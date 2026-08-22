@@ -1422,3 +1422,20 @@ occupancy上校准。v13已经过8项support条件中的7项，项目却没有�
 所以当前不得直接建立v25。后继只有在完成单一falsification card、增加独立policy mappings并把leave-task-out closed-loop放回
 首个compiler oracle后才能成为active design；raw LoRA cosine只保留为定位。完整复盘见
 `docs/ecp_stage1_iteration_retrospective_20260823.md`。
+
+## 69. 现有资产足以检验mapping diversity，但trajectory数量不能冒充policy mapping数量
+
+LIBERO-90去重协议已有71个与target40零重合的任务，每task 50条successful demonstrations；对应step1000 rank16 expert
+bank也已71/71完成，不需要再训练专家。同一3550个fixed rows上，source为`2918`、direct experts为`3203`，净增285；按task
+aggregate为43项正、13项相等、15项负。即使其中15个expert在固定面上低于source，它们仍有真实successful occupancy；训练时
+必须同时保留source/shared support，而不能按aggregate把任务删掉。
+
+这71个source-seen任务不能单独证明source-unseen adaptation，但可与train24 fit19共同形成90个task-to-policy mappings；
+train24 held5继续零shared-gradient，直接裁决泛化。独立统计单元必须保持为task：non-held每task只有一个独立训练的adapter，
+复跑两条successful trajectories只增加状态与uncertainty覆盖，不能把90 mappings写成232个或更多样本。
+
+当前真正缺失的不是专家或demonstration，而是namespaced 90-fit/5-held Stage 1 authority、71-task successful occupancy与
+owner-resolved support cache。第一次闭环必须先于geometry/support筛选：540 visits后直接在既有paired250上要求保留
+direct-latest与shared support，并用这些rows反向校准open-loop proxy。唯一合同为
+`docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`，资产证据为
+`docs/evidence/ecp_20260823/stage1_mapping_diversity_asset_audit.json`。

@@ -1,0 +1,117 @@
+{
+  "schema_version": "ember_ecp_stage1_mapping_diversity_asset_audit_v1",
+  "date": "2026-08-23",
+  "status": "complete_preimplementation_audit",
+  "content_hash_policy": "disabled_by_owner",
+  "scientific_unit": "independent task-to-successful-policy mapping; episodes and trajectories are state coverage, not additional mappings",
+  "nonheld_meta_authority": {
+    "protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
+    "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
+    "allowlisted_tasks": 71,
+    "excluded_target_overlap_tasks": 19,
+    "successful_demonstration_episodes": 3550,
+    "frames": 529173,
+    "hdf5_bytes": 52710755898,
+    "validation_or_test_overlap": 0
+  },
+  "nonheld_expert_bank": {
+    "config": "configs/pi05_nonheld_meta_expert_bank_v1.json",
+    "root": "runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819",
+    "completed_tasks": 71,
+    "adapter_files": 71,
+    "checkpoint_step": 1000,
+    "lora_targets": 38,
+    "lora_rank": 16,
+    "values_per_adapter": 1287168,
+    "root_bytes": 603867058,
+    "independently_trained_adapters_per_task": 1,
+    "retraining_required": false
+  },
+  "nonheld_paired_policy_evidence": {
+    "rows": 3550,
+    "source_successes": 2918,
+    "direct_expert_successes": 3203,
+    "net_direct_over_source": 285,
+    "task_level_direct_over_source": {
+      "positive": 43,
+      "equal": 13,
+      "negative": 15
+    },
+    "legacy_fold_roles": {
+      "fit56": {
+        "source": 2272,
+        "direct": 2519,
+        "net": 247
+      },
+      "held15": {
+        "source": 646,
+        "direct": 684,
+        "net": 38
+      }
+    },
+    "interpretation": "The bank supplies broad successful-policy mappings even though every identity was seen by source. It may train shared Stage 1 components but cannot by itself prove source-unseen adaptation."
+  },
+  "target_train_authority": {
+    "manifest": "configs/pi05_target_data_v1/manifest.json",
+    "successful_member_selection": "configs/pi05_train24_successful_expert_equivalence_v1.json",
+    "tasks": 24,
+    "fit_tasks": 19,
+    "held_tasks": 5,
+    "selected_successful_members": 47,
+    "fit_members": 37,
+    "held_members": 10,
+    "held_global_task_ids": [0, 9, 18, 25, 36]
+  },
+  "combined_mapping_contract": {
+    "fit_mappings": 90,
+    "fit_composition": {
+      "audited_nonheld_meta": 71,
+      "target_train_fold0_fit": 19
+    },
+    "leave_task_out_mappings": 5,
+    "leave_task_out_role": "target train24 fold0 held5; privileged frozen inference only",
+    "task_weighting": "each of the 90 mappings has equal shared-gradient weight; multiple members or trajectories do not increase task weight",
+    "task_namespace_requirement": "source90 and target40 identities remain namespaced for asset ownership; numeric IDs are never model inputs",
+    "validation_gradient_tasks": 0,
+    "test_gradient_tasks": 0
+  },
+  "reusable_without_regeneration": [
+    "frozen source pi0.5 and normalization",
+    "frozen Stage 0 native plus Action Meta observer authority",
+    "71 step1000 nonheld task-expert adapters",
+    "3550 nonheld successful demonstrations",
+    "47 selected target-train successful members and trajectories",
+    "stable shared prior",
+    "target24 policy-support banks",
+    "held5 source/shared/direct paired baselines and evaluator"
+  ],
+  "missing_derived_assets": [
+    "one namespaced 90-fit plus 5-held Stage 1 task/member authority",
+    "successful occupancy trajectories for all 71 nonheld experts in ECP phase/owner format",
+    "nonheld owner-resolved policy-support cache",
+    "one combined task-equal Stage 1 schedule and checkpoint schema",
+    "one 90-task-equal structured fit success/progress calibration panel"
+  ],
+  "existing_occupancy_limit": {
+    "captured_nonheld_tasks": 4,
+    "captured_nonheld_trajectories": 8,
+    "evidence": "docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json",
+    "decision": "insufficient for 71-task Stage 1 training and must not be counted as broad coverage"
+  },
+  "derivation_plan": {
+    "new_expert_training": false,
+    "full_3550_row_reevaluation": false,
+    "trajectory_capture": "replay at most two already-identified successful rows per nonheld task, preferring one source-to-direct gained row and one retained-success row when available",
+    "maximum_new_nonheld_rollouts": 142,
+    "support_build": "query existing step1000 experts and frozen source/shared policies on cross-episode successful occupancy; retain event, owner, horizon and member uncertainty structure",
+    "fit_closed_loop": "one task-equal structured success/progress calibration after the 540 dense visits; no global 16D estimator",
+    "raw_adapter_reconstruction_target": false
+  },
+  "known_limitations": [
+    "The 71 nonheld mappings are source-seen and therefore only increase shared mapping diversity; held5 remains the source-unseen oracle.",
+    "Each nonheld task has one independently trained adapter. Two trajectories improve occupancy coverage but are not two independent policy mappings.",
+    "Fifteen nonheld experts score below source on the fixed paired rows; they remain valid successful-policy members but source/shared preservation is mandatory.",
+    "The current metadata still does not establish equal-endpoint different-valid-procedure pairs, so this audit does not authorize a process-identifiability claim."
+  ],
+  "decision": "assets_sufficient_for_one_mapping_diversity_falsification_experiment_without_retraining_experts"
+}

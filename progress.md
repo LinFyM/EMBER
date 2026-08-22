@@ -6,9 +6,11 @@
 ## Current authority and executable state
 
 - owner设定的v24停点已经执行：formal、materialization、full/prior dual audit和remote-safe evidence均已完成；v24关闭，
-  不续训、不扫小超参、不进入held5或`q_V`，也不自动建立v25。Stage 1 v1--v24系统复盘已写入
-  `docs/ecp_stage1_iteration_retrospective_20260823.md`。当前没有active Stage 1 revision或GPU任务；下一实现必须先形成新的单一
-  falsification contract，不能由v24局部metric自动推导。
+  不续训、不扫小超参、不进入`q_V`，也不建立v25。Stage 1 v1--v24系统复盘已写入
+  `docs/ecp_stage1_iteration_retrospective_20260823.md`。复盘后的唯一active科学合同已登记为 **ECP Stage 1
+  Mapping-Diverse Compiler Oracle（MDCO）**：它不是新架构版本，只检验把shared Stage 1的独立policy mappings从19扩大到
+  71 non-held + 19 target-fit = 90后，冻结`q_pi + compiler`能否直接通过source-unseen held5 closed loop。合同见
+  `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`；当前仍没有GPU任务或successor代码。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为
@@ -17,8 +19,10 @@
 - 复盘确认Stage 1的24个版本约归并为13组主要因果问题；从首版到v24不足22小时形成65个提交、tracked tree净增12,163行，
   formal账本约4,997 task visits。v1 held5输给shared后，v2--v24连续23版没有held5 rows，geometry/open-loop support从screen
   变成了未经闭环校准的主要决策面；fixed compiler、direct layer/family-local surface和broad independent mappings又落实过晚。
-  下一路线默认优先在更多audited meta-task policy mappings上建立fixed functional compiler，并让leave-task-out closed-loop
-  oracle成为首个科学门；本文尚未把它升级为active design。
+  现有资产审计确认71个non-held expert checkpoints全部完成，无需重训；与target fit19合计90个shared-gradient mappings，
+  held5继续完全留出。71-task paired rows为source `2918/3550`、direct `3203/3550`，43/71 tasks正增量；但每个non-held
+  task只有一个独立adapter，trajectory不能冒充mapping。审计见
+  `docs/evidence/ecp_20260823/stage1_mapping_diversity_asset_audit.json`。
 - 专家最终复核与owner逐项讨论已经完成，研究总架构命名为 **EMBER-ECP（Event-Conditioned Policy Compiler）**；长期设计
   authority仍为`docs/event_conditioned_policy_compiler_design.md`。核心结构是ordered video-event segmentation、
   Event-Conditioned Horizon Binding、target-family-aware Program、分布式privileged `q_pi(P)`、Dynamic-K `q_V(P|L,V)`与

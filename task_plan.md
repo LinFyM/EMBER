@@ -317,14 +317,17 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 1. v24已经完成并关闭：formal、materialization、dual 308-panel audit与remote-safe evidence全部落盘；不续训、不扫
    LR/rank/seed/dtype/width/fusion，不运行held5或`q_V`；
-2. Stage 1 v1--v24复盘已经完成，当前停止所有successor代码与GPU工作。复盘确认主要问题是geometry/open-loop support门长期
+2. Stage 1 v1--v24复盘已经完成。复盘确认主要问题是geometry/open-loop support门长期
    未用held closed-loop校准、fixed compiler与专家direct layer/family-local surface落实过晚、19个独立task mappings不足以及
    版本号增长快于独立信息增长；
-3. 在任何下一实现前，先形成一份单一falsification contract，必须明确：一个主要科学变量、更多audited independent policy
-   mappings、固定functional compiler的authority、首个leave-task-out closed-loop oracle、一次合理修正上限和明确停止条件；
-4. raw/effective LoRA own cosine与retrieval降为定位指标，不再作为成功策略必要门；新的open-loop support proxy在连续主导
+3. [x] 完成non-held meta资产审计：71个step1000 expert checkpoints与3550条successful demos均可复用；与fit19合成90个
+   task-equal mappings，held5继续留出；不重训experts、不把trajectory计为mapping；
+4. [x] 登记唯一 **MDCO** falsification contract：主要变量仅为mapping diversity；固定ECP结构与信息墙；90 tasks各6次dense
+   visits并完成一次task-equal structured fit success/progress calibration后，直接运行held5 strict paired250；只允许一次
+   预注册near-pass exact-resume，失败即关闭当前compiler family；
+5. raw/effective LoRA own cosine与retrieval降为定位指标，不再作为成功策略必要门；新的open-loop support proxy在连续主导
    决策前必须用一次train-authorized held5 paired closed-loop校准；
-5. 默认优先方向是在排除validation/Test的更大meta-task policy mapping集合上建立fixed layer/family-local direct-absolute
-   single-surface compiler，再由closed-loop oracle决定是否训练video `q_V`。该方向尚未登记为active design，不创建v25；
-6. 完成本轮文档/evidence集成、推送`main`并清理v24 detached/implementation worktree、branch与临时log；保留唯一formal
-   checkpoint、projection和dual audit，不删除或重复生成昂贵资产。
+6. 下一实现只一般化canonical Stage 1 data/support owner：建立namespaced 90-fit/5-held authority、复跑最多142条已知成功
+   non-held rows并构建一次owner-resolved support cache；不增加平行trainer或新架构版本；
+7. 实现验证后从clean pushed detached worktree运行MDCO首节点。只有held5完整门通过才轮换fold并进入`q_V`；失败按合同停止；
+8. 完成本轮合同/evidence集成、推送`main`；保留唯一formal checkpoint、projection和dual audit，不删除或重复生成昂贵资产。

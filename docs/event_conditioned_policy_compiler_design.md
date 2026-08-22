@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **长期research design authority；Stage 1实现于v24后暂停**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-23 **长期research design authority；v24已关闭，Stage 1当前只登记MDCO falsification contract**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -987,6 +987,25 @@ heads与continuous fusion没有把process Program识别为own successful policy 
 结果见`docs/ecp_stage1_iteration_retrospective_20260823.md`与
 `docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`。当前没有active Stage 1 revision；
 下述Stage 2--4只保留为通过Gate 2之后的设计合同，不构成当前执行授权。
+
+#### Stage 1 MDCO — mapping diversity的单一闭环证伪
+
+v1--v24复盘后不再建立v25。唯一active科学合同称为 **Mapping-Diverse Compiler Oracle（MDCO）**，保持本设计的observer、
+Program、`q_pi`、target-local layer-resolved direct-absolute single surface和rank16输出不变，只把shared-gradient的独立
+task-to-policy mappings从fit19扩大到71个audited non-held tasks加fit19，共90个task-equal mappings。train24 fold0 held5仍
+完全留出，validation/Test action或reward仍为零读取、零梯度。
+
+现有71-task experts、3550 successful demos和paired source/direct结果足够建立一次实验，不重新训练专家，也不把多条trajectory
+算成独立mapping。90 tasks各6次dense visits并完成一次90-task等权structured success/progress calibration后，跳过raw
+geometry预筛，冻结`q_pi + compiler`并直接运行既有held5
+strict paired250。primary门要求至少保留`81/108` direct-latest successes、`58/96` direct-latest source-failure gains、
+`33/43` shared successes，5/5 breadth且Goal和Long均非零。只有预登记near-pass才允许一次不改任何合同的12-visits/task
+exact-resume；否则关闭当前compiler family。
+
+完整数据、停止条件与proxy校准规则见
+`docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`，资产审计见
+`docs/evidence/ecp_20260823/stage1_mapping_diversity_asset_audit.json`。MDCO是一个因果实验，不是新的部署架构；未通过前仍不训练
+`q_V`。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

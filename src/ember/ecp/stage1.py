@@ -77,23 +77,13 @@ class ECPStage1Model(torch.nn.Module):
         encoded: ECPVideoEncoderOutput,
         evidence: PrivilegedPolicyEvidence,
         video_group_ids: torch.Tensor,
-        *,
-        evidence_logit_offset: torch.Tensor | None = None,
-        rank_angle_offset: torch.Tensor | None = None,
     ) -> ECPStage1Output:
         anchors = self.visible_program(encoded, video_group_ids, group_count=1)
-        teacher = self.policy_teacher(
-            anchors,
-            evidence,
-            evidence_logit_offset=evidence_logit_offset,
-        )
+        teacher = self.policy_teacher(anchors, evidence)
         return ECPStage1Output(
             anchors=anchors,
             teacher=teacher,
             member_compilation=self.compiler(teacher.member_programs),
-            consensus_compilation=self.compiler(
-                teacher.program,
-                rank_angle_offset=rank_angle_offset,
-            ),
+            consensus_compilation=self.compiler(teacher.program),
             prior_compilation=self.compiler(anchors.prior_only()),
         )

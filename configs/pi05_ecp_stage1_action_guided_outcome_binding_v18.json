@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_action_grounded_recovery_v17",
-  "status": "active_stage1_action_grounded_recovery",
-  "purpose": "Task-balanced exact PI0.5 action grounding on cross-episode successful train trajectories from the retained v16 model, with verified-success learner augmentation and bounded v16 structural anchors.",
+  "schema_version": "ember_ecp_stage1_action_guided_outcome_binding_v18",
+  "status": "active_stage1_action_guided_outcome_binding",
+  "purpose": "Task-equal fit19 closed-loop success/progress binds exact action-informed 38-owner A/B factor directions while successful/learner policy support remains a structural anchor.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -18,17 +18,18 @@
     "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json",
     "learner_occupancy": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821",
     "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v3_owner_local_activation_20260822/manifest.json",
-    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_owner_local_activation_v16_tv114_r6_cd96b42_gpu01p123456_20260822/checkpoints/macro_00000228"
+    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_action_grounded_v17_tv114_r6_72b4a1c_gpu01p123456_20260822/checkpoints/macro_00000114"
   },
   "initialization": {
-    "stage": "stage1_owner_local_activation_bootstrap_v16",
-    "run_contract_schema": "ember_ecp_stage1_owner_local_activation_bootstrap_run_v16",
-    "checkpoint_macro": 228,
+    "stage": "stage1_action_grounded_recovery_v17",
+    "run_contract_schema": "ember_ecp_stage1_action_grounded_recovery_run_v17",
+    "checkpoint_macro": 114,
     "load_model_weights_only": true,
     "fresh_optimizer": true
   },
   "information_wall": {
     "shared_gradient_tasks": "fit19 development-train tasks only",
+    "fit19_action_and_reward_reads": true,
     "held5": "privileged transform and frozen inference only; zero shared gradient and zero code fitting",
     "held5_action_or_reward_reads": 0,
     "validation_action_or_reward_reads": 0,
@@ -39,11 +40,9 @@
       "multiple independently successful adapter members",
       "full successful-occupancy eight-phase source-subtracted action response",
       "successful and learner occupancy full-layer source/expert owner responses",
-      "detached source target inputs and successful-member target-local LoRA activation effects",
-      "cross-episode successful train action chunks for exact PI0.5 flow-matching gradients",
-      "verified-success learner action chunks as an explicit secondary state-support stratum",
       "source, stable-shared and learner-policy counterfactual responses",
-      "member reliability and disagreement"
+      "member reliability and disagreement",
+      "train-only exact action gradients and paired closed-loop outcomes during privileged Stage 1"
     ],
     "deployment_forbidden": [
       "q_pi",
@@ -108,14 +107,14 @@
   "data": {
     "frame_stride": 5,
     "visible_videos_per_visit": 2,
-    "video_sampling": "without replacement deterministic per task visit",
+    "video_sampling": "without replacement deterministic per task and macro",
     "pair_seed": 20260825,
     "successful_members": 47,
     "k2_tasks": 23,
     "k1_tasks": 1,
     "phase_points": 8,
     "phase_source": "fit19-frozen 350-to-32 whitening of complete 50x7 successful trajectory responses",
-    "learner_states": "30 frozen fit19 projected-policy trajectories; verified successes full weight and failures member-agreement/outcome weighted"
+    "learner_states": "30 frozen fit19 projected-policy trajectories; learner panels alternate with successful anchors"
   },
   "policy_support": {
     "channels": [
@@ -136,18 +135,12 @@
   "objective": {
     "effective_update": "diagnostic-only exact gauge-invariant BA Frobenius distance; zero optimization weight",
     "canonical_factor_warmstart": "diagnostic-only compact rank16 SVD gauge distance; zero optimization weight",
-    "functional_response": "paired complete PI0.5 final-flow plus target-local LoRA activation effects retained as bounded structural anchors",
-    "action_grounding": "exact PI0.5 flow-matching loss differentiated only through the generated complete LoRA on cross-episode successful train trajectories",
-    "action_supervision": "every task receives the same successful-panel base stratum; verified-success learner panels add state support; failed learner actions never produce gradients",
-    "target_local_activation_effect": "candidate and successful members apply each target B(Ax_ref) to the same detached source input in 38-owner x 4-horizon-basis policy-native output spaces",
+    "functional_response": "successful and learner PI0.5 response plus target-local activation effects remain bounded structural anchors",
+    "action_proposal_panel": "cross_episode_successful_train_trajectory",
+    "action_policy_direct_gradient_weight": 0.0,
+    "action_policy_gradient_usage": "detached owner-local proposal direction only; closed-loop credit chooses sign and magnitude",
     "support_preservation": "baseline_relative_response_barrier",
     "prior_counterfactual": "language and scene never act as replacement Values; absent or zero process content returns the exact stable-prior LoRA",
-    "action_policy_loss_weight": 1.0,
-    "action_supervision_weights": {
-      "successful": 1.0,
-      "verified_successful_learner": 1.0,
-      "failed_learner": 0.0
-    },
     "policy_flow_time_sampling_scheme": "task_logical_batch_keyed_independent_beta15_time_v2",
     "policy_flow_noise_sampling_scheme": "task_logical_batch_keyed_independent_gaussian_v2",
     "activation_effect_distillation_weight": 0.1,
@@ -166,17 +159,42 @@
     "train_policy_seed": 2026082501,
     "evaluation_policy_seed": 2026082591
   },
+  "outcome_binding": {
+    "proposal_coordinate": "exact_action_loss_negative_gradient_per_owner_ab_pair",
+    "direction_normalization": "joint A/B L2 unit action descent rescaled to each base owner pair L2 norm",
+    "relative_factor_sigma": 0.05,
+    "leaf_gradient_weight": 0.01,
+    "minimum_active_owners": 38,
+    "lanes_per_arm": 2,
+    "success_weight": 1.0,
+    "progress_weight": 0.25,
+    "success_efficiency_weight": 0.05,
+    "update_seed_root": 2026083101,
+    "environment_seed_root": 2026083102,
+    "policy_noise_seed_root": 2026083103,
+    "video_visit_root": 18000,
+    "proposal_visit_root": 28000,
+    "support_visit_root": 38001,
+    "support_preservation": "baseline_relative_response_barrier",
+    "factor_structure": "one shared Rademacher coefficient per canonical target owner across its A/B pair; owner identity already fixes family and layer",
+    "reward_role": "select the closed-loop sign and magnitude of action-informed factor directions; never invent Program meaning"
+  },
+  "environment": {
+    "render_resolution": 256,
+    "dummy_settling_steps": 10,
+    "dummy_action": [0, 0, 0, 0, 0, 0, -1],
+    "action_execution_horizon": 5,
+    "num_inference_steps": 10
+  },
   "optimization": {
-    "seed": 20260830,
+    "seed": 20260831,
     "precision": "bfloat16",
     "world_size": 6,
-    "visits_per_fit_task": 12,
-    "total_task_visits": 228,
-    "optimizer_updates": 38,
-    "task_balance_block_rounds": 6,
-    "task_balance_contract": "Each 114-visit block contains exactly six visits for every fit task; rows remain cost-balanced within the block.",
-    "checkpoint_task_visits": [114, 228],
-    "stage_stop_task_visits": [114, 228],
+    "task_count": 19,
+    "total_macros": 4,
+    "checkpoint_macros": [2, 4],
+    "stage_stop_macros": [2, 4],
+    "task_balance_contract": "Every optimizer macro contains exactly one equally weighted paired credit panel for each fit19 task; static ownership is cost-balanced across six ranks.",
     "optimizer": {
       "name": "AdamW",
       "learning_rate": 0.00002,
@@ -186,23 +204,22 @@
       "gradient_clip_norm": 1.0
     },
     "scheduler": {
-      "kind": "constant",
-      "warmup_updates": 1,
-      "decay_lr": 0.00002
+      "kind": "constant"
     },
-    "distributed": "manual flat gradient mean, deferred NCCL, task-equal",
+    "distributed": "static horizon-and-video-cost-balanced fit-task ownership with task-equal gradient sum",
     "functional_policy_microbatch_size": 1,
     "exact_resume_world_size_locked": true
   },
   "profile_defaults": {
     "world_size": 1,
-    "tasks": 1,
-    "task_visits": 1
+    "task_count": 1,
+    "total_macros": 1,
+    "checkpoint_macros": []
   },
   "materialization": {
-    "video_visit": 13099,
+    "video_visit": 18199,
     "visible_video_count": 2,
-    "allowed_checkpoint_task_visits": [114, 228],
+    "allowed_checkpoint_macros": [2, 4],
     "sampling": "fixed correct action-hidden videos without replacement",
     "output": "one privileged q_pi consensus rank16 LoRA per task"
   },
@@ -220,6 +237,6 @@
     "require_significant_improvement_over_source": true,
     "require_cross_task_breadth": true,
     "goal_and_long_must_not_both_be_zero": true,
-    "failure_action": "stop before q_V; repair the earliest q_pi/compiler/support interface instead of tuning rank, seed, dtype, or tiny LR sweeps"
+    "failure_action": "stop before q_V; repair the earliest q_pi/compiler/outcome interface instead of tuning sigma, seed, dtype, or tiny learning-rate sweeps"
   }
 }

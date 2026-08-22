@@ -1,109 +1,141 @@
-"""Structured Stage 1 coordinates for task-equal closed-loop calibration."""
+"""Action-informed factor coordinates for task-equal Stage 1 outcome credit."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Mapping
 
 import torch
 
-from ember.ecp.stage1 import ECPStage1Output
-from ember.reward.credit import AntitheticCredit
+from ember.ecp.contracts import TargetOwner
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
 from ember.reward.protocol import RewardProtocolError
 
 
-PROGRAM_BINDING = "program_binding"
-COMPILER_BINDING = "compiler_binding"
-OUTCOME_COORDINATES = (PROGRAM_BINDING, COMPILER_BINDING)
-
-
 @dataclass(frozen=True)
-class OutcomePerturbation:
-    coordinate: str
+class ActionGuidedFactorPerturbation:
+    """One paired complete-LoRA perturbation in 38 owner-local directions."""
+
     epsilon: torch.Tensor
     sigma: float
-    plus_kwargs: dict[str, torch.Tensor]
-    minus_kwargs: dict[str, torch.Tensor]
+    directions: Mapping[str, torch.Tensor]
+    direction_norm_sq: torch.Tensor
+    plus_state: Mapping[str, torch.Tensor]
+    minus_state: Mapping[str, torch.Tensor]
+    active_owners: int
 
 
-def _rademacher(shape: tuple[int, ...], *, seed: int) -> torch.Tensor:
+def _rademacher(count: int, *, seed: int, device: torch.device) -> torch.Tensor:
     generator = torch.Generator(device="cpu").manual_seed(seed)
     return (
-        torch.randint(0, 2, shape, generator=generator, dtype=torch.float32)
+        torch.randint(0, 2, (1, count), generator=generator, dtype=torch.float32)
         .mul_(2.0)
         .sub_(1.0)
+        .to(device)
     )
 
 
-def structured_outcome_perturbation(
-    output: ECPStage1Output,
+def action_guided_factor_perturbation(
+    state: Mapping[str, torch.Tensor],
+    action_gradients: Mapping[str, torch.Tensor],
+    owners: tuple[TargetOwner, ...],
     *,
-    coordinate: str,
     sigma: float,
     seed: int,
-) -> OutcomePerturbation:
-    """Build one rank-semantic-free antithetic perturbation."""
+) -> ActionGuidedFactorPerturbation:
+    """Use exact action-loss descent as one relative factor direction per owner.
 
-    if coordinate not in OUTCOME_COORDINATES or sigma <= 0:
-        raise RewardProtocolError("invalid ECP outcome coordinate")
-    device = output.teacher.program.process.device
-    if coordinate == PROGRAM_BINDING:
-        shape = (1, *output.teacher.program.process.shape[1:3], 1)
-        epsilon = _rademacher(shape, seed=seed)
-        presence = output.teacher.program.presence[:, :, None, None].float().cpu()
-        epsilon = epsilon * (presence > 0).float()
-        offset = (sigma * epsilon).to(device)
-        plus = {"evidence_logit_offset": offset}
-        minus = {"evidence_logit_offset": -offset}
-    else:
-        owners = int(output.consensus_compilation.rank_angles.shape[1])
-        epsilon = _rademacher((1, owners, 1), seed=seed)
-        offset = (sigma * epsilon).to(device)
-        plus = {"rank_angle_offset": offset}
-        minus = {"rank_angle_offset": -offset}
-    return OutcomePerturbation(
-        coordinate=coordinate,
-        epsilon=epsilon.reshape(1, -1).to(device),
+    Each A/B pair is jointly L2-normalized, then rescaled to the base pair's
+    factor norm. Consequently ``sigma`` is the same relative factor change for
+    every active owner despite different target shapes and families.
+    """
+
+    expected = {
+        owner.target_name + suffix
+        for owner in owners
+        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX)
+    }
+    if set(state) != expected or set(action_gradients) != expected or sigma <= 0:
+        raise RewardProtocolError("invalid action-guided factor surface")
+    first = next(iter(state.values()))
+    epsilon = _rademacher(len(owners), seed=seed, device=first.device)
+    directions: dict[str, torch.Tensor] = {}
+    plus: dict[str, torch.Tensor] = {}
+    minus: dict[str, torch.Tensor] = {}
+    norm_squares = []
+    active = 0
+    for owner in owners:
+        name_a = owner.target_name + LORA_A_SUFFIX
+        name_b = owner.target_name + LORA_B_SUFFIX
+        base_a = state[name_a].detach().float()
+        base_b = state[name_b].detach().float()
+        gradient_a = action_gradients[name_a].detach().float()
+        gradient_b = action_gradients[name_b].detach().float()
+        base_norm_sq = base_a.square().sum() + base_b.square().sum()
+        gradient_norm_sq = gradient_a.square().sum() + gradient_b.square().sum()
+        if not bool(torch.isfinite(base_norm_sq + gradient_norm_sq)) or float(
+            base_norm_sq
+        ) <= 0:
+            raise RewardProtocolError("non-finite action-guided factor direction")
+        if float(gradient_norm_sq) > 0:
+            scale = (base_norm_sq / gradient_norm_sq).sqrt()
+            direction_a = -gradient_a * scale
+            direction_b = -gradient_b * scale
+            active += 1
+        else:
+            direction_a = torch.zeros_like(base_a)
+            direction_b = torch.zeros_like(base_b)
+            epsilon[:, owner.index] = 0
+        coefficient = sigma * epsilon[0, owner.index]
+        directions[name_a] = direction_a
+        directions[name_b] = direction_b
+        plus[name_a] = (base_a + coefficient * direction_a).to(state[name_a])
+        plus[name_b] = (base_b + coefficient * direction_b).to(state[name_b])
+        minus[name_a] = (base_a - coefficient * direction_a).to(state[name_a])
+        minus[name_b] = (base_b - coefficient * direction_b).to(state[name_b])
+        norm_squares.append(base_norm_sq)
+    return ActionGuidedFactorPerturbation(
+        epsilon=epsilon,
         sigma=float(sigma),
-        plus_kwargs=plus,
-        minus_kwargs=minus,
+        directions=directions,
+        direction_norm_sq=torch.stack(norm_squares),
+        plus_state=plus,
+        minus_state=minus,
+        active_owners=active,
     )
 
 
-def outcome_coordinate(
-    output: ECPStage1Output, coordinate: str
-) -> torch.Tensor:
-    """Return the differentiable base coordinate matching the shared offset."""
-
-    if coordinate == PROGRAM_BINDING:
-        logits = output.teacher.evidence_gate_logits.float()
-        weights = output.teacher.member_weights.to(logits)
-        value = torch.einsum("m,meoj->eoj", weights, logits)
-        value = value * output.teacher.program.presence[0, :, None, None]
-        return value.reshape(1, -1)
-    if coordinate == COMPILER_BINDING:
-        return output.consensus_compilation.rank_angles.float().mean(-1)
-    raise RewardProtocolError("invalid ECP outcome coordinate")
-
-
-def outcome_surrogate_loss(
-    output: ECPStage1Output,
-    credit: AntitheticCredit,
+def action_guided_outcome_leaf_gradients(
+    perturbation: ActionGuidedFactorPerturbation,
+    owners: tuple[TargetOwner, ...],
+    coordinate_gradient: torch.Tensor,
     *,
-    coordinate: str,
     weight: float,
-) -> torch.Tensor:
-    value = outcome_coordinate(output, coordinate)
+) -> dict[str, torch.Tensor]:
+    """Project reward ascent onto the action-informed directions.
+
+    The returned tensors are loss gradients. For every active owner their inner
+    product with its proposal direction equals the negative weighted reward
+    coordinate gradient, so optimizer descent performs reward ascent without
+    treating reward as a deployment input.
+    """
+
     if (
-        weight < 0
-        or value.shape != credit.gradient.shape
-        or not bool(torch.isfinite(credit.gradient).all())
+        coordinate_gradient.shape != (1, len(owners))
+        or perturbation.direction_norm_sq.shape != (len(owners),)
+        or weight <= 0
+        or not bool(torch.isfinite(coordinate_gradient).all())
     ):
-        raise RewardProtocolError("invalid ECP outcome surrogate")
-    return -weight * (value * credit.gradient.to(value)).sum()
-
-
-def perturbation_forward_kwargs(
-    perturbation: OutcomePerturbation, *, plus: bool
-) -> dict[str, Any]:
-    return perturbation.plus_kwargs if plus else perturbation.minus_kwargs
+        raise RewardProtocolError("invalid action-guided outcome gradient")
+    result: dict[str, torch.Tensor] = {}
+    for owner in owners:
+        denominator = perturbation.direction_norm_sq[owner.index].clamp_min(1e-20)
+        coefficient = (
+            -weight * coordinate_gradient[0, owner.index].float() / denominator
+        )
+        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX):
+            name = owner.target_name + suffix
+            result[name] = (coefficient * perturbation.directions[name]).to(
+                perturbation.plus_state[name]
+            )
+    return result

@@ -276,12 +276,7 @@ class TargetFamilyCompiler(torch.nn.Module):
         )
         return ((process_mass + uncertainty_mass) > 0).to(program.process)
 
-    def forward(
-        self,
-        program: ECPProgram,
-        *,
-        rank_angle_offset: torch.Tensor | None = None,
-    ) -> ECPCompilerOutput:
+    def forward(self, program: ECPProgram) -> ECPCompilerOutput:
         key_tokens, value_tokens, presence, query_context = self._tokens(program)
         queries = self._queries(query_context)
         keys = self.key_projection(key_tokens)
@@ -300,11 +295,6 @@ class TargetFamilyCompiler(torch.nn.Module):
         process_gate = self._process_gate(program)
         has_process = bool((process_gate.detach() > 0).any())
         batch = int(program.language.shape[0])
-        if rank_angle_offset is not None and rank_angle_offset.shape not in {
-            (batch, self.owner_count, 1),
-            (batch, self.owner_count, self.rank),
-        }:
-            raise ValueError("compiler rank-angle offset changed shape")
         result: dict[str, torch.Tensor] = {}
         replacement_fractions = []
         rank_angles = []
@@ -328,13 +318,6 @@ class TargetFamilyCompiler(torch.nn.Module):
             replacement_b = self.factor_b[family](addressed).transpose(1, 2)
             selector_logits = self.rank_selector[family](addressed).squeeze(-1)
             angles = self.selector_max_angle_radians * torch.tanh(selector_logits)
-            if rank_angle_offset is not None:
-                angles = (
-                    angles + rank_angle_offset[:, owner.index].to(angles)
-                ).clamp(
-                    min=-self.selector_max_angle_radians,
-                    max=self.selector_max_angle_radians,
-                )
             selected_a, selected_b = replace_low_rank_modes(
                 base_a=templates[name_a],
                 base_b=templates[name_b],

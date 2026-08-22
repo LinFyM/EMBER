@@ -66,6 +66,12 @@ ECP_STAGE1_OUTCOME_TASK_EXPERT_ADAPTER_SCHEMA = (
 ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_ecp_stage1_outcome_binding_projection_v11"
 )
+ECP_STAGE1_ACTION_GUIDED_TASK_EXPERT_ADAPTER_SCHEMA = (
+    "ember_pi05_ecp_stage1_action_guided_outcome_task_expert_eval_adapter_v18"
+)
+ECP_STAGE1_ACTION_GUIDED_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_ecp_stage1_action_guided_outcome_projection_v18"
+)
 
 
 def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
@@ -79,20 +85,28 @@ def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
 def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     optimization = manifest.get("optimization", {})
     information_wall = manifest.get("information_wall", {})
-    outcome = (
-        manifest.get("schema_version")
-        == ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA
-    )
-    cursor = int(
-        optimization.get("outcome_macro" if outcome else "task_visits", -1)
-    )
+    schema = manifest.get("schema_version")
+    if schema == ECP_STAGE1_ACTION_GUIDED_TASK_EXPERT_MANIFEST_SCHEMA:
+        projection_kind = "ecp_stage1_privileged_action_guided_outcome_compiler"
+        objective_phase = "task_equal_action_guided_outcome_binding"
+        adapter_schema = ECP_STAGE1_ACTION_GUIDED_TASK_EXPERT_ADAPTER_SCHEMA
+        cursor_name = "outcome_macro"
+        arm_prefix = "ecp_stage1_q_pi_action_guided_outcome_m"
+    elif schema == ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA:
+        projection_kind = "ecp_stage1_privileged_outcome_binding_compiler"
+        objective_phase = "outcome_calibrated_policy_support"
+        adapter_schema = ECP_STAGE1_OUTCOME_TASK_EXPERT_ADAPTER_SCHEMA
+        cursor_name = "outcome_macro"
+        arm_prefix = "ecp_stage1_q_pi_outcome_binding_m"
+    else:
+        projection_kind = "ecp_stage1_privileged_process_value_selector_compiler"
+        objective_phase = "policy_support"
+        adapter_schema = ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA
+        cursor_name = "task_visits"
+        arm_prefix = "ecp_stage1_q_pi_process_value_selector_tv"
+    cursor = int(optimization.get(cursor_name, -1))
     if (
-        manifest.get("projection_kind")
-        != (
-            "ecp_stage1_privileged_outcome_binding_compiler"
-            if outcome
-            else "ecp_stage1_privileged_process_value_selector_compiler"
-        )
+        manifest.get("projection_kind") != projection_kind
         or optimization.get("held_shared_gradient_steps") != 0
         or optimization.get("compiler_frozen_for_materialization") is not True
         or optimization.get("single_complete_lora") is not True
@@ -107,27 +121,14 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         or optimization.get("raw_factor_addition") is not False
         or optimization.get("fixed_rank_partition") is not False
         or optimization.get("second_adapter_deployed") is not False
-        or optimization.get("objective_phase")
-        != (
-            "outcome_calibrated_policy_support"
-            if outcome
-            else "policy_support"
-        )
+        or optimization.get("objective_phase") != objective_phase
         or information_wall.get("privileged_q_pi") is not True
         or information_wall.get("second_adapter_deployed") is not False
     ):
         raise ExpertManifoldError("ECP Stage 1 projection manifest changed")
     return {
-        "adapter_schema": (
-            ECP_STAGE1_OUTCOME_TASK_EXPERT_ADAPTER_SCHEMA
-            if outcome
-            else ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA
-        ),
-        "arm": (
-            f"ecp_stage1_q_pi_outcome_binding_m{cursor}"
-            if outcome
-            else f"ecp_stage1_q_pi_process_value_selector_tv{cursor}"
-        ),
+        "adapter_schema": adapter_schema,
+        "arm": f"{arm_prefix}{cursor}",
         "asset": {
             "stage1_config": _projection_file(manifest, "stage1_config"),
             "stage1_checkpoint": _projection_file(manifest, "stage1_checkpoint"),
@@ -264,6 +265,7 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     if schema in {
         ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA,
         ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA,
+        ECP_STAGE1_ACTION_GUIDED_TASK_EXPERT_MANIFEST_SCHEMA,
     }:
         return _ecp_projection_contract(manifest)
     raise ExpertManifoldError("projected task-expert manifest schema changed")

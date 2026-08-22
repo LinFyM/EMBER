@@ -772,6 +772,16 @@ action/reward。该坐标直接触及A/B factor方向，不能恢复v11--v13只�
 validation8和Test8仍为零gradient/零读取；先做单task paired profile，再给fit19至少多个task-equal optimizer updates，不能再次
 用一个update裁决昂贵outcome目标。
 
+v18具体坐标现已收敛为单一路径。对owner \(j\)的完整A/B pair，先由successful cross-episode panel得到
+\(g_j=\nabla_{A_j,B_j}\mathcal L_{action}\)，再令
+\(d_j=-g_j\lVert(A_j,B_j)\rVert_2/\lVert g_j\rVert_2\)。paired两臂使用
+\((A_j,B_j)\pm0.05\epsilon_jd_j\)，所以不同family、layer和tensor大小都具有相同的owner-relative factor步长；每个owner共用
+一个Rademacher sign，但38个owner彼此独立。由两条严格配对lanes得到的reward差估计每个relative coefficient的梯度，再除以
+\(\lVert d_j\rVert_2^2\)投影回A/B leaf，使其与\(d_j\)的内积精确等于负的reward-coordinate gradient。该leaf随完整candidate
+LoRA图反传，不向compiler增加第二套head或adapter。exact action gradient只定义proposal，不再像v17一样作为独立下降目标；
+successful/learner policy response、local activation、source/shared barrier、prior counterfactual和Program locality继续提供结构锚。
+formal每个macro覆盖fit19各一次并只做一个等权optimizer update，首个bounded节点至少含两个macros。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

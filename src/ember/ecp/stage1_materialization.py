@@ -40,8 +40,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_action_grounded_projection_v17"
-PROJECTION_KIND = "ecp_stage1_privileged_action_grounded_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_action_guided_outcome_projection_v18"
+PROJECTION_KIND = "ecp_stage1_privileged_action_guided_outcome_compiler"
 
 
 @dataclass(frozen=True)
@@ -69,15 +69,13 @@ def resolve_stage1_materialization_config(
         seed=int(base["optimization"]["seed"]),
         checkpoint_cursors=tuple(
             int(value)
-            for value in base["materialization"][
-                "allowed_checkpoint_task_visits"
-            ]
+            for value in base["materialization"]["allowed_checkpoint_macros"]
         ),
-        cursor_name="task_visits",
+        cursor_name="outcome_macro",
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_balanced_action_grounded_recovery",
+        objective_phase="task_equal_action_guided_outcome_binding",
     )
 
 
@@ -95,7 +93,7 @@ def _load_checkpoint(
     expected_stage: str,
     expected_run_schema: str,
 ) -> tuple[int, dict[str, Any]]:
-    task_visits = checkpoint_macro(checkpoint)
+    cursor = checkpoint_macro(checkpoint)
     manifest_path = checkpoint / "checkpoint_manifest.json"
     manifest = read_json(manifest_path)
     weights = checkpoint / "ecp.safetensors"
@@ -103,7 +101,7 @@ def _load_checkpoint(
     if (
         manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
         or manifest.get("stage") != expected_stage
-        or int(manifest.get("next_macro", -1)) != task_visits
+        or int(manifest.get("next_macro", -1)) != cursor
         or manifest.get("run_contract_schema") != expected_run_schema
         or int(manifest.get("world_size", -1)) != 6
         or not weights.is_file()
@@ -117,7 +115,7 @@ def _load_checkpoint(
         raise ValueError("ECP Stage 1 materialization checkpoint changed")
     model.load_state_dict(load_file(str(weights), device=str(device)), strict=True)
     model.requires_grad_(False).eval()
-    return task_visits, {
+    return cursor, {
         "checkpoint": str(checkpoint.resolve()),
         "checkpoint_manifest": _file(manifest_path),
         "weights": _file(weights),
@@ -353,7 +351,7 @@ def _projection_manifest(
     args: argparse.Namespace,
     config: Mapping[str, Any],
     repository: Mapping[str, Any],
-    task_visits: int,
+    checkpoint_cursor: int,
     checkpoint_asset: Mapping[str, Any],
     base_manifest: Path,
     support_manifest: Path,
@@ -377,7 +375,7 @@ def _projection_manifest(
         "expert_bank_root": str(args.expert_bank_root.resolve()),
         "expert_step": int(args.expert_step),
         "optimization": {
-            materialization.cursor_name: task_visits,
+            materialization.cursor_name: checkpoint_cursor,
             "fold": int(config["roles"]["fold"]),
             "fit_task_count": 19,
             "held_task_count": 5,
@@ -424,7 +422,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("ECP Stage 1 materialization uses one GPU")
     seed_everything(materialization.seed, context)
     authorities = load_stage1_authorities(args, config, context)
-    task_visits, checkpoint_asset = _load_checkpoint(
+    checkpoint_cursor, checkpoint_asset = _load_checkpoint(
         args.stage1_checkpoint,
         model=authorities.model,
         device=context.device,
@@ -433,7 +431,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         expected_run_schema=materialization.run_schema,
     )
     if (
-        task_visits not in set(materialization.checkpoint_cursors)
+        checkpoint_cursor not in set(materialization.checkpoint_cursors)
         or int(materialization.settings["visible_video_count"])
         != int(config["data"]["visible_videos_per_visit"])
     ):
@@ -540,7 +538,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         args=args,
         config=config,
         repository=repository,
-        task_visits=task_visits,
+        checkpoint_cursor=checkpoint_cursor,
         checkpoint_asset=checkpoint_asset,
         base_manifest=base_manifest,
         support_manifest=support_manifest,
@@ -559,7 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_action_grounded_recovery_v17.json",
+        / "configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

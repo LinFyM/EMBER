@@ -183,8 +183,6 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
         self,
         anchors: ECPProgram,
         evidence: PrivilegedPolicyEvidence,
-        *,
-        evidence_logit_offset: torch.Tensor | None = None,
     ) -> PolicyTeacherOutput:
         if anchors.language.shape[0] != 1:
             raise ValueError("q_pi consumes one task-level visible Program at a time")
@@ -229,16 +227,6 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
             )
         )
         evidence_gate_logits = self.evidence_gate(correction)
-        expected_offset = (1, self.event_slots, len(self.owners), 1)
-        if (
-            evidence_logit_offset is not None
-            and evidence_logit_offset.shape != expected_offset
-        ):
-            raise ValueError("q_pi evidence-logit offset changed shape")
-        if evidence_logit_offset is not None:
-            evidence_gate_logits = (
-                evidence_gate_logits + evidence_logit_offset.to(evidence_gate_logits)
-            )
         evidence_gate = evidence_gate_logits.sigmoid()
         visible = anchors.presence[0][None, :, None, None]
         member_process = anchor + visible * evidence_gate * correction

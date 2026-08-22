@@ -49,6 +49,13 @@
   `1.13962/1.12203x`、breadth`2/19、0/5`。v17因此关闭，不续228、不跑held5或`q_V`。当前最早缺口是缺少能给完整factor
   direction分配task-equal closed-loop credit的Stage 1 outcome目标；下一active实现为OCPB v18 action-guided structured outcome
   binding，而不是调v17小权重或恢复旧selector-only outcome。
+- OCPB v18运行图现已完成：sole active config为
+  `configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json`，从v17 task-visit114只加载model weights并使用fresh optimizer。
+  每个fit task用successful cross-episode exact action loss的负梯度构造38个owner-local联合A/B方向，各方向按自身base factor
+  L2归一为相同`.05`相对扰动；两条paired simulator lanes的success、BDDL peak progress和成功效率只决定这些方向的符号与幅度，
+  projected loss gradient直接穿过完整candidate LoRA反传compiler/FactorHeads。v17 direct action-loss梯度不再继续推模型，successful/
+  learner support仍交替作为结构锚。旧v17 config、visit-step trainer和program/selector offset接口已删除；单一Stage 1入口按macro
+  调度fit19。56项ECP/reward聚焦CPU合同通过，下一步是单task真实paired rollout profile，尚不构成性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

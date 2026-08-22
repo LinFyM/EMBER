@@ -206,9 +206,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 用真实successful-panel单task profile确认exact action loss、LoRA-leaf到FactorHead梯度、显存和吞吐；
 - [x] 运行114-visits bounded task-balanced节点并完成24-task geometry与同一308-panel frozen support audit；输出虽明显分散，
   own-policy方向和shared support均失败，因此不续到228、不进入held5；
-- [ ] 实现 **OCPB v18 action-guided structured outcome binding**：以每task exact action leaf gradient定义38-owner/family局部
-  proposal direction，再由fit19 paired simulator success/progress给这些方向分配task-equal closed-loop credit；不得恢复只扰动
-  selector angle的旧global outcome coordinate；
+- [x] 实现 **OCPB v18 action-guided structured outcome binding**：以每task exact action leaf gradient定义38-owner/family局部
+  proposal direction，再由fit19 paired simulator success/progress给这些方向分配task-equal closed-loop credit；训练只保留一个
+  `train_ecp_stage1.py`入口，已删除v17 visit-step和旧selector/program offset运行面；
 - [ ] 先做单task paired rollout profile，再运行有合理optimizer暴露量的bounded outcome节点；只有geometry、frozen support和
   train-only closed-loop outcome共同改善，才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。

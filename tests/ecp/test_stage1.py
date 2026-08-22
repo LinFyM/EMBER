@@ -1,4 +1,3 @@
-from collections import Counter
 from pathlib import Path
 
 import torch
@@ -14,22 +13,15 @@ from ember.ecp.policy_response import (
 )
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
-from ember.ecp.stage1_data import (
-    ECPStage1Task,
-    build_stage1_schedule,
-    gauge_canonicalize_factors,
-)
+from ember.ecp.stage1_data import gauge_canonicalize_factors
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_materialization import (
     PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
 )
 from ember.ecp.stage1_outcome import (
-    COMPILER_BINDING,
-    PROGRAM_BINDING,
-    outcome_coordinate,
-    outcome_surrogate_loss,
-    structured_outcome_perturbation,
+    action_guided_factor_perturbation,
+    action_guided_outcome_leaf_gradients,
 )
 from ember.ecp.stage1_objective import (
     canonical_factor_loss,
@@ -42,9 +34,14 @@ from ember.ecp.stage1_support import (
     policy_support_loss_from_response,
 )
 from ember.ecp.stage1_support_audit import summarize_policy_support_audit
-from ember.lora import LoRATarget, SmolVLALoRAContract, identity_lora_state
+from ember.lora import (
+    LORA_A_SUFFIX,
+    LORA_B_SUFFIX,
+    LoRATarget,
+    SmolVLALoRAContract,
+    identity_lora_state,
+)
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.reward.credit import AntitheticCredit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -134,58 +131,17 @@ def _expert_evidence(
     )
 
 
-def test_stage1_decision_prefixes_are_task_equal() -> None:
-    tasks = tuple(
-        ECPStage1Task(
-            ordinal=ordinal,
-            global_task_id=ordinal,
-            suite="suite",
-            task_id=ordinal,
-            language=f"task {ordinal}",
-            path=Path(f"task_{ordinal}.hdf5"),
-            expected_bytes=1,
-            episode_lengths=tuple(40 + ordinal + index for index in range(50)),
-            fold_role="fit",
-        )
-        for ordinal in range(19)
-    )
-    config = {
-        "roles": {"fit_task_ordinals": list(range(19))},
-        "data": {
-            "frame_stride": 5,
-            "visible_videos_per_visit": 2,
-            "pair_seed": 17,
-        },
-        "optimization": {
-            "visits_per_fit_task": 12,
-            "task_balance_block_rounds": 6,
-            "stage_stop_task_visits": [114, 228],
-            "seed": 23,
-        },
-    }
-    schedule = build_stage1_schedule(
-        config=config,
-        tasks=tasks,
-        world_size=6,
-        total_task_visits=228,
-        mode="formal",
-    )
-    for prefix, expected in ((114, 6), (228, 12)):
-        counts = Counter(ordinal for ordinal, _ in schedule[:prefix])
-        assert counts == Counter({ordinal: expected for ordinal in range(19)})
-
-
-def test_action_grounded_materialization_uses_v17_task_visit_cursor() -> None:
+def test_action_guided_materialization_uses_v18_macro_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
         REPO_ROOT
-        / "configs/pi05_ecp_stage1_action_grounded_recovery_v17.json"
+        / "configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json"
     )
-    assert resolved.stage == "stage1_action_grounded_recovery_v17"
-    assert resolved.cursor_name == "task_visits"
-    assert resolved.checkpoint_cursors == (114, 228)
+    assert resolved.stage == "stage1_action_guided_outcome_binding_v18"
+    assert resolved.cursor_name == "outcome_macro"
+    assert resolved.checkpoint_cursors == (2, 4)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_action_grounded_recovery_v17"
+        "ember_ecp_stage1_action_guided_outcome_binding_v18"
     )
 
 
@@ -240,84 +196,70 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert output.consensus_compilation.rank_angles.shape == (1, 38, 16)
 
 
-def test_outcome_binding_offsets_preserve_structured_coordinates() -> None:
-    contract, owners, template = _contract_and_states()
-    model = ECPStage1Model(owners, contract, template)
-    for selector in model.compiler.rank_selector.values():
-        selector.weight.data.zero_()
-    encoded = _encoded()
-    evidence = _expert_evidence(template)
-    baseline = model(encoded, evidence, torch.zeros(2, dtype=torch.long))
-    event_owner = torch.zeros(1, 8, 38, 1)
-    event_owner[:, 2, 7] = 0.5
-    changed_program = model(
-        encoded,
-        evidence,
-        torch.zeros(2, dtype=torch.long),
-        evidence_logit_offset=event_owner,
+def test_action_guided_factor_perturbation_is_relative_action_descent() -> None:
+    compiler, _ = _tiny_compiler()
+    compiler.rank_selector["q"].weight.data.normal_(std=0.1)
+    state = select_compiled_state(compiler(_tiny_program()).state, 0)
+    gradients = {name: torch.randn_like(value) for name, value in state.items()}
+    perturbation = action_guided_factor_perturbation(
+        state, gradients, compiler.owners, sigma=0.05, seed=17
     )
-    assert baseline.teacher.evidence_gate_logits.shape == (2, 8, 38, 1)
-    torch.testing.assert_close(
-        changed_program.teacher.evidence_gate_logits
-        - baseline.teacher.evidence_gate_logits,
-        event_owner.expand(2, -1, -1, -1),
+    assert perturbation.epsilon.shape == (1, 1)
+    assert perturbation.active_owners == 1
+    owner = compiler.owners[0]
+    names = (
+        owner.target_name + LORA_A_SUFFIX,
+        owner.target_name + LORA_B_SUFFIX,
     )
-    owner = torch.zeros(1, 38, 1)
-    owner[:, 7] = 0.1
-    changed_compiler = model(
-        encoded,
-        evidence,
-        torch.zeros(2, dtype=torch.long),
-        rank_angle_offset=owner,
+    base_norm = sum(state[name].float().square().sum() for name in names).sqrt()
+    delta_norm = sum(
+        (perturbation.plus_state[name].float() - state[name].float())
+        .square()
+        .sum()
+        for name in names
+    ).sqrt()
+    torch.testing.assert_close(delta_norm / base_norm, torch.tensor(0.05))
+    for name in names:
+        torch.testing.assert_close(
+            (perturbation.plus_state[name] + perturbation.minus_state[name]) / 2,
+            state[name],
+        )
+    action_dot = sum(
+        (gradients[name].float() * perturbation.directions[name]).sum()
+        for name in names
     )
-    delta = (
-        changed_compiler.consensus_compilation.rank_angles
-        - baseline.consensus_compilation.rank_angles
-    )
-    torch.testing.assert_close(delta[:, 7], torch.full_like(delta[:, 7], 0.1))
-    torch.testing.assert_close(delta[:, :7], torch.zeros_like(delta[:, :7]))
-    torch.testing.assert_close(delta[:, 8:], torch.zeros_like(delta[:, 8:]))
-    coordinate_delta = outcome_coordinate(
-        changed_compiler, COMPILER_BINDING
-    ) - outcome_coordinate(baseline, COMPILER_BINDING)
-    torch.testing.assert_close(coordinate_delta, owner.squeeze(-1))
+    assert float(action_dot) < 0
 
 
-def test_structured_outcome_coordinates_reach_q_pi_and_compiler() -> None:
-    contract, owners, template = _contract_and_states()
-    model = ECPStage1Model(owners, contract, template)
-    for selector in model.compiler.rank_selector.values():
-        selector.weight.data.normal_(std=0.1)
-    output = model(
-        _encoded(),
-        _expert_evidence(template),
-        torch.zeros(2, dtype=torch.long),
+def test_action_guided_outcome_gradient_reaches_factor_directions() -> None:
+    compiler, _ = _tiny_compiler()
+    compiler.rank_selector["q"].weight.data.normal_(std=0.1)
+    state = select_compiled_state(compiler(_tiny_program()).state, 0)
+    gradients = {name: torch.randn_like(value) for name, value in state.items()}
+    perturbation = action_guided_factor_perturbation(
+        state, gradients, compiler.owners, sigma=0.05, seed=19
     )
-    for index, coordinate in enumerate((PROGRAM_BINDING, COMPILER_BINDING)):
-        perturbation = structured_outcome_perturbation(
-            output, coordinate=coordinate, sigma=0.1, seed=17 + index
-        )
-        value = outcome_coordinate(output, coordinate)
-        assert perturbation.epsilon.shape == value.shape
-        credit = AntitheticCredit(
-            gradient=perturbation.epsilon,
-            plus_scores=(1.0, 0.0),
-            minus_scores=(0.0, 0.0),
-            lane_advantages=(1.0, 0.0),
-            plus_successes=1,
-            minus_successes=0,
-            plus_progress_mean=0.5,
-            minus_progress_mean=0.0,
-        )
-        model.zero_grad(set_to_none=True)
-        outcome_surrogate_loss(
-            output, credit, coordinate=coordinate, weight=0.1
-        ).backward(retain_graph=index == 0)
-        if coordinate == PROGRAM_BINDING:
-            gradient = model.policy_teacher.evidence_gate.weight.grad
-        else:
-            gradient = model.compiler.rank_selector["q"].weight.grad
-        assert gradient is not None and float(gradient.abs().sum()) > 0
+    leaf = action_guided_outcome_leaf_gradients(
+        perturbation,
+        compiler.owners,
+        torch.tensor([[2.0]]),
+        weight=0.1,
+    )
+    owner = compiler.owners[0]
+    names = (
+        owner.target_name + LORA_A_SUFFIX,
+        owner.target_name + LORA_B_SUFFIX,
+    )
+    projected = sum(
+        (leaf[name].float() * perturbation.directions[name]).sum()
+        for name in names
+    )
+    torch.testing.assert_close(projected, torch.tensor(-0.2))
+    sum(
+        (state[name].float() * leaf[name].float()).sum() for name in state
+    ).backward()
+    assert float(compiler.factor_a["q"].weight.grad.abs().sum()) > 0
+    assert float(compiler.factor_b["q"].weight.grad.abs().sum()) > 0
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:

@@ -14,8 +14,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_action_grounded_recovery_run_v17"
-STAGE = "stage1_action_grounded_recovery_v17"
+RUN_SCHEMA = "ember_ecp_stage1_action_guided_outcome_binding_run_v18"
+STAGE = "stage1_action_guided_outcome_binding_v18"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,9 +34,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_action_grounded_recovery_v17"
+        != "ember_ecp_stage1_action_guided_outcome_binding_v18"
         or config.get("status")
-        != "active_stage1_action_grounded_recovery"
+        != "active_stage1_action_guided_outcome_binding"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -62,15 +62,13 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         )
         <= 0
         or float(
-            config.get("objective", {}).get("action_policy_loss_weight", -1)
+            config.get("objective", {}).get(
+                "action_policy_direct_gradient_weight", -1
+            )
         )
-        <= 0
-        or config.get("objective", {}).get("action_supervision_weights")
-        != {
-            "successful": 1.0,
-            "verified_successful_learner": 1.0,
-            "failed_learner": 0.0,
-        }
+        != 0.0
+        or config.get("objective", {}).get("action_proposal_panel")
+        != "cross_episode_successful_train_trajectory"
         or config.get("objective", {}).get("policy_flow_time_sampling_scheme")
         != "task_logical_batch_keyed_independent_beta15_time_v2"
         or config.get("objective", {}).get("policy_flow_noise_sampling_scheme")
@@ -104,16 +102,35 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             )
         )
         or config.get("initialization", {}).get("stage")
-        != "stage1_owner_local_activation_bootstrap_v16"
+        != "stage1_action_grounded_recovery_v17"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_owner_local_activation_bootstrap_run_v16"
+        != "ember_ecp_stage1_action_grounded_recovery_run_v17"
         or int(config.get("initialization", {}).get("checkpoint_macro", -1))
-        != 228
+        != 114
         or config.get("initialization", {}).get("load_model_weights_only")
         is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
+        or config.get("outcome_binding", {}).get("proposal_coordinate")
+        != "exact_action_loss_negative_gradient_per_owner_ab_pair"
+        or float(config.get("outcome_binding", {}).get("relative_factor_sigma", -1))
+        != 0.05
+        or float(config.get("outcome_binding", {}).get("leaf_gradient_weight", -1))
+        <= 0
+        or int(config.get("outcome_binding", {}).get("lanes_per_arm", -1)) != 2
+        or int(config.get("outcome_binding", {}).get("minimum_active_owners", -1))
+        != 38
+        or config.get("outcome_binding", {}).get("support_preservation")
+        != "baseline_relative_response_barrier"
+        or int(config.get("optimization", {}).get("world_size", -1)) != 6
+        or int(config.get("optimization", {}).get("task_count", -1)) != 19
+        or int(config.get("optimization", {}).get("total_macros", -1)) != 4
+        or tuple(config.get("optimization", {}).get("checkpoint_macros", ()))
+        != (2, 4)
+        or int(config.get("profile_defaults", {}).get("world_size", -1)) != 1
+        or int(config.get("profile_defaults", {}).get("task_count", -1)) != 1
+        or int(config.get("profile_defaults", {}).get("total_macros", -1)) != 1
     ):
-        raise ValueError("unsupported ECP Stage 1 action-grounded recovery contract")
+        raise ValueError("unsupported ECP Stage 1 action-guided outcome contract")
     return config
 
 

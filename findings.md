@@ -1453,3 +1453,28 @@ semi-gradient同时回传event-owner `q_pi`和layer/target-local compiler。prof
 Program梯度严格为0，峰值显存`23.33GB`；两臂均成功但效率差产生`.001375` mean advantage，证明progress/efficiency credit在
 terminal success相同时仍有辨识力。该结果只解除formal运行门，不能说明90 mappings会提高held5；唯一性能裁决仍是540 single
 checkpoint的strict paired250，不能再由loss、geometry、support或profile替代。
+
+## 71. MDCO证明mapping diversity与局部structured credit不足以识别可迁移的当前compiler坐标
+
+clean pushed detached `419fa84`完成90 tasks各6 visits、540 dense visits/108 updates；每个task精确6次，compiler与privileged
+`q_pi`梯度持续非零，visible Program梯度为0。随后唯一一次90-task等权structured calibration中plus/minus各123次成功，
+75/90 tasks产生非零advantage，`q_pi/compiler`裁剪前梯度为`.11708/62.25886`。因此本轮不是dead graph、任务失衡、reward
+完全无差异或held信息泄漏造成的无效实验。
+
+冻结checkpoint的held5 strict paired250却只有`20`个成功，低于source `21`与stable shared `43`，远低于direct-earliest/latest
+`74/108`；global0/9/18/25/36分别为`18/1/1/0/0`。candidate只保留direct-latest `10/108` successes、`3/96`
+source-failure gains及shared `18/43` successes；相对source为retained/gained/lost=`11/9/10`，5个tasks只有4个不降、2个严格
+提高，Goal与Long均为0。所有面板的episode key、env seed、policy seed root与policy-noise common prefix零mismatch，故这是
+有效科学负结果，不是paired evaluator偏差。
+
+物化LoRA仍呈近共享：candidate pair cosine `.95842`，own/nearest-direct `.02321/.02968`，own retrieval `1/5`，但norm ratio
+`.94215`，不是输出近零。40-panel audit进一步显示full/prior相对shared response为`1.24958/1.24794x`，只有`0/5、1/5`
+tasks更好；它们与closed-loop的per-task符号均只对齐`2/5`，低于预注册`4/5`。因此open-loop support不但没有挽救候选，也被
+闭环实证取消了作为早期替代门的资格。
+
+本轮准确淘汰的是：**增加现有71个source-seen LIBERO policy mappings，再对当前`q_pi + layer/target-local compiler`执行dense
+action/support训练和一次task-equal structured fit credit，足以识别source-unseen successful-policy方向。** 更多mapping确实
+增加了训练约束，局部reward也能推动参数，但两者仍收敛到不能把held Program差异编译为闭环支持的共享吸引子。最早失败接口
+仍在successful-policy等价类、Program可观察部分与policy-effective compiler坐标之间的可识别性，而不是训练时长、梯度、rank16
+幅度或简单数据量。按合同不续1080、不轮fold、不进入`q_V`，也不再为同一失败签名创建局部compiler版本。正式证据：
+`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。

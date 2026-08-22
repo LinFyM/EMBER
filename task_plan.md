@@ -1,9 +1,9 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **active goal — MDCO authority/calibration ready; formal 540 + held5 pending**。
+状态：2026-08-23 **active goal paused at a completed MDCO falsification; no active successor Stage 1 design**。
 
-长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。当前唯一Stage 1执行合同是MDCO，不建立
-v25；v24后的复盘与后继授权条件见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
+长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
+当前没有active successor，不建立v25。v24与MDCO后的复盘见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -263,7 +263,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed authority完成v24 114-visit节点、materialization及一次执行同时得到full/prior的308-panel audit；
   candidate pair cosine`.97092`、own retrieval`1/24`，full/prior support两臂均失败，故不进入held5；
 - [x] 完成Stage 1 v1--v24系统复盘，区分约13组主要因果问题与11个窄变体/修复节点，并冻结“不得直接建立v25”的纠偏规则；
-- [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
+- [x] MDCO首次held5闭环未通过且不满足near-pass，按预注册合同停止；不轮换fold、不续1080、不进入`q_V`。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
 Goal/Long不能系统为零。失败则停在Program/compiler，不训练`q_V`。
@@ -337,6 +337,13 @@ coordinate退化则保留Stage 2并定位最早接口。
    authority覆盖95 tasks、118 members和178 fit sequences，support bank完成95/95 tasks；
 10. [x] 实现540节点后的唯一一次90-task等权structured success/progress calibration；单任务真实profile确认38/38 owner
    proposal、paired simulator、非零outcome credit及`q_pi + compiler`联合梯度，formal artifact成为540 checkpoint物化硬门；
-11. [ ] 从clean pushed detached worktree运行MDCO首节点和held5 strict paired250。只有完整门通过才轮换fold并进入`q_V`；失败按
-    合同停止；
-12. 完成本轮合同/evidence集成、推送`main`；只保留canonical formal产物，不删除或重复生成昂贵资产。
+11. [x] 从clean pushed detached `419fa84`完成90 tasks各6 visits、540 dense visits/108 updates及唯一一次task-equal
+    structured calibration；held5 strict paired250为candidate/source/shared/direct-earliest/direct-latest=
+    `20/21/43/74/108`，per-task为`18/1/1/0/0`、breadth`3/5`，Goal与Long为0；
+12. [x] 严格配对的episode key、env seed、policy seed root与policy-noise common prefix均零mismatch。candidate只保留
+    direct-latest `10/108` successes、`3/96` source-failure gains及shared `18/43` successes；完整门与near-pass均失败，
+    因而不续1080、不轮fold、不进入`q_V`；
+13. [x] 同checkpoint的40-panel open-loop audit中full/prior相对shared response为`1.24958/1.24794x`，per-task support符号与
+    closed-loop只各对齐`2/5`，两种proxy均失去替代早期closed-loop裁决的资格；
+14. [x] 完成本轮合同、remote-safe evidence、历史与复盘集成并推送`main`；清理task-owned worktree和已验证重复的临时
+    support shards。当前停在内部复盘后的科学暂停点，不自动建立下一版本。

@@ -5,20 +5,22 @@
 
 ## Current authority and executable state
 
-- MDCO正式训练所需的derived authority与structured calibration运行图现已齐备。71-task、142条fixed occupancy复现中141条
-  成功，task32/state22作为capture失败证据剔除；最终combined authority覆盖95 tasks、118 successful members、178 fit
-  sequences和76个LoRA tensors，phase-response explained variance为`.88402`。95-task policy support bank也已完成并通过真实
-  selective load。canonical Stage 1保持90 fit mappings task-equal、5 held mappings无梯度；540 dense visits后只执行一次
-  90-task structured success/progress calibration。单任务真实profile已走通38/38 owner-local action directions、两条严格配对
-  simulator lanes、非零outcome credit以及`q_pi + compiler`联合反传；两模块裁剪前梯度分别为`.14077/320.67142`，冻结visible
-  Program梯度为0，峰值显存`23,325,685,760` bytes，校准段`26.97s`。该profile只证明工程图，不构成性能证据；下一步是从
-  clean pushed detached authority运行540节点并直接进入held5 strict paired250。v24专用dual support-audit运行面已退役。
-- owner设定的v24停点已经执行：formal、materialization、full/prior dual audit和remote-safe evidence均已完成；v24关闭，
-  不续训、不扫小超参、不进入`q_V`，也不建立v25。Stage 1 v1--v24系统复盘已写入
-  `docs/ecp_stage1_iteration_retrospective_20260823.md`。复盘后的唯一active科学合同已登记为 **ECP Stage 1
-  Mapping-Diverse Compiler Oracle（MDCO）**：它不是新架构版本，只检验把shared Stage 1的独立policy mappings从19扩大到
-  71 non-held + 19 target-fit = 90后，冻结`q_pi + compiler`能否直接通过source-unseen held5 closed loop。合同见
-  `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`；occupancy采集GPU进程已全部退出。
+- **MDCO已完成并按合同失败，当前没有active successor Stage 1 design。** clean pushed detached `419fa84`在gpu02 physical
+  `0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates；所有task等权，compiler与`q_pi`梯度持续非零，visible
+  Program梯度始终为0。随后唯一一次fit90 structured calibration覆盖90/90 tasks、每rank 18 tasks，plus/minus各123次成功，
+  75 tasks产生非零advantage；`q_pi/compiler`裁剪前梯度为`.11708/62.25886`，held/validation/Test reward读取均为0。
+- 冻结single checkpoint的held5 strict paired250为candidate/source/stable-shared/direct-earliest/direct-latest=
+  `20/21/43/74/108`，candidate per-task为global0/9/18/25/36=`18/1/1/0/0`、breadth`3/5`，Goal与Long为0。source→candidate
+  retained/gained/lost=`11/9/10`；candidate只保留direct-latest `10/108` successes、`3/96` source-failure gains和shared
+  `18/43` successes。episode key、env seed、policy seed root与policy-noise common prefix均零mismatch。完整门与near-pass都失败，
+  所以不续1080、不轮fold、不进入`q_V`、不自动建立下一版本。
+- 同checkpoint补齐的40-panel open-loop audit中full/prior相对shared response为`1.24958/1.24794x`，分别只有`0/5、1/5`
+  tasks胜过shared；两种support符号与closed-loop均只对齐`2/5`，低于预注册`4/5`，故两种proxy均不得再替代早期闭环裁决。
+  正式结论见`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`；MDCO只淘汰“增加现有71个
+  source-seen mappings足以挽救当前Program/compiler接口”，不外推为EMBER目标、Stage 0 observer或全部compiler可能性的反证。
+- owner设定的v24停点和随后MDCO停点均已执行。Stage 1 v1--v24系统复盘及MDCO后验已写入
+  `docs/ecp_stage1_iteration_retrospective_20260823.md`；当前保持科学暂停，不做小扫、续训或局部结构补丁。所有本轮GPU进程
+  已退出，task-owned detached formal worktree已清理。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为

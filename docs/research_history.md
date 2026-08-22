@@ -1157,6 +1157,27 @@ gpu02 physical0上的单任务真实profile完成38/38 active owners，plus/minu
 `26.97s`，峰值`23,325,685,760` bytes。该profile只证明真实simulator、配对、LoRA proposal与联合反传图接通，不作为held性能
 证据；下一科学节点仍是clean pushed detached commit的540 formal及held5 strict paired250。
 
+### 3.60 MDCO 540首次source-unseen闭环失败并关闭当前Stage 1 compiler family
+
+clean pushed detached `419fa84`在gpu02 physical`0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates。全部task
+精确等权，compiler与privileged `q_pi`梯度持续非零，visible Program梯度始终为0，峰值显存`24,341,012,992` bytes。随后
+唯一一次fit90 structured calibration由5 ranks各处理18 tasks，plus/minus各123次成功、75 tasks产生非零advantage；
+`q_pi/compiler`裁剪前梯度为`.11708/62.25886`，校准峰值`24,450,292,224` bytes。held、validation与Test reward读取均为0。
+
+冻结checkpoint为held5各生成唯一一套完整rank16 LoRA；物化candidate pair cosine `.95842`、direct pair `.14064`，
+own/nearest-direct `.02321/.02968`、retrieval `1/5`，norm ratio `.94215`。随后gpu02 physical`0,1,2,3,4,7`的18个persistent
+workers用`727.89s`完成strict paired250，candidate/source/shared/direct-earliest/direct-latest=`20/21/43/74/108`，candidate
+per-task global0/9/18/25/36=`18/1/1/0/0`。episode key、env seed、policy seed root与policy-noise common prefix均零mismatch。
+
+candidate只保留direct-latest `10/108` successes、`3/96` source-failure gains与shared `18/43` successes；source→candidate
+retained/gained/lost=`11/9/10`，shared→candidate=`18/2/25`，direct-latest→candidate=`10/10/98`。Goal与Long为0，breadth
+`3/5`，故完整门与near-pass都失败，不续1080、不轮fold、不进入`q_V`。
+
+同checkpoint的40-panel full/prior support相对shared response为`1.24958/1.24794x`，per-task符号与closed-loop都只对齐`2/5`，
+低于`4/5`资格门。于是MDCO同时关闭了“增加现有71个source-seen mappings足以挽救当前接口”的假设和这两种open-loop proxy
+替代早期闭环的资格；它不否定EMBER总目标、Stage 0 observer、task-local rank16上界或全部compiler形式。正式证据为
+`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

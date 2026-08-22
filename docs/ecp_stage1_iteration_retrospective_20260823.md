@@ -221,3 +221,22 @@ v22还正确复用了v6 direct compiler，没有重复长训。GPU任务通常�
 
 本文不把上述默认方向升级为active design。只有完成falsification card、数据authority与一次closed-loop evidence计划后，
 `progress.md`才能登记新的active Stage 1。
+
+## 8. MDCO后验复盘
+
+上述纠偏后来被MDCO完整执行，而不是停在计划层。90个task mappings、task-equal dense训练、fit90 structured simulator credit与
+第一次不受geometry/support拦截的held5 strict paired250全部完成。训练图有效，但candidate只有`20/250`，低于source `21`和
+shared `43`；direct-latest success/gain retention只有`10/108`和`3/96`，Goal/Long仍为0。完整门和near-pass均失败。
+
+这使v1--v24复盘中的几个推断得到更严格区分：
+
+1. 19个mapping确实是旧实验的欠识别风险，但不是当前失败的充分解释；扩到90后同类失败签名仍在。
+2. structured simulator reward不是缺失：75/90 fit tasks有非零advantage并真实更新`q_pi + compiler`；问题是这种fit-local方向没有
+   识别出source-unseen successful-policy等价类。
+3. open-loop support不能作为可靠替代门；本轮full/prior与closed-loop符号都只对齐`2/5`，正式失去继续主导早期决策的资格。
+4. 过去几十个版本的问题不只是“没有早点扩数据”，而是长期把可优化的局部代理、task差异和参数移动当成接近policy-effective
+   mapping的证据。MDCO用一次闭环把这三者与真正迁移能力分开了。
+
+因此当前不再从最近一个metric差异自动生成下一版本。Stage 0与昂贵资产保留，当前Stage 1 compiler family停止；在形成新的、
+真正改变可识别性假设且由早期闭环裁决的合同之前，仓库保持无active successor设计。MDCO事实证据见
+`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。

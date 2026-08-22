@@ -1,6 +1,6 @@
 # ECP Stage 1 Mapping-Diverse Compiler Oracle（MDCO）
 
-状态：2026-08-23 **唯一Stage 1 falsification contract；derived authority与校准图已就绪，formal 540尚未启动**。
+状态：2026-08-23 **已完成并失败；完整门与near-pass均未通过，当前Stage 1 compiler family按合同停止**。
 它不是`v25`，也不是一套新的EMBER架构；它只回答v1--v24复盘后仍未回答的一个问题。
 
 ## 1. 唯一问题
@@ -112,3 +112,19 @@ raw A/B reconstruction、own-direct cosine、retrieval、norm ratio、training l
 
 这份合同把第一次昂贵裁决重新放回source-unseen closed loop，并使一次实验同时回答“19 mappings是否是主要瓶颈”以及
 “open-loop support proxy是否有资格继续筛选checkpoint”。
+
+## 8. 最终裁决
+
+clean pushed detached `419fa84`完成90 tasks各6 visits、540 dense visits/108 updates及唯一一次task-equal structured
+calibration。训练与信息墙合同成立：90/90 tasks覆盖，`q_pi + compiler`梯度非零，visible Program梯度为0，held、validation与
+Test reward均未进入训练。
+
+冻结checkpoint的held5 strict paired250为candidate/source/shared/direct-earliest/direct-latest=`20/21/43/74/108`；candidate
+per-task为global0/9/18/25/36=`18/1/1/0/0`，breadth`3/5`，Goal与Long为0。它只保留direct-latest `10/108` successes、
+`3/96` source-failure gains和shared `18/43` successes。所有面板的episode key、env seed、policy seed root与policy-noise
+common prefix严格一致。
+
+因此完整门与near-pass均失败：不exact-resume到1080、不轮fold、不进入`q_V`。同checkpoint的full/prior open-loop support
+方向与closed-loop各只对齐`2/5` tasks，低于`4/5`资格门，二者也不能继续替代早期闭环。该裁决淘汰的是“仅增加现有71个
+source-seen mappings即可挽救当前ECP Stage 1 Program/compiler接口”，不扩大解释为全部EMBER或全部compiler方案失败。正式
+证据为`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。

@@ -817,6 +817,12 @@ L2 norm。两臂使用`P_process ± .05 d`并分别经过同一冻结compiler；
 `configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json`；旧v18 config和factor-space perturbation已从active tree删除。
 当前CPU合同已通过，下一门只是真实单task profile中的compiled relative delta、paired credit、上游梯度与冻结所有权。
 
+该profile现已通过。q-family的18个native owners与全部active events形成`18,432`个有效Program elements；`.05`相对切向
+扰动经同一个冻结compiler产生`.110166` compiled-LoRA relative delta。两臂在两个paired init上各成功一次但成功互换，
+并由成功步数差形成非零credit；action Program gradient为`.0005131`，`policy_teacher`裁剪前梯度为`.560583`，compiler与
+visible Program梯度均严格为0。它证明固定compiler局部可达且reward semi-gradient接通，授权fit19 macro2 bounded节点；
+它仍只是运行图证据，不替代24-task geometry/support裁决。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

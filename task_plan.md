@@ -220,8 +220,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   exact action gradient只在compiler可达的event × layer-group × target-family Program切空间定义proposal；每次paired panel只裁决
   一个预注册family block，reward只更新privileged Program inference，不再让scalar outcome旋转FactorHeads；active tree已替换为
   v19单路径并通过47项聚焦CPU合同；
-- [ ] 完成v19单task reachability profile，确认固定compiler下Program扰动产生非零compiled LoRA差异、paired credit可用、
-  `policy_teacher`梯度finite且compiler/visible Program梯度严格为零；通过后才运行fit19 bounded节点；
+- [x] 完成v19单task reachability profile：`.05` q-family Program扰动产生`.110166` compiled relative delta，paired credit
+  非零，`policy_teacher`梯度`.560583`且compiler/visible Program梯度严格为零；
+- [ ] 从clean pushed frozen authority运行fit19 macro2 bounded节点，随后立即物化24-task geometry并复跑同一308-panel
+  support audit；只有有方向性改善才exact-resume到macro4；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

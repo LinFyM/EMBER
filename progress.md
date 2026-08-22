@@ -80,7 +80,12 @@
   选择一个target-family block，在全部active ordered events及该family原生owners上把exact action-loss Program gradient归一为
   `.05`相对切向方向。plus/minus都重新经过同一个冻结compiler，paired reward只作为Program semi-gradient回传，不再更新
   FactorHeads或rank selector。v18 active config、factor-space perturbation及旧schema已从active tree删除；Stage 1、reward与
-  evaluator共47项聚焦CPU合同通过，compiler/visible梯度归零与真实compiled reachability仍等待单task GPU profile裁决。
+  evaluator共47项聚焦CPU合同通过。随后gpu01 physical6上的真实q-family单task profile也通过：18个q owners、全部active
+  events共`18,432`个Program elements被共同扰动，`.05`相对Program步长经冻结compiler产生`.110166`的compiled LoRA相对差异；
+  action LoRA/Program梯度norm为`.129785/.0005131`。两臂各`1/2` success但成功落在不同paired init，成功步数`126/119`，
+  形成mean advantage`-.00079545`与非零Program credit；`policy_teacher`裁剪前梯度`.560583`，compiler与visible Program梯度
+  均严格为0。运行macro部分`62.12s`、峰值`16,505,290,752` bytes；physical0未使用，profile临时目录已删除。该结果只解除
+  fit19 macro2运行门，不构成性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

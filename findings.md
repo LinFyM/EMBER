@@ -1305,8 +1305,9 @@ OCPB v19把v13 compiler与visible Program精确冻结，只更新privileged `pol
 compiler/visible梯度严格为0。不能把结果解释为“fixed compiler不可微”或“closed-loop reward太稀疏”。
 
 两步shared update却没有改变task mapping。24-task pair cosine为`.99594891`，own/nearest-direct为`.03980/.06198`，retrieval
-仍`1/24`，与v13在报告精度内相同；308-panel fit/held relative-shared还从v13`.96741/1.00168x`轻微退到
-`.96830/1.00335x`，fit breadth从`13/19`降到`12/19`。因此不续macro4是因果门裁决，不是为了节省两轮训练而遗漏意见。
+仍`1/24`；308-panel fit/held relative-shared为`.96830/1.00335x`，fit breadth`12/19`。这些绝对值已经失败。历史v13
+reference在另一组24/24 materialization videos上得到`.99595249、1/24`与`.96741/1.00168x、13/19`，只能说明v19仍处于
+同一坍缩区间，不能把微小差值归因于训练。因此不续macro4是因果门裁决，不是为了节省两轮训练而遗漏意见。
 
 这把Stage 1的坐标冲突进一步分成两个互补问题：v18同时移动Program/compiler时decoder重定义；v19固定未识别的compiler时
 shared Program更新又无法找到其own-policy preimage。下一步应固定当前最有结构且support最强的v13 Program坐标，只训练compiler

@@ -73,9 +73,13 @@
     "own_retrieval_count": 1,
     "mean_candidate_to_direct_norm_ratio": 1.965868353843689,
     "program_correction_pair_cosine_mean": 0.826787531375885,
+    "video_visit": 18199,
     "geometry_passed": false
   },
-  "matched_v13_geometry": {
+  "historical_v13_geometry_reference": {
+    "comparison_is_matched": false,
+    "video_visit": 12099,
+    "different_video_pairs": 24,
     "candidate_pair_cosine_mean": 0.9959524869918823,
     "mean_own_direct_cosine": 0.039802081882953644,
     "mean_nearest_other_cosine": 0.06200810894370079,
@@ -91,7 +95,9 @@
     "held5_tasks_better_than_shared": 3,
     "passed": false
   },
-  "matched_v13_support": {
+  "historical_v13_support_reference": {
+    "comparison_is_matched": false,
+    "video_visit": 12099,
     "fit19_candidate_to_shared_ratio": 0.9674071247796677,
     "fit19_tasks_better_than_shared": 13,
     "held5_candidate_to_shared_ratio": 1.0016753258997275,
@@ -101,7 +107,7 @@
     "resume_to_macro4": false,
     "held5_closed_loop": false,
     "q_v_training": false,
-    "reason": "The fixed compiler is locally reachable and receives no gradient, but two task-equal q/v Program-credit updates leave task-matched compiled geometry unchanged and slightly worsen the matched v13 support surface."
+    "reason": "The fixed compiler is locally reachable and receives no gradient, but the v19 macro2 single checkpoint fails the absolute task-matched geometry and support gates. Its historical v13 reference uses different video pairs and therefore establishes only that v19 remains in the same collapsed regime, not a matched training delta."
   },
   "earliest_failed_interface": "A task-diverse privileged Program is present and fixed-compiler local perturbations change LoRA substantially, but shared q_pi inference updates do not identify Programs that the existing bounded compiler maps to own successful policies. The next causal lock must keep Program coordinates fixed while identifying the compiler, rather than moving Program and compiler together or extending this failed curve."
 }

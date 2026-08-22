@@ -88,10 +88,11 @@
   fit19 macro2运行门，不构成性能证据。
 - OCPB v19 macro2及联合门现已完成并关闭。q/v两个task-equal macros分别有`8/9`个fit tasks产生非零credit，plus/minus
   successes为`10/8、11/10`，mean compiled perturbation为`.10901/.05426`，所以fixed-compiler Program局部可达和reward信号
-  均不是dead path；policy teacher相对v13实际移动`.05276%`，compiler/visible仍精确不变。但24-task materialization相对
-  matched v13几乎原地：candidate pair cosine`.99595249→.99594891`，own/nearest-direct`.03980/.06198`、retrieval仍`1/24`，
-  Program correction pair反而`.82546→.82679`。308-panel fit/held candidate-to-shared从v13`.96741/1.00168x`轻微退到
-  `.96830/1.00335x`，breadth从`13/19、3/5`变为`12/19、3/5`。因此按预注册条件不续macro4，不运行held5、fold或`q_V`。
+  均不是dead path；policy teacher相对v13 weights实际移动`.05276%`，compiler/visible仍精确不变。但v19自身24-task
+  materialization仍明确坍缩：candidate pair cosine`.99594891`，own/nearest-direct`.03980/.06198`、retrieval`1/24`；
+  308-panel fit/held candidate-to-shared为`.96830/1.00335x`，breadth`12/19、3/5`，绝对联合门失败。历史v13 reference为
+  `.99595249、1/24`与`.96741/1.00168x、13/19、3/5`，但它使用video visit12099，v19使用18199，24/24 demo pairs均不同；
+  因此只能说明两者处于同一坍缩区间，不能把微小差值归因于训练。因此按预注册条件不续macro4，不运行held5、fold或`q_V`。
   正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`。
 - 下一active因果锁称为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**。它仍从support最强的v13 weights和fresh
   optimizer开始，但与v19互补：永久冻结visible Program与privileged `q_pi`，只训练compiler。固定的task-diverse
@@ -100,6 +101,13 @@
   task-equal updates并立即复跑geometry/support门。只有task matching与support同向改善才接structured outcome；若compiler-only
   仍失败，则先做task-local free-Program/fixed-compiler reachability oracle，区分bounded compiler image不足与shared inference失败，
   而不是继续v20或直接重做`q_V`。
+- v20 retained实现已完成单路径替换：active config为
+  `configs/pi05_ecp_stage1_program_locked_compiler_v20.json`，仅compiler进入optimizer，visible Program、privileged
+  `q_pi`、source与observer均冻结；formal schedule为114 visits/19 task-equal updates，materialization使用与v13
+  一致的video visit12099以形成matched比较。v19的active config、Program-perturbation与三个outcome runtime模块已从
+  active tree删除，Stage 1恢复为`stage1_training.py` + `stage1_train_step.py`一个trainer；相比v19运行面净减少约350行。当前
+  55项Stage 0/1、reward与expert-manifold聚焦CPU合同已通过，下一步是在非prohibited A40上运行真实单task
+  profile，不把机制smoke写成formal结论。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

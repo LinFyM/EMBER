@@ -223,10 +223,12 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 完成v19单task reachability profile：`.05` q-family Program扰动产生`.110166` compiled relative delta，paired credit
   非零，`policy_teacher`梯度`.560583`且compiler/visible Program梯度严格为零；
 - [x] 从clean pushed frozen authority完成fit19 macro2、24-task geometry与同一308-panel support audit；q/v credit均真实存在，
-  但geometry相对v13不动、support轻微退化，因此不exact-resume到macro4，v19关闭；
-- [ ] 实现 **OCPB v20 Program-Locked Compiler Identification（PLCI）**：从v13 weights/fresh optimizer固定visible Program与
+  但v19 single checkpoint的absolute geometry/support门失败，且仍处于历史v13的坍缩区间，因此不exact-resume到macro4，
+  v19关闭；二者materialization videos不同，不把微小差值解释为matched训练变化；
+- [x] 实现 **OCPB v20 Program-Locked Compiler Identification（PLCI）**：从v13 weights/fresh optimizer固定visible Program与
   privileged `q_pi`坐标，只训练compiler；用successful cross-episode exact action、owner-local/multi-state response和v13
-  barrier做task-balanced dense识别，避免Program/decoder共同旋转；
+  barrier做task-balanced dense识别，避免Program/decoder共同旋转；旧v19 config、perturbation和outcome runtime已删除，
+  active tree仅保留一个Stage 1 trainer，55项Stage 0/1、reward与expert-manifold聚焦CPU合同通过；
 - [ ] 完成v20真实单task profile后运行114 visits/19 updates，立即物化24-task geometry并复跑308-panel support；只有own
   task matching与support同向改善才接structured closed-loop outcome，否则先做free-Program/fixed-compiler reachability oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
@@ -281,12 +283,13 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v19已在macro2关闭：q/v Program切向均可达且有真实paired credit，但24-task geometry与v13等价，308-panel support轻微
-   退化；正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`；
-2. 实现v20 PLCI单路径：回到v13 weights/fresh optimizer，固定visible Program与privileged `q_pi`，只训练compiler；删除v19
-   active config、Program perturbation与outcome runtime，不保留两套trainer；
-3. 用successful cross-episode exact action、owner-local/multi-state response和v13 barrier接通compiler-only profile，确认
-   q_pi/visible梯度为零且FactorHeads获得finite梯度；
+1. v19已在macro2关闭：q/v Program切向均可达且有真实paired credit，但其single checkpoint绝对geometry/support门失败并
+   仍处于历史v13坍缩区间；两者视频ordinal不同，不声称matched delta。正式证据为
+   `docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`；
+2. v20 PLCI单路径已实现并完成active cleanup：仅compiler trainable，114 visits/19 updates的task-equal schedule及
+   matched video visit12099 materialization合同已接通，55项聚焦CPU合同通过；
+3. 在非prohibited A40上运行单task compiler-only profile，确认successful cross-episode exact action、
+   owner-local/multi-state response和v13 barrier均接通，并确认q_pi/visible梯度为零且FactorHeads获得finite梯度；
 4. profile通过后从clean pushed detached worktree运行114 visits/19 task-equal updates，立即物化24-task geometry与同一
    308-panel support audit；只有own task matching与support同向改善才接structured outcome；
 5. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；

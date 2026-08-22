@@ -66,11 +66,11 @@ ECP_STAGE1_OUTCOME_TASK_EXPERT_ADAPTER_SCHEMA = (
 ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_ecp_stage1_outcome_binding_projection_v11"
 )
-ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_ADAPTER_SCHEMA = (
-    "ember_pi05_ecp_stage1_fixed_compiler_program_task_expert_eval_adapter_v19"
+ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_ADAPTER_SCHEMA = (
+    "ember_pi05_ecp_stage1_program_locked_compiler_task_expert_eval_adapter_v20"
 )
-ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_MANIFEST_SCHEMA = (
-    "ember_ecp_stage1_fixed_compiler_program_projection_v19"
+ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_ecp_stage1_program_locked_compiler_projection_v20"
 )
 
 
@@ -86,12 +86,14 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     optimization = manifest.get("optimization", {})
     information_wall = manifest.get("information_wall", {})
     schema = manifest.get("schema_version")
-    if schema == ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_MANIFEST_SCHEMA:
-        projection_kind = "ecp_stage1_privileged_fixed_compiler_program_binding"
-        objective_phase = "task_equal_fixed_compiler_program_binding"
-        adapter_schema = ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_ADAPTER_SCHEMA
-        cursor_name = "outcome_macro"
-        arm_prefix = "ecp_stage1_q_pi_fixed_compiler_program_m"
+    if schema == ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_MANIFEST_SCHEMA:
+        projection_kind = (
+            "ecp_stage1_privileged_program_locked_compiler_identification"
+        )
+        objective_phase = "task_balanced_program_locked_compiler_identification"
+        adapter_schema = ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_ADAPTER_SCHEMA
+        cursor_name = "task_visits"
+        arm_prefix = "ecp_stage1_q_pi_program_locked_compiler_tv"
     elif schema == ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA:
         projection_kind = "ecp_stage1_privileged_outcome_binding_compiler"
         objective_phase = "outcome_calibrated_policy_support"
@@ -123,12 +125,12 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         or optimization.get("second_adapter_deployed") is not False
         or optimization.get("objective_phase") != objective_phase
         or (
-            schema == ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_MANIFEST_SCHEMA
+            schema == ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_MANIFEST_SCHEMA
             and (
-                optimization.get("compiler_frozen_during_training") is not True
+                optimization.get("compiler_trainable_during_training") is not True
                 or optimization.get("visible_program_frozen_during_training")
                 is not True
-                or optimization.get("policy_teacher_trainable_during_training")
+                or optimization.get("policy_teacher_frozen_during_training")
                 is not True
             )
         )
@@ -275,7 +277,7 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     if schema in {
         ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA,
         ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA,
-        ECP_STAGE1_FIXED_COMPILER_TASK_EXPERT_MANIFEST_SCHEMA,
+        ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_MANIFEST_SCHEMA,
     }:
         return _ecp_projection_contract(manifest)
     raise ExpertManifoldError("projected task-expert manifest schema changed")

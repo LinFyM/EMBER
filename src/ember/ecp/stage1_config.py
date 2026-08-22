@@ -14,8 +14,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_fixed_compiler_program_binding_run_v19"
-STAGE = "stage1_fixed_compiler_program_binding_v19"
+RUN_SCHEMA = "ember_ecp_stage1_program_locked_compiler_run_v20"
+STAGE = "stage1_program_locked_compiler_identification_v20"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,9 +34,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_fixed_compiler_program_binding_v19"
+        != "ember_ecp_stage1_program_locked_compiler_v20"
         or config.get("status")
-        != "active_stage1_fixed_compiler_program_binding"
+        != "active_stage1_program_locked_compiler_identification"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -62,13 +62,15 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         )
         <= 0
         or float(
-            config.get("objective", {}).get(
-                "action_policy_direct_gradient_weight", -1
-            )
+            config.get("objective", {}).get("action_policy_loss_weight", -1)
         )
-        != 0.0
-        or config.get("objective", {}).get("action_proposal_panel")
-        != "cross_episode_successful_train_trajectory"
+        <= 0
+        or config.get("objective", {}).get("action_supervision_weights")
+        != {
+            "successful": 1.0,
+            "verified_successful_learner": 1.0,
+            "failed_learner": 0.0,
+        }
         or config.get("objective", {}).get("policy_flow_time_sampling_scheme")
         != "task_logical_batch_keyed_independent_beta15_time_v2"
         or config.get("objective", {}).get("policy_flow_noise_sampling_scheme")
@@ -91,6 +93,14 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         != 0
         or config.get("information_wall", {}).get("held5_action_or_reward_reads")
         != 0
+        or config.get("training_ownership")
+        != {
+            "visible_program_trainable": False,
+            "policy_teacher_trainable": False,
+            "compiler_trainable": True,
+            "source_policy_trainable": False,
+            "observer_trainable": False,
+        }
         or any(
             float(config.get("objective", {}).get("weights", {}).get(name, -1))
             != 0.0
@@ -110,32 +120,18 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or config.get("initialization", {}).get("load_model_weights_only")
         is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
-        or config.get("outcome_binding", {}).get("proposal_coordinate")
-        != "exact_action_loss_negative_gradient_in_reachable_program_family_block"
-        or float(config.get("outcome_binding", {}).get("relative_program_sigma", -1))
-        != 0.05
-        or float(config.get("outcome_binding", {}).get("leaf_gradient_weight", -1))
-        != 1.0
-        or tuple(config.get("outcome_binding", {}).get("family_sequence", ()))
-        != ("q", "v", "action_in", "action_out")
-        or config.get("outcome_binding", {}).get("compiler_trainable") is not False
-        or config.get("outcome_binding", {}).get("visible_program_trainable")
-        is not False
-        or config.get("outcome_binding", {}).get("policy_teacher_trainable")
-        is not True
-        or int(config.get("outcome_binding", {}).get("lanes_per_arm", -1)) != 2
-        or config.get("outcome_binding", {}).get("support_preservation")
-        != "baseline_relative_response_barrier"
-        or int(config.get("optimization", {}).get("world_size", -1)) != 6
-        or int(config.get("optimization", {}).get("task_count", -1)) != 19
-        or int(config.get("optimization", {}).get("total_macros", -1)) != 4
-        or tuple(config.get("optimization", {}).get("checkpoint_macros", ()))
-        != (2, 4)
-        or int(config.get("profile_defaults", {}).get("world_size", -1)) != 1
-        or int(config.get("profile_defaults", {}).get("task_count", -1)) != 1
-        or int(config.get("profile_defaults", {}).get("total_macros", -1)) != 1
+        or int(config.get("optimization", {}).get("visits_per_fit_task", -1))
+        != 6
+        or int(config.get("optimization", {}).get("total_task_visits", -1))
+        != 114
+        or int(config.get("optimization", {}).get("optimizer_updates", -1))
+        != 19
+        or tuple(config.get("optimization", {}).get("checkpoint_task_visits", ()))
+        != (114,)
+        or tuple(config.get("optimization", {}).get("stage_stop_task_visits", ()))
+        != (114,)
     ):
-        raise ValueError("unsupported ECP Stage 1 fixed-compiler Program contract")
+        raise ValueError("unsupported ECP Stage 1 Program-locked compiler contract")
     return config
 
 

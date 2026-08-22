@@ -825,8 +825,9 @@ visible Program梯度均严格为0。它证明固定compiler局部可达且rewar
 
 v19 macro2的完整门随后否定了“只固定v13 compiler并用少数shared reward steps更新`q_pi`已经足够”。q/v两个macros分别在
 `8/9`个fit tasks上得到非零credit，Program perturbation经compiler的相对LoRA差异为`.10901/.05426`；但最终24-task
-candidate pair cosine仍为`.99594891`，own retrieval仍`1/24`，与v13的`.99595249/1-of-24`等价。308-panel fit/held
-support还从v13`.96741/1.00168x`轻微退到`.96830/1.00335x`。所以失败不是Program切向不可达，而是已有bounded compiler没有
+candidate pair cosine仍为`.99594891`，own retrieval仍`1/24`；308-panel fit/held support为`.96830/1.00335x`，绝对门
+失败。历史v13 reference的`.99595249/1-of-24`与`.96741/1.00168x`使用另一组24/24 demo pairs，只能证明v19仍处于相同
+坍缩区间，不能把小差值解释为matched退化。所以失败不是Program切向不可达，而是已有bounded compiler没有
 把shared `q_pi`更新识别成own successful policy；v19不续action-in/out macros，也不进入held5或`q_V`。
 
 下一互补因果锁为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**：回到v13 weights，固定visible Program与
@@ -836,6 +837,13 @@ Program共同旋转。首个bounded节点为114 visits/19 task-equal updates；�
 才加入fixed-Program下的structured outcome calibration。若compiler-only仍失败，下一诊断是对当前fixed compiler直接优化
 task-local free Programs，以区分compiler image不可达和shared `q_pi` inference不足；这些free Programs只作fit19 privileged
 reachability oracle，不成为部署task-ID route或唯一`P*`监督。
+
+v20已按该合同实现为唯一active Stage 1运行面。它从v13 macro1只加载model weights并新建optimizer，
+`model.requires_grad_(False)`后只解冻compiler；每个fit task在一个114-visit block中精确出现6次，6-GPU下汇总为
+19个等权updates。exact action leaf仅通过完整38-target LoRA回传compiler，policy-response/support作为baseline-relative
+structural anchor；每步显式记录compiler/FactorHead梯度并要求`q_pi`/visible Program梯度精确为0。物化固定使用
+video visit12099，与v13 historical authority形成真正matched geometry/support对照。v19的active config与三个outcome
+runtime模块已删除；其formal artifact与Git仍保留历史证据。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
@@ -931,9 +939,9 @@ Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stag
 `program.py`独占visible Program与K-video集合聚合；`policy_teacher.py`独占train-only privileged `q_pi`；`compiler.py`独占
 38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`拥有task/member/video authority，
 `policy_response.py`拥有冻结PI0.5 full-layer capture与target-local activation effect，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
-bank及其运行时panel；`stage1_objective.py`拥有结构/support loss，`stage1_outcome.py`拥有当前Program切向坐标，
-`stage1_outcome_train_step.py`与`stage1_outcome_training.py`分别拥有一次task-equal Program-credit macro及formal运行时/checkpoint，
-`stage1_training.py`只保留canonical入口和共享authority加载；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
+bank及其运行时panel；`stage1_objective.py`拥有结构/support loss，`stage1_train_step.py`拥有一次task-equal compiler
+update及exact LoRA-leaf回传，`stage1_training.py`拥有唯一formal/profile orchestration、authority加载与checkpoint生命周期；
+`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
 现有`expert_manifold` evaluator继续拥有闭环执行。已完成的OCPB outcome实现由Git和formal artifacts保存，不在active tree保留
 第二套orchestration；通用paired trajectory score仍由`reward/credit.py`拥有。当前唯一Stage 1训练入口为
 `train_ecp_stage1.py`；v20必须复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，再经固定Program

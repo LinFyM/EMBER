@@ -1029,12 +1029,13 @@ compiler/visible梯度严格为0，所以fixed compiler的Program切向不是dea
 
 正式macro1/2分别只扰动q/v family block并各覆盖fit19一次。非零credit breadth为`8/9` tasks，plus/minus successes为
 `10/8、11/10`，mean compiled perturbation为`.10901/.05426`；训练信号真实。两步后policy teacher参数相对v13移动
-`.0005276`，其余两模块精确不变。但24-task materialization与v13实质相同：pair cosine`.99594891`，own/nearest-direct
-`.03980/.06198`，retrieval`1/24`；v13对应`.99595249、.03980/.06201、1/24`。Program correction pair cosine还从
-`.82546`轻微升到`.82679`。
+`.0005276`，其余两模块精确不变。但v19自身24-task materialization仍坍缩：pair cosine`.99594891`，own/nearest-direct
+`.03980/.06198`，retrieval`1/24`。历史v13 reference为`.99595249、.03980/.06201、1/24`，但其video visit12099与v19的
+18199使24/24 demo pairs不同；它只说明v19仍在同一坍缩区间，不构成matched training delta。
 
 同一308-panel audit也没有给出续训依据。fit candidate/shared为`.96830x`、breadth`12/19`，held为`1.00335x`、breadth
-`3/5`；matched v13为`.96741x、13/19`与`1.00168x、3/5`。v19因此按预注册门停在macro2，不运行action-in/out、held5、
+`3/5`；历史v13 reference为`.96741x、13/19`与`1.00168x、3/5`，同样不是matched video对照。v19以自身绝对门失败为依据
+停在macro2，不运行action-in/out、held5、
 fold或`q_V`。该结果否定的是“在未识别的v13 decoder image中，只靠少数shared q_pi reward updates即可找到own Programs”，
 不否定structured Program perturbation或fixed compiler原则。
 

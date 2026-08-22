@@ -40,8 +40,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_fixed_compiler_program_projection_v19"
-PROJECTION_KIND = "ecp_stage1_privileged_fixed_compiler_program_binding"
+PROJECTION_SCHEMA = "ember_ecp_stage1_program_locked_compiler_projection_v20"
+PROJECTION_KIND = "ecp_stage1_privileged_program_locked_compiler_identification"
 
 
 @dataclass(frozen=True)
@@ -69,13 +69,15 @@ def resolve_stage1_materialization_config(
         seed=int(base["optimization"]["seed"]),
         checkpoint_cursors=tuple(
             int(value)
-            for value in base["materialization"]["allowed_checkpoint_macros"]
+            for value in base["materialization"][
+                "allowed_checkpoint_task_visits"
+            ]
         ),
-        cursor_name="outcome_macro",
+        cursor_name="task_visits",
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_equal_fixed_compiler_program_binding",
+        objective_phase="task_balanced_program_locked_compiler_identification",
     )
 
 
@@ -380,9 +382,9 @@ def _projection_manifest(
             "fit_task_count": 19,
             "held_task_count": 5,
             "held_shared_gradient_steps": 0,
-            "compiler_frozen_during_training": True,
+            "compiler_trainable_during_training": True,
             "visible_program_frozen_during_training": True,
-            "policy_teacher_trainable_during_training": True,
+            "policy_teacher_frozen_during_training": True,
             "compiler_frozen_for_materialization": True,
             "single_complete_lora": True,
             "final_lora_averaging": False,
@@ -560,7 +562,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json",
+        / "configs/pi05_ecp_stage1_program_locked_compiler_v20.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

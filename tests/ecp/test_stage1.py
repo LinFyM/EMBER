@@ -1,3 +1,4 @@
+from collections import Counter
 from pathlib import Path
 
 import torch
@@ -13,15 +14,15 @@ from ember.ecp.policy_response import (
 )
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
-from ember.ecp.stage1_data import gauge_canonicalize_factors
+from ember.ecp.stage1_data import (
+    ECPStage1Task,
+    build_stage1_schedule,
+    gauge_canonicalize_factors,
+)
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_materialization import (
     PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
-)
-from ember.ecp.stage1_outcome import (
-    action_guided_program_leaf_gradient,
-    action_guided_program_perturbation,
 )
 from ember.ecp.stage1_objective import (
     canonical_factor_loss,
@@ -131,17 +132,17 @@ def _expert_evidence(
     )
 
 
-def test_fixed_compiler_materialization_uses_v19_macro_cursor() -> None:
+def test_program_locked_materialization_uses_v20_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
         REPO_ROOT
-        / "configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json"
+        / "configs/pi05_ecp_stage1_program_locked_compiler_v20.json"
     )
-    assert resolved.stage == "stage1_fixed_compiler_program_binding_v19"
-    assert resolved.cursor_name == "outcome_macro"
-    assert resolved.checkpoint_cursors == (2, 4)
+    assert resolved.stage == "stage1_program_locked_compiler_identification_v20"
+    assert resolved.cursor_name == "task_visits"
+    assert resolved.checkpoint_cursors == (114,)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_fixed_compiler_program_binding_v19"
+        "ember_ecp_stage1_program_locked_compiler_v20"
     )
 
 
@@ -196,56 +197,44 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert output.consensus_compilation.rank_angles.shape == (1, 38, 16)
 
 
-def test_action_guided_program_block_is_relative_action_descent() -> None:
-    compiler, _ = _tiny_compiler()
-    program = _tiny_program()
-    gradient = torch.randn_like(program.process)
-    perturbation = action_guided_program_perturbation(
-        program,
-        gradient,
-        compiler.owners,
-        family=TargetFamily.Q,
-        sigma=0.05,
-    )
-    assert perturbation.epsilon.shape == (1, 1)
-    assert perturbation.owner_indices == (0,)
-    base_norm = program.process.float().square().sum().sqrt()
-    delta_norm = (
-        perturbation.plus_program.process.float() - program.process.float()
-    ).square().sum().sqrt()
-    torch.testing.assert_close(delta_norm / base_norm, torch.tensor(0.05))
-    torch.testing.assert_close(
-        (
-            perturbation.plus_program.process
-            + perturbation.minus_program.process
+def test_stage1_decision_prefix_is_task_equal() -> None:
+    tasks = tuple(
+        ECPStage1Task(
+            ordinal=ordinal,
+            global_task_id=ordinal,
+            suite="suite",
+            task_id=ordinal,
+            language=f"task {ordinal}",
+            path=Path(f"task_{ordinal}.hdf5"),
+            expected_bytes=1,
+            episode_lengths=tuple(40 + ordinal + index for index in range(50)),
+            fold_role="fit",
         )
-        / 2,
-        program.process,
+        for ordinal in range(19)
     )
-    action_dot = (gradient.float() * perturbation.direction).sum()
-    assert float(action_dot) < 0
-
-
-def test_action_guided_outcome_gradient_reaches_program_direction() -> None:
-    compiler, _ = _tiny_compiler()
-    program = _tiny_program()
-    perturbation = action_guided_program_perturbation(
-        program,
-        torch.randn_like(program.process),
-        compiler.owners,
-        family=TargetFamily.Q,
-        sigma=0.05,
+    config = {
+        "roles": {"fit_task_ordinals": list(range(19))},
+        "data": {
+            "frame_stride": 5,
+            "visible_videos_per_visit": 2,
+            "pair_seed": 17,
+        },
+        "optimization": {
+            "visits_per_fit_task": 6,
+            "task_balance_block_rounds": 6,
+            "stage_stop_task_visits": [114],
+            "seed": 23,
+        },
+    }
+    schedule = build_stage1_schedule(
+        config=config,
+        tasks=tasks,
+        world_size=6,
+        total_task_visits=114,
+        mode="formal",
     )
-    leaf = action_guided_program_leaf_gradient(
-        perturbation,
-        torch.tensor([[2.0]]),
-        weight=0.1,
-    )
-    projected = (leaf.float() * perturbation.direction).sum()
-    torch.testing.assert_close(projected, torch.tensor(-0.2))
-    process = program.process.detach().requires_grad_(True)
-    (process.float() * leaf.float()).sum().backward()
-    torch.testing.assert_close(process.grad, leaf)
+    counts = Counter(ordinal for ordinal, _ in schedule)
+    assert counts == Counter({ordinal: 6 for ordinal in range(19)})
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:

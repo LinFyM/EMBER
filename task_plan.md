@@ -147,8 +147,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   并通过successful/learner两条真实BF16训练路径profile；
 - [x] 完成v7 fresh 228-visits、24-task物化与冻结全bank audit；相对shared从v6的`1.400/1.277`改善到
   `1.024/1.100`，但只在`9/19、1/5` tasks胜出，support门仍失败；
-- [ ] 保持v7全部结构与数据，fresh训练取消direct BA/canonical参数坐标梯度的v8 functional-equivalence union，并复跑同一
-  冻结support门；
+- [x] 保持v7全部结构与数据，fresh训练取消direct BA/canonical参数坐标梯度的v8 functional-equivalence union，并复跑同一
+  冻结support门；fit/held均在0个task胜过shared，且发现228节点访问数为每task `5--18`而非task-equal 12；
+- [ ] 修正formal schedule，使每个可裁决prefix按6个visit rounds成块、兼顾task balance与cost-balanced rank分配；fresh复验
+  同一v8短节点一次，仍失败则替换Frobenius top-SVD compiler而不做loss小扫；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -202,11 +204,10 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v7冻结审计已完成：相对source在fit/held为`.588/.776`且24/24 tasks更好；相对shared为`1.024/1.100`，breadth仅
-   `9/19、1/5`，故不续训、不跑held closed loop、不加reward；
-2. v8只移除被证实占前/后节点总目标`64.3%/52.9%`的direct BA/canonical参数坐标梯度；同一Program、q_pi、union、bank、
-   seed、schedule与support门均保持，参数loss仍作为diagnostic报告，不做权重扫；
-3. 只有v8相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. v8首个228节点已完成：fit/held相对shared为`1.160/1.149`且breadth均为0，故不跑held closed loop、不加reward；
+2. formal schedule审计发现该节点每个fit task实际访问`5--18`次，而task-equal应为12次。先保持v8架构/objective不变，修正
+   checkpoint-prefix balance并fresh复验一次；若仍失败，下一major variable是functional rank selector而非延长或loss小扫；
+3. 只有task-equal v8相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

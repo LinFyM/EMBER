@@ -527,6 +527,17 @@ active v8不修改Program、`q_pi`、factor heads、low-rank union、数据或sc
 support与locality，prior-only仍精确返回stable shared。它不是小权重扫描，而是删除与“目标不是raw A/B重建”相冲突的训练
 目标。v8仍从fresh训练并复跑同一冻结support门；未过门不得加simulator reward、运行held closed loop或启动`q_V`。
 
+v8首个228-visits节点确认“删除raw坐标梯度”本身不够：fit19/held5 candidate-to-shared为`1.15980/1.14903`，两边均0个task
+胜过shared；candidate/direct norm ratio达到`6.54391`，candidate pair cosine为`.97804`，own-direct只有`.01411`。该checkpoint
+明确未过门。与此同时，运行记录暴露了独立的schedule合同问题：完整456-visits schedule最终task-equal，但先对所有visit全局
+按cost分组再随机排序，使228决策前缀的每task访问数为`5--18`而不是12。冻结audit自身仍是task-equal有效负证据，但不能把这个
+不平衡训练前缀作为v8参数化的最终裁决。
+
+因此active v8先做一次fresh、严格checkpoint-balanced复验：每6个visit rounds形成一个114-visits平衡block，block内部继续按
+真实视频cost动态组成world6 group并随机rank顺序；228节点正好包含每task 12次访问。除schedule ordering外Program、`q_pi`、
+union、bank、seed、objective和gate全部不变。若平衡复验仍未通过，不再延长v8；下一compiler修正必须让rank16压缩由
+policy-functional selector决定，而不是让Frobenius top-SVD被无界residual norm接管。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

@@ -1,0 +1,110 @@
+{
+  "schema_version": "ember_ecp_stage1_functional_union_support_v1",
+  "date": "2026-08-22",
+  "training_repository_commit": "ae4805ef5efd37925ad6680e47608a4486290426",
+  "audit_repository_commit": "1659bb6646e1b177cfc7de32a1668b020796e115",
+  "stage": "stage1_functional_union_v8",
+  "profile": {
+    "successful_update_seconds": 2.3760986250053975,
+    "learner_update_seconds": 2.1310664350021398,
+    "maximum_cuda_allocated_bytes": 16459576320,
+    "initial_successful_shared_support": 0.016375118866562843,
+    "initial_successful_source_support": 0.7536523342132568,
+    "initial_learner_shared_support": 0.003076950553804636,
+    "initial_learner_source_support": 0.6632766127586365,
+    "all_gradients_finite": true,
+    "coordinate_objective_weight": 0.0
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_functional_union_fold0_tv228_r6_ae4805e_gpu01p123456_20260822",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "successful_records": 115,
+    "learner_records": 113,
+    "elapsed_seconds": 116.42413881600078,
+    "maximum_cuda_allocated_bytes": 16682531840,
+    "maximum_gradient_norm_before_clip": 613.6249389648438,
+    "first_five_update_mean": {
+      "total": 0.5897780756155651,
+      "functional_response": 0.46202011530598003,
+      "shared_support": 0.029676744775497355,
+      "source_support": 0.641155726959308,
+      "coordinate_objective_contribution": 0.0
+    },
+    "last_five_update_mean": {
+      "total": 0.5196261599659919,
+      "functional_response": 0.35499709968765575,
+      "shared_support": 0.15934294903029997,
+      "source_support": 0.64107119217515,
+      "coordinate_objective_contribution": 0.0
+    },
+    "checkpoint_complete": true,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "materialization": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_functional_union_projection_tv228_ae4805e_gpu01p1_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.97804194688797,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.014114554040133953,
+    "mean_nearest_other_direct_cosine": 0.022244513034820557,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 6.543908596038818,
+    "candidate_effective_rank_participation_mean": 1.8645259141921997,
+    "candidate_top1_energy_fraction_mean": 0.6984208226203918,
+    "geometry_gate_passed": false,
+    "held5_closed_loop_rows": 0
+  },
+  "frozen_all_panel_support_audit": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_functional_union_audit_tv228_1659bb6_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.4698794834364794,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.6652375960339512,
+      "candidate_to_shared_ratio": 1.1597993584829822,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 0,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.7173798978328705,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.8110234998121344,
+      "candidate_to_shared_ratio": 1.1490278806406042,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 0,
+      "panels": 40
+    },
+    "candidate_panel_wins_over_shared": 84,
+    "total_panels": 308,
+    "task_equal_gate_passed": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "checkpoint_prefix_schedule_audit": {
+    "expected_visits_per_fit_task": 12,
+    "minimum_observed_visits": 5,
+    "maximum_observed_visits": 18,
+    "tasks_exactly_at_expected_count": 3,
+    "fit_task_count": 19,
+    "root_cause": "The complete 456-visit schedule was task-equal, but global cost sorting and group shuffling made the decision prefix non-stratified. The 228-visit checkpoint therefore did not satisfy the declared task-equal decision-node contract."
+  },
+  "interpretation": {
+    "established": "Removing all direct BA and canonical-factor gradients did not recover stable-prior support at this checkpoint. Relative to v7, fit candidate-to-shared worsened from 1.02429 to 1.15980, held worsened from 1.09995 to 1.14903, and shared task breadth fell from 9 and 1 to 0 and 0. The residual also expanded to 6.54391 times direct norm while candidate pair cosine rose to 0.97804.",
+    "failed_gate": "The frozen candidate loses to stable shared in aggregate and task breadth on both fit19 and held5. It is not authorized for held closed loop, simulator reward, q_V, or continuation of this exact checkpoint.",
+    "contract_issue": "The short checkpoint itself was sampled from an unbalanced prefix, with only 5 to 18 visits per fit task instead of 12 each. Because Stage 1 decisions are task-equal, one fresh checkpoint-balanced rerun is required before attributing the failure solely to the functional union parameterization."
+  },
+  "decision": {
+    "verdict": "fail_frozen_support_gate_with_checkpoint_schedule_contract_violation",
+    "continue_same_checkpoint": false,
+    "run_held5_closed_loop": false,
+    "start_simulator_reward": false,
+    "start_q_v": false,
+    "next": "Make every formal decision prefix task-equal while preserving cost-balanced dynamic rank assignment, then fresh-rerun the same v8 228-visit gate once. If the balanced rerun still fails, replace Frobenius top-SVD compression with a policy-functional rank selector rather than tuning loss weights or extending the curve."
+  }
+}

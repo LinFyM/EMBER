@@ -19,9 +19,9 @@
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
   永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
   预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
-  v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。当前唯一active
-  工作是保持v5 Program/compiler content-address合同，重建专家要求的privileged policy-support evidence与objective，不延长
-  任何已失败曲线，也不再围绕query、rank或loss权重做局部微调。
+  v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
+  v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。当前唯一active工作是修正短节点的task-equal
+  schedule合同后fresh复验v8一次；若仍失败，替换Frobenius top-SVD压缩，不延长曲线，也不围绕query、rank或loss权重做局部微调。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -168,6 +168,13 @@
   raw A/B重建”冲突。下一fresh v8保持Program、q_pi、prior union、数据、seed和短节点不变，只把四项参数坐标loss从梯度中
   移除并继续作为诊断；同一冻结support门通过后才允许加入task-equal simulator success/progress。证据为
   `docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。
+- v8从clean pushed `ae4805e`完成228 visits/38 updates，clean pushed `1659bb6`完成24-task物化与308-panel冻结审计。参数坐标
+  梯度确为0，但fit/held candidate-to-shared反而为`1.15980/1.14903`，胜过shared的task breadth均为0；candidate/direct norm
+  ratio膨胀到`6.54391`，candidate pair cosine升到`.97804`，own-direct仅`.01411`。因此该checkpoint不进入held闭环、reward或
+  `q_V`。随后对formal metrics反查发现，完整456-visits schedule虽最终每task 24次，但全局cost-sort后随机group使228决策前缀
+  每task只有`5--18`次访问，只有3/19 tasks恰为应有的12次。这违反短节点声明的task-equal裁决合同；当前只授权修正为每6轮
+  task visit一个平衡block并fresh复验v8一次，仍失败才替换SVD union。证据为
+  `docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

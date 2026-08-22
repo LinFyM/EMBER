@@ -144,6 +144,8 @@
     "visits_per_fit_task": 24,
     "total_task_visits": 456,
     "optimizer_updates": 76,
+    "task_balance_block_rounds": 6,
+    "task_balance_contract": "Each 114-visit block contains exactly six visits for every fit task; rows remain cost-balanced within the block.",
     "checkpoint_task_visits": [228, 456],
     "stage_stop_task_visits": [228, 456],
     "optimizer": {

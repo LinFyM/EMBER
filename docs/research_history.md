@@ -833,6 +833,19 @@ shared-to-direct坐标距离放大而成为多数梯度，与专家“目标不�
 下一fresh v8只移除这些参数坐标梯度，继续报告相同诊断并复跑同一冻结support gate。证据：
 `docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。
 
+### 3.42 v8 functional-only union失败并暴露短节点task-balance合同错误
+
+clean pushed `ae4805e`完成v8 228 visits/38 updates，clean pushed `1659bb6`完成24-task物化与308-panel冻结审计。四项
+direct BA/canonical梯度均为0，但fit/held candidate-to-shared为`1.15980/1.14903`，胜过shared的task数均为0；相对source
+仍为`.66524/.81102`且24/24 tasks更好。materialization的candidate/direct norm ratio达到`6.54391`，candidate pair cosine
+`.97804`，own-direct `.01411`，所以该checkpoint未获held闭环、reward或`q_V`授权。
+
+随后从formal metrics核对schedule prefix发现，每个fit task在228节点实际只访问`5--18`次，而task-equal预期为12次；完整
+456-visits虽最终平衡，当前全局cost-sort与group shuffle没有保证决策prefix平衡。该工程/科学合同偏差先于下一架构裁决：保留
+v8全部方法变量，只把schedule改为每6轮一个task-balanced/cost-balanced block并fresh复验一次。若仍失败，再把Frobenius
+top-SVD union替换为policy-functional rank selector。证据：
+`docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

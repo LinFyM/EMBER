@@ -1,3 +1,4 @@
+from collections import Counter
 from pathlib import Path
 
 import torch
@@ -8,7 +9,11 @@ from ember.ecp.low_rank import merge_low_rank_updates
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
-from ember.ecp.stage1_data import gauge_canonicalize_factors
+from ember.ecp.stage1_data import (
+    ECPStage1Task,
+    build_stage1_schedule,
+    gauge_canonicalize_factors,
+)
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_objective import (
     canonical_factor_loss,
@@ -69,6 +74,47 @@ def _expert_evidence(
         policy_response=torch.randn(members, 8, 38, 5, 4, 128),
         policy_response_weights=torch.ones(members, 8, 5),
     )
+
+
+def test_stage1_decision_prefixes_are_task_equal() -> None:
+    tasks = tuple(
+        ECPStage1Task(
+            ordinal=ordinal,
+            global_task_id=ordinal,
+            suite="suite",
+            task_id=ordinal,
+            language=f"task {ordinal}",
+            path=Path(f"task_{ordinal}.hdf5"),
+            expected_bytes=1,
+            episode_lengths=tuple(40 + ordinal + index for index in range(50)),
+            fold_role="fit",
+        )
+        for ordinal in range(19)
+    )
+    config = {
+        "roles": {"fit_task_ordinals": list(range(19))},
+        "data": {
+            "frame_stride": 5,
+            "visible_videos_per_visit": 2,
+            "pair_seed": 17,
+        },
+        "optimization": {
+            "visits_per_fit_task": 24,
+            "task_balance_block_rounds": 6,
+            "stage_stop_task_visits": [228, 456],
+            "seed": 23,
+        },
+    }
+    schedule = build_stage1_schedule(
+        config=config,
+        tasks=tasks,
+        world_size=6,
+        total_task_visits=456,
+        mode="formal",
+    )
+    for prefix, expected in ((114, 6), (228, 12), (456, 24)):
+        counts = Counter(ordinal for ordinal, _ in schedule[:prefix])
+        assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
 def test_visible_program_video_set_is_permutation_invariant() -> None:

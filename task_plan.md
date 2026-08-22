@@ -245,7 +245,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   family-specific direct A/B absolute compiler与其`q_pi`，保持v21 task-local free-Program oracle、fit19数据、task-equal
   schedule和geometry/support门不变；checkpoint 153/153 keys strict-load、55项聚焦合同及真实单卡profile已通过，不重复训练
   一套长compiler；
-- [ ] 从clean pushed frozen authority运行v22 228-visit节点，只在末节点做24-task geometry与308-panel support gate；
+- [x] 从clean pushed frozen authority完成v22 228 visits/38 updates、24-task geometry与308-panel support gate；direct surface
+  将candidate pair cosine降到`.70280`并把own retrieval提高到`10/24`，但fit/held相对shared为`1.45056/1.27628x`且
+  breadth`0/19、0/5`，故v22关闭；
+- [ ] 实现 **OCPB v23 Single-Surface Absolute Compiler（SSAC）**：删除prior exact-template hard bypass，让prior/full都经同一
+  direct family A/B heads；冻结visible Program与`q_pi`，只训练compiler并同时锚定prior shared support和full own-policy功能；
+- [ ] 完成v23真实单task双路径profile、一个fit19 task-balanced有界节点及matched geometry/support；只有prior/full两条surface
+  同向成立才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -305,10 +311,14 @@ coordinate退化则保留Stage 2并定位最早接口。
    v13 support，因此关闭且不续训；证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`；
 3. v21 FPR formal/geometry/support已经完成并失败：Program correction已明显task-diverse，bounded compiler仍只有`1/24`
    own retrieval且fit support退化；证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`；
-4. v22复用现有v6 direct-absolute compiler checkpoint做同一free-Program reachability，不重复长compiler训练；先完成兼容迁移、
-   真实单task profile，再从clean pushed authority运行一个有界fit19节点并只在末节点物化/audit；
-5. 若v22可达，再以该absolute compiler修正shared `q_pi`并进入Dynamic-K `q_V`；若仍不可达，按Program→attention/value→
-   family A/B gain的最早接口做结构修正，不回退bounded selector或扫小超参数；
-6. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
+4. v22 direct-absolute free-Program formal/geometry/308-panel audit已经完成：process Value真实控制输出、own retrieval提高到
+   `10/24`，但fit/held两边`0/19、0/5`胜过shared，故关闭且不进入held5或`q_V`；证据为
+   `docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`；
+5. 实现v23 SSAC：移除prior exact-template hard bypass，冻结visible Program与`q_pi`，让同一direct A/B surface同时学习
+   prior-only shared support和full Program own-policy功能；先做真实单task双路径profile，再运行一个有界fit19 task-balanced
+   compiler-only节点及matched geometry/support；
+6. v23只有在prior support与full own mapping同向改善后才接held5 oracle；若同一surface仍失败，先用固定Program/head-image
+   capacity证据决定是否扩大compiler width，而不回退bounded selector或扫LR/rank/seed/dtype；
+7. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
    只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

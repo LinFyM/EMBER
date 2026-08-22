@@ -124,18 +124,34 @@
   `.03936/.06070`、retrieval `1/24`。308-panel support相对shared为fit/held `1.02708/1.02932x`，breadth仅
   `7/19、2/5`；fit还比v20的`1.00874x、8/19`更差，held按合同完全不变。故不续训、不扫LR/rank/seed、不进入held rollout
   或`q_V`。正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
-- 当前active因果锁改为 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**。专家原始设计要求
+- **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）已经完成并关闭。** 专家原始设计要求
   family-specific A/B heads直接生成完整absolute rank16 LoRA；当前v20/v21却使用固定能量、QR归一化、角度有界的rank-mode
   retraction。为避免再做一次长compiler训练，v22先复用已完成的v6 direct-absolute checkpoint
   `pi05_ecp_stage1_policy_support_fold0_tv228_r6_85477ea_gpu01p123456_20260822/macro_00000228`，保持同一fit19 free-Program
-  oracle与policy evidence，直接裁决专家所述absolute output surface是否存在own-policy preimage。只有该oracle过geometry/support
-  门才训练shared `q_pi`或`q_V`；失败则在direct absolute compiler内部定位attention/content/gain接口，不回到bounded selector。
+  oracle与policy evidence，直接裁决专家所述absolute output surface是否存在own-policy preimage。
 - v22 canonical运行面已完成替换：active compiler恢复专家所述380-token direct-absolute family A/B surface，删除rank selector、
   QR retraction、angle diagnostics与v21 config，继续复用同一个free-Program trainer/materializer。v6 macro228与当前模型
   state为`153/153` keys、零missing/unexpected/shape mismatch并strict-load通过；55项聚焦CPU合同与pyflakes通过。
   gpu01 physical6真实profile中action LoRA/free-Program梯度为`.077174/.063050`，一步process相对修正`.097946`，冻结
   compiler/`q_pi`/visible梯度均精确为0；update `1.103s`、峰值显存`16,383,187,456` bytes，physical0未使用。profile临时
-  目录已删除；下一节点是clean pushed authority上的228-visit formal，不重复v6 compiler训练。
+  目录已删除。clean pushed formal随后完成228 visits/38 updates，19个fit task各12 visits；114个successful和42个
+  verified-success learner panels产生action gradient，72个failed learner panels保持action gradient为0，全部153个冻结base
+  state keys不变，mean update `1.098s`、峰值`16,759,229,952` bytes，physical0未使用。
+- v22的direct surface把candidate pair cosine从v21`.96595`显著降到`.70280`，own retrieval从`1/24`提高到`10/24`，fit19
+  free Program correction pair cosine为`.44268`且process相对anchor移动`.178--.559`；所以raw amplitude和direct heads确实
+  打开了真实task-conditioned输出，不是又一次忽略process。但own/nearest-direct仍只有`.01663/.01846`，geometry门失败；
+  308-panel fit/held相对shared更退到`1.45056/1.27628x`，两边分别`0/19、0/5` tasks胜过shared，故不运行held5闭环或`q_V`。
+  正式证据为`docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`。
+- 冻结checkpoint的只读接口定位进一步排除了process读取失败：compiler attention对language/scene/process平均质量为
+  `.23190/.22897/.53913`；fit19中process-only Values仍有`9/19` own retrieval，而zero-process full surface只有`2/19`。
+  最早偏差是prior/full并非专家要求的同一compiler surface：当前prior-only通过hard gate精确旁路到shared template，full一旦
+  presence非零就整套切换到未被shared校准的direct A/B head image。该固定head image对gauge-canonical direct/shared raw factor
+  energy都只覆盖约`.213`，与support全部丢失一致。
+- 当前active因果锁因此改为 **OCPB v23 Single-Surface Absolute Compiler（SSAC）**：移除hard exact-template bypass，让
+  `D(P_lang,P_scene,0)`与`D(P_lang,P_scene,P_process)`都由同一组direct family A/B heads生成；永久冻结visible Program和
+  `q_pi`，只训练compiler，同时用prior-path shared policy support与full-path own successful functional evidence识别坐标，
+  避免Program/compiler共同旋转。首个节点仍以fit19固定Program做有界task-balanced identification；只有prior support与full
+  own mapping同向改善才继续，失败后才根据同一surface的intrinsic/head-image证据决定是否扩大compiler width，不扫小超参数。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

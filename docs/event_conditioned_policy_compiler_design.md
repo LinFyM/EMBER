@@ -899,6 +899,30 @@ LoRA leaf与free Program梯度分别为`.077174/.063050`，一步process相对�
 梯度均为0；update `1.103s`、峰值显存`16,383,187,456` bytes。该结果只证明既有absolute compiler的free-Program
 preimage搜索图接通，正式裁决仍只认228-visit后的own geometry和308-panel support。
 
+v22正式裁决表明direct absolute output image是必要但不充分的修正。228 visits后candidate pair cosine由v21`.96595`降到
+`.70280`、own retrieval从`1/24`升到`10/24`，说明process-conditioned raw amplitude确实打开了task差异；但own-direct仍低于
+nearest-other，308-panel fit/held相对shared为`1.45056/1.27628x`且两边没有一个task优于shared。继续free Program优化、加入
+reward或进入`q_V`均不被授权。
+
+回到专家原始公式后，当前实现还保留了一个关键偏差：专家的prior/full是同一个
+`D(P_lang,P_scene,P_process)`在process为零或非零时的两个输入；当前实现却以hard gate让prior-only直接旁路成exact shared
+template，只有full surface经过family A/B heads。于是head image从未学习shared prior，一旦presence非零便必须整套重写LoRA。
+冻结只读消融已经确认process Value不是dead path：其attention mass均值`.53913`，process-only仍有`9/19` own retrieval；失败
+发生在这个不连续的prior/full output coordinate。
+
+active **OCPB v23 Single-Surface Absolute Compiler（SSAC）**只改变这一主要结构变量：
+
+1. 删除exact-template process gate；prior-only与full都经过同一target/rank attention、trunk与family-specific direct A/B heads；
+2. 固定visible Program、privileged `q_pi`与全部Program输入，compiler不能与Program共同旋转；
+3. 每个fit visit同时训练prior path保留stable-shared的multi-state policy support，以及full path匹配own successful action、
+   owner-local effect和multi-state response；raw A/B只允许作低权重坐标warm-start，不作方法目标；
+4. 首个有界节点必须同时报告prior-to-shared support、full-to-shared support、own geometry与breadth。只有两条surface同向成立
+   才进入held5；若固定256-width同一surface无法同时容纳二者，再用intrinsic/head-image capacity证据裁决是否扩宽，而不是扫
+   LR、rank、seed或恢复bounded selector。
+
+SSAC仍生成一套完整rank16 LoRA，不是shared carrier加residual，也不在A/B空间相加两套adapter。stable shared只是训练期
+functional authority；部署时prior和full都由同一个compiler真实生成。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

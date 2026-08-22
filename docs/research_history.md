@@ -1082,6 +1082,23 @@ cosine`.36624`。但固定compiler后的candidate pair cosine仍`.96595`，own/n
 重训compiler或做小超参扫描。证据：
 `docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
 
+### 3.56 OCPB v22打开direct absolute几何，但暴露prior/full非同一surface
+
+clean pushed detached `7a1f233`复用v6 macro228的direct-absolute compiler与`q_pi`，只优化fit19 task-local
+process/uncertainty；没有重复训练昂贵compiler。228 visits/38 updates中每个fit task精确出现12次，114个successful和42个
+verified-success learner panels产生action gradient，72个failed learner panels保持action gradient为0；153个冻结base keys
+精确不变。mean update为`1.098s`，峰值显存`16,759,229,952` bytes，gpu01 prohibited physical0未使用。
+
+direct heads让输出真正摆脱bounded collapse：candidate pair cosine为`.70280`、own retrieval`10/24`、mean effective norm
+ratio`.46548`，Program correction pair cosine`.44268`。但own/nearest-direct仍只有`.01663/.01846`，且308-panel fit/held
+candidate-to-shared恶化到`1.45056/1.27628x`、breadth`0/19、0/5`；因此不运行held5 closed loop或`q_V`。
+
+冻结checkpoint只读消融显示process attention mass均值`.53913`，process-only Values有`9/19` own retrieval，证明最早问题不再是
+Program可写性或process被忽略。代码合同复核发现prior-only通过hard process gate直接返回exact shared template，而full
+Program才经过direct A/B heads；这不是专家定义的同一个`D(P_lang,P_scene,0/full)` surface。下一active v23移除该旁路，冻结
+visible Program与`q_pi`，只训练一个同时承担prior shared support和full own-policy mapping的single-surface absolute compiler。
+证据：`docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

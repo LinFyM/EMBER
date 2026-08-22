@@ -1348,3 +1348,21 @@ LoRA；当前bounded retraction会丢掉raw head amplitude和独立task-dependen
 及完成的macro228 checkpoint，因此下一步应复用它做相同free-Program oracle，而不是重新训练一套长compiler或给bounded
 surface扫LR/rank/seed。若direct-absolute oracle可达，最早失败就是v20/v21 output parameterization；若仍不可达，再依次定位
 Program可写区域、attention/value binding和absolute factor gain，而不能恢复task-ID route或跳过Gate 2训练`q_V`。
+
+## 65. direct absolute heads解除几何坍缩，但prior/full硬切换必然破坏shared support
+
+OCPB v22复用已有v6 direct-absolute compiler，并在完全冻结compiler、visible Program与`q_pi`时只优化fit19 task-local
+process/uncertainty。228 visits后candidate pair cosine由v21`.96595`降到`.70280`、own retrieval由`1/24`提高到`10/24`，
+Program correction pair cosine为`.44268`。只读消融还显示process占compiler attention质量`.53913`，process-only Values保留
+`9/19` own retrieval，而zero-process full surface只有`2/19`。因此v22不是Program不可写、attention忽略process或输出仍近全局。
+
+但打开的方向没有保留policy support。308-panel fit/held candidate-to-shared为`1.45056/1.27628x`，分别`0/19、0/5`
+tasks优于shared；own-direct仍低于nearest-other（`.01663/.01846`）。这说明“输出更分散”和“process有因果作用”仍不足以定义
+own successful policy。
+
+最早接口是此前实现偏离了专家的同一compiler反事实。专家写的是同一个
+`D(P_lang,P_scene,P_process)`分别处理process为零和非零；当前实现却在process缺失时hard gate旁路为exact shared template，
+presence非零后才让direct A/B heads接管整套LoRA。固定heads从未被要求在自己的image中表示shared prior；只读raw-factor
+projection也显示该image对gauge-canonical direct/shared平均都只覆盖约`.213` energy。下一结构变量必须先把prior/full放回
+同一direct head surface，并在固定Program坐标上同时训练prior support与full functional mapping；不能用更多free-Program steps、
+reward或小超参掩盖这个不连续接口。

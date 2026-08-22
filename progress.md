@@ -94,20 +94,15 @@
   `.99595249、1/24`与`.96741/1.00168x、13/19、3/5`，但它使用video visit12099，v19使用18199，24/24 demo pairs均不同；
   因此只能说明两者处于同一坍缩区间，不能把微小差值归因于训练。因此按预注册条件不续macro4，不运行held5、fold或`q_V`。
   正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`。
-- 下一active因果锁称为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**。它仍从support最强的v13 weights和fresh
+- v19之后的因果锁为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**。它仍从support最强的v13 weights和fresh
   optimizer开始，但与v19互补：永久冻结visible Program与privileged `q_pi`，只训练compiler。固定的task-diverse
   Program先通过successful cross-episode exact action loss、owner-local/multi-state response与v13 support barrier识别到完整
   policy；不再允许Program和decoder共同旋转，也不先支付paired rollout成本。真实单task profile通过后只运行114 visits/19
   task-equal updates并立即复跑geometry/support门。只有task matching与support同向改善才接structured outcome；若compiler-only
   仍失败，则先做task-local free-Program/fixed-compiler reachability oracle，区分bounded compiler image不足与shared inference失败，
   而不是继续v20或直接重做`q_V`。
-- v20 retained实现已完成单路径替换：active config为
-  `configs/pi05_ecp_stage1_program_locked_compiler_v20.json`，仅compiler进入optimizer，visible Program、privileged
-  `q_pi`、source与observer均冻结；formal schedule为114 visits/19 task-equal updates，materialization使用与v13
-  一致的video visit12099以形成matched比较。v19的active config、Program-perturbation与三个outcome runtime模块已从
-  active tree删除，Stage 1恢复为`stage1_training.py` + `stage1_train_step.py`一个trainer；相比v19运行面净减少约350行。当前
-  55项Stage 0/1、reward与expert-manifold聚焦CPU合同已通过，下一步是在非prohibited A40上运行真实单task
-  profile，不把机制smoke写成formal结论。
+- v20 retained实现与裁决均由Git/formal artifacts保存，active config现已删除；Stage 1继续只保留
+  `stage1_training.py` + `stage1_train_step.py`一个trainer，没有并行v20/v21执行路径。
 - clean pushed `a1689ee`的v20真实单task profile已在gpu01物理卡6通过，prohibited物理卡0未使用。exact
   action supervision激活，LoRA-leaf/FactorHead/compiler裁剪前梯度分别为`.129426/.431188/7.62951`，
   privileged `q_pi`与visible Program梯度精确为0；完整update为2.80秒，峰值显存16,385,350,144 bytes。该结果
@@ -119,10 +114,18 @@
   retrieval仍`1/24`，geometry门失败。matched 308-panel support还从v13 fit/held `.96741/1.00168x`、breadth
   `13/19、3/5`退到`1.00874/1.02932x`、`8/19、2/5`。因此v20在114 visits关闭，不续训、不接outcome/
   held rollout/`q_V`。正式证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`。
-- 下一active因果锁称为 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**。它冻结v20 compiler与全部shared
-  Writer/source/observer，仅在fit19为每task优化一个privileged free Program，使用同一exact action、multi-state response和
-  support合同。这些Programs只作reachability oracle，不是deployment route、task-ID字典或唯一`P*`。若free Programs能
-  恢复own matching/support，失败在shared `q_pi`的Program坐标；若同样失败，则当前bounded compiler image不可达。
+- 当前active因果锁为 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**。唯一config是
+  `configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json`：从v20 macro114加载model weights，冻结compiler、visible
+  Program、shared `q_pi`、source与observer；fit19各自维护一个privileged Program。每个Program在固定visit12099由冻结
+  `q_pi`初始化一次，随后language/scene/presence保持不变，只优化`process=base+2*tanh(delta)`与
+  `uncertainty=base*exp(2*tanh(zeta))`；held5没有任何free-Program参数。formal合同为每task 12 visits、总228 visits/
+  38个task-equal updates，一次最终matched物化与support门，不做中间重复audit。free Programs只作reachability oracle，
+  不是deployment route、task-ID字典或唯一`P*`。
+- v21 retained实现、materializer与任务行梯度隔离已接通，旧v20 config已退役；56项Stage 0/1、reward与expert-manifold聚焦
+  CPU合同通过。gpu01 physical6真实单task profile也通过，physical0未使用：exact action LoRA-leaf/free-Program梯度分别为
+  `.129141/.052106`，一步后process相对修正`.092908`，compiler/`q_pi`/visible Program梯度均精确为0；update `1.26s`、
+  峰值显存`16,396,331,008` bytes。该结果只解除228-visit formal运行门；若最终free Programs恢复own matching/support，
+  失败在shared `q_pi`坐标，否则判定当前bounded compiler image不可达。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

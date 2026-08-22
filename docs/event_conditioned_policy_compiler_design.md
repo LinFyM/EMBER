@@ -838,7 +838,7 @@ Program共同旋转。首个bounded节点为114 visits/19 task-equal updates；�
 task-local free Programs，以区分compiler image不可达和shared `q_pi` inference不足；这些free Programs只作fit19 privileged
 reachability oracle，不成为部署task-ID route或唯一`P*`监督。
 
-v20已按该合同实现为唯一active Stage 1运行面。它从v13 macro1只加载model weights并新建optimizer，
+v20当时按该合同实现为唯一Stage 1运行面。它从v13 macro1只加载model weights并新建optimizer，
 `model.requires_grad_(False)`后只解冻compiler；每个fit task在一个114-visit block中精确出现6次，6-GPU下汇总为
 19个等权updates。exact action leaf仅通过完整38-target LoRA回传compiler，policy-response/support作为baseline-relative
 structural anchor；每步显式记录compiler/FactorHead梯度并要求`q_pi`/visible Program梯度精确为0。物化固定使用
@@ -862,6 +862,17 @@ cross-episode successful/verified-success exact action leaf、multi-state respon
 这是reachability oracle，所以task-local Programs不是deployment model、不读held5，不成为task-ID route或唯一`P*`。若它恢复
 own geometry/support，证明compiler image可达而shared `q_pi`坐标错；若它仍失败，则当前bounded rank-one compiler
 image本身不能表示所需policy，后续应替换compiler parameterization，不扫LR/rank/seed。
+
+v21的具体自由度保持最小且与shared `q_pi`可写面一致。每个fit task先用固定visit12099的两条correct action-hidden videos经
+冻结observer、visible Program和v20 `q_pi`产生一次anchor；随后固定`language/scene/presence`，只训练
+`process=base+2*tanh(delta)`与`uncertainty=base*exp(2*tanh(zeta))`。19行参数彼此独立，6-GPU每步all-reduce后只让该步
+全局实际访问的task行进入AdamW，避免inactive行积累optimizer动量；held5不创建参数。formal节点为每fit task 12 visits、
+总228 visits/38个等权updates，结束后只做一次matched geometry与308-panel support audit。
+
+真实单task profile确认实现合同成立：action-LoRA leaf与free-Program梯度norm为`.129141/.052106`，一步后process相对
+修正`.092908`，uncertainty scale范围`.90491--1.10508`；compiler、shared `q_pi`和visible Program梯度均为0。训练update
+为`1.26s`，峰值显存`16,396,331,008` bytes。该profile只证明fixed image对task-local Program有可微、非死写入路径，
+不能预判228-visit后的own-policy reachability。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

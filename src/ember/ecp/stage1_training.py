@@ -1,4 +1,4 @@
-"""Task-balanced Program-locked compiler identification for ECP Stage 1."""
+"""Task-balanced fixed-compiler free-Program reachability for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -19,7 +19,10 @@ from safetensors.torch import load_file
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.contracts import build_target_owners
-from ember.ecp.observer_authority import FrozenObserverAuthority, load_frozen_observer_authority
+from ember.ecp.observer_authority import (
+    FrozenObserverAuthority,
+    load_frozen_observer_authority,
+)
 from ember.ecp.stage0_training import load_stage0_config, stage0_source_authority
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_config import (
@@ -41,6 +44,11 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_lora_state,
     tokenize_stage1_languages,
 )
+from ember.ecp.stage1_free_program import (
+    TaskLocalFreeProgramTable,
+    free_program_ordinals,
+    initialize_task_local_free_programs,
+)
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
     PolicySupportBank,
@@ -49,9 +57,17 @@ from ember.ecp.stage1_support import (
 )
 from ember.ecp.stage1_train_step import run_stage1_update
 from ember.lora import LoRAContract, validate_lora_state
-from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
+from ember.pi05_eval_contract import (
+    git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
+)
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import DistributedContext, barrier, read_json, write_json_atomic
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    barrier,
+    read_json,
+    write_json_atomic,
+)
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
     initialize_deferred_process_group,
@@ -72,16 +88,15 @@ class ECPStage1Runtime:
     tasks: tuple[ECPStage1Task, ...]
     task_by_ordinal: dict[int, ECPStage1Task]
     schedule: tuple[tuple[int, int], ...]
-    video_store: RawTeacherVideoStore
-    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     evidence_bank: ECPStage1EvidenceBank
     support_bank: PolicySupportBank
     support_panels: dict[tuple[int, int], CachedPolicySupportPanel]
     policy: torch.nn.Module
-    observer: FrozenObserverAuthority
+    observer_authority: dict[str, str]
     contract: LoRAContract
     prior_state: Mapping[str, torch.Tensor]
     model: ECPStage1Model
+    free_programs: TaskLocalFreeProgramTable
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
@@ -117,20 +132,18 @@ class ECPStage1Inputs:
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
-    if config.get("status") != "active_stage1_program_locked_compiler_identification":
+    if config.get("status") != "active_stage1_fixed_compiler_free_program_reachability":
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
         total = int(config["optimization"]["total_task_visits"])
         checkpoints = tuple(
-            int(value)
-            for value in config["optimization"]["checkpoint_task_visits"]
+            int(value) for value in config["optimization"]["checkpoint_task_visits"]
         )
         stop = int(args.stop_after_task_visits or total)
         if (
             context.world_size != expected_world
-            or stop
-            not in set(config["optimization"]["stage_stop_task_visits"])
+            or stop not in set(config["optimization"]["stage_stop_task_visits"])
             or os.environ.get("NCCL_P2P_DISABLE") != "1"
             or not git_state_is_clean_pushed_or_frozen_authority(git_state(REPO_ROOT))
         ):
@@ -138,7 +151,9 @@ def _runtime_limits(
     else:
         if context.world_size != int(config["profile_defaults"]["world_size"]):
             raise ValueError("ECP Stage 1 profile must use one GPU")
-        total = int(args.stop_after_task_visits or config["profile_defaults"]["task_visits"])
+        total = int(
+            args.stop_after_task_visits or config["profile_defaults"]["task_visits"]
+        )
         stop = total
         checkpoints = ()
     if total % context.world_size or stop % context.world_size:
@@ -224,14 +239,19 @@ def _build_contract(
         "command": list(sys.argv),
         "git": {"branch": state["branch"], "commit": state["commit"]},
         "host": socket.gethostname(),
-        "config": {"path": str(runtime.args.config), "bytes": runtime.args.config.stat().st_size},
+        "config": {
+            "path": str(runtime.args.config),
+            "bytes": runtime.args.config.stat().st_size,
+        },
         "source": dict(source),
         "asset_root": str(runtime.args.asset_root),
         "data_root": str(runtime.args.data_root),
-        "tokenizer": {"path": str(runtime.args.tokenizer_path), "bytes": runtime.args.tokenizer_path.stat().st_size},
+        "tokenizer": {
+            "path": str(runtime.args.tokenizer_path),
+            "bytes": runtime.args.tokenizer_path.stat().st_size,
+        },
         "observer_authority": {
-            "native": str(runtime.observer.native_checkpoint),
-            "action_meta": str(runtime.observer.action_meta_checkpoint),
+            **runtime.observer_authority,
             "frozen": True,
         },
         "policy_support_bank": {
@@ -253,6 +273,7 @@ def _build_contract(
         "model": dict(runtime.config["model"]),
         "data": dict(runtime.config["data"]),
         "objective": dict(runtime.config["objective"]),
+        "free_program_oracle": dict(runtime.config["free_program_oracle"]),
         "optimization": dict(runtime.config["optimization"]),
         "information_wall": dict(runtime.config["information_wall"]),
         "runtime": {
@@ -265,9 +286,11 @@ def _build_contract(
             "loaded_policy_support_tasks_by_rank": len(runtime.support_bank.tasks),
             "loaded_policy_support_panels_by_rank": len(runtime.support_panels),
         },
-        "trainable_parameters": sum(value.numel() for value in runtime.trainable_parameters),
-        "trainable_modules": ["compiler"],
-        "frozen_writer_modules": ["visible_program", "policy_teacher"],
+        "trainable_parameters": sum(
+            value.numel() for value in runtime.trainable_parameters
+        ),
+        "trainable_modules": ["free_programs"],
+        "frozen_writer_modules": ["visible_program", "policy_teacher", "compiler"],
         "source_policy_trainable_parameters": 0,
         "observer_trainable_parameters": 0,
         "content_hash_policy": "disabled_by_owner",
@@ -319,9 +342,7 @@ def load_stage1_authorities(
         replacement_head_init_multiplier=float(
             config["model"]["replacement_head_init_multiplier"]
         ),
-        selector_max_angle_radians=float(
-            config["model"]["selector_max_angle_radians"]
-        ),
+        selector_max_angle_radians=float(config["model"]["selector_max_angle_radians"]),
     ).to(context.device)
     return ECPStage1Authorities(
         source=source,
@@ -395,13 +416,7 @@ def _prepare_optimization(
         eps=float(cell["eps"]),
         weight_decay=float(cell["weight_decay"]),
     )
-    scheduler = _scheduler(
-        optimizer, config, total_task_visits // context.world_size
-    )
-    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
-    if context.world_size > 1:
-        for value in model.state_dict().values():
-            dist.broadcast(value, src=0)
+    scheduler = _scheduler(optimizer, config, total_task_visits // context.world_size)
     start = 0
     expected_metrics = 0
     if args.resume is not None:
@@ -419,6 +434,17 @@ def _prepare_optimization(
     return optimizer, scheduler, start, expected_metrics
 
 
+def _initialize_distributed_model(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    model: ECPStage1Model,
+) -> None:
+    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    if context.world_size > 1:
+        for value in model.state_dict().values():
+            dist.broadcast(value, src=0)
+
+
 def _load_policy_support(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -427,6 +453,7 @@ def _load_policy_support(
     *,
     start: int,
     stop: int,
+    extra_tasks: tuple[int, ...] = (),
 ) -> PolicySupportBank:
     needed = _needed_support_tasks(
         schedule=inputs.schedule,
@@ -435,6 +462,7 @@ def _load_policy_support(
         start=start,
         stop=stop,
     )
+    needed.update(extra_tasks)
     return load_policy_support_bank(
         manifest_path=stage1_asset_authority(
             config, "policy_support_bank", args.asset_root
@@ -458,10 +486,8 @@ def _initialize_run_contract(
         if (
             existing.get("schema_version") != RUN_SCHEMA
             or existing.get("stage") != STAGE
-            or existing.get("git", {}).get("commit")
-            != contract["git"]["commit"]
-            or existing.get("config", {}).get("bytes")
-            != contract["config"]["bytes"]
+            or existing.get("git", {}).get("commit") != contract["git"]["commit"]
+            or existing.get("config", {}).get("bytes") != contract["config"]["bytes"]
             or existing.get("source", {}).get("checkpoint")
             != contract["source"]["checkpoint"]
             or existing.get("runtime", {}).get("world_size")
@@ -487,14 +513,55 @@ def prepare_runtime(
         initialization=config["initialization"],
     )
     authorities.model.requires_grad_(False)
-    authorities.model.compiler.requires_grad_(True)
-    trainable_parameters = tuple(
-        parameter
-        for parameter in authorities.model.compiler.parameters()
-        if parameter.requires_grad
+    inputs = _load_inputs(
+        args,
+        config=config,
+        context=context,
+        contract=authorities.contract,
+        total_task_visits=total,
     )
+    _initialize_distributed_model(args, context, authorities.model)
+    initialization_ordinals = free_program_ordinals(config, mode=args.mode)
+    owned_initialization_ordinals = tuple(
+        ordinal
+        for index, ordinal in enumerate(initialization_ordinals)
+        if index % context.world_size == context.rank
+    )
+    support_bank = _load_policy_support(
+        args,
+        config,
+        context,
+        inputs,
+        start=0,
+        stop=stop,
+        extra_tasks=owned_initialization_ordinals,
+    )
+    language = tokenize_stage1_languages(
+        inputs.tasks,
+        tokenizer_path=args.tokenizer_path,
+        max_length=int(authorities.source_config["features"]["tokenizer_max_length"]),
+        device=context.device,
+    )
+    free_programs = initialize_task_local_free_programs(
+        mode=args.mode,
+        config=config,
+        context=context,
+        inputs=inputs,
+        policy=authorities.policy,
+        observer=authorities.observer,
+        model=authorities.model,
+        support_bank=support_bank,
+        language_tokens=language,
+    )
+    authorities.model.add_module("free_programs", free_programs)
+    trainable_parameters = tuple(free_programs.parameters())
     if (
         not trainable_parameters
+        or not all(parameter.requires_grad for parameter in trainable_parameters)
+        or any(
+            parameter.requires_grad
+            for parameter in authorities.model.compiler.parameters()
+        )
         or any(
             parameter.requires_grad
             for parameter in authorities.model.visible_program.parameters()
@@ -504,14 +571,7 @@ def prepare_runtime(
             for parameter in authorities.model.policy_teacher.parameters()
         )
     ):
-        raise ValueError("Program-locked compiler ownership changed")
-    inputs = _load_inputs(
-        args,
-        config=config,
-        context=context,
-        contract=authorities.contract,
-        total_task_visits=total,
-    )
+        raise ValueError("fixed-compiler free-Program ownership changed")
     optimizer, scheduler, start, expected_metrics = _prepare_optimization(
         args,
         config,
@@ -520,14 +580,6 @@ def prepare_runtime(
         trainable_parameters,
         total_task_visits=total,
         stop_after_task_visits=stop,
-    )
-    support_bank = _load_policy_support(
-        args,
-        config,
-        context,
-        inputs,
-        start=start,
-        stop=stop,
     )
     panel_requests = _needed_support_panels(
         schedule=inputs.schedule,
@@ -540,14 +592,6 @@ def prepare_runtime(
     panels = cache_policy_support_panels(
         bank=support_bank,
         requests=panel_requests,
-        device=context.device,
-    )
-    language = tokenize_stage1_languages(
-        inputs.tasks,
-        tokenizer_path=args.tokenizer_path,
-        max_length=int(
-            authorities.source_config["features"]["tokenizer_max_length"]
-        ),
         device=context.device,
     )
     metrics_rows = (
@@ -567,16 +611,18 @@ def prepare_runtime(
         tasks=inputs.tasks,
         task_by_ordinal={task.ordinal: task for task in inputs.tasks},
         schedule=inputs.schedule,
-        video_store=inputs.video_store,
-        language_tokens=language,
         evidence_bank=inputs.evidence_bank,
         support_bank=support_bank,
         support_panels=panels,
         policy=authorities.policy,
-        observer=authorities.observer,
+        observer_authority={
+            "native": str(authorities.observer.native_checkpoint),
+            "action_meta": str(authorities.observer.action_meta_checkpoint),
+        },
         contract=authorities.contract,
         prior_state=authorities.prior_state,
         model=authorities.model,
+        free_programs=free_programs,
         trainable_parameters=trainable_parameters,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -587,9 +633,12 @@ def prepare_runtime(
         checkpoint_task_visits=checkpoints,
         metrics_rows=metrics_rows,
     )
-    _initialize_run_contract(runtime, authorities.source)
+    source = authorities.source
+    _initialize_run_contract(runtime, source)
     authorities.model.eval()
-    authorities.model.compiler.train()
+    free_programs.train()
+    del authorities
+    torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats(context.device)
     return runtime
 
@@ -637,8 +686,6 @@ def train(args: argparse.Namespace) -> None:
             if runtime.stop_after_task_visits == runtime.total_task_visits:
                 write_json_atomic(args.output_dir / "completion.json", result)
     finally:
-        if runtime is not None:
-            runtime.video_store.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 
@@ -649,7 +696,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_program_locked_compiler_v20.json",
+        / "configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

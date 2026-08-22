@@ -20,6 +20,7 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_factors,
 )
 from ember.ecp.stage1 import ECPStage1Model
+from ember.ecp.stage1_free_program import TaskLocalFreeProgramTable
 from ember.ecp.stage1_materialization import (
     PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
@@ -52,9 +53,7 @@ def _encoded(*, presence: torch.Tensor | None = None) -> ECPVideoEncoderOutput:
     videos, frames, events, owners, width = 2, 3, 8, 38, 128
     return ECPVideoEncoderOutput(
         process=torch.randn(videos, events, owners, width),
-        presence=(
-            torch.rand(videos, events) if presence is None else presence
-        ),
+        presence=(torch.rand(videos, events) if presence is None else presence),
         uncertainty=torch.rand(videos, events, owners, width) + 0.1,
         assignment=torch.rand(videos, events, frames, 4),
         state_posterior=torch.rand(videos, frames, events),
@@ -132,18 +131,45 @@ def _expert_evidence(
     )
 
 
-def test_program_locked_materialization_uses_v20_task_visit_cursor() -> None:
+def test_free_program_materialization_uses_v21_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT
-        / "configs/pi05_ecp_stage1_program_locked_compiler_v20.json"
+        REPO_ROOT / "configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json"
     )
-    assert resolved.stage == "stage1_program_locked_compiler_identification_v20"
+    assert resolved.stage == "stage1_fixed_compiler_free_program_reachability_v21"
     assert resolved.cursor_name == "task_visits"
-    assert resolved.checkpoint_cursors == (114,)
+    assert resolved.checkpoint_cursors == (228,)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_program_locked_compiler_v20"
+        "ember_ecp_stage1_fixed_compiler_free_program_v21"
     )
+
+
+def test_task_local_free_program_bounds_fields_and_task_gradients() -> None:
+    first = _tiny_program()
+    second = _tiny_program()
+    table = TaskLocalFreeProgramTable(
+        {1: first, 2: second},
+        process_delta_scale=2.0,
+        uncertainty_log_scale_bound=2.0,
+    )
+    baseline = table(1)
+    torch.testing.assert_close(baseline.language, first.language)
+    torch.testing.assert_close(baseline.scene, first.scene)
+    torch.testing.assert_close(baseline.process, first.process)
+    torch.testing.assert_close(baseline.presence, first.presence)
+    torch.testing.assert_close(baseline.uncertainty, first.uncertainty)
+    (baseline.process.square().mean() + baseline.uncertainty.mean()).backward()
+    assert all(parameter.grad is not None for parameter in table.row(1).parameters())
+    assert all(parameter.grad is None for parameter in table.row(2).parameters())
+    table.freeze_inactive_gradients((2,))
+    assert all(parameter.grad is None for parameter in table.row(1).parameters())
+    with torch.no_grad():
+        table.row(2).process_delta.fill_(100.0)
+        table.row(2).uncertainty_log_scale.fill_(-100.0)
+    bounded = table(2)
+    assert float((bounded.process - second.process).detach().abs().max()) <= 2.0
+    ratio = bounded.uncertainty / second.uncertainty.clamp_min(1e-4)
+    torch.testing.assert_close(ratio, torch.exp(torch.full_like(ratio, -2.0)))
 
 
 def test_visible_program_video_set_is_permutation_invariant() -> None:
@@ -188,12 +214,12 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert len(output.consensus_compilation.state) == 76
     consensus = select_compiled_state(output.consensus_compilation.state, 0)
     assert sum(value.numel() for value in consensus.values()) == 1_287_168
-    assert all(value.shape[0] == 2 for value in output.member_compilation.state.values())
+    assert all(
+        value.shape[0] == 2 for value in output.member_compilation.state.values()
+    )
     attention = float(output.consensus_compilation.exact_owner_attention.detach())
     assert 0.0 <= attention <= 1.0
-    assert float(
-        output.consensus_compilation.rank_replacement_fraction.detach()
-    ) == 0.0
+    assert float(output.consensus_compilation.rank_replacement_fraction.detach()) == 0.0
     assert output.consensus_compilation.rank_angles.shape == (1, 38, 16)
 
 
@@ -220,9 +246,9 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
             "pair_seed": 17,
         },
         "optimization": {
-            "visits_per_fit_task": 6,
+            "visits_per_fit_task": 12,
             "task_balance_block_rounds": 6,
-            "stage_stop_task_visits": [114],
+            "stage_stop_task_visits": [228],
             "seed": 23,
         },
     }
@@ -230,11 +256,11 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
         config=config,
         tasks=tasks,
         world_size=6,
-        total_task_visits=114,
+        total_task_visits=228,
         mode="formal",
     )
     counts = Counter(ordinal for ordinal, _ in schedule)
-    assert counts == Counter({ordinal: 6 for ordinal in range(19)})
+    assert counts == Counter({ordinal: 12 for ordinal in range(19)})
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:
@@ -244,9 +270,7 @@ def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -
     transformed = {}
     scale = 2.0
     for name, value in target.items():
-        transformed[name] = (
-            value * scale if ".lora_A." in name else value / scale
-        )
+        transformed[name] = value * scale if ".lora_A." in name else value / scale
     assert float(exact_effective_update_loss(transformed, target, contract)) < 1e-5
     cosine, left_energy, right_energy = effective_update_cosine_matrix(
         target, target, contract
@@ -277,21 +301,20 @@ def test_rank_selector_starts_from_the_exact_complete_prior() -> None:
         "process": torch.randn(1, 8, 38, 128),
         "uncertainty": torch.ones(1, 8, 38, 128),
     }
-    prior = compiler(
-        ECPProgram(**common, presence=torch.zeros(1, 8))
-    ).state
-    full = compiler(
-        ECPProgram(**common, presence=torch.ones(1, 8))
-    ).state
+    prior = compiler(ECPProgram(**common, presence=torch.zeros(1, 8))).state
+    full = compiler(ECPProgram(**common, presence=torch.ones(1, 8))).state
     for name, target in template.items():
         torch.testing.assert_close(prior[name][0], target)
     assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7
     assert float(exact_effective_update_loss(full, template, contract).detach()) < 1e-5
-    assert float(
-        compiler(
-            ECPProgram(**common, presence=torch.ones(1, 8))
-        ).rank_replacement_fraction.detach()
-    ) == 0.0
+    assert (
+        float(
+            compiler(
+                ECPProgram(**common, presence=torch.ones(1, 8))
+            ).rank_replacement_fraction.detach()
+        )
+        == 0.0
+    )
 
 
 def test_language_scene_and_presence_cannot_write_without_process_values() -> None:
@@ -320,9 +343,8 @@ def test_language_and_scene_condition_process_value_queries() -> None:
     second_program = ECPProgram(
         **{
             **first_program.__dict__,
-            "language": first_program.language + torch.randn_like(
-                first_program.language
-            ),
+            "language": first_program.language
+            + torch.randn_like(first_program.language),
             "scene": first_program.scene + torch.randn_like(first_program.scene),
         }
     )
@@ -488,9 +510,7 @@ def test_policy_support_response_baselines_share_one_normalization() -> None:
     shared_loss = policy_support_loss_from_response(
         candidate=panel.shared_response, panel=panel
     )
-    expert_loss = policy_support_loss_from_response(
-        candidate=expert[0], panel=panel
-    )
+    expert_loss = policy_support_loss_from_response(candidate=expert[0], panel=panel)
     torch.testing.assert_close(source_loss.response, torch.tensor(0.25))
     torch.testing.assert_close(shared_loss.response, torch.tensor(0.0625))
     torch.testing.assert_close(expert_loss.response, torch.tensor(0.0))
@@ -569,9 +589,7 @@ def test_target_activation_effect_is_gauge_invariant_local_and_differentiable() 
     for name in baseline:
         torch.testing.assert_close(transformed[name], baseline[name])
 
-    candidate = {
-        name: value.clone().requires_grad_() for name, value in state.items()
-    }
+    candidate = {name: value.clone().requires_grad_() for name, value in state.items()}
     targets = FrozenTargetActivationEffects(
         reference_inputs=reference,
         expert_effects={
@@ -589,8 +607,7 @@ def test_target_activation_effect_is_gauge_invariant_local_and_differentiable() 
     assert float(missed.loss.detach()) > 0
     missed.loss.backward()
     assert all(
-        candidate[name].grad is not None
-        and float(candidate[name].grad.abs().sum()) > 0
+        candidate[name].grad is not None and float(candidate[name].grad.abs().sum()) > 0
         for name in candidate
         if name.startswith("first")
     )

@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_program_locked_compiler_v20",
-  "status": "active_stage1_program_locked_compiler_identification",
-  "purpose": "Identify the compiler from a permanently fixed v13 privileged Program coordinate using task-balanced exact PI0.5 action grounding and multi-state support, without Program-decoder co-rotation.",
+  "schema_version": "ember_ecp_stage1_fixed_compiler_free_program_v21",
+  "status": "active_stage1_fixed_compiler_free_program_reachability",
+  "purpose": "Test whether the frozen v20 compiler image can recover own successful policies when each fit task receives a privileged free Program; this is a reachability oracle, never a deployment route.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -18,30 +18,31 @@
     "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json",
     "learner_occupancy": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821",
     "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v3_owner_local_activation_20260822/manifest.json",
-    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v13_barrier_compiler_r6_b371463_gpu01p123456_20260822/checkpoints/macro_00000001"
+    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_program_locked_compiler_v20_tv114_r6_d42a026_gpu01p123456_20260822/checkpoints/macro_00000114"
   },
   "initialization": {
-    "stage": "stage1_outcome_binding_v13",
-    "run_contract_schema": "ember_ecp_stage1_outcome_binding_run_v13",
-    "checkpoint_macro": 1,
+    "stage": "stage1_program_locked_compiler_identification_v20",
+    "run_contract_schema": "ember_ecp_stage1_program_locked_compiler_run_v20",
+    "checkpoint_macro": 114,
     "load_model_weights_only": true,
     "fresh_optimizer": true
   },
   "information_wall": {
-    "shared_gradient_tasks": "fit19 development-train tasks only",
+    "shared_gradient_tasks": "none; fit19 development tasks update only their own privileged diagnostic Program row",
     "held5": "privileged transform and frozen inference only; zero shared gradient and zero code fitting",
     "held5_action_or_reward_reads": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0,
     "deployment_reward_reads": 0,
-    "q_pi_inputs": [
+    "oracle_training_inputs": [
       "exact language and action-hidden correct-video event anchors",
       "multiple independently successful adapter members",
       "full successful-occupancy eight-phase source-subtracted action response",
       "successful and learner occupancy full-layer source/expert owner responses",
       "detached source target inputs and successful-member target-local LoRA activation effects",
-      "cross-episode successful train action chunks used only to identify the shared compiler from the frozen Program",
-      "verified-success learner action chunks used only as a secondary compiler state-support stratum",
+      "fit-task-local privileged free Programs initialized once from the frozen v20 q_pi at fixed correct videos",
+      "cross-episode successful train action chunks used only to optimize those diagnostic free Programs",
+      "verified-success learner action chunks used only as a secondary free-Program state-support stratum",
       "source, stable-shared and learner-policy counterfactual responses",
       "member reliability and disagreement"
     ],
@@ -74,11 +75,25 @@
     "scope": "permanently frozen observer-only calibration"
   },
   "training_ownership": {
+    "free_program_trainable": true,
     "visible_program_trainable": false,
     "policy_teacher_trainable": false,
-    "compiler_trainable": true,
+    "compiler_trainable": false,
     "source_policy_trainable": false,
     "observer_trainable": false
+  },
+  "free_program_oracle": {
+    "scope": "fit19 task-local privileged reachability diagnostic only",
+    "initialization_video_visit": 12099,
+    "optimized_fields": ["process", "uncertainty"],
+    "fixed_fields": ["language", "scene", "presence"],
+    "process_delta_parameterization": "base plus 2 times tanh delta",
+    "process_delta_scale": 2.0,
+    "uncertainty_parameterization": "base times exp of 2 times tanh log-scale",
+    "uncertainty_log_scale_bound": 2.0,
+    "task_id_route": false,
+    "held_program_parameters": 0,
+    "deployment": false
   },
   "model": {
     "program_width": 128,
@@ -141,11 +156,12 @@
     "rank_semantics": false
   },
   "objective": {
-    "effective_update": "diagnostic-only exact gauge-invariant BA Frobenius distance; zero optimization weight",
+    "effective_update": "primary gauge-invariant set target: exact BA Frobenius distance from the compiled free Program to every independently successful task member",
     "canonical_factor_warmstart": "diagnostic-only compact rank16 SVD gauge distance; zero optimization weight",
     "functional_response": "paired complete PI0.5 final-flow plus target-local LoRA activation effects retained as bounded structural anchors",
-    "action_grounding": "exact PI0.5 flow-matching loss differentiated through the generated complete LoRA into the compiler only; visible Program and privileged q_pi stay permanently fixed",
-    "action_supervision": "every task receives the same successful-panel base stratum; verified-success learner panels add state support; failed learner actions never produce gradients",
+    "action_grounding": "exact PI0.5 flow-matching loss differentiated through the frozen v20 compiler into fit-task-local free Programs only",
+    "action_supervision": "every fit task receives the same successful-panel base stratum; verified-success learner panels add state support; failed learner actions never produce gradients",
+    "reachability_target": "gauge-invariant effective-update distance to all independently successful task members plus exact action and multi-state functional support; no deterministic unique P star is defined",
     "target_local_activation_effect": "candidate and successful members apply each target B(Ax_ref) to the same detached source input in 38-owner x 4-horizon-basis policy-native output spaces",
     "support_preservation": "baseline_relative_response_barrier",
     "prior_counterfactual": "language and scene never act as replacement Values; absent or zero process content returns the exact stable-prior LoRA",
@@ -160,7 +176,7 @@
     "activation_effect_distillation_weight": 0.1,
     "weights": {
       "member_effective_update": 0.0,
-      "consensus_effective_update": 0.0,
+      "consensus_effective_update": 1.0,
       "member_canonical_factor": 0.0,
       "consensus_canonical_factor": 0.0,
       "prior_preservation": 0.01,
@@ -174,28 +190,28 @@
     "evaluation_policy_seed": 2026082591
   },
   "optimization": {
-    "seed": 20260901,
+    "seed": 20260902,
     "precision": "bfloat16",
     "world_size": 6,
-    "visits_per_fit_task": 6,
-    "total_task_visits": 114,
-    "optimizer_updates": 19,
+    "visits_per_fit_task": 12,
+    "total_task_visits": 228,
+    "optimizer_updates": 38,
     "task_balance_block_rounds": 6,
-    "task_balance_contract": "Each 114-visit block contains exactly six visits for every fit task; rows remain cost-balanced within the block.",
-    "checkpoint_task_visits": [114],
-    "stage_stop_task_visits": [114],
+    "task_balance_contract": "The 228-visit oracle contains exactly twelve visits for every fit task; rows remain cost-balanced within each 114-visit block.",
+    "checkpoint_task_visits": [228],
+    "stage_stop_task_visits": [228],
     "optimizer": {
       "name": "AdamW",
-      "learning_rate": 0.00002,
+      "learning_rate": 0.05,
       "betas": [0.9, 0.999],
       "eps": 1e-8,
-      "weight_decay": 0.0001,
+      "weight_decay": 0.0,
       "gradient_clip_norm": 1.0
     },
     "scheduler": {
       "kind": "constant",
       "warmup_updates": 1,
-      "decay_lr": 0.00002
+      "decay_lr": 0.05
     },
     "distributed": "manual flat gradient mean, deferred NCCL, task-equal",
     "functional_policy_microbatch_size": 1,
@@ -209,9 +225,9 @@
   "materialization": {
     "video_visit": 12099,
     "visible_video_count": 2,
-    "allowed_checkpoint_task_visits": [114],
+    "allowed_checkpoint_task_visits": [228],
     "sampling": "fixed correct action-hidden videos without replacement",
-    "output": "one privileged q_pi consensus rank16 LoRA per task"
+    "output": "fit19 use one task-local free-Program rank16 LoRA; held5 remain frozen q_pi diagnostics; no free Program is deployable"
   },
   "gate2": {
     "pre_rollout_geometry": {
@@ -221,7 +237,7 @@
       "minimum_mean_candidate_to_direct_norm_ratio": 0.30
     },
     "closed_loop_rows": 250,
-    "arms": ["source", "stable prior", "direct successful members", "q_pi consensus compiled"],
+    "arms": ["source", "stable prior", "direct successful members", "fit free-Program compiled or held frozen-q_pi compiled"],
     "minimum_direct_success_retention": 0.75,
     "minimum_direct_gain_retention": 0.60,
     "require_significant_improvement_over_source": true,

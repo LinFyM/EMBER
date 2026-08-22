@@ -1,4 +1,4 @@
-"""One task-equal Program-locked compiler update for ECP Stage 1."""
+"""One task-equal fixed-compiler free-Program update for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import torch.distributed as dist
 
 from ember.ecp.compiler import select_compiled_state
 from ember.ecp.policy_response import TargetActivationEffectLoss
-from ember.ecp.stage1_data import pack_stage1_videos
 from ember.ecp.stage1_objective import ECPStage1Loss, ecp_stage1_loss
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
@@ -26,7 +25,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "program_locked_compiler_identification", {
+    return "fixed_compiler_free_program_reachability", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -128,9 +127,7 @@ def _action_policy_gradient(
         ),
         policy_rng_device=runtime.context.device,
         flow_time_sampling_scheme=str(objective["policy_flow_time_sampling_scheme"]),
-        flow_noise_sampling_scheme=str(
-            objective["policy_flow_noise_sampling_scheme"]
-        ),
+        flow_noise_sampling_scheme=str(objective["policy_flow_noise_sampling_scheme"]),
         policy_microbatch_size=int(
             runtime.config["optimization"]["functional_policy_microbatch_size"]
         ),
@@ -144,8 +141,6 @@ def _local_record(
     *,
     task: Any,
     task_visit: int,
-    demo_indices: tuple[int, ...],
-    video_offsets: torch.Tensor,
     loss: ECPStage1Loss,
     total: torch.Tensor,
     structural_total: torch.Tensor,
@@ -153,7 +148,8 @@ def _local_record(
     action_supervision_weight: float,
     action_lora_gradient_norm: torch.Tensor,
     activation_effect: TargetActivationEffectLoss,
-    output: Any,
+    program: Any,
+    compilation: Any,
     panel_id: int,
     panel_kind: str,
 ) -> dict[str, Any]:
@@ -164,11 +160,6 @@ def _local_record(
         "suite": task.suite,
         "task_id": task.task_id,
         "task_visit": task_visit,
-        "demo_indices": list(demo_indices),
-        "sampled_frames": [
-            int(video_offsets[index + 1] - video_offsets[index])
-            for index in range(len(demo_indices))
-        ],
         "successful_members": len(runtime.evidence_bank.member_indices(task.ordinal)),
         "support_panel_id": panel_id,
         "support_panel_kind": panel_kind,
@@ -186,38 +177,30 @@ def _local_record(
             activation_effect.active_owner_fraction.detach()
         ),
         "member_effective_update": float(loss.member_effective_update.detach()),
-        "consensus_effective_update": float(
-            loss.consensus_effective_update.detach()
-        ),
+        "consensus_effective_update": float(loss.consensus_effective_update.detach()),
         "member_canonical_factor": float(loss.member_canonical_factor.detach()),
-        "consensus_canonical_factor": float(
-            loss.consensus_canonical_factor.detach()
-        ),
+        "consensus_canonical_factor": float(loss.consensus_canonical_factor.detach()),
         "prior_preservation": float(loss.prior_preservation.detach()),
         "functional_response": float(loss.functional_response.detach()),
         "successful_response": float(loss.successful_response.detach()),
         "learner_response": float(loss.learner_response.detach()),
         "source_support": float(loss.source_support.detach()),
         "shared_support": float(loss.shared_support.detach()),
-        "expert_set_disagreement": float(
-            loss.expert_set_disagreement.detach()
-        ),
+        "expert_set_disagreement": float(loss.expert_set_disagreement.detach()),
         "locality": float(loss.locality.detach()),
         "consensus_exact_owner_attention": float(
-            output.consensus_compilation.exact_owner_attention.detach()
+            compilation.exact_owner_attention.detach()
         ),
         "consensus_rank_replacement_fraction": float(
-            output.consensus_compilation.rank_replacement_fraction.detach()
+            compilation.rank_replacement_fraction.detach()
         ),
-        "mean_active_events": float(
-            (output.teacher.program.presence.detach() > 0.5).float().sum()
-        ),
-        "q_pi_gate_mean": float(output.teacher.evidence_gate.detach().mean()),
-        "q_pi_gate_min": float(output.teacher.evidence_gate.detach().min()),
-        "q_pi_gate_max": float(output.teacher.evidence_gate.detach().max()),
-        "support_attention_entropy": float(
-            output.teacher.support_attention_entropy.detach().mean()
-        ),
+        "mean_active_events": float((program.presence.detach() > 0.5).float().sum()),
+        **{
+            name: float(value.detach())
+            for name, value in runtime.free_programs.row(task.ordinal)
+            .diagnostics()
+            .items()
+        },
     }
 
 
@@ -231,35 +214,15 @@ def run_stage1_update(
     schedule_index = cursor + runtime.context.rank
     task_ordinal, task_visit = runtime.schedule[schedule_index]
     task = runtime.task_by_ordinal[task_ordinal]
-    packed = pack_stage1_videos(
-        store=runtime.video_store,
-        ordinal=task_ordinal,
-        visit=task_visit,
-        seed=int(runtime.config["data"]["pair_seed"]),
-        k=int(runtime.config["data"]["visible_videos_per_visit"]),
-        device=runtime.context.device,
-    )
-    tokens, mask = runtime.language_tokens[task_ordinal]
-    expert = runtime.policy.model.paligemma_with_expert.gemma_expert.model
-    with torch.no_grad(), runtime.observer.action_meta.installed(expert):
-        with torch.autocast("cuda", dtype=torch.bfloat16):
-            encoded = runtime.observer.model.encoder(
-                policy=runtime.policy,
-                frames=packed.frames,
-                video_offsets=packed.video_offsets,
-                frame_condition_ids=packed.frame_condition_ids,
-                language_tokens=tokens,
-                language_mask=mask,
-            )
     evidence = runtime.evidence_bank.evidence(
         task_ordinal, runtime.support_bank.task(task_ordinal)
     )
     runtime.optimizer.zero_grad(set_to_none=True)
     with torch.autocast("cuda", dtype=torch.bfloat16):
-        output = runtime.model(encoded, evidence, packed.video_group_ids)
-        candidate = select_compiled_state(
-            output.consensus_compilation.state, 0
-        )
+        program = runtime.free_programs(task_ordinal)
+        compilation = runtime.model.compiler(program)
+        prior_compilation = runtime.model.compiler(program.prior_only())
+        candidate = select_compiled_state(compilation.state, 0)
         task_visits = cursor + runtime.context.world_size
         cached = _policy_support_panel(
             runtime,
@@ -276,41 +239,37 @@ def run_stage1_update(
                 task_visit=task_visit,
             )
         )
-        support_loss, activation_effect = (
-            policy_support_activation_distillation_loss(
-                policy=runtime.policy,
-                candidate_state=candidate,
-                contract=runtime.contract,
-                cached=cached,
-                preservation=str(
-                    runtime.config["objective"]["support_preservation"]
-                ),
-            )
+        support_loss, activation_effect = policy_support_activation_distillation_loss(
+            policy=runtime.policy,
+            candidate_state=candidate,
+            contract=runtime.contract,
+            cached=cached,
+            preservation=str(runtime.config["objective"]["support_preservation"]),
         )
-        objective_phase, objective_weights = _objective_weights(
-            runtime, task_visits
-        )
+        objective_phase, objective_weights = _objective_weights(runtime, task_visits)
         loss = ecp_stage1_loss(
-            member=output.member_compilation,
-            consensus=output.consensus_compilation,
-            prior=output.prior_compilation,
+            member=compilation,
+            consensus=compilation,
+            prior=prior_compilation,
             expert_states=evidence.member_states,
             prior_target=runtime.prior_state,
             contract=runtime.contract,
             policy_support=support_loss,
             weights=objective_weights,
         )
-        structural_total = loss.total + float(
-            runtime.config["objective"]["activation_effect_distillation_weight"]
-        ) * activation_effect.loss
+        structural_total = (
+            loss.total
+            + float(
+                runtime.config["objective"]["activation_effect_distillation_weight"]
+            )
+            * activation_effect.loss
+        )
         action_scale = (
             float(runtime.config["objective"]["action_policy_loss_weight"])
             * action_supervision_weight
         )
         total = structural_total.detach() + action_scale * action_policy_loss
-    if not bool(torch.isfinite(total)) or not bool(
-        torch.isfinite(structural_total)
-    ):
+    if not bool(torch.isfinite(total)) or not bool(torch.isfinite(structural_total)):
         raise RuntimeError(f"non-finite ECP Stage 1 loss at task visit {task_visits}")
     if action_gradients:
         active_names = tuple(
@@ -325,38 +284,31 @@ def run_stage1_update(
         )
     structural_total.backward()
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
+    active_ordinals = tuple(
+        runtime.schedule[cursor + rank][0] for rank in range(runtime.context.world_size)
+    )
+    runtime.free_programs.freeze_inactive_gradients(active_ordinals)
     action_lora_gradient_norm = (
         torch.stack(
-            [
-                gradient.float().square().sum()
-                for gradient in action_gradients.values()
-            ]
-        ).sum().sqrt()
+            [gradient.float().square().sum() for gradient in action_gradients.values()]
+        )
+        .sum()
+        .sqrt()
         if action_gradients
         else total.new_zeros(())
     )
-    factor_gradient = sum(
-        parameter.grad.float().square().sum()
-        for heads in (
-            runtime.model.compiler.factor_a,
-            runtime.model.compiler.factor_b,
-        )
-        for parameter in heads.parameters()
-        if parameter.grad is not None
-    ).sqrt()
+    free_program_gradient = _module_gradient_norm(runtime.free_programs)
     compiler_gradient = _module_gradient_norm(runtime.model.compiler)
     policy_teacher_gradient = _module_gradient_norm(runtime.model.policy_teacher)
     visible_program_gradient = _module_gradient_norm(runtime.model.visible_program)
-    clip = float(
-        runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
-    )
-    gradient_norm = torch.nn.utils.clip_grad_norm_(
-        runtime.trainable_parameters, clip
-    )
+    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
+    active_parameters = runtime.free_programs.parameters_for_ordinals(active_ordinals)
+    gradient_norm = torch.nn.utils.clip_grad_norm_(active_parameters, clip)
     if (
         not bool(
             torch.isfinite(
                 gradient_norm
+                + free_program_gradient
                 + compiler_gradient
                 + policy_teacher_gradient
                 + visible_program_gradient
@@ -364,16 +316,15 @@ def run_stage1_update(
         )
         or float(policy_teacher_gradient) != 0.0
         or float(visible_program_gradient) != 0.0
+        or float(compiler_gradient) != 0.0
     ):
-        raise RuntimeError("invalid Program-locked compiler gradient")
+        raise RuntimeError("invalid fixed-compiler free-Program gradient")
     runtime.optimizer.step()
     runtime.scheduler.step()
     local = _local_record(
         runtime,
         task=task,
         task_visit=task_visit,
-        demo_indices=packed.demo_indices,
-        video_offsets=packed.video_offsets,
         loss=loss,
         total=total,
         structural_total=structural_total,
@@ -381,7 +332,8 @@ def run_stage1_update(
         action_supervision_weight=action_supervision_weight,
         action_lora_gradient_norm=action_lora_gradient_norm,
         activation_effect=activation_effect,
-        output=output,
+        program=program,
+        compilation=compilation,
         panel_id=cached.panel.panel_id,
         panel_kind=cached.panel.kind,
     )
@@ -411,10 +363,10 @@ def run_stage1_update(
         "consensus_exact_owner_attention",
         "consensus_rank_replacement_fraction",
         "mean_active_events",
-        "q_pi_gate_mean",
-        "q_pi_gate_min",
-        "q_pi_gate_max",
-        "support_attention_entropy",
+        "process_delta_relative",
+        "uncertainty_scale_mean",
+        "uncertainty_scale_min",
+        "uncertainty_scale_max",
     )
     return {
         "task_visits": task_visits,
@@ -426,14 +378,10 @@ def run_stage1_update(
             for name in metric_names
         },
         "gradient_norm_before_clip": float(gradient_norm),
+        "free_program_gradient_norm_before_clip": float(free_program_gradient),
         "compiler_gradient_norm_before_clip": float(compiler_gradient),
-        "factor_head_gradient_norm_before_clip": float(factor_gradient),
-        "policy_teacher_gradient_norm_before_clip": float(
-            policy_teacher_gradient
-        ),
-        "visible_program_gradient_norm_before_clip": float(
-            visible_program_gradient
-        ),
+        "policy_teacher_gradient_norm_before_clip": float(policy_teacher_gradient),
+        "visible_program_gradient_norm_before_clip": float(visible_program_gradient),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "update_seconds": time.monotonic() - tick,
         "elapsed_seconds": time.monotonic() - run_started,

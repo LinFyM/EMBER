@@ -1075,7 +1075,7 @@ response等价类；它不是值得小扫的权重问题，而是错误目标仍
 还是替换fixed SVD compiler。证据见
 `docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。
 
-## 51. v8删除参数坐标梯度后仍破坏shared，但短节点schedule并非task-equal
+## 51. v8删除参数坐标梯度和修正task balance后仍被Frobenius union捕获
 
 v8从clean pushed `ae4805e`完成228 visits/38 updates，参数坐标四项权重严格为0；clean pushed `1659bb6`随后遍历全部
 308个冻结support panels。fit19 candidate/source/shared为`.46988/.70633/.40514`，candidate相对source/shared为
@@ -1084,9 +1084,18 @@ v8从clean pushed `ae4805e`完成228 visits/38 updates，参数坐标四项权�
 candidate pair cosine由`.95247`升到`.97804`，own-direct由`.05039`降到`.01411`。所以删除raw坐标目标没有建立
 policy-functional等价类，反而允许局部functional residual接管SVD union；该checkpoint不进入held闭环、reward或`q_V`。
 
-但formal metrics又揭示一个必须先修的科学合同错误。`build_stage1_schedule`只保证完整456 visits中每个fit task恰好24次；它把
+formal metrics曾揭示一个必须先修的科学合同错误。`build_stage1_schedule`只保证完整456 visits中每个fit task恰好24次；它把
 全部rows按cost全局排序成world6 groups后再整体打乱，导致228决策前缀每task实际只有`5--18`次访问，只有3/19 tasks恰为应有
 的12次。冻结audit是task-equal的，所以负结果本身有效；但训练checkpoint没有满足其声明的task-equal比较条件，不能直接把
-全部失败归因于SVD参数化。下一步只改变schedule ordering：按6个visit rounds形成task-balanced block，block内保留cost balance
-与动态rank顺序，fresh复验同一v8一次。若仍失败，替换Frobenius top-SVD为policy-functional rank selector，不延长曲线或扫描
-loss权重。证据见`docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
+全部失败归因于SVD参数化。
+
+schedule修复后，clean pushed `0b63da1`的fresh复验在228节点使19个fit task均恰好12 visits，successful/learner各114 records。
+结果并未恢复shared support：前5到末5 updates的total/functional/shared-support从`.40702/.29527/.02232`恶化到
+`.72780/.55854/.21882`；candidate/direct norm ratio升到`8.75029`，cross-task cosine升到`.99433`，own-direct只有
+`.01106`且自身检索`1/24`。clean pushed `c1f485d`的冻结审计中，fit candidate/shared ratio为`1.17823`且仅`2/19` tasks
+更好，held为`1.11729`且仅`2/5` tasks更好；88/308 individual panels胜出仍不足以满足任何shared aggregate/breadth门。
+
+这排除了“短节点仅因task exposure不平衡失败”的解释。最早失败接口是Frobenius top-SVD按参数能量保留rank16：无界、近共享的
+residual通过放大范数接管subspace，而不是由policy response选择有用mode。v8最终关闭；下一fresh实现只把该压缩换成bounded、
+exact-prior、content-derived per-rank functional selector，保持其它变量不动。证据见
+`docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。

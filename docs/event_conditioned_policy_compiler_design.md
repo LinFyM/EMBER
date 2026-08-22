@@ -533,10 +533,17 @@ v8首个228-visits节点确认“删除raw坐标梯度”本身不够：fit19/he
 按cost分组再随机排序，使228决策前缀的每task访问数为`5--18`而不是12。冻结audit自身仍是task-equal有效负证据，但不能把这个
 不平衡训练前缀作为v8参数化的最终裁决。
 
-因此active v8先做一次fresh、严格checkpoint-balanced复验：每6个visit rounds形成一个114-visits平衡block，block内部继续按
-真实视频cost动态组成world6 group并随机rank顺序；228节点正好包含每task 12次访问。除schedule ordering外Program、`q_pi`、
-union、bank、seed、objective和gate全部不变。若平衡复验仍未通过，不再延长v8；下一compiler修正必须让rank16压缩由
-policy-functional selector决定，而不是让Frobenius top-SVD被无界residual norm接管。
+严格checkpoint-balanced复验已从clean pushed `0b63da1`完成：每6个visit rounds形成一个114-visits block，228节点中19个
+fit task均恰好12 visits。它没有挽救v8。物化的candidate/direct norm ratio进一步达到`8.75029`，candidate跨task cosine
+`.99433`，own-direct `.01106`且自身检索`1/24`；冻结审计的fit/held candidate-to-shared为`1.17823/1.11729`，只有
+`2/19、2/5` tasks胜过shared。因此v8最终关闭，不延长、不调loss/rank/seed，也不加入reward或`q_V`。
+
+active v9只替换最早失败接口：stable-shared的16个canonical rank-one modes保持固定尺度，factor heads提供同尺度归一化的
+content-conditioned replacement directions；每个target/rank由从已读取Program content产生的零初始化selector angle，在
+shared mode与replacement mode之间作有界rank-one retraction。selector为零时76 tensors精确等价于完整stable shared；幅度不能
+通过扩大raw residual范数抢占rank；全部16 ranks仍可写，输出仍是唯一一套完整rank16 LoRA。训练信号仍只来自successful/learner
+multi-state policy response、局部source/shared support、exact-prior counterfactual和locality；raw A/B距离继续只作诊断。
+该实现以replacement fraction和冻结全bank support裁决是否真正选择了policy-functional modes，而不是参数能量最大的modes。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

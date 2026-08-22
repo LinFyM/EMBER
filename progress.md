@@ -20,8 +20,9 @@
   永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
   预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
   v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
-  v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。当前唯一active工作是修正短节点的task-equal
-  schedule合同后fresh复验v8一次；若仍失败，替换Frobenius top-SVD压缩，不延长曲线，也不围绕query、rank或loss权重做局部微调。
+  v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
+  当前唯一active工作是以bounded、exact-prior的policy-functional rank selector替换Frobenius top-SVD压缩，保持Program、
+  `q_pi`、support bank、balanced schedule和functional objective不变，不延长v8，也不围绕query、rank或loss权重做局部微调。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -175,6 +176,14 @@
   每task只有`5--18`次访问，只有3/19 tasks恰为应有的12次。这违反短节点声明的task-equal裁决合同；当前只授权修正为每6轮
   task visit一个平衡block并fresh复验v8一次，仍失败才替换SVD union。证据为
   `docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
+- schedule修复从clean pushed `0b63da1`完成fresh 228-visits balanced v8：19个fit task均恰好12 visits，successful/learner各
+  114 records，排除了短节点采样不平衡。训练并未改善，前5到末5 updates的total/functional/shared-support从
+  `.40702/.29527/.02232`恶化到`.72780/.55854/.21882`；24-task物化的candidate/direct norm ratio继续升到`8.75029`，
+  candidate pair cosine升到`.99433`，own-direct仅`.01106`且自身检索`1/24`。
+- clean pushed `c1f485d`随后完成同一308-panel冻结审计。fit19 candidate/source/shared为`.47735/.70633/.40514`，相对
+  source/shared为`.67581/1.17823`且只在`18/19、2/19` tasks胜出；held5为`.69756/.88454/.62434`，ratio
+  `.78862/1.11729`且只在`4/5、2/5` tasks胜出。88/308 panels胜过shared，但四个shared aggregate/breadth条件均失败。
+  v8因此最终关闭，不进入held闭环、reward或`q_V`；下一fresh-incompatible实现只替换rank16选择机制。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

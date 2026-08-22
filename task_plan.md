@@ -149,8 +149,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   `1.024/1.100`，但只在`9/19、1/5` tasks胜出，support门仍失败；
 - [x] 保持v7全部结构与数据，fresh训练取消direct BA/canonical参数坐标梯度的v8 functional-equivalence union，并复跑同一
   冻结support门；fit/held均在0个task胜过shared，且发现228节点访问数为每task `5--18`而非task-equal 12；
-- [ ] 修正formal schedule，使每个可裁决prefix按6个visit rounds成块、兼顾task balance与cost-balanced rank分配；fresh复验
-  同一v8短节点一次，仍失败则替换Frobenius top-SVD compiler而不做loss小扫；
+- [x] 修正formal schedule，使每个可裁决prefix按6个visit rounds成块、兼顾task balance与cost-balanced rank分配；fresh复验
+  的19个fit task均恰好12 visits，但fit/held仅`2/19、2/5` tasks胜过shared，v8最终关闭；
+- [ ] 用bounded、exact-prior的policy-functional rank selector替换唯一active compiler中的Frobenius top-SVD；先完成聚焦合同与
+  successful/learner真实profile，再从balanced schedule fresh训练228 visits并复跑同一冻结support gate；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -204,10 +206,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v8首个228节点已完成：fit/held相对shared为`1.160/1.149`且breadth均为0，故不跑held closed loop、不加reward；
-2. formal schedule审计发现该节点每个fit task实际访问`5--18`次，而task-equal应为12次。先保持v8架构/objective不变，修正
-   checkpoint-prefix balance并fresh复验一次；若仍失败，下一major variable是functional rank selector而非延长或loss小扫；
-3. 只有task-equal v8相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. balanced v8已完成且最终失败：fit/held相对shared为`1.178/1.117`，breadth仅`2/19、2/5`，故不跑held closed loop、
+   不加reward、不启动`q_V`，也不延长或做loss小扫；
+2. 下一major variable只替换Frobenius top-SVD：实现exact-shared起点、bounded同尺度replacement和content-derived per-rank
+   selector；保持Program、`q_pi`、support bank、balanced schedule、seed与functional objectives不变；
+3. 只有functional rank selector相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

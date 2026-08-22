@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **长期research design authority；v24已关闭，Stage 1只执行MDCO falsification contract**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-23 **长期ECP结构与边界authority；v24和MDCO均已关闭，当前learned Stage 1 compiler family停止**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -1006,6 +1006,12 @@ exact-resume；否则关闭当前compiler family。
 `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`，资产审计见
 `docs/evidence/ecp_20260823/stage1_mapping_diversity_asset_audit.json`。MDCO是一个因果实验，不是新的部署架构；未通过前仍不训练
 `q_V`。
+
+MDCO随后在90个task-equal mappings、540 dense visits与一次fit90 structured calibration后，于held5 strict paired250只得到
+`20`，低于source`21`和stable shared`43`，direct-latest success/gain retention为`10/108`与`3/96`，Goal/Long均为0。
+因此当前learned `q_pi + Program-to-LoRA compiler` family关闭，不续1080、不轮fold、不训练本节Stage 2 `q_V`。ECP Stage 0、
+Program schema与信息墙继续保留；下一design-only hypothesis用固定policy-effect inner solver替代learned compiler，见
+`docs/ember_pecs_falsification_card_20260823.md`。它在privileged oracle通过前不构成可执行authority。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

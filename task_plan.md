@@ -1,9 +1,11 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **active goal paused at a completed MDCO falsification; no active successor Stage 1 design**。
+状态：2026-08-23 **MDCO已完成并失败；EMBER-PECS已选为design-only successor hypothesis，尚未实现或训练**。
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
-当前没有active successor，不建立v25。v24与MDCO后的复盘见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
+当前learned Stage 1 compiler family已停止，不建立v25。v24与MDCO后的复盘见
+`docs/ecp_stage1_iteration_retrospective_20260823.md`；下一候选的单一合同见
+`docs/ember_pecs_falsification_card_20260823.md`。该合同在首个privileged effect oracle前不授权video predictor或GPU formal。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -270,6 +272,9 @@ Goal/Long不能系统为零。失败则停在Program/compiler，不训练`q_V`�
 
 ## Phase 3 — Dynamic-K video-to-Program
 
+状态：**suspended with the failed learned compiler family**。以下原ECP顺序只保留历史合同；若PECS privileged oracle通过，
+由`docs/ember_pecs_falsification_card_20260823.md`中的effect-prediction gate替代，不得直接勾选或启动本节旧`q_V`路径。
+
 - [ ] 冻结source、observer authority、`q_pi`和compiler；
 - [ ] 只用correct action-hidden videos训练`q_V`，真实覆盖K1--K4并用同task跨episode action query；
 - [ ] 每video先独立形成完整Program，再做event alignment、mean/variance/presence/bounded residual聚合；
@@ -315,8 +320,7 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v24已经完成并关闭：formal、materialization、dual 308-panel audit与remote-safe evidence全部落盘；不续训、不扫
-   LR/rank/seed/dtype/width/fusion，不运行held5或`q_V`；
+1. v24与MDCO均已完成并关闭：不续训、不扫LR/rank/seed/dtype/width/fusion，不轮fold、不进入旧`q_V`；
 2. Stage 1 v1--v24复盘已经完成。复盘确认主要问题是geometry/open-loop support门长期
    未用held closed-loop校准、fixed compiler与专家direct layer/family-local surface落实过晚、19个独立task mappings不足以及
    版本号增长快于独立信息增长；
@@ -347,3 +351,11 @@ coordinate退化则保留Stage 2并定位最早接口。
     closed-loop只各对齐`2/5`，两种proxy均失去替代早期closed-loop裁决的资格；
 14. [x] 完成本轮合同、remote-safe evidence、历史与复盘集成并推送`main`；清理task-owned worktree和已验证重复的临时
     support shards。当前停在内部复盘后的科学暂停点，不自动建立下一版本。
+15. [x] 完成MDCO后的第二层复盘：跨版本参数方向不同但success rows高度重合，确认最早失败是outcome层easy/shared basin，
+    不是同一个LoRA参数局部最优；
+16. [x] 在不写代码、不启动GPU的前提下比较下一路线，停止继续学习共享Program-to-LoRA映射；选择
+    **EMBER-PECS（Policy-Effect Constrained Solver）**作为design-only hypothesis；
+17. [x] 写成单一falsification card：第一实验只用held5 exact privileged policy effects检验固定inner solver realizability，
+    不训练video effect predictor，不用geometry/open-loop proxy挡住首次strict paired250；
+18. [ ] 下一执行节点必须先复核PECS card与资产所有权，再决定是否把它登记为可执行authority；本节点不创建config/module、
+    不launch profile/formal，避免从复盘直接滑入下一版本。

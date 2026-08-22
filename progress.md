@@ -5,7 +5,7 @@
 
 ## Current authority and executable state
 
-- **MDCO已完成并按合同失败，当前没有active successor Stage 1 design。** clean pushed detached `419fa84`在gpu02 physical
+- **MDCO已完成并按合同失败；EMBER-PECS已选为design-only successor hypothesis，尚无新可执行运行面。** clean pushed detached `419fa84`在gpu02 physical
   `0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates；所有task等权，compiler与`q_pi`梯度持续非零，visible
   Program梯度始终为0。随后唯一一次fit90 structured calibration覆盖90/90 tasks、每rank 18 tasks，plus/minus各123次成功，
   75 tasks产生非零advantage；`q_pi/compiler`裁剪前梯度为`.11708/62.25886`，held/validation/Test reward读取均为0。
@@ -25,6 +25,10 @@
 - owner设定的v24停点和随后MDCO停点均已执行。Stage 1 v1--v24系统复盘及MDCO后验已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`；当前保持科学暂停，不做小扫、续训或局部结构补丁。所有本轮GPU进程
   已退出，task-owned detached formal worktree已清理。
+- 复盘后的架构选择已单独写入`docs/ember_pecs_falsification_card_20260823.md`。PECS保留Stage 0 event/owner表示，删除需要
+  跨task学习的Program-to-LoRA decoder，让exact/predicted policy effects通过同一个无task参数的fixed proximal inner solver生成
+  一套complete rank16 LoRA。第一节点只允许held5 exact privileged-effect realizability oracle：先不实现video effect predictor、
+  不训练新shared模型、不运行GPU formal。本节点只完成设计和资产边界，避免从复盘直接滑入下一版本。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为

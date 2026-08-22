@@ -1,6 +1,6 @@
 # EMBER-PECS：Policy-Effect Constrained Solver falsification card
 
-状态：2026-08-23 **exact-effect oracle已实现为唯一可执行Writer面；只授权一个fit-task GPU profile，尚未授权held5 formal**。
+状态：2026-08-23 **fit-task GPU profile已通过并冻结solver合同；现授权held5 exact-effect formal，尚未授权video effect predictor**。
 
 本文是MDCO失败和Stage 1全链复盘后的单一科学合同，不是`v25`。它保留EMBER-ECP已经通过的Stage 0
 event/Action observer与最终single-LoRA部署目标，但停止当前learned `q_pi + Program-to-LoRA compiler` family。
@@ -240,9 +240,11 @@ predicted effects
 - effect capture与solver forward不安装Action Meta，也不读取action、state或proprio；canonical/antithetic probe均固定在`u=1`；
 - owner effect保留38 owners与DCT4 horizon basis，flow effect保留两个probe的完整`50x32`；多个successful members及两条视频的
   同event frames共同形成mean/variance；
-- solver从stable shared开始，固定12步、无per-task early stop或持久optimizer；每步只更新一套LoRA leaves，随后逐target
-  thin-QR/core-SVD regauge回rank16；
+- solver从stable shared开始，固定12步、base step RMS `.0002`、inverse-sqrt decay power `.5`，无per-task early stop或持久
+  optimizer；每步只更新一套LoRA leaves，随后逐target thin-QR/core-SVD regauge回rank16；
 - 首个profile固定为fit ordinal71，held ordinals90--94不能用于step/scale选择；旧learned compiler运行面已从active tree退休。
 
-实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`；正式profile结果产生前，上述12步与step scale仍只算
-预注册候选数值合同，不构成已通过的科学节点。
+实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`。clean pushed `b7c87e7`在fit ordinal71的正式
+profile把effect从`3.660019`单调降至`.774046`，final/initial为`.211487`、0次回升，峰值`18,721,906,176` bytes、耗时
+`153.67s`。此前constant-step候选虽降至`.748501`，但有2次回升；合同允许的唯一一次数值修正只加入所有task共享的
+inverse-sqrt decay，没有修改effect target、架构、数据、步数或held信息。数值/资源合同现已冻结，下一节点直接运行held5。

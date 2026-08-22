@@ -1,12 +1,12 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **MDCO已完成并失败；EMBER-PECS exact-effect oracle已成为唯一可执行Writer面，等待fit-task真实profile**。
+状态：2026-08-23 **PECS fit-task数值/资源profile已通过；固定solver合同已冻结，进入held5 exact-effect formal**。
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
 当前learned Stage 1 compiler family已停止，不建立v25。v24与MDCO后的复盘见
 `docs/ecp_stage1_iteration_retrospective_20260823.md`；下一候选的单一合同见
-`docs/ember_pecs_falsification_card_20260823.md`。当前只授权一个fit task的数值/资源profile；通过后才允许held5 exact-effect
-formal，首个privileged oracle通过前仍不授权video effect predictor。
+`docs/ember_pecs_falsification_card_20260823.md`。fit ordinal71已冻结12-step inverse-sqrt数值合同；当前授权held5 exact-effect
+formal，privileged closed-loop oracle通过前仍不授权video effect predictor。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -365,5 +365,6 @@ coordinate退化则保留Stage 2并定位最早接口。
     出发只经LoRA exact VJP、owner-normalized step与thin-QR/core-SVD regauge输出一套rank16 LoRA；
 20. [x] 从active tree退休旧Program-to-LoRA compiler trainer、calibration、materialization、support builder、配置与测试入口；Git和
     formal artifacts继续保存历史，当前不再存在可误启动的MDCO Writer路径；
-21. [ ] 在一个fit target task上运行完整12-step单卡profile；只按finite、effect单调下降、峰值显存和吞吐裁决当前数值合同；
+21. [x] 在fit ordinal71完成完整12-step单卡profile；一次任务无关inverse-sqrt步长修正后effect `3.6600→.7740`、严格单调，
+    峰值18.72 GB、耗时153.67秒，固定数值/资源合同通过；
 22. [ ] profile通过后从clean pushed authority并行物化held5五套LoRA，随后直接strict paired250，按PECS Gate 2裁决。

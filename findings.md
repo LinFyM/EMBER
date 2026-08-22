@@ -1489,3 +1489,14 @@ retrieval仅`2/5`，MDCO update norm平均还是首版的`2.8521x`。所以“�
 shared-support吸引子**，不是一个固定参数方向；不同的近task-common LoRA可以在冻结source上保留和丢失几乎相同的一批初始状态。
 这进一步说明过去以LoRA坐标分离、幅度或moving gauge为主的修补即使改变参数，也未让task-conditioned部分控制新的闭环能力。
 该对照只证明success-set层的重合，不证明两版逐步action policy等价。
+
+## 72. Exact policy effects可以经固定PECS solver单调编译为一套完整LoRA
+
+PECS在fit ordinal71上的真实PI0.5链路已经证明：从stable shared出发，对38 owners的DCT4 effect与两个完整`50x32` flow probes
+执行LoRA exact VJP和逐target rank16 regauge，可以在固定12步内把effect objective从`3.660019`降至`.774046`。所有task共享的
+base step RMS `.0002`与inverse-sqrt decay power `.5`产生0次回升，峰值18.72 GB、耗时153.67秒；candidate仍是一套完整
+76-tensor LoRA，effect capture不安装Action Meta，也不读取teacher action/state/proprio。
+
+这排除了“完整PI0.5 effect对LoRA leaves不可微、owner-normalized solver数值不可达或rank16 regauge必然破坏下降”的窄解释，
+但没有证明这些输入视频帧上的canonical/antithetic effects足以定义闭环成功策略。后者只能由固定合同的held5 strict paired250
+裁决，不能由更低inner loss、LoRA距离或fit task本身替代。

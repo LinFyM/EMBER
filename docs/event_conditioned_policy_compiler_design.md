@@ -1011,8 +1011,8 @@ MDCO随后在90个task-equal mappings、540 dense visits与一次fit90 structure
 `20`，低于source`21`和stable shared`43`，direct-latest success/gain retention为`10/108`与`3/96`，Goal/Long均为0。
 因此当前learned `q_pi + Program-to-LoRA compiler` family关闭，不续1080、不轮fold、不训练本节Stage 2 `q_V`。ECP Stage 0、
 Program schema与信息墙继续保留；后继用固定policy-effect inner solver替代learned compiler，见
-`docs/ember_pecs_falsification_card_20260823.md`。其exact-effect oracle现已成为唯一可执行Writer面，但在fit-task profile与
-held5 privileged oracle通过前，不授权video effect predictor或恢复本节旧`q_V`路径。
+`docs/ember_pecs_falsification_card_20260823.md`。其exact-effect oracle现已成为唯一可执行Writer面；fit-task数值/资源profile
+已通过，但在held5 privileged closed-loop oracle通过前，不授权video effect predictor或恢复本节旧`q_V`路径。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

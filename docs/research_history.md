@@ -1194,8 +1194,12 @@ normalized step与thin-QR/core-SVD rank16 regauge；没有task ID、per-task ear
 
 新canonical owner为`effect_solver.py + effect_oracle.py + run_ecp_effect_oracle.py`。旧learned `q_pi + Program-to-LoRA`
 trainer、calibration、materialization、support builder、配置与对应测试从active tree删除，精确历史继续由Git和formal artifacts
-保存；这使仓库不再同时暴露可误启动的旧Writer。当前只完成CPU/结构验证，尚无GPU profile或closed-loop结果，故本节不构成
-PECS正证据。下一唯一节点是在fit ordinal71上冻结12-step数值/资源合同，之后才允许held5 exact-effect strict250。
+保存；这使仓库不再同时暴露可误启动的旧Writer。
+
+fit ordinal71随后在gpu02 physical0完成唯一数值/资源profile。constant-step候选把effect `3.660019→.748501`但出现2次回升，
+未过预注册单调门；唯一一次任务无关数值修正加入inverse-sqrt step decay。clean pushed `b7c87e7`的12步结果为
+`3.660019→.774046`、final/initial `.211487`、0次回升、峰值18.72 GB、耗时153.67秒，故固定solver合同通过并冻结。
+这只证明exact-effect VJP求解链可达，不是closed-loop正证据；下一唯一节点是held5 exact-effect strict250。
 
 ## 4. 截至整理边界的已解决与未解决接口
 

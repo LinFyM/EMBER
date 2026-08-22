@@ -1,0 +1,50 @@
+{
+  "schema_version": "ember_pecs_effect_profile_evidence_v1",
+  "status": "pass_to_held5_exact_effect_formal",
+  "task": {
+    "ordinal": 71,
+    "global_task_id": 2,
+    "fold_role": "fit"
+  },
+  "initial_candidate": {
+    "repository_commit": "edc7e59e6ced3f89810976f8fcd02f5871e2ad6f",
+    "step_schedule": "constant",
+    "initial_effect": 3.6600186228752136,
+    "final_effect": 0.748500756919384,
+    "final_to_initial_ratio": 0.20450736295199,
+    "increasing_steps": 2,
+    "profile_gate_pass": false
+  },
+  "frozen_solver": {
+    "repository_commit": "b7c87e769aa481bc7c6df4179f43d9cbc0a9531b",
+    "steps": 12,
+    "base_step_rms": 0.0002,
+    "step_schedule": "inverse_sqrt",
+    "step_decay_power": 0.5,
+    "per_task_early_stop": false,
+    "task_local_persistent_optimizer": false,
+    "output_rank": 16
+  },
+  "result": {
+    "initial_effect": 3.6600186228752136,
+    "final_effect": 0.774046279489994,
+    "final_to_initial_ratio": 0.2114869784137666,
+    "increasing_steps": 0,
+    "profile_gate_pass": true,
+    "effective_distance_from_shared": 0.023932138457894325,
+    "elapsed_seconds": 153.67384328879416,
+    "max_cuda_allocated_bytes": 18721906176,
+    "adapter_bytes": 5160912
+  },
+  "information_wall": {
+    "teacher_action_forward_reads": 0,
+    "action_meta_installed_for_effect_capture": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "runtime_artifacts": {
+    "initial_profile": "runs/acceptance/pi05_pecs_effect_profile_fit71_edc7e59_gpu02p0_20260823",
+    "frozen_profile": "runs/acceptance/pi05_pecs_effect_profile_fit71_b7c87e7_gpu02p0_20260823"
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

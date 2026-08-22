@@ -40,8 +40,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_owner_local_activation_projection_v16"
-PROJECTION_KIND = "ecp_stage1_privileged_owner_local_activation_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_action_grounded_projection_v17"
+PROJECTION_KIND = "ecp_stage1_privileged_action_grounded_compiler"
 
 
 @dataclass(frozen=True)
@@ -77,7 +77,7 @@ def resolve_stage1_materialization_config(
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_balanced_owner_local_activation_bootstrap",
+        objective_phase="task_balanced_action_grounded_recovery",
     )
 
 
@@ -559,7 +559,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_owner_local_activation_bootstrap_v16.json",
+        / "configs/pi05_ecp_stage1_action_grounded_recovery_v17.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

@@ -14,8 +14,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_owner_local_activation_bootstrap_run_v16"
-STAGE = "stage1_owner_local_activation_bootstrap_v16"
+RUN_SCHEMA = "ember_ecp_stage1_action_grounded_recovery_run_v17"
+STAGE = "stage1_action_grounded_recovery_v17"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,9 +34,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_owner_local_activation_bootstrap_v16"
+        != "ember_ecp_stage1_action_grounded_recovery_v17"
         or config.get("status")
-        != "active_stage1_owner_local_activation_bootstrap"
+        != "active_stage1_action_grounded_recovery"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -61,6 +61,26 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             )
         )
         <= 0
+        or float(
+            config.get("objective", {}).get("action_policy_loss_weight", -1)
+        )
+        <= 0
+        or config.get("objective", {}).get("action_supervision_weights")
+        != {
+            "successful": 1.0,
+            "verified_successful_learner": 1.0,
+            "failed_learner": 0.0,
+        }
+        or config.get("objective", {}).get("policy_flow_time_sampling_scheme")
+        != "task_logical_batch_keyed_independent_beta15_time_v2"
+        or config.get("objective", {}).get("policy_flow_noise_sampling_scheme")
+        != "task_logical_batch_keyed_independent_gaussian_v2"
+        or int(
+            config.get("optimization", {}).get(
+                "functional_policy_microbatch_size", -1
+            )
+        )
+        != 1
         or float(config.get("model", {}).get("replacement_head_init_multiplier", -1))
         != 0.1
         or float(config.get("model", {}).get("selector_max_angle_radians", -1))
@@ -84,16 +104,16 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             )
         )
         or config.get("initialization", {}).get("stage")
-        != "stage1_outcome_binding_v13"
+        != "stage1_owner_local_activation_bootstrap_v16"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_outcome_binding_run_v13"
+        != "ember_ecp_stage1_owner_local_activation_bootstrap_run_v16"
         or int(config.get("initialization", {}).get("checkpoint_macro", -1))
-        != 1
+        != 228
         or config.get("initialization", {}).get("load_model_weights_only")
         is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
     ):
-        raise ValueError("unsupported ECP Stage 1 owner-local activation contract")
+        raise ValueError("unsupported ECP Stage 1 action-grounded recovery contract")
     return config
 
 

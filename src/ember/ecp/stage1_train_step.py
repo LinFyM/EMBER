@@ -13,9 +13,10 @@ from ember.ecp.policy_response import TargetActivationEffectLoss
 from ember.ecp.stage1_data import pack_stage1_videos
 from ember.ecp.stage1_objective import ECPStage1Loss, ecp_stage1_loss
 from ember.ecp.stage1_support import (
-    PolicySupportLoss,
+    CachedPolicySupportPanel,
     policy_support_activation_distillation_loss,
 )
+from ember.writer.functional import functional_lora_loss_gradient
 
 if TYPE_CHECKING:
     from ember.ecp.stage1_training import ECPStage1Runtime
@@ -25,7 +26,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "owner_local_activation_bootstrap", {
+    return "action_grounded_recovery", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -51,25 +52,80 @@ def _gather(record: dict[str, Any], world_size: int) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def _policy_support_loss(
+def _policy_support_panel(
     runtime: "ECPStage1Runtime",
     *,
     task_ordinal: int,
     task_visit: int,
-    candidate: dict[str, torch.Tensor],
     task_visits_after_update: int,
-) -> tuple[PolicySupportLoss, TargetActivationEffectLoss, int, str]:
+) -> CachedPolicySupportPanel:
     del task_visits_after_update
     panel = runtime.support_bank.task(task_ordinal).panel_for_visit(task_visit)
-    cached = runtime.support_panels[(task_ordinal, panel.panel_id)]
-    support, activation = policy_support_activation_distillation_loss(
-        policy=runtime.policy,
-        candidate_state=candidate,
-        contract=runtime.contract,
-        cached=cached,
-        preservation=str(runtime.config["objective"]["support_preservation"]),
+    return runtime.support_panels[(task_ordinal, panel.panel_id)]
+
+
+def _action_supervision_weight(
+    runtime: "ECPStage1Runtime", cached: CachedPolicySupportPanel
+) -> float:
+    weights = runtime.config["objective"]["action_supervision_weights"]
+    panel = cached.panel
+    if panel.kind == "successful":
+        return float(weights["successful"])
+    if panel.learner_success is True:
+        return float(weights["verified_successful_learner"])
+    return float(weights["failed_learner"])
+
+
+def _action_policy_seed(
+    runtime: "ECPStage1Runtime",
+    *,
+    task_ordinal: int,
+    task_visit: int,
+    panel_id: int,
+) -> int:
+    base = int(runtime.config["objective"]["train_policy_seed"])
+    return (
+        base
+        + (task_ordinal + 1) * 1_000_003
+        + (task_visit + 1) * 10_007
+        + (panel_id + 1) * 101
+    ) % ((1 << 63) - 1)
+
+
+def _action_policy_gradient(
+    runtime: "ECPStage1Runtime",
+    *,
+    candidate: dict[str, torch.Tensor],
+    cached: CachedPolicySupportPanel,
+    task_ordinal: int,
+    task_visit: int,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor], float]:
+    supervision_weight = _action_supervision_weight(runtime, cached)
+    if supervision_weight == 0.0:
+        return next(iter(candidate.values())).new_zeros(()), {}, 0.0
+    objective = runtime.config["objective"]
+    loss, _, gradients = functional_lora_loss_gradient(
+        runtime.policy,
+        candidate,
+        runtime.contract,
+        batch=cached.batch,
+        policy_rng_seed=_action_policy_seed(
+            runtime,
+            task_ordinal=task_ordinal,
+            task_visit=task_visit,
+            panel_id=cached.panel.panel_id,
+        ),
+        policy_rng_device=runtime.context.device,
+        flow_time_sampling_scheme=str(objective["policy_flow_time_sampling_scheme"]),
+        flow_noise_sampling_scheme=str(
+            objective["policy_flow_noise_sampling_scheme"]
+        ),
+        policy_microbatch_size=int(
+            runtime.config["optimization"]["functional_policy_microbatch_size"]
+        ),
+        collect_policy_details=False,
     )
-    return support, activation, panel.panel_id, panel.kind
+    return loss, gradients, supervision_weight
 
 
 def _local_record(
@@ -81,6 +137,10 @@ def _local_record(
     video_offsets: torch.Tensor,
     loss: ECPStage1Loss,
     total: torch.Tensor,
+    structural_total: torch.Tensor,
+    action_policy_loss: torch.Tensor,
+    action_supervision_weight: float,
+    action_lora_gradient_norm: torch.Tensor,
     activation_effect: TargetActivationEffectLoss,
     output: Any,
     panel_id: int,
@@ -102,7 +162,11 @@ def _local_record(
         "support_panel_id": panel_id,
         "support_panel_kind": panel_kind,
         "total": float(total.detach()),
-        "functional_total": float(loss.total.detach()),
+        "structural_total": float(structural_total.detach()),
+        "action_policy_loss": float(action_policy_loss.detach()),
+        "action_supervision_active": float(action_supervision_weight > 0.0),
+        "action_supervision_weight": float(action_supervision_weight),
+        "action_lora_gradient_norm": float(action_lora_gradient_norm.detach()),
         "activation_effect": float(activation_effect.loss.detach()),
         "activation_effect_disagreement": float(
             activation_effect.normalized_disagreement.detach()
@@ -186,12 +250,31 @@ def run_stage1_update(
             output.consensus_compilation.state, 0
         )
         task_visits = cursor + runtime.context.world_size
-        support_loss, activation_effect, panel_id, panel_kind = _policy_support_loss(
+        cached = _policy_support_panel(
             runtime,
             task_ordinal=task_ordinal,
             task_visit=task_visit,
-            candidate=candidate,
             task_visits_after_update=task_visits,
+        )
+        action_policy_loss, action_gradients, action_supervision_weight = (
+            _action_policy_gradient(
+                runtime,
+                candidate=candidate,
+                cached=cached,
+                task_ordinal=task_ordinal,
+                task_visit=task_visit,
+            )
+        )
+        support_loss, activation_effect = (
+            policy_support_activation_distillation_loss(
+                policy=runtime.policy,
+                candidate_state=candidate,
+                contract=runtime.contract,
+                cached=cached,
+                preservation=str(
+                    runtime.config["objective"]["support_preservation"]
+                ),
+            )
         )
         objective_phase, objective_weights = _objective_weights(
             runtime, task_visits
@@ -206,13 +289,41 @@ def run_stage1_update(
             policy_support=support_loss,
             weights=objective_weights,
         )
-        total = loss.total + float(
+        structural_total = loss.total + float(
             runtime.config["objective"]["activation_effect_distillation_weight"]
         ) * activation_effect.loss
-    if not bool(torch.isfinite(total)):
+        action_scale = (
+            float(runtime.config["objective"]["action_policy_loss_weight"])
+            * action_supervision_weight
+        )
+        total = structural_total.detach() + action_scale * action_policy_loss
+    if not bool(torch.isfinite(total)) or not bool(
+        torch.isfinite(structural_total)
+    ):
         raise RuntimeError(f"non-finite ECP Stage 1 loss at task visit {task_visits}")
-    total.backward()
+    if action_gradients:
+        active_names = tuple(
+            name for name, value in candidate.items() if value.requires_grad
+        )
+        torch.autograd.backward(
+            tuple(candidate[name] for name in active_names),
+            grad_tensors=tuple(
+                action_scale * action_gradients[name] for name in active_names
+            ),
+            retain_graph=True,
+        )
+    structural_total.backward()
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
+    action_lora_gradient_norm = (
+        torch.stack(
+            [
+                gradient.float().square().sum()
+                for gradient in action_gradients.values()
+            ]
+        ).sum().sqrt()
+        if action_gradients
+        else total.new_zeros(())
+    )
     factor_gradient = sum(
         parameter.grad.float().square().sum()
         for heads in (
@@ -240,15 +351,23 @@ def run_stage1_update(
         video_offsets=packed.video_offsets,
         loss=loss,
         total=total,
+        structural_total=structural_total,
+        action_policy_loss=action_policy_loss,
+        action_supervision_weight=action_supervision_weight,
+        action_lora_gradient_norm=action_lora_gradient_norm,
         activation_effect=activation_effect,
         output=output,
-        panel_id=panel_id,
-        panel_kind=panel_kind,
+        panel_id=cached.panel.panel_id,
+        panel_kind=cached.panel.kind,
     )
     records = _gather(local, runtime.context.world_size)
     metric_names = (
         "total",
-        "functional_total",
+        "structural_total",
+        "action_policy_loss",
+        "action_supervision_active",
+        "action_supervision_weight",
+        "action_lora_gradient_norm",
         "activation_effect",
         "activation_effect_disagreement",
         "activation_effect_active_fraction",

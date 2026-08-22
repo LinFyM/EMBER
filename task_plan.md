@@ -200,7 +200,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从v13 authority完成同一114/228 task-balanced裁决：target-local cosine retrieval由v13 `1/24`提高到`11/24`，但
   candidate correction仍比expert correction显著更task-common，308-panel fit/held相对shared退到`1.08581/1.08815x`与
   `2/19、0/5` breadth；因此v16关闭，不接outcome、held5或`q_V`；
-- [ ] 实现 **OCPB v17 action-grounded composed-policy recovery**：复用v16已形成的task-discrimination model weights并创建fresh
+- [x] 实现 **OCPB v17 action-grounded composed-policy recovery**：复用v16已形成的task-discrimination model weights并创建fresh
   optimizer，对successful或verified-success跨episode action panel直接计算冻结PI0.5的exact flow-matching loss及LoRA leaf gradient，
   再反传到`q_pi`/compiler；failed learner action不作oracle，v16 local effect与v13 barrier只作结构/support锚；
 - [ ] 用真实单task profile确认action loss、LoRA-leaf到FactorHead梯度、显存和吞吐，再运行一个bounded task-balanced节点；只有

@@ -38,7 +38,10 @@
   candidate-to-shared退到`1.08581/1.08815x`且breadth只有`2/19、0/5`，故v16关闭。当前唯一active后继为
   **OCPB v17 action-grounded composed-policy recovery**：复用v16 model weights建立fresh optimizer，用successful或
   verified-success跨episode train actions上的exact PI0.5 flow-matching loss直接训练完整LoRA组合；failed learner action不作
-  oracle，v16 local effect与v13 barrier只保留为结构/support锚。
+  oracle，v16 local effect与v13 barrier只保留为结构/support锚。v17 retained实现已收敛到唯一`train_ecp_stage1.py`运行面：
+  直接复用`writer.functional`的frozen-policy LoRA leaf gradient，成功panel构成每task等量主监督，verified-success learner为
+  显式附加state-support stratum；v16结构锚统一缩放为`.1x`。旧v16 active config已删除，v17从v16 task-visit228只加载model
+  weights并创建fresh optimizer；30项ECP聚焦合同已通过，下一节点是真实单卡action-gradient profile，不把CPU合同当作性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

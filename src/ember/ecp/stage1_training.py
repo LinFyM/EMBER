@@ -117,7 +117,7 @@ class ECPStage1Inputs:
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
-    if config.get("status") != "active_stage1_owner_local_activation_bootstrap":
+    if config.get("status") != "active_stage1_action_grounded_recovery":
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
@@ -623,7 +623,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_owner_local_activation_bootstrap_v16.json",
+        / "configs/pi05_ecp_stage1_action_grounded_recovery_v17.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

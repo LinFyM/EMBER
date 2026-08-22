@@ -175,17 +175,17 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_owner_local_activation_materialization_uses_v16_task_visit_cursor() -> None:
+def test_action_grounded_materialization_uses_v17_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
         REPO_ROOT
-        / "configs/pi05_ecp_stage1_owner_local_activation_bootstrap_v16.json"
+        / "configs/pi05_ecp_stage1_action_grounded_recovery_v17.json"
     )
-    assert resolved.stage == "stage1_owner_local_activation_bootstrap_v16"
+    assert resolved.stage == "stage1_action_grounded_recovery_v17"
     assert resolved.cursor_name == "task_visits"
     assert resolved.checkpoint_cursors == (114, 228)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_owner_local_activation_bootstrap_v16"
+        "ember_ecp_stage1_action_grounded_recovery_v17"
     )
 
 

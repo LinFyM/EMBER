@@ -1099,3 +1099,20 @@ schedule修复后，clean pushed `0b63da1`的fresh复验在228节点使19个fit 
 residual通过放大范数接管subspace，而不是由policy response选择有用mode。v8最终关闭；下一fresh实现只把该压缩换成bounded、
 exact-prior、content-derived per-rank functional selector，保持其它变量不动。证据见
 `docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
+
+## 52. bounded rank selector保住shared但学成近全局修正，最早缺口转到process因果Value路径
+
+v9从clean pushed `dc5dff6`完成strict task-equal 228 visits/38 updates。它把v8无界SVD union的candidate/direct norm ratio
+从`8.75029`压到`1.94717`，末5步shared-support也由`.21882`降到`.02773`；clean pushed `bb3bc59`的308-panel冻结审计中，
+fit candidate/shared达到`.98369x`且19/19 tasks优于source，held也只比shared差`.69%`并在5/5 tasks优于source。这证明
+exact-prior、bounded replacement是实质正修正，而不是参数数值装饰。
+
+但完整门仍失败：fit/held只有`10/19、2/5` tasks优于shared，低于`13/19、3/5`；held aggregate为`1.00692x`。24-task
+candidate跨task cosine为`.99779`，own-direct `.04015`低于nearest-other `.06247`且自身检索`1/24`。更直接地，去掉shared
+后的correction pair cosine仍为`.97482`，其norm只有shared的`.24768x`；各task selector fraction也只分布在
+`.08031--.09164`。因此v9学到的是一个安全、接近全局的shared修正，不是task Program编译。
+
+当前compiler在process存在时仍把language、scene和process共同作为Value；exact prior则由特殊反事实直接返回shared。这允许
+静态Value或presence开关在不同task上写出同一修正。下一fresh实现保持v9的bounded selector和全部训练变量，只把replacement
+reader改成language/scene-conditioned query读取present process-only Values，并要求zero process即使presence为真也严格不能
+写LoRA。证据见`docs/evidence/ecp_20260822/stage1_functional_rank_selector_fold0_tv228_support.json`。

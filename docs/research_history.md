@@ -851,6 +851,18 @@ clean pushed `0b63da1`的balanced复验使每个fit task在228节点恰好12 vis
 rank selector，不延长曲线或扫描loss权重。证据：
 `docs/evidence/ecp_20260822/stage1_functional_union_fold0_tv228_support.json`。
 
+### 3.43 v9 bounded rank selector近乎保住shared但仍是global correction
+
+clean pushed `dc5dff6`完成v9 fresh balanced 228 visits/38 updates与24-task物化，clean pushed `bb3bc59`完成308-panel冻结审计。
+v9把candidate/direct norm ratio从v8的`8.75029`压到`1.94717`，fit candidate-to-shared达到`.98369`，held达到`1.00692`；
+相对source为`.56423/.71072`且24/24 tasks更好。这是Stage 1迄今最强的shared-preserving修正。
+
+它仍未通过方法门。fit/held breadth只有`10/19、2/5`，candidate pair cosine`.99779`、own retrieval `1/24`；去掉shared后
+correction pair cosine仍`.97482`，selector fraction仅`.08031--.09164`。因此v9关闭且held闭环rows保持0。后继保留bounded
+exact-prior selector，但replacement只允许language/scene-conditioned query读取present process Values，消除静态Value或presence
+开关写近全局修正的旁路。证据：
+`docs/evidence/ecp_20260822/stage1_functional_rank_selector_fold0_tv228_support.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

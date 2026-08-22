@@ -202,8 +202,14 @@
   v8末段`.21882`；但functional response从`.28632`恶化到`.40139`，不能由训练loss promote。
 - 24-task K2物化已完成。bounded selector把candidate/direct norm ratio从v8的`8.75029`压到`1.94717`，但candidate跨task
   cosine反而为`.99779`，own-direct `.04015`仍低于nearest-other `.06247`，自身检索`1/24`；mean replacement fraction
-  `.08783`且task范围仅`.08031--.09164`。几何门失败，held闭环仍为0。当前只运行一次复用缓存的308-panel冻结support audit，
-  判断v9是否至少保住shared surface；未过门则关闭v9，不续训。
+  `.08783`且task范围仅`.08031--.09164`。几何门失败，held闭环仍为0。
+- clean pushed `bb3bc59`完成308-panel冻结support audit。v9使fit candidate/source/shared为`.39853/.70633/.40514`，
+  candidate相对source/shared为`.56423/.98369`，19/19优于source且10/19优于shared；held为`.62866/.88454/.62434`，
+  ratio `.71072/1.00692`，5/5优于source但仅2/5优于shared。132/308 panels优于shared，297/308优于source；fit aggregate
+  首次略胜shared，但fit/held breadth和held aggregate三个shared门仍失败。candidate-minus-shared correction跨task cosine仍
+  `.97482`、相对shared norm仅`.24768`，证明它主要学到一个安全的近全局修正。v9最终关闭，不续训、不进入held闭环/reward/`q_V`。
+  当前唯一后继保留bounded exact-prior selector，但让replacement值只来自present process tokens，language/scene只条件化query，
+  去掉full/prior开关可凭静态token写出近全局修正的路径。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

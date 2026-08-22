@@ -1,0 +1,112 @@
+{
+  "schema_version": "ember_ecp_stage1_functional_rank_selector_support_v1",
+  "date": "2026-08-22",
+  "training_repository_commit": "dc5dff6ff43626d5a6cf9920a100c5ce73ac99e0",
+  "audit_repository_commit": "bb3bc59e473a51dd78aac999d0f0275dd1094eae",
+  "stage": "stage1_functional_rank_selector_v9_closed",
+  "profile": {
+    "successful_update_seconds": 2.3076126189989736,
+    "learner_update_seconds": 2.078292534999491,
+    "maximum_cuda_allocated_bytes": 16438259200,
+    "successful_gradient_norm_before_clip": 0.6434794068336487,
+    "learner_gradient_norm_before_clip": 1.4050568342208862,
+    "first_replacement_fraction": 0.0,
+    "second_replacement_fraction": 0.00000392407719118637,
+    "all_gradients_finite": true
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_functional_rank_selector_fold0_tv228_r6_dc5dff6_gpu01p123456_20260822",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "successful_records": 114,
+    "learner_records": 114,
+    "fit_task_visit_count_minimum": 12,
+    "fit_task_visit_count_maximum": 12,
+    "elapsed_seconds": 115.24906021400238,
+    "maximum_cuda_allocated_bytes": 16657711616,
+    "maximum_gradient_norm_before_clip": 14.526764869689941,
+    "first_five_update_mean": {
+      "total": 0.3929993952314059,
+      "functional_response": 0.2863157119601965,
+      "shared_support": 0.0022232658598416795,
+      "source_support": 0.5117278481523196,
+      "rank_replacement_fraction": 0.00004846245143805087
+    },
+    "last_five_update_mean": {
+      "total": 0.47060173104206726,
+      "functional_response": 0.40138940686980884,
+      "shared_support": 0.027732308938478428,
+      "source_support": 0.3427005961537361,
+      "rank_replacement_fraction": 0.08093271429340046
+    },
+    "checkpoint_complete": true,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "materialization": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_functional_rank_selector_projection_tv228_dc5dff6_gpu01p1_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.9977923631668091,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.0401478074491024,
+    "mean_nearest_other_direct_cosine": 0.06247290223836899,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.9471654891967773,
+    "candidate_effective_rank_participation_mean": 1.0828051567077637,
+    "candidate_top1_energy_fraction_mean": 0.9658387899398804,
+    "mean_rank_replacement_fraction": 0.08783424086868763,
+    "minimum_rank_replacement_fraction": 0.08030763268470764,
+    "maximum_rank_replacement_fraction": 0.09163739532232285,
+    "candidate_minus_shared_pair_cosine_mean": 0.9748201370239258,
+    "candidate_minus_shared_norm_to_shared_mean": 0.2476833313703537,
+    "geometry_gate_passed": false,
+    "held5_closed_loop_rows": 0
+  },
+  "frozen_all_panel_support_audit": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_functional_rank_selector_audit_tv228_bb3bc59_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.39853107670256704,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.5642252210534701,
+      "candidate_to_shared_ratio": 0.9836907194047644,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 10,
+      "successful_candidate_to_shared_ratio": 0.9862308358253878,
+      "learner_candidate_to_shared_ratio": 0.980215893228804,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.6286583378911018,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.7107206194691883,
+      "candidate_to_shared_ratio": 1.0069224964571617,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 2,
+      "panels": 40
+    },
+    "candidate_panel_wins_over_shared": 132,
+    "candidate_panel_wins_over_source": 297,
+    "total_panels": 308,
+    "task_equal": true,
+    "gate_passed": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "interpretation": {
+    "established": "Bounded rank-mode replacement nearly preserves the stable-shared support surface and is the strongest Stage 1 compiler correction so far. It moves fit aggregate slightly ahead of shared and holds held aggregate within 0.69 percent while controlling candidate norm.",
+    "earliest_failed_interface": "The learned correction remains almost global rather than task-conditioned. Candidate-minus-shared corrections have 0.97482 cross-task cosine, selector fraction lies in the narrow 0.08031 to 0.09164 interval, and full candidates have 0.99779 cross-task cosine with only 1 of 24 own-direct retrievals.",
+    "failed_gate": "Fit breadth is 10 of 19 rather than 13, held breadth is 2 of 5 rather than 3, and held aggregate is slightly worse than shared. Geometry and frozen-support gates therefore fail despite the strong preservation improvement."
+  },
+  "decision": {
+    "verdict": "fail_task_dependent_geometry_and_frozen_support_gate_close_v9",
+    "continue_v9": false,
+    "run_held5_closed_loop": false,
+    "start_simulator_reward": false,
+    "start_q_v": false,
+    "next": "Keep the bounded exact-prior rank selector but make its selector and replacement values read a matched process-only contrast: language and scene condition the query, while only present process tokens provide values. This removes the observed language-scene or process-presence switch path that can learn one global correction."
+  }
+}

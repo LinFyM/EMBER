@@ -156,7 +156,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 完成selector successful/learner真实双visit profile；两步均finite、约2.3/2.1秒，selector从exact-zero安全打开；
 - [x] 从clean pushed authority按balanced schedule fresh训练228 visits并物化24 tasks；norm受控但cross-task cosine`.99779`、
   own retrieval `1/24`，几何门失败；
-- [ ] 对冻结single checkpoint复跑308-panel support gate；未过门则关闭v9，不续训、不跑held闭环；
+- [x] 对冻结single checkpoint复跑308-panel support gate；fit aggregate略优于shared，但fit/held breadth仅`10/19、2/5`且held
+  aggregate为`1.00692x`，v9按门关闭；
+- [ ] 保持bounded exact-prior rank selector与全部训练变量，只把compiler改为language/scene-conditioned、process-value-only
+  reader；完成零process因果合同、真实双visit profile和fresh balanced 228-visits gate；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 

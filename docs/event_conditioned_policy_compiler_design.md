@@ -550,6 +550,18 @@ fraction为0；一次optimizer update后第二步fraction为`3.9241e-6`，两步
 retraction图和预期的两阶段梯度到达顺序成立；方法资格仍只由fresh balanced 228节点的24-task geometry与冻结full-bank
 support决定。
 
+v9的正式裁决表明bounded retraction解决了“破坏shared”，却没有解决“按task编译”。fit aggregate相对shared达到`.98369x`，
+held为`1.00692x`，远好于v8的`1.17823/1.11729`；但breadth仅`10/19、2/5`，candidate跨task cosine`.99779`，
+candidate-minus-shared correction本身也有`.97482` pair cosine，24个task的replacement fraction全部挤在
+`.08031--.09164`。因此不续训v9，也不因接近shared就运行held闭环。
+
+active v10只修正这条已观测因果旁路。numeric target/rank query继续由exact language和scene条件化，但replacement attention
+只在present process tokens上归一化，factor与selector的Value只来自process/uncertainty content；language/scene不再作为可直接
+写replacement的Value，process presence也不能只充当full/prior开关。process values全零时，即使language/scene与presence存在，
+replacement hidden仍严格为零并返回完整shared；真实process则保留event/owner顺序、locality和全部16 ranks。bounded QR/RMS
+replacement、零初始化selector、support bank、task-balanced schedule、seed和functional-only objective全部不变。该单变量直接
+检验“近全局修正来自静态Value/开关旁路”，资格仍由同一24-task geometry与308-panel frozen support gate决定。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

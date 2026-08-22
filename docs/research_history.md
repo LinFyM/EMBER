@@ -1000,6 +1000,26 @@ v11--v13 outcome只扰动q_pi gate或38个selector angles，不能裁决replacem
 每owner/family局部proposal，并用fit19 paired success/progress给这些proposal structured outcome credit；不是继续v17曲线或
 扫描小权重。证据：`docs/evidence/ecp_20260822/stage1_action_grounded_v17_gate.json`。
 
+### 3.52 OCPB v18真实closed-loop factor credit仍未识别own successful Program
+
+clean pushed `026e756`以v17 macro114 model weights和fresh optimizer运行OCPB v18。single-task paired profile先确认
+38/38 owner action-gradient proposals、strict common-random simulator、非零success-efficiency advantage与LoRA-leaf到
+FactorHead反传。旧outcome的`.01` multiplier会把标准`2 sigma`归一后的leaf再次任意缩小；matched profile改为自然`1.0`
+尺度后，outcome leaf由`.002038`变为`.20380`，FactorHead/total gradient仍为finite的`1.367/4.785`，显存不变。
+
+正式4个macros每轮均覆盖fit19各一次并只做一个等权optimizer update；非零credit breadth为`9/8/10/9` tasks，证明训练
+outcome不是dead signal。macro2的candidate pair cosine由v17`.90236`降到`.89302`，fit frozen-support ratio也由
+`1.13962`暂时改善到`1.13120`，所以按预注册合同exact-resume到macro4。最终pair cosine继续小降到`.89140`，但
+own/nearest-direct为`.03836/.05799`、retrieval仍`1/24`。308-panel macro4 audit的fit/held candidate-to-shared为
+`1.14317/1.13244x`、breadth`2/19、0/5`，既反转macro2的fit改善，也比v17更差。
+
+Program correction pair cosine从macro2`.84710`到macro4`.84690`几乎不变，而compiled adapter继续分散；这与实现中的
+坐标错位一致：paired plus/minus先在compiler输出之外的完整A/B factor states上构造，scalar reward再经leaf投回同时可动的
+Program和compiler。它能重定义decoder输出，却没有证明reward识别了compiler可达的own Program方向。v18因此在macro4关闭，
+不运行held5、fold rotation或`q_V`。后继回到v13 support最强坐标并冻结compiler，只在event × layer-group × family Program
+切空间做逐family action-guided paired credit；先验证fixed compiler reachability。证据：
+`docs/evidence/ecp_20260822/stage1_action_guided_v18_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

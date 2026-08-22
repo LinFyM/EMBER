@@ -1282,3 +1282,18 @@ candidate pair cosine降到`.90236`、norm ratio达到`1.14481`，说明完整Lo
 尚未被否定的是专家明确要求的task-equal closed-loop success/progress，因为历史outcome coordinate只对evidence gate或selector
 angle给credit，未触及replacement factor方向。下一结构性变量应让exact action gradient提供38-owner/family局部proposal，paired
 train simulator outcome只选择这些proposal的闭环符号和幅度；这既比全局随机LoRA扰动有结构，也不让reward负责发明Program。
+
+## 61. factor-space closed-loop credit有效但仍不是固定Program坐标上的可识别监督
+
+OCPB v18用exact action gradient构造38个owner-local A/B方向，再用每task两条paired lanes的success、progress与效率给方向
+分配credit。4个macros每轮都有`8--10/19` tasks产生非零advantage，plus/minus successes也持续不同，因此不能再说“缺少
+closed-loop reward”或“outer图没有接通”。
+
+它仍没有恢复策略。candidate pair cosine从v17`.90236`降到macro4`.89140`，但own-direct始终约`.038`、retrieval始终
+`1/24`；fit/held support最终为shared的`1.14317/1.13244x`，breadth仍`2/19、0/5`。短暂macro2 fit改善还在macro4反转。
+所以被否定的是：**在compiler输出的完整factor空间同时扰动38个owner，再把一个task scalar reward投回同时可动的Program与
+compiler，足以识别task-native policy方向。**
+
+专家要求的“固定、功能锚定policy-adaptation坐标”仍未被这个实验真正检验。下一步必须把compiler固定，把perturbation放在其
+真实可达的event/layer/family Program切空间，并让一次paired reward只裁决一个预注册结构块；否则scalar reward仍同时承担
+Program坐标识别和decoder旋转，重复旧问题。该结论不否定closed-loop credit、action gradient或structured Program本身。

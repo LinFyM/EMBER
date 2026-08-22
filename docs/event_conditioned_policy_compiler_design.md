@@ -793,6 +793,21 @@ single-task profile确认finite gradient和显存后，才授权fit19 formal。m
 gradient仅为`1.36716/4.78533`且finite，峰值显存仍为`16,443,782,144` bytes。因此`1.0`成为v18唯一canonical尺度，fit19
 bounded节点已获运行授权。
 
+v18随后完成4个fit19 task-equal macros。每轮有`8--10/19` tasks产生非零paired credit，证明闭环目标不是稀疏dead path；
+但macro2/macro4的own-direct cosine只有`.03862/.03836`，retrieval均为`1/24`。308-panel fit/held relative-shared在macro2为
+`1.13120/1.12216x`，到macro4又退到`1.14317/1.13244x`，breadth始终`2/19、0/5`。Program correction pair cosine几乎不动
+（`.84710→.84690`），而compiled adapter继续分散（`.89302→.89140`）；说明直接在完整A/B factor空间构造plus/minus，随后把
+scalar reward leaf投回同时可动的Program与compiler，主要仍在重新定义编译坐标，没有识别own successful Program。v18因此在
+macro4关闭，不运行held5或`q_V`。
+
+下一Stage 1变量称为 **OCPB v19 fixed-compiler structured Program binding**。它回到v13这个已证明最能保留shared support的完整
+Program/compiler坐标并冻结compiler；exact action gradient只在该compiler真实可达的Program切空间定义proposal，按
+event × layer-group × target-family分块。首个bounded实现每次只扰动一个target-family block、保留全部active ordered events和
+该family的native layers，使一个paired reward差只回答一个明确问题，不再用一次scalar advantage同时估计38个A/B owner坐标。
+reward surrogate只能更新privileged Program inference，FactorHeads、rank selector与其余compiler永久冻结。先用单task profile
+证明Program perturbation能产生足够的compiled LoRA差异、paired outcome差异和finite upstream gradient；若固定compiler局部
+不可达，就在训练前关闭，而不是靠放大sigma或重新解冻decoder。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

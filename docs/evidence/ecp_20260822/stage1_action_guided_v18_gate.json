@@ -1,0 +1,136 @@
+{
+  "schema_version": "ember_ecp_stage1_action_guided_v18_gate_evidence_v1",
+  "method": "OCPB v18 action-guided structured outcome binding",
+  "repository_commit": "026e75618d868b0b9e68fe667fbcff3f4a1b00a0",
+  "profile": {
+    "task_ordinal": 1,
+    "active_owners": 38,
+    "paired_lanes_per_arm": 2,
+    "plus_successes": 1,
+    "minus_successes": 1,
+    "mean_advantage": 0.003977272727272774,
+    "action_leaf_gradient_norm": 0.1230350211262703,
+    "legacy_leaf_weight": {
+      "weight": 0.01,
+      "outcome_leaf_gradient_norm": 0.002038097707554698,
+      "outcome_surrogate": -0.0001662614376982674,
+      "factor_head_gradient_norm": 0.8624869585037231,
+      "total_gradient_norm": 4.908284664154053
+    },
+    "canonical_leaf_weight": {
+      "weight": 1.0,
+      "outcome_leaf_gradient_norm": 0.20380240678787231,
+      "outcome_surrogate": -0.016624413430690765,
+      "factor_head_gradient_norm": 1.3671636581420898,
+      "total_gradient_norm": 4.785330772399902
+    },
+    "maximum_cuda_allocated_bytes": 16443782144
+  },
+  "training": {
+    "run": "runs/outputs/pi05_ecp_stage1_action_guided_v18_m2_r6_026e756_gpu01p123456_20260822",
+    "initialization": "v17 macro114 model weights only with a fresh optimizer",
+    "completed_macros": 4,
+    "fit_tasks_per_macro": 19,
+    "optimizer_updates": 4,
+    "world_size": 6,
+    "physical_gpus": [1, 2, 3, 4, 5, 6],
+    "maximum_cuda_allocated_bytes": 16557433856,
+    "macros": [
+      {
+        "macro": 1,
+        "nonzero_advantage_tasks": 9,
+        "plus_successes": 8,
+        "minus_successes": 11,
+        "mean_advantage": -0.10212145748987854,
+        "mean_outcome_leaf_gradient_norm": 8.710975573839326,
+        "factor_head_gradient_norm_before_clip": 22.62122344970703,
+        "total_gradient_norm_before_clip": 24.30362319946289
+      },
+      {
+        "macro": 2,
+        "nonzero_advantage_tasks": 8,
+        "plus_successes": 11,
+        "minus_successes": 11,
+        "mean_advantage": -0.0017245123297754833,
+        "mean_outcome_leaf_gradient_norm": 0.14924434665590525,
+        "factor_head_gradient_norm_before_clip": 0.6537129282951355,
+        "total_gradient_norm_before_clip": 2.6252219676971436
+      },
+      {
+        "macro": 3,
+        "nonzero_advantage_tasks": 10,
+        "plus_successes": 10,
+        "minus_successes": 9,
+        "mean_advantage": 0.04190800208563367,
+        "mean_outcome_leaf_gradient_norm": 5.598749013446075,
+        "factor_head_gradient_norm_before_clip": 14.71340560913086,
+        "total_gradient_norm_before_clip": 14.797038078308105
+      },
+      {
+        "macro": 4,
+        "nonzero_advantage_tasks": 9,
+        "plus_successes": 10,
+        "minus_successes": 8,
+        "mean_advantage": 0.06492255989624413,
+        "mean_outcome_leaf_gradient_norm": 7.126204302632495,
+        "factor_head_gradient_norm_before_clip": 18.209508895874023,
+        "total_gradient_norm_before_clip": 18.52659034729004
+      }
+    ]
+  },
+  "projection": {
+    "macro2": {
+      "manifest": "runs/analysis/pi05_ecp_stage1_action_guided_v18_projection_m2_026e756_gpu01p6_20260822/projection_manifest.json",
+      "candidate_pair_cosine_mean": 0.8930231928825378,
+      "mean_own_direct_cosine": 0.03861544281244278,
+      "mean_nearest_other_direct_cosine": 0.05817962810397148,
+      "own_retrieval_count": 1,
+      "mean_effective_norm_ratio": 1.145017147064209,
+      "program_correction_pair_cosine_mean": 0.8471030592918396
+    },
+    "macro4": {
+      "manifest": "runs/analysis/pi05_ecp_stage1_action_guided_v18_projection_m4_026e756_gpu01p6_20260822/projection_manifest.json",
+      "candidate_pair_cosine_mean": 0.8914044499397278,
+      "mean_own_direct_cosine": 0.0383562371134758,
+      "mean_nearest_other_direct_cosine": 0.05798656865954399,
+      "own_retrieval_count": 1,
+      "mean_effective_norm_ratio": 1.13994300365448,
+      "program_correction_pair_cosine_mean": 0.8469027876853943
+    }
+  },
+  "frozen_support_audit": {
+    "panels": 308,
+    "v17_baseline": {
+      "fit_candidate_to_shared_ratio": 1.139624505569159,
+      "fit_tasks_better_than_shared": 2,
+      "held_candidate_to_shared_ratio": 1.1220254706631876,
+      "held_tasks_better_than_shared": 0
+    },
+    "macro2": {
+      "audit": "runs/analysis/pi05_ecp_stage1_action_guided_v18_audit_m2_026e756_gpu01p123456_20260822/audit.json",
+      "fit_candidate_to_shared_ratio": 1.1312034109259024,
+      "fit_tasks_better_than_shared": 2,
+      "held_candidate_to_shared_ratio": 1.122156821412957,
+      "held_tasks_better_than_shared": 0
+    },
+    "macro4": {
+      "audit": "runs/analysis/pi05_ecp_stage1_action_guided_v18_audit_m4_026e756_gpu01p123456_20260822/audit.json",
+      "fit_candidate_to_shared_ratio": 1.1431721545289875,
+      "fit_tasks_better_than_shared": 2,
+      "held_candidate_to_shared_ratio": 1.1324407588374399,
+      "held_tasks_better_than_shared": 0
+    }
+  },
+  "information_wall": {
+    "held5_shared_gradient_steps": 0,
+    "held5_action_or_reward_reads": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "prohibited_gpu01_physical0_used": false
+  },
+  "decision": {
+    "status": "failed_stop_before_held5_and_q_v",
+    "reason": "Task-equal paired success and progress produced broad nonzero gradients and slightly dispersed compiled adapters, but never identified the own successful policy direction or recovered shared support. The transient macro2 fit improvement reversed by macro4 while held support worsened.",
+    "next_interface": "Keep the compiler coordinate fixed and place action-informed paired credit on reachable event-layer-family Program blocks. Do not continue full-factor perturbations, move the compiler under the same scalar reward, or scan sigma, weight, learning rate, rank, or seed."
+  }
+}

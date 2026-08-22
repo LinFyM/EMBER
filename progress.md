@@ -65,6 +65,15 @@
   init与RNG，outcome leaf如预期变为`.20380`、surrogate`-.01662`，而FactorHead/total梯度仅变为`1.36716/4.78533`，均finite，
   global clipping继续有效；整步`63.85s`、峰值仍为`16,443,782,144` bytes。profile后GPU已释放，physical0保持`14MB/0%`。
   该结果解除fit19 bounded formal运行门，仍不构成性能证据。
+- OCPB v18已经完成全部4个预注册task-equal macros并关闭。每个macro覆盖fit19各一次、只做一个等权update，非零paired
+  advantage breadth依次为`9/8/10/9` tasks，plus/minus successes为`8/11、11/11、10/9、10/8`；因此outcome图和train-only
+  reward信号均真实存在。macro2物化把candidate pair cosine从v17`.90236`小幅降到`.89302`，fit support ratio也暂时从
+  `1.13962`改善到`1.13120`，故按预注册合同exact-resume到macro4。最终pair cosine为`.89140`，但own/nearest-direct仍仅
+  `.03836/.05799`、retrieval`1/24`；macro4的308-panel fit/held relative-shared反而退到`1.14317/1.13244x`，breadth仍
+  `2/19、0/5`。Program correction pair cosine在macro2/macro4为`.84710/.84690`，几乎不动；scalar outcome主要继续改变可动
+  compiler输出，未建立own successful Program。v18不运行held5、fold rotation或`q_V`。下一active Stage 1变量为
+  **OCPB v19 fixed-compiler structured Program binding**：回到v13 support authority，冻结compiler，仅在compiler可达的
+  event/layer-group/family Program切空间逐family给予action-guided paired credit，先做单task reachability profile。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

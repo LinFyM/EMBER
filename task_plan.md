@@ -213,8 +213,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   LoRA-leaf到FactorHead反传、显存和吞吐全部接通；首个`.01x` profile还发现closed-loop leaf被旧outcome尺度任意压低，
   formal前改用已由antithetic estimator完整归一化的`1.0x`自然梯度尺度；matched profile已确认outcome leaf按预期放大100倍，
   FactorHead/total gradient保持finite且显存不变；
-- [ ] 运行有合理optimizer暴露量的bounded outcome节点；只有geometry、frozen support和train-only closed-loop outcome共同改善，
-  才进入held5 oracle；
+- [x] 完成4个task-equal outcome macros及macro2/macro4两次24-task geometry与308-panel audit；credit在每轮覆盖`8--10/19`
+  tasks，但own retrieval始终`1/24`，macro4 fit/held relative-shared退到`1.14317/1.13244x`、breadth仍`2/19、0/5`，
+  因此v18关闭，不进入held5或`q_V`；
+- [ ] 实现 **OCPB v19 fixed-compiler structured Program binding**：回到support最强的v13完整坐标，永久冻结compiler，
+  exact action gradient只在compiler可达的event × layer-group × target-family Program切空间定义proposal；每次paired panel只裁决
+  一个预注册family block，reward只更新privileged Program inference，不再让scalar outcome旋转FactorHeads；先做reachability profile，
+  再决定是否运行fit19 bounded节点；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

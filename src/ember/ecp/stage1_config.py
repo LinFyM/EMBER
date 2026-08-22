@@ -13,8 +13,9 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_layer_resolved_single_surface_compiler_run_v24"
-STAGE = "stage1_layer_resolved_single_surface_compiler_v24"
+CONFIG_SCHEMA = "ember_ecp_stage1_mapping_diverse_compiler_oracle_v1"
+RUN_SCHEMA = "ember_ecp_stage1_mapping_diverse_compiler_oracle_run_v1"
+STAGE = "stage1_mapping_diverse_compiler_oracle"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -29,123 +30,146 @@ def stage1_asset_authority(
     return path if path.is_absolute() else asset_root / path
 
 
+def _valid_model_contract(config: Mapping[str, Any]) -> bool:
+    model = config.get("model", {})
+    forbidden = {
+        "rank_selector",
+        "replacement_normalization",
+        "replacement_head_init_multiplier",
+        "selector_max_angle_radians",
+    }
+    return all(
+        (
+            model.get("hard_rank_partition") is False,
+            model.get("query_to_output_shortcut") is False,
+            "query_content_modulation" in model,
+            int(model.get("compiler_tokens", -1)) == 380,
+            int(model.get("static_tokens", -1)) == 76,
+            int(model.get("process_tokens", -1)) == 304,
+            "direct absolute complete rank16 LoRA"
+            in model.get("full_process_surface", ""),
+            "target-local" in model.get("absolute_factor_heads", ""),
+            model.get("static_process_local_reads") is True,
+            model.get("continuous_static_process_fusion") is True,
+            model.get("target_local_factor_heads") is True,
+            model.get("single_surface_prior_full") is True,
+            model.get("exact_template_output_bypass") is False,
+            forbidden.isdisjoint(model),
+        )
+    )
+
+
+def _valid_objective_contract(config: Mapping[str, Any]) -> bool:
+    objective = config.get("objective", {})
+    support = config.get("policy_support", {})
+    diagnostic = (
+        "member_effective_update",
+        "consensus_effective_update",
+        "member_canonical_factor",
+        "consensus_canonical_factor",
+    )
+    return all(
+        (
+            tuple(support.get("channels", ()))
+            == (
+                "successful_expert_minus_source",
+                "successful_shared_minus_source",
+                "learner_expert_minus_source",
+                "learner_policy_minus_source",
+                "learner_shared_minus_source",
+            ),
+            int(support.get("horizon_basis", -1)) == 4,
+            support.get("target_local_activation_effect_panels_required") is True,
+            objective.get("support_preservation")
+            == "baseline_relative_response_barrier",
+            float(objective.get("activation_effect_distillation_weight", -1)) > 0,
+            float(objective.get("action_policy_loss_weight", -1)) > 0,
+            objective.get("action_supervision_weights")
+            == {
+                "successful": 1.0,
+                "verified_successful_learner": 1.0,
+                "failed_learner": 0.0,
+            },
+            objective.get("policy_flow_time_sampling_scheme")
+            == "task_logical_batch_keyed_independent_beta15_time_v2",
+            objective.get("policy_flow_noise_sampling_scheme")
+            == "task_logical_batch_keyed_independent_gaussian_v2",
+            all(
+                float(objective.get("weights", {}).get(name, -1)) == 0
+                for name in diagnostic
+            ),
+            float(objective.get("prior_shared_response_weight", -1)) > 0,
+        )
+    )
+
+
+def _valid_run_contract(config: Mapping[str, Any]) -> bool:
+    initialization = config.get("initialization", {})
+    optimization = config.get("optimization", {})
+    calibration = config.get("prior_calibration", {})
+    data = config.get("data", {})
+    return all(
+        (
+            initialization.get("stage")
+            == "stage1_single_surface_absolute_compiler_v23",
+            initialization.get("run_contract_schema")
+            == "ember_ecp_stage1_single_surface_absolute_compiler_run_v23",
+            int(initialization.get("checkpoint_macro", -1)) == 114,
+            initialization.get("load_model_weights_only") is True,
+            initialization.get("fresh_optimizer") is True,
+            initialization.get("migrate_family_heads_to_targets") is True,
+            float(initialization.get("prior_head_relative_ridge", -1)) > 0,
+            int(optimization.get("functional_policy_microbatch_size", -1)) == 1,
+            int(optimization.get("visits_per_fit_task", -1)) == 12,
+            int(optimization.get("total_task_visits", -1)) == 1080,
+            tuple(optimization.get("checkpoint_task_visits", ())) == (540, 1080),
+            tuple(optimization.get("stage_stop_task_visits", ())) == (540, 1080),
+            tuple(optimization.get("allowed_world_sizes", ())) == (1, 2, 3, 4, 5, 6),
+            tuple(config.get("roles", {}).get("fit_task_ordinals", ()))
+            == tuple(range(90)),
+            tuple(config.get("roles", {}).get("held_task_ordinals", ()))
+            == tuple(range(90, 95)),
+            calibration.get("scope")
+            == (
+                "fit90 initial privileged q_pi coordinates used once for "
+                "minimum-change prior calibration"
+            ),
+            int(calibration.get("video_visit", -1)) == 12099,
+            calibration.get("task_id_route") is False,
+            calibration.get("retained_program_table") is False,
+            data.get("task_namespace") == ["source90", "target40"],
+            int(data.get("fit_mappings", -1)) == 90,
+            int(data.get("held_mappings", -1)) == 5,
+            int(data.get("successful_members", -1)) == 118,
+        )
+    )
+
+
 def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if (
-        config.get("schema_version")
-        != "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24"
-        or config.get("status")
-        != "active_stage1_layer_resolved_single_surface_compiler"
-        or config.get("model", {}).get("hard_rank_partition") is not False
-        or config.get("model", {}).get("query_to_output_shortcut") is not False
-        or "query_content_modulation" not in config.get("model", {})
-        or tuple(config.get("policy_support", {}).get("channels", ()))
-        != (
-            "successful_expert_minus_source",
-            "successful_shared_minus_source",
-            "learner_expert_minus_source",
-            "learner_policy_minus_source",
-            "learner_shared_minus_source",
+    information_wall = config.get("information_wall", {})
+    valid = all(
+        (
+            config.get("schema_version") == CONFIG_SCHEMA,
+            config.get("status") == "active_mapping_diverse_compiler_oracle",
+            _valid_model_contract(config),
+            _valid_objective_contract(config),
+            _valid_run_contract(config),
+            information_wall.get("validation_action_or_reward_reads") == 0,
+            information_wall.get("test_action_or_reward_reads") == 0,
+            information_wall.get("held5_action_or_reward_reads") == 0,
+            config.get("training_ownership")
+            == {
+                "visible_program_trainable": False,
+                "policy_teacher_trainable": True,
+                "compiler_trainable": True,
+                "source_policy_trainable": False,
+                "observer_trainable": False,
+            },
         )
-        or int(config.get("policy_support", {}).get("horizon_basis", -1)) != 4
-        or config.get("policy_support", {}).get(
-            "target_local_activation_effect_panels_required"
-        )
-        is not True
-        or config.get("objective", {}).get("support_preservation")
-        != "baseline_relative_response_barrier"
-        or float(
-            config.get("objective", {}).get("activation_effect_distillation_weight", -1)
-        )
-        <= 0
-        or float(config.get("objective", {}).get("action_policy_loss_weight", -1)) <= 0
-        or config.get("objective", {}).get("action_supervision_weights")
-        != {
-            "successful": 1.0,
-            "verified_successful_learner": 1.0,
-            "failed_learner": 0.0,
-        }
-        or config.get("objective", {}).get("policy_flow_time_sampling_scheme")
-        != "task_logical_batch_keyed_independent_beta15_time_v2"
-        or config.get("objective", {}).get("policy_flow_noise_sampling_scheme")
-        != "task_logical_batch_keyed_independent_gaussian_v2"
-        or int(
-            config.get("optimization", {}).get("functional_policy_microbatch_size", -1)
-        )
-        != 1
-        or int(config.get("model", {}).get("compiler_tokens", -1)) != 380
-        or "direct absolute complete rank16 LoRA"
-        not in config.get("model", {}).get("full_process_surface", "")
-        or "target-local" not in config.get("model", {}).get(
-            "absolute_factor_heads", ""
-        )
-        or config.get("model", {}).get("static_process_local_reads") is not True
-        or config.get("model", {}).get("continuous_static_process_fusion") is not True
-        or config.get("model", {}).get("target_local_factor_heads") is not True
-        or int(config.get("model", {}).get("static_tokens", -1)) != 76
-        or int(config.get("model", {}).get("process_tokens", -1)) != 304
-        or config.get("model", {}).get("single_surface_prior_full") is not True
-        or config.get("model", {}).get("exact_template_output_bypass") is not False
-        or any(
-            name in config.get("model", {})
-            for name in (
-                "rank_selector",
-                "replacement_normalization",
-                "replacement_head_init_multiplier",
-                "selector_max_angle_radians",
-            )
-        )
-        or config.get("information_wall", {}).get("validation_action_or_reward_reads")
-        != 0
-        or config.get("information_wall", {}).get("test_action_or_reward_reads") != 0
-        or config.get("information_wall", {}).get("held5_action_or_reward_reads") != 0
-        or config.get("training_ownership")
-        != {
-            "visible_program_trainable": False,
-            "policy_teacher_trainable": False,
-            "compiler_trainable": True,
-            "source_policy_trainable": False,
-            "observer_trainable": False,
-        }
-        or any(
-            float(config.get("objective", {}).get("weights", {}).get(name, -1)) != 0.0
-            for name in (
-                "member_effective_update",
-                "consensus_effective_update",
-                "member_canonical_factor",
-                "consensus_canonical_factor",
-            )
-        )
-        or float(config.get("objective", {}).get("prior_shared_response_weight", -1))
-        <= 0.0
-        or config.get("initialization", {}).get("stage")
-        != "stage1_single_surface_absolute_compiler_v23"
-        or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_single_surface_absolute_compiler_run_v23"
-        or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 114
-        or config.get("initialization", {}).get("load_model_weights_only") is not True
-        or config.get("initialization", {}).get("fresh_optimizer") is not True
-        or config.get("initialization", {}).get("migrate_family_heads_to_targets")
-        is not True
-        or float(config.get("initialization", {}).get("prior_head_relative_ridge", -1))
-        <= 0.0
-        or int(config.get("optimization", {}).get("visits_per_fit_task", -1)) != 6
-        or int(config.get("optimization", {}).get("total_task_visits", -1)) != 114
-        or int(config.get("optimization", {}).get("optimizer_updates", -1)) != 19
-        or tuple(config.get("optimization", {}).get("checkpoint_task_visits", ()))
-        != (114,)
-        or tuple(config.get("optimization", {}).get("stage_stop_task_visits", ()))
-        != (114,)
-        or config.get("fixed_program_coordinate", {}).get("scope")
-        != "fit19 privileged q_pi coordinates captured once and frozen for compiler-only identification"
-        or int(config.get("fixed_program_coordinate", {}).get("video_visit", -1))
-        != 12099
-        or tuple(config.get("fixed_program_coordinate", {}).get("optimized_fields", ()))
-        != ()
-        or config.get("fixed_program_coordinate", {}).get("task_id_route") is not False
-        or config.get("fixed_program_coordinate", {}).get("checkpoint_state") is not False
-    ):
-        raise ValueError("unsupported ECP Stage 1 layer-resolved compiler contract")
+    )
+    if not valid:
+        raise ValueError("unsupported ECP Stage 1 mapping-diverse compiler contract")
     return config
 
 

@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **长期research design authority；v24已关闭，Stage 1当前只登记MDCO falsification contract**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-23 **长期research design authority；v24已关闭，Stage 1只执行MDCO falsification contract**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -971,9 +971,9 @@ profile中prior→shared response为`.01515`、full shared barrier为`.000587`�
 `.13244/8.18010/24.46963`，冻结模块为0。此前“直接把归一化process read加到static read”会把全compiler梯度放大到
 `591.7`并破坏support，已作为profile定位删除，未成为保留路径。
 
-实现所有权也同步收敛：`compiler.py`只负责local read、fusion与一次LoRA写出；`stage1_prior_calibration.py`只负责fit-only
-minimum-change初始化；`stage1_support_summary.py`只负责纯汇总；`stage1_support_audit.py`一次加载policy/panels后同时评测full与
-prior两臂。旧v23 config不在active tree保留。
+当时的实现所有权也同步收敛：`compiler.py`只负责local read、fusion与一次LoRA写出；`stage1_prior_calibration.py`只负责fit-only
+minimum-change初始化；v24专用的support summary/audit曾一次加载policy/panels后同时评测full与prior两臂。MDCO明确跳过该
+raw support预筛后，这两条退役运行面不再保留于active tree，历史实现由Git与formal artifacts保存。
 
 v24随后从clean pushed `631aab7`完成114 visits/19 updates。prior校准在19个fit Programs上的factor residual为`.02583`；
 compiler、target heads、process fusion与Action LoRA leaf梯度全程非零，冻结Program/`q_pi`梯度为0。因此这不是dead graph或

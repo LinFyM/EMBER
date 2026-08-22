@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Mapping
 
 import torch
+import torch.distributed as dist
 
 from ember.ecp.compiler import LayerResolvedCompiler
 from ember.ecp.program import ECPProgram
@@ -87,3 +88,36 @@ def calibrate_prior_heads(
             (after_squared / target_squared.clamp_min(1e-12)).sqrt()
         ),
     }
+
+
+def calibrate_prior_heads_distributed(
+    *,
+    compiler: LayerResolvedCompiler,
+    programs: Mapping[int, ECPProgram],
+    relative_ridge: float,
+    context: object,
+    resume: bool,
+) -> dict[str, object]:
+    """Calibrate once on rank zero and synchronize the shared compiler."""
+
+    if resume:
+        return {"applied": False, "reason": "resume_restores_mdco_checkpoint"}
+    summary: dict[str, object] = {}
+    if context.is_main:
+        summary = {
+            "applied": True,
+            **calibrate_prior_heads(
+                compiler, programs, relative_ridge=relative_ridge
+            ),
+            "fit_only": True,
+            "held_action_or_reward_reads": 0,
+            "validation_action_or_reward_reads": 0,
+            "test_action_or_reward_reads": 0,
+        }
+    if context.world_size > 1:
+        for parameter in compiler.parameters():
+            dist.broadcast(parameter.data, src=0)
+        payload = [summary if context.is_main else None]
+        dist.broadcast_object_list(payload, src=0)
+        summary = dict(payload[0])
+    return summary

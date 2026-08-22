@@ -1,6 +1,7 @@
 import json
 from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -22,6 +23,7 @@ from ember.ecp.stage1_data import (
 )
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_materialization import resolve_stage1_materialization_config
+from ember.ecp.stage1_config import load_stage1_config
 from ember.ecp.stage1_prior_calibration import calibrate_prior_heads
 from ember.ecp.stage1_objective import (
     effective_update_cosine_matrix,
@@ -32,18 +34,16 @@ from ember.ecp.stage1_support import (
     SUPPORT_PRESERVATION_BASELINE_BARRIER,
     policy_support_loss_from_response,
 )
-from ember.ecp.stage1_support_audit import (
-    AUDIT_ADAPTER_FIELDS,
-    AUDIT_CONFIG_SCHEMA,
-    load_audit_config,
-    summarize_policy_support_audit,
-)
+from ember.expert_manifold.projection import inspect_projected_task_expert_bank
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
     identity_lora_state,
 )
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_eval.occupancy_selection import successful_expert_occupancy_tasks
+from ember.pi05_eval_contract import TargetTaskContract
+from ember.pi05_source_checkpoint import write_json_atomic
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -133,7 +133,7 @@ def _expert_evidence(
 
 def test_failed_v24_stage1_authority_is_sealed() -> None:
     with pytest.raises(
-        ValueError, match="unsupported ECP Stage 1 layer-resolved compiler contract"
+        ValueError, match="unsupported ECP Stage 1 mapping-diverse compiler contract"
     ):
         resolve_stage1_materialization_config(
             REPO_ROOT
@@ -141,28 +141,156 @@ def test_failed_v24_stage1_authority_is_sealed() -> None:
         )
 
 
-def test_support_audit_requires_both_compiler_arms(tmp_path: Path) -> None:
-    path = tmp_path / "audit_config.json"
-    path.write_text(
-        json.dumps(
+def test_mdco_is_the_only_active_stage1_authority() -> None:
+    config = load_stage1_config(
+        REPO_ROOT / "configs/pi05_ecp_stage1_mapping_diverse_compiler_oracle.json"
+    )
+    assert config["data"]["fit_mappings"] == 90
+    assert config["roles"]["held_task_ordinals"] == [90, 91, 92, 93, 94]
+    assert config["training_ownership"]["policy_teacher_trainable"] is True
+
+
+def test_mdco_occupancy_selection_covers_all_71_mappings() -> None:
+    path = REPO_ROOT / "configs/pi05_ecp_stage1_mdco_nonheld_occupancy_selection.json"
+    manifest = json.loads(path.read_text())
+    by_task = {}
+    for row in manifest["rows"]:
+        by_task.setdefault(int(row["task_id"]), str(row["language"]))
+    tasks = tuple(
+        TargetTaskContract(
+            suite="libero_90",
+            task_id=task_id,
+            split_role="meta_train",
+            language=language,
+            problem_folder="libero_90",
+            bddl_file=f"task_{task_id}.bddl",
+            bddl_bytes=1,
+            init_states_file=f"task_{task_id}.pruned_init",
+            init_states_bytes=1,
+            installed_init_state_count=50,
+            horizon=400,
+            init_state_ids=tuple(range(50)),
+        )
+        for task_id, language in sorted(by_task.items())
+    )
+    selected, capture = successful_expert_occupancy_tasks(
+        SimpleNamespace(mode="formal", role="nonheld_meta"),
+        tasks,
+        output_dir=Path("/tmp/mdco-capture"),
+        writer_kind="task_expert",
+        selection_path=path,
+        manifest=manifest,
+        rows=manifest["rows"],
+    )
+    assert len(selected) == 71
+    assert sum(len(task.init_state_ids) for task in selected) == 142
+    assert capture["training_gradient_use"] is True
+    assert capture["category_counts"] == {
+        "gained": 58,
+        "retained_success": 71,
+        "direct_success_fallback": 13,
+    }
+
+
+def test_mdco_projection_binds_only_the_frozen_leave_task_out_panel(
+    tmp_path: Path,
+) -> None:
+    assets = {}
+    for name in (
+        "stage1_config",
+        "stage1_checkpoint",
+        "base_projection_manifest",
+        "policy_support_bank",
+    ):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        assets[name] = {"path": str(path), "bytes": path.stat().st_size}
+    base_tasks = []
+    projected_tasks = []
+    for ordinal in range(24):
+        checkpoint = tmp_path / f"checkpoint_{ordinal:02d}"
+        base_tasks.append(
             {
-                "schema_version": AUDIT_CONFIG_SCHEMA,
-                "status": "active_frozen_support_audit",
-                "adapter_fields": list(AUDIT_ADAPTER_FIELDS),
-                "thresholds": {
-                    "minimum_fit_tasks_better_than_source": 13,
-                    "minimum_fit_tasks_better_than_shared": 13,
-                    "minimum_held_tasks_better_than_source": 3,
-                    "minimum_held_tasks_better_than_shared": 3,
-                },
-                "information_wall": {
-                    "validation_action_or_reward_reads": 0,
-                    "test_action_or_reward_reads": 0,
-                },
+                "suite": "libero_train",
+                "task_id": ordinal,
+                "ordinal": ordinal,
+                "global_task_id": ordinal,
+                "checkpoint": str(checkpoint),
             }
         )
+        if ordinal < 5:
+            adapter = tmp_path / f"projected_{ordinal:02d}.safetensors"
+            adapter.write_bytes(b"projected")
+            projected_tasks.append(
+                {
+                    "suite": "libero_train",
+                    "task_id": ordinal,
+                    "ordinal": ordinal,
+                    "stage1_ordinal": 90 + ordinal,
+                    "global_task_id": ordinal,
+                    "expert_checkpoint": str(checkpoint),
+                    "projected_adapter": str(adapter),
+                    "projected_adapter_bytes": adapter.stat().st_size,
+                }
+            )
+    manifest = tmp_path / "projection.json"
+    write_json_atomic(
+        manifest,
+        {
+            "schema_version": (
+                "ember_ecp_stage1_mapping_diverse_compiler_oracle_projection_v1"
+            ),
+            "projection_kind": "ecp_stage1_mapping_diverse_compiler_oracle",
+            "repository": {"dirty_paths": []},
+            **assets,
+            "optimization": {
+                "task_visits": 540,
+                "fit_task_count": 90,
+                "held_task_count": 5,
+                "held_shared_gradient_steps": 0,
+                "compiler_trainable_during_training": True,
+                "visible_program_frozen_during_training": True,
+                "policy_teacher_frozen_during_training": False,
+                "compiler_frozen_for_materialization": True,
+                "single_complete_lora": True,
+                "final_lora_averaging": False,
+                "rank": 16,
+                "all_ranks_writable": True,
+                "parameterization": (
+                    "one layer-resolved direct-absolute A/B surface with continuous "
+                    "static/process fusion"
+                ),
+                "content_address_separated": True,
+                "query_content_modulated": True,
+                "policy_support_teacher": True,
+                "raw_factor_amplitude_retained": True,
+                "fixed_rank_partition": False,
+                "second_adapter_deployed": False,
+                "objective_phase": (
+                    "task_equal_mapping_diverse_q_pi_compiler_identification"
+                ),
+            },
+            "information_wall": {
+                "role": "development_train_leave_task_out_oracle_only",
+                "deployment_carrier": False,
+                "privileged_q_pi": (
+                    "fit90 shared training and frozen held5 inference only"
+                ),
+                "second_adapter_deployed": False,
+            },
+            "tasks": projected_tasks,
+        },
     )
-    assert tuple(load_audit_config(path)["adapter_fields"]) == AUDIT_ADAPTER_FIELDS
+    projected = inspect_projected_task_expert_bank(
+        {
+            "tasks": base_tasks,
+            "information_wall": {"evaluation_role": "development_train"},
+        },
+        manifest,
+    )
+    assert len(projected["tasks"]) == 5
+    assert projected["arm"] == "ecp_stage1_mdco_tv540"
+    assert all("projected_adapter" in row for row in projected["tasks"])
 
 
 def test_visible_program_video_set_is_permutation_invariant() -> None:
@@ -234,13 +362,15 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
             language=f"task {ordinal}",
             path=Path(f"task_{ordinal}.hdf5"),
             expected_bytes=1,
-            episode_lengths=tuple(40 + ordinal + index for index in range(50)),
+            episode_lengths=tuple(
+                40 + ordinal % 10 + index for index in range(50)
+            ),
             fold_role="fit",
         )
-        for ordinal in range(19)
+        for ordinal in range(90)
     )
     config = {
-        "roles": {"fit_task_ordinals": list(range(19))},
+        "roles": {"fit_task_ordinals": list(range(90))},
         "data": {
             "frame_stride": 5,
             "visible_videos_per_visit": 2,
@@ -248,8 +378,7 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
         },
         "optimization": {
             "visits_per_fit_task": 6,
-            "task_balance_block_rounds": 6,
-            "stage_stop_task_visits": [114],
+            "stage_stop_task_visits": [540],
             "seed": 23,
         },
     }
@@ -257,11 +386,11 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
         config=config,
         tasks=tasks,
         world_size=6,
-        total_task_visits=114,
+        total_task_visits=540,
         mode="formal",
     )
     counts = Counter(ordinal for ordinal, _ in schedule)
-    assert counts == Counter({ordinal: 6 for ordinal in range(19)})
+    assert counts == Counter({ordinal: 6 for ordinal in range(90)})
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:
@@ -597,32 +726,3 @@ def test_target_activation_effect_is_gauge_invariant_local_and_differentiable() 
         for name in candidate
         if name.startswith("second")
     )
-
-
-def test_policy_support_audit_gate_is_task_equal_across_fit_and_held() -> None:
-    summary = {
-        "panels": 2,
-        "candidate_response": 0.5,
-        "source_response": 1.0,
-        "shared_response": 0.8,
-        "consensus_response": 0.1,
-    }
-    tasks = [
-        {
-            "fold_role": "fit" if ordinal < 19 else "held_transform_only",
-            "summary": {"all": summary, "successful": summary, "learner": None},
-        }
-        for ordinal in range(24)
-    ]
-    aggregates, gate = summarize_policy_support_audit(
-        tasks=tasks,
-        thresholds={
-            "minimum_fit_tasks_better_than_source": 13,
-            "minimum_fit_tasks_better_than_shared": 13,
-            "minimum_held_tasks_better_than_source": 3,
-            "minimum_held_tasks_better_than_shared": 3,
-        },
-    )
-    assert gate["passed"] is True
-    assert aggregates["fit19"]["all"]["tasks"] == 19
-    assert aggregates["held5"]["all"]["tasks"] == 5

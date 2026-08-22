@@ -1,7 +1,7 @@
 # ECP Stage 1 Mapping-Diverse Compiler Oracle（MDCO）
 
-状态：2026-08-23 **已登记的唯一Stage 1 falsification contract；尚未实现、未启动GPU**。它不是`v25`，也不是一套新的
-EMBER架构；它只回答v1--v24复盘后仍未回答的一个问题。
+状态：2026-08-23 **唯一Stage 1 falsification contract；canonical authority一般化已实现，derived assets与GPU实验尚未启动**。
+它不是`v25`，也不是一套新的EMBER架构；它只回答v1--v24复盘后仍未回答的一个问题。
 
 ## 1. 唯一问题
 

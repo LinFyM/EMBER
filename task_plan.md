@@ -1,9 +1,9 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **active goal — v24 closed; Stage 1 retrospective pause; no active successor implementation**。
+状态：2026-08-23 **active goal — v24 closed; MDCO authority implementation in progress; no GPU run yet**。
 
-长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。当前没有active Stage 1 revision；v24后的复盘与
-后继授权条件见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
+长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。当前唯一Stage 1执行合同是MDCO，不建立
+v25；v24后的复盘与后继授权条件见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -327,7 +327,14 @@ coordinate退化则保留Stage 2并定位最早接口。
    预注册near-pass exact-resume，失败即关闭当前compiler family；
 5. raw/effective LoRA own cosine与retrieval降为定位指标，不再作为成功策略必要门；新的open-loop support proxy在连续主导
    决策前必须用一次train-authorized held5 paired closed-loop校准；
-6. 下一实现只一般化canonical Stage 1 data/support owner：建立namespaced 90-fit/5-held authority、复跑最多142条已知成功
-   non-held rows并构建一次owner-resolved support cache；不增加平行trainer或新架构版本；
-7. 实现验证后从clean pushed detached worktree运行MDCO首节点。只有held5完整门通过才轮换fold并进入`q_V`；失败按合同停止；
-8. 完成本轮合同/evidence集成、推送`main`；保留唯一formal checkpoint、projection和dual audit，不删除或重复生成昂贵资产。
+6. [x] 已按唯一授权只一般化canonical Stage 1 data/support owner；不增加平行trainer或新架构版本；
+7. [x] canonical Stage 1代码已一般化为namespaced 95-task/118-member authority、90-task动态world-size等权schedule、每member
+   多trajectory聚合、fit90 `q_pi + compiler`联合训练与held5单checkpoint物化；71-task fixed occupancy selection已登记，v24专用
+   support-audit运行面已退役；
+8. [ ] 从clean pushed detached worktree复跑142条fixed successful non-held occupancies，构建combined 90-fit/5-held action-response
+   authority与95-task support bank；
+9. [ ] 在正式训练前实现并验证540节点后的唯一一次90-task等权structured success/progress calibration，不得以配置声明代替
+   真实simulator credit；
+10. [ ] 从clean pushed detached worktree运行MDCO首节点和held5 strict paired250。只有完整门通过才轮换fold并进入`q_V`；失败按
+    合同停止；
+11. 完成本轮合同/evidence集成、推送`main`；只保留canonical formal产物，不删除或重复生成昂贵资产。

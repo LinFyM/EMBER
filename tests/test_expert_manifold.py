@@ -18,15 +18,17 @@ from ember.writer.data import WriterTaskAuthority
 from ember.expert_manifold.expert_training import _scheduler
 from ember.expert_manifold.evaluation import (
     FrozenTaskExpertAdapter,
-    PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
     TASK_EXPERT_ADAPTER_KIND,
     TASK_EXPERT_EPISODE_SCHEMA,
     _evaluation_task_rows,
-    _projection_contract,
     inspect_projected_task_expert_bank,
     inspect_task_expert_bank,
     inspect_task_expert_evaluation,
     validate_task_expert_episode,
+)
+from ember.expert_manifold.projection import (
+    PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
+    _projection_contract,
 )
 from ember.expert_manifold.meta_contract import meta_expert_rows
 from ember.expert_manifold.diagnostic_contract import (

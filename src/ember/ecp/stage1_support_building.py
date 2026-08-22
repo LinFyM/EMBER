@@ -27,7 +27,6 @@ from ember.ecp.stage1_config import (
     REPO_ROOT,
     load_stage1_config,
     stage1_asset_authority,
-    stage1_repo_authority,
 )
 from ember.ecp.stage1_training import load_stage1_authorities
 from ember.functional_adaptation.phase_alignment import arc_length_phase_indices
@@ -126,8 +125,12 @@ def _support_weights(
     response_weight = float((agreement * outcome).clamp(1e-3, 1.0))
     source_distance = (source.float() - consensus).square().mean() / response_scale
     shared_distance = (shared.float() - consensus).square().mean() / response_scale
-    source_weight = float(torch.exp(-agreement_temperature * source_distance).clamp(0, 1))
-    shared_weight = float(torch.exp(-agreement_temperature * shared_distance).clamp(0, 1))
+    source_weight = float(
+        torch.exp(-agreement_temperature * source_distance).clamp(0, 1)
+    )
+    shared_weight = float(
+        torch.exp(-agreement_temperature * shared_distance).clamp(0, 1)
+    )
     return response_weight, source_weight, shared_weight
 
 
@@ -230,99 +233,119 @@ def _capture_panel(
     }
 
 
-def build_task_support(
+def _successful_support(
     *,
     task: Any,
-    evidence_bank: ECPStage1EvidenceBank,
-    learner_sources: Sequence[LearnerOccupancySource],
+    members: Sequence[Any],
+    member_states: Sequence[Mapping[str, torch.Tensor]],
+    member_keys: Sequence[str],
+    expert_weights: torch.Tensor,
     policy: torch.nn.Module,
     identity_state: Mapping[str, torch.Tensor],
     shared_state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     projector: TargetOwnerProjector,
-    output_path: Path,
     base_policy_seed: int,
     horizon_basis: int,
     agreement_temperature: float,
     failed_learner_base_weight: float,
-) -> dict[str, Any]:
-    indices = evidence_bank.member_indices(task.ordinal)
-    members = tuple(evidence_bank.members[index] for index in indices)
-    member_states = tuple(_selected_state(evidence_bank.member_states, index) for index in indices)
-    member_keys = tuple(f"expert_{local}" for local in range(len(indices)))
-    expert_weights = evidence_bank.reliability[
-        torch.tensor(indices, device=evidence_bank.reliability.device)
-    ].float()
-    response = torch.zeros(
-        len(indices), 8, 38, len(SUPPORT_CHANNELS), horizon_basis, 128
+) -> tuple[torch.Tensor, torch.Tensor, list[dict[str, Any]]]:
+    accumulator = torch.zeros(
+        len(members), 8, 38, 2, horizon_basis, 128
     )
-    response_weights = torch.zeros(len(indices), 8, len(SUPPORT_CHANNELS))
+    weights = torch.zeros(len(members), 8, 2)
     panels: list[dict[str, Any]] = []
-    panel_id = 0
-
+    states = {
+        "source": identity_state,
+        "shared": shared_state,
+        **{key: state for key, state in zip(member_keys, member_states, strict=True)},
+    }
     for local, member in enumerate(members):
-        trajectory_panels = _trajectory_panels(
-            path=member.trajectory_path,
-            expected_bytes=member.trajectory_path.stat().st_size,
-            expected_success=True,
-            selected_indices=member.selected_replan_indices,
-            device=next(policy.parameters()).device,
-        )
-        for panel_index, (selected, batch) in enumerate(trajectory_panels):
-            seed = base_policy_seed + task.ordinal * 100_000 + local * 1_000 + panel_index
-            states = {
-                "source": identity_state,
-                "shared": shared_state,
-                **{key: state for key, state in zip(member_keys, member_states, strict=True)},
-            }
-            captured = _capture_panel(
-                policy=policy,
-                states=states,
-                contract=contract,
-                batch=batch,
-                projector=projector,
-                policy_seed=seed,
-                horizon_basis=horizon_basis,
+        for trajectory_index, trajectory in enumerate(member.trajectories):
+            trajectory_panels = _trajectory_panels(
+                path=trajectory.path,
+                expected_bytes=trajectory.expected_bytes,
+                expected_success=True,
+                selected_indices=trajectory.selected_replan_indices,
+                device=next(policy.parameters()).device,
             )
-            event_slice = slice(2 * panel_index, 2 * panel_index + 2)
-            source_basis = captured["source"].owner_basis.cpu()
-            response[local, event_slice, :, 0] = (
-                captured[member_keys[local]].owner_basis.cpu() - source_basis
-            )
-            response[local, event_slice, :, 1] = (
-                captured["shared"].owner_basis.cpu() - source_basis
-            )
-            response_weights[local, event_slice, :2] = 1.0
-            panels.append(
-                _panel_payload(
-                    panel_id=panel_id,
-                    kind="successful",
-                    trajectory_path=member.trajectory_path,
-                    trajectory_bytes=member.trajectory_path.stat().st_size,
-                    selected_indices=selected,
-                    policy_seed=seed,
-                    responses=captured,
-                    states=states,
-                    member_keys=member_keys,
-                    contract=contract,
-                    expert_weights=expert_weights,
-                    learner_success=None,
-                    agreement_temperature=agreement_temperature,
-                    failed_learner_base_weight=failed_learner_base_weight,
+            for panel_index, (selected, batch) in enumerate(trajectory_panels):
+                seed = (
+                    base_policy_seed
+                    + task.ordinal * 100_000
+                    + local * 10_000
+                    + trajectory_index * 1_000
+                    + panel_index
                 )
-            )
-            panel_id += 1
+                captured = _capture_panel(
+                    policy=policy,
+                    states=states,
+                    contract=contract,
+                    batch=batch,
+                    projector=projector,
+                    policy_seed=seed,
+                    horizon_basis=horizon_basis,
+                )
+                event_slice = slice(2 * panel_index, 2 * panel_index + 2)
+                source_basis = captured["source"].owner_basis.cpu()
+                accumulator[local, event_slice, :, 0] += (
+                    captured[member_keys[local]].owner_basis.cpu() - source_basis
+                )
+                accumulator[local, event_slice, :, 1] += (
+                    captured["shared"].owner_basis.cpu() - source_basis
+                )
+                weights[local, event_slice, :2] += 1.0
+                panels.append(
+                    _panel_payload(
+                        panel_id=len(panels),
+                        kind="successful",
+                        trajectory_path=trajectory.path,
+                        trajectory_bytes=trajectory.expected_bytes,
+                        selected_indices=selected,
+                        policy_seed=seed,
+                        responses=captured,
+                        states=states,
+                        member_keys=member_keys,
+                        contract=contract,
+                        expert_weights=expert_weights,
+                        learner_success=None,
+                        agreement_temperature=agreement_temperature,
+                        failed_learner_base_weight=failed_learner_base_weight,
+                    )
+                )
+    response = accumulator / weights[:, :, None, :, None, None].clamp_min(1.0)
+    return response, (weights > 0).float(), panels
 
-    learner_accumulator = torch.zeros_like(response[:, :, :, 2:])
-    learner_weight = torch.zeros_like(response_weights[:, :, 2:])
+
+def _learner_support(
+    *,
+    task: Any,
+    learner_sources: Sequence[LearnerOccupancySource],
+    member_states: Sequence[Mapping[str, torch.Tensor]],
+    member_keys: Sequence[str],
+    expert_weights: torch.Tensor,
+    policy: torch.nn.Module,
+    identity_state: Mapping[str, torch.Tensor],
+    shared_state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    projector: TargetOwnerProjector,
+    base_policy_seed: int,
+    horizon_basis: int,
+    agreement_temperature: float,
+    failed_learner_base_weight: float,
+    first_panel_id: int,
+) -> tuple[torch.Tensor, torch.Tensor, list[dict[str, Any]]]:
+    accumulator = torch.zeros(
+        len(member_states), 8, 38, 3, horizon_basis, 128
+    )
+    weights = torch.zeros(len(member_states), 8, 3)
+    panels: list[dict[str, Any]] = []
     projected_cache: dict[Path, Mapping[str, torch.Tensor]] = {}
+    device = next(policy.parameters()).device
     for source_index, source in enumerate(learner_sources):
         projected = projected_cache.get(source.projected_adapter)
         if projected is None:
-            projected = load_file(
-                str(source.projected_adapter),
-                device=str(next(policy.parameters()).device),
-            )
+            projected = load_file(str(source.projected_adapter), device=str(device))
             validate_lora_state(projected, contract)
             projected_cache[source.projected_adapter] = projected
         trajectory_panels = _trajectory_panels(
@@ -330,7 +353,7 @@ def build_task_support(
             expected_bytes=source.trajectory_bytes,
             expected_success=source.success,
             selected_indices=None,
-            device=next(policy.parameters()).device,
+            device=device,
         )
         for panel_index, (selected, batch) in enumerate(trajectory_panels):
             seed = (
@@ -344,7 +367,10 @@ def build_task_support(
                 "source": identity_state,
                 "shared": shared_state,
                 "learner": projected,
-                **{key: state for key, state in zip(member_keys, member_states, strict=True)},
+                **{
+                    key: state
+                    for key, state in zip(member_keys, member_states, strict=True)
+                },
             }
             captured = _capture_panel(
                 policy=policy,
@@ -356,7 +382,7 @@ def build_task_support(
                 horizon_basis=horizon_basis,
             )
             payload = _panel_payload(
-                panel_id=panel_id,
+                panel_id=first_panel_id + len(panels),
                 kind="learner",
                 trajectory_path=source.trajectory_path,
                 trajectory_bytes=source.trajectory_bytes,
@@ -378,22 +404,91 @@ def build_task_support(
             learner_delta = captured["learner"].owner_basis.cpu() - source_basis
             shared_delta = captured["shared"].owner_basis.cpu() - source_basis
             for local, key in enumerate(member_keys):
-                learner_accumulator[local, event_slice, :, 0] += weight * (
+                accumulator[local, event_slice, :, 0] += weight * (
                     captured[key].owner_basis.cpu() - source_basis
                 )
-                learner_accumulator[local, event_slice, :, 1] += weight * learner_delta
-                learner_accumulator[local, event_slice, :, 2] += weight * shared_delta
-                learner_weight[local, event_slice] += weight
-            panel_id += 1
-    nonzero = learner_weight > 0
-    normalized = learner_accumulator / learner_weight[:, :, None, :, None, None].clamp_min(1e-8)
-    response[:, :, :, 2:] = torch.where(
-        nonzero[:, :, None, :, None, None], normalized, learner_accumulator
+                accumulator[local, event_slice, :, 1] += weight * learner_delta
+                accumulator[local, event_slice, :, 2] += weight * shared_delta
+                weights[local, event_slice] += weight
+    normalized = accumulator / weights[:, :, None, :, None, None].clamp_min(1e-8)
+    response = torch.where(
+        (weights > 0)[:, :, None, :, None, None], normalized, accumulator
     )
-    response_weights[:, :, 2:] = learner_weight / max(len(learner_sources), 1)
+    return response, weights / max(len(learner_sources), 1), panels
+
+
+def build_task_support(
+    *,
+    task: Any,
+    evidence_bank: ECPStage1EvidenceBank,
+    learner_sources: Sequence[LearnerOccupancySource],
+    policy: torch.nn.Module,
+    identity_state: Mapping[str, torch.Tensor],
+    shared_state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    projector: TargetOwnerProjector,
+    output_path: Path,
+    base_policy_seed: int,
+    horizon_basis: int,
+    agreement_temperature: float,
+    failed_learner_base_weight: float,
+) -> dict[str, Any]:
+    indices = evidence_bank.member_indices(task.ordinal)
+    members = tuple(evidence_bank.members[index] for index in indices)
+    member_states = tuple(
+        _selected_state(evidence_bank.member_states, index) for index in indices
+    )
+    member_keys = tuple(f"expert_{local}" for local in range(len(indices)))
+    expert_weights = evidence_bank.reliability[
+        torch.tensor(indices, device=evidence_bank.reliability.device)
+    ].float()
+    response = torch.zeros(
+        len(indices), 8, 38, len(SUPPORT_CHANNELS), horizon_basis, 128
+    )
+    response_weights = torch.zeros(len(indices), 8, len(SUPPORT_CHANNELS))
+    successful, successful_weights, panels = _successful_support(
+        task=task,
+        members=members,
+        member_states=member_states,
+        member_keys=member_keys,
+        expert_weights=expert_weights,
+        policy=policy,
+        identity_state=identity_state,
+        shared_state=shared_state,
+        contract=contract,
+        projector=projector,
+        base_policy_seed=base_policy_seed,
+        horizon_basis=horizon_basis,
+        agreement_temperature=agreement_temperature,
+        failed_learner_base_weight=failed_learner_base_weight,
+    )
+    learner, learner_weights, learner_panels = _learner_support(
+        task=task,
+        learner_sources=learner_sources,
+        member_states=member_states,
+        member_keys=member_keys,
+        expert_weights=expert_weights,
+        policy=policy,
+        identity_state=identity_state,
+        shared_state=shared_state,
+        contract=contract,
+        projector=projector,
+        base_policy_seed=base_policy_seed,
+        horizon_basis=horizon_basis,
+        agreement_temperature=agreement_temperature,
+        failed_learner_base_weight=failed_learner_base_weight,
+        first_panel_id=len(panels),
+    )
+    response[:, :, :, :2] = successful
+    response[:, :, :, 2:] = learner
+    response_weights[:, :, :2] = successful_weights
+    response_weights[:, :, 2:] = learner_weights
+    panels.extend(learner_panels)
     payload = {
         "schema_version": SUPPORT_TASK_SCHEMA,
         "ordinal": int(task.ordinal),
+        "asset_key": str(task.asset_key),
+        "domain": str(task.domain),
         "global_task_id": int(task.global_task_id),
         "suite": str(task.suite),
         "task_id": int(task.task_id),
@@ -402,9 +497,13 @@ def build_task_support(
         "policy_response": response.to(dtype=torch.bfloat16),
         "policy_response_weights": response_weights.float(),
         "panels": panels,
-        "successful_panel_count": sum(panel["kind"] == "successful" for panel in panels),
+        "successful_panel_count": sum(
+            panel["kind"] == "successful" for panel in panels
+        ),
         "learner_panel_count": sum(panel["kind"] == "learner" for panel in panels),
-        "learner_successful_trajectory_count": sum(source.success for source in learner_sources),
+        "learner_successful_trajectory_count": sum(
+            source.success for source in learner_sources
+        ),
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = output_path.with_name(f".{output_path.name}.{os.getpid()}.tmp")
@@ -412,6 +511,8 @@ def build_task_support(
     os.replace(temporary, output_path)
     return {
         "ordinal": int(task.ordinal),
+        "asset_key": str(task.asset_key),
+        "domain": str(task.domain),
         "fold_role": str(task.fold_role),
         "file": output_path.name,
         "bytes": output_path.stat().st_size,
@@ -434,14 +535,15 @@ def build_support_shard(args: Any) -> None:
     from ember.ecp.stage1_data import load_stage1_evidence_bank, load_stage1_tasks
 
     tasks = load_stage1_tasks(
-        target_manifest=stage1_repo_authority(config, "target_manifest"),
-        selection_path=stage1_repo_authority(config, "successful_member_selection"),
+        authority_manifest=stage1_asset_authority(
+            config, "task_evidence_manifest", args.asset_root
+        ),
         data_root=args.data_root,
     )
     evidence = load_stage1_evidence_bank(
-        selection_path=stage1_repo_authority(config, "successful_member_selection"),
-        phase_analysis_path=stage1_asset_authority(config, "phase_analysis", args.asset_root),
-        phase_code_root=stage1_asset_authority(config, "phase_code_root", args.asset_root),
+        authority_manifest=stage1_asset_authority(
+            config, "task_evidence_manifest", args.asset_root
+        ),
         asset_root=args.asset_root,
         contract=authorities.contract,
         device=context.device,
@@ -460,7 +562,7 @@ def build_support_shard(args: Any) -> None:
     projector = authorities.observer.model.encoder.observer.projector
     support = config["policy_support"]
     for task in selected:
-        output = args.output_dir / f"task_{task.ordinal:02d}.pt"
+        output = args.output_dir / f"task_{task.ordinal:03d}.pt"
         if output.exists():
             raise ValueError(f"policy-support task output exists: {output}")
         rows.append(
@@ -486,7 +588,7 @@ def build_support_shard(args: Any) -> None:
     write_json_atomic(
         args.output_dir / f"shard_{args.shard_index:02d}.json",
         {
-            "schema_version": "ember_ecp_stage1_policy_support_shard_v3",
+            "schema_version": "ember_ecp_stage1_policy_support_shard_v4",
             "repository": repository,
             "shard_index": args.shard_index,
             "shard_count": args.shard_count,
@@ -505,7 +607,7 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         shard = read_json(args.output_dir / f"shard_{shard_index:02d}.json")
         if (
             shard.get("schema_version")
-            != "ember_ecp_stage1_policy_support_shard_v3"
+            != "ember_ecp_stage1_policy_support_shard_v4"
             or int(shard.get("shard_index", -1)) != shard_index
             or int(shard.get("shard_count", -1)) != args.shard_count
             or shard.get("repository", {}).get("commit") != repository.get("commit")
@@ -513,8 +615,8 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
             raise ValueError("policy-support shard authority changed")
         rows.extend(dict(row) for row in shard["tasks"])
     rows.sort(key=lambda row: int(row["ordinal"]))
-    if [int(row["ordinal"]) for row in rows] != list(range(24)):
-        raise ValueError("policy-support bank does not cover train24")
+    if [int(row["ordinal"]) for row in rows] != list(range(95)):
+        raise ValueError("policy-support bank does not cover fit90 plus held5")
     for row in rows:
         path = args.output_dir / str(row["file"])
         if not path.is_file() or path.stat().st_size != int(row["bytes"]):
@@ -534,6 +636,11 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         "validation_action_or_reward_reads": 0,
         "test_action_or_reward_reads": 0,
         "tasks": rows,
+        "learner_panels_required_task_ordinals": [
+            int(row["ordinal"])
+            for row in rows
+            if row["domain"] == "target_train" and row["fold_role"] == "fit"
+        ],
         "content_hash_policy": "disabled_by_owner",
     }
     write_json_atomic(args.output_dir / "manifest.json", result)

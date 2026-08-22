@@ -20,8 +20,8 @@ from ember.lora import LoRAContract
 from ember.pi05_source_checkpoint import read_json
 
 
-SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v3"
-SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v3"
+SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v4"
+SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v4"
 SUPPORT_CHANNELS = (
     "successful_expert_minus_source",
     "successful_shared_minus_source",
@@ -117,7 +117,7 @@ class PolicySupportLoss:
 def load_learner_occupancy_sources(
     *, root: Path, tasks: Sequence[Any]
 ) -> dict[int, tuple[LearnerOccupancySource, ...]]:
-    """Load the fixed fit19 learner trajectories without old decoder objects."""
+    """Load the target-fit learner trajectories without old decoder objects."""
 
     resolved = root.resolve()
     contract = read_json(resolved / "run_contract.json")
@@ -130,7 +130,13 @@ def load_learner_occupancy_sources(
         results.get("mode") != "formal"
         or results.get("role") != "development_train"
         or len(rows) != 30
-        or len({(row["suite"], int(row["task_id"]), int(row["init_state_id"])) for row in rows}) != 30
+        or len(
+            {
+                (row["suite"], int(row["task_id"]), int(row["init_state_id"]))
+                for row in rows
+            }
+        )
+        != 30
         or contract.get("git", {}).get("dirty_paths") != []
         or capture.get("schema_version")
         != "ember_phase_decoder_fit_projected_occupancy_capture_v1"
@@ -143,43 +149,55 @@ def load_learner_occupancy_sources(
         raise ValueError("ECP learner-occupancy authority changed")
     result: dict[int, list[LearnerOccupancySource]] = {}
     for row in rows:
-        key = (str(row["suite"]), int(row["task_id"]))
-        task = task_by_key.get(key)
-        occupancy = row.get("occupancy_trajectory", {})
-        expert = row.get("task_expert", {})
-        trajectory = Path(str(occupancy.get("path", ""))).resolve()
-        projected = Path(str(expert.get("projected_adapter", ""))).resolve()
-        if (
-            task is None
-            or task.fold_role != "fit"
-            or not trajectory.is_file()
-            or trajectory.stat().st_size != int(occupancy.get("bytes", -1))
-            or int(occupancy.get("replans", -1)) < 8
-            or not projected.is_file()
-            or projected.stat().st_size
-            != int(expert.get("projected_adapter_bytes", -1))
-            or int(expert.get("global_task_id", -1)) != int(task.global_task_id)
-        ):
-            raise ValueError("ECP learner-occupancy row changed")
-        result.setdefault(int(task.ordinal), []).append(
-            LearnerOccupancySource(
-                ordinal=int(task.ordinal),
-                suite=key[0],
-                task_id=key[1],
-                init_state_id=int(row["init_state_id"]),
-                success=bool(row["success"]),
-                trajectory_path=trajectory,
-                trajectory_bytes=trajectory.stat().st_size,
-                projected_adapter=projected,
-                projected_adapter_bytes=projected.stat().st_size,
-            )
-        )
-    if set(result) != {int(task.ordinal) for task in tasks if task.fold_role == "fit"}:
-        raise ValueError("learner occupancy no longer covers all fit19 tasks")
+        ordinal, source = _learner_occupancy_source(row, task_by_key)
+        result.setdefault(ordinal, []).append(source)
+    expected = {
+        int(task.ordinal)
+        for task in tasks
+        if task.fold_role == "fit" and getattr(task, "domain", None) == "target_train"
+    }
+    if len(expected) != 19 or set(result) != expected:
+        raise ValueError("learner occupancy no longer covers target fit19")
     return {
         ordinal: tuple(sorted(values, key=lambda row: row.init_state_id))
         for ordinal, values in result.items()
     }
+
+
+def _learner_occupancy_source(
+    row: Mapping[str, Any], task_by_key: Mapping[tuple[str, int], Any]
+) -> tuple[int, LearnerOccupancySource]:
+    key = (str(row["suite"]), int(row["task_id"]))
+    task = task_by_key.get(key)
+    occupancy = row.get("occupancy_trajectory", {})
+    expert = row.get("task_expert", {})
+    trajectory = Path(str(occupancy.get("path", ""))).resolve()
+    projected = Path(str(expert.get("projected_adapter", ""))).resolve()
+    if (
+        task is None
+        or task.fold_role != "fit"
+        or getattr(task, "domain", None) != "target_train"
+        or not trajectory.is_file()
+        or trajectory.stat().st_size != int(occupancy.get("bytes", -1))
+        or int(occupancy.get("replans", -1)) < 8
+        or not projected.is_file()
+        or projected.stat().st_size
+        != int(expert.get("projected_adapter_bytes", -1))
+        or int(expert.get("global_task_id", -1)) != int(task.global_task_id)
+    ):
+        raise ValueError("ECP learner-occupancy row changed")
+    source = LearnerOccupancySource(
+        ordinal=int(task.ordinal),
+        suite=key[0],
+        task_id=key[1],
+        init_state_id=int(row["init_state_id"]),
+        success=bool(row["success"]),
+        trajectory_path=trajectory,
+        trajectory_bytes=trajectory.stat().st_size,
+        projected_adapter=projected,
+        projected_adapter_bytes=projected.stat().st_size,
+    )
+    return int(task.ordinal), source
 
 
 def _panel_from_payload(
@@ -202,7 +220,9 @@ def _panel_from_payload(
         source_support_weight=float(value["source_support_weight"]),
         shared_support_weight=float(value["shared_support_weight"]),
         learner_success=(
-            None if value.get("learner_success") is None else bool(value["learner_success"])
+            None
+            if value.get("learner_success") is None
+            else bool(value["learner_success"])
         ),
         activation_effects=target_activation_effects_from_payload(
             value,
@@ -239,6 +259,10 @@ def load_policy_support_bank(
     manifest_path = manifest_path.resolve()
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): row for row in manifest.get("tasks", ())}
+    learner_required = {
+        int(value)
+        for value in manifest.get("learner_panels_required_task_ordinals", ())
+    }
     if (
         manifest.get("schema_version") != SUPPORT_BANK_SCHEMA
         or tuple(manifest.get("support_channels", ())) != SUPPORT_CHANNELS
@@ -247,7 +271,9 @@ def load_policy_support_bank(
         or int(manifest.get("horizon_basis", -1)) != 4
         or int(manifest.get("program_width", -1)) != 128
         or manifest.get("target_local_activation_effect_panels") is not True
-        or set(rows) != set(range(24))
+        or set(rows) != set(range(95))
+        or len(learner_required) != 19
+        or not learner_required <= set(rows)
         or not task_ordinals <= set(rows)
     ):
         raise ValueError("ECP policy-support bank manifest changed")
@@ -255,40 +281,61 @@ def load_policy_support_bank(
     for ordinal in sorted(task_ordinals):
         row = rows[ordinal]
         path = (manifest_path.parent / str(row["file"])).resolve()
-        if not path.is_file() or path.stat().st_size != int(row["bytes"]):
-            raise ValueError("ECP policy-support task asset changed")
-        value = torch.load(path, map_location="cpu", weights_only=False)
-        member_indices = tuple(int(index) for index in value["member_indices"])
-        response = value["policy_response"]
-        weights = value["policy_response_weights"]
-        panels = tuple(
-            _panel_from_payload(panel, contract=contract)
-            for panel in value["panels"]
-        )
-        expected_members = evidence_bank.member_indices(ordinal)
-        if (
-            value.get("schema_version") != SUPPORT_TASK_SCHEMA
-            or int(value.get("ordinal", -1)) != ordinal
-            or member_indices != expected_members
-            or response.shape
-            != (len(member_indices), 8, 38, len(SUPPORT_CHANNELS), 4, 128)
-            or weights.shape != (len(member_indices), 8, len(SUPPORT_CHANNELS))
-            or not torch.isfinite(response).all()
-            or not torch.isfinite(weights).all()
-            or (weights < 0).any()
-            or not panels
-            or (value.get("fold_role") == "fit" and not any(panel.kind == "learner" for panel in panels))
-            or any(panel.activation_effects is None for panel in panels)
-        ):
-            raise ValueError("ECP policy-support task payload changed")
-        tasks[ordinal] = PolicySupportTask(
+        tasks[ordinal] = _load_policy_support_task(
+            path=path,
+            expected_bytes=int(row["bytes"]),
             ordinal=ordinal,
-            member_indices=member_indices,
-            policy_response=response.to(device=device, dtype=torch.float32),
-            policy_response_weights=weights.to(device=device, dtype=torch.float32),
-            panels=panels,
+            evidence_bank=evidence_bank,
+            contract=contract,
+            device=device,
+            learner_required=ordinal in learner_required,
         )
     return PolicySupportBank(root=manifest_path.parent, tasks=tasks)
+
+
+def _load_policy_support_task(
+    *,
+    path: Path,
+    expected_bytes: int,
+    ordinal: int,
+    evidence_bank: Any,
+    contract: LoRAContract,
+    device: torch.device,
+    learner_required: bool,
+) -> PolicySupportTask:
+    if not path.is_file() or path.stat().st_size != expected_bytes:
+        raise ValueError("ECP policy-support task asset changed")
+    value = torch.load(path, map_location="cpu", weights_only=False)
+    member_indices = tuple(int(index) for index in value["member_indices"])
+    response = value["policy_response"]
+    weights = value["policy_response_weights"]
+    panels = tuple(
+        _panel_from_payload(panel, contract=contract) for panel in value["panels"]
+    )
+    expected_members = evidence_bank.member_indices(ordinal)
+    invalid = (
+        value.get("schema_version") != SUPPORT_TASK_SCHEMA
+        or int(value.get("ordinal", -1)) != ordinal
+        or member_indices != expected_members
+        or response.shape
+        != (len(member_indices), 8, 38, len(SUPPORT_CHANNELS), 4, 128)
+        or weights.shape != (len(member_indices), 8, len(SUPPORT_CHANNELS))
+        or not torch.isfinite(response).all()
+        or not torch.isfinite(weights).all()
+        or (weights < 0).any()
+        or not panels
+        or (learner_required and not any(panel.kind == "learner" for panel in panels))
+        or any(panel.activation_effects is None for panel in panels)
+    )
+    if invalid:
+        raise ValueError("ECP policy-support task payload changed")
+    return PolicySupportTask(
+        ordinal=ordinal,
+        member_indices=member_indices,
+        policy_response=response.to(device=device, dtype=torch.float32),
+        policy_response_weights=weights.to(device=device, dtype=torch.float32),
+        panels=panels,
+    )
 
 
 def _panel_batch_from_trajectory(
@@ -304,16 +351,19 @@ def _panel_batch_from_trajectory(
         or len(observations) != len(actions)
         or max(panel.selected_indices) >= len(observations)
         or (panel.kind == "successful" and value.get("success") is not True)
-        or (panel.kind == "learner" and bool(value.get("success")) != panel.learner_success)
+        or (
+            panel.kind == "learner"
+            and bool(value.get("success")) != panel.learner_success
+        )
     ):
         raise ValueError("ECP policy-support trajectory payload changed")
     keys = set(observations[panel.selected_indices[0]])
     if any(set(observations[index]) != keys for index in panel.selected_indices):
         raise ValueError("ECP policy-support observation keys changed")
     batch = {
-        name: torch.cat([observations[index][name] for index in panel.selected_indices]).to(
-            device, non_blocking=True
-        )
+        name: torch.cat(
+            [observations[index][name] for index in panel.selected_indices]
+        ).to(device, non_blocking=True)
         for name in sorted(keys)
     }
     batch[ACTION] = torch.cat(

@@ -1,4 +1,4 @@
-"""Train24 videos and successful-policy evidence for ECP Stage 1."""
+"""Namespaced videos and successful-policy evidence for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -36,6 +36,8 @@ class ECPStage1Task:
     expected_bytes: int
     episode_lengths: tuple[int, ...]
     fold_role: str
+    asset_key: str = ""
+    domain: str = "target40"
 
     def video_authority(self) -> WriterTaskAuthority:
         return WriterTaskAuthority(
@@ -59,7 +61,14 @@ class ECPStage1Member:
     fold_role: str
     reliability: float
     checkpoint: Path
-    trajectory_path: Path
+    trajectories: tuple["ECPStage1Trajectory", ...]
+    asset_key: str
+
+
+@dataclass(frozen=True)
+class ECPStage1Trajectory:
+    path: Path
+    expected_bytes: int
     selected_replan_indices: tuple[int, ...]
 
 
@@ -132,195 +141,173 @@ def gauge_canonicalize_lora_state(
     return result
 
 
+STAGE1_AUTHORITY_SCHEMA = "ember_ecp_stage1_mapping_diverse_authority_v1"
+
+
+def _asset_path(asset_root: Path, value: Any) -> Path:
+    path = Path(str(value))
+    return path.resolve() if path.is_absolute() else (asset_root / path).resolve()
+
+
 def load_stage1_tasks(
-    *,
-    target_manifest: Path,
-    selection_path: Path,
-    data_root: Path,
+    *, authority_manifest: Path, data_root: Path
 ) -> tuple[ECPStage1Task, ...]:
-    manifest = read_json(target_manifest)
-    selection = read_json(selection_path)
-    selected: dict[int, dict[str, Any]] = {}
-    for row in selection.get("rows", ()):
-        ordinal = int(row["ordinal"])
-        previous = selected.setdefault(ordinal, dict(row))
-        if (
-            int(previous["global_task_id"]) != int(row["global_task_id"])
-            or previous["fold_role"] != row["fold_role"]
-        ):
-            raise ValueError("successful-member task ownership changed")
-    train_rows = {
-        int(row["global_task_id"]): row
-        for row in manifest.get("tasks", ())
-        if row.get("split_role") == "train"
-    }
+    manifest = read_json(authority_manifest)
+    rows = tuple(dict(row) for row in manifest.get("tasks", ()))
+    if (
+        manifest.get("schema_version") != STAGE1_AUTHORITY_SCHEMA
+        or manifest.get("status") != "complete_mapping_diverse_authority"
+        or len(rows) != 95
+    ):
+        raise ValueError("ECP Stage 1 mapping-diverse task authority changed")
     tasks = []
-    for ordinal in range(24):
-        selected_row = selected[ordinal]
-        global_id = int(selected_row["global_task_id"])
-        row = train_rows[global_id]
-        path = data_root / str(row["hdf5"]["relative_path"])
+    for ordinal, row in enumerate(rows):
+        path = data_root / str(row["hdf5_relative_path"])
         task = ECPStage1Task(
-            ordinal=ordinal,
-            global_task_id=global_id,
+            ordinal=int(row["ordinal"]),
+            global_task_id=int(row["global_task_id"]),
             suite=str(row["suite"]),
             task_id=int(row["task_id"]),
             language=str(row["language"]),
             path=path,
-            expected_bytes=int(row["hdf5"]["bytes"]),
-            episode_lengths=tuple(
-                int(value) for value in row["demonstrations"]["episode_lengths"]
-            ),
-            fold_role=str(selected_row["fold_role"]),
+            expected_bytes=int(row["hdf5_bytes"]),
+            episode_lengths=tuple(int(value) for value in row["episode_lengths"]),
+            fold_role=str(row["fold_role"]),
+            asset_key=str(row["asset_key"]),
+            domain=str(row["domain"]),
         )
         if (
-            not path.is_file()
+            task.ordinal != ordinal
+            or task.asset_key
+            != (
+                f"{'source90' if task.domain == 'libero90_nonheld' else 'target40'}:"
+                f"{task.global_task_id}"
+            )
+            or task.domain not in {"libero90_nonheld", "target_train"}
+            or not path.is_file()
             or path.stat().st_size != task.expected_bytes
-            or task.suite != str(selected_row["suite"])
-            or task.task_id != int(selected_row["task_id"])
             or len(task.episode_lengths) != 50
         ):
             raise ValueError(f"ECP Stage 1 task authority changed: {ordinal}")
         tasks.append(task)
     if (
-        sum(task.fold_role == "fit" for task in tasks) != 19
+        sum(task.fold_role == "fit" for task in tasks) != 90
         or sum(task.fold_role == "held_transform_only" for task in tasks) != 5
+        or sum(task.domain == "libero90_nonheld" for task in tasks) != 71
+        or len({task.asset_key for task in tasks}) != 95
     ):
-        raise ValueError("ECP Stage 1 split differs from fixed fit19/held5")
+        raise ValueError("ECP Stage 1 split differs from fixed fit90/held5")
     return tuple(tasks)
-
-
-def _member_key(row: Mapping[str, Any]) -> tuple[int, int, int]:
-    return int(row["ordinal"]), int(row["expert_step"]), int(row["init_state_id"])
-
-
-def _expert_assets(
-    analysis: Mapping[str, Any], asset_root: Path
-) -> tuple[
-    dict[tuple[int, str, int], Path],
-    dict[tuple[int, str, int, int], Path],
-]:
-    checkpoints: dict[tuple[int, str, int], Path] = {}
-    trajectories: dict[tuple[int, str, int, int], Path] = {}
-    for step_text, relative in analysis.get("panels", {}).items():
-        step = int(step_text)
-        root = (asset_root / str(relative)).resolve()
-        contract = read_json(root / "run_contract.json")
-        for row in contract.get("adapter", {}).get("tasks", ()):
-            key = (step, str(row["suite"]), int(row["task_id"]))
-            checkpoint = Path(str(row["checkpoint"])).resolve()
-            if not (checkpoint / "adapter.safetensors").is_file():
-                raise ValueError("successful expert checkpoint is missing")
-            checkpoints[key] = checkpoint
-        results = read_json(root / "results.json")
-        for row in results.get("rows", ()):
-            capture = row.get("occupancy_trajectory", {})
-            path = Path(str(capture.get("path", ""))).resolve()
-            if row.get("success") is True and path.is_file():
-                trajectories[
-                    (
-                        step,
-                        str(row["suite"]),
-                        int(row["task_id"]),
-                        int(row["init_state_id"]),
-                    )
-                ] = path
-    if {key[0] for key in checkpoints} != {250, 500, 1000, 2000}:
-        raise ValueError("successful expert panel family changed")
-    return checkpoints, trajectories
 
 
 def load_stage1_evidence_bank(
     *,
-    selection_path: Path,
-    phase_analysis_path: Path,
-    phase_code_root: Path,
+    authority_manifest: Path,
     asset_root: Path,
     contract: LoRAContract,
     device: torch.device | str,
 ) -> ECPStage1EvidenceBank:
-    selection = read_json(selection_path)
-    analysis = read_json(phase_analysis_path)
-    phase_result = read_json(phase_code_root / "result.json")
+    manifest = read_json(authority_manifest)
+    selected = tuple(dict(row) for row in manifest.get("members", ()))
+    phase_cell = manifest.get("phase_response", {})
     if (
-        selection.get("schema_version")
-        != "ember_successful_expert_equivalence_selection_v1"
-        or analysis.get("schema_version")
-        != "ember_successful_expert_equivalence_phase_analysis_v1"
-        or analysis.get("decision") != "advance_to_phase_aligned_fixed_decoder"
-        or phase_result.get("schema_version")
-        != "ember_successful_expert_equivalence_phase_codes_v1"
+        manifest.get("schema_version") != STAGE1_AUTHORITY_SCHEMA
+        or manifest.get("status") != "complete_mapping_diverse_authority"
+        or len(selected) != 118
+        or phase_cell.get("tensor") != "member_phase_response"
+        or tuple(int(value) for value in phase_cell.get("shape", ())) != (118, 8, 32)
     ):
         raise ValueError("ECP Stage 1 successful-policy authority changed")
-    selected = sorted(
-        (dict(row) for row in selection.get("rows", ())), key=_member_key
-    )
-    phase_members = sorted(
-        (dict(row) for row in phase_result.get("members", ())), key=_member_key
-    )
+    phase_path = _asset_path(asset_root, phase_cell["path"])
+    tensors = load_file(str(phase_path), device=str(device))
+    fingerprints = tensors["member_phase_response"]
+    if fingerprints.shape != (118, 8, 32):
+        raise ValueError("ECP Stage 1 phase response must be 118x8x32")
+    loaded = [
+        _load_stage1_member(
+            row=row,
+            index=index,
+            asset_root=asset_root,
+            contract=contract,
+            device=device,
+        )
+        for index, row in enumerate(selected)
+    ]
+    members = [row[0] for row in loaded]
+    states = [row[1] for row in loaded]
+    reliability = [row[0].reliability for row in loaded]
     if (
-        len(selected) != 47
-        or [_member_key(row) for row in selected]
-        != [_member_key(row) for row in phase_members]
+        len({member.asset_key for member in members}) != 95
+        or {member.ordinal for member in members} != set(range(95))
+        or any(
+            member.asset_key
+            != manifest["tasks"][member.ordinal]["asset_key"]
+            for member in members
+        )
     ):
-        raise ValueError("ECP Stage 1 member ordering changed")
-    tensors = load_file(
-        str(phase_code_root / "phase_codes.safetensors"), device=str(device)
-    )
-    fingerprints = tensors["member_phase_fingerprints"]
-    if fingerprints.shape != (47, 256):
-        raise ValueError("ECP Stage 1 phase response must be 47x8x32")
-    checkpoints, trajectories = _expert_assets(analysis, asset_root)
-    members = []
-    states = []
-    reliability = []
-    for index, row in enumerate(selected):
-        step = int(row["expert_step"])
-        checkpoint = checkpoints[(step, str(row["suite"]), int(row["task_id"]))]
-        trajectory = trajectories[
-            (
-                step,
-                str(row["suite"]),
-                int(row["task_id"]),
-                int(row["init_state_id"]),
-            )
-        ]
-        successes = int(row["checkpoint_successes"][str(step)])
-        selected_indices = tuple(
-            int(value) for value in phase_members[index]["selected_replan_indices"]
-        )
-        if len(selected_indices) != 8:
-            raise ValueError("successful member lost its eight phase states")
-        members.append(
-            ECPStage1Member(
-                index=index,
-                ordinal=int(row["ordinal"]),
-                global_task_id=int(row["global_task_id"]),
-                suite=str(row["suite"]),
-                task_id=int(row["task_id"]),
-                member=str(row["member"]),
-                expert_step=step,
-                init_state_id=int(row["init_state_id"]),
-                fold_role=str(row["fold_role"]),
-                reliability=successes / 50.0,
-                checkpoint=checkpoint,
-                trajectory_path=trajectory,
-                selected_replan_indices=selected_indices,
-            )
-        )
-        state = load_file(str(checkpoint / "adapter.safetensors"), device=str(device))
-        validate_lora_state(state, contract)
-        states.append(gauge_canonicalize_lora_state(state, contract))
-        reliability.append(successes / 50.0)
+        raise ValueError("ECP Stage 1 member-to-task ownership changed")
     stacked = {
         name: torch.stack([state[name] for state in states]) for name in states[0]
     }
     return ECPStage1EvidenceBank(
         members=tuple(members),
         member_states=stacked,
-        phase_response=fingerprints.reshape(47, 8, 32).float(),
+        phase_response=fingerprints.float(),
         reliability=torch.tensor(reliability, device=device),
     )
+
+
+def _load_stage1_member(
+    *,
+    row: Mapping[str, Any],
+    index: int,
+    asset_root: Path,
+    contract: LoRAContract,
+    device: torch.device | str,
+) -> tuple[ECPStage1Member, dict[str, torch.Tensor]]:
+    checkpoint = _asset_path(asset_root, row["checkpoint"])
+    trajectories = tuple(
+        ECPStage1Trajectory(
+            path=_asset_path(asset_root, value["path"]),
+            expected_bytes=int(value["bytes"]),
+            selected_replan_indices=tuple(
+                int(item) for item in value["selected_replan_indices"]
+            ),
+        )
+        for value in row.get("trajectories", ())
+    )
+    reliability = float(row["reliability"])
+    valid_trajectories = trajectories and all(
+        len(value.selected_replan_indices) == 8
+        and value.path.is_file()
+        and value.path.stat().st_size == value.expected_bytes
+        for value in trajectories
+    )
+    if (
+        int(row["index"]) != index
+        or not (checkpoint / "adapter.safetensors").is_file()
+        or not 0.0 < reliability <= 1.0
+        or not valid_trajectories
+    ):
+        raise ValueError("ECP Stage 1 member asset changed")
+    member = ECPStage1Member(
+        index=index,
+        ordinal=int(row["ordinal"]),
+        global_task_id=int(row["global_task_id"]),
+        suite=str(row["suite"]),
+        task_id=int(row["task_id"]),
+        member=str(row["member"]),
+        expert_step=int(row["expert_step"]),
+        init_state_id=int(row["init_state_id"]),
+        fold_role=str(row["fold_role"]),
+        reliability=reliability,
+        checkpoint=checkpoint,
+        trajectories=trajectories,
+        asset_key=str(row["asset_key"]),
+    )
+    state = load_file(str(checkpoint / "adapter.safetensors"), device=str(device))
+    validate_lora_state(state, contract)
+    return member, gauge_canonicalize_lora_state(state, contract)
 
 
 def build_stage1_video_store(
@@ -331,7 +318,9 @@ def build_stage1_video_store(
     )
 
 
-def stage1_demo_indices(*, ordinal: int, visit: int, seed: int, k: int) -> tuple[int, ...]:
+def stage1_demo_indices(
+    *, ordinal: int, visit: int, seed: int, k: int
+) -> tuple[int, ...]:
     if not 1 <= k <= 4:
         raise ValueError("ECP Stage 1 supports one to four visible videos")
     order = np.random.default_rng(
@@ -359,9 +348,8 @@ def build_stage1_schedule(
     if mode == "profile":
         return tuple((fit[0], visit) for visit in range(total_task_visits))
     visits = int(config["optimization"]["visits_per_fit_task"])
-    balance_rounds = int(config["optimization"]["task_balance_block_rounds"])
-    expected_balance_rounds = world_size // math.gcd(len(fit), world_size)
-    if balance_rounds != expected_balance_rounds or visits % balance_rounds:
+    balance_rounds = world_size // math.gcd(len(fit), world_size)
+    if visits % balance_rounds:
         raise ValueError("ECP Stage 1 task-balance block changed")
     balance_block_visits = len(fit) * balance_rounds
     if any(

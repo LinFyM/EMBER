@@ -34,14 +34,14 @@ from ember.pi05_eval_queue import (
     initialize_queue,
     publish_json_exclusive,
 )
+from ember.pi05_eval.occupancy_selection import (
+    MDCO_OCCUPANCY_SELECTION_SCHEMA,
+    SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA,
+    SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA,
+    successful_expert_occupancy_tasks,
+)
 
 
-SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA = (
-    "ember_successful_expert_occupancy_selection_v1"
-)
-SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA = (
-    "ember_successful_expert_occupancy_capture_v1"
-)
 SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA = (
     "ember_successful_expert_equivalence_selection_v1"
 )
@@ -193,8 +193,11 @@ def _occupancy_capture_tasks(
     path = path.resolve()
     manifest = read_json(path)
     rows = tuple(dict(row) for row in manifest.get("rows", ()))
-    if manifest.get("schema_version") == SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA:
-        return _successful_expert_occupancy_tasks(
+    if manifest.get("schema_version") in {
+        SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA,
+        MDCO_OCCUPANCY_SELECTION_SCHEMA,
+    }:
+        return successful_expert_occupancy_tasks(
             args,
             tasks,
             output_dir=output_dir,
@@ -338,92 +341,6 @@ def _task_subset_tasks(
         "outcome_dependence": False,
         "validation_use": False,
         "test_use": False,
-    }
-
-
-def _successful_expert_occupancy_tasks(
-    args: Any,
-    tasks: Sequence[Any],
-    *,
-    output_dir: Path,
-    writer_kind: str | None,
-    selection_path: Path,
-    manifest: Mapping[str, Any],
-    rows: Sequence[Mapping[str, Any]],
-) -> tuple[tuple[Any, ...], dict[str, Any]]:
-    categories = {
-        category: sum(row.get("category") == category for row in rows)
-        for category in ("gained", "retained_success")
-    }
-    keys = {
-        (
-            str(row.get("suite")),
-            int(row.get("task_id", -1)),
-            int(row.get("init_state_id", -1)),
-        )
-        for row in rows
-    }
-    task_categories: dict[tuple[str, int], set[str]] = {}
-    for row in rows:
-        task_categories.setdefault(
-            (str(row.get("suite")), int(row.get("task_id", -1))), set()
-        ).add(str(row.get("category")))
-    if (
-        args.mode != "formal"
-        or args.role != "nonheld_meta_train"
-        or writer_kind != "task_expert"
-        or len(rows) != 8
-        or len(keys) != 8
-        or categories != {"gained": 4, "retained_success": 4}
-        or len(task_categories) != 4
-        or any(
-            values != {"gained", "retained_success"}
-            for values in task_categories.values()
-        )
-    ):
-        raise Pi05EvaluationError("successful-expert occupancy selection changed")
-
-    selected_tasks = []
-    covered = set()
-    for task in tasks:
-        selected_rows = [
-            row
-            for row in rows
-            if (str(row.get("suite")), int(row.get("task_id", -1)))
-            == (str(task.suite), int(task.task_id))
-        ]
-        if selected_rows and any(
-            row.get("language") != task.language for row in selected_rows
-        ):
-            raise Pi05EvaluationError("successful-expert task language changed")
-        state_ids = tuple(
-            state_id
-            for state_id in task.init_state_ids
-            if (str(task.suite), int(task.task_id), int(state_id)) in keys
-        )
-        if state_ids:
-            selected_tasks.append(replace(task, init_state_ids=state_ids))
-            covered.update(
-                (str(task.suite), int(task.task_id), int(state_id))
-                for state_id in state_ids
-            )
-    if covered != keys:
-        raise Pi05EvaluationError(
-            "successful-expert occupancy selection is outside meta-train"
-        )
-    return tuple(selected_tasks), {
-        "schema_version": SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA,
-        "selection_path": str(selection_path),
-        "selection_bytes": selection_path.stat().st_size,
-        "source_results": manifest.get("source_results"),
-        "direct_results": manifest.get("direct_results"),
-        "category_counts": categories,
-        "selected_rows": len(rows),
-        "selected_tasks": len(selected_tasks),
-        "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
-        "training_gradient_use": False,
-        "held_data_use": False,
-        "claim_boundary": manifest.get("claim_boundary"),
     }
 
 
@@ -589,7 +506,8 @@ def _phase_decoder_fit_occupancy_tasks(
         "test_use": False,
         "claim_boundary": (
             "Projected-policy trajectories provide fit-task learner occupancy; "
-            "privileged experts are queried only after capture and held tasks are excluded."
+            "privileged experts are queried only after capture and held tasks are "
+            "excluded."
         ),
     }
 
@@ -685,17 +603,21 @@ def _prepared_payload(
     diagnostic_subset = _task_expert_diagnostic_subset(occupancy_capture)
     if diagnostic_subset is None and task_subset is not None:
         diagnostic_subset = str(task_subset["diagnostic_subset"])
+    inspect_complete_bank = (
+        diagnostic_subset is not None
+        and writer_kind == "task_expert"
+        and not (
+            task_subset is not None
+            and getattr(args, "task_expert_projection_manifest", None) is not None
+        )
+    )
     adapter = _inspect_adapter(
         args,
         writer_kind=writer_kind,
         source_sft_requested=source_sft_requested,
         authorities=authorities,
         model=model,
-        tasks=(
-            installed_tasks
-            if diagnostic_subset is not None and writer_kind == "task_expert"
-            else tasks
-        ),
+        tasks=installed_tasks if inspect_complete_bank else tasks,
     )
     if (
         diagnostic_subset is not None

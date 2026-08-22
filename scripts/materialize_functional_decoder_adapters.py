@@ -10,7 +10,7 @@ from typing import Any, Mapping
 import torch
 from safetensors.torch import load_file, save_file
 
-from ember.expert_manifold.evaluation import (
+from ember.expert_manifold.projection import (
     FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA,
     FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA,
 )

@@ -1,4 +1,4 @@
-"""Materialize ECP layer-resolved prior/full compiler outputs over train24."""
+"""Materialize the frozen MDCO compiler on the target held5 oracle."""
 
 from __future__ import annotations
 
@@ -31,7 +31,6 @@ from ember.ecp.stage1_config import (
     STAGE,
     load_stage1_config,
     stage1_asset_authority,
-    stage1_repo_authority,
 )
 from ember.ecp.stage1_training import load_stage1_authorities
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
@@ -40,10 +39,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = (
-    "ember_ecp_stage1_layer_resolved_single_surface_compiler_projection_v24"
-)
-PROJECTION_KIND = "ecp_stage1_privileged_layer_resolved_single_surface_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_mapping_diverse_compiler_oracle_projection_v1"
+PROJECTION_KIND = "ecp_stage1_mapping_diverse_compiler_oracle"
 
 
 @dataclass(frozen=True)
@@ -58,6 +55,18 @@ class Stage1MaterializationConfig:
     projection_schema: str
     projection_kind: str
     objective_phase: str
+
+
+@dataclass(frozen=True)
+class Stage1MaterializationInputs:
+    tasks: tuple[Any, ...]
+    evidence: Any
+    support: Any
+    base_manifest: Path
+    support_manifest: Path
+    base_rows: Mapping[int, Mapping[str, Any]]
+    languages: Mapping[int, tuple[torch.Tensor, torch.Tensor]]
+    video_store: Any
 
 
 def resolve_stage1_materialization_config(
@@ -77,7 +86,7 @@ def resolve_stage1_materialization_config(
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_balanced_layer_resolved_single_surface_identification",
+        objective_phase="task_equal_mapping_diverse_q_pi_compiler_identification",
     )
 
 
@@ -105,7 +114,8 @@ def _load_checkpoint(
         or manifest.get("stage") != expected_stage
         or int(manifest.get("next_macro", -1)) != cursor
         or manifest.get("run_contract_schema") != expected_run_schema
-        or int(manifest.get("world_size", -1)) != 6
+        or int(manifest.get("world_size", -1))
+        != int(run_contract.get("runtime", {}).get("world_size", -2))
         or not weights.is_file()
         or weights.stat().st_size
         != int(manifest.get("files", {}).get(weights.name, {}).get("bytes", -1))
@@ -129,7 +139,10 @@ def _base_rows(
     path: Path, *, expert_bank_root: Path, expert_step: int
 ) -> dict[int, dict[str, Any]]:
     manifest = read_json(path)
-    rows = {int(row["ordinal"]): dict(row) for row in manifest.get("tasks", ())}
+    rows = {
+        int(row["global_task_id"]): dict(row)
+        for row in manifest.get("tasks", ())
+    }
     if (
         manifest.get("schema_version")
         != "ember_phase_aligned_functional_decoder_train24_projection_v1"
@@ -138,7 +151,6 @@ def _base_rows(
         != expert_bank_root.resolve()
         or int(manifest.get("expert_step", -1)) != expert_step
         or len(rows) != 24
-        or set(rows) != set(range(24))
     ):
         raise ValueError("ECP Stage 1 base evaluation surface changed")
     return rows
@@ -399,19 +411,22 @@ def _projection_manifest(
         "optimization": {
             materialization.cursor_name: checkpoint_cursor,
             "fold": int(config["roles"]["fold"]),
-            "fit_task_count": 19,
+            "fit_task_count": 90,
             "held_task_count": 5,
             "held_shared_gradient_steps": 0,
             "compiler_trainable_during_training": True,
-            "fixed_q_pi_program_coordinates_during_training": True,
+            "fixed_q_pi_program_coordinates_during_training": False,
             "visible_program_frozen_during_training": True,
-            "policy_teacher_frozen_during_training": True,
+            "policy_teacher_frozen_during_training": False,
             "compiler_frozen_for_materialization": True,
             "single_complete_lora": True,
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "one layer-resolved direct-absolute A/B surface with continuous static/process fusion",
+            "parameterization": (
+                "one layer-resolved direct-absolute A/B surface with continuous "
+                "static/process fusion"
+            ),
             "static_process_local_reads": True,
             "continuous_static_process_fusion": True,
             "target_local_factor_heads": True,
@@ -424,9 +439,9 @@ def _projection_manifest(
             "objective_phase": materialization.objective_phase,
         },
         "information_wall": {
-            "role": "development_train_oracle_only",
+            "role": "development_train_leave_task_out_oracle_only",
             "deployment_carrier": False,
-            "privileged_q_pi": "training-time Program coordinate only",
+            "privileged_q_pi": "fit90 shared training and frozen held5 inference only",
             "teacher_action_deployment_reads": 0,
             "validation_action_or_reward_reads": 0,
             "test_action_or_reward_reads": 0,
@@ -436,6 +451,124 @@ def _projection_manifest(
         "cross_task_geometry": dict(cross_task_geometry),
         "content_hash_policy": "disabled_by_owner",
     }
+
+
+def _load_materialization_inputs(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    authorities: Any,
+    device: torch.device,
+) -> Stage1MaterializationInputs:
+    authority_manifest = stage1_asset_authority(
+        config, "task_evidence_manifest", args.asset_root
+    )
+    held = set(config["roles"]["held_task_ordinals"])
+    tasks = tuple(
+        task
+        for task in load_stage1_tasks(
+            authority_manifest=authority_manifest, data_root=args.data_root
+        )
+        if task.ordinal in held
+    )
+    evidence = load_stage1_evidence_bank(
+        authority_manifest=authority_manifest,
+        asset_root=args.asset_root,
+        contract=authorities.contract,
+        device=device,
+    )
+    support_manifest = stage1_asset_authority(
+        config, "policy_support_bank", args.asset_root
+    )
+    support = load_policy_support_bank(
+        manifest_path=support_manifest,
+        evidence_bank=evidence,
+        contract=authorities.contract,
+        task_ordinals={task.ordinal for task in tasks},
+        device=device,
+    )
+    base_manifest = stage1_asset_authority(
+        config, "base_projection_manifest", args.asset_root
+    )
+    base_rows = _base_rows(
+        base_manifest,
+        expert_bank_root=args.expert_bank_root,
+        expert_step=args.expert_step,
+    )
+    held_global_ids = {task.global_task_id for task in tasks}
+    if len(tasks) != 5 or not held_global_ids.issubset(base_rows):
+        raise ValueError("ECP Stage 1 held5 base evaluation surface changed")
+    return Stage1MaterializationInputs(
+        tasks=tasks,
+        evidence=evidence,
+        support=support,
+        base_manifest=base_manifest,
+        support_manifest=support_manifest,
+        base_rows=base_rows,
+        languages=tokenize_stage1_languages(
+            tasks,
+            tokenizer_path=args.tokenizer_path,
+            max_length=int(
+                authorities.source_config["features"]["tokenizer_max_length"]
+            ),
+            device=device,
+        ),
+        video_store=build_stage1_video_store(
+            tasks, frame_stride=int(config["data"]["frame_stride"])
+        ),
+    )
+
+
+def _materialize_held_tasks(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    materialization: Stage1MaterializationConfig,
+    authorities: Any,
+    inputs: Stage1MaterializationInputs,
+    device: torch.device,
+) -> tuple[list[dict[str, Any]], list[Any], list[Any], list[Any]]:
+    rows: list[dict[str, Any]] = []
+    candidates = []
+    directs = []
+    programs = []
+    visit = int(materialization.settings["video_visit"])
+    for task in inputs.tasks:
+        generated, candidate, program = _materialize_task(
+            task=task,
+            visit=visit,
+            config=config,
+            authorities=authorities,
+            evidence_bank=inputs.evidence,
+            support_bank=inputs.support,
+            video_store=inputs.video_store,
+            language_tokens=inputs.languages,
+            output_dir=args.output_dir,
+        )
+        base = inputs.base_rows[task.global_task_id]
+        direct = load_file(
+            str(Path(str(base["expert_checkpoint"])) / "adapter.safetensors"),
+            device=str(device),
+        )
+        validate_lora_state(direct, authorities.contract)
+        candidates.append(candidate)
+        directs.append(direct)
+        programs.append(program)
+        rows.append(
+            {
+                "suite": task.suite,
+                "task_id": task.task_id,
+                "ordinal": int(base["ordinal"]),
+                "stage1_ordinal": task.ordinal,
+                "asset_key": task.asset_key,
+                "domain": task.domain,
+                "global_task_id": task.global_task_id,
+                "expert_checkpoint": base["expert_checkpoint"],
+                "fold_role": task.fold_role,
+                **generated,
+            }
+        )
+    return rows, candidates, directs, programs
 
 
 def materialize(args: argparse.Namespace) -> dict[str, Any]:
@@ -463,95 +596,28 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         materialization.settings["visible_video_count"]
     ) != int(config["data"]["visible_videos_per_visit"]):
         raise ValueError("ECP Stage 1 materialization contract changed")
-    tasks = load_stage1_tasks(
-        target_manifest=stage1_repo_authority(config, "target_manifest"),
-        selection_path=stage1_repo_authority(config, "successful_member_selection"),
-        data_root=args.data_root,
-    )
-    evidence = load_stage1_evidence_bank(
-        selection_path=stage1_repo_authority(config, "successful_member_selection"),
-        phase_analysis_path=stage1_asset_authority(
-            config, "phase_analysis", args.asset_root
-        ),
-        phase_code_root=stage1_asset_authority(
-            config, "phase_code_root", args.asset_root
-        ),
-        asset_root=args.asset_root,
-        contract=authorities.contract,
-        device=context.device,
-    )
-    support_manifest = stage1_asset_authority(
-        config, "policy_support_bank", args.asset_root
-    )
-    support = load_policy_support_bank(
-        manifest_path=support_manifest,
-        evidence_bank=evidence,
-        contract=authorities.contract,
-        task_ordinals=set(range(24)),
-        device=context.device,
-    )
-    base_manifest = stage1_asset_authority(
-        config, "base_projection_manifest", args.asset_root
-    )
-    base_rows = _base_rows(
-        base_manifest,
-        expert_bank_root=args.expert_bank_root,
-        expert_step=args.expert_step,
-    )
-    languages = tokenize_stage1_languages(
-        tasks,
-        tokenizer_path=args.tokenizer_path,
-        max_length=int(authorities.source_config["features"]["tokenizer_max_length"]),
+    inputs = _load_materialization_inputs(
+        args=args,
+        config=config,
+        authorities=authorities,
         device=context.device,
     )
     args.output_dir.mkdir(parents=True, exist_ok=False)
-    store = build_stage1_video_store(
-        tasks, frame_stride=int(config["data"]["frame_stride"])
-    )
-    rows = []
-    candidate_states = []
-    direct_states = []
-    program_rows = []
     try:
-        visit = int(materialization.settings["video_visit"])
-        for task in tasks:
-            generated, candidate, program = _materialize_task(
-                task=task,
-                visit=visit,
-                config=config,
-                authorities=authorities,
-                evidence_bank=evidence,
-                support_bank=support,
-                video_store=store,
-                language_tokens=languages,
-                output_dir=args.output_dir,
-            )
-            base = base_rows[task.ordinal]
-            direct = load_file(
-                str(Path(str(base["expert_checkpoint"])) / "adapter.safetensors"),
-                device=str(context.device),
-            )
-            validate_lora_state(direct, authorities.contract)
-            candidate_states.append(candidate)
-            direct_states.append(direct)
-            program_rows.append(program)
-            rows.append(
-                {
-                    "suite": task.suite,
-                    "task_id": task.task_id,
-                    "ordinal": task.ordinal,
-                    "global_task_id": task.global_task_id,
-                    "expert_checkpoint": base["expert_checkpoint"],
-                    "fold_role": task.fold_role,
-                    **generated,
-                }
-            )
+        rows, candidates, directs, programs = _materialize_held_tasks(
+            args=args,
+            config=config,
+            materialization=materialization,
+            authorities=authorities,
+            inputs=inputs,
+            device=context.device,
+        )
     finally:
-        store.close()
+        inputs.video_store.close()
     geometry = _cross_task_geometry(
-        candidates=candidate_states,
-        directs=direct_states,
-        program_rows=program_rows,
+        candidates=candidates,
+        directs=directs,
+        program_rows=programs,
         contract=authorities.contract,
         gate=config["gate2"],
     )
@@ -561,8 +627,8 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         repository=repository,
         checkpoint_cursor=checkpoint_cursor,
         checkpoint_asset=checkpoint_asset,
-        base_manifest=base_manifest,
-        support_manifest=support_manifest,
+        base_manifest=inputs.base_manifest,
+        support_manifest=inputs.support_manifest,
         rank=int(authorities.contract.rank),
         rows=rows,
         cross_task_geometry=geometry,
@@ -578,7 +644,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json",
+        / "configs/pi05_ecp_stage1_mapping_diverse_compiler_oracle.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

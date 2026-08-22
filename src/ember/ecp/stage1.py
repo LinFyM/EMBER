@@ -68,6 +68,28 @@ class ECPStage1Model(torch.nn.Module):
             factor_head_init=factor_head_init,
         )
 
+    def trainable_q_pi_compiler_parameters(
+        self,
+    ) -> tuple[torch.nn.Parameter, ...]:
+        """Enable exactly the two shared Stage 1 mapping owners."""
+
+        self.policy_teacher.requires_grad_(True)
+        self.compiler.requires_grad_(True)
+        parameters = tuple(
+            (*self.policy_teacher.parameters(), *self.compiler.parameters())
+        )
+        ownership_valid = (
+            bool(parameters)
+            and all(parameter.requires_grad for parameter in parameters)
+            and not any(
+                parameter.requires_grad
+                for parameter in self.visible_program.parameters()
+            )
+        )
+        if not ownership_valid:
+            raise ValueError("mapping-diverse q_pi/compiler ownership changed")
+        return parameters
+
     def forward(
         self,
         encoded: ECPVideoEncoderOutput,

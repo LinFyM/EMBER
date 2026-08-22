@@ -44,7 +44,8 @@ class ECPStage1Model(torch.nn.Module):
         support_channels: int = 5,
         support_horizon_basis: int = 4,
         factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
-        residual_head_init_multiplier: float = 0.1,
+        replacement_head_init_multiplier: float = 0.1,
+        selector_max_angle_radians: float = torch.pi / 2.0,
     ) -> None:
         super().__init__()
         self.visible_program = VisibleProgramProjector(
@@ -67,7 +68,8 @@ class ECPStage1Model(torch.nn.Module):
             compiler_width=compiler_width,
             event_slots=event_slots,
             factor_head_init=factor_head_init,
-            residual_head_init_multiplier=residual_head_init_multiplier,
+            replacement_head_init_multiplier=replacement_head_init_multiplier,
+            selector_max_angle_radians=selector_max_angle_radians,
         )
 
     def forward(

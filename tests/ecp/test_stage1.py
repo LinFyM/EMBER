@@ -4,8 +4,8 @@ from pathlib import Path
 import torch
 
 from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
-from ember.ecp.contracts import build_target_owners
-from ember.ecp.low_rank import merge_low_rank_updates
+from ember.ecp.contracts import TargetFamily, TargetOwner, build_target_owners
+from ember.ecp.low_rank import replace_low_rank_modes
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
@@ -25,7 +25,7 @@ from ember.ecp.stage1_support import (
     policy_support_loss_from_response,
 )
 from ember.ecp.stage1_support_audit import summarize_policy_support_audit
-from ember.lora import identity_lora_state
+from ember.lora import LoRATarget, SmolVLALoRAContract, identity_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 
 
@@ -56,6 +56,46 @@ def _contract_and_states() -> tuple[object, tuple, dict[str, torch.Tensor]]:
     owners = build_target_owners(contract)
     template = identity_lora_state(contract)
     return contract, owners, template
+
+
+def _tiny_compiler() -> tuple[TargetFamilyCompiler, dict[str, torch.Tensor]]:
+    target = LoRATarget("tiny", in_features=5, out_features=6)
+    contract = SmolVLALoRAContract(
+        targets=(target,), rank=2, alpha=2, dropout=0.0, identity_seed=1
+    )
+    owner = TargetOwner(
+        index=0,
+        target_name=target.name,
+        family=TargetFamily.Q,
+        layer=0,
+        in_features=target.in_features,
+        out_features=target.out_features,
+    )
+    template = {
+        "tiny.lora_A.default.weight": torch.randn(2, 5),
+        "tiny.lora_B.default.weight": torch.randn(6, 2),
+    }
+    return (
+        TargetFamilyCompiler(
+            (owner,),
+            contract,
+            template,
+            program_width=4,
+            compiler_width=8,
+            event_slots=2,
+        ),
+        template,
+    )
+
+
+def _tiny_program() -> ECPProgram:
+    return ECPProgram(
+        language=torch.randn(1, 1, 4),
+        scene=torch.randn(1, 1, 4),
+        process=torch.randn(1, 2, 1, 4),
+        presence=torch.ones(1, 2),
+        uncertainty=torch.rand(1, 2, 1, 4),
+    )
 
 
 def _expert_evidence(
@@ -162,6 +202,9 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert all(value.shape[0] == 2 for value in output.member_compilation.state.values())
     attention = float(output.consensus_compilation.exact_owner_attention.detach())
     assert 0.0 <= attention <= 1.0
+    assert float(
+        output.consensus_compilation.rank_replacement_fraction.detach()
+    ) == 0.0
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:
@@ -193,13 +236,11 @@ def test_compact_svd_gauge_preserves_update_and_is_deterministic() -> None:
     torch.testing.assert_close(canonical_b, repeat_b)
 
 
-def test_prior_union_compiler_preserves_base_when_residual_is_zero() -> None:
+def test_rank_selector_starts_from_the_exact_complete_prior() -> None:
     contract, owners, template = _contract_and_states()
     for value in template.values():
         value.normal_(std=0.01)
     compiler = TargetFamilyCompiler(owners, contract, template)
-    for head in (*compiler.factor_a.values(), *compiler.factor_b.values()):
-        head.weight.data.zero_()
     common = {
         "language": torch.randn(1, 38, 128),
         "scene": torch.randn(1, 38, 128),
@@ -216,6 +257,11 @@ def test_prior_union_compiler_preserves_base_when_residual_is_zero() -> None:
         torch.testing.assert_close(prior[name][0], target)
     assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7
     assert float(exact_effective_update_loss(full, template, contract).detach()) < 1e-5
+    assert float(
+        compiler(
+            ECPProgram(**common, presence=torch.ones(1, 8))
+        ).rank_replacement_fraction.detach()
+    ) == 0.0
 
 
 def test_compiler_address_queries_cannot_write_residual_without_program_content() -> None:
@@ -223,6 +269,8 @@ def test_compiler_address_queries_cannot_write_residual_without_program_content(
     for value in template.values():
         value.normal_(std=0.01)
     compiler = TargetFamilyCompiler(owners, contract, template)
+    for selector in compiler.rank_selector.values():
+        selector.weight.data.normal_(std=0.1)
     zero = ECPProgram(
         language=torch.zeros(1, 38, 128),
         scene=torch.zeros(1, 38, 128),
@@ -234,32 +282,86 @@ def test_compiler_address_queries_cannot_write_residual_without_program_content(
     assert float(exact_effective_update_loss(state, template, contract).detach()) < 1e-5
 
 
-def test_low_rank_union_matches_dense_best_rank_and_has_finite_gradient() -> None:
+def test_rank_mode_replacement_is_amplitude_invariant_and_differentiable() -> None:
     generator = torch.Generator().manual_seed(17)
     base_a = torch.randn(2, 5, generator=generator)
     base_b = torch.randn(6, 2, generator=generator)
-    residual_a = torch.randn(1, 2, 5, generator=generator, requires_grad=True)
-    residual_b = torch.randn(1, 6, 2, generator=generator, requires_grad=True)
+    replacement_a = torch.randn(1, 2, 5, generator=generator, requires_grad=True)
+    replacement_b = torch.randn(1, 6, 2, generator=generator, requires_grad=True)
+    angles = torch.tensor([[0.2, -0.4]], requires_grad=True)
     with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
-        merged_a, merged_b = merge_low_rank_updates(
+        selected_a, selected_b = replace_low_rank_modes(
             base_a=base_a,
             base_b=base_b,
-            residual_a=residual_a,
-            residual_b=residual_b,
-            output_rank=2,
+            replacement_a=replacement_a,
+            replacement_b=replacement_b,
+            angles=angles,
         )
-    dense = base_b @ base_a + residual_b[0] @ residual_a[0]
-    u, singular, vh = torch.linalg.svd(dense, full_matrices=False)
-    expected = (u[:, :2] * singular[:2]) @ vh[:2]
-    torch.testing.assert_close(merged_b[0] @ merged_a[0], expected)
-    (merged_b @ merged_a).square().mean().backward()
-    assert residual_a.grad is not None and torch.isfinite(residual_a.grad).all()
-    assert residual_b.grad is not None and torch.isfinite(residual_b.grad).all()
+    scaled_a, scaled_b = replace_low_rank_modes(
+        base_a=base_a,
+        base_b=base_b,
+        replacement_a=7.0 * replacement_a,
+        replacement_b=7.0 * replacement_b,
+        angles=angles,
+    )
+    torch.testing.assert_close(selected_a, scaled_a)
+    torch.testing.assert_close(selected_b, scaled_b)
+    zero_a, zero_b = replace_low_rank_modes(
+        base_a=base_a,
+        base_b=base_b,
+        replacement_a=replacement_a,
+        replacement_b=replacement_b,
+        angles=torch.zeros_like(angles),
+    )
+    torch.testing.assert_close(zero_a[0], base_a)
+    torch.testing.assert_close(zero_b[0], base_b)
+    (selected_b @ selected_a).square().mean().backward()
+    assert replacement_a.grad is not None and torch.isfinite(replacement_a.grad).all()
+    assert replacement_b.grad is not None and torch.isfinite(replacement_b.grad).all()
+    assert angles.grad is not None and torch.isfinite(angles.grad).all()
+
+
+def test_selector_learns_before_replacement_directions_receive_gradient() -> None:
+    compiler, template = _tiny_compiler()
+    program = _tiny_program()
+    first = compiler(program)
+    for name, value in template.items():
+        torch.testing.assert_close(first.state[name][0], value)
+    dense = (
+        first.state["tiny.lora_B.default.weight"]
+        @ first.state["tiny.lora_A.default.weight"]
+    )
+    target = torch.randn_like(dense)
+    (dense - target).square().mean().backward()
+    selector = compiler.rank_selector["q"].weight
+    assert selector.grad is not None and float(selector.grad.abs().sum()) > 0
+    factor_grad = sum(
+        float(head.weight.grad.abs().sum())
+        for head in (compiler.factor_a["q"], compiler.factor_b["q"])
+        if head.weight.grad is not None
+    )
+    assert factor_grad == 0.0
+    with torch.no_grad():
+        selector.add_(selector.grad, alpha=-0.1)
+    compiler.zero_grad(set_to_none=True)
+    second = compiler(program)
+    second_dense = (
+        second.state["tiny.lora_B.default.weight"]
+        @ second.state["tiny.lora_A.default.weight"]
+    )
+    (second_dense - target).square().mean().backward()
+    assert float(second.rank_replacement_fraction.detach()) > 0.0
+    assert float(compiler.factor_a["q"].weight.grad.abs().sum()) > 0.0
+    assert float(compiler.factor_b["q"].weight.grad.abs().sum()) > 0.0
 
 
 def test_query_content_modulation_reaches_rank_outputs() -> None:
     contract, owners, template = _contract_and_states()
     compiler = TargetFamilyCompiler(owners, contract, template)
+    for value in template.values():
+        value.normal_(std=0.01)
+    for selector in compiler.rank_selector.values():
+        selector.weight.data.normal_(std=0.1)
     program = ECPProgram(
         language=torch.randn(1, 38, 128),
         scene=torch.randn(1, 38, 128),

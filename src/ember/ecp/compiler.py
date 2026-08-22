@@ -9,7 +9,7 @@ from typing import Mapping
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
-from ember.ecp.low_rank import merge_low_rank_updates
+from ember.ecp.low_rank import replace_low_rank_modes
 from ember.ecp.program import ECPProgram
 from ember.lora import (
     LORA_A_SUFFIX,
@@ -33,6 +33,7 @@ class ECPCompilerOutput:
     state: Mapping[str, torch.Tensor]
     locality_penalty: torch.Tensor
     exact_owner_attention: torch.Tensor
+    rank_replacement_fraction: torch.Tensor
 
 
 def select_compiled_state(
@@ -54,7 +55,8 @@ class TargetFamilyCompiler(torch.nn.Module):
         compiler_width: int = 256,
         event_slots: int = 8,
         factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
-        residual_head_init_multiplier: float = 0.1,
+        replacement_head_init_multiplier: float = 0.1,
+        selector_max_angle_radians: float = math.pi / 2.0,
     ) -> None:
         super().__init__()
         validate_lora_state(template_state, contract)
@@ -107,21 +109,33 @@ class TargetFamilyCompiler(torch.nn.Module):
             torch.nn.LayerNorm(compiler_width),
         )
         self.factor_a, self.factor_b = self._factor_heads(owners, compiler_width)
+        self.rank_selector = torch.nn.ModuleDict(
+            {
+                family: torch.nn.Linear(compiler_width, 1, bias=False)
+                for family in self.factor_a
+            }
+        )
+        self.selector_max_angle_radians = float(selector_max_angle_radians)
         self._register_coordinates(owners)
         self._register_templates(template_state)
         init = factor_head_init or DEFAULT_FACTOR_HEAD_INIT
-        if not 0.0 < residual_head_init_multiplier <= 1.0:
-            raise ValueError("invalid residual head initialization multiplier")
+        if (
+            not 0.0 < replacement_head_init_multiplier <= 1.0
+            or not 0.0 < self.selector_max_angle_radians <= math.pi / 2.0
+        ):
+            raise ValueError("invalid rank-mode replacement initialization")
         for family, head in self.factor_a.items():
             torch.nn.init.normal_(
                 head.weight,
-                std=residual_head_init_multiplier * float(init[family]["a"]),
+                std=replacement_head_init_multiplier * float(init[family]["a"]),
             )
         for family, head in self.factor_b.items():
             torch.nn.init.normal_(
                 head.weight,
-                std=residual_head_init_multiplier * float(init[family]["b"]),
+                std=replacement_head_init_multiplier * float(init[family]["b"]),
             )
+        for selector in self.rank_selector.values():
+            torch.nn.init.zeros_(selector.weight)
 
     @staticmethod
     def _factor_heads(
@@ -288,6 +302,7 @@ class TargetFamilyCompiler(torch.nn.Module):
         process_gate = self._process_gate(program)
         has_process = bool((process_gate.detach() > 0).any())
         result: dict[str, torch.Tensor] = {}
+        replacement_fractions = []
         for owner in self.owners:
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
@@ -301,31 +316,42 @@ class TargetFamilyCompiler(torch.nn.Module):
                 continue
             family = owner.family.value
             addressed = hidden[:, owner.index]
-            residual_a = self.factor_a[family](addressed)
-            residual_b = self.factor_b[family](addressed).transpose(1, 2)
-            merged_a, merged_b = merge_low_rank_updates(
+            replacement_a = self.factor_a[family](addressed)
+            replacement_b = self.factor_b[family](addressed).transpose(1, 2)
+            selector_logits = self.rank_selector[family](addressed).squeeze(-1)
+            angles = self.selector_max_angle_radians * torch.tanh(selector_logits)
+            selected_a, selected_b = replace_low_rank_modes(
                 base_a=templates[name_a],
                 base_b=templates[name_b],
-                residual_a=residual_a,
-                residual_b=residual_b,
-                output_rank=self.rank,
+                replacement_a=replacement_a,
+                replacement_b=replacement_b,
+                angles=angles,
             )
-            gate_a = process_gate[:, None, None].to(merged_a)
-            gate_b = process_gate[:, None, None].to(merged_b)
+            gate_a = process_gate[:, None, None].to(selected_a)
+            gate_b = process_gate[:, None, None].to(selected_b)
             result[name_a] = (
-                (1.0 - gate_a) * templates[name_a][None] + gate_a * merged_a
+                (1.0 - gate_a) * templates[name_a][None] + gate_a * selected_a
             ).to(templates[name_a])
             result[name_b] = (
-                (1.0 - gate_b) * templates[name_b][None] + gate_b * merged_b
+                (1.0 - gate_b) * templates[name_b][None] + gate_b * selected_b
             ).to(templates[name_b])
+            replacement_fractions.append(
+                angles.sin().square() * process_gate[:, None].to(angles)
+            )
         locality = torch.einsum(
             "bjrn,jn->", attention.float(), self.locality_cost
         ) / (attention.shape[0] * self.owner_count * self.rank)
         exact_attention = (
             attention * self.exact_owner_mask[:, None]
         ).sum(-1).mean()
+        replacement_fraction = (
+            torch.cat(replacement_fractions, dim=1).mean()
+            if replacement_fractions
+            else attention.new_zeros(())
+        )
         return ECPCompilerOutput(
             state=result,
             locality_penalty=locality,
             exact_owner_attention=exact_attention,
+            rank_replacement_fraction=replacement_fraction,
         )

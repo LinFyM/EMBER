@@ -151,8 +151,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   冻结support门；fit/held均在0个task胜过shared，且发现228节点访问数为每task `5--18`而非task-equal 12；
 - [x] 修正formal schedule，使每个可裁决prefix按6个visit rounds成块、兼顾task balance与cost-balanced rank分配；fresh复验
   的19个fit task均恰好12 visits，但fit/held仅`2/19、2/5` tasks胜过shared，v8最终关闭；
-- [ ] 用bounded、exact-prior的policy-functional rank selector替换唯一active compiler中的Frobenius top-SVD；先完成聚焦合同与
-  successful/learner真实profile，再从balanced schedule fresh训练228 visits并复跑同一冻结support gate；
+- [x] 用bounded、exact-prior的policy-functional rank selector替换唯一active compiler中的Frobenius top-SVD；删除旧v8
+  active config/union调用并通过40项聚焦合同；
+- [ ] 完成selector successful/learner真实双visit profile；通过后从balanced schedule fresh训练228 visits并复跑同一冻结
+  support gate；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 

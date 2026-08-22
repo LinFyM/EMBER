@@ -39,8 +39,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_functional_union_projection_v8"
-PROJECTION_KIND = "ecp_stage1_privileged_prior_union_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_functional_rank_selector_projection_v9"
+PROJECTION_KIND = "ecp_stage1_privileged_functional_rank_selector_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -176,6 +176,9 @@ def _materialize_task(
         "stable_prior_effective_update_loss": float(prior_loss.detach()),
         "exact_owner_attention": float(
             output.consensus_compilation.exact_owner_attention.detach()
+        ),
+        "rank_replacement_fraction": float(
+            output.consensus_compilation.rank_replacement_fraction.detach()
         ),
         "active_event_count": int((output.teacher.program.presence > 0.5).sum()),
         "q_pi_evidence_gate_mean": float(output.teacher.evidence_gate.mean()),
@@ -343,7 +346,7 @@ def _projection_manifest(
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "prior-only exact template; full-process best-rank16 shared-plus-residual effective-update union",
+            "parameterization": "prior-only exact template; full-process bounded rank-one retraction toward content-conditioned replacement modes",
             "content_address_separated": True,
             "query_content_modulated": True,
             "policy_support_teacher": True,
@@ -514,7 +517,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_functional_union_v8.json",
+        / "configs/pi05_ecp_stage1_functional_rank_selector_v9.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

@@ -21,8 +21,9 @@
   预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
   v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
   v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
-  当前唯一active工作是以bounded、exact-prior的policy-functional rank selector替换Frobenius top-SVD压缩，保持Program、
-  `q_pi`、support bank、balanced schedule和functional objective不变，不延长v8，也不围绕query、rank或loss权重做局部微调。
+  Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector在唯一active路径中替换；当前工作是完成
+  successful/learner真实双visit profile，并在通过后从clean pushed authority fresh训练balanced 228-visits。Program、`q_pi`、
+  support bank、schedule和functional objective保持不变，不延长v8，也不围绕query、rank或loss权重做局部微调。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -184,6 +185,12 @@
   source/shared为`.67581/1.17823`且只在`18/19、2/19` tasks胜出；held5为`.69756/.88454/.62434`，ratio
   `.78862/1.11729`且只在`4/5、2/5` tasks胜出。88/308 panels胜过shared，但四个shared aggregate/breadth条件均失败。
   v8因此最终关闭，不进入held闭环、reward或`q_V`；下一fresh-incompatible实现只替换rank16选择机制。
+- v9已在唯一Stage 1代码路径完成fresh-incompatible替换。每个target的raw replacement A/B先在FP32形成独立正交方向，按该
+  target stable-shared canonical factors的跨rank RMS能量定标；从Program-addressed hidden读取的零初始化per-rank selector
+  angle只在对应shared/replacement rank-one mode间作有界retraction。selector为零时完整76 tensors逐值返回shared；raw head
+  幅度放大7倍不改变输出；全部16 ranks均可写且不再运行Frobenius SVD。训练metrics和materialization新增唯一相关诊断
+  `rank_replacement_fraction`。旧v8 active config与union调用已删除，40项聚焦CPU合同通过，包括exact prior、幅度不变性、
+  selector先获梯度且打开后factor heads获梯度、零Program不能写LoRA、完整rank16输出及新projection authority。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

@@ -54,57 +54,62 @@ def canonicalize_low_rank_factors(
     return canonical_a, canonical_b
 
 
-def merge_low_rank_updates(
+def replace_low_rank_modes(
     *,
     base_a: torch.Tensor,
     base_b: torch.Tensor,
-    residual_a: torch.Tensor,
-    residual_b: torch.Tensor,
-    output_rank: int,
+    replacement_a: torch.Tensor,
+    replacement_b: torch.Tensor,
+    angles: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Best rank-r compression of base BA plus residual BA."""
+    """Retract each base rank-one mode toward a bounded replacement mode."""
 
-    residual_a_batch = residual_a[None] if residual_a.ndim == 2 else residual_a
-    residual_b_batch = residual_b[None] if residual_b.ndim == 2 else residual_b
-    base_a_batch = base_a[None] if base_a.ndim == 2 else base_a
-    base_b_batch = base_b[None] if base_b.ndim == 2 else base_b
-    batch = residual_a_batch.shape[0]
     if (
-        residual_a_batch.ndim != 3
-        or residual_b_batch.ndim != 3
-        or base_a_batch.ndim != 3
-        or base_b_batch.ndim != 3
-        or residual_b_batch.shape[0] != batch
-        or base_a_batch.shape[0] not in (1, batch)
-        or base_b_batch.shape[0] not in (1, batch)
-        or base_a_batch.shape[2] != residual_a_batch.shape[2]
-        or base_b_batch.shape[1] != residual_b_batch.shape[1]
-        or base_a_batch.shape[1] != base_b_batch.shape[2]
-        or residual_a_batch.shape[1] != residual_b_batch.shape[2]
+        base_a.ndim != 2
+        or base_b.ndim != 2
+        or replacement_a.ndim != 3
+        or replacement_b.ndim != 3
+        or angles.ndim != 2
+        or replacement_a.shape[0] != replacement_b.shape[0]
+        or replacement_a.shape[0] != angles.shape[0]
+        or base_a.shape[0] != base_b.shape[1]
+        or replacement_a.shape[1] != base_a.shape[0]
+        or replacement_b.shape[2] != base_a.shape[0]
+        or angles.shape[1] != base_a.shape[0]
+        or replacement_a.shape[2] != base_a.shape[1]
+        or replacement_b.shape[1] != base_b.shape[0]
     ):
-        raise ValueError("low-rank union factor shapes changed")
-    base_a_batch = base_a_batch.expand(batch, -1, -1)
-    base_b_batch = base_b_batch.expand(batch, -1, -1)
-    base_is_zero = bool(
-        (base_a_batch.detach().abs().amax() == 0)
-        or (base_b_batch.detach().abs().amax() == 0)
-    )
-    residual_is_zero = bool(
-        (residual_a_batch.detach().abs().amax() == 0)
-        or (residual_b_batch.detach().abs().amax() == 0)
-    )
-    if base_is_zero:
-        return canonicalize_low_rank_factors(
-            residual_a_batch.float(),
-            residual_b_batch.float(),
-            output_rank=output_rank,
+        raise ValueError("rank-mode replacement factor shapes changed")
+    batch = replacement_a.shape[0]
+    with torch.autocast(device_type=replacement_a.device.type, enabled=False):
+        base_a_float = base_a.float()
+        base_b_float = base_b.float()
+        replacement_a_basis, _ = torch.linalg.qr(
+            replacement_a.float().transpose(1, 2), mode="reduced"
         )
-    if residual_is_zero:
-        return canonicalize_low_rank_factors(
-            base_a_batch.float(), base_b_batch.float(), output_rank=output_rank
+        replacement_b_basis, _ = torch.linalg.qr(
+            replacement_b.float(), mode="reduced"
         )
-    union_a = torch.cat((base_a_batch, residual_a_batch), dim=1).float()
-    union_b = torch.cat((base_b_batch, residual_b_batch), dim=2).float()
-    return canonicalize_low_rank_factors(
-        union_a, union_b, output_rank=output_rank
-    )
+        # Equal-rank replacement factors preserve the complete base factor
+        # energy while preventing raw head amplitude from winning selection.
+        replacement_a_scale = (
+            base_a_float.square().sum(-1).mean().sqrt()
+        )
+        replacement_b_scale = (
+            base_b_float.square().sum(0).mean().sqrt()
+        )
+        normalized_a = replacement_a_basis.transpose(1, 2) * replacement_a_scale
+        normalized_b = replacement_b_basis * replacement_b_scale
+        cosine = angles.float().cos()
+        sine = angles.float().sin()
+        selected_a = (
+            cosine[:, :, None] * base_a_float[None]
+            + sine[:, :, None] * normalized_a
+        )
+        selected_b = (
+            cosine[:, None, :] * base_b_float[None]
+            + sine[:, None, :] * normalized_b
+        )
+    if selected_a.shape[0] != batch:
+        raise RuntimeError("rank-mode replacement batch changed")
+    return selected_a.to(replacement_a), selected_b.to(replacement_b)

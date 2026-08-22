@@ -538,10 +538,10 @@ fit task均恰好12 visits。它没有挽救v8。物化的candidate/direct norm 
 `.99433`，own-direct `.01106`且自身检索`1/24`；冻结审计的fit/held candidate-to-shared为`1.17823/1.11729`，只有
 `2/19、2/5` tasks胜过shared。因此v8最终关闭，不延长、不调loss/rank/seed，也不加入reward或`q_V`。
 
-active v9只替换最早失败接口：stable-shared的16个canonical rank-one modes保持固定尺度，factor heads提供同尺度归一化的
-content-conditioned replacement directions；每个target/rank由从已读取Program content产生的零初始化selector angle，在
-shared mode与replacement mode之间作有界rank-one retraction。selector为零时76 tensors精确等价于完整stable shared；幅度不能
-通过扩大raw residual范数抢占rank；全部16 ranks仍可写，输出仍是唯一一套完整rank16 LoRA。训练信号仍只来自successful/learner
+active v9只替换最早失败接口：stable-shared的16个canonical rank-one modes保持固定尺度，factor heads的raw A/B分别经FP32
+thin QR形成正交方向，再按对应target shared factors的跨rank RMS能量定标；每个target/rank由从已读取Program content产生的
+零初始化selector angle，在shared mode与replacement mode之间作有界rank-one retraction。selector为零时76 tensors精确等价于
+完整stable shared；扩大raw head幅度不能改变方向或抢占rank；全部16 ranks仍可写，输出仍是唯一一套完整rank16 LoRA。训练信号仍只来自successful/learner
 multi-state policy response、局部source/shared support、exact-prior counterfactual和locality；raw A/B距离继续只作诊断。
 该实现以replacement fraction和冻结全bank support裁决是否真正选择了policy-functional modes，而不是参数能量最大的modes。
 

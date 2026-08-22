@@ -120,6 +120,9 @@ def _local_record(
         "consensus_exact_owner_attention": float(
             output.consensus_compilation.exact_owner_attention.detach()
         ),
+        "consensus_rank_replacement_fraction": float(
+            output.consensus_compilation.rank_replacement_fraction.detach()
+        ),
         "mean_active_events": float(
             (output.teacher.program.presence.detach() > 0.5).float().sum()
         ),
@@ -233,6 +236,7 @@ def run_stage1_update(
         "expert_set_disagreement",
         "locality",
         "consensus_exact_owner_attention",
+        "consensus_rank_replacement_fraction",
         "mean_active_events",
         "q_pi_gate_mean",
         "q_pi_gate_min",

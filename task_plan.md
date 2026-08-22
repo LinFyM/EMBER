@@ -160,7 +160,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   aggregate为`1.00692x`，v9按门关闭；
 - [x] 保持bounded exact-prior rank selector与全部训练变量，只把compiler改为language/scene-conditioned、process-value-only
   reader；删除v9 active路径并通过41项聚焦合同；
-- [ ] 完成v10真实successful/learner双visit profile；通过后fresh balanced 228 visits并复跑geometry/support gate；
+- [x] 完成v10真实successful/learner双visit profile；两步梯度finite、约2.3/2.1秒，selector从exact shared安全打开；
+- [ ] 从clean pushed v10 authority完成fresh balanced 228 visits，并复跑同一24-task geometry/308-panel frozen support gate；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -214,11 +215,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. balanced v8已完成且最终失败：fit/held相对shared为`1.178/1.117`，breadth仅`2/19、2/5`，故不跑held closed loop、
-   不加reward、不启动`q_V`，也不延长或做loss小扫；
-2. 下一major variable只替换Frobenius top-SVD：实现exact-shared起点、bounded同尺度replacement和content-derived per-rank
-   selector；保持Program、`q_pi`、support bank、balanced schedule、seed与functional objectives不变；
-3. 只有functional rank selector相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. v9已终止：它保住shared但学成近全局correction，不跑held closed loop、不加reward、不启动`q_V`，
+   也不延长或做loss小扫；
+2. active v10只将replacement Value收紧为present process/uncertainty，language/scene只条件化query；真实双visit profile已通过，
+   下一步从clean pushed authority fresh训练balanced 228 visits，随后用同一geometry/support gate裁决该单变量；
+3. 只有v10相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

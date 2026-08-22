@@ -214,7 +214,10 @@
   present process tokens；language/scene只经独立projection条件化608个target/rank queries，factor与selector Value只读取有序
   process/uncertainty。zero process反事实即使language/scene/presence非零也逐值返回完整shared；同一process改变language/scene会
   改变query readout。bounded QR/RMS replacement、selector、q_pi、support bank、balanced schedule、seed和loss均未改变。旧v9
-  active config/schema/evaluator已删除，41项聚焦CPU合同通过；下一步只做真实successful/learner双visit profile。
+  active config/schema/evaluator已删除，41项聚焦CPU合同通过。gpu01 physical 1的真实successful/learner双visit profile
+  两次更新分别为`2.3049/2.0821s`，峰值`16,439,940,608` bytes，裁剪前梯度`.29288/1.90028`且finite；
+  `rank_replacement_fraction`从精确shared的`0`安全打开到`4.4849e-6`。该profile只授权fresh balanced 228-visits，
+  不构成geometry或support pass。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

@@ -562,6 +562,11 @@ replacement hidden仍严格为零并返回完整shared；真实process则保留e
 replacement、零初始化selector、support bank、task-balanced schedule、seed和functional-only objective全部不变。该单变量直接
 检验“近全局修正来自静态Value/开关旁路”，资格仍由同一24-task geometry与308-panel frozen support gate决定。
 
+真实successful/learner双visit profile已在gpu01 physical 1通过：两次更新约`2.305/2.082s`，峰值
+`16,439,940,608` bytes，裁剪前梯度`.29288/1.90028`且finite；selector fraction从exact shared的`0`
+打开至`4.4849e-6`。因而v10图和两阶段梯度顺序通过实底座检查，可进入fresh balanced 228-visits；
+该profile不预判科学门结果。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

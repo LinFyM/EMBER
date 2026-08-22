@@ -195,6 +195,23 @@ def test_reward_schedules_exclude_arm_rank_and_execution_order() -> None:
     )
 
 
+def test_reward_task_accepts_audited_nonheld_libero90_authority() -> None:
+    task = RewardTask(
+        suite="libero_90",
+        task_id=89,
+        global_task_id=70,
+        split_role="train",
+        language="put the object in the container",
+        problem_folder="libero_90",
+        bddl_file="task_89.bddl",
+        bddl_bytes=1,
+        bddl_sha256=None,
+        horizon=400,
+    )
+    assert task.horizon == 400
+    assert reward_credit_environment_seed(7, task.suite, task.task_id, 11, 9) >= 0
+
+
 def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
     envs = tuple(
         _FakeEnvironment(success_after_policy_steps=value, marker=lane * 20)

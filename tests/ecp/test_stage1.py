@@ -157,6 +157,9 @@ def test_mdco_is_the_only_active_stage1_authority() -> None:
     assert config["data"]["fit_mappings"] == 90
     assert config["roles"]["held_task_ordinals"] == [90, 91, 92, 93, 94]
     assert config["training_ownership"]["policy_teacher_trainable"] is True
+    assert config["structured_calibration"]["after_task_visits"] == 540
+    assert config["structured_calibration"]["task_count"] == 90
+    assert config["structured_calibration"]["global_16d_estimator"] is False
 
 
 def test_mdco_occupancy_selection_covers_all_71_mappings() -> None:

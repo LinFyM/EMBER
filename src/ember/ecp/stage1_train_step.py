@@ -107,7 +107,7 @@ def _action_supervision_weight(
     return float(weights["failed_learner"])
 
 
-def _action_policy_seed(
+def stage1_action_policy_seed(
     runtime: "ECPStage1Runtime",
     *,
     task_ordinal: int,
@@ -123,7 +123,7 @@ def _action_policy_seed(
     ) % ((1 << 63) - 1)
 
 
-def _action_policy_gradient(
+def stage1_action_policy_gradient(
     runtime: "ECPStage1Runtime",
     *,
     candidate: dict[str, torch.Tensor],
@@ -140,7 +140,7 @@ def _action_policy_gradient(
         candidate,
         runtime.contract,
         batch=cached.batch,
-        policy_rng_seed=_action_policy_seed(
+        policy_rng_seed=stage1_action_policy_seed(
             runtime,
             task_ordinal=task_ordinal,
             task_visit=task_visit,
@@ -227,7 +227,7 @@ def _local_record(
     }
 
 
-def _encode_visit(
+def encode_stage1_visit(
     runtime: "ECPStage1Runtime", *, task_ordinal: int, task_visit: int
 ) -> tuple[Any, Any]:
     packed = pack_stage1_videos(
@@ -278,7 +278,7 @@ def _forward_objective(
             task_visit=task_visit,
             task_visits_after_update=task_visits,
         )
-        action_loss, action_gradients, supervision_weight = _action_policy_gradient(
+        action_loss, action_gradients, supervision_weight = stage1_action_policy_gradient(
             runtime,
             candidate=candidate,
             cached=cached,
@@ -520,7 +520,7 @@ def run_stage1_update(
     schedule_index = cursor + runtime.context.rank
     task_ordinal, task_visit = runtime.schedule[schedule_index]
     task = runtime.task_by_ordinal[task_ordinal]
-    packed, encoded = _encode_visit(
+    packed, encoded = encode_stage1_visit(
         runtime, task_ordinal=task_ordinal, task_visit=task_visit
     )
     forward = _forward_objective(

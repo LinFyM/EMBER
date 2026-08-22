@@ -9,10 +9,19 @@ from typing import Any
 
 
 SUITE_HORIZONS = {
+    "libero_90": 400,
     "libero_spatial": 220,
     "libero_object": 280,
     "libero_goal": 300,
     "libero_10": 520,
+}
+
+SUITE_TASK_COUNTS = {
+    "libero_90": 90,
+    "libero_spatial": 10,
+    "libero_object": 10,
+    "libero_goal": 10,
+    "libero_10": 10,
 }
 
 
@@ -40,8 +49,8 @@ class RewardTask:
     def __post_init__(self) -> None:
         if (
             self.suite not in SUITE_HORIZONS
-            or not 0 <= self.task_id < 10
-            or not 0 <= self.global_task_id < 40
+            or not 0 <= self.task_id < SUITE_TASK_COUNTS.get(self.suite, 0)
+            or not 0 <= self.global_task_id < 95
             or self.split_role not in {"train", "validation", "test"}
             or not self.language.strip()
             or not self.problem_folder
@@ -62,6 +71,7 @@ _SEED_TAGS = {
     "task_video": 0x082EFA98EC4E6C89,
 }
 _SUITE_IDS = {
+    "libero_90": 4,
     "libero_spatial": 0,
     "libero_object": 1,
     "libero_goal": 2,

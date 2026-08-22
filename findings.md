@@ -1439,3 +1439,17 @@ owner-resolved support cache。第一次闭环必须先于geometry/support筛选
 direct-latest与shared support，并用这些rows反向校准open-loop proxy。唯一合同为
 `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`，资产证据为
 `docs/evidence/ecp_20260823/stage1_mapping_diversity_asset_audit.json`。
+
+## 70. MDCO broad-mapping authority和结构化闭环校准已成为可执行合同，但尚无性能结论
+
+141条保持成功的non-held occupancy已经与target authority合并为95-task、118-member、178-fit-sequence的唯一Stage 1
+evidence authority；71个non-held mappings全部覆盖，同task两条trajectory仍只算一个mapping。完整source response assembly的
+phase-response explained variance为`.88402`，95-task support bank已完成真实选择性加载，因此正式MDCO不再依赖重训expert或
+重复大规模资产构建。
+
+540节点后的fit closed-loop目标也不再只是配置声明：单任务真实profile对完整generated LoRA建立38/38 owner-local exact-action
+方向，以两条common-random simulator lanes的success、BDDL peak progress与成功效率形成非零antithetic credit，并把task-equal
+semi-gradient同时回传event-owner `q_pi`和layer/target-local compiler。profile中两模块裁剪前梯度为`.14077/320.67142`，visible
+Program梯度严格为0，峰值显存`23.33GB`；两臂均成功但效率差产生`.001375` mean advantage，证明progress/efficiency credit在
+terminal success相同时仍有辨识力。该结果只解除formal运行门，不能说明90 mappings会提高held5；唯一性能裁决仍是540 single
+checkpoint的strict paired250，不能再由loss、geometry、support或profile替代。

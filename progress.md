@@ -5,14 +5,14 @@
 
 ## Current authority and executable state
 
-- MDCO的首个工程节点已经落实，并已完成一次non-held occupancy GPU采集：canonical Stage 1 data/support/trainer/materializer已从写死的train24/47-member
-  owner一般化为namespaced 95-task/118-member authority；fit为71个audited non-held加target fit19，held为target held5；多条
-  trajectory在同一member内聚合而不增加mapping权重，schedule支持live world-size 1--6并保持90-task等权，`q_pi + compiler`
-  联合训练，held只作冻结物化。71-task、142条fixed occupancy复现中141条成功；task32/state22一条在相同冻结expert下未复现
-  成功，保留为capture失败证据但不进入successful-policy authority，也不为一条记录整批重跑。71个mapping仍全部覆盖：70个各2条、
-  1个1条成功trajectory。combined action-response builder已接通真实target47资产与该source capture，等待clean pushed authority上
-  并行生成source responses；95-task support bank、structured success/progress calibration及formal训练尚未运行。v24专用dual support-audit
-  source/script已从active tree退役，历史由Git与formal artifacts保存。
+- MDCO正式训练所需的derived authority与structured calibration运行图现已齐备。71-task、142条fixed occupancy复现中141条
+  成功，task32/state22作为capture失败证据剔除；最终combined authority覆盖95 tasks、118 successful members、178 fit
+  sequences和76个LoRA tensors，phase-response explained variance为`.88402`。95-task policy support bank也已完成并通过真实
+  selective load。canonical Stage 1保持90 fit mappings task-equal、5 held mappings无梯度；540 dense visits后只执行一次
+  90-task structured success/progress calibration。单任务真实profile已走通38/38 owner-local action directions、两条严格配对
+  simulator lanes、非零outcome credit以及`q_pi + compiler`联合反传；两模块裁剪前梯度分别为`.14077/320.67142`，冻结visible
+  Program梯度为0，峰值显存`23,325,685,760` bytes，校准段`26.97s`。该profile只证明工程图，不构成性能证据；下一步是从
+  clean pushed detached authority运行540节点并直接进入held5 strict paired250。v24专用dual support-audit运行面已退役。
 - owner设定的v24停点已经执行：formal、materialization、full/prior dual audit和remote-safe evidence均已完成；v24关闭，
   不续训、不扫小超参、不进入`q_V`，也不建立v25。Stage 1 v1--v24系统复盘已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`。复盘后的唯一active科学合同已登记为 **ECP Stage 1

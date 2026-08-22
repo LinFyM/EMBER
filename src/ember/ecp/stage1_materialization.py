@@ -12,6 +12,10 @@ from safetensors.torch import load_file, save_file
 
 from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
 from ember.ecp.compiler import select_compiled_state
+from ember.ecp.stage1_calibration_contract import (
+    STRUCTURED_CALIBRATION_FILE,
+    validate_structured_calibration,
+)
 from ember.ecp.stage1_data import (
     build_stage1_video_store,
     gauge_canonicalize_factors,
@@ -127,11 +131,16 @@ def _load_checkpoint(
         raise ValueError("ECP Stage 1 materialization checkpoint changed")
     model.load_state_dict(load_file(str(weights), device=str(device)), strict=True)
     model.requires_grad_(False).eval()
+    calibration_path = checkpoint.parent.parent / STRUCTURED_CALIBRATION_FILE
+    validate_structured_calibration(
+        checkpoint.parent.parent, checkpoint_task_visits=cursor
+    )
     return cursor, {
         "checkpoint": str(checkpoint.resolve()),
         "checkpoint_manifest": _file(manifest_path),
         "weights": _file(weights),
         "training_commit": str(run_contract["git"]["commit"]),
+        "structured_calibration": _file(calibration_path),
     }
 
 

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **active goal — v24 closed; MDCO occupancy captured; combined authority construction in progress**。
+状态：2026-08-23 **active goal — MDCO authority/calibration ready; formal 540 + held5 pending**。
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。当前唯一Stage 1执行合同是MDCO，不建立
 v25；v24后的复盘与后继授权条件见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
@@ -333,9 +333,10 @@ coordinate退化则保留Stage 2并定位最早接口。
    support-audit运行面已退役；
 8. [x] 从clean pushed detached worktree完成142条fixed non-held occupancy复现；141条保持成功，task32/state22一条未复现
    成功并从successful-policy evidence中剔除，不整批重跑。71个mapping仍全部覆盖，其中70个各2条成功trajectory、1个1条；
-9. [ ] 用已保留的141条成功trajectory构建combined 90-fit/5-held action-response authority与95-task support bank；
-10. [ ] 在正式训练前实现并验证540节点后的唯一一次90-task等权structured success/progress calibration，不得以配置声明代替
-   真实simulator credit；
+9. [x] 用已保留的141条成功trajectory构建combined 90-fit/5-held action-response authority与95-task support bank；最终
+   authority覆盖95 tasks、118 members和178 fit sequences，support bank完成95/95 tasks；
+10. [x] 实现540节点后的唯一一次90-task等权structured success/progress calibration；单任务真实profile确认38/38 owner
+   proposal、paired simulator、非零outcome credit及`q_pi + compiler`联合梯度，formal artifact成为540 checkpoint物化硬门；
 11. [ ] 从clean pushed detached worktree运行MDCO首节点和held5 strict paired250。只有完整门通过才轮换fold并进入`q_V`；失败按
     合同停止；
 12. 完成本轮合同/evidence集成、推送`main`；只保留canonical formal产物，不删除或重复生成昂贵资产。

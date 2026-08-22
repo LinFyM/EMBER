@@ -108,6 +108,8 @@ def _valid_run_contract(config: Mapping[str, Any]) -> bool:
     optimization = config.get("optimization", {})
     calibration = config.get("prior_calibration", {})
     data = config.get("data", {})
+    structured = config.get("structured_calibration", {})
+    environment = config.get("environment", {})
     return all(
         (
             initialization.get("stage")
@@ -141,6 +143,31 @@ def _valid_run_contract(config: Mapping[str, Any]) -> bool:
             int(data.get("fit_mappings", -1)) == 90,
             int(data.get("held_mappings", -1)) == 5,
             int(data.get("successful_members", -1)) == 118,
+            structured.get("status")
+            == "required_after_task_visit_540_before_held5_materialization",
+            int(structured.get("after_task_visits", -1)) == 540,
+            int(structured.get("task_count", -1)) == 90,
+            int(structured.get("profile_task_count", -1)) == 1,
+            structured.get("task_weight") == "equal",
+            structured.get("global_16d_estimator") is False,
+            "event-owner q_pi" in structured.get("surface", ""),
+            "compiler joint" in structured.get("surface", ""),
+            float(structured.get("relative_factor_sigma", -1)) > 0,
+            int(structured.get("minimum_active_owners", -1)) == 38,
+            int(structured.get("lanes_per_arm", -1)) == 2,
+            float(structured.get("success_weight", -1)) > 0,
+            float(structured.get("progress_weight", -1)) >= 0,
+            float(structured.get("success_efficiency_weight", -1)) >= 0,
+            float(structured.get("outcome_leaf_weight", -1)) > 0,
+            float(structured.get("dense_anchor_weight", -1)) > 0,
+            int(environment.get("render_resolution", -1)) == 256,
+            int(environment.get("dummy_settling_steps", -1)) == 10,
+            environment.get("dummy_action") == [0, 0, 0, 0, 0, 0, -1],
+            int(environment.get("action_execution_horizon", -1)) == 5,
+            int(environment.get("num_inference_steps", -1)) == 10,
+            str(config.get("authorities", {}).get("libero_assets_root", "")).startswith(
+                "data/simulation/ember_assets/datasets/libero-assets/"
+            ),
         )
     )
 

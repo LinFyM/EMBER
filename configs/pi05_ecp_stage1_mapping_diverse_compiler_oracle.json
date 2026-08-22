@@ -5,6 +5,9 @@
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "source_base_config": "configs/pi05_source_base_v1.json",
+    "source_overlap_audit": "configs/pi05_source_corpus_v1/overlap_audit.json",
+    "target_manifest": "configs/pi05_target_data_v1/manifest.json",
+    "libero_assets_root": "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6",
     "lora_contract": "configs/pi05_lora_v1.json",
     "task_evidence_manifest": "runs/analysis/pi05_ecp_stage1_mdco_task_evidence_20260823/manifest.json",
     "stable_shared_prior": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors",
@@ -168,10 +171,32 @@
   },
   "structured_calibration": {
     "status": "required_after_task_visit_540_before_held5_materialization",
+    "after_task_visits": 540,
     "task_count": 90,
+    "profile_task_count": 1,
     "task_weight": "equal",
-    "surface": "fit simulator success and progress only",
-    "global_16d_estimator": false
+    "surface": "38 layer-family owner-local action directions with event-owner q_pi and compiler joint semi-gradient",
+    "global_16d_estimator": false,
+    "relative_factor_sigma": 0.05,
+    "minimum_active_owners": 38,
+    "lanes_per_arm": 2,
+    "success_weight": 1,
+    "progress_weight": 0.25,
+    "success_efficiency_weight": 0.05,
+    "outcome_leaf_weight": 1,
+    "dense_anchor_weight": 1,
+    "update_seed_root": 2026090401,
+    "environment_seed_root": 2026090402,
+    "policy_noise_seed_root": 2026090403,
+    "video_visit": 64100,
+    "support_visit": 74100
+  },
+  "environment": {
+    "render_resolution": 256,
+    "dummy_settling_steps": 10,
+    "dummy_action": [0, 0, 0, 0, 0, 0, -1],
+    "action_execution_horizon": 5,
+    "num_inference_steps": 10
   },
   "materialization": {
     "video_visit": 12099,

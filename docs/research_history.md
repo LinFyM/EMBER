@@ -1139,6 +1139,24 @@ process-conditioned own-policy direction。v24之后不自动建立v25，而先�
 `docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`，复盘见
 `docs/ecp_stage1_iteration_retrospective_20260823.md`。
 
+### 3.59 MDCO authority与structured calibration图完成，等待首次source-unseen闭环裁决
+
+v24复盘后的唯一MDCO合同复用了71个audited non-held experts，没有重训同类资产。142条fixed occupancy中141条保持成功；
+task32/state22未复现并被逐条剔除。source与target response最终组装为95-task、118-member、178-fit-sequence authority，包含76个
+LoRA tensors和`118 x 8 x 32` phase responses，explained variance为`.88402`；独立95-task policy support bank同步完成。fit集合
+固定为71 non-held加target fit19，held5仍不产生梯度。
+
+canonical Stage 1新增一次且仅一次的fit90 structured calibration：在540 dense visits后，每task由exact successful-action LoRA
+leaf gradient构造38个owner-local A/B方向，一组Rademacher owner signs形成完整plus/minus LoRA，两条common-random lanes按
+success、BDDL peak progress和成功效率给出antithetic credit；该leaf semi-gradient与原action/support/prior/activation锚共同回传
+event-owner `q_pi`及layer/target-local compiler，90 tasks各除以90并跨rank求和。held5、validation8与Test8 reward读取均为0，
+materializer要求formal calibration artifact后才接受540 checkpoint。
+
+gpu02 physical0上的单任务真实profile完成38/38 active owners，plus/minus各`2/2` success，效率差产生mean advantage
+`.001375`与outcome leaf norm`.06683`；`q_pi/compiler`裁剪前梯度为`.14077/320.67142`，visible Program梯度为0。校准段
+`26.97s`，峰值`23,325,685,760` bytes。该profile只证明真实simulator、配对、LoRA proposal与联合反传图接通，不作为held性能
+证据；下一科学节点仍是clean pushed detached commit的540 formal及held5 strict paired250。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -6,8 +6,6 @@ import argparse
 import json
 import math
 import os
-import socket
-import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +15,7 @@ import torch
 import torch.distributed as dist
 from safetensors.torch import load_file
 
-from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
+from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.contracts import build_target_owners
 from ember.ecp.observer_authority import (
     FrozenObserverAuthority,
@@ -25,6 +23,13 @@ from ember.ecp.observer_authority import (
 )
 from ember.ecp.stage0_training import load_stage0_config, stage0_source_authority
 from ember.ecp.stage1 import ECPStage1Model
+from ember.ecp.stage1_calibration import run_structured_calibration
+from ember.ecp.stage1_calibration_contract import (
+    StructuredCalibrationState,
+    plan_structured_calibration,
+    prepare_structured_calibration,
+    validate_structured_calibration,
+)
 from ember.ecp.stage1_config import (
     REPO_ROOT,
     RUN_SCHEMA,
@@ -49,6 +54,7 @@ from ember.ecp.stage1_fixed_program import (
     prior_calibration_ordinals,
 )
 from ember.ecp.stage1_prior_calibration import calibrate_prior_heads_distributed
+from ember.ecp.stage1_run_contract import initialize_stage1_run_contract
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
     PolicySupportBank,
@@ -62,12 +68,7 @@ from ember.pi05_eval_contract import (
     git_state_is_clean_pushed_or_frozen_authority,
 )
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import (
-    DistributedContext,
-    barrier,
-    read_json,
-    write_json_atomic,
-)
+from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
     initialize_deferred_process_group,
@@ -98,6 +99,7 @@ class ECPStage1Runtime:
     observer_authority: dict[str, str]
     contract: LoRAContract
     prior_state: Mapping[str, torch.Tensor]
+    identity_state: Mapping[str, torch.Tensor]
     model: ECPStage1Model
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     optimizer: torch.optim.Optimizer
@@ -108,6 +110,7 @@ class ECPStage1Runtime:
     total_task_visits: int
     checkpoint_task_visits: tuple[int, ...]
     metrics_rows: int
+    calibration: StructuredCalibrationState
 
 
 @dataclass(frozen=True)
@@ -214,93 +217,6 @@ def _needed_support_panels(
         panel = bank.task(ordinal).panel_for_visit(visit)
         result.add((int(ordinal), int(panel.panel_id)))
     return result
-
-
-def _build_contract(
-    runtime: ECPStage1Runtime,
-    source: Mapping[str, Any],
-) -> dict[str, Any]:
-    support_manifest = stage1_asset_authority(
-        runtime.config, "policy_support_bank", runtime.args.asset_root
-    )
-    local = {
-        "rank": runtime.context.rank,
-        "local_rank": runtime.context.local_rank,
-        "device": str(runtime.context.device),
-        "numa_node": runtime.context.numa_node,
-        "cpu_affinity": list(runtime.context.cpu_affinity or ()),
-    }
-    topology: list[Any] = [None] * runtime.context.world_size
-    if runtime.context.world_size > 1:
-        dist.all_gather_object(topology, local)
-    else:
-        topology[0] = local
-    state = git_state(REPO_ROOT)
-    return {
-        "schema_version": RUN_SCHEMA,
-        "stage": STAGE,
-        "mode": runtime.args.mode,
-        "command": list(sys.argv),
-        "git": {"branch": state["branch"], "commit": state["commit"]},
-        "host": socket.gethostname(),
-        "config": {
-            "path": str(runtime.args.config),
-            "bytes": runtime.args.config.stat().st_size,
-        },
-        "source": dict(source),
-        "asset_root": str(runtime.args.asset_root),
-        "data_root": str(runtime.args.data_root),
-        "tokenizer": {
-            "path": str(runtime.args.tokenizer_path),
-            "bytes": runtime.args.tokenizer_path.stat().st_size,
-        },
-        "observer_authority": {
-            **runtime.observer_authority,
-            "frozen": True,
-        },
-        "policy_support_bank": {
-            "path": str(support_manifest.resolve()),
-            "bytes": support_manifest.stat().st_size,
-        },
-        "initialization": dict(runtime.initialization),
-        "tasks": [
-            {
-                "ordinal": task.ordinal,
-                "global_task_id": task.global_task_id,
-                "suite": task.suite,
-                "task_id": task.task_id,
-                "fold_role": task.fold_role,
-                "asset_key": task.asset_key,
-                "domain": task.domain,
-            }
-            for task in runtime.tasks
-        ],
-        "successful_members": len(runtime.evidence_bank.members),
-        "model": dict(runtime.config["model"]),
-        "data": dict(runtime.config["data"]),
-        "objective": dict(runtime.config["objective"]),
-        "prior_calibration": dict(runtime.config["prior_calibration"]),
-        "optimization": dict(runtime.config["optimization"]),
-        "information_wall": dict(runtime.config["information_wall"]),
-        "runtime": {
-            "world_size": runtime.context.world_size,
-            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
-            "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
-            "topology": topology,
-            "start_task_visits": runtime.start_task_visits,
-            "stop_after_task_visits": runtime.stop_after_task_visits,
-            "loaded_policy_support_tasks_by_rank": len(runtime.support_bank.tasks),
-            "loaded_policy_support_panels_by_rank": len(runtime.support_panels),
-        },
-        "trainable_parameters": sum(
-            value.numel() for value in runtime.trainable_parameters
-        ),
-        "trainable_modules": ["policy_teacher", "compiler"],
-        "frozen_writer_modules": ["visible_program"],
-        "source_policy_trainable_parameters": 0,
-        "observer_trainable_parameters": 0,
-        "content_hash_policy": "disabled_by_owner",
-    }
 
 
 def load_stage1_authorities(
@@ -413,7 +329,14 @@ def _prepare_optimization(
         eps=float(cell["eps"]),
         weight_decay=float(cell["weight_decay"]),
     )
-    scheduler = _scheduler(optimizer, config, total_task_visits // context.world_size)
+    calibration_updates = int(
+        args.mode == "formal" or bool(args.profile_structured_calibration)
+    )
+    scheduler = _scheduler(
+        optimizer,
+        config,
+        total_task_visits // context.world_size + calibration_updates,
+    )
     start = 0
     expected_metrics = 0
     if args.resume is not None:
@@ -471,29 +394,6 @@ def _load_policy_support(
     )
 
 
-def _initialize_run_contract(
-    runtime: ECPStage1Runtime, source: Mapping[str, Any]
-) -> None:
-    contract = _build_contract(runtime, source)
-    if runtime.context.is_main and runtime.args.resume is None:
-        runtime.args.output_dir.mkdir(parents=True, exist_ok=False)
-        write_json_atomic(runtime.args.output_dir / "run_contract.json", contract)
-    elif runtime.context.is_main:
-        existing = read_json(runtime.args.output_dir / "run_contract.json")
-        if (
-            existing.get("schema_version") != RUN_SCHEMA
-            or existing.get("stage") != STAGE
-            or existing.get("git", {}).get("commit") != contract["git"]["commit"]
-            or existing.get("config", {}).get("bytes") != contract["config"]["bytes"]
-            or existing.get("source", {}).get("checkpoint")
-            != contract["source"]["checkpoint"]
-            or existing.get("runtime", {}).get("world_size")
-            != runtime.context.world_size
-        ):
-            raise ValueError("ECP Stage 1 resume run contract changed")
-    barrier(runtime.context)
-
-
 def _prepare_prior_calibration(
     *,
     args: argparse.Namespace,
@@ -540,6 +440,7 @@ def _cache_support_panels(
     context: DistributedContext,
     start: int,
     stop: int,
+    extra_requests: set[tuple[int, int]] | None = None,
 ) -> dict[tuple[int, int], CachedPolicySupportPanel]:
     requests = _needed_support_panels(
         schedule=inputs.schedule,
@@ -549,6 +450,7 @@ def _cache_support_panels(
         start=start,
         stop=stop,
     )
+    requests.update(extra_requests or ())
     return cache_policy_support_panels(
         bank=support_bank,
         requests=requests,
@@ -571,6 +473,111 @@ def _resume_metrics_rows(
         expected_metrics,
         cursor_key="task_visits",
     )
+
+
+def _make_runtime(
+    *,
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    context: DistributedContext,
+    authorities: ECPStage1Authorities,
+    inputs: ECPStage1Inputs,
+    support_bank: PolicySupportBank,
+    panels: dict[tuple[int, int], CachedPolicySupportPanel],
+    language: dict[int, tuple[torch.Tensor, torch.Tensor]],
+    trainable_parameters: tuple[torch.nn.Parameter, ...],
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    initialization: Mapping[str, Any],
+    start: int,
+    stop: int,
+    total: int,
+    checkpoints: tuple[int, ...],
+    metrics_rows: int,
+    calibration: StructuredCalibrationState,
+) -> ECPStage1Runtime:
+    return ECPStage1Runtime(
+        args=args,
+        config=config,
+        context=context,
+        tasks=inputs.tasks,
+        task_by_ordinal={task.ordinal: task for task in inputs.tasks},
+        schedule=inputs.schedule,
+        evidence_bank=inputs.evidence_bank,
+        support_bank=support_bank,
+        support_panels=panels,
+        video_store=inputs.video_store,
+        language_tokens=language,
+        policy=authorities.policy,
+        observer=authorities.observer,
+        observer_authority={
+            "native": str(authorities.observer.native_checkpoint),
+            "action_meta": str(authorities.observer.action_meta_checkpoint),
+        },
+        contract=authorities.contract,
+        prior_state=authorities.prior_state,
+        identity_state=authorities.identity_state,
+        model=authorities.model,
+        trainable_parameters=trainable_parameters,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        initialization=initialization,
+        start_task_visits=start,
+        stop_after_task_visits=stop,
+        total_task_visits=total,
+        checkpoint_task_visits=checkpoints,
+        metrics_rows=metrics_rows,
+        calibration=calibration,
+    )
+
+
+def _plan_support_ownership(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    inputs: ECPStage1Inputs,
+    context: DistributedContext,
+    stop: int,
+) -> tuple[StructuredCalibrationState, tuple[int, ...]]:
+    calibration = plan_structured_calibration(
+        args,
+        config,
+        inputs.tasks,
+        context,
+        start_task_visits=checkpoint_macro(args.resume),
+        stop_after_task_visits=stop,
+    )
+    initialization_ordinals = (
+        prior_calibration_ordinals(config, mode=args.mode)
+        if args.resume is None
+        else ()
+    )
+    owned = {
+        ordinal
+        for index, ordinal in enumerate(initialization_ordinals)
+        if index % context.world_size == context.rank
+    }
+    owned.update(calibration.assignments[context.rank])
+    return calibration, tuple(sorted(owned))
+
+
+def _activate_runtime(
+    runtime: ECPStage1Runtime, authorities: ECPStage1Authorities
+) -> ECPStage1Runtime:
+    initialize_stage1_run_contract(runtime, authorities.source)
+    if runtime.start_task_visits >= int(
+        runtime.config["structured_calibration"]["after_task_visits"]
+    ):
+        validate_structured_calibration(
+            runtime.args.output_dir,
+            checkpoint_task_visits=runtime.start_task_visits,
+        )
+    authorities.model.eval()
+    authorities.model.policy_teacher.train()
+    authorities.model.compiler.train()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(runtime.context.device)
+    return runtime
 
 
 def prepare_runtime(
@@ -598,17 +605,10 @@ def prepare_runtime(
         contract=authorities.contract,
         total_task_visits=total,
     )
+    calibration, extra_support_tasks = _plan_support_ownership(
+        args=args, config=config, inputs=inputs, context=context, stop=stop
+    )
     _initialize_distributed_model(args, context, authorities.model)
-    initialization_ordinals = (
-        prior_calibration_ordinals(config, mode=args.mode)
-        if args.resume is None
-        else ()
-    )
-    owned_initialization_ordinals = tuple(
-        ordinal
-        for index, ordinal in enumerate(initialization_ordinals)
-        if index % context.world_size == context.rank
-    )
     support_bank = _load_policy_support(
         args,
         config,
@@ -616,7 +616,7 @@ def prepare_runtime(
         inputs,
         start=0,
         stop=stop,
-        extra_tasks=owned_initialization_ordinals,
+        extra_tasks=extra_support_tasks,
     )
     language = tokenize_stage1_languages(
         inputs.tasks,
@@ -644,12 +644,22 @@ def prepare_runtime(
         total_task_visits=total,
         stop_after_task_visits=stop,
     )
+    calibration = prepare_structured_calibration(
+        calibration,
+        config=config,
+        tasks=inputs.tasks,
+        source_config=authorities.source_config,
+        tokenizer_path=args.tokenizer_path,
+        context=context,
+        support_bank=support_bank,
+    )
     panels = _cache_support_panels(
         inputs=inputs,
         support_bank=support_bank,
         context=context,
         start=start,
         stop=stop,
+        extra_requests=set(calibration.panel_requests),
     )
     metrics_rows = _resume_metrics_rows(
         args,
@@ -657,46 +667,27 @@ def prepare_runtime(
         start=start,
         expected_metrics=expected_metrics,
     )
-    runtime = ECPStage1Runtime(
+    runtime = _make_runtime(
         args=args,
         config=config,
         context=context,
-        tasks=inputs.tasks,
-        task_by_ordinal={task.ordinal: task for task in inputs.tasks},
-        schedule=inputs.schedule,
-        evidence_bank=inputs.evidence_bank,
+        authorities=authorities,
+        inputs=inputs,
         support_bank=support_bank,
-        support_panels=panels,
-        video_store=inputs.video_store,
-        language_tokens=language,
-        policy=authorities.policy,
-        observer=authorities.observer,
-        observer_authority={
-            "native": str(authorities.observer.native_checkpoint),
-            "action_meta": str(authorities.observer.action_meta_checkpoint),
-        },
-        contract=authorities.contract,
-        prior_state=authorities.prior_state,
-        model=authorities.model,
+        panels=panels,
+        language=language,
         trainable_parameters=trainable_parameters,
         optimizer=optimizer,
         scheduler=scheduler,
         initialization=initialization,
-        start_task_visits=start,
-        stop_after_task_visits=stop,
-        total_task_visits=total,
-        checkpoint_task_visits=checkpoints,
+        start=start,
+        stop=stop,
+        total=total,
+        checkpoints=checkpoints,
         metrics_rows=metrics_rows,
+        calibration=calibration,
     )
-    source = authorities.source
-    _initialize_run_contract(runtime, source)
-    authorities.model.eval()
-    authorities.model.policy_teacher.train()
-    authorities.model.compiler.train()
-    del authorities
-    torch.cuda.empty_cache()
-    torch.cuda.reset_peak_memory_stats(context.device)
-    return runtime
+    return _activate_runtime(runtime, authorities)
 
 
 def train(args: argparse.Namespace) -> None:
@@ -709,6 +700,7 @@ def train(args: argparse.Namespace) -> None:
     try:
         runtime = prepare_runtime(args, context)
         started = time.monotonic()
+        calibration_applied = False
         for cursor in range(
             runtime.start_task_visits,
             runtime.stop_after_task_visits,
@@ -720,6 +712,22 @@ def train(args: argparse.Namespace) -> None:
                 runtime.metrics_rows += 1
                 if row["optimizer_update"] % args.log_every == 0:
                     print(json.dumps(row, sort_keys=True), flush=True)
+            calibration_due = runtime.calibration.pending and (
+                args.mode == "formal"
+                and row["task_visits"]
+                == int(runtime.config["structured_calibration"]["after_task_visits"])
+                or args.mode == "profile"
+                and row["task_visits"] == runtime.stop_after_task_visits
+            )
+            if calibration_due:
+                calibration = run_structured_calibration(
+                    runtime,
+                    task_visits=int(row["task_visits"]),
+                    run_started=started,
+                )
+                calibration_applied = True
+                if context.is_main:
+                    print(json.dumps(calibration, sort_keys=True), flush=True)
             if row["task_visits"] in runtime.checkpoint_task_visits:
                 save_ecp_checkpoint(
                     output_dir=args.output_dir,
@@ -732,6 +740,8 @@ def train(args: argparse.Namespace) -> None:
                     run_contract_schema=RUN_SCHEMA,
                     metrics_rows=runtime.metrics_rows,
                 )
+        if runtime.calibration.pending and not calibration_applied:
+            raise RuntimeError("MDCO structured calibration trigger was not reached")
         if context.is_main:
             result = {
                 "stage": STAGE,
@@ -766,6 +776,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-task-visits", type=int)
     parser.add_argument("--max-frames-per-call", type=int)
+    parser.add_argument("--profile-structured-calibration", action="store_true")
     parser.add_argument("--log-every", type=int, default=1)
     return parser
 

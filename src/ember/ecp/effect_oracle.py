@@ -421,7 +421,9 @@ def _publish_task_result(
         "adapter": _file(adapter_path),
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": (
-            torch.cuda.max_memory_allocated(device) if device.type == "cuda" else 0
+            torch.cuda.max_memory_allocated(device.index or 0)
+            if device.type == "cuda"
+            else 0
         ),
     }
     write_json_atomic(result_path, result)
@@ -447,8 +449,9 @@ def solve_task(args: argparse.Namespace) -> dict[str, Any]:
     device = torch.device(args.device)
     torch.manual_seed(int(config["data"]["pair_seed"]))
     if device.type == "cuda":
+        torch.cuda.set_device(device.index or 0)
         torch.cuda.manual_seed_all(int(config["data"]["pair_seed"]))
-        torch.cuda.reset_peak_memory_stats(device)
+        torch.cuda.reset_peak_memory_stats(device.index or 0)
     started = time.monotonic()
     prepared = _prepare_effect_task(args=args, config=config, device=device)
     try:

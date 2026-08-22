@@ -23,10 +23,11 @@
   v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
   v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
   Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector替换；v9/v10又分别完成bounded selector与
-  process-only Value裁决并关闭。当前唯一active后继是Stage 1 **OCPB v11**：复用v10 checkpoint、不重复228-visits，以
+  process-only Value裁决并关闭。当前唯一active后继是Stage 1 **OCPB v12**：保留v11 macro1的program-binding checkpoint，
+  修正shared-rank compiler credit的16倍尺度错误后只重做一次compiler-binding；仍以
   fit19 task-equal success/BDDL progress交替校准`event x owner` Program binding和`layer x family` compiler binding，同时保留
-  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。macro1及其train24物化、308-panel
-  冻结审计已经完成，当前从同一clean pushed checkpoint精确续到macro2；尚未进入held5闭环、`q_V`或validation8。
+  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。v11 macro1/2及其train24物化、
+  308-panel冻结审计已经完成，但macro2只作尺度错误诊断；尚未进入held5闭环、`q_V`或validation8。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -233,7 +234,7 @@
   `.62612/.88454/.62434`，相对shared `1.00285x`且breadth `2/5`。v10较v9连续改善，但fit/held breadth和held
   aggregate仍未过门，因此最终关闭，held闭环/reward/`q_V`仍为0。一次性audit config已删除，证据见
   `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。v10 config已改为只读sealed
-  initialization/materialization authority，原训练入口拒绝再启动它；active训练入口只剩OCPB v11。
+  initialization/materialization authority，原训练入口拒绝再启动它；active训练入口只剩OCPB v12。
 - 重新逐条核对专家Stage 1原文后，已撤销仓库此前自行增加的“functional-only frozen support先过门，才允许fit reward”限制。
   task-equal closed-loop success/progress本来就是privileged `q_pi + compiler` realizability训练的并列目标；v6--v10从未执行
   这一项。OCPB v11因此作为新的outcome-calibrated阶段从v10冻结checkpoint初始化fresh optimizer，而不是续训或重命名v10。
@@ -243,8 +244,7 @@
   `74.08/38.58s`，峰值`16.43/16.47 GB`，裁剪前梯度`3.51/2.00`且finite。两臂都严格配对并产生非零efficiency advantage；
   program offset只改变304个active event-owner logits，compiler offset只改变38个owner且跨16 ranks共享，replacement fraction
   分别从`.09684`变为`.09694/.09673`、从`.10581`变为`.09340/.13402`。该profile只证明真实simulator、两种credit坐标、
-  functional anchor和反传接通，不作为性能证据；临时profile目录在记录后删除。下一步是完成formal materialization/evaluator
-  兼容并从clean pushed authority运行首个task-equal fit19 macro。
+  functional anchor和反传接通，不作为性能证据；临时profile目录在记录后删除。后续formal结果与尺度诊断见紧随其后的记录。
 - OCPB v11 macro1已从clean pushed `86ed95b`在gpu01 physical `2,3,4,5,6,7`完成，明确排除prohibited physical0。
   19个fit task各恰好提供一次配对credit，program-binding两臂success为`9/8`、mean progress为`.31140/.28509`，
   `8/19` tasks产生非零advantage；一次macro耗时`277.44s`，峰值`16,464,732,672` bytes，裁剪前梯度`1.09043`且finite。
@@ -254,6 +254,14 @@
   `.62540/.62434`、ratio `1.00171`、breadth `2/5`。相对v10 aggregate在fit与held均小幅改善且未破坏breadth，但完整门仍失败；
   因此不运行held5 oracle、不启动`q_V`，只继续已预注册且改变不同主因果坐标的macro2 compiler-binding。物化和审计均来自
   同一detached clean authority；六个audit shard已经exit0，临时审计合同将在本轮相邻checkpoint裁决结束后删除。
+- v11 macro2用相同world6 exact-resume完成compiler-binding，训练臂为`10/8` successes、progress
+  `.31140/.27193`，但裁剪前梯度升至`11.8792`；物化后candidate pair cosine虽微降到`.99588`，own-direct仍`.03974`且
+  retrieval仍`1/24`。冻结audit的fit/held candidate-to-shared反而退到`.97049/1.00366`，breadth维持`12/19、2/5`，
+  shared panel wins从macro1的`139/16`降到`131/14`。只读反查发现该macro违反注册coordinate：一个owner offset共同加到16个
+  rank angles，但surrogate对rank求和，故coordinate实际移动`16 delta`而credit仍除以`2 sigma`。clean pushed `d06842c`
+  已把shared-rank coordinate改为mean并注册OCPB v12；19项Stage 1聚焦合同通过。v12从macro1完整恢复optimizer/RNG/topology，
+  用`credit_macro_offset=1`复用原macro2全部paired seeds，只重做一次compiler-binding；旧macro2不作为架构负证据，
+  v11 macro3/4取消。证据见`docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

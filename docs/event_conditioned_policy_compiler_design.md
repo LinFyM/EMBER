@@ -575,7 +575,7 @@ correction pair cosine从v9的`.97482`降到`.95088`，selector的task间范围�
 task-conditioned policy direction，v10按原门关闭。后继必须回到Stage 1的task-relative Program-to-policy合同，不再续训、
 扫小超参或把同一functional-only曲线继续解释成可能过门。
 
-#### Stage 1 OCPB v11 — Outcome-Calibrated Program--Policy Binding
+#### Stage 1 OCPB v11/v12 — Outcome-Calibrated Program--Policy Binding
 
 重新逐条核对专家Stage 1原文后，此前“只有冻结support先过门才加入fit simulator reward”的顺序属于仓库自行增加的限制，
 不是专家合同。专家把task-equal closed-loop success/progress与multi-state response、successful/learner occupancy、source/shared
@@ -608,6 +608,17 @@ task-relative geometry、fit/held support与held5 direct-success retention共同
 真实单task profile已经让两种block-coordinate各完成一次plus/minus × 2 common-random lanes并与完整functional anchor共同
 backward。program/compiler两步分别为`74.08/38.58s`、峰值`16.43/16.47 GB`、裁剪前梯度`3.51/2.00`且finite；两者都产生
 非零paired efficiency advantage。该结果只通过运行合同，不能证明task-equal reward、跨task Program mapping或held泛化。
+
+v11 macro1的program-binding只带来很小但方向一致的冻结改善：fit/held candidate-to-shared由v10的
+`.96892/1.00285`变为`.96786/1.00171`，breadth仍为`12/19、2/5`，geometry own retrieval仍为`1/24`。原v11 macro2不能
+用于裁决compiler-binding：扰动合同给一个owner的16个numeric rank angles共同增加同一`delta`，surrogate却读取16个angles
+的`sum`，使实际coordinate step成为注册`delta`的16倍，而antithetic credit仍按`2 sigma`归一化。它对应的裁剪前梯度升至
+`11.8792`，fit/held support退到`.97049/1.00366`；这是实现尺度违反，不是架构反证。
+
+唯一active修正为OCPB v12。shared-rank differentiable coordinate改为16个angles的`mean`，使共同offset精确对应一个注册步长；
+从v11 macro1恢复model、optimizer、scheduler、六份rank RNG与world topology，并以`credit_macro_offset=1`复用原macro2的
+videos、support panel、perturbation、environment和policy-noise seeds，只重做一次compiler-binding。v11 macro3/4不再运行，
+也不重复program macro1。v12仍须经同一train24物化、geometry、308-panel冻结support和held5 oracle逐级裁决。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

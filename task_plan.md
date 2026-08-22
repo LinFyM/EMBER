@@ -164,13 +164,17 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed v10 authority完成fresh balanced 228 visits和24-task geometry；task-equal与数值合同通过，但own retrieval仍为`1/24`；
 - [x] 完成同一308-panel frozen support audit；fit改善到`.96892x` shared和`12/19` breadth，但held仍为
   `1.00285x`和`2/5`，v10按门关闭；
-- [ ] 实现并裁决 **Stage 1 OCPB v11（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
+- [ ] 实现并裁决 **Stage 1 OCPB v11/v12（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
   以task-equal fit19 success/BDDL progress分别校准`event x owner` privileged Program binding与`layer x family`
   compiler binding；每个macro仍同时使用完整multi-state functional/support锚，不读取held/validation/Test reward；
 - [x] 完成OCPB v11 retained实现、两坐标真实profile、formal macro1、train24物化与同一308-panel冻结审计；macro1使
   fit/held candidate-to-shared从v10的`.96892/1.00285`小幅改善到`.96786/1.00171`，但breadth仍为`12/19、2/5`，
   因而不进入`q_V`，只按已登记的交替坐标继续macro2；
-- [ ] 对v11相邻single checkpoints物化全部train24，并复跑同一308-panel frozen support与held5 oracle gate；
+- [x] 完成v11 macro2、物化与冻结审计，并定位shared-rank credit的16倍尺度违反；该checkpoint只作工程诊断，不作
+  compiler-binding科学反证，旧macro3/4取消；
+- [ ] 从v11 macro1完整恢复model/optimizer/RNG/topology，以相同paired seeds运行唯一v12 corrected compiler-binding，
+  随后立即物化与复跑同一geometry/308-panel门；
+- [ ] 对OCPB相邻single checkpoints物化全部train24，并复跑同一308-panel frozen support与held5 oracle gate；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -227,11 +231,13 @@ coordinate退化则保留Stage 2并定位最早接口。
    不跑v10 held closed loop、不延长或做小超参扫描，也不把v10 checkpoint冒充通过；
 2. 对照专家Stage 1原文后，纠正此前自行加入的“先过冻结support门、再接reward”限制：task-equal closed-loop
    success/progress本来就是`q_pi + compiler`共同识别Program的Stage 1训练信号，不能因functional-only未过门而永久省略；
-3. 唯一后继登记为OCPB v11。它复用v10作为prior-preserving functional warm start，不重跑228-visits；同一paired
+3. OCPB v11 macro1已成为唯一保留的program-binding warm start；v11 macro2存在shared-rank coordinate 16倍尺度违反，
+   已由OCPB v12的rank-mean surrogate修正。v12不重复macro1并复用原macro2全部paired seeds；
+4. v12从clean pushed authority只运行一个corrected compiler-binding macro。checkpoint立即物化train24并复跑冻结support；
+   只有同时改善task-relative geometry、fit/held support且直接held5 oracle保留成功，才冻结compiler进入`q_V`；
+5. OCPB的共同合同仍是：同一paired
    fit19 rollout先后在`event x owner` q_pi evidence-logit与`owner = layer x family` compiler selector-angle坐标做
    antithetic calibration，rank不获得语义。每个task的outcome surrogate与原完整functional/support loss共同反传；
-4. v11先做两种坐标各一次真实profile，再从clean pushed authority运行短相邻macros。每个checkpoint立即物化train24并
-   复跑冻结support；只有同时改善task-relative geometry、fit/held support且直接held5 oracle保留成功，才冻结compiler进入`q_V`；
-5. 若19个映射随后显示泛化限制，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
-6. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+6. 若19个映射随后显示泛化限制，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
+7. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

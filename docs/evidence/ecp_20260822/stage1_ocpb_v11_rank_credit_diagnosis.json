@@ -1,0 +1,93 @@
+{
+  "schema_version": "ember_ecp_stage1_ocpb_rank_credit_diagnosis_v1",
+  "date": "2026-08-22",
+  "training_repository_commit": "86ed95bddd81981521e75dd640a71ce71b6d907a",
+  "correction_repository_commit": "d06842ce80772c6e5ff52da97a20e677a8c93da8",
+  "stage": "stage1_ocpb_v11_closed_after_rank_credit_scale_violation",
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_ocpb_v11_fold0_m1_r6_86ed95b_gpu01p234567_20260822",
+    "gpu01_physical_devices": [2, 3, 4, 5, 6, 7],
+    "prohibited_physical_device_0_used": false,
+    "fit_tasks_per_macro": 19,
+    "lanes_per_arm": 2,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "macro1": {
+      "coordinate": "program_binding",
+      "elapsed_seconds": 277.44325888899766,
+      "maximum_cuda_allocated_bytes": 16464732672,
+      "gradient_norm_before_clip": 1.0904299020767212,
+      "plus_successes": 9,
+      "minus_successes": 8,
+      "nonzero_advantage_tasks": 8,
+      "mean_plus_progress": 0.31140350877192985,
+      "mean_minus_progress": 0.2850877192982456,
+      "mean_functional_total": 0.5215848166691629,
+      "mean_outcome_surrogate": 0.010329356996408023
+    },
+    "macro2": {
+      "coordinate": "compiler_binding",
+      "elapsed_seconds": 294.56067265899765,
+      "maximum_cuda_allocated_bytes": 16492515328,
+      "gradient_norm_before_clip": 11.879215240478516,
+      "plus_successes": 10,
+      "minus_successes": 8,
+      "nonzero_advantage_tasks": 7,
+      "mean_plus_progress": 0.31140350877192985,
+      "mean_minus_progress": 0.2719298245614035,
+      "mean_functional_total": 0.2529522776603699,
+      "mean_outcome_surrogate": -0.1433979486043283,
+      "scientific_status": "invalid_for_architecture_adjudication_due_to_16x_shared_rank_credit_lift"
+    }
+  },
+  "frozen_checkpoint_evidence": {
+    "v10": {
+      "fit_candidate_to_shared": 0.9689248891790949,
+      "fit_breadth_over_shared": 12,
+      "held_candidate_to_shared": 1.0028528941784083,
+      "held_breadth_over_shared": 2,
+      "candidate_pair_cosine": 0.9964144229888916,
+      "own_direct_cosine": 0.039828814566135406,
+      "own_retrieval_count": 1
+    },
+    "v11_macro1": {
+      "projection_artifact": "runs/analysis/pi05_ecp_stage1_ocpb_v11_projection_m1_86ed95b_gpu01p4_20260822",
+      "audit_artifact": "runs/analysis/pi05_ecp_stage1_ocpb_v11_audit_m1_86ed95b_gpu01p234567_20260822",
+      "fit_candidate_to_shared": 0.9678556515617749,
+      "fit_breadth_over_shared": 12,
+      "held_candidate_to_shared": 1.0017111625008794,
+      "held_breadth_over_shared": 2,
+      "candidate_pair_cosine": 0.9961647391319275,
+      "own_direct_cosine": 0.03982675075531006,
+      "own_retrieval_count": 1,
+      "gate_passed": false
+    },
+    "v11_macro2": {
+      "projection_artifact": "runs/analysis/pi05_ecp_stage1_ocpb_v11_projection_m2_86ed95b_gpu01p5_20260822",
+      "audit_artifact": "runs/analysis/pi05_ecp_stage1_ocpb_v11_audit_m2_86ed95b_gpu01p234567_20260822",
+      "fit_candidate_to_shared": 0.9704864008241125,
+      "fit_breadth_over_shared": 12,
+      "held_candidate_to_shared": 1.0036571698985444,
+      "held_breadth_over_shared": 2,
+      "candidate_panel_wins_over_shared": 145,
+      "candidate_pair_cosine": 0.9958755970001221,
+      "own_direct_cosine": 0.03974025696516037,
+      "own_retrieval_count": 1,
+      "gate_passed": false
+    }
+  },
+  "implementation_violation": {
+    "registered_perturbation": "one owner offset is added identically to all 16 numeric rank angles",
+    "incorrect_surrogate_coordinate": "sum of 16 rank angles",
+    "observed_coordinate_step_to_registered_step_ratio": 16,
+    "credit_denominator_step_ratio": 1,
+    "effect": "the compiler-binding reward gradient was lifted 16 times before the configured surrogate weight and then clipped",
+    "correction": "use the mean rank angle so one shared offset changes the differentiable coordinate by exactly the registered offset"
+  },
+  "decision": {
+    "continue_v11_macro3_or_macro4": false,
+    "run_v11_macro2_held5_closed_loop": false,
+    "start_q_v": false,
+    "next": "OCPB v12 restores the v11 macro1 model, optimizer, scheduler, rank RNG and world topology, reuses the original compiler-binding paired seeds through credit_macro_offset=1, and runs exactly one corrected compiler-binding macro."
+  }
+}

@@ -875,6 +875,18 @@ Program correction已有`.82475` pair cosine，编译后correction却回到`.950
 task-relative Program变化在compiler/绝对functional objective中的坍缩。v10最终关闭，held闭环、reward与`q_V`仍为0。
 证据：`docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。
 
+### 3.45 OCPB v11首轮outcome calibration与shared-rank credit修正
+
+clean pushed `86ed95b`从v10冻结checkpoint启动OCPB。program-binding macro1的配对训练臂为`9/8` successes；随后24-task
+物化和308-panel audit使fit/held candidate-to-shared从`.96892/1.00285`小幅改善到`.96786/1.00171`，但breadth仍为
+`12/19、2/5`，own retrieval仍`1/24`。因此没有运行held5 closed loop或`q_V`。
+
+exact-resume compiler-binding macro2为`10/8` successes，但support退到`.97049/1.00366`，裁剪前梯度由macro1的
+`1.0904`升到`11.8792`。反查发现同一个owner perturbation加到全部16个rank angles，而surrogate取rank sum，导致coordinate
+step与antithetic归一化相差16倍；macro2不能作为科学负证据。clean pushed `d06842c`注册OCPB v12：coordinate改为rank mean，
+从macro1恢复完整optimizer/RNG/topology并复用原macro2 paired seeds，只重做一次compiler-binding，旧macro3/4取消。证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -1133,3 +1133,23 @@ privileged Program中存在的task-relative变化仍被compiler与当前绝对fu
 关闭，不进入held闭环、reward或`q_V`；后继必须修复最早的task-relative Program-to-policy接口，而不是续训
 或再做一个局部attention/routing微调。证据见
 `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。
+
+## 54. OCPB program credit有微小正向证据，首个compiler credit因shared-rank尺度违反必须重做
+
+OCPB v11从clean pushed `86ed95b`复用v10冻结checkpoint，不重复228 visits。macro1对fit19各运行一个
+`event x owner` program-binding paired panel；训练臂success为`9/8`，但训练reward不参与checkpoint裁决。物化与同一
+308-panel冻结audit显示，fit/held candidate-to-shared由v10的`.96892/1.00285`小幅改善为`.96786/1.00171`，candidate
+pair cosine由`.99641`降到`.99616`；breadth仍为`12/19、2/5`，own-direct约`.03983`且自身检索仍`1/24`。所以program
+credit并非零作用，但证据不足以进入held闭环或`q_V`。
+
+exact-resume的macro2表面上得到`10/8` successes，却使fit/held support退到`.97049/1.00366`，shared panel wins由
+macro1的`139/16`降到`131/14`，裁剪前梯度从`1.0904`升到`11.8792`。代码反查确认这不是可接受的科学负结果：每个owner的
+perturbation把相同`delta`加到全部16个numeric rank angles，但differentiable surrogate使用angles的`sum`，因此surrogate
+coordinate实际变化`16 delta`，而antithetic estimator仍以注册的`2 sigma`归一化。compiler reward lift被放大16倍后才进入
+loss和gradient clipping，违反“一个跨rank共享owner coordinate”的预注册合同。
+
+clean pushed `d06842c`把该coordinate改为rank mean，并以OCPB v12从v11 macro1恢复model、optimizer、scheduler、六份rank
+RNG和world topology；`credit_macro_offset=1`复用原macro2的video、support、perturbation、environment与policy-noise seeds，
+只重做一个corrected compiler-binding macro。v11 macro2只作尺度错误诊断，macro3/4取消；在v12物化和冻结audit前，不能据
+macro2否定compiler-binding，也不能转入LIBERO-90扩容、held5闭环或`q_V`。证据见
+`docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。

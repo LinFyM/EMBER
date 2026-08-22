@@ -14,16 +14,18 @@
   observer，若matched evidence无负面效果则采用并永久冻结。shuffled/reversed不进入训练、loss或checkpoint选择，只在最终
   候选checkpoint冻结后评测时序特异性。held5只作train24内部privileged/compiler leave-task-out机制门；最终shared components
   使用全部授权train data训练，validation8只以language+action-hidden videos作development evaluation。
-- 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
+- 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler`（包括
+  multi-state functional support与task-equal fit simulator success/progress）oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
   永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
   预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
   v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
   v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
-  Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector在唯一active路径中替换；当前工作是完成
-  successful/learner真实双visit profile，并在通过后从clean pushed authority fresh训练balanced 228-visits。Program、`q_pi`、
-  support bank、schedule和functional objective保持不变，不延长v8，也不围绕query、rank或loss权重做局部微调。
+  Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector替换；v9/v10又分别完成bounded selector与
+  process-only Value裁决并关闭。当前唯一active后继是Stage 1 **OCPB v11**：复用v10 checkpoint、不重复228-visits，以
+  fit19 task-equal success/BDDL progress交替校准`event x owner` Program binding和`layer x family` compiler binding，同时保留
+  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -229,7 +231,19 @@
   fit candidate/source/shared为`.39255/.70633/.40514`，相对shared `.96892x`且breadth `12/19`；held为
   `.62612/.88454/.62434`，相对shared `1.00285x`且breadth `2/5`。v10较v9连续改善，但fit/held breadth和held
   aggregate仍未过门，因此最终关闭，held闭环/reward/`q_V`仍为0。一次性audit config已删除，证据见
-  `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。
+  `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。v10 config已改为只读sealed
+  initialization/materialization authority，原训练入口拒绝再启动它；active训练入口只剩OCPB v11。
+- 重新逐条核对专家Stage 1原文后，已撤销仓库此前自行增加的“functional-only frozen support先过门，才允许fit reward”限制。
+  task-equal closed-loop success/progress本来就是privileged `q_pi + compiler` realizability训练的并列目标；v6--v10从未执行
+  这一项。OCPB v11因此作为新的outcome-calibrated阶段从v10冻结checkpoint初始化fresh optimizer，而不是续训或重命名v10。
+  两个交替block-coordinate分别是member-shared `event x owner` q_pi evidence-logit和跨numeric ranks共享的38-owner selector
+  angle；每个formal macro覆盖fit19、两条common-random lanes，held/validation/Test保持零reward/action读取。retained实现已
+  通过19项Stage 1/credit聚焦合同；gpu01 physical5的真实单task双坐标profile已完成，program/compiler macro分别用时
+  `74.08/38.58s`，峰值`16.43/16.47 GB`，裁剪前梯度`3.51/2.00`且finite。两臂都严格配对并产生非零efficiency advantage；
+  program offset只改变304个active event-owner logits，compiler offset只改变38个owner且跨16 ranks共享，replacement fraction
+  分别从`.09684`变为`.09694/.09673`、从`.10581`变为`.09340/.13402`。该profile只证明真实simulator、两种credit坐标、
+  functional anchor和反传接通，不作为性能证据；临时profile目录在记录后删除。下一步是完成formal materialization/evaluator
+  兼容并从clean pushed authority运行首个task-equal fit19 macro。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

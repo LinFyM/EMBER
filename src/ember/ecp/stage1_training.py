@@ -129,7 +129,11 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     if (
         config.get("schema_version")
         != "ember_ecp_stage1_process_value_selector_v10"
-        or config.get("status") != "active_stage1_process_value_selector"
+        or config.get("status")
+        not in {
+            "active_stage1_process_value_selector",
+            "sealed_stage1_process_value_selector_authority",
+        }
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -170,6 +174,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
+    if config.get("status") != "active_stage1_process_value_selector":
+        raise ValueError("sealed ECP Stage 1 authority cannot start new training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
         total = int(config["optimization"]["total_task_visits"])

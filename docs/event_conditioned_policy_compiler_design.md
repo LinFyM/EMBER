@@ -573,7 +573,41 @@ correction pair cosine从v9的`.97482`降到`.95088`，selector的task间范围�
 同一frozen full-bank audit中，fit相对shared进一步改善到`.96892x`、breadth `12/19`，held为
 `1.00285x`、breadth `2/5`。因而该修正弱化了全局旁路且连续改善support，但尚未建立
 task-conditioned policy direction，v10按原门关闭。后继必须回到Stage 1的task-relative Program-to-policy合同，不再续训、
-扫小超参或在此坐标上加rollout credit。
+扫小超参或把同一functional-only曲线继续解释成可能过门。
+
+#### Stage 1 OCPB v11 — Outcome-Calibrated Program--Policy Binding
+
+重新逐条核对专家Stage 1原文后，此前“只有冻结support先过门才加入fit simulator reward”的顺序属于仓库自行增加的限制，
+不是专家合同。专家把task-equal closed-loop success/progress与multi-state response、successful/learner occupancy、source/shared
+preservation、member consistency和Program结构约束并列为`q_pi + compiler`的共同识别目标。v6--v10只实现了其余项；若在
+functional-only门失败后永远禁止reward，等于遗漏了原方案中唯一直接判断静态LoRA是否闭环完成task的Stage 1信号。
+
+唯一后继称为 **OCPB v11（Outcome-Calibrated Program--Policy Binding）**。它不再改attention、query、rank、factor容量或
+Program轴，也不从scratch重复v10的228 visits；以v10冻结single checkpoint作为prior-preserving functional warm start，fresh
+optimizer只引入一个major variable：fit19 task-equal success与BDDL peak progress对Program--policy binding的闭环校准。
+
+credit按同一接口的两个block-coordinate交替分配：
+
+1. `program_binding`：对`q_pi`的`event x owner` evidence logits施加共享于successful members的paired antithetic offset，
+   直接回答哪些可见event、layer与target family的privileged correction对当前task闭环有用；
+2. `compiler_binding`：对38个`owner = layer x target-family`的selector angle施加跨16个numeric ranks共享的paired offset，
+   直接回答同一Program应在哪些policy target families替换shared modes。rank仍无phase、skill或跨adapter语义；
+3. 每个fit task使用两个common-random lanes，plus/minus严格共享初始化、environment seed与policy-noise stream；score只由terminal
+   success、BDDL peak progress和successful efficiency组成；
+4. 每个macro覆盖全部19个fit tasks且等权。outcome surrogate与同一task的完整successful/learner multi-state response、
+   source/shared preservation、prior counterfactual和locality共同反传；factor方向仍由functional support锚定，避免四条rollout
+   让百万参数decoder任意漂移；
+5. held5、validation8与Test8 reward/action均为零读取、零梯度；部署输入输出、single-LoRA、冻结source/observer与最终
+   shuffled/reversed只测试的边界完全不变。
+
+这与Stage 4的video-posterior outer credit不是同一件事：OCPB使用privileged `q_pi`并在video inference进入前共同识别可实现的
+Program/compiler坐标；Stage 4则在full-video必要性已经成立后冻结compiler，只给deployment event inference、policy binding与
+Program posterior分配结构化credit。v11的首个裁决节点只允许短相邻macros；每个节点都物化train24并复跑冻结support，只有
+task-relative geometry、fit/held support与held5 direct-success retention共同改善才promote，不能以train reward上升选模。
+
+真实单task profile已经让两种block-coordinate各完成一次plus/minus × 2 common-random lanes并与完整functional anchor共同
+backward。program/compiler两步分别为`74.08/38.58s`、峰值`16.43/16.47 GB`、裁剪前梯度`3.51/2.00`且finite；两者都产生
+非零paired efficiency advantage。该结果只通过运行合同，不能证明task-equal reward、跨task Program mapping或held泛化。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
@@ -671,8 +705,11 @@ Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stag
 `policy_response.py`拥有冻结PI0.5 full-layer owner response，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
 bank及其运行时panel；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
 一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
-现有`expert_manifold` evaluator继续拥有闭环执行。拆分的理由是信息墙、共享梯度、policy functional调用和静态物化具有不同
-生命周期与测试责任；它们全部只服务同一个`train_ecp_stage1.py`训练入口和一个materialization入口，没有版本化fallback。
+现有`expert_manifold` evaluator继续拥有闭环执行。OCPB阶段由`stage1_outcome.py`独占两种结构化credit坐标，
+`stage1_outcome_{config,contract,train_step,training}.py`分别拥有冻结合同、formal provenance、一次task-equal simulator macro和
+运行编排；通用paired trajectory score已从退役functional路径抽到`reward/credit.py`，旧入口只作兼容转发。拆分的理由是
+信息墙、共享梯度、policy functional调用、simulator生命周期和静态物化具有不同测试责任；`train_ecp_stage1.py`只复现v10
+functional warm start，当前后继入口唯一为`train_ecp_stage1_outcome.py`，两者是连续阶段而非并行architecture fallback。
 
 生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1
 materializer只保留为oracle/evidence工具，正式部署由后续`q_V`经同一个Program/compiler生成LoRA。旧16维decoder、

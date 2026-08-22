@@ -10,7 +10,7 @@ import torch
 from safetensors.torch import load_file
 
 from ember.ecp.stage1_data import load_stage1_evidence_bank, load_stage1_tasks
-from ember.ecp.stage1_materialization import PROJECTION_SCHEMA
+from ember.ecp.stage1_materialization import resolve_stage1_materialization_config
 from ember.ecp.stage1_support import (
     cache_policy_support_panels,
     load_policy_support_bank,
@@ -20,7 +20,6 @@ from ember.ecp.stage1_support import (
 from ember.ecp.stage1_training import (
     REPO_ROOT,
     load_stage1_authorities,
-    load_stage1_config,
     stage1_asset_authority,
     stage1_repo_authority,
 )
@@ -73,14 +72,18 @@ def _authority_path(config: Mapping[str, Any], name: str, asset_root: Path) -> P
 
 
 def _load_projection(
-    *, manifest_path: Path, support_manifest: Path, tasks: Sequence[Any]
+    *,
+    manifest_path: Path,
+    support_manifest: Path,
+    tasks: Sequence[Any],
+    expected_schema: str,
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): dict(row) for row in manifest.get("tasks", ())}
     expected = {int(task.ordinal): task for task in tasks}
     support = manifest.get("policy_support_bank", {})
     if (
-        manifest.get("schema_version") != PROJECTION_SCHEMA
+        manifest.get("schema_version") != expected_schema
         or manifest.get("repository", {}).get("dirty_paths") != []
         or set(rows) != set(expected)
         or Path(str(support.get("path", ""))).resolve() != support_manifest.resolve()
@@ -301,14 +304,15 @@ def build_audit_shard(args: Any) -> None:
     stage1_config_path = _authority_path(
         audit_config, "stage1_config", REPO_ROOT
     )
-    stage1_config = load_stage1_config(stage1_config_path)
+    materialization = resolve_stage1_materialization_config(stage1_config_path)
+    stage1_config = materialization.base
     repository = git_state(REPO_ROOT)
     if not git_state_is_clean_pushed_or_frozen_authority(repository):
         raise ValueError("policy-support audit requires clean pushed authority")
     context = initialize_distributed(require_numa=False, defer_process_group=True)
     if context.world_size != 1:
         raise ValueError("each policy-support audit shard owns one GPU")
-    seed_everything(int(stage1_config["optimization"]["seed"]), context)
+    seed_everything(materialization.seed, context)
     base_authorities = load_stage1_authorities(args, stage1_config, context)
     tasks = load_stage1_tasks(
         target_manifest=stage1_repo_authority(stage1_config, "target_manifest"),
@@ -352,6 +356,7 @@ def build_audit_shard(args: Any) -> None:
         manifest_path=projection_path,
         support_manifest=support_manifest,
         tasks=tasks,
+        expected_schema=materialization.projection_schema,
     )
     rows = []
     for task in selected:

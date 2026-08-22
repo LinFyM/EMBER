@@ -6,6 +6,7 @@ from ember.reward.protocol import (
     reward_credit_policy_noise_seed,
 )
 from ember.reward.occupancy_panel import complete_successful_expert_occupancy_batch
+from ember.reward.credit import AntitheticCredit, paired_antithetic_credit
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
     RewardTrajectory,
@@ -18,11 +19,13 @@ from ember.reward.rollout import (
 __all__ = [
     "RewardTask",
     "RewardTrajectory",
+    "AntitheticCredit",
     "RandomResetEnvironmentPool",
     "capture_paired_initial_states",
     "collect_paired_reward_arm_trajectories",
     "complete_successful_expert_occupancy_batch",
     "policy_flow_noise_cpu",
+    "paired_antithetic_credit",
     "query_successful_expert_occupancy_actions",
     "reward_credit_environment_seed",
     "reward_credit_policy_noise_seed",

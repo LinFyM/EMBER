@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -24,6 +25,12 @@ from ember.ecp.stage1_objective import (
     exact_effective_update_loss,
 )
 from ember.ecp.stage1_support import load_policy_support_bank
+from ember.ecp.stage1_outcome_config import (
+    RUN_SCHEMA as OUTCOME_RUN_SCHEMA,
+    STAGE as OUTCOME_STAGE,
+    load_outcome_config,
+    outcome_repo_authority,
+)
 from ember.ecp.stage1_training import (
     REPO_ROOT,
     RUN_SCHEMA,
@@ -41,6 +48,66 @@ from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 PROJECTION_SCHEMA = "ember_ecp_stage1_process_value_selector_projection_v10"
 PROJECTION_KIND = "ecp_stage1_privileged_process_value_selector_compiler"
+OUTCOME_PROJECTION_SCHEMA = "ember_ecp_stage1_outcome_binding_projection_v11"
+OUTCOME_PROJECTION_KIND = "ecp_stage1_privileged_outcome_binding_compiler"
+
+
+@dataclass(frozen=True)
+class Stage1MaterializationConfig:
+    base: dict[str, Any]
+    stage: str
+    run_schema: str
+    seed: int
+    checkpoint_cursors: tuple[int, ...]
+    cursor_name: str
+    settings: Mapping[str, Any]
+    projection_schema: str
+    projection_kind: str
+    objective_phase: str
+
+
+def resolve_stage1_materialization_config(
+    path: Path,
+) -> Stage1MaterializationConfig:
+    raw = read_json(path)
+    if raw.get("schema_version") == "ember_ecp_stage1_outcome_binding_v11":
+        outcome = load_outcome_config(path)
+        base = load_stage1_config(
+            outcome_repo_authority(outcome, "base_stage1_config")
+        )
+        return Stage1MaterializationConfig(
+            base=base,
+            stage=OUTCOME_STAGE,
+            run_schema=OUTCOME_RUN_SCHEMA,
+            seed=int(outcome["optimization"]["seed"]),
+            checkpoint_cursors=tuple(
+                int(value)
+                for value in outcome["materialization"][
+                    "allowed_checkpoint_macros"
+                ]
+            ),
+            cursor_name="outcome_macro",
+            settings=outcome["materialization"],
+            projection_schema=OUTCOME_PROJECTION_SCHEMA,
+            projection_kind=OUTCOME_PROJECTION_KIND,
+            objective_phase="outcome_calibrated_policy_support",
+        )
+    base = load_stage1_config(path)
+    return Stage1MaterializationConfig(
+        base=base,
+        stage=STAGE,
+        run_schema=RUN_SCHEMA,
+        seed=int(base["optimization"]["seed"]),
+        checkpoint_cursors=tuple(
+            int(value)
+            for value in base["optimization"]["checkpoint_task_visits"]
+        ),
+        cursor_name="task_visits",
+        settings=base["materialization"],
+        projection_schema=PROJECTION_SCHEMA,
+        projection_kind=PROJECTION_KIND,
+        objective_phase="policy_support",
+    )
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -54,6 +121,8 @@ def _load_checkpoint(
     model: torch.nn.Module,
     device: torch.device,
     repository: Mapping[str, Any],
+    expected_stage: str,
+    expected_run_schema: str,
 ) -> tuple[int, dict[str, Any]]:
     task_visits = checkpoint_macro(checkpoint)
     manifest_path = checkpoint / "checkpoint_manifest.json"
@@ -62,15 +131,15 @@ def _load_checkpoint(
     run_contract = read_json(checkpoint.parent.parent / "run_contract.json")
     if (
         manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or manifest.get("stage") != STAGE
+        or manifest.get("stage") != expected_stage
         or int(manifest.get("next_macro", -1)) != task_visits
-        or manifest.get("run_contract_schema") != RUN_SCHEMA
+        or manifest.get("run_contract_schema") != expected_run_schema
         or int(manifest.get("world_size", -1)) != 6
         or not weights.is_file()
         or weights.stat().st_size
         != int(manifest.get("files", {}).get(weights.name, {}).get("bytes", -1))
-        or run_contract.get("schema_version") != RUN_SCHEMA
-        or run_contract.get("stage") != STAGE
+        or run_contract.get("schema_version") != expected_run_schema
+        or run_contract.get("stage") != expected_stage
         or run_contract.get("mode") != "formal"
         or run_contract.get("git", {}).get("commit") != repository.get("commit")
     ):
@@ -320,10 +389,11 @@ def _projection_manifest(
     rank: int,
     rows: list[dict[str, Any]],
     cross_task_geometry: Mapping[str, Any],
+    materialization: Stage1MaterializationConfig,
 ) -> dict[str, Any]:
     return {
-        "schema_version": PROJECTION_SCHEMA,
-        "projection_kind": PROJECTION_KIND,
+        "schema_version": materialization.projection_schema,
+        "projection_kind": materialization.projection_kind,
         "repository": {
             "commit": repository["commit"],
             "dirty_paths": repository["dirty_paths"],
@@ -336,7 +406,7 @@ def _projection_manifest(
         "expert_bank_root": str(args.expert_bank_root.resolve()),
         "expert_step": int(args.expert_step),
         "optimization": {
-            "task_visits": task_visits,
+            materialization.cursor_name: task_visits,
             "fold": int(config["roles"]["fold"]),
             "fit_task_count": 19,
             "held_task_count": 5,
@@ -353,7 +423,7 @@ def _projection_manifest(
             "raw_factor_addition": False,
             "fixed_rank_partition": False,
             "second_adapter_deployed": False,
-            "objective_phase": "policy_support",
+            "objective_phase": materialization.objective_phase,
         },
         "information_wall": {
             "role": "development_train_oracle_only",
@@ -376,25 +446,24 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("formal ECP Stage 1 materialization requires a clean worktree")
     if args.output_dir.exists():
         raise ValueError("ECP Stage 1 materialization output already exists")
-    config = load_stage1_config(args.config)
+    materialization = resolve_stage1_materialization_config(args.config)
+    config = materialization.base
     context = initialize_distributed(require_numa=False, defer_process_group=True)
     if context.world_size != 1:
         raise ValueError("ECP Stage 1 materialization uses one GPU")
-    seed_everything(int(config["optimization"]["seed"]), context)
+    seed_everything(materialization.seed, context)
     authorities = load_stage1_authorities(args, config, context)
     task_visits, checkpoint_asset = _load_checkpoint(
         args.stage1_checkpoint,
         model=authorities.model,
         device=context.device,
         repository=repository,
+        expected_stage=materialization.stage,
+        expected_run_schema=materialization.run_schema,
     )
     if (
-        task_visits
-        not in set(
-            int(value)
-            for value in config["optimization"]["checkpoint_task_visits"]
-        )
-        or int(config["materialization"]["visible_video_count"])
+        task_visits not in set(materialization.checkpoint_cursors)
+        or int(materialization.settings["visible_video_count"])
         != int(config["data"]["visible_videos_per_visit"])
     ):
         raise ValueError("ECP Stage 1 materialization contract changed")
@@ -453,7 +522,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
     direct_states = []
     program_rows = []
     try:
-        visit = int(config["materialization"]["video_visit"])
+        visit = int(materialization.settings["video_visit"])
         for task in tasks:
             generated, candidate, program = _materialize_task(
                 task=task,
@@ -506,6 +575,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         rank=int(authorities.contract.rank),
         rows=rows,
         cross_task_geometry=geometry,
+        materialization=materialization,
     )
     write_json_atomic(args.output_dir / "projection_manifest.json", result)
     return result

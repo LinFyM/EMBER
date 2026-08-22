@@ -255,6 +255,51 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
     assert contract["asset"]["single_complete_lora"] is True
 
 
+def test_ecp_stage1_outcome_projection_keeps_the_same_single_lora_surface(
+    tmp_path: Path,
+) -> None:
+    assets = {}
+    for name in (
+        "stage1_config",
+        "stage1_checkpoint",
+        "base_projection_manifest",
+        "policy_support_bank",
+    ):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        assets[name] = {"path": str(path), "bytes": path.stat().st_size}
+    contract = _projection_contract(
+        {
+            "schema_version": "ember_ecp_stage1_outcome_binding_projection_v11",
+            "projection_kind": "ecp_stage1_privileged_outcome_binding_compiler",
+            **assets,
+            "optimization": {
+                "outcome_macro": 1,
+                "held_shared_gradient_steps": 0,
+                "compiler_frozen_for_materialization": True,
+                "single_complete_lora": True,
+                "final_lora_averaging": False,
+                "rank": 16,
+                "all_ranks_writable": True,
+                "parameterization": "prior-only exact template; full-process process-value-only bounded rank-one retraction",
+                "content_address_separated": True,
+                "query_content_modulated": True,
+                "policy_support_teacher": True,
+                "raw_factor_addition": False,
+                "fixed_rank_partition": False,
+                "second_adapter_deployed": False,
+                "objective_phase": "outcome_calibrated_policy_support",
+            },
+            "information_wall": {
+                "privileged_q_pi": True,
+                "second_adapter_deployed": False,
+            },
+        }
+    )
+    assert contract["arm"] == "ecp_stage1_q_pi_outcome_binding_m1"
+    assert contract["asset"]["single_complete_lora"] is True
+
+
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
     config = load_task_expert_config(CONFIG)
     fresh = Namespace(mode="profile", batch_size=None, stop_after_step=1, resume=None)

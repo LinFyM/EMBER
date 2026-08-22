@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_ecp_stage1_process_value_selector_v10",
-  "status": "active_stage1_process_value_selector",
+  "status": "sealed_stage1_process_value_selector_authority",
   "purpose": "Privileged policy-functional teacher with language-conditioned process-only Values and an exact-prior bounded rank selector.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",

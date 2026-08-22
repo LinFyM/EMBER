@@ -34,6 +34,7 @@ class ECPCompilerOutput:
     locality_penalty: torch.Tensor
     exact_owner_attention: torch.Tensor
     rank_replacement_fraction: torch.Tensor
+    rank_angles: torch.Tensor
 
 
 def select_compiled_state(
@@ -275,7 +276,12 @@ class TargetFamilyCompiler(torch.nn.Module):
         )
         return ((process_mass + uncertainty_mass) > 0).to(program.process)
 
-    def forward(self, program: ECPProgram) -> ECPCompilerOutput:
+    def forward(
+        self,
+        program: ECPProgram,
+        *,
+        rank_angle_offset: torch.Tensor | None = None,
+    ) -> ECPCompilerOutput:
         key_tokens, value_tokens, presence, query_context = self._tokens(program)
         queries = self._queries(query_context)
         keys = self.key_projection(key_tokens)
@@ -293,8 +299,15 @@ class TargetFamilyCompiler(torch.nn.Module):
         templates = self.template_state()
         process_gate = self._process_gate(program)
         has_process = bool((process_gate.detach() > 0).any())
+        batch = int(program.language.shape[0])
+        if rank_angle_offset is not None and rank_angle_offset.shape not in {
+            (batch, self.owner_count, 1),
+            (batch, self.owner_count, self.rank),
+        }:
+            raise ValueError("compiler rank-angle offset changed shape")
         result: dict[str, torch.Tensor] = {}
         replacement_fractions = []
+        rank_angles = []
         for owner in self.owners:
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
@@ -305,6 +318,9 @@ class TargetFamilyCompiler(torch.nn.Module):
                 result[name_b] = templates[name_b][None].expand(
                     program.language.shape[0], -1, -1
                 )
+                rank_angles.append(
+                    process_gate.new_zeros((batch, self.rank))
+                )
                 continue
             family = owner.family.value
             addressed = hidden[:, owner.index]
@@ -312,6 +328,13 @@ class TargetFamilyCompiler(torch.nn.Module):
             replacement_b = self.factor_b[family](addressed).transpose(1, 2)
             selector_logits = self.rank_selector[family](addressed).squeeze(-1)
             angles = self.selector_max_angle_radians * torch.tanh(selector_logits)
+            if rank_angle_offset is not None:
+                angles = (
+                    angles + rank_angle_offset[:, owner.index].to(angles)
+                ).clamp(
+                    min=-self.selector_max_angle_radians,
+                    max=self.selector_max_angle_radians,
+                )
             selected_a, selected_b = replace_low_rank_modes(
                 base_a=templates[name_a],
                 base_b=templates[name_b],
@@ -330,6 +353,7 @@ class TargetFamilyCompiler(torch.nn.Module):
             replacement_fractions.append(
                 angles.sin().square() * process_gate[:, None].to(angles)
             )
+            rank_angles.append(angles * process_gate[:, None].to(angles))
         locality = torch.einsum(
             "bjrn,jn->", attention.float(), self.locality_cost
         ) / (attention.shape[0] * self.owner_count * self.rank)
@@ -346,4 +370,5 @@ class TargetFamilyCompiler(torch.nn.Module):
             locality_penalty=locality,
             exact_owner_attention=exact_attention,
             rank_replacement_fraction=replacement_fraction,
+            rank_angles=torch.stack(rank_angles, dim=1),
         )

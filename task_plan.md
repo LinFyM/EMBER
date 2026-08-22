@@ -164,7 +164,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed v10 authority完成fresh balanced 228 visits和24-task geometry；task-equal与数值合同通过，但own retrieval仍为`1/24`；
 - [x] 完成同一308-panel frozen support audit；fit改善到`.96892x` shared和`12/19` breadth，但held仍为
   `1.00285x`和`2/5`，v10按门关闭；
-- [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
+- [ ] 实现并裁决 **Stage 1 OCPB v11（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
+  以task-equal fit19 success/BDDL progress分别校准`event x owner` privileged Program binding与`layer x family`
+  compiler binding；每个macro仍同时使用完整multi-state functional/support锚，不读取held/validation/Test reward；
+- [ ] 对v11相邻single checkpoints物化全部train24，并复跑同一308-panel frozen support与held5 oracle gate；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -218,10 +221,14 @@ coordinate退化则保留Stage 2并定位最早接口。
 ## Current next actions
 
 1. v10已终止：process-only Value连续改善v9，但geometry retrieval `1/24`、fit/held breadth `12/19、2/5`仍失败；
-   不跑held closed loop、不加reward、不启动`q_V`，也不延长或做小超参扫描；
-2. 先回到专家Stage 1原始合同，对照现有Program correction cosine `.82475`到compiled correction `.95088`的退化，
-   只登记一个修复最早task-relative信息坍缩的major variable；不再追加compiler局部routing微调；
-3. 只有新Stage 1后继相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
-   task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
-4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+   不跑v10 held closed loop、不延长或做小超参扫描，也不把v10 checkpoint冒充通过；
+2. 对照专家Stage 1原文后，纠正此前自行加入的“先过冻结support门、再接reward”限制：task-equal closed-loop
+   success/progress本来就是`q_pi + compiler`共同识别Program的Stage 1训练信号，不能因functional-only未过门而永久省略；
+3. 唯一后继登记为OCPB v11。它复用v10作为prior-preserving functional warm start，不重跑228-visits；同一paired
+   fit19 rollout先后在`event x owner` q_pi evidence-logit与`owner = layer x family` compiler selector-angle坐标做
+   antithetic calibration，rank不获得语义。每个task的outcome surrogate与原完整functional/support loss共同反传；
+4. v11先做两种坐标各一次真实profile，再从clean pushed authority运行短相邻macros。每个checkpoint立即物化train24并
+   复跑冻结support；只有同时改善task-relative geometry、fit/held support且直接held5 oracle保留成功，才冻结compiler进入`q_V`；
+5. 若19个映射随后显示泛化限制，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
+6. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

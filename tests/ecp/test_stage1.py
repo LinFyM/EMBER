@@ -15,6 +15,17 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_factors,
 )
 from ember.ecp.stage1 import ECPStage1Model
+from ember.ecp.stage1_materialization import (
+    OUTCOME_PROJECTION_SCHEMA,
+    resolve_stage1_materialization_config,
+)
+from ember.ecp.stage1_outcome import (
+    COMPILER_BINDING,
+    PROGRAM_BINDING,
+    outcome_coordinate,
+    outcome_surrogate_loss,
+    structured_outcome_perturbation,
+)
 from ember.ecp.stage1_objective import (
     canonical_factor_loss,
     effective_update_cosine_matrix,
@@ -27,6 +38,7 @@ from ember.ecp.stage1_support import (
 from ember.ecp.stage1_support_audit import summarize_policy_support_audit
 from ember.lora import LoRATarget, SmolVLALoRAContract, identity_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.reward.credit import AntitheticCredit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -157,6 +169,19 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
+def test_outcome_materialization_uses_v11_cursor_and_v10_model_contract() -> None:
+    resolved = resolve_stage1_materialization_config(
+        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v11.json"
+    )
+    assert resolved.stage == "stage1_outcome_binding_v11"
+    assert resolved.cursor_name == "outcome_macro"
+    assert resolved.checkpoint_cursors == (1, 2, 3, 4)
+    assert resolved.projection_schema == OUTCOME_PROJECTION_SCHEMA
+    assert resolved.base["schema_version"] == (
+        "ember_ecp_stage1_process_value_selector_v10"
+    )
+
+
 def test_visible_program_video_set_is_permutation_invariant() -> None:
     contract, owners, _ = _contract_and_states()
     projector = VisibleProgramProjector(owners)
@@ -205,6 +230,83 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert float(
         output.consensus_compilation.rank_replacement_fraction.detach()
     ) == 0.0
+    assert output.consensus_compilation.rank_angles.shape == (1, 38, 16)
+
+
+def test_outcome_binding_offsets_preserve_structured_coordinates() -> None:
+    contract, owners, template = _contract_and_states()
+    model = ECPStage1Model(owners, contract, template)
+    for selector in model.compiler.rank_selector.values():
+        selector.weight.data.normal_(std=0.1)
+    encoded = _encoded()
+    evidence = _expert_evidence(template)
+    baseline = model(encoded, evidence, torch.zeros(2, dtype=torch.long))
+    event_owner = torch.zeros(1, 8, 38, 1)
+    event_owner[:, 2, 7] = 0.5
+    changed_program = model(
+        encoded,
+        evidence,
+        torch.zeros(2, dtype=torch.long),
+        evidence_logit_offset=event_owner,
+    )
+    assert baseline.teacher.evidence_gate_logits.shape == (2, 8, 38, 1)
+    torch.testing.assert_close(
+        changed_program.teacher.evidence_gate_logits
+        - baseline.teacher.evidence_gate_logits,
+        event_owner.expand(2, -1, -1, -1),
+    )
+    owner = torch.zeros(1, 38, 1)
+    owner[:, 7] = 0.1
+    changed_compiler = model(
+        encoded,
+        evidence,
+        torch.zeros(2, dtype=torch.long),
+        rank_angle_offset=owner,
+    )
+    delta = (
+        changed_compiler.consensus_compilation.rank_angles
+        - baseline.consensus_compilation.rank_angles
+    )
+    torch.testing.assert_close(delta[:, 7], torch.full_like(delta[:, 7], 0.1))
+    torch.testing.assert_close(delta[:, :7], torch.zeros_like(delta[:, :7]))
+    torch.testing.assert_close(delta[:, 8:], torch.zeros_like(delta[:, 8:]))
+
+
+def test_structured_outcome_coordinates_reach_q_pi_and_compiler() -> None:
+    contract, owners, template = _contract_and_states()
+    model = ECPStage1Model(owners, contract, template)
+    for selector in model.compiler.rank_selector.values():
+        selector.weight.data.normal_(std=0.1)
+    output = model(
+        _encoded(),
+        _expert_evidence(template),
+        torch.zeros(2, dtype=torch.long),
+    )
+    for index, coordinate in enumerate((PROGRAM_BINDING, COMPILER_BINDING)):
+        perturbation = structured_outcome_perturbation(
+            output, coordinate=coordinate, sigma=0.1, seed=17 + index
+        )
+        value = outcome_coordinate(output, coordinate)
+        assert perturbation.epsilon.shape == value.shape
+        credit = AntitheticCredit(
+            gradient=perturbation.epsilon,
+            plus_scores=(1.0, 0.0),
+            minus_scores=(0.0, 0.0),
+            lane_advantages=(1.0, 0.0),
+            plus_successes=1,
+            minus_successes=0,
+            plus_progress_mean=0.5,
+            minus_progress_mean=0.0,
+        )
+        model.zero_grad(set_to_none=True)
+        outcome_surrogate_loss(
+            output, credit, coordinate=coordinate, weight=0.1
+        ).backward(retain_graph=index == 0)
+        if coordinate == PROGRAM_BINDING:
+            gradient = model.policy_teacher.evidence_gate.weight.grad
+        else:
+            gradient = model.compiler.rank_selector["q"].weight.grad
+        assert gradient is not None and float(gradient.abs().sum()) > 0
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:

@@ -545,6 +545,11 @@ thin QR形成正交方向，再按对应target shared factors的跨rank RMS能�
 multi-state policy response、局部source/shared support、exact-prior counterfactual和locality；raw A/B距离继续只作诊断。
 该实现以replacement fraction和冻结全bank support裁决是否真正选择了policy-functional modes，而不是参数能量最大的modes。
 
+retained v9实现已通过40项聚焦合同和真实successful/learner双visit profile。首步selector保持exact shared且replacement
+fraction为0；一次optimizer update后第二步fraction为`3.9241e-6`，两步梯度finite、峰值约16.44 GB。这个结果只证明有界
+retraction图和预期的两阶段梯度到达顺序成立；方法资格仍只由fresh balanced 228节点的24-task geometry与冻结full-bank
+support决定。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

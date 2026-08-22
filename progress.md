@@ -191,6 +191,11 @@
   幅度放大7倍不改变输出；全部16 ranks均可写且不再运行Frobenius SVD。训练metrics和materialization新增唯一相关诊断
   `rank_replacement_fraction`。旧v8 active config与union调用已删除，40项聚焦CPU合同通过，包括exact prior、幅度不变性、
   selector先获梯度且打开后factor heads获梯度、零Program不能写LoRA、完整rank16输出及新projection authority。
+- v9真实successful/learner双visit profile已在gpu01 physical1通过，prohibited physical0未使用。两次update耗时
+  `2.3076/2.0783s`，峰值`16,438,259,200` bytes，裁剪前梯度`0.6435/1.4051`且finite；首步
+  `rank_replacement_fraction=0`精确处于shared，第二步为`3.9241e-6`，证明selector已打开且没有幅度跳变。successful/learner
+  functional response分别`.40044/.25523`，第二步shared-support仅`.00121`。该profile只授权fresh balanced 228-visits，
+  不构成support、几何或held闭环pass。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

@@ -203,8 +203,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 实现 **OCPB v17 action-grounded composed-policy recovery**：复用v16已形成的task-discrimination model weights并创建fresh
   optimizer，对successful或verified-success跨episode action panel直接计算冻结PI0.5的exact flow-matching loss及LoRA leaf gradient，
   再反传到`q_pi`/compiler；failed learner action不作oracle，v16 local effect与v13 barrier只作结构/support锚；
-- [ ] 用真实单task profile确认action loss、LoRA-leaf到FactorHead梯度、显存和吞吐，再运行一个bounded task-balanced节点；只有
-  exact action loss、task discrimination与同一308-panel frozen support共同改善，才进入held5 oracle；
+- [x] 用真实successful-panel单task profile确认exact action loss、LoRA-leaf到FactorHead梯度、显存和吞吐；
+- [ ] 运行一个114-visits bounded task-balanced节点；只有exact action loss、task discrimination与同一308-panel frozen
+  support共同改善，才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

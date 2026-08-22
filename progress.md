@@ -41,7 +41,9 @@
   oracle，v16 local effect与v13 barrier只保留为结构/support锚。v17 retained实现已收敛到唯一`train_ecp_stage1.py`运行面：
   直接复用`writer.functional`的frozen-policy LoRA leaf gradient，成功panel构成每task等量主监督，verified-success learner为
   显式附加state-support stratum；v16结构锚统一缩放为`.1x`。旧v16 active config已删除，v17从v16 task-visit228只加载model
-  weights并创建fresh optimizer；30项ECP聚焦合同已通过，下一节点是真实单卡action-gradient profile，不把CPU合同当作性能证据。
+  weights并创建fresh optimizer；30项ECP聚焦合同已通过。gpu01 physical6上的真实successful-panel单task profile也已通过：
+  exact action loss `.10709`、LoRA-leaf gradient norm `.12452`、FactorHead梯度`.69883`、总梯度`4.69989`，整步`2.88s`、峰值
+  `16,412,292,608` bytes；因此运行图、显存和吞吐授权进入114-visits bounded task-balanced节点，但该profile不作性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

@@ -889,6 +889,25 @@ step与antithetic归一化相差16倍；macro2不能作为科学负证据。clea
 clean pushed `7d77eb8`的真实single-task corrected profile随后得到rank-mean surrogate`-.000381`、finite梯度`2.08455`和
 `16.43GB`峰值，确认修正后的运行面可进入一次formal复验；profile产物在记录后删除。
 
+### 3.46 OCPB v12 corrected compiler-binding有效但未过geometry/support门
+
+clean pushed `16f9e55`从v11 macro1完整恢复model、optimizer、scheduler、六份rank RNG和world6 topology，并以原macro2的
+全部paired authority完成唯一corrected compiler-binding macro。两臂仍为`10/8` successes、progress
+`.31140/.27193`；rank-mean surrogate为`-.00896`、裁剪前梯度`1.63196`，相对错误macro2的`-.14340/11.8792`确认16倍
+shared-rank lift已经消除。一个成功rollout的终止步由110变为109属于允许的低位执行差异，success pattern与replacement
+fractions未变。
+
+24-task物化给出candidate pair cosine`.99586`、own/nearest-other `.03972/.06186`、own retrieval `1/24`，而Program
+correction pair cosine为`.82561`。clean authority上的308-panel audit给出fit/held candidate-to-shared
+`.96934/1.00303`、breadth `12/19、2/5`；相对v11 macro1的`.96786/1.00171`与155个shared panel wins均未改善，v12只有149个
+wins。因此v12有效但Gate 2早门失败，held5 closed loop、fold rotation、meta expansion与`q_V`均未启动。
+
+最早接口仍是task-relative Program到policy direction。现行functional anchor把candidate到source/shared的响应距离直接当作
+support loss，会把有益task-specific移动与有害漂移一起拉回；compiler outcome coordinate又只监督selector angles，不直接
+识别replacement factor方向。后继保持同一结构、checkpoint与paired实验，只把support preservation改成baseline-relative
+functional barrier，再做一个bounded相邻节点。正式证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

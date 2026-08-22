@@ -620,6 +620,32 @@ v11 macro1的program-binding只带来很小但方向一致的冻结改善：fit/
 videos、support panel、perturbation、environment和policy-noise seeds，只重做一次compiler-binding。v11 macro3/4不再运行，
 也不重复program macro1。v12仍须经同一train24物化、geometry、308-panel冻结support和held5 oracle逐级裁决。
 
+v12已完成上述matched复验。rank-mean把裁剪前梯度从错误macro2的`11.8792`恢复到`1.63196`，且paired success/progress保持
+`10/8`与`.31140/.27193`，所以尺度修正成立；但物化仍只有`1/24` own retrieval、candidate pair cosine `.99586`，冻结
+fit/held support为`.96934/1.00303x` shared、breadth `12/19、2/5`，比v11 macro1略差。逐级门因此在held5 rollout前停止，
+v12关闭，不能进入`q_V`。
+
+#### Stage 1 OCPB v13 — baseline-relative functional support barrier
+
+v12后的最早接口不是Program缺少task差异：privileged Program correction pair cosine已经是`.82561`，task差异是在compiler和
+functional objective后被压回`.99586`的近共同LoRA。当前`source_support/shared_support`把candidate与source/shared响应的
+距离直接加入loss；该实现会同时惩罚有益task-specific移动与有害support丢失。专家要求的是已有行为support preservation，
+不是所有响应都必须接近shared。
+
+v13只改变这一项定义。对同一panel记candidate、source、shared相对own successful-policy evidence的归一response error为
+`R_c, R_s, R_h`，则：
+
+\[
+L_{source\_preserve}=w_s [R_c-R_s]_+,\qquad
+L_{shared\_preserve}=w_h [R_c-R_h]_+.
+\]
+
+candidate优于baseline时barrier为零，不再被拉回；差于baseline时仍保留原panel的outcome/reliability权重。successful/learner
+expert-response、stable-prior counterfactual、locality、Program/compiler结构、bounded rank selector、rank-mean outcome
+coordinate、v11 macro1初始化和原macro2全部paired seeds均不变。这是support preservation语义的单变量修复，不是loss weight、
+rank或seed sweep。先做真实single-task profile；随后只运行一个matched corrected compiler macro并立即物化/复跑同一geometry与
+308-panel门。若仍不能同时改善task-relative geometry和fit/held support，不延长该曲线，也不先用LIBERO-90掩盖fit映射未形成。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

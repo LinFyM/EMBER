@@ -23,11 +23,11 @@
   v4 coordinate bootstrap与v5 query-content bootstrap都已完成228-visits正式裁决；两者均未过预注册几何门。v6 policy-support、
   v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
   Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector替换；v9/v10又分别完成bounded selector与
-  process-only Value裁决并关闭。当前唯一active后继是Stage 1 **OCPB v12**：保留v11 macro1的program-binding checkpoint，
-  修正shared-rank compiler credit的16倍尺度错误后只重做一次compiler-binding；仍以
-  fit19 task-equal success/BDDL progress交替校准`event x owner` Program binding和`layer x family` compiler binding，同时保留
-  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。v11 macro1/2及其train24物化、
-  308-panel冻结审计已经完成，但macro2只作尺度错误诊断；尚未进入held5闭环、`q_V`或validation8。
+  process-only Value裁决并关闭。OCPB v11/v12也已完成裁决：v12消除了compiler credit的16倍尺度错误，但有效更新没有改善
+  v11 macro1的task-relative geometry或冻结support，故v12关闭且仍未进入held5闭环、`q_V`或validation8。当前唯一active
+  后继是Stage 1 **OCPB v13 baseline-relative support barrier**：保持同一v11 macro1初始化、paired seeds、Program/compiler、
+  rank与outcome coordinate，只把source/shared无条件响应邻近改成相对其expert-response baseline不退化的functional hinge。
+  这不是loss权重小扫，而是修正“support preservation”把有益task-specific移动也拉回shared的错误接口。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -37,9 +37,9 @@
 - Stage 1 canonical运行面已经接通为`visible Program projector → train-only q_pi → shared target-family compiler`。每条
   action-hidden video先经永久冻结的native+Action-Meta observer独立保序编码，K个video只在Program层做置换不变的
   presence-weighted mean/variance聚合；q_pi correction只能写入visible event presence已经激活的位置，privileged evidence
-  中没有task ID。fit19的task-equal schedule为19×60=1,140 visits、world-size6的190次更新；held5保持零shared gradient。
-  训练目标同时使用gauge-invariant exact-BA、member/consensus、stable-prior counterfactual、multi-phase完整PI0.5 functional
-  response和locality，不把内部loss当作Gate 2闭环结论。
+  中没有task ID。fit19的task-equal schedule和OCPB macro都保持held5零shared gradient。当前Stage 1主目标使用successful/learner
+  multi-state expert response、source/shared功能保留、stable-prior counterfactual、locality及task-equal simulator outcome；
+  exact-BA/canonical只保留为无梯度诊断。v13把功能保留实现为相对baseline barrier，不把内部loss当作Gate 2闭环结论。
 - 两个真实A40单卡profile均已通过。K2视频共45个stride-5 frames时，完整observer+q_pi+compiler forward/backward为
   2.24秒、峰值10,127,157,760 bytes；加入成功occupancy functional response后为2.15秒、峰值16,353,665,536 bytes，
   functional loss `.40906`且梯度finite。首次profile暴露observer未处于BF16 autocast的dtype接口错误，按已验证Stage 0
@@ -234,7 +234,7 @@
   `.62612/.88454/.62434`，相对shared `1.00285x`且breadth `2/5`。v10较v9连续改善，但fit/held breadth和held
   aggregate仍未过门，因此最终关闭，held闭环/reward/`q_V`仍为0。一次性audit config已删除，证据见
   `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。v10 config已改为只读sealed
-  initialization/materialization authority，原训练入口拒绝再启动它；active训练入口只剩OCPB v12。
+  initialization/materialization authority，原训练入口拒绝再启动它；active训练入口将由OCPB v13单路径替换v12。
 - 重新逐条核对专家Stage 1原文后，已撤销仓库此前自行增加的“functional-only frozen support先过门，才允许fit reward”限制。
   task-equal closed-loop success/progress本来就是privileged `q_pi + compiler` realizability训练的并列目标；v6--v10从未执行
   这一项。OCPB v11因此作为新的outcome-calibrated阶段从v10冻结checkpoint初始化fresh optimizer，而不是续训或重命名v10。
@@ -266,6 +266,16 @@
   仍为`.09845→.08681/.12619`，但rank-mean surrogate仅`-.000381`、裁剪前梯度`2.08455`且finite，峰值
   `16,425,290,752` bytes。该profile只解除corrected formal运行门，不作性能证据；目录在记录后删除。证据见
   `docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
+- OCPB v12已从clean pushed `16f9e55`在gpu01 physical `2,3,4,5,6,7`完成唯一corrected compiler-binding macro，明确排除
+  prohibited physical0。它从v11 macro1完整恢复model/optimizer/scheduler/rank RNG/world topology并复用原macro2的全部paired
+  authority；两臂仍为`10/8` successes、progress `.31140/.27193`，但rank-mean修正使outcome surrogate从错误macro2的
+  `-.14340`回到`-.00896`、裁剪前梯度从`11.8792`回到`1.63196`，证明尺度修复有效。24-task物化仍给出candidate pair
+  cosine `.99586`、own/nearest-other `.03972/.06186`、retrieval `1/24`；308-panel audit的fit/held candidate-to-shared为
+  `.96934/1.00303`、breadth `12/19、2/5`，比保留的v11 macro1 `.96786/1.00171`更差，shared panel wins也由155降到149。
+  因而v12作为有效科学负结果关闭，不跑held5、不轮fold、不扩meta、不进入`q_V`。最早接口收紧为：Program correction已有
+  `.82561` task差异，compiler仍压成近共同LoRA；现有source/shared响应邻近项又会惩罚所有task-specific移动，而outcome
+  selector-angle credit不直接识别replacement factor方向。正式证据见
+  `docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`；一次性audit config已删除。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

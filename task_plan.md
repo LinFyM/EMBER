@@ -164,7 +164,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed v10 authority完成fresh balanced 228 visits和24-task geometry；task-equal与数值合同通过，但own retrieval仍为`1/24`；
 - [x] 完成同一308-panel frozen support audit；fit改善到`.96892x` shared和`12/19` breadth，但held仍为
   `1.00285x`和`2/5`，v10按门关闭；
-- [ ] 实现并裁决 **Stage 1 OCPB v11/v12（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
+- [x] 实现并裁决 **Stage 1 OCPB v11/v12（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
   以task-equal fit19 success/BDDL progress分别校准`event x owner` privileged Program binding与`layer x family`
   compiler binding；每个macro仍同时使用完整multi-state functional/support锚，不读取held/validation/Test reward；
 - [x] 完成OCPB v11 retained实现、两坐标真实profile、formal macro1、train24物化与同一308-panel冻结审计；macro1使
@@ -172,9 +172,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   因而不进入`q_V`，只按已登记的交替坐标继续macro2；
 - [x] 完成v11 macro2、物化与冻结审计，并定位shared-rank credit的16倍尺度违反；该checkpoint只作工程诊断，不作
   compiler-binding科学反证，旧macro3/4取消；
-- [ ] 从v11 macro1完整恢复model/optimizer/RNG/topology，以相同paired seeds运行唯一v12 corrected compiler-binding，
+- [x] 从v11 macro1完整恢复model/optimizer/RNG/topology，以相同paired seeds运行唯一v12 corrected compiler-binding，
   随后立即物化与复跑同一geometry/308-panel门；
-- [ ] 对OCPB相邻single checkpoints物化全部train24，并复跑同一308-panel frozen support与held5 oracle gate；
+- [x] 对v10、v11 macro1与v12 corrected相邻single checkpoints物化全部train24并复跑同一308-panel frozen support；v12
+  geometry与support早门失败，按逐级合同没有启动held5 oracle；
+- [ ] 实现OCPB v13的baseline-relative functional support barrier：只惩罚candidate相对source/shared已有expert-response
+  baseline的退化，不再把所有偏离source/shared的响应都当作损失；保持Program、compiler、rank、数据、paired seeds与outcome
+  coordinate不变，从同一v11 macro1 authority作一次matched corrected compiler-binding复验；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -227,17 +231,16 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v10已终止：process-only Value连续改善v9，但geometry retrieval `1/24`、fit/held breadth `12/19、2/5`仍失败；
-   不跑v10 held closed loop、不延长或做小超参扫描，也不把v10 checkpoint冒充通过；
-2. 对照专家Stage 1原文后，纠正此前自行加入的“先过冻结support门、再接reward”限制：task-equal closed-loop
-   success/progress本来就是`q_pi + compiler`共同识别Program的Stage 1训练信号，不能因functional-only未过门而永久省略；
-3. OCPB v11 macro1已成为唯一保留的program-binding warm start；v11 macro2存在shared-rank coordinate 16倍尺度违反，
-   已由OCPB v12的rank-mean surrogate修正。v12不重复macro1并复用原macro2全部paired seeds；
-4. v12从clean pushed authority只运行一个corrected compiler-binding macro。checkpoint立即物化train24并复跑冻结support；
-   只有同时改善task-relative geometry、fit/held support且直接held5 oracle保留成功，才冻结compiler进入`q_V`；
-5. OCPB的共同合同仍是：同一paired
-   fit19 rollout先后在`event x owner` q_pi evidence-logit与`owner = layer x family` compiler selector-angle坐标做
-   antithetic calibration，rank不获得语义。每个task的outcome surrogate与原完整functional/support loss共同反传；
-6. 若19个映射随后显示泛化限制，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
-7. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+1. OCPB v12 corrected compiler-binding已完成并关闭：matched train outcomes保持`10/8`，梯度尺度由错误macro2的`11.879`
+   回到`1.632`，但candidate pair cosine仍`.99586`、own retrieval仍`1/24`；fit/held support为`.96934/1.00303x`、
+   breadth仍`12/19、2/5`，较v11 macro1退化，故不跑held5、不进入`q_V`；
+2. 最早失效接口仍在Program-to-policy：privileged Program correction已有`.82561`的task差异，compiler却输出近共同LoRA。
+   当前source/shared preservation以响应距离实现，会把有益task-specific移动与有害漂移一起惩罚；selector-angle outcome credit
+   又不能直接识别replacement factor方向；
+3. 唯一active修正是OCPB v13 baseline-relative functional support barrier。保持同一v11 macro1初始化、相同paired seeds、
+   rank-mean compiler coordinate、Program/compiler容量与全部信息墙，只把source/shared无条件响应邻近改为“相对各自
+   expert-response baseline不退化”的hinge barrier；先做真实profile，再做一个matched formal macro并立即物化/审计；
+4. 若v13仍不能同时改善task-relative geometry与fit/held support，就不延长该曲线；再根据最早失败证据决定是否需要一个
+   第二fold、task-relative compiler方向机制或经审计的LIBERO-90映射扩容，不能用更多meta tasks掩盖fit映射本身未形成；
+5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

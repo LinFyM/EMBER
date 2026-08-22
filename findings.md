@@ -1158,3 +1158,29 @@ corrected rank-mean真实单task profile在clean pushed `7d77eb8`上复用原mac
 paired rollout seeds。两臂仍为`2/2` successes且replacement fraction与原perturbation一致；surrogate为`-.000381`、裁剪前
 梯度`2.08455`且finite，排除了16倍lift。首个profile暴露的support cache offset遗漏在optimizer update前退出，修复后临时目录
 均已删除；profile只解除formal运行门，不改变上述科学裁决。
+
+## 55. corrected compiler credit有效但未改善映射；support preservation的实现仍把有益偏移拉回shared
+
+OCPB v12从同一个v11 macro1 checkpoint完整恢复model、optimizer、scheduler、rank RNG和world6 topology，并通过
+`credit_macro_offset=1`复用原macro2的video、support panel、Rademacher perturbation、environment seed与policy-noise seed。
+正式两臂仍为`10/8` successes、mean progress `.31140/.27193`；除一个成功rollout因允许的数值差异在109而非110步终止外，
+task outcome pattern与replacement fractions保持一致。rank-mean修正使mean outcome surrogate从错误实现的`-.14340`回到
+`-.00896`，裁剪前梯度从`11.8792`回到`1.63196`，所以v12是有效、可裁决的compiler-binding实验。
+
+它没有改善最早科学接口。物化后candidate pair cosine仍为`.99586`，own-direct `.03972`低于nearest-other `.06186`，自身
+检索仍`1/24`；Program correction的pair cosine却为`.82561`。冻结308-panel audit中，fit candidate/shared为
+`.39272/.40514`、ratio `.96934`、breadth `12/19`；held为`.62623/.62434`、ratio `1.00303`、breadth `2/5`。相对保留的
+v11 macro1，fit/held ratio从`.96786/1.00171`退化，shared panel wins从155降到149。按逐级门不运行held5 closed loop、
+不轮fold、不扩meta、不启动`q_V`；继续相同macro也没有依据。
+
+代码级反查进一步收紧了原因。`policy_support_loss_from_response`一方面用candidate到successful experts的response error训练任务
+功能，另一方面把`candidate-source`和`candidate-shared`的响应距离直接作为“support preservation”损失。后两项不会区分
+有益task-specific移动与有害漂移；在shared已是强安全底座时，它们为近共同修正提供持续吸引力。与此同时OCPB
+`compiler_binding`的reward coordinate只扰动并监督38个selector angles，不能直接识别replacement factor方向；factor heads仍
+只由上述functional objective决定。这与“.82561的Program差异在compiler后变成.99586”一致。
+
+下一单变量不是调loss权重，而是改正support preservation的定义：保留同一Program、compiler、rank selector、v11 macro1
+初始化、paired seeds和outcome coordinate，把source/shared项改成baseline-relative functional barrier——只有candidate对own
+expert response比source或shared baseline更差时才惩罚，优于baseline的偏移不再被拉回。先用真实profile验证该barrier、factor
+gradient和信息墙，再重做一个matched corrected compiler macro并立即物化/审计。证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`。

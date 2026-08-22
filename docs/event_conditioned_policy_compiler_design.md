@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-22 **active design / implementation authority**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-23 **active design / implementation authority**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -910,7 +910,7 @@ template，只有full surface经过family A/B heads。于是head image从未学�
 冻结只读消融已经确认process Value不是dead path：其attention mass均值`.53913`，process-only仍有`9/19` own retrieval；失败
 发生在这个不连续的prior/full output coordinate。
 
-active **OCPB v23 Single-Surface Absolute Compiler（SSAC）**只改变这一主要结构变量：
+OCPB v23 **Single-Surface Absolute Compiler（SSAC）**只改变这一主要结构变量：
 
 1. 删除exact-template process gate；prior-only与full都经过同一target/rank attention、trunk与family-specific direct A/B heads；
 2. 固定visible Program、privileged `q_pi`与全部Program输入，compiler不能与Program共同旋转；
@@ -933,6 +933,36 @@ compiler-identification坐标，不作为参数进入checkpoint，也不提供he
 淹没full action/functional路径；依据同一profile将其一次性定为`.01`后，总compiler梯度约`19.96`，action LoRA-leaf梯度
 `.07717`与prior→shared loss`.65112`同时有效，冻结visible Program/`q_pi`梯度为0。该校准只建立两路径可共同优化的formal
 运行合同，不是以profile loss选方法；方法仍只由节点后的prior/full geometry与冻结support裁决。
+
+v23随后从clean pushed `ef7100b`完成114 visits/19 updates。compiler与FactorHeads梯度全程finite，固定Program与`q_pi`
+梯度为0；所以这是有效的single-surface检验，不是dead graph。结果仍未通过：full own retrieval只有`2/24`，full在fit/held
+相对shared为`1.13175/1.11069x`、breadth`4/19、0/5`；同一surface的prior更差，为`1.27744/1.21881x`、`0/19、0/5`。
+full虽然分别在15/19和4/5 tasks优于它自己的prior，却没有保住stable shared support，因此不进入held5 closed loop或`q_V`。
+
+冻结checkpoint的head-image定位排除了“先把width从256扩大”这一解释。stable shared在width256的target-factor最优子空间中几乎
+100%可表示；但v23的family-shared线性heads对q/v prior仍有约`.53--.56` relative residual，对full约`.96`。把同一hidden改为
+target-local readout后，prior residual降至约`.0003`，q/v full降至约`.21--.25`。这说明最早结构损失是18个q/v layer owners
+被一个family head抹平，而不是prior容量不足。另一方面，同一target-local线性head联合拟合prior/full仍分别残留约
+`.16--.20`与`.74--.76`，且实测process delta约等于一整套full LoRA；因此还必须把static与process内容在head之前形成连续、
+非线性的条件融合，不能只换38个线性head或在A/B空间相加两套adapter。正式证据见
+`docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
+
+active **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**据此只修正这两个相互耦合的最早接口：
+
+1. language与scene的76个static tokens独立做local attention；304个event/process tokens独立做presence-masked local
+   attention。没有process时process read严格为零，但prior/full仍调用同一个compiler；
+2. static read与process read先在每个target/rank内部做content-dependent interaction，再经过同一个非线性trunk。address/rank
+   query仍只控制读取与调制，不能在Program content为零时独立写出LoRA；
+3. q/v/action的最终A/B heads改为38个target-local、layer-resolved heads。它们仍按family确定输出形状和初始化规则，主干保持
+   shared，禁止全局Transformer任意混合targets；
+4. 从v23只迁移shape-compatible的shared compiler/Program权重，并把旧family head作为各target head的minimum-change起点；
+   随后只用fit19冻结prior Programs把target-local heads校准到同一个stable shared rank16 authority。该校准不读取held/validation/
+   test action或reward，不保存task table，也不是部署旁路；full仍必须由process-conditioned同一surface学出；
+5. v24仍只训练compiler并保持114 visits/19 updates首门。下一次support audit在一次panel execution中同时测full/prior，避免重复
+   加载六份PI0.5 worker；只有prior和full均恢复support且own mapping成立才进入held5。
+
+LR-SSC最终仍只输出一套complete rank16 LoRA。static/process是compiler内部的两个content reads，不是两条部署模型、两套
+FactorHeads或两个adapter；它们在非线性trunk之前融合，最终A/B由同一组target-local heads一次写出。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

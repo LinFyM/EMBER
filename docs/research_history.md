@@ -1099,6 +1099,24 @@ Program才经过direct A/B heads；这不是专家定义的同一个`D(P_lang,P_
 visible Program与`q_pi`，只训练一个同时承担prior shared support和full own-policy mapping的single-surface absolute compiler。
 证据：`docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`。
 
+### 3.57 OCPB v23证明同一direct surface仍会丢失layer与static/process policy坐标
+
+clean pushed detached `ef7100b`冻结visible Program与privileged `q_pi`，fit19每task在visit12099捕获一次Program后只训练
+compiler。114 visits/19 updates包含57个successful与18个verified-success learner action panels；39个failed learner panels
+不产生action gradient。compiler/FactorHead梯度mean为`4.48596/4.46896`，两个冻结模块梯度始终为0，mean update
+`1.252s`，峰值`22,990,815,744` bytes。
+
+同一checkpoint一次materialization同时保存24套full/prior LoRA。full candidate pair cosine为`.83977`，own/nearest-direct
+`.03196/.05191`，retrieval`2/24`。full 308-panel fit/held相对shared为`1.13175/1.11069x`、breadth`4/19、0/5`；prior为
+`1.27744/1.21881x`、`0/19、0/5`。故两臂都失败，不进入held5 closed loop或`q_V`。
+
+冻结hidden的只读SVD/ridge定位显示stable prior在width256中几乎完全可表示；family-shared q/v heads的prior/full residual约
+`.53--.56/.96`，target-local readout降至约`.0003/.21--.25`。但target-local同一个线性map联合拟合prior/full仍有
+`.16--.20/.74--.76` residual；同时process delta norm约等于完整full adapter。下一active v24因此保留一个complete-rank16
+compiler，但把static/process分开local read、在head前连续非线性融合，并使用38个target-local A/B heads；不扩大width、不扫
+小超参，也不把static与process变成两套adapter。证据：
+`docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

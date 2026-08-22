@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-22 **active — EMBER-ECP architecture implementation**。
+状态：2026-08-23 **active — EMBER-ECP architecture implementation**。
 
 唯一active design：`docs/event_conditioned_policy_compiler_design.md`。
 
@@ -252,8 +252,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   direct family A/B heads；冻结visible Program与`q_pi`，只训练compiler并同时锚定prior shared support和full own-policy功能；
 - [x] 完成v23真实单task双路径profile：两条功能路径、action leaf与compiler/FactorHead梯度均finite非零，冻结模块梯度为0；
   根据首轮真实梯度量级一次性校准prior权重后，update约1.43秒、峰值约22.80GB；
-- [ ] 从clean pushed frozen authority完成一个fit19 task-balanced有界节点及matched full/prior geometry/support；只有prior/full两条surface
-  同向成立才进入held5 oracle；
+- [x] 从clean pushed frozen authority完成v23 fit19 task-balanced 114-visit节点及matched full/prior geometry/support；两条surface
+  均未保留stable shared support，v23关闭且不进入held5 oracle；
+- [ ] 实现 **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**：static/process content独立local read并在head前连续
+  非线性融合；用38个target-local A/B heads保留layer correspondence；从v23迁移shared权重，并以fit19 prior hidden对stable
+  shared做minimum-change head calibration，不建立template bypass、task table或第二adapter；
+- [ ] 完成v24真实单task双路径profile、clean pushed 114-visit节点、一次执行同时得到full/prior的308-panel audit；只有prior/full
+  support与own mapping同向成立才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -316,11 +321,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 4. v22 direct-absolute free-Program formal/geometry/308-panel audit已经完成：process Value真实控制输出、own retrieval提高到
    `10/24`，但fit/held两边`0/19、0/5`胜过shared，故关闭且不进入held5或`q_V`；证据为
    `docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`；
-5. v23 SSAC实现与真实双路径profile已经完成：旧free-Program运行面已删除，同一direct A/B surface、固定fit19 `q_pi`
-   Program坐标和compiler-only所有权均接通；下一步从clean pushed frozen authority运行114 visits/19 updates，并分别审计
-   learned prior-only与full输出的matched geometry/support；
-6. v23只有在prior support与full own mapping同向改善后才接held5 oracle；若同一surface仍失败，先用固定Program/head-image
-   capacity证据决定是否扩大compiler width，而不回退bounded selector或扫LR/rank/seed/dtype；
-7. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
+5. v23 SSAC formal/full-prior materialization/两次308-panel audit均已完成并失败：full/prior在fit相对shared为
+   `1.13175/1.27744x`，held为`1.11069/1.21881x`；own retrieval仅`2/24`，故不接held5或`q_V`；
+6. 固定hidden capacity/ridge定位已完成：stable prior不是width256容量问题；最早损失是family-shared head抹去layer
+   correspondence，以及static/process共用一个fused read后整套重写adapter。v24 LR-SSC据此只修正这两个结构变量；
+7. v24先完成target-local head、static/process local read、continuous nonlinear fusion与fit19-only prior calibration；真实profile后
+   从clean pushed frozen authority运行114 visits/19 updates，并把full/prior合并到一次support audit execution；
+8. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
    只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

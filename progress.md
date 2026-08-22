@@ -1,6 +1,6 @@
 # EMBER Progress
 
-更新时间：2026-08-22。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
+更新时间：2026-08-23。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
 `findings.md`，完整历史见`docs/research_history.md`。
 
 ## Current authority and executable state
@@ -164,6 +164,20 @@
   `.651121`，compiler/FactorHead总梯度降到`19.96197/19.92703`且finite，visible Program与`q_pi`梯度均精确为0；update
   `1.427s`、峰值`22,796,661,248` bytes。该profile只解除clean pushed 6卡114-visit节点的运行门，不构成geometry/support
   或闭环性能证据。
+- v23 formal已经从clean pushed `ef7100b`在gpu02 physical`0,1,2,3,4,7`完成114 visits/19 updates；57个successful与18个
+  verified-success learner panels产生action gradient，39个failed learner panels保持action gradient为0。compiler/FactorHead
+  梯度mean为`4.48596/4.46896`，visible Program与`q_pi`梯度始终为0；mean update `1.252s`、峰值
+  `22,990,815,744` bytes。任务、optimizer、scheduler和6份rank RNG均完整，所有GPU已经释放。
+- v23同一checkpoint的一次materialization同时生成24套full/prior输出。full candidate pair cosine为`.83977`、own retrieval
+  `2/24`、own/nearest-direct `.03196/.05191`，geometry失败。308-panel full audit在fit/held相对shared为
+  `1.13175/1.11069x`、breadth`4/19、0/5`；prior audit更差，为`1.27744/1.21881x`、`0/19、0/5`。两条surface都优于source
+  的多数tasks，但都没有保留stable shared support，故v23关闭，不运行held5 rollout或`q_V`。
+- 冻结v23 hidden的只读ridge定位给出明确结构证据：width256对stable prior factor几乎100%可表示，因此不扩width；family-shared
+  q/v head对prior/full relative residual约`.53--.56/.96`，改成target-local后降至约`.0003/.21--.25`。但同一target-local
+  线性head联合拟合prior/full仍保留约`.16--.20/.74--.76` residual，且process delta幅度约等于整套full LoRA。当前active因果锁
+  因此转为 **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**：static/process独立local read、head前连续非线性
+  fusion、38个target-local A/B heads，并用fit19 prior hidden对stable shared做minimum-change初始化校准；仍只输出一套LoRA。
+  正式证据为`docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

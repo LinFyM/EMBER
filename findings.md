@@ -1366,3 +1366,26 @@ presence非零后才让direct A/B heads接管整套LoRA。固定heads从未被�
 projection也显示该image对gauge-canonical direct/shared平均都只覆盖约`.213` energy。下一结构变量必须先把prior/full放回
 同一direct head surface，并在固定Program坐标上同时训练prior support与full functional mapping；不能用更多free-Program steps、
 reward或小超参掩盖这个不连续接口。
+
+## 66. single surface不等于可识别surface：layer-shared readout与static/process融合共同丢失policy坐标
+
+OCPB v23从clean pushed `ef7100b`完成114 visits/19 updates。compiler与FactorHeads持续收到finite gradient，固定visible Program与
+`q_pi`梯度为0；prior functional moving mean由`.52635`降到`.39306`。所以v23确实检验了“固定Program坐标、同一个direct
+surface联合承担prior/full”，不能把失败归因于训练图未接通。
+
+结果没有达到policy support。full own retrieval只有`2/24`，fit/held response相对shared为`1.13175/1.11069x`、breadth
+`4/19、0/5`；prior更差，为`1.27744/1.21881x`、`0/19、0/5`。full在15/19 fit和4/5 held tasks优于它自己的prior，说明
+process不是完全无效；但两者都没有守住stable shared，故不运行held5闭环或`q_V`。process delta pair cosine为`.83813`，其norm
+分别是full/prior的`1.00361/1.17665x`：当前process不是在稳定静态坐标上作条件修正，而是近似重写整套adapter。
+
+head-image分析进一步分离了容量与坐标。对gauge-canonical targets做最优SVD时，width256几乎100%覆盖stable shared的q/v A/B；
+所以prior失败不是compiler width不足。使用真实冻结prior/full hidden做linear ridge时，一个family-shared q/v head的prior residual
+约`.53--.56`、full约`.96`；换成38个target-local heads后，prior约`.0003`，q/v full约`.21--.25`。这直接证明共享family head
+把18层不同数值坐标当成了同一个读出问题。q-B direct targets在width256只有`.71017`最优coverage，扩大到512/768/1024可到
+`.84360/.90413/.94048`，但那是layer correspondence修复后才可能成为的后续容量上限，不能解释当前prior崩坏。
+
+仅换target-local线性head仍不够：同一owner-local head联合拟合prior/full时，q/v prior residual仍约`.16--.20`，full仍约
+`.74--.76`。因此下一修正必须同时保持static policy read与process evidence read，在target/rank内部连续、非线性融合后才由
+同一个target-local head一次输出最终A/B。该结论否定的是v23的family-shared fused latent surface，不否定专家的fixed
+layer-/family-local compiler、complete rank16 LoRA或Program；也不授权A/B空间的第二adapter相加。正式证据：
+`docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。

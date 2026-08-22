@@ -25,7 +25,8 @@
   Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector替换；v9/v10又分别完成bounded selector与
   process-only Value裁决并关闭。当前唯一active后继是Stage 1 **OCPB v11**：复用v10 checkpoint、不重复228-visits，以
   fit19 task-equal success/BDDL progress交替校准`event x owner` Program binding和`layer x family` compiler binding，同时保留
-  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。
+  完整functional/support锚；不再围绕attention、query、rank、seed或loss权重做局部微调。macro1及其train24物化、308-panel
+  冻结审计已经完成，当前从同一clean pushed checkpoint精确续到macro2；尚未进入held5闭环、`q_V`或validation8。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -244,6 +245,15 @@
   分别从`.09684`变为`.09694/.09673`、从`.10581`变为`.09340/.13402`。该profile只证明真实simulator、两种credit坐标、
   functional anchor和反传接通，不作为性能证据；临时profile目录在记录后删除。下一步是完成formal materialization/evaluator
   兼容并从clean pushed authority运行首个task-equal fit19 macro。
+- OCPB v11 macro1已从clean pushed `86ed95b`在gpu01 physical `2,3,4,5,6,7`完成，明确排除prohibited physical0。
+  19个fit task各恰好提供一次配对credit，program-binding两臂success为`9/8`、mean progress为`.31140/.28509`，
+  `8/19` tasks产生非零advantage；一次macro耗时`277.44s`，峰值`16,464,732,672` bytes，裁剪前梯度`1.09043`且finite。
+  这些rollout只用于训练credit，不作为checkpoint性能分数。macro1随后为全部train24物化single rank16 LoRA：candidate跨task
+  cosine由v10的`.99641`小幅降到`.99616`，但own-direct仍为`.03983`、自身检索仍`1/24`，geometry门失败。同一308-panel
+  frozen audit中，fit candidate/shared为`.39212/.40514`、ratio `.96786`、breadth `12/19`；held为
+  `.62540/.62434`、ratio `1.00171`、breadth `2/5`。相对v10 aggregate在fit与held均小幅改善且未破坏breadth，但完整门仍失败；
+  因此不运行held5 oracle、不启动`q_V`，只继续已预注册且改变不同主因果坐标的macro2 compiler-binding。物化和审计均来自
+  同一detached clean authority；六个audit shard已经exit0，临时审计合同将在本轮相邻checkpoint裁决结束后删除。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

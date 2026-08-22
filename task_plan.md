@@ -167,6 +167,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [ ] 实现并裁决 **Stage 1 OCPB v11（Outcome-Calibrated Program--Policy Binding）**：从v10冻结checkpoint初始化，
   以task-equal fit19 success/BDDL progress分别校准`event x owner` privileged Program binding与`layer x family`
   compiler binding；每个macro仍同时使用完整multi-state functional/support锚，不读取held/validation/Test reward；
+- [x] 完成OCPB v11 retained实现、两坐标真实profile、formal macro1、train24物化与同一308-panel冻结审计；macro1使
+  fit/held candidate-to-shared从v10的`.96892/1.00285`小幅改善到`.96786/1.00171`，但breadth仍为`12/19、2/5`，
+  因而不进入`q_V`，只按已登记的交替坐标继续macro2；
 - [ ] 对v11相邻single checkpoints物化全部train24，并复跑同一308-panel frozen support与held5 oracle gate；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 

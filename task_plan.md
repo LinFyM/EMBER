@@ -176,9 +176,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   随后立即物化与复跑同一geometry/308-panel门；
 - [x] 对v10、v11 macro1与v12 corrected相邻single checkpoints物化全部train24并复跑同一308-panel frozen support；v12
   geometry与support早门失败，按逐级合同没有启动held5 oracle；
-- [ ] 实现OCPB v13的baseline-relative functional support barrier：只惩罚candidate相对source/shared已有expert-response
-  baseline的退化，不再把所有偏离source/shared的响应都当作损失；保持Program、compiler、rank、数据、paired seeds与outcome
-  coordinate不变，从同一v11 macro1 authority作一次matched corrected compiler-binding复验；
+- [x] 实现OCPB v13的baseline-relative functional support barrier：只惩罚candidate相对source/shared已有expert-response
+  baseline的退化，不再把所有偏离source/shared的响应都当作损失；替换v12 active config/schema且保留唯一运行面；
+- [ ] 保持Program、compiler、rank、数据、paired seeds与outcome coordinate不变，从同一v11 macro1 authority作一次matched
+  corrected compiler-binding profile/formal复验，并立即物化与复跑同一geometry/308-panel门；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

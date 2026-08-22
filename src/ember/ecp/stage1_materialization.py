@@ -48,7 +48,7 @@ from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 PROJECTION_SCHEMA = "ember_ecp_stage1_process_value_selector_projection_v10"
 PROJECTION_KIND = "ecp_stage1_privileged_process_value_selector_compiler"
-OUTCOME_PROJECTION_SCHEMA = "ember_ecp_stage1_outcome_binding_projection_v12"
+OUTCOME_PROJECTION_SCHEMA = "ember_ecp_stage1_outcome_binding_projection_v13"
 OUTCOME_PROJECTION_KIND = "ecp_stage1_privileged_outcome_binding_compiler"
 
 
@@ -70,7 +70,7 @@ def resolve_stage1_materialization_config(
     path: Path,
 ) -> Stage1MaterializationConfig:
     raw = read_json(path)
-    if raw.get("schema_version") == "ember_ecp_stage1_outcome_binding_v12":
+    if raw.get("schema_version") == "ember_ecp_stage1_outcome_binding_v13":
         outcome = load_outcome_config(path)
         base = load_stage1_config(
             outcome_repo_authority(outcome, "base_stage1_config")

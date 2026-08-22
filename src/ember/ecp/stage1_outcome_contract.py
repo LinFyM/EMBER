@@ -70,7 +70,12 @@ def _run_contract(
             ),
         },
         "outcome_calibration": dict(runtime.config["outcome_calibration"]),
-        "functional_anchor": dict(runtime.base_config["objective"]),
+        "functional_anchor": {
+            **dict(runtime.base_config["objective"]),
+            "support_preservation": runtime.config["outcome_calibration"][
+                "support_preservation"
+            ],
+        },
         "environment": dict(runtime.config["environment"]),
         "optimization": dict(runtime.config["optimization"]),
         "information_wall": dict(runtime.config["information_wall"]),

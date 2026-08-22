@@ -243,6 +243,9 @@ def _task_update(
             candidate_state=candidate,
             contract=runtime.contract,
             cached=cached,
+            preservation=str(
+                runtime.config["outcome_calibration"]["support_preservation"]
+            ),
         )
         functional = ecp_stage1_loss(
             member=output.member_compilation,

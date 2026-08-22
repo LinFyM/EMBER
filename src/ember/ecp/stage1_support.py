@@ -23,6 +23,8 @@ SUPPORT_CHANNELS = (
     "learner_policy_minus_source",
     "learner_shared_minus_source",
 )
+SUPPORT_PRESERVATION_RESPONSE_PROXIMITY = "response_proximity"
+SUPPORT_PRESERVATION_BASELINE_BARRIER = "baseline_relative_response_barrier"
 
 
 @dataclass(frozen=True)
@@ -354,6 +356,7 @@ def policy_support_distillation_loss(
     candidate_state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     cached: CachedPolicySupportPanel,
+    preservation: str = SUPPORT_PRESERVATION_RESPONSE_PROXIMITY,
 ) -> PolicySupportLoss:
     panel = cached.panel
     candidate = pi05_flow_response(
@@ -363,11 +366,18 @@ def policy_support_distillation_loss(
         cached.batch,
         policy_seed=panel.policy_seed,
     ).float()
-    return policy_support_loss_from_response(candidate=candidate, panel=panel)
+    return policy_support_loss_from_response(
+        candidate=candidate,
+        panel=panel,
+        preservation=preservation,
+    )
 
 
 def policy_support_loss_from_response(
-    *, candidate: torch.Tensor, panel: PolicySupportPanel
+    *,
+    candidate: torch.Tensor,
+    panel: PolicySupportPanel,
+    preservation: str = SUPPORT_PRESERVATION_RESPONSE_PROXIMITY,
 ) -> PolicySupportLoss:
     """Score a frozen response against one cached multi-policy support panel."""
 
@@ -377,21 +387,33 @@ def policy_support_loss_from_response(
     member_weights = panel.expert_weights.to(candidate).clamp_min(1e-4)
     member_weights = member_weights / member_weights.sum()
     expert_energy = (experts - source[None]).square().mean(dim=(1, 2, 3))
-    expert_error = (experts - candidate[None]).square().mean(dim=(1, 2, 3))
-    response = (member_weights * expert_error / expert_energy.clamp_min(1e-8)).sum()
-    response = response * float(panel.outcome_weight)
+
+    def expert_response_error(value: torch.Tensor) -> torch.Tensor:
+        error = (experts - value[None]).square().mean(dim=(1, 2, 3))
+        normalized = member_weights * error / expert_energy.clamp_min(1e-8)
+        return normalized.sum() * float(panel.outcome_weight)
+
+    response = expert_response_error(candidate)
     consensus = torch.einsum("m,mbhd->bhd", member_weights, experts)
     normalization = (consensus - source).square().mean().clamp_min(1e-8)
-    source_support = (
-        (candidate - source).square().mean()
-        / normalization
-        * float(panel.source_support_weight)
-    )
-    shared_support = (
-        (candidate - shared).square().mean()
-        / normalization
-        * float(panel.shared_support_weight)
-    )
+    if preservation == SUPPORT_PRESERVATION_RESPONSE_PROXIMITY:
+        source_support = (
+            (candidate - source).square().mean()
+            / normalization
+            * float(panel.source_support_weight)
+        )
+        shared_support = (
+            (candidate - shared).square().mean()
+            / normalization
+            * float(panel.shared_support_weight)
+        )
+    elif preservation == SUPPORT_PRESERVATION_BASELINE_BARRIER:
+        source_support = torch.relu(response - expert_response_error(source))
+        shared_support = torch.relu(response - expert_response_error(shared))
+        source_support = source_support * float(panel.source_support_weight)
+        shared_support = shared_support * float(panel.shared_support_weight)
+    else:
+        raise ValueError(f"unsupported policy-support preservation: {preservation}")
     disagreement = torch.einsum(
         "m,mbhd->bhd", member_weights, (experts - consensus[None]).square()
     ).mean() / normalization

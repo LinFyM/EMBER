@@ -232,7 +232,7 @@ def _load_initialization(
         or weights.stat().st_size
         != int(manifest.get("files", {}).get(weights.name, {}).get("bytes", -1))
     ):
-        raise ValueError("ECP v10 initialization authority changed")
+        raise ValueError("OCPB initialization authority changed")
     model.load_state_dict(load_file(str(weights), device=str(device)), strict=True)
     return {
         "checkpoint": str(checkpoint.resolve()),
@@ -555,7 +555,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v12.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v13.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

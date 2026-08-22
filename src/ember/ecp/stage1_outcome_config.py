@@ -9,8 +9,8 @@ from ember.ecp.stage1_training import REPO_ROOT
 from ember.pi05_source_checkpoint import read_json
 
 
-RUN_SCHEMA = "ember_ecp_stage1_outcome_binding_run_v12"
-STAGE = "stage1_outcome_binding_v12"
+RUN_SCHEMA = "ember_ecp_stage1_outcome_binding_run_v13"
+STAGE = "stage1_outcome_binding_v13"
 
 
 def outcome_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -31,13 +31,15 @@ def load_outcome_config(path: Path) -> dict[str, Any]:
     optimization = config.get("optimization", {})
     profile = config.get("profile_defaults", {})
     if (
-        config.get("schema_version") != "ember_ecp_stage1_outcome_binding_v12"
+        config.get("schema_version") != "ember_ecp_stage1_outcome_binding_v13"
         or config.get("status") != "active_stage1_outcome_binding"
         or tuple(outcome.get("coordinate_sequence", ()))
         != ("compiler_binding",)
         or set(outcome.get("sigma", {})) != {"compiler_binding"}
         or set(outcome.get("surrogate_weight", {})) != {"compiler_binding"}
         or int(outcome.get("credit_macro_offset", -1)) != 1
+        or outcome.get("support_preservation")
+        != "baseline_relative_response_barrier"
         or int(outcome.get("lanes_per_arm", -1)) != 2
         or int(optimization.get("world_size", -1)) != 6
         or int(optimization.get("task_count", -1)) != 19

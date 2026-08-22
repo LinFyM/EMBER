@@ -276,6 +276,11 @@
   `.82561` task差异，compiler仍压成近共同LoRA；现有source/shared响应邻近项又会惩罚所有task-specific移动，而outcome
   selector-angle credit不直接识别replacement factor方向。正式证据见
   `docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`；一次性audit config已删除。
+- OCPB v13 retained替换已完成。`policy_support_loss_from_response`新增显式baseline-relative barrier：candidate优于source/shared
+  的own-expert response baseline时preservation loss精确为0，退化时才产生hinge和非零梯度；sealed v10路径仍默认使用历史
+  response-proximity语义。唯一active outcome config/schema、run contract和materialization resolver已从v12替换为v13，Program、
+  compiler、rank selector、初始化、paired seeds、优化器与信息墙均未改变。20项`tests/ecp/test_stage1.py`通过，py_compile、
+  pyflakes、JSON与diff检查通过；下一节点只做同一v11 macro1上的真实profile与matched formal复验。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

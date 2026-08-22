@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_outcome_binding_v12",
+  "schema_version": "ember_ecp_stage1_outcome_binding_v13",
   "status": "active_stage1_outcome_binding",
-  "purpose": "Corrected shared-rank compiler-binding calibration initialized from the frozen OCPB v11 macro1 checkpoint.",
+  "purpose": "Matched compiler-binding calibration with baseline-relative source/shared functional support preservation, initialized from the frozen OCPB v11 macro1 checkpoint.",
   "authorities": {
     "base_stage1_config": "configs/pi05_ecp_stage1_process_value_selector_v10.json",
     "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v11_fold0_m1_r6_86ed95b_gpu01p234567_20260822/checkpoints/macro_00000001"
@@ -47,7 +47,8 @@
     "policy_noise_seed_root": 2026082703,
     "video_visit_root": 12000,
     "support_visit_root": 24000,
-    "functional_anchor": "the complete v10 successful/learner policy-response, source/shared support, prior and locality objective on every task",
+    "support_preservation": "baseline_relative_response_barrier",
+    "functional_anchor": "the complete v10 successful/learner expert-response objective with baseline-relative source/shared preservation, prior counterfactual and locality on every task",
     "rank_semantics": false
   },
   "environment": {

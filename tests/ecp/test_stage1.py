@@ -33,6 +33,7 @@ from ember.ecp.stage1_objective import (
 )
 from ember.ecp.stage1_support import (
     PolicySupportPanel,
+    SUPPORT_PRESERVATION_BASELINE_BARRIER,
     policy_support_loss_from_response,
 )
 from ember.ecp.stage1_support_audit import summarize_policy_support_audit
@@ -169,11 +170,11 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_outcome_materialization_uses_v12_cursor_and_v10_model_contract() -> None:
+def test_outcome_materialization_uses_v13_cursor_and_v10_model_contract() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v12.json"
+        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v13.json"
     )
-    assert resolved.stage == "stage1_outcome_binding_v12"
+    assert resolved.stage == "stage1_outcome_binding_v13"
     assert resolved.cursor_name == "outcome_macro"
     assert resolved.checkpoint_cursors == (1,)
     assert resolved.projection_schema == OUTCOME_PROJECTION_SCHEMA
@@ -570,6 +571,46 @@ def test_policy_support_response_baselines_share_one_normalization() -> None:
     torch.testing.assert_close(source_loss.response, torch.tensor(0.25))
     torch.testing.assert_close(shared_loss.response, torch.tensor(0.0625))
     torch.testing.assert_close(expert_loss.response, torch.tensor(0.0))
+
+
+def test_policy_support_barrier_only_penalizes_baseline_regression() -> None:
+    source = torch.zeros(2, 3, 4)
+    expert = torch.ones(1, 2, 3, 4)
+    panel = PolicySupportPanel(
+        panel_id=0,
+        kind="successful",
+        trajectory_path=Path("unused"),
+        trajectory_bytes=0,
+        selected_indices=(0, 1),
+        policy_seed=1,
+        source_response=source,
+        shared_response=torch.full_like(source, 0.5),
+        expert_responses=expert,
+        expert_weights=torch.ones(1),
+        outcome_weight=0.25,
+        source_support_weight=1.0,
+        shared_support_weight=1.0,
+        learner_success=None,
+    )
+    improved = policy_support_loss_from_response(
+        candidate=torch.full_like(source, 0.75),
+        panel=panel,
+        preservation=SUPPORT_PRESERVATION_BASELINE_BARRIER,
+    )
+    torch.testing.assert_close(improved.source_support, torch.tensor(0.0))
+    torch.testing.assert_close(improved.shared_support, torch.tensor(0.0))
+
+    regressed_response = torch.full_like(source, -1.0, requires_grad=True)
+    regressed = policy_support_loss_from_response(
+        candidate=regressed_response,
+        panel=panel,
+        preservation=SUPPORT_PRESERVATION_BASELINE_BARRIER,
+    )
+    torch.testing.assert_close(regressed.source_support, torch.tensor(0.75))
+    torch.testing.assert_close(regressed.shared_support, torch.tensor(0.9375))
+    (regressed.source_support + regressed.shared_support).backward()
+    assert regressed_response.grad is not None
+    assert float(regressed_response.grad.abs().sum()) > 0
 
 
 def test_policy_support_audit_gate_is_task_equal_across_fit_and_held() -> None:

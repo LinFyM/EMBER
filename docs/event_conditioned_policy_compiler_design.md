@@ -646,6 +646,10 @@ coordinate、v11 macro1初始化和原macro2全部paired seeds均不变。这是
 rank或seed sweep。先做真实single-task profile；随后只运行一个matched corrected compiler macro并立即物化/复跑同一geometry与
 308-panel门。若仍不能同时改善task-relative geometry和fit/held support，不延长该曲线，也不先用LIBERO-90掩盖fit映射未形成。
 
+retained实现将旧response-proximity保留为sealed v10历史路径的默认语义；v13 outcome入口显式选择baseline barrier，run contract
+记录该选择。v12 active config/schema/materialization resolver已由v13单路径替换，20项Stage 1聚焦CPU合同覆盖barrier正反例、
+非零退化梯度、rank-mean coordinate、信息墙与v13 materialization cursor。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

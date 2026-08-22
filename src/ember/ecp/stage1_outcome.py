@@ -82,7 +82,7 @@ def outcome_coordinate(
         value = value * output.teacher.program.presence[0, :, None, None]
         return value.reshape(1, -1)
     if coordinate == COMPILER_BINDING:
-        return output.consensus_compilation.rank_angles.float().sum(-1)
+        return output.consensus_compilation.rank_angles.float().mean(-1)
     raise RewardProtocolError("invalid ECP outcome coordinate")
 
 

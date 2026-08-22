@@ -45,8 +45,6 @@ from ember.ecp.stage1_support import (
 )
 from ember.ecp.stage1_training import (
     REPO_ROOT,
-    RUN_SCHEMA as V10_RUN_SCHEMA,
-    STAGE as V10_STAGE,
     load_stage1_authorities,
     load_stage1_config,
     stage1_asset_authority,
@@ -213,18 +211,23 @@ def _load_initialization(
     checkpoint: Path,
     model: ECPStage1Model,
     device: torch.device,
+    initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     weights = checkpoint / "ecp.safetensors"
     run_contract = read_json(checkpoint.parent.parent / "run_contract.json")
+    expected_stage = str(initialization["stage"])
+    expected_schema = str(initialization["run_contract_schema"])
+    expected_macro = int(initialization["checkpoint_macro"])
     if (
         manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or manifest.get("stage") != V10_STAGE
-        or manifest.get("run_contract_schema") != V10_RUN_SCHEMA
-        or int(manifest.get("next_macro", -1)) != 228
+        or manifest.get("stage") != expected_stage
+        or manifest.get("run_contract_schema") != expected_schema
+        or int(manifest.get("next_macro", -1)) != expected_macro
+        or checkpoint_macro(checkpoint) != expected_macro
         or int(manifest.get("world_size", -1)) != 6
-        or run_contract.get("schema_version") != V10_RUN_SCHEMA
-        or run_contract.get("stage") != V10_STAGE
+        or run_contract.get("schema_version") != expected_schema
+        or run_contract.get("stage") != expected_stage
         or not weights.is_file()
         or weights.stat().st_size
         != int(manifest.get("files", {}).get(weights.name, {}).get("bytes", -1))
@@ -236,7 +239,12 @@ def _load_initialization(
         "weights": str(weights.resolve()),
         "weights_bytes": weights.stat().st_size,
         "training_commit": str(run_contract["git"]["commit"]),
-        "task_visits": 228,
+        "stage": expected_stage,
+        "run_contract_schema": expected_schema,
+        "checkpoint_macro": expected_macro,
+        "restore_optimizer_and_rank_rng_in_formal": bool(
+            initialization["restore_optimizer_and_rank_rng_in_formal"]
+        ),
     }
 
 
@@ -293,6 +301,7 @@ def prepare_runtime(
         ),
         model=authorities.model,
         device=context.device,
+        initialization=config["initialization"],
     )
     tasks = load_stage1_tasks(
         target_manifest=stage1_repo_authority(base_config, "target_manifest"),
@@ -378,7 +387,25 @@ def prepare_runtime(
         context, rendezvous_root=args.output_dir.parent
     )
     expected_metrics = 0
-    if args.resume is not None:
+    if (
+        args.resume is None
+        and args.mode == "formal"
+        and initialization["restore_optimizer_and_rank_rng_in_formal"]
+    ):
+        loaded, _ = load_ecp_checkpoint(
+            checkpoint=outcome_asset_authority(
+                config, "initialization_checkpoint", args.asset_root
+            ),
+            stage=str(initialization["stage"]),
+            context=context,
+            model=authorities.model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            run_contract_schema=str(initialization["run_contract_schema"]),
+        )
+        if loaded != int(initialization["checkpoint_macro"]):
+            raise ValueError("OCPB fork initialization cursor changed")
+    elif args.resume is not None:
         loaded, expected_metrics = load_ecp_checkpoint(
             checkpoint=args.resume,
             stage=STAGE,
@@ -465,6 +492,7 @@ def train(args: argparse.Namespace) -> None:
                 runtime.metrics_rows += 1
                 summary = {name: row[name] for name in (
                     "macro",
+                    "credit_macro",
                     "coordinate",
                     "plus_successes",
                     "minus_successes",
@@ -519,7 +547,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v11.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v12.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

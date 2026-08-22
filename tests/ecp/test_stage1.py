@@ -169,13 +169,13 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_outcome_materialization_uses_v11_cursor_and_v10_model_contract() -> None:
+def test_outcome_materialization_uses_v12_cursor_and_v10_model_contract() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v11.json"
+        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v12.json"
     )
-    assert resolved.stage == "stage1_outcome_binding_v11"
+    assert resolved.stage == "stage1_outcome_binding_v12"
     assert resolved.cursor_name == "outcome_macro"
-    assert resolved.checkpoint_cursors == (1, 2, 3, 4)
+    assert resolved.checkpoint_cursors == (1,)
     assert resolved.projection_schema == OUTCOME_PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
         "ember_ecp_stage1_process_value_selector_v10"
@@ -237,7 +237,7 @@ def test_outcome_binding_offsets_preserve_structured_coordinates() -> None:
     contract, owners, template = _contract_and_states()
     model = ECPStage1Model(owners, contract, template)
     for selector in model.compiler.rank_selector.values():
-        selector.weight.data.normal_(std=0.1)
+        selector.weight.data.zero_()
     encoded = _encoded()
     evidence = _expert_evidence(template)
     baseline = model(encoded, evidence, torch.zeros(2, dtype=torch.long))
@@ -270,6 +270,10 @@ def test_outcome_binding_offsets_preserve_structured_coordinates() -> None:
     torch.testing.assert_close(delta[:, 7], torch.full_like(delta[:, 7], 0.1))
     torch.testing.assert_close(delta[:, :7], torch.zeros_like(delta[:, :7]))
     torch.testing.assert_close(delta[:, 8:], torch.zeros_like(delta[:, 8:]))
+    coordinate_delta = outcome_coordinate(
+        changed_compiler, COMPILER_BINDING
+    ) - outcome_coordinate(baseline, COMPILER_BINDING)
+    torch.testing.assert_close(coordinate_delta, owner.squeeze(-1))
 
 
 def test_structured_outcome_coordinates_reach_q_pi_and_compiler() -> None:

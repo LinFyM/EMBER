@@ -1,10 +1,16 @@
 {
-  "schema_version": "ember_ecp_stage1_outcome_binding_v11",
+  "schema_version": "ember_ecp_stage1_outcome_binding_v12",
   "status": "active_stage1_outcome_binding",
-  "purpose": "Task-equal fit19 success/progress calibration of the privileged Program-to-policy binding, initialized from the frozen v10 functional warm start.",
+  "purpose": "Corrected shared-rank compiler-binding calibration initialized from the frozen OCPB v11 macro1 checkpoint.",
   "authorities": {
     "base_stage1_config": "configs/pi05_ecp_stage1_process_value_selector_v10.json",
-    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_process_value_selector_fold0_tv228_r6_13dfc25_gpu01p123456_20260822/checkpoints/macro_00000228"
+    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v11_fold0_m1_r6_86ed95b_gpu01p234567_20260822/checkpoints/macro_00000001"
+  },
+  "initialization": {
+    "stage": "stage1_outcome_binding_v11",
+    "run_contract_schema": "ember_ecp_stage1_outcome_binding_run_v11",
+    "checkpoint_macro": 1,
+    "restore_optimizer_and_rank_rng_in_formal": true
   },
   "roles": {
     "fit_task_ordinals": [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23],
@@ -21,17 +27,15 @@
     "deployment_output": "one complete 38-target rank16 LoRA"
   },
   "outcome_calibration": {
-    "coordinate_sequence": ["program_binding", "compiler_binding", "program_binding", "compiler_binding"],
+    "coordinate_sequence": ["compiler_binding"],
+    "credit_macro_offset": 1,
     "coordinate_contract": {
-      "program_binding": "one Rademacher offset per visible event and target owner, shared across successful members",
-      "compiler_binding": "one Rademacher selector-angle offset per target owner, shared across all 16 numeric ranks"
+      "compiler_binding": "one Rademacher selector-angle offset per target owner, shared across all 16 numeric ranks and lifted through their mean"
     },
     "sigma": {
-      "program_binding": 0.5,
       "compiler_binding": 0.1
     },
     "surrogate_weight": {
-      "program_binding": 0.02,
       "compiler_binding": 0.01
     },
     "success_weight": 1.0,
@@ -58,9 +62,9 @@
     "precision": "bfloat16",
     "world_size": 6,
     "task_count": 19,
-    "total_macros": 4,
-    "checkpoint_macros": [1, 2, 3, 4],
-    "stage_stop_macros": [1, 2, 3, 4],
+    "total_macros": 1,
+    "checkpoint_macros": [1],
+    "stage_stop_macros": [1],
     "optimizer": {
       "name": "AdamW",
       "learning_rate": 0.00002,
@@ -75,11 +79,11 @@
   "profile_defaults": {
     "world_size": 1,
     "task_count": 1,
-    "total_macros": 2,
+    "total_macros": 1,
     "checkpoint_macros": []
   },
   "materialization": {
-    "allowed_checkpoint_macros": [1, 2, 3, 4],
+    "allowed_checkpoint_macros": [1],
     "video_visit": 12099,
     "visible_video_count": 2,
     "output": "one privileged q_pi consensus rank16 LoRA per task"

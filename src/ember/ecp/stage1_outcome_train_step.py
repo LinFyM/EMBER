@@ -120,17 +120,19 @@ def _task_update(
     runtime: "ECPStage1OutcomeRuntime",
     *,
     task: Any,
-    macro: int,
+    credit_index: int,
     coordinate: str,
 ) -> dict[str, Any]:
     if runtime.env_pool is None:
         raise ValueError("OCPB environment pool is unavailable")
     started = time.monotonic()
-    packed, encoded, evidence = _encode_task(runtime, task=task, macro=macro)
+    packed, encoded, evidence = _encode_task(
+        runtime, task=task, macro=credit_index
+    )
     outcome = runtime.config["outcome_calibration"]
     sigma = float(outcome["sigma"][coordinate])
     epsilon_seed = reward_credit_update_seed(
-        int(outcome["update_seed_root"]), task.global_task_id, macro
+        int(outcome["update_seed_root"]), task.global_task_id, credit_index
     )
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         baseline = runtime.model(encoded, evidence, packed.video_group_ids)
@@ -175,7 +177,7 @@ def _task_update(
             minus_output.consensus_compilation.rank_replacement_fraction
         )
     reward_task = runtime.reward_tasks[task.ordinal]
-    rollout_cursors = (macro * 2, macro * 2 + 1)
+    rollout_cursors = (credit_index * 2, credit_index * 2 + 1)
     environment_seeds = tuple(
         reward_credit_environment_seed(
             int(outcome["environment_seed_root"]),
@@ -228,7 +230,7 @@ def _task_update(
     )
     support_task = runtime.support_bank.task(task.ordinal)
     panel = support_task.panel_for_visit(
-        int(outcome["support_visit_root"]) + macro
+        int(outcome["support_visit_root"]) + credit_index
     )
     cached = runtime.support_panels[(task.ordinal, panel.panel_id)]
     with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -272,6 +274,7 @@ def _task_update(
         "suite": task.suite,
         "task_id": task.task_id,
         "coordinate": coordinate,
+        "credit_macro": credit_index + 1,
         "demo_indices": list(packed.demo_indices),
         "epsilon_seed": epsilon_seed,
         "active_coordinate_values": int(
@@ -341,9 +344,17 @@ def run_outcome_macro(
     coordinate = str(
         runtime.config["outcome_calibration"]["coordinate_sequence"][macro]
     )
+    credit_index = macro + int(
+        runtime.config["outcome_calibration"]["credit_macro_offset"]
+    )
     runtime.optimizer.zero_grad(set_to_none=True)
     local = [
-        _task_update(runtime, task=task, macro=macro, coordinate=coordinate)
+        _task_update(
+            runtime,
+            task=task,
+            credit_index=credit_index,
+            coordinate=coordinate,
+        )
         for task in runtime.local_tasks
     ]
     gradient_norm = _sync_gradients(runtime)
@@ -358,6 +369,7 @@ def run_outcome_macro(
         raise ValueError("OCPB macro lost task-equal coverage")
     return {
         "macro": completed,
+        "credit_macro": credit_index + 1,
         "coordinate": coordinate,
         "plus_successes": sum(int(row["plus_successes"]) for row in records),
         "minus_successes": sum(int(row["minus_successes"]) for row in records),

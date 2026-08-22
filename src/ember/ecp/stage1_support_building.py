@@ -22,13 +22,13 @@ from ember.ecp.stage1_support import (
     LearnerOccupancySource,
     load_learner_occupancy_sources,
 )
-from ember.ecp.stage1_training import (
+from ember.ecp.stage1_config import (
     REPO_ROOT,
-    load_stage1_authorities,
     load_stage1_config,
     stage1_asset_authority,
     stage1_repo_authority,
 )
+from ember.ecp.stage1_training import load_stage1_authorities
 from ember.functional_adaptation.phase_alignment import arc_length_phase_indices
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_eval_contract import (

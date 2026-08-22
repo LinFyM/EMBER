@@ -22,6 +22,15 @@ from ember.ecp.contracts import build_target_owners
 from ember.ecp.observer_authority import FrozenObserverAuthority, load_frozen_observer_authority
 from ember.ecp.stage0_training import load_stage0_config, stage0_source_authority
 from ember.ecp.stage1 import ECPStage1Model
+from ember.ecp.stage1_config import (
+    REPO_ROOT,
+    RUN_SCHEMA,
+    STAGE,
+    load_stage1_config,
+    load_stage1_initialization,
+    stage1_asset_authority,
+    stage1_repo_authority,
+)
 from ember.ecp.stage1_data import (
     ECPStage1EvidenceBank,
     ECPStage1Task,
@@ -55,11 +64,6 @@ from ember.writer.data import RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_process_value_selector_run_v10"
-STAGE = "stage1_process_value_selector_v10"
-
-
 @dataclass
 class ECPStage1Runtime:
     args: argparse.Namespace
@@ -81,6 +85,7 @@ class ECPStage1Runtime:
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
+    initialization: Mapping[str, Any]
     start_task_visits: int
     stop_after_task_visits: int
     total_task_visits: int
@@ -108,74 +113,11 @@ class ECPStage1Inputs:
     schedule: tuple[tuple[int, int], ...]
 
 
-def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
-    path = Path(str(config["authorities"][name]))
-    if path.is_absolute():
-        return path
-    return REPO_ROOT / path
-
-
-def stage1_asset_authority(
-    config: Mapping[str, Any], name: str, asset_root: Path
-) -> Path:
-    path = Path(str(config["authorities"][name]))
-    if path.is_absolute():
-        return path
-    return asset_root / path
-
-
-def load_stage1_config(path: Path) -> dict[str, Any]:
-    config = read_json(path)
-    if (
-        config.get("schema_version")
-        != "ember_ecp_stage1_process_value_selector_v10"
-        or config.get("status")
-        not in {
-            "active_stage1_process_value_selector",
-            "sealed_stage1_process_value_selector_authority",
-        }
-        or config.get("model", {}).get("hard_rank_partition") is not False
-        or config.get("model", {}).get("query_to_output_shortcut") is not False
-        or "query_content_modulation" not in config.get("model", {})
-        or tuple(config.get("policy_support", {}).get("channels", ()))
-        != (
-            "successful_expert_minus_source",
-            "successful_shared_minus_source",
-            "learner_expert_minus_source",
-            "learner_policy_minus_source",
-            "learner_shared_minus_source",
-        )
-        or int(config.get("policy_support", {}).get("horizon_basis", -1)) != 4
-        or float(config.get("model", {}).get("replacement_head_init_multiplier", -1))
-        != 0.1
-        or float(config.get("model", {}).get("selector_max_angle_radians", -1))
-        != math.pi / 2.0
-        or "process-value-only bounded rank-one retraction"
-        not in config.get("model", {}).get("full_process_surface", "")
-        or config.get("information_wall", {}).get("validation_action_or_reward_reads")
-        != 0
-        or config.get("information_wall", {}).get("test_action_or_reward_reads")
-        != 0
-        or any(
-            float(config.get("objective", {}).get("weights", {}).get(name, -1))
-            != 0.0
-            for name in (
-                "member_effective_update",
-                "consensus_effective_update",
-                "member_canonical_factor",
-                "consensus_canonical_factor",
-            )
-        )
-    ):
-        raise ValueError("unsupported ECP Stage 1 contract")
-    return config
-
-
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
-    if config.get("status") != "active_stage1_process_value_selector":
-        raise ValueError("sealed ECP Stage 1 authority cannot start new training")
+    if config.get("status") != "active_stage1_owner_response_bootstrap":
+        raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
         total = int(config["optimization"]["total_task_visits"])
@@ -295,6 +237,7 @@ def _build_contract(
             "path": str(support_manifest.resolve()),
             "bytes": support_manifest.stat().st_size,
         },
+        "initialization": dict(runtime.initialization),
         "tasks": [
             {
                 "ordinal": task.ordinal,
@@ -492,6 +435,7 @@ def _load_policy_support(
         evidence_bank=inputs.evidence_bank,
         task_ordinals=needed,
         device=context.device,
+        require_owner_responses=True,
     )
 
 
@@ -527,6 +471,14 @@ def prepare_runtime(
     total, stop, checkpoints = _runtime_limits(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
     authorities = load_stage1_authorities(args, config, context)
+    initialization = load_stage1_initialization(
+        checkpoint=stage1_asset_authority(
+            config, "initialization_checkpoint", args.asset_root
+        ),
+        model=authorities.model,
+        device=context.device,
+        initialization=config["initialization"],
+    )
     inputs = _load_inputs(
         args,
         config=config,
@@ -601,6 +553,7 @@ def prepare_runtime(
         trainable_parameters=tuple(authorities.model.parameters()),
         optimizer=optimizer,
         scheduler=scheduler,
+        initialization=initialization,
         start_task_visits=start,
         stop_after_task_visits=stop,
         total_task_visits=total,
@@ -668,7 +621,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_process_value_selector_v10.json",
+        / "configs/pi05_ecp_stage1_owner_response_bootstrap_v15.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

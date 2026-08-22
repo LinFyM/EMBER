@@ -308,6 +308,12 @@
   下一canonical训练面从v13 model weights与fresh optimizer启动response-only task-balanced阶段，保留v13 barrier、Program、
   compiler、rank和v2 bank；先跑114 visits/19 updates并只物化geometry。只有task-relative方向实质移动才继续至最多228 visits、
   full support audit和一个matched outcome macro，避免重复昂贵rollout或小超参扫描。
+- v15 retained实现已经完成并收敛为唯一Stage 1运行面。`train_ecp_stage1.py`现在从v13只加载model weights、创建fresh optimizer，
+  按world6每update访问6个fit tasks并在114-visit边界保证每task恰好6 visits；每个candidate forward同时计算最终flow、v13
+  baseline barrier和owner-resolved response，metrics显式记录owner active/disagreement与compiler factor-head gradient。首个formal
+  上限固定为114 visits/19 updates，只有geometry移动才允许exact-resume至228。旧v10/v14 active configs、outcome trainer/
+  contract/train-step/config四模块和旧script均已删除，materializer只接受v15 checkpoint；历史由Git与formal artifacts保留。
+  21项Stage 1聚焦合同、py_compile、pyflakes、JSON与diff检查通过；真实GPU profile尚未运行，当前不能声称科学改进。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

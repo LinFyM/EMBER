@@ -699,6 +699,12 @@ task-balanced Stage 1短节点是228 visits/38 updates。专家要求的multi-st
 这不是延长v14的昂贵rollout曲线或扫学习率，而是把专家Stage 1中的policy-response identification与closed-loop credit按成本和
 因果职责分开。baseline-relative barrier、raw A/B零目标、held/validation/Test信息墙及single-LoRA合同全部不变。
 
+retained实现已将这一路径收敛回唯一`train_ecp_stage1.py`入口和一个v15完整config：从v13只载入model weights，fresh
+optimizer按114-visit task-balance block更新；每visit的同一candidate policy forward同时产生final-flow与owner response，
+factor heads、selector、`q_pi`和共享compiler接收同一task loss。checkpoint cursor重新使用task visits而非outcome macro，
+materializer只接受114/228节点。旧v10/v14 active configs与outcome专用orchestration已从active tree删除；未来若geometry/support
+通过，closed-loop outcome作为同一Stage 1 trainer的后续阶段接回，不恢复第二套可执行Writer路径。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

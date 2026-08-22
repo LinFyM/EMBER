@@ -17,12 +17,12 @@ from ember.ecp.stage1_support import (
     policy_support_distillation_loss,
     policy_support_loss_from_response,
 )
-from ember.ecp.stage1_training import (
+from ember.ecp.stage1_config import (
     REPO_ROOT,
-    load_stage1_authorities,
     stage1_asset_authority,
     stage1_repo_authority,
 )
+from ember.ecp.stage1_training import load_stage1_authorities
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import (
     git_state,

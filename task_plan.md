@@ -187,6 +187,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 构建一次v2 frozen support bank，完成真实单task profile并确认owner loss、可微compiler路径、显存与信息墙；
 - [x] 从v13冻结checkpoint运行一个task-equal v14 outcome macro，立即物化并复跑同一geometry/308-panel门；一更新
   checkpoint未改善geometry或support，不能进入held5或`q_V`；
+- [x] 将v14 outcome-only入口收敛回唯一Stage 1 trainer，实现v15 task-balanced owner-response bootstrap；删除两套退役
+  active configs、四个outcome orchestration模块与旧入口，保留一个canonical训练/物化运行面；
 - [ ] 将专家要求的multi-state owner-resolved policy-response distillation从昂贵rollout macro中拆成task-balanced优化阶段：
   从v13 model weights与fresh optimizer运行首个114-visits/19-updates信息节点，保持v13 barrier与全部Program/compiler结构；
 - [ ] 114节点先物化geometry；只有task-relative方向出现实质移动才继续到最多228 visits并运行冻结support audit，随后才允许

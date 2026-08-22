@@ -9,12 +9,12 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.compiler import select_compiled_state
-from ember.ecp.stage1_objective import ECPStage1Loss
+from ember.ecp.policy_response import OwnerResolvedResponseLoss
 from ember.ecp.stage1_data import pack_stage1_videos
-from ember.ecp.stage1_objective import ecp_stage1_loss
+from ember.ecp.stage1_objective import ECPStage1Loss, ecp_stage1_loss
 from ember.ecp.stage1_support import (
     PolicySupportLoss,
-    policy_support_distillation_loss,
+    policy_support_owner_distillation_loss,
 )
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "policy_support", {
+    return "owner_response_bootstrap", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -58,17 +58,20 @@ def _policy_support_loss(
     task_visit: int,
     candidate: dict[str, torch.Tensor],
     task_visits_after_update: int,
-) -> tuple[PolicySupportLoss, int, str]:
+) -> tuple[PolicySupportLoss, OwnerResolvedResponseLoss, int, str]:
     del task_visits_after_update
     panel = runtime.support_bank.task(task_ordinal).panel_for_visit(task_visit)
     cached = runtime.support_panels[(task_ordinal, panel.panel_id)]
-    loss = policy_support_distillation_loss(
+    support, owner = policy_support_owner_distillation_loss(
         policy=runtime.policy,
         candidate_state=candidate,
         contract=runtime.contract,
         cached=cached,
+        projector=runtime.observer.model.encoder.observer.projector,
+        horizon_basis=int(runtime.config["policy_support"]["horizon_basis"]),
+        preservation=str(runtime.config["objective"]["support_preservation"]),
     )
-    return loss, panel.panel_id, panel.kind
+    return support, owner, panel.panel_id, panel.kind
 
 
 def _local_record(
@@ -79,6 +82,8 @@ def _local_record(
     demo_indices: tuple[int, ...],
     video_offsets: torch.Tensor,
     loss: ECPStage1Loss,
+    total: torch.Tensor,
+    owner_response: OwnerResolvedResponseLoss,
     output: Any,
     panel_id: int,
     panel_kind: str,
@@ -98,7 +103,15 @@ def _local_record(
         "successful_members": len(runtime.evidence_bank.member_indices(task.ordinal)),
         "support_panel_id": panel_id,
         "support_panel_kind": panel_kind,
-        "total": float(loss.total.detach()),
+        "total": float(total.detach()),
+        "functional_total": float(loss.total.detach()),
+        "owner_response": float(owner_response.loss.detach()),
+        "owner_response_disagreement": float(
+            owner_response.normalized_disagreement.detach()
+        ),
+        "owner_response_active_fraction": float(
+            owner_response.active_owner_fraction.detach()
+        ),
         "member_effective_update": float(loss.member_effective_update.detach()),
         "consensus_effective_update": float(
             loss.consensus_effective_update.detach()
@@ -175,7 +188,7 @@ def run_stage1_update(
             output.consensus_compilation.state, 0
         )
         task_visits = cursor + runtime.context.world_size
-        support_loss, panel_id, panel_kind = _policy_support_loss(
+        support_loss, owner_response, panel_id, panel_kind = _policy_support_loss(
             runtime,
             task_ordinal=task_ordinal,
             task_visit=task_visit,
@@ -195,10 +208,22 @@ def run_stage1_update(
             policy_support=support_loss,
             weights=objective_weights,
         )
-    if not bool(torch.isfinite(loss.total)):
+        total = loss.total + float(
+            runtime.config["objective"]["owner_response_distillation_weight"]
+        ) * owner_response.loss
+    if not bool(torch.isfinite(total)):
         raise RuntimeError(f"non-finite ECP Stage 1 loss at task visit {task_visits}")
-    loss.total.backward()
+    total.backward()
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
+    factor_gradient = sum(
+        parameter.grad.float().square().sum()
+        for heads in (
+            runtime.model.compiler.factor_a,
+            runtime.model.compiler.factor_b,
+        )
+        for parameter in heads.parameters()
+        if parameter.grad is not None
+    ).sqrt()
     clip = float(
         runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
     )
@@ -216,6 +241,8 @@ def run_stage1_update(
         demo_indices=packed.demo_indices,
         video_offsets=packed.video_offsets,
         loss=loss,
+        total=total,
+        owner_response=owner_response,
         output=output,
         panel_id=panel_id,
         panel_kind=panel_kind,
@@ -223,6 +250,10 @@ def run_stage1_update(
     records = _gather(local, runtime.context.world_size)
     metric_names = (
         "total",
+        "functional_total",
+        "owner_response",
+        "owner_response_disagreement",
+        "owner_response_active_fraction",
         "member_effective_update",
         "consensus_effective_update",
         "member_canonical_factor",
@@ -253,6 +284,7 @@ def run_stage1_update(
             for name in metric_names
         },
         "gradient_norm_before_clip": float(gradient_norm),
+        "factor_head_gradient_norm_before_clip": float(factor_gradient),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "update_seconds": time.monotonic() - tick,
         "elapsed_seconds": time.monotonic() - run_started,

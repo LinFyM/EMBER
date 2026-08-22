@@ -17,7 +17,7 @@ from ember.ecp.stage1_data import (
 )
 from ember.ecp.stage1 import ECPStage1Model
 from ember.ecp.stage1_materialization import (
-    OUTCOME_PROJECTION_SCHEMA,
+    PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
 )
 from ember.ecp.stage1_outcome import (
@@ -153,9 +153,9 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
             "pair_seed": 17,
         },
         "optimization": {
-            "visits_per_fit_task": 24,
+            "visits_per_fit_task": 12,
             "task_balance_block_rounds": 6,
-            "stage_stop_task_visits": [228, 456],
+            "stage_stop_task_visits": [114, 228],
             "seed": 23,
         },
     }
@@ -163,24 +163,24 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         config=config,
         tasks=tasks,
         world_size=6,
-        total_task_visits=456,
+        total_task_visits=228,
         mode="formal",
     )
-    for prefix, expected in ((114, 6), (228, 12), (456, 24)):
+    for prefix, expected in ((114, 6), (228, 12)):
         counts = Counter(ordinal for ordinal, _ in schedule[:prefix])
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_outcome_materialization_uses_v14_cursor_and_v10_model_contract() -> None:
+def test_owner_response_materialization_uses_v15_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v14.json"
+        REPO_ROOT / "configs/pi05_ecp_stage1_owner_response_bootstrap_v15.json"
     )
-    assert resolved.stage == "stage1_outcome_binding_v14"
-    assert resolved.cursor_name == "outcome_macro"
-    assert resolved.checkpoint_cursors == (1,)
-    assert resolved.projection_schema == OUTCOME_PROJECTION_SCHEMA
+    assert resolved.stage == "stage1_owner_response_bootstrap_v15"
+    assert resolved.cursor_name == "task_visits"
+    assert resolved.checkpoint_cursors == (114, 228)
+    assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_process_value_selector_v10"
+        "ember_ecp_stage1_owner_response_bootstrap_v15"
     )
 
 

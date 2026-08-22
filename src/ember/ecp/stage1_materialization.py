@@ -25,31 +25,23 @@ from ember.ecp.stage1_objective import (
     exact_effective_update_loss,
 )
 from ember.ecp.stage1_support import load_policy_support_bank
-from ember.ecp.stage1_outcome_config import (
-    RUN_SCHEMA as OUTCOME_RUN_SCHEMA,
-    STAGE as OUTCOME_STAGE,
-    load_outcome_config,
-    outcome_repo_authority,
-)
-from ember.ecp.stage1_training import (
+from ember.ecp.stage1_config import (
     REPO_ROOT,
     RUN_SCHEMA,
     STAGE,
-    load_stage1_authorities,
     load_stage1_config,
     stage1_asset_authority,
     stage1_repo_authority,
 )
+from ember.ecp.stage1_training import load_stage1_authorities
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_process_value_selector_projection_v10"
-PROJECTION_KIND = "ecp_stage1_privileged_process_value_selector_compiler"
-OUTCOME_PROJECTION_SCHEMA = "ember_ecp_stage1_outcome_binding_projection_v14"
-OUTCOME_PROJECTION_KIND = "ecp_stage1_privileged_outcome_binding_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_owner_response_bootstrap_projection_v15"
+PROJECTION_KIND = "ecp_stage1_privileged_owner_response_bootstrap_compiler"
 
 
 @dataclass(frozen=True)
@@ -69,29 +61,6 @@ class Stage1MaterializationConfig:
 def resolve_stage1_materialization_config(
     path: Path,
 ) -> Stage1MaterializationConfig:
-    raw = read_json(path)
-    if raw.get("schema_version") == "ember_ecp_stage1_outcome_binding_v14":
-        outcome = load_outcome_config(path)
-        base = load_stage1_config(
-            outcome_repo_authority(outcome, "base_stage1_config")
-        )
-        return Stage1MaterializationConfig(
-            base=base,
-            stage=OUTCOME_STAGE,
-            run_schema=OUTCOME_RUN_SCHEMA,
-            seed=int(outcome["optimization"]["seed"]),
-            checkpoint_cursors=tuple(
-                int(value)
-                for value in outcome["materialization"][
-                    "allowed_checkpoint_macros"
-                ]
-            ),
-            cursor_name="outcome_macro",
-            settings=outcome["materialization"],
-            projection_schema=OUTCOME_PROJECTION_SCHEMA,
-            projection_kind=OUTCOME_PROJECTION_KIND,
-            objective_phase="owner_resolved_outcome_calibrated_policy_support",
-        )
     base = load_stage1_config(path)
     return Stage1MaterializationConfig(
         base=base,
@@ -100,13 +69,15 @@ def resolve_stage1_materialization_config(
         seed=int(base["optimization"]["seed"]),
         checkpoint_cursors=tuple(
             int(value)
-            for value in base["optimization"]["checkpoint_task_visits"]
+            for value in base["materialization"][
+                "allowed_checkpoint_task_visits"
+            ]
         ),
         cursor_name="task_visits",
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="policy_support",
+        objective_phase="task_balanced_owner_response_bootstrap",
     )
 
 
@@ -587,7 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_process_value_selector_v10.json",
+        / "configs/pi05_ecp_stage1_owner_response_bootstrap_v15.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

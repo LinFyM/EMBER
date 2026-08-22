@@ -1244,3 +1244,27 @@ successful-policy等价类。联合geometry/support门失败，不能用outcome 
 gauge-invariant局部activation effect `B_j(A_j x_j^{ref})`。它保留owner与horizon，只约束expert adapter在被访问子空间上的功能，
 不会要求复制任意factor gauge；其余v13 barrier、Program/compiler、schedule和联合门保持不变。正式证据：
 `docs/evidence/ecp_20260822/stage1_owner_response_bootstrap_v15_gate.json`。
+
+## 59. owner-local activation effect能形成弱task检索，但孤立局部等价不保证完整policy组合
+
+v16在同一detached source target input上直接监督38个LoRA targets的`B(Ax_ref)`，从v13 model weights与fresh optimizer完成
+228 visits/38 updates。target-local目标不是dead graph：loss由前114的`1.69620`降到后114的`1.31481`，首个successful panel
+上的own MSE由v13`.48016`降到114节点`.35668`和228节点`.25057`；cosine retrieval从`1/24`提高到`5/24、11/24`。
+candidate跨task effective pair cosine也由v13`.99595`降到`.94932`。因此真正target-local的功能标签比v15累计hidden标签更能
+传递task差异，不能把这项结果写成“局部effect完全无信息”。
+
+但它没有组成成功策略。shared-subtracted effect显示direct expert correction的跨task pair cosine为`.82316`，v16 candidate仍为
+`.97657`；candidate对own expert correction cosine虽有`.87419`，却低于nearest-other`.87516`，自身检索仅`2/24`。其幅度也只到
+expert correction的`.49176x`，即主要形成一个跨task共同的stable-prior到expert半程插值。raw effective-BA own/nearest仍为
+`.03873/.05976`、retrieval`1/24`。
+
+冻结308-panel结果给出更强反证：fit candidate/shared从v13`.96741x`退到`1.08581x`，breadth仅`2/19`；held从
+`1.00168x`退到`1.08815x`，`0/5` task优于shared；shared panel wins由155降到85。训练后半段successful、learner与shared
+barrier也同时恶化。故继续相同local-effect曲线不能由loss下降授权，matched outcome、held5和`q_V`均不启动。
+
+最早接口不是局部方向完全错误，而是**孤立target effect与38-target组合policy之间仍有缺口**：`B_j(A_jx_j^{ref})`在冻结source
+输入上给每个head分配局部方向，却不约束上游改变后下游输入如何变化，也不直接优化最终action target。下一主要变量因此复用v16
+已经获得的task discrimination，不从头重复训练；只在successful或verified-success跨episode train action panels上，以冻结PI0.5
+的exact flow-matching loss计算完整generated LoRA的leaf gradient并反传`q_pi`/compiler。failed learner actions不作oracle，
+local effect降为结构锚，v13 barrier继续保护source/shared。该路径直接检验policy composition，仍不重建raw A/B，也不向deployment
+加入action。正式证据：`docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`。

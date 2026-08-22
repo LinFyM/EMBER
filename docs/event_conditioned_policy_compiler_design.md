@@ -728,6 +728,36 @@ noise/time和输入合同上计算局部effect；member disagreement与outcome�
 q_pi、compiler容量、rank16、114/228 task-balanced schedule与联合geometry/support门不变；只有该门通过后才接回一个
 matched closed-loop outcome macro。
 
+v16现已完成。它确实建立了比v15更强的target-local task信号：own MSE由v13`.48016`降到`.25057`，cosine retrieval由
+`1/24`升到`11/24`，candidate pair cosine降到`.94932`。但shared-subtracted candidate correction仍有`.97657`跨task
+pair cosine，而expert correction为`.82316`；candidate幅度只有expert correction的`.49176x`。更重要的是308-panel
+fit/held candidate-to-shared退到`1.08581/1.08815x`、breadth`2/19、0/5`。所以`B(Ax_ref)`不是无信息目标，但**孤立
+target effect不足以定义38-target组合policy**；v16不续训、不接outcome、held5或`q_V`。
+
+唯一active后继称为 **OCPB v17 action-grounded composed-policy recovery**。它复用v16已经形成的task-discriminative model
+weights，但因训练合同改变而创建fresh optimizer；每个visit仍由相同language、correct action-hidden videos和train-only
+`q_pi`生成一套完整LoRA，再在同task不同episode的policy batch上计算冻结PI0.5原生flow-matching loss：
+
+\[
+\mathcal L_{act}
+=
+\mathbb E_{a,\epsilon,t}
+\left\|
+v_{\Delta\theta(P)}(x_t,L,I,q)- (\epsilon-a)
+\right\|^2.
+\]
+
+policy与source参数继续完全冻结；先把generated LoRA作为detached leaves求exact gradient，再按链式法则反传`q_pi`、compiler和
+FactorHeads，不保留完整policy参数梯度。action target只来自fit19 successful expert occupancy或verified-success learner
+occupancy，并与教学视频跨episode；failed learner trajectory的action不能冒充恢复oracle。held5、validation8和Test8 actions仍
+为零gradient/零读取。
+
+v16 target-local effect不再承担主要policy目标，只作为owner/family结构锚；v13 baseline-relative barrier继续保护source/shared，
+successful-member final-flow与set uncertainty继续保留。该阶段先做一个真实单task profile，确认exact action loss、LoRA-leaf到
+FactorHead梯度、显存和吞吐，再运行一个bounded task-balanced节点。只有action loss、task discrimination和冻结support共同
+改善，才允许held5 oracle；如果action loss下降而support继续恶化，就关闭当前Program/compiler mapping，而不是靠继续训练或
+小权重扫描解释。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode
@@ -826,7 +856,8 @@ bank及其运行时panel；`stage1_objective.py`、`stage1_train_step.py`、`sta
 一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
 现有`expert_manifold` evaluator继续拥有闭环执行。已完成的OCPB outcome实现由Git和formal artifacts保存，不在active tree保留
 第二套orchestration；通用paired trajectory score仍由`reward/credit.py`拥有。当前唯一Stage 1训练入口为
-`train_ecp_stage1.py`，先完成无simulator的v16 target-local identification；只有联合geometry/support门通过后，才在同一
+`train_ecp_stage1.py`；v17在该入口中复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，不新增第二个
+policy-loss实现或平行Writer。只有action/geometry/support联合门通过后，才在同一
 canonical Stage 1生命周期接回一个matched outcome macro，不恢复平行Writer或退役入口。
 
 生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1

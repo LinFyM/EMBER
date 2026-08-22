@@ -194,11 +194,17 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 114节点先物化geometry；task-relative方向出现实质移动后exact-resume到228 visits并完成冻结support audit。最终
   pair cosine降至`.98727`，但own retrieval仍`1/24`，fit/held support退到`.97253/1.02171x`，因此联合门失败且不运行
   outcome-calibration、held5或`q_V`；
-- [ ] 实现 **OCPB v16 owner-local activation-effect distillation**：在真实successful/learner occupancy的同一冻结source target
+- [x] 实现 **OCPB v16 owner-local activation-effect distillation**：在真实successful/learner occupancy的同一冻结source target
   input上，直接匹配gauge-invariant的`B(Ax_ref)`局部功能增量，保留完整owner/horizon结构；不再把可被所有上游targets共同改变的下游hidden
   当作“对应owner”目标，不读取raw A/B；
-- [ ] 从v13 authority用同一114/228 task-balanced节点裁决v16；只有own-direct、retrieval与同一冻结support共同改善，才接回一个
-  matched outcome-calibration macro并进入held5 oracle；
+- [x] 从v13 authority完成同一114/228 task-balanced裁决：target-local cosine retrieval由v13 `1/24`提高到`11/24`，但
+  candidate correction仍比expert correction显著更task-common，308-panel fit/held相对shared退到`1.08581/1.08815x`与
+  `2/19、0/5` breadth；因此v16关闭，不接outcome、held5或`q_V`；
+- [ ] 实现 **OCPB v17 action-grounded composed-policy recovery**：复用v16已形成的task-discrimination model weights并创建fresh
+  optimizer，对successful或verified-success跨episode action panel直接计算冻结PI0.5的exact flow-matching loss及LoRA leaf gradient，
+  再反传到`q_pi`/compiler；failed learner action不作oracle，v16 local effect与v13 barrier只作结构/support锚；
+- [ ] 用真实单task profile确认action loss、LoRA-leaf到FactorHead梯度、显存和吞吐，再运行一个bounded task-balanced节点；只有
+  exact action loss、task discrimination与同一308-panel frozen support共同改善，才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -251,14 +257,16 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v15已完成并关闭：228 visits把candidate pair cosine从v13`.99595`降到`.98727`，但own retrieval仍`1/24`，fit/held
-   candidate-to-shared退到`.97253/1.02171x`且held breadth降到`1/5`；不接outcome macro、held5或`q_V`；
-2. 唯一active后继为OCPB v16 owner-local activation-effect distillation。保留v13 barrier、Program、`q_pi`、compiler、
-   rank16和114/228 schedule，只把可被上游多targets共同改变的owner hidden目标替换为同一detached source input上的
-   target-local `B(Ax_ref)`；
-3. 当前先构建一次v3 frozen support bank并做真实单task profile，确认38个真实PI0.5 target输入、局部effect梯度、显存和吞吐；
-   随后从v13 model weights与fresh optimizer运行114 visits并物化24-task geometry；
-4. 只有own-direct、retrieval与candidate dispersion同向实质改善才exact-resume到228并运行同一308-panel audit；geometry与
-   support共同成立后，才接一个matched outcome-calibration macro和held5 oracle；
+1. v16已完整裁决并关闭：local-effect MSE由v13`.48016`降到`.25057`、cosine retrieval提高到`11/24`，但candidate
+   correction pair cosine仍`.97657`而expert为`.82316`，说明主要学到约半程的task-common prior→expert插值；
+2. 同一308-panel audit的fit/held candidate-to-shared为`1.08581/1.08815x`、breadth仅`2/19、0/5`，比v13与v15都差；
+   不续local-effect曲线，不接outcome macro、held5或`q_V`；正式证据为
+   `docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`；
+3. 唯一active后继为OCPB v17 action-grounded composed-policy recovery。它不重训v16已获得的task discrimination，而从v16
+   model weights创建fresh optimizer；successful/verified-success panel的真实train action通过冻结PI0.5 exact policy loss
+   给完整38-target LoRA组合提供直接梯度，failed learner action不作监督；
+4. v17先做单task真实profile，再做一个bounded task-balanced checkpoint和同一物化/冻结support门。local effect只保留为
+   低权重target-local锚，v13 barrier继续保护source/shared；只有composed action loss、task discrimination和support同向改善，
+   才运行held5 oracle；
 5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

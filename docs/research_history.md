@@ -960,6 +960,29 @@ candidate-to-shared为`.97253/1.02171x`、breadth`13/19、1/5`，shared panel wi
 multi-state occupancy、member disagreement和v13 barrier，不恢复raw A/B target。证据：
 `docs/evidence/ecp_20260822/stage1_owner_response_bootstrap_v15_gate.json`。
 
+### 3.50 OCPB v16建立局部task信号但破坏完整policy support
+
+clean pushed `cd96b42`先在gpu01 physical `1--6`并行生成v3 support bank，覆盖24 tasks、188 successful与120 learner
+panels，并为每个panel保存38个detached source target inputs和successful-member `B(Ax_ref)` effects；task payload共
+688,985,254 bytes，validation/Test action或reward读取均为0。真实task1 profile的local loss为`2.83512`、active owner
+fraction`.97368`、FactorHead梯度`4.13349`、2.32秒、峰值16.40 GB。
+
+同一commit从v13 model weights、fresh AdamW完成228 visits/38 updates，每个fit task恰好12 visits。local loss由前后两个
+114-visit block的`1.69620→1.31481`；目标对首个successful panel的own MSE由v13`.48016`降到`.25057`，cosine retrieval
+由`1/24`升至`11/24`。24-task candidate pair cosine也降至`.94932`，说明局部功能标签真实打破了部分跨task坍缩。
+
+然而candidate shared-subtracted correction pair cosine仍为`.97657`，而expert为`.82316`；candidate只走到expert correction
+约`.49176x`幅度，own correction cosine`.87419`仍低于nearest-other`.87516`。raw effective-BA own/nearest为
+`.03873/.05976`、retrieval`1/24`。完整308-panel audit中fit/held candidate-to-shared为`1.08581/1.08815x`、breadth
+`2/19、0/5`，shared panel wins仅85，均显著差于v13与v15。v16因此不promote、不续相同local curve，也不运行outcome、held5、
+fold rotation或`q_V`。
+
+该结果否定的是“匹配冻结source输入上的孤立target effect足以定义完整compiler策略”，不是target-local功能标签本身。它能提供
+head-local task方向，却不能约束38个target改变后相互影响的下游输入与最终action。后继保留v16 model weights而fresh optimizer，
+以successful/verified-success跨episode train actions上的exact PI0.5 flow-matching loss作为完整组合policy梯度；failed learner
+action不作oracle，local effect与v13 barrier只作锚。证据：
+`docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

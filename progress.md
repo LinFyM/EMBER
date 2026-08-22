@@ -33,8 +33,12 @@
   `13/19、2/5`，因此不promote、不运行held5或`q_V`。随后 **v15 task-balanced owner-response bootstrap** 已完整裁决：从v13
   model weights与fresh optimizer完成228 visits/38 updates，candidate pair cosine持续降到`.98727`，但own retrieval仍`1/24`；
   308-panel fit/held support退到`.97253/1.02171x`，breadth为`13/19、1/5`。v15因此关闭，不接outcome macro、held5或`q_V`。
-  当前唯一active后继是把监督从“可被上游多个targets共同改变的下游owner hidden”改为同一冻结source target input上的
-  target-local、gauge-invariant `B(Ax_ref)` activation effect，直接识别每个compiler head应产生的局部功能方向。
+  **OCPB v16 owner-local activation-effect distillation**也已完成v3 bank、真实profile、114/228 task-balanced训练、两次
+  24-task物化与308-panel冻结审计。它把target-local cosine retrieval从v13的`1/24`提高到`11/24`，却使fit/held
+  candidate-to-shared退到`1.08581/1.08815x`且breadth只有`2/19、0/5`，故v16关闭。当前唯一active后继为
+  **OCPB v17 action-grounded composed-policy recovery**：复用v16 model weights建立fresh optimizer，用successful或
+  verified-success跨episode train actions上的exact PI0.5 flow-matching loss直接训练完整LoRA组合；failed learner action不作
+  oracle，v16 local effect与v13 barrier只保留为结构/support锚。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -334,7 +338,22 @@
   用4个正交DCT horizon basis保存detached reference，并在线性等价下直接计算各successful member与candidate的`B(Ax_ref)`；
   `stage1_support*`只接受含该payload的v3 bank，唯一`train_ecp_stage1.py`同时保留final-flow barrier并增加target-local loss。
   退役v15 config、owner-hidden可微路径与v1/v2 active bank兼容已删除；focused ECP测试、py_compile、JSON与diff检查已通过。
-  当前尚未把实现通过写成科学结果；下一节点仍是clean pushed authority上的v3 bank、真实单task profile和114-visits geometry门。
+  clean pushed `cd96b42`随后在gpu01 physical `1--6`并行构建v3 bank：24 tasks、188 successful + 120 learner panels、
+  688,985,254 bytes task payload；prohibited physical0未使用。真实task1 profile的local loss为`2.83512`、active owner
+  fraction`.97368`、Writer/FactorHead梯度`78.617/4.1335`、2.32秒、峰值16.40 GB，确认图和局部梯度均有效。
+- v16从v13 model weights与fresh optimizer完成228 visits/38 updates，每个fit task恰好12 visits。local loss由前114的
+  `1.69620`降到后114的`1.31481`；目标对candidate确实有持续作用。24-task candidate pair cosine从114的`.98552`降到
+  228的`.94932`，objective-aligned local cosine retrieval由v13 `1/24`依次到`5/24、11/24`，own MSE由`.48016`降到
+  `.35668/.25057`。因此v16不是dead graph，也不能简单写成训练不足。
+- 这一移动没有组成可用policy。228节点raw effective-BA own/nearest仍为`.03873/.05976`、retrieval`1/24`；更直接的
+  shared-subtracted诊断显示expert correction pair cosine为`.82316`，candidate仍`.97657`，candidate只走到expert correction
+  约`.49176x`幅度。完整308-panel audit中fit candidate/shared=`.43990/.40514=1.08581x`、breadth`2/19`；held为
+  `.67937/.62434=1.08815x`、breadth`0/5`，shared panel wins从v13的155降到85。后半段successful/learner/shared functional
+  项也同时恶化，说明孤立`B(Ax_ref)`可分配局部方向，却不能保证38个target在改变后的下游输入上组合成成功策略。
+- v16联合门失败，故不续相同local-effect曲线、不运行matched outcome macro、held5、fold rotation或`q_V`。下一主要变量
+  不是contrastive小项或LR/rank扫描，而是复用现有v16 task discrimination，在successful/verified-success跨episode action
+  panel上用冻结PI0.5 exact flow-matching loss取得完整组合policy的直接LoRA leaf gradient；failed learner action继续排除。
+  正式证据见`docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

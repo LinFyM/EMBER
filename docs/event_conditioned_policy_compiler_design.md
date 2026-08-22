@@ -845,6 +845,11 @@ structural anchor；每步显式记录compiler/FactorHead梯度并要求`q_pi`/v
 video visit12099，与v13 historical authority形成真正matched geometry/support对照。v19的active config与三个outcome
 runtime模块已删除；其formal artifact与Git仍保留历史证据。
 
+clean pushed `a1689ee`的真实单task profile确认这一运行图已接通：exact action LoRA-leaf、FactorHead和
+compiler裁剪前梯度分别为`.129426/.431188/7.62951`，`q_pi`/visible Program梯度精确为0；单次完整
+update 2.80秒，峰值显存16,385,350,144 bytes。它是formal 114-visit节点的运行门，不替代geometry/support
+或closed-loop裁决。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

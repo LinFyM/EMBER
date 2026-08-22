@@ -108,6 +108,10 @@
   active tree删除，Stage 1恢复为`stage1_training.py` + `stage1_train_step.py`一个trainer；相比v19运行面净减少约350行。当前
   55项Stage 0/1、reward与expert-manifold聚焦CPU合同已通过，下一步是在非prohibited A40上运行真实单task
   profile，不把机制smoke写成formal结论。
+- clean pushed `a1689ee`的v20真实单task profile已在gpu01物理卡6通过，prohibited物理卡0未使用。exact
+  action supervision激活，LoRA-leaf/FactorHead/compiler裁剪前梯度分别为`.129426/.431188/7.62951`，
+  privileged `q_pi`与visible Program梯度精确为0；完整update为2.80秒，峰值显存16,385,350,144 bytes。该结果
+  只证明compiler-only真实图、所有权和显存合同接通，授权114-visit formal节点，不是闭环性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

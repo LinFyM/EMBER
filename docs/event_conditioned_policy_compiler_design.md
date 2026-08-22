@@ -782,6 +782,17 @@ LoRA图反传，不向compiler增加第二套head或adapter。exact action gradi
 successful/learner policy response、local activation、source/shared barrier、prior counterfactual和Program locality继续提供结构锚。
 formal每个macro覆盖fit19各一次并只做一个等权optimizer update，首个bounded节点至少含两个macros。
 
+首个真实single-task paired profile已确认上述图完整接通：38/38 owner方向均active，两个严格配对init分别给出相反的
+`plus-only`与`minus-only` success，因成功效率差异产生非零antithetic coordinate gradient，且LoRA leaf能够反传到
+FactorHeads。profile也暴露了一个formal前必须修正的尺度问题：旧selector-coordinate outcome的`.01` surrogate multiplier
+不适用于这里已经除以`2\sigma`的标准有限差分reward estimator；它把outcome leaf norm压到`.002038`，而定义proposal的
+action leaf norm为`.12304`，使新增closed-loop目标几乎只是名义接线。v18 canonical因此不继承这个历史超参，也不做标量扫；
+使用`1.0`保留estimator本身的自然尺度，再以现有global gradient clipping处理optimizer步长。该变更必须经过一次matched
+single-task profile确认finite gradient和显存后，才授权fit19 formal。matched profile现已通过：保持task、videos、paired init与
+全部RNG不变时，outcome leaf norm由`.002038`严格变为`.20380`，surrogate由`-.000166`变为`-.01662`；FactorHead与总裁剪前
+gradient仅为`1.36716/4.78533`且finite，峰值显存仍为`16,443,782,144` bytes。因此`1.0`成为v18唯一canonical尺度，fit19
+bounded节点已获运行授权。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

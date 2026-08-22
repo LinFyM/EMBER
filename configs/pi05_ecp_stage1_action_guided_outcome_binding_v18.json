@@ -164,7 +164,7 @@
     "proposal_coordinate": "exact_action_loss_negative_gradient_per_owner_ab_pair",
     "direction_normalization": "joint A/B L2 unit action descent rescaled to each base owner pair L2 norm",
     "relative_factor_sigma": 0.05,
-    "leaf_gradient_weight": 0.01,
+    "leaf_gradient_weight": 1.0,
     "minimum_active_owners": 38,
     "lanes_per_arm": 2,
     "success_weight": 1.0,

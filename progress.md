@@ -55,7 +55,16 @@
   L2归一为相同`.05`相对扰动；两条paired simulator lanes的success、BDDL peak progress和成功效率只决定这些方向的符号与幅度，
   projected loss gradient直接穿过完整candidate LoRA反传compiler/FactorHeads。v17 direct action-loss梯度不再继续推模型，successful/
   learner support仍交替作为结构锚。旧v17 config、visit-step trainer和program/selector offset接口已删除；单一Stage 1入口按macro
-  调度fit19。56项ECP/reward聚焦CPU合同通过，下一步是单task真实paired rollout profile，尚不构成性能证据。
+  调度fit19。56项ECP/reward聚焦CPU合同通过。gpu01 physical6上的首个真实paired profile已走通38/38 owners和两条严格配对
+  lanes：两臂各`1/2` success，但同一两个init上分别出现`plus-only`与`minus-only` success，成功步数为`119/154`，因此产生
+  mean advantage `.0039773`、mean absolute coordinate gradient `.039773`和finite FactorHead/total gradient
+  `.86249/4.90828`；一次macro为`62.58s`、峰值`16,443,782,144` bytes，prohibited physical0未使用。该profile只证明运行图，
+  不构成性能证据。它同时表明从旧selector outcome沿用的`.01` leaf multiplier把已由`2 sigma`归一化的标准antithetic gradient
+  再任意衰减：outcome leaf norm仅`.002038`，相对action proposal`.12304`过小，surrogate仅`-.000166`而结构锚为`.18397`。
+  因此不做标量扫描，formal canonical改为数学自然的`1.0x` estimator尺度。matched profile复用完全相同task、videos、paired
+  init与RNG，outcome leaf如预期变为`.20380`、surrogate`-.01662`，而FactorHead/total梯度仅变为`1.36716/4.78533`，均finite，
+  global clipping继续有效；整步`63.85s`、峰值仍为`16,443,782,144` bytes。profile后GPU已释放，physical0保持`14MB/0%`。
+  该结果解除fit19 bounded formal运行门，仍不构成性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

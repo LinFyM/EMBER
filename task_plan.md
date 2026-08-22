@@ -209,8 +209,12 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 实现 **OCPB v18 action-guided structured outcome binding**：以每task exact action leaf gradient定义38-owner/family局部
   proposal direction，再由fit19 paired simulator success/progress给这些方向分配task-equal closed-loop credit；训练只保留一个
   `train_ecp_stage1.py`入口，已删除v17 visit-step和旧selector/program offset运行面；
-- [ ] 先做单task paired rollout profile，再运行有合理optimizer暴露量的bounded outcome节点；只有geometry、frozen support和
-  train-only closed-loop outcome共同改善，才进入held5 oracle；
+- [x] 完成单task paired rollout profile并确认38/38 owner proposal、严格paired simulator、非零reward advantage、
+  LoRA-leaf到FactorHead反传、显存和吞吐全部接通；首个`.01x` profile还发现closed-loop leaf被旧outcome尺度任意压低，
+  formal前改用已由antithetic estimator完整归一化的`1.0x`自然梯度尺度；matched profile已确认outcome leaf按预期放大100倍，
+  FactorHead/total gradient保持finite且显存不变；
+- [ ] 运行有合理optimizer暴露量的bounded outcome节点；只有geometry、frozen support和train-only closed-loop outcome共同改善，
+  才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

@@ -181,6 +181,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 保持Program、compiler、rank、数据、paired seeds与outcome coordinate不变，从同一v11 macro1 authority完成一次matched
   corrected compiler-binding profile/formal复验，并立即物化与复跑同一geometry/308-panel门；v13首次同时达到fit/held
   support breadth门，但task-relative geometry不变且held aggregate仍略差于shared，故关闭同曲线；
+- [x] 实现OCPB v14 owner-resolved policy-response distillation：v2 support panel在同状态保存source与successful members的
+  `2 × 38 × 4 × 128`冻结response，candidate同一次forward可微捕获owner response并直接监督family-specific factor heads；
+  v13 barrier、最终flow、Program、rank与outcome coordinate不变，raw A/B仍为零梯度诊断；
+- [ ] 构建一次v2 frozen support bank，完成真实单task profile并确认owner loss、factor-head gradient、显存与信息墙；
+- [ ] 从v13冻结checkpoint运行一个task-equal v14 macro，立即物化并复跑同一geometry/308-panel门；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -239,10 +244,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 2. task-relative geometry没有随support改善：Program correction pair cosine为`.82546`，compiler后candidate pair cosine
    仍`.99595`，own/nearest-other为`.03980/.06201`且own retrieval仍`1/24`。因此不跑held5、不轮fold、不扩meta、
    不进入`q_V`，也不再延长selector-angle OCPB macro；
-3. 下一主要变量只针对这个最早接口：保留v13 barrier，检查并实现让successful-policy与task-equal outcome evidence在
-   **policy-native、owner-resolved response空间**直接识别compiler factor方向的最小机制；不得退回raw A/B重建，也不得
-   以更多LIBERO-90任务掩盖当前fit映射尚未形成；
-4. 先复用现有support bank与Action Expert response capture确认candidate/teacher owner坐标可微且同义，再登记唯一retained
-   v14设计、做真实profile和一个bounded formal节点；若现有response资产不能建立可比坐标，先写明接口证据再选择替代机制；
+3. 唯一active后继为OCPB v14 owner-resolved policy-response distillation：保留v13 barrier，用同状态、同seed的
+   source/successful-member full-layer owner response直接监督candidate factor方向；不重建raw A/B，也不改变Program/compiler/rank；
+4. 先一次性构建v2 support bank并做真实profile；图接通后从v13 checkpoint运行一个task-equal macro，立即物化/审计。
+   只有task-relative geometry与v13 support同时改善才运行held5；否则关闭v14，再按最早接口选择下一主要变量；
 5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

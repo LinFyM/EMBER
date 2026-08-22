@@ -17,7 +17,7 @@ from ember.ecp.stage1_outcome import (
     perturbation_forward_kwargs,
     structured_outcome_perturbation,
 )
-from ember.ecp.stage1_support import policy_support_distillation_loss
+from ember.ecp.stage1_support import policy_support_owner_distillation_loss
 from ember.lora import copy_task_lora_state_
 from ember.reward.credit import paired_antithetic_credit
 from ember.reward.protocol import (
@@ -238,11 +238,13 @@ def _task_update(
         candidate = select_compiled_state(
             output.consensus_compilation.state, 0
         )
-        support_loss = policy_support_distillation_loss(
+        support_loss, owner_response = policy_support_owner_distillation_loss(
             policy=runtime.policy,
             candidate_state=candidate,
             contract=runtime.contract,
             cached=cached,
+            projector=runtime.observer.model.encoder.observer.projector,
+            horizon_basis=int(runtime.base_config["policy_support"]["horizon_basis"]),
             preservation=str(
                 runtime.config["outcome_calibration"]["support_preservation"]
             ),
@@ -266,7 +268,14 @@ def _task_update(
             coordinate=coordinate,
             weight=float(outcome["surrogate_weight"][coordinate]),
         )
-        total = (functional.total + surrogate) / len(runtime.tasks)
+        owner_weight = float(
+            runtime.config["outcome_calibration"][
+                "owner_response_distillation_weight"
+            ]
+        )
+        total = (
+            functional.total + owner_weight * owner_response.loss + surrogate
+        ) / len(runtime.tasks)
     if not bool(torch.isfinite(total)):
         raise RuntimeError("non-finite OCPB task loss")
     total.backward()
@@ -296,6 +305,13 @@ def _task_update(
         "minus_progress_mean": credit.minus_progress_mean,
         "functional_total": float(functional.total.detach()),
         "functional_response": float(functional.functional_response.detach()),
+        "owner_response": float(owner_response.loss.detach()),
+        "owner_response_disagreement": float(
+            owner_response.normalized_disagreement.detach()
+        ),
+        "owner_response_active_fraction": float(
+            owner_response.active_owner_fraction.detach()
+        ),
         "shared_support": float(functional.shared_support.detach()),
         "source_support": float(functional.source_support.detach()),
         "outcome_surrogate": float(surrogate.detach()),
@@ -391,6 +407,10 @@ def run_outcome_macro(
         / len(records),
         "mean_functional_total": sum(
             float(row["functional_total"]) for row in records
+        )
+        / len(records),
+        "mean_owner_response": sum(
+            float(row["owner_response"]) for row in records
         )
         / len(records),
         "mean_outcome_surrogate": sum(

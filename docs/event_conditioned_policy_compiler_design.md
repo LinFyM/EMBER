@@ -655,10 +655,28 @@ v13现已完成并关闭。它把fit/held candidate-to-shared改善到`.96741/1.
 没有把Program中`.82546`的task差异编译为task-relative LoRA。联合门失败，因此不运行held5、不轮fold、不扩meta、不进入
 `q_V`，也不延长selector-angle OCPB curve。
 
-下一Stage 1修正必须只针对剩余最早接口：在保留v13 barrier和全部信息墙的前提下，让successful-policy与task-equal outcome
-evidence以policy-native、owner-resolved response直接识别compiler factor方向。首选复用现有support bank的
-`event × owner × channel × basis × width` policy response以及Action Expert capture，先证明candidate与teacher坐标同义且可微，
-再登记唯一retained实现；不得退回raw A/B重建，也不得把更多meta tasks当作当前fit映射缺失的替代品。
+#### Stage 1 OCPB v14 — owner-resolved policy-response distillation
+
+v14只修正剩余最早接口。现有support bank虽然用`event × owner × channel × basis × width`的full-layer response形成`q_pi`，
+compiler objective却只读取最后的`[batch,50,32]` flow；38个factor方向没有收到与自身layer/family对应的功能监督。v14把同一次
+policy forward中的owner response也接入compiler gradient，不改变Program、compiler容量、rank selector或信息墙。
+
+对每个同状态、同noise/time seed的successful或learner panel，v2 frozen bank保存source与多个successful members的：
+
+\[
+S,E_m\in\mathbb R^{2\times38\times4\times128},
+\]
+
+其中2是同一phase panel的两个occupancy states，4是50个horizon positions的固定低频DCT basis。candidate完整LoRA经冻结
+PI0.5和同一冻结owner projector得到可微的`C`；以member reliability形成expert effect共识
+`T=\sum_m w_m(E_m-S)`，按owner计算member disagreement与signal confidence，再最小化`C-S`到`T`的全局signal归一误差。
+因此梯度直接到对应owner的family-specific A/B heads，却从不读取或重建raw A/B target。failed learner occupancy继续沿用既有
+低outcome weight与member disagreement降权，不能把不确定expert recovery当确定oracle。
+
+同一candidate forward同时复用最终flow response；v13 baseline-relative source/shared barrier、prior counterfactual、locality、
+member set consistency和task-equal paired success/progress均保留。v14从冻结v13 checkpoint初始化，只运行一个bounded
+compiler-binding macro并立即物化与复跑geometry/308-panel门。若owner loss有梯度却仍不能降低compiled pair cosine、提高own
+retrieval且保持v13 support，就关闭这一机制，不靠权重扫或更多meta tasks掩盖失败。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

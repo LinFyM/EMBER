@@ -347,12 +347,13 @@ def prepare_runtime(
         device=context.device,
     )
     support = load_policy_support_bank(
-        manifest_path=stage1_asset_authority(
-            base_config, "policy_support_bank", args.asset_root
+        manifest_path=outcome_asset_authority(
+            config, "policy_support_bank", args.asset_root
         ),
         evidence_bank=evidence,
         task_ordinals=local_ordinals,
         device=context.device,
+        require_owner_responses=True,
     )
     support_root = int(config["outcome_calibration"]["support_visit_root"])
     credit_offset = int(
@@ -506,6 +507,7 @@ def train(args: argparse.Namespace) -> None:
                     "minus_successes",
                     "nonzero_advantage_tasks",
                     "mean_functional_total",
+                    "mean_owner_response",
                     "mean_outcome_surrogate",
                     "gradient_norm_before_clip",
                     "elapsed_seconds",
@@ -555,7 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v13.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v14.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

@@ -144,6 +144,9 @@ def _panel_payload(
     failed_learner_base_weight: float,
 ) -> dict[str, Any]:
     expert = torch.stack([responses[key].flow for key in member_keys])
+    expert_owner = torch.stack(
+        [responses[key].owner_basis for key in member_keys]
+    )
     outcome, source_weight, shared_weight = _support_weights(
         source=responses["source"].flow,
         shared=responses["shared"].flow,
@@ -167,6 +170,12 @@ def _panel_payload(
             device="cpu", dtype=torch.bfloat16
         ),
         "expert_responses": expert.to(device="cpu", dtype=torch.bfloat16),
+        "source_owner_response": responses["source"].owner_basis.to(
+            device="cpu", dtype=torch.bfloat16
+        ),
+        "expert_owner_responses": expert_owner.to(
+            device="cpu", dtype=torch.bfloat16
+        ),
         "expert_weights": expert_weights.detach().cpu().float(),
         "outcome_weight": outcome,
         "source_support_weight": source_weight,
@@ -451,7 +460,7 @@ def build_support_shard(args: Any) -> None:
     write_json_atomic(
         args.output_dir / f"shard_{args.shard_index:02d}.json",
         {
-            "schema_version": "ember_ecp_stage1_policy_support_shard_v1",
+            "schema_version": "ember_ecp_stage1_policy_support_shard_v2",
             "repository": repository,
             "shard_index": args.shard_index,
             "shard_count": args.shard_count,
@@ -470,7 +479,7 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         shard = read_json(args.output_dir / f"shard_{shard_index:02d}.json")
         if (
             shard.get("schema_version")
-            != "ember_ecp_stage1_policy_support_shard_v1"
+            != "ember_ecp_stage1_policy_support_shard_v2"
             or int(shard.get("shard_index", -1)) != shard_index
             or int(shard.get("shard_count", -1)) != args.shard_count
             or shard.get("repository", {}).get("commit") != repository.get("commit")
@@ -495,6 +504,7 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         "program_width": int(config["model"]["program_width"]),
         "source_policy_frozen": True,
         "observer_projection_frozen": True,
+        "owner_resolved_panels": True,
         "validation_action_or_reward_reads": 0,
         "test_action_or_reward_reads": 0,
         "tasks": rows,

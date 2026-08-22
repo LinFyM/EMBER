@@ -1,14 +1,15 @@
 {
-  "schema_version": "ember_ecp_stage1_outcome_binding_v13",
+  "schema_version": "ember_ecp_stage1_outcome_binding_v14",
   "status": "active_stage1_outcome_binding",
-  "purpose": "Matched compiler-binding calibration with baseline-relative source/shared functional support preservation, initialized from the frozen OCPB v11 macro1 checkpoint.",
+  "purpose": "Owner-resolved full-layer policy-response distillation plus the retained baseline-relative support barrier and task-equal compiler-binding outcome calibration, initialized from the frozen OCPB v13 checkpoint.",
   "authorities": {
     "base_stage1_config": "configs/pi05_ecp_stage1_process_value_selector_v10.json",
-    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v11_fold0_m1_r6_86ed95b_gpu01p234567_20260822/checkpoints/macro_00000001"
+    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v13_barrier_compiler_r6_b371463_gpu01p123456_20260822/checkpoints/macro_00000001",
+    "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v2_owner_resolved_20260822/manifest.json"
   },
   "initialization": {
-    "stage": "stage1_outcome_binding_v11",
-    "run_contract_schema": "ember_ecp_stage1_outcome_binding_run_v11",
+    "stage": "stage1_outcome_binding_v13",
+    "run_contract_schema": "ember_ecp_stage1_outcome_binding_run_v13",
     "checkpoint_macro": 1,
     "restore_optimizer_and_rank_rng_in_formal": true
   },
@@ -28,7 +29,7 @@
   },
   "outcome_calibration": {
     "coordinate_sequence": ["compiler_binding"],
-    "credit_macro_offset": 1,
+    "credit_macro_offset": 2,
     "coordinate_contract": {
       "compiler_binding": "one Rademacher selector-angle offset per target owner, shared across all 16 numeric ranks and lifted through their mean"
     },
@@ -42,13 +43,15 @@
     "progress_weight": 0.25,
     "success_efficiency_weight": 0.05,
     "lanes_per_arm": 2,
-    "update_seed_root": 2026082701,
-    "environment_seed_root": 2026082702,
-    "policy_noise_seed_root": 2026082703,
-    "video_visit_root": 12000,
-    "support_visit_root": 24000,
+    "update_seed_root": 2026082801,
+    "environment_seed_root": 2026082802,
+    "policy_noise_seed_root": 2026082803,
+    "video_visit_root": 13000,
+    "support_visit_root": 25000,
     "support_preservation": "baseline_relative_response_barrier",
-    "functional_anchor": "the complete v10 successful/learner expert-response objective with baseline-relative source/shared preservation, prior counterfactual and locality on every task",
+    "owner_response_distillation_weight": 1.0,
+    "owner_response_contract": "same-state candidate versus successful-member consensus in frozen owner x low-frequency-horizon x width policy response space; global signal normalization and member-disagreement confidence; no raw A/B target",
+    "functional_anchor": "the complete v13 successful/learner final-flow objective with baseline-relative source/shared preservation, plus owner-resolved full-layer policy-response distillation, prior counterfactual, locality and task-equal closed-loop outcome",
     "rank_semantics": false
   },
   "environment": {
@@ -59,7 +62,7 @@
     "num_inference_steps": 10
   },
   "optimization": {
-    "seed": 20260827,
+    "seed": 20260828,
     "precision": "bfloat16",
     "world_size": 6,
     "task_count": 19,
@@ -85,7 +88,7 @@
   },
   "materialization": {
     "allowed_checkpoint_macros": [1],
-    "video_visit": 12099,
+    "video_visit": 13099,
     "visible_video_count": 2,
     "output": "one privileged q_pi consensus rank16 LoRA per task"
   }

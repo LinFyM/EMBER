@@ -28,7 +28,8 @@
   **OCPB v13 baseline-relative support barrier**随后完成profile、matched formal、24-task物化与308-panel冻结审计：它首次达到
   fit/held breadth `13/19、3/5`并通过8项support条件中的7项，但held aggregate仍为shared的`1.00168x`，compiled geometry
   仍是pair cosine `.99595`、own retrieval `1/24`。v13 objective修正保留，同曲线关闭；当前没有可启动的held5或`q_V`，
-  下一接口是让policy-native successful/outcome evidence直接识别task-relative compiler factor方向。
+  唯一active后继为 **OCPB v14 owner-resolved policy-response distillation**：让同状态successful-policy full-layer evidence直接
+  进入38个owner对应的compiler factor方向，同时保留v13 barrier与task-equal outcome，不恢复raw A/B目标。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -291,6 +292,11 @@
   aggregate比shared高`.1675%`。这证明barrier语义是正修正，却没有解决factor direction identification；按预登记合同不跑
   held5、不轮fold、不扩meta、不启动`q_V`，也不再续同一selector-angle curve。正式证据见
   `docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
+- OCPB v14 retained运行面已实现但尚未产生科学结果。support bank schema v2在每个same-state panel新增source与successful
+  members的`[2,38,4,128]`冻结owner response；candidate LoRA在同一次PI0.5 forward中同时返回最终flow与可微owner response，
+  以member reliability、signal与disagreement形成owner-wise policy-native distillation，梯度直达factor heads。v14从v13
+  checkpoint完整恢复，保留baseline-relative barrier、Program/compiler/rank、selector-angle paired outcome与全部信息墙；
+  v13 active config已由v14单路径替换。21项Stage 1聚焦CPU合同通过，下一步只构建一次v2 bank并做真实单task profile。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

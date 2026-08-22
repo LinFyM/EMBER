@@ -9,13 +9,23 @@ from typing import Any, Mapping, Sequence
 import torch
 from lerobot.utils.constants import ACTION
 
+from ember.ecp.observer import TargetOwnerProjector
+from ember.ecp.policy_response import (
+    FrozenOwnerResponseTargets,
+    OwnerResolvedResponseLoss,
+    differentiable_policy_response,
+    owner_response_targets_from_payload,
+    owner_resolved_response_distillation_loss,
+)
 from ember.functional_adaptation.functional_response import pi05_flow_response
 from ember.lora import LoRAContract
 from ember.pi05_source_checkpoint import read_json
 
 
-SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v1"
-SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v1"
+SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v2"
+SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v2"
+LEGACY_SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v1"
+LEGACY_SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v1"
 SUPPORT_CHANNELS = (
     "successful_expert_minus_source",
     "successful_shared_minus_source",
@@ -56,6 +66,7 @@ class PolicySupportPanel:
     source_support_weight: float
     shared_support_weight: float
     learner_success: bool | None
+    owner_responses: FrozenOwnerResponseTargets | None = None
 
 
 @dataclass(frozen=True)
@@ -177,6 +188,7 @@ def load_learner_occupancy_sources(
 
 def _panel_from_payload(value: Mapping[str, Any]) -> PolicySupportPanel:
     selected = tuple(int(index) for index in value["selected_indices"])
+    expert_responses = value["expert_responses"].float()
     panel = PolicySupportPanel(
         panel_id=int(value["panel_id"]),
         kind=str(value["kind"]),
@@ -186,13 +198,16 @@ def _panel_from_payload(value: Mapping[str, Any]) -> PolicySupportPanel:
         policy_seed=int(value["policy_seed"]),
         source_response=value["source_response"].float(),
         shared_response=value["shared_response"].float(),
-        expert_responses=value["expert_responses"].float(),
+        expert_responses=expert_responses,
         expert_weights=value["expert_weights"].float(),
         outcome_weight=float(value["outcome_weight"]),
         source_support_weight=float(value["source_support_weight"]),
         shared_support_weight=float(value["shared_support_weight"]),
         learner_success=(
             None if value.get("learner_success") is None else bool(value["learner_success"])
+        ),
+        owner_responses=owner_response_targets_from_payload(
+            value, expert_count=int(expert_responses.shape[0])
         ),
     )
     if (
@@ -219,12 +234,18 @@ def load_policy_support_bank(
     evidence_bank: Any,
     task_ordinals: set[int],
     device: torch.device,
+    require_owner_responses: bool = False,
 ) -> PolicySupportBank:
     manifest_path = manifest_path.resolve()
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): row for row in manifest.get("tasks", ())}
     if (
-        manifest.get("schema_version") != SUPPORT_BANK_SCHEMA
+        manifest.get("schema_version")
+        not in {SUPPORT_BANK_SCHEMA, LEGACY_SUPPORT_BANK_SCHEMA}
+        or (
+            require_owner_responses
+            and manifest.get("schema_version") != SUPPORT_BANK_SCHEMA
+        )
         or tuple(manifest.get("support_channels", ())) != SUPPORT_CHANNELS
         or int(manifest.get("event_slots", -1)) != 8
         or int(manifest.get("owners", -1)) != 38
@@ -247,7 +268,12 @@ def load_policy_support_bank(
         panels = tuple(_panel_from_payload(panel) for panel in value["panels"])
         expected_members = evidence_bank.member_indices(ordinal)
         if (
-            value.get("schema_version") != SUPPORT_TASK_SCHEMA
+            value.get("schema_version")
+            not in {SUPPORT_TASK_SCHEMA, LEGACY_SUPPORT_TASK_SCHEMA}
+            or (
+                require_owner_responses
+                and value.get("schema_version") != SUPPORT_TASK_SCHEMA
+            )
             or int(value.get("ordinal", -1)) != ordinal
             or member_indices != expected_members
             or response.shape
@@ -258,6 +284,10 @@ def load_policy_support_bank(
             or (weights < 0).any()
             or not panels
             or (value.get("fold_role") == "fit" and not any(panel.kind == "learner" for panel in panels))
+            or (
+                require_owner_responses
+                and any(panel.owner_responses is None for panel in panels)
+            )
         ):
             raise ValueError("ECP policy-support task payload changed")
         tasks[ordinal] = PolicySupportTask(
@@ -339,6 +369,11 @@ def cache_policy_support_panels(
                     "expert_weights": panel.expert_weights.to(
                         device, non_blocking=True
                     ),
+                    "owner_responses": (
+                        None
+                        if panel.owner_responses is None
+                        else panel.owner_responses.to(device)
+                    ),
                 }
             )
             result[(ordinal, panel_id)] = CachedPolicySupportPanel(
@@ -371,6 +406,43 @@ def policy_support_distillation_loss(
         panel=panel,
         preservation=preservation,
     )
+
+
+def policy_support_owner_distillation_loss(
+    *,
+    policy: torch.nn.Module,
+    candidate_state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    cached: CachedPolicySupportPanel,
+    projector: TargetOwnerProjector,
+    horizon_basis: int,
+    preservation: str,
+) -> tuple[PolicySupportLoss, OwnerResolvedResponseLoss]:
+    panel = cached.panel
+    if panel.owner_responses is None:
+        raise ValueError("owner-resolved policy-support panel is unavailable")
+    candidate = differentiable_policy_response(
+        policy=policy,
+        state=candidate_state,
+        contract=contract,
+        batch=cached.batch,
+        projector=projector,
+        policy_seed=panel.policy_seed,
+        horizon_basis=horizon_basis,
+    )
+    support = policy_support_loss_from_response(
+        candidate=candidate.flow,
+        panel=panel,
+        preservation=preservation,
+    )
+    owner = owner_resolved_response_distillation_loss(
+        candidate=candidate.owner_basis,
+        source=panel.owner_responses.source,
+        experts=panel.owner_responses.experts,
+        expert_weights=panel.expert_weights,
+        outcome_weight=panel.outcome_weight,
+    )
+    return support, owner
 
 
 def policy_support_loss_from_response(

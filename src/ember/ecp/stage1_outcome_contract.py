@@ -53,6 +53,9 @@ def _run_contract(
         "base_stage1_config": str(
             outcome_repo_authority(runtime.config, "base_stage1_config").resolve()
         ),
+        "policy_support_bank": str(
+            (runtime.support_bank.root / "manifest.json").resolve()
+        ),
         "source": dict(source),
         "initialization": dict(initialization),
         "asset_root": str(runtime.args.asset_root),

@@ -7,6 +7,7 @@ from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
 from ember.ecp.contracts import TargetFamily, TargetOwner, build_target_owners
 from ember.ecp.low_rank import replace_low_rank_modes
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
+from ember.ecp.policy_response import owner_resolved_response_distillation_loss
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 from ember.ecp.stage1_data import (
@@ -170,11 +171,11 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_outcome_materialization_uses_v13_cursor_and_v10_model_contract() -> None:
+def test_outcome_materialization_uses_v14_cursor_and_v10_model_contract() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v13.json"
+        REPO_ROOT / "configs/pi05_ecp_stage1_outcome_binding_v14.json"
     )
-    assert resolved.stage == "stage1_outcome_binding_v13"
+    assert resolved.stage == "stage1_outcome_binding_v14"
     assert resolved.cursor_name == "outcome_macro"
     assert resolved.checkpoint_cursors == (1,)
     assert resolved.projection_schema == OUTCOME_PROJECTION_SCHEMA
@@ -611,6 +612,38 @@ def test_policy_support_barrier_only_penalizes_baseline_regression() -> None:
     (regressed.source_support + regressed.shared_support).backward()
     assert regressed_response.grad is not None
     assert float(regressed_response.grad.abs().sum()) > 0
+
+
+def test_owner_resolved_response_distillation_is_policy_native_and_differentiable() -> None:
+    source = torch.zeros(2, 3, 4, 5)
+    experts = torch.stack(
+        (
+            torch.ones_like(source),
+            torch.ones_like(source) * 1.2,
+        )
+    )
+    target = 0.25 * experts[0] + 0.75 * experts[1]
+    matched = owner_resolved_response_distillation_loss(
+        candidate=target,
+        source=source,
+        experts=experts,
+        expert_weights=torch.tensor([0.25, 0.75]),
+        outcome_weight=1.0,
+    )
+    torch.testing.assert_close(matched.loss, torch.tensor(0.0))
+
+    candidate = torch.zeros_like(source, requires_grad=True)
+    missed = owner_resolved_response_distillation_loss(
+        candidate=candidate,
+        source=source,
+        experts=experts,
+        expert_weights=torch.tensor([0.25, 0.75]),
+        outcome_weight=0.25,
+    )
+    assert float(missed.loss.detach()) > 0
+    assert float(missed.active_owner_fraction) == 1.0
+    missed.loss.backward()
+    assert candidate.grad is not None and float(candidate.grad.abs().sum()) > 0
 
 
 def test_policy_support_audit_gate_is_task_equal_across_fit_and_held() -> None:

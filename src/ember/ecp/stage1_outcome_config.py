@@ -9,8 +9,8 @@ from ember.ecp.stage1_training import REPO_ROOT
 from ember.pi05_source_checkpoint import read_json
 
 
-RUN_SCHEMA = "ember_ecp_stage1_outcome_binding_run_v13"
-STAGE = "stage1_outcome_binding_v13"
+RUN_SCHEMA = "ember_ecp_stage1_outcome_binding_run_v14"
+STAGE = "stage1_outcome_binding_v14"
 
 
 def outcome_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -31,15 +31,16 @@ def load_outcome_config(path: Path) -> dict[str, Any]:
     optimization = config.get("optimization", {})
     profile = config.get("profile_defaults", {})
     if (
-        config.get("schema_version") != "ember_ecp_stage1_outcome_binding_v13"
+        config.get("schema_version") != "ember_ecp_stage1_outcome_binding_v14"
         or config.get("status") != "active_stage1_outcome_binding"
         or tuple(outcome.get("coordinate_sequence", ()))
         != ("compiler_binding",)
         or set(outcome.get("sigma", {})) != {"compiler_binding"}
         or set(outcome.get("surrogate_weight", {})) != {"compiler_binding"}
-        or int(outcome.get("credit_macro_offset", -1)) != 1
+        or int(outcome.get("credit_macro_offset", -1)) != 2
         or outcome.get("support_preservation")
         != "baseline_relative_response_barrier"
+        or float(outcome.get("owner_response_distillation_weight", -1)) <= 0
         or int(outcome.get("lanes_per_arm", -1)) != 2
         or int(optimization.get("world_size", -1)) != 6
         or int(optimization.get("task_count", -1)) != 19
@@ -47,9 +48,9 @@ def load_outcome_config(path: Path) -> dict[str, Any]:
         or int(profile.get("world_size", -1)) != 1
         or int(profile.get("total_macros", -1)) != 1
         or config.get("initialization", {}).get("stage")
-        != "stage1_outcome_binding_v11"
+        != "stage1_outcome_binding_v13"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_outcome_binding_run_v11"
+        != "ember_ecp_stage1_outcome_binding_run_v13"
         or int(config.get("initialization", {}).get("checkpoint_macro", -1))
         != 1
         or config.get("initialization", {}).get(

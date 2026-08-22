@@ -16,14 +16,12 @@ from ember.ecp.events import (
     TaskGroundedTransitionMatcher,
 )
 from ember.ecp.observer import ECPNativeObserver, NativeObserverOutput
-from ember.ecp.compiler import ECPCompilerOutput, LayerResolvedCompiler
-from ember.ecp.policy_teacher import (
-    PolicyTeacherOutput,
-    PrivilegedPolicyEvidence,
-    PrivilegedPolicyTeacher,
+from ember.ecp.effect_solver import (
+    ExactPolicyEffectTargets,
+    PolicyEffectProbe,
+    PolicyEffectResponse,
+    solve_policy_effects,
 )
-from ember.ecp.program import ECPProgram, VisibleProgramProjector
-from ember.ecp.stage1 import ECPStage1Model, ECPStage1Output
 from ember.ecp.stage0 import (
     ECPStage0Model,
     ECPStage0Output,
@@ -45,8 +43,7 @@ __all__ = [
     "ACTION_LAYERS",
     "PADDED_ACTION_DIM",
     "ECPNativeObserver",
-    "ECPCompilerOutput",
-    "ECPProgram",
+    "ExactPolicyEffectTargets",
     "ECPStage0Loss",
     "ECPStage0Model",
     "ECPStage0Output",
@@ -55,24 +52,20 @@ __all__ = [
     "ECPStage0Task",
     "ECPVideoEncoder",
     "ECPVideoEncoderOutput",
-    "ECPStage1Model",
-    "ECPStage1Output",
     "EventBindingOutput",
     "EventConditionedHorizonBinding",
     "EventProgramOutput",
     "NativeObserverOutput",
     "OrderedEventSegmenter",
     "PackedStage0Pair",
-    "PolicyTeacherOutput",
-    "PrivilegedPolicyEvidence",
-    "PrivilegedPolicyTeacher",
+    "PolicyEffectProbe",
+    "PolicyEffectResponse",
     "TargetFamily",
     "TargetOwner",
     "TaskGroundedTransitionMatcher",
-    "LayerResolvedCompiler",
-    "VisibleProgramProjector",
     "build_target_owners",
     "ecp_stage0_loss",
     "load_stage0_tasks",
     "pack_stage0_pair",
+    "solve_policy_effects",
 ]

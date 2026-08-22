@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -11,9 +10,7 @@ import numpy as np
 import torch
 from safetensors.torch import load_file
 
-from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
 from ember.ecp.low_rank import canonicalize_low_rank_factors
-from ember.ecp.stage1_support import PolicySupportTask
 from ember.lora import (
     LORA_A_SUFFIX,
     LORA_B_SUFFIX,
@@ -95,28 +92,6 @@ class ECPStage1EvidenceBank:
         if not indices:
             raise ValueError("ECP Stage 1 task has no successful policy evidence")
         return indices
-
-    def evidence(
-        self, ordinal: int, support: PolicySupportTask
-    ) -> PrivilegedPolicyEvidence:
-        index = torch.tensor(
-            self.member_indices(ordinal),
-            dtype=torch.long,
-            device=self.phase_response.device,
-        )
-        if support.member_indices != self.member_indices(ordinal):
-            raise ValueError("policy-support member ordering changed")
-        return PrivilegedPolicyEvidence(
-            member_states={
-                name: value.index_select(0, index)
-                for name, value in self.member_states.items()
-            },
-            phase_response=self.phase_response.index_select(0, index),
-            reliability=self.reliability.index_select(0, index),
-            policy_response=support.policy_response,
-            policy_response_weights=support.policy_response_weights,
-        )
-
 
 def gauge_canonicalize_factors(
     a: torch.Tensor, b: torch.Tensor
@@ -327,76 +302,6 @@ def stage1_demo_indices(
         np.random.SeedSequence([seed, ordinal, visit])
     ).permutation(50)
     return tuple(int(value) for value in order[:k])
-
-
-def _frame_count(raw_frames: int, stride: int) -> int:
-    count = (raw_frames - 1) // stride + 1
-    return count + int((raw_frames - 1) % stride != 0)
-
-
-def build_stage1_schedule(
-    *,
-    config: Mapping[str, Any],
-    tasks: tuple[ECPStage1Task, ...],
-    world_size: int,
-    total_task_visits: int,
-    mode: str,
-) -> tuple[tuple[int, int], ...]:
-    """Build cost-balanced prefixes that remain exactly task-equal."""
-
-    fit = tuple(int(value) for value in config["roles"]["fit_task_ordinals"])
-    if mode == "profile":
-        return tuple((fit[0], visit) for visit in range(total_task_visits))
-    visits = int(config["optimization"]["visits_per_fit_task"])
-    balance_rounds = world_size // math.gcd(len(fit), world_size)
-    if visits % balance_rounds:
-        raise ValueError("ECP Stage 1 task-balance block changed")
-    balance_block_visits = len(fit) * balance_rounds
-    if any(
-        int(value) % balance_block_visits
-        for value in config["optimization"]["stage_stop_task_visits"]
-    ):
-        raise ValueError("ECP Stage 1 decision prefix is not task-equal")
-    stride = int(config["data"]["frame_stride"])
-    k = int(config["data"]["visible_videos_per_visit"])
-    seed = int(config["data"]["pair_seed"])
-    by_ordinal = {task.ordinal: task for task in tasks}
-    generator = torch.Generator(device="cpu").manual_seed(
-        int(config["optimization"]["seed"])
-    )
-    schedule = []
-    for visit_start in range(0, visits, balance_rounds):
-        rows = []
-        for visit in range(visit_start, visit_start + balance_rounds):
-            for ordinal in fit:
-                demos = stage1_demo_indices(
-                    ordinal=ordinal, visit=visit, seed=seed, k=k
-                )
-                cost = sum(
-                    _frame_count(
-                        by_ordinal[ordinal].episode_lengths[demo], stride
-                    )
-                    for demo in demos
-                )
-                rows.append((cost, ordinal, visit))
-        rows.sort(reverse=True)
-        groups = [
-            rows[index : index + world_size]
-            for index in range(0, len(rows), world_size)
-        ]
-        for group_index in torch.randperm(
-            len(groups), generator=generator
-        ).tolist():
-            group = groups[group_index]
-            rank_order = torch.randperm(
-                len(group), generator=generator
-            ).tolist()
-            schedule.extend(
-                (group[index][1], group[index][2]) for index in rank_order
-            )
-    if len(schedule) != total_task_visits:
-        raise ValueError("ECP Stage 1 task-equal schedule changed")
-    return tuple(schedule)
 
 
 def tokenize_stage1_languages(

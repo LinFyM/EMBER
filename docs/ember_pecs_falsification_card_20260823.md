@@ -1,6 +1,6 @@
 # EMBER-PECS：Policy-Effect Constrained Solver falsification card
 
-状态：2026-08-23 **已选定的design-only successor hypothesis；尚未成为可执行运行面，未授权GPU训练**。
+状态：2026-08-23 **exact-effect oracle已实现为唯一可执行Writer面；只授权一个fit-task GPU profile，尚未授权held5 formal**。
 
 本文是MDCO失败和Stage 1全链复盘后的单一科学合同，不是`v25`。它保留EMBER-ECP已经通过的Stage 0
 event/Action observer与最终single-LoRA部署目标，但停止当前learned `q_pi + Program-to-LoRA compiler` family。
@@ -231,3 +231,18 @@ predicted effects
 
 第一oracle通过并不证明EMBER成功；它只证明learned Program-to-LoRA mapping不是必要条件。第一oracle失败则是比MDCO更直接的
 根本证据：即使给定exact privileged policy effects，输入视频frame support上的固定功能约束仍不能确定可闭环的完整LoRA。
+
+## 8. 当前实现锁定
+
+当前canonical实现把本卡的首个oracle收敛为一个窄运行面：
+
+- 每条K2视频先由冻结Stage 0 v3 + Action Meta v3形成ordered event posterior；每个event从每条视频选一个最大posterior frame；
+- effect capture与solver forward不安装Action Meta，也不读取action、state或proprio；canonical/antithetic probe均固定在`u=1`；
+- owner effect保留38 owners与DCT4 horizon basis，flow effect保留两个probe的完整`50x32`；多个successful members及两条视频的
+  同event frames共同形成mean/variance；
+- solver从stable shared开始，固定12步、无per-task early stop或持久optimizer；每步只更新一套LoRA leaves，随后逐target
+  thin-QR/core-SVD regauge回rank16；
+- 首个profile固定为fit ordinal71，held ordinals90--94不能用于step/scale选择；旧learned compiler运行面已从active tree退休。
+
+实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`；正式profile结果产生前，上述12步与step scale仍只算
+预注册候选数值合同，不构成已通过的科学节点。

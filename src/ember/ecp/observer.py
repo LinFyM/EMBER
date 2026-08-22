@@ -242,5 +242,7 @@ class ECPNativeObserver(torch.nn.Module):
             owner_lattice=lattice,
             patch_states=patch_states,
             language_states=language_states,
-            flow_velocity=flow_velocity.detach(),
+            flow_velocity=(
+                flow_velocity if track_action_adapter_grad else flow_velocity.detach()
+            ),
         )

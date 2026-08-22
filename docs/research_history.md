@@ -1184,6 +1184,19 @@ direct-latest重合的10个成功全部来自global task0，其余held4为0。�
 均值只有`.09128`、own retrieval`2/5`，MDCO norm平均为首版`2.8521x`。故重复失败是outcome层easy-state/shared-support
 吸引子，而非同一个LoRA参数方向；该结论不外推为逐action policy等价。
 
+### 3.61 PECS exact-effect oracle成为唯一运行面
+
+MDCO后的二次复盘没有继续建立v25，而是选择Policy-Effect Constrained Solver作为新的单一可证伪接口。首个实现不训练video
+predictor或共享decoder：K2 action-hidden videos只经冻结Stage 0形成ordered event posterior；每个event从每条视频取一个
+最大posterior frame，source/shared/successful experts在不安装Action Meta、固定canonical/antithetic `u=1` probes下形成
+38-owner DCT4与完整flow effect distribution。固定solver从stable shared开始，对同一套LoRA leaves做exact VJP、逐owner
+normalized step与thin-QR/core-SVD rank16 regauge；没有task ID、per-task early stop、持久optimizer或第二adapter。
+
+新canonical owner为`effect_solver.py + effect_oracle.py + run_ecp_effect_oracle.py`。旧learned `q_pi + Program-to-LoRA`
+trainer、calibration、materialization、support builder、配置与对应测试从active tree删除，精确历史继续由Git和formal artifacts
+保存；这使仓库不再同时暴露可误启动的旧Writer。当前只完成CPU/结构验证，尚无GPU profile或closed-loop结果，故本节不构成
+PECS正证据。下一唯一节点是在fit ordinal71上冻结12-step数值/资源合同，之后才允许held5 exact-effect strict250。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

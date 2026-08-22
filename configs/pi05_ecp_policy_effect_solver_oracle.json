@@ -1,0 +1,72 @@
+{
+  "schema_version": "ember_ecp_policy_effect_solver_oracle_v1",
+  "status": "active_exact_effect_realizability_oracle",
+  "purpose": "Test whether exact successful-policy effects on action-hidden video frames can be compiled into one held-task LoRA by a fixed task-agnostic solver.",
+  "authorities": {
+    "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
+    "source_base_config": "configs/pi05_source_base_v1.json",
+    "lora_contract": "configs/pi05_lora_v1.json",
+    "task_evidence_manifest": "runs/analysis/pi05_ecp_stage1_mdco_task_evidence_20260823/manifest.json",
+    "stable_shared_prior": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors",
+    "native_observer_checkpoint": "runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010",
+    "action_meta_checkpoint": "runs/outputs/pi05_ecp_stage0_action_meta_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010",
+    "base_projection_manifest": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/projection_shared.json"
+  },
+  "roles": {
+    "profile_fit_task_ordinal": 71,
+    "held_task_ordinals": [90, 91, 92, 93, 94],
+    "held_target_global_task_ids": [0, 9, 18, 25, 36],
+    "fold": 0
+  },
+  "data": {
+    "frame_stride": 5,
+    "visible_videos": 2,
+    "video_visit": 12099,
+    "pair_seed": 20260825,
+    "event_slots": 8,
+    "horizon_basis": 4,
+    "support_frames_per_event": "one maximum-posterior action-hidden frame from each visible video"
+  },
+  "solver": {
+    "algorithm": "fixed owner-normalized gradient step plus thin-QR/core-SVD regauge",
+    "steps": 12,
+    "step_rms": 0.0002,
+    "owner_weight": 1.0,
+    "flow_weight": 1.0,
+    "shared_barrier_weight": 0.25,
+    "trust_region": 1.5,
+    "trust_weight": 0.05,
+    "prefix_batch_size": 4,
+    "output_rank": 16,
+    "per_task_early_stop": false,
+    "task_local_persistent_optimizer": false
+  },
+  "profile_gate": {
+    "maximum_final_to_initial_effect_ratio": 0.8,
+    "maximum_increasing_steps": 1
+  },
+  "gate2": {
+    "closed_loop_rows": 250,
+    "source_successes": 21,
+    "stable_shared_successes": 43,
+    "direct_earliest_successes": 74,
+    "direct_latest_successes": 108,
+    "minimum_direct_success_retention": 81,
+    "minimum_direct_gain_retention": 58,
+    "minimum_shared_success_retention": 33,
+    "minimum_breadth": 5,
+    "require_goal_success": true,
+    "require_long_success": true
+  },
+  "information_wall": {
+    "deployment_inputs": "exact language plus K same-task action-hidden ordered videos",
+    "exact_effects": "privileged train-fold oracle target only",
+    "teacher_action_forward_reads": 0,
+    "held_shared_parameter_updates": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "task_id_model_route": false,
+    "action_meta_effect_solver_installation": false,
+    "second_adapter_deployed": false
+  }
+}

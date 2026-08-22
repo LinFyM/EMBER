@@ -5,7 +5,19 @@
 
 ## Current authority and executable state
 
-- **MDCO已完成并按合同失败；EMBER-PECS已选为design-only successor hypothesis，尚无新可执行运行面。** clean pushed detached `419fa84`在gpu02 physical
+- **MDCO已完成并按合同失败；EMBER-PECS exact-effect oracle现为唯一可执行Writer面，尚未运行GPU profile/formal。** 新运行面由
+  `src/ember/ecp/effect_solver.py`、`src/ember/ecp/effect_oracle.py`、`scripts/run_ecp_effect_oracle.py`与
+  `configs/pi05_ecp_policy_effect_solver_oracle.json`共同拥有。它只复用既有source、Stage 0 v3、Action Meta v3、stable shared、
+  95-task/118-member evidence与action-hidden HDF5，不训练video predictor或shared decoder。旧compiler/q_pi trainer、calibration、
+  materialization、support builder及两个active Stage 1 config已经从当前树退休；历史由Git、formal artifacts和下述ledger保存。
+- exact-effect数据流已落实为：K2 correct videos经冻结Stage 0+Action Meta形成ordered event posterior；每event从每条视频选择一个
+  最大posterior的action-hidden frame；随后不安装Action Meta，以source/shared/successful experts在canonical/antithetic `u=1`
+  probes上收集38-owner DCT4与50x32 flow effects；固定12-step solver从stable shared出发，只经LoRA leaves求exact VJP并逐owner
+  normalized update、逐步thin-QR/core-SVD regauge。solver无task ID、per-task early stop、persistent optimizer或第二adapter。
+- CPU/结构验证已完成：PECS核心/投影定向测试`12 passed`，此前Stage 0 + PECS/旧Stage1替换面合计`36 passed`；完整仓库测试为
+  `335 passed, 15 failed`，15项均来自既有环境/密封authority漂移（7项缺失LIBERO assets环境变量，8项旧evaluation config
+  hash不一致），不涉及本次PECS代码。下一节点是单个fit target task的真实GPU profile，不在held上选择solver参数。
+- clean pushed detached `419fa84`在gpu02 physical
   `0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates；所有task等权，compiler与`q_pi`梯度持续非零，visible
   Program梯度始终为0。随后唯一一次fit90 structured calibration覆盖90/90 tasks、每rank 18 tasks，plus/minus各123次成功，
   75 tasks产生非零advantage；`q_pi/compiler`裁剪前梯度为`.11708/62.25886`，held/validation/Test reward读取均为0。
@@ -28,7 +40,7 @@
 - 复盘后的架构选择已单独写入`docs/ember_pecs_falsification_card_20260823.md`。PECS保留Stage 0 event/owner表示，删除需要
   跨task学习的Program-to-LoRA decoder，让exact/predicted policy effects通过同一个无task参数的fixed proximal inner solver生成
   一套complete rank16 LoRA。第一节点只允许held5 exact privileged-effect realizability oracle：先不实现video effect predictor、
-  不训练新shared模型、不运行GPU formal。本节点只完成设计和资产边界，避免从复盘直接滑入下一版本。
+  不训练新shared模型。设计停顿已经完成，当前先运行一个fit task profile冻结数值与资源合同；未通过不得启动held5 formal。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为

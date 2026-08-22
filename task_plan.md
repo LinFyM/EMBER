@@ -1,11 +1,12 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **MDCO已完成并失败；EMBER-PECS已选为design-only successor hypothesis，尚未实现或训练**。
+状态：2026-08-23 **MDCO已完成并失败；EMBER-PECS exact-effect oracle已成为唯一可执行Writer面，等待fit-task真实profile**。
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
 当前learned Stage 1 compiler family已停止，不建立v25。v24与MDCO后的复盘见
 `docs/ecp_stage1_iteration_retrospective_20260823.md`；下一候选的单一合同见
-`docs/ember_pecs_falsification_card_20260823.md`。该合同在首个privileged effect oracle前不授权video predictor或GPU formal。
+`docs/ember_pecs_falsification_card_20260823.md`。当前只授权一个fit task的数值/资源profile；通过后才允许held5 exact-effect
+formal，首个privileged oracle通过前仍不授权video effect predictor。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -13,7 +14,7 @@ dual-time transport方案均已封存，不再启动formal训练。它们的实�
 
 ## Goal
 
-全面实现并验证 **EMBER-ECP（Event-Conditioned Policy Compiler）**：让一个shared Writer仅根据exact task language与K条
+全面实现并验证 **EMBER-ECP/PECS**：让一个shared Writer仅根据exact task language与K条
 action-hidden、内部有序的正确教学视频，在rollout前一次生成唯一一套完整38-target rank16 LoRA，使冻结source PI0.5在
 未见初始化上获得强、稳定、广泛且具有视频时序特异性的zero-interaction闭环能力。
 
@@ -25,9 +26,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 ## Done when
 
 - EMBER-ECP成为仓库唯一canonical Writer训练与部署运行面，旧活动路径由Git、sealed configs与formal artifacts复现；
-- native observer、Action Meta-LoRA独立对照、privileged policy teacher、target-family compiler、Dynamic-K video encoder、
+- native observer、Action Meta-LoRA独立对照、exact/predicted policy-effect teacher、fixed solver、Dynamic-K video encoder、
   Writer联合训练和structured outer credit均已实现并得到相应阶段裁决；
-- compiler在video inference进入前通过task-level leave-out closed-loop oracle gate，而非只通过latent/BA/flow loss；
+- fixed solver在video effect predictor进入前通过task-level leave-out closed-loop oracle gate，而非只通过inner effect loss；
 - final Writer只读language与action-hidden videos，输出一套完整LoRA，不读取task ID、teacher action/state/reward或第二expert；
 - final training使用全部授权train tasks，validation8仅以部署输入做single-checkpoint development evaluation，Test8在方法冻结后
   才使用；
@@ -56,7 +57,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 
 1. **Contract gate**：信息墙、tensor owner、single-LoRA、task roles、pairing和冻结backbone正确。
 2. **Observer gate**：正确视频的event/owner结构跨episode、速度与替代probe稳定；native与Action Meta-LoRA得到独立裁决。
-3. **Compiler oracle gate**：冻结`q_pi + compiler`在train24 leave-task-out tasks上显著保留direct successful-policy support。
+3. **PECS realizability gate**：exact privileged policy effects经固定solver在train24 leave-task-out tasks上显著保留direct
+   successful-policy support。
 4. **Video inference gate**：冻结compiler后，action-hidden full video相对language+scene/endpoints创造新的闭环success，且跨video/
    Dynamic-K稳定。
 5. **Joint Writer gate**：除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练，相对frozen-
@@ -357,5 +359,11 @@ coordinate退化则保留Stage 2并定位最早接口。
     **EMBER-PECS（Policy-Effect Constrained Solver）**作为design-only hypothesis；
 17. [x] 写成单一falsification card：第一实验只用held5 exact privileged policy effects检验固定inner solver realizability，
     不训练video effect predictor，不用geometry/open-loop proxy挡住首次strict paired250；
-18. [ ] 下一执行节点必须先复核PECS card与资产所有权，再决定是否把它登记为可执行authority；本节点不创建config/module、
-    不launch profile/formal，避免从复盘直接滑入下一版本。
+18. [x] 复核PECS card、95-task evidence、held5 direct/shared/video资产与代码ownership；确认无需重建MDCO大资产；
+19. [x] 实现唯一PECS exact-effect运行面：同K2 action-hidden视频经冻结Stage 0选择每event每video一个support frame，source/
+    shared/successful experts在canonical+antithetic `u=1` probes上形成owner/flow effect distribution，固定solver从stable shared
+    出发只经LoRA exact VJP、owner-normalized step与thin-QR/core-SVD regauge输出一套rank16 LoRA；
+20. [x] 从active tree退休旧Program-to-LoRA compiler trainer、calibration、materialization、support builder、配置与测试入口；Git和
+    formal artifacts继续保存历史，当前不再存在可误启动的MDCO Writer路径；
+21. [ ] 在一个fit target task上运行完整12-step单卡profile；只按finite、effect单调下降、峰值显存和吞吐裁决当前数值合同；
+22. [ ] profile通过后从clean pushed authority并行物化held5五套LoRA，随后直接strict paired250，按PECS Gate 2裁决。

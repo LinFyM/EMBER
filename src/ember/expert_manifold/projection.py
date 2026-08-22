@@ -49,6 +49,12 @@ ECP_STAGE1_MDCO_TASK_EXPERT_ADAPTER_SCHEMA = (
 ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_ecp_stage1_mapping_diverse_compiler_oracle_projection_v1"
 )
+ECP_PECS_TASK_EXPERT_ADAPTER_SCHEMA = (
+    "ember_pi05_ecp_policy_effect_solver_oracle_eval_adapter_v1"
+)
+ECP_PECS_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_ecp_policy_effect_solver_oracle_projection_v1"
+)
 
 
 def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
@@ -263,8 +269,56 @@ def _phase_aligned_projection_contract(
     }
 
 
+def _pecs_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    optimization = manifest.get("optimization", {})
+    information_wall = manifest.get("information_wall", {})
+    expected = {
+        "fit_profile_task_count": 1,
+        "held_task_count": 5,
+        "held_shared_gradient_steps": 0,
+        "solver_algorithm_frozen": True,
+        "per_task_early_stop": False,
+        "task_local_persistent_optimizer": False,
+        "single_complete_lora": True,
+        "final_lora_averaging": False,
+        "rank": 16,
+        "second_adapter_deployed": False,
+        "parameterization": (
+            "one complete rank16 LoRA solved from exact policy effects"
+        ),
+    }
+    if (
+        manifest.get("projection_kind")
+        != "ecp_policy_effect_solver_exact_oracle"
+        or int(optimization.get("solver_steps", -1)) <= 0
+        or any(optimization.get(name) != value for name, value in expected.items())
+        or information_wall.get("exact_privileged_effects") is not True
+        or information_wall.get("teacher_action_forward_reads") != 0
+        or information_wall.get("second_adapter_deployed") is not False
+    ):
+        raise ExpertManifoldError("PECS projection manifest changed")
+    return {
+        "adapter_schema": ECP_PECS_TASK_EXPERT_ADAPTER_SCHEMA,
+        "arm": "ecp_pecs_exact_effect_oracle",
+        "asset": {
+            "effect_oracle_config": _projection_file(
+                manifest, "effect_oracle_config"
+            ),
+            "base_projection_manifest": _projection_file(
+                manifest, "base_projection_manifest"
+            ),
+            "exact_privileged_effects": True,
+            "held_shared_gradient_steps": 0,
+            "single_complete_lora": True,
+            "content_address_separated": True,
+        },
+    }
+
+
 def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     schema = manifest.get("schema_version")
+    if schema == ECP_PECS_TASK_EXPERT_MANIFEST_SCHEMA:
+        return _pecs_projection_contract(manifest)
     if schema == PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA:
         if manifest.get("optimization", {}).get("factor_heads_frozen") is not True:
             raise ExpertManifoldError("fixed-head projection manifest changed")
@@ -337,15 +391,15 @@ def inspect_projected_task_expert_bank(
         (str(row["suite"]), int(row["task_id"])): dict(row) for row in base["tasks"]
     }
     evaluation_role = str(base.get("information_wall", {}).get("evaluation_role"))
-    mdco = (
-        manifest.get("schema_version")
-        == ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA
-    )
+    leave_task_out = manifest.get("schema_version") in {
+        ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA,
+        ECP_PECS_TASK_EXPERT_MANIFEST_SCHEMA,
+    }
     expected_oracle_role = (
         "nonheld_meta_oracle_only"
         if evaluation_role == "nonheld_meta"
         else "development_train_leave_task_out_oracle_only"
-        if mdco
+        if leave_task_out
         else "development_train_oracle_only"
     )
     if (
@@ -354,8 +408,8 @@ def inspect_projected_task_expert_bank(
         != expected_oracle_role
         or manifest.get("information_wall", {}).get("deployment_carrier") is not False
         or not set(projected).issubset(base_records)
-        or (not mdco and set(projected) != set(base_records))
-        or (mdco and len(projected) != 5)
+        or (not leave_task_out and set(projected) != set(base_records))
+        or (leave_task_out and len(projected) != 5)
     ):
         raise ExpertManifoldError("fixed-head projection manifest changed")
     tasks = []

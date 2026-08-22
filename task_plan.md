@@ -161,7 +161,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 保持bounded exact-prior rank selector与全部训练变量，只把compiler改为language/scene-conditioned、process-value-only
   reader；删除v9 active路径并通过41项聚焦合同；
 - [x] 完成v10真实successful/learner双visit profile；两步梯度finite、约2.3/2.1秒，selector从exact shared安全打开；
-- [ ] 从clean pushed v10 authority完成fresh balanced 228 visits，并复跑同一24-task geometry/308-panel frozen support gate；
+- [x] 从clean pushed v10 authority完成fresh balanced 228 visits和24-task geometry；task-equal与数值合同通过，但own retrieval仍为`1/24`；
+- [ ] 完成同一308-panel frozen support audit，按aggregate与breadth门最终裁决v10；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 

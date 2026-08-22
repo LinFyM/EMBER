@@ -218,6 +218,15 @@
   两次更新分别为`2.3049/2.0821s`，峰值`16,439,940,608` bytes，裁剪前梯度`.29288/1.90028`且finite；
   `rank_replacement_fraction`从精确shared的`0`安全打开到`4.4849e-6`。该profile只授权fresh balanced 228-visits，
   不构成geometry或support pass。
+- v10已从clean pushed `13dfc25`在gpu01 physical `1,2,3,4,5,6`完成fresh balanced 228 visits/38 updates；19个fit task
+  均恰好12 visits，successful/learner各114 records，elapsed `115.7431s`，六卡峰值`16,659,623,424` bytes，最大
+  裁剪前梯度`12.4831`且finite。前5到末5 updates的total/functional/shared-support/selector fraction从
+  `.39278/.28643/.00223/5.61e-5`变为`.46849/.39718/.02799/.09989`；loss不用于promote。
+- 24-task K2物化已完成。相对v9，candidate跨task cosine从`.99779`小幅降到`.99641`，candidate-minus-shared
+  correction cosine从`.97482`降到`.95088`，selector task范围从`.08031--.09164`扩大到`.06844--.12597`，
+  证明process-only Value削弱了一部分近全局旁路。但own-direct `.03983`仍低于nearest-other `.06200`，自身检索
+  `1/24`，candidate/direct norm ratio `1.98083`，故geometry门仍失败。已预登记同一308-panel frozen support audit，
+  只用于判断shared preservation，不进入held闭环或reward。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

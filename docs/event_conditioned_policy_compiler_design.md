@@ -567,6 +567,12 @@ replacement、零初始化selector、support bank、task-balanced schedule、see
 打开至`4.4849e-6`。因而v10图和两阶段梯度顺序通过实底座检查，可进入fresh balanced 228-visits；
 该profile不预判科学门结果。
 
+clean pushed `13dfc25`的fresh 228-visits与24-task物化已完成。process-only Value使candidate-minus-shared
+correction pair cosine从v9的`.97482`降到`.95088`，selector的task间范围也扩大到`.06844--.12597`；
+但candidate pair cosine仍为`.99641`，own-direct `.03983`低于nearest-other `.06200`，own retrieval仍只有`1/24`。
+因而该修正弱化了全局旁路，但尚未建立task-conditioned policy direction；仅剩同一frozen full-bank support
+audit用于判断是否保住shared，不据此进入held闭环。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

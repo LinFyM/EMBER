@@ -1,0 +1,26 @@
+{
+  "schema_version": "ember_ecp_stage1_policy_support_audit_config_v1",
+  "status": "active_frozen_support_audit",
+  "purpose": "Task-equal frozen support audit for the process-value-only bounded selector checkpoint.",
+  "authorities": {
+    "stage1_config": "configs/pi05_ecp_stage1_process_value_selector_v10.json",
+    "projection_manifest": "runs/analysis/pi05_ecp_stage1_process_value_selector_projection_tv228_13dfc25_gpu01p1_20260822/projection_manifest.json"
+  },
+  "thresholds": {
+    "minimum_fit_tasks_better_than_source": 13,
+    "minimum_fit_tasks_better_than_shared": 13,
+    "minimum_held_tasks_better_than_source": 3,
+    "minimum_held_tasks_better_than_shared": 3
+  },
+  "information_wall": {
+    "role": "train24 frozen policy-support diagnosis only; not checkpoint selection",
+    "held5": "privileged transform and frozen inference only; zero shared gradient",
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "shuffled_or_reversed_reads": 0
+  },
+  "decision": {
+    "pass": "Add fit-task task-equal simulator success and progress as the next fresh major variable.",
+    "fail": "Close v10 without extension and revisit the earliest task-dependent Program or q_pi support interface."
+  }
+}

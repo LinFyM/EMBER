@@ -1,0 +1,153 @@
+{
+  "schema_version": "ember_ecp_stage1_owner_response_bootstrap_gate_v1",
+  "date": "2026-08-22",
+  "training_commit": "b2faaebe32c1a50dd32fa57fd89f0a954da5d633",
+  "stage": "stage1_owner_response_bootstrap_v15_task_balanced_geometry_and_support_gate_failure",
+  "scientific_change": {
+    "changed": "owner-resolved full-layer policy-response distillation received a fresh task-balanced optimizer and 38 updates over 228 fit-task visits instead of one outcome-macro update",
+    "unchanged": "v13 model initialization, baseline-relative support barrier, visible Program, privileged q_pi, compiler, rank selector, v2 support bank and information wall"
+  },
+  "profile": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_owner_response_bootstrap_v15_profile_task1_b2faaeb_gpu01p5_20260822",
+    "task_ordinal": 1,
+    "owner_response_loss": 0.48164358735084534,
+    "owner_response_active_fraction": 0.9210526347160339,
+    "owner_response_disagreement": 0.06641554087400436,
+    "functional_response": 0.342206746339798,
+    "total_loss": 0.8240944743156433,
+    "gradient_norm_before_clip": 5.156437397003174,
+    "factor_head_gradient_norm_before_clip": 2.234175205230713,
+    "update_seconds": 2.236852853005985,
+    "maximum_cuda_allocated_bytes": 16396576768,
+    "passed_runtime_gate": true,
+    "retained_after_recording": false
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_owner_response_bootstrap_v15_tv114_r6_b2faaeb_gpu01p123456_20260822",
+    "initial_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v13_barrier_compiler_r6_b371463_gpu01p123456_20260822/checkpoints/macro_00000001",
+    "initialization": "v13 model weights only with fresh AdamW optimizer",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "fit_task_count": 19,
+    "visits_per_fit_task": 12,
+    "checkpoint_task_visits": [114, 228],
+    "mean_owner_response_loss": 0.49910286722476027,
+    "first_114_mean_owner_response_loss": 0.5055292766998735,
+    "second_114_mean_owner_response_loss": 0.492676457749647,
+    "minimum_factor_head_gradient_norm_before_clip": 0.7800668478012085,
+    "maximum_factor_head_gradient_norm_before_clip": 4.244704723358154,
+    "maximum_cuda_allocated_bytes": 16600629248,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false,
+    "checkpoint_complete": true,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "materialization_114": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_owner_response_bootstrap_v15_projection_tv114_b2faaeb_gpu01p5_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.992292582988739,
+    "mean_own_direct_cosine": 0.038904935121536255,
+    "mean_nearest_other_direct_cosine": 0.0599227175116539,
+    "own_minus_nearest_margin": -0.021017782390117645,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.8042258024215698,
+    "mean_candidate_participation_rank": 1.1025230884552002,
+    "program_correction_pair_cosine_mean": 0.8220473527908325,
+    "geometry_gate_passed": false,
+    "continued_to_228": true,
+    "continuation_reason": "pair collapse, own-minus-nearest margin, effective norm ratio and participation rank moved coherently away from the v13 one-update geometry"
+  },
+  "materialization_228": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_owner_response_bootstrap_v15_projection_tv228_b2faaeb_gpu01p5_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.9872706532478333,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.03979816287755966,
+    "mean_nearest_other_direct_cosine": 0.060752056539058685,
+    "own_minus_nearest_margin": -0.020953893661499023,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.7118737697601318,
+    "mean_candidate_participation_rank": 1.1255918741226196,
+    "program_correction_pair_cosine_mean": 0.8128594756126404,
+    "geometry_gate_passed": false
+  },
+  "frozen_all_panel_support_audit_228": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_owner_response_bootstrap_v15_audit_tv228_b2faaeb_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.39400760846604643,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.5578210658573521,
+      "candidate_to_shared_ratio": 0.9725254829052568,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 13,
+      "successful_candidate_to_shared_ratio": 0.9840399681554433,
+      "learner_candidate_to_shared_ratio": 0.9515829376257359,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.6378921903669834,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.7211598182456824,
+      "candidate_to_shared_ratio": 1.0217123643814816,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 1,
+      "panels": 40
+    },
+    "candidate_panel_wins_over_shared": 146,
+    "candidate_panel_wins_over_source": 299,
+    "conditions_passed": 6,
+    "conditions_total": 8,
+    "gate_passed": false,
+    "task_equal": true,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "adjacent_authority_comparison": {
+    "v13": {
+      "candidate_pair_cosine_mean": 0.9959524869918823,
+      "mean_own_direct_cosine": 0.039802081882953644,
+      "mean_nearest_other_direct_cosine": 0.06200810894370079,
+      "own_retrieval_count": 1,
+      "fit_candidate_to_shared": 0.9674071247796677,
+      "held_candidate_to_shared": 1.0016753258997275,
+      "fit_tasks_better_than_shared": 13,
+      "held_tasks_better_than_shared": 3,
+      "candidate_panel_wins_over_shared": 155
+    },
+    "v15_228": {
+      "candidate_pair_cosine_mean": 0.9872706532478333,
+      "mean_own_direct_cosine": 0.03979816287755966,
+      "mean_nearest_other_direct_cosine": 0.060752056539058685,
+      "own_retrieval_count": 1,
+      "fit_candidate_to_shared": 0.9725254829052568,
+      "held_candidate_to_shared": 1.0217123643814816,
+      "fit_tasks_better_than_shared": 13,
+      "held_tasks_better_than_shared": 1,
+      "candidate_panel_wins_over_shared": 146
+    }
+  },
+  "diagnosis": {
+    "owner_response_graph_is_live": true,
+    "one_update_exposure_confound_removed": true,
+    "owner_response_objective_passed": false,
+    "reason": "balanced owner-response training steadily reduced cross-task collapse and changed rank usage, but did not improve own-direct retrieval and worsened frozen successful-policy and held support relative to v13; the current full-layer hidden response is therefore not a sufficient owner-local compiler target",
+    "earliest_interface": "the response labeled for one owner is read from a downstream layer state that can be altered by many upstream LoRA targets, so its gradient is not local to the corresponding compiler head and can be satisfied by correlated global changes",
+    "next_major_variable": "replace projected downstream hidden-state matching with gauge-invariant target-local LoRA activation-effect distillation on the same detached source target inputs, preserving owner, horizon and occupancy while keeping raw A/B out of the target"
+  },
+  "decision": {
+    "verdict": "task_balanced_owner_response_bootstrap_failed_joint_geometry_and_support_gate",
+    "promote_v15_checkpoint": false,
+    "run_matched_outcome_macro": false,
+    "run_held5_closed_loop": false,
+    "start_q_v": false,
+    "continue_same_training_curve": false,
+    "retain_v13_baseline_barrier": true,
+    "retain_v2_support_bank_as_state_authority": true,
+    "next": "Implement one canonical owner-local activation-effect target and re-run the bounded task-balanced Stage 1 gate; do not add outcome credit until geometry and frozen support jointly establish a usable compiler coordinate."
+  }
+}

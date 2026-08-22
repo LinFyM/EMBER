@@ -30,8 +30,11 @@
   仍是pair cosine `.99595`、own retrieval `1/24`。v13 objective修正保留。**OCPB v14 owner-resolved policy-response
   distillation**也已完成v2 bank、真实profile、一个outcome macro、24-task物化与308-panel审计；新loss和梯度图有效，但这一
   checkpoint只接受了一个optimizer update，geometry仍为`.99575/1-of-24`，fit/held support为`.96795/1.00313x`且breadth
-  `13/19、2/5`，因此不promote、不运行held5或`q_V`。当前唯一active后继是把同一owner-response objective从昂贵rollout中拆出，
-  按既有Stage 1 task-balanced schedule训练首个114-visits/19-updates信息节点；不再用一次optimizer update过早否定专家核心目标。
+  `13/19、2/5`，因此不promote、不运行held5或`q_V`。随后 **v15 task-balanced owner-response bootstrap** 已完整裁决：从v13
+  model weights与fresh optimizer完成228 visits/38 updates，candidate pair cosine持续降到`.98727`，但own retrieval仍`1/24`；
+  308-panel fit/held support退到`.97253/1.02171x`，breadth为`13/19、1/5`。v15因此关闭，不接outcome macro、held5或`q_V`。
+  当前唯一active后继是把监督从“可被上游多个targets共同改变的下游owner hidden”改为同一冻结source target input上的
+  target-local、gauge-invariant `B(Ax_ref)` activation effect，直接识别每个compiler head应产生的局部功能方向。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -313,7 +316,20 @@
   baseline barrier和owner-resolved response，metrics显式记录owner active/disagreement与compiler factor-head gradient。首个formal
   上限固定为114 visits/19 updates，只有geometry移动才允许exact-resume至228。旧v10/v14 active configs、outcome trainer/
   contract/train-step/config四模块和旧script均已删除，materializer只接受v15 checkpoint；历史由Git与formal artifacts保留。
-  21项Stage 1聚焦合同、py_compile、pyflakes、JSON与diff检查通过；真实GPU profile尚未运行，当前不能声称科学改进。
+  21项Stage 1聚焦合同、py_compile、pyflakes、JSON与diff检查通过。
+- v15真实GPU profile与两个formal节点均已完成。profile一次更新2.24秒、峰值16.40 GB，Writer/FactorHead裁剪前梯度分别
+  `5.1564/2.2342`；clean pushed `b2faaeb`在gpu01 physical `1--6`完成228 visits/38 updates，每个fit task恰好12 visits，
+  prohibited physical0始终无CUDA进程。114节点pair cosine由v13`.99595`降到`.99229`且norm ratio由`1.97`收至`1.80`，故按门
+  exact-resume；228节点继续到`.98727/1.71`，但own/nearest为`.03980/.06075`、retrieval仍`1/24`。
+- v15 frozen 308-panel audit进一步否定了“几何开始分散即代表task policy方向成立”。fit candidate/shared为
+  `.39401/.40514=.97253x`、breadth`13/19`；held为`.63789/.62434=1.02171x`、breadth`1/5`，shared panel wins由v13的155
+  降到146。learner panels改善到`.95158x`，successful panels却退到`.98404x`，说明当前目标可通过相关全局hidden变化被优化，
+  但没有识别对应LoRA target的成功策略作用。按预登记联合门，不运行matched outcome macro、held5、fold rotation或`q_V`，
+  不续同一曲线。正式证据见`docs/evidence/ecp_20260822/stage1_owner_response_bootstrap_v15_gate.json`。
+- 最早接口已经从“训练步数不足”收紧为owner监督的局部性：当前`owner_response`读取某层投影hidden/residual，但该hidden可由所有
+  上游LoRA targets共同改变，owner索引并不保证梯度只识别对应factor head。active v16只替换这一个主要变量：在相同真实
+  occupancy的同一detached source target input上，以每个target的gauge-invariant LoRA activation effect `B(Ax_ref)`作为expert/source/
+  candidate功能对象，保留owner和50-step horizon并压缩缓存，不重建raw A/B；其余v13 barrier、Program/compiler、schedule和门不变。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

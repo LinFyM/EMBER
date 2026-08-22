@@ -189,10 +189,16 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   checkpoint未改善geometry或support，不能进入held5或`q_V`；
 - [x] 将v14 outcome-only入口收敛回唯一Stage 1 trainer，实现v15 task-balanced owner-response bootstrap；删除两套退役
   active configs、四个outcome orchestration模块与旧入口，保留一个canonical训练/物化运行面；
-- [ ] 将专家要求的multi-state owner-resolved policy-response distillation从昂贵rollout macro中拆成task-balanced优化阶段：
-  从v13 model weights与fresh optimizer运行首个114-visits/19-updates信息节点，保持v13 barrier与全部Program/compiler结构；
-- [ ] 114节点先物化geometry；只有task-relative方向出现实质移动才继续到最多228 visits并运行冻结support audit，随后才允许
-  一个matched outcome-calibration macro；
+- [x] 将专家要求的multi-state owner-resolved policy-response distillation从昂贵rollout macro中拆成task-balanced优化阶段：
+  从v13 model weights与fresh optimizer完成114-visits/19-updates信息节点，保持v13 barrier与全部Program/compiler结构；
+- [x] 114节点先物化geometry；task-relative方向出现实质移动后exact-resume到228 visits并完成冻结support audit。最终
+  pair cosine降至`.98727`，但own retrieval仍`1/24`，fit/held support退到`.97253/1.02171x`，因此联合门失败且不运行
+  outcome-calibration、held5或`q_V`；
+- [ ] 实现 **OCPB v16 owner-local activation-effect distillation**：在真实successful/learner occupancy的同一冻结source target
+  input上，直接匹配gauge-invariant的`B(Ax_ref)`局部功能增量，保留完整owner/horizon结构；不再把可被所有上游targets共同改变的下游hidden
+  当作“对应owner”目标，不读取raw A/B；
+- [ ] 从v13 authority用同一114/228 task-balanced节点裁决v16；只有own-direct、retrieval与同一冻结support共同改善，才接回一个
+  matched outcome-calibration macro并进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

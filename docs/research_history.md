@@ -942,6 +942,24 @@ distillation。后继从v13 model weights和fresh optimizer建立无simulator的
 114 visits/19 updates；先以24-task geometry决定是否继续至228 visits、full support与一个matched outcome macro。证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v14_owner_response_gate.json`。
 
+### 3.49 v15完整优化owner response后仍未建立同task policy方向
+
+clean pushed `b2faaeb`把owner-response distillation从昂贵outcome macro拆回唯一Stage 1 trainer。从v13只加载model weights、
+fresh AdamW在gpu01 physical `1--6`完成228 visits/38 updates，每个fit task恰好12 visits；prohibited physical0无CUDA
+process。真实profile一次更新2.24秒、峰值16.40 GB，Writer/FactorHead梯度分别`5.1564/2.2342`。114节点pair cosine由
+v13`.99595`降到`.99229`，按预登记方向门exact-resume；228节点继续降至`.98727`，norm ratio从`1.97`收至`1.71`。
+
+完整优化没有恢复task定位。228节点own/nearest-direct为`.03980/.06075`、retrieval仍`1/24`；308-panel fit/held
+candidate-to-shared为`.97253/1.02171x`、breadth`13/19、1/5`，shared panel wins为146。相对v13的
+`.96741/1.00168x`、`13/19、3/5`和155 wins均未改善。learner panels虽达到`.95158x`，successful panels却退到
+`.98404x`，说明当前projected full-layer hidden target能够推动输出分散，却不能识别对应successful LoRA target的局部功能。
+联合geometry/support门失败，故不接matched outcome macro、不运行held5、fold rotation或`q_V`，也不续同一训练曲线。
+
+代码级边界是：标记为owner `j`的累计hidden/residual仍可被所有上游LoRA targets共同改变，owner loss并非head-local。
+后继只替换监督对象为同一detached source target input上的gauge-invariant activation effect `B_j(A_j x_j^{ref})`，保留owner/horizon、
+multi-state occupancy、member disagreement和v13 barrier，不恢复raw A/B target。证据：
+`docs/evidence/ecp_20260822/stage1_owner_response_bootstrap_v15_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

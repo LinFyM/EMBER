@@ -1223,3 +1223,24 @@ optimizer step；此前可裁决的Stage 1短程节点228 visits则是38 updates
 bank，从v13 model weights和fresh optimizer建立task-balanced response-only阶段；114 visits/19 updates后先检查真实24-task
 geometry，只有方向开始形成才继续至最多228 visits和full support audit，再允许一个matched outcome macro。正式证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v14_owner_response_gate.json`。
+
+## 58. task-balanced owner response打破部分跨task坍缩，却没有识别owner-local成功策略方向
+
+v15从v13 model weights和fresh optimizer完成228 visits/38 updates，每个fit task恰好12 visits；FactorHead裁剪前梯度在
+`.7801--4.2447`内持续非零，排除了v14只有一个optimizer update的暴露不足。114节点candidate pair cosine已由v13
+`.99595`降到`.99229`，own-minus-nearest margin、norm ratio与有效参与秩也同向移动，因此按预登记合同exact-resume至228。
+最终pair cosine继续降到`.98727`、norm ratio降到`1.71187`、参与秩升到`1.12559`，说明目标确实改变了compiler输出，不能再
+把失败解释为“owner loss没有进入factor heads”。
+
+改变的方向仍不对应own successful policy。228节点own/nearest-direct为`.03980/.06075`，own retrieval仍`1/24`；冻结
+308-panel audit中fit candidate/shared为`.97253x`、breadth`13/19`，held为`1.02171x`、breadth仅`1/5`。相对v13的
+`.96741/1.00168x`、`13/19、3/5`和155个shared panel wins，v15退到146 wins。分解后learner ratio从v13`.96013x`改善到
+`.95158x`，successful却从`.97171x`退到`.98404x`，进一步说明它学到的是可降低部分局部响应误差的相关变化，而不是完整
+successful-policy等价类。联合geometry/support门失败，不能用outcome credit替这个坐标发明方向，也不运行held5或`q_V`。
+
+最早接口是“owner-resolved”命名没有带来真正的owner-local梯度。当前target来自某层累计hidden与residual的投影；owner `j`
+处的hidden可同时被所有上游LoRA targets改变，因此对应loss可以由多head协同变化满足。下一主要变量不是继续训练、调LR/rank/
+权重或恢复raw A/B，而是在相同successful/learner occupancy和detached source reference input上直接监督每个target的
+gauge-invariant局部activation effect `B_j(A_j x_j^{ref})`。它保留owner与horizon，只约束expert adapter在被访问子空间上的功能，
+不会要求复制任意factor gauge；其余v13 barrier、Program/compiler、schedule和联合门保持不变。正式证据：
+`docs/evidence/ecp_20260822/stage1_owner_response_bootstrap_v15_gate.json`。

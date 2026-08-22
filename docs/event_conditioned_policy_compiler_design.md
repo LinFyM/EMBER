@@ -705,6 +705,29 @@ factor heads、selector、`q_pi`和共享compiler接收同一task loss。checkpo
 materializer只接受114/228节点。旧v10/v14 active configs与outcome专用orchestration已从active tree删除；未来若geometry/support
 通过，closed-loop outcome作为同一Stage 1 trainer的后续阶段接回，不恢复第二套可执行Writer路径。
 
+v15已经完成上述完整裁决。task-balanced梯度确实让candidate pair cosine从v13`.99595`依次降到114节点`.99229`和228节点
+`.98727`，norm ratio也由`1.97`收至`1.71`；因此“owner objective只缺optimizer updates”的优化混淆已排除。但own-direct
+始终约`.0398`、nearest-other仍约`.0608`、retrieval保持`1/24`。更关键的是冻结308-panel support相对v13退化：fit/held
+candidate-to-shared由`.96741/1.00168x`变为`.97253/1.02171x`，held breadth由`3/5`降到`1/5`。所以geometry与support没有
+共同成立，matched outcome macro、held5和`q_V`都不允许启动。
+
+代码与专家原始“更贴近LoRA target的policy-native量”要求共同指出下一个更早接口：当前所谓owner response是某层累计hidden/
+residual的冻结投影；即使标记为owner `j`，所有上游LoRA targets都能改变它，loss梯度也能经多head相关变化满足。这解释了
+“跨task输出开始分散，但同task successful support没有提高”。后继称为 **OCPB v16 owner-local activation-effect
+distillation**，只替换功能监督对象：
+
+\[
+\Delta y_{j,s,h}=B_j(A_j x^{ref}_{j,s,h}),
+\]
+
+其中`x_ref`是successful/learner occupancy上冻结source policy在相同noise/time下实际产生、随后detach的target input；q/v、
+action-in与action-out各自使用对应原生输入，所有expert/candidate在同一个reference input上比较。它保留owner与50-step horizon并
+只在缓存阶段做低维basis压缩。这个对象对`A/B` gauge不变、梯度严格落到对应target
+effect，却不是raw A/B重建，也不要求复制某个expert的任意参数化。source、多个successful members与candidate都在相同state、
+noise/time和输入合同上计算局部effect；member disagreement与outcome继续决定confidence。v16保持v13 barrier、Program、
+q_pi、compiler容量、rank16、114/228 task-balanced schedule与联合geometry/support门不变；只有该门通过后才接回一个
+matched closed-loop outcome macro。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

@@ -1,141 +1,129 @@
-"""Action-informed factor coordinates for task-equal Stage 1 outcome credit."""
+"""Action-informed reachable Program coordinates for Stage 1 outcome credit."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
 
 import torch
 
-from ember.ecp.contracts import TargetOwner
-from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
+from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.program import ECPProgram
 from ember.reward.protocol import RewardProtocolError
 
 
 @dataclass(frozen=True)
-class ActionGuidedFactorPerturbation:
-    """One paired complete-LoRA perturbation in 38 owner-local directions."""
+class ActionGuidedProgramPerturbation:
+    """One paired perturbation in a fixed compiler's Program tangent space."""
 
+    family: TargetFamily
+    owner_indices: tuple[int, ...]
     epsilon: torch.Tensor
     sigma: float
-    directions: Mapping[str, torch.Tensor]
+    direction: torch.Tensor
     direction_norm_sq: torch.Tensor
-    plus_state: Mapping[str, torch.Tensor]
-    minus_state: Mapping[str, torch.Tensor]
-    active_owners: int
+    plus_program: ECPProgram
+    minus_program: ECPProgram
+    active_elements: int
 
 
-def _rademacher(count: int, *, seed: int, device: torch.device) -> torch.Tensor:
-    generator = torch.Generator(device="cpu").manual_seed(seed)
-    return (
-        torch.randint(0, 2, (1, count), generator=generator, dtype=torch.float32)
-        .mul_(2.0)
-        .sub_(1.0)
-        .to(device)
+def _with_process(program: ECPProgram, process: torch.Tensor) -> ECPProgram:
+    return ECPProgram(
+        language=program.language.detach(),
+        scene=program.scene.detach(),
+        process=process,
+        presence=program.presence.detach(),
+        uncertainty=program.uncertainty.detach(),
     )
 
 
-def action_guided_factor_perturbation(
-    state: Mapping[str, torch.Tensor],
-    action_gradients: Mapping[str, torch.Tensor],
+def action_guided_program_perturbation(
+    program: ECPProgram,
+    action_gradient: torch.Tensor,
     owners: tuple[TargetOwner, ...],
     *,
+    family: TargetFamily,
     sigma: float,
-    seed: int,
-) -> ActionGuidedFactorPerturbation:
-    """Use exact action-loss descent as one relative factor direction per owner.
+) -> ActionGuidedProgramPerturbation:
+    """Normalize one family block of exact action descent in Program space.
 
-    Each A/B pair is jointly L2-normalized, then rescaled to the base pair's
-    factor norm. Consequently ``sigma`` is the same relative factor change for
-    every active owner despite different target shapes and families.
+    The block contains every visible ordered event and every native owner in the
+    selected target family. Its direction has the same L2 norm as the current
+    Program block, so ``sigma`` is a relative Program perturbation. Both arms
+    are therefore outputs of the same permanently frozen compiler.
     """
 
-    expected = {
-        owner.target_name + suffix
-        for owner in owners
-        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX)
-    }
-    if set(state) != expected or set(action_gradients) != expected or sigma <= 0:
-        raise RewardProtocolError("invalid action-guided factor surface")
-    first = next(iter(state.values()))
-    epsilon = _rademacher(len(owners), seed=seed, device=first.device)
-    directions: dict[str, torch.Tensor] = {}
-    plus: dict[str, torch.Tensor] = {}
-    minus: dict[str, torch.Tensor] = {}
-    norm_squares = []
-    active = 0
-    for owner in owners:
-        name_a = owner.target_name + LORA_A_SUFFIX
-        name_b = owner.target_name + LORA_B_SUFFIX
-        base_a = state[name_a].detach().float()
-        base_b = state[name_b].detach().float()
-        gradient_a = action_gradients[name_a].detach().float()
-        gradient_b = action_gradients[name_b].detach().float()
-        base_norm_sq = base_a.square().sum() + base_b.square().sum()
-        gradient_norm_sq = gradient_a.square().sum() + gradient_b.square().sum()
-        if not bool(torch.isfinite(base_norm_sq + gradient_norm_sq)) or float(
-            base_norm_sq
-        ) <= 0:
-            raise RewardProtocolError("non-finite action-guided factor direction")
-        if float(gradient_norm_sq) > 0:
-            scale = (base_norm_sq / gradient_norm_sq).sqrt()
-            direction_a = -gradient_a * scale
-            direction_b = -gradient_b * scale
-            active += 1
-        else:
-            direction_a = torch.zeros_like(base_a)
-            direction_b = torch.zeros_like(base_b)
-            epsilon[:, owner.index] = 0
-        coefficient = sigma * epsilon[0, owner.index]
-        directions[name_a] = direction_a
-        directions[name_b] = direction_b
-        plus[name_a] = (base_a + coefficient * direction_a).to(state[name_a])
-        plus[name_b] = (base_b + coefficient * direction_b).to(state[name_b])
-        minus[name_a] = (base_a - coefficient * direction_a).to(state[name_a])
-        minus[name_b] = (base_b - coefficient * direction_b).to(state[name_b])
-        norm_squares.append(base_norm_sq)
-    return ActionGuidedFactorPerturbation(
-        epsilon=epsilon,
+    process = program.process.detach().float()
+    if (
+        process.ndim != 4
+        or process.shape[0] != 1
+        or action_gradient.shape != process.shape
+        or process.shape[2] != len(owners)
+        or sigma <= 0
+        or not bool(torch.isfinite(process).all())
+        or not bool(torch.isfinite(action_gradient).all())
+    ):
+        raise RewardProtocolError("invalid action-guided Program surface")
+    owner_indices = tuple(
+        owner.index for owner in owners if owner.family is family
+    )
+    if not owner_indices:
+        raise RewardProtocolError("Program family block has no owners")
+    owner_mask = torch.zeros(
+        (1, 1, len(owners), 1), device=process.device, dtype=process.dtype
+    )
+    owner_mask[:, :, owner_indices] = 1.0
+    event_mask = (program.presence.detach().float() > 0).to(process)[
+        :, :, None, None
+    ]
+    mask = owner_mask * event_mask
+    block = process * mask
+    gradient = action_gradient.detach().float() * mask
+    block_norm_sq = block.square().sum()
+    gradient_norm_sq = gradient.square().sum()
+    if (
+        not bool(torch.isfinite(block_norm_sq + gradient_norm_sq))
+        or float(block_norm_sq) <= 0
+        or float(gradient_norm_sq) <= 0
+    ):
+        raise RewardProtocolError("action gradient did not reach Program block")
+    direction = -gradient * (block_norm_sq / gradient_norm_sq).sqrt()
+    direction_norm_sq = direction.square().sum()
+    plus = (process + sigma * direction).to(program.process)
+    minus = (process - sigma * direction).to(program.process)
+    active_elements = int(mask.sum().item() * process.shape[-1])
+    return ActionGuidedProgramPerturbation(
+        family=family,
+        owner_indices=owner_indices,
+        epsilon=process.new_ones((1, 1)),
         sigma=float(sigma),
-        directions=directions,
-        direction_norm_sq=torch.stack(norm_squares),
-        plus_state=plus,
-        minus_state=minus,
-        active_owners=active,
+        direction=direction,
+        direction_norm_sq=direction_norm_sq,
+        plus_program=_with_process(program, plus),
+        minus_program=_with_process(program, minus),
+        active_elements=active_elements,
     )
 
 
-def action_guided_outcome_leaf_gradients(
-    perturbation: ActionGuidedFactorPerturbation,
-    owners: tuple[TargetOwner, ...],
+def action_guided_program_leaf_gradient(
+    perturbation: ActionGuidedProgramPerturbation,
     coordinate_gradient: torch.Tensor,
     *,
     weight: float,
-) -> dict[str, torch.Tensor]:
-    """Project reward ascent onto the action-informed directions.
-
-    The returned tensors are loss gradients. For every active owner their inner
-    product with its proposal direction equals the negative weighted reward
-    coordinate gradient, so optimizer descent performs reward ascent without
-    treating reward as a deployment input.
-    """
+) -> torch.Tensor:
+    """Return a loss gradient whose Program-direction dot is reward ascent."""
 
     if (
-        coordinate_gradient.shape != (1, len(owners))
-        or perturbation.direction_norm_sq.shape != (len(owners),)
+        coordinate_gradient.shape != (1, 1)
         or weight <= 0
         or not bool(torch.isfinite(coordinate_gradient).all())
+        or float(perturbation.direction_norm_sq) <= 0
     ):
-        raise RewardProtocolError("invalid action-guided outcome gradient")
-    result: dict[str, torch.Tensor] = {}
-    for owner in owners:
-        denominator = perturbation.direction_norm_sq[owner.index].clamp_min(1e-20)
-        coefficient = (
-            -weight * coordinate_gradient[0, owner.index].float() / denominator
-        )
-        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX):
-            name = owner.target_name + suffix
-            result[name] = (coefficient * perturbation.directions[name]).to(
-                perturbation.plus_state[name]
-            )
-    return result
+        raise RewardProtocolError("invalid action-guided Program gradient")
+    coefficient = (
+        -weight
+        * coordinate_gradient[0, 0].float()
+        / perturbation.direction_norm_sq.float()
+    )
+    return (coefficient * perturbation.direction).to(
+        perturbation.plus_program.process
+    )

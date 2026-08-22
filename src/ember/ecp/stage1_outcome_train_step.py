@@ -1,4 +1,4 @@
-"""One task-equal v18 macro with action-guided paired simulator credit."""
+"""One task-equal fixed-compiler Program-credit macro."""
 
 from __future__ import annotations
 
@@ -9,11 +9,13 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.compiler import select_compiled_state
+from ember.ecp.contracts import TargetFamily
+from ember.ecp.program import ECPProgram
 from ember.ecp.stage1_data import pack_stage1_videos
 from ember.ecp.stage1_objective import ecp_stage1_loss
 from ember.ecp.stage1_outcome import (
-    action_guided_factor_perturbation,
-    action_guided_outcome_leaf_gradients,
+    action_guided_program_leaf_gradient,
+    action_guided_program_perturbation,
 )
 from ember.ecp.stage1_outcome_training import successful_panel_for_visit
 from ember.ecp.stage1_support import (
@@ -22,11 +24,7 @@ from ember.ecp.stage1_support import (
 )
 from ember.lora import copy_task_lora_state_
 from ember.reward.credit import paired_antithetic_credit
-from ember.reward.protocol import (
-    RewardTask,
-    reward_credit_environment_seed,
-    reward_credit_update_seed,
-)
+from ember.reward.protocol import RewardTask, reward_credit_environment_seed
 from ember.reward.rollout import (
     RewardTrajectory,
     capture_paired_initial_states,
@@ -167,12 +165,84 @@ def _action_gradient(
     return loss, gradients
 
 
+def _leaf_program(program: ECPProgram, process: torch.Tensor) -> ECPProgram:
+    return ECPProgram(
+        language=program.language.detach(),
+        scene=program.scene.detach(),
+        process=process,
+        presence=program.presence.detach(),
+        uncertainty=program.uncertainty.detach(),
+    )
+
+
+def _program_action_gradient(
+    runtime: "ECPStage1OutcomeRuntime",
+    *,
+    program: ECPProgram,
+    panel: CachedPolicySupportPanel,
+    task_ordinal: int,
+    macro: int,
+) -> tuple[
+    torch.Tensor,
+    dict[str, torch.Tensor],
+    torch.Tensor,
+    dict[str, torch.Tensor],
+]:
+    process = program.process.detach().float().requires_grad_(True)
+    leaf_program = _leaf_program(program, process)
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        compilation = runtime.model.compiler(leaf_program)
+        candidate = select_compiled_state(compilation.state, 0)
+    action_loss, action_lora_gradients = _action_gradient(
+        runtime,
+        candidate=candidate,
+        panel=panel,
+        task_ordinal=task_ordinal,
+        macro=macro,
+    )
+    chain = sum(
+        (candidate[name].float() * action_lora_gradients[name].float()).sum()
+        for name in candidate
+    )
+    program_gradient = torch.autograd.grad(chain, process)[0].detach()
+    return (
+        action_loss,
+        action_lora_gradients,
+        program_gradient,
+        {name: value.detach() for name, value in candidate.items()},
+    )
+
+
+def _compile_program(
+    runtime: "ECPStage1OutcomeRuntime", program: ECPProgram
+) -> dict[str, torch.Tensor]:
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        output = runtime.model.compiler(program)
+    return {
+        name: value.detach()
+        for name, value in select_compiled_state(output.state, 0).items()
+    }
+
+
 def _tensor_dict_norm(values: Mapping[str, torch.Tensor]) -> float:
     return float(
         torch.stack([value.float().square().sum() for value in values.values()])
         .sum()
         .sqrt()
     )
+
+
+def _compiled_relative_delta(
+    base: Mapping[str, torch.Tensor],
+    plus: Mapping[str, torch.Tensor],
+    minus: Mapping[str, torch.Tensor],
+) -> float:
+    base_norm_sq = sum(value.float().square().sum() for value in base.values())
+    delta_norm_sq = sum(
+        ((plus[name].float() - minus[name].float()) * 0.5).square().sum()
+        for name in base
+    )
+    return float((delta_norm_sq / base_norm_sq.clamp_min(1e-20)).sqrt())
 
 
 def _task_update(
@@ -195,32 +265,33 @@ def _task_update(
     ]
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         baseline = runtime.model(encoded, evidence, packed.video_group_ids)
-        base_adapter = {
-            name: value.detach()
-            for name, value in select_compiled_state(
-                baseline.consensus_compilation.state, 0
-            ).items()
-        }
-    with torch.autocast("cuda", dtype=torch.bfloat16):
-        action_loss, action_gradients = _action_gradient(
-            runtime,
-            candidate=base_adapter,
-            panel=proposal_cached,
-            task_ordinal=task.ordinal,
-            macro=macro,
-        )
-    epsilon_seed = reward_credit_update_seed(
-        int(outcome["update_seed_root"]), task.global_task_id, macro
+    family = TargetFamily(
+        outcome["family_sequence"][macro % len(outcome["family_sequence"])]
     )
-    perturbation = action_guided_factor_perturbation(
+    (
+        action_loss,
+        action_lora_gradients,
+        action_program_gradient,
         base_adapter,
-        action_gradients,
-        runtime.owners,
-        sigma=float(outcome["relative_factor_sigma"]),
-        seed=epsilon_seed,
+    ) = _program_action_gradient(
+        runtime,
+        program=baseline.teacher.program,
+        panel=proposal_cached,
+        task_ordinal=task.ordinal,
+        macro=macro,
     )
-    if perturbation.active_owners < int(outcome["minimum_active_owners"]):
-        raise RuntimeError("exact action proposal did not reach every target owner")
+    perturbation = action_guided_program_perturbation(
+        baseline.teacher.program,
+        action_program_gradient,
+        runtime.owners,
+        family=family,
+        sigma=float(outcome["relative_program_sigma"]),
+    )
+    plus_adapter = _compile_program(runtime, perturbation.plus_program)
+    minus_adapter = _compile_program(runtime, perturbation.minus_program)
+    compiled_delta = _compiled_relative_delta(
+        base_adapter, plus_adapter, minus_adapter
+    )
     reward_task = runtime.reward_tasks[task.ordinal]
     rollout_cursors = (macro * 2, macro * 2 + 1)
     environment_seeds = tuple(
@@ -247,7 +318,7 @@ def _task_update(
         plus = _arm_rollout(
             runtime,
             task=reward_task,
-            adapter=perturbation.plus_state,
+            adapter=plus_adapter,
             rollout_cursors=rollout_cursors,
             environment_seeds=environment_seeds,
             initial_states=initial_states,
@@ -255,7 +326,7 @@ def _task_update(
         minus = _arm_rollout(
             runtime,
             task=reward_task,
-            adapter=perturbation.minus_state,
+            adapter=minus_adapter,
             rollout_cursors=rollout_cursors,
             environment_seeds=environment_seeds,
             initial_states=initial_states,
@@ -273,9 +344,8 @@ def _task_update(
         progress_weight=float(outcome["progress_weight"]),
         success_efficiency_weight=float(outcome["success_efficiency_weight"]),
     )
-    leaf_gradients = action_guided_outcome_leaf_gradients(
+    program_leaf = action_guided_program_leaf_gradient(
         perturbation,
-        runtime.owners,
         credit.gradient,
         weight=float(outcome["leaf_gradient_weight"]),
     )
@@ -313,13 +383,12 @@ def _task_update(
         structural_total = functional.total + float(
             runtime.config["objective"]["activation_effect_distillation_weight"]
         ) * activation_effect.loss
-        outcome_surrogate = sum(
-            (candidate[name].float() * leaf_gradients[name].float()).sum()
-            for name in candidate
-        )
+        outcome_surrogate = (
+            output.teacher.program.process.float() * program_leaf.float()
+        ).sum()
         total = (structural_total + outcome_surrogate) / len(runtime.tasks)
     if not bool(torch.isfinite(total)):
-        raise RuntimeError("non-finite action-guided Stage 1 task loss")
+        raise RuntimeError("non-finite fixed-compiler Program task loss")
     total.backward()
     return {
         "rank": runtime.context.rank,
@@ -329,15 +398,20 @@ def _task_update(
         "task_id": task.task_id,
         "macro": macro + 1,
         "demo_indices": list(packed.demo_indices),
-        "epsilon_seed": epsilon_seed,
-        "active_owners": perturbation.active_owners,
-        "relative_factor_sigma": perturbation.sigma,
+        "program_family": family.value,
+        "program_owner_count": len(perturbation.owner_indices),
+        "active_program_elements": perturbation.active_elements,
+        "relative_program_sigma": perturbation.sigma,
+        "compiled_relative_delta": compiled_delta,
         "action_policy_loss": float(action_loss),
-        "action_lora_gradient_norm": _tensor_dict_norm(action_gradients),
-        "outcome_leaf_gradient_norm": _tensor_dict_norm(leaf_gradients),
-        "mean_abs_coordinate_gradient": float(
-            credit.gradient.abs().mean()
+        "action_lora_gradient_norm": _tensor_dict_norm(action_lora_gradients),
+        "action_program_gradient_norm": float(
+            action_program_gradient.float().square().sum().sqrt()
         ),
+        "outcome_program_leaf_gradient_norm": float(
+            program_leaf.float().square().sum().sqrt()
+        ),
+        "coordinate_gradient": float(credit.gradient[0, 0]),
         "mean_advantage": credit.mean_advantage,
         "plus_successes": credit.plus_successes,
         "minus_successes": credit.minus_successes,
@@ -359,29 +433,50 @@ def _task_update(
     }
 
 
-def _sync_gradients(runtime: "ECPStage1OutcomeRuntime") -> tuple[float, float]:
+def _module_gradient_norm(module: torch.nn.Module) -> torch.Tensor:
+    values = [
+        parameter.grad.float().square().sum()
+        for parameter in module.parameters()
+        if parameter.grad is not None
+    ]
+    if not values:
+        return next(module.parameters()).new_zeros((), dtype=torch.float32)
+    return torch.stack(values).sum().sqrt()
+
+
+def _sync_gradients(
+    runtime: "ECPStage1OutcomeRuntime",
+) -> tuple[float, float, float, float]:
     for parameter in runtime.trainable_parameters:
         if parameter.grad is None:
             parameter.grad = torch.zeros_like(parameter)
         if runtime.context.world_size > 1:
             dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)
-    factor_gradient = sum(
-        parameter.grad.float().square().sum()
-        for heads in (
-            runtime.model.compiler.factor_a,
-            runtime.model.compiler.factor_b,
-        )
-        for parameter in heads.parameters()
-    ).sqrt()
+    teacher_gradient = _module_gradient_norm(runtime.model.policy_teacher)
+    compiler_gradient = _module_gradient_norm(runtime.model.compiler)
+    visible_gradient = _module_gradient_norm(runtime.model.visible_program)
     gradient = torch.nn.utils.clip_grad_norm_(
         runtime.trainable_parameters,
         float(
             runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
         ),
     )
-    if not bool(torch.isfinite(gradient + factor_gradient)):
-        raise RuntimeError("non-finite action-guided Stage 1 gradient")
-    return float(gradient), float(factor_gradient)
+    if (
+        not bool(
+            torch.isfinite(
+                gradient + teacher_gradient + compiler_gradient + visible_gradient
+            )
+        )
+        or float(compiler_gradient) != 0.0
+        or float(visible_gradient) != 0.0
+    ):
+        raise RuntimeError("fixed Stage 1 coordinate received an invalid gradient")
+    return (
+        float(gradient),
+        float(teacher_gradient),
+        float(compiler_gradient),
+        float(visible_gradient),
+    )
 
 
 def _gather_records(
@@ -409,7 +504,12 @@ def run_outcome_macro(
         _task_update(runtime, task=task, macro=macro)
         for task in runtime.local_tasks
     ]
-    gradient_norm, factor_gradient = _sync_gradients(runtime)
+    (
+        gradient_norm,
+        teacher_gradient,
+        compiler_gradient,
+        visible_gradient,
+    ) = _sync_gradients(runtime)
     runtime.optimizer.step()
     runtime.scheduler.step()
     records = _gather_records(runtime, local)
@@ -418,9 +518,10 @@ def run_outcome_macro(
         return {"macro": completed}
     records.sort(key=lambda row: int(row["task_ordinal"]))
     if len(records) != len(runtime.tasks):
-        raise ValueError("action-guided macro lost task-equal coverage")
+        raise ValueError("fixed-compiler macro lost task-equal coverage")
     return {
         "macro": completed,
+        "program_family": records[0]["program_family"],
         "plus_successes": sum(int(row["plus_successes"]) for row in records),
         "minus_successes": sum(int(row["minus_successes"]) for row in records),
         "nonzero_advantage_tasks": sum(
@@ -440,16 +541,26 @@ def run_outcome_macro(
             float(row["action_policy_loss"]) for row in records
         )
         / len(records),
+        "mean_action_program_gradient_norm": sum(
+            float(row["action_program_gradient_norm"]) for row in records
+        )
+        / len(records),
+        "mean_compiled_relative_delta": sum(
+            float(row["compiled_relative_delta"]) for row in records
+        )
+        / len(records),
         "mean_structural_total": sum(
             float(row["structural_total"]) for row in records
         )
         / len(records),
-        "mean_outcome_leaf_gradient_norm": sum(
-            float(row["outcome_leaf_gradient_norm"]) for row in records
+        "mean_outcome_program_leaf_gradient_norm": sum(
+            float(row["outcome_program_leaf_gradient_norm"]) for row in records
         )
         / len(records),
         "gradient_norm_before_clip": gradient_norm,
-        "factor_head_gradient_norm_before_clip": factor_gradient,
+        "policy_teacher_gradient_norm_before_clip": teacher_gradient,
+        "compiler_gradient_norm_before_clip": compiler_gradient,
+        "visible_program_gradient_norm_before_clip": visible_gradient,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "elapsed_seconds": time.monotonic() - run_started,
         "max_cuda_allocated_bytes": int(

@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-21 **active design / implementation authority**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-22 **active design / implementation authority**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -734,7 +734,7 @@ pair cosine，而expert correction为`.82316`；candidate幅度只有expert corr
 fit/held candidate-to-shared退到`1.08581/1.08815x`、breadth`2/19、0/5`。所以`B(Ax_ref)`不是无信息目标，但**孤立
 target effect不足以定义38-target组合policy**；v16不续训、不接outcome、held5或`q_V`。
 
-唯一active后继称为 **OCPB v17 action-grounded composed-policy recovery**。它复用v16已经形成的task-discriminative model
+随后裁决的 **OCPB v17 action-grounded composed-policy recovery**复用v16已经形成的task-discriminative model
 weights，但因训练合同改变而创建fresh optimizer；每个visit仍由相同language、correct action-hidden videos和train-only
 `q_pi`生成一套完整LoRA，再在同task不同episode的policy batch上计算冻结PI0.5原生flow-matching loss：
 
@@ -763,7 +763,7 @@ ratio升到`1.14481`，证明exact action gradient确实让完整LoRA组合离�
 nearest-other`.05779`，retrieval退回`1/24`。更关键的是308-panel fit/held candidate-to-shared为`1.13962/1.12203x`，
 breadth`2/19、0/5`。所以action imitation提供了material但未被closed-loop识别的task-dependent方向；同一曲线不续228。
 
-下一active Stage 1修正称为 **OCPB v18 action-guided structured outcome binding**。它补齐专家Stage 1原始目标中尚未被当前
+随后裁决的 **OCPB v18 action-guided structured outcome binding**补齐专家Stage 1原始目标中尚未被当时
 factor方向真正执行的“task-equal closed-loop success/progress”：对每个fit task先在cross-episode successful panel上求完整LoRA
 的exact action leaf gradient，再按38个owner及其family/layer分组归一化为局部proposal direction；paired plus/minus LoRA只沿
 这些action-informed directions扰动，使用相同init state、environment RNG和policy-noise RNG，以success、BDDL peak progress与
@@ -807,6 +807,15 @@ event × layer-group × target-family分块。首个bounded实现每次只扰动
 reward surrogate只能更新privileged Program inference，FactorHeads、rank selector与其余compiler永久冻结。先用单task profile
 证明Program perturbation能产生足够的compiled LoRA差异、paired outcome差异和finite upstream gradient；若固定compiler局部
 不可达，就在训练前关闭，而不是靠放大sigma或重新解冻decoder。
+
+v19 retained实现已经替换唯一Stage 1运行面。模型从v13 macro1只加载weights并创建fresh optimizer；`visible_program`与
+`compiler`在整个阶段永久冻结，optimizer只拥有`policy_teacher`参数。第(m)个macro按预注册
+`q → v → action_in → action_out`选择一个family：先把successful cross-episode action loss对冻结compiler输入
+`P_process`的exact gradient反传出来，只保留全部active events与该family原生owners的block，再把负梯度归一到当前block的
+L2 norm。两臂使用`P_process ± .05 d`并分别经过同一冻结compiler；paired success/progress estimator只形成对
+`q_pi(P).process`的semi-gradient。结构/support objective仍约束同一个`q_pi`输出，但无法旋转compiler坐标。active config为
+`configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json`；旧v18 config和factor-space perturbation已从active tree删除。
+当前CPU合同已通过，下一门只是真实单task profile中的compiled relative delta、paired credit、上游梯度与冻结所有权。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
@@ -902,13 +911,14 @@ Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stag
 `program.py`独占visible Program与K-video集合聚合；`policy_teacher.py`独占train-only privileged `q_pi`；`compiler.py`独占
 38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`拥有task/member/video authority，
 `policy_response.py`拥有冻结PI0.5 full-layer capture与target-local activation effect，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
-bank及其运行时panel；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
-一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
+bank及其运行时panel；`stage1_objective.py`拥有结构/support loss，`stage1_outcome.py`拥有当前Program切向坐标，
+`stage1_outcome_train_step.py`与`stage1_outcome_training.py`分别拥有一次task-equal Program-credit macro及formal运行时/checkpoint，
+`stage1_training.py`只保留canonical入口和共享authority加载；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
 现有`expert_manifold` evaluator继续拥有闭环执行。已完成的OCPB outcome实现由Git和formal artifacts保存，不在active tree保留
 第二套orchestration；通用paired trajectory score仍由`reward/credit.py`拥有。当前唯一Stage 1训练入口为
-`train_ecp_stage1.py`；v17在该入口中复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，不新增第二个
-policy-loss实现或平行Writer。只有action/geometry/support联合门通过后，才在同一
-canonical Stage 1生命周期接回一个matched outcome macro，不恢复平行Writer或退役入口。
+`train_ecp_stage1.py`；v19仍复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，再经冻结compiler链到
+Program，不新增第二个policy-loss实现或平行Writer。只有Program reachability与geometry/support联合门通过后，才在同一
+canonical Stage 1生命周期进入held oracle，不恢复平行Writer或退役入口。
 
 生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1
 materializer只保留为oracle/evidence工具，正式部署由后续`q_V`经同一个Program/compiler生成LoRA。旧16维decoder、

@@ -14,8 +14,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_action_guided_outcome_binding_run_v18"
-STAGE = "stage1_action_guided_outcome_binding_v18"
+RUN_SCHEMA = "ember_ecp_stage1_fixed_compiler_program_binding_run_v19"
+STAGE = "stage1_fixed_compiler_program_binding_v19"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,9 +34,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_action_guided_outcome_binding_v18"
+        != "ember_ecp_stage1_fixed_compiler_program_binding_v19"
         or config.get("status")
-        != "active_stage1_action_guided_outcome_binding"
+        != "active_stage1_fixed_compiler_program_binding"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -102,23 +102,28 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             )
         )
         or config.get("initialization", {}).get("stage")
-        != "stage1_action_grounded_recovery_v17"
+        != "stage1_outcome_binding_v13"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_action_grounded_recovery_run_v17"
+        != "ember_ecp_stage1_outcome_binding_run_v13"
         or int(config.get("initialization", {}).get("checkpoint_macro", -1))
-        != 114
+        != 1
         or config.get("initialization", {}).get("load_model_weights_only")
         is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
         or config.get("outcome_binding", {}).get("proposal_coordinate")
-        != "exact_action_loss_negative_gradient_per_owner_ab_pair"
-        or float(config.get("outcome_binding", {}).get("relative_factor_sigma", -1))
+        != "exact_action_loss_negative_gradient_in_reachable_program_family_block"
+        or float(config.get("outcome_binding", {}).get("relative_program_sigma", -1))
         != 0.05
         or float(config.get("outcome_binding", {}).get("leaf_gradient_weight", -1))
-        <= 0
+        != 1.0
+        or tuple(config.get("outcome_binding", {}).get("family_sequence", ()))
+        != ("q", "v", "action_in", "action_out")
+        or config.get("outcome_binding", {}).get("compiler_trainable") is not False
+        or config.get("outcome_binding", {}).get("visible_program_trainable")
+        is not False
+        or config.get("outcome_binding", {}).get("policy_teacher_trainable")
+        is not True
         or int(config.get("outcome_binding", {}).get("lanes_per_arm", -1)) != 2
-        or int(config.get("outcome_binding", {}).get("minimum_active_owners", -1))
-        != 38
         or config.get("outcome_binding", {}).get("support_preservation")
         != "baseline_relative_response_barrier"
         or int(config.get("optimization", {}).get("world_size", -1)) != 6
@@ -130,7 +135,7 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or int(config.get("profile_defaults", {}).get("task_count", -1)) != 1
         or int(config.get("profile_defaults", {}).get("total_macros", -1)) != 1
     ):
-        raise ValueError("unsupported ECP Stage 1 action-guided outcome contract")
+        raise ValueError("unsupported ECP Stage 1 fixed-compiler Program contract")
     return config
 
 

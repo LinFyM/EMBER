@@ -300,7 +300,7 @@ def test_ecp_stage1_outcome_projection_keeps_the_same_single_lora_surface(
     assert contract["asset"]["single_complete_lora"] is True
 
 
-def test_ecp_stage1_action_guided_projection_is_one_complete_lora(
+def test_ecp_stage1_fixed_compiler_projection_is_one_complete_lora(
     tmp_path: Path,
 ) -> None:
     assets = {}
@@ -315,12 +315,15 @@ def test_ecp_stage1_action_guided_projection_is_one_complete_lora(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_action_guided_outcome_projection_v18",
-            "projection_kind": "ecp_stage1_privileged_action_guided_outcome_compiler",
+            "schema_version": "ember_ecp_stage1_fixed_compiler_program_projection_v19",
+            "projection_kind": "ecp_stage1_privileged_fixed_compiler_program_binding",
             **assets,
             "optimization": {
                 "outcome_macro": 2,
                 "held_shared_gradient_steps": 0,
+                "compiler_frozen_during_training": True,
+                "visible_program_frozen_during_training": True,
+                "policy_teacher_trainable_during_training": True,
                 "compiler_frozen_for_materialization": True,
                 "single_complete_lora": True,
                 "final_lora_averaging": False,
@@ -333,7 +336,7 @@ def test_ecp_stage1_action_guided_projection_is_one_complete_lora(
                 "raw_factor_addition": False,
                 "fixed_rank_partition": False,
                 "second_adapter_deployed": False,
-                "objective_phase": "task_equal_action_guided_outcome_binding",
+                "objective_phase": "task_equal_fixed_compiler_program_binding",
             },
             "information_wall": {
                 "privileged_q_pi": True,
@@ -341,7 +344,7 @@ def test_ecp_stage1_action_guided_projection_is_one_complete_lora(
             },
         }
     )
-    assert contract["arm"] == "ecp_stage1_q_pi_action_guided_outcome_m2"
+    assert contract["arm"] == "ecp_stage1_q_pi_fixed_compiler_program_m2"
     assert contract["asset"]["single_complete_lora"] is True
 
 

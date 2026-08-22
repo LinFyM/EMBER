@@ -20,8 +20,8 @@ from ember.ecp.stage1_materialization import (
     resolve_stage1_materialization_config,
 )
 from ember.ecp.stage1_outcome import (
-    action_guided_factor_perturbation,
-    action_guided_outcome_leaf_gradients,
+    action_guided_program_leaf_gradient,
+    action_guided_program_perturbation,
 )
 from ember.ecp.stage1_objective import (
     canonical_factor_loss,
@@ -131,17 +131,17 @@ def _expert_evidence(
     )
 
 
-def test_action_guided_materialization_uses_v18_macro_cursor() -> None:
+def test_fixed_compiler_materialization_uses_v19_macro_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
         REPO_ROOT
-        / "configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json"
+        / "configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json"
     )
-    assert resolved.stage == "stage1_action_guided_outcome_binding_v18"
+    assert resolved.stage == "stage1_fixed_compiler_program_binding_v19"
     assert resolved.cursor_name == "outcome_macro"
     assert resolved.checkpoint_cursors == (2, 4)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_action_guided_outcome_binding_v18"
+        "ember_ecp_stage1_fixed_compiler_program_binding_v19"
     )
 
 
@@ -196,70 +196,56 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     assert output.consensus_compilation.rank_angles.shape == (1, 38, 16)
 
 
-def test_action_guided_factor_perturbation_is_relative_action_descent() -> None:
+def test_action_guided_program_block_is_relative_action_descent() -> None:
     compiler, _ = _tiny_compiler()
-    compiler.rank_selector["q"].weight.data.normal_(std=0.1)
-    state = select_compiled_state(compiler(_tiny_program()).state, 0)
-    gradients = {name: torch.randn_like(value) for name, value in state.items()}
-    perturbation = action_guided_factor_perturbation(
-        state, gradients, compiler.owners, sigma=0.05, seed=17
+    program = _tiny_program()
+    gradient = torch.randn_like(program.process)
+    perturbation = action_guided_program_perturbation(
+        program,
+        gradient,
+        compiler.owners,
+        family=TargetFamily.Q,
+        sigma=0.05,
     )
     assert perturbation.epsilon.shape == (1, 1)
-    assert perturbation.active_owners == 1
-    owner = compiler.owners[0]
-    names = (
-        owner.target_name + LORA_A_SUFFIX,
-        owner.target_name + LORA_B_SUFFIX,
-    )
-    base_norm = sum(state[name].float().square().sum() for name in names).sqrt()
-    delta_norm = sum(
-        (perturbation.plus_state[name].float() - state[name].float())
-        .square()
-        .sum()
-        for name in names
-    ).sqrt()
+    assert perturbation.owner_indices == (0,)
+    base_norm = program.process.float().square().sum().sqrt()
+    delta_norm = (
+        perturbation.plus_program.process.float() - program.process.float()
+    ).square().sum().sqrt()
     torch.testing.assert_close(delta_norm / base_norm, torch.tensor(0.05))
-    for name in names:
-        torch.testing.assert_close(
-            (perturbation.plus_state[name] + perturbation.minus_state[name]) / 2,
-            state[name],
+    torch.testing.assert_close(
+        (
+            perturbation.plus_program.process
+            + perturbation.minus_program.process
         )
-    action_dot = sum(
-        (gradients[name].float() * perturbation.directions[name]).sum()
-        for name in names
+        / 2,
+        program.process,
     )
+    action_dot = (gradient.float() * perturbation.direction).sum()
     assert float(action_dot) < 0
 
 
-def test_action_guided_outcome_gradient_reaches_factor_directions() -> None:
+def test_action_guided_outcome_gradient_reaches_program_direction() -> None:
     compiler, _ = _tiny_compiler()
-    compiler.rank_selector["q"].weight.data.normal_(std=0.1)
-    state = select_compiled_state(compiler(_tiny_program()).state, 0)
-    gradients = {name: torch.randn_like(value) for name, value in state.items()}
-    perturbation = action_guided_factor_perturbation(
-        state, gradients, compiler.owners, sigma=0.05, seed=19
-    )
-    leaf = action_guided_outcome_leaf_gradients(
-        perturbation,
+    program = _tiny_program()
+    perturbation = action_guided_program_perturbation(
+        program,
+        torch.randn_like(program.process),
         compiler.owners,
+        family=TargetFamily.Q,
+        sigma=0.05,
+    )
+    leaf = action_guided_program_leaf_gradient(
+        perturbation,
         torch.tensor([[2.0]]),
         weight=0.1,
     )
-    owner = compiler.owners[0]
-    names = (
-        owner.target_name + LORA_A_SUFFIX,
-        owner.target_name + LORA_B_SUFFIX,
-    )
-    projected = sum(
-        (leaf[name].float() * perturbation.directions[name]).sum()
-        for name in names
-    )
+    projected = (leaf.float() * perturbation.direction).sum()
     torch.testing.assert_close(projected, torch.tensor(-0.2))
-    sum(
-        (state[name].float() * leaf[name].float()).sum() for name in state
-    ).backward()
-    assert float(compiler.factor_a["q"].weight.grad.abs().sum()) > 0
-    assert float(compiler.factor_b["q"].weight.grad.abs().sum()) > 0
+    process = program.process.detach().requires_grad_(True)
+    (process.float() * leaf.float()).sum().backward()
+    torch.testing.assert_close(process.grad, leaf)
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:

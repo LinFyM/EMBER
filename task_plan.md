@@ -216,10 +216,12 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 完成4个task-equal outcome macros及macro2/macro4两次24-task geometry与308-panel audit；credit在每轮覆盖`8--10/19`
   tasks，但own retrieval始终`1/24`，macro4 fit/held relative-shared退到`1.14317/1.13244x`、breadth仍`2/19、0/5`，
   因此v18关闭，不进入held5或`q_V`；
-- [ ] 实现 **OCPB v19 fixed-compiler structured Program binding**：回到support最强的v13完整坐标，永久冻结compiler，
+- [x] 实现 **OCPB v19 fixed-compiler structured Program binding**：回到support最强的v13完整坐标，永久冻结compiler，
   exact action gradient只在compiler可达的event × layer-group × target-family Program切空间定义proposal；每次paired panel只裁决
-  一个预注册family block，reward只更新privileged Program inference，不再让scalar outcome旋转FactorHeads；先做reachability profile，
-  再决定是否运行fit19 bounded节点；
+  一个预注册family block，reward只更新privileged Program inference，不再让scalar outcome旋转FactorHeads；active tree已替换为
+  v19单路径并通过47项聚焦CPU合同；
+- [ ] 完成v19单task reachability profile，确认固定compiler下Program扰动产生非零compiled LoRA差异、paired credit可用、
+  `policy_teacher`梯度finite且compiler/visible Program梯度严格为零；通过后才运行fit19 bounded节点；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -272,16 +274,15 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v16已完整裁决并关闭：local-effect MSE由v13`.48016`降到`.25057`、cosine retrieval提高到`11/24`，但candidate
-   correction pair cosine仍`.97657`而expert为`.82316`，说明主要学到约半程的task-common prior→expert插值；
-2. 同一308-panel audit的fit/held candidate-to-shared为`1.08581/1.08815x`、breadth仅`2/19、0/5`，比v13与v15都差；
-   不续local-effect曲线，不接outcome macro、held5或`q_V`；正式证据为
-   `docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`；
-3. 唯一active后继为OCPB v17 action-grounded composed-policy recovery。它不重训v16已获得的task discrimination，而从v16
-   model weights创建fresh optimizer；successful/verified-success panel的真实train action通过冻结PI0.5 exact policy loss
-   给完整38-target LoRA组合提供直接梯度，failed learner action不作监督；
-4. v17先做单task真实profile，再做一个bounded task-balanced checkpoint和同一物化/冻结support门。local effect只保留为
-   低权重target-local锚，v13 barrier继续保护source/shared；只有composed action loss、task discrimination和support同向改善，
-   才运行held5 oracle；
-5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+1. v18已在macro4关闭：closed-loop credit每轮覆盖`8--10/19` tasks，但final own retrieval仍`1/24`，fit/held
+   relative-shared为`1.14317/1.13244x`、breadth`2/19、0/5`；正式证据为
+   `docs/evidence/ecp_20260822/stage1_action_guided_v18_gate.json`；
+2. v19 fixed-compiler Program binding已替换唯一active Stage 1运行面并通过47项聚焦CPU合同；从v13 macro1 fresh初始化，
+   只训练privileged `policy_teacher`，冻结visible Program与compiler；
+3. 在实时可用且不含gpu01 physical0的单卡上运行一个q-family reachability profile；必须观察到非零compiled relative delta、
+   finite `policy_teacher`梯度以及严格为零的compiler/visible梯度，才允许formal；
+4. profile通过后，从clean pushed commit的detached frozen worktree在一个节点最多6张有效卡运行fit19 macro2节点，立即物化
+   24-task geometry与同一308-panel support audit；只有有方向性改善才exact-resume到macro4；
+5. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
+   只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

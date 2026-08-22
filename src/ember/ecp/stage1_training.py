@@ -112,9 +112,11 @@ def train(args: argparse.Namespace) -> None:
     """Run the one active Stage 1 lifecycle through the canonical entrypoint."""
 
     load_stage1_config(args.config)
-    from ember.ecp.stage1_outcome_training import train_action_guided_outcome
+    from ember.ecp.stage1_outcome_training import (
+        train_fixed_compiler_program_outcome,
+    )
 
-    train_action_guided_outcome(args)
+    train_fixed_compiler_program_outcome(args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -123,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json",
+        / "configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

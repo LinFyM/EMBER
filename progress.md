@@ -35,8 +35,8 @@
   308-panel fit/held support退到`.97253/1.02171x`，breadth为`13/19、1/5`。v15因此关闭，不接outcome macro、held5或`q_V`。
   **OCPB v16 owner-local activation-effect distillation**也已完成v3 bank、真实profile、114/228 task-balanced训练、两次
   24-task物化与308-panel冻结审计。它把target-local cosine retrieval从v13的`1/24`提高到`11/24`，却使fit/held
-  candidate-to-shared退到`1.08581/1.08815x`且breadth只有`2/19、0/5`，故v16关闭。当前唯一active后继为
-  **OCPB v17 action-grounded composed-policy recovery**：复用v16 model weights建立fresh optimizer，用successful或
+  candidate-to-shared退到`1.08581/1.08815x`且breadth只有`2/19、0/5`，故v16关闭。随后完成的
+  **OCPB v17 action-grounded composed-policy recovery**复用v16 model weights建立fresh optimizer，用successful或
   verified-success跨episode train actions上的exact PI0.5 flow-matching loss直接训练完整LoRA组合；failed learner action不作
   oracle，v16 local effect与v13 barrier只保留为结构/support锚。v17 retained实现已收敛到唯一`train_ecp_stage1.py`运行面：
   直接复用`writer.functional`的frozen-policy LoRA leaf gradient，成功panel构成每task等量主监督，verified-success learner为
@@ -47,10 +47,10 @@
   57个successful与18个verified-success learner，39个failed learner严格为零。物化candidate pair cosine降到`.90236`、norm
   ratio升到`1.14481`，但own/nearest为`.03855/.05779`且retrieval仅`1/24`；308-panel fit/held relative-shared又退到
   `1.13962/1.12203x`、breadth`2/19、0/5`。v17因此关闭，不续228、不跑held5或`q_V`。当前最早缺口是缺少能给完整factor
-  direction分配task-equal closed-loop credit的Stage 1 outcome目标；下一active实现为OCPB v18 action-guided structured outcome
-  binding，而不是调v17小权重或恢复旧selector-only outcome。
-- OCPB v18运行图现已完成：sole active config为
-  `configs/pi05_ecp_stage1_action_guided_outcome_binding_v18.json`，从v17 task-visit114只加载model weights并使用fresh optimizer。
+  direction分配task-equal closed-loop credit的Stage 1 outcome目标；因此当时转入OCPB v18，而没有调v17小权重或恢复旧
+  selector-only outcome。
+- OCPB v18运行图与裁决已经完成并退役；其formal config由Git与run contract保留，不再存在于active tree。v18从v17
+  task-visit114只加载model weights并使用fresh optimizer。
   每个fit task用successful cross-episode exact action loss的负梯度构造38个owner-local联合A/B方向，各方向按自身base factor
   L2归一为相同`.05`相对扰动；两条paired simulator lanes的success、BDDL peak progress和成功效率只决定这些方向的符号与幅度，
   projected loss gradient直接穿过完整candidate LoRA反传compiler/FactorHeads。v17 direct action-loss梯度不再继续推模型，successful/
@@ -74,6 +74,13 @@
   compiler输出，未建立own successful Program。v18不运行held5、fold rotation或`q_V`。下一active Stage 1变量为
   **OCPB v19 fixed-compiler structured Program binding**：回到v13 support authority，冻结compiler，仅在compiler可达的
   event/layer-group/family Program切空间逐family给予action-guided paired credit，先做单task reachability profile。
+- OCPB v19 retained实现已经替换唯一Stage 1运行面：active config为
+  `configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json`。它从v13 macro1只加载model weights并建立fresh optimizer，
+  永久冻结visible Program与compiler，只训练privileged `policy_teacher`；每个macro按`q → v → action_in → action_out`
+  选择一个target-family block，在全部active ordered events及该family原生owners上把exact action-loss Program gradient归一为
+  `.05`相对切向方向。plus/minus都重新经过同一个冻结compiler，paired reward只作为Program semi-gradient回传，不再更新
+  FactorHeads或rank selector。v18 active config、factor-space perturbation及旧schema已从active tree删除；Stage 1、reward与
+  evaluator共47项聚焦CPU合同通过，compiler/visible梯度归零与真实compiled reachability仍等待单task GPU profile裁决。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -134,7 +141,7 @@
   own retrieval仅`2/24`，effective norm ratio`.099771`；全部未过预注册门，故held rollout为0、同曲线停止。
 - 回看专家Stage 1原文后，v2还存在一个此前未隔离的实现偏差：numeric owner/rank/event地址既进入compiler value，又以
   `hidden + query`直达factor heads；q_pi factor tokens也注入owner/rank常量。这允许地址在不保留task Program内容时写出
-  近共享LoRA，而专家要求target query**读取**event/layer/family Program。当前唯一active修正因此是content/address分离：
+  近共享LoRA，而专家要求target query**读取**event/layer/family Program。当时的active修正因此是content/address分离：
   地址只影响keys、queries和locality，values与factor hidden必须来自Program；visible Program和q_pi evidence values不再重复
   注入地址常量；successful-policy functional从第一个update启用，BA/canonical降为低权重warm-start。v2证据见
   `docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。

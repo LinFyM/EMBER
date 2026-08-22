@@ -1,4 +1,4 @@
-"""Runtime for OCPB v18 task-equal action-guided closed-loop binding."""
+"""Runtime for fixed-compiler structured Program outcome binding."""
 
 from __future__ import annotations
 
@@ -213,11 +213,11 @@ def _reward_tasks(
 
 
 def _optimizer(
-    model: ECPStage1Model, config: Mapping[str, Any]
+    parameters: Sequence[torch.nn.Parameter], config: Mapping[str, Any]
 ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
     cell = config["optimization"]["optimizer"]
     optimizer = torch.optim.AdamW(
-        model.parameters(),
+        parameters,
         lr=float(cell["learning_rate"]),
         betas=tuple(float(value) for value in cell["betas"]),
         eps=float(cell["eps"]),
@@ -287,7 +287,7 @@ def _run_contract(
             "bytes": runtime.args.tokenizer_path.stat().st_size,
         },
         "tasks": {
-            "role": "train24_fit19_action_guided_outcome_binding",
+            "role": "train24_fit19_fixed_compiler_program_binding",
             "count": len(runtime.tasks),
             "ordinals": [task.ordinal for task in runtime.tasks],
             "global_task_ids": [task.global_task_id for task in runtime.tasks],
@@ -322,6 +322,8 @@ def _run_contract(
         "trainable_parameters": sum(
             parameter.numel() for parameter in runtime.trainable_parameters
         ),
+        "trainable_modules": ["policy_teacher"],
+        "frozen_writer_modules": ["visible_program", "compiler"],
         "source_policy_trainable_parameters": 0,
         "observer_trainable_parameters": 0,
         "content_hash_policy": "disabled_by_owner",
@@ -375,6 +377,25 @@ def prepare_outcome_runtime(
         device=context.device,
         initialization=config["initialization"],
     )
+    authorities.model.requires_grad_(False)
+    authorities.model.policy_teacher.requires_grad_(True)
+    trainable_parameters = tuple(
+        parameter
+        for parameter in authorities.model.policy_teacher.parameters()
+        if parameter.requires_grad
+    )
+    if (
+        not trainable_parameters
+        or any(
+            parameter.requires_grad
+            for parameter in authorities.model.compiler.parameters()
+        )
+        or any(
+            parameter.requires_grad
+            for parameter in authorities.model.visible_program.parameters()
+        )
+    ):
+        raise ValueError("fixed Stage 1 trainable ownership changed")
     tasks = load_stage1_tasks(
         target_manifest=stage1_repo_authority(config, "target_manifest"),
         selection_path=stage1_repo_authority(
@@ -472,7 +493,7 @@ def prepare_outcome_runtime(
         int(authorities.source_config["features"]["tokenizer_max_length"]),
         str(context.device),
     )
-    optimizer, scheduler = _optimizer(authorities.model, config)
+    optimizer, scheduler = _optimizer(trainable_parameters, config)
     initialize_deferred_process_group(
         context, rendezvous_root=args.output_dir.parent
     )
@@ -526,7 +547,7 @@ def prepare_outcome_runtime(
         model=authorities.model,
         optimizer=optimizer,
         scheduler=scheduler,
-        trainable_parameters=tuple(authorities.model.parameters()),
+        trainable_parameters=trainable_parameters,
         env_pool=None,
         initialization=initialization,
         start_macro=start,
@@ -546,12 +567,13 @@ def prepare_outcome_runtime(
         assets_root=Path(paths["assets"]),
         render_resolution=int(config["environment"]["render_resolution"]),
     )
-    runtime.model.train()
+    runtime.model.eval()
+    runtime.model.policy_teacher.train()
     torch.cuda.reset_peak_memory_stats(context.device)
     return runtime
 
 
-def train_action_guided_outcome(args: argparse.Namespace) -> None:
+def train_fixed_compiler_program_outcome(args: argparse.Namespace) -> None:
     from ember.ecp.stage1_outcome_train_step import run_outcome_macro
 
     context = initialize_distributed(
@@ -576,9 +598,10 @@ def train_action_guided_outcome(args: argparse.Namespace) -> None:
                             "nonzero_advantage_tasks",
                             "mean_action_policy_loss",
                             "mean_structural_total",
-                            "mean_outcome_leaf_gradient_norm",
+                            "mean_outcome_program_leaf_gradient_norm",
                             "gradient_norm_before_clip",
-                            "factor_head_gradient_norm_before_clip",
+                            "policy_teacher_gradient_norm_before_clip",
+                            "compiler_gradient_norm_before_clip",
                             "elapsed_seconds",
                         )
                     }

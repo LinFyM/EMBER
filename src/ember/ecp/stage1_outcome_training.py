@@ -355,8 +355,16 @@ def prepare_runtime(
         device=context.device,
     )
     support_root = int(config["outcome_calibration"]["support_visit_root"])
+    credit_offset = int(
+        config["outcome_calibration"]["credit_macro_offset"]
+    )
     requests = {
-        (task.ordinal, support.task(task.ordinal).panel_for_visit(support_root + macro).panel_id)
+        (
+            task.ordinal,
+            support.task(task.ordinal)
+            .panel_for_visit(support_root + macro + credit_offset)
+            .panel_id,
+        )
         for task in local_tasks
         for macro in range(start, stop)
     }

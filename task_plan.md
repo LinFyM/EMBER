@@ -1,12 +1,15 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **Phase 0以`136/400`归档关闭；Phase 1首个process teacher Gate A以`0/50、19/50`判为non-pass；
+状态：2026-08-24 **Phase 0以`136/400`归档关闭；Phase 1首个process teacher Gate A以`0/50、19/50`判为non-pass，
+复用两个primitive task-local experts的Gate A2仍为`0/50、44/50`、总计`44/100`，当前scene3 soup/butter
+family对phase-composed teacher关闭；
 Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fold0 strict250仅为step800/1000=`33/37`，
 均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
 coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
 `59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
-未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。process侧已预注册复用task55/56既有step1000 experts的
-phase-expert teacher Gate A2，工程smoke接通，formal100行待从clean pushed authority执行。**
+未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。process侧Gate B、suite扩展与
+`q_pi/q_V`不启动；下一实质选择是获得true composite privileged expert/data，或改用物理机制不同的
+source-unseen process family，需要专家重新裁决。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -201,7 +204,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   policy或Writer；不放松正式target40 evaluator；
 - [x] 选择不重训的更强teacher：phase切换时加载task55/56各自formal `50/50`的step1000 rank16 expert；两个state0工程
   smoke均正确切换LoRA，`butter -> soup`成功、反向完成首事件后失败；
-- [ ] 按`docs/ecp_process_phase_expert_teacher_gate_20260824.md`完成一次100行strict400 Gate A2并裁决；
+- [x] 按`docs/ecp_process_phase_expert_teacher_gate_20260824.md`完成一次100行strict400 Gate A2；结果为
+  `0/50、44/50`、总计`44/100`，尽管相对source-phase teacher净增25条，仍同时未达双向floor与总量门，判为non-pass；
 - [ ] 取得两个方向均可靠的更强privileged sequential teacher，或基于明确primitive/scene证据预注册一个替代process family；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；

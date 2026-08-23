@@ -1,6 +1,6 @@
 # ECP process pair phase-expert teacher Gate A2
 
-日期：2026-08-24。状态：**预注册；工程smoke完成，未产生本卡formal结果。**
+日期：2026-08-24。状态：**formal完成，Gate A2 non-pass。**
 
 ## 问题与唯一变量
 
@@ -50,3 +50,20 @@ gpu01 physical0；每个worker只加载一次source policy和两个小LoRA state
 通过只授权原Gate B的视频顺序可识别性与闭环必要性诊断；不自动扩process suite，也不启动`q_pi/q_V`。失败则关闭当前
 `scene3 soup/butter + phase-composed primitive experts` acquisition，不用step2000、延长horizon、挑state或改predicate救援；下一步
 回到专家判断是训练真正composite privileged expert，还是选择物理机制不同的替代family。
+
+## Formal结果与裁决
+
+clean pushed detached `24c5bdc`在gpu01 physical`1,2,3,4,5,7`完成100行；六个worker全部返回0，100份ledger、50/50
+paired state IDs和policy-noise common prefix均完整。公开video共44条，只含预注册六个字段，成功episode的event order与最终
+predicate均正确。
+
+- `alphabet_soup -> butter`：`0/50`；50行均完成soup（step97--245），没有一行完成butter；
+- `butter -> alphabet_soup`：`44/50`；50行均完成butter，44行在step245--400完成soup；
+- 总计`44/100`，低于50；第一方向也低于20。
+
+相对原source-phase teacher的`0/19`，task-local experts把butter-first提高到44，却没有改变soup-first的0。由此排除adapter
+未加载、phase route错误、共享source容量和第一事件执行；当前family的剩余失败是soup已占据tray后task56 primitive不能恢复。
+Gate A2因此non-pass，Gate B、suite扩展、`q_pi/q_V`均不启动。当前family对phase-composed source/task-local primitive teacher
+关闭；下一决策回到专家选择true composite privileged expert还是不同物理机制的source-unseen family。
+
+正式证据：`docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`。

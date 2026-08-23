@@ -1483,6 +1483,26 @@ Gate后只读lineage分解显示，exact earliest→latest correction仅占lates
 所以aggregate cosine掩盖了低能量行为方向。fit basis已达到108 centered members的最大rank107；在同一evidence上增加width
 不能补方向，后继若存在必须引入span外独立mapping，而非继续coordinate/decoder sweep。
 
+### 3.76 phase task-local experts的process Gate A2以44/100关闭
+
+原Gate A的两个primitive第一事件都能完成，但shared source在phase switch后只得到`0/50、19/50`。
+Gate A2唯一替换为LIBERO-90 task55/56已有step1000 rank16 task-local experts；两个expert在各自primitive
+formal panel均为`50/50`，本轮没有新训练或checkpoint选择。
+
+clean pushed detached `24c5bdc3ec83c78ff36ec514717d15da8560e81f`在gpu01 physical`1,2,3,4,5,7`完成
+100行strict400，physical0未使用，6 workers全部返回0。100份privileged ledgers、50对state IDs/noise common
+prefix、100/100 phase-expert alignment完整；44条公开成功video仅含camera1/camera2/language/stride/schema/source_steps。
+
+结果为soup→butter `0/50`、butter→soup `44/50`，总计`44/100`。两向第一event均为`50/50`；
+soup-first的50行全部只完成soup，butter-first有44行完成两事件。相对旧teacher的`0/19`，task-local experts产生
+25条净增，但没有让pair双向可行；剩余失败是soup occupancy之后task56 butter primitive的恢复支持，而非
+adapter加载、phase route、首事件或wrapper。
+
+结果同时未达每方向20和总计50的门，故Gate A2 non-pass。当前family对phase-composed source/task-local primitive
+teacher关闭，Gate B、suite扩展与`q_pi/q_V`不启动，也不以step2000、延长horizon、挑state或改predicate救援。
+下一决策是true composite privileged expert/data acquisition或物理机制不同的source-unseen family。证据：
+`docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

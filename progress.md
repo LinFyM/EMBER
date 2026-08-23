@@ -22,7 +22,9 @@
 - completed process minimal-pair Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；
 - process minimal-pair Gate A adjudication：
   `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`；
-- active process phase-expert Gate A2 card：`docs/ecp_process_phase_expert_teacher_gate_20260824.md`；
+- completed process phase-expert Gate A2 card：`docs/ecp_process_phase_expert_teacher_gate_20260824.md`；
+- process phase-expert Gate A2 adjudication：
+  `docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -40,9 +42,9 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `8aab214`。当前没有active GPU job。
-  process Gate A、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；fold1、fresh Program、
-  `q_pi/q_V`及joint Writer均未启动。当前没有已预注册的下一shared-realizer机制，须先按失败合同回到专家讨论。
+- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `24c5bdc`。当前没有active GPU job。
+  process Gate A/A2、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；fold1、Gate B、
+  process suite、fresh Program、`q_pi/q_V`及joint Writer均未启动。process acquisition与shared-realizer两侧均已到专家裁决点。
 
 ## Current scientific state
 
@@ -69,9 +71,10 @@
 - 首个process-identifying pair的teacher Gate A已完成并non-pass：soup→butter为`0/50`、butter→soup为`19/50`，总计
   `19/100`，两方向首事件都为`50/50`，第二事件分别为`0/50、19/50`，invalid均为0。故失败接口是phase switch后的顺序组合
   支持，而非custom wrapper、wrong-first判定或第一primitive。Gate B未运行，不能从本结果裁决video order observer。
-- 更强teacher不需要新训练：现有task55/56 step1000 rank16 experts在各自formal primitive panel均为`50/50`。canonical
-  collector已支持phase-specific LoRA切换；state0双向smoke均记录task55/56两个expert，`butter -> soup`在296步成功，
-  `soup -> butter`在97步完成首事件后strict400失败。该smoke只证明图接通，100行Gate A2合同保持冻结。
+- phase-expert Gate A2已完成：现有task55/56 step1000 rank16 experts在各自primitive panel均为`50/50`，但组合后
+  `soup -> butter=0/50`、`butter -> soup=44/50`、总计`44/100`。两向首事件均为`50/50`，100/100行phase/expert
+  对齐，44条公开video全部通过信息墙。相对旧teacher的`0/19`净增25条证明expert切换真正生效；反向仍为0将
+  失败定位到soup occupancy之后task56 butter primitive的恢复支持，而非adapter加载、phase route、第一事件或wrapper。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -177,6 +180,9 @@
 17. 从clean pushed detached `8aab214`建立fit90 centered two-sided coordinate并物化五套held latest single rank16 LoRA；gpu01
     physical`1,2,3,4,5,7`以12 workers完成唯一strict250，physical0未使用，36/36 shards与250 rows完整。结果`80/250`、
     breadth3、Goal/Long为0；carrier/known-latest retention仅`23/43、59/110`，全部Gate条款失败，successor未启动。
+18. 从clean pushed detached `24c5bdc`在gpu01 physical`1,2,3,4,5,7`完成phase-expert teacher的100行Gate A2；
+    6 workers全部返回0，100 ledgers、50对state/noise与44条public videos完整。结果`0/50、44/50`、总计
+    `44/100`，未达双向与总量门；Gate B与后续process suite未启动。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -264,7 +270,7 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0已归档；首个process family Gate A、balanced-SVD learned realizer fold0与two-sided coordinate
-  Gate均为non-pass，Gate B、process suite、fold1和Phase 3以后均未启动。process侧仍只允许更强privileged sequential teacher
-  或有依据的替代family；realizer侧没有剩余预注册successor。依two-sided卡，下一步先由专家判断shared realizer是否应放弃，
-  或是否需要新的source-unseen mappings；不得自行继续版本化。
+- 当前没有active GPU job。Phase 0已归档；首个process family Gate A/A2、balanced-SVD learned realizer fold0与
+  two-sided coordinate Gate均为non-pass，Gate B、process suite、fold1和Phase 3以后均未启动。process侧现在只剩
+  true composite privileged expert/data或物理机制不同的source-unseen family；realizer侧没有剩余预注册successor。
+  两侧都应先由专家按全部formal证据重新裁决，不得自行继续版本化。

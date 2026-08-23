@@ -1872,3 +1872,22 @@ fold1、不扫probe seed/width/rank/threshold。它不裁决mobile-rank4容量�
 或完整ECP。结合balanced-SVD learned map与本coordinate先后non-pass，当前没有剩余预注册shared-realizer机制；依专家合同须先
 讨论是停止该family，还是补真正source-unseen且process-diverse mappings后重新定义识别问题。正式证据：
 `docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。
+
+## 89. primitive task-local experts改善单向process teacher，但不能让当前pair双向成立
+
+Gate A2只把phase执行从shared source换成LIBERO-90 task55/56已formal证明各自`50/50`的step1000 rank16
+task-local experts；任务对、同一批state、strict400、noise、temporal wrapper、predicate、language与信息墙都不变。
+clean pushed detached `24c5bdc`上六个workers完成100行，返回码全为0；100份ledger、50对state/noise、
+100/100 phase-expert alignment均完整，44条public video只含六个授权字段。
+
+结果为soup→butter `0/50`、butter→soup `44/50`、总计`44/100`。两个方向的第一事件都是`50/50`；
+soup-first的50行全部在97--245步完成soup后停住，butter-first则有44行在245--400步完成第二事件。
+相对source-phase teacher的`0/19`，experts让单向净增25条，因此checkpoint加载、phase route和expert执行是真实有效的；
+另一向仍为0说明当前瓶颈是soup已改变tray occupancy后task56 butter primitive没有恢复支持，不是第一事件、
+wrapper或shared-source容量。
+
+因为第一方向低于20且总量低于50，Gate A2是明确scientific non-pass。当前scene3 soup/butter family
+对phase-composed source和task-local primitive teachers都已关闭；不做step2000、延长horizon、挑state或改predicate救援。
+Gate B、process suite、`q_pi/q_V`不启动。下一实质决策是获得true composite privileged expert/data，或更换为物理机制
+不同的source-unseen process family，这需要专家重新裁决。证据：
+`docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`。

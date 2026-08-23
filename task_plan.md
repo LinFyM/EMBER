@@ -10,7 +10,9 @@
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
-当前diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`
+当前process Gate：`docs/ecp_process_minimal_pair_gate_20260824.md`
+
+历史diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`
 
 历史：`docs/research_history.md`与`docs/ecp_stage1_iteration_retrospective_20260823.md`
 
@@ -188,8 +190,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 ## Phase F — Phase 1：process-identifying最小pair与suite
 
-- [ ] 先对soup/butter order pair或等价候选做真实资产/teacher feasibility，确认两个完整单episode trajectories可获得；
-- [ ] 实现repo-owned temporal wrapper：同scene/language/init/final predicates，wrong-first永久invalid，variant/predicate/phase不进入
+- [ ] 按冻结Gate对soup/butter order pair完成50×2 teacher acquisition，确认两个方向都有足量完整single-episode trajectories；
+- [x] 实现repo-owned temporal wrapper：同scene/language/init/final predicates，wrong-first永久invalid，variant/predicate/phase不进入
   policy或Writer；不放松正式target40 evaluator；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；

@@ -19,6 +19,7 @@
 - effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
 - completed GOMQ rank16 Phase 0 card：`docs/gomq_rank16_archival_card_20260824.md`；
 - GOMQ rank16 Phase 0 adjudication：`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`；
+- active process minimal-pair Gate：`docs/ecp_process_minimal_pair_gate_20260824.md`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
   当前没有active GPU job，active双前置已转为process-identifying最小pair与mobile-rank4 realizer calibration。

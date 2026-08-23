@@ -173,7 +173,7 @@ def _collect_episode(
             base, wrist = _capture(observation)
             camera1.append(base)
             camera2.append(wrist)
-            if success or env.invalid or env.phase_key != before_phase:
+            if success or env.invalid or env.steps >= horizon or env.phase_key != before_phase:
                 break
     snapshot = env.snapshot()
     return {

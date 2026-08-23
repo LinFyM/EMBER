@@ -79,9 +79,10 @@
   对齐，44条公开video全部通过信息墙。相对旧teacher的`0/19`净增25条证明expert切换真正生效；反向仍为0将
   失败定位到soup occupancy之后task56 butter primitive的恢复支持，而非adapter加载、phase route、第一事件或wrapper。
 - A2后路线审计已完成：soup-first成功action episodes为0，当前task-expert SFT只能消费successful HDF5，而现有
-  outer-credit不训练task-local policy LoRA。另一方面，task21/45共100条source demos都为stove-on→pan-on-stove，
-  experts为`43/50、46/50`，task18 pan primitive为`50/50`。所以当前推荐用stove/pan反向顺序做下一个minimal family，
-  但在专家裁决neutral language、video来源及joint realizer含义前不实现。
+  outer-credit不训练task-local policy LoRA。当前最干净替代是task65/68 separate-plate pair：同scene/init、不共享objects/plates、
+  experts为`43/50、47/50`，两种composite orders都source-unseen。同scene task66/67 `42/50、49/50`可复现；task21/45
+  stove/pan则降为后续异构动作family。source RGB仅128分辨率，故两个process variants都必须用experts在render256
+  temporal wrapper下fresh rollout，不直接重标旧videos。专家裁决前不实现。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

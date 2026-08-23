@@ -1900,10 +1900,12 @@ outer-credit也只优化Writer低维code，不是task-local PI0.5 policy RL。�
 planner、人工demonstrations或RL研究面，不是复用已有expert训练通路。
 
 只读stored-state predicate replay同时发现，LIBERO-90 task1/21/23/45/63/64的50条source demonstrations均在每个task内
-100%采用同一事件顺序。其中task21和45是两个scene中同language的stove-on→pan-on-stove，共100条全部同序，
-step1000 experts为`43/50、46/50`；同scene task18 pan primitive expert为`50/50`。这使stove/pan双顺序pair成为比继续
-救soup/butter更快、且不重复shared-tray occupancy失败的最佳最小候选。它只能先支持video-specified order
-feasibility；通过后还需task64的stack/tray等物理耦合family及family-disjoint held才能支持更广process claim。
+100%采用同一事件顺序。但最干净的minimal replacement是进一步查到的task65/68：二者scene、fixtures、objects、
+init完全相同，纯primitive experts为`43/50、47/50`，goal objects与plates互不共享，且source中没有该composite goal
+或任一order。这使separate-plate pair成为比继续救soup/butter或使用一种order已source-seen的stove/pan更干净的
+最小候选。它只能先支持video-specified order feasibility；通过后仍需stove/pan异构动作、task64 stack/tray物理耦合
+及family-disjoint held才能支持更广process claim。旧source RGB为128分辨率，两个variants的public videos必须fresh render256 rollout，
+不能直接重标旧videos。
 
 该审计没有选定新family或复活realizer。具体推荐、风险和三个专家裁决问题见
 `docs/ecp_post_a2_route_decision_20260824.md`，结构证据见

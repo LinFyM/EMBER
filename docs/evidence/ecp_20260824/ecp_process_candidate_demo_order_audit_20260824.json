@@ -84,10 +84,39 @@
     "existing_task_expert_training_requires_successful_action_hdf5": true,
     "existing_outer_credit_trains_task_local_policy_lora": false
   },
+  "primitive_pair_candidates": [
+    {
+      "family": "LIVING_ROOM_SCENE5 separate plates A",
+      "task_ids": [65, 68],
+      "fixtures_objects_and_init_exactly_equal": true,
+      "goal_objects_disjoint": true,
+      "goal_receptacles_disjoint": true,
+      "step1000_task_expert_successes": [43, 47],
+      "source_contains_their_composite_task": false,
+      "role": "preferred fully source-unseen minimal order pair"
+    },
+    {
+      "family": "LIVING_ROOM_SCENE5 separate plates B",
+      "task_ids": [66, 67],
+      "fixtures_objects_and_init_exactly_equal": true,
+      "goal_objects_disjoint": true,
+      "goal_receptacles_disjoint": true,
+      "step1000_task_expert_successes": [42, 49],
+      "source_contains_their_composite_task": false,
+      "role": "same-scene replication pair"
+    }
+  ],
+  "video_authority": {
+    "source_hdf5_rgb_resolution": [128, 128],
+    "process_meta_canonical_render_resolution": [256, 256],
+    "ruling": "Existing source videos are evidence and expert-training data only. Both process variants must be freshly rolled out through the temporal wrapper for canonical public videos."
+  },
   "recommendation": {
-    "preferred_next_minimal_family": "KITCHEN_SCENE3 stove-on and frying-pan-on-stove opposite-order pair",
-    "reason": "It reuses a 50-demo order-consistent composite task, a 43/50 composite expert, and a 50/50 same-scene pan primitive expert, while avoiding the shared-tray occupancy failure exposed by Gate A2.",
-    "second_physical_family_after_feasibility": "LIVING_ROOM_SCENE4 stack and tray placement opposite-order pair",
+    "preferred_next_minimal_family": "LIVING_ROOM_SCENE5 task65/task68 separate-plate opposite-order pair",
+    "reason": "Both pure primitive experts are strong, their scene and initial-state specifications are identical, their objects and receptacles are disjoint, and neither composite order exists in source training.",
+    "replication_family": "LIVING_ROOM_SCENE5 task66/task67 separate-plate opposite-order pair",
+    "heterogeneous_action_family_after_feasibility": "KITCHEN_SCENE3 and KITCHEN_SCENE9 stove/pan opposite-order pairs",
+    "physical_coupling_family_after_feasibility": "LIVING_ROOM_SCENE4 stack and tray placement opposite-order pair",
     "requires_expert_selection_before_implementation": true
   }
 }

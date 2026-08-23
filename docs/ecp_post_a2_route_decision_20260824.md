@@ -12,7 +12,8 @@ soup-first successful action data。
 因此实质选择是：
 
 1. 为soup/butter开发新的privileged planner、人工demonstration或task-local RL，获得soup-first labels；
-2. 换到已有可靠composite demonstrations和task experts、但反向procedure仍source-unseen的process family。
+2. 换到scene/init一致、primitive experts可靠、但composite goal与两个orders都source-unseen的process family，
+   用phase switching重新采集两个方向的canonical demonstrations。
 
 ## 2. 为什么不推荐先救soup/butter
 
@@ -33,7 +34,7 @@ soup-first successful action data。
 | source task | 50 demos的事件顺序 | step1000 expert | 用途 |
 | --- | --- | ---: | --- |
 | task1 drawer-close + bowl-on-top | 50/50 close→place | 50/50 | 独立fixture/object候选 |
-| task21 stove-on + pan-on-stove | 50/50 turnon→place | 43/50 | **最佳首个替代pair** |
+| task21 stove-on + pan-on-stove | 50/50 turnon→place | 43/50 | 后续异构动作family候选 |
 | task23 bottom-close + top-open | 50/50 close→open | 28/50 | 两个fixture control候选，expert较弱 |
 | task45 stove-on + pan-on-stove | 50/50 turnon→place | 46/50 | task21的跨scene复现 |
 | task63 left-on-right + stack-in-tray | 50/50 stack→tray | 44/50 | 物理耦合suite候选 |
@@ -44,18 +45,25 @@ task38的50条demos中stove在step0已全部turn-on，不构成两事件order pa
 
 ## 4. 推荐的下一个最小family
 
-首选`KITCHEN_SCENE3` stove/pan pair：
+首选`LIVING_ROOM_SCENE5` task65/task68 separate-plate pair：
 
-- 统一public language只陈述goal，不用含明确顺序的句式；
-- 两个variants的终点都是`Turnon(stove) AND On(pan,stove)`；
-- variant A要求`turnon -> pan`，variant B要求`pan -> turnon`；
-- task21的50条source demonstrations都是A顺序，step1000 expert为43/50；task18同scene pan primitive expert为50/50；
-- 可用task21 expert执行stove phase、task18 expert执行pan phase，复用现有temporal wrapper/collector，无需先训新expert；
-- 两事event不共享一个容器内的放置空间，不会重复soup先改变tray occupancy的已知失败。
+- task65和task68的fixtures、objects和init specification逐字相同；
+- 两个variants的终点都是`On(red mug,left plate) AND On(yellow-white mug,right plate)`；
+- variant A要求`red mug -> yellow-white mug`，variant B要求反向；
+- 两个纯primitive step1000 experts分别为`43/50、47/50`，它们的goal objects和goal plates都互不共享；
+- source中没有这两个primitives的composite task，因此两种composite orders都是source-unseen，比stove/pan“一种顺序
+  已在source composite中出现”更干净；
+- 可直接用task65/68 experts做phase switching，复用现有temporal wrapper/collector，无需先训新expert；
+- 它保留原soup/butter Gate想检验的video-specified order，却去掉shared tray occupancy这个已知teacher confound。
 
-这仍是最小“视频指定顺序”可行性，不应被写成general physical process understanding。若Scene3双向teacher过Gate A，
-再用task45的Scene9复现；之后把task64的`stack -> tray`与`tray -> stack`作为物理耦合family，才扩成
-family-disjoint process suite。
+同scene的task66/task67具有第二组互不共享的mug/plate goals，experts为`42/50、49/50`，可作为同机制复现。
+这仍只是最小“视频指定顺序”可行性，不应被写成general physical process understanding。过Gate A/B后，
+再加task21/45 stove/pan异构动作family，之后加task64的`stack -> tray`与`tray -> stack`物理耦合family，
+才扩成family-disjoint process suite。
+
+现有source HDF5的RGB是128×128，而process-meta canonical collector是render256且stride5。所以source videos只作顺序和expert
+证据，不直接重标为public teacher videos。选定family后，两个variants都必须由phase experts在同一temporal wrapper、
+配对states/noise下重新rollout，再产生统一goal-only exact language的256分辨率action-hidden videos。
 
 ## 5. realizer侧的同步裁决
 
@@ -66,19 +74,20 @@ fit90 learned realizer和fixed two-sided coordinate已经分别在strict250得�
 
 ## 6. 需要专家回答的三个核心问题
 
-1. A2之后，是否同意不再为soup/butter先开发新teacher algorithm，而把stove/pan反向顺序pair作为下一个
+1. A2之后，是否同意不再为soup/butter先开发新teacher algorithm，而把task65/68 separate-plate双顺序pair作为下一个
    minimal feasibility？
-2. 现有source composite demonstrations可否在不改video内容的前提下，用统一goal-only neutral language作为process-meta
-   teacher videos；还是两个variants都必须由新privileged teacher从头rollout？
+2. 该pair的两个primitives都被source见过，但它们的composite goal和两种order都没有进入source训练；这是否满足你要求的
+   source-unseen process mapping最小Gate？
 3. 在两种principled realizer coordinates均non-pass后，新process mappings是否构成重新定义Program-to-effect识别问题的
    充分新证据，还是应直接放弃当前shared-realizer family并重设部署桥？
 
 ## 7. 可以给专家的最短prompt
 
 > 我们按你的Gate补做了phase task-local experts：soup→butter仍为0/50，butter→soup从19/50提高到44/50，
-> 所以切换有效，但当前pair的soup-first successful action data完全不存在。另外只读重放发现，LIBERO-90
-> task21/45共100条stove+pan demonstrations全部严格为turnon→place，两个experts为43/50和46/50，同scene
-> pan primitive expert为50/50。我们因此倾向停止为soup/butter发明新teacher，改用统一neutral language、同终点的
-> stove/pan双顺序pair做下一个feasibility，通过后再加stack/tray这类物理耦合family。请你核心裁决：
-> 这个数据路线是否正确；既有composite videos能否重标为neutral goal language；以及在learned和two-sided realizer都失败后，
+> 所以切换有效，但当前pair的soup-first successful action data完全不存在。进一步审计发现，LIBERO-90
+> task65/68的scene和init完全相同，experts为43/50和47/50，目标mugs和plates都互不共享；source只见过两个
+> primitives，没见过它们的composite goal或任一order。我们因此倾向停止为soup/butter发明新teacher，改用
+> task65/68的统一goal-only language、同终点双顺序pair做下一个feasibility，两种视频都由phase experts重新rollout。
+> 通过后再加stove/pan异构动作与stack/tray物理耦合family。请你核心裁决：这个数据路线及source-unseen界定
+> 是否正确；以及在learned和two-sided realizer都失败后，
 > 新process mappings是否足以重开shared realizer，还是应重设Program-to-effect部署桥。

@@ -1503,6 +1503,27 @@ teacher关闭，Gate B、suite扩展与`q_pi/q_V`不启动，也不以step2000�
 下一决策是true composite privileged expert/data acquisition或物理机制不同的source-unseen family。证据：
 `docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`。
 
+### 3.77 separate-plates Gate A3以37/100关闭phase-composed primitive teacher
+
+为去掉scene3 shared-tray occupancy confound，后继选用LIBERO-90 task65/68：scene、fixtures、objects与init specification
+相同，red mug→left plate和yellow-white mug→right plate的目标objects/receptacles互不共享；source只见过两个primitive，
+没见过统一conjunctive goal或任一required order。两个step1000 task experts原primitive formal为`43/50、47/50`。
+
+新custom BDDL、统一goal-only language、同task65的50个init states、相反required orders与render256/stride5合同在
+`docs/ecp_process_separate_plates_teacher_gate_20260824.md`冻结。双向state0 smoke都成功后，clean pushed detached
+`4bf50394f75307568339143d17a39c0bfe2c2829`在gpu01 physical`1,2,3,4,5,7`完成100行formal；六个worker返回0，
+physical0 Prohibited且未使用。
+
+结果为red→yellow-white `28/50`、yellow-white→red `9/50`、总计`37/100`。两向第一event完成`43/50、46/50`，
+第二event只完成`30/50、9/50`；invalid与phase/expert错配均为0。100份ledger、50对noise和37条公开成功video完整，
+public字段与统一language无泄漏。反向37个second-phase失败在第一event后仍剩余median297步，故不是horizon-only问题。
+
+Gate A3未达每方向20和总计50，判为non-pass。结合soup/butter A2，phase-composed primitive expert在共享receptacle与物理分离
+目标上都缺少可靠的post-sibling-goal恢复支持；该teacher mechanism关闭，不以task66/67同机制full formal、step2000、
+horizon或state/seed修改救援。Gate B、process suite与`q_pi/q_V`仍不启动。下一数据前置改为真正order-specific composite
+privileged policy/data；37条完整成功轨迹只作bootstrap evidence。正式证据：
+`docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -1,0 +1,99 @@
+{
+  "schema_version": "ember_ecp_process_separate_plates_teacher_gate_v1",
+  "status": "formal_complete_gate_non_pass",
+  "date": "2026-08-24",
+  "contract": {
+    "card": "docs/ecp_process_separate_plates_teacher_gate_20260824.md",
+    "manifest": "configs/pi05_ecp_process_meta_separate_plates_v1/manifest.json",
+    "authority_commit": "4bf50394f75307568339143d17a39c0bfe2c2829",
+    "authority_worktree": "/data1/user/ymdai/projects/EMBER-formal-ecp-process-plates-4bf5039",
+    "output_root": "runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824"
+  },
+  "execution": {
+    "host": "gpu01",
+    "physical_gpu_ids": [1, 2, 3, 4, 5, 7],
+    "worker_exit_codes": [0, 0, 0, 0, 0, 0],
+    "worker_summaries": 6,
+    "episodes": 100,
+    "strict_horizon": 400,
+    "teacher_mode": "phase_task_local_rank16_lora",
+    "task_expert_ids": {
+      "red_left": 65,
+      "yellow_white_right": 68
+    }
+  },
+  "gate": {
+    "minimum_successes_each_variant": 20,
+    "minimum_successes_total": 50,
+    "wrong_first_invalid_required": 0,
+    "paired_state_and_noise_required": true,
+    "public_information_wall_required": true
+  },
+  "results": {
+    "red_left_then_yellow_white_right": {
+      "required_order": ["red_left", "yellow_white_right"],
+      "successes": 28,
+      "episodes": 50,
+      "first_event_completed": 43,
+      "second_event_completed": 30,
+      "outcomes": {
+        "success": 28,
+        "first_not_completed": 7,
+        "second_not_completed": 13,
+        "second_completed_but_final_conjunction_lost": 2
+      },
+      "first_event_step_min_median_max": [118, 140.0, 371],
+      "success_step_min_median_max": [284, 336.0, 397],
+      "failed_after_first_remaining_steps_min_median_max": [29, 239.0, 267]
+    },
+    "yellow_white_right_then_red_left": {
+      "required_order": ["yellow_white_right", "red_left"],
+      "successes": 9,
+      "episodes": 50,
+      "first_event_completed": 46,
+      "second_event_completed": 9,
+      "outcomes": {
+        "success": 9,
+        "first_not_completed": 4,
+        "second_not_completed": 37,
+        "second_completed_but_final_conjunction_lost": 0
+      },
+      "first_event_step_min_median_max": [78, 102.0, 171],
+      "success_step_min_median_max": [335, 357.0, 379],
+      "failed_after_first_remaining_steps_min_median_max": [229, 297.0, 322]
+    },
+    "total_successes": 37,
+    "total_episodes": 100
+  },
+  "integrity": {
+    "unique_privileged_ledgers": 100,
+    "state_ids_per_variant": "exactly 0..49",
+    "invalid_total": 0,
+    "phase_expert_alignment_mismatches": 0,
+    "successful_missing_phase": 0,
+    "successful_order_failures": 0,
+    "successful_final_predicate_failures": 0,
+    "paired_noise_mismatch_states": [],
+    "public_videos": 37,
+    "public_video_count_equals_success_count": true,
+    "public_field_mismatches": [],
+    "public_language_mismatches": [],
+    "artifact_bytes": 2172047097
+  },
+  "adjudication": {
+    "passed": false,
+    "failed_clauses": [
+      "yellow_white_right_then_red_left successes below 20/50",
+      "total successes below 50/100"
+    ],
+    "engineering_contract_passed": true,
+    "earliest_failed_interface": "A primitive task expert does not reliably retain its skill when invoked after the sibling goal has changed the scene, even though goal objects and receptacles are disjoint.",
+    "evidence_against_horizon_only_explanation": "For yellow_white_right_then_red_left, 37 failures completed the first event with 229..322 steps remaining, median 297, yet never completed red_left.",
+    "ruling": [
+      "Close task65/task68 phase-composed primitive-expert acquisition.",
+      "Do not change horizon, seeds, states, predicates, expert steps, or Gate thresholds to rescue it.",
+      "Do not start Gate B, q_pi, q_V, or any successor of the two failed shared-realizer coordinates.",
+      "The next data mechanism must provide true order-specific composite privileged policy/data; the 37 successful full episodes are bootstrap evidence, not a passed teacher bank."
+    ]
+  }
+}

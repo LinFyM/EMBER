@@ -1922,3 +1922,19 @@ init完全相同，纯primitive experts为`43/50、47/50`，goal objects与plate
 mobile-rank4 shared-realizer family。新增process mappings是后续Program定义和deployment bridge的必要数据，但不构成继续
 旧coordinate/solver sweep的授权。owner已确认按该解释推进；task65/68 Gate A3合同见
 `docs/ecp_process_separate_plates_teacher_gate_20260824.md`。
+
+## 92. 物理分离的task65/68仍不能让primitive experts双向可靠组合
+
+Gate A3从clean pushed detached `4bf5039`在gpu01 physical`1,2,3,4,5,7`完成100行，六个worker均返回0。
+red→yellow-white为`28/50`，反向为`9/50`，总计`37/100`；100份ledger、0 invalid、0 phase/expert错配、50对noise和
+37条无泄漏公开video完整。因此这是科学non-pass，不是实现或信息墙失败。
+
+两向第一event分别完成`43/50、46/50`，但第二event只完成`30/50、9/50`。尤其yellow-white→red的37个second-phase
+失败在第一event后仍有`229..322`步、median`297`，不能用strict400不足解释。soup/butter曾因shared tray occupancy失败；
+本轮目标mugs与plates均不共享仍出现同类非对称退化，说明更一般的最早失败是primitive task expert缺少“sibling goal已完成”
+状态上的恢复支持，而不是选错一个有物理冲突的family。
+
+因此task65/68 phase-composed acquisition关闭，task66/67同机制不直接进入另一轮full formal；Gate B、`q_pi/q_V`和旧realizer
+successor继续不启动。37条成功完整轨迹证明两个orders都可实现，可作为真正order-specific composite privileged policy/data的
+bootstrap evidence，但它们未达到teacher Gate，不能被重标为已完成process bank。正式证据：
+`docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`。

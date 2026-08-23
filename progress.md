@@ -28,6 +28,11 @@
 - post-A2 route decision audit：`docs/ecp_post_a2_route_decision_20260824.md`；
 - process candidate demonstration-order evidence：
   `docs/evidence/ecp_20260824/ecp_process_candidate_demo_order_audit_20260824.json`；
+- completed separate-plates process Gate A3 card：`docs/ecp_process_separate_plates_teacher_gate_20260824.md`；
+- separate-plates process Gate A3 adjudication：
+  `docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`；
+- separate-plates process Gate A3 raw authority：
+  `runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824/`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -45,9 +50,9 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `24c5bdc`。当前没有active GPU job。
-  process Gate A/A2、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧shared-realizer
-  family关闭。task65/68 separate-plate Gate A3合同已冻结并进入实现，Gate B、process suite、fresh Program、`q_pi/q_V`及
+- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`。当前没有active GPU job。
+  process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
+  shared-realizer与phase-composed primitive-teacher mechanisms关闭。Gate B、process suite、fresh Program、`q_pi/q_V`及
   joint Writer均未启动。
 
 ## Current scientific state
@@ -88,6 +93,11 @@
 - task65/68 Gate A3双向state0 smoke已在gpu02 physical0/1通过：red→yellow-white events为`144/291`，反向为`94/374`；
   两行均success、invalid=false，均调用task65/68两个experts，公开video字段与统一语言符合信息墙，59个共同replans的
   policy-noise逐项一致。该结果只授权从clean pushed detached commit运行预注册100行formal面板。
+- task65/68 Gate A3 formal已从clean pushed detached `4bf5039`在gpu01 physical`1,2,3,4,5,7`完成：red→yellow-white
+  `28/50`、反向`9/50`、总计`37/100`，低于每方向20与总计50的组合门。100份ledger、0 invalid、0 phase/expert错配、
+  50对noise及37条无泄漏public videos完整。两向第一event为`43/50、46/50`，第二event仅`30/50、9/50`；反向37个
+  second-phase失败仍有median297步余量，排除horizon-only解释。phase-composed primitive-teacher机制关闭；下一数据前置是
+  true order-specific composite privileged policy/data，Gate B仍不启动。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -283,7 +293,7 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0已归档；首个process family Gate A/A2、balanced-SVD learned realizer fold0与
-  two-sided coordinate Gate均为non-pass，旧shared-realizer family没有剩余预注册successor。process侧已选定task65/68
-  source-unseen composite/order family，Gate A3双向state0 smoke已通过；下一步是clean pushed detached的100行teacher Gate，
-  通过后才决定Gate B。该数据不构成恢复旧coordinate的理由，后续部署桥必须重新建立。
+- 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、balanced-SVD learned realizer fold0与two-sided
+  coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed primitive experts也已在
+  shared-tray与separate-plates两类family上失败。下一步不是换pair或扫teacher参数，而是用已有完整成功轨迹建立真正
+  order-specific composite privileged policy/data合同；通过前不运行Gate B。后续deployment bridge仍必须重新建立。

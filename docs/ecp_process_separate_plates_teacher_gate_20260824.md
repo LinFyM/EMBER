@@ -1,6 +1,6 @@
 # ECP separate-plates process teacher Gate A3
 
-日期：2026-08-24。状态：**合同已冻结；双向state0 smoke通过；formal尚未运行。**
+日期：2026-08-24。状态：**formal完成，Gate A3 non-pass。**
 
 ## 问题与唯一变量
 
@@ -82,3 +82,22 @@ common prefix配对。单节点使用当时真正提高吞吐的最多六张GPU�
 失败则关闭本task65/68 phase-composed acquisition，不做step2000、延长horizon、挑state、改seed或predicate救援。先按raw ledgers
 定位是某一primitive在另一目标已完成后的恢复失败，还是两方向普遍不支持；之后才在已登记的task66/67同机制复现、真正
 composite privileged data或异构process family之间作下一次因果选择。
+
+## Formal结果与裁决
+
+clean pushed detached `4bf50394f75307568339143d17a39c0bfe2c2829`在gpu01 physical`1,2,3,4,5,7`以六个固定shards
+完成100行，六个worker返回码均为0；physical0为Prohibited且未使用。
+
+- red→yellow-white：`28/50`；第一event完成`43/50`，第二event完成`30/50`；
+- yellow-white→red：`9/50`；第一event完成`46/50`，第二event完成`9/50`；
+- 总计`37/100`，低于50；反向也低于每方向20的floor；
+- invalid为0，phase/expert错配为0，100份ledgers与50对state/noise完整；
+- 37条公开video恰好对应37个success，字段和统一language均无泄漏。
+
+这不是horizon-only失败：yellow-white→red的37个second-phase失败在第一event后仍剩余`229..322`步，median`297`。因此最早
+失效接口是primitive task expert在sibling goal已经改变场景后的恢复支持；目标物体和plates物理分离仍未让phase composition
+双向可靠。Gate A3判为non-pass，task65/68 phase-composed acquisition关闭，不运行Gate B，也不以task66/67同机制full formal、
+step2000或合同调整盲目续试。下一数据机制必须提供真正order-specific composite privileged policy/data；本轮37条完整成功轨迹
+只作bootstrap evidence，不能冒充通过的teacher bank。
+
+正式证据：`docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`。

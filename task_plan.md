@@ -7,8 +7,10 @@ Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fol
 均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
 coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
 `59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
-未启动。当前shared-realizer family按专家停止条件关闭，不自行版本化。process侧已选定task65/68 separate-plate
-source-unseen composite/order family并冻结Gate A3；Gate通过前不启动Gate B、suite扩展或`q_pi/q_V`。**
+未启动。当前shared-realizer family按专家停止条件关闭，不自行版本化。task65/68 separate-plate Gate A3正式得到
+`28/50、9/50`、总计`37/100`，工程合同完整但teacher门non-pass；这把失败进一步定位到primitive expert在sibling goal已完成
+状态上的恢复支持。phase-composed primitive-teacher机制关闭，Gate B、suite扩展与`q_pi/q_V`不启动；下一数据前置是
+真正order-specific composite privileged policy/data。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -214,9 +216,12 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   相反required order与phase-expert authority；
 - [x] 完成两个方向state0工程smoke：events分别在`144/291`与`94/374`步完成，均调用task65/68 experts、无invalid，
   public artifacts与59步noise common prefix符合合同；
-- [ ] 从clean pushed detached commit完成100行formal Gate A3，裁决能否取得两个方向均可靠的privileged sequential teachers；
-- [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
-  区分，且无variant leakage；
+- [x] 从clean pushed detached `4bf5039`完成100行formal Gate A3；结果`28/50、9/50`、总计`37/100`，100份ledger、
+  0 invalid、0 phase/expert错配及50对noise均完整，判为scientific non-pass；
+- [ ] 以37条真实成功single-episode轨迹为bootstrap evidence，设计并预注册真正order-specific composite privileged
+  policy/data acquisition；不得把task66/67同机制full formal或Gate参数调整当下一版本；
+- [ ] 只有新的双向composite teacher通过后，才运行Gate B：correct video胜sibling wrong，而language-only/no-video/first+final
+  不能区分，且无variant leakage；
 - [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；
 - [ ] 完整suite在最终Stage 0、`q_pi`、`q_V`共同训练前完成。该准备可与Phase G并行。
 

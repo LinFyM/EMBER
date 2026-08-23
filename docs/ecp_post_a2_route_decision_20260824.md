@@ -1,6 +1,6 @@
 # ECP Gate A2后续数据路线决策审计
 
-日期：2026-08-24。状态：**后续裁决已冻结：选定task65/68作为Gate A3；旧shared-realizer family保持关闭；双向state0 smoke已通过。**
+日期：2026-08-24。状态：**task65/68 Gate A3 formal已完成并以`28/50、9/50` non-pass；旧shared-realizer与phase-composed teacher均保持关闭。**
 
 ## 1. 现在真正要决定的事
 

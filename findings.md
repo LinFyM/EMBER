@@ -1676,3 +1676,24 @@ carrier，gap recovery与trust均为0。峰值allocated约18.95GB，formal resul
 否则就是用profile结果修改预注册solver。它不否定任意更小局部有效更新、mobile-rank4拓扑、successful-policy effect target的
 充分性或ECP核心。按卡没有运行held5、closed loop、Action Meta或shared Writer，也不立即建立successor。正式证据：
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
+
+## 81. 专家要求的强oracle当前首先缺process-identifying任务语义，而不是另一个solver版本
+
+重新按专家的广义ECP停止条件审计后，现有source71和target40只提供最终状态谓词合取；没有一对已授权任务同时满足exact
+language、初始分布和最终状态相同，却要求不同且互斥的过程。现有shuffled/reversed control能检验表示对帧顺序是否敏感，但
+不能让“哪个过程才算任务成功”成为训练标签。因此更多同类LIBERO任务、更多successful members或另一个realization数值方案
+都不能补上这个识别缺口。
+
+LIBERO底层`BDDLBaseDomain.step()`用当前`_check_success()`覆盖done，EMBER evaluator又把done直接记为success。故把两个终点
+谓词写进新BDDL仍只得到无序合取；最小正确实现是显式meta-task manifest激活的有状态environment wrapper，内部观察两个
+谓词的首次转移、wrong-first后永久invalid、仅在正确顺序且最终合取成立时返回success。wrapper状态、variant ID和predicate
+progress不得进入policy或deployment Writer。
+
+`LIVING_ROOM_SCENE3`提供了一个低成本候选：同一场景里已有多个“物体放入wooden tray”的source primitives，可组合为语言、
+初态和终点都相同但要求相反物体顺序的一对任务。现有多物体demo若覆盖两种顺序可直接按predicate transition分组；否则训练
+阶段可用privileged phase-conditioned expert生成，但必须在wrapper下重新闭环验证，不能拼接两段视频冒充episode。
+
+该方案科学上直接补专家指出的信息源，也能用sibling variant video形成比普通wrong-video更强的因果control；工程上只需接入
+现有canonical与reward environment pools，不改PI0.5前向或target40 evaluator主干。但它会改变当前数据合同，尚待owner授权。
+在此之前停止代码/GPU推进；授权后也先做一个paired family的privileged upper-bound Gate，不直接扩suite或训练Writer。完整
+边界见`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。

@@ -309,6 +309,17 @@ Stage 1C通过后才进入Dynamic-K `q_V`、除backbone外普通Writer参数的�
 single-checkpoint development evaluation。联合训练不是遗漏的永久禁区，但不能在policy realization坐标尚未成立时再次让
 Program与compiler共同旋转。
 
+### 6.1 当前优先级修正：先建立process-identifying data gate
+
+effective-update profile失败后不再自动创建realization successor。现有全部授权BDDL只按最终状态合取判成功，无法让“同语言、
+同终点、不同必需过程”成为可学习的任务变量。下一主线因此前移到process-identifying meta-task feasibility：先用一个显式
+temporal state machine包裹non-held LIBERO场景，构造exact language、初始分布和最终谓词都相同、只在必需事件顺序上相反的
+paired variants；variant不可作为policy或Writer输入，正确action-hidden video是唯一deployment区分信息。
+
+该数据合同扩展尚待owner授权。授权后也只先做一个pair的privileged upper-bound gate；只有correct video相对sibling wrong
+video有闭环配对优势、language/no-video不能区分且两个variant都存在成功teacher时，才扩成跨scene meta suite并重建强
+Stage 1A/1B oracle。精确可行性与接入边界见`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+
 ## 7. 生命周期与停止条件
 
 active tree只保留一条ECP路径。每个重大科学问题对应一张falsification card；bugfix不增加版本，profile不算科学裁决，

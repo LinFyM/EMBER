@@ -152,8 +152,13 @@ card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
 
 ## Phase D — 继续被Realization non-pass阻止
 
+- [x] 审计现有source71/target40与LIBERO success接口，确认没有授权的same-endpoint/different-required-process pair，且单纯
+  BDDL终点合取不能表达必需顺序；
+- [x] 完成最小process-identifying pair的只读接入设计与feasibility gate；
+- [ ] 等待owner明确授权扩展数据合同；未授权前不创建custom temporal tasks、不启动GPU或新solver；
+- [ ] 授权后只实现一个paired temporal family并先证明privileged upper bound、correct-vs-sibling-video因果性与teacher可得性；
+- [ ] 通过后才扩成跨scene/source-unseen adaptation meta suite，并按family切分；
 - [ ] 轮换train24 fold并建立新的shared-model selection面；
-- [ ] 审计或构建source-unseen adaptation meta tasks；若要process claim，必须包含真正process-identifying mappings；
 - [ ] 学习`ECP Program -> effect distribution`，保持privileged recovery information不进入deployment输入；
 - [ ] 固定realization operator后训练Dynamic-K video inference；
 - [ ] 分阶段通过后再做除backbone外Writer普通参数联合训练；

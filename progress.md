@@ -143,3 +143,9 @@
 - effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
   当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续先综合复盘这一断点与
   专家原始意见，不复活raw-factor dynamics、不即时再造solver、不启动held5或Stage 1C。
+- 综合专家停止条件后，下一优先级已从“再造realization solver”前移到process-identifying data gate。只读接口核查确认现有
+  LIBERO只把最终谓词合取作为`done`；要形成同language/同终点/相反必需顺序的任务对，必须增加不向policy暴露状态的temporal
+  environment wrapper。最小pair、teacher acquisition与privileged feasibility gate已写入
+  `docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+- 该动作会构造当前枚举LIBERO任务之外的新temporal semantics，属于数据合同扩展；目前尚无owner明确授权，所以没有改代码、
+  生成数据、启动GPU或建立successor。授权后第一步也只是一个pair的upper-bound gate，不直接扩suite或训练Writer。

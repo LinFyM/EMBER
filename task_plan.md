@@ -213,8 +213,9 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   verified-state validity下15/15路径严格单调下降，5/5 tasks的global-particle objective改善；
 - [x] 选定并冻结deterministic-sign balanced-SVD canonical rank4为首个principled coordinate；fixed two-sided
   sketches只作有原则fallback；
-- [ ] 在successor effect evidence中保留probe particles，给member-state补on-policy/continuation/progress/recovery
-  validity，不把当前antithetic-average bank冒充distributional authority；
+- [x] 在successor effect evidence中保留probe particles并只采集successful member自身的on-policy anchors，不把旧
+  antithetic-average bank冒充distributional authority；
+- [ ] 在后继`q_pi`前另补continuation/progress/recovery validity；当前realizer不把这些尚未验证的states冒充target；
 - [ ] 训练小型target-local amortized `D_eff(structured code)->Delta W_rank4`，inference不读取future occupancy；
 - [ ] 多fold privileged-code transform-only closed-loop直接裁决：高于carrier、5/5 breadth、Goal/Long非零、carrier retention>=75%、
   best-member gap显著恢复、相邻checkpoint稳定；

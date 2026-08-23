@@ -1,6 +1,6 @@
 # ECP Phase 2B/2C：fixed effect-code coordinate and deployment realizer
 
-状态：2026-08-24 **在retained实现、effect-particle capture与realizer训练前预注册。**
+状态：2026-08-24 **预注册合同不变；effect-particle formal capture已完成，fit-only coordinate与realizer待执行。**
 
 ## 唯一科学问题
 
@@ -106,3 +106,15 @@ carrier且保留率达门。两fold通过后冻结`D_eff`，才能进入fresh St
   deterministic reconstruction；
 - fold0闭环不高于carrier、breadth `<=3/5`或Goal/Long均为0，不靠更长训练、width/LR/seed/head小扫救援；
 - 本轮通过也只证明realizer接口成立，不证明language/video能生成正确code。
+
+## Phase 2B capture milestone
+
+clean pushed detached `565c055ee7187546c017f253646d70c25a330b7e`在gpu01 physical`1,2,3,4,5,7`以6个独立
+shards完成唯一formal capture，physical0未使用。118/118 members、95/95 tasks与188条既有successful trajectories
+全部覆盖，形成376个保留`trajectory x probe-sign`轴的particles；每particle形状为`[8,38,4,128]`。
+
+六个shards均返回0，capture本体耗时为`83.79--87.40s/shard`，每路峰值allocated为18.72 GB；118个
+member tensors合计195,744,144 bytes。一条两轨迹profile上正负probe response RMS差为`.05092`，所以新轴
+不是重复副本。本次只采集successful member自身的on-policy states，candidate/recovery没有被冒充valid target；
+validation/Test读取、held optimizer steps和task-ID model input均为0。formal authority：
+`runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`。

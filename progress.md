@@ -26,11 +26,13 @@
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
 - active Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
+- Phase 2B formal particle authority：
+  `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
   process pair的formal code authority为clean pushed `d1975c3`，effect-path calibration的formal code authority为clean pushed
-  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，主执行转入
-  fixed-coordinate evidence capture与deployment realizer，
+  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，formal particle
+  capture已完成，主执行转入fit-only fixed coordinate与deployment realizer，
   process acquisition修正作为并行资格前置。
 
 ## Current scientific state
@@ -180,7 +182,13 @@
 - Phase 2B successor capture已实现原生probe-preserving response：旧路径仍显式求两个probe均值，新路径落盘
   `trajectory x sign x event8 x owner38 x horizon-mode4 x hidden128`粒子与canonical residual4 target。一个两轨迹
   member的真实GPU profile为18.72 GB peak，模型初始化后capture `5.25s`，输出1.91 MB，全部finite；
-  正负probe response RMS差为`.05092`，证明新轴非重复。当前仅完成profile，118-member formal authority尚未采集。
+  正负probe response RMS差为`.05092`，证明新轴非重复。formal authority现已完成：118 members、95 tasks、
+  188 successful trajectories和376 particles全部落盘，6 shards均0返回，capture耗时`83.79--87.40s/shard`，
+  tensors合计195,744,144 bytes；未读validation/Test，未训练held参数。下一接口是fit-only owner-local
+  `512 -> 128` code coordinate。
+- Phase 2B/2C retained实现已接通fit-only owner-local PCA whitening、held transform-only code materialization、按task等权的
+  in-memory batch，以及保持event/particle/owner结构的38-head fixed realizer与factor/effective/null losses；focused tests
+  `14/14`通过。尚未生成formal code authority或训练checkpoint，不能把实现接通写成realizer有效。
 
 ## Current unresolved interface
 

@@ -1,0 +1,117 @@
+{
+  "schema_version": "ember_pi05_ecp_composite_teacher_expert_v1",
+  "status": "sealed_ecp_composite_teacher_expert_training_contract",
+  "authorities": {
+    "composite_dataset_manifest": {
+      "path": "data/datasets/ecp_composite_teacher_bootstrap_a3_v1/yellow_white_right_then_red_left.json"
+    },
+    "process_manifest": {
+      "path": "configs/pi05_ecp_process_meta_separate_plates_v1/manifest.json"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json"
+    }
+  },
+  "information_wall": {
+    "expert_action_roles": [
+      "nonheld_process_bootstrap"
+    ],
+    "target40_action_reads": 0,
+    "deployment_uses_privileged_expert": false,
+    "task_identity_role": "sampler_ownership_only",
+    "policy_condition": "exact_unified_composite_language_only"
+  },
+  "task_experts": {
+    "variant_name": "yellow_white_right_then_red_left",
+    "required_order": [
+      "yellow_white_right",
+      "red_left"
+    ],
+    "exact_language": "put the red mug on the left plate and the yellow and white mug on the right plate",
+    "sampler_task_id": 0,
+    "task_count": 1,
+    "episodes_per_task": 9,
+    "demo_indices": [
+      0,
+      8
+    ],
+    "action_chunk_size": 50,
+    "lora_topology": "configs/pi05_lora_v1.json:38targets:rank16",
+    "initialization": "shared deterministic template-A and exact zero-B",
+    "task_parameter_sharing": "none",
+    "checkpoint_selection": "fixed_step1000_for_both_variants_no_selection",
+    "sampler": {
+      "kind": "deterministic_task_local_epoch_permutation",
+      "seed": 20260824,
+      "worker_random_transforms": false
+    },
+    "optimization": {
+      "precision": "bfloat16",
+      "gradient_checkpointing": true,
+      "optimizer": {
+        "name": "AdamW",
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1
+      },
+      "scheduler": {
+        "kind": "cosine_decay_with_warmup",
+        "peak_lr": 5e-05,
+        "warmup_steps": 25,
+        "decay_lr": 1e-07
+      },
+      "seed": 7
+    },
+    "profile_defaults": {
+      "total_steps": 3,
+      "scheduler_total_steps": 1000,
+      "per_task_batch_size": 16,
+      "checkpoint_steps": [
+        1,
+        3
+      ]
+    },
+    "formal_run": {
+      "status": "sealed",
+      "total_steps": 1000,
+      "per_task_batch_size": 16,
+      "checkpoint_steps": [
+        1000
+      ],
+      "allowed_worker_count": 1,
+      "tasks_per_worker": 1,
+      "default_stop_step": 1000,
+      "stage_stop_steps": [
+        1000
+      ],
+      "checkpoint_policy": "fixed_step1000_no_variant_specific_selection",
+      "profile_evidence": {
+        "source": "configs/pi05_nonheld_meta_expert_bank_v1.json",
+        "device": "NVIDIA A40",
+        "per_task_batch_size": 16,
+        "model_input_resolution": 224,
+        "same_pi05_rank16_forward_as_existing_experts": true,
+        "composite_data_profile_steps": 3,
+        "max_cuda_allocated_bytes": 15099039744,
+        "max_cuda_reserved_bytes": 21313355776,
+        "steady_step_seconds": [
+          4.0962257836945355,
+          4.073533312883228
+        ],
+        "oom_count": 0,
+        "nonfinite_count": 0
+      }
+    }
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

@@ -34,6 +34,9 @@
 - separate-plates process Gate A3 raw authority：
   `runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824/`；
 - active composite bootstrap data contract：`docs/ecp_composite_teacher_bootstrap_data_20260824.md`；
+- composite bootstrap data evidence：
+  `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`；
+- active composite expert train/Gate A4 contract：`docs/ecp_composite_teacher_expert_gate_20260824.md`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -101,8 +104,11 @@
   true order-specific composite privileged policy/data，Gate B仍不启动。
 - 37条successful ledgers已经完成数据接口审计：public RGB与teacher actions完整，唯一缺口是每个action执行前的8维
   PI0.5 state。新增canonical replay builder只重放已保存actions并采集state，不加载PI0.5；双向state0代码smoke均逐步
-  复现原completion steps，生成的HDF5可被现有`FunctionalQueryDataset`直接读取。下一步是从clean pushed frozen commit
-  正式构建28/9条两个数据集，尚未训练composite expert。
+  复现原completion steps，生成的HDF5可被现有`FunctionalQueryDataset`直接读取。
+- 正式bootstrap data build已从clean pushed detached `b8fb0bf`完成：red→yellow-white的28/28 replay与反向9/9全部
+  精确匹配原completion steps、0 divergence；两份HDF5分别为`3,728,011,012`与`1,277,410,960` bytes，含
+  `9,479/3,248` action rows，标准training dataset读取门通过。它只授权训练privileged composite experts，尚未通过
+  process teacher Gate或授权Gate B。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -300,5 +306,5 @@
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
 - 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、balanced-SVD learned realizer fold0与two-sided
   coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed primitive experts也已在
-  shared-tray与separate-plates两类family上失败。下一步不是换pair或扫teacher参数，而是按已冻结合同正式构建28/9条
-  order-specific composite privileged数据；通过前不运行Gate B。后续deployment bridge仍必须重新建立。
+  shared-tray与separate-plates两类family上失败。28/9条order-specific composite privileged数据已通过；下一步按固定
+  step1000合同训练两套完整composite experts并运行Gate A4，通过前不运行Gate B。后续deployment bridge仍必须重新建立。

@@ -20,6 +20,11 @@ from ember.expert_manifold.meta_contract import (
     meta_expert_config_is_valid,
     meta_worker_assignments,
 )
+from ember.expert_manifold.composite_contract import (
+    COMPOSITE_EXPERT_CONFIG_SCHEMA,
+    composite_expert_config_is_valid,
+    load_composite_expert_spec,
+)
 from ember.expert_manifold.diagnostic_contract import (
     VALIDATION_EXPERT_CONFIG_SCHEMA,
     load_validation_expert_specs,
@@ -155,23 +160,27 @@ def _ecp_particle_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
 
 
 def load_task_expert_config(path: Path) -> dict[str, Any]:
-    """Load either the retained train24 or non-held meta expert authority."""
+    """Load one retained task-local expert training authority."""
 
     config = read_json(path)
     schema = config.get("schema_version")
     valid = (
-        _train24_config_is_valid(config)
-        if schema == CONFIG_SCHEMA
+        composite_expert_config_is_valid(config)
+        if schema == COMPOSITE_EXPERT_CONFIG_SCHEMA
         else (
-            _ecp_particle_expert_config_is_valid(config)
-            if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
+            _train24_config_is_valid(config)
+            if schema == CONFIG_SCHEMA
             else (
-                meta_expert_config_is_valid(config)
-                if schema == META_EXPERT_CONFIG_SCHEMA
+                _ecp_particle_expert_config_is_valid(config)
+                if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
                 else (
-                    validation_expert_config_is_valid(config)
-                    if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
-                    else False
+                    meta_expert_config_is_valid(config)
+                    if schema == META_EXPERT_CONFIG_SCHEMA
+                    else (
+                        validation_expert_config_is_valid(config)
+                        if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
+                        else False
+                    )
                 )
             )
         )
@@ -192,6 +201,8 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 def load_train_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
+    if config.get("schema_version") == COMPOSITE_EXPERT_CONFIG_SCHEMA:
+        return _load_composite_task(config, data_root)
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
         return _load_meta_tasks(config, data_root)
     if config.get("schema_version") == VALIDATION_EXPERT_CONFIG_SCHEMA:
@@ -231,6 +242,33 @@ def load_train_tasks(
             )
         )
     return tuple(tasks)
+
+
+def _load_composite_task(
+    config: Mapping[str, Any], data_root: Path
+) -> tuple[ExpertTask, ...]:
+    try:
+        spec = load_composite_expert_spec(config, data_root)
+    except ValueError as error:
+        raise ExpertManifoldError(str(error)) from error
+    authority = WriterTaskAuthority(
+        task_id=spec.sampler_task_id,
+        language=spec.language,
+        path=spec.path,
+        expected_bytes=spec.expected_bytes,
+        expected_sha256=None,
+    )
+    return (
+        ExpertTask(
+            ordinal=0,
+            global_task_id=spec.sampler_task_id,
+            suite="ecp_process_meta",
+            task_id=spec.sampler_task_id,
+            split_role="nonheld_process_bootstrap",
+            language=spec.language,
+            authority=authority,
+        ),
+    )
 
 
 def _load_validation_tasks(
@@ -294,6 +332,12 @@ def validate_formal_task_assignment(
     config: Mapping[str, Any], indices: Sequence[int]
 ) -> None:
     formal = config["task_experts"]["formal_run"]
+    if config.get("schema_version") == COMPOSITE_EXPERT_CONFIG_SCHEMA:
+        if tuple(indices) != (0,):
+            raise ExpertManifoldError(
+                "formal composite expert worker must own its only policy"
+            )
+        return
     if config.get("schema_version") == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA:
         allowed = {(int(index),) for index in formal["task_indices"]}
         if tuple(indices) not in allowed:

@@ -10,7 +10,8 @@ coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0�
 未启动。当前shared-realizer family按专家停止条件关闭，不自行版本化。task65/68 separate-plate Gate A3正式得到
 `28/50、9/50`、总计`37/100`，工程合同完整但teacher门non-pass；这把失败进一步定位到primitive expert在sibling goal已完成
 状态上的恢复支持。phase-composed primitive-teacher机制关闭，Gate B、suite扩展与`q_pi/q_V`不启动；下一数据前置是
-真正order-specific composite privileged policy/data。**
+真正order-specific composite privileged policy/data。该前置现已由37/37确定性replay构成两份正式HDF5；下一步固定训练
+两个step1000完整composite experts并运行Gate A4。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -220,7 +221,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   0 invalid、0 phase/expert错配及50对noise均完整，判为scientific non-pass；
 - [x] 以37条真实成功single-episode轨迹为bootstrap evidence，冻结真正order-specific composite privileged policy/data
   合同；确定性action replay补齐逐步8维policy state，复用原public RGB与actions，不重跑PI0.5；
-- [ ] 从clean pushed frozen authority构建28条与9条两个composite HDF5，并通过逐episode replay与标准training dataset读取门；
+- [x] 从clean pushed frozen `b8fb0bf`构建28条与9条两个composite HDF5；37/37 replay精确匹配、0 divergence，
+  标准training dataset读取通过；
 - [ ] 从同一source分别训练两个fixed-step1000 order-specific composite experts，并在原50×2状态面板报告bootstrap
   retention与原失败state acquisition；不得把task66/67同机制full formal或Gate参数调整当下一版本；
 - [ ] 只有新的双向composite teacher通过后，才运行Gate B：correct video胜sibling wrong，而language-only/no-video/first+final

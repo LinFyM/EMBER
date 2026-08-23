@@ -1938,3 +1938,19 @@ red→yellow-white为`28/50`，反向为`9/50`，总计`37/100`；100份ledger�
 successor继续不启动。37条成功完整轨迹证明两个orders都可实现，可作为真正order-specific composite privileged policy/data的
 bootstrap evidence，但它们未达到teacher Gate，不能被重标为已完成process bank。正式证据：
 `docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`。
+
+## 93. 37条Gate A3成功轨迹足以无损构造order-specific composite policy-SFT authority
+
+Gate A3公开成功video已经包含每个action前后的render256双相机RGB，privileged ledger包含完整teacher actions；唯一缺少的
+task-expert训练字段是每个action执行前的8维PI0.5 state。clean pushed detached `b8fb0bf`没有重新运行PI0.5，而是在同一
+BDDL/init/seed/dummy-settling下确定性重放保存的actions，采集`eef pos + axis-angle + gripper qpos`。
+
+red→yellow-white的28/28与反向9/9 replay全部保持success，completion steps逐条精确一致、divergence为0。生成的标准HDF5
+分别含`9,479`与`3,248` action rows，bytes为`3,728,011,012`与`1,277,410,960`；现有
+`FunctionalQueryDataset`可直接读取256双相机、8维state和50-step action chunks。整个构建没有target40 action reads，
+也没有新增PI0.5 forward。
+
+因此“现有成功轨迹缺训练接口”已经解决，下一最早接口变为：从这两个不对称bootstrap basins训练的完整composite policy
+能否保留已有support并泛化到原失败states。数据通过只授权两个fixed-step1000 privileged experts与随后Gate A4，不把37条
+训练轨迹冒充teacher Gate通过。证据：
+`docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`。

@@ -1524,6 +1524,23 @@ horizon或state/seed修改救援。Gate B、process suite与`q_pi/q_V`仍不启�
 privileged policy/data；37条完整成功轨迹只作bootstrap evidence。正式证据：
 `docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`。
 
+### 3.78 Gate A3成功轨迹已转换为两个composite policy-SFT数据集
+
+Gate A3的37条成功episode具备完整teacher actions与每步前后render256双相机公开RGB，但缺少现有task-expert trainer所需的
+逐action 8维PI0.5 state。新增builder从clean pushed detached `b8fb0bfc5b8991b3af646a5f7f700c89a5ca2ad0`
+确定性重放保存actions，不重新执行PI0.5 inference；每个action前采集eef position、axis-angle orientation和gripper qpos，
+并与原RGB/actions写成标准LIBERO风格HDF5。
+
+red→yellow-white的28/28与yellow-white→red的9/9 replay全部success、0 divergence，completion steps逐条匹配原ledger。
+两份HDF5分别有`9,479/3,248` action rows，bytes为`3,728,011,012/1,277,410,960`；现有
+`FunctionalQueryDataset`读取双相机`[3,256,256]`、8维state和`[50,7]`action chunk的正式门通过。target40 action
+reads与新增PI0.5 forwards均为0。
+
+该结果解决的是privileged composite policy的数据authority，不是process teacher性能。后继固定为两个独立rank16、
+step1000 composite experts，再在原50×2面板报告bootstrap retention与原failure acquisition。通过原teacher门之前，
+Gate B、process suite和deployment compiler仍不启动。证据：
+`docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

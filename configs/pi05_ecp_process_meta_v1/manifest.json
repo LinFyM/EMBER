@@ -1,0 +1,121 @@
+{
+  "schema_version": "ember_ecp_process_meta_manifest_v1",
+  "status": "active_minimal_pair_feasibility",
+  "source_policy_authority": "runs/outputs/pi05_nonheld_meta_train_source_base_56x50_formal_3502d13_gpu02p12_20260819",
+  "normalization_authority": "configs/pi05_source_corpus_v1/source_normalization.json",
+  "tokenizer_authority": "models/tokenizers/openpi/paligemma_tokenizer.model",
+  "family": {
+    "family_id": "living_room_scene3_soup_butter_order_v1",
+    "scene": "LIVING_ROOM_SCENE3",
+    "exact_language": "put the alphabet soup and butter in the tray",
+    "bddl": {
+      "path": "configs/pi05_ecp_process_meta_v1/bddl/LIVING_ROOM_SCENE3_put_the_alphabet_soup_and_butter_in_the_tray.bddl",
+      "bytes": 2638
+    },
+    "base_init_states": {
+      "suite": "libero_90",
+      "task_id": 55,
+      "filename": "LIVING_ROOM_SCENE3_pick_up_the_alphabet_soup_and_put_it_in_the_tray.pruned_init",
+      "bytes": 46319,
+      "count": 50,
+      "state_ids": [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+        10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+        30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47, 48, 49
+      ]
+    },
+    "predicates": {
+      "alphabet_soup": [
+        "In",
+        "alphabet_soup_1",
+        "wooden_tray_1_contain_region"
+      ],
+      "butter": [
+        "In",
+        "butter_1",
+        "wooden_tray_1_contain_region"
+      ]
+    },
+    "privileged_teacher_phase_languages": {
+      "alphabet_soup": "pick up the alphabet soup and put it in the tray",
+      "butter": "pick up the butter and put it in the tray"
+    },
+    "source_primitive_evidence": [
+      {
+        "task_id": 55,
+        "language": "pick up the alphabet soup and put it in the tray",
+        "strict_successes": 50,
+        "episodes": 50
+      },
+      {
+        "task_id": 56,
+        "language": "pick up the butter and put it in the tray",
+        "strict_successes": 50,
+        "episodes": 50
+      }
+    ],
+    "variants": [
+      {
+        "name": "alphabet_soup_then_butter",
+        "required_order": [
+          "alphabet_soup",
+          "butter"
+        ]
+      },
+      {
+        "name": "butter_then_alphabet_soup",
+        "required_order": [
+          "butter",
+          "alphabet_soup"
+        ]
+      }
+    ]
+  },
+  "rollout": {
+    "horizon": 400,
+    "render_resolution": 256,
+    "dummy_settling_steps": 10,
+    "dummy_action": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1
+    ],
+    "replan_steps": 5,
+    "num_inference_steps": 10,
+    "frame_stride": 5,
+    "environment_seed": 7,
+    "policy_seed_root": 7
+  },
+  "information_wall": {
+    "deployment_inputs": [
+      "exact_language",
+      "action_hidden_ordered_video_frames"
+    ],
+    "privileged_only": [
+      "variant_name",
+      "required_order",
+      "predicate_values",
+      "predicate_transition_steps",
+      "teacher_phase_language",
+      "teacher_actions",
+      "success",
+      "reward"
+    ],
+    "writer_never_reads": [
+      "variant_name",
+      "task_id",
+      "filename",
+      "predicate_values",
+      "teacher_phase_language",
+      "teacher_actions",
+      "reward",
+      "success"
+    ]
+  }
+}

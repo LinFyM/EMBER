@@ -28,12 +28,12 @@
     },
     "predicates": {
       "alphabet_soup": [
-        "In",
+        "in",
         "alphabet_soup_1",
         "wooden_tray_1_contain_region"
       ],
       "butter": [
-        "In",
+        "in",
         "butter_1",
         "wooden_tray_1_contain_region"
       ]

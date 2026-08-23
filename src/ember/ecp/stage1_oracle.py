@@ -21,7 +21,7 @@ from ember.ecp.policy_effects import (
 )
 from ember.ecp.stage0_training import stage0_source_authority
 from ember.ecp.stage1_equivalence import load_effect_bank
-from ember.ecp.stage1_objective import RealizationConfig
+from ember.ecp.stage1_objective import realization_config_from_mapping
 from ember.ecp.stage1_realization import solve_effective_update_particle_effects
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
@@ -42,27 +42,6 @@ def _finite_dataclass(value: Any) -> bool:
 def _authority_path(config: Mapping[str, Any], name: str, asset_root: Path) -> Path:
     path = Path(str(config["authorities"][name]))
     return path.resolve() if path.is_absolute() else (asset_root / path).resolve()
-
-
-def _solver_config(value: Mapping[str, Any]) -> RealizationConfig:
-    return RealizationConfig(
-        sketch_width=int(value["sketch_width"]),
-        probe_seed=int(value["probe_seed"]),
-        max_vjp_evaluations=int(value["max_vjp_evaluations"]),
-        backtrack_scales=tuple(float(item) for item in value["backtrack_scales"]),
-        gram_damping_fraction=float(value["gram_damping_fraction"]),
-        temperature=float(value["temperature"]),
-        owner_weight=float(value["owner_weight"]),
-        flow_weight=float(value["flow_weight"]),
-        action_weight=float(value["action_weight"]),
-        carrier_barrier_weight=float(value["carrier_barrier_weight"]),
-        preservation_weight=float(value["preservation_weight"]),
-        signal_floor_fraction=float(value["signal_floor_fraction"]),
-        minimum_confidence=float(value["minimum_confidence"]),
-        trust_region=float(value["trust_region"]),
-        trust_weight=float(value["trust_weight"]),
-        microbatch_size=int(value["microbatch_size"]),
-    )
 
 
 def solve_stage1_task(
@@ -137,7 +116,7 @@ def solve_stage1_task(
             bank=bank,
             contract=contract,
             response=response,
-            config=_solver_config(config["solver"]),
+            config=realization_config_from_mapping(config["solver"]),
             carrier_rank=carrier_rank,
         )
     finally:

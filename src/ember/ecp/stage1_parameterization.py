@@ -111,6 +111,48 @@ def initial_rank_reserved_residual(
     return residual
 
 
+def interpolate_rank_reserved_endpoint(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    endpoint: Mapping[str, torch.Tensor],
+    alpha: float,
+    contract: LoRAContract,
+    carrier_rank: int,
+) -> dict[str, torch.Tensor]:
+    """Scale one canonical residual path in effective-update coordinates."""
+
+    residual_rank = int(contract.rank) - int(carrier_rank)
+    if residual_rank <= 0 or not 0.0 <= float(alpha) <= 1.0:
+        raise ValueError("rank-reserved path interpolation changed")
+    scale = float(alpha) ** 0.5
+    result = {}
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        carrier_a = carrier[a_name]
+        carrier_b = carrier[b_name]
+        endpoint_a = endpoint[a_name]
+        endpoint_b = endpoint[b_name]
+        if (
+            endpoint_a.shape != carrier_a.shape
+            or endpoint_b.shape != carrier_b.shape
+            or torch.count_nonzero(carrier_b[:, carrier_rank:])
+            or not torch.equal(endpoint_a[:carrier_rank], carrier_a[:carrier_rank])
+            or not torch.equal(endpoint_b[:, :carrier_rank], carrier_b[:, :carrier_rank])
+            or endpoint_a[carrier_rank:].shape[0] != residual_rank
+        ):
+            raise ValueError("rank-reserved endpoint lost its carrier coordinate")
+        result[a_name] = torch.cat(
+            [carrier_a[:carrier_rank], endpoint_a[carrier_rank:] * scale], dim=0
+        )
+        result[b_name] = torch.cat(
+            [carrier_b[:, :carrier_rank], endpoint_b[:, carrier_rank:] * scale],
+            dim=1,
+        )
+    validate_lora_state(result, contract)
+    return result
+
+
 def project_expert_onto_rank_reserved_residual(
     *,
     carrier: Mapping[str, torch.Tensor],

@@ -102,6 +102,20 @@ def _prepare_prefix_cache(
     return cache
 
 
+@torch.no_grad()
+def prepare_policy_effect_prefix_cache(
+    policy: torch.nn.Module,
+    prefix: ExecutionPolicyPrefix,
+) -> Any:
+    """Prepare the antithetic prefix cache once for repeated effect queries."""
+
+    repeated = ExecutionPolicyPrefix(
+        embeddings=prefix.embeddings.repeat_interleave(2, dim=0),
+        padding=prefix.padding.repeat_interleave(2, dim=0),
+    )
+    return _prepare_prefix_cache(policy, repeated)
+
+
 def dct_basis(device: torch.device, count: int = 4) -> torch.Tensor:
     """Orthonormal low-frequency basis over PI0.5's 50 action positions."""
 
@@ -124,6 +138,7 @@ def capture_policy_effect_response(
     prefix: ExecutionPolicyPrefix,
     suffix_noise: torch.Tensor,
     denoising_steps: int,
+    prepared_prefix_cache: Any | None = None,
 ) -> PolicyEffectResponse:
     """Run the official complete denoising path from matched antithetic noise."""
 
@@ -146,7 +161,11 @@ def capture_policy_effect_response(
     needs_grad = any(value.requires_grad for value in state.values())
     state_names = tuple(state)
     state_values = tuple(state[name] for name in state_names)
-    prefix_cache = _prepare_prefix_cache(policy, repeated)
+    prefix_cache = (
+        prepare_policy_effect_prefix_cache(policy, prefix)
+        if prepared_prefix_cache is None
+        else prepared_prefix_cache
+    )
 
     def active_state(values: tuple[torch.Tensor, ...]) -> dict[str, torch.Tensor]:
         return dict(zip(state_names, values, strict=True))

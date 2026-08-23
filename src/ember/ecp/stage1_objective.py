@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, Mapping
 
 import torch
 
@@ -53,6 +54,27 @@ class ParticleObjective:
     baseline_uses_carrier: torch.Tensor
 
 
+def realization_config_from_mapping(value: Mapping[str, Any]) -> RealizationConfig:
+    return RealizationConfig(
+        sketch_width=int(value["sketch_width"]),
+        probe_seed=int(value["probe_seed"]),
+        max_vjp_evaluations=int(value["max_vjp_evaluations"]),
+        backtrack_scales=tuple(float(item) for item in value["backtrack_scales"]),
+        gram_damping_fraction=float(value["gram_damping_fraction"]),
+        temperature=float(value["temperature"]),
+        owner_weight=float(value["owner_weight"]),
+        flow_weight=float(value["flow_weight"]),
+        action_weight=float(value["action_weight"]),
+        carrier_barrier_weight=float(value["carrier_barrier_weight"]),
+        preservation_weight=float(value["preservation_weight"]),
+        signal_floor_fraction=float(value["signal_floor_fraction"]),
+        minimum_confidence=float(value["minimum_confidence"]),
+        trust_region=float(value["trust_region"]),
+        trust_weight=float(value["trust_weight"]),
+        microbatch_size=int(value["microbatch_size"]),
+    )
+
+
 def response_fields(value: PolicyEffectResponse) -> tuple[torch.Tensor, ...]:
     return value.owner, value.flow, value.action
 
@@ -61,7 +83,7 @@ def _component_weights(config: RealizationConfig) -> tuple[float, ...]:
     return config.owner_weight, config.flow_weight, config.action_weight
 
 
-def _member_scales(
+def member_response_scales(
     bank: Stage1EffectBank, config: RealizationConfig
 ) -> PolicyEffectResponse:
     values = []
@@ -179,7 +201,7 @@ def build_particle_objective(
     bank: Stage1EffectBank, config: RealizationConfig
 ) -> ParticleObjective:
     bank.validate()
-    scales = _member_scales(bank, config)
+    scales = member_response_scales(bank, config)
     group_ids, group_weights, state_weights = _group_layout(
         bank.category_ids, bank.stage_ids, bank.progress
     )

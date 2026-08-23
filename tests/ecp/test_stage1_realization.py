@@ -1,5 +1,11 @@
 import torch
 
+from ember.ecp.effect_path_calibration import (
+    build_verified_member_objective,
+    build_verified_member_validity,
+    global_particle_loss,
+    verified_member_losses,
+)
 from ember.ecp.policy_effects import ExecutionPolicyPrefix, PolicyEffectResponse
 from ember.ecp.stage1_equivalence import (
     Stage1EffectBank,
@@ -7,6 +13,7 @@ from ember.ecp.stage1_equivalence import (
 )
 from ember.ecp.stage1_objective import RealizationConfig
 from ember.ecp.stage1_parameterization import (
+    interpolate_rank_reserved_endpoint,
     project_expert_onto_rank_reserved_residual,
     rank_reserved_relative_distance,
     rank_reserved_state,
@@ -127,6 +134,66 @@ def test_rank_reserved_update_is_exactly_effective_additive() -> None:
         ),
         torch.tensor(1.0),
     )
+
+
+def test_rank_reserved_path_scales_the_effective_correction() -> None:
+    contract, carrier = _contract()
+    endpoint = {
+        "tiny.lora_A.default.weight": torch.tensor([[1.0], [4.0]]),
+        "tiny.lora_B.default.weight": torch.tensor([[0.1, 0.05]]),
+    }
+    state = interpolate_rank_reserved_endpoint(
+        carrier=carrier,
+        endpoint=endpoint,
+        alpha=0.25,
+        contract=contract,
+        carrier_rank=1,
+    )
+    effective = state["tiny.lora_B.default.weight"] @ state[
+        "tiny.lora_A.default.weight"
+    ]
+    carrier_effective = carrier["tiny.lora_B.default.weight"] @ carrier[
+        "tiny.lora_A.default.weight"
+    ]
+    endpoint_effective = endpoint["tiny.lora_B.default.weight"] @ endpoint[
+        "tiny.lora_A.default.weight"
+    ]
+    assert torch.allclose(
+        effective - carrier_effective,
+        0.25 * (endpoint_effective - carrier_effective),
+    )
+
+
+def test_verified_objective_keeps_one_member_identity() -> None:
+    anchors = [
+        {"category": "initial", "init_state_id": index} for index in range(8)
+    ]
+    anchors.extend(
+        {"category": "successful", "generator": member}
+        for member in ("latest", "independent", "earliest")
+        for _ in range(8)
+    )
+    anchors.extend({"category": "candidate"} for _ in range(8))
+    anchors.extend({"category": "recovery"} for _ in range(8))
+    names = ("latest", "independent", "earliest")
+    validity = build_verified_member_validity(
+        anchors=anchors,
+        member_names=names,
+        initial_success={
+            "latest": {index: True for index in range(8)},
+            "independent": {},
+            "earliest": {0: True},
+        },
+    )
+    assert validity.sum(1).tolist() == [16, 8, 9]
+    bank = _bank()
+    config = RealizationConfig()
+    objective = build_verified_member_objective(bank, validity, config)
+    losses = verified_member_losses(
+        _response(torch.tensor(0.4), 48), bank, objective, config
+    )
+    _, responsibilities = global_particle_loss(losses, objective)
+    assert int(responsibilities.argmax()) == 0
 
 
 def test_rank_reserved_projection_recovers_a_mobile_rank_one_correction() -> None:

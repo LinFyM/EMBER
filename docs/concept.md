@@ -63,8 +63,8 @@ correct视频展示物理可行的初态→目标态过程；shuffled破坏阶�
 ## 输出为什么仍是一套LoRA
 
 LoRA提供一次性、可缓存、可挂载到冻结policy的task adaptation，并能自然成为未来task-local RL的起点。Writer
-生成LoRA不意味着必须直接回归每个A/B元素；合理实现可先形成与policy topology对齐的memory/Program，再由共享
-compiler生成完整LoRA。
+生成LoRA不意味着必须直接回归每个A/B元素；当前更有依据的实现是先形成与policy topology对齐的Program，再预测
+event/layer/family policy-effect distribution，最后由固定、受约束的realization solver在PI0.5自己的参数坐标中生成完整LoRA。
 
 rank、memory token、parameter grid、FactorHead和decoder只是实现选择。LoRA是否“健康”最终看它能否产生合理
 effective BA、action response和closed-loop improvement，而不是强求高rank、正交或均匀能量。
@@ -75,7 +75,7 @@ EMBER可以分成四个必须同时成立、但应分别诊断的接口：
 
 1. **Evidence extraction**：语言确定语义query，视频提供有向动态Value；
 2. **Program formation**：同task不同video形成可复现的高层表示，多task保持可分；
-3. **Policy compilation**：Program被写成native、policy-effective的一套LoRA，而非近identity或错误子空间；
+3. **Policy compilation**：Program先约束策略响应等价类，再被固定实现器写成native、policy-effective的一套LoRA；
 4. **Shared credit and retention**：训练更新在同一checkpoint中积累多个tasks，不轮流换手。
 
 “视频被读到”“LoRA非零”“reward gradient存在”“single checkpoint分数高”分别只关闭其中一个局部问题。

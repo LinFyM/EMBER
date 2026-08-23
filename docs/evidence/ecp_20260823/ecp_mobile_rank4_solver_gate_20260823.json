@@ -1,0 +1,285 @@
+{
+  "schema_version": "ember_ecp_stage1b_mobile_rank4_solver_gate_v1",
+  "date": "2026-08-23",
+  "decision": "mobile_rank4_solver_non_pass_stop_operator",
+  "repository": {
+    "formal_commit": "f75bafc66eff70db7b912e07fc9455d5bf76ab2e",
+    "dirty_paths_at_formal_launch": []
+  },
+  "artifacts": {
+    "preregistered_card": "docs/ecp_mobile_rank4_solver_card_20260823.md",
+    "fit_profile": "runs/outputs/pi05_ecp_stage1b_mobile_rank4_profile_formal_f75bafc_gpu01p1_20260823/task_071.json",
+    "held_solver_root": "runs/outputs/pi05_ecp_stage1b_mobile_rank4_held5_formal_f75bafc_gpu01p15672_20260823",
+    "projection_manifest": "runs/outputs/pi05_ecp_stage1b_mobile_rank4_held5_formal_f75bafc_gpu01p15672_20260823/projection.json",
+    "strict250_root": "runs/outputs/pi05_ecp_stage1b_mobile_rank4_solver_fixed250_formal_f75bafc_gpu01p16_r3_20260823",
+    "strict250_results": "runs/outputs/pi05_ecp_stage1b_mobile_rank4_solver_fixed250_formal_f75bafc_gpu01p16_r3_20260823/results.json",
+    "stable_carrier_results": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json",
+    "fixed_a_results": "runs/outputs/pi05_ecp_stage1b_held_oracle_fixed250_formal_c2aaac1_gpu02p12347_r3_20260823/results.json",
+    "successful_member_projection_analysis": "runs/analysis/pi05_ecp_stage1b_mobile_rank4_residual_member_projection_083ed98_20260823/projection_analysis.json"
+  },
+  "formal_completion": {
+    "episodes": 250,
+    "successes": 49,
+    "worker_return_codes": {
+      "1-r0": 0,
+      "1-r1": 0,
+      "1-r2": 0,
+      "6-r0": 0,
+      "6-r1": 0,
+      "6-r2": 0
+    },
+    "completed_shards": 22,
+    "worker_count": 6,
+    "physical_gpus": [
+      1,
+      6
+    ],
+    "prohibited_physical_gpu0_selected": false,
+    "evaluation_wall_seconds": 1756.393747329712
+  },
+  "solver": {
+    "parameterization": "frozen carrier rank12 plus jointly mobile residual rank4",
+    "steps": 12,
+    "output": "one complete rank16 LoRA per task",
+    "all_adapters_finite": true,
+    "all_objective_histories_strictly_decreasing": true,
+    "all_mobile_a_gradients_nonzero_after_step0": true,
+    "all_mobile_b_gradients_nonzero": true,
+    "per_task_global_0_9_18_25_36": {
+      "initial_total": [
+        2.226314067840576,
+        2.617264986038208,
+        2.3830387592315674,
+        2.206861734390259,
+        3.94933819770813
+      ],
+      "final_total": [
+        1.915012240409851,
+        2.4012553691864014,
+        2.0187220573425293,
+        1.9874213933944702,
+        3.261854887008667
+      ],
+      "final_to_initial_ratio": [
+        0.8601716478696675,
+        0.9174674257271964,
+        0.8471209498889916,
+        0.9005645267321568,
+        0.8259244267562547
+      ],
+      "final_trust_distance": [
+        0.0009152432321570814,
+        0.0009696613997220993,
+        0.0010801847092807293,
+        0.0011714657302945852,
+        0.0010697140824049711
+      ],
+      "final_trust_penalty": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "strict_paired_closed_loop": {
+    "rows": 250,
+    "successes": {
+      "source": 21,
+      "stable_carrier": 43,
+      "direct_earliest": 74,
+      "direct_latest": 108,
+      "independent": 113,
+      "successful_member_union": 146,
+      "fixed_a_oracle": 78,
+      "mobile_rank4_solver": 49
+    },
+    "per_task_global_0_9_18_25_36": {
+      "stable_carrier": [
+        38,
+        1,
+        4,
+        0,
+        0
+      ],
+      "successful_member_union": [
+        38,
+        40,
+        41,
+        16,
+        11
+      ],
+      "fixed_a_oracle": [
+        36,
+        12,
+        30,
+        0,
+        0
+      ],
+      "mobile_rank4_solver": [
+        40,
+        3,
+        6,
+        0,
+        0
+      ]
+    },
+    "candidate_vs_carrier": {
+      "retained": 41,
+      "gained": 8,
+      "lost": 2,
+      "net": 6,
+      "per_task_retained_global_0_9_18_25_36": [
+        36,
+        1,
+        4,
+        0,
+        0
+      ],
+      "per_task_gained_global_0_9_18_25_36": [
+        4,
+        2,
+        2,
+        0,
+        0
+      ],
+      "per_task_lost_global_0_9_18_25_36": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "candidate_vs_fixed_a": {
+      "retained": 41,
+      "gained": 8,
+      "lost": 37,
+      "net": -29,
+      "success_set_jaccard": 0.47674418604651164
+    },
+    "oracle_normalized_recovery": {
+      "recoverable_union_gap": 115,
+      "recovered": 3,
+      "overall": 0.02608695652173913,
+      "per_task_recoverable_gap_global_0_9_18_25_36": [
+        8,
+        40,
+        40,
+        16,
+        11
+      ],
+      "per_task_recovered_global_0_9_18_25_36": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "per_task_ratio_global_0_9_18_25_36": [
+        0.25,
+        0.025,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "positive_tasks": 2
+    },
+    "candidate_success_membership": {
+      "inside_successful_member_union": 33,
+      "outside_successful_member_union": 16,
+      "fraction_of_union_covered": 0.22602739726027396,
+      "fraction_of_candidate_successes_inside_union": 0.673469387755102
+    },
+    "strict_pairing": {
+      "references_checked": [
+        "source",
+        "stable_carrier",
+        "direct_earliest",
+        "direct_latest",
+        "independent"
+      ],
+      "episode_key_mismatches": 0,
+      "environment_seed_mismatches": 0,
+      "policy_seed_root_mismatches": 0,
+      "language_mismatches": 0,
+      "policy_noise_common_prefix_mismatches": 0
+    }
+  },
+  "post_hoc_failure_localization": {
+    "role": "read_only_no_new_rollout",
+    "best_successful_member_objective_global_0_9_18_25_36": [
+      0.0841938927769661,
+      0.1196170449256897,
+      0.16272032260894775,
+      0.06023944169282913,
+      0.07786575704813004
+    ],
+    "solver_final_over_best_member_objective_global_0_9_18_25_36": [
+      22.745263073686544,
+      20.07452508694012,
+      12.406084408976723,
+      32.99202876960016,
+      41.890749036093794
+    ],
+    "successful_projected_member_trust_range": [
+      1.3409431581183728,
+      2.2808434568640092
+    ],
+    "solver_final_trust_range": [
+      0.0009152432321570814,
+      0.0011714657302945852
+    ],
+    "solver_to_successful_projection_effective_correction_cosine_range": [
+      0.04068518842703458,
+      0.07701203135633782
+    ],
+    "solver_to_successful_projection_effective_correction_norm_ratio_range": [
+      0.009000119197815097,
+      0.0104937580545344
+    ]
+  },
+  "gate": {
+    "absolute_at_least_74": false,
+    "net_over_carrier_at_least_20": false,
+    "breadth_5_of_5": false,
+    "strictly_above_carrier_at_least_4_of_5": false,
+    "strictly_above_carrier_tasks": 3,
+    "goal_nonzero": false,
+    "long_nonzero": false,
+    "carrier_retention_at_least_33_of_43": true,
+    "oracle_normalized_recovery_at_least_0_35": false,
+    "oracle_recovery_positive_at_least_4_of_5": false,
+    "pairing_valid": true,
+    "single_complete_lora": true,
+    "information_wall_valid": true,
+    "pass": false
+  },
+  "interpretation": {
+    "supported": "The mobile-rank4 topology can represent successful policies, but the preregistered zero-residual raw-factor dynamics mainly preserve the stable carrier and do not realize the multiple-member policy-effect distribution.",
+    "earliest_failed_interface": "zero-residual raw A/B optimization dynamics from the singular rank-zero correction point, before any shared video-conditioned predictor",
+    "not_supported": [
+      "rank4 residual capacity is insufficient",
+      "successful or recovery occupancy is absent",
+      "the inner objective failed to decrease",
+      "all policy-effect objectives or all ECP architectures are invalid"
+    ],
+    "next_decision_boundary": "Do not sweep this solver. Any successor must separately test a gauge-invariant or explicitly preconditioned fixed realization operator and must preserve the same direct closed-loop governance."
+  },
+  "stopped_scope": {
+    "current_raw_factor_operator": "stopped",
+    "step10_or_step11_followup_authorized": false,
+    "rank_step_lr_initialization_weight_member_sweep_started": false,
+    "shared_video_predictor_authorized": false,
+    "broad_ecp_stopped": false
+  },
+  "information_wall": {
+    "held_shared_gradient_steps": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "second_adapter_deployed": false,
+    "final_lora_averaging": false
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

@@ -1,6 +1,6 @@
 # ECP Rank-Reserved Mobile-Rank4 Realization Oracle
 
-状态：2026-08-23 **在retained implementation、fit profile与held GPU launch前预注册。**
+状态：2026-08-23 **已从clean pushed `f75bafc`完成；正式裁决为Objective/solver non-pass，当前operator停止。**
 
 ## Scientific question
 
@@ -76,3 +76,23 @@ step10/11相邻稳定性，不改变final选择。
 - **Objective/solver non-pass**：若inner objective有效下降但闭环未过，停止本operator，不扫solver；结合解析capacity正证据把
   最早缺口定位在effect objective identification或固定优化动力学，并在建立下一科学卡前暂停复盘；
 - **Engineering invalidation**：只修复可复现的实现、asset、OOM、pairing或runtime问题，重跑同一卡，不增加科学版本。
+
+## Formal result and adjudication
+
+非held ordinal71 profile满足数值合同：12步finite、objective严格下降、A在step0之后与B在全部step均有非零梯度，未据此
+调整任何科学量纲。held5五套single-rank16 LoRA的objective也都严格下降，initial-to-final ratios依global
+`0/9/18/25/36`为`.8602/.9175/.8471/.9006/.8259`，trust penalty全部为0。
+
+从同一clean commit在gpu01 physical `1,6`完成strict paired250；physical0没有被选择。final为`49/250`，逐task
+`40/3/6/0/0`。相对stable carrier `43`保留41、获得8、丢失2，净增仅6；successful-member union的115个可恢复缺口
+只恢复3个（`.0261`）且仅2/5 tasks为正。absolute、净增、breadth、4/5提升、Goal、Long与union recovery均失败；只有
+carrier retention、pairing、single-LoRA和information wall通过。因此不补step10/11，也不扫rank、step、LR、初始化、权重
+或member。
+
+只读失败定位进一步显示：三个真实successful-member responses在同一objective上的最优值为`.060--.163`，而final仍为
+`1.915--3.262`；known-success mobile-rank4 projections的trust为`1.341--2.281`，当前final只有
+`.000915--.001171`。当前修正相对三个known-success corrections的effective-update cosine仅`.041--.077`、norm ratio约
+`.009--.0105`。这不证明effect target充分，却排除了“inner objective没有低值successful endpoint”和“只是rank4容量不足”；
+最早失败收窄为从zero residual奇点出发的raw A/B动力学未到达已知successful-policy effect basins。
+
+正式证据：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。

@@ -1,9 +1,9 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **mobile-rank4解析容量门保持mixed；rank-reserved realization solver已实现，尚未启动fit profile**。
+状态：2026-08-23 **mobile-rank4解析容量门保持mixed；其后raw-factor realization solver已以`49/250`正式non-pass并停止**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
-`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
 
 ## 1. 当前裁决
 
@@ -15,6 +15,7 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 - v24、MDCO以及width/rank/head/fusion/LR/seed后继；
 - 只在教学视频稀疏support frames上拟合exact policy effects的PECS；
 - 当前48-state三particle effect bank、stable fixed-A carrier与12-step Delta-B realization的组合；
+- 当前从exact-zero residual开始、直接更新mobile-rank4 raw A/B factors的12-step realization operator；
 - 用open-loop geometry、own retrieval或LoRA cosine替代早期closed loop。
 
 本轮privileged问题已经得到否定答案：
@@ -22,11 +23,12 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 > 在真实闭环状态分布上，用多个独立成功策略定义一个分布式策略等价类后，固定、受约束的rank16实现器能否从稳定
 > carrier出发，恢复显著且广泛的task-local闭环能力？
 
-结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
-non-pass。该轮证据把断点收窄到realization，但当时尚未分离fixed-A capacity与effect objective/calibration。复盘形成新的强科学卡
-后，把三个既有成功members解析投影到carrier-A行空间并完成strict paired750：三个arms只保留`67/295=22.71%` matched
-direct successes，Goal/Long共300行全0。因此fixed-A已被分离为行为上binding的参数约束并退出主线；effect objective在允许
-row-space移动后是否仍不足尚未回答。不训练video predictor、shared compiler或Writer联合模型，也不扫solver、rank或插值系数。
+fixed-A结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
+non-pass。解析容量分离随后证明fixed-A行为上binding，而mobile-rank4 topology能以三个known-success members达到
+`110/120/76`。但保持同一bank/objective/12-step数值的mobile raw-factor solver只有`49/250`，逐task`40/3/6/0/0`，
+member-union gap只恢复`3/115`。它停止在接近carrier的极小修正，并未进入known-success effect basin。因此当前不训练video
+predictor、shared compiler或Writer联合模型，也不扫solver、rank、step、LR、初始化或权重；下一接口必须把gauge-invariant
+realization reachability与effect objective sufficiency分开。
 
 ## 2. 方法总图
 
@@ -256,7 +258,13 @@ Long能力为0。该post-hoc定位符合专家“exact row只作辅助”的提�
 
 operator固定为`W=B_c12 A_c12 + B_r4 A_r4`。carrier12冻结，`A_r4`从carrier未激活tail rows初始化、`B_r4=0`；A/B按target
 联合归一化更新并在每步后只对residual做balanced compact-SVD regauge。step0精确为carrier，final仍是一套rank16。完整单变量
-合同与原Gate见`docs/ecp_mobile_rank4_solver_card_20260823.md`；本卡通过前仍不训练video predictor或Writer。
+合同与原Gate见`docs/ecp_mobile_rank4_solver_card_20260823.md`。
+
+该实验已完成并明确non-pass。五项inner objective均严格下降，但strict250只有`49`，逐task`40/3/6/0/0`；相对carrier
+retained/gained/lost为`41/8/2`，union recovery只有`3/115=.0261`。known-success member effects在同一objective上有
+`.060--.163`低值，known-success mobile projections的trust为`1.341--2.281`，而solver final trust仅
+`.000915--.001171`，correction方向cosine仅`.041--.077`。所以这轮关闭的是zero-start raw-factor dynamics，不是mobile-rank4
+容量，也尚未关闭全部effect-distribution objective。当前不补相邻step、不调数值、不训练video predictor或Writer。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

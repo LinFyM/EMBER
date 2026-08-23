@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **mobile-rank4解析容量门保持mixed；已按专家的successful-policy-equivalence口径预注册唯一一次mobile-rank4
-realization oracle，尚未启动GPU。**
+状态：2026-08-23 **mobile-rank4解析容量门保持mixed；其后唯一一次raw-factor realization oracle已完成并以`49/250`
+判为Objective/solver non-pass。当前operator停止，未启动shared Writer或参数扫。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -24,10 +24,11 @@ zero-interaction闭环能力。正式目标仍为strict paired correct严格`>14
 video-frame exact effects能从shared43提高到58/59，但没有覆盖policy真实执行的initial/successful/candidate/recovery
 occupancy，不能作为ECP最终反证。
 
-本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到`78/250`，但只覆盖3/5 tasks，
-Goal/Long仍为0；进一步把三个已知成功members解析投影到carrier-A行空间后，只保留`67/295=22.71%` matched successes，
-Goal/Long共300行全0。fixed-A是行为上实质binding的当前最早接口，不能继续与effect objective打包调参。仍不训练video
-predictor、shared compiler、joint Writer或outer credit，也不扫solver、rank或插值系数。
+本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到fixed-A oracle的`78/250`，但只
+覆盖3/5 tasks；known-success mobile-rank4解析投影则可恢复到`110/120/76`，排除明显rank4 topology binding。随后保持同一
+bank/objective/12-step数值，只让residual A/B共同移动的正式solver却只有`49/250`、逐task`40/3/6/0/0`。它保留
+`41/43` carrier successes，却只恢复`3/115` member-union缺口。当前raw-factor operator停止；仍不训练video predictor、
+shared compiler、joint Writer或outer credit，也不扫rank、step、LR、初始化、权重或member。
 
 ## Fixed boundaries
 
@@ -123,11 +124,16 @@ objective、12-step数值、held rows和Gate全部不变。
 
 - [x] 在retained implementation与GPU前冻结operator、profile、formal rows与完整closed-loop Gate；
 - [x] 用一个canonical solver替换退役fixed-A runtime，zero residual精确返回carrier并输出single rank16；
-- [ ] ordinal71完成一次无科学调参权的数值/资源profile；
-- [ ] held5各物化final12并完成一次strict250闭环裁决；
-- [ ] Pass后才讨论Stage 1C；non-pass则停止该operator并复盘objective identification。
+- [x] ordinal71完成一次无科学调参权的数值/资源profile；
+- [x] held5各物化final12并完成一次strict250闭环裁决；
+- [x] 以`49/250`判为Objective/solver non-pass，停止该operator；未补相邻step、未启动Stage 1C；
+- [x] 用已有bank/member/projection做零新rollout失败定位：successful endpoints目标显著更低，但当前修正只有其约1%的
+  effective norm且方向cosine仅`.041--.077`；
+- [ ] 在新falsification card前分离“raw-factor zero-start方向/尺度失败”与“effect objective本身不足”，不把LR放大或更多步
+  冒充新架构。
 
-card：`docs/ecp_mobile_rank4_solver_card_20260823.md`。禁止rank/step/LR/初始化/权重/member sweep，也不启动Writer。
+card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；evidence：
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。禁止rank/step/LR/初始化/权重/member sweep，也不启动Writer。
 
 ## Phase D — 继续被Realization non-pass阻止
 

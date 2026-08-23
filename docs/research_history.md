@@ -1320,6 +1320,23 @@ direct/projected/overlap=`11/16/6`，union retention`54.55%`；它定位到membe
 rank，先明确exact-row与policy-equivalence union的科学口径。正式证据为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
 
+### 3.67 Mobile-rank4 raw-factor solver闭环non-pass
+
+在不改48-state bank、three-member objective、stable carrier、12 steps或原Gate的条件下，clean pushed `f75bafc`把
+fixed-A runtime替换为`carrier12 + jointly mobile residual4`。ordinal71 profile与五个held solvers全部finite，objective严格
+下降，A/B梯度接通，输出一套complete rank16 LoRA；因此随后负结果不是工程invalidation。
+
+gpu01 physical`1,6`的6个persistent workers完成strict paired250，physical0未选择，全部返回码0。final为`49`，逐global
+`0/9/18/25/36`为`40/3/6/0/0`；相对carrier43的retained/gained/lost为`41/8/2`，而multiple-member union recoverable gap
+只恢复`3/115=.0261`。Goal/Long、breadth、absolute、net和union recovery门均失败，故按卡停止当前operator，不补step10/11，
+不扫rank/step/LR/init/weight/member，不进入Stage 1C。
+
+零新rollout定位显示，真实successful-member responses在同一objective上的最低值仅`.060--.163`，而solver final为
+`1.915--3.262`；known-success mobile-rank4 projections的trust为`1.341--2.281`，final仅
+`.000915--.001171`，且effective correction cosine只有`.041--.077`、norm ratio约1%。因此下一科学接口不是再调当前
+raw-factor solver，而是独立检验gauge-invariant effective-update direction或很小的target-local preconditioner。正式证据：
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

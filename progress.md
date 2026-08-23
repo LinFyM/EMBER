@@ -9,12 +9,13 @@
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
-- active realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
+- completed realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
+- mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；mobile-rank4 canonical solver已实现并等待clean-pushed fit profile，没有active GPU job。
+- canonical workspace：本仓库`main`；raw-factor mobile-rank4 solver已完成并停止，没有active GPU job。
 
 ## Current scientific state
 
@@ -39,6 +40,12 @@
   Long同member retention只有36.36%，故预注册裁决为mixed而非supported。Long union retention为54.55%只作失败定位。
 - 依据专家“multiple successful members的union进入Gate、exact row只作辅助”的原始意见，旧mixed不改名，但另行授权一次
   单变量mobile-rank4 realization oracle；bank、objective、12-step数值与原完整closed-loop Gate全部冻结。
+- 该oracle正式只有`49/250`，逐task`40/3/6/0/0`；相对carrier保留41、获得8、丢失2，但member-union recoverable gap只
+  恢复`3/115=.0261`且仅2/5 tasks为正。它是明确non-pass，不补step10/11、不扫参数、不授权Stage 1C。
+- 同一objective在真实successful-member responses上存在`.060--.163`的低值，而当前solver final仍为`1.915--3.262`；
+  known-success projections的trust为`1.341--2.281`，当前只有`.000915--.001171`，且effective correction方向cosine仅
+  `.041--.077`。因此当前最早失败进一步收窄为zero-residual raw-factor动力学未到达successful effect basin；effect target
+  是否充分仍未被最终回答。
 
 ## Verified reusable assets
 
@@ -62,9 +69,9 @@
 - earliest/latest不再被冒充为独立lineages；五个不同seed、固定step2000的独立task experts已经补齐并全部产生strict success。
 - oracle直接在PI0.5官方双相机rollout observations上查询source/carrier/三个expert particles，已经覆盖initial、successful、
   prior-candidate与recovery states。
-- realization从stable carrier出发，固定rank16 A、只求Delta-B，使zero correction精确返回carrier、effective update严格相加且
-  不产生A/B交叉项。
-- 第一次完整oracle已经直接closed loop，没有geometry预筛；重大失败后现已暂停，没有创建下一版本。
+- fixed-A历史realization从stable carrier出发只求Delta-B；后续mobile operator改为冻结carrier12并共同更新residual4 A/B，
+  两者都在effective-update层严格相加且zero correction精确返回carrier。
+- 两次完整oracle都直接closed loop，没有geometry预筛；mobile operator重大失败后已停止，没有启动新的GPU版本。
 
 ## Completed execution
 
@@ -77,7 +84,11 @@
    policy-noise common-prefix mismatch；
 6. Gate 1B判为Realization non-pass并暂停，未补step10/11、未扫solver、未训练video predictor；
 7. 从clean pushed `cc70aa6`解析生成15套fixed-A投影；gpu01 physical`1,2,3,4,5,7`并行完成三个strict250 arms，
-   physical0 Prohibited未使用；formal results及paired gate完整。
+   physical0 Prohibited未使用；formal results及paired gate完整；
+8. 从clean pushed `083ed98`解析生成15套mobile-rank4投影并完成三个strict250 arms `110/120/76`，裁决mixed；
+9. 从clean pushed `f75bafc`完成ordinal71 profile与held5五套mobile-rank4 solver LoRA；五项objective均严格下降；
+10. gpu01 physical`1,6`完成最终strict250，physical0未使用；6 workers返回码全0，最终`49/250`，五套reference严格配对零错配；
+11. 完成零新rollout的member-objective、trust、effective-correction方向审计，停止当前raw-factor operator。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -105,15 +116,18 @@
 - fixed-A analytic projection用低秩闭式解直接求`argmin_B ||B A_c - B_e A_e||_F`并输出single rank16 LoRA；focused
   realization/manifold tests为23/23通过；该已完成diagnostic入口现由Git保存；
 - mobile-rank4 helper用thin-QR/core-SVD直接求`expert-carrier`的best-rank4 correction，再与不变carrier12按rank拼接；真实
-  latest-task0资产得到76/76 finite tensors与`.99610/.98062` correction/expert coverage，focused tests为24/24通过。
+  latest-task0资产得到76/76 finite tensors与`.99610/.98062` correction/expert coverage，focused tests为24/24通过；
+- mobile solver canonical runtime只保留`carrier12 + residual4`一条路径；profile与五个held outputs均为76 tensors、finite、
+  single rank16，focused tests为24/24通过。科学non-pass不是工程invalid。
 
 ## Current unresolved interface
 
-- 最早失效接口已从teacher/state coverage收窄到realization：当前owner/flow/action effect distance加fixed-A Delta-B求解器，
-  即使inner objective在Goal/Long明显下降，也没有进入它们的closed-loop success basins；
-- fixed-A capacity已经与effect objective/calibration分离：前者行为上明确binding；后者是否在row-space-mobile operator下仍不足
-  尚未回答，不能用本轮结果替它作结论；
+- fixed-A capacity已被证明binding，mobile-rank4 topology则能解析恢复direct级闭环；当前失败不再是这两个容量问题；
+- 当前zero-residual raw A/B solver从rank-zero correction奇点出发，12步后effective correction norm约为known-success
+  projection的1%，方向cosine也只有`.041--.077`。它没有进入successful-member effect basin，不能靠放大LR或增加步数盲救；
+- successful-member effect responses在当前objective上确有显著低值，因此effect target尚未被本结果否定；但“低值存在”也不等于
+  任何由视频预测的effect distribution都会充分，后续必须把gauge-invariant realization与objective sufficiency分开检验；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 下一步只实现预注册的`carrier12 + jointly mobile residual4` Stage 1B oracle；不顺手改effect objective、Program或数据，
-  不扫solver，也不启动Stage 1C。
+- 下一步只能先建立一个独立falsification card，检验gauge-invariant或显式preconditioned fixed realization；不得复活当前
+  raw-factor dynamics，不顺手改effect objective、Program或数据，也不启动Stage 1C。

@@ -1633,3 +1633,29 @@ retention为`81.25%--97.56%`。唯一失败条款因此不是“Long能力缺失
 也必须进入判断。但由于本卡事前明确使用matched-member 50%门，post-hoc union不能自动授权solver。当前应显式决定capacity门
 到底约束某个member的局部policy identity，还是约束successful-policy equivalence class；在决定前不复跑、不扫rank、不实现
 solver。正式证据：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
+
+## 79. Mobile-rank4容量成立不等于zero-residual raw-factor solver可达
+
+按照专家关于successful-policy equivalence、multiple-member union与exact-row辅助地位的意见，保持48-state bank、three
+particles、effect objective、stable carrier、12 steps和原Gate不变，只把fixed-A参数面替换为
+`carrier12 + jointly mobile residual4`。非held profile和五个held solver均满足实现合同：objective全程严格下降，A在step0
+之后与B在全部step都有finite非零梯度，输出均为一套76-tensor rank16 LoRA，trust penalty为0。
+
+clean pushed `f75bafc`的strict paired250只有`49`，逐global`0/9/18/25/36`为`40/3/6/0/0`。相对stable carrier43，
+retained/gained/lost为`41/8/2`，净增6；相对fixed-A78则为`41/8/37`，净退29。它只覆盖successful-member union的
+`33/146`，扣除carrier已有support后只恢复`3/115=.0261`且仅2/5 tasks为正。五项中3项略高于carrier，但breadth只有3/5，
+Goal/Long继续0。因此absolute、net、breadth、4/5提升、Goal/Long与union recovery门全部失败；严格pairing、single-LoRA、
+information wall和carrier retention通过。6 workers全部返回0，gpu01 physical0没有被选择。
+
+该结果不能简单写成“effect objective错误”。在同一正式bank上把candidate response替换为三个真实successful members时，
+每task最低objective只有`.084/.120/.163/.060/.078`，而solver final仍为`1.915/2.401/2.019/1.987/3.262`，相差
+`12.4--41.9x`。known-success mobile-rank4 projections的mean per-target trust为`1.341--2.281`，solver final只有
+`.000915--.001171`；其effective correction相对三个known-success corrections的global cosine仅`.041--.077`，norm ratio
+约`.0090--.0105`。所以当前动力学既没有走到正确尺度，也没有形成接近已知成功members的方向。
+
+更精确的边界是：mobile-rank4 topology已经由解析投影证明能保留direct级闭环，但从exact-zero correction开始的双线性A/B
+坐标在rank-zero奇点只有任意初始row-space的B梯度，当前raw-factor RMS归一化和12-step retract没有到达successful-policy
+effect basin。放大LR、增加steps、改初始化或扫权重都只是在同一失败operator内局部搜索，现已禁止。后续若继续Stage 1B，必须
+先以独立card检验gauge-invariant、matrix-free effective-update方向或很小的target-local preconditioner；仍需首次完整设计后
+直接closed loop，不能用objective下降替代结果。正式证据：
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。

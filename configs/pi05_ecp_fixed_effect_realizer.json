@@ -1,0 +1,93 @@
+{
+  "schema_version": "ember_ecp_fixed_effect_realizer_v1",
+  "status": "preregistered_before_effect_particle_capture",
+  "authorities": {
+    "stage1_config": "configs/pi05_ecp_stage1b_effective_update_oracle_v1.json",
+    "task_evidence_manifest": "runs/analysis/pi05_ecp_stage1_mdco_task_evidence_20260823/manifest.json",
+    "lora_contract": "configs/pi05_lora_v1.json",
+    "stable_carrier": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors",
+    "native_observer_checkpoint": "runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010"
+  },
+  "target_train_global_ids_ordered": [
+    0, 2, 4, 5, 7, 9, 12, 14, 15, 16, 18, 19,
+    20, 21, 22, 25, 28, 29, 34, 35, 36, 37, 38, 39
+  ],
+  "folds": {
+    "rule": "ordered target-train position modulo 5; all 71 audited LIBERO-90 tasks remain fit",
+    "initial_fold": 0,
+    "replication_fold": 1,
+    "fold0_held_global_ids": [0, 9, 18, 25, 36],
+    "fold1_held_global_ids": [2, 12, 19, 28, 37],
+    "member_weighting": "equal tasks then equal members within task",
+    "held_use": "frozen coordinate transform and realizer forward only"
+  },
+  "effect_particles": {
+    "event_count": 8,
+    "horizon_modes": 4,
+    "hidden_width": 128,
+    "probe_signs": [1, -1],
+    "trajectory_rule": "all preregistered successful member trajectories",
+    "baseline": "stable carrier rank12",
+    "response": "successful member minus stable carrier native owner lattice",
+    "pre_average_probes": false,
+    "pre_average_trajectories": false,
+    "off_policy_states": false,
+    "capture_microbatch_size": 4
+  },
+  "effect_code": {
+    "input_width": 512,
+    "output_width": 128,
+    "transform": "owner-local fit-only task-equal PCA whitening",
+    "held_transform_updates": 0,
+    "particle_axis_retained": true
+  },
+  "output": {
+    "carrier_rank": 12,
+    "residual_rank": 4,
+    "coordinate": "deterministic-sign compact balanced-SVD factors",
+    "target_count": 38,
+    "single_complete_rank16_lora": true
+  },
+  "model": {
+    "token_width": 128,
+    "owner_state_width": 256,
+    "output_bottleneck_width": 32,
+    "event_aggregation": "ordered attention within particle",
+    "particle_aggregation": "permutation-invariant DeepSets attention",
+    "cross_owner_communication": "one shared global owner summary",
+    "action_meta": false
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "total_steps": 1000,
+    "checkpoint_steps": [800, 1000],
+    "factor_loss_weight": 1.0,
+    "effective_update_loss_weight": 1.0,
+    "null_code_weight": 0.05,
+    "seed": 20260824
+  },
+  "gate": {
+    "invalidity_screen_rows_max": 50,
+    "final_successes_min": 69,
+    "breadth_required": 5,
+    "goal_nonzero": true,
+    "long_nonzero": true,
+    "carrier_successes": 43,
+    "carrier_retained_min": 33,
+    "direct_latest_successes": 108,
+    "adjacent_checkpoint_max_success_gap": 5,
+    "strict_rows_per_checkpoint": 250
+  },
+  "information_wall": {
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "deployment_task_id_route": false,
+    "held_free_code_parameters": false,
+    "held_optimizer_steps": 0,
+    "second_adapter_deployed": false
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

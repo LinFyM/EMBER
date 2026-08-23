@@ -25,10 +25,12 @@
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
+- active Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
   process pair的formal code authority为clean pushed `d1975c3`，effect-path calibration的formal code authority为clean pushed
-  `4cddcab`；当前没有active GPU job，主执行转入Phase 2B/2C fixed-coordinate dataset与deployment realizer，
+  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，主执行转入
+  fixed-coordinate evidence capture与deployment realizer，
   process acquisition修正作为并行资格前置。
 
 ## Current scientific state

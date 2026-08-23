@@ -1,8 +1,9 @@
 # EMBER Task Plan
 
 状态：2026-08-24 **Phase 0已按预注册合同完成并以`136/400`判为absolute-baseline non-pass；GOMQ归档关闭。Phase 1首个
-process family的teacher Gate A以`0/50、19/50`判为non-pass，不运行Gate B。当前主执行转入Phase 2 mobile-rank4 deployment
-realizer坐标校准，同时只对更强privileged sequential teacher或有依据的替代family做有边界的数据修正；process Gate未通过前
+process family的teacher Gate A以`0/50、19/50`判为non-pass，不运行Gate B。Phase 2A的15/15 known-success paths已全门通过，
+当前主执行转入Phase 2B/2C fixed effect-code与deployment realizer，同时只对更强privileged sequential teacher或有依据的
+替代family做有边界的数据修正；process Gate未通过前
 不得启动`q_pi`或`q_V`，fixed realizer未通过前不得启动完整privileged链。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
@@ -206,6 +207,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 - completed Phase 2A卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
   `configs/pi05_ecp_effect_path_calibration.json`。
+- active Phase 2B/2C卡：`docs/ecp_fixed_effect_realizer_card_20260824.md`；配置：
+  `configs/pi05_ecp_fixed_effect_realizer.json`。
 - [x] 用existing known-success mobile projections完成path calibration：global member identity与conservative
   verified-state validity下15/15路径严格单调下降，5/5 tasks的global-particle objective改善；
 - [x] 选定并冻结deterministic-sign balanced-SVD canonical rank4为首个principled coordinate；fixed two-sided

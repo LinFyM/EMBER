@@ -1,10 +1,11 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **专家全过程复核已经完成，后继依赖与Gate已定稿并恢复执行。当前里程碑是GOMQ真实rank16
-archival baseline；随后并行推进process-identifying最小pair与mobile-rank4 deployment realizer坐标校准。**
+状态：2026-08-24 **GOMQ真实rank16已以`136/400`归档，首个process pair在teacher Gate A以`19/100`关闭；
+Phase 2A known-success effect-path calibration以15/15路径全门通过。当前执行Phase 2B/2C fixed effect-code与
+mobile-rank4 deployment realizer，process acquisition有界修正与之并行。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
-`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
+`docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。
 本次方案对齐、专家最终修正与执行顺序见`docs/ecp_expert_alignment_audit_20260824.md`第9节。
 
 ## 1. 当前裁决

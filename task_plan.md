@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **fixed-A已判为capacity-binding；现只执行预注册的mobile-rank4 residual闭环容量诊断，尚未启动后继Writer或solver。**
+状态：2026-08-23 **mobile-rank4 residual容量门已完成并裁决为mixed；当前暂停在solver授权前，没有active Writer、solver或GPU job。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -103,11 +103,16 @@ adapters的离线最佳rank4 correction审计达到`99.49%--99.69%` correction e
 - [x] 确认38/38 carrier targets的后4个B columns精确为0、A仍full-row-rank；
 - [x] 完成15个member-task的best-rank4 correction零训练几何审计；
 - [x] 在任何formal materialization/GPU rollout前冻结三个matched arms与裁决门；
-- [ ] 解析物化三个members的15套`carrier12 + mobile residual4` single-rank16 adapters；
-- [ ] 完成三个strict250 arms并裁决capacity-supported、capacity-binding或mixed。
+- [x] 解析物化三个members的15套`carrier12 + mobile residual4` single-rank16 adapters；
+- [x] 完成三个strict250 arms：`110/120/76`均略高于matched direct `108/113/74`，breadth均5/5；
+- [x] 按预注册门裁决为mixed：pooled retention `245/295=83.05%`、Goal `15/24=62.5%`通过，但Long matched
+  retention `4/11=36.36%`未达到50%；capacity-binding条款均未触发；
+- [x] 按mixed条款只做无新rollout定位：Long direct/projected union=`11/16`、overlap6、union retention`54.55%`，说明
+  失败集中于member-specific row identity，而非Long能力缺失，但不事后改门。
 
 card：`docs/ecp_rank4_residual_capacity_card_20260823.md`。capacity-supported后才允许为同一48-state三particle objective写
-rank4 residual solver；capacity-binding后才允许设计full-rank16 effective-additive retraction。没有授权Stage 1C或共享Writer训练。
+rank4 residual solver；本轮mixed不自动满足该授权。下一科学决策必须显式处理“matched member row”与专家要求的
+policy-equivalence union之间的口径，不复跑当前arms、不扫rank。没有授权Stage 1C或共享Writer训练。
 
 ## Phase D — 继续被Realization non-pass阻止
 

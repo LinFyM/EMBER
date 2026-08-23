@@ -1610,3 +1610,26 @@ prefix均零mismatch，18个workers全部返回0。overall、Goal和Long三条ca
 Stage 1B operator必须允许task-conditioned row与column space移动，同时保持zero correction精确返回carrier、显式在effective
 update层相加而不产生raw A/B交叉项，并确定性retract成一套rank16 LoRA；在该参数化闭合前不能继续改objective或训练Writer。
 正式证据：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
+
+## 78. Mobile rank4 residual恢复direct级absolute与困难任务能力，但member-specific Long retention留下口径争议
+
+stable carrier的38个targets均为精确rank12，后4个B columns为0而A仍full-row-rank。对三个members×held5逐target求
+`expert-carrier`的best-rank4 correction，离线覆盖`99.49%--99.69%`修正能量与`95.34%--98.90%` expert effective-update
+能量。与历史`shared12 + learned phase-code residual4`的`37/33`不同，这次不训练code或decoder，直接检验该参数拓扑本身。
+
+三个strict250 arms为latest/independent/earliest=`110/120/76`，逐task分别
+`28/31/40/4/7、27/36/38/11/8、18/18/33/2/5`；matched direct为`108/113/74`。三臂都达到5/5 breadth并略高于各自
+direct，projected合计306也高于direct合计295。matched retained/gained/lost合计`245/61/50`，overall retention
+`83.05%`；Goal保留`15/24=62.5%`且三个members均非零。因此mobile row/column-space correction与fixed-A的
+`49/41/35、Goal/Long全0`是实质不同的行为参数化，rank4残差不存在明显absolute/breadth capacity binding。
+
+预注册capacity-supported门仍不能宣告通过：Long direct successes合计11、projected合计20，但同member同row只保留4，
+retention为`36.36%`，低于50%。故正式裁决是mixed，不能因为分数更高而事后改门。无新rollout的equivalence-class定位显示，
+三个direct Long policies的union为11、三个projected policies为16、重合6，union retention为`54.55%`；其它四task的union
+retention为`81.25%--97.56%`。唯一失败条款因此不是“Long能力缺失”，而是best-rank4近似后Long success在member/initial-state
+之间重新分配。
+
+这正碰到专家此前强调的边界：successful policy不唯一，exact row retention只应辅助，multiple-member union和absolute breadth
+也必须进入判断。但由于本卡事前明确使用matched-member 50%门，post-hoc union不能自动授权solver。当前应显式决定capacity门
+到底约束某个member的局部policy identity，还是约束successful-policy equivalence class；在决定前不复跑、不扫rank、不实现
+solver。正式证据：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。

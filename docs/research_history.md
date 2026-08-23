@@ -1301,6 +1301,25 @@ projected arms合计125分，比三次carrier panel合计129还少4。
 realization operator。正式证据为
 `docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
 
+### 3.66 Mobile-rank4 residual容量门恢复direct级表现但裁决为mixed
+
+fixed-A关闭后没有立即实现free-A/B solver。资产审计确认stable carrier是精确rank12、后4个B columns为0；历史
+`shared12 + phase-code residual4`的`37/33`只关闭当时learned mapping，未分离mobile residual容量。clean pushed `083ed98`
+因此预注册零训练解析门：逐target对`W_expert-W_carrier`取best-rank4 SVD，再与不变carrier12按rank拼成一套rank16。15个
+member-task的correction/expert energy coverage为`99.49%--99.69%/95.34%--98.90%`。
+
+从clean detached `083ed98`在gpu01 physical`1,2,3,4,5,7`并行完成三个strict250 arms，physical0未使用。latest、
+independent、earliest为`110/120/76`，逐global0/9/18/25/36分别为
+`28/31/40/4/7、27/36/38/11/8、18/18/33/2/5`，全部5/5非零并略高于matched direct `108/113/74`。matched
+retained/gained/lost合计`245/61/50`，overall retention`83.05%`；Goal为`15/24=62.5%`。
+
+唯一未过capacity-supported条款是Long matched-member retention：direct/projected absolute合计`11/20`，但只保留同row
+`4/11=36.36%`。capacity-binding条款也未触发，故按卡裁决为mixed。post-hoc、无新rollout的multiple-member union分析为
+direct/projected/overlap=`11/16/6`，union retention`54.55%`；它定位到member-specific policy identity churn，但不修改正式门。
+750行episode key、env/policy seed、language与noise common prefix零mismatch，18 workers全部返回0。当前不实现solver、不扫
+rank，先明确exact-row与policy-equivalence union的科学口径。正式证据为
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

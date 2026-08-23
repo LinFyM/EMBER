@@ -1,8 +1,9 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **fixed-A容量已判为binding；当前只做mobile-rank4 residual解析容量门，没有active successor Writer或solver**。
+状态：2026-08-23 **mobile-rank4 residual容量门已判为mixed；没有active successor Writer或solver**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
-artifacts保存；最新裁决为`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
+artifacts保存；最新裁决为
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
 
 ## 1. 当前裁决
 
@@ -239,6 +240,13 @@ W_task = B_c12 A_c12 + B_r4(task) A_r4(task)
 
 当前唯一授权动作是三个预固定members各自的strict250解析容量评测。通过后才为现有48-state objective写rank4 residual solver；
 失败后才讨论full-rank16 retraction。精确合同见`docs/ecp_rank4_residual_capacity_card_20260823.md`。
+
+正式结果为`110/120/76`，逐arm均略高于matched direct `108/113/74`且5/5 tasks非零；pooled matched retention为
+`245/295=83.05%`，Goal为`15/24=62.5%`。但Long虽由absolute合计11提高到20，matched-member exact-row retention只有
+`4/11=36.36%`，故没有通过预注册50%条款；capacity-binding条款也全部未触发，裁决为mixed。三个member集合层的Long
+direct/projected success union为`11/16`、overlap6、union retention`54.55%`，说明差异集中在policy/member identity，而不是
+Long能力为0。该post-hoc定位符合专家“exact row只作辅助”的提醒，但不重写预注册门，当前仍暂停solver授权。正式证据见
+`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

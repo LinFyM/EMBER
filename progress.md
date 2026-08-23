@@ -8,11 +8,12 @@
 - active design：`docs/event_conditioned_policy_compiler_design.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
-- active capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
+- completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
+- mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；fixed-A GPU诊断已经结束，mobile-rank4仍在实现前，没有active GPU job或successor训练。
+- canonical workspace：本仓库`main`；mobile-rank4 GPU诊断已经结束，没有active GPU job或successor训练。
 
 ## Current scientific state
 
@@ -33,6 +34,8 @@
   `67/295=22.71%`；Goal与Long三个members全部0。当前fixed-A row space停止作为主线。
 - stable carrier的38个targets都是精确rank12且后4个B columns为0；最佳任意row/column-space rank4 correction在15个matched
   member-task上覆盖`99.49%--99.69%`所需修正能量。它成为下一次解析闭环容量问题，不直接视为正结果。
+- mobile-rank4 strict250为`110/120/76`，全部5/5 tasks非零并逐arm略高于direct；pooled matched retention为83.05%，但
+  Long同member retention只有36.36%，故预注册裁决为mixed而非supported。Long union retention为54.55%只作失败定位。
 
 ## Verified reusable assets
 
@@ -110,5 +113,5 @@
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
 - 下一步只设计一个effective-additive、允许row/column-space移动、zero correction精确返回carrier且最终retract为single rank16
-  LoRA的Stage 1B oracle；在写solver前先完成`carrier rank12 + mobile residual rank4`的解析容量门，不顺手改effect objective、
-  Program或数据，也不启动Stage 1C。
+  LoRA的Stage 1B oracle；mobile-rank4已经排除明显capacity-binding，却因Long matched-row retention未正式supported。当前先
+  决定policy-equivalence口径，不顺手改effect objective、Program或数据，也不启动Stage 1C。

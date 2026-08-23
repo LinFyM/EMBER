@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **occupancy-complete privileged realization oracle已判为non-pass；现只执行预注册的fixed-A闭环容量诊断，未启动后继Writer。**
+状态：2026-08-23 **fixed-A闭环容量诊断已判为capacity-binding；当前fixed-A主线停止，尚未启动后继Writer或solver。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -24,9 +24,9 @@ video-frame exact effects能从shared43提高到58/59，但没有覆盖policy真
 occupancy，不能作为ECP最终反证。
 
 本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到`78/250`，但只覆盖3/5 tasks，
-Goal/Long仍为0，oracle-normalized recovery只有`.304`且仅3/5 tasks为正，故未通过完整门。当前只分离fixed-A容量与
-effect objective/calibration两个竞争解释：解析投影三个既有成功members后直接做paired closed loop；不训练video predictor、
-shared compiler、joint Writer或outer credit，也不扫solver、rank或插值系数。
+Goal/Long仍为0；进一步把三个已知成功members解析投影到carrier-A行空间后，只保留`67/295=22.71%` matched successes，
+Goal/Long共300行全0。fixed-A是行为上实质binding的当前最早接口，不能继续与effect objective打包调参。仍不训练video
+predictor、shared compiler、joint Writer或outer credit，也不扫solver、rank或插值系数。
 
 ## Fixed boundaries
 
@@ -83,12 +83,27 @@ retention至少33/43、overall oracle-normalized recovery至少0.35。**Realizat
 - [x] 复用三个successful members完成零训练行空间审计：correction energy coverage为`83.3%--96.7%`，但expert absolute
   update coverage只有`41.5%--62.7%`，且Long高于Goal，内部几何不能直接解释共同的0分；
 - [x] 预注册解析最优fixed-A投影、三个固定member arms、paired750与事前裁决边界；
-- [ ] 从clean pushed frozen authority解析生成15套single-LoRA projected member adapters；
-- [ ] 分别跑latest/independent/earliest原fixed250 matched panels并报告retained/gained/lost；
-- [ ] 裁决fixed-A是capacity-supported、capacity-binding或mixed，再决定唯一下一科学问题。
+- [x] 从clean pushed frozen authority解析生成15套single-LoRA projected member adapters；
+- [x] 分别跑latest/independent/earliest原fixed250 matched panels并报告retained/gained/lost；
+- [x] 裁决fixed-A为capacity-binding：三个arms=`49/41/35`，matched retention=`31/108、22/113、14/74`，
+  Goal/Long全部归零。
 
 本诊断没有optimizer、checkpoint/member选择、interpolation或video输入，不构成Stage 1C授权。card：
-`docs/ecp_fixed_a_capacity_card_20260823.md`。
+`docs/ecp_fixed_a_capacity_card_20260823.md`；evidence：
+`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
+
+## Phase C3 — 下一允许的Stage 1B问题
+
+下一次只允许检验一个carrier-preserving、row-space-mobile的realization operator。它必须同时满足：
+
+- zero correction逐effective update精确恢复stable carrier；
+- correction在effective-update坐标中显式相加，不通过同时更新raw A/B引入交叉项；
+- task-conditioned row与column space可移动；
+- 每步或最终经确定性rank16 retraction物化为一套38-target LoRA，不部署第二adapter或rank32 carrier；
+- 首轮保持同一48-state三particle objective与held5 gate，先分离parameterization，不顺手改Program、数据或effect target；
+- 在实现前形成一张完整card并证明数值更新不是fixed-A的换名版本。
+
+下一步先完成该问题的设计复核与预注册；没有授权Stage 1C或共享Writer训练。
 
 ## Phase D — 继续被Realization non-pass阻止
 

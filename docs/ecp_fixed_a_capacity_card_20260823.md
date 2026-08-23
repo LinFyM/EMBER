@@ -1,6 +1,6 @@
 # ECP Fixed-A Closed-Loop Capacity Diagnostic
 
-状态：2026-08-23 **在formal adapter materialization与GPU rollout前预注册。**
+状态：2026-08-23 **在formal adapter materialization与GPU rollout前预注册；现已完成并裁决为capacity-binding。**
 
 ## Scientific question
 
@@ -73,3 +73,25 @@ adapter、不平均LoRA、不使用optimizer、不做interpolation、不选择ch
 formal materialization与rollout必须来自clean pushed commit的detached frozen worktree。launch前live检查两节点GPU；只在一个
 节点使用最多六张真正增加吞吐的非prohibited GPU。复用现有policy、carrier、expert、normalization和fixed evaluation
 assets，不进行训练或大资产复制。
+
+## Completed adjudication
+
+三个解析投影arms的strict250结果为：
+
+- latest：`49`，逐global `0/9/18/25/36 = 26/4/19/0/0`；相对direct-latest的
+  retained/gained/lost为`31/18/77`，只保留`31/108=28.70%`；
+- independent：`41`，逐task `22/4/15/0/0`；相对matched direct为`22/19/91`，保留
+  `22/113=19.47%`；
+- earliest：`35`，逐task `23/2/10/0/0`；相对matched direct为`14/21/60`，保留
+  `14/74=18.92%`。
+
+三个固定arms合计只保留`67/295=22.71%`的matched direct successes，projected absolute合计`125`，比三次carrier
+panel的`129`还少4。Goal原有`24`个direct successes、Long原有`11`个，投影后两者分别为`0/150`与`0/150`，三个member
+全部归零。全部750行的episode key、environment seed、policy seed root、language与policy-noise common prefix零mismatch；
+18个workers均返回0。
+
+因此同时触发overall、Goal和Long三条capacity-binding判据。当前stable carrier的固定A行空间作为主线参数化停止；这不证明
+数学上不存在任何fixed-A功能等价解，也不否定stable carrier、effective-update加法、single-rank16部署或ECP核心。下一oracle
+必须允许task-conditioned row-space motion，同时保持zero correction精确返回carrier、不产生A/B交叉项，并最终仍物化为一套
+rank16 LoRA；本卡不授权直接启动该oracle或Stage 1C。正式证据：
+`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。

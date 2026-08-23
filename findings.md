@@ -1587,3 +1587,26 @@ solver”组合，不否定ECP目标、视频条件、所有policy-effect compil
 
 按预注册card，未补step10/11、未做rank/step/weight小扫、未训练video effect predictor，也未自动建立下一架构版本。正式证据：
 `docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
+
+## 77. Fixed-A解析最优投影证明row space是行为binding，而不是中性carrier
+
+对latest、independent和earliest三个已知闭环有效的rank16 members逐target求解析最优
+`argmin_B ||B A_carrier - B_expert A_expert||_F`。相对`expert-carrier`所需correction的Frobenius energy coverage虽有
+`83.3%--96.7%`，相对expert绝对effective update则只有`41.5%--62.7%`；仅凭离线几何不能判断是否仍存在功能等价解，故按
+预注册合同直接完成三个strict250 closed-loop arms。
+
+latest、independent、earliest投影分别只得`49/41/35`，而matched direct为`108/113/74`；逐row只保留
+`31/108、22/113、14/74`，合计retained/gained/lost为`67/58/228`，overall retention仅
+`67/295=22.71%`。Goal原有24个direct successes、Long原有11个，投影后三个members在两项上全部为0。尤其Long的
+effective-update energy coverage在五项中最高之一，却仍完全失去闭环能力；per-task coverage与retention的Pearson/Spearman
+也都接近0。因此Frobenius row-space coverage不能充当功能容量或closed-loop选择代理。
+
+三个投影arms的absolute success合计125，甚至比三次stable carrier panel合计129少4；它们产生58个新success同时丢失228个，
+说明这不是单纯的LoRA幅度缩放。750行的episode key、environment seed、policy seed root、language和policy-noise common
+prefix均零mismatch，18个workers全部返回0。overall、Goal和Long三条capacity-binding判据同时触发。
+
+本轮准确淘汰的是：**把stable carrier的A行空间固定住、只重求B，就足以表达已知有效task policy的闭环功能。** 它不证明
+数学上不存在任意fixed-A功能等价adapter，也不否定stable carrier、effective-update加法、single-rank16部署或ECP核心。下一
+Stage 1B operator必须允许task-conditioned row与column space移动，同时保持zero correction精确返回carrier、显式在effective
+update层相加而不产生raw A/B交叉项，并确定性retract成一套rank16 LoRA；在该参数化闭合前不能继续改objective或训练Writer。
+正式证据：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。

@@ -1279,6 +1279,28 @@ carrier与当前12-step solver的组合，不是ECP核心目标或所有policy-e
 solver小扫、不训练video predictor、不建立successor。正式证据为
 `docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
 
+### 3.65 Fixed-A解析容量诊断判为binding并停止该参数化
+
+重新核对专家最终意见后确认，fixed-A只是“strong carrier + small effective correction”的一种实现候选，不是ECP硬约束。为把
+fixed-A capacity与既有effect objective/calibration分开，clean pushed `cc70aa6`加入零训练解析投影：对latest、independent、
+earliest三个已知成功members逐target求
+`B_star = B_expert A_expert A_carrier^T (A_carrier A_carrier^T)^+`，直接物化为一套完整rank16 LoRA。离线审计显示所需
+correction energy coverage为`83.3%--96.7%`，expert absolute effective-update coverage为`41.5%--62.7%`，且Long高于
+Goal，因此没有用内部几何代替闭环裁决。
+
+从clean detached `cc70aa6`在gpu01 physical`1,2,3,4,5,7`并行完成三个strict250 arms；physical0为Prohibited且未使用。
+latest、independent、earliest投影得分为`49/41/35`，逐global0/9/18/25/36分别为
+`26/4/19/0/0、22/4/15/0/0、23/2/10/0/0`。相对matched direct的retained/gained/lost为
+`31/18/77、22/19/91、14/21/60`，合计只保留`67/295=22.71%`。Goal的24个direct successes与Long的11个全部丢失；三个
+projected arms合计125分，比三次carrier panel合计129还少4。
+
+全部750行的episode key、environment seed、policy seed root、language与policy-noise common prefix零mismatch，18个workers
+返回码全0。于是overall、Goal和Long三条capacity-binding预注册判据同时触发。当前fixed-A row space停止作为ECP Stage 1B
+主线，不扫solver、rank、步数或插值，不训练video predictor，也不进入Stage 1C。该负结果只否定当前fixed-A表达合同；下一允许
+问题是一个zero-correction精确返回carrier、effective-additive、允许row/column-space移动且确定性retract为single rank16的
+realization operator。正式证据为
+`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

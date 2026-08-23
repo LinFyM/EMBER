@@ -7,10 +7,11 @@
 
 - active design：`docs/event_conditioned_policy_compiler_design.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
-- active diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
+- completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
+- fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；当前只实现fixed-A解析容量诊断，尚未启动新的GPU rollout或训练。
+- canonical workspace：本仓库`main`；fixed-A GPU诊断已经结束，没有active GPU job或successor训练。
 
 ## Current scientific state
 
@@ -27,6 +28,8 @@
 - GOMQ历史151只作为“强carrier + 小有效更新可保留support”的结构证据，不恢复其Writer或checkpoint作为答案。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
+- fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
+  `67/295=22.71%`；Goal与Long三个members全部0。当前fixed-A row space停止作为主线。
 
 ## Verified reusable assets
 
@@ -63,18 +66,23 @@
    `.5040/.5667/.5278/.6055/.4373`，均无trust penalty；
 5. original fixed250 strict paired panel完成，250行相对source/carrier/direct/independent均无episode、seed、language或
    policy-noise common-prefix mismatch；
-6. Gate 1B判为Realization non-pass并暂停，未补step10/11、未扫solver、未训练video predictor。
+6. Gate 1B判为Realization non-pass并暂停，未补step10/11、未扫solver、未训练video predictor；
+7. 从clean pushed `cc70aa6`解析生成15套fixed-A投影；gpu01 physical`1,2,3,4,5,7`并行完成三个strict250 arms，
+   physical0 Prohibited未使用；formal results及paired gate完整。
 
-## Active fixed-A capacity diagnostic
+## Completed fixed-A capacity diagnostic
 
 - 三个successful members的零训练几何审计已完成：相对`expert-carrier`所需correction的energy coverage为
   `83.3%--96.7%`，但相对expert绝对effective update只有`41.5%--62.7%`；
 - Goal的latest/independent coverage最低（约`41.5%--42.0%`），但Long反而最高（约`59.2%--59.6%`），所以不能用
   row-space数值直接解释Goal/Long共同0分；
-- 已预注册唯一下一诊断：把latest/independent/earliest各自解析投影到carrier-A行空间，不优化、不插值、不选member，
-  在原held5 fixed50逐arm跑共750个strict paired rows；
-- 当前实现归属仍是ECP Stage 1B fixed-A owner，不新增Writer/decoder/solver版本。formal materialization与rollout必须等代码
-  test、clean commit、push和detached frozen worktree完成后才启动。
+- latest/independent/earliest投影后分别为`49/41/35`，逐global0/9/18/25/36为
+  `26/4/19/0/0、22/4/15/0/0、23/2/10/0/0`；
+- 相对matched direct的retained/gained/lost分别为`31/18/77、22/19/91、14/21/60`；总体只保留67个、丢失228个，
+  同时产生58个不同rows上的success，不能解释成纯粹分数缩放；
+- 三个projected arms absolute合计125，比三次stable carrier panel的129还低4；Goal direct24与Long direct11全部丢失；
+- 750行episode key、env seed、policy seed root、language和policy-noise common prefix均零mismatch，18个workers返回码全0；
+- capacity-supported全部失败，overall、Goal、Long三条capacity-binding判据全部触发。
 
 ## Current implementation milestone
 
@@ -84,14 +92,17 @@
 - fixed-A路径只为38个target建立`Delta B`叶子；真实PI0.5 smoke中38/38梯度均finite且非零，峰值allocated约18.72GB；
 - 已实现48-state effect bank、stage-consistent particle soft-min、carrier barrier、preservation/trust及统一12-step solver；
 - profile没有借held5做量纲选择：另用ordinal71/global2独立member、四类occupancy和同构solver冻结实现合同；
-- projection helper现可直接解析并行solver的per-task子目录，不再需要临时symlink surface。
+- projection helper现可直接解析并行solver的per-task子目录，不再需要临时symlink surface；
+- fixed-A analytic projection用低秩闭式解直接求`argmin_B ||B A_c - B_e A_e||_F`并输出single rank16 LoRA；focused
+  realization/manifold tests为23/23通过。
 
 ## Current unresolved interface
 
 - 最早失效接口已从teacher/state coverage收窄到realization：当前owner/flow/action effect distance加fixed-A Delta-B求解器，
   即使inner objective在Goal/Long明显下降，也没有进入它们的closed-loop success basins；
-- fixed-A capacity与effect objective/calibration仍是两个竞争解释。本卡只关闭二者当前组合，不把局部失败外推成整个ECP反证；
+- fixed-A capacity已经与effect objective/calibration分离：前者行为上明确binding；后者是否在row-space-mobile operator下仍不足
+  尚未回答，不能用本轮结果替它作结论；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 当前只执行`docs/ecp_fixed_a_capacity_card_20260823.md`登记的解析投影闭环诊断；其结果裁决前不启动successor、小扫或
-  Stage 1C，也不把geometry或inner loss冒充闭环答案。
+- 下一步只设计一个effective-additive、允许row/column-space移动、zero correction精确返回carrier且最终retract为single rank16
+  LoRA的Stage 1B oracle；在完整card前不实现，不顺手改effect objective、Program或数据，也不启动Stage 1C。

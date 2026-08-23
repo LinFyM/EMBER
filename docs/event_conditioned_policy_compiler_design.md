@@ -1,8 +1,8 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **Realization non-pass后只进行fixed-A闭环容量分离诊断；没有active successor Writer**。
+状态：2026-08-23 **fixed-A容量诊断已判为binding；没有active successor Writer或solver**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
-artifacts保存；当前diagnostic authority为`docs/ecp_fixed_a_capacity_card_20260823.md`。
+artifacts保存；最新裁决为`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
 
 ## 1. 当前裁决
 
@@ -22,9 +22,10 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 > carrier出发，恢复显著且广泛的task-local闭环能力？
 
 结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
-non-pass。当前证据把断点收窄到realization，但尚未分离fixed-A capacity与effect objective/calibration。复盘形成新的强科学卡
-后，唯一授权动作是把三个既有成功members解析投影到carrier-A行空间并做strict paired closed loop；不训练video predictor、
-shared compiler或Writer联合模型，也不扫solver、rank或插值系数。
+non-pass。该轮证据把断点收窄到realization，但当时尚未分离fixed-A capacity与effect objective/calibration。复盘形成新的强科学卡
+后，把三个既有成功members解析投影到carrier-A行空间并完成strict paired750：三个arms只保留`67/295=22.71%` matched
+direct successes，Goal/Long共300行全0。因此fixed-A已被分离为行为上binding的参数约束并退出主线；effect objective在允许
+row-space移动后是否仍不足尚未回答。不训练video predictor、shared compiler或Writer联合模型，也不扫solver、rank或插值系数。
 
 ## 2. 方法总图
 
@@ -196,6 +197,31 @@ process-identifying meta tasks，它不会被夸大为整个EMBER目标的最终
 正式结果为`78/250`，逐global0/9/18/25/36为`36/12/30/0/0`。absolute、相对carrier净增与carrier retention通过；breadth、
 4/5严格胜carrier、Goal/Long及oracle-normalized recovery失败，故按上述合同暂停。精确裁决见
 `docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
+
+### 5.4 Fixed-A capacity已被闭环裁决
+
+对latest、independent、earliest三个已知成功members逐target求解析最优fixed-A投影：
+
+```text
+B_star = B_expert A_expert A_carrier^T (A_carrier A_carrier^T)^+
+W_projected = B_star A_carrier
+```
+
+三个strict250结果为`49/41/35`，相对matched direct只保留`31/108、22/113、14/74`，合计
+`67/295=22.71%`。Goal原有24个direct successes、Long原有11个，三个投影member均为0；Long的effective-update energy
+coverage反而是五项最高之一。因此当前fixed-A行空间不是一个可继续靠objective校准挽救的中性载体，而是行为上binding的
+参数约束。它从Stage 1B主线退出，但这个结论不外推为“数学上不存在任意fixed-A功能等价解”。
+
+下一realization operator必须同时满足：
+
+- zero correction在effective-update层面精确返回stable carrier；
+- correction显式加到effective update，不通过同时raw更新A/B引入交叉项；
+- task-conditioned row与column space都可移动；
+- 每步或最终用确定性rank16 retraction返回一套38-target LoRA，不部署rank32 carrier或第二adapter；
+- 首轮保持同一48-state三particle objective与held5 gate，只分离parameterization；
+- 在实现前说明其更新几何、数值profile与停止条件，不能把free A/B当作新一轮raw-factor小扫。
+
+正式证据见`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

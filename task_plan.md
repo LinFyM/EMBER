@@ -206,6 +206,10 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   smoke均正确切换LoRA，`butter -> soup`成功、反向完成首事件后失败；
 - [x] 按`docs/ecp_process_phase_expert_teacher_gate_20260824.md`完成一次100行strict400 Gate A2；结果为
   `0/50、44/50`、总计`44/100`，尽管相对source-phase teacher净增25条，仍同时未达双向floor与总量门，判为non-pass；
+- [x] 完成A2后数据路线只读审计：当前pair缺soup-first successful actions，现有SFT/outer-credit不能直接产生该teacher；
+  task21/45共100条source demonstrations则全部为stove-on→pan-on-stove，推荐作为下一个双顺序最小family；
+- [ ] 由专家在true composite soup/butter data acquisition与stove/pan替代family之间裁决，并同时裁决新process mappings
+  是否足以重开shared realizer；决策前不实现新family或realizer。
 - [ ] 取得两个方向均可靠的更强privileged sequential teacher，或基于明确primitive/scene证据预注册一个替代process family；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；

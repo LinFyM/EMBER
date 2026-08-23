@@ -1,0 +1,93 @@
+{
+  "schema_version": "ember_ecp_process_candidate_demo_order_audit_v1",
+  "status": "read_only_decision_evidence",
+  "date": "2026-08-24",
+  "purpose": "Compare post-Gate-A2 process-family options without selecting or launching a successor family.",
+  "authorities": {
+    "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
+    "source_hdf5_root": "data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90",
+    "task_expert_results": [
+      "runs/outputs/pi05_nonheld_meta_train_direct_expert_step1000_56x50_formal_fe61f87_gpu02p123467_20260820/results.json",
+      "runs/outputs/pi05_nonheld_meta_validation_direct_expert_step1000_15x50_formal_fe61f87_gpu01p6_20260820/results.json"
+    ]
+  },
+  "method": {
+    "kind": "read_only_stored_sim_state_predicate_replay",
+    "actions_executed": false,
+    "models_loaded": false,
+    "training_or_checkpoint_selection": false,
+    "per_demo_measurement": "first rising satisfaction step for every BDDL goal predicate",
+    "demonstrations_per_task": 50
+  },
+  "tasks": [
+    {
+      "task_id": 1,
+      "language": "close the top drawer of the cabinet and put the black bowl on top of it",
+      "goal_predicates": ["Close(top drawer)", "On(black bowl,cabinet top)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [66.5, 195.5],
+      "step1000_task_expert_successes": 50
+    },
+    {
+      "task_id": 21,
+      "language": "turn on the stove and put the frying pan on it",
+      "goal_predicates": ["Turnon(stove)", "On(frying pan,stove)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [85.5, 262.5],
+      "step1000_task_expert_successes": 43
+    },
+    {
+      "task_id": 23,
+      "language": "close the bottom drawer of the cabinet and open the top drawer",
+      "goal_predicates": ["Close(bottom drawer)", "Open(top drawer)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [105.0, 222.5],
+      "step1000_task_expert_successes": 28
+    },
+    {
+      "task_id": 38,
+      "language": "put the right moka pot on the stove",
+      "goal_predicates": ["On(moka pot,stove)", "Turnon(stove)"],
+      "order_counts": {"goal1_initially_true_then_goal0": 50},
+      "median_first_steps": [191.5, 0.0],
+      "step1000_task_expert_successes": 33,
+      "candidate_note": "Not a valid two-event order pair under the existing initial-state distribution because the stove predicate is already true."
+    },
+    {
+      "task_id": 45,
+      "language": "turn on the stove and put the frying pan on it",
+      "goal_predicates": ["Turnon(stove)", "On(frying pan,stove)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [87.0, 241.0],
+      "step1000_task_expert_successes": 46
+    },
+    {
+      "task_id": 63,
+      "language": "stack the left bowl on the right bowl and place them in the tray",
+      "goal_predicates": ["On(left bowl,right bowl)", "In(right bowl,tray)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [114.0, 198.0],
+      "step1000_task_expert_successes": 44
+    },
+    {
+      "task_id": 64,
+      "language": "stack the right bowl on the left bowl and place them in the tray",
+      "goal_predicates": ["On(right bowl,left bowl)", "In(left bowl,tray)"],
+      "order_counts": {"goal0_then_goal1": 50},
+      "median_first_steps": [106.0, 219.5],
+      "step1000_task_expert_successes": 43
+    }
+  ],
+  "post_a2_data_fact": {
+    "soup_then_butter_successful_action_episodes": 0,
+    "butter_then_soup_successful_action_episodes": 44,
+    "existing_task_expert_training_requires_successful_action_hdf5": true,
+    "existing_outer_credit_trains_task_local_policy_lora": false
+  },
+  "recommendation": {
+    "preferred_next_minimal_family": "KITCHEN_SCENE3 stove-on and frying-pan-on-stove opposite-order pair",
+    "reason": "It reuses a 50-demo order-consistent composite task, a 43/50 composite expert, and a 50/50 same-scene pan primitive expert, while avoiding the shared-tray occupancy failure exposed by Gate A2.",
+    "second_physical_family_after_feasibility": "LIVING_ROOM_SCENE4 stack and tray placement opposite-order pair",
+    "requires_expert_selection_before_implementation": true
+  }
+}

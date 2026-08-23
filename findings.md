@@ -1891,3 +1891,20 @@ wrapper或shared-source容量。
 Gate B、process suite、`q_pi/q_V`不启动。下一实质决策是获得true composite privileged expert/data，或更换为物理机制
 不同的source-unseen process family，这需要专家重新裁决。证据：
 `docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`。
+
+## 90. A2后首先缺的是successful action authority，而不是另一个expert trainer
+
+当前soup/butter路径已有44条butter-first successful privileged ledgers，但soup-first为0。仓库现有task-local
+expert trainer能从successful action HDF5高效学习rank16 LoRA，却不能从失败轨迹创造正确actions；现有
+outer-credit也只优化Writer低维code，不是task-local PI0.5 policy RL。因此继续当前family意味着引入新的
+planner、人工demonstrations或RL研究面，不是复用已有expert训练通路。
+
+只读stored-state predicate replay同时发现，LIBERO-90 task1/21/23/45/63/64的50条source demonstrations均在每个task内
+100%采用同一事件顺序。其中task21和45是两个scene中同language的stove-on→pan-on-stove，共100条全部同序，
+step1000 experts为`43/50、46/50`；同scene task18 pan primitive expert为`50/50`。这使stove/pan双顺序pair成为比继续
+救soup/butter更快、且不重复shared-tray occupancy失败的最佳最小候选。它只能先支持video-specified order
+feasibility；通过后还需task64的stack/tray等物理耦合family及family-disjoint held才能支持更广process claim。
+
+该审计没有选定新family或复活realizer。具体推荐、风险和三个专家裁决问题见
+`docs/ecp_post_a2_route_decision_20260824.md`，结构证据见
+`docs/evidence/ecp_20260824/ecp_process_candidate_demo_order_audit_20260824.json`。

@@ -1,0 +1,123 @@
+{
+  "schema_version": "ember_ecp_effect_path_calibration_adjudication_v1",
+  "status": "complete_pass",
+  "date": "2026-08-24",
+  "code_commit": "4cddcabead992476483ea337046728374ba87b9b",
+  "preregistration": "docs/ecp_effect_path_calibration_card_20260824.md",
+  "config": "configs/pi05_ecp_effect_path_calibration.json",
+  "formal_result_root": "runs/outputs/ecp_effect_path_calibration_4cddcab_gpu01p12345_20260824",
+  "panel": {
+    "task_ordinals": [90, 91, 92, 93, 94],
+    "global_task_ids": [0, 9, 18, 25, 36],
+    "members": ["latest", "independent", "earliest"],
+    "path_count": 15,
+    "alphas": [0, 0.125, 0.25, 0.5, 0.75, 1],
+    "noncarrier_forward_points": 75,
+    "coordinate": "carrier rank12 plus deterministic-sign balanced-SVD residual rank4",
+    "new_closed_loop_rows": 0,
+    "optimizer_steps": 0
+  },
+  "validity": {
+    "member_identity": "one global member for the complete trajectory",
+    "initial": "same-member fixed50 success on the exact init-state row",
+    "successful": "same generating member only",
+    "candidate": "unverified and excluded from equivalence",
+    "recovery": "unverified and excluded from equivalence",
+    "per_task_valid_state_counts_latest_independent_earliest": {
+      "0": [13, 12, 9],
+      "9": [11, 14, 10],
+      "18": [14, 14, 13],
+      "25": [10, 12, 9],
+      "36": [9, 8, 8]
+    },
+    "probe_axis_retained": false,
+    "probe_scope": "The inherited bank contains antithetic-averaged responses; this pass calibrates that existing coordinate and does not qualify future distributional q_pi evidence."
+  },
+  "formal_completion": {
+    "host": "gpu01",
+    "physical_gpus": [1, 2, 3, 4, 5],
+    "prohibited_physical_gpu0_selected": false,
+    "worker_count": 5,
+    "all_worker_return_codes_zero": true,
+    "task_capture_elapsed_seconds_range": [68.24833203200251, 79.82288700700155],
+    "max_cuda_allocated_bytes_per_worker": 18721906176,
+    "retained_output_bytes": 120394
+  },
+  "gate": {
+    "matching_endpoint_improvement": "15/15",
+    "matching_endpoint_improvement_pass": true,
+    "first_nonzero_improvement": "15/15",
+    "first_nonzero_task_coverage": "5/5",
+    "first_nonzero_improvement_pass": true,
+    "late_path_minimum": "15/15",
+    "late_path_minimum_pass": true,
+    "global_objective_improved_tasks": "5/5",
+    "global_objective_improved_tasks_pass": true,
+    "pass": true,
+    "decision": "proceed_with_balanced_svd_coordinate"
+  },
+  "path_analysis": {
+    "matching_verified_loss_strictly_monotone_paths": "15/15",
+    "global_particle_loss_strictly_monotone_paths": "15/15",
+    "legacy_stagewise_total_strictly_monotone_paths": "15/15",
+    "verified_endpoint_to_carrier_ratio": {
+      "minimum": 0.000722937749079819,
+      "median": 0.0023227467726724986,
+      "maximum": 0.01993054100187305
+    },
+    "verified_alpha_0_125_to_carrier_ratio": {
+      "minimum": 0.5699418995776698,
+      "median": 0.8167883485777265,
+      "maximum": 0.868361811900145
+    },
+    "endpoint_trust_distance": {
+      "minimum": 1.3409427404403687,
+      "median": 1.7528915405273438,
+      "maximum": 2.2808427810668945
+    },
+    "global_particle_carrier_to_best_endpoint_by_global_task": {
+      "0": [1.9625588655471802, 0.05178631842136383],
+      "9": [3.527827262878418, 0.08568534255027771],
+      "18": [2.572608709335327, 0.11469723284244537],
+      "25": [2.12837815284729, 0.039589107036590576],
+      "36": [2.9548416137695312, 0.08747483789920807]
+    },
+    "endpoint_carrier_drift_range_by_category": {
+      "initial": [1.4794673919677734, 4.680945873260498],
+      "successful": [1.773095726966858, 4.575850009918213],
+      "candidate": [1.9541994333267212, 4.392714977264404],
+      "recovery": [1.549318790435791, 3.8847830295562744]
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The inherited owner/flow/action coordinate consistently ranks all fifteen known-success balanced-SVD paths, including Goal and Long.",
+      "A single global member identity with conservative verified state masks preserves the same path signal without stage-wise member splicing.",
+      "The legacy objective also has a strictly decreasing route to every known-success endpoint, so absence of successful low-loss basins is not the explanation for the prior solver failures.",
+      "Balanced-SVD rank4 is the first authorized canonical coordinate for Phase 2B."
+    ],
+    "not_supported": [
+      "A deployment-compatible realizer has been trained or passed closed loop.",
+      "Probe/member uncertainty is distributionally represented.",
+      "Candidate or recovery member-state continuation validity is established.",
+      "q_pi, q_V, Program-to-effect, or video inference is implemented."
+    ],
+    "trust_note": "Some full endpoints exceed the historical 1.5 trust limit, but alpha=0.75 keeps even the largest endpoint below 1.29 trust while already lying late on every decreasing path. The old trust cap is therefore not the sole cause of solver failure."
+  },
+  "next_action": {
+    "phase": "Phase 2B then 2C",
+    "authorized": "Freeze deterministic-sign balanced-SVD residual coordinates, retain probe particles in successor evidence, add richer member-state validity, and train a small held-free target-local amortized realizer before q_pi.",
+    "not_authorized": [
+      "another task-local solver",
+      "alpha or trust sweep",
+      "q_pi training before the realizer gate",
+      "q_V or Writer training"
+    ]
+  },
+  "information_wall": {
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "action_meta_installed": false,
+    "second_adapter_deployed": false
+  }
+}

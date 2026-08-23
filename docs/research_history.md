@@ -1428,6 +1428,19 @@ Gate B、process suite扩展和`q_pi/q_V`均未启动。后继只允许更强pri
 并行进入专家既定的Phase 2 mobile-rank4 realizer calibration。证据：
 `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`。
 
+### 3.73 known-success effect-path calibration全门通过
+
+clean pushed `4cddcabead992476483ea337046728374ba87b9b`在gpu01 physical1--5查询五个tasks、三个independent
+successful members的15条balanced-SVD rank4 effect paths，没有新closed-loop rows或optimizer step。matching verified、
+global-particle与legacy stage-wise loss均在15/15条路径上严格单调下降；15/15在`alpha=1/8`已改善，15/15
+的最低点在`alpha>=3/4`，5/5 tasks的global objective均优于carrier，包括Goal与Long。
+
+这将deterministic-sign balanced-SVD rank4确定为Phase 2B canonical coordinate，并将旧solver失败定位为没有到达
+已存在的successful basin。当前bank的probe轴已被平均，candidate/recovery也缺continuation validity，所以本轮
+不证明realizer、distributional `q_pi`、Program-to-effect或video inference。后续须先建立successor evidence与只读
+structured code的target-local amortized realizer，不再做新task-local solver。证据：
+`docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

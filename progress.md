@@ -22,11 +22,14 @@
 - completed process minimal-pair Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；
 - process minimal-pair Gate A adjudication：
   `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`；
-- active Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
+- completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
+- Phase 2A effect-path adjudication：
+  `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
-  process pair的formal code authority为clean pushed `d1975c3`，评测已结束；当前没有active GPU job，主执行转入
-  mobile-rank4 realizer calibration，process acquisition修正作为并行资格前置。
+  process pair的formal code authority为clean pushed `d1975c3`，effect-path calibration的formal code authority为clean pushed
+  `4cddcab`；当前没有active GPU job，主执行转入Phase 2B/2C fixed-coordinate dataset与deployment realizer，
+  process acquisition修正作为并行资格前置。
 
 ## Current scientific state
 
@@ -72,6 +75,11 @@
 - effective-update successor已在ordinal71判为Profile non-pass：initial精确等于carrier，matrix-free sketch的方向导数为
   `-81.8873`且全部finite，但五个固定回溯尺度均未被完整objective接受；final objective仍为`2.214329`、gap recovery与trust
   都为0。它只运行4次initial VJP，未进入后续Gram tangent，也未启动held5。
+- Phase 2A effect-path calibration已通过：15/15 known-success balanced-SVD paths的matching verified loss、
+  global-particle loss与legacy stage-wise loss都从carrier到endpoint严格单调下降；15/15在`alpha=1/8`已改善，
+  15/15最低点在`alpha>=3/4`，5/5 tasks均改善且Goal/Long非例外。这授权fixed deterministic-sign
+  balanced-SVD rank4 coordinate，也证明旧solver失败是未到达已存在的successful basin，但不证明realizer、
+  distributional `q_pi`或video inference已成立。
 
 ## Verified reusable assets
 
@@ -127,6 +135,9 @@
 14. 从clean pushed `d1975c3`在gpu01 physical`2,3,4,5,6,7`以6 workers完成process pair的100行Gate A；两方向结果为
     `0/50、19/50`，未达到各20与总50的门。19条成功全在step275--385；旧collector中66条失败尾部达到401--404，不影响
     strict success，内层horizon边界已在`90090bf`修正且不重跑同一科学panel。
+15. 从clean pushed `4cddcab`在gpu01 physical`1,2,3,4,5`完成15条known-success effect paths的formal
+    calibration；5 workers全部返回0，15/15三种objective严格单调下降，5/5 tasks通过global gate，
+    balanced-SVD rank4被冻结为Phase 2B coordinate。
 
 ## Completed fixed-A capacity diagnostic
 

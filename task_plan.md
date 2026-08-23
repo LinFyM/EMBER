@@ -204,12 +204,14 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 ## Phase G — Phase 2：fixed mobile-rank4 coordinate与deployment realizer
 
-- 当前Phase 2A预注册卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
+- completed Phase 2A卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
   `configs/pi05_ecp_effect_path_calibration.json`。
-- [ ] 用known-success mobile projections重新校准effect target：保留probe particles，给member-state加on-policy/
-  continuation/progress/recovery validity，global member identity默认贯穿trajectory；
-- [ ] 检验carrier沿真实successful correction路径的objective局部与全程行为，先做single-member，再做verified mixture；
-- [ ] 在balanced-SVD canonical rank4与fixed two-sided sketches + deterministic reconstruction中选择首个principled coordinate；
+- [x] 用existing known-success mobile projections完成path calibration：global member identity与conservative
+  verified-state validity下15/15路径严格单调下降，5/5 tasks的global-particle objective改善；
+- [x] 选定并冻结deterministic-sign balanced-SVD canonical rank4为首个principled coordinate；fixed two-sided
+  sketches只作有原则fallback；
+- [ ] 在successor effect evidence中保留probe particles，给member-state补on-policy/continuation/progress/recovery
+  validity，不把当前antithetic-average bank冒充distributional authority；
 - [ ] 训练小型target-local amortized `D_eff(structured code)->Delta W_rank4`，inference不读取future occupancy；
 - [ ] 多fold privileged-code transform-only closed-loop直接裁决：高于carrier、5/5 breadth、Goal/Long非零、carrier retention>=75%、
   best-member gap显著恢复、相邻checkpoint稳定；

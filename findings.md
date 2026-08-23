@@ -1801,3 +1801,18 @@ step275--385，严格截断不会改变任何success。内层horizon停止已在
 privileged sequential teacher，或用明确primitive/scene证据预注册一个替代family；与此同时继续专家允许并行的Phase 2
 mobile-rank4 coordinate与deployment realizer calibration。完整证据见
 `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`。
+
+## 86. known-success effect paths确立了固定balanced-SVD坐标，但尚未确立deployment realizer
+
+Phase 2A在五个held-fold train tasks上查询15条已有strict closed-loop success的
+`carrier rank12 + mobile residual rank4`balanced-SVD路径。matching verified、global-particle与legacy stage-wise三种
+objective均在15/15条路径上从carrier到endpoint严格单调下降；15/15在`alpha=1/8`已优于carrier，
+15/15最低点位于`alpha>=3/4`，5/5 tasks的global-particle objective均改善，Goal与Long也成立。
+
+因此owner/flow/action response对真实成功修正具有稳定方向性，旧raw-factor/effective-update solver的主要失败是
+reachability/direction，不是successful effect basin不存在。确定sign gauge的balanced-SVD rank4现被授权为Phase 2B
+canonical coordinate；不再做another solver、alpha/trust sweep或raw A/B动力学救援。
+
+该结果只校准了现有antithetic-averaged bank。probe轴未保留，candidate/recovery没有continuation validity，
+因而不能冒充distributional `q_pi`证据；也尚未训练任何只读structured code的deployment realizer。下一最早
+接口是在固定坐标上建立successor evidence与target-local amortized realizer，然后才能进入fresh Program与`q_pi`。

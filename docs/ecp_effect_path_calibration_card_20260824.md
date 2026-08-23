@@ -68,3 +68,22 @@ balanced-SVD rank4 coordinate；fixed two-sided sketches只保留为一次有原
 
 formal capture来自clean pushed detached authority；launch前重新检查gpu01与gpu02及`/data1`quota。单节点最多五张GPU，一张
 task一张卡；gpu01 physical0禁止使用。结果只保留每point scalar与必要metadata，不保存重复response tensor或adapter副本。
+
+## Formal adjudication
+
+clean pushed `4cddcabead992476483ea337046728374ba87b9b`在gpu01 physical1--5完成15条known-success paths的唯一
+formal capture，physical0未使用，5个workers全部返回0。所有事前固定的Gate通过：15/15 matching endpoints优于
+carrier，15/15在`alpha=1/8`已下降，15/15的最低点在`alpha>=3/4`，5/5 tasks的global-particle objective均
+改善，包括Goal与Long。
+
+更强的post-hoc定位是：matching verified、global-particle与legacy stage-wise三种loss都在15/15条路径上
+严格单调下降。verified endpoint/carrier ratio的min/median/max为
+`.000723/.002323/.019931`，`alpha=1/8`时为`.569942/.816788/.868362`。这证明现有owner/flow/action
+response坐标能稳定排序真实成功修正；旧solver的失败是reachability/direction失败，不是低损失成功盆地
+不存在。因此Phase 2A裁决为`pass_proceed_balanced_svd_coordinate`，确定sign gauge的balanced-SVD rank4
+成为Phase 2B的canonical coordinate。
+
+本结果不证明realizer、`q_pi`、`q_V`、Program-to-effect或video inference已成立。当前bank在落盘前已将
+antithetic probes平均，candidate/recovery也没有member-state continuation validity；后继effect evidence必须保留
+probe轴并补足validity，不得把本轮外推为distributional `q_pi`资格。完整证据：
+`docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。

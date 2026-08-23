@@ -28,6 +28,11 @@ same-endpoint/different-required-procedure任务对。它们可以支持scene、
 `In(soup,tray) AND In(butter,tray)`，只让两个variant分别要求`soup -> butter`与`butter -> soup`。这只是可行性候选，不是
 已批准的数据集设计；正式suite还必须跨scene/family切分，不能靠同一场景中的物体组合形成虚假的task数量。
 
+只读资产核查支持先选这个family：task55的source policy在两个已保留rows分别以97/99步成功，task56分别以85/87步成功。
+相比之下，target train24中现成的双物体task37虽有三条保留成功轨迹，但目视复核三条都是alphabet soup先进入basket，未提供
+反向teacher。精确资产记录见`docs/evidence/ecp_20260823/process_meta_asset_feasibility_20260823.json`。因此首轮不应先训练新
+task expert；应先检验把两个已有source primitives在同一episode中按privileged phase切换能否得到两个方向的可靠teacher。
+
 ## 3. 最小工程接入点
 
 LIBERO的`BDDLBaseDomain.step()`最终把`_check_success()`的当前谓词合取直接作为`done`；EMBER canonical evaluator又把
@@ -45,16 +50,20 @@ OffScreenRenderEnv
 ```
 
 wrong-first不应返回`done=True`，因为当前evaluator会把任何done解释为成功；wrapper应把该episode保持为invalid并运行到horizon，
-同时只在privileged meta-training ledger中记录失败原因。它只需在两个已有环境owner处接入：canonical
-`PersistentTaskEnvironmentPool`与训练用`RandomResetEnvironmentPool`。π0.5输入、action chunk、replan、preprocessing和正式
-target40 evaluator均不改变；temporal semantics只由显式meta-task manifest激活。
+同时只在privileged meta-training ledger中记录失败原因。
+
+现有`PersistentTaskEnvironmentPool._task_assets()`还会强制查询installed benchmark task并核对其language；自定义组合language
+不能伪装成已有task从这里进入。实现时不应放松正式target40的asset检查，而应让显式meta-task manifest登记custom BDDL、
+复用的base task/init-state authority、两个goal predicates与required order；专用meta collector创建底层
+`OffScreenRenderEnv`并包上上述wrapper。训练reward路径再通过共享的environment factory复用同一wrapper语义，避免canonical
+evaluator与meta task各自实现一套成功判定。π0.5输入、action chunk、replan、preprocessing和正式target40 evaluator均不改变。
 
 ## 4. 教学与oracle数据如何取得
 
 不能把两条独立单物体视频直接拼接后冒充同一闭环episode。优先顺序应为：
 
-1. 先检查已有多物体成功demonstrations是否真实包含两种完成顺序；若有，按predicate transition归入两个variant；
-2. 若只有一种顺序，训练阶段可用privileged phase-conditioned expert在同一episode中依次执行两个已有primitive；
+1. 已保留的三条多物体成功轨迹只观察到一种顺序；完整raw 50-demo corpus当前不在本地，不能把“未见反向”夸大为数据集证明；
+2. 首轮直接复用已有source policy成功的task55/task56，在同一episode中以内部predicate phase切换primitive language；
 3. 所有收集结果必须用temporal wrapper重新rollout验证，只有顺序与最终状态都通过的episode进入teacher bank；
 4. deployment输入仍只保留渲染视频和统一language，teacher phase language、actions、predicate transition与reward全部留在信息墙外。
 

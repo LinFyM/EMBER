@@ -149,3 +149,7 @@
   `docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
 - 该动作会构造当前枚举LIBERO任务之外的新temporal semantics，属于数据合同扩展；目前尚无owner明确授权，所以没有改代码、
   生成数据、启动GPU或建立successor。授权后第一步也只是一个pair的upper-bound gate，不直接扩suite或训练Writer。
+- 等待授权期间完成了零GPU资产核查：target task37三条保留成功轨迹都只有`soup -> cream cheese`一种顺序；non-held
+  LIBERO-90 task55/56则已有source policy的两条成功rows，分别约97/99与85/87步。首个pair因此可优先用privileged phase
+  switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
+  meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。

@@ -1,0 +1,59 @@
+{
+  "schema_version": "ember_ecp_process_meta_asset_feasibility_v1",
+  "date": "2026-08-23",
+  "scope": "read_only_asset_audit",
+  "custom_task_authorized": false,
+  "existing_composite_success_order_audit": {
+    "task": {
+      "suite": "libero_10",
+      "task_id": 7,
+      "global_task_id": 37,
+      "language": "put both the alphabet soup and the cream cheese box in the basket"
+    },
+    "evidence_kind": "manual inspection of retained successful base-camera trajectories",
+    "episodes": [
+      {
+        "path": "runs/outputs/pi05_train24_successful_equivalence_step0250_stage_545b43c_gpu01p012_20260821/occupancy_trajectories/libero_10_task_07_state_030.pt",
+        "success": true,
+        "steps": 332,
+        "first_completed_object": "alphabet_soup"
+      },
+      {
+        "path": "runs/outputs/pi05_train24_successful_equivalence_step2000_stage_545b43c_gpu01p456_20260821/occupancy_trajectories/libero_10_task_07_state_017.pt",
+        "success": true,
+        "steps": 272,
+        "first_completed_object": "alphabet_soup"
+      },
+      {
+        "path": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821/occupancy_trajectories/libero_10_task_07_state_030.pt",
+        "success": true,
+        "steps": 416,
+        "first_completed_object": "alphabet_soup"
+      }
+    ],
+    "observed_order_diversity": 1,
+    "limitation": "This audits the three retained successful trajectories, not the full raw 50-demo corpus."
+  },
+  "source_primitive_upper_bound_evidence": [
+    {
+      "suite": "libero_90",
+      "task_id": 55,
+      "language": "pick up the alphabet soup and put it in the tray",
+      "source_success_rows": [
+        {"init_state_id": 0, "steps": 97},
+        {"init_state_id": 26, "steps": 99}
+      ]
+    },
+    {
+      "suite": "libero_90",
+      "task_id": 56,
+      "language": "pick up the butter and put it in the tray",
+      "source_success_rows": [
+        {"init_state_id": 46, "steps": 85},
+        {"init_state_id": 2, "steps": 87}
+      ]
+    }
+  ],
+  "source": "configs/pi05_ecp_stage1_mdco_nonheld_occupancy_selection.json",
+  "conclusion": "The retained composite trajectories do not supply both orders, but the two same-scene primitives already have successful source-policy support. A privileged phase-switched single-episode teacher is the lowest-cost acquisition path after owner authorization."
+}

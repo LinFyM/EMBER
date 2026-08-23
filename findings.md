@@ -1697,3 +1697,15 @@ progress不得进入policy或deployment Writer。
 现有canonical与reward environment pools，不改PI0.5前向或target40 evaluator主干。但它会改变当前数据合同，尚待owner授权。
 在此之前停止代码/GPU推进；授权后也先做一个paired family的privileged upper-bound Gate，不直接扩suite或训练Writer。完整
 边界见`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+
+进一步只读核查排除了“现成多物体轨迹已经提供两个顺序”的乐观假设。task37保留的earliest、latest与phase-decoder三条成功
+occupancy分别为332、272与416步，三条base-camera序列都显示alphabet soup先进入basket、cream cheese随后进入；这里只能说明
+三条保留资产没有order diversity，不能外推未下载的完整50-demo corpus。相反，同一`LIVING_ROOM_SCENE3`中的source task55
+与56已有各两个source-success rows，完成单物体primitive只需97/99与85/87步。首个pair的最省成本teacher acquisition因此不是
+重训expert或拼接视频，而是在一个真实闭环episode里以privileged predicate phase切换两个现成primitive，并用temporal wrapper
+重新判定成功。资产证据见`docs/evidence/ecp_20260823/process_meta_asset_feasibility_20260823.json`。
+
+工程审计也发现custom language不能直接塞进当前`PersistentTaskEnvironmentPool`：它会向installed benchmark查询task并严格核对
+language。正确做法不是放松正式target40 asset gate，而是由显式meta manifest登记custom BDDL与复用的base init-state authority，
+通过专用meta collector和共享temporal wrapper进入；reward训练再复用同一environment factory。这个边界进一步保证custom
+process任务不会静默改变正式LIBERO评测语义。

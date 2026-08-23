@@ -8,20 +8,24 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
 import numpy as np
 import torch
+from safetensors.torch import load_file
 
 from ember.ecp.process_meta import (
     ProcessMetaError,
     TemporalPredicateOrderEnv,
     load_process_meta_authority,
 )
+from ember.lora import copy_task_lora_state_, validate_lora_state
 from ember.pi05_assets import configure_libero_runtime_assets, write_json_atomic
 from ember.pi05_eval.worker_setup import load_policy
 from ember.pi05_eval_contract import policy_noise_seed
+from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import libero_policy_input
+from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--state-ids", type=_state_ids, required=True)
     parser.add_argument("--physical-gpu-id", type=int, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--teacher-mode",
+        choices=("source_phase", "phase_expert"),
+        default="source_phase",
+    )
     parser.add_argument("--keep-failure-videos", action="store_true")
     return parser
 
@@ -123,6 +132,8 @@ def _collect_episode(
     init_state: np.ndarray,
     state_id: int,
     phase_languages: Any,
+    install_phase_expert: Callable[[str], None] | None,
+    phase_expert_task_ids: Mapping[str, int],
     exact_language: str,
     rollout: Any,
 ) -> dict[str, Any]:
@@ -139,6 +150,7 @@ def _collect_episode(
     actions: list[np.ndarray] = []
     action_phase_keys: list[str] = []
     replan_phase_keys: list[str] = []
+    replan_teacher_task_ids: list[int | None] = []
     noise_seeds: list[int] = []
     replan_index = 0
     started = time.monotonic()
@@ -147,6 +159,8 @@ def _collect_episode(
         phase_key = env.phase_key
         if phase_key is None:
             break
+        if install_phase_expert is not None:
+            install_phase_expert(phase_key)
         language = str(phase_languages[phase_key])
         batch = preprocess(libero_policy_input(observation, language))
         noise, seed = _noise(
@@ -163,6 +177,7 @@ def _collect_episode(
             )
         environment_actions = postprocess(normalized).detach().cpu().numpy()[0]
         replan_phase_keys.append(phase_key)
+        replan_teacher_task_ids.append(phase_expert_task_ids.get(phase_key))
         noise_seeds.append(seed)
         replan_index += 1
         for action in environment_actions[: int(rollout["replan_steps"])]:
@@ -189,6 +204,7 @@ def _collect_episode(
         "actions": np.stack(actions) if actions else np.empty((0, 7), dtype=np.float32),
         "action_phase_keys": tuple(action_phase_keys),
         "replan_phase_keys": tuple(replan_phase_keys),
+        "replan_teacher_task_ids": tuple(replan_teacher_task_ids),
         "policy_noise_seeds": tuple(noise_seeds),
         "exact_language": exact_language,
     }
@@ -242,6 +258,40 @@ def main() -> None:
         authority.tokenizer_path,
         source_contract["policy"],
     )
+    install_phase_expert: Callable[[str], None] | None = None
+    phase_expert_task_ids: dict[str, int] = {}
+    if args.teacher_mode == "phase_expert":
+        if (
+            authority.lora_contract_path is None
+            or authority.expert_source_checkpoint is None
+            or set(authority.phase_experts) != set(authority.family.predicates)
+            or authority.expert_source_checkpoint.resolve()
+            != Path(source_contract["model"]["checkpoint"]).resolve()
+        ):
+            raise ProcessMetaError("phase-expert teacher authority is incomplete")
+        lora = load_pi05_lora_contract(authority.lora_contract_path)
+        prepare_frozen_writer_policy(policy, lora)
+        expert_states = {
+            phase_key: load_file(str(expert.adapter_path), device="cpu")
+            for phase_key, expert in authority.phase_experts.items()
+        }
+        for state in expert_states.values():
+            validate_lora_state(state, lora)
+        installed_phase: str | None = None
+
+        def install(phase_key: str) -> None:
+            nonlocal installed_phase
+            if phase_key != installed_phase:
+                copy_task_lora_state_(policy, expert_states[phase_key], lora)
+                installed_phase = phase_key
+
+        install_phase_expert = install
+        phase_expert_task_ids = {
+            phase_key: expert.task_id
+            for phase_key, expert in authority.phase_experts.items()
+        }
+    elif authority.phase_experts:
+        raise ProcessMetaError("phase-expert manifest requires --teacher-mode phase_expert")
     init_states = torch.load(
         authority.family.init_states_path,
         map_location="cpu",
@@ -268,6 +318,8 @@ def main() -> None:
                 init_state=np.asarray(init_states[state_id]),
                 state_id=state_id,
                 phase_languages=authority.family.phase_languages,
+                install_phase_expert=install_phase_expert,
+                phase_expert_task_ids=phase_expert_task_ids,
                 exact_language=authority.family.exact_language,
                 rollout=authority.rollout,
             )
@@ -300,8 +352,10 @@ def main() -> None:
                     "completion_steps": result["completion_steps"],
                     "predicate_values": result["predicate_values"],
                     "teacher_actions": torch.from_numpy(result["actions"]),
+                    "teacher_mode": args.teacher_mode,
                     "action_phase_keys": result["action_phase_keys"],
                     "replan_phase_keys": result["replan_phase_keys"],
+                    "replan_teacher_task_ids": result["replan_teacher_task_ids"],
                     "policy_noise_seeds": result["policy_noise_seeds"],
                     "public_video": (
                         str(public_path.relative_to(args.output_dir))
@@ -337,6 +391,8 @@ def main() -> None:
         "schema_version": "ember_ecp_process_meta_teacher_collection_v1",
         "manifest": str(args.manifest),
         "family_id": authority.family.family_id,
+        "teacher_mode": args.teacher_mode,
+        "phase_expert_task_ids": phase_expert_task_ids,
         "variant_name": variant.name,
         "required_order": list(variant.required_order),
         "state_ids": list(args.state_ids),

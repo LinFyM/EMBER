@@ -22,6 +22,7 @@
 - completed process minimal-pair Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；
 - process minimal-pair Gate A adjudication：
   `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`；
+- active process phase-expert Gate A2 card：`docs/ecp_process_phase_expert_teacher_gate_20260824.md`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -68,6 +69,9 @@
 - 首个process-identifying pair的teacher Gate A已完成并non-pass：soup→butter为`0/50`、butter→soup为`19/50`，总计
   `19/100`，两方向首事件都为`50/50`，第二事件分别为`0/50、19/50`，invalid均为0。故失败接口是phase switch后的顺序组合
   支持，而非custom wrapper、wrong-first判定或第一primitive。Gate B未运行，不能从本结果裁决video order observer。
+- 更强teacher不需要新训练：现有task55/56 step1000 rank16 experts在各自formal primitive panel均为`50/50`。canonical
+  collector已支持phase-specific LoRA切换；state0双向smoke均记录task55/56两个expert，`butter -> soup`在296步成功，
+  `soup -> butter`在97步完成首事件后strict400失败。该smoke只证明图接通，100行Gate A2合同保持冻结。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

@@ -42,10 +42,22 @@ class ProcessMetaFamily:
 
 
 @dataclass(frozen=True)
+class ProcessPhaseExpert:
+    phase_key: str
+    task_id: int
+    checkpoint: Path
+    adapter_path: Path
+    adapter_bytes: int
+
+
+@dataclass(frozen=True)
 class ProcessMetaAuthority:
     source_evaluation_root: Path
     normalization_path: Path
     tokenizer_path: Path
+    lora_contract_path: Path | None
+    expert_source_checkpoint: Path | None
+    phase_experts: Mapping[str, ProcessPhaseExpert]
     family: ProcessMetaFamily
     rollout: Mapping[str, Any]
     information_wall: Mapping[str, Any]
@@ -116,10 +128,43 @@ def load_process_meta_authority(
         phase_languages=phase_languages,
         variants=(variants[0], variants[1]),
     )
+    teacher = value.get("privileged_teacher")
+    lora_contract_path: Path | None = None
+    expert_source_checkpoint: Path | None = None
+    phase_experts: dict[str, ProcessPhaseExpert] = {}
+    if teacher is not None:
+        if teacher.get("kind") != "phase_task_local_rank16_lora":
+            raise ProcessMetaError("unsupported process-meta privileged teacher")
+        lora_contract_path = repo_root / str(teacher["lora_contract"])
+        expert_source_checkpoint = repo_root / str(teacher["source_checkpoint"])
+        records = teacher.get("phase_experts", {})
+        if set(records) != set(keys):
+            raise ProcessMetaError("process-meta phase experts do not cover both events")
+        for phase_key, record in records.items():
+            checkpoint = repo_root / str(record["checkpoint"])
+            adapter_path = checkpoint / "adapter.safetensors"
+            adapter_bytes = int(record["adapter_bytes"])
+            if (
+                not adapter_path.is_file()
+                or adapter_path.stat().st_size != adapter_bytes
+                or int(record["step"]) != 1000
+                or str(record["language"]).strip() != phase_languages[phase_key]
+            ):
+                raise ProcessMetaError("process-meta phase expert authority changed")
+            phase_experts[phase_key] = ProcessPhaseExpert(
+                phase_key=phase_key,
+                task_id=int(record["task_id"]),
+                checkpoint=checkpoint,
+                adapter_path=adapter_path,
+                adapter_bytes=adapter_bytes,
+            )
     result = ProcessMetaAuthority(
         source_evaluation_root=repo_root / str(value["source_policy_authority"]),
         normalization_path=repo_root / str(value["normalization_authority"]),
         tokenizer_path=repo_root / str(value["tokenizer_authority"]),
+        lora_contract_path=lora_contract_path,
+        expert_source_checkpoint=expert_source_checkpoint,
+        phase_experts=phase_experts,
         family=family,
         rollout=dict(value["rollout"]),
         information_wall=dict(value["information_wall"]),
@@ -130,6 +175,7 @@ def load_process_meta_authority(
             result.source_evaluation_root,
             result.normalization_path,
             result.tokenizer_path,
+            *(path for path in (result.lora_contract_path,) if path is not None),
         )
     ):
         raise ProcessMetaError("process-meta source policy authority is incomplete")

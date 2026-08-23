@@ -5,7 +5,8 @@ Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fol
 均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
 coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
 `59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
-未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。**
+未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。process侧已预注册复用task55/56既有step1000 experts的
+phase-expert teacher Gate A2，工程smoke接通，formal100行待从clean pushed authority执行。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -198,6 +199,9 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   各20及总计50的固定门，判为Gate A non-pass且不做救援重跑；
 - [x] 实现repo-owned temporal wrapper：同scene/language/init/final predicates，wrong-first永久invalid，variant/predicate/phase不进入
   policy或Writer；不放松正式target40 evaluator；
+- [x] 选择不重训的更强teacher：phase切换时加载task55/56各自formal `50/50`的step1000 rank16 expert；两个state0工程
+  smoke均正确切换LoRA，`butter -> soup`成功、反向完成首事件后失败；
+- [ ] 按`docs/ecp_process_phase_expert_teacher_gate_20260824.md`完成一次100行strict400 Gate A2并裁决；
 - [ ] 取得两个方向均可靠的更强privileged sequential teacher，或基于明确primitive/scene证据预注册一个替代process family；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；

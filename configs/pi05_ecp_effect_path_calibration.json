@@ -1,0 +1,49 @@
+{
+  "schema_version": "ember_ecp_effect_path_calibration_v1",
+  "status": "preregistered_known_success_path_calibration",
+  "scientific_card": "docs/ecp_effect_path_calibration_card_20260824.md",
+  "authorities": {
+    "stage1_config": "configs/pi05_ecp_stage1b_effective_update_oracle_v1.json",
+    "effect_bank_root": "runs/analysis/pi05_ecp_stage1b_held_effect_banks_c2aaac1_gpu02p02347_20260823",
+    "projection_analysis": "runs/analysis/pi05_ecp_stage1b_mobile_rank4_residual_member_projection_083ed98_20260823/projection_analysis.json",
+    "latest_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808/results.json",
+    "independent_results": "runs/outputs/pi05_ecp_stage1a_independent_held5_fixed50_formal_c2aaac1_gpu02p02347_r3_20260823/results.json",
+    "earliest_step250_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step0250_formal_r3_1362d15_20260808/results.json",
+    "earliest_step500_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step0500_formal_r3_1362d15_20260808/results.json"
+  },
+  "tasks": {
+    "ordinals": [90, 91, 92, 93, 94],
+    "global_task_ids": [0, 9, 18, 25, 36],
+    "members": ["latest", "independent", "earliest"],
+    "earliest_step500_global_task_ids": [36]
+  },
+  "path": {
+    "alphas": [0, 0.125, 0.25, 0.5, 0.75, 1],
+    "carrier_rank": 12,
+    "residual_rank": 4,
+    "coordinate": "balanced_svd_rank4_with_deterministic_sign_gauge",
+    "capture_microbatch_size": 4
+  },
+  "validity": {
+    "initial": "matched_member_fixed50_success_on_same_init_state",
+    "successful": "same_generating_member_only",
+    "candidate": "unverified_excluded_from_equivalence",
+    "recovery": "unverified_excluded_from_equivalence",
+    "member_identity": "one_global_member_per_trajectory"
+  },
+  "gate": {
+    "matching_endpoint_improvement_required": 15,
+    "first_nonzero_improvement_minimum": 12,
+    "late_path_minimum_minimum": 12,
+    "task_coverage_required": 5,
+    "global_objective_improved_tasks_required": 5
+  },
+  "information_wall": {
+    "optimizer_steps": 0,
+    "new_closed_loop_rows": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "action_meta_installed": false,
+    "second_adapter_deployed": false
+  }
+}

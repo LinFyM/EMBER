@@ -204,6 +204,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 ## Phase G — Phase 2：fixed mobile-rank4 coordinate与deployment realizer
 
+- 当前Phase 2A预注册卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
+  `configs/pi05_ecp_effect_path_calibration.json`。
 - [ ] 用known-success mobile projections重新校准effect target：保留probe particles，给member-state加on-policy/
   continuation/progress/recovery validity，global member identity默认贯穿trajectory；
 - [ ] 检验carrier沿真实successful correction路径的objective局部与全程行为，先做single-member，再做verified mixture；

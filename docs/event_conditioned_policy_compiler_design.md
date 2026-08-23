@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **mobile-rank4解析容量门保持mixed；其后raw-factor realization solver已以`49/250`正式non-pass并停止**。
+状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability card已在实现/GPU前冻结**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
@@ -265,6 +265,18 @@ retained/gained/lost为`41/8/2`，union recovery只有`3/115=.0261`。known-succ
 `.060--.163`低值，known-success mobile projections的trust为`1.341--2.281`，而solver final trust仅
 `.000915--.001171`，correction方向cosine仅`.041--.077`。所以这轮关闭的是zero-start raw-factor dynamics，不是mobile-rank4
 容量，也尚未关闭全部effect-distribution objective。当前不补相邻step、不调数值、不训练video predictor或Writer。
+
+### 5.7 Effective-update reachability oracle
+
+下一单变量实验不放大raw-factor LR，也不增加VJP预算。它在exact carrier处用固定8列input sketch和4次matrix-free VJP近似
+dense effective-update gradient的rank4最陡下降方向；首步后最多8次VJP使用Gram-preconditioned tangent
+`dB A + B dA`，每次只在低秩core中retract为rank4。全部候选用同一objective和固定
+`1,1/2,1/4,1/8,1/16` trust backtracking单调接受，mean trust继续不超过1.5，总VJP最多12。
+
+非held ordinal71必须先恢复至少50%的carrier-to-best-member objective gap，且trust进入`.10--1.50`；否则在held rollout前
+停止。profile通过后仍直接使用原strict paired250 Gate，不用inner objective选择LoRA。精确合同见
+`docs/ecp_effective_update_solver_card_20260823.md`。该卡仍不授权Program、Writer或Action Meta；realization成立后再按owner要求
+做一次matched Action Meta control，无负面才启用并冻结。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

@@ -10,12 +10,13 @@
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
 - completed realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
+- active reachability card：`docs/ecp_effective_update_solver_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；raw-factor mobile-rank4 solver已完成并停止，没有active GPU job。
+- canonical workspace：本仓库`main`；effective-update card已在实现前冻结，没有active GPU job。
 
 ## Current scientific state
 
@@ -46,6 +47,8 @@
   known-success projections的trust为`1.341--2.281`，当前只有`.000915--.001171`，且effective correction方向cosine仅
   `.041--.077`。因此当前最早失败进一步收窄为zero-residual raw-factor动力学未到达successful effect basin；effect target
   是否充分仍未被最终回答。
+- 下一唯一授权operator直接在effective-update metric工作：4次matrix-free sketch VJP初始化rank4下降方向，最多8次
+  gauge-preconditioned tangent VJP，共同trust-region objective回溯；总VJP仍为12，不改变bank、loss、rank或Gate。
 
 ## Verified reusable assets
 
@@ -129,5 +132,5 @@
   任何由视频预测的effect distribution都会充分，后续必须把gauge-invariant realization与objective sufficiency分开检验；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 下一步只能先建立一个独立falsification card，检验gauge-invariant或显式preconditioned fixed realization；不得复活当前
-  raw-factor dynamics，不顺手改effect objective、Program或数据，也不启动Stage 1C。
+- 下一步只实现已预注册的effective-update reachability card；ordinal71未恢复至少50%的known-success objective gap就不启动
+  held5。不得复活raw-factor dynamics，不顺手改effect objective、Program或数据，也不启动Stage 1C。

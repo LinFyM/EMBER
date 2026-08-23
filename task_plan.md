@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **mobile-rank4解析容量门保持mixed；其后唯一一次raw-factor realization oracle已完成并以`49/250`
-判为Objective/solver non-pass。当前operator停止，未启动shared Writer或参数扫。**
+状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；已在任何实现/GPU前预注册唯一的effective-update
+reachability oracle，只分离求解几何，未启动shared Writer或参数扫。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -134,6 +134,20 @@ objective、12-step数值、held rows和Gate全部不变。
 
 card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；evidence：
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。禁止rank/step/LR/初始化/权重/member sweep，也不启动Writer。
+
+## Phase C5 — Gauge-invariant effective-update reachability
+
+raw-factor solver从exact-zero residual奇点出发，12步后correction norm约为known-success projection的1%，方向cosine只有
+`.041--.077`；因此它尚未检验一个在effective-update坐标中可达的fixed solver。本轮冻结所有科学输入与Gate，只替换求解几何：
+
+- [x] 在实现前冻结matrix-free rank4 gradient sketch、trust backtracking、VJP预算、fit profile门和held closed-loop门；
+- [ ] 以一个canonical runtime替换已关闭raw-factor solver，不保留并行fallback；
+- [ ] ordinal71必须恢复至少50%的carrier-to-best-member objective gap且trust进入`.10--1.50`；
+- [ ] profile通过后才物化held5并直接strict paired250；
+- [ ] Pass后才进入Stage 1C；profile或closed-loop non-pass均停止本operator，不扫sketch/trust/damping/backtrack。
+
+card：`docs/ecp_effective_update_solver_card_20260823.md`。Action Meta保持control；本realization坐标成立后再按owner要求做一次
+matched control，无负面才启用并永久冻结。
 
 ## Phase D — 继续被Realization non-pass阻止
 

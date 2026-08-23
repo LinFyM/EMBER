@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.eval_adapters import WRITER_ADAPTER_KINDS
+from ember.eval_adapters import ARCHIVAL_WRITER_CACHE_KIND, WRITER_ADAPTER_KINDS
 
 
 MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
@@ -271,6 +271,10 @@ def _stage_writer_generators(
 
     if writer_cache_manifest_is_ready(contract):
         return ()
+    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        raise Pi05EvaluationError(
+            "archival Writer projection must be imported and sealed before launch"
+        )
     physical_gpu_ids = tuple(
         int(value) for value in contract["parallel"]["physical_gpu_ids"]
     )

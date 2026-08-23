@@ -10,6 +10,7 @@ from typing import Any, Callable, Mapping, Sequence
 import torch
 
 from ember.eval_adapters import (
+    ARCHIVAL_WRITER_CACHE_KIND,
     DYNAMIC_K_WRITER_KIND,
     FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
@@ -79,9 +80,17 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             repo_root = Path(__file__).resolve().parents[3]
             config = load_functional_adapter_config(config_path, repo_root)
             lora_path = authority_path(config, "lora_contract", repo_root)
+        elif observed["kind"] == ARCHIVAL_WRITER_CACHE_KIND:
+            from ember.writer.archival_projection import (
+                load_archival_lora_contract,
+            )
+
+            lora = load_archival_lora_contract(observed)
+            lora_path = None
         else:
             raise WriterModelError("cached Writer kind changed")
-        lora = load_pi05_lora_contract(lora_path)
+        if lora_path is not None:
+            lora = load_pi05_lora_contract(lora_path)
         observed_rank = int(observed["lora_contract"]["rank"])
         if observed["kind"] == DYNAMIC_K_WRITER_KIND and observed_rank != lora.rank:
             lora = derive_pi05_lora_rank(lora, rank=observed_rank)

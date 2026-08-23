@@ -8,9 +8,11 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
+    ARCHIVAL_WRITER_CACHE_KIND,
     DYNAMIC_K_WRITER_KIND,
     FUNCTIONAL_CODE_WRITER_KIND,
     inspect_dynamic_k_writer_adapter,
+    inspect_archival_writer_cache_adapter,
     inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
@@ -136,6 +138,13 @@ def _reinspect_adapter(
             evaluation_k=int(
                 adapter.get("information_wall", {}).get("evaluation_k", 1)
             ),
+        )
+    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        return inspect_archival_writer_cache_adapter(
+            manifest_path=Path(adapter["config"]["path"]),
+            source=model,
+            tasks=tasks,
+            require_formal=require_formal,
         )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 

@@ -10,10 +10,12 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
+    ARCHIVAL_WRITER_CACHE_KIND,
     DYNAMIC_K_WRITER_KIND,
     FUNCTIONAL_CODE_WRITER_KIND,
     adapter_requests,
     inspect_dynamic_k_writer_adapter,
+    inspect_archival_writer_cache_adapter,
     inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
@@ -184,6 +186,13 @@ def _inspect_adapter(
             video_sampling_mode=str(args.functional_writer_video_sampling),
             require_formal=args.mode != "smoke",
             evaluation_k=int(getattr(args, "functional_writer_evaluation_k", 1)),
+        )
+    if writer_kind == ARCHIVAL_WRITER_CACHE_KIND:
+        return inspect_archival_writer_cache_adapter(
+            manifest_path=args.archival_writer_projection_manifest.resolve(),
+            source=model,
+            tasks=tasks,
+            require_formal=args.mode != "smoke",
         )
     return None
 

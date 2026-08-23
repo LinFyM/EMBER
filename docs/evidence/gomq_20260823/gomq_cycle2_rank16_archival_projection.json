@@ -1,0 +1,25 @@
+{
+  "schema_version": "ember_pi05_archival_writer_rank_projection_v1",
+  "status": "sealed",
+  "source_evaluation_root": "runs/outputs/pi05_v6_lpcp_cfmg_gomq_cycle2_k4_correct400_noreplacement_seed7_trainr6_evalr6_8553b61_gpu01p012457_b16_retry1_20260817",
+  "source_adapter_schema": "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1",
+  "source_adapter_kind": "v6_layerwise_probe_conditioned_procedure_writer",
+  "source_arm": "v6_lpcp_cfmg_gradient_open_memory_query_correct",
+  "source_successes": 151,
+  "source_rank": 32,
+  "target_rank": 16,
+  "target_lora_authority": "configs/pi05_lora_v1.json",
+  "projection": "A_concat_A0_A0_B_concat_B0_deltaB_to_A0_B0_plus_deltaB",
+  "condition": "correct",
+  "evaluation_k": 4,
+  "target_arm": "gomq_cycle2_effective_rank16_archival_correct",
+  "qualification": {
+    "strict_rows": 400,
+    "minimum_successes_for_absolute_phase0_baseline": 145,
+    "comparison_reference_successes": 151,
+    "paired_churn_report_required": true,
+    "single_checkpoint_only": true,
+    "checkpoint_selection": false,
+    "training_performed": false
+  }
+}

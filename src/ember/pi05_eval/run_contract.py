@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
+    ARCHIVAL_WRITER_CACHE_KIND,
     DYNAMIC_K_WRITER_KIND,
     FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
@@ -38,6 +39,9 @@ _WRITER_THROUGHPUT_BY_SCHEMA = {
         _BATCH_THROUGHPUT_POLICY
     ),
     "ember_functional_code_writer_eval_adapter_v1": _BATCH_THROUGHPUT_POLICY,
+    "ember_pi05_archival_writer_lora_cache_eval_adapter_v1": (
+        "precomputed_archival_cache_only"
+    ),
 }
 
 
@@ -113,6 +117,10 @@ def _writer_lora_contract(
 ) -> Any:
     from ember.pi05_lora import load_pi05_lora_contract
 
+    if adapter["kind"] == ARCHIVAL_WRITER_CACHE_KIND:
+        from ember.writer.archival_projection import load_archival_lora_contract
+
+        return load_archival_lora_contract(adapter)
     config_path = Path(adapter["config"]["path"])
     if adapter["kind"] == DYNAMIC_K_WRITER_KIND:
         from ember.writer.as_config import authority_path, load_writer_config

@@ -14,12 +14,20 @@ STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 DYNAMIC_K_WRITER_KIND = "layer_matched_memory_program_compiler_writer"
 FUNCTIONAL_CODE_WRITER_KIND = "fixed_functional_code_writer"
-WRITER_ADAPTER_KINDS = frozenset({DYNAMIC_K_WRITER_KIND, FUNCTIONAL_CODE_WRITER_KIND})
+ARCHIVAL_WRITER_CACHE_KIND = "archival_canonical_writer_lora_cache"
+WRITER_ADAPTER_KINDS = frozenset(
+    {
+        DYNAMIC_K_WRITER_KIND,
+        FUNCTIONAL_CODE_WRITER_KIND,
+        ARCHIVAL_WRITER_CACHE_KIND,
+    }
+)
 PAIRED_WRITER_KINDS = frozenset(
     {
         EXPERT_MANIFOLD_WRITER_KIND,
         DYNAMIC_K_WRITER_KIND,
         FUNCTIONAL_CODE_WRITER_KIND,
+        ARCHIVAL_WRITER_CACHE_KIND,
     }
 )
 
@@ -81,14 +89,25 @@ def functional_code_writer_requested(args: Any) -> bool:
     )
 
 
+def archival_writer_cache_requested(args: Any) -> bool:
+    return getattr(args, "archival_writer_projection_manifest", None) is not None
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     sft_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
     dynamic_k_requested = dynamic_k_writer_requested(args)
     functional_requested = functional_code_writer_requested(args)
+    archival_requested = archival_writer_cache_requested(args)
     if (
         sum(
-            (sft_requested, expert_requested, dynamic_k_requested, functional_requested)
+            (
+                sft_requested,
+                expert_requested,
+                dynamic_k_requested,
+                functional_requested,
+                archival_requested,
+            )
         )
         > 1
     ):
@@ -99,7 +118,11 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
         else (
             DYNAMIC_K_WRITER_KIND
             if dynamic_k_requested
-            else FUNCTIONAL_CODE_WRITER_KIND if functional_requested else None
+            else (
+                FUNCTIONAL_CODE_WRITER_KIND
+                if functional_requested
+                else ARCHIVAL_WRITER_CACHE_KIND if archival_requested else None
+            )
         )
     )
     return kind, sft_requested
@@ -122,7 +145,10 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
         "video_schedule",
         "pairing_reference",
     )
-    return {key: adapter[key] for key in keys}
+    result = {key: adapter[key] for key in keys}
+    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        result["archival_projection"] = adapter["archival_projection"]
+    return result
 
 
 def inspect_source_sft_adapter(
@@ -272,6 +298,27 @@ def inspect_functional_code_writer_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def inspect_archival_writer_cache_adapter(
+    *,
+    manifest_path: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.writer.archival_projection import inspect_archival_writer_projection
+    from ember.writer.errors import WriterModelError
+
+    try:
+        return inspect_archival_writer_projection(
+            manifest_path=manifest_path,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            require_formal=require_formal,
+        )
+    except WriterModelError as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
 def reinspect_writer_adapter(
     adapter: Mapping[str, Any],
     *,
@@ -282,6 +329,17 @@ def reinspect_writer_adapter(
     """Rebuild one prepared Writer adapter from its immutable asset record."""
 
     kind = adapter.get("kind")
+    if kind == ARCHIVAL_WRITER_CACHE_KIND:
+        from ember.writer.archival_projection import (
+            reinspect_archival_writer_projection,
+        )
+
+        return reinspect_archival_writer_projection(
+            adapter,
+            source=source,
+            task_keys=task_keys,
+            require_formal=require_formal,
+        )
     common = {
         "config_path": Path(str(adapter["config"]["path"])),
         "checkpoint": Path(str(adapter["writer_asset"]["checkpoint"])),
@@ -340,6 +398,18 @@ def expected_writer_episode(
             init_state_id=init_state_id,
             lora_reference=lora_reference,
         )
+    elif adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        from ember.writer.archival_projection import (
+            expected_archival_episode_evidence,
+        )
+
+        result = expected_archival_episode_evidence(
+            adapter,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+            lora_reference=lora_reference,
+        )
     else:
         raise Pi05EvaluationError("retired Writer adapter kind")
     if evidence_schema is not None and result["schema_version"] != evidence_schema:
@@ -377,6 +447,18 @@ def validate_writer_episode(
             task_id=task_id,
             init_state_id=init_state_id,
         )
+    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        from ember.writer.archival_projection import (
+            validate_archival_episode_evidence,
+        )
+
+        return validate_archival_episode_evidence(
+            adapter,
+            row,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+        )
     return False
 
 
@@ -391,6 +473,10 @@ def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
         )
 
         return functional_code_writer_episode_schema(adapter)
+    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+        from ember.writer.archival_projection import ARCHIVAL_EPISODE_SCHEMA
+
+        return ARCHIVAL_EPISODE_SCHEMA
     raise Pi05EvaluationError("retired Writer adapter kind")
 
 
@@ -430,6 +516,10 @@ def load_evaluation_adapter(
         raise Pi05EvaluationError("retired evaluation adapter kind")
     common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
     if writer_generation:
+        if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
+            raise Pi05EvaluationError(
+                "archival Writer projection requires a pre-sealed LoRA cache"
+            )
         if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
             from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
 

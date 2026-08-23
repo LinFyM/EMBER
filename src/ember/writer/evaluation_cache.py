@@ -14,6 +14,7 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import (
+    ARCHIVAL_WRITER_CACHE_KIND,
     DYNAMIC_K_WRITER_KIND,
     FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
@@ -55,6 +56,17 @@ FUNCTIONAL_CODE_WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
 FUNCTIONAL_CODE_WRITER_LORA_KEY_ALGORITHM = (
     "one_entry_per_episode_functional_code_nested_video_set_v1"
 )
+ARCHIVAL_WRITER_LORA_CACHE_SCHEMA = "ember_pi05_archival_writer_lora_cache_v1"
+ARCHIVAL_WRITER_LORA_CACHE_ENTRY_SCHEMA = (
+    "ember_pi05_archival_writer_lora_cache_entry_v1"
+)
+ARCHIVAL_WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
+    "ember_pi05_archival_writer_lora_cache_manifest_v1"
+)
+ARCHIVAL_WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
+    "ember_pi05_archival_writer_lora_generator_marker_v1"
+)
+ARCHIVAL_WRITER_LORA_KEY_ALGORITHM = "one_entry_per_episode_archival_rank_projection_v1"
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = (
     "sealed request order chunked by generation_batch_size into contiguous global "
@@ -91,6 +103,14 @@ def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
             "manifest": FUNCTIONAL_CODE_WRITER_LORA_CACHE_MANIFEST_SCHEMA,
             "marker": FUNCTIONAL_CODE_WRITER_LORA_GENERATOR_MARKER_SCHEMA,
             "key_algorithm": FUNCTIONAL_CODE_WRITER_LORA_KEY_ALGORITHM,
+        }
+    if kind == ARCHIVAL_WRITER_CACHE_KIND:
+        return {
+            "cache": ARCHIVAL_WRITER_LORA_CACHE_SCHEMA,
+            "entry": ARCHIVAL_WRITER_LORA_CACHE_ENTRY_SCHEMA,
+            "manifest": ARCHIVAL_WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+            "marker": ARCHIVAL_WRITER_LORA_GENERATOR_MARKER_SCHEMA,
+            "key_algorithm": ARCHIVAL_WRITER_LORA_KEY_ALGORITHM,
         }
     raise WriterModelError("Writer cache adapter kind changed")
 

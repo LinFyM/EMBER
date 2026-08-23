@@ -177,6 +177,14 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         "--functional-writer-evaluation-k",
         type=int, choices=(1, 2, 3, 4), default=1,
     )
+    parser.add_argument(
+        "--archival-writer-projection-manifest",
+        type=Path,
+        help=(
+            "Sealed read-only projection authority for a precomputed historical "
+            "episode-LoRA cache."
+        ),
+    )
 
 
 def parse_args() -> argparse.Namespace:

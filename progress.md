@@ -33,6 +33,7 @@
   `docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`；
 - separate-plates process Gate A3 raw authority：
   `runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824/`；
+- active composite bootstrap data contract：`docs/ecp_composite_teacher_bootstrap_data_20260824.md`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -98,6 +99,10 @@
   50对noise及37条无泄漏public videos完整。两向第一event为`43/50、46/50`，第二event仅`30/50、9/50`；反向37个
   second-phase失败仍有median297步余量，排除horizon-only解释。phase-composed primitive-teacher机制关闭；下一数据前置是
   true order-specific composite privileged policy/data，Gate B仍不启动。
+- 37条successful ledgers已经完成数据接口审计：public RGB与teacher actions完整，唯一缺口是每个action执行前的8维
+  PI0.5 state。新增canonical replay builder只重放已保存actions并采集state，不加载PI0.5；双向state0代码smoke均逐步
+  复现原completion steps，生成的HDF5可被现有`FunctionalQueryDataset`直接读取。下一步是从clean pushed frozen commit
+  正式构建28/9条两个数据集，尚未训练composite expert。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -295,5 +300,5 @@
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
 - 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、balanced-SVD learned realizer fold0与two-sided
   coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed primitive experts也已在
-  shared-tray与separate-plates两类family上失败。下一步不是换pair或扫teacher参数，而是用已有完整成功轨迹建立真正
-  order-specific composite privileged policy/data合同；通过前不运行Gate B。后续deployment bridge仍必须重新建立。
+  shared-tray与separate-plates两类family上失败。下一步不是换pair或扫teacher参数，而是按已冻结合同正式构建28/9条
+  order-specific composite privileged数据；通过前不运行Gate B。后续deployment bridge仍必须重新建立。

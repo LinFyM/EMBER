@@ -1701,7 +1701,7 @@ progress不得进入policy或deployment Writer。
 进一步只读核查排除了“现成多物体轨迹已经提供两个顺序”的乐观假设。task37保留的earliest、latest与phase-decoder三条成功
 occupancy分别为332、272与416步，三条base-camera序列都显示alphabet soup先进入basket、cream cheese随后进入；这里只能说明
 三条保留资产没有order diversity，不能外推未下载的完整50-demo corpus。相反，同一`LIVING_ROOM_SCENE3`中的source task55
-与56已有各两个source-success rows，完成单物体primitive只需97/99与85/87步。首个pair的最省成本teacher acquisition因此不是
+与56在正式source panel上均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair的最省成本teacher acquisition因此不是
 重训expert或拼接视频，而是在一个真实闭环episode里以privileged predicate phase切换两个现成primitive，并用temporal wrapper
 重新判定成功。资产证据见`docs/evidence/ecp_20260823/process_meta_asset_feasibility_20260823.json`。
 

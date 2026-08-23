@@ -28,7 +28,8 @@ same-endpoint/different-required-procedure任务对。它们可以支持scene、
 `In(soup,tray) AND In(butter,tray)`，只让两个variant分别要求`soup -> butter`与`butter -> soup`。这只是可行性候选，不是
 已批准的数据集设计；正式suite还必须跨scene/family切分，不能靠同一场景中的物体组合形成虚假的task数量。
 
-只读资产核查支持先选这个family：task55的source policy在两个已保留rows分别以97/99步成功，task56分别以85/87步成功。
+只读资产核查支持先选这个family：正式source panel上task55与task56都达到`50/50`；成功轨迹步数分别为
+`102--204`（median `123.5`）与`83--162`（median `107`）。
 相比之下，target train24中现成的双物体task37虽有三条保留成功轨迹，但目视复核三条都是alphabet soup先进入basket，未提供
 反向teacher。精确资产记录见`docs/evidence/ecp_20260823/process_meta_asset_feasibility_20260823.json`。因此首轮不应先训练新
 task expert；应先检验把两个已有source primitives在同一episode中按privileged phase切换能否得到两个方向的可靠teacher。

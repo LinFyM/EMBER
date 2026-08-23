@@ -69,6 +69,7 @@ ECP_STAGE1_STATIC_LORA_PURPOSES = {
     "stage1b_effective_update_realization_oracle",
     "stage1b_fixed_effect_realizer_step800",
     "stage1b_fixed_effect_realizer_step1000",
+    "stage1b_centered_two_sided_coordinate_latest",
 }
 
 

@@ -80,7 +80,7 @@ def merge_carrier_residual(
     return result
 
 
-def _projection_manifest(
+def build_static_lora_projection_manifest(
     *,
     repository: Mapping[str, Any],
     purpose: str,
@@ -230,7 +230,7 @@ def materialize_fixed_effect_realizer(args: Any) -> Path:
             }
         )
     purpose = f"stage1b_fixed_effect_realizer_step{step}"
-    projection = _projection_manifest(
+    projection = build_static_lora_projection_manifest(
         repository=repository,
         purpose=purpose,
         base_projection_path=base_projection_path,

@@ -35,6 +35,7 @@
     "reconstruction_core": "0.5 * (Psi^T Y + Z Omega)",
     "reconstruction_rank": 4,
     "core_inverse": "top-4 SVD pseudoinverse with 1e-6 relative singular floor",
+    "core_inverse_relative_singular_floor": 1e-6,
     "factor_gauge": "deterministic-sign balanced compact SVD"
   },
   "oracle": {

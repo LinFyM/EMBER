@@ -11,6 +11,8 @@ import torch
 from ember.ecp.realizer_capture import capture_effect_shard
 from ember.ecp.realizer_code import fit_effect_code_authority
 from ember.ecp.realizer_evidence import aggregate_effect_shards
+from ember.ecp.two_sided_coordinate import build_centered_two_sided_coordinate
+from ember.ecp.two_sided_oracle import materialize_centered_two_sided_oracle
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +51,25 @@ def parse_args() -> argparse.Namespace:
     code.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     code.add_argument("--output-dir", type=Path, required=True)
     code.add_argument("--device", default="cuda:0")
+    two_sided = commands.add_parser("fit-two-sided")
+    two_sided.add_argument(
+        "--config",
+        type=Path,
+        default=REPO_ROOT / "configs/pi05_ecp_centered_two_sided_coordinate.json",
+    )
+    two_sided.add_argument("--particle-manifest", type=Path, required=True)
+    two_sided.add_argument("--mode", choices=("profile", "formal"), required=True)
+    two_sided.add_argument("--asset-root", type=Path, default=REPO_ROOT)
+    two_sided.add_argument("--output-dir", type=Path, required=True)
+    materialize = commands.add_parser("materialize-two-sided")
+    materialize.add_argument(
+        "--config",
+        type=Path,
+        default=REPO_ROOT / "configs/pi05_ecp_centered_two_sided_coordinate.json",
+    )
+    materialize.add_argument("--coordinate-manifest", type=Path, required=True)
+    materialize.add_argument("--asset-root", type=Path, default=REPO_ROOT)
+    materialize.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -61,7 +82,7 @@ def main() -> None:
             aggregate_effect_shards(shard_manifests=args.shard, output=args.output),
             flush=True,
         )
-    else:
+    elif args.command == "fit-code":
         device = torch.device(args.device)
         if device.type == "cuda":
             torch.cuda.set_device(device)
@@ -77,6 +98,10 @@ def main() -> None:
             ),
             flush=True,
         )
+    elif args.command == "fit-two-sided":
+        print(build_centered_two_sided_coordinate(args), flush=True)
+    else:
+        print(materialize_centered_two_sided_oracle(args), flush=True)
 
 
 if __name__ == "__main__":

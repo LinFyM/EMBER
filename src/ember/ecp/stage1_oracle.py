@@ -22,7 +22,7 @@ from ember.ecp.stage0_training import stage0_source_authority
 from ember.ecp.stage1_equivalence import load_effect_bank
 from ember.ecp.stage1_realization import (
     RealizationConfig,
-    solve_fixed_a_particle_effects,
+    solve_rank_reserved_particle_effects,
 )
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
@@ -32,7 +32,7 @@ from ember.pi05_source_setup import load_config, load_policy
 from ember.writer.functional import prepare_frozen_writer_policy
 
 
-RESULT_SCHEMA = "ember_ecp_stage1b_occupancy_oracle_task_v1"
+RESULT_SCHEMA = "ember_ecp_stage1b_mobile_rank4_oracle_task_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -88,6 +88,10 @@ def solve_stage1_task(
     contract = load_pi05_lora_contract(
         _authority_path(config, "lora_contract", asset_root)
     )
+    carrier_rank = int(config["solver"]["carrier_rank"])
+    residual_rank = int(config["solver"]["residual_rank"])
+    if carrier_rank + residual_rank != int(contract.rank):
+        raise ValueError("ECP Stage 1 rank reservation changed")
     prepare_frozen_writer_policy(policy, contract)
     carrier = load_file(
         str(_authority_path(config, "stable_carrier", asset_root)),
@@ -123,12 +127,13 @@ def solve_stage1_task(
 
     started = time.monotonic()
     try:
-        candidate, history, final = solve_fixed_a_particle_effects(
+        candidate, history, final = solve_rank_reserved_particle_effects(
             carrier=carrier,
             bank=bank,
             contract=contract,
             response=response,
             config=_solver_config(config["solver"]),
+            carrier_rank=carrier_rank,
         )
     finally:
         lora.close()
@@ -150,7 +155,7 @@ def solve_stage1_task(
         "scientific_role": (
             "fit_task_numerical_resource_profile"
             if ordinal == profile
-            else "held5_privileged_realization_oracle"
+            else "held5_mobile_rank4_privileged_realization_oracle"
         ),
         "repository": git_state(REPO_ROOT),
         "task": task,
@@ -164,6 +169,8 @@ def solve_stage1_task(
                 "step": row.step,
                 "snapshot": asdict(row.snapshot),
                 "gradient_rms": row.gradient_rms,
+                "a_gradient_rms": row.a_gradient_rms,
+                "b_gradient_rms": row.b_gradient_rms,
                 "applied_step_rms": row.applied_step_rms,
             }
             for row in history
@@ -177,6 +184,13 @@ def solve_stage1_task(
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(device),
         "action_meta_installed": False,
+        "parameterization": {
+            "carrier_rank": carrier_rank,
+            "residual_rank": residual_rank,
+            "zero_residual_is_exact_carrier": True,
+            "effective_update_additive": True,
+            "single_complete_rank16": True,
+        },
         "held_shared_gradient_steps": 0,
         "validation_action_or_reward_reads": 0,
         "test_action_or_reward_reads": 0,

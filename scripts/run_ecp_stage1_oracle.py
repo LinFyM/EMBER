@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one formal ECP Stage 1B occupancy-complete realization task."""
+"""Run one formal ECP Stage 1B mobile-rank4 realization task."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1b_occupancy_oracle_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage1b_mobile_rank4_oracle_v1.json",
     )
     parser.add_argument("--task-ordinal", type=int, required=True)
     parser.add_argument("--effect-bank-manifest", type=Path, required=True)
@@ -45,7 +45,7 @@ def main() -> None:
     torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats(device)
     config = read_json(args.config.resolve())
-    if config.get("schema_version") != "ember_ecp_stage1b_occupancy_oracle_v1":
+    if config.get("schema_version") != "ember_ecp_stage1b_mobile_rank4_oracle_v1":
         raise ValueError("ECP Stage 1B config changed")
     result = solve_stage1_task(
         args=args,

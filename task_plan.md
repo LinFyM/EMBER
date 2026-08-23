@@ -122,7 +122,7 @@ card：`docs/ecp_rank4_residual_capacity_card_20260823.md`。该卡自身的mixe
 objective、12-step数值、held rows和Gate全部不变。
 
 - [x] 在retained implementation与GPU前冻结operator、profile、formal rows与完整closed-loop Gate；
-- [ ] 用一个canonical solver替换退役fixed-A runtime，zero residual精确返回carrier并输出single rank16；
+- [x] 用一个canonical solver替换退役fixed-A runtime，zero residual精确返回carrier并输出single rank16；
 - [ ] ordinal71完成一次无科学调参权的数值/资源profile；
 - [ ] held5各物化final12并完成一次strict250闭环裁决；
 - [ ] Pass后才讨论Stage 1C；non-pass则停止该operator并复盘objective identification。

@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **mobile-rank4解析容量门保持mixed；已预注册rank-reserved mobile-rank4 realization oracle，尚未启动GPU**。
+状态：2026-08-23 **mobile-rank4解析容量门保持mixed；rank-reserved realization solver已实现，尚未启动fit profile**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。

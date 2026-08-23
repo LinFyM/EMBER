@@ -14,7 +14,7 @@
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；mobile-rank4解析GPU诊断已经结束，realization operator尚未实现，没有active GPU job。
+- canonical workspace：本仓库`main`；mobile-rank4 canonical solver已实现并等待clean-pushed fit profile，没有active GPU job。
 
 ## Current scientific state
 

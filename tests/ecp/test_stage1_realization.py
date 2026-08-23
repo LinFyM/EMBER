@@ -7,10 +7,10 @@ from ember.ecp.stage1_equivalence import (
 )
 from ember.ecp.stage1_realization import (
     RealizationConfig,
-    fixed_a_relative_distance,
-    fixed_a_state,
     project_expert_onto_rank_reserved_residual,
-    solve_fixed_a_particle_effects,
+    rank_reserved_relative_distance,
+    rank_reserved_state,
+    solve_rank_reserved_particle_effects,
 )
 from ember.lora import LoRATarget, SmolVLALoRAContract
 
@@ -18,14 +18,14 @@ from ember.lora import LoRATarget, SmolVLALoRAContract
 def _contract():
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("tiny", in_features=1, out_features=1),),
-        rank=1,
-        alpha=1,
+        rank=2,
+        alpha=2,
         dropout=0.0,
         identity_seed=1,
     )
     carrier = {
-        "tiny.lora_A.default.weight": torch.ones(1, 1),
-        "tiny.lora_B.default.weight": torch.full((1, 1), 0.1),
+        "tiny.lora_A.default.weight": torch.tensor([[1.0], [2.0]]),
+        "tiny.lora_B.default.weight": torch.tensor([[0.1, 0.0]]),
     }
     return contract, carrier
 
@@ -78,14 +78,31 @@ def test_time_progress_strata_are_ordered_and_unique() -> None:
     assert selected[-1] == 9
 
 
-def test_fixed_a_update_has_no_factor_cross_term() -> None:
+def test_rank_reserved_update_is_exactly_effective_additive() -> None:
     contract, carrier = _contract()
-    delta = {"tiny.lora_B.default.weight": torch.full((1, 1), 0.05)}
-    state = fixed_a_state(carrier, delta, contract)
-    assert state["tiny.lora_A.default.weight"] is carrier["tiny.lora_A.default.weight"]
-    assert torch.equal(state["tiny.lora_B.default.weight"], torch.full((1, 1), 0.15))
+    residual = {
+        "tiny.lora_A.default.weight": torch.tensor([[2.0]]),
+        "tiny.lora_B.default.weight": torch.tensor([[0.05]]),
+    }
+    state = rank_reserved_state(carrier, residual, contract, carrier_rank=1)
+    candidate = (
+        state["tiny.lora_B.default.weight"]
+        @ state["tiny.lora_A.default.weight"]
+    )
+    carrier_update = (
+        carrier["tiny.lora_B.default.weight"][:, :1]
+        @ carrier["tiny.lora_A.default.weight"][:1]
+    )
+    residual_update = (
+        residual["tiny.lora_B.default.weight"]
+        @ residual["tiny.lora_A.default.weight"]
+    )
+    assert torch.equal(candidate, carrier_update + residual_update)
     assert torch.allclose(
-        fixed_a_relative_distance(delta, carrier, contract), torch.tensor(0.25)
+        rank_reserved_relative_distance(
+            residual, carrier, contract, carrier_rank=1
+        ),
+        torch.tensor(1.0),
     )
 
 
@@ -163,7 +180,7 @@ def test_rank_reserved_projection_matches_the_best_truncated_correction() -> Non
     assert abs(metrics[0].residual_energy - 4.0) < 1e-5
 
 
-def test_fixed_solver_reduces_particle_equivalence_error() -> None:
+def test_rank_reserved_solver_moves_both_factors_and_reduces_error() -> None:
     contract, carrier = _contract()
     bank = _bank()
 
@@ -173,11 +190,12 @@ def test_fixed_solver_reduces_particle_equivalence_error() -> None:
         ).mean()
         return _response(value, int(indices.numel()))
 
-    _, history, final = solve_fixed_a_particle_effects(
+    _, history, final = solve_rank_reserved_particle_effects(
         carrier=carrier,
         bank=bank,
         contract=contract,
         response=response,
+        carrier_rank=1,
         config=RealizationConfig(
             owner_weight=1.0,
             flow_weight=0.0,
@@ -186,3 +204,5 @@ def test_fixed_solver_reduces_particle_equivalence_error() -> None:
         ),
     )
     assert final.total < history[0].snapshot.total
+    assert any(row.a_gradient_rms > 0 for row in history)
+    assert all(row.b_gradient_rms > 0 for row in history)

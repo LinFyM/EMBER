@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1b_occupancy_oracle_v1",
-  "status": "preregistered_occupancy_complete_privileged_realization",
-  "scientific_card": "docs/ecp_occupancy_complete_oracle_card_20260823.md",
+  "schema_version": "ember_ecp_stage1b_mobile_rank4_oracle_v1",
+  "status": "preregistered_mobile_rank4_privileged_realization",
+  "scientific_card": "docs/ecp_mobile_rank4_solver_card_20260823.md",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "source_base_config": "configs/pi05_source_base_v1.json",
@@ -39,7 +39,7 @@
     "capture_microbatch_size": 4
   },
   "solver": {
-    "algorithm": "two-pass stage-consistent particle softmin plus fixed-A owner-normalized Delta-B updates",
+    "algorithm": "two-pass stage-consistent particle softmin plus target-joint normalized mobile-rank4 residual updates",
     "steps": 12,
     "step_rms": 0.0002,
     "step_decay_power": 0.5,
@@ -56,6 +56,10 @@
     "microbatch_size": 4,
     "per_task_early_stop": false,
     "task_local_persistent_optimizer": false,
+    "carrier_rank": 12,
+    "residual_rank": 4,
+    "residual_initialization": "carrier_A_rows_12_16_and_zero_B",
+    "residual_regauge": "per_step_balanced_thin_qr_core_svd",
     "output_rank": 16
   },
   "information_wall": {

@@ -40,7 +40,7 @@ W = B_c12 A_c12 + B_r4 A_r4
 - final通过rank拼接序列化为唯一一套38-target rank16 LoRA。carrier与residual在effective-update层严格相加，不存在raw
   factor交叉项，也不部署第二adapter。
 
-solver其余合同完全继承`configs/pi05_ecp_stage1b_occupancy_oracle_v1.json`：12 steps、inverse-sqrt decay、temperature、
+solver其余合同冻结在`configs/pi05_ecp_stage1b_mobile_rank4_oracle_v1.json`：12 steps、inverse-sqrt decay、temperature、
 owner/flow/action、carrier barrier、preservation、confidence、trust与microbatch均不变。不得扫rank、step、LR、初始化、插值、
 objective weight或member。
 

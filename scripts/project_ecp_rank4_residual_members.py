@@ -246,7 +246,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1b_occupancy_oracle_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage1b_mobile_rank4_oracle_v1.json",
     )
     parser.add_argument("--effect-bank-root", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)

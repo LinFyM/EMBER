@@ -82,6 +82,10 @@
   carrier `23/43`和known-latest `59/110` successes。250行相对两套reference的episode/env/policy/language/noise pairing均
   零mismatch。尽管重建update cosine仍为`.877--.960`且Object达到46，fit-span投影没有保住task-specific closed-loop support。
   当前coordinate停止，不训练centered-innovation realizer、不启动fold1、不扫probe/width/rank/threshold。
+- Gate后零新forward/rollout定位显示，exact earliest→latest只增加`1.3%--10.8%` update energy，却把mobile projection从76
+  提高到110；fit90 span对该innovation的cosine仅`.318--.647`。q_proj占总能量`91.3%--92.6%`，aggregate cosine遮蔽了
+  低能量行为方向。combined basis已达到108 members中心化rank上限107；同数据加width无效，下一实质选择是新增span外
+  source-unseen/process-diverse mappings，或停止当前shared-realizer family。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention

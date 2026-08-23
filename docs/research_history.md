@@ -1478,6 +1478,11 @@ carrier12+residual4 rank16 LoRA。
 threshold。该结果不否定Program、distributional `q_pi`、`q_V`、video inference或完整ECP；下一shared-realizer机制须先重新
 咨询专家。证据：`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。
 
+Gate后只读lineage分解显示，exact earliest→latest correction仅占latest update能量`1.3%--10.8%`，却对应mobile projection
+从76到110的34个success增量；fit90 span对该innovation的cosine只有`.318--.647`。q_proj占总update能量`91.3%--92.6%`，
+所以aggregate cosine掩盖了低能量行为方向。fit basis已达到108 centered members的最大rank107；在同一evidence上增加width
+不能补方向，后继若存在必须引入span外独立mapping，而非继续coordinate/decoder sweep。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

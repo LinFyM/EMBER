@@ -1856,6 +1856,17 @@ language与policy-noise common prefix均零mismatch；12 workers、36 shards全�
 fit-span update投影仍会重排闭环support。Object从known-latest 40提高到46同时Goal/Long全部丢失，也说明失败不是统一幅度缩小，
 而是task-specific functional directions没有被aggregate geometry识别。
 
+零新forward/rollout的lineage分解给出更直接的机制定位。exact mobile-rank4 projection从earliest `76`提高到latest `110`，
+逐global由`18/18/33/2/5`变为`28/31/40/4/7`；但earliest→latest effective update只占latest能量的
+`5.08%/5.15%/6.19%/10.75%/1.29%`。combined fit90 coordinate对这段innovation的cosine只有
+`.571/.485/.647/.318/.335`，relative error energy为`.716/.800/.594/.939/1.005`。因此34个新增success依赖的恰是
+aggregate norm中很小、fit span最难保留的lineage innovation。
+
+update总能量的`91.3%--92.6%`来自q_proj，v_proj约`7.3%--8.5%`，action in/out仅`.096%--.152%`；总cosine天然被q
+主导。71个source-seen mappings单独对held innovation的cosine只有`.208--.303`，19个source-unseen target-train mappings为
+`.241--.618`，合并90 tasks才到`.318--.647`。38个target的fit90 active rank都已是centered 108-member span的上限107，
+所以在同一fit evidence上增加code width不会产生新方向；任何有依据的扩展必须增加span外独立mapping，而不是PCA/decoder调参。
+
 该结果关闭固定的`probe8 / code128 / fit90 span / top4 reconstruction`coordinate，不训练reliability-free successor、不启动
 fold1、不扫probe seed/width/rank/threshold。它不裁决mobile-rank4容量、Program、distributional `q_pi`、`q_V`、video inference
 或完整ECP。结合balanced-SVD learned map与本coordinate先后non-pass，当前没有剩余预注册shared-realizer机制；依专家合同须先

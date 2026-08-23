@@ -123,4 +123,16 @@ carrier              38    1    4    0    0     43      3
 固定的two-sided coordinate，不裁决mobile-rank4容量、Program、`q_pi/q_V`、视频推断或完整EMBER。下一shared-realizer机制必须先
 回到专家讨论，不能自行继续版本化。
 
+Gate结束后的零新forward/rollout定位进一步解释了这一现象。exact mobile projection从earliest `76`提高到latest `110`，五个
+任务全部增加；但earliest→latest correction只占latest update能量的`1.3%--10.8%`。combined fit90 span对这段innovation的
+cosine逐global仅`.571/.485/.647/.318/.335`，能量误差为`.716/.800/.594/.939/1.005`。相比之下，aggregate latest cosine
+仍为`.877--.960`，因为q_proj占exact update能量的`91.3%--92.6%`，action in/out合计只占`.096%--.152%`，低能量但行为关键
+的方向被总量指标遮蔽。
+
+这个定位也排除了在同一数据上简单扩大PCA width：108个fit members中心化后的最大rank就是107，而38个targets已经全部达到
+107。只用71个source-seen LIBERO-90 mappings时innovation cosine为`.208--.303`；19个source-unseen target-train mappings为
+`.241--.618`；合并后虽改善，Goal/Long仍只有`.318/.335`。因此任何真正新增的方向都必须来自当前fit mapping span之外。
+下一决策不是换decoder或调coordinate，而是补真正source-unseen、process-diverse mappings后重新识别，或停止当前shared-realizer
+family。
+
 正式证据：`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。

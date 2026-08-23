@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -20,10 +21,8 @@ from ember.ecp.policy_effects import (
 )
 from ember.ecp.stage0_training import stage0_source_authority
 from ember.ecp.stage1_equivalence import load_effect_bank
-from ember.ecp.stage1_realization import (
-    RealizationConfig,
-    solve_rank_reserved_particle_effects,
-)
+from ember.ecp.stage1_objective import RealizationConfig
+from ember.ecp.stage1_realization import solve_effective_update_particle_effects
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_lora import load_pi05_lora_contract
@@ -32,8 +31,12 @@ from ember.pi05_source_setup import load_config, load_policy
 from ember.writer.functional import prepare_frozen_writer_policy
 
 
-RESULT_SCHEMA = "ember_ecp_stage1b_mobile_rank4_oracle_task_v1"
+RESULT_SCHEMA = "ember_ecp_stage1b_effective_update_oracle_task_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _finite_dataclass(value: Any) -> bool:
+    return all(math.isfinite(float(item)) for item in asdict(value).values())
 
 
 def _authority_path(config: Mapping[str, Any], name: str, asset_root: Path) -> Path:
@@ -43,9 +46,11 @@ def _authority_path(config: Mapping[str, Any], name: str, asset_root: Path) -> P
 
 def _solver_config(value: Mapping[str, Any]) -> RealizationConfig:
     return RealizationConfig(
-        steps=int(value["steps"]),
-        step_rms=float(value["step_rms"]),
-        step_decay_power=float(value["step_decay_power"]),
+        sketch_width=int(value["sketch_width"]),
+        probe_seed=int(value["probe_seed"]),
+        max_vjp_evaluations=int(value["max_vjp_evaluations"]),
+        backtrack_scales=tuple(float(item) for item in value["backtrack_scales"]),
+        gram_damping_fraction=float(value["gram_damping_fraction"]),
         temperature=float(value["temperature"]),
         owner_weight=float(value["owner_weight"]),
         flow_weight=float(value["flow_weight"]),
@@ -127,7 +132,7 @@ def solve_stage1_task(
 
     started = time.monotonic()
     try:
-        candidate, history, final = solve_rank_reserved_particle_effects(
+        outcome = solve_effective_update_particle_effects(
             carrier=carrier,
             bank=bank,
             contract=contract,
@@ -145,17 +150,61 @@ def solve_stage1_task(
     if adapter_path.exists() or result_path.exists():
         raise ValueError("ECP Stage 1B task output already exists")
     save_file(
-        {name: value.detach().cpu().contiguous() for name, value in candidate.items()},
+        {
+            name: value.detach().cpu().contiguous()
+            for name, value in outcome.state.items()
+        },
         str(adapter_path),
     )
-    initial = history[0].snapshot.total
+    profile_gate = config["profile_gate"]
+    all_finite = (
+        _finite_dataclass(outcome.initial)
+        and _finite_dataclass(outcome.final)
+        and all(
+            _finite_dataclass(row.before)
+            and _finite_dataclass(row.after)
+            and math.isfinite(row.accepted_alpha)
+            and math.isfinite(row.directional_derivative)
+            and math.isfinite(row.gradient_rms)
+            for row in outcome.history
+        )
+        and math.isfinite(outcome.initial_directional_derivative)
+        and math.isfinite(outcome.initial_gradient_rms)
+        and math.isfinite(outcome.best_member_effect_objective)
+        and math.isfinite(outcome.objective_gap_recovery)
+    )
+    profile_gate_result = {
+        "minimum_objective_gap_recovery": float(
+            profile_gate["minimum_objective_gap_recovery"]
+        ),
+        "minimum_final_trust": float(profile_gate["minimum_final_trust"]),
+        "maximum_final_trust": float(profile_gate["maximum_final_trust"]),
+        "initial_state_is_exact_carrier": outcome.initial_state_is_exact_carrier,
+        "initial_sketch_is_descent": outcome.initial_directional_derivative < 0.0,
+        "accepted_step": bool(outcome.history),
+        "all_finite": all_finite,
+        "gap_recovery_pass": outcome.objective_gap_recovery
+        >= float(profile_gate["minimum_objective_gap_recovery"]),
+        "trust_pass": float(profile_gate["minimum_final_trust"])
+        <= outcome.final.trust_distance
+        <= float(profile_gate["maximum_final_trust"]),
+    }
+    profile_gate_result["pass"] = bool(
+        profile_gate_result["accepted_step"]
+        and profile_gate_result["initial_state_is_exact_carrier"]
+        and profile_gate_result["initial_sketch_is_descent"]
+        and profile_gate_result["all_finite"]
+        and profile_gate_result["gap_recovery_pass"]
+        and profile_gate_result["trust_pass"]
+        and outcome.vjp_evaluations <= int(config["solver"]["max_vjp_evaluations"])
+    )
     payload = {
         "schema_version": RESULT_SCHEMA,
         "mode": "formal",
         "scientific_role": (
             "fit_task_numerical_resource_profile"
             if ordinal == profile
-            else "held5_mobile_rank4_privileged_realization_oracle"
+            else "held5_effective_update_privileged_realization_oracle"
         ),
         "repository": git_state(REPO_ROOT),
         "task": task,
@@ -164,19 +213,19 @@ def solve_stage1_task(
             "bytes": effect_bank_manifest.stat().st_size,
         },
         "solver": dict(config["solver"]),
-        "history": [
-            {
-                "step": row.step,
-                "snapshot": asdict(row.snapshot),
-                "gradient_rms": row.gradient_rms,
-                "a_gradient_rms": row.a_gradient_rms,
-                "b_gradient_rms": row.b_gradient_rms,
-                "applied_step_rms": row.applied_step_rms,
-            }
-            for row in history
-        ],
-        "final": asdict(final),
-        "initial_to_final_total_ratio": final.total / max(initial, 1e-12),
+        "initial": asdict(outcome.initial),
+        "history": [asdict(row) for row in outcome.history],
+        "final": asdict(outcome.final),
+        "initial_to_final_total_ratio": outcome.final.total
+        / max(outcome.initial.total, 1e-12),
+        "best_member_effect_objective": outcome.best_member_effect_objective,
+        "objective_gap_recovery": outcome.objective_gap_recovery,
+        "initial_state_is_exact_carrier": outcome.initial_state_is_exact_carrier,
+        "initial_directional_derivative": outcome.initial_directional_derivative,
+        "initial_gradient_rms": outcome.initial_gradient_rms,
+        "vjp_evaluations": outcome.vjp_evaluations,
+        "stop_reason": outcome.stop_reason,
+        "profile_gate": profile_gate_result,
         "adapter": {
             "path": str(adapter_path.resolve()),
             "bytes": adapter_path.stat().st_size,
@@ -189,6 +238,9 @@ def solve_stage1_task(
             "residual_rank": residual_rank,
             "zero_residual_is_exact_carrier": True,
             "effective_update_additive": True,
+            "matrix_free_initial_gradient": True,
+            "gauge_preconditioned_tangent": True,
+            "objective_only_trust_backtracking": True,
             "single_complete_rank16": True,
         },
         "held_shared_gradient_steps": 0,

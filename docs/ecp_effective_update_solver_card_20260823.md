@@ -1,6 +1,6 @@
 # ECP Effective-Update Reachability Oracle
 
-状态：2026-08-23 **在retained implementation、fit profile与held GPU launch前预注册。**
+状态：2026-08-23 **在retained implementation、fit profile与held GPU launch前预注册；随后只按本卡实现，科学合同未改。**
 
 ## Scientific question
 
@@ -84,7 +84,8 @@ damping、VJP预算或trust上限。
 
 ## Canonical implementation lifecycle
 
-- 在现有`src/ember/ecp/stage1_realization.py`内替换已关闭的raw-factor solver；解析capacity projection helper继续保留；
+- `src/ember/ecp/stage1_realization.py`成为唯一solver owner；秩预留加法与解析capacity projection集中到
+  `src/ember/ecp/stage1_parameterization.py`，避免退役solver与解析诊断继续堆叠；
 - active runtime只保留一个solver入口，不保留fixed-A或raw-factor fallback；历史由Git、cards和formal artifacts恢复；
 - 配置改为一个effective-update oracle config，CLI默认只指向它；不新增平行版本目录或第二entrypoint；
 - focused tests只验证matrix-free sketch、gauge invariance、trust/backtracking、rank4 retraction、single-LoRA与既有投影helper。

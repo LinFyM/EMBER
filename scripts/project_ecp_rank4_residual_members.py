@@ -11,7 +11,7 @@ from typing import Any, Iterable, Mapping
 
 from safetensors.torch import load_file, save_file
 
-from ember.ecp.stage1_realization import (
+from ember.ecp.stage1_parameterization import (
     RankReservedProjectionTarget,
     project_expert_onto_rank_reserved_residual,
 )
@@ -246,7 +246,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1b_mobile_rank4_oracle_v1.json",
+        default=REPO_ROOT
+        / "configs/pi05_ecp_stage1b_effective_update_oracle_v1.json",
     )
     parser.add_argument("--effect-bank-root", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)

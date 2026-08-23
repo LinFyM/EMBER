@@ -16,7 +16,7 @@
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；effective-update card已在实现前冻结，没有active GPU job。
+- canonical workspace：本仓库`main`；effective-update card已在实现前冻结，retained实现与focused验证完成，没有active GPU job。
 
 ## Current scientific state
 
@@ -122,6 +122,9 @@
   latest-task0资产得到76/76 finite tensors与`.99610/.98062` correction/expert coverage，focused tests为24/24通过；
 - mobile solver canonical runtime只保留`carrier12 + residual4`一条路径；profile与五个held outputs均为76 tensors、finite、
   single rank16，focused tests为24/24通过。科学non-pass不是工程invalid。
+- effective-update successor只保留一个solver入口：4次matrix-free sketch后最多8次Gram-preconditioned tangent VJP，所有候选
+  通过固定objective-only trust回溯；解析参数化另归一个owner模块，raw-factor runtime/config已移除。focused ECP tests为
+  `15/15`通过，profile gate显式核对exact carrier、负方向、finite、至少一步、gap recovery、trust与VJP预算；尚未读取held结果。
 
 ## Current unresolved interface
 

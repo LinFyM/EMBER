@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；已在任何实现/GPU前预注册唯一的effective-update
-reachability oracle，只分离求解几何，未启动shared Writer或参数扫。**
+状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；唯一的effective-update reachability oracle已按
+预注册合同实现并通过focused CPU验证，等待ordinal71 profile；未启动shared Writer或参数扫。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -129,7 +129,7 @@ objective、12-step数值、held rows和Gate全部不变。
 - [x] 以`49/250`判为Objective/solver non-pass，停止该operator；未补相邻step、未启动Stage 1C；
 - [x] 用已有bank/member/projection做零新rollout失败定位：successful endpoints目标显著更低，但当前修正只有其约1%的
   effective norm且方向cosine仅`.041--.077`；
-- [ ] 在新falsification card前分离“raw-factor zero-start方向/尺度失败”与“effect objective本身不足”，不把LR放大或更多步
+- [x] 在新falsification card前分离“raw-factor zero-start方向/尺度失败”与“effect objective本身不足”，不把LR放大或更多步
   冒充新架构。
 
 card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；evidence：
@@ -141,7 +141,7 @@ raw-factor solver从exact-zero residual奇点出发，12步后correction norm约
 `.041--.077`；因此它尚未检验一个在effective-update坐标中可达的fixed solver。本轮冻结所有科学输入与Gate，只替换求解几何：
 
 - [x] 在实现前冻结matrix-free rank4 gradient sketch、trust backtracking、VJP预算、fit profile门和held closed-loop门；
-- [ ] 以一个canonical runtime替换已关闭raw-factor solver，不保留并行fallback；
+- [x] 以一个canonical runtime替换已关闭raw-factor solver，不保留并行fallback；
 - [ ] ordinal71必须恢复至少50%的carrier-to-best-member objective gap且trust进入`.10--1.50`；
 - [ ] profile通过后才物化held5并直接strict paired250；
 - [ ] Pass后才进入Stage 1C；profile或closed-loop non-pass均停止本operator，不扫sketch/trust/damping/backtrack。

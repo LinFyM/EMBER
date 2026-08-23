@@ -1,7 +1,8 @@
-"""Policy-effect realization and capacity projections for ECP Stage 1B."""
+"""Gauge-invariant policy-effect realization for ECP Stage 1B."""
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
@@ -20,232 +21,46 @@ from ember.ecp.stage1_objective import (
     reference_distances,
     response_fields,
 )
+from ember.ecp.stage1_parameterization import (
+    effective_inner_product,
+    initial_rank_reserved_residual,
+    rank_reserved_relative_distance,
+    rank_reserved_state,
+)
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRAContract, validate_lora_state
 
 
 @dataclass(frozen=True)
 class RealizationStep:
-    step: int
-    snapshot: RealizationSnapshot
+    iteration: int
+    phase: str
+    before: RealizationSnapshot
+    after: RealizationSnapshot
+    accepted_alpha: float
+    backtrack_index: int
+    directional_derivative: float
     gradient_rms: float
-    a_gradient_rms: float
-    b_gradient_rms: float
-    applied_step_rms: float
+    cumulative_vjp_evaluations: int
 
 
 @dataclass(frozen=True)
-class RankReservedProjectionTarget:
-    """Best additive low-rank correction evidence for one LoRA target."""
-
-    target: str
-    expert_energy: float
-    carrier_energy: float
-    required_correction_energy: float
-    projected_correction_energy: float
-    projected_effective_update_energy: float
-    residual_energy: float
-    carrier_rank: int
-    residual_rank: int
+class RealizationOutcome:
+    state: dict[str, torch.Tensor]
+    initial: RealizationSnapshot
+    final: RealizationSnapshot
+    history: tuple[RealizationStep, ...]
+    initial_state_is_exact_carrier: bool
+    initial_directional_derivative: float
+    initial_gradient_rms: float
+    vjp_evaluations: int
+    stop_reason: str
+    best_member_effect_objective: float
+    objective_gap_recovery: float
 
 
 ResponseFunction = Callable[
     [Mapping[str, torch.Tensor], torch.Tensor], PolicyEffectResponse
 ]
-
-
-def rank_reserved_state(
-    carrier: Mapping[str, torch.Tensor],
-    residual: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    carrier_rank: int,
-) -> dict[str, torch.Tensor]:
-    residual_rank = int(contract.rank) - int(carrier_rank)
-    if carrier_rank <= 0 or residual_rank <= 0:
-        raise ValueError("rank-reserved state requires carrier and residual ranks")
-    result = {}
-    for target in contract.targets:
-        a_name = target.name + LORA_A_SUFFIX
-        b_name = target.name + LORA_B_SUFFIX
-        carrier_a = carrier[a_name]
-        carrier_b = carrier[b_name]
-        residual_a = residual[a_name]
-        residual_b = residual[b_name]
-        if (
-            residual_a.shape != (residual_rank, target.in_features)
-            or residual_b.shape != (target.out_features, residual_rank)
-        ):
-            raise ValueError("rank-reserved residual shapes changed")
-        result[a_name] = torch.cat(
-            [carrier_a[:carrier_rank], residual_a.to(carrier_a)], dim=0
-        )
-        result[b_name] = torch.cat(
-            [carrier_b[:, :carrier_rank], residual_b.to(carrier_b)], dim=1
-        )
-    return result
-
-
-def rank_reserved_relative_distance(
-    residual: Mapping[str, torch.Tensor],
-    carrier: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    carrier_rank: int,
-) -> torch.Tensor:
-    distances = []
-    for target in contract.targets:
-        a_name = target.name + LORA_A_SUFFIX
-        b_name = target.name + LORA_B_SUFFIX
-        carrier_a = carrier[a_name][:carrier_rank].float()
-        carrier_b = carrier[b_name][:, :carrier_rank].float()
-        residual_a = residual[a_name].float()
-        residual_b = residual[b_name].float()
-        residual_energy = _effective_inner_product(
-            residual_b, residual_a, residual_b, residual_a
-        )
-        carrier_energy = _effective_inner_product(
-            carrier_b, carrier_a, carrier_b, carrier_a
-        )
-        distances.append(residual_energy / carrier_energy.clamp_min(1e-10))
-    return torch.stack(distances).mean()
-
-
-def _initial_rank_reserved_residual(
-    carrier: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    carrier_rank: int,
-    device: torch.device,
-) -> dict[str, torch.Tensor]:
-    residual = {}
-    for target in contract.targets:
-        a_name = target.name + LORA_A_SUFFIX
-        b_name = target.name + LORA_B_SUFFIX
-        carrier_a = carrier[a_name]
-        carrier_b = carrier[b_name]
-        if torch.count_nonzero(carrier_b[:, carrier_rank:]):
-            raise ValueError("stable carrier uses ranks reserved for the residual")
-        residual[a_name] = carrier_a[carrier_rank:].detach().float().to(device).clone()
-        residual[b_name] = torch.zeros_like(
-            carrier_b[:, carrier_rank:], dtype=torch.float32, device=device
-        )
-    return residual
-
-
-def _balanced_rank_reserved_residual(
-    residual: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    carrier_rank: int,
-) -> dict[str, torch.Tensor]:
-    residual_rank = int(contract.rank) - int(carrier_rank)
-    balanced = {}
-    for target in contract.targets:
-        a_name = target.name + LORA_A_SUFFIX
-        b_name = target.name + LORA_B_SUFFIX
-        a, b = canonicalize_low_rank_factors(
-            residual[a_name], residual[b_name], output_rank=residual_rank
-        )
-        balanced[a_name] = a.detach()
-        balanced[b_name] = b.detach()
-    return balanced
-
-
-def _effective_inner_product(
-    left_b: torch.Tensor,
-    left_a: torch.Tensor,
-    right_b: torch.Tensor,
-    right_a: torch.Tensor,
-) -> torch.Tensor:
-    return torch.sum((left_b.T @ right_b) * (left_a @ right_a.T))
-
-
-def project_expert_onto_rank_reserved_residual(
-    *,
-    carrier: Mapping[str, torch.Tensor],
-    expert: Mapping[str, torch.Tensor],
-    contract: LoRAContract,
-    carrier_rank: int,
-) -> tuple[dict[str, torch.Tensor], tuple[RankReservedProjectionTarget, ...]]:
-    """Add the best mobile residual in the ranks reserved by the carrier.
-
-    For every target this computes the truncated-SVD solution to
-    ``min_rank(X)<=r ||(W_expert - W_carrier) - X||_F`` without materializing
-    either dense update.  Concatenating the frozen carrier ranks and residual
-    factors yields one complete LoRA with an exact effective-update sum.
-    """
-
-    validate_lora_state(carrier, contract)
-    validate_lora_state(expert, contract)
-    residual_rank = int(contract.rank) - int(carrier_rank)
-    if carrier_rank <= 0 or residual_rank <= 0:
-        raise ValueError(
-            "rank-reserved projection requires carrier and residual ranks"
-        )
-    projected: dict[str, torch.Tensor] = {}
-    metrics = []
-    for target in contract.targets:
-        a_name = target.name + LORA_A_SUFFIX
-        b_name = target.name + LORA_B_SUFFIX
-        carrier_a = carrier[a_name]
-        carrier_b = carrier[b_name]
-        expert_a = expert[a_name]
-        expert_b = expert[b_name]
-        if torch.count_nonzero(carrier_b[:, carrier_rank:]):
-            raise ValueError("stable carrier uses ranks reserved for the residual")
-
-        correction_a = torch.cat(
-            [expert_a.detach().float(), carrier_a.detach().float()], dim=0
-        )
-        correction_b = torch.cat(
-            [expert_b.detach().float(), -carrier_b.detach().float()], dim=1
-        )
-        residual_a, residual_b = canonicalize_low_rank_factors(
-            correction_a, correction_b, output_rank=residual_rank
-        )
-        residual_a = residual_a.to(device=carrier_a.device, dtype=carrier_a.dtype)
-        residual_b = residual_b.to(device=carrier_b.device, dtype=carrier_b.dtype)
-        projected[a_name] = torch.cat(
-            [carrier_a[:carrier_rank].detach(), residual_a], dim=0
-        )
-        projected[b_name] = torch.cat(
-            [carrier_b[:, :carrier_rank].detach(), residual_b], dim=1
-        )
-
-        ca = carrier_a.detach().double()
-        cb = carrier_b.detach().double()
-        ea = expert_a.detach().double()
-        eb = expert_b.detach().double()
-        ra = residual_a.detach().double()
-        rb = residual_b.detach().double()
-        expert_energy = _effective_inner_product(eb, ea, eb, ea)
-        carrier_energy = _effective_inner_product(cb, ca, cb, ca)
-        expert_carrier = _effective_inner_product(eb, ea, cb, ca)
-        expert_residual = _effective_inner_product(eb, ea, rb, ra)
-        carrier_residual = _effective_inner_product(cb, ca, rb, ra)
-        residual_energy = _effective_inner_product(rb, ra, rb, ra)
-        correction_energy = (
-            expert_energy + carrier_energy - 2.0 * expert_carrier
-        ).clamp_min(0.0)
-        projected_energy = (
-            carrier_energy + residual_energy + 2.0 * carrier_residual
-        ).clamp_min(0.0)
-        approximation_error = (
-            expert_energy
-            + projected_energy
-            - 2.0 * (expert_carrier + expert_residual)
-        ).clamp_min(0.0)
-        metrics.append(
-            RankReservedProjectionTarget(
-                target=target.name,
-                expert_energy=float(expert_energy),
-                carrier_energy=float(carrier_energy),
-                required_correction_energy=float(correction_energy),
-                projected_correction_energy=float(residual_energy),
-                projected_effective_update_energy=float(projected_energy),
-                residual_energy=float(approximation_error),
-                carrier_rank=int(carrier_rank),
-                residual_rank=residual_rank,
-            )
-        )
-    validate_lora_state(projected, contract)
-    return projected, tuple(metrics)
 
 
 def _indexed_response(
@@ -355,117 +170,28 @@ def _gradient_rms(values: tuple[torch.Tensor, ...]) -> torch.Tensor:
     return torch.sqrt(energy / count)
 
 
-def solve_rank_reserved_particle_effects(
+def _evaluate_residual(
     *,
     carrier: Mapping[str, torch.Tensor],
+    residual: Mapping[str, torch.Tensor],
     bank: Stage1EffectBank,
     contract: LoRAContract,
     response: ResponseFunction,
+    objective: ParticleObjective,
     config: RealizationConfig,
     carrier_rank: int,
-) -> tuple[dict[str, torch.Tensor], tuple[RealizationStep, ...], RealizationSnapshot]:
-    """Optimize one mobile residual while keeping the effective carrier frozen."""
-
-    validate_lora_state(carrier, contract)
-    if config.steps != 12 or config.microbatch_size <= 0:
-        raise ValueError("ECP Stage 1 rank-reserved solver contract changed")
-    residual_rank = int(contract.rank) - int(carrier_rank)
-    if carrier_rank <= 0 or residual_rank <= 0:
-        raise ValueError("rank-reserved solver requires carrier and residual ranks")
+) -> tuple[RealizationSnapshot, torch.Tensor, torch.Tensor]:
     device = bank.suffix_noise.device
-    objective = build_particle_objective(bank, config)
-    residual = _initial_rank_reserved_residual(
-        carrier, contract, carrier_rank, device
-    )
-    history = []
-    for step in range(config.steps):
-        leaves = {
-            name: value.detach().requires_grad_(True)
-            for name, value in residual.items()
-        }
-        detached = {name: value.detach() for name, value in residual.items()}
-        with torch.no_grad():
-            candidate = _capture_all(
-                response,
-                rank_reserved_state(carrier, detached, contract, carrier_rank),
-                bank.state_count,
-                config.microbatch_size,
-                device,
-            )
-            trust = rank_reserved_relative_distance(
-                detached, carrier, contract, carrier_rank
-            )
-            snapshot, responsibilities, barrier_active = candidate_snapshot(
-                candidate, bank, objective, config, trust
-            )
-        names = tuple(leaves)
-        gradients = _gradient_rows(
-            state=rank_reserved_state(carrier, leaves, contract, carrier_rank),
-            leaves=leaves,
-            names=names,
-            response=response,
-            bank=bank,
-            objective=objective,
-            responsibilities=responsibilities,
-            barrier_active=barrier_active,
-            config=config,
-        )
-        trust = rank_reserved_relative_distance(
-            leaves, carrier, contract, carrier_rank
-        )
-        trust_penalty = torch.relu(trust - float(config.trust_region)).square()
-        if config.trust_weight and float(trust.detach()) > config.trust_region:
-            trust_gradients = torch.autograd.grad(
-                float(config.trust_weight) * trust_penalty,
-                tuple(leaves[name] for name in names),
-            )
-            for name, gradient in zip(names, trust_gradients, strict=True):
-                gradients[name].add_(gradient.detach())
-        a_gradients = tuple(
-            gradients[target.name + LORA_A_SUFFIX] for target in contract.targets
-        )
-        b_gradients = tuple(
-            gradients[target.name + LORA_B_SUFFIX] for target in contract.targets
-        )
-        gradient_rms = _gradient_rms(tuple(gradients.values()))
-        a_gradient_rms = _gradient_rms(a_gradients)
-        b_gradient_rms = _gradient_rms(b_gradients)
-        applied = float(config.step_rms) / float(step + 1) ** float(
-            config.step_decay_power
-        )
-        updated = {}
-        for target in contract.targets:
-            a_name = target.name + LORA_A_SUFFIX
-            b_name = target.name + LORA_B_SUFFIX
-            a_gradient = gradients[a_name]
-            b_gradient = gradients[b_name]
-            joint_rms = torch.sqrt(
-                (a_gradient.square().sum() + b_gradient.square().sum())
-                / (a_gradient.numel() + b_gradient.numel())
-            ).clamp_min(1e-12)
-            updated[a_name] = leaves[a_name].detach() - applied * a_gradient / joint_rms
-            updated[b_name] = leaves[b_name].detach() - applied * b_gradient / joint_rms
-        residual = _balanced_rank_reserved_residual(
-            updated, contract, carrier_rank
-        )
-        history.append(
-            RealizationStep(
-                step=step,
-                snapshot=snapshot,
-                gradient_rms=float(gradient_rms),
-                a_gradient_rms=float(a_gradient_rms),
-                b_gradient_rms=float(b_gradient_rms),
-                applied_step_rms=applied,
-            )
-        )
-    final_state = rank_reserved_state(carrier, residual, contract, carrier_rank)
-    validate_lora_state(final_state, contract)
     with torch.no_grad():
-        final_response = _capture_all(
-            response, final_state, bank.state_count, config.microbatch_size, device
+        candidate = _capture_all(
+            response,
+            rank_reserved_state(carrier, residual, contract, carrier_rank),
+            bank.state_count,
+            config.microbatch_size,
+            device,
         )
-        final_snapshot, _, _ = candidate_snapshot(
-            final_response,
+        return candidate_snapshot(
+            candidate,
             bank,
             objective,
             config,
@@ -473,8 +199,534 @@ def solve_rank_reserved_particle_effects(
                 residual, carrier, contract, carrier_rank
             ),
         )
-    return (
-        {name: value.detach() for name, value in final_state.items()},
-        tuple(history),
-        final_snapshot,
+
+
+def _best_member_effect_objective(
+    bank: Stage1EffectBank,
+    objective: ParticleObjective,
+    config: RealizationConfig,
+) -> float:
+    values = []
+    for member in range(bank.member_count):
+        response = PolicyEffectResponse(
+            owner=bank.members.owner[member],
+            flow=bank.members.flow[member],
+            action=bank.members.action[member],
+        )
+        snapshot, _, _ = candidate_snapshot(
+            response,
+            bank,
+            objective,
+            config,
+            torch.zeros((), device=bank.suffix_noise.device),
+        )
+        values.append(snapshot.total)
+    return min(values)
+
+
+def _carrier_energy(
+    carrier: Mapping[str, torch.Tensor],
+    a_name: str,
+    b_name: str,
+    carrier_rank: int,
+) -> torch.Tensor:
+    a = carrier[a_name][:carrier_rank].float()
+    b = carrier[b_name][:, :carrier_rank].float()
+    return effective_inner_product(b, a, b, a).clamp_min(1e-12)
+
+
+def _unit_effective_direction(
+    *,
+    direction: Mapping[str, torch.Tensor],
+    carrier: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    carrier_rank: int,
+) -> tuple[dict[str, torch.Tensor], dict[str, float]]:
+    normalized = {}
+    scales = {}
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        a = direction[a_name].float()
+        b = direction[b_name].float()
+        energy = effective_inner_product(b, a, b, a)
+        if not torch.isfinite(energy) or float(energy) <= 0.0:
+            raise ValueError(f"effective direction is degenerate for {target.name}")
+        scale = torch.sqrt(
+            _carrier_energy(carrier, a_name, b_name, carrier_rank) / energy
+        )
+        root = torch.sqrt(scale)
+        normalized[a_name] = (root * a).detach()
+        normalized[b_name] = (root * b).detach()
+        scales[target.name] = float(scale)
+    return normalized, scales
+
+
+def _orthonormal_input_probe(
+    *, rows: int, columns: int, seed: int, device: torch.device
+) -> torch.Tensor:
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(int(seed))
+    value = torch.randn(columns, rows, generator=generator, dtype=torch.float32)
+    basis, _ = torch.linalg.qr(value, mode="reduced")
+    return basis.T.contiguous().to(device)
+
+
+def _matrix_free_initial_direction(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    bank: Stage1EffectBank,
+    contract: LoRAContract,
+    response: ResponseFunction,
+    objective: ParticleObjective,
+    responsibilities: torch.Tensor,
+    barrier_active: torch.Tensor,
+    config: RealizationConfig,
+    carrier_rank: int,
+) -> tuple[dict[str, torch.Tensor], float, float, int]:
+    residual_rank = int(contract.rank) - int(carrier_rank)
+    width = int(config.sketch_width)
+    if width != 2 * residual_rank:
+        raise ValueError("effective-update sketch must use two residual-rank chunks")
+    device = bank.suffix_noise.device
+    probes = {
+        target.name: _orthonormal_input_probe(
+            rows=width,
+            columns=target.in_features,
+            seed=int(config.probe_seed) + index,
+            device=device,
+        )
+        for index, target in enumerate(contract.targets)
+    }
+    range_chunks: dict[str, list[torch.Tensor]] = {
+        target.name: [] for target in contract.targets
+    }
+    vjp_evaluations = 0
+    for start in range(0, width, residual_rank):
+        residual = {}
+        leaves = {}
+        names = []
+        for target in contract.targets:
+            a_name = target.name + LORA_A_SUFFIX
+            b_name = target.name + LORA_B_SUFFIX
+            residual[a_name] = probes[target.name][start : start + residual_rank]
+            leaves[b_name] = torch.zeros(
+                target.out_features,
+                residual_rank,
+                dtype=torch.float32,
+                device=device,
+                requires_grad=True,
+            )
+            residual[b_name] = leaves[b_name]
+            names.append(b_name)
+        gradients = _gradient_rows(
+            state=rank_reserved_state(carrier, residual, contract, carrier_rank),
+            leaves=leaves,
+            names=tuple(names),
+            response=response,
+            bank=bank,
+            objective=objective,
+            responsibilities=responsibilities,
+            barrier_active=barrier_active,
+            config=config,
+        )
+        for target in contract.targets:
+            range_chunks[target.name].append(
+                gradients[target.name + LORA_B_SUFFIX]
+            )
+        vjp_evaluations += 1
+    output_bases = {}
+    for target in contract.targets:
+        value = torch.cat(range_chunks[target.name], dim=1)
+        output_bases[target.name], _ = torch.linalg.qr(value, mode="reduced")
+
+    co_range_chunks: dict[str, list[torch.Tensor]] = {
+        target.name: [] for target in contract.targets
+    }
+    for start in range(0, width, residual_rank):
+        residual = {}
+        leaves = {}
+        names = []
+        for target in contract.targets:
+            a_name = target.name + LORA_A_SUFFIX
+            b_name = target.name + LORA_B_SUFFIX
+            leaves[a_name] = torch.zeros(
+                residual_rank,
+                target.in_features,
+                dtype=torch.float32,
+                device=device,
+                requires_grad=True,
+            )
+            residual[a_name] = leaves[a_name]
+            residual[b_name] = output_bases[target.name][
+                :, start : start + residual_rank
+            ]
+            names.append(a_name)
+        gradients = _gradient_rows(
+            state=rank_reserved_state(carrier, residual, contract, carrier_rank),
+            leaves=leaves,
+            names=tuple(names),
+            response=response,
+            bank=bank,
+            objective=objective,
+            responsibilities=responsibilities,
+            barrier_active=barrier_active,
+            config=config,
+        )
+        for target in contract.targets:
+            co_range_chunks[target.name].append(
+                gradients[target.name + LORA_A_SUFFIX]
+            )
+        vjp_evaluations += 1
+
+    direction = {}
+    unnormalized_derivative = {}
+    projected_gradient_energy = 0.0
+    dense_count = 0
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        z = torch.cat(co_range_chunks[target.name], dim=0)
+        left, singular, right = torch.linalg.svd(z, full_matrices=False)
+        singular = singular[:residual_rank]
+        root = torch.sqrt(singular.clamp_min(0.0))
+        direction[a_name] = root[:, None] * right[:residual_rank]
+        direction[b_name] = -(
+            output_bases[target.name] @ left[:, :residual_rank]
+        ) * root[None, :]
+        unnormalized_derivative[target.name] = -float(singular.square().sum())
+        projected_gradient_energy += float(singular.square().sum())
+        dense_count += target.in_features * target.out_features
+    direction, scales = _unit_effective_direction(
+        direction=direction,
+        carrier=carrier,
+        contract=contract,
+        carrier_rank=carrier_rank,
+    )
+    derivative = sum(
+        scales[target.name] * unnormalized_derivative[target.name]
+        for target in contract.targets
+    )
+    if not math.isfinite(derivative) or derivative >= 0.0:
+        raise ValueError("matrix-free sketch is not a descent direction")
+    gradient_rms = math.sqrt(projected_gradient_energy / max(dense_count, 1))
+    return direction, derivative, gradient_rms, vjp_evaluations
+
+
+def _preconditioned_tangent_direction(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    residual: Mapping[str, torch.Tensor],
+    bank: Stage1EffectBank,
+    contract: LoRAContract,
+    response: ResponseFunction,
+    objective: ParticleObjective,
+    responsibilities: torch.Tensor,
+    barrier_active: torch.Tensor,
+    config: RealizationConfig,
+    carrier_rank: int,
+) -> tuple[dict[str, torch.Tensor], float, float]:
+    leaves = {
+        name: value.detach().requires_grad_(True) for name, value in residual.items()
+    }
+    names = tuple(leaves)
+    gradients = _gradient_rows(
+        state=rank_reserved_state(carrier, leaves, contract, carrier_rank),
+        leaves=leaves,
+        names=names,
+        response=response,
+        bank=bank,
+        objective=objective,
+        responsibilities=responsibilities,
+        barrier_active=barrier_active,
+        config=config,
+    )
+    direction = {}
+    derivative = 0.0
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        a = residual[a_name].float()
+        b = residual[b_name].float()
+        grad_a = gradients[a_name].float()
+        grad_b = gradients[b_name].float()
+        gram_a = a @ a.T
+        gram_b = b.T @ b
+        damping_a = float(config.gram_damping_fraction) * torch.diagonal(
+            gram_a
+        ).mean().clamp_min(1e-12)
+        damping_b = float(config.gram_damping_fraction) * torch.diagonal(
+            gram_b
+        ).mean().clamp_min(1e-12)
+        identity = torch.eye(a.shape[0], device=a.device, dtype=a.dtype)
+        delta_b = -torch.linalg.solve(
+            gram_a + damping_a * identity, grad_b.T
+        ).T
+        delta_a = -torch.linalg.solve(
+            gram_b + damping_b * identity, grad_a
+        )
+        tangent_a = torch.cat([a, delta_a], dim=0)
+        tangent_b = torch.cat([delta_b, b], dim=1)
+        energy = effective_inner_product(
+            tangent_b, tangent_a, tangent_b, tangent_a
+        )
+        if not torch.isfinite(energy) or float(energy) <= 0.0:
+            raise ValueError(f"preconditioned tangent is degenerate for {target.name}")
+        scale = torch.sqrt(
+            _carrier_energy(carrier, a_name, b_name, carrier_rank) / energy
+        )
+        direction[a_name] = tangent_a.detach()
+        direction[b_name] = (scale * tangent_b).detach()
+        derivative += float(
+            scale
+            * (
+                torch.sum(grad_b * delta_b)
+                + torch.sum(grad_a * delta_a)
+            )
+        )
+    if not math.isfinite(derivative) or derivative >= 0.0:
+        raise ValueError("preconditioned tangent is not a descent direction")
+    return direction, derivative, float(_gradient_rms(tuple(gradients.values())))
+
+
+def _retract_residual_sum(
+    *,
+    residual: Mapping[str, torch.Tensor],
+    direction: Mapping[str, torch.Tensor],
+    alpha: float,
+    contract: LoRAContract,
+    carrier_rank: int,
+) -> dict[str, torch.Tensor]:
+    residual_rank = int(contract.rank) - int(carrier_rank)
+    result = {}
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        joined_a = torch.cat([residual[a_name], direction[a_name]], dim=0)
+        joined_b = torch.cat(
+            [residual[b_name], float(alpha) * direction[b_name]], dim=1
+        )
+        a, b = canonicalize_low_rank_factors(
+            joined_a, joined_b, output_rank=residual_rank
+        )
+        result[a_name] = a.detach()
+        result[b_name] = b.detach()
+    return result
+
+
+def _accept_direction(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    residual: Mapping[str, torch.Tensor],
+    direction: Mapping[str, torch.Tensor],
+    current: RealizationSnapshot,
+    bank: Stage1EffectBank,
+    contract: LoRAContract,
+    response: ResponseFunction,
+    objective: ParticleObjective,
+    config: RealizationConfig,
+    carrier_rank: int,
+) -> tuple[
+    dict[str, torch.Tensor],
+    RealizationSnapshot,
+    torch.Tensor,
+    torch.Tensor,
+    float,
+    int,
+] | None:
+    for backtrack, alpha in enumerate(config.backtrack_scales):
+        candidate = _retract_residual_sum(
+            residual=residual,
+            direction=direction,
+            alpha=float(alpha),
+            contract=contract,
+            carrier_rank=carrier_rank,
+        )
+        trust = rank_reserved_relative_distance(
+            candidate, carrier, contract, carrier_rank
+        )
+        if not torch.isfinite(trust) or float(trust) > float(config.trust_region):
+            continue
+        snapshot, responsibilities, barrier_active = _evaluate_residual(
+            carrier=carrier,
+            residual=candidate,
+            bank=bank,
+            contract=contract,
+            response=response,
+            objective=objective,
+            config=config,
+            carrier_rank=carrier_rank,
+        )
+        if math.isfinite(snapshot.total) and snapshot.total < current.total:
+            return (
+                candidate,
+                snapshot,
+                responsibilities,
+                barrier_active,
+                float(alpha),
+                backtrack,
+            )
+    return None
+
+
+def solve_effective_update_particle_effects(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    bank: Stage1EffectBank,
+    contract: LoRAContract,
+    response: ResponseFunction,
+    config: RealizationConfig,
+    carrier_rank: int,
+) -> RealizationOutcome:
+    """Solve in the effective-update metric while keeping the carrier frozen."""
+
+    validate_lora_state(carrier, contract)
+    residual_rank = int(contract.rank) - int(carrier_rank)
+    if carrier_rank <= 0 or residual_rank <= 0:
+        raise ValueError("rank-reserved solver requires carrier and residual ranks")
+    if (
+        int(config.max_vjp_evaluations) != 12
+        or int(config.sketch_width) != 2 * residual_rank
+        or tuple(config.backtrack_scales) != (1.0, 0.5, 0.25, 0.125, 0.0625)
+        or config.microbatch_size <= 0
+    ):
+        raise ValueError("ECP effective-update solver contract changed")
+    device = bank.suffix_noise.device
+    objective = build_particle_objective(bank, config)
+    residual = initial_rank_reserved_residual(
+        carrier, contract, carrier_rank, device
+    )
+    initial_state = rank_reserved_state(carrier, residual, contract, carrier_rank)
+    initial_state_is_exact_carrier = all(
+        torch.equal(initial_state[name], carrier[name]) for name in carrier
+    )
+    if not initial_state_is_exact_carrier:
+        raise ValueError("zero residual does not reproduce the exact carrier")
+    initial, responsibilities, barrier_active = _evaluate_residual(
+        carrier=carrier,
+        residual=residual,
+        bank=bank,
+        contract=contract,
+        response=response,
+        objective=objective,
+        config=config,
+        carrier_rank=carrier_rank,
+    )
+    current = initial
+    history = []
+    direction, derivative, gradient_rms, vjp_evaluations = (
+        _matrix_free_initial_direction(
+            carrier=carrier,
+            bank=bank,
+            contract=contract,
+            response=response,
+            objective=objective,
+            responsibilities=responsibilities,
+            barrier_active=barrier_active,
+            config=config,
+            carrier_rank=carrier_rank,
+        )
+    )
+    initial_derivative = derivative
+    initial_gradient_rms = gradient_rms
+    accepted = _accept_direction(
+        carrier=carrier,
+        residual=residual,
+        direction=direction,
+        current=current,
+        bank=bank,
+        contract=contract,
+        response=response,
+        objective=objective,
+        config=config,
+        carrier_rank=carrier_rank,
+    )
+    stop_reason = "initial_backtracking_failed"
+    if accepted is not None:
+        before = current
+        residual, current, responsibilities, barrier_active, alpha, backtrack = accepted
+        history.append(
+            RealizationStep(
+                iteration=0,
+                phase="matrix_free_initial_sketch",
+                before=before,
+                after=current,
+                accepted_alpha=alpha,
+                backtrack_index=backtrack,
+                directional_derivative=derivative,
+                gradient_rms=gradient_rms,
+                cumulative_vjp_evaluations=vjp_evaluations,
+            )
+        )
+        stop_reason = "vjp_budget_exhausted"
+        while vjp_evaluations < int(config.max_vjp_evaluations):
+            direction, derivative, gradient_rms = _preconditioned_tangent_direction(
+                carrier=carrier,
+                residual=residual,
+                bank=bank,
+                contract=contract,
+                response=response,
+                objective=objective,
+                responsibilities=responsibilities,
+                barrier_active=barrier_active,
+                config=config,
+                carrier_rank=carrier_rank,
+            )
+            vjp_evaluations += 1
+            accepted = _accept_direction(
+                carrier=carrier,
+                residual=residual,
+                direction=direction,
+                current=current,
+                bank=bank,
+                contract=contract,
+                response=response,
+                objective=objective,
+                config=config,
+                carrier_rank=carrier_rank,
+            )
+            if accepted is None:
+                stop_reason = "preconditioned_backtracking_failed"
+                break
+            before = current
+            (
+                residual,
+                current,
+                responsibilities,
+                barrier_active,
+                alpha,
+                backtrack,
+            ) = accepted
+            history.append(
+                RealizationStep(
+                    iteration=len(history),
+                    phase="gauge_preconditioned_tangent",
+                    before=before,
+                    after=current,
+                    accepted_alpha=alpha,
+                    backtrack_index=backtrack,
+                    directional_derivative=derivative,
+                    gradient_rms=gradient_rms,
+                    cumulative_vjp_evaluations=vjp_evaluations,
+                )
+            )
+    final_state = rank_reserved_state(carrier, residual, contract, carrier_rank)
+    validate_lora_state(final_state, contract)
+    best_member = _best_member_effect_objective(bank, objective, config)
+    denominator = initial.total - best_member
+    gap_recovery = (
+        (initial.total - current.total) / denominator if denominator > 0.0 else 0.0
+    )
+    return RealizationOutcome(
+        state={name: value.detach() for name, value in final_state.items()},
+        initial=initial,
+        final=current,
+        history=tuple(history),
+        initial_state_is_exact_carrier=initial_state_is_exact_carrier,
+        initial_directional_derivative=initial_derivative,
+        initial_gradient_rms=initial_gradient_rms,
+        vjp_evaluations=vjp_evaluations,
+        stop_reason=stop_reason,
+        best_member_effect_objective=best_member,
+        objective_gap_recovery=gap_recovery,
     )

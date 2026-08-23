@@ -5,12 +5,14 @@ from ember.ecp.stage1_equivalence import (
     Stage1EffectBank,
     equal_time_progress_strata,
 )
-from ember.ecp.stage1_realization import (
-    RealizationConfig,
+from ember.ecp.stage1_objective import RealizationConfig
+from ember.ecp.stage1_parameterization import (
     project_expert_onto_rank_reserved_residual,
     rank_reserved_relative_distance,
     rank_reserved_state,
-    solve_rank_reserved_particle_effects,
+)
+from ember.ecp.stage1_realization import (
+    solve_effective_update_particle_effects,
 )
 from ember.lora import LoRATarget, SmolVLALoRAContract
 
@@ -67,6 +69,27 @@ def _bank() -> Stage1EffectBank:
         members=members,
         member_reliability=torch.ones(3),
     )
+
+
+def _solver_contract():
+    contract = SmolVLALoRAContract(
+        targets=(LoRATarget("tiny", in_features=8, out_features=8),),
+        rank=6,
+        alpha=6,
+        dropout=0.0,
+        identity_seed=1,
+    )
+    carrier_a = torch.zeros(6, 8)
+    carrier_b = torch.zeros(8, 6)
+    carrier_a[0] = 1.0
+    carrier_a[1, 0] = 1.0
+    carrier_a[2:, :4] = torch.eye(4)
+    carrier_b[:, 0] = 0.1
+    carrier = {
+        "tiny.lora_A.default.weight": carrier_a,
+        "tiny.lora_B.default.weight": carrier_b,
+    }
+    return contract, carrier
 
 
 def test_time_progress_strata_are_ordered_and_unique() -> None:
@@ -180,8 +203,8 @@ def test_rank_reserved_projection_matches_the_best_truncated_correction() -> Non
     assert abs(metrics[0].residual_energy - 4.0) < 1e-5
 
 
-def test_rank_reserved_solver_moves_both_factors_and_reduces_error() -> None:
-    contract, carrier = _contract()
+def test_effective_update_solver_reduces_error_inside_the_trust_region() -> None:
+    contract, carrier = _solver_contract()
     bank = _bank()
 
     def response(state, indices):
@@ -190,12 +213,12 @@ def test_rank_reserved_solver_moves_both_factors_and_reduces_error() -> None:
         ).mean()
         return _response(value, int(indices.numel()))
 
-    _, history, final = solve_rank_reserved_particle_effects(
+    outcome = solve_effective_update_particle_effects(
         carrier=carrier,
         bank=bank,
         contract=contract,
         response=response,
-        carrier_rank=1,
+        carrier_rank=2,
         config=RealizationConfig(
             owner_weight=1.0,
             flow_weight=0.0,
@@ -203,6 +226,68 @@ def test_rank_reserved_solver_moves_both_factors_and_reduces_error() -> None:
             microbatch_size=8,
         ),
     )
-    assert final.total < history[0].snapshot.total
-    assert any(row.a_gradient_rms > 0 for row in history)
-    assert all(row.b_gradient_rms > 0 for row in history)
+    assert outcome.final.total < outcome.initial.total
+    assert outcome.initial_state_is_exact_carrier
+    assert outcome.initial_directional_derivative < 0.0
+    assert outcome.initial.trust_distance == 0.0
+    assert 0 < len(outcome.history) <= 9
+    assert outcome.history[0].phase == "matrix_free_initial_sketch"
+    assert all(row.directional_derivative < 0 for row in outcome.history)
+    assert all(row.after.total < row.before.total for row in outcome.history)
+    assert outcome.vjp_evaluations <= 12
+    assert outcome.final.trust_distance <= 1.5
+    assert outcome.objective_gap_recovery > 0.0
+
+
+def test_effective_update_solver_is_invariant_to_carrier_factor_gauge() -> None:
+    contract, carrier = _solver_contract()
+    bank = _bank()
+
+    def response(state, indices):
+        value = (
+            state["tiny.lora_B.default.weight"]
+            @ state["tiny.lora_A.default.weight"]
+        ).mean()
+        return _response(value, int(indices.numel()))
+
+    transform = torch.tensor([[2.0, 0.5], [0.0, 0.5]])
+    inverse = torch.linalg.inv(transform)
+    gauged = {name: value.clone() for name, value in carrier.items()}
+    gauged["tiny.lora_A.default.weight"][:2] = (
+        transform @ carrier["tiny.lora_A.default.weight"][:2]
+    )
+    gauged["tiny.lora_B.default.weight"][:, :2] = (
+        carrier["tiny.lora_B.default.weight"][:, :2] @ inverse
+    )
+    config = RealizationConfig(
+        owner_weight=1.0,
+        flow_weight=0.0,
+        action_weight=0.0,
+        microbatch_size=8,
+    )
+    original = solve_effective_update_particle_effects(
+        carrier=carrier,
+        bank=bank,
+        contract=contract,
+        response=response,
+        carrier_rank=2,
+        config=config,
+    )
+    transformed = solve_effective_update_particle_effects(
+        carrier=gauged,
+        bank=bank,
+        contract=contract,
+        response=response,
+        carrier_rank=2,
+        config=config,
+    )
+    original_update = (
+        original.state["tiny.lora_B.default.weight"]
+        @ original.state["tiny.lora_A.default.weight"]
+    )
+    transformed_update = (
+        transformed.state["tiny.lora_B.default.weight"]
+        @ transformed.state["tiny.lora_A.default.weight"]
+    )
+    assert torch.allclose(original_update, transformed_update, atol=1e-5)
+    assert abs(original.final.total - transformed.final.total) < 1e-6

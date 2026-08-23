@@ -12,9 +12,11 @@ from ember.ecp.stage1_equivalence import Stage1EffectBank
 
 @dataclass(frozen=True)
 class RealizationConfig:
-    steps: int = 12
-    step_rms: float = 0.0002
-    step_decay_power: float = 0.5
+    sketch_width: int = 8
+    probe_seed: int = 20260823
+    max_vjp_evaluations: int = 12
+    backtrack_scales: tuple[float, ...] = (1.0, 0.5, 0.25, 0.125, 0.0625)
+    gram_damping_fraction: float = 1e-6
     temperature: float = 0.25
     owner_weight: float = 1.0
     flow_weight: float = 1.0

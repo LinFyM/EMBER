@@ -24,7 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1b_mobile_rank4_oracle_v1.json",
+        default=REPO_ROOT
+        / "configs/pi05_ecp_stage1b_effective_update_oracle_v1.json",
     )
     parser.add_argument("--task-ordinal", type=int, required=True)
     parser.add_argument("--source-support-run", type=Path, required=True)
@@ -50,9 +51,10 @@ def main() -> None:
     torch.cuda.set_device(device)
     config = read_json(args.config.resolve())
     if (
-        config.get("schema_version") != "ember_ecp_stage1b_mobile_rank4_oracle_v1"
+        config.get("schema_version")
+        != "ember_ecp_stage1b_effective_update_oracle_v1"
         or config.get("status")
-        != "preregistered_mobile_rank4_privileged_realization"
+        != "preregistered_effective_update_privileged_realization"
     ):
         raise ValueError("ECP Stage 1B effect-bank config changed")
     manifest = build_effect_bank(

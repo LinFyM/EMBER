@@ -1,6 +1,7 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability card已在实现/GPU前冻结**。
+状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability card已在实现/GPU前冻结，
+canonical实现已完成并等待ordinal71 profile**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。

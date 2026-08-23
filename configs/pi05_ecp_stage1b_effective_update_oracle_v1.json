@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1b_mobile_rank4_oracle_v1",
-  "status": "preregistered_mobile_rank4_privileged_realization",
-  "scientific_card": "docs/ecp_mobile_rank4_solver_card_20260823.md",
+  "schema_version": "ember_ecp_stage1b_effective_update_oracle_v1",
+  "status": "preregistered_effective_update_privileged_realization",
+  "scientific_card": "docs/ecp_effective_update_solver_card_20260823.md",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "source_base_config": "configs/pi05_source_base_v1.json",
@@ -39,10 +39,12 @@
     "capture_microbatch_size": 4
   },
   "solver": {
-    "algorithm": "two-pass stage-consistent particle softmin plus target-joint normalized mobile-rank4 residual updates",
-    "steps": 12,
-    "step_rms": 0.0002,
-    "step_decay_power": 0.5,
+    "algorithm": "matrix-free rank4 effective-gradient sketch plus gauge-preconditioned tangent trust-region",
+    "sketch_width": 8,
+    "probe_seed": 20260823,
+    "max_vjp_evaluations": 12,
+    "backtrack_scales": [1.0, 0.5, 0.25, 0.125, 0.0625],
+    "gram_damping_fraction": 0.000001,
     "temperature": 0.25,
     "owner_weight": 1.0,
     "flow_weight": 1.0,
@@ -54,13 +56,17 @@
     "trust_region": 1.5,
     "trust_weight": 0.05,
     "microbatch_size": 4,
-    "per_task_early_stop": false,
-    "task_local_persistent_optimizer": false,
     "carrier_rank": 12,
     "residual_rank": 4,
-    "residual_initialization": "carrier_A_rows_12_16_and_zero_B",
-    "residual_regauge": "per_step_balanced_thin_qr_core_svd",
+    "initial_direction": "deterministic_width8_matrix_free_effective_gradient",
+    "subsequent_direction": "gram_preconditioned_effective_tangent",
+    "residual_retraction": "thin_qr_core_svd_rank4",
     "output_rank": 16
+  },
+  "profile_gate": {
+    "minimum_objective_gap_recovery": 0.5,
+    "minimum_final_trust": 0.1,
+    "maximum_final_trust": 1.5
   },
   "information_wall": {
     "privileged_train_fold_oracle": true,

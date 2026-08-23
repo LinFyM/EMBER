@@ -1354,6 +1354,24 @@ trust、damping、rank或VJP预算。该结果只关闭当前固定solver合同�
 mobile-rank4容量、effect target或ECP核心。正式证据：
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
 
+### 3.69 ECP全过程专家对齐审计修正了阶段命名，不改写实验结果
+
+2026-08-24没有启动训练、评测或新架构。仓库逐项对照专家原始方案、最后修正案、retained source和全部ECP formal evidence，
+确认occupancy-complete工作后的阶段叙述过强：48-state、three-member bank是successful-policy evidence/state-support资产，
+不是输出同构Program posterior的distributional `q_pi(P)`；当前`stage1_oracle.py`直接加载effect bank进入solver，没有
+Program-to-effect forward。因此此前“Stage 1A通过”“Stage 1B失败并阻止Stage 1C”的表述被校正为“evidence prerequisite
+完成、direct-effect realization子门已裁决、完整privileged Program链尚未实现”。
+
+所有既有数值与窄结论保持不变：independent members `113/250`；fixed-A learned oracle `78/250`；fixed-A analytic
+`49/41/35`；mobile-rank4 analytic `110/120/76`；mobile raw-factor solver `49/250`；effective-update profile 0 accepted
+steps。它们仍分别证明independent policy/state coverage、fixed-A binding、mobile-rank4 capacity及两个具体operator non-pass，
+但不裁决distributional `q_pi(P)`、Program-to-effect compiler或`q_V(P|L,V)`。
+
+第3.68之后提出的process-identifying data feasibility仍是有效数据发现，但“它已成为唯一下一主线”被降级为竞争性资格缺口。
+在专家重新确定direct-effect oracle、`q_pi(P)`、Program-to-effect、fixed realization与`q_V`的阶段关系前，仓库不创建
+successor或启动GPU。完整落实矩阵、成果边界、疑问与候选顺序见
+`docs/ecp_expert_alignment_audit_20260824.md`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -3,6 +3,10 @@
 状态：2026-08-23扩展至MDCO、PECS与GOMQ因果补审。本文是方法与执行复盘，不是下一版设计，
 也不授权新的GPU训练。
 
+2026-08-24补充边界：本文没有覆盖随后完成的occupancy-complete/direct-effect realization工作，也不能作为当前Stage命名
+authority。最新全过程对齐确认distributional `q_pi(P)`与Program-to-effect bridge仍未实现；见
+`docs/ecp_expert_alignment_audit_20260824.md`。
+
 范围边界：v1--v24与MDCO属于ECP Stage 1；MDCO之后的PECS删除了ECP `q_pi + learned compiler`，只是一项独立
 privileged upper-bound诊断，不是ECP实现进度；GOMQ是更早退役架构的历史补审，与当前Stage 1没有直接关系。把PECS写成
 `ECP/PECS`、以及在没有当前决策价值时补跑GOMQ controls，都是本次需要接受外部审阅的执行偏移。

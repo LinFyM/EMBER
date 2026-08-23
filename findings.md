@@ -1709,3 +1709,26 @@ occupancy分别为332、272与416步，三条base-camera序列都显示alphabet 
 language。正确做法不是放松正式target40 asset gate，而是由显式meta manifest登记custom BDDL与复用的base init-state authority，
 通过专用meta collector和共享temporal wrapper进入；reward训练再复用同一environment factory。这个边界进一步保证custom
 process任务不会静默改变正式LIBERO评测语义。
+
+## 82. 2026-08-24全过程对齐审计：effect bank与direct solver不能替代distributional Program链
+
+重新逐项对照专家原始方案、最后修正案、retained source与formal evidence后，确认此前阶段命名存在实质性过报。当前
+`Stage1EffectBank`保存48个occupancy states上的prefix/noise/category/stage/progress及source/carrier/three-member
+owner/flow/action particles；`solve_stage1_task()`直接加载该bank进入fixed solver。retained ECP source中没有输出与`q_V`
+同构Program posterior的distributional `q_pi(P)`，也没有
+`Program -> event/layer/family policy-effect distribution`模块。
+
+因此独立members `113/250`和五个完整effect banks只能证明successful-policy evidence/state-coverage prerequisite成立，不能
+称为完整Stage 1A通过。fixed-A `78/250`、解析fixed-A `49/41/35`、解析mobile-rank4 `110/120/76`、raw-factor solver
+`49/250`及effective-update 0-step profile都是有效的direct-effect realization子门结果；它们分别定位effect objective、
+parameterization与operator边界，但没有裁决`q_pi(P)`、Program-to-effect bridge或`q_V`。
+
+历史v1--v24虽然实现过visible Program、privileged teacher和learned compiler，却始终主要使用deterministic/mean teacher并
+长期移动Program/compiler坐标。该家族关闭仍成立，但不能外推为专家最终要求的distributional `q_pi(P)`已被否定。完整ECP
+Stage 1因此不是“Stage 1A已过、Stage 1B失败”，而是evidence资产已完成、direct-effect子门已广泛裁决、Program posterior与
+Program-to-effect接口尚未实现。
+
+第81节关于现有LIBERO终点合取、temporal wrapper与process-pair feasibility的事实仍成立；其“process-identifying data已经是
+唯一下一主线”的优先级结论被本次审计降级为竞争性数据资格缺口。process数据应在`q_pi`之前还是只在`q_V`/最终claim前加入，
+与direct-effect oracle在完整Stage中的位置一起交由专家重新裁决。当前没有active successor或GPU job。全过程审计见
+`docs/ecp_expert_alignment_audit_20260824.md`。

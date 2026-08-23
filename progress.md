@@ -1,11 +1,12 @@
 # EMBER Progress
 
-更新时间：2026-08-23。稳定目标见`docs/current_owner_requirements.md`，active计划见`task_plan.md`，历史见
+更新时间：2026-08-24。稳定目标见`docs/current_owner_requirements.md`，active计划见`task_plan.md`，历史见
 `docs/research_history.md`。
 
 ## Current authority
 
-- active design：`docs/event_conditioned_policy_compiler_design.md`；
+- current design contract：`docs/event_conditioned_policy_compiler_design.md`（正在接受专家复核，不授权successor）；
+- ECP全过程对齐审计：`docs/ecp_expert_alignment_audit_20260824.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
@@ -17,20 +18,27 @@
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；formal code authority为clean pushed `fc678f3`，profile已结束，没有active GPU job。
+- canonical workspace：本仓库`main`；最新retained solver的formal code authority为clean pushed `fc678f3`，profile已结束，
+  没有active GPU job或等待中的launch。
 
 ## Current scientific state
 
 - ECP核心假设未被证伪；native Stage 0 v3只作为candidate observer。它通过non-degeneracy与task separation，但未完全通过
   process semantics和probe invariance。现有数据只支持scene/goal/order claim。
 - 历史Action Meta matched结果中性，现保留为control而非默认authority。
-- learned `q_pi -> Program -> A/B hyperdecoder`家族已经关闭。v24、MDCO以及width/rank/head/fusion/LR/seed后继均不再恢复。
+- 旧deterministic/mean `q_pi -> Program -> A/B hyperdecoder`家族已经关闭。v24、MDCO以及width/rank/head/fusion/LR/seed
+  后继均不再恢复；这个裁决不等于专家最终要求的distributional `q_pi(P)`已经实现或被否定。
 - occupancy-complete oracle已经补齐PECS缺少的真实initial/successful/candidate/recovery occupancy以及独立成功策略。它从
   stable carrier `43/250`提高到`78/250`，说明realization仍有真实增量；但breadth只有3/5，Goal/Long仍为0，完整门失败。
-- Stage 1A teacher bank通过：五个seed37独立members fixed250为`113`，逐task为`26/32/37/13/5`；Goal/Long均有strict
-  success，五个48-state、三particle effect banks完整。当前失败不能再归因于没有独立teacher或没有闭环occupancy。
-- Stage 1B为Realization non-pass：final逐task`36/12/30/0/0`，只在2/5 tasks严格胜carrier；carrier retention为
-  `35/43`，但oracle-normalized recovery为`35/115=.304`且仅3/5 tasks为正。
+- Stage 1A的evidence prerequisite已完成：fold0五项各自的新seed37独立member在fixed250合计`113`，逐task为
+  `26/32/37/13/5`；
+  Goal/Long均有strict success，五个48-state、三particle effect banks完整。当前失败不能再归因于没有独立successful
+  members或没有闭环occupancy，但retained source没有输出同构Program posterior的`q_pi(P)`，所以完整Stage 1A未通过。
+- direct-effect realization子门为non-pass：final逐task`36/12/30/0/0`，只在2/5 tasks严格胜carrier；carrier retention为
+  `35/43`，oracle-normalized recovery为`35/115=.304`且仅3/5 tasks为正。该solver直接读取effect bank，不读取Program，
+  因而不能写成完整Stage 1B或Program compiler的负裁决。
+- 当前没有`Program -> event/layer/family policy-effect distribution`模块，也没有`q_V(P|L,V)` checkpoint；普通Writer
+  联合训练和最终结构化outer credit尚未开始。
 - GOMQ历史151只作为“强carrier + 小有效更新可保留support”的结构证据，不恢复其Writer或checkpoint作为答案。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
@@ -68,6 +76,10 @@
 
 ## Corrections now applied
 
+- 不再把48-state effect bank称为完整Stage 1A pass：它是`q_pi(P)`所需的evidence输入，当前没有Program posterior；
+- 不再把direct privileged effect solver称为完整Stage 1B：它是绕过Program的lower-level realization子门；
+- 不再由该子门non-pass直接推导“全部shared compiler/video inference被证伪”；完整privileged Program链尚未实现；
+- process-identifying data保留为最终claim与数据资格缺口，但不再冒充已经证明的唯一根因或替代缺失Program桥；
 - 当前不再把更多task数量等同于更多可识别信息：71个LIBERO-90 tasks全部被source见过，现成source-unseen mapping只有
   target train24；现有BDDL没有证明same-endpoint/different-required-process pair。
 - held5只用于与`43/58/59/74/108`的预注册机制比较，没有用于训练shared模型或选择solver量纲。
@@ -113,6 +125,9 @@
 
 ## Current implementation milestone
 
+- retained Stage 1运行面由`Stage1EffectBank -> stage1_oracle -> fixed solver -> single rank16 LoRA`组成；bank字段为
+  prefix/noise/category/stage/progress及source/carrier/member owner/flow/action。仓库没有当前`q_pi(P)`或Program-to-effect
+  runtime，这一事实已在全过程审计中显式登记；
 - 已接通真实PI0.5 official prefix cache与10-step denoising路径：在同一policy observation/noise上与official action输出的
   max-abs差约`0.00668`、RMS约`0.00208`，属于允许的BF16/batch reduction差异；
 - native owner为`[batch,38,4,128]`，同时保留`[batch,10,50,32]` flow与`[batch,10,50,7]` integrated action；
@@ -133,6 +148,10 @@
 
 ## Current unresolved interface
 
+- 最早的架构对齐缺口是distributional `q_pi(P)`与Program-to-effect bridge尚不存在。现有evidence bank足以作为其输入资产，
+  但不能自行定义同构Program、video-observable posterior或固定compiler坐标；
+- 专家最后修正案对direct-effect realization子门与完整`q_pi(P) -> effect -> solver`门的命名和依赖顺序仍有解释空间，
+  已在`docs/ecp_expert_alignment_audit_20260824.md`列为首要复核问题；
 - fixed-A capacity已被证明binding，mobile-rank4 topology则能解析恢复direct级闭环；当前失败不再是这两个容量问题；
 - 当前zero-residual raw A/B solver从rank-zero correction奇点出发，12步后effective correction norm约为known-success
   projection的1%，方向cosine也只有`.041--.077`。它没有进入successful-member effect basin，不能靠放大LR或增加步数盲救；
@@ -143,13 +162,11 @@
 - effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
   当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续先综合复盘这一断点与
   专家原始意见，不复活raw-factor dynamics、不即时再造solver、不启动held5或Stage 1C。
-- 综合专家停止条件后，下一优先级已从“再造realization solver”前移到process-identifying data gate。只读接口核查确认现有
-  LIBERO只把最终谓词合取作为`done`；要形成同language/同终点/相反必需顺序的任务对，必须增加不向policy暴露状态的temporal
-  environment wrapper。最小pair、teacher acquisition与privileged feasibility gate已写入
-  `docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
-- 该动作会构造当前枚举LIBERO任务之外的新temporal semantics，属于数据合同扩展；目前尚无owner明确授权，所以没有改代码、
-  生成数据、启动GPU或建立successor。授权后第一步也只是一个pair的upper-bound gate，不直接扩suite或训练Writer。
-- 等待授权期间完成了零GPU资产核查：target task37三条保留成功轨迹都只有`soup -> cream cheese`一种顺序；non-held
+- process-identifying data不再被登记为已经确定的唯一下一主线。只读接口核查仍成立：现有LIBERO只把最终谓词合取作为
+  `done`；若要形成同language/同终点/相反必需顺序的任务对，需要不向policy暴露状态的temporal environment wrapper。
+  feasibility保留在`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`，具体插入时机等待专家与完整Program链一起裁决。
+- 零GPU资产核查仍可复用：target task37三条保留成功轨迹都只有`soup -> cream cheese`一种顺序；non-held
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
+- 当前没有active successor、GPU job或待启动命令；下一步先由专家复核阶段定义、成果边界和详细计划。

@@ -1,9 +1,11 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；唯一的effective-update reachability oracle也在
-ordinal71初始回溯处non-pass，按预注册合同未启动held5、shared Writer或参数扫。**
+状态：2026-08-24 **ECP全过程已完成一次专家方案对齐审计，当前暂停新的代码/GPU推进，等待专家复核阶段边界、
+distributional `q_pi(P)`缺口与后续顺序。既有direct-effect realization结果全部保留，但不再冒充完整Stage 1结论。**
 
-active design：`docs/event_conditioned_policy_compiler_design.md`
+当前设计合同：`docs/event_conditioned_policy_compiler_design.md`（正在接受专家复核，不授权successor）
+
+本次复核索引：`docs/ecp_expert_alignment_audit_20260824.md`
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
@@ -20,9 +22,10 @@ zero-interaction闭环能力。正式目标仍为strict paired correct严格`>14
 
 ## 当前科学锁
 
-旧learned `q_pi -> Program -> A/B hyperdecoder`家族已经关闭；不恢复v24、MDCO或小结构/超参变体。PECS只证明稀疏
-video-frame exact effects能从shared43提高到58/59，但没有覆盖policy真实执行的initial/successful/candidate/recovery
-occupancy，不能作为ECP最终反证。
+旧deterministic/mean `q_pi -> Program -> A/B hyperdecoder`家族已经关闭；不恢复v24、MDCO或小结构/超参变体。这个裁决
+不等于专家最终要求的distributional `q_pi(P)`已经实现或被否定。PECS只证明selected-context exact effects能从shared43
+提高到58/59；后续occupancy-complete工作补齐了真实initial/successful/candidate/recovery support，但当前retained solver
+仍直接读取effect bank，绕过Program。
 
 本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到fixed-A oracle的`78/250`，但只
 覆盖3/5 tasks；known-success mobile-rank4解析投影则可恢复到`110/120/76`，排除明显rank4 topology binding。随后保持同一
@@ -49,8 +52,10 @@ shared compiler、joint Writer或outer credit，也不扫rank、step、LR、初�
 - [x] 将compiler合同改为`Program -> policy-effect distribution -> fixed solver -> LoRA`；
 - [x] 将claim收窄到现有数据实际能识别的scene/goal/order；
 - [x] 预注册首个occupancy-complete oracle的数据、参数化和直接闭环门。
+- [x] 复核后校正阶段命名：effect/evidence bank不是完整`q_pi(P)`，direct-effect solver只是realization子门；
+- [x] 形成`docs/ecp_expert_alignment_audit_20260824.md`供专家对照原始方案、修正案、代码与raw evidence重新裁决。
 
-## Phase B — Stage 1A policy-equivalence bank
+## Phase B — Stage 1A evidence prerequisite：policy-equivalence bank
 
 - [x] 为fold0五项各训练一个不同seed的独立rank16 task expert；只读train actions，固定step2000，不按task选step；
 - [x] 对新member跑fixed50 closed loop，五项均捕获一条strict-success完整occupancy；
@@ -59,11 +64,14 @@ shared compiler、joint Writer或outer credit，也不扫rank、step、LR、初�
 - [x] 实现官方双相机policy prefix、fixed antithetic noise及source/carrier/三个member的owner/flow/action particle缓存；
 - [x] 报告member independence、success union、state/stage覆盖、disagreement和video-observable/recovery信息分界。
 
-**Gate 1A：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；particle轴未被均值压平；
-Goal/Long也有成功member与完整occupancy。**已通过：** 新独立members fixed250为`113`，逐task
+**Evidence prerequisite：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；particle轴未被
+均值压平；Goal/Long也有成功member与完整occupancy。**已通过：** 新独立members fixed250为`113`，逐task
 `26/32/37/13/5`，5/5成功occupancy及五个48-state effect banks均完整。
 
-## Phase C — Stage 1B fixed-A privileged realization
+这一步没有输出专家所定义的同构Program posterior。当前bank保存privileged prefix/noise/category/stage/progress与
+source/carrier/member owner/flow/action particles；distributional `q_pi(P)`仍未实现，因此不能再写成完整Stage 1A通过。
+
+## Phase C — Direct-effect realization子门：fixed-A privileged oracle
 
 - [x] 从verified stable carrier出发，固定全部`A_c`，只优化`Delta B`，确保zero correction精确返回carrier且无A/B交叉项；
 - [x] 实现stage-consistent particle soft-min、carrier no-worse barrier、source/shared preservation、trust与category balance；
@@ -73,11 +81,14 @@ Goal/Long也有成功member与完整occupancy。**已通过：** 新独立member
 - [x] 按absolute、per-task oracle-normalized recovery、carrier retention、member success union、breadth、Goal/Long裁决；
 - [x] 重大失败后暂停复盘，未自动建立下一版本。
 
-**Gate 1B：** final12至少74/250、相对carrier净增至少20、5/5非零、4/5严格胜carrier、Goal/Long各非零、carrier
+**Direct-effect Gate：** final12至少74/250、相对carrier净增至少20、5/5非零、4/5严格胜carrier、Goal/Long各非零、carrier
 retention至少33/43、overall oracle-normalized recovery至少0.35。**Realization non-pass：** final为`78/250`，absolute、净增
 `+35`及carrier retention `35/43`通过；breadth `3/5`、严格胜carrier `2/5`、Goal/Long `0/0`、recovery
 `35/115=.304`且仅3/5为正，因此整体失败。正式证据：
 `docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
+
+该门直接读取privileged effect particles，不读取Program。后续C2--C5均只分离这一lower-level realization问题；它们不能单独
+裁决`q_pi(P)`、Program-to-effect bridge或`q_V`。
 
 ## Phase C2 — Fixed-A capacity separation
 
@@ -150,19 +161,19 @@ card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。Action Meta仍保持control；由于本realization
 坐标未成立，本轮不启动该matched control。
 
-## Phase D — 继续被Realization non-pass阻止
+## Phase D — 专家复核与完整ECP链缺口
 
-- [x] 审计现有source71/target40与LIBERO success接口，确认没有授权的same-endpoint/different-required-process pair，且单纯
-  BDDL终点合取不能表达必需顺序；
-- [x] 完成最小process-identifying pair的只读接入设计与feasibility gate；
-- [ ] 等待owner明确授权扩展数据合同；未授权前不创建custom temporal tasks、不启动GPU或新solver；
-- [ ] 授权后只实现一个paired temporal family并先证明privileged upper bound、correct-vs-sibling-video因果性与teacher可得性；
-- [ ] 通过后才扩成跨scene/source-unseen adaptation meta suite，并按family切分；
-- [ ] 轮换train24 fold并建立新的shared-model selection面；
-- [ ] 学习`ECP Program -> effect distribution`，保持privileged recovery information不进入deployment输入；
-- [ ] 固定realization operator后训练Dynamic-K video inference；
-- [ ] 分阶段通过后再做除backbone外Writer普通参数联合训练；
-- [ ] 之后才允许structured train/meta outer credit；
+- [x] 审计retained source：当前没有distributional `q_pi(P)`或Program-to-effect模块，Stage 1 oracle直接读取effect bank；
+- [x] 对照原始方案与最后修正案，形成全过程落实/部分落实/未落实矩阵、结果边界和待裁决问题；
+- [x] 审计现有source71/target40与LIBERO success接口：没有已授权same-endpoint/different-required-process pair，process data是
+  最终资格缺口，但尚不能替代未完成的Program桥；
+- [x] 暂停新solver、custom tasks、shared Writer与GPU实验，避免在阶段定义未对齐时继续产生版本；
+- [ ] 由专家明确direct-effect oracle、distributional `q_pi(P)`、Program-to-effect compiler与`q_V`之间的最终顺序和门；
+- [ ] 按专家修正后的单一合同，fresh实现同构distributional `q_pi(P)`并分离video-observable与recovery-only信息；
+- [ ] 实现唯一`Program -> event/layer/family policy-effect distribution`桥，并在held5完成冻结privileged全链closed-loop gate；
+- [ ] 只有全链oracle通过后训练Dynamic-K `q_V(P|L,V)`；
+- [ ] 按专家指定时机加入process-identifying source-unseen meta tasks，不用source-seen或同task更多episode冒充独立mapping；
+- [ ] 分阶段通过后再做除backbone外Writer普通参数联合训练与structured train/meta outer credit；
 - [ ] 全train授权数据fresh训练，validation8 single-checkpoint development，最终Test8；
 - [ ] final paired400补相邻稳定、same-task-other、wrong/shuffled/reversed/no-video与Dynamic-K资格。
 

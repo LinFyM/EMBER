@@ -1,16 +1,17 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability也在ordinal71 profile初始回溯处
-non-pass，held5与Stage 1C未启动**。
+状态：2026-08-24 **正在接受专家全过程复核；新的代码/GPU推进暂停。既有direct-effect realization已裁决，但此前把
+effect bank误写成完整Stage 1A pass、把绕过Program的solver误写成完整Stage 1B，现已校正。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
+本次方案对齐与待专家裁决问题见`docs/ecp_expert_alignment_audit_20260824.md`。
 
 ## 1. 当前裁决
 
-ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族已经有足够反证，不再恢复或做小变体：
+ECP的核心目标与Stage 0候选表示尚未被证伪，但以下**实际检验过的实现组合**已经有足够反证，不再恢复或做小变体：
 
-- deterministic mean `q_pi`；
+- 历史deterministic/mean `q_pi`；
 - learned Program-to-A/B hyperdecoder；
 - 19或90个mapping上的21M target/rank query compiler；
 - v24、MDCO以及width/rank/head/fusion/LR/seed后继；
@@ -19,7 +20,7 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 - 当前从exact-zero residual开始、直接更新mobile-rank4 raw A/B factors的12-step realization operator；
 - 用open-loop geometry、own retrieval或LoRA cosine替代早期closed loop。
 
-本轮privileged问题已经得到否定答案：
+本轮direct-effect privileged子问题已经得到否定答案：
 
 > 在真实闭环状态分布上，用多个独立成功策略定义一个分布式策略等价类后，固定、受约束的rank16实现器能否从稳定
 > carrier出发，恢复显著且广泛的task-local闭环能力？
@@ -28,8 +29,11 @@ fixed-A结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long
 non-pass。解析容量分离随后证明fixed-A行为上binding，而mobile-rank4 topology能以三个known-success members达到
 `110/120/76`。但保持同一bank/objective/12-step数值的mobile raw-factor solver只有`49/250`，逐task`40/3/6/0/0`，
 member-union gap只恢复`3/115`。它停止在接近carrier的极小修正，并未进入known-success effect basin。因此当前不训练video
-predictor、shared compiler或Writer联合模型，也不扫solver、rank、step、LR、初始化或权重；下一接口必须把gauge-invariant
-realization reachability与effect objective sufficiency分开。
+predictor、shared compiler或Writer联合模型，也不扫solver、rank、step、LR、初始化或权重。
+
+这项结论不能外推为完整privileged ECP链失败：当前retained Stage 1直接读取effect bank，没有distributional `q_pi(P)`，也没有
+`Program -> event/layer/family policy-effect distribution`模块。gauge-invariant realization、effect objective充分性与缺失的
+Program bridge必须由专家重新确定依赖顺序。
 
 ## 2. 方法总图
 
@@ -72,6 +76,9 @@ rho[e]           : [8]             event presence
 sigma[e,o,d]     : [8,38,128]      cross-video uncertainty
 ```
 
+retained Stage 0另输出language summary与scene transition，但当前没有把它们固定为贯穿后续链路的
+`P_lang[38,128] / P_scene[38,128]`同构Program。这个缺口不能由effect bank或solver自行补齐。
+
 native v3只通过non-degeneracy/task separation，尚未通过完整process identification。进入最终Writer前必须补齐只读机制门：
 
 - full video相对first+final；
@@ -87,9 +94,10 @@ shuffled/reversed不进入训练、loss或checkpoint选择。中段重排最多�
 历史Action Meta-LoRA matched arm已完成且效果中性。它保留为control，不是默认observer authority；新路线不自动加载。
 只有新的matched证据显示它对probe稳定性、视频因果性或闭环有明确净收益时才重新启用并冻结。
 
-## 4. Stage 1A：successful-policy equivalence identification
+## 4. Stage 1A evidence与尚未实现的distributional policy teacher
 
-Stage 1A不生成LoRA。它建立一个有显式member轴、state-support轴和stage轴的privileged teacher bank。
+Stage 1A不生成LoRA。已完成部分建立了有显式member轴、state-support轴和stage轴的privileged evidence bank；专家最终方案
+还要求由这些evidence产生与`q_V`同构的distributional `q_pi(P)`，这一后半部分尚未实现。
 
 ### 4.1 独立成功策略
 
@@ -138,12 +146,33 @@ member轴始终保留，不先平均成一个Program。member reliability、stag
 particles或其等价的mean+structured covariance。Stage 1A只回答teacher等价类是否完整、非退化且覆盖真实闭环状态，不以
 LoRA geometry作为通过条件。
 
-本轮Stage 1A已通过：五个独立members逐task均有strict success，Goal/Long在内的五个48-state banks全部完整。
+本轮只通过Stage 1A的evidence prerequisite：fold0五项各有一个新seed37独立member并取得strict success，配合既有两类
+members形成每task三particle；Goal/Long在内的五个48-state banks全部完整。它不能再被简称为“Stage 1A整体通过”。
 
-## 5. Stage 1B：occupancy-complete privileged realization oracle
+### 4.4 尚缺的`q_pi(P)`
 
-该关键GPU实验已经完成。它不读取视频、不学习shared weights、不形成deployment route；held task各自使用privileged
-effect particles，检验一套rank16 LoRA能否实现该策略等价类。
+专家要求的privileged teacher应读取multiple successful adapters、successful/learner/recovery occupancy、policy responses、
+stage与uncertainty，输出与deployment video encoder完全同构的posterior：
+
+```text
+q_pi(P) = distribution over {
+  P_lang[38,128],
+  P_scene[38,128],
+  P_process[8,38,128],
+  rho[8],
+  sigma[8,38,128]
+}
+```
+
+posterior应保留mixture/particles或mean+structured covariance，并区分video-observable与rollout-only recovery information。
+当前`Stage1EffectBank`保存的是prefix/noise/category/stage/progress以及source/carrier/member owner/flow/action effects；仓库没有
+实现上述Program posterior的retained `q_pi`模块。
+
+## 5. Direct-effect realization子门：occupancy-complete privileged oracle
+
+该关键GPU实验已经完成。它不读取视频、不学习shared weights、不形成deployment route；held task各自直接使用privileged
+effect particles，检验一套rank16 LoRA能否实现该策略等价类。`stage1_oracle.py`加载`effect_bank_manifest`后直接进入solver，
+没有Program或Program-to-effect forward，因此这里只是lower-level realization子门，不是完整Stage 1B compiler gate。
 
 ### 5.1 Stable carrier与无交叉项有效更新
 
@@ -179,12 +208,12 @@ tensor元素任意拼接不同策略；不同stage允许选择不同成功member
 修正OOM、batching或明显量纲错误；profile不是科学结果。profile后solver step、temperature、category weights和state IDs全部
 冻结，held task不early-stop、不挑step、不保留optimizer。
 
-### 5.3 直接闭环Gate 2
+### 5.3 Direct-effect closed-loop gate
 
 第一次完整设计后直接在原held5 fixed250上评测final step12，不由geometry预筛。只有final12接近通过时，才补step10/11
 作为相邻稳定性证据；final选择不变。
 
-Stage 1B通过必须同时满足：
+该direct-effect子门通过必须同时满足：
 
 - absolute至少达到direct-earliest参考`74/250`，且相对carrier43净增至少20；
 - 5/5 task非零，至少4/5 task严格高于carrier；
@@ -214,7 +243,7 @@ W_projected = B_star A_carrier
 三个strict250结果为`49/41/35`，相对matched direct只保留`31/108、22/113、14/74`，合计
 `67/295=22.71%`。Goal原有24个direct successes、Long原有11个，三个投影member均为0；Long的effective-update energy
 coverage反而是五项最高之一。因此当前fixed-A行空间不是一个可继续靠objective校准挽救的中性载体，而是行为上binding的
-参数约束。它从Stage 1B主线退出，但这个结论不外推为“数学上不存在任意fixed-A功能等价解”。
+参数约束。它从direct-effect realization候选中退出，但这个结论不外推为“数学上不存在任意fixed-A功能等价解”。
 
 下一realization operator必须同时满足：
 
@@ -285,40 +314,40 @@ gap recovery与trust均为0，只消耗4次initial sketch VJP。按预注册门�
 用“方向导数为负”事后缩小步长继续搜索。证据见
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
 
-## 6. Stage 1C：被当前non-pass阻止
+## 6. 完整Stage 1与`q_V`：等待专家重新定稿
 
-只有未来新的强realization oracle通过后，才允许学习：
+当前不是“Stage 1C只被一个solver non-pass阻止”，而是完整privileged链还有两个未实现接口：
 
 ```text
-ECP Program
+successful-policy evidence
+    -> distributional q_pi(P)
     -> event/layer/family policy-effect distribution
-    -> frozen shared realization operator
-    -> rank-reserved mobile residual
+    -> fixed shared realization operator
     -> one complete rank16 LoRA
 ```
 
-privileged occupancy在训练中监督共享effect basis、uncertainty和realization operator，但在deployment时被边缘化；部署前向
-仍只读取`P_lang/P_scene/P_process/rho/sigma`。首个共享实验前必须：
+下一次held5 gate必须冻结哪些模块、direct-effect oracle在其中是什么前置角色、realizer是否应先独立通过，均由本轮专家复核
+重新裁决。仓库在得到这个顺序前不创建successor。
 
-- 轮换train24 fold，避免继续用已高度审阅的fold0选择shared模型；
-- 加入经审计的source-unseen adaptation meta tasks；
-- 若要声称process understanding，至少一部分数据必须真正满足same endpoint/different required procedure；
-- 先校准任何重复使用的open-loop proxy与closed-loop相关性。
+只有完整privileged链显著高于shared、覆盖Goal/Long并保留multi-member support，才进入同构deployment posterior：
 
-Stage 1C通过后才进入Dynamic-K `q_V`、除backbone外普通Writer参数的联合训练、structured outer credit和validation8
-single-checkpoint development evaluation。联合训练不是遗漏的永久禁区，但不能在policy realization坐标尚未成立时再次让
-Program与compiler共同旋转。
+```text
+q_V(P | exact language, action-hidden ordered videos)
+    -> frozen Program-to-effect compiler/realizer
+    -> one complete rank16 LoRA
+```
 
-### 6.1 当前优先级修正：先建立process-identifying data gate
+之后才允许普通Writer参数联合训练、structured outer credit与validation8 single-checkpoint development evaluation。联合训练不是
+永久禁区，但不能再次同时发明video semantics、Program gauge和realizer坐标。
 
-effective-update profile失败后不再自动创建realization successor。现有全部授权BDDL只按最终状态合取判成功，无法让“同语言、
-同终点、不同必需过程”成为可学习的任务变量。下一主线因此前移到process-identifying meta-task feasibility：先用一个显式
-temporal state machine包裹non-held LIBERO场景，构造exact language、初始分布和最终谓词都相同、只在必需事件顺序上相反的
-paired variants；variant不可作为policy或Writer输入，正确action-hidden video是唯一deployment区分信息。
+### 6.1 Process-identifying data是资格缺口，不是已确定的唯一下一主线
 
-该数据合同扩展尚待owner授权。授权后也只先做一个pair的privileged upper-bound gate；只有correct video相对sibling wrong
-video有闭环配对优势、language/no-video不能区分且两个variant都存在成功teacher时，才扩成跨scene meta suite并重建强
-Stage 1A/1B oracle。精确可行性与接入边界见`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+现有全部授权BDDL只按最终状态合取判success，无法让“同language/endpoint、不同必需process”成为训练标签。若要声称general
+process understanding，仍需经审计的source-unseen paired variants；可行性见
+`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+
+但当前证据只说明这类数据缺失，不证明它是所有失败的唯一根因。它应在distributional `q_pi(P)`之前建立，还是只在`q_V`与
+最终process qualification前加入，是本次请专家明确的问题；未定稿前不创建custom tasks或启动GPU。
 
 ## 7. 生命周期与停止条件
 

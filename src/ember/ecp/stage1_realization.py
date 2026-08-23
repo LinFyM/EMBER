@@ -30,6 +30,20 @@ class RealizationStep:
     applied_step_rms: float
 
 
+@dataclass(frozen=True)
+class FixedAProjectionTarget:
+    """Exact row-space projection evidence for one LoRA target."""
+
+    target: str
+    expert_energy: float
+    carrier_energy: float
+    required_correction_energy: float
+    projected_energy: float
+    residual_energy: float
+    rowspace_mean_squared_overlap: float
+    rowspace_minimum_cosine: float
+
+
 ResponseFunction = Callable[
     [Mapping[str, torch.Tensor], torch.Tensor], PolicyEffectResponse
 ]
@@ -64,6 +78,107 @@ def fixed_a_relative_distance(
         carrier_energy = torch.einsum("ij,ji->", b.T @ b, gram_a)
         distances.append(delta_energy / carrier_energy.clamp_min(1e-10))
     return torch.stack(distances).mean()
+
+
+def _effective_inner_product(
+    left_b: torch.Tensor,
+    left_a: torch.Tensor,
+    right_b: torch.Tensor,
+    right_a: torch.Tensor,
+) -> torch.Tensor:
+    return torch.sum((left_b.T @ right_b) * (left_a @ right_a.T))
+
+
+def _fixed_a_projection_metrics(
+    *,
+    target: str,
+    carrier_a: torch.Tensor,
+    carrier_b: torch.Tensor,
+    expert_a: torch.Tensor,
+    expert_b: torch.Tensor,
+    projected_b: torch.Tensor,
+) -> FixedAProjectionTarget:
+    expert_energy = _effective_inner_product(expert_b, expert_a, expert_b, expert_a)
+    carrier_energy = _effective_inner_product(
+        carrier_b, carrier_a, carrier_b, carrier_a
+    )
+    projected_energy = _effective_inner_product(
+        projected_b, carrier_a, projected_b, carrier_a
+    )
+    correction_energy = (
+        expert_energy
+        + carrier_energy
+        - 2.0 * _effective_inner_product(expert_b, expert_a, carrier_b, carrier_a)
+    ).clamp_min(0.0)
+    residual_energy = (
+        expert_energy
+        + projected_energy
+        - 2.0 * _effective_inner_product(expert_b, expert_a, projected_b, carrier_a)
+    ).clamp_min(0.0)
+    carrier_basis = torch.linalg.svd(carrier_a, full_matrices=False).Vh
+    expert_basis = torch.linalg.svd(expert_a, full_matrices=False).Vh
+    cosines = torch.linalg.svdvals(expert_basis @ carrier_basis.T).clamp(0.0, 1.0)
+    return FixedAProjectionTarget(
+        target=target,
+        expert_energy=float(expert_energy),
+        carrier_energy=float(carrier_energy),
+        required_correction_energy=float(correction_energy),
+        projected_energy=float(projected_energy),
+        residual_energy=float(residual_energy),
+        rowspace_mean_squared_overlap=float(cosines.square().mean()),
+        rowspace_minimum_cosine=float(cosines.min()),
+    )
+
+
+def project_expert_onto_fixed_a(
+    *,
+    carrier: Mapping[str, torch.Tensor],
+    expert: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+) -> tuple[dict[str, torch.Tensor], tuple[FixedAProjectionTarget, ...]]:
+    """Project each expert effective update onto the carrier-A row space.
+
+    For every LoRA target this solves ``min_B ||B A_c - B_e A_e||_F`` in
+    closed form.  The returned state remains one complete rank-r LoRA; it is
+    the unconstrained representational upper bound for the current fixed-A
+    parameterization, not a deployment Writer output.
+    """
+
+    validate_lora_state(carrier, contract)
+    validate_lora_state(expert, contract)
+    projected: dict[str, torch.Tensor] = {}
+    metrics = []
+    for target in contract.targets:
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        carrier_a = carrier[a_name]
+        carrier_b = carrier[b_name]
+        expert_a = expert[a_name]
+        expert_b = expert[b_name]
+        ca = carrier_a.detach().double()
+        cb = carrier_b.detach().double()
+        ea = expert_a.detach().double()
+        eb = expert_b.detach().double()
+
+        gram_inverse = torch.linalg.pinv(ca @ ca.T)
+        best_b = (eb @ ea @ ca.T) @ gram_inverse
+        stored_b = best_b.to(device=carrier_b.device, dtype=carrier_b.dtype)
+        projected[a_name] = carrier_a.detach().clone()
+        projected[b_name] = stored_b
+
+        pb = stored_b.detach().double()
+        metrics.append(
+            _fixed_a_projection_metrics(
+                target=target.name,
+                carrier_a=ca,
+                carrier_b=cb,
+                expert_a=ea,
+                expert_b=eb,
+                projected_b=pb,
+            )
+        )
+    validate_lora_state(projected, contract)
+    return projected, tuple(metrics)
 
 
 def _indexed_response(

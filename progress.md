@@ -7,9 +7,10 @@
 
 - active design：`docs/event_conditioned_policy_compiler_design.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
+- active diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；本卡GPU工作已经结束，当前处于科学暂停而不是运行或训练状态。
+- canonical workspace：本仓库`main`；当前只实现fixed-A解析容量诊断，尚未启动新的GPU rollout或训练。
 
 ## Current scientific state
 
@@ -24,6 +25,8 @@
 - Stage 1B为Realization non-pass：final逐task`36/12/30/0/0`，只在2/5 tasks严格胜carrier；carrier retention为
   `35/43`，但oracle-normalized recovery为`35/115=.304`且仅3/5 tasks为正。
 - GOMQ历史151只作为“强carrier + 小有效更新可保留support”的结构证据，不恢复其Writer或checkpoint作为答案。
+- 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
+  effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 
 ## Verified reusable assets
 
@@ -62,6 +65,17 @@
    policy-noise common-prefix mismatch；
 6. Gate 1B判为Realization non-pass并暂停，未补step10/11、未扫solver、未训练video predictor。
 
+## Active fixed-A capacity diagnostic
+
+- 三个successful members的零训练几何审计已完成：相对`expert-carrier`所需correction的energy coverage为
+  `83.3%--96.7%`，但相对expert绝对effective update只有`41.5%--62.7%`；
+- Goal的latest/independent coverage最低（约`41.5%--42.0%`），但Long反而最高（约`59.2%--59.6%`），所以不能用
+  row-space数值直接解释Goal/Long共同0分；
+- 已预注册唯一下一诊断：把latest/independent/earliest各自解析投影到carrier-A行空间，不优化、不插值、不选member，
+  在原held5 fixed50逐arm跑共750个strict paired rows；
+- 当前实现归属仍是ECP Stage 1B fixed-A owner，不新增Writer/decoder/solver版本。formal materialization与rollout必须等代码
+  test、clean commit、push和detached frozen worktree完成后才启动。
+
 ## Current implementation milestone
 
 - 已接通真实PI0.5 official prefix cache与10-step denoising路径：在同一policy observation/noise上与official action输出的
@@ -72,11 +86,12 @@
 - profile没有借held5做量纲选择：另用ordinal71/global2独立member、四类occupancy和同构solver冻结实现合同；
 - projection helper现可直接解析并行solver的per-task子目录，不再需要临时symlink surface。
 
-## Current pause and unresolved interface
+## Current unresolved interface
 
 - 最早失效接口已从teacher/state coverage收窄到realization：当前owner/flow/action effect distance加fixed-A Delta-B求解器，
   即使inner objective在Goal/Long明显下降，也没有进入它们的closed-loop success basins；
 - fixed-A capacity与effect objective/calibration仍是两个竞争解释。本卡只关闭二者当前组合，不把局部失败外推成整个ECP反证；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 按预注册合同，当前等待owner/专家层面的架构复盘；没有获得新科学裁决前不启动successor、小扫或Stage 1C。
+- 当前只执行`docs/ecp_fixed_a_capacity_card_20260823.md`登记的解析投影闭环诊断；其结果裁决前不启动successor、小扫或
+  Stage 1C，也不把geometry或inner loss冒充闭环答案。

@@ -1,10 +1,12 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **occupancy-complete privileged realization oracle已完成并判为Realization non-pass；按预注册合同暂停，未启动后继。**
+状态：2026-08-23 **occupancy-complete privileged realization oracle已判为non-pass；现只执行预注册的fixed-A闭环容量诊断，未启动后继Writer。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
+
+当前diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`
 
 历史：`docs/research_history.md`与`docs/ecp_stage1_iteration_retrospective_20260823.md`
 
@@ -22,8 +24,9 @@ video-frame exact effects能从shared43提高到58/59，但没有覆盖policy真
 occupancy，不能作为ECP最终反证。
 
 本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到`78/250`，但只覆盖3/5 tasks，
-Goal/Long仍为0，oracle-normalized recovery只有`.304`且仅3/5 tasks为正，故未通过完整门。当前暂停定位realization接口，
-不训练video predictor、shared compiler、joint Writer或outer credit，也不自动建立solver/结构小变体。
+Goal/Long仍为0，oracle-normalized recovery只有`.304`且仅3/5 tasks为正，故未通过完整门。当前只分离fixed-A容量与
+effect objective/calibration两个竞争解释：解析投影三个既有成功members后直接做paired closed loop；不训练video predictor、
+shared compiler、joint Writer或outer credit，也不扫solver、rank或插值系数。
 
 ## Fixed boundaries
 
@@ -74,7 +77,20 @@ retention至少33/43、overall oracle-normalized recovery至少0.35。**Realizat
 `35/115=.304`且仅3/5为正，因此整体失败。正式证据：
 `docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
 
-## Phase D — 已被本轮non-pass阻止
+## Phase C2 — Fixed-A capacity separation
+
+- [x] 重新对齐专家最终复核与owner合同，确认fixed-A是候选carrier-preserving参数化而非不可更改的ECP核心；
+- [x] 复用三个successful members完成零训练行空间审计：correction energy coverage为`83.3%--96.7%`，但expert absolute
+  update coverage只有`41.5%--62.7%`，且Long高于Goal，内部几何不能直接解释共同的0分；
+- [x] 预注册解析最优fixed-A投影、三个固定member arms、paired750与事前裁决边界；
+- [ ] 从clean pushed frozen authority解析生成15套single-LoRA projected member adapters；
+- [ ] 分别跑latest/independent/earliest原fixed250 matched panels并报告retained/gained/lost；
+- [ ] 裁决fixed-A是capacity-supported、capacity-binding或mixed，再决定唯一下一科学问题。
+
+本诊断没有optimizer、checkpoint/member选择、interpolation或video输入，不构成Stage 1C授权。card：
+`docs/ecp_fixed_a_capacity_card_20260823.md`。
+
+## Phase D — 继续被Realization non-pass阻止
 
 - [ ] 轮换train24 fold并建立新的shared-model selection面；
 - [ ] 审计或构建source-unseen adaptation meta tasks；若要process claim，必须包含真正process-identifying mappings；

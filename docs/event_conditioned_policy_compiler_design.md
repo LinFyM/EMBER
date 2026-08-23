@@ -1,8 +1,8 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **research authority paused after the expert-corrected occupancy-complete oracle returned Realization non-pass**。
+状态：2026-08-23 **Realization non-pass后只进行fixed-A闭环容量分离诊断；没有active successor Writer**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
-artifacts保存；当前没有active successor运行面。
+artifacts保存；当前diagnostic authority为`docs/ecp_fixed_a_capacity_card_20260823.md`。
 
 ## 1. 当前裁决
 
@@ -23,7 +23,8 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 
 结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
 non-pass。当前证据把断点收窄到realization，但尚未分离fixed-A capacity与effect objective/calibration。复盘形成新的强科学卡
-之前，不训练video predictor、shared compiler或Writer联合模型，也不自动尝试这两个解释的小变体。
+后，唯一授权动作是把三个既有成功members解析投影到carrier-A行空间并做strict paired closed loop；不训练video predictor、
+shared compiler或Writer联合模型，也不扫solver、rank或插值系数。
 
 ## 2. 方法总图
 

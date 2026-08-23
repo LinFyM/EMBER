@@ -60,6 +60,9 @@ ECP_STAGE1_STATIC_LORA_PURPOSES = {
     "stage1a_independent_particle_step2000",
     "stage1a_candidate_pecs_trajectory",
     "stage1b_occupancy_complete_oracle",
+    "stage1b_fixed_a_projection_earliest",
+    "stage1b_fixed_a_projection_independent",
+    "stage1b_fixed_a_projection_latest",
 }
 
 

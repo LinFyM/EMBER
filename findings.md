@@ -1767,3 +1767,18 @@ fresh Stage 0 Program；distributional `q_pi`；多fold frozen privileged full-c
 闭环增量后的structured outer credit；最后validation8/Test8资格。广义ECP只有在process数据、fixed schema、多独立lineages、
 verified support、deployment realizer、distributional `q_pi`与多fold early closed-loop都完成后仍不高于carrier、breadth不超过3/5、
 Goal/Long为0，才具备停止依据。完整裁决见`docs/ecp_expert_alignment_audit_20260824.md`第9节。
+
+## 84. GOMQ有效rank16结构不能复现其151绝对闭环水平
+
+按预注册Phase 0卡，将GOMQ cycle2每个历史rank32状态的`A32=[A0;A0]、B32=[B0,deltaB]`确定性转换为
+`A16=A0、B16=B0+deltaB`。38个targets全部满足A半块精确相等，400套cache均生成完整76-tensor、1,287,168参数的真实
+rank16 LoRA；转换不训练、不选择checkpoint、不重新读取视频，也不融合adapter。
+
+clean pushed `ac233fa`上的唯一strict400 correct评测为`136/400`，逐task
+`16/0/0/35/46/34/0/5`、breadth`5/8`。与历史rank32的151逐row配对后，retained/gained/lost为`123/13/28`、churn41、
+Jaccard`.75`；Long、Goal、Object、Spatial分别变化`-11/-5/-1/+2`。400行episode key、environment seed与policy-noise
+common prefix完全一致，72/72 shards和18/18 workers正常完成，所以该下降不是panel覆盖或运行失败。
+
+预注册absolute门是145，故本轮判为non-pass：只保留“该rank32更新在实数代数上有效rank不超过16”的结构事实；新136不成为
+ECP absolute Phase 0基线，旧151也只保留为历史与机制证据。正常native BF16相加后的闭环轨迹足以发生离散分歧，但本阶段不为
+解释或挽救该现象扩大dtype、调scale/rank/seed/checkpoint或重跑。GOMQ归档关闭，下一接口是process-identifying最小pair。

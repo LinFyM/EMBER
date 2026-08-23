@@ -1,0 +1,91 @@
+{
+  "schema_version": "ember_gomq_effective_rank16_phase0_adjudication_v1",
+  "status": "complete_non_pass",
+  "date": "2026-08-24",
+  "code_commit": "ac233fa0e94b40c525d75746ef2d8fdfb4dc0046",
+  "preregistration": "docs/gomq_rank16_archival_card_20260824.md",
+  "projection_evidence": "docs/evidence/gomq_20260823/gomq_cycle2_rank16_archival_projection.json",
+  "historical_reference_root": "runs/outputs/pi05_v6_lpcp_cfmg_gomq_cycle2_k4_correct400_noreplacement_seed7_trainr6_evalr6_8553b61_gpu01p012457_b16_retry1_20260817",
+  "formal_result_root": "runs/outputs/pi05_gomq_cycle2_effective_rank16_correct400_seed7_ac233fa_gpu01p123457_20260824",
+  "contract_reference": "ember_pi05_target_eval_launch_v2:90dd89c4fb5a4778a8ff3f24b8380685",
+  "method": {
+    "source_rank": 32,
+    "target_rank": 16,
+    "target_count": 38,
+    "tensor_count": 76,
+    "parameter_count": 1287168,
+    "projection": "A32=[A0;A0],B32=[B0,deltaB] -> A16=A0,B16=B0+deltaB",
+    "training_performed": false,
+    "writer_forward_performed": false,
+    "checkpoint_selection": false,
+    "condition": "correct",
+    "k": 4
+  },
+  "formal_panel": {
+    "split": "validation8",
+    "states_per_task": 50,
+    "episodes": 400,
+    "completed_shards": 72,
+    "worker_count": 18,
+    "all_worker_return_codes_zero": true,
+    "successes": 136,
+    "success_rate": 0.34,
+    "breadth_nonzero_tasks": 5,
+    "task_count": 8,
+    "per_task_successes": [
+      {"suite": "libero_10", "task_id": 1, "successes": 16},
+      {"suite": "libero_10", "task_id": 2, "successes": 0},
+      {"suite": "libero_goal", "task_id": 3, "successes": 0},
+      {"suite": "libero_goal", "task_id": 6, "successes": 35},
+      {"suite": "libero_object", "task_id": 1, "successes": 46},
+      {"suite": "libero_object", "task_id": 3, "successes": 34},
+      {"suite": "libero_spatial", "task_id": 1, "successes": 0},
+      {"suite": "libero_spatial", "task_id": 3, "successes": 5}
+    ],
+    "per_suite_successes": {
+      "libero_10": 16,
+      "libero_goal": 35,
+      "libero_object": 80,
+      "libero_spatial": 5
+    },
+    "wall_seconds": 765.8628742694855,
+    "shard_execution_window_seconds": 612.1233932971954
+  },
+  "paired_to_historical_rank32": {
+    "historical_successes": 151,
+    "rank16_successes": 136,
+    "delta": -15,
+    "episode_keys_match": true,
+    "environment_seeds_match": true,
+    "policy_noise_common_prefix_match": true,
+    "retained": 123,
+    "gained": 13,
+    "lost": 28,
+    "churn": 41,
+    "retention_rate": 0.8145695364238411,
+    "success_set_jaccard": 0.75,
+    "historical_breadth_nonzero_tasks": 6,
+    "rank16_breadth_nonzero_tasks": 5,
+    "per_suite": [
+      {"suite": "libero_10", "historical": 27, "rank16": 16, "delta": -11, "retained": 11, "gained": 5, "lost": 16},
+      {"suite": "libero_goal", "historical": 40, "rank16": 35, "delta": -5, "retained": 34, "gained": 1, "lost": 6},
+      {"suite": "libero_object", "historical": 81, "rank16": 80, "delta": -1, "retained": 75, "gained": 5, "lost": 6},
+      {"suite": "libero_spatial", "historical": 3, "rank16": 5, "delta": 2, "retained": 3, "gained": 2, "lost": 0}
+    ],
+    "per_task": [
+      {"suite": "libero_10", "task_id": 1, "historical": 26, "rank16": 16, "delta": -10, "retained": 11, "gained": 5, "lost": 15},
+      {"suite": "libero_10", "task_id": 2, "historical": 1, "rank16": 0, "delta": -1, "retained": 0, "gained": 0, "lost": 1},
+      {"suite": "libero_goal", "task_id": 3, "historical": 0, "rank16": 0, "delta": 0, "retained": 0, "gained": 0, "lost": 0},
+      {"suite": "libero_goal", "task_id": 6, "historical": 40, "rank16": 35, "delta": -5, "retained": 34, "gained": 1, "lost": 6},
+      {"suite": "libero_object", "task_id": 1, "historical": 47, "rank16": 46, "delta": -1, "retained": 44, "gained": 2, "lost": 3},
+      {"suite": "libero_object", "task_id": 3, "historical": 34, "rank16": 34, "delta": 0, "retained": 31, "gained": 3, "lost": 3},
+      {"suite": "libero_spatial", "task_id": 1, "historical": 0, "rank16": 0, "delta": 0, "retained": 0, "gained": 0, "lost": 0},
+      {"suite": "libero_spatial", "task_id": 3, "historical": 3, "rank16": 5, "delta": 2, "retained": 3, "gained": 2, "lost": 0}
+    ]
+  },
+  "qualification": {
+    "minimum_successes_for_absolute_phase0_baseline": 145,
+    "passed": false,
+    "ruling": "The algebraic effective-rank-16 structure is retained, but 136/400 does not qualify as the absolute Phase 0 baseline. Historical 151/400 remains mechanism and historical evidence only. No rerun or rescue sweep is authorized."
+  }
+}

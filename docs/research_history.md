@@ -1398,6 +1398,21 @@ structured outer credit与最终validation/Test资格。最小process pair必须
 最终Stage 0/`q_pi`/`q_V`共同训练。该复核只改变当前阶段解释和未来顺序，不改写任何历史分数；完整记录见
 `docs/ecp_expert_alignment_audit_20260824.md`第9节。
 
+### 3.71 GOMQ真实rank16 Phase 0以136/400关闭
+
+在clean pushed `ac233fa0e94b40c525d75746ef2d8fdfb4dc0046`上，将GOMQ cycle2已封存的400套rank32 episode LoRA按
+`A32=[A0;A0]、B32=[B0,deltaB] -> A16=A0、B16=B0+deltaB`确定性canonicalize。38/38 targets的A半块逐元素相等；输出
+为完整76-tensor、1,287,168参数的真实rank16 LoRA。全程没有训练、Writer/video forward、checkpoint选择或adapter融合。
+
+唯一strict400 correct评测得到`136/400`，逐task为`16/0/0/35/46/34/0/5`、breadth`5/8`。相对历史rank32的151，
+retained/gained/lost=`123/13/28`、churn41、Jaccard`.75`；suite变化为Long`-11`、Goal`-5`、Object`-1`、Spatial`+2`。
+400行episode、environment seed与policy-noise common prefix严格匹配，72/72 shards和18 workers全部正常完成。
+
+由于结果低于事前固定的145门，真实rank16结果不成为absolute Phase 0基线，历史151也只保留机制与历史证据。实数代数上的
+effective-rank事实仍成立，但native BF16 regrouping后的实际闭环行为不能视为等价。依预注册合同不做dtype、rank、scale、seed或
+checkpoint救援，GOMQ正式归档关闭。完整证据：
+`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

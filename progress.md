@@ -17,9 +17,11 @@
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
+- completed GOMQ rank16 Phase 0 card：`docs/gomq_rank16_archival_card_20260824.md`；
+- GOMQ rank16 Phase 0 adjudication：`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；最新retained solver的formal code authority为clean pushed `fc678f3`，profile已结束；
-  当前没有active GPU job，下一formal里程碑是冻结GOMQ cycle2真实rank16 strict400 archival baseline。
+- canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
+  当前没有active GPU job，active双前置已转为process-identifying最小pair与mobile-rank4 realizer calibration。
 
 ## Current scientific state
 
@@ -40,6 +42,9 @@
 - 当前没有`Program -> event/layer/family policy-effect distribution`模块，也没有`q_V(P|L,V)` checkpoint；普通Writer
   联合训练和最终结构化outer credit尚未开始。
 - GOMQ历史151只作为“强carrier + 小有效更新可保留support”的结构证据，不恢复其Writer或checkpoint作为答案。
+- GOMQ真实rank16 Phase 0已完成：确定性native-dtype canonicalization在strict400得到`136/400`、逐task
+  `16/0/0/35/46/34/0/5`、breadth`5/8`。它相对历史rank32的`151`保留123、获得13、丢失28；因低于预注册145门，
+  不成为absolute基线，历史151也只保留机制/历史证据。该差异不触发dtype、scale、seed、rank或checkpoint救援。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
@@ -108,6 +113,9 @@
 11. 完成零新rollout的member-objective、trust、effective-correction方向审计，停止当前raw-factor operator。
 12. 从clean pushed `fc678f3`在gpu01 physical5完成唯一ordinal71 effective-update profile；physical0未使用。initial sketch
     finite且为负方向，但0步被接受，按卡停止并取消held5 launch。
+13. 从clean pushed `ac233fa`物化400套真实rank16 archival caches，并在gpu01 physical`1,2,3,4,5,7`以18 workers完成唯一
+    strict400 correct评测；physical0未使用，72/72 shards与400/400 rows完整、workers全0返回。结果`136/400`，按预注册门关闭
+    GOMQ；formal产物与paired evidence保留。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -173,6 +181,6 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。执行顺序已固定为：GOMQ真实rank16 archival；process最小pair与realizer coordinate并行；fresh
+- 当前没有active GPU job。Phase 0 GOMQ archival已结束；process最小pair与realizer coordinate可并行；后续顺序固定为：fresh
   Stage 0 Program；distributional `q_pi`；冻结privileged full-chain；`q_V`；ordinary joint Writer；structured outer credit；
-  final qualification。当前active里程碑是第一项，不建立新的ECP版本号。
+  final qualification。当前active双前置就是前两项，不建立新的ECP版本号。

@@ -1,8 +1,8 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **专家最终复核已完成，ECP恢复执行。当前active里程碑是冻结GOMQ cycle2的真实rank16 archival
-strict400；随后并行推进process-identifying最小pair与mobile-rank4 deployment realizer坐标校准。`q_pi`、`q_V`和joint
-Writer均不得提前启动。**
+状态：2026-08-24 **Phase 0已按预注册合同完成并以`136/400`判为absolute-baseline non-pass；GOMQ归档关闭。当前active
+双前置是process-identifying最小pair与mobile-rank4 deployment realizer坐标校准，两者可并行；最小pair未通过前不得启动
+`q_pi`或`q_V`，fixed realizer未通过前不得启动完整privileged链。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -175,12 +175,16 @@ card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
 
 ## Phase E — Phase 0：GOMQ真实rank16 archival baseline
 
-- [ ] 定位cycle2冻结checkpoint、rank32构造、K4 schedule与历史strict400 exact rows；
-- [ ] 在实现前冻结确定性canonicalization：逐target保留实数effective update，输出真实76-tensor rank16 BF16 adapter，不训练、
+- [x] 定位cycle2冻结checkpoint、rank32构造、K4 schedule与历史strict400 exact rows；
+- [x] 在实现前冻结确定性canonicalization：逐target保留实数effective update，输出真实76-tensor rank16 BF16 adapter，不训练、
   不选checkpoint、不融合；
-- [ ] 从clean pushed detached authority物化rank16并做focused effective-update/serialization验证；
-- [ ] 在同一strict400 correct面板完成一次archival评测，与历史151逐row配对；
-- [ ] 若大幅下降，151只保留机制证据；否则rank16 strict结果成为后继absolute参考；归档后不恢复GOMQ训练。
+- [x] 从clean pushed detached authority物化rank16并做focused effective-update/serialization验证；
+- [x] 在同一strict400 correct面板完成一次archival评测，与历史151逐row配对；
+- [x] 结果`136/400`低于预注册`145`门；历史151只保留机制/历史证据，归档后不恢复GOMQ训练。
+
+正式rank16逐task为`16/0/0/35/46/34/0/5`，breadth为`5/8`。相对历史rank32的
+retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、environment seed与policy-noise common prefix
+均严格配对。证据：`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`。
 
 ## Phase F — Phase 1：process-identifying最小pair与suite
 

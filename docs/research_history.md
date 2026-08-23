@@ -1372,6 +1372,32 @@ steps。它们仍分别证明independent policy/state coverage、fixed-A binding
 successor或启动GPU。完整落实矩阵、成果边界、疑问与候选顺序见
 `docs/ecp_expert_alignment_audit_20260824.md`。
 
+### 3.70 专家最终复核固定deployment-time occupancy completion与后继顺序
+
+独立专家对`main@6a97185126ab640c3f9a6a719084dc0268ddd8e9`完成全过程复核。专家确认第3.69节的核心纠偏：当前effect bank
+不是distributional Program posterior，direct-effect solver绕过Program，完整ECP Stage 1未执行也未被整体证伪。进一步的最终
+修正是，最深未解问题不是单独缺少`q_pi`或更好solver，而是deployment-time occupancy completion：Writer只见language/videos，
+却必须生成一套在编译时不可见的future policy occupancy上有效的静态LoRA。
+
+最终阶段名固定为Stage 0-V、1A-E、1A-P、1B-R0、1B-C、1B-O、2、3、4。Stage 1B-R0仍是ECP必要的privileged lower-bound
+diagnostic，但读取future occupancy；正式Stage 1B-C只能从Program生成effective update。学习顺序固定为Program schema、
+effective coordinate与deployment realizer先建立并冻结，再训练distributional `q_pi`，privileged full-chain过门后才训练同构`q_V`。
+
+专家还校正了当前evidence边界：48-state资产改称four-category structured occupancy panel；antithetic probe已提前平均；
+off-policy member response没有continuation/recovery validity；stage-wise soft-min可能拼接不存在的policy。后继必须保留probe
+particles、global member identity与member-state validity，区分`P_visible`和rollout-only `Z_robust`。
+
+`carrier rank12 + mobile rank4 residual`解析投影`110/120/76`被认定为最近最强的结构正证据，并成为默认输出拓扑。下一realizer
+不再读取future occupancy，而是在balanced-SVD rank4或fixed two-sided sketch等固定canonical coordinate上训练小型target-local
+amortized map；known-success correction先用于objective/path calibration。Action Meta默认关闭，只作matched control。
+
+专家最终执行计划为：先把冻结GOMQ cycle2确定性canonicalize成真实rank16并补一次strict400 archival baseline；随后并行完成
+process-identifying最小pair feasibility与mobile-rank4 realizer calibration；再fresh建立owner-specific
+`P_lang/P_scene/P_process`、distributional `q_pi`、多fold frozen privileged full-chain、deployment `q_V`、ordinary joint Writer、
+structured outer credit与最终validation/Test资格。最小process pair必须先于新`q_pi/q_V`训练，完整family-disjoint suite必须先于
+最终Stage 0/`q_pi`/`q_V`共同训练。该复核只改变当前阶段解释和未来顺序，不改写任何历史分数；完整记录见
+`docs/ecp_expert_alignment_audit_20260824.md`第9节。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

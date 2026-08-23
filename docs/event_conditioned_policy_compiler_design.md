@@ -1,11 +1,11 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **正在接受专家全过程复核；新的代码/GPU推进暂停。既有direct-effect realization已裁决，但此前把
-effect bank误写成完整Stage 1A pass、把绕过Program的solver误写成完整Stage 1B，现已校正。**
+状态：2026-08-24 **专家全过程复核已经完成，后继依赖与Gate已定稿并恢复执行。当前里程碑是GOMQ真实rank16
+archival baseline；随后并行推进process-identifying最小pair与mobile-rank4 deployment realizer坐标校准。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
-本次方案对齐与待专家裁决问题见`docs/ecp_expert_alignment_audit_20260824.md`。
+本次方案对齐、专家最终修正与执行顺序见`docs/ecp_expert_alignment_audit_20260824.md`第9节。
 
 ## 1. 当前裁决
 
@@ -20,20 +20,20 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下**实际检�
 - 当前从exact-zero residual开始、直接更新mobile-rank4 raw A/B factors的12-step realization operator；
 - 用open-loop geometry、own retrieval或LoRA cosine替代早期closed loop。
 
-本轮direct-effect privileged子问题已经得到否定答案：
+本轮direct-effect privileged lower bound已经得到明确但有限的non-pass：
 
 > 在真实闭环状态分布上，用多个独立成功策略定义一个分布式策略等价类后，固定、受约束的rank16实现器能否从稳定
 > carrier出发，恢复显著且广泛的task-local闭环能力？
 
-fixed-A结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
+fixed-A结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，该组合
 non-pass。解析容量分离随后证明fixed-A行为上binding，而mobile-rank4 topology能以三个known-success members达到
 `110/120/76`。但保持同一bank/objective/12-step数值的mobile raw-factor solver只有`49/250`，逐task`40/3/6/0/0`，
 member-union gap只恢复`3/115`。它停止在接近carrier的极小修正，并未进入known-success effect basin。因此当前不训练video
-predictor、shared compiler或Writer联合模型，也不扫solver、rank、step、LR、初始化或权重。
+predictor、shared compiler或Writer联合模型，也不扫旧solver、rank、step、LR、初始化或权重。
 
 这项结论不能外推为完整privileged ECP链失败：当前retained Stage 1直接读取effect bank，没有distributional `q_pi(P)`，也没有
-`Program -> event/layer/family policy-effect distribution`模块。gauge-invariant realization、effect objective充分性与缺失的
-Program bridge必须由专家重新确定依赖顺序。
+`Program -> event/layer/family policy-effect distribution`模块。专家最终裁决要求先冻结Program schema、policy-effect坐标与
+deployment-compatible realizer，再训练distributional `q_pi`；不得先学习任意latent再让decoder共同旋转。
 
 ## 2. 方法总图
 
@@ -111,9 +111,9 @@ oracle至少使用：
 新member只有在预注册fixed-state closed loop上至少产生一条strict success并保留完整occupancy时才进入successful
 particle bank；不按task挑checkpoint或融合LoRA。
 
-### 4.2 Occupancy-complete state support
+### 4.2 Four-category structured occupancy panel
 
-每个task的首个formal bank固定为四类等权support：
+每个task现有formal bank固定为四类等权support：
 
 ```text
 S = S_initial U S_successful U S_candidate U S_recovery
@@ -128,7 +128,9 @@ S = S_initial U S_successful U S_candidate U S_recovery
 四类先等权，再在类内等权，避免Long的帧数支配task或stage权重。每个anchor保留官方双相机+state-conditioned language
 prompt形成的preprocessed policy observation、固定noise seed、归一化stage、BDDL progress、生成policy与最终success。
 
-`S_recovery`只为privileged realization补全闭环支持；它不能写入deployment Program。后续共享`q_V`只能预测视频可识别的
+该panel不是严格occupancy-complete：candidate只来自一条PECS轨迹，recovery只来自一条source失败轨迹，successful member
+轨迹也不覆盖全部失败与恢复模式。`S_recovery`只为privileged realization补全闭环支持；它不能写入deployment Program。
+后续共享`q_V`只能预测视频可识别的
 task/scene/order effect distribution，rollout-only recovery信息只能进入task-independent prior、uncertainty或共享solver。
 
 ### 4.3 Policy-effect particles
@@ -142,9 +144,11 @@ flow[m,s,10,50,32]       # 完整denoising velocity
 action[m,s,10,50,7]      # 每步积分后的action field
 ```
 
-member轴始终保留，不先平均成一个Program。member reliability、stage progress和跨member disagreement分别保存，形成
-particles或其等价的mean+structured covariance。Stage 1A只回答teacher等价类是否完整、非退化且覆盖真实闭环状态，不以
-LoRA geometry作为通过条件。
+现有capture在落盘前平均了antithetic正负probe，所以实际只保留member轴，尚未保留probe particle、不对称与probe variance；
+后继必须保留联合`member x probe x state/stage`不确定性。member reliability、on-policy validity、continuation success/progress
+与recovery validity必须进入mask或权重。global member identity默认贯穿整条trajectory，不能再由stage-wise soft-min自由拼接
+一个没有任何member实现过的策略；只有经过验证的skill composition才允许event级切换。Stage 1A-E只回答evidence是否足以供
+teacher学习，不以LoRA geometry作为通过条件。
 
 本轮只通过Stage 1A的evidence prerequisite：fold0五项各有一个新seed37独立member并取得strict success，配合既有两类
 members形成每task三particle；Goal/Long在内的五个48-state banks全部完整。它不能再被简称为“Stage 1A整体通过”。
@@ -168,7 +172,7 @@ posterior应保留mixture/particles或mean+structured covariance，并区分vide
 当前`Stage1EffectBank`保存的是prefix/noise/category/stage/progress以及source/carrier/member owner/flow/action effects；仓库没有
 实现上述Program posterior的retained `q_pi`模块。
 
-## 5. Direct-effect realization子门：occupancy-complete privileged oracle
+## 5. Direct-effect realization子门：four-category structured occupancy privileged oracle
 
 该关键GPU实验已经完成。它不读取视频、不学习shared weights、不形成deployment route；held task各自直接使用privileged
 effect particles，检验一套rank16 LoRA能否实现该策略等价类。`stage1_oracle.py`加载`effect_bank_manifest`后直接进入solver，
@@ -314,47 +318,117 @@ gap recovery与trust均为0，只消耗4次initial sketch VJP。按预注册门�
 用“方向导数为负”事后缩小步长继续搜索。证据见
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
 
-## 6. 完整Stage 1与`q_V`：等待专家重新定稿
+## 6. 最终阶段分类与依赖顺序
 
-当前不是“Stage 1C只被一个solver non-pass阻止”，而是完整privileged链还有两个未实现接口：
-
-```text
-successful-policy evidence
-    -> distributional q_pi(P)
-    -> event/layer/family policy-effect distribution
-    -> fixed shared realization operator
-    -> one complete rank16 LoRA
-```
-
-下一次held5 gate必须冻结哪些模块、direct-effect oracle在其中是什么前置角色、realizer是否应先独立通过，均由本轮专家复核
-重新裁决。仓库在得到这个顺序前不创建successor。
-
-只有完整privileged链显著高于shared、覆盖Goal/Long并保留multi-member support，才进入同构deployment posterior：
+完整链以后固定使用以下名称：
 
 ```text
-q_V(P | exact language, action-hidden ordered videos)
-    -> frozen Program-to-effect compiler/realizer
-    -> one complete rank16 LoRA
+Stage 0-V   language/videos -> owner-specific visible Program
+Stage 1A-E  successful policies/verified occupancies -> policy evidence particles
+Stage 1A-P  visible anchors + evidence -> distributional q_pi(P_visible, Z_robust)
+Stage 1B-C  Program -> deployment-compatible fixed effective-update realizer
+Stage 1B-O  frozen q_pi -> frozen realizer -> one held LoRA
+Stage 2     language/videos -> q_V(P_visible | L,V)
+Stage 3     ordinary Writer joint training
+Stage 4     structured rollout outer credit
 ```
 
-之后才允许普通Writer参数联合训练、structured outer credit与validation8 single-checkpoint development evaluation。联合训练不是
-永久禁区，但不能再次同时发明video semantics、Program gauge和realizer坐标。
+Stage 1B-R0另指exact privileged effects直接进入task-local realization的lower-bound diagnostic。它是必要下游证据，但读取future
+occupancy，不能成为Stage 1B-C部署路径。
 
-### 6.1 Process-identifying data是资格缺口，不是已确定的唯一下一主线
+### 6.1 Phase 0：GOMQ真实rank16 archival baseline
 
-现有全部授权BDDL只按最终状态合取判success，无法让“同language/endpoint、不同必需process”成为训练标签。若要声称general
-process understanding，仍需经审计的source-unseen paired variants；可行性见
-`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`。
+冻结GOMQ cycle2，不恢复训练或选择checkpoint。把磁盘rank32构造的实数有效更新确定性canonicalize为真实rank16 BF16 adapter，
+在同一K4 teacher-video schedule、strict400 rows和RNG合同上评测一次correct。若量化后大幅下降，151只作历史机制证据；否则
+rank16结果成为后继absolute/causal参考。该工作不把GOMQ并入ECP。
 
-但当前证据只说明这类数据缺失，不证明它是所有失败的唯一根因。它应在distributional `q_pi(P)`之前建立，还是只在`q_V`与
-最终process qualification前加入，是本次请专家明确的问题；未定稿前不创建custom tasks或启动GPU。
+### 6.2 Phase 1：process-identifying data Gate
+
+任何新`q_pi/q_V`训练前先完成一个同scene、language、init distribution与final predicates、只在required order上相反的最小
+pair。environment-internal temporal wrapper在wrong-first后永久invalid，variant/predicate/phase不进入policy或Writer；两个variant
+都必须有真实完整teacher episode，不能拼接primitive视频。privileged task-local expert必须完成两臂；correct video须胜sibling
+wrong，而language-only、no-video、first+final不能区分。最小pair通过后扩成family-disjoint process-meta suite，并在最终
+Stage 0、`q_pi`与`q_V`共同训练前完成。数据准备可与Phase 2并行。
+
+### 6.3 Phase 2：mobile-rank4坐标与deployment realizer
+
+输出拓扑固定为：
+
+```text
+W_j = W_carrier,j(rank12) + Delta W_j(rank4)
+```
+
+先用known-success analytic projections检验当前effect objective沿真实successful correction的局部/全程行为，并禁止未经验证的
+stage-wise member拼接；再在以下两种principled coordinate中择一完成闭环校准：balanced-SVD rank4 canonical factors，或fixed
+two-sided effective-update sketches加deterministic rank4 reconstruction。realizer为小型target-local amortized map，只读取结构化
+code/Program，不读取future occupancy；它在`q_pi`前训练，并在多fold privileged-code transform-only closed-loop通过后冻结。
+Gate要求明显高于carrier、5/5 breadth、Goal/Long非零、carrier retention至少75%、best-member gap有显著恢复且相邻checkpoint
+稳定。若known correction有效但coordinate不够，只允许一次有原则的coordinate扩展；两种坐标均失败则停止当前mobile-rank4
+shared realizer，而非继续solver sweep。
+
+### 6.4 Phase 3：fresh完整Stage 0-V Program
+
+最终schema固定为：
+
+```text
+P_lang[38,128]
+P_scene[38,128]
+P_process[8,38,128]
+rho[8]
+sigma[8,38,128] and probe/member uncertainty
+```
+
+owner-specific fixed queries读取native language states与initial/goal grounded relations；process保留有序event-horizon binding与
+Dynamic-K event alignment。probe particles不得提前antithetic averaging。训练使用frame-level content/action/transition、真实
+event/contact/predicate phase、process-pair discrimination、same-procedure/different-object invariance与group-disjoint contrast，
+不再让pure relative-time action schedule成为主监督。process-held full video须胜first+final，same-task稳定、probe replacement
+稳定、events不坍缩；latent margin不能替代闭环资格。
+
+### 6.5 Phase 4：Stage 1A-P distributional `q_pi`
+
+在fit/meta、process、Goal/Long和不同suite/family上补足至少两个独立successful lineages；独立统计单元必须远多于19，不要求90
+tasks全部三lineage。set encoder以visible anchors与verified evidence为输入，event x owner queries输出
+`q_pi(P_visible,Z_robust)` particles/mixture；不使用raw task ID、filename或raw A/B rank embedding。目标包括leave-one-member-out
+effect、posterior calibration、lineage consistency、process alignment、冻结realizer后的policy response与最终closed-loop。
+held fold只forward privileged evidence，不拟合free code；必须显著高于carrier、5/5 breadth、Goal/Long非零、多fold复现且posterior
+不坍缩，才进入完整oracle。
+
+### 6.6 Phase 5：Stage 1B-O完整privileged Gate
+
+冻结Stage 0 schema、`q_pi`、carrier、effective coordinate、realizer、checkpoint及member/video选择规则。held task只把预登记
+evidence送入共享`q_pi`并用固定realizer生成一个posterior-marginalized LoRA；禁止task-local optimizer、free code、effect early
+stop或particle/LoRA挑选。Gate要求相对carrier显著净增、接近全breadth、Goal/Long非零、高carrier retention、best-single-member
+gap恢复约40%且多fold/相邻checkpoint同向。失败则不训练`q_V`。
+
+### 6.7 Phase 6：Stage 2 deployment posterior `q_V`
+
+第一轮冻结source/backbone、Stage 0 schema、`q_pi`、Program coordinate、realizer与carrier，只训练`q_V`和Dynamic-K posterior
+aggregation。部署输入仅exact language与action-hidden ordered videos，输出与`q_pi`同构的`P_visible` posterior。训练目标为posterior
+distillation、event matching、effect-code prediction、uncertainty、same-task cross-video consistency与process sibling discrimination。
+主要结构完成后直接做deployment-only closed loop；最终冻结checkpoint才跑shuffled/reversed/cross-suite wrong/static/no-video。
+full须显著胜language+scene/endpoints、增量覆盖多数tasks、same-task retention至少90%、process sibling正确、Goal/Long非零且
+相邻稳定。
+
+### 6.8 Phase 7--9：联合训练、outer credit与最终资格
+
+`q_V`通过后，先固定realizer并解冻semantic/transition/event/Dynamic-K/`q_V`，稳定后才小学习率解冻Program-to-code；carrier与
+canonicalizer保持冻结。每个主要节点直接closed-loop，连续两个预注册节点absolute/breadth与same-task retention均无恢复则退回
+frozen-realizer checkpoint。
+
+只有full video已有闭环增量后才让structured outer credit作用于event posterior、Program与mobile residual coefficients；不在百万
+A/B参数上随机扰动。task-equal CRN rollouts使用success、temporal progress、efficiency、prior/full与retained-success barrier。
+两个预注册outer节点无净改善即停止该estimator。
+
+最终使用全部授权train/meta fresh训练；validation8只以deployment输入做single-checkpoint paired400，目标correct严格
+`>145/400`且高breadth、Goal/Long贡献、same-task鲁棒、相邻稳定并显著胜wrong/shuffled/reversed/static/no-video。方法、checkpoint
+与controls冻结后才打开Test8。
 
 ## 7. 生命周期与停止条件
 
 active tree只保留一条ECP路径。每个重大科学问题对应一张falsification card；bugfix不增加版本，profile不算科学裁决，
 每个主要家族第一次完整实现后必须直接closed loop。
 
-只有在一次真正强的oracle同时具备process-identifying source-unseen data、多个独立成功策略、initial/successful/candidate/
-recovery occupancy、effect distribution、stable carrier和fixed realization后仍不高于shared、breadth不超过3/5、Goal/Long为0、
+只有在一次真正强的oracle同时具备process-identifying source-unseen data、固定Program schema、多个独立成功策略、verified
+initial/success/recovery support、distributional `q_pi`、deployment-compatible mobile residual realizer和多fold early closed-loop后仍不高于shared、breadth不超过3/5、Goal/Long为0、
 且只恢复很少task-local oracle gains，才停止广义`action-hidden video -> static full LoRA`主路线。届时优先转向runtime
 video-conditioned policy、video-to-reward/progress、video-initialized task-local RL或skill/subgoal composition。

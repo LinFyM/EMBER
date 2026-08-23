@@ -1,7 +1,8 @@
 # EMBER-ECP 全过程专家对齐审计
 
-状态：2026-08-24。本文是提交给独立专家复核的索引与自查，不是新的架构裁决，也不授权新的GPU实验。专家应以
-remote `main`、Git历史和formal raw evidence为准，可以推翻本文的分类、结论与候选计划。
+状态：2026-08-24 **专家复核已完成**。第1--8节保留提交复核时的原始自查，便于追踪哪些判断由仓库先提出；
+第9节记录专家对`main@6a97185126ab640c3f9a6a719084dc0268ddd8e9`的最终修正。后续执行以第9节、
+`docs/event_conditioned_policy_compiler_design.md`和`task_plan.md`为准，第7节旧候选顺序不再授权执行。
 
 ## 1. 审计结论先行
 
@@ -239,3 +240,67 @@ retained source中没有输出同构Program posterior的`q_pi`，也没有Progra
 - PECS complete trajectory：`docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`
 - MDCO：`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`
 - GOMQ causal controls：`docs/evidence/gomq_20260823/gomq_cycle2_causal_adjudication.json`
+
+## 9. 专家最终复核裁决
+
+### 9.1 最核心的未解问题
+
+专家确认ECP尚未被完整实现，也没有被整体证伪。比“缺`q_pi(P)`”更深的核心缺口是
+**deployment-time occupancy completion**：Writer在rollout前只能看language与action-hidden videos，不能读取未来initial、
+candidate或recovery occupancy，却必须生成一套在这些未见状态上稳定工作的静态LoRA。task-local occupancy solver可作强oracle，
+但不能成为deployment compiler；teacher-frame PECS可部署兼容但state coverage不足；历史amortized compiler可部署兼容却欠识别。
+后继必须正面建立`video-visible Program -> global policy adaptation`这座桥。
+
+### 9.2 最终阶段分类
+
+| 阶段 | 输入与输出 | 当前状态 |
+| --- | --- | --- |
+| Stage 0-V | language/videos -> `P_lang/P_scene/P_process/rho/sigma` | 部分实现；v3只过非退化门 |
+| Stage 1A-E | successful policies/occupancies/responses -> evidence particles | fold0前置资产部分完成 |
+| Stage 1A-P | visible anchors + verified policy evidence -> distributional `q_pi(P_visible,Z_robust)` | 未实现 |
+| Stage 1B-R0 | exact privileged effects -> LoRA lower-bound diagnostic | 多个子门完成，未强通过 |
+| Stage 1B-C | Program-only、deployment-compatible fixed compiler/realizer | 未实现 |
+| Stage 1B-O | `q_pi(P)` -> fixed realizer -> held LoRA | 未执行 |
+| Stage 2 | language/videos ->同构`q_V(P|L,V)` | 未实现 |
+| Stage 3 | 普通Writer联合训练 | 未开始 |
+| Stage 4 | structured rollout outer credit | 最终链未执行 |
+
+direct-effect realization是完整ECP的必要下游条件与lower-bound diagnostic，不是普通消融；但它读取future occupancy，因此不能
+冒充Stage 1B-C。当前48-state资产改称**four-category structured occupancy panel**，不再称occupancy-complete。其antithetic
+probe在保存前被平均、off-policy member response未验证为恢复target、stage-wise soft-min可拼出不存在的混合policy，均须在
+下一次teacher/effect设计中修正。
+
+### 9.3 冻结的架构原则
+
+1. Program schema先固定为`P_lang[38,128]`、`P_scene[38,128]`、
+   `P_process[8,38,128]`、`rho[8]`及结构化uncertainty；owner-specific language/scene reads必须重建。
+2. 先固定Program语义、effective-update/effect coordinate和deployment-compatible realizer，再训练`q_pi`；`q_pi`通过并冻结后
+   才训练`q_V`。不得先联合学习任意latent，再让decoder共同旋转寻找语义。
+3. 默认输出拓扑为`rank12 stable carrier + mobile rank4 residual`。解析投影`110/120/76`已强支持其容量；rank只作数值
+   参数化，不承载skill/event语义。
+4. 首选固定canonical residual coordinate加小型target-local amortized realizer；realizer inference只能读取Program，不读取
+   future occupancy。task-local occupancy solver只保留为上限诊断。
+5. `q_pi`必须保留member/probe/uncertainty distribution；global member identity贯穿trajectory。只有经验证的skill composition
+   才允许event级member切换；member-state response须带on-policy、continuation/progress与recovery-validity信息。
+6. `P_visible`必须与`q_V`同构；rollout-only recovery information只进入`Z_robust`、共享robustness prior或realizer训练，不能要求
+   deployment posterior逐项复制。
+7. Action Meta默认关闭，只作matched control；只有明确改善probe stability、process-held或最终closed-loop才启用并冻结。
+
+### 9.4 最终执行顺序
+
+0. 将冻结GOMQ cycle2有效更新确定性canonicalize为真实rank16，完成一次strict400 archival baseline；不恢复训练。
+1. 在任何新`q_pi/q_V`训练前完成一个process-identifying最小pair feasibility；完整family-disjoint process-meta suite在最终
+   Stage 0、`q_pi`和`q_V`共同训练前建立。
+2. 与process数据准备并行，使用known-success mobile projections校准effect objective、member validity与固定canonical
+   rank4 residual coordinate；训练并冻结小型deployment-compatible target-local realizer。
+3. fresh重建完整owner-specific Stage 0 Program，保留probe particles而非提前antithetic averaging，并以process-meta
+   识别约束替代pure relative-time schedule捷径。
+4. 在fit/meta与process tasks补足独立successful lineages，训练distributional Stage 1A-P `q_pi`；held folds不拟合free code。
+5. 冻结Program schema、`q_pi`、carrier、coordinate、realizer与checkpoint规则，运行多fold Stage 1B-O privileged full-chain
+   closed-loop gate。
+6. 只有privileged full chain显著超过carrier、覆盖Goal/Long并恢复best-member gap，才训练同构deployment `q_V`。
+7. `q_V`已有full-video闭环增量后，先在fixed realizer上做普通Writer联合训练，再按结构化Program/mobile coefficients加入outer
+   credit；每个主要节点直接closed-loop，不再由open-loop proxy自动派生版本。
+8. 用全部授权train/meta fresh训练，validation8作single-checkpoint paired400；方法与controls冻结后才打开Test8。
+
+Phase 0--2是当前立即执行面。其余阶段的详细输入、冻结项、Gate与停止条件已经同步进active design与`task_plan.md`。

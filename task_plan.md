@@ -1,11 +1,12 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **ECP全过程已完成一次专家方案对齐审计，当前暂停新的代码/GPU推进，等待专家复核阶段边界、
-distributional `q_pi(P)`缺口与后续顺序。既有direct-effect realization结果全部保留，但不再冒充完整Stage 1结论。**
+状态：2026-08-24 **专家最终复核已完成，ECP恢复执行。当前active里程碑是冻结GOMQ cycle2的真实rank16 archival
+strict400；随后并行推进process-identifying最小pair与mobile-rank4 deployment realizer坐标校准。`q_pi`、`q_V`和joint
+Writer均不得提前启动。**
 
-当前设计合同：`docs/event_conditioned_policy_compiler_design.md`（正在接受专家复核，不授权successor）
+当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
-本次复核索引：`docs/ecp_expert_alignment_audit_20260824.md`
+本次复核索引与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
@@ -24,10 +25,10 @@ zero-interaction闭环能力。正式目标仍为strict paired correct严格`>14
 
 旧deterministic/mean `q_pi -> Program -> A/B hyperdecoder`家族已经关闭；不恢复v24、MDCO或小结构/超参变体。这个裁决
 不等于专家最终要求的distributional `q_pi(P)`已经实现或被否定。PECS只证明selected-context exact effects能从shared43
-提高到58/59；后续occupancy-complete工作补齐了真实initial/successful/candidate/recovery support，但当前retained solver
-仍直接读取effect bank，绕过Program。
+提高到58/59；后续four-category structured occupancy panel补齐了initial/successful/candidate/recovery四类support，但当前
+retained solver仍直接读取effect bank，绕过Program且依赖future occupancy。
 
-本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到fixed-A oracle的`78/250`，但只
+本轮已经回答：结构化闭环状态支持上的多成功策略evidence可把stable carrier从`43/250`提高到fixed-A oracle的`78/250`，但只
 覆盖3/5 tasks；known-success mobile-rank4解析投影则可恢复到`110/120/76`，排除明显rank4 topology binding。随后保持同一
 bank/objective/12-step数值，只让residual A/B共同移动的正式solver却只有`49/250`、逐task`40/3/6/0/0`。它保留
 `41/43` carrier successes，却只恢复`3/115` member-union缺口。当前raw-factor operator停止；仍不训练video predictor、
@@ -64,8 +65,8 @@ shared compiler、joint Writer或outer credit，也不扫rank、step、LR、初�
 - [x] 实现官方双相机policy prefix、fixed antithetic noise及source/carrier/三个member的owner/flow/action particle缓存；
 - [x] 报告member independence、success union、state/stage覆盖、disagreement和video-observable/recovery信息分界。
 
-**Evidence prerequisite：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；particle轴未被
-均值压平；Goal/Long也有成功member与完整occupancy。**已通过：** 新独立members fixed250为`113`，逐task
+**Fold0 evidence prerequisite：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；member轴未被
+均值压平但antithetic probe轴尚未保留；Goal/Long也有成功member与完整occupancy。**已通过：** 新独立members fixed250为`113`，逐task
 `26/32/37/13/5`，5/5成功occupancy及五个48-state effect banks均完整。
 
 这一步没有输出专家所定义的同构Program posterior。当前bank保存privileged prefix/noise/category/stage/progress与
@@ -161,25 +162,94 @@ card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
 `docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。Action Meta仍保持control；由于本realization
 坐标未成立，本轮不启动该matched control。
 
-## Phase D — 专家复核与完整ECP链缺口
+## Phase D — 专家最终复核与执行合同
 
 - [x] 审计retained source：当前没有distributional `q_pi(P)`或Program-to-effect模块，Stage 1 oracle直接读取effect bank；
-- [x] 对照原始方案与最后修正案，形成全过程落实/部分落实/未落实矩阵、结果边界和待裁决问题；
-- [x] 审计现有source71/target40与LIBERO success接口：没有已授权same-endpoint/different-required-process pair，process data是
-  最终资格缺口，但尚不能替代未完成的Program桥；
-- [x] 暂停新solver、custom tasks、shared Writer与GPU实验，避免在阶段定义未对齐时继续产生版本；
-- [ ] 由专家明确direct-effect oracle、distributional `q_pi(P)`、Program-to-effect compiler与`q_V`之间的最终顺序和门；
-- [ ] 按专家修正后的单一合同，fresh实现同构distributional `q_pi(P)`并分离video-observable与recovery-only信息；
-- [ ] 实现唯一`Program -> event/layer/family policy-effect distribution`桥，并在held5完成冻结privileged全链closed-loop gate；
-- [ ] 只有全链oracle通过后训练Dynamic-K `q_V(P|L,V)`；
-- [ ] 按专家指定时机加入process-identifying source-unseen meta tasks，不用source-seen或同task更多episode冒充独立mapping；
-- [ ] 分阶段通过后再做除backbone外Writer普通参数联合训练与structured train/meta outer credit；
-- [ ] 全train授权数据fresh训练，validation8 single-checkpoint development，最终Test8；
-- [ ] final paired400补相邻稳定、same-task-other、wrong/shuffled/reversed/no-video与Dynamic-K资格。
+- [x] 对照原始方案与最后修正案，形成全过程落实/部分落实/未落实矩阵；
+- [x] 由专家固定最终阶段：Stage 0-V、1A-E、1A-P、1B-R0、1B-C、1B-O、2、3、4；
+- [x] 将最深缺口固定为deployment-time occupancy completion，而不是“只缺一个solver”或“只缺`q_pi`”；
+- [x] 将48-state资产改称four-category structured occupancy panel，并登记probe averaging、member-state validity和stage-wise
+  policy splicing问题；
+- [x] 冻结默认输出拓扑为stable carrier rank12 + mobile residual rank4，并固定“schema/coordinate/realizer先于`q_pi`”的顺序；
+- [x] 恢复执行；不再等待专家二次定稿。
+
+## Phase E — Phase 0：GOMQ真实rank16 archival baseline
+
+- [ ] 定位cycle2冻结checkpoint、rank32构造、K4 schedule与历史strict400 exact rows；
+- [ ] 在实现前冻结确定性canonicalization：逐target保留实数effective update，输出真实76-tensor rank16 BF16 adapter，不训练、
+  不选checkpoint、不融合；
+- [ ] 从clean pushed detached authority物化rank16并做focused effective-update/serialization验证；
+- [ ] 在同一strict400 correct面板完成一次archival评测，与历史151逐row配对；
+- [ ] 若大幅下降，151只保留机制证据；否则rank16 strict结果成为后继absolute参考；归档后不恢复GOMQ训练。
+
+## Phase F — Phase 1：process-identifying最小pair与suite
+
+- [ ] 先对soup/butter order pair或等价候选做真实资产/teacher feasibility，确认两个完整单episode trajectories可获得；
+- [ ] 实现repo-owned temporal wrapper：同scene/language/init/final predicates，wrong-first永久invalid，variant/predicate/phase不进入
+  policy或Writer；不放松正式target40 evaluator；
+- [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
+  区分，且无variant leakage；
+- [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；
+- [ ] 完整suite在最终Stage 0、`q_pi`、`q_V`共同训练前完成。该准备可与Phase G并行。
+
+## Phase G — Phase 2：fixed mobile-rank4 coordinate与deployment realizer
+
+- [ ] 用known-success mobile projections重新校准effect target：保留probe particles，给member-state加on-policy/
+  continuation/progress/recovery validity，global member identity默认贯穿trajectory；
+- [ ] 检验carrier沿真实successful correction路径的objective局部与全程行为，先做single-member，再做verified mixture；
+- [ ] 在balanced-SVD canonical rank4与fixed two-sided sketches + deterministic reconstruction中选择首个principled coordinate；
+- [ ] 训练小型target-local amortized `D_eff(structured code)->Delta W_rank4`，inference不读取future occupancy；
+- [ ] 多fold privileged-code transform-only closed-loop直接裁决：高于carrier、5/5 breadth、Goal/Long非零、carrier retention>=75%、
+  best-member gap显著恢复、相邻checkpoint稳定；
+- [ ] 若known correction有效而coordinate不够，只允许一次有依据的coordinate扩展；两种principled coordinates均失败则停止当前
+  mobile-rank4 shared realizer，不做solver小扫。
+
+## Phase H — Phase 3：fresh完整Stage 0-V Program
+
+- [ ] 建立owner-specific `P_lang[38,128]`和`P_scene[38,128]`，与
+  `P_process[8,38,128]/rho/sigma`形成固定同构schema；
+- [ ] 复用native v3初始化、event/horizon binding与Dynamic-K，但默认关闭Action Meta；probe粒子不得提前平均；
+- [ ] 用content-grounded frame/action/transition、event/contact/predicate phase、process-pair、cross-video consistency、speed、
+  same-procedure/different-object与group-disjoint目标训练，不以pure relative-time schedule为主监督；
+- [ ] 在process-held families通过full-vs-first+final、sibling discrimination、same-task稳定、probe稳定、event boundary/non-collapse与
+  language/scene/process职责门。
+
+## Phase I — Phase 4--5：distributional `q_pi`与完整privileged ECP
+
+- [ ] 在fit/meta、process、Goal/Long与不同families补足至少两个独立successful lineages，统计独立映射远多于19；
+- [ ] 训练`q_pi(P_visible,Z_robust)` particles/mixture；不使用raw task ID、filename或raw A/B rank embedding；
+- [ ] held folds只forward privileged evidence，不拟合free code；先通过多fold Stage 1A-P门；
+- [ ] 冻结schema、`q_pi`、carrier、coordinate、realizer、checkpoint/member/video规则，运行Stage 1B-O：每task一个
+  posterior-marginalized LoRA，无task-local optimizer/early-stop/particle选择；
+- [ ] 必须相对carrier显著净增、接近全breadth、Goal/Long非零、高retention、best-member gap恢复约40%、多fold和相邻点同向；
+  失败则不进入`q_V`。
+
+## Phase J — Phase 6：deployment `q_V(P|L,V)`
+
+- [ ] 冻结source/backbone、Stage 0 schema、`q_pi`、Program coordinate、realizer与carrier，只训练`q_V`和Dynamic-K aggregation；
+- [ ] 仅用exact language与K条action-hidden ordered videos预测与`q_pi`同构的`P_visible` posterior；
+- [ ] 直接做deployment-only closed-loop，比较language、language+scene/endpoints、full、same-task-other、K1/K2/K4与process sibling；
+- [ ] full须显著胜endpoints、增量分布多数tasks、same-task retention>=90%、Goal/Long非零、process sibling正确且相邻稳定；
+- [ ] shuffled/reversed/cross-suite wrong/static/no-video只在最终冻结checkpoint做，不进入训练或选模。
+
+## Phase K — Phase 7--8：ordinary joint Writer与structured outer credit
+
+- [ ] `q_V`通过后先冻结realizer，只解冻semantic/transition/event/Dynamic-K/`q_V`；稳定后才小学习率解冻Program-to-code；
+- [ ] 每个主要节点直接closed-loop；连续两个预注册节点absolute/breadth/same-task共同无恢复则退回frozen-realizer checkpoint；
+- [ ] 只有full video已有闭环增量后，outer credit才作用于event posterior、Program与mobile residual coefficients；
+- [ ] 使用task-equal CRN、success+temporal progress+efficiency、prior/full和retained-success barrier；两节点无净改善即停止estimator。
+
+## Phase L — Phase 9：最终方法资格
+
+- [ ] 全部授权train/meta fresh训练，validation8 deployment-only single-checkpoint paired400；
+- [ ] 目标correct严格`>145/400`，并满足high breadth、Goal/Long贡献、same-task鲁棒、相邻稳定及视频controls显著优势；
+- [ ] preferably超过GOMQ真实rank16 archival baseline；
+- [ ] 方法、checkpoint与controls冻结后才打开Test8；报告K变化及全部paired conditions。
 
 ## Done when
 
 - 最终shared Writer满足输入墙与single-LoRA部署合同并达到正式性能/因果/稳定性资格；或
-- 完成专家定义的强oracle（包括process-identifying source-unseen data）后仍触发广义ECP停止条件，并以closed-loop证据定位
+- 完成专家定义的强oracle（包括process-identifying source-unseen data、固定Program schema、独立lineages、verified support、
+  deployment-compatible realizer、distributional `q_pi`与多fold privileged full-chain）后仍触发广义ECP停止条件，并以closed-loop证据定位
   最早根本失败接口；
 - 验证后的代码、配置、文档和remote-safe evidence及时合并`main`并推送，task-owned worktree/branch/temp产物清理完毕。

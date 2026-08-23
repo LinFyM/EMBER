@@ -5,8 +5,8 @@
 
 ## Current authority
 
-- current design contract：`docs/event_conditioned_policy_compiler_design.md`（正在接受专家复核，不授权successor）；
-- ECP全过程对齐审计：`docs/ecp_expert_alignment_audit_20260824.md`；
+- current design contract：`docs/event_conditioned_policy_compiler_design.md`（专家最终修正已纳入，恢复执行）；
+- ECP全过程对齐审计与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
@@ -18,8 +18,8 @@
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
 - effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；最新retained solver的formal code authority为clean pushed `fc678f3`，profile已结束，
-  没有active GPU job或等待中的launch。
+- canonical workspace：本仓库`main`；最新retained solver的formal code authority为clean pushed `fc678f3`，profile已结束；
+  当前没有active GPU job，下一formal里程碑是冻结GOMQ cycle2真实rank16 strict400 archival baseline。
 
 ## Current scientific state
 
@@ -28,9 +28,9 @@
 - 历史Action Meta matched结果中性，现保留为control而非默认authority。
 - 旧deterministic/mean `q_pi -> Program -> A/B hyperdecoder`家族已经关闭。v24、MDCO以及width/rank/head/fusion/LR/seed
   后继均不再恢复；这个裁决不等于专家最终要求的distributional `q_pi(P)`已经实现或被否定。
-- occupancy-complete oracle已经补齐PECS缺少的真实initial/successful/candidate/recovery occupancy以及独立成功策略。它从
+- four-category structured occupancy oracle已经补齐PECS缺少的initial/successful/candidate/recovery四类state support以及独立成功策略。它从
   stable carrier `43/250`提高到`78/250`，说明realization仍有真实增量；但breadth只有3/5，Goal/Long仍为0，完整门失败。
-- Stage 1A的evidence prerequisite已完成：fold0五项各自的新seed37独立member在fixed250合计`113`，逐task为
+- Stage 1A-E的fold0 evidence prerequisite已部分完成：fold0五项各自的新seed37独立member在fixed250合计`113`，逐task为
   `26/32/37/13/5`；
   Goal/Long均有strict success，五个48-state、三particle effect banks完整。当前失败不能再归因于没有独立successful
   members或没有闭环occupancy，但retained source没有输出同构Program posterior的`q_pi(P)`，所以完整Stage 1A未通过。
@@ -148,10 +148,13 @@
 
 ## Current unresolved interface
 
-- 最早的架构对齐缺口是distributional `q_pi(P)`与Program-to-effect bridge尚不存在。现有evidence bank足以作为其输入资产，
-  但不能自行定义同构Program、video-observable posterior或固定compiler坐标；
-- 专家最后修正案对direct-effect realization子门与完整`q_pi(P) -> effect -> solver`门的命名和依赖顺序仍有解释空间，
-  已在`docs/ecp_expert_alignment_audit_20260824.md`列为首要复核问题；
+- 最深缺口是deployment-time occupancy completion：Writer只见language/videos，不能在编译时读取future initial/candidate/
+  recovery occupancy，却必须生成在该未见分布上有效的静态LoRA。task-local occupancy solver只作Stage 1B-R0 lower bound；
+  deployment Stage 1B-C必须只读取Program；
+- 时间上最早未证明的接口仍是video到process-semantic Program。native v3只证明非退化task/time表示；最终必须fresh建立
+  owner-specific `P_lang/P_scene`并用process-identifying data排除task identity、relative phase与endpoint捷径；
+- distributional `q_pi(P_visible,Z_robust)`与Program-to-effective-update bridge尚不存在。现有evidence panel可作输入资产，
+  但antithetic probes已被平均、off-policy member response未验证、stage-wise soft-min可拼接不存在的policy；
 - fixed-A capacity已被证明binding，mobile-rank4 topology则能解析恢复direct级闭环；当前失败不再是这两个容量问题；
 - 当前zero-residual raw A/B solver从rank-zero correction奇点出发，12步后effective correction norm约为known-success
   projection的1%，方向cosine也只有`.041--.077`。它没有进入successful-member effect basin，不能靠放大LR或增加步数盲救；
@@ -160,13 +163,16 @@
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
 - effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
-  当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续先综合复盘这一断点与
-  专家原始意见，不复活raw-factor dynamics、不即时再造solver、不启动held5或Stage 1C。
-- process-identifying data不再被登记为已经确定的唯一下一主线。只读接口核查仍成立：现有LIBERO只把最终谓词合取作为
+  当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续不复活raw-factor
+  dynamics，而用known-success corrections校准固定canonical residual coordinate与small deployment realizer；
+- process-identifying data与realizer calibration现为并行前置。只读接口核查仍成立：现有LIBERO只把最终谓词合取作为
   `done`；若要形成同language/同终点/相反必需顺序的任务对，需要不向policy暴露状态的temporal environment wrapper。
-  feasibility保留在`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`，具体插入时机等待专家与完整Program链一起裁决。
+  feasibility保留在`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`；最小pair必须在新`q_pi/q_V`前完成，完整
+  family-disjoint suite必须在最终Stage 0、`q_pi`与`q_V`共同训练前完成；
 - 零GPU资产核查仍可复用：target task37三条保留成功轨迹都只有`soup -> cream cheese`一种顺序；non-held
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active successor、GPU job或待启动命令；下一步先由专家复核阶段定义、成果边界和详细计划。
+- 当前没有active GPU job。执行顺序已固定为：GOMQ真实rank16 archival；process最小pair与realizer coordinate并行；fresh
+  Stage 0 Program；distributional `q_pi`；冻结privileged full-chain；`q_V`；ordinary joint Writer；structured outer credit；
+  final qualification。当前active里程碑是第一项，不建立新的ECP版本号。

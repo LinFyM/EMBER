@@ -1730,5 +1730,40 @@ Program-to-effect接口尚未实现。
 
 第81节关于现有LIBERO终点合取、temporal wrapper与process-pair feasibility的事实仍成立；其“process-identifying data已经是
 唯一下一主线”的优先级结论被本次审计降级为竞争性数据资格缺口。process数据应在`q_pi`之前还是只在`q_V`/最终claim前加入，
-与direct-effect oracle在完整Stage中的位置一起交由专家重新裁决。当前没有active successor或GPU job。全过程审计见
-`docs/ecp_expert_alignment_audit_20260824.md`。
+与direct-effect oracle在完整Stage中的位置一起交由专家重新裁决。审计提交时没有active successor或GPU job；该等待状态已由
+第83节的专家最终裁决解除。全过程审计见`docs/ecp_expert_alignment_audit_20260824.md`。
+
+## 83. 专家最终复核将主问题定为deployment-time occupancy completion
+
+独立专家对`main@6a97185`完成全过程复核后，确认第82节的阶段纠偏成立，但进一步指出“缺少distributional `q_pi(P)`”仍不是
+最深根因。Writer在rollout前只能看到language与action-hidden videos，不能看到未来initial、candidate或recovery occupancy；
+而现有direct-effect oracle正是利用这些privileged states求静态LoRA。完整ECP必须建立一条只由video-visible Program决定、却在
+未见deployment occupancy上有效的global policy adaptation。task-local occupancy solver因此是必要的Stage 1B-R0 lower-bound
+diagnostic，但永远不能冒充deployment-compatible Stage 1B-C。
+
+阶段现固定为Stage 0-V visible Program、Stage 1A-E policy evidence、Stage 1A-P distributional privileged teacher、
+Stage 1B-R0 direct-effect lower bound、Stage 1B-C Program-only fixed realizer、Stage 1B-O frozen privileged full chain、
+Stage 2 `q_V`、Stage 3 ordinary joint Writer与Stage 4 outer credit。正确学习顺序不是先让arbitrary latent与decoder共同旋转，
+而是先冻结Program schema、effective-update/effect coordinate与deployment realizer，再训练`q_pi`，最后冻结`q_pi`训练`q_V`。
+
+现有48-state资产应称four-category structured occupancy panel。它只保留member distribution：antithetic probes在落盘前已平均；
+successful member在off-policy/candidate/recovery states上的response未验证为正确continuation；stage-wise soft-min还可能拼接出没有
+任何member实际实现的policy。后继teacher必须保留`member x probe x state/stage`不确定性、member-state validity与global policy
+particle identity；rollout-only recovery进入`Z_robust`或共享realizer/prior，不成为`q_V`逐项预测target。
+
+mobile-rank4解析`110/120/76`是最近工作最强正结果：`stable carrier rank12 + mobile residual rank4`具有direct级absolute、
+5/5 breadth和Goal/Long容量，应成为默认输出拓扑。下一步不是再造task-local solver，而是用known-success corrections校准
+objective与固定canonical residual coordinate，再训练一个Program-only、target-local的小型amortized realizer并在`q_pi`前冻结。
+首选coordinate为balanced-SVD rank4 factors或fixed two-sided sketches加deterministic reconstruction；两种principled坐标都失败
+才停止该shared realizer family。
+
+process-identifying data也获得明确时序：任何新`q_pi/q_V`训练前先完成最小order pair feasibility；完整family-disjoint process-meta
+suite必须在最终Stage 0、`q_pi`和`q_V`共同训练前建立。它与realizer calibration可并行，不能互相替代。Stage 0最终必须fresh
+补齐owner-specific `P_lang[38,128]`与`P_scene[38,128]`，Action Meta默认关闭，只在matched probe/process/closed-loop有明确正收益
+时启用。
+
+执行顺序固定为：GOMQ frozen cycle2真实rank16 strict400 archival baseline；process最小pair与mobile-rank4 realizer calibration；
+fresh Stage 0 Program；distributional `q_pi`；多fold frozen privileged full-chain；deployment `q_V`；ordinary joint Writer；已有视频
+闭环增量后的structured outer credit；最后validation8/Test8资格。广义ECP只有在process数据、fixed schema、多独立lineages、
+verified support、deployment realizer、distributional `q_pi`与多fold early closed-loop都完成后仍不高于carrier、breadth不超过3/5、
+Goal/Long为0，才具备停止依据。完整裁决见`docs/ecp_expert_alignment_audit_20260824.md`第9节。

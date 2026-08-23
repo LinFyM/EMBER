@@ -1,13 +1,11 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **PECS完整去噪trajectory held5为59/250并未过retention/breadth门；最终预登记复验结束，PECS family停止并进入科学暂停**。
+状态：2026-08-23 **ECP停在未通过的Stage 1；MDCO仍属ECP Stage 1，PECS是随后越出原架构的独立诊断，GOMQ是无关的历史补审。当前不建立下一版本，等待独立专家复核。**
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
-当前learned Stage 1 compiler family已停止，不建立v25。v24与MDCO后的复盘见
-`docs/ecp_stage1_iteration_retrospective_20260823.md`；下一候选的单一合同见
-`docs/ember_pecs_falsification_card_20260823.md`。fit ordinal71冻结的12-step inverse-sqrt合同已完成首轮local-effect与最终
-fixed-noise完整去噪action/flow trajectory两次held5裁决；后者只把58提高到59，Goal/Long仍为0。按预登记停止条件，不训练
-video effect predictor、不再调整solver/target，也不自动建立下一架构版本。
+ECP learned Stage 1 compiler在v24后经MDCO的90-mapping与structured-credit复验仍失败，未进入`q_V`、联合Writer或后续阶段。
+PECS随后删除ECP的`q_pi + learned compiler`，只作为独立privileged upper-bound诊断完成并失败，不计入ECP实现进度。
+GOMQ补审也不计入ECP推进。跨版本执行复盘见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -15,7 +13,7 @@ dual-time transport方案均已封存，不再启动formal训练。它们的实�
 
 ## Goal
 
-全面实现并验证 **EMBER-ECP/PECS**：让一个shared Writer仅根据exact task language与K条
+全面实现并验证 **EMBER-ECP**：让一个shared Writer仅根据exact task language与K条
 action-hidden、内部有序的正确教学视频，在rollout前一次生成唯一一套完整38-target rank16 LoRA，使冻结source PI0.5在
 未见初始化上获得强、稳定、广泛且具有视频时序特异性的zero-interaction闭环能力。
 
@@ -27,9 +25,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 ## Done when
 
 - EMBER-ECP成为仓库唯一canonical Writer训练与部署运行面，旧活动路径由Git、sealed configs与formal artifacts复现；
-- native observer、Action Meta-LoRA独立对照、exact/predicted policy-effect teacher、fixed solver、Dynamic-K video encoder、
-  Writer联合训练和structured outer credit均已实现并得到相应阶段裁决；
-- fixed solver在video effect predictor进入前通过task-level leave-out closed-loop oracle gate，而非只通过inner effect loss；
+- native observer、Action Meta-LoRA独立对照、privileged `q_pi + Program-to-LoRA compiler`、Dynamic-K video encoder、Writer
+  联合训练和structured outer credit均已实现并得到相应阶段裁决；
+- privileged compiler在video-to-Program进入前通过task-level leave-out closed-loop oracle gate，而非只通过内部代理指标；
 - final Writer只读language与action-hidden videos，输出一套完整LoRA，不读取task ID、teacher action/state/reward或第二expert；
 - final training使用全部授权train tasks，validation8仅以部署输入做single-checkpoint development evaluation，Test8在方法冻结后
   才使用；
@@ -58,8 +56,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 
 1. **Contract gate**：信息墙、tensor owner、single-LoRA、task roles、pairing和冻结backbone正确。
 2. **Observer gate**：正确视频的event/owner结构跨episode、速度与替代probe稳定；native与Action Meta-LoRA得到独立裁决。
-3. **PECS realizability gate**：exact privileged policy effects经固定solver在train24 leave-task-out tasks上显著保留direct
-   successful-policy support。
+3. **Privileged compiler gate**：ECP `q_pi + Program-to-LoRA compiler`在train24 leave-task-out tasks上显著保留direct
+   successful-policy support；PECS fixed solver只作已完成的独立失败诊断，不替代本门。
 4. **Video inference gate**：冻结compiler后，action-hidden full video相对language+scene/endpoints创造新的闭环success，且跨video/
    Dynamic-K稳定。
 5. **Joint Writer gate**：除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练，相对frozen-
@@ -275,8 +273,8 @@ Goal/Long不能系统为零。失败则停在Program/compiler，不训练`q_V`�
 
 ## Phase 3 — Dynamic-K video-to-Program
 
-状态：**suspended with the failed learned compiler family**。以下原ECP顺序只保留历史合同；若PECS privileged oracle通过，
-由`docs/ember_pecs_falsification_card_20260823.md`中的effect-prediction gate替代，不得直接勾选或启动本节旧`q_V`路径。
+状态：**suspended because ECP Stage 1 failed**。以下是尚未执行的原ECP顺序；PECS是独立诊断，既未通过也不替代本阶段，
+不得把PECS结果记作进入`q_V`的授权。
 
 - [ ] 冻结source、observer authority、`q_pi`和compiler；
 - [ ] 只用correct action-hidden videos训练`q_V`，真实覆盖K1--K4并用同task跨episode action query；
@@ -356,8 +354,8 @@ coordinate退化则保留Stage 2并定位最早接口。
     support shards。当前停在内部复盘后的科学暂停点，不自动建立下一版本。
 15. [x] 完成MDCO后的第二层复盘：跨版本参数方向不同但success rows高度重合，确认最早失败是outcome层easy/shared basin，
     不是同一个LoRA参数局部最优；
-16. [x] 在不写代码、不启动GPU的前提下比较下一路线，停止继续学习共享Program-to-LoRA映射；选择
-    **EMBER-PECS（Policy-Effect Constrained Solver）**作为design-only hypothesis；
+16. [x] 在不写代码、不启动GPU的前提下比较下一路线，随后选择 **PECS（Policy-Effect Constrained Solver）**作为
+    ECP之外的design-only diagnostic hypothesis；该材料变化当时未先与owner重新确认，不能记作ECP自然推进；
 17. [x] 写成单一falsification card：第一实验只用held5 exact privileged policy effects检验固定inner solver realizability，
     不训练video effect predictor，不用geometry/open-loop proxy挡住首次strict paired250；
 18. [x] 复核PECS card、95-task evidence、held5 direct/shared/video资产与代码ownership；确认无需重建MDCO大资产；
@@ -378,3 +376,16 @@ coordinate退化则保留Stage 2并定位最早接口。
     policy而非dead graph；但净增量仅`+1`，最早断点是稀疏teacher-frame functional constraints不能确定跨初始化的状态策略；
 25. [x] 将失败PECS source/config/script/tests及evaluator compatibility入口从active tree退休，保留Git `1142e5b`、formal
     artifacts与remote-safe evidence；当前不启动下一版本，停在内部跨版本复盘后的科学暂停点。
+26. [x] 回查GOMQ cycle 2历史authority、相邻checkpoints与未完成controls；确认151峰值此前没有因果资格，same-task-other仅因
+    CLI解析失败而从未产生rows，不能据此继续把GOMQ视为已否定方法；
+27. [x] 对同一冻结GOMQ checkpoint补齐same-task-other/cross-suite-wrong/shuffled/reversed strict paired400，结果为
+    `139/131/127/115`，五个video panels全部配对字段零mismatch；correct相对wrong/shuffled/reversed净
+    `+20/+24/+36`且exact p均显著，证明视频内容和时序有真实闭环价值；
+28. [x] 复用旧source strict400作identity/no-adapter proxy并验证配对，得到`48/400`与correct净`+103`；明确它不是learned
+    language-only baseline，不用该proxy过度声称language/video分解；
+29. [x] 审计source71与target40的language/goal metadata及GOMQ rank topology；确认全部BDDL reward为最终状态合取、没有已证明的
+    same-endpoint/different-required-procedure pair；GOMQ实数有效update rank不超过16，但BF16 rank16序列化尚未formal验证；
+30. [x] 完成跨GOMQ、ECP、MDCO与PECS的统一复盘：停止由最近metric差异自动生成successor，保留GOMQ为最强视频因果锚点，
+    将当前最早缺口登记为process-identifying information与closed-loop state coverage；本轮不启动下一版本或补充训练。
+31. [x] 固化remote-safe evidence，以`evidence/gomq-causal-audit-20260823` tag保留精确GOMQ审计authority；清理task-owned
+    branch/worktree、约8GB可再生control LoRA caches、42MB smoke及GPU/tmux残留。当前提交推送后结束本轮。

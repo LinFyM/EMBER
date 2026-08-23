@@ -1231,6 +1231,31 @@ trajectory相对local的effective-update cosine按task为`.753/.765/.777/.830/.8
 不再改solver/target、不建立下一版本。tracked PECS runtime与evaluator compatibility入口从active tree退休，Git `1142e5b`、
 formal artifacts及`docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`保存精确历史。
 
+### 3.63 GOMQ cycle 2完成迟到的validation8因果资格补审
+
+跨版本复盘发现，历史GOMQ cycle 2是shared Writer最高single checkpoint：K4 correct validation8为`151/400`，但当时
+same-task-other命令在CLI解析失败后未重试，也没有wrong/shuffled/reversed formal panel。2026-08-23从历史`8553b61`恢复
+该冻结方法，只增加无梯度evaluation conditions；adapter checkpoint、teacher-video schedule、初态与policy RNG不变，没有训练、
+checkpoint选择或validation action/reward梯度。
+
+补齐的same-task-other/cross-suite-wrong/shuffled/reversed分别为`139/131/127/115`。correct相对四者的paired
+correct-only/control-only为`28/16、43/23、40/16、50/14`，margin为`+12/+20/+24/+36`，exact p为
+`.09614/.01866/.001842/7.07e-6`。五个panels的episode key、env seed、policy seed root、noise common prefix和teacher
+reference videos均零mismatch。旧frozen source strict400作为identity/no-adapter proxy为48；与correct为43 both、108
+correct-only、5 source-only，净`+103`、`p=2.83e-26`，但它不是learned language-only Writer baseline。
+
+因此151具有真实视频内容与时序因果性；然而same-task correct-success retention仅`123/151=81.46%`，相邻cycles为
+`151→135→131`，breadth`6/8`、两task为0且top3占`80.13%`，不满足鲁棒、稳定与breadth资格。GOMQ输出磁盘rank32在实数代数上
+等价于rank不超过16的update，但BF16 rank16序列化形式未做formal paired400。裁决保留GOMQ为最强经验锚点，不恢复训练或自动
+建立successor。
+
+reversed首轮还暴露一个独立执行教训：历史工作树遗漏main已有的NFS-safe SQLite `DELETE` journal修复，在NFS WAL上出现重复
+claim。已完成33/36 shards精确复用，只补48 rows后得到上述完整结果；随后把`247e6a8`修复叠加到审计authority `e0d6532`，
+focused queue tests通过。科学历史代码恢复应叠加最新运行基础，不能连已修复的基础设施缺陷一起恢复。正式证据为
+`docs/evidence/gomq_20260823/gomq_cycle2_causal_controls_strict400.json`、
+`docs/evidence/gomq_20260823/gomq_cycle2_causal_adjudication.json`与
+`docs/evidence/gomq_20260823/process_identifiability_and_rank_audit.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

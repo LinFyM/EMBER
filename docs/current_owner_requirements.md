@@ -66,6 +66,11 @@ K都强才做video-scaling claim。选择依据是真实闭环性能与因果证
 跨episode错开，是阻断逐帧动作复制的重要手段；但它也造成“同task监督target对所有video恒定”的不可识别性，
 所以仅输入正确顺序或重建task expert并不能证明模型理解了视频过程。
 
+当前source71与目标40的BDDL reward都是最终状态合取，现有metadata没有证明same-endpoint但required procedure不同的
+授权task pair。因此，在补充经审计的process-identifying meta tasks之前，训练loss或task reward最多能证明
+video-conditioned scene/object/relation adaptation；“理解了必要中间过程”必须由额外数据合同和correct相对
+shuffled/reversed的闭环证据共同支持，不能从架构形式推断。
+
 ## 4. 正确顺序必须有结构作用
 
 correct、shuffled和reversed不是人为negative：

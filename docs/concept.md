@@ -56,6 +56,10 @@ correct视频展示物理可行的初态→目标态过程；shuffled破坏阶�
 真正的证据是correct视频相对same-task-other、wrong、shuffled、reversed和no-video，沿有用policy方向提高闭环
 成功率。hidden或LoRA不同、negative变坏、内部margin变大都不是充分证明。
 
+现有LIBERO source/target reward只约束最终状态，没有已证明的same-endpoint/different-required-procedure任务对。
+因此时序control可以证明模型对视频顺序敏感并且这种敏感性有用，却不能单独把结果升级为一般“过程理解”；
+该claim还需要训练数据中真正排除endpoint、language或task-identity捷径的process-identifying mappings。
+
 ## 输出为什么仍是一套LoRA
 
 LoRA提供一次性、可缓存、可挂载到冻结policy的task adaptation，并能自然成为未来task-local RL的起点。Writer

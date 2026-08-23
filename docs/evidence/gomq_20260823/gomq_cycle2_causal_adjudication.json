@@ -1,0 +1,107 @@
+{
+  "schema_version": "ember_gomq_cycle2_causal_adjudication_v1",
+  "adjudication_date": "2026-08-23",
+  "method": "GOMQ cycle 2, K=4, single frozen checkpoint",
+  "formal_validation8": {
+    "correct": {
+      "successes": 151,
+      "episodes": 400,
+      "nonzero_task_breadth": 6,
+      "per_suite_successes": {
+        "libero_spatial": 3,
+        "libero_object": 81,
+        "libero_goal": 40,
+        "libero_10": 27
+      },
+      "top3_success_share": 0.8013245033112583
+    },
+    "same_task_other": {
+      "successes": 139,
+      "episodes": 400,
+      "correct_success_retention": 0.8145695364238411,
+      "paired_correct_only": 28,
+      "paired_control_only": 16,
+      "paired_margin": 12,
+      "churn": 44,
+      "success_set_jaccard": 0.7365269461077845,
+      "mcnemar_exact_two_sided_p": 0.09614175442061423
+    },
+    "cross_suite_wrong": {
+      "successes": 131,
+      "episodes": 400,
+      "paired_correct_only": 43,
+      "paired_control_only": 23,
+      "paired_margin": 20,
+      "churn": 66,
+      "success_set_jaccard": 0.6206896551724138,
+      "mcnemar_exact_two_sided_p": 0.018657260354021005
+    },
+    "shuffled": {
+      "successes": 127,
+      "episodes": 400,
+      "paired_correct_only": 40,
+      "paired_control_only": 16,
+      "paired_margin": 24,
+      "churn": 56,
+      "success_set_jaccard": 0.6646706586826348,
+      "mcnemar_exact_two_sided_p": 0.0018415547884925443
+    },
+    "reversed": {
+      "successes": 115,
+      "episodes": 400,
+      "paired_correct_only": 50,
+      "paired_control_only": 14,
+      "paired_margin": 36,
+      "churn": 64,
+      "success_set_jaccard": 0.6121212121212121,
+      "mcnemar_exact_two_sided_p": 7.069487542545679e-06
+    },
+    "source_identity_proxy": {
+      "successes": 48,
+      "episodes": 400,
+      "nonzero_task_breadth": 3,
+      "paired_correct_only": 108,
+      "paired_source_only": 5,
+      "paired_margin": 103,
+      "churn": 113,
+      "success_set_jaccard": 0.27564102564102566,
+      "mcnemar_exact_two_sided_p": 2.8319615385298505e-26,
+      "pairing_mismatches": {
+        "episode_keys": 0,
+        "environment_seed": 0,
+        "policy_seed_root": 0,
+        "policy_noise_common_prefix": 0
+      },
+      "qualification_boundary": "This reuses the frozen source-policy strict400 as an exact identity/no-adapter proxy. It is not a learned language-only Writer baseline."
+    },
+    "video_control_pairing": {
+      "strict_pairing_verified": true,
+      "mismatches": {
+        "episode_keys": 0,
+        "environment_seed": 0,
+        "policy_seed_root": 0,
+        "policy_noise_common_prefix": 0,
+        "teacher_reference_videos": 0
+      }
+    }
+  },
+  "stability": {
+    "adjacent_cycle_successes": [
+      151,
+      135,
+      131
+    ],
+    "verdict": "The peak is not an isolated no-video artifact, but it is not an adjacent-checkpoint-stable result."
+  },
+  "deployment_rank": {
+    "serialized_rank": 32,
+    "algebraic_effective_rank_upper_bound": 16,
+    "verdict": "The BF16 serialized rank-16 reduction is not bit-identical and has not received a formal paired400 validation."
+  },
+  "claim_boundary": {
+    "positive": "Correct ordered videos provide useful task content and frame-order information: correct is significantly better than cross-suite-wrong, shuffled, reversed, and the source-identity proxy.",
+    "negative": "The result does not establish a qualified EMBER method because same-task-video retention is 81.46%, adjacent cycles regress, two tasks remain at zero, 80.13% of successes lie in three tasks, wrong and temporally corrupted videos retain substantial performance, and the deployment artifact is not yet a formally validated serialized rank-16 adapter.",
+    "process_identifiability": "The authorized LIBERO rewards are endpoint-only and contain no proven same-endpoint/different-required-procedure pair, so these controls establish useful temporal specificity but not general required-procedure understanding."
+  },
+  "decision": "Retain GOMQ cycle 2 as the strongest empirical video-causal benchmark and architectural anchor. Do not resume it, compress it, retrain it, or create a successor version in this iteration. Any later successor must first state what new identifiability information it adds and must beat this full causal and stability profile, not only a surrogate metric."
+}

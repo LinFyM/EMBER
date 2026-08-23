@@ -5,10 +5,15 @@
 
 ## Current authority and executable state
 
-- **当前没有active Writer/compiler运行面。** EMBER-PECS的local-effect与唯一预登记的完整去噪trajectory held5分别为`58/250`
-  和`59/250`，均未通过同一Gate 2；按falsification card停止PECS family，不训练video effect predictor、不再改solver/target，也不
-  自动建立下一架构版本。PECS source/config/script/tests及其evaluator compatibility入口已从active tree退休；精确实现由Git
-  `1142e5b`、formal artifacts、`docs/ember_pecs_falsification_card_20260823.md`与remote-safe evidence保存。
+- **ECP当前停在未通过的Stage 1，且没有active Writer/compiler运行面。** v24结束learned compiler局部迭代；MDCO仍沿用ECP
+  `q_pi + Program-to-LoRA compiler`并扩至90个task mappings、加入task-equal structured credit，held5仍只有`20/250`，低于
+  source `21`、shared `43`与direct-latest `108`。因此ECP没有进入`q_V`、普通Writer联合训练或后续outer-credit阶段。
+- **PECS不是ECP进度。** 它在MDCO后删除ECP的`q_pi + learned compiler`，用privileged exact policy effects与fixed solver作
+  独立upper-bound诊断；local-effect/完整去噪trajectory为`58/250、59/250`，均失败。PECS source/config/script/tests及
+  evaluator入口已退休，精确历史由Git `1142e5b`、formal artifacts和falsification card保存。
+- **GOMQ也不是ECP进度。** 历史cycle 2补审correct/same-task-other/wrong/shuffled/reversed=`151/139/131/127/115`，只补齐
+  退役方法的因果账本，没有解决当前Stage 1的任何接口；不再围绕GOMQ训练、压rank或补baseline。当前等待独立专家审阅ECP
+  的实际推进、越界诊断与执行复盘。
 - 已封存的exact-effect数据流为：K2 correct videos经冻结Stage 0+Action Meta形成ordered event posterior；每event从每条视频选择一个
   最大posterior的action-hidden frame；随后不安装Action Meta，以source/shared/successful experts在canonical/antithetic `u=1`
   probes上收集38-owner DCT4与50x32 flow effects；固定12-step solver从stable shared出发，只经LoRA leaves求exact VJP并逐owner
@@ -59,7 +64,7 @@
 - owner设定的v24停点和随后MDCO停点均已执行。Stage 1 v1--v24系统复盘及MDCO后验已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`；当前保持科学暂停，不做小扫、续训或局部结构补丁。所有本轮GPU进程
   已退出，task-owned detached formal worktree已清理。
-- 复盘后的PECS架构与停止合同见`docs/ember_pecs_falsification_card_20260823.md`。它保留Stage 0 event/owner表示，删除需要
+- 独立PECS诊断与停止合同见`docs/ember_pecs_falsification_card_20260823.md`。它保留Stage 0 event/owner表示，删除需要
   跨task学习的Program-to-LoRA decoder，让exact/predicted policy effects通过同一个无task参数的fixed proximal inner solver生成
   一套complete rank16 LoRA。local-effect与唯一登记的完整去噪trajectory复验现均已完成并失败，故没有训练video predictor或
   新shared模型，solver合同也未再修改；该运行面现已退休。
@@ -1049,3 +1054,27 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 - 最终strict250只有`59`，比local-effect的`58`净增1；direct-latest success/gain retention=`37/108、26/96`，shared
   retention=`30/43`，breadth`3/5`，Goal/Long=`0/0`。按预登记停止PECS family；未训练`R_V`，未读validation/Test，未启动
   下一版本。正式输出全部保留，detached worktree与task-owned temporary文件已清理。
+
+## 2026-08-23 GOMQ历史峰值因果补审与跨版本停止裁决
+
+- 同一冻结GOMQ cycle 2 K4 checkpoint的validation8 formal panels现为correct/same-task-other/cross-suite-wrong/shuffled/
+  reversed=`151/139/131/127/115`。相对correct的both-success、correct-only、control-only与exact p分别为
+  `123/28/16/.09614`、`108/43/23/.01866`、`111/40/16/.001842`、`101/50/14/7.07e-6`；全部400 rows及
+  teacher-video pairing fields零mismatch。
+- 历史frozen source identity strict400为`48`，与correct配对得到43 both、108 correct-only、5 source-only，净`+103`、
+  `p=2.83e-26`；它只作no-adapter proxy，不是learned language-only Writer。GOMQ由此取得真实video-content与frame-order
+  因果资格，但same-task retention `81.46%`、相邻`151→135→131`、两个zero-success tasks与top3 `80.13%`集中度仍不合格。
+- GOMQ磁盘rank32通过重复A-half结构在实数上严格等价于rank不超过16的effective update；BF16求和压缩的action最大相对差异
+  `.003729`，没有formal paired400，故不把它记为已满足deployment rank16。
+- source71有61个unique languages/goals，target40有40/30；两边全部BDDL goals均为最终状态`And`合取，temporal goal operator
+  为0，现有协议也明确没有证明same-endpoint/different-required-procedure pair。当前只能声称有用的视频顺序特异性，不能从
+  controls或架构形式升级为一般必要过程理解。
+- 跨版本复盘裁决：最主要的执行失误是GOMQ 151未补controls就转向新架构、ECP v2--v24长期用未校准代理代替held闭环、
+  task mapping diversity与process identifiability混淆，以及稀疏teacher-context functional targets没有覆盖closed-loop
+  occupancy。MDCO/PECS/GOMQ的事实现统一指向process-identifying information与state coverage；本轮不生成下一版本。
+- reversed首轮从历史代码恢复时遗漏main的NFS-safe queue修复，NFS WAL触发重复claim；原33/36 shards被复用并只补48 rows，
+  最终formal evidence完整有效。审计authority已叠加`247e6a8`形成`e0d6532`且queue focused tests通过；历史科学代码与最新运行
+  基础今后必须分层恢复。
+- 收尾已清理`codex/gomq-causal-audit`本地/远程branch与独立worktree，精确代码由remote tag
+  `evidence/gomq-causal-audit-20260823`保留；四个formal control的results、raw shards、run contracts、launcher completion与
+  evidence保留，约8GB可再生Writer LoRA caches和42MB reversed smoke删除。gpu02 evaluator/tmux均已退出。

@@ -1540,3 +1540,26 @@ state distribution上正确的静态LoRA；closed-loop gate又长期晚于大量
 覆盖。被淘汰的是“selected-frame exact-effect → zero-interaction full-LoRA fixed solver”这一family，不是single LoRA输出、
 action-hidden视频目标、task-local expert上界、Stage 0事件表示或所有可能的Writer。正式证据：
 `docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`。
+
+## 75. GOMQ峰值具有真实视频内容与时序因果性，但不满足方法资格
+
+历史GOMQ cycle 2的validation8 correct严格配对结果为`151/400`，此前从未完成正式因果controls。本次保持同一冻结checkpoint、
+K4 teacher-video schedule和400个paired初态，只改变无梯度视频condition，补齐same-task-other/cross-suite-wrong/shuffled/
+reversed=`139/131/127/115`。correct相对后三者的paired margin分别为`+20/+24/+36`，exact McNemar
+`p=.01866/.001842/7.07e-6`；episode key、env seed、policy seed root、policy-noise common prefix及teacher reference
+videos均零mismatch。冻结source identity proxy为`48/400`，correct相对它为108 correct-only、5 source-only，净`+103`。
+因此GOMQ确实使用视频内容与帧顺序形成闭环有用更新，不能再把151视为language/no-video假象。
+
+它仍不合格：same-task-other只保留`123/151=81.46%`的correct successes；相邻cycle为`151→135→131`；correct breadth为
+`6/8`且Spatial task1、Goal task3为0，top3 success share为`80.13%`；wrong与时序破坏条件仍保留大部分得分。source
+identity不是learned language-only baseline。其磁盘LoRA虽通过`A=[A0;A0]、B=[B0,deltaB]`在实数上等价于rank不超过16的
+`(B0+deltaB)A0`，但BF16序列化rank16形式不bit-identical且未做formal paired400。因此GOMQ只成为当前最强shared Writer
+视频因果与性能锚点，不恢复训练、不自动压rank、不建立下一版本。
+
+更大的数据审计边界是：source71与target40 BDDL reward全部为最终状态合取，当前metadata没有证明same-endpoint但
+required procedure不同的授权task pair。shuffled/reversed优势可以证明有用的顺序特异性，却不能单独证明一般必要过程理解。
+本轮跨版本裁决把最早缺口合并为process-identifying information与closed-loop state coverage，而不是新的slot/head/decoder、
+更长训练或同类局部功能target。完整结果见
+`docs/evidence/gomq_20260823/gomq_cycle2_causal_controls_strict400.json`、
+`docs/evidence/gomq_20260823/gomq_cycle2_causal_adjudication.json`与
+`docs/evidence/gomq_20260823/process_identifiability_and_rank_audit.json`。

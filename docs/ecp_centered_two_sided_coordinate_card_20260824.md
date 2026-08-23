@@ -1,7 +1,6 @@
 # ECP Phase 2B fallback：centered two-sided functional coordinate
 
-状态：2026-08-24 **在retained implementation与任何新rollout前预注册。只先执行fit-only coordinate与held latest
-transform-only oracle；未授权新realizer训练。**
+状态：2026-08-24 **已按预注册完成并判为non-pass。当前coordinate停止；未授权新realizer训练。**
 
 ## 为什么重新打开专家保留的第二种坐标
 
@@ -70,7 +69,7 @@ C = 0.5 * (Psi^T Y_hat + Z_hat Omega)
 full pseudoinverse放大fit-span外噪声，不做per-task damping、alpha、trust或rank选择。
 
 CPU只读预审已经验证：exact held sketches经该rank4 reconstruction的aggregate relative error约`1e-12`；fit-span投影后的held
-aggregate effective cosine逐global `0/9/18/25/36 = .957/.950/.960/.877/.953`，relative error为
+aggregate effective cosine逐global `0/9/18/25/36 = .957/.950/.960/.877/.953`，relative residual energy fraction为
 `.084/.098/.079/.231/.092`。这些数值只授权一次闭环oracle，不用于改变probe、width或Gate。
 
 ## Formal oracle与Gate
@@ -98,3 +97,30 @@ aggregate effective cosine逐global `0/9/18/25/36 = .957/.950/.960/.877/.953`，
 - 无论结果如何，本轮不裁决video、Program、`q_pi/q_V`或完整ECP，也不读取validation/Test action/reward。
 
 配置：`configs/pi05_ecp_centered_two_sided_coordinate.json`。
+
+## Formal结果与裁决
+
+clean pushed detached `8aab214`只用90 fit tasks/108 members建立coordinate；38个targets的active rank全部为107。
+五个held tasks/10 members只在transform冻结后读取，coordinate updates与optimizer steps均为0。五个latest重建的effective cosine
+逐global仍为`.957/.950/.960/.877/.953`，说明实现与预审一致且没有数值坍塌。
+
+唯一strict250在gpu01 physical `1,2,3,4,5,7`以12 workers完成，physical0未使用；36/36 shards、250/250 rows完整，所有worker
+返回码为0。结果为：
+
+```text
+global               0    9   18   25   36   total  breadth
+known latest        28   31   40    4    7    110      5
+two-sided coordinate 24   10   46    0    0     80      3
+carrier              38    1    4    0    0     43      3
+```
+
+新结果低于83总分门，Goal/Long均为0。它只保留carrier `23/43`与known latest `59/110` successes，分别低于`33`与`83`门；
+相对两套reference的episode key、environment seed、policy seed root、language与policy-noise common prefix均零mismatch。因此全部
+性能/retention条款失败，不训练centered-innovation realizer，不启动fold1，也不扫probe seed、width、rank或阈值。
+
+高effective cosine但closed-loop support大量变化是本轮最重要边界：fit-span投影不是纯数值失败，Object甚至从40升到46；但它
+没有保住Goal/Long，Spatial也产生高churn，说明aggregate update几何不足以定义task-specific policy support。该结论只关闭本卡
+固定的two-sided coordinate，不裁决mobile-rank4容量、Program、`q_pi/q_V`、视频推断或完整EMBER。下一shared-realizer机制必须先
+回到专家讨论，不能自行继续版本化。
+
+正式证据：`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。

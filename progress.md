@@ -28,8 +28,10 @@
 - completed Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
 - Phase 2B/2C fold0 adjudication：
   `docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`；
-- active centered two-sided coordinate fallback card：
+- completed centered two-sided coordinate fallback card：
   `docs/ecp_centered_two_sided_coordinate_card_20260824.md`；
+- centered two-sided coordinate adjudication：
+  `docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`；
 - Phase 2B formal particle authority：
   `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`；
 - Phase 2B fold0 fixed-code authority：
@@ -37,10 +39,9 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；GOMQ rank16 Phase 0、process pair、effect-path calibration与fold0 fixed realizer评测均已
-  结束；最新formal evaluation authority为clean pushed `e806693`。当前没有active GPU job。process Gate A与首个fixed realizer
-  fold0 Gate均为non-pass；基于后置mean/innovation分解的新证据，当前只预注册了专家原方案中的centered two-sided coordinate
-  expressivity oracle。它通过前fold1、fresh Program、`q_pi/q_V`及joint Writer均不启动。
+- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `8aab214`。当前没有active GPU job。
+  process Gate A、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；fold1、fresh Program、
+  `q_pi/q_V`及joint Writer均未启动。当前没有已预注册的下一shared-realizer机制，须先按失败合同回到专家讨论。
 
 ## Current scientific state
 
@@ -77,9 +78,10 @@
 - 进一步分解output target后发现，fit residual的task-equal expected energy为`94.1161`，其中shared mean为`89.1989`
   （`94.775%`）；当前prediction与held target去掉该mean后的innovation cosine仅`.0012--.0573`。这比input PCA解释更早：
   absolute A/B/effective loss被共享更新主导，没有学习低能量但闭环关键的task innovation。
-- fixed width8 two-sided sketches对exact held rank4 residual的deterministic reconstruction误差约`1e-12`；只投影到fit90
-  centered sketch span后，aggregate cosine仍为`.877--.960`。该新证据不挽救旧checkpoint，但满足专家预留第二种functional
-  coordinate的一次expressivity oracle前提；其Gate已在实现和新rollout前冻结。
+- fixed width8 two-sided coordinate已完成唯一strict250：`80=24/10/46/0/0`、breadth3，低于83门且Goal/Long为0；只保留
+  carrier `23/43`和known-latest `59/110` successes。250行相对两套reference的episode/env/policy/language/noise pairing均
+  零mismatch。尽管重建update cosine仍为`.877--.960`且Object达到46，fit-span投影没有保住task-specific closed-loop support。
+  当前coordinate停止，不训练centered-innovation realizer、不启动fold1、不扫probe/width/rank/threshold。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
@@ -162,6 +164,11 @@
 15. 从clean pushed `4cddcab`在gpu01 physical`1,2,3,4,5`完成15条known-success effect paths的formal
     calibration；5 workers全部返回0，15/15三种objective严格单调下降，5/5 tasks通过global gate，
     balanced-SVD rank4被冻结为Phase 2B coordinate。
+16. 从clean pushed `565c055/e05ffca/0247a19/e806693`依次完成probe-preserving evidence、fold0 fit-only code、1000-step
+    fixed realizer与两个strict250；step800/1000=`33/37`、breadth2且Goal/Long为0，按门停止learned realizer与fold1。
+17. 从clean pushed detached `8aab214`建立fit90 centered two-sided coordinate并物化五套held latest single rank16 LoRA；gpu01
+    physical`1,2,3,4,5,7`以12 workers完成唯一strict250，physical0未使用，36/36 shards与250 rows完整。结果`80/250`、
+    breadth3、Goal/Long为0；carrier/known-latest retention仅`23/43、59/110`，全部Gate条款失败，successor未启动。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -218,6 +225,9 @@
 - clean pushed detached `e806693`同时完成两个strict250：step800使用gpu01 physical`1,2,3`，step1000使用`4,5,7`，
   各6 workers且全部返回0，physical0未使用；250行均完整并与carrier在episode/env/policy/language/noise common-prefix上
   零mismatch。结果分别为`33/250、37/250`，Phase 2C fold0正式non-pass。
+- clean pushed detached `8aab214`的two-sided transform由90 fit tasks/108 members拟合，38/38 targets active rank均为107；
+  held 10 members只做transform。五个latest update cosine为`.877--.960`；五套single rank16 LoRA在唯一strict250得到80，
+  未达到任何性能/retention门。focused ECP tests为`29/29`通过；工程有效但科学non-pass。
 
 ## Current unresolved interface
 
@@ -246,7 +256,7 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0已归档；首个process family的Gate A与balanced-SVD factor realizer fold0均为non-pass，Gate B、
-  process suite、fold1和Phase 3以后均未启动。process侧仍只允许更强privileged sequential teacher或有依据的替代family；
-  realizer侧只执行已预注册的centered two-sided coordinate oracle。它以functional innovation whitening替换absolute factor target，
-  是针对`.001--.057` innovation miss的单一机制变化；不恢复旧模型、不改变input evidence、不训练Writer。
+- 当前没有active GPU job。Phase 0已归档；首个process family Gate A、balanced-SVD learned realizer fold0与two-sided coordinate
+  Gate均为non-pass，Gate B、process suite、fold1和Phase 3以后均未启动。process侧仍只允许更强privileged sequential teacher
+  或有依据的替代family；realizer侧没有剩余预注册successor。依two-sided卡，下一步先由专家判断shared realizer是否应放弃，
+  或是否需要新的source-unseen mappings；不得自行继续版本化。

@@ -1460,6 +1460,24 @@ step800 `33=32/0/1/0/0`，step1000 `37=36/0/1/0/0`；carrier为`43=38/1/4/0/0`�
 超参变体救援；fresh Program、`q_pi/q_V`继续等待新的realizer裁决与process Gate。完整证据：
 `docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。
 
+### 3.75 centered two-sided coordinate以80/250关闭
+
+依据fixed realizer结束后的mean/innovation分解，专家预留的第二种principled coordinate在任何实现和rollout前重新预注册。
+clean pushed detached `8aab214`只用fold0的90 fit tasks/108 members拟合fixed width8 input/output probes、task-equal sketch mean与
+centered whitened sample-space basis；38个targets的active rank均为107。五个held tasks/10 members只在coordinate冻结后做
+transform，held coordinate updates与optimizer steps均为0。top4 deterministic reconstruction输出五套single
+carrier12+residual4 rank16 LoRA。
+
+五个held latest corrections的reconstructed effective cosine逐global为`.957/.950/.960/.877/.953`，但唯一strict250只得到
+`80=24/10/46/0/0`、breadth3。结果低于83门，Goal/Long均为0；相对carrier只保留`23/43` successes，相对known-latest
+`110`只保留`59`，均低于预注册retention门。gpu01 physical`1,2,3,4,5,7`上的12 workers全部返回0，36/36 shards与250 rows
+完整；两套reference的episode/env/policy/language/noise pairing均零mismatch。
+
+本轮说明高aggregate update cosine不足以保证task-specific closed-loop support：Object从known-latest 40升到46，但Goal/Long
+全部丢失且Spatial高churn。依合同停止当前coordinate，不训练centered-innovation realizer、不启动fold1、不扫probe/width/rank/
+threshold。该结果不否定Program、distributional `q_pi`、`q_V`、video inference或完整ECP；下一shared-realizer机制须先重新
+咨询专家。证据：`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

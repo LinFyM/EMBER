@@ -1841,3 +1841,23 @@ unseen-task `effect code -> canonical residual`映射和幅度外推，不是mob
 coordinate本身严重丢失known correction才允许two-sided fallback。本次没有触发该条件，fold1、fresh Program、`q_pi/q_V`
 均不启动。该结论关闭当前balanced-SVD effect-code learned realizer，但不外推为完整ECP或mobile-rank4 topology失败。
 证据：`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。
+
+## 88. 高effective-update cosine不能保证task-specific closed-loop support
+
+专家预留的第二种fixed functional coordinate已按事前合同完成。clean pushed detached `8aab214`只用fold0的90 fit tasks/
+108 members拟合width8 two-sided sketches的task-equal mean与centered whitened sample-space basis；38个targets的active rank均为
+107。五个held tasks/10 members只在coordinate冻结后transform，held coordinate updates与optimizer steps均为0。五个latest
+corrections投影并top4重建后的aggregate effective cosine仍为`.957/.950/.960/.877/.953`，energy ratio为
+`.934/.913/.930/.809/.928`，所以该实现没有数值坍塌。
+
+唯一strict250却只有`80=24/10/46/0/0`、breadth3。它低于预注册83门，Goal与Long均为0，只保留carrier `23/43`和exact
+known-latest `59/110` successes，分别低于33与83门。相对两套reference的episode key、environment seed、policy seed root、
+language与policy-noise common prefix均零mismatch；12 workers、36 shards全部正常。因此这不是运行invalid，而是高cosine的
+fit-span update投影仍会重排闭环support。Object从known-latest 40提高到46同时Goal/Long全部丢失，也说明失败不是统一幅度缩小，
+而是task-specific functional directions没有被aggregate geometry识别。
+
+该结果关闭固定的`probe8 / code128 / fit90 span / top4 reconstruction`coordinate，不训练reliability-free successor、不启动
+fold1、不扫probe seed/width/rank/threshold。它不裁决mobile-rank4容量、Program、distributional `q_pi`、`q_V`、video inference
+或完整ECP。结合balanced-SVD learned map与本coordinate先后non-pass，当前没有剩余预注册shared-realizer机制；依专家合同须先
+讨论是停止该family，还是补真正source-unseen且process-diverse mappings后重新定义识别问题。正式证据：
+`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。

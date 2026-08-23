@@ -2,10 +2,10 @@
 
 状态：2026-08-24 **Phase 0以`136/400`归档关闭；Phase 1首个process teacher Gate A以`0/50、19/50`判为non-pass；
 Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fold0 strict250仅为step800/1000=`33/37`，
-均低于carrier `43`，breadth `2/5`且Goal/Long均为0。post-hoc定位为cross-task effect-code-to-residual mapping失败，
-不满足input-PCA-only fallback条件。之后的只读分解发现absolute target有`94.775%` shared-mean energy，而held task-specific
-innovation cosine仅`.001--.057`；这构成专家预留two-sided functional coordinate的新增依据。当前只执行一次fit-only centered
-two-sided coordinate expressivity oracle；其通过前仍不进入fold1、fresh Program、`q_pi`或`q_V`。**
+均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
+coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
+`59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
+未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -234,10 +234,17 @@ successor必须先针对跨任务映射给出与本次证据不同的因果机�
 
 - [x] 冻结`docs/ecp_centered_two_sided_coordinate_card_20260824.md`与
   `configs/pi05_ecp_centered_two_sided_coordinate.json`；
-- [ ] 只用fit90构建fixed width8 two-sided probes、task-equal sketch mean与最多128维centered whitened basis；
-- [ ] held latest只做transform，使用固定top4 core pseudoinverse重建single rank16 adapters；
-- [ ] 运行一次strict250 coordinate oracle；必须`>=83`、breadth5、Goal/Long非零，并同时保留carrier与known-latest至少75%；
-- [ ] 只有该oracle通过，才fresh训练reliability-free centered-innovation realizer；失败则不扫coordinate超参并重新讨论路线。
+- [x] 只用fit90构建fixed width8 two-sided probes、task-equal sketch mean与最多128维centered whitened basis；
+- [x] held latest只做transform，使用固定top4 core pseudoinverse重建single rank16 adapters；
+- [x] 运行唯一strict250 coordinate oracle：`80=24/10/46/0/0`、breadth3，低于83且Goal/Long为0；只保留carrier
+  `23/43`与known-latest `59/110` successes；
+- [x] 依据失败合同不训练reliability-free centered-innovation realizer、不启动fold1、不扫coordinate超参；shared realizer是否
+  放弃或需要新的source-unseen mappings回到专家讨论。
+
+本轮证明two-sided实现没有数值坍塌：held update cosine仍为`.877--.960`，Object甚至达到`46/50`；但fit-span投影不能保留
+task-specific closed-loop support，尤其Goal/Long全部丢失。该结果关闭本卡固定coordinate，不外推否定Program、`q_pi/q_V`或
+完整ECP。正式裁决：
+`docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`。
 
 ## Phase H — Phase 3：fresh完整Stage 0-V Program
 

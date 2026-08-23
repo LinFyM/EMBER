@@ -1513,3 +1513,30 @@ global25 Goal与global36 Long仍为0，而direct-latest分别有8和3个成功�
 `u=1`局部flow velocity probes可以约束primitive task update，却没有提供成功去噪轨迹的长程vector field/endpoint信息，不能
 守住复杂任务的policy basin。下一次复验只新增同frame、同fixed noise的完整official denoising action/flow trajectory；不再调整
 solver或恢复learned compiler。
+
+## 74. 完整去噪trajectory改变了LoRA与成功集合，但仍不能从稀疏teacher contexts确定跨初始化策略
+
+最终预登记增强保持support frames、K2、fixed noise、stable-shared起点、rank16与12-step solver不变，把functional target扩展为
+PI0.5原生10步中的全部`50x32` flow velocity和每个积分点的`50x7` action。真实单event最终action与独立官方循环最大误差为0，
+完整反向有`1,135,487`个非零finite LoRA gradients；fit effect由`5.82335`降到`1.09769`，held5各自降到初值的
+`.134--.326`。因此本轮不是dead graph、伪trajectory、solver不可达或held objective没有下降。
+
+strict paired250却只有`59`，相对local-effect的`58`仅净增1，per global0/9/18/25/36仍为`31/11/17/0/0`。direct-latest
+success/gain retention只有`37/108、26/96`，stable-shared retention`30/43`，breadth`3/5`且Goal/Long均为0。全部episode key、
+env seed、policy seed root与policy-noise common prefix零mismatch。按原Gate 2，这不是near-pass，PECS oracle family停止。
+
+“只多1分”也不能解释成新target没有改变policy。trajectory与local的same-task effective-update cosine为
+`.753/.765/.777/.830/.848`，norm ratio均值`.930`；250行中47个共同成功、12 gained、11 lost，换手23行。也就是说更完整的
+vector field确实选择了不同LoRA和不同初态，却仍落在同样三个primitive tasks，没打开Goal/Long。这把最早失败接口从“缺少
+denoising trajectory”进一步前移到**state coverage与功能可识别性**：在16个selected teacher frames（8 events×2 videos）上，
+即使给出successful expert的精确完整去噪函数，也只约束这些demo contexts附近的行为；它没有定义policy在50个未见初始化及其
+闭环visited/recovery states上的完整函数。direct experts的108个成功来自跨episode状态分布训练，不能由少数teacher-context
+等式自动恢复。
+
+这也解释了为何Stage 1几十个版本常能改善geometry、response loss、reward credit或LoRA分离，却很少持续提高闭环：多数版本
+改变了表示、decoder或局部objective，但保留了同一个欠识别合同——用task-level/稀疏context surrogate去决定一个必须在整条
+state distribution上正确的静态LoRA；closed-loop gate又长期晚于大量内部迭代。PECS删除learned mapping后从20提高到58，证明
+固定功能求解能避开一部分shared/easy basin；完整trajectory仍停在59，则证明继续把同类local target做得更精确不会补上状态
+覆盖。被淘汰的是“selected-frame exact-effect → zero-interaction full-LoRA fixed solver”这一family，不是single LoRA输出、
+action-hidden视频目标、task-local expert上界、Stage 0事件表示或所有可能的Writer。正式证据：
+`docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`。

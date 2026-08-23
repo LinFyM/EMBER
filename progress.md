@@ -5,12 +5,11 @@
 
 ## Current authority and executable state
 
-- **EMBER-PECS local-effect held5已完成并按Gate 2失败；唯一运行面进入预登记的完整去噪trajectory target复验。** 新运行面由
-  `src/ember/ecp/effect_solver.py`、`src/ember/ecp/effect_oracle.py`、`scripts/run_ecp_effect_oracle.py`与
-  `configs/pi05_ecp_policy_effect_solver_oracle.json`共同拥有。它只复用既有source、Stage 0 v3、Action Meta v3、stable shared、
-  95-task/118-member evidence与action-hidden HDF5，不训练video predictor或shared decoder。旧compiler/q_pi trainer、calibration、
-  materialization、support builder及两个active Stage 1 config已经从当前树退休；历史由Git、formal artifacts和下述ledger保存。
-- exact-effect数据流已落实为：K2 correct videos经冻结Stage 0+Action Meta形成ordered event posterior；每event从每条视频选择一个
+- **当前没有active Writer/compiler运行面。** EMBER-PECS的local-effect与唯一预登记的完整去噪trajectory held5分别为`58/250`
+  和`59/250`，均未通过同一Gate 2；按falsification card停止PECS family，不训练video effect predictor、不再改solver/target，也不
+  自动建立下一架构版本。PECS source/config/script/tests及其evaluator compatibility入口已从active tree退休；精确实现由Git
+  `1142e5b`、formal artifacts、`docs/ember_pecs_falsification_card_20260823.md`与remote-safe evidence保存。
+- 已封存的exact-effect数据流为：K2 correct videos经冻结Stage 0+Action Meta形成ordered event posterior；每event从每条视频选择一个
   最大posterior的action-hidden frame；随后不安装Action Meta，以source/shared/successful experts在canonical/antithetic `u=1`
   probes上收集38-owner DCT4与50x32 flow effects；固定12-step solver从stable shared出发，只经LoRA leaves求exact VJP并逐owner
   normalized update、逐步thin-QR/core-SVD regauge。solver无task ID、per-task early stop、persistent optimizer或第二adapter。
@@ -24,14 +23,22 @@
   direct-latest=`58/21/43/74/108`，candidate per global0/9/18/25/36=`31/11/16/0/0`。相对source为13 retained、45 gained、
   8 lost、净`+37`；相对shared为30 retained、28 gained、13 lost、净`+15`且exact McNemar `p=.02753`，说明local effects产生
   真实policy增量，不是旧MDCO的20分重放。
-- 但Gate 2明确失败：direct-latest success/gain retention仅`34/108、25/96`，stable-shared retention`30/43`，都低于
+- local-effect Gate 2当时明确失败：direct-latest success/gain retention仅`34/108、25/96`，stable-shared retention`30/43`，都低于
   `81、58、33`门；breadth只有`3/5`，Goal/Long均0。全部250 rows与source/shared/direct/MDCO的episode key、env seed、
-  policy seed root和policy-noise common prefix零mismatch。按唯一预登记分叉，当前不改solver、不训练video predictor，只加入
+  policy seed root和policy-noise common prefix零mismatch。该结果触发唯一预登记分叉：不改solver、不训练video predictor，只加入
   同support frames上successful expert从fixed noise完成official去噪的完整action/flow trajectory target并复验一次。证据见
   `docs/evidence/ecp_20260823/pecs_exact_effect_held5_gate_20260823.json`。
-- CPU/结构验证已完成：PECS核心/投影定向测试`12 passed`，此前Stage 0 + PECS/旧Stage1替换面合计`36 passed`；完整仓库测试为
-  `335 passed, 15 failed`，15项均来自既有环境/密封authority漂移（7项缺失LIBERO assets环境变量，8项旧evaluation config
-  hash不一致），不涉及本次PECS代码。下一节点是实现且只profile预登记的完整去噪trajectory target。
+- 最终trajectory实现直接沿PI0.5官方`dt=-.1`运行10步，保留每步`50x32` flow与积分后的`50x7` action；单event最终action与
+  独立官方循环最大误差为0，完整反向有`1,135,487`个非零finite LoRA gradients。fit ordinal71为`5.82335→1.09769`、ratio
+  `.18850`、1次允许回升、峰值18.72 GB；held5五项ratio为`.3012/.2797/.1341/.3258/.2338`，全部过inner gate。
+- clean pushed detached `1142e5b`的strict paired250由18/18 workers、54/54 shards在`707.43s`完成；trajectory candidate/
+  local/source/shared/direct-earliest/direct-latest/MDCO=`59/58/21/43/74/108/20`，per global0/9/18/25/36=`31/11/17/0/0`。
+  trajectory相对source retained/gained/lost=`17/42/4`，相对shared=`30/29/13`，但只保留direct-latest successes/gains
+  `37/108、26/96`与shared `30/43`，breadth`3/5`且Goal/Long为0；全部配对字段零mismatch。
+- trajectory与local-effect的effective-update cosine按task为`.753/.765/.777/.830/.848`，250 rows中retained/gained/lost=
+  `47/12/11`。因此新target确实改变了LoRA并重排23行，不是dead graph；但只净增1且没有打开新suite。最早失效接口是选定
+  teacher frames上的精确action/flow constraints不能确定跨初始化、跨visited-state的完整闭环policy function。正式证据见
+  `docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`。
 - clean pushed detached `419fa84`在gpu02 physical
   `0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates；所有task等权，compiler与`q_pi`梯度持续非零，visible
   Program梯度始终为0。随后唯一一次fit90 structured calibration覆盖90/90 tasks、每rank 18 tasks，plus/minus各123次成功，
@@ -52,10 +59,10 @@
 - owner设定的v24停点和随后MDCO停点均已执行。Stage 1 v1--v24系统复盘及MDCO后验已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`；当前保持科学暂停，不做小扫、续训或局部结构补丁。所有本轮GPU进程
   已退出，task-owned detached formal worktree已清理。
-- 复盘后的架构选择已单独写入`docs/ember_pecs_falsification_card_20260823.md`。PECS保留Stage 0 event/owner表示，删除需要
+- 复盘后的PECS架构与停止合同见`docs/ember_pecs_falsification_card_20260823.md`。它保留Stage 0 event/owner表示，删除需要
   跨task学习的Program-to-LoRA decoder，让exact/predicted policy effects通过同一个无task参数的fixed proximal inner solver生成
-  一套complete rank16 LoRA。local-effect oracle已经完成且未过retention/breadth门；当前只执行card登记的完整去噪trajectory
-  target复验，不训练video predictor或新shared模型，也不再修改solver合同。
+  一套complete rank16 LoRA。local-effect与唯一登记的完整去噪trajectory复验现均已完成并失败，故没有训练video predictor或
+  新shared模型，solver合同也未再修改；该运行面现已退休。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为
@@ -1030,11 +1037,15 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
   detached formal worktree均在证据落盘后删除，当前`git worktree list`只保留canonical `main`。372 MiB成功trajectory是
   唯一phase follow-up输入而保留，不重复rollout；临时selection与旧冻结worktree未残留。
 
-## 2026-08-23 PECS完整去噪trajectory实现门
+## 2026-08-23 PECS完整去噪trajectory实现与最终裁决
 
-- 唯一预登记增强已直接接入canonical `effect_solver.py`，没有创建新架构版本：相同event-selected K2 frames与
+- 唯一预登记增强曾直接接入Git `1142e5b`的canonical `effect_solver.py`，没有创建新架构版本：相同event-selected K2 frames与
   canonical/antithetic fixed initial noise沿PI0.5官方`dt=-0.1` Euler网格运行10步；首步继续捕获38-owner DCT4，全部10步保留
   `50x32` flow velocity及积分后的`50x7` action。solver、rank16、12步schedule、stable-shared起点和信息墙均未改变。
 - gpu02 physical0上的真实单event smoke得到owner/flow/action shape=`[2,38,4,128] / [2,2,10,50,32] /
   [2,2,10,50,7]`，最终action与独立原生10步循环最大绝对误差为0；完整trajectory反向产生`1,135,487`个非零finite LoRA
-  gradients，峰值`18,721,906,176` bytes。该结果只解除实现门，fit ordinal71 profile与held5 Gate 2尚未运行。
+  gradients，峰值`18,721,906,176` bytes。fit与held exact-effect gates随后全部通过，排除了trajectory未进入真实图或固定solver
+  无法拟合该目标。
+- 最终strict250只有`59`，比local-effect的`58`净增1；direct-latest success/gain retention=`37/108、26/96`，shared
+  retention=`30/43`，breadth`3/5`，Goal/Long=`0/0`。按预登记停止PECS family；未训练`R_V`，未读validation/Test，未启动
+  下一版本。正式输出全部保留，detached worktree与task-owned temporary文件已清理。

@@ -1,13 +1,13 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **PECS local-effect held5为58/250并未过retention/breadth门；进入唯一已登记的完整去噪trajectory target复验**。
+状态：2026-08-23 **PECS完整去噪trajectory held5为59/250并未过retention/breadth门；最终预登记复验结束，PECS family停止并进入科学暂停**。
 
 长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。最近唯一Stage 1执行合同MDCO已完成并失败；
 当前learned Stage 1 compiler family已停止，不建立v25。v24与MDCO后的复盘见
 `docs/ecp_stage1_iteration_retrospective_20260823.md`；下一候选的单一合同见
-`docs/ember_pecs_falsification_card_20260823.md`。fit ordinal71已冻结12-step inverse-sqrt数值合同；首轮held5证明local effects有
-真实闭环增量但不足以保留successful-policy basin，当前只授权加入fixed-noise完整去噪action/flow trajectory target后复验同一
-oracle，privileged closed-loop oracle通过前仍不授权video effect predictor。
+`docs/ember_pecs_falsification_card_20260823.md`。fit ordinal71冻结的12-step inverse-sqrt合同已完成首轮local-effect与最终
+fixed-noise完整去噪action/flow trajectory两次held5裁决；后者只把58提高到59，Goal/Long仍为0。按预登记停止条件，不训练
+video effect predictor、不再调整solver/target，也不自动建立下一架构版本。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -371,6 +371,10 @@ coordinate退化则保留Stage 2并定位最早接口。
 22. [x] 从clean pushed detached `c400feb`并行物化held5五套LoRA并完成strict paired250：candidate/source/shared/
     direct-earliest/direct-latest=`58/21/43/74/108`，但direct success/gain与shared retention仅`34/108、25/96、30/43`，
     breadth`3/5`且Goal/Long均0，local-effect Gate 2失败；
-23. [ ] 保持视频support、solver、rank、步数与全部信息墙不变，只加入expert从fixed noise完成official去噪得到的完整action/flow
-    trajectory target；10步真实策略forward、official-loop逐元素等价和完整LoRA gradient smoke已通过，下一步重新profile资源并只
-    复跑一次held5 strict250，随后按同一Gate 2通过或停止PECS oracle family。
+23. [x] 保持视频support、solver、rank、步数与全部信息墙不变，只加入expert从fixed noise完成official去噪得到的完整action/flow
+    trajectory target；fit profile与held5 exact objective均通过，但strict250只有`59`，direct-latest success/gain retention为
+    `37/108、26/96`，shared retention`30/43`，breadth`3/5`且Goal/Long为0，因此按原Gate 2停止PECS oracle family；
+24. [x] 完成local/trajectory逐row及effective-update复盘：两版LoRA cosine均值`.79477`且换手23 rows，证明新target确实改变
+    policy而非dead graph；但净增量仅`+1`，最早断点是稀疏teacher-frame functional constraints不能确定跨初始化的状态策略；
+25. [x] 将失败PECS source/config/script/tests及evaluator compatibility入口从active tree退休，保留Git `1142e5b`、formal
+    artifacts与remote-safe evidence；当前不启动下一版本，停在内部跨版本复盘后的科学暂停点。

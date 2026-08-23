@@ -1211,6 +1211,26 @@ Goal/Long均0；所有baseline配对字段零mismatch。该oracle按Gate 2失败
 canonical/antithetic velocity不足以定义跨初始化successful-policy basin。按预登记合同只允许一次更强target：在相同support frames
 加入successful expert从fixed noise完成official去噪的完整action/flow trajectory，再复跑同一oracle；若仍失败则停止PECS family。
 
+### 3.62 PECS完整去噪trajectory完成最终复验并停止family
+
+clean pushed `1142e5b`把唯一预登记增强接入同一PECS运行面：support frames、K2、fixed noise、rank16、stable-shared起点、
+12-step solver与信息墙全部不动；每个probe沿PI0.5官方10步Euler网格保留全部`50x32` velocity与积分后`50x7` action，首步
+继续保留38-owner DCT4。单event与独立官方循环的最终action最大误差为0，完整trajectory对LoRA leaves有`1,135,487`个非零finite
+gradients。fit ordinal71 effect `5.82335→1.09769`、ratio`.18850`，held5五项ratio为
+`.3012/.2797/.1341/.3258/.2338`，说明目标与固定solver都真实可达。
+
+五套LoRA随后在gpu02 physical`0,1,2,3,7`并行物化；18个persistent workers在physical`0,1,2,3,4,7`用`707.43s`完成
+54 shards与strict paired250。trajectory/local/source/shared/direct-earliest/direct-latest/MDCO=
+`59/58/21/43/74/108/20`，trajectory per global0/9/18/25/36=`31/11/17/0/0`。它相对source为17 retained、42 gained、4 lost；
+相对shared为30/29/13。但direct-latest success/gain retention仅`37/108、26/96`，shared retention`30/43`，breadth`3/5`且
+Goal/Long均0，因此最终Gate 2失败。
+
+trajectory相对local的effective-update cosine按task为`.753/.765/.777/.830/.848`，250行中47 retained、12 gained、11 lost。
+所以完整target确实改变了LoRA和23个outcomes，却没有扩展suite/task支持；最早断点定为稀疏teacher-frame function constraints对
+跨初始化closed-loop state distribution的欠识别，而非trajectory未接通。按card停止PECS family，不训练video effect predictor、
+不再改solver/target、不建立下一版本。tracked PECS runtime与evaluator compatibility入口从active tree退休，Git `1142e5b`、
+formal artifacts及`docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`保存精确历史。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

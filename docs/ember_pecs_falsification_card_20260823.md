@@ -1,6 +1,6 @@
 # EMBER-PECS：Policy-Effect Constrained Solver falsification card
 
-状态：2026-08-23 **local-effect held5为58/250并未过Gate 2；只授权一次预登记的完整去噪trajectory target复验**。
+状态：2026-08-23 **local-effect与最终完整去噪trajectory held5分别为58/250、59/250，均未过Gate 2；按预登记停止PECS family**。
 
 本文是MDCO失败和Stage 1全链复盘后的单一科学合同，不是`v25`。它保留EMBER-ECP已经通过的Stage 0
 event/Action observer与最终single-LoRA部署目标，但停止当前learned `q_pi + Program-to-LoRA compiler` family。
@@ -188,7 +188,7 @@ raw/effective LoRA cosine、retrieval、norm与inner loss只解释失败，不�
   新方法。若一次修正后仍不可达，PECS实现失败。
 - 若effect loss明显下降但closed-loop仍低于shared或direct retention门：说明输入视频帧上的canonical/antithetic
   policy effects不足以定义跨初始化策略。只允许一次已登记的更强functional target：加入expert在同一视频帧上从fixed noise
-  完整去噪得到的action/flow trajectory，再复跑同一oracle。当前active实现已经精确采用official 10-step time grid、每步
+  完整去噪得到的action/flow trajectory，再复跑同一oracle。最终实现精确采用official 10-step time grid、每步
   `50x32` velocity和每个积分点`50x7` action；owner只在相同首步保留原DCT4约束。它把长程vector field与endpoint信息作为
   明确的新信息变量，而不是暗中修改solver、head或数据。
 - 若更强target仍失败：停止当前zero-interaction full-LoRA compiler/solver family，不训练`R_V`；下一研究转向专家列出的
@@ -239,24 +239,25 @@ predicted effects
 第一oracle通过并不证明EMBER成功；它只证明learned Program-to-LoRA mapping不是必要条件。第一oracle失败则是比MDCO更直接的
 根本证据：即使给定exact privileged policy effects，输入视频frame support上的固定功能约束仍不能确定可闭环的完整LoRA。
 
-## 8. 当前实现锁定
+## 8. 已封存实现合同
 
-当前canonical实现把本卡的首个oracle收敛为一个窄运行面：
+Git `1142e5b`中的最终canonical实现把本卡的oracle收敛为一个窄运行面：
 
 - 每条K2视频先由冻结Stage 0 v3 + Action Meta v3形成ordered event posterior；每个event从每条视频选一个最大posterior frame；
-- effect capture与solver forward不安装Action Meta，也不读取action、state或proprio；canonical/antithetic probe均固定在`u=1`；
-- owner effect保留38 owners与DCT4 horizon basis，flow effect保留两个probe的完整`50x32`；多个successful members及两条视频的
-  同event frames共同形成mean/variance；
+- effect capture与solver forward不安装Action Meta，也不读取action、state或proprio；canonical/antithetic probe使用同一fixed
+  initial noise并沿官方10步time grid完整积分；
+- owner effect在首步保留38 owners与DCT4 horizon basis，全部10步保留两个probe的`50x32` flow与积分后`50x7` action；多个
+  successful members及两条视频的同event frames共同形成mean/variance；
 - solver从stable shared开始，固定12步、base step RMS `.0002`、inverse-sqrt decay power `.5`，无per-task early stop或持久
   optimizer；每步只更新一套LoRA leaves，随后逐target thin-QR/core-SVD regauge回rank16；
 - 首个profile固定为fit ordinal71，held ordinals90--94不能用于step/scale选择；旧learned compiler运行面已从active tree退休。
 
-实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`。clean pushed `b7c87e7`在fit ordinal71的正式
+当时的实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`。clean pushed `b7c87e7`在fit ordinal71的正式
 profile把effect从`3.660019`单调降至`.774046`，final/initial为`.211487`、0次回升，峰值`18,721,906,176` bytes、耗时
 `153.67s`。此前constant-step候选虽降至`.748501`，但有2次回升；合同允许的唯一一次数值修正只加入所有task共享的
 inverse-sqrt decay，没有修改effect target、架构、数据、步数或held信息。数值/资源合同由此冻结；held5裁决见下一节。
 
-## 9. Local-effect oracle裁决与唯一后续
+## 9. Local-effect与最终trajectory oracle裁决
 
 clean pushed detached `c400feb`为held ordinals90--94各生成一套完整LoRA。五项effect final/initial分别为
 `.3170/.2040/.1892/.2905/.1793`且全程严格单调。strict paired250为candidate/source/stable-shared/direct-earliest/
@@ -275,3 +276,17 @@ expert从同一fixed noise按official 10-step integration产生的完整action/f
 `[2,38,4,128] / [2,2,10,50,32] / [2,2,10,50,7]`；最终action与独立执行的原生10步循环最大绝对误差为0，完整unrolled
 trajectory对LoRA leaves产生`1,135,487`个非零且全部finite的gradient，峰值18.72 GB。该smoke只解除实现门，不替代fit profile
 或held5 Gate 2。
+
+同commit的fit ordinal71 profile把新effect从`5.82335`降到`1.09769`，ratio`.18850`、1次允许回升；held5五项ratio为
+`.3012/.2797/.1341/.3258/.2338`，全部通过inner gate。18个persistent workers随后完成最终strict paired250：trajectory/
+local/source/stable-shared/direct-earliest/direct-latest/MDCO=`59/58/21/43/74/108/20`，trajectory per global0/9/18/25/36=
+`31/11/17/0/0`。
+
+trajectory只保留direct-latest successes/gains `37/108、26/96`和shared successes `30/43`，breadth`3/5`，Goal/Long均0，
+全部配对字段零mismatch。相对local虽然effective-update cosine只有`.753--.848`且250行换手23次，却只有净`+1`，说明新target
+确实改变policy但没有恢复新的suite或复杂任务。原Gate 2因此最终失败，不是near-pass。
+
+按第4.5节停止`selected teacher frames exact effects → zero-interaction full-LoRA fixed solver` family；`R_V`未训练，solver/target
+不再重试，也不自动创建下一架构版本。PECS可执行source、config、script、tests与evaluator compatibility入口已从active tree退休，
+精确实现由Git `1142e5b`和formal artifacts保存。最终证据为
+`docs/evidence/ecp_20260823/pecs_complete_trajectory_held5_gate_20260823.json`。

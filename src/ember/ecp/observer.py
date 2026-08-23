@@ -20,14 +20,6 @@ class NativeObserverOutput:
     flow_velocity: torch.Tensor
 
 
-@dataclass(frozen=True)
-class NativeActionStepOutput:
-    """Target-aligned Action Expert state at one official denoising step."""
-
-    owner_lattice: torch.Tensor
-    flow_velocity: torch.Tensor
-
-
 class ActionLayerStateCapture(AbstractContextManager["ActionLayerStateCapture"]):
     def __init__(self, expert_model: torch.nn.Module, *, detach: bool) -> None:
         self.expert_model = expert_model
@@ -188,47 +180,6 @@ class ECPNativeObserver(torch.nn.Module):
             expert_width=expert_width,
             program_width=program_width,
             padded_action_dim=padded_action_dim,
-        )
-
-    def observe_action_step(
-        self,
-        core: torch.nn.Module,
-        prefix_padding: torch.Tensor,
-        past_key_values: object,
-        suffix_noise: torch.Tensor,
-        flow_time: torch.Tensor,
-        *,
-        track_action_adapter_grad: bool = False,
-        action_adapter_context: AbstractContextManager[None] | None = None,
-    ) -> NativeActionStepOutput:
-        """Observe one native cached-prefix denoising step without changing it."""
-
-        expert_model = core.paligemma_with_expert.gemma_expert.model
-        grad_context = (
-            torch.enable_grad() if track_action_adapter_grad else torch.no_grad()
-        )
-        adapter_context = action_adapter_context or nullcontext()
-        with grad_context, adapter_context, ActionLayerStateCapture(
-            expert_model, detach=not track_action_adapter_grad
-        ) as capture:
-            flow_velocity = core.denoise_step(
-                prefix_pad_masks=prefix_padding,
-                past_key_values=past_key_values,
-                x_t=suffix_noise,
-                timestep=flow_time,
-            )
-            layer_states = capture.stacked()
-        if layer_states.shape[1:3] != (19, ACTION_HORIZON):
-            raise RuntimeError("PI0.5 Action Expert observer topology changed")
-        return NativeActionStepOutput(
-            owner_lattice=self.projector(
-                layer_states, flow_velocity, suffix_noise
-            ),
-            flow_velocity=(
-                flow_velocity
-                if track_action_adapter_grad
-                else flow_velocity.detach()
-            ),
         )
 
     def forward(

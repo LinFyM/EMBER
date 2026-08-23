@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **fixed-A容量诊断已判为binding；没有active successor Writer或solver**。
+状态：2026-08-23 **fixed-A容量已判为binding；当前只做mobile-rank4 residual解析容量门，没有active successor Writer或solver**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
 
@@ -222,6 +222,23 @@ coverage反而是五项最高之一。因此当前fixed-A行空间不是一个�
 - 在实现前说明其更新几何、数值profile与停止条件，不能把free A/B当作新一轮raw-factor小扫。
 
 正式证据见`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
+
+### 5.5 Mobile-rank4 residual先做容量门
+
+资产审计进一步确认stable carrier不是有效rank16，而是精确rank12：38/38 targets的后4个B columns均为0，同时A的16行
+full-row-rank。因此最小的row-space-mobile successor不是立即自由更新整套A/B，而是保留前12个carrier ranks，并用后4 ranks
+表达任意行、列空间的effective correction：
+
+```text
+W_task = B_c12 A_c12 + B_r4(task) A_r4(task)
+```
+
+这与历史phase-code residual4的参数拓扑相同，但科学问题不同：历史`37/33`关闭的是当时learned code与functional decoder；
+现在先把三个已知成功members的`W_expert-W_carrier`逐target做best-rank4 SVD。15个member-task的离线correction energy coverage
+为`99.49%--99.69%`、expert update coverage为`95.34%--98.90%`，明显优于fixed-A，但仍必须直接闭环。
+
+当前唯一授权动作是三个预固定members各自的strict250解析容量评测。通过后才为现有48-state objective写rank4 residual solver；
+失败后才讨论full-rank16 retraction。精确合同见`docs/ecp_rank4_residual_capacity_card_20260823.md`。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

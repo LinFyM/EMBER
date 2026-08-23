@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **fixed-A闭环容量诊断已判为capacity-binding；当前fixed-A主线停止，尚未启动后继Writer或solver。**
+状态：2026-08-23 **fixed-A已判为capacity-binding；现只执行预注册的mobile-rank4 residual闭环容量诊断，尚未启动后继Writer或solver。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -92,18 +92,22 @@ retention至少33/43、overall oracle-normalized recovery至少0.35。**Realizat
 `docs/ecp_fixed_a_capacity_card_20260823.md`；evidence：
 `docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`。
 
-## Phase C3 — 下一允许的Stage 1B问题
+## Phase C3 — Mobile-rank4 residual容量分离
 
-下一次只允许检验一个carrier-preserving、row-space-mobile的realization operator。它必须同时满足：
+代码与资产审计确认stable carrier本身是精确的`shared rank12 + 4个zero-B reserved ranks`。对15个matched successful
+adapters的离线最佳rank4 correction审计达到`99.49%--99.69%` correction energy coverage和
+`95.34%--98.90%` expert effective-update energy coverage。因此在写solver前，先直接检验这个最小、严格effective-additive的
+参数化是否能保留已知成功行为：
 
-- zero correction逐effective update精确恢复stable carrier；
-- correction在effective-update坐标中显式相加，不通过同时更新raw A/B引入交叉项；
-- task-conditioned row与column space可移动；
-- 每步或最终经确定性rank16 retraction物化为一套38-target LoRA，不部署第二adapter或rank32 carrier；
-- 首轮保持同一48-state三particle objective与held5 gate，先分离parameterization，不顺手改Program、数据或effect target；
-- 在实现前形成一张完整card并证明数值更新不是fixed-A的换名版本。
+- [x] 复核历史rank12+rank4 decoder的`37/33`只关闭当时的code/objective/decoder，不回答参数容量；
+- [x] 确认38/38 carrier targets的后4个B columns精确为0、A仍full-row-rank；
+- [x] 完成15个member-task的best-rank4 correction零训练几何审计；
+- [x] 在任何formal materialization/GPU rollout前冻结三个matched arms与裁决门；
+- [ ] 解析物化三个members的15套`carrier12 + mobile residual4` single-rank16 adapters；
+- [ ] 完成三个strict250 arms并裁决capacity-supported、capacity-binding或mixed。
 
-下一步先完成该问题的设计复核与预注册；没有授权Stage 1C或共享Writer训练。
+card：`docs/ecp_rank4_residual_capacity_card_20260823.md`。capacity-supported后才允许为同一48-state三particle objective写
+rank4 residual solver；capacity-binding后才允许设计full-rank16 effective-additive retraction。没有授权Stage 1C或共享Writer训练。
 
 ## Phase D — 继续被Realization non-pass阻止
 

@@ -8,10 +8,11 @@
 - active design：`docs/event_conditioned_policy_compiler_design.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
+- active capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；fixed-A GPU诊断已经结束，没有active GPU job或successor训练。
+- canonical workspace：本仓库`main`；fixed-A GPU诊断已经结束，mobile-rank4仍在实现前，没有active GPU job或successor训练。
 
 ## Current scientific state
 
@@ -30,6 +31,8 @@
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
   `67/295=22.71%`；Goal与Long三个members全部0。当前fixed-A row space停止作为主线。
+- stable carrier的38个targets都是精确rank12且后4个B columns为0；最佳任意row/column-space rank4 correction在15个matched
+  member-task上覆盖`99.49%--99.69%`所需修正能量。它成为下一次解析闭环容量问题，不直接视为正结果。
 
 ## Verified reusable assets
 
@@ -94,7 +97,9 @@
 - profile没有借held5做量纲选择：另用ordinal71/global2独立member、四类occupancy和同构solver冻结实现合同；
 - projection helper现可直接解析并行solver的per-task子目录，不再需要临时symlink surface；
 - fixed-A analytic projection用低秩闭式解直接求`argmin_B ||B A_c - B_e A_e||_F`并输出single rank16 LoRA；focused
-  realization/manifold tests为23/23通过。
+  realization/manifold tests为23/23通过；该已完成diagnostic入口现由Git保存；
+- mobile-rank4 helper用thin-QR/core-SVD直接求`expert-carrier`的best-rank4 correction，再与不变carrier12按rank拼接；真实
+  latest-task0资产得到76/76 finite tensors与`.99610/.98062` correction/expert coverage，focused tests为24/24通过。
 
 ## Current unresolved interface
 
@@ -105,4 +110,5 @@
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
 - 下一步只设计一个effective-additive、允许row/column-space移动、zero correction精确返回carrier且最终retract为single rank16
-  LoRA的Stage 1B oracle；在完整card前不实现，不顺手改effect objective、Program或数据，也不启动Stage 1C。
+  LoRA的Stage 1B oracle；在写solver前先完成`carrier rank12 + mobile residual rank4`的解析容量门，不顺手改effect objective、
+  Program或数据，也不启动Stage 1C。

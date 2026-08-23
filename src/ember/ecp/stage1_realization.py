@@ -1,4 +1,4 @@
-"""Fixed-A policy-effect realization solver for ECP Stage 1B."""
+"""Policy-effect realization and capacity projections for ECP Stage 1B."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from typing import Callable, Mapping
 
 import torch
 
+from ember.ecp.low_rank import canonicalize_low_rank_factors
 from ember.ecp.policy_effects import PolicyEffectResponse
 from ember.ecp.stage1_equivalence import Stage1EffectBank
 from ember.ecp.stage1_objective import (
@@ -31,17 +32,18 @@ class RealizationStep:
 
 
 @dataclass(frozen=True)
-class FixedAProjectionTarget:
-    """Exact row-space projection evidence for one LoRA target."""
+class RankReservedProjectionTarget:
+    """Best additive low-rank correction evidence for one LoRA target."""
 
     target: str
     expert_energy: float
     carrier_energy: float
     required_correction_energy: float
-    projected_energy: float
+    projected_correction_energy: float
+    projected_effective_update_energy: float
     residual_energy: float
-    rowspace_mean_squared_overlap: float
-    rowspace_minimum_cosine: float
+    carrier_rank: int
+    residual_rank: int
 
 
 ResponseFunction = Callable[
@@ -89,63 +91,28 @@ def _effective_inner_product(
     return torch.sum((left_b.T @ right_b) * (left_a @ right_a.T))
 
 
-def _fixed_a_projection_metrics(
-    *,
-    target: str,
-    carrier_a: torch.Tensor,
-    carrier_b: torch.Tensor,
-    expert_a: torch.Tensor,
-    expert_b: torch.Tensor,
-    projected_b: torch.Tensor,
-) -> FixedAProjectionTarget:
-    expert_energy = _effective_inner_product(expert_b, expert_a, expert_b, expert_a)
-    carrier_energy = _effective_inner_product(
-        carrier_b, carrier_a, carrier_b, carrier_a
-    )
-    projected_energy = _effective_inner_product(
-        projected_b, carrier_a, projected_b, carrier_a
-    )
-    correction_energy = (
-        expert_energy
-        + carrier_energy
-        - 2.0 * _effective_inner_product(expert_b, expert_a, carrier_b, carrier_a)
-    ).clamp_min(0.0)
-    residual_energy = (
-        expert_energy
-        + projected_energy
-        - 2.0 * _effective_inner_product(expert_b, expert_a, projected_b, carrier_a)
-    ).clamp_min(0.0)
-    carrier_basis = torch.linalg.svd(carrier_a, full_matrices=False).Vh
-    expert_basis = torch.linalg.svd(expert_a, full_matrices=False).Vh
-    cosines = torch.linalg.svdvals(expert_basis @ carrier_basis.T).clamp(0.0, 1.0)
-    return FixedAProjectionTarget(
-        target=target,
-        expert_energy=float(expert_energy),
-        carrier_energy=float(carrier_energy),
-        required_correction_energy=float(correction_energy),
-        projected_energy=float(projected_energy),
-        residual_energy=float(residual_energy),
-        rowspace_mean_squared_overlap=float(cosines.square().mean()),
-        rowspace_minimum_cosine=float(cosines.min()),
-    )
-
-
-def project_expert_onto_fixed_a(
+def project_expert_onto_rank_reserved_residual(
     *,
     carrier: Mapping[str, torch.Tensor],
     expert: Mapping[str, torch.Tensor],
     contract: LoRAContract,
-) -> tuple[dict[str, torch.Tensor], tuple[FixedAProjectionTarget, ...]]:
-    """Project each expert effective update onto the carrier-A row space.
+    carrier_rank: int,
+) -> tuple[dict[str, torch.Tensor], tuple[RankReservedProjectionTarget, ...]]:
+    """Add the best mobile residual in the ranks reserved by the carrier.
 
-    For every LoRA target this solves ``min_B ||B A_c - B_e A_e||_F`` in
-    closed form.  The returned state remains one complete rank-r LoRA; it is
-    the unconstrained representational upper bound for the current fixed-A
-    parameterization, not a deployment Writer output.
+    For every target this computes the truncated-SVD solution to
+    ``min_rank(X)<=r ||(W_expert - W_carrier) - X||_F`` without materializing
+    either dense update.  Concatenating the frozen carrier ranks and residual
+    factors yields one complete LoRA with an exact effective-update sum.
     """
 
     validate_lora_state(carrier, contract)
     validate_lora_state(expert, contract)
+    residual_rank = int(contract.rank) - int(carrier_rank)
+    if carrier_rank <= 0 or residual_rank <= 0:
+        raise ValueError(
+            "rank-reserved projection requires carrier and residual ranks"
+        )
     projected: dict[str, torch.Tensor] = {}
     metrics = []
     for target in contract.targets:
@@ -155,26 +122,61 @@ def project_expert_onto_fixed_a(
         carrier_b = carrier[b_name]
         expert_a = expert[a_name]
         expert_b = expert[b_name]
+        if torch.count_nonzero(carrier_b[:, carrier_rank:]):
+            raise ValueError("stable carrier uses ranks reserved for the residual")
+
+        correction_a = torch.cat(
+            [expert_a.detach().float(), carrier_a.detach().float()], dim=0
+        )
+        correction_b = torch.cat(
+            [expert_b.detach().float(), -carrier_b.detach().float()], dim=1
+        )
+        residual_a, residual_b = canonicalize_low_rank_factors(
+            correction_a, correction_b, output_rank=residual_rank
+        )
+        residual_a = residual_a.to(device=carrier_a.device, dtype=carrier_a.dtype)
+        residual_b = residual_b.to(device=carrier_b.device, dtype=carrier_b.dtype)
+        projected[a_name] = torch.cat(
+            [carrier_a[:carrier_rank].detach(), residual_a], dim=0
+        )
+        projected[b_name] = torch.cat(
+            [carrier_b[:, :carrier_rank].detach(), residual_b], dim=1
+        )
+
         ca = carrier_a.detach().double()
         cb = carrier_b.detach().double()
         ea = expert_a.detach().double()
         eb = expert_b.detach().double()
-
-        gram_inverse = torch.linalg.pinv(ca @ ca.T)
-        best_b = (eb @ ea @ ca.T) @ gram_inverse
-        stored_b = best_b.to(device=carrier_b.device, dtype=carrier_b.dtype)
-        projected[a_name] = carrier_a.detach().clone()
-        projected[b_name] = stored_b
-
-        pb = stored_b.detach().double()
+        ra = residual_a.detach().double()
+        rb = residual_b.detach().double()
+        expert_energy = _effective_inner_product(eb, ea, eb, ea)
+        carrier_energy = _effective_inner_product(cb, ca, cb, ca)
+        expert_carrier = _effective_inner_product(eb, ea, cb, ca)
+        expert_residual = _effective_inner_product(eb, ea, rb, ra)
+        carrier_residual = _effective_inner_product(cb, ca, rb, ra)
+        residual_energy = _effective_inner_product(rb, ra, rb, ra)
+        correction_energy = (
+            expert_energy + carrier_energy - 2.0 * expert_carrier
+        ).clamp_min(0.0)
+        projected_energy = (
+            carrier_energy + residual_energy + 2.0 * carrier_residual
+        ).clamp_min(0.0)
+        approximation_error = (
+            expert_energy
+            + projected_energy
+            - 2.0 * (expert_carrier + expert_residual)
+        ).clamp_min(0.0)
         metrics.append(
-            _fixed_a_projection_metrics(
+            RankReservedProjectionTarget(
                 target=target.name,
-                carrier_a=ca,
-                carrier_b=cb,
-                expert_a=ea,
-                expert_b=eb,
-                projected_b=pb,
+                expert_energy=float(expert_energy),
+                carrier_energy=float(carrier_energy),
+                required_correction_energy=float(correction_energy),
+                projected_correction_energy=float(residual_energy),
+                projected_effective_update_energy=float(projected_energy),
+                residual_energy=float(approximation_error),
+                carrier_rank=int(carrier_rank),
+                residual_rank=residual_rank,
             )
         )
     validate_lora_state(projected, contract)

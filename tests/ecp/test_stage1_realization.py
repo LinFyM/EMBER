@@ -9,7 +9,7 @@ from ember.ecp.stage1_realization import (
     RealizationConfig,
     fixed_a_relative_distance,
     fixed_a_state,
-    project_expert_onto_fixed_a,
+    project_expert_onto_rank_reserved_residual,
     solve_fixed_a_particle_effects,
 )
 from ember.lora import LoRATarget, SmolVLALoRAContract
@@ -89,49 +89,78 @@ def test_fixed_a_update_has_no_factor_cross_term() -> None:
     )
 
 
-def test_fixed_a_projection_is_the_exact_rowspace_solution() -> None:
+def test_rank_reserved_projection_recovers_a_mobile_rank_one_correction() -> None:
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("tiny", in_features=3, out_features=2),),
-        rank=2,
-        alpha=2,
+        rank=3,
+        alpha=3,
         dropout=0.0,
         identity_seed=1,
     )
     carrier = {
         "tiny.lora_A.default.weight": torch.tensor(
-            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         ),
         "tiny.lora_B.default.weight": torch.tensor(
-            [[0.2, 0.0], [0.0, 0.3]]
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
         ),
     }
     expert = {
         "tiny.lora_A.default.weight": torch.tensor(
-            [[1.0, 0.0, 1.0], [0.0, 2.0, 0.0]]
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         ),
         "tiny.lora_B.default.weight": torch.tensor(
-            [[2.0, 3.0], [4.0, 5.0]]
+            [[1.0, 0.0, 3.0], [0.0, 1.0, 6.0]]
         ),
     }
-    projected, metrics = project_expert_onto_fixed_a(
-        carrier=carrier, expert=expert, contract=contract
+    projected, metrics = project_expert_onto_rank_reserved_residual(
+        carrier=carrier, expert=expert, contract=contract, carrier_rank=2
     )
     expert_update = (
         expert["tiny.lora_B.default.weight"]
         @ expert["tiny.lora_A.default.weight"]
     )
-    expected = expert_update.clone()
-    expected[:, 2] = 0.0
     actual = (
         projected["tiny.lora_B.default.weight"]
         @ projected["tiny.lora_A.default.weight"]
     )
-    assert torch.equal(
-        projected["tiny.lora_A.default.weight"],
-        carrier["tiny.lora_A.default.weight"],
+    assert torch.allclose(actual, expert_update, atol=1e-5)
+    assert metrics[0].carrier_rank == 2
+    assert metrics[0].residual_rank == 1
+    assert metrics[0].residual_energy < 1e-8
+
+
+def test_rank_reserved_projection_matches_the_best_truncated_correction() -> None:
+    contract = SmolVLALoRAContract(
+        targets=(LoRATarget("tiny", in_features=3, out_features=2),),
+        rank=3,
+        alpha=3,
+        dropout=0.0,
+        identity_seed=1,
     )
-    assert torch.allclose(actual, expected)
-    assert metrics[0].residual_energy == torch.sum(expert_update[:, 2].square())
+    identity = torch.eye(3)
+    carrier = {
+        "tiny.lora_A.default.weight": identity,
+        "tiny.lora_B.default.weight": torch.tensor(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
+        ),
+    }
+    expert = {
+        "tiny.lora_A.default.weight": identity,
+        "tiny.lora_B.default.weight": torch.tensor(
+            [[1.0, 2.0, 0.0], [0.0, 1.0, 6.0]]
+        ),
+    }
+    projected, metrics = project_expert_onto_rank_reserved_residual(
+        carrier=carrier, expert=expert, contract=contract, carrier_rank=2
+    )
+    actual = (
+        projected["tiny.lora_B.default.weight"]
+        @ projected["tiny.lora_A.default.weight"]
+    )
+    expected = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 6.0]])
+    assert torch.allclose(actual, expected, atol=1e-5)
+    assert abs(metrics[0].residual_energy - 4.0) < 1e-5
 
 
 def test_fixed_solver_reduces_particle_equivalence_error() -> None:

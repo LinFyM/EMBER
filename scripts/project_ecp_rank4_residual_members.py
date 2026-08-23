@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Project the Stage 1B successful members onto the carrier-A row spaces."""
+"""Project Stage 1B members into an additive carrier12 + mobile residual4."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from typing import Any, Iterable, Mapping
 from safetensors.torch import load_file, save_file
 
 from ember.ecp.stage1_realization import (
-    FixedAProjectionTarget,
-    project_expert_onto_fixed_a,
+    RankReservedProjectionTarget,
+    project_expert_onto_rank_reserved_residual,
 )
 from ember.pi05_eval_contract import (
     git_state,
@@ -24,8 +24,9 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = "ember_ecp_stage1b_fixed_a_member_projection_v1"
+SCHEMA = "ember_ecp_stage1b_rank4_residual_member_projection_v1"
 MEMBERS = ("latest", "independent", "earliest")
+RESIDUAL_RANK = 4
 
 
 def _authority(config: Mapping[str, Any], name: str, asset_root: Path) -> Path:
@@ -50,7 +51,7 @@ def _family(name: str) -> str:
     raise ValueError(f"unknown ECP LoRA target family: {name}")
 
 
-def _aggregate(rows: Iterable[FixedAProjectionTarget]) -> dict[str, float]:
+def _aggregate(rows: Iterable[RankReservedProjectionTarget]) -> dict[str, float]:
     values = tuple(rows)
     expert = math.fsum(row.expert_energy for row in values)
     correction = math.fsum(row.required_correction_energy for row in values)
@@ -65,19 +66,17 @@ def _aggregate(rows: Iterable[FixedAProjectionTarget]) -> dict[str, float]:
         "carrier_relative_distance_to_expert": math.sqrt(
             correction / max(expert, 1e-24)
         ),
-        "rowspace_mean_squared_overlap": math.fsum(
-            row.rowspace_mean_squared_overlap for row in values
-        )
-        / len(values),
-        "rowspace_mean_minimum_cosine": math.fsum(
-            row.rowspace_minimum_cosine for row in values
-        )
-        / len(values),
+        "projected_correction_energy": math.fsum(
+            row.projected_correction_energy for row in values
+        ),
+        "projected_effective_update_energy": math.fsum(
+            row.projected_effective_update_energy for row in values
+        ),
     }
 
 
 def _metric_groups(
-    metrics: tuple[FixedAProjectionTarget, ...],
+    metrics: tuple[RankReservedProjectionTarget, ...],
 ) -> dict[str, dict[str, float]]:
     result = {"all": _aggregate(metrics)}
     for family in ("q", "v", "action_in", "action_out"):
@@ -90,7 +89,7 @@ def _metric_groups(
 def _task_manifests(root: Path) -> tuple[Path, ...]:
     manifests = tuple(sorted(root.resolve().glob("task_*/manifest.json")))
     if len(manifests) != 5:
-        raise ValueError("fixed-A diagnostic requires the registered held5 banks")
+        raise ValueError("rank4 residual diagnostic requires the registered held5 banks")
     return manifests
 
 
@@ -105,8 +104,11 @@ def _project_member(
 ) -> dict[str, Any]:
     expert_path = _adapter_file(str(member["adapter"]))
     expert = load_file(str(expert_path), device="cpu")
-    projected, metrics = project_expert_onto_fixed_a(
-        carrier=carrier, expert=expert, contract=contract
+    projected, metrics = project_expert_onto_rank_reserved_residual(
+        carrier=carrier,
+        expert=expert,
+        contract=contract,
+        carrier_rank=int(contract.rank) - RESIDUAL_RANK,
     )
     adapter_path = (
         output_dir
@@ -151,7 +153,7 @@ def _result(
     return {
         "schema_version": SCHEMA,
         "mode": "formal",
-        "scientific_role": "held5_fixed_a_representational_capacity_diagnostic",
+        "scientific_role": "held5_mobile_rank4_residual_capacity_diagnostic",
         "repository": {
             "commit": repository["commit"],
             "dirty_paths": repository["dirty_paths"],
@@ -166,11 +168,17 @@ def _result(
         },
         "effect_bank_manifests": bank_files,
         "projection": {
-            "equation": "argmin_B ||B A_carrier - B_expert A_expert||_F",
+            "equation": (
+                "carrier_rank12 + argmin_rank(X)<=4 "
+                "||(W_expert - W_carrier) - X||_F"
+            ),
             "optimizer_steps": 0,
             "interpolation_or_checkpoint_selection": False,
             "single_complete_lora": True,
-            "fixed_a": True,
+            "effective_update_addition": True,
+            "carrier_rank": int(contract.rank) - RESIDUAL_RANK,
+            "mobile_residual_rank": RESIDUAL_RANK,
+            "raw_factor_cross_terms": False,
         },
         "records": records,
         "information_wall": {
@@ -187,10 +195,10 @@ def _result(
 def run(args: argparse.Namespace) -> dict[str, Any]:
     repository = git_state(REPO_ROOT)
     if not git_state_is_clean_pushed_or_frozen_authority(repository):
-        raise ValueError("formal fixed-A projection requires clean pushed authority")
+        raise ValueError("formal rank4 residual projection requires clean pushed authority")
     output_dir = args.output_dir.resolve()
     if output_dir.exists():
-        raise ValueError("fixed-A projection output already exists")
+        raise ValueError("rank4 residual projection output already exists")
     config = read_json(args.config.resolve())
     asset_root = args.asset_root.resolve()
     carrier_path = _authority(config, "stable_carrier", asset_root)
@@ -208,7 +216,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         task = dict(metadata["task"])
         members = {str(row["name"]): dict(row) for row in metadata["members"]}
         if set(members) != set(MEMBERS):
-            raise ValueError("fixed-A diagnostic member panel changed")
+            raise ValueError("rank4 residual diagnostic member panel changed")
         for member_name in MEMBERS:
             records.append(
                 _project_member(

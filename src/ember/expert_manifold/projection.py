@@ -63,6 +63,9 @@ ECP_STAGE1_STATIC_LORA_PURPOSES = {
     "stage1b_fixed_a_projection_earliest",
     "stage1b_fixed_a_projection_independent",
     "stage1b_fixed_a_projection_latest",
+    "stage1b_mobile_rank4_residual_projection_earliest",
+    "stage1b_mobile_rank4_residual_projection_independent",
+    "stage1b_mobile_rank4_residual_projection_latest",
 }
 
 

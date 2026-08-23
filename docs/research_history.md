@@ -1413,6 +1413,21 @@ effective-rank事实仍成立，但native BF16 regrouping后的实际闭环行�
 checkpoint救援，GOMQ正式归档关闭。完整证据：
 `docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`。
 
+### 3.72 首个process minimal pair在teacher Gate A以19/100关闭
+
+按预注册`docs/ecp_process_minimal_pair_gate_20260824.md`，clean pushed
+`d1975c3d1526e091e8675ea7df7178e6410b4a7d`在gpu01 physical2--7并行采集soup→butter与butter→soup各50条同面板轨迹。
+六个workers全部返回0，100个privileged ledgers、50对state IDs与policy-noise common prefix完整；19条公开成功video通过信息墙。
+
+结果分别为`0/50`与`19/50`，总计`19/100`，低于每方向20和总计50的固定门。两方向第一predicate都完成`50/50`，第二predicate
+分别只完成`0/50`和`19/50`，invalid均为0；所以失败定位在phase switch后的sequential teacher support，不在wrapper或首个
+primitive。19个成功均在step275--385；旧collector让66个失败chunk尾部到401--404，但严格horizon success不变，边界在
+`90090bf38874eb6d4202d3f2a7b262a4eced736a`修正且没有科学重跑。
+
+Gate B、process suite扩展和`q_pi/q_V`均未启动。后继只允许更强privileged sequential teacher或有明确依据的替代family；与此
+并行进入专家既定的Phase 2 mobile-rank4 realizer calibration。证据：
+`docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

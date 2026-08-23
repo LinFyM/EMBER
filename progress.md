@@ -19,10 +19,13 @@
 - effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
 - completed GOMQ rank16 Phase 0 card：`docs/gomq_rank16_archival_card_20260824.md`；
 - GOMQ rank16 Phase 0 adjudication：`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`；
-- active process minimal-pair Gate：`docs/ecp_process_minimal_pair_gate_20260824.md`；
+- completed process minimal-pair Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；
+- process minimal-pair Gate A adjudication：
+  `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
-  当前没有active GPU job，active双前置已转为process-identifying最小pair与mobile-rank4 realizer calibration。
+  process pair的formal code authority为clean pushed `d1975c3`，评测已结束；当前没有active GPU job，主执行转入
+  mobile-rank4 realizer calibration，process acquisition修正作为并行资格前置。
 
 ## Current scientific state
 
@@ -46,6 +49,9 @@
 - GOMQ真实rank16 Phase 0已完成：确定性native-dtype canonicalization在strict400得到`136/400`、逐task
   `16/0/0/35/46/34/0/5`、breadth`5/8`。它相对历史rank32的`151`保留123、获得13、丢失28；因低于预注册145门，
   不成为absolute基线，历史151也只保留机制/历史证据。该差异不触发dtype、scale、seed、rank或checkpoint救援。
+- 首个process-identifying pair的teacher Gate A已完成并non-pass：soup→butter为`0/50`、butter→soup为`19/50`，总计
+  `19/100`，两方向首事件都为`50/50`，第二事件分别为`0/50、19/50`，invalid均为0。故失败接口是phase switch后的顺序组合
+  支持，而非custom wrapper、wrong-first判定或第一primitive。Gate B未运行，不能从本结果裁决video order observer。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
@@ -117,6 +123,9 @@
 13. 从clean pushed `ac233fa`物化400套真实rank16 archival caches，并在gpu01 physical`1,2,3,4,5,7`以18 workers完成唯一
     strict400 correct评测；physical0未使用，72/72 shards与400/400 rows完整、workers全0返回。结果`136/400`，按预注册门关闭
     GOMQ；formal产物与paired evidence保留。
+14. 从clean pushed `d1975c3`在gpu01 physical`2,3,4,5,6,7`以6 workers完成process pair的100行Gate A；两方向结果为
+    `0/50、19/50`，未达到各20与总50的门。19条成功全在step275--385；旧collector中66条失败尾部达到401--404，不影响
+    strict success，内层horizon边界已在`90090bf`修正且不重跑同一科学panel。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -182,6 +191,7 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0 GOMQ archival已结束；process最小pair与realizer coordinate可并行；后续顺序固定为：fresh
-  Stage 0 Program；distributional `q_pi`；冻结privileged full-chain；`q_V`；ordinary joint Writer；structured outer credit；
-  final qualification。当前active双前置就是前两项，不建立新的ECP版本号。
+- 当前没有active GPU job。Phase 0 GOMQ archival已结束；首个process family的Gate A已non-pass，Gate B与suite扩展均未启动。
+  Phase 2 realizer coordinate按专家顺序继续；process侧只做更强privileged teacher或有依据替代family的有界修正。两道前置均
+  通过后，顺序固定为fresh Stage 0 Program、distributional `q_pi`、冻结privileged full-chain、`q_V`、ordinary joint Writer、
+  structured outer credit与final qualification；不建立新的ECP版本号。

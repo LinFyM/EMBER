@@ -1,8 +1,9 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **Phase 0已按预注册合同完成并以`136/400`判为absolute-baseline non-pass；GOMQ归档关闭。当前active
-双前置是process-identifying最小pair与mobile-rank4 deployment realizer坐标校准，两者可并行；最小pair未通过前不得启动
-`q_pi`或`q_V`，fixed realizer未通过前不得启动完整privileged链。**
+状态：2026-08-24 **Phase 0已按预注册合同完成并以`136/400`判为absolute-baseline non-pass；GOMQ归档关闭。Phase 1首个
+process family的teacher Gate A以`0/50、19/50`判为non-pass，不运行Gate B。当前主执行转入Phase 2 mobile-rank4 deployment
+realizer坐标校准，同时只对更强privileged sequential teacher或有依据的替代family做有边界的数据修正；process Gate未通过前
+不得启动`q_pi`或`q_V`，fixed realizer未通过前不得启动完整privileged链。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -10,7 +11,8 @@
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
-当前process Gate：`docs/ecp_process_minimal_pair_gate_20260824.md`
+已完成process Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；裁决：
+`docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`
 
 历史diagnostic card：`docs/ecp_fixed_a_capacity_card_20260823.md`
 
@@ -190,9 +192,11 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 ## Phase F — Phase 1：process-identifying最小pair与suite
 
-- [ ] 按冻结Gate对soup/butter order pair完成50×2 teacher acquisition，确认两个方向都有足量完整single-episode trajectories；
+- [x] 按冻结Gate完成soup/butter order pair的50×2 teacher acquisition；结果为`0/50、19/50`、总计`19/100`，低于两个方向
+  各20及总计50的固定门，判为Gate A non-pass且不做救援重跑；
 - [x] 实现repo-owned temporal wrapper：同scene/language/init/final predicates，wrong-first永久invalid，variant/predicate/phase不进入
   policy或Writer；不放松正式target40 evaluator；
+- [ ] 取得两个方向均可靠的更强privileged sequential teacher，或基于明确primitive/scene证据预注册一个替代process family；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；
 - [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；

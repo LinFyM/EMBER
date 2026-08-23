@@ -1782,3 +1782,22 @@ common prefix完全一致，72/72 shards和18/18 workers正常完成，所以该
 预注册absolute门是145，故本轮判为non-pass：只保留“该rank32更新在实数代数上有效rank不超过16”的结构事实；新136不成为
 ECP absolute Phase 0基线，旧151也只保留为历史与机制证据。正常native BF16相加后的闭环轨迹足以发生离散分歧，但本阶段不为
 解释或挽救该现象扩大dtype、调scale/rank/seed/checkpoint或重跑。GOMQ归档关闭，下一接口是process-identifying最小pair。
+
+## 85. 首个process-identifying pair在teacher acquisition而非视频识别处失败
+
+按`docs/ecp_process_minimal_pair_gate_20260824.md`冻结的100行面板，从clean pushed `d1975c3`运行soup→butter与
+butter→soup各50个相同init states。六个workers全部返回0，100个privileged ledgers唯一且完整，variant间50/50 state IDs和
+policy-noise common prefix配对。temporal wrapper没有产生invalid；所有成功episode的predicate顺序都与variant一致，公开
+19条video只含统一language、双相机RGB、stride/schema/source-step元数据，不含variant、predicate、action、reward或success。
+
+正式结果为soup→butter `0/50`、butter→soup `19/50`、总计`19/100`，没有达到两个方向各20和总计50的Gate A。更有定位价值的
+事实是两个方向的第一事件都为`50/50`：soup-first的50行全停在“只有soup完成”，butter-first则31行停在“只有butter完成”、
+19行完成两事件。因此最早科学失败是phase switch后的sequential composition/remaining tray occupancy support，而不是第一项
+primitive、wrong-first wrapper或进程运行失败；本结果也没有进入Gate B，不能被解释成video observer不理解顺序。
+
+formal collector原本只在每个5-action chunk前检查horizon，66条失败尾部因此记录为step401--404；19条成功全部发生在
+step275--385，严格截断不会改变任何success。内层horizon停止已在`90090bf`修正，但按预注册不重跑同一100行panel。当前pair
+封存为teacher Gate A non-pass，不延长horizon、不挑state、不训练Writer掩盖数据失败。process路线只允许取得两向都可靠的更强
+privileged sequential teacher，或用明确primitive/scene证据预注册一个替代family；与此同时继续专家允许并行的Phase 2
+mobile-rank4 coordinate与deployment realizer calibration。完整证据见
+`docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`。

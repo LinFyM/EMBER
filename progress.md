@@ -10,13 +10,14 @@
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
 - completed realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
-- active reachability card：`docs/ecp_effective_update_solver_card_20260823.md`；
+- completed reachability card：`docs/ecp_effective_update_solver_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
+- effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；effective-update card已在实现前冻结，retained实现与focused验证完成，没有active GPU job。
+- canonical workspace：本仓库`main`；formal code authority为clean pushed `fc678f3`，profile已结束，没有active GPU job。
 
 ## Current scientific state
 
@@ -47,8 +48,9 @@
   known-success projections的trust为`1.341--2.281`，当前只有`.000915--.001171`，且effective correction方向cosine仅
   `.041--.077`。因此当前最早失败进一步收窄为zero-residual raw-factor动力学未到达successful effect basin；effect target
   是否充分仍未被最终回答。
-- 下一唯一授权operator直接在effective-update metric工作：4次matrix-free sketch VJP初始化rank4下降方向，最多8次
-  gauge-preconditioned tangent VJP，共同trust-region objective回溯；总VJP仍为12，不改变bank、loss、rank或Gate。
+- effective-update successor已在ordinal71判为Profile non-pass：initial精确等于carrier，matrix-free sketch的方向导数为
+  `-81.8873`且全部finite，但五个固定回溯尺度均未被完整objective接受；final objective仍为`2.214329`、gap recovery与trust
+  都为0。它只运行4次initial VJP，未进入后续Gram tangent，也未启动held5。
 
 ## Verified reusable assets
 
@@ -92,6 +94,8 @@
 9. 从clean pushed `f75bafc`完成ordinal71 profile与held5五套mobile-rank4 solver LoRA；五项objective均严格下降；
 10. gpu01 physical`1,6`完成最终strict250，physical0未使用；6 workers返回码全0，最终`49/250`，五套reference严格配对零错配；
 11. 完成零新rollout的member-objective、trust、effective-correction方向审计，停止当前raw-factor operator。
+12. 从clean pushed `fc678f3`在gpu01 physical5完成唯一ordinal71 effective-update profile；physical0未使用。initial sketch
+    finite且为负方向，但0步被接受，按卡停止并取消held5 launch。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -124,7 +128,8 @@
   single rank16，focused tests为24/24通过。科学non-pass不是工程invalid。
 - effective-update successor只保留一个solver入口：4次matrix-free sketch后最多8次Gram-preconditioned tangent VJP，所有候选
   通过固定objective-only trust回溯；解析参数化另归一个owner模块，raw-factor runtime/config已移除。focused ECP tests为
-  `15/15`通过，profile gate显式核对exact carrier、负方向、finite、至少一步、gap recovery、trust与VJP预算；尚未读取held结果。
+  `15/15`通过，profile gate显式核对exact carrier、负方向、finite、至少一步、gap recovery、trust与VJP预算；formal profile
+  在initial backtracking处停止，未读取held结果。
 
 ## Current unresolved interface
 
@@ -135,5 +140,6 @@
   任何由视频预测的effect distribution都会充分，后续必须把gauge-invariant realization与objective sufficiency分开检验；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 下一步只实现已预注册的effective-update reachability card；ordinal71未恢复至少50%的known-success objective gap就不启动
-  held5。不得复活raw-factor dynamics，不顺手改effect objective、Program或数据，也不启动Stage 1C。
+- effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
+  当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续先综合复盘这一断点与
+  专家原始意见，不复活raw-factor dynamics、不即时再造solver、不启动held5或Stage 1C。

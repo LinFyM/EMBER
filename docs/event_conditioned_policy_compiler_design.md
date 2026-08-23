@@ -1,7 +1,7 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability card已在实现/GPU前冻结，
-canonical实现已完成并等待ordinal71 profile**。
+状态：2026-08-23 **raw-factor realization已以`49/250`停止；effective-update reachability也在ordinal71 profile初始回溯处
+non-pass，held5与Stage 1C未启动**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
@@ -278,6 +278,12 @@ dense effective-update gradient的rank4最陡下降方向；首步后最多8次V
 停止。profile通过后仍直接使用原strict paired250 Gate，不用inner objective选择LoRA。精确合同见
 `docs/ecp_effective_update_solver_card_20260823.md`。该卡仍不授权Program、Writer或Action Meta；realization成立后再按owner要求
 做一次matched Action Meta control，无负面才启用并冻结。
+
+正式profile从exact carrier得到finite负方向导数`-81.8873`，但五个固定回溯尺度都没有使完整objective严格下降，故0步接受、
+gap recovery与trust均为0，只消耗4次initial sketch VJP。按预注册门，这个operator在进入Gram tangent与held5前停止。该结果只
+关闭当前matrix-free sketch归一化、固定回溯网格与effect objective组成的solver，不关闭mobile-rank4解析容量或ECP核心；也不能
+用“方向导数为负”事后缩小步长继续搜索。证据见
+`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
 
 ## 6. Stage 1C：被当前non-pass阻止
 

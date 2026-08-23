@@ -1,6 +1,7 @@
 # ECP Effective-Update Reachability Oracle
 
-状态：2026-08-23 **在retained implementation、fit profile与held GPU launch前预注册；随后只按本卡实现，科学合同未改。**
+状态：2026-08-23 **在retained implementation、fit profile与held GPU launch前预注册；ordinal71 profile已按卡判为
+non-pass并停止，held5未启动。**
 
 ## Scientific question
 
@@ -131,3 +132,11 @@ exact-row、trust、objective gap recovery与correction cosine只作定位。只
 
 Action Meta-LoRA本卡保持关闭，以免同时改变observer坐标。owner要求的后续matched Action Meta尝试没有取消：只有本realization
 坐标成立后才单独做control；若无负面则启用并永久冻结。
+
+## Adjudication
+
+clean pushed `fc678f3`在ordinal71得到exact carrier初态与finite负方向导数`-81.8873`，但固定
+`1,1/2,1/4,1/8,1/16`五个候选均未被完整objective接受。final仍为carrier：objective
+`2.214329→2.214329`、gap recovery `0`、trust `0`、accepted steps `0`，只消耗initial sketch的4次VJP。按本卡
+Profile non-pass条款停止；没有运行held5、closed loop、Action Meta或shared Writer。正式证据：
+`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。

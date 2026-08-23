@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；唯一的effective-update reachability oracle已按
-预注册合同实现并通过focused CPU验证，等待ordinal71 profile；未启动shared Writer或参数扫。**
+状态：2026-08-23 **raw-factor realization oracle已以`49/250`停止；唯一的effective-update reachability oracle也在
+ordinal71初始回溯处non-pass，按预注册合同未启动held5、shared Writer或参数扫。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -142,12 +142,13 @@ raw-factor solver从exact-zero residual奇点出发，12步后correction norm约
 
 - [x] 在实现前冻结matrix-free rank4 gradient sketch、trust backtracking、VJP预算、fit profile门和held closed-loop门；
 - [x] 以一个canonical runtime替换已关闭raw-factor solver，不保留并行fallback；
-- [ ] ordinal71必须恢复至少50%的carrier-to-best-member objective gap且trust进入`.10--1.50`；
-- [ ] profile通过后才物化held5并直接strict paired250；
-- [ ] Pass后才进入Stage 1C；profile或closed-loop non-pass均停止本operator，不扫sketch/trust/damping/backtrack。
+- [x] ordinal71只运行一次formal profile；实际gap recovery为`0`、trust为`0`，未达到`.50`与`.10--1.50`门；
+- [x] profile未过，因此没有物化held5或运行strict paired250；
+- [x] 按Profile non-pass停止本operator与Stage 1C授权，不扫sketch/trust/damping/backtrack。
 
-card：`docs/ecp_effective_update_solver_card_20260823.md`。Action Meta保持control；本realization坐标成立后再按owner要求做一次
-matched control，无负面才启用并永久冻结。
+card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
+`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。Action Meta仍保持control；由于本realization
+坐标未成立，本轮不启动该matched control。
 
 ## Phase D — 继续被Realization non-pass阻止
 

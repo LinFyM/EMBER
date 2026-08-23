@@ -1659,3 +1659,20 @@ effect basin。放大LR、增加steps、改初始化或扫权重都只是在同�
 先以独立card检验gauge-invariant、matrix-free effective-update方向或很小的target-local preconditioner；仍需首次完整设计后
 直接closed loop，不能用objective下降替代结果。正式证据：
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
+
+## 80. Gauge-invariant一阶方向存在，但固定有效更新solver未通过最小profile门
+
+raw-factor non-pass之后没有放大LR或增加steps，而是从clean pushed `fc678f3`实现事前冻结的matrix-free effective-update
+solver：exact carrier处以4次VJP构造rank4梯度草图，候选只允许固定`1,1/2,1/4,1/8,1/16`回溯；首步若成立，才允许最多
+8次Gram-preconditioned tangent VJP。bank、three members、objective、rank4 residual、trust1.5与held Gate均未改变。
+
+非held ordinal71的初态逐tensor精确等于carrier，initial objective为`2.214329`，best successful-member effect objective为
+`.127698`。matrix-free sketch finite且报告负方向导数`-81.8873`，说明它不是zero gradient或符号直接反转；但五个事前候选
+没有一个使完整objective严格下降。solver因此在4次VJP后以`initial_backtracking_failed`停止，accepted steps为0，final仍为
+carrier，gap recovery与trust均为0。峰值allocated约18.95GB，formal result与adapter完整生成，gpu01 physical0未使用。
+
+这项结果必须窄解释。它关闭的是**当前per-target unit-trust归一化、固定最小`1/16`回溯网格、rank4 sketch与当前完整objective
+共同构成的确定性operator**；由于首步未接受，它根本没有检验后续Gram tangent。负的一阶导数也不能授权事后继续缩小alpha，
+否则就是用profile结果修改预注册solver。它不否定任意更小局部有效更新、mobile-rank4拓扑、successful-policy effect target的
+充分性或ECP核心。按卡没有运行held5、closed loop、Action Meta或shared Writer，也不立即建立successor。正式证据：
+`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。

@@ -1,0 +1,64 @@
+{
+  "schema_version": "ember_ecp_stage1b_effective_update_profile_gate_v1",
+  "date": "2026-08-23",
+  "decision": "profile_non_pass_stop_effective_update_operator",
+  "repository": {
+    "formal_commit": "fc678f32c31425315d243950ba7f8130e6fbcf80",
+    "dirty_paths_at_formal_launch": []
+  },
+  "artifacts": {
+    "preregistered_card": "docs/ecp_effective_update_solver_card_20260823.md",
+    "profile_effect_bank": "runs/analysis/pi05_ecp_stage1b_profile_effect_bank_e8dba3c_gpu01p1_20260823/manifest.json",
+    "profile_result": "runs/outputs/pi05_ecp_stage1b_effective_update_profile_formal_fc678f3_gpu01p5_20260823/task_071.json",
+    "profile_adapter": "runs/outputs/pi05_ecp_stage1b_effective_update_profile_formal_fc678f3_gpu01p5_20260823/task_071_global_02.safetensors",
+    "launch_contract": "runs/outputs/pi05_ecp_stage1b_effective_update_profile_formal_fc678f3_gpu01p5_20260823/launch_contract.json"
+  },
+  "profile": {
+    "task_ordinal": 71,
+    "global_task_id": 2,
+    "initial_state_is_exact_carrier": true,
+    "initial_directional_derivative": -81.88732296628663,
+    "initial_gradient_rms": 0.002964056998227062,
+    "initial_total": 2.214329481124878,
+    "best_successful_member_effect_objective": 0.1276983618736267,
+    "final_total": 2.214329481124878,
+    "objective_gap_recovery": 0.0,
+    "final_trust_distance": 0.0,
+    "accepted_steps": 0,
+    "vjp_evaluations": 4,
+    "stop_reason": "initial_backtracking_failed",
+    "all_finite": true,
+    "elapsed_seconds": 144.22665362499538,
+    "max_cuda_allocated_bytes": 18950993920
+  },
+  "runtime": {
+    "host": "gpu01",
+    "physical_gpu": 5,
+    "prohibited_physical_gpu0_selected": false,
+    "result_payload_complete": true
+  },
+  "gate": {
+    "initial_state_is_exact_carrier": true,
+    "initial_sketch_is_descent": true,
+    "accepted_at_least_one_step": false,
+    "objective_gap_recovery_at_least_0_5": false,
+    "final_trust_between_0_1_and_1_5": false,
+    "vjp_budget_at_most_12": true,
+    "all_finite": true,
+    "pass": false
+  },
+  "execution_boundary": {
+    "held5_solver_launched": false,
+    "held5_closed_loop_launched": false,
+    "shared_writer_training_launched": false,
+    "action_meta_control_launched": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "interpretation": {
+    "supported": "The deterministic matrix-free sketch has a finite negative local directional derivative at the exact carrier.",
+    "not_supported": "None of the five preregistered trust-region scales produced a strict full-objective decrease, so this fixed realization operator did not leave the carrier and did not qualify for held5.",
+    "claim_boundary": "This profile does not test the post-initial Gram-preconditioned tangent phase, does not establish that the policy-effect objective is sufficient or insufficient, and does not refute the mobile-rank4 topology or ECP core hypothesis.",
+    "next_action": "Stop this operator without seed, trust, damping, backtrack, rank, or VJP sweeps; consolidate the failure before any new architecture or expert consultation."
+  }
+}

@@ -1337,6 +1337,23 @@ gpu01 physical`1,6`的6个persistent workers完成strict paired250，physical0�
 raw-factor solver，而是独立检验gauge-invariant effective-update direction或很小的target-local preconditioner。正式证据：
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`。
 
+### 3.68 Effective-update reachability在非held profile初始回溯处停止
+
+为分离raw-factor rank-zero奇点，clean pushed `fc678f3`按事前card把唯一Stage 1B runtime替换为matrix-free effective-update
+solver。它在exact carrier以固定8列input sketch和4次VJP构造rank4方向；只有首步通过固定
+`1,1/2,1/4,1/8,1/16`完整objective回溯后，才会执行最多8次Gram-preconditioned tangent VJP。effect bank、three-member
+objective、stable carrier、rank4 residual、trust1.5、总VJP12与held closed-loop Gate全部冻结。
+
+gpu01 physical5上的非held ordinal71 profile完整生成formal result与adapter，physical0未使用。初态精确等于carrier，
+initial/best-member objective为
+`2.214329/.127698`；initial sketch finite且方向导数`-81.8873`。然而五个固定尺度均未被接受，故final仍为carrier，accepted
+steps、gap recovery与trust全为0，stop reason为`initial_backtracking_failed`，只消耗4次VJP，峰值allocated约18.95GB。
+
+按预注册Profile non-pass条款，没有物化held5、运行closed loop、Action Meta control或shared Writer，也没有扫更小alpha、seed、
+trust、damping、rank或VJP预算。该结果只关闭当前固定solver合同；它未执行Gram tangent，不能外推否定任意更小局部步、
+mobile-rank4容量、effect target或ECP核心。正式证据：
+`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

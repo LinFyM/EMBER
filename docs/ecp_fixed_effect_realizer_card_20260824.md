@@ -177,3 +177,9 @@ direct-latest `108/250`继续证明known correction有效。失败在held-unseen
 fallback；本次不满足“coordinate-only”条件，所以不启动fallback，也不靠更长训练、width/LR/seed/head sweep救援。
 
 完整证据：`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。
+
+后续边界更新：该裁决提交时只检查了input `512 -> 128` PCA是否单独严重丢失response，因此当时没有触发fallback；它没有检查
+absolute residual loss中shared mean与task innovation的可辨识性。之后的只读分解发现fit target energy有`94.775%`来自
+task-shared mean，而本realizer对held centered innovation的cosine仅`.001--.057`。这是冻结结果之后出现的新证据，且直接对应
+专家预留的第二种`two-sided sketches + deterministic reconstruction`坐标。故本卡non-pass与“不续训本模型”保持不变，但另由
+`docs/ecp_centered_two_sided_coordinate_card_20260824.md`预注册一次不同输出坐标的expressivity oracle；不是重解释本卡为通过。

@@ -44,6 +44,29 @@ class PolicyEffectResponse:
         )
 
 
+@dataclass(frozen=True)
+class PolicyEffectParticles:
+    """Native owner, flow, and action responses with the probe axis intact."""
+
+    owner: torch.Tensor
+    flow: torch.Tensor
+    action: torch.Tensor
+
+    def mean_response(self) -> PolicyEffectResponse:
+        return PolicyEffectResponse(
+            owner=self.owner.mean(1),
+            flow=self.flow.mean(1),
+            action=self.action.mean(1),
+        )
+
+    def to(self, *args: Any, **kwargs: Any) -> "PolicyEffectParticles":
+        return PolicyEffectParticles(
+            owner=self.owner.to(*args, **kwargs),
+            flow=self.flow.to(*args, **kwargs),
+            action=self.action.to(*args, **kwargs),
+        )
+
+
 def _autocast(device: torch.device):
     return (
         torch.autocast("cuda", dtype=torch.bfloat16)
@@ -129,7 +152,7 @@ def dct_basis(device: torch.device, count: int = 4) -> torch.Tensor:
     return torch.stack(rows)
 
 
-def capture_policy_effect_response(
+def capture_policy_effect_particles(
     *,
     policy: torch.nn.Module,
     observer: ECPNativeObserver,
@@ -139,8 +162,8 @@ def capture_policy_effect_response(
     suffix_noise: torch.Tensor,
     denoising_steps: int,
     prepared_prefix_cache: Any | None = None,
-) -> PolicyEffectResponse:
-    """Run the official complete denoising path from matched antithetic noise."""
+) -> PolicyEffectParticles:
+    """Run the official denoising path without averaging antithetic probes."""
 
     states = int(prefix.embeddings.shape[0])
     if (
@@ -250,8 +273,33 @@ def capture_policy_effect_response(
     ).reshape(states, 2, 38, 4, 128)
     flow = torch.stack(velocities, dim=1).reshape(states, 2, denoising_steps, 50, 32)
     action = torch.stack(actions, dim=1).reshape(states, 2, denoising_steps, 50, 7)
-    return PolicyEffectResponse(
-        owner=owner.mean(1),
-        flow=flow.mean(1),
-        action=action.mean(1),
+    return PolicyEffectParticles(
+        owner=owner,
+        flow=flow,
+        action=action,
     )
+
+
+def capture_policy_effect_response(
+    *,
+    policy: torch.nn.Module,
+    observer: ECPNativeObserver,
+    lora: BatchedLoRAInference,
+    state: Mapping[str, torch.Tensor],
+    prefix: ExecutionPolicyPrefix,
+    suffix_noise: torch.Tensor,
+    denoising_steps: int,
+    prepared_prefix_cache: Any | None = None,
+) -> PolicyEffectResponse:
+    """Compatibility view that averages the two matched probe particles."""
+
+    return capture_policy_effect_particles(
+        policy=policy,
+        observer=observer,
+        lora=lora,
+        state=state,
+        prefix=prefix,
+        suffix_noise=suffix_noise,
+        denoising_steps=denoising_steps,
+        prepared_prefix_cache=prepared_prefix_cache,
+    ).mean_response()

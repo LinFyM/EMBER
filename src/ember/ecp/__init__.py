@@ -22,7 +22,9 @@ from ember.ecp.observer import (
 )
 from ember.ecp.policy_effects import (
     ExecutionPolicyPrefix,
+    PolicyEffectParticles,
     PolicyEffectResponse,
+    capture_policy_effect_particles,
     capture_policy_effect_response,
     prepare_execution_policy_prefix,
 )
@@ -63,11 +65,13 @@ __all__ = [
     "NativeObserverOutput",
     "OrderedEventSegmenter",
     "PackedStage0Pair",
+    "PolicyEffectParticles",
     "PolicyEffectResponse",
     "TargetFamily",
     "TargetOwner",
     "TaskGroundedTransitionMatcher",
     "build_target_owners",
+    "capture_policy_effect_particles",
     "capture_policy_effect_response",
     "ecp_stage0_loss",
     "load_stage0_tasks",

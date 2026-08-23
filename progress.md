@@ -177,6 +177,10 @@
   通过固定objective-only trust回溯；解析参数化另归一个owner模块，raw-factor runtime/config已移除。focused ECP tests为
   `15/15`通过，profile gate显式核对exact carrier、负方向、finite、至少一步、gap recovery、trust与VJP预算；formal profile
   在initial backtracking处停止，未读取held结果。
+- Phase 2B successor capture已实现原生probe-preserving response：旧路径仍显式求两个probe均值，新路径落盘
+  `trajectory x sign x event8 x owner38 x horizon-mode4 x hidden128`粒子与canonical residual4 target。一个两轨迹
+  member的真实GPU profile为18.72 GB peak，模型初始化后capture `5.25s`，输出1.91 MB，全部finite；
+  正负probe response RMS差为`.05092`，证明新轴非重复。当前仅完成profile，118-member formal authority尚未采集。
 
 ## Current unresolved interface
 

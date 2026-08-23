@@ -6,7 +6,11 @@ from ember.ecp.effect_path_calibration import (
     global_particle_loss,
     verified_member_losses,
 )
-from ember.ecp.policy_effects import ExecutionPolicyPrefix, PolicyEffectResponse
+from ember.ecp.policy_effects import (
+    ExecutionPolicyPrefix,
+    PolicyEffectParticles,
+    PolicyEffectResponse,
+)
 from ember.ecp.stage1_equivalence import (
     Stage1EffectBank,
     equal_time_progress_strata,
@@ -76,6 +80,19 @@ def _bank() -> Stage1EffectBank:
         members=members,
         member_reliability=torch.ones(3),
     )
+
+
+def test_effect_particles_preserve_probe_axis_before_averaging() -> None:
+    particles = PolicyEffectParticles(
+        owner=torch.tensor([[[1.0], [3.0]]]),
+        flow=torch.tensor([[[2.0], [6.0]]]),
+        action=torch.tensor([[[4.0], [8.0]]]),
+    )
+    response = particles.mean_response()
+    assert particles.owner.shape[1] == 2
+    assert response.owner.item() == 2.0
+    assert response.flow.item() == 4.0
+    assert response.action.item() == 6.0
 
 
 def _solver_contract():

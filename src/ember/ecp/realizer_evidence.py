@@ -184,7 +184,7 @@ def load_effect_member(
         residual[target.name + LORA_A_SUFFIX] = tensors[f"target_{index:02d}_a"]
         residual[target.name + LORA_B_SUFFIX] = tensors[f"target_{index:02d}_b"]
     if (
-        owner_delta.ndim != 6
+        owner_delta.ndim != 5
         or owner_delta.shape[1:] != (8, 38, 4, 128)
         or trajectory_ids.shape != (owner_delta.shape[0],)
         or probe_signs.shape != trajectory_ids.shape

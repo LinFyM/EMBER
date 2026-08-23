@@ -9,6 +9,8 @@ from ember.ecp.realizer_code import (
 from ember.ecp.realizer_evidence import (
     balanced_member_shards,
     effect_member_tensors,
+    load_effect_member,
+    save_effect_member,
 )
 from ember.ecp.realizer_model import (
     FixedEffectRealizer,
@@ -38,7 +40,7 @@ def test_balanced_member_shards_use_trajectory_cost() -> None:
     assert loads == [3, 3, 3]
 
 
-def test_effect_member_tensors_keep_particles_and_rank4_targets() -> None:
+def test_effect_member_tensors_keep_particles_and_rank4_targets(tmp_path) -> None:
     contract = _contract()
     residual = {
         "tiny.lora_A.default.weight": torch.ones(4, 3),
@@ -55,6 +57,20 @@ def test_effect_member_tensors_keep_particles_and_rank4_targets() -> None:
     assert tensors["particle_probe_signs"].tolist() == [1, -1, 1, -1]
     assert tensors["target_00_a"].shape == (4, 3)
     assert tensors["target_00_b"].shape == (2, 4)
+    path = tmp_path / "member.safetensors"
+    save_effect_member(
+        path=path,
+        owner_delta=torch.ones(4, 8, 38, 4, 128),
+        residual=residual,
+        trajectory_count=2,
+        contract=contract,
+    )
+    loaded, _, trajectory_ids, probe_signs = load_effect_member(
+        path, contract=contract
+    )
+    assert loaded.shape == (4, 8, 38, 4, 128)
+    assert trajectory_ids.tolist() == [0, 0, 1, 1]
+    assert probe_signs.tolist() == [1, -1, 1, -1]
 
 
 def test_fold_and_task_weights_do_not_count_extra_members_as_tasks() -> None:

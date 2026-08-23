@@ -1441,6 +1441,25 @@ global-particle与legacy stage-wise loss均在15/15条路径上严格单调下�
 structured code的target-local amortized realizer，不再做新task-local solver。证据：
 `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。
 
+### 3.74 fixed effect realizer fold0以33/37低于carrier关闭
+
+Phase 2B在clean pushed `565c055`上捕获118个successful members、95 tasks、188条on-policy trajectories与376个保留
+probe-sign的effect particles；fold0的fit-only owner-local `512 -> 128` coordinate由90 fit tasks/108 members拟合，5 held
+tasks/10 members只做transform。随后小型target-local realizer在fit mappings上训练1000步，step800/1000 total loss分别为
+`.31668/.26605`，held target residual在训练与materialization中的读取次数均为0。
+
+clean pushed `0247a19`物化两个相邻checkpoint的single carrier12+residual4 rank16 LoRA；step1000 invalidity screen为
+`8/50`，matching carrier为`9/50`，没有用于选择checkpoint。clean pushed detached `e806693`随后同时完成两个strict250：
+step800 `33=32/0/1/0/0`，step1000 `37=36/0/1/0/0`；carrier为`43=38/1/4/0/0`，direct-latest为
+`108=27/30/40/8/3`。step1000相对carrier retained/gained/lost=`33/4/10`，两节点breadth均为`2/5`且Goal/Long为0。
+12 workers全部返回0，episode/env/policy/language/noise pairing零mismatch，因此fold0强门明确non-pass。
+
+两节点完成后的post-hoc定位显示，held latest在冻结PCA中仍保留`79.1%--89.2%`中心化response energy；但step1000
+对Goal/Long只生成known residual `7.1%/22.9%`的effective energy。失败由此落在cross-task effect-code-to-residual mapping，
+不是rank4容量、balanced-SVD表达或单独PCA压缩。按预注册边界不触发two-sided fallback，不启动fold1，也不以更多训练或
+超参变体救援；fresh Program、`q_pi/q_V`继续等待新的realizer裁决与process Gate。完整证据：
+`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

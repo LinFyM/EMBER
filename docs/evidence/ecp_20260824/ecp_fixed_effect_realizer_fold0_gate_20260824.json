@@ -1,0 +1,214 @@
+{
+  "schema_version": "ember_ecp_fixed_effect_realizer_fold0_adjudication_v1",
+  "status": "complete_non_pass",
+  "date": "2026-08-24",
+  "formal_evaluation_commit": "e8066935d9ecf0d79bd880da4fad7e190d0be21b",
+  "preregistration": "docs/ecp_fixed_effect_realizer_card_20260824.md",
+  "config": "configs/pi05_ecp_fixed_effect_realizer.json",
+  "authorities": {
+    "effect_particles": "runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json",
+    "fold0_effect_code": "runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json",
+    "fold0_realizer_training": "runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824",
+    "step800_materialization": "runs/analysis/ecp_fixed_effect_realizer_fold0_step800_0247a19_gpu01p1_20260824",
+    "step1000_materialization": "runs/analysis/ecp_fixed_effect_realizer_fold0_step1000_0247a19_gpu01p2_20260824",
+    "carrier_reference": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json",
+    "direct_latest_reference": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808/results.json"
+  },
+  "panel": {
+    "global_task_ids": [0, 9, 18, 25, 36],
+    "states_per_task": 50,
+    "episodes": 250,
+    "held_training_updates": 0,
+    "held_target_lora_reads_during_training_or_materialization": 0,
+    "single_complete_rank16_lora": true,
+    "second_adapter_deployed": false
+  },
+  "screen": {
+    "result_root": "runs/outputs/pi05_ecp_fixed_effect_realizer_step1000_screen50_e806693_gpu01p12_r3_20260824",
+    "episodes": 50,
+    "candidate_successes": 8,
+    "candidate_per_global_0_9_18_25_36": [8, 0, 0, 0, 0],
+    "matching_carrier_successes": 9,
+    "matching_carrier_per_global_0_9_18_25_36": [8, 0, 1, 0, 0],
+    "carrier_to_candidate_retained_gained_lost": [8, 0, 1],
+    "role": "invalidity_only_no_checkpoint_selection"
+  },
+  "formal_completion": {
+    "step800": {
+      "result_root": "runs/outputs/pi05_ecp_fixed_effect_realizer_step800_strict250_e806693_gpu01p123_r2_20260824",
+      "physical_gpus": [1, 2, 3],
+      "workers": 6,
+      "all_worker_return_codes_zero": true,
+      "completed_rows": 250,
+      "successes": 33,
+      "wall_seconds": 1401.5715086460114
+    },
+    "step1000": {
+      "result_root": "runs/outputs/pi05_ecp_fixed_effect_realizer_step1000_strict250_e806693_gpu01p457_r2_20260824",
+      "physical_gpus": [4, 5, 7],
+      "workers": 6,
+      "all_worker_return_codes_zero": true,
+      "completed_rows": 250,
+      "successes": 37,
+      "wall_seconds": 1368.6348149776459
+    },
+    "prohibited_physical_gpu0_selected": false
+  },
+  "strict_paired_closed_loop": {
+    "carrier": {
+      "successes": 43,
+      "per_global_0_9_18_25_36": [38, 1, 4, 0, 0],
+      "breadth": 3
+    },
+    "direct_latest": {
+      "successes": 108,
+      "per_global_0_9_18_25_36": [27, 30, 40, 8, 3],
+      "breadth": 5
+    },
+    "step800": {
+      "successes": 33,
+      "per_global_0_9_18_25_36": [32, 0, 1, 0, 0],
+      "breadth": 2,
+      "goal_successes": 0,
+      "long_successes": 0
+    },
+    "step1000": {
+      "successes": 37,
+      "per_global_0_9_18_25_36": [36, 0, 1, 0, 0],
+      "breadth": 2,
+      "goal_successes": 0,
+      "long_successes": 0
+    }
+  },
+  "paired_transitions": {
+    "carrier_to_step800": {
+      "retained_success": 28,
+      "gained": 5,
+      "lost": 15,
+      "net": -10,
+      "churn": 20,
+      "success_set_jaccard": 0.5833333333333334
+    },
+    "carrier_to_step1000": {
+      "retained_success": 33,
+      "gained": 4,
+      "lost": 10,
+      "net": -6,
+      "churn": 14,
+      "success_set_jaccard": 0.7021276595744681
+    },
+    "direct_latest_to_step800": {
+      "retained_success": 19,
+      "gained": 14,
+      "lost": 89,
+      "net": -75,
+      "churn": 103,
+      "success_set_jaccard": 0.1557377049180328
+    },
+    "direct_latest_to_step1000": {
+      "retained_success": 19,
+      "gained": 18,
+      "lost": 89,
+      "net": -71,
+      "churn": 107,
+      "success_set_jaccard": 0.15079365079365079
+    },
+    "step800_to_step1000": {
+      "retained_success": 29,
+      "gained": 8,
+      "lost": 4,
+      "net": 4,
+      "churn": 12,
+      "success_set_jaccard": 0.7073170731707317
+    }
+  },
+  "pairing_audit": {
+    "reference": "carrier",
+    "step800_mismatches": {
+      "episode_keys": 0,
+      "environment_seed": 0,
+      "policy_seed_root": 0,
+      "policy_noise_common_prefix": 0,
+      "language": 0
+    },
+    "step1000_mismatches": {
+      "episode_keys": 0,
+      "environment_seed": 0,
+      "policy_seed_root": 0,
+      "policy_noise_common_prefix": 0,
+      "language": 0
+    }
+  },
+  "gate": {
+    "step1000_total_at_least_69": false,
+    "step1000_breadth_5_of_5": false,
+    "step1000_goal_and_long_nonzero": false,
+    "step1000_carrier_retention_at_least_33_of_43": true,
+    "step800_breadth_5_of_5": false,
+    "step800_goal_and_long_nonzero": false,
+    "step800_carrier_retention_at_least_33_of_43": false,
+    "step800_not_more_than_5_below_step1000": true,
+    "passed": false,
+    "ruling": "Fold0 fixed-effect realizer is below carrier, has breadth 2/5, and produces no Goal or Long success. Fold1, fresh Program, q_pi, and q_V are not authorized."
+  },
+  "post_hoc_failure_localization": {
+    "scope": "Run only after both preregistered checkpoints completed; no gradient, checkpoint selection, or additional rollout.",
+    "fit_coordinate_explained_variance_fraction": {
+      "minimum_owner": 0.9069457650184631,
+      "mean_owner": 0.9410609006881714
+    },
+    "held_latest_centered_response_energy_retained_per_global_0_9_18_25_36": [
+      0.8920478224754333,
+      0.8502707481384277,
+      0.8537204265594482,
+      0.7905709147453308,
+      0.8084185123443604
+    ],
+    "held_latest_centered_response_cosine_per_global_0_9_18_25_36": [
+      0.9444829821586609,
+      0.9221013784408569,
+      0.9239699244499207,
+      0.8891406655311584,
+      0.8991209268569946
+    ],
+    "step1000_predicted_to_target_effective_energy_ratio_per_global_0_9_18_25_36": [
+      0.3999987201463714,
+      0.724275777919152,
+      0.6442130031591804,
+      0.07137934859078623,
+      0.22857404265931328
+    ],
+    "step1000_target_energy_weighted_effective_cosine_per_global_0_9_18_25_36": [
+      0.7936187344818753,
+      0.7994623058264344,
+      0.7043280514510392,
+      0.46841194032096023,
+      0.7141699035063457
+    ],
+    "step1000_target_energy_weighted_relative_error_per_global_0_9_18_25_36": [
+      0.3961432082381209,
+      0.36352068594716974,
+      0.5135850346439284,
+      0.8210889194314602,
+      0.545693097285825
+    ],
+    "held_target_residual_reads": "post_hoc_train24_fold0_diagnostic_only",
+    "interpretation": "The fit-only 128-dimensional coordinate retains most held response energy, while the learned map severely under-produces Goal and Long residual energy. The earliest failed interface is cross-task effect-code-to-update mapping, not balanced-SVD rank4 capacity or a coordinate-only 512-to-128 collapse."
+  },
+  "decision": {
+    "fold1_authorized": false,
+    "longer_training_or_lr_width_seed_head_sweep_authorized": false,
+    "two_sided_coordinate_fallback_triggered": false,
+    "current_fixed_effect_realizer_family_continues": false,
+    "fresh_stage0_or_q_pi_or_q_v_authorized": false,
+    "reason": "The preregistered fallback was conditional on severe coordinate-only loss. Held response retention is 79.1% to 89.2%, but decoded Goal and Long residual energy is only 7.1% and 22.9%; changing only the sketch coordinate is not an evidence-backed repair."
+  },
+  "information_wall": {
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "held_optimizer_steps": 0,
+    "task_id_model_input": false,
+    "checkpoint_selection_from_screen_or_post_hoc_diagnostic": false,
+    "second_adapter_deployed": false
+  }
+}

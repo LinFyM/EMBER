@@ -1,6 +1,6 @@
 # ECP Phase 2B/2C：fixed effect-code coordinate and deployment realizer
 
-状态：2026-08-24 **预注册合同不变；effect-particle、fit-only coordinate与formal realizer训练已完成，held materialization与closed-loop Gate待执行。**
+状态：2026-08-24 **已完成并判为fold0 non-pass。step800/1000 strict250分别为`33/37`，均低于carrier `43`，breadth均为`2/5`且Goal/Long均为0；不进入fold1、fresh Program或`q_pi/q_V`。**
 
 ## 唯一科学问题
 
@@ -130,3 +130,50 @@ tasks/10 members只经冻结transform；owner-local `512 -> 128`解释方差比�
 factor/effective/total loss为`.23058/.08608/.31668`，step1000为`.19417/.07186/.26605`；两节点均已保存完整
 model/optimizer checkpoint。该下降只证明fit mapping可优化，不替代held closed-loop。training authority：
 `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`。
+
+## Held materialization与invalidity screen
+
+clean pushed `0247a19`仅从held latest effect-code、冻结realizer checkpoint与stable carrier物化step800/1000各五套
+single `carrier12 + residual4` LoRA。held loader没有打开target residual；每套adapter均为76 tensors、完整rank16、finite，
+前12 ranks与carrier精确相同且不存在第二adapter。两组authority分别为：
+
+- `runs/analysis/ecp_fixed_effect_realizer_fold0_step800_0247a19_gpu01p1_20260824/`；
+- `runs/analysis/ecp_fixed_effect_realizer_fold0_step1000_0247a19_gpu01p2_20260824/`。
+
+step1000在每task固定前10 states上的invalidity-only screen为`8/50`，逐global `0/9/18/25/36 = 8/0/0/0/0`；
+matching carrier为`9/50 = 8/0/1/0/0`，retained/gained/lost=`8/0/1`。该screen排除了all-zero与serialization
+失败，但没有用于checkpoint选择；依预注册，两相邻checkpoint随后都进入完整strict250。
+
+## Fold0 strict250裁决
+
+clean pushed detached `e806693`上，两组评测同时使用同一5 tasks × 50 states、相同environment seed、policy seed root、
+language与policy-noise common prefix：
+
+- carrier：`43/250`，逐global为`38/1/4/0/0`，breadth `3/5`；
+- direct-latest：`108/250`，逐global为`27/30/40/8/3`，breadth `5/5`；
+- step800：`33/250`，逐global为`32/0/1/0/0`，breadth `2/5`；
+- step1000：`37/250`，逐global为`36/0/1/0/0`，breadth `2/5`。
+
+step800相对carrier的retained/gained/lost为`28/5/15`；step1000为`33/4/10`。step800到step1000为
+`29/8/4`，说明相邻节点只在global0上产生有限改善，没有形成跨task新support。两组12个workers全部返回0，250 rows均完整，
+gpu01 physical0未使用。
+
+最终门明确失败：step1000未达到`69`、breadth未达`5/5`、Goal/Long均为0；step800也没有达到breadth、Goal/Long或
+carrier-retention门。fold1不启动。
+
+## 失败接口与fallback裁决
+
+两组formal rollout全部完成后才进行一次无梯度、无checkpoint选择、无新rollout的train24-fold0 post-hoc定位：
+
+- fit coordinate的owner解释方差仍为minimum `.90695`、mean `.94106`；
+- held latest在冻结PCA逆变换下保留的中心化response energy逐global为
+  `.8920/.8503/.8537/.7906/.8084`，cosine为`.9445/.9221/.9240/.8891/.8991`；
+- step1000生成的residual相对known target residual的effective energy逐global仅为
+  `.4000/.7243/.6442/.0714/.2286`，Goal/Long出现远大于输入坐标损失的输出幅度坍缩。
+
+因此最早失败不是mobile-rank4容量，也不是balanced-SVD能否表达known correction；Phase 2A的15/15 path与
+direct-latest `108/250`继续证明known correction有效。失败在held-unseen的cross-task
+`effect code -> canonical residual`映射。当前卡只在`512 -> 128`坐标本身严重丢失known correction时允许一次two-sided
+fallback；本次不满足“coordinate-only”条件，所以不启动fallback，也不靠更长训练、width/LR/seed/head sweep救援。
+
+完整证据：`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。

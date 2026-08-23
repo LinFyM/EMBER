@@ -25,7 +25,9 @@
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
-- active Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
+- completed Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
+- Phase 2B/2C fold0 adjudication：
+  `docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`；
 - Phase 2B formal particle authority：
   `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`；
 - Phase 2B fold0 fixed-code authority：
@@ -33,11 +35,9 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
-  process pair的formal code authority为clean pushed `d1975c3`，effect-path calibration的formal code authority为clean pushed
-  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，formal particle、
-  fit-only coordinate与realizer训练已完成，主执行转入held LoRA materialization与closed-loop Gate，
-  process acquisition修正作为并行资格前置。
+- canonical workspace：本仓库`main`；GOMQ rank16 Phase 0、process pair、effect-path calibration与fold0 fixed realizer评测均已
+  结束；最新formal evaluation authority为clean pushed `e806693`。当前没有active GPU job。process Gate A与fixed realizer
+  fold0 Gate两道并行前置均为non-pass；fold1、fresh Program、`q_pi/q_V`及joint Writer均未启动。
 
 ## Current scientific state
 
@@ -64,6 +64,13 @@
 - 首个process-identifying pair的teacher Gate A已完成并non-pass：soup→butter为`0/50`、butter→soup为`19/50`，总计
   `19/100`，两方向首事件都为`50/50`，第二事件分别为`0/50、19/50`，invalid均为0。故失败接口是phase switch后的顺序组合
   支持，而非custom wrapper、wrong-first判定或第一primitive。Gate B未运行，不能从本结果裁决video order observer。
+- fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
+  `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
+  step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
+- 两节点评测完成后的post-hoc定位显示：held latest在fit-only `512 -> 128`坐标中仍保留`79.1%--89.2%`中心化response
+  energy，cosine为`.889--.944`；但step1000生成的Goal/Long residual effective energy仅为known target的`7.1%/22.9%`。
+  最早失败由此定位为cross-task effect-code-to-residual mapping，而非rank4容量、known correction不可达或单独PCA压缩。
+  预注册two-sided fallback未触发；不续训、不扫width/LR/seed/head，也不进入fold1。
 - 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
   effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
 - fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
@@ -196,7 +203,12 @@
 - fold0 code authority已完成：90 fit tasks/108 members拟合，5 held tasks/10 members transform-only；owner-local
   `512 -> 128`解释方差最低`.90695`、平均`.94106`，全部code finite。formal realizer训练只加载fit members，1000步
   `136.99s`，step800/1000 total loss为`.31668/.26605`，峰值1.90 GB；两checkpoint均已保存。loss下降不能替代held
-  closed-loop，下一步严格只读held latest code物化single carrier12+residual4 LoRA。
+  closed-loop。
+- held-only materialization在`0247a19`生成step800/1000各五套single carrier12+residual4 rank16 LoRA；held target residual
+  reads为0。step1000 invalidity screen为`8/50`，matching carrier为`9/50`，没有用于选checkpoint。
+- clean pushed detached `e806693`同时完成两个strict250：step800使用gpu01 physical`1,2,3`，step1000使用`4,5,7`，
+  各6 workers且全部返回0，physical0未使用；250行均完整并与carrier在episode/env/policy/language/noise common-prefix上
+  零mismatch。结果分别为`33/250、37/250`，Phase 2C fold0正式non-pass。
 
 ## Current unresolved interface
 
@@ -225,7 +237,7 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0 GOMQ archival已结束；首个process family的Gate A已non-pass，Gate B与suite扩展均未启动。
-  Phase 2 realizer coordinate按专家顺序继续；process侧只做更强privileged teacher或有依据替代family的有界修正。两道前置均
-  通过后，顺序固定为fresh Stage 0 Program、distributional `q_pi`、冻结privileged full-chain、`q_V`、ordinary joint Writer、
-  structured outer credit与final qualification；不建立新的ECP版本号。
+- 当前没有active GPU job。Phase 0已归档；首个process family的Gate A与fixed realizer fold0均为non-pass，Gate B、process
+  suite、fold1和Phase 3以后均未启动。process侧仍只允许更强privileged sequential teacher或有依据的替代family；realizer侧
+  当前balanced-SVD effect-code learned map已按卡停止，且two-sided fallback没有coordinate-only证据。下一次实施前必须先明确
+  一个真正针对cross-task mapping的新机制，或重新获得专家裁决；不以fresh Program、joint Writer或超参迭代绕过该必要门。

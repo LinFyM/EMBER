@@ -1816,3 +1816,28 @@ canonical coordinate；不再做another solver、alpha/trust sweep或raw A/B动�
 该结果只校准了现有antithetic-averaged bank。probe轴未保留，candidate/recovery没有continuation validity，
 因而不能冒充distributional `q_pi`证据；也尚未训练任何只读structured code的deployment realizer。下一最早
 接口是在固定坐标上建立successor evidence与target-local amortized realizer，然后才能进入fresh Program与`q_pi`。
+
+## 87. fit-only fixed effect realizer在fold0退化到carrier support，跨任务映射门失败
+
+Phase 2B保留了旧bank缺失的probe轴：118个successful members、95 tasks、188条on-policy successful trajectories形成
+376个`particle × event8 × owner38 × horizon-mode4 × hidden128` response particles。fold0只用90 fit tasks/108 members拟合
+owner-local `512 -> 128` PCA whitening和小型target-local realizer；held 5 tasks/10 members只做冻结transform，训练与held-only
+materialization均未读取held target residual。realizer的fit loss从step800 `.31668`降到step1000 `.26605`，但这没有转化为
+held policy support。
+
+step1000前10 states的invalidity screen为`8/50`，matching carrier为`9/50`；随后两个固定相邻checkpoint在同一strict250上
+分别得到step800 `33=32/0/1/0/0`和step1000 `37=36/0/1/0/0`。carrier为`43=38/1/4/0/0`，direct-latest为
+`108=27/30/40/8/3`。step1000相对carrier retained/gained/lost=`33/4/10`，breadth只有`2/5`，Goal/Long均为0；
+step800也只有breadth `2/5`且carrier retention `28/43`。两组250行与carrier在episode key、env seed、policy seed root、
+language和policy-noise common prefix上零mismatch，12 workers全部返回0，所以这是科学non-pass，不是工程invalid。
+
+闭环完成后的无梯度定位进一步区分了输入坐标与跨任务映射。fit PCA owner解释方差minimum/mean为`.90695/.94106`；held
+latest逆变换仍保留`.7906--.8920`中心化response energy，cosine `.8891--.9445`。但step1000对known residual生成的
+effective energy比例逐global只有`.4000/.7243/.6442/.0714/.2286`，尤其Goal/Long远小于输入坐标损失。因此最早失败是
+unseen-task `effect code -> canonical residual`映射和幅度外推，不是mobile-rank4容量、balanced-SVD expressivity或单独
+`512 -> 128`压缩。
+
+依预注册合同，fold0不高于carrier、breadth不超过3且Goal/Long均0时不靠更多step、width/LR/seed/head扫参救援；只有
+coordinate本身严重丢失known correction才允许two-sided fallback。本次没有触发该条件，fold1、fresh Program、`q_pi/q_V`
+均不启动。该结论关闭当前balanced-SVD effect-code learned realizer，但不外推为完整ECP或mobile-rank4 topology失败。
+证据：`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。

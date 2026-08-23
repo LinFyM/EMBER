@@ -1,10 +1,10 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **Phase 0已按预注册合同完成并以`136/400`判为absolute-baseline non-pass；GOMQ归档关闭。Phase 1首个
-process family的teacher Gate A以`0/50、19/50`判为non-pass，不运行Gate B。Phase 2A的15/15 known-success paths已全门通过，
-当前主执行转入Phase 2B/2C fixed effect-code与deployment realizer，同时只对更强privileged sequential teacher或有依据的
-替代family做有边界的数据修正；process Gate未通过前
-不得启动`q_pi`或`q_V`，fixed realizer未通过前不得启动完整privileged链。**
+状态：2026-08-24 **Phase 0以`136/400`归档关闭；Phase 1首个process teacher Gate A以`0/50、19/50`判为non-pass；
+Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fold0 strict250仅为step800/1000=`33/37`，
+均低于carrier `43`，breadth `2/5`且Goal/Long均为0。post-hoc定位为cross-task effect-code-to-residual mapping失败，
+不满足coordinate-only fallback条件。两道并行前置当前均未通过；不进入fold1、fresh Program、`q_pi`或`q_V`，先固化证据并
+重新裁决realizer successor与process teacher路线。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -207,7 +207,7 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 
 - completed Phase 2A卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
   `configs/pi05_ecp_effect_path_calibration.json`。
-- active Phase 2B/2C卡：`docs/ecp_fixed_effect_realizer_card_20260824.md`；配置：
+- completed Phase 2B/2C卡：`docs/ecp_fixed_effect_realizer_card_20260824.md`；配置：
   `configs/pi05_ecp_fixed_effect_realizer.json`。
 - [x] 用existing known-success mobile projections完成path calibration：global member identity与conservative
   verified-state validity下15/15路径严格单调下降，5/5 tasks的global-particle objective改善；
@@ -218,10 +218,16 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 - [ ] 在后继`q_pi`前另补continuation/progress/recovery validity；当前realizer不把这些尚未验证的states冒充target；
 - [x] 训练fold0小型target-local amortized `D_eff(structured code)->Delta W_rank4`；training只读fit mappings，held
   inference loader只读冻结code、不打开held target residual或future occupancy；
-- [ ] 多fold privileged-code transform-only closed-loop直接裁决：高于carrier、5/5 breadth、Goal/Long非零、carrier retention>=75%、
-  best-member gap显著恢复、相邻checkpoint稳定；
-- [ ] 若known correction有效而coordinate不够，只允许一次有依据的coordinate扩展；两种principled coordinates均失败则停止当前
-  mobile-rank4 shared realizer，不做solver小扫。
+- [x] 完成fold0 privileged-code transform-only closed-loop：step800/1000=`33/37`，逐global分别为
+  `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43`、breadth `2/5`、Goal/Long为0，故强门失败且fold1不启动；
+- [x] 在两个固定checkpoint均评测后完成一次post-hoc定位：held latest PCA response energy保留
+  `79.1%--89.2%`，但step1000 Goal/Long residual effective energy只恢复target的`7.1%/22.9%`；判定为cross-task mapping
+  失败而非coordinate-only collapse，不触发two-sided fallback，不做训练/solver小扫。
+
+Phase G当前关闭的是本轮balanced-SVD effect-code learned realizer，不是否定mobile-rank4容量或完整ECP。任何新realizer
+successor必须先针对跨任务映射给出与本次证据不同的因果机制，并重新预注册；不能把fresh Program或joint Writer提前用于掩盖
+下游必要条件失败。正式裁决：
+`docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`。
 
 ## Phase H — Phase 3：fresh完整Stage 0-V Program
 

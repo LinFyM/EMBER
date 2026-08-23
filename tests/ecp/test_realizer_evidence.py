@@ -5,6 +5,7 @@ from ember.ecp.realizer_code import (
     fit_weighted_owner_pca,
     held_global_ids,
     task_equal_member_weights,
+    transform_owner_particles,
 )
 from ember.ecp.realizer_evidence import (
     balanced_member_shards,
@@ -102,6 +103,16 @@ def test_weighted_owner_pca_uses_a_frozen_owner_local_basis() -> None:
     assert scales.shape == (2, 1)
     assert torch.all(explained > 0.7)
     assert torch.allclose(components[..., 1].abs(), torch.tensor([[0.0], [1.0]]))
+
+
+def test_effect_coordinate_transform_preserves_particle_event_and_owner_axes() -> None:
+    code = transform_owner_particles(
+        torch.ones(2, 8, 38, 4, 128),
+        mean=torch.zeros(38, 512),
+        components=torch.eye(512)[:128].expand(38, -1, -1),
+        scales=torch.ones(38, 128),
+    )
+    assert code.shape == (2, 8, 38, 128)
 
 
 def test_fixed_effect_realizer_preserves_owner_outputs_and_has_finite_loss() -> None:

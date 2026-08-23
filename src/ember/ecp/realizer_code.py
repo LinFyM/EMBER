@@ -95,7 +95,7 @@ def transform_owner_particles(
     components: torch.Tensor,
     scales: torch.Tensor,
 ) -> torch.Tensor:
-    if owner_delta.ndim != 6 or owner_delta.shape[1:] != (8, 38, 4, 128):
+    if owner_delta.ndim != 5 or owner_delta.shape[1:] != (8, 38, 4, 128):
         raise ValueError("effect particles changed before coordinate transform")
     flat = owner_delta.float().flatten(-2)
     centered = flat - mean[None, None]

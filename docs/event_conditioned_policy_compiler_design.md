@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **mobile-rank4 residual容量门已判为mixed；没有active successor Writer或solver**。
+状态：2026-08-23 **mobile-rank4解析容量门保持mixed；已预注册rank-reserved mobile-rank4 realization oracle，尚未启动GPU**。
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
@@ -248,6 +248,16 @@ direct/projected success union为`11/16`、overlap6、union retention`54.55%`，
 Long能力为0。该post-hoc定位符合专家“exact row只作辅助”的提醒，但不重写预注册门，当前仍暂停solver授权。正式证据见
 `docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`。
 
+### 5.6 Rank-reserved mobile-rank4 realization
+
+原mixed verdict不重写。专家要求的selection unit是successful-policy equivalence class，而非某一个member的exact row identity；
+本轮absolute、5/5 breadth、Goal/Long非零与multiple-member union已经排除明显mobile-rank4 topology binding。因此下一唯一
+问题是：同一48-state three-particle effect objective能否通过固定12-step solver找到该参数面中的闭环有效区域。
+
+operator固定为`W=B_c12 A_c12 + B_r4 A_r4`。carrier12冻结，`A_r4`从carrier未激活tail rows初始化、`B_r4=0`；A/B按target
+联合归一化更新并在每步后只对residual做balanced compact-SVD regauge。step0精确为carrier，final仍是一套rank16。完整单变量
+合同与原Gate见`docs/ecp_mobile_rank4_solver_card_20260823.md`；本卡通过前仍不训练video predictor或Writer。
+
 ## 6. Stage 1C：被当前non-pass阻止
 
 只有未来新的强realization oracle通过后，才允许学习：
@@ -256,7 +266,7 @@ Long能力为0。该post-hoc定位符合专家“exact row只作辅助”的提�
 ECP Program
     -> event/layer/family policy-effect distribution
     -> frozen shared realization operator
-    -> Delta B
+    -> rank-reserved mobile residual
     -> one complete rank16 LoRA
 ```
 

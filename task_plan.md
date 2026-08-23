@@ -1,6 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **mobile-rank4 residual容量门已完成并裁决为mixed；当前暂停在solver授权前，没有active Writer、solver或GPU job。**
+状态：2026-08-23 **mobile-rank4解析容量门保持mixed；已按专家的successful-policy-equivalence口径预注册唯一一次mobile-rank4
+realization oracle，尚未启动GPU。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -110,9 +111,23 @@ adapters的离线最佳rank4 correction审计达到`99.49%--99.69%` correction e
 - [x] 按mixed条款只做无新rollout定位：Long direct/projected union=`11/16`、overlap6、union retention`54.55%`，说明
   失败集中于member-specific row identity，而非Long能力缺失，但不事后改门。
 
-card：`docs/ecp_rank4_residual_capacity_card_20260823.md`。capacity-supported后才允许为同一48-state三particle objective写
-rank4 residual solver；本轮mixed不自动满足该授权。下一科学决策必须显式处理“matched member row”与专家要求的
-policy-equivalence union之间的口径，不复跑当前arms、不扫rank。没有授权Stage 1C或共享Writer训练。
+card：`docs/ecp_rank4_residual_capacity_card_20260823.md`。该卡自身的mixed不自动授权solver；后续是否继续必须显式处理
+“matched member row”与专家要求的policy-equivalence union口径。Phase C4记录了这个独立决策，不复跑当前arms、不扫rank，
+也没有授权Stage 1C或共享Writer训练。
+
+## Phase C4 — Rank-reserved mobile-rank4 realization oracle
+
+原capacity gate不重写；依据专家明确要求的absolute、breadth、Goal/Long、shared retention与multiple-member union综合口径，
+解析结果已足以排除明显topology binding。现在只把fixed-A参数面替换为`carrier12 + jointly mobile residual4`，其余bank、
+objective、12-step数值、held rows和Gate全部不变。
+
+- [x] 在retained implementation与GPU前冻结operator、profile、formal rows与完整closed-loop Gate；
+- [ ] 用一个canonical solver替换退役fixed-A runtime，zero residual精确返回carrier并输出single rank16；
+- [ ] ordinal71完成一次无科学调参权的数值/资源profile；
+- [ ] held5各物化final12并完成一次strict250闭环裁决；
+- [ ] Pass后才讨论Stage 1C；non-pass则停止该operator并复盘objective identification。
+
+card：`docs/ecp_mobile_rank4_solver_card_20260823.md`。禁止rank/step/LR/初始化/权重/member sweep，也不启动Writer。
 
 ## Phase D — 继续被Realization non-pass阻止
 

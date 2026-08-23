@@ -9,11 +9,12 @@
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
+- active realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
 - formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
 - fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
 - mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；mobile-rank4 GPU诊断已经结束，没有active GPU job或successor训练。
+- canonical workspace：本仓库`main`；mobile-rank4解析GPU诊断已经结束，realization operator尚未实现，没有active GPU job。
 
 ## Current scientific state
 
@@ -36,6 +37,8 @@
   member-task上覆盖`99.49%--99.69%`所需修正能量。它成为下一次解析闭环容量问题，不直接视为正结果。
 - mobile-rank4 strict250为`110/120/76`，全部5/5 tasks非零并逐arm略高于direct；pooled matched retention为83.05%，但
   Long同member retention只有36.36%，故预注册裁决为mixed而非supported。Long union retention为54.55%只作失败定位。
+- 依据专家“multiple successful members的union进入Gate、exact row只作辅助”的原始意见，旧mixed不改名，但另行授权一次
+  单变量mobile-rank4 realization oracle；bank、objective、12-step数值与原完整closed-loop Gate全部冻结。
 
 ## Verified reusable assets
 
@@ -112,6 +115,5 @@
   尚未回答，不能用本轮结果替它作结论；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
 - 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
-- 下一步只设计一个effective-additive、允许row/column-space移动、zero correction精确返回carrier且最终retract为single rank16
-  LoRA的Stage 1B oracle；mobile-rank4已经排除明显capacity-binding，却因Long matched-row retention未正式supported。当前先
-  决定policy-equivalence口径，不顺手改effect objective、Program或数据，也不启动Stage 1C。
+- 下一步只实现预注册的`carrier12 + jointly mobile residual4` Stage 1B oracle；不顺手改effect objective、Program或数据，
+  不扫solver，也不启动Stage 1C。

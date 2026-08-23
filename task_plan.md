@@ -216,7 +216,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 - [x] 在successor effect evidence中保留probe particles并只采集successful member自身的on-policy anchors，不把旧
   antithetic-average bank冒充distributional authority；
 - [ ] 在后继`q_pi`前另补continuation/progress/recovery validity；当前realizer不把这些尚未验证的states冒充target；
-- [ ] 训练小型target-local amortized `D_eff(structured code)->Delta W_rank4`，inference不读取future occupancy；
+- [x] 训练fold0小型target-local amortized `D_eff(structured code)->Delta W_rank4`；training只读fit mappings，held
+  inference loader只读冻结code、不打开held target residual或future occupancy；
 - [ ] 多fold privileged-code transform-only closed-loop直接裁决：高于carrier、5/5 breadth、Goal/Long非零、carrier retention>=75%、
   best-member gap显著恢复、相邻checkpoint稳定；
 - [ ] 若known correction有效而coordinate不够，只允许一次有依据的coordinate扩展；两种principled coordinates均失败则停止当前

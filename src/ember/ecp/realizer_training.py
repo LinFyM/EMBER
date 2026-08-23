@@ -86,7 +86,6 @@ def run_fixed_effect_realizer(args: Any) -> Path:
         manifest_path=code_manifest,
         contract=contract,
         device=device,
-        include_held=False,
     )
     cell = config["model"]
     model = FixedEffectRealizer(

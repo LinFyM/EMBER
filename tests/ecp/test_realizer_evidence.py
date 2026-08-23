@@ -1,4 +1,7 @@
+import json
+
 import torch
+from safetensors.torch import save_file
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.realizer_code import (
@@ -17,7 +20,14 @@ from ember.ecp.realizer_model import (
     FixedEffectRealizer,
     fixed_effect_realizer_loss,
 )
-from ember.lora import LoRATarget, SmolVLALoRAContract
+from ember.ecp.realizer_materialization import merge_carrier_residual
+from ember.ecp.realizer_training_data import load_held_effect_code_batch
+from ember.lora import (
+    LORA_A_SUFFIX,
+    LORA_B_SUFFIX,
+    LoRATarget,
+    SmolVLALoRAContract,
+)
 
 
 def _contract() -> SmolVLALoRAContract:
@@ -113,6 +123,88 @@ def test_effect_coordinate_transform_preserves_particle_event_and_owner_axes() -
         scales=torch.ones(38, 128),
     )
     assert code.shape == (2, 8, 38, 128)
+
+
+def test_held_code_loader_never_opens_held_target_residuals(tmp_path) -> None:
+    held_ids = (0, 9, 18, 25, 36)
+    rows = [
+        {
+            "fold_role": "fit",
+            "global_task_id": index,
+            "member": "fit",
+            "effect_code_path": str(tmp_path / "unused"),
+        }
+        for index in range(108)
+    ]
+    for global_id in held_ids:
+        rows.append(
+            {
+                "fold_role": "held_transform_only",
+                "global_task_id": global_id,
+                "member": "earliest",
+                "effect_code_path": str(tmp_path / "unused"),
+            }
+        )
+        code_path = tmp_path / f"code_{global_id}.safetensors"
+        save_file(
+            {"effect_code": torch.ones(2, 8, 38, 128, dtype=torch.bfloat16)},
+            str(code_path),
+        )
+        rows.append(
+            {
+                "fold_role": "held_transform_only",
+                "global_task_id": global_id,
+                "member": "latest",
+                "effect_code_path": str(code_path),
+                "tensor_path": str(tmp_path / "must_not_be_opened"),
+                "reliability": 0.5,
+            }
+        )
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "ember_ecp_fixed_effect_code_authority_v1",
+                "status": "complete_fit_only_effect_code_coordinate",
+                "held_tasks": 5,
+                "held_global_task_ids": list(held_ids),
+                "members": rows,
+            }
+        )
+    )
+    batch = load_held_effect_code_batch(
+        manifest_path=manifest, device=torch.device("cpu")
+    )
+    assert batch.code.shape == (5, 4, 8, 38, 128)
+    assert batch.particle_mask.sum().item() == 10
+    assert tuple(int(row["global_task_id"]) for row in batch.rows) == held_ids
+
+
+def test_merge_carrier_residual_replaces_only_mobile_rank4() -> None:
+    contract = SmolVLALoRAContract(
+        targets=(LoRATarget("tiny", in_features=3, out_features=2),),
+        rank=16,
+        alpha=16,
+        dropout=0.0,
+        identity_seed=1,
+    )
+    a_name = "tiny" + LORA_A_SUFFIX
+    b_name = "tiny" + LORA_B_SUFFIX
+    carrier = {
+        a_name: torch.arange(48).reshape(16, 3).float(),
+        b_name: torch.cat((torch.ones(2, 12), torch.zeros(2, 4)), dim=1),
+    }
+    residual_a = torch.full((4, 3), 7.0)
+    residual_b = torch.full((2, 4), 9.0)
+    merged = merge_carrier_residual(
+        carrier=carrier,
+        residual=((residual_a, residual_b),),
+        contract=contract,
+    )
+    assert torch.equal(merged[a_name][:12], carrier[a_name][:12])
+    assert torch.equal(merged[b_name][:, :12], carrier[b_name][:, :12])
+    assert torch.equal(merged[a_name][12:], residual_a)
+    assert torch.equal(merged[b_name][:, 12:], residual_b)
 
 
 def test_fixed_effect_realizer_preserves_owner_outputs_and_has_finite_loss() -> None:

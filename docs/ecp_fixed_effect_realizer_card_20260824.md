@@ -1,6 +1,6 @@
 # ECP Phase 2B/2C：fixed effect-code coordinate and deployment realizer
 
-状态：2026-08-24 **预注册合同不变；effect-particle formal capture已完成，fit-only coordinate与realizer待执行。**
+状态：2026-08-24 **预注册合同不变；effect-particle、fit-only coordinate与formal realizer训练已完成，held materialization与closed-loop Gate待执行。**
 
 ## 唯一科学问题
 
@@ -118,3 +118,15 @@ member tensors合计195,744,144 bytes。一条两轨迹profile上正负probe res
 不是重复副本。本次只采集successful member自身的on-policy states，candidate/recovery没有被冒充valid target；
 validation/Test读取、held optimizer steps和task-ID model input均为0。formal authority：
 `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`。
+
+## Phase 2B/2C coordinate and training milestone
+
+fold0的fit-only coordinate由clean pushed detached `e05ffca`生成：90个fit tasks/108 members用于拟合，5个held
+tasks/10 members只经冻结transform；owner-local `512 -> 128`解释方差比例最低`.90695`、平均`.94106`，118份code
+均保留particle/event/owner轴且finite。authority：
+`runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json`。
+
+同一authority下的formal realizer只加载fit members，1000步耗时`136.99s`、峰值allocated 1.90 GB。step800的
+factor/effective/total loss为`.23058/.08608/.31668`，step1000为`.19417/.07186/.26605`；两节点均已保存完整
+model/optimizer checkpoint。该下降只证明fit mapping可优化，不替代held closed-loop。training authority：
+`runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`。

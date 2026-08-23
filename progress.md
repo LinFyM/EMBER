@@ -28,11 +28,15 @@
 - active Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
 - Phase 2B formal particle authority：
   `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`；
+- Phase 2B fold0 fixed-code authority：
+  `runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json`；
+- Phase 2C fold0 formal training authority：
+  `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；GOMQ rank16 Phase 0的formal code authority为clean pushed `ac233fa`，评测已结束；
   process pair的formal code authority为clean pushed `d1975c3`，effect-path calibration的formal code authority为clean pushed
-  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，formal particle
-  capture已完成，主执行转入fit-only fixed coordinate与deployment realizer，
+  `4cddcab`；当前没有active GPU job，Phase 2B/2C已冻结effect-particle/code/realizer预注册合同，formal particle、
+  fit-only coordinate与realizer训练已完成，主执行转入held LoRA materialization与closed-loop Gate，
   process acquisition修正作为并行资格前置。
 
 ## Current scientific state
@@ -188,7 +192,11 @@
   `512 -> 128` code coordinate。
 - Phase 2B/2C retained实现已接通fit-only owner-local PCA whitening、held transform-only code materialization、按task等权的
   in-memory batch，以及保持event/particle/owner结构的38-head fixed realizer与factor/effective/null losses；focused tests
-  `14/14`通过。尚未生成formal code authority或训练checkpoint，不能把实现接通写成realizer有效。
+  已增至`17/17`通过。
+- fold0 code authority已完成：90 fit tasks/108 members拟合，5 held tasks/10 members transform-only；owner-local
+  `512 -> 128`解释方差最低`.90695`、平均`.94106`，全部code finite。formal realizer训练只加载fit members，1000步
+  `136.99s`，step800/1000 total loss为`.31668/.26605`，峰值1.90 GB；两checkpoint均已保存。loss下降不能替代held
+  closed-loop，下一步严格只读held latest code物化single carrier12+residual4 LoRA。
 
 ## Current unresolved interface
 

@@ -23,6 +23,25 @@ class EffectCodeBatch:
     member_indices: tuple[int, ...]
 
 
+@dataclass(frozen=True)
+class EffectCodeInferenceBatch:
+    code: torch.Tensor
+    particle_mask: torch.Tensor
+    reliability: torch.Tensor
+    rows: tuple[dict, ...]
+
+
+def _padded_code(row: dict) -> tuple[torch.Tensor, torch.Tensor]:
+    code = load_file(str(Path(str(row["effect_code_path"])).resolve()))[
+        "effect_code"
+    ]
+    if code.ndim != 4 or code.shape[1:] != (8, 38, 128) or code.shape[0] > 4:
+        raise ValueError("fixed effect code member changed shape")
+    padded = torch.zeros(4, 8, 38, 128, dtype=code.dtype)
+    padded[: code.shape[0]] = code
+    return padded, torch.arange(4) < code.shape[0]
+
+
 class PackedEffectCodeDataset:
     def __init__(
         self,
@@ -30,7 +49,6 @@ class PackedEffectCodeDataset:
         manifest_path: Path,
         contract: LoRAContract,
         device: torch.device,
-        include_held: bool = True,
     ) -> None:
         manifest = read_json(manifest_path.resolve())
         rows = tuple(dict(row) for row in manifest.get("members", ()))
@@ -59,7 +77,7 @@ class PackedEffectCodeDataset:
         ):
             raise ValueError("fixed effect code fold roles changed")
 
-        loaded_indices = tuple(range(len(rows))) if include_held else fit_indices
+        loaded_indices = fit_indices
         original_to_local = {
             original: local for local, original in enumerate(loaded_indices)
         }
@@ -68,14 +86,7 @@ class PackedEffectCodeDataset:
         target_b: list[list[torch.Tensor]] = [[] for _ in contract.targets]
         for original_index in loaded_indices:
             row = rows[original_index]
-            code = load_file(str(Path(str(row["effect_code_path"])).resolve()))[
-                "effect_code"
-            ]
-            if code.ndim != 4 or code.shape[1:] != (8, 38, 128) or code.shape[0] > 4:
-                raise ValueError("fixed effect code member changed shape")
-            padded = torch.zeros(4, 8, 38, 128, dtype=code.dtype)
-            padded[: code.shape[0]] = code
-            mask = torch.arange(4) < code.shape[0]
+            padded, mask = _padded_code(row)
             _, residual, _, _ = load_effect_member(
                 Path(str(row["tensor_path"])), contract=contract
             )
@@ -91,9 +102,6 @@ class PackedEffectCodeDataset:
                 )
         self.rows = tuple(rows[index] for index in loaded_indices)
         self.fit_indices = tuple(original_to_local[index] for index in fit_indices)
-        self.held_indices = tuple(
-            original_to_local[index] for index in held_indices if index in original_to_local
-        )
         self.task_groups = tuple(
             tuple(original_to_local[index] for index in groups[key])
             for key in sorted(groups)
@@ -111,24 +119,6 @@ class PackedEffectCodeDataset:
         index = torch.tensor(indices, device=self.code.device)
         return self._batch(index, indices)
 
-    def held_batch(self, member: str = "latest") -> EffectCodeBatch:
-        by_task: dict[str, list[int]] = {}
-        for index in self.held_indices:
-            by_task.setdefault(str(self.rows[index]["asset_key"]), []).append(index)
-        selected = []
-        for key in sorted(by_task):
-            matches = [
-                index
-                for index in by_task[key]
-                if str(self.rows[index]["member"]) == member
-            ]
-            if len(matches) != 1:
-                raise ValueError("held effect code lacks the fixed member lineage")
-            selected.append(matches[0])
-        indices = tuple(selected)
-        index = torch.tensor(indices, device=self.code.device)
-        return self._batch(index, indices)
-
     def _batch(self, index: torch.Tensor, indices: tuple[int, ...]) -> EffectCodeBatch:
         return EffectCodeBatch(
             code=self.code.index_select(0, index),
@@ -143,3 +133,37 @@ class PackedEffectCodeDataset:
             ),
             member_indices=indices,
         )
+
+
+def load_held_effect_code_batch(
+    *, manifest_path: Path, device: torch.device, member: str = "latest"
+) -> EffectCodeInferenceBatch:
+    """Load only held effect codes; never open held target-residual tensors."""
+
+    manifest = read_json(manifest_path.resolve())
+    rows = tuple(dict(row) for row in manifest.get("members", ()))
+    selected = tuple(
+        row
+        for row in rows
+        if row.get("fold_role") == "held_transform_only"
+        and str(row.get("member")) == member
+    )
+    if (
+        manifest.get("schema_version") != EFFECT_CODE_AUTHORITY_SCHEMA
+        or manifest.get("status") != "complete_fit_only_effect_code_coordinate"
+        or len(rows) != 118
+        or len(selected) != int(manifest.get("held_tasks", -1))
+        or {int(row["global_task_id"]) for row in selected}
+        != set(int(value) for value in manifest.get("held_global_task_ids", ()))
+    ):
+        raise ValueError("held fixed effect code authority changed")
+    selected = tuple(sorted(selected, key=lambda row: int(row["global_task_id"])))
+    codes, masks = zip(*(_padded_code(row) for row in selected), strict=True)
+    return EffectCodeInferenceBatch(
+        code=torch.stack(codes).to(device),
+        particle_mask=torch.stack(masks).to(device),
+        reliability=torch.tensor(
+            [float(row["reliability"]) for row in selected], device=device
+        ),
+        rows=selected,
+    )

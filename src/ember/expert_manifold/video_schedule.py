@@ -230,6 +230,52 @@ def condition_demo_index(
     )
 
 
+def paired_condition_demo_indices(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    condition: str,
+    demo_count: int,
+    sampling_mode: str,
+    video_count: int,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Return paired reference and selected K-video sets for one control arm."""
+
+    if condition not in VIDEO_CONDITIONS:
+        raise ExpertManifoldError("invalid video-set condition")
+    reference = reference_demo_indices(
+        root_seed,
+        suite,
+        task_id,
+        init_state_id,
+        demo_count=demo_count,
+        sampling_mode=sampling_mode,
+        video_count=video_count,
+    )
+    if condition != "same_task_other":
+        return reference, reference
+    if video_count == 1:
+        return reference, ((reference[0] + SAME_TASK_OTHER_OFFSET) % demo_count,)
+    if demo_count != 50 or sampling_mode != "without_replacement":
+        raise ExpertManifoldError(
+            "multi-video same-task-other requires the 50-video permutation schedule"
+        )
+    block, position = divmod(init_state_id, demo_count)
+    permutation = np.random.default_rng(
+        np.random.SeedSequence(
+            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+        )
+    ).permutation(demo_count)
+    selected = tuple(
+        int(permutation[(position + SAME_TASK_OTHER_OFFSET + offset) % demo_count])
+        for offset in range(video_count)
+    )
+    if len(set(selected)) != video_count or set(selected) & set(reference):
+        raise ExpertManifoldError("same-task-other video set is not disjoint")
+    return reference, selected
+
+
 def frame_order_seed(
     root_seed: int,
     suite: str,

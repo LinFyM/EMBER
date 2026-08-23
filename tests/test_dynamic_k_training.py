@@ -10,6 +10,7 @@ import pytest
 import torch
 from safetensors.torch import save_file
 
+from ember.expert_manifold.video_schedule import paired_condition_demo_indices
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.reward.expert_teacher import resolve_task_expert_bank_root
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
@@ -36,6 +37,7 @@ from ember.writer.update_schedule import build_exposure_scheduler
 import ember.writer.live_adapter as live_adapter_module
 from ember.writer.live_adapter import (
     FrozenDynamicKTaskAdapter,
+    _ordered_video_tensors,
     condition_video_offsets,
 )
 from ember.writer.reward_config import (
@@ -690,6 +692,79 @@ def test_evaluation_offsets_assign_fixed_k_videos_per_condition(
     offsets = condition_video_offsets(4, evaluation_k)
     assert offsets.tolist() == expected
     assert offsets.dtype == torch.long and offsets.device.type == "cpu"
+
+
+def test_k4_same_task_other_is_paired_unique_and_disjoint() -> None:
+    for init_state_id in range(50):
+        reference, selected = paired_condition_demo_indices(
+            7,
+            "libero_goal",
+            3,
+            init_state_id,
+            "same_task_other",
+            50,
+            "without_replacement",
+            4,
+        )
+        assert len(set(reference)) == len(set(selected)) == 4
+        assert set(reference).isdisjoint(selected)
+
+
+@pytest.mark.parametrize("condition", ("correct", "reversed", "shuffled"))
+def test_video_control_reorders_content_but_not_source_positions(
+    condition: str,
+) -> None:
+    video = RawTeacherVideo(
+        frames=np.arange(6, dtype=np.uint8).reshape(6, 1, 1, 1),
+        frame_indices=np.arange(10, 16, dtype=np.int64),
+        raw_frame_count=6,
+    )
+    frames, indices = _ordered_video_tensors(
+        video,
+        condition=condition,
+        order_seed=19,
+        device=torch.device("cpu"),
+    )
+    if condition == "correct":
+        expected = torch.arange(6)
+    elif condition == "reversed":
+        expected = torch.arange(6).flip(0)
+    else:
+        expected = torch.randperm(6, generator=torch.Generator().manual_seed(19))
+    assert torch.equal(frames[:, 0, 0, 0], expected.to(torch.uint8))
+    assert torch.equal(indices, torch.arange(10, 16))
+
+
+def test_no_video_control_returns_identity_without_calling_writer() -> None:
+    adapter = FrozenDynamicKTaskAdapter.__new__(FrozenDynamicKTaskAdapter)
+    adapter.evaluation_k = 4
+    adapter.total_frame_budget = 420
+    adapter._physical_lora_is_identity = True
+    adapter.device = torch.device("cpu")
+    adapter.policy = object()
+    adapter.identity_state = {"lora": torch.tensor([3.0])}
+    adapter.lora_contract = object()
+    adapter.evaluation_adapter = {"video_condition": "no_video"}
+    adapter.writer = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        AssertionError("no-video control called Writer")
+    )
+    adapter._episode_input = lambda **identity: (
+        {"lora_reference": str(identity["init_state_id"])},
+        (),
+        "task",
+        (),
+    )
+    prepared = adapter.prepare_episodes(
+        (
+            {"suite": "libero_goal", "task_id": 3, "init_state_id": 0},
+            {"suite": "libero_goal", "task_id": 3, "init_state_id": 1},
+        )
+    )
+    assert [row.state["lora"].item() for row in prepared] == [3.0, 3.0]
+    assert [row["sampled_frames"] for row in adapter.last_generation_batch_profile()] == [
+        0,
+        0,
+    ]
 
 
 def test_live_evaluator_supplies_k4_as_one_ragged_writer_call(

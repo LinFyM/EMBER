@@ -54,6 +54,24 @@
 5. 直接运行原fixed250并按falsification card裁决；
 6. 暂停复盘。只有通过才轮换fold并进入shared video-to-effect学习。
 
+## Active formal launch contract: Stage 1A independent particles
+
+- frozen workspace：`/data1/user/ymdai/worktrees/EMBER-ecp-stage1a-4e00982`，detached clean pushed
+  `4e00982dd2d8a87d3a0626c4cbcb35fb1864ca4e`；
+- config：`configs/pi05_ecp_stage1a_particle_experts_v1.json`；source与tokenizer复用现有canonical assets；data root为
+  `data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`；
+- scale：held ordinals `0,5,10,15,20`各一个独立rank16 expert，seed37，batch16，固定2000 steps，保存1000/2000，
+  不按闭环结果选step；
+- execution：gpu02独立单卡process，physical `0,1,2,3,7`分别绑定上述五项，无NCCL/DDP，不使用gpu01 physical0；
+- output：`runs/outputs/pi05_ecp_stage1a_particle_experts_seed37_formal_4e00982_gpu02p01237_20260823/worker_*`；预计新增
+  不超过250 MiB，`/data1` launch前quota余量约360 GiB；
+- command template：`CUDA_VISIBLE_DEVICES=<gpu> PYTHONPATH=src .venv/bin/python scripts/train_task_experts.py --config
+  configs/pi05_ecp_stage1a_particle_experts_v1.json --mode formal --source-run <canonical-source-run> --checkpoint
+  <canonical-step1000> --tokenizer-path <canonical-tokenizer> --data-root <canonical-data> --output-dir <worker> --task-indices
+  <ordinal> --stop-after-step 2000 --log-every 10`；实际Python来自canonical repo `.venv`；
+- retain/eval：step2000是预注册member；训练后fixed50 strict closed loop与occupancy capture只决定member authority是否完整，
+  不回选step。失败或中断只允许从正式step1000 checkpoint exact-resume；不覆盖非空不兼容output。
+
 ## Current blockers and risks
 
 - 新独立expert必须在Goal/Long上实际产生strict success；若没有，Stage 1A不完整，不能用checkpoint数量冒充policy diversity；

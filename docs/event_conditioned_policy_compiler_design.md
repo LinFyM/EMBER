@@ -1,7 +1,8 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **active research authority after independent review**。旧ECP Stage 1 v1--v24、MDCO与
-PECS的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal artifacts保存；它们不再是active运行面。
+状态：2026-08-23 **research authority paused after the expert-corrected occupancy-complete oracle returned Realization non-pass**。
+旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
+artifacts保存；当前没有active successor运行面。
 
 ## 1. 当前裁决
 
@@ -12,14 +13,17 @@ ECP的核心目标与Stage 0候选表示尚未被证伪，但以下实现家族�
 - 19或90个mapping上的21M target/rank query compiler；
 - v24、MDCO以及width/rank/head/fusion/LR/seed后继；
 - 只在教学视频稀疏support frames上拟合exact policy effects的PECS；
+- 当前48-state三particle effect bank、stable fixed-A carrier与12-step Delta-B realization的组合；
 - 用open-loop geometry、own retrieval或LoRA cosine替代早期closed loop。
 
-当前唯一active科学问题是：
+本轮privileged问题已经得到否定答案：
 
 > 在真实闭环状态分布上，用多个独立成功策略定义一个分布式策略等价类后，固定、受约束的rank16实现器能否从稳定
 > carrier出发，恢复显著且广泛的task-local闭环能力？
 
-这个privileged upper bound未通过前，不训练新的video predictor、shared compiler或Writer联合模型。
+结果由carrier `43/250`提高到`78/250`，但breadth仅3/5、Goal/Long为0、oracle recovery `.304`，整体Realization
+non-pass。当前证据把断点收窄到realization，但尚未分离fixed-A capacity与effect objective/calibration。复盘形成新的强科学卡
+之前，不训练video predictor、shared compiler或Writer联合模型，也不自动尝试这两个解释的小变体。
 
 ## 2. 方法总图
 
@@ -128,9 +132,11 @@ member轴始终保留，不先平均成一个Program。member reliability、stag
 particles或其等价的mean+structured covariance。Stage 1A只回答teacher等价类是否完整、非退化且覆盖真实闭环状态，不以
 LoRA geometry作为通过条件。
 
+本轮Stage 1A已通过：五个独立members逐task均有strict success，Goal/Long在内的五个48-state banks全部完整。
+
 ## 5. Stage 1B：occupancy-complete privileged realization oracle
 
-这是下一次关键GPU实验。它不读取视频、不学习shared weights、不形成deployment route；held task各自使用privileged
+该关键GPU实验已经完成。它不读取视频、不学习shared weights、不形成deployment route；held task各自使用privileged
 effect particles，检验一套rank16 LoRA能否实现该策略等价类。
 
 ### 5.1 Stable carrier与无交叉项有效更新
@@ -186,9 +192,13 @@ Stage 1B通过必须同时满足：
 `state support + particles + fixed-A carrier + fixed solver`组合未建立强realization upper bound；由于当前仍缺真正
 process-identifying meta tasks，它不会被夸大为整个EMBER目标的最终反证。
 
-## 6. Stage 1C：oracle通过后才学习video-to-effect
+正式结果为`78/250`，逐global0/9/18/25/36为`36/12/30/0/0`。absolute、相对carrier净增与carrier retention通过；breadth、
+4/5严格胜carrier、Goal/Long及oracle-normalized recovery失败，故按上述合同暂停。精确裁决见
+`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
 
-Stage 1B通过后，才允许学习：
+## 6. Stage 1C：被当前non-pass阻止
+
+只有未来新的强realization oracle通过后，才允许学习：
 
 ```text
 ECP Program

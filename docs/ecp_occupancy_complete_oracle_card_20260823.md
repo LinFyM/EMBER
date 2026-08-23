@@ -1,6 +1,6 @@
 # ECP Occupancy-Complete Privileged Realization Oracle
 
-状态：2026-08-23 **preregistered before retained implementation and GPU launch**。
+状态：2026-08-23 **preregistered before retained implementation and GPU launch；现已完成并裁决为Realization non-pass。**
 
 ## Scientific question
 
@@ -69,3 +69,16 @@ final step12直接跑原held5 fixed250 strict paired panel。通过条件同时�
 - **Teacher-bank non-pass**：若独立member或四类occupancy不完整，先补Stage 1A，不运行solver；
 - **Realization non-pass**：暂停分析，不自动生成successor或小扫；该结果关闭本卡组合并继续阻止video predictor；
 - **Engineering invalidation**：只在可复现实现、数据、OOM或合同错误时修复并重跑同一科学卡，不增加版本号。
+
+## Completed adjudication
+
+Stage 1A通过：五个独立seed37 members fixed250为`113`，逐global0/9/18/25/36为`26/32/37/13/5`，5/5均有
+strict-success occupancy；五个effect banks均包含48 states与三个未平均的member particles。
+
+Stage 1B final12为`78/250`，逐task`36/12/30/0/0`。它通过absolute `>=74`、相对carrier净增`+35`以及carrier
+retention `35/43`；但breadth仅3/5、仅2/5严格胜carrier、Goal/Long均0。三member success union扣除carrier已有success后共有
+115个recoverable rows，final恢复35个，oracle-normalized recovery为`.304`且仅3/5 tasks为正。pairing、single-LoRA与
+information wall均有效。
+
+因此按本卡既定outcome暂停：不补step10/11、不扫solver/权重/rank、不训练video predictor、不自动建立successor。完整证据：
+`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。

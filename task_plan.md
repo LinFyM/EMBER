@@ -1,10 +1,10 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **ECP已按独立专家复核完成阶段重构；当前只推进occupancy-complete privileged realization oracle。**
+状态：2026-08-23 **occupancy-complete privileged realization oracle已完成并判为Realization non-pass；按预注册合同暂停，未启动后继。**
 
 active design：`docs/event_conditioned_policy_compiler_design.md`
 
-当前falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
+已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
 历史：`docs/research_history.md`与`docs/ecp_stage1_iteration_retrospective_20260823.md`
 
@@ -21,8 +21,9 @@ zero-interaction闭环能力。正式目标仍为strict paired correct严格`>14
 video-frame exact effects能从shared43提高到58/59，但没有覆盖policy真实执行的initial/successful/candidate/recovery
 occupancy，不能作为ECP最终反证。
 
-当前只回答一个问题：完整闭环状态支持上的多成功策略分布，能否通过stable carrier与固定rank16实现器恢复显著闭环能力？
-该oracle通过前不训练video predictor、shared compiler、joint Writer或outer credit。
+本轮已经回答：完整闭环状态支持上的多成功策略分布可把stable carrier从`43/250`提高到`78/250`，但只覆盖3/5 tasks，
+Goal/Long仍为0，oracle-normalized recovery只有`.304`且仅3/5 tasks为正，故未通过完整门。当前暂停定位realization接口，
+不训练video predictor、shared compiler、joint Writer或outer credit，也不自动建立solver/结构小变体。
 
 ## Fixed boundaries
 
@@ -46,30 +47,34 @@ occupancy，不能作为ECP最终反证。
 
 ## Phase B — Stage 1A policy-equivalence bank
 
-- [ ] 为fold0五项各训练一个不同seed的独立rank16 task expert；只读train actions，固定step2000，不按task选step；
-- [ ] 对新member跑fixed50 closed loop，至少捕获一条strict-success完整occupancy；
+- [x] 为fold0五项各训练一个不同seed的独立rank16 task expert；只读train actions，固定step2000，不按task选step；
+- [x] 对新member跑fixed50 closed loop，五项均捕获一条strict-success完整occupancy；
 - [x] 复用现有earliest/latest成功occupancy与stable carrier，不重复大规模资产；
-- [ ] 收集每task四类等权state bank：8 initial、24 successful、8 prior-candidate、8 recovery；
+- [x] 收集每task四类等权state bank：8 initial、24 successful、8 prior-candidate、8 recovery；
 - [x] 实现官方双相机policy prefix、fixed antithetic noise及source/carrier/三个member的owner/flow/action particle缓存；
-- [ ] 报告member independence、success union、state/stage覆盖、disagreement和video-observable/recovery信息分界。
+- [x] 报告member independence、success union、state/stage覆盖、disagreement和video-observable/recovery信息分界。
 
 **Gate 1A：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；particle轴未被均值压平；
-Goal/Long也有成功member与完整occupancy。未通过则先补teacher authority，不进入LoRA求解。
+Goal/Long也有成功member与完整occupancy。**已通过：** 新独立members fixed250为`113`，逐task
+`26/32/37/13/5`，5/5成功occupancy及五个48-state effect banks均完整。
 
 ## Phase C — Stage 1B fixed-A privileged realization
 
 - [x] 从verified stable carrier出发，固定全部`A_c`，只优化`Delta B`，确保zero correction精确返回carrier且无A/B交叉项；
 - [x] 实现stage-consistent particle soft-min、carrier no-worse barrier、source/shared preservation、trust与category balance；
-- [ ] 在一个fit task做真实数值/吞吐profile，只修正OOM、batching或明显量纲错误；
-- [ ] 从clean pushed commit并行求解held5五套task-local rank16 oracle LoRA；
-- [ ] 第一次完整设计后直接跑原fixed250 strict closed loop，不用geometry预筛；
-- [ ] 按absolute、per-task oracle-normalized recovery、carrier retention、member success union、breadth、Goal/Long裁决；
-- [ ] 重大失败后暂停复盘，不自动建立下一版本。
+- [x] 在一个fit task做真实数值/吞吐profile，只将microbatch定为4，未用held结果调科学量纲；
+- [x] 从clean pushed commit并行求解held5五套task-local rank16 oracle LoRA；
+- [x] 第一次完整设计后直接跑原fixed250 strict closed loop，不用geometry预筛；
+- [x] 按absolute、per-task oracle-normalized recovery、carrier retention、member success union、breadth、Goal/Long裁决；
+- [x] 重大失败后暂停复盘，未自动建立下一版本。
 
 **Gate 1B：** final12至少74/250、相对carrier净增至少20、5/5非零、4/5严格胜carrier、Goal/Long各非零、carrier
-retention至少33/43、overall oracle-normalized recovery至少0.35。exact row与geometry只作辅助。
+retention至少33/43、overall oracle-normalized recovery至少0.35。**Realization non-pass：** final为`78/250`，absolute、净增
+`+35`及carrier retention `35/43`通过；breadth `3/5`、严格胜carrier `2/5`、Goal/Long `0/0`、recovery
+`35/115=.304`且仅3/5为正，因此整体失败。正式证据：
+`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
 
-## Phase D — 仅在oracle通过后
+## Phase D — 已被本轮non-pass阻止
 
 - [ ] 轮换train24 fold并建立新的shared-model selection面；
 - [ ] 审计或构建source-unseen adaptation meta tasks；若要process claim，必须包含真正process-identifying mappings；

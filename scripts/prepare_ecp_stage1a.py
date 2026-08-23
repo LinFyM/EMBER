@@ -146,7 +146,9 @@ def _adapter_for(root: Path, global_id: int, purpose: str) -> Path:
             )
         )
     else:
-        candidates = list(root.glob(f"task_*_global_{global_id:02d}.safetensors"))
+        candidates = sorted(
+            root.rglob(f"task_*_global_{global_id:02d}.safetensors")
+        )
     if len(candidates) != 1:
         raise ValueError(
             f"ECP static adapter is not unique for global task {global_id}"

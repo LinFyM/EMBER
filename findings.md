@@ -1563,3 +1563,27 @@ required procedure不同的授权task pair。shuffled/reversed优势可以证明
 `docs/evidence/gomq_20260823/gomq_cycle2_causal_controls_strict400.json`、
 `docs/evidence/gomq_20260823/gomq_cycle2_causal_adjudication.json`与
 `docs/evidence/gomq_20260823/process_identifiability_and_rank_audit.json`。
+
+## 76. Occupancy-complete teacher bank成立，但当前fixed-A realization仍只恢复easy/shared support
+
+独立专家纠正后的Stage 1A已经排除“earliest/latest同一lineage冒充policy diversity”和“只在教学视频稀疏帧上定义功能”两项
+关键混淆。五个不同seed、固定step2000的独立rank16 experts在原fixed250达到`113`，逐global0/9/18/25/36为
+`26/32/37/13/5`，5/5均提供strict-success完整轨迹。每task的正式effect bank包含8 initial、三个members各8 successful、
+8 prior-candidate和8 recovery states，共48 states；Goal与Long不再缺successful teacher或闭环occupancy。earliest/latest/
+independent逐row success union为`146`，逐task`38/40/41/16/11`，因此Gate 1A通过。
+
+固定stable carrier A、只求Delta-B的统一12-step solver在五项都真实降低预注册objective，initial-to-final ratios为
+`.5040/.5667/.5278/.6055/.4373`，final trust penalty全为0；Goal/Long的member confidence仍高达`.900/.929`。然而原fixed250
+strict paired结果只有`78`，逐task`36/12/30/0/0`。相对carrier43，它保留35、获得43、丢失8，absolute、净增和carrier
+retention门均通过；但breadth只有3/5、仅2/5严格胜carrier、Goal/Long为0。相对三member union扣除carrier已有success后，
+recoverable gap为`115`，只恢复`35=.304`且仅3/5 tasks为正，低于`.35`及4/5门。所有250行相对source、carrier和三类members的
+episode key、env/policy seed、language与policy-noise common prefix均零mismatch，所以这是Realization non-pass，不是评测错配。
+
+最重要的新定位是：本轮失败已经不能再归因于teacher bank不独立、Goal/Long没有成功示范、缺initial/recovery occupancy、
+dead gradient、solver不下降或trust截断。inner effect objective甚至在Long下降最多，却完全没有转成Long闭环成功，直接证明当前
+48-state三particle owner/flow/action距离并不能作为困难任务closed-loop basin的充分坐标。当前fixed-A row-space容量与effect
+objective/calibration是仍未分离的竞争解释；本结果只关闭“当前bank + 当前effect distance + stable fixed-A carrier + 当前12-step
+solver”组合，不否定ECP目标、视频条件、所有policy-effect compiler或所有carrier-preserving参数化。
+
+按预注册card，未补step10/11、未做rank/step/weight小扫、未训练video effect predictor，也未自动建立下一架构版本。正式证据：
+`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。

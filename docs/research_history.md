@@ -1256,6 +1256,29 @@ focused queue tests通过。科学历史代码恢复应叠加最新运行基础�
 `docs/evidence/gomq_20260823/gomq_cycle2_causal_adjudication.json`与
 `docs/evidence/gomq_20260823/process_identifiability_and_rank_audit.json`。
 
+### 3.64 Occupancy-complete privileged oracle通过teacher gate但未通过realization gate
+
+独立专家复核把ECP Stage 1重新分成successful-policy equivalence、privileged realization与后续shared video inference三道门。
+clean pushed `4e00982`为fold0 held5各训练一个不同seed37、固定step2000的独立rank16 expert；五项fixed250合计`113`，逐
+global0/9/18/25/36为`26/32/37/13/5`，全部取得strict-success轨迹。随后每task建立48-state bank：8 initial、三个members各
+8 successful、8 PECS candidate与8 source recovery states，并在同一官方双相机observation、fixed antithetic noise上缓存三
+members以及source/carrier的owner DCT4、10-step flow与integrated action。Goal/Long也具备成功独立member与完整occupancy，
+所以Stage 1A通过，不能再把后续失败归因于teacher缺失或稀疏教学帧support。
+
+clean pushed `c2aaac1`先在非held fit ordinal71固定microbatch4，再用stable carrier A、Delta-B-only、rank16、12 steps并行求解
+held5。五项objective ratio为`.5040/.5667/.5278/.6055/.4373`，trust penalty均0。final LoRAs直接进入原strict paired250，
+得到`78`，逐task`36/12/30/0/0`；相对carrier43为retained/gained/lost=`35/43/8`。earliest/latest/independent success union为
+`146`，扣除carrier已会的rows后有115个recoverable successes，final只恢复35个，overall `.304`且仅3/5 tasks为正。尽管
+absolute、net gain与carrier retention通过，breadth、4/5严格胜carrier、Goal/Long和oracle recovery均失败，因此正式裁决为
+Realization non-pass。
+
+这一结果把最早断点从state coverage推进到realization坐标：当前48-state三particle owner/flow/action effect objective在Goal/
+Long上也显著下降并具有高member confidence，却没有产生任何闭环成功，inner effect距离不能充当困难任务success-basin代理。
+fixed-A capacity和effect objective/calibration仍未被本卡彼此分离；被关闭的只是当前bank、当前effect distance、stable fixed-A
+carrier与当前12-step solver的组合，不是ECP核心目标或所有policy-effect compiler。按预注册合同暂停，不补step10/11、不做
+solver小扫、不训练video predictor、不建立successor。正式证据为
+`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

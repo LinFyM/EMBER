@@ -46,8 +46,9 @@
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
 - canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `24c5bdc`。当前没有active GPU job。
-  process Gate A/A2、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；fold1、Gate B、
-  process suite、fresh Program、`q_pi/q_V`及joint Writer均未启动。process acquisition与shared-realizer两侧均已到专家裁决点。
+  process Gate A/A2、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧shared-realizer
+  family关闭。task65/68 separate-plate Gate A3合同已冻结并进入实现，Gate B、process suite、fresh Program、`q_pi/q_V`及
+  joint Writer均未启动。
 
 ## Current scientific state
 
@@ -82,7 +83,11 @@
   outer-credit不训练task-local policy LoRA。当前最干净替代是task65/68 separate-plate pair：同scene/init、不共享objects/plates、
   experts为`43/50、47/50`，两种composite orders都source-unseen。同scene task66/67 `42/50、49/50`可复现；task21/45
   stove/pan则降为后续异构动作family。source RGB仅128分辨率，故两个process variants都必须用experts在render256
-  temporal wrapper下fresh rollout，不直接重标旧videos。专家裁决前不实现。
+  temporal wrapper下fresh rollout，不直接重标旧videos。现已依据专家既有合同与owner最终确认选定为Gate A3；这不重开
+  已失败的两种shared-realizer coordinates。
+- task65/68 Gate A3双向state0 smoke已在gpu02 physical0/1通过：red→yellow-white events为`144/291`，反向为`94/374`；
+  两行均success、invalid=false，均调用task65/68两个experts，公开video字段与统一语言符合信息墙，59个共同replans的
+  policy-noise逐项一致。该结果只授权从clean pushed detached commit运行预注册100行formal面板。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -279,6 +284,6 @@
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
 - 当前没有active GPU job。Phase 0已归档；首个process family Gate A/A2、balanced-SVD learned realizer fold0与
-  two-sided coordinate Gate均为non-pass，Gate B、process suite、fold1和Phase 3以后均未启动。process侧现在只剩
-  true composite privileged expert/data或物理机制不同的source-unseen family；realizer侧没有剩余预注册successor。
-  两侧都应先由专家按全部formal证据重新裁决，不得自行继续版本化。
+  two-sided coordinate Gate均为non-pass，旧shared-realizer family没有剩余预注册successor。process侧已选定task65/68
+  source-unseen composite/order family，Gate A3双向state0 smoke已通过；下一步是clean pushed detached的100行teacher Gate，
+  通过后才决定Gate B。该数据不构成恢复旧coordinate的理由，后续部署桥必须重新建立。

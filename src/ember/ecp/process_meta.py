@@ -29,6 +29,8 @@ class ProcessMetaFamily:
     exact_language: str
     bddl_path: Path
     init_states_path: Path
+    base_task_suite: str
+    base_task_id: int
     init_state_ids: tuple[int, ...]
     predicates: Mapping[str, tuple[str, ...]]
     phase_languages: Mapping[str, str]
@@ -123,6 +125,8 @@ def load_process_meta_authority(
         exact_language=str(raw["exact_language"]).strip(),
         bddl_path=bddl_path,
         init_states_path=init_path,
+        base_task_suite=str(init["suite"]),
+        base_task_id=int(init["task_id"]),
         init_state_ids=ids,
         predicates=predicates,
         phase_languages=phase_languages,

@@ -1910,3 +1910,15 @@ init完全相同，纯primitive experts为`43/50、47/50`，goal objects与plate
 该审计没有选定新family或复活realizer。具体推荐、风险和三个专家裁决问题见
 `docs/ecp_post_a2_route_decision_20260824.md`，结构证据见
 `docs/evidence/ecp_20260824/ecp_process_candidate_demo_order_audit_20260824.json`。
+
+## 91. task65/68满足最小source-unseen composite/order Gate，但不复活旧realizer
+
+重新对照专家全过程复核可知，“source-unseen mapping”要求未见的是需要从视频识别并编译的composite goal/process mapping，
+不是要求每个primitive object skill都未被source训练见过。task65/68只在source中分别出现为primitive；二者的conjunctive goal、
+统一goal-only language和两个required orders均未出现。因此该pair满足最小video-specified order feasibility的定义，同时仍需在
+后续加入异构动作与物理耦合families才能支持更广process claim。
+
+专家对realizer的停止条件同样已经明确：balanced-SVD learned map与fixed two-sided coordinate都失败后，停止当前
+mobile-rank4 shared-realizer family。新增process mappings是后续Program定义和deployment bridge的必要数据，但不构成继续
+旧coordinate/solver sweep的授权。owner已确认按该解释推进；task65/68 Gate A3合同见
+`docs/ecp_process_separate_plates_teacher_gate_20260824.md`。

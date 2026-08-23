@@ -2,7 +2,7 @@
   "schema_version": "ember_ecp_process_candidate_demo_order_audit_v1",
   "status": "read_only_decision_evidence",
   "date": "2026-08-24",
-  "purpose": "Compare post-Gate-A2 process-family options without selecting or launching a successor family.",
+  "purpose": "Compare post-Gate-A2 process-family options and preserve the evidence used to select the next family.",
   "authorities": {
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
     "source_hdf5_root": "data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90",
@@ -117,6 +117,7 @@
     "replication_family": "LIVING_ROOM_SCENE5 task66/task67 separate-plate opposite-order pair",
     "heterogeneous_action_family_after_feasibility": "KITCHEN_SCENE3 and KITCHEN_SCENE9 stove/pan opposite-order pairs",
     "physical_coupling_family_after_feasibility": "LIVING_ROOM_SCENE4 stack and tray placement opposite-order pair",
-    "requires_expert_selection_before_implementation": true
+    "requires_expert_selection_before_implementation": false,
+    "subsequent_ruling": "The existing expert contract plus the owner's final confirmation select task65/task68 for Gate A3. This does not reopen either failed shared-realizer coordinate."
   }
 }

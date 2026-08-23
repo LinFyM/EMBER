@@ -103,13 +103,15 @@ def _noise(
     policy: torch.nn.Module,
     *,
     root_seed: int,
+    task_suite: str,
+    task_id: int,
     state_id: int,
     replan_index: int,
 ) -> tuple[torch.Tensor, int]:
     seed = policy_noise_seed(
         root_seed,
-        "libero_90",
-        55,
+        task_suite,
+        task_id,
         state_id,
         replan_index,
     )
@@ -131,6 +133,8 @@ def _collect_episode(
     postprocess: Any,
     init_state: np.ndarray,
     state_id: int,
+    noise_task_suite: str,
+    noise_task_id: int,
     phase_languages: Any,
     install_phase_expert: Callable[[str], None] | None,
     phase_expert_task_ids: Mapping[str, int],
@@ -166,6 +170,8 @@ def _collect_episode(
         noise, seed = _noise(
             policy,
             root_seed=int(rollout["policy_seed_root"]),
+            task_suite=noise_task_suite,
+            task_id=noise_task_id,
             state_id=state_id,
             replan_index=replan_index,
         )
@@ -317,6 +323,8 @@ def main() -> None:
                 postprocess=postprocess,
                 init_state=np.asarray(init_states[state_id]),
                 state_id=state_id,
+                noise_task_suite=authority.family.base_task_suite,
+                noise_task_id=authority.family.base_task_id,
                 phase_languages=authority.family.phase_languages,
                 install_phase_expert=install_phase_expert,
                 phase_expert_task_ids=phase_expert_task_ids,

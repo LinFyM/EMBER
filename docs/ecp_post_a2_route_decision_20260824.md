@@ -1,6 +1,6 @@
 # ECP Gate A2后续数据路线决策审计
 
-日期：2026-08-24。状态：**只读审计完成，已形成推荐；未选定或实现successor family，未启动GPU训练。**
+日期：2026-08-24。状态：**后续裁决已冻结：选定task65/68作为Gate A3；旧shared-realizer family保持关闭；双向state0 smoke已通过。**
 
 ## 1. 现在真正要决定的事
 
@@ -69,25 +69,18 @@ task38的50条demos中stove在step0已全部turn-on，不构成两事件order pa
 
 fit90 learned realizer和fixed two-sided coordinate已经分别在strict250得到`33/37`与`80`，且Goal/Long均为0。
 专家原合同规定两种principled coordinates都失败后应停止当前mobile-rank4 shared-realizer family。
-因此新process mappings在获得前不启动任何realizer新版；即使获得，是否足以重开shared realizer，也应由专家明确
-裁决，不把“数据更多”自动解释为复活当前coordinate。
+因此新process mappings不启动任何旧realizer新版，也不把“数据更多”自动解释为复活当前coordinate。task65/68只先补足
+process-identifying teacher与observer证据；Gate通过后需要按专家合同重新建立deployment-compatible Program-to-effect桥，
+而不是恢复已经失败的balanced-SVD learned map或fixed two-sided coordinate。
 
-## 6. 需要专家回答的三个核心问题
+## 6. 已冻结的执行裁决
 
-1. A2之后，是否同意不再为soup/butter先开发新teacher algorithm，而把task65/68 separate-plate双顺序pair作为下一个
-   minimal feasibility？
-2. 该pair的两个primitives都被source见过，但它们的composite goal和两种order都没有进入source训练；这是否满足你要求的
-   source-unseen process mapping最小Gate？
-3. 在两种principled realizer coordinates均non-pass后，新process mappings是否构成重新定义Program-to-effect识别问题的
-   充分新证据，还是应直接放弃当前shared-realizer family并重设部署桥？
+重新对照专家完整合同并由owner确认后，三个问题已有一致答案：
 
-## 7. 可以给专家的最短prompt
+1. 不再为soup/butter先开发新的teacher algorithm；task65/68作为下一个最小双顺序feasibility；
+2. source见过两个primitive不影响其conjunctive goal与required orders属于source-unseen mappings；该Gate只声称
+   video-specified order feasibility，不声称object skill本身未见；
+3. 新process mappings是后续Program识别的必要数据，不是旧shared-realizer family的复活条件。两种principled coordinates
+   已按专家停止合同关闭；Gate通过后另建deployment-compatible bridge。
 
-> 我们按你的Gate补做了phase task-local experts：soup→butter仍为0/50，butter→soup从19/50提高到44/50，
-> 所以切换有效，但当前pair的soup-first successful action data完全不存在。进一步审计发现，LIBERO-90
-> task65/68的scene和init完全相同，experts为43/50和47/50，目标mugs和plates都互不共享；source只见过两个
-> primitives，没见过它们的composite goal或任一order。我们因此倾向停止为soup/butter发明新teacher，改用
-> task65/68的统一goal-only language、同终点双顺序pair做下一个feasibility，两种视频都由phase experts重新rollout。
-> 通过后再加stove/pan异构动作与stack/tray物理耦合family。请你核心裁决：这个数据路线及source-unseen界定
-> 是否正确；以及在learned和two-sided realizer都失败后，
-> 新process mappings是否足以重开shared realizer，还是应重设Program-to-effect部署桥。
+预注册执行合同见`docs/ecp_process_separate_plates_teacher_gate_20260824.md`。

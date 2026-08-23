@@ -7,9 +7,8 @@ Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fol
 均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
 coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
 `59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
-未启动。下一shared-realizer机制须先回到专家讨论，不自行版本化。process侧Gate B、suite扩展与
-`q_pi/q_V`不启动；下一实质选择是获得true composite privileged expert/data，或改用物理机制不同的
-source-unseen process family，需要专家重新裁决。**
+未启动。当前shared-realizer family按专家停止条件关闭，不自行版本化。process侧已选定task65/68 separate-plate
+source-unseen composite/order family并冻结Gate A3；Gate通过前不启动Gate B、suite扩展或`q_pi/q_V`。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -209,9 +208,13 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 - [x] 完成A2后数据路线只读审计：当前pair缺soup-first successful actions，现有SFT/outer-credit不能直接产生该teacher；
   task65/68的scene/init完全一致、纯primitive experts为`43/47`、objects/plates互不共享，且两种composite orders都
   source-unseen，推荐作为下一个双顺序最小family；
-- [ ] 由专家在true composite soup/butter data acquisition与task65/68 separate-plate替代family之间裁决，并同时裁决新process mappings
-  是否足以重开shared realizer；决策前不实现新family或realizer。
-- [ ] 取得两个方向均可靠的更强privileged sequential teacher，或基于明确primitive/scene证据预注册一个替代process family；
+- [x] 依据专家已有source-unseen process合同与owner最终确认，选定task65/68 separate-plate family；明确它不复活已经失败的
+  balanced-SVD learned map或fixed two-sided shared-realizer coordinate；
+- [x] 冻结`docs/ecp_process_separate_plates_teacher_gate_20260824.md`及统一goal-only language、同BDDL/init/final predicates、
+  相反required order与phase-expert authority；
+- [x] 完成两个方向state0工程smoke：events分别在`144/291`与`94/374`步完成，均调用task65/68 experts、无invalid，
+  public artifacts与59步noise common prefix符合合同；
+- [ ] 从clean pushed detached commit完成100行formal Gate A3，裁决能否取得两个方向均可靠的privileged sequential teachers；
 - [ ] 验证两个privileged task-local experts均能闭环完成，correct video胜sibling wrong，而language-only/no-video/first+final不能
   区分，且无variant leakage；
 - [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；

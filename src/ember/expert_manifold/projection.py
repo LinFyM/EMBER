@@ -49,6 +49,18 @@ ECP_STAGE1_MDCO_TASK_EXPERT_ADAPTER_SCHEMA = (
 ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_ecp_stage1_mapping_diverse_compiler_oracle_projection_v1"
 )
+ECP_STAGE1_STATIC_LORA_ADAPTER_SCHEMA = (
+    "ember_pi05_ecp_stage1_privileged_static_lora_eval_adapter_v1"
+)
+ECP_STAGE1_STATIC_LORA_MANIFEST_SCHEMA = (
+    "ember_ecp_stage1_privileged_static_lora_projection_v1"
+)
+
+ECP_STAGE1_STATIC_LORA_PURPOSES = {
+    "stage1a_independent_particle_step2000",
+    "stage1a_candidate_pecs_trajectory",
+    "stage1b_occupancy_complete_oracle",
+}
 
 
 def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
@@ -86,9 +98,7 @@ def _ecp_projection_spec(schema: Any) -> dict[str, Any]:
             "projection_kind": (
                 "ecp_stage1_privileged_program_locked_compiler_identification"
             ),
-            "objective_phase": (
-                "task_balanced_program_locked_compiler_identification"
-            ),
+            "objective_phase": ("task_balanced_program_locked_compiler_identification"),
             "adapter_schema": ECP_STAGE1_PROGRAM_LOCKED_TASK_EXPERT_ADAPTER_SCHEMA,
             "cursor_name": "task_visits",
             "arm_prefix": "ecp_stage1_q_pi_program_locked_compiler_tv",
@@ -165,9 +175,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         )
     if manifest.get("projection_kind") != spec["projection_kind"]:
         raise ExpertManifoldError("ECP Stage 1 projection manifest changed")
-    _require_values(
-        optimization, expected, "ECP Stage 1 projection manifest changed"
-    )
+    _require_values(optimization, expected, "ECP Stage 1 projection manifest changed")
     if (
         information_wall.get("privileged_q_pi")
         not in (True, "fit90 shared training and frozen held5 inference only")
@@ -184,9 +192,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
             "base_projection_manifest": _projection_file(
                 manifest, "base_projection_manifest"
             ),
-            "policy_support_bank": _projection_file(
-                manifest, "policy_support_bank"
-            ),
+            "policy_support_bank": _projection_file(manifest, "policy_support_bank"),
             "privileged_q_pi": True,
             "held_shared_gradient_steps": 0,
             "single_complete_lora": True,
@@ -205,9 +211,11 @@ def _phase_aligned_projection_contract(
     expected_kind = (
         "stable_shared_prior_baseline"
         if member == "shared"
-        else "stable_shared_prior_task_residual_decoder"
-        if projection_kind == "stable_shared_prior_task_residual_decoder"
-        else "phase_aligned_success_equivalence_decoder"
+        else (
+            "stable_shared_prior_task_residual_decoder"
+            if projection_kind == "stable_shared_prior_task_residual_decoder"
+            else "phase_aligned_success_equivalence_decoder"
+        )
     )
     if (
         projection_kind != expected_kind
@@ -239,9 +247,11 @@ def _phase_aligned_projection_contract(
         "arm": (
             "stable_shared_prior_baseline"
             if member == "shared"
-            else f"stable_shared_prior_residual_{member}_projection"
-            if projection_kind == "stable_shared_prior_task_residual_decoder"
-            else f"phase_aligned_functional_decoder_{member}_projection"
+            else (
+                f"stable_shared_prior_residual_{member}_projection"
+                if projection_kind == "stable_shared_prior_task_residual_decoder"
+                else f"phase_aligned_functional_decoder_{member}_projection"
+            )
         ),
         "asset": {
             "decoder_checkpoint": _projection_file(manifest, "decoder_checkpoint"),
@@ -259,6 +269,49 @@ def _phase_aligned_projection_contract(
                 }
                 else None
             ),
+        },
+    }
+
+
+def _ecp_static_lora_projection_contract(
+    manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    optimization = manifest.get("optimization", {})
+    information_wall = manifest.get("information_wall", {})
+    purpose = str(manifest.get("purpose"))
+    task_panel = str(manifest.get("task_panel"))
+    if (
+        manifest.get("projection_kind") != "ecp_stage1_privileged_static_lora"
+        or purpose not in ECP_STAGE1_STATIC_LORA_PURPOSES
+        or task_panel not in {"held5", "profile_fit"}
+        or optimization
+        != {
+            "held_shared_gradient_steps": 0,
+            "single_complete_lora": True,
+            "final_lora_averaging": False,
+            "rank": 16,
+            "second_adapter_deployed": False,
+            "parameterization": "one complete rank16 static LoRA",
+        }
+        or information_wall.get("role")
+        != "development_train_leave_task_out_oracle_only"
+        or information_wall.get("deployment_carrier") is not False
+        or information_wall.get("validation_action_or_reward_reads") != 0
+        or information_wall.get("test_action_or_reward_reads") != 0
+        or information_wall.get("second_adapter_deployed") is not False
+    ):
+        raise ExpertManifoldError("ECP Stage 1 static-LoRA projection changed")
+    return {
+        "adapter_schema": ECP_STAGE1_STATIC_LORA_ADAPTER_SCHEMA,
+        "arm": purpose,
+        "asset": {
+            "purpose": purpose,
+            "task_panel": task_panel,
+            "base_projection_manifest": _projection_file(
+                manifest, "base_projection_manifest"
+            ),
+            "held_shared_gradient_steps": 0,
+            "single_complete_lora": True,
         },
     }
 
@@ -295,14 +348,14 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
             "arm": (
                 "functional_decoder_nonheld_meta_shared_zero_carrier"
                 if meta_surface and code_condition == "shared_zero"
-                else "functional_decoder_nonheld_meta_projection"
-                if meta_surface
-                else "functional_decoder_train24_projection"
+                else (
+                    "functional_decoder_nonheld_meta_projection"
+                    if meta_surface
+                    else "functional_decoder_train24_projection"
+                )
             ),
             "asset": {
-                "decoder_checkpoint": _projection_file(
-                    manifest, "decoder_checkpoint"
-                ),
+                "decoder_checkpoint": _projection_file(manifest, "decoder_checkpoint"),
                 "held_codes": _projection_file(manifest, "held_codes"),
                 "profile_result": _projection_file(manifest, "profile_result"),
                 "decoder_frozen_for_held_code_fit": True,
@@ -311,6 +364,8 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         }
     if schema == PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA:
         return _phase_aligned_projection_contract(manifest)
+    if schema == ECP_STAGE1_STATIC_LORA_MANIFEST_SCHEMA:
+        return _ecp_static_lora_projection_contract(manifest)
     if schema in {
         ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA,
         ECP_STAGE1_OUTCOME_TASK_EXPERT_MANIFEST_SCHEMA,
@@ -337,25 +392,34 @@ def inspect_projected_task_expert_bank(
         (str(row["suite"]), int(row["task_id"])): dict(row) for row in base["tasks"]
     }
     evaluation_role = str(base.get("information_wall", {}).get("evaluation_role"))
-    leave_task_out = (
-        manifest.get("schema_version")
-        == ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA
+    static_lora = (
+        manifest.get("schema_version") == ECP_STAGE1_STATIC_LORA_MANIFEST_SCHEMA
     )
+    leave_task_out = manifest.get("schema_version") in {
+        ECP_STAGE1_MDCO_TASK_EXPERT_MANIFEST_SCHEMA,
+        ECP_STAGE1_STATIC_LORA_MANIFEST_SCHEMA,
+    }
     expected_oracle_role = (
         "nonheld_meta_oracle_only"
         if evaluation_role == "nonheld_meta"
-        else "development_train_leave_task_out_oracle_only"
-        if leave_task_out
-        else "development_train_oracle_only"
+        else (
+            "development_train_leave_task_out_oracle_only"
+            if leave_task_out
+            else "development_train_oracle_only"
+        )
     )
     if (
         manifest.get("repository", {}).get("dirty_paths") != []
-        or manifest.get("information_wall", {}).get("role")
-        != expected_oracle_role
+        or manifest.get("information_wall", {}).get("role") != expected_oracle_role
         or manifest.get("information_wall", {}).get("deployment_carrier") is not False
         or not set(projected).issubset(base_records)
         or (not leave_task_out and set(projected) != set(base_records))
-        or (leave_task_out and len(projected) != 5)
+        or (
+            static_lora
+            and len(projected)
+            != (1 if manifest.get("task_panel") == "profile_fit" else 5)
+        )
+        or (leave_task_out and not static_lora and len(projected) != 5)
     ):
         raise ExpertManifoldError("fixed-head projection manifest changed")
     tasks = []

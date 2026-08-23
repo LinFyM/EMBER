@@ -8,7 +8,7 @@
 - active design：`docs/event_conditioned_policy_compiler_design.md`；
 - active falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；当前没有task-owned worktree或active GPU job。
+- canonical workspace：本仓库`main`；Stage 1A独立member训练仍在下述detached frozen worktree运行。
 
 ## Current scientific state
 
@@ -54,6 +54,15 @@
 5. 直接运行原fixed250并按falsification card裁决；
 6. 暂停复盘。只有通过才轮换fold并进入shared video-to-effect学习。
 
+## Current implementation milestone
+
+- 已接通真实PI0.5 official prefix cache与10-step denoising路径：在同一policy observation/noise上与official action输出的
+  max-abs差约`0.00668`、RMS约`0.00208`，属于允许的BF16/batch reduction差异；
+- native owner为`[batch,38,4,128]`，同时保留`[batch,10,50,32]` flow与`[batch,10,50,7]` integrated action；
+- fixed-A路径只为38个target建立`Delta B`叶子；真实PI0.5 smoke中38/38梯度均finite且非零，峰值allocated约18.72GB；
+- 已实现48-state effect bank、stage-consistent particle soft-min、carrier barrier、preservation/trust及统一12-step solver；
+- profile不再借held5做量纲选择：另补ordinal71/global2的独立seed37 member、fixed50、四类occupancy和同构solver profile。
+
 ## Active formal launch contract: Stage 1A independent particles
 
 - frozen workspace：`/data1/user/ymdai/worktrees/EMBER-ecp-stage1a-4e00982`，detached clean pushed
@@ -71,6 +80,7 @@
   <ordinal> --stop-after-step 2000 --log-every 10`；实际Python来自canonical repo `.venv`；
 - retain/eval：step2000是预注册member；训练后fixed50 strict closed loop与occupancy capture只决定member authority是否完整，
   不回选step。失败或中断只允许从正式step1000 checkpoint exact-resume；不覆盖非空不兼容output。
+- live state：五个worker持续健康运行，step time约4.2秒；最后一次关键节点检查均已超过step750，尚未到step1000 checkpoint。
 
 ## Current blockers and risks
 

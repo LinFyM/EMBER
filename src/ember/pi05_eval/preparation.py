@@ -35,9 +35,12 @@ from ember.pi05_eval_queue import (
     publish_json_exclusive,
 )
 from ember.pi05_eval.occupancy_selection import (
+    ECP_STAGE1_OCCUPANCY_CAPTURE_SCHEMA,
+    ECP_STAGE1_OCCUPANCY_SELECTION_SCHEMA,
     MDCO_OCCUPANCY_SELECTION_SCHEMA,
     SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA,
     SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA,
+    ecp_stage1_occupancy_tasks,
     successful_expert_occupancy_tasks,
 )
 
@@ -55,15 +58,18 @@ PHASE_DECODER_FIT_OCCUPANCY_CAPTURE_SCHEMA = (
     "ember_phase_decoder_fit_projected_occupancy_capture_v1"
 )
 TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
-PHASE_DECODER_HELD_ORDINALS = (0, 5, 10, 15, 20)
-PHASE_DECODER_HELD_GLOBAL_IDS = (0, 9, 18, 25, 36)
-PHASE_DECODER_HELD_KEYS = (
+TRAIN24_FOLD0_HELD_ORDINALS = (0, 5, 10, 15, 20)
+TRAIN24_FOLD0_HELD_GLOBAL_IDS = (0, 9, 18, 25, 36)
+TRAIN24_FOLD0_HELD_KEYS = (
     ("libero_spatial", 0),
     ("libero_spatial", 9),
     ("libero_object", 8),
     ("libero_goal", 5),
     ("libero_10", 6),
 )
+TRAIN24_FOLD0_PROFILE_ORDINALS = (1,)
+TRAIN24_FOLD0_PROFILE_GLOBAL_IDS = (2,)
+TRAIN24_FOLD0_PROFILE_KEYS = (("libero_spatial", 2),)
 
 
 def _task_expert_diagnostic_subset(
@@ -78,6 +84,8 @@ def _task_expert_diagnostic_subset(
         return "successful_expert_equivalence_occupancy"
     if schema == PHASE_DECODER_FIT_OCCUPANCY_CAPTURE_SCHEMA:
         return "phase_decoder_fit_projected_occupancy"
+    if schema == ECP_STAGE1_OCCUPANCY_CAPTURE_SCHEMA:
+        return "ecp_stage1_occupancy_complete_support"
     return None
 
 
@@ -193,6 +201,16 @@ def _occupancy_capture_tasks(
     path = path.resolve()
     manifest = read_json(path)
     rows = tuple(dict(row) for row in manifest.get("rows", ()))
+    if manifest.get("schema_version") == ECP_STAGE1_OCCUPANCY_SELECTION_SCHEMA:
+        return ecp_stage1_occupancy_tasks(
+            args,
+            tasks,
+            output_dir=output_dir,
+            writer_kind=writer_kind,
+            selection_path=path,
+            manifest=manifest,
+            rows=rows,
+        )
     if manifest.get("schema_version") in {
         SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA,
         MDCO_OCCUPANCY_SELECTION_SCHEMA,
@@ -206,10 +224,7 @@ def _occupancy_capture_tasks(
             manifest=manifest,
             rows=rows,
         )
-    if (
-        manifest.get("schema_version")
-        == SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA
-    ):
+    if manifest.get("schema_version") == SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA:
         return _successful_expert_equivalence_tasks(
             args,
             tasks,
@@ -280,28 +295,42 @@ def _occupancy_capture_tasks(
 
 def _phase_decoder_subset_manifest(
     manifest: Mapping[str, Any], args: Any
-) -> tuple[tuple[int, ...], tuple[int, ...], tuple[tuple[str, int], ...]]:
+) -> tuple[tuple[int, ...], tuple[int, ...], tuple[tuple[str, int], ...], str]:
     ordinals = tuple(int(value) for value in manifest.get("task_ordinals", ()))
     global_ids = tuple(int(value) for value in manifest.get("global_task_ids", ()))
     declared_tasks = tuple(manifest.get("tasks", ()))
     declared_keys = tuple(
-        (str(row.get("suite")), int(row.get("task_id", -1)))
-        for row in declared_tasks
+        (str(row.get("suite")), int(row.get("task_id", -1))) for row in declared_tasks
+    )
+    panel = (
+        "train24_fold0_held5"
+        if (
+            ordinals == TRAIN24_FOLD0_HELD_ORDINALS
+            and global_ids == TRAIN24_FOLD0_HELD_GLOBAL_IDS
+            and declared_keys == TRAIN24_FOLD0_HELD_KEYS
+        )
+        else (
+            "train24_fold0_profile1"
+            if (
+                ordinals == TRAIN24_FOLD0_PROFILE_ORDINALS
+                and global_ids == TRAIN24_FOLD0_PROFILE_GLOBAL_IDS
+                and declared_keys == TRAIN24_FOLD0_PROFILE_KEYS
+            )
+            else "unsupported"
+        )
     )
     if (
         manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
         or manifest.get("role") != args.role
         or manifest.get("mode") != args.mode
         or int(manifest.get("state_count", -1)) != args.state_count
-        or ordinals != PHASE_DECODER_HELD_ORDINALS
-        or global_ids != PHASE_DECODER_HELD_GLOBAL_IDS
+        or panel == "unsupported"
         or tuple(int(row.get("global_task_id", -1)) for row in declared_tasks)
         != global_ids
-        or declared_keys != PHASE_DECODER_HELD_KEYS
         or manifest.get("outcome_dependence") is not False
     ):
         raise Pi05EvaluationError("formal task subset selection changed")
-    return ordinals, global_ids, declared_keys
+    return ordinals, global_ids, declared_keys, panel
 
 
 def _task_subset_tasks(
@@ -322,7 +351,7 @@ def _task_subset_tasks(
     ):
         raise Pi05EvaluationError("formal task subset request changed")
     path = path.resolve()
-    ordinals, global_ids, declared_keys = _phase_decoder_subset_manifest(
+    ordinals, global_ids, declared_keys, panel = _phase_decoder_subset_manifest(
         read_json(path), args
     )
     by_key = {(str(task.suite), int(task.task_id)): task for task in tasks}
@@ -337,7 +366,7 @@ def _task_subset_tasks(
         "selection_bytes": path.stat().st_size,
         "task_ordinals": list(ordinals),
         "global_task_ids": list(global_ids),
-        "diagnostic_subset": "phase_aligned_decoder_held5",
+        "diagnostic_subset": panel,
         "outcome_dependence": False,
         "validation_use": False,
         "test_use": False,
@@ -407,9 +436,7 @@ def _successful_expert_equivalence_tasks(
             if (str(row["suite"]), int(row["task_id"]))
             == (str(task.suite), int(task.task_id))
         ]
-        if matching and any(
-            row.get("language") != task.language for row in matching
-        ):
+        if matching and any(row.get("language") != task.language for row in matching):
             raise Pi05EvaluationError("successful-expert equivalence language changed")
         state_ids = tuple(
             state_id
@@ -469,8 +496,7 @@ def _phase_decoder_fit_occupancy_tasks(
         or len(fit_tasks) != 19
         or len(keys) != 30
         or any(int(row["ordinal"]) % 5 == 0 for row in fit_members)
-        or fit_ordinals
-        != tuple(ordinal for ordinal in range(24) if ordinal % 5 != 0)
+        or fit_ordinals != tuple(ordinal for ordinal in range(24) if ordinal % 5 != 0)
         or any(int(row["code_index"]) != index for index, row in enumerate(members))
     ):
         raise Pi05EvaluationError("phase-decoder fit occupancy selection changed")
@@ -526,6 +552,10 @@ def _stage_predicate_capture(
         )
         or (
             diagnostic_subset == "successful_expert_equivalence_occupancy"
+            and args.role == "development_train"
+        )
+        or (
+            diagnostic_subset == "ecp_stage1_occupancy_complete_support"
             and args.role == "development_train"
         )
     ):
@@ -606,6 +636,9 @@ def _prepared_payload(
     inspect_complete_bank = (
         diagnostic_subset is not None
         and writer_kind == "task_expert"
+        and not bool(
+            occupancy_capture and occupancy_capture.get("adapter_is_declared_subset")
+        )
         and not (
             task_subset is not None
             and getattr(args, "task_expert_projection_manifest", None) is not None

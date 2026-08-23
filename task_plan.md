@@ -48,9 +48,9 @@ occupancy，不能作为ECP最终反证。
 
 - [ ] 为fold0五项各训练一个不同seed的独立rank16 task expert；只读train actions，固定step2000，不按task选step；
 - [ ] 对新member跑fixed50 closed loop，至少捕获一条strict-success完整occupancy；
-- [ ] 复用现有earliest/latest成功occupancy与stable carrier，不重复大规模资产；
+- [x] 复用现有earliest/latest成功occupancy与stable carrier，不重复大规模资产；
 - [ ] 收集每task四类等权state bank：8 initial、24 successful、8 prior-candidate、8 recovery；
-- [ ] 在官方双相机policy prefix和同一fixed antithetic noise上缓存source/carrier/三个member的owner/flow/action particles；
+- [x] 实现官方双相机policy prefix、fixed antithetic noise及source/carrier/三个member的owner/flow/action particle缓存；
 - [ ] 报告member independence、success union、state/stage覆盖、disagreement和video-observable/recovery信息分界。
 
 **Gate 1A：** 每task至少两个独立optimization lineages有strict success；48个anchor四类齐全；particle轴未被均值压平；
@@ -58,8 +58,8 @@ Goal/Long也有成功member与完整occupancy。未通过则先补teacher author
 
 ## Phase C — Stage 1B fixed-A privileged realization
 
-- [ ] 从verified stable carrier出发，固定全部`A_c`，只优化`Delta B`，确保zero correction精确返回carrier且无A/B交叉项；
-- [ ] 实现stage-consistent particle soft-min、carrier no-worse barrier、source/shared preservation、trust与category balance；
+- [x] 从verified stable carrier出发，固定全部`A_c`，只优化`Delta B`，确保zero correction精确返回carrier且无A/B交叉项；
+- [x] 实现stage-consistent particle soft-min、carrier no-worse barrier、source/shared preservation、trust与category balance；
 - [ ] 在一个fit task做真实数值/吞吐profile，只修正OOM、batching或明显量纲错误；
 - [ ] 从clean pushed commit并行求解held5五套task-local rank16 oracle LoRA；
 - [ ] 第一次完整设计后直接跑原fixed250 strict closed loop，不用geometry预筛；

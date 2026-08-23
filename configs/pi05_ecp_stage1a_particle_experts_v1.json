@@ -79,10 +79,11 @@
         1000,
         2000
       ],
-      "allowed_worker_count": 5,
+      "allowed_worker_count": 6,
       "tasks_per_worker": 1,
       "task_indices": [
         0,
+        1,
         5,
         10,
         15,

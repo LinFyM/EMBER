@@ -20,19 +20,26 @@ class NativeObserverOutput:
     flow_velocity: torch.Tensor
 
 
+@dataclass(frozen=True)
+class NativeActionStepOutput:
+    """Action-side states from one cached-prefix PI0.5 denoising step."""
+
+    owner_lattice: torch.Tensor
+    flow_velocity: torch.Tensor
+
+
 class ActionLayerStateCapture(AbstractContextManager["ActionLayerStateCapture"]):
     def __init__(self, expert_model: torch.nn.Module, *, detach: bool) -> None:
         self.expert_model = expert_model
         self.detach = detach
-        self.values: list[torch.Tensor | None] = [None] * (
-            len(expert_model.layers) + 1
-        )
+        self.values: list[torch.Tensor | None] = [None] * (len(expert_model.layers) + 1)
         self.handles: list[torch.utils.hooks.RemovableHandle] = []
 
     def __enter__(self) -> "ActionLayerStateCapture":
         modules = [layer.input_layernorm for layer in self.expert_model.layers]
         modules.append(self.expert_model.norm)
         for index, module in enumerate(modules):
+
             def hook(
                 _module: torch.nn.Module,
                 inputs: tuple[torch.Tensor, ...],
@@ -90,9 +97,11 @@ class TargetOwnerProjector(torch.nn.Module):
             "owner_layer_ids",
             torch.tensor(
                 [
-                    owner.layer
-                    if owner.layer is not None
-                    else (17 if owner.family is TargetFamily.ACTION_OUT else 0)
+                    (
+                        owner.layer
+                        if owner.layer is not None
+                        else (17 if owner.family is TargetFamily.ACTION_OUT else 0)
+                    )
                     for owner in owners
                 ]
             ),
@@ -105,16 +114,12 @@ class TargetOwnerProjector(torch.nn.Module):
         )
         self.register_buffer(
             "action_in_mask",
-            torch.tensor(
-                [owner.family is TargetFamily.ACTION_IN for owner in owners]
-            ),
+            torch.tensor([owner.family is TargetFamily.ACTION_IN for owner in owners]),
             persistent=False,
         )
         self.register_buffer(
             "action_out_mask",
-            torch.tensor(
-                [owner.family is TargetFamily.ACTION_OUT for owner in owners]
-            ),
+            torch.tensor([owner.family is TargetFamily.ACTION_OUT for owner in owners]),
             persistent=False,
         )
 
@@ -140,16 +145,12 @@ class TargetOwnerProjector(torch.nn.Module):
         action_in = state[:, 0, None] + delta[:, 0, None] + noise[:, None]
         final_state = self.state_projection(layer_states[:, -1])
         action_out = final_state[:, None] + delta[:, -1, None] + velocity[:, None]
-        value = torch.where(
-            self.action_in_mask[None, :, None, None], action_in, value
-        )
+        value = torch.where(self.action_in_mask[None, :, None, None], action_in, value)
         value = torch.where(
             self.action_out_mask[None, :, None, None], action_out, value
         )
         layer_bias = self.layer_embedding(self.owner_layer_ids)
-        value = value + (
-            layer_bias * self.layer_owner_mask[:, None]
-        )[None, :, None]
+        value = value + (layer_bias * self.layer_owner_mask[:, None])[None, :, None]
         family_bias = self.family_embedding(self.family_ids)[None, :, None]
         return self.output_norm(value + family_bias)
 
@@ -169,9 +170,7 @@ class ECPNativeObserver(torch.nn.Module):
     ) -> None:
         super().__init__()
         self.image_tokens = image_tokens
-        self.patch_projection = torch.nn.Linear(
-            prefix_width, program_width, bias=False
-        )
+        self.patch_projection = torch.nn.Linear(prefix_width, program_width, bias=False)
         self.language_projection = torch.nn.Linear(
             prefix_width, program_width, bias=False
         )
@@ -180,6 +179,47 @@ class ECPNativeObserver(torch.nn.Module):
             expert_width=expert_width,
             program_width=program_width,
             padded_action_dim=padded_action_dim,
+        )
+
+    def observe_action_step(
+        self,
+        core: torch.nn.Module,
+        prefix_padding: torch.Tensor,
+        past_key_values: object,
+        suffix_noise: torch.Tensor,
+        flow_time: torch.Tensor,
+        *,
+        track_action_adapter_grad: bool = False,
+        action_adapter_context: AbstractContextManager[None] | None = None,
+    ) -> NativeActionStepOutput:
+        """Observe the native Action Expert while reusing an official prefix cache."""
+
+        expert_model = core.paligemma_with_expert.gemma_expert.model
+        grad_context = (
+            torch.enable_grad() if track_action_adapter_grad else torch.no_grad()
+        )
+        adapter_context = action_adapter_context or nullcontext()
+        with (
+            grad_context,
+            adapter_context,
+            ActionLayerStateCapture(
+                expert_model, detach=not track_action_adapter_grad
+            ) as capture,
+        ):
+            flow_velocity = core.denoise_step(
+                prefix_pad_masks=prefix_padding,
+                past_key_values=past_key_values,
+                x_t=suffix_noise,
+                timestep=flow_time,
+            )
+            layer_states = capture.stacked()
+        if layer_states.shape[1:3] != (19, ACTION_HORIZON):
+            raise RuntimeError("PI0.5 Action Expert observer topology changed")
+        return NativeActionStepOutput(
+            owner_lattice=self.projector(layer_states, flow_velocity, suffix_noise),
+            flow_velocity=(
+                flow_velocity if track_action_adapter_grad else flow_velocity.detach()
+            ),
         )
 
     def forward(
@@ -201,7 +241,9 @@ class ECPNativeObserver(torch.nn.Module):
             suffix_noise, flow_time
         )
         padding = torch.cat((prefix_padding, suffix_padding), dim=1)
-        attention = torch.cat((torch.zeros_like(prefix_padding), suffix_attention), dim=1)
+        attention = torch.cat(
+            (torch.zeros_like(prefix_padding), suffix_attention), dim=1
+        )
         mask = core._prepare_attention_masks_4d(make_att_2d_masks(padding, attention))
         positions = torch.cumsum(padding, dim=1) - 1
         target_dtype = expert_model.layers[0].self_attn.q_proj.weight.dtype
@@ -209,9 +251,13 @@ class ECPNativeObserver(torch.nn.Module):
             torch.enable_grad() if track_action_adapter_grad else torch.no_grad()
         )
         adapter_context = action_adapter_context or nullcontext()
-        with grad_context, adapter_context, ActionLayerStateCapture(
-            expert_model, detach=not track_action_adapter_grad
-        ) as capture:
+        with (
+            grad_context,
+            adapter_context,
+            ActionLayerStateCapture(
+                expert_model, detach=not track_action_adapter_grad
+            ) as capture,
+        ):
             (prefix_hidden, suffix_hidden), _ = bridge.forward(
                 attention_mask=mask,
                 position_ids=positions,
@@ -229,14 +275,10 @@ class ECPNativeObserver(torch.nn.Module):
         if layer_states.shape[1:3] != (19, ACTION_HORIZON):
             raise RuntimeError("PI0.5 Action Expert observer topology changed")
         frozen_prefix = prefix_hidden.detach()
-        patch_states = self.patch_projection(
-            frozen_prefix[:, : self.image_tokens]
-        )
+        patch_states = self.patch_projection(frozen_prefix[:, : self.image_tokens])
         language_states = self.language_projection(
             frozen_prefix[:, self.image_tokens :]
-        ).masked_fill(
-            ~prefix_padding[:, self.image_tokens :, None], 0.0
-        )
+        ).masked_fill(~prefix_padding[:, self.image_tokens :, None], 0.0)
         lattice = self.projector(layer_states, flow_velocity, suffix_noise)
         return NativeObserverOutput(
             owner_lattice=lattice,

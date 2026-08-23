@@ -88,8 +88,7 @@ def _train24_config_is_valid(config: Mapping[str, Any]) -> bool:
         and int(experts.get("episodes_per_task", -1)) == 50
         and experts.get("demo_indices") == [0, 49]
         and int(experts.get("action_chunk_size", -1)) == 50
-        and experts.get("lora_topology")
-        == "configs/pi05_lora_v1.json:38targets:rank16"
+        and experts.get("lora_topology") == "configs/pi05_lora_v1.json:38targets:rank16"
         and experts.get("task_parameter_sharing") == "none"
         and formal.get("status") == "sealed"
         and int(formal.get("total_steps", -1)) == 2000
@@ -132,8 +131,7 @@ def _ecp_particle_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
         and int(experts.get("episodes_per_task", -1)) == 50
         and experts.get("demo_indices") == [0, 49]
         and int(experts.get("action_chunk_size", -1)) == 50
-        and experts.get("lora_topology")
-        == "configs/pi05_lora_v1.json:38targets:rank16"
+        and experts.get("lora_topology") == "configs/pi05_lora_v1.json:38targets:rank16"
         and experts.get("task_parameter_sharing") == "none"
         and experts.get("particle_role")
         == "independent_stage1a_successful_policy_lineage"
@@ -142,17 +140,15 @@ def _ecp_particle_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
         and int(formal.get("total_steps", -1)) == 2000
         and int(formal.get("per_task_batch_size", -1)) == 16
         and formal.get("checkpoint_steps") == [1000, 2000]
-        and int(formal.get("allowed_worker_count", -1)) == 5
+        and int(formal.get("allowed_worker_count", -1)) == 6
         and int(formal.get("tasks_per_worker", -1)) == 1
-        and formal.get("task_indices") == [0, 5, 10, 15, 20]
+        and formal.get("task_indices") == [0, 1, 5, 10, 15, 20]
         and int(formal.get("selected_stop_step", -1)) == 2000
         and formal.get("stage_stop_steps") == [1000, 2000]
         and formal.get("checkpoint_selection")
         == "fixed_step2000_before_new_member_closed_loop"
         and formal.get("profile_authority", {}).get("device") == "NVIDIA A40"
-        and int(
-            formal.get("profile_authority", {}).get("per_task_batch_size", -1)
-        )
+        and int(formal.get("profile_authority", {}).get("per_task_batch_size", -1))
         == 16
         and config.get("content_hash_policy") == "disabled_by_owner"
     )
@@ -166,13 +162,19 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
     valid = (
         _train24_config_is_valid(config)
         if schema == CONFIG_SCHEMA
-        else _ecp_particle_expert_config_is_valid(config)
-        if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
-        else meta_expert_config_is_valid(config)
-        if schema == META_EXPERT_CONFIG_SCHEMA
-        else validation_expert_config_is_valid(config)
-        if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
-        else False
+        else (
+            _ecp_particle_expert_config_is_valid(config)
+            if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
+            else (
+                meta_expert_config_is_valid(config)
+                if schema == META_EXPERT_CONFIG_SCHEMA
+                else (
+                    validation_expert_config_is_valid(config)
+                    if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
+                    else False
+                )
+            )
+        )
     )
     if not valid:
         raise ExpertManifoldError("task-expert scientific boundary changed")
@@ -296,7 +298,7 @@ def validate_formal_task_assignment(
         allowed = {(int(index),) for index in formal["task_indices"]}
         if tuple(indices) not in allowed:
             raise ExpertManifoldError(
-                "formal ECP particle expert is outside the fixed held5 panel"
+                "formal ECP particle expert is outside the fixed profile/held panel"
             )
         return
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:

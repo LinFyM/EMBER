@@ -17,7 +17,7 @@
     "task_experts": "configs/pi05_video_expert_manifold_v1.json",
     "evaluation": "configs/pi05_target_evaluation_v1.json",
     "lora_contract": "configs/pi05_lora_v1.json",
-    "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json"
+    "held_evaluation_selection": "configs/pi05_train24_fold0_held5_eval_v1.json"
   },
   "roles": {
     "fit_task_ordinals": [

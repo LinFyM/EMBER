@@ -46,6 +46,9 @@ objective固定包括stage-consistent member-particle soft minimum、carrier no-
 trust和category/stage balance。solver沿用12 steps、inverse-sqrt decay与owner-normalized gradient；不early-stop、不挑step、
 不保存task-local optimizer。一次fit-task profile只拥有数值与资源修正权，不拥有科学调参权。
 
+fit-task profile固定使用Stage 1 ordinal 71 / target global ID 2，并为它补同seed37、step2000的独立member和同构48-state
+occupancy bank；不能用held5的loss走势反向修改solver量纲、batching或步长。
+
 ## Direct closed-loop decision
 
 final step12直接跑原held5 fixed250 strict paired panel。通过条件同时为：

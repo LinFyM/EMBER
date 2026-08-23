@@ -62,7 +62,7 @@ def test_task_expert_config_contains_only_the_retained_train24_authority() -> No
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
 
 
-def test_ecp_particle_experts_are_independent_fixed_step_held5_lineages() -> None:
+def test_ecp_particle_experts_cover_fixed_profile_and_held_lineages() -> None:
     config = load_task_expert_config(ECP_PARTICLE_CONFIG)
     experts = config["task_experts"]
     assert experts["optimization"]["seed"] != 7
@@ -70,7 +70,7 @@ def test_ecp_particle_experts_are_independent_fixed_step_held5_lineages() -> Non
     for index in experts["formal_run"]["task_indices"]:
         validate_formal_task_assignment(config, (index,))
     with pytest.raises(ExpertManifoldError):
-        validate_formal_task_assignment(config, (1,))
+        validate_formal_task_assignment(config, (3,))
 
 
 def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> None:

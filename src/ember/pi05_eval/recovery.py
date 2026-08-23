@@ -36,7 +36,9 @@ TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "successful_on_policy_occupancy",
     "successful_expert_equivalence_occupancy",
     "phase_decoder_fit_projected_occupancy",
-    "phase_aligned_decoder_held5",
+    "train24_fold0_held5",
+    "train24_fold0_profile1",
+    "ecp_stage1_occupancy_complete_support",
 }
 
 
@@ -84,9 +86,7 @@ def _reinspect_adapter(
         if subset in TASK_EXPERT_DIAGNOSTIC_SUBSETS:
             inspection_tasks = tuple(
                 argparse.Namespace(suite=row[0], task_id=int(row[1]))
-                for row in adapter["information_wall"].get(
-                    "inspection_task_keys", ()
-                )
+                for row in adapter["information_wall"].get("inspection_task_keys", ())
             )
         inspected = inspect_task_expert_adapter(
             config_path=Path(adapter["config"]["path"]),
@@ -188,8 +188,7 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
     if task_subset is not None:
         path = Path(str(task_subset.get("selection_path", "")))
         if (
-            task_subset.get("schema_version")
-            != "ember_pi05_task_subset_selection_v1"
+            task_subset.get("schema_version") != "ember_pi05_task_subset_selection_v1"
             or not path.is_file()
             or path.stat().st_size != int(task_subset.get("selection_bytes", -1))
         ):

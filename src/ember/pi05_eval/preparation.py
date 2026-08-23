@@ -351,11 +351,11 @@ def _task_subset_tasks(
     path = getattr(args, "task_subset_selection", None)
     if path is None:
         return tuple(tasks), None
+    subset_mode = (str(args.mode), int(args.state_count))
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or args.mode != "formal"
+        or subset_mode not in {("screen", 10), ("formal", 50)}
         or args.role != "development_train"
-        or args.state_count != 50
         or writer_kind not in {None, "task_expert", FUNCTIONAL_CODE_WRITER_KIND}
     ):
         raise Pi05EvaluationError("formal task subset request changed")
@@ -367,8 +367,8 @@ def _task_subset_tasks(
     if len(by_key) != len(tasks) or any(key not in by_key for key in declared_keys):
         raise Pi05EvaluationError("installed target task identities overlap")
     selected = tuple(by_key[key] for key in declared_keys)
-    if any(len(task.init_state_ids) != 50 for task in selected):
-        raise Pi05EvaluationError("formal task subset lost fixed initial states")
+    if any(len(task.init_state_ids) != args.state_count for task in selected):
+        raise Pi05EvaluationError("task subset lost its fixed initial states")
     return selected, {
         "schema_version": TASK_SUBSET_SELECTION_SCHEMA,
         "selection_path": str(path),

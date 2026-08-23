@@ -81,8 +81,8 @@ null-code-to-zero-residual约束。不用held loss、held checkpoint selection�
 
 1. 先完成CPU asset/shape audit与一个GPU capture profile；profile只固定microbatch与显存，不选方法；
 2. 用单节点最多6张有效GPU一次捕获118 members，按member shard并行，不重跑task experts或大规模训练；
-3. fold0 formal realizer固定1000 optimizer steps，保留step800和1000两个相邻节点；先用不超过50 rows的
-   invalidity screen排除serialization、all-zero或明显低于carrier，不用screen选checkpoint；
+3. fold0 formal realizer固定1000 optimizer steps，保留step800和1000两个相邻节点；先对step1000使用held5各自前10个
+   fixed init states形成50-row invalidity screen，排除serialization、all-zero或明显低于carrier，不用screen选checkpoint；
 4. screen有基本信号后，step800和1000均运行预登记held5 strict paired250。每task统一使用`latest`
    successful member的privileged code，不按task挑member、video、code或checkpoint；只生成一套完整LoRA。
 

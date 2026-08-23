@@ -12,6 +12,7 @@ from ember.expert_manifold.contract import (
     parse_resume_task,
     parse_task_indices,
     resolve_runtime,
+    validate_formal_task_assignment,
     worker_stage_resume_step,
 )
 from ember.writer.data import WriterTaskAuthority
@@ -47,6 +48,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
 META_CONFIG = REPO_ROOT / "configs/pi05_nonheld_meta_expert_bank_v1.json"
 VALIDATION_CONFIG = REPO_ROOT / "configs/pi05_validation_expert_diagnostic_v1.json"
+ECP_PARTICLE_CONFIG = REPO_ROOT / "configs/pi05_ecp_stage1a_particle_experts_v1.json"
 
 
 def test_task_expert_config_contains_only_the_retained_train24_authority() -> None:
@@ -58,6 +60,17 @@ def test_task_expert_config_contains_only_the_retained_train24_authority() -> No
     assert "meta_training" not in config
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
+
+
+def test_ecp_particle_experts_are_independent_fixed_step_held5_lineages() -> None:
+    config = load_task_expert_config(ECP_PARTICLE_CONFIG)
+    experts = config["task_experts"]
+    assert experts["optimization"]["seed"] != 7
+    assert experts["formal_run"]["checkpoint_selection"].startswith("fixed_step2000")
+    for index in experts["formal_run"]["task_indices"]:
+        validate_formal_task_assignment(config, (index,))
+    with pytest.raises(ExpertManifoldError):
+        validate_formal_task_assignment(config, (1,))
 
 
 def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> None:

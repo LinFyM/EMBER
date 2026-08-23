@@ -37,6 +37,7 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = "ember_pi05_video_expert_manifold_v1"
+ECP_PARTICLE_EXPERT_CONFIG_SCHEMA = "ember_pi05_ecp_particle_expert_v1"
 WORKER_CONTRACT_SCHEMA = "ember_pi05_task_expert_worker_launch_v1"
 
 
@@ -111,6 +112,52 @@ def _train24_config_is_valid(config: Mapping[str, Any]) -> bool:
     )
 
 
+def _ecp_particle_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
+    experts = config.get("task_experts", {})
+    formal = experts.get("formal_run", {})
+    authorities = config.get("authorities", {})
+    return (
+        config.get("schema_version") == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
+        and config.get("status") == "sealed_ecp_stage1a_particle_authority"
+        and set(authorities)
+        == {
+            "target_data_manifest",
+            "evaluation_config",
+            "lora_contract",
+            "source_base_config",
+        }
+        and all(authority_path(config, name).is_file() for name in authorities)
+        and _information_wall_matches(config.get("information_wall", {}))
+        and int(experts.get("task_count", -1)) == 24
+        and int(experts.get("episodes_per_task", -1)) == 50
+        and experts.get("demo_indices") == [0, 49]
+        and int(experts.get("action_chunk_size", -1)) == 50
+        and experts.get("lora_topology")
+        == "configs/pi05_lora_v1.json:38targets:rank16"
+        and experts.get("task_parameter_sharing") == "none"
+        and experts.get("particle_role")
+        == "independent_stage1a_successful_policy_lineage"
+        and int(experts.get("optimization", {}).get("seed", 7)) != 7
+        and formal.get("status") == "sealed"
+        and int(formal.get("total_steps", -1)) == 2000
+        and int(formal.get("per_task_batch_size", -1)) == 16
+        and formal.get("checkpoint_steps") == [1000, 2000]
+        and int(formal.get("allowed_worker_count", -1)) == 5
+        and int(formal.get("tasks_per_worker", -1)) == 1
+        and formal.get("task_indices") == [0, 5, 10, 15, 20]
+        and int(formal.get("selected_stop_step", -1)) == 2000
+        and formal.get("stage_stop_steps") == [1000, 2000]
+        and formal.get("checkpoint_selection")
+        == "fixed_step2000_before_new_member_closed_loop"
+        and formal.get("profile_authority", {}).get("device") == "NVIDIA A40"
+        and int(
+            formal.get("profile_authority", {}).get("per_task_batch_size", -1)
+        )
+        == 16
+        and config.get("content_hash_policy") == "disabled_by_owner"
+    )
+
+
 def load_task_expert_config(path: Path) -> dict[str, Any]:
     """Load either the retained train24 or non-held meta expert authority."""
 
@@ -119,6 +166,8 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
     valid = (
         _train24_config_is_valid(config)
         if schema == CONFIG_SCHEMA
+        else _ecp_particle_expert_config_is_valid(config)
+        if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
         else meta_expert_config_is_valid(config)
         if schema == META_EXPERT_CONFIG_SCHEMA
         else validation_expert_config_is_valid(config)
@@ -243,6 +292,13 @@ def validate_formal_task_assignment(
     config: Mapping[str, Any], indices: Sequence[int]
 ) -> None:
     formal = config["task_experts"]["formal_run"]
+    if config.get("schema_version") == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA:
+        allowed = {(int(index),) for index in formal["task_indices"]}
+        if tuple(indices) not in allowed:
+            raise ExpertManifoldError(
+                "formal ECP particle expert is outside the fixed held5 panel"
+            )
+        return
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
         if tuple(indices) not in meta_worker_assignments(formal):
             raise ExpertManifoldError(

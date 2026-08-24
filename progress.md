@@ -36,7 +36,11 @@
 - active composite bootstrap data contract：`docs/ecp_composite_teacher_bootstrap_data_20260824.md`；
 - composite bootstrap data evidence：
   `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`；
-- active composite expert train/Gate A4 contract：`docs/ecp_composite_teacher_expert_gate_20260824.md`；
+- completed fixed-step1000 composite expert contract：`docs/ecp_composite_teacher_expert_gate_20260824.md`；
+- active one-round on-policy distillation/Gate A4 successor：
+  `docs/ecp_composite_teacher_distillation_gate_20260824.md`；
+- composite step1000/preformal state0 evidence：
+  `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -54,7 +58,8 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
-- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`。当前没有active GPU job。
+- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`，最新formal training authority为
+  clean pushed `38dbffd`。当前没有active GPU job。
   process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
   shared-realizer与phase-composed primitive-teacher mechanisms关闭。Gate B、process suite、fresh Program、`q_pi/q_V`及
   joint Writer均未启动。
@@ -109,6 +114,17 @@
   精确匹配原completion steps、0 divergence；两份HDF5分别为`3,728,011,012`与`1,277,410,960` bytes，含
   `9,479/3,248` action rows，标准training dataset读取门通过。它只授权训练privileged composite experts，尚未通过
   process teacher Gate或授权Gate B。
+- 两个order-specific composite rank16 experts已从clean pushed detached `38dbffd`各训练固定1000 steps；两套worker均exit0、
+  各有1000行metrics和唯一step1000 checkpoint，首末50-step mean loss分别为`.13563→.11336`与`.12407→.10331`。
+  但Gate A4 state0资格检查双向0/1：red-first在step114 wrong-first invalid，yellow-first在step114完成首事件后到400仍未完成
+  red。故原100行formal未启动，正常loss不能替代闭环资格。
+- 零新rollout paired forward排除了data/adapter route：bootstrap action与ledger逐项一致；两个composite update cosine仅`.505`；
+  primitive phase expert能在相同observation/noise近乎精确复现标签。composite checkpoint在原transition observation上可改善
+  executed-prefix误差，且yellow完整50-token误差优于source，却仍在自身闭环occupancy失败。最早接口是successful-trajectory
+  50-token SFT缺少policy自身访问与恢复状态，不是再延长SFT或扫超参。
+- 当前唯一active修正为一轮on-policy phase-expert distillation：固定step1000 composite policy访问原50 states，phase expert仅在
+  训练采集时按相同observation/noise提供50-step privileged label；从step1000权重fresh optimizer固定训练两遍数据，再直接回到
+  不变Gate A4。state0 collector smoke已验证23个queries、标签与原primitive teacher首chunk逐项一致。Gate B仍未授权。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

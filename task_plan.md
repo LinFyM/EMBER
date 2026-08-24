@@ -223,8 +223,12 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   合同；确定性action replay补齐逐步8维policy state，复用原public RGB与actions，不重跑PI0.5；
 - [x] 从clean pushed frozen `b8fb0bf`构建28条与9条两个composite HDF5；37/37 replay精确匹配、0 divergence，
   标准training dataset读取通过；
-- [ ] 从同一source分别训练两个fixed-step1000 order-specific composite experts，并在原50×2状态面板报告bootstrap
-  retention与原失败state acquisition；不得把task66/67同机制full formal或Gate参数调整当下一版本；
+- [x] 从同一source分别训练两个fixed-step1000 order-specific composite experts；两套训练均完整结束且loss下降，但state0
+  预正式资格双向失败，故没有浪费性启动原50×2 formal面板；零新rollout定位排除adapter/data route，并把最早失败锁定为
+  successful-occupancy SFT没有覆盖policy自身访问与恢复状态；
+- [ ] 按`docs/ecp_composite_teacher_distillation_gate_20260824.md`只做一轮固定on-policy phase-expert distillation：完整收集
+  两variant各50条behavior episodes、从step1000权重fresh optimizer训练两遍数据，随后直接重跑不变的Gate A4；不得增加
+  第二轮DAgger、step/LR/rank/seed小扫或按state选择checkpoint；
 - [ ] 只有新的双向composite teacher通过后，才运行Gate B：correct video胜sibling wrong，而language-only/no-video/first+final
   不能区分，且无variant leakage；
 - [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；

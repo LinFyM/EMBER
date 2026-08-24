@@ -1541,6 +1541,22 @@ step1000 composite experts，再在原50×2面板报告bootstrap retention与原
 Gate B、process suite和deployment compiler仍不启动。证据：
 `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`。
 
+### 3.79 fixed-step1000 composite SFT未通过state0，转入唯一一轮on-policy phase-expert distillation
+
+两个order-specific rank16 LoRA已从clean pushed detached `38dbffd34951cd4d6c76584f137d0e870bdbe073`各完成固定1000步，
+worker均exit0、各1000行metrics，mean loss分别`.135630→.113355`与`.124071→.103308`。Gate A4 state0资格检查却双向
+non-pass：red-first在step114 wrong-first invalid；yellow-first在step114完成第一事件后，到400仍未完成第二事件。正式100行
+面板因此没有启动。
+
+paired离线诊断确认bootstrap动作authority、adapter差异与primitive teacher复现都正确，并发现composite checkpoint可改善原
+成功trajectory transition上的局部误差或后45 token，但不能稳定控制实际执行前5 token及自身访问状态。最早失效接口定位为
+successful-occupancy SFT的闭环distribution shift。后继合同只允许一轮：固定step1000 policy收集两variant各50条on-policy
+episodes，在每个replan state由对应phase expert提供相同observation/noise下的privileged 50-step标签；从step1000权重fresh
+optimizer固定训练两遍数据后直接重跑原Gate A4，不做第二轮或超参救援。state0采集smoke的23个queries已通过标签逐项对齐。
+
+合同：`docs/ecp_composite_teacher_distillation_gate_20260824.md`；证据：
+`docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

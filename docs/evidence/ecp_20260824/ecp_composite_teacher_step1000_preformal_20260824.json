@@ -1,0 +1,72 @@
+{
+  "schema_version": "ember_ecp_composite_teacher_step1000_preformal_evidence_v1",
+  "status": "preformal_gate_failed",
+  "training_commit": "38dbffd34951cd4d6c76584f137d0e870bdbe073",
+  "training_contract": "docs/ecp_composite_teacher_expert_gate_20260824.md",
+  "successor_contract": "docs/ecp_composite_teacher_distillation_gate_20260824.md",
+  "training_output": "runs/outputs/pi05_ecp_composite_teacher_experts_step1000_38dbffd_gpu02p01_20260824",
+  "state0_output": "runs/outputs/pi05_ecp_composite_teacher_gate_a4_state0_smoke_38dbffd_20260824",
+  "training": {
+    "variants": 2,
+    "optimizer_steps_each": 1000,
+    "metrics_rows_each": 1000,
+    "worker_exit_codes": [0, 0],
+    "first50_last50_loss_mean": {
+      "red_left_then_yellow_white_right": [0.13563047781586646, 0.1133552524447441],
+      "yellow_white_right_then_red_left": [0.12407137647271156, 0.10330839224159717]
+    },
+    "adapter_tensors_each": 76,
+    "adapter_bytes_each": 2654208
+  },
+  "state0_qualification": {
+    "red_left_then_yellow_white_right": {
+      "success": false,
+      "invalid": true,
+      "invalid_reason": "wrong_or_simultaneous_first_satisfaction",
+      "steps": 114,
+      "completion_steps": {}
+    },
+    "yellow_white_right_then_red_left": {
+      "success": false,
+      "invalid": false,
+      "steps": 400,
+      "completion_steps": {"yellow_white_right": 114}
+    },
+    "formal_100_rows_launched": false
+  },
+  "zero_new_rollout_diagnostics": {
+    "composite_effective_update_cosine": 0.50519,
+    "exact_bootstrap_action_ledger_max_abs_difference": 0.0,
+    "initial_red_first5_action_mse": {
+      "source": 0.0049308,
+      "matched_composite": 0.0032255,
+      "sibling_composite": 0.0046842
+    },
+    "initial_yellow_first5_action_mse": {
+      "source": 0.0092715,
+      "matched_composite": 0.0129140,
+      "sibling_composite": 0.0131801
+    },
+    "yellow_full50_action_mse": {
+      "source": 0.029762,
+      "matched_composite": 0.017753
+    },
+    "red_transition_first5_action_mse": {
+      "source": 0.0003112,
+      "matched_composite": 0.0002055,
+      "primitive_phase_expert": 0.000000889
+    },
+    "yellow_transition_first5_action_mse": {
+      "source": 0.0003708,
+      "matched_composite": 0.0002644,
+      "primitive_phase_expert": 0.000001073
+    }
+  },
+  "earliest_failed_interface": "Successful-occupancy 50-token behavior cloning does not cover the composite policy's own visited and recovery states.",
+  "decision": "Do not launch the original Gate A4 formal panel. Run exactly one fixed on-policy phase-expert distillation round, then return directly to the unchanged Gate A4.",
+  "information_wall": {
+    "target40_action_or_reward_reads": 0,
+    "deployment_inputs_changed": false,
+    "phase_experts_are_training_only": true
+  }
+}

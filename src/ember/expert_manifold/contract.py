@@ -21,10 +21,14 @@ from ember.expert_manifold.meta_contract import (
     meta_worker_assignments,
 )
 from ember.expert_manifold.composite_contract import (
+    COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
     COMPOSITE_EXPERT_CONFIG_SCHEMA,
+    composite_distillation_config_is_valid,
     composite_expert_config_is_valid,
+    load_composite_distillation_spec,
     load_composite_expert_spec,
 )
+from ember.ecp.composite_distillation_data import CompositeDistillationDataset
 from ember.expert_manifold.diagnostic_contract import (
     VALIDATION_EXPERT_CONFIG_SCHEMA,
     load_validation_expert_specs,
@@ -165,21 +169,25 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     schema = config.get("schema_version")
     valid = (
-        composite_expert_config_is_valid(config)
-        if schema == COMPOSITE_EXPERT_CONFIG_SCHEMA
+        composite_distillation_config_is_valid(config)
+        if schema == COMPOSITE_DISTILLATION_CONFIG_SCHEMA
         else (
-            _train24_config_is_valid(config)
-            if schema == CONFIG_SCHEMA
+            composite_expert_config_is_valid(config)
+            if schema == COMPOSITE_EXPERT_CONFIG_SCHEMA
             else (
-                _ecp_particle_expert_config_is_valid(config)
-                if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
+                _train24_config_is_valid(config)
+                if schema == CONFIG_SCHEMA
                 else (
-                    meta_expert_config_is_valid(config)
-                    if schema == META_EXPERT_CONFIG_SCHEMA
+                    _ecp_particle_expert_config_is_valid(config)
+                    if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
                     else (
-                        validation_expert_config_is_valid(config)
-                        if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
-                        else False
+                        meta_expert_config_is_valid(config)
+                        if schema == META_EXPERT_CONFIG_SCHEMA
+                        else (
+                            validation_expert_config_is_valid(config)
+                            if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
+                            else False
+                        )
                     )
                 )
             )
@@ -201,6 +209,8 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 def load_train_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
+    if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
+        return _load_composite_distillation_task(config, data_root)
     if config.get("schema_version") == COMPOSITE_EXPERT_CONFIG_SCHEMA:
         return _load_composite_task(config, data_root)
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
@@ -271,6 +281,33 @@ def _load_composite_task(
     )
 
 
+def _load_composite_distillation_task(
+    config: Mapping[str, Any], data_root: Path
+) -> tuple[ExpertTask, ...]:
+    try:
+        spec = load_composite_distillation_spec(config, data_root)
+    except ValueError as error:
+        raise ExpertManifoldError(str(error)) from error
+    authority = WriterTaskAuthority(
+        task_id=int(config["task_experts"]["sampler_task_id"]),
+        language=spec.language,
+        path=spec.manifest_path,
+        expected_bytes=spec.manifest_bytes,
+        expected_sha256=None,
+    )
+    return (
+        ExpertTask(
+            ordinal=0,
+            global_task_id=authority.task_id,
+            suite="ecp_process_meta",
+            task_id=authority.task_id,
+            split_role="nonheld_process_distillation",
+            language=authority.language,
+            authority=authority,
+        ),
+    )
+
+
 def _load_validation_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
@@ -332,7 +369,10 @@ def validate_formal_task_assignment(
     config: Mapping[str, Any], indices: Sequence[int]
 ) -> None:
     formal = config["task_experts"]["formal_run"]
-    if config.get("schema_version") == COMPOSITE_EXPERT_CONFIG_SCHEMA:
+    if config.get("schema_version") in {
+        COMPOSITE_EXPERT_CONFIG_SCHEMA,
+        COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
+    }:
         if tuple(indices) != (0,):
             raise ExpertManifoldError(
                 "formal composite expert worker must own its only policy"
@@ -440,8 +480,18 @@ def resolve_runtime(
 
 
 def build_dataset(
-    config: Mapping[str, Any], tasks: Sequence[ExpertTask]
-) -> FunctionalQueryDataset:
+    config: Mapping[str, Any],
+    tasks: Sequence[ExpertTask],
+    *,
+    data_root: Path | None = None,
+) -> Any:
+    if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
+        if data_root is None:
+            raise ExpertManifoldError("distillation dataset requires its data root")
+        spec = load_composite_distillation_spec(config, data_root)
+        return CompositeDistillationDataset(
+            spec, task_id=int(config["task_experts"]["sampler_task_id"])
+        )
     first, last = map(int, config["task_experts"]["demo_indices"])
     return FunctionalQueryDataset(
         [task.authority for task in tasks],
@@ -467,7 +517,7 @@ def build_worker_contract(
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
-    return {
+    result = {
         "schema_version": WORKER_CONTRACT_SCHEMA,
         "mode": args.mode,
         "method": "independent_task_local_rank16_policy_experts",
@@ -511,6 +561,11 @@ def build_worker_contract(
         },
         "content_hash_policy": "disabled_by_owner",
     }
+    if "initialization" in config["task_experts"]:
+        result["initialization"] = dict(config["task_experts"]["initialization"])
+        result["training_objective"] = str(config["task_experts"]["objective"])
+        result["distillation"] = dict(config["task_experts"]["distillation"])
+    return result
 
 
 def publish_worker_contract(

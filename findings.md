@@ -1954,3 +1954,25 @@ red→yellow-white的28/28与反向9/9 replay全部保持success，completion st
 能否保留已有support并泛化到原失败states。数据通过只授权两个fixed-step1000 privileged experts与随后Gate A4，不把37条
 训练轨迹冒充teacher Gate通过。证据：
 `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`。
+
+## 94. step1000 composite SFT学到了原轨迹局部动作，却没有补齐自身闭环occupancy
+
+两个variant均从clean pushed detached `38dbffd`完成固定1000 optimizer steps，metrics、checkpoint、LoRA topology与训练
+合同完整，mean loss分别从首50步`.135630/.124071`降至末50步`.113355/.103308`。但Gate A4 state0资格检查中，
+red→yellow-white在step114先满足错误事件而invalid；反向只在step114完成yellow-white，至strict400仍未完成red。因此没有启动
+100行formal，不能把loss下降或bootstrap fit冒充teacher gate通过。
+
+不增加rollout的paired诊断排除了三个更早工程解释：两份bootstrap HDF5动作与A3 ledger逐项一致；两个composite LoRA的
+effective-update cosine只有`.50519`，不是同一adapter误载；原phase expert在相同observation/noise上对首5步标签的MSE约为
+`8.89e-7/1.073e-6`。matched composite在原成功transition observation的首5步误差确实优于source，但仍比primitive teacher
+大两个数量级；yellow方向完整50步误差从source `.029762`降至`.017753`，执行前5步却从`.009272`恶化为`.012914`。
+
+这说明模型既非完全没学会，也不是简单容量坍缩；最早失败是successful-teacher occupancy上的50-token SFT没有覆盖policy自身
+闭环访问与恢复状态，且full-chunk objective可改善后45 token而没有充分约束实际执行的前5 token。继续step2000或扫超参不改变
+训练支持。下一轮只改变一个主要因果变量：固定step1000 behavior在原50 states实际访问的每个replan observation上，由相应
+primitive phase expert在相同noise下提供完整action chunk标签；每variant固定收集全部episodes，再从step1000权重用fresh optimizer
+恰好训练两遍数据。state0 collector smoke已得到23个queries，首chunk与原phase teacher逐项一致，teacher-vs-behavior首5步
+MSE为`.00328508`。只允许这一轮；其后直接回到不变Gate A4，仍失败就停止而不进入第二轮DAgger。
+
+合同与证据见`docs/ecp_composite_teacher_distillation_gate_20260824.md`及
+`docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`。

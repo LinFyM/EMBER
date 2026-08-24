@@ -53,16 +53,124 @@ class ProcessPhaseExpert:
 
 
 @dataclass(frozen=True)
+class ProcessCompositeExpert:
+    variant_name: str
+    required_order: tuple[str, str]
+    checkpoint: Path
+    adapter_path: Path
+    adapter_bytes: int
+
+
+@dataclass(frozen=True)
 class ProcessMetaAuthority:
     source_evaluation_root: Path
     normalization_path: Path
     tokenizer_path: Path
     lora_contract_path: Path | None
     expert_source_checkpoint: Path | None
+    privileged_teacher_kind: str | None
     phase_experts: Mapping[str, ProcessPhaseExpert]
+    variant_experts: Mapping[str, ProcessCompositeExpert]
     family: ProcessMetaFamily
     rollout: Mapping[str, Any]
     information_wall: Mapping[str, Any]
+
+
+def _phase_expert_authorities(
+    teacher: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    family: ProcessMetaFamily,
+) -> dict[str, ProcessPhaseExpert]:
+    records = teacher.get("phase_experts", {})
+    if set(records) != set(family.predicates):
+        raise ProcessMetaError("process-meta phase experts do not cover both events")
+    result = {}
+    for phase_key, record in records.items():
+        checkpoint = repo_root / str(record["checkpoint"])
+        adapter_path = checkpoint / "adapter.safetensors"
+        adapter_bytes = int(record["adapter_bytes"])
+        if (
+            not adapter_path.is_file()
+            or adapter_path.stat().st_size != adapter_bytes
+            or int(record["step"]) != 1000
+            or str(record["language"]).strip() != family.phase_languages[phase_key]
+        ):
+            raise ProcessMetaError("process-meta phase expert authority changed")
+        result[phase_key] = ProcessPhaseExpert(
+            phase_key=phase_key,
+            task_id=int(record["task_id"]),
+            checkpoint=checkpoint,
+            adapter_path=adapter_path,
+            adapter_bytes=adapter_bytes,
+        )
+    return result
+
+
+def _composite_expert_authorities(
+    teacher: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    family: ProcessMetaFamily,
+) -> dict[str, ProcessCompositeExpert]:
+    records = teacher.get("variant_experts", {})
+    variants = {variant.name: variant for variant in family.variants}
+    if set(records) != set(variants):
+        raise ProcessMetaError(
+            "process-meta composite experts do not cover both variants"
+        )
+    result = {}
+    for variant_name, record in records.items():
+        checkpoint = repo_root / str(record["checkpoint"])
+        adapter_path = checkpoint / "adapter.safetensors"
+        adapter_bytes = int(record["adapter_bytes"])
+        required_order = tuple(str(item) for item in record["required_order"])
+        if (
+            not adapter_path.is_file()
+            or adapter_path.stat().st_size != adapter_bytes
+            or int(record["step"]) != 1000
+            or str(record["language"]).strip() != family.exact_language
+            or required_order != variants[variant_name].required_order
+        ):
+            raise ProcessMetaError("process-meta composite expert authority changed")
+        result[variant_name] = ProcessCompositeExpert(
+            variant_name=variant_name,
+            required_order=required_order,
+            checkpoint=checkpoint,
+            adapter_path=adapter_path,
+            adapter_bytes=adapter_bytes,
+        )
+    return result
+
+
+def _teacher_authorities(
+    teacher: Mapping[str, Any] | None,
+    *,
+    repo_root: Path,
+    family: ProcessMetaFamily,
+) -> tuple[
+    str | None,
+    Path | None,
+    Path | None,
+    dict[str, ProcessPhaseExpert],
+    dict[str, ProcessCompositeExpert],
+]:
+    if teacher is None:
+        return None, None, None, {}, {}
+    kind = str(teacher.get("kind"))
+    lora_contract_path = repo_root / str(teacher["lora_contract"])
+    source_checkpoint = repo_root / str(teacher["source_checkpoint"])
+    if kind == "phase_task_local_rank16_lora":
+        phase_experts = _phase_expert_authorities(
+            teacher, repo_root=repo_root, family=family
+        )
+        return kind, lora_contract_path, source_checkpoint, phase_experts, {}
+    if kind == "order_specific_composite_rank16_lora":
+        variant_experts = _composite_expert_authorities(
+            teacher, repo_root=repo_root, family=family
+        )
+        return kind, lora_contract_path, source_checkpoint, {}, variant_experts
+    raise ProcessMetaError("unsupported process-meta privileged teacher")
 
 
 def load_process_meta_authority(
@@ -78,13 +186,13 @@ def load_process_meta_authority(
         value.get("schema_version") != PROCESS_META_MANIFEST_SCHEMA
         or value.get("status") != "active_minimal_pair_feasibility"
     ):
-        raise ProcessMetaError("process-meta manifest is not the active feasibility contract")
+        raise ProcessMetaError(
+            "process-meta manifest is not the active feasibility contract"
+        )
     raw = value["family"]
     bddl_path = repo_root / str(raw["bddl"]["path"])
     init = raw["base_init_states"]
-    init_path = (
-        libero_init_root / str(init["suite"]) / str(init["filename"])
-    )
+    init_path = libero_init_root / str(init["suite"]) / str(init["filename"])
     if (
         not bddl_path.is_file()
         or bddl_path.stat().st_size != int(raw["bddl"]["bytes"])
@@ -132,43 +240,24 @@ def load_process_meta_authority(
         phase_languages=phase_languages,
         variants=(variants[0], variants[1]),
     )
-    teacher = value.get("privileged_teacher")
-    lora_contract_path: Path | None = None
-    expert_source_checkpoint: Path | None = None
-    phase_experts: dict[str, ProcessPhaseExpert] = {}
-    if teacher is not None:
-        if teacher.get("kind") != "phase_task_local_rank16_lora":
-            raise ProcessMetaError("unsupported process-meta privileged teacher")
-        lora_contract_path = repo_root / str(teacher["lora_contract"])
-        expert_source_checkpoint = repo_root / str(teacher["source_checkpoint"])
-        records = teacher.get("phase_experts", {})
-        if set(records) != set(keys):
-            raise ProcessMetaError("process-meta phase experts do not cover both events")
-        for phase_key, record in records.items():
-            checkpoint = repo_root / str(record["checkpoint"])
-            adapter_path = checkpoint / "adapter.safetensors"
-            adapter_bytes = int(record["adapter_bytes"])
-            if (
-                not adapter_path.is_file()
-                or adapter_path.stat().st_size != adapter_bytes
-                or int(record["step"]) != 1000
-                or str(record["language"]).strip() != phase_languages[phase_key]
-            ):
-                raise ProcessMetaError("process-meta phase expert authority changed")
-            phase_experts[phase_key] = ProcessPhaseExpert(
-                phase_key=phase_key,
-                task_id=int(record["task_id"]),
-                checkpoint=checkpoint,
-                adapter_path=adapter_path,
-                adapter_bytes=adapter_bytes,
-            )
+    (
+        teacher_kind,
+        lora_contract_path,
+        expert_source_checkpoint,
+        phase_experts,
+        variant_experts,
+    ) = _teacher_authorities(
+        value.get("privileged_teacher"), repo_root=repo_root, family=family
+    )
     result = ProcessMetaAuthority(
         source_evaluation_root=repo_root / str(value["source_policy_authority"]),
         normalization_path=repo_root / str(value["normalization_authority"]),
         tokenizer_path=repo_root / str(value["tokenizer_authority"]),
         lora_contract_path=lora_contract_path,
         expert_source_checkpoint=expert_source_checkpoint,
+        privileged_teacher_kind=teacher_kind,
         phase_experts=phase_experts,
+        variant_experts=variant_experts,
         family=family,
         rollout=dict(value["rollout"]),
         information_wall=dict(value["information_wall"]),
@@ -202,8 +291,12 @@ class TemporalPredicateOrderEnv:
             for name, predicate in predicates.items()
         }
         self.required_order = tuple(str(item) for item in required_order)
-        if len(self.required_order) != 2 or set(self.required_order) != set(self.predicates):
-            raise ProcessMetaError("temporal wrapper requires one two-event permutation")
+        if len(self.required_order) != 2 or set(self.required_order) != set(
+            self.predicates
+        ):
+            raise ProcessMetaError(
+                "temporal wrapper requires one two-event permutation"
+            )
         self.steps = 0
         self.invalid = False
         self.invalid_reason: str | None = None

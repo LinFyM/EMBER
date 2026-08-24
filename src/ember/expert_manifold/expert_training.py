@@ -13,11 +13,15 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 import torch
+from safetensors.torch import load_file
 from torch.utils.data import default_collate
 
 from ember.expert_manifold.checkpoint import (
     load_task_expert_checkpoint,
     save_task_expert_checkpoint,
+)
+from ember.expert_manifold.composite_contract import (
+    COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
 )
 from ember.expert_manifold.contract import (
     REPO_ROOT,
@@ -41,6 +45,7 @@ from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
     task_lora_state_dict,
+    validate_lora_state,
 )
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
@@ -143,9 +148,13 @@ def _task_expert_metric_values(
     task: ExpertTask,
     step: int,
 ) -> tuple[float, float]:
-    values = torch.stack(
-        (loss.detach().to(torch.float32), grad_norm.detach().to(torch.float32))
-    ).to(device="cpu").tolist()
+    values = (
+        torch.stack(
+            (loss.detach().to(torch.float32), grad_norm.detach().to(torch.float32))
+        )
+        .to(device="cpu")
+        .tolist()
+    )
     if not math.isfinite(values[0]):
         raise ExpertManifoldError(
             f"non-finite task-expert loss for task {task.ordinal} at step {step}"
@@ -159,7 +168,8 @@ def _task_expert_metric_row(
     *,
     task: ExpertTask,
     completed: int,
-    batch_size: int,
+    batch_rows: int,
+    action_queries: int,
     loss: float,
     grad_norm: float,
     applied_lr: float,
@@ -176,13 +186,63 @@ def _task_expert_metric_row(
         "gradient_norm_before_clip": grad_norm,
         "applied_lr": applied_lr,
         "next_lr": next_lr,
-        "action_queries": completed * batch_size,
+        "batch_rows": batch_rows,
+        "action_queries": action_queries,
         "data_seconds": data_seconds,
         "step_seconds": time.monotonic() - tick,
         "elapsed_seconds": time.monotonic() - started,
         "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
         "max_cuda_reserved_bytes": int(torch.cuda.max_memory_reserved()),
     }
+
+
+def _optimize_task_batch(
+    *,
+    policy: torch.nn.Module,
+    processor: Pi05LiberoProcessor,
+    batch: Mapping[str, Any],
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    task: ExpertTask,
+    step: int,
+    clip: float,
+    action_queries: int,
+    data_seconds: float,
+    tick: float,
+    started: float,
+) -> dict[str, Any]:
+    policy_batch = processor.training_batch(dict(batch))
+    optimizer.zero_grad(set_to_none=True)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        loss = pi05_mean_flow_loss(policy, policy_batch)
+    loss.backward()
+    if any(
+        parameter.grad is not None
+        for name, parameter in policy.named_parameters()
+        if ".lora_" not in name
+    ):
+        raise ExpertManifoldError("frozen source policy accumulated expert gradients")
+    trainable = tuple(task_lora_state_dict(policy).values())
+    grad_norm = torch.nn.utils.clip_grad_norm_(trainable, clip)
+    loss_value, grad_norm_value = _task_expert_metric_values(
+        loss, grad_norm, task=task, step=step
+    )
+    applied_lr = float(optimizer.param_groups[0]["lr"])
+    optimizer.step()
+    scheduler.step()
+    return _task_expert_metric_row(
+        task=task,
+        completed=step + 1,
+        batch_rows=int(batch["action"].shape[0]),
+        action_queries=action_queries,
+        loss=loss_value,
+        grad_norm=grad_norm_value,
+        applied_lr=applied_lr,
+        next_lr=float(optimizer.param_groups[0]["lr"]),
+        data_seconds=data_seconds,
+        tick=tick,
+        started=started,
+    )
 
 
 def _train_one_task(
@@ -194,7 +254,7 @@ def _train_one_task(
     policy: torch.nn.Module,
     processor: Pi05LiberoProcessor,
     lora_contract: Any,
-    identity_state: Mapping[str, torch.Tensor],
+    initial_state: Mapping[str, torch.Tensor],
     total_steps: int,
     batch_size: int,
     checkpoint_steps: Sequence[int],
@@ -207,7 +267,7 @@ def _train_one_task(
         if task_dir.exists() and any(task_dir.iterdir()):
             raise ExpertManifoldError("fresh task-expert directory is not empty")
         task_dir.mkdir(parents=True, exist_ok=True)
-        copy_task_lora_state_(policy, identity_state, lora_contract)
+        copy_task_lora_state_(policy, initial_state, lora_contract)
         initial_step = 0
         metrics_rows = 0
     else:
@@ -231,7 +291,9 @@ def _train_one_task(
             scheduler=scheduler,
         )
         if _metric_rows(metrics_path) != metrics_rows:
-            raise ExpertManifoldError("task-expert metrics cursor changed during resume")
+            raise ExpertManifoldError(
+                "task-expert metrics cursor changed during resume"
+            )
     if not 0 <= initial_step < stop_step:
         raise ExpertManifoldError("task-expert resume cursor is outside this segment")
     rows = dataset.task_rows[task.global_task_id]
@@ -244,44 +306,40 @@ def _train_one_task(
     clip = float(
         config["task_experts"]["optimization"]["optimizer"]["gradient_clip_norm"]
     )
+    query_limit = None
+    if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
+        query_limit = int(
+            config["task_experts"]["distillation"]["training_epochs"]
+        ) * len(rows)
+        if total_steps != math.ceil(query_limit / batch_size):
+            raise ExpertManifoldError("distillation epoch and step contracts disagree")
     started = time.monotonic()
     torch.cuda.reset_peak_memory_stats()
     for step in range(initial_step, stop_step):
         tick = time.monotonic()
         selected = sampler.batch_for_step(step)
+        if query_limit is not None:
+            remaining = query_limit - step * batch_size
+            selected = selected[: min(batch_size, remaining)]
+            if not selected:
+                raise ExpertManifoldError("distillation query stream ended early")
         batch = default_collate([dataset[index] for index in selected])
         data_seconds = time.monotonic() - tick
-        policy_batch = processor.training_batch(batch)
-        optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            loss = pi05_mean_flow_loss(policy, policy_batch)
-        loss.backward()
-        if any(
-            parameter.grad is not None
-            for name, parameter in policy.named_parameters()
-            if ".lora_" not in name
-        ):
-            raise ExpertManifoldError("frozen source policy accumulated expert gradients")
-        trainable = tuple(task_lora_state_dict(policy).values())
-        grad_norm = torch.nn.utils.clip_grad_norm_(trainable, clip)
-        loss_value, grad_norm_value = _task_expert_metric_values(
-            loss,
-            grad_norm,
+        completed = step + 1
+        row = _optimize_task_batch(
+            policy=policy,
+            processor=processor,
+            batch=batch,
+            optimizer=optimizer,
+            scheduler=scheduler,
             task=task,
             step=step,
-        )
-        applied_lr = float(optimizer.param_groups[0]["lr"])
-        optimizer.step()
-        scheduler.step()
-        completed = step + 1
-        row = _task_expert_metric_row(
-            task=task,
-            completed=completed,
-            batch_size=batch_size,
-            loss=loss_value,
-            grad_norm=grad_norm_value,
-            applied_lr=applied_lr,
-            next_lr=float(optimizer.param_groups[0]["lr"]),
+            clip=clip,
+            action_queries=(
+                min(completed * batch_size, query_limit)
+                if query_limit is not None
+                else completed * batch_size
+            ),
             data_seconds=data_seconds,
             tick=tick,
             started=started,
@@ -303,7 +361,9 @@ def _train_one_task(
             )
     if stop_step not in checkpoint_steps:
         raise ExpertManifoldError("task-expert segment ended outside a checkpoint")
-    _task_summary(task=task, task_dir=task_dir, step=stop_step, metrics_rows=metrics_rows)
+    _task_summary(
+        task=task, task_dir=task_dir, step=stop_step, metrics_rows=metrics_rows
+    )
     result = {
         "task_ordinal": task.ordinal,
         "global_task_id": task.global_task_id,
@@ -317,9 +377,30 @@ def _train_one_task(
     return result
 
 
+def _initial_lora_state(
+    config: Mapping[str, Any],
+    identity_state: Mapping[str, torch.Tensor],
+    lora_contract: Any,
+) -> Mapping[str, torch.Tensor]:
+    initialization = config["task_experts"].get("initialization")
+    if initialization is None:
+        return identity_state
+    path = REPO_ROOT / str(initialization["adapter"])
+    if (
+        initialization.get("kind")
+        != "fixed_step1000_composite_adapter_no_optimizer_reuse"
+        or not path.is_file()
+        or path.stat().st_size != int(initialization["adapter_bytes"])
+    ):
+        raise ExpertManifoldError("task-expert warm-start adapter changed")
+    state = load_file(str(path), device="cpu")
+    validate_lora_state(state, lora_contract)
+    return state
+
+
 def train(args: argparse.Namespace) -> None:
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
-        raise ExpertManifoldError("each task-expert worker requires exactly one visible CUDA device")
+        raise ExpertManifoldError("task-expert worker requires one visible CUDA device")
     torch.cuda.set_device(0)
     config = load_task_expert_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps, stop_step = resolve_runtime(args, config)
@@ -329,7 +410,9 @@ def train(args: argparse.Namespace) -> None:
     if args.mode == "formal":
         validate_formal_task_assignment(config, indices)
     worker_resume_step = worker_stage_resume_step(args.resume, args.output_dir, tasks)
-    resume_identity = None if worker_resume_step is not None else parse_resume_task(args.resume)
+    resume_identity = (
+        None if worker_resume_step is not None else parse_resume_task(args.resume)
+    )
     if worker_resume_step is not None and not worker_resume_step < stop_step:
         raise ExpertManifoldError("worker stage resume must advance every task")
     if resume_identity is not None and resume_identity[0] not in indices:
@@ -356,7 +439,9 @@ def train(args: argparse.Namespace) -> None:
     seed = int(config["task_experts"]["optimization"]["seed"])
     _seed(seed)
     policy = load_policy(
-        Path(source["model_path"]), authorities.source_base_config, torch.device("cuda:0")
+        Path(source["model_path"]),
+        authorities.source_base_config,
+        torch.device("cuda:0"),
     )
     lora_contract = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     inject_task_lora(policy, lora_contract)
@@ -365,6 +450,7 @@ def train(args: argparse.Namespace) -> None:
         name: value.detach().cpu().clone()
         for name, value in task_lora_state_dict(policy).items()
     }
+    initial_state = _initial_lora_state(config, identity_state, lora_contract)
     stats = load_stats(
         authorities.source_base_config,
         authorities.source_base_config["data"]["active_task_ids"],
@@ -375,7 +461,7 @@ def train(args: argparse.Namespace) -> None:
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         "cuda:0",
     )
-    dataset = build_dataset(config, tasks)
+    dataset = build_dataset(config, tasks, data_root=args.data_root.resolve())
     results = []
     resume_consumed = False
     for task in tasks:
@@ -391,7 +477,9 @@ def train(args: argparse.Namespace) -> None:
             if task.ordinal < resume_identity[0]:
                 completion = task_directory(args.output_dir, task) / "completion.json"
                 if not completion.is_file():
-                    raise ExpertManifoldError("resume worker lacks an earlier completed task")
+                    raise ExpertManifoldError(
+                        "resume worker lacks an earlier completed task"
+                    )
                 results.append(read_json(completion))
                 continue
             if task.ordinal == resume_identity[0]:
@@ -407,7 +495,7 @@ def train(args: argparse.Namespace) -> None:
                 policy=policy,
                 processor=processor,
                 lora_contract=lora_contract,
-                identity_state=identity_state,
+                initial_state=initial_state,
                 total_steps=total_steps,
                 batch_size=batch_size,
                 checkpoint_steps=checkpoint_steps,

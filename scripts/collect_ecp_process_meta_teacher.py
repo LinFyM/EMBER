@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect privileged phase-switched teachers for one process-meta variant."""
+"""Collect privileged policy teachers for one process-meta variant."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -15,7 +16,9 @@ import torch
 from safetensors.torch import load_file
 
 from ember.ecp.process_meta import (
+    ProcessMetaAuthority,
     ProcessMetaError,
+    ProcessVariant,
     TemporalPredicateOrderEnv,
     load_process_meta_authority,
 )
@@ -31,11 +34,21 @@ from ember.writer.functional import prepare_frozen_writer_policy
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+@dataclass(frozen=True)
+class TeacherRuntime:
+    install_phase_expert: Callable[[str], None] | None
+    phase_expert_task_ids: Mapping[str, int]
+    fixed_language: str | None
+    composite_expert_variant: str | None
+
+
 def _state_ids(value: str) -> tuple[int, ...]:
     try:
         result = tuple(int(item) for item in value.split(",") if item.strip())
     except ValueError as error:
-        raise argparse.ArgumentTypeError("state IDs must be comma-separated integers") from error
+        raise argparse.ArgumentTypeError(
+            "state IDs must be comma-separated integers"
+        ) from error
     if not result or len(set(result)) != len(result) or min(result) < 0:
         raise argparse.ArgumentTypeError("state IDs must be unique and nonnegative")
     return result
@@ -54,7 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--teacher-mode",
-        choices=("source_phase", "phase_expert"),
+        choices=("source_phase", "phase_expert", "composite_expert"),
         default="source_phase",
     )
     parser.add_argument("--keep-failure-videos", action="store_true")
@@ -138,6 +151,7 @@ def _collect_episode(
     phase_languages: Any,
     install_phase_expert: Callable[[str], None] | None,
     phase_expert_task_ids: Mapping[str, int],
+    fixed_language: str | None,
     exact_language: str,
     rollout: Any,
 ) -> dict[str, Any]:
@@ -165,7 +179,7 @@ def _collect_episode(
             break
         if install_phase_expert is not None:
             install_phase_expert(phase_key)
-        language = str(phase_languages[phase_key])
+        language = fixed_language or str(phase_languages[phase_key])
         batch = preprocess(libero_policy_input(observation, language))
         noise, seed = _noise(
             policy,
@@ -194,7 +208,12 @@ def _collect_episode(
             base, wrist = _capture(observation)
             camera1.append(base)
             camera2.append(wrist)
-            if success or env.invalid or env.steps >= horizon or env.phase_key != before_phase:
+            if (
+                success
+                or env.invalid
+                or env.steps >= horizon
+                or env.phase_key != before_phase
+            ):
                 break
     snapshot = env.snapshot()
     return {
@@ -224,59 +243,36 @@ def _runtime_contract(source_root: Path) -> dict[str, Any]:
     return value
 
 
-def main() -> None:
-    args = build_parser().parse_args()
-    args.manifest = args.manifest.resolve()
-    args.output_dir = args.output_dir.resolve()
-    raw = json.loads(args.manifest.read_text(encoding="utf-8"))
-    source_root = REPO_ROOT / str(raw["source_policy_authority"])
-    source_contract = _runtime_contract(source_root)
-    os.environ.update(
-        MUJOCO_GL="egl",
-        PYOPENGL_PLATFORM="egl",
-        MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu_id),
-        LIBERO_CONFIG_PATH=str((source_root / "libero_config").resolve()),
-    )
-    if os.environ.get("CUDA_VISIBLE_DEVICES") != str(args.physical_gpu_id):
-        raise ProcessMetaError("collector must see exactly its declared physical GPU")
-    authority = load_process_meta_authority(
-        args.manifest,
-        repo_root=REPO_ROOT,
-        libero_init_root=Path(source_contract["libero_paths"]["init_states"]),
-    )
-    variant = authority.family.variant(args.variant)
-    if any(state_id not in authority.family.init_state_ids for state_id in args.state_ids):
-        raise ProcessMetaError("requested state is outside the fixed process-meta panel")
-    configure_libero_runtime_assets(Path(source_contract["libero_paths"]["assets"]))
-    from libero.libero.envs import OffScreenRenderEnv
-
-    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
-        raise ProcessMetaError("process-meta collector requires one visible CUDA GPU")
-    torch.cuda.set_device(0)
-    torch.manual_seed(int(authority.rollout["policy_seed_root"]))
-    torch.cuda.manual_seed(int(authority.rollout["policy_seed_root"]))
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.set_grad_enabled(False)
-    normalization = json.loads(authority.normalization_path.read_text(encoding="utf-8"))
-    policy, preprocess, postprocess = load_policy(
-        Path(source_contract["model"]["model_path"]),
-        normalization["stats"],
-        authority.tokenizer_path,
-        source_contract["policy"],
-    )
-    install_phase_expert: Callable[[str], None] | None = None
-    phase_expert_task_ids: dict[str, int] = {}
-    if args.teacher_mode == "phase_expert":
+def _prepare_teacher(
+    *,
+    mode: str,
+    policy: torch.nn.Module,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    source_contract: Mapping[str, Any],
+) -> TeacherRuntime:
+    if mode == "source_phase":
+        if authority.privileged_teacher_kind is not None:
+            raise ProcessMetaError(
+                "privileged-teacher manifest requires its matching teacher mode"
+            )
+        return TeacherRuntime(None, {}, None, None)
+    if (
+        authority.lora_contract_path is None
+        or authority.expert_source_checkpoint is None
+        or authority.expert_source_checkpoint.resolve()
+        != Path(source_contract["model"]["checkpoint"]).resolve()
+    ):
+        raise ProcessMetaError("process expert source authority is incomplete")
+    lora = load_pi05_lora_contract(authority.lora_contract_path)
+    prepare_frozen_writer_policy(policy, lora)
+    if mode == "phase_expert":
         if (
-            authority.lora_contract_path is None
-            or authority.expert_source_checkpoint is None
+            authority.privileged_teacher_kind != "phase_task_local_rank16_lora"
             or set(authority.phase_experts) != set(authority.family.predicates)
-            or authority.expert_source_checkpoint.resolve()
-            != Path(source_contract["model"]["checkpoint"]).resolve()
+            or authority.variant_experts
         ):
             raise ProcessMetaError("phase-expert teacher authority is incomplete")
-        lora = load_pi05_lora_contract(authority.lora_contract_path)
-        prepare_frozen_writer_policy(policy, lora)
         expert_states = {
             phase_key: load_file(str(expert.adapter_path), device="cpu")
             for phase_key, expert in authority.phase_experts.items()
@@ -291,19 +287,114 @@ def main() -> None:
                 copy_task_lora_state_(policy, expert_states[phase_key], lora)
                 installed_phase = phase_key
 
-        install_phase_expert = install
-        phase_expert_task_ids = {
+        task_ids = {
             phase_key: expert.task_id
             for phase_key, expert in authority.phase_experts.items()
         }
-    elif authority.phase_experts:
-        raise ProcessMetaError("phase-expert manifest requires --teacher-mode phase_expert")
-    init_states = torch.load(
-        authority.family.init_states_path,
-        map_location="cpu",
-        weights_only=False,
+        return TeacherRuntime(install, task_ids, None, None)
+    if (
+        mode != "composite_expert"
+        or authority.privileged_teacher_kind != "order_specific_composite_rank16_lora"
+        or authority.phase_experts
+        or set(authority.variant_experts)
+        != {item.name for item in authority.family.variants}
+    ):
+        raise ProcessMetaError("composite-expert teacher authority is incomplete")
+    expert = authority.variant_experts[variant.name]
+    state = load_file(str(expert.adapter_path), device="cpu")
+    validate_lora_state(state, lora)
+    copy_task_lora_state_(policy, state, lora)
+    return TeacherRuntime(
+        None,
+        {},
+        authority.family.exact_language,
+        expert.variant_name,
     )
-    base_env = OffScreenRenderEnv(
+
+
+def _persist_episode(
+    *,
+    args: argparse.Namespace,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    teacher: TeacherRuntime,
+    state_id: int,
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    episode_id = f"{authority.family.family_id}-{variant.name}-state{state_id:03d}"
+    public_path = args.output_dir / "public_videos" / f"{episode_id}.npz"
+    keep_video = bool(result["success"] or args.keep_failure_videos)
+    if keep_video:
+        _atomic_video_save(
+            public_path,
+            language=authority.family.exact_language,
+            camera1=result["camera1"],
+            camera2=result["camera2"],
+            frame_stride=int(authority.rollout["frame_stride"]),
+        )
+    privileged_path = args.output_dir / "privileged_ledgers" / f"{episode_id}.pt"
+    _atomic_torch_save(
+        privileged_path,
+        {
+            "schema_version": "ember_ecp_process_meta_privileged_episode_v1",
+            "family_id": authority.family.family_id,
+            "variant_name": variant.name,
+            "required_order": variant.required_order,
+            "state_id": state_id,
+            "success": result["success"],
+            "invalid": result["invalid"],
+            "invalid_reason": result["invalid_reason"],
+            "steps": result["steps"],
+            "completion_steps": result["completion_steps"],
+            "predicate_values": result["predicate_values"],
+            "teacher_actions": torch.from_numpy(result["actions"]),
+            "teacher_mode": args.teacher_mode,
+            "privileged_teacher_kind": authority.privileged_teacher_kind,
+            "composite_expert_variant": teacher.composite_expert_variant,
+            "action_phase_keys": result["action_phase_keys"],
+            "replan_phase_keys": result["replan_phase_keys"],
+            "replan_teacher_task_ids": result["replan_teacher_task_ids"],
+            "policy_noise_seeds": result["policy_noise_seeds"],
+            "public_video": (
+                str(public_path.relative_to(args.output_dir)) if keep_video else None
+            ),
+        },
+    )
+    return {
+        "family_id": authority.family.family_id,
+        "variant_name": variant.name,
+        "composite_expert_variant": teacher.composite_expert_variant,
+        "state_id": state_id,
+        "success": result["success"],
+        "invalid": result["invalid"],
+        "invalid_reason": result["invalid_reason"],
+        "steps": result["steps"],
+        "completion_steps": result["completion_steps"],
+        "elapsed_seconds": result["elapsed_seconds"],
+        "public_video": (
+            str(public_path.relative_to(args.output_dir)) if keep_video else None
+        ),
+        "public_video_bytes": public_path.stat().st_size if keep_video else 0,
+        "privileged_ledger": str(privileged_path.relative_to(args.output_dir)),
+        "privileged_ledger_bytes": privileged_path.stat().st_size,
+    }
+
+
+def _collect_panel(
+    *,
+    args: argparse.Namespace,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    teacher: TeacherRuntime,
+    policy: torch.nn.Module,
+    preprocess: Any,
+    postprocess: Any,
+    environment_class: Any,
+) -> list[dict[str, Any]]:
+    init_states = torch.load(
+        authority.family.init_states_path, map_location="cpu", weights_only=False
+    )
+    base_env = environment_class(
         bddl_file_name=authority.family.bddl_path,
         camera_heights=int(authority.rollout["render_resolution"]),
         camera_widths=int(authority.rollout["render_resolution"]),
@@ -326,81 +417,96 @@ def main() -> None:
                 noise_task_suite=authority.family.base_task_suite,
                 noise_task_id=authority.family.base_task_id,
                 phase_languages=authority.family.phase_languages,
-                install_phase_expert=install_phase_expert,
-                phase_expert_task_ids=phase_expert_task_ids,
+                install_phase_expert=teacher.install_phase_expert,
+                phase_expert_task_ids=teacher.phase_expert_task_ids,
+                fixed_language=teacher.fixed_language,
                 exact_language=authority.family.exact_language,
                 rollout=authority.rollout,
             )
-            episode_id = f"{authority.family.family_id}-{variant.name}-state{state_id:03d}"
-            public_path = args.output_dir / "public_videos" / f"{episode_id}.npz"
-            keep_video = bool(result["success"] or args.keep_failure_videos)
-            if keep_video:
-                _atomic_video_save(
-                    public_path,
-                    language=authority.family.exact_language,
-                    camera1=result["camera1"],
-                    camera2=result["camera2"],
-                    frame_stride=int(authority.rollout["frame_stride"]),
-                )
-            privileged_path = (
-                args.output_dir / "privileged_ledgers" / f"{episode_id}.pt"
-            )
-            _atomic_torch_save(
-                privileged_path,
-                {
-                    "schema_version": "ember_ecp_process_meta_privileged_episode_v1",
-                    "family_id": authority.family.family_id,
-                    "variant_name": variant.name,
-                    "required_order": variant.required_order,
-                    "state_id": state_id,
-                    "success": result["success"],
-                    "invalid": result["invalid"],
-                    "invalid_reason": result["invalid_reason"],
-                    "steps": result["steps"],
-                    "completion_steps": result["completion_steps"],
-                    "predicate_values": result["predicate_values"],
-                    "teacher_actions": torch.from_numpy(result["actions"]),
-                    "teacher_mode": args.teacher_mode,
-                    "action_phase_keys": result["action_phase_keys"],
-                    "replan_phase_keys": result["replan_phase_keys"],
-                    "replan_teacher_task_ids": result["replan_teacher_task_ids"],
-                    "policy_noise_seeds": result["policy_noise_seeds"],
-                    "public_video": (
-                        str(public_path.relative_to(args.output_dir))
-                        if keep_video
-                        else None
-                    ),
-                },
-            )
             rows.append(
-                {
-                    "family_id": authority.family.family_id,
-                    "variant_name": variant.name,
-                    "state_id": state_id,
-                    "success": result["success"],
-                    "invalid": result["invalid"],
-                    "invalid_reason": result["invalid_reason"],
-                    "steps": result["steps"],
-                    "completion_steps": result["completion_steps"],
-                    "elapsed_seconds": result["elapsed_seconds"],
-                    "public_video": (
-                        str(public_path.relative_to(args.output_dir))
-                        if keep_video
-                        else None
-                    ),
-                    "public_video_bytes": public_path.stat().st_size if keep_video else 0,
-                    "privileged_ledger": str(privileged_path.relative_to(args.output_dir)),
-                    "privileged_ledger_bytes": privileged_path.stat().st_size,
-                }
+                _persist_episode(
+                    args=args,
+                    authority=authority,
+                    variant=variant,
+                    teacher=teacher,
+                    state_id=state_id,
+                    result=result,
+                )
             )
     finally:
         env.close()
+    return rows
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    args.manifest = args.manifest.resolve()
+    args.output_dir = args.output_dir.resolve()
+    raw = json.loads(args.manifest.read_text(encoding="utf-8"))
+    source_root = REPO_ROOT / str(raw["source_policy_authority"])
+    source_contract = _runtime_contract(source_root)
+    os.environ.update(
+        MUJOCO_GL="egl",
+        PYOPENGL_PLATFORM="egl",
+        MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu_id),
+        LIBERO_CONFIG_PATH=str((source_root / "libero_config").resolve()),
+    )
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != str(args.physical_gpu_id):
+        raise ProcessMetaError("collector must see exactly its declared physical GPU")
+    authority = load_process_meta_authority(
+        args.manifest,
+        repo_root=REPO_ROOT,
+        libero_init_root=Path(source_contract["libero_paths"]["init_states"]),
+    )
+    variant = authority.family.variant(args.variant)
+    if any(
+        state_id not in authority.family.init_state_ids for state_id in args.state_ids
+    ):
+        raise ProcessMetaError(
+            "requested state is outside the fixed process-meta panel"
+        )
+    configure_libero_runtime_assets(Path(source_contract["libero_paths"]["assets"]))
+    from libero.libero.envs import OffScreenRenderEnv
+
+    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
+        raise ProcessMetaError("process-meta collector requires one visible CUDA GPU")
+    torch.cuda.set_device(0)
+    torch.manual_seed(int(authority.rollout["policy_seed_root"]))
+    torch.cuda.manual_seed(int(authority.rollout["policy_seed_root"]))
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.set_grad_enabled(False)
+    normalization = json.loads(authority.normalization_path.read_text(encoding="utf-8"))
+    policy, preprocess, postprocess = load_policy(
+        Path(source_contract["model"]["model_path"]),
+        normalization["stats"],
+        authority.tokenizer_path,
+        source_contract["policy"],
+    )
+    teacher = _prepare_teacher(
+        mode=args.teacher_mode,
+        policy=policy,
+        authority=authority,
+        variant=variant,
+        source_contract=source_contract,
+    )
+    rows = _collect_panel(
+        args=args,
+        authority=authority,
+        variant=variant,
+        teacher=teacher,
+        policy=policy,
+        preprocess=preprocess,
+        postprocess=postprocess,
+        environment_class=OffScreenRenderEnv,
+    )
     summary = {
         "schema_version": "ember_ecp_process_meta_teacher_collection_v1",
         "manifest": str(args.manifest),
         "family_id": authority.family.family_id,
         "teacher_mode": args.teacher_mode,
-        "phase_expert_task_ids": phase_expert_task_ids,
+        "privileged_teacher_kind": authority.privileged_teacher_kind,
+        "phase_expert_task_ids": dict(teacher.phase_expert_task_ids),
+        "composite_expert_variant": teacher.composite_expert_variant,
         "variant_name": variant.name,
         "required_order": list(variant.required_order),
         "state_ids": list(args.state_ids),

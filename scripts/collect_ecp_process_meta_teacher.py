@@ -378,6 +378,8 @@ def _persist_episode(
             "variant_name": variant.name,
             "required_order": variant.required_order,
             "state_id": state_id,
+            "environment_seed": int(authority.rollout["environment_seed"]),
+            "policy_seed_root": int(authority.rollout["policy_seed_root"]),
             "success": result["success"],
             "environment_success": result["environment_success"],
             "invalid": result["invalid"],

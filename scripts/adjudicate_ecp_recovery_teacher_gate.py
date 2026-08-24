@@ -102,6 +102,10 @@ def _inspect_row(root: Path, authority: Any, row: dict[str, Any]) -> dict[str, A
     route_mismatch = int(
         ledger.get("schema_version") != LEDGER_SCHEMA
         or ledger.get("privileged_teacher_kind") != "variant_phase_recovery_rank16_lora"
+        or ledger.get("teacher_mode") != "phase_expert"
+        or ledger.get("variant_name") != variant.name
+        or int(ledger.get("state_id", -1)) != int(row["state_id"])
+        or tuple(ledger.get("required_order", ())) != variant.required_order
         or not phases
         or not (len(phases) == len(task_ids) == len(roles) == len(checkpoints))
         or any(
@@ -113,6 +117,12 @@ def _inspect_row(root: Path, authority: Any, row: dict[str, Any]) -> dict[str, A
                 phases, task_ids, roles, checkpoints, strict=True
             )
         )
+    )
+    seed_mismatch = int(
+        int(ledger.get("environment_seed", -1))
+        != int(authority.rollout["environment_seed"])
+        or int(ledger.get("policy_seed_root", -1))
+        != int(authority.rollout["policy_seed_root"])
     )
     drops = {
         str(name): tuple(int(step) for step in steps)
@@ -161,6 +171,7 @@ def _inspect_row(root: Path, authority: Any, row: dict[str, Any]) -> dict[str, A
         "first_event_dropped": bool(drops[variant.required_order[0]]),
         "invalid": bool(ledger["invalid"]),
         "route_mismatch": route_mismatch,
+        "seed_mismatch": seed_mismatch,
         "success_mismatch": success_mismatch,
         "public_mismatch": public_mismatch,
         "policy_noise_seeds": tuple(
@@ -281,6 +292,7 @@ def adjudicate(manifest: Path, root: Path) -> dict[str, Any]:
         "completeness_mismatch": completeness_mismatch,
         "invalid": sum(row["invalid"] for row in inspected),
         "route_mismatch": sum(row["route_mismatch"] for row in inspected),
+        "seed_mismatch": sum(row["seed_mismatch"] for row in inspected),
         "success_mismatch": sum(row["success_mismatch"] for row in inspected),
         "public_mismatch": sum(row["public_mismatch"] for row in inspected),
         "pairing_mismatch": pairing_mismatch,
@@ -294,6 +306,7 @@ def adjudicate(manifest: Path, root: Path) -> dict[str, Any]:
                 "completeness_mismatch",
                 "invalid",
                 "route_mismatch",
+                "seed_mismatch",
                 "success_mismatch",
                 "public_mismatch",
                 "pairing_mismatch",

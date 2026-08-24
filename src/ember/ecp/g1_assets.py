@@ -68,9 +68,11 @@ def load_g1_config(path: Path) -> dict[str, Any]:
         or config.get("video", {}).get("cross_video_weight") != "identity_k1"
         or output_partition.get("q")
         != "eight_real_attention_heads_independent_signed_measures_then_concatenate"
+        or output_partition.get("action_in")
+        != "native_input_width_blocks_independent_signed_measures_then_concatenate"
         or any(
             output_partition.get(name) != "whole_native_vector_one_signed_measure"
-            for name in ("v", "action_in", "action_out")
+            for name in ("v", "action_out")
         )
         or initialization.get("kind")
         != "best_verified_robust_projection_or_carrier"

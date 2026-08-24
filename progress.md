@@ -41,7 +41,15 @@ set-valued formal与strict250已完成：每task按fixed50 count选择carrier/in
 最早接口现为signed-measure闭式初始化的数值稳定性：`1e-3` span threshold使scatter inverse condition number可达约`1e6`，task94
 FP32实际direction cosine最低为input `0.978`、output `0.883`。只把小型初始化solve的sufficient statistics改为FP64后，真实task94
 forward/materialization两侧minimum cosine均恢复到`>=0.99999988`；candidate、rank、pooling、loss、38 hooks、唯一rank16和Action Meta 0
-均不变。尚待clean pushed formal与同一strict250闭环复评。
+均不变。clean pushed formal与同一strict250已经完成：`116/250`、逐task`35/34/44/3/0`、relative recovery`1.090`、
+retention`35/43`；但breadth4/5、Long0且仅3/5高于carrier，Gate仍non-pass。
+
+FP64已排除数值失真后，最早剩余结构接口是action-in whole-vector output pooling：`32 -> 1024`真实Y共享一个scalar signed measure
+时必然受限于`span(column_space(W),bias)`、至多`33/1024`。paired response只把task94的action-in target恢复为known-success
+independent mobile，其它37 targets保持当前native candidate，Long从`0/50`变为`1/50`。当前canonical修正因此按native input width
+把action-in真实Y切成32个32D blocks，各block独立signed pooling；完整response counterfactual为`118/250`、逐task
+`35/35/44/3/1`、breadth5/5、4/5高于carrier、retention`35/43`，数值上满足全部G1门，但因task94 action-in来自privileged
+reference而不是native pooling，不能冒充G1 pass。候选索引、四类bank、rank、scale、唯一rank16和G1/G3边界不变。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -105,14 +113,17 @@ G1--G5 Gate或架构修正依据。
   peak allocated为28,332,442,624 bytes，single complete rank16与纯Native/Action-Meta-off合同保持不变。
 - reference-projected初始化后task93的pre-update latest loss从旧随机路径约`1.32`降至`0.817`，global-member effect为`0.107`；
   全部五类free variables仍有非零梯度，峰值28,676,537,344 bytes，真实chunk cache为521,625,600 bytes。
+- action-in 32×32D修正的task94真实profile中，32个output blocks均为stable rank32，input/output minimum direction cosine仍为
+  `>=0.99999988`；一步真实loss backward使全部26,208,000个`output_logits`及其余四类free variables获得有限非零梯度，
+  peak allocated为29,771,734,528 bytes。纯Native loader、Action Meta module/parameter 0、38 hooks和76-tensor唯一rank16均保持。
 
 ## 当前下一步与延期漂移
 
-1. 审查FP64 signed-measure solve、配置合同和定向测试，完成全量CPU回归后集成clean pushed main；
-2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，fresh生成五个
-   task-local step0；
+1. 审查action-in 32×32D native-block修正diff、配置合同与全量CPU回归，集成clean pushed main；
+2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、
+   prohibited设备、进程、显存/util与独立storage quota，fresh生成五个task-local step0；
 3. 以该single step0唯一rank16 bank重跑同一strict250和four-arm Gate；若仍non-pass，按最早失败task的signed-measure/span response
-   定位，不以步数、seed、LR或threshold小扫替代机制证据；
+   定位，不以步数、seed、LR、threshold或group-count小扫替代机制证据；
 4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。

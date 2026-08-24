@@ -327,12 +327,28 @@ def rms_normalize(value: torch.Tensor, *, epsilon: float = 1e-8) -> torch.Tensor
 
 
 def native_output_group_count(owner: TargetOwner) -> int:
-    """Use the action expert's real eight-head q layout as output value groups."""
+    """Partition only native outputs with a proved whole-vector span ceiling."""
 
-    groups = G1_Q_OUTPUT_GROUPS if owner.family is TargetFamily.Q else 1
+    if owner.family is TargetFamily.Q:
+        groups = G1_Q_OUTPUT_GROUPS
+    elif owner.family is TargetFamily.ACTION_IN:
+        # action_in is 32 -> 1024.  One scalar signed measure over its complete
+        # Y vector is confined to span(column_space(W), bias), at most 33/1024
+        # dimensions.  Contiguous blocks no wider than the native input retain
+        # genuine Y values while removing that algebraic ceiling.  This is the
+        # minimal full-width partition implied by the actual Linear shape, not
+        # a tunable group-count sweep.
+        if owner.out_features % owner.in_features:
+            raise NativeFactorError(
+                f"native action-in output does not preserve input-width blocks: "
+                f"{owner.target_name}"
+            )
+        groups = owner.out_features // owner.in_features
+    else:
+        groups = 1
     if owner.out_features % groups:
         raise NativeFactorError(
-            f"native output width does not preserve q-head groups: {owner.target_name}"
+            f"native output width does not preserve value groups: {owner.target_name}"
         )
     return groups
 
@@ -513,9 +529,10 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
                     + measure[target, None, :, None, :, None, None, None]
                 )
                 groups = len(output_accumulator)
-                # The candidate index is unchanged.  A q value is merely restored
-                # to its native [8 heads, 256 channels] layout so one head cannot
-                # force every other head to use the same scalar attention measure.
+                # The candidate index is unchanged.  Grouping only restores a
+                # proved native structure: q's [8 heads, 256 channels], or
+                # action-in's minimal input-width output blocks.  Values remain
+                # slices of the same real Y candidate; no candidate is copied.
                 grouped_bank = output_bank.reshape(
                     *output_bank.shape[:-1], groups, output_bank.shape[-1] // groups
                 ).movedim(-2, 0)

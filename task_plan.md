@@ -34,8 +34,17 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
 - [x] 完成set-valued clean formal与strict250：`111/250`、recovery`1.015`、retention`34/43`，但breadth4/5、Long0、仅3/5高于carrier；
 - [x] 由task94 minimum direction cosine `0.978/0.883`定位FP32 inverse-scatter数值失真，并用真实FP64 smoke恢复到两侧
   `>=0.99999988`；
-- [ ] 完成FP64 signed-solve diff审查、全量回归、main集成与detached formal worktree；
-- [ ] fresh生成五task step0、跑single-checkpoint strict250与同一G1 Gate；若仍non-pass，继续定位最早signed-measure/span response接口。
+- [x] 完成FP64 signed-solve diff审查、全量回归、main集成与detached formal worktree；
+- [x] fresh生成五task step0并完成single-checkpoint strict250：`116/250`、recovery`1.090`、retention`35/43`，但breadth4/5、
+  Long0且仅3/5高于carrier，Gate仍non-pass；
+- [x] 用paired response只把task94的action-in target恢复为known-success independent mobile，Long从`0/50`变为`1/50`；完整
+  counterfactual为`118/250`、breadth5/5、4/5高于carrier、retention`35/43`，定位whole-vector action-in
+  `span(column_space(W),bias)`上限具有独立闭环后果；该privileged替换不是G1 candidate；
+- [x] 实现action-in按其native input width形成32个真实32D Y blocks的独立signed measures，并通过142项CPU合同检查；
+- [x] 完成task94真实forward/gradient/materialization smoke：32个output blocks均stable rank32、两侧minimum cosine
+  `>=0.99999988`、全部26,208,000个output logits有非零有限梯度、Action Meta 0、唯一rank16，峰值约29.77GB；
+- [ ] 完成全量diff审查、main集成与detached formal；
+- [ ] fresh生成五task step0并重跑同一strict250 Gate；若仍non-pass，继续按最早signed-measure/span response接口修正。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 

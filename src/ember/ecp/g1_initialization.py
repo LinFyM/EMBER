@@ -183,7 +183,7 @@ def _scaled_group_probabilities(
     desired: torch.Tensor,
     probability_floor_mass: float,
 ) -> tuple[tuple[torch.Tensor, ...], torch.Tensor]:
-    """Preserve desired q-head magnitudes while each head owns a simplex pair."""
+    """Preserve desired block magnitudes while each block owns a simplex pair."""
 
     width = measures[0].values.shape[-1]
     if desired.shape[-1] != len(measures) * width:

@@ -122,7 +122,7 @@ Native-Factor根本失败：Object/Spatial已有强闭环信号。read-only解�
 闭环response诊断进一步把同一independent mobile member从`120/250`、Goal/Long=`11/8`投影为`109/250`、Goal/Long=`0/0`，
 而三个Spatial/Object task仍为`34/30/45`。这说明被scalar q measure排除的方向对process-sensitive task是必要的。当前只改变这一
 最早接口：候选索引仍为`(k,t,p,h,u)`，真实q value按模型原生八个query heads恢复为`[8,256]`，各head独立做signed measure后
-拼回2048维；不增加fake type、task route或非native value。action-in仍有独立结构上限，但当前不同时改第二个主要变量。
+拼回2048维；不增加fake type、task route或非native value。action-in仍有独立结构上限，但该轮没有同时改第二个主要变量。
 
 ### 15. q-head复评把最早失效接口推进到free-logit优化
 
@@ -151,6 +151,24 @@ input/output direction cosine只有`0.978/0.883`，没有实际实现解析span�
 solve改为FP64后，同一真实forward/materialization的两侧minimum cosine均为`>=0.99999988`，38 hooks、Action Meta 0和唯一rank16
 不变。这是由闭环Long失败和方向误差共同支持的数值机制修正，不是seed/LR/threshold扫；仍不证明G3共享映射。
 
+### 16. FP64复评把最早接口推进到action-in whole-vector输出上限
+
+FP64 clean formal把解析点完整实现后，strict250达到`116/250`，逐task`35/34/44/3/0`，relative recovery`1.090`、carrier
+retention`35/43`；总分、Goal和retention均通过，但breadth4/5、Long0且仅3/5 task高于carrier，故G1仍non-pass。task94初始化
+两侧minimum direction cosine已为`>=0.99999988`，所以Long0不再能归因于FP32 solve。
+
+剩余四个output family中，v和action-out的base Linear output row space可覆盖完整输出，q已按真实八个query heads分组；只有
+action-in把`32 -> 1024`线性层的完整Y向量共享一个scalar signed measure，必然受限于`span(column_space(W),bias)`、至多
+`33/1024`。paired response只把task94完整rank16中的action-in target恢复为known-success independent mobile，其它37 targets保持
+当前native candidate不变，Long由`0/50`变为`1/50`；完整counterfactual为`118/250`、逐task`35/35/44/3/1`、breadth5/5、
+4/5高于carrier、retention`35/43`，即数值上满足全部G1门。它仍不是G1 candidate，因为action-in来自privileged reference；其作用
+是证明action-in被排除方向本身具有闭环因果作用，而不是根据内部cosine猜测。
+
+当前修正不改变候选索引、不复制X、不增加fake type：每个action-in Y candidate仍只出现一次，只把真实1024D Y按native input
+width切成32个连续32D blocks，各block独立做positive/negative softmax后再拼回1024D。32组是由`1024/32`线性shape推出、解除
+已证明上限所需的最小full-width partition，不是group-count小扫；G1 logits仍是task-local free code，G3以后必须以共享Program query
+和content keys生成这些group measures。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
@@ -167,8 +185,9 @@ solve改为FP64后，同一真实forward/materialization的两侧minimum cosine�
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- G1 scalar、q-head、latest-only和set-valued exact step0分别为`88/250`、`84/250`、`100/250`、`111/250`；set-valued已恢复
-  recovery与retention，但Long仍为0。FP64 signed solve已用真实task94证明方向恢复，尚待clean pushed formal闭环复评。
+- G1 scalar、q-head、latest-only、set-valued和FP64 exact step0分别为`88/250`、`84/250`、`100/250`、`111/250`、`116/250`；
+  FP64已恢复recovery与retention，但Long仍为0。task94 action-in-only privileged response为`118/250`并恢复`1/50` Long，当前按该
+  最早接口修正，不能把response counterfactual冒充G1 pass。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。

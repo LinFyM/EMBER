@@ -38,11 +38,11 @@
     "output_value_partition": {
       "q": "eight_real_attention_heads_independent_signed_measures_then_concatenate",
       "v": "whole_native_vector_one_signed_measure",
-      "action_in": "whole_native_vector_one_signed_measure",
+      "action_in": "native_input_width_blocks_independent_signed_measures_then_concatenate",
       "action_out": "whole_native_vector_one_signed_measure"
     },
-    "mechanism_evidence": "runs/outputs/pi05_ecp_native_factor_g1_set_oracle_step0_strict250_873af85_gpu01p34567_r3_20260825/results.json",
-    "claim_boundary": "set-valued free code recovers 111/250 and carrier retention, but an ill-conditioned FP32 signed-measure solve loses Long; FP64 is confined to the small closed-form initialization solve and makes no shared-compiler claim"
+    "mechanism_evidence": "runs/outputs/pi05_ecp_native_factor_g1_fp64_signed_solve_step0_strict250_f60ec9d_gpu01p34567_r3_20260825/results.json",
+    "claim_boundary": "FP64 realizes the intended stable-span point and reaches 116/250 with retention, but Long remains 0; action-in whole-vector pooling still has a proved 33/1024 output ceiling, so G1 now tests the minimal native-input-width block partition without making a shared-compiler claim"
   },
   "functional_query": {
     "demo_indices": [1, 2, 3, 4, 5, 6, 7, 8],

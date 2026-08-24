@@ -114,15 +114,33 @@ fresh development recipe。两者的精确顺序、validation8是否并入32-tas
 
 首轮free-code strict250为`88/250`，逐task`33/18/37/0/0`，Gate non-pass。该结果不能用loss解释为通过，但也不是
 Native-Factor根本失败：Object/Spatial已有强闭环信号。read-only解析证明，对冻结linear target有`Y=W X+b`，而positive/negative
-两个softmax各自质量为1，所以signed absolute bank中的bias抵消，adj/init/goal也全部位于`column_space(W)`。因此18个q target的
-scalar pooling至多覆盖`1024/2048`输出维，action-in至多覆盖`32/1024`；15个known-success mobile-rank4 reference整体仅保留
+两个softmax各自质量为1；无bias的q/v outputs位于`column_space(W)`。action-in带bias，且abs与difference type可跨类型相减，
+所以其精确结构上限是`span(column_space(W), bias)`而不是此前简写的纯列空间。因此18个q target的scalar pooling至多覆盖
+`1024/2048`输出维，action-in至多覆盖`33/1024`；15个known-success mobile-rank4 reference整体仅保留
 约55--56% update energy。
 
 闭环response诊断进一步把同一independent mobile member从`120/250`、Goal/Long=`11/8`投影为`109/250`、Goal/Long=`0/0`，
 而三个Spatial/Object task仍为`34/30/45`。这说明被scalar q measure排除的方向对process-sensitive task是必要的。当前只改变这一
 最早接口：候选索引仍为`(k,t,p,h,u)`，真实q value按模型原生八个query heads恢复为`[8,256]`，各head独立做signed measure后
-拼回2048维；不增加fake type、task route或非native value。action-in虽也有解析上限，但其在reference总能量中的剩余影响约
-0.07--0.13%，当前不同时改第二个主要变量。
+拼回2048维；不增加fake type、task route或非native value。action-in仍有独立结构上限，但当前不同时改第二个主要变量。
+
+### 15. q-head复评把最早失效接口推进到free-logit优化
+
+q-head修正后的formal strict250为`84/250`，逐task`28/21/35/0/0`，比scalar首轮`88/250`更低，Gate仍non-pass。其step500
+generated residual与三个known-success references的整体effective-update cosine仅约`0.06`，Goal task对latest/independent的
+sensitivity-normalized update loss仍为`1.18/1.17`；因此“增加q输出自由度”没有被随机近均匀、千万级dense softmax logits的优化
+实际利用。
+
+随后对真实K=1视频bank做稳定中心子空间投影：以action-in已知结构秩校准的relative singular threshold `1e-3`，将latest mobile
+rank4的每个input factor和q-head-grouped output factor投影后再按冻结`s_ref`截断。该唯一rank12+4 rank16诊断在paired strict250达到
+`94/250`，逐task`24/24/44/1/1`，relative recovery、breadth5/5、四task高于carrier以及Goal/Long非零均成立；carrier retention只有
+`22/43`，所以它不是G1 Gate pass。它仍直接证明：稳定native bank内存在具有process-sensitive闭环能力的signed-pooling方向，当前最早
+问题是free logits从随机稠密softmax无法到达这些方向，而不是bank本身完全不可达。
+
+当前单变量修正保持bank、rank和loss不变，用known-success latest member只在G1中做稳定子空间解析投影，把投影系数分解为positive/
+negative simplex并初始化实际free logits；q各head再用共享背景质量缩放以保持跨head相对幅度。task93真实一步smoke的初始化
+latest update loss为`0.817`（解析投影`0.813`），global-member effect为`0.107`，全部五类free variables有非零梯度，Action Meta为0。
+这仍是privileged task-local capacity solve，不是G3共享Program-to-attention映射。
 
 ## 已关闭路线
 
@@ -140,8 +158,8 @@ scalar pooling至多覆盖`1024/2048`输出维，action-in至多覆盖`32/1024`�
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- G1首轮formal已形成`88/250` non-pass及完整Gate；q-head机制修正已通过真实profile smoke但尚未formal复评，因此既不能把首轮
-  non-pass扩大成Native-Factor根本失败，也不能把修正接通误写成G1通过。
+- G1 scalar与q-head formal分别形成`88/250`和`84/250` non-pass；稳定bank投影`94/250`证明breadth/Goal/Long容量但retention仅
+  `22/43`，不能冒充Gate pass。reference-projected free-logit初始化已通过真实profile，尚待clean pushed formal复评。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。

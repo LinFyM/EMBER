@@ -57,6 +57,7 @@ def load_g1_config(path: Path) -> dict[str, Any]:
     output_partition = config.get("native_factor", {}).get(
         "output_value_partition", {}
     )
+    initialization = config.get("optimization", {}).get("initialization", {})
     if (
         config.get("schema_version") != G1_CONFIG_SCHEMA
         or config.get("status") != "active_native_factor_capacity_oracle"
@@ -69,6 +70,12 @@ def load_g1_config(path: Path) -> dict[str, Any]:
             output_partition.get(name) != "whole_native_vector_one_signed_measure"
             for name in ("v", "action_in", "action_out")
         )
+        or initialization.get("kind") != "robust_reference_projection"
+        or initialization.get("reference_member") not in G1_MEMBER_NAMES
+        or not 0
+        < float(initialization.get("relative_singular_threshold", 0))
+        < 1
+        or not 0 <= float(initialization.get("probability_floor_mass", -1)) < 1
     ):
         raise ValueError("G1 Native-Factor config changed its capacity contract")
     return config

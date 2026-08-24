@@ -14,12 +14,17 @@ import torch
 from ember.batched_lora import BatchedLoRAInference
 from ember.ecp.contracts import TargetOwner, build_target_owners
 from ember.ecp.g1_assets import (
+    G1_MEMBER_NAMES,
     G1RankAssets,
     G1TaskAssets,
     authority_path,
     load_g1_config,
     load_g1_rank_assets,
     load_g1_task_assets,
+)
+from ember.ecp.g1_initialization import (
+    cache_native_video_readout,
+    initialize_oracle_from_reference,
 )
 from ember.ecp.g1_objective import (
     G1EffectBank,
@@ -259,16 +264,18 @@ def prepare_runtime(args: argparse.Namespace) -> G1Runtime:
     prepare_frozen_writer_policy(policy, ranks.contract)
     lora = BatchedLoRAInference(policy, ranks.contract)
     capture_modes = native_capture_modes(policy, owners)
-    readout = prepare_pass_b_readout(
-        policy=policy,
-        stage0=stage0,
-        owners=owners,
-        frames=frames,
-        tokens=tokens,
-        masks=masks,
-        process=process,
-        posterior=posterior,
-        chunk_size=int(config["video"]["frame_chunk_size"]),
+    readout = cache_native_video_readout(
+        prepare_pass_b_readout(
+            policy=policy,
+            stage0=stage0,
+            owners=owners,
+            frames=frames,
+            tokens=tokens,
+            masks=masks,
+            process=process,
+            posterior=posterior,
+            chunk_size=int(config["video"]["frame_chunk_size"]),
+        )
     )
     video = G1VideoRuntime(
         readout=readout,
@@ -283,6 +290,29 @@ def prepare_runtime(args: argparse.Namespace) -> G1Runtime:
         program_width=128,
         initialization_seed=seed,
     ).to(device)
+    initialization_cell = config["optimization"]["initialization"]
+    if args.resume is None:
+        reference_member = str(initialization_cell["reference_member"])
+        reference_index = G1_MEMBER_NAMES.index(reference_member)
+        initialization_report = initialize_oracle_from_reference(
+            oracle=oracle,
+            video=readout,
+            owners=owners,
+            contract=ranks.contract,
+            reference=ranks.reference_rank4[task.ordinal][reference_index],
+            s_ref=ranks.s_ref,
+            relative_singular_threshold=float(
+                initialization_cell["relative_singular_threshold"]
+            ),
+            probability_floor_mass=float(
+                initialization_cell["probability_floor_mass"]
+            ),
+            reference_member=reference_member,
+        )
+    else:
+        initialization_report = read_json(args.output_dir / "run_contract.json")[
+            "native_factor_initialization"
+        ]
     optimizer = _optimizer(oracle, config)
 
     effect_bank = load_g1_effect_bank(task.effect_manifest, device=device)
@@ -343,6 +373,7 @@ def prepare_runtime(args: argparse.Namespace) -> G1Runtime:
         ranks=ranks,
         video=video,
         pure_native=pure_native,
+        initialization=initialization_report,
         sensitivity_raw=sensitivity_raw,
         sensitivity_weights=sensitivity_weights,
         repo_root=REPO_ROOT,

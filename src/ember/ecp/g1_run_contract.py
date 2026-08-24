@@ -26,6 +26,7 @@ def build_run_contract(
     ranks: G1RankAssets,
     video: G1VideoRuntime,
     pure_native: Mapping[str, Any],
+    initialization: Mapping[str, Any],
     sensitivity_raw: torch.Tensor,
     sensitivity_weights: torch.Tensor,
     repo_root: Any,
@@ -82,6 +83,7 @@ def build_run_contract(
             "s_ref": ranks.s_ref.detach().cpu().tolist(),
             **dict(config["native_factor"]),
         },
+        "native_factor_initialization": dict(initialization),
         "pure_native_stage0": dict(pure_native),
         "policy_sensitivity": {
             "calibration": "carrier directional functional derivative along each successful rank4 member",

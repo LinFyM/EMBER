@@ -41,8 +41,8 @@
       "action_in": "whole_native_vector_one_signed_measure",
       "action_out": "whole_native_vector_one_signed_measure"
     },
-    "mechanism_evidence": "runs/analysis/pi05_ecp_native_factor_g1_output_span_response_822147b_gpu01p3_20260824/analysis.json",
-    "claim_boundary": "q head partition removes the proven scalar-Y column-space ceiling without adding task/frame lookup or non-native values"
+    "mechanism_evidence": "runs/outputs/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_strict250_a8ec468_gpu01p34567_r3_20260825/results.json",
+    "claim_boundary": "q-head values plus a reference-projected stable signed measure recover 94/250 with breadth5; the initialization is privileged G1 free code and makes no shared-compiler claim"
   },
   "functional_query": {
     "demo_indices": [1, 2, 3, 4, 5, 6, 7, 8],
@@ -55,8 +55,14 @@
   },
   "optimization": {
     "seed": 20260824,
+    "initialization": {
+      "kind": "robust_reference_projection",
+      "reference_member": "latest",
+      "relative_singular_threshold": 0.001,
+      "probability_floor_mass": 0.0001
+    },
     "initial_segment_steps": 500,
-    "checkpoint_steps": [50, 100, 200, 350, 500],
+    "checkpoint_steps": [1, 50, 100, 200, 350, 500],
     "effect_interval": 5,
     "effect_microbatch_states": 4,
     "denoising_steps": 10,

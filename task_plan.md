@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-08-24。
+更新时间：2026-08-25。
 
 ## 当前目标
 
@@ -21,8 +21,15 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
 - [x] 完成read-only output span与paired response projection，定位scalar q-output pooling的列空间上限，并以`109/250`、
   Goal/Long仍为0验证被排除方向具有闭环后果；
 - [x] 实现真实q八头独立signed measure修正，并通过CPU合同及task93真实forward/gradient/materialization smoke；
-- [ ] 完成修正diff审查、全量CPU回归、main集成与detached formal worktree；
-- [ ] fresh重跑5-task formal optimization、strict250与同一G1 Gate；若仍non-pass，继续定位最早失效机制并复评。
+- [x] 完成q-head修正diff审查、全量CPU回归、main集成与detached formal worktree；
+- [x] fresh重跑q-head 5-task formal optimization、strict250与同一G1 Gate：`84/250`、breadth3/5、Goal/Long 0，仍non-pass；
+- [x] 用真实bank稳定子空间投影和paired strict250把最早接口定位到free-logit可达优化：`94/250`、breadth5/5、Goal/Long非零，
+  但retention`22/43`；
+- [x] 实现reference-projected positive/negative simplex初始化与frozen native chunk cache，并通过task93真实一步gradient/materialization
+  profile和140项CPU回归；
+- [ ] 完成当前修正diff审查、main集成与detached formal worktree；
+- [ ] fresh重跑初始化后的5-task formal optimization、single-checkpoint strict250与同一G1 Gate；若仍non-pass，优先定位
+  carrier-preservation/retention接口并复评。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 

@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-08-24。本轮G1实现起点：clean pushed `main@13ca36662e430d9e33afa9e26fa3835d859abc78`。
+更新时间：2026-08-25。本轮G1实现起点：clean pushed `main@13ca36662e430d9e33afa9e26fa3835d859abc78`。
 
 ## 当前状态
 
@@ -17,15 +17,21 @@ G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250�
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。
 
-按Gate合同完成的read-only span/response分析定位到当前scalar output pooling的结构性上限：对任一target，signed absolute/adj/init/goal
-组合仍位于base weight列空间；q只能覆盖`1024/2048`输出维，action-in只能覆盖`32/1024`。15个known-success mobile-rank4
+按Gate合同完成的read-only span/response分析定位到当前scalar output pooling的结构性上限：无bias q/v组合位于base weight列空间；
+q只能覆盖`1024/2048`输出维。action-in带bias且可跨output types相减，精确上限为`span(column_space(W),bias)`、至多`33/1024`。
+15个known-success mobile-rank4
 reference整体只保留约55--56% update energy。将independent member正交投影到该上限后的paired strict250为`109/250`，逐task
 `34/30/45/0/0`；原independent mobile authority为`120/250`且Goal/Long为`11/8`，投影单独抹掉了两个process-sensitive suite。
 
-当前有机制依据的单变量修正是：保持`n_B=(video,frame,probe,horizon,type)`候选不变，把真实q output恢复为PI0.5原生
-`[8 heads,256]`布局，每个真实q head独立做positive/negative signed normalization，随后拼回2048维factor；v/action-in/action-out
-暂不改变。新路径CPU合同与task93真实CUDA profile smoke均通过，全部五类free variables有非零梯度，峰值约28.33GB，输出仍是
-38-target/76-tensor唯一rank12+4 rank16，Action Meta module/parameter为0；尚未形成修正后的formal Gate结论。
+q-head修正的formal optimization与strict250已经完成：唯一rank16 candidate为`84/250`，逐task`28/21/35/0/0`、relative recovery
+`0.6119`、breadth3/5、高于carrier2/5、carrier retention`24/43`，Gate non-pass。step500 generated update与known-success references
+整体cosine仅约`0.06`，所以增加的q自由度没有被随机近均匀dense logits实际利用。
+
+随后稳定native-bank投影诊断把latest member materialize为同一唯一rank16，在strict250达到`94/250`、逐task`24/24/44/1/1`；
+relative recovery、breadth、Goal/Long和四task高于carrier均成立，但retention仅`22/43`，故不是Gate pass。该结果证明稳定bank内存在
+process-sensitive闭环方向，并把最早失效接口推进到free-logit可达优化与retention。当前实现已加入只用于G1的reference-projected
+positive/negative simplex初始化；task93真实一步profile的latest update loss为`0.817`（解析`0.813`）、effect loss`0.107`，五类参数
+均有非零梯度，Action Meta为0。尚待clean pushed formal复评。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -63,7 +69,8 @@ G1--G5 Gate或架构修正依据。
 - 旧41份Markdown、87份分散证据JSON、退役配置/测试及约11.6GB可重建人工datasets/runs已清除；recovery Gate A残留
   作为历史formal evidence保留，不删除也不恢复为当前路线；
 - 瘦身提交`6fdaeb8`的126项活动CPU测试、compile、脚本入口与引用审计均通过；
-- 当前只有`main`一个worktree，无task-owned branch或GPU job。
+- orientation清理节点当时只有`main`一个worktree、无task-owned branch或GPU job；后续G1按合同使用隔离实现面与detached formal
+  worktree，动态状态以本节“当前下一步”和live检查为准。
 
 ## 当前可复用资产
 
@@ -86,14 +93,16 @@ G1--G5 Gate或架构修正依据。
 - profile输出已核对后删除，不作为formal evidence。
 - q-head修正后task93一步真实profile中`output_logits`的16,793,600个元素全部获得非零梯度，其余四类free variables也全部非零；
   peak allocated为28,332,442,624 bytes，single complete rank16与纯Native/Action-Meta-off合同保持不变。
+- reference-projected初始化后task93的pre-update latest loss从旧随机路径约`1.32`降至`0.817`，global-member effect为`0.107`；
+  全部五类free variables仍有非零梯度，峰值28,676,537,344 bytes，真实chunk cache为521,625,600 bytes。
 
 ## 当前下一步与延期漂移
 
-1. 完成q-head修正的全量CPU回归、diff审查与clean pushed main集成；
-2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，
-   fresh重跑5-task formal optimization；
-3. 以修正后的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，继续按最早失效接口做
-   span/response分析，不以步数、seed或LR小扫替代机制证据；
+1. 审查reference-projected free-logit初始化、缓存chunk与定向合同，完成全量CPU回归后集成clean pushed main；
+2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，fresh重跑
+   5-task formal optimization；预注册保留step1及后续相邻checkpoints，使用内部objective与retention response定位，而非held reward拼接；
+3. 以一个single checkpoint的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，优先检查
+   carrier-preservation/retention接口，不以步数、seed或LR小扫替代机制证据；
 4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。

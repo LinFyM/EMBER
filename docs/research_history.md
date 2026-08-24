@@ -131,13 +131,14 @@ G1首轮canonical实现提交为`9a6f434`。fold0 held5 task-local free-code for
 strict250为`88/250`，逐task`33/18/37/0/0`；relative recovery为`0.6716`，breadth3/5、高于carrier 2/5、carrier retention
 30/43，因此Gate non-pass。250 rows、47 shards、15 workers、Action Meta关闭与single-adapter合同均正常。
 
-提交`822147b`加入的只读分析证明，scalar signed output pooling把q factor限制在base q weight的1024维列空间（输出2048），把
-action-in限制在32维列空间（输出1024）；15个known-success mobile-rank4 reference只保留约55--56%总update energy。将
+提交`822147b`加入的只读分析证明，scalar signed output pooling把q factor限制在base q weight的1024维列空间（输出2048）。
+action-in带bias且不同output-bank types可跨类型相减，后续精确修正其结构上限为`span(column_space(W),bias)`、至多33维，而非该
+分析最初简写的32维纯列空间；这不影响无bias q target的主结论。15个known-success mobile-rank4 reference只保留约55--56%总update energy。将
 independent member正交投影到该输出上限后，paired strict250为`109/250`、逐task`34/30/45/0/0`；未投影authority为`120/250`，
 Goal/Long为`11/8`。因此被排除输出方向对Goal/Long具有闭环必要性，最早问题是scalar q-output bank，不是实现故障、seed或训练时长。
 
 当前机制修正在每个真实q attention head内独立做signed pooling，再拼回原生2048维；候选索引、真实Y、rank4、carrier12和唯一rank16
-合同不变。该修正已通过CPU合同和真实CUDA一步smoke，但本历史节点尚无修正后的formal Gate结果。
+合同不变。
 
 关键artifacts：
 
@@ -146,7 +147,34 @@ Goal/Long为`11/8`。因此被排除输出方向对Goal/Long具有闭环必要�
 - `runs/analysis/pi05_ecp_native_factor_g1_output_span_response_822147b_gpu01p3_20260824/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_output_span_independent_strict250_822147b_gpu01p34567_r3_20260824/`。
 
-## 11. 当前保留结论
+## 11. q-head formal与稳定bank投影
+
+q-head修正由clean pushed `main@a8ec468`执行。五个task均完成500 steps、全部五类free variables有非零梯度、Action Meta module/
+parameter为0，checkpoint仍为76 tensors的唯一rank12+4 rank16。paired strict250为`84/250`，逐task`28/21/35/0/0`；relative
+recovery `0.6119`、breadth3/5、高于carrier 2/5、carrier retention `24/43`，因此Gate non-pass。
+
+endpoint审计显示，step500 generated residual与latest/independent/earliest references的整体effective-update cosine约`0.05--0.07`；
+Goal task的latest/independent update loss仍为`1.18/1.17`，虽然global-member effect从约`0.72`降到`0.24`。这表明effect critic的内部
+改善没有把千万级随机近均匀free logits带入known-success update basin，不能用内部loss冒充closed-loop。
+
+随后对五个真实K=1视频bank按relative singular threshold `1e-3`构造稳定中心子空间，将latest mobile rank4的input factors与q-head-grouped
+output factors作正交投影并按冻结`s_ref`截断。该read-only唯一rank16 response诊断在strict250达到`94/250`，逐task
+`24/24/44/1/1`：relative recovery超过0.70、breadth5/5、Goal/Long非零且四task高于carrier；carrier retention仅`22/43`，所以不是
+G1 Gate pass。该结果直接约束下一修正为free-logit可达优化与retention，而不是扩rank、加slot或宣告native bank根本失败。
+
+基于此证据，当前实现把稳定子空间的最小范数系数解析分解为positive/negative simplex，初始化实际task-local signed logits；q每个真实
+head用共同背景质量保持跨head相对幅度。task93真实一步profile的pre-update latest loss为`0.817`（投影下界`0.813`），effect loss
+`0.107`，五类参数均有非零有限梯度，缓存真实chunk后峰值约28.68GB。该初始化只属于G1 privileged capacity oracle，不进入G3共享
+compiler。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_native_factor_g1_qhead_held5_formal_a8ec468_gpu01p34567_20260825/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_qhead_free_code_step500_strict250_a8ec468_gpu01p34567_r3_20260825/`；
+- `runs/analysis/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_a8ec468_gpu01p34567_20260825/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_strict250_a8ec468_gpu01p34567_r3_20260825/`。
+
+## 12. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -156,7 +184,7 @@ Goal/Long为`11/8`。因此被排除输出方向对Goal/Long具有闭环必要�
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 12. 证据恢复方式
+## 13. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

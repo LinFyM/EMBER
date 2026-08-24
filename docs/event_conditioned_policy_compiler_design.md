@@ -267,8 +267,9 @@ loss：global-member effect、sensitivity-normalized effective update、independ
 不可达，才停止Native-Factor主线；不得仅因一次或预定次数的non-pass把失败归因于数据量。
 
 首轮scalar-output实现的formal结果为`88/250`、breadth3/5、Goal/Long 0。随后解析证明：对linear target，整条输出vector共享一个
-signed scalar measure时，absolute bank的bias因两分支质量相等而抵消，四类output value均受限于`column_space(W)`；q只能覆盖
-`1024/2048`维，action-in只能覆盖`32/1024`维，known-success rank4能量总体仅保留约55--56%。paired response projection又把
+signed scalar measure时，无bias的q/v outputs受限于`column_space(W)`；action-in因带bias且abs/difference可跨类型相减，结构上限为
+`span(column_space(W),bias)`。因此q只能覆盖`1024/2048`维，action-in至多覆盖`33/1024`维，known-success rank4能量总体仅保留
+约55--56%。paired response projection又把
 independent mobile从`120/250`、Goal/Long=`11/8`变为`109/250`、Goal/Long=`0/0`，因此最早失效接口是q-output scalar pooling，
 不是训练轮数。
 
@@ -276,6 +277,16 @@ independent mobile从`120/250`、Goal/Long=`11/8`变为`109/250`、Goal/Long=`0/
 恢复为`[8,256]`，同一event measure下每个head独立进行positive/negative softmax归一化，再拼接成2048维`b`并做既定factor
 normalization。它不复制候选、不增加fake type或非native value，也不引入task/frame route。v、action-in、action-out首轮保持整vector
 一个signed measure，以便一次只修正有闭环证据的最早接口；若复评仍失败，再依据新span/response证据决定是否处理action-in或优化面。
+
+q-head formal复评为`84/250`、逐task`28/21/35/0/0`，且生成update与known-success references的整体cosine仅约`0.06`。对同一真实
+video bank做relative singular threshold `1e-3`的稳定中心子空间投影并materialize latest member后，strict250为`94/250`、逐task
+`24/24/44/1/1`：breadth、Goal/Long与四task高于carrier已恢复，但carrier retention只有`22/43`，故仍不是Gate pass。这个成对闭环
+结果把最早接口从bank span推进到随机稠密free logits的可达优化。
+
+当前修正不改变candidate、signed pooling、rank或loss：仅在G1使用已授权known-success latest member，把稳定子空间最小范数系数分解为
+positive/negative simplex来初始化实际free logits，并按q真实head保持相对幅度；随后仍由原四类objective联合优化。该解析初始化是
+task-local privileged capacity solve，不进入G3，也不声称共享Program query-key attention成立。预注册保留step1以免解析可达点在首次
+长优化前丢失，同时继续观察后续相邻checkpoints能否改善carrier retention。
 
 ### G2. Natural Program训练
 

@@ -67,9 +67,14 @@ K都强才做video-scaling claim。选择依据是真实闭环性能与因果证
 所以仅输入正确顺序或重建task expert并不能证明模型理解了视频过程。
 
 当前source71与目标40的BDDL reward都是最终状态合取，现有metadata没有证明same-endpoint但required procedure不同的
-授权task pair。因此，在补充经审计的process-identifying meta tasks之前，训练loss或task reward最多能证明
-video-conditioned scene/object/relation adaptation；“理解了必要中间过程”必须由额外数据合同和correct相对
-shuffled/reversed的闭环证据共同支持，不能从架构形式推断。
+授权task pair。因此，仅凭训练loss或task reward最多能证明video-conditioned scene/object/relation adaptation；
+“理解了必要中间过程”不能从架构形式推断。
+
+owner最新明确要求不再制作、扩充或救援custom BDDL、temporal-wrapper或其它人工process-identifying数据集。后续核心
+ECP只使用现成、经审计且不触碰validation/test梯度边界的LIBERO tasks、自然成功videos、task experts与授权train/meta
+signals。人工process Gate、composite/recovery teachers和其videos只保留为历史负证据，不再是Stage 0、`q_pi`、`q_V`或
+Writer训练的前置条件。最终时序特异性继续只由冻结checkpoint上的correct相对shuffled/reversed等自然任务配对controls
+判断；缺少受控same-endpoint pair时，claim相应收窄，不用继续造数据换取更强措辞。
 
 ## 4. 正确顺序必须有结构作用
 

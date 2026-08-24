@@ -1,11 +1,10 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts正在clean pushed frozen `342620a`上并行formal训练。
-GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
-分别为`19/100、44/100、37/100`，两个step1000 composite SFT也未通过state0。Phase 2A的15/15 known-success paths通过，
-但两种principled shared-realizer坐标均未过held closed-loop门，当前fit90 shared-realizer family关闭。最新专家复核取消
-现有`347/500`步phase-expert distillation；当前正在实施second-phase composite-context recovery teacher Gate。fresh Program、
-`q_pi/q_V`、joint Writer和outer credit仍须等待该Gate及后继Gate B。**
+状态：2026-08-24 **recovery teacher不变Gate A已完成并以`9/50 + 5/50 = 14/100`明确non-pass；六worker正常结束且
+全部route/pairing/seed/leakage检查通过。task65/68 SFT式teacher family关闭。owner最新终止人工process dataset/controller
+acquisition，后续只用现成授权LIBERO tasks直指ECP核心；人工Gate B/process suite不再是执行前置。GOMQ不属于ECP阶段，
+`rank12+rank4`也不作为未经重新复核的硬架构。本文保留已对齐的Program schema与历史专家方案，但具体自然数据路线、
+`q_pi`可识别性、Program-to-LoRA realizer和最终阶段Gate将在下一次专家核心复核后更新为唯一执行合同。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。
@@ -14,11 +13,10 @@ artifacts保存；最新裁决为
 
 ## 1. 当前裁决
 
-最新process acquisition裁决先于以下长期架构边界：现有on-policy phase-expert distillation只覆盖student states，未证明
-primitive expert在这些composite occupancies上是可靠continuation oracle；其完整50步标签还可能越过真实phase切换。
-因此该训练在启动前取消，已采集数据只作weak-teacher诊断。process路线只允许用A3真实成功轨迹的second-phase动作训练
-两个direction-specific recovery experts，并以冻结primitive first-phase + recovery second-phase的controller重跑原Gate A；
-失败后停止当前task65/68 SFT式teacher acquisition family。
+现有on-policy phase-expert distillation只覆盖student states，未证明primitive expert在composite occupancies上是可靠
+continuation oracle；其完整50步标签还可能越过真实phase切换，因此只作weak-teacher诊断。后继recovery experts虽然完成
+固定训练，但正式Gate A仅`14/100`且相对A3 gained0/lost23，已按合同关闭当前task65/68 SFT式teacher family。owner进一步
+取消全部人工process数据与controller acquisition；该支线不再阻塞fresh Program、`q_pi/q_V`和Writer核心方案复核。
 
 ECP的核心目标与Stage 0候选表示尚未被证伪，但以下**实际检验过的实现组合**已经有足够反证，不再恢复或做小变体：
 
@@ -353,17 +351,18 @@ occupancy，不能成为Stage 1B-C部署路径。
 在同一K4 teacher-video schedule、strict400 rows和RNG合同上评测一次correct。若量化后大幅下降，151只作历史机制证据；否则
 rank16结果成为后继absolute/causal参考。该工作不把GOMQ并入ECP。
 
-### 6.2 Phase 1：process-identifying data Gate
+### 6.2 Phase 1：retired artificial process-identifying data Gate
 
-任何新`q_pi/q_V`训练前先完成一个同scene、language、init distribution与final predicates、只在required order上相反的最小
-pair。environment-internal temporal wrapper在wrong-first后永久invalid，variant/predicate/phase不进入policy或Writer；两个variant
-都必须有真实完整teacher episode，不能拼接primitive视频。privileged task-local expert必须完成两臂；correct video须胜sibling
-wrong，而language-only、no-video、first+final不能区分。最小pair通过后扩成family-disjoint process-meta suite，并在最终
-Stage 0、`q_pi`与`q_V`共同训练前完成。数据准备可与Phase 2并行。
+原专家方案曾要求在新`q_pi/q_V`前完成same-scene/language/init/final、opposite-order的人工最小pair并扩成process-meta suite。
+Gate A/A2/A3/recovery依次得到`19/100、44/100、37/100、14/100`，没有建立可靠双向teacher。owner现已终止custom BDDL、
+temporal wrapper、composite controller与人工suite制作；本Phase只保留为历史负证据，不再是执行前置。后继只用现成LIBERO
+tasks，时序性由最终冻结checkpoint上的自然任务controls检验，general process claim按证据收窄。自然数据怎样替代本Phase的
+识别约束，列为下一次专家核心复核问题。
 
-### 6.3 Phase 2：mobile-rank4坐标与deployment realizer
+### 6.3 Phase 2：historical mobile-rank4坐标与deployment realizer
 
-输出拓扑固定为：
+以下是上一轮专家方案的默认候选，不再是当前硬架构；两种principled coordinates已闭环non-pass，owner要求专家在完整rank16
+输出合同和自然LIBERO-only边界下重新明确realizer。历史候选拓扑为：
 
 ```text
 W_j = W_carrier,j(rank12) + Delta W_j(rank4)

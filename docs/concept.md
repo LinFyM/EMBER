@@ -57,8 +57,9 @@ correct视频展示物理可行的初态→目标态过程；shuffled破坏阶�
 成功率。hidden或LoRA不同、negative变坏、内部margin变大都不是充分证明。
 
 现有LIBERO source/target reward只约束最终状态，没有已证明的same-endpoint/different-required-procedure任务对。
-因此时序control可以证明模型对视频顺序敏感并且这种敏感性有用，却不能单独把结果升级为一般“过程理解”；
-该claim还需要训练数据中真正排除endpoint、language或task-identity捷径的process-identifying mappings。
+因此时序control可以证明模型对视频顺序敏感并且这种敏感性有用，却不能单独把结果升级为一般“过程理解”。owner已明确
+停止制作人工process-identifying数据；后续只用现成LIBERO tasks直指核心Writer，并按现有证据收窄claim，而不是让造数据
+继续阻塞ECP实现。
 
 ## 输出为什么仍是一套LoRA
 

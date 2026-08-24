@@ -1,7 +1,7 @@
 # ECP composite-context recovery teacher Gate
 
-状态：2026-08-24，owner已授权执行。本文把
-`docs/ecp_recovery_teacher_expert_ruling_20260824.md`落实为唯一formal训练与闭环裁决合同。
+状态：2026-08-24，**formal完成，Gate A non-pass，路线关闭。** 本文把
+`docs/ecp_recovery_teacher_expert_ruling_20260824.md`落实为唯一formal训练与闭环裁决合同，并记录最终结果。
 
 ## 1. 科学问题
 
@@ -54,3 +54,14 @@ first/second event完成与first-event drop，并与A3同100行authority报告re
 不按state、结果或checkpoint筛选。通过后立即运行原Gate B。若失败，则关闭task65/68 primitive composition、composite SFT、
 phase-expert distillation和second-phase recovery SFT；不延长、不扫step/LR/rank/seed、不换task66/67重复，转向必须先独立
 通过同一Gate A的planner、human/teleoperation、MPC或task-local simulator RL composite controller。
+
+## 5. Formal结果与最终owner裁决
+
+clean pushed frozen `ebdd509`在gpu02 physical0--5以六个persistent workers完成100行：red-first为`9/50`、yellow-first为
+`5/50`、total `14/100`，environment success分别为`23/50、8/50`。两向first event完成`43/50、46/50`，但发生
+`27/50、26/50`次post-completion drop；相对A3的37条成功只retained14、gained0、lost23。六worker均exit0，invalid、route、
+pairing、seed与public-video mismatch全为0。因此这是明确科学non-pass，不是工程故障。
+
+按合同关闭task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT。owner随后进一步终止全部
+人工process dataset/controller acquisition，不执行上述planner/human/MPC/task-local RL后继；后续只用现成授权LIBERO tasks
+直指ECP核心。正式证据：`docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`。

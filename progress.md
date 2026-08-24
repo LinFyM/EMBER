@@ -5,9 +5,11 @@
 
 ## Current authority
 
-- current design contract：`docs/event_conditioned_policy_compiler_design.md`（专家最终修正已纳入，恢复执行）；
+- current design contract：`docs/event_conditioned_policy_compiler_design.md`（保留已对齐schema，等待自然LIBERO-only核心复核）；
 - ECP全过程对齐审计与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节；
 - 最新composite recovery teacher专家裁决：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`；
+- composite recovery teacher最终Gate A non-pass：
+  `docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
@@ -131,17 +133,19 @@
   该数据只满足student-state coverage，却没有验证primitive expert在这些composite states上的continuation correctness；同时完整
   50步标签可能跨越真实phase切换，reader又不遮掉tail。因此派生的`347/500`步正式训练已在启动前取消，数据只作
   student-occupancy/weak-teacher response资产，不再作为oracle训练集。
-- 当前active科学步骤是composite-context recovery teacher：从A3的28/9条真实成功轨迹截取second-phase执行动作，分别与
-  对应primitive成功数据按50/50混合，从原primitive LoRA初始化两个direction-specific recovery experts；第一event仍由冻结
-  primitive执行，切换后由recovery expert完成第二event。它必须直接通过原Gate A；失败后整个task65/68 SFT式teacher
-  acquisition family停止。owner已确认执行；训练合同已经完整完成，当前进入smoke与Gate A闭环裁决。
+- composite-context recovery teacher已从clean pushed frozen `ebdd509`完成不变100-row Gate A：red→yellow为`9/50`、
+  yellow→red为`5/50`、total `14/100`，低于双向各20与total50门；environment success为31/100，first-event drops为53/100。
+  相对A3基线37条只retained14、gained0、lost23。六个worker均exit0，invalid/route/pairing/seed/public mismatch全为0，故为
+  明确科学non-pass。task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT共同关闭。
 - clean pushed `a06a3ba`的首次formal launch在第一个mixed batch、任何optimizer step之前工程停止：composite RGB为256，
   primitive RGB为128，默认collate无法堆叠。该run以0 steps封存，不作科学结果；修正使用PI0.5原生resize分别变换到model224，
   并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
 - clean pushed `342620a`的真实1-step A40 profile通过，随后两臂在gpu02 physical0/1完成formal optimizer；每臂固定1000
-  steps、1000条finite metrics且只保存step1000，worker exit均0。variant-specific primitive-first/recovery-second route、checkpoint/role ledger与Gate A adjudicator已接通，
-  正从新clean pushed frozen authority运行smoke及100-row面板。该面板使用每方向50个single-state jobs和三名persistent
-  workers的动态队列，六个worker各只加载一次policy，避免原先固定shard的尾部等待。
+  steps、1000条finite metrics且只保存step1000，worker exit均0。clean pushed `ebdd509`的最终100-row面板使用每方向50个
+  single-state jobs和三名persistent workers动态队列，在686.2秒完成，证明队列与route基础设施有效，但teacher科学门失败。
+- owner最新明确不再制作或扩充人工process dataset，也不再取得planner/human/MPC/task-local RL composite controller；后续只用
+  现成授权LIBERO tasks推进ECP核心。GOMQ不进入ECP执行阶段，`rank12+rank4`不在专家重新确认前作为硬架构。当前无active GPU job，
+  `q_pi`、Program-only realizer、`q_V`、joint Writer与最终outer chain仍未实现。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -323,8 +327,8 @@
 - 最深缺口是deployment-time occupancy completion：Writer只见language/videos，不能在编译时读取future initial/candidate/
   recovery occupancy，却必须生成在该未见分布上有效的静态LoRA。task-local occupancy solver只作Stage 1B-R0 lower bound；
   deployment Stage 1B-C必须只读取Program；
-- 时间上最早未证明的接口仍是video到process-semantic Program。native v3只证明非退化task/time表示；最终必须fresh建立
-  owner-specific `P_lang/P_scene`并用process-identifying data排除task identity、relative phase与endpoint捷径；
+- 时间上最早未证明的接口仍是video到结构化Program。native v3只证明非退化task/time表示；最终必须fresh建立
+  owner-specific `P_lang/P_scene/P_process`，并只用现成LIBERO tasks、跨episode自然监督与最终视频controls约束捷径；
 - distributional `q_pi(P_visible,Z_robust)`与Program-to-effective-update bridge尚不存在。现有evidence panel可作输入资产，
   但antithetic probes已被平均、off-policy member response未验证、stage-wise soft-min可拼接不存在的policy；
 - fixed-A capacity已被证明binding，mobile-rank4 topology则能解析恢复direct级闭环；当前失败不再是这两个容量问题；
@@ -333,20 +337,12 @@
 - successful-member effect responses在当前objective上确有显著低值，因此effect target尚未被本结果否定；但“低值存在”也不等于
   任何由视频预测的effect distribution都会充分，后续必须把gauge-invariant realization与objective sufficiency分开检验；
 - recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
-- 现有数据仍不足以最终检验general process understanding；process-identifying source-unseen meta data仍是未来方法资格前置；
+- 现有数据不足以支持general process-understanding强claim；owner选择收窄claim，不再用人工process数据换取该资格；
 - effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
   当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续不复活raw-factor
   dynamics，而用known-success corrections校准固定canonical residual coordinate与small deployment realizer；
-- process-identifying data与realizer calibration现为并行前置。只读接口核查仍成立：现有LIBERO只把最终谓词合取作为
-  `done`；若要形成同language/同终点/相反必需顺序的任务对，需要不向policy暴露状态的temporal environment wrapper。
-  feasibility保留在`docs/ecp_process_identifying_meta_task_feasibility_20260823.md`；最小pair必须在新`q_pi/q_V`前完成，完整
-  family-disjoint suite必须在最终Stage 0、`q_pi`与`q_V`共同训练前完成；
-- 零GPU资产核查仍可复用：target task37三条保留成功轨迹都只有`soup -> cream cheese`一种顺序；non-held
-  LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
-  switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
-  meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、两个step1000 composite SFT、balanced-SVD learned
-  realizer fold0与two-sided coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed
-  primitive experts也已在shared-tray与separate-plates两类family上失败。现有phase-expert distillation训练已取消；唯一候选
-  下一步是用28/9条成功轨迹的second-phase动作与primitive成功数据训练两个recovery experts，并重跑不变Gate A。owner已确认
-  执行；它通过前不运行Gate B。后续deployment bridge仍必须重新建立。
+- 人工process feasibility、Gate A/A2/A3/recovery与相关collector保留为历史证据，不再进入active依赖图；自然LIBERO如何为
+  Program可识别性提供足够约束，是下一次专家核心复核必须直接回答的问题；
+- 当前没有active GPU job。process Gate A/A2/A3/recovery依次为`19/100、44/100、37/100、14/100`，两个step1000
+  composite SFT、balanced-SVD learned realizer fold0与two-sided coordinate Gate也均为non-pass。旧shared-realizer与人工
+  process families均关闭；当前下一步是专家在现成LIBERO-only边界下重新明确ECP架构、阶段、数据、Gate与最终训练闭环。

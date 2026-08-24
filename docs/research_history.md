@@ -1596,6 +1596,17 @@ second event使用recovery expert。原100-row Gate A及双向各`>=20/50`、tot
 recovery Gate即使通过也只授权Gate B，不等于fresh Stage 0、`q_pi/q_V`或Writer已经启动。完整裁决：
 `docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
 
+### 3.82 Recovery teacher Gate A non-pass与人工process路线终止
+
+clean pushed frozen `ebdd509`在gpu02 physical0--5以六个persistent workers完成固定100-row Gate A；两方向严格成功为
+`9/50、5/50`，total `14/100`，低于双向各20与total50门。environment success为31/100，first-event drop为53/100；相对
+A3 baseline37条只retained14、gained0、lost23。六worker均exit0，invalid、route、pairing、seed和public-video leakage检查
+均为0，因此正式裁决为科学non-pass而非工程失败。
+
+该结果按原合同关闭task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT。owner随后终止
+全部人工process dataset/controller acquisition，不再使用planner/human/MPC/task-local RL救该支线；后续只用现成授权LIBERO
+tasks直指ECP核心。证据：`docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

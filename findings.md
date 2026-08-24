@@ -2016,3 +2016,16 @@ phase-expert distillation和recovery SFT，不做第二轮DAgger或同机制fami
 这项裁决不重开当前fit90 shared-realizer family，也不意味着ECP Writer已开始。ECP仍同时缺可靠process-identifying composite
 teacher与可跨任务泛化的deployment-compatible realizer；recovery Gate通过只授权Gate B，随后才可能扩process suite与fresh
 Stage 0。完整裁决见`docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
+
+## 97. Recovery Gate正式non-pass，owner终止人工process数据支线
+
+clean pushed frozen `ebdd509`在gpu02 physical0--5以六个persistent workers和两条动态队列完成固定100-row recovery Gate A，
+wall time为686.2秒，六worker均exit0。red→yellow与yellow→red严格成功分别为`9/50、5/50`，total `14/100`；environment
+success为`23/50、8/50`，first-event drops为`27/50、26/50`。invalid、route、pairing、seed、public-video mismatch均为0。
+相对A3的37条成功只retained14、gained0、lost23，故失败来自recovery controller闭环功能而非队列、adapter route或裁决工程。
+
+按预注册停止规则，task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT共同关闭，不做
+第二轮DAgger、延长、超参扫描或task66/67同机制替换。owner随后明确不再制作、扩充或救援任何人工process dataset/controller，
+也不以planner/human/MPC/task-local RL继续该支线；后续只使用现成授权LIBERO tasks直指ECP核心。该owner裁决同时将GOMQ保留为
+非ECP历史证据，并要求`rank12+rank4`等历史默认项在专家重新明确前不得冒充硬架构。正式证据：
+`docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`。

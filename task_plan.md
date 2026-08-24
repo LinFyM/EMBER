@@ -1,22 +1,22 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts已从clean pushed frozen `342620a`完成固定
-step1000 formal训练，唯一checkpoint与primitive-first/recovery-second manifest已成立，正在进入双向smoke及不变Gate A。
-Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
-process Gate A/A2/A3分别为`19/100、44/100、37/100`，均未取得可靠双向teacher。37条A3成功轨迹已转换为28/9条
-composite HDF5，两个fixed-step1000 composite SFT均未通过state0；其完整固定100-row采集baseline实际均为`5/50`。
-随后准备的`347/500`步on-policy phase-expert distillation经最新专家复核判定为oracle authority与50步phase-tail语义不成立，
-不得启动；`2773/3998` query数据只作student-occupancy/weak-teacher诊断资产。Phase 2A的15/15 known-success paths通过，
-但balanced-SVD learned realizer与centered two-sided coordinate均未过held closed-loop门，当前fit90 shared-realizer family
-保持关闭。当前正在从A3真实成功轨迹的第二阶段片段构建两个composite-context recovery experts，并将以不变Gate A裁决。
-通过后继续Gate B、suite扩展、fresh Program、`q_pi/q_V`、joint Writer与outer credit；失败则按专家停止规则切换到独立
-composite controller acquisition。**
+状态：2026-08-24 **composite-context recovery experts已完成固定step1000训练及不变100-row Gate A。正式结果为
+`9/50 + 5/50 = 14/100`，相对A3的37条成功只retained 14、gained 0、lost 23；六个worker均exit0且
+invalid/route/pairing/seed/public mismatch全为0，因此是明确科学non-pass而非工程失败。task65/68 primitive composition、
+composite SFT、phase-expert distillation与recovery SFT共同关闭。owner随后明确终止全部人工process dataset/controller
+acquisition，不再制作custom tasks、planner/MPC/RL teacher或扩process suite；后续只用现成LIBERO tasks直指ECP核心。
+GOMQ不属于ECP执行阶段，历史`136/400`仅归档；`rank12+rank4`也不作为未复核的硬架构。当前无active GPU job，下一步是由
+专家在这一最新数据边界下重新明确canonical ECP架构、必要阶段、每阶段数据/模型/目的/Gate及最终训练闭环，然后按该单一路线
+高效率实现，不再恢复人工数据支线或历史几十版架构。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
 本次复核索引与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节
 
-最新process teacher复核与唯一后继：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`
+历史process teacher复核与已完成停止合同：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`
+
+recovery teacher最终non-pass：
+`docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
@@ -55,7 +55,7 @@ shared compiler、joint Writer或outer credit，也不扫rank、step、LR、初�
 - shuffled/reversed不进入训练、loss或checkpoint选择，只在最终候选checkpoint冻结后评测；
 - 每个condition只输出一套complete rank16 LoRA，不平均video LoRA、不部署第二adapter、不用task-ID/expert route；
 - validation/test action或reward不训练共享模型；fold0 held5只作当前同面板privileged机制比较；
-- 当前LIBERO只支持scene/goal/order claim；general process claim等待process-identifying source-unseen数据；
+- 后续只使用现成授权LIBERO tasks；不再制作人工process数据，general process claim按最终自然任务证据收窄；
 - formal train/eval来自clean pushed commit的detached frozen worktree；不重复已有source、stable carrier或兼容轨迹资产。
 
 ## Phase A — 阶段重构与合同
@@ -183,8 +183,9 @@ card：`docs/ecp_effective_update_solver_card_20260823.md`；evidence：
 - [x] 将最深缺口固定为deployment-time occupancy completion，而不是“只缺一个solver”或“只缺`q_pi`”；
 - [x] 将48-state资产改称four-category structured occupancy panel，并登记probe averaging、member-state validity和stage-wise
   policy splicing问题；
-- [x] 冻结默认输出拓扑为stable carrier rank12 + mobile residual rank4，并固定“schema/coordinate/realizer先于`q_pi`”的顺序；
-- [x] 恢复执行；不再等待专家二次定稿。
+- [x] 当时冻结stable carrier rank12 + mobile residual rank4为默认候选，并固定“schema/coordinate/realizer先于`q_pi`”的顺序；
+  后续两种coordinate non-pass且owner已撤销其硬架构地位；
+- [x] 当时恢复执行；最新owner边界已重新要求一次自然LIBERO-only核心方案复核。
 
 ## Phase E — Phase 0：GOMQ真实rank16 archival baseline
 
@@ -243,15 +244,17 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   finite metrics rows、唯一step1000 adapter，worker exit均0，不按loss选模；
 - [x] Gate A收集器改为每方向50个single-state jobs、三名persistent workers共享SQLite动态队列；六卡只各加载一次policy，
   public/privileged artifact、route与strict-success裁决保持原合同；
-- [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；
-  若失败，关闭task65/68上的primitive composition、composite SFT、phase-expert distillation和recovery SFT，不做第二轮DAgger、
-  不扫超参、不换task66/67重复同一机制；后继必须先获得独立成立的planner/human/MPC/task-local RL composite controller；
-- [ ] 只有新的双向composite teacher通过后，才运行Gate B：correct video胜sibling wrong，而language-only/no-video/first+final
-  不能区分，且无variant leakage；
-- [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；
-- [ ] 完整suite在最终Stage 0、`q_pi`、`q_V`共同训练前完成。该准备可与Phase G并行。
+- [x] 从clean pushed frozen `ebdd509`在gpu02 physical0--5完成不变100-row Gate A；两方向为`9/50、5/50`、total `14/100`，
+  environment success为`23/50、8/50`，first-event drops为`27/50、26/50`；六worker exit0，全部工程一致性检查为0 mismatch；
+- [x] 按原停止规则关闭task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT，不做第二轮
+  DAgger、训练延长、超参扫描或task66/67同机制替换；
+- [x] owner进一步终止全部人工process dataset/controller acquisition；Gate B与process-suite扩展取消为执行前置，历史artifacts
+  只作负证据，后续自然LIBERO路线和claim边界交由下一次专家核心方案复核明确。
 
 ## Phase G — Phase 2：fixed mobile-rank4 coordinate与deployment realizer
+
+本节现为已完成历史裁决，不是后继硬架构。owner不接受把`rank12 carrier + rank4 residual`按推进惯性继续固定；下一realizer
+必须由专家在完整rank16输出合同、自然LIBERO-only数据边界和既有负结果下重新明确。
 
 - completed Phase 2A卡：`docs/ecp_effect_path_calibration_card_20260824.md`；配置：
   `configs/pi05_ecp_effect_path_calibration.json`。

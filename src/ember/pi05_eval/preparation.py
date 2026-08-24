@@ -11,6 +11,7 @@ from typing import Any, Mapping, Sequence
 from ember.eval_adapters import (
     adapter_requests,
     inspect_source_sft_adapter,
+    inspect_static_task_lora_adapter,
     inspect_task_expert_adapter,
     select_task_expert_adapter_tasks,
 )
@@ -95,6 +96,14 @@ def _inspect_adapter(
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
         )
+    if adapter_kind == "static_task_lora":
+        return inspect_static_task_lora_adapter(
+            manifest_path=args.static_task_lora_manifest.resolve(),
+            source=model,
+            tasks=tasks,
+            evaluation_role=args.role,
+            require_formal=args.mode != "smoke",
+        )
     if adapter_kind != "task_expert":
         return None
     return inspect_task_expert_adapter(
@@ -121,7 +130,7 @@ def _task_subset_tasks(
         getattr(args, "occupancy_capture_selection", None) is not None
         or (str(args.mode), int(args.state_count)) not in {("screen", 10), ("formal", 50)}
         or args.role != "development_train"
-        or adapter_kind not in {None, "task_expert"}
+        or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):
         raise Pi05EvaluationError("formal task subset request changed")
     path = path.resolve()

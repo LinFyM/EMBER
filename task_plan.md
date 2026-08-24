@@ -4,22 +4,22 @@
 
 ## 当前目标
 
-全仓库orientation已完成并基本通过owner复核。当前session只同步最新正式性能目标和shuffled/reversed post-selection
-合同、登记Final数据顺序冲突、消费临时`HANDOFF.md`，提交并推送后继续暂停。G1仍是唯一下一实现阶段，但本轮
-不启动，必须等owner明确许可。
+owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1：完成task-local free-code capacity oracle的canonical
+实现、从clean pushed commit启动fold0 held5 formal优化并形成four-arm strict250 Gate结论。G1通过后才进入G2；单独完成实现、
+训练或某个局部检查都不代表整体项目goal完成。
 
-## 当前session完成条件
+## 当前G1里程碑
 
-- [x] 清除退役Writer、ECP v1--v24后继、MDCO/PECS、人工process与失败realizer执行路径；
-- [x] 删除过时配置、脚本、测试、重复文档/证据与约11.6GB可重建人工资产；recovery Gate A残留作为历史formal evidence保留；
-- [x] 专家回复完整阅读并对照当前保留实现；
-- [x] 专家1416行原文逐字保存，active design与原文明确分层；
-- [x] 固化专家确认的Program schema、native-factor compiler、rank、训练阶段、Gate、final controls与停止条件；
-- [x] 明确删除神经`q_pi`与fixed effect-code realizer，保留effect evidence为training critic；
-- [x] 运行文档一致性/Git审查，提交并推送`main`；
-- [x] 完成全仓库orientation并获得owner基本确认；
-- [x] 同步唯一正式性能线`>145/400`与shuffled/reversed post-selection边界；
-- [x] 消费并删除`HANDOFF.md`。
+- [x] 从`main@13ca366`建立隔离的`codex/ecp-native-factor-g1`实现面；
+- [x] 接通真实38-target native X/Y hooks、四类output banks与跨chunk/video边界状态；
+- [x] 接通task-local free-code signed pooling、rank4 outer products、small-core SVD和唯一rank12+4 rank16 materialization；
+- [x] 接通四类G1 loss、optimizer、checkpoint、静态task-LoRA evaluator和four-arm Gate report；
+- [x] 用最小真实CUDA forward/gradient/materialization smoke证明全部free variables有有限非零梯度、Action Meta实际未加载、
+  source/Stage 0无trainable parameter且checkpoint为38-target/76-tensor rank16；
+- [ ] 完成最终代码/测试/diff审查，集成并推送`main`，建立detached frozen formal worktree；
+- [ ] live复查gpu01/gpu02与storage quota，启动5-task formal optimization；
+- [ ] 物化held5 adapters并完成free-code strict250；
+- [ ] 形成G1 Gate结论；non-pass时定位最早失效接口并以机制证据修正后复评。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 
@@ -36,8 +36,8 @@
 7. 向owner给出一份简洁的“我对EMBER和当前仓库的理解”：目标、架构数据流、已有证据、可复用资产、实现缺口、后续阶段和G1
    首步。若发现文档、原文和代码冲突，先列出证据并修正文档，不凭摘要猜测。
 
-Phase R已完成，`HANDOFF.md`已消费并删除。文档整理提交并推送后暂停；只在owner明确许可后进入G1。得到许可后
-不把orientation变成长时间文档考古，整体推进不设阶段工期和修正次数上限，但应在保质前提下尽可能快。
+Phase R已完成，`HANDOFF.md`已消费并删除；owner随后已明确许可进入G1。后续不重做orientation或退役路线考古，整体推进
+不设阶段工期和修正次数上限，但每次scientific修正必须有机制证据。
 
 ## Phase G1：Native-factor capacity oracle
 

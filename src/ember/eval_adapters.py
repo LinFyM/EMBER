@@ -10,6 +10,7 @@ from ember.pi05_assets import Pi05EvaluationError
 
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
+STATIC_TASK_LORA_KIND = "static_task_lora_bank"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -37,12 +38,22 @@ def task_expert_requested(args: Any) -> bool:
     return requested
 
 
+def static_task_lora_requested(args: Any) -> bool:
+    return getattr(args, "static_task_lora_manifest", None) is not None
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     source_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
-    if source_requested and expert_requested:
+    static_requested = static_task_lora_requested(args)
+    if sum((source_requested, expert_requested, static_requested)) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
-    return ("task_expert" if expert_requested else None), source_requested
+    kind = (
+        "task_expert"
+        if expert_requested
+        else "static_task_lora" if static_requested else None
+    )
+    return kind, source_requested
 
 
 def inspect_source_sft_adapter(
@@ -93,6 +104,25 @@ def inspect_task_expert_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def inspect_static_task_lora_adapter(
+    *,
+    manifest_path: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    evaluation_role: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.static_task_lora import inspect_static_task_lora_bank
+
+    return inspect_static_task_lora_bank(
+        manifest_path=manifest_path,
+        source=source,
+        task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+        evaluation_role=evaluation_role,
+        require_formal=require_formal,
+    )
+
+
 def select_task_expert_adapter_tasks(
     adapter: Mapping[str, Any] | None,
     tasks: Sequence[Any],
@@ -102,9 +132,7 @@ def select_task_expert_adapter_tasks(
     if adapter is None or adapter.get("kind") != STATIC_TASK_EXPERT_KIND:
         raise Pi05EvaluationError("diagnostic subset requires a task-expert adapter")
     task_rows = tuple(adapter.get("tasks", ()))
-    records = {
-        (str(row["suite"]), int(row["task_id"])): dict(row) for row in task_rows
-    }
+    records = {(str(row["suite"]), int(row["task_id"])): dict(row) for row in task_rows}
     keys = [(str(task.suite), int(task.task_id)) for task in tasks]
     if len(records) != len(task_rows) or any(key not in records for key in keys):
         raise Pi05EvaluationError("diagnostic task experts are incomplete")
@@ -148,6 +176,10 @@ def load_evaluation_adapter(
         from ember.expert_manifold.evaluation import FrozenTaskExpertAdapter
 
         return FrozenTaskExpertAdapter(**common)
+    if adapter.get("kind") == STATIC_TASK_LORA_KIND:
+        from ember.static_task_lora import FrozenStaticTaskLoRAAdapter
+
+        return FrozenStaticTaskLoRAAdapter(**common)
     raise Pi05EvaluationError("unsupported evaluation adapter kind")
 
 
@@ -155,6 +187,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if contract.get("adapter", {}).get("kind") == STATIC_TASK_LORA_KIND:
+            return {"static_task_lora": dict(prepared.evidence)}
         return {"task_expert": dict(prepared.evidence)}
     adapter = contract.get("adapter")
     if adapter is not None and adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
@@ -171,19 +205,43 @@ def validate_episode_adapter_fields(
     init_state_id: int,
 ) -> bool:
     if adapter is None:
-        return row.get("task_expert") is None and row.get("policy_adapter_sha256") is None
+        return (
+            row.get("task_expert") is None
+            and row.get("static_task_lora") is None
+            and row.get("policy_adapter_sha256") is None
+        )
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
-        return row.get("task_expert") is None and row.get(
-            "policy_adapter_sha256"
-        ) == adapter.get("lora_state_sha256")
-    if adapter.get("kind") != STATIC_TASK_EXPERT_KIND:
-        return False
-    from ember.expert_manifold.evaluation import validate_task_expert_episode
+        return (
+            row.get("task_expert") is None
+            and row.get("static_task_lora") is None
+            and row.get("policy_adapter_sha256") == adapter.get("lora_state_sha256")
+        )
+    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
+        from ember.expert_manifold.evaluation import validate_task_expert_episode
 
-    return row.get("policy_adapter_sha256") is None and validate_task_expert_episode(
-        adapter,
-        row.get("task_expert"),
-        suite=suite,
-        task_id=task_id,
-        init_state_id=init_state_id,
-    )
+        return (
+            row.get("static_task_lora") is None
+            and row.get("policy_adapter_sha256") is None
+            and validate_task_expert_episode(
+                adapter,
+                row.get("task_expert"),
+                suite=suite,
+                task_id=task_id,
+                init_state_id=init_state_id,
+            )
+        )
+    if adapter.get("kind") == STATIC_TASK_LORA_KIND:
+        from ember.static_task_lora import validate_static_task_lora_episode
+
+        return (
+            row.get("task_expert") is None
+            and row.get("policy_adapter_sha256") is None
+            and validate_static_task_lora_episode(
+                adapter,
+                row.get("static_task_lora"),
+                suite=suite,
+                task_id=task_id,
+                init_state_id=init_state_id,
+            )
+        )
+    return False

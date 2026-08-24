@@ -1,0 +1,208 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+import torch
+from safetensors.torch import save_file
+
+from ember.ecp.g1_evaluation import (
+    _shared_scientific_contract,
+    _single_training_authority,
+    _task_record,
+)
+from ember.eval_adapters import validate_episode_adapter_fields
+from ember.lora import identity_lora_state
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.static_task_lora import (
+    STATIC_TASK_LORA_EPISODE_SCHEMA,
+    STATIC_TASK_LORA_KIND,
+    STATIC_TASK_LORA_MANIFEST_SCHEMA,
+    inspect_static_task_lora_bank,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_static_task_lora_manifest_and_episode_evidence_are_exact(
+    tmp_path: Path,
+) -> None:
+    lora_path = ROOT / "configs/pi05_lora_v1.json"
+    lora = load_pi05_lora_contract(lora_path)
+    run_root = tmp_path / "run"
+    checkpoint = run_root / "checkpoints/step_00000005"
+    checkpoint.mkdir(parents=True)
+    adapter_path = checkpoint / "adapter.safetensors"
+    save_file(
+        {
+            name: value.to(torch.bfloat16)
+            for name, value in identity_lora_state(lora).items()
+        },
+        str(adapter_path),
+    )
+    checkpoint_manifest = {
+        "schema_version": "ember_ecp_native_factor_g1_checkpoint_v1",
+        "step": 5,
+        "task_ordinal": 90,
+        "global_task_id": 0,
+        "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        "single_complete_rank16": True,
+        "content_hash_policy": "disabled_by_owner",
+        "files": {"adapter.safetensors": adapter_path.stat().st_size},
+    }
+    manifest_path = checkpoint / "manifest.json"
+    manifest_path.write_text(json.dumps(checkpoint_manifest), encoding="utf-8")
+    (run_root / "run_contract.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "ember_ecp_native_factor_g1_task_run_v1",
+                "mode": "formal",
+                "content_hash_policy": "disabled_by_owner",
+                "device": "cuda:0",
+                "runtime": {
+                    "world_size": 1,
+                    "torch_device": "cuda:0",
+                    "cuda_visible_devices": "GPU-test",
+                    "device_name": "NVIDIA A40",
+                },
+                "video": {"K": 1, "cross_video_weight": "identity_k1"},
+                "video_contract": {"videos_per_task": 1},
+                "functional_query": {"demo_indices": [1, 2]},
+                "authorities": {"source_checkpoint": "source"},
+                "native_factor": {"residual_rank": 4},
+                "optimization": {"initial_segment_steps": 5},
+                "information_wall": {"action_meta_installed": False},
+                "pure_native_stage0": {
+                    "action_meta_module_count": 0,
+                    "action_meta_parameter_count": 0,
+                    "policy_trainable_parameter_count": 0,
+                    "stage0_trainable_parameter_count": 0,
+                },
+                "repository": {
+                    "commit": "a" * 40,
+                    "dirty_paths": [],
+                    "branch": "",
+                    "upstream": None,
+                },
+                "task": {
+                    "suite": "libero_spatial",
+                    "task_id": 0,
+                    "ordinal": 90,
+                    "global_task_id": 0,
+                    "language": "exact language",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_root / "segment_completion.json").write_text(
+        json.dumps({"status": "segment_complete", "completed_steps": 5}),
+        encoding="utf-8",
+    )
+    row = {
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "ordinal": 90,
+        "global_task_id": 0,
+        "language": "exact language",
+        "step": 5,
+        "run_root": str(run_root),
+        "checkpoint": str(checkpoint),
+        "checkpoint_manifest_bytes": manifest_path.stat().st_size,
+        "adapter_path": str(adapter_path),
+        "adapter_bytes": adapter_path.stat().st_size,
+        "single_complete_rank16": True,
+    }
+    source = {
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "source/checkpoints/step_00001000"),
+        "model_path": str(tmp_path / "source/checkpoints/step_00001000/policy"),
+    }
+    bank_path = tmp_path / "bank.json"
+    bank_path.write_text(
+        json.dumps(
+            {
+                "schema_version": STATIC_TASK_LORA_MANIFEST_SCHEMA,
+                "status": "sealed",
+                "arm": "ecp_native_factor_g1_free_code",
+                "source": source,
+                "lora_contract": {
+                    "path": str(lora_path),
+                    "bytes": lora_path.stat().st_size,
+                },
+                "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+                "single_complete_rank16": True,
+                "training_commit": "a" * 40,
+                "shared_run_contract": {
+                    "schema_version": "ember_ecp_native_factor_g1_task_run_v1",
+                    "mode": "formal",
+                },
+                "tasks": [row],
+                "information_wall": {
+                    "action_meta_installed": False,
+                    "second_adapter_deployed": False,
+                    "teacher_video_runtime_reads": 0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    adapter = inspect_static_task_lora_bank(
+        manifest_path=bank_path,
+        source=source,
+        task_keys=(("libero_spatial", 0),),
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+    evidence = {
+        "schema_version": STATIC_TASK_LORA_EPISODE_SCHEMA,
+        **row,
+        "init_state_id": 7,
+    }
+    assert adapter["kind"] == STATIC_TASK_LORA_KIND
+    published_row, commit, shared = _task_record(run_root=run_root, step=5, lora=lora)
+    assert published_row == row
+    assert commit == "a" * 40
+    assert shared["video_contract"] == {"videos_per_task": 1}
+    assert validate_episode_adapter_fields(
+        adapter,
+        {"static_task_lora": evidence},
+        suite="libero_spatial",
+        task_id=0,
+        init_state_id=7,
+    )
+    assert not validate_episode_adapter_fields(
+        adapter,
+        {"task_expert": evidence},
+        suite="libero_spatial",
+        task_id=0,
+        init_state_id=7,
+    )
+
+
+def test_g1_evaluation_bank_rejects_mixed_commit_or_mechanism() -> None:
+    base = {
+        "schema_version": "ember_ecp_native_factor_g1_task_run_v1",
+        "mode": "formal",
+        "content_hash_policy": "disabled_by_owner",
+        "authorities": {"source": "same"},
+        "video_contract": {"videos_per_task": 1},
+        "functional_query": {"demo_indices": [1, 2]},
+        "native_factor": {"residual_rank": 4},
+        "optimization": {"selection_lr": 0.02},
+        "information_wall": {"action_meta_installed": False},
+    }
+    changed = dict(base)
+    changed["native_factor"] = {"residual_rank": 8}
+    shared = _shared_scientific_contract(base)
+    changed_shared = _shared_scientific_contract(changed)
+    row: dict[str, object] = {}
+    with pytest.raises(ValueError, match="training commits"):
+        _single_training_authority(((row, "a" * 40, shared), (row, "b" * 40, shared)))
+    with pytest.raises(ValueError, match="scientific run contracts"):
+        _single_training_authority(
+            ((row, "a" * 40, shared), (row, "a" * 40, changed_shared))
+        )

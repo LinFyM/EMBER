@@ -9,6 +9,7 @@ from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
     inspect_source_sft_adapter,
+    inspect_static_task_lora_adapter,
     inspect_task_expert_adapter,
     select_task_expert_adapter_tasks,
 )
@@ -96,6 +97,14 @@ def _reinspect_adapter(
                 diagnostic_subset=str(subset),
             )
         return inspected
+    if adapter.get("kind") == "static_task_lora_bank":
+        return inspect_static_task_lora_adapter(
+            manifest_path=Path(adapter["manifest"]["path"]),
+            source=model,
+            tasks=tasks,
+            evaluation_role=str(contract["role"]),
+            require_formal=require_formal,
+        )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 
 

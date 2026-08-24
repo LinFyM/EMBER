@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-08-24。分支：`main`。本轮科学起点：`7ab5a04`；仓库瘦身基础：`6fdaeb8`；最终交接提交见当前Git HEAD。
+更新时间：2026-08-24。本轮G1实现起点：clean pushed `main@13ca36662e430d9e33afa9e26fa3835d859abc78`。
 
 ## 当前状态
 
@@ -10,9 +10,13 @@
 专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
 active design明确是解释/执行层，不能替代原文。
 
-全仓库只读orientation已完成并基本通过owner复核，临时`HANDOFF.md`已消费删除。本轮只同步最新owner authority
-与登记已发现漂移；没有启动GPU训练、没有实现G1或新Writer、没有向专家发送任何消息。文档提交并推送后继续
-暂停，只在owner明确许可后进入G1 capacity oracle。
+全仓库orientation和两轮owner复核已完成，owner已正式许可推进。当前只推进G1 task-local free-code capacity oracle；没有恢复
+旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
+
+G1 canonical实现面已接通并通过CPU定向合同与一次真实CUDA profile smoke：真实38-target native input/output hooks、
+abs/adj/init/goal output banks、跨chunk边界状态、task-local positive/negative signed pooling、rank4 outer products、small-core SVD、
+唯一rank12+4 rank16 adapter、四类loss/optimizer/checkpoint、static task-LoRA strict evaluator和four-arm Gate report均已实现。
+formal held5 optimization与strict250尚未启动；它们必须来自clean pushed commit的detached frozen worktree。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -63,22 +67,21 @@ G1--G5 Gate或架构修正依据。
 - natural reward rollout、occupancy capture、BDDL progress与cost-balanced strict evaluator；
 - ignored `runs/`中的唯一formal checkpoints、raw rows和aggregate。
 
-## 下一实现缺口
+## G1真实smoke证据
 
-活动树尚无：
+- 使用纯`load_frozen_native_observer`路径，`action_meta_lora=None`、`install_action_meta_lora=False`；实际对象图中无
+  `MetaLoRAStack/MetaLoRAProjection`，policy与Stage 0 trainable列表均为空；
+- 38个target均从identity LoRA wrapper的真实`base_layer`捕获X/Y；输入候选不含output type，输出候选含四类bank；
+- task 90的一步真实优化中`rank_queries/event_logits/input_logits/output_logits/scale_logits`均有有限非零梯度；
+- 峰值allocated约27.24GB A40显存；输出checkpoint为single complete rank16、76 tensors、carrier slots`[0,12]`与task slots`[12,16]`；
+- profile输出已核对后删除，不作为formal evidence。
 
-1. 38-target native linear input/output hooks；
-2. absolute/adjacent/init/goal banks的chunked online accumulator；
-3. signed rank4 factor path与scale/SVD canonicalization；G1使用task-local free selection，shared Program-conditioned content attention属于G3；
-4. task-local free-code optimizer；
-5. G1 four-arm strict250 wiring与Gate report。
+## 当前下一步与延期漂移
 
-这些组成得到owner许可后的唯一实现面。先做最小真实smoke，再完成G1；不得恢复旧realizer、建立平行版本或跳到fresh
-Stage 0/joint。
-
-## 当前暂停与延期漂移
-
-1. 完成本轮文档一致性与Git审查，提交并推送`main`后暂停，等待owner明确许可G1；
-2. Action Meta仍默认关闭；现有loader/config的mandatory表述只在将来真正进入matched arm前再对齐，本轮不改代码或配置；
-3. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
-4. 32-task fresh refit与71 meta+train24 development recipe的精确顺序已登记，延迟到Final前owner裁决，不阻塞G1--G5。
+1. 完成最终review与全量CPU回归，集成并推送`main`，清理已完成的实现worktree/branch；
+2. 从该clean pushed commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，
+   再启动5-task formal optimization；
+3. formal完成后以唯一完整rank16 task bank跑free-code strict250，并与carrier43、direct108、mobile110形成Gate报告；
+4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
+5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
+6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。

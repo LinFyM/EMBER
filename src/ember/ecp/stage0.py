@@ -123,8 +123,7 @@ class ECPVideoEncoder(torch.nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         core = policy.model
         bridge = core.paligemma_with_expert
-        with torch.no_grad():
-            language_embeddings = bridge.embed_language_tokens(language_tokens)
+        language_embeddings = self.embed_language_conditions(policy, language_tokens)
         patches = []
         languages = []
         lattices = []
@@ -134,23 +133,12 @@ class ECPVideoEncoder(torch.nn.Module):
         for start in range(0, frames.shape[0], self.max_frames_per_call):
             stop = min(start + self.max_frames_per_call, frames.shape[0])
             condition_ids = frame_condition_ids[start:stop]
-            with torch.no_grad():
-                image_embeddings = bridge.embed_image(
-                    self._prepare_images(frames[start:stop])
-                )
-            selected_language = language_embeddings.index_select(0, condition_ids)
-            selected_mask = language_mask.index_select(0, condition_ids)
-            prefix = torch.cat((image_embeddings, selected_language), dim=1)
-            prefix_padding = torch.cat(
-                (
-                    torch.ones(
-                        image_embeddings.shape[:2],
-                        dtype=torch.bool,
-                        device=frames.device,
-                    ),
-                    selected_mask,
-                ),
-                dim=1,
+            prefix, prefix_padding = self.prepare_frame_prefix(
+                policy=policy,
+                frames=frames[start:stop],
+                frame_condition_ids=condition_ids,
+                language_embeddings=language_embeddings,
+                language_mask=language_mask,
             )
             adapter_context = (
                 action_meta_lora.installed(bridge.gemma_expert.model)
@@ -170,6 +158,45 @@ class ECPVideoEncoder(torch.nn.Module):
             languages.append(observed.language_states)
             lattices.append(observed.owner_lattice)
         return torch.cat(patches), torch.cat(languages), torch.cat(lattices)
+
+    @staticmethod
+    @torch.no_grad()
+    def embed_language_conditions(
+        policy: torch.nn.Module, language_tokens: torch.Tensor
+    ) -> torch.Tensor:
+        """Embed exact task language once for Stage 0 and Pass B alike."""
+
+        return policy.model.paligemma_with_expert.embed_language_tokens(language_tokens)
+
+    @torch.no_grad()
+    def prepare_frame_prefix(
+        self,
+        *,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_embeddings: torch.Tensor,
+        language_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Build the exact teacher-frame image/language prefix without state."""
+
+        bridge = policy.model.paligemma_with_expert
+        image_embeddings = bridge.embed_image(self._prepare_images(frames))
+        selected_language = language_embeddings.index_select(0, frame_condition_ids)
+        selected_mask = language_mask.index_select(0, frame_condition_ids)
+        prefix = torch.cat((image_embeddings, selected_language), dim=1)
+        prefix_padding = torch.cat(
+            (
+                torch.ones(
+                    image_embeddings.shape[:2],
+                    dtype=torch.bool,
+                    device=frames.device,
+                ),
+                selected_mask,
+            ),
+            dim=1,
+        )
+        return prefix, prefix_padding
 
     def forward(
         self,

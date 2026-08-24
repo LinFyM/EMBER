@@ -126,8 +126,11 @@ fresh development recipe。两者的精确顺序、validation8是否并入32-tas
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- 下一实现缺口是38-target native input/output hooks、chunked online bank accumulator、signed rank4 compiler、task-local free-code optimizer
-  和strict250 wiring；当前仓库尚无这些模块。
+- G1现已实现38-target native input/output hooks、chunked online bank accumulator、task-local signed rank4 free-code optimizer、
+  rank12+4唯一rank16 materialization、静态task-LoRA evaluator与four-arm Gate report；一次真实profile smoke已证明全部free variables
+  有非零梯度且Action Meta未加载，但尚无formal optimization或closed-loop结论，因此不能把实现接通误写成G1通过。
+- G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
+  推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。
 - formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process路线与约11.6GB可重建主要产物已
   删除，recovery Gate A残留作为历史formal evidence保留，不恢复为当前数据或训练路线。

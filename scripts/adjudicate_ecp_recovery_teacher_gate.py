@@ -18,6 +18,10 @@ from ember.pi05_assets import write_json_atomic
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LEDGER_SCHEMA = "ember_ecp_process_meta_privileged_episode_v1"
 PUBLIC_SCHEMA = "ember_ecp_action_hidden_video_v1"
+A3_BASELINE_ROOT = (
+    REPO_ROOT
+    / "runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824"
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -152,6 +156,9 @@ def _inspect_row(root: Path, authority: Any, row: dict[str, Any]) -> dict[str, A
         "state_id": int(row["state_id"]),
         "success": strict_success,
         "environment_success": environment_success,
+        "first_event_completed": variant.required_order[0] in completion,
+        "second_event_completed": variant.required_order[1] in completion,
+        "first_event_dropped": bool(drops[variant.required_order[0]]),
         "invalid": bool(ledger["invalid"]),
         "route_mismatch": route_mismatch,
         "success_mismatch": success_mismatch,
@@ -160,6 +167,28 @@ def _inspect_row(root: Path, authority: Any, row: dict[str, Any]) -> dict[str, A
             int(value) for value in ledger["policy_noise_seeds"]
         ),
     }
+
+
+def _a3_success_keys(authority: Any) -> set[tuple[str, int]]:
+    result = set()
+    for variant in authority.family.variants:
+        for state_id in authority.family.init_state_ids:
+            episode_id = (
+                f"{authority.family.family_id}-{variant.name}-state{state_id:03d}"
+            )
+            ledger = torch.load(
+                A3_BASELINE_ROOT / "privileged_ledgers" / f"{episode_id}.pt",
+                map_location="cpu",
+                weights_only=False,
+            )
+            if (
+                ledger.get("variant_name") != variant.name
+                or int(ledger.get("state_id", -1)) != state_id
+            ):
+                raise ProcessMetaError("A3 matched-row baseline authority changed")
+            if bool(ledger["success"]):
+                result.add((variant.name, state_id))
+    return result
 
 
 def adjudicate(manifest: Path, root: Path) -> dict[str, Any]:
@@ -193,6 +222,59 @@ def adjudicate(manifest: Path, root: Path) -> dict[str, Any]:
         )
         for variant in variants
     }
+    stage_results = {
+        variant: {
+            "first_event_completed": sum(
+                row["first_event_completed"]
+                for row in inspected
+                if row["variant_name"] == variant
+            ),
+            "second_event_completed": sum(
+                row["second_event_completed"]
+                for row in inspected
+                if row["variant_name"] == variant
+            ),
+            "environment_successes": sum(
+                row["environment_success"]
+                for row in inspected
+                if row["variant_name"] == variant
+            ),
+            "first_event_drops": sum(
+                row["first_event_dropped"]
+                for row in inspected
+                if row["variant_name"] == variant
+            ),
+        }
+        for variant in variants
+    }
+    baseline_success = _a3_success_keys(authority)
+    current_success = {
+        (row["variant_name"], row["state_id"]) for row in inspected if row["success"]
+    }
+    matched_change = {
+        "baseline_root": str(A3_BASELINE_ROOT),
+        "baseline_successes": len(baseline_success),
+        "retained": len(current_success & baseline_success),
+        "gained": len(current_success - baseline_success),
+        "lost": len(baseline_success - current_success),
+        "by_variant": {
+            variant: {
+                "baseline_successes": sum(
+                    key[0] == variant for key in baseline_success
+                ),
+                "retained": sum(
+                    key[0] == variant for key in current_success & baseline_success
+                ),
+                "gained": sum(
+                    key[0] == variant for key in current_success - baseline_success
+                ),
+                "lost": sum(
+                    key[0] == variant for key in baseline_success - current_success
+                ),
+            }
+            for variant in variants
+        },
+    }
     checks = {
         "each_direction_at_least_20": all(value >= 20 for value in successes.values()),
         "total_at_least_50": sum(successes.values()) >= 50,
@@ -225,6 +307,8 @@ def adjudicate(manifest: Path, root: Path) -> dict[str, Any]:
         "collection_root": str(root),
         "episodes": len(inspected),
         "successes": successes,
+        "stage_results": stage_results,
+        "matched_a3_change": matched_change,
         "total_successes": sum(successes.values()),
         "environment_successes": sum(row["environment_success"] for row in inspected),
         "checks": checks,

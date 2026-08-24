@@ -191,7 +191,23 @@ FP64后，真实task94 profile两侧minimum cosine均恢复到`>=0.99999988`；�
 - `runs/outputs/pi05_ecp_native_factor_g1_set_oracle_held5_formal_873af85_gpu02p1_20260825/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_set_oracle_step0_strict250_873af85_gpu01p34567_r3_20260825/`。
 
-## 12. 当前保留结论
+## 12. action-in native-block修正与G1正式通过
+
+clean pushed `main@31f0053`把action-in真实1024D Y按native input width分为32个连续32D blocks，各block独立signed pooling；候选索引、
+四类output banks、真实Y、rank4 residual和唯一rank12+4 rank16合同均不变。task94真实profile确认32个blocks均为stable rank32，
+两侧minimum direction cosine `>=0.99999988`，全部26,208,000个output logits有有限非零梯度，Action Meta module/parameter为0。
+
+五task formal step0 bank的paired strict250达到`114/250`，逐task`35/31/45/2/1`；relative recovery`71/67=1.060`、breadth5/5、
+Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部G1 checks通过。54/54 shards、250/250 rows与18/18 workers完整，
+没有使用shuffled/reversed。该结果只证明真实native X/Y banks加signed pooling存在强闭环rank4 residual；共享Program到content attention
+仍未验证，按顺序进入G2 Natural Program。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_native_factor_g1_action_in_groups_held5_formal_31f0053_gpu02p1_20260825/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_action_in_groups_step0_strict250_31f0053_gpu01p234567_r3_20260825/`。
+
+## 13. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -201,7 +217,7 @@ FP64后，真实task94 profile两侧minimum cosine均恢复到`>=0.99999988`；�
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 13. 证据恢复方式
+## 14. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

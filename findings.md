@@ -169,6 +169,17 @@ width切成32个连续32D blocks，各block独立做positive/negative softmax后
 已证明上限所需的最小full-width partition，不是group-count小扫；G1 logits仍是task-local free code，G3以后必须以共享Program query
 和content keys生成这些group measures。
 
+### 17. action-in native-block修正使G1 capacity Gate正式通过
+
+clean pushed `main@31f0053`的task-local formal bank使用真实38-target X/Y、四类output banks、signed positive/negative pooling与
+唯一rank12+4 rank16 adapter。paired strict250达到`114/250`，逐task`35/31/45/2/1`；relative recovery`71/67=1.060`、
+breadth5/5、Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部G1 Gate checks通过。54 shards、250 rows和18 workers
+完整，Action Meta module/parameter为0，未用shuffled/reversed。
+
+该闭环结果与此前task94 action-in-only response形成一致因果链：解除已证明的whole-vector output ceiling后，真实native pooling本身
+恢复Long并满足全部容量门。因此G1问题已经回答为“存在”；它仍不证明task-unseen的共享Program query-key selection能够学习，下一最早
+接口是G2 Natural Program，随后才是G3 shared attention。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
@@ -185,9 +196,9 @@ width切成32个连续32D blocks，各block独立做positive/negative softmax后
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- G1 scalar、q-head、latest-only、set-valued和FP64 exact step0分别为`88/250`、`84/250`、`100/250`、`111/250`、`116/250`；
-  FP64已恢复recovery与retention，但Long仍为0。task94 action-in-only privileged response为`118/250`并恢复`1/50` Long，当前按该
-  最早接口修正，不能把response counterfactual冒充G1 pass。
+- G1 scalar、q-head、latest-only、set-valued、FP64 exact和action-in native-block step0依次为`88/250`、`84/250`、`100/250`、
+  `111/250`、`116/250`、`114/250`；最后一项以breadth5/5、Goal/Long非零、4/5高于carrier和retention`35/43`正式通过G1。
+  task94 action-in-only privileged response`118/250`只用于定位机制，最终pass来自真实native pooling而非该counterfactual。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。

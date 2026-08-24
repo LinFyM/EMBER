@@ -4,9 +4,9 @@
 
 ## 当前目标
 
-owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1：完成task-local free-code capacity oracle的canonical
-实现、从clean pushed commit启动fold0 held5 formal优化并形成four-arm strict250 Gate结论。G1通过后才进入G2；单独完成实现、
-训练或某个局部检查都不代表整体项目goal完成。
+owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle已经通过four-arm strict250 Gate；
+当前进入Phase G2 Natural Program。G1只证明真实native banks与signed pooling存在强rank4 residual，不证明deployment Writer或
+shared Program-to-attention映射成立；单独完成任一阶段仍不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -43,8 +43,10 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
 - [x] 实现action-in按其native input width形成32个真实32D Y blocks的独立signed measures，并通过142项CPU合同检查；
 - [x] 完成task94真实forward/gradient/materialization smoke：32个output blocks均stable rank32、两侧minimum cosine
   `>=0.99999988`、全部26,208,000个output logits有非零有限梯度、Action Meta 0、唯一rank16，峰值约29.77GB；
-- [ ] 完成全量diff审查、main集成与detached formal；
-- [ ] fresh生成五task step0并重跑同一strict250 Gate；若仍non-pass，继续按最早signed-measure/span response接口修正。
+- [x] 完成全量diff审查、142项CPU回归、clean pushed `main@31f0053`集成与detached formal；
+- [x] fresh生成五task step0并完成同一strict250 Gate：`114/250`、逐task`35/31/45/2/1`、relative recovery`1.060`、
+  breadth5/5、Goal2/Long1、4/5 task高于carrier、retention`35/43`，G1正式通过；54/54 shards、250/250 rows、18/18 workers正常，
+  Action Meta关闭且输出为single complete rank16。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 

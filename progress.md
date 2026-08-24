@@ -10,8 +10,8 @@
 专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
 active design明确是解释/执行层，不能替代原文。
 
-全仓库orientation和两轮owner复核已完成，owner已正式许可推进。当前只推进G1 task-local free-code capacity oracle；没有恢复
-旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
+全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle已经通过，当前进入G2
+Natural Program；没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -51,6 +51,12 @@ independent mobile，其它37 targets保持当前native candidate，Long从`0/50
 `35/35/44/3/1`、breadth5/5、4/5高于carrier、retention`35/43`，数值上满足全部G1门，但因task94 action-in来自privileged
 reference而不是native pooling，不能冒充G1 pass。候选索引、四类bank、rank、scale、唯一rank16和G1/G3边界不变。
 
+action-in native-block修正由clean pushed `main@31f0053`完成，142项CPU回归及task94真实forward/gradient/materialization smoke通过。
+从detached frozen worktree生成的五task step0 bank完成同一four-arm strict250：`114/250`、逐task`35/31/45/2/1`，relative
+recovery为`71/67=1.060`，breadth5/5、四suite非零、Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部Gate
+checks通过。54/54 shards、250/250 rows与18/18 workers完整，Action Meta module/parameter为0，adapter为唯一完整rank12+4 rank16，
+没有使用shuffled/reversed。该pass只回答native X/Y banks与signed pooling形式的capacity问题；shared Program query-key attention仍由G3验证。
+
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
 裁决可直接应用于当前活动树。
@@ -63,7 +69,7 @@ Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer i
 - Video Program固定为owner-specific language/scene/ordered events及`rho/tau/sigma`；
 - 第二pass读取38个target的真实native inputs/outputs与动态differences；
 - Program通过signed pooling产生mobile rank4，与frozen rank12 carrier拼成唯一rank16；
-- 当前唯一下一步是fold0 held5 task-local free-code strict250，不先训练fresh Program/compiler；
+- 当时唯一下一步是fold0 held5 task-local free-code strict250；该Gate现已通过；
 - 通过后依次进行Natural Program、frozen-Program shared compiler、joint Writer、conditional outer credit和final fresh；
 - validation8与完整video controls的资格门、Test8 sealed规则及ECP根本失败条件均已固定。
 
@@ -119,11 +125,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 审查action-in 32×32D native-block修正diff、配置合同与全量CPU回归，集成clean pushed main；
-2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、
-   prohibited设备、进程、显存/util与独立storage quota，fresh生成五个task-local step0；
-3. 以该single step0唯一rank16 bank重跑同一strict250和four-arm Gate；若仍non-pass，按最早失败task的signed-measure/span response
-   定位，不以步数、seed、LR、threshold或group-count小扫替代机制证据；
-4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
-5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
-6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。
+1. 清理G1 task-owned临时launcher与detached worktree，保留formal bank、raw rows、aggregate、唯一checkpoint和Gate report；
+2. 从最新clean pushed main建立唯一`codex/` G2实现面，接通Natural Program固定schema、每video独立保序event assignment、
+   canonical alignment、uniform K aggregation、variance/uncertainty、`K=1` identity与集合置换不变性；
+3. 先用最小真实forward/gradient及定向合同检查证明两probe、端点保留、跨video边界和held-gradient wall，再进行G2 formal训练与
+   meta-held15+target-held5 Gate；
+4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
+5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
+6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

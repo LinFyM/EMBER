@@ -312,6 +312,11 @@ breadth5/5、4/5高于carrier、retention`35/43`，数值上满足全部G1门。
 signed pooling后拼回完整b；这是由Linear shape推出的最小full-width partition，不是group-count sweep。G1仍可直接持有这些free logits；
 G3必须由共享Program query与content keys计算每个group的weights，不能转化为task/frame查表。
 
+该修正由clean pushed `main@31f0053`完成。五task step0唯一rank16 bank的同一strict250为`114/250`、逐task`35/31/45/2/1`，
+relative recovery`71/67=1.060`、breadth5/5、Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部G1 checks通过；
+54/54 shards、250/250 rows、18/18 workers完整，Action Meta为0且没有使用shuffled/reversed。因此G1 capacity问题正式通过，下一阶段
+进入G2；此结果仍不声称shared Program query-key attention成立。
+
 ### G2. Natural Program训练
 
 仅在G1通过后，使用meta56+target-fit19、exact language、自然action-hidden videos，`K`均匀采样1/2/4，stride5并保留端点；video

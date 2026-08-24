@@ -20,8 +20,9 @@ Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38�
 ## 2. 不可改变的部署合同
 
 - 输入：exact language + `K`条action-hidden ordered videos。
-- 输出：唯一一套完整rank16 LoRA。当前专家方案采用有解析容量证据的frozen rank12 carrier + native-factor mobile rank4 residual；
-  只有证明rank4 ceiling后才重开完整task rank16，不能因历史惯性或便利随意改变。
+- 输出：唯一一套完整rank16 LoRA。首版canonical采用有解析容量证据的frozen rank12 carrier + native-factor mobile rank4 residual，
+  但这不是不可改变的架构公理，也不代表专家证明了12+4全局最优。若native bank可表达、rank4 free-code已经收敛、剩余误差由
+  rank ceiling造成，且一次同构full-rank16 oracle显著通过，则按证据重新分配task/carrier rank；不能因历史惯性或便利随意改变。
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
 - 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
@@ -51,15 +52,15 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 1. 用冻结PI0.5原生language、patch和Action Expert内部时序结构形成owner-specific、ordered Video Program；
 2. 用同一Program从38个LoRA目标的真实input/output activations中有符号地选取rank4因子；
-3. 与frozen rank12 carrier严格拼接成唯一rank16 LoRA；
+3. 首版与frozen rank12 carrier严格拼接成唯一rank16 LoRA；rank分解保留由容量实验重开的机制；
 4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
 5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。
 
 唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
 `sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。
 
-首版不启用Action Meta-LoRA；base Writer有明确闭环增量后必须做一次matched attempt。owner要求无负面效果即可启用，专家建议还需
-明确净收益；执行到该后期门时以owner最新指示裁决，不能遗漏这次尝试。
+首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做一次matched attempt；Stage 0和compiler冻结，只有出现明确
+净收益且不损害breadth/retention才加入并永久冻结，否则保持关闭。
 
 shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终冻结checkpoint上作为严格配对的时序特异性测试；正确
 视频应稳定优于打乱与倒序输入。full video还必须优于language/no-video、scene/first+final和wrong-video controls。
@@ -102,5 +103,9 @@ shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终�
 
 - 未经owner当次明确允许，绝不能直接向外部专家发送消息；只能提供可复制prompt给owner。
 - 给专家的prompt只补充他未知的新事实、结果与问题，不重复整段既有对话，也不人为限制专家的核心判断。
+- 只有owner明确要求时才创建或设置goal；不得因任务复杂、跨session或自主推进而自行调用goal机制。
+- owner询问具体问题时先直接回答该问题，不擅自扩成新方案、审批请求或外部沟通。
 - owner主要语音输入；明显同音词或断句错误要按EMBER上下文理解。
-- 跨session前，稳定要求、设计、历史、当前进度与下一步必须写入仓库；新session不应要求owner重新解释项目或GPU约束。
+- `HANDOFF.md`只能是消费后删除的临时索引，不得成为任何长期要求、架构决定、科学结论或执行计划的唯一载体。稳定要求进入
+  本文件，架构进入active design，跨轮结论进入`findings.md`/`research_history.md`，计划与即时状态进入`task_plan.md`/`progress.md`。
+- 跨session前，上述持久文件必须完整；新session不应要求owner重新解释项目、专家讨论或GPU约束。

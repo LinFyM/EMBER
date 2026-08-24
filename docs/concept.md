@@ -32,7 +32,7 @@ Action Expert target对齐的Program；同一condition在冻结PI0.5各目标层
 exact language + ordered action-hidden videos
               -> Pass A: q_V(owner-specific Program)
               -> Pass B: Program-conditioned native-factor signed pooling
-              -> rank4 task residual + frozen rank12 carrier
+              -> current first implementation: rank4 task residual + frozen rank12 carrier
               -> one complete rank16 LoRA
               -> frozen PI0.5 closed loop
 
@@ -80,7 +80,8 @@ differences，通过signed pooling产生rank4 outer products；它们不是Progr
 ## 目前知道与不知道的
 
 已经知道：task-local rank16 LoRA有闭环容量；Action Expert内部能捕获任务相关动态结构；rank12 carrier有有限支持；mobile rank4
-解析投影在held5具有5/5容量；policy-effect objective对known-success paths有用；fit-span realizer会丢失held低能量创新。
+解析投影在held5具有5/5容量；policy-effect objective对known-success paths有用；fit-span realizer会丢失held低能量创新。12+4因此
+是首版最合理的参数分配，但不是不可由capacity evidence推翻的永久结论。
 
 尚不知道的核心实验问题已经被压缩为两层：自然视频产生的target-native banks能否通过小型task-local选址生成强LoRA；若能，
 现有自然LIBERO mappings是否足以学习共享Program-to-selection映射。前者由当前唯一下一步free-code strict250回答，后者只在前者

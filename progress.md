@@ -7,6 +7,9 @@
 专家回复已经收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的
 **ECP Native-Factor Compiler**，核心架构、数据角色、阶段Gate、最终controls和停止条件均已明确。
 
+专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
+active design明确是解释/执行层，不能替代原文。
+
 本轮没有启动GPU训练、没有实现新Writer、没有向专家发送任何消息。当前有意停在跨session交接点；下一session消费
 `HANDOFF.md`后才开始G1 capacity oracle。
 
@@ -26,8 +29,9 @@ Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer i
 - 通过后依次进行Natural Program、frozen-Program shared compiler、joint Writer、conditional outer credit和final fresh；
 - validation8与完整video controls的资格门、Test8 sealed规则及ECP根本失败条件均已固定。
 
-唯一保留的后期政策差异：专家建议Action Meta只有明确净收益才启用；owner此前要求必须matched尝试且无负面即可启用。它不阻塞
-当前G1--G3，执行到该门时按owner最新指示。
+owner已接受专家的Action Meta门槛：只有base Writer先产生明确闭环增量，matched Action Meta又有明确净收益且无breadth/retention
+损害时才加入，否则保持关闭。rank12 carrier + mobile rank4是首版有证据配置，不是永久锁死；active design保留了rank-ceiling
+诊断通过后重开分配的正式分支。
 
 ## 本轮仓库整理结果
 

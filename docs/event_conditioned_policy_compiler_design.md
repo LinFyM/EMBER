@@ -3,6 +3,9 @@
 状态：2026-08-24专家复核后冻结的active architecture contract。专家审查的是远程`main@7ab5a04`；当前仓库随后只进行了
 代码/文档瘦身，没有产生新的科学结果。本文已结合当前`main@6fdaeb8`的保留实现复核，可作为下一session的唯一架构依据。
 
+专家1416行回复已逐字保存于`docs/expert_review_20260824_native_factor.md`（仅将CRLF标准化为LF，逐行内容无差异）。本文是将
+专家原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。
+
 人工process数据、神经`q_pi`、fixed effect-code realizer、fit-task fixed span、PECS/GOMQ/v24和并行旧Writer均不属于本路线。
 
 ## 1. 核心裁决
@@ -20,7 +23,7 @@ exact language + K ordered action-hidden videos
         |
         +-- Pass B: same frames, target-native input/output readout
                 -> Program-conditioned signed pooling
-                -> task-specific rank4 residual
+                -> current first implementation: task-specific rank4 residual
                 -> concatenate frozen shared rank12 carrier
                 -> one complete 38-target rank16 LoRA
 ```
@@ -147,8 +150,8 @@ held task的新方向来自其自身视频在PI0.5目标层中的native activati
 
 ## 5. 唯一rank16输出
 
-当前canonical采用冻结rank12 shared carrier与mobile rank4 task residual。这是基于held5 mobile-rank4解析投影`110/120/76`且三个
-arms均5/5非零的容量证据，不是沿用fixed-A或旧solver坐标。
+首版canonical采用冻结rank12 shared carrier与mobile rank4 task residual。这是基于held5 mobile-rank4解析投影`110/120/76`且三个
+arms均5/5非零的容量证据，不是沿用fixed-A或旧solver坐标；它是当前最合理的实验起点，不是专家已经证明不可改变的最终分解。
 
 ```text
 A_final_j = concat_rows(A_carrier_j[12], A_task_j[4])
@@ -159,7 +162,8 @@ B_final_j A_final_j = B_carrier_j A_carrier_j + B_task_j A_task_j
 最终仍是一套76 tensors、38 targets、rank16 LoRA，没有cross terms、second adapter或并行expert。
 
 只有同时证明native bank能表示task update、rank4 free-code已经收敛、剩余误差确由rank ceiling造成，并且一次同构full-rank16 oracle
-显著通过，才允许重开完整task rank16诊断。
+显著通过，才重开完整task rank16诊断并据结果重新分配carrier/task rank。无论如何仍输出唯一一套完整rank16 LoRA，不增加第二
+adapter。这一证据分支是正式设计的一部分，不能把12+4误记成永久硬约束。
 
 ## 6. Privileged evidence不是`q_pi`
 
@@ -188,9 +192,8 @@ segmenter、Dynamic-K alignment/aggregation、rank queries、native bank key/que
 Program与compiler分别通过后必须联合解冻全部Writer；backbone与carrier始终冻结。outer credit只更新event posterior、Program、rank
 attention和scale，不直接扰动百万级A/B tensor。
 
-Action Meta必须按owner要求在base Writer出现明确闭环增量后做一次matched attempt，Stage 0/compiler冻结。专家建议只有明确净收益且
-无breadth/retention损害才启用；owner此前要求只要无负面效果就启用。该后期启用阈值是唯一保留的政策差异，不阻塞当前任何
-阶段，执行到该门时以owner最新指示为准。
+Action Meta只在base Writer出现明确闭环增量后做一次matched attempt，Stage 0/compiler冻结。只有明确净收益且无breadth/retention
+损害才启用并永久冻结；否则保持关闭，不再把中性结果解释为加入理由。
 
 ## 8. 数据authority与fold
 

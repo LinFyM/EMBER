@@ -106,18 +106,22 @@ acquisition和SFT式recovery family全部取消，不再作为Stage 1前置。�
 专家在远程`main@7ab5a04`上复核全部人工process non-pass、Stage 0、successful members、mobile projection和两类shared realizer结果，
 形成以下新主线：
 
+专家回复原文完整保存在`docs/expert_review_20260824_native_factor.md`；以下仅为历史索引，若措辞存在疑义，以原文和owner后续明确
+裁决为准。
+
 1. 保留ECP输入输出目标，但取消canonical neural `q_pi -> fixed effect code -> inverse realizer`；
 2. privileged successful policies/effects改为nonparametric set-valued functional critic，不输出Program；
 3. Video Program固定为owner-specific language/scene与最多8个ordered events，并新增`tau[8,2]`；
 4. 同一视频第二pass直接捕获38个LoRA targets的native inputs/outputs及动态differences；
-5. Program-conditioned signed pooling生成mobile rank4，与frozen rank12 carrier拼成唯一rank16；
-6. mobile rank4选择来自110/120/76且5/5非零的解析容量证据，不恢复fixed-A或旧rank4 solver；
+5. Program-conditioned signed pooling首版生成mobile rank4，与frozen rank12 carrier拼成唯一rank16；
+6. 12+4来自110/120/76且5/5非零的解析容量证据，不恢复fixed-A或旧rank4 solver；专家同时保留了rank-ceiling证据成立后重开
+   carrier/task rank分配的分支，并未把12+4说死；
 7. 当前唯一下一步是fold0 held5 task-local free-code oracle，门槛约90/250、breadth5/5、Goal/Long非零与高retention；
 8. 通过后才训练Natural Program、frozen-Program shared compiler、joint Writer和conditional outer credit；
 9. final使用全部71 meta+train24 fresh训练，validation只看三个预注册相邻checkpoint，冻结后补controls并最后打开Test；
 10. 只有所有必要Gate与完整controls均完成仍系统失败，才可判断当前自然LIBERO/zero-interaction合同存在根本问题。
 
-完整shape、loss、门槛与耗时已经无损结构化进入`docs/event_conditioned_policy_compiler_design.md`。专家原始审查快照早于
+完整shape、loss、门槛与耗时已经结构化进入`docs/event_conditioned_policy_compiler_design.md`。专家原始审查快照早于
 `6fdaeb8`仓库瘦身；后者没有新增科学结果，因此不影响裁决。当前保留代码也验证了其指出的q/v native target hook缺口。
 
 ## 10. 当前保留结论

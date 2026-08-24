@@ -1,7 +1,7 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。精确分数、提交和历史脉络见`docs/research_history.md`；当前唯一架构合同见
-`docs/event_conditioned_policy_compiler_design.md`。
+只记录跨session仍影响决策的结论。专家原文见`docs/expert_review_20260824_native_factor.md`，精确分数、提交和历史脉络见
+`docs/research_history.md`；当前唯一架构合同见`docs/event_conditioned_policy_compiler_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
 
@@ -63,13 +63,14 @@ members；只有short-continuation verified member-state pairs可作训练target
 这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。它是否具有足够容量尚未被实验验证，当前唯一
 合理下一步是fold0 held5 task-local free-code strict250，而不是先训练fresh Program或shared compiler。
 
-### 8. rank12 carrier + mobile rank4是当前有证据的选择
+### 8. rank12 carrier + mobile rank4是当前有证据的首版选择，不是封死结论
 
 shared carrier为43/250；mobile-rank4解析投影在三个member arms为110/120/76，且均5/5 task非零。当前失败是shared mapping/solver，
-不是rank4容量。因此canonical用frozen rank12 carrier + native-factor mobile rank4，严格拼成一套rank16 LoRA。
+不是rank4容量。因此首版canonical用frozen rank12 carrier + native-factor mobile rank4，严格拼成一套rank16 LoRA。专家没有把
+12+4说成全局最优或不可改变；它只是现有证据下统计难度更低的起点。
 
 这不恢复fixed-A或raw-factor短solver。只有native bank可表达、rank4 free-code已收敛、response分析证明rank ceiling且一次同构full-rank16
-oracle显著通过，才允许重开task full-rank16。
+oracle显著通过，才重开task full-rank16并按结果调整carrier/task rank；总输出仍是唯一rank16 adapter。
 
 ### 9. Program结构已经明确
 
@@ -90,9 +91,8 @@ controls都完成后仍系统失败，才足以判定现有数据/zero-interacti
 
 ### 11. Action Meta是后期matched control
 
-当前结果中性，canonical默认关闭。base Writer有明确闭环增量后必须按owner要求做一次matched attempt，Stage 0/compiler冻结。
-专家要求明确净收益且无breadth/retention损害才启用；owner此前要求无负面即可启用。这一后期阈值差异不阻塞当前阶段，到门时按
-owner最新指示执行。
+当前结果中性，canonical默认关闭。base Writer有明确闭环增量后做一次matched attempt，Stage 0/compiler冻结；只有明确净收益且
+无breadth/retention损害才启用，否则保持关闭。
 
 ## 已关闭路线
 

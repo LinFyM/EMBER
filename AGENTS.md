@@ -24,7 +24,8 @@ authority。owner主要使用语音输入；明显同音词、术语识别和断
 4. `progress.md`
 5. `docs/concept.md`
 6. `docs/research_history.md`
-7. 当前active design，仅当`progress.md`明确登记时读取。
+7. `docs/expert_review_20260824_native_factor.md`
+8. 当前active design，仅当`progress.md`明确登记时读取。
 
 旧架构先查`research_history`；只有需要精确公式、实现或命令时，才从该文档登记的Git
 快照和formal artifact选择性读取。不得把重复阅读几十份退役设计当成推进前置步骤。

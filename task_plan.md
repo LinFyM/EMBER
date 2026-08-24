@@ -12,6 +12,7 @@ ECP Native-Factor Compiler开始，首先完成task-local capacity oracle，不�
 - [x] 清除退役Writer、ECP v1--v24后继、MDCO/PECS、人工process与失败realizer执行路径；
 - [x] 删除过时配置、脚本、测试、重复文档/证据与约11.6GB人工资产；
 - [x] 专家回复完整阅读并对照当前保留实现；
+- [x] 专家1416行原文逐字保存，active design与原文明确分层；
 - [x] 固化专家确认的Program schema、native-factor compiler、rank、训练阶段、Gate、final controls与停止条件；
 - [x] 明确删除神经`q_pi`与fixed effect-code realizer，保留effect evidence为training critic；
 - [x] 运行文档一致性/Git审查，提交并推送`main`；
@@ -92,5 +93,6 @@ shuffled/reversed；方法完全冻结后只打开Test8一次。
 - 不把GOMQ、PECS、v24或历史solver当ECP前置；
 - 不在G1前训练fresh Stage 0、shared compiler、joint Writer或outer credit；
 - 不用loss、geometry或checkpoint union替代single-checkpoint closed loop；
-- Action Meta只在base Writer有闭环增量后做一次matched attempt，最终启用阈值按owner最新指示；
+- Action Meta只在base Writer有闭环增量后做一次matched attempt，只有明确净收益且无breadth/retention损害才启用；
+- rank12 carrier + mobile rank4是G1的首版可证伪配置，不是永久硬约束；只有active design登记的rank-ceiling证据链成立才重开分配；
 - 遇到科学non-pass先按Gate判定最早失效接口，不进入slot/width/rank/seed版本链。

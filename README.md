@@ -12,7 +12,7 @@ realizer均由Git保存，不再作为可执行fallback。
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
 - ECP Stage 0 native v3可复用，但其q/v owners还不是真实target input/output captures；
-- 专家已冻结owner-specific Program、native-factor signed compiler和rank12+rank4单adapter主线；
+- 专家已冻结owner-specific Program与native-factor signed compiler；rank12+rank4是首版有证据配置，保留capacity证据触发的重开分支；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 当前唯一下一步是fold0 held5 native-factor task-local free-code capacity oracle。
 
@@ -24,8 +24,9 @@ realizer均由Git保存，不再作为可执行fallback。
 2. `docs/current_owner_requirements.md`：owner稳定目标与约束；
 3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
 4. `docs/concept.md`：科学问题与ECP假设；
-5. `docs/event_conditioned_policy_compiler_design.md`：当前唯一架构、阶段Gate与停止条件；
-6. `docs/research_history.md`：影响当前决策的历史证据。
+5. `docs/expert_review_20260824_native_factor.md`：2026-08-24专家回复原文；
+6. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
+7. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

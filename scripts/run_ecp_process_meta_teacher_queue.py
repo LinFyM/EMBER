@@ -145,6 +145,8 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": CONTRACT_SCHEMA,
         "status": "prepared",
         "prepared_unix": time.time(),
+        "scientific_contract": "docs/ecp_composite_recovery_teacher_gate_20260824.md",
+        "prepare_argv": list(sys.argv),
         "manifest": str(manifest),
         "output_dir": str(output_dir),
         "teacher_mode": "phase_expert",
@@ -158,6 +160,21 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             "persistent_workers_per_variant": 3,
             "ordering": "estimated_cost_desc_then_state_ordinal",
         },
+        "execution": {
+            "python": sys.executable,
+            "collector": str(COLLECTOR),
+            "one_policy_load_per_worker": True,
+            "gpu_local_numa_binding": True,
+            "omp_threads_per_worker": 8,
+        },
+        "gate": {
+            "episodes_per_variant": 50,
+            "minimum_successes_per_variant": 20,
+            "minimum_total_successes": 50,
+            "invalid_route_pair_seed_or_leakage_mismatches": 0,
+        },
+        "estimated_peak_new_bytes": 8 * 1024**3,
+        "content_hash_policy": "disabled_by_owner",
         "git": _git_authority(),
     }
     write_json_atomic(output_dir / "run_contract.json", contract)

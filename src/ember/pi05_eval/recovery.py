@@ -8,12 +8,6 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
-    ARCHIVAL_WRITER_CACHE_KIND,
-    DYNAMIC_K_WRITER_KIND,
-    FUNCTIONAL_CODE_WRITER_KIND,
-    inspect_dynamic_k_writer_adapter,
-    inspect_archival_writer_cache_adapter,
-    inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
     select_task_expert_adapter_tasks,
@@ -36,11 +30,8 @@ from ember.pi05_eval_queue import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "successful_on_policy_occupancy",
-    "successful_expert_equivalence_occupancy",
-    "phase_decoder_fit_projected_occupancy",
     "train24_fold0_held5",
     "train24_fold0_profile1",
-    "ecp_stage1_occupancy_complete_support",
 }
 
 
@@ -82,7 +73,6 @@ def _reinspect_adapter(
             require_formal=require_formal,
         )
     if adapter.get("kind") == "task_local_expert_bank":
-        manifest_path = adapter.get("projection", {}).get("manifest_path")
         subset = adapter.get("information_wall", {}).get("diagnostic_subset")
         inspection_tasks = tasks
         if subset in TASK_EXPERT_DIAGNOSTIC_SUBSETS:
@@ -98,9 +88,6 @@ def _reinspect_adapter(
             tasks=inspection_tasks,
             evaluation_role=str(contract["role"]),
             require_formal=require_formal,
-            projection_manifest=(
-                Path(str(manifest_path)) if manifest_path is not None else None
-            ),
         )
         if subset in TASK_EXPERT_DIAGNOSTIC_SUBSETS:
             return select_task_expert_adapter_tasks(
@@ -109,43 +96,6 @@ def _reinspect_adapter(
                 diagnostic_subset=str(subset),
             )
         return inspected
-    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-        return inspect_dynamic_k_writer_adapter(
-            config_path=Path(adapter["config"]["path"]),
-            checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
-            video_data_root=Path(adapter["video_data"]["root"]),
-            source=model,
-            tasks=tasks,
-            video_condition=str(adapter["video_condition"]),
-            video_seed=int(adapter["video_schedule"]["seed"]),
-            video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
-            require_formal=require_formal,
-            evaluation_k=int(
-                adapter.get("information_wall", {}).get("evaluation_k", 1)
-            ),
-        )
-    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
-        return inspect_functional_code_writer_adapter(
-            config_path=Path(adapter["config"]["path"]),
-            checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
-            video_data_root=Path(adapter["video_data"]["root"]),
-            source=model,
-            tasks=tasks,
-            video_condition=str(adapter["video_condition"]),
-            video_seed=int(adapter["video_schedule"]["seed"]),
-            video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
-            require_formal=require_formal,
-            evaluation_k=int(
-                adapter.get("information_wall", {}).get("evaluation_k", 1)
-            ),
-        )
-    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        return inspect_archival_writer_cache_adapter(
-            manifest_path=Path(adapter["config"]["path"]),
-            source=model,
-            tasks=tasks,
-            require_formal=require_formal,
-        )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 
 

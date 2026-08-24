@@ -13,7 +13,7 @@ from ember.pi05_assets import (
     load_protocol,
     prepare_libero_config,
 )
-from ember.functional_adaptation.contract import load_meta_protocol
+from ember.meta_protocol import load_meta_protocol
 
 
 EVALUATION_CONFIG_SCHEMA = "ember_pi05_target_evaluation_v1"

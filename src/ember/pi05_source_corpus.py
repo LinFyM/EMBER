@@ -12,7 +12,7 @@ import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from ember.libero_data import (
     AuditResult,
@@ -431,15 +431,3 @@ def seal_source_data(
     }
     write_json_atomic(normalization_path, normalization)
     return manifest, normalization
-
-
-def write_checksums(config_dir: Path, filenames: Iterable[str]) -> None:
-    rows = []
-    for filename in filenames:
-        path = config_dir / filename
-        if not path.is_file():
-            raise Pi05EvaluationError(f"missing source-corpus artifact: {path}")
-        rows.append(f"{sha256_file(path)}  {filename}")
-    path = config_dir / "checksums.sha256"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(rows) + "\n", encoding="utf-8")

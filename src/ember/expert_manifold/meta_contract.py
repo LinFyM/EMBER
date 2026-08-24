@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.functional_adaptation.contract import load_meta_protocol
+from ember.meta_protocol import load_meta_protocol
 from ember.pi05_source_checkpoint import read_json
 
 

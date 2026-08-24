@@ -25,7 +25,6 @@ from ember.expert_manifold.diagnostic_contract import (
     validation_expert_rows,
     validation_worker_assignments,
 )
-from ember.expert_manifold.projection import inspect_projected_task_expert_bank
 from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
@@ -369,92 +368,8 @@ def inspect_task_expert_bank(
     }
 
 
-def inspect_task_expert_evaluation(
-    *,
-    projection_manifest: Path | None = None,
-    **kwargs: Any,
-) -> dict[str, Any]:
-    evaluation_role = str(kwargs["evaluation_role"])
-    config = (
-        load_task_expert_config(Path(kwargs["config_path"]))
-        if projection_manifest is not None
-        else None
-    )
-    if (
-        projection_manifest is not None
-        and config is not None
-        and config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA
-        and evaluation_role in {"nonheld_meta_train", "nonheld_meta_validation"}
-    ):
-        all_rows = _expert_task_rows(config)
-        full_kwargs = {
-            **kwargs,
-            "task_keys": [
-                (str(row["suite"]), int(row["task_id"])) for row in all_rows
-            ],
-            "evaluation_role": "nonheld_meta",
-        }
-        projected = inspect_projected_task_expert_bank(
-            inspect_task_expert_bank(**full_kwargs), projection_manifest
-        )
-        requested = tuple(
-            (str(suite), int(task_id)) for suite, task_id in kwargs["task_keys"]
-        )
-        requested_keys = set(requested)
-        selected_rows = _evaluation_task_rows(
-            projected["tasks"], is_meta=True, evaluation_role=evaluation_role
-        )
-        selected_keys = {
-            (str(row["suite"]), int(row["task_id"])) for row in selected_rows
-        }
-        if len(requested_keys) != len(requested) or requested_keys != selected_keys:
-            raise ExpertManifoldError(
-                "projected task-expert panel differs from its evaluation role"
-            )
-        information_wall = dict(projected["information_wall"])
-        information_wall.update(
-            evaluation_role=evaluation_role,
-            evaluated_task_count=len(selected_rows),
-        )
-        return {
-            **projected,
-            "tasks": [dict(row) for row in selected_rows],
-            "information_wall": information_wall,
-        }
-    if projection_manifest is None:
-        return inspect_task_expert_bank(**kwargs)
-    if config is None:
-        raise ExpertManifoldError("projected task-expert config was not loaded")
-    expected = _expert_task_rows(config)
-    expected_keys = {
-        (str(row["suite"]), int(row["task_id"])) for row in expected
-    }
-    requested = tuple(
-        (str(suite), int(task_id)) for suite, task_id in kwargs["task_keys"]
-    )
-    requested_keys = set(requested)
-    if (
-        len(requested_keys) != len(requested)
-        or not requested_keys
-        or not requested_keys.issubset(expected_keys)
-    ):
-        raise ExpertManifoldError("projected task-expert panel is not authorized")
-    full_kwargs = {
-        **kwargs,
-        "task_keys": sorted(expected_keys),
-        "evaluation_role": "development_train",
-    }
-    projected = inspect_projected_task_expert_bank(
-        inspect_task_expert_bank(**full_kwargs), projection_manifest
-    )
-    projected_keys = {
-        (str(row["suite"]), int(row["task_id"])) for row in projected["tasks"]
-    }
-    if requested_keys != projected_keys:
-        raise ExpertManifoldError(
-            "projected task-expert panel differs from its requested subset"
-        )
-    return projected
+def inspect_task_expert_evaluation(**kwargs: Any) -> dict[str, Any]:
+    return inspect_task_expert_bank(**kwargs)
 
 
 @dataclass(frozen=True)
@@ -501,14 +416,8 @@ class FrozenTaskExpertAdapter:
     def _state(self, key: tuple[str, int]) -> dict[str, torch.Tensor]:
         if key not in self._states:
             record = self.records[key]
-            path = (
-                Path(str(record["projected_adapter"]))
-                if "projected_adapter" in record
-                else Path(str(record["checkpoint"])) / "adapter.safetensors"
-            )
-            expected_bytes = int(
-                record.get("projected_adapter_bytes", record.get("adapter_bytes", -1))
-            )
+            path = Path(str(record["checkpoint"])) / "adapter.safetensors"
+            expected_bytes = int(record.get("adapter_bytes", -1))
             if not path.is_file() or path.stat().st_size != expected_bytes:
                 raise ExpertManifoldError("task-expert runtime adapter changed")
             state = load_file(str(path), device="cpu")

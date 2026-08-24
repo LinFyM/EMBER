@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
 import torch
 
 from ember.expert_manifold.video_schedule import (
@@ -11,53 +10,7 @@ from ember.expert_manifold.video_schedule import (
     task_video_mapping,
     video_selection_seed,
 )
-from ember.pi05_eval_contract import policy_noise_seed
-from ember.pi05_eval_results import _per_task_rows
-from ember.writer.data import RawTeacherVideo
-from ember.writer.live_adapter import _ordered_video_tensors
-
-
-def _rows() -> list[dict]:
-    return [
-        {
-            "suite": "libero_spatial",
-            "task_id": 0,
-            "split_role": "train",
-            "language": "task zero",
-            "init_state_id": state_id,
-            "env_seed": 7,
-            "policy_seed_root": 7,
-            "policy_noise_seeds": [
-                policy_noise_seed(7, "libero_spatial", 0, state_id, 0)
-            ],
-            "success": state_id == 0,
-            "steps": 1,
-            "wall_seconds": 0.1,
-            "finished_at": 0.1,
-        }
-        for state_id in (0, 1)
-    ]
-
-
-def test_per_task_rows_summarizes_teacher_video_sets() -> None:
-    rows = _rows()
-    for row, demos in zip(rows, ((0, 1), (2, 3)), strict=True):
-        row["writer"] = {
-            "condition": "correct",
-            "teacher_demo_indices": list(demos),
-            "writer_generation_seconds": 0.25,
-        }
-    tasks = {
-        ("libero_spatial", 0): {"split_role": "train", "language": "task zero"}
-    }
-
-    writer = _per_task_rows(rows, tasks)[0]["writer"]
-
-    assert writer["videos_per_condition"] == 2
-    assert writer["unique_teacher_videos"] == 4
-    assert writer["unique_teacher_video_sets"] == 2
-    assert writer["teacher_demo_set_counts"] == {"0,1": 1, "2,3": 1}
-    assert writer["generation_wall_seconds"] == 0.5
+from ember.video_conditions import frame_control
 
 
 def test_video_schedule_is_nested_balanced_and_order_independent() -> None:
@@ -167,76 +120,54 @@ def test_shuffled_keep_first_changes_only_the_anchor_position() -> None:
 
 
 def test_temporal_controls_reorder_frames_but_keep_display_positions() -> None:
-    frames = np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2)
-    indices = np.asarray([0, 5, 10, 15], dtype=np.int64)
-    video = RawTeacherVideo(
-        frames=frames.copy(), frame_indices=indices.copy(), raw_frame_count=16
-    )
-    correct_frames, correct_indices = _ordered_video_tensors(
-        video, condition="correct", order_seed=7, device=torch.device("cpu")
-    )
-    reversed_frames, reversed_indices = _ordered_video_tensors(
-        video, condition="reversed", order_seed=7, device=torch.device("cpu")
-    )
-    shuffled_frames, shuffled_indices = _ordered_video_tensors(
-        video, condition="shuffled", order_seed=7, device=torch.device("cpu")
-    )
+    frames = torch.arange(4 * 3 * 2 * 2).reshape(4, 3, 2, 2)
+    indices = torch.tensor([0, 5, 10, 15])
+    correct = frame_control(4, condition="correct", order_seed=7)
+    reversed_control = frame_control(4, condition="reversed", order_seed=7)
+    shuffled = frame_control(4, condition="shuffled", order_seed=7)
     permutation = shuffled_frame_permutation(4, 7, keep_first=False)
 
-    assert torch.equal(correct_frames, torch.from_numpy(frames))
-    assert torch.equal(reversed_frames, torch.from_numpy(frames).flip(0))
-    assert torch.equal(
-        shuffled_frames, torch.from_numpy(frames).index_select(0, permutation)
-    )
-    assert torch.equal(correct_indices, torch.from_numpy(indices))
-    assert torch.equal(reversed_indices, correct_indices)
-    assert torch.equal(shuffled_indices, correct_indices)
-    assert np.array_equal(video.frames, frames)
-    assert np.array_equal(video.frame_indices, indices)
+    assert torch.equal(frames.index_select(0, correct.content), frames)
+    assert torch.equal(frames.index_select(0, reversed_control.content), frames.flip(0))
+    assert torch.equal(frames.index_select(0, shuffled.content), frames.index_select(0, permutation))
+    assert torch.equal(indices.index_select(0, correct.positions), indices)
+    assert torch.equal(indices.index_select(0, reversed_control.positions), indices)
+    assert torch.equal(indices.index_select(0, shuffled.positions), indices)
 
 
 def test_process_controls_separate_endpoints_middle_and_sparse_evidence() -> None:
-    frames = np.arange(7 * 3, dtype=np.uint8).reshape(7, 3, 1, 1)
-    indices = np.arange(0, 35, 5, dtype=np.int64)
-    video = RawTeacherVideo(
-        frames=frames.copy(), frame_indices=indices.copy(), raw_frame_count=35
-    )
-
-    first, first_positions = _ordered_video_tensors(
-        video, condition="first_frame_only", order_seed=7, device=torch.device("cpu")
-    )
-    final, final_positions = _ordered_video_tensors(
-        video, condition="final_frame_only", order_seed=7, device=torch.device("cpu")
-    )
-    endpoints, endpoint_positions = _ordered_video_tensors(
-        video, condition="first_final", order_seed=7, device=torch.device("cpu")
-    )
-    shuffled_middle, shuffled_positions = _ordered_video_tensors(
-        video,
-        condition="endpoints_middle_shuffled",
-        order_seed=7,
-        device=torch.device("cpu"),
-    )
-    sparse, sparse_positions = _ordered_video_tensors(
-        video, condition="monotone_sparse", order_seed=7, device=torch.device("cpu")
-    )
-    static, static_positions = _ordered_video_tensors(
-        video,
-        condition="static_first_repeated",
-        order_seed=7,
-        device=torch.device("cpu"),
-    )
-
-    assert torch.equal(first, torch.from_numpy(frames[:1]))
-    assert first_positions.tolist() == [0]
-    assert torch.equal(final, torch.from_numpy(frames[-1:]))
-    assert final_positions.tolist() == [30]
-    assert torch.equal(endpoints, torch.from_numpy(frames[[0, -1]]))
-    assert endpoint_positions.tolist() == [0, 30]
-    assert torch.equal(shuffled_middle[[0, -1]], torch.from_numpy(frames[[0, -1]]))
-    assert not torch.equal(shuffled_middle[1:-1], torch.from_numpy(frames[1:-1]))
-    assert torch.equal(shuffled_positions, torch.from_numpy(indices))
-    assert torch.equal(sparse, torch.from_numpy(frames[[0, 2, 4, 6]]))
-    assert sparse_positions.tolist() == [0, 10, 20, 30]
-    assert torch.equal(static, torch.from_numpy(frames[[0] * 7]))
-    assert static_positions.tolist() == indices.tolist()
+    frames = torch.arange(7 * 3).reshape(7, 3, 1, 1)
+    indices = torch.arange(0, 35, 5)
+    controls = {
+        name: frame_control(7, condition=name, order_seed=7)
+        for name in (
+            "first_frame_only",
+            "final_frame_only",
+            "first_final",
+            "endpoints_middle_shuffled",
+            "monotone_sparse",
+            "static_first_repeated",
+        )
+    }
+    selected = {
+        name: frames.index_select(0, control.content)
+        for name, control in controls.items()
+    }
+    positions = {
+        name: indices.index_select(0, control.positions)
+        for name, control in controls.items()
+    }
+    assert torch.equal(selected["first_frame_only"], frames[:1])
+    assert positions["first_frame_only"].tolist() == [0]
+    assert torch.equal(selected["final_frame_only"], frames[-1:])
+    assert positions["final_frame_only"].tolist() == [30]
+    assert torch.equal(selected["first_final"], frames[[0, -1]])
+    assert positions["first_final"].tolist() == [0, 30]
+    shuffled = selected["endpoints_middle_shuffled"]
+    assert torch.equal(shuffled[[0, -1]], frames[[0, -1]])
+    assert not torch.equal(shuffled[1:-1], frames[1:-1])
+    assert torch.equal(positions["endpoints_middle_shuffled"], indices)
+    assert torch.equal(selected["monotone_sparse"], frames[[0, 2, 4, 6]])
+    assert positions["monotone_sparse"].tolist() == [0, 10, 20, 30]
+    assert torch.equal(selected["static_first_repeated"], frames[[0] * 7])
+    assert positions["static_first_repeated"].tolist() == indices.tolist()

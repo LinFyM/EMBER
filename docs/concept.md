@@ -1,96 +1,84 @@
-# EMBER Concept
+# EMBER concept
 
-## 一句话定义
+## 问题定义
 
-EMBER让一个shared Writer把“任务语言 + action-hidden正确教学视频”一次性编译为一套task-conditioned policy
-adaptation，使已有通用机器人能力的冻结source policy能从未见初始化完成新任务。
+人看过一段没有动作标注的教学视频，通常会先理解目标，再把视频中的条件、过程和结果迁移到自己的身体与当前场景。EMBER
+研究PI0.5能否做同一件事：只看task language和`K`条action-hidden正确视频，在rollout前把观察到的知识编译成Action
+Expert的一套LoRA，随后零交互完成任务。
 
-## 人类学习类比
+这不是视频检索、task-ID分类、行为克隆或运行时视频条件策略。部署时没有teacher action、state、reward和第二个expert；
+Writer只运行一次，输出的参数必须直接成为闭环策略的一部分。
 
-一个会基本打乒乓球的人，看别人正确示范一次逆旋转发球后，通常不会逐帧复制对方的关节轨迹。他会提取更抽象的
-知识：球拍怎样接触球、运动方向怎样产生旋转、动作阶段如何衔接。这个理解先给他一个明显好于盲试的起点；之后
-根据真实击球结果继续练习，才逐渐熟练。
+## 为什么问题困难
 
-EMBER要复制的是这种“从正确视觉示范获得可迁移技能起点”的能力，而不是把视频伪装成动作标注。
+原生PI0.5中，Gemma处理当前language和静态图像prefix，Action Expert把50个未来horizon位置上的noise tokens通过flow
+matching推进为动作chunk。教学视频则是一串跨时间的静态帧，而且没有teacher actions。EMBER必须同时解决三个接口：
 
-## 问题合同
+1. 从帧级PI0.5表示中提取与动作过程相关、而非只识别物体或task模板的动态证据；
+2. 把可变长度、可变`K`的视频压缩成保留event顺序和Action Expert层对应关系的固定结构；
+3. 用跨任务共享的编译机制把这个结构转成闭环有效的完整LoRA，而不是只重建某个expert的因子或内部hidden。
+
+训练task数量有限还会造成欠识别：language、video和task identity可能高度相关，模型即使完全忽略过程也能降低训练loss。因此
+方法必须靠task-disjoint评测、视频controls、多个独立策略lineages和真实closed-loop结果证明因果路径。
+
+## ECP假设
+
+当前方法方向称为ECP（Event-Conditioned Policy Compiler）。核心假设是：教学视频中的可迁移知识可以表示为一个有序、
+event-conditioned、与Action Expert target/layer对齐的Program；同一个Program schema既能由训练期privileged policy evidence
+推断，也能由部署期language+video推断；一个任务共享的realizer再把Program编译为唯一一套rank16 LoRA。
 
 ```text
-exact task language
-    + one or more internally ordered, action-hidden teaching videos
-    -> shared Writer runs once
-    -> one complete task-conditioned LoRA
-    -> frozen π0.5-LIBERO source policy
-    -> closed-loop execution from unseen initialization
+deployment: exact language + ordered action-hidden videos
+              -> q_V(Program)
+              -> shared Program-to-LoRA realizer
+              -> one complete rank16 LoRA
+              -> frozen PI0.5 closed loop
+
+training only: successful policies + actions/occupancies/reward
+              -> q_pi(Program)
+              -> teach/calibrate the same Program and realizer
 ```
 
-语言告诉模型任务关注什么、目标是什么；视频告诉模型正确过程如何演化。两者联合应形成一个跨初始化成立的高层
-task Program：对象与关系、目标状态、必要阶段、阶段间因果顺序，以及可忽略的demo-specific nuisance。
+`q_pi`不是手工标签或外部专家。它是一个只在授权meta tasks上训练的共享网络，用privileged policy evidence推断Program
+posterior；其价值必须由task-disjoint、冻结realizer的闭环结果证明。`q_V`是部署Writer的video posterior。两者输出同构，
+因此privileged信息教的是可由视频预测的中间结构，而不是隐藏的task-local code。
 
-## 为什么视频不能等同于轨迹监督
+## Program候选结构
 
-teacher video可以来自不同视角、速度、路径和抓取姿态，部署环境的初始状态也不同。合理模型不应复刻原demo的
-低层轨迹，而应使用冻结policy已有的视觉、语言和动作先验，在当前观测下重新实现同一目标。
+每个视频帧使用原生PI0.5 prefix和一组固定Gaussian action probes。flow时刻`t=1`表示denoising的噪声端点：输入仍是50个
+按未来horizon排列的noise tokens；它们的中间hidden是当前language/image条件下的时间索引policy response，不是已经预测好的
+50步动作，也不包含teacher action。
 
-因此训练可让video episode与action query episode同task但错开。这阻断了逐帧动作复制捷径，却也使监督target对
-同task不同video可能恒定。架构和objective必须额外解决这个不可识别性：task identity正确不等于视频过程理解。
+当前Stage 0候选保留38个LoRA target owners、50个horizon位置和各层hidden，再将帧序列分段为最多`E=8`个有序event slots。
+`E=8`是固定最大容量；每个任务实际激活多少slot、哪个视频段落写入哪个slot均由模型学习。跨视频聚合只在event对齐后进行。
 
-## One-shot、few-shot与动态K
+当前候选Program为：
 
-一条视频足以定义one-shot问题；多条视频则允许比较同task示范，过滤单demo的偶然细节。若采用多视频：
+```text
+P_lang    [38, 128]
+P_scene   [38, 128]
+P_process [8, 38, 128]
+rho       [8]            # event presence
+sigma     [8, 38, 128]   # cross-video uncertainty
+```
 
-- 每条video内部必须有序编码；
-- videos之间必须置换不变聚合；
-- 聚合对象应是高层程序证据，不是raw frame、feature或最终LoRA的简单平均；
-- 训练必须覆盖声称支持的K；
-- K由真实性能选择，不由形式偏好决定。
+这是已讨论的schema，不是专家最终回复前可随意扩写的架构。slot数、坐标、posterior形式和realizer具体网络可被新证据修正，
+但必须保持：事件顺序、target/layer对应、Dynamic-K真实性、部署信息墙和单LoRA输出。
 
-多视频只是提供可识别性的机会，不会自动产生正确task Program。历史上K4确实降低过same-task LoRA方差，也曾只是
-更稳定地保留错误方向。
+## 训练原则
 
-## 正确时序的因果意义
+- 只使用现成且授权的LIBERO tasks，不制作人工process数据集。
+- train24与审计后的non-held LIBERO-90 meta tasks产生梯度；validation/test不产生梯度。
+- video与action query跨episode；多个successful policies用独立优化lineages构成分布，不把同一轨迹的checkpoint当独立任务知识。
+- 先证明Program-to-LoRA共享映射在held tasks闭环成立，再训练video posterior；否则`q_V`会学习一个没有政策意义的latent。
+- staged gates用于定位接口，最终必须有冻结backbone、全Writer联合训练阶段。
+- shuffled/reversed只在最终冻结checkpoint评测时序特异性，不进入训练或选模。
 
-correct视频展示物理可行的初态→目标态过程；shuffled破坏阶段连续性；reversed颠倒有向因果关系。模型需要利用
-这种结构判断“先做什么、后做什么、为什么”，而不是仅对时间戳、动作phase或negative标签敏感。
+## 目前知道与不知道的
 
-真正的证据是correct视频相对same-task-other、wrong、shuffled、reversed和no-video，沿有用policy方向提高闭环
-成功率。hidden或LoRA不同、negative变坏、内部margin变大都不是充分证明。
+已经知道：task-local rank16 LoRA有足够闭环容量；Action Expert内部能捕获任务相关动态结构；共享carrier可提供有限支持；过去
+失败主要集中在把结构稳定地编译为跨任务有效LoRA，而非证明输入输出目标不可能。
 
-现有LIBERO source/target reward只约束最终状态，没有已证明的same-endpoint/different-required-procedure任务对。
-因此时序control可以证明模型对视频顺序敏感并且这种敏感性有用，却不能单独把结果升级为一般“过程理解”。owner已明确
-停止制作人工process-identifying数据；后续只用现成LIBERO tasks直指核心Writer，并按现有证据收窄claim，而不是让造数据
-继续阻塞ECP实现。
-
-## 输出为什么仍是一套LoRA
-
-LoRA提供一次性、可缓存、可挂载到冻结policy的task adaptation，并能自然成为未来task-local RL的起点。Writer
-生成LoRA不意味着必须直接回归每个A/B元素；当前更有依据的实现是先形成与policy topology对齐的Program，再预测
-event/layer/family policy-effect distribution，最后由固定、受约束的realization solver在PI0.5自己的参数坐标中生成完整LoRA。
-
-rank、memory token、parameter grid、FactorHead和decoder只是实现选择。LoRA是否“健康”最终看它能否产生合理
-effective BA、action response和closed-loop improvement，而不是强求高rank、正交或均匀能量。
-
-## 学习系统的四个接口
-
-EMBER可以分成四个必须同时成立、但应分别诊断的接口：
-
-1. **Evidence extraction**：语言确定语义query，视频提供有向动态Value；
-2. **Program formation**：同task不同video形成可复现的高层表示，多task保持可分；
-3. **Policy compilation**：Program先约束策略响应等价类，再被固定实现器写成native、policy-effective的一套LoRA；
-4. **Shared credit and retention**：训练更新在同一checkpoint中积累多个tasks，不轮流换手。
-
-“视频被读到”“LoRA非零”“reward gradient存在”“single checkpoint分数高”分别只关闭其中一个局部问题。
-
-## 当前成功定义
-
-正式方法由single-checkpoint strict paired400选择。目标不仅是高correct，还包括：
-
-- 高task breadth；
-- 相邻checkpoint稳定、低churn；
-- same-task不同视频鲁棒；
-- correct明显优于wrong/shuffled/reversed/no-video；
-- 能从Program追踪到LoRA、effective BA、action和闭环收益；
-- 不依赖language-only shortcut、挑video、expert dictionary或checkpoint union。
-
-zero-interaction Writer是当前研究对象。生成LoRA后的环境交互和task-local RL是合理的第二阶段，但必须单独评价，
-不能替代初始adaptation本身的能力。
+尚不知道：现有自然LIBERO任务是否足以识别强过程Program；`q_pi`如何在不变成task dictionary的情况下形成可迁移posterior；
+realizer应直接预测LoRA、预测policy-effect distribution还是使用可微inner solver；以及Stage 0的native probes是否比纯视觉
+时序编码提供稳定净增量。这些是待专家回复后必须明确的核心问题。

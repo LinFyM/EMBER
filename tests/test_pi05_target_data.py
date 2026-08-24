@@ -19,7 +19,6 @@ from ember.pi05_target_data import (
     seal_target_data,
     target_global_task_id,
     target_hdf5_relative_path,
-    write_checksums,
 )
 
 
@@ -128,14 +127,6 @@ def test_seal_target_data_keeps_trajectory_values_unread(
     digest = payload.pop("canonical_payload_sha256")
     assert canonical_hash(payload) == digest
     assert read_json(output) == manifest
-
-
-def test_target_checksums_use_config_local_paths(tmp_path: Path) -> None:
-    artifact = tmp_path / "manifest.json"
-    artifact.write_text("{}\n", encoding="utf-8")
-    write_checksums(tmp_path, ("manifest.json",))
-    line = (tmp_path / "checksums.sha256").read_text(encoding="utf-8")
-    assert line == f"{target_data.sha256_file(artifact)}  manifest.json\n"
 
 
 def test_seen_panel_is_specification_only_and_recomputable() -> None:

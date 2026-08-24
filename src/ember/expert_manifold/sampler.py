@@ -55,36 +55,3 @@ class TaskLocalEpochSampler:
             result.extend(order[offset : offset + take])
             start += take
         return tuple(result)
-
-
-class BalancedTwoDomainSampler:
-    """Draw an exact half-batch from each deterministic domain stream."""
-
-    def __init__(
-        self,
-        domain_rows: Sequence[Sequence[int]],
-        *,
-        task_id: int,
-        batch_size: int,
-        seed: int,
-    ) -> None:
-        if len(domain_rows) != 2 or batch_size <= 0 or batch_size % 2:
-            raise ExpertManifoldError(
-                "balanced recovery sampler needs two half-batches"
-            )
-        half = batch_size // 2
-        self.samplers = tuple(
-            TaskLocalEpochSampler(
-                rows,
-                task_id=task_id * 2 + domain,
-                batch_size=half,
-                seed=seed,
-            )
-            for domain, rows in enumerate(domain_rows)
-        )
-
-    def batch_for_step(self, step: int) -> tuple[int, ...]:
-        first, second = (sampler.batch_for_step(step) for sampler in self.samplers)
-        return tuple(
-            value for pair in zip(first, second, strict=True) for value in pair
-        )

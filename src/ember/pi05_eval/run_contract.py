@@ -11,13 +11,6 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ember.eval_adapters import (
-    ARCHIVAL_WRITER_CACHE_KIND,
-    DYNAMIC_K_WRITER_KIND,
-    FUNCTIONAL_CODE_WRITER_KIND,
-    WRITER_ADAPTER_KINDS,
-    paired_writer_identity,
-)
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
     RUNTIME_OMP_THREADS,
@@ -29,20 +22,6 @@ from ember.pi05_eval_contract import (
     _read_object,
     git_state,
 )
-
-
-_BATCH_THROUGHPUT_POLICY = (
-    "highest_measured_batch_throughput_with_device_memory_headroom"
-)
-_WRITER_THROUGHPUT_BY_SCHEMA = {
-    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v5": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_functional_code_writer_eval_adapter_v1": _BATCH_THROUGHPUT_POLICY,
-    "ember_pi05_archival_writer_lora_cache_eval_adapter_v1": (
-        "precomputed_archival_cache_only"
-    ),
-}
 
 
 def _resolve_gpu_ids(
@@ -71,9 +50,6 @@ def _parallel_contract(
     *,
     physical_gpu_ids: Sequence[int],
     replicas_per_gpu: int,
-    writer_adapter: bool,
-    writer_generators_per_gpu: int,
-    writer_generation_batch_size: int,
 ) -> dict[str, Any]:
     configured = int(authorities.config["parallel"]["physical_gpu_count"])
     physical_count = len(physical_gpu_ids)
@@ -89,17 +65,6 @@ def _parallel_contract(
         "physical_gpu_count": physical_count,
         "replicas_per_gpu": replicas_per_gpu,
         "worker_count": physical_count * replicas_per_gpu,
-        "writer_generators_per_gpu": (
-            writer_generators_per_gpu if writer_adapter else 0
-        ),
-        "writer_generation_worker_count": (
-            physical_count * writer_generators_per_gpu if writer_adapter else 0
-        ),
-        "writer_generation_batch_size": (
-            writer_generation_batch_size if writer_adapter else 0
-        ),
-        "writer_and_rollout_parallelism_decoupled": writer_adapter,
-        "generator_source_policy_processes_reused_for_rollout": (writer_adapter),
         "one_policy_per_worker": True,
         "cpu_only_launcher": True,
         "sharding_algorithm": (
@@ -111,81 +76,6 @@ def _parallel_contract(
     }
 
 
-def _writer_lora_contract(
-    authorities: EvaluationAuthorities,
-    adapter: Mapping[str, Any],
-) -> Any:
-    from ember.pi05_lora import load_pi05_lora_contract
-
-    if adapter["kind"] == ARCHIVAL_WRITER_CACHE_KIND:
-        from ember.writer.archival_projection import load_archival_lora_contract
-
-        return load_archival_lora_contract(adapter)
-    config_path = Path(adapter["config"]["path"])
-    if adapter["kind"] == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.as_config import authority_path, load_writer_config
-
-        config = load_writer_config(config_path)
-        path = authority_path(config, "lora_contract")
-    elif adapter["kind"] == FUNCTIONAL_CODE_WRITER_KIND:
-        from ember.functional_adaptation.decoder_training import (
-            authority_path,
-            load_functional_adapter_config,
-        )
-
-        config = load_functional_adapter_config(config_path, authorities.repo_root)
-        path = authority_path(config, "lora_contract", authorities.repo_root)
-    else:
-        raise Pi05EvaluationError("unknown Writer LoRA authority")
-    result = load_pi05_lora_contract(path)
-    observed_rank = int(adapter.get("lora_contract", {}).get("rank", result.rank))
-    if observed_rank != result.rank:
-        raise Pi05EvaluationError(
-            "Writer deployment rank differs from its LoRA contract"
-        )
-    expected_reference = (
-        f"{path.relative_to(authorities.repo_root)}:"
-        f"{result.state_tensor_count}tensors:{result.parameter_count}parameters"
-    )
-    if adapter.get("lora_contract", {}).get("reference") != expected_reference:
-        raise Pi05EvaluationError("Writer cache LoRA authority changed")
-    return result
-
-
-def _attach_writer_cache(
-    contract: dict[str, Any],
-    *,
-    authorities: EvaluationAuthorities,
-    adapter: Mapping[str, Any] | None,
-    output_dir: Path,
-    writer_cache_root: Path | None,
-    writer_generators_per_gpu: int,
-    writer_generation_batch_size: int,
-) -> None:
-    contract["writer_lora_cache"] = None
-    if adapter is None or adapter.get("kind") not in WRITER_ADAPTER_KINDS:
-        return
-    from ember.writer.evaluation_cache import build_writer_lora_cache_descriptor
-
-    lora = _writer_lora_contract(authorities, adapter)
-    root = (
-        writer_cache_root.resolve()
-        if writer_cache_root is not None
-        else output_dir.resolve() / "writer_lora_cache"
-    )
-    writer_asset = adapter["writer_asset"]
-    lora_storage = writer_asset["generated_lora_storage"]
-    contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
-        contract,
-        root=root,
-        generators_per_gpu=writer_generators_per_gpu,
-        generation_batch_size=writer_generation_batch_size,
-        lora_parameter_count=lora.parameter_count,
-        lora_tensor_count=lora.state_tensor_count,
-        lora_storage_per_entry=lora_storage,
-    )
-
-
 def _validate_build_request(
     authorities: EvaluationAuthorities,
     *,
@@ -193,11 +83,7 @@ def _validate_build_request(
     tasks: Sequence[TargetTaskContract],
     mode: str,
     replicas_per_gpu: int,
-    adapter: Mapping[str, Any] | None,
-    writer_generators_per_gpu: int,
-    writer_generation_batch_size: int,
-    writer_cache_root: Path | None,
-) -> tuple[dict[str, Any], bool]:
+) -> dict[str, Any]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
     git = git_state(authorities.repo_root)
@@ -209,94 +95,7 @@ def _validate_build_request(
         raise Pi05EvaluationError(
             "PI05 evaluation runtime profile or task panel is invalid"
         )
-    writer_adapter = adapter is not None and adapter.get("kind") in WRITER_ADAPTER_KINDS
-    valid_writer_topology = (
-        0 < writer_generators_per_gpu <= replicas_per_gpu
-        and writer_generation_batch_size > 0
-    )
-    if writer_adapter and not valid_writer_topology:
-        raise Pi05EvaluationError(
-            "Writer generation and rollout topology are incompatible"
-        )
-    if writer_adapter:
-        evaluation = adapter.get("evaluation_authority", {})
-        try:
-            minimum_batch_size = int(
-                evaluation["minimum_smoke_writer_model_batch_size"]
-            )
-        except (KeyError, TypeError, ValueError) as error:
-            raise Pi05EvaluationError(
-                "Writer generation lacks its throughput authority"
-            ) from error
-        expected_throughput_policy = _WRITER_THROUGHPUT_BY_SCHEMA.get(
-            str(adapter.get("schema_version"))
-        )
-        if (
-            expected_throughput_policy is None
-            or evaluation.get("throughput_policy") != expected_throughput_policy
-            or writer_generation_batch_size < minimum_batch_size
-        ):
-            raise Pi05EvaluationError(
-                "Writer generation batch violates its throughput authority"
-            )
-        smoke = evaluation.get("online_smoke_evidence")
-        if evaluation.get("formal_status") == "sealed":
-            if not isinstance(smoke, Mapping):
-                raise Pi05EvaluationError(
-                    "sealed Writer evaluation requires its selected Writer batch"
-                )
-            selected_batch = int(
-                smoke.get(
-                    "selected_writer_model_batch_size",
-                    smoke.get("writer_model_batch_size", -1),
-                )
-            )
-            supported_raw = smoke.get(
-                "supported_writer_model_batch_sizes", [selected_batch]
-            )
-            try:
-                supported_batches = tuple(int(value) for value in supported_raw)
-            except (TypeError, ValueError) as error:
-                raise Pi05EvaluationError(
-                    "sealed Writer evaluation requires its selected Writer batch"
-                ) from error
-            if (
-                not supported_batches
-                or selected_batch not in supported_batches
-                or len(set(supported_batches)) != len(supported_batches)
-                or min(supported_batches) < minimum_batch_size
-                or writer_generation_batch_size not in supported_batches
-            ):
-                raise Pi05EvaluationError(
-                    "sealed Writer evaluation requires its selected Writer batch"
-                )
-    if not writer_adapter and writer_cache_root is not None:
-        raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
-    return git, writer_adapter
-
-
-def _paired_control_contract(
-    contract: Mapping[str, Any],
-    adapter: Mapping[str, Any],
-) -> dict[str, Any]:
-    paired_keys = (
-        "mode",
-        "role",
-        "git",
-        "model",
-        "tokenizer",
-        "normalization",
-        "tasks",
-        "environment",
-        "policy",
-        "rng",
-        "parallel",
-    )
-    return {
-        "schema_version": "ember_pi05_writer_paired_control_v2",
-        **{key: contract[key] for key in paired_keys},
-        "writer": paired_writer_identity(adapter),
-    }
+    return git
 
 
 def build_run_contract(
@@ -313,20 +112,13 @@ def build_run_contract(
     command: Sequence[str],
     adapter: Mapping[str, Any] | None = None,
     physical_gpu_ids: Sequence[int] | None = None,
-    writer_generators_per_gpu: int = 1,
-    writer_generation_batch_size: int = 8,
-    writer_cache_root: Path | None = None,
 ) -> dict[str, Any]:
-    git, writer_adapter = _validate_build_request(
+    git = _validate_build_request(
         authorities,
         model=model,
         tasks=tasks,
         mode=mode,
         replicas_per_gpu=replicas_per_gpu,
-        adapter=adapter,
-        writer_generators_per_gpu=writer_generators_per_gpu,
-        writer_generation_batch_size=writer_generation_batch_size,
-        writer_cache_root=writer_cache_root,
     )
     gpu_ids = _resolve_gpu_ids(authorities, physical_gpu_ids)
     contract = {
@@ -388,25 +180,10 @@ def build_run_contract(
             authorities,
             physical_gpu_ids=gpu_ids,
             replicas_per_gpu=replicas_per_gpu,
-            writer_adapter=writer_adapter,
-            writer_generators_per_gpu=writer_generators_per_gpu,
-            writer_generation_batch_size=writer_generation_batch_size,
         ),
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
-    _attach_writer_cache(
-        contract,
-        authorities=authorities,
-        adapter=adapter,
-        output_dir=output_dir,
-        writer_cache_root=writer_cache_root,
-        writer_generators_per_gpu=writer_generators_per_gpu,
-        writer_generation_batch_size=writer_generation_batch_size,
-    )
-    contract["paired_control"] = None
-    if writer_adapter:
-        contract["paired_control"] = _paired_control_contract(contract, adapter)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"
     return contract
 

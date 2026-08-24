@@ -25,7 +25,7 @@ from ember.ecp.contracts import TargetOwner, build_target_owners
 from ember.ecp.stage0 import ECPStage0Model
 from ember.ecp.stage0_data import ECPStage0Schedule, ECPStage0Task, load_stage0_tasks
 from ember.ecp.stage0_train_step import run_stage0_macro
-from ember.functional_adaptation.action_alignment import PrivilegedMetaActionStore
+from ember.privileged_actions import PrivilegedMetaActionStore
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,

@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -265,13 +263,3 @@ def seal_target_data(
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
     write_json_atomic(output_path, manifest)
     return manifest
-
-
-def write_checksums(config_dir: Path, filenames: Sequence[str]) -> None:
-    if not filenames or len(set(filenames)) != len(filenames):
-        raise Pi05TargetDataError("checksum file list must be unique and non-empty")
-    lines = [f"{sha256_file(config_dir / name)}  {name}" for name in filenames]
-    path = config_dir / "checksums.sha256"
-    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    os.replace(temporary, path)

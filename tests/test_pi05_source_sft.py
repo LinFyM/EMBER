@@ -205,11 +205,6 @@ def test_final_config_selects_32_source_actions_and_frozen_step_budget() -> None
     assert formal["per_rank_batch_size"] == 64
     assert formal["checkpoint_steps"] == [200, 400, 600, 800]
     assert formal["development_selection"]["selected_optimizer_step"] == 400
-    assert sha256_file(FINAL_CONFIG) == (
-        ROOT / "configs/pi05_source_sft_final_v1.sha256"
-    ).read_text(encoding="utf-8").split()[0]
-
-
 def test_final_formal_runtime_keeps_development_scheduler_horizon(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

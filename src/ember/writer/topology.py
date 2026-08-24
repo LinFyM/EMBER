@@ -1,15 +1,10 @@
-"""Runtime topology helpers shared by Writer training and validation."""
+"""NUMA helpers shared by PI0.5 training and evaluation."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Mapping
-
 import torch
-
-from ember.pi05_source_checkpoint import DistributedContext
-from ember.writer.errors import WriterModelError
 
 
 def _expand_cpu_list(value: str) -> set[int]:
@@ -59,81 +54,3 @@ def bind_current_process_to_cuda_numa(device: int) -> tuple[int, ...] | None:
         return None
     os.sched_setaffinity(0, eligible)
     return tuple(sorted(eligible))
-
-
-def visible_physical_cuda_index(local_rank: int) -> int:
-    """Map a torchrun local rank to the host NVIDIA device index."""
-
-    visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
-    if not visible:
-        if local_rank < 0:
-            raise WriterModelError("CUDA local rank is negative")
-        return local_rank
-    devices = tuple(value.strip() for value in visible.split(","))
-    if not 0 <= local_rank < len(devices) or not devices[local_rank].isdigit():
-        raise WriterModelError(
-            "CUDA_VISIBLE_DEVICES must contain numeric physical GPU indices"
-        )
-    return int(devices[local_rank])
-
-
-def validate_task_complete_topology(
-    config: Mapping[str, Any],
-    context: DistributedContext,
-    *,
-    expected_world_size: int,
-    batch_size: int,
-    mode: str,
-) -> None:
-    """Seal a complete-task-cycle AS-Writer update topology."""
-
-    if context.world_size != expected_world_size:
-        raise WriterModelError(
-            "AS-Writer training requires exactly "
-            f"{expected_world_size} symmetric ranks"
-        )
-    training = config["conditioning_training"]
-    tasks_per_rank = int(training["tasks_per_rank_per_optimizer_update"])
-    global_tasks = int(training["global_tasks_per_optimizer_update"])
-    task_count = int(config["data"]["task_count"])
-    update_topology = str(
-        training.get("update_topology", "task_complete_all_tasks")
-    )
-    updates_per_cycle = int(
-        training.get("optimizer_updates_per_task_cycle", 1)
-    )
-    invalid_common = (
-        int(training["teacher_videos_per_task_visit"])
-        != int(config["writer"]["videos_per_condition"])
-        or tasks_per_rank * context.world_size != global_tasks
-        or global_tasks * updates_per_cycle != task_count
-    )
-    supported = (
-        update_topology == "task_complete_all_tasks"
-        and updates_per_cycle == 1
-        and global_tasks == task_count
-    ) or (
-        update_topology in {
-            "serial4_exposure_matched_six_phase_task_cycle",
-            "cycle_normalized_randomized_group4_six_phase_task_cycle",
-        }
-        and updates_per_cycle == 6
-        and tasks_per_rank == 1
-        and global_tasks == 4
-    )
-    if invalid_common or not supported:
-        raise WriterModelError(
-            "AS-Writer update topology differs from its declared contract"
-        )
-    if mode == "profile":
-        evidence = config.get("profile_evidence", {})
-        candidates = {
-            int(evidence[name]["per_task_action_batch_size"])
-            for name in ("primary_candidate", "oom_fallback_only")
-            if isinstance(evidence.get(name), Mapping)
-        }
-        if not candidates or batch_size not in candidates:
-            raise WriterModelError(
-                "AS-Writer profile batch is outside its declared "
-                "hardware-friendly candidates"
-            )

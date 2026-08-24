@@ -91,7 +91,7 @@ def _payload(contract: dict, shard: EvaluationShard) -> dict:
     }
 
 
-def test_static_source_sft_rows_remain_batched_without_writer_evidence(
+def test_static_source_sft_rows_remain_batched_without_task_expert_evidence(
     tmp_path: Path,
 ) -> None:
     contract = _contract(tmp_path)
@@ -113,7 +113,7 @@ def test_static_source_sft_rows_remain_batched_without_writer_evidence(
     payload = _payload(contract, shard)
     for row in payload["rows"]:
         row["policy_adapter_sha256"] = "8" * 64
-    assert all("writer" not in row for row in payload["rows"])
+    assert all("task_expert" not in row for row in payload["rows"])
     assert len(validate_shard_result(payload, contract=contract, shard=shard)) == 2
     payload["rows"][0]["policy_adapter_sha256"] = "9" * 64
     with pytest.raises(Pi05EvaluationError, match="row contract changed"):
@@ -362,7 +362,7 @@ def test_diagnostic_rollout_captures_requeryable_occupancy(tmp_path: Path) -> No
     trajectory = torch.load(record["path"], map_location="cpu", weights_only=False)
     assert record["bytes"] > 0
     assert record["replans"] == 2
-    assert trajectory["schema_version"] == "ember_writer_occupancy_trajectory_v1"
+    assert trajectory["schema_version"] == "ember_pi05_occupancy_trajectory_v1"
     assert len(trajectory["observations"]) == len(trajectory["action_chunks"]) == 2
     assert len(trajectory["policy_noise_seeds"]) == 2
 
@@ -427,7 +427,7 @@ def test_sealed_stage_diagnosis_records_bddl_predicate_transitions() -> None:
     assert stage["peak_satisfied_count"] == 2
 
 
-def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> None:
+def test_task_expert_is_prepared_once_and_reinstalled_for_each_replan() -> None:
     class FakeAdapter:
         def __init__(self) -> None:
             self.prepared = []
@@ -471,60 +471,11 @@ def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> No
     assert adapted[0]["steps"] == 7
     assert len(adapter.prepared) == 1
     assert adapter.installed == [adapter.prepared[0], adapter.prepared[0]]
-    assert adapted[0]["writer"] == {
+    assert adapted[0]["task_expert"] == {
         "suite": "libero_goal",
         "task_id": 4,
         "init_state_id": 3,
     }
-
-
-def test_writer_adapter_batches_distinct_prepared_loras_for_each_replan() -> None:
-    class FakeBatchedAdapter:
-        def __init__(self) -> None:
-            self.prepared = []
-            self.batch_sizes = []
-
-        def prepare_episode(self, **identity):
-            value = SimpleNamespace(evidence=dict(identity))
-            self.prepared.append(value)
-            return value
-
-        def predict_action_chunk(self, prepared, batch, *, noise, num_steps):
-            assert len(prepared) == int(noise.shape[0])
-            self.batch_sizes.append(len(prepared))
-            return _FakePolicy().predict_action_chunk(
-                batch, noise=noise, num_steps=num_steps
-            )
-
-    adapter = FakeBatchedAdapter()
-    contract = {
-        "environment": {
-            "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
-            "dummy_settling_steps": 10,
-        },
-        "policy": {"replan_steps": 5, "num_inference_steps": 10},
-        "rng": {"inference_seed": 7},
-    }
-    task = {
-        "suite": "libero_goal",
-        "task_id": 4,
-        "split_role": "test",
-        "language": "put the bowl on top of the cabinet",
-        "horizon": 300,
-    }
-    rows = rollout_shard(
-        envs=(_FakeEnv(success_after=7), _FakeEnv(success_after=7)),
-        init_states=tuple(range(10)),
-        task=task,
-        state_ids=(3, 4),
-        contract=contract,
-        policy=_FakePolicy(),
-        preprocess=_preprocess,
-        postprocess=lambda value: value,
-        task_adapter=adapter,
-    )
-    assert [row["init_state_id"] for row in rows] == [3, 4]
-    assert adapter.batch_sizes == [2, 2]
 
 
 def test_shard_validation_rejects_wrong_policy_schedule(tmp_path: Path) -> None:

@@ -13,17 +13,12 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 import torch
-from safetensors.torch import load_file
 from torch.utils.data import default_collate
 
 from ember.expert_manifold.checkpoint import (
     load_task_expert_checkpoint,
     save_task_expert_checkpoint,
 )
-from ember.expert_manifold.composite_contract import (
-    COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
-)
-from ember.expert_manifold.recovery_contract import RECOVERY_EXPERT_CONFIG_SCHEMA
 from ember.expert_manifold.contract import (
     REPO_ROOT,
     ExpertManifoldError,
@@ -41,15 +36,11 @@ from ember.expert_manifold.contract import (
     validate_formal_task_assignment,
     worker_stage_resume_step,
 )
-from ember.expert_manifold.sampler import (
-    BalancedTwoDomainSampler,
-    TaskLocalEpochSampler,
-)
+from ember.expert_manifold.sampler import TaskLocalEpochSampler
 from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
     task_lora_state_dict,
-    validate_lora_state,
 )
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
@@ -306,47 +297,22 @@ def _train_one_task(
     if not 0 <= initial_step < stop_step:
         raise ExpertManifoldError("task-expert resume cursor is outside this segment")
     rows = dataset.task_rows[task.global_task_id]
-    sampler = (
-        BalancedTwoDomainSampler(
-            dataset.domain_rows,
-            task_id=task.global_task_id,
-            batch_size=batch_size,
-            seed=int(config["task_experts"]["sampler"]["seed"]),
-        )
-        if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
-        else TaskLocalEpochSampler(
-            rows,
-            task_id=task.global_task_id,
-            batch_size=batch_size,
-            seed=int(config["task_experts"]["sampler"]["seed"]),
-        )
+    sampler = TaskLocalEpochSampler(
+        rows,
+        task_id=task.global_task_id,
+        batch_size=batch_size,
+        seed=int(config["task_experts"]["sampler"]["seed"]),
     )
     clip = float(
         config["task_experts"]["optimization"]["optimizer"]["gradient_clip_norm"]
     )
-    query_limit = None
-    if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
-        query_limit = int(
-            config["task_experts"]["distillation"]["training_epochs"]
-        ) * len(rows)
-        if total_steps != math.ceil(query_limit / batch_size):
-            raise ExpertManifoldError("distillation epoch and step contracts disagree")
     started = time.monotonic()
     torch.cuda.reset_peak_memory_stats()
     for step in range(initial_step, stop_step):
         tick = time.monotonic()
         selected = sampler.batch_for_step(step)
-        if query_limit is not None:
-            remaining = query_limit - step * batch_size
-            selected = selected[: min(batch_size, remaining)]
-            if not selected:
-                raise ExpertManifoldError("distillation query stream ended early")
         samples = [dataset[index] for index in selected]
-        batch = (
-            dataset.collate(samples)
-            if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
-            else default_collate(samples)
-        )
+        batch = default_collate(samples)
         data_seconds = time.monotonic() - tick
         completed = step + 1
         row = _optimize_task_batch(
@@ -358,17 +324,11 @@ def _train_one_task(
             task=task,
             step=step,
             clip=clip,
-            action_queries=(
-                min(completed * batch_size, query_limit)
-                if query_limit is not None
-                else completed * batch_size
-            ),
+            action_queries=completed * batch_size,
             data_seconds=data_seconds,
             tick=tick,
             started=started,
-            mask_action_padding=(
-                config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
-            ),
+            mask_action_padding=False,
         )
         append_jsonl(metrics_path, row)
         metrics_rows += 1
@@ -408,23 +368,8 @@ def _initial_lora_state(
     identity_state: Mapping[str, torch.Tensor],
     lora_contract: Any,
 ) -> Mapping[str, torch.Tensor]:
-    initialization = config["task_experts"].get("initialization")
-    if initialization is None:
-        return identity_state
-    path = REPO_ROOT / str(initialization["adapter"])
-    if (
-        initialization.get("kind")
-        not in {
-            "fixed_step1000_composite_adapter_no_optimizer_reuse",
-            "fixed_step1000_primitive_adapter_no_optimizer_reuse",
-        }
-        or not path.is_file()
-        or path.stat().st_size != int(initialization["adapter_bytes"])
-    ):
-        raise ExpertManifoldError("task-expert warm-start adapter changed")
-    state = load_file(str(path), device="cpu")
-    validate_lora_state(state, lora_contract)
-    return state
+    del config, lora_contract
+    return identity_state
 
 
 def train(args: argparse.Namespace) -> None:

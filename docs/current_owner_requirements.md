@@ -1,210 +1,106 @@
-# EMBER Current Owner Requirements
+# EMBER owner requirements
 
-本文只记录owner的稳定目标、共识原则和协作边界，不记录逐轮实验状态或下一条架构。当前进度见仓库根目录
-`progress.md`，历史证据见`research_history.md`。
+本文只记录长期有效的目标、边界与协作要求。动态进度见`progress.md`，执行计划见`task_plan.md`，历史事实见
+`docs/research_history.md`。
 
-## 1. 项目的现实出发点
+## 1. 最终目标
 
-EMBER源于人通过正确示范快速学习新技能的经验：一个已有基础运动能力的人，看一条第三人称教学视频后，虽然不
-会逐帧复刻示范者，也未得到手把手动作轨迹，仍能理解“这件事本质上怎么做”，立刻获得比盲试更好的起点；之后再
-根据环境反馈练习，才逐渐精通。
+EMBER必须从generic `lerobot/pi05_base`建立的冻结PI0.5-LIBERO source policy出发，只接收：
 
-对应机器人任务，教学介质首先是视频而不是动作序列。模型需要从正确视频提取跨初始化仍成立的任务知识：对象与
-关系、目标状态、必要阶段、阶段之间的有向因果顺序，以及哪些细节只是某条demo的速度、路径、视角、抓取角度或
-偶然扰动。部署目标不是复刻teacher原始低层轨迹，而是在自己的观测和初始化下完成同一任务。
+- 目标task的exact language；
+- 一条或多条同task、action-hidden、内部有序的正确教学视频。
 
-因此EMBER当前核心问题是：
+Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38个目标层的完整task-conditioned LoRA。冻结policy加载这
+一套LoRA后，应从未见初始化闭环完成相同或相近场景中的任务。部署时不得再次观看视频，也不得进行环境交互、task-local
+优化或第二阶段适配。
 
-```text
-exact task language + one or more action-hidden correct teaching videos
-    -> one shared Writer
-    -> one complete task-conditioned LoRA
-    -> one frozen source policy
-    -> closed-loop success from unseen initialization
-```
+语言负责说明目标与关注对象，视频必须提供不可被语言或静态端点取代的动态证据。模型应理解“在什么条件下、按什么过程
+完成任务”，而不是记住task ID、文件名、场景模板或少量训练任务特征。
 
-## 2. 输入必须同时包含语言和视频
+## 2. 不可改变的部署合同
 
-语言不能删除：只看视频时，模型未必知道任务要求关注哪个对象、关系或结果。视频也不能删除：只看语言时，模型
-只知道“要做什么”，不知道一条正确示范所提供的“怎样完成”。合理分工是：
+- 输入：exact language + `K`条action-hidden ordered videos。
+- 输出：唯一一套完整rank16 LoRA；rank和内部参数化若有强证据可重新讨论，但不得因历史惯性固定成rank12+rank4。
+- source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
+- 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
+- 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
+- Writer只在rollout前运行一次；zero-interaction分数不混入生成后的task-local RL。
+- deployment Writer不得读取teacher action、state/proprio、reward、terminal、task ID、filename、pose或policy outcome。
 
-- language提供task query、关注点、目标与语义地址；
-- video提供动态过程、状态变化、阶段顺序和正确做法的Value；
-- 两者联合形成task Program，任何一方都不能成为可删除装饰。
+训练期可在授权的non-held tasks上使用actions、privileged task experts、simulator reward和occupancy学习共享机制，但这些信息
+不得成为deployment输入、held dictionary或task-ID route。
 
-language-only路径不得独立写出有效LoRA。反过来，也不能为了阻断language shortcut而制造不自然的zero-image、
-空prefix或与π0.5原生计算无关的fake action query。
+## 3. 数据边界
 
-允许训练并报告真正的learned language-only adapter作为诊断baseline，用来测量video相对language prior的条件增量；
-它不自动成为canonical方法，也不能替代“video dynamic evidence对最终有效adaptation必须有必要贡献”的科学合同。
+- 固定benchmark为LIBERO Spatial/Object/Goal/Long 40 tasks。
+- 固定development split为`configs/libero_24_8_8_v1/`的24 train / 8 validation / 8 test。
+- source corpus为LIBERO-90排除与目标40重合的19项后剩余71 tasks，每task 50条成功episode。
+- 后继meta-training可以使用train24和经精确语义审计、排除validation/test及重复项的其它现成LIBERO tasks。
+- 当前不制作人工任务、人工process数据集、人工controller trajectory或额外仿真场景；推进必须直指ECP核心。
+- 不得使用读过目标40 actions的`pi05_libero`。
+- video和action query同task但跨episode采样，阻断逐帧轨迹复制。
+- validation/test actions或reward不得产生梯度；Test默认留到最终方法冻结。
 
-后续canonical Writer不再使用trainable **Text Meta-LoRA**或VL Meta-LoRA。exact language仍是必需输入，但应通过
-冻结原生text/VLM表示和Writer-local读取/投影进入Program，不能用额外Text Meta-LoRA强化task-identity旁路。当前已
-封存formal run确实使用过rank4 Text Meta-LoRA，历史config与结果必须保留这一事实。Action Meta-LoRA已经在frozen native
-Action observer基线后完成过一次所有train/meta tasks共享、无task-ID的matched校准；结果中性、没有证明值得永久增加复杂度。
-因此它保留为独立control而不是新路线默认authority。只有后续matched evidence显示probe稳定性、视频因果性或闭环有明确净收益，
-才重新启用并在compiler/Writer训练前永久冻结；不得让它与输出坐标共同旋转。
+held5只是train24内部的leave-task-out机制门，用于在不消费validation设计信号的前提下快速检查共享映射。正式开发选择必须回到
+固定validation8；方法确定后才按合同从fresh使用32 source tasks训练并评测test8。
 
-## 3. One-shot、few-shot和动态视频数量
+## 4. 当前方法方向
 
-one-shot仍是清晰且有价值的canonical问题，但方法不必先验锁死K=1。多条同task视频有合理优势：它们可帮助过滤
-单条demo的低层nuisance，提取跨video共同的高层程序。
+经过专家和owner反复讨论，当前方向称为ECP（Event-Conditioned Policy Compiler）。它不是GOMQ、PECS或历史v24的改名，
+也不要求继承这些实现。ECP的核心是：
 
-若声称支持动态K，则训练时必须真实覆盖不同cardinality，不能只训练K1/K4后口头外推。数据流应满足：
+1. 用PI0.5原生语言、视觉和Action Expert内部时序结构形成有序、layer/target对应的Video Program；
+2. 用跨任务共享且部署兼容的机制把Program编译为一套完整LoRA；
+3. 训练期privileged posterior和部署期video posterior必须输出同构Program，避免任意latent与decoder共同旋转；
+4. 最终端到端Writer必须在冻结backbone的前提下进行联合训练，而不能永远停在互相割裂的阶段模块。
 
-1. 每条视频独立保留内部顺序；
-2. 不同视频在集合维做置换不变聚合；
-3. 提取共同语义的同时保留每条视频的时序证据；
-4. 不平均frames、raw features或生成后的LoRAs；
-5. 不挑“最好视频”；
-6. 所有视频保持action-hidden。
+Program当前候选schema使用固定最大`E=8`个event slots；slot激活数量、视频段落到slot的分配由内容学习，不由人工规定。固定
+容量并不意味着每个任务使用相同数量的事件。schema和后续阶段将在待回专家意见中再次确认，未确认的实现细节不得冒充最终
+架构。
 
-不要求为了论文形式做人为削弱的K1/K4公平对照。最终若K1最强就做one-shot claim，K4/K8最强就做few-shot，动态
-K都强才做video-scaling claim。选择依据是真实闭环性能与因果证据。
+首版可以不启用Action Meta-LoRA，但后续必须做一次与canonical匹配的尝试；只要没有负面影响并能改善probe稳定性、视频
+因果性或闭环表现，就启用并冻结。历史中性结果不能被忘记，也不能被包装成永久禁止。
 
-同一video生成的LoRA应对同task多种未见初始化和action queries有效。训练时video与action episode同task但
-跨episode错开，是阻断逐帧动作复制的重要手段；但它也造成“同task监督target对所有video恒定”的不可识别性，
-所以仅输入正确顺序或重建task expert并不能证明模型理解了视频过程。
+shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终冻结checkpoint上作为严格配对的时序特异性测试；正确
+视频应稳定优于打乱与倒序输入。full video还必须优于language/no-video、scene/first+final和wrong-video controls。
 
-当前source71与目标40的BDDL reward都是最终状态合取，现有metadata没有证明same-endpoint但required procedure不同的
-授权task pair。因此，仅凭训练loss或task reward最多能证明video-conditioned scene/object/relation adaptation；
-“理解了必要中间过程”不能从架构形式推断。
+## 5. 成功标准
 
-owner最新明确要求不再制作、扩充或救援custom BDDL、temporal-wrapper或其它人工process-identifying数据集。后续核心
-ECP只使用现成、经审计且不触碰validation/test梯度边界的LIBERO tasks、自然成功videos、task experts与授权train/meta
-signals。人工process Gate、composite/recovery teachers和其videos只保留为历史负证据，不再是Stage 0、`q_pi`、`q_V`或
-Writer训练的前置条件。最终时序特异性继续只由冻结checkpoint上的correct相对shuffled/reversed等自然任务配对controls
-判断；缺少受控same-endpoint pair时，claim相应收窄，不用继续造数据换取更强措辞。
+- 继续追求validation8 `>150/400`，越高越好。
+- 约145也可构成有价值结果，但必须由相邻single checkpoints、低churn、高breadth和same-task不同视频鲁棒性共同证明。
+- Goal与Long必须有真实贡献，不能依靠Spatial/Object掩盖失败。
+- full video必须有必要条件增量，并在多数任务上形成收益；same-task其它视频应保持高retention。
+- shuffled/reversed最终表现应揭示真实时序特异性，而不是仅让内部latent距离变大。
+- closed-loop absolute表现优先；loss、reconstruction、LoRA norm/cosine、hidden margin和surrogate只用于定位。
 
-## 4. 正确顺序必须有结构作用
+一次实验必须报告per-task、per-suite、breadth、retained/gained/lost、churn和相邻checkpoint success-set重合。明确坏结果不靠
+小幅seed/LR/rank/scale或超长续训挽救；负结果只淘汰实际检验的组合，不外推为整个EMBER目标失败。
 
-correct、shuffled和reversed不是人为negative：
+## 6. 推进方式
 
-- correct展示从初态到目标态的物理可行演化；
-- reversed产生违反正常因果方向的过程；
-- shuffled破坏阶段连续性和先后依赖。
+- 先理解因果链和最早失效接口，再实现；不得用连续版本号替代思考。
+- 每个阶段都要说明：输入数据、训练模块、冻结模块、输出、验证问题、通过条件和失败后的分支。
+- 优先做能改变路线判断的实验；不钻无关紧要的shape、低位浮点误差、防御性代码或冗余测试。
+- 不新增MD5/SHA-256 sidecar和大规模逐tensor校验；只保留信息墙、shape、finite、OOM、pairing、asset、checkpoint与resume所需
+  的直接检查。
+- 复用已经训练出的可用资产，避免重复长训练；profile和smoke只做最小必要验证。
+- 遇到困难先回看专家原始意见与修正，检查执行是否偏移，再决定是否实验或咨询。
+- 专家意见是设计约束与启发：不能为了速度随意丢弃，也不能不经理解机械照搬。
+- 只有性能显著跃升、路线存在实质歧义或需要新增权限时，在关键节点暂停和owner讨论；不频繁汇报。
 
-架构应在每条视频内部显式保留有向过程。shuffled/reversed不进入训练数据、negative loss或checkpoint选择；它们只在最终
-候选checkpoint冻结后作严格配对评测。最终需要证明correct沿有用policy direction提高成功率并表现出时序特异性；仅让
-control LoRA变坏不够。
+## 7. GPU、仓库与文档
 
-## 5. 输出是一个task adaptation；具体参数化是方法
+- 每次GPU launch前同时live检查gpu01/gpu02；单个job只用一个节点，最多6张真正提高吞吐的A40。
+- EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
+- gpu01物理0若仍标记prohibited则不得使用；GPU身份和状态每次都要重新确认。
+- 正式训练遵守storage quota、clean pushed commit和frozen worktree合同；探索实验不做冗余流程。
+- canonical集成目标是`main`。只有需要隔离或并发写入时创建`codex/*`分支和worktree，验证后尽快合并、推送并清理。
+- 不在活动树保留退役实现、平行fallback、过时配置、重复文档或临时结果；历史由Git、formal artifacts和一份精简历史记录保存。
+- 代码、文档、branch、worktree和运行产物应在每个阶段及时整理，不等到几十版后集中失控。
 
-当前部署输出是一套完整38-target task-conditioned LoRA。Writer只在rollout前运行一次，policy闭环时不反复看
-teacher video。一个condition只能得到一套LoRA，不能按video分别生成再平均，也不能用checkpoint union、expert
-route或第二套adapter。
+## 8. 沟通与交接
 
-架构可以使用principled shared prior/base adapter与video-conditioned residual，只要二者在rollout前合并为上述
-唯一一套完整LoRA，不部署并行expert/第二adapter，不按task ID查表，并以language-only、video controls和strict
-closed loop证明video提供必要条件增量。该授权不等于原样恢复任何旧Writer、旧checkpoint或历史residual实现。
-
-LoRA rank、memory token数量、FactorHeads、A/B生成方式和decoder都属于可修改的方法变量，不应写成goal。
-owner当前认为rank16完全可以保留；此前建议rank8只是降低生成维度的一种思路，不是硬要求。
-
-LoRA健康度应参考正常task-local SFT的policy geometry：不能小到近identity，也不应无理由所有targets完全共线；
-但低stable rank、q-dominant和跨列coherent本身可能是正常expert结构。高rank、均匀能量、正交、更多atoms/lanes/
-experts均不是独立优化目标。
-
-优先分析effective `BA`、fixed-action response和closed-loop，而不是raw A/B gauge符号。
-
-## 6. Memory token和成熟Hypernetwork工作的准确启发
-
-SHINE、Doc2LoRA等工作值得学习的不是表面“加token”，而是第一性原理对应关系：原backbone本来能处理输入内容，
-为目标参数层设置少量可学习memory tokens，让内容处理过程中形成与层/参数位置有对应的state，再把这些state解码为
-各层LoRA。
-
-对EMBER，这带来三个有价值候选：
-
-- memory可让视频/语言内容在policy topology中形成layer-matched坐标；
-- layer correspondence可能比一个扁平latent直接吐出百万参数更可扩展；
-- Writer规模、基础模型规模和LoRA target数量可通过同构token/grid扩展。
-
-但memory token不是必须形式，也不能为了使用Action Expert而运行缺失其原生图像/文字prefix的无意义forward。
-π0.5的Gemma/VLM与Action Expert各自承担什么原生计算，必须先从真实backbone接口推导，再决定memory放置、读写方向
-和是否需要纵向/横向交互。
-
-历史GOMQ已给出重要但有限的正证据：learned input memory query曾把strict correct从matched fixed-query的135
-提高到151，证明memory reader可能有用；之后135/131又证明“memory + 当前shared direct-B tail”没有稳定积累。
-因此不能宣称memory失败，也不能原样重复这条完整架构。
-
-## 7. 训练和RL边界
-
-最终方法应有可从零复现的训练方式；允许开发阶段从强checkpoint做受控单变量实验，但成品不能依赖task轮换、挑
-checkpoint或能力换手。
-
-当前目标是生成LoRA后、环境交互前的性能。Writer可在授权的non-held meta tasks上使用监督、functional credit、
-privileged task expert或on-policy reward，只要部署信息墙不被破坏；授权范围包括train24，以及经过语义/specification
-审计、明确排除固定validation/test tasks及其重复项的LIBERO-90任务。生成LoRA后的task-local RL属于后续独立实验，
-当前不得把它混入初始分数。
-
-允许在共享模型与checkpoint冻结、不参与checkpoint选择且预先登记分析口径时，用held action/reward做sealed
-post-hoc科学诊断。唯一已授权的梯度例外是一次validation8 task-local rank16 oracle：validation actions只更新八套彼此
-独立的诊断LoRA，统一训练到预注册step2000，不更新Writer、decoder或source policy，不按结果选step，也不形成部署route。
-validation可继续作为development panel；Test不训练expert，Test诊断默认只在最终方法冻结后执行，任何提前使用都必须
-显式登记且不得反哺设计。
-
-长期设想仍成立：生成LoRA应成为后续快速RL的良好起点，RL直接优化这套adaptation；但先把zero-interaction Writer
-做强、做稳、证明视频因果性，再单独评价后续交互收益。
-
-若纯监督长期无法提供policy-aligned credit，可以使用强化学习训练Writer。不能因为最初选择了监督就把RL排除，
-也不能因为一次reward实验失败就否定reward credit一般。
-
-## 8. 性能与科学有效性
-
-正式目标为strict paired correct严格超过`145/400`并越高越好，而且必须同时满足：
-
-- 不是高波动训练中的单个winner checkpoint；
-- 相邻single checkpoints保持接近性能、低churn和高success-set重合；
-- 高breadth，多tasks在同一checkpoint共同积累；
-- same-task不同teacher videos性能稳定；
-- correct明显优于wrong、shuffled、reversed和no-video；
-- 高分不是language-only shortcut、挑video、专家字典或checkpoint融合。
-
-absolute closed-loop性能优先，但视频因果性和训练稳定性是方法资格，不是可替代absolute的另一个排行榜。
-
-每个架构训练后必须充分分析per-task、per-suite、breadth、retained/gained/lost、churn、相邻checkpoint和最早失效
-接口。好结果应适当多训练确认稳定性；明显坏结果不靠无限训练或小参数sweep挽救。
-
-## 9. 如何使用过去的大量实验
-
-过去实验必须形成连续因果认知，而不是几十个互不相关版本：
-
-- v4证明视频与顺序能影响LoRA/action，但也暴露absolute-time/action-phase shortcut；
-- v5/v5.2证明Semantic Core与Procedure分离能增强视频内容辨识，但Procedure可在fusion/compiler衰减；
-- v6-fast达到143，说明特定architecture×recipe有效，同时后续checkpoint回落暴露能力不稳定；
-- v7/v8/v10、Loom/Core/Prior等证明更漂亮的内部结构不自动提高closed-loop；
-- rank/atom/lane/ownership实验否定把高rank、均匀能量或容量本身当目标；
-- checkpoint union与大量相邻评测证明task drift首先是共同积累问题；
-- K4/Dynamic-K证明多视频能降低same-task nuisance，却可能稳定错误task mean；
-- task experts证明task-local LoRA有效，但不提供视频特异性、顺序或held shared support；
-- reward/commitment路线逐步关闭carrier、gradient、native写出等局部断点，仍未解决held policy-useful shared direction；
-- GOMQ证明memory有真实正贡献，但当前tail连续更新不保留支持。
-
-任何负结果只淘汰实际测试的组合。rank14失败不否定所有rank reservation，Expert-Manifold失败不否定所有task-level
-manifold监督，K4失败不否定few-shot，GOMQ不稳定也不否定memory token。
-
-owner的局部建议是启发和约束，不应导致整套方案每次大改。新判断必须说明继承哪些已验证机制、针对哪个最早失败
-接口，以及什么证据能快速否决。
-
-后续研究不再受限于EMBER-LMMPC Core-Addressed Reader增量主链，可以基于现有证据重构Writer、functional decoder、
-shared prior/carrier或residual参数化。历史V6、LPCP、GOMQ及其checkpoint只能提供事实基线、机制provenance、
-可复用组件和反事实证据，不能未经重新设计与fresh验证就原样恢复为canonical。任何shared prior/residual必须满足
-本文件的一套LoRA、无task-ID/expert route、video必要增量和single-checkpoint strict评测合同。
-
-## 10. 效率、GPU和协作
-
-- 训练/评测最多使用单节点6张A40，但不是必须6张；有多少合适卡就用多少。
-- 所有同时运行的EMBER作业合计最多占用8张GPU；并行多组训练、评测和诊断时也不得突破该全局上限。
-- 低util、只占少量显存的他人GPU可在峰值余量足够时共驻；owner已与ycliu沟通过可共驻。
-- 训练按K、帧数和历史cost平衡rank负载，不要求每rank进程数表面完全一致；第一个rank额外小控制进程应在不影响
-  实际推进时顺手简化。
-- 接受设备、batch和kernel导致的正常低位浮点差异；不为逐元素一致牺牲吞吐。
-- 不增加防御性hash、重复forward、逐tensor扫描和无必要校验。
-- 大规模formal训练产物是可复用的基础资产。已完整且合同兼容的task-expert bank、source policy、fixed
-  panel和checkpoint必须直接服务后续decoder、fold重分配、评测和诊断；不因进入新phase、改变数据角色或调度便利而重训。
-- 不自动启动更长的uniform stage或重建大bank。只有产物损坏、科学合同确实不兼容，或闭环证据明确证明当前
-  expert/source ceiling不足时才允许重训，并必须先说明现有产物为何不可用。中断或迁移长任务前先比较需要重算的已完成工作与可验证的
-  净时间收益，不再为小幅调度收益造成大规模返工。
-- 暂时不使用subagents。
-- owner提出疑问时应独立判断、给出证据和完整pipeline，不机械顺从，也不因一点反馈推翻全部设计。
-- goal应表达最终目标和原则，不把memory token、rank等细枝末节方法写成目标。
+- 未经owner当次明确允许，绝不能直接向外部专家发送消息；只能提供可复制prompt给owner。
+- 给专家的prompt只补充他未知的新事实、结果与问题，不重复整段既有对话，也不人为限制专家的核心判断。
+- owner主要语音输入；明显同音词或断句错误要按EMBER上下文理解。
+- 跨session前，稳定要求、设计、历史、当前进度与下一步必须写入仓库；新session不应要求owner重新解释项目或GPU约束。

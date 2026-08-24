@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.functional_adaptation.process_controls import (
+from ember.video_conditions import (
     TEMPORAL_PROCESS_VIDEO_CONDITIONS,
     shuffled_frame_permutation,
 )

@@ -9,7 +9,6 @@ from pathlib import Path
 from ember.pi05_source_corpus import (
     seal_overlap_audit,
     seal_source_data,
-    write_checksums,
 )
 
 
@@ -36,8 +35,6 @@ def parse_args() -> argparse.Namespace:
         "--normalization", type=Path, default=DEFAULT_CONFIG_DIR / "source_normalization.json"
     )
     data.add_argument("--sealed-utc", default="2026-07-21")
-    checksums = subparsers.add_parser("checksums")
-    checksums.add_argument("--config-dir", type=Path, default=DEFAULT_CONFIG_DIR)
     return parser.parse_args()
 
 
@@ -53,16 +50,6 @@ def main() -> None:
             manifest_path=args.manifest,
             normalization_path=args.normalization,
             sealed_utc=args.sealed_utc,
-        )
-    else:
-        write_checksums(
-            args.config_dir,
-            (
-                "overlap_audit.json",
-                "source_manifest.json",
-                "source_normalization.json",
-                "pi05_recipe_research.json",
-            ),
         )
 
 

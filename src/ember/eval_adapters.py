@@ -1,4 +1,4 @@
-"""Runtime dispatch and raw-row evidence for canonical PI05 evaluation adapters."""
+"""Static adapter inspection and evidence for canonical PI0.5 evaluation."""
 
 from __future__ import annotations
 
@@ -10,34 +10,13 @@ from ember.pi05_assets import Pi05EvaluationError
 
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
-# Retained only so CPU analysis can read immutable historical result rows.
-EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-DYNAMIC_K_WRITER_KIND = "layer_matched_memory_program_compiler_writer"
-FUNCTIONAL_CODE_WRITER_KIND = "fixed_functional_code_writer"
-ARCHIVAL_WRITER_CACHE_KIND = "archival_canonical_writer_lora_cache"
-WRITER_ADAPTER_KINDS = frozenset(
-    {
-        DYNAMIC_K_WRITER_KIND,
-        FUNCTIONAL_CODE_WRITER_KIND,
-        ARCHIVAL_WRITER_CACHE_KIND,
-    }
-)
-PAIRED_WRITER_KINDS = frozenset(
-    {
-        EXPERT_MANIFOLD_WRITER_KIND,
-        DYNAMIC_K_WRITER_KIND,
-        FUNCTIONAL_CODE_WRITER_KIND,
-        ARCHIVAL_WRITER_CACHE_KIND,
-    }
-)
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
-    if any(value is not None for value in values) and not all(
-        value is not None for value in values
-    ):
+    requested = tuple(value is not None for value in values)
+    if any(requested) and not all(requested):
         raise Pi05EvaluationError(f"{label} evaluation requires all declared assets")
-    return all(value is not None for value in values)
+    return all(requested)
 
 
 def source_sft_requested(args: Any) -> bool:
@@ -55,100 +34,15 @@ def task_expert_requested(args: Any) -> bool:
         ),
         "Task-Expert",
     )
-    if (
-        getattr(args, "task_expert_projection_manifest", None) is not None
-        and not requested
-    ):
-        raise Pi05EvaluationError(
-            "projected Task-Expert evaluation requires its complete base bank"
-        )
     return requested
 
 
-def dynamic_k_writer_requested(args: Any) -> bool:
-    return _all_or_none(
-        (
-            getattr(args, "dynamic_k_writer_config", None),
-            getattr(args, "dynamic_k_writer_checkpoint", None),
-            getattr(args, "dynamic_k_writer_video_data_root", None),
-            getattr(args, "dynamic_k_writer_video_condition", None),
-        ),
-        "Dynamic-K Writer",
-    )
-
-
-def functional_code_writer_requested(args: Any) -> bool:
-    return _all_or_none(
-        (
-            getattr(args, "functional_writer_config", None),
-            getattr(args, "functional_writer_checkpoint", None),
-            getattr(args, "functional_writer_video_data_root", None),
-            getattr(args, "functional_writer_video_condition", None),
-        ),
-        "Functional-Code Writer",
-    )
-
-
-def archival_writer_cache_requested(args: Any) -> bool:
-    return getattr(args, "archival_writer_projection_manifest", None) is not None
-
-
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
-    sft_requested = source_sft_requested(args)
+    source_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
-    dynamic_k_requested = dynamic_k_writer_requested(args)
-    functional_requested = functional_code_writer_requested(args)
-    archival_requested = archival_writer_cache_requested(args)
-    if (
-        sum(
-            (
-                sft_requested,
-                expert_requested,
-                dynamic_k_requested,
-                functional_requested,
-                archival_requested,
-            )
-        )
-        > 1
-    ):
+    if source_requested and expert_requested:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
-    kind = (
-        "task_expert"
-        if expert_requested
-        else (
-            DYNAMIC_K_WRITER_KIND
-            if dynamic_k_requested
-            else (
-                FUNCTIONAL_CODE_WRITER_KIND
-                if functional_requested
-                else ARCHIVAL_WRITER_CACHE_KIND if archival_requested else None
-            )
-        )
-    )
-    return kind, sft_requested
-
-
-def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
-    """Return method-specific assets shared by correct/wrong Writer arms."""
-
-    if adapter.get("kind") not in PAIRED_WRITER_KINDS or "video_data" not in adapter:
-        raise Pi05EvaluationError(
-            "writer adapter lost its method-specific video authority"
-        )
-    keys = (
-        "execution_backend",
-        "config",
-        "writer_asset",
-        "evaluation_authority",
-        "video_data",
-        "lora_contract",
-        "video_schedule",
-        "pairing_reference",
-    )
-    result = {key: adapter[key] for key in keys}
-    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        result["archival_projection"] = adapter["archival_projection"]
-    return result
+    return ("task_expert" if expert_requested else None), source_requested
 
 
 def inspect_source_sft_adapter(
@@ -181,7 +75,6 @@ def inspect_task_expert_adapter(
     tasks: Sequence[Any],
     evaluation_role: str,
     require_formal: bool,
-    projection_manifest: Path | None = None,
 ) -> dict[str, Any]:
     from ember.expert_manifold.contract import ExpertManifoldError
     from ember.expert_manifold.evaluation import inspect_task_expert_evaluation
@@ -195,7 +88,6 @@ def inspect_task_expert_adapter(
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             evaluation_role=evaluation_role,
             require_formal=require_formal,
-            projection_manifest=projection_manifest,
         )
     except ExpertManifoldError as error:
         raise Pi05EvaluationError(str(error)) from error
@@ -207,8 +99,6 @@ def select_task_expert_adapter_tasks(
     *,
     diagnostic_subset: str,
 ) -> dict[str, Any]:
-    """Retain a declared diagnostic subset after inspecting its complete bank."""
-
     if adapter is None or adapter.get("kind") != STATIC_TASK_EXPERT_KIND:
         raise Pi05EvaluationError("diagnostic subset requires a task-expert adapter")
     task_rows = tuple(adapter.get("tasks", ()))
@@ -230,276 +120,22 @@ def select_task_expert_adapter_tasks(
     return selected
 
 
-def inspect_dynamic_k_writer_adapter(
-    *,
-    config_path: Path,
-    checkpoint: Path,
-    video_data_root: Path,
-    source: Mapping[str, Any],
-    tasks: Sequence[Any],
-    video_condition: str,
-    video_seed: int,
-    video_sampling_mode: str,
-    require_formal: bool,
-    evaluation_k: int = 1,
-) -> dict[str, Any]:
-    from ember.writer.errors import WriterModelError
-    from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
-
-    try:
-        return inspect_dynamic_k_writer_evaluation(
-            config_path=config_path,
-            checkpoint=checkpoint,
-            video_data_root=video_data_root,
-            source=source,
-            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-            video_condition=video_condition,
-            video_seed=video_seed,
-            video_sampling_mode=video_sampling_mode,
-            require_formal=require_formal,
-            evaluation_k=evaluation_k,
-        )
-    except WriterModelError as error:
-        raise Pi05EvaluationError(str(error)) from error
-
-
-def inspect_functional_code_writer_adapter(
-    *,
-    config_path: Path,
-    checkpoint: Path,
-    video_data_root: Path,
-    source: Mapping[str, Any],
-    tasks: Sequence[Any],
-    video_condition: str,
-    video_seed: int,
-    video_sampling_mode: str,
-    require_formal: bool,
-    evaluation_k: int = 1,
-) -> dict[str, Any]:
-    from ember.functional_adaptation.evaluation import (
-        inspect_functional_code_writer_evaluation,
-    )
-    from ember.writer.errors import WriterModelError
-
-    try:
-        return inspect_functional_code_writer_evaluation(
-            config_path=config_path,
-            checkpoint=checkpoint,
-            video_data_root=video_data_root,
-            source=source,
-            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-            video_condition=video_condition,
-            video_seed=video_seed,
-            video_sampling_mode=video_sampling_mode,
-            require_formal=require_formal,
-            evaluation_k=evaluation_k,
-        )
-    except (ValueError, WriterModelError) as error:
-        raise Pi05EvaluationError(str(error)) from error
-
-
-def inspect_archival_writer_cache_adapter(
-    *,
-    manifest_path: Path,
-    source: Mapping[str, Any],
-    tasks: Sequence[Any],
-    require_formal: bool,
-) -> dict[str, Any]:
-    from ember.writer.archival_projection import inspect_archival_writer_projection
-    from ember.writer.errors import WriterModelError
-
-    try:
-        return inspect_archival_writer_projection(
-            manifest_path=manifest_path,
-            source=source,
-            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-            require_formal=require_formal,
-        )
-    except WriterModelError as error:
-        raise Pi05EvaluationError(str(error)) from error
-
-
-def reinspect_writer_adapter(
-    adapter: Mapping[str, Any],
-    *,
-    source: Mapping[str, Any],
-    task_keys: Sequence[tuple[str, int]],
-    require_formal: bool,
-) -> dict[str, Any]:
-    """Rebuild one prepared Writer adapter from its immutable asset record."""
-
-    kind = adapter.get("kind")
-    if kind == ARCHIVAL_WRITER_CACHE_KIND:
-        from ember.writer.archival_projection import (
-            reinspect_archival_writer_projection,
-        )
-
-        return reinspect_archival_writer_projection(
-            adapter,
-            source=source,
-            task_keys=task_keys,
-            require_formal=require_formal,
-        )
-    common = {
-        "config_path": Path(str(adapter["config"]["path"])),
-        "checkpoint": Path(str(adapter["writer_asset"]["checkpoint"])),
-        "video_data_root": Path(str(adapter["video_data"]["root"])),
-        "source": source,
-        "task_keys": task_keys,
-        "video_condition": str(adapter["video_condition"]),
-        "video_seed": int(adapter["video_schedule"]["seed"]),
-        "video_sampling_mode": str(adapter["video_schedule"]["sampling_mode"]),
-        "require_formal": require_formal,
-    }
-    common["evaluation_k"] = int(
-        adapter.get("information_wall", {}).get("evaluation_k", 1)
-    )
-    if kind == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
-
-        return inspect_dynamic_k_writer_evaluation(**common)
-    if kind == FUNCTIONAL_CODE_WRITER_KIND:
-        from ember.functional_adaptation.evaluation import (
-            inspect_functional_code_writer_evaluation,
-        )
-
-        return inspect_functional_code_writer_evaluation(**common)
-    raise Pi05EvaluationError("retired Writer adapter kind")
-
-
-def expected_writer_episode(
-    adapter: Mapping[str, Any],
-    *,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-    lora_reference: str,
-    evidence_schema: str | None = None,
-) -> dict[str, Any]:
-    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.evaluation import expected_dynamic_k_episode_evidence
-
-        result = expected_dynamic_k_episode_evidence(
-            adapter,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-            lora_reference=lora_reference,
-        )
-    elif adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
-        from ember.functional_adaptation.evaluation import (
-            expected_functional_code_writer_episode,
-        )
-
-        result = expected_functional_code_writer_episode(
-            adapter,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-            lora_reference=lora_reference,
-        )
-    elif adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        from ember.writer.archival_projection import (
-            expected_archival_episode_evidence,
-        )
-
-        result = expected_archival_episode_evidence(
-            adapter,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-            lora_reference=lora_reference,
-        )
-    else:
-        raise Pi05EvaluationError("retired Writer adapter kind")
-    if evidence_schema is not None and result["schema_version"] != evidence_schema:
-        raise Pi05EvaluationError("Writer episode evidence schema changed")
-    return result
-
-
-def validate_writer_episode(
-    adapter: Mapping[str, Any],
-    row: Any,
-    *,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-) -> bool:
-    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.evaluation import validate_dynamic_k_episode_evidence
-
-        return validate_dynamic_k_episode_evidence(
-            adapter,
-            row,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-        )
-    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
-        from ember.functional_adaptation.evaluation import (
-            validate_functional_code_writer_episode,
-        )
-
-        return validate_functional_code_writer_episode(
-            adapter,
-            row,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-        )
-    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        from ember.writer.archival_projection import (
-            validate_archival_episode_evidence,
-        )
-
-        return validate_archival_episode_evidence(
-            adapter,
-            row,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-        )
-    return False
-
-
-def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
-    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.evaluation import dynamic_k_episode_schema
-
-        return dynamic_k_episode_schema(adapter)
-    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
-        from ember.functional_adaptation.evaluation import (
-            functional_code_writer_episode_schema,
-        )
-
-        return functional_code_writer_episode_schema(adapter)
-    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        from ember.writer.archival_projection import ARCHIVAL_EPISODE_SCHEMA
-
-        return ARCHIVAL_EPISODE_SCHEMA
-    raise Pi05EvaluationError("retired Writer adapter kind")
-
-
 def load_evaluation_adapter(
     policy: Any,
     contract: Mapping[str, Any],
     *,
     device: Any,
-    writer_generation: bool = False,
 ) -> Any | None:
-    """Install one static shared adapter, or return a per-rollout Writer adapter."""
-
     adapter = contract.get("adapter")
     if adapter is None:
         return None
-    task_keys = tuple(
-        (str(row["suite"]), int(row["task_id"])) for row in contract["tasks"]
-    )
     common = {
         "policy": policy,
         "source": contract["model"],
         "evaluation_adapter": adapter,
-        "task_keys": task_keys,
+        "task_keys": tuple(
+            (str(row["suite"]), int(row["task_id"])) for row in contract["tasks"]
+        ),
         "device": device,
         "require_formal": contract["mode"] != "smoke",
     }
@@ -512,36 +148,14 @@ def load_evaluation_adapter(
         from ember.expert_manifold.evaluation import FrozenTaskExpertAdapter
 
         return FrozenTaskExpertAdapter(**common)
-    if adapter.get("kind") not in WRITER_ADAPTER_KINDS:
-        raise Pi05EvaluationError("retired evaluation adapter kind")
-    common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
-    if writer_generation:
-        if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-            raise Pi05EvaluationError(
-                "archival Writer projection requires a pre-sealed LoRA cache"
-            )
-        if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-            from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
-
-            return FrozenDynamicKTaskAdapter(**common)
-        from ember.functional_adaptation.evaluation_runtime import (
-            FrozenFunctionalCodeTaskAdapter,
-        )
-
-        return FrozenFunctionalCodeTaskAdapter(**common)
-    from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
-
-    common["cache_contract"] = contract
-    return FrozenCachedWriterTaskAdapter(**common)
+    raise Pi05EvaluationError("unsupported evaluation adapter kind")
 
 
 def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
-        if contract.get("adapter", {}).get("kind") == STATIC_TASK_EXPERT_KIND:
-            return {"task_expert": dict(prepared.evidence)}
-        return {"writer": dict(prepared.evidence)}
+        return {"task_expert": dict(prepared.evidence)}
     adapter = contract.get("adapter")
     if adapter is not None and adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
         return {"policy_adapter_sha256": adapter["lora_state_sha256"]}
@@ -557,28 +171,18 @@ def validate_episode_adapter_fields(
     init_state_id: int,
 ) -> bool:
     if adapter is None:
-        return row.get("writer") is None and row.get("policy_adapter_sha256") is None
+        return row.get("task_expert") is None and row.get("policy_adapter_sha256") is None
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
-        return row.get("writer") is None and row.get(
+        return row.get("task_expert") is None and row.get(
             "policy_adapter_sha256"
         ) == adapter.get("lora_state_sha256")
-    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
-        from ember.expert_manifold.evaluation import validate_task_expert_episode
+    if adapter.get("kind") != STATIC_TASK_EXPERT_KIND:
+        return False
+    from ember.expert_manifold.evaluation import validate_task_expert_episode
 
-        return (
-            row.get("writer") is None
-            and row.get("policy_adapter_sha256") is None
-            and validate_task_expert_episode(
-                adapter,
-                row.get("task_expert"),
-                suite=suite,
-                task_id=task_id,
-                init_state_id=init_state_id,
-            )
-        )
-    return row.get("policy_adapter_sha256") is None and validate_writer_episode(
+    return row.get("policy_adapter_sha256") is None and validate_task_expert_episode(
         adapter,
-        row.get("writer"),
+        row.get("task_expert"),
         suite=suite,
         task_id=task_id,
         init_state_id=init_state_id,

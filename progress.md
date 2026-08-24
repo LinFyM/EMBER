@@ -1,348 +1,83 @@
-# EMBER Progress
+# EMBER progress
 
-更新时间：2026-08-24。稳定目标见`docs/current_owner_requirements.md`，active计划见`task_plan.md`，历史见
-`docs/research_history.md`。
+更新时间：2026-08-24。分支：`main`。本轮起点：`7ab5a04`。
 
-## Current authority
+## 当前状态
 
-- current design contract：`docs/event_conditioned_policy_compiler_design.md`（保留已对齐schema，等待自然LIBERO-only核心复核）；
-- ECP全过程对齐审计与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节；
-- 最新composite recovery teacher专家裁决：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`；
-- composite recovery teacher最终Gate A non-pass：
-  `docs/evidence/ecp_20260824/ecp_composite_recovery_teacher_gate_20260824.json`；
-- completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
-- completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
-- completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
-- completed realization card：`docs/ecp_mobile_rank4_solver_card_20260823.md`；
-- completed reachability card：`docs/ecp_effective_update_solver_card_20260823.md`；
-- formal adjudication：`docs/evidence/ecp_20260823/ecp_occupancy_complete_oracle_gate_20260823.json`；
-- fixed-A adjudication：`docs/evidence/ecp_20260823/ecp_fixed_a_capacity_gate_20260823.json`；
-- mobile-rank4 adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_residual_capacity_gate_20260823.json`；
-- mobile-rank4 solver adjudication：`docs/evidence/ecp_20260823/ecp_mobile_rank4_solver_gate_20260823.json`；
-- effective-update profile adjudication：`docs/evidence/ecp_20260823/ecp_effective_update_profile_gate_20260823.json`；
-- completed GOMQ rank16 Phase 0 card：`docs/gomq_rank16_archival_card_20260824.md`；
-- GOMQ rank16 Phase 0 adjudication：`docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`；
-- completed process minimal-pair Gate card：`docs/ecp_process_minimal_pair_gate_20260824.md`；
-- process minimal-pair Gate A adjudication：
-  `docs/evidence/ecp_20260824/ecp_process_minimal_pair_teacher_gate_20260824.json`；
-- completed process phase-expert Gate A2 card：`docs/ecp_process_phase_expert_teacher_gate_20260824.md`；
-- process phase-expert Gate A2 adjudication：
-  `docs/evidence/ecp_20260824/ecp_process_phase_expert_teacher_gate_20260824.json`；
-- post-A2 route decision audit：`docs/ecp_post_a2_route_decision_20260824.md`；
-- process candidate demonstration-order evidence：
-  `docs/evidence/ecp_20260824/ecp_process_candidate_demo_order_audit_20260824.json`；
-- completed separate-plates process Gate A3 card：`docs/ecp_process_separate_plates_teacher_gate_20260824.md`；
-- separate-plates process Gate A3 adjudication：
-  `docs/evidence/ecp_20260824/ecp_process_separate_plates_teacher_gate_20260824.json`；
-- separate-plates process Gate A3 raw authority：
-  `runs/outputs/pi05_ecp_process_separate_plates_gate_a3_4bf5039_gpu01p123457_20260824/`；
-- active composite bootstrap data contract：`docs/ecp_composite_teacher_bootstrap_data_20260824.md`；
-- composite bootstrap data evidence：
-  `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`；
-- completed fixed-step1000 composite expert contract：`docs/ecp_composite_teacher_expert_gate_20260824.md`；
-- cancelled-before-launch on-policy phase-expert distillation历史合同：
-  `docs/ecp_composite_teacher_distillation_gate_20260824.md`；
-- composite step1000/preformal state0 evidence：
-  `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`；
-- completed one-round on-policy distillation data evidence：
-  `docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`；
-- completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
-- Phase 2A effect-path adjudication：
-  `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
-- completed Phase 2B/2C card：`docs/ecp_fixed_effect_realizer_card_20260824.md`；
-- Phase 2B/2C fold0 adjudication：
-  `docs/evidence/ecp_20260824/ecp_fixed_effect_realizer_fold0_gate_20260824.json`；
-- completed centered two-sided coordinate fallback card：
-  `docs/ecp_centered_two_sided_coordinate_card_20260824.md`；
-- centered two-sided coordinate adjudication：
-  `docs/evidence/ecp_20260824/ecp_centered_two_sided_coordinate_gate_20260824.json`；
-- Phase 2B formal particle authority：
-  `runs/analysis/ecp_fixed_effect_particles_565c055_gpu01p123457_20260824/manifest.json`；
-- Phase 2B fold0 fixed-code authority：
-  `runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json`；
-- Phase 2C fold0 formal training authority：
-  `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
-- goal：完整实现并验证EMBER-ECP；owner已明确恢复推进；
-- canonical workspace：本仓库`main`；clean pushed `342620a`的两个recovery experts已在gpu02 physical0/1完成固定
-  step1000 formal训练，当前以唯一checkpoint进入双向smoke与100-row Gate A；此前formal evaluation authority为clean pushed `4bf5039`。
-  process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
-  shared-realizer与phase-composed primitive-teacher mechanisms关闭。现有`347/500`步phase-expert distillation经专家复核
-  取消启动；composite-context recovery teacher Gate现已开始实施。Gate B、process suite、fresh Program、`q_pi/q_V`及joint
-  Writer仍须等待该teacher Gate裁决。
+owner已经把自然LIBERO-only的ECP核心复核prompt发送给专家，回复尚未提供。本轮只做仓库瘦身、状态固化和跨session交接，
+没有启动GPU训练，也没有向专家发送任何消息。
 
-## Current scientific state
+当前active design：`docs/event_conditioned_policy_compiler_design.md`，状态为“骨架有效、开放点等待专家裁决”，不可启动formal run。
 
-- ECP核心假设未被证伪；native Stage 0 v3只作为candidate observer。它通过non-degeneracy与task separation，但未完全通过
-  process semantics和probe invariance。现有数据只支持scene/goal/order claim。
-- 历史Action Meta matched结果中性，现保留为control而非默认authority。
-- 旧deterministic/mean `q_pi -> Program -> A/B hyperdecoder`家族已经关闭。v24、MDCO以及width/rank/head/fusion/LR/seed
-  后继均不再恢复；这个裁决不等于专家最终要求的distributional `q_pi(P)`已经实现或被否定。
-- four-category structured occupancy oracle已经补齐PECS缺少的initial/successful/candidate/recovery四类state support以及独立成功策略。它从
-  stable carrier `43/250`提高到`78/250`，说明realization仍有真实增量；但breadth只有3/5，Goal/Long仍为0，完整门失败。
-- Stage 1A-E的fold0 evidence prerequisite已部分完成：fold0五项各自的新seed37独立member在fixed250合计`113`，逐task为
-  `26/32/37/13/5`；
-  Goal/Long均有strict success，五个48-state、三particle effect banks完整。当前失败不能再归因于没有独立successful
-  members或没有闭环occupancy，但retained source没有输出同构Program posterior的`q_pi(P)`，所以完整Stage 1A未通过。
-- direct-effect realization子门为non-pass：final逐task`36/12/30/0/0`，只在2/5 tasks严格胜carrier；carrier retention为
-  `35/43`，oracle-normalized recovery为`35/115=.304`且仅3/5 tasks为正。该solver直接读取effect bank，不读取Program，
-  因而不能写成完整Stage 1B或Program compiler的负裁决。
-- 当前没有`Program -> event/layer/family policy-effect distribution`模块，也没有`q_V(P|L,V)` checkpoint；普通Writer
-  联合训练和最终结构化outer credit尚未开始。
-- GOMQ历史151只作为“强carrier + 小有效更新可保留support”的结构证据，不恢复其Writer或checkpoint作为答案。
-- GOMQ真实rank16 Phase 0已完成：确定性native-dtype canonicalization在strict400得到`136/400`、逐task
-  `16/0/0/35/46/34/0/5`、breadth`5/8`。它相对历史rank32的`151`保留123、获得13、丢失28；因低于预注册145门，
-  不成为absolute基线，历史151也只保留机制/历史证据。该差异不触发dtype、scale、seed、rank或checkpoint救援。
-- 首个process-identifying pair的teacher Gate A已完成并non-pass：soup→butter为`0/50`、butter→soup为`19/50`，总计
-  `19/100`，两方向首事件都为`50/50`，第二事件分别为`0/50、19/50`，invalid均为0。故失败接口是phase switch后的顺序组合
-  支持，而非custom wrapper、wrong-first判定或第一primitive。Gate B未运行，不能从本结果裁决video order observer。
-- phase-expert Gate A2已完成：现有task55/56 step1000 rank16 experts在各自primitive panel均为`50/50`，但组合后
-  `soup -> butter=0/50`、`butter -> soup=44/50`、总计`44/100`。两向首事件均为`50/50`，100/100行phase/expert
-  对齐，44条公开video全部通过信息墙。相对旧teacher的`0/19`净增25条证明expert切换真正生效；反向仍为0将
-  失败定位到soup occupancy之后task56 butter primitive的恢复支持，而非adapter加载、phase route、第一事件或wrapper。
-- A2后路线审计已完成：soup-first成功action episodes为0，当前task-expert SFT只能消费successful HDF5，而现有
-  outer-credit不训练task-local policy LoRA。当前最干净替代是task65/68 separate-plate pair：同scene/init、不共享objects/plates、
-  experts为`43/50、47/50`，两种composite orders都source-unseen。同scene task66/67 `42/50、49/50`可复现；task21/45
-  stove/pan则降为后续异构动作family。source RGB仅128分辨率，故两个process variants都必须用experts在render256
-  temporal wrapper下fresh rollout，不直接重标旧videos。现已依据专家既有合同与owner最终确认选定为Gate A3；这不重开
-  已失败的两种shared-realizer coordinates。
-- task65/68 Gate A3双向state0 smoke已在gpu02 physical0/1通过：red→yellow-white events为`144/291`，反向为`94/374`；
-  两行均success、invalid=false，均调用task65/68两个experts，公开video字段与统一语言符合信息墙，59个共同replans的
-  policy-noise逐项一致。该结果只授权从clean pushed detached commit运行预注册100行formal面板。
-- task65/68 Gate A3 formal已从clean pushed detached `4bf5039`在gpu01 physical`1,2,3,4,5,7`完成：red→yellow-white
-  `28/50`、反向`9/50`、总计`37/100`，低于每方向20与总计50的组合门。100份ledger、0 invalid、0 phase/expert错配、
-  50对noise及37条无泄漏public videos完整。两向第一event为`43/50、46/50`，第二event仅`30/50、9/50`；反向37个
-  second-phase失败仍有median297步余量，排除horizon-only解释。phase-composed primitive-teacher机制关闭；下一数据前置是
-  true order-specific composite privileged policy/data，Gate B仍不启动。
-- 37条successful ledgers已经完成数据接口审计：public RGB与teacher actions完整，唯一缺口是每个action执行前的8维
-  PI0.5 state。新增canonical replay builder只重放已保存actions并采集state，不加载PI0.5；双向state0代码smoke均逐步
-  复现原completion steps，生成的HDF5可被现有`FunctionalQueryDataset`直接读取。
-- 正式bootstrap data build已从clean pushed detached `b8fb0bf`完成：red→yellow-white的28/28 replay与反向9/9全部
-  精确匹配原completion steps、0 divergence；两份HDF5分别为`3,728,011,012`与`1,277,410,960` bytes，含
-  `9,479/3,248` action rows，标准training dataset读取门通过。它只授权训练privileged composite experts，尚未通过
-  process teacher Gate或授权Gate B。
-- 两个order-specific composite rank16 experts已从clean pushed detached `38dbffd`各训练固定1000 steps；两套worker均exit0、
-  各有1000行metrics和唯一step1000 checkpoint，首末50-step mean loss分别为`.13563→.11336`与`.12407→.10331`。
-  但Gate A4 state0资格检查双向0/1：red-first在step114 wrong-first invalid，yellow-first在step114完成首事件后到400仍未完成
-  red。故原100行formal未启动，正常loss不能替代闭环资格。
-- 零新rollout paired forward排除了data/adapter route：bootstrap action与ledger逐项一致；两个composite update cosine仅`.505`；
-  primitive phase expert能在相同observation/noise近乎精确复现标签。composite checkpoint在原transition observation上可改善
-  executed-prefix误差，且yellow完整50-token误差优于source，却仍在自身闭环occupancy失败。最早接口是successful-trajectory
-  50-token SFT缺少policy自身访问与恢复状态，不是再延长SFT或扫超参。
-- 一轮on-policy phase-expert数据采集已从clean pushed detached `7527568`完成：red/yellow分别有`2773/3998` queries、
-  固定50/50 episodes、behavior successes `5/5`、invalid `24/0`，六个shard约1.5GB且没有按outcome筛选。最新专家复核确认，
-  该数据只满足student-state coverage，却没有验证primitive expert在这些composite states上的continuation correctness；同时完整
-  50步标签可能跨越真实phase切换，reader又不遮掉tail。因此派生的`347/500`步正式训练已在启动前取消，数据只作
-  student-occupancy/weak-teacher response资产，不再作为oracle训练集。
-- composite-context recovery teacher已从clean pushed frozen `ebdd509`完成不变100-row Gate A：red→yellow为`9/50`、
-  yellow→red为`5/50`、total `14/100`，低于双向各20与total50门；environment success为31/100，first-event drops为53/100。
-  相对A3基线37条只retained14、gained0、lost23。六个worker均exit0，invalid/route/pairing/seed/public mismatch全为0，故为
-  明确科学non-pass。task65/68 primitive composition、composite SFT、phase-expert distillation与recovery SFT共同关闭。
-- clean pushed `a06a3ba`的首次formal launch在第一个mixed batch、任何optimizer step之前工程停止：composite RGB为256，
-  primitive RGB为128，默认collate无法堆叠。该run以0 steps封存，不作科学结果；修正使用PI0.5原生resize分别变换到model224，
-  并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
-- clean pushed `342620a`的真实1-step A40 profile通过，随后两臂在gpu02 physical0/1完成formal optimizer；每臂固定1000
-  steps、1000条finite metrics且只保存step1000，worker exit均0。clean pushed `ebdd509`的最终100-row面板使用每方向50个
-  single-state jobs和三名persistent workers动态队列，在686.2秒完成，证明队列与route基础设施有效，但teacher科学门失败。
-- owner最新明确不再制作或扩充人工process dataset，也不再取得planner/human/MPC/task-local RL composite controller；后续只用
-  现成授权LIBERO tasks推进ECP核心。GOMQ不进入ECP执行阶段，`rank12+rank4`不在专家重新确认前作为硬架构。当前无active GPU job，
-  `q_pi`、Program-only realizer、`q_V`、joint Writer与最终outer chain仍未实现。
-- fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
-  `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
-  step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
-- 两节点评测完成后的post-hoc定位显示：held latest在fit-only `512 -> 128`坐标中仍保留`79.1%--89.2%`中心化response
-  energy，cosine为`.889--.944`；但step1000生成的Goal/Long residual effective energy仅为known target的`7.1%/22.9%`。
-  最早失败由此定位为cross-task effect-code-to-residual mapping，而非rank4容量、known correction不可达或单独PCA压缩。
-  按当时仅检查input-PCA的判据没有触发fallback；本模型仍不续训、不扫width/LR/seed/head，也不进入fold1。
-- 进一步分解output target后发现，fit residual的task-equal expected energy为`94.1161`，其中shared mean为`89.1989`
-  （`94.775%`）；当前prediction与held target去掉该mean后的innovation cosine仅`.0012--.0573`。这比input PCA解释更早：
-  absolute A/B/effective loss被共享更新主导，没有学习低能量但闭环关键的task innovation。
-- fixed width8 two-sided coordinate已完成唯一strict250：`80=24/10/46/0/0`、breadth3，低于83门且Goal/Long为0；只保留
-  carrier `23/43`和known-latest `59/110` successes。250行相对两套reference的episode/env/policy/language/noise pairing均
-  零mismatch。尽管重建update cosine仍为`.877--.960`且Object达到46，fit-span投影没有保住task-specific closed-loop support。
-  当前coordinate停止，不训练centered-innovation realizer、不启动fold1、不扫probe/width/rank/threshold。
-- Gate后零新forward/rollout定位显示，exact earliest→latest只增加`1.3%--10.8%` update energy，却把mobile projection从76
-  提高到110；fit90 span对该innovation的cosine仅`.318--.647`。q_proj占总能量`91.3%--92.6%`，aggregate cosine遮蔽了
-  低能量行为方向。combined basis已达到108 members中心化rank上限107；同数据加width无效，下一实质选择是新增span外
-  source-unseen/process-diverse mappings，或停止当前shared-realizer family。
-- 重新阅读专家最终复核后确认：fixed-A只是一种carrier-preserving realization候选，不是ECP核心硬约束；必须先把它与
-  effect objective/calibration分离，不能继续把二者打包成新版本盲目迭代。
-- fixed-A容量现已被直接闭环分离：三个成功members的解析最优投影只得到`49/41/35`，合计matched retention
-  `67/295=22.71%`；Goal与Long三个members全部0。当前fixed-A row space停止作为主线。
-- stable carrier的38个targets都是精确rank12且后4个B columns为0；最佳任意row/column-space rank4 correction在15个matched
-  member-task上覆盖`99.49%--99.69%`所需修正能量。它成为下一次解析闭环容量问题，不直接视为正结果。
-- mobile-rank4 strict250为`110/120/76`，全部5/5 tasks非零并逐arm略高于direct；pooled matched retention为83.05%，但
-  Long同member retention只有36.36%，故预注册裁决为mixed而非supported。Long union retention为54.55%只作失败定位。
-- 依据专家“multiple successful members的union进入Gate、exact row只作辅助”的原始意见，旧mixed不改名，但另行授权一次
-  单变量mobile-rank4 realization oracle；bank、objective、12-step数值与原完整closed-loop Gate全部冻结。
-- 该oracle正式只有`49/250`，逐task`40/3/6/0/0`；相对carrier保留41、获得8、丢失2，但member-union recoverable gap只
-  恢复`3/115=.0261`且仅2/5 tasks为正。它是明确non-pass，不补step10/11、不扫参数、不授权Stage 1C。
-- 同一objective在真实successful-member responses上存在`.060--.163`的低值，而当前solver final仍为`1.915--3.262`；
-  known-success projections的trust为`1.341--2.281`，当前只有`.000915--.001171`，且effective correction方向cosine仅
-  `.041--.077`。因此当前最早失败进一步收窄为zero-residual raw-factor动力学未到达successful effect basin；effect target
-  是否充分仍未被最终回答。
-- effective-update successor已在ordinal71判为Profile non-pass：initial精确等于carrier，matrix-free sketch的方向导数为
-  `-81.8873`且全部finite，但五个固定回溯尺度均未被完整objective接受；final objective仍为`2.214329`、gap recovery与trust
-  都为0。它只运行4次initial VJP，未进入后续Gram tangent，也未启动held5。
-- Phase 2A effect-path calibration已通过：15/15 known-success balanced-SVD paths的matching verified loss、
-  global-particle loss与legacy stage-wise loss都从carrier到endpoint严格单调下降；15/15在`alpha=1/8`已改善，
-  15/15最低点在`alpha>=3/4`，5/5 tasks均改善且Goal/Long非例外。这授权fixed deterministic-sign
-  balanced-SVD rank4 coordinate，也证明旧solver失败是未到达已存在的successful basin，但不证明realizer、
-  distributional `q_pi`或video inference已成立。
+## 本轮已完成
 
-## Verified reusable assets
+### 活动代码收敛
 
-- source policy、normalization、tokenizer与fixed evaluation assets保持canonical，不重训；
-- fit19 stable shared carrier：
-  `runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors`，
-  held5 fixed250为43；
-- fold0 held5 source/direct-earliest/direct-latest为`21/74/108`；
-- 新独立members为`113/250`；earliest/latest/independent逐row success union为`146/250`，逐task
-  `38/40/41/16/11`；
-- 24-task task-expert bank、三套member成功occupancy、五个48-state effect banks及五套final LoRA完整保留；
-- Stage 1 authority含95 tasks、118 successful members与`[118,8,32]` phase response；
-- PECS local/trajectory adapters及paired rows完整保留，可作为candidate occupancy生成policy；
-- validation8 sealed task-local rank16 oracle为250/400，只作ceiling evidence。
+- 删除旧Writer网络、训练、cache、live adapter、generation profile与parallel evaluation实现；
+- 删除旧functional fingerprint/code/phase decoder、outer credit和shared residual实现；
+- 删除ECP Stage 1 v1--v24后继、MDCO、PECS、effect calibration、fixed realizer、two-sided coordinate和人工process模块；
+- 删除projected historical adapter、旧Writer family registry和跨历史benchmark分析路径；
+- 删除已冻结后不再使用且接口失效的旧source-base trainer；source authority与Source-SFT路径保留；
+- evaluator只保留source SFT与task-local expert静态adapter、动态队列、恢复、聚合和occupancy diagnostics；
+- 将仍被多个活动模块复用的基础能力重命名并提升到稳定位置：
+  - `meta_protocol.py`：non-held meta split；
+  - `privileged_actions.py`：训练期action对齐；
+  - `video_conditions.py`：视频control变换。
 
-## Corrections now applied
+### 配置、脚本与测试
 
-- 不再把48-state effect bank称为完整Stage 1A pass：它是`q_pi(P)`所需的evidence输入，当前没有Program posterior；
-- 不再把direct privileged effect solver称为完整Stage 1B：它是绕过Program的lower-level realization子门；
-- 不再由该子门non-pass直接推导“全部shared compiler/video inference被证伪”；完整privileged Program链尚未实现；
-- process-identifying data保留为最终claim与数据资格缺口，但不再冒充已经证明的唯一根因或替代缺失Program桥；
-- 当前不再把更多task数量等同于更多可识别信息：71个LIBERO-90 tasks全部被source见过，现成source-unseen mapping只有
-  target train24；现有BDDL没有证明same-endpoint/different-required-process pair。
-- held5只用于与`43/58/59/74/108`的预注册机制比较，没有用于训练shared模型或选择solver量纲。
-- earliest/latest不再被冒充为独立lineages；五个不同seed、固定step2000的独立task experts已经补齐并全部产生strict success。
-- oracle直接在PI0.5官方双相机rollout observations上查询source/carrier/三个expert particles，已经覆盖initial、successful、
-  prior-candidate与recovery states。
-- fixed-A历史realization从stable carrier出发只求Delta-B；后续mobile operator改为冻结carrier12并共同更新residual4 A/B，
-  两者都在effective-update层严格相加且zero correction精确返回carrier。
-- 两次完整oracle都直接closed loop，没有geometry预筛；mobile operator重大失败后已停止，没有启动新的GPU版本。
+- 删除退役Writer/ECP/人工process配置与冗余checksum sidecars；
+- canonical脚本缩减为source封存/Source-SFT、task experts、ECP Stage 0和PI0.5评测入口；
+- 删除只覆盖退役实现的测试；保留当前source、LoRA、experts、Stage 0、functional、reward和evaluation合同测试；
+- Python compile及全部126项活动测试通过；所有保留脚本的`--help`入口可加载。
 
-## Completed execution
+### 文档与证据
 
-1. 五个独立experts固定step2000完成，fixed250及成功occupancy完成；
-2. 五个48-state effect banks完成，每项保留initial8、successful24、candidate8、recovery8及三member轴；
-3. fit ordinal71 profile完成，只把实现microbatch固定为4；12-step objective ratio为`.59779`，峰值18.94 GB；
-4. 五个held solvers从clean pushed `c2aaac1`完成，objective ratio为
-   `.5040/.5667/.5278/.6055/.4373`，均无trust penalty；
-5. original fixed250 strict paired panel完成，250行相对source/carrier/direct/independent均无episode、seed、language或
-   policy-noise common-prefix mismatch；
-6. Gate 1B判为Realization non-pass并暂停，未补step10/11、未扫solver、未训练video predictor；
-7. 从clean pushed `cc70aa6`解析生成15套fixed-A投影；gpu01 physical`1,2,3,4,5,7`并行完成三个strict250 arms，
-   physical0 Prohibited未使用；formal results及paired gate完整；
-8. 从clean pushed `083ed98`解析生成15套mobile-rank4投影并完成三个strict250 arms `110/120/76`，裁决mixed；
-9. 从clean pushed `f75bafc`完成ordinal71 profile与held5五套mobile-rank4 solver LoRA；五项objective均严格下降；
-10. gpu01 physical`1,6`完成最终strict250，physical0未使用；6 workers返回码全0，最终`49/250`，五套reference严格配对零错配；
-11. 完成零新rollout的member-objective、trust、effective-correction方向审计，停止当前raw-factor operator。
-12. 从clean pushed `fc678f3`在gpu01 physical5完成唯一ordinal71 effective-update profile；physical0未使用。initial sketch
-    finite且为负方向，但0步被接受，按卡停止并取消held5 launch。
-13. 从clean pushed `ac233fa`物化400套真实rank16 archival caches，并在gpu01 physical`1,2,3,4,5,7`以18 workers完成唯一
-    strict400 correct评测；physical0未使用，72/72 shards与400/400 rows完整、workers全0返回。结果`136/400`，按预注册门关闭
-    GOMQ；formal产物与paired evidence保留。
-14. 从clean pushed `d1975c3`在gpu01 physical`2,3,4,5,6,7`以6 workers完成process pair的100行Gate A；两方向结果为
-    `0/50、19/50`，未达到各20与总50的门。19条成功全在step275--385；旧collector中66条失败尾部达到401--404，不影响
-    strict success，内层horizon边界已在`90090bf`修正且不重跑同一科学panel。
-15. 从clean pushed `4cddcab`在gpu01 physical`1,2,3,4,5`完成15条known-success effect paths的formal
-    calibration；5 workers全部返回0，15/15三种objective严格单调下降，5/5 tasks通过global gate，
-    balanced-SVD rank4被冻结为Phase 2B coordinate。
-16. 从clean pushed `565c055/e05ffca/0247a19/e806693`依次完成probe-preserving evidence、fold0 fit-only code、1000-step
-    fixed realizer与两个strict250；step800/1000=`33/37`、breadth2且Goal/Long为0，按门停止learned realizer与fold1。
-17. 从clean pushed detached `8aab214`建立fit90 centered two-sided coordinate并物化五套held latest single rank16 LoRA；gpu01
-    physical`1,2,3,4,5,7`以12 workers完成唯一strict250，physical0未使用，36/36 shards与250 rows完整。结果`80/250`、
-    breadth3、Goal/Long为0；carrier/known-latest retention仅`23/43、59/110`，全部Gate条款失败，successor未启动。
-18. 从clean pushed detached `24c5bdc`在gpu01 physical`1,2,3,4,5,7`完成phase-expert teacher的100行Gate A2；
-    6 workers全部返回0，100 ledgers、50对state/noise与44条public videos完整。结果`0/50、44/50`、总计
-    `44/100`，未达双向与总量门；Gate B与后续process suite未启动。
-19. 从clean pushed detached `4bf5039`完成task65/68 Gate A3，结果`28/50、9/50`、total `37/100`；37条success完整保留。
-20. 从clean pushed detached `b8fb0bf`将37/37成功轨迹无损replay成28/9条composite HDF5；两个step1000 composite SFT随后
-    完成但state0双向non-pass。
-21. 从clean pushed detached `7527568`完成100-row on-policy matched采集，两个composite behavior均为`5/50`；采集得到
-    `2773/3998` weak-teacher queries，但训练未启动。
-22. 最新专家复核判定该distillation的oracle authority与full50 phase-tail目标不成立，取消formal training，并把唯一后继改为
-    second-phase composite-context recovery teacher Gate；该时点goal paused且没有GPU job，owner随后已恢复完整ECP推进，
-    当前状态以上方Current authority为准。
+- 删除41份旧Markdown设计/审查文件和87份分散证据JSON；
+- 重写`README.md`、owner要求、concept、ECP设计、research history、findings、plan和progress；
+- 历史精确事实改由一份`research_history.md`、Git提交和formal artifacts恢复，不再让旧文档宣称自己是active；
+- 新增临时`HANDOFF.md`，等待专家回复并供下一session消费。
 
-## Completed fixed-A capacity diagnostic
+### 精简规模
 
-- 三个successful members的零训练几何审计已完成：相对`expert-carrier`所需correction的energy coverage为
-  `83.3%--96.7%`，但相对expert绝对effective update只有`41.5%--62.7%`；
-- Goal的latest/independent coverage最低（约`41.5%--42.0%`），但Long反而最高（约`59.2%--59.6%`），所以不能用
-  row-space数值直接解释Goal/Long共同0分；
-- latest/independent/earliest投影后分别为`49/41/35`，逐global0/9/18/25/36为
-  `26/4/19/0/0、22/4/15/0/0、23/2/10/0/0`；
-- 相对matched direct的retained/gained/lost分别为`31/18/77、22/19/91、14/21/60`；总体只保留67个、丢失228个，
-  同时产生58个不同rows上的success，不能解释成纯粹分数缩放；
-- 三个projected arms absolute合计125，比三次stable carrier panel的129还低4；Goal direct24与Long direct11全部丢失；
-- 750行episode key、env seed、policy seed root、language和policy-noise common prefix均零mismatch，18个workers返回码全0；
-- capacity-supported全部失败，overall、Goal、Long三条capacity-binding判据全部触发。
+- tracked/pending tracked文件：456 -> 146；
+- Python文件：251 -> 105，代码与测试总行数：75,039 -> 26,118；
+- Markdown文件：50 -> 10；
+- Git历史与唯一formal artifacts继续承担精确历史恢复，不在活动树保留平行实现。
 
-## Current implementation milestone
+### 本地运行资产
 
-- retained Stage 1运行面由`Stage1EffectBank -> stage1_oracle -> fixed solver -> single rank16 LoRA`组成；bank字段为
-  prefix/noise/category/stage/progress及source/carrier/member owner/flow/action。仓库没有当前`q_pi(P)`或Program-to-effect
-  runtime，这一事实已在全过程审计中显式登记；
-- 已接通真实PI0.5 official prefix cache与10-step denoising路径：在同一policy observation/noise上与official action输出的
-  max-abs差约`0.00668`、RMS约`0.00208`，属于允许的BF16/batch reduction差异；
-- native owner为`[batch,38,4,128]`，同时保留`[batch,10,50,32]` flow与`[batch,10,50,7]` integrated action；
-- fixed-A路径只为38个target建立`Delta B`叶子；真实PI0.5 smoke中38/38梯度均finite且非零，峰值allocated约18.72GB；
-- 已实现48-state effect bank、stage-consistent particle soft-min、carrier barrier、preservation/trust及统一12-step solver；
-- profile没有借held5做量纲选择：另用ordinal71/global2独立member、四类occupancy和同构solver冻结实现合同；
-- projection helper现可直接解析并行solver的per-task子目录，不再需要临时symlink surface；
-- fixed-A analytic projection用低秩闭式解直接求`argmin_B ||B A_c - B_e A_e||_F`并输出single rank16 LoRA；focused
-  realization/manifold tests为23/23通过；该已完成diagnostic入口现由Git保存；
-- mobile-rank4 helper用thin-QR/core-SVD直接求`expert-carrier`的best-rank4 correction，再与不变carrier12按rank拼接；真实
-  latest-task0资产得到76/76 finite tensors与`.99610/.98062` correction/expert coverage，focused tests为24/24通过；
-- mobile solver canonical runtime只保留`carrier12 + residual4`一条路径；profile与五个held outputs均为76 tensors、finite、
-  single rank16，focused tests为24/24通过。科学non-pass不是工程invalid。
-- effective-update successor只保留一个solver入口：4次matrix-free sketch后最多8次Gram-preconditioned tangent VJP，所有候选
-  通过固定objective-only trust回溯；解析参数化另归一个owner模块，raw-factor runtime/config已移除。focused ECP tests为
-  `15/15`通过，profile gate显式核对exact carrier、负方向、finite、至少一步、gap recovery、trust与VJP预算；formal profile
-  在initial backtracking处停止，未读取held结果。
-- Phase 2B successor capture已实现原生probe-preserving response：旧路径仍显式求两个probe均值，新路径落盘
-  `trajectory x sign x event8 x owner38 x horizon-mode4 x hidden128`粒子与canonical residual4 target。一个两轨迹
-  member的真实GPU profile为18.72 GB peak，模型初始化后capture `5.25s`，输出1.91 MB，全部finite；
-  正负probe response RMS差为`.05092`，证明新轴非重复。formal authority现已完成：118 members、95 tasks、
-  188 successful trajectories和376 particles全部落盘，6 shards均0返回，capture耗时`83.79--87.40s/shard`，
-  tensors合计195,744,144 bytes；未读validation/Test，未训练held参数。下一接口是fit-only owner-local
-  `512 -> 128` code coordinate。
-- Phase 2B/2C retained实现已接通fit-only owner-local PCA whitening、held transform-only code materialization、按task等权的
-  in-memory batch，以及保持event/particle/owner结构的38-head fixed realizer与factor/effective/null losses；focused tests
-  已增至`17/17`通过。
-- fold0 code authority已完成：90 fit tasks/108 members拟合，5 held tasks/10 members transform-only；owner-local
-  `512 -> 128`解释方差最低`.90695`、平均`.94106`，全部code finite。formal realizer训练只加载fit members，1000步
-  `136.99s`，step800/1000 total loss为`.31668/.26605`，峰值1.90 GB；两checkpoint均已保存。loss下降不能替代held
-  closed-loop。
-- held-only materialization在`0247a19`生成step800/1000各五套single carrier12+residual4 rank16 LoRA；held target residual
-  reads为0。step1000 invalidity screen为`8/50`，matching carrier为`9/50`，没有用于选checkpoint。
-- clean pushed detached `e806693`同时完成两个strict250：step800使用gpu01 physical`1,2,3`，step1000使用`4,5,7`，
-  各6 workers且全部返回0，physical0未使用；250行均完整并与carrier在episode/env/policy/language/noise common-prefix上
-  零mismatch。结果分别为`33/250、37/250`，Phase 2C fold0正式non-pass。
-- clean pushed detached `8aab214`的two-sided transform由90 fit tasks/108 members拟合，38/38 targets active rank均为107；
-  held 10 members只做transform。五个latest update cosine为`.877--.960`；五套single rank16 LoRA在唯一strict250得到80，
-  未达到任何性能/retention门。focused ECP tests为`29/29`通过；工程有效但科学non-pass。
+- 删除两个人工复合数据集（约6.2GB）；
+- 删除人工composite/process teacher、recovery和separate-plates运行目录（约5.4GB）；
+- 保留原始LIBERO数据、tokenizer、`.venv`、现有task experts、唯一formal checkpoints和非人工历史结果；
+- 这些被删人工资产不在Git中，不能直接恢复，但可从对应历史提交重新生成；当前路线明确不再需要。
 
-## Current unresolved interface
+## 当前可复用资产
 
-- 最深缺口是deployment-time occupancy completion：Writer只见language/videos，不能在编译时读取future initial/candidate/
-  recovery occupancy，却必须生成在该未见分布上有效的静态LoRA。task-local occupancy solver只作Stage 1B-R0 lower bound；
-  deployment Stage 1B-C必须只读取Program；
-- 时间上最早未证明的接口仍是video到结构化Program。native v3只证明非退化task/time表示；最终必须fresh建立
-  owner-specific `P_lang/P_scene/P_process`，并只用现成LIBERO tasks、跨episode自然监督与最终视频controls约束捷径；
-- distributional `q_pi(P_visible,Z_robust)`与Program-to-effective-update bridge尚不存在。现有evidence panel可作输入资产，
-  但antithetic probes已被平均、off-policy member response未验证、stage-wise soft-min可拼接不存在的policy；
-- fixed-A capacity已被证明binding，mobile-rank4 topology则能解析恢复direct级闭环；当前失败不再是这两个容量问题；
-- 当前zero-residual raw A/B solver从rank-zero correction奇点出发，12步后effective correction norm约为known-success
-  projection的1%，方向cosine也只有`.041--.077`。它没有进入successful-member effect basin，不能靠放大LR或增加步数盲救；
-- successful-member effect responses在当前objective上确有显著低值，因此effect target尚未被本结果否定；但“低值存在”也不等于
-  任何由视频预测的effect distribution都会充分，后续必须把gauge-invariant realization与objective sufficiency分开检验；
-- recovery occupancy是rollout-only privileged information，任何后续deployment Program仍不得读取；
-- 现有数据不足以支持general process-understanding强claim；owner选择收窄claim，不再用人工process数据换取该资格；
-- effective-update profile已依合同停止：负的一阶草图没有在事前固定的最小`1/16`尺度产生可接受完整objective下降。这关闭的是
-  当前sketch归一化、固定回溯网格与objective组合，不是mobile-rank4容量、任意更小局部步或ECP核心；后续不复活raw-factor
-  dynamics，而用known-success corrections校准固定canonical residual coordinate与small deployment realizer；
-- 人工process feasibility、Gate A/A2/A3/recovery与相关collector保留为历史证据，不再进入active依赖图；自然LIBERO如何为
-  Program可识别性提供足够约束，是下一次专家核心复核必须直接回答的问题；
-- 当前没有active GPU job。process Gate A/A2/A3/recovery依次为`19/100、44/100、37/100、14/100`，两个step1000
-  composite SFT、balanced-SVD learned realizer fold0与two-sided coordinate Gate也均为non-pass。旧shared-realizer与人工
-  process families均关闭；当前下一步是专家在现成LIBERO-only边界下重新明确ECP架构、阶段、数据、Gate与最终训练闭环。
+- 固定24/8/8 split与过滤后的71-task source corpus；
+- 已冻结source PI0.5 authority，以及source SFT训练、resume、validation；
+- rank16 LoRA topology和batched/materialized执行；
+- train24、non-held meta、validation diagnostic和独立particle task-expert contracts；
+- Stage 0 native observer、event binding、Stage 0 training/meta-training/checkpoint；
+- Stage 0跨episode video/action pair schedule；
+- functional flow loss和detached LoRA gradient bridge；
+- privileged reward rollout、occupancy capture；
+- cost-balanced PI0.5 evaluator与strict aggregation。
+
+## 当前阻塞
+
+唯一有意阻塞是专家回复。等待其再次明确：ECP最终架构、Program schema、realizer、`q_pi/q_V`训练关系、只用现成LIBERO的
+阶段计划、每个Gate和最终全Writer训练方式。
+
+回复前禁止：
+
+- 新建ECP版本、训练新checkpoint或恢复人工任务；
+- 把当前设计文档中的开放候选当成专家已确认方案；
+- 联系专家或替owner发送补充信息；
+- 因等待而转去重跑GOMQ、PECS、v24或无关历史实验。
+
+## 下一动作
+
+1. 等owner粘贴专家回复；
+2. 按`task_plan.md`的四步处理回复，提交最终handoff；
+3. owner开启新session后，新session完整阅读mandatory docs，消费并删除`HANDOFF.md`，再按冻结计划推进。

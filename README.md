@@ -1,118 +1,67 @@
 # EMBER
 
-EMBER研究如何把任务语言和action-hidden正确教学视频，一次性编译为冻结机器人policy的一套task-conditioned LoRA，
-使policy能从未见初始化闭环完成任务。
+EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
+Expert的一套完整LoRA，使policy零交互完成任务。
+
+当前方法方向为ECP（Event-Conditioned Policy Compiler）。活动树只保留source/task-expert基础设施、严格评测、ECP Stage 0
+候选observer以及最终Writer仍会复用的数据/functional组件。历史Writer、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务和
+失败realizer均由Git保存，不再作为可执行fallback。
+
+## 当前状态
+
+- source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
+- task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
+- ECP Stage 0 native v3可作为candidate observer，但完整Program-to-LoRA链尚未通过；
+- 旧privileged realizer和人工process路线已正式关闭；
+- owner已请求专家重新明确自然LIBERO-only的ECP架构和完整推进阶段，回复尚待写入仓库。
+
+在专家回复到达前，不启动新的ECP版本或GPU训练。交接状态见`HANDOFF.md`。
+
+## 阅读顺序
+
+1. `AGENTS.md`：仓库总合同；
+2. `docs/current_owner_requirements.md`：owner稳定目标与约束；
+3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
+4. `docs/concept.md`：科学问题与ECP假设；
+5. `docs/event_conditioned_policy_compiler_design.md`：当前架构骨架与待裁决点；
+6. `docs/research_history.md`：影响当前决策的历史证据。
+
+## 目录
 
 ```text
-exact task language + ordered teaching video set
-    -> shared Writer
-    -> one complete task LoRA
-    -> frozen π0.5-LIBERO source policy
-    -> closed-loop task execution
+configs/                 固定split、source、LoRA、task-expert和Stage 0合同
+src/ember/ecp/           ECP Stage 0候选表示
+src/ember/expert_manifold/ task expert训练与静态评测
+src/ember/pi05_eval/     动态队列、恢复、聚合和评测合同
+src/ember/reward/        训练期privileged rollout/occupancy工具
+src/ember/source_sft/    source SFT训练、checkpoint与validation
+src/ember/writer/        跨路线复用的数据、functional与Meta-LoRA工具
+scripts/                 canonical训练、封存与评测入口
+tests/                   当前活动面的定向测试
 ```
 
-项目强调从视频提取跨初始化成立的高层程序，而不是逐帧复制teacher轨迹。语言提供任务query与目标，视频必须提供
-正确过程的动态Value和有向顺序证据。
+`data/`、`models/`、`runs/`和`.venv/`是ignored本地资产，不提交远端。现成LIBERO数据、tokenizer、唯一formal checkpoints和结果
+应复用；人工process数据已删除。
 
-## Scientific contract
+## 本地验证
 
-- teacher videos可为一条或多条，但全部action-hidden；
-- 每条video内部保序，多video集合置换不变；
-- Writer在rollout前只运行一次，并生成一套完整38-target LoRA；
-- source policy在Writer训练和部署时冻结；
-- 不读teacher action/proprio/reward/task ID，不挑video，不平均LoRA，不融合checkpoint；
-- 正式选择只认single-checkpoint strict paired400 closed-loop结果；
-- 高分还必须具备相邻checkpoint稳定性、same-task不同视频鲁棒性和correct相对wrong/shuffled/reversed/no-video的
-  因果优势。
+仓库使用Python 3.12和本地`.venv`：
 
-完整问题定义见[concept](docs/concept.md)，owner稳定要求见[current owner requirements](docs/current_owner_requirements.md)。
+```bash
+PYTHONPATH=src .venv/bin/python -m compileall -q src scripts tests
+PYTHONPATH=src .venv/bin/python -m pytest -q
+```
 
-## Repository state
-
-动态状态不写入README或AGENTS。请按以下三个仓库级文件查看：
-
-- [task_plan.md](task_plan.md)：当前goal、完成标准和工作计划；
-- [findings.md](findings.md)：跨实验仍成立的持久结论；
-- [progress.md](progress.md)：当前进度、运行状态和即时边界。
-
-完整架构与实验账本见[research history](docs/research_history.md)。
-
-## Repository map
+主要入口：
 
 ```text
-EMBER/
-├── AGENTS.md                     # 稳定项目总览、科研与工程原则
-├── task_plan.md                  # 当前计划
-├── findings.md                   # 持久发现
-├── progress.md                   # 当前进度
-├── docs/
-│   ├── concept.md                # 第一性原理问题定义
-│   ├── current_owner_requirements.md
-│   ├── research_history.md       # 唯一实验/架构ledger
-│   ├── architecture_reasoning.md # 供独立复核的当前证据与未决归因综述
-│   ├── layer_matched_memory_program_compiler_design.md # 最新被测架构的封存事实
-│   ├── external_review_20260818.md # 固定提交外部独立复核及仓库侧核验
-│   ├── benchmark_validity_report.md
-│   └── novelty_and_landscape.md
-├── configs/                      # 固定数据、source、LoRA与保留运行authority
-├── scripts/                      # canonical launch/evaluation/analysis entrypoints
-├── src/ember/
-│   ├── source_sft/               # source adaptation baselines
-│   ├── expert_manifold/          # task-expert训练/评测；名称因artifact兼容保留
-│   ├── writer/                   # canonical LMMPC Writer训练与部署
-│   ├── reward/                   # 保留的train24 rollout/occupancy utilities
-│   └── pi05_eval/                # paired evaluator、queue与历史分析
-└── tests/
+scripts/train_source_sft.py
+scripts/train_task_experts.py
+scripts/train_ecp_stage0.py
+scripts/train_ecp_stage0_action_meta.py
+scripts/evaluate_source_sft_validation_loss.py
+scripts/evaluate_ecp_stage0.py
+scripts/evaluate_pi05.py
 ```
 
-`data/`、`models/`、`runs/`和`evidence/`是本地大资产/正式证据根，均由`.gitignore`排除，不应复制或提交。
-
-## Canonical entrypoints
-
-- `scripts/train_source_base.py`：过滤LIBERO-90 source policy训练；
-- `scripts/train_source_sft.py`：shared Source-SFT参考；
-- `scripts/train_task_experts.py`：train24 task-local expert参考；
-- `scripts/train_as_writer.py`：LMMPC Dynamic-K Writer训练；
-- `scripts/evaluate_pi05.py`：source/expert/Writer strict paired评测；
-- `scripts/analyze_task_expert_bank.py`：task-expert诊断。
-
-已退役架构没有平行可执行入口；精确旧代码和设计通过Git快照检索。
-
-当前最新被测Writer已经formal non-pass，且仓库没有active successor。远程独立复核应先读
-[current evidence synthesis](docs/architecture_reasoning.md)；该文档只陈述证据与未决问题，不预设下一步方案。
-外部专家对固定提交的完整结构化意见及哪些代码判断已由仓库侧复核，见
-[external independent review](docs/external_review_20260818.md)。
-
-## Environment and tests
-
-环境要求Python 3.12、CUDA 12.8栈与仓库锁定的`uv.lock`。首次安装需把cache放在storage-backed目录：
-
-```bash
-export EMBER_CACHE_ROOT=/data1/user/ymdai/.cache/ember
-scripts/bootstrap_env.sh
-```
-
-本地host路径和私有环境变量放在未跟踪的`.env.local`。CPU验证：
-
-```bash
-set -a
-source .env.local
-set +a
-PYTHONPATH=src .venv/bin/pytest -q
-```
-
-GPU launch前必须按`AGENTS.md`同时检查gpu01/gpu02、对应quota、clean frozen commit和完整run contract。
-
-## Historical retrieval
-
-active tree只保留少数结构锚点和统一ledger。整理前的完整设计语料可从commit
-`8553b613de7791df50e0f3ef85678fcaca1cac0c`读取：
-
-```bash
-git show 8553b61:docs/<historical-design>.md
-git show 8553b61:findings.md
-git show 8553b61:task_plan.md
-```
-
-formal run的精确command、manifest、raw rows和分析应从对应`runs/outputs/` artifact读取，不能由旧文档中的动态
-“下一步”恢复执行。
+正式GPU运行前必须读取项目合同，检查两个GPU节点与对应storage quota，并从clean pushed commit的frozen worktree启动。

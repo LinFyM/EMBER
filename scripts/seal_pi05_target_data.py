@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ember.pi05_target_data import seal_target_data, write_checksums
+from ember.pi05_target_data import seal_target_data
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +40,6 @@ def main() -> None:
         output_path=args.output.resolve(),
         sealed_utc=args.sealed_utc,
     )
-    write_checksums(args.output.resolve().parent, (args.output.name,))
 
 
 if __name__ == "__main__":

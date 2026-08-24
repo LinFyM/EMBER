@@ -50,12 +50,7 @@ def _worker_lifecycle(
     selected = [row for row in events if row.get("invocation_id") == invocation_id]
     by_event = {row.get("event"): row for row in selected}
     ready = by_event.get("ready", {})
-    writer_generator = bool(ready.get("writer_generator", False))
     expected_events = {"process_started", "ready", "finished"}
-    if writer_generator:
-        expected_events.update(
-            {"writer_generation_finished", "rollout_ready_with_retained_policy"}
-        )
     if (
         len(selected) != len(expected_events)
         or set(by_event) != expected_events
@@ -68,8 +63,6 @@ def _worker_lifecycle(
         raise Pi05EvaluationError(f"worker lifecycle is incomplete: {worker_id}")
     process = by_event["process_started"]
     finished = by_event["finished"]
-    generation = by_event.get("writer_generation_finished")
-    rollout_ready = by_event.get("rollout_ready_with_retained_policy", ready)
     gpu_text, replica_text = worker_id.split("-r", 1)
     physical_gpu = int(gpu_text)
     expected_numa = 0 if physical_gpu < 4 else 1
@@ -81,19 +74,6 @@ def _worker_lifecycle(
         or ready.get("numa_node") != expected_numa
         or not ready.get("cpu_affinity")
         or not float(process["unix"]) <= float(ready["unix"]) <= float(finished["unix"])
-        or not float(ready["unix"])
-        <= float(rollout_ready["unix"])
-        <= float(finished["unix"])
-        or (
-            generation is not None
-            and not float(ready["unix"])
-            <= float(generation["unix"])
-            <= float(rollout_ready["unix"])
-        )
-        or (
-            writer_generator
-            and rollout_ready.get("source_policy_reloaded") is not False
-        )
     ):
         raise Pi05EvaluationError(f"worker topology evidence changed: {worker_id}")
     return {
@@ -107,37 +87,9 @@ def _worker_lifecycle(
         "cpu_affinity": ready["cpu_affinity"],
         "process_started_unix": float(process["unix"]),
         "ready_unix": float(ready["unix"]),
-        "rollout_ready_unix": float(rollout_ready["unix"]),
+        "rollout_ready_unix": float(ready["unix"]),
         "finished_unix": float(finished["unix"]),
         "model_load_seconds": float(ready["model_load_seconds"]),
-        "writer_generator": writer_generator,
-        "source_policy_reloaded": bool(
-            rollout_ready.get("source_policy_reloaded", False)
-        ),
-        "writer_generation": (
-            {
-                key: generation[key]
-                for key in (
-                    "assigned_entries",
-                    "generated_entries",
-                    "reused_entries",
-                    "generated_batches",
-                    "generation_batch_size",
-                    "generation_wall_seconds",
-                    "peak_allocated_bytes",
-                    "peak_reserved_bytes",
-                    "post_release_allocated_bytes",
-                    "post_release_reserved_bytes",
-                    "source_policy_reused_for_rollout",
-                    "writer_modules_released",
-                    "redundant_writer_forwards",
-                    "batch_shape_bf16_roundoff_accepted",
-                    "batches",
-                )
-            }
-            if generation is not None
-            else None
-        ),
         "completed_shards": int(finished["completed_shards"]),
         "adopted_shards": int(finished["adopted_shards"]),
     }
@@ -182,97 +134,6 @@ def _validated_worker_lifecycles(
     ) != physical_gpu_count:
         raise Pi05EvaluationError("worker lifecycle GPU UUID mapping is not device symmetric")
     return lifecycles
-
-
-def _writer_generation_summary(workers: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
-    generated = [
-        row["writer_generation"]
-        for row in workers
-        if row.get("writer_generation") is not None
-    ]
-    if not generated:
-        return None
-    batches = [
-        dict(batch)
-        for row in generated
-        for batch in row["batches"]
-    ]
-    if not batches and not all(
-        int(row["generated_entries"]) == 0
-        and int(row["generated_batches"]) == 0
-        and int(row["reused_entries"]) == int(row["assigned_entries"])
-        for row in generated
-    ):
-        raise Pi05EvaluationError("Writer generation omitted actual batch evidence")
-    actual_batches = (
-        {
-            "max_observed_forward_batch_size": max(
-                int(row["batch_size"]) for row in batches
-            ),
-            "max_sampled_video_frames": max(
-                int(value)
-                for row in batches
-                for value in row["sampled_frame_counts"]
-            ),
-        }
-        if batches
-        else {
-            "max_observed_forward_batch_size": 0,
-            "max_sampled_video_frames": 0,
-        }
-    )
-    return {
-        "generator_workers": len(generated),
-        "assigned_entries": sum(int(row["assigned_entries"]) for row in generated),
-        "generated_entries": sum(int(row["generated_entries"]) for row in generated),
-        "reused_entries": sum(int(row["reused_entries"]) for row in generated),
-        "generated_batches": sum(int(row["generated_batches"]) for row in generated),
-        "generation_batch_size": sorted(
-            {int(row["generation_batch_size"]) for row in generated}
-        ),
-        **actual_batches,
-        "batches": batches,
-        "max_worker_generation_wall_seconds": max(
-            float(row["generation_wall_seconds"]) for row in generated
-        ),
-        "max_peak_allocated_bytes": max(
-            int(row["peak_allocated_bytes"]) for row in generated
-        ),
-        "max_peak_reserved_bytes": max(
-            int(row["peak_reserved_bytes"]) for row in generated
-        ),
-        "max_post_release_allocated_bytes": max(
-            int(row["post_release_allocated_bytes"]) for row in generated
-        ),
-        "max_post_release_reserved_bytes": max(
-            int(row["post_release_reserved_bytes"]) for row in generated
-        ),
-        "redundant_writer_forwards": sum(
-            int(row["redundant_writer_forwards"]) for row in generated
-        ),
-        "batch_shape_bf16_roundoff_accepted": all(
-            row["batch_shape_bf16_roundoff_accepted"] is True
-            for row in generated
-        ),
-        "all_source_policy_processes_reused_for_rollout": all(
-            row["source_policy_reused_for_rollout"] is True for row in generated
-        ),
-        "all_writer_modules_released": all(
-            row["writer_modules_released"] is True for row in generated
-        ),
-        "all_source_policies_not_reloaded": all(
-            row["source_policy_reloaded"] is False
-            for row in workers
-            if row.get("writer_generation") is not None
-        ),
-        "gpu_names": sorted(
-            {
-                str(row["gpu_name"])
-                for row in workers
-                if row.get("writer_generation") is not None
-            }
-        ),
-    }
 
 
 def _load_shard_records(
@@ -338,37 +199,6 @@ def _per_task_rows(
                 "episodes": len(selected),
                 "success_rate": successes / len(selected),
             }
-        writer_rows = [row["writer"] for row in selected if row.get("writer") is not None]
-        if writer_rows:
-            demo_counts: dict[str, int] = {}
-            demo_set_counts: dict[str, int] = {}
-            for writer in writer_rows:
-                demos = (
-                    tuple(int(demo) for demo in writer["teacher_demo_indices"])
-                    if "teacher_demo_indices" in writer
-                    else (int(writer["teacher_demo_index"]),)
-                )
-                for demo in demos:
-                    key = str(demo)
-                    demo_counts[key] = demo_counts.get(key, 0) + 1
-                set_key = ",".join(str(demo) for demo in demos)
-                demo_set_counts[set_key] = demo_set_counts.get(set_key, 0) + 1
-            value["writer"] = {
-                "condition": writer_rows[0]["condition"],
-                "unique_teacher_videos": len(demo_counts),
-                "teacher_demo_counts": dict(sorted(demo_counts.items(), key=lambda item: int(item[0]))),
-                "generation_wall_seconds": sum(
-                    float(writer["writer_generation_seconds"]) for writer in writer_rows
-                ),
-            }
-            if "teacher_demo_indices" in writer_rows[0]:
-                value["writer"].update(
-                    {
-                        "videos_per_condition": len(writer_rows[0]["teacher_demo_indices"]),
-                        "unique_teacher_video_sets": len(demo_set_counts),
-                        "teacher_demo_set_counts": dict(sorted(demo_set_counts.items())),
-                    }
-                )
         values.append(value)
     return values
 
@@ -429,7 +259,6 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
         "schema_version": AGGREGATE_SCHEMA,
         "contract_reference": contract["contract_reference"],
         "arm": contract["arm"],
-        "paired_control": contract.get("paired_control"),
         "role": contract["role"],
         "mode": contract["mode"],
         "model": contract["model"],
@@ -451,7 +280,6 @@ def aggregate_run(output_dir: Path) -> dict[str, Any]:
                 len(rows) * 3600.0 / shard_window_seconds
             ),
         },
-        "writer_generation": _writer_generation_summary(workers),
         "per_task": _per_task_rows(rows, tasks),
         "launcher": launcher,
         "launcher_attempts": launcher_attempts,

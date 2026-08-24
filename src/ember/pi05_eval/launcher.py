@@ -9,10 +9,9 @@ import sys
 import time
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.eval_adapters import ARCHIVAL_WRITER_CACHE_KIND, WRITER_ADAPTER_KINDS
 
 
 MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
@@ -191,18 +190,6 @@ def terminate_owned_workers(
             process.wait()
 
 
-def _writer_generator_ids(
-    contract: Mapping[str, Any],
-    physical_gpu_ids: Sequence[int],
-) -> tuple[str, ...]:
-    generators = int(contract["parallel"].get("writer_generators_per_gpu", 0))
-    return tuple(
-        f"{gpu}-r{replica}"
-        for gpu in physical_gpu_ids
-        for replica in range(generators)
-    )
-
-
 def _spawn_one(
     *,
     stack: ExitStack,
@@ -210,7 +197,6 @@ def _spawn_one(
     output_dir: Path,
     contract: Mapping[str, Any],
     worker_id: str,
-    writer_generator: bool,
     invocation_id: str,
     repo_root: Path,
     script_path: Path,
@@ -239,8 +225,6 @@ def _spawn_one(
         "--worker-id",
         worker_id,
     ]
-    if writer_generator:
-        command.append("--writer-generator")
     processes[worker_id] = subprocess.Popen(
         command,
         cwd=repo_root,
@@ -248,60 +232,6 @@ def _spawn_one(
         stdout=log,
         stderr=subprocess.STDOUT,
     )
-
-
-def _stage_writer_generators(
-    contract: Mapping[str, Any],
-    *,
-    invocation_id: str,
-    processes: Mapping[str, subprocess.Popen[bytes]],
-    spawn: Callable[[str, bool], None],
-) -> tuple[str, ...]:
-    adapter = contract.get("adapter")
-    if not (
-        isinstance(adapter, Mapping)
-        and adapter.get("kind") in WRITER_ADAPTER_KINDS
-    ):
-        return ()
-    from ember.writer.evaluation_cache import (
-        finalize_writer_cache,
-        generator_marker_path,
-        writer_cache_manifest_is_ready,
-    )
-
-    if writer_cache_manifest_is_ready(contract):
-        return ()
-    if adapter.get("kind") == ARCHIVAL_WRITER_CACHE_KIND:
-        raise Pi05EvaluationError(
-            "archival Writer projection must be imported and sealed before launch"
-        )
-    physical_gpu_ids = tuple(
-        int(value) for value in contract["parallel"]["physical_gpu_ids"]
-    )
-    generator_ids = _writer_generator_ids(contract, physical_gpu_ids)
-    for worker_id in generator_ids:
-        spawn(worker_id, True)
-    marker_paths = tuple(
-        generator_marker_path(contract, invocation_id, worker_id)
-        for worker_id in generator_ids
-    )
-    while not all(path.is_file() for path in marker_paths):
-        exited = {
-            worker_id: process.poll()
-            for worker_id, process in processes.items()
-            if process.poll() is not None
-        }
-        if exited:
-            raise Pi05EvaluationError(
-                f"Writer generator exited before sealing its cache: {exited}"
-            )
-        time.sleep(0.2)
-    finalize_writer_cache(
-        contract,
-        invocation_id=invocation_id,
-        worker_ids=generator_ids,
-    )
-    return generator_ids
 
 
 def _wait_for_workers(
@@ -338,7 +268,7 @@ def spawn_worker_processes(
     dict[str, int],
     BaseException | None,
 ]:
-    """Stage Writer generators first, then scale out rollout-only workers."""
+    """Launch persistent rollout workers owned by this invocation."""
 
     processes: dict[str, subprocess.Popen[bytes]] = {}
     return_codes: dict[str, int] = {}
@@ -346,28 +276,20 @@ def spawn_worker_processes(
     (output_dir / "worker_logs").mkdir(parents=True, exist_ok=True)
     try:
         with ExitStack() as stack:
-            def spawn(worker_id: str, writer_generator: bool) -> None:
+            def spawn(worker_id: str) -> None:
                 _spawn_one(
                     stack=stack,
                     processes=processes,
                     output_dir=output_dir,
                     contract=contract,
                     worker_id=worker_id,
-                    writer_generator=writer_generator,
                     invocation_id=invocation_id,
                     repo_root=repo_root,
                     script_path=script_path,
                 )
 
-            generator_ids = _stage_writer_generators(
-                contract,
-                invocation_id=invocation_id,
-                processes=processes,
-                spawn=spawn,
-            )
             for worker_id in worker_ids:
-                if worker_id not in generator_ids:
-                    spawn(worker_id, False)
+                spawn(worker_id)
             return_codes = _wait_for_workers(processes)
     except BaseException as error:
         launch_error = error

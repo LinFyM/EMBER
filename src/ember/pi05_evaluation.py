@@ -15,7 +15,6 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ember.eval_adapters import (
-    WRITER_ADAPTER_KINDS,
     episode_adapter_fields,
     load_evaluation_adapter as _load_evaluation_adapter,
     validate_episode_adapter_fields,
@@ -173,7 +172,7 @@ def _start_fixed_episode(
         "started": time.monotonic(),
     }
     if prepared is not None:
-        slot["writer_lora"] = prepared
+        slot["episode_adapter"] = prepared
     if capture_occupancy:
         slot["replay_observations"] = []
         slot["replay_action_chunks"] = []
@@ -220,7 +219,7 @@ def _plan_action_chunks(
     )
     for group in groups:
         if task_adapter is not None and not batched_adapter:
-            task_adapter.install(group[0]["writer_lora"])
+            task_adapter.install(group[0]["episode_adapter"])
         processed = [
             preprocess(libero_policy_input(slot["obs"], str(task["language"])))
             for slot in group
@@ -248,7 +247,7 @@ def _plan_action_chunks(
             arguments = (
                 (batch,)
                 if task_adapter is None or not batched_adapter
-                else ([slot["writer_lora"] for slot in group], batch)
+                else ([slot["episode_adapter"] for slot in group], batch)
             )
             chunks = predict(
                 *arguments,
@@ -376,7 +375,7 @@ def rollout_shard(
                 )
                 torch.save(
                     {
-                        "schema_version": "ember_writer_occupancy_trajectory_v1",
+                        "schema_version": "ember_pi05_occupancy_trajectory_v1",
                         "suite": task["suite"],
                         "task_id": int(task["task_id"]),
                         "init_state_id": int(slot["init_state_id"]),
@@ -394,7 +393,9 @@ def rollout_shard(
                     "replans": len(slot["replay_observations"]),
                 }
             row.update(
-                episode_adapter_fields(contract, task_adapter, slot.get("writer_lora"))
+                episode_adapter_fields(
+                    contract, task_adapter, slot.get("episode_adapter")
+                )
             )
             rows.append(row)
             if next_state < len(state_ids):
@@ -612,8 +613,6 @@ def _parse_worker_assignment(
 def _initialize_worker(
     output_dir: Path,
     worker_id: str,
-    *,
-    writer_generation: bool = False,
 ) -> WorkerRuntime:
     import torch
 
@@ -621,15 +620,6 @@ def _initialize_worker(
     contract = load_run_contract(output_dir / "run_contract.json")
     queue_path = output_dir / "queue.sqlite3"
     gpu_index, gpu_slot, replica = _parse_worker_assignment(worker_id, contract)
-    if writer_generation:
-        adapter = contract.get("adapter")
-        generators = int(contract["parallel"].get("writer_generators_per_gpu", 0))
-        if (
-            not isinstance(adapter, Mapping)
-            or adapter.get("kind") not in WRITER_ADAPTER_KINDS
-            or not 0 <= replica < generators
-        ):
-            raise Pi05EvaluationError("invalid Writer generator worker assignment")
     os.environ.update(
         MUJOCO_GL="egl",
         PYOPENGL_PLATFORM="egl",
@@ -660,7 +650,6 @@ def _initialize_worker(
         policy,
         contract,
         device=torch.device("cuda:0"),
-        writer_generation=writer_generation,
     )
     return WorkerRuntime(
         output_dir=output_dir,
@@ -762,16 +751,6 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
     return _publish_claim_result(runtime, claim, rows, started_unix)
 
 
-def _run_writer_bootstrap(runtime: WorkerRuntime, invocation_id: str) -> None:
-    from ember.writer.evaluation_runtime import run_writer_generation_phase
-
-    run_writer_generation_phase(
-        runtime,
-        invocation_id=invocation_id,
-        append_event=_append_worker_event,
-    )
-
-
 def _drain_claim_queue(
     runtime: WorkerRuntime,
     *,
@@ -807,7 +786,6 @@ def run_worker(
     *,
     output_dir: Path,
     worker_id: str,
-    writer_generator: bool = False,
 ) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     invocation_id = os.environ.get("EMBER_PI05_EVAL_INVOCATION_ID", "")
@@ -833,11 +811,7 @@ def run_worker(
     completed = 0
     adopted = 0
     try:
-        runtime = _initialize_worker(
-            output_dir,
-            worker_id,
-            writer_generation=writer_generator,
-        )
+        runtime = _initialize_worker(output_dir, worker_id)
         ready_unix = time.time()
         _append_worker_event(
             event_path,
@@ -855,11 +829,8 @@ def run_worker(
                 "cpu_affinity": list(runtime.cpu_affinity),
                 "model_load_seconds": ready_unix - process_started_unix,
                 "contract_reference": runtime.contract["contract_reference"],
-                "writer_generator": writer_generator,
             },
         )
-        if writer_generator:
-            _run_writer_bootstrap(runtime, invocation_id)
         completed, adopted = _drain_claim_queue(runtime, worker_id=worker_id)
     except Exception as error:
         _append_worker_event(

@@ -192,10 +192,15 @@ def run_step(runtime: G1Runtime, step: int) -> dict[str, Any]:
         )
     total.backward()
     gradients = {name: value.grad for name, value in runtime.oracle.named_parameters()}
-    if any(
-        value is None or not torch.isfinite(value).all() for value in gradients.values()
-    ):
-        raise ValueError("G1 oracle gradient is missing or non-finite")
+    invalid_gradients = [
+        name
+        for name, value in gradients.items()
+        if value is None or not torch.isfinite(value).all()
+    ]
+    if invalid_gradients:
+        raise ValueError(
+            f"G1 oracle gradient is missing or non-finite: {invalid_gradients}"
+        )
     gradient_norm = torch.nn.utils.clip_grad_norm_(
         runtime.oracle.parameters(),
         float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
@@ -265,7 +270,15 @@ def train(args: argparse.Namespace) -> None:
             runtime.metrics_rows,
             cursor_key="step",
         )
-        if not runtime.start_step < args.stop_after_step:
+        initialization_only = (
+            args.resume is None
+            and args.stop_after_step == 0
+            and runtime.start_step == 0
+            and runtime.config["optimization"]["initialization"][
+                "retain_initialization_checkpoint"
+            ]
+        )
+        if not initialization_only and not runtime.start_step < args.stop_after_step:
             raise ValueError("G1 resume cursor is not before requested stop")
         torch.cuda.reset_peak_memory_stats(runtime.args.torch_device)
         checkpoint_steps = set(
@@ -285,6 +298,7 @@ def train(args: argparse.Namespace) -> None:
                 "schema_version": G1_RUN_SCHEMA,
                 "task_ordinal": runtime.task.ordinal,
                 "completed_steps": args.stop_after_step,
+                "initialization_only": initialization_only,
                 "initial_segment_steps": int(
                     runtime.config["optimization"]["initial_segment_steps"]
                 ),
@@ -323,6 +337,6 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     config = load_g1_config(args.config)
     if args.stop_after_step is None:
         args.stop_after_step = int(config["optimization"]["initial_segment_steps"])
-    if args.stop_after_step <= 0 or args.log_every <= 0:
-        raise ValueError("G1 stop and log intervals must be positive")
+    if args.stop_after_step < 0 or args.log_every <= 0:
+        raise ValueError("G1 stop must be non-negative and log interval positive")
     return args

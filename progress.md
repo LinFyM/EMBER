@@ -29,9 +29,16 @@ q-head修正的formal optimization与strict250已经完成：唯一rank16 candid
 
 随后稳定native-bank投影诊断把latest member materialize为同一唯一rank16，在strict250达到`94/250`、逐task`24/24/44/1/1`；
 relative recovery、breadth、Goal/Long和四task高于carrier均成立，但retention仅`22/43`，故不是Gate pass。该结果证明稳定bank内存在
-process-sensitive闭环方向，并把最早失效接口推进到free-logit可达优化与retention。当前实现已加入只用于G1的reference-projected
-positive/negative simplex初始化；task93真实一步profile的latest update loss为`0.817`（解析`0.813`）、effect loss`0.107`，五类参数
-均有非零梯度，Action Meta为0。尚待clean pushed formal复评。
+process-sensitive闭环方向，并把最早失效接口推进到free-logit可达优化与retention。
+
+latest-only解析free logits的精确step0 strict250已完成：`100/250`、逐task`24/28/45/3/0`，relative recovery`0.851`；breadth4/5、
+Long 0、仅3/5高于carrier且retention`22/43`，Gate仍non-pass。step0与解析投影residual cosine为`0.952--0.964`，第一次Adam更新后即
+降至`0.039--0.070`；五task 500-step formal也未在预注册内部effect/update证据上恢复step0，因此没有用held reward选择被扰动checkpoint。
+
+最早接口现为set-valued member选择而非bank或训练时长：task90 carrier有38 successes，强于latest/independent/earliest的
+`27/26/17`；task91--94最强mobile依次为independent/latest/independent/independent，success counts为`32/40/13/5`。当前实现据此
+选择每task verified member，carrier胜出时输出精确zero residual；task90 initialization-only与task94 independent真实smoke均通过，
+保持38 hooks、唯一rank16与Action Meta 0。尚待clean pushed formal及同一strict250复评。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -98,12 +105,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 审查reference-projected free-logit初始化、缓存chunk与定向合同，完成全量CPU回归后集成clean pushed main；
-2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，fresh重跑
-   5-task formal optimization；预注册保留optimizer更新前的initialization checkpoint及后续相邻checkpoints，使用内部objective与
-   retention response定位，而非held reward拼接；
-3. 以一个single checkpoint的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，优先检查
-   carrier-preservation/retention接口，不以步数、seed或LR小扫替代机制证据；
+1. 审查set-valued reference选择、zero-residual carrier与initialization-only completion合同，完成全量CPU回归后集成clean pushed main；
+2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，fresh生成五个
+   task-local step0；
+3. 以该single step0的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，按最早失败task的
+   reference span/response定位，不以步数、seed或LR小扫替代机制证据；
 4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。

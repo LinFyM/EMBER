@@ -167,12 +167,22 @@ head用共同背景质量保持跨head相对幅度。task93真实一步profile�
 `0.107`，五类参数均有非零有限梯度，缓存真实chunk后峰值约28.68GB。该初始化只属于G1 privileged capacity oracle，不进入G3共享
 compiler。
 
+clean pushed `fc53249`进一步保留未受optimizer扰动的step0。其residual相对解析projection cosine为`0.952--0.964`，而第一次Adam
+更新后为`0.039--0.070`；配套五task 500-step run的最终effective-update loss均差于step0。step0 paired strict250为`100/250`、逐task
+`24/28/45/3/0`，relative recovery`0.8507`，但breadth4/5、Long 0、tasks-above-carrier 3/5、retention`22/43`，故Gate non-pass。
+
+该结果与固定50 evidence共同定位到set-valued选择：task90 carrier 38强于latest/independent/earliest的`27/26/17`；其余四task最强
+member依次为independent/latest/independent/independent，成功数`32/40/13/5`。下一修正据此选择verified member，carrier胜出时用
+zero rank4 residual；candidate bank、signed pooling、rank12+4和唯一rank16合同不变。
+
 关键artifacts：
 
 - `runs/outputs/pi05_ecp_native_factor_g1_qhead_held5_formal_a8ec468_gpu01p34567_20260825/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_qhead_free_code_step500_strict250_a8ec468_gpu01p34567_r3_20260825/`；
 - `runs/analysis/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_a8ec468_gpu01p34567_20260825/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_strict250_a8ec468_gpu01p34567_r3_20260825/`。
+- `runs/outputs/pi05_ecp_native_factor_g1_exact_init_held5_formal_fc53249_gpu02p1_20260825/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_exact_init_step0_strict250_fc53249_gpu01p34567_r3_20260825/`。
 
 ## 12. 当前保留结论
 

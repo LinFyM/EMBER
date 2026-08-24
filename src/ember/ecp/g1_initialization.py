@@ -145,6 +145,20 @@ def cached_native_bytes(readout: NativeVideoReadout) -> int:
     return sum(value.numel() * value.element_size() for value in tensors)
 
 
+def initialize_oracle_as_carrier(
+    *, oracle: TaskLocalNativeFactorOracle, video: NativeVideoReadout
+) -> dict[str, Any]:
+    """Represent the verified carrier member as an exact zero rank-four residual."""
+
+    with torch.no_grad():
+        for parameter in oracle.parameters():
+            parameter.zero_()
+    return {
+        "kind": "zero_residual_carrier",
+        "candidate_cache_bytes": cached_native_bytes(video),
+    }
+
+
 def _output_bank(
     *, video: NativeVideoReadout, chunks: Sequence[NativeTargetChunk], target: int
 ) -> torch.Tensor:

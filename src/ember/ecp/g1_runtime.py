@@ -21,9 +21,11 @@ from ember.ecp.g1_assets import (
     load_g1_config,
     load_g1_rank_assets,
     load_g1_task_assets,
+    select_g1_initialization_reference,
 )
 from ember.ecp.g1_initialization import (
     cache_native_video_readout,
+    initialize_oracle_as_carrier,
     initialize_oracle_from_reference,
 )
 from ember.ecp.g1_objective import (
@@ -292,23 +294,38 @@ def prepare_runtime(args: argparse.Namespace) -> G1Runtime:
     ).to(device)
     initialization_cell = config["optimization"]["initialization"]
     if args.resume is None:
-        reference_member = str(initialization_cell["reference_member"])
-        reference_index = G1_MEMBER_NAMES.index(reference_member)
-        initialization_report = initialize_oracle_from_reference(
-            oracle=oracle,
-            video=readout,
-            owners=owners,
-            contract=ranks.contract,
-            reference=ranks.reference_rank4[task.ordinal][reference_index],
-            s_ref=ranks.s_ref,
-            relative_singular_threshold=float(
-                initialization_cell["relative_singular_threshold"]
-            ),
-            probability_floor_mass=float(
-                initialization_cell["probability_floor_mass"]
-            ),
-            reference_member=reference_member,
+        reference_member, success_counts = select_g1_initialization_reference(
+            carrier_success=task.carrier_success,
+            member_success=task.initial_success,
         )
+        if reference_member == "carrier":
+            initialization_report = initialize_oracle_as_carrier(
+                oracle=oracle, video=readout
+            )
+        else:
+            reference_index = G1_MEMBER_NAMES.index(reference_member)
+            initialization_report = initialize_oracle_from_reference(
+                oracle=oracle,
+                video=readout,
+                owners=owners,
+                contract=ranks.contract,
+                reference=ranks.reference_rank4[task.ordinal][reference_index],
+                s_ref=ranks.s_ref,
+                relative_singular_threshold=float(
+                    initialization_cell["relative_singular_threshold"]
+                ),
+                probability_floor_mass=float(
+                    initialization_cell["probability_floor_mass"]
+                ),
+                reference_member=reference_member,
+            )
+        initialization_report = {
+            **initialization_report,
+            "selection_strategy": str(initialization_cell["kind"]),
+            "selection_metric": str(initialization_cell["selection_metric"]),
+            "candidate_success_counts": success_counts,
+            "selected_reference": reference_member,
+        }
     else:
         initialization_report = read_json(args.output_dir / "run_contract.json")[
             "native_factor_initialization"

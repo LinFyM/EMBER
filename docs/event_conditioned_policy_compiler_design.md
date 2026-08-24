@@ -283,11 +283,17 @@ video bank做relative singular threshold `1e-3`的稳定中心子空间投影并
 `24/24/44/1/1`：breadth、Goal/Long与四task高于carrier已恢复，但carrier retention只有`22/43`，故仍不是Gate pass。这个成对闭环
 结果把最早接口从bank span推进到随机稠密free logits的可达优化。
 
-当前修正不改变candidate、signed pooling、rank或loss：仅在G1使用已授权known-success latest member，把稳定子空间最小范数系数分解为
-positive/negative simplex来初始化实际free logits，并按q真实head保持相对幅度；随后仍由原四类objective联合优化。该解析初始化是
-task-local privileged capacity solve，不进入G3，也不声称共享Program query-key attention成立。预注册保留optimizer更新前的
-initialization checkpoint（step0），同时继续观察后续相邻checkpoints能否改善carrier retention；不能把第一次Adam更新后的step1
-误当成未扰动解析点。
+把latest member稳定子空间系数解析分解为positive/negative simplex并写入实际free logits后，精确step0 strict250达到`100/250`、逐task
+`24/28/45/3/0`，relative recovery `0.851`；但breadth4/5、Long 0、仅3/5高于carrier且retention仍为`22/43`，所以Gate non-pass。
+实际step0 residual与解析投影cosine为`0.952--0.964`，第一次Adam更新即降至`0.039--0.070`；500-step formal的最终effective-update
+loss也在全部task差于未扰动step0。因此optimizer前的initialization checkpoint（step0）是预注册解析点，不能用step1冒充，也不因
+内部loss选择被扰动路径。
+
+当前修正仍不改变candidate、signed pooling、rank或loss，而是落实privileged evidence的set-valued职责：每task在`carrier/latest/
+independent/earliest`中按同一paired fixed50 success count选择最强verified member，tie优先carrier；若carrier胜出，以所有scale为0的
+精确zero rank4 residual表示。fold0选择固定为task90 carrier、91 independent、92 latest、93 independent、94 independent。它直接针对
+已定位的task90 retention与Long reference覆盖，不是seed/LR扫；只属于G1 task-local capacity solve，不进入G3，也不声称shared Program
+query-key attention成立。
 
 ### G2. Natural Program训练
 

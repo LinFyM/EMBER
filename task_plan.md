@@ -27,9 +27,12 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
   但retention`22/43`；
 - [x] 实现reference-projected positive/negative simplex初始化与frozen native chunk cache，并通过task93真实一步gradient/materialization
   profile和140项CPU回归；
-- [ ] 完成当前修正diff审查、main集成与detached formal worktree；
-- [ ] fresh重跑初始化后的5-task formal optimization、single-checkpoint strict250与同一G1 Gate；若仍non-pass，优先定位
-  carrier-preservation/retention接口并复评。
+- [x] 保留optimizer前step0，完成latest-only五task formal与strict250：`100/250`、breadth4/5、Goal3/Long0、retention`22/43`，
+  Gate non-pass；
+- [x] 以paired fixed50证据定位set-valued选择接口，并实现每task在carrier/latest/independent/earliest中选最强verified member；
+- [x] 通过141项CPU回归、task90 zero-residual initialization-only与task94 independent真实gradient/materialization smoke；
+- [ ] 完成set-valued修正diff审查、main集成与detached formal worktree；
+- [ ] fresh生成五task step0、跑single-checkpoint strict250与同一G1 Gate；若仍non-pass，继续定位最早reference span/response接口。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 

@@ -2,10 +2,26 @@ from __future__ import annotations
 
 import torch
 
+from ember.ecp.g1_assets import select_g1_initialization_reference
 from ember.ecp.g1_initialization import (
     CandidateMeasure,
     _scaled_group_probabilities,
 )
+
+
+def test_verified_reference_selection_prefers_best_member_and_carrier_ties() -> None:
+    selected, counts = select_g1_initialization_reference(
+        carrier_success={0, 1},
+        member_success={"latest": {0}, "independent": {0, 1, 2}, "earliest": set()},
+    )
+    assert selected == "independent"
+    assert counts == {"carrier": 2, "latest": 1, "independent": 3, "earliest": 0}
+
+    selected, _counts = select_g1_initialization_reference(
+        carrier_success={0, 1, 2},
+        member_success={"latest": {0, 1, 2}, "independent": {0}, "earliest": set()},
+    )
+    assert selected == "carrier"
 
 
 def test_signed_reference_projection_preserves_simplexes_and_group_direction() -> None:

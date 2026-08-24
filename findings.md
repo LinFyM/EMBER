@@ -1976,3 +1976,20 @@ MSE为`.00328508`。只允许这一轮；其后直接回到不变Gate A4，仍�
 
 合同与证据见`docs/ecp_composite_teacher_distillation_gate_20260824.md`及
 `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`。
+
+## 95. 一轮formal采集已经覆盖两个composite policy的完整固定失败occupancy
+
+clean pushed detached `7527568`在gpu01 physical1--6用六个独立worker完成两variant各50个固定initial states。red-first
+得到`2773`个replan queries，原step1000 behavior仅`5/50`成功并有24个wrong-first invalid；yellow-first得到`3998`个queries，
+behavior同为`5/50`成功、invalid为0。所有失败与恢复状态都保留，0条episode按outcome过滤；这些behavior分数只描述本轮覆盖，
+不选择数据或checkpoint。
+
+六个HDF5 shard合计`1,594,115,631` bytes，两个完整artifact root连同manifest/log约`1,594,176,572` bytes。每variant恰有
+state IDs0--49、无重复缺失，manifest query count与HDF5 metadata完全一致；training reader抽查的双相机、state、teacher action
+分别为`[3,256,256]、[8]、[50,7]`且finite。target40 action/reward读取仍为0，phase key/language/expert只产生privileged标签，
+composite policy forward仍只有当前observation与统一language。
+
+训练步数不是看behavior结果选择：固定两遍数据与batch16机械给出red `ceil(2*2773/16)=347`、yellow
+`ceil(2*3998/16)=500`。两者均从各自step1000 adapter权重warm-start但使用fresh optimizer；peak LR `1e-5`已经在采集前冻结，
+只保留final checkpoint。证据：
+`docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`。

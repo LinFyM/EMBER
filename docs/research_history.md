@@ -1557,6 +1557,19 @@ optimizer固定训练两遍数据后直接重跑原Gate A4，不做第二轮或�
 合同：`docs/ecp_composite_teacher_distillation_gate_20260824.md`；证据：
 `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`。
 
+### 3.80 唯一一轮on-policy phase-expert distillation数据已完成
+
+clean pushed detached `7527568`在gpu01 physical1--6并发采集两variant各50个固定states，未使用prohibited physical0。
+red-first得到`2773` queries，step1000 behavior为`5/50`成功、24 invalid；yellow-first得到`3998` queries，behavior为
+`5/50`成功、0 invalid。所有episodes无论结果均保留，phase expert只在相同observation/noise上提供privileged full50 action
+chunk，target40 action/reward读取为0。
+
+六个HDF5总计`1,594,115,631` bytes，100个state groups无缺失重复，manifest、metadata query count和training reader的
+camera/state/action shape及finite检查通过。固定两遍、batch16机械派生formal final steps为`347/500`；两个config均从对应
+step1000 LoRA权重warm-start、fresh optimizer、peak LR `1e-5`，不按behavior outcome或loss选checkpoint。
+
+证据：`docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

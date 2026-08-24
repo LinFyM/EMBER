@@ -41,6 +41,8 @@
   `docs/ecp_composite_teacher_distillation_gate_20260824.md`；
 - composite step1000/preformal state0 evidence：
   `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`；
+- completed one-round on-policy distillation data evidence：
+  `docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`；
 - completed Phase 2A card：`docs/ecp_effect_path_calibration_card_20260824.md`；
 - Phase 2A effect-path adjudication：
   `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`；
@@ -124,7 +126,10 @@
   50-token SFT缺少policy自身访问与恢复状态，不是再延长SFT或扫超参。
 - 当前唯一active修正为一轮on-policy phase-expert distillation：固定step1000 composite policy访问原50 states，phase expert仅在
   训练采集时按相同observation/noise提供50-step privileged label；从step1000权重fresh optimizer固定训练两遍数据，再直接回到
-  不变Gate A4。state0 collector smoke已验证23个queries、标签与原primitive teacher首chunk逐项一致。Gate B仍未授权。
+  不变Gate A4。formal采集已从clean pushed detached `7527568`在gpu01 physical1--6完成：red/yellow分别有
+  `2773/3998` queries、固定50/50 episodes、behavior successes `5/5`、invalid `24/0`，六个shard总计约1.5GB；没有按
+  outcome筛选。训练reader、100个唯一state groups、shape和finite门均通过。由`ceil(2Q/16)`机械派生唯一final steps为
+  `347/500`，peak LR已在采集前固定为`1e-5`；正式训练尚未启动，Gate B仍未授权。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

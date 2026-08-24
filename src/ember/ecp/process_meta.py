@@ -374,6 +374,7 @@ class TemporalPredicateOrderEnv:
         self.invalid = False
         self.invalid_reason: str | None = None
         self._completed: dict[str, int] = {}
+        self._post_completion_drops: dict[str, list[int]] = {}
         self._last_values = {name: False for name in self.predicates}
         self._begun = False
 
@@ -394,6 +395,7 @@ class TemporalPredicateOrderEnv:
     def begin_episode(self) -> None:
         self.steps = 0
         self._completed = {}
+        self._post_completion_drops = {name: [] for name in self.predicates}
         self._last_values = self._values()
         self._begun = True
         initially_true = [name for name, value in self._last_values.items() if value]
@@ -428,6 +430,10 @@ class TemporalPredicateOrderEnv:
             "steps": self.steps,
             "predicate_values": values,
             "completion_steps": dict(self._completed),
+            "post_completion_drop_steps": {
+                name: tuple(steps)
+                for name, steps in self._post_completion_drops.items()
+            },
             "phase_key": self.phase_key,
             "invalid": self.invalid,
             "invalid_reason": self.invalid_reason,
@@ -452,6 +458,9 @@ class TemporalPredicateOrderEnv:
                 self.invalid_reason = "wrong_or_simultaneous_first_satisfaction"
             else:
                 self._completed[rising[0]] = self.steps
+        for name in self._completed:
+            if self._last_values[name] and not values[name]:
+                self._post_completion_drops[name].append(self.steps)
         self._last_values = values
         success = (
             not self.invalid

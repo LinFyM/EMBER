@@ -61,8 +61,8 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - goal：完整实现并验证EMBER-ECP；owner已明确恢复推进；
-- canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`，最新formal training authority为
-  clean pushed `38dbffd`。当前没有active GPU job。
+- canonical workspace：本仓库`main`；最新active formal training authority为clean pushed `342620a`，两个recovery experts
+  正在gpu02 physical0/1并行训练；此前formal evaluation authority为clean pushed `4bf5039`。
   process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
   shared-realizer与phase-composed primitive-teacher mechanisms关闭。现有`347/500`步phase-expert distillation经专家复核
   取消启动；composite-context recovery teacher Gate现已开始实施。Gate B、process suite、fresh Program、`q_pi/q_V`及joint
@@ -138,6 +138,9 @@
 - clean pushed `a06a3ba`的首次formal launch在第一个mixed batch、任何optimizer step之前工程停止：composite RGB为256，
   primitive RGB为128，默认collate无法堆叠。该run以0 steps封存，不作科学结果；修正使用PI0.5原生resize分别变换到model224，
   并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
+- clean pushed `342620a`的真实1-step A40 profile通过，随后两臂已在gpu02 physical0/1进入formal optimizer；每臂固定1000
+  steps且只保存step1000。variant-specific primitive-first/recovery-second route、checkpoint/role ledger与Gate A adjudicator已接通，
+  等训练完成后从新clean pushed frozen authority运行100-row面板。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

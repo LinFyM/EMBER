@@ -1,6 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **owner已明确恢复完整ECP推进，当前没有active GPU job。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
+状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts正在gpu02 physical0/1从clean pushed frozen
+`342620a`并行formal训练。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
 process Gate A/A2/A3分别为`19/100、44/100、37/100`，均未取得可靠双向teacher。37条A3成功轨迹已转换为28/9条
 composite HDF5，两个fixed-step1000 composite SFT均未通过state0；其完整固定100-row采集baseline实际均为`5/50`。
 随后准备的`347/500`步on-policy phase-expert distillation经最新专家复核判定为oracle authority与50步phase-tail语义不成立，

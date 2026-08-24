@@ -1,6 +1,7 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **owner已明确恢复完整ECP推进，当前没有active GPU job。GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
+状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts正在clean pushed frozen `342620a`上并行formal训练。
+GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
 分别为`19/100、44/100、37/100`，两个step1000 composite SFT也未通过state0。Phase 2A的15/15 known-success paths通过，
 但两种principled shared-realizer坐标均未过held closed-loop门，当前fit90 shared-realizer family关闭。最新专家复核取消
 现有`347/500`步phase-expert distillation；当前正在实施second-phase composite-context recovery teacher Gate。fresh Program、

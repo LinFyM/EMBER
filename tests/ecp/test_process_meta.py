@@ -1,13 +1,37 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from ember.ecp.process_meta import (
     ProcessMetaError,
     ProcessMetaFamily,
     ProcessVariant,
+    TemporalPredicateOrderEnv,
     _variant_phase_expert_authorities,
 )
+
+
+class _PredicateEnv:
+    def __init__(self) -> None:
+        self.values = {"red": False, "yellow": False}
+
+    def _eval_predicate(self, predicate: list[str]) -> bool:
+        return self.values[predicate[1]]
+
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[dict[str, object], float, bool, dict[str, object]]:
+        transition = int(action[0])
+        if transition == 1:
+            self.values["red"] = True
+        elif transition == 2:
+            self.values["red"] = False
+        elif transition == 3:
+            self.values["yellow"] = True
+        elif transition == 4:
+            self.values["red"] = True
+        return {}, 0.0, False, {}
 
 
 def _family(tmp_path: Path) -> ProcessMetaFamily:
@@ -134,3 +158,17 @@ def test_variant_phase_recovery_rejects_reversed_roles(tmp_path: Path) -> None:
         _variant_phase_expert_authorities(
             teacher, repo_root=tmp_path, family=_family(tmp_path)
         )
+
+
+def test_temporal_wrapper_records_post_completion_predicate_drop() -> None:
+    env = TemporalPredicateOrderEnv(
+        _PredicateEnv(),
+        predicates={"red": ("on", "red", "left"), "yellow": ("on", "yellow", "right")},
+        required_order=("red", "yellow"),
+    )
+    env.begin_episode()
+    for transition in (1, 2, 3, 4):
+        env.step(np.asarray([transition]))
+    snapshot = env.snapshot()
+    assert snapshot["success"] is True
+    assert snapshot["post_completion_drop_steps"]["red"] == (2,)

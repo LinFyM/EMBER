@@ -37,6 +37,8 @@ weak-teacher labels。
 每个方向的第一event固定使用原primitive step1000 expert；event完成即丢弃旧action chunk，重新观察并切换到对应recovery
 expert完成第二event。统一使用现有separate-plates family language、initial states、temporal wrapper、RNG与公开video信息墙。
 ledger必须额外记录每次replan使用的是primitive还是direction-specific recovery checkpoint，route mismatch为硬失败。
+`scripts/adjudicate_ecp_recovery_teacher_gate.py`从privileged ledgers核对该route、两向state/noise pairing、公开video信息墙、
+first-predicate post-completion drop与全部固定阈值；发生drop后又恢复的episode不计strict success。
 
 ## 4. Gate A与停止规则
 

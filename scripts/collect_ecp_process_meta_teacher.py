@@ -224,12 +224,18 @@ def _collect_episode(
             ):
                 break
     snapshot = env.snapshot()
+    first_phase = env.required_order[0]
+    strict_success = bool(
+        snapshot["success"] and not snapshot["post_completion_drop_steps"][first_phase]
+    )
     return {
-        "success": bool(snapshot["success"]),
+        "success": strict_success,
+        "environment_success": bool(snapshot["success"]),
         "invalid": bool(snapshot["invalid"]),
         "invalid_reason": snapshot["invalid_reason"],
         "steps": int(snapshot["steps"]),
         "completion_steps": dict(snapshot["completion_steps"]),
+        "post_completion_drop_steps": dict(snapshot["post_completion_drop_steps"]),
         "predicate_values": dict(snapshot["predicate_values"]),
         "elapsed_seconds": time.monotonic() - started,
         "camera1": camera1,
@@ -365,10 +371,12 @@ def _persist_episode(
             "required_order": variant.required_order,
             "state_id": state_id,
             "success": result["success"],
+            "environment_success": result["environment_success"],
             "invalid": result["invalid"],
             "invalid_reason": result["invalid_reason"],
             "steps": result["steps"],
             "completion_steps": result["completion_steps"],
+            "post_completion_drop_steps": result["post_completion_drop_steps"],
             "predicate_values": result["predicate_values"],
             "teacher_actions": torch.from_numpy(result["actions"]),
             "teacher_mode": args.teacher_mode,
@@ -391,10 +399,12 @@ def _persist_episode(
         "composite_expert_variant": teacher.composite_expert_variant,
         "state_id": state_id,
         "success": result["success"],
+        "environment_success": result["environment_success"],
         "invalid": result["invalid"],
         "invalid_reason": result["invalid_reason"],
         "steps": result["steps"],
         "completion_steps": result["completion_steps"],
+        "post_completion_drop_steps": result["post_completion_drop_steps"],
         "elapsed_seconds": result["elapsed_seconds"],
         "public_video": (
             str(public_path.relative_to(args.output_dir)) if keep_video else None

@@ -41,7 +41,10 @@ from ember.pi05_source_checkpoint import (
     read_json,
     write_json_atomic,
 )
-from ember.expert_manifold.sampler import TaskLocalEpochSampler
+from ember.expert_manifold.sampler import (
+    BalancedTwoDomainSampler,
+    TaskLocalEpochSampler,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +52,10 @@ CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
 META_CONFIG = REPO_ROOT / "configs/pi05_nonheld_meta_expert_bank_v1.json"
 VALIDATION_CONFIG = REPO_ROOT / "configs/pi05_validation_expert_diagnostic_v1.json"
 ECP_PARTICLE_CONFIG = REPO_ROOT / "configs/pi05_ecp_stage1a_particle_experts_v1.json"
+RECOVERY_CONFIGS = (
+    REPO_ROOT / "configs/pi05_ecp_composite_recovery_experts_v1/yellow_after_red.json",
+    REPO_ROOT / "configs/pi05_ecp_composite_recovery_experts_v1/red_after_yellow.json",
+)
 
 
 def test_task_expert_config_contains_only_the_retained_train24_authority() -> None:
@@ -71,6 +78,23 @@ def test_ecp_particle_experts_cover_fixed_profile_and_held_lineages() -> None:
         validate_formal_task_assignment(config, (index,))
     with pytest.raises(ExpertManifoldError):
         validate_formal_task_assignment(config, (3,))
+
+
+def test_composite_recovery_experts_share_one_fixed_training_contract() -> None:
+    configs = tuple(load_task_expert_config(path) for path in RECOVERY_CONFIGS)
+    assert {config["task_experts"]["recovery"]["phase_key"] for config in configs} == {
+        "red_left",
+        "yellow_white_right",
+    }
+    for field in ("paired_contract_id", "content_hash_policy"):
+        assert configs[0][field] == configs[1][field]
+    for section in ("sampler", "optimization", "formal_run"):
+        left = dict(configs[0]["task_experts"][section])
+        right = dict(configs[1]["task_experts"][section])
+        if section == "formal_run":
+            left.pop("profile_evidence")
+            right.pop("profile_evidence")
+        assert left == right
 
 
 def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> None:
@@ -409,6 +433,17 @@ def test_task_local_sampler_is_step_exact_across_epoch_boundary() -> None:
     assert resumed == uninterrupted[12:]
     assert len(set(uninterrupted[:11])) == 11
     assert len(set(uninterrupted[11:22])) == 11
+
+
+def test_balanced_two_domain_sampler_is_exact_and_resumable() -> None:
+    sampler = BalancedTwoDomainSampler(
+        (range(0, 5), range(100, 113)), task_id=0, batch_size=8, seed=23
+    )
+    batch = sampler.batch_for_step(3)
+    assert len(batch) == 8
+    assert sum(value < 100 for value in batch) == 4
+    assert sum(value >= 100 for value in batch) == 4
+    assert sampler.batch_for_step(3) == batch
 
 
 def test_task_assignment_and_resume_identity_are_explicit() -> None:

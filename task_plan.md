@@ -1,14 +1,14 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **goal为paused，当前没有active GPU job。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
+状态：2026-08-24 **owner已明确恢复完整ECP推进，当前没有active GPU job。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
 process Gate A/A2/A3分别为`19/100、44/100、37/100`，均未取得可靠双向teacher。37条A3成功轨迹已转换为28/9条
 composite HDF5，两个fixed-step1000 composite SFT均未通过state0；其完整固定100-row采集baseline实际均为`5/50`。
 随后准备的`347/500`步on-policy phase-expert distillation经最新专家复核判定为oracle authority与50步phase-tail语义不成立，
 不得启动；`2773/3998` query数据只作student-occupancy/weak-teacher诊断资产。Phase 2A的15/15 known-success paths通过，
 但balanced-SVD learned realizer与centered two-sided coordinate均未过held closed-loop门，当前fit90 shared-realizer family
-保持关闭。唯一候选下一步是从A3真实成功轨迹的第二阶段片段训练两个composite-context recovery experts，再用不变Gate A
-裁决；当前只记录并解释该方案，待owner理解确认后才实施。Gate B、suite扩展、fresh Program、`q_pi/q_V`、joint Writer与
-outer credit均未启动。**
+保持关闭。当前正在从A3真实成功轨迹的第二阶段片段构建两个composite-context recovery experts，并将以不变Gate A裁决。
+通过后继续Gate B、suite扩展、fresh Program、`q_pi/q_V`、joint Writer与outer credit；失败则按专家停止规则切换到独立
+composite controller acquisition。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
@@ -229,11 +229,13 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   `2773/3998` queries；六个HDF5、100个state groups与training reader通过，按固定公式派生`347/500` training steps；
 - [x] 最新专家复核取消上述`347/500`步训练：primitive expert没有在student composite occupancy上建立continuation oracle，
   完整50步标签又可能跨越真实phase切换；现有数据只作weak-teacher response诊断，不再是formal oracle训练集；
-- [ ] owner理解确认后，分别从原yellow-white/red primitive expert初始化两个rank16 recovery experts；训练数据固定为
+- [x] owner已确认恢复执行；分别从原yellow-white/red primitive expert初始化两个rank16 recovery experts；训练数据固定为
   `50% A3成功轨迹second-phase真实执行片段 + 50%对应primitive成功数据`，两个方向不共享参数，不使用当前
   `2773/3998`预测标签或A3失败states；
-- [ ] 训练前冻结相同steps/epochs/optimizer与唯一checkpoint；first event继续使用冻结primitive expert，event完成后丢弃旧chunk
+- [x] 冻结相同1000 steps、每步8+8精确50/50 batch、optimizer/scheduler与唯一step1000 checkpoint；action chunk在first-event
+  completion之后开始并在episode end截断；first event继续使用冻结primitive expert，event完成后丢弃旧chunk
   并切换direction-specific recovery expert，运行不变100-row Gate A；
+- [ ] 从clean pushed frozen authority并行训练两个recovery experts；
 - [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；
   若失败，关闭task65/68上的primitive composition、composite SFT、phase-expert distillation和recovery SFT，不做第二轮DAgger、
   不扫超参、不换task66/67重复同一机制；后继必须先获得独立成立的planner/human/MPC/task-local RL composite controller；

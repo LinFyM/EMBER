@@ -23,6 +23,7 @@ from ember.expert_manifold.checkpoint import (
 from ember.expert_manifold.composite_contract import (
     COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
 )
+from ember.expert_manifold.recovery_contract import RECOVERY_EXPERT_CONFIG_SCHEMA
 from ember.expert_manifold.contract import (
     REPO_ROOT,
     ExpertManifoldError,
@@ -40,7 +41,10 @@ from ember.expert_manifold.contract import (
     validate_formal_task_assignment,
     worker_stage_resume_step,
 )
-from ember.expert_manifold.sampler import TaskLocalEpochSampler
+from ember.expert_manifold.sampler import (
+    BalancedTwoDomainSampler,
+    TaskLocalEpochSampler,
+)
 from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
@@ -297,11 +301,20 @@ def _train_one_task(
     if not 0 <= initial_step < stop_step:
         raise ExpertManifoldError("task-expert resume cursor is outside this segment")
     rows = dataset.task_rows[task.global_task_id]
-    sampler = TaskLocalEpochSampler(
-        rows,
-        task_id=task.global_task_id,
-        batch_size=batch_size,
-        seed=int(config["task_experts"]["sampler"]["seed"]),
+    sampler = (
+        BalancedTwoDomainSampler(
+            dataset.domain_rows,
+            task_id=task.global_task_id,
+            batch_size=batch_size,
+            seed=int(config["task_experts"]["sampler"]["seed"]),
+        )
+        if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
+        else TaskLocalEpochSampler(
+            rows,
+            task_id=task.global_task_id,
+            batch_size=batch_size,
+            seed=int(config["task_experts"]["sampler"]["seed"]),
+        )
     )
     clip = float(
         config["task_experts"]["optimization"]["optimizer"]["gradient_clip_norm"]
@@ -388,7 +401,10 @@ def _initial_lora_state(
     path = REPO_ROOT / str(initialization["adapter"])
     if (
         initialization.get("kind")
-        != "fixed_step1000_composite_adapter_no_optimizer_reuse"
+        not in {
+            "fixed_step1000_composite_adapter_no_optimizer_reuse",
+            "fixed_step1000_primitive_adapter_no_optimizer_reuse",
+        }
         or not path.is_file()
         or path.stat().st_size != int(initialization["adapter_bytes"])
     ):

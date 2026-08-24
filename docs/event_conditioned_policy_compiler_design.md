@@ -1,10 +1,10 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **goal paused，当前没有active GPU job。GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
+状态：2026-08-24 **owner已明确恢复完整ECP推进，当前没有active GPU job。GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
 分别为`19/100、44/100、37/100`，两个step1000 composite SFT也未通过state0。Phase 2A的15/15 known-success paths通过，
 但两种principled shared-realizer坐标均未过held closed-loop门，当前fit90 shared-realizer family关闭。最新专家复核取消
-现有`347/500`步phase-expert distillation；唯一候选后继为second-phase composite-context recovery teacher Gate，待owner
-理解确认后才执行。fresh Program、`q_pi/q_V`、joint Writer和outer credit均未启动。**
+现有`347/500`步phase-expert distillation；当前正在实施second-phase composite-context recovery teacher Gate。fresh Program、
+`q_pi/q_V`、joint Writer和outer credit仍须等待该Gate及后继Gate B。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。

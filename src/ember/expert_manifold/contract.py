@@ -29,6 +29,12 @@ from ember.expert_manifold.composite_contract import (
     load_composite_expert_spec,
 )
 from ember.ecp.composite_distillation_data import CompositeDistillationDataset
+from ember.ecp.composite_recovery_data import CompositeRecoveryDataset
+from ember.expert_manifold.recovery_contract import (
+    RECOVERY_EXPERT_CONFIG_SCHEMA,
+    load_recovery_spec,
+    recovery_expert_config_is_valid,
+)
 from ember.expert_manifold.diagnostic_contract import (
     VALIDATION_EXPERT_CONFIG_SCHEMA,
     load_validation_expert_specs,
@@ -168,31 +174,34 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
 
     config = read_json(path)
     schema = config.get("schema_version")
-    valid = (
-        composite_distillation_config_is_valid(config)
-        if schema == COMPOSITE_DISTILLATION_CONFIG_SCHEMA
-        else (
-            composite_expert_config_is_valid(config)
-            if schema == COMPOSITE_EXPERT_CONFIG_SCHEMA
+    if schema == RECOVERY_EXPERT_CONFIG_SCHEMA:
+        valid = recovery_expert_config_is_valid(config)
+    else:
+        valid = (
+            composite_distillation_config_is_valid(config)
+            if schema == COMPOSITE_DISTILLATION_CONFIG_SCHEMA
             else (
-                _train24_config_is_valid(config)
-                if schema == CONFIG_SCHEMA
+                composite_expert_config_is_valid(config)
+                if schema == COMPOSITE_EXPERT_CONFIG_SCHEMA
                 else (
-                    _ecp_particle_expert_config_is_valid(config)
-                    if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
+                    _train24_config_is_valid(config)
+                    if schema == CONFIG_SCHEMA
                     else (
-                        meta_expert_config_is_valid(config)
-                        if schema == META_EXPERT_CONFIG_SCHEMA
+                        _ecp_particle_expert_config_is_valid(config)
+                        if schema == ECP_PARTICLE_EXPERT_CONFIG_SCHEMA
                         else (
-                            validation_expert_config_is_valid(config)
-                            if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
-                            else False
+                            meta_expert_config_is_valid(config)
+                            if schema == META_EXPERT_CONFIG_SCHEMA
+                            else (
+                                validation_expert_config_is_valid(config)
+                                if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
+                                else False
+                            )
                         )
                     )
                 )
             )
         )
-    )
     if not valid:
         raise ExpertManifoldError("task-expert scientific boundary changed")
     return config
@@ -209,6 +218,8 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 def load_train_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
+    if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA:
+        return _load_recovery_task(config, data_root)
     if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
         return _load_composite_distillation_task(config, data_root)
     if config.get("schema_version") == COMPOSITE_EXPERT_CONFIG_SCHEMA:
@@ -252,6 +263,33 @@ def load_train_tasks(
             )
         )
     return tuple(tasks)
+
+
+def _load_recovery_task(
+    config: Mapping[str, Any], data_root: Path
+) -> tuple[ExpertTask, ...]:
+    try:
+        spec = load_recovery_spec(config, data_root)
+    except ValueError as error:
+        raise ExpertManifoldError(str(error)) from error
+    authority = WriterTaskAuthority(
+        task_id=int(config["task_experts"]["sampler_task_id"]),
+        language=spec.language,
+        path=spec.composite_path,
+        expected_bytes=spec.composite_bytes,
+        expected_sha256=None,
+    )
+    return (
+        ExpertTask(
+            ordinal=0,
+            global_task_id=authority.task_id,
+            suite="ecp_process_meta",
+            task_id=authority.task_id,
+            split_role="nonheld_composite_recovery",
+            language=authority.language,
+            authority=authority,
+        ),
+    )
 
 
 def _load_composite_task(
@@ -372,6 +410,7 @@ def validate_formal_task_assignment(
     if config.get("schema_version") in {
         COMPOSITE_EXPERT_CONFIG_SCHEMA,
         COMPOSITE_DISTILLATION_CONFIG_SCHEMA,
+        RECOVERY_EXPERT_CONFIG_SCHEMA,
     }:
         if tuple(indices) != (0,):
             raise ExpertManifoldError(
@@ -485,6 +524,14 @@ def build_dataset(
     *,
     data_root: Path | None = None,
 ) -> Any:
+    if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA:
+        if data_root is None:
+            raise ExpertManifoldError("recovery dataset requires its data root")
+        return CompositeRecoveryDataset(
+            load_recovery_spec(config, data_root),
+            task_id=int(config["task_experts"]["sampler_task_id"]),
+            action_chunk_size=int(config["task_experts"]["action_chunk_size"]),
+        )
     if config.get("schema_version") == COMPOSITE_DISTILLATION_CONFIG_SCHEMA:
         if data_root is None:
             raise ExpertManifoldError("distillation dataset requires its data root")
@@ -564,7 +611,10 @@ def build_worker_contract(
     if "initialization" in config["task_experts"]:
         result["initialization"] = dict(config["task_experts"]["initialization"])
         result["training_objective"] = str(config["task_experts"]["objective"])
-        result["distillation"] = dict(config["task_experts"]["distillation"])
+        if "distillation" in config["task_experts"]:
+            result["distillation"] = dict(config["task_experts"]["distillation"])
+        if "recovery" in config["task_experts"]:
+            result["recovery"] = dict(config["task_experts"]["recovery"])
     return result
 
 

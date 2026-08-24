@@ -117,4 +117,4 @@ authority、distributional `q_pi`、privileged full chain、同构`q_V`、joint 
 - 已封存的`347/500`步phase-expert distillation training未启动，现取消执行授权；
 - 已采集数据与原launch contract保留为历史和weak-teacher诊断证据；
 - 当前没有active GPU job；
-- 当前仅记录专家裁决并向owner解释项目状态；在owner理解并确认前，不实现或启动recovery teacher训练。
+- owner已明确确认恢复完整ECP推进；当前按本裁决实施recovery teacher训练与Gate A，未启动被取消的distillation训练。

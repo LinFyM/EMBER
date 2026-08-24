@@ -60,13 +60,13 @@
   `runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json`；
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
-- goal：完整实现并验证EMBER-ECP；当前状态为paused；
+- goal：完整实现并验证EMBER-ECP；owner已明确恢复推进；
 - canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`，最新formal training authority为
   clean pushed `38dbffd`。当前没有active GPU job。
   process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
   shared-realizer与phase-composed primitive-teacher mechanisms关闭。现有`347/500`步phase-expert distillation经专家复核
-  取消启动；下一候选是composite-context recovery teacher Gate，但在owner理解确认前不实现或启动。Gate B、process suite、
-  fresh Program、`q_pi/q_V`及joint Writer均未启动。
+  取消启动；composite-context recovery teacher Gate现已开始实施。Gate B、process suite、fresh Program、`q_pi/q_V`及joint
+  Writer仍须等待该teacher Gate裁决。
 
 ## Current scientific state
 
@@ -131,10 +131,10 @@
   该数据只满足student-state coverage，却没有验证primitive expert在这些composite states上的continuation correctness；同时完整
   50步标签可能跨越真实phase切换，reader又不遮掉tail。因此派生的`347/500`步正式训练已在启动前取消，数据只作
   student-occupancy/weak-teacher response资产，不再作为oracle训练集。
-- 当前唯一候选科学后继是composite-context recovery teacher：从A3的28/9条真实成功轨迹截取second-phase执行动作，分别与
+- 当前active科学步骤是composite-context recovery teacher：从A3的28/9条真实成功轨迹截取second-phase执行动作，分别与
   对应primitive成功数据按50/50混合，从原primitive LoRA初始化两个direction-specific recovery experts；第一event仍由冻结
   primitive执行，切换后由recovery expert完成第二event。它必须直接通过原Gate A；失败后整个task65/68 SFT式teacher
-  acquisition family停止。当前仅记录该裁决，owner理解确认前不执行。
+  acquisition family停止。owner已确认执行，当前正在冻结并验证训练合同。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -340,5 +340,5 @@
 - 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、两个step1000 composite SFT、balanced-SVD learned
   realizer fold0与two-sided coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed
   primitive experts也已在shared-tray与separate-plates两类family上失败。现有phase-expert distillation训练已取消；唯一候选
-  下一步是用28/9条成功轨迹的second-phase动作与primitive成功数据训练两个recovery experts，并重跑不变Gate A。它通过前不运行
-  Gate B；owner理解确认前不执行。后续deployment bridge仍必须重新建立。
+  下一步是用28/9条成功轨迹的second-phase动作与primitive成功数据训练两个recovery experts，并重跑不变Gate A。owner已确认
+  执行；它通过前不运行Gate B。后续deployment bridge仍必须重新建立。

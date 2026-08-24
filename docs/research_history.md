@@ -121,7 +121,8 @@ acquisition和SFT式recovery family全部取消，不再作为Stage 1前置。�
 9. final使用全部71 meta+train24 fresh训练，validation只看三个预注册相邻checkpoint，冻结后补controls并最后打开Test；
 10. 只有所有必要Gate与完整controls均完成仍系统失败，才可判断当前自然LIBERO/zero-interaction合同存在根本问题。
 
-完整shape、loss、门槛与耗时已经结构化进入`docs/event_conditioned_policy_compiler_design.md`。专家原始审查快照早于
+完整shape、loss、门槛与阶段逻辑已经结构化进入`docs/event_conditioned_policy_compiler_design.md`。专家原文中的工期和固定尝试
+次数随后被owner明确取消为当前硬约束；专家原始审查快照早于
 `6fdaeb8`仓库瘦身；后者没有新增科学结果，因此不影响裁决。当前保留代码也验证了其指出的q/v native target hook缺口。
 
 ## 10. 当前保留结论

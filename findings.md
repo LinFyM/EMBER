@@ -69,7 +69,7 @@ shared carrier为43/250；mobile-rank4解析投影在三个member arms为110/120
 不是rank4容量。因此首版canonical用frozen rank12 carrier + native-factor mobile rank4，严格拼成一套rank16 LoRA。专家没有把
 12+4说成全局最优或不可改变；它只是现有证据下统计难度更低的起点。
 
-这不恢复fixed-A或raw-factor短solver。只有native bank可表达、rank4 free-code已收敛、response分析证明rank ceiling且一次同构full-rank16
+这不恢复fixed-A或raw-factor短solver。只有native bank可表达、rank4 free-code已收敛、response分析证明rank ceiling且同构full-rank16
 oracle显著通过，才重开task full-rank16并按结果调整carrier/task rank；总输出仍是唯一rank16 adapter。
 
 ### 9. Program结构已经明确
@@ -91,8 +91,14 @@ controls都完成后仍系统失败，才足以判定现有数据/zero-interacti
 
 ### 11. Action Meta是后期matched control
 
-当前结果中性，canonical默认关闭。base Writer有明确闭环增量后做一次matched attempt，Stage 0/compiler冻结；只有明确净收益且
+当前结果中性，canonical默认关闭。base Writer有明确闭环增量后做matched controls，Stage 0/compiler冻结；只有明确净收益且
 无breadth/retention损害才启用，否则保持关闭。
+
+### 12. Gate不等于时间或修正次数上限
+
+专家原文给出的工期和“只允许一次/最多两轮”等是其当时的效率建议，owner后续明确不采用为硬约束。当前路线不设阶段工期、
+修正次数、结构版本或训练轮数上限；只要求每次修正有新的机制证据并重新通过同一Gate。无信息的超参小扫不算有效修正，充分证据
+持续否定接口时才停止。整体实现与关键Gate在保质前提下尽可能快推进，顺利时力争数天内形成完整架构。
 
 ## 已关闭路线
 

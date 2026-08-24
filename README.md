@@ -16,7 +16,8 @@ realizer均由Git保存，不再作为可执行fallback。
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 当前唯一下一步是fold0 held5 native-factor task-local free-code capacity oracle。
 
-本session只完成交接，不启动训练；新session按`task_plan.md`从capacity oracle开始。临时交接状态见`HANDOFF.md`。
+本session只完成交接，不启动训练；新session先按`task_plan.md`读通目标、历史、专家原文、代码/数据/脚本与formal assets，再从
+capacity oracle开始。临时交接状态见`HANDOFF.md`。
 
 ## 阅读顺序
 

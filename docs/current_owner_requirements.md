@@ -22,7 +22,7 @@ Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38�
 - 输入：exact language + `K`条action-hidden ordered videos。
 - 输出：唯一一套完整rank16 LoRA。首版canonical采用有解析容量证据的frozen rank12 carrier + native-factor mobile rank4 residual，
   但这不是不可改变的架构公理，也不代表专家证明了12+4全局最优。若native bank可表达、rank4 free-code已经收敛、剩余误差由
-  rank ceiling造成，且一次同构full-rank16 oracle显著通过，则按证据重新分配task/carrier rank；不能因历史惯性或便利随意改变。
+  rank ceiling造成，且同构full-rank16 oracle显著通过，则按证据重新分配task/carrier rank；不能因历史惯性或便利随意改变。
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
 - 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
@@ -59,7 +59,7 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
 `sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。
 
-首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做一次matched attempt；Stage 0和compiler冻结，只有出现明确
+首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做matched controls；Stage 0和compiler冻结，只有出现明确
 净收益且不损害breadth/retention才加入并永久冻结，否则保持关闭。
 
 shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终冻结checkpoint上作为严格配对的时序特异性测试；正确
@@ -85,6 +85,10 @@ shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终�
 - 不新增MD5/SHA-256 sidecar和大规模逐tensor校验；只保留信息墙、shape、finite、OOM、pairing、asset、checkpoint与resume所需
   的直接检查。
 - 复用已经训练出的可用资产，避免重复长训练；profile和smoke只做最小必要验证。
+- 不人为给各阶段规定工期、修正次数、版本数量或总轮数。Gate用于判断证据和下一接口，不是日历或尝试次数上限；有新机制证据
+  支持时可以继续修正，不能因为预设次数耗尽而停止，也不能用无新信息的seed/LR/width小扫冒充修正。
+- 在证据质量不下降的前提下尽可能快地推进，积极复用资产、并行独立工作并提高代码和GPU吞吐；进展顺利时应力争数天内完成
+  整体架构实现并推进关键Gate，不能借“分阶段”把工作人为拉长。
 - 遇到困难先回看专家原始意见与修正，检查执行是否偏移，再决定是否实验或咨询。
 - 专家意见是设计约束与启发：不能为了速度随意丢弃，也不能不经理解机械照搬。
 - 只有性能显著跃升、路线存在实质歧义或需要新增权限时，在关键节点暂停和owner讨论；不频繁汇报。

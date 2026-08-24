@@ -21,8 +21,12 @@
 
 ## 3. 新session动作
 
-1. 按`AGENTS.md`完整读取mandatory docs、专家原文和本文件；
-2. 核对HEAD、origin/main、worktree、formal assets、storage与GPU live state；
-3. 删除本文件并提交；
-4. 从`task_plan.md`的G1 native-factor task-local capacity oracle开始，不先训练fresh Program/compiler/joint Writer；
-5. formal launch前遵守clean pushed commit与frozen worktree合同。
+1. 先不改代码、不启动GPU，按`AGENTS.md`完整读取mandatory docs、专家原文和本文件；
+2. 只读检查README、Git历史与当前树，映射`configs/`、`src/ember/*`、`scripts/`、`tests/`以及ignored `data/models/runs`和formal
+   assets，核对HEAD/origin/worktree、storage与GPU live检查方式；
+3. 向owner用自己的话复述：EMBER是什么、输入输出与信息墙、历史成败、当前Native-Factor数据流、专家纲领、已有资产、实现缺口、
+   G1及后续计划；发现冲突先列证据并修正文档；
+4. 确认理解无偏移后删除本文件并提交；
+5. 从`task_plan.md`的G1 native-factor task-local capacity oracle开始，不先训练fresh Program/compiler/joint Writer；
+6. 不设人为阶段工期或修正次数上限，但要积极复用/并行/提速，顺利时力争数天内完成整体架构实现并推进关键Gate；
+7. formal launch前遵守clean pushed commit与frozen worktree合同。

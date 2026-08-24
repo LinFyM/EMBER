@@ -6,6 +6,10 @@
 专家1416行回复已逐字保存于`docs/expert_review_20260824_native_factor.md`（仅将CRLF标准化为LF，逐行内容无差异）。本文是将
 专家原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。
 
+owner后续明确取消专家原文中的阶段工期估计、固定修正次数、结构版本上限和训练轮数上限。本文保留专家的Gate与失败定位逻辑，
+但不把时间或尝试次数当停止条件；修正必须由新证据驱动，整体推进应在保质前提下尽可能快，顺利时力争数天内完成完整架构实现
+并推进关键Gate。
+
 人工process数据、神经`q_pi`、fixed effect-code realizer、fit-task fixed span、PECS/GOMQ/v24和并行旧Writer均不属于本路线。
 
 ## 1. 核心裁决
@@ -161,7 +165,7 @@ B_final_j A_final_j = B_carrier_j A_carrier_j + B_task_j A_task_j
 
 最终仍是一套76 tensors、38 targets、rank16 LoRA，没有cross terms、second adapter或并行expert。
 
-只有同时证明native bank能表示task update、rank4 free-code已经收敛、剩余误差确由rank ceiling造成，并且一次同构full-rank16 oracle
+只有同时证明native bank能表示task update、rank4 free-code已经收敛、剩余误差确由rank ceiling造成，并且同构full-rank16 oracle
 显著通过，才重开完整task rank16诊断并据结果重新分配carrier/task rank。无论如何仍输出唯一一套完整rank16 LoRA，不增加第二
 adapter。这一证据分支是正式设计的一部分，不能把12+4误记成永久硬约束。
 
@@ -192,7 +196,7 @@ segmenter、Dynamic-K alignment/aggregation、rank queries、native bank key/que
 Program与compiler分别通过后必须联合解冻全部Writer；backbone与carrier始终冻结。outer credit只更新event posterior、Program、rank
 attention和scale，不直接扰动百万级A/B tensor。
 
-Action Meta只在base Writer出现明确闭环增量后做一次matched attempt，Stage 0/compiler冻结。只有明确净收益且无breadth/retention
+Action Meta只在base Writer出现明确闭环增量后做matched controls，Stage 0/compiler冻结。只有明确净收益且无breadth/retention
 损害才启用并永久冻结；否则保持关闭，不再把中性结果解释为加入理由。
 
 ## 8. 数据authority与fold
@@ -211,11 +215,11 @@ Action Meta只在base Writer出现明确闭环增量后做一次matched attempt�
 专家原回复按概念依赖把Natural Program列为Stage 1、capacity oracle列为Stage 2，但最终明确capacity oracle是当前唯一下一步，
 通过后才训练fresh Program。为避免编号混淆，仓库使用以下实际序列。
 
-### G0. Authority冻结（半天，CPU）
+### G0. Authority冻结
 
 固定fold manifests、baseline rows、carrier/task-expert/effect authority和role-balanced sampler，不做模型选择，不创建新数据。
 
-### G1. Native-factor task-local capacity oracle（约1个工作日；当前唯一下一步）
+### G1. Native-factor task-local capacity oracle（当前首个机制Gate）
 
 先实现真实q/v/action-in/action-out input/output hooks与Program-conditioned signed rank4 compiler。使用冻结的现有Stage 0 v3、fold0
 held5自然teacher videos、known successful experts/mobile projections和carrier43；不碰validation/test。
@@ -232,10 +236,11 @@ loss：global-member effect、sensitivity-normalized effective update、independ
 - carrier successes保留至少33/43；
 - single complete rank16，strict pairing，无second adapter。
 
-失败时只允许一次read-only span分析和一次hook/pooling实现修正。再次失败即停止Native-Factor主线，不训练Program/compiler，也不得把
-失败归因于数据量。
+失败时先做read-only span与response分析，定位native bank、hook、pooling或优化的最早问题，再进行有机制依据的修正和复评。修正
+次数不预设上限，但每次必须带来新的可检验证据，不能退化为slot/width/seed版本链。只有充分修正后证据持续表明native basis本身
+不可达，才停止Native-Factor主线；不得仅因一次或预定次数的non-pass把失败归因于数据量。
 
-### G2. Natural Program训练（约1--2个工作日）
+### G2. Natural Program训练
 
 仅在G1通过后，使用meta56+target-fit19、exact language、自然action-hidden videos，`K`均匀采样1/2/4，stride5并保留端点；video
 demos与functional/action query episodes错开。允许从现有demonstrations派生action chunks、gripper/contact、BDDL progress、object
@@ -253,10 +258,10 @@ shuffled/reversed不进入训练。
 - full相对first+final在held action/progress loss上改善至少10%；
 - `K=1` identity与K permutation invariance通过。
 
-失败说明Program仍是task/endpoint code，不进入LoRA训练。只允许一次修正，范围限于native capture、event grounding或owner-specific
-language/scene；不修改slot数、width、seed形成版本链。
+失败说明Program仍是task/endpoint code，暂不进入LoRA训练。修正聚焦native capture、event grounding或owner-specific
+language/scene；不设次数上限，但每次都要针对已定位机制并重新通过同一资格门，不能靠slot数、width、seed形成无信息版本链。
 
-### G3. Frozen-Program shared compiler（约2--3个工作日，最多一个结构版本）
+### G3. Frozen-Program shared compiler
 
 使用meta56+target-fit19、K=1/2/4自然videos、现有95-task/118-member evidence，跨episode采样并保持两种task role各50%。冻结Program，
 只训练Program-to-rank query、signed pooling、target scales和bounded K correction。
@@ -268,9 +273,10 @@ held5门比较carrier、learned language-only、full、first+final、same-task-o
 carrier至少33/43、Goal或Long至少一个非零、full相对language-only与first+final各净增至少5、same-task retention至少80%。
 
 若G1很强而shared compiler低于carrier或breadth不超过2，结论是当前source-unseen mappings不足以学习该共享映射；不得用joint
-training掩盖失败。
+training掩盖失败。可以依据mapping、factor selection或critic的具体证据修正并复评，不设结构版本上限；无机制差异的小变体不算
+有效推进。
 
-### G4. Joint Writer（每轮约2--4个工作日，最多两轮）
+### G4. Joint Writer
 
 只有G3有真实闭环信号才解冻全部Writer，继续冻结backbone、carrier和task experts。
 
@@ -282,16 +288,17 @@ label。
 至少两个train24 folds分别要求：oracle-normalized recovery至少0.40、breadth 5/5、Goal/Long均非零、carrier retention至少75%、
 same-task retention至少85%、相邻checkpoint差不超过10且success-set Jaccard至少0.75、full相对first+final和language-only均有正增量。
 
-若G3有信号而joint崩落，只允许一次冻结compiler、Program proximal/EMA和更低Program LR的恢复；不再改architecture/slot/rank/seed。
+若G3有信号而joint崩落，优先尝试冻结compiler、Program proximal/EMA、更低Program LR或其它由崩落证据直接支持的稳定化方式。
+不设joint轮数或修正次数上限，但不得无依据地扫architecture/slot/rank/seed。
 
-### G5. Structured outer credit（条件阶段，约2--3个工作日）
+### G5. Structured outer credit（条件阶段）
 
 只有G4已证明full高于carrier、language和endpoints且breadth成立才进行。仅在fit/meta natural tasks上用task-equal CRN rollouts优化event
 posterior、Program、rank attention和scales；reward包括success、BDDL progress、efficiency、carrier/full paired advantage和retained-
 success barrier。
 
-只允许一个estimator family。两个预注册outer节点的最终节点必须相对G4净增至少10 held successes，且breadth、Goal/Long、
-same-task retention不下降；两节点均无净改善即停止该estimator，不扫seed/sigma/step。
+预注册outer评测节点必须相对G4净增至少10 held successes，且breadth、Goal/Long、same-task retention不下降。无净改善时先分析
+credit estimator的失效机制；允许有依据地修正或更换estimator，不设family或尝试次数上限，但不做无信息的seed/sigma/step扫。
 
 ## 10. Final fresh训练与部署
 
@@ -342,5 +349,6 @@ static-first-repeated、first-only、final-only、first+final，最后才跑shuf
 继续复用：Stage 0 v3、full-layer/horizon capture、transition matcher、event binding/segmenter、strict evaluator/controls、task expert bank、
 successful members、effect calibration、probe-particle capture、carrier/mobile-rank4容量证据，以及natural occupancy/action/reward基础设施。
 
-当前尚未实现且下一session首先负责：真实38-target native input/output hooks、chunked bank accumulator、signed rank4 compiler、free-code
-oracle optimizer及其strict250 evaluation wiring。它们必须形成一个canonical实现面，不恢复任何退役Writer或realizer。
+当前尚未实现且下一session完成全仓库orientation后首先负责：真实38-target native input/output hooks、chunked bank accumulator、
+signed rank4 compiler、free-code oracle optimizer及其strict250 evaluation wiring。它们必须形成一个canonical实现面，不恢复任何
+退役Writer或realizer。

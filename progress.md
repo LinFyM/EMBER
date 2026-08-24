@@ -11,7 +11,7 @@
 active design明确是解释/执行层，不能替代原文。
 
 本轮没有启动GPU训练、没有实现新Writer、没有向专家发送任何消息。当前有意停在跨session交接点；下一session消费
-`HANDOFF.md`后才开始G1 capacity oracle。
+`HANDOFF.md`前先完成全仓库只读orientation并向owner复述理解，确认目标、证据、资产和计划无偏移后才开始G1 capacity oracle。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -32,6 +32,9 @@ Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer i
 owner已接受专家的Action Meta门槛：只有base Writer先产生明确闭环增量，matched Action Meta又有明确净收益且无breadth/retention
 损害时才加入，否则保持关闭。rank12 carrier + mobile rank4是首版有证据配置，不是永久锁死；active design保留了rank-ceiling
 诊断通过后重开分配的正式分支。
+
+owner最新取消所有人为阶段工期、固定修正次数、结构版本和训练轮数上限。Gate与失败定位仍保留；有新机制证据可继续修正，
+无信息超参小扫不算推进。执行应积极复用、并行和提升吞吐，顺利时力争数天内完成整体架构实现并推进关键Gate。
 
 ## 本轮仓库整理结果
 
@@ -67,7 +70,8 @@ owner已接受专家的Action Meta门槛：只有base Writer先产生明确闭�
 ## 交接动作
 
 1. 当前session完成文档一致性与Git审查，提交并推送；
-2. owner开启新session；
-3. 新session完整读取mandatory docs与`HANDOFF.md`，核对当前HEAD；
-4. 删除已消费的`HANDOFF.md`并提交；
-5. 按`task_plan.md`从G1开始自主推进，只在关键Gate、显著跃升或真实权限/路线歧义时暂停。
+2. owner用交接prompt开启新session；
+3. 新session完整读取mandatory docs、专家原文和`HANDOFF.md`，只读盘点代码/数据/脚本/formal assets并核对HEAD；
+4. 向owner复述EMBER目标、架构、证据、资产、缺口和计划，修正发现的冲突；
+5. 删除已消费的`HANDOFF.md`并提交；
+6. 按`task_plan.md`从G1开始自主推进，只在关键Gate、显著跃升或真实权限/路线歧义时暂停。

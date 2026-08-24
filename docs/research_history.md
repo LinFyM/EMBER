@@ -125,7 +125,28 @@ acquisition和SFT式recovery family全部取消，不再作为Stage 1前置。�
 次数随后被owner明确取消为当前硬约束；专家原始审查快照早于
 `6fdaeb8`仓库瘦身；后者没有新增科学结果，因此不影响裁决。当前保留代码也验证了其指出的q/v native target hook缺口。
 
-## 10. 当前保留结论
+## 10. G1 Native-Factor首轮与scalar-output失效证据
+
+G1首轮canonical实现提交为`9a6f434`。fold0 held5 task-local free-code formal优化后，唯一rank12+4 rank16 adapter的paired
+strict250为`88/250`，逐task`33/18/37/0/0`；relative recovery为`0.6716`，breadth3/5、高于carrier 2/5、carrier retention
+30/43，因此Gate non-pass。250 rows、47 shards、15 workers、Action Meta关闭与single-adapter合同均正常。
+
+提交`822147b`加入的只读分析证明，scalar signed output pooling把q factor限制在base q weight的1024维列空间（输出2048），把
+action-in限制在32维列空间（输出1024）；15个known-success mobile-rank4 reference只保留约55--56%总update energy。将
+independent member正交投影到该输出上限后，paired strict250为`109/250`、逐task`34/30/45/0/0`；未投影authority为`120/250`，
+Goal/Long为`11/8`。因此被排除输出方向对Goal/Long具有闭环必要性，最早问题是scalar q-output bank，不是实现故障、seed或训练时长。
+
+当前机制修正在每个真实q attention head内独立做signed pooling，再拼回原生2048维；候选索引、真实Y、rank4、carrier12和唯一rank16
+合同不变。该修正已通过CPU合同和真实CUDA一步smoke，但本历史节点尚无修正后的formal Gate结果。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_native_factor_g1_held5_formal_9a6f434_gpu01p34567_20260824/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_free_code_step500_strict250_9a6f434_gpu01p34567_r3_20260824/`；
+- `runs/analysis/pi05_ecp_native_factor_g1_output_span_response_822147b_gpu01p3_20260824/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_output_span_independent_strict250_822147b_gpu01p34567_r3_20260824/`。
+
+## 11. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -135,7 +156,7 @@ acquisition和SFT式recovery family全部取消，不再作为Stage 1前置。�
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 11. 证据恢复方式
+## 12. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

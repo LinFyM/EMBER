@@ -13,10 +13,19 @@ active design明确是解释/执行层，不能替代原文。
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。当前只推进G1 task-local free-code capacity oracle；没有恢复
 旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
 
-G1 canonical实现面已接通并通过CPU定向合同与一次真实CUDA profile smoke：真实38-target native input/output hooks、
-abs/adj/init/goal output banks、跨chunk边界状态、task-local positive/negative signed pooling、rank4 outer products、small-core SVD、
-唯一rank12+4 rank16 adapter、四类loss/optimizer/checkpoint、static task-LoRA strict evaluator和four-arm Gate report均已实现。
-formal held5 optimization与strict250尚未启动；它们必须来自clean pushed commit的detached frozen worktree。
+G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
+`45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
+`non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。
+
+按Gate合同完成的read-only span/response分析定位到当前scalar output pooling的结构性上限：对任一target，signed absolute/adj/init/goal
+组合仍位于base weight列空间；q只能覆盖`1024/2048`输出维，action-in只能覆盖`32/1024`。15个known-success mobile-rank4
+reference整体只保留约55--56% update energy。将independent member正交投影到该上限后的paired strict250为`109/250`，逐task
+`34/30/45/0/0`；原independent mobile authority为`120/250`且Goal/Long为`11/8`，投影单独抹掉了两个process-sensitive suite。
+
+当前有机制依据的单变量修正是：保持`n_B=(video,frame,probe,horizon,type)`候选不变，把真实q output恢复为PI0.5原生
+`[8 heads,256]`布局，每个真实q head独立做positive/negative signed normalization，随后拼回2048维factor；v/action-in/action-out
+暂不改变。新路径CPU合同与task93真实CUDA profile smoke均通过，全部五类free variables有非零梯度，峰值约28.33GB，输出仍是
+38-target/76-tensor唯一rank12+4 rank16，Action Meta module/parameter为0；尚未形成修正后的formal Gate结论。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -75,13 +84,16 @@ G1--G5 Gate或架构修正依据。
 - task 90的一步真实优化中`rank_queries/event_logits/input_logits/output_logits/scale_logits`均有有限非零梯度；
 - 峰值allocated约27.24GB A40显存；输出checkpoint为single complete rank16、76 tensors、carrier slots`[0,12]`与task slots`[12,16]`；
 - profile输出已核对后删除，不作为formal evidence。
+- q-head修正后task93一步真实profile中`output_logits`的16,793,600个元素全部获得非零梯度，其余四类free variables也全部非零；
+  peak allocated为28,332,442,624 bytes，single complete rank16与纯Native/Action-Meta-off合同保持不变。
 
 ## 当前下一步与延期漂移
 
-1. 完成最终review与全量CPU回归，集成并推送`main`，清理已完成的实现worktree/branch；
-2. 从该clean pushed commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，
-   再启动5-task formal optimization；
-3. formal完成后以唯一完整rank16 task bank跑free-code strict250，并与carrier43、direct108、mobile110形成Gate报告；
+1. 完成q-head修正的全量CPU回归、diff审查与clean pushed main集成；
+2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，
+   fresh重跑5-task formal optimization；
+3. 以修正后的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，继续按最早失效接口做
+   span/response分析，不以步数、seed或LR小扫替代机制证据；
 4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G1--G5。

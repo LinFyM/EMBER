@@ -16,10 +16,13 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
 - [x] 接通四类G1 loss、optimizer、checkpoint、静态task-LoRA evaluator和four-arm Gate report；
 - [x] 用最小真实CUDA forward/gradient/materialization smoke证明全部free variables有有限非零梯度、Action Meta实际未加载、
   source/Stage 0无trainable parameter且checkpoint为38-target/76-tensor rank16；
-- [ ] 完成最终代码/测试/diff审查，集成并推送`main`，建立detached frozen formal worktree；
-- [ ] live复查gpu01/gpu02与storage quota，启动5-task formal optimization；
-- [ ] 物化held5 adapters并完成free-code strict250；
-- [ ] 形成G1 Gate结论；non-pass时定位最早失效接口并以机制证据修正后复评。
+- [x] 完成首轮代码/测试/diff审查，集成到clean pushed`main@9a6f434`并从detached worktree执行formal；
+- [x] 完成首轮5-task optimization、唯一rank16 strict250与four-arm Gate：`88/250`、breadth3/5、Goal/Long 0，结论non-pass；
+- [x] 完成read-only output span与paired response projection，定位scalar q-output pooling的列空间上限，并以`109/250`、
+  Goal/Long仍为0验证被排除方向具有闭环后果；
+- [x] 实现真实q八头独立signed measure修正，并通过CPU合同及task93真实forward/gradient/materialization smoke；
+- [ ] 完成修正diff审查、全量CPU回归、main集成与detached formal worktree；
+- [ ] fresh重跑5-task formal optimization、strict250与同一G1 Gate；若仍non-pass，继续定位最早失效机制并复评。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 
@@ -63,6 +66,8 @@ selection形成强闭环mobile rank4 residual。
    sum外，还须按video保持首帧、末帧及跨chunk previous activation，并与non-chunked reference数值等价；
 4. 实现two-branch signed pooling、per-target scales、rank4 outer products与small-core SVD canonicalization；G1允许直接优化task-local
    selection logits/weights，不要求共享Program-query到candidate-key映射；
+   首轮证据已证明对q的整条2048维value强制共享一个scalar measure会把所有输出限制在base-weight的1024维列空间；当前修正保持
+   原candidate index和真实Y值不变，只按PI0.5原生八个query heads分别归一化signed measure并拼接，v/action-in/action-out不变；
 5. 实现每task free-code optimizer，只优化4 rank queries、event weights、输入/输出pooling weights或logits和scales；`K>1`时固定
    `beta_k=1/K`并做video内assignment归一化，`K=1`为identity，不学习video reliability；
 6. 明确走纯Native Stage 0 observer加载路径，在run contract与最小真实forward中核对实际module/trainable parameter，证明Action Meta

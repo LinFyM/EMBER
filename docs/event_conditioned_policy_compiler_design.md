@@ -266,6 +266,17 @@ loss：global-member effect、sensitivity-normalized effective update、independ
 次数不预设上限，但每次必须带来新的可检验证据，不能退化为slot/width/seed版本链。只有充分修正后证据持续表明native basis本身
 不可达，才停止Native-Factor主线；不得仅因一次或预定次数的non-pass把失败归因于数据量。
 
+首轮scalar-output实现的formal结果为`88/250`、breadth3/5、Goal/Long 0。随后解析证明：对linear target，整条输出vector共享一个
+signed scalar measure时，absolute bank的bias因两分支质量相等而抵消，四类output value均受限于`column_space(W)`；q只能覆盖
+`1024/2048`维，action-in只能覆盖`32/1024`维，known-success rank4能量总体仅保留约55--56%。paired response projection又把
+independent mobile从`120/250`、Goal/Long=`11/8`变为`109/250`、Goal/Long=`0/0`，因此最早失效接口是q-output scalar pooling，
+不是训练轮数。
+
+当前G1修正保持输出候选索引`n_B=(k,t,p,h,u)`、四种type和真实native Y完全不变；只把q value按PI0.5真实的八个query heads
+恢复为`[8,256]`，同一event measure下每个head独立进行positive/negative softmax归一化，再拼接成2048维`b`并做既定factor
+normalization。它不复制候选、不增加fake type或非native value，也不引入task/frame route。v、action-in、action-out首轮保持整vector
+一个signed measure，以便一次只修正有闭环证据的最早接口；若复评仍失败，再依据新span/response证据决定是否处理action-in或优化面。
+
 ### G2. Natural Program训练
 
 仅在G1通过后，使用meta56+target-fit19、exact language、自然action-hidden videos，`K`均匀采样1/2/4，stride5并保留端点；video

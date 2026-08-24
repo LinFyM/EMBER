@@ -110,6 +110,20 @@ controls都完成后仍系统失败，才足以判定现有数据/zero-interacti
 fresh development recipe。两者的精确顺序、validation8是否并入32-task refit以及如何保持Test8 sealed尚未裁决。该问题
 延迟到Final前由owner确认，不阻塞G1--G5，也不得在此前为任一种解释启动数据合并或训练。
 
+### 14. G1首轮最早失效接口是scalar native-Y输出空间
+
+首轮free-code strict250为`88/250`，逐task`33/18/37/0/0`，Gate non-pass。该结果不能用loss解释为通过，但也不是
+Native-Factor根本失败：Object/Spatial已有强闭环信号。read-only解析证明，对冻结linear target有`Y=W X+b`，而positive/negative
+两个softmax各自质量为1，所以signed absolute bank中的bias抵消，adj/init/goal也全部位于`column_space(W)`。因此18个q target的
+scalar pooling至多覆盖`1024/2048`输出维，action-in至多覆盖`32/1024`；15个known-success mobile-rank4 reference整体仅保留
+约55--56% update energy。
+
+闭环response诊断进一步把同一independent mobile member从`120/250`、Goal/Long=`11/8`投影为`109/250`、Goal/Long=`0/0`，
+而三个Spatial/Object task仍为`34/30/45`。这说明被scalar q measure排除的方向对process-sensitive task是必要的。当前只改变这一
+最早接口：候选索引仍为`(k,t,p,h,u)`，真实q value按模型原生八个query heads恢复为`[8,256]`，各head独立做signed measure后
+拼回2048维；不增加fake type、task route或非native value。action-in虽也有解析上限，但其在reference总能量中的剩余影响约
+0.07--0.13%，当前不同时改第二个主要变量。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
@@ -126,9 +140,8 @@ fresh development recipe。两者的精确顺序、validation8是否并入32-tas
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- G1现已实现38-target native input/output hooks、chunked online bank accumulator、task-local signed rank4 free-code optimizer、
-  rank12+4唯一rank16 materialization、静态task-LoRA evaluator与four-arm Gate report；一次真实profile smoke已证明全部free variables
-  有非零梯度且Action Meta未加载，但尚无formal optimization或closed-loop结论，因此不能把实现接通误写成G1通过。
+- G1首轮formal已形成`88/250` non-pass及完整Gate；q-head机制修正已通过真实profile smoke但尚未formal复评，因此既不能把首轮
+  non-pass扩大成Native-Factor根本失败，也不能把修正接通误写成G1通过。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。

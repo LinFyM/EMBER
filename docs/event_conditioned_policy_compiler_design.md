@@ -1,14 +1,23 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-24 **GOMQ真实rank16已以`136/400`归档，首个process pair在teacher Gate A以`19/100`关闭；
-Phase 2A known-success effect-path calibration以15/15路径全门通过。当前执行Phase 2B/2C fixed effect-code与
-mobile-rank4 deployment realizer，process acquisition有界修正与之并行。**
+状态：2026-08-24 **goal paused，当前没有active GPU job。GOMQ真实rank16以`136/400`归档；process Gate A/A2/A3
+分别为`19/100、44/100、37/100`，两个step1000 composite SFT也未通过state0。Phase 2A的15/15 known-success paths通过，
+但两种principled shared-realizer坐标均未过held closed-loop门，当前fit90 shared-realizer family关闭。最新专家复核取消
+现有`347/500`步phase-expert distillation；唯一候选后继为second-phase composite-context recovery teacher Gate，待owner
+理解确认后才执行。fresh Program、`q_pi/q_V`、joint Writer和outer credit均未启动。**
 旧ECP Stage 1 v1--v24、MDCO、PECS及本轮oracle的精确实现、结果和退出原因由`docs/research_history.md`、Git与formal
 artifacts保存；最新裁决为
 `docs/evidence/ecp_20260824/ecp_effect_path_calibration_gate_20260824.json`。
 本次方案对齐、专家最终修正与执行顺序见`docs/ecp_expert_alignment_audit_20260824.md`第9节。
+最新process teacher标签审计、替代步骤与停止条件见`docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
 
 ## 1. 当前裁决
+
+最新process acquisition裁决先于以下长期架构边界：现有on-policy phase-expert distillation只覆盖student states，未证明
+primitive expert在这些composite occupancies上是可靠continuation oracle；其完整50步标签还可能越过真实phase切换。
+因此该训练在启动前取消，已采集数据只作weak-teacher诊断。process路线只允许用A3真实成功轨迹的second-phase动作训练
+两个direction-specific recovery experts，并以冻结primitive first-phase + recovery second-phase的controller重跑原Gate A；
+失败后停止当前task65/68 SFT式teacher acquisition family。
 
 ECP的核心目标与Stage 0候选表示尚未被证伪，但以下**实际检验过的实现组合**已经有足够反证，不再恢复或做小变体：
 

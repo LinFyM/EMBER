@@ -1993,3 +1993,26 @@ composite policy forward仍只有当前observation与统一language。
 `ceil(2*3998/16)=500`。两者均从各自step1000 adapter权重warm-start但使用fresh optimizer；peak LR `1e-5`已经在采集前冻结，
 只保留final checkpoint。证据：
 `docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`。
+
+## 96. Student occupancy coverage不能替代teacher continuation authority
+
+最新专家对`main@d8eca7987a4ad2a59c5d27738b29a8d4d9bfd161`的复核确认，当前on-policy phase-expert采集只解决了
+`state ~ d(student)`，没有解决`phase expert(state)`是否是能保持已完成goal并最终完成composite task的正确动作。
+A2/A3已经证明primitive experts在post-sibling-goal occupancy上不可靠；当前采集又没有从query state实际执行teacher
+continuation或记录continuation success/progress，因此不能把这些预测升级为oracle label。
+
+完整50步监督还有独立语义错误：真实phase controller会在event完成后丢弃旧chunk、切换expert并基于新观测重新规划；当前
+dataset却把查询时primitive expert的全部50步标为有效，reader不读取phase boundary也不mask切换后的tail。长失败episode按query
+等权、没有成功数据rehearsal，进一步放大了最不可靠状态的训练权重。因此已准备的`347/500`步训练在启动前取消，现有
+`2773/3998` queries只保留为student occupancy与weak-teacher response资产。该结论淘汰当前distillation target，不淘汰
+on-policy aggregation一般；后者必须同时具备verified continuation oracle和phase-consistent action target。
+
+当前唯一有界修正是从A3的28/9条真实成功episode中截取second-phase执行片段，分别与对应primitive成功数据按50/50混合，
+从原primitive LoRA初始化`yellow-white-after-red`与`red-after-yellow-white`两个recovery experts。first event继续使用冻结
+primitive，event切换后丢弃旧chunk并由recovery expert重新规划第二event。该controller必须在原100-row Gate A达到双向各
+`>=20/50`、total `>=50/100`且invalid/route/pairing/泄漏全为0；失败后停止task65/68上的primitive composition、composite SFT、
+phase-expert distillation和recovery SFT，不做第二轮DAgger或同机制family替换。
+
+这项裁决不重开当前fit90 shared-realizer family，也不意味着ECP Writer已开始。ECP仍同时缺可靠process-identifying composite
+teacher与可跨任务泛化的deployment-compatible realizer；recovery Gate通过只授权Gate B，随后才可能扩process suite与fresh
+Stage 0。完整裁决见`docs/ecp_recovery_teacher_expert_ruling_20260824.md`。

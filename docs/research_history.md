@@ -1570,6 +1570,32 @@ step1000 LoRA权重warm-start、fresh optimizer、peak LR `1e-5`，不按behavio
 
 证据：`docs/evidence/ecp_20260824/ecp_composite_teacher_distillation_data_20260824.json`。
 
+### 3.81 专家取消现有distillation并固定composite-context recovery teacher Gate
+
+独立专家对远程`main@d8eca7987a4ad2a59c5d27738b29a8d4d9bfd161`复核后，明确判定已封存但未启动的
+`347/500`步on-policy phase-expert distillation不应执行。采集虽然覆盖两个step1000 composite policies自己的固定100-row
+occupancy，却直接把已经在A2/A3 composite occupancy上失败过的primitive experts当成动作oracle；代码没有从query state执行
+teacher continuation，也没有验证当前goal完成、已完成goal保持或最终composite success。
+
+监督目标另有独立phase语义错误。真实privileged controller在event完成时丢弃旧action chunk、切换expert并重新规划；当前
+HDF5和reader却把查询时primitive expert的完整`[50,7]`全部当作有效标签，不读取phase boundary或mask切换后的tail。较长失败
+episode又按query自然获得更大权重，且没有混入原37条成功轨迹保护success support。因此训练无论提高或降低Gate A，都不能
+清楚区分weak oracle、phase-tail错位、occupancy coverage、SFT优化和static LoRA能力。现有数据改作student occupancy与
+weak-teacher response历史资产，不再是formal oracle训练集。
+
+专家确认路线在GOMQ、Gate A/A2/A3、37条成功轨迹bootstrap、两个composite SFT、effect-path calibration和两种realizer裁决
+之前总体对齐；偏移从composite SFT闭环失败后重新升级primitive experts为student-state oracle开始。当前唯一下一步骤改为：
+从A3的28/9条真实成功轨迹截取second-phase动作，分别与对应primitive成功数据按50/50混合；从原primitive LoRA初始化两个
+direction-specific rank16 recovery experts。正式controller在first event使用冻结primitive，phase transition时丢弃旧chunk，
+second event使用recovery expert。原100-row Gate A及双向各`>=20/50`、total `>=50/100`、invalid/route/pairing/泄漏全为0的门
+保持不变。
+
+若该recovery teacher仍失败，则task65/68上的primitive composition、composite SFT、phase-expert distillation与recovery SFT
+共同关闭，不做第二轮DAgger、训练延长、超参扫描或task66/67同机制替换；下一process controller必须来自独立成立并先过Gate A
+的scripted planner、human/teleoperation、privileged MPC或task-local simulator RL。当前fit90 shared-realizer family继续关闭；
+recovery Gate即使通过也只授权Gate B，不等于fresh Stage 0、`q_pi/q_V`或Writer已经启动。完整裁决：
+`docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

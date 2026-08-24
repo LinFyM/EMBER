@@ -7,6 +7,7 @@
 
 - current design contract：`docs/event_conditioned_policy_compiler_design.md`（专家最终修正已纳入，恢复执行）；
 - ECP全过程对齐审计与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节；
+- 最新composite recovery teacher专家裁决：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`；
 - completed falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`；
 - completed capacity card：`docs/ecp_fixed_a_capacity_card_20260823.md`；
 - completed mixed capacity card：`docs/ecp_rank4_residual_capacity_card_20260823.md`；
@@ -37,7 +38,7 @@
 - composite bootstrap data evidence：
   `docs/evidence/ecp_20260824/ecp_composite_teacher_bootstrap_data_20260824.json`；
 - completed fixed-step1000 composite expert contract：`docs/ecp_composite_teacher_expert_gate_20260824.md`；
-- active one-round on-policy distillation/Gate A4 successor：
+- cancelled-before-launch on-policy phase-expert distillation历史合同：
   `docs/ecp_composite_teacher_distillation_gate_20260824.md`；
 - composite step1000/preformal state0 evidence：
   `docs/evidence/ecp_20260824/ecp_composite_teacher_step1000_preformal_20260824.json`；
@@ -59,12 +60,13 @@
   `runs/analysis/ecp_fixed_effect_code_fold0_e05ffca_gpu01p1_20260824/manifest.json`；
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
-- active goal：完整实现并验证EMBER-ECP；goal仍在进行中；
+- goal：完整实现并验证EMBER-ECP；当前状态为paused；
 - canonical workspace：本仓库`main`；最新formal evaluation authority为clean pushed `4bf5039`，最新formal training authority为
   clean pushed `38dbffd`。当前没有active GPU job。
   process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
-  shared-realizer与phase-composed primitive-teacher mechanisms关闭。Gate B、process suite、fresh Program、`q_pi/q_V`及
-  joint Writer均未启动。
+  shared-realizer与phase-composed primitive-teacher mechanisms关闭。现有`347/500`步phase-expert distillation经专家复核
+  取消启动；下一候选是composite-context recovery teacher Gate，但在owner理解确认前不实现或启动。Gate B、process suite、
+  fresh Program、`q_pi/q_V`及joint Writer均未启动。
 
 ## Current scientific state
 
@@ -124,12 +126,15 @@
   primitive phase expert能在相同observation/noise近乎精确复现标签。composite checkpoint在原transition observation上可改善
   executed-prefix误差，且yellow完整50-token误差优于source，却仍在自身闭环occupancy失败。最早接口是successful-trajectory
   50-token SFT缺少policy自身访问与恢复状态，不是再延长SFT或扫超参。
-- 当前唯一active修正为一轮on-policy phase-expert distillation：固定step1000 composite policy访问原50 states，phase expert仅在
-  训练采集时按相同observation/noise提供50-step privileged label；从step1000权重fresh optimizer固定训练两遍数据，再直接回到
-  不变Gate A4。formal采集已从clean pushed detached `7527568`在gpu01 physical1--6完成：red/yellow分别有
-  `2773/3998` queries、固定50/50 episodes、behavior successes `5/5`、invalid `24/0`，六个shard总计约1.5GB；没有按
-  outcome筛选。训练reader、100个唯一state groups、shape和finite门均通过。由`ceil(2Q/16)`机械派生唯一final steps为
-  `347/500`，peak LR已在采集前固定为`1e-5`；正式训练尚未启动，Gate B仍未授权。
+- 一轮on-policy phase-expert数据采集已从clean pushed detached `7527568`完成：red/yellow分别有`2773/3998` queries、
+  固定50/50 episodes、behavior successes `5/5`、invalid `24/0`，六个shard约1.5GB且没有按outcome筛选。最新专家复核确认，
+  该数据只满足student-state coverage，却没有验证primitive expert在这些composite states上的continuation correctness；同时完整
+  50步标签可能跨越真实phase切换，reader又不遮掉tail。因此派生的`347/500`步正式训练已在启动前取消，数据只作
+  student-occupancy/weak-teacher response资产，不再作为oracle训练集。
+- 当前唯一候选科学后继是composite-context recovery teacher：从A3的28/9条真实成功轨迹截取second-phase执行动作，分别与
+  对应primitive成功数据按50/50混合，从原primitive LoRA初始化两个direction-specific recovery experts；第一event仍由冻结
+  primitive执行，切换后由recovery expert完成第二event。它必须直接通过原Gate A；失败后整个task65/68 SFT式teacher
+  acquisition family停止。当前仅记录该裁决，owner理解确认前不执行。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。
@@ -238,6 +243,13 @@
 18. 从clean pushed detached `24c5bdc`在gpu01 physical`1,2,3,4,5,7`完成phase-expert teacher的100行Gate A2；
     6 workers全部返回0，100 ledgers、50对state/noise与44条public videos完整。结果`0/50、44/50`、总计
     `44/100`，未达双向与总量门；Gate B与后续process suite未启动。
+19. 从clean pushed detached `4bf5039`完成task65/68 Gate A3，结果`28/50、9/50`、total `37/100`；37条success完整保留。
+20. 从clean pushed detached `b8fb0bf`将37/37成功轨迹无损replay成28/9条composite HDF5；两个step1000 composite SFT随后
+    完成但state0双向non-pass。
+21. 从clean pushed detached `7527568`完成100-row on-policy matched采集，两个composite behavior均为`5/50`；采集得到
+    `2773/3998` weak-teacher queries，但训练未启动。
+22. 最新专家复核判定该distillation的oracle authority与full50 phase-tail目标不成立，取消formal training，并把唯一后继改为
+    second-phase composite-context recovery teacher Gate；当前goal paused且没有GPU job。
 
 ## Completed fixed-A capacity diagnostic
 
@@ -325,7 +337,8 @@
   LIBERO-90 task55/56的正式source panels则均为`50/50`成功，成功步数median分别为`123.5`与`107`。首个pair因此可优先用privileged phase
   switch串联现成primitive，而不先重训teacher。custom language不能通过当前benchmark-locked environment pool，正式实现需独立
   meta manifest/collector并共享唯一temporal wrapper，不放松target40 asset gate。
-- 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、balanced-SVD learned realizer fold0与two-sided
-  coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed primitive experts也已在
-  shared-tray与separate-plates两类family上失败。28/9条order-specific composite privileged数据已通过；下一步按固定
-  step1000合同训练两套完整composite experts并运行Gate A4，通过前不运行Gate B。后续deployment bridge仍必须重新建立。
+- 当前没有active GPU job。Phase 0已归档；process Gate A/A2/A3、两个step1000 composite SFT、balanced-SVD learned
+  realizer fold0与two-sided coordinate Gate均为non-pass。旧shared-realizer family没有剩余预注册successor；phase-composed
+  primitive experts也已在shared-tray与separate-plates两类family上失败。现有phase-expert distillation训练已取消；唯一候选
+  下一步是用28/9条成功轨迹的second-phase动作与primitive成功数据训练两个recovery experts，并重跑不变Gate A。它通过前不运行
+  Gate B；owner理解确认前不执行。后续deployment bridge仍必须重新建立。

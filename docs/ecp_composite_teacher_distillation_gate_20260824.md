@@ -1,5 +1,11 @@
 # ECP composite teacher 一轮on-policy phase-expert distillation合同
 
+> **状态：2026-08-24专家复核后取消执行。** 本文保留为历史上已冻结但未启动的实验合同；其`347/500`步训练不得启动。
+> 专家确认当前primitive phase expert没有在student composite occupancy上建立oracle authority，且完整50步标签可能跨越
+> phase边界，与真实中途切换expert并重新规划的controller语义不一致。已采集`2773/3998` queries只作为student occupancy
+> 与weak-teacher response资产归档。当前裁决与替代步骤见
+> `docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
+
 ## 1. 当前裁决
 
 两个order-specific composite LoRA已经按冻结合同从Gate A3成功轨迹分别训练到step1000。训练工程合同完整、loss正常下降，

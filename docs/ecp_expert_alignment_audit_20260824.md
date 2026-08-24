@@ -1,5 +1,9 @@
 # EMBER-ECP 全过程专家对齐审计
 
+> **后续裁决更新：** 本文第9节仍是ECP总体阶段与架构依赖的authority；但在其后执行中，现有on-policy phase-expert
+> distillation被专家判定为标签authority与50步phase-tail语义不成立，取消启动。当前process teacher的唯一后继与停止条件见
+> `docs/ecp_recovery_teacher_expert_ruling_20260824.md`。
+
 状态：2026-08-24 **专家复核已完成**。第1--8节保留提交复核时的原始自查，便于追踪哪些判断由仓库先提出；
 第9节记录专家对`main@6a97185126ab640c3f9a6a719084dc0268ddd8e9`的最终修正。后续执行以第9节、
 `docs/event_conditioned_policy_compiler_design.md`和`task_plan.md`为准，第7节旧候选顺序不再授权执行。

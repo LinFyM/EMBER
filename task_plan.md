@@ -1,21 +1,20 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **Phase 0以`136/400`归档关闭；Phase 1首个process teacher Gate A以`0/50、19/50`判为non-pass，
-复用两个primitive task-local experts的Gate A2仍为`0/50、44/50`、总计`44/100`，当前scene3 soup/butter
-family对phase-composed teacher关闭；
-Phase 2A的15/15 known-success paths通过，但Phase 2B/2C fixed realizer在fold0 strict250仅为step800/1000=`33/37`，
-均低于carrier `43`，breadth `2/5`且Goal/Long均为0。后置mean/innovation分解触发专家预留的two-sided fallback；该fit90
-coordinate唯一strict250又得到`80=24/10/46/0/0`、breadth3、Goal/Long为0，只保留carrier `23/43`与known-latest
-`59/110` successes，全部预注册门失败。当前coordinate与conditional successor均已停止；fold1、fresh Program、`q_pi/q_V`
-未启动。当前shared-realizer family按专家停止条件关闭，不自行版本化。task65/68 separate-plate Gate A3正式得到
-`28/50、9/50`、总计`37/100`，工程合同完整但teacher门non-pass；这把失败进一步定位到primitive expert在sibling goal已完成
-状态上的恢复支持。phase-composed primitive-teacher机制关闭，Gate B、suite扩展与`q_pi/q_V`不启动；下一数据前置是
-真正order-specific composite privileged policy/data。该前置现已由37/37确定性replay构成两份正式HDF5；下一步固定训练
-两个step1000完整composite experts并运行Gate A4。**
+状态：2026-08-24 **goal为paused，当前没有active GPU job。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
+process Gate A/A2/A3分别为`19/100、44/100、37/100`，均未取得可靠双向teacher。37条A3成功轨迹已转换为28/9条
+composite HDF5，两个fixed-step1000 composite SFT均未通过state0；其完整固定100-row采集baseline实际均为`5/50`。
+随后准备的`347/500`步on-policy phase-expert distillation经最新专家复核判定为oracle authority与50步phase-tail语义不成立，
+不得启动；`2773/3998` query数据只作student-occupancy/weak-teacher诊断资产。Phase 2A的15/15 known-success paths通过，
+但balanced-SVD learned realizer与centered two-sided coordinate均未过held closed-loop门，当前fit90 shared-realizer family
+保持关闭。唯一候选下一步是从A3真实成功轨迹的第二阶段片段训练两个composite-context recovery experts，再用不变Gate A
+裁决；当前只记录并解释该方案，待owner理解确认后才实施。Gate B、suite扩展、fresh Program、`q_pi/q_V`、joint Writer与
+outer credit均未启动。**
 
 当前设计合同：`docs/event_conditioned_policy_compiler_design.md`
 
 本次复核索引与专家最终裁决：`docs/ecp_expert_alignment_audit_20260824.md`第9节
+
+最新process teacher复核与唯一后继：`docs/ecp_recovery_teacher_expert_ruling_20260824.md`
 
 已完成falsification card：`docs/ecp_occupancy_complete_oracle_card_20260823.md`
 
@@ -228,8 +227,16 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   successful-occupancy SFT没有覆盖policy自身访问与恢复状态；
 - [x] 从clean pushed detached `7527568`完成唯一一轮formal on-policy采集：两variant固定50/50 episodes，无筛选，得到
   `2773/3998` queries；六个HDF5、100个state groups与training reader通过，按固定公式派生`347/500` training steps；
-- [ ] 从step1000权重以fresh optimizer、peak LR `1e-5`分别训练恰好两遍固定数据，只保留各自唯一final checkpoint，随后
-  直接重跑不变Gate A4；不得增加第二轮DAgger、step/LR/rank/seed小扫或按state选择checkpoint；
+- [x] 最新专家复核取消上述`347/500`步训练：primitive expert没有在student composite occupancy上建立continuation oracle，
+  完整50步标签又可能跨越真实phase切换；现有数据只作weak-teacher response诊断，不再是formal oracle训练集；
+- [ ] owner理解确认后，分别从原yellow-white/red primitive expert初始化两个rank16 recovery experts；训练数据固定为
+  `50% A3成功轨迹second-phase真实执行片段 + 50%对应primitive成功数据`，两个方向不共享参数，不使用当前
+  `2773/3998`预测标签或A3失败states；
+- [ ] 训练前冻结相同steps/epochs/optimizer与唯一checkpoint；first event继续使用冻结primitive expert，event完成后丢弃旧chunk
+  并切换direction-specific recovery expert，运行不变100-row Gate A；
+- [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；
+  若失败，关闭task65/68上的primitive composition、composite SFT、phase-expert distillation和recovery SFT，不做第二轮DAgger、
+  不扫超参、不换task66/67重复同一机制；后继必须先获得独立成立的planner/human/MPC/task-local RL composite controller；
 - [ ] 只有新的双向composite teacher通过后，才运行Gate B：correct video胜sibling wrong，而language-only/no-video/first+final
   不能区分，且无variant leakage；
 - [ ] 最小pair通过后扩成跨scene、object与物理约束的family-disjoint process-meta train/held suite；

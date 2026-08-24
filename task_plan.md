@@ -31,8 +31,11 @@ owner已正式许可推进ECP Native-Factor Compiler。当前只推进Phase G1�
   Gate non-pass；
 - [x] 以paired fixed50证据定位set-valued选择接口，并实现每task在carrier/latest/independent/earliest中选最强verified member；
 - [x] 通过141项CPU回归、task90 zero-residual initialization-only与task94 independent真实gradient/materialization smoke；
-- [ ] 完成set-valued修正diff审查、main集成与detached formal worktree；
-- [ ] fresh生成五task step0、跑single-checkpoint strict250与同一G1 Gate；若仍non-pass，继续定位最早reference span/response接口。
+- [x] 完成set-valued clean formal与strict250：`111/250`、recovery`1.015`、retention`34/43`，但breadth4/5、Long0、仅3/5高于carrier；
+- [x] 由task94 minimum direction cosine `0.978/0.883`定位FP32 inverse-scatter数值失真，并用真实FP64 smoke恢复到两侧
+  `>=0.99999988`；
+- [ ] 完成FP64 signed-solve diff审查、全量回归、main集成与detached formal worktree；
+- [ ] fresh生成五task step0、跑single-checkpoint strict250与同一G1 Gate；若仍non-pass，继续定位最早signed-measure/span response接口。
 
 ## Phase R：全仓库理解与资产映射（已完成）
 

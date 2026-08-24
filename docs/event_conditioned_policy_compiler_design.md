@@ -289,11 +289,15 @@ video bank做relative singular threshold `1e-3`的稳定中心子空间投影并
 loss也在全部task差于未扰动step0。因此optimizer前的initialization checkpoint（step0）是预注册解析点，不能用step1冒充，也不因
 内部loss选择被扰动路径。
 
-当前修正仍不改变candidate、signed pooling、rank或loss，而是落实privileged evidence的set-valued职责：每task在`carrier/latest/
-independent/earliest`中按同一paired fixed50 success count选择最强verified member，tie优先carrier；若carrier胜出，以所有scale为0的
-精确zero rank4 residual表示。fold0选择固定为task90 carrier、91 independent、92 latest、93 independent、94 independent。它直接针对
-已定位的task90 retention与Long reference覆盖，不是seed/LR扫；只属于G1 task-local capacity solve，不进入G3，也不声称shared Program
-query-key attention成立。
+set-valued free code按同一paired fixed50 success count在`carrier/latest/independent/earliest`中逐task选择，fold0固定为task90
+carrier、91 independent、92 latest、93 independent、94 independent。其strict250达到`111/250`、逐task`35/29/45/2/0`，relative
+recovery`1.015`且retention`34/43`，但breadth4/5、Long 0、仅3/5高于carrier，故仍是Gate non-pass。
+
+该次失败把最早接口进一步定位到解析signed-measure系数的数值求解：relative singular threshold `1e-3`对应scatter逆的条件数可达
+约`1e6`，FP32在task94把input/output direction cosine降至最低`0.978/0.883`。仅将这个小型、初始化时一次性的eigenspace与
+inverse-scatter sufficient statistics改为FP64后，真实task94 forward/materialization的两侧minimum cosine均恢复到
+`0.99999988`以上；candidate、softmax signed pooling、rank、scale、loss和checkpoint合同均不变。该修正仍只是G1 privileged
+capacity solve，不进入G3，也不声称shared Program query-key attention成立。
 
 ### G2. Natural Program训练
 

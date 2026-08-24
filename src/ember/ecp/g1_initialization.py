@@ -39,7 +39,12 @@ class CandidateMeasure:
     ) -> "CandidateMeasure":
         if values.ndim < 2 or not 0 < relative_singular_threshold < 1:
             raise ValueError("G1 candidate measure or span threshold changed")
-        flat = values.reshape(-1, values.shape[-1]).float()
+        # The retained relative threshold permits a 1e6 scatter condition
+        # number.  FP32 eigenspaces are adequate for span diagnostics, but the
+        # subsequent inverse-scatter solve can rotate weak native directions
+        # enough to destroy a low-success closed-loop task.  This is a small
+        # initialization-only solve; keep its sufficient statistics in FP64.
+        flat = values.reshape(-1, values.shape[-1]).double()
         if flat.shape[0] <= 1:
             raise ValueError("G1 candidate measure is empty")
         mean = flat.mean(0)
@@ -67,7 +72,8 @@ class CandidateMeasure:
     def project(self, vectors: torch.Tensor) -> torch.Tensor:
         if vectors.ndim != 2 or vectors.shape[-1] != self.values.shape[-1]:
             raise ValueError("G1 projection vector width changed")
-        return (vectors.float() @ self.basis) @ self.basis.transpose(0, 1)
+        native = vectors.to(dtype=self.basis.dtype)
+        return (native @ self.basis) @ self.basis.transpose(0, 1)
 
     def signed_probabilities(
         self,

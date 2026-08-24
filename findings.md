@@ -142,11 +142,14 @@ rank4的每个input factor和q-head-grouped output factor投影后再按冻结`s
 `22/43`。step0 residual与解析projection cosine为`0.952--0.964`，第一次Adam更新后即降为`0.039--0.070`；五task 500-step
 formal的最终effective-update loss也全部差于step0。故解析点必须以step0保留，不能用step1冒充，也不能用被扰动路径的内部loss代替闭环。
 
-paired evidence又把失败精确定位到set-valued reference选择：task90 carrier为38/50，强于三个mobile members的`27/26/17`，因此
-该task的最强合法free-code解是zero residual；task91--94最强member依次为independent/latest/independent/independent，成功数
-`32/40/13/5`，而latest-only正好在Long只有3且step0闭环归零。当前修正用同一fixed50 success-count规则在四个verified members中
-选择，tie优先carrier；不改bank、rank、pooling或loss。它仍是privileged task-local capacity solve，不是G3共享Program-to-attention
-映射。
+paired evidence把下一接口定位到set-valued reference选择：task90 carrier为38/50，强于三个mobile members的`27/26/17`；task91--94
+最强member依次为independent/latest/independent/independent，成功数`32/40/13/5`。该规则的formal strict250为`111/250`、逐task
+`35/29/45/2/0`，relative recovery`1.015`、retention`34/43`，但breadth4/5、Long 0且仅3/5 task高于carrier，仍non-pass。
+
+task94的真实初始化报告揭示了更早的数值接口：`1e-3` singular threshold允许scatter inverse condition number约`1e6`，FP32最小
+input/output direction cosine只有`0.978/0.883`，没有实际实现解析span点。将仅在初始化时运行的小型eigenspace/inverse-scatter
+solve改为FP64后，同一真实forward/materialization的两侧minimum cosine均为`>=0.99999988`，38 hooks、Action Meta 0和唯一rank16
+不变。这是由闭环Long失败和方向误差共同支持的数值机制修正，不是seed/LR/threshold扫；仍不证明G3共享映射。
 
 ## 已关闭路线
 
@@ -164,8 +167,8 @@ paired evidence又把失败精确定位到set-valued reference选择：task90 ca
 
 - 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
   flow loss、reward/occupancy和strict dynamic evaluator。
-- G1 scalar、q-head与latest-only exact step0分别为`88/250`、`84/250`、`100/250`；最后者恢复Goal但Long为0、retention仅
-  `22/43`，仍不能冒充Gate pass。set-valued reference修正已通过真实profile，尚待clean pushed formal复评。
+- G1 scalar、q-head、latest-only和set-valued exact step0分别为`88/250`、`84/250`、`100/250`、`111/250`；set-valued已恢复
+  recovery与retention，但Long仍为0。FP64 signed solve已用真实task94证明方向恢复，尚待clean pushed formal闭环复评。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。

@@ -41,8 +41,8 @@
       "action_in": "whole_native_vector_one_signed_measure",
       "action_out": "whole_native_vector_one_signed_measure"
     },
-    "mechanism_evidence": "runs/outputs/pi05_ecp_native_factor_g1_exact_init_step0_strict250_fc53249_gpu01p34567_r3_20260825/results.json",
-    "claim_boundary": "exact stable signed measures recover 100/250, but latest-only selection loses Long and carrier retention; set-valued reference selection remains privileged G1 free code and makes no shared-compiler claim"
+    "mechanism_evidence": "runs/outputs/pi05_ecp_native_factor_g1_set_oracle_step0_strict250_873af85_gpu01p34567_r3_20260825/results.json",
+    "claim_boundary": "set-valued free code recovers 111/250 and carrier retention, but an ill-conditioned FP32 signed-measure solve loses Long; FP64 is confined to the small closed-form initialization solve and makes no shared-compiler claim"
   },
   "functional_query": {
     "demo_indices": [1, 2, 3, 4, 5, 6, 7, 8],
@@ -59,6 +59,7 @@
       "kind": "best_verified_robust_projection_or_carrier",
       "selection_candidates": ["carrier", "latest", "independent", "earliest"],
       "selection_metric": "paired_fixed50_success_count",
+      "signed_measure_solve_precision": "float64",
       "relative_singular_threshold": 0.001,
       "probability_floor_mass": 0.0001,
       "retain_initialization_checkpoint": true

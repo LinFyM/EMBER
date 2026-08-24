@@ -175,6 +175,11 @@ clean pushed `fc53249`进一步保留未受optimizer扰动的step0。其residual
 member依次为independent/latest/independent/independent，成功数`32/40/13/5`。下一修正据此选择verified member，carrier胜出时用
 zero rank4 residual；candidate bank、signed pooling、rank12+4和唯一rank16合同不变。
 
+clean pushed `873af85`完成该set-valued solve，paired strict250为`111/250`、逐task`35/29/45/2/0`，relative recovery`1.0149`、
+retention`34/43`；breadth4/5、Long 0、tasks-above-carrier 3/5，故仍non-pass。task94的实际初始化报告同时显示FP32
+inverse-scatter在`1e-3` threshold下把input/output direction cosine最低降至`0.978/0.883`。仅将小型初始化sufficient statistics改为
+FP64后，真实task94 profile两侧minimum cosine均恢复到`>=0.99999988`；该profile只证明机制接通，closed-loop结论待clean formal。
+
 关键artifacts：
 
 - `runs/outputs/pi05_ecp_native_factor_g1_qhead_held5_formal_a8ec468_gpu01p34567_20260825/`；
@@ -183,6 +188,8 @@ zero rank4 residual；candidate bank、signed pooling、rank12+4和唯一rank16�
 - `runs/outputs/pi05_ecp_native_factor_g1_bank_span_latest_r1e3_strict250_a8ec468_gpu01p34567_r3_20260825/`。
 - `runs/outputs/pi05_ecp_native_factor_g1_exact_init_held5_formal_fc53249_gpu02p1_20260825/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_exact_init_step0_strict250_fc53249_gpu01p34567_r3_20260825/`。
+- `runs/outputs/pi05_ecp_native_factor_g1_set_oracle_held5_formal_873af85_gpu02p1_20260825/`；
+- `runs/outputs/pi05_ecp_native_factor_g1_set_oracle_step0_strict250_873af85_gpu01p34567_r3_20260825/`。
 
 ## 12. 当前保留结论
 

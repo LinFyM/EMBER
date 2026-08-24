@@ -78,6 +78,7 @@ def load_g1_config(path: Path) -> dict[str, Any]:
         != G1_REFERENCE_CANDIDATES
         or initialization.get("selection_metric")
         != "paired_fixed50_success_count"
+        or initialization.get("signed_measure_solve_precision") != "float64"
         or not 0
         < float(initialization.get("relative_singular_threshold", 0))
         < 1

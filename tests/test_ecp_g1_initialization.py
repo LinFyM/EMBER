@@ -41,6 +41,8 @@ def test_signed_reference_projection_preserves_simplexes_and_group_direction() -
         probability_floor_mass=1e-4,
     )
 
+    assert all(measure.values.dtype == torch.float64 for measure in measures)
+    assert all(value.dtype == torch.float64 for value in probabilities)
     assert all(
         torch.allclose(
             value.sum(-1), torch.ones_like(value.sum(-1)), atol=1e-6, rtol=0

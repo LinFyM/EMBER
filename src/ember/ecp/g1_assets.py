@@ -54,12 +54,21 @@ def authority_path(config: Mapping[str, Any], name: str, *, asset_root: Path) ->
 
 def load_g1_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
+    output_partition = config.get("native_factor", {}).get(
+        "output_value_partition", {}
+    )
     if (
         config.get("schema_version") != G1_CONFIG_SCHEMA
         or config.get("status") != "active_native_factor_capacity_oracle"
         or config.get("information_wall", {}).get("action_meta_installed") is not False
         or config.get("video", {}).get("videos_per_task") != 1
         or config.get("video", {}).get("cross_video_weight") != "identity_k1"
+        or output_partition.get("q")
+        != "eight_real_attention_heads_independent_signed_measures_then_concatenate"
+        or any(
+            output_partition.get(name) != "whole_native_vector_one_signed_measure"
+            for name in ("v", "action_in", "action_out")
+        )
     ):
         raise ValueError("G1 Native-Factor config changed its capacity contract")
     return config

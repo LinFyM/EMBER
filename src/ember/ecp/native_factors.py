@@ -9,7 +9,7 @@ from typing import Callable, Iterable, Sequence
 
 import torch
 
-from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
+from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.policy_effects import (
     ExecutionPolicyPrefix,
     prepare_policy_effect_prefix_cache,
@@ -19,6 +19,7 @@ from ember.ecp.policy_effects import (
 OUTPUT_BANK_TYPES = ("abs", "adj", "init", "goal")
 G1_RESIDUAL_RANK = 4
 G1_PROBE_COUNT = 2
+G1_Q_OUTPUT_GROUPS = 8
 
 
 class NativeFactorError(RuntimeError):
@@ -325,6 +326,17 @@ def rms_normalize(value: torch.Tensor, *, epsilon: float = 1e-8) -> torch.Tensor
     return value / scale.to(value.dtype)
 
 
+def native_output_group_count(owner: TargetOwner) -> int:
+    """Use the action expert's real eight-head q layout as output value groups."""
+
+    groups = G1_Q_OUTPUT_GROUPS if owner.family is TargetFamily.Q else 1
+    if owner.out_features % groups:
+        raise NativeFactorError(
+            f"native output width does not preserve q-head groups: {owner.target_name}"
+        )
+    return groups
+
+
 class TaskLocalNativeFactorOracle(torch.nn.Module):
     """Held-task free selection over real native X/Y candidate banks."""
 
@@ -350,6 +362,28 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
         )
         targets = len(self.owners)
         frames = offsets[-1]
+        output_group_counts = tuple(
+            native_output_group_count(owner) for owner in self.owners
+        )
+        output_group_offsets = [0]
+        for count in output_group_counts:
+            output_group_offsets.append(output_group_offsets[-1] + count)
+        self.output_group_slices = tuple(
+            slice(start, stop)
+            for start, stop in zip(
+                output_group_offsets[:-1], output_group_offsets[1:], strict=True
+            )
+        )
+        self.register_buffer(
+            "output_group_counts",
+            torch.tensor(output_group_counts, dtype=torch.long),
+            persistent=True,
+        )
+        self.register_buffer(
+            "output_group_offsets",
+            torch.tensor(output_group_offsets, dtype=torch.long),
+            persistent=True,
+        )
         self.rank_queries = torch.nn.Parameter(
             torch.empty(G1_RESIDUAL_RANK, program_width)
         )
@@ -368,7 +402,7 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
         )
         self.output_logits = torch.nn.Parameter(
             torch.empty(
-                targets,
+                output_group_offsets[-1],
                 G1_RESIDUAL_RANK,
                 2,
                 frames,
@@ -424,10 +458,13 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
             for owner in self.owners
         ]
         output_accumulators = [
-            OnlineSoftmaxAccumulator(
-                ranks=G1_RESIDUAL_RANK,
-                width=owner.out_features,
-                device=self.rank_queries.device,
+            tuple(
+                OnlineSoftmaxAccumulator(
+                    ranks=G1_RESIDUAL_RANK,
+                    width=owner.out_features // native_output_group_count(owner),
+                    device=self.rank_queries.device,
+                )
+                for _ in range(native_output_group_count(owner))
             )
             for owner in self.owners
         ]
@@ -467,13 +504,23 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
                 input_logits = input_logits + measure[target, :, None, :, None, None]
                 input_accumulator.add(input_logits, x)
                 output_bank = boundary.build(y, start_frame=next_frame)
+                output_slice = self.output_group_slices[target]
                 output_logits = self.output_logits[
-                    target, :, :, start + next_frame : start + stop
+                    output_slice, :, :, start + next_frame : start + stop
                 ]
                 output_logits = (
-                    output_logits + measure[target, :, None, :, None, None, None]
+                    output_logits
+                    + measure[target, None, :, None, :, None, None, None]
                 )
-                output_accumulator.add(output_logits, output_bank)
+                groups = len(output_accumulator)
+                # The candidate index is unchanged.  A q value is merely restored
+                # to its native [8 heads, 256 channels] layout so one head cannot
+                # force every other head to use the same scalar attention measure.
+                grouped_bank = output_bank.reshape(
+                    *output_bank.shape[:-1], groups, output_bank.shape[-1] // groups
+                ).movedim(-2, 0)
+                for group, accumulator in enumerate(output_accumulator):
+                    accumulator.add(output_logits[group], grouped_bank[group])
             next_frame = stop
         if next_frame != video.frame_count or any(
             boundary.next_frame != video.frame_count for boundary in boundaries
@@ -481,7 +528,12 @@ class TaskLocalNativeFactorOracle(torch.nn.Module):
             raise NativeFactorError("G1 native video stream ended early")
         return (
             tuple(value.signed_mean() for value in input_accumulators),
-            tuple(value.signed_mean() for value in output_accumulators),
+            tuple(
+                torch.cat(
+                    tuple(group.signed_mean() for group in target), dim=-1
+                )
+                for target in output_accumulators
+            ),
         )
 
     def forward(

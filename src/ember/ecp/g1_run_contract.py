@@ -80,6 +80,7 @@ def build_run_contract(
             "output_rank": 16,
             "fit_experts_for_s_ref": ranks.fit_expert_count,
             "s_ref": ranks.s_ref.detach().cpu().tolist(),
+            **dict(config["native_factor"]),
         },
         "pure_native_stage0": dict(pure_native),
         "policy_sensitivity": {

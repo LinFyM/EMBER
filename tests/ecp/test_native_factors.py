@@ -172,6 +172,37 @@ def test_task_local_free_code_is_chunk_equivalent_and_all_variables_receive_grad
         assert torch.count_nonzero(parameter.grad)
 
 
+def test_q_output_pooling_uses_all_eight_native_attention_head_groups() -> None:
+    owners = (TargetOwner(0, "q", TargetFamily.Q, 0, 6, 16),)
+    oracle = TaskLocalNativeFactorOracle(
+        owners,
+        frame_counts=(4,),
+        event_slots=3,
+        program_width=7,
+        initialization_seed=11,
+    )
+    video = _video(frames=4, owners=owners, split=2, seed=23)
+    whole = replace(
+        video, chunks=_video(frames=4, owners=owners, split=0, seed=23).chunks
+    )
+
+    residual = oracle((video,), s_ref=torch.tensor([0.3]))
+    reference = oracle((whole,), s_ref=torch.tensor([0.3]))
+    residual.b[0].square().sum().backward()
+
+    assert oracle.output_group_counts.tolist() == [8]
+    assert oracle.output_group_offsets.tolist() == [0, 8]
+    assert oracle.output_logits.shape[0] == 8
+    assert residual.b[0].shape == (G1_RESIDUAL_RANK, 16)
+    assert torch.allclose(residual.b[0], reference.b[0], atol=3e-4, rtol=3e-4)
+    gradient = oracle.output_logits.grad
+    assert gradient is not None
+    per_group_nonzero = torch.count_nonzero(
+        gradient, dim=tuple(range(1, gradient.ndim))
+    )
+    assert torch.all(per_group_nonzero > 0)
+
+
 def _contract() -> SmolVLALoRAContract:
     return SmolVLALoRAContract(
         targets=(LoRATarget("first", 6, 7), LoRATarget("second", 7, 5)),

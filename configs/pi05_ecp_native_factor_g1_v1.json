@@ -33,6 +33,17 @@
     "cross_video_weight": "identity_k1",
     "probe": "stage0_fixed_antithetic"
   },
+  "native_factor": {
+    "input_value_partition": "whole_native_vector_one_signed_measure",
+    "output_value_partition": {
+      "q": "eight_real_attention_heads_independent_signed_measures_then_concatenate",
+      "v": "whole_native_vector_one_signed_measure",
+      "action_in": "whole_native_vector_one_signed_measure",
+      "action_out": "whole_native_vector_one_signed_measure"
+    },
+    "mechanism_evidence": "runs/analysis/pi05_ecp_native_factor_g1_output_span_response_822147b_gpu01p3_20260824/analysis.json",
+    "claim_boundary": "q head partition removes the proven scalar-Y column-space ceiling without adding task/frame lookup or non-native values"
+  },
   "functional_query": {
     "demo_indices": [1, 2, 3, 4, 5, 6, 7, 8],
     "action_chunk_size": 50,

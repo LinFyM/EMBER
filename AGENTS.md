@@ -45,8 +45,9 @@ EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO sourc
 当前目标是Writer初次生成的LoRA立即有效。生成LoRA后的task-local RL是后续独立实验，不能混入当前
 zero-interaction分数。
 
-正式性能目标为strict paired correct严格`>145/400`并越高越好，同时必须由相邻single checkpoints、低churn、
-高breadth、same-task不同视频鲁棒性、Goal/Long贡献和最终视频因果性共同证明，不能是训练波动中的偶然峰值。
+唯一正式性能目标线为validation8 strict paired correct严格`>145/400`。通过还必须由相邻single
+checkpoints、低churn、高breadth、四个suite均非零、Goal/Long贡献、same-task不同视频鲁棒性和最终视频
+因果controls共同证明，不能是训练波动中的偶然峰值。
 
 closed-loop absolute性能首先选择方法。LoRA norm/rank/cosine、reconstruction、functional loss、内部时序margin、
 hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明显更差的闭环性能。
@@ -100,8 +101,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 好结果应训练到足以判断相邻稳定性；明确坏结果不得靠无限续训或rank/scale/seed/LR/dtype小扫挽救。
 - 每轮必须报告per-task、per-suite、breadth、retained/gained/lost、churn及相邻success-set重合，并定位最早失效接口。
 - 一次尽量只改变一个主要因果变量。负结果只淘汰实际检验的假设，不能因局部失败整套180度转向。
-- correct表现与相邻稳定性冻结出`>145/400`最终候选后，再一次性补wrong/shuffled/reversed/no-video等视频因果controls；
-  controls不产生梯度，也不参与checkpoint选择。
+- 正式checkpoint选择只使用active design预注册的qualification arms与相邻稳定性；selected checkpoint选定并
+  冻结后再补视频因果controls。shuffled/reversed最后测试，只确认时序特异性；它们不进入训练、loss、
+  checkpoint选择、G1--G5 Gate或架构修正依据。
 
 ## 8. Evaluation contract
 

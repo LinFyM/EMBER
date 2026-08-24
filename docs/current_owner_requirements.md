@@ -62,14 +62,15 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做matched controls；Stage 0和compiler冻结，只有出现明确
 净收益且不损害breadth/retention才加入并永久冻结，否则保持关闭。
 
-shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终冻结checkpoint上作为严格配对的时序特异性测试；正确
-视频应稳定优于打乱与倒序输入。full video还必须优于language/no-video、scene/first+final和wrong-video controls。
+shuffled/reversed不进入训练、loss、checkpoint选择、G1--G5 Gate或架构修正依据。它们只在最终selected
+checkpoint已选定并冻结后作为严格配对的时序特异性测试；正确视频应稳定优于打乱与倒序输入。full video
+还必须优于language/no-video、scene/first+final和wrong-video controls。
 
 ## 5. 成功标准
 
-- 继续追求validation8 `>150/400`，越高越好。
-- 约145也可构成有价值结果，但必须由相邻single checkpoints、低churn、高breadth和same-task不同视频鲁棒性共同证明。
-- Goal与Long必须有真实贡献，不能依靠Spatial/Object掩盖失败。
+- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`。
+- 该分数必须由相邻single checkpoints、低churn、高breadth、四个suite均非零、Goal/Long真实贡献、same-task
+  不同视频鲁棒性和视频因果controls共同证明，不能用偶然峰值通过。
 - full video必须有必要条件增量，并在多数任务上形成收益；same-task其它视频应保持高retention。
 - shuffled/reversed最终表现应揭示真实时序特异性，而不是仅让内部latent距离变大。
 - closed-loop absolute表现优先；loss、reconstruction、LoRA norm/cosine、hidden margin和surrogate只用于定位。

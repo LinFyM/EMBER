@@ -23,9 +23,11 @@ teacher action或已经预测好的动作。
 
 ### 3. 视频因果性尚未建立
 
-多个历史Writer的full-video接近language-only、video-only或first+final，Goal/Long为0。不能声称EMBER已经理解视频过程。最终
-correct必须稳定优于language/no-video/static/endpoints/wrong，same-task其它视频保持高retention；shuffled/reversed只在冻结
-checkpoint上测试时序特异性，不进入训练或选模。
+多个历史Writer的full-video接近language-only、video-only或first+final，Goal/Long为0。不能声称EMBER已经理解视频过程。唯一
+正式性能目标线是validation8 strict paired correct严格`>145/400`；同时必须稳定优于language/no-video/static/endpoints/wrong，
+same-task其它视频保持高retention，并满足稳定性、breadth、四suite非零和Goal/Long贡献。shuffled/reversed只在
+最终selected checkpoint已选定并冻结后测试时序特异性，不进入训练、loss、checkpoint选择、G1--G5 Gate或
+架构修正依据。
 
 ### 4. 自然task数量是共享映射的识别边界
 
@@ -100,6 +102,12 @@ controls都完成后仍系统失败，才足以判定现有数据/zero-interacti
 修正次数、结构版本或训练轮数上限；只要求每次修正有新的机制证据并重新通过同一Gate。无信息的超参小扫不算有效修正，充分证据
 持续否定接口时才停止。整体实现与关键Gate在保质前提下尽可能快推进，顺利时力争数天内形成完整架构。
 
+### 13. Final fresh数据顺序待Final前裁决
+
+`docs/current_owner_requirements.md`记录了方法选定后的32-task fresh refit，active design当前记录的则是71 meta+train24
+fresh development recipe。两者的精确顺序、validation8是否并入32-task refit以及如何保持Test8 sealed尚未裁决。该问题
+延迟到Final前由owner确认，不阻塞G1--G5，也不得在此前为任一种解释启动数据合并或训练。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
@@ -119,5 +127,6 @@ controls都完成后仍系统失败，才足以判定现有数据/zero-interacti
 - 下一实现缺口是38-target native input/output hooks、chunked online bank accumulator、signed rank4 compiler、task-local free-code optimizer
   和strict250 wiring；当前仓库尚无这些模块。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。
-- formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process datasets及约12GB产物已删除且当前路线不需要。
+- formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process路线与约11.6GB可重建主要产物已
+  删除，recovery Gate A残留作为历史formal evidence保留，不恢复为当前数据或训练路线。
 - 不新增checksum sidecar、重复证据JSON或一实验一文档；跨轮结论只更新本文件、`progress.md`和`research_history.md`。

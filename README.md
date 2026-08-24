@@ -14,10 +14,11 @@ realizer均由Git保存，不再作为可执行fallback。
 - ECP Stage 0 native v3可复用，但其q/v owners还不是真实target input/output captures；
 - 专家已冻结owner-specific Program与native-factor signed compiler；rank12+rank4是首版有证据配置，保留capacity证据触发的重开分支；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
-- 当前唯一下一步是fold0 held5 native-factor task-local free-code capacity oracle。
+- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
+  Goal/Long贡献、same-task鲁棒性和视频因果controls；
+- 当前唯一下一实现阶段是fold0 held5 native-factor task-local free-code capacity oracle，但尚未获得本轮启动许可。
 
-本session只完成交接，不启动训练；新session先按`task_plan.md`读通目标、历史、专家原文、代码/数据/脚本与formal assets，再从
-capacity oracle开始。临时交接状态见`HANDOFF.md`。
+全仓库orientation已完成。当前在最新owner authority文档同步后暂停；得到owner明确许可前不开始capacity oracle。
 
 ## 阅读顺序
 
@@ -44,7 +45,7 @@ tests/                   当前活动面的定向测试
 ```
 
 `data/`、`models/`、`runs/`和`.venv/`是ignored本地资产，不提交远端。现成LIBERO数据、tokenizer、唯一formal checkpoints和结果
-应复用；人工process数据已删除。
+应复用；人工process路线和约11.6GB可重建主要产物已删除，recovery Gate A残留作为历史formal evidence保留。
 
 ## 本地验证
 

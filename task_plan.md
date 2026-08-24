@@ -4,22 +4,24 @@
 
 ## 当前目标
 
-完成专家回复固化与跨session交接。当前session不启动GPU、不实现新架构；文档提交并推送后停止。下一session先完整读通EMBER的
-目标、历史证据、专家原文、代码/数据/脚本资产与执行合同，形成准确的仓库理解；随后从ECP Native-Factor Compiler的task-local
-capacity oracle开始，不能在理解仓库前盲目实现，也不能跳到fresh Program、shared compiler或joint Writer。
+全仓库orientation已完成并基本通过owner复核。当前session只同步最新正式性能目标和shuffled/reversed post-selection
+合同、登记Final数据顺序冲突、消费临时`HANDOFF.md`，提交并推送后继续暂停。G1仍是唯一下一实现阶段，但本轮
+不启动，必须等owner明确许可。
 
 ## 当前session完成条件
 
 - [x] 清除退役Writer、ECP v1--v24后继、MDCO/PECS、人工process与失败realizer执行路径；
-- [x] 删除过时配置、脚本、测试、重复文档/证据与约11.6GB人工资产；
+- [x] 删除过时配置、脚本、测试、重复文档/证据与约11.6GB可重建人工资产；recovery Gate A残留作为历史formal evidence保留；
 - [x] 专家回复完整阅读并对照当前保留实现；
 - [x] 专家1416行原文逐字保存，active design与原文明确分层；
 - [x] 固化专家确认的Program schema、native-factor compiler、rank、训练阶段、Gate、final controls与停止条件；
 - [x] 明确删除神经`q_pi`与fixed effect-code realizer，保留effect evidence为training critic；
 - [x] 运行文档一致性/Git审查，提交并推送`main`；
-- [ ] owner开启新session后，新session消费并删除`HANDOFF.md`。
+- [x] 完成全仓库orientation并获得owner基本确认；
+- [x] 同步唯一正式性能线`>145/400`与shuffled/reversed post-selection边界；
+- [x] 消费并删除`HANDOFF.md`。
 
-## 下一session Phase R：全仓库理解与资产映射
+## Phase R：全仓库理解与资产映射（已完成）
 
 这是开始实现前的必需orientation，不是让owner重新解释项目。全程先只读，不启动GPU或修改科学状态。
 
@@ -34,8 +36,8 @@ capacity oracle开始，不能在理解仓库前盲目实现，也不能跳到fr
 7. 向owner给出一份简洁的“我对EMBER和当前仓库的理解”：目标、架构数据流、已有证据、可复用资产、实现缺口、后续阶段和G1
    首步。若发现文档、原文和代码冲突，先列出证据并修正文档，不凭摘要猜测。
 
-Phase R完成后删除`HANDOFF.md`并提交；随后直接进入G1，不把orientation变成长时间文档考古。整体推进不设阶段工期和修正次数
-上限，但应在保质前提下尽可能快，顺利时力争数天内完成整体架构实现并推进关键Gate。
+Phase R已完成，`HANDOFF.md`已消费并删除。文档整理提交并推送后暂停；只在owner明确许可后进入G1。得到许可后
+不把orientation变成长时间文档考古，整体推进不设阶段工期和修正次数上限，但应在保质前提下尽可能快。
 
 ## Phase G1：Native-factor capacity oracle
 
@@ -107,6 +109,9 @@ retention`>=85%`和相邻checkpoint稳定。
 validation8只比较三个预注册相邻checkpoints；资格arm先跑correct/same-task/language/first+final。冻结selected后补完整controls，最后才跑
 shuffled/reversed；方法完全冻结后只打开Test8一次。
 
+`current_owner_requirements`中的32-task fresh refit与上述71 meta+train24 development recipe的精确顺序待Final前owner裁决；
+该冲突不阻塞G1--G5，当前不为任一解释启动数据合并或训练。
+
 ## 路线边界
 
 - 不恢复人工process dataset/controller acquisition；
@@ -114,6 +119,8 @@ shuffled/reversed；方法完全冻结后只打开Test8一次。
 - 不把GOMQ、PECS、v24或历史solver当ECP前置；
 - 不在G1前训练fresh Stage 0、shared compiler、joint Writer或outer credit；
 - 不用loss、geometry或checkpoint union替代single-checkpoint closed loop；
+- shuffled/reversed只在最终selected checkpoint选定并冻结后测试时序特异性，不进入训练、loss、checkpoint选择、
+  G1--G5 Gate或架构修正依据；
 - Action Meta只在base Writer有闭环增量后做matched controls，只有明确净收益且无breadth/retention损害才启用；
 - rank12 carrier + mobile rank4是G1的首版可证伪配置，不是永久硬约束；只有active design登记的rank-ceiling证据链成立才重开分配；
 - 不人为限制各阶段时间、修正次数、结构版本或训练轮数；遇到scientific non-pass先按Gate定位接口，有新证据就修正，无新机制的

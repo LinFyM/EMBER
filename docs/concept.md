@@ -75,7 +75,8 @@ differences，通过signed pooling产生rank4 outer products；它们不是Progr
 - 当前先用task-local free-code证明native factor bank与pooling具有闭环容量；通过后再训练Natural Program和冻结Program的shared
   compiler，避免在核心参数基底无效时训练更大的Writer。
 - staged gates用于定位接口，最终必须有冻结backbone、全Writer联合训练阶段。
-- shuffled/reversed只在最终冻结checkpoint评测时序特异性，不进入训练或选模。
+- shuffled/reversed只在最终selected checkpoint已选定并冻结后评测时序特异性，不进入训练、loss、
+  checkpoint选择、G1--G5 Gate或架构修正依据。
 
 ## 目前知道与不知道的
 

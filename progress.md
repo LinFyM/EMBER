@@ -10,8 +10,9 @@
 专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
 active design明确是解释/执行层，不能替代原文。
 
-本轮没有启动GPU训练、没有实现新Writer、没有向专家发送任何消息。当前有意停在跨session交接点；下一session消费
-`HANDOFF.md`前先完成全仓库只读orientation并向owner复述理解，确认目标、证据、资产和计划无偏移后才开始G1 capacity oracle。
+全仓库只读orientation已完成并基本通过owner复核，临时`HANDOFF.md`已消费删除。本轮只同步最新owner authority
+与登记已发现漂移；没有启动GPU训练、没有实现G1或新Writer、没有向专家发送任何消息。文档提交并推送后继续
+暂停，只在owner明确许可后进入G1 capacity oracle。
 
 专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
 Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
@@ -36,18 +37,25 @@ owner已接受专家的Action Meta门槛：只有base Writer先产生明确闭�
 owner最新取消所有人为阶段工期、固定修正次数、结构版本和训练轮数上限。Gate与失败定位仍保留；有新机制证据可继续修正，
 无信息超参小扫不算推进。执行应积极复用、并行和提升吞吐，顺利时力争数天内完成整体架构实现并推进关键Gate。
 
+owner最新进一步明确：唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，且必须同时满足
+相邻稳定性、breadth、四suite非零、Goal/Long贡献、same-task鲁棒性和视频因果controls，不能用偶然峰值通过。
+shuffled/reversed只在最终selected checkpoint选定并冻结后测试时序特异性，不进入训练、loss、checkpoint选择、
+G1--G5 Gate或架构修正依据。
+
 ## 本轮仓库整理结果
 
 - 退役Writer、functional decoder、ECP v1--v24后继、MDCO/PECS、fixed/two-sided realizers与人工process模块已删除；
 - evaluator保留source/task-expert adapter、dynamic queue、occupancy diagnostics和strict aggregation；
 - canonical基础模块为source/corpus/SFT、LoRA、task experts、Stage 0、policy effects、functional loss、reward/occupancy与evaluation；
-- 旧41份Markdown、87份分散证据JSON、退役配置/测试及约11.6GB人工datasets/runs已清除；
+- 旧41份Markdown、87份分散证据JSON、退役配置/测试及约11.6GB可重建人工datasets/runs已清除；recovery Gate A残留
+  作为历史formal evidence保留，不删除也不恢复为当前路线；
 - 瘦身提交`6fdaeb8`的126项活动CPU测试、compile、脚本入口与引用审计均通过；
 - 当前只有`main`一个worktree，无task-owned branch或GPU job。
 
 ## 当前可复用资产
 
-- 固定24/8/8 split、71-task source corpus与五fold meta/target manifests；
+- 固定24/8/8 split、71-task source corpus、五fold meta manifests与target fold0 manifests；target其余folds在G4多fold验证前补齐，
+  不阻塞G1；
 - frozen source PI0.5 authority、rank16 LoRA topology/materialization；
 - task-expert bank、independent successful members、mobile-rank4解析容量与effect calibration；
 - Stage 0 v3 full-layer/horizon observer、transition matcher、event binding/segmenter；
@@ -65,13 +73,12 @@ owner最新取消所有人为阶段工期、固定修正次数、结构版本和
 4. task-local free-code optimizer；
 5. G1 four-arm strict250 wiring与Gate report。
 
-这些组成下一session的唯一实现面。先做最小真实smoke，再完成G1；不得恢复旧realizer、建立平行版本或跳到fresh Stage 0/joint。
+这些组成得到owner许可后的唯一实现面。先做最小真实smoke，再完成G1；不得恢复旧realizer、建立平行版本或跳到fresh
+Stage 0/joint。
 
-## 交接动作
+## 当前暂停与延期漂移
 
-1. 当前session完成文档一致性与Git审查，提交并推送；
-2. owner用交接prompt开启新session；
-3. 新session完整读取mandatory docs、专家原文和`HANDOFF.md`，只读盘点代码/数据/脚本/formal assets并核对HEAD；
-4. 向owner复述EMBER目标、架构、证据、资产、缺口和计划，修正发现的冲突；
-5. 删除已消费的`HANDOFF.md`并提交；
-6. 按`task_plan.md`从G1开始自主推进，只在关键Gate、显著跃升或真实权限/路线歧义时暂停。
+1. 完成本轮文档一致性与Git审查，提交并推送`main`后暂停，等待owner明确许可G1；
+2. Action Meta仍默认关闭；现有loader/config的mandatory表述只在将来真正进入matched arm前再对齐，本轮不改代码或配置；
+3. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G1；
+4. 32-task fresh refit与71 meta+train24 development recipe的精确顺序已登记，延迟到Final前owner裁决，不阻塞G1--G5。

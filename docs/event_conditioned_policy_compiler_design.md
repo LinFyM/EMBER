@@ -247,8 +247,8 @@ demos与functional/action query episodes错开。允许从现有demonstrations�
 relations、speed perturbation和temporal crop，不创建新task、trajectory或成功语义。
 
 训练owner-specific `P_lang/P_scene/P_process/rho/tau/sigma`与K aggregation，backbone冻结。loss覆盖local next-10-phase 7D action
-summary、predicate progress/rising/contact、scene relation、cross-video event consistency、speed/crop robustness与probe stability；
-shuffled/reversed不进入训练。
+summary、predicate progress/rising/contact、scene relation、cross-video event consistency、speed/crop robustness与probe stability。shuffled/reversed
+遵守全局post-selection规则：不进入训练、loss、checkpoint选择、G1--G5 Gate或架构修正依据。
 
 在meta-held15+target-held5同时要求：
 
@@ -312,6 +312,10 @@ recipe，以及仅在G5通过时的outer recipe。fresh使用全部71 meta tasks
 5. 训练到train24 cross-validation预先确定的horizon；
 6. 仅当outer已通过，追加固定数量outer updates。
 
+Final前待owner裁决：本节描述71 meta+train24 fresh development recipe，而`docs/current_owner_requirements.md`同时记录了
+方法选定后的32-task fresh refit。两者的精确顺序与validation8数据角色延迟到Final前明确，不阻塞G1--G5，
+当前不默认任一种合并方式。
+
 部署时Pass A生成唯一Program；Pass B读native banks、生成rank4 residual并与carrier拼接；安装唯一rank16 LoRA后闭环运行，不再观看
 teacher video。
 
@@ -320,14 +324,15 @@ teacher video。
 validation8不再开放式选模。final只保留三个预注册相邻checkpoints。先跑correct、same-task-other、learned language-only和
 first+final；checkpoint资格为correct至少135、breadth@1 8/8、breadth@5至少6/8、四suite非零、same-task retention至少90%、
 相邻分数不低于它10以上、Jaccard至少0.80、top3 task share不超过70%。多个通过取correct最高，平分取更早；无通过者不跑完整
-controls且不打开Test。
+controls且不打开Test。这里的`135`只是是否展开完整controls的预筛，不是额外正式性能目标线。
 
 selected checkpoint冻结后依次评测correct、same-task-other、cross-suite wrong、video-only、language-only、no-video/carrier、
-static-first-repeated、first-only、final-only、first+final，最后才跑shuffled/reversed。后两者绝不进入训练、loss或选模。
+static-first-repeated、first-only、final-only、first+final，最后才跑shuffled/reversed。后两者只确认视频时序特异性，
+绝不进入训练、loss、checkpoint选择、G1--G5 Gate或架构修正依据。
 
 最终方法资格：
 
-- correct必须`>145/400`；项目继续追求`>150/400`；
+- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`；
 - 两个相邻checkpoint在selected的10分内、Jaccard至少0.80、breadth@5下降不超过1且无suite归零；
 - same-task-other总分在correct正负10内，correct成功rows保留至少90%；
 - correct相对language/no-video/static/first+final/wrong每个arm paired净增至少10、exact McNemar `p<0.05`、至少3/4 suites不负；
@@ -349,6 +354,6 @@ static-first-repeated、first-only、final-only、first+final，最后才跑shuf
 继续复用：Stage 0 v3、full-layer/horizon capture、transition matcher、event binding/segmenter、strict evaluator/controls、task expert bank、
 successful members、effect calibration、probe-particle capture、carrier/mobile-rank4容量证据，以及natural occupancy/action/reward基础设施。
 
-当前尚未实现且下一session完成全仓库orientation后首先负责：真实38-target native input/output hooks、chunked bank accumulator、
+当前尚未实现且已完成全仓库orientation；得到owner明确许可后首先负责：真实38-target native input/output hooks、chunked bank accumulator、
 signed rank4 compiler、free-code oracle optimizer及其strict250 evaluation wiring。它们必须形成一个canonical实现面，不恢复任何
 退役Writer或realizer。

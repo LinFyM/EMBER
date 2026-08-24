@@ -235,6 +235,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 - [x] 冻结相同1000 steps、每步8+8精确50/50 batch、optimizer/scheduler与唯一step1000 checkpoint；action chunk在first-event
   completion之后开始并在episode end截断；first event继续使用冻结primitive expert，event完成后丢弃旧chunk
   并切换direction-specific recovery expert，运行不变100-row Gate A；
+- [x] 首次formal在0 optimizer steps暴露256/128 raw RGB mixed-collate工程错误；改用PI0.5原生model224 resize，并从loss遮掉
+  phase/episode tail padding，不改变科学训练合同；
 - [ ] 从clean pushed frozen authority并行训练两个recovery experts；
 - [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；
   若失败，关闭task65/68上的primitive composition、composite SFT、phase-expert distillation和recovery SFT，不做第二轮DAgger、

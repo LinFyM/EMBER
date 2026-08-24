@@ -214,11 +214,16 @@ def _optimize_task_batch(
     data_seconds: float,
     tick: float,
     started: float,
+    mask_action_padding: bool,
 ) -> dict[str, Any]:
     policy_batch = processor.training_batch(dict(batch))
     optimizer.zero_grad(set_to_none=True)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        loss = pi05_mean_flow_loss(policy, policy_batch)
+        loss = pi05_mean_flow_loss(
+            policy,
+            policy_batch,
+            action_is_pad=(batch["action_is_pad"] if mask_action_padding else None),
+        )
     loss.backward()
     if any(
         parameter.grad is not None
@@ -336,7 +341,12 @@ def _train_one_task(
             selected = selected[: min(batch_size, remaining)]
             if not selected:
                 raise ExpertManifoldError("distillation query stream ended early")
-        batch = default_collate([dataset[index] for index in selected])
+        samples = [dataset[index] for index in selected]
+        batch = (
+            dataset.collate(samples)
+            if config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
+            else default_collate(samples)
+        )
         data_seconds = time.monotonic() - tick
         completed = step + 1
         row = _optimize_task_batch(
@@ -356,6 +366,9 @@ def _train_one_task(
             data_seconds=data_seconds,
             tick=tick,
             started=started,
+            mask_action_padding=(
+                config.get("schema_version") == RECOVERY_EXPERT_CONFIG_SCHEMA
+            ),
         )
         append_jsonl(metrics_path, row)
         metrics_rows += 1

@@ -8,7 +8,9 @@ import torch
 from ember.expert_manifold.contract import (
     ExpertTask,
     ExpertManifoldError,
+    build_dataset,
     load_task_expert_config,
+    load_train_tasks,
     parse_resume_task,
     parse_task_indices,
     resolve_runtime,
@@ -95,6 +97,23 @@ def test_composite_recovery_experts_share_one_fixed_training_contract() -> None:
             left.pop("profile_evidence")
             right.pop("profile_evidence")
         assert left == right
+
+
+def test_composite_recovery_mixed_resolution_batch_reaches_native_model_size() -> None:
+    config = load_task_expert_config(RECOVERY_CONFIGS[0])
+    data_root = REPO_ROOT / (
+        "data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a/libero_90"
+    )
+    tasks = load_train_tasks(config, data_root)
+    dataset = build_dataset(config, tasks, data_root=data_root)
+    try:
+        batch = dataset.collate([dataset[rows[0]] for rows in dataset.domain_rows])
+    finally:
+        dataset.close()
+    assert batch["observation.images.camera1"].shape == (2, 3, 224, 224)
+    assert batch["observation.images.camera2"].shape == (2, 3, 224, 224)
+    assert batch["observation.images.camera1"].dtype == torch.float32
+    assert batch["action"].shape == (2, 50, 7)
 
 
 def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> None:

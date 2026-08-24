@@ -21,8 +21,11 @@ expert。该实验只建立训练期privileged composite teacher，不是EMBER�
 primitive成功episodes等概率抽取。每个domain独立确定性shuffle；两臂均训练1000 steps，AdamW、BF16、peak LR
 `1e-5`、warmup 25、cosine decay到`1e-7`，只保留step1000 checkpoint。不同方向不单独调参或选step。
 
-action query从当前segment内最多读取50步；不足50步时padding并标记`action_is_pad`，绝不跨first-event boundary或episode
-end。只使用真实执行且最终成功的动作，不读取A3失败states和已取消distillation的`2773/3998` weak-teacher labels。
+action query从当前segment内最多读取50步；不足50步时padding并以`action_is_pad`从flow loss中排除，绝不跨first-event
+boundary或episode end。只使用真实执行且最终成功的动作，不读取A3失败states和已取消distillation的`2773/3998`
+weak-teacher labels。
+两类HDF5的原始RGB分别为256与128；mixed batch在collate前分别调用PI0.5原生`resize_with_pad_torch`到model224，使结果与
+模型原本逐样本预处理一致，不让任一domain决定另一domain的图像尺度。
 
 配置：
 

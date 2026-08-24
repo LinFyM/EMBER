@@ -50,6 +50,7 @@ class ProcessPhaseExpert:
     checkpoint: Path
     adapter_path: Path
     adapter_bytes: int
+    role: str = "primitive_phase_expert"
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,7 @@ class ProcessMetaAuthority:
     expert_source_checkpoint: Path | None
     privileged_teacher_kind: str | None
     phase_experts: Mapping[str, ProcessPhaseExpert]
+    variant_phase_experts: Mapping[str, Mapping[str, ProcessPhaseExpert]]
     variant_experts: Mapping[str, ProcessCompositeExpert]
     family: ProcessMetaFamily
     rollout: Mapping[str, Any]
@@ -103,6 +105,62 @@ def _phase_expert_authorities(
             checkpoint=checkpoint,
             adapter_path=adapter_path,
             adapter_bytes=adapter_bytes,
+        )
+    return result
+
+
+def _variant_phase_expert_authorities(
+    teacher: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    family: ProcessMetaFamily,
+) -> dict[str, dict[str, ProcessPhaseExpert]]:
+    records = teacher.get("variant_phase_experts", {})
+    variants = {variant.name: variant for variant in family.variants}
+    if set(records) != set(variants):
+        raise ProcessMetaError(
+            "process-meta recovery experts do not cover both variants"
+        )
+    result = {}
+    adapter_paths = set()
+    for variant_name, phase_records in records.items():
+        variant = variants[variant_name]
+        if set(phase_records) != set(family.predicates):
+            raise ProcessMetaError(
+                "process-meta recovery route does not cover both events"
+            )
+        phase_experts = {}
+        for position, phase_key in enumerate(variant.required_order):
+            record = phase_records[phase_key]
+            checkpoint = repo_root / str(record["checkpoint"])
+            adapter_path = checkpoint / "adapter.safetensors"
+            adapter_bytes = int(record["adapter_bytes"])
+            expected_role = (
+                "original_primitive_first"
+                if position == 0
+                else "composite_context_recovery_second"
+            )
+            if (
+                not adapter_path.is_file()
+                or adapter_path.stat().st_size != adapter_bytes
+                or int(record["step"]) != 1000
+                or str(record["language"]).strip() != family.phase_languages[phase_key]
+                or str(record["role"]) != expected_role
+            ):
+                raise ProcessMetaError("process-meta recovery expert authority changed")
+            phase_experts[phase_key] = ProcessPhaseExpert(
+                phase_key=phase_key,
+                task_id=int(record["task_id"]),
+                checkpoint=checkpoint,
+                adapter_path=adapter_path,
+                adapter_bytes=adapter_bytes,
+                role=expected_role,
+            )
+            adapter_paths.add(adapter_path.resolve())
+        result[variant_name] = phase_experts
+    if len(adapter_paths) != 4:
+        raise ProcessMetaError(
+            "process-meta recovery controller requires four distinct adapters"
         )
     return result
 
@@ -153,10 +211,11 @@ def _teacher_authorities(
     Path | None,
     Path | None,
     dict[str, ProcessPhaseExpert],
+    dict[str, dict[str, ProcessPhaseExpert]],
     dict[str, ProcessCompositeExpert],
 ]:
     if teacher is None:
-        return None, None, None, {}, {}
+        return None, None, None, {}, {}, {}
     kind = str(teacher.get("kind"))
     lora_contract_path = repo_root / str(teacher["lora_contract"])
     source_checkpoint = repo_root / str(teacher["source_checkpoint"])
@@ -164,12 +223,24 @@ def _teacher_authorities(
         phase_experts = _phase_expert_authorities(
             teacher, repo_root=repo_root, family=family
         )
-        return kind, lora_contract_path, source_checkpoint, phase_experts, {}
+        return kind, lora_contract_path, source_checkpoint, phase_experts, {}, {}
+    if kind == "variant_phase_recovery_rank16_lora":
+        variant_phase_experts = _variant_phase_expert_authorities(
+            teacher, repo_root=repo_root, family=family
+        )
+        return (
+            kind,
+            lora_contract_path,
+            source_checkpoint,
+            {},
+            variant_phase_experts,
+            {},
+        )
     if kind == "order_specific_composite_rank16_lora":
         variant_experts = _composite_expert_authorities(
             teacher, repo_root=repo_root, family=family
         )
-        return kind, lora_contract_path, source_checkpoint, {}, variant_experts
+        return kind, lora_contract_path, source_checkpoint, {}, {}, variant_experts
     raise ProcessMetaError("unsupported process-meta privileged teacher")
 
 
@@ -245,6 +316,7 @@ def load_process_meta_authority(
         lora_contract_path,
         expert_source_checkpoint,
         phase_experts,
+        variant_phase_experts,
         variant_experts,
     ) = _teacher_authorities(
         value.get("privileged_teacher"), repo_root=repo_root, family=family
@@ -257,6 +329,7 @@ def load_process_meta_authority(
         expert_source_checkpoint=expert_source_checkpoint,
         privileged_teacher_kind=teacher_kind,
         phase_experts=phase_experts,
+        variant_phase_experts=variant_phase_experts,
         variant_experts=variant_experts,
         family=family,
         rollout=dict(value["rollout"]),

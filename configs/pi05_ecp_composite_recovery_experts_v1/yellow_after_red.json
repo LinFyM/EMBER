@@ -40,6 +40,8 @@
     "sampler_task_id": 0,
     "task_count": 1,
     "action_chunk_size": 50,
+    "model_image_size": 224,
+    "mask_action_padding": true,
     "lora_topology": "configs/pi05_lora_v1.json:38targets:rank16",
     "task_parameter_sharing": "none",
     "objective": "successful_second_phase_plus_primitive_flow_sft",

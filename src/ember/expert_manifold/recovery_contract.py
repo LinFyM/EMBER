@@ -111,6 +111,8 @@ def recovery_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
         and int(experts.get("task_count", -1)) == 1
         and int(experts.get("sampler_task_id", -1)) == 0
         and int(experts.get("action_chunk_size", -1)) == 50
+        and int(experts.get("model_image_size", -1)) == 224
+        and experts.get("mask_action_padding") is True
         and experts.get("lora_topology") == "configs/pi05_lora_v1.json:38targets:rank16"
         and experts.get("task_parameter_sharing") == "none"
         and sampler.get("kind") == "deterministic_balanced_two_domain"
@@ -193,6 +195,7 @@ def load_recovery_spec(
         primitive_demo_indices=tuple(range(50)),
         composite_query_count=int(recovery["composite_query_count"]),
         primitive_query_count=int(recovery["primitive_query_count"]),
+        model_image_size=int(experts["model_image_size"]),
         initial_adapter_path=initial_path,
         initial_adapter_bytes=int(initialization["adapter_bytes"]),
     )

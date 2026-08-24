@@ -38,6 +38,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 class TeacherRuntime:
     install_phase_expert: Callable[[str], None] | None
     phase_expert_task_ids: Mapping[str, int]
+    phase_expert_roles: Mapping[str, str]
+    phase_expert_checkpoints: Mapping[str, str]
     fixed_language: str | None
     composite_expert_variant: str | None
 
@@ -151,6 +153,8 @@ def _collect_episode(
     phase_languages: Any,
     install_phase_expert: Callable[[str], None] | None,
     phase_expert_task_ids: Mapping[str, int],
+    phase_expert_roles: Mapping[str, str],
+    phase_expert_checkpoints: Mapping[str, str],
     fixed_language: str | None,
     exact_language: str,
     rollout: Any,
@@ -169,6 +173,8 @@ def _collect_episode(
     action_phase_keys: list[str] = []
     replan_phase_keys: list[str] = []
     replan_teacher_task_ids: list[int | None] = []
+    replan_teacher_roles: list[str | None] = []
+    replan_teacher_checkpoints: list[str | None] = []
     noise_seeds: list[int] = []
     replan_index = 0
     started = time.monotonic()
@@ -198,6 +204,8 @@ def _collect_episode(
         environment_actions = postprocess(normalized).detach().cpu().numpy()[0]
         replan_phase_keys.append(phase_key)
         replan_teacher_task_ids.append(phase_expert_task_ids.get(phase_key))
+        replan_teacher_roles.append(phase_expert_roles.get(phase_key))
+        replan_teacher_checkpoints.append(phase_expert_checkpoints.get(phase_key))
         noise_seeds.append(seed)
         replan_index += 1
         for action in environment_actions[: int(rollout["replan_steps"])]:
@@ -230,6 +238,8 @@ def _collect_episode(
         "action_phase_keys": tuple(action_phase_keys),
         "replan_phase_keys": tuple(replan_phase_keys),
         "replan_teacher_task_ids": tuple(replan_teacher_task_ids),
+        "replan_teacher_roles": tuple(replan_teacher_roles),
+        "replan_teacher_checkpoints": tuple(replan_teacher_checkpoints),
         "policy_noise_seeds": tuple(noise_seeds),
         "exact_language": exact_language,
     }
@@ -256,7 +266,7 @@ def _prepare_teacher(
             raise ProcessMetaError(
                 "privileged-teacher manifest requires its matching teacher mode"
             )
-        return TeacherRuntime(None, {}, None, None)
+        return TeacherRuntime(None, {}, {}, {}, None, None)
     if (
         authority.lora_contract_path is None
         or authority.expert_source_checkpoint is None
@@ -267,15 +277,24 @@ def _prepare_teacher(
     lora = load_pi05_lora_contract(authority.lora_contract_path)
     prepare_frozen_writer_policy(policy, lora)
     if mode == "phase_expert":
+        if authority.privileged_teacher_kind == "phase_task_local_rank16_lora":
+            experts = authority.phase_experts
+        elif (
+            authority.privileged_teacher_kind == "variant_phase_recovery_rank16_lora"
+            and set(authority.variant_phase_experts)
+            == {item.name for item in authority.family.variants}
+        ):
+            experts = authority.variant_phase_experts[variant.name]
+        else:
+            raise ProcessMetaError("phase-expert teacher authority is incomplete")
         if (
-            authority.privileged_teacher_kind != "phase_task_local_rank16_lora"
-            or set(authority.phase_experts) != set(authority.family.predicates)
+            set(experts) != set(authority.family.predicates)
             or authority.variant_experts
         ):
-            raise ProcessMetaError("phase-expert teacher authority is incomplete")
+            raise ProcessMetaError("phase-expert teacher route is incomplete")
         expert_states = {
             phase_key: load_file(str(expert.adapter_path), device="cpu")
-            for phase_key, expert in authority.phase_experts.items()
+            for phase_key, expert in experts.items()
         }
         for state in expert_states.values():
             validate_lora_state(state, lora)
@@ -287,15 +306,17 @@ def _prepare_teacher(
                 copy_task_lora_state_(policy, expert_states[phase_key], lora)
                 installed_phase = phase_key
 
-        task_ids = {
-            phase_key: expert.task_id
-            for phase_key, expert in authority.phase_experts.items()
+        task_ids = {phase_key: expert.task_id for phase_key, expert in experts.items()}
+        roles = {phase_key: expert.role for phase_key, expert in experts.items()}
+        checkpoints = {
+            phase_key: str(expert.checkpoint) for phase_key, expert in experts.items()
         }
-        return TeacherRuntime(install, task_ids, None, None)
+        return TeacherRuntime(install, task_ids, roles, checkpoints, None, None)
     if (
         mode != "composite_expert"
         or authority.privileged_teacher_kind != "order_specific_composite_rank16_lora"
         or authority.phase_experts
+        or authority.variant_phase_experts
         or set(authority.variant_experts)
         != {item.name for item in authority.family.variants}
     ):
@@ -306,6 +327,8 @@ def _prepare_teacher(
     copy_task_lora_state_(policy, state, lora)
     return TeacherRuntime(
         None,
+        {},
+        {},
         {},
         authority.family.exact_language,
         expert.variant_name,
@@ -354,6 +377,8 @@ def _persist_episode(
             "action_phase_keys": result["action_phase_keys"],
             "replan_phase_keys": result["replan_phase_keys"],
             "replan_teacher_task_ids": result["replan_teacher_task_ids"],
+            "replan_teacher_roles": result["replan_teacher_roles"],
+            "replan_teacher_checkpoints": result["replan_teacher_checkpoints"],
             "policy_noise_seeds": result["policy_noise_seeds"],
             "public_video": (
                 str(public_path.relative_to(args.output_dir)) if keep_video else None
@@ -419,6 +444,8 @@ def _collect_panel(
                 phase_languages=authority.family.phase_languages,
                 install_phase_expert=teacher.install_phase_expert,
                 phase_expert_task_ids=teacher.phase_expert_task_ids,
+                phase_expert_roles=teacher.phase_expert_roles,
+                phase_expert_checkpoints=teacher.phase_expert_checkpoints,
                 fixed_language=teacher.fixed_language,
                 exact_language=authority.family.exact_language,
                 rollout=authority.rollout,
@@ -506,6 +533,8 @@ def main() -> None:
         "teacher_mode": args.teacher_mode,
         "privileged_teacher_kind": authority.privileged_teacher_kind,
         "phase_expert_task_ids": dict(teacher.phase_expert_task_ids),
+        "phase_expert_roles": dict(teacher.phase_expert_roles),
+        "phase_expert_checkpoints": dict(teacher.phase_expert_checkpoints),
         "composite_expert_variant": teacher.composite_expert_variant,
         "variant_name": variant.name,
         "required_order": list(variant.required_order),

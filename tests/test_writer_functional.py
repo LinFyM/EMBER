@@ -404,6 +404,29 @@ def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> N
         assert torch.equal(loss_only_gradients[name], default_gradients[name])
 
 
+def test_pi05_loss_only_masks_action_chunk_tail() -> None:
+    from lerobot.utils.constants import (
+        ACTION,
+        OBS_LANGUAGE_ATTENTION_MASK,
+        OBS_LANGUAGE_TOKENS,
+    )
+
+    policy = _TinyPi05Policy()
+    actions = torch.tensor([[[0.2, -0.1, 0.3], [9.0, 8.0, 7.0]]])
+    batch = {
+        "image": torch.zeros(1, 3, 4, 4),
+        ACTION: actions,
+        OBS_LANGUAGE_TOKENS: torch.ones(1, 4, dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(1, 4, dtype=torch.bool),
+    }
+    loss = pi05_mean_flow_loss(
+        policy, batch, action_is_pad=torch.tensor([[False, True]])
+    )
+    velocity = policy.model.action_out_proj(policy.model.projection(actions)) + 0.005
+    expected = (-actions - velocity)[0, 0].square().mean()
+    assert torch.allclose(loss, expected)
+
+
 @pytest.mark.parametrize("policy_microbatch_size", (16, 10))
 def test_pi05_loss_only_independent_logical_b20_matches_physical_slices(
     policy_microbatch_size: int,

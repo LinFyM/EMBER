@@ -44,6 +44,8 @@ def _splitmix64(value: int) -> int:
 def pi05_mean_flow_loss(
     policy: torch.nn.Module,
     batch: Mapping[str, Any],
+    *,
+    action_is_pad: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute the exact PI05 training mean without materializing host metrics."""
 
@@ -86,7 +88,14 @@ def pi05_mean_flow_loss(
     )
     if losses.ndim != 3 or not 0 < action_width <= losses.shape[-1]:
         raise WriterModelError("PI05 loss-only output contract changed")
-    return losses[:, :, :action_width].mean()
+    losses = losses[:, :, :action_width]
+    if action_is_pad is None:
+        return losses.mean()
+    if action_is_pad.shape != losses.shape[:2] or bool(action_is_pad.all()):
+        raise WriterModelError("PI05 action padding mask changed")
+    padding = action_is_pad.to(device=losses.device, dtype=torch.bool)
+    valid = (~padding).unsqueeze(-1)
+    return (losses * valid).sum() / (valid.sum() * action_width)
 
 
 @contextmanager

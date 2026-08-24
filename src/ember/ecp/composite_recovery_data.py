@@ -27,6 +27,7 @@ class CompositeRecoverySpec:
     primitive_demo_indices: tuple[int, ...]
     composite_query_count: int
     primitive_query_count: int
+    model_image_size: int
     initial_adapter_path: Path
     initial_adapter_bytes: int
 
@@ -154,3 +155,26 @@ class CompositeRecoveryDataset:
         state = self.__dict__.copy()
         state["_handles"] = OrderedDict()
         return state
+
+    def collate(self, samples: Sequence[dict[str, Any]]) -> dict[str, Any]:
+        """Apply PI0.5's native resize independently before mixed-size collation."""
+
+        import torch
+        from lerobot.policies.pi05.modeling_pi05 import resize_with_pad_torch
+        from torch.utils.data import default_collate
+
+        prepared = []
+        for sample in samples:
+            row = dict(sample)
+            for key in (
+                "observation.images.camera1",
+                "observation.images.camera2",
+            ):
+                image = torch.from_numpy(row[key]).to(torch.float32).div_(255.0)
+                row[key] = resize_with_pad_torch(
+                    image,
+                    self.spec.model_image_size,
+                    self.spec.model_image_size,
+                ).squeeze(0)
+            prepared.append(row)
+        return default_collate(prepared)

@@ -135,6 +135,9 @@
   对应primitive成功数据按50/50混合，从原primitive LoRA初始化两个direction-specific recovery experts；第一event仍由冻结
   primitive执行，切换后由recovery expert完成第二event。它必须直接通过原Gate A；失败后整个task65/68 SFT式teacher
   acquisition family停止。owner已确认执行，当前正在冻结并验证训练合同。
+- clean pushed `a06a3ba`的首次formal launch在第一个mixed batch、任何optimizer step之前工程停止：composite RGB为256，
+  primitive RGB为128，默认collate无法堆叠。该run以0 steps封存，不作科学结果；修正使用PI0.5原生resize分别变换到model224，
+  并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

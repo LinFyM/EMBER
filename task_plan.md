@@ -296,6 +296,8 @@ task-specific closed-loop support，尤其Goal/Long全部丢失。该结果关�
 - [ ] 建立owner-specific `P_lang[38,128]`和`P_scene[38,128]`，与
   `P_process[8,38,128]/rho/sigma`形成固定同构schema；
 - [ ] 复用native v3初始化、event/horizon binding与Dynamic-K，但默认关闭Action Meta；probe粒子不得提前平均；
+- [ ] fresh observer形成后必须补一次共享、无task-ID的matched Action Meta-LoRA control；按owner要求只要没有闭环、视频因果或
+  probe稳定性负面就启用并永久冻结，不让它与后续Program-to-code/realizer坐标共同旋转；
 - [ ] 用content-grounded frame/action/transition、event/contact/predicate phase、process-pair、cross-video consistency、speed、
   same-procedure/different-object与group-disjoint目标训练，不以pure relative-time schedule为主监督；
 - [ ] 在process-held families通过full-vs-first+final、sibling discrimination、same-task稳定、probe稳定、event boundary/non-collapse与

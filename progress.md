@@ -256,7 +256,8 @@
 21. 从clean pushed detached `7527568`完成100-row on-policy matched采集，两个composite behavior均为`5/50`；采集得到
     `2773/3998` weak-teacher queries，但训练未启动。
 22. 最新专家复核判定该distillation的oracle authority与full50 phase-tail目标不成立，取消formal training，并把唯一后继改为
-    second-phase composite-context recovery teacher Gate；当前goal paused且没有GPU job。
+    second-phase composite-context recovery teacher Gate；该时点goal paused且没有GPU job，owner随后已恢复完整ECP推进，
+    当前状态以上方Current authority为准。
 
 ## Completed fixed-A capacity diagnostic
 

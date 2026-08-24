@@ -1,76 +1,78 @@
 # EMBER temporary handoff
 
-此文件只服务这次跨session交接。专家回复尚未到达；当前session收到回复后应更新本文件并推送。新session完整消费后删除它，
-不要把它变成长期状态文档。
+此文件只服务本次跨session交接。新session完整消费后删除并提交，不把它保留为长期状态文档。
 
-## 1. 当前交接点
+## 1. 交接结论
 
-- canonical branch：`main`；本轮起点`7ab5a04`，清理提交号见Git最新记录；
-- 没有新的ECP训练或GPU job；
-- 活动架构方向仍叫ECP，不叫PECS；GOMQ与ECP没有阶段依赖；
-- 人工process数据路线已取消并清理；后续只使用现成授权LIBERO tasks；
-- owner已向专家发送复核请求，等待回复；未经owner明确允许，不得自行联系或回复专家。
+- canonical branch为`main`；科学起点`7ab5a04`，瘦身基础`6fdaeb8`，最终文档提交见Git HEAD；
+- 没有新的ECP训练或GPU job，没有联系或回复外部专家；
+- 专家最新回复已完整处理，active design是**ECP Native-Factor Compiler**；
+- 原回复共1416行，没有原样复制进仓库以避免再次制造重复长文档；所有可执行架构、shape、数据、loss、Gate、耗时、final controls和
+  停止条件已无损结构化进`docs/event_conditioned_policy_compiler_design.md`，长期结论进入`findings.md`与`research_history.md`；
+- 专家审查的`7ab5a04`早于`6fdaeb8`瘦身，但期间没有新增科学结果；当前代码也复核了专家指出的native hook缺口。
 
-## 2. owner发给专家的要求
+## 2. 路线变化，必须先读
 
-> 我们不制作数据集，就用现成的LIBERO task。我们没有那么多时间浪费，后续的推进直指ECP的核心。关键的几个点，第一，
-> ECP的架构再次明确清楚，即使现在的设计没有问题，也再次明确一下；第二，接下来的具体的几个推进阶段规划清楚，到底用
-> 什么数据，构建什么样的模型，目的是什么，要验证什么事情，怎么算通过；第三，最终的ECP应该是什么样的，如何根据前序
-> 的推进阶段构建出来，用什么数据训练什么模型。我们接下来的推进，核心的目标就一个，根据之前讨论分析得出的，以现有条件
-> 能分析出来的比较合理的ECP架构，经过必要的几个阶段的推进，解决之前几十版架构实现遇到的各种问题，最终实现既定输入
-> 信息下性能的稳定提升。
+旧交接中的`q_pi -> shared realizer`已经被专家明确否决，不能恢复：
 
-不要再给专家重复他已经知道的完整背景，也不要给他设置“单变量下一步”“三个月计划”等限制。需要的是他对ECP核心架构、
-识别问题、训练流程和可行性的直接判断。
+```text
+exact language + K ordered action-hidden videos
+  -> Pass A owner-specific Video Program
+  -> Pass B Program-conditioned pooling of target-native inputs/outputs
+  -> mobile rank4 residual + frozen rank12 carrier
+  -> one complete 38-target rank16 LoRA
+```
 
-## 3. 专家回复到达后的处理
+privileged experts/effects只作nonparametric set-valued functional critic，不输出Program、不进入deployment。唯一Program schema为
+`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`、`sigma[8,38,128]`。
 
-当前session：
+## 3. 新session的唯一当前任务
 
-1. 保存回复原文或不失真的摘要；
-2. 对照`docs/event_conditioned_policy_compiler_design.md`列出confirmed / changed / rejected / unresolved；
-3. 把唯一最终架构具体到每层输入、中间shape、输出LoRA，以及每阶段数据、训练、冻结、实验、耗时级别、通过条件和失败分支；
-4. 更新`task_plan.md`、`findings.md`、`progress.md`和本文件，提交并推送`main`；
-5. 停止，不自行开始下一版本，让owner切到新session。
+不要训练fresh Stage 0、shared compiler、joint Writer或outer credit。先完成G1 native-factor task-local capacity oracle：
 
-新session：
+1. 实现38-target真实linear input/output hooks；
+2. 按frame chunk构造absolute/adjacent/init/goal output banks；
+3. 实现Program-conditioned signed rank4 pooling、target scales与small-core SVD；
+4. 在fold0 held5只优化task-local rank/event/pooling/scale free code；
+5. 完成carrier/direct/mobile/native四arm strict250。
 
-1. 按`AGENTS.md`完整读取mandatory docs；
-2. 核对expert ruling已经进入active design和plan；
+通过门：relative recovery至少0.70（当前参考约90/250）、breadth5/5、Goal/Long均非零、4/5 tasks高于carrier、carrier保留至少33/43，
+且只有一套完整rank16 adapter。一次完整周期预计约1个工作日。失败只允许一次read-only span分析和一次实现修正，再失败即停止该
+架构，不把失败推给数据量。
+
+G1通过后的G2--G5与final顺序、训练数据、冻结关系、门槛和耗时全部以`task_plan.md`和active design为准。
+
+## 4. 当前代码与资产边界
+
+保留：source/corpus/SFT、LoRA、task experts、Stage 0 v3、transition/event modules、policy effects、functional loss、reward occupancy、
+dynamic evaluator、successful members、carrier/mobile-rank4 evidence。
+
+尚无：native target bank hooks、online accumulator、signed compiler、free-code optimizer和G1 evaluation wiring。必须在一个canonical
+implementation surface内新增；不得恢复旧Writer、ECP v24、MDCO/PECS、fixed/two-sided realizer、人工process或GOMQ路径。
+
+## 5. owner稳定要求
+
+- 不制作人工dataset/task/controller trajectory，只用现成授权LIBERO；
+- 效率优先但不丢专家关键意见；先判断最早接口，不盲目版本迭代或小超参扫；
+- 复用现有长训练资产，smoke只做最小必要验证，不做checksum、防御性矩阵扫描或冗余测试提交；
+- 单job一个节点最多6张A40；EMBER通常总量不超过6，大量空闲才最多8；launch前live检查gpu01/gpu02；
+- 可安全共驻低显存/低util卡，不kill/reset他人进程；gpu01物理0若仍prohibited则不用；
+- 关键Gate汇报即可；遇到困难先回看active design和专家裁决；
+- canonical是`main`，仅在隔离/并发必要时开`codex/*` worktree，及时合并、推送、清理；
+- 活动树只保留一个实现面，代码/配置/文档/runs同步清理；
+- 未经owner当次明确允许，不得向外部专家发送任何内容；若需要，只给owner精简可复制prompt；
+- 只有owner明确要求时才使用goal机制；routine实现决定自主解决，不反问owner；
+- owner问具体问题时直接回答，不擅自扩成新方案或审批请求。
+
+## 6. 唯一保留的后期政策差异
+
+Action Meta当前默认关闭；base Writer有明确闭环增量后必须做一次matched attempt。专家要求“明确净收益且无breadth/retention
+损害”才启用，owner此前要求“只要无负面效果就启用”。这不阻塞G1--G3；执行到该门时按owner最新指示，不要提前询问。
+
+## 7. 新session启动清单
+
+1. 按`AGENTS.md`完整读mandatory docs和本文件；
+2. 核对当前HEAD、origin/main、worktree、ignored formal assets与GPU live state；
 3. 删除本文件并提交；
-4. 只有owner明确要求设置goal时才调用goal机制；
-5. 按冻结计划自主推进，不把routine实现选择反问owner。
-
-## 4. 不可再犯的路线混淆
-
-- ECP核心：language+action-hidden videos -> Program posterior -> shared realizer -> one complete LoRA。
-- GOMQ：独立历史baseline，rank16 136/400；不属于ECP Phase 0，也不需要重跑。
-- PECS：旧privileged effect/solver诊断，已关闭；不是ECP的别名。
-- v24：旧Stage 1 compiler的一版；其失败只说明那类compiler没解决映射，不定义ECP本质。
-- q_pi：训练期共享Program posterior网络，不是凭空正确的teacher或手工code；必须用task-disjoint closed loop证明。
-- held5：train24内部leave-task-out机制门；validation8才是正式开发选择。
-- Program event slots：最大`E=8`固定，激活数量和视频段落分配动态学习。
-- Action Meta-LoRA：首版可不用，但后续必须matched尝试；无负面且有净收益就启用并冻结。
-- shuffled/reversed：只在最终冻结checkpoint测试时序特异性，不用于训练或选模。
-- staged training不是最终割裂模型；通过后必须有冻结PI0.5 backbone的全Writer联合训练。
-
-## 5. owner执行偏好
-
-- 效率优先，但不能为了快丢掉专家关键意见；先思考接口，再实验。
-- 不要连续盲目迭代版本，不要钻矩阵shape、低位浮点、防御性代码或冗余测试。
-- 复用已有长训练资产；明确坏路线停止，不用超长续训或小超参扫挽救。
-- 单job一个节点最多6张A40；EMBER总量通常不超过6，大量空闲时最多8；每次live检查两节点。
-- 可安全共驻低显存/低util卡，不得kill/reset他人进程；gpu01物理0若仍prohibited则不用。
-- 关键节点汇报即可，不频繁打断；遇到困难先回看专家原始意见和当前设计。
-- canonical是`main`；必要时开`codex/*` worktree，验证后及时合并、推送、清理。
-- 代码、文档、配置、branch、worktree和运行产物同步清理；活动树只保留一个实现面。
-- owner问具体问题时先直接回答，不擅自扩大成方案或要求owner批准routine决定。
-
-## 6. 当前仓库面
-
-保留：source/corpus/SFT、LoRA、task experts、ECP Stage 0、video sampling、functional loss、reward occupancy、dynamic evaluator。
-
-删除：旧Writer、functional decoder、ECP Stage 1/MDCO/PECS、fixed/two-sided realizers、projected historical adapters、人工process
-代码/配置/数据，以及逐轮设计卡和重复证据JSON。精确历史通过`docs/research_history.md`和Git恢复。
-
-专家回复前，`docs/event_conditioned_policy_compiler_design.md`中的realizer与`q_pi`训练顺序仍是开放点，不能据此launch。
+4. 从G1实现与最小smoke开始；
+5. formal launch前遵守clean pushed commit、frozen worktree、storage quota与GPU preflight合同。

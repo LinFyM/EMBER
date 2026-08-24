@@ -20,7 +20,8 @@ Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38�
 ## 2. 不可改变的部署合同
 
 - 输入：exact language + `K`条action-hidden ordered videos。
-- 输出：唯一一套完整rank16 LoRA；rank和内部参数化若有强证据可重新讨论，但不得因历史惯性固定成rank12+rank4。
+- 输出：唯一一套完整rank16 LoRA。当前专家方案采用有解析容量证据的frozen rank12 carrier + native-factor mobile rank4 residual；
+  只有证明rank4 ceiling后才重开完整task rank16，不能因历史惯性或便利随意改变。
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
 - 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
@@ -46,20 +47,19 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 ## 4. 当前方法方向
 
-经过专家和owner反复讨论，当前方向称为ECP（Event-Conditioned Policy Compiler）。它不是GOMQ、PECS或历史v24的改名，
-也不要求继承这些实现。ECP的核心是：
+经过专家和owner反复讨论，当前方向称为ECP Native-Factor Compiler。它不是GOMQ、PECS或历史v24的改名。其核心是：
 
-1. 用PI0.5原生语言、视觉和Action Expert内部时序结构形成有序、layer/target对应的Video Program；
-2. 用跨任务共享且部署兼容的机制把Program编译为一套完整LoRA；
-3. 训练期privileged posterior和部署期video posterior必须输出同构Program，避免任意latent与decoder共同旋转；
-4. 最终端到端Writer必须在冻结backbone的前提下进行联合训练，而不能永远停在互相割裂的阶段模块。
+1. 用冻结PI0.5原生language、patch和Action Expert内部时序结构形成owner-specific、ordered Video Program；
+2. 用同一Program从38个LoRA目标的真实input/output activations中有符号地选取rank4因子；
+3. 与frozen rank12 carrier严格拼接成唯一rank16 LoRA；
+4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
+5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。
 
-Program当前候选schema使用固定最大`E=8`个event slots；slot激活数量、视频段落到slot的分配由内容学习，不由人工规定。固定
-容量并不意味着每个任务使用相同数量的事件。schema和后续阶段将在待回专家意见中再次确认，未确认的实现细节不得冒充最终
-架构。
+唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
+`sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。
 
-首版可以不启用Action Meta-LoRA，但后续必须做一次与canonical匹配的尝试；只要没有负面影响并能改善probe稳定性、视频
-因果性或闭环表现，就启用并冻结。历史中性结果不能被忘记，也不能被包装成永久禁止。
+首版不启用Action Meta-LoRA；base Writer有明确闭环增量后必须做一次matched attempt。owner要求无负面效果即可启用，专家建议还需
+明确净收益；执行到该后期门时以owner最新指示裁决，不能遗漏这次尝试。
 
 shuffled/reversed不进入训练、loss或checkpoint选择。它们只在最终冻结checkpoint上作为严格配对的时序特异性测试；正确
 视频应稳定优于打乱与倒序输入。full video还必须优于language/no-video、scene/first+final和wrong-video controls。

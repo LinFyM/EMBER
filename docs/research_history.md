@@ -81,9 +81,9 @@ heads、fusion、LR、seed或mapping数量没有改变最早失效接口：Progr
 - fixed effect realizer的两个裁决点只有33/37；
 - centered two-sided coordinate达到80/250，但仍breadth3/5、Goal/Long0。
 
-结论：policy effect证据本身包含有效策略，但历史coordinate/solver/realizer不能稳定跨任务实现它。这个负结果淘汰固定-A、
-rank12+rank4惯性分解、raw-factor短solver和当时的fixed realizer；它没有检验完整distributional `q_pi` + 同构`q_V` + shared
-Program realizer。
+当时结论是：policy effect证据本身包含有效策略，但历史coordinate/solver/realizer不能稳定跨任务实现它。这个负结果淘汰
+fixed-A、raw-factor短solver和当时的fixed realizer；它尚未检验distributional `q_pi`。2026-08-24专家在综合后续fit-span结果后
+进一步判断，不应再为未经标定的latent增加神经`q_pi`，并以native-factor critic路线取代。
 
 关键提交：`e8dba3c`、`ceae794`、`083ed98`、`44bd6f0`、`f75bafc`、`8acc5b4`、`1774a9e`、`01a96b6`、`8aab214`、
 `7aa0bed`。
@@ -101,18 +101,36 @@ acquisition和SFT式recovery family全部取消，不再作为Stage 1前置。�
 关键提交链：`24c5bdc`、`4bf5039`、`b8fb0bf`、`38dbffd`、`7527568`、`d8eca79`、`a06a3ba`、`342620a`、`ebdd509`、
 `7ab5a04`。
 
-## 9. 当前保留结论
+## 9. 2026-08-24 ECP Native-Factor专家裁决
+
+专家在远程`main@7ab5a04`上复核全部人工process non-pass、Stage 0、successful members、mobile projection和两类shared realizer结果，
+形成以下新主线：
+
+1. 保留ECP输入输出目标，但取消canonical neural `q_pi -> fixed effect code -> inverse realizer`；
+2. privileged successful policies/effects改为nonparametric set-valued functional critic，不输出Program；
+3. Video Program固定为owner-specific language/scene与最多8个ordered events，并新增`tau[8,2]`；
+4. 同一视频第二pass直接捕获38个LoRA targets的native inputs/outputs及动态differences；
+5. Program-conditioned signed pooling生成mobile rank4，与frozen rank12 carrier拼成唯一rank16；
+6. mobile rank4选择来自110/120/76且5/5非零的解析容量证据，不恢复fixed-A或旧rank4 solver；
+7. 当前唯一下一步是fold0 held5 task-local free-code oracle，门槛约90/250、breadth5/5、Goal/Long非零与高retention；
+8. 通过后才训练Natural Program、frozen-Program shared compiler、joint Writer和conditional outer credit；
+9. final使用全部71 meta+train24 fresh训练，validation只看三个预注册相邻checkpoint，冻结后补controls并最后打开Test；
+10. 只有所有必要Gate与完整controls均完成仍系统失败，才可判断当前自然LIBERO/zero-interaction合同存在根本问题。
+
+完整shape、loss、门槛与耗时已经无损结构化进入`docs/event_conditioned_policy_compiler_design.md`。专家原始审查快照早于
+`6fdaeb8`仓库瘦身；后者没有新增科学结果，因此不影响裁决。当前保留代码也验证了其指出的q/v native target hook缺口。
+
+## 10. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
-2. task-local LoRA容量充足；共享Program-to-effective-LoRA映射是最明确的未解瓶颈。
-3. 不应再把GOMQ、PECS、v24、固定-A或rank12+rank4当作ECP的必经阶段。
-4. privileged `q_pi`必须是task-disjoint共享网络并输出与video `q_V`同构的Program；名称本身不构成合理性。
-5. Program schema、coordinate和realizer不能一起自由旋转；每个接口要先冻结后做closed-loop Gate。
-6. Stage 0需要证明视频过程信息，而不只是task/scene分类；最终full video必须超过static controls。
-7. 经过阶段Gate后必须进行冻结backbone的全Writer联合训练。
-8. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
+2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
+3. policy effects保留为critic；neural `q_pi`、fit-span/fixed-effect realizer、GOMQ、PECS与v24均不进入active路线。
+4. Program schema、native bank和compiler角色已经固定，不能共同自由旋转或退回全局task code。
+5. Stage 0必须证明full video超越endpoints；shared compiler必须直接用held closed loop证明跨task mapping。
+6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
+7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 10. 证据恢复方式
+## 11. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

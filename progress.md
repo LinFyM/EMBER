@@ -1,83 +1,69 @@
 # EMBER progress
 
-更新时间：2026-08-24。分支：`main`。本轮起点：`7ab5a04`。
+更新时间：2026-08-24。分支：`main`。本轮科学起点：`7ab5a04`；仓库瘦身基础：`6fdaeb8`；最终交接提交见当前Git HEAD。
 
 ## 当前状态
 
-owner已经把自然LIBERO-only的ECP核心复核prompt发送给专家，回复尚未提供。本轮只做仓库瘦身、状态固化和跨session交接，
-没有启动GPU训练，也没有向专家发送任何消息。
+专家回复已经收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的
+**ECP Native-Factor Compiler**，核心架构、数据角色、阶段Gate、最终controls和停止条件均已明确。
 
-当前active design：`docs/event_conditioned_policy_compiler_design.md`，状态为“骨架有效、开放点等待专家裁决”，不可启动formal run。
+本轮没有启动GPU训练、没有实现新Writer、没有向专家发送任何消息。当前有意停在跨session交接点；下一session消费
+`HANDOFF.md`后才开始G1 capacity oracle。
 
-## 本轮已完成
+专家复核锁定的是远程`main@7ab5a04`。其后`6fdaeb8`只删除退役代码/人工资产并整合文档，没有新增实验结果；专家指出的当前
+Stage 0实现缺口已在瘦身后的代码中复核：q/v owner仍来自layer input/residual，尚无真实38-target input/output hooks。因此该科学
+裁决可直接应用于当前活动树。
 
-### 活动代码收敛
+## 专家裁决已固化
 
-- 删除旧Writer网络、训练、cache、live adapter、generation profile与parallel evaluation实现；
-- 删除旧functional fingerprint/code/phase decoder、outer credit和shared residual实现；
-- 删除ECP Stage 1 v1--v24后继、MDCO、PECS、effect calibration、fixed realizer、two-sided coordinate和人工process模块；
-- 删除projected historical adapter、旧Writer family registry和跨历史benchmark分析路径；
-- 删除已冻结后不再使用且接口失效的旧source-base trainer；source authority与Source-SFT路径保留；
-- evaluator只保留source SFT与task-local expert静态adapter、动态队列、恢复、聚合和occupancy diagnostics；
-- 将仍被多个活动模块复用的基础能力重命名并提升到稳定位置：
-  - `meta_protocol.py`：non-held meta split；
-  - `privileged_actions.py`：训练期action对齐；
-  - `video_conditions.py`：视频control变换。
+- ECP继续推进，名称细化为ECP Native-Factor Compiler；
+- 取消neural `q_pi -> fixed effect-code realizer -> LoRA`前置链；
+- privileged experts/effects只作nonparametric set-valued training critic；
+- Video Program固定为owner-specific language/scene/ordered events及`rho/tau/sigma`；
+- 第二pass读取38个target的真实native inputs/outputs与动态differences；
+- Program通过signed pooling产生mobile rank4，与frozen rank12 carrier拼成唯一rank16；
+- 当前唯一下一步是fold0 held5 task-local free-code strict250，不先训练fresh Program/compiler；
+- 通过后依次进行Natural Program、frozen-Program shared compiler、joint Writer、conditional outer credit和final fresh；
+- validation8与完整video controls的资格门、Test8 sealed规则及ECP根本失败条件均已固定。
 
-### 配置、脚本与测试
+唯一保留的后期政策差异：专家建议Action Meta只有明确净收益才启用；owner此前要求必须matched尝试且无负面即可启用。它不阻塞
+当前G1--G3，执行到该门时按owner最新指示。
 
-- 删除退役Writer/ECP/人工process配置与冗余checksum sidecars；
-- canonical脚本缩减为source封存/Source-SFT、task experts、ECP Stage 0和PI0.5评测入口；
-- 删除只覆盖退役实现的测试；保留当前source、LoRA、experts、Stage 0、functional、reward和evaluation合同测试；
-- Python compile及全部126项活动测试通过；所有保留脚本的`--help`入口可加载。
+## 本轮仓库整理结果
 
-### 文档与证据
-
-- 删除41份旧Markdown设计/审查文件和87份分散证据JSON；
-- 重写`README.md`、owner要求、concept、ECP设计、research history、findings、plan和progress；
-- 历史精确事实改由一份`research_history.md`、Git提交和formal artifacts恢复，不再让旧文档宣称自己是active；
-- 新增临时`HANDOFF.md`，等待专家回复并供下一session消费。
-
-### 精简规模
-
-- tracked/pending tracked文件：456 -> 146；
-- Python文件：251 -> 105，代码与测试总行数：75,039 -> 26,118；
-- Markdown文件：50 -> 10；
-- Git历史与唯一formal artifacts继续承担精确历史恢复，不在活动树保留平行实现。
-
-### 本地运行资产
-
-- 删除两个人工复合数据集（约6.2GB）；
-- 删除人工composite/process teacher、recovery和separate-plates运行目录（约5.4GB）；
-- 保留原始LIBERO数据、tokenizer、`.venv`、现有task experts、唯一formal checkpoints和非人工历史结果；
-- 这些被删人工资产不在Git中，不能直接恢复，但可从对应历史提交重新生成；当前路线明确不再需要。
+- 退役Writer、functional decoder、ECP v1--v24后继、MDCO/PECS、fixed/two-sided realizers与人工process模块已删除；
+- evaluator保留source/task-expert adapter、dynamic queue、occupancy diagnostics和strict aggregation；
+- canonical基础模块为source/corpus/SFT、LoRA、task experts、Stage 0、policy effects、functional loss、reward/occupancy与evaluation；
+- 旧41份Markdown、87份分散证据JSON、退役配置/测试及约11.6GB人工datasets/runs已清除；
+- 瘦身提交`6fdaeb8`的126项活动CPU测试、compile、脚本入口与引用审计均通过；
+- 当前只有`main`一个worktree，无task-owned branch或GPU job。
 
 ## 当前可复用资产
 
-- 固定24/8/8 split与过滤后的71-task source corpus；
-- 已冻结source PI0.5 authority，以及source SFT训练、resume、validation；
-- rank16 LoRA topology和batched/materialized执行；
-- train24、non-held meta、validation diagnostic和独立particle task-expert contracts；
-- Stage 0 native observer、event binding、Stage 0 training/meta-training/checkpoint；
-- Stage 0跨episode video/action pair schedule；
-- functional flow loss和detached LoRA gradient bridge；
-- privileged reward rollout、occupancy capture；
-- cost-balanced PI0.5 evaluator与strict aggregation。
+- 固定24/8/8 split、71-task source corpus与五fold meta/target manifests；
+- frozen source PI0.5 authority、rank16 LoRA topology/materialization；
+- task-expert bank、independent successful members、mobile-rank4解析容量与effect calibration；
+- Stage 0 v3 full-layer/horizon observer、transition matcher、event binding/segmenter；
+- cross-episode video/action schedule、functional flow loss与detached LoRA gradient bridge；
+- natural reward rollout、occupancy capture、BDDL progress与cost-balanced strict evaluator；
+- ignored `runs/`中的唯一formal checkpoints、raw rows和aggregate。
 
-## 当前阻塞
+## 下一实现缺口
 
-唯一有意阻塞是专家回复。等待其再次明确：ECP最终架构、Program schema、realizer、`q_pi/q_V`训练关系、只用现成LIBERO的
-阶段计划、每个Gate和最终全Writer训练方式。
+活动树尚无：
 
-回复前禁止：
+1. 38-target native linear input/output hooks；
+2. absolute/adjacent/init/goal banks的chunked online accumulator；
+3. Program-conditioned signed rank4 compiler与scale/SVD canonicalization；
+4. task-local free-code optimizer；
+5. G1 four-arm strict250 wiring与Gate report。
 
-- 新建ECP版本、训练新checkpoint或恢复人工任务；
-- 把当前设计文档中的开放候选当成专家已确认方案；
-- 联系专家或替owner发送补充信息；
-- 因等待而转去重跑GOMQ、PECS、v24或无关历史实验。
+这些组成下一session的唯一实现面。先做最小真实smoke，再完成G1；不得恢复旧realizer、建立平行版本或跳到fresh Stage 0/joint。
 
-## 下一动作
+## 交接动作
 
-1. 等owner粘贴专家回复；
-2. 按`task_plan.md`的四步处理回复，提交最终handoff；
-3. owner开启新session后，新session完整阅读mandatory docs，消费并删除`HANDOFF.md`，再按冻结计划推进。
+1. 当前session完成文档一致性与Git审查，提交并推送；
+2. owner开启新session；
+3. 新session完整读取mandatory docs与`HANDOFF.md`，核对当前HEAD；
+4. 删除已消费的`HANDOFF.md`并提交；
+5. 按`task_plan.md`从G1开始自主推进，只在关键Gate、显著跃升或真实权限/路线歧义时暂停。

@@ -3,19 +3,20 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-当前方法方向为ECP（Event-Conditioned Policy Compiler）。活动树只保留source/task-expert基础设施、严格评测、ECP Stage 0
-候选observer以及最终Writer仍会复用的数据/functional组件。历史Writer、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务和
-失败realizer均由Git保存，不再作为可执行fallback。
+当前方法为ECP Native-Factor Compiler。活动树只保留source/task-expert基础设施、严格评测、ECP Stage 0以及最终Writer会复用的
+数据/functional组件。历史Writer、neural q_pi、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务和fixed-effect/fit-span
+realizer均由Git保存，不再作为可执行fallback。
 
 ## 当前状态
 
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
-- ECP Stage 0 native v3可作为candidate observer，但完整Program-to-LoRA链尚未通过；
-- 旧privileged realizer和人工process路线已正式关闭；
-- owner已请求专家重新明确自然LIBERO-only的ECP架构和完整推进阶段，回复尚待写入仓库。
+- ECP Stage 0 native v3可复用，但其q/v owners还不是真实target input/output captures；
+- 专家已冻结owner-specific Program、native-factor signed compiler和rank12+rank4单adapter主线；
+- 旧privileged q_pi/realizer和人工process路线已正式关闭；
+- 当前唯一下一步是fold0 held5 native-factor task-local free-code capacity oracle。
 
-在专家回复到达前，不启动新的ECP版本或GPU训练。交接状态见`HANDOFF.md`。
+本session只完成交接，不启动训练；新session按`task_plan.md`从capacity oracle开始。临时交接状态见`HANDOFF.md`。
 
 ## 阅读顺序
 
@@ -23,7 +24,7 @@ Expert的一套完整LoRA，使policy零交互完成任务。
 2. `docs/current_owner_requirements.md`：owner稳定目标与约束；
 3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
 4. `docs/concept.md`：科学问题与ECP假设；
-5. `docs/event_conditioned_policy_compiler_design.md`：当前架构骨架与待裁决点；
+5. `docs/event_conditioned_policy_compiler_design.md`：当前唯一架构、阶段Gate与停止条件；
 6. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录

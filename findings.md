@@ -1,101 +1,117 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。分数与提交的完整历史见`docs/research_history.md`。
+只记录跨session仍影响决策的结论。精确分数、提交和历史脉络见`docs/research_history.md`；当前唯一架构合同见
+`docs/event_conditioned_policy_compiler_design.md`。
 
 ## 科学结论
 
-### 1. 输出形式可行，Writer映射未解决
+### 1. 输出形式可行，amortized Writer仍未解决
 
-validation8 task-local rank16 oracle为250/400，四suite均有明显收益。因此“冻结PI0.5，只给Action Expert生成一套完整LoRA”
-不是根本错误。source只有48/400，说明通用policy不能替代task-conditioned更新。
+validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一
+完整LoRA”不是根本错误，核心瓶颈是如何由source-unseen task的language+video生成正确更新。
 
-失败集中在共享Writer：如何让language+video在source-unseen task上生成正确更新。内部hidden、LoRA重建、retrieval或低loss不保证
-闭环有效。
+内部hidden、LoRA cosine/reconstruction、retrieval或低training loss均不能替代closed-loop证据。
 
-### 2. Action Expert内部有可利用的动态结构
+### 2. Action Expert有可利用的时序结构，但旧owner并非完整target-native对应
 
-成功task experts的跨层、跨horizon response能形成task geometry，完整成功轨迹在held5五个任务上都有可捕获policy effects。
-Stage 0 native v3的owner/layer/horizon observer通过基本非退化门。这支持继续利用Action Expert原生时序结构，但不证明当前
-event Program已经理解视频过程。
+成功task experts的跨层、跨horizon response能形成task geometry；Stage 0 v3的owner/layer/horizon observer通过基本非退化门。
+固定`t_flow=1`probe的50个noise tokens按未来horizon排列，其hidden是当前language/image条件下的time-indexed policy response，不是
+teacher action或已经预测好的动作。
 
-固定`t_flow=1`probe的50个token是按未来horizon排列的Gaussian noise输入。中间hidden是当前language/image条件下的
-time-indexed policy response，不是teacher action，也不是已生成动作。
+当前代码的q/v owners主要来自同层input state与residual，再用family embedding/gate区分；它没有捕获真实`q_proj/v_proj`输出
+空间。原生target input/output hooks是新架构第一项必需实现，不能把现有`Z_owner`误称为LoRA factor bank。
 
-### 3. 视频因果性仍未建立
+### 3. 视频因果性尚未建立
 
-多个历史Writer的full-video结果接近language-only、video-only或first+final，Goal/Long为0。当前不能声称模型已理解视频过程。
-最终方法必须证明full video的必要增量、same-task其它视频鲁棒性、wrong/static controls差异，并在冻结checkpoint上表现出对
-shuffled/reversed的时序特异性。
+多个历史Writer的full-video接近language-only、video-only或first+final，Goal/Long为0。不能声称EMBER已经理解视频过程。最终
+correct必须稳定优于language/no-video/static/endpoints/wrong，same-task其它视频保持高retention；shuffled/reversed只在冻结
+checkpoint上测试时序特异性，不进入训练或选模。
 
-shuffled/reversed不应进入训练或选模，否则会把“对负样本敏感”误当成闭环有用的视频理解。
+### 4. 自然task数量是共享映射的识别边界
 
-### 4. task数量与映射多样性是识别问题
+train24中的language、scene、video和task identity高度耦合，可用审计后的non-held LIBERO-90扩展observer/prior/preservation，但71个
+任务已被source见过，不能冒充71个source-unseen adaptation mappings，也不能在task weight上淹没train24。开发macro固定由19个
+target-fit与轮换19个meta-fit各占50%。
 
-train24中language、scene、video和task identity高度耦合，Writer可能记住task特征。可使用审计后的non-held LIBERO-90扩充独立
-meta mappings，但不能用更多同task episodes冒充更多任务，也不能泄漏validation/test或形成task dictionary。
+owner明确不制作人工process数据。若free-code容量强而shared compiler低于carrier或breadth不超过2，应诚实判断现有source-unseen
+mappings不足，不能靠joint training或更多同task episodes掩盖。
 
-当前owner明确不制作人工process数据。因此新的ECP必须诚实评估现成LIBERO是否足以识别Program；若自然数据不能支持强
-same-endpoint/opposite-process claim，应收窄claim，而不是暗中补人工任务。
+### 5. Policy effects适合做critic，不适合做部署中间code
 
-### 5. shared prior有价值，错误residual会伤害
+15/15 known-success paths在owner/flow/action effect objective上严格单调改善，说明effect space能处理LoRA gauge、successful policies
+参数不相似、q-family能量支配和factor loss与policy function错配。
 
-held5 source/shared为21/43；某些task residual反而从43降到37/33。稳定共享底座可以提供支持，但错误的条件更新比不更新更危险。
-这要求realizer有no-worse/retention机制和早期closed-loop Gate，而不是只追求更大更新norm。
+但balanced-SVD realizer只有33/37且低于carrier43；centered two-sided fit span即使aggregate update cosine为.877--.960，仍只有
+80/250、breadth3/5、Goal/Long0。将held innovation压回fit-task固定坐标会丢失低能量但闭环关键的方向。
 
-rank12 carrier+rank4 residual只是历史方案。fixed-A投影与mobile solver结果表明其具体坐标受限；它不再是ECP硬架构。
+因此effect evidence只作nonparametric set-valued functional critic；它不再生成Program、不进入deployment，也不形成
+`Program -> effect code -> fixed inverse -> LoRA`。
 
-### 6. policy effects有效，但历史realizer失败
+### 6. canonical删除神经`q_pi`
 
-独立successful members达到113/250，说明privileged policy evidence包含真实策略。历史structured solver到78/250但breadth3/5、
-Goal/Long0；fixed-A members 49/41/35；mobile raw solver 49；centered coordinate 80且仍breadth3/5。
+没有真实Program标签；同时训练policy encoder、video encoder和realizer仍允许latent任意旋转。现有95-task/118-member evidence更适合
+直接监督generated policy function，而不是再训练一个未经验证的privileged Program teacher。
 
-所以已淘汰的是这些coordinate/solver/realizer组合，不是“Program绝不能生成LoRA”。下一条路线必须用跨任务共享、部署兼容、
-坐标固定的realizer，并在训练video posterior前完成held closed-loop Gate。
+canonical只保留video Program encoder`q_V`。一个logical trajectory只能由一个global successful member解释，不能按event混合
+members；只有short-continuation verified member-state pairs可作训练target。
 
-### 7. `q_pi`的含义与证明责任
+### 7. Native-factor compiler直接针对最早失效接口
 
-`q_pi`是一个训练期共享网络，从multiple successful policies、occupancies和policy responses推断Program posterior。它不是现成
-teacher、手工标签或凭空正确的中间state。其合理性只能由task-disjoint、冻结schema/realizer、无held optimizer的闭环结果证明。
+新主线用同一视频在冻结PI0.5各目标层产生的真实native inputs`X_j`和outputs/differences`Y_j`作为task-specific参数基底。Program
+只学习对video/frame/probe/horizon/feature-type的signed selection和target scale，再形成rank4 outer products。
 
-`q_V`从language+video预测同构posterior。二者同构的目的，是让privileged supervision指向部署可推断的结构，避免任意latent
-和decoder共同旋转。rollout-only recovery信息不能被要求由video预测。
+这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。它是否具有足够容量尚未被实验验证，当前唯一
+合理下一步是fold0 held5 task-local free-code strict250，而不是先训练fresh Program或shared compiler。
 
-### 8. event slot是固定容量、动态激活
+### 8. rank12 carrier + mobile rank4是当前有证据的选择
 
-当前Program候选最多`E=8`个有序slots。简单任务可以激活少量，复杂任务可以激活更多；slot presence、视频边界与段落到slot
-的对应均由学习得到。固定`E`只是为了让可变长度视频最终进入固定形状Program和LoRA realizer。
+shared carrier为43/250；mobile-rank4解析投影在三个member arms为110/120/76，且均5/5 task非零。当前失败是shared mapping/solver，
+不是rank4容量。因此canonical用frozen rank12 carrier + native-factor mobile rank4，严格拼成一套rank16 LoRA。
 
-### 9. staged Gate之后必须联合训练
+这不恢复fixed-A或raw-factor短solver。只有native bank可表达、rank4 free-code已收敛、response分析证明rank ceiling且一次同构full-rank16
+oracle显著通过，才允许重开task full-rank16。
 
-阶段冻结用于确定最早失效接口，不是最终模型形态。Program/realizer和`q_V`分别通过后，必须有冻结PI0.5 backbone、解冻所有被
-允许Writer参数的联合训练阶段；随后才考虑structured outer credit。
+### 9. Program结构已经明确
+
+唯一schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`、
+`sigma[8,38,128]`。38个owner固定对应18 q、18 v、action-in/out；`E=8`是最大容量，presence和frame-to-slot assignment动态学习。
+
+每条视频独立保序编码，K-set只在soft monotonic event alignment后聚合。language与scene必须owner-specific，不能退回全局均值或
+first/final/difference summary。
+
+### 10. staged Gate是因果诊断，最终必须联合训练
+
+当前执行顺序固定为：authority -> native-factor free-code capacity -> Natural Program -> frozen-Program shared compiler -> all-Writer
+joint training -> conditional structured outer credit -> fresh final。每门失败只定位对应接口；不能跳过free-code，用joint training掩盖
+参数基底无效，也不能在没有视频闭环增量时启动outer credit。
+
+只有Natural Program、capacity、shared compiler、两fold joint、verified natural on-policy evidence、outer、fresh validation和完整
+controls都完成后仍系统失败，才足以判定现有数据/zero-interaction static-LoRA合同存在根本问题。
+
+### 11. Action Meta是后期matched control
+
+当前结果中性，canonical默认关闭。base Writer有明确闭环增量后必须按owner要求做一次matched attempt，Stage 0/compiler冻结。
+专家要求明确净收益且无breadth/retention损害才启用；owner此前要求无负面即可启用。这一后期阈值差异不阻塞当前阶段，到门时按
+owner最新指示执行。
 
 ## 已关闭路线
 
-- 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其梯度/credit小变体；
+- 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
 - ECP Stage 1 v1--v24、MDCO和deterministic privileged codes；
-- PECS式直接effect solver；
-- fixed-A、rank12+rank4惯性分解和raw-factor 12-step solver；
-- 人工opposite-order process tasks、primitive/recovery expert acquisition与distillation；
-- 把GOMQ重跑或归入ECP阶段。
+- neural `q_pi`、fixed effect-code/balanced-SVD realizer和centered two-sided fit span；
+- PECS、fixed-A、raw mobile-rank4短solver、matrix-free solver和full-width factor hyperdecoder；
+- 人工opposite-order tasks、primitive/recovery expert acquisition与distillation；
+- 把GOMQ重跑或归入ECP阶段；
+- Action Meta默认路径和open-loop geometry gate。
 
-这些路线可作为历史启发，不再保留活动代码或自动恢复。
+这些历史路线只作证据与启发，不恢复活动代码或并行fallback。
 
-## 当前开放问题
+## 工程结论与复用面
 
-等待专家回复明确：
-
-1. 当前Program schema是否保持`P_lang/P_scene/P_process/rho/sigma`，slot和owner/layer坐标是否需要修改；
-2. realizer应直接生成LoRA，还是经policy-effect distribution与固定可微operator；
-3. 如何固定LoRA因子坐标并进行posterior marginalization；
-4. `q_pi`与realizer的冻结/联合训练顺序；
-5. 只用现成LIBERO时，哪些natural task mappings足以形成有效task-disjoint Gate；
-6. 每阶段明确的数据、模型、目标、通过条件、失败分支与最终全Writer训练方式。
-
-## 工程结论
-
-- source、task expert、Stage 0、functional loss、video data/control、reward occupancy和dynamic evaluation queue是当前可复用基础。
-- 旧Writer/functional decoder/ECP Stage 1实现已经造成版本惯性，现已从活动树删除；后续只允许一个canonical Writer路径。
-- formal checkpoint与raw rows保留在ignored `runs/`；精确旧代码用Git恢复，不在源码树存archive或fallback。
-- 人工process datasets和对应约12GB运行产物已删除；它们可由旧提交重建，但不是当前资产。
-- 不新增checksum sidecar、重复证据JSON或一实验一文档；关键结果只更新本文件、`progress.md`和`research_history.md`。
+- 继续复用source/corpus/SFT、rank16 LoRA materialization、task experts、Stage 0 v3、transition/event modules、policy effects、functional
+  flow loss、reward/occupancy和strict dynamic evaluator。
+- 下一实现缺口是38-target native input/output hooks、chunked online bank accumulator、signed rank4 compiler、task-local free-code optimizer
+  和strict250 wiring；当前仓库尚无这些模块。
+- 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。
+- formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process datasets及约12GB产物已删除且当前路线不需要。
+- 不新增checksum sidecar、重复证据JSON或一实验一文档；跨轮结论只更新本文件、`progress.md`和`research_history.md`。

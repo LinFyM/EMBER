@@ -119,6 +119,10 @@ action_in    [50, 32]               [50, 1024]
 action_out   [50, 1024]             [50, 32]
 ```
 
+输入侧候选索引严格为`n_A=(video k, frame t, probe p, horizon h)`，value为`X_j[k,t,p,h]`。输出侧候选索引为
+`n_B=(video k, frame t, probe p, horizon h, type u)`，其中`u in {abs, adj, init, goal}`，value为
+`Y_j^u[k,t,p,h]`。`X`没有output-bank type轴；不得为了统一实现而把同一个`X`复制四次并改变输入attention measure。
+
 输出侧同时构造同维bank：
 
 ```text
@@ -129,22 +133,34 @@ Y_goal(t) = Y(T) - Y(t)
 ```
 
 Pass A只保留128维Program。Pass B按frame chunk重跑冻结backbone，并按已确定query在线累计sufficient statistics；不得物化完整
-`K*T*38*50*2048` tensor。
+`K*T*38*50*2048` tensor。每个softmax分支分别维护running maximum、normalizer与weighted sum，同时按video维护首个采样帧、
+末个采样帧和跨chunk的previous activation：`Y_adj`使用同一video的上一采样帧，`Y_init`始终使用该video首帧，`Y_goal`始终使用
+该video末帧。chunk边界不得重置这些状态，video边界必须隔离并重置；可以预缓存端点或采用等价的分阶段读取。相同输入下chunked
+结果必须在正常数值误差内等价于non-chunked reference。
 
 ## 4. Native-factor compiler
 
-对target`j`和task residual rank slot`r=1..4`，对应owner Program与rank embedding产生query`q_jr`，先分配event权重，再在所有
-video/frame/probe/horizon/native feature type上做两个softmax分支之差的signed pooling：
+以下factor形式由G1 capacity oracle与最终compiler共同遵守，但selection logits的来源必须分开：G1允许每个held task直接优化free
+logits/weights；从G3开始的shared deployment compiler才由共享Program query与native candidate keys按内容计算logits，禁止task/frame
+查表、固定系数或普通平均。
+
+对target`j`和task residual rank slot`r=1..4`，先分配event权重。输入分支只在`n_A=(k,t,p,h)`候选上pool真实`X_jn_A`；
+输出分支在`n_B=(k,t,p,h,u)`候选上pool真实`Y_jn_B^u`。两个分支各自由positive/negative两个softmax之差产生signed weights，
+最后才分别对native values加权求和：
 
 ```text
-w_n = softmax(l_n_plus) - softmax(l_n_minus)
+wA_nA = softmax(lA_nA_plus) - softmax(lA_nA_minus)
+wB_nB = softmax(lB_nB_plus) - softmax(lB_nB_minus)
 
-a_jr = Normalize(sum_n wA_jrn * X_jn)                    [d_in_j]
-b_unit_jr = Normalize(sum_n wB_jrn * Y_type_jn)          [d_out_j]
+a_jr = Normalize(sum_nA wA_jrnA * X_jnA)                 [d_in_j]
+b_unit_jr = Normalize(sum_nB wB_jrnB * Y_jnB^u)          [d_out_j]
 s_jr = s_ref_j * tanh(s_hat_jr)
 b_jr = s_jr * b_unit_jr
 DeltaW_task_j = sum_r b_jr a_jr^T
 ```
+
+上式的softmax归一化域服从阶段合同：G1先在每条video内部归一化再以固定`beta_k=1/K`合并；G3才可根据G2证据使用从均匀值
+初始化的bounded跨video correction。
 
 `s_ref_j`来自fit-task expert correction的target-wise median RMS，冻结后不得按held结果调节。每个target的rank4 update经过small-core
 balanced SVD确定性canonicalization，保持effective update不变且rank不超过4。
@@ -221,11 +237,21 @@ Action Meta只在base Writer出现明确闭环增量后做matched controls，Sta
 
 ### G1. Native-factor task-local capacity oracle（当前首个机制Gate）
 
-先实现真实q/v/action-in/action-out input/output hooks与Program-conditioned signed rank4 compiler。使用冻结的现有Stage 0 v3、fold0
-held5自然teacher videos、known successful experts/mobile projections和carrier43；不碰validation/test。
+先实现真实q/v/action-in/action-out input/output hooks与signed rank4 factor capacity path。使用冻结的现有Stage 0 v3、fold0 held5自然
+teacher videos、known successful experts/mobile projections和carrier43；不碰validation/test。G1不得因最终deployment禁止task-local查表而
+收紧这个capacity upper bound。
 
-每个held task只优化4个rank queries、event/signed-pooling weights和per-target scales。Stage 0、shared compiler、source、carrier和task
-expert均冻结。这是free-code upper bound，不是部署方法。
+每个held task可以单独优化4个rank queries、event weights、输入/输出signed-pooling weights或logits和per-target scales。它们是task-local
+free variables，不负责证明共享Program到attention的映射。Stage 0、shared compiler、source、carrier和task expert均冻结。
+
+若G1使用`K>1`，每条video固定等质量`beta_k=1/K`，且每条video内部按event/frame assignment归一化，不能因更长或候选更多获得更大
+总质量；`K=1`时该聚合严格退化为identity。G1不学习video reliability或learned `beta_k`。
+
+G1必须选择纯Native Stage 0 observer加载路径；run contract与最小真实forward需枚举实际module及trainable parameter状态，确认旧
+Action Meta mandatory loader没有装载任何Action Meta module或parameter。本阶段不修改Action Meta架构。
+
+这是free-code upper bound，只回答真实native banks与signed pooling形式中是否存在强闭环rank4 residual；通过不代表deployment Writer或
+shared Program-to-attention映射已经成立。输出仍必须是frozen rank12 carrier加该rank4 residual组成的唯一完整rank16 adapter。
 
 loss：global-member effect、sensitivity-normalized effective update、independent action-query functional、carrier preservation。
 
@@ -250,6 +276,9 @@ relations、speed perturbation和temporal crop，不创建新task、trajectory�
 summary、predicate progress/rising/contact、scene relation、cross-video event consistency、speed/crop robustness与probe stability。shuffled/reversed
 遵守全局post-selection规则：不进入训练、loss、checkpoint选择、G1--G5 Gate或架构修正依据。
 
+G2负责学习并验证每条video独立的event assignment与canonical alignment，以及跨video event variance、uncertainty、`K=1` identity和
+video集合置换不变性；它不把learned video reliability混入G1容量结论。
+
 在meta-held15+target-held5同时要求：
 
 - 至少90% same-task pairs在owner/event distance上近于nearest cross-task；
@@ -264,7 +293,9 @@ language/scene；不设次数上限，但每次都要针对已定位机制并重
 ### G3. Frozen-Program shared compiler
 
 使用meta56+target-fit19、K=1/2/4自然videos、现有95-task/118-member evidence，跨episode采样并保持两种task role各50%。冻结Program，
-只训练Program-to-rank query、signed pooling、target scales和bounded K correction。
+只训练共享的Program-to-rank query、native candidate key、signed pooling、target scales和bounded K correction。这里必须验证selection
+logits确由共享Program query与candidate content计算而非task/frame查表。根据G2证据，跨video权重可从均匀权重初始化为有界learned
+`beta_k`或其他bounded K correction；参数化必须防止单条video覆盖其余videos，具体形式由G2结果决定，不回写G1。
 
 loss：whole-trajectory single-member equivalence；q/v/action-in/action-out四family等权的functional loss；cross-episode action flow；
 sensitivity-normalized mobile update辅助；carrier preservation；same-task video functional consistency。

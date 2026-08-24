@@ -60,7 +60,9 @@ members；只有short-continuation verified member-state pairs可作训练target
 ### 7. Native-factor compiler直接针对最早失效接口
 
 新主线用同一视频在冻结PI0.5各目标层产生的真实native inputs`X_j`和outputs/differences`Y_j`作为task-specific参数基底。Program
-只学习对video/frame/probe/horizon/feature-type的signed selection和target scale，再形成rank4 outer products。
+在最终shared compiler中学习content-derived signed selection与target scale：输入`X`候选只索引video/frame/probe/horizon，输出`Y`
+候选才额外索引abs/adj/init/goal type，再形成rank4 outer products。G1则允许直接优化task-local selection logits/weights，只作为
+native-bank容量upper bound；共享Program-query到candidate-key的映射由G3单独学习和验证。
 
 这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。它是否具有足够容量尚未被实验验证，当前唯一
 合理下一步是fold0 held5 task-local free-code strict250，而不是先训练fresh Program或shared compiler。

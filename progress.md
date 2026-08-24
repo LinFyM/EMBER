@@ -69,7 +69,7 @@ G1--G5 Gate或架构修正依据。
 
 1. 38-target native linear input/output hooks；
 2. absolute/adjacent/init/goal banks的chunked online accumulator；
-3. Program-conditioned signed rank4 compiler与scale/SVD canonicalization；
+3. signed rank4 factor path与scale/SVD canonicalization；G1使用task-local free selection，shared Program-conditioned content attention属于G3；
 4. task-local free-code optimizer；
 5. G1 four-arm strict250 wiring与Gate report。
 

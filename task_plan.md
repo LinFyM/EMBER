@@ -57,13 +57,21 @@ selection形成强闭环mobile rank4 residual。
 ### 实现工作
 
 1. 为18层q/v与action-in/out增加真实linear input/output hooks，probe轴保留；
-2. 构造absolute/adjacent/init/goal output banks，按frame chunk在线读取与累计；
-3. 实现Program-conditioned two-branch signed pooling、per-target scales、rank4 outer products与small-core SVD canonicalization；
-4. 实现每task free-code optimizer，只优化4 rank queries、event/pooling weights和scales；
-5. 接通global-member effect、sensitivity-normalized update、independent functional与carrier-preservation loss；
-6. 生成唯一rank12+rank4 complete adapter，接入现有strict evaluator。
+2. 输入候选使用`n_A=(video,frame,probe,horizon)`的真实`X`，输出候选使用额外带`type in {abs,adj,init,goal}`的`n_B`与真实
+   `Y^type`；不得把`X`复制到无意义的type轴；
+3. 构造absolute/adjacent/init/goal output banks，按frame chunk在线读取与累计；online softmax除running maximum、normalizer和weighted
+   sum外，还须按video保持首帧、末帧及跨chunk previous activation，并与non-chunked reference数值等价；
+4. 实现two-branch signed pooling、per-target scales、rank4 outer products与small-core SVD canonicalization；G1允许直接优化task-local
+   selection logits/weights，不要求共享Program-query到candidate-key映射；
+5. 实现每task free-code optimizer，只优化4 rank queries、event weights、输入/输出pooling weights或logits和scales；`K>1`时固定
+   `beta_k=1/K`并做video内assignment归一化，`K=1`为identity，不学习video reliability；
+6. 明确走纯Native Stage 0 observer加载路径，在run contract与最小真实forward中核对实际module/trainable parameter，证明Action Meta
+   未被旧loader装载；
+7. 接通global-member effect、sensitivity-normalized update、independent functional与carrier-preservation loss；
+8. 生成唯一rank12+rank4 complete adapter，接入现有strict evaluator。
 
 先做最小真实forward/gradient smoke，再进行5-task optimization与strict250；不增加通用框架、checksum或与Gate无关的测试。
+G1通过只证明native banks加signed pooling形式存在强rank4 residual，不证明deployment Writer或共享Program-to-attention映射成立。
 
 ### 通过门
 
@@ -82,12 +90,15 @@ selection形成强闭环mobile rank4 residual。
 ### G2 Natural Program
 
 meta56+target-fit19，K均匀采样1/2/4；训练owner-specific language/scene、ordered events与K aggregation。meta-held15+target-held5检查
-same-task separation、probe stability、event non-collapse、full相对endpoints的held loss增量与K合同。修正应限于证据定位到的native
-capture、event grounding或owner-specific language/scene，不设次数上限。
+same-task separation、probe stability、event non-collapse、full相对endpoints的held loss增量，以及每video event alignment、variance、
+uncertainty、`K=1` identity与video集合置换不变性。修正应限于证据定位到的native capture、event grounding或owner-specific
+language/scene，不设次数上限。
 
 ### G3 Frozen-Program shared compiler
 
-冻结Program，用自然videos与95-task/118-member evidence训练rank queries、signed pooling、scales和bounded K correction。held5要求full
+冻结Program，用自然videos与95-task/118-member evidence训练共享Program-query到native-candidate-key的content attention、signed pooling、
+scales和bounded K correction，禁止task/frame查表。依据G2证据可从均匀跨video权重初始化有界learned `beta_k`或其他bounded correction，
+并防止单条video覆盖其余videos。held5要求full
 `>=60/250`、breadth`>=4/5`、retention`>=33/43`、Goal/Long至少一项非零、相对language和first+final各`+5`、same-task
 retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构版本上限，但无机制差异的小变体不算推进。
 

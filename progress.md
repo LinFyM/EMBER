@@ -140,7 +140,8 @@
   并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
 - clean pushed `342620a`的真实1-step A40 profile通过，随后两臂已在gpu02 physical0/1进入formal optimizer；每臂固定1000
   steps且只保存step1000。variant-specific primitive-first/recovery-second route、checkpoint/role ledger与Gate A adjudicator已接通，
-  等训练完成后从新clean pushed frozen authority运行100-row面板。
+  等训练完成后从新clean pushed frozen authority运行100-row面板。该面板现使用每方向50个single-state jobs和三名persistent
+  workers的动态队列，六个worker各只加载一次policy，避免原先固定shard的尾部等待。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。
   step1000相对carrier只保留/新增/丢失`33/4/10`，相对direct-latest `108`只保留19个成功，因此不是near-pass。

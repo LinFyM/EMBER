@@ -26,9 +26,15 @@ from ember.lora import copy_task_lora_state_, validate_lora_state
 from ember.pi05_assets import configure_libero_runtime_assets, write_json_atomic
 from ember.pi05_eval.worker_setup import load_policy
 from ember.pi05_eval_contract import policy_noise_seed
+from ember.pi05_eval_queue import (
+    claim_next,
+    complete_job,
+    fail_job,
+)
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import libero_policy_input
 from ember.writer.functional import prepare_frozen_writer_policy
+from ember.writer.topology import bind_current_process_to_cuda_numa, cuda_numa_node
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=REPO_ROOT / "configs/pi05_ecp_process_meta_v1/manifest.json",
     )
     parser.add_argument("--variant", required=True)
-    parser.add_argument("--state-ids", type=_state_ids, required=True)
+    parser.add_argument("--state-ids", type=_state_ids)
+    parser.add_argument("--queue-path", type=Path)
+    parser.add_argument("--worker-id")
     parser.add_argument("--physical-gpu-id", type=int, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
@@ -415,6 +423,47 @@ def _persist_episode(
     }
 
 
+def _collect_state(
+    *,
+    args: argparse.Namespace,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    teacher: TeacherRuntime,
+    env: TemporalPredicateOrderEnv,
+    init_states: Any,
+    state_id: int,
+    policy: torch.nn.Module,
+    preprocess: Any,
+    postprocess: Any,
+) -> dict[str, Any]:
+    result = _collect_episode(
+        env=env,
+        policy=policy,
+        preprocess=preprocess,
+        postprocess=postprocess,
+        init_state=np.asarray(init_states[state_id]),
+        state_id=state_id,
+        noise_task_suite=authority.family.base_task_suite,
+        noise_task_id=authority.family.base_task_id,
+        phase_languages=authority.family.phase_languages,
+        install_phase_expert=teacher.install_phase_expert,
+        phase_expert_task_ids=teacher.phase_expert_task_ids,
+        phase_expert_roles=teacher.phase_expert_roles,
+        phase_expert_checkpoints=teacher.phase_expert_checkpoints,
+        fixed_language=teacher.fixed_language,
+        exact_language=authority.family.exact_language,
+        rollout=authority.rollout,
+    )
+    return _persist_episode(
+        args=args,
+        authority=authority,
+        variant=variant,
+        teacher=teacher,
+        state_id=state_id,
+        result=result,
+    )
+
+
 def _collect_panel(
     *,
     args: argparse.Namespace,
@@ -442,32 +491,18 @@ def _collect_panel(
     rows = []
     try:
         for state_id in args.state_ids:
-            result = _collect_episode(
-                env=env,
-                policy=policy,
-                preprocess=preprocess,
-                postprocess=postprocess,
-                init_state=np.asarray(init_states[state_id]),
-                state_id=state_id,
-                noise_task_suite=authority.family.base_task_suite,
-                noise_task_id=authority.family.base_task_id,
-                phase_languages=authority.family.phase_languages,
-                install_phase_expert=teacher.install_phase_expert,
-                phase_expert_task_ids=teacher.phase_expert_task_ids,
-                phase_expert_roles=teacher.phase_expert_roles,
-                phase_expert_checkpoints=teacher.phase_expert_checkpoints,
-                fixed_language=teacher.fixed_language,
-                exact_language=authority.family.exact_language,
-                rollout=authority.rollout,
-            )
             rows.append(
-                _persist_episode(
+                _collect_state(
                     args=args,
                     authority=authority,
                     variant=variant,
                     teacher=teacher,
+                    env=env,
+                    init_states=init_states,
                     state_id=state_id,
-                    result=result,
+                    policy=policy,
+                    preprocess=preprocess,
+                    postprocess=postprocess,
                 )
             )
     finally:
@@ -475,10 +510,137 @@ def _collect_panel(
     return rows
 
 
+def _collection_summary(
+    *,
+    args: argparse.Namespace,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    teacher: TeacherRuntime,
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema_version": "ember_ecp_process_meta_teacher_collection_v1",
+        "manifest": str(args.manifest),
+        "family_id": authority.family.family_id,
+        "teacher_mode": args.teacher_mode,
+        "privileged_teacher_kind": authority.privileged_teacher_kind,
+        "phase_expert_task_ids": dict(teacher.phase_expert_task_ids),
+        "phase_expert_roles": dict(teacher.phase_expert_roles),
+        "phase_expert_checkpoints": dict(teacher.phase_expert_checkpoints),
+        "composite_expert_variant": teacher.composite_expert_variant,
+        "variant_name": variant.name,
+        "required_order": list(variant.required_order),
+        "state_ids": [int(row["state_id"]) for row in rows],
+        "successes": sum(bool(row["success"]) for row in rows),
+        "episodes": len(rows),
+        "rows": rows,
+    }
+
+
+def _collect_queue(
+    *,
+    args: argparse.Namespace,
+    authority: ProcessMetaAuthority,
+    variant: ProcessVariant,
+    teacher: TeacherRuntime,
+    policy: torch.nn.Module,
+    preprocess: Any,
+    postprocess: Any,
+    environment_class: Any,
+) -> dict[str, int]:
+    if args.queue_path is None or not args.worker_id:
+        raise ProcessMetaError("queue collection requires a queue path and worker ID")
+    init_states = torch.load(
+        authority.family.init_states_path, map_location="cpu", weights_only=False
+    )
+    base_env = environment_class(
+        bddl_file_name=authority.family.bddl_path,
+        camera_heights=int(authority.rollout["render_resolution"]),
+        camera_widths=int(authority.rollout["render_resolution"]),
+    )
+    env = TemporalPredicateOrderEnv(
+        base_env,
+        predicates=authority.family.predicates,
+        required_order=variant.required_order,
+    )
+    completed = successes = 0
+    try:
+        while (
+            claim := claim_next(
+                args.queue_path,
+                worker_id=args.worker_id,
+            )
+        ) is not None:
+            try:
+                shard = claim.shard
+                if (
+                    shard.suite != variant.name
+                    or shard.task_id != authority.family.base_task_id
+                    or len(shard.init_state_ids) != 1
+                ):
+                    raise ProcessMetaError("process-meta queue shard changed")
+                state_id = shard.init_state_ids[0]
+                row = _collect_state(
+                    args=args,
+                    authority=authority,
+                    variant=variant,
+                    teacher=teacher,
+                    env=env,
+                    init_states=init_states,
+                    state_id=state_id,
+                    policy=policy,
+                    preprocess=preprocess,
+                    postprocess=postprocess,
+                )
+                summary = _collection_summary(
+                    args=args,
+                    authority=authority,
+                    variant=variant,
+                    teacher=teacher,
+                    rows=[row],
+                )
+                relative = Path("shards") / f"{shard.job_id}.json"
+                summary_path = args.output_dir / relative
+                write_json_atomic(summary_path, summary)
+                complete_job(
+                    args.queue_path,
+                    job_id=shard.job_id,
+                    worker_id=args.worker_id,
+                    claim_token=claim.claim_token,
+                    rows_path=str(relative),
+                    rows_bytes=summary_path.stat().st_size,
+                    row_count=1,
+                    successes=int(bool(row["success"])),
+                )
+                completed += 1
+                successes += int(bool(row["success"]))
+            except Exception as error:
+                fail_job(
+                    args.queue_path,
+                    job_id=claim.shard.job_id,
+                    worker_id=args.worker_id,
+                    claim_token=claim.claim_token,
+                    error=repr(error),
+                )
+                raise
+    finally:
+        env.close()
+    return {"completed_jobs": completed, "successes": successes}
+
+
 def main() -> None:
     args = build_parser().parse_args()
     args.manifest = args.manifest.resolve()
     args.output_dir = args.output_dir.resolve()
+    queue_mode = args.queue_path is not None or args.worker_id is not None
+    if queue_mode:
+        if args.state_ids is not None or args.queue_path is None or not args.worker_id:
+            raise ProcessMetaError(
+                "queue mode requires --queue-path/--worker-id and forbids --state-ids"
+            )
+        args.queue_path = args.queue_path.resolve()
+    elif args.state_ids is None:
+        raise ProcessMetaError("static collection requires --state-ids")
     raw = json.loads(args.manifest.read_text(encoding="utf-8"))
     source_root = REPO_ROOT / str(raw["source_policy_authority"])
     source_contract = _runtime_contract(source_root)
@@ -496,7 +658,7 @@ def main() -> None:
         libero_init_root=Path(source_contract["libero_paths"]["init_states"]),
     )
     variant = authority.family.variant(args.variant)
-    if any(
+    if args.state_ids is not None and any(
         state_id not in authority.family.init_state_ids for state_id in args.state_ids
     ):
         raise ProcessMetaError(
@@ -508,6 +670,10 @@ def main() -> None:
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise ProcessMetaError("process-meta collector requires one visible CUDA GPU")
     torch.cuda.set_device(0)
+    numa_node = cuda_numa_node(0)
+    cpu_affinity = bind_current_process_to_cuda_numa(0)
+    if numa_node is None or not cpu_affinity:
+        raise ProcessMetaError("process-meta collector requires GPU-local NUMA binding")
     torch.manual_seed(int(authority.rollout["policy_seed_root"]))
     torch.cuda.manual_seed(int(authority.rollout["policy_seed_root"]))
     torch.backends.cuda.matmul.allow_tf32 = True
@@ -526,6 +692,31 @@ def main() -> None:
         variant=variant,
         source_contract=source_contract,
     )
+    if queue_mode:
+        result = _collect_queue(
+            args=args,
+            authority=authority,
+            variant=variant,
+            teacher=teacher,
+            policy=policy,
+            preprocess=preprocess,
+            postprocess=postprocess,
+            environment_class=OffScreenRenderEnv,
+        )
+        print(
+            json.dumps(
+                {
+                    "event": "process_meta_queue_worker_complete",
+                    "worker_id": args.worker_id,
+                    "variant_name": variant.name,
+                    "numa_node": numa_node,
+                    "cpu_affinity_count": len(cpu_affinity),
+                    **result,
+                },
+                sort_keys=True,
+            )
+        )
+        return
     rows = _collect_panel(
         args=args,
         authority=authority,
@@ -536,23 +727,13 @@ def main() -> None:
         postprocess=postprocess,
         environment_class=OffScreenRenderEnv,
     )
-    summary = {
-        "schema_version": "ember_ecp_process_meta_teacher_collection_v1",
-        "manifest": str(args.manifest),
-        "family_id": authority.family.family_id,
-        "teacher_mode": args.teacher_mode,
-        "privileged_teacher_kind": authority.privileged_teacher_kind,
-        "phase_expert_task_ids": dict(teacher.phase_expert_task_ids),
-        "phase_expert_roles": dict(teacher.phase_expert_roles),
-        "phase_expert_checkpoints": dict(teacher.phase_expert_checkpoints),
-        "composite_expert_variant": teacher.composite_expert_variant,
-        "variant_name": variant.name,
-        "required_order": list(variant.required_order),
-        "state_ids": list(args.state_ids),
-        "successes": sum(bool(row["success"]) for row in rows),
-        "episodes": len(rows),
-        "rows": rows,
-    }
+    summary = _collection_summary(
+        args=args,
+        authority=authority,
+        variant=variant,
+        teacher=teacher,
+        rows=rows,
+    )
     summary_path = (
         args.output_dir
         / "workers"

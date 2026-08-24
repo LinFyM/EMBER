@@ -239,6 +239,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
 - [x] 首次formal在0 optimizer steps暴露256/128 raw RGB mixed-collate工程错误；改用PI0.5原生model224 resize，并从loss遮掉
   phase/episode tail padding，不改变科学训练合同；
 - [ ] 从clean pushed frozen authority并行训练两个recovery experts；
+- [x] Gate A收集器改为每方向50个single-state jobs、三名persistent workers共享SQLite动态队列；六卡只各加载一次policy，
+  public/privileged artifact、route与strict-success裁决保持原合同；
 - [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；
   若失败，关闭task65/68上的primitive composition、composite SFT、phase-expert distillation和recovery SFT，不做第二轮DAgger、
   不扫超参、不换task66/67重复同一机制；后继必须先获得独立成立的planner/human/MPC/task-local RL composite controller；

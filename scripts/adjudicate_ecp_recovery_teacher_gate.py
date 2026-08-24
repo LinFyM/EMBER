@@ -42,7 +42,9 @@ def _authority(manifest: Path) -> Any:
 
 
 def _worker_rows(root: Path) -> list[dict[str, Any]]:
-    summaries = sorted((root / "workers").glob("*.json"))
+    summaries = sorted((root / "shards").glob("*.json"))
+    if not summaries:
+        summaries = sorted((root / "workers").glob("*.json"))
     if not summaries:
         raise ProcessMetaError("recovery Gate has no completed worker summaries")
     rows = []

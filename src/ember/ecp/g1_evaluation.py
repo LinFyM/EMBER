@@ -144,9 +144,9 @@ def publish_g1_evaluation_bank(
     output_path = output_path.resolve()
     config = load_g1_config(config_path)
     expected_ordinals = tuple(int(value) for value in config["tasks"]["held_ordinals"])
-    if step <= 0 or len(task_runs) != len(expected_ordinals):
+    if step < 0 or len(task_runs) != len(expected_ordinals):
         raise ValueError(
-            "G1 evaluation bank requires one positive-step run per held task"
+            "G1 evaluation bank requires one non-negative shared step per held task"
         )
     lora_path = authority_path(config, "lora_contract", asset_root=asset_root)
     lora = load_pi05_lora_contract(lora_path)

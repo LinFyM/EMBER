@@ -255,6 +255,10 @@ def train(args: argparse.Namespace) -> None:
         runtime = prepare_runtime(args)
         if args.resume is not None:
             _load_checkpoint(runtime, args.resume)
+        elif runtime.config["optimization"]["initialization"][
+            "retain_initialization_checkpoint"
+        ]:
+            _save_checkpoint(runtime, 0)
         runtime.metrics_rows = reconcile_metrics(
             args.output_dir / "metrics.jsonl",
             runtime.start_step,

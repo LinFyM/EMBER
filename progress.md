@@ -100,7 +100,8 @@ G1--G5 Gate或架构修正依据。
 
 1. 审查reference-projected free-logit初始化、缓存chunk与定向合同，完成全量CPU回归后集成clean pushed main；
 2. 从该commit建立detached frozen worktree，live检查gpu01/gpu02、prohibited设备、进程、显存/util与独立storage quota，fresh重跑
-   5-task formal optimization；预注册保留step1及后续相邻checkpoints，使用内部objective与retention response定位，而非held reward拼接；
+   5-task formal optimization；预注册保留optimizer更新前的initialization checkpoint及后续相邻checkpoints，使用内部objective与
+   retention response定位，而非held reward拼接；
 3. 以一个single checkpoint的唯一完整rank16 task bank重跑同一free-code strict250和four-arm Gate；若仍non-pass，优先检查
    carrier-preservation/retention接口，不以步数、seed或LR小扫替代机制证据；
 4. Action Meta在G1必须继续实际关闭；现有旧loader/config漂移不在本轮扩建Action Meta架构；

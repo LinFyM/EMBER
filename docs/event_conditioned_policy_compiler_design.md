@@ -285,8 +285,9 @@ video bank做relative singular threshold `1e-3`的稳定中心子空间投影并
 
 当前修正不改变candidate、signed pooling、rank或loss：仅在G1使用已授权known-success latest member，把稳定子空间最小范数系数分解为
 positive/negative simplex来初始化实际free logits，并按q真实head保持相对幅度；随后仍由原四类objective联合优化。该解析初始化是
-task-local privileged capacity solve，不进入G3，也不声称共享Program query-key attention成立。预注册保留step1以免解析可达点在首次
-长优化前丢失，同时继续观察后续相邻checkpoints能否改善carrier retention。
+task-local privileged capacity solve，不进入G3，也不声称共享Program query-key attention成立。预注册保留optimizer更新前的
+initialization checkpoint（step0），同时继续观察后续相邻checkpoints能否改善carrier retention；不能把第一次Adam更新后的step1
+误当成未扰动解析点。
 
 ### G2. Natural Program训练
 

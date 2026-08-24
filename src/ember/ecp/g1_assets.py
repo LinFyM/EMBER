@@ -76,6 +76,7 @@ def load_g1_config(path: Path) -> dict[str, Any]:
         < float(initialization.get("relative_singular_threshold", 0))
         < 1
         or not 0 <= float(initialization.get("probability_floor_mass", -1)) < 1
+        or initialization.get("retain_initialization_checkpoint") is not True
     ):
         raise ValueError("G1 Native-Factor config changed its capacity contract")
     return config

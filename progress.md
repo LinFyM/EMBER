@@ -61,8 +61,8 @@
 - Phase 2C fold0 formal training authority：
   `runs/outputs/pi05_ecp_fixed_effect_realizer_fold0_e05ffca_gpu01p1_20260824/`；
 - goal：完整实现并验证EMBER-ECP；owner已明确恢复推进；
-- canonical workspace：本仓库`main`；最新active formal training authority为clean pushed `342620a`，两个recovery experts
-  正在gpu02 physical0/1并行训练；此前formal evaluation authority为clean pushed `4bf5039`。
+- canonical workspace：本仓库`main`；clean pushed `342620a`的两个recovery experts已在gpu02 physical0/1完成固定
+  step1000 formal训练，当前以唯一checkpoint进入双向smoke与100-row Gate A；此前formal evaluation authority为clean pushed `4bf5039`。
   process Gate A/A2/A3、balanced-SVD learned realizer fold0与centered two-sided coordinate Gate均为non-pass；旧
   shared-realizer与phase-composed primitive-teacher mechanisms关闭。现有`347/500`步phase-expert distillation经专家复核
   取消启动；composite-context recovery teacher Gate现已开始实施。Gate B、process suite、fresh Program、`q_pi/q_V`及joint
@@ -134,13 +134,13 @@
 - 当前active科学步骤是composite-context recovery teacher：从A3的28/9条真实成功轨迹截取second-phase执行动作，分别与
   对应primitive成功数据按50/50混合，从原primitive LoRA初始化两个direction-specific recovery experts；第一event仍由冻结
   primitive执行，切换后由recovery expert完成第二event。它必须直接通过原Gate A；失败后整个task65/68 SFT式teacher
-  acquisition family停止。owner已确认执行，当前正在冻结并验证训练合同。
+  acquisition family停止。owner已确认执行；训练合同已经完整完成，当前进入smoke与Gate A闭环裁决。
 - clean pushed `a06a3ba`的首次formal launch在第一个mixed batch、任何optimizer step之前工程停止：composite RGB为256，
   primitive RGB为128，默认collate无法堆叠。该run以0 steps封存，不作科学结果；修正使用PI0.5原生resize分别变换到model224，
   并让phase/episode tail的`action_is_pad`真正从flow loss排除，训练数据、比例、steps、optimizer和checkpoint合同不变。
-- clean pushed `342620a`的真实1-step A40 profile通过，随后两臂已在gpu02 physical0/1进入formal optimizer；每臂固定1000
-  steps且只保存step1000。variant-specific primitive-first/recovery-second route、checkpoint/role ledger与Gate A adjudicator已接通，
-  等训练完成后从新clean pushed frozen authority运行100-row面板。该面板现使用每方向50个single-state jobs和三名persistent
+- clean pushed `342620a`的真实1-step A40 profile通过，随后两臂在gpu02 physical0/1完成formal optimizer；每臂固定1000
+  steps、1000条finite metrics且只保存step1000，worker exit均0。variant-specific primitive-first/recovery-second route、checkpoint/role ledger与Gate A adjudicator已接通，
+  正从新clean pushed frozen authority运行smoke及100-row面板。该面板使用每方向50个single-state jobs和三名persistent
   workers的动态队列，六个worker各只加载一次policy，避免原先固定shard的尾部等待。
 - fixed effect realizer的held-only materialization与fold0 Gate已完成：step800/1000 strict250为`33/37`，逐global分别为
   `32/0/1/0/0、36/0/1/0/0`；两者均低于carrier `43=38/1/4/0/0`，breadth均为`2/5`且Goal/Long均为0。

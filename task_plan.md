@@ -1,7 +1,8 @@
 # EMBER Task Plan
 
-状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts正在gpu02 physical0/1从clean pushed frozen
-`342620a`并行formal训练。Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
+状态：2026-08-24 **owner已明确恢复完整ECP推进；两个recovery experts已从clean pushed frozen `342620a`完成固定
+step1000 formal训练，唯一checkpoint与primitive-first/recovery-second manifest已成立，正在进入双向smoke及不变Gate A。
+Phase 0 GOMQ rank16以`136/400`归档；Phase 1的
 process Gate A/A2/A3分别为`19/100、44/100、37/100`，均未取得可靠双向teacher。37条A3成功轨迹已转换为28/9条
 composite HDF5，两个fixed-step1000 composite SFT均未通过state0；其完整固定100-row采集baseline实际均为`5/50`。
 随后准备的`347/500`步on-policy phase-expert distillation经最新专家复核判定为oracle authority与50步phase-tail语义不成立，
@@ -238,7 +239,8 @@ retained/gained/lost为`123/13/28`、churn41、Jaccard`.75`，400行episode、en
   并切换direction-specific recovery expert，运行不变100-row Gate A；
 - [x] 首次formal在0 optimizer steps暴露256/128 raw RGB mixed-collate工程错误；改用PI0.5原生model224 resize，并从loss遮掉
   phase/episode tail padding，不改变科学训练合同；
-- [ ] 从clean pushed frozen authority并行训练两个recovery experts；
+- [x] 从clean pushed frozen `342620a`在gpu02 physical0/1并行完成两个recovery experts；两臂均1000/1000 steps、1000
+  finite metrics rows、唯一step1000 adapter，worker exit均0，不按loss选模；
 - [x] Gate A收集器改为每方向50个single-state jobs、三名persistent workers共享SQLite动态队列；六卡只各加载一次policy，
   public/privileged artifact、route与strict-success裁决保持原合同；
 - [ ] recovery teacher只有在两个方向各至少`20/50`、total至少`50/100`、wrong-first invalid与route/pairing/泄漏均为0时通过；

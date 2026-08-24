@@ -1,0 +1,72 @@
+{
+  "schema_version": "ember_ecp_composite_recovery_expert_training_evidence_v1",
+  "status": "formal_training_complete_awaiting_gate_a",
+  "authority_commit": "342620a6b8c98d6f161ab3cb83189fd6389c1d37",
+  "output_root": "runs/outputs/pi05_ecp_composite_recovery_experts_step1000_342620a_gpu02p01_20260824",
+  "scientific_contract": "docs/ecp_composite_recovery_teacher_gate_20260824.md",
+  "execution": {
+    "host": "gpu02",
+    "physical_gpu_ids": [0, 1],
+    "worker_exit_codes": {
+      "yellow_after_red": 0,
+      "red_after_yellow": 0
+    },
+    "finished_unix": 1787551217
+  },
+  "fixed_training_contract": {
+    "steps_per_arm": 1000,
+    "batch_size_per_arm": 16,
+    "batch_domain_rows": {
+      "composite_second_phase_success": 8,
+      "primitive_success": 8
+    },
+    "checkpoint_steps": [1000],
+    "optimizer": "AdamW",
+    "peak_lr": 0.00001,
+    "warmup_steps": 25,
+    "decay_lr": 0.0000001,
+    "precision": "bfloat16",
+    "action_padding_excluded_from_flow_loss": true,
+    "mixed_resolution_preprocess": "native_float_resize_with_pad_to_224"
+  },
+  "arms": {
+    "yellow_after_red": {
+      "composite_success_episodes": 28,
+      "composite_query_rows": 5594,
+      "primitive_query_rows": 5377,
+      "initial_primitive_task_id": 68,
+      "completed_steps": 1000,
+      "metrics_rows": 1000,
+      "all_metrics_finite": true,
+      "sequential_optimizer_steps": true,
+      "mean_loss_first100": 0.12372496373951435,
+      "mean_loss_last100": 0.12442095600068569,
+      "adapter_bytes": 2654208,
+      "changed_lora_tensors": 76,
+      "delta_from_primitive_l2": 0.46591737558814694,
+      "checkpoint": "runs/outputs/pi05_ecp_composite_recovery_experts_step1000_342620a_gpu02p01_20260824/yellow_after_red/task_00_global_00/checkpoints/step_00001000"
+    },
+    "red_after_yellow": {
+      "composite_success_episodes": 9,
+      "composite_query_rows": 2331,
+      "primitive_query_rows": 7239,
+      "initial_primitive_task_id": 65,
+      "completed_steps": 1000,
+      "metrics_rows": 1000,
+      "all_metrics_finite": true,
+      "sequential_optimizer_steps": true,
+      "mean_loss_first100": 0.09811599813401699,
+      "mean_loss_last100": 0.09640309687703848,
+      "adapter_bytes": 2654208,
+      "changed_lora_tensors": 76,
+      "delta_from_primitive_l2": 0.45247520867928664,
+      "checkpoint": "runs/outputs/pi05_ecp_composite_recovery_experts_step1000_342620a_gpu02p01_20260824/red_after_yellow/task_00_global_00/checkpoints/step_00001000"
+    }
+  },
+  "adjudication": {
+    "training_completion_passed": true,
+    "checkpoint_selection": "fixed_step1000_only",
+    "closed_loop_claim": "none_until_unchanged_100_row_gate_a",
+    "content_hash_policy": "disabled_by_owner"
+  }
+}

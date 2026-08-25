@@ -35,17 +35,101 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RESULT_SCHEMA = "ember_ecp_g3_fit_native_span_shard_v1"
 
 
-def _k1_sample(runtime: Any, task_id: int) -> NaturalProgramSample:
+def k1_schedule_sample(runtime: Any, task_id: int) -> tuple[NaturalProgramSample, int]:
+    """Return the first deterministic G3 K1 visit and its original action split."""
+
     for macro in range(12):
         sampled = runtime.schedule.sample(task_id, macro)
         if sampled.k == 1:
-            return NaturalProgramSample(
-                video_demos=sampled.video_demos,
-                action_demos=(),
-                k=1,
-                robustness_view="fit_span_k1",
-            )
+            return sampled, macro
     raise RuntimeError(f"G3 schedule did not expose K1 for fit task {task_id}")
+
+
+def _k1_sample(runtime: Any, task_id: int) -> NaturalProgramSample:
+    sampled, _ = k1_schedule_sample(runtime, task_id)
+    return NaturalProgramSample(
+        video_demos=sampled.video_demos,
+        action_demos=(),
+        k=1,
+        robustness_view="fit_span_k1",
+    )
+
+
+def capture_k1_native_readout(
+    runtime: Any,
+    task: Any,
+    sample: NaturalProgramSample,
+) -> tuple[Any, Mapping[str, Any]]:
+    """Capture one real K1 Pass-B bank while leaving action episodes unread."""
+
+    if sample.k != 1 or len(sample.video_demos) != 1:
+        raise ValueError("G3 native-span diagnostic requires exactly one video")
+    video_only = NaturalProgramSample(
+        video_demos=sample.video_demos,
+        action_demos=(),
+        k=1,
+        robustness_view="fit_span_k1",
+    )
+    packed = pack_shared_compiler_videos(
+        task=task,
+        sample=video_only,
+        video_store=runtime.video_store,
+        query_points=runtime.query_points,
+        device=runtime.context.device,
+    )
+    tokens, mask = runtime.language_tokens[task.authority_id]
+    prepared = prepare_shared_compiler_condition(
+        policy=runtime.policy,
+        program_model=runtime.program,
+        owners=runtime.owners,
+        packed=packed,
+        language_tokens=tokens,
+        language_mask=mask,
+        chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
+    )
+    if len(prepared.videos) != 1:
+        raise RuntimeError("fit-span diagnostic lost its K1 identity")
+    return cache_native_video_readout(prepared.videos[0].native), packed.metrics
+
+
+def project_member_into_k1_native_span(
+    runtime: Any,
+    *,
+    task_id: int,
+    member_index: int,
+    member_name: str,
+    native: Any,
+    reference: Mapping[str, torch.Tensor],
+    relative_singular_threshold: float,
+    probability_floor_mass: float,
+) -> tuple[dict[str, torch.Tensor], dict[str, Any], dict[str, Any]]:
+    """Project one verified mobile-rank4 member into a real K1 native bank."""
+
+    oracle = TaskLocalNativeFactorOracle(
+        runtime.owners,
+        frame_counts=(native.frame_count,),
+        event_slots=int(runtime.config["model"]["event_slots"]),
+        program_width=int(runtime.config["model"]["program_width"]),
+        initialization_seed=(
+            int(runtime.config["optimization"]["seed"]) + task_id * 17 + member_index
+        ),
+    ).to(runtime.context.device)
+    initialization = initialize_oracle_from_reference(
+        oracle=oracle,
+        video=native,
+        owners=runtime.owners,
+        contract=runtime.rank4_contract,
+        reference=reference,
+        s_ref=runtime.ranks.s_ref,
+        relative_singular_threshold=relative_singular_threshold,
+        probability_floor_mass=probability_floor_mass,
+        reference_member=member_name,
+    )
+    residual = oracle((native,), s_ref=runtime.ranks.s_ref)
+    state = residual_lora_state(residual, runtime.rank4_contract, canonicalize=False)
+    geometry = _low_rank_geometry(state, reference, runtime)
+    del oracle, residual
+    return state, initialization, geometry
 
 
 def _low_rank_geometry(
@@ -163,58 +247,22 @@ def _fit_span_task(
     probability_floor_mass: float,
 ) -> dict[str, Any]:
     sample = _k1_sample(runtime, task.authority_id)
-    packed = pack_shared_compiler_videos(
-        task=task,
-        sample=sample,
-        video_store=runtime.video_store,
-        query_points=runtime.query_points,
-        device=runtime.context.device,
-    )
-    tokens, mask = runtime.language_tokens[task.authority_id]
-    prepared = prepare_shared_compiler_condition(
-        policy=runtime.policy,
-        program_model=runtime.program,
-        owners=runtime.owners,
-        packed=packed,
-        language_tokens=tokens,
-        language_mask=mask,
-        chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
-    )
-    if len(prepared.videos) != 1:
-        raise RuntimeError("fit-span diagnostic lost its K1 identity")
-    native = cache_native_video_readout(prepared.videos[0].native)
+    native, packed_metrics = capture_k1_native_readout(runtime, task, sample)
     bank = runtime.effect_banks.get(task.authority_id)
     members = []
     for member, (name, reference) in enumerate(
         zip(bank.member_names, bank.projections, strict=True)
     ):
-        oracle = TaskLocalNativeFactorOracle(
-            runtime.owners,
-            frame_counts=(native.frame_count,),
-            event_slots=int(runtime.config["model"]["event_slots"]),
-            program_width=int(runtime.config["model"]["program_width"]),
-            initialization_seed=(
-                int(runtime.config["optimization"]["seed"])
-                + task.authority_id * 17
-                + member
-            ),
-        ).to(runtime.context.device)
-        initialization = initialize_oracle_from_reference(
-            oracle=oracle,
-            video=native,
-            owners=runtime.owners,
-            contract=runtime.rank4_contract,
+        state, initialization, geometry = project_member_into_k1_native_span(
+            runtime,
+            task_id=task.authority_id,
+            member_index=member,
+            member_name=name,
+            native=native,
             reference=reference,
-            s_ref=runtime.ranks.s_ref,
             relative_singular_threshold=relative_singular_threshold,
             probability_floor_mass=probability_floor_mass,
-            reference_member=name,
         )
-        residual = oracle((native,), s_ref=runtime.ranks.s_ref)
-        state = residual_lora_state(
-            residual, runtime.rank4_contract, canonicalize=False
-        )
-        geometry = _low_rank_geometry(state, reference, runtime)
         projected_scale_ratios = [
             value
             for row in initialization["targets"]
@@ -244,7 +292,7 @@ def _fit_span_task(
                 ),
             }
         )
-        del oracle, residual, state
+        del state
         torch.cuda.empty_cache()
     best = min(
         range(len(members)),
@@ -259,8 +307,8 @@ def _fit_span_task(
         "role": task.role,
         "language": task.language,
         "video_demo": sample.video_demos[0],
-        "sampled_frames": packed.metrics["sampled_frames"][0],
-        "raw_frame_count": packed.metrics["raw_frame_counts"][0],
+        "sampled_frames": packed_metrics["sampled_frames"][0],
+        "raw_frame_count": packed_metrics["raw_frame_counts"][0],
         "member_count": len(members),
         "best_member": members[best]["member"],
         "best_relative_update_error": members[best]["geometry"]["overall"][

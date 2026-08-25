@@ -46,7 +46,7 @@ def materialize_g3_evaluation_bank(args: argparse.Namespace) -> dict[str, Any]:
     partial_root.mkdir(parents=True)
     records = []
     try:
-        with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+        with torch.inference_mode():
             for task in runtime.held:
                 sample = NaturalProgramSample(
                     video_demos=runtime.demos,

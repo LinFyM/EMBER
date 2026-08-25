@@ -377,6 +377,12 @@ query/key和scale；selection与scale/video分开clip。K2/K4严格不读teacher
 multi-video职责。该teacher是fit-only training label，不是task/frame参数表，不进入deployment或checkpoint model state；其通过也仍须
 由held5五臂closed loop证明shared mapping。
 
+clean pushed `main@93dffc7`的实际封存与三步真实profile证明该修正按上述边界成立：formal40 K1 union为50 tasks、451 videos、
+662 teacher states，held/Action Meta/deployment reads均0；K1精确lookup而K2/K4 tensor reads为0。profile中selection与scale/video
+分别clip，K1 input/output query梯度均显著非零，长K4峰值29.32GB且唯一rank16被policy实际消费。该结果只消除了loader、梯度墙、
+显存和materialization工程风险；是否学会shared mapping仍必须看fresh macro5的fit-teacher曲线与held closed loop，不能用初始
+teacher loss或gradient大小提前宣称通过。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

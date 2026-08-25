@@ -217,11 +217,15 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] 用fit-only、held-gradient 0的K1 native-span诊断定位最早接口：6 tasks/9 members的native update cosine median `0.7029`、
   named/global functional retention median `0.7855/0.7981`且action benefit `9/9`为正，说明rank4压缩与真实native bank有足够功能容量；
   v1的全局clip由scale path主导，shared query/key更新不足且没有直接native-feasible selection supervision。
-- [ ] 封存formal40 schedule实际覆盖的50个fit tasks、451个K1 task-video条件和全部verified members的离线native-feasible
-  teacher factors；只保存pre-scale A/B directions、scales与provenance，不保存native banks/free logits/weights，不读取held或Action Meta。
-- [ ] 在保持frozen G2 Program、sampler/K/LR/rank/bounded beta不变的首版修正中：K1以detached set-valued responsibilities监督
+- [x] 从clean pushed detached `93dffc7`在gpu02 p4/p5/p6封存formal40 schedule实际覆盖的50个fit tasks、451个K1
+  task-video条件、68个covered-task verified members及662个teacher states；只保存pre-scale A/B directions、scales与provenance，
+  root为828MiB，held/Action Meta/deployment reads均0，三个worker与aggregate均exit0。
+- [x] 在保持frozen G2 Program、sampler/K/LR/rank/bounded beta不变的首版修正中：K1以detached set-valued responsibilities监督
   shared query-key产生的input/output subspace、paired update direction和独立small-core spectrum；K2/K4 teacher tensor reads为0；
-  selection与scale/video各自clip。完成真实K1/K2/K4 forward/gradient/materialization smoke后fresh训练并复评相同五臂Gate。
+  selection与scale/video各自clip且scale/video不反传shared context。真实三步K1/K2/K4 profile已验证teacher lookup、gradient wall、
+  same-task、bounded beta、长K4与唯一rank16，峰值29.32GB，Action Meta/source/Program trainable均0。
+- [ ] 从fresh运行G3 v2到首个预注册macro5节点，先核对fit K1 teacher selection/scale是否学会，再执行与v1完全相同的held5五臂
+  strict250 Gate；任何non-pass先按teacher fit、held generalization、multi-video组合和闭环稳定性的最早失效接口定位，不做超参小扫。
 
 ### G4 Joint Writer
 

@@ -208,6 +208,17 @@ K1 native span或多视频鲁棒性。当前活动G3修正为fit-only、K1-only�
 factors不进入compiler forward、checkpoint model state或deployment。selection与scale/video使用分离clip预算，首版保持原Program、
 sampler、K、LR、rank、bounded beta和无confidence gate。
 
+该G3 v2修正已在clean pushed `main@93dffc7`实现并通过全仓`168 passed`。formal teacher authority已由同一detached commit在
+gpu02 p4/p5/p6封存：50个K1-covered fit tasks（meta31/target19）、451个唯一task-video、covered tasks内68个verified members、
+662个teacher states、828MiB；三个worker、aggregate和master均exit0。root明确登记full fit authority 75 tasks、missing25、held reads 0、
+Action Meta 0、deployment use false，且只含38-target rank4 pre-scale directions、scales与provenance。
+
+随后单GPU真实三步profile覆盖K1/K2/K4、same-task consistency和target93长K4：两个K1条件分别精确读取1个task tensor shard并找到
+`2/1`个members，所有K2/K4条件teacher reads与lookups均为0；input/output query和scale gradients全部finite/nonzero，selection与
+scale/video pre-clip norms被分别记录，scale/video heads不反传shared context。所有条件均物化76 tensors的唯一rank16，K>1 beta
+从uniform的最大偏差低于`1e-6`；Action Meta module/parameter、source与Program trainable均0，峰值allocated
+`29,320,510,976` bytes。该profile只证明v2训练面和信息墙接通，不是G3 Gate；下一步从fresh到macro5并复评同一五臂strict250。
+
 owner再次明确G1--G3的分段冻结是组件因果验证，不是Final默认训练模板。组件Gate通过后，G4/Final优先直接联合优化完整Writer并使用
 最小充分loss集合；只有后续机制证据要求时才采用有退出条件的warmup或分段。该建议与当前joint Writer目标一致，具体loss删留仍由
 闭环和最早失效接口决定。
@@ -327,8 +338,8 @@ G1--G5 Gate或架构修正依据。
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
 2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
    Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3 v1 macro10五臂strict250已明确non-pass并完成根因定位；下一步封存fit-only K1 native teacher authority，完成真实K1/K2/K4
-   forward/gradient/materialization smoke后，从fresh运行G3 native-teacher shared compiler并复评同一Gate；
+3. G3 v1 macro10五臂strict250已明确non-pass并完成根因定位；fit-only K1 native teacher authority和真实K1/K2/K4 profile均已完成，
+   下一步从fresh运行G3 v2到macro5并复评同一Gate；
 4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

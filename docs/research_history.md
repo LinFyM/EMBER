@@ -385,6 +385,8 @@ benefit `9/9`。因此后继活动修正转为fit-only K1 native-feasible factor
 - `runs/outputs/pi05_ecp_shared_compiler_g3_fold0_m10fresh_5140362_gpu02p45_r2_20260825/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_gate_m10fresh_5140362_4770c5e_20260826/report.json`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_functional_span_4770c5e_gpu01p27_20260826/aggregate.json`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json`（clean pushed
+  `93dffc7`，fit-only K1 authority：50 tasks、451 task-video、662 teacher states；不是Gate结果）；
 - 三条macro10 video arms位于对应`pi05_ecp_shared_compiler_g3_*strict250*m10fresh*20260826/`目录。
 
 ## 23. 当前保留结论

@@ -76,9 +76,9 @@ def load_task_rank4_target(
         raise ValueError("language baseline task effect authority changed")
     output: dict[str, torch.Tensor] = {}
     with safe_open(tensor_path, framework="pt", device="cpu") as handle:
-        reliability = handle.get_tensor("reliability").float().to(device)
+        reliability = handle.get_tensor("reliability").float()
         if reliability.shape != (len(members),) or not torch.allclose(
-            reliability.sum(), torch.ones((), device=device)
+            reliability.sum(), torch.ones(())
         ):
             raise ValueError("language baseline member reliability changed")
         for target in contract.targets:

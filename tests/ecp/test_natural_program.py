@@ -243,6 +243,59 @@ def test_temporal_heads_have_no_direct_language_or_scene_bypass() -> None:
     assert model.process_fusion[0].in_features == 2 * model.width
 
 
+def test_temporal_readout_preserves_fixed_owner_identity() -> None:
+    torch.manual_seed(6)
+    model = _model()
+    process = torch.randn(1, 4, 38, 8)
+    rho = torch.rand(1, 4)
+    tau = torch.stack(
+        (
+            torch.linspace(0.0, 1.0, 4)[None],
+            torch.full((1, 4), 0.1),
+        ),
+        dim=-1,
+    )
+    common = {
+        "p_lang": torch.randn(1, 38, 8),
+        "p_scene": torch.randn(1, 38, 8),
+        "rho": rho,
+        "tau": tau,
+        "sigma": torch.rand_like(process),
+    }
+    query_times = torch.linspace(0.0, 1.0, 6)[None]
+    shared_query = torch.randn(8)
+    shared_weights = torch.einsum(
+        "cejd,d->cej", torch.tanh(process), shared_query
+    ).softmax(-1)
+    shared_event = torch.einsum("cej,cejd->ced", shared_weights, process)
+    permuted_process = process.roll(1, dims=2)
+    permuted_weights = torch.einsum(
+        "cejd,d->cej", torch.tanh(permuted_process), shared_query
+    ).softmax(-1)
+    permuted_event = torch.einsum(
+        "cej,cejd->ced", permuted_weights, permuted_process
+    )
+    assert torch.allclose(shared_event, permuted_event)
+
+    assert torch.equal(
+        model.decoder.owner_queries,
+        model.decoder.owner_queries[:1].expand_as(model.decoder.owner_queries),
+    )
+    with torch.no_grad():
+        model.decoder.owner_queries[0].add_(0.25)
+    original = model.decoder(
+        NaturalProgram(p_process=process, **common), query_times
+    )
+    permuted = model.decoder(
+        NaturalProgram(p_process=permuted_process, **common), query_times
+    )
+
+    assert model.decoder.owner_queries.shape == (38, 8)
+    assert not torch.equal(
+        original.action_phases, permuted.action_phases
+    )
+
+
 def test_g2_inventory_requires_the_native_observer_to_remain_frozen() -> None:
     policy = torch.nn.Linear(2, 2).requires_grad_(False)
     model = _model().requires_grad_(True)

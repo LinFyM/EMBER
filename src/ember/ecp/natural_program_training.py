@@ -116,6 +116,8 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         != ["P_process", "rho", "tau"]
         or config.get("model", {}).get("native_observer_training")
         != "frozen_stage0_v3"
+        or config.get("model", {}).get("temporal_owner_readout")
+        != "fixed_owner_specific_linear_v1"
         or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
         or config.get("data", {}).get("robustness_for_every_task") is not True
         or int(config.get("objective", {}).get(
@@ -556,6 +558,14 @@ def run_natural_program_macro(
     if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
         raise RuntimeError("frozen G2 source policy accumulated gradients")
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
+    owner_query_gradient = runtime.model.decoder.owner_queries.grad
+    if owner_query_gradient is None or not bool(
+        torch.isfinite(owner_query_gradient).all()
+    ):
+        raise RuntimeError("G2 owner-specific temporal readout lost its gradient")
+    owner_query_gradient_norm = float(owner_query_gradient.float().norm())
+    if owner_query_gradient_norm <= 0.0:
+        raise RuntimeError("G2 owner-specific temporal readout has zero gradient")
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
     if not bool(torch.isfinite(grad_norm)):
@@ -593,6 +603,7 @@ def run_natural_program_macro(
         },
         "local_task_ids": list(task_ids),
         "global_means": means,
+        "owner_query_gradient_norm_before_clip": owner_query_gradient_norm,
         "gradient_norm_before_clip": float(grad_norm),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "macro_seconds": time.monotonic() - tick,

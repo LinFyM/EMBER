@@ -239,7 +239,25 @@ Stage 0 v3，仅训练新增Program层，待fresh复评后再决定是否需要o
 - `runs/analysis/pi05_ecp_natural_program_g2_static_free_macro10_temporal_readout_diagnostic_30b98ef_gpu01p1_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_static_free_macro10_event_grounding_diagnostic_30b98ef_gpu01p1_20260825/`。
 
-## 15. 当前保留结论
+## 15. G2 frozen-observer formal与owner readout定位
+
+clean pushed `main@db84a50`冻结Stage 0 v3后，fresh macro10并按原world5 topology exact-resume到macro20。held20 Gate中same-task、
+K1/K4、active-event范围保持通过，但full相对endpoints改善仅`+0.0051%/-0.0207%`，macro20 probe margin为`0/40`，因此G2仍
+non-pass。fit total从macro10的`1.17260`降至macro20的`0.97637`，不能用内部loss下降替代held视频增量。
+
+无梯度层级诊断确认raw Stage 0 full event/owner relative RMS保持`0.06252/0.36771`，full/endpoints fused Program RMS差异为
+`0.00618`；失败不再来自observer侵蚀或动态缺失。最早接口是training-only decoder对38个固定LoRA owners共享同一
+`Linear(128,1)`，其owner加权和对owner轴严格置换不变。owner entropy `0.99898`、action prediction temporal std `0.00173`
+而target为`0.32725`，继续训练没有修复。后继只允许把该readout改为跨task共享的固定owner-specific content queries；raw probe
+margin仍须独立处理，不能用不改变canonical Program或action/progress utility的Gate-only residual缩放。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_frozen_observer_fold0_m10_db84a50_gpu01p34567_r5_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_frozen_observer_macro10_layer_diagnostic_db84a50_gpu01p3_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_frozen_observer_macro20_layer_diagnostic_db84a50_gpu01p3_20260825/`。
+
+## 16. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -249,7 +267,7 @@ Stage 0 v3，仅训练新增Program层，待fresh复评后再决定是否需要o
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 16. 证据恢复方式
+## 17. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

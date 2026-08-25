@@ -142,8 +142,17 @@ language/scene，不设次数上限。
 - [x] 冻结Stage 0 v3 observer，只训练新的Program readers/fusion/alignment/diagnostic heads；task92真实K4 smoke确认46/46个新增
   parameter tensors进入optimizer state、39个encoder tensors保持逐tensor不变，run contract确认native observer/source policy
   trainable均为0、observer处于eval且Action Meta为0。
-- [ ] 从fresh clean pushed commit进行macro10 formal并复评同一held20 Gate。若仍non-pass，才依据owner entropy与event-token证据
-  修正owner-structured readout，不把两项机制改动混在同一轮。
+- [x] 从clean pushed `main@db84a50` fresh训练并exact-resume到macro20；同一held20 Gate中same-task、K1/K4、active-event范围继续
+  通过，但macro10/macro20的full相对endpoints分别仅`+0.0051%/-0.0207%`，macro20 probe margin为`0/40`，因此仍未进入G3。
+- [x] macro20无梯度层级诊断确认frozen Stage 0 raw event/owner结构保持`0.06252/0.36771`，full/endpoints差异也真实存在；但共享
+  `Linear(128,1)` owner score对固定38-owner轴严格置换不变，owner entropy为`0.99898`，action prediction temporal std仅
+  `0.00173`而target为`0.32725`。继续训练没有修复最早readout接口。
+- [x] 只把training-only temporal owner score替换为38个固定语义owner各自的shared-across-task linear query；queries从旧共享
+  Linear完全相同的向量初始化以保持其余head的RNG序列，不修改Stage 0、
+  Program schema、probe处理、scene head、数据、loss、seed/LR/slot/width或Gate。真实K4 profile确认owner-query gradient norm
+  `0.01827`、一步后query rows已分化、46个Program tensors trainable、observer/source/Action Meta trainable均为0，peak约10.02GB。
+- [ ] 集成并推送owner-structured readout，从clean detached commit fresh训练并复评同一held20 Gate；probe raw margin仍是独立未通过
+  接口，不得用只缩放辅助delta而不改变部署Program的Gate-only adapter处理。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

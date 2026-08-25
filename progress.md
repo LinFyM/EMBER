@@ -60,6 +60,24 @@ Stage 0 event grounding。当前唯一机制修正因此冻结已验证的Stage 
 Action Meta module/parameter 0。checkpoint中39个encoder tensors与Stage 0 v3 authority逐tensor相等，证明optimizer/forward没有改写
 frozen observer。profile输出核对后将删除，不冒充formal evidence。
 
+clean pushed `main@db84a50`的frozen-observer formal已从fresh训练到macro10，并按原world5 topology exact-resume到macro20。macro10
+held20 Gate中same-task nearer `1.0`、K1/K4、median active events `5`与one-event `0`通过，但full相对endpoints仅`+0.0051%`、
+probe margin `0/40`；macro20仍为non-pass，full相对endpoints为`-0.0207%`、probe margin `0/40`、one-event `0.025`，其它上述
+资格项保持通过。fit total从macro10的`1.17260`降至macro20的`0.97637`，因此内部loss下降没有转化为视频动态因果增量。
+
+macro20无梯度诊断确认冻结修正确实保存了native结构：raw full event/owner relative RMS为`0.06252/0.36771`，fused为
+`0.05590/0.26447`，full与endpoints的fused Program RMS差异仍有`0.00618`。最早失效接口现为temporal owner readout：当前共享
+`Linear(128,1)`对38-owner轴严格置换不变，owner entropy为`0.99898`，action prediction temporal std仅`0.00173`，而target为
+`0.32725`；从macro10继续到20没有改善该比例。两个raw antithetic branches仍不稳定，但把零均值residual只在辅助Gate路径缩小、
+而不改变部署`P_process/rho/tau/sigma`，会成为Gate-only旋钮，已明确不采用。
+
+当前隔离实现只把training-only temporal readout改为38个固定LoRA owner各自的linear query；38条query从旧共享Linear完全相同的
+向量初始化，保持其余head的旧RNG序列，之后只能由owner-specific梯度分化。queries跨task共享且只读取
+`P_process` content，不是task-ID route。scene head、probe、Stage 0、Program schema、数据、loss、seed/LR/slot/width与Gate均不变。
+task92真实K4 profile已通过：owner-query gradient norm `0.01827`，一步后query row centered RMS为`3.23e-5`，证明共享初始化已由
+owner-specific梯度分化；46个Program parameter tensors/915,554 parameters trainable，native observer/source policy/Action Meta
+trainable均为0，39个observer tensors逐tensor不变，peak allocated 10,016,671,744 bytes；profile只作机制smoke，核对后删除。
+
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。
@@ -172,10 +190,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 把已通过CPU回归与真实K4 smoke的唯一frozen-observer实现面合并到main并推送；
-2. 从新的clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后fresh启动
-   macro10 formal；
-3. 在meta-held15+target-held5复评同一G2 Gate；只有full相对endpoints至少改善10%且其它资格项继续通过才冻结Program并进入G3；
+1. 把已完成152项CPU回归、diff审查和真实K4 smoke的owner-structured temporal readout集成到main并推送；
+2. 从新的clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后fresh启动macro10 formal；
+3. 在meta-held15+target-held5复评完全相同的G2 Gate；只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program
+   并进入G3。owner readout若修复full但probe仍失败，下一修正必须让probe invariance接受真实action/progress utility约束，不能添加只服务
+   Gate的residual shrink旋钮；
 4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

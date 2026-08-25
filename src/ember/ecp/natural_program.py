@@ -194,13 +194,19 @@ class TemporalProgramDecoder(torch.nn.Module):
         self,
         *,
         width: int,
+        owners: int,
         action_phases: int,
         predicate_slots: int,
     ) -> None:
         super().__init__()
         self.action_phases = action_phases
         self.predicate_slots = predicate_slots
-        self.owner_score = torch.nn.Linear(width, 1, bias=False)
+        self.owner_queries = torch.nn.Parameter(torch.empty(owners, width))
+        torch.nn.init.uniform_(
+            self.owner_queries[:1], -width**-0.5, width**-0.5
+        )
+        with torch.no_grad():
+            self.owner_queries[1:].copy_(self.owner_queries[:1])
         self.scene_owner_score = torch.nn.Linear(width, 1, bias=False)
         self.query_projection = torch.nn.Sequential(
             torch.nn.LayerNorm(width),
@@ -225,7 +231,11 @@ class TemporalProgramDecoder(torch.nn.Module):
         # gives the decoder a task/endpoint code that can fit cross-episode
         # action priors while ignoring the ordered video process entirely.
         owner_context = program.p_process
-        owner_weights = self.owner_score(torch.tanh(owner_context)).squeeze(-1)
+        if owner_context.shape[-2] != self.owner_queries.shape[0]:
+            raise ValueError("Natural Program owner axis changed")
+        owner_weights = torch.einsum(
+            "cejd,jd->cej", torch.tanh(owner_context), self.owner_queries
+        )
         event_tokens = torch.einsum(
             "cej,cejd->ced", owner_weights.softmax(-1), owner_context
         )
@@ -299,6 +309,7 @@ class NaturalProgramModel(torch.nn.Module):
         )
         self.decoder = TemporalProgramDecoder(
             width=width,
+            owners=owners,
             action_phases=action_phases,
             predicate_slots=predicate_slots,
         )

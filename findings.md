@@ -227,6 +227,19 @@ macro10训练后raw值降至`0.02601/0.22824`，fusion后owner仅`0.14837`。也
 先抹平了已有的event/owner结构。首个有证据修正是保留Stage 0 v3为frozen observer，只训练新增Program层；若该隔离仍失败，才用
 owner entropy证据处理owner-structured readout。它不改变数据、slot/width/rank、优化超参、K权重或Gate，也不使用shuffled/reversed。
 
+### 21. 冻结observer后最早接口是对固定38-owner轴置换不变的temporal readout
+
+clean pushed `main@db84a50`的frozen-observer formal从fresh macro10按原world5 topology exact-resume到macro20；full相对endpoints的
+held action/progress改善分别只有`+0.0051%/-0.0207%`，而fit total继续下降。无梯度诊断确认Stage 0 raw full event/owner relative RMS
+保持`0.06252/0.36771`，full/endpoints的fused Program RMS差异也仍为`0.00618`，所以失败不再来自observer侵蚀或视频动态缺失。
+
+training-only decoder原先用同一个`Linear(128,1)`给38个固定LoRA owners打分；同时置换owner content与score后加权和严格不变，因而
+把有固定target语义的owner轴当成无身份集合。对应实证是owner entropy `0.99898`、action prediction temporal std `0.00173`，而target
+为`0.32725`，继续训练到macro20没有修复。当前最小修正是38个固定owner各自持有一个跨task共享的linear query，只读取
+`P_process` content；38条query从旧共享Linear完全相同的向量初始化，保持其余head的旧RNG序列，之后只由owner-specific梯度分化。
+它不是task-ID route，也不改变deployment Program schema、Stage 0、probe、数据、loss、seed/LR、slot/width或Gate。
+raw antithetic branch margin仍是独立接口，不能用不改变canonical Program或action/progress utility的residual缩放去美化Gate。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

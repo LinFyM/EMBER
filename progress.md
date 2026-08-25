@@ -145,6 +145,19 @@ Gate全部通过：full/endpoints action+progress loss为`0.28167/0.36207`，相
 probe `38/40`、same-task 1.0、K1 identity 1.0、K4 permutation 1.0（max abs `4.77e-7`）、tau violation `0.00357`。因此G2的
 最早失效接口确为无边界K>1 alignment，而不是readout容量；当前冻结`macro_00000020` Program并进入G3。
 
+G3首个共享编译器实现面已接通但尚未形成formal科学结果：frozen G2 Program现暴露每条video的canonical event assignment；Pass B
+按真实native content与Program query计算正负两支softmax，输入候选严格为`(video,frame,probe,horizon)`，输出候选严格为额外含
+`type={abs,adj,init,goal}`的集合。每条video先以event assignment和时间quadrature构成单位质量measure并独立chunked pooling，再由
+uniform初始化、最大修正0.5的置换不变bounded beta合并K=1/2/4；K=1严格identity。实现不含task/video/frame selection参数，最终只
+输出一套rank4 residual并复用唯一rank12+4 rank16 materialization。
+
+同时已接通95-task/118-member authority、G2 checkpoint冻结加载、member相对carrier的small-core最佳rank4投影、set-valued
+functional effect losses，以及target-fit successful-member occupancy的窄 evaluator capture合同。CPU定向机制检查为`23 passed`，
+全仓为`157 passed`；覆盖chunk/non-chunk边界等价、gradient、K1 identity、K4 permutation、bounded beta及无free logits。当前尚未
+完成真实GPU video->Program->native bank->signed pooling->materialization forward，也尚未生成target-fit occupancy/effect banks；
+因此不能把本节点报告为G3可formal训练或Gate通过。下一步从clean pushed commit的detached worktree完成这两项真实检查，确认纯Native
+observer与Action Meta module/parameter为0后，才启动G3 formal优化。
+
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。

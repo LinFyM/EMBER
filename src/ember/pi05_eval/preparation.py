@@ -17,8 +17,10 @@ from ember.eval_adapters import (
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.occupancy_selection import (
+    G3_VERIFIED_MEMBER_OCCUPANCY_SELECTION_SCHEMA,
     SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA,
     SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA,
+    g3_verified_member_occupancy_tasks,
     successful_expert_occupancy_tasks,
 )
 from ember.pi05_eval_contract import (
@@ -190,6 +192,19 @@ def _occupancy_capture_tasks(
         return tuple(tasks), None
     path = path.resolve()
     manifest = read_json(path)
+    if (
+        manifest.get("schema_version")
+        == G3_VERIFIED_MEMBER_OCCUPANCY_SELECTION_SCHEMA
+    ):
+        return g3_verified_member_occupancy_tasks(
+            args,
+            tasks,
+            output_dir=output_dir,
+            adapter_kind=adapter_kind,
+            selection_path=path,
+            manifest=manifest,
+            rows=tuple(dict(row) for row in manifest.get("rows", ())),
+        )
     if manifest.get("schema_version") != SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA:
         raise Pi05EvaluationError("unsupported occupancy capture selection")
     return successful_expert_occupancy_tasks(
@@ -282,7 +297,11 @@ def _prepared_payload(
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     diagnostic_subset = (
-        "successful_on_policy_occupancy"
+        str(
+            occupancy_capture.get(
+                "diagnostic_subset", "successful_on_policy_occupancy"
+            )
+        )
         if occupancy_capture is not None
         else str(task_subset["diagnostic_subset"]) if task_subset is not None else None
     )

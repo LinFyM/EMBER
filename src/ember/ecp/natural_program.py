@@ -44,6 +44,7 @@ class NaturalProgramOutput:
     probe_process: torch.Tensor
     probe_presence: torch.Tensor
     alignment: torch.Tensor
+    canonical_assignment: torch.Tensor
     frame_mask: torch.Tensor
     video_condition_ids: torch.Tensor
 
@@ -676,6 +677,16 @@ class NaturalProgramModel(torch.nn.Module):
             local_sigma=local_sigma,
             video_set_offsets=video_set_offsets,
         )
+        local_assignment = torch.stack(
+            (positive.state_posterior, negative.state_posterior)
+        ).mean(0)
+        canonical_assignment = torch.einsum(
+            "vte,vce->vtc", local_assignment, alignment
+        )
+        canonical_assignment = canonical_assignment / canonical_assignment.sum(
+            -1, keepdim=True
+        ).clamp_min(1e-6)
+        canonical_assignment = canonical_assignment * positive.frame_mask[..., None]
         return NaturalProgramOutput(
             program=program,
             predictions=self.decoder(program, query_times),
@@ -687,6 +698,7 @@ class NaturalProgramModel(torch.nn.Module):
             probe_process=probe_process,
             probe_presence=probe_presence,
             alignment=alignment,
+            canonical_assignment=canonical_assignment,
             frame_mask=positive.frame_mask,
             video_condition_ids=video_condition_ids,
         )

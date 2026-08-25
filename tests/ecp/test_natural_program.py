@@ -205,6 +205,10 @@ def test_alignment_is_monotone_and_two_probe_forward_has_gradients() -> None:
     assert output.program.tau.shape == (1, 4, 2)
     assert output.program.sigma.shape == (1, 4, 38, 8)
     assert output.probe_process.shape == (2, 2, 4, 38, 8)
+    assert output.canonical_assignment.shape == (2, 3, 4)
+    torch.testing.assert_close(
+        output.canonical_assignment.sum(-1), output.frame_mask.float()
+    )
     assert output.predictions.action_phases.shape == (1, 6, 5, 7)
     assert output.predictions.scene_predicate_logits.shape == (1, 2, 3)
     assert any(parameter.grad is not None for parameter in model.parameters())

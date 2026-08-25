@@ -33,14 +33,38 @@ def small_core_balanced_svd(
         or b.shape[0] < G1_RESIDUAL_RANK
     ):
         raise NativeFactorError("G1 residual factors are not rank four")
+    return low_rank_balanced_svd(a, b, output_rank=G1_RESIDUAL_RANK)
+
+
+def low_rank_balanced_svd(
+    a: torch.Tensor, b: torch.Tensor, *, output_rank: int
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Best balanced low-rank factors for B@A through only its small core."""
+
+    if (
+        a.ndim != 2
+        or b.ndim != 2
+        or a.shape[0] != b.shape[1]
+        or not 0 < output_rank <= a.shape[0]
+        or a.shape[1] < output_rank
+        or b.shape[0] < output_rank
+    ):
+        raise NativeFactorError("low-rank core factorization changed shape")
     qb, rb = torch.linalg.qr(b.float(), mode="reduced")
     qa, ra = torch.linalg.qr(a.float().transpose(0, 1), mode="reduced")
     u, singular, vh = torch.linalg.svd(rb @ ra.transpose(0, 1), full_matrices=False)
+    u = u[:, :output_rank]
+    singular = singular[:output_rank]
+    vh = vh[:output_rank]
     root = singular.clamp_min(0).sqrt()
     canonical_b = (qb @ u) * root[None]
     canonical_a = root[:, None] * (vh @ qa.transpose(0, 1))
     pivots = canonical_a.abs().argmax(-1)
-    signs = torch.sign(canonical_a[torch.arange(a.shape[0]), pivots])
+    signs = torch.sign(
+        canonical_a[
+            torch.arange(output_rank, device=canonical_a.device), pivots
+        ]
+    )
     signs = torch.where(signs == 0, torch.ones_like(signs), signs)
     canonical_a = canonical_a * signs[:, None]
     canonical_b = canonical_b * signs[None]

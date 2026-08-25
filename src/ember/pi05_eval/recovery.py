@@ -30,6 +30,7 @@ from ember.pi05_eval_queue import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
+    "g3_verified_member_occupancy",
     "successful_on_policy_occupancy",
     "train24_fold0_held5",
     "train24_fold0_profile1",

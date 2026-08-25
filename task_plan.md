@@ -200,6 +200,8 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [ ] 以通过G2 Gate的`c1493a1/macro_00000020`为唯一frozen Program authority，先复用G1真实native X/Y capture、四类output banks、
   action-in native blocks、small-core SVD和rank12+4 materialization；实现共享content-derived query-key signed attention、target scales与
   由uniform初始化的bounded K correction，不保留task/frame free-logit路径。
+- [x] 完成上述共享Pass B、95-task/118-member与set-valued critic的CPU实现合同：input/output candidate索引分离、跨chunk视频边界、
+  per-video单位measure、K=1 identity、K=4置换不变和无task/frame free logits均已有定向回归；真实GPU机制smoke仍属于下一项。
 - [ ] 完成最小真实forward/gradient/materialization与信息墙检查后，从clean pushed detached commit做functional formal和held5 strict250 Gate。
 
 ### G4 Joint Writer

@@ -15,7 +15,7 @@ from ember.ecp.native_factors import (
     capture_native_target_chunk,
 )
 from ember.ecp.policy_effects import ExecutionPolicyPrefix
-from ember.ecp.stage0 import ECPStage0Model
+from ember.ecp.stage0 import ECPStage0Model, ECPVideoEncoder
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.data import RawTeacherVideoStore
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
@@ -147,11 +147,38 @@ def prepare_pass_b_readout(
     posterior: torch.Tensor,
     chunk_size: int,
 ) -> NativeVideoReadout:
-    language = stage0.encoder.embed_language_conditions(policy, tokens)
-    fixed_probe = stage0.encoder.fixed_suffix_noise.detach()
+    return prepare_native_video_readout(
+        policy=policy,
+        encoder=stage0.encoder,
+        owners=owners,
+        frames=frames,
+        tokens=tokens,
+        masks=masks,
+        process=process,
+        posterior=posterior,
+        chunk_size=chunk_size,
+    )
+
+
+def prepare_native_video_readout(
+    *,
+    policy: torch.nn.Module,
+    encoder: ECPVideoEncoder,
+    owners: tuple[TargetOwner, ...],
+    frames: torch.Tensor,
+    tokens: torch.Tensor,
+    masks: torch.Tensor,
+    process: torch.Tensor,
+    posterior: torch.Tensor,
+    chunk_size: int,
+) -> NativeVideoReadout:
+    """Build the common chunked native readout used by G1 and G3 Pass B."""
+
+    language = encoder.embed_language_conditions(policy, tokens)
+    fixed_probe = encoder.fixed_suffix_noise.detach()
 
     def prefix(start: int, stop: int) -> ExecutionPolicyPrefix:
-        embeddings, padding = stage0.encoder.prepare_frame_prefix(
+        embeddings, padding = encoder.prepare_frame_prefix(
             policy=policy,
             frames=frames[start:stop],
             frame_condition_ids=torch.zeros(

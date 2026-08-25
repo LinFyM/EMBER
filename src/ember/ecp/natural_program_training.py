@@ -1,0 +1,691 @@
+"""Distributed task-equal training for G2 Natural Program (Pass A)."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Mapping
+
+import torch
+import torch.distributed as dist
+
+from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
+from ember.ecp.contracts import build_target_owners
+from ember.ecp.natural_program import NaturalProgramModel, NaturalProgramOutput
+from ember.ecp.natural_program_authority import (
+    RUN_SCHEMA,
+    build_natural_program_run_contract,
+    publish_natural_program_run_contract,
+)
+from ember.ecp.natural_program_data import (
+    NaturalProgramSchedule,
+    NaturalProgramTask,
+    PackedNaturalProgramCondition,
+    load_natural_program_tasks,
+    pack_natural_program_condition,
+)
+from ember.ecp.natural_program_labels import NaturalProgramLabelStore
+from ember.ecp.natural_program_objective import (
+    NaturalProgramLoss,
+    natural_program_loss,
+)
+from ember.ecp.observer_authority import load_frozen_native_observer
+from ember.ecp.stage0_train_step import _gather_records, _reduce_gradients
+from ember.ecp.stage0_training import (
+    build_stage0_optimizer,
+    load_stage0_config,
+    stage0_source_authority,
+    tokenize_stage0_languages,
+)
+from ember.pi05_eval_contract import (
+    git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
+)
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    read_json,
+    write_json_atomic,
+)
+from ember.pi05_source_contract import append_jsonl, reconcile_metrics
+from ember.pi05_source_setup import (
+    initialize_deferred_process_group,
+    initialize_distributed,
+    load_config,
+    load_policy,
+    load_stats,
+    seed_everything,
+)
+from ember.privileged_actions import PrivilegedMetaActionStore
+from ember.writer.data import RawTeacherVideoStore
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+STAGE = "g2_natural_program"
+
+
+@dataclass
+class NaturalProgramRuntime:
+    args: argparse.Namespace
+    config: dict[str, Any]
+    context: DistributedContext
+    tasks: tuple[NaturalProgramTask, ...]
+    task_by_id: dict[int, NaturalProgramTask]
+    schedule: NaturalProgramSchedule
+    video_store: RawTeacherVideoStore
+    action_store: PrivilegedMetaActionStore
+    label_store: NaturalProgramLabelStore
+    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
+    policy: torch.nn.Module
+    model: NaturalProgramModel
+    trainable_parameters: tuple[torch.nn.Parameter, ...]
+    frozen_parameters: tuple[torch.nn.Parameter, ...]
+    optimizer: torch.optim.Optimizer
+    scheduler: torch.optim.lr_scheduler.LRScheduler
+    tasks_per_rank: int | None
+    total_macros: int
+    stop_after_macro: int
+    checkpoint_macros: tuple[int, ...]
+    start_macro: int
+    metrics_rows: int
+    run_contract: dict[str, Any]
+
+    def close(self) -> None:
+        self.video_store.close()
+        self.action_store.close()
+        self.label_store.close()
+
+
+def load_natural_program_config(path: Path) -> dict[str, Any]:
+    config = read_json(path)
+    if (
+        config.get("schema_version") != "ember_ecp_natural_program_g2_v1"
+        or config.get("data", {}).get("K_values") != [1, 2, 4]
+        or config.get("data", {}).get("video_weights")
+        != "uniform_beta_1_over_K"
+        or config.get("model", {}).get("target_owners") != 38
+        or config.get("model", {}).get("event_slots") != 8
+        or config.get("model", {}).get("program_width") != 128
+        or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
+        or config.get("data", {}).get("robustness_for_every_task") is not True
+        or int(config.get("objective", {}).get(
+            "contrastive_negative_languages", 0
+        )) <= 0
+        or int(config.get("objective", {}).get(
+            "contrastive_negative_languages", 0
+        )) % 2
+    ):
+        raise ValueError("unsupported G2 Natural Program config")
+    return config
+
+
+def _authority(config: Mapping[str, Any], name: str) -> Path:
+    path = REPO_ROOT / str(config["authorities"][name])
+    if not path.is_file():
+        raise FileNotFoundError(f"G2 authority is missing: {name}")
+    return path
+
+
+def _asset_authority(
+    args: argparse.Namespace, config: Mapping[str, Any], name: str
+) -> Path:
+    path = args.asset_root / str(config["authorities"][name])
+    if not path.exists():
+        raise FileNotFoundError(f"G2 retained asset is missing: {name}")
+    return path
+
+
+def _resolve_runtime(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+) -> tuple[int, int, tuple[int, ...]]:
+    cell = config["formal_run" if args.mode == "formal" else "profile_defaults"]
+    if context.world_size not in cell["allowed_world_sizes"]:
+        raise ValueError("G2 world size is outside its launch contract")
+    total = int(cell["total_macros"])
+    stop = int(args.stop_after_macro or cell.get("stop_after_macro", total))
+    checkpoints = tuple(map(int, cell["checkpoint_macros"]))
+    if not 0 < stop <= total:
+        raise ValueError("G2 stop macro is outside its segment")
+    if args.mode == "formal":
+        if stop not in set(map(int, cell["stage_stop_macros"])):
+            raise ValueError("formal G2 stop is not pre-registered")
+        state = git_state(REPO_ROOT)
+        if (
+            not git_state_is_clean_pushed_or_frozen_authority(state)
+            or state.get("branch") != ""
+            or state.get("upstream") is not None
+        ):
+            raise ValueError("formal G2 requires a clean detached origin/main authority")
+    return total, stop, checkpoints
+
+
+def _scheduler(
+    optimizer: torch.optim.Optimizer,
+    config: Mapping[str, Any],
+    total_macros: int,
+) -> torch.optim.lr_scheduler.LambdaLR:
+    cell = config["optimization"]["scheduler"]
+    warmup = int(cell["warmup_macros"])
+    floor = float(cell["decay_lr"]) / float(cell["peak_lr"])
+
+    def scale(step: int) -> float:
+        if step < warmup:
+            return (step + 1) / warmup
+        progress = (step - warmup) / max(total_macros - warmup, 1)
+        return floor + (1.0 - floor) * 0.5 * (
+            1.0 + math.cos(math.pi * progress)
+        )
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
+
+
+def _tasks(config: Mapping[str, Any], data_root: Path) -> tuple[NaturalProgramTask, ...]:
+    fold = config["fold"]
+    return load_natural_program_tasks(
+        meta_protocol_path=_authority(config, "meta_protocol"),
+        source_manifest_path=_authority(config, "source_manifest"),
+        target_manifest_path=_authority(config, "target_manifest"),
+        data_root=data_root,
+        target_fit_ids=fold["target_fit_task_ids"],
+        target_held_ids=fold["target_held_task_ids"],
+        held_meta_fold=int(fold["meta_held_fold"]),
+    )
+
+
+def _load_program_model(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+) -> tuple[dict[str, Any], dict[str, Any], torch.nn.Module, NaturalProgramModel]:
+    source = stage0_source_authority(args)
+    source_config = load_config(_authority(config, "source_base_config"))
+    policy = load_policy(Path(source["model_path"]), source_config, context.device)
+    policy.requires_grad_(False).eval()
+    owners = build_target_owners(
+        load_pi05_lora_contract(_authority(config, "lora_contract"))
+    )
+    native = load_frozen_native_observer(
+        stage0_config=load_stage0_config(_authority(config, "stage0_config")),
+        owners=owners,
+        native_checkpoint=_asset_authority(
+            args, config, "native_observer_checkpoint"
+        ),
+        device=context.device,
+        max_frames_per_call=int(config["model"]["max_frames_per_call"]),
+    )
+    model = NaturalProgramModel(
+        native.encoder,
+        prefix_width=int(config["model"]["prefix_width"]),
+        width=int(config["model"]["program_width"]),
+        owners=int(config["model"]["target_owners"]),
+        event_slots=int(config["model"]["event_slots"]),
+        action_phases=int(config["model"]["action_phases"]),
+        predicate_slots=int(config["model"]["predicate_slots"]),
+    ).to(context.device)
+    model.requires_grad_(True)
+    return source, source_config, policy, model
+
+
+def _open_program_data(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    tasks: tuple[NaturalProgramTask, ...],
+    source_config: Mapping[str, Any],
+    context: DistributedContext,
+) -> tuple[
+    RawTeacherVideoStore,
+    PrivilegedMetaActionStore,
+    NaturalProgramLabelStore,
+    dict[int, tuple[torch.Tensor, torch.Tensor]],
+]:
+    authorities = tuple(task.writer_authority() for task in tasks)
+    stats = load_stats(source_config, source_config["data"]["active_task_ids"])
+    return (
+        RawTeacherVideoStore(
+            authorities,
+            frame_stride=int(config["data"]["frame_stride"]),
+            max_open_files=8,
+        ),
+        PrivilegedMetaActionStore(
+            authorities,
+            action_q01=stats["action"]["q01"],
+            action_q99=stats["action"]["q99"],
+            phase_count=int(config["model"]["action_phases"]),
+            max_open_files=8,
+        ),
+        NaturalProgramLabelStore(
+            args.label_root,
+            tasks=tasks,
+            predicate_slots=int(config["model"]["predicate_slots"]),
+            max_open_tasks=8,
+        ),
+        tokenize_stage0_languages(
+            tasks,
+            tokenizer_path=args.tokenizer_path,
+            max_length=int(source_config["features"]["tokenizer_max_length"]),
+            device=context.device,
+        ),
+    )
+
+
+def _resume_cursor(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    *,
+    model: NaturalProgramModel,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    stop: int,
+) -> tuple[int, int]:
+    start_macro = 0
+    expected_metrics = 0
+    if args.resume is not None:
+        start_macro, expected_metrics = load_ecp_checkpoint(
+            checkpoint=args.resume,
+            stage=STAGE,
+            context=context,
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            run_contract_schema=RUN_SCHEMA,
+        )
+    if not 0 <= start_macro < stop:
+        raise ValueError("G2 resume cursor is outside this segment")
+    metrics_rows = (
+        reconcile_metrics(
+            args.output_dir / "metrics.jsonl",
+            start_macro,
+            expected_metrics,
+            cursor_key="macro",
+        )
+        if context.is_main
+        else 0
+    )
+    return start_macro, metrics_rows
+
+
+def prepare_runtime(
+    args: argparse.Namespace, context: DistributedContext
+) -> NaturalProgramRuntime:
+    config = load_natural_program_config(args.config)
+    total, stop, checkpoints = _resolve_runtime(args, config, context)
+    seed_everything(int(config["optimization"]["seed"]), context)
+    tasks = _tasks(config, args.data_root)
+    schedule = NaturalProgramSchedule(
+        tasks,
+        seed=int(config["data"]["pair_seed"]),
+        query_points=int(config["data"]["query_points"]),
+    )
+    source, source_config, policy, model = _load_program_model(
+        args, config, context
+    )
+    initialize_deferred_process_group(
+        context, rendezvous_root=args.output_dir.parent
+    )
+    if context.world_size > 1:
+        for value in model.state_dict().values():
+            dist.broadcast(value, src=0)
+    optimizer = build_stage0_optimizer(model.parameters(), config["optimization"])
+    scheduler = _scheduler(optimizer, config, total)
+
+    video_store, action_store, label_store, language_tokens = _open_program_data(
+        args, config, tasks, source_config, context
+    )
+    native_checkpoint = _asset_authority(
+        args, config, "native_observer_checkpoint"
+    )
+    contract = build_natural_program_run_contract(
+        runtime_args=args,
+        config=config,
+        context=context,
+        tasks=tasks,
+        source=source,
+        policy=policy,
+        model=model,
+        total_macros=total,
+        checkpoint_macros=checkpoints,
+        repo_root=REPO_ROOT,
+        native_checkpoint=native_checkpoint,
+    )
+    publish_natural_program_run_contract(args, context, contract)
+
+    start_macro, metrics_rows = _resume_cursor(
+        args,
+        context,
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        stop=stop,
+    )
+    model.train()
+    torch.cuda.reset_peak_memory_stats(context.device)
+    return NaturalProgramRuntime(
+        args=args,
+        config=config,
+        context=context,
+        tasks=tasks,
+        task_by_id={task.authority_id: task for task in tasks},
+        schedule=schedule,
+        video_store=video_store,
+        action_store=action_store,
+        label_store=label_store,
+        language_tokens=language_tokens,
+        policy=policy,
+        model=model,
+        trainable_parameters=tuple(model.parameters()),
+        frozen_parameters=tuple(policy.parameters()),
+        optimizer=optimizer,
+        scheduler=scheduler,
+        tasks_per_rank=(
+            None
+            if args.mode == "formal"
+            else int(config["profile_defaults"]["tasks_per_rank_per_macro"])
+        ),
+        total_macros=total,
+        stop_after_macro=stop,
+        checkpoint_macros=checkpoints,
+        start_macro=start_macro,
+        metrics_rows=metrics_rows,
+        run_contract=contract,
+    )
+
+
+def _forward(
+    runtime: NaturalProgramRuntime,
+    batch: PackedNaturalProgramCondition,
+    task_id: int,
+) -> NaturalProgramOutput:
+    language_tokens, language_mask = runtime.language_tokens[task_id]
+    return runtime.model(
+        policy=runtime.policy,
+        frames=batch.frames,
+        frame_indices=batch.frame_indices,
+        raw_frame_counts=batch.raw_frame_counts,
+        video_offsets=batch.video_offsets,
+        video_set_offsets=batch.video_set_offsets,
+        frame_condition_ids=batch.frame_condition_ids,
+        language_tokens=language_tokens,
+        language_mask=language_mask,
+        query_times=batch.query_times,
+    )
+
+
+def _negative_language_embeddings(
+    runtime: NaturalProgramRuntime,
+    *,
+    task_id: int,
+    macro: int,
+) -> torch.Tensor:
+    count = int(runtime.config["objective"]["contrastive_negative_languages"])
+    negative_ids = runtime.schedule.contrastive_task_ids(
+        task_id, macro, count=count
+    )
+    tokens = torch.cat(
+        [runtime.language_tokens[index][0] for index in negative_ids]
+    )
+    masks = torch.cat(
+        [runtime.language_tokens[index][1] for index in negative_ids]
+    )
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        source = runtime.model.encoder.embed_language_conditions(
+            runtime.policy, tokens
+        )
+        p_lang = runtime.model.language_reader(source, masks)
+    return torch.nn.functional.normalize(p_lang.float().mean(1), dim=-1)
+
+
+def _task_record(
+    task: NaturalProgramTask,
+    batch: PackedNaturalProgramCondition,
+    output: NaturalProgramOutput,
+    loss: NaturalProgramLoss,
+) -> dict[str, Any]:
+    active = (output.program.rho.detach().float() > 0.5).sum(-1)
+    return {
+        "authority_id": task.authority_id,
+        "domain": task.domain,
+        "domain_task_id": task.domain_task_id,
+        "role": task.role,
+        **{
+            name: float(getattr(loss, name).detach())
+            for name in NaturalProgramLoss.__dataclass_fields__
+        },
+        "mean_active_events": float(active.float().mean()),
+        "one_event_fraction": float((active <= 1).float().mean()),
+        "mean_presence_sum": float(output.program.rho.detach().float().sum(-1).mean()),
+        "mean_cross_video_sigma": float(output.program.sigma.detach().float().mean()),
+        **batch.metrics,
+    }
+
+
+def _run_task_step(
+    runtime: NaturalProgramRuntime,
+    *,
+    task_id: int,
+    macro: int,
+    global_task_count: int,
+) -> dict[str, Any]:
+    task = runtime.task_by_id[task_id]
+    sample = runtime.schedule.sample(task_id, macro)
+    pack = {
+        "task": task,
+        "sample": sample,
+        "video_store": runtime.video_store,
+        "action_store": runtime.action_store,
+        "label_store": runtime.label_store,
+        "query_points": int(runtime.config["data"]["query_points"]),
+        "predicate_slots": int(runtime.config["model"]["predicate_slots"]),
+        "device": runtime.context.device,
+    }
+    batch = pack_natural_program_condition(**pack)
+    robust_batch = pack_natural_program_condition(
+        **pack, view=sample.robustness_view
+    )
+    negatives = _negative_language_embeddings(
+        runtime, task_id=task_id, macro=macro
+    )
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        output = _forward(runtime, batch, task_id)
+        robust_output = _forward(runtime, robust_batch, task_id)
+        loss = natural_program_loss(
+            output,
+            batch,
+            weights=runtime.config["objective"]["weights"],
+            robust_output=robust_output,
+            negative_embeddings=negatives,
+            contrastive_temperature=float(
+                runtime.config["objective"]["contrastive_temperature"]
+            ),
+        )
+    if not bool(torch.isfinite(loss.total)):
+        raise RuntimeError(f"non-finite G2 loss at macro {macro}, task {task_id}")
+    (loss.total / float(global_task_count)).backward()
+    return _task_record(task, batch, output, loss)
+
+
+def run_natural_program_macro(
+    runtime: NaturalProgramRuntime, macro: int, run_started: float
+) -> dict[str, Any]:
+    tick = time.monotonic()
+    groups = runtime.schedule.assignments(macro, runtime.context.world_size)
+    task_ids = groups[runtime.context.rank]
+    if runtime.tasks_per_rank is not None:
+        task_ids = task_ids[: runtime.tasks_per_rank]
+    selected_groups = tuple(
+        group if runtime.tasks_per_rank is None else group[: runtime.tasks_per_rank]
+        for group in groups
+    )
+    global_task_count = sum(map(len, selected_groups))
+    if runtime.tasks_per_rank is None and sorted(
+        task_id for group in groups for task_id in group
+    ) != sorted(runtime.schedule.training_task_ids(macro)):
+        raise RuntimeError("G2 distributed task ownership changed")
+    runtime.optimizer.zero_grad(set_to_none=True)
+    records: list[dict[str, Any]] = []
+    for task_id in task_ids:
+        records.append(
+            _run_task_step(
+                runtime,
+                task_id=task_id,
+                macro=macro,
+                global_task_count=global_task_count,
+            )
+        )
+
+    if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
+        raise RuntimeError("frozen G2 source policy accumulated gradients")
+    _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
+    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
+    grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
+    if not bool(torch.isfinite(grad_norm)):
+        raise RuntimeError(f"non-finite G2 gradient at macro {macro}")
+    runtime.optimizer.step()
+    runtime.scheduler.step()
+    global_records = sorted(
+        _gather_records(records, runtime.context.world_size),
+        key=lambda row: int(row["authority_id"]),
+    )
+    if len(global_records) != global_task_count:
+        raise RuntimeError("G2 macro lost task-equal records")
+    mean_names = (
+        *NaturalProgramLoss.__dataclass_fields__.keys(),
+        "mean_active_events",
+        "one_event_fraction",
+        "mean_presence_sum",
+        "mean_cross_video_sigma",
+    )
+    means = {
+        name: sum(float(row[name]) for row in global_records) / len(global_records)
+        for name in mean_names
+    }
+    return {
+        "macro": macro + 1,
+        "rank": runtime.context.rank,
+        "global_task_count": len(global_records),
+        "role_counts": {
+            role: sum(row["role"] == role for row in global_records)
+            for role in ("meta_fit", "target_fit")
+        },
+        "K_counts": {
+            str(k): sum(int(row["K"]) == k for row in global_records)
+            for k in (1, 2, 4)
+        },
+        "local_task_ids": list(task_ids),
+        "global_means": means,
+        "gradient_norm_before_clip": float(grad_norm),
+        "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
+        "macro_seconds": time.monotonic() - tick,
+        "elapsed_seconds": time.monotonic() - run_started,
+        "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(
+            runtime.context.device
+        ),
+        "conditions": global_records,
+    }
+
+
+def train(args: argparse.Namespace) -> None:
+    context = initialize_distributed(
+        require_numa=args.mode == "formal", defer_process_group=True
+    )
+    runtime: NaturalProgramRuntime | None = None
+    try:
+        runtime = prepare_runtime(args, context)
+        started = time.monotonic()
+        for macro in range(runtime.start_macro, runtime.stop_after_macro):
+            row = run_natural_program_macro(runtime, macro, started)
+            if context.is_main:
+                append_jsonl(args.output_dir / "metrics.jsonl", row)
+                runtime.metrics_rows += 1
+                if (macro + 1) % args.log_every == 0:
+                    print(json.dumps(row, sort_keys=True), flush=True)
+            if macro + 1 in runtime.checkpoint_macros:
+                save_ecp_checkpoint(
+                    output_dir=args.output_dir,
+                    macro=macro + 1,
+                    stage=STAGE,
+                    context=context,
+                    model=runtime.model,
+                    optimizer=runtime.optimizer,
+                    scheduler=runtime.scheduler,
+                    run_contract_schema=RUN_SCHEMA,
+                    metrics_rows=runtime.metrics_rows,
+                )
+                if args.mode == "formal":
+                    from ember.ecp.natural_program_gate import (
+                        evaluate_natural_program_gate,
+                    )
+
+                    gate = evaluate_natural_program_gate(runtime, macro + 1)
+                    if context.is_main:
+                        print(
+                            json.dumps(
+                                {
+                                    "g2_gate_macro": macro + 1,
+                                    "passed": gate["passed"],
+                                    "metrics": gate["metrics"],
+                                },
+                                sort_keys=True,
+                            ),
+                            flush=True,
+                        )
+        if context.is_main:
+            completion = {
+                "stage": STAGE,
+                "completed_macros": runtime.stop_after_macro,
+                "total_macros": runtime.total_macros,
+            }
+            write_json_atomic(args.output_dir / "segment_completion.json", completion)
+            if runtime.stop_after_macro == runtime.total_macros:
+                write_json_atomic(args.output_dir / "completion.json", completion)
+    finally:
+        if runtime is not None:
+            runtime.close()
+        if dist.is_available() and dist.is_initialized():
+            dist.destroy_process_group()
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_v1.json",
+    )
+    parser.add_argument("--mode", choices=("profile", "formal"), required=True)
+    parser.add_argument("--asset-root", type=Path, required=True)
+    parser.add_argument("--source-run", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--tokenizer-path", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
+    parser.add_argument("--label-root", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--resume", type=Path)
+    parser.add_argument("--stop-after-macro", type=int)
+    parser.add_argument("--log-every", type=int, default=1)
+    return parser
+
+
+def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
+    for name in (
+        "config",
+        "asset_root",
+        "source_run",
+        "checkpoint",
+        "tokenizer_path",
+        "data_root",
+        "label_root",
+        "output_dir",
+        "resume",
+    ):
+        value = getattr(args, name)
+        if value is not None:
+            setattr(args, name, value.resolve())
+    if args.log_every <= 0:
+        raise ValueError("G2 log interval must be positive")
+    return args

@@ -123,6 +123,25 @@ same-task separation、probe stability、event non-collapse、full相对endpoint
 uncertainty、`K=1` identity与video集合置换不变性。修正应限于证据定位到的native capture、event grounding或owner-specific
 language/scene，不设次数上限。
 
+当前实现节点：
+
+- [x] 固定Program schema、owner-specific language/scene readers、两条antithetic probes、ordered event decoder和monotonic canonical alignment；
+- [x] meta56/held15与target-fit19/held5角色、K=1/2/4 task-equal schedule、跨episode video/action监督和`beta_k=1/K`；
+- [x] 95-task BDDL progress/rising、真实simulator contact及terminal contact mask的CPU label authority；
+- [x] action/progress/predicate/contact/scene、same-task event、probe、speed/crop、contrast、occupancy/tau/uncertainty losses；
+- [x] 每条video完全独立native encoding；真实K4检查把集合置换误差从`0.132`降到`2.38e-7`，K1保持exact identity；
+- [x] 真实K4 forward/backward使84/84 trainable parameter tensors进入optimizer state，Action Meta module/parameter为0，峰值约18.85GB；
+- [x] formal前复核已消除rank-local顺序导致的辅助loss不等权：每个task都计算一次speed/crop robustness，contrast对每task使用固定数量、
+  两种fit role各半且与rank/world-size无关的language negatives；action与全部动态标签共享唯一action-episode query index；
+- [ ] 从clean pushed detached authority执行macro10 formal，并在meta-held15+target-held5运行同一G2 Gate；non-pass按最早失效接口修正。
+
+G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
+Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，
+`natural_program_objective.py`拥有机制loss，`natural_program_authority.py`拥有run provenance与信息墙inventory，
+`natural_program_training.py`拥有optimizer/macro/checkpoint编排，`natural_program_gate.py`拥有无梯度held20 Gate。Stage0 encoder、通用
+checkpoint和既有video/action stores只复用，不复制。G3复用并冻结通过Gate的Program schema/model；G2 trainer、label sealer和Gate在
+formal结论固化后仅作为可复现实证runner保留，不成为平行Writer或deployment fallback。
+
 ### G3 Frozen-Program shared compiler
 
 冻结Program，用自然videos与95-task/118-member evidence训练共享Program-query到native-candidate-key的content attention、signed pooling、

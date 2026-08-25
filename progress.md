@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-08-25。本轮G1实现起点：clean pushed `main@13ca36662e430d9e33afa9e26fa3835d859abc78`。
+更新时间：2026-08-25。本轮G2实现起点：clean pushed `main@5617a4e21ce91c931b658f7c995c4b536b412b49`。
 
 ## 当前状态
 
@@ -12,6 +12,30 @@ active design明确是解释/执行层，不能替代原文。
 
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle已经通过，当前进入G2
 Natural Program；没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
+
+G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
+两条fixed antithetic native probes，再做monotonic canonical alignment与`beta_k=1/K`集合聚合。首轮真实held检查发现把多视频frames
+先扁平后按全局chunk分批会使K4集合置换最大误差达`0.132`；按阶段合同改为每条video完全独立native forward后，同一检查降为
+`2.38e-7`，K1为bitwise exact identity。该修正针对真实失效接口，不引入learned video reliability或task/frame route。
+
+95-task training-only dynamic label authority已升级并在
+`runs/outputs/pi05_ecp_natural_program_labels_g2_v2_cpu_20260825`封存完成：meta56/held15、target-fit19/held5共735,519 frames，
+BDDL goal predicates为80个单predicate、14个双predicate、1个三predicate task；`obs[i]`按真实`state[i+1]`恢复，缺失terminal
+post-action contact显式mask，`rising[0]`明确比较`states[0] -> states[1]`。全量复核发现4750个demo均无首action完成goal，故v2相对v1
+rising数值不变，schema升级防止旧语义被静默复用。四个旧LIBERO-90 scene4任务的HDF5 XML使用pre-rename `salad_dressing_1`，当前BDD model使用
+`new_salad_dressing_1`；只在内存中对模型identifier做已验证alias后补齐，未修改原始数据。
+
+formal前代码复核发现并修正两项会污染解释的问题：旧rank-local negative queue与`local_index % 4` robustness使辅助loss随rank分配
+不等权；现改为每task一次robustness及固定8个、target/meta fit各4个且与rank/world-size无关的content negatives。旧action target
+先按video长度取整再映射action episode，而其它动态标签直接按action episode取整；现统一使用唯一action-episode query grid。修正后
+architecture guard无hard violation，全仓库149 tests通过。修正后的真实K4 profile在v2 label authority上完成：macro time 23.53s、
+peak allocated 18,853,217,280 bytes、84/84 trainable tensors均进入optimizer state、loss/gradient finite；run contract实际记录固定
+role-balanced negatives、每task robustness、Action Meta module/parameter 0及source trainable 0。
+
+最新真实K4 forward/backward smoke完成：84/84 Natural Program trainable parameter tensors均产生optimizer state，gradient norm有限，
+peak allocated为18,853,213,184 bytes；纯Native loader实际记录Action Meta module/parameter 0、source policy trainable 0、held gradient 0。
+下一步是完成diff复核与main集成，从clean pushed detached worktree启动macro10 formal及
+meta-held15+target-held5 Gate。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -125,11 +149,10 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 清理G1 task-owned临时launcher与detached worktree，保留formal bank、raw rows、aggregate、唯一checkpoint和Gate report；
-2. 从最新clean pushed main建立唯一`codex/` G2实现面，接通Natural Program固定schema、每video独立保序event assignment、
-   canonical alignment、uniform K aggregation、variance/uncertainty、`K=1` identity与集合置换不变性；
-3. 先用最小真实forward/gradient及定向合同检查证明两probe、端点保留、跨video边界和held-gradient wall，再进行G2 formal训练与
-   meta-held15+target-held5 Gate；
+1. 完成G2 task-scoped diff与CPU回归，把唯一实现面合并到main并推送；
+2. 从clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后启动macro10 formal；
+3. 在meta-held15+target-held5运行same-task separation、probe stability、event non-collapse、full-vs-endpoints、K1 identity和K4集合
+   置换Gate；失败按最早的native capture、event grounding或owner-specific language/scene接口修正；
 4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

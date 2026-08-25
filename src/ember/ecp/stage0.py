@@ -41,6 +41,7 @@ class ECPVideoEncoderOutput:
     frame_mask: torch.Tensor
     program_summary: torch.Tensor
     frame_owner_evidence: torch.Tensor
+    patch_states: torch.Tensor
     language_summary: torch.Tensor
     scene_transition: torch.Tensor
 
@@ -278,6 +279,7 @@ class ECPVideoEncoder(torch.nn.Module):
             frame_mask=frame_mask,
             program_summary=summary,
             frame_owner_evidence=frame_owner_evidence,
+            patch_states=patch,
             language_summary=language_summary,
             scene_transition=scene_transition,
         )

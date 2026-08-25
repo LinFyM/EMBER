@@ -180,6 +180,26 @@ breadth5/5、Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，
 恢复Long并满足全部容量门。因此G1问题已经回答为“存在”；它仍不证明task-unseen的共享Program query-key selection能够学习，下一最早
 接口是G2 Natural Program，随后才是G3 shared attention。
 
+### 18. G2必须在native forward层面逐video独立，不能只在padding后声称集合不变
+
+G2首轮真实held检查中，K1 aggregation已是bitwise identity，但把K条video的frames先扁平、再按全局frame chunk送入native policy时，
+同一K4视频集合仅改变video顺序就使Program最大绝对差异达到`0.132`。这不是集合mean公式的问题：不同video长度改变了各帧所在的
+native microbatch/chunk，实际输出没有满足部署合同要求的逐video独立性。
+
+把每条video的positive/negative probe native forward完全独立，只在每video event形成并经canonical alignment后用FP32
+`beta_k=1/K`聚合，同一真实检查的最大差异降为`2.38e-7`，K1仍完全相等。后续G2/G3的集合不变性必须覆盖完整native forward，
+不能只对预先构造的local tensors测试mean交换律；G2仍不学习video reliability。
+
+G2派生标签的真实时间合同同时得到验证：HDF5 `obs[i]`对应`states[i+1]`（terminal post-action state缺失），因此末帧成功predicate
+可由successful-demo合同置真，但contact必须mask；稀疏query的rising target要对相邻query区间取any。LIBERO-90 scene4的四个任务还存在
+`salad_dressing_1 -> new_salad_dressing_1`模型identifier历史改名，只能在内存XML恢复时按当前BDD model显式对齐，不能改写原始HDF5。
+
+formal前复核还定位到两个数据权重接口：辅助robustness/contrast若按rank-local执行顺序抽样，会让task接受不同数量或不同规模的loss，
+即使最终梯度再按全局task数归一化也不等于task-equal；因此G2现对每task计算一次robustness，并为每task选固定8个、两种fit role各半、
+与rank/world-size无关的language-content negatives。跨episode action与progress/rising/contact/predicate必须共享同一action-episode query
+index；不能先经video长度取整再二次映射。label v2同时明确`rising[0]`比较`states[0] -> states[1]`；全量4750 demos中该边界恰无正例，
+所以数值总量仍为7344，但schema必须显式区分，防止未来数据静默改变语义。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

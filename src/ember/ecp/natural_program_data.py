@@ -256,8 +256,9 @@ class NaturalProgramSchedule:
             for demo in sample.video_demos
         )
 
-    def assignments(self, macro: int, world_size: int) -> tuple[tuple[int, ...], ...]:
-        tasks = self.training_task_ids(macro)
+    def _assign_tasks(
+        self, tasks: Sequence[int], *, macro: int, world_size: int
+    ) -> tuple[tuple[int, ...], ...]:
         if not 1 <= world_size <= 6:
             raise ValueError("Natural Program world size is outside 1..6")
         ordered = sorted(tasks, key=lambda task: (-self._sample_cost(task, macro), task))
@@ -268,6 +269,46 @@ class NaturalProgramSchedule:
             groups[rank].append(task)
             loads[rank] += self._sample_cost(task, macro)
         return tuple(tuple(group) for group in groups)
+
+    def optimizer_task_groups(
+        self, macro: int, *, tasks_per_role: int
+    ) -> tuple[tuple[int, ...], ...]:
+        """Split one task-equal macro into role-balanced optimizer updates."""
+
+        if tasks_per_role <= 0:
+            raise ValueError("G2 optimizer tasks per role must be positive")
+        tasks = self.training_task_ids(macro)
+        by_role = {
+            role: tuple(task for task in tasks if self.by_id[task].role == role)
+            for role in ("target_fit", "meta_fit")
+        }
+        if len(by_role["target_fit"]) != len(by_role["meta_fit"]):
+            raise ValueError("G2 optimizer roles lost equal macro mass")
+        offset = int(macro) % len(by_role["target_fit"])
+        by_role = {
+            role: values[offset:] + values[:offset]
+            for role, values in by_role.items()
+        }
+        return tuple(
+            by_role["target_fit"][start : start + tasks_per_role]
+            + by_role["meta_fit"][start : start + tasks_per_role]
+            for start in range(0, len(by_role["target_fit"]), tasks_per_role)
+        )
+
+    def optimizer_assignments(
+        self, macro: int, world_size: int, *, tasks_per_role: int
+    ) -> tuple[tuple[tuple[int, ...], ...], ...]:
+        return tuple(
+            self._assign_tasks(tasks, macro=macro, world_size=world_size)
+            for tasks in self.optimizer_task_groups(
+                macro, tasks_per_role=tasks_per_role
+            )
+        )
+
+    def assignments(self, macro: int, world_size: int) -> tuple[tuple[int, ...], ...]:
+        return self._assign_tasks(
+            self.training_task_ids(macro), macro=macro, world_size=world_size
+        )
 
 
 def _video_view(video: RawTeacherVideo, view: str) -> tuple[np.ndarray, np.ndarray]:

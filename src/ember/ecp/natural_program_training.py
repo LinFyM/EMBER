@@ -15,7 +15,7 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.contracts import build_target_owners
-from ember.ecp.natural_program import NaturalProgramModel, NaturalProgramOutput
+from ember.ecp.natural_program import NaturalProgramModel
 from ember.ecp.natural_program_authority import (
     RUN_SCHEMA,
     build_natural_program_run_contract,
@@ -24,17 +24,14 @@ from ember.ecp.natural_program_authority import (
 from ember.ecp.natural_program_data import (
     NaturalProgramSchedule,
     NaturalProgramTask,
-    PackedNaturalProgramCondition,
     load_natural_program_tasks,
-    pack_natural_program_condition,
 )
 from ember.ecp.natural_program_labels import NaturalProgramLabelStore
-from ember.ecp.natural_program_objective import (
-    NaturalProgramLoss,
-    natural_program_loss,
+from ember.ecp.natural_program_objective import NaturalProgramLoss
+from ember.ecp.natural_program_train_step import (
+    run_natural_program_optimizer_step,
 )
 from ember.ecp.observer_authority import load_frozen_native_observer
-from ember.ecp.stage0_train_step import _gather_records, _reduce_gradients
 from ember.ecp.stage0_training import (
     build_stage0_optimizer,
     load_stage0_config,
@@ -87,6 +84,9 @@ class NaturalProgramRuntime:
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     tasks_per_rank: int | None
+    tasks_per_role_per_optimizer_step: int
+    optimizer_steps_per_macro: int
+    optimizer_steps: int
     total_macros: int
     stop_after_macro: int
     checkpoint_macros: tuple[int, ...]
@@ -128,6 +128,9 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         )) % 2
         or config.get("objective", {}).get("temporal_residual_mode")
         != "query_centered_mse_v1"
+        or int(config.get("optimization", {}).get(
+            "tasks_per_role_per_optimizer_step", 0
+        )) != 2
     ):
         raise ValueError("unsupported G2 Natural Program config")
     return config
@@ -178,16 +181,18 @@ def _resolve_runtime(
 def _scheduler(
     optimizer: torch.optim.Optimizer,
     config: Mapping[str, Any],
-    total_macros: int,
+    total_optimizer_steps: int,
+    warmup_optimizer_steps: int,
 ) -> torch.optim.lr_scheduler.LambdaLR:
     cell = config["optimization"]["scheduler"]
-    warmup = int(cell["warmup_macros"])
     floor = float(cell["decay_lr"]) / float(cell["peak_lr"])
 
     def scale(step: int) -> float:
-        if step < warmup:
-            return (step + 1) / warmup
-        progress = (step - warmup) / max(total_macros - warmup, 1)
+        if step < warmup_optimizer_steps:
+            return (step + 1) / warmup_optimizer_steps
+        progress = (step - warmup_optimizer_steps) / max(
+            total_optimizer_steps - warmup_optimizer_steps, 1
+        )
         return floor + (1.0 - floor) * 0.5 * (
             1.0 + math.cos(math.pi * progress)
         )
@@ -295,6 +300,7 @@ def _resume_cursor(
     model: NaturalProgramModel,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
+    optimizer_steps_per_macro: int,
     stop: int,
 ) -> tuple[int, int]:
     start_macro = 0
@@ -309,6 +315,9 @@ def _resume_cursor(
             scheduler=scheduler,
             run_contract_schema=RUN_SCHEMA,
         )
+        expected_steps = start_macro * optimizer_steps_per_macro
+        if int(scheduler.last_epoch) != expected_steps:
+            raise ValueError("G2 resume optimizer-step cursor changed")
     if not 0 <= start_macro < stop:
         raise ValueError("G2 resume cursor is outside this segment")
     metrics_rows = (
@@ -336,6 +345,17 @@ def prepare_runtime(
         seed=int(config["data"]["pair_seed"]),
         query_points=int(config["data"]["query_points"]),
     )
+    tasks_per_role_per_optimizer_step = int(
+        config["optimization"]["tasks_per_role_per_optimizer_step"]
+    )
+    formal_optimizer_steps_per_macro = len(
+        schedule.optimizer_task_groups(
+            0, tasks_per_role=tasks_per_role_per_optimizer_step
+        )
+    )
+    optimizer_steps_per_macro = (
+        formal_optimizer_steps_per_macro if args.mode == "formal" else 1
+    )
     source, source_config, policy, model = _load_program_model(
         args, config, context
     )
@@ -350,7 +370,13 @@ def prepare_runtime(
     )
     frozen_parameters = tuple(policy.parameters()) + tuple(model.encoder.parameters())
     optimizer = build_stage0_optimizer(trainable_parameters, config["optimization"])
-    scheduler = _scheduler(optimizer, config, total)
+    scheduler = _scheduler(
+        optimizer,
+        config,
+        total * optimizer_steps_per_macro,
+        int(config["optimization"]["scheduler"]["warmup_macros"])
+        * optimizer_steps_per_macro,
+    )
 
     video_store, action_store, label_store, language_tokens = _open_program_data(
         args, config, tasks, source_config, context
@@ -368,6 +394,8 @@ def prepare_runtime(
         model=model,
         total_macros=total,
         checkpoint_macros=checkpoints,
+        optimizer_steps_per_macro=optimizer_steps_per_macro,
+        tasks_per_role_per_optimizer_step=tasks_per_role_per_optimizer_step,
         repo_root=REPO_ROOT,
         native_checkpoint=native_checkpoint,
     )
@@ -379,6 +407,7 @@ def prepare_runtime(
         model=model,
         optimizer=optimizer,
         scheduler=scheduler,
+        optimizer_steps_per_macro=optimizer_steps_per_macro,
         stop=stop,
     )
     model.train()
@@ -406,6 +435,9 @@ def prepare_runtime(
             if args.mode == "formal"
             else int(config["profile_defaults"]["tasks_per_rank_per_macro"])
         ),
+        tasks_per_role_per_optimizer_step=tasks_per_role_per_optimizer_step,
+        optimizer_steps_per_macro=optimizer_steps_per_macro,
+        optimizer_steps=start_macro * optimizer_steps_per_macro,
         total_macros=total,
         stop_after_macro=stop,
         checkpoint_macros=checkpoints,
@@ -415,171 +447,41 @@ def prepare_runtime(
     )
 
 
-def _forward(
-    runtime: NaturalProgramRuntime,
-    batch: PackedNaturalProgramCondition,
-    task_id: int,
-) -> NaturalProgramOutput:
-    language_tokens, language_mask = runtime.language_tokens[task_id]
-    return runtime.model(
-        policy=runtime.policy,
-        frames=batch.frames,
-        frame_indices=batch.frame_indices,
-        raw_frame_counts=batch.raw_frame_counts,
-        video_offsets=batch.video_offsets,
-        video_set_offsets=batch.video_set_offsets,
-        frame_condition_ids=batch.frame_condition_ids,
-        language_tokens=language_tokens,
-        language_mask=language_mask,
-        query_times=batch.query_times,
+def _macro_optimizer_assignments(
+    runtime: NaturalProgramRuntime, macro: int
+) -> tuple[tuple[tuple[int, ...], ...], ...]:
+    assignments = runtime.schedule.optimizer_assignments(
+        macro,
+        runtime.context.world_size,
+        tasks_per_role=runtime.tasks_per_role_per_optimizer_step,
     )
-
-
-def _negative_language_embeddings(
-    runtime: NaturalProgramRuntime,
-    *,
-    task_id: int,
-    macro: int,
-) -> torch.Tensor:
-    count = int(runtime.config["objective"]["contrastive_negative_languages"])
-    negative_ids = runtime.schedule.contrastive_task_ids(
-        task_id, macro, count=count
+    if runtime.tasks_per_rank is None:
+        return assignments
+    return (
+        tuple(group[: runtime.tasks_per_rank] for group in assignments[0]),
     )
-    tokens = torch.cat(
-        [runtime.language_tokens[index][0] for index in negative_ids]
-    )
-    masks = torch.cat(
-        [runtime.language_tokens[index][1] for index in negative_ids]
-    )
-    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        source = runtime.model.encoder.embed_language_conditions(
-            runtime.policy, tokens
-        )
-        p_lang = runtime.model.language_reader(source, masks)
-    return torch.nn.functional.normalize(p_lang.float().mean(1), dim=-1)
-
-
-def _task_record(
-    task: NaturalProgramTask,
-    batch: PackedNaturalProgramCondition,
-    output: NaturalProgramOutput,
-    loss: NaturalProgramLoss,
-) -> dict[str, Any]:
-    active = (output.program.rho.detach().float() > 0.5).sum(-1)
-    return {
-        "authority_id": task.authority_id,
-        "domain": task.domain,
-        "domain_task_id": task.domain_task_id,
-        "role": task.role,
-        **{
-            name: float(getattr(loss, name).detach())
-            for name in NaturalProgramLoss.__dataclass_fields__
-        },
-        "mean_active_events": float(active.float().mean()),
-        "one_event_fraction": float((active <= 1).float().mean()),
-        "mean_presence_sum": float(output.program.rho.detach().float().sum(-1).mean()),
-        "mean_cross_video_sigma": float(output.program.sigma.detach().float().mean()),
-        **batch.metrics,
-    }
-
-
-def _run_task_step(
-    runtime: NaturalProgramRuntime,
-    *,
-    task_id: int,
-    macro: int,
-    global_task_count: int,
-) -> dict[str, Any]:
-    task = runtime.task_by_id[task_id]
-    sample = runtime.schedule.sample(task_id, macro)
-    pack = {
-        "task": task,
-        "sample": sample,
-        "video_store": runtime.video_store,
-        "action_store": runtime.action_store,
-        "label_store": runtime.label_store,
-        "query_points": int(runtime.config["data"]["query_points"]),
-        "predicate_slots": int(runtime.config["model"]["predicate_slots"]),
-        "device": runtime.context.device,
-    }
-    batch = pack_natural_program_condition(**pack)
-    robust_batch = pack_natural_program_condition(
-        **pack, view=sample.robustness_view
-    )
-    negatives = _negative_language_embeddings(
-        runtime, task_id=task_id, macro=macro
-    )
-    with torch.autocast("cuda", dtype=torch.bfloat16):
-        output = _forward(runtime, batch, task_id)
-        robust_output = _forward(runtime, robust_batch, task_id)
-        loss = natural_program_loss(
-            output,
-            batch,
-            weights=runtime.config["objective"]["weights"],
-            robust_output=robust_output,
-            negative_embeddings=negatives,
-            contrastive_temperature=float(
-                runtime.config["objective"]["contrastive_temperature"]
-            ),
-        )
-    if not bool(torch.isfinite(loss.total)):
-        raise RuntimeError(f"non-finite G2 loss at macro {macro}, task {task_id}")
-    (loss.total / float(global_task_count)).backward()
-    return _task_record(task, batch, output, loss)
 
 
 def run_natural_program_macro(
     runtime: NaturalProgramRuntime, macro: int, run_started: float
 ) -> dict[str, Any]:
     tick = time.monotonic()
-    groups = runtime.schedule.assignments(macro, runtime.context.world_size)
-    task_ids = groups[runtime.context.rank]
-    if runtime.tasks_per_rank is not None:
-        task_ids = task_ids[: runtime.tasks_per_rank]
-    selected_groups = tuple(
-        group if runtime.tasks_per_rank is None else group[: runtime.tasks_per_rank]
-        for group in groups
-    )
-    global_task_count = sum(map(len, selected_groups))
-    if runtime.tasks_per_rank is None and sorted(
-        task_id for group in groups for task_id in group
-    ) != sorted(runtime.schedule.training_task_ids(macro)):
-        raise RuntimeError("G2 distributed task ownership changed")
-    runtime.optimizer.zero_grad(set_to_none=True)
-    records: list[dict[str, Any]] = []
-    for task_id in task_ids:
-        records.append(
-            _run_task_step(
-                runtime,
-                task_id=task_id,
-                macro=macro,
-                global_task_count=global_task_count,
-            )
+    optimizer_step_start = runtime.optimizer_steps
+    global_records: list[dict[str, Any]] = []
+    updates: list[dict[str, Any]] = []
+    local_task_ids: list[int] = []
+    for assignments in _macro_optimizer_assignments(runtime, macro):
+        records, update, local = run_natural_program_optimizer_step(
+            runtime, macro=macro, assignments=assignments
         )
-
-    if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
-        raise RuntimeError("frozen G2 source policy accumulated gradients")
-    _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
-    owner_query_gradient = runtime.model.decoder.owner_queries.grad
-    if owner_query_gradient is None or not bool(
-        torch.isfinite(owner_query_gradient).all()
-    ):
-        raise RuntimeError("G2 owner-specific temporal readout lost its gradient")
-    owner_query_gradient_norm = float(owner_query_gradient.float().norm())
-    if owner_query_gradient_norm <= 0.0:
-        raise RuntimeError("G2 owner-specific temporal readout has zero gradient")
-    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
-    grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
-    if not bool(torch.isfinite(grad_norm)):
-        raise RuntimeError(f"non-finite G2 gradient at macro {macro}")
-    runtime.optimizer.step()
-    runtime.scheduler.step()
-    global_records = sorted(
-        _gather_records(records, runtime.context.world_size),
-        key=lambda row: int(row["authority_id"]),
-    )
-    if len(global_records) != global_task_count:
-        raise RuntimeError("G2 macro lost task-equal records")
+        global_records.extend(records)
+        updates.append(update)
+        local_task_ids.extend(local)
+    global_records.sort(key=lambda row: int(row["authority_id"]))
+    if runtime.tasks_per_rank is None and [
+        int(row["authority_id"]) for row in global_records
+    ] != sorted(runtime.schedule.training_task_ids(macro)):
+        raise RuntimeError("G2 distributed macro ownership changed")
     mean_names = (
         *NaturalProgramLoss.__dataclass_fields__.keys(),
         "mean_active_events",
@@ -603,10 +505,16 @@ def run_natural_program_macro(
             str(k): sum(int(row["K"]) == k for row in global_records)
             for k in (1, 2, 4)
         },
-        "local_task_ids": list(task_ids),
+        "local_task_ids": local_task_ids,
         "global_means": means,
-        "owner_query_gradient_norm_before_clip": owner_query_gradient_norm,
-        "gradient_norm_before_clip": float(grad_norm),
+        "optimizer_step_start": optimizer_step_start,
+        "optimizer_step_end": runtime.optimizer_steps,
+        "optimizer_steps_this_macro": len(updates),
+        "optimizer_updates": updates,
+        "owner_query_gradient_norm_before_clip": updates[-1][
+            "owner_query_gradient_norm_before_clip"
+        ],
+        "gradient_norm_before_clip": updates[-1]["gradient_norm_before_clip"],
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "macro_seconds": time.monotonic() - tick,
         "elapsed_seconds": time.monotonic() - run_started,

@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-08-25。本轮G2实现起点：clean pushed `main@5617a4e21ce91c931b658f7c995c4b536b412b49`。
+更新时间：2026-08-25。当前G2根因修正起点：clean pushed `main@68f87051261f5f830f1c6bee92f3c113cb2a9558`。
 
 ## 当前状态
 
@@ -92,6 +92,22 @@ absolute cross-episode MSE被trajectory mean解主导，未单独约束query-tim
 residual MSE，不改模型、Program schema、数据、K、seed/LR或Gate。task92真实K4 profile得到`action_temporal=0.14324`、
 `progress_temporal=0.08779`、owner-query gradient norm `0.01839`，39个observer tensors不变，Action Meta/observer/source trainable均为0，
 peak allocated 10,016,671,744 bytes；profile已删除。
+
+clean pushed `main@68f8705`的temporal-residual objective已从fresh训练到macro10。held20 Gate中same-task nearer `1.0`、K1/K4、
+median active events `5`与one-event `0`继续通过，但full相对endpoints只改善`0.0381%`，probe margin为`0/40`，因此明确non-pass，
+没有进入G3，也没有用fit loss下降或继续同一低更新数run冒充进展。
+
+该轮结果冻结后的read-only根因分析排除了新的表示架构猜测：固定Program的full-owner temporal readout相对endpoints可改善
+`15.17%`；tied-query与independent-query初始化曲线近乎相同；cross-episode监督可识别。旧trainer每macro访问38个task却只执行
+一次Adam更新，所以macro10仅10次更新。同一frozen readout temporal loss从`0.311873`开始，10/60步仅为
+`0.311827/0.311164`，到200/500步才降至`0.294034/0.257824`。最早接口由此定位为optimizer cadence，而不是再次增加Program
+slot、width或readout结构。
+
+当前隔离实现保持模型、数据、loss、K、seed/LR峰值和Gate不变，把每macro拆为10个role-balanced optimizer steps：常规
+2 target-fit+2 meta-fit，尾部1+1并随macro轮换；scheduler与exact-resume cursor按真实optimizer step计数。单卡及gpu02 world4
+真实profile均完成：world4实际聚合4个互异task、role为2+2、finite owner-query/全局gradient，46/46 Program tensors进入Adam，
+四个rank checkpoint齐全；run contract记录source/observer trainable 0、Action Meta module/parameter 0。profile只作执行证据，
+核对后删除，不冒充formal。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -205,11 +221,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 集成并推送query-centered action/progress residual objective，从新的clean detached commit fresh启动macro10 formal；
-2. 在meta-held15+target-held5复评完全相同的G2 Gate；只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program
-   并进入G3。若full动态读出成立但probe仍失败，下一修正必须让probe invariance接受真实action/progress utility约束，不能添加只服务
-   Gate的residual shrink旋钮；若temporal residual仍不能放大已有raw dynamics，则按held-free训练证据定位owner/event value readout，
-   不再延长已淘汰的scalar-query run；
-3. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
-4. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
-5. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。
+1. 完成role-balanced optimizer cadence实现的全量定向回归、architecture guard、clean main集成与push，并从该commit建立detached frozen
+   worktree；
+2. live复核gpu01/gpu02、prohibited设备、进程与独立storage quota后，从fresh启动macro10 formal；在meta-held15+target-held5复评
+   完全相同的G2 Gate。只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program并进入G3；
+3. 若仍non-pass，先冻结该轮证据并定位最早失效接口；不得再用连续架构版本、probe-only旋钮或LR/seed/width小扫替代根因分析；
+4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
+5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
+6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

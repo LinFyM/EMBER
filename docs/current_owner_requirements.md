@@ -81,6 +81,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 ## 6. 推进方式
 
 - 先理解因果链和最早失效接口，再实现；不得用连续版本号替代思考。
+- G2、G3、G4及后续阶段出现显著non-pass时，先冻结该轮结果与controls，区分工程合同错误和真实科学失败，再用可证伪的
+  read-only消融、decodability、gradient或closed-loop probe定位最早失效接口。只有新的机制证据支持时才修改对应接口；不得把
+  盲目迭代架构、微调超参或内部loss下降包装成根因分析。
 - 每个阶段都要说明：输入数据、训练模块、冻结模块、输出、验证问题、通过条件和失败后的分支。
 - 优先做能改变路线判断的实验；不钻无关紧要的shape、低位浮点误差、防御性代码或冗余测试。
 - 不新增MD5/SHA-256 sidecar和大规模逐tensor校验；只保留信息墙、shape、finite、OOM、pairing、asset、checkpoint与resume所需

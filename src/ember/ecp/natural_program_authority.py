@@ -23,7 +23,7 @@ from ember.pi05_source_contract import append_jsonl
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
-RUN_SCHEMA = "ember_ecp_natural_program_g2_run_v1"
+RUN_SCHEMA = "ember_ecp_natural_program_g2_run_v2"
 
 
 def _pure_native_inventory(
@@ -100,6 +100,8 @@ def build_natural_program_run_contract(
     model: torch.nn.Module,
     total_macros: int,
     checkpoint_macros: tuple[int, ...],
+    optimizer_steps_per_macro: int,
+    tasks_per_role_per_optimizer_step: int,
     repo_root: Path,
     native_checkpoint: Path,
 ) -> dict[str, Any]:
@@ -155,14 +157,27 @@ def build_natural_program_run_contract(
             "topology": _topology(context),
             "total_macros": total_macros,
             "checkpoint_macros": list(checkpoint_macros),
+            "optimizer_steps_per_macro": optimizer_steps_per_macro,
+            "total_optimizer_steps": total_macros * optimizer_steps_per_macro,
+            "tasks_per_role_per_optimizer_step": (
+                tasks_per_role_per_optimizer_step
+            ),
             "global_tasks_per_macro": (
                 38
                 if runtime_args.mode == "formal"
                 else int(config["profile_defaults"]["tasks_per_rank_per_macro"])
                 * context.world_size
             ),
-            "task_weight": "exactly_equal_within_each_macro",
-            "assignment": "cost_balanced_uneven_rank_counts",
+            "task_weight": (
+                "one visit per task per macro; every optimizer step is role-"
+                "balanced and task-mean weighted; the short tail pair rotates"
+                if runtime_args.mode == "formal"
+                else "one role-balanced optimizer group for execution smoke; "
+                "task-mean weighted"
+            ),
+            "assignment": (
+                "role-balanced optimizer groups then cost-balanced uneven ranks"
+            ),
             "contrastive_negatives": (
                 "fixed_count_role_balanced_fit_language_content_"
                 "independent_of_rank_and_world_size"

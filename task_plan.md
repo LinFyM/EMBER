@@ -157,13 +157,22 @@ language/scene，不设次数上限。
   最早接口不是简单旧head丢失，而是absolute MSE的trajectory-mean解未约束query-time residual。
 - [x] 保留absolute action/progress并新增等权query-centered temporal residual MSE；真实K4 profile确认两个新loss有限、owner-query
   gradient非零、frozen observer 39 tensors不变且Action Meta为0。
-- [ ] 集成并推送temporal-residual objective，从clean detached commit fresh训练并复评同一held20 Gate；probe raw margin仍是独立未通过
-  接口，不得用只缩放辅助delta而不改变部署Program/action utility的Gate-only adapter处理。
+- [x] temporal-residual objective由clean pushed `main@68f8705`完成并从fresh训练到macro10；held20的same-task、K1/K4、event范围
+  继续通过，但full相对endpoints只改善`0.0381%`、probe margin为`0/40`，故仍未进入G3。
+- [x] 冻结该轮Program做readout/label/optimization可证伪诊断：full-owner temporal readout相对endpoints可产生`15.17%`改善，证明
+  动态信号可读；tied与independent query初始化曲线近乎相同，cross-episode监督可识别；而旧macro10实际只有10次Adam更新，
+  frozen readout在10/60步几乎不动、200/500步才明显下降。最早接口因此是optimizer cadence，不是新的Program架构缺口。
+- [x] 保持模型、数据、loss、K和Gate不变，实现每macro 10个role-balanced optimizer steps：常规2 target+2 meta，旋转尾部1+1；
+  scheduler与resume按真实step计数。单卡与world4真实profile均完成finite forward/backward/materialization/checkpoint，world4实际聚合
+  2+2任务、46/46参数进入Adam、Action Meta/source/observer trainable均为0。
+- [ ] 从该修正的clean detached pushed commit fresh运行macro10并复评同一held20 Gate；non-pass时继续按最早失效接口诊断，不能用
+  probe-only旋钮或无机制的LR/seed/width扫替代根因分析。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，
 `natural_program_objective.py`拥有机制loss，`natural_program_authority.py`拥有run provenance与信息墙inventory，
-`natural_program_training.py`拥有optimizer/macro/checkpoint编排，`natural_program_gate.py`拥有无梯度held20 Gate。Stage0 encoder、通用
+`natural_program_training.py`拥有macro/checkpoint编排，`natural_program_train_step.py`拥有唯一role-balanced optimizer update，
+`natural_program_gate.py`拥有无梯度held20 Gate。Stage0 encoder、通用
 checkpoint和既有video/action stores只复用，不复制。G3复用并冻结通过Gate的Program schema/model；G2 trainer、label sealer和Gate在
 formal结论固化后仅作为可复现实证runner保留，不成为平行Writer或deployment fallback。
 

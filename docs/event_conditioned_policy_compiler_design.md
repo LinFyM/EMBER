@@ -330,6 +330,11 @@ summary、predicate progress/rising/contact、scene relation、cross-video event
 G2负责学习并验证每条video独立的event assignment与canonical alignment，以及跨video event variance、uncertainty、`K=1` identity和
 video集合置换不变性；它不把learned video reliability混入G1容量结论。
 
+每个macro仍对19个target-fit和19个轮换meta-fit各访问一次，但optimizer不能把38个task全部累积成一次更新。当前执行合同按
+role-balanced microsteps训练：常规step包含2个target-fit和2个meta-fit，尾step包含1+1且随macro轮换，因而每macro为10次更新；
+LR warmup/decay与resume cursor按真实optimizer step计数。该修正只改变已被诊断为不足的优化时间尺度，不改变Program结构、数据、
+loss、K、Gate或task role质量。
+
 在meta-held15+target-held5同时要求：
 
 - 至少90% same-task pairs在owner/event distance上近于nearest cross-task；
@@ -338,8 +343,10 @@ video集合置换不变性；它不把learned video reliability混入G1容量结
 - full相对first+final在held action/progress loss上改善至少10%；
 - `K=1` identity与K permutation invariance通过。
 
-失败说明Program仍是task/endpoint code，暂不进入LoRA训练。修正聚焦native capture、event grounding或owner-specific
-language/scene；不设次数上限，但每次都要针对已定位机制并重新通过同一资格门，不能靠slot数、width、seed形成无信息版本链。
+失败说明Program仍未满足动态资格，暂不进入LoRA训练。每次non-pass先冻结证据，并依次检查native capture、event grounding、
+Program readout、监督可识别性、optimizer cadence等最早接口；用可证伪的counterfactual/decodability probe区分“信号不存在”和
+“信号存在但没有被当前训练读出”。不设次数上限，但每次修正都必须只针对有新机制证据的接口并重新通过同一资格门，不能靠
+slot数、width、seed或连续架构版本形成无信息迭代。
 
 ### G3. Frozen-Program shared compiler
 

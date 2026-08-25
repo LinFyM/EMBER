@@ -16,6 +16,7 @@ from ember.ecp.natural_program_labels import _predicate_rising
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
 from ember.ecp.natural_program_authority import _pure_native_inventory
 from ember.ecp.natural_program_objective import _temporal_residual_mse
+from ember.ecp.natural_program_training import _scheduler
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 
 
@@ -362,6 +363,22 @@ def test_schedule_contrastive_negatives_are_fixed_fit_only() -> None:
     assert sum(tasks[index].role == "meta_fit" for index in negatives) == 4
     assert sum(tasks[index].role == "target_fit" for index in negatives) == 4
     expected = set(schedule.training_task_ids(3))
+    optimizer_groups = schedule.optimizer_task_groups(3, tasks_per_role=2)
+    assert len(optimizer_groups) == 10
+    assert [len(group) for group in optimizer_groups] == [4] * 9 + [2]
+    assert len({task for group in optimizer_groups for task in group}) == 38
+    for group in optimizer_groups:
+        assert sum(tasks[index].role == "meta_fit" for index in group) * 2 == len(
+            group
+        )
+        assert sum(tasks[index].role == "target_fit" for index in group) * 2 == len(
+            group
+        )
+    rotating_target_tails = {
+        schedule.optimizer_task_groups(macro, tasks_per_role=2)[-1][0]
+        for macro in range(19)
+    }
+    assert rotating_target_tails == set(schedule.target_fit)
     for world_size in range(1, 7):
         assigned = {
             task_id
@@ -369,6 +386,49 @@ def test_schedule_contrastive_negatives_are_fixed_fit_only() -> None:
             for task_id in group
         }
         assert assigned == expected
+        optimizer_assignments = schedule.optimizer_assignments(
+            3, world_size, tasks_per_role=2
+        )
+        assert tuple(
+            task
+            for assignments in optimizer_assignments
+            for rank in assignments
+            for task in rank
+        ) != ()
+        for expected_group, assignments in zip(
+            optimizer_groups, optimizer_assignments, strict=True
+        ):
+            assert {
+                task for rank in assignments for task in rank
+            } == set(expected_group)
+
+
+def test_scheduler_uses_optimizer_step_cursor() -> None:
+    parameter = torch.nn.Parameter(torch.zeros(()))
+    optimizer = torch.optim.AdamW([parameter], lr=1e-4)
+    config = {
+        "optimization": {
+            "scheduler": {"peak_lr": 1e-4, "decay_lr": 1e-6}
+        }
+    }
+    scheduler = _scheduler(
+        optimizer,
+        config,
+        total_optimizer_steps=600,
+        warmup_optimizer_steps=30,
+    )
+    assert scheduler.last_epoch == 0
+    assert optimizer.param_groups[0]["lr"] == pytest.approx(1e-4 / 30)
+    for _ in range(30):
+        optimizer.step()
+        scheduler.step()
+    assert scheduler.last_epoch == 30
+    assert optimizer.param_groups[0]["lr"] == pytest.approx(1e-4)
+    for _ in range(570):
+        optimizer.step()
+        scheduler.step()
+    assert scheduler.last_epoch == 600
+    assert optimizer.param_groups[0]["lr"] == pytest.approx(1e-6)
 
 
 def test_cross_episode_supervision_uses_one_action_index_grid() -> None:

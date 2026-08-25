@@ -253,6 +253,21 @@ raw Stage0 process配回其已训练action head可把held absolute action loss�
 再等权加入query-centered action/progress residual MSE，使常数预测无法满足local temporal grounding。该修正不使用held梯度或
 shuffled/reversed，不改变Program schema、模型容量、数据、K、seed/LR或Gate。
 
+### 23. temporal residual未失败于表示容量，最早接口是optimizer cadence
+
+clean pushed `main@68f8705`的temporal-residual fresh macro10仍为G2 non-pass：held20 full相对endpoints只改善`0.0381%`，probe
+margin为`0/40`，而same-task、K1/K4与event范围继续通过。该结果先被冻结，没有立即再改Program架构。
+
+后续可证伪诊断把问题分开：固定现有Program后，full-owner temporal readout相对endpoints可产生`15.17%`改善，说明已有动态bank
+可被读出；tied-query与independent-query初始化的学习曲线近乎相同，排除对称初始化；cross-episode target也可识别。真正异常是旧
+trainer把每macro的38个task全部累积后只做一次Adam更新，所以macro10只有10次更新。同一frozen readout的temporal loss从
+`0.311873`开始，10/60步仅到`0.311827/0.311164`，200/500步才降到`0.294034/0.257824`。因此当前最早失效接口是优化时间尺度，
+不是需要新增slot、width或第三种readout架构。
+
+有证据的单一修正是保持Program、数据、loss、K与Gate不变，把一个macro拆成10个role-balanced optimizer steps：常规每step
+2个target-fit+2个meta-fit，最后1+1并随macro轮换；scheduler和resume cursor按真实optimizer step计数。这个案例同时固化为后续
+G2/G3/G4的诊断纪律：显著non-pass先冻结证据、定位最早接口并做可证伪probe，只有新机制证据才允许修改对应结构。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

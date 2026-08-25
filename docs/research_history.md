@@ -276,7 +276,23 @@ softmax温度和单纯旧head转移作为充分解释；下一修正只把同一
 - `runs/analysis/pi05_ecp_natural_program_g2_owner_readout_macro20_diagnostic_407340b_gpu02p3_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_stage0_transfer_macro20_diagnostic_407340b_gpu02p3_20260825/`。
 
-## 17. 当前保留结论
+## 17. G2 temporal-residual formal与optimizer cadence定位
+
+clean pushed `main@68f8705`保留absolute action/progress监督，并加入等权query-centered temporal residual MSE。fresh macro10的
+held20 Gate仍为non-pass：same-task nearer `1.0`、K1/K4、median active events `5`与one-event `0`通过；full相对endpoints改善
+`0.0381%`，probe margin `0/40`。
+
+冻结该checkpoint的Program做可证伪readout诊断后，full-owner temporal readout相对endpoints可改善`15.17%`，tied/independent
+owner-query初始化曲线近乎相同，cross-episode监督可识别。旧trainer每macro聚合38个task后只做一次Adam更新，故macro10实际上仅
+10次更新；同一frozen readout temporal loss在10/60步几乎不变，到200/500步才明显下降。该证据把最早接口定位为optimizer
+cadence，而不是Program动态bank不存在或需要再次增加架构容量。后继实现只把每macro改为10个role-balanced microsteps，并按真实
+optimizer step推进scheduler/resume；模型、数据、loss、K与Gate保持不变。
+
+关键artifact：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_temporal_residual_fold0_m10_68f8705_gpu02p0123_r4_20260825/`。
+
+## 18. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -286,7 +302,7 @@ softmax温度和单纯旧head转移作为充分解释；下一修正只把同一
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 18. 证据恢复方式
+## 19. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

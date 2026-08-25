@@ -30,6 +30,7 @@ from ember.ecp.shared_compiler_effects import (
     member_effect_losses,
     response_consistency_loss,
 )
+from ember.ecp.shared_compiler_functional import cross_episode_flow_loss
 from ember.ecp.stage0_train_step import _gather_records, _reduce_gradients
 from ember.pi05_lora import derive_pi05_lora_rank
 
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
 class SharedCompilerTaskLoss:
     global_member_effect: torch.Tensor
     family_functional: torch.Tensor
+    member_flow_response: torch.Tensor
     cross_episode_flow: torch.Tensor
     effective_update: torch.Tensor
     carrier_preservation: torch.Tensor
@@ -146,7 +148,17 @@ def _candidate(
         residual_state=residual,
         rank16_contract=runtime.ranks.contract,
     )
-    return (output, residual, complete, condition.metrics)
+    return (
+        output,
+        residual,
+        complete,
+        {
+            **condition.metrics,
+            "materialized_lora_tensor_count": len(complete),
+            "single_complete_rank16": True,
+            "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        },
+    )
 
 
 def _task_record(
@@ -154,12 +166,12 @@ def _task_record(
     task: NaturalProgramTask,
     sample: NaturalProgramSample,
     other_visit: int | None,
-    output: Any,
+    video_weights: torch.Tensor,
     metrics: Mapping[str, Any],
     loss: SharedCompilerTaskLoss,
     responsibilities: torch.Tensor,
 ) -> dict[str, Any]:
-    beta = output.video_weights.detach().float()
+    beta = video_weights.detach().float()
     return {
         "authority_id": task.authority_id,
         "domain": task.domain,
@@ -174,7 +186,7 @@ def _task_record(
             for name in SharedCompilerTaskLoss.__dataclass_fields__
         },
         "responsibilities": responsibilities.detach().float().cpu().tolist(),
-        "video_weights": beta.cpu().tolist(),
+        "video_weights": beta.tolist(),
         "maximum_video_weight": float(beta.max()),
         "maximum_uniform_deviation": float((beta - 1.0 / sample.k).abs().max()),
         **metrics,
@@ -198,17 +210,15 @@ def _run_task(
         runtime.config["optimization"]["same_task_consistency_interval"]
     ) == 0
     other_visit = None
-    states = [complete]
-    if consistency:
-        other, other_visit = _different_sample(
-            runtime, task_id=task_id, macro=macro, primary=sample
-        )
-        _, _, other_complete, _ = _candidate(
-            runtime, task_id=task_id, sample=other
-        )
-        states.append(other_complete)
-    responses = _effect_responses(runtime, bank=bank, states=states)
+    responses = _effect_responses(runtime, bank=bank, states=[complete])
     member = member_effect_losses(responses[0], bank)
+    flow, flow_metrics = cross_episode_flow_loss(
+        runtime,
+        task_id=task_id,
+        sample=sample,
+        macro=macro,
+        complete=complete,
+    )
     update, _ = effective_update_loss(
         candidate_state=residual,
         bank=bank,
@@ -217,41 +227,70 @@ def _run_task(
         responsibilities=member.responsibilities,
     )
     carrier = carrier_preservation_loss(responses[0], bank)
-    same = (
-        response_consistency_loss(responses[0], responses[1], bank)
-        if consistency
-        else responses[0].owner.new_zeros(())
-    )
     weights = runtime.config["optimization"]["loss_weights"]
-    total = (
+    main_total = (
         float(weights["global_member_effect"]) * member.global_effect
         + float(weights["family_functional"]) * member.family_functional
-        + float(weights["cross_episode_flow"]) * member.cross_episode_flow
+        + float(weights["cross_episode_flow"]) * flow
         + float(weights["effective_update"]) * update
         + float(weights["carrier_preservation"]) * carrier
-        + float(weights["same_task_consistency"]) * same
+    )
+    if not bool(torch.isfinite(main_total)):
+        raise RuntimeError(f"non-finite G3 loss at macro {macro}, task {task_id}")
+    (main_total / float(global_task_count)).backward()
+
+    video_weights = output.video_weights.detach().float().cpu()
+    responsibilities = member.responsibilities.detach().float().cpu()
+    same = main_total.new_zeros(())
+    if consistency:
+        primary_response = PolicyEffectResponse(
+            owner=responses[0].owner.detach(),
+            flow=responses[0].flow.detach(),
+            action=responses[0].action.detach(),
+        )
+        other, other_visit = _different_sample(
+            runtime, task_id=task_id, macro=macro, primary=sample
+        )
+        del output, residual, complete, responses
+        _, _, other_complete, _ = _candidate(
+            runtime, task_id=task_id, sample=other
+        )
+        other_response = _effect_responses(
+            runtime, bank=bank, states=[other_complete]
+        )[0]
+        same = response_consistency_loss(primary_response, other_response, bank)
+        if not bool(torch.isfinite(same)):
+            raise RuntimeError(
+                f"non-finite G3 consistency at macro {macro}, task {task_id}"
+            )
+        (
+            float(weights["same_task_consistency"])
+            * same
+            / float(global_task_count)
+        ).backward()
+    total = (
+        main_total.detach()
+        + float(weights["same_task_consistency"]) * same.detach()
     )
     loss = SharedCompilerTaskLoss(
-        global_member_effect=member.global_effect,
-        family_functional=member.family_functional,
-        cross_episode_flow=member.cross_episode_flow,
-        effective_update=update,
-        carrier_preservation=carrier,
-        same_task_consistency=same,
-        action_response=member.action_response,
+        global_member_effect=member.global_effect.detach(),
+        family_functional=member.family_functional.detach(),
+        member_flow_response=member.member_flow_response.detach(),
+        cross_episode_flow=flow.detach(),
+        effective_update=update.detach(),
+        carrier_preservation=carrier.detach(),
+        same_task_consistency=same.detach(),
+        action_response=member.action_response.detach(),
         total=total,
     )
-    if not bool(torch.isfinite(total)):
-        raise RuntimeError(f"non-finite G3 loss at macro {macro}, task {task_id}")
-    (total / float(global_task_count)).backward()
     return _task_record(
         task=task,
         sample=sample,
         other_visit=other_visit,
-        output=output,
-        metrics=metrics,
+        video_weights=video_weights,
+        metrics={**metrics, **flow_metrics},
         loss=loss,
-        responsibilities=member.responsibilities,
+        responsibilities=responsibilities,
     )
 
 

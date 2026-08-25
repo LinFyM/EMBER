@@ -20,7 +20,7 @@
     "target_step1000_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_r3_1362d15_20260808/results.json",
     "target_step2000_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808/results.json",
     "meta_verified_occupancy": "runs/outputs/pi05_ecp_stage1_mdco_nonheld_occupancy_fedd871_gpu02p01237_r3_20260823/results.json",
-    "shared_effect_bank": "runs/analysis/pi05_ecp_shared_compiler_g3_effect_bank_pending/manifest.json"
+    "shared_effect_bank": "runs/analysis/pi05_ecp_shared_compiler_g3_effect_bank_37aca5f_gpu01p123456_20260825/manifest.json"
   },
   "fold": {
     "meta_held_fold": 0,
@@ -48,7 +48,6 @@
     "K_sampling": "deterministic_uniform_cycle",
     "video_action_cross_episode": true,
     "task_role_weighting": "meta50_target50",
-    "query_demo_indices": [1, 2, 3, 4],
     "action_chunk_size": 50,
     "same_task_other_offset": 17
   },
@@ -58,7 +57,10 @@
     "tasks_per_role_per_optimizer_step": 1,
     "effect_interval": 1,
     "same_task_consistency_interval": 2,
+    "same_task_consistency_gradient": "rotating_primary_stop_gradient_other_update",
     "effect_microbatch_states": 2,
+    "functional_query_count": 4,
+    "functional_policy_microbatch_size": 2,
     "denoising_steps": 10,
     "optimizer": {
       "name": "AdamW",
@@ -84,8 +86,9 @@
     }
   },
   "profile_defaults": {
-    "total_macros": 1,
-    "checkpoint_macros": [1],
+    "total_macros": 3,
+    "checkpoint_macros": [1, 2, 3],
+    "task_pairs": [[23, 72], [27, 73], [1, 93]],
     "allowed_world_sizes": [1, 2]
   },
   "formal_run": {

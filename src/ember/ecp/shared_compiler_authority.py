@@ -188,6 +188,19 @@ def build_shared_compiler_run_contract(
         ],
         "model": dict(config["model"]),
         "data": dict(config["data"]),
+        "functional_action_queries": {
+            "fit_task_count": sum(
+                task.role in {"meta_fit", "target_fit"} for task in tasks
+            ),
+            "held_task_count": 0,
+            "video_and_action_episodes_disjoint": True,
+            "queries_per_task_step": int(
+                config["optimization"]["functional_query_count"]
+            ),
+            "action_chunk_size": int(config["data"]["action_chunk_size"]),
+            "validation_or_test_action_reads": 0,
+            "deployment_action_reads": 0,
+        },
         "optimization": dict(config["optimization"]),
         "runtime": {
             "world_size": context.world_size,

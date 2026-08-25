@@ -313,6 +313,21 @@ probe `38/40`，median active events 4、one-event 0，same-task/K1/K4均通过�
 未约束首尾的alignment path造成，边界锚定在不固定事件数量的前提下恢复动态资格。G3必须冻结该macro20 Program，只学习共享
 Program-query到native content-key的signed selection；G1 task-local free logits不能进入部署路径。
 
+### 27. G3 formal前的最早工程接口是实际action-flow监督与长视频反向显存
+
+首个G3 runtime把expert member的flow response拟合误记为`cross_episode_flow`，而schedule保留的`action_demos`没有实际进入loss。
+这不满足active design的独立action episode PI0.5 flow合同。修正后只为meta56+target-fit19建立授权query store；每step从与video demos
+不相交的action episodes确定性取4个query，使用matched policy RNG计算generated唯一rank16 adapter的真实PI0.5 flow loss，再以
+detached LoRA gradient bridge回传compiler。member flow仍保留在whole-trajectory single-member effect中，但不再冒充独立flow监督；
+meta-held、target-held、validation与test actions均不读取。
+
+真实两步profile随后暴露第二个工程接口：same-task primary与other两套完整Writer图同时驻留会在A40达到约`44.39 GiB`并OOM。
+当前修正先完成primary全部主loss并backward，再以primary detached response作为轮换teacher，只让other response承担consistency梯度；
+不同macro持续轮换primary，不改变deployment forward。每条video的chunked signed pooling同时使用activation checkpoint，反向逐video
+重算同一online accumulator，避免candidate数线性保留激活。修正后三项真实profile全部通过：普通K1+K4峰值`16.68 GB`、包含
+same-task consistency的K2+K4峰值`17.39 GB`、target93共332个采样帧的长K4峰值`29.28 GB`；三项关键gradient probes均finite/nonzero，
+Action Meta module/parameter、source/Program trainable均为0。该结果只证明formal运行面接通和显存合同成立，不是G3闭环Gate结果。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

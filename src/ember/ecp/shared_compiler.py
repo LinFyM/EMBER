@@ -8,6 +8,7 @@ from typing import Sequence
 
 import torch
 import torch.nn.functional as functional
+from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.native_factors import (
@@ -465,12 +466,23 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 "shared compiler video set or scale authority changed"
             )
         rank_context, event_weights, owner_context = self._owner_rank_context(program)
-        pooled = tuple(
-            self._pool_video(
+
+        def pool(video: SharedCompilerVideo):
+            if self.training and torch.is_grad_enabled():
+                return checkpoint(
+                    lambda rank, events: self._pool_video(
+                        video, rank_context=rank, event_weights=events
+                    ),
+                    rank_context,
+                    event_weights,
+                    use_reentrant=False,
+                    preserve_rng_state=False,
+                )
+            return self._pool_video(
                 video, rank_context=rank_context, event_weights=event_weights
             )
-            for video in videos
-        )
+
+        pooled = tuple(pool(video) for video in videos)
         beta = self._video_weights(program, videos, owner_context)
         scale_logits = self.scale_head(rank_context).squeeze(-1)
         scales = s_ref[:, None].to(scale_logits) * torch.tanh(scale_logits)

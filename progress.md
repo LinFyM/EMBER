@@ -152,29 +152,33 @@ uniform初始化、最大修正0.5的置换不变bounded beta合并K=1/2/4；K=1
 输出一套rank4 residual并复用唯一rank12+4 rank16 materialization。
 
 同时已接通95-task/118-member authority、G2 checkpoint冻结加载、member相对carrier的small-core最佳rank4投影、set-valued
-functional effect losses，以及target-fit successful-member occupancy的窄 evaluator capture合同。CPU定向机制检查为`23 passed`，
-全仓为`157 passed`；覆盖chunk/non-chunk边界等价、gradient、K1 identity、K4 permutation、bounded beta及无free logits。当前尚未
-完成真实GPU video->Program->native bank->signed pooling->materialization forward，也尚未生成target-fit occupancy/effect banks；
-因此不能把本节点报告为G3可formal训练或Gate通过。下一步从clean pushed commit的detached worktree完成这两项真实检查，确认纯Native
-observer与Action Meta module/parameter为0后，才启动G3 formal优化。
+functional effect losses，以及target-fit successful-member occupancy的窄 evaluator capture合同。全仓`158 passed`；覆盖
+chunk/non-chunk边界等价、gradient、K1 identity、K4 permutation、bounded beta及无free logits。target-fit occupancy和75-task/93-member
+fit effect authority现已完成，真实GPU forward/backward/materialization也已通过；这些仍只是formal launch资格，不是G3闭环Gate结果。
 
 该实现面随后补齐了canonical训练runtime：每个optimizer step严格一项target-fit与一项meta-fit，member identity只拥有training-only
 critic/sampler；deployment forward只接收Program与native candidates。loss由single-global-member log-sum-exp、四family等权functional、
 cross-episode flow、sensitivity-normalized mobile update、carrier preservation与定期same-task不同video functional consistency组成；
 source、Native observer、G2 Program、carrier及experts全部冻结，只更新shared query/key/signed pooling/scales/bounded beta。由于每step
-只有两个独立task，允许world size收紧为1--2，避免多GPU空转。该runtime已通过compile与CPU回归，但尚未完成真实GPU backward，不能
-据此启动formal训练。
+只有两个独立task，允许world size收紧为1--2，避免多GPU空转。复核发现旧实现只拟合member flow response而未实际使用预留action demos；
+现已改为fit75独立action episodes上的真实PI0.5 flow loss，held actions读取为0，member flow只保留在global set-valued effect中。
 
 target-fit verified occupancy首次clean formal capture中，step1000为`19/19`，step2000为`17/18`。唯一失败是global38 moka-pots
 state4；新旧结果的adapter、init state与全部policy-noise seeds一致，但旧evaluator在step434成功，新clean evaluator到520未成功，说明
 该晚完成轨迹对允许的BF16/kernel低位差异缺少裕量，而不是authority错配。修正不试seed：只用旧sealed fixed50结果预先选择每member
-完成步数最短的成功state（再以state ID破同分）；global38因此改为state36、旧证据step401成功。等待从下一clean pushed commit重采
-step2000，失败run作为formal capture evidence保留，不混入effect critic。
+完成步数最短的成功state（再以state ID破同分）；global38因此改为state36、旧证据step401成功。clean重采后step2000为`18/18`，
+与step1000的`19/19`共同进入critic；失败run作为formal capture evidence保留，不混入effect authority。
 
 一项meta-fit真实GPU effect-bank smoke已完成：复用的旧meta occupancy schema为`ember_writer_occupancy_trajectory_v1`，新target schema为
 `ember_pi05_occupancy_trajectory_v1`；sealer现在同时接受并逐项核对suite/task/state/success/adapter，不做宽松fallback。task1输出
 4个trajectory states、1个global member、38-owner response、flow/action response及76个rank4 projection tensors，全部finite；实际对象图
 Action Meta为空。约33.7MB smoke artifact核对后已删除，不冒充formal evidence。
+
+完整effect root为75个fit tasks、93个successful members、约3.0GB，manifest状态`complete`；meta56与target-fit19角色及全部task manifest
+均核对。三步真实训练profile覆盖普通K1/K4、触发same-task-other的K2/K4，以及target93共332个采样帧的长K4：三条compiler gradient
+probe均finite/nonzero，真实cross-episode flow分别进入loss，唯一rank12+4 rank16被policy实际消费；Action Meta module/parameter为0，
+source/Program trainable为0。最初双条件同时驻留在约44.39GiB OOM，已按最早接口改为primary主loss先backward、other对detached primary
+response做轮换consistency，并对每video signed pooling做activation checkpoint；最终三步峰值分别约16.68/17.39/29.28GB，均exit0。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -291,7 +295,7 @@ G1--G5 Gate或架构修正依据。
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
 2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
    Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3先完成真实forward/gradient/materialization smoke，再从clean pushed detached commit训练并执行预注册held5 strict250 Gate；
+3. G3真实forward/gradient/materialization与信息墙检查已通过；下一步从clean pushed detached commit训练并执行预注册held5 strict250 Gate；
 4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

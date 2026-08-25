@@ -82,7 +82,7 @@ class SharedCompilerEffectBank:
 class SharedMemberEffectLoss:
     global_effect: torch.Tensor
     family_functional: torch.Tensor
-    cross_episode_flow: torch.Tensor
+    member_flow_response: torch.Tensor
     action_response: torch.Tensor
     responsibilities: torch.Tensor
     member_totals: torch.Tensor
@@ -279,7 +279,7 @@ def member_effect_losses(
     return SharedMemberEffectLoss(
         global_effect=global_loss,
         family_functional=family_loss,
-        cross_episode_flow=(responsibilities.detach() * flow).sum(),
+        member_flow_response=(responsibilities.detach() * flow).sum(),
         action_response=(responsibilities.detach() * action).sum(),
         responsibilities=responsibilities,
         member_totals=total,

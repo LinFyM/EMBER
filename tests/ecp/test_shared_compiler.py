@@ -202,7 +202,7 @@ def test_shared_member_effect_uses_one_global_member_responsibility() -> None:
     combined = (
         loss.global_effect
         + loss.family_functional
-        + loss.cross_episode_flow
+        + loss.member_flow_response
         + loss.action_response
     )
     combined.backward()

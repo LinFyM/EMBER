@@ -202,7 +202,9 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   由uniform初始化的bounded K correction，不保留task/frame free-logit路径。
 - [x] 完成上述共享Pass B、95-task/118-member与set-valued critic的CPU实现合同：input/output candidate索引分离、跨chunk视频边界、
   per-video单位measure、K=1 identity、K=4置换不变和无task/frame free logits均已有定向回归；真实GPU机制smoke仍属于下一项。
-- [ ] 完成最小真实forward/gradient/materialization与信息墙检查后，从clean pushed detached commit做functional formal和held5 strict250 Gate。
+- [x] 完成最小真实forward/gradient/materialization、真实cross-episode action-flow、same-task consistency、长K4显存与信息墙检查；
+  三步profile均exit0，Action Meta 0，source/Program trainable 0，唯一rank16被policy实际消费。
+- [ ] 从clean pushed detached commit做functional formal和held5 strict250 Gate。
 
 ### G4 Joint Writer
 

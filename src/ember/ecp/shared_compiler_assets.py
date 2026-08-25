@@ -72,6 +72,7 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
     data = config.get("data", {})
     wall = config.get("information_wall", {})
     losses = config.get("optimization", {}).get("loss_weights", {})
+    optimization = config.get("optimization", {})
     profile = config.get("profile_defaults", {})
     formal = config.get("formal_run", {})
     if (
@@ -90,11 +91,17 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
         != ["video", "frame", "probe", "horizon", "type"]
         or data.get("K_values") != [1, 2, 4]
         or data.get("video_action_cross_episode") is not True
+        or data.get("action_chunk_size") != 50
         or data.get("task_role_weighting") != "meta50_target50"
+        or optimization.get("functional_query_count") != 4
+        or optimization.get("functional_policy_microbatch_size") != 2
+        or optimization.get("same_task_consistency_gradient")
+        != "rotating_primary_stop_gradient_other_update"
         or wall.get("action_meta_installed") is not False
         or wall.get("held_gradient_tasks") != 0
         or wall.get("shuffled_or_reversed_use") is not False
         or profile.get("allowed_world_sizes") != [1, 2]
+        or profile.get("task_pairs") != [[23, 72], [27, 73], [1, 93]]
         or formal.get("allowed_world_sizes") != [1, 2]
         or set(losses)
         != {

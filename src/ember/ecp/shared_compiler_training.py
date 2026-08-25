@@ -48,6 +48,7 @@ from ember.pi05_eval_contract import (
     git_state_is_clean_pushed_or_frozen_authority,
 )
 from ember.pi05_lora import derive_pi05_lora_rank
+from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
@@ -55,9 +56,10 @@ from ember.pi05_source_setup import (
     initialize_distributed,
     load_config,
     load_policy,
+    load_stats,
     seed_everything,
 )
-from ember.writer.data import RawTeacherVideoStore
+from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 
 
@@ -75,6 +77,8 @@ class SharedCompilerRuntime:
     members: tuple[SharedTaskMembers, ...]
     schedule: NaturalProgramSchedule
     video_store: RawTeacherVideoStore
+    query_dataset: FunctionalQueryDataset
+    query_processor: Pi05LiberoProcessor
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     policy: torch.nn.Module
     program: NaturalProgramModel
@@ -101,6 +105,7 @@ class SharedCompilerRuntime:
     def close(self) -> None:
         self.lora.close()
         self.video_store.close()
+        self.query_dataset.close()
 
 
 def _tasks(
@@ -261,12 +266,16 @@ def prepare_runtime(
     expected_tokenizer = authority_path(
         config, "tokenizer", asset_root=args.asset_root
     )
+    expected_effect_bank = authority_path(
+        config, "shared_effect_bank", asset_root=args.asset_root
+    )
     if (
         args.checkpoint != expected_checkpoint
         or args.source_run != expected_checkpoint.parent.parent
         or args.tokenizer_path != expected_tokenizer
+        or args.effect_bank_root != expected_effect_bank
     ):
-        raise ValueError("G3 source policy or tokenizer authority changed")
+        raise ValueError("G3 source, tokenizer, or effect-bank authority changed")
     source = stage0_source_authority(args)
     source_config = load_config(
         authority_path(config, "source_base_config", asset_root=args.asset_root)
@@ -329,6 +338,23 @@ def prepare_runtime(
         frame_stride=int(config["data"]["frame_stride"]),
         max_open_files=8,
     )
+    fit_authorities = tuple(
+        task.writer_authority()
+        for task in tasks
+        if task.role in {"meta_fit", "target_fit"}
+    )
+    query_dataset = FunctionalQueryDataset(
+        fit_authorities,
+        demo_indices=range(50),
+        action_chunk_size=int(config["data"]["action_chunk_size"]),
+        max_open_files_per_worker=8,
+    )
+    query_processor = Pi05LiberoProcessor(
+        load_stats(source_config, source_config["data"]["active_task_ids"]),
+        args.tokenizer_path,
+        int(source_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
     language_tokens = tokenize_stage0_languages(
         tasks,
         tokenizer_path=args.tokenizer_path,
@@ -373,6 +399,8 @@ def prepare_runtime(
         members=members,
         schedule=schedule,
         video_store=video_store,
+        query_dataset=query_dataset,
+        query_processor=query_processor,
         language_tokens=language_tokens,
         policy=policy,
         program=program,
@@ -404,7 +432,16 @@ def _macro_assignments(
     assignments = runtime.schedule.optimizer_assignments(
         macro, runtime.context.world_size, tasks_per_role=1
     )
-    return assignments if runtime.args.mode == "formal" else assignments[:1]
+    if runtime.args.mode == "formal":
+        return assignments
+    pair = tuple(map(int, runtime.config["profile_defaults"]["task_pairs"][macro]))
+    roles = {runtime.task_by_id[task_id].role for task_id in pair}
+    if len(pair) != 2 or roles != {"meta_fit", "target_fit"}:
+        raise RuntimeError("G3 profile pair lost its fit-role contract")
+    profile_assignment = (
+        (pair,) if runtime.context.world_size == 1 else ((pair[0],), (pair[1],))
+    )
+    return (profile_assignment,)
 
 
 def run_shared_compiler_macro(

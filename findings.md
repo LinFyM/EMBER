@@ -268,6 +268,22 @@ trainer把每macro的38个task全部累积后只做一次Adam更新，所以macr
 2个target-fit+2个meta-fit，最后1+1并随macro轮换；scheduler和resume cursor按真实optimizer step计数。这个案例同时固化为后续
 G2/G3/G4的诊断纪律：显著non-pass先冻结证据、定位最早接口并做可证伪probe，只有新机制证据才允许修改对应结构。
 
+### 24. cadence恢复了宽泛动态信号，但近常数readout仍造成temporal gradient starvation
+
+clean pushed `main@49e7769`的cadence fresh macro10实际完成100次optimizer update。held20 full相对endpoints改善由旧`0.0381%`
+升到`0.3080%`，probe由`0/40`升到`13/40`，17/20 held task方向改善；same-task、K1/K4、event范围与tau仍通过。因此cadence
+确实修正了一个真实问题，但幅度仍远低于`10%` Gate，不能把约`8.1x`相对提升冒充G2 pass。
+
+冻结checkpoint后的fit-only梯度几何进一步定位接口：full/endpoints `P_process` delta RMS为`0.07296`，动态bank没有消失；full
+action/progress prediction temporal std仅`0.00379/0.00160`，target为`0.35248/0.32500`。temporal与non-temporal梯度cosine在
+Program process/decoder上只有`-0.065/-0.071`，不存在足以解释坍缩的强反向抵消；真正异常是temporal norm仅为non-temporal的
+约`1/10`和`1/21`。也就是说，共用近常数readout时，query-centered loss虽然数值不小，却因时变state极小而形成自我维持的
+弱梯度通道。
+
+既有frozen-readout曲线显示100步后才开始展开、200--500步继续增长，所以同一formal exact-resume到macro20是有明确预测的时标
+检验，不是盲目续训。若held增量和prediction temporal std不随之实质增长，学习时标解释即被证伪，后续应直接修改
+Program-to-temporal-readout的残差/owner-value保留结构；这类结构修改是允许的，但必须由该证据驱动并fresh复评同一Gate。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

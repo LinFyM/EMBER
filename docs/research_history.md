@@ -292,7 +292,24 @@ optimizer step推进scheduler/resume；模型、数据、loss、K与Gate保持�
 
 - `runs/outputs/pi05_ecp_natural_program_g2_temporal_residual_fold0_m10_68f8705_gpu02p0123_r4_20260825/`。
 
-## 18. 当前保留结论
+## 18. G2 cadence formal与temporal gradient starvation定位
+
+clean pushed `main@49e7769`把每macro的一次update改为10个role-balanced optimizer steps，并从fresh完成macro10/100 updates。
+held20 Gate仍为non-pass：full相对endpoints改善`0.3080%`、probe `13/40`；same-task、K1/K4、event范围与tau资格项通过。相对旧
+10-update checkpoint，动态增量约提高`8.1x`且17/20 held task方向改善，证明cadence修正有效但远不足以满足`10%` Gate。
+
+冻结checkpoint后只用12个fit task做gradient diagnostic，held gradient为0。full/endpoints `P_process` delta RMS为`0.07296`；
+action/progress prediction temporal std为`0.00379/0.00160`，target为`0.35248/0.32500`。Program process和temporal decoder上的
+temporal/non-temporal gradient norm分别为`0.01031/0.10345`与`0.00885/0.18567`，cosine为`-0.065/-0.071`。因此最早接口不是
+动态bank缺失或强梯度反向冲突，而是近常数readout造成的temporal gradient starvation。下一步保留同一科学合同exact-resume到
+macro20，作为既有frozen-readout学习时标的可证伪节点；若动态幅度不实质增长，再依据该证据修改readout结构并fresh复评。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_cadence_fold0_m10_49e7769_gpu02p0123_r4_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_cadence_macro10_gradient_diagnostic_49e7769_gpu02p5_20260825/`。
+
+## 19. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -302,7 +319,7 @@ optimizer step推进scheduler/resume；模型、数据、loss、K与Gate保持�
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 19. 证据恢复方式
+## 20. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

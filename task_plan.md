@@ -165,8 +165,13 @@ language/scene，不设次数上限。
 - [x] 保持模型、数据、loss、K和Gate不变，实现每macro 10个role-balanced optimizer steps：常规2 target+2 meta，旋转尾部1+1；
   scheduler与resume按真实step计数。单卡与world4真实profile均完成finite forward/backward/materialization/checkpoint，world4实际聚合
   2+2任务、46/46参数进入Adam、Action Meta/source/observer trainable均为0。
-- [ ] 从该修正的clean detached pushed commit fresh运行macro10并复评同一held20 Gate；non-pass时继续按最早失效接口诊断，不能用
-  probe-only旋钮或无机制的LR/seed/width扫替代根因分析。
+- [x] 从clean detached `main@49e7769` fresh运行macro10/100 optimizer steps并复评同一held20 Gate：full相对endpoints改善
+  `0.3080%`、probe `13/40`，其余资格项通过；相对旧10-update结果动态增量约`8.1x`且17/20 held task方向改善，但仍明确non-pass。
+- [x] 冻结该checkpoint，用12个role/K平衡fit task做gradient diagnostic且held gradient为0：Program full/endpoints差异真实存在，
+  temporal梯度没有被强方向性抵消，但在Program process/temporal decoder上分别比non-temporal小约`10x/21x`，prediction temporal std
+  仍比target小约`93x/203x`。最早接口是近常数readout造成的temporal gradient starvation。
+- [ ] 按同一commit、world4 topology与run目录exact-resume到预注册macro20，作为既有100--500步readout学习曲线的可证伪时标检验；
+  若held增量和temporal std不实质增长，则停止用训练长度解释，转而依据该接口证据修正readout结构并从fresh复评。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

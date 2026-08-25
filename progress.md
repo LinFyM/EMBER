@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-08-25。当前G2根因修正起点：clean pushed `main@68f87051261f5f830f1c6bee92f3c113cb2a9558`。
+更新时间：2026-08-25。当前G2 formal authority：clean pushed `main@49e7769c560289623850b729bcf6b645042997d5`。
 
 ## 当前状态
 
@@ -108,6 +108,19 @@ slot、width或readout结构。
 真实profile均完成：world4实际聚合4个互异task、role为2+2、finite owner-query/全局gradient，46/46 Program tensors进入Adam，
 四个rank checkpoint齐全；run contract记录source/observer trainable 0、Action Meta module/parameter 0。profile只作执行证据，
 核对后删除，不冒充formal。
+
+该cadence修正已由clean pushed `main@49e7769`完成，并从fresh训练至macro10/100 optimizer steps。held20 Gate仍为non-pass：
+full相对endpoints改善`0.3080%`、probe margin `13/40=0.325`，低于`10%/0.75`门；same-task、K1/K4、event范围与tau资格项均通过。
+相对旧10-update checkpoint，动态增量由`0.0381%`提高约`8.1x`，20个held task中17个方向改善，meta/target-held分别为
+`0.2781%/0.3891%`，所以这是宽泛但幅度不足的真实信号，不是偶然峰值，也不能进入G3。
+
+冻结macro10后仅用12个fit task（target/meta各半，K=1/2/4等量）做gradient diagnostic；held gradient为0。full与endpoints的
+`P_process`差异仍有`0.07296 RMS`，但full action/progress prediction temporal std仅`0.00379/0.00160`，而target为
+`0.35248/0.32500`。temporal梯度相对non-temporal在Program process参数上为`0.01031/0.10345`，在temporal decoder上为
+`0.00885/0.18567`；cosine仅`-0.065/-0.071`，说明问题不是方向性强抵消，而是近常数读出使temporal梯度小约`10--21x`。
+结合frozen readout在100--500步才开始明显展开的既有曲线，下一步按同一commit/world4 topology exact-resume到预注册macro20；
+这是对“有效但尚未跨过学习时标”的可证伪检验。若held增量和prediction temporal std没有实质继续增长，该解释即被否定，下一修正
+必须直接针对Program-to-temporal-readout的梯度饥饿/近常数结构，而不能靠继续训练或超参小扫。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -221,11 +234,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 完成role-balanced optimizer cadence实现的全量定向回归、architecture guard、clean main集成与push，并从该commit建立detached frozen
-   worktree；
-2. live复核gpu01/gpu02、prohibited设备、进程与独立storage quota后，从fresh启动macro10 formal；在meta-held15+target-held5复评
-   完全相同的G2 Gate。只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program并进入G3；
-3. 若仍non-pass，先冻结该轮证据并定位最早失效接口；不得再用连续架构版本、probe-only旋钮或LR/seed/width小扫替代根因分析；
+1. 在同一clean detached `49e7769`、world4 topology与run目录上exact-resume到预注册macro20/200 optimizer steps，复评完全相同的
+   held20 Gate；不改变模型、loss、数据、K、LR、seed或checkpoint选择合同；
+2. 若macro20使held full增量、prediction temporal std与probe margin按既有学习曲线实质增长，则继续依预注册节点判断；若仍近常数，
+   即否定单纯学习时标解释，先冻结证据并针对Program-to-temporal-readout结构做机制修正后fresh复评；
+3. 任何non-pass都不得用连续架构版本、probe-only旋钮或LR/seed/width小扫替代根因分析；结构修正允许且应在证据指向结构接口时实施；
 4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

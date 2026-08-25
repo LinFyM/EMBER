@@ -75,9 +75,12 @@
   "objective": {
     "contrastive_temperature": 0.1,
     "contrastive_negative_languages": 8,
+    "temporal_residual_mode": "query_centered_mse_v1",
     "weights": {
       "action": 1.0,
+      "action_temporal": 1.0,
       "progress": 1.0,
+      "progress_temporal": 1.0,
       "rising": 0.25,
       "contact": 0.25,
       "predicate": 0.5,

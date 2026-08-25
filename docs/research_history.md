@@ -257,7 +257,26 @@ margin仍须独立处理，不能用不改变canonical Program或action/progress
 - `runs/analysis/pi05_ecp_natural_program_g2_frozen_observer_macro10_layer_diagnostic_db84a50_gpu01p3_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_frozen_observer_macro20_layer_diagnostic_db84a50_gpu01p3_20260825/`。
 
-## 16. 当前保留结论
+## 16. G2 owner-specific scalar readout与时间均值坍缩定位
+
+clean pushed `main@407340b`把training-only owner score改为38个fixed-owner、shared-across-task content queries，并从fresh macro10
+按同一world2 topology exact-resume到macro20。held20 Gate的full相对endpoints改善分别为`+0.0158%/-0.0340%`，probe margin均为
+`0/40`，其它same-task、K1/K4与event资格项保持通过，因此G2仍non-pass。
+
+query rows从自身RMS的`1.58%`分化到`2.94%`，但macro20 actual与强制shared-query held loss只差约`4.9e-5`，hard-owner同样无效；
+action prediction temporal std仍为`0.00171`而target为`0.33589`。raw Stage0 process与其既有action head反事实将absolute action loss
+从`0.25511`降至`0.20767`，却只产生`0.2467%` full增量和`0.00298` temporal std。该证据淘汰owner-specific scalar selection、
+softmax温度和单纯旧head转移作为充分解释；下一修正只把同一授权action/progress监督分解出query-centered temporal residual MSE，
+不改变模型容量、数据、K、seed/LR、Gate或Program schema。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_owner_readout_fold0_m10_407340b_gpu02p03_r2_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_owner_readout_macro10_diagnostic_407340b_gpu02p3_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_owner_readout_macro20_diagnostic_407340b_gpu02p3_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_stage0_transfer_macro20_diagnostic_407340b_gpu02p3_20260825/`。
+
+## 17. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -267,7 +286,7 @@ margin仍须独立处理，不能用不改变canonical Program或action/progress
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 17. 证据恢复方式
+## 18. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

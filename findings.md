@@ -240,6 +240,19 @@ training-only decoder原先用同一个`Linear(128,1)`给38个固定LoRA owners�
 它不是task-ID route，也不改变deployment Program schema、Stage 0、probe、数据、loss、seed/LR、slot/width或Gate。
 raw antithetic branch margin仍是独立接口，不能用不改变canonical Program或action/progress utility的residual缩放去美化Gate。
 
+### 22. owner-specific scalar queries未解决时间均值坍缩，下一接口是query-time residual监督
+
+clean pushed `main@407340b`的owner-specific scalar-query formal从fresh macro10 exact-resume到macro20；held full相对endpoints改善
+分别仅`+0.0158%/-0.0340%`，probe均为`0/40`。query rows的分化从自身RMS的`1.58%`增至`2.94%`，但actual与强制shared-query的
+macro20 held combined loss只差约`4.9e-5`，hard-owner也不改善，action prediction temporal std仍为`0.00171`而target为
+`0.33589`。因此失败不是query没有更新或softmax温度不足，继续训练该scalar selection没有新机制依据。
+
+raw Stage0 process配回其已训练action head可把held absolute action loss从`0.25511`降至`0.20767`，但full相对endpoints仍只有
+`0.2467%`且prediction temporal std仅`0.00298`。这证明旧坐标/head值得复用，却否定“只转移旧head”会自然解决10%动态门；它并未
+提供直接增加owner value map的充分证据。当前absolute cross-episode action/progress MSE主要奖励trajectory mean；有证据的下一修正是保留absolute项，
+再等权加入query-centered action/progress residual MSE，使常数预测无法满足local temporal grounding。该修正不使用held梯度或
+shuffled/reversed，不改变Program schema、模型容量、数据、K、seed/LR或Gate。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

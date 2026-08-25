@@ -15,7 +15,9 @@ from ember.ecp.natural_program import NaturalProgramOutput
 class NaturalProgramLoss:
     total: torch.Tensor
     action: torch.Tensor
+    action_temporal: torch.Tensor
     progress: torch.Tensor
+    progress_temporal: torch.Tensor
     rising: torch.Tensor
     contact: torch.Tensor
     predicate: torch.Tensor
@@ -65,6 +67,35 @@ def _cross_task_contrast(
     )
 
 
+def _temporal_residual_mse(
+    prediction: torch.Tensor, target: torch.Tensor
+) -> torch.Tensor:
+    """Remove each trajectory mean so a constant prediction cannot win."""
+
+    prediction = prediction.float()
+    target = target.float()
+    prediction = prediction - prediction.mean(1, keepdim=True)
+    target = target - target.mean(1, keepdim=True)
+    return F.mse_loss(prediction, target)
+
+
+def _temporal_prediction_losses(
+    prediction: Any, batch: Any
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    action = F.mse_loss(
+        prediction.action_phases.float(), batch.action_targets.float()
+    )
+    progress = F.mse_loss(
+        prediction.progress.float(), batch.progress_targets.float()
+    )
+    return (
+        action,
+        _temporal_residual_mse(prediction.action_phases, batch.action_targets),
+        progress,
+        _temporal_residual_mse(prediction.progress, batch.progress_targets),
+    )
+
+
 def natural_program_loss(
     output: NaturalProgramOutput,
     batch: Any,
@@ -75,11 +106,8 @@ def natural_program_loss(
     contrastive_temperature: float = 0.1,
 ) -> NaturalProgramLoss:
     prediction = output.predictions
-    action = F.mse_loss(
-        prediction.action_phases.float(), batch.action_targets.float()
-    )
-    progress = F.mse_loss(
-        prediction.progress.float(), batch.progress_targets.float()
+    action, action_temporal, progress, progress_temporal = (
+        _temporal_prediction_losses(prediction, batch)
     )
     rising = F.binary_cross_entropy_with_logits(
         prediction.rising_logits.float(), batch.rising_targets.float()
@@ -163,7 +191,9 @@ def natural_program_loss(
 
     terms = {
         "action": action,
+        "action_temporal": action_temporal,
         "progress": progress,
+        "progress_temporal": progress_temporal,
         "rising": rising,
         "contact": contact,
         "predicate": predicate,

@@ -126,6 +126,8 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         or int(config.get("objective", {}).get(
             "contrastive_negative_languages", 0
         )) % 2
+        or config.get("objective", {}).get("temporal_residual_mode")
+        != "query_centered_mse_v1"
     ):
         raise ValueError("unsupported G2 Natural Program config")
     return config

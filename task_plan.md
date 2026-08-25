@@ -151,8 +151,14 @@ language/scene，不设次数上限。
   Linear完全相同的向量初始化以保持其余head的RNG序列，不修改Stage 0、
   Program schema、probe处理、scene head、数据、loss、seed/LR/slot/width或Gate。真实K4 profile确认owner-query gradient norm
   `0.01827`、一步后query rows已分化、46个Program tensors trainable、observer/source/Action Meta trainable均为0，peak约10.02GB。
-- [ ] 集成并推送owner-structured readout，从clean detached commit fresh训练并复评同一held20 Gate；probe raw margin仍是独立未通过
-  接口，不得用只缩放辅助delta而不改变部署Program的Gate-only adapter处理。
+- [x] 集成并推送owner-structured readout，从clean detached commit fresh训练并exact-resume到macro20；full相对endpoints为
+  `+0.0158%/-0.0340%`、probe均为`0/40`，query分化从`1.58%`增至`2.94%`却未改变shared解，故该scalar selection不是充分修正。
+- [x] 无梯度Stage0-transfer反事实确认raw process+既有action head把absolute action loss降至`0.20767`，但full增量仍仅`0.2467%`；
+  最早接口不是简单旧head丢失，而是absolute MSE的trajectory-mean解未约束query-time residual。
+- [x] 保留absolute action/progress并新增等权query-centered temporal residual MSE；真实K4 profile确认两个新loss有限、owner-query
+  gradient非零、frozen observer 39 tensors不变且Action Meta为0。
+- [ ] 集成并推送temporal-residual objective，从clean detached commit fresh训练并复评同一held20 Gate；probe raw margin仍是独立未通过
+  接口，不得用只缩放辅助delta而不改变部署Program/action utility的Gate-only adapter处理。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

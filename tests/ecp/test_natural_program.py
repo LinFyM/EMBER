@@ -15,6 +15,7 @@ from ember.ecp.natural_program_gate import _build_report
 from ember.ecp.natural_program_labels import _predicate_rising
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
 from ember.ecp.natural_program_authority import _pure_native_inventory
+from ember.ecp.natural_program_objective import _temporal_residual_mse
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 
 
@@ -293,6 +294,17 @@ def test_temporal_readout_preserves_fixed_owner_identity() -> None:
     assert model.decoder.owner_queries.shape == (38, 8)
     assert not torch.equal(
         original.action_phases, permuted.action_phases
+    )
+
+
+def test_temporal_residual_loss_rejects_a_constant_mean_prediction() -> None:
+    target = torch.tensor([[[0.0, 1.0], [1.0, 0.0], [2.0, -1.0]]])
+    constant = target.mean(1, keepdim=True).expand_as(target)
+    shifted_match = target + 7.0
+
+    assert _temporal_residual_mse(constant, target) > 0
+    assert torch.equal(
+        _temporal_residual_mse(shifted_match, target), torch.zeros(())
     )
 
 

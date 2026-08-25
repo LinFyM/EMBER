@@ -78,6 +78,21 @@ task92真实K4 profile已通过：owner-query gradient norm `0.01827`，一步�
 owner-specific梯度分化；46个Program parameter tensors/915,554 parameters trainable，native observer/source policy/Action Meta
 trainable均为0，39个observer tensors逐tensor不变，peak allocated 10,016,671,744 bytes；profile只作机制smoke，核对后删除。
 
+clean pushed `main@407340b`的owner-specific scalar-query formal已从fresh macro10按同一world2 topology exact-resume到macro20。
+macro10/macro20 held20 Gate的full相对endpoints改善分别为`+0.0158%/-0.0340%`，probe margin均为`0/40`；same-task、K1/K4、
+active-event范围继续通过，所以仍未进入G3。owner queries的row-centered RMS从自身RMS的`1.58%`增长到`2.94%`，但macro20
+actual与强制shared-query的held combined loss只差约`4.9e-5`，action prediction temporal std仍只有`0.00171`，target为
+`0.33589`；hard-owner readout同样不改善。该结果淘汰owner-specific scalar selection作为充分修正，也排除继续到macro40只等待
+query分化的解释。
+
+进一步无梯度反事实把frozen Stage 0 raw process与其已训练action head重新配对：held action absolute loss从当前fused/current的
+`0.25511`降至`0.20767`，说明Stage 0坐标与head包含可复用信息；但full相对endpoints仍只改善`0.2467%`，prediction temporal std
+仅`0.00298`，所以只复用旧head不足以满足G2动态门；该反事实也没有提供直接增加owner value map的充分证据。当前最早接口是
+absolute cross-episode MSE被trajectory mean解主导，未单独约束query-time action/progress residual。当前机制修正保留absolute losses并新增等权query-centered action/progress
+residual MSE，不改模型、Program schema、数据、K、seed/LR或Gate。task92真实K4 profile得到`action_temporal=0.14324`、
+`progress_temporal=0.08779`、owner-query gradient norm `0.01839`，39个observer tensors不变，Action Meta/observer/source trainable均为0，
+peak allocated 10,016,671,744 bytes；profile已删除。
+
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。
@@ -190,11 +205,11 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 把已完成152项CPU回归、diff审查和真实K4 smoke的owner-structured temporal readout集成到main并推送；
-2. 从新的clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后fresh启动macro10 formal；
-3. 在meta-held15+target-held5复评完全相同的G2 Gate；只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program
-   并进入G3。owner readout若修复full但probe仍失败，下一修正必须让probe invariance接受真实action/progress utility约束，不能添加只服务
-   Gate的residual shrink旋钮；
-4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
-5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
-6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。
+1. 集成并推送query-centered action/progress residual objective，从新的clean detached commit fresh启动macro10 formal；
+2. 在meta-held15+target-held5复评完全相同的G2 Gate；只有full相对endpoints至少改善10%、probe及其它资格项同时通过才冻结Program
+   并进入G3。若full动态读出成立但probe仍失败，下一修正必须让probe invariance接受真实action/progress utility约束，不能添加只服务
+   Gate的residual shrink旋钮；若temporal residual仍不能放大已有raw dynamics，则按held-free训练证据定位owner/event value readout，
+   不再延长已淘汰的scalar-query run；
+3. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
+4. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
+5. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

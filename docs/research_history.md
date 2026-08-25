@@ -341,7 +341,31 @@ task-local free logits。
 
 - `runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/`。
 
-## 21. 当前保留结论
+## 21. G3 frozen-Program shared compiler macro5 formal non-pass
+
+clean detached `5140362`以冻结的G2 `c1493a1/macro20` Program、75个fit tasks/93个verified members训练shared native-content
+compiler到macro5/95 optimizer updates。compiler只训练共享Program-query/content-key attention、event weights、target scales与bounded
+video correction；source policy、Stage 0与Program均冻结，Action Meta module/parameter为0。held5由同一macro5 checkpoint分别物化
+correct full、first+final与disjoint same-task K4条件，每个条件是一套完整rank12+4 rank16；learned language control不读held video/action/reward。
+
+五臂paired strict250为carrier/language/full/endpoints/same-task=`43/42/35/40/44`。full逐task为Spatial0 `27`、Spatial9 `4`、
+Object8 `4`、Goal5 `0`、Long6 `0`；breadth`3/5`、carrier retention`28/43`、相对language/endpoints为`-7/-5`，只有same-task
+retention `33/35=94.3%`通过。250个task/state rows、source model、tokenizer、normalization、environment/policy RNG、三个bank、唯一
+compiler checkpoint和single complete rank16均通过配对与authority检查；shuffled/reversed未使用。因此macro5是明确G3 non-pass。
+
+无梯度几何显示full与same-task residual update cosine为`0.992--0.999`，而full与endpoints已有约`38--47%`相对差异；对四个G1非零
+held residual，full相对G1可行方向的整体cosine仅约`0.001--0.005`。这把最早接口定位为shared selection方向尚未学会，而非Pass A
+没有动态、多视频置换/同任务鲁棒性失败或native bank无容量。macro5仍含50步warmup且fit metrics广泛改善，所以后继先执行原schedule的
+macro10训练时标证伪；若closed loop与方向不显著改善，再修改signed-pooling confidence/initialization或shared supervision，而不是
+盲续macro20/40。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_fold0_m5_5140362_gpu01p12_r2_20260825/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_gate_m5_5140362_990557d_20260825/report.json`；
+- 四条新strict250结果分别位于对应`pi05_ecp_shared_compiler_g3_*strict250*20260825/`目录。
+
+## 22. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -351,7 +375,7 @@ task-local free logits。
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 22. 证据恢复方式
+## 23. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

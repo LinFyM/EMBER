@@ -206,7 +206,14 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   三步profile均exit0，Action Meta 0，source/Program trainable 0，唯一rank16被policy实际消费。
 - [x] 接通冻结checkpoint的held5 `correct_full/first_final/same_task_other`静态rank16物化、fit75 learned language-only control和
   paired five-arm Gate report；language control只用frozen `P_lang`映射fit-task verified rank4 effect，不读取held video/action/reward。
-- [ ] 从clean pushed detached commit做functional formal和held5 strict250 Gate。
+- [x] 从clean pushed detached `5140362`完成macro5/95 updates formal、三条video bank、learned language control与五臂paired
+  strict250 Gate：carrier/language/full/endpoints/same-task分别为`43/42/35/40/44`，full breadth`3/5`、carrier retention
+  `28/43`、Goal/Long均0、相对language/endpoints为`-7/-5`；只有same-task retention `33/35=94.3%`及全部adapter authority检查通过，
+  所以macro5明确non-pass。
+- [ ] 不改代码、配置、seed、LR、loss或数据，按原formal schedule把同一架构fresh运行到预注册macro10，检验macro5是否只是
+  warmup后有效更新不足；macro10若没有显著改善shared selection方向与closed-loop Gate，不自动续到macro20/40，先修正
+  signed-pooling置信度/初始化或shared supervision这一最早接口再fresh复评。gpu01在exact-resume launch前失联且run contract锁定
+  visible devices/NUMA/affinity，因此不放宽resume合同，改在gpu02保持world2做唯一fresh macro10候选。
 
 ### G4 Joint Writer
 

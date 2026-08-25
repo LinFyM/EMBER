@@ -333,6 +333,25 @@ meta-held、target-held、validation与test actions均不读取。
 same-task consistency的K2+K4峰值`17.39 GB`、target93共332个采样帧的长K4峰值`29.28 GB`；三项关键gradient probes均finite/nonzero，
 Action Meta module/parameter、source/Program trainable均为0。该结果只证明formal运行面接通和显存合同成立，不是G3闭环Gate结果。
 
+### 28. G3 macro5 non-pass先发生在shared selection方向，不是多视频鲁棒性
+
+clean detached `5140362`的首个G3 formal checkpoint完成macro5/95 optimizer updates；paired strict250的
+carrier/language/full/first+final/same-task分别为`43/42/35/40/44`。full逐task为`27/4/4/0/0`，breadth`3/5`、carrier
+retention`28/43`、Goal/Long均0、相对language/endpoints为`-7/-5`，只有same-task retention `33/35=94.3%`通过；三个video bank、
+single compiler checkpoint、唯一完整rank16和Action Meta 0均通过authority检查。因此这是shared compiler的科学non-pass，不能用
+内部loss或same-task稳定性冒充G3通过。
+
+read-only几何把最早接口定位在Program到native signed selection：对四个G1非零held residual，macro5 full residual相对G1可行方向的
+整体update cosine仅约`0.001--0.005`，而learned language residual约为`0.557--0.699`；full相对same-task residual cosine为
+`0.992--0.999`，但full相对endpoints已有约`38--47%`的相对update差异。即模型对中间帧有反应、换同任务视频也稳定，反应方向却尚未
+成为有用LoRA。训练侧global-member/effective-update到macro5仍约`0.936/0.892`，checkpoint的logit scales、uncertainty与scale bias
+几乎停在初始化；95步中前50步又属于warmup，84%的target-fit tasks在已有五次访问内仍显示member/effective-update改善。
+
+因此下一步不是LR/seed/width小扫，也不能直接宣判架构无容量：原formal schedule的macro10是对“有效训练时标不足”的一次明确
+证伪节点。当前实现同时存在可检验的结构风险：正负pooling的raw差异无条件经`rms_normalize`变为完整方向，未学会的attention不能自然
+退回carrier。若macro10仍近正交、full不优于language/endpoints，就应在任何macro20续训前修正signed-factor置信度/初始化，或以fit-task
+可行native selection提供更直接的shared mapping supervision；不能靠继续同一路径或调loss数字掩盖。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -17,7 +17,7 @@ from ember.pi05_source_contract import append_jsonl
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
-RUN_SCHEMA = "ember_ecp_shared_compiler_g3_run_v1"
+RUN_SCHEMA = "ember_ecp_shared_compiler_g3_run_v2"
 
 
 def _topology(context: DistributedContext) -> list[Any]:
@@ -110,6 +110,7 @@ def build_shared_compiler_run_contract(
     policy: torch.nn.Module,
     program: torch.nn.Module,
     compiler: torch.nn.Module,
+    native_teacher_store: Any | None,
     owners: Sequence[Any],
     total_macros: int,
     checkpoint_macros: Sequence[int],
@@ -118,6 +119,21 @@ def build_shared_compiler_run_contract(
 ) -> dict[str, Any]:
     repository = git_state(repo_root)
     effect_root = read_json(args.effect_bank_root)
+    native_teacher = None
+    if native_teacher_store is not None:
+        teacher_root = read_json(native_teacher_store.root_manifest)
+        if native_teacher_store.tensor_reads != 0:
+            raise ValueError("G3 native teacher tensors were read before training")
+        native_teacher = {
+            "root_manifest": str(native_teacher_store.root_manifest),
+            "root_manifest_bytes": native_teacher_store.root_manifest.stat().st_size,
+            "schema_version": teacher_root.get("schema_version"),
+            "full_fit_task_count": teacher_root.get("fit_authority_task_count"),
+            "K1_covered_task_count": teacher_root.get("K1_covered_task_count"),
+            "teacher_count": teacher_root.get("teacher_count"),
+            "deployment_reads": False,
+            "task_video_member_keys_are_training_only": True,
+        }
     return {
         "schema_version": RUN_SCHEMA,
         "stage": "g3_shared_compiler",
@@ -149,6 +165,7 @@ def build_shared_compiler_run_contract(
             "member_count": effect_root.get("member_count"),
             "deployment_forward_reads_effects": False,
         },
+        "native_teacher": native_teacher,
         "frozen_program": {
             "checkpoint": str(
                 args.asset_root / config["authorities"]["g2_program_checkpoint"]

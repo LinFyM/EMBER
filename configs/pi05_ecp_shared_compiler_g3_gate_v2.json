@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_ecp_shared_compiler_g3_gate_v1",
-  "status": "historical_held5_closed_loop_gate_v1",
-  "training_config": "configs/pi05_ecp_shared_compiler_g3_v1.json",
+  "status": "active_held5_closed_loop_gate",
+  "training_config": "configs/pi05_ecp_shared_compiler_g3_v2.json",
   "task_subset": "configs/pi05_train24_fold0_held5_eval_v1.json",
   "authorities": {
     "carrier_strict250": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json"

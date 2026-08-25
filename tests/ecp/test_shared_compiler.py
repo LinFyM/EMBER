@@ -1,16 +1,24 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
+from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler import SharedCompilerVideo, SharedNativeFactorCompiler
 from ember.ecp.policy_effects import ExecutionPolicyPrefix, PolicyEffectResponse
 from ember.ecp.shared_compiler_effects import (
     SharedCompilerEffectBank,
     member_effect_losses,
 )
+from ember.ecp.shared_compiler_train_step import (
+    _clip_parameter_groups,
+    _native_teacher_loss,
+)
+from ember.ecp.shared_compiler_training import _trainable_groups
 
 
 def _owners() -> tuple[TargetOwner, ...]:
@@ -114,6 +122,14 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     observed = compiler(program, (two_chunks,), s_ref=scale)
 
     assert torch.equal(expected.video_weights, torch.ones(1))
+    for target, (a_direction, b_direction) in enumerate(
+        zip(observed.input_directions, observed.output_directions, strict=True)
+    ):
+        torch.testing.assert_close(a_direction, observed.residual.a[target])
+        torch.testing.assert_close(
+            b_direction * observed.residual.scales[target, :, None],
+            observed.residual.b[target],
+        )
     for left, right in zip(
         (*expected.residual.a, *expected.residual.b),
         (*observed.residual.a, *observed.residual.b),
@@ -164,6 +180,139 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+
+
+def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
+    compiler = SharedNativeFactorCompiler(
+        _owners(), program_width=8, event_slots=4, key_width=6
+    )
+    selection, scale_video = _trainable_groups(compiler)
+    assert {id(value) for value in selection}.isdisjoint(
+        {id(value) for value in scale_video}
+    )
+    assert len(selection) + len(scale_video) == len(tuple(compiler.parameters()))
+    for parameter in selection:
+        parameter.grad = torch.full_like(parameter, 1e-4)
+    for parameter in scale_video:
+        parameter.grad = torch.full_like(parameter, 1e4)
+    selection_before = tuple(value.grad.clone() for value in selection)
+
+    norms = _clip_parameter_groups(
+        selection_parameters=selection,
+        scale_video_parameters=scale_video,
+        optimizer={
+            "selection_gradient_clip_norm": 1.0,
+            "scale_video_gradient_clip_norm": 1.0,
+        },
+    )
+
+    assert norms["selection"] < 1.0
+    assert norms["scale_video"] > 1.0
+    for before, parameter in zip(selection_before, selection, strict=True):
+        torch.testing.assert_close(parameter.grad, before)
+    assert torch.linalg.vector_norm(
+        torch.cat([parameter.grad.flatten() for parameter in scale_video])
+    ) <= 1.00001
+
+
+def test_scale_and_video_heads_do_not_backpropagate_into_selection_context() -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4, key_width=6
+    )
+    torch.nn.init.normal_(compiler.video_reliability[-1].weight, std=0.03)
+    selection, scale_video = _trainable_groups(compiler)
+    program = _program(len(owners), 8, 4)
+    videos = tuple(
+        _video(owners, seed=seed, chunks=(2, 2), width=8, events=4)
+        for seed in (71, 73)
+    )
+
+    output = compiler(program, videos, s_ref=torch.ones(len(owners)))
+    scale_gradients = torch.autograd.grad(
+        output.residual.scales.sum(),
+        (*selection, *scale_video),
+        allow_unused=True,
+    )
+    selection_scale = scale_gradients[: len(selection)]
+    scale_head = [
+        gradient
+        for parameter, gradient in zip(
+            scale_video, scale_gradients[len(selection) :], strict=True
+        )
+        if "scale_head" in next(
+            name
+            for name, candidate in compiler.named_parameters()
+            if candidate is parameter
+        )
+    ]
+    assert all(
+        gradient is None or not bool(torch.count_nonzero(gradient))
+        for gradient in selection_scale
+    )
+    assert scale_head and all(
+        gradient is not None and bool(torch.count_nonzero(gradient))
+        for gradient in scale_head
+    )
+
+    output = compiler(program, videos, s_ref=torch.ones(len(owners)))
+    video_gradients = torch.autograd.grad(
+        output.video_weights[0],
+        (*selection, *scale_video),
+        allow_unused=True,
+    )
+    assert all(
+        gradient is None or not bool(torch.count_nonzero(gradient))
+        for gradient in video_gradients[: len(selection)]
+    )
+    assert any(
+        gradient is not None and bool(torch.count_nonzero(gradient))
+        for gradient in video_gradients[len(selection) :]
+    )
+
+
+def test_multivideo_training_condition_cannot_read_native_teacher_tensors() -> None:
+    class Store:
+        tensor_reads = 0
+
+        def lookup_members(self, **kwargs):
+            assert kwargs["k"] in (2, 4)
+            assert kwargs["video_demo"] is None
+            return None
+
+    runtime = SimpleNamespace(
+        native_teachers=Store(),
+        config={"optimization": {"loss_weights": {}}},
+        owners=_owners(),
+    )
+    output = SimpleNamespace(
+        residual=SimpleNamespace(scales=torch.ones(len(_owners()), 4)),
+        input_directions=(),
+        output_directions=(),
+    )
+    bank = SimpleNamespace(
+        member_names=("member",),
+        family_weights=torch.full((1, len(_owners())), 0.25),
+    )
+    for k in (2, 4):
+        sample = NaturalProgramSample(
+            video_demos=tuple(range(k)),
+            action_demos=(),
+            k=k,
+            robustness_view="test",
+        )
+        loss, metrics = _native_teacher_loss(
+            runtime,
+            task_id=1,
+            sample=sample,
+            output=output,
+            bank=bank,
+            responsibilities=torch.ones(1),
+        )
+        assert float(loss.total) == 0.0
+        assert metrics["native_teacher_member_lookups"] == 0
+        assert metrics["native_teacher_tensor_reads"] == 0
+    assert runtime.native_teachers.tensor_reads == 0
 
 
 def test_shared_member_effect_uses_one_global_member_responsibility() -> None:

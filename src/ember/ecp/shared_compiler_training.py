@@ -24,6 +24,7 @@ from ember.ecp.natural_program_data import (
 )
 from ember.ecp.shared_compiler import SharedNativeFactorCompiler
 from ember.ecp.shared_compiler_assets import (
+    G3_CONFIG_SCHEMA,
     SharedCompilerRankAssets,
     SharedTaskMembers,
     authority_path,
@@ -38,6 +39,10 @@ from ember.ecp.shared_compiler_authority import (
     publish_shared_compiler_run_contract,
 )
 from ember.ecp.shared_compiler_effects import SharedEffectBankStore
+from ember.ecp.shared_compiler_native_teacher import (
+    G3_NATIVE_TEACHER_FORMAL_MACROS,
+    NativeTeacherStore,
+)
 from ember.ecp.shared_compiler_train_step import (
     SharedCompilerTaskLoss,
     run_shared_compiler_optimizer_step,
@@ -88,7 +93,10 @@ class SharedCompilerRuntime:
     rank4_contract: Any
     lora: BatchedLoRAInference
     effect_banks: SharedEffectBankStore
+    native_teachers: NativeTeacherStore | None
     query_points: int
+    selection_parameters: tuple[torch.nn.Parameter, ...]
+    scale_video_parameters: tuple[torch.nn.Parameter, ...]
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     frozen_parameters: tuple[torch.nn.Parameter, ...]
     optimizer: torch.optim.Optimizer
@@ -155,10 +163,9 @@ def _resolve_runtime(
     return total, stop, checkpoints
 
 
-def _optimizer(
-    compiler: SharedNativeFactorCompiler, config: Mapping[str, Any]
-) -> torch.optim.AdamW:
-    cell = config["optimization"]["optimizer"]
+def _trainable_groups(
+    compiler: SharedNativeFactorCompiler,
+) -> tuple[tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     ordinary = []
     scale_and_video = []
     for name, parameter in compiler.named_parameters():
@@ -170,9 +177,22 @@ def _optimizer(
         destination.append(parameter)
     if not ordinary or not scale_and_video:
         raise ValueError("G3 optimizer parameter ownership changed")
+    if len({id(value) for value in (*ordinary, *scale_and_video)}) != len(
+        tuple(compiler.parameters())
+    ):
+        raise ValueError("G3 optimizer parameter groups overlap or omit parameters")
+    return tuple(ordinary), tuple(scale_and_video)
+
+
+def _optimizer(
+    selection: tuple[torch.nn.Parameter, ...],
+    scale_and_video: tuple[torch.nn.Parameter, ...],
+    config: Mapping[str, Any],
+) -> torch.optim.AdamW:
+    cell = config["optimization"]["optimizer"]
     return torch.optim.AdamW(
         [
-            {"params": ordinary, "lr": float(cell["peak_lr"])},
+            {"params": selection, "lr": float(cell["peak_lr"])},
             {
                 "params": scale_and_video,
                 "lr": float(cell["scale_and_video_lr"]),
@@ -244,10 +264,26 @@ def _resume_cursor(
     return start, rows
 
 
+def _native_teacher_task_ids(schedule: NaturalProgramSchedule) -> set[int]:
+    output = set()
+    for macro in range(G3_NATIVE_TEACHER_FORMAL_MACROS):
+        for task_id in schedule.training_task_ids(macro):
+            if schedule.sample(task_id, macro).k == 1:
+                output.add(task_id)
+    if len(output) != 50:
+        raise ValueError("G3 formal K1 teacher task coverage changed")
+    return output
+
+
 def prepare_runtime(
-    args: argparse.Namespace, context: DistributedContext
+    args: argparse.Namespace,
+    context: DistributedContext,
+    *,
+    load_native_teachers: bool = False,
 ) -> SharedCompilerRuntime:
     config = load_shared_compiler_config(args.config)
+    if load_native_teachers and config.get("schema_version") != G3_CONFIG_SCHEMA:
+        raise ValueError("G3 training requires the active native-teacher config")
     total, stop, checkpoints = _resolve_runtime(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
     tasks = _tasks(config, args.data_root, args.asset_root)
@@ -289,6 +325,7 @@ def prepare_runtime(
         device=context.device,
     )
     owners = build_target_owners(rank_assets.contract)
+    rank4_contract = derive_pi05_lora_rank(rank_assets.contract, rank=4)
     program = build_frozen_g2_program(
         config,
         asset_root=args.asset_root,
@@ -315,9 +352,10 @@ def prepare_runtime(
     if context.world_size > 1:
         for value in compiler.state_dict().values():
             dist.broadcast(value, src=0)
-    trainable = tuple(compiler.parameters())
+    selection_parameters, scale_video_parameters = _trainable_groups(compiler)
+    trainable = (*selection_parameters, *scale_video_parameters)
     frozen = tuple(policy.parameters()) + tuple(program.parameters())
-    optimizer = _optimizer(compiler, config)
+    optimizer = _optimizer(selection_parameters, scale_video_parameters, config)
     scheduler = _scheduler(
         optimizer, config, total * optimizer_steps_per_macro
     )
@@ -333,6 +371,17 @@ def prepare_runtime(
         expected_task_ids=fit_ids,
         device=context.device,
     )
+    native_teachers = None
+    if load_native_teachers:
+        native_teachers = NativeTeacherStore(
+            authority_path(
+                config, "native_teacher_manifest", asset_root=args.asset_root
+            ),
+            contract=rank4_contract,
+            expected_fit_task_ids=_native_teacher_task_ids(schedule),
+            expected_full_fit_task_ids=fit_ids,
+            device=context.device,
+        )
     video_store = RawTeacherVideoStore(
         tuple(task.writer_authority() for task in tasks),
         frame_stride=int(config["data"]["frame_stride"]),
@@ -373,6 +422,7 @@ def prepare_runtime(
         policy=policy,
         program=program,
         compiler=compiler,
+        native_teacher_store=native_teachers,
         owners=owners,
         total_macros=total,
         checkpoint_macros=checkpoints,
@@ -407,10 +457,13 @@ def prepare_runtime(
         compiler=compiler,
         owners=owners,
         ranks=rank_assets,
-        rank4_contract=derive_pi05_lora_rank(rank_assets.contract, rank=4),
+        rank4_contract=rank4_contract,
         lora=lora,
         effect_banks=effect_banks,
+        native_teachers=native_teachers,
         query_points=query_points,
+        selection_parameters=selection_parameters,
+        scale_video_parameters=scale_video_parameters,
         trainable_parameters=trainable,
         frozen_parameters=frozen,
         optimizer=optimizer,
@@ -501,7 +554,7 @@ def train(args: argparse.Namespace) -> None:
     )
     runtime: SharedCompilerRuntime | None = None
     try:
-        runtime = prepare_runtime(args, context)
+        runtime = prepare_runtime(args, context, load_native_teachers=True)
         started = time.monotonic()
         for macro in range(runtime.start_macro, runtime.stop_after_macro):
             row = run_shared_compiler_macro(runtime, macro, started)
@@ -543,7 +596,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

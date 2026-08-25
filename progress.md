@@ -1,6 +1,7 @@
 # EMBER progress
 
-更新时间：2026-08-25。当前G2 formal authority：clean pushed `main@49e7769c560289623850b729bcf6b645042997d5`。
+更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；G3 v1
+formal authority：clean pushed `main@5140362`的fresh `macro_00000010`。
 
 ## 当前状态
 
@@ -10,8 +11,9 @@
 专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
 active design明确是解释/执行层，不能替代原文。
 
-全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle已经通过，当前进入G2
-Natural Program；没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
+全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle与G2 Natural Program
+均已通过；当前处于G3 shared compiler，v1 macro10已形成根本non-pass证据，正在实现有机制依据的K1 native-teacher修正。没有恢复
+旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
 两条fixed antithetic native probes，再做monotonic canonical alignment与`beta_k=1/K`集合聚合。首轮真实held检查发现把多视频frames
@@ -186,16 +188,25 @@ rank4 effect的learned language-only control，held video/action/reward读取均
 tokenizer与RNG身份、三条video arm的唯一compiler checkpoint、carrier retention、breadth、Goal/Long、full相对language/endpoints及
 same-task retention；shuffled/reversed未进入该Gate。
 
-首个G3 formal checkpoint已从clean detached `5140362`完成macro5/95 updates及完整五臂strict250。正式Gate为non-pass：
-carrier/language/full/endpoints/same-task=`43/42/35/40/44`，full逐task`27/4/4/0/0`、breadth`3/5`、carrier retention
-`28/43`、Goal/Long 0、相对language/endpoints `-7/-5`；仅same-task retention `33/35=94.3%`与全部bank/checkpoint/信息墙检查通过。
-formal report为`runs/analysis/pi05_ecp_shared_compiler_g3_gate_m5_5140362_990557d_20260825/report.json`。
+G3 v1随后从同一clean detached `5140362` fresh训练到macro10/190 updates，并完成同一五臂strict250。正式Gate仍为non-pass：
+carrier/language/full/endpoints/same-task=`43/42/38/39/40`；full逐task为Spatial0 `32`、Spatial9 `2`、Object8 `4`、Goal5 `0`、
+Long6 `0`，breadth`3/5`、carrier retention `32/43`、相对language/endpoints `-4/-1`。仅same-task retention
+`32/38=84.2%`与adapter/checkpoint/配对authority通过；报告为
+`runs/analysis/pi05_ecp_shared_compiler_g3_gate_m10fresh_5140362_4770c5e_20260826/report.json`。shuffled/reversed未使用。
 
-read-only定位显示full与same-task residual cosine为`0.992--0.999`、full相对endpoints已有`38--47%` update差异，但full相对G1可行
-residual cosine仅约`0.001--0.005`；checkpoint attention/scale状态仍接近初始化，且95步含50步warmup。当前把预注册macro10作为
-“欠训练”假设的单一证伪节点，不改科学配置；若closed-loop方向没有显著改善，不自动续到macro20/40，而先修正无条件
-`rms_normalize`放大低置信signed factors或shared mapping supervision。gpu01在exact-resume launch前失联；checkpoint合同锁定
-visible devices/NUMA/affinity，故没有放宽合同或跨节点resume，当前准备在gpu02 p4/p5以同一commit/config/seed/world2 fresh到macro10。
+macro10把“只是warmup后更新不足”证伪：total/global-member/effective-update虽从约`2.381/1.015/0.929`降至
+`2.135/0.926/0.894`，190个optimizer steps却全部触发同一全局gradient clip；macro10 pre-clip median约`10.87`，scale path
+gradient均值约`13.88`，而input/output query约`0.754/1.057`。macro5到10的input/output query-key相对参数变化只有约
+`2.14%/1.70%`，scale组约`14.4%`，且held闭环没有跨suite或方向性跃升。因此不能再靠续到macro20或调LR/seed解释。
+
+独立fit-only K1几何同时排除了“真实native bank不能承载member效果”：6个fit tasks、9个verified members的full-to-native
+update cosine median为`0.7029`，native named/global functional retention median为`0.7855/0.7981`，9个member均有正action benefit；
+full-to-mobile update cosine为`0.9978`。最早失效接口由此确定为shared Program-to-content selection的监督与优化，而不是rank4压缩、
+K1 native span或多视频鲁棒性。当前活动G3修正为fit-only、K1-only的离线native-feasible teacher：对formal40 schedule实际覆盖的
+50个fit tasks/451个task-video条件，把verified member投影到对应真实K1 bank，训练时以detached set-valued responsibilities监督
+共享query/key产生的input/output subspace、paired update direction与独立small-core spectrum。K2/K4严格不读teacher；teacher键和
+factors不进入compiler forward、checkpoint model state或deployment。selection与scale/video使用分离clip预算，首版保持原Program、
+sampler、K、LR、rank、bounded beta和无confidence gate。
 
 owner再次明确G1--G3的分段冻结是组件因果验证，不是Final默认训练模板。组件Gate通过后，G4/Final优先直接联合优化完整Writer并使用
 最小充分loss集合；只有后续机制证据要求时才采用有退出条件的warmup或分段。该建议与当前joint Writer目标一致，具体loss删留仍由
@@ -316,7 +327,8 @@ G1--G5 Gate或架构修正依据。
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
 2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
    Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3 macro5五臂strict250已明确non-pass；下一步在gpu02 fresh完成同一架构的预注册macro10证伪点并复评相同Gate；
+3. G3 v1 macro10五臂strict250已明确non-pass并完成根因定位；下一步封存fit-only K1 native teacher authority，完成真实K1/K2/K4
+   forward/gradient/materialization smoke后，从fresh运行G3 native-teacher shared compiler并复评同一Gate；
 4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

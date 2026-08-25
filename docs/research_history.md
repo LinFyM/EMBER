@@ -365,7 +365,29 @@ macro10训练时标证伪；若closed loop与方向不显著改善，再修改si
 - `runs/analysis/pi05_ecp_shared_compiler_g3_gate_m5_5140362_990557d_20260825/report.json`；
 - 四条新strict250结果分别位于对应`pi05_ecp_shared_compiler_g3_*strict250*20260825/`目录。
 
-## 22. 当前保留结论
+## 22. G3 v1 macro10与fit-native-span定位
+
+clean detached `5140362`按相同v1合同从fresh训练至macro10/190 optimizer updates。五臂paired strict250为
+carrier/language/full/first+final/same-task=`43/42/38/39/40`；full逐task为Spatial0 `32`、Spatial9 `2`、Object8 `4`、
+Goal5 `0`、Long6 `0`，breadth`3/5`、carrier retention `32/43`、相对language/endpoints `-4/-1`，same-task retention
+`32/38=84.2%`。全部bank、single-checkpoint、single-rank16、配对与信息墙authority通过，shuffled/reversed未使用；科学Gate为
+non-pass。该结果只淘汰v1间接functional监督和共享global clip在原训练时标内足以学会shared selection的假设，不淘汰native bank或
+Native-Factor整体。
+
+同一冻结v1训练面显示全部190 steps被global gradient clip，macro10 scale path gradient约比input/output query高一个数量级；
+macro5到10的query-key参数只发生约`1.7--2.1%`相对变化。与此同时，fit-only K1 span diagnostic对6 tasks/9 verified members得到
+full-to-native update cosine median`0.7029`、native named/global functional retention median`0.7855/0.7981`和positive action
+benefit `9/9`。因此后继活动修正转为fit-only K1 native-feasible factor supervision与selection/scale分离clip；它不把task/video/member
+键变成deployment路由，K2/K4不读取teacher，最终结论仍由held closed loop决定。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_fold0_m10fresh_5140362_gpu02p45_r2_20260825/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_gate_m10fresh_5140362_4770c5e_20260826/report.json`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_functional_span_4770c5e_gpu01p27_20260826/aggregate.json`；
+- 三条macro10 video arms位于对应`pi05_ecp_shared_compiler_g3_*strict250*m10fresh*20260826/`目录。
+
+## 23. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -375,7 +397,7 @@ macro10训练时标证伪；若closed loop与方向不显著改善，再修改si
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 23. 证据恢复方式
+## 24. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

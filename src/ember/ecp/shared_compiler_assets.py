@@ -24,7 +24,8 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 
 
-G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v1"
+G3_CONFIG_SCHEMA_V1 = "ember_ecp_shared_compiler_g3_v1"
+G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v2"
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def _checked(path: Path, expected_bytes: int | None = None) -> Path:
 
 def load_shared_compiler_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
+    schema = config.get("schema_version")
     model = config.get("model", {})
     data = config.get("data", {})
     wall = config.get("information_wall", {})
@@ -75,10 +77,8 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
     optimization = config.get("optimization", {})
     profile = config.get("profile_defaults", {})
     formal = config.get("formal_run", {})
-    if (
-        config.get("schema_version") != G3_CONFIG_SCHEMA
-        or config.get("status") != "active_frozen_program_shared_compiler"
-        or model.get("target_owners") != 38
+    common_invalid = (
+        model.get("target_owners") != 38
         or model.get("event_slots") != 8
         or model.get("program_width") != 128
         or model.get("residual_rank") != 4
@@ -103,6 +103,9 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
         or profile.get("allowed_world_sizes") != [1, 2]
         or profile.get("task_pairs") != [[23, 72], [27, 73], [1, 93]]
         or formal.get("allowed_world_sizes") != [1, 2]
+    )
+    v1_invalid = schema == G3_CONFIG_SCHEMA_V1 and (
+        config.get("status") != "historical_frozen_program_shared_compiler_v1"
         or set(losses)
         != {
             "global_member_effect",
@@ -112,7 +115,45 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
             "carrier_preservation",
             "same_task_consistency",
         }
-    ):
+    )
+    teacher = optimization.get("native_teacher", {})
+    optimizer = optimization.get("optimizer", {})
+    v2_invalid = schema == G3_CONFIG_SCHEMA and (
+        config.get("status") != "active_native_teacher_shared_compiler"
+        or "native_teacher_manifest" not in config.get("authorities", {})
+        or teacher.get("K_values") != [1]
+        or teacher.get("member_reduction")
+        != "detached_set_valued_functional_responsibilities"
+        or teacher.get("target_reduction") != "four_families_equal"
+        or teacher.get("selection")
+        != "equal_input_output_subspace_and_update_direction"
+        or teacher.get("scale") != "small_core_singular_spectrum"
+        or teacher.get("scale_video_shared_context_gradient") != "stopped"
+        or teacher.get("K2_K4_tensor_reads") != 0
+        or teacher.get("confidence_gate") is not False
+        or set(losses)
+        != {
+            "global_member_effect",
+            "family_functional",
+            "cross_episode_flow",
+            "native_teacher_selection",
+            "native_teacher_scale",
+            "carrier_preservation",
+            "same_task_consistency",
+        }
+        or not {
+            "selection_gradient_clip_norm",
+            "scale_video_gradient_clip_norm",
+        }
+        <= set(optimizer)
+        or "gradient_clip_norm" in optimizer
+        or wall.get("native_teacher_training_only") is not True
+        or wall.get("native_teacher_deployment_reads") != 0
+        or wall.get("task_video_member_lookup_parameters") is not False
+    )
+    if common_invalid or schema not in {G3_CONFIG_SCHEMA_V1, G3_CONFIG_SCHEMA}:
+        raise ValueError("unsupported G3 shared compiler config")
+    if v1_invalid or v2_invalid:
         raise ValueError("unsupported G3 shared compiler config")
     return config
 

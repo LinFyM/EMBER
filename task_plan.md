@@ -1,12 +1,13 @@
 # EMBER task plan
 
-更新时间：2026-08-25。
+更新时间：2026-08-26。
 
 ## 当前目标
 
-owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle已经通过four-arm strict250 Gate；
-当前进入Phase G2 Natural Program。G1只证明真实native banks与signed pooling存在强rank4 residual，不证明deployment Writer或
-shared Program-to-attention映射成立；单独完成任一阶段仍不代表整体项目goal完成。
+owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
+分别通过对应Gate；当前推进Phase G3 shared compiler的native-teacher修正。G1只证明真实native banks与signed pooling存在强rank4
+residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
+任一阶段仍不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -210,10 +211,17 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   strict250 Gate：carrier/language/full/endpoints/same-task分别为`43/42/35/40/44`，full breadth`3/5`、carrier retention
   `28/43`、Goal/Long均0、相对language/endpoints为`-7/-5`；只有same-task retention `33/35=94.3%`及全部adapter authority检查通过，
   所以macro5明确non-pass。
-- [ ] 不改代码、配置、seed、LR、loss或数据，按原formal schedule把同一架构fresh运行到预注册macro10，检验macro5是否只是
-  warmup后有效更新不足；macro10若没有显著改善shared selection方向与closed-loop Gate，不自动续到macro20/40，先修正
-  signed-pooling置信度/初始化或shared supervision这一最早接口再fresh复评。gpu01在exact-resume launch前失联且run contract锁定
-  visible devices/NUMA/affinity，因此不放宽resume合同，改在gpu02保持world2做唯一fresh macro10候选。
+- [x] 从同一clean detached `5140362`按原合同fresh完成macro10/190 updates及五臂strict250：carrier/language/full/endpoints/
+  same-task=`43/42/38/39/40`，full breadth`3/5`、retention`32/43`、Goal/Long均0、相对language/endpoints为`-4/-1`，仅
+  same-task retention `84.2%`通过；因此“只是macro5 warmup后更新不足”被证伪，没有续到macro20或做超参小扫。
+- [x] 用fit-only、held-gradient 0的K1 native-span诊断定位最早接口：6 tasks/9 members的native update cosine median `0.7029`、
+  named/global functional retention median `0.7855/0.7981`且action benefit `9/9`为正，说明rank4压缩与真实native bank有足够功能容量；
+  v1的全局clip由scale path主导，shared query/key更新不足且没有直接native-feasible selection supervision。
+- [ ] 封存formal40 schedule实际覆盖的50个fit tasks、451个K1 task-video条件和全部verified members的离线native-feasible
+  teacher factors；只保存pre-scale A/B directions、scales与provenance，不保存native banks/free logits/weights，不读取held或Action Meta。
+- [ ] 在保持frozen G2 Program、sampler/K/LR/rank/bounded beta不变的首版修正中：K1以detached set-valued responsibilities监督
+  shared query-key产生的input/output subspace、paired update direction和独立small-core spectrum；K2/K4 teacher tensor reads为0；
+  selection与scale/video各自clip。完成真实K1/K2/K4 forward/gradient/materialization smoke后fresh训练并复评相同五臂Gate。
 
 ### G4 Joint Writer
 

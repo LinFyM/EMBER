@@ -352,6 +352,31 @@ read-only几何把最早接口定位在Program到native signed selection：对�
 退回carrier。若macro10仍近正交、full不优于language/endpoints，就应在任何macro20续训前修正signed-factor置信度/初始化，或以fit-task
 可行native selection提供更直接的shared mapping supervision；不能靠继续同一路径或调loss数字掩盖。
 
+### 29. G3 macro10证伪欠训练解释，最早接口是shared native selection supervision
+
+同一clean detached `5140362`从fresh训练至macro10/190 updates；五臂paired strict250的
+carrier/language/full/first+final/same-task=`43/42/38/39/40`。full逐task为Spatial0 `32`、Spatial9 `2`、Object8 `4`、
+Goal5 `0`、Long6 `0`；breadth`3/5`、carrier retention `32/43`、相对language/endpoints `-4/-1`，只有same-task
+retention `32/38=84.2%`和全部authority检查通过。相对macro5的`35`只增加3，仍无Goal/Long且不优于任何主要control，故预注册
+“有效更新时标不足”解释已被closed-loop证伪，不能续训或用内部loss替代Gate。
+
+训练记录进一步定位了原因：total/global-member/effective-update从约`2.381/1.015/0.929`降到`2.135/0.926/0.894`，但全部
+190 steps都触发同一个global clip；macro10 pre-clip norm median约`10.87`，scale gradient均值约`13.88`，input/output query
+分别约`0.754/1.057`。macro5到10的input/output query-key相对变化仅`2.14%/1.70%`，而scale组约`14.4%`。所以v1把间接
+mobile functional target、selection与scale混在一个梯度预算中，scale path持续吞噬shared content selection的有效更新。
+
+独立fit-only K1 functional-span证据排除了更早的容量失败：6 tasks/9 verified members的full-to-mobile update cosine median
+`0.9978`，mobile named-effect retention median`0.9892`；投影到对应真实K1 native bank后，update cosine median仍为`0.7029`，
+named/global functional retention median为`0.7855/0.7981`，positive action benefit为`9/9`。这不能证明held shared mapping，
+但证明真实native X/Y span能保留强rank4 member功能；最早失效接口是Program-query到native-key的共享选择映射缺少直接可达监督。
+
+因此首个有机制依据的修正不改Program、sampler、K、LR、rank或bounded beta，也不先加confidence：离线对formal40实际出现的K1
+fit-task/video/member组合做稳定native投影，只封存pre-scale directions与scales。K1训练用detached set-valued functional
+responsibilities选择member，再以gauge-invariant input/output subspace、paired update direction及独立small-core spectrum监督共享
+query/key和scale；selection与scale/video分开clip。K2/K4严格不读teacher，继续只承担functional、flow、carrier、same-task与
+multi-video职责。该teacher是fit-only training label，不是task/frame参数表，不进入deployment或checkpoint model state；其通过也仍须
+由held5五臂closed loop证明shared mapping。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

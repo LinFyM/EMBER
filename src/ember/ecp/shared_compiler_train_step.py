@@ -26,11 +26,14 @@ from ember.ecp.shared_compiler_data import (
 from ember.ecp.shared_compiler_effects import (
     SharedCompilerEffectBank,
     carrier_preservation_loss,
-    effective_update_loss,
     member_effect_losses,
     response_consistency_loss,
 )
 from ember.ecp.shared_compiler_functional import cross_episode_flow_loss
+from ember.ecp.shared_compiler_native_teacher import (
+    NativeTeacherLoss,
+    native_teacher_supervision_loss,
+)
 from ember.ecp.stage0_train_step import _gather_records, _reduce_gradients
 from ember.pi05_lora import derive_pi05_lora_rank
 
@@ -44,11 +47,33 @@ class SharedCompilerTaskLoss:
     family_functional: torch.Tensor
     member_flow_response: torch.Tensor
     cross_episode_flow: torch.Tensor
-    effective_update: torch.Tensor
+    native_teacher_selection: torch.Tensor
+    native_teacher_scale: torch.Tensor
     carrier_preservation: torch.Tensor
     same_task_consistency: torch.Tensor
     action_response: torch.Tensor
     total: torch.Tensor
+
+
+def _clip_parameter_groups(
+    *,
+    selection_parameters: Sequence[torch.nn.Parameter],
+    scale_video_parameters: Sequence[torch.nn.Parameter],
+    optimizer: Mapping[str, Any],
+) -> dict[str, float]:
+    norms = {
+        "selection": torch.nn.utils.clip_grad_norm_(
+            selection_parameters,
+            float(optimizer["selection_gradient_clip_norm"]),
+        ),
+        "scale_video": torch.nn.utils.clip_grad_norm_(
+            scale_video_parameters,
+            float(optimizer["scale_video_gradient_clip_norm"]),
+        ),
+    }
+    if not all(bool(torch.isfinite(value)) for value in norms.values()):
+        raise RuntimeError("non-finite G3 grouped gradient")
+    return {name: float(value) for name, value in norms.items()}
 
 
 def _different_sample(
@@ -170,6 +195,7 @@ def _task_record(
     metrics: Mapping[str, Any],
     loss: SharedCompilerTaskLoss,
     responsibilities: torch.Tensor,
+    teacher_metrics: Mapping[str, Any],
 ) -> dict[str, Any]:
     beta = video_weights.detach().float()
     return {
@@ -189,7 +215,64 @@ def _task_record(
         "video_weights": beta.tolist(),
         "maximum_video_weight": float(beta.max()),
         "maximum_uniform_deviation": float((beta - 1.0 / sample.k).abs().max()),
+        **teacher_metrics,
         **metrics,
+    }
+
+
+def _native_teacher_loss(
+    runtime: SharedCompilerRuntime,
+    *,
+    task_id: int,
+    sample: NaturalProgramSample,
+    output: Any,
+    bank: SharedCompilerEffectBank,
+    responsibilities: torch.Tensor,
+) -> tuple[NativeTeacherLoss, dict[str, Any]]:
+    if runtime.native_teachers is None:
+        raise RuntimeError("G3 training did not load its native teacher authority")
+    before = runtime.native_teachers.tensor_reads
+    teachers = runtime.native_teachers.lookup_members(
+        authority_id=task_id,
+        k=sample.k,
+        video_demo=sample.video_demos[0] if sample.k == 1 else None,
+        member_names=bank.member_names,
+    )
+    tensor_reads = runtime.native_teachers.tensor_reads - before
+    if teachers is None:
+        zero = output.residual.scales.new_zeros(())
+        loss = NativeTeacherLoss(
+            total=zero,
+            selection=zero,
+            input_subspace=zero,
+            output_subspace=zero,
+            update_direction=zero,
+            spectrum_scale=zero,
+        )
+        member_count = 0
+    else:
+        weights = runtime.config["optimization"]["loss_weights"]
+        loss = native_teacher_supervision_loss(
+            student_a_directions=output.input_directions,
+            student_b_directions=output.output_directions,
+            student_scales=output.residual.scales,
+            teachers=teachers,
+            owners=runtime.owners,
+            member_weights=responsibilities,
+            target_weights=bank.family_weights,
+            selection_weight=float(weights["native_teacher_selection"]),
+            spectrum_weight=float(weights["native_teacher_scale"]),
+        )
+        member_count = len(teachers)
+    if (sample.k == 1) != (member_count > 0) or (
+        sample.k != 1 and tensor_reads != 0
+    ):
+        raise RuntimeError("G3 native teacher K boundary changed")
+    return loss, {
+        **loss.metrics(),
+        "native_teacher_member_lookups": member_count,
+        "native_teacher_tensor_reads": tensor_reads,
+        "native_teacher_K1_only": True,
     }
 
 
@@ -219,11 +302,12 @@ def _run_task(
         macro=macro,
         complete=complete,
     )
-    update, _ = effective_update_loss(
-        candidate_state=residual,
+    teacher, teacher_metrics = _native_teacher_loss(
+        runtime,
+        task_id=task_id,
+        sample=sample,
+        output=output,
         bank=bank,
-        contract=runtime.rank4_contract,
-        s_ref=runtime.ranks.s_ref,
         responsibilities=member.responsibilities,
     )
     carrier = carrier_preservation_loss(responses[0], bank)
@@ -232,7 +316,7 @@ def _run_task(
         float(weights["global_member_effect"]) * member.global_effect
         + float(weights["family_functional"]) * member.family_functional
         + float(weights["cross_episode_flow"]) * flow
-        + float(weights["effective_update"]) * update
+        + teacher.total
         + float(weights["carrier_preservation"]) * carrier
     )
     if not bool(torch.isfinite(main_total)):
@@ -277,7 +361,8 @@ def _run_task(
         family_functional=member.family_functional.detach(),
         member_flow_response=member.member_flow_response.detach(),
         cross_episode_flow=flow.detach(),
-        effective_update=update.detach(),
+        native_teacher_selection=teacher.selection.detach(),
+        native_teacher_scale=teacher.spectrum_scale.detach(),
         carrier_preservation=carrier.detach(),
         same_task_consistency=same.detach(),
         action_response=member.action_response.detach(),
@@ -291,6 +376,7 @@ def _run_task(
         metrics={**metrics, **flow_metrics},
         loss=loss,
         responsibilities=responsibilities,
+        teacher_metrics=teacher_metrics,
     )
 
 
@@ -330,10 +416,11 @@ def run_shared_compiler_optimizer_step(
         probe_norms[name] = float(gradient.float().norm())
     if min(probe_norms.values()) <= 0.0:
         raise RuntimeError("G3 shared query or scale path has zero gradient")
-    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
-    gradient_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
-    if not bool(torch.isfinite(gradient_norm)):
-        raise RuntimeError(f"non-finite G3 gradient at macro {macro}")
+    gradient_group_norms = _clip_parameter_groups(
+        selection_parameters=runtime.selection_parameters,
+        scale_video_parameters=runtime.scale_video_parameters,
+        optimizer=runtime.config["optimization"]["optimizer"],
+    )
     runtime.optimizer.step()
     runtime.scheduler.step()
     runtime.optimizer_steps += 1
@@ -352,7 +439,7 @@ def run_shared_compiler_optimizer_step(
         "global_task_count": 2,
         "role_counts": role_counts,
         "gradient_probe_norms": probe_norms,
-        "gradient_norm_before_clip": float(gradient_norm),
+        "gradient_group_norms_before_clip": gradient_group_norms,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "step_seconds": time.monotonic() - tick,
     }, task_ids

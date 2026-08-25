@@ -90,7 +90,7 @@ def inspect_static_task_lora_bank(
             and len(materialization_commit) == 40
             and isinstance(shared_contract, Mapping)
             and shared_contract.get("schema_version")
-            == "ember_ecp_shared_compiler_g3_run_v1"
+            == "ember_ecp_shared_compiler_g3_run_v2"
             and shared_contract.get("stage") == "g3_shared_compiler"
             and shared_contract.get("mode") == "formal"
             and condition.get("name") == G3_STATIC_ARMS[arm]

@@ -43,6 +43,8 @@ class SharedCompilerVideo:
 @dataclass(frozen=True)
 class SharedCompilerOutput:
     residual: NativeFactorResidual
+    input_directions: tuple[torch.Tensor, ...]
+    output_directions: tuple[torch.Tensor, ...]
     video_weights: torch.Tensor
     frame_measures: tuple[torch.Tensor, ...]
 
@@ -423,7 +425,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         count = len(videos)
         if count == 1:
             return owner_context.new_ones(1)
-        aggregate = owner_context.mean(0)
+        # Scale/video heads own only their explicit heads.  Their loss path must
+        # not re-enter the shared selection context and consume its clip budget.
+        aggregate = owner_context.detach().mean(0)
         rows = []
         for video in videos:
             local_process = video.local_process.float().mean((0, 1))
@@ -484,9 +488,10 @@ class SharedNativeFactorCompiler(torch.nn.Module):
 
         pooled = tuple(pool(video) for video in videos)
         beta = self._video_weights(program, videos, owner_context)
-        scale_logits = self.scale_head(rank_context).squeeze(-1)
+        scale_logits = self.scale_head(rank_context.detach()).squeeze(-1)
         scales = s_ref[:, None].to(scale_logits) * torch.tanh(scale_logits)
-        a_values = []
+        a_directions = []
+        b_directions = []
         b_values = []
         for target in range(len(self.owners)):
             a = sum(
@@ -497,12 +502,17 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 beta[index] * value[1][target]
                 for index, value in enumerate(pooled)
             )
-            a_values.append(rms_normalize(a))
-            b_values.append(rms_normalize(b) * scales[target, :, None])
+            a_direction = rms_normalize(a)
+            b_direction = rms_normalize(b)
+            a_directions.append(a_direction)
+            b_directions.append(b_direction)
+            b_values.append(b_direction * scales[target, :, None])
         return SharedCompilerOutput(
             residual=NativeFactorResidual(
-                a=tuple(a_values), b=tuple(b_values), scales=scales
+                a=tuple(a_directions), b=tuple(b_values), scales=scales
             ),
+            input_directions=tuple(a_directions),
+            output_directions=tuple(b_directions),
             video_weights=beta,
             frame_measures=tuple(value[2] for value in pooled),
         )

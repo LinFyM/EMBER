@@ -375,7 +375,19 @@ logits确由共享Program query与candidate content计算而非task/frame查表�
 `beta_k`或其他bounded K correction；参数化必须防止单条video覆盖其余videos，具体形式由G2结果决定，不回写G1。
 
 loss：whole-trajectory single-member equivalence；q/v/action-in/action-out四family等权的functional loss；cross-episode action flow；
-sensitivity-normalized mobile update辅助；carrier preservation；same-task video functional consistency。
+K1 native-feasible mapping supervision；carrier preservation；same-task video functional consistency。K1 teacher只来自fit-task当前真实
+native bank中对verified member rank4 residual的离线投影，training loader可用`(authority_id, video_demo, member)`定位标签，但这些键、
+teacher factors及member identity都不进入compiler forward、checkpoint model state或deployment。teacher只保存pre-scale A/B directions、
+scales与provenance，不保存native banks、free logits或weights；cache miss必须hard error，不能在线投影或回退mobile target。
+
+K1 selection loss以input/output subspace和paired low-rank update direction等权构成，student scale在selection分支stop-gradient；独立
+small-core singular-spectrum loss只更新scale，student directions在该分支stop-gradient。多个verified members仍由set-valued functional
+critic的detached whole-trajectory responsibilities选择，不平均不兼容members。K2/K4不读取teacher，也不施加未投影mobile参数目标，
+继续承担functional、cross-episode flow、carrier preservation、same-task与bounded multi-video组合职责。shared selection/query/key/context
+和scale/video reliability使用独立gradient-clip预算，防止scale梯度吞噬selection更新；scale/video heads的输入对shared selection
+context stop-gradient，使两个clip组具有真实互斥的parameter owner。首版保持原sampler、LR、K、rank、bounded beta、
+`rms_normalize`和scale初始化，不加入confidence gate；只有teacher方向已在fit K1明显学会、而闭环仍被低置信随机residual破坏时，才以
+独立机制证据重开confidence。
 
 held5门比较carrier、learned language-only、full、first+final、same-task-other。继续条件：full至少60/250、breadth至少4/5、保留
 carrier至少33/43、Goal或Long至少一个非零、full相对language-only与first+final各净增至少5、same-task retention至少80%。

@@ -265,7 +265,7 @@ def test_g3_static_bank_accepts_only_matching_materialized_condition(
         "training_commit": "a" * 40,
         "materialization_commit": "b" * 40,
         "shared_run_contract": {
-            "schema_version": "ember_ecp_shared_compiler_g3_run_v1",
+            "schema_version": "ember_ecp_shared_compiler_g3_run_v2",
             "stage": "g3_shared_compiler",
             "mode": "formal",
         },

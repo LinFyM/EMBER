@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_shared_compiler_g3_v1",
-  "status": "historical_frozen_program_shared_compiler_v1",
+  "schema_version": "ember_ecp_shared_compiler_g3_v2",
+  "status": "active_native_teacher_shared_compiler",
   "authorities": {
     "g2_config": "configs/pi05_ecp_natural_program_g2_v1.json",
     "g2_program_checkpoint": "runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/checkpoints/macro_00000020",
@@ -20,7 +20,8 @@
     "target_step1000_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_r3_1362d15_20260808/results.json",
     "target_step2000_results": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808/results.json",
     "meta_verified_occupancy": "runs/outputs/pi05_ecp_stage1_mdco_nonheld_occupancy_fedd871_gpu02p01237_r3_20260823/results.json",
-    "shared_effect_bank": "runs/analysis/pi05_ecp_shared_compiler_g3_effect_bank_37aca5f_gpu01p123456_20260825/manifest.json"
+    "shared_effect_bank": "runs/analysis/pi05_ecp_shared_compiler_g3_effect_bank_37aca5f_gpu01p123456_20260825/manifest.json",
+    "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json"
   },
   "fold": {
     "meta_held_fold": 0,
@@ -62,6 +63,16 @@
     "functional_query_count": 4,
     "functional_policy_microbatch_size": 2,
     "denoising_steps": 10,
+    "native_teacher": {
+      "K_values": [1],
+      "member_reduction": "detached_set_valued_functional_responsibilities",
+      "target_reduction": "four_families_equal",
+      "selection": "equal_input_output_subspace_and_update_direction",
+      "scale": "small_core_singular_spectrum",
+      "scale_video_shared_context_gradient": "stopped",
+      "K2_K4_tensor_reads": 0,
+      "confidence_gate": false
+    },
     "optimizer": {
       "name": "AdamW",
       "peak_lr": 0.0001,
@@ -69,7 +80,8 @@
       "betas": [0.9, 0.95],
       "eps": 1e-8,
       "weight_decay": 0.01,
-      "gradient_clip_norm": 1.0
+      "selection_gradient_clip_norm": 1.0,
+      "scale_video_gradient_clip_norm": 1.0
     },
     "scheduler": {
       "kind": "linear_warmup_cosine_decay",
@@ -80,7 +92,8 @@
       "global_member_effect": 1.0,
       "family_functional": 1.0,
       "cross_episode_flow": 1.0,
-      "effective_update": 0.25,
+      "native_teacher_selection": 1.0,
+      "native_teacher_scale": 1.0,
       "carrier_preservation": 0.1,
       "same_task_consistency": 0.25
     }
@@ -109,12 +122,15 @@
   },
   "information_wall": {
     "deployment_inputs": ["exact language", "same-task action-hidden internally ordered videos"],
-    "training_only": ["fit-task actions", "verified successful member effects", "sampler task ownership"],
+    "training_only": ["fit-task actions", "verified successful member effects", "native-feasible K1 teacher factors", "sampler task ownership"],
     "forbidden_deployment": ["actions", "state", "reward", "terminal", "task ID", "filename", "policy outcome"],
     "held_gradient_tasks": 0,
     "action_meta_installed": false,
     "task_or_frame_lookup_logits": false,
     "second_adapter_deployed": false,
-    "shuffled_or_reversed_use": false
+    "shuffled_or_reversed_use": false,
+    "native_teacher_training_only": true,
+    "native_teacher_deployment_reads": 0,
+    "task_video_member_lookup_parameters": false
   }
 }

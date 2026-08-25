@@ -210,7 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v2.json",
     )
     parser.add_argument(
         "--gate-config",

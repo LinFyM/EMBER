@@ -186,7 +186,7 @@ def build_g3_gate_report(
 ) -> dict[str, Any]:
     gate = load_g3_gate_config(config_path.resolve())
     training = load_shared_compiler_config(
-        (asset_root / gate["training_config"]).resolve()
+        (REPO_ROOT / gate["training_config"]).resolve()
     )
     target_manifest = read_json(
         authority_path(training, "target_manifest", asset_root=asset_root)

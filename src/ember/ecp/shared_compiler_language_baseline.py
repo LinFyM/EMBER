@@ -70,7 +70,7 @@ def materialize_language_baseline(args: argparse.Namespace) -> dict[str, Any]:
     config = load_shared_compiler_config(args.config)
     gate = load_g3_gate_config(args.gate_config)
     if (
-        args.config != (args.asset_root / gate["training_config"]).resolve()
+        args.config != (REPO_ROOT / gate["training_config"]).resolve()
         or args.effect_bank_root
         != authority_path(config, "shared_effect_bank", asset_root=args.asset_root)
     ):

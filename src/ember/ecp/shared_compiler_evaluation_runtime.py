@@ -267,7 +267,7 @@ def prepare_g3_materialization_runtime(args: Any) -> G3MaterializationRuntime:
         raise ValueError("formal G3 materialization requires clean detached authority")
     config = load_shared_compiler_config(args.config)
     gate = load_g3_gate_config(args.gate_config)
-    if args.config != (args.asset_root / gate["training_config"]).resolve():
+    if args.config != (REPO_ROOT / gate["training_config"]).resolve():
         raise ValueError("G3 materializer training config changed")
     seed_everything(int(config["optimization"]["seed"]), context)
     expected_checkpoint = authority_path(

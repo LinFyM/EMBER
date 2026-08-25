@@ -204,13 +204,16 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   per-video单位measure、K=1 identity、K=4置换不变和无task/frame free logits均已有定向回归；真实GPU机制smoke仍属于下一项。
 - [x] 完成最小真实forward/gradient/materialization、真实cross-episode action-flow、same-task consistency、长K4显存与信息墙检查；
   三步profile均exit0，Action Meta 0，source/Program trainable 0，唯一rank16被policy实际消费。
+- [x] 接通冻结checkpoint的held5 `correct_full/first_final/same_task_other`静态rank16物化、fit75 learned language-only control和
+  paired five-arm Gate report；language control只用frozen `P_lang`映射fit-task verified rank4 effect，不读取held video/action/reward。
 - [ ] 从clean pushed detached commit做functional formal和held5 strict250 Gate。
 
 ### G4 Joint Writer
 
-解冻全部Writer、冻结backbone/carrier/experts；先functional warmup，再用student visited states上的verified short continuation筛选有效
-expert members。至少两个train24 folds要求recovery`>=0.40`、breadth5/5、Goal/Long均非零、carrier retention`>=75%`、same-task
-retention`>=85%`和相邻checkpoint稳定。
+解冻全部Writer、冻结backbone/carrier/experts；默认直接联合优化已通过组件Gate的完整Writer，并优先保留支撑闭环因果问题的最小loss
+集合。只有真实机制证据表明需要时才使用有退出条件的functional warmup；随后可在student visited states上用verified short
+continuation筛选有效expert members。至少两个train24 folds要求recovery`>=0.40`、breadth5/5、Goal/Long均非零、carrier
+retention`>=75%`、same-task retention`>=85%`和相邻checkpoint稳定。
 
 ### G5 Structured outer credit（条件阶段）
 
@@ -220,7 +223,9 @@ retention`>=85%`和相邻checkpoint稳定。
 
 ### Final fresh与正式评测
 
-使用全部71 meta+train24，role仍50/50；fresh carrier -> Program -> frozen-Program compiler -> joint Writer -> 仅在通过时outer。
+使用全部71 meta+train24，role仍50/50；fresh初始化已验证组件后直接做完整Writer joint training，G1--G3的冻结分段只作架构因果
+验证，不机械重演为最终训练流程。若联合训练证据要求短暂分段预热，必须登记最早失效接口与退出条件；loss默认从最小充分集合开始，
+仅在closed-loop或明确机制证据支持时增加。只有base joint通过时才启用已验证的outer。
 validation8只比较三个预注册相邻checkpoints；资格arm先跑correct/same-task/language/first+final。冻结selected后补完整controls，最后才跑
 shuffled/reversed；方法完全冻结后只打开Test8一次。
 

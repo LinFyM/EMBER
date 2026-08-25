@@ -46,6 +46,7 @@ def pack_shared_compiler_videos(
     video_store: RawTeacherVideoStore,
     query_points: int,
     device: torch.device,
+    view: str = "full",
 ) -> PackedSharedCompilerVideos:
     """Load only authorized action-hidden videos for frozen Pass A/B."""
 
@@ -53,7 +54,7 @@ def pack_shared_compiler_videos(
         video_store.load(task.authority_id, demo) for demo in sample.video_demos
     )
     frames, indices, raw_counts, offsets, counts = pack_ordered_teacher_videos(
-        videos, view="full", device=device
+        videos, view=view, device=device
     )
     return PackedSharedCompilerVideos(
         frames=frames,
@@ -73,7 +74,7 @@ def pack_shared_compiler_videos(
             "K": sample.k,
             "video_demos": list(sample.video_demos),
             "action_demos_reserved": list(sample.action_demos),
-            "view": "full",
+            "view": view,
             "sampled_frames": counts,
             "raw_frame_counts": [video.raw_frame_count for video in videos],
         },

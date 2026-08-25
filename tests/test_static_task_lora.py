@@ -14,6 +14,7 @@ from ember.ecp.g1_evaluation import (
 )
 from ember.eval_adapters import validate_episode_adapter_fields
 from ember.lora import identity_lora_state
+from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.static_task_lora import (
     STATIC_TASK_LORA_EPISODE_SCHEMA,
@@ -205,4 +206,198 @@ def test_g1_evaluation_bank_rejects_mixed_commit_or_mechanism() -> None:
     with pytest.raises(ValueError, match="scientific run contracts"):
         _single_training_authority(
             ((row, "a" * 40, shared), (row, "a" * 40, changed_shared))
+        )
+
+
+def test_g3_static_bank_accepts_only_matching_materialized_condition(
+    tmp_path: Path,
+) -> None:
+    lora_path = ROOT / "configs/pi05_lora_v1.json"
+    lora = load_pi05_lora_contract(lora_path)
+    checkpoint = tmp_path / "adapters/task_00"
+    checkpoint.mkdir(parents=True)
+    adapter_path = checkpoint / "adapter.safetensors"
+    save_file(identity_lora_state(lora), str(adapter_path))
+    checkpoint_manifest = {
+        "schema_version": "ember_ecp_shared_compiler_g3_materialized_adapter_v1",
+        "condition": "correct_full",
+        "compiler_macro": 5,
+        "authority_id": 90,
+        "global_task_id": 0,
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "single_complete_rank16": True,
+    }
+    checkpoint_manifest_path = checkpoint / "manifest.json"
+    checkpoint_manifest_path.write_text(
+        json.dumps(checkpoint_manifest), encoding="utf-8"
+    )
+    row = {
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "natural_program_authority_id": 90,
+        "global_task_id": 0,
+        "language": "exact language",
+        "condition": "correct_full",
+        "compiler_macro": 5,
+        "checkpoint": str(checkpoint),
+        "checkpoint_manifest_bytes": checkpoint_manifest_path.stat().st_size,
+        "adapter_path": str(adapter_path),
+        "adapter_bytes": adapter_path.stat().st_size,
+        "single_complete_rank16": True,
+    }
+    source = {
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "source/checkpoints/step_00001000"),
+        "model_path": str(tmp_path / "source/checkpoints/step_00001000/policy"),
+    }
+    bank = {
+        "schema_version": STATIC_TASK_LORA_MANIFEST_SCHEMA,
+        "status": "sealed",
+        "arm": "ecp_shared_compiler_g3_correct_full",
+        "source": source,
+        "lora_contract": {
+            "path": str(lora_path),
+            "bytes": lora_path.stat().st_size,
+        },
+        "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        "single_complete_rank16": True,
+        "training_commit": "a" * 40,
+        "materialization_commit": "b" * 40,
+        "shared_run_contract": {
+            "schema_version": "ember_ecp_shared_compiler_g3_run_v1",
+            "stage": "g3_shared_compiler",
+            "mode": "formal",
+        },
+        "compiler_checkpoint": {"path": "macro_00000005", "macro": 5},
+        "condition": {
+            "name": "correct_full",
+            "view": "full",
+            "video_demos": [5, 6, 7, 8],
+            "K": 4,
+        },
+        "tasks": [row],
+        "information_wall": {
+            "action_meta_installed": False,
+            "second_adapter_deployed": False,
+            "teacher_video_runtime_reads": 0,
+        },
+    }
+    bank_path = tmp_path / "bank.json"
+    bank_path.write_text(json.dumps(bank), encoding="utf-8")
+    adapter = inspect_static_task_lora_bank(
+        manifest_path=bank_path,
+        source=source,
+        task_keys=(("libero_spatial", 0),),
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+    assert adapter["condition"]["name"] == "correct_full"
+    checkpoint_manifest["condition"] = "first_final"
+    checkpoint_manifest_path.write_text(
+        json.dumps(checkpoint_manifest), encoding="utf-8"
+    )
+    row["checkpoint_manifest_bytes"] = checkpoint_manifest_path.stat().st_size
+    bank["tasks"] = [row]
+    bank_path.write_text(json.dumps(bank), encoding="utf-8")
+    with pytest.raises(Pi05EvaluationError, match="checkpoint authority"):
+        inspect_static_task_lora_bank(
+            manifest_path=bank_path,
+            source=source,
+            task_keys=(("libero_spatial", 0),),
+            evaluation_role="development_train",
+            require_formal=True,
+        )
+
+
+def test_g3_language_bank_requires_zero_video_baseline_contract(
+    tmp_path: Path,
+) -> None:
+    lora_path = ROOT / "configs/pi05_lora_v1.json"
+    lora = load_pi05_lora_contract(lora_path)
+    checkpoint = tmp_path / "adapters/task_00"
+    checkpoint.mkdir(parents=True)
+    adapter_path = checkpoint / "adapter.safetensors"
+    save_file(identity_lora_state(lora), str(adapter_path))
+    checkpoint_manifest = {
+        "schema_version": "ember_ecp_g3_language_only_adapter_v1",
+        "condition": "learned_language_only",
+        "authority_id": 90,
+        "global_task_id": 0,
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "single_complete_rank16": True,
+    }
+    checkpoint_manifest_path = checkpoint / "manifest.json"
+    checkpoint_manifest_path.write_text(
+        json.dumps(checkpoint_manifest), encoding="utf-8"
+    )
+    row = {
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "natural_program_authority_id": 90,
+        "global_task_id": 0,
+        "language": "exact language",
+        "condition": "learned_language_only",
+        "checkpoint": str(checkpoint),
+        "checkpoint_manifest_bytes": checkpoint_manifest_path.stat().st_size,
+        "adapter_path": str(adapter_path),
+        "adapter_bytes": adapter_path.stat().st_size,
+        "single_complete_rank16": True,
+    }
+    source = {
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "source/checkpoints/step_00001000"),
+        "model_path": str(tmp_path / "source/checkpoints/step_00001000/policy"),
+    }
+    bank = {
+        "schema_version": STATIC_TASK_LORA_MANIFEST_SCHEMA,
+        "status": "sealed",
+        "arm": "ecp_shared_compiler_g3_learned_language_only",
+        "source": source,
+        "lora_contract": {
+            "path": str(lora_path),
+            "bytes": lora_path.stat().st_size,
+        },
+        "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        "single_complete_rank16": True,
+        "training_commit": "a" * 40,
+        "materialization_commit": "b" * 40,
+        "shared_run_contract": {
+            "schema_version": "ember_ecp_g3_language_only_baseline_v1",
+            "stage": "g3_learned_language_only",
+            "mode": "formal",
+        },
+        "condition": {
+            "name": "learned_language_only",
+            "view": None,
+            "video_demos": [],
+            "K": 0,
+        },
+        "tasks": [row],
+        "information_wall": {
+            "action_meta_installed": False,
+            "second_adapter_deployed": False,
+            "teacher_video_runtime_reads": 0,
+        },
+    }
+    bank_path = tmp_path / "bank.json"
+    bank_path.write_text(json.dumps(bank), encoding="utf-8")
+    adapter = inspect_static_task_lora_bank(
+        manifest_path=bank_path,
+        source=source,
+        task_keys=(("libero_spatial", 0),),
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+    assert adapter["condition"]["video_demos"] == []
+    bank["condition"]["K"] = 1
+    bank_path.write_text(json.dumps(bank), encoding="utf-8")
+    with pytest.raises(Pi05EvaluationError, match="manifest changed"):
+        inspect_static_task_lora_bank(
+            manifest_path=bank_path,
+            source=source,
+            task_keys=(("libero_spatial", 0),),
+            evaluation_role="development_train",
+            require_formal=True,
         )

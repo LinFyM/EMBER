@@ -93,6 +93,11 @@ joint training -> conditional structured outer credit -> fresh final。每门失
 只有Natural Program、capacity、shared compiler、两fold joint、verified natural on-policy evidence、outer、fresh validation和完整
 controls都完成后仍系统失败，才足以判定现有数据/zero-interaction static-LoRA合同存在根本问题。
 
+owner进一步提醒：G1--G3的冻结与分段训练只服务于逐接口可证伪，不应被机械复制为最终模型的训练范式。组件Gate通过后，G4/Final
+默认应从已验证机制出发直接联合优化完整Writer，并优先采用能支撑闭环因果问题的最小loss集合；只有新证据表明联合训练不稳定或某个
+接口需要单独预热时，才保留有明确退出条件的staged warmup。最终取舍继续以single-checkpoint closed loop为准，而不是以loss数量或
+分段形式本身为目标。
+
 ### 11. Action Meta是后期matched control
 
 当前结果中性，canonical默认关闭。base Writer有明确闭环增量后做matched controls，Stage 0/compiler冻结；只有明确净收益且

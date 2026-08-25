@@ -24,6 +24,16 @@ STATIC_TASK_LORA_KIND = "static_task_lora_bank"
 STATIC_TASK_LORA_MANIFEST_SCHEMA = "ember_pi05_static_task_lora_bank_v1"
 STATIC_TASK_LORA_ADAPTER_SCHEMA = "ember_pi05_static_task_lora_eval_adapter_v1"
 STATIC_TASK_LORA_EPISODE_SCHEMA = "ember_pi05_static_task_lora_episode_v1"
+G3_MATERIALIZED_ADAPTER_SCHEMA = (
+    "ember_ecp_shared_compiler_g3_materialized_adapter_v1"
+)
+G3_STATIC_ARMS = {
+    "ecp_shared_compiler_g3_correct_full": "correct_full",
+    "ecp_shared_compiler_g3_first_final": "first_final",
+    "ecp_shared_compiler_g3_same_task_other": "same_task_other",
+}
+G3_LANGUAGE_ARM = "ecp_shared_compiler_g3_learned_language_only"
+G3_LANGUAGE_ADAPTER_SCHEMA = "ember_ecp_g3_language_only_adapter_v1"
 
 
 def _source_matches(declared: Mapping[str, Any], observed: Mapping[str, Any]) -> bool:
@@ -55,17 +65,57 @@ def inspect_static_task_lora_bank(
     lora_path = Path(str(lora_cell.get("path", ""))).resolve()
     information_wall = manifest.get("information_wall", {})
     arm = str(manifest.get("arm", ""))
-    g1_provenance_valid = True
+    provenance_valid = True
     if arm == "ecp_native_factor_g1_free_code":
         training_commit = manifest.get("training_commit")
         shared_contract = manifest.get("shared_run_contract")
-        g1_provenance_valid = (
+        provenance_valid = (
             isinstance(training_commit, str)
             and len(training_commit) == 40
             and isinstance(shared_contract, Mapping)
             and shared_contract.get("schema_version")
             == "ember_ecp_native_factor_g1_task_run_v1"
             and shared_contract.get("mode") == "formal"
+        )
+    elif arm in G3_STATIC_ARMS:
+        training_commit = manifest.get("training_commit")
+        materialization_commit = manifest.get("materialization_commit")
+        shared_contract = manifest.get("shared_run_contract")
+        condition = manifest.get("condition", {})
+        checkpoint = manifest.get("compiler_checkpoint", {})
+        provenance_valid = (
+            isinstance(training_commit, str)
+            and len(training_commit) == 40
+            and isinstance(materialization_commit, str)
+            and len(materialization_commit) == 40
+            and isinstance(shared_contract, Mapping)
+            and shared_contract.get("schema_version")
+            == "ember_ecp_shared_compiler_g3_run_v1"
+            and shared_contract.get("stage") == "g3_shared_compiler"
+            and shared_contract.get("mode") == "formal"
+            and condition.get("name") == G3_STATIC_ARMS[arm]
+            and int(condition.get("K", -1)) == 4
+            and isinstance(checkpoint.get("path"), str)
+            and int(checkpoint.get("macro", -1)) > 0
+        )
+    elif arm == G3_LANGUAGE_ARM:
+        training_commit = manifest.get("training_commit")
+        materialization_commit = manifest.get("materialization_commit")
+        shared_contract = manifest.get("shared_run_contract")
+        condition = manifest.get("condition", {})
+        provenance_valid = (
+            isinstance(training_commit, str)
+            and len(training_commit) == 40
+            and isinstance(materialization_commit, str)
+            and len(materialization_commit) == 40
+            and isinstance(shared_contract, Mapping)
+            and shared_contract.get("schema_version")
+            == "ember_ecp_g3_language_only_baseline_v1"
+            and shared_contract.get("stage") == "g3_learned_language_only"
+            and shared_contract.get("mode") == "formal"
+            and condition.get("name") == "learned_language_only"
+            and int(condition.get("K", -1)) == 0
+            and condition.get("video_demos") == []
         )
     valid = (
         manifest.get("schema_version") == STATIC_TASK_LORA_MANIFEST_SCHEMA
@@ -78,7 +128,7 @@ def inspect_static_task_lora_bank(
         and information_wall.get("action_meta_installed") is False
         and information_wall.get("second_adapter_deployed") is False
         and information_wall.get("teacher_video_runtime_reads") == 0
-        and g1_provenance_valid
+        and provenance_valid
         and _source_matches(manifest.get("source", {}), source)
         and lora_path.is_file()
         and lora_path.stat().st_size == int(lora_cell.get("bytes", -1))
@@ -107,16 +157,46 @@ def inspect_static_task_lora_bank(
         if not valid_row:
             raise Pi05EvaluationError("static task-LoRA checkpoint changed")
         checkpoint_cell = read_json(checkpoint_manifest)
-        if (
-            checkpoint_cell.get("schema_version")
-            != "ember_ecp_native_factor_g1_checkpoint_v1"
-            or int(checkpoint_cell.get("task_ordinal", -1))
-            != int(row.get("ordinal", -2))
-            or int(checkpoint_cell.get("global_task_id", -1))
-            != int(row.get("global_task_id", -2))
-            or int(checkpoint_cell.get("step", -1)) != int(row.get("step", -2))
-            or checkpoint_cell.get("single_complete_rank16") is not True
-        ):
+        g1_checkpoint = (
+            arm not in {*G3_STATIC_ARMS, G3_LANGUAGE_ARM}
+            and checkpoint_cell.get("schema_version")
+            == "ember_ecp_native_factor_g1_checkpoint_v1"
+            and int(checkpoint_cell.get("task_ordinal", -1))
+            == int(row.get("ordinal", -2))
+            and int(checkpoint_cell.get("global_task_id", -1))
+            == int(row.get("global_task_id", -2))
+            and int(checkpoint_cell.get("step", -1)) == int(row.get("step", -2))
+            and checkpoint_cell.get("single_complete_rank16") is True
+        )
+        g3_checkpoint = (
+            arm in G3_STATIC_ARMS
+            and checkpoint_cell.get("schema_version")
+            == G3_MATERIALIZED_ADAPTER_SCHEMA
+            and checkpoint_cell.get("condition") == G3_STATIC_ARMS[arm]
+            and int(checkpoint_cell.get("authority_id", -1))
+            == int(row.get("natural_program_authority_id", -2))
+            and int(checkpoint_cell.get("global_task_id", -1))
+            == int(row.get("global_task_id", -2))
+            and str(checkpoint_cell.get("suite")) == key[0]
+            and int(checkpoint_cell.get("task_id", -1)) == key[1]
+            and int(checkpoint_cell.get("compiler_macro", -1))
+            == int(row.get("compiler_macro", -2))
+            and checkpoint_cell.get("single_complete_rank16") is True
+        )
+        language_checkpoint = (
+            arm == G3_LANGUAGE_ARM
+            and checkpoint_cell.get("schema_version")
+            == G3_LANGUAGE_ADAPTER_SCHEMA
+            and checkpoint_cell.get("condition") == "learned_language_only"
+            and int(checkpoint_cell.get("authority_id", -1))
+            == int(row.get("natural_program_authority_id", -2))
+            and int(checkpoint_cell.get("global_task_id", -1))
+            == int(row.get("global_task_id", -2))
+            and str(checkpoint_cell.get("suite")) == key[0]
+            and int(checkpoint_cell.get("task_id", -1)) == key[1]
+            and checkpoint_cell.get("single_complete_rank16") is True
+        )
+        if not (g1_checkpoint or g3_checkpoint or language_checkpoint):
             raise Pi05EvaluationError("static task-LoRA checkpoint authority changed")
         state = load_file(str(adapter_path), device="cpu")
         validate_lora_state(state, lora)
@@ -138,7 +218,10 @@ def inspect_static_task_lora_bank(
         "tasks": inspected_rows,
         "information_wall": dict(information_wall),
         "training_commit": manifest.get("training_commit"),
+        "materialization_commit": manifest.get("materialization_commit"),
         "shared_run_contract": manifest.get("shared_run_contract"),
+        "compiler_checkpoint": manifest.get("compiler_checkpoint"),
+        "condition": manifest.get("condition"),
         "content_hash_policy": "disabled_by_owner",
     }
 

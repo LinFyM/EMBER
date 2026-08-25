@@ -14,7 +14,10 @@ from ember.ecp.natural_program_data import (
 from ember.ecp.natural_program_gate import _build_report
 from ember.ecp.natural_program_labels import _predicate_rising
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
-from ember.ecp.natural_program_authority import _pure_native_inventory
+from ember.ecp.natural_program_authority import (
+    _pure_native_inventory,
+    _run_authority_commit,
+)
 from ember.ecp.natural_program_objective import _temporal_residual_mse
 from ember.ecp.natural_program_training import _scheduler
 from ember.ecp.stage0 import ECPVideoEncoderOutput
@@ -91,6 +94,15 @@ def _model(width: int = 8, events: int = 4) -> NaturalProgramModel:
         action_phases=5,
         predicate_slots=3,
     )
+
+
+def test_formal_run_authority_stays_on_its_frozen_commit() -> None:
+    repository = {
+        "commit": "frozen-formal-commit",
+        "authority_commit": "newer-origin-main-tip",
+    }
+    assert _run_authority_commit(repository, "formal") == "frozen-formal-commit"
+    assert _run_authority_commit(repository, "profile") == "newer-origin-main-tip"
 
 
 def test_k1_is_exact_identity_and_k2_is_permutation_invariant() -> None:

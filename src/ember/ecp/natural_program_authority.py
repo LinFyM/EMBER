@@ -26,6 +26,17 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 RUN_SCHEMA = "ember_ecp_natural_program_g2_run_v2"
 
 
+def _run_authority_commit(repository: Mapping[str, Any], mode: str) -> str:
+    # Formal G2 already requires a clean detached commit contained by
+    # origin/main.  Exact resume must keep that frozen authority stable when
+    # origin/main later advances with documentation or other integrated work.
+    return str(
+        repository["commit"]
+        if mode == "formal"
+        else repository["authority_commit"]
+    )
+
+
 def _pure_native_inventory(
     policy: torch.nn.Module, model: torch.nn.Module
 ) -> dict[str, Any]:
@@ -114,7 +125,9 @@ def build_natural_program_run_contract(
         "git": {
             "branch": repository["branch"],
             "commit": repository["commit"],
-            "authority_commit": repository["authority_commit"],
+            "authority_commit": _run_authority_commit(
+                repository, runtime_args.mode
+            ),
         },
         "config_path": str(runtime_args.config),
         "source": dict(source),

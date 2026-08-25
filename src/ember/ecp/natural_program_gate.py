@@ -443,3 +443,4 @@ def evaluate_natural_program_gate(
         return payload[0]
     finally:
         runtime.model.train()
+        runtime.model.encoder.eval()

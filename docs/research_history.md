@@ -223,7 +223,23 @@ loss反而更低。历史结论因此只淘汰当时把`P_lang/P_scene`直接加
 - `runs/outputs/pi05_ecp_natural_program_g2_fold0_m10_141a110_gpu01p123457_r6_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_macro10_endpoint_shortcut_diagnostic_141a110_gpu01p1_20260825/`。
 
-## 14. 当前保留结论
+## 14. G2静态旁路移除后的formal与Stage 0结构侵蚀定位
+
+clean pushed `main@30b98ef`移除静态旁路后，从fresh初始化完成macro10 formal。held20 Gate仍为non-pass：same-task nearer、K1、K4
+与active-event median通过；full相对endpoints改善`-0.0570%`，one-event fraction `0.30`，probe margin `0.65`。
+
+无梯度readout诊断表明event-time weights确实变化，但owner/event内容已经近乎均匀，最终prediction temporal std远低于target；改变
+event query measure不能恢复动态。随后target-held5对照显示初始Stage 0 v3的event/owner relative RMS为`0.06069/0.36992`，G2训练后
+raw encoder降为`0.02601/0.22824`。该轮只淘汰“在G2一开始联合训练Stage 0 observer与Program heads”的实现；后继修正冻结已有
+Stage 0 v3，仅训练新增Program层，待fresh复评后再决定是否需要owner-structured readout修正。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_static_free_fold0_m10_30b98ef_gpu01p123457_r6_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_static_free_macro10_temporal_readout_diagnostic_30b98ef_gpu01p1_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_static_free_macro10_event_grounding_diagnostic_30b98ef_gpu01p1_20260825/`。
+
+## 15. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -233,7 +249,7 @@ loss反而更低。历史结论因此只淘汰当时把`P_lang/P_scene`直接加
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 15. 证据恢复方式
+## 16. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

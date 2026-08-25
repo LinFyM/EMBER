@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 import torch
 
 from ember.ecp.natural_program_data import (
@@ -13,6 +14,7 @@ from ember.ecp.natural_program_data import (
 from ember.ecp.natural_program_gate import _build_report
 from ember.ecp.natural_program_labels import _predicate_rising
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
+from ember.ecp.natural_program_authority import _pure_native_inventory
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 
 
@@ -239,6 +241,25 @@ def test_temporal_heads_have_no_direct_language_or_scene_bypass() -> None:
         second_prediction.scene_predicate_logits,
     )
     assert model.process_fusion[0].in_features == 2 * model.width
+
+
+def test_g2_inventory_requires_the_native_observer_to_remain_frozen() -> None:
+    policy = torch.nn.Linear(2, 2).requires_grad_(False)
+    model = _model().requires_grad_(True)
+    model.encoder.requires_grad_(False).eval()
+
+    inventory = _pure_native_inventory(policy, model)
+    assert inventory["native_observer_trainable_parameter_count"] == 0
+    assert inventory["native_observer_training"] is False
+    assert inventory["natural_program_trainable_parameter_count"] > 0
+
+    model.encoder.requires_grad_(True)
+    with pytest.raises(ValueError, match="trainable frozen authority"):
+        _pure_native_inventory(policy, model)
+
+    model.encoder.requires_grad_(False).train()
+    with pytest.raises(ValueError, match="trainable frozen authority"):
+        _pure_native_inventory(policy, model)
 
 
 def test_sparse_rising_windows_preserve_transitions() -> None:

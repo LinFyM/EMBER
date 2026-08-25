@@ -135,8 +135,15 @@ language/scene，不设次数上限。
   两种fit role各半且与rank/world-size无关的language negatives；action与全部动态标签共享唯一action-episode query index；
 - [x] clean pushed `main@141a110`的macro10 formal与held20 Gate完成；除full-vs-endpoints仅改善`0.0226%`外其它资格项全部通过，
   因而未进入G3；read-only消融把最早接口定位为training decoder的静态旁路，而非native动态捕获。
-- [ ] 移除`P_lang/P_scene`到`P_process` fusion及时序heads的直接加性旁路，保留独立scene head；fresh macro10后复评同一Gate，
-  不从旧checkpoint resume，也不以内部loss代替held Gate。
+- [x] 移除`P_lang/P_scene`到`P_process` fusion及时序heads的直接加性旁路，保留独立scene head；clean pushed
+  `main@30b98ef`的fresh macro10仍non-pass，full相对endpoints为`-0.0570%`，one-event `0.30`、probe margin `0.65`。
+- [x] read-only temporal与event-grounding诊断定位到G2训练侵蚀已有Stage 0 v3结构：初始event/owner relative RMS
+  `0.06069/0.36992`降为raw encoder `0.02601/0.22824`；这不是query-time weighting或静态旁路残留。
+- [x] 冻结Stage 0 v3 observer，只训练新的Program readers/fusion/alignment/diagnostic heads；task92真实K4 smoke确认46/46个新增
+  parameter tensors进入optimizer state、39个encoder tensors保持逐tensor不变，run contract确认native observer/source policy
+  trainable均为0、observer处于eval且Action Meta为0。
+- [ ] 从fresh clean pushed commit进行macro10 formal并复评同一held20 Gate。若仍non-pass，才依据owner entropy与event-token证据
+  修正owner-structured readout，不把两项机制改动混在同一轮。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

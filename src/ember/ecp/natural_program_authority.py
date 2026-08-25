@@ -38,10 +38,21 @@ def _pure_native_inventory(
     policy_trainable = [
         name for name, value in policy.named_parameters() if value.requires_grad
     ]
-    if action_meta_modules or policy_trainable:
-        raise ValueError("G2 accidentally loaded Action Meta or trainable source policy")
+    observer_trainable = [
+        name for name, value in model.encoder.named_parameters() if value.requires_grad
+    ]
+    observer_training = bool(model.encoder.training)
+    if (
+        action_meta_modules
+        or policy_trainable
+        or observer_trainable
+        or observer_training
+    ):
+        raise ValueError(
+            "G2 accidentally loaded Action Meta or a trainable frozen authority"
+        )
     return {
-        "loader": "load_frozen_native_observer_then_train_native_pass_a",
+        "loader": "load_frozen_native_observer_then_train_program_heads",
         "action_meta_argument": None,
         "install_action_meta_lora": False,
         "action_meta_module_instances": action_meta_modules,
@@ -49,6 +60,9 @@ def _pure_native_inventory(
         "action_meta_parameter_count": 0,
         "source_policy_trainable_parameters": policy_trainable,
         "source_policy_trainable_parameter_count": 0,
+        "native_observer_trainable_parameters": observer_trainable,
+        "native_observer_trainable_parameter_count": 0,
+        "native_observer_training": observer_training,
         "natural_program_trainable_parameter_count": sum(
             value.numel() for value in model.parameters() if value.requires_grad
         ),
@@ -159,6 +173,7 @@ def build_natural_program_run_contract(
             "held_roles": ["meta_held", "target_held"],
             "held_task_gradient_count": 0,
             "source_policy_trainable_parameter_count": 0,
+            "native_observer_trainable_parameter_count": 0,
         },
     }
 

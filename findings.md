@@ -215,6 +215,18 @@ clean pushed `main@141a110`的G2 macro10 held20 Gate中，same-task separation�
 seed、训练数据或Gate，也不使用shuffled/reversed。若fresh复评仍失败，下一定位应检查event-token内部时序分离和query-to-event读出，
 不能恢复静态旁路或用无信息超参扫掩盖。
 
+### 20. 静态旁路移除后，最早接口是G2梯度侵蚀已验证的Stage 0 event grounding
+
+clean pushed `main@30b98ef`的static-free fresh macro10仍未通过held20 Gate：full相对endpoints改善`-0.0570%`，one-event
+fraction `0.30`，probe margin `0.65`；same-task、K1、K4和active-event median仍通过。无梯度readout消融显示tau产生的event weights
+已有明显时变，但owner pooling近乎均匀、event tokens彼此接近，最终action预测的temporal std只有`0.00093`，而target为`0.32725`；
+hard-nearest、uniform event measure与mean-repeated process都不能显著改变loss。因此不能把失败归因于某个query核或再调tau。
+
+target-held5的前后对照把最早接口进一步前移：初始Stage 0 v3的event/owner relative RMS为`0.06069/0.36992`，同一observer经G2
+macro10训练后raw值降至`0.02601/0.22824`，fusion后owner仅`0.14837`。也就是说，在新的Program readout尚未学会使用动态前，联合梯度
+先抹平了已有的event/owner结构。首个有证据修正是保留Stage 0 v3为frozen observer，只训练新增Program层；若该隔离仍失败，才用
+owner entropy证据处理owner-structured readout。它不改变数据、slot/width/rank、优化超参、K权重或Gate，也不使用shuffled/reversed。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

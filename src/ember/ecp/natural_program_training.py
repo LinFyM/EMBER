@@ -114,6 +114,8 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         != ["native_process", "native_uncertainty"]
         or config.get("model", {}).get("temporal_head_inputs")
         != ["P_process", "rho", "tau"]
+        or config.get("model", {}).get("native_observer_training")
+        != "frozen_stage0_v3"
         or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
         or config.get("data", {}).get("robustness_for_every_task") is not True
         or int(config.get("objective", {}).get(
@@ -233,6 +235,10 @@ def _load_program_model(
         predicate_slots=int(config["model"]["predicate_slots"]),
     ).to(context.device)
     model.requires_grad_(True)
+    # Stage 0 v3 is an established observer authority.  G2 qualifies the new
+    # Program readers and alignment on top of that fixed evidence instead of
+    # relearning (and potentially erasing) the observer's event grounding.
+    model.encoder.requires_grad_(False).eval()
     return source, source_config, policy, model
 
 
@@ -335,7 +341,11 @@ def prepare_runtime(
     if context.world_size > 1:
         for value in model.state_dict().values():
             dist.broadcast(value, src=0)
-    optimizer = build_stage0_optimizer(model.parameters(), config["optimization"])
+    trainable_parameters = tuple(
+        parameter for parameter in model.parameters() if parameter.requires_grad
+    )
+    frozen_parameters = tuple(policy.parameters()) + tuple(model.encoder.parameters())
+    optimizer = build_stage0_optimizer(trainable_parameters, config["optimization"])
     scheduler = _scheduler(optimizer, config, total)
 
     video_store, action_store, label_store, language_tokens = _open_program_data(
@@ -368,6 +378,7 @@ def prepare_runtime(
         stop=stop,
     )
     model.train()
+    model.encoder.eval()
     torch.cuda.reset_peak_memory_stats(context.device)
     return NaturalProgramRuntime(
         args=args,
@@ -382,8 +393,8 @@ def prepare_runtime(
         language_tokens=language_tokens,
         policy=policy,
         model=model,
-        trainable_parameters=tuple(model.parameters()),
-        frozen_parameters=tuple(policy.parameters()),
+        trainable_parameters=trainable_parameters,
+        frozen_parameters=frozen_parameters,
         optimizer=optimizer,
         scheduler=scheduler,
         tasks_per_rank=(

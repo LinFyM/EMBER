@@ -177,7 +177,9 @@ language/scene，不设次数上限。
 - [x] 只把K>1 monotonic DP改为首尾canonical边界锚定、保留中间stay/skip与既有content/time score；真实K4 profile
   已完成4-video/102-frame forward、backward与optimizer step，active events为2、one-event为0，Action Meta module/parameter均为0，
   source policy与native observer均冻结；全量合同测试`155 passed`。
-- [ ] 从clean pushed commit的detached frozen worktree fresh训练并复评同一held20 Gate；不复用不兼容checkpoint。
+- [x] 从clean pushed `main@c1493a1`的detached frozen worktree fresh训练并exact-resume到macro20/200 updates；held20 Gate全部通过：
+  full相对endpoints改善`22.2047%`，median active events为4、one-event为0，probe为`38/40`，same-task、K1 identity和K4 permutation
+  均为1.0，tau violation仅`0.00357`。冻结`macro_00000020` Program进入G3。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，
@@ -194,6 +196,11 @@ scales和bounded K correction，禁止task/frame查表。依据G2证据可从均
 并防止单条video覆盖其余videos。held5要求full
 `>=60/250`、breadth`>=4/5`、retention`>=33/43`、Goal/Long至少一项非零、相对language和first+final各`+5`、same-task
 retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构版本上限，但无机制差异的小变体不算推进。
+
+- [ ] 以通过G2 Gate的`c1493a1/macro_00000020`为唯一frozen Program authority，先复用G1真实native X/Y capture、四类output banks、
+  action-in native blocks、small-core SVD和rank12+4 materialization；实现共享content-derived query-key signed attention、target scales与
+  由uniform初始化的bounded K correction，不保留task/frame free-logit路径。
+- [ ] 完成最小真实forward/gradient/materialization与信息墙检查后，从clean pushed detached commit做functional formal和held5 strict250 Gate。
 
 ### G4 Joint Writer
 

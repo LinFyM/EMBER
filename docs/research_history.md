@@ -326,7 +326,22 @@ monotonic DP增加首尾canonical边界锚点，保留中间stay/skip与content/
 - `runs/outputs/pi05_ecp_natural_program_g2_cadence_fold0_m10_49e7769_gpu02p0123_r4_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_cadence_macro20_alignment_counterfactual_49e7769_gpu02p5_20260825/`。
 
-## 20. 当前保留结论
+## 20. G2 boundary-anchored Natural Program正式通过
+
+clean pushed `main@c1493a1`只增加monotonic DP首尾canonical边界锚点，从fresh运行到macro10/100 updates，再按相同world4
+topology exact-resume到macro20/200 updates。macro10 held动态增量为`0.8268%`，但event结构已恢复为median 2、one-event 0；
+macro20 held20 Gate全部通过：full/endpoints action+progress loss为`0.28167/0.36207`，相对改善`22.2047%`，probe `38/40`，
+median active events 4、one-event 0、same-task/K1/K4均为1.0，K4 max abs `4.77e-7`，tau violation `0.00357`。
+
+该结果证明旧macro20 non-pass的最早接口是未约束的K>1 alignment path，而非Natural Program动态容量或readout时标。冻结
+`macro_00000020`作为G3唯一Program authority；G3继续验证共享Program-query到native content-key signed attention，不能使用G1
+task-local free logits。
+
+关键artifact：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/`。
+
+## 21. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -336,7 +351,7 @@ monotonic DP增加首尾canonical边界锚点，保留中间stay/skip与content/
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 21. 证据恢复方式
+## 22. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

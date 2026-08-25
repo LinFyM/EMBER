@@ -302,6 +302,17 @@ canonical slot，故不是Stage 0、阈值或总presence mass假象。
 就把K>1恢复为稳定3个active events，并将同一frozen decoder的full增量从`15.82%`略升到`16.47%`。因此当前最小结构修正是
 boundary-anchored monotonic alignment；它不固定事件数，不改变K权重、loss、readout、数据或Gate，必须fresh复评。
 
+### 26. boundary-anchored G2正式通过，冻结Program进入G3
+
+clean pushed `main@c1493a1`只把K>1 monotonic DP的首/末local slot锚到canonical 0/7，保留全部中间stay/skip、content/time score、
+uniform `beta_k=1/K`以及原readout/loss/data/LR/seed/Gate。fresh macro10已将held event指标从旧one-event坍缩修复为median 2、
+one-event 0，但动态增量仅`0.8268%`；同一world4 exact-resume到macro20/200 updates后，full相对endpoints改善达到`22.2047%`，
+probe `38/40`，median active events 4、one-event 0，same-task/K1/K4均通过，tau violation仅`0.00357`，所以G2 Gate正式pass。
+
+这组因果对照同时验证两点：一是旧readout确有可用学习时标，不能因macro10弱信号误判为结构无容量；二是K>1单事件坍缩确由
+未约束首尾的alignment path造成，边界锚定在不固定事件数量的前提下恢复动态资格。G3必须冻结该macro20 Program，只学习共享
+Program-query到native content-key的signed selection；G1 task-local free logits不能进入部署路径。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；
@@ -323,6 +334,8 @@ boundary-anchored monotonic alignment；它不固定事件数，不改变K权重
   task94 action-in-only privileged response`118/250`只用于定位机制，最终pass来自真实native pooling而非该counterfactual。
 - G1 free logits是held-task capacity upper bound；最终shared Program query到content key的attention仍只属于G3，不得从G1代码或结果
   推断deployment Writer已经成立。
+- G2 boundary-anchored `c1493a1/macro20`以`22.2047%` held动态增量、median events 4、one-event 0和完整K/probe/same-task合同通过；
+  它现在是G3唯一frozen Program authority。
 - 旧Writer/realizer/ECP Stage 1已从活动树删除；后续只允许一个canonical Native-Factor implementation surface。
 - formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process路线与约11.6GB可重建主要产物已
   删除，recovery Gate A残留作为历史formal evidence保留，不恢复为当前数据或训练路线。

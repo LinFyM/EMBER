@@ -139,7 +139,11 @@ decoder的full增量从`15.82%`略升到`16.47%`。当前隔离实现只做这�
 readout、loss、数据、K、seed/LR和Gate。全量合同测试为`155 passed`；真实macro0 K4 profile读取4条视频、102个采样帧并完成
 forward/backward/optimizer step，gradient norm与owner-query gradient均finite/nonzero，active events为2、one-event为0，峰值显存约
 `9.97 GB`。run contract实测Action Meta module/parameter均为0，source policy与native observer trainable parameters均为0。
-下一步从clean pushed commit fresh复评，不复用不兼容checkpoint。
+clean pushed `main@c1493a1`随后从fresh训练到macro10/100 updates并按同一world4 topology exact-resume到macro20/200 updates；两段均
+exit 0，metrics/invocations严格为20/2。macro10已把event Gate修复为median 2、one-event 0，但动态增量仅`0.8268%`；macro20 held20
+Gate全部通过：full/endpoints action+progress loss为`0.28167/0.36207`，相对改善`22.2047%`，median active events 4、one-event 0、
+probe `38/40`、same-task 1.0、K1 identity 1.0、K4 permutation 1.0（max abs `4.77e-7`）、tau violation `0.00357`。因此G2的
+最早失效接口确为无边界K>1 alignment，而不是readout容量；当前冻结`macro_00000020` Program并进入G3。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -253,9 +257,10 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 集成并推送boundary-anchored monotonic DP，从clean pushed commit创建detached frozen worktree；
-2. 按同一数据、loss、K、LR/seed、cadence和held20 Gate fresh训练；
-3. 若event non-collapse恢复且动态增量严格超过`10%`，冻结Program进入G3；否则冻结结果并从最早失效接口继续机制分析；
-4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
+1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
+2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
+   Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
+3. G3先完成真实forward/gradient/materialization smoke，再从clean pushed detached commit训练并执行预注册held5 strict250 Gate；
+4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

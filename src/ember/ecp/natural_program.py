@@ -220,11 +220,11 @@ class TemporalProgramDecoder(torch.nn.Module):
     def forward(
         self, program: NaturalProgram, query_times: torch.Tensor
     ) -> NaturalProgramPredictions:
-        owner_context = (
-            program.p_process
-            + program.p_lang[:, None]
-            + program.p_scene[:, None]
-        )
+        # The temporal heads are a G2 mechanism test, so they may only read the
+        # event-bearing Program fields.  Adding P_lang/P_scene to every event
+        # gives the decoder a task/endpoint code that can fit cross-episode
+        # action priors while ignoring the ordered video process entirely.
+        owner_context = program.p_process
         owner_weights = self.owner_score(torch.tanh(owner_context)).squeeze(-1)
         event_tokens = torch.einsum(
             "cej,cejd->ced", owner_weights.softmax(-1), owner_context
@@ -285,7 +285,11 @@ class NaturalProgramModel(torch.nn.Module):
         )
         self.scene_reader = OwnerSceneReader(owners=owners, width=width)
         self.process_fusion = torch.nn.Sequential(
-            torch.nn.Linear(4 * width, 2 * width),
+            # Preserve a static-free process path.  The frozen native process
+            # is already task-grounded by exact language; uncertainty is the
+            # only additional local event field fused here.  P_lang/P_scene
+            # remain available in their own Program fields and the scene head.
+            torch.nn.Linear(2 * width, 2 * width),
             torch.nn.GELU(),
             torch.nn.Linear(2 * width, width),
             torch.nn.LayerNorm(width),
@@ -441,9 +445,6 @@ class NaturalProgramModel(torch.nn.Module):
         process = torch.stack([row.process for row in probes])
         uncertainty = torch.stack([row.uncertainty for row in probes])
         presence = torch.stack([row.presence for row in probes])
-        language = p_lang.index_select(0, video_condition_ids)
-        language = language[:, None].expand(-1, self.event_slots, -1, -1)
-        scene = p_scene[:, None].expand(-1, self.event_slots, -1, -1)
         probe_program = []
         for probe in range(2):
             probe_program.append(
@@ -452,8 +453,6 @@ class NaturalProgramModel(torch.nn.Module):
                         (
                             process[probe],
                             uncertainty[probe],
-                            language,
-                            scene,
                         ),
                         dim=-1,
                     )

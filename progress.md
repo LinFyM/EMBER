@@ -32,10 +32,16 @@ architecture guard无hard violation，全仓库149 tests通过。修正后的真
 peak allocated 18,853,217,280 bytes、84/84 trainable tensors均进入optimizer state、loss/gradient finite；run contract实际记录固定
 role-balanced negatives、每task robustness、Action Meta module/parameter 0及source trainable 0。
 
-最新真实K4 forward/backward smoke完成：84/84 Natural Program trainable parameter tensors均产生optimizer state，gradient norm有限，
-peak allocated为18,853,213,184 bytes；纯Native loader实际记录Action Meta module/parameter 0、source policy trainable 0、held gradient 0。
-下一步是完成diff复核与main集成，从clean pushed detached worktree启动macro10 formal及
-meta-held15+target-held5 Gate。
+clean pushed `main@141a110`的首轮G2 macro10 formal及meta-held15+target-held5 Gate已经完成。same-task nearer为`1.0`、probe
+margin为`0.9`、one-event为`0`、median active events为`6`、K1 exact identity与K4 permutation均通过；唯一non-pass是full相对
+endpoints的action/progress改善仅`0.0226%`，低于`10%` Gate，因此没有进入G3。
+
+read-only held20机制诊断显示，full相对endpoints的`P_process/rho/tau`差异分别是same-task不同视频差异的约`2.20x/13.77x/60.00x`，
+说明最早失效接口不是native动态捕获。相反，decoder action时序标准差仅`0.00060`而target为`0.33789`，清零`P_process`的静态路径
+combined loss反而由`0.39574`降到`0.39088`。当前唯一修正因此移除`P_lang/P_scene`对`P_process` fusion及action/progress等时序heads的
+直接加性旁路；静态scene-only head保持独立。修正后的task92 K4真实forward/backward已完成，84/84 trainable tensors均进入optimizer
+state，gradient有限、peak allocated 18,851,367,936 bytes，Action Meta module/parameter 0且source trainable 0；下一步是集成后fresh
+训练并复评同一held20 Gate。
 
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
@@ -149,10 +155,9 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 完成G2 task-scoped diff与CPU回归，把唯一实现面合并到main并推送；
-2. 从clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后启动macro10 formal；
-3. 在meta-held15+target-held5运行same-task separation、probe stability、event non-collapse、full-vs-endpoints、K1 identity和K4集合
-   置换Gate；失败按最早的native capture、event grounding或owner-specific language/scene接口修正；
+1. 完成G2静态旁路修正的diff复核与CPU回归，把唯一实现面合并到main并推送；
+2. 从新的clean pushed main建立detached frozen worktree，live检查双节点GPU和storage后fresh启动macro10 formal；
+3. 在meta-held15+target-held5复评同一G2 Gate；只有full相对endpoints至少改善10%且其它资格项继续通过才冻结Program并进入G3；
 4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

@@ -200,6 +200,21 @@ formal前复核还定位到两个数据权重接口：辅助robustness/contrast�
 index；不能先经video长度取整再二次映射。label v2同时明确`rising[0]`比较`states[0] -> states[1]`；全量4750 demos中该边界恰无正例，
 所以数值总量仍为7344，但schema必须显式区分，防止未来数据静默改变语义。
 
+### 19. G2首轮non-pass是decoder静态旁路，不是native动态捕获失败
+
+clean pushed `main@141a110`的G2 macro10 held20 Gate中，same-task separation、probe margin、event non-collapse、K1 identity与K4集合
+置换全部通过，但full相对endpoints的action/progress loss只改善`0.0226%`，所以正确结论是G2 non-pass，不能进入G3。
+
+同一checkpoint的无梯度消融提供了最早接口证据：full与endpoints的`P_process/rho/tau`差异相对same-task不同video分别约为
+`2.20x/13.77x/60.00x`，native process确实保留了中间帧信息；但decoder action/progress输出几乎不随query time变化，action时序
+标准差为`0.00060`，而training target为`0.33789`。清零`P_process`后静态路径combined loss由`0.39574`改善到`0.39088`，说明
+`P_lang/P_scene`被重复加到每个event以及直接进入process fusion，使模型能够用task/endpoint code拟合跨episode priors并忽略动态。
+
+因此当前修正只切断这条已证实的静态旁路：`P_process`由native process与native uncertainty形成，时序heads只读
+`P_process/rho/tau`；`P_lang/P_scene`仍按固定schema输出，并只供独立scene relation head读取。它不改变Stage 0、K aggregation、slot/width、
+seed、训练数据或Gate，也不使用shuffled/reversed。若fresh复评仍失败，下一定位应检查event-token内部时序分离和query-to-event读出，
+不能恢复静态旁路或用无信息超参扫掩盖。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

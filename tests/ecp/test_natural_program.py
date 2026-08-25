@@ -12,7 +12,7 @@ from ember.ecp.natural_program_data import (
 )
 from ember.ecp.natural_program_gate import _build_report
 from ember.ecp.natural_program_labels import _predicate_rising
-from ember.ecp.natural_program import NaturalProgramModel
+from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 
 
@@ -189,6 +189,56 @@ def test_alignment_is_monotone_and_two_probe_forward_has_gradients() -> None:
     assert output.predictions.action_phases.shape == (1, 6, 5, 7)
     assert output.predictions.scene_predicate_logits.shape == (1, 2, 3)
     assert any(parameter.grad is not None for parameter in model.parameters())
+
+
+def test_temporal_heads_have_no_direct_language_or_scene_bypass() -> None:
+    torch.manual_seed(5)
+    model = _model()
+    process = torch.randn(1, 4, 38, 8)
+    rho = torch.rand(1, 4)
+    tau = torch.stack(
+        (
+            torch.linspace(0.0, 1.0, 4)[None],
+            torch.full((1, 4), 0.1),
+        ),
+        dim=-1,
+    )
+    sigma = torch.rand_like(process)
+    first = NaturalProgram(
+        p_lang=torch.randn(1, 38, 8),
+        p_scene=torch.randn(1, 38, 8),
+        p_process=process,
+        rho=rho,
+        tau=tau,
+        sigma=sigma,
+    )
+    second = NaturalProgram(
+        p_lang=torch.randn(1, 38, 8),
+        p_scene=torch.randn(1, 38, 8),
+        p_process=process,
+        rho=rho,
+        tau=tau,
+        sigma=sigma,
+    )
+    query_times = torch.linspace(0.0, 1.0, 6)[None]
+    first_prediction = model.decoder(first, query_times)
+    second_prediction = model.decoder(second, query_times)
+
+    for name in (
+        "action_phases",
+        "progress",
+        "rising_logits",
+        "contact_logits",
+        "predicate_logits",
+    ):
+        assert torch.equal(
+            getattr(first_prediction, name), getattr(second_prediction, name)
+        )
+    assert not torch.equal(
+        first_prediction.scene_predicate_logits,
+        second_prediction.scene_predicate_logits,
+    )
+    assert model.process_fusion[0].in_features == 2 * model.width
 
 
 def test_sparse_rising_windows_preserve_transitions() -> None:

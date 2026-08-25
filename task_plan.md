@@ -133,7 +133,10 @@ language/scene，不设次数上限。
 - [x] 真实K4 forward/backward使84/84 trainable parameter tensors进入optimizer state，Action Meta module/parameter为0，峰值约18.85GB；
 - [x] formal前复核已消除rank-local顺序导致的辅助loss不等权：每个task都计算一次speed/crop robustness，contrast对每task使用固定数量、
   两种fit role各半且与rank/world-size无关的language negatives；action与全部动态标签共享唯一action-episode query index；
-- [ ] 从clean pushed detached authority执行macro10 formal，并在meta-held15+target-held5运行同一G2 Gate；non-pass按最早失效接口修正。
+- [x] clean pushed `main@141a110`的macro10 formal与held20 Gate完成；除full-vs-endpoints仅改善`0.0226%`外其它资格项全部通过，
+  因而未进入G3；read-only消融把最早接口定位为training decoder的静态旁路，而非native动态捕获。
+- [ ] 移除`P_lang/P_scene`到`P_process` fusion及时序heads的直接加性旁路，保留独立scene head；fresh macro10后复评同一Gate，
+  不从旧checkpoint resume，也不以内部loss代替held Gate。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

@@ -110,6 +110,10 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         or config.get("model", {}).get("target_owners") != 38
         or config.get("model", {}).get("event_slots") != 8
         or config.get("model", {}).get("program_width") != 128
+        or config.get("model", {}).get("process_fusion_inputs")
+        != ["native_process", "native_uncertainty"]
+        or config.get("model", {}).get("temporal_head_inputs")
+        != ["P_process", "rho", "tau"]
         or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
         or config.get("data", {}).get("robustness_for_every_task") is not True
         or int(config.get("objective", {}).get(

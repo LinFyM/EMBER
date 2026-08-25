@@ -48,7 +48,16 @@
     "action_phases": 10,
     "predicate_slots": 8,
     "max_frames_per_call": 8,
-    "fixed_probe_pair": "stage0_fixed_gaussian_and_exact_antithetic"
+    "fixed_probe_pair": "stage0_fixed_gaussian_and_exact_antithetic",
+    "process_fusion_inputs": [
+      "native_process",
+      "native_uncertainty"
+    ],
+    "temporal_head_inputs": [
+      "P_process",
+      "rho",
+      "tau"
+    ]
   },
   "data": {
     "frame_stride": 5,

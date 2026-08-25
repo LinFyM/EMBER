@@ -207,7 +207,23 @@ Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部G1 chec
 - `runs/outputs/pi05_ecp_native_factor_g1_action_in_groups_held5_formal_31f0053_gpu02p1_20260825/`；
 - `runs/outputs/pi05_ecp_native_factor_g1_action_in_groups_step0_strict250_31f0053_gpu01p234567_r3_20260825/`。
 
-## 13. 当前保留结论
+## 13. G2 Natural Program首轮formal与静态旁路定位
+
+clean pushed `main@141a110`的首轮G2 macro10 formal在meta-held15+target-held5上通过same-task separation、probe stability、event
+non-collapse、K1 exact identity与K4 permutation invariance，但full相对first+final的action/progress loss改善仅`0.0226%`，低于
+`10%`资格门，因此G2 non-pass且未进入G3。
+
+无梯度机制诊断显示full与endpoints的`P_process/rho/tau`已经明显分开，但action/progress预测近乎时间常数，且清零`P_process`后
+loss反而更低。历史结论因此只淘汰当时把`P_lang/P_scene`直接加到每个event、同时注入process fusion的training decoder实现；它不
+淘汰Stage 0 native capture、Natural Program schema或ECP Native-Factor路线。后继修正保留scene-only head，切断动态heads的静态旁路，
+并要求fresh训练后复评同一Gate。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_fold0_m10_141a110_gpu01p123457_r6_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_macro10_endpoint_shortcut_diagnostic_141a110_gpu01p1_20260825/`。
+
+## 14. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -217,7 +233,7 @@ Goal2、Long1、4/5 task高于carrier、carrier retention`35/43`，全部G1 chec
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 14. 证据恢复方式
+## 15. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

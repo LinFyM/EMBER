@@ -145,7 +145,13 @@ class MonotonicCanonicalAligner(torch.nn.Module):
         gap = (destination - source).to(emission.dtype)
         negative = torch.finfo(emission.dtype).min
         transition = (-gap).masked_fill(~allowed, negative).log_softmax(-1)
-        start = emission.new_zeros(canonical_slots).log_softmax(0)
+        # Local and canonical sequences have the same fixed maximum capacity.
+        # Anchor their boundaries while keeping every intermediate stay/skip
+        # path available.  Without the terminal constraints the learned
+        # content score can route every local event through one canonical slot
+        # even though the native observer still exposes a full ordered path.
+        start = emission.new_full((canonical_slots,), negative)
+        start[0] = 0.0
 
         alpha = emission.new_empty(batch, local_slots, canonical_slots)
         alpha[:, 0] = emission[:, 0] + start
@@ -154,7 +160,10 @@ class MonotonicCanonicalAligner(torch.nn.Module):
                 alpha[:, local - 1, :, None] + transition[None], dim=1
             )
 
-        beta = emission.new_zeros(batch, local_slots, canonical_slots)
+        beta = emission.new_full(
+            (batch, local_slots, canonical_slots), negative
+        )
+        beta[:, -1, -1] = 0.0
         for local in range(local_slots - 2, -1, -1):
             beta[:, local] = torch.logsumexp(
                 transition[None]

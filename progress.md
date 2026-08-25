@@ -127,6 +127,20 @@ macro20首次resume在训练前被exact-contract拒绝：旧v2 contract把当时
 用可逆local ref pin通过旧contract后立即恢复`origin/main=e952823`。主线窄修复现让formal contract固定记录自身detached commit，
 profile仍记录当前authority tip，并以定向回归保护；它不改变模型、数据、优化或Gate。
 
+同一run随后已成功exact-resume到macro20/200 updates并完成held20 Gate。full相对endpoints改善从macro10的`0.3080%`跃升到
+`8.6878%`，probe margin由`13/40`升到`36/40`，same-task与K1/K4 invariance继续通过；fit-only prediction temporal std从
+`0.00379/0.00160`升到`0.03393/0.04789`。这验证了readout学习时标，但Gate仍non-pass：median active events `1`、one-event
+fraction `1.0`，且动态增量尚未严格超过`10%`。
+
+按K分解已把最早接口定位到canonical alignment：K1在macro20仍平均`6.42` active events，而全部K2/K4训练条件均为one-event；
+每条video的local presence仍约7--8个有效槽，DP却把约`6/8` path mass集中到同一canonical slot。fit-only、held-gradient 0的
+counterfactual中，identity会产生5--8 events而过强；仅给现有DP首尾加canonical 0/7边界锚点就恢复为稳定3 events，同一frozen
+decoder的full增量从`15.82%`略升到`16.47%`。当前隔离实现只做这个boundary修正，保留中间stay/skip、content/time score、
+readout、loss、数据、K、seed/LR和Gate。全量合同测试为`155 passed`；真实macro0 K4 profile读取4条视频、102个采样帧并完成
+forward/backward/optimizer step，gradient norm与owner-query gradient均finite/nonzero，active events为2、one-event为0，峰值显存约
+`9.97 GB`。run contract实测Action Meta module/parameter均为0，source policy与native observer trainable parameters均为0。
+下一步从clean pushed commit fresh复评，不复用不兼容checkpoint。
+
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。
@@ -239,11 +253,9 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 在同一clean detached `49e7769`、world4 topology与run目录上exact-resume到预注册macro20/200 optimizer steps，复评完全相同的
-   held20 Gate；不改变模型、loss、数据、K、LR、seed或checkpoint选择合同；
-2. 若macro20使held full增量、prediction temporal std与probe margin按既有学习曲线实质增长，则继续依预注册节点判断；若仍近常数，
-   即否定单纯学习时标解释，先冻结证据并针对Program-to-temporal-readout结构做机制修正后fresh复评；
-3. 任何non-pass都不得用连续架构版本、probe-only旋钮或LR/seed/width小扫替代根因分析；结构修正允许且应在证据指向结构接口时实施；
+1. 集成并推送boundary-anchored monotonic DP，从clean pushed commit创建detached frozen worktree；
+2. 按同一数据、loss、K、LR/seed、cadence和held20 Gate fresh训练；
+3. 若event non-collapse恢复且动态增量严格超过`10%`，冻结Program进入G3；否则冻结结果并从最早失效接口继续机制分析；
 4. G2不引入learned video reliability；`beta_k=1/K`，learned bounded K correction只在G3根据G2证据决定；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

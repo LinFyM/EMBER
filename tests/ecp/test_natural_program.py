@@ -172,9 +172,12 @@ def test_alignment_is_monotone_and_two_probe_forward_has_gradients() -> None:
         dim=-1,
     )
     alignment = model.aligner(process, presence, tau)
+    posterior = alignment.transpose(1, 2)
+    assert torch.equal(posterior[:, 0, 0], torch.ones(2))
+    assert torch.equal(posterior[:, -1, -1], torch.ones(2))
     expected = torch.einsum(
         "vlc,c->vl",
-        alignment.transpose(1, 2),
+        posterior,
         torch.arange(4, dtype=alignment.dtype),
     )
     assert torch.all(expected[:, 1:] >= expected[:, :-1] - 1e-5)

@@ -170,8 +170,14 @@ language/scene，不设次数上限。
 - [x] 冻结该checkpoint，用12个role/K平衡fit task做gradient diagnostic且held gradient为0：Program full/endpoints差异真实存在，
   temporal梯度没有被强方向性抵消，但在Program process/temporal decoder上分别比non-temporal小约`10x/21x`，prediction temporal std
   仍比target小约`93x/203x`。最早接口是近常数readout造成的temporal gradient starvation。
-- [ ] 按同一commit、world4 topology与run目录exact-resume到预注册macro20，作为既有100--500步readout学习曲线的可证伪时标检验；
-  若held增量和temporal std不实质增长，则停止用训练长度解释，转而依据该接口证据修正readout结构并从fresh复评。
+- [x] 按同一commit、world4 topology与run目录exact-resume到macro20/200 updates；held full增量升至`8.6878%`、probe升至
+  `36/40`，fit prediction temporal std增长约`9x/30x`，验证readout学习时标；但所有K>1条件坍为one-event，Gate仍non-pass。
+- [x] 用K分解与fit-only no-gradient alignment反事实定位根因：K1保留平均`6.42` events，K2/K4 local presence未坍缩但DP将约
+  `6/8` path mass集中到单一canonical slot；boundary-only锚点恢复K>1为3 events且不损失视频增量。
+- [x] 只把K>1 monotonic DP改为首尾canonical边界锚定、保留中间stay/skip与既有content/time score；真实K4 profile
+  已完成4-video/102-frame forward、backward与optimizer step，active events为2、one-event为0，Action Meta module/parameter均为0，
+  source policy与native observer均冻结；全量合同测试`155 passed`。
+- [ ] 从clean pushed commit的detached frozen worktree fresh训练并复评同一held20 Gate；不复用不兼容checkpoint。
 
 G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块ownership固定为：`natural_program.py`拥有部署Program schema与
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，

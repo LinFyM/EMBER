@@ -309,7 +309,24 @@ macro20，作为既有frozen-readout学习时标的可证伪节点；若动态�
 - `runs/outputs/pi05_ecp_natural_program_g2_cadence_fold0_m10_49e7769_gpu02p0123_r4_20260825/`；
 - `runs/analysis/pi05_ecp_natural_program_g2_cadence_macro10_gradient_diagnostic_49e7769_gpu02p5_20260825/`。
 
-## 19. 当前保留结论
+## 19. G2 cadence macro20与canonical alignment坍缩定位
+
+clean detached `49e7769`从macro10 exact-resume到macro20/200 optimizer updates。held20 Gate中same-task、probe、K1 identity、
+K4 permutation与tau均通过；full相对endpoints改善达到`8.6878%`，但median active events为`1`、one-event fraction为`1.0`，
+且动态增量仍未严格超过`10%`，所以G2明确non-pass。
+
+fit-only no-gradient temporal panel确认readout已按预期展开：full action/progress temporal std为`0.03393/0.04789`，相对macro10
+分别增长约`9x/30x`，full相对endpoints改善`15.82%`。进一步按K分解显示K=1仍保留平均`6.42`个active events，而全部K=2/K=4
+条件都坍成1个；local native presence未坍缩，learned alignment却把多数path mass集中到单一canonical slot。boundary-only
+counterfactual在不改checkpoint参数和decoder的情况下恢复K>1为3个active events，并保持`16.47%` fit视频增量；因此后继只给
+monotonic DP增加首尾canonical边界锚点，保留中间stay/skip与content/time score，并从fresh复评。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_cadence_fold0_m10_49e7769_gpu02p0123_r4_20260825/`；
+- `runs/analysis/pi05_ecp_natural_program_g2_cadence_macro20_alignment_counterfactual_49e7769_gpu02p5_20260825/`。
+
+## 20. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -319,7 +336,7 @@ macro20，作为既有frozen-readout学习时标的可证伪节点；若动态�
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 20. 证据恢复方式
+## 21. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

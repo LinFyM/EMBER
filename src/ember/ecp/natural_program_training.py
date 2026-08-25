@@ -118,6 +118,8 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
         != "frozen_stage0_v3"
         or config.get("model", {}).get("temporal_owner_readout")
         != "fixed_owner_specific_linear_v1"
+        or config.get("model", {}).get("canonical_alignment")
+        != "boundary_anchored_forward_only_dp_v2"
         or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
         or config.get("data", {}).get("robustness_for_every_task") is not True
         or int(config.get("objective", {}).get(

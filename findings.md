@@ -284,6 +284,24 @@ Program process/decoder上只有`-0.065/-0.071`，不存在足以解释坍缩的
 检验，不是盲目续训。若held增量和prediction temporal std不随之实质增长，学习时标解释即被证伪，后续应直接修改
 Program-to-temporal-readout的残差/owner-value保留结构；这类结构修改是允许的，但必须由该证据驱动并fresh复评同一Gate。
 
+### 25. macro20验证了readout学习时标，同时暴露K>1 canonical alignment坍缩
+
+同一clean detached `49e7769` exact-resume到macro20/200 updates后，held20 full相对endpoints改善从macro10的`0.3080%`
+跃升到`8.6878%`，probe margin从`13/40`升到`36/40`；18/20 tasks方向为正，8/20已超过`10%`。fit-only同一12-task
+panel中，full action/progress prediction temporal std从macro10的`0.00379/0.00160`升到`0.03393/0.04789`，full相对
+endpoints改善为`15.82%`。因此“100步后readout才开始展开”的时标预测得到验证，不能再把最早接口留在近常数readout，也没有
+依据此轮直接换成full-owner value head。
+
+Gate仍明确non-pass：median active events为`1`、one-event fraction为`1.0`，动态增量也尚未严格超过`10%`。分K证据把根因
+精确定位到跨视频alignment：macro20训练条件中K=1仍为平均`6.42`个active events、one-event为0；全部K=2/K=4条件却都只有
+1个active event。原始每video local presence仍有约7--8个有效槽，但learned DP把约`6/8` alignment mass集中到同一个
+canonical slot，故不是Stage 0、阈值或总presence mass假象。
+
+无梯度fit-only反事实只改变alignment measure：identity把K>1推到5--8个active events而过强；unit-step prior也改变了中间路径
+偏好；仅把现有forward-only DP的首/末local slot分别锚到canonical 0/7，保留全部中间stay/skip、content/time emission与原transition，
+就把K>1恢复为稳定3个active events，并将同一frozen decoder的full增量从`15.82%`略升到`16.47%`。因此当前最小结构修正是
+boundary-anchored monotonic alignment；它不固定事件数，不改变K权重、loss、readout、数据或Gate，必须fresh复评。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

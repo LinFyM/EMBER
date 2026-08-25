@@ -17,6 +17,8 @@ from ember.ecp.native_materialization import (
 )
 from ember.ecp.natural_program import NaturalProgramModel
 from ember.ecp.natural_program_data import NaturalProgramTask
+from ember.ecp.observer_authority import load_frozen_native_observer
+from ember.ecp.stage0_training import load_stage0_config
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRAContract, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
@@ -70,6 +72,8 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
     data = config.get("data", {})
     wall = config.get("information_wall", {})
     losses = config.get("optimization", {}).get("loss_weights", {})
+    profile = config.get("profile_defaults", {})
+    formal = config.get("formal_run", {})
     if (
         config.get("schema_version") != G3_CONFIG_SCHEMA
         or config.get("status") != "active_frozen_program_shared_compiler"
@@ -90,6 +94,8 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
         or wall.get("action_meta_installed") is not False
         or wall.get("held_gradient_tasks") != 0
         or wall.get("shuffled_or_reversed_use") is not False
+        or profile.get("allowed_world_sizes") != [1, 2]
+        or formal.get("allowed_world_sizes") != [1, 2]
         or set(losses)
         != {
             "global_member_effect",
@@ -276,6 +282,52 @@ def load_frozen_g2_program(
     model.requires_grad_(False).eval()
     if any(parameter.requires_grad for parameter in model.parameters()):
         raise ValueError("G3 Program was not frozen")
+
+
+def build_frozen_g2_program(
+    config: Mapping[str, Any],
+    *,
+    asset_root: Path,
+    owners: Sequence[Any],
+    device: torch.device | str,
+) -> NaturalProgramModel:
+    """Rebuild the qualified G2 topology over the pure Native observer."""
+
+    g2 = read_json(authority_path(config, "g2_config", asset_root=asset_root))
+    model_cell = g2.get("model", {})
+    if (
+        g2.get("schema_version") != "ember_ecp_natural_program_g2_v1"
+        or model_cell.get("canonical_alignment")
+        != "boundary_anchored_forward_only_dp_v2"
+        or model_cell.get("native_observer_training") != "frozen_stage0_v3"
+    ):
+        raise ValueError("G3 frozen Program topology changed")
+    native = load_frozen_native_observer(
+        stage0_config=load_stage0_config(
+            authority_path(config, "stage0_config", asset_root=asset_root)
+        ),
+        owners=tuple(owners),
+        native_checkpoint=authority_path(
+            config, "native_observer_checkpoint", asset_root=asset_root
+        ),
+        device=device,
+        max_frames_per_call=int(model_cell["max_frames_per_call"]),
+    )
+    model = NaturalProgramModel(
+        native.encoder,
+        prefix_width=int(model_cell["prefix_width"]),
+        width=int(model_cell["program_width"]),
+        owners=int(model_cell["target_owners"]),
+        event_slots=int(model_cell["event_slots"]),
+        action_phases=int(model_cell["action_phases"]),
+        predicate_slots=int(model_cell["predicate_slots"]),
+    ).to(device)
+    load_frozen_g2_program(
+        model,
+        authority_path(config, "g2_program_checkpoint", asset_root=asset_root),
+        device=device,
+    )
+    return model
 
 
 def project_member_to_mobile_rank4(

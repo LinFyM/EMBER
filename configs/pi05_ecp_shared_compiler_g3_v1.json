@@ -86,13 +86,13 @@
   "profile_defaults": {
     "total_macros": 1,
     "checkpoint_macros": [1],
-    "allowed_world_sizes": [1]
+    "allowed_world_sizes": [1, 2]
   },
   "formal_run": {
     "total_macros": 40,
     "checkpoint_macros": [5, 10, 20, 40],
     "stage_stop_macros": [5, 10, 20, 40],
-    "allowed_world_sizes": [1, 2, 3, 4, 5, 6]
+    "allowed_world_sizes": [1, 2]
   },
   "gate": {
     "full_successes_minimum": 60,

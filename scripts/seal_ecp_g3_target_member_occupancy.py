@@ -26,7 +26,8 @@ def _selection(
     results = read_json(results_path)
     selected: dict[int, Mapping[str, Any]] = {}
     for row in sorted(
-        results.get("rows", ()), key=lambda value: int(value["init_state_id"])
+        results.get("rows", ()),
+        key=lambda value: (int(value["steps"]), int(value["init_state_id"])),
     ):
         expert = row.get("task_expert", {})
         global_id = int(expert.get("global_task_id", -1))
@@ -51,9 +52,10 @@ def _selection(
                 "language": str(row["language"]),
                 "init_state_id": int(row["init_state_id"]),
                 "success": True,
+                "verified_success_steps": int(row["steps"]),
                 "member_step": step,
                 "member_checkpoint": str(expert["checkpoint"]),
-                "selection": "lowest_verified_successful_init_state",
+                "selection": "shortest_verified_success_then_lowest_init_state",
             }
         )
     return {
@@ -73,8 +75,10 @@ def _selection(
         },
         "claim_boundary": (
             "Each row is an already paired closed-loop success for this exact "
-            "task expert and only seeds a verified training-state trajectory; "
-            "it is not a deployment input or a task dictionary."
+            "task expert. The shortest pre-existing success is used to avoid a "
+            "late horizon-boundary trajectory; this only seeds a verified "
+            "training-state trajectory and is not a deployment input or task "
+            "dictionary."
         ),
     }
 

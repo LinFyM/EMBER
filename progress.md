@@ -158,6 +158,24 @@ functional effect losses，以及target-fit successful-member occupancy的窄 ev
 因此不能把本节点报告为G3可formal训练或Gate通过。下一步从clean pushed commit的detached worktree完成这两项真实检查，确认纯Native
 observer与Action Meta module/parameter为0后，才启动G3 formal优化。
 
+该实现面随后补齐了canonical训练runtime：每个optimizer step严格一项target-fit与一项meta-fit，member identity只拥有training-only
+critic/sampler；deployment forward只接收Program与native candidates。loss由single-global-member log-sum-exp、四family等权functional、
+cross-episode flow、sensitivity-normalized mobile update、carrier preservation与定期same-task不同video functional consistency组成；
+source、Native observer、G2 Program、carrier及experts全部冻结，只更新shared query/key/signed pooling/scales/bounded beta。由于每step
+只有两个独立task，允许world size收紧为1--2，避免多GPU空转。该runtime已通过compile与CPU回归，但尚未完成真实GPU backward，不能
+据此启动formal训练。
+
+target-fit verified occupancy首次clean formal capture中，step1000为`19/19`，step2000为`17/18`。唯一失败是global38 moka-pots
+state4；新旧结果的adapter、init state与全部policy-noise seeds一致，但旧evaluator在step434成功，新clean evaluator到520未成功，说明
+该晚完成轨迹对允许的BF16/kernel低位差异缺少裕量，而不是authority错配。修正不试seed：只用旧sealed fixed50结果预先选择每member
+完成步数最短的成功state（再以state ID破同分）；global38因此改为state36、旧证据step401成功。等待从下一clean pushed commit重采
+step2000，失败run作为formal capture evidence保留，不混入effect critic。
+
+一项meta-fit真实GPU effect-bank smoke已完成：复用的旧meta occupancy schema为`ember_writer_occupancy_trajectory_v1`，新target schema为
+`ember_pi05_occupancy_trajectory_v1`；sealer现在同时接受并逐项核对suite/task/state/success/adapter，不做宽松fallback。task1输出
+4个trajectory states、1个global member、38-owner response、flow/action response及76个rank4 projection tensors，全部finite；实际对象图
+Action Meta为空。约33.7MB smoke artifact核对后已删除，不冒充formal evidence。
+
 G1 canonical实现面已接通。首轮formal held5 free-code优化与strict250已完成：唯一rank16 candidate为`88/250`，relative recovery
 `45/67=0.6716`、breadth`3/5`、高于carrier`2/5`、carrier retention`30/43`，逐task为`33/18/37/0/0`；因此Gate为
 `non_pass`。全部250 paired rows、47 shards与15 workers完整，Action Meta关闭，失败是科学结果而非运行故障。

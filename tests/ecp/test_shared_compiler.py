@@ -6,6 +6,11 @@ from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
 from ember.ecp.shared_compiler import SharedCompilerVideo, SharedNativeFactorCompiler
+from ember.ecp.policy_effects import ExecutionPolicyPrefix, PolicyEffectResponse
+from ember.ecp.shared_compiler_effects import (
+    SharedCompilerEffectBank,
+    member_effect_losses,
+)
 
 
 def _owners() -> tuple[TargetOwner, ...]:
@@ -159,3 +164,49 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+
+
+def test_shared_member_effect_uses_one_global_member_responsibility() -> None:
+    states = 4
+    carrier = PolicyEffectResponse(
+        owner=torch.zeros(states, 38, 4, 128),
+        flow=torch.zeros(states, 10, 50, 32),
+        action=torch.zeros(states, 10, 50, 7),
+    )
+    members = PolicyEffectResponse(
+        owner=torch.ones(1, states, 38, 4, 128),
+        flow=torch.ones(1, states, 10, 50, 32),
+        action=torch.ones(1, states, 10, 50, 7),
+    )
+    bank = SharedCompilerEffectBank(
+        prefix=ExecutionPolicyPrefix(torch.empty(states, 0, 0), torch.empty(states, 0)),
+        suffix_noise=torch.empty(states, 50, 32),
+        validity=torch.ones(1, states, dtype=torch.bool),
+        trajectory_ids=torch.zeros(states, dtype=torch.long),
+        carrier=carrier,
+        members=members,
+        reliability=torch.ones(1),
+        family_weights=torch.full((1, 38), 1.0 / 38.0),
+        member_names=("member",),
+        projections=({},),
+        anchors=tuple({} for _ in range(states)),
+    )
+    value = torch.tensor(0.25, requires_grad=True)
+    candidate = PolicyEffectResponse(
+        owner=value * torch.ones_like(carrier.owner),
+        flow=value * torch.ones_like(carrier.flow),
+        action=value * torch.ones_like(carrier.action),
+    )
+
+    loss = member_effect_losses(candidate, bank)
+    combined = (
+        loss.global_effect
+        + loss.family_functional
+        + loss.cross_episode_flow
+        + loss.action_response
+    )
+    combined.backward()
+
+    torch.testing.assert_close(loss.responsibilities, torch.ones(1))
+    torch.testing.assert_close(loss.global_effect, loss.member_totals[0])
+    assert value.grad is not None and float(value.grad) < 0.0

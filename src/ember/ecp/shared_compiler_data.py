@@ -4,14 +4,32 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.g1_video import prepare_native_video_readout
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
-from ember.ecp.natural_program_data import PackedNaturalProgramCondition
+from ember.ecp.natural_program_data import (
+    NaturalProgramSample,
+    NaturalProgramTask,
+    pack_ordered_teacher_videos,
+)
 from ember.ecp.shared_compiler import SharedCompilerVideo
+from ember.writer.data import RawTeacherVideoStore
+
+
+@dataclass(frozen=True)
+class PackedSharedCompilerVideos:
+    frames: torch.Tensor
+    frame_indices: torch.Tensor
+    raw_frame_counts: torch.Tensor
+    video_offsets: torch.Tensor
+    video_set_offsets: torch.Tensor
+    frame_condition_ids: torch.Tensor
+    query_times: torch.Tensor
+    metrics: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -19,6 +37,47 @@ class SharedCompilerCondition:
     program: NaturalProgram
     videos: tuple[SharedCompilerVideo, ...]
     metrics: dict[str, object]
+
+
+def pack_shared_compiler_videos(
+    *,
+    task: NaturalProgramTask,
+    sample: NaturalProgramSample,
+    video_store: RawTeacherVideoStore,
+    query_points: int,
+    device: torch.device,
+) -> PackedSharedCompilerVideos:
+    """Load only authorized action-hidden videos for frozen Pass A/B."""
+
+    videos = tuple(
+        video_store.load(task.authority_id, demo) for demo in sample.video_demos
+    )
+    frames, indices, raw_counts, offsets, counts = pack_ordered_teacher_videos(
+        videos, view="full", device=device
+    )
+    return PackedSharedCompilerVideos(
+        frames=frames,
+        frame_indices=indices,
+        raw_frame_counts=raw_counts,
+        video_offsets=offsets,
+        video_set_offsets=torch.tensor(
+            [0, len(videos)], dtype=torch.long, device=device
+        ),
+        frame_condition_ids=torch.zeros(
+            frames.shape[0], dtype=torch.long, device=device
+        ),
+        query_times=torch.linspace(
+            0.0, 1.0, query_points, dtype=torch.float32, device=device
+        )[None],
+        metrics={
+            "K": sample.k,
+            "video_demos": list(sample.video_demos),
+            "action_demos_reserved": list(sample.action_demos),
+            "view": "full",
+            "sampled_frames": counts,
+            "raw_frame_counts": [video.raw_frame_count for video in videos],
+        },
+    )
 
 
 def _ordinary(value: torch.Tensor) -> torch.Tensor:
@@ -32,7 +91,7 @@ def prepare_shared_compiler_condition(
     policy: torch.nn.Module,
     program_model: NaturalProgramModel,
     owners: tuple[TargetOwner, ...],
-    packed: PackedNaturalProgramCondition,
+    packed: PackedSharedCompilerVideos,
     language_tokens: torch.Tensor,
     language_mask: torch.Tensor,
     chunk_size: int,

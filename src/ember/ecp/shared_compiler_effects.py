@@ -19,6 +19,7 @@ from ember.pi05_source_checkpoint import read_json
 
 
 G3_EFFECT_BANK_SCHEMA = "ember_ecp_g3_verified_effect_bank_v1"
+G3_EFFECT_ROOT_SCHEMA = "ember_ecp_g3_verified_effect_bank_root_v1"
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,73 @@ class SharedCompilerEffectBank:
             )
         ):
             raise ValueError("G3 verified effect bank changed shape or ownership")
+
+
+@dataclass(frozen=True)
+class SharedMemberEffectLoss:
+    global_effect: torch.Tensor
+    family_functional: torch.Tensor
+    cross_episode_flow: torch.Tensor
+    action_response: torch.Tensor
+    responsibilities: torch.Tensor
+    member_totals: torch.Tensor
+
+
+class SharedEffectBankStore:
+    """Lazy GPU cache over the sealed 75-task G3 fit authority."""
+
+    def __init__(
+        self,
+        root_manifest: Path,
+        *,
+        contract: LoRAContract,
+        owners: Sequence[TargetOwner],
+        expected_task_ids: set[int],
+        device: torch.device | str,
+    ) -> None:
+        root = read_json(root_manifest.resolve())
+        records = tuple(root.get("records", ()))
+        by_id = {int(row.get("authority_id", -1)): row for row in records}
+        if (
+            root.get("schema_version")
+            != G3_EFFECT_ROOT_SCHEMA
+            or root.get("status") != "complete"
+            or int(root.get("task_count", -1)) != 75
+            or int(root.get("member_count", -1)) != 93
+            or root.get("roles") != {"meta_fit": 56, "target_fit": 19}
+            or set(by_id) != expected_task_ids
+        ):
+            raise ValueError("G3 effect-bank root authority changed")
+        self.root_manifest = root_manifest.resolve()
+        self.contract = contract
+        self.owners = tuple(owners)
+        self.device = device
+        self.paths: dict[int, Path] = {}
+        for task_id, record in by_id.items():
+            path = Path(str(record.get("manifest", ""))).resolve()
+            if (
+                not path.is_file()
+                or path.stat().st_size != int(record.get("manifest_bytes", -1))
+                or int(record.get("member_count", -1)) not in (1, 2)
+                or record.get("role") not in {"meta_fit", "target_fit"}
+            ):
+                raise ValueError("G3 effect-bank task authority changed")
+            self.paths[task_id] = path
+        self.cache: dict[int, SharedCompilerEffectBank] = {}
+
+    def get(self, task_id: int) -> SharedCompilerEffectBank:
+        if task_id not in self.cache:
+            try:
+                path = self.paths[task_id]
+            except KeyError as error:
+                raise ValueError("G3 requested a held effect bank") from error
+            self.cache[task_id] = load_shared_effect_bank(
+                path,
+                contract=self.contract,
+                owners=self.owners,
+                device=self.device,
+            )
+        return self.cache[task_id]
 
 
 def _response(prefix: str, values: Mapping[str, torch.Tensor]) -> PolicyEffectResponse:
@@ -164,7 +232,7 @@ def member_effect_losses(
     bank: SharedCompilerEffectBank,
     *,
     temperature: float = 0.25,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> SharedMemberEffectLoss:
     """Global single-member response loss plus an explicit family-balanced term."""
 
     if candidate.owner.shape != bank.carrier.owner.shape or temperature <= 0:
@@ -208,7 +276,14 @@ def member_effect_losses(
     responsibilities = logits.softmax(0)
     global_loss = -temperature * torch.logsumexp(logits, 0)
     family_loss = (responsibilities.detach() * owner).sum()
-    return global_loss, family_loss, responsibilities, total
+    return SharedMemberEffectLoss(
+        global_effect=global_loss,
+        family_functional=family_loss,
+        cross_episode_flow=(responsibilities.detach() * flow).sum(),
+        action_response=(responsibilities.detach() * action).sum(),
+        responsibilities=responsibilities,
+        member_totals=total,
+    )
 
 
 def carrier_preservation_loss(

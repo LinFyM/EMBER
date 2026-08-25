@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -29,7 +30,10 @@ from ember.ecp.shared_compiler_assets import (
     load_shared_task_members,
     project_member_to_mobile_rank4,
 )
-from ember.ecp.shared_compiler_effects import G3_EFFECT_BANK_SCHEMA
+from ember.ecp.shared_compiler_effects import (
+    G3_EFFECT_BANK_SCHEMA,
+    G3_EFFECT_ROOT_SCHEMA,
+)
 from ember.ecp.stage0_training import load_stage0_config
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_eval_contract import git_state
@@ -39,7 +43,6 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
-ROOT_SCHEMA = "ember_ecp_g3_verified_effect_bank_root_v1"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -83,8 +86,15 @@ def _trajectory(
     checkpoint = Path(str(row["task_expert"]["checkpoint"])).resolve()
     observations = tuple(observed.get("observations", ()))
     if (
-        observed.get("schema_version") != "ember_pi05_occupancy_trajectory_v1"
+        observed.get("schema_version")
+        not in {
+            "ember_writer_occupancy_trajectory_v1",
+            "ember_pi05_occupancy_trajectory_v1",
+        }
         or observed.get("success") is not True
+        or str(observed.get("suite")) != str(row["suite"])
+        or int(observed.get("task_id", -1)) != int(row["task_id"])
+        or int(observed.get("init_state_id", -1)) != int(row["init_state_id"])
         or checkpoint / "adapter.safetensors" != member.adapter
         or len(observations) < 4
     ):
@@ -209,9 +219,10 @@ def _seal_task(
     device: torch.device,
 ) -> dict[str, Any]:
     task_dir = output_dir / f"task_{task.task.authority_id:03d}"
-    if task_dir.exists():
+    partial = output_dir / f".task_{task.task.authority_id:03d}.partial"
+    if task_dir.exists() or partial.exists():
         raise ValueError(f"G3 effect task output already exists: {task_dir}")
-    task_dir.mkdir(parents=True)
+    partial.mkdir(parents=True)
     observations = []
     anchors = []
     for member_index, member in enumerate(task.members):
@@ -287,7 +298,7 @@ def _seal_task(
         )
         for state in member_states
     ]
-    tensor_path = task_dir / "effect_bank.safetensors"
+    tensor_path = partial / "effect_bank.safetensors"
     save_file(
         _tensor_values(
             prefix=prefix,
@@ -314,7 +325,7 @@ def _seal_task(
         "state_count": len(observations),
         "member_count": len(task.members),
         "tensor_file": {
-            "path": str(tensor_path.resolve()),
+            "path": str((task_dir / "effect_bank.safetensors").resolve()),
             "bytes": tensor_path.stat().st_size,
         },
         "metadata": {
@@ -334,7 +345,8 @@ def _seal_task(
             "global_member_only": True,
         },
     }
-    write_json_atomic(task_dir / "manifest.json", manifest)
+    write_json_atomic(partial / "manifest.json", manifest)
+    os.replace(partial, task_dir)
     return manifest
 
 
@@ -496,7 +508,7 @@ def aggregate(args: argparse.Namespace) -> None:
     write_json_atomic(
         manifest_path,
         {
-            "schema_version": ROOT_SCHEMA,
+            "schema_version": G3_EFFECT_ROOT_SCHEMA,
             "status": "complete",
             "task_count": len(records),
             "member_count": sum(row["member_count"] for row in records),

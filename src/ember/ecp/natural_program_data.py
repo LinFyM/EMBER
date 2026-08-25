@@ -345,7 +345,7 @@ def _windowed_rising(values: np.ndarray, indices: np.ndarray) -> np.ndarray:
     return result
 
 
-def _pack_video_inputs(
+def pack_ordered_teacher_videos(
     videos: Sequence[RawTeacherVideo],
     *,
     view: str,
@@ -467,7 +467,7 @@ def pack_natural_program_condition(
     videos = tuple(
         video_store.load(task.authority_id, demo) for demo in sample.video_demos
     )
-    frames, frame_indices, raw_counts, offsets, counts = _pack_video_inputs(
+    frames, frame_indices, raw_counts, offsets, counts = pack_ordered_teacher_videos(
         videos, view=view, device=device
     )
     supervision = _pack_cross_episode_supervision(

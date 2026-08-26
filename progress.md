@@ -46,6 +46,13 @@ formal prelaunch qualification，三个scripts均为薄入口。旧v1/v2 config�
 active train入口已唯一指向v3 mapping，不是fallback。若F2失败且F3通过，删除`C=I` off执行模式；F3结束后mapping-only训练面随
 F4 joint owner演化或退役，不另建平行Writer。
 
+clean pushed detached `main@19b5b3f`的formal F0已通过。task93真实K1 gradient与rank12+4 materialization有限，唯一完整LoRA为
+76 tensors/38 targets并被policy实际消费；source/Program trainable与Action Meta module/parameter均为0，checkpoint无lookup/teacher
+state，K4 teacher reads为0、四video权重均为`.25`、反序置换最大误差`1.43e-6`。同一cached X/Y bank按chunk4与one-chunk重放时，
+38个最终低秩更新的cosine最低`.99999976`、相对Frobenius误差最高`.00066443`，solve metric误差`3.71e-14`；内部rank槽位最大
+差`.00311`来自等价small-core SVD gauge，只作诊断。峰值allocated/reserved为`33.85/34.43GB`，独占gpu01当前逻辑0且计算段
+UTL约`61--100%`；F0只解封F2，不代表shared mapping已通过。
+
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
 `19.5--25.1GB`且计算段大多`100%`。当时物理3因他人约`78--92%` UTL而未使用，旧物理0按当时prohibited标记未使用。gpu01在

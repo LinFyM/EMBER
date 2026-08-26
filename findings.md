@@ -523,6 +523,16 @@ F2 non-pass解释为两阶段bank-conditioned Writer失败。
 `100%` UTL。后续GPU效率同时看world-size scaling与单卡SM/UTL、显存峰值、step time/LoRA吞吐；不以dummy显存占用或48GB填满率
 替代有效计算。
 
+### 37. F0证明canonical B0/B1图接通，chunk Gate必须比较有效更新而非rank槽位
+
+首次同bank chunk4/one-chunk复核的raw A/B槽位最大差为`.00311`，但solve metrics最大差仅`3.71e-14`。small-core SVD的rank槽位
+允许符号、顺序和子空间内旋转，因此逐槽坐标不是LoRA功能等价量。clean detached `19b5b3f`改用不物化大矩阵的
+`B.T @ A` Frobenius内积后，38 targets最终更新cosine最低`.99999976`、相对误差最高`.00066443`；raw槽位差仍完整保留为诊断，
+没有放宽其阈值冒充通过。
+
+同一formal F0同时证明真实K1梯度、B0/B1 chunk边界、K4均匀集合聚合/置换不变、teacher零读取、Action Meta实际未加载及唯一
+rank16 policy consumption均成立，故工程Gate通过并解封F2。它不测mapping泛化或closed-loop，不能被解释成F2/F3或G3通过。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

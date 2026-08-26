@@ -250,9 +250,10 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   bank-conditioned compiler，并在同一实现中保留一次`global_statistics_off`决定性消融。
 - [x] owner明确Final保留整套Writer完全随机初始化、直接端到端fresh联合训练的正式可选项；G1--G3只作因果验证，不构成Final
   强制课程。该裁决覆盖专家“默认从通过组件初始化”的偏好，但不改写专家原文。
-- [ ] F0：接通一个真实K1/K4 bank-conditioned forward/gradient/materialization，证明Program/source/carrier冻结、Action Meta 0、
-  ID/teacher信息墙、K2/K4 teacher reads 0、chunk/video边界、finite gradients、76 tensors及policy实际消费唯一rank16。canonical
-  实现、tracked smoke与CPU合同测试已接通；本项只待clean pushed detached authority上的真实formal F0结果后勾选。
+- [x] F0：clean pushed detached `19b5b3f`完成真实K1/K4 bank-conditioned forward/gradient/materialization。Program/source冻结、
+  Action Meta 0、K4 teacher reads 0、76 tensors/38 targets及policy实际消费唯一rank16全部通过；同一cached native bank的chunk4与
+  one-chunk最终更新cosine最低`0.99999976`、相对误差最高`0.00066443`，K4置换误差`1.43e-6`且权重严格均匀。raw rank-slot
+  最大差`0.00311`只记录为small-core SVD gauge诊断，不再错误充当最终LoRA等价Gate。
 - [x] F1：以50 tasks/98 conditions的既有authority完成operator capacity；free/analytic native anchors隔离shared mapping，要求q/v/
   action-in/out各family materialized与streaming replay median update cosine`>=0.995`、minimum`>=0.99`，chunk/full等价。若显式
   covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。clean

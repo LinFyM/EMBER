@@ -569,31 +569,47 @@ Action Meta/source/Program/scale trainable均为0；全仓181 tests通过。它�
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_macro10_mapping_eval_84903aa_gpu01p012346_w6_20260827/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_credit_diagnostics_84903aa_20260827/`。
 
-## 32. G3 F3 family-owner FiLM formal non-pass与fixed-key image诊断
+## 32. G3 family/fixed-owner F3 formal non-pass
 
-clean pushed detached `main@c3fc8e3`把Program/query/candidate职责按q、v、action-in、action-out family共享，并以fixed 38-target owner的
-zero-init bounded FiLM调制candidate hidden direction；rank、bank、loss、data、optimizer与Gate不变。它从fresh训练至macro5/25
-updates，再按相同world6 topology exact-resume至macro10/50 updates。mean recovery由macro1 `-.001251`增至macro5 `.024528`和
-macro10 `.071244`。
+clean pushed detached `main@c3fc8e3`将四family独立trunk与38个fixed owner bounded candidate modulation从fresh训练到macro5/25
+updates，并按原world6 topology exact-resume至macro10/50 updates。macro5与macro10均由六个独立worker完整覆盖同一451 conditions；
+macro10 fit、held-video、task-holdout task median为`.074715/.074620/.081644`，held p10 `.058381`、held/fit `.998724`。
+held q/v/action-in/action-out median为`.027938/.066509/.044464/.164942`。相邻checkpoint变化稳定但两个primary都远低于
+`.75/.50`，故不继续macro20。
 
-macro5/macro10各自完整评估451 conditions。macro10 fit、held-video、task-holdout task median为`.074715/.074620/.081644`，held
-p10 `.058381`、held/fit `.998724`；macro5到10 held提高`.043307`，但两个checkpoint都未达到`.75/.50` primary。macro10 held
-q/v/action-in/action-out为`.027938/.066509/.044464/.164942`。Action Meta、held gradients和shuffled/reversed use均为0。因此
-family/fixed-owner FiLM作为充分结构修正被formal证伪，不续到macro20。
-
-对同一macro10 checkpoint做只读fixed-key image诊断：冻结当前candidate keys，求task-local free event query对centered compatibility
-measure的线性化image，再投影sealed teacher factors。在相对最大奇异值`1e-3`的稳定子空间内，task93/video31 q target0、q target18、
-v target19、action-in target36、action-out target37的joint teacher-update ceilings为`.2268/.2262/.3151/.9750/.6292`；
-task94/video11的q target18独立复现`.2312`。去掉metadata或读取first 256D hidden不能修复q/v/action-out；放宽到`1e-6`则恢复
-约`.97--.997`。所以raw native信息仍存在，但compressed candidate projection把所需方向放入三到六个数量级更弱的谱尾。action-in
-稳定image已有`.975`而trained recovery仍只有`.044`，又证明shared Program-to-selection acquisition本身没有成立。
-
-该证据只定位Program/native scalar-anchor接口，不否定已通过的F1 operator、真实X/Y bank、current-bank solve、B1 exact replay、rank4
-或rank12+4。后继canonical correction删除compressed candidate encoder与owner FiLM，改由共享Program context直接生成固定owner的
-native/metadata/magnitude queries，与当前真实X/Y content形成B0 scalar anchor，再保留current-bank solve及B1 replay；不允许task/
-video/member/frame lookup或query直接输出factor。它与旧checkpoint不兼容，必须fresh验证。关键artifacts：
+该结果说明family/owner parameter ownership隔离没有解决绝对mapping acquisition。它没有推翻F1 operator、G1/G2、真实native
+banks或signed replay。关键artifacts：
 
 - `runs/outputs/pi05_ecp_shared_compiler_g3_f3_familyowner_fold0_m5_c3fc8e3_gpu01p012346_r6_20260827/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro5_mapping_eval_c3fc8e3_gpu01p012346_w6_20260827/`；
-- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro10_mapping_eval_c3fc8e3_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro10_mapping_eval_c3fc8e3_gpu01p012346_w6_20260827/`。
+
+## 33. fixed-key/raw/FiLM image诊断与direct-native修正终止
+
+对`c3fc8e3` macro10冻结candidate map并允许task-local free event query后，稳定`1e-3`谱下q/v/action-in/action-out joint teacher
+update ceiling约为`.226/.315/.975/.629`；raw-native key约`.250/.336/.960/.600`，FiLM tangent约
+`.280/.381/.973/.645`。降到`1e-6`时q/v/action-out大多恢复到`.97--.99`，说明方向仍存在但被压入极弱奇异尾。action-in已经有
+`.975`容量而formal held只有`.044`，证明shared stable selection也独立失败。
+
+clean pushed `main@4117117`曾把direct-native Program query接入同一B0 solve/B1 replay并通过真实F0工程Gate；但随后的解析复核指出，
+若native anchor写成`a=Cq`，再求`C^-1a`会在retained span返回raw `q`，所以它退化为已失败的跨video raw-query transfer而非新的
+bank-stable mapping。该commit没有启动formal F3，活动实现随后回退。关键artifact：
+
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro10_fixed_key_image_c3fc8e3_gpu01_20260827/`。
+
+## 34. same-task feature-common-code oracle与task-stable anchor修正资格
+
+在task93同一teacher members上，以videos 31/32拟合一个共同feature code并把video46作holdout。full inverse、global
+inverse-square-root及8-event block inverse-square-root的两video inductive q/v/action-out均近零或极低；event-block action-in held
+为`.986`。然而把video46只加入共同code估计的transductive正控制后，q/v/action-out分别达到约`.905/.912/.929`，action-in为`1.0`；
+全部q/v/action-out event covariance均满rank128。该只读oracle证明共享feature chart中存在强same-task code，失败是两video
+minimum-norm selection落入巨大train-only nullspace，不是继续调谱floor、loss、width或训练长度可解释。
+
+冻结G2的`P_lang`是exact-language-only且same-task不同video确定性相同，因此后继canonical修正以`P_lang`产生固定task anchor query，
+让`P_scene/P_process/rho/tau/sigma`及canonical assignment只控制video-specific event/frame measure；每个video、target/group/event先
+建立detached candidate-feature symmetric inverse-square-root，再形成native anchors、native-bank solve和exact signed replay。该选择
+没有task/video/member/frame lookup，仍以真实X/Y为唯一factor Value路径。关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_feature_anchor_canonicalizer_c3fc8e3_gpu01_20260827/`；
+- `runs/analysis/pi05_ecp_g3_feature_anchor_invsqrt_c3fc8e3_gpu01_20260827/`；
+- `runs/analysis/pi05_ecp_g3_feature_anchor_eventblock_invsqrt_c3fc8e3_gpu01_20260827/`。

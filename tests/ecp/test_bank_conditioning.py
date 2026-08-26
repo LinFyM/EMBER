@@ -4,12 +4,48 @@ import torch
 
 from ember.ecp.bank_conditioning import (
     StreamingBankStatistics,
+    StreamingFeatureStatistics,
     StreamingSignedPool,
+    batched_feature_whiteners,
     bounded_relative_group_gain,
     materialized_bank_statistics,
     materialized_signed_pool,
     spectral_bank_query,
 )
+
+
+def test_streaming_feature_whitening_is_chunk_equivalent_and_differentiable() -> None:
+    generator = torch.Generator().manual_seed(11)
+    keys = torch.randn(73, 6, generator=generator)
+    mass = torch.rand(3, 73, generator=generator) + 0.1
+    mass = mass / mass.sum(-1, keepdim=True)
+
+    expected = StreamingFeatureStatistics(
+        events=3, width=6, device=keys.device
+    )
+    expected.add(keys, mass)
+    streamed = StreamingFeatureStatistics(
+        events=3, width=6, device=keys.device
+    )
+    for start, stop in ((0, 11), (11, 39), (39, 73)):
+        streamed.add(keys[start:stop], mass[:, start:stop])
+    left, right = batched_feature_whiteners(
+        (expected.finalize(), streamed.finalize()),
+        relative_eigenvalue_floor=1e-8,
+    )
+    torch.testing.assert_close(left.mean, right.mean, rtol=1e-6, atol=1e-6)
+    torch.testing.assert_close(
+        left.inverse_sqrt, right.inverse_sqrt, rtol=1e-5, atol=1e-5
+    )
+    assert left.retained_ranks == (6, 6, 6)
+
+    differentiable = keys.clone().requires_grad_()
+    whitened = left.whiten(differentiable)
+    assert whitened.shape == (3, 73, 6)
+    whitened.square().mean().backward()
+    assert differentiable.grad is not None
+    assert bool(torch.isfinite(differentiable.grad).all())
+    assert bool(torch.count_nonzero(differentiable.grad))
 
 
 def _condition(seed: int = 17):

@@ -48,6 +48,7 @@ def _output(seed: int = 7) -> SharedCompilerOutput:
         frame_measures=(torch.ones(len(_owners()), 4, 2) * 0.5,),
         output_group_gains=(torch.ones(4, 4),),
         solve_metrics=torch.ones(1, 4),
+        feature_whitening_metrics=torch.ones(1, 2),
         global_statistics_enabled=True,
     )
 

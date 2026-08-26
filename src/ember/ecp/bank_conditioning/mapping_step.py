@@ -86,6 +86,10 @@ def prepare_mapping_condition_output(
         "split_sampled_frames": condition.sampled_frames,
         "global_statistics": output.global_statistics_enabled,
         "solve_metrics": output.solve_metrics.detach().float().cpu().tolist(),
+        "feature_whitening_metrics": output.feature_whitening_metrics.detach()
+        .float()
+        .cpu()
+        .tolist(),
     }
 
 

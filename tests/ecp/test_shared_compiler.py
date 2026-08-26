@@ -146,36 +146,65 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     loss.backward()
     families = {family.value for family in TargetFamily}
     assert set(compiler.anchor_scorer.program_context) == families
+    assert set(compiler.anchor_scorer.language_context) == families
+    assert set(compiler.anchor_scorer.input_candidates) == families
+    assert set(compiler.anchor_scorer.output_candidates) == families
     assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
     assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
+    assert (
+        compiler.anchor_scorer.input_candidates["q"].direction_input.weight.grad
+        is not None
+    )
+    assert (
+        compiler.anchor_scorer.output_candidates["q"].direction_input.weight.grad
+        is not None
+    )
+    assert compiler.anchor_scorer.input_owner_scale.grad is not None
+    assert compiler.anchor_scorer.output_owner_scale.grad is not None
+    assert bool(torch.count_nonzero(compiler.anchor_scorer.input_owner_scale.grad))
+    assert bool(torch.count_nonzero(compiler.anchor_scorer.output_owner_scale.grad))
     assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
+    assert bool(torch.isfinite(observed.feature_whitening_metrics).all())
+    assert float(observed.feature_whitening_metrics[..., 0].min()) > 0
+    assert float(observed.feature_whitening_metrics[..., 1].min()) > 0
     assert observed.global_statistics_enabled
     assert all(
         bool(((gain >= 0.0) & (gain <= 1.0)).all())
         for gain in observed.output_group_gains
     )
     names = set(dict(compiler.named_parameters()))
-    assert not any("candidates" in name or "owner_scale" in name for name in names)
     assert not {"input_logits", "output_logits", "event_logits"} & names
 
-    state = compiler.anchor_scorer.program_state(program)
-    input_queries = compiler.anchor_scorer.input_queries(state)
-    for owner, query in zip(owners, input_queries, strict=True):
-        native, metadata, magnitude = query
-        assert native.shape == (4, events, 2, owner.in_features)
-        assert metadata.shape == (4, events, 2, compiler.anchor_width)
-        assert magnitude.shape == (4, events, 2)
-    for target, owner in enumerate(owners):
-        groups = int(compiler.output_group_counts[target])
-        native, metadata, magnitude = compiler.anchor_scorer.output_queries(
-            state, target=target, groups=groups
-        )
-        prefix = (groups, 4, events, 2)
-        assert native.shape == (*prefix, owner.out_features // groups)
-        assert metadata.shape == (*prefix, compiler.anchor_width)
-        assert magnitude.shape == prefix
+
+def test_anchor_code_is_stable_when_only_video_program_fields_change() -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4, anchor_width=6
+    )
+    first = _program(len(owners), 8, 4)
+    changed = _program(len(owners), 8, 4)
+    generator = torch.Generator().manual_seed(97)
+    changed = NaturalProgram(
+        p_lang=first.p_lang.clone(),
+        p_scene=torch.randn(first.p_scene.shape, generator=generator),
+        p_process=torch.randn(first.p_process.shape, generator=generator),
+        rho=torch.rand(first.rho.shape, generator=generator) + 0.1,
+        tau=torch.rand(first.tau.shape, generator=generator),
+        sigma=torch.rand(first.sigma.shape, generator=generator) + 0.1,
+    )
+    first_state = compiler.anchor_scorer.program_state(first)
+    changed_state = compiler.anchor_scorer.program_state(changed)
+    torch.testing.assert_close(
+        first_state.stable_rank_event, changed_state.stable_rank_event
+    )
+    torch.testing.assert_close(first_state.stable_rank, changed_state.stable_rank)
+    torch.testing.assert_close(
+        compiler.anchor_scorer.input_queries(first_state),
+        compiler.anchor_scorer.input_queries(changed_state),
+    )
+    assert not torch.allclose(first_state.event_weights, changed_state.event_weights)
 
 
 def test_shared_compiler_video_set_is_permutation_invariant() -> None:

@@ -600,26 +600,48 @@ scorer内将Program/rank/query/event/gain/native-candidate模块按四family共�
 真实一步profile使222/222 trainable tensors进入optimizer state，Action Meta/source/Program/scale trainable均为0；这只解封fresh
 formal F3，仍须以同一451 Gate判断。
 
-### 42. family-owner FiLM仍失败；compressed key的稳定谱与shared acquisition共同构成更早接口
+### 42. family/fixed-owner分解仍未取得绝对mapping，direct-native并不是有效的bank-stable修正
 
-clean pushed detached `c3fc8e3`将scorer按family拆分并以fixed-owner bounded FiLM调制candidate hidden direction后，从fresh训练到
-macro5并exact-resume到macro10。macro10完整451-condition fit/held-video/task-holdout median为`.074715/.074620/.081644`，held
-p10 `.058381`、held/fit `.998724`；held q/v/action-in/action-out仅`.027938/.066509/.044464/.164942`。它相对macro5稳定增长，
-但没有超过`.75/.50` Gate，也没有解决family绝对能力，故“family ownership加owner FiLM足够”被formal证伪，不授权macro20或小扫。
+clean pushed detached `c3fc8e3`把四family trunk及38个fixed owner的bounded modulation从fresh训练到macro5/macro10，完整451-condition
+macro10 fit/held-video/task-holdout median只有`.074715/.074620/.081644`，held p10 `.058381`、held/fit `.998724`；held q/v/
+action-in/action-out为`.027938/.066509/.044464/.164942`。它和`84903aa`一样是fit、held-video、task-holdout同量级但绝对能力很低，
+所以parameter sharing竞争不是唯一根因，也不应继续macro20。
 
-冻结该checkpoint的candidate keys后，task-local free event query的exact centered linearized image给出两项互补证据。在稳定的`1e-3`
-relative spectral cutoff下，task93/video31的q target0/q target18/v/action-in/action-out joint teacher-update ceiling为
-`.2268/.2262/.3151/.9750/.6292`；task94/video11独立q target18为`.2312`。去除metadata或改读candidate encoder第一层256D
-hidden不能修复q/v/action-out，而`1e-6` cutoff可恢复约`.97--.997`，所以raw native信息没有消失，失败来自learned compressed key
-把所需方向压入三到六个数量级更弱的谱尾。与此同时action-in在稳定子空间已经有`.975` ceiling，训练恢复却只有`.044`，证明即使
-方向可表示，共享Program-to-selection/credit acquisition仍未学会。两者共同把最早接口定位为Program/native candidate的scalar-anchor
-构造，而不是bank、covariance solve、B1 replay、rank、Action Meta、metadata或多视频集合处理。
+冻结同一candidate map、允许task-local free event query后，稳定`1e-3`谱下q/v/action-in/action-out joint update ceiling约为
+`.226/.315/.975/.629`；raw-native key约`.250/.336/.960/.600`，FiLM tangent约`.280/.381/.973/.645`。降到`1e-6`虽可恢复
+大部分方向，却要求使用三到六个数量级更弱的奇异尾。action-in的`.975`容量与训练held `.044`并存，明确区分了两个问题：q/v/
+action-out key conditioning不足，以及即便方向可表达，shared stable code仍没有选择到它。
 
-有机制资格的下一修正删除learned compressed candidate encoder与owner FiLM。共享Program context按公开的38-target topology直接产生
-native query、metadata query和magnitude query；compatibility只由它们与当前真实X/Y的RMS-normalized direction、独立归一化metadata
-及bounded log-RMS按内容计算。它只生成B0 scalar anchor，之后仍由current-bank solve重条件化并在B1 exact replay真实bank，因此不是
-旧的raw query跨video直接进入B1，也不输出factor或引入task/video/member/frame lookup。真实一步profile已验证forward/backward/
-optimizer/checkpoint、关键anchor梯度有限非零和Action Meta 0；formal判断仍须clean pushed detached F0与fresh F3。
+`4117117`的direct-native scorer完成了真实F0工程合同，但后续代数检查发现`a=Cq`后再做`C^-1a`在可逆子空间近似返回原始`q`，
+等价于把Program raw query直接跨video transfer；它没有消除随bank变化的识别问题。故没有启动formal F3，及时回退该活动实现。
+这只淘汰direct-native query/FiLM tangent这一具体修正，不淘汰真实X/Y、signed pooling或bank-conditioned operator。
+
+### 43. same-task feature chart存在强共同code，失败来自minimum-norm两video解的巨大nullspace
+
+在task93同一teacher members、train videos 31/32与held video46上，先冻结`c3fc8e3` candidate features并只读比较共同code。full
+feature inverse的两video inductive held q/v/action-out约为`0/-0.001/0`，action-in约`.097`；改用symmetric inverse-square-root后
+约为`-.003/.001/.035/.593`。但把held video只加入共同code估计的transductive正控制时，q/v/action-out立即达到约
+`.896/.902/.926`，action-in为`1.0`，说明三个bank确实共享强task-level feature code，只是两video minimum-norm解落入未被第三bank
+观测的train-only nullspace。
+
+按8个canonical events分别做128维inverse-square-root后，q/v/action-out两video inductive仍近零，action-in升到`.986`；
+transductive q/v/action-out为`.905/.912/.929`。所有q/v/action-out event blocks均满rank128，故继续调全局/分event谱floor或再加
+covariance并不能识别稳定code。这是analytic task-local interface oracle，不训练shared mapping，也不把held视频或teacher信息送入
+deployment；其因果作用是把下一修正锁定为same-task稳定anchor，而不是另一次width/LR/loss sweep。
+
+### 44. 当前F3以`P_lang`固定task anchor、动态Program event measure和per-event feature gauge分离稳定与视频职责
+
+冻结G2 Natural Program中，`P_lang`只由exact language产生，同task不同video确定性相同；`P_scene/P_process/rho/tau/sigma`则承载
+video scene/process/alignment。当前唯一canonical修正据此把两种职责分开：family-shared query以`P_lang`加固定owner/event/rank topology
+形成task-stable anchor code；动态Program字段和canonical assignment只控制每video的event/frame measure；真实native direction/
+log-magnitude与frame/probe/horizon/type metadata经family-shared、fixed-owner bounded candidate encoder后，按每video、每event统计
+detached symmetric inverse-square-root，再与stable query做content compatibility。
+
+这仍不是language-only Writer：`P_lang`只提供“寻找什么”的稳定坐标，最终native anchor、B0 solve和B1 positive-minus-negative softmax
+都必须读取当前video真实X/Y，LoRA factor始终是这些values的有符号加权和。三次流式读取保持每video adj/init/goal边界并只发生在
+rollout前一次Writer调用。world6真实profile已完成一组3+3 optimizer update，六张A40计算段基本满载，step `77.806s`、峰值
+`25.59/25.99GB`，Action Meta/source/Program/scale trainable及held gradient均为0；这只获得clean detached F0/formal F3资格，不能
+冒充mapping Gate。
 
 ## 已关闭路线
 

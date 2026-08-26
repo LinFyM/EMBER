@@ -1,6 +1,6 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-27第二次专家复核、owner最新裁决与F3机制证据后更新的active architecture contract。第一次专家审查锁定
+状态：2026-08-27第二次专家复核、owner最新裁决与F3连续formal/机制证据后更新的active architecture contract。第一次专家审查锁定
 `main@7ab5a04`并建立Native-Factor主线；第二次专家审查锁定`main@ed2883b`及其可达历史，针对G3跨视频dual/score旋转给出
 bank-conditioned两阶段Pass B修正。本文是当前唯一架构依据。
 
@@ -28,8 +28,10 @@ exact language + K ordered action-hidden videos
         +-- Pass A: frozen PI0.5 native observation
         |       -> owner-specific language / scene / ordered-event Program
         |
-        +-- Pass B0: same frames, target-native statistics / native anchors
-                -> regularized bank-conditioned query solve
+        +-- Pass B0a: same frames, per-event candidate-feature statistics
+                -> detached current-bank feature gauge
+        +-- Pass B0b: stable task anchor + whitened candidate content
+                -> native anchors and regularized native-bank query solve
         +-- Pass B1: replay same native bank
                 -> Program-conditioned exact signed pooling
                 -> current first implementation: task-specific rank4 residual
@@ -37,10 +39,10 @@ exact language + K ordered action-hidden videos
                 -> one complete 38-target rank16 LoRA
 ```
 
-Pass A与Pass B读取同一个冻结backbone，并共享owner、event、video assignment。Pass A回答视频表达什么目标、场景和过程；Pass B0
-先统计当前native bank并形成Program-conditioned native anchors，求解bank-conditioned query；Pass B1重放同一bank并精确pool真实
-X/Y。它们不是独立video/hypernetwork分支。可复用image/language prefix cache；固定的内部多阶段读取仍只属于rollout前一次Writer
-调用，不是交互式适配。
+Pass A与Pass B读取同一个冻结backbone，并共享owner、event、video assignment。Pass A回答视频表达什么目标、场景和过程；Pass B0a
+先在当前video bank中建立每个canonical event的candidate-feature gauge，Pass B0b再以same-task稳定的language anchor读取白化后的
+candidate content、形成native anchors并求解native-bank-conditioned query；Pass B1重放同一bank并精确pool真实X/Y。它们不是独立
+video/hypernetwork分支。可复用image/language prefix cache；固定的内部三阶段读取仍只属于rollout前一次Writer调用，不是交互式适配。
 
 ## 2. 固定目标与Program schema
 
@@ -138,14 +140,16 @@ Y_init(t) = Y(t) - Y(1)
 Y_goal(t) = Y(T) - Y(t)
 ```
 
-Pass A只保留128维Program。Pass B按每条video独立执行两个流式native子阶段，不得物化完整`K*T*38*50*2048` tensor：
+Pass A只保留128维Program。Pass B按每条video独立执行三个流式native子阶段，不得物化完整`K*T*38*50*2048` tensor：
 
-1. **Pass B0 statistics/anchors**：按每视频单位质量的基础measure累计各native group的均值、centered covariance/Gram以及
-   Program-conditioned native anchors；形成regularized bank-conditioned queries后释放当前视频的大型统计量。
-2. **Pass B1 exact replay**：重读同一video的native chunks，精确重建四类output bank，再以已求得query执行positive/negative
+1. **Pass B0a feature statistics**：按每视频、每canonical event单位质量累计共享candidate encoder输出的均值与128维covariance，
+   用固定相对谱floor形成detached symmetric inverse-square-root；不保留完整keys，也不对当前video做梯度适配。
+2. **Pass B0b native anchors/solve**：重读同一video，以task-stable anchor query和白化后的candidate keys形成有符号scalar
+   compatibility；再按native group累计真实X/Y的均值、covariance与centered anchors，并形成regularized bank-conditioned queries。
+3. **Pass B1 exact replay**：再次重读同一video的native chunks，精确重建四类output bank，再以已求得query执行positive/negative
    online softmax和真实X/Y weighted sum。
 
-两个子阶段都必须按video维护首个采样帧、末个采样帧和跨chunk的previous activation：`Y_adj`使用同一video的上一采样帧，
+三个子阶段都必须按video维护首个采样帧、末个采样帧和跨chunk的previous activation：`Y_adj`使用同一video的上一采样帧，
 `Y_init`始终使用该video首帧，`Y_goal`始终使用该video末帧。chunk边界不得重置这些状态，video边界必须隔离并重置；可以预缓存
 端点或采用等价的分阶段读取。B1每个softmax分支分别维护running maximum、normalizer与weighted sum。相同输入下chunked B0/B1
 必须在正常数值误差内等价于non-chunked reference。内部重读同一授权bank仍是一次rollout前Writer调用，不读取action/state/reward/
@@ -157,14 +161,25 @@ outcome，也不进行task-local优化。
 logits/weights；从G3开始的shared deployment compiler才由共享Program query与native candidate keys按内容计算logits，禁止task/frame
 查表、固定系数或普通平均。
 
-G3当前first implementation不是直接回归每条video的解析dual/score。对每个video、target和native group，Program context与candidate
-direction/log-magnitude、normalized time、probe、horizon、output type和Pass A canonical event assignment只产生有界的正/负标量
-compatibilities。以每视频单位质量的基础measure记native value为`v_n`，先构造：
+G3当前修正不直接回归每条video的解析dual/score，也不把最终deployment query写成task/frame查表。family-shared candidate encoder
+读取真实native direction/log-magnitude及normalized time、probe、horizon、output type；固定owner只作bounded调制。对每个video、target、
+native group和canonical event，先在candidate-feature空间形成detached、对称的当前bank gauge：
+
+```text
+f_n = CandidateKey(native_n, metadata_n)
+m_e, K_e = event-normalized mean/covariance of f_n
+f_tilde_e,n = K_e^(-1/2) (f_n - m_e)
+```
+
+anchor query只由`P_lang`、固定owner/event/rank topology和family-shared参数产生，因此同一task不同video使用相同task anchor code；
+`P_scene/P_process/rho/tau/sigma`及Pass A canonical assignment仍决定每个video的event/frame measure。query与`f_tilde`的content dot
+product经有界非线性产生正/负compatibility。它不是固定系数、普通平均或自由查表，candidate bank仍是LoRA方向的必要Value路径。
+以每视频单位质量的基础measure记native value为`v_n`，随后构造：
 
 ```text
 mu = sum_n pi_n v_n
 C  = sum_n pi_n (v_n - mu)(v_n - mu)^T
-a_plus/minus = sum_e alpha_e sum_n pi_e,n (v_n - mu) * g_plus/minus(Program, candidate, event)
+a_plus/minus = sum_e alpha_e sum_n pi_e,n (v_n - mu) * g_plus/minus(P_lang, f_tilde_e,n, event)
 q_plus/minus = (C + lambda I)^-1 a_plus/minus
 logit_plus/minus,n = q_plus/minus^T (v_n - mu) + bounded_local_bias
 ```
@@ -175,22 +190,19 @@ action-out的32D group构造统计；不得把X复制到四个output type。Prog
 仍是当前视频真实X/Y的加权和。owner/family/rank/event/group embedding只表示固定拓扑，不得包含task、authority、video、member或
 frame absolute ID。
 
-`c3fc8e3`的family-shared candidate trunk加fixed-owner FiLM已由fresh macro5/macro10 formal证伪：macro10 held median/p10仅
-`.074620/.058381`，其中q/v/action-in/action-out为`.027938/.066509/.044464/.164942`。同checkpoint fixed-key image进一步显示，
-在稳定的`1e-3`相对谱floor下，task-local free query对q/v/action-out teacher update的联合上限仅约`.23/.32/.63`；去掉metadata或读取
-first hidden projection不能修复，而放宽至`1e-6`可恢复约`.97--.98`。因此原生信息没有消失，但learned compressed candidate key把
-关键方向压入数个数量级更弱的谱尾。action-in fixed-key ceiling已约`.975`而训练恢复仍只有`.044`，又独立证明共享Program-to-selection
-acquisition没有成立。最早接口由parameter ownership进一步收窄到Program/native candidate的scalar-anchor构造，而不是bank、solve、
-replay、rank或Action Meta。
+`84903aa`之后的family/fixed-owner scorer在clean detached `c3fc8e3`上从fresh运行到macro5/macro10，fit/held-video/task-holdout
+median仅`.074715/.074620/.081644`，held p10 `.058381`；因此parameter ownership本身不是充分修正。固定key image进一步显示稳定
+`1e-3`谱下q/v/action-out可达ceiling约`.226/.315/.629`，而action-in虽有`.975` ceiling、训练held仍仅约`.045`；raw-native与
+FiLM tangent也只有约`.250/.336/.600`与`.280/.381/.645`。直接把query写入native坐标再经同一bank逆解在代数上退化为脆弱raw-query
+transfer，所以clean pushed `4117117`只完成F0工程验证，没有浪费formal F3。
 
-当前F3 scorer因此删除learned compressed candidate projection与owner FiLM。q、v、action-in、action-out仍分别共享Program/rank/event/
-gain职责，并用公开的38-target owner embedding表达固定LoRA拓扑；每个owner/rank/event/branch由Program context直接产生native query、
-metadata query和一个magnitude query。scalar compatibility由native query与当前真实X/Y的RMS-normalized direction点积、metadata query与
-独立归一化的time/probe/horizon/type/event metadata点积、以及bounded log-RMS magnitude项共同形成，最后整体有界。它仍是共享的
-Program-query对current native candidate content的query-key计算，不是task/frame/member/video查表，也不由query head输出factor。
-B0只用这些scalar compatibilities从当前bank构造anchor并求解；B1仍在同一真实bank上exact signed replay。因此它不同于已失败的
-“把raw query直接跨video送入B1”路线。该修正不改变Program schema、bank、rank、scale、数据、loss、optimizer或Gate，与旧scorer
-checkpoint不兼容，必须fresh验证；若仍失败，继续以最早接口证据修正，不能用task lookup或width/LR/seed小扫替代。
+同一task三video的bank-global反事实则给出更精确证据：两video minimum-norm feature code对第三video的q/v/action-out近零，但把第三
+video只加入共同code估计后，三者立即达到约`.90--.93`；每event symmetric inverse-square-root保持该正控制，同时action-in的两video
+inductive held已达`.986`。这说明当前最早接口是**task-stable anchor code的可识别性**，而不是再调loss、谱floor或candidate width。
+当前唯一canonical修正因此保留四family共享candidate trunk和fixed-owner bounded modulation，但让anchor query只依赖same-task稳定
+`P_lang`，再对每video、每event白化candidate features；动态Program字段只控制event/frame measure。它不改变Program schema、真实
+banks、rank、teacher、data、optimizer或F3 Gate，与旧checkpoint不兼容，必须fresh验证。若仍失败，应按F3 family/held分解继续定位
+最早接口，不能用task lookup或LR/seed/width小扫替代。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，

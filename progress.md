@@ -1,9 +1,9 @@
 # EMBER progress
 
 更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@84903aa`的F3 equal-subspace-credit macro5/macro10 mapping non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过；当前family/fixed-owner scorer修正同时依据全新专家对`main@ed2883b`完整历史的复核与最新
-formal梯度证据。
+evidence为clean pushed `main@c3fc8e3`的family/fixed-owner F3 macro5/macro10 mapping non-pass，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过。后续fixed-key、raw/FiLM tangent与same-task三video bank-global反事实把最早接口从parameter
+ownership继续收窄到task-stable anchor code的可识别性；当前活动修正为`P_lang`稳定anchor加per-event candidate-feature whitening。
 
 ## 当前状态
 
@@ -101,12 +101,40 @@ key pairwise median cosine为`.001448/-.000865`，aggregate gradient只有各tar
 最大最小约`20.5x`。独立task94/video11复现q output pairwise median约0、aggregate ratio仅`.282/.276`。macro10 q两侧span
 ceiling均值已到`.235654/.093766`，实际update cosine仍只有`.008407`，排除了只是再训练同一共享trunk即可取到现有span。
 
-当前唯一canonical修正因此按专家明确建议实现为四family各自共享Program/rank/query/event/gain/candidate trunks，并由38-target
+基于该证据，当时的canonical修正按专家明确建议实现为四family各自共享Program/rank/query/event/gain/candidate trunks，并由38-target
 固定LoRA拓扑的zero-init bounded FiLM调制candidate hidden direction；没有task/video/member/authority/frame lookup，也不增加
 第二Writer。完整真实profile在gpu01单卡完成一组`3 target + 3 meta` forward/backward/update/checkpoint：222/222 trainable
 parameter tensors进入optimizer state，3,187,080个scorer参数、Action Meta 0、source/Program/scale trainable 0，耗时`179.81s`，
 peak allocated/reserved `25.16/25.45GB`。全仓`181 passed`且architecture guard无hard violation。该checkpoint-incompatible修正
-下一步必须从clean pushed detached commit fresh跑同一F3 Gate；profile和内部梯度不冒充shared mapping成功。
+该profile只为随后从clean pushed detached commit fresh运行同一F3 Gate解封；没有被解释为shared mapping成功。
+
+上述family/fixed-owner修正已由clean pushed detached `main@c3fc8e3`从fresh训练到macro5并以同一world6 topology exact-resume到
+macro10；两个checkpoint均完整评估451 conditions。macro10 fit/held-video/task-holdout task median为
+`.074715/.074620/.081644`，held p10 `.058381`、held/fit `.998724`，held四family q/v/action-in/action-out为
+`.027938/.066509/.044464/.164942`。它没有超过旧`c1e26ce`，故family/fixed-owner ownership是必要工程隔离但不是充分机制，
+不续macro20。
+
+同一checkpoint的fixed-key image在稳定`1e-3`相对谱floor下给出q/v/action-in/action-out teacher update ceiling约
+`.226/.315/.975/.629`；降到`1e-6`时大多恢复到`.97--.99`，说明信息被压入极弱奇异尾。raw-native与FiLM tangent并未解决：
+对应ceiling约`.250/.336/.960/.600`与`.280/.381/.973/.645`。尤其action-in已有`.975`表示容量而训练held只有`.044`，证明
+问题不只在key压缩，也在stable task code到current-bank selection的识别。clean pushed `main@4117117`曾接通direct-native F0，
+但进一步代数复核发现native query经同一bank covariance逆解会退化为已失败的raw-query transfer；因此没有启动无信息的formal F3，
+该实现已从活动分支回退，只作为工程/反证历史保留。
+
+新的same-task三video bank-global oracle用task93的videos 31/32拟合共同feature code、video46作holdout。full feature inverse与
+per-event symmetric inverse-square-root均显示：只用两条video的minimum-norm code时q/v/action-out held update近零，而把第三条
+video只加入共同code估计的transductive正控制立刻达到约`.90--.93`；action-in的per-event两video inductive held已达`.986`。
+这不是held梯度或deployment方案，而是证明共享feature chart中存在强same-task code，失败来自两video解落入巨大train-only
+nullspace。冻结G2 `P_lang`由exact language单独产生且same-task不同video确定性相同，故当前有机制依据的修正是用`P_lang`产生
+task-stable anchor query，动态`P_scene/P_process/rho/tau/sigma`只控制event/frame measure；每video、每event先对candidate keys做
+detached symmetric inverse-square-root，再形成native anchors与原有native-bank solve。
+
+该修正已在唯一canonical `SharedNativeFactorCompiler`中接通三次流式读取：B0a feature statistics、B0b native anchors/solve、B1
+exact signed replay；没有task/video/member/frame lookup、第二adapter或Action Meta。定向CPU合同现为14 tests通过。gpu01逻辑
+`0,1,2,3,4,6`的world6真实profile完成固定`3 meta + 3 target`一组forward/backward/update/checkpoint，step为`77.806s`，峰值
+allocated/reserved为`25.59/25.99GB`；feature retained rank最低约`94--96/128`、retained trace最低约`.999999`，native solve
+residual约`1e-12`，held/validation/test gradients、Program/source/scale trainable与Action Meta均为0。该profile只证明工程图与六卡
+吞吐。全仓`183 passed`，architecture guard无hard violation；下一步仍须clean pushed detached F0后从fresh运行同一F3 Gate。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
@@ -499,36 +527,15 @@ G1--G5 Gate或架构修正依据。
   `>=0.99999988`；一步真实loss backward使全部26,208,000个`output_logits`及其余四类free variables获得有限非零梯度，
   peak allocated为29,771,734,528 bytes。纯Native loader、Action Meta module/parameter 0、38 hooks和76-tensor唯一rank16均保持。
 
-## G3 family-owner formal与direct-native anchor修正
-
-clean pushed detached `main@c3fc8e3`的family-shared candidate trunk加fixed-owner bounded FiLM从fresh训练到macro5并exact-resume到
-macro10。完整451-condition macro10 fit/held-video/task-holdout median为`.074715/.074620/.081644`，held p10 `.058381`、held/fit
-`.998724`；macro5到10 held提高`.043307`但两点都远低于`.75/.50`，故相邻Gate不通过且没有盲目续到macro20。macro10 held q/v/
-action-in/action-out为`.027938/.066509/.044464/.164942`；Action Meta、held gradient与shuffled/reversed use均为0。
-
-同一checkpoint随后完成只读fixed-key image诊断。在相对最大奇异值`1e-3`的稳定子空间内，task93/video31的q target0、q target18、
-v target19、action-in target36、action-out target37联合teacher update ceiling分别为`.2268/.2262/.3151/.9750/.6292`；独立
-task94/video11把q target18复现为`.2312`。去掉metadata或读取first hidden projection不能修复q/v/action-out，放宽到`1e-6`却可
-恢复约`.97--.98`，说明真实native信息仍在，但compressed key将关键方向压入三到六个数量级更弱的谱尾。action-in已有`.975`
-fixed-key ceiling而当前训练恢复只有约`.044`，说明共享Program-to-selection acquisition也同时失败。最早接口因此是Program/native
-candidate scalar-anchor构造，不是X/Y banks、current-bank solve、B1 replay、rank4、rank12+4、Action Meta或多视频聚合。
-
-活动实现面已据此删除learned compressed candidate encoder与owner FiLM；共享Program context直接产生每个固定owner/rank/event/
-branch的native、metadata和magnitude query，并只与当前真实X/Y direction、独立metadata及bounded log-RMS形成B0 scalar compatibility，
-随后继续用current-bank solve与B1 exact signed replay。它没有task/video/member/frame lookup，不由query输出factor，也不是旧的跨video
-raw-query B1 transfer。单卡真实3+3任务profile已完成forward/backward/optimizer/checkpoint；input/output/group-gain gradient norm均有限
-非零，峰值allocated/reserved为25.49/25.78GB，Action Meta/source/Program/scale trainable均为0。该profile只证明实现面接通，formal
-结论仍需clean pushed detached F0与fresh F3。
-
 ## 当前下一步与延期漂移
 
 1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
 2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
-3. `c3fc8e3`的family/fixed-owner FiLM F3已从fresh运行并exact-resume到macro10；held median/p10仅`.074620/.058381`，该修正已被
-   formal证伪。fixed-key image把最早接口进一步定位到ill-conditioned compressed candidate key与Program-to-selection acquisition；
-   当前唯一实现面改为共享Program生成direct owner-native/metadata/magnitude queries，与真实X/Y content构造B0 scalar anchor，保留
-   current-bank solve与B1 exact replay。完成clean pushed detached F0资格后从fresh重跑同一F3 primary与相邻checkpoint Gate；通过后
-   才恢复scale/functional、K2/K4和held5 strict250；逐video dual/score、task/video键、解析系数仍不得进入deployment；
+3. `84903aa`的equal-subspace-credit F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但held median/p10仅
+   `.073029/.057174`，该修正已被formal证伪。跨family与固定target梯度分解把下一最早接口定位到width-shared scorer的parameter
+   ownership；当前以family-shared trunks加fixed-target bounded FiLM作单一机制修正，先从clean pushed detached commit fresh重跑
+   同一F3 primary与相邻checkpoint Gate。通过后才恢复scale/functional、K2/K4和held5 strict250；逐video dual/score、task/video键、
+   解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

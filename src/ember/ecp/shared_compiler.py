@@ -12,11 +12,15 @@ from torch.utils.checkpoint import checkpoint
 from ember.ecp.bank_conditioning import (
     AnchorProgramState,
     BankStatistics,
+    FeatureWhitener,
+    FeatureWhiteningPlan,
     ProgramNativeAnchorScorer,
     SpectralBankQuery,
     StreamingBankStatistics,
     StreamingSignedPool,
     batched_spectral_bank_query,
+    build_feature_whitening_plan,
+    identity_feature_whitening_plan,
 )
 from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.native_factors import (
@@ -56,6 +60,7 @@ class SharedCompilerOutput:
     frame_measures: tuple[torch.Tensor, ...]
     output_group_gains: tuple[torch.Tensor, ...]
     solve_metrics: torch.Tensor
+    feature_whitening_metrics: torch.Tensor
     global_statistics_enabled: bool
 
 
@@ -66,6 +71,7 @@ class _VideoBankPlan:
     frame_measure: torch.Tensor
     group_gains: torch.Tensor
     solve_metrics: torch.Tensor
+    feature_whitening_metrics: torch.Tensor
 
 
 @dataclass
@@ -73,21 +79,23 @@ class _StatisticsStream:
     base_frame: torch.Tensor
     event_frame: torch.Tensor
     frame_measure: torch.Tensor
-    input_anchor_queries: tuple[tuple[torch.Tensor, ...], ...]
+    input_anchor_queries: torch.Tensor
     input_accumulators: list[StreamingBankStatistics]
     output_accumulators: list[tuple[StreamingBankStatistics, ...]]
-    output_anchor_queries: tuple[tuple[torch.Tensor, ...], ...]
+    output_anchor_queries: tuple[torch.Tensor, ...]
     gains: tuple[torch.Tensor, ...]
     boundaries: list[NativeOutputBankState]
+    feature_plan: FeatureWhiteningPlan
 
 
 class SharedNativeFactorCompiler(torch.nn.Module):
     """Generate one rank-four residual through B0 solve and B1 exact replay.
 
     The scorer contains no task-, video-, member-, or frame-indexed parameters.
-    B0 converts bounded Program/candidate compatibilities into native anchors
-    and conditions them on the current video bank. B1 rereads that same bank
-    and only then pools its real X/Y values with two explicit softmax branches.
+    B0a derives detached per-event feature gauges from the current video bank.
+    B0b converts stable language anchors and whitened candidate content into
+    native anchors, then conditions them on the native covariance. B1 rereads
+    that same bank and pools real X/Y values with explicit softmax branches.
     """
 
     def __init__(
@@ -268,7 +276,10 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         return value.query if isinstance(value, SpectralBankQuery) else value
 
     def _new_statistics_stream(
-        self, video: SharedCompilerVideo, state: AnchorProgramState
+        self,
+        video: SharedCompilerVideo,
+        state: AnchorProgramState,
+        feature_plan: FeatureWhiteningPlan,
     ) -> _StatisticsStream:
         base_frame, event_frame, frame_measure = self._video_measures(
             video, state.event_weights
@@ -318,24 +329,22 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 NativeOutputBankState(final=value.detach())
                 for value in video.native.final_outputs
             ],
+            feature_plan=feature_plan,
         )
 
     def _input_anchor_compatibility(
         self,
         value: torch.Tensor,
         metadata: torch.Tensor,
-        native_query: torch.Tensor,
-        metadata_query: torch.Tensor,
-        magnitude_query: torch.Tensor,
+        query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
+        target: int,
+        whitener: FeatureWhitener,
     ) -> torch.Tensor:
+        keys = self.anchor_scorer.input_keys(value, metadata, target=target)
         event = self.anchor_scorer.input_compatibility(
-            native_query,
-            metadata_query,
-            magnitude_query,
-            value,
-            metadata,
+            query, whitener.whiten(keys)
         )
         return self._effective_input_compatibility(event, weights, ratio)
 
@@ -343,19 +352,23 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self,
         value: torch.Tensor,
         metadata: torch.Tensor,
-        native_query: torch.Tensor,
-        metadata_query: torch.Tensor,
-        magnitude_query: torch.Tensor,
+        query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
+        target: int,
+        whiteners: tuple[FeatureWhitener, ...],
     ) -> torch.Tensor:
-        event = self.anchor_scorer.output_compatibility(
-            native_query,
-            metadata_query,
-            magnitude_query,
-            value,
-            metadata,
+        keys = self.anchor_scorer.output_keys(value, metadata, target=target)
+        if len(whiteners) != keys.shape[0]:
+            raise NativeFactorError("compiler output feature groups changed")
+        whitened = torch.stack(
+            tuple(
+                whitener.whiten(keys[group])
+                for group, whitener in enumerate(whiteners)
+            ),
+            dim=1,
         )
+        event = self.anchor_scorer.output_compatibility(query, whitened)
         return self._effective_output_compatibility(event, weights, ratio)
 
     def _add_statistics_chunk(
@@ -390,14 +403,15 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         for target, (owner, x, y) in enumerate(
             zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
         ):
-            input_query = stream.input_anchor_queries[target]
             x_compatibility = checkpoint(
                 self._input_anchor_compatibility,
                 x,
                 input_metadata,
-                *input_query,
+                stream.input_anchor_queries[target],
                 state.event_weights[target],
                 event_ratio,
+                target,
+                stream.feature_plan.input_whiteners[target],
                 use_reentrant=False,
                 preserve_rng_state=False,
             )
@@ -407,14 +421,15 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             grouped = bank.reshape(
                 *bank.shape[:-1], groups, owner.out_features // groups
             ).movedim(-2, 0)
-            output_query = stream.output_anchor_queries[target]
             y_compatibility = checkpoint(
                 self._output_anchor_compatibility,
                 grouped,
                 output_metadata[None],
-                *output_query,
+                stream.output_anchor_queries[target],
                 state.event_weights[target],
                 event_ratio,
+                target,
+                stream.feature_plan.output_whiteners[target],
                 use_reentrant=False,
                 preserve_rng_state=False,
             )
@@ -472,6 +487,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             frame_measure=stream.frame_measure,
             group_gains=torch.cat(stream.gains, dim=0),
             solve_metrics=solve_metrics,
+            feature_whitening_metrics=stream.feature_plan.metrics,
         )
 
     def _statistics_pass(
@@ -479,7 +495,26 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         video: SharedCompilerVideo,
         state: AnchorProgramState,
     ) -> _VideoBankPlan:
-        stream = self._new_statistics_stream(video, state)
+        _, event_frame, _ = self._video_measures(video, state.event_weights)
+        feature_plan = (
+            build_feature_whitening_plan(
+                video=video,
+                event_frame=event_frame,
+                scorer=self.anchor_scorer,
+                owners=self.owners,
+                events=self.event_slots,
+                width=self.anchor_width,
+                relative_eigenvalue_floor=self.relative_eigenvalue_floor,
+            )
+            if self.global_statistics
+            else identity_feature_whitening_plan(
+                self.owners,
+                events=self.event_slots,
+                width=self.anchor_width,
+                reference=state.rank,
+            )
+        )
+        stream = self._new_statistics_stream(video, state, feature_plan)
         next_frame = 0
         for chunk in video.native.chunks():
             stop = next_frame + chunk.frame_count
@@ -620,6 +655,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
+        torch.Tensor,
     ]:
         plan = self._statistics_pass(video, state)
         input_values, output_values = self._replay_pass(video, plan)
@@ -629,6 +665,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             plan.frame_measure,
             plan.group_gains,
             plan.solve_metrics,
+            plan.feature_whitening_metrics,
         )
 
     def forward(
@@ -646,7 +683,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
 
         pooled = tuple(self._pool_video(video, state) for video in videos)
         beta = state.rank.new_full((len(videos),), 1.0 / len(videos))
-        scale_logits = self.scale_head(state.rank.detach()).squeeze(-1)
+        scale_logits = self.scale_head(state.stable_rank.detach()).squeeze(-1)
         scales = s_ref[:, None].to(scale_logits) * torch.tanh(scale_logits)
         a_directions = []
         b_directions = []
@@ -677,5 +714,8 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             frame_measures=tuple(values[2] for values in pooled),
             output_group_gains=tuple(values[3] for values in pooled),
             solve_metrics=torch.stack(tuple(values[4] for values in pooled)),
+            feature_whitening_metrics=torch.stack(
+                tuple(values[5] for values in pooled)
+            ),
             global_statistics_enabled=self.global_statistics,
         )

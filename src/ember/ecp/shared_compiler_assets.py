@@ -177,11 +177,19 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             config.get("schema_version") == G3_CONFIG_SCHEMA,
             config.get("status") == "active_bank_conditioned_mapping_compiler",
             model.get("selection")
-            == "program_direct_native_anchor_current_bank_solve_two_softmax_difference",
+            == "task_stable_anchor_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
             model.get("anchor_width") == 128,
             model.get("anchor_parameter_ownership")
-            == "family_shared_program_to_direct_owner_native_queries",
+            == "family_shared_task_stable_language_anchor_with_fixed_owner_candidate_key",
             model.get("relative_eigenvalue_floor") == 1e-6,
+            model.get("feature_whitening")
+            == "detached_per_event_symmetric_inverse_square_root",
+            model.get("native_read_sequence")
+            == [
+                "feature_statistics",
+                "native_anchor_statistics",
+                "exact_signed_replay",
+            ],
             model.get("phase_global_statistics") == {"f2": False, "f3": True},
             data.get("supported_K") == [1, 2, 4],
             data.get("mapping_K") == [1],

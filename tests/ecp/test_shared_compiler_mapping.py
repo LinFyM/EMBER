@@ -16,6 +16,7 @@ from ember.ecp.bank_conditioning.mapping_eval_runtime import (
     balanced_mapping_assignments,
 )
 from ember.ecp.bank_conditioning.mapping_gate import summarize_mapping_rows
+from ember.ecp.bank_conditioning.f0 import _low_rank_update_similarity
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherFactors
 
 
@@ -61,6 +62,24 @@ def _teacher(output: SharedCompilerOutput, *, member: str) -> NativeTeacherFacto
         scales=output.residual.scales.detach().clone(),
         provenance={},
     )
+
+
+def test_f0_chunk_reference_compares_effective_update_not_rank_gauge() -> None:
+    generator = torch.Generator().manual_seed(17)
+    a = torch.randn(4, 9, generator=generator, dtype=torch.float64)
+    b = torch.randn(4, 7, generator=generator, dtype=torch.float64)
+    q, _ = torch.linalg.qr(
+        torch.randn(4, 4, generator=generator, dtype=torch.float64)
+    )
+    rotated_a = q @ a
+    rotated_b = q @ b
+
+    assert float((a - rotated_a).abs().max()) > 1e-2
+    cosine, relative_error = _low_rank_update_similarity(
+        a, b, rotated_a, rotated_b
+    )
+    assert cosine >= 1.0 - 1e-6
+    assert relative_error <= 1e-6
 
 
 def test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped() -> None:

@@ -115,7 +115,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
   48GB本身不构成低效，选择仍以真实吞吐和安全余量为准。
 - EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
-- gpu01物理0若仍标记prohibited则不得使用；GPU身份和状态每次都要重新确认。
+- gpu01曾标记prohibited的设备只能按UUID/serial身份继承该限制，不能把节点重启后的逻辑index 0机械等同于旧物理0；GPU身份、
+  枚举映射和状态每次都要重新确认。2026-08-26重启后旧prohibited设备未被枚举，当前逻辑0是原物理1，不受该旧标记限制。
 - 正式训练遵守storage quota、clean pushed commit和frozen worktree合同；探索实验不做冗余流程。
 - canonical集成目标是`main`。只有需要隔离或并发写入时创建`codex/*`分支和worktree，验证后尽快合并、推送并清理。
 - 不在活动树保留退役实现、平行fallback、过时配置、重复文档或临时结果；历史由Git、formal artifacts和一份精简历史记录保存。

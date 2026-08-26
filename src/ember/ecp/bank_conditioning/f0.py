@@ -91,7 +91,12 @@ class F0K1:
     output: Any
     complete_adapter: Mapping[str, torch.Tensor]
     gradient_norms: dict[str, float]
-    chunk_error: float
+    raw_slot_error: float
+    update_cosine_minimum: float
+    update_cosine_median: float
+    update_relative_error_maximum: float
+    update_relative_error_median: float
+    solve_metric_error: float
     seconds: float
 
 
@@ -285,6 +290,34 @@ def _single_chunk_readout(readout: NativeVideoReadout) -> NativeVideoReadout:
     )
 
 
+def _low_rank_update_similarity(
+    left_a: torch.Tensor,
+    left_b: torch.Tensor,
+    right_a: torch.Tensor,
+    right_b: torch.Tensor,
+) -> tuple[float, float]:
+    """Compare ``B.T @ A`` without materializing a target-sized update."""
+
+    left_a = left_a.detach().float()
+    left_b = left_b.detach().float()
+    right_a = right_a.detach().float()
+    right_b = right_b.detach().float()
+    inner = ((left_a @ right_a.T) * (left_b @ right_b.T)).sum()
+    left_squared = ((left_a @ left_a.T) * (left_b @ left_b.T)).sum()
+    right_squared = ((right_a @ right_a.T) * (right_b @ right_b.T)).sum()
+    left_norm = left_squared.clamp_min(0).sqrt()
+    right_norm = right_squared.clamp_min(0).sqrt()
+    if float(right_norm) == 0.0:
+        if float(left_norm) == 0.0:
+            return 1.0, 0.0
+        return 0.0, float("inf")
+    denominator = (left_norm * right_norm).clamp_min(torch.finfo(torch.float32).tiny)
+    cosine = (inner / denominator).clamp(-1.0, 1.0)
+    difference_squared = (left_squared + right_squared - 2.0 * inner).clamp_min(0)
+    relative_error = difference_squared.sqrt() / right_norm
+    return float(cosine), float(relative_error)
+
+
 def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
     tick = time.monotonic()
     prepared = _condition(runtime, (video,), chunk_size=chunk_size)
@@ -349,7 +382,7 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         reference_output = runtime.compiler(
             prepared.program, (single_video,), s_ref=runtime.ranks.s_ref
         )
-    chunk_error = max(
+    raw_slot_error = max(
         float((left.detach() - right.detach()).abs().max())
         for left, right in zip(
             (*chunked_output.residual.a, *chunked_output.residual.b),
@@ -357,12 +390,41 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
             strict=True,
         )
     )
+    update_similarities = tuple(
+        _low_rank_update_similarity(left_a, left_b, right_a, right_b)
+        for left_a, left_b, right_a, right_b in zip(
+            chunked_output.residual.a,
+            chunked_output.residual.b,
+            reference_output.residual.a,
+            reference_output.residual.b,
+            strict=True,
+        )
+    )
+    update_cosines = torch.tensor(
+        tuple(row[0] for row in update_similarities), dtype=torch.float64
+    )
+    update_relative_errors = torch.tensor(
+        tuple(row[1] for row in update_similarities), dtype=torch.float64
+    )
+    solve_metric_error = float(
+        (
+            chunked_output.solve_metrics.detach()
+            - reference_output.solve_metrics.detach()
+        )
+        .abs()
+        .max()
+    )
     return F0K1(
         video=video,
         output=output,
         complete_adapter=complete,
         gradient_norms=gradient_norms,
-        chunk_error=chunk_error,
+        raw_slot_error=raw_slot_error,
+        update_cosine_minimum=float(update_cosines.min()),
+        update_cosine_median=float(update_cosines.median()),
+        update_relative_error_maximum=float(update_relative_errors.max()),
+        update_relative_error_median=float(update_relative_errors.median()),
+        solve_metric_error=solve_metric_error,
         seconds=time.monotonic() - tick,
     )
 
@@ -481,10 +543,12 @@ def _qualification_checks(result: Mapping[str, Any]) -> dict[str, bool]:
         and max(abs(value - uniform) for value in video_weights) <= 1e-7,
         "K4_permutation_invariant": result["k4_permutation_maximum_error"]
         <= 2e-6,
-        "chunked_matches_nonchunked": result[
-            "chunked_to_nonchunked_maximum_error"
+        "chunked_matches_nonchunked_effective_update": result[
+            "chunked_to_nonchunked_update_cosine_minimum"
         ]
-        <= 2e-5,
+        >= 0.99999
+        and result["chunked_to_nonchunked_update_relative_error_maximum"]
+        <= 1e-3,
     }
 
 
@@ -515,7 +579,24 @@ def _build_result(
             "natural_program_trainable_parameter_count"
         ],
         "gradient_norms": k1.gradient_norms,
-        "chunked_to_nonchunked_maximum_error": k1.chunk_error,
+        "chunked_to_nonchunked_raw_slot_maximum_error": k1.raw_slot_error,
+        "chunked_to_nonchunked_update_cosine_minimum": (
+            k1.update_cosine_minimum
+        ),
+        "chunked_to_nonchunked_update_cosine_median": (
+            k1.update_cosine_median
+        ),
+        "chunked_to_nonchunked_update_relative_error_maximum": (
+            k1.update_relative_error_maximum
+        ),
+        "chunked_to_nonchunked_update_relative_error_median": (
+            k1.update_relative_error_median
+        ),
+        "chunked_to_nonchunked_solve_metric_maximum_error": (
+            k1.solve_metric_error
+        ),
+        "chunked_update_cosine_minimum_threshold": 0.99999,
+        "chunked_update_relative_error_maximum_threshold": 1e-3,
         "chunk_reference": "same cached native X/Y bank, chunk4 versus one chunk",
         "solve_metrics": k1.output.solve_metrics.detach().cpu().tolist(),
         "rank16_tensor_count": len(k1.complete_adapter),
@@ -543,8 +624,17 @@ def _build_result(
         failed = {name: value for name, value in checks.items() if not value}
         diagnostic = {
             "failed": failed,
-            "chunked_to_nonchunked_maximum_error": result[
-                "chunked_to_nonchunked_maximum_error"
+            "chunked_to_nonchunked_raw_slot_maximum_error": result[
+                "chunked_to_nonchunked_raw_slot_maximum_error"
+            ],
+            "chunked_to_nonchunked_update_cosine_minimum": result[
+                "chunked_to_nonchunked_update_cosine_minimum"
+            ],
+            "chunked_to_nonchunked_update_relative_error_maximum": result[
+                "chunked_to_nonchunked_update_relative_error_maximum"
+            ],
+            "chunked_to_nonchunked_solve_metric_maximum_error": result[
+                "chunked_to_nonchunked_solve_metric_maximum_error"
             ],
             "k4_permutation_maximum_error": result[
                 "k4_permutation_maximum_error"

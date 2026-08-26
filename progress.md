@@ -48,7 +48,9 @@ F4 joint owner演化或退役，不另建平行Writer。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
-`19.5--25.1GB`且计算段大多`100%`。物理3因他人约`78--92%` UTL而未使用，物理0继续遵守prohibited。正式launch仍重新live检查；
+`19.5--25.1GB`且计算段大多`100%`。当时物理3因他人约`78--92%` UTL而未使用，旧物理0按当时prohibited标记未使用。gpu01在
+2026-08-26重启后只枚举7张卡；UUID复核证明当前逻辑0是原物理1，旧prohibited物理0已不在列表，故不能按裸index继续排除。
+正式launch仍重新live检查UUID、index、进程与状态；
 每卡以真实step time、LoRA/s和持续UTL为准，显存安全余量不是必须填满的配额。
 
 吞吐profile同样按真实稳态而非卡数解释：单worker峰值allocated约`10.1GB`但启动主要是CPU runtime装载；同一A40共驻两个长寿命

@@ -28,6 +28,7 @@ class SpectralBankQuery:
     retained_condition: float
     relative_residual_maximum: float
     anchor_projection_minimum: float
+    retained_trace_fraction: float
 
 
 class StreamingBankStatistics:
@@ -215,6 +216,10 @@ def batched_spectral_bank_query(
         dim=-1
     ).clamp_min(1e-30)
     projection = projected_anchor.norm(dim=-1) / flat_anchor.norm(dim=-1).clamp_min(1e-30)
+    positive_eigenvalues = eigenvalues.clamp_min(0)
+    retained_trace = (positive_eigenvalues * keep).sum(-1) / positive_eigenvalues.sum(
+        -1
+    ).clamp_min(1e-30)
     if not bool(torch.isfinite(query).all()) or not bool(
         torch.isfinite(residual).all()
     ):
@@ -230,6 +235,7 @@ def batched_spectral_bank_query(
                 retained_condition=float(retained[-1] / retained[0]),
                 relative_residual_maximum=float(residual[index].detach().max()),
                 anchor_projection_minimum=float(projection[index].detach().min()),
+                retained_trace_fraction=float(retained_trace[index]),
             )
         )
     return tuple(results)
@@ -249,14 +255,32 @@ def bounded_relative_group_gain(score_maximum: torch.Tensor) -> torch.Tensor:
 
 
 class StreamingSignedPool:
-    """Exact positive/negative online softmax under an explicit base measure."""
+    """Exact positive/negative online softmax under an explicit base measure.
 
-    def __init__(self, query: torch.Tensor, *, dtype: torch.dtype = torch.float32):
+    Capacity probes use one antithetic query.  The shared compiler can instead
+    provide two independently solved branch queries.  A query-specific logit
+    bias carries event-conditioned measures without copying native values.
+    """
+
+    def __init__(
+        self,
+        query: torch.Tensor,
+        *,
+        dtype: torch.dtype = torch.float32,
+        explicit_branches: bool = False,
+    ):
         if query.ndim < 2 or query.shape[-1] <= 0:
             raise BankConditioningError("signed-pool query shape changed")
-        self.query_shape = tuple(query.shape[:-1])
+        if explicit_branches:
+            if query.ndim < 3 or query.shape[-2] != 2:
+                raise BankConditioningError("signed-pool explicit branches changed")
+            self.query_shape = tuple(query.shape[:-2])
+            branch_query = query
+        else:
+            self.query_shape = tuple(query.shape[:-1])
+            branch_query = torch.stack((query, -query), dim=-2)
         self.width = int(query.shape[-1])
-        self.query = query.to(dtype=dtype)
+        self.query = branch_query.to(dtype=dtype)
         self.maximum = torch.full(
             (*self.query_shape, 2),
             -torch.inf,
@@ -273,7 +297,12 @@ class StreamingSignedPool:
         )
         self.candidate_count = 0
 
-    def add(self, values: torch.Tensor, mass: torch.Tensor) -> None:
+    def add(
+        self,
+        values: torch.Tensor,
+        mass: torch.Tensor,
+        logit_bias: torch.Tensor | None = None,
+    ) -> None:
         if (
             values.ndim < 2
             or values.shape[-1] != self.width
@@ -284,12 +313,28 @@ class StreamingSignedPool:
         flat_mass = mass.detach().to(self.query).reshape(-1)
         if torch.any(flat_mass <= 0) or not bool(torch.isfinite(flat_mass).all()):
             raise BankConditioningError("signed-pool measure is not positive")
-        score = self.query.reshape(-1, self.width) @ flat_values.T
-        score = score.reshape(*self.query_shape, flat_values.shape[0])
+        score = self.query.reshape(-1, 2, self.width) @ flat_values.T
+        score = score.reshape(*self.query_shape, 2, flat_values.shape[0])
         log_mass = flat_mass.log().reshape(
             *((1,) * len(self.query_shape)), flat_values.shape[0]
         )
-        logits = torch.stack((score, -score), dim=-2) + log_mass[..., None, :]
+        logits = score + log_mass[..., None, :]
+        if logit_bias is not None:
+            shared_shape = (*self.query_shape, *mass.shape)
+            branch_shape = (*self.query_shape, 2, *mass.shape)
+            if logit_bias.shape == shared_shape:
+                bias = logit_bias.to(self.query).reshape(
+                    *self.query_shape, 1, flat_values.shape[0]
+                )
+            elif logit_bias.shape == branch_shape:
+                bias = logit_bias.to(self.query).reshape(
+                    *self.query_shape, 2, flat_values.shape[0]
+                )
+            else:
+                raise BankConditioningError("signed-pool logit bias axes changed")
+            if not bool(torch.isfinite(bias).all()):
+                raise BankConditioningError("signed-pool logit bias is non-finite")
+            logits = logits + bias
         chunk_maximum = logits.amax(-1)
         maximum = torch.maximum(self.maximum, chunk_maximum)
         old_scale = torch.exp(self.maximum - maximum)
@@ -314,7 +359,11 @@ def materialized_signed_pool(
     mass: torch.Tensor,
     *,
     dtype: torch.dtype = torch.float64,
+    explicit_branches: bool = False,
+    logit_bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    accumulator = StreamingSignedPool(query, dtype=dtype)
-    accumulator.add(values, mass)
+    accumulator = StreamingSignedPool(
+        query, dtype=dtype, explicit_branches=explicit_branches
+    )
+    accumulator.add(values, mass, logit_bias)
     return accumulator.signed_mean()

@@ -108,7 +108,7 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     width = 8
     events = 4
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=width, event_slots=events, key_width=6
+        owners, program_width=width, event_slots=events, anchor_width=6
     )
     program = _program(len(owners), width, events)
     one_chunk = _video(
@@ -144,11 +144,24 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     loss = sum(value.square().mean() for value in observed.residual.a)
     loss = loss + sum(value.square().mean() for value in observed.residual.b)
     loss.backward()
-    assert compiler.input_query.weight.grad is not None
-    assert compiler.output_query.weight.grad is not None
-    assert compiler.input_keys["4"].content.weight.grad is not None
-    assert compiler.output_keys["2"].content.weight.grad is not None
-    assert compiler.scale_head.weight.grad is not None
+    assert compiler.anchor_scorer.input_anchor_query[-1].weight.grad is not None
+    assert compiler.anchor_scorer.output_anchor_query[-1].weight.grad is not None
+    assert (
+        compiler.anchor_scorer.input_candidates["4"].direction[0].weight.grad
+        is not None
+    )
+    assert (
+        compiler.anchor_scorer.output_candidates["2"].direction[0].weight.grad
+        is not None
+    )
+    assert compiler.anchor_scorer.group_gain[-1].weight.grad is not None
+    assert compiler.scale_head[-1].weight.grad is not None
+    assert bool(torch.isfinite(observed.solve_metrics).all())
+    assert observed.global_statistics_enabled
+    assert all(
+        bool(((gain >= 0.0) & (gain <= 1.0)).all())
+        for gain in observed.output_group_gains
+    )
     names = set(dict(compiler.named_parameters()))
     assert not {"input_logits", "output_logits", "event_logits"} & names
 
@@ -158,9 +171,8 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
     width = 8
     events = 4
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=width, event_slots=events, key_width=6
+        owners, program_width=width, event_slots=events, anchor_width=6
     )
-    torch.nn.init.normal_(compiler.video_reliability[-1].weight, std=0.03)
     program = _program(len(owners), width, events)
     videos = tuple(
         _video(owners, seed=seed, chunks=(2, 2), width=width, events=events)
@@ -173,7 +185,7 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
     torch.testing.assert_close(
         forward.video_weights, reverse.video_weights.flip(0), rtol=1e-6, atol=1e-6
     )
-    assert float(forward.video_weights.detach().max()) < 0.625
+    torch.testing.assert_close(forward.video_weights, torch.full((4,), 0.25))
     for left, right in zip(
         (*forward.residual.a, *forward.residual.b),
         (*reverse.residual.a, *reverse.residual.b),
@@ -184,7 +196,7 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
 
 def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
     compiler = SharedNativeFactorCompiler(
-        _owners(), program_width=8, event_slots=4, key_width=6
+        _owners(), program_width=8, event_slots=4, anchor_width=6
     )
     selection, scale_video = _trainable_groups(compiler)
     assert {id(value) for value in selection}.isdisjoint(
@@ -215,12 +227,11 @@ def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
     ) <= 1.00001
 
 
-def test_scale_and_video_heads_do_not_backpropagate_into_selection_context() -> None:
+def test_scale_and_group_gain_heads_do_not_backpropagate_into_selection_context() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4, key_width=6
+        owners, program_width=8, event_slots=4, anchor_width=6
     )
-    torch.nn.init.normal_(compiler.video_reliability[-1].weight, std=0.03)
     selection, scale_video = _trainable_groups(compiler)
     program = _program(len(owners), 8, 4)
     videos = tuple(
@@ -250,25 +261,26 @@ def test_scale_and_video_heads_do_not_backpropagate_into_selection_context() -> 
         gradient is None or not bool(torch.count_nonzero(gradient))
         for gradient in selection_scale
     )
-    assert scale_head and all(
+    assert scale_head and any(
         gradient is not None and bool(torch.count_nonzero(gradient))
         for gradient in scale_head
     )
 
     output = compiler(program, videos, s_ref=torch.ones(len(owners)))
-    video_gradients = torch.autograd.grad(
-        output.video_weights[0],
+    gain_gradients = torch.autograd.grad(
+        sum(value.sum() for value in output.output_group_gains),
         (*selection, *scale_video),
         allow_unused=True,
     )
     assert all(
         gradient is None or not bool(torch.count_nonzero(gradient))
-        for gradient in video_gradients[: len(selection)]
+        for gradient in gain_gradients[: len(selection)]
     )
     assert any(
         gradient is not None and bool(torch.count_nonzero(gradient))
-        for gradient in video_gradients[len(selection) :]
+        for gradient in gain_gradients[len(selection) :]
     )
+    torch.testing.assert_close(output.video_weights, torch.full((2,), 0.5))
 
 
 def test_multivideo_training_condition_cannot_read_native_teacher_tensors() -> None:

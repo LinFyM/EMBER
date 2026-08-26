@@ -510,6 +510,19 @@ relative gain及chunked replay本身是G3当前瓶颈，也不需要转向matrix
 `100%`，12个cost-balanced workers在最长`228.44s`内完成。第三worker没有安全显存余量；后续仍按任务图和live状态选择card/process
 数，而不是把“多卡”或“显存占满”本身当科学结果。
 
+### 36. F2的off边界、F3训练权重与吞吐实现已被精确定义
+
+`global_statistics_off`采用专家允许的`C=I`消融：仍以每video单位measure累计centered first-moment native anchor，再由B1对真实X/Y做
+两branch exact replay；它只关闭current-bank covariance/preconditioning，不等于固定query、普通平均或完全不读bank的字面单pass。
+因此F2只检验candidate-local compatibility加first-moment anchor能否泛化；若F2失败而F3通过，应删除off模式并淘汰该假设，不能把
+F2 non-pass解释为两阶段bank-conditioned Writer失败。
+
+预注册451条件解析为40 fit tasks（25 meta、15 target）、40 held-video和10 task-holdout/82 conditions。为保持两种role每步各50%，
+每macro固定5个六任务updates，完整覆盖15个target并按seed从25个meta中轮换15个；不能沿用旧“19+19尾step”的历史表述。
+同一科学batch在单卡与gpu01物理1/2/4/5/6五卡的真实profile中分别为`181.21s`和`44.96s`，五卡约`4.03x`，各卡计算段大多
+`100%` UTL。后续GPU效率同时看world-size scaling与单卡SM/UTL、显存峰值、step time/LoRA吞吐；不以dummy显存占用或48GB填满率
+替代有效计算。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

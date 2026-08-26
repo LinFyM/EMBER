@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Train ECP G3 frozen-Program shared compiler."""
+"""Train the active ECP G3 bank-conditioned mapping compiler."""
 
-from ember.ecp.shared_compiler_training import build_parser, finalize_args, train
+from ember.ecp.bank_conditioning.mapping_training import (
+    build_parser,
+    finalize_args,
+    train,
+)
 
 
 if __name__ == "__main__":

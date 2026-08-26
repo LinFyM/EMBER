@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -18,6 +19,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 RUN_SCHEMA = "ember_ecp_shared_compiler_g3_run_v2"
+MAPPING_RUN_SCHEMA = "ember_ecp_shared_compiler_mapping_run_v1"
 
 
 def _topology(context: DistributedContext) -> list[Any]:
@@ -237,6 +239,125 @@ def build_shared_compiler_run_contract(
             "source_policy_trainable_parameter_count": 0,
             "native_observer_trainable_parameter_count": 0,
             "natural_program_trainable_parameter_count": 0,
+        },
+    }
+
+
+def build_mapping_run_contract(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    source: Mapping[str, Any],
+    policy: torch.nn.Module,
+    program: torch.nn.Module,
+    compiler: torch.nn.Module,
+    native_teacher_store: Any,
+    owners: Sequence[Any],
+    mapping_split: Any,
+    total_macros: int,
+    checkpoint_macros: Sequence[int],
+    repo_root: Path,
+) -> dict[str, Any]:
+    """Freeze the factor-supervised F2/F3 information wall and topology."""
+
+    repository = git_state(repo_root)
+    teacher_root = read_json(native_teacher_store.root_manifest)
+    state_names = tuple(compiler.state_dict())
+    forbidden = tuple(
+        name
+        for name in state_names
+        if any(
+            token in name
+            for token in (
+                "task_lookup",
+                "video_lookup",
+                "frame_lookup",
+                "teacher",
+                "covariance",
+                "analytic_dual",
+            )
+        )
+    )
+    if forbidden or native_teacher_store.tensor_reads != 0:
+        raise ValueError("G3 mapping checkpoint or prelaunch teacher wall changed")
+    return {
+        "schema_version": MAPPING_RUN_SCHEMA,
+        "stage": f"g3_mapping_{args.phase}",
+        "mode": args.mode,
+        "phase": args.phase,
+        "git": {
+            "branch": repository["branch"],
+            "commit": repository["commit"],
+            "authority_commit": (
+                repository["commit"]
+                if args.mode == "formal"
+                else repository["authority_commit"]
+            ),
+        },
+        "config": {"path": str(args.config), "bytes": args.config.stat().st_size},
+        "source": dict(source),
+        "tokenizer": {
+            "path": str(args.tokenizer_path),
+            "bytes": args.tokenizer_path.stat().st_size,
+        },
+        "data_root": str(args.data_root),
+        "frozen_program": {
+            "checkpoint": str(
+                args.asset_root / config["authorities"]["g2_program_checkpoint"]
+            ),
+            **pure_shared_compiler_inventory(
+                policy=policy,
+                program=program,
+                compiler=compiler,
+                owners=owners,
+            ),
+        },
+        "native_teacher": {
+            "root_manifest": str(native_teacher_store.root_manifest),
+            "root_manifest_bytes": native_teacher_store.root_manifest.stat().st_size,
+            "schema_version": teacher_root.get("schema_version"),
+            "K1_covered_task_count": teacher_root.get("K1_covered_task_count"),
+            "video_count": teacher_root.get("video_count"),
+            "teacher_count": teacher_root.get("teacher_count"),
+            "deployment_reads": False,
+            "checkpoint_payload": False,
+        },
+        "mapping_split": {
+            **dict(config["mapping_split"]),
+            "resolved_fit_conditions": len(mapping_split.fit),
+            "resolved_video_holdout_conditions": len(mapping_split.video_held),
+            "resolved_task_holdout_conditions": len(mapping_split.task_held),
+        },
+        "model": {
+            **dict(config["model"]),
+            "active_global_statistics": bool(compiler.global_statistics),
+            "compiler_forward_signature": list(
+                inspect.signature(compiler.forward).parameters
+            ),
+            "checkpoint_tensor_names": len(state_names),
+            "checkpoint_forbidden_names": list(forbidden),
+        },
+        "optimization": dict(config["optimization"]),
+        "information_wall": dict(config["information_wall"]),
+        "runtime": {
+            "world_size": context.world_size,
+            "topology": _topology(context),
+            "total_macros": total_macros,
+            "checkpoint_macros": list(checkpoint_macros),
+            "optimizer_steps_per_macro": 5,
+            "global_logical_tasks_per_optimizer_step": 6,
+            "role_weighting": "three meta-fit plus three target-fit",
+            "two_K1_videos_per_logical_task": True,
+        },
+        "gradient_wall": {
+            "source_policy_trainable_parameter_count": 0,
+            "native_observer_trainable_parameter_count": 0,
+            "natural_program_trainable_parameter_count": 0,
+            "scale_head_trainable_parameter_count": 0,
+            "held_task_gradient_count": 0,
+            "validation_or_test_gradient_count": 0,
+            "old_functional_selection_gradient": False,
         },
     }
 

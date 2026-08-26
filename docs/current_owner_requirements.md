@@ -111,6 +111,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 - 每次GPU launch前同时live检查gpu01/gpu02；单个job只用一个节点，最多6张真正提高吞吐的A40。
 - 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
+- 吞吐优化同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、step wall time、计算段SM/UTL、memory UTL与显存峰值
+  调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
+  48GB本身不构成低效，选择仍以真实吞吐和安全余量为准。
 - EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
 - gpu01物理0若仍标记prohibited则不得使用；GPU身份和状态每次都要重新确认。
 - 正式训练遵守storage quota、clean pushed commit和frozen worktree合同；探索实验不做冗余流程。

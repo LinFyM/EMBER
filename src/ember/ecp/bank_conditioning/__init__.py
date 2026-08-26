@@ -1,5 +1,10 @@
 """Current-bank statistics, spectral queries, and signed pooling."""
 
+from ember.ecp.bank_conditioning.anchor import (
+    AnchorProgramState,
+    NativeCandidateEncoder,
+    ProgramNativeAnchorScorer,
+)
 from ember.ecp.bank_conditioning.operator import (
     BankConditioningError,
     BankStatistics,
@@ -14,8 +19,11 @@ from ember.ecp.bank_conditioning.operator import (
 )
 
 __all__ = [
+    "AnchorProgramState",
     "BankConditioningError",
     "BankStatistics",
+    "NativeCandidateEncoder",
+    "ProgramNativeAnchorScorer",
     "SpectralBankQuery",
     "StreamingBankStatistics",
     "StreamingSignedPool",

@@ -25,7 +25,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 G3_CONFIG_SCHEMA_V1 = "ember_ecp_shared_compiler_g3_v1"
-G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v2"
+G3_CONFIG_SCHEMA_V2 = "ember_ecp_shared_compiler_g3_v2"
+G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v3"
 
 
 @dataclass(frozen=True)
@@ -67,47 +68,56 @@ def _checked(path: Path, expected_bytes: int | None = None) -> Path:
     return value
 
 
-def load_shared_compiler_config(path: Path) -> dict[str, Any]:
-    config = read_json(path.resolve())
+def _common_config_valid(config: Mapping[str, Any]) -> bool:
+    model = config.get("model", {})
+    wall = config.get("information_wall", {})
+    return all(
+        (
+            model.get("target_owners") == 38,
+            model.get("event_slots") == 8,
+            model.get("program_width") == 128,
+            model.get("residual_rank") == 4,
+            model.get("materialization") == "unique_rank12_plus_rank4_rank16",
+            model.get("input_candidate_index")
+            == ["video", "frame", "probe", "horizon"],
+            model.get("output_candidate_index")
+            == ["video", "frame", "probe", "horizon", "type"],
+            wall.get("action_meta_installed") is False,
+            wall.get("held_gradient_tasks") == 0,
+            wall.get("shuffled_or_reversed_use") is False,
+        )
+    )
+
+
+def _historical_config_valid(config: Mapping[str, Any]) -> bool:
     schema = config.get("schema_version")
     model = config.get("model", {})
     data = config.get("data", {})
     wall = config.get("information_wall", {})
-    losses = config.get("optimization", {}).get("loss_weights", {})
     optimization = config.get("optimization", {})
-    profile = config.get("profile_defaults", {})
-    formal = config.get("formal_run", {})
-    common_invalid = (
-        model.get("target_owners") != 38
-        or model.get("event_slots") != 8
-        or model.get("program_width") != 128
-        or model.get("residual_rank") != 4
-        or model.get("materialization") != "unique_rank12_plus_rank4_rank16"
-        or model.get("selection")
-        != "program_query_native_content_key_two_softmax_difference"
-        or model.get("input_candidate_index")
-        != ["video", "frame", "probe", "horizon"]
-        or model.get("output_candidate_index")
-        != ["video", "frame", "probe", "horizon", "type"]
-        or data.get("K_values") != [1, 2, 4]
-        or data.get("video_action_cross_episode") is not True
-        or data.get("action_chunk_size") != 50
-        or data.get("task_role_weighting") != "meta50_target50"
-        or optimization.get("functional_query_count") != 4
-        or optimization.get("functional_policy_microbatch_size") != 2
-        or optimization.get("same_task_consistency_gradient")
-        != "rotating_primary_stop_gradient_other_update"
-        or wall.get("action_meta_installed") is not False
-        or wall.get("held_gradient_tasks") != 0
-        or wall.get("shuffled_or_reversed_use") is not False
-        or profile.get("allowed_world_sizes") != [1, 2]
-        or profile.get("task_pairs") != [[23, 72], [27, 73], [1, 93]]
-        or formal.get("allowed_world_sizes") != [1, 2]
+    losses = set(optimization.get("loss_weights", {}))
+    teacher = optimization.get("native_teacher", {})
+    optimizer = optimization.get("optimizer", {})
+    common = all(
+        (
+            model.get("selection")
+            == "program_query_native_content_key_two_softmax_difference",
+            data.get("K_values") == [1, 2, 4],
+            data.get("video_action_cross_episode") is True,
+            data.get("action_chunk_size") == 50,
+            data.get("task_role_weighting") == "meta50_target50",
+            optimization.get("functional_query_count") == 4,
+            optimization.get("functional_policy_microbatch_size") == 2,
+            optimization.get("same_task_consistency_gradient")
+            == "rotating_primary_stop_gradient_other_update",
+            config.get("profile_defaults", {}).get("allowed_world_sizes") == [1, 2],
+            config.get("profile_defaults", {}).get("task_pairs")
+            == [[23, 72], [27, 73], [1, 93]],
+            config.get("formal_run", {}).get("allowed_world_sizes") == [1, 2],
+        )
     )
-    v1_invalid = schema == G3_CONFIG_SCHEMA_V1 and (
-        config.get("status") != "historical_frozen_program_shared_compiler_v1"
-        or set(losses)
-        != {
+    if schema == G3_CONFIG_SCHEMA_V1:
+        expected = {
             "global_member_effect",
             "family_functional",
             "cross_episode_flow",
@@ -115,45 +125,94 @@ def load_shared_compiler_config(path: Path) -> dict[str, Any]:
             "carrier_preservation",
             "same_task_consistency",
         }
+        return common and config.get("status") == (
+            "historical_frozen_program_shared_compiler_v1"
+        ) and losses == expected
+    expected = {
+        "global_member_effect",
+        "family_functional",
+        "cross_episode_flow",
+        "native_teacher_selection",
+        "native_teacher_scale",
+        "carrier_preservation",
+        "same_task_consistency",
+    }
+    return common and all(
+        (
+            schema == G3_CONFIG_SCHEMA_V2,
+            config.get("status") == "active_native_teacher_shared_compiler",
+            "native_teacher_manifest" in config.get("authorities", {}),
+            teacher.get("K_values") == [1],
+            teacher.get("member_reduction")
+            == "detached_set_valued_functional_responsibilities",
+            teacher.get("target_reduction") == "four_families_equal",
+            teacher.get("selection")
+            == "equal_input_output_subspace_and_update_direction",
+            teacher.get("scale") == "small_core_singular_spectrum",
+            teacher.get("scale_video_shared_context_gradient") == "stopped",
+            teacher.get("K2_K4_tensor_reads") == 0,
+            teacher.get("confidence_gate") is False,
+            losses == expected,
+            {"selection_gradient_clip_norm", "scale_video_gradient_clip_norm"}
+            <= set(optimizer),
+            "gradient_clip_norm" not in optimizer,
+            wall.get("native_teacher_training_only") is True,
+            wall.get("native_teacher_deployment_reads") == 0,
+            wall.get("task_video_member_lookup_parameters") is False,
+        )
     )
-    teacher = optimization.get("native_teacher", {})
+
+
+def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
+    model = config.get("model", {})
+    data = config.get("data", {})
+    wall = config.get("information_wall", {})
+    optimization = config.get("optimization", {})
+    mapping = optimization.get("mapping", {})
     optimizer = optimization.get("optimizer", {})
-    v2_invalid = schema == G3_CONFIG_SCHEMA and (
-        config.get("status") != "active_native_teacher_shared_compiler"
-        or "native_teacher_manifest" not in config.get("authorities", {})
-        or teacher.get("K_values") != [1]
-        or teacher.get("member_reduction")
-        != "detached_set_valued_functional_responsibilities"
-        or teacher.get("target_reduction") != "four_families_equal"
-        or teacher.get("selection")
-        != "equal_input_output_subspace_and_update_direction"
-        or teacher.get("scale") != "small_core_singular_spectrum"
-        or teacher.get("scale_video_shared_context_gradient") != "stopped"
-        or teacher.get("K2_K4_tensor_reads") != 0
-        or teacher.get("confidence_gate") is not False
-        or set(losses)
-        != {
-            "global_member_effect",
-            "family_functional",
-            "cross_episode_flow",
-            "native_teacher_selection",
-            "native_teacher_scale",
-            "carrier_preservation",
-            "same_task_consistency",
-        }
-        or not {
-            "selection_gradient_clip_norm",
-            "scale_video_gradient_clip_norm",
-        }
-        <= set(optimizer)
-        or "gradient_clip_norm" in optimizer
-        or wall.get("native_teacher_training_only") is not True
-        or wall.get("native_teacher_deployment_reads") != 0
-        or wall.get("task_video_member_lookup_parameters") is not False
+    profile = config.get("profile_defaults", {})
+    formal = config.get("formal_run", {})
+    return all(
+        (
+            config.get("schema_version") == G3_CONFIG_SCHEMA,
+            config.get("status") == "active_bank_conditioned_mapping_compiler",
+            model.get("selection")
+            == "program_native_anchor_current_bank_solve_two_softmax_difference",
+            model.get("anchor_width") == 128,
+            model.get("relative_eigenvalue_floor") == 1e-6,
+            model.get("phase_global_statistics") == {"f2": False, "f3": True},
+            data.get("supported_K") == [1, 2, 4],
+            data.get("mapping_K") == [1],
+            data.get("task_role_weighting") == "three_meta_plus_three_target",
+            mapping.get("member_reduction") == "set_valued_paired_update",
+            mapping.get("target_reduction") == "four_families_equal",
+            mapping.get("student_scale_gradient") == "stopped",
+            mapping.get("old_functional_selection_gradient") == "blocked",
+            mapping.get("K2_K4_tensor_reads") == 0,
+            0 < float(mapping.get("temperature", 0)),
+            0 <= float(mapping.get("cross_video_weight", -1)),
+            0 <= float(mapping.get("cross_video_margin", -1)),
+            mapping.get("cross_video_conditions_per_optimizer_step") == 6,
+            optimizer.get("name") == "AdamW",
+            float(optimizer.get("gradient_clip_norm", 0)) > 0,
+            profile.get("allowed_world_sizes") == [1, 2, 3, 4, 5, 6],
+            formal.get("allowed_world_sizes") == [1, 2, 3, 4, 5, 6],
+            formal.get("global_tasks_per_optimizer_step") == 6,
+            formal.get("optimizer_steps_per_macro") == 5,
+            wall.get("native_teacher_training_only") is True,
+            wall.get("native_teacher_deployment_reads") == 0,
+            wall.get("task_video_member_lookup_parameters") is False,
+            wall.get("global_statistics_off_deployment") is False,
+        )
     )
-    if common_invalid or schema not in {G3_CONFIG_SCHEMA_V1, G3_CONFIG_SCHEMA}:
-        raise ValueError("unsupported G3 shared compiler config")
-    if v1_invalid or v2_invalid:
+
+
+def load_shared_compiler_config(path: Path) -> dict[str, Any]:
+    config = read_json(path.resolve())
+    schema = config.get("schema_version")
+    historical = schema in {G3_CONFIG_SCHEMA_V1, G3_CONFIG_SCHEMA_V2}
+    valid = _historical_config_valid(config) if historical else _mapping_config_valid(config)
+    if not _common_config_valid(config) or not valid:
         raise ValueError("unsupported G3 shared compiler config")
     return config
 

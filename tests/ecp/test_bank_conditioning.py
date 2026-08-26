@@ -81,3 +81,31 @@ def test_signed_pool_is_chunk_equivalent_and_group_gain_is_bounded() -> None:
     torch.testing.assert_close(gain[1], torch.full_like(gain[1], 0.125))
     assert float(gain.min()) >= 0.0
     assert float(gain.max()) <= 1.0
+
+    branches = torch.stack((reference, -0.7 * reference), dim=1).requires_grad_()
+    bias = torch.randn(
+        reference.shape[0], values.shape[0], generator=torch.Generator().manual_seed(29)
+    ) * 0.05
+    explicit = materialized_signed_pool(
+        branches,
+        values,
+        mass,
+        explicit_branches=True,
+        logit_bias=bias,
+    )
+    streamed = StreamingSignedPool(
+        branches, dtype=torch.float64, explicit_branches=True
+    )
+    for start, stop in ((0, 7), (7, 54), (54, 73)):
+        streamed.add(
+            values[start:stop],
+            mass[start:stop],
+            bias[:, start:stop],
+        )
+    torch.testing.assert_close(
+        streamed.signed_mean(), explicit, rtol=1e-12, atol=1e-12
+    )
+    explicit.square().mean().backward()
+    assert branches.grad is not None
+    assert bool(torch.isfinite(branches.grad).all())
+    assert bool(torch.count_nonzero(branches.grad))

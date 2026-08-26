@@ -175,9 +175,11 @@ action-out的32D group构造统计；不得把X复制到四个output type。Prog
 仍是当前视频真实X/Y的加权和。owner/family/rank/event/group embedding只表示固定拓扑，不得包含task、authority、video、member或
 frame absolute ID。
 
-同一canonical实现保留一次预注册的`global_statistics_off`消融：关闭`C`的condition作用，只检验严格candidate-local shared
-canonicalizer。它不是第二套deployment路径；若off失败而bank-conditioned通过，严格one-pass/candidate-local假设即被正式淘汰并删除
-消融执行面。只有materialized FP64 bank-conditioned reference通过而显式covariance/Cholesky replay因数值或内存不能恢复时，才启用
+同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
+按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，
+不是另一套deployment路径，也不能被误写成完全不读bank的固定query或字面上的单pass实现。若off失败而bank-conditioned通过，严格
+candidate-local假设即被正式淘汰并删除消融执行面。只有materialized FP64 bank-conditioned reference通过而显式covariance/Cholesky
+replay因数值或内存不能恢复时，才启用
 matrix-free covariance-vector product配合block-CG/Lanczos；不能因shared mapping泛化失败触发该fallback。
 
 对target`j`和task residual rank slot`r=1..4`，先分配event权重。输入分支只在`n_A=(k,t,p,h)`候选上pool真实`X_jn_A`；
@@ -422,9 +424,10 @@ G3按以下最小因果顺序推进，前一接口通过后才恢复后一职责
 2. **F1 bank-operator capacity**：使用50 tasks/98 conditions的q/v/action-in/out authority，以free或analytic native anchor隔离shared
    mapping；materialized reference与streaming B0/solve/B1 replay每family median update cosine至少`0.995`、minimum至少`0.99`，且
    chunked/full在正常数值误差内一致。analytic强而streaming弱只说明实现、正则化或数值接口错误。
-3. **F2 strict candidate-local消融**：在50 K1-covered tasks/451 task-video的预注册video/task holdout上关闭global statistics，仅训练
-   shared anchor scorer；held-video oracle-normalized recovery median至少`0.75`、每family至少`0.65`、task-holdout至少`0.60`才保留
-   strict candidate-local假设。若不通过而F3通过，正式淘汰并删除off执行面，不继续pointwise key变体。
+3. **F2 strict candidate-local消融**：在50 K1-covered tasks/451 task-video的预注册video/task holdout上令`C=I`并关闭covariance
+   preconditioning，但保留单位measure的B0 centered native anchor与B1 exact replay；仅训练shared anchor scorer。held-video
+   oracle-normalized recovery median至少`0.75`、每family至少`0.65`、task-holdout至少`0.60`才保留candidate-local假设。若不通过而
+   F3通过，正式淘汰并删除off执行面，不继续pointwise key变体。
 4. **F3 bank-conditioned mapping**：开启regularized current-bank solve，冻结Program/source/carrier；held-video recovery median至少
    `0.75`、p10至少`0.50`、train/held ratio至少`0.8`，且两个相邻checkpoint稳定。train高held低时先检查functional anchor seed与
    content泛化，不靠加宽或回归逐video dual。
@@ -443,9 +446,10 @@ checkpoint model state。多个verified members由detached whole-trajectory resp
 video与functional职责保持明确parameter ownership；旧functional不得再次以更大梯度覆盖mapping acquisition。通过F3后teacher-factor
 loss只作有退出条件的warmup，不成为G4/Final永久监督。
 
-formal训练的全局task group固定为3个target-fit加3个meta-fit，19+19 task的尾step自然为1+1；launch时可按1--6张有效GPU
-cost-balanced分片。world size只改变每rank承担哪些task，不改变每个optimizer step的全局task集合、两种role质量、loss归一化或
-scheduler cadence；exact-resume锁定首次launch topology。
+F2/F3预注册fit split为25个meta-fit与15个target-fit tasks。每个macro完整覆盖15个target-fit，并从25个meta-fit中按固定seed轮换15个，
+形成5次固定`3 target + 3 meta`全局optimizer updates；跨macro覆盖全部meta-fit，同时每一步保持两种role各50%。launch时可按1--6张
+有效GPU cost-balanced分片。world size只改变每rank承担哪些task，不改变每个optimizer step的全局task集合、两种role质量、loss
+归一化或scheduler cadence；exact-resume锁定首次launch topology。
 
 若F1 operator本身不能恢复analytic reference，停在数值/measure接口；若F3 shared mapping在operator通过后仍低于门槛，结论只针对
 当前Program-to-functional-content mapping，不得用joint training掩盖，也不得恢复旧realizer/FactorHead/task lookup。若mapping通过而

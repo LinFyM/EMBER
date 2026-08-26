@@ -33,6 +33,24 @@ Action Meta实际未加载、held reads为0；全仓`177 passed`。ridge在约`1
 不证明shared Program-to-anchor mapping。analytic-only analyzer只保留为formal evidence入口，旧G3 v2 compiler将在
 bank-conditioned canonical实现通过对应Gate后删除而不是长期并行。
 
+bank-conditioned canonical实现面现已接通但尚未冒充formal Gate：`SharedNativeFactorCompiler`执行B0流式单位measure统计、
+Program/native anchor compatibility、可开关的FP64谱solve和B1 exact signed replay；输入候选不含output type，四类Y bank保持
+各video的adj/init/goal边界。F2的off模式精确定义为`C=I`：保留centered first-moment native anchor与B1，不是固定query或第二套
+deployment Writer。50-task/451-condition split预注册为329 fit、40 held-video、82 held-task；每macro用固定5次`3 target + 3 meta`
+更新覆盖全部15个target-fit并轮换15/25个meta-fit，world size只做cost-balanced吞吐分片。mapping训练只解冻anchor scorer，
+Program/source/scale/Action Meta均冻结；相邻checkpoint稳定性和held/fit口径已进入Gate。全仓在当前实现上为`180 passed`。
+
+实现ownership保持单一：`shared_compiler.py`是唯一deployment Writer的B0/B1 orchestration；`bank_conditioning/anchor.py`与
+`operator.py`分别拥有content mapping和数值operator；`mapping*.py`只拥有F2/F3 acquisition/evaluation/Gate，`f0.py`只拥有一次
+formal prelaunch qualification，三个scripts均为薄入口。旧v1/v2 config与旧training/evaluation模块只用于读取既有formal history，
+active train入口已唯一指向v3 mapping，不是fallback。若F2失败且F3通过，删除`C=I` off执行模式；F3结束后mapping-only训练面随
+F4 joint owner演化或退役，不另建平行Writer。
+
+真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
+约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
+`19.5--25.1GB`且计算段大多`100%`。物理3因他人约`78--92%` UTL而未使用，物理0继续遵守prohibited。正式launch仍重新live检查；
+每卡以真实step time、LoRA/s和持续UTL为准，显存安全余量不是必须填满的配额。
+
 吞吐profile同样按真实稳态而非卡数解释：单worker峰值allocated约`10.1GB`但启动主要是CPU runtime装载；同一A40共驻两个长寿命
 worker时实测约`37.5/46.1GB`、稳定GPU UTL `94--100%`、memory UTL约`50--73%`，两条件总墙钟相对串行提升约`66%`。
 第三worker无安全显存余量；formal F1实际使用gpu01 p1--p6每卡两个长寿命worker，六卡稳态均约`37.5--37.8GB`且UTL `100%`，
@@ -419,13 +437,10 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
-2. 在单一canonical implementation surface中复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与
-   held5 evaluator；把旧candidate-local query路径替换为B0 statistics/native anchors、regularized bank-conditioned solve、B1 exact
-   pooling replay，不新增并行Writer或FactorHead；
-3. 先完成F1 operator capacity：50 tasks/98 conditions的materialized与streaming q/v/action-in/out replay每family median至少
-   `0.995`、minimum至少`0.99`，并验证chunk/full等价；随后依次执行一次`global_statistics_off`消融、bank-conditioned shared
-   mapping、scale/functional恢复、K1到K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
+1. 从当前bank-conditioned实现完成clean pushed detached F0真实K1/K4 forward/gradient/materialization与信息墙资格；
+2. F0通过后先fresh运行一次`C=I`的F2消融并在预注册451 conditions上评估；若充分训练后non-pass，不以LR/seed小扫挽救；
+3. 随后fresh开启B0 covariance/preconditioning进入F3，要求held-video median/p10、held/fit与相邻checkpoint稳定同时通过；通过后才
+   恢复scale/functional、K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

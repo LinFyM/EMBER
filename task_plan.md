@@ -254,7 +254,9 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   ID/teacher信息墙、K2/K4 teacher reads 0、chunk/video边界、finite gradients、76 tensors及policy实际消费唯一rank16。
 - [ ] F1：先以50 tasks/98 conditions的既有authority做operator capacity；free/analytic native anchors隔离shared mapping，要求q/v/
   action-in/out各family materialized与streaming replay median update cosine`>=0.995`、minimum`>=0.99`，chunk/full等价。若显式
-  covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。
+  covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。当前单一
+  statistics/solve/pooling模块、formal analyzer、真实K1 smoke与双worker吞吐profile已接通；仍须从clean detached pushed commit完成
+  全50-task/98-condition报告后才能勾选。
 - [ ] F2：在50 K1-covered tasks/451 task-video预注册holdout上运行同一实现的`global_statistics_off`消融，只训练anchor scorer；
   held-video recovery median`>=0.75`、每family`>=0.65`、task-holdout`>=0.60`才保留strict candidate-local假设。若off失败且F3通过，
   删除off执行面并正式淘汰one-pass candidate-local路线。

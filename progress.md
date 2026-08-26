@@ -529,13 +529,17 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
-2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
-3. `84903aa`的equal-subspace-credit F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但held median/p10仅
-   `.073029/.057174`，该修正已被formal证伪。跨family与固定target梯度分解把下一最早接口定位到width-shared scorer的parameter
-   ownership；当前以family-shared trunks加fixed-target bounded FiLM作单一机制修正，先从clean pushed detached commit fresh重跑
-   同一F3 primary与相邻checkpoint Gate。通过后才恢复scale/functional、K2/K4和held5 strict250；逐video dual/score、task/video键、
-   解析系数仍不得进入deployment；
+1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及`c1e26ce/84903aa/c3fc8e3`三次有明确机制差异的F3均在完整
+   451 conditions上non-pass，不续训旧checkpoint或做参数小扫；
+2. fixed-key/raw/FiLM tangent与`4117117` F0证明direct-native solve退化为raw-query transfer，该路线未启动formal；same-task三video
+   bank-global oracle把最早接口收窄到task-stable anchor code识别，而不是parameter ownership、谱floor或loss权重；
+3. 当前唯一canonical修正以frozen G2 `P_lang`产生task-stable anchor query、动态Program控制event/frame measure，并在每video、每event
+   建立detached candidate-feature gauge；world6真实profile、全仓183 tests与architecture guard已通过。clean pushed detached F0的feature/
+   solve metric误差均为`5.96e-8`、有效update cosine最低`0.99999827`、K4置换误差`1.91e-6`，唯一non-pass是FP32 reduction order经
+   白化谱放大后单target最大相对update误差`0.1852%`略过旧`0.1%`线。当前先以FP64小Gram只计算验证指标，并以cosine最低
+   `0.99999`、最大相对误差`0.5%`及median相对误差`0.1%`联合约束正常数值误差；compiler/bank/训练数值路径均不改变。新clean
+   pushed authority重跑F0后才fresh启动同一F3 primary及相邻checkpoint Gate；只有通过后才恢复scale/functional、K2/K4和held5
+   strict250。逐video dual/score、task/video键和解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

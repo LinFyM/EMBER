@@ -5,7 +5,7 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
-分别通过对应Gate；当前推进Phase G3 shared compiler的teacher-credit修正。G1只证明真实native banks与signed pooling存在强rank4
+分别通过对应Gate；当前推进Phase G3 bank-conditioned shared compiler。G1只证明真实native banks与signed pooling存在强rank4
 residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
 任一阶段仍不代表整体项目goal完成。
 
@@ -244,13 +244,29 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   acquisition反事实。teacher update与G2 Program跨video稳定，但minimum-norm dual随bank covariance旋转；2000步已能明显拟合train
   score，held q/v仍弱或负相关，完整held update约为`-0.001/-0.003`，action-out也仅`0.114`。因此不把逐video analytic
   dual/score、raw native key或event query当作已确定的canonical G3修正，也不通过续训或width/LR/seed扫掩盖结构问题。
-- [ ] 在保留frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16的前提下，先由全新专家复核当前结构分叉：
-  （a）严格one-pass、query预先确定时，是否仍应以跨task/video paired-factor监督验证bank-independent functional canonicalizer；
-  （b）高条件数inverse-covariance是否要求先累计bank-global sufficient statistics/preconditioning，从而修订Pass B读取合同。专家意见
-  必须以远程仓库的完整历史、formal Gate和上述反事实为依据；不得把neural FactorHead、fixed realizer、task/video lookup或逐video
-  score标签恢复成捷径。裁决后只保留一个canonical实现面，再做最小真实forward/gradient/materialization与formal K1 mapping验证，
-  随后恢复K2/K4职责并最终执行完整held5五臂strict250。formal runtime仍使用固定3+3 role-balanced全局task group并按实时1--6张
-  有效GPU弹性分片；world size不得改变task权重、optimizer cadence或Gate口径，exact-resume锁定原topology。
+- [x] 全新专家已基于远程`main@ed2883b`及其完整可达历史复核结构分叉；1538行原文逐字保存为
+  `docs/expert_review_20260826_bank_conditioned_native_factor.md`。裁决保留G1/G2、真实banks、exact signed pooling、rank4、small-core
+  SVD、carrier12与唯一rank16；G3改为B0累计current-bank statistics/native anchors、regularized solve、B1重放exact pooling的
+  bank-conditioned compiler，并在同一实现中保留一次`global_statistics_off`决定性消融。
+- [x] owner明确Final保留整套Writer完全随机初始化、直接端到端fresh联合训练的正式可选项；G1--G3只作因果验证，不构成Final
+  强制课程。该裁决覆盖专家“默认从通过组件初始化”的偏好，但不改写专家原文。
+- [ ] F0：接通一个真实K1/K4 bank-conditioned forward/gradient/materialization，证明Program/source/carrier冻结、Action Meta 0、
+  ID/teacher信息墙、K2/K4 teacher reads 0、chunk/video边界、finite gradients、76 tensors及policy实际消费唯一rank16。
+- [ ] F1：先以50 tasks/98 conditions的既有authority做operator capacity；free/analytic native anchors隔离shared mapping，要求q/v/
+  action-in/out各family materialized与streaming replay median update cosine`>=0.995`、minimum`>=0.99`，chunk/full等价。若显式
+  covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。
+- [ ] F2：在50 K1-covered tasks/451 task-video预注册holdout上运行同一实现的`global_statistics_off`消融，只训练anchor scorer；
+  held-video recovery median`>=0.75`、每family`>=0.65`、task-holdout`>=0.60`才保留strict candidate-local假设。若off失败且F3通过，
+  删除off执行面并正式淘汰one-pass candidate-local路线。
+- [ ] F3：开启bank-conditioned solve训练shared mapping；held-video recovery median`>=0.75`、p10`>=0.50`、train/held ratio
+  `>=0.8`且相邻checkpoint稳定。不得恢复逐video dual/score监督、task/video lookup、FactorHead或fixed realizer。
+- [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
+  paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
+- [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task
+  mapping retention`>=80%`。
+- [ ] F6：冻结单一checkpoint执行held5 carrier/language/full/first+final/same-task五臂strict250；沿用现有G3 Gate。formal runtime
+  使用固定3+3 role-balanced全局task group并按实时1--6张有效GPU弹性分片；world size不得改变task权重、optimizer cadence或Gate
+  口径，exact-resume锁定原topology。
 
 ### G4 Joint Writer
 
@@ -269,9 +285,11 @@ retention`>=75%`、same-task retention`>=85%`和相邻checkpoint稳定。
 
 ### Final fresh与正式评测
 
-使用全部71 meta+train24，role仍50/50；fresh初始化已验证组件后直接做完整Writer joint training，G1--G3的冻结分段只作架构因果
-验证，不机械重演为最终训练流程。若联合训练证据要求短暂分段预热，必须登记最早失效接口与退出条件；loss默认从最小充分集合开始，
-仅在closed-loop或明确机制证据支持时增加。只有base joint通过时才启用已验证的outer。
+使用全部71 meta+train24，role仍50/50；Final保留两种fresh初始化候选：（a）从已验证Program/compiler初始化后完整Writer joint
+training；（b）整套Writer完全随机初始化后从头直接端到端joint training，让梯度下降自行形成内部功能分化。两者均用fresh
+optimizer/scheduler和同一信息墙、数据及closed-loop合同。G1--G3的冻结分段只作架构因果验证，不机械重演为最终训练流程；若联合
+训练证据要求短暂分段预热，必须登记最早失效接口与退出条件。loss默认从最小充分集合开始，仅在closed-loop或明确机制证据支持时
+增加；不预设Final有目标LoRA。只有base joint通过时才启用已验证的outer。
 validation8只比较三个预注册相邻checkpoints；资格arm先跑correct/same-task/language/first+final。冻结selected后补完整controls，最后才跑
 shuffled/reversed；方法完全冻结后只打开Test8一次。
 

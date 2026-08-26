@@ -1,21 +1,27 @@
 # EMBER progress
 
 更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@e7d86b0`的四family task-LOTO analytic-dual basis probe。
+evidence为clean pushed `main@e7d86b0`的四family task-LOTO analytic-dual basis probe，最新结构裁决基于全新专家对
+`main@ed2883b`及完整可达历史的复核。
 
 ## 当前状态
 
-专家回复已经收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的
+两轮专家回复均已收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的
 **ECP Native-Factor Compiler**，核心架构、数据角色、阶段Gate、最终controls和停止条件均已明确。
 
 专家1416行原始回复已完整保存为`docs/expert_review_20260824_native_factor.md`，逐行内容与附件一致，仅换行从CRLF标准化为LF；
-active design明确是解释/执行层，不能替代原文。
+第二位专家1538行原始回复已逐字保存为`docs/expert_review_20260826_bank_conditioned_native_factor.md`并与owner提供附件byte-identical；
+active design明确是解释/执行层，不能替代任一原文。
 
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle与G2 Natural Program
-均已通过；当前处于G3 shared compiler，v1 macro10、v2 macro5、低维dual-basis与最新跨视频score acquisition已形成连续non-pass及
-根因证据。固定target-specific raw-dual basis不具备首版所需的compact functional capacity；进一步证据又否定了把逐video解析
-dual/score直接作为candidate-local shared mapping标签。当前暂停实现新的G3架构，先就严格one-pass candidate-local canonicalization与
-bank-global preconditioning之间的结构分叉征询全新专家。没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线，也尚未联系专家。
+均已通过；当前处于G3 shared compiler，v1 macro10、v2 macro5、低维dual-basis与跨视频score acquisition已形成连续non-pass及
+根因证据。固定target-specific raw-dual basis不具备首版所需的compact functional capacity；进一步证据否定了把逐video解析
+dual/score直接作为candidate-local shared mapping标签。新专家确认主因是stable functional target被表达成随current-bank covariance
+旋转的脆弱inverse coordinates；当前活动修正为两阶段流式bank-conditioned Pass B：B0累计每视频单位质量的statistics/native anchors，
+regularized solve后由B1重放同一bank做exact signed pooling。没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线。
+
+owner接受该G3修正，同时明确覆盖专家的Final初始化偏好：整套Writer完全随机初始化、从头端到端fresh联合训练必须保留为Final
+正式可选项；G1--G3是组件因果验证而非Final强制课程。Final仍不预设目标LoRA，具体初始化与最小监督由matched closed-loop证据裁决。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
 两条fixed antithetic native probes，再做monotonic canonical alignment与`beta_k=1/K`集合聚合。首轮真实held检查发现把多视频frames
@@ -399,13 +405,13 @@ G1--G5 Gate或架构修正依据。
 ## 当前下一步与延期漂移
 
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
-2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
-   Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3 v2 macro5与四family dual-basis formal均明确non-pass；后者淘汰了`<=128`维target-specific raw-dual basis和欧氏投影，
-   但full dual仍在全部50 tasks稳定约`0.997`，所以不淘汰native banks或signed pooling。当前只沿一个canonical实现面修正：为每个固定
-   LoRA owner直接以真实native X/Y形成content scores，用非线性高容量shared Program query和bounded output-group gain隔离K1
-   mapping acquisition；不得把
-   training-only dual、task/video键或解析系数带入deployment，也不得恢复fixed realizer；
-4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
+2. 在单一canonical implementation surface中复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与
+   held5 evaluator；把旧candidate-local query路径替换为B0 statistics/native anchors、regularized bank-conditioned solve、B1 exact
+   pooling replay，不新增并行Writer或FactorHead；
+3. 先完成F1 operator capacity：50 tasks/98 conditions的materialized与streaming q/v/action-in/out replay每family median至少
+   `0.995`、minimum至少`0.99`，并验证chunk/full等价；随后依次执行一次`global_statistics_off`消融、bank-conditioned shared
+   mapping、scale/functional恢复、K1到K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
+4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
+   video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

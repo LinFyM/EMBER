@@ -25,7 +25,8 @@ authority。owner主要使用语音输入；明显同音词、术语识别和断
 5. `docs/concept.md`
 6. `docs/research_history.md`
 7. `docs/expert_review_20260824_native_factor.md`
-8. 当前active design，仅当`progress.md`明确登记时读取。
+8. `docs/expert_review_20260826_bank_conditioned_native_factor.md`
+9. 当前active design，仅当`progress.md`明确登记时读取。
 
 旧架构先查`research_history`；只有需要精确公式、实现或命令时，才从该文档登记的Git
 快照和formal artifact选择性读取。不得把重复阅读几十份退役设计当成推进前置步骤。
@@ -63,7 +64,8 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
   held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
 - 每个condition只生成一套完整38-target task LoRA；不生成多套video LoRA后平均，不挑video，不融合checkpoint，
   不部署第二套expert adapter。
-- Writer在rollout前运行一次；闭环中不反复观看teacher video。
+- Writer在rollout前运行一次；一次调用内部可以对同一组授权视频/native activations做固定、只读的多阶段流式读取与重放，
+  但闭环中不反复观看teacher video，也不进行task-local优化或环境交互。
 - frame stride固定为5；frozen source policy无trainable parameters。允许learned language-only诊断baseline，以及
   rollout前合并为一套LoRA的principled shared prior/base adapter + video-conditioned residual；canonical仍必须证明
   video相对language/static prior有必要条件增量，且不得部署并行carrier、expert或第二adapter。
@@ -97,6 +99,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 多卡可按K、帧数和历史cost平衡负载，但不得改变task权重。
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
 - incompatible架构必须fresh；exact-resume锁原world size/topology。
+- G1--G3的分段冻结只用于机制验证，不构成Final必须照搬的训练课程。Final允许把通过Gate的组件作为初始化，也必须保留
+  整套Writer完全随机初始化后直接端到端fresh联合训练的正式候选；两者都使用fresh optimizer/scheduler并由同一closed-loop
+  合同裁决，不得用内部loss替代。
 - 机制smoke只证明图接通。到有信息量的预注册节点后及时做strict paired400；loss不能代替闭环。
 - 好结果应训练到足以判断相邻稳定性；明确坏结果不得靠无限续训或rank/scale/seed/LR/dtype小扫挽救。
 - 每轮必须报告per-task、per-suite、breadth、retained/gained/lost、churn及相邻success-set重合，并定位最早失效接口。

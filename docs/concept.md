@@ -31,7 +31,9 @@ Action Expert target对齐的Program；同一condition在冻结PI0.5各目标层
 ```text
 exact language + ordered action-hidden videos
               -> Pass A: q_V(owner-specific Program)
-              -> Pass B: Program-conditioned native-factor signed pooling
+              -> Pass B0: Program-conditioned native anchors + current-bank statistics
+              -> regularized bank-conditioned query solve
+              -> Pass B1: replay the same bank and exact signed pooling of real X/Y
               -> current first implementation: rank4 task residual + frozen rank12 carrier
               -> one complete rank16 LoRA
               -> frozen PI0.5 closed loop
@@ -65,7 +67,9 @@ sigma     [8, 38, 128]   # cross-video uncertainty
 ```
 
 这是专家复核后固定的schema。Pass B另外读取每个q/v/action-in/action-out目标的真实input/output以及output的adjacent、init、goal
-differences，通过signed pooling产生rank4 outer products；它们不是Program字段，也不在内存中整段物化。
+differences。当前bank-conditioned实现先按每条视频单位质量流式累计均值、协方差和Program-conditioned native anchors，求解
+regularized query，再重放同一bank，由正负softmax之差对真实X/Y做exact signed pooling并产生rank4 outer products；这些量不是
+Program字段，也不在内存中整段物化。内部两阶段读取仍属于rollout前一次Writer调用。
 
 ## 训练原则
 
@@ -74,7 +78,8 @@ differences，通过signed pooling产生rank4 outer products；它们不是Progr
 - video与action query跨episode；多个successful policies用独立优化lineages构成分布，不把同一轨迹的checkpoint当独立任务知识。
 - 当前先用task-local free-code证明native factor bank与pooling具有闭环容量；通过后再训练Natural Program和冻结Program的shared
   compiler，避免在核心参数基底无效时训练更大的Writer。
-- staged gates用于定位接口，最终必须有冻结backbone、全Writer联合训练阶段。
+- staged gates用于定位接口，不是Final必须重演的训练课程。Final既保留从已验证组件初始化的fresh joint run，也保留整套Writer
+  完全随机初始化并直接端到端fresh训练的正式选项，由同一closed-loop合同选择。
 - shuffled/reversed只在最终selected checkpoint已选定并冻结后评测时序特异性，不进入训练、loss、
   checkpoint选择、G1--G5 Gate或架构修正依据。
 
@@ -84,6 +89,7 @@ differences，通过signed pooling产生rank4 outer products；它们不是Progr
 解析投影在held5具有5/5容量；policy-effect objective对known-success paths有用；fit-span realizer会丢失held低能量创新。12+4因此
 是首版最合理的参数分配，但不是不可由capacity evidence推翻的永久结论。
 
-尚不知道的核心实验问题已经被压缩为两层：自然视频产生的target-native banks能否通过小型task-local选址生成强LoRA；若能，
-现有自然LIBERO mappings是否足以学习共享Program-to-selection映射。前者由当前唯一下一步free-code strict250回答，后者只在前者
-通过后进入。
+G1已经证明自然视频产生的target-native banks与exact signed pooling可形成强task-local rank4 residual；G2已经证明Natural Program
+保留了可用的视频动态。当前未知集中在G3：共享compiler能否用Program-conditioned内容兼容性与每个当前bank的统计量，学习跨task、
+跨video稳定的bank-conditioned selection。旧candidate-local one-pass实现对随bank covariance旋转的解析dual/score不可辨识；下一步
+先验证新operator能否精确恢复native-factor容量，再验证shared anchor mapping，而不是继续回归逐video dual标签。

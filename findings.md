@@ -1,6 +1,7 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。专家原文见`docs/expert_review_20260824_native_factor.md`，精确分数、提交和历史脉络见
+只记录跨session仍影响决策的结论。专家原文见`docs/expert_review_20260824_native_factor.md`与
+`docs/expert_review_20260826_bank_conditioned_native_factor.md`，精确分数、提交和历史脉络见
 `docs/research_history.md`；当前唯一架构合同见`docs/event_conditioned_policy_compiler_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
@@ -474,6 +475,23 @@ measure/covariance改变。
 剩余可证伪方向是跨大量task/video用paired factor功能监督学习bank-independent canonicalizer；若它仍失败，则需要认真考虑先累计
 bank-global sufficient statistics再condition query/key，或等价的额外pass。后者会修改当前Pass B流式合同，不能在专家复核前假装成
 普通实现细节，也不能恢复neural FactorHead、fixed effect realizer或task/video lookup。
+
+### 34. 第二次专家复核把G3修正为current-bank-conditioned operator；Final保留整套Writer随机fresh选项
+
+全新专家锁定远程`main@ed2883b`及其可达历史后，确认G1 bank capacity和G2 Natural Program结论仍成立；G3的结构问题是稳定的
+task/video功能被表达成随当前candidate measure/covariance旋转、条件数约`1e6`的minimum-norm dual/score coordinates。旧
+candidate-local one-pass compiler在query形成前看不到这个bank-global gauge，因此即使train score cosine很高也不能稳定保留q/v factor。
+这只淘汰已测pointwise/raw/event/anchor/direct-score实现，不淘汰真实native banks、signed pooling或Native-Factor主线。
+
+active G3改为两阶段流式、set-equivariant的bank-conditioned Pass B：每条video的B0按单位质量累计native mean/covariance与
+Program-conditioned native anchors，regularized solve形成query；B1重放同一bank，精确重建X与abs/adj/init/goal Y banks，以正负
+softmax之差pool真实native values。内部多次只读同一授权bank仍是rollout前一次Writer调用；不存在task-local适配、禁用信息或第二
+adapter。`global_statistics_off`只作一次预注册candidate-local消融，若off失败/on通过即删除并正式淘汰严格one-pass假设。
+
+owner接受上述G3裁决，但明确不同于专家的Final默认偏好：完全随机初始化整套Writer并从头端到端fresh联合训练必须保留为Final正式
+可选项。G1--G3的分段冻结是因果验证，不是Final必须照搬的课程；若整体梯度下降能形成Program/anchor/selection/scale内部功能分化，
+不应人为分段。通过组件初始化与全随机初始化都必须使用fresh optimizer/scheduler、同一信息墙与closed-loop合同；Final不预设存在
+目标LoRA，最终选择不能由内部loss代替。
 
 ## 已关闭路线
 

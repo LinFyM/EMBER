@@ -11,14 +11,15 @@ realizer均由Git保存，不再作为可执行fallback。
 
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
-- ECP Stage 0 native v3可复用，但其q/v owners还不是真实target input/output captures；
-- 专家已冻结owner-specific Program与native-factor signed compiler；rank12+rank4是首版有证据配置，保留capacity证据触发的重开分支；
+- G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
+- 当前处于G3 bank-conditioned shared compiler：先流式累计current-bank statistics与Program-conditioned native anchors，再重放同一
+  bank做exact signed pooling；rank12+rank4是首版有证据配置，保留capacity证据触发的重开分支；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
-- 当前唯一下一实现阶段是fold0 held5 native-factor task-local free-code capacity oracle，但尚未获得本轮启动许可。
+- Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-全仓库orientation已完成。当前在最新owner authority文档同步后暂停；得到owner明确许可前不开始capacity oracle。
+全仓库orientation、G1和G2已完成；当前按active design推进G3 F0--F6，不恢复任何退役Writer/realizer路线。
 
 ## 阅读顺序
 
@@ -27,8 +28,9 @@ realizer均由Git保存，不再作为可执行fallback。
 3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
 4. `docs/concept.md`：科学问题与ECP假设；
 5. `docs/expert_review_20260824_native_factor.md`：2026-08-24专家回复原文；
-6. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
-7. `docs/research_history.md`：影响当前决策的历史证据。
+6. `docs/expert_review_20260826_bank_conditioned_native_factor.md`：2026-08-26第二次专家回复原文；
+7. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
+8. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

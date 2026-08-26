@@ -10,7 +10,9 @@ EMBER必须从generic `lerobot/pi05_base`建立的冻结PI0.5-LIBERO source poli
 - 目标task的exact language；
 - 一条或多条同task、action-hidden、内部有序的正确教学视频。
 
-Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38个目标层的完整task-conditioned LoRA。冻结policy加载这
+Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38个目标层的完整task-conditioned LoRA。该次调用内部允许对同一组
+授权视频及其冻结policy native activations做固定、只读的多阶段流式读取与重放；这不等于rollout期间重复调用Writer，也不构成
+task-local适配。冻结policy加载这
 一套LoRA后，应从未见初始化闭环完成相同或相近场景中的任务。部署时不得再次观看视频，也不得进行环境交互、task-local
 优化或第二阶段适配。
 
@@ -26,13 +28,17 @@ Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38�
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
 - 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
-- Writer只在rollout前运行一次；zero-interaction分数不混入生成后的task-local RL。
+- Writer只在rollout前运行一次；一次调用内部可有固定的read-only native-bank统计与重放子阶段；zero-interaction分数不混入
+  生成后的task-local RL。
 - deployment Writer不得读取teacher action、state/proprio、reward、terminal、task ID、filename、pose或policy outcome。
 
 训练期可在授权的non-held tasks上使用actions、privileged task experts、simulator reward和occupancy学习共享机制，但这些信息
 不得成为deployment输入、held dictionary或task-ID route。
 G3的native-feasible LoRA teacher只用于验证shared compiler接口；G4/Final训练合同不得预设每个任务存在目标LoRA。正式联合训练可直接
 使用授权fit/meta tasks的teacher actions、functional或on-policy闭环信号，具体最小监督集合由机制与closed-loop证据决定。
+G1--G3的冻结/分段只为逐接口验证，不是Final的强制训练课程。Final正式候选既可从已通过Gate的Program/compiler参数初始化，也必须
+保留整套Writer完全随机初始化、从头直接端到端联合优化的fresh选项；两者使用fresh optimizer/scheduler和同一数据、评测与信息墙，
+最终由稳定closed-loop表现决定。若随机初始化能够通过整体梯度下降形成内部功能分化，就不应人为重演G1--G3的分段训练。
 
 ## 3. 数据边界
 
@@ -53,7 +59,8 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 经过专家和owner反复讨论，当前方向称为ECP Native-Factor Compiler。它不是GOMQ、PECS或历史v24的改名。其核心是：
 
 1. 用冻结PI0.5原生language、patch和Action Expert内部时序结构形成owner-specific、ordered Video Program；
-2. 用同一Program从38个LoRA目标的真实input/output activations中有符号地选取rank4因子；
+2. 用同一Program先从38个LoRA目标的真实input/output activations流式累计每视频单位质量的bank statistics和native anchors，
+   形成regularized bank-conditioned queries，再重放同一bank，以正负softmax之差对真实X/Y做exact signed pooling并选取rank4因子；
 3. 首版与frozen rank12 carrier严格拼接成唯一rank16 LoRA；rank分解保留由容量实验重开的机制；
 4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
 5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。

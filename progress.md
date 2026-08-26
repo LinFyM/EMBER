@@ -1,8 +1,8 @@
 # EMBER progress
 
 更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@435cb4a`的50-task/98-condition bank-operator F1 pass，最新结构裁决基于全新专家对
-`main@ed2883b`及完整可达历史的复核。
+evidence为clean pushed `main@2199a76`的451-condition F2 candidate-local消融non-pass，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过；最新结构裁决基于全新专家对`main@ed2883b`及完整可达历史的复核。
 
 ## 当前状态
 
@@ -52,6 +52,15 @@ state，K4 teacher reads为0、四video权重均为`.25`、反序置换最大误
 38个最终低秩更新的cosine最低`.99999976`、相对Frobenius误差最高`.00066443`，solve metric误差`3.71e-14`；内部rank槽位最大
 差`.00311`来自等价small-core SVD gauge，只作诊断。峰值allocated/reserved为`33.85/34.43GB`，独占gpu01当前逻辑0且计算段
 UTL约`61--100%`；F0只解封F2，不代表shared mapping已通过。
+
+clean pushed detached `main@2199a76`随后完成一次且仅一次预注册F2 `C=I` formal。六卡world6从fresh训练到macro5/25
+optimizer updates，mean recovery由macro1的`.000639`升到macro5的`.019690`；随后六个独立只读worker完整覆盖451个唯一条件
+（329 fit、40 held-video、82 task-holdout），Action Meta module/parameter、held gradient及shuffled/reversed use均为0。正式
+task-equal aggregate的fit/held-video/task-holdout recovery median分别为`.022243/.022858/.018919`；held-video四family median
+action-in/action-out/q/v分别为`.039958/.022185/.004722/.023158`，远低于`.65`，所有F2 primary checks均失败。因为fit本身已经
+接近零，最早失效接口是candidate-local compatibility加first-moment anchor没有学会，而不是held泛化、训练/评测信息墙或F1
+operator。该结果只淘汰`C=I`假设，不反证F1已证明有容量的current-bank solve；不续训F2、不做LR/seed/width小扫，下一步从fresh
+进入F3。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
@@ -446,9 +455,9 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. 从当前bank-conditioned实现完成clean pushed detached F0真实K1/K4 forward/gradient/materialization与信息墙资格；
-2. F0通过后先fresh运行一次`C=I`的F2消融并在预注册451 conditions上评估；若充分训练后non-pass，不以LR/seed小扫挽救；
-3. 随后fresh开启B0 covariance/preconditioning进入F3，要求held-video median/p10、held/fit与相邻checkpoint稳定同时通过；通过后才
+1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
+2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
+3. 现在fresh开启B0 covariance/preconditioning进入F3，要求held-video median/p10、held/fit与相邻checkpoint稳定同时通过；通过后才
    恢复scale/functional、K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；

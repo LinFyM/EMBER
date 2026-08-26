@@ -259,9 +259,11 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。clean
   detached `435cb4a`的四family task-mean median为`0.999871/0.999824/0.999960/0.999884`，minimum为
   `0.999757/0.999544/0.999951/0.999743`，chunk/full row minimum`0.99999988`；Action Meta 0、held reads 0，Gate pass。
-- [ ] F2：在50 K1-covered tasks/451 task-video预注册holdout上运行同一实现的`global_statistics_off`消融：令`C=I`，保留B0单位measure
-  centered native anchor与B1 exact replay，只训练anchor scorer；held-video recovery median`>=0.75`、每family`>=0.65`、
-  task-holdout`>=0.60`才保留candidate-local假设。若off失败且F3通过，删除off执行面并正式淘汰candidate-local路线。
+- [x] F2：从clean pushed detached `2199a76` fresh完成`global_statistics_off/C=I`到macro5/25 updates，并由六个独立worker完整评估
+  50 K1-covered tasks/451 task-video（329 fit、40 held-video、82 task-holdout）。fit/held-video/task-holdout task recovery median为
+  `.022243/.022858/.018919`；held-video action-in/action-out/q/v median为`.039958/.022185/.004722/.023158`，三个primary checks
+  全部失败。Action Meta、held gradient及shuffled/reversed use均为0。由于fit本身已失败，结论是candidate-local first-moment
+  compatibility没有形成，不继续F2或做LR/seed/width小扫；若F3通过，删除off执行面并正式淘汰candidate-local路线。
 - [ ] F3：开启bank-conditioned solve训练shared mapping；held-video recovery median`>=0.75`、p10`>=0.50`、train/held ratio
   （实际口径为held-video task median / fit task median）`>=0.8`且相邻checkpoint稳定。不得恢复逐video dual/score监督、task/video
   lookup、FactorHead或fixed realizer。

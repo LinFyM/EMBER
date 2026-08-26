@@ -533,6 +533,19 @@ F2 non-pass解释为两阶段bank-conditioned Writer失败。
 同一formal F0同时证明真实K1梯度、B0/B1 chunk边界、K4均匀集合聚合/置换不变、teacher零读取、Action Meta实际未加载及唯一
 rank16 policy consumption均成立，故工程Gate通过并解封F2。它不测mapping泛化或closed-loop，不能被解释成F2/F3或G3通过。
 
+### 38. F2正式淘汰`C=I` first-moment容量假设，但不反证current-bank operator
+
+clean pushed detached `2199a76`的一次性F2消融令`C=I`、保留B0单位measure centered first-moment anchor与B1 exact replay，且只训练
+约101万参数的shared anchor scorer。world6 fresh macro1到macro5的mean recovery从`.000639`单调升到`.019690`，说明优化图有响应；
+但451条件task-equal aggregate的fit/held-video/task-holdout median仍只有`.022243/.022858/.018919`。held-video四family median为
+action-in `.039958`、action-out `.022185`、q `.004722`、v `.023158`，相对F2要求的overall `.75`、family `.65`、task-holdout
+`.60`不是边缘不达标。
+
+关键区分是fit本身也接近零，held与fit数量级相同；因此最早失效接口不是跨video/task泛化，而是candidate-local scorer加first-moment
+anchor无法形成teacher功能。451条件全覆盖、六worker completion、0 held gradients、0 Action Meta及0 shuffled/reversed use排除了
+评测缺行或信息墙污染。F1已经独立证明同一真实bank在current-bank covariance solve下可恢复analytic factors，所以F2只否定off模式，
+不授权放弃两阶段bank-conditioned Pass B。下一项有信息量的实验是fresh F3，不是继续F2或扫描LR、seed、width。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -489,3 +489,22 @@ action-out task-mean update cosine median分别为`0.999871/0.999824/0.999960/0.
 Program-to-anchor mapping，也不是closed-loop G3 Gate。关键artifact：
 
 - `runs/analysis/pi05_ecp_g3_bank_operator_f1_435cb4a_gpu01p123456x2_20260826/`。
+
+## 28. G3 F2 candidate-local `C=I` formal non-pass
+
+clean pushed detached `main@2199a76`完成active design预注册的一次性`global_statistics_off`消融。该模式令`C=I`并关闭current-bank
+covariance/preconditioning，但仍保留B0每video单位measure centered first-moment native anchor与B1对真实X/Y的exact signed replay；
+Program/source/scale冻结、Action Meta为0，只训练shared anchor scorer。六卡world6从fresh训练到macro5/25 optimizer updates，mean
+recovery从macro1 `.000639`升至macro5 `.019690`。
+
+同一macro5由六个独立只读worker完整评估451个唯一条件：329 fit、40 held-video、82 task-holdout。task-equal fit、held-video、
+task-holdout recovery median分别为`.022243/.022858/.018919`；held-video action-in/action-out/q/v median分别为
+`.039958/.022185/.004722/.023158`。F2要求held-video overall至少`.75`、每family至少`.65`、task-holdout至少`.60`，故三个
+primary checks全部失败。所有worker自然完成，Action Meta module/parameter、held gradient及shuffled/reversed use均为0。
+
+fit本身接近零，故这不是held泛化的次级掉点，而是candidate-local compatibility加first-moment anchor未能建立teacher mapping。
+按照预注册因果顺序，不续训F2且不做LR/seed/width小扫；该结果只淘汰`C=I` off假设，不反证F1已证明有容量的current-bank
+statistics/solve/B1 operator。下一步从fresh进入F3。关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f2_fold0_m5_2199a76_gpu01p023456_r6_20260826/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f2_macro5_mapping_eval_2199a76_gpu01p023456_w6_20260826/`。

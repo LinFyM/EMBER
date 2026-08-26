@@ -546,6 +546,20 @@ anchor无法形成teacher功能。451条件全覆盖、六worker completion、0 
 评测缺行或信息墙污染。F1已经独立证明同一真实bank在current-bank covariance solve下可恢复analytic factors，所以F2只否定off模式，
 不授权放弃两阶段bank-conditioned Pass B。下一项有信息量的实验是fresh F3，不是继续F2或扫描LR、seed、width。
 
+### 39. F3 current-bank solve修复了泛化与部分幅度，但shared anchor acquisition仍有family结构瓶颈
+
+clean detached `c1e26ce`的F3从fresh macro5以同一world6 optimizer/scheduler/topology exact-resume到macro10。训练mean recovery从
+`.002204`单调升到`.087444`，macro5与macro10的451-condition held median分别为`.048433/.089704`，证明current-bank solve相对
+F2 `.022858`有真实增量；但仍不是接近`.75`门槛的边缘失败。macro10 fit/held/task-holdout median为
+`.089915/.089704/.096849`，held/fit `.997650`，所以训练分布、held video和held task处于同一量级，不能把失败归因于过拟合、
+task split或video泛化。
+
+最关键的不对称在family：macro10 held action-out/action-in已到`.177230/.125947`，v只有`.052761`，q仅`.013288`。F1已用相同真实
+banks证明四family operator-to-analytic recovery均约`.9998`，所以q/v弱不是covariance solve、B1 replay或native bank容量不足。
+macro5到10 held median虽增加`.041271`，最后单macro训练增量已降至`.005105`；继续macro20无法解释family差异，只会把结构问题
+伪装成训练时长。下一最早接口是shared anchor scorer如何从Program/native content生成q/v functional anchors及其梯度尺度；应先做
+同条件、同checkpoint的family幅度/方向/gradient分解，再决定单一机制修正。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

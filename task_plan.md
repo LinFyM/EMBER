@@ -266,7 +266,10 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   compatibility没有形成，不继续F2或做LR/seed/width小扫；若F3通过，删除off执行面并正式淘汰candidate-local路线。
 - [ ] F3：开启bank-conditioned solve训练shared mapping；held-video recovery median`>=0.75`、p10`>=0.50`、train/held ratio
   （实际口径为held-video task median / fit task median）`>=0.8`且相邻checkpoint稳定。不得恢复逐video dual/score监督、task/video
-  lookup、FactorHead或fixed realizer。
+  lookup、FactorHead或fixed realizer。clean detached `c1e26ce`已从fresh训练至macro5并按原world6 topology exact-resume至
+  macro10；同一451-condition held median/p10由`.048433/.037740`升至`.089704/.072144`，held/fit由`1.019827`变为`.997650`，
+  泛化和相邻task delta稳定但绝对Gate仍明确失败。macro10 held family median action-in/action-out/q/v为
+  `.125947/.177230/.013288/.052761`；当前先定位q/v shared anchor表达/梯度瓶颈，不盲续macro20。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

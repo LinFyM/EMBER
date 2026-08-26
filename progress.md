@@ -1,7 +1,7 @@
 # EMBER progress
 
-更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@2199a76`的451-condition F2 candidate-local消融non-pass，F1 bank-operator仍由
+更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
+evidence为clean pushed `main@c1e26ce`的F3 macro5/macro10 current-bank mapping non-pass，F1 bank-operator仍由
 clean pushed `main@435cb4a`通过；最新结构裁决基于全新专家对`main@ed2883b`及完整可达历史的复核。
 
 ## 当前状态
@@ -61,6 +61,14 @@ action-in/action-out/q/v分别为`.039958/.022185/.004722/.023158`，远低于`.
 接近零，最早失效接口是candidate-local compatibility加first-moment anchor没有学会，而不是held泛化、训练/评测信息墙或F1
 operator。该结果只淘汰`C=I`假设，不反证F1已证明有容量的current-bank solve；不续训F2、不做LR/seed/width小扫，下一步从fresh
 进入F3。
+
+clean pushed detached `main@c1e26ce`随后从fresh运行F3并以同一world6 topology exact-resume到macro10/50 updates。训练
+mean recovery由macro1 `.002204`持续升到macro5 `.042865`和macro10 `.087444`，但后段增量已经放缓。macro5与macro10均用六个
+独立只读worker完整覆盖同一451条件；macro10 fit/held-video/task-holdout task median为`.089915/.089704/.096849`，held/fit
+为`.997650`，说明跨video与跨task泛化并未崩溃。held-video action-in/action-out/q/v median为
+`.125947/.177230/.013288/.052761`；overall median/p10仍远低于F3 Gate的`.75/.50`。macro5到10的held median提高`.041271`，
+同任务median absolute delta `.041962`且无held下降；相邻稳定性数值成立，但两个checkpoint都未通过primary。当前不续到macro20，
+先定位q/v远弱于action families的shared anchor scorer表达/梯度接口；F1 operator capacity、信息墙和泛化已被分别排除为最早问题。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
@@ -457,7 +465,8 @@ G1--G5 Gate或架构修正依据。
 
 1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
 2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
-3. 现在fresh开启B0 covariance/preconditioning进入F3，要求held-video median/p10、held/fit与相邻checkpoint稳定同时通过；通过后才
+3. F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但绝对recovery明确non-pass。当前先分解q/v family的
+   shared anchor表达与梯度接口，不靠续到macro20掩盖结构瓶颈；修正后仍须重新通过同一F3 primary与相邻checkpoint Gate，之后才
    恢复scale/functional、K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；

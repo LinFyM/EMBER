@@ -508,3 +508,22 @@ statistics/solve/B1 operator。下一步从fresh进入F3。关键artifacts：
 
 - `runs/outputs/pi05_ecp_shared_compiler_g3_f2_fold0_m5_2199a76_gpu01p023456_r6_20260826/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f2_macro5_mapping_eval_2199a76_gpu01p023456_w6_20260826/`。
+
+## 29. G3 F3 macro5/macro10 current-bank mapping formal non-pass
+
+clean pushed detached `main@c1e26ce`开启current-bank covariance/preconditioning，F3从fresh训练至macro5/25 updates，再以同一world6
+topology、optimizer和scheduler exact-resume至macro10/50 updates。训练mean recovery依次为`.002204/.010863/.019536/.031414/
+.042865/.058599/.066219/.073079/.082339/.087444`；后半程仍增长但斜率趋缓。
+
+macro5与macro10分别由六个独立只读worker完整评估同一451条件。macro10 fit、held-video、task-holdout task recovery median为
+`.089915/.089704/.096849`，held/fit为`.997650`；held-video p10为`.072144`。macro5到10 held median提高`.041271`，相邻
+同任务median absolute delta `.041962`且held没有下降，但两个checkpoint都未达到F3 primary的median `.75`和p10 `.50`，所以
+adjacent Gate不能通过。
+
+macro10 held-video四family median action-in/action-out/q/v为`.125947/.177230/.013288/.052761`。信息墙、451唯一条件、split、
+Action Meta 0、held gradients 0及shuffled/reversed 0均通过。该结果证明current-bank solve相对F2有增量且held泛化成立，但shared
+anchor acquisition的绝对能力、尤其q/v family仍有结构瓶颈；不继续盲训macro20，先定位anchor表达与梯度接口。关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_fold0_m5_c1e26ce_gpu01p023456_r6_20260826/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_macro5_mapping_eval_c1e26ce_gpu01p023456_w6_20260826/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_macro10_mapping_eval_c1e26ce_gpu01p023456_w6_20260827/`。

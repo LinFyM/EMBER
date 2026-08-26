@@ -568,3 +568,32 @@ Action Meta/source/Program/scale trainable均为0；全仓181 tests通过。它�
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_macro5_mapping_eval_84903aa_gpu01p012346_w6_20260827/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_macro10_mapping_eval_84903aa_gpu01p012346_w6_20260827/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_credit_diagnostics_84903aa_20260827/`。
+
+## 32. G3 F3 family-owner FiLM formal non-pass与fixed-key image诊断
+
+clean pushed detached `main@c3fc8e3`把Program/query/candidate职责按q、v、action-in、action-out family共享，并以fixed 38-target owner的
+zero-init bounded FiLM调制candidate hidden direction；rank、bank、loss、data、optimizer与Gate不变。它从fresh训练至macro5/25
+updates，再按相同world6 topology exact-resume至macro10/50 updates。mean recovery由macro1 `-.001251`增至macro5 `.024528`和
+macro10 `.071244`。
+
+macro5/macro10各自完整评估451 conditions。macro10 fit、held-video、task-holdout task median为`.074715/.074620/.081644`，held
+p10 `.058381`、held/fit `.998724`；macro5到10 held提高`.043307`，但两个checkpoint都未达到`.75/.50` primary。macro10 held
+q/v/action-in/action-out为`.027938/.066509/.044464/.164942`。Action Meta、held gradients和shuffled/reversed use均为0。因此
+family/fixed-owner FiLM作为充分结构修正被formal证伪，不续到macro20。
+
+对同一macro10 checkpoint做只读fixed-key image诊断：冻结当前candidate keys，求task-local free event query对centered compatibility
+measure的线性化image，再投影sealed teacher factors。在相对最大奇异值`1e-3`的稳定子空间内，task93/video31 q target0、q target18、
+v target19、action-in target36、action-out target37的joint teacher-update ceilings为`.2268/.2262/.3151/.9750/.6292`；
+task94/video11的q target18独立复现`.2312`。去掉metadata或读取first 256D hidden不能修复q/v/action-out；放宽到`1e-6`则恢复
+约`.97--.997`。所以raw native信息仍存在，但compressed candidate projection把所需方向放入三到六个数量级更弱的谱尾。action-in
+稳定image已有`.975`而trained recovery仍只有`.044`，又证明shared Program-to-selection acquisition本身没有成立。
+
+该证据只定位Program/native scalar-anchor接口，不否定已通过的F1 operator、真实X/Y bank、current-bank solve、B1 exact replay、rank4
+或rank12+4。后继canonical correction删除compressed candidate encoder与owner FiLM，改由共享Program context直接生成固定owner的
+native/metadata/magnitude queries，与当前真实X/Y content形成B0 scalar anchor，再保留current-bank solve及B1 replay；不允许task/
+video/member/frame lookup或query直接输出factor。它与旧checkpoint不兼容，必须fresh验证。关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_familyowner_fold0_m5_c3fc8e3_gpu01p012346_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro5_mapping_eval_c3fc8e3_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro10_mapping_eval_c3fc8e3_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_familyowner_macro10_fixed_key_image_c3fc8e3_gpu01_20260827/`。

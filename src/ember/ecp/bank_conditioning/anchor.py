@@ -31,46 +31,7 @@ class AnchorProgramState:
     owner: torch.Tensor
 
 
-class NativeCandidateEncoder(torch.nn.Module):
-    """Family-shared native encoder with bounded fixed-owner modulation."""
-
-    def __init__(self, native_width: int, feature_width: int) -> None:
-        super().__init__()
-        hidden = 2 * feature_width
-        self.native_width = int(native_width)
-        self.direction_input = torch.nn.Linear(native_width, hidden, bias=False)
-        self.direction_output = torch.nn.Linear(hidden, feature_width, bias=False)
-        self.magnitude = torch.nn.Sequential(
-            torch.nn.Linear(1, feature_width),
-            torch.nn.SiLU(),
-            torch.nn.Linear(feature_width, feature_width),
-        )
-        self.output = torch.nn.LayerNorm(feature_width)
-
-    def forward(
-        self,
-        value: torch.Tensor,
-        *,
-        owner_scale: torch.Tensor,
-        owner_shift: torch.Tensor,
-    ) -> torch.Tensor:
-        hidden = self.direction_input.out_features
-        if (
-            value.shape[-1] != self.native_width
-            or owner_scale.shape != (hidden,)
-            or owner_shift.shape != (hidden,)
-        ):
-            raise BankConditioningError("native candidate width changed")
-        value = value.float()
-        magnitude = value.square().mean(-1, keepdim=True).sqrt().clamp_min(1e-6)
-        direction = value / magnitude
-        direction = self.direction_input(direction)
-        direction = direction * (1.0 + torch.tanh(owner_scale))
-        direction = direction + torch.tanh(owner_shift)
-        direction = self.direction_output(functional.gelu(direction))
-        return self.output(
-            direction + self.magnitude(magnitude.log())
-        )
+AnchorQuery = tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
 
 class ProgramNativeAnchorScorer(torch.nn.Module):
@@ -122,47 +83,28 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             {family.value: self._rank_context(width) for family in families}
         )
         self.input_anchor_query = torch.nn.ModuleDict(
-            {family.value: self._query_head(width) for family in families}
+            {
+                family.value: self._query_head(
+                    width,
+                    native_width=self._family_native_width(family, output=False),
+                )
+                for family in families
+            }
         )
         self.output_anchor_query = torch.nn.ModuleDict(
-            {family.value: self._query_head(width) for family in families}
+            {
+                family.value: self._query_head(
+                    width,
+                    native_width=self._family_native_width(family, output=True),
+                )
+                for family in families
+            }
         )
         self.event_score = torch.nn.ModuleDict(
             {family.value: torch.nn.Linear(width, 1) for family in families}
         )
         self.group_gain = torch.nn.ModuleDict(
             {family.value: self._group_gain_head(width) for family in families}
-        )
-        self.input_candidates = torch.nn.ModuleDict(
-            {
-                family.value: NativeCandidateEncoder(
-                    self._family_native_width(family, output=False),
-                    self.feature_width,
-                )
-                for family in families
-            }
-        )
-        self.output_candidates = torch.nn.ModuleDict(
-            {
-                family.value: NativeCandidateEncoder(
-                    self._family_native_width(family, output=True),
-                    self.feature_width,
-                )
-                for family in families
-            }
-        )
-        hidden = 2 * self.feature_width
-        self.input_owner_scale = torch.nn.Parameter(
-            torch.zeros(len(self.owners), hidden)
-        )
-        self.input_owner_shift = torch.nn.Parameter(
-            torch.zeros(len(self.owners), hidden)
-        )
-        self.output_owner_scale = torch.nn.Parameter(
-            torch.zeros(len(self.owners), hidden)
-        )
-        self.output_owner_shift = torch.nn.Parameter(
-            torch.zeros(len(self.owners), hidden)
         )
         self.frame_event_metadata = torch.nn.Parameter(
             torch.empty(self.event_slots, self.feature_width)
@@ -247,12 +189,28 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             raise BankConditioningError("native family width is not shared")
         return widths.pop()
 
-    def _query_head(self, width: int) -> torch.nn.Sequential:
+    def _query_head(
+        self, width: int, *, native_width: int
+    ) -> torch.nn.Sequential:
+        branch_width = native_width + self.feature_width + 1
         return torch.nn.Sequential(
             torch.nn.LayerNorm(width),
             torch.nn.Linear(width, 2 * width),
             torch.nn.GELU(),
-            torch.nn.Linear(2 * width, 2 * self.feature_width),
+            torch.nn.Linear(2 * width, 2 * branch_width),
+        )
+
+    def _split_query(
+        self, value: torch.Tensor, *, native_width: int
+    ) -> AnchorQuery:
+        branch_width = native_width + self.feature_width + 1
+        if value.shape[-1] != 2 * branch_width:
+            raise BankConditioningError("native anchor query width changed")
+        value = value.reshape(*value.shape[:-1], 2, branch_width)
+        return (
+            value[..., :native_width],
+            value[..., native_width : native_width + self.feature_width],
+            value[..., -1],
         )
 
     def program_state(self, program: NaturalProgram) -> AnchorProgramState:
@@ -317,34 +275,29 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             owner=owner,
         )
 
-    def input_queries(self, state: AnchorProgramState) -> torch.Tensor:
-        return torch.stack(
-            tuple(
+    def input_queries(
+        self, state: AnchorProgramState
+    ) -> tuple[AnchorQuery, ...]:
+        return tuple(
+            self._split_query(
                 self.input_anchor_query[owner.family.value](
                     state.rank_event[target]
-                ).reshape(
-                    G1_RESIDUAL_RANK,
-                    self.event_slots,
-                    2,
-                    self.feature_width,
-                )
-                for target, owner in enumerate(self.owners)
+                ),
+                native_width=owner.in_features,
             )
+            for target, owner in enumerate(self.owners)
         )
 
     def output_queries(
         self, state: AnchorProgramState, *, target: int, groups: int
-    ) -> torch.Tensor:
+    ) -> AnchorQuery:
         context = state.rank_event[target][None] + self.group_embedding[
             :groups, None, None
         ]
-        family = self.owners[target].family.value
-        return self.output_anchor_query[family](context).reshape(
-            groups,
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            2,
-            self.feature_width,
+        owner = self.owners[target]
+        return self._split_query(
+            self.output_anchor_query[owner.family.value](context),
+            native_width=owner.out_features // groups,
         )
 
     def output_group_gains(
@@ -386,40 +339,75 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             ]
         return metadata
 
-    def input_keys(
-        self, value: torch.Tensor, metadata: torch.Tensor, *, target: int
-    ) -> torch.Tensor:
-        family = self.owners[target].family.value
-        encoded = self.input_candidates[family](
-            value,
-            owner_scale=self.input_owner_scale[target],
-            owner_shift=self.input_owner_shift[target],
-        )
-        return functional.normalize(encoded + metadata, dim=-1)
-
-    def output_keys(
-        self, value: torch.Tensor, metadata: torch.Tensor, *, target: int
-    ) -> torch.Tensor:
-        family = self.owners[target].family.value
-        encoded = self.output_candidates[family](
-            value,
-            owner_scale=self.output_owner_scale[target],
-            owner_shift=self.output_owner_shift[target],
-        )
-        return functional.normalize(encoded + metadata, dim=-1)
-
     def input_compatibility(
-        self, query: torch.Tensor, key: torch.Tensor
+        self,
+        native_query: torch.Tensor,
+        metadata_query: torch.Tensor,
+        magnitude_query: torch.Tensor,
+        value: torch.Tensor,
+        metadata: torch.Tensor,
     ) -> torch.Tensor:
-        if query.shape[-1] != self.feature_width or key.shape[-1] != self.feature_width:
-            raise BankConditioningError("input anchor query/key width changed")
-        score = torch.einsum("rebd,tphd->rebtph", query, key)
-        return torch.tanh(score / math.sqrt(self.feature_width))
+        expected = (G1_RESIDUAL_RANK, self.event_slots, 2)
+        if (
+            native_query.shape[:-1] != expected
+            or native_query.shape[-1] != value.shape[-1]
+            or metadata_query.shape != (*expected, self.feature_width)
+            or magnitude_query.shape != expected
+            or value.ndim != 4
+            or metadata.shape != (*value.shape[:-1], self.feature_width)
+        ):
+            raise BankConditioningError("input native anchor axes changed")
+        value, magnitude, metadata = self._candidate_fields(value, metadata)
+        native = torch.einsum("rebd,tphd->rebtph", native_query, value)
+        native = native / math.sqrt(value.shape[-1])
+        auxiliary = torch.einsum(
+            "rebd,tphd->rebtph", metadata_query, metadata
+        ) / math.sqrt(self.feature_width)
+        scale = torch.einsum("reb,tph->rebtph", magnitude_query, magnitude)
+        return torch.tanh((native + auxiliary + scale) / math.sqrt(3.0))
 
     def output_compatibility(
-        self, query: torch.Tensor, key: torch.Tensor
+        self,
+        native_query: torch.Tensor,
+        metadata_query: torch.Tensor,
+        magnitude_query: torch.Tensor,
+        value: torch.Tensor,
+        metadata: torch.Tensor,
     ) -> torch.Tensor:
-        if query.shape[-1] != self.feature_width or key.shape[-1] != self.feature_width:
-            raise BankConditioningError("output anchor query/key width changed")
-        score = torch.einsum("grebd,gtphud->grebtphu", query, key)
-        return torch.tanh(score / math.sqrt(self.feature_width))
+        groups = value.shape[0] if value.ndim == 6 else 0
+        expected = (groups, G1_RESIDUAL_RANK, self.event_slots, 2)
+        if (
+            groups <= 0
+            or native_query.shape[:-1] != expected
+            or native_query.shape[-1] != value.shape[-1]
+            or metadata_query.shape != (*expected, self.feature_width)
+            or magnitude_query.shape != expected
+            or metadata.ndim != value.ndim
+            or metadata.shape[0] not in (1, groups)
+            or metadata.shape[1:-1] != value.shape[1:-1]
+            or metadata.shape[-1] != self.feature_width
+        ):
+            raise BankConditioningError("output native anchor axes changed")
+        value, magnitude, metadata = self._candidate_fields(value, metadata)
+        native = torch.einsum(
+            "grebd,gtphud->grebtphu", native_query, value
+        ) / math.sqrt(value.shape[-1])
+        auxiliary = torch.einsum(
+            "grebd,gtphud->grebtphu", metadata_query, metadata
+        ) / math.sqrt(self.feature_width)
+        scale = torch.einsum(
+            "greb,gtphu->grebtphu", magnitude_query, magnitude
+        )
+        return torch.tanh((native + auxiliary + scale) / math.sqrt(3.0))
+
+    def _candidate_fields(
+        self, value: torch.Tensor, metadata: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        value = value.float()
+        magnitude = value.square().mean(-1).sqrt().clamp_min(1e-6)
+        direction = value / magnitude[..., None]
+        log_magnitude = torch.tanh(magnitude.log())
+        normalized_metadata = functional.layer_norm(
+            metadata.float(), (self.feature_width,)
+        )
+        return direction, log_magnitude, normalized_metadata

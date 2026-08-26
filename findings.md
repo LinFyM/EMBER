@@ -600,6 +600,27 @@ scorer内将Program/rank/query/event/gain/native-candidate模块按四family共�
 真实一步profile使222/222 trainable tensors进入optimizer state，Action Meta/source/Program/scale trainable均为0；这只解封fresh
 formal F3，仍须以同一451 Gate判断。
 
+### 42. family-owner FiLM仍失败；compressed key的稳定谱与shared acquisition共同构成更早接口
+
+clean pushed detached `c3fc8e3`将scorer按family拆分并以fixed-owner bounded FiLM调制candidate hidden direction后，从fresh训练到
+macro5并exact-resume到macro10。macro10完整451-condition fit/held-video/task-holdout median为`.074715/.074620/.081644`，held
+p10 `.058381`、held/fit `.998724`；held q/v/action-in/action-out仅`.027938/.066509/.044464/.164942`。它相对macro5稳定增长，
+但没有超过`.75/.50` Gate，也没有解决family绝对能力，故“family ownership加owner FiLM足够”被formal证伪，不授权macro20或小扫。
+
+冻结该checkpoint的candidate keys后，task-local free event query的exact centered linearized image给出两项互补证据。在稳定的`1e-3`
+relative spectral cutoff下，task93/video31的q target0/q target18/v/action-in/action-out joint teacher-update ceiling为
+`.2268/.2262/.3151/.9750/.6292`；task94/video11独立q target18为`.2312`。去除metadata或改读candidate encoder第一层256D
+hidden不能修复q/v/action-out，而`1e-6` cutoff可恢复约`.97--.997`，所以raw native信息没有消失，失败来自learned compressed key
+把所需方向压入三到六个数量级更弱的谱尾。与此同时action-in在稳定子空间已经有`.975` ceiling，训练恢复却只有`.044`，证明即使
+方向可表示，共享Program-to-selection/credit acquisition仍未学会。两者共同把最早接口定位为Program/native candidate的scalar-anchor
+构造，而不是bank、covariance solve、B1 replay、rank、Action Meta、metadata或多视频集合处理。
+
+有机制资格的下一修正删除learned compressed candidate encoder与owner FiLM。共享Program context按公开的38-target topology直接产生
+native query、metadata query和magnitude query；compatibility只由它们与当前真实X/Y的RMS-normalized direction、独立归一化metadata
+及bounded log-RMS按内容计算。它只生成B0 scalar anchor，之后仍由current-bank solve重条件化并在B1 exact replay真实bank，因此不是
+旧的raw query跨video直接进入B1，也不输出factor或引入task/video/member/frame lookup。真实一步profile已验证forward/backward/
+optimizer/checkpoint、关键anchor梯度有限非零和Action Meta 0；formal判断仍须clean pushed detached F0与fresh F3。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -2,7 +2,6 @@
 
 from ember.ecp.bank_conditioning.anchor import (
     AnchorProgramState,
-    NativeCandidateEncoder,
     ProgramNativeAnchorScorer,
 )
 from ember.ecp.bank_conditioning.operator import (
@@ -22,7 +21,6 @@ __all__ = [
     "AnchorProgramState",
     "BankConditioningError",
     "BankStatistics",
-    "NativeCandidateEncoder",
     "ProgramNativeAnchorScorer",
     "SpectralBankQuery",
     "StreamingBankStatistics",

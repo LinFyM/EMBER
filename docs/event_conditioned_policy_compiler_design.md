@@ -175,12 +175,22 @@ action-out的32D group构造统计；不得把X复制到四个output type。Prog
 仍是当前视频真实X/Y的加权和。owner/family/rank/event/group embedding只表示固定拓扑，不得包含task、authority、video、member或
 frame absolute ID。
 
-当前F3 scorer的parameter ownership依据`84903aa`等权subspace formal及同bank梯度分解进一步固定：q、v、action-in、
-action-out各自共享Program context、rank context、input/output query、event/gain head和native candidate trunk；同family内部再用
-38-target LoRA固定拓扑索引的zero-init bounded FiLM调制candidate hidden direction。owner索引只表示已公开的目标层/投影位置，
-不是task、video、authority或member route；FiLM参数不产生逐frame logits，最终compatibility仍必须由共享Program query与当前
-candidate content计算。该修正不改变Program schema、128宽度、bank、rank、scale、数据、optimizer或Gate，但与旧scorer checkpoint
-不兼容，必须fresh验证。若它仍失败，应继续定位最早的family/owner content接口，不能用task lookup或width/LR/seed小扫替代。
+`c3fc8e3`的family-shared candidate trunk加fixed-owner FiLM已由fresh macro5/macro10 formal证伪：macro10 held median/p10仅
+`.074620/.058381`，其中q/v/action-in/action-out为`.027938/.066509/.044464/.164942`。同checkpoint fixed-key image进一步显示，
+在稳定的`1e-3`相对谱floor下，task-local free query对q/v/action-out teacher update的联合上限仅约`.23/.32/.63`；去掉metadata或读取
+first hidden projection不能修复，而放宽至`1e-6`可恢复约`.97--.98`。因此原生信息没有消失，但learned compressed candidate key把
+关键方向压入数个数量级更弱的谱尾。action-in fixed-key ceiling已约`.975`而训练恢复仍只有`.044`，又独立证明共享Program-to-selection
+acquisition没有成立。最早接口由parameter ownership进一步收窄到Program/native candidate的scalar-anchor构造，而不是bank、solve、
+replay、rank或Action Meta。
+
+当前F3 scorer因此删除learned compressed candidate projection与owner FiLM。q、v、action-in、action-out仍分别共享Program/rank/event/
+gain职责，并用公开的38-target owner embedding表达固定LoRA拓扑；每个owner/rank/event/branch由Program context直接产生native query、
+metadata query和一个magnitude query。scalar compatibility由native query与当前真实X/Y的RMS-normalized direction点积、metadata query与
+独立归一化的time/probe/horizon/type/event metadata点积、以及bounded log-RMS magnitude项共同形成，最后整体有界。它仍是共享的
+Program-query对current native candidate content的query-key计算，不是task/frame/member/video查表，也不由query head输出factor。
+B0只用这些scalar compatibilities从当前bank构造anchor并求解；B1仍在同一真实bank上exact signed replay。因此它不同于已失败的
+“把raw query直接跨video送入B1”路线。该修正不改变Program schema、bank、rank、scale、数据、loss、optimizer或Gate，与旧scorer
+checkpoint不兼容，必须fresh验证；若仍失败，继续以最早接口证据修正，不能用task lookup或width/LR/seed小扫替代。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，

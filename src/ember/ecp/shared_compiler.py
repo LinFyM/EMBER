@@ -73,10 +73,10 @@ class _StatisticsStream:
     base_frame: torch.Tensor
     event_frame: torch.Tensor
     frame_measure: torch.Tensor
-    input_anchor_queries: torch.Tensor
+    input_anchor_queries: tuple[tuple[torch.Tensor, ...], ...]
     input_accumulators: list[StreamingBankStatistics]
     output_accumulators: list[tuple[StreamingBankStatistics, ...]]
-    output_anchor_queries: tuple[torch.Tensor, ...]
+    output_anchor_queries: tuple[tuple[torch.Tensor, ...], ...]
     gains: tuple[torch.Tensor, ...]
     boundaries: list[NativeOutputBankState]
 
@@ -324,26 +324,38 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self,
         value: torch.Tensor,
         metadata: torch.Tensor,
-        query: torch.Tensor,
+        native_query: torch.Tensor,
+        metadata_query: torch.Tensor,
+        magnitude_query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
-        target: int,
     ) -> torch.Tensor:
-        keys = self.anchor_scorer.input_keys(value, metadata, target=target)
-        event = self.anchor_scorer.input_compatibility(query, keys)
+        event = self.anchor_scorer.input_compatibility(
+            native_query,
+            metadata_query,
+            magnitude_query,
+            value,
+            metadata,
+        )
         return self._effective_input_compatibility(event, weights, ratio)
 
     def _output_anchor_compatibility(
         self,
         value: torch.Tensor,
         metadata: torch.Tensor,
-        query: torch.Tensor,
+        native_query: torch.Tensor,
+        metadata_query: torch.Tensor,
+        magnitude_query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
-        target: int,
     ) -> torch.Tensor:
-        keys = self.anchor_scorer.output_keys(value, metadata, target=target)
-        event = self.anchor_scorer.output_compatibility(query, keys)
+        event = self.anchor_scorer.output_compatibility(
+            native_query,
+            metadata_query,
+            magnitude_query,
+            value,
+            metadata,
+        )
         return self._effective_output_compatibility(event, weights, ratio)
 
     def _add_statistics_chunk(
@@ -378,14 +390,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         for target, (owner, x, y) in enumerate(
             zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
         ):
+            input_query = stream.input_anchor_queries[target]
             x_compatibility = checkpoint(
                 self._input_anchor_compatibility,
                 x,
                 input_metadata,
-                stream.input_anchor_queries[target],
+                *input_query,
                 state.event_weights[target],
                 event_ratio,
-                target,
                 use_reentrant=False,
                 preserve_rng_state=False,
             )
@@ -395,14 +407,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             grouped = bank.reshape(
                 *bank.shape[:-1], groups, owner.out_features // groups
             ).movedim(-2, 0)
+            output_query = stream.output_anchor_queries[target]
             y_compatibility = checkpoint(
                 self._output_anchor_compatibility,
                 grouped,
                 output_metadata[None],
-                stream.output_anchor_queries[target],
+                *output_query,
                 state.event_weights[target],
                 event_ratio,
-                target,
                 use_reentrant=False,
                 preserve_rng_state=False,
             )

@@ -146,22 +146,8 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     loss.backward()
     families = {family.value for family in TargetFamily}
     assert set(compiler.anchor_scorer.program_context) == families
-    assert set(compiler.anchor_scorer.input_candidates) == families
-    assert set(compiler.anchor_scorer.output_candidates) == families
     assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
     assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
-    assert (
-        compiler.anchor_scorer.input_candidates["q"].direction_input.weight.grad
-        is not None
-    )
-    assert (
-        compiler.anchor_scorer.output_candidates["q"].direction_input.weight.grad
-        is not None
-    )
-    assert compiler.anchor_scorer.input_owner_scale.grad is not None
-    assert compiler.anchor_scorer.output_owner_scale.grad is not None
-    assert bool(torch.count_nonzero(compiler.anchor_scorer.input_owner_scale.grad))
-    assert bool(torch.count_nonzero(compiler.anchor_scorer.output_owner_scale.grad))
     assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
@@ -171,7 +157,25 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         for gain in observed.output_group_gains
     )
     names = set(dict(compiler.named_parameters()))
+    assert not any("candidates" in name or "owner_scale" in name for name in names)
     assert not {"input_logits", "output_logits", "event_logits"} & names
+
+    state = compiler.anchor_scorer.program_state(program)
+    input_queries = compiler.anchor_scorer.input_queries(state)
+    for owner, query in zip(owners, input_queries, strict=True):
+        native, metadata, magnitude = query
+        assert native.shape == (4, events, 2, owner.in_features)
+        assert metadata.shape == (4, events, 2, compiler.anchor_width)
+        assert magnitude.shape == (4, events, 2)
+    for target, owner in enumerate(owners):
+        groups = int(compiler.output_group_counts[target])
+        native, metadata, magnitude = compiler.anchor_scorer.output_queries(
+            state, target=target, groups=groups
+        )
+        prefix = (groups, 4, events, 2)
+        assert native.shape == (*prefix, owner.out_features // groups)
+        assert metadata.shape == (*prefix, compiler.anchor_width)
+        assert magnitude.shape == prefix
 
 
 def test_shared_compiler_video_set_is_permutation_invariant() -> None:

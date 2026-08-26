@@ -1,7 +1,7 @@
 # EMBER progress
 
 更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@e7d86b0`的四family task-LOTO analytic-dual basis probe，最新结构裁决基于全新专家对
+evidence为clean pushed `main@435cb4a`的50-task/98-condition bank-operator F1 pass，最新结构裁决基于全新专家对
 `main@ed2883b`及完整可达历史的复核。
 
 ## 当前状态
@@ -23,18 +23,20 @@ regularized solve后由B1重放同一bank做exact signed pooling。没有恢复�
 owner接受该G3修正，同时明确覆盖专家的Final初始化偏好：整套Writer完全随机初始化、从头端到端fresh联合训练必须保留为Final
 正式可选项；G1--G3是组件因果验证而非Final强制课程。Final仍不预设目标LoRA，具体初始化与最小监督由matched closed-loop证据裁决。
 
-F1隔离operator实现面现已接通但尚未冒充formal Gate：新增的`ember.ecp.bank_conditioning`只拥有B0 sufficient statistics、截断谱
-query solve与B1 exact signed pooling，随后由同一模块直接供canonical compiler复用；analytic anchor、teacher lookup和四family
-对照只存在于单一formal analyzer，不进入deployment模块或checkpoint。一个真实K1条件及两个并发条件的materialized-to-analytic
-update cosine最低分别为`0.99983`和`0.99960`，streaming-to-materialized最低`0.99999994`，Action Meta实际未加载；全仓
-`177 passed`。ridge在约`1e6`条件数bank上会收缩有效方向，故首版采用与G1稳定span一致的FP64谱截断，并保留q/action-in真实
-output-group相对gain，未做width/LR/seed扫。该新增包不是第二套Writer；F1之后analytic-only analyzer只保留为formal evidence入口，
-旧G3 v2 compiler将在bank-conditioned canonical实现通过对应Gate后删除而不是长期并行。
+F1隔离operator已从clean pushed detached `435cb4a`完成formal Gate：新增的`ember.ecp.bank_conditioning`只拥有B0 sufficient
+statistics、截断谱query solve与B1 exact signed pooling，随后由同一模块直接供canonical compiler复用；analytic anchor、teacher
+lookup和四family对照只存在于单一formal analyzer，不进入deployment模块或checkpoint。固定50 tasks/98 conditions/536
+member-family rows上，q/v/action-in/action-out的task-mean median分别为`0.999871/0.999824/0.999960/0.999884`，minimum为
+`0.999757/0.999544/0.999951/0.999743`；streaming-to-materialized row minimum为`0.99999988`，全部远高于预注册门。
+Action Meta实际未加载、held reads为0；全仓`177 passed`。ridge在约`1e6`条件数bank上会收缩有效方向，故首版采用与G1稳定span
+一致的FP64谱截断，并保留q/action-in真实output-group相对gain，未做width/LR/seed扫。该pass只证明operator capacity与数值合同，
+不证明shared Program-to-anchor mapping。analytic-only analyzer只保留为formal evidence入口，旧G3 v2 compiler将在
+bank-conditioned canonical实现通过对应Gate后删除而不是长期并行。
 
 吞吐profile同样按真实稳态而非卡数解释：单worker峰值allocated约`10.1GB`但启动主要是CPU runtime装载；同一A40共驻两个长寿命
 worker时实测约`37.5/46.1GB`、稳定GPU UTL `94--100%`、memory UTL约`50--73%`，两条件总墙钟相对串行提升约`66%`。
-第三worker无安全显存余量，因此formal F1按live可用卡动态采用每卡两个长寿命worker并让每个worker连续处理多个条件摊薄初始化；
-这只优化分片与吞吐，不改变50-task/98-condition authority或Gate。
+第三worker无安全显存余量；formal F1实际使用gpu01 p1--p6每卡两个长寿命worker，六卡稳态均约`37.5--37.8GB`且UTL `100%`，
+12个worker全部完成，最长总时长`228.44s`。这只优化分片与吞吐，不改变50-task/98-condition authority或Gate。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
 两条fixed antithetic native probes，再做monotonic canonical alignment与`beta_k=1/K`集合聚合。首轮真实held检查发现把多视频frames

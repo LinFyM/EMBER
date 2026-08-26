@@ -493,6 +493,23 @@ owner接受上述G3裁决，但明确不同于专家的Final默认偏好：完�
 不应人为分段。通过组件初始化与全随机初始化都必须使用fresh optimizer/scheduler、同一信息墙与closed-loop合同；Final不预设存在
 目标LoRA，最终选择不能由内部loss代替。
 
+### 35. F1证明bank-conditioned operator能恢复解析上限，但不替代shared mapping Gate
+
+clean pushed detached `main@435cb4a`在既有50-task/98-condition analytic-dual authority上完成B0/B1 operator formal。代表38-target
+四类native拓扑的q20、v21、action-in36、action-out37均使用真实X与abs/adj/init/goal Y、固定G2 measure、Program-conditioned
+bounded analytic anchors、FP64 current-bank covariance截断谱solve及exact antithetic signed replay；streaming严格跨frame chunks保留
+adjacent/init/goal视频边界状态。analytic teacher只用于隔离operator capacity，不进入deployment模块或checkpoint。
+
+四family的operator-to-analytic task-mean median为`0.999871/0.999824/0.999960/0.999884`，minimum为
+`0.999757/0.999544/0.999951/0.999743`；536 rows的streaming-to-materialized minimum为`0.99999988`，故预注册F1 Gate明确
+通过。Action Meta module/parameter为0、held action/reward reads为0。该结果排除了显式covariance、截断谱solve、output-group
+relative gain及chunked replay本身是G3当前瓶颈，也不需要转向matrix-free block-CG/Lanczos；它没有训练shared anchor scorer，不能
+被解释为Program-to-attention mapping或closed-loop成功。下一最早接口仍是F0 canonical forward与F2/F3 shared mapping acquisition。
+
+吞吐合同也用真实profile固定：单worker约`19.3GB`reserved，gpu01 p1--p6每卡双worker时六卡均约`37.5--37.8GB`且稳态UTL
+`100%`，12个cost-balanced workers在最长`228.44s`内完成。第三worker没有安全显存余量；后续仍按任务图和live状态选择card/process
+数，而不是把“多卡”或“显存占满”本身当科学结果。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

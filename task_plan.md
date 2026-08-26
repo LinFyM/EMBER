@@ -252,11 +252,11 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   强制课程。该裁决覆盖专家“默认从通过组件初始化”的偏好，但不改写专家原文。
 - [ ] F0：接通一个真实K1/K4 bank-conditioned forward/gradient/materialization，证明Program/source/carrier冻结、Action Meta 0、
   ID/teacher信息墙、K2/K4 teacher reads 0、chunk/video边界、finite gradients、76 tensors及policy实际消费唯一rank16。
-- [ ] F1：先以50 tasks/98 conditions的既有authority做operator capacity；free/analytic native anchors隔离shared mapping，要求q/v/
+- [x] F1：以50 tasks/98 conditions的既有authority完成operator capacity；free/analytic native anchors隔离shared mapping，要求q/v/
   action-in/out各family materialized与streaming replay median update cosine`>=0.995`、minimum`>=0.99`，chunk/full等价。若显式
-  covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。当前单一
-  statistics/solve/pooling模块、formal analyzer、真实K1 smoke与双worker吞吐profile已接通；仍须从clean detached pushed commit完成
-  全50-task/98-condition报告后才能勾选。
+  covariance实现不能恢复而materialized FP64 reference能恢复，才根据operator证据切换matrix-free block-CG/Lanczos。clean
+  detached `435cb4a`的四family task-mean median为`0.999871/0.999824/0.999960/0.999884`，minimum为
+  `0.999757/0.999544/0.999951/0.999743`，chunk/full row minimum`0.99999988`；Action Meta 0、held reads 0，Gate pass。
 - [ ] F2：在50 K1-covered tasks/451 task-video预注册holdout上运行同一实现的`global_statistics_off`消融，只训练anchor scorer；
   held-video recovery median`>=0.75`、每family`>=0.65`、task-holdout`>=0.60`才保留strict candidate-local假设。若off失败且F3通过，
   删除off执行面并正式淘汰one-pass candidate-local路线。

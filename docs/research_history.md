@@ -469,3 +469,23 @@ deployment，held5 closed loop仍是G3结论。
 - 大型formal结果：本地ignored `runs/`中的唯一checkpoint、raw rows与aggregate；人工process资产除外，已明确删除。
 
 任何旧提交中的“active”“next”或“current”只代表当时状态，不能覆盖当前owner要求。
+
+## 27. G3 current-bank-conditioned F1 operator formal pass
+
+第二位全新专家在远程`main@ed2883b`的完整可达历史上复核后，确认G3此前最早失效接口是current-bank gauge：稳定任务功能被写成
+随video candidate covariance旋转、条件数约`1e6`的minimum-norm dual coordinates。活动Pass B因此修正为B0流式累计每视频
+unit-mass mean/covariance及Program-conditioned native anchors，regularized solve形成query，再由B1重放同一真实bank执行exact
+positive-minus-negative softmax pooling。owner同时明确Final必须保留整套Writer随机初始化、从头端到端fresh联合训练的正式选项；
+这不改写专家原文。
+
+clean pushed detached `main@435cb4a`随后先隔离验证operator capacity。固定authority沿用四family task-LOTO的50 fit tasks、98 K1
+conditions与targets q20/v21/action-in36/action-out37；使用真实native X、abs/adj/init/goal Y、冻结G2 measure、bounded analytic
+native anchors、FP64 covariance截断谱solve、output-group bounded relative gain及materialized/streaming exact replay。q/v/action-in/
+action-out task-mean update cosine median分别为`0.999871/0.999824/0.999960/0.999884`，minimum分别为
+`0.999757/0.999544/0.999951/0.999743`；536 member-family rows的streaming-to-materialized minimum为`0.99999988`。
+全部预注册门通过，Action Meta为0且held reads为0。
+
+该pass只证明bank statistics、截断谱solve、group gain和chunked signed replay能保存analytic Native-Factor上限；没有训练或证明shared
+Program-to-anchor mapping，也不是closed-loop G3 Gate。关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_bank_operator_f1_435cb4a_gpu01p123456x2_20260826/`。

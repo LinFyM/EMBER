@@ -383,6 +383,47 @@ clean pushed `main@93dffc7`的实际封存与三步真实profile证明该修正�
 显存和materialization工程风险；是否学会shared mapping仍必须看fresh macro5的fit-teacher曲线与held closed loop，不能用初始
 teacher loss或gradient大小提前宣称通过。
 
+### 30. G3 v2 direct teacher仍被旧credit覆盖，不能靠续训或调权重修复
+
+clean detached `2a7f760`的v2 fresh macro5/95 updates完成后，五臂strict250的carrier/language/full/first+final/same-task为
+`43/42/41/38/37`。full breadth`3/5`、carrier retention`33/43`、Goal/Long均0、相对language/endpoints`-1/+3`、same-task
+retention`73.2%`；单checkpoint、三条video banks、唯一rank16、配对与Action Meta 0均有效，shuffled/reversed未使用。相对v1虽有
+小幅改善，但仍没有G3所需的跨suite、视频必要增量或same-task稳定性。
+
+固定同一fit K1真实bank比较deterministic step0和macro5，input/output subspace从`0.9298/0.9292`降到`0.9070/0.9083`，
+paired update cosine反而从`0.00409`降至`0.00299`，spectrum loss从`3.7536`恶化到`4.2118`。梯度墙本身严格为0泄漏，但teacher
+selection梯度范数仅`0.3235`，同一步其它functional/flow/carrier selection梯度为`21.8015`；teacher spectrum与其它scale梯度cosine
+为`-0.989657`。因此“分组clip即可让direct teacher起作用”的v2假设被反证：问题不是scale再度消费selection clip，而是两个目标仍在
+各自参数组内直接争夺同一次更新。
+
+teacher-only反事实能让同一条件的selection、paired update和spectrum共同下降，说明teacher loader、真实bank、shared forward和
+autograd链路有效；但paired-update梯度又明显小于两个subspace分量，等权scalar objective没有把最终LoRA更新方向作为首要credit。
+下一修正必须隔离fit-K1 mapping acquisition与旧functional职责，并以paired update为首要可证伪量；K2/K4仍不能读取teacher，最终
+checkpoint仍需恢复多视频职责并由held closed loop判定。该证据不支持task/frame lookup、改变rank/K或直接进入G4。
+
+owner进一步明确：上述LoRA teacher只承担G3中间接口监督，不能被机械延伸为Final数据合同。G4/Final不得假设每个任务都有目标LoRA；
+在授权fit/meta tasks上直接以teacher actions、functional/on-policy闭环信号训练完整Writer是正式候选路径，具体loss删留仍由实际
+closed-loop效果与最早失效接口决定。deployment信息墙与zero-interaction输入合同不变。
+
+正式训练的world size是吞吐分片选择，不得成为科学batch定义。当前G3以固定3个target-fit加3个meta-fit的全局optimizer group
+保持task/role权重与update cadence不变，再按launch时1--6张有效GPU做cost-balanced分片；最后1+1尾step允许其余rank自然无本地task，
+但参加同一全局梯度归并。exact-resume仍锁定run最初topology。
+
+### 31. G3最早selection接口是高条件数native dual的获取，不是signed pooling表达力
+
+在固定fit K1 `meta9/video40/member=meta_step1000`、同一真实target20 q bank上，直接优化free full-native query即使到500步，
+canonical factor cosine也只有`0.4313`、effective-update cosine只有`0.1624`；uniform frame measure、raw key、LayerNorm、独立或
+paired antithetic branches均没有结构性改善。相反，按冻结G2 `rho`与canonical assignment形成的base measure，对同一X/Y bank做
+FP64 stable inverse-covariance dual解析解，input/output factor cosine达到`0.99628/0.99997`，完整update cosine为`0.99750`，而
+各bank retained scatter condition约`9.6e5--9.9e5`。把该dual缩到最大absolute logit `0.1`后放回现有online-compatible
+`softmax(+s)-softmax(-s)`，update cosine仍为`0.99749`，所以不需要以第二次bank读取或新pooling公式解释失败。
+
+这组反事实把最早接口进一步定位为：旧factor/update loss要求共享Program query通过普通梯度隐式学会每个bank约`1e6`条件数的
+inverse-covariance preconditioning；bank、candidate索引、两路softmax、chunked accumulator、rank4和materialization本身均能表达
+teacher方向。下一步先在fit-only analytic dual集合上做按task留出的低维target-native key-basis oracle，以一次解析谱及held-out真实bank
+回放判定低维共享basis是否保留full dual；不通过多个width训练选分数。只有该oracle有信号，才允许把compact dual supervision显式写入
+active design/schema并实现shared Program-to-coefficient mapping；内部cosine仍不能替代最终held5 closed loop。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

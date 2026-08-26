@@ -389,6 +389,10 @@ context stop-gradient，使两个clip组具有真实互斥的parameter owner。�
 `rms_normalize`和scale初始化，不加入confidence gate；只有teacher方向已在fit K1明显学会、而闭环仍被低置信随机residual破坏时，才以
 独立机制证据重开confidence。
 
+formal训练的全局task group固定为3个target-fit加3个meta-fit，19+19 task的尾step自然为1+1；launch时可按1--6张有效GPU
+cost-balanced分片。world size只改变每rank承担哪些task，不改变每个optimizer step的全局task集合、两种role质量、loss归一化或
+scheduler cadence；exact-resume锁定首次launch topology。
+
 held5门比较carrier、learned language-only、full、first+final、same-task-other。继续条件：full至少60/250、breadth至少4/5、保留
 carrier至少33/43、Goal或Long至少一个非零、full相对language-only与first+final各净增至少5、same-task retention至少80%。
 
@@ -400,7 +404,9 @@ training掩盖失败。可以依据mapping、factor selection或critic的具体�
 
 只有G3有真实闭环信号才解冻全部Writer，继续冻结backbone、carrier和task experts。
 
-4A先用G3全部loss做functional joint warmup，Program checkpoint作anchor，compiler较小学习率。4B在fit natural tasks上以generated
+G3的native-feasible LoRA teacher只作shared mapping组件验证，不是G4/Final必须存在的监督资产。正式联合训练不得预设目标LoRA；
+可直接使用授权fit/meta tasks的teacher actions、functional及on-policy闭环信号，并由实际closed-loop证据选择最小充分loss集合。
+若机制证据要求warmup，4A可用仍有效的G3 functional losses、Program checkpoint作anchor和较小compiler学习率；4B在fit natural tasks上以generated
 LoRA rollout收集student visited states，再查询多个task experts；member-state pair只有在fixed short continuation中最终成功、严格提升
 BDDL progress且不撤销predicate，或明显优于carrier/source，才进入set loss。无valid member的state只用reward/progress，不制造伪动作
 label。

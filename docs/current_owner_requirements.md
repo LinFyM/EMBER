@@ -31,6 +31,8 @@ Writer在rollout前运行一次，直接生成一套覆盖Action Expert全部38�
 
 训练期可在授权的non-held tasks上使用actions、privileged task experts、simulator reward和occupancy学习共享机制，但这些信息
 不得成为deployment输入、held dictionary或task-ID route。
+G3的native-feasible LoRA teacher只用于验证shared compiler接口；G4/Final训练合同不得预设每个任务存在目标LoRA。正式联合训练可直接
+使用授权fit/meta tasks的teacher actions、functional或on-policy闭环信号，具体最小监督集合由机制与closed-loop证据决定。
 
 ## 3. 数据边界
 
@@ -100,6 +102,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 ## 7. GPU、仓库与文档
 
 - 每次GPU launch前同时live检查gpu01/gpu02；单个job只用一个节点，最多6张真正提高吞吐的A40。
+- 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
+  实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
 - EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
 - gpu01物理0若仍标记prohibited则不得使用；GPU身份和状态每次都要重新确认。
 - 正式训练遵守storage quota、clean pushed commit和frozen worktree合同；探索实验不做冗余流程。

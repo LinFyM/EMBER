@@ -389,7 +389,32 @@ benefit `9/9`。因此后继活动修正转为fit-only K1 native-feasible factor
   `93dffc7`，fit-only K1 authority：50 tasks、451 task-video、662 teacher states；不是Gate结果）；
 - 三条macro10 video arms位于对应`pi05_ecp_shared_compiler_g3_*strict250*m10fresh*20260826/`目录。
 
-## 23. 当前保留结论
+## 23. G3 v2 macro5与teacher-credit冲突定位
+
+clean detached `2a7f760`从fresh完成v2 macro5/95 optimizer updates。五臂paired strict250的
+carrier/language/full/first+final/same-task=`43/42/41/38/37`；full逐task为Spatial0 `34`、Spatial9 `5`、Object8 `2`、Goal5 `0`、
+Long6 `0`，breadth`3/5`、carrier retention`33/43`、相对language/endpoints`-1/+3`、same-task retention`30/41=73.2%`。
+所有bank、single checkpoint、single rank16、配对和Action Meta 0 authority通过，shuffled/reversed未使用，故这是科学non-pass。
+
+同一fit K1真实bank的固定条件审计显示，macro5的paired update cosine仍仅`0.00299`，spectrum较step0更差；teacher-selection与旧
+functional selection梯度范数为`0.3235/21.8015`，teacher spectrum与旧scale梯度cosine为`-0.989657`，显式gradient wall泄漏为0。
+teacher-only反事实能沿正确方向下降，因此失败不是teacher cache、native capture或autograd断路，而是v2在同一步内让旧functional
+credit覆盖direct mapping credit，且等权subspace/update objective低估最终paired update方向。后继转向隔离fit-K1 mapping acquisition，
+随后再以非干扰阶段恢复K2/K4 functional职责；不续训v2、不做seed/LR/rank/K小扫，也不进入G4。
+
+后续同一固定bank的free-query/解析反事实进一步定位了selection内部接口：full-native query普通梯度500步只有`0.1624` update cosine，
+而固定G2 measure下的FP64 weighted inverse-covariance dual为`0.99750`；该dual用现有small-logit antithetic exponential softmax仍为
+`0.99749`。这证明当前bank和signed-pooling形式可以实现teacher，失败来自约`1e6`条件数dual的shared acquisition。该结果只授权下一步
+fit-only leave-task-out dual-basis oracle；在解析压缩门通过并更新active schema前，不把dual label或full-width query写成已定架构。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_native_teacher_v2_fold0_m5fresh_2a7f760_gpu02p45_r2_20260826/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_gate_native_teacher_v2_m5_2a7f760_20260826/report.json`；
+- 三条video strict250结果位于对应`pi05_ecp_shared_compiler_g3_*strict250_native_teacher_v2*m5*20260826/`目录；
+- 一次性固定bank梯度审计位于ignored `.codex/tmp/g3_v2_fixed_probe_meta9_*`，其结论已固化在当前持久文件中。
+
+## 24. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -399,7 +424,7 @@ benefit `9/9`。因此后继活动修正转为fit-only K1 native-feasible factor
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 24. 证据恢复方式
+## 25. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

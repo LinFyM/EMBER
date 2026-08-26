@@ -5,7 +5,7 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
-分别通过对应Gate；当前推进Phase G3 shared compiler的native-teacher修正。G1只证明真实native banks与signed pooling存在强rank4
+分别通过对应Gate；当前推进Phase G3 shared compiler的teacher-credit修正。G1只证明真实native banks与signed pooling存在强rank4
 residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
 任一阶段仍不代表整体项目goal完成。
 
@@ -224,13 +224,32 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   shared query-key产生的input/output subspace、paired update direction和独立small-core spectrum；K2/K4 teacher tensor reads为0；
   selection与scale/video各自clip且scale/video不反传shared context。真实三步K1/K2/K4 profile已验证teacher lookup、gradient wall、
   same-task、bounded beta、长K4与唯一rank16，峰值29.32GB，Action Meta/source/Program trainable均0。
-- [ ] 从fresh运行G3 v2到首个预注册macro5节点，先核对fit K1 teacher selection/scale是否学会，再执行与v1完全相同的held5五臂
-  strict250 Gate；任何non-pass先按teacher fit、held generalization、multi-video组合和闭环稳定性的最早失效接口定位，不做超参小扫。
+- [x] 从clean pushed detached `2a7f760` fresh运行G3 v2到macro5/95 updates并完成同一五臂strict250：carrier/language/full/
+  endpoints/same-task=`43/42/41/38/37`，full breadth`3/5`、carrier retention`33/43`、Goal/Long均0、相对language/endpoints
+  `-1/+3`、same-task retention`73.2%`，故Gate明确non-pass；所有bank、单checkpoint、唯一rank16、配对及Action Meta 0检查通过，
+  shuffled/reversed未使用。
+- [x] 对同一真实fit K1 bank做固定条件、梯度分解和teacher-only反事实：macro5相对step0未改善最终paired update，spectrum反而更差；
+  旧functional对selection的梯度范数约为teacher的`67x`，teacher spectrum与旧scale梯度cosine为`-0.9897`。因此最早失效接口是
+  同一步内相互冲突的shared selection/scale credit，而非Program、native bank、rank、K聚合或Action Meta；不能沿v2混合loss直接续训。
+- [x] 在同一真实target20 bank上完成free-query与解析dual对照：普通梯度500步仍仅`0.1624` update cosine，FP64 weighted
+  inverse-covariance dual在冻结G2 measure下达到`0.9975`；缩到最大logit`0.1`后用现有antithetic softmax仍为`0.9975`。
+  因此最早接口是高条件数dual的shared acquisition，不是banks、signed pooling或chunked实现。
+- [ ] 先做fit-only、按task leave-out的target-native dual-basis解析oracle；用同一次basis曲线评估`16/32/64/96/128`维在未参与建basis的
+  真实bank上对完整rank4 update的保留，不通过训练多个width选优。四类probe的task-equal update cosine须同时达到median`>=0.98`、
+  p10`>=0.95`且至少90% tasks `>=0.95`，并对每task两条视频中的worst-video应用同一门槛；通过后先扩到全部38 targets，再把
+  compact dual监督写入shared compiler。
+- [ ] 保持frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16合同，实施隔离的fit-K1 mapping acquisition；
+  以paired update方向为首要因果量，阻断旧functional/flow/carrier梯度在同一acquisition step覆盖selection/scale，之后再以非干扰阶段
+  验证K2/K4组合和functional职责。先用fit内未见video诊断证明shared mapping而非记忆条件，最终仍以完整K4 held5五臂strict250 Gate
+  作G3结论。formal runtime使用固定3+3 role-balanced全局task group并按实时1--6张有效GPU弹性分片；world size不得改变task权重、
+  optimizer cadence或Gate口径，exact-resume锁定原topology。
 
 ### G4 Joint Writer
 
 解冻全部Writer、冻结backbone/carrier/experts；默认直接联合优化已通过组件Gate的完整Writer，并优先保留支撑闭环因果问题的最小loss
-集合。只有真实机制证据表明需要时才使用有退出条件的functional warmup；随后可在student visited states上用verified short
+集合。G3的native-feasible LoRA teacher是组件验证工具，不是G4/Final必须存在的数据依赖；正式训练不得预设有目标LoRA，可直接以
+授权fit/meta teacher actions、functional与on-policy闭环信号监督完整Writer。只有真实机制证据表明需要时才使用有退出条件的functional
+warmup；随后可在student visited states上用verified short
 continuation筛选有效expert members。至少两个train24 folds要求recovery`>=0.40`、breadth5/5、Goal/Long均非零、carrier
 retention`>=75%`、same-task retention`>=85%`和相邻checkpoint稳定。
 

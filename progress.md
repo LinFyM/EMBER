@@ -1,7 +1,7 @@
 # EMBER progress
 
-更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；G3 v1
-formal authority：clean pushed `main@5140362`的fresh `macro_00000010`。
+更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
+evidence为clean pushed `main@2a7f760`的v2 fresh `macro_00000005`及其五臂strict250 Gate。
 
 ## 当前状态
 
@@ -12,7 +12,8 @@ formal authority：clean pushed `main@5140362`的fresh `macro_00000010`。
 active design明确是解释/执行层，不能替代原文。
 
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle与G2 Natural Program
-均已通过；当前处于G3 shared compiler，v1 macro10已形成根本non-pass证据，正在实现有机制依据的K1 native-teacher修正。没有恢复
+均已通过；当前处于G3 shared compiler，v1 macro10与v2 macro5已形成两层non-pass及根因证据，正在验证高条件数native dual能否由
+低维task-general basis承载。没有恢复
 旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
@@ -219,6 +220,32 @@ scale/video pre-clip norms被分别记录，scale/video heads不反传shared con
 从uniform的最大偏差低于`1e-6`；Action Meta module/parameter、source与Program trainable均0，峰值allocated
 `29,320,510,976` bytes。该profile只证明v2训练面和信息墙接通，不是G3 Gate；下一步从fresh到macro5并复评同一五臂strict250。
 
+G3 v2随后由clean detached `2a7f760`从fresh训练至macro5/95 optimizer updates，并以同一checkpoint分别物化full、first+final和
+same-task K4 banks。五臂strict250的carrier/language/full/endpoints/same-task为`43/42/41/38/37`；full逐task为Spatial0 `34`、
+Spatial9 `5`、Object8 `2`、Goal5 `0`、Long6 `0`，breadth`3/5`、carrier retention`33/43`、相对language/endpoints为`-1/+3`、
+same-task retention`30/41=73.2%`。只有carrier retention和全部authority检查通过，因此明确non-pass；shuffled/reversed未使用。
+
+同一fit K1 `meta9/video40`真实bank上的固定条件审计排除了loader或梯度墙故障。step0到macro5的input/output subspace从
+`0.9298/0.9292`轻微降至`0.9070/0.9083`，但paired update cosine由`0.00409`降至`0.00299`，spectrum loss由`3.7536`升至
+`4.2118`。macro5梯度分解显示teacher-selection与其它selection梯度范数为`0.3235/21.8015`（约`67x`），teacher spectrum与其它
+scale梯度cosine为`-0.989657`；两条显式gradient wall泄漏均为0。teacher-only反事实能同时改善selection/update/spectrum，证明分支
+可优化，但v2把几乎正交且量级悬殊的selection credit以及近乎反向的scale credit放在同一步，旧functional职责实际覆盖了direct
+mapping监督。当前不续训v2，也不通过seed/LR/loss系数小扫修饰结果。
+
+隔离credit之后又完成了更早selection接口的固定bank反事实。target20的free full-native query到500步仍只有`0.4313` factor、`0.1624`
+update cosine；相同真实X/Y、teacher和冻结G2 `rho` measure下的FP64 inverse-covariance dual达到input/output
+`0.99628/0.99997`、update`0.99750`，retained scatter condition约`1e6`；将dual缩成最大logit`0.1`并继续使用现有
+`softmax(+s)-softmax(-s)`仍为`0.99749`。最早失效接口由此定位为shared query隐式获取高条件数dual，而不是native banks或pooling表达力。
+
+当前独立`codex/g3-dual-basis-oracle`实现面只为该接口建立formal解析probe：对K1-covered 50 fit tasks的前两条固定视频、q/v/action-in/
+action-out四个代表target封存FP64 minimum-norm dual，以task-balanced、leave-one-task-out rank-block projector拟合一次
+`16/32/64/96/128` basis曲线，再回放真实X/Y及antithetic signed pooling。两task四family真实smoke的full-dual reference update cosine
+为median`0.997401`、p10`0.996245`、minimum`0.995956`；11项dual/native-teacher定向测试通过。该smoke只验证数值与artifact合同，
+不是basis Gate结果；正式50-task probe必须来自clean pushed detached worktree。
+
+owner明确formal训练实现不得固定world2：保持固定全局task group、role权重、loss归一化和optimizer cadence，launch时按1--6张有效GPU
+弹性分片；exact-resume锁定该run首次launch topology。该要求同样适用于后续G3/G4/Final训练，不能让卡数改变科学batch定义。
+
 owner再次明确G1--G3的分段冻结是组件因果验证，不是Final默认训练模板。组件Gate通过后，G4/Final优先直接联合优化完整Writer并使用
 最小充分loss集合；只有后续机制证据要求时才采用有退出条件的warmup或分段。该建议与当前joint Writer目标一致，具体loss删留仍由
 闭环和最早失效接口决定。
@@ -338,8 +365,9 @@ G1--G5 Gate或架构修正依据。
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
 2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
    Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3 v1 macro10五臂strict250已明确non-pass并完成根因定位；fit-only K1 native teacher authority和真实K1/K2/K4 profile均已完成，
-   下一步从fresh运行G3 v2到macro5并复评同一Gate；
+3. G3 v2 macro5五臂strict250已明确non-pass；固定真实K1 bank的梯度审计与解析反事实把最早接口定位为旧credit冲突之后的
+   高条件数native dual acquisition。下一步先完成50-task、四family、task-LOTO dual-basis formal probe；通过后扩到38 targets，
+   再把compact dual supervision接入shared Program-to-coefficient mapping，不能把oracle系数冒充deployment compiler；
 4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

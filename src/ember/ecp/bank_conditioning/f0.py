@@ -309,7 +309,7 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
             reference.program, reference.videos, s_ref=runtime.ranks.s_ref
         )
     chunk_error = max(
-        float((left - right).abs().max())
+        float((left.detach() - right.detach()).abs().max())
         for left, right in zip(
             (*output.residual.a, *output.residual.b),
             (*reference_output.residual.a, *reference_output.residual.b),
@@ -418,6 +418,35 @@ def _forbidden_checkpoint_keys(compiler: torch.nn.Module) -> list[str]:
     ]
 
 
+def _qualification_checks(result: Mapping[str, Any]) -> dict[str, bool]:
+    video_weights = tuple(map(float, result["video_weights"]))
+    uniform = 1.0 / len(video_weights)
+    return {
+        "compiler_forward_information_wall": result[
+            "compiler_forward_parameters"
+        ]
+        == ["program", "videos", "s_ref"],
+        "action_meta_absent": result["action_meta_modules"] == 0
+        and result["action_meta_parameters"] == 0,
+        "source_and_program_frozen": result["source_trainable"] == 0
+        and result["program_trainable"] == 0,
+        "unique_complete_rank16": result["rank16_tensor_count"] == 76
+        and result["rank16_targets"] == 38,
+        "checkpoint_has_no_lookup_or_teacher_state": not result[
+            "checkpoint_forbidden_keys"
+        ],
+        "K4_teacher_tensor_reads_zero": result["k4_teacher_tensor_reads"] == 0,
+        "K4_uniform_video_measure": bool(video_weights)
+        and max(abs(value - uniform) for value in video_weights) <= 1e-7,
+        "K4_permutation_invariant": result["k4_permutation_maximum_error"]
+        <= 2e-6,
+        "chunked_matches_nonchunked": result[
+            "chunked_to_nonchunked_maximum_error"
+        ]
+        <= 2e-5,
+    }
+
+
 def _build_result(
     runtime: F0Runtime,
     *,
@@ -465,18 +494,25 @@ def _build_result(
         "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(runtime.device),
         "max_cuda_reserved_bytes": torch.cuda.max_memory_reserved(runtime.device),
     }
-    passed = all(
-        (
-            result["rank16_tensor_count"] == 76,
-            result["rank16_targets"] == 38,
-            not result["checkpoint_forbidden_keys"],
-            result["k4_teacher_tensor_reads"] == 0,
-            result["k4_permutation_maximum_error"] <= 2e-6,
-            result["chunked_to_nonchunked_maximum_error"] <= 2e-5,
+    checks = _qualification_checks(result)
+    result["qualification_checks"] = checks
+    result["passed"] = all(checks.values())
+    if not result["passed"]:
+        failed = {name: value for name, value in checks.items() if not value}
+        diagnostic = {
+            "failed": failed,
+            "chunked_to_nonchunked_maximum_error": result[
+                "chunked_to_nonchunked_maximum_error"
+            ],
+            "k4_permutation_maximum_error": result[
+                "k4_permutation_maximum_error"
+            ],
+            "video_weights": result["video_weights"],
+        }
+        raise RuntimeError(
+            "F0 bank-conditioned compiler contract did not pass: "
+            + json.dumps(diagnostic, sort_keys=True)
         )
-    )
-    if not passed:
-        raise RuntimeError("F0 bank-conditioned compiler contract did not pass")
     return result
 
 

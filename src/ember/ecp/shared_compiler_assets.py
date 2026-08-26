@@ -179,6 +179,8 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("selection")
             == "program_native_anchor_current_bank_solve_two_softmax_difference",
             model.get("anchor_width") == 128,
+            model.get("anchor_parameter_ownership")
+            == "family_shared_trunks_with_fixed_owner_film",
             model.get("relative_eigenvalue_floor") == 1e-6,
             model.get("phase_global_statistics") == {"f2": False, "f3": True},
             data.get("supported_K") == [1, 2, 4],

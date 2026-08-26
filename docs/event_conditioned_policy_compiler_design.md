@@ -1,6 +1,6 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-26第二次专家复核与owner最新裁决后更新的active architecture contract。第一次专家审查锁定
+状态：2026-08-27第二次专家复核、owner最新裁决与F3机制证据后更新的active architecture contract。第一次专家审查锁定
 `main@7ab5a04`并建立Native-Factor主线；第二次专家审查锁定`main@ed2883b`及其可达历史，针对G3跨视频dual/score旋转给出
 bank-conditioned两阶段Pass B修正。本文是当前唯一架构依据。
 
@@ -174,6 +174,13 @@ gauge。输入侧对真实`X` group构造统计，输出侧分别按q的8个256D
 action-out的32D group构造统计；不得把X复制到四个output type。Program/anchor网络不输出高维factor，所有native anchors和最终factor
 仍是当前视频真实X/Y的加权和。owner/family/rank/event/group embedding只表示固定拓扑，不得包含task、authority、video、member或
 frame absolute ID。
+
+当前F3 scorer的parameter ownership依据`84903aa`等权subspace formal及同bank梯度分解进一步固定：q、v、action-in、
+action-out各自共享Program context、rank context、input/output query、event/gain head和native candidate trunk；同family内部再用
+38-target LoRA固定拓扑索引的zero-init bounded FiLM调制candidate hidden direction。owner索引只表示已公开的目标层/投影位置，
+不是task、video、authority或member route；FiLM参数不产生逐frame logits，最终compatibility仍必须由共享Program query与当前
+candidate content计算。该修正不改变Program schema、128宽度、bank、rank、scale、数据、optimizer或Gate，但与旧scorer checkpoint
+不兼容，必须fresh验证。若它仍失败，应继续定位最早的family/owner content接口，不能用task lookup或width/LR/seed小扫替代。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，

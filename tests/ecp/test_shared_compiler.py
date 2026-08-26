@@ -144,17 +144,25 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     loss = sum(value.square().mean() for value in observed.residual.a)
     loss = loss + sum(value.square().mean() for value in observed.residual.b)
     loss.backward()
-    assert compiler.anchor_scorer.input_anchor_query[-1].weight.grad is not None
-    assert compiler.anchor_scorer.output_anchor_query[-1].weight.grad is not None
+    families = {family.value for family in TargetFamily}
+    assert set(compiler.anchor_scorer.program_context) == families
+    assert set(compiler.anchor_scorer.input_candidates) == families
+    assert set(compiler.anchor_scorer.output_candidates) == families
+    assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
+    assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
     assert (
-        compiler.anchor_scorer.input_candidates["4"].direction[0].weight.grad
+        compiler.anchor_scorer.input_candidates["q"].direction_input.weight.grad
         is not None
     )
     assert (
-        compiler.anchor_scorer.output_candidates["2"].direction[0].weight.grad
+        compiler.anchor_scorer.output_candidates["q"].direction_input.weight.grad
         is not None
     )
-    assert compiler.anchor_scorer.group_gain[-1].weight.grad is not None
+    assert compiler.anchor_scorer.input_owner_scale.grad is not None
+    assert compiler.anchor_scorer.output_owner_scale.grad is not None
+    assert bool(torch.count_nonzero(compiler.anchor_scorer.input_owner_scale.grad))
+    assert bool(torch.count_nonzero(compiler.anchor_scorer.output_owner_scale.grad))
+    assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
     assert observed.global_statistics_enabled

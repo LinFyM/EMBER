@@ -1,8 +1,9 @@
 # EMBER progress
 
 更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@c1e26ce`的F3 macro5/macro10 current-bank mapping non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过；最新结构裁决基于全新专家对`main@ed2883b`及完整可达历史的复核。
+evidence为clean pushed `main@84903aa`的F3 equal-subspace-credit macro5/macro10 mapping non-pass，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过；当前family/fixed-owner scorer修正同时依据全新专家对`main@ed2883b`完整历史的复核与最新
+formal梯度证据。
 
 ## 当前状态
 
@@ -83,6 +84,29 @@ set-valued global member posterior，再将其detach后同时监督同一member�
 update direction，三项固定等权；scale仍冻结且无selection梯度。六卡真实5-macro qualification中三项loss分别从
 `.939056/.922342/.999256`降至`.923254/.902963/.997695`，graph、梯度和唯一checkpoint均正常；run contract再次确认
 Action Meta module/parameter为0、source/G2 Program/scale全冻结。该结果只解封从fresh重跑formal F3，不是451-condition Gate。
+
+该修正随后由clean pushed detached `main@84903aa`从fresh训练到macro5并以同一world6 topology exact-resume到macro10。训练
+mean recovery由`.001262`升至macro5 `.021016`和macro10 `.070337`；三项训练loss在macro10降至
+`.771307/.825056/.930808`，说明新credit确实被优化，但六worker完整451-condition结果仍明确non-pass。macro5的
+fit/held-video/task-holdout task median为`.024363/.025418/.034375`；macro10为`.073151/.073029/.087636`，held p10
+`.057174`、held/fit `.998320`。macro5到10同任务median absolute delta `.049104`且held没有下降，但两个checkpoint都未过
+`.75/.50` primary，因此相邻Gate也不能通过。macro10 held action-in/action-out/q/v median仅
+`.098990/.146806/.008482/.040693`，甚至低于旧`c1e26ce`的`.125947/.177230/.013288/.052761`；等权subspace
+credit作为充分修正已被formal证伪，不续到macro20。
+
+进一步只读分解把剩余最早接口定位到shared scorer的parameter ownership，而不是再调loss。macro5同一task93/video31上，四family
+output-key gradient norm为q/v/action-in/action-out `.022128/.056223/.014089/.251221`，output-query为
+`.018642/.055363/.016834/.305811`，跨family方向大多近正交而action-out幅度支配。q的18个固定层目标内部同样近正交：input/output
+key pairwise median cosine为`.001448/-.000865`，aggregate gradient只有各target norm和的`.306/.320`；output target norm
+最大最小约`20.5x`。独立task94/video11复现q output pairwise median约0、aggregate ratio仅`.282/.276`。macro10 q两侧span
+ceiling均值已到`.235654/.093766`，实际update cosine仍只有`.008407`，排除了只是再训练同一共享trunk即可取到现有span。
+
+当前唯一canonical修正因此按专家明确建议实现为四family各自共享Program/rank/query/event/gain/candidate trunks，并由38-target
+固定LoRA拓扑的zero-init bounded FiLM调制candidate hidden direction；没有task/video/member/authority/frame lookup，也不增加
+第二Writer。完整真实profile在gpu01单卡完成一组`3 target + 3 meta` forward/backward/update/checkpoint：222/222 trainable
+parameter tensors进入optimizer state，3,187,080个scorer参数、Action Meta 0、source/Program/scale trainable 0，耗时`179.81s`，
+peak allocated/reserved `25.16/25.45GB`。全仓`181 passed`且architecture guard无hard violation。该checkpoint-incompatible修正
+下一步必须从clean pushed detached commit fresh跑同一F3 Gate；profile和内部梯度不冒充shared mapping成功。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
@@ -479,10 +503,11 @@ G1--G5 Gate或架构修正依据。
 
 1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
 2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
-3. 旧F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但绝对recovery明确non-pass。factor/gradient分解已把根因定位为
-   update-only双线性credit下的两侧子空间获取不足；当前以同一global-member的input/output subspace加paired update固定等权作单一
-   机制修正，从fresh重跑同一F3 primary与相邻checkpoint Gate。通过后才恢复scale/functional、K2/K4和held5 strict250；逐video
-   dual/score、task/video键、解析系数仍不得进入deployment；
+3. `84903aa`的equal-subspace-credit F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但held median/p10仅
+   `.073029/.057174`，该修正已被formal证伪。跨family与固定target梯度分解把下一最早接口定位到width-shared scorer的parameter
+   ownership；当前以family-shared trunks加fixed-target bounded FiLM作单一机制修正，先从clean pushed detached commit fresh重跑
+   同一F3 primary与相邻checkpoint Gate。通过后才恢复scale/functional、K2/K4和held5 strict250；逐video dual/score、task/video键、
+   解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

@@ -579,6 +579,27 @@ update选出的一个global member posterior，并用该detached posterior对inp
 `.923254/.902963/.997695`，Action Meta 0、source/Program/scale冻结且梯度有限。这只证明修正后的credit graph能直接改善最早接口，
 不证明shared mapping或G3 Gate；下一步仍须从clean pushed detached commit fresh训练并完整评估451 conditions。
 
+### 41. 等权subspace credit仍被共享parameter ownership覆盖，family/fixed-owner分解获得修正资格
+
+clean pushed detached `84903aa`把input subspace、output subspace和paired update固定等权后，从fresh训练到macro5并exact-resume到
+macro10。三项训练loss持续下降，macro10为`.771307/.825056/.930808`；但完整451-condition macro5/macro10 held median仅
+`.025418/.073029`，macro10 p10 `.057174`，远低于`.75/.50` Gate。held/fit `.998320`、task-holdout `.087636`说明泛化没有先坏；
+macro10 action-in/action-out/q/v held median仅`.098990/.146806/.008482/.040693`，也没有超过旧update-only F3。因此该结果淘汰
+“只要给两侧直接等权credit就足够”的假设，不授权续到macro20或调loss权重。
+
+同一真实bank的family backward显示更早的共享参数竞争：q/v/action-in/action-out output-key norm为
+`.022128/.056223/.014089/.251221`，output-query为`.018642/.055363/.016834/.305811`，跨family梯度大多近正交且action-out
+支配幅度。q的18个固定层目标pairwise median cosine约0，aggregate gradient只有per-target norm和的约`.29--.32`，层间norm差最高
+约`20.5x`；独立task94/video11把aggregate ratio复现为`.282/.276`。macro10 q input/output span ceiling均值
+`.235654/.093766`而实际update cosine仅`.008407`；结合F1约`.9998`的同bank operator recovery，说明native bank容量存在，
+但当前width-shared scorer尚未把它同时暴露给不同family/层owner。
+
+这与第二位专家“family共享trunk、固定owner/group用FiLM或embedding”的明确建议一致。当前有证据的单变量修正是在唯一canonical
+scorer内将Program/rank/query/event/gain/native-candidate模块按四family共享，并以38-target固定LoRA拓扑的zero-init bounded FiLM
+调制candidate hidden direction。它不是task或frame查表，不改变Program、bank、width、rank、scale、loss、data、optimizer或Gate。
+真实一步profile使222/222 trainable tensors进入optimizer state，Action Meta/source/Program/scale trainable均为0；这只解封fresh
+formal F3，仍须以同一451 Gate判断。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

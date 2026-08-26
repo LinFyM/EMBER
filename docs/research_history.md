@@ -542,3 +542,29 @@ gauge-invariant input subspace、output subspace与paired update direction固定
 三项loss从`.939056/.922342/.999256`降至`.923254/.902963/.997695`，Action Meta module/parameter 0且source/Program/scale
 冻结。该qualification只证明新credit能直接作用于最早接口；它不是formal 451-condition Gate，正式结论须来自fresh clean pushed
 detached run。
+
+## 31. G3 F3 equal-subspace formal non-pass与family/fixed-owner修正
+
+clean pushed detached `main@84903aa`从fresh训练equal input/output subspace加paired update credit到macro5/25 updates，再以同一
+world6 topology、optimizer和scheduler exact-resume到macro10/50 updates。mean recovery由macro1 `.001262`升至macro5
+`.021016`和macro10 `.070337`；macro10 input/output/update三项loss为`.771307/.825056/.930808`，证明梯度图确实优化了新目标。
+
+macro5与macro10分别由六个独立只读worker完整覆盖同一451 conditions。macro10 fit、held-video、task-holdout task median为
+`.073151/.073029/.087636`，held p10 `.057174`、held/fit `.998320`。macro5到10 median absolute task delta `.049104`且held没有
+下降，但两个checkpoint都未达到`.75/.50` primary，故相邻Gate仍不通过。macro10 held action-in/action-out/q/v为
+`.098990/.146806/.008482/.040693`；equal-subspace credit没有超过旧`c1e26ce`，不续到macro20。
+
+只读gradient decomposition随后在task93/video31与独立task94/video11复现：四family与q的18个固定layer owner目标大多近正交，
+共享output scorer被action-out及少数高敏感层支配；q target aggregate gradient只有per-target norm和约`.28--.32`，最大层间norm差
+约`20.5x`。macro10 q mean input/output span ceiling为`.235654/.093766`而实际update cosine仅`.008407`。因此最早接口从loss
+credit继续收窄到shared scorer parameter ownership。
+
+后继canonical修正遵循第二位专家原文：四family各自共享Program/query/candidate trunks，并用固定38-target LoRA topology的
+zero-init bounded FiLM调制native candidate hidden direction；禁止task/video/member/frame lookup，且不改变width、rank、loss、data、
+optimizer或Gate。真实GPU profile完成一组3+3任务forward/backward/update/checkpoint，222/222 trainable tensors进入optimizer state，
+Action Meta/source/Program/scale trainable均为0；全仓181 tests通过。它只获得fresh formal资格，尚不构成F3 pass。关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_subspace_fold0_m5_84903aa_gpu01p012346_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_macro5_mapping_eval_84903aa_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_macro10_mapping_eval_84903aa_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_subspace_credit_diagnostics_84903aa_20260827/`。

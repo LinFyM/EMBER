@@ -344,9 +344,15 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
     )
     loss.total.backward()
     gradients = {
-        "input_anchor": runtime.compiler.anchor_scorer.input_anchor_query[-1].weight.grad,
-        "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query[-1].weight.grad,
-        "group_gain": runtime.compiler.anchor_scorer.group_gain[-1].weight.grad,
+        "input_anchor": runtime.compiler.anchor_scorer.input_anchor_query["q"][
+            -1
+        ].weight.grad,
+        "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query["q"][
+            -1
+        ].weight.grad,
+        "group_gain": runtime.compiler.anchor_scorer.group_gain["q"][
+            -1
+        ].weight.grad,
         "scale": runtime.compiler.scale_head[-1].weight.grad,
     }
     valid_gradients = all(

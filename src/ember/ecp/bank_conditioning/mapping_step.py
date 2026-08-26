@@ -260,12 +260,14 @@ def run_mapping_optimizer_step(
     )
     probes = {
         "input_anchor": runtime.compiler.anchor_scorer.input_anchor_query[
-            -1
-        ].weight.grad,
+            "q"
+        ][-1].weight.grad,
         "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query[
+            "q"
+        ][-1].weight.grad,
+        "group_gain": runtime.compiler.anchor_scorer.group_gain["q"][
             -1
         ].weight.grad,
-        "group_gain": runtime.compiler.anchor_scorer.group_gain[-1].weight.grad,
     }
     probe_norms = {}
     for name, gradient in probes.items():

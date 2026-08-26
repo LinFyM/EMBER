@@ -9,7 +9,7 @@ from typing import Sequence
 import torch
 import torch.nn.functional as functional
 
-from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
+from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     G1_PROBE_COUNT,
     G1_RESIDUAL_RANK,
@@ -32,17 +32,14 @@ class AnchorProgramState:
 
 
 class NativeCandidateEncoder(torch.nn.Module):
-    """Nonlinear direction/log-magnitude encoder shared by native width."""
+    """Family-shared native encoder with bounded fixed-owner modulation."""
 
     def __init__(self, native_width: int, feature_width: int) -> None:
         super().__init__()
         hidden = 2 * feature_width
         self.native_width = int(native_width)
-        self.direction = torch.nn.Sequential(
-            torch.nn.Linear(native_width, hidden, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden, feature_width, bias=False),
-        )
+        self.direction_input = torch.nn.Linear(native_width, hidden, bias=False)
+        self.direction_output = torch.nn.Linear(hidden, feature_width, bias=False)
         self.magnitude = torch.nn.Sequential(
             torch.nn.Linear(1, feature_width),
             torch.nn.SiLU(),
@@ -50,14 +47,29 @@ class NativeCandidateEncoder(torch.nn.Module):
         )
         self.output = torch.nn.LayerNorm(feature_width)
 
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        if value.shape[-1] != self.native_width:
+    def forward(
+        self,
+        value: torch.Tensor,
+        *,
+        owner_scale: torch.Tensor,
+        owner_shift: torch.Tensor,
+    ) -> torch.Tensor:
+        hidden = self.direction_input.out_features
+        if (
+            value.shape[-1] != self.native_width
+            or owner_scale.shape != (hidden,)
+            or owner_shift.shape != (hidden,)
+        ):
             raise BankConditioningError("native candidate width changed")
         value = value.float()
         magnitude = value.square().mean(-1, keepdim=True).sqrt().clamp_min(1e-6)
         direction = value / magnitude
+        direction = self.direction_input(direction)
+        direction = direction * (1.0 + torch.tanh(owner_scale))
+        direction = direction + torch.tanh(owner_shift)
+        direction = self.direction_output(functional.gelu(direction))
         return self.output(
-            self.direction(direction) + self.magnitude(magnitude.log())
+            direction + self.magnitude(magnitude.log())
         )
 
 
@@ -98,53 +110,59 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         self.group_embedding = torch.nn.Parameter(
             torch.empty(self.maximum_groups, width)
         )
-        self.program_context = torch.nn.Sequential(
-            torch.nn.LayerNorm(4 * width),
-            torch.nn.Linear(4 * width, 2 * width),
-            torch.nn.GELU(),
-            torch.nn.Linear(2 * width, width),
-            torch.nn.LayerNorm(width),
+        families = tuple(TargetFamily)
+        self.program_context = torch.nn.ModuleDict(
+            {
+                family.value: self._program_context(width)
+                for family in families
+            }
         )
         self.event_scalar = torch.nn.Linear(3, width, bias=False)
-        self.rank_context = torch.nn.Sequential(
-            torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, 2 * width),
-            torch.nn.GELU(),
-            torch.nn.Linear(2 * width, width),
-            torch.nn.LayerNorm(width),
+        self.rank_context = torch.nn.ModuleDict(
+            {family.value: self._rank_context(width) for family in families}
         )
-        self.input_anchor_query = self._query_head(width)
-        self.output_anchor_query = self._query_head(width)
-        self.event_score = torch.nn.Linear(width, 1)
-        self.group_gain = torch.nn.Sequential(
-            torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, width),
-            torch.nn.GELU(),
-            torch.nn.Linear(width, 1),
+        self.input_anchor_query = torch.nn.ModuleDict(
+            {family.value: self._query_head(width) for family in families}
         )
-
-        input_widths = sorted({owner.in_features for owner in self.owners})
-        output_widths = sorted(
-            {
-                owner.out_features // native_output_group_count(owner)
-                for owner in self.owners
-            }
+        self.output_anchor_query = torch.nn.ModuleDict(
+            {family.value: self._query_head(width) for family in families}
+        )
+        self.event_score = torch.nn.ModuleDict(
+            {family.value: torch.nn.Linear(width, 1) for family in families}
+        )
+        self.group_gain = torch.nn.ModuleDict(
+            {family.value: self._group_gain_head(width) for family in families}
         )
         self.input_candidates = torch.nn.ModuleDict(
             {
-                str(native_width): NativeCandidateEncoder(
-                    native_width, self.feature_width
+                family.value: NativeCandidateEncoder(
+                    self._family_native_width(family, output=False),
+                    self.feature_width,
                 )
-                for native_width in input_widths
+                for family in families
             }
         )
         self.output_candidates = torch.nn.ModuleDict(
             {
-                str(native_width): NativeCandidateEncoder(
-                    native_width, self.feature_width
+                family.value: NativeCandidateEncoder(
+                    self._family_native_width(family, output=True),
+                    self.feature_width,
                 )
-                for native_width in output_widths
+                for family in families
             }
+        )
+        hidden = 2 * self.feature_width
+        self.input_owner_scale = torch.nn.Parameter(
+            torch.zeros(len(self.owners), hidden)
+        )
+        self.input_owner_shift = torch.nn.Parameter(
+            torch.zeros(len(self.owners), hidden)
+        )
+        self.output_owner_scale = torch.nn.Parameter(
+            torch.zeros(len(self.owners), hidden)
+        )
+        self.output_owner_shift = torch.nn.Parameter(
+            torch.zeros(len(self.owners), hidden)
         )
         self.frame_event_metadata = torch.nn.Parameter(
             torch.empty(self.event_slots, self.feature_width)
@@ -159,14 +177,18 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             torch.empty(len(OUTPUT_BANK_TYPES), self.feature_width)
         )
         self.time_metadata = torch.nn.Linear(2, self.feature_width, bias=False)
+        self._reset_structured_parameters(families)
 
+    def _reset_structured_parameters(
+        self, families: Sequence[TargetFamily]
+    ) -> None:
         for embedding in (
             self.owner_embedding,
             self.rank_embedding,
             self.event_embedding,
             self.group_embedding,
         ):
-            torch.nn.init.normal_(embedding, std=width**-0.5)
+            torch.nn.init.normal_(embedding, std=self.program_width**-0.5)
         for embedding in (
             self.frame_event_metadata,
             self.probe_metadata,
@@ -174,10 +196,56 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             self.type_metadata,
         ):
             torch.nn.init.normal_(embedding, std=self.feature_width**-0.5)
-        torch.nn.init.zeros_(self.event_score.weight)
-        torch.nn.init.zeros_(self.event_score.bias)
-        torch.nn.init.zeros_(self.group_gain[-1].weight)
-        torch.nn.init.zeros_(self.group_gain[-1].bias)
+        for family in families:
+            torch.nn.init.zeros_(self.event_score[family.value].weight)
+            torch.nn.init.zeros_(self.event_score[family.value].bias)
+            torch.nn.init.zeros_(self.group_gain[family.value][-1].weight)
+            torch.nn.init.zeros_(self.group_gain[family.value][-1].bias)
+
+    @staticmethod
+    def _program_context(width: int) -> torch.nn.Sequential:
+        return torch.nn.Sequential(
+            torch.nn.LayerNorm(4 * width),
+            torch.nn.Linear(4 * width, 2 * width),
+            torch.nn.GELU(),
+            torch.nn.Linear(2 * width, width),
+            torch.nn.LayerNorm(width),
+        )
+
+    @staticmethod
+    def _rank_context(width: int) -> torch.nn.Sequential:
+        return torch.nn.Sequential(
+            torch.nn.LayerNorm(width),
+            torch.nn.Linear(width, 2 * width),
+            torch.nn.GELU(),
+            torch.nn.Linear(2 * width, width),
+            torch.nn.LayerNorm(width),
+        )
+
+    @staticmethod
+    def _group_gain_head(width: int) -> torch.nn.Sequential:
+        return torch.nn.Sequential(
+            torch.nn.LayerNorm(width),
+            torch.nn.Linear(width, width),
+            torch.nn.GELU(),
+            torch.nn.Linear(width, 1),
+        )
+
+    def _family_native_width(
+        self, family: TargetFamily, *, output: bool
+    ) -> int:
+        widths = {
+            (
+                owner.out_features // native_output_group_count(owner)
+                if output
+                else owner.in_features
+            )
+            for owner in self.owners
+            if owner.family is family
+        }
+        if len(widths) != 1:
+            raise BankConditioningError("native family width is not shared")
+        return widths.pop()
 
     def _query_head(self, width: int) -> torch.nn.Sequential:
         return torch.nn.Sequential(
@@ -214,16 +282,31 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         rho = program.rho.float().clamp_min(1e-8)
         rho = rho / rho.sum()
         scalar = torch.cat((rho[:, None], program.tau.float()), dim=-1)
-        event_owner = (
-            self.program_context(fields)
-            + self.event_scalar(scalar)[:, None]
-            + self.event_embedding[:, None]
-            + self.owner_embedding[None]
+        scalar_context = self.event_scalar(scalar)
+        event_owner = torch.stack(
+            tuple(
+                self.program_context[owner.family.value](fields[:, target])
+                + scalar_context
+                + self.event_embedding
+                + self.owner_embedding[target]
+                for target, owner in enumerate(self.owners)
+            ),
+            dim=1,
         )
-        rank_event = self.rank_context(
-            event_owner[:, :, None] + self.rank_embedding[None, None]
-        ).permute(1, 2, 0, 3)
-        event_logits = self.event_score(rank_event).squeeze(-1)
+        rank_event = torch.stack(
+            tuple(
+                self.rank_context[owner.family.value](
+                    event_owner[:, target, None] + self.rank_embedding[None]
+                ).permute(1, 0, 2)
+                for target, owner in enumerate(self.owners)
+            )
+        )
+        event_logits = torch.stack(
+            tuple(
+                self.event_score[owner.family.value](rank_event[target]).squeeze(-1)
+                for target, owner in enumerate(self.owners)
+            )
+        )
         event_weights = (event_logits + rho.log()[None, None]).softmax(-1)
         rank = torch.einsum("jre,jrew->jrw", event_weights, rank_event)
         owner = torch.einsum("e,ejw->jw", rho, event_owner)
@@ -235,13 +318,18 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         )
 
     def input_queries(self, state: AnchorProgramState) -> torch.Tensor:
-        targets = len(self.owners)
-        return self.input_anchor_query(state.rank_event).reshape(
-            targets,
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            2,
-            self.feature_width,
+        return torch.stack(
+            tuple(
+                self.input_anchor_query[owner.family.value](
+                    state.rank_event[target]
+                ).reshape(
+                    G1_RESIDUAL_RANK,
+                    self.event_slots,
+                    2,
+                    self.feature_width,
+                )
+                for target, owner in enumerate(self.owners)
+            )
         )
 
     def output_queries(
@@ -250,7 +338,8 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         context = state.rank_event[target][None] + self.group_embedding[
             :groups, None, None
         ]
-        return self.output_anchor_query(context).reshape(
+        family = self.owners[target].family.value
+        return self.output_anchor_query[family](context).reshape(
             groups,
             G1_RESIDUAL_RANK,
             self.event_slots,
@@ -264,7 +353,8 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         context = (
             state.rank[target][None] + self.group_embedding[:groups, None]
         ).detach()
-        return torch.sigmoid(self.group_gain(context).squeeze(-1))
+        family = self.owners[target].family.value
+        return torch.sigmoid(self.group_gain[family](context).squeeze(-1))
 
     def frame_metadata(
         self,
@@ -296,12 +386,26 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             ]
         return metadata
 
-    def input_keys(self, value: torch.Tensor, metadata: torch.Tensor) -> torch.Tensor:
-        encoded = self.input_candidates[str(value.shape[-1])](value)
+    def input_keys(
+        self, value: torch.Tensor, metadata: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        encoded = self.input_candidates[family](
+            value,
+            owner_scale=self.input_owner_scale[target],
+            owner_shift=self.input_owner_shift[target],
+        )
         return functional.normalize(encoded + metadata, dim=-1)
 
-    def output_keys(self, value: torch.Tensor, metadata: torch.Tensor) -> torch.Tensor:
-        encoded = self.output_candidates[str(value.shape[-1])](value)
+    def output_keys(
+        self, value: torch.Tensor, metadata: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        encoded = self.output_candidates[family](
+            value,
+            owner_scale=self.output_owner_scale[target],
+            owner_shift=self.output_owner_shift[target],
+        )
         return functional.normalize(encoded + metadata, dim=-1)
 
     def input_compatibility(

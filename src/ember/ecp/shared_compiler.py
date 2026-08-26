@@ -327,8 +327,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
+        target: int,
     ) -> torch.Tensor:
-        keys = self.anchor_scorer.input_keys(value, metadata)
+        keys = self.anchor_scorer.input_keys(value, metadata, target=target)
         event = self.anchor_scorer.input_compatibility(query, keys)
         return self._effective_input_compatibility(event, weights, ratio)
 
@@ -339,8 +340,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         query: torch.Tensor,
         weights: torch.Tensor,
         ratio: torch.Tensor,
+        target: int,
     ) -> torch.Tensor:
-        keys = self.anchor_scorer.output_keys(value, metadata)
+        keys = self.anchor_scorer.output_keys(value, metadata, target=target)
         event = self.anchor_scorer.output_compatibility(query, keys)
         return self._effective_output_compatibility(event, weights, ratio)
 
@@ -383,6 +385,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 stream.input_anchor_queries[target],
                 state.event_weights[target],
                 event_ratio,
+                target,
                 use_reentrant=False,
                 preserve_rng_state=False,
             )
@@ -399,6 +402,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 stream.output_anchor_queries[target],
                 state.event_weights[target],
                 event_ratio,
+                target,
                 use_reentrant=False,
                 preserve_rng_state=False,
             )

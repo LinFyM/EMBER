@@ -84,6 +84,7 @@
     "event_slots": 8,
     "residual_rank": 4,
     "anchor_width": 128,
+    "anchor_parameter_ownership": "family_shared_trunks_with_fixed_owner_film",
     "selection": "program_native_anchor_current_bank_solve_two_softmax_difference",
     "input_candidate_index": ["video", "frame", "probe", "horizon"],
     "output_candidate_index": ["video", "frame", "probe", "horizon", "type"],

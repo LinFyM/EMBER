@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-08-26。
+更新时间：2026-08-27。
 
 ## 当前目标
 
@@ -272,8 +272,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   `.125947/.177230/.013288/.052761`。同checkpoint factor/gradient分解已定位到update-only双线性credit造成两侧subspace acquisition
   starvation：q/v的一侧span ceiling与key gradient显著弱于action families。首个单变量修正保留完整update选出的一个global member，
   对其input/output gauge-invariant subspace与paired update固定等权；不改变rank、width、group gain、LR、seed、data或Gate。六卡真实
-  5-macro qualification三项loss均连续下降且Action Meta 0；下一步从clean pushed detached commit fresh重跑formal F3并评估同一451
-  conditions，不把qualification或内部loss冒充Gate。
+  5-macro qualification三项loss均连续下降且Action Meta 0，但clean detached `84903aa` fresh macro5/macro10的451-condition
+  held median/p10最终只有`.073029/.057174`，held/fit `.998320`；macro10四family仅
+  `.098990/.146806/.008482/.040693`，所以equal-subspace credit作为充分修正已被formal证伪。跨family及两个独立fit condition的
+  固定target gradient分解进一步显示近正交目标和最高约`20.5x` sensitivity imbalance；当前单一修正按family共享
+  Program/query/candidate trunks，并以fixed 38-target topology的zero-init bounded FiLM调制candidate hidden direction。它不新增
+  task/video/member lookup、不改变width/rank/loss/data/LR/Gate；真实profile的222/222 trainable tensors已进入optimizer state且
+  Action Meta 0。下一步从clean pushed detached commit fresh重跑同一F3，不把profile或内部loss冒充Gate。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

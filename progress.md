@@ -70,6 +70,20 @@ mean recovery由macro1 `.002204`持续升到macro5 `.042865`和macro10 `.087444`
 同任务median absolute delta `.041962`且无held下降；相邻稳定性数值成立，但两个checkpoint都未通过primary。当前不续到macro20，
 先定位q/v远弱于action families的shared anchor scorer表达/梯度接口；F1 operator capacity、信息墙和泛化已被分别排除为最早问题。
 
+针对同一`c1e26ce` macro5/macro10、同一真实task93/video31 bank的只读factor几何与单family backward进一步把接口收窄到
+**两侧rank4子空间获取的credit starvation**，而不是pairing、solve或长训不足。macro10的q实际update recovery仅`.012892`，其
+input/output one-sided span ceiling为`.192547/.094122`；v为`.046297`与`.260870/.282059`；action-in为`.125741`与
+`.775570/.145645`；action-out为`.094190`与`.237240/.657518`。q从macro5到10的两侧ceiling只由`.184690/.089680`
+增至`.192547/.094122`，held task2 q同样只有`.013565` recovery与`.204308/.088427` ceiling，排除了fit特例。旧F3虽按family
+等权完整update cosine，但q input/output key gradient norm只有`.0643/.0313`，action-out则为`2.6973/.6383`；双线性update-only
+credit没有给高维q/v足够的一侧方向信号。
+
+当前单一机制修正不改变bank、Program、rank、query/key宽度、group gain、data、LR或Gate：仍由完整四family update产生一个
+set-valued global member posterior，再将其detach后同时监督同一member的gauge-invariant input subspace、output subspace和paired
+update direction，三项固定等权；scale仍冻结且无selection梯度。六卡真实5-macro qualification中三项loss分别从
+`.939056/.922342/.999256`降至`.923254/.902963/.997695`，graph、梯度和唯一checkpoint均正常；run contract再次确认
+Action Meta module/parameter为0、source/G2 Program/scale全冻结。该结果只解封从fresh重跑formal F3，不是451-condition Gate。
+
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
 `19.5--25.1GB`且计算段大多`100%`。当时物理3因他人约`78--92%` UTL而未使用，旧物理0按当时prohibited标记未使用。gpu01在
@@ -465,9 +479,10 @@ G1--G5 Gate或架构修正依据。
 
 1. F0真实K1/K4 forward/gradient/materialization与信息墙资格已从clean pushed detached完成并通过；
 2. 一次预注册`C=I` F2已从fresh训练并在451 conditions上明确non-pass；candidate-local first-moment假设不再续训或做参数小扫；
-3. F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但绝对recovery明确non-pass。当前先分解q/v family的
-   shared anchor表达与梯度接口，不靠续到macro20掩盖结构瓶颈；修正后仍须重新通过同一F3 primary与相邻checkpoint Gate，之后才
-   恢复scale/functional、K2/K4和held5 strict250。逐video dual/score、task/video键、解析系数不得进入deployment；
+3. 旧F3已从fresh运行并exact-resume到macro10；泛化与相邻变化稳定但绝对recovery明确non-pass。factor/gradient分解已把根因定位为
+   update-only双线性credit下的两侧子空间获取不足；当前以同一global-member的input/output subspace加paired update固定等权作单一
+   机制修正，从fresh重跑同一F3 primary与相邻checkpoint Gate。通过后才恢复scale/functional、K2/K4和held5 strict250；逐video
+   dual/score、task/video键、解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

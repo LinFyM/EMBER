@@ -184,7 +184,10 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             data.get("supported_K") == [1, 2, 4],
             data.get("mapping_K") == [1],
             data.get("task_role_weighting") == "three_meta_plus_three_target",
-            mapping.get("member_reduction") == "set_valued_paired_update",
+            mapping.get("member_reduction")
+            == "set_valued_global_member_subspace_and_paired_update",
+            mapping.get("selection_credit")
+            == "equal_input_subspace_output_subspace_and_paired_update",
             mapping.get("target_reduction") == "four_families_equal",
             mapping.get("student_scale_gradient") == "stopped",
             mapping.get("old_functional_selection_gradient") == "blocked",

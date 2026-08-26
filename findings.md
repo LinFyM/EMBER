@@ -560,6 +560,25 @@ macro5到10 held median虽增加`.041271`，最后单macro训练增量已降至`
 伪装成训练时长。下一最早接口是shared anchor scorer如何从Program/native content生成q/v functional anchors及其梯度尺度；应先做
 同条件、同checkpoint的family幅度/方向/gradient分解，再决定单一机制修正。
 
+### 40. F3最早失败是两侧subspace credit starvation，不是rank pairing或shared泛化
+
+在不修改checkpoint的前提下，对`c1e26ce` macro5/macro10同一task93/video31真实bank逐family计算student rank4与teacher两侧
+row-subspace的最大可达update ceiling，并分别反传旧update-only objective。macro10的实际update recovery与input/output one-sided
+ceiling依次为：q `.012892/.192547/.094122`，v `.046297/.260870/.282059`，action-in
+`.125741/.775570/.145645`，action-out `.094190/.237240/.657518`。两侧ceiling的乘积已近似解释family层级，说明最终
+pairing并不是最早接口；q从macro5到10的ceiling只由`.184690/.089680`增至`.192547/.094122`，held task2/video4 q也只有
+`.013565/.204308/.088427`，所以这不是fit或单condition特例。
+
+旧loss虽把四family scalar等权，但双线性完整update对已经错误的一侧只能通过另一侧传梯度；q input/output key gradient norm只有
+`.0643/.0313`，而action-out为`2.6973/.6383`，差约一个到两个数量级。F1的四family operator recovery约`.9998`、solve residual
+约`1e-12`、retained trace约`.99996`，进一步排除了B0/solve/B1数值失败。故当前有证据的单变量修正是保留由完整38-target
+update选出的一个global member posterior，并用该detached posterior对input subspace、output subspace和paired update direction固定
+等权；不改Program、banks、query/key容量、rank、group gain、data、LR或seed，也不恢复per-video dual/score。
+
+六卡真实5-macro qualification使上述三项loss从`.939056/.922342/.999256`连续降至
+`.923254/.902963/.997695`，Action Meta 0、source/Program/scale冻结且梯度有限。这只证明修正后的credit graph能直接改善最早接口，
+不证明shared mapping或G3 Gate；下一步仍须从clean pushed detached commit fresh训练并完整评估451 conditions。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

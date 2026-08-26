@@ -105,7 +105,8 @@
     "seed": 20260826,
     "precision": "native_policy_bfloat16_compiler_float32_solve_float64",
     "mapping": {
-      "member_reduction": "set_valued_paired_update",
+      "member_reduction": "set_valued_global_member_subspace_and_paired_update",
+      "selection_credit": "equal_input_subspace_output_subspace_and_paired_update",
       "target_reduction": "four_families_equal",
       "student_scale_gradient": "stopped",
       "old_functional_selection_gradient": "blocked",

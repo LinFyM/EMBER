@@ -12,7 +12,10 @@ import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.shared_compiler import SharedCompilerOutput
-from ember.ecp.shared_compiler_native_teacher import NativeTeacherFactors
+from ember.ecp.shared_compiler_native_teacher import (
+    NativeTeacherFactors,
+    native_teacher_supervision_loss,
+)
 from ember.pi05_source_checkpoint import read_json
 
 
@@ -43,6 +46,9 @@ class SharedCompilerMappingSplit:
 @dataclass(frozen=True)
 class MappingLoss:
     total: torch.Tensor
+    input_subspace: torch.Tensor
+    output_subspace: torch.Tensor
+    update_direction: torch.Tensor
     member_distances: torch.Tensor
     responsibilities: torch.Tensor
     family_recovery: torch.Tensor
@@ -349,7 +355,13 @@ def paired_mapping_loss(
     owners: Sequence[TargetOwner],
     temperature: float,
 ) -> MappingLoss:
-    """Use one set-valued member to explain the complete 38-target update."""
+    """Give both factor sides and their pairing one global-member credit.
+
+    The member posterior is selected by the complete four-family update and is
+    then detached before it supervises either factor subspace.  This preserves
+    one global member for all 38 targets while avoiding the high-dimensional
+    bilinear starvation of update-only acquisition.
+    """
 
     if not teachers or temperature <= 0:
         raise ValueError("G3 mapping teacher set or temperature changed")
@@ -364,10 +376,22 @@ def paired_mapping_loss(
     log_prior = -math.log(len(teachers))
     logits = log_prior - distances / float(temperature)
     responsibilities = logits.softmax(0)
-    total = -float(temperature) * torch.logsumexp(logits, 0)
+    credit = native_teacher_supervision_loss(
+        student_a_directions=output.input_directions,
+        student_b_directions=output.output_directions,
+        student_scales=output.residual.scales,
+        teachers=teachers,
+        owners=owners,
+        member_weights=responsibilities.detach(),
+        selection_weight=1.0,
+        spectrum_weight=0.0,
+    )
     best = int(distances.detach().argmin())
     return MappingLoss(
-        total=total,
+        total=credit.selection,
+        input_subspace=credit.input_subspace,
+        output_subspace=credit.output_subspace,
+        update_direction=credit.update_direction,
         member_distances=distances,
         responsibilities=responsibilities,
         family_recovery=(responsibilities.detach()[:, None] * family).sum(0),

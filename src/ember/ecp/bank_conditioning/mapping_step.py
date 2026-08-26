@@ -107,6 +107,9 @@ def load_mapping_condition_teachers(
 def mapping_recovery_record(loss: Any) -> dict[str, Any]:
     return {
         "mapping_loss": float(loss.total.detach()),
+        "input_subspace_loss": float(loss.input_subspace.detach()),
+        "output_subspace_loss": float(loss.output_subspace.detach()),
+        "update_direction_loss": float(loss.update_direction.detach()),
         "member_distances": loss.member_distances.detach().float().cpu().tolist(),
         "member_responsibilities": loss.responsibilities.detach()
         .float()

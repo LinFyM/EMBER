@@ -527,3 +527,18 @@ anchor acquisition的绝对能力、尤其q/v family仍有结构瓶颈；不继�
 - `runs/outputs/pi05_ecp_shared_compiler_g3_f3_fold0_m5_c1e26ce_gpu01p023456_r6_20260826/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_macro5_mapping_eval_c1e26ce_gpu01p023456_w6_20260826/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_macro10_mapping_eval_c1e26ce_gpu01p023456_w6_20260827/`。
+
+## 30. G3 F3 shared-anchor credit根因分解与修正资格
+
+对上述macro5/macro10 formal checkpoint做只读、同bank的factor几何与单family backward后，最早接口从笼统的q/v anchor弱进一步
+定位为update-only双线性credit下的input/output rank4 subspace acquisition starvation。task93/video31 macro10的q/v/action-in/
+action-out实际update recovery为`.012892/.046297/.125741/.094190`；对应input/output one-sided span ceiling为
+`.192547/.094122`、`.260870/.282059`、`.775570/.145645`、`.237240/.657518`。q的key gradient norm仅
+`.0643/.0313`，action-out则为`2.6973/.6383`；held task2 q也复现同样两侧ceiling不足。F1 operator、solve residual、fit/held
+比例与信息墙均已通过，故这不是operator、pairing或泛化问题，也没有用macro20续训掩盖。
+
+后继只改变mapping credit：仍以完整四family update选择一个set-valued global member，将posterior detach后对同一member的
+gauge-invariant input subspace、output subspace与paired update direction固定等权；scale保持冻结。六卡真实5-macro qualification中
+三项loss从`.939056/.922342/.999256`降至`.923254/.902963/.997695`，Action Meta module/parameter 0且source/Program/scale
+冻结。该qualification只证明新credit能直接作用于最早接口；它不是formal 451-condition Gate，正式结论须来自fresh clean pushed
+detached run。

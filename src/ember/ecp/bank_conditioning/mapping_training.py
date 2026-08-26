@@ -476,6 +476,18 @@ def run_mapping_macro(
         },
         "mean_mapping_loss": sum(float(row["mapping_loss"]) for row in records)
         / len(records),
+        "mean_input_subspace_loss": sum(
+            float(row["input_subspace_loss"]) for row in records
+        )
+        / len(records),
+        "mean_output_subspace_loss": sum(
+            float(row["output_subspace_loss"]) for row in records
+        )
+        / len(records),
+        "mean_update_direction_loss": sum(
+            float(row["update_direction_loss"]) for row in records
+        )
+        / len(records),
         "mean_companion_mapping_loss": sum(
             float(row["companion"]["mapping_loss"]) for row in records
         )

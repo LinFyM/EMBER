@@ -97,6 +97,15 @@ def test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped() -> Non
     torch.testing.assert_close(
         loss.best_family_recovery, torch.ones(4), rtol=1e-5, atol=1e-5
     )
+    components = (
+        loss.input_subspace,
+        loss.output_subspace,
+        loss.update_direction,
+    )
+    assert all(
+        torch.isfinite(component) and component >= 0 for component in components
+    )
+    torch.testing.assert_close(loss.total, sum(components) / 3.0)
     loss.total.backward()
     assert all(value.grad is not None for value in output.input_directions)
     assert all(value.grad is not None for value in output.output_directions)

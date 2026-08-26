@@ -240,14 +240,17 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   family median分别为`0.000490/-0.000586/0.146885`，故Gate明确non-pass。bank-conditioned functional least-squares虽证明旧欧氏
   投影不正确，128维仍不足，扩展raw/effect basis又需要约384--512维；因此淘汰compact fixed dual/effect basis，不扩到38 targets，
   不恢复fixed realizer。
-- [ ] 保持frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16合同，实施隔离的fit-K1 mapping acquisition；
-  解析functional image与exact bounded signed-softmax已否定随机/近线性512-key的病态tail，确认直接native X/Y content score在
-  `1e6`截断、固定small-logit scale下可稳定恢复三family约`0.995--0.999` update。只修正该证据定位的接口：owner-native direct keys、
-  非线性高容量Program query与q output groups的bounded相对gain；不能把training-only dual/score、task/video键或解析系数带入deployment，
-  也不能让单个`128 -> key`线性head重新形成固定低维query span。mapping acquisition以paired update方向为首要因果量，阻断旧functional/flow/
-  carrier梯度在同一步覆盖selection/scale；之后再以非干扰阶段验证K2/K4组合和functional职责。先用fit内未见video诊断证明shared
-  mapping而非记忆条件，最终仍以完整K4 held5五臂strict250 Gate作G3结论。formal runtime使用固定3+3 role-balanced全局task group并按
-  实时1--6张有效GPU弹性分片；world size不得改变task权重、optimizer cadence或Gate口径，exact-resume锁定原topology。
+- [x] 对owner-native direct-key候选完成same-task三video的raw-query、event-query、event-anchor、nonlinear content-key和直接score
+  acquisition反事实。teacher update与G2 Program跨video稳定，但minimum-norm dual随bank covariance旋转；2000步已能明显拟合train
+  score，held q/v仍弱或负相关，完整held update约为`-0.001/-0.003`，action-out也仅`0.114`。因此不把逐video analytic
+  dual/score、raw native key或event query当作已确定的canonical G3修正，也不通过续训或width/LR/seed扫掩盖结构问题。
+- [ ] 在保留frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16的前提下，先由全新专家复核当前结构分叉：
+  （a）严格one-pass、query预先确定时，是否仍应以跨task/video paired-factor监督验证bank-independent functional canonicalizer；
+  （b）高条件数inverse-covariance是否要求先累计bank-global sufficient statistics/preconditioning，从而修订Pass B读取合同。专家意见
+  必须以远程仓库的完整历史、formal Gate和上述反事实为依据；不得把neural FactorHead、fixed realizer、task/video lookup或逐video
+  score标签恢复成捷径。裁决后只保留一个canonical实现面，再做最小真实forward/gradient/materialization与formal K1 mapping验证，
+  随后恢复K2/K4职责并最终执行完整held5五臂strict250。formal runtime仍使用固定3+3 role-balanced全局task group并按实时1--6张
+  有效GPU弹性分片；world size不得改变task权重、optimizer cadence或Gate口径，exact-resume锁定原topology。
 
 ### G4 Joint Writer
 

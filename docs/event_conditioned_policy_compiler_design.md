@@ -400,6 +400,15 @@ carrier至少33/43、Goal或Long至少一个非零、full相对language-only与f
 training掩盖失败。可以依据mapping、factor selection或critic的具体证据修正并复评，不设结构版本上限；无机制差异的小变体不算
 有效推进。
 
+截至2026-08-26的当前G3诊断对“shared mapping”的含义增加一项硬约束。same-task teacher功能与冻结Program均跨video稳定，但每条
+bank的minimum-norm inverse-covariance dual/score会随完整candidate measure旋转；raw query、event query、稀疏anchor、单任务
+nonlinear key及直接analytic-score监督均未在q/v建立held-video迁移。因此training-only analytic dual/score只能作oracle和定位证据，
+不能作为已经确定的shared标签或deployment route。下一修正必须明确回答：candidate-local key能否在跨task/video paired-factor监督下
+学习bank-independent functional canonicalization；若不能，是否必须先流式累计bank-global sufficient statistics再condition query/key。
+后一选择会改变本设计第4节“query已确定后单遍在线累计”的合同，必须先以机制证据和owner/专家裁决修订，不能被实现者静默加入。
+在该分叉解决前，owner-native raw key、直接score acquisition与额外Pass均不是active canonical architecture；现有唯一保留实现仍是
+已经记录non-pass的G3 v2，G1/G2通过结论不受影响。
+
 ### G4. Joint Writer
 
 只有G3有真实闭环信号才解冻全部Writer，继续冻结backbone、carrier和task experts。

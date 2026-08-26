@@ -12,10 +12,10 @@ evidence为clean pushed `main@e7d86b0`的四family task-LOTO analytic-dual basis
 active design明确是解释/执行层，不能替代原文。
 
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle与G2 Natural Program
-均已通过；当前处于G3 shared compiler，v1 macro10、v2 macro5与低维dual-basis probe已形成三层non-pass及根因证据。固定
-target-specific raw-dual basis不具备首版所需的compact functional capacity，当前沿保留native content attention的方向验证
-owner-native direct keys、非线性Program query与直接score acquisition。没有恢复
-旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
+均已通过；当前处于G3 shared compiler，v1 macro10、v2 macro5、低维dual-basis与最新跨视频score acquisition已形成连续non-pass及
+根因证据。固定target-specific raw-dual basis不具备首版所需的compact functional capacity；进一步证据又否定了把逐video解析
+dual/score直接作为candidate-local shared mapping标签。当前暂停实现新的G3架构，先就严格one-pass candidate-local canonicalization与
+bank-global preconditioning之间的结构分叉征询全新专家。没有恢复旧Writer/realizer/GOMQ/PECS/人工process路线，也尚未联系专家。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
 两条fixed antithetic native probes，再做monotonic canonical alignment与`beta_k=1/K`集合聚合。首轮真实held检查发现把多视频frames
@@ -261,6 +261,23 @@ X/Y作为content keys时，`1e6`截断配合不读取完整bank的固定`0.01` s
 `0.967--0.985`，保留归一到`[0,1]`的相对group gain后恢复约`0.999`。因此下一canonical候选是owner-native direct content score、
 非线性高容量Program query与显式bounded group gain；先做隔离的K1 mapping acquisition，不能把这些selected-condition内部值冒充
 G3 Gate或shared mapping成功。
+
+该候选随后经过同task跨video反事实复核，结论已被收紧。q/v/action-out的verified teacher effective update在三条video间仍较稳定，
+mean cosine约`0.873/0.866/0.884`；冻结G2 Program更稳定，same-task flattened cosine均值约`0.9971`。但逐video minimum-norm
+native dual明显旋转：直接把一个video的raw query用于另一条video时q/v几乎为零，action-out仅约`0.086`；同一条raw query对三条
+video联合求解的update upper bound也只有q/v/action-out约`0.736/0.381/0.823`。保留8个event query虽把两条训练video拟合到约
+`0.965/0.525/0.986`，第三条held video仍为`-0.004/0.012/0.049`；稀疏event anchor同样不迁移。candidate-local nonlinear
+512D key以factor loss训练时，train/held update仅为q `0.177/0.105`、v `0.244/0.175`、action-out `0.593/0.487`。
+
+最后以逐video FP64 analytic dual产生直接score标签，并把同一candidate-local nonlinear scorer固定训练到2000步。训练score已持续升至
+q input/output `0.887/0.699`、v `0.897/0.722`、action-out `0.912/0.979`，排除了500步欠拟合解释；但held-video q为
+`0.133/0.111`、v为`-0.246/-0.232`，action-out虽为`0.491/0.961`，完整held paired update仍分别只有
+`-0.001/-0.003/0.114`。结合50-task/98-condition frozen-Program decoder的task-holdout与held-video dual decodability低值，当前
+最早失效接口是：解析dual/score依赖整条bank的高条件数协方差，既不是稳定Program的确定标签，也不是单candidate内容可唯一决定的量。
+因此不再把direct score supervision或owner-native raw key写成已确定的canonical修正；现存代码仍是已记录non-pass的G3 v2实现，尚无
+新架构被保留。后续必须在两项有区别的假设间做机制裁决：一是保持one-pass合同、用跨task/video factor监督学习真正的functional
+canonicalizer；二是让Pass B利用bank-global sufficient statistics/preconditioning，后者可能需要修订“query预先确定且只流式一遍”
+的当前合同。该分叉先交由全新专家基于完整远程历史复核，不能用width/LR/seed或更多逐video score拟合替代。
 
 owner明确formal训练实现不得固定world2：保持固定全局task group、role权重、loss归一化和optimizer cadence，launch时按1--6张有效GPU
 弹性分片；exact-resume锁定该run首次launch topology。该要求同样适用于后续G3/G4/Final训练，不能让卡数改变科学batch定义。

@@ -453,6 +453,28 @@ q的八个output groups还暴露独立幅度职责：逐group单位化把update�
 relative gains并只保留一个公共score scale可恢复约`0.999`。首个mapping修正因此必须同时包含非线性高容量query生成和显式group gain；
 它仍只通过真实X/Y的signed pooling生成factor，不是full FactorHead或fixed effect realizer。
 
+### 33. 同task功能稳定但解析dual旋转，逐video score不是shared mapping标签
+
+对q/v/action-out各选一个有三条K1 video的真实fit condition复核后，teacher effective update的same-task cross-video cosine均值约为
+`0.873/0.866/0.884`，冻结G2 Program flattened cosine均值为`0.9971`；因此任务功能和Program都没有随video随机漂移。漂移的是将该
+功能从当前bank取出的minimum-norm inverse-covariance dual：直接跨video replay时q/v update接近零、action-out约`0.086`，一条raw
+query同时适配三条video的解析upper bound也只有`0.736/0.381/0.823`。保留8个canonical event query可拟合两条video，却在第三条
+video降至`-0.004/0.012/0.049`；每event单帧anchor更低。这排除了“只需保留event轴”或“只需稀疏稳定锚点”的解释。
+
+candidate-local nonlinear 512D key配合一个跨video共享free query的factor训练也未建立该映射：q/v/action-out的train update为
+`0.177/0.244/0.593`，held-video为`0.105/0.175/0.487`。为区分factor loss难优化与标签不可泛化，又直接监督解析score并固定训练
+2000步；训练score cosine已到q `0.887/0.699`、v `0.897/0.722`、action-out `0.912/0.979`，但held q/v分别只有
+`0.133/0.111`和`-0.246/-0.232`，最终held update为`-0.001/-0.003`。action-out output score能迁移到`0.961`，仍因input只有
+`0.491`而使update仅`0.114`。所以不是简单续训问题：约`1e6`条件数使不精确score无法保留factor，而逐video解析score本身又随全bank
+measure/covariance改变。
+
+50-task/98-condition的frozen-Program dual decoder给出一致证据：除近恒等action-in外，q/v/action-out在task holdout只有约
+`0.07/0.05/0.03`，held-video约`0.293/0.224/0.292`；模型可记住train却不能把稳定Program解码成新的video dual。结论只淘汰
+“Program或单candidate内容直接回归逐video analytic dual/score”及当前已测raw/event/anchor实现，不证明所有content attention失败。
+剩余可证伪方向是跨大量task/video用paired factor功能监督学习bank-independent canonicalizer；若它仍失败，则需要认真考虑先累计
+bank-global sufficient statistics再condition query/key，或等价的额外pass。后者会修改当前Pass B流式合同，不能在专家复核前假装成
+普通实现细节，也不能恢复neural FactorHead、fixed effect realizer或task/video lookup。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

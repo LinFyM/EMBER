@@ -6,7 +6,7 @@ import argparse
 import inspect
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Mapping
@@ -17,6 +17,8 @@ from ember.batched_lora import BatchedLoRAInference
 from ember.ecp.bank_conditioning.mapping import load_mapping_split
 from ember.ecp.bank_conditioning.mapping_eval_runtime import load_mapping_tasks
 from ember.ecp.contracts import build_target_owners
+from ember.ecp.g1_initialization import cache_native_video_readout
+from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.native_materialization import (
     compose_rank12_plus_rank4,
     residual_lora_state,
@@ -251,6 +253,38 @@ def _video_panel(runtime: F0Runtime) -> tuple[int, tuple[int, ...]]:
     return videos[0], videos[:4]
 
 
+def _single_chunk_readout(readout: NativeVideoReadout) -> NativeVideoReadout:
+    """Repartition one cached native bank without recapturing X/Y values."""
+
+    chunks = tuple(readout.chunks())
+    if not chunks or sum(chunk.frame_count for chunk in chunks) != readout.frame_count:
+        raise RuntimeError("F0 cached native reference is incomplete")
+    targets = len(chunks[0].inputs)
+    if targets != len(readout.final_outputs) or any(
+        len(chunk.inputs) != targets or len(chunk.outputs) != targets
+        for chunk in chunks
+    ):
+        raise RuntimeError("F0 cached native target topology changed")
+    inputs = tuple(
+        torch.cat(tuple(chunk.inputs[target] for chunk in chunks), dim=0)
+        for target in range(targets)
+    )
+    outputs = tuple(
+        torch.cat(tuple(chunk.outputs[target] for chunk in chunks), dim=0)
+        for target in range(targets)
+    )
+    def one_chunk() -> tuple[NativeTargetChunk, ...]:
+        return (NativeTargetChunk(start_frame=0, inputs=inputs, outputs=outputs),)
+
+    return NativeVideoReadout(
+        frame_count=readout.frame_count,
+        process=readout.process,
+        state_posterior=readout.state_posterior,
+        final_outputs=readout.final_outputs,
+        chunks=one_chunk,
+    )
+
+
 def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
     tick = time.monotonic()
     prepared = _condition(runtime, (video,), chunk_size=chunk_size)
@@ -303,15 +337,22 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
     )
     runtime.compiler.zero_grad(set_to_none=True)
     runtime.compiler.eval()
+    cached = cache_native_video_readout(prepared.videos[0].native)
+    chunked_video = replace(prepared.videos[0], native=cached)
+    single_video = replace(
+        prepared.videos[0], native=_single_chunk_readout(cached)
+    )
     with torch.no_grad():
-        reference = _condition(runtime, (video,), chunk_size=10_000)
+        chunked_output = runtime.compiler(
+            prepared.program, (chunked_video,), s_ref=runtime.ranks.s_ref
+        )
         reference_output = runtime.compiler(
-            reference.program, reference.videos, s_ref=runtime.ranks.s_ref
+            prepared.program, (single_video,), s_ref=runtime.ranks.s_ref
         )
     chunk_error = max(
         float((left.detach() - right.detach()).abs().max())
         for left, right in zip(
-            (*output.residual.a, *output.residual.b),
+            (*chunked_output.residual.a, *chunked_output.residual.b),
             (*reference_output.residual.a, *reference_output.residual.b),
             strict=True,
         )
@@ -475,6 +516,7 @@ def _build_result(
         ],
         "gradient_norms": k1.gradient_norms,
         "chunked_to_nonchunked_maximum_error": k1.chunk_error,
+        "chunk_reference": "same cached native X/Y bank, chunk4 versus one chunk",
         "solve_metrics": k1.output.solve_metrics.detach().cpu().tolist(),
         "rank16_tensor_count": len(k1.complete_adapter),
         "rank16_targets": len(k1.complete_adapter) // 2,

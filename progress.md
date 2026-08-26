@@ -237,7 +237,7 @@ update cosine；相同真实X/Y、teacher和冻结G2 `rho` measure下的FP64 inv
 `0.99628/0.99997`、update`0.99750`，retained scatter condition约`1e6`；将dual缩成最大logit`0.1`并继续使用现有
 `softmax(+s)-softmax(-s)`仍为`0.99749`。最早失效接口由此定位为shared query隐式获取高条件数dual，而不是native banks或pooling表达力。
 
-当前独立`codex/g3-dual-basis-oracle`实现面只为该接口建立formal解析probe：对K1-covered 50 fit tasks的前两条固定视频、q/v/action-in/
+当前独立`codex/g3-dual-basis-oracle`实现面只为该接口建立formal解析probe：对K1-covered 50 fit tasks确定性的最多前两条固定视频、q/v/action-in/
 action-out四个代表target封存FP64 minimum-norm dual，以task-balanced、leave-one-task-out rank-block projector拟合一次
 `16/32/64/96/128` basis曲线，再回放真实X/Y及antithetic signed pooling。两task四family真实smoke的full-dual reference update cosine
 为median`0.997401`、p10`0.996245`、minimum`0.995956`；11项dual/native-teacher定向测试通过。该smoke只验证数值与artifact合同，

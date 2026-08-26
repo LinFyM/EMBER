@@ -236,7 +236,7 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   因此最早接口是高条件数dual的shared acquisition，不是banks、signed pooling或chunked实现。
 - [ ] 先做fit-only、按task leave-out的target-native dual-basis解析oracle；用同一次basis曲线评估`16/32/64/96/128`维在未参与建basis的
   真实bank上对完整rank4 update的保留，不通过训练多个width选优。四类probe的task-equal update cosine须同时达到median`>=0.98`、
-  p10`>=0.95`且至少90% tasks `>=0.95`，并对每task两条视频中的worst-video应用同一门槛；通过后先扩到全部38 targets，再把
+  p10`>=0.95`且至少90% tasks `>=0.95`，并对每task确定性最多两条K1视频中的worst-video应用同一门槛；通过后先扩到全部38 targets，再把
   compact dual监督写入shared compiler。
 - [ ] 保持frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16合同，实施隔离的fit-K1 mapping acquisition；
   以paired update方向为首要因果量，阻断旧functional/flow/carrier梯度在同一acquisition step覆盖selection/scale，之后再以非干扰阶段

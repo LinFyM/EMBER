@@ -119,6 +119,9 @@ def _selection_record(
         "selected_task_ids": sorted(selected),
         "selected_task_count": len(selected),
         "selected_unique_video_count": sum(len(rows) for rows in selected.values()),
+        "selected_videos_by_task": {
+            str(task_id): list(rows) for task_id, rows in selected.items()
+        },
         "max_videos_per_task": args.max_videos_per_task,
         "explicit_task_ids": None if args.task_ids is None else sorted(args.task_ids),
         "dirty_exploratory_subset": args.task_ids is not None,

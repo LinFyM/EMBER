@@ -16,7 +16,7 @@ from ember.ecp.shared_compiler_native_teacher import (
 )
 
 
-WORKER_SCHEMA = "ember_ecp_g3_dual_basis_worker_v1"
+WORKER_SCHEMA = "ember_ecp_g3_dual_basis_worker_v2"
 BASIS_SCHEMA = "ember_ecp_g3_dual_basis_loto_v1"
 REPLAY_SCHEMA = "ember_ecp_g3_dual_basis_replay_worker_v1"
 REPORT_SCHEMA = "ember_ecp_g3_dual_basis_report_v1"

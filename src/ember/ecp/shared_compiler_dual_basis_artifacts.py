@@ -305,21 +305,36 @@ def aggregate(args: Any, *, repo_root: Path) -> None:
         or target_indices != DEFAULT_TARGETS
         or dimensions != DEFAULT_BASIS_DIMENSIONS
         or selection.get("selected_task_count") != 50
-        or selection.get("selected_unique_video_count") != 100
         or selection.get("max_videos_per_task") != 2
         or selection.get("explicit_task_ids") is not None
     ):
         raise ValueError("formal dual-basis aggregate lost the K1-covered50 authority")
-    videos_per_task: dict[int, set[int]] = defaultdict(set)
+    selected_videos = {
+        int(task): tuple(map(int, videos))
+        for task, videos in selection.get("selected_videos_by_task", {}).items()
+    }
+    if (
+        set(selected_videos) != set(tasks)
+        or any(not 1 <= len(videos) <= 2 for videos in selected_videos.values())
+        or any(len(set(videos)) != len(videos) for videos in selected_videos.values())
+        or sum(map(len, selected_videos.values()))
+        != int(selection.get("selected_unique_video_count", -1))
+    ):
+        raise ValueError("dual-basis deterministic video selection changed")
+    expected_task_videos = {
+        (task, video)
+        for task, videos in selected_videos.items()
+        for video in videos
+    }
+    actual_task_videos: set[tuple[int, int]] = set()
     for row in record_inventory:
         task = int(row["authority_id"])
         video = int(row["video_demo"])
-        if video in videos_per_task[task]:
+        if (task, video) in actual_task_videos:
             raise ValueError("dual-basis capture duplicated a task video")
-        videos_per_task[task].add(video)
+        actual_task_videos.add((task, video))
     if not dirty_subset and (
-        len(record_inventory) != 100
-        or any(len(videos_per_task[task]) != 2 for task in tasks)
+        actual_task_videos != expected_task_videos
         or {target_metadata[target]["family"] for target in target_indices}
         != {"q", "v", "action_in", "action_out"}
     ):

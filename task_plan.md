@@ -234,15 +234,20 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] 在同一真实target20 bank上完成free-query与解析dual对照：普通梯度500步仍仅`0.1624` update cosine，FP64 weighted
   inverse-covariance dual在冻结G2 measure下达到`0.9975`；缩到最大logit`0.1`后用现有antithetic softmax仍为`0.9975`。
   因此最早接口是高条件数dual的shared acquisition，不是banks、signed pooling或chunked实现。
-- [ ] 先做fit-only、按task leave-out的target-native dual-basis解析oracle；用同一次basis曲线评估`16/32/64/96/128`维在未参与建basis的
-  真实bank上对完整rank4 update的保留，不通过训练多个width选优。四类probe的task-equal update cosine须同时达到median`>=0.98`、
-  p10`>=0.95`且至少90% tasks `>=0.95`，并对每task确定性最多两条K1视频中的worst-video应用同一门槛；通过后先扩到全部38 targets，再把
-  compact dual监督写入shared compiler。
+- [x] 从clean pushed detached `e7d86b0`完成fit-only、按task leave-out的四family target-native dual-basis解析oracle：50 tasks、
+  98个确定性K1 conditions的full-dual reference task-mean update cosine median/p10/min为
+  `0.996949/0.995468/0.993884`；但最大128维LOTO basis只有`0.288444/0.249615`，`0/50` tasks达到`0.95`，q/v/action-out
+  family median分别为`0.000490/-0.000586/0.146885`，故Gate明确non-pass。bank-conditioned functional least-squares虽证明旧欧氏
+  投影不正确，128维仍不足，扩展raw/effect basis又需要约384--512维；因此淘汰compact fixed dual/effect basis，不扩到38 targets，
+  不恢复fixed realizer。
 - [ ] 保持frozen G2 Program、真实banks、shared content attention、rank4与唯一rank16合同，实施隔离的fit-K1 mapping acquisition；
-  以paired update方向为首要因果量，阻断旧functional/flow/carrier梯度在同一acquisition step覆盖selection/scale，之后再以非干扰阶段
-  验证K2/K4组合和functional职责。先用fit内未见video诊断证明shared mapping而非记忆条件，最终仍以完整K4 held5五臂strict250 Gate
-  作G3结论。formal runtime使用固定3+3 role-balanced全局task group并按实时1--6张有效GPU弹性分片；world size不得改变task权重、
-  optimizer cadence或Gate口径，exact-resume锁定原topology。
+  解析functional image与exact bounded signed-softmax已否定随机/近线性512-key的病态tail，确认直接native X/Y content score在
+  `1e6`截断、固定small-logit scale下可稳定恢复三family约`0.995--0.999` update。只修正该证据定位的接口：owner-native direct keys、
+  非线性高容量Program query与q output groups的bounded相对gain；不能把training-only dual/score、task/video键或解析系数带入deployment，
+  也不能让单个`128 -> key`线性head重新形成固定低维query span。mapping acquisition以paired update方向为首要因果量，阻断旧functional/flow/
+  carrier梯度在同一步覆盖selection/scale；之后再以非干扰阶段验证K2/K4组合和functional职责。先用fit内未见video诊断证明shared
+  mapping而非记忆条件，最终仍以完整K4 held5五臂strict250 Gate作G3结论。formal runtime使用固定3+3 role-balanced全局task group并按
+  实时1--6张有效GPU弹性分片；world size不得改变task权重、optimizer cadence或Gate口径，exact-resume锁定原topology。
 
 ### G4 Joint Writer
 

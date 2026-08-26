@@ -1,7 +1,7 @@
 # EMBER progress
 
 更新时间：2026-08-26。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@2a7f760`的v2 fresh `macro_00000005`及其五臂strict250 Gate。
+evidence为clean pushed `main@e7d86b0`的四family task-LOTO analytic-dual basis probe。
 
 ## 当前状态
 
@@ -12,8 +12,9 @@ evidence为clean pushed `main@2a7f760`的v2 fresh `macro_00000005`及其五臂st
 active design明确是解释/执行层，不能替代原文。
 
 全仓库orientation和两轮owner复核已完成，owner已正式许可推进。G1 task-local free-code capacity oracle与G2 Natural Program
-均已通过；当前处于G3 shared compiler，v1 macro10与v2 macro5已形成两层non-pass及根因证据，正在验证高条件数native dual能否由
-低维task-general basis承载。没有恢复
+均已通过；当前处于G3 shared compiler，v1 macro10、v2 macro5与低维dual-basis probe已形成三层non-pass及根因证据。固定
+target-specific raw-dual basis不具备首版所需的compact functional capacity，当前沿保留native content attention的方向验证
+owner-native direct keys、非线性Program query与直接score acquisition。没有恢复
 旧Writer/realizer/GOMQ/PECS/人工process路线，也没有联系专家。
 
 G2实现面现已接通并通过最小真实检查。Program严格输出`P_lang/P_scene/P_process/rho/tau/sigma`固定schema；每条video分别运行
@@ -237,11 +238,29 @@ update cosine；相同真实X/Y、teacher和冻结G2 `rho` measure下的FP64 inv
 `0.99628/0.99997`、update`0.99750`，retained scatter condition约`1e6`；将dual缩成最大logit`0.1`并继续使用现有
 `softmax(+s)-softmax(-s)`仍为`0.99749`。最早失效接口由此定位为shared query隐式获取高条件数dual，而不是native banks或pooling表达力。
 
-当前独立`codex/g3-dual-basis-oracle`实现面只为该接口建立formal解析probe：对K1-covered 50 fit tasks确定性的最多前两条固定视频、q/v/action-in/
-action-out四个代表target封存FP64 minimum-norm dual，以task-balanced、leave-one-task-out rank-block projector拟合一次
-`16/32/64/96/128` basis曲线，再回放真实X/Y及antithetic signed pooling。两task四family真实smoke的full-dual reference update cosine
-为median`0.997401`、p10`0.996245`、minimum`0.995956`；11项dual/native-teacher定向测试通过。该smoke只验证数值与artifact合同，
-不是basis Gate结果；正式50-task probe必须来自clean pushed detached worktree。
+clean pushed detached `main@e7d86b0`已完成上述50-task、98-condition、四family formal probe。full-dual reference的task-mean
+update cosine median/p10/min为`0.996949/0.995468/0.993884`，worst-video为`0.996487/0.994944/0.991649`，证明capture、dual、真实
+X/Y回放与signed pooling合同有效。相同LOTO basis压到最大128维后，overall task-mean median/p10仅`0.288444/0.249615`，50 tasks中
+没有一个达到`0.95`；family median分别为action-in `0.999983`、action-out `0.146885`、q `0.000490`、v `-0.000586`，故Gate明确
+non-pass，不能扩到38 targets或把compact raw-dual code接入compiler。
+
+同一formal artifact上的后续fit-only机制反事实把失败再分解了一层：对最差q/v/action-out条件，不再欧氏投影dual，而是在当前bank的
+functional geometry中求固定basis内最小二乘，128维update cosine分别由`-0.0119/-0.0288/-0.1178`升至约
+`0.684/0.507/0.805`，证明旧realizer几何错误；但仍远低于门。把同一LOTO构造延伸到实际稳定秩后，q在384维为`0.981`、
+action-out在384维约`0.978`，v到其稳定span仍只有约`0.933`，说明128维raw query span本身也不够。selected-task effect-basis
+反事实同样需要约384--512维，因而不恢复fixed effect-code/fit-span realizer。
+
+直接对现有content-key做小型functional-span acquisition进一步发现：当前按width共享的64维近线性key在两条同task视频训练后，第三条
+视频的三family update cosine均值只由`0.380`升到峰值约`0.521`；改为owner-specific keys改善已见拟合但没有消除未见视频缺口。
+按解析曲线指定的512维owner-specific key在相同train/third-video条件上，其解析functional span从step0已达
+`0.9907/0.9904`，50步为`0.9997/0.9932`，但cross-covariance最小/最大奇异值比仍约`1e-8--1e-6`。因此下一接口不是继续宽度扫，
+exact bounded-score反事实确认该问题不可忽略：随机512-key必须动用约`1e7`条件数才使q/v/action-out达到约
+`0.993/0.984/0.994`，在`1e6`内只有约`0.956/0.936/0.966`，且同task跨video query cosine很低甚至为负。相反，直接以真实native
+X/Y作为content keys时，`1e6`截断配合不读取完整bank的固定`0.01` score scale，三family跨三video update cosine均值为
+`0.99886/0.99551/0.99788`、minimum为`0.99810/0.99447/0.99703`。q的八个output groups若各自单位化会降至约
+`0.967--0.985`，保留归一到`[0,1]`的相对group gain后恢复约`0.999`。因此下一canonical候选是owner-native direct content score、
+非线性高容量Program query与显式bounded group gain；先做隔离的K1 mapping acquisition，不能把这些selected-condition内部值冒充
+G3 Gate或shared mapping成功。
 
 owner明确formal训练实现不得固定world2：保持固定全局task group、role权重、loss归一化和optimizer cadence，launch时按1--6张有效GPU
 弹性分片；exact-resume锁定该run首次launch topology。该要求同样适用于后续G3/G4/Final训练，不能让卡数改变科学batch定义。
@@ -365,9 +384,11 @@ G1--G5 Gate或架构修正依据。
 1. 冻结G2通过Gate的`c1493a1/macro_00000020` Program，进入G3 shared compiler；
 2. 直接复用G1 native capture/banks、action-in blocks、small-core SVD、rank12+4 materialization与held5 evaluator，只新增共享
    Program-query/candidate-key signed attention、target scales和bounded K correction的canonical实现面；
-3. G3 v2 macro5五臂strict250已明确non-pass；固定真实K1 bank的梯度审计与解析反事实把最早接口定位为旧credit冲突之后的
-   高条件数native dual acquisition。下一步先完成50-task、四family、task-LOTO dual-basis formal probe；通过后扩到38 targets，
-   再把compact dual supervision接入shared Program-to-coefficient mapping，不能把oracle系数冒充deployment compiler；
+3. G3 v2 macro5与四family dual-basis formal均明确non-pass；后者淘汰了`<=128`维target-specific raw-dual basis和欧氏投影，
+   但full dual仍在全部50 tasks稳定约`0.997`，所以不淘汰native banks或signed pooling。当前只沿一个canonical实现面修正：为每个固定
+   LoRA owner直接以真实native X/Y形成content scores，用非线性高容量shared Program query和bounded output-group gain隔离K1
+   mapping acquisition；不得把
+   training-only dual、task/video键或解析系数带入deployment，也不得恢复fixed realizer；
 4. G2没有引入learned video reliability；G3的bounded K correction从uniform初始化，并必须防止单条video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
 6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

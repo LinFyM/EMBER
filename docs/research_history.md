@@ -414,7 +414,43 @@ fit-only leave-task-out dual-basis oracle；在解析压缩门通过并更新act
 - 三条video strict250结果位于对应`pi05_ecp_shared_compiler_g3_*strict250_native_teacher_v2*m5*20260826/`目录；
 - 一次性固定bank梯度审计位于ignored `.codex/tmp/g3_v2_fixed_probe_meta9_*`，其结论已固化在当前持久文件中。
 
-## 24. 当前保留结论
+## 24. G3四family task-LOTO dual-basis formal non-pass
+
+clean pushed detached `main@e7d86b0`对formal40 schedule中实际有K1 authority的50个fit tasks运行四family解析probe。每task按
+预注册口径最多取两条确定性video，共98 conditions；代表targets为q20、v21、action-in36、action-out37。capture与replay均使用冻结
+G2 `c1493a1/macro_00000020`的fixed measure、真实native X/Y、四类动态Y bank、antithetic bounded signed pooling和verified member
+rank4 factors，Action Meta与held reads均为0。
+
+完整FP64 analytic dual reference的task-mean update cosine median/p10/min为`0.996949/0.995468/0.993884`，worst-video为
+`0.996487/0.994944/0.991649`，因此数据、dual、bank与回放合同有效。用另外49 tasks的rank-block projector构造同一套task-balanced
+LOTO basis后，最大128维overall task-mean median/p10只有`0.288444/0.249615`，50 tasks中没有一个达到`0.95`；family median为
+action-in `0.999983`、action-out `0.146885`、q `0.000490`、v `-0.000586`。预注册Gate明确non-pass，故没有扩到38 targets，也没有
+把compact dual code接入active compiler。
+
+随后只读同一formal authority的fit-only反事实区分了失败层次。对最差q/v/action-out bank在固定LOTO span内做正确的functional
+least-squares，128维update cosine由原欧氏投影的约`-0.012/-0.029/-0.118`提高到约`0.684/0.507/0.805`，证明欧氏realizer几何
+确实错误；但要到约384--512维才接近强回放，v即使到当前稳定span仍约`0.933`。selected-task effect-basis反事实也需要相近宽度，
+所以该结果不授权恢复fixed raw/effect basis或历史fit-span realizer。
+
+直接content-key机制screen显示，现有width-shared 64维近线性key在两条同task视频上拟合后，第三条video的q/v/action-out均值只约
+`0.52`；owner-specific复制只改善seen fit。按解析容量选取512维owner-specific key时，自由functional image在三条held-video条件
+约`0.99`，但其最小/最大奇异值比约`1e-8--1e-6`，尚未证明shared Program query能稳定取得scores。因此后继只沿直接
+Program-query/content-key attention继续：先验证截断谱下exact bounded signed-softmax的可用conditioning，再针对owner-specific key、
+非线性高容量query生成和output-group相对幅度修正唯一canonical compiler；training-only dual/score、task/video键和解析系数不得进入
+deployment，held5 closed loop仍是G3结论。
+
+随后selected-condition exact-score反事实比较了两种content key。随机512维key必须保留约`1e7`条件数的tail才使q/v/action-out达到约
+`0.993/0.984/0.994`，在`1e6`内只有约`0.956/0.936/0.966`，且同task跨video query方向不稳定；因此没有把“加宽key”当成
+充分修正。直接以真实native X/Y作为key时，`1e6`截断与固定`0.01` small-logit scale即可使三family跨三video的update cosine均值达到
+`0.99886/0.99551/0.99788`、minimum达到`0.99810/0.99447/0.99703`，无需逐bank读取后校准。q的八个output groups若分别单位化会降到
+约`0.967--0.985`，保留一个公共score scale和`[0,1]`相对group gains则恢复约`0.999`。这些值只授权下一步owner-native direct key、
+非线性高容量Program query与bounded group-gain mapping acquisition，仍不是shared mapping或closed-loop Gate结果。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_dual_basis_four_family_loto_e7d86b0_gpu01p012345_20260826/`。
+
+## 25. 当前保留结论
 
 1. EMBER输入输出目标不变，ECP核心尚未被完整实验反证。
 2. task-local LoRA与mobile-rank4容量充足；native video basis和shared selection mapping是顺序待验证的最早接口。
@@ -424,7 +460,7 @@ fit-only leave-task-out dual-basis oracle；在解析压缩门通过并更新act
 6. 分阶段冻结后必须进行冻结backbone、冻结carrier的全Writer联合训练。
 7. shuffled/reversed只用于最终冻结checkpoint的时序特异性评测。
 
-## 25. 证据恢复方式
+## 26. 证据恢复方式
 
 - 活动科学合同：`AGENTS.md`、`docs/current_owner_requirements.md`、`docs/concept.md`。
 - 当前架构：`docs/event_conditioned_policy_compiler_design.md`。

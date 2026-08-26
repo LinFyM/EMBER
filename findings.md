@@ -424,6 +424,35 @@ teacher方向。下一步先在fit-only analytic dual集合上做按task留出�
 回放判定低维共享basis是否保留full dual；不通过多个width训练选分数。只有该oracle有信号，才允许把compact dual supervision显式写入
 active design/schema并实现shared Program-to-coefficient mapping；内部cosine仍不能替代最终held5 closed loop。
 
+### 32. compact dual-basis失败同时暴露了functional geometry与query-span两层问题
+
+clean pushed detached `main@e7d86b0`的50-task、98-condition、四family task-LOTO formal中，完整解析dual回放仍稳定成立：task-mean
+update cosine median/p10/min为`0.996949/0.995468/0.993884`，worst-video为`0.996487/0.994944/0.991649`。但同一真实bank把
+target-specific raw dual压到最大128维后，overall median/p10只有`0.288444/0.249615`，`0/50` tasks达到`0.95`；action-in
+单独接近1不能掩盖action-out `0.146885`、q `0.000490`和v `-0.000586`。因此该Gate淘汰的是`<=128`固定raw-dual code，
+不是native bank、signed pooling或Native-Factor。
+
+对最差q/v/action-out条件做bank-conditioned functional least-squares后，128维update cosine分别约为`0.684/0.507/0.805`，远高于
+错误的欧氏dual投影但仍不通过；同一LOTO span要到约384--512维才接近强回放，selected-task effect basis也呈相同宽度需求。这说明不能
+用换一种投影方式恢复fixed basis/effect realizer。现有compiler还把key按native width共享，且`input_query/output_query`最终只是从
+128维context做一次线性映射；即使只把key width调大，query仍落在一个固定至多约128维的线性像中，会重新引入formal已否定的
+compact-span风险。后继必须直接验证content-derived key的functional image、exact有界softmax与共享Program mapping，并允许
+owner-specific、非线性高容量query生成；这仍不得成为task/frame lookup或直接factor hyperdecoder。
+
+小型fit-only screen进一步把两项职责分开：当前width-shared 64维近线性key即使拟合两条同task视频，第三条video的三family update cosine
+均值也只到约`0.52`；owner-specific复制改善训练拟合但不解决未见video。按前述解析容量选择512维owner-specific key时，自由解析
+functional span在三条未见video上约`0.99`，证明高容量动态key具有候选表达力；但最小/最大奇异值比约`1e-8--1e-6`，尚未证明
+Program query能稳定取得所需scores。所以下一检查是固定bank的截断谱与exact bounded signed-softmax可用性，不是继续width、seed或LR扫。
+
+exact可用性检查给出了更强的架构选择证据。随机512维key只有使用约`1e7`条件数的tail时才使q/v/action-out达到约
+`0.993/0.984/0.994`，在`1e6`内只有约`0.956/0.936/0.966`；同task三条video间的query cosine也很低，v甚至为负。
+直接使用真实native X/Y作为content key则在`1e6`截断时已足够：用固定、deployment-compatible的`0.01`全局small-logit scale而非
+读取完整bank做逐条件校准，三family跨三video update cosine均值为`0.99886/0.99551/0.99788`，minimum为
+`0.99810/0.99447/0.99703`。这证明不需要高成本512维candidate projection，最早接口转为Program对owner-native dual/score的获取。
+q的八个output groups还暴露独立幅度职责：逐group单位化把update降到约`0.967--0.985`，而将解析query norm化为`[0,1]` bounded
+relative gains并只保留一个公共score scale可恢复约`0.999`。首个mapping修正因此必须同时包含非线性高容量query生成和显式group gain；
+它仍只通过真实X/Y的signed pooling生成factor，不是full FactorHead或fixed effect realizer。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

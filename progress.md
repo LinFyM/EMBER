@@ -5,8 +5,9 @@ clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM F3 macro5/ma
 clean pushed `main@435cb4a`通过。最新fit-only exact B0/B1解析见证已经完成candidate-key/compatibility image裁决：浅层q/v可在极弱
 谱尾恢复，而layer9/17深层q/v即使到`1e-6`也只有`.52--.65`，相同direct-native reference仍约`.995--.997`。当前因此只扩展
 shared bounded scalar compatibility，不重开G2或改变Program、bank/operator、rank、data、loss和Gate。`a2a56a7`首轮真实F0在
-训练前只因chunk有效更新合同失败；机制对照已定位到两个随机signed branches抵消并被满幅joint启动放大，当前正以antithetic
-branches加small-nonzero joint residual做唯一初始化修正，尚未把诊断pass冒充formal F0。
+训练前只因chunk有效更新合同失败；机制对照定位到两个随机signed branches抵消并被满幅joint启动放大。antithetic branches加
+small-nonzero joint residual的唯一修正现已由clean pushed detached `e784eb9`通过完整F0和六卡真实mapping profile，下一步从fresh
+运行同一F3 mapping Gate，尚未把F0或profile冒充shared mapping成功。
 
 ## 当前状态
 
@@ -591,7 +592,8 @@ G1--G5 Gate或架构修正依据。
    不是pair loss或共享梯度。唯一活动修正以旧点积为残差，加入family-shared additive joint bounded scalar scorer；逐video
    dual/score、task/video键、held gradients和解析系数仍不得进入deployment。首轮`a2a56a7` F0的feature/solve/K4均正常，但
    chunk minimum cosine/maximum relative error为`.9999365/.01127`；缩放joint至0仍失败，antithetic branches加`.03`非零joint
-   residual的固定bank对照达到`.9999965/.00264`，因此只修fresh初始化后从新clean detached commit重跑完整F0；
+   residual已在clean detached `e784eb9` formal F0达到`.9999965/.002641`并通过全部K1/K4、gradient、信息墙与唯一rank16资格项。
+   world6真实mapping profile一步`89.83s`、峰值约`25.60/26.00GB`且joint梯度非零；下一步直接fresh F3 macro5；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

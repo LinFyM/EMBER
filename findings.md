@@ -715,6 +715,13 @@ negative query rows初始化为严格antithetic且joint以`.03`非零残差启�
 可立即解绑训练的antithetic signed初始化和small-nonzero joint residual。它不改Program、bank、operator、rank、loss、data或Gate，
 也不放宽F0阈值；下一步必须从新clean pushed detached commit重跑完整K1/K4 F0。
 
+该唯一修正随后由clean pushed detached `e784eb9`通过完整formal F0。task93 chunk4/one-chunk的minimum update cosine为
+`.999996512`、maximum relative error`.00264108`、median relative error`5.34e-5`，K4置换误差`1.91e-6`；input/output
+joint query/key/scalar、candidate、anchor和owner-query梯度均finite/nonzero。Action Meta module/parameter、source/Program trainable与
+K4 teacher reads均为0，38-target/76-tensor唯一rank16被policy实际消费。六卡真实mapping profile再完成固定3 meta+3 target的一个
+optimizer step：`89.83s`，单卡峰值allocated/reserved约`25.60/26.00GB`，4,102,024个compiler参数为唯一trainable owner，
+joint gradient probes全部非零且held/validation/test gradients为0。这只解封从fresh运行同一451-condition F3，不证明shared mapping。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

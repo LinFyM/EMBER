@@ -648,3 +648,25 @@ hard violation；正式结论仍须clean pushed detached F0及fresh F3。
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_stable_anchor_macro10_mapping_eval_20acc33_gpu01p012346_w6_20260827/`；
 - `runs/analysis/pi05_ecp_g3_stable_anchor_single_task_probes_20acc33_gpu01p012346_w6_20260827/`；
 - `runs/analysis/pi05_ecp_g3_stable_anchor_query_gradient_diag_20acc33_gpu01p1_20260827/`。
+
+## 36. fixed-owner/group query FiLM formal F0
+
+fixed-owner/group query FiLM首先在clean pushed `7e232b0`通过184项CPU回归与architecture hard checks。首次detached F0尚未进入
+GPU计算即失败：新模块内部helper命名为`_apply`，覆盖了`torch.nn.Module._apply`，导致`.to(device)`调用签名冲突。该失败只揭示
+PyTorch模块生命周期工程错误，不构成scientific non-pass。唯一修复将helper改名为`_modulate`并新增显式`.to(cpu)`回归，形成
+clean pushed `main@d64f7ad`；代码、配置和科学合同除此之外未变。
+
+clean pushed detached `d64f7ad`随后完成formal F0并通过全部qualification checks。真实task93 K1 backward给出input/output
+owner-query gradient norm `.015828/.000958`；source与Program trainable为0，Action Meta modules/parameters为0。K4四条视频保持
+均匀`.25` measure，置换最大误差`1.91e-6`且teacher tensor reads为0。相同cached X/Y bank的chunk4相对one-chunk有效更新cosine
+最低`.99999826`、median近1，相对误差最高`.001863`、median `6.04e-5`，feature metric误差`5.96e-8`。最终仍只materialize
+38 targets/76 tensors的一套完整rank16并由policy真实消费。总时长`592.16s`，峰值allocated/reserved约`34.00/42.81GB`。
+
+该结果只解封该checkpoint-incompatible修正从fresh运行同一F3 mapping Gate；它不证明shared mapping已通过，也不改变stable-anchor
+macro10 non-pass、F1 operator结论或后续`.75/.50` primary与相邻checkpoint口径。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_7e232b0_task93_gpu01p0_20260827.log`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_d64f7ad_task93_gpu01p2_20260827.json`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_d64f7ad_task93_gpu01p2_20260827.log`。

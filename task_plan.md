@@ -286,8 +286,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   macro5改善且held/fit为`1.00737`，证明稳定anchor修复了迁移但仍未过`.75/.50`。六task单任务20-step probes的另一fit/held均跟随
   train，但q仅`.0197--.0277`；task93 q的18个target在shared input/output query head上合成梯度只有norm和的`.272/.268`，而
   candidate trunk已有fixed-owner FiLM。当前单一修正因此给query trunks增加zero-init bounded fixed-owner input及fixed-owner/
-  output-group FiLM；不重训G2，不改rank、bank、loss、data或Gate。实现通过184项CPU回归和architecture hard checks；下一步是
-  clean pushed detached F0与fresh同一F3 Gate，profile、诊断和内部loss仍不得冒充Gate。
+  output-group FiLM；不重训G2，不改rank、bank、loss、data或Gate。实现通过184项CPU回归和architecture hard checks。
+- [x] fixed-owner/group query FiLM formal F0：`7e232b0`首次运行在GPU计算前发现内部`_apply`覆盖PyTorch模块生命周期方法；
+  `d64f7ad`以唯一rename修复并新增`.to(device)`回归。clean pushed detached `d64f7ad`随后通过真实K1/K4
+  forward/gradient/chunk/materialization全部资格项，新input/output owner-query gradients为`.015828/.000958`，Action Meta 0，
+  K4置换误差`1.91e-6`，chunk有效更新cosine最低`.99999826`且相对误差最高`.001863`，唯一38-target rank16被policy消费。
+- [ ] 从clean pushed detached authority fresh运行fixed-owner/group query FiLM同一F3 macro5；若有增量则按相同world topology
+  exact-resume到macro10并完整评估451 conditions。profile、诊断和内部loss仍不得冒充`.75/.50` primary及相邻checkpoint Gate。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

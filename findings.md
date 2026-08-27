@@ -661,6 +661,14 @@ zero-init bounded fixed-owner input FiLM与fixed-owner/output-group FiLM；它�
 video/member/frame ID，task-dependent query仍由共享trunk读取`P_lang`。若fresh F3仍失败，再按owner/group与task-content分解决定是否
 重开language content接口，不能把该probe或内部recovery冒充shared mapping Gate。
 
+### 46. fixed-owner query路径已通过F0，生命周期错误不改变科学判断
+
+首个clean pushed `7e232b0` F0在GPU计算前因内部`_apply` helper覆盖`torch.nn.Module._apply`而失败；将其唯一改名为
+`_modulate`并补`.to(device)`回归后，clean pushed detached `d64f7ad`通过完整F0。新input/output owner-query gradients分别为
+`.015828/.000958`，证明38-target固定owner/group路径实际进入训练图；Action Meta与teacher reads仍为0，K4均匀measure与置换
+不变、chunk有效更新一致性及唯一完整rank16 materialization全部保持。该证据排除了“新路径未接图”的工程问题，但不回答它能否
+提高shared mapping；后者仍只由fresh F3的451-condition primary及相邻checkpoint Gate判断。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -1,9 +1,9 @@
 # EMBER progress
 
-更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@20acc33`的task-stable feature-anchor F3 macro5/macro10 mapping non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。该修正已把held-video与task-holdout泛化恢复到fit水平并将绝对recovery提高约一倍，但q family
-仍形成结构性内瓶颈；当前活动修正仅为fixed-owner/group query FiLM，不重开G2、不改变bank/operator/rank/loss/data或Gate。
+更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 mapping evidence仍为
+clean pushed `main@20acc33`的task-stable feature-anchor F3 macro5/macro10 non-pass，F1 bank-operator仍由clean pushed
+`main@435cb4a`通过。fixed-owner/group query FiLM已由clean pushed detached `main@d64f7ad`完成formal F0并通过全部资格检查；
+下一步从fresh运行同一F3 Gate，不重开G2、不改变bank/operator/rank/loss/data或Gate。
 
 ## 当前状态
 
@@ -152,8 +152,17 @@ task variation非零、same-task跨video严格相同，故不以未证明的G2�
 
 当前唯一机制修正对现有family-shared query trunks增加zero-init bounded fixed-owner input FiLM及fixed-owner/output-group FiLM，
 让38个真实LoRA targets获得互不相消的query梯度路径；task dependence仍只来自`P_lang`，没有task/video/member/frame lookup。
-该修正与旧checkpoint不兼容，必须从fresh验证；实现分支已通过184项CPU回归与architecture guard hard checks，下一步是clean
-pushed detached F0及同一F3 Gate，不用macro20盲续旧结构。
+该修正与旧checkpoint不兼容，必须从fresh验证。首个clean pushed `7e232b0` F0在任何GPU计算前暴露出
+`FixedOwnerQueryFiLM._apply`与`torch.nn.Module._apply`的生命周期命名冲突；这属于可复现工程失败，不是科学non-pass。唯一修复
+将内部helper改名为`_modulate`并新增`.to(device)`回归，形成clean pushed `main@d64f7ad`；全仓184项CPU回归与architecture guard
+hard checks通过。
+
+clean pushed detached `main@d64f7ad`的formal F0随后通过全部资格项：新input/output owner-query gradient norm分别为
+`.015828/.000958`，source/Program trainable与Action Meta module/parameter均为0；K4四video权重均为`.25`、置换最大误差
+`1.91e-6`且teacher reads为0。chunk4相对one-chunk的38-target有效更新cosine最低`.99999826`，相对误差最高`.001863`、median
+`6.04e-5`，feature metric误差`5.96e-8`；唯一完整rank16仍为38 targets/76 tensors并被policy实际消费。F0总时长`592.16s`，
+峰值allocated/reserved约`34.00/42.81GB`。该结果只证明新query路径与部署合同接通；下一步必须从fresh运行同一F3 primary及
+相邻checkpoint Gate，不用macro20盲续旧结构。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约

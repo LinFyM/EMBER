@@ -811,6 +811,34 @@ LR/seed/width扫或universal prototype制造表面pass。
 - `runs/analysis/pi05_ecp_g3_functional_anchor_input_content*_t85_j{18,19}_s200_factor_3062de8_macro5_20260828.json`；
 - `runs/analysis/pi05_ecp_g3_functional_anchor_gradient_groups_t85_3062de8_macro5_20260828.json`。
 
+### 53. F1与canonical B1之间隐藏着TF32数值断层，旧checkpoint不能post-hoc修复
+
+继续改carrier或canonicalizer前，对同一真实native bank逐层拆分query storage、score matmul与pool reduction的精度。F1解析operator
+一直用FP64，而source runtime会全局开启TF32；既有F0只比较chunked与one-chunk两条相同runtime路径，因而不能发现共同数值偏差。
+对深层q target34、v target19和action-out target37的learned/teacher native anchors做全组合复核后，IEEE FP32相对FP64的
+update-cosine最大绝对误差分别只有`2.7e-5/7.4e-5/1.9e-5`；TF32相对FP64的误差median却为
+`.528/.675/.524`、maximum为`.817/.840/.704`。ridge `1e-6`的held learned-anchor recovery在q/v/action-out上由TF32
+`.256/.178/.262`恢复到IEEE `.705/.798/.673`，且IEEE与FP64一致。根因是约`1e6`条件数的native dual在TF32约10-bit
+mantissa下发生灾难性score cancellation，不是query存成FP32、softmax公式或FP32 reduction本身。
+
+把已训练的`3062de8/macro5`直接切到IEEE或全FP64重放，12个代表条件均值仍为`.081656/.081651`，与原`.081656`不变；旧权重已在
+错误forward/backward下没有取得强anchor，不能靠post-hoc高精度推理救回。这项证据因此既否定“继续用TF32”，也不允许宣称G3已经
+通过：唯一有信息量的复评是保持架构、data、loss、rank、optimizer与451 Gate不变，从fresh用IEEE FP32训练。canonical
+`main@78b7e58`在compiler forward开始关闭TF32并保持到backward，run contract与F0新增明确精度资格；4卡一步真实profile已证明
+全部主路径gradient finite/nonzero、Action Meta 0，耗时`123.62s`、峰值约`25.65GB`。
+
+随后clean pushed detached `78b7e58`的真实F0全部通过：`native_dual_uses_ieee_fp32=true`且compiler forward后
+`allow_tf32=false`；chunk4相对one-chunk的38-target有效更新minimum cosine为`.99999955`、maximum relative error为
+`.0009452`，K4置换误差`1.43e-6`且四条video权重严格均匀。全部Program/candidate/query/gain gradient finite/nonzero，
+Action Meta 0、source/Program冻结、K4 teacher reads 0，最终76 tensors/38 targets的唯一rank16被policy实际消费。因此工程Gate
+已经解封fresh IEEE F3，但这仍不是shared mapping科学Gate。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_native_dual_precision_audit_abff0a7_20260828/`；
+- `runs/analysis/pi05_ecp_g3_ieee_profile_step1_78b7e58_gpu01p1235_w4_20260828/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f0_ieee_precision_78b7e58_gpu01p1_20260828.json`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

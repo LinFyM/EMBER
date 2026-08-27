@@ -5,12 +5,45 @@ clean pushed `main@435cb4a`通过；最新完整F3 Gate现为clean pushed detach
 fit/held/p10/task-holdout为`.084298/.082754/.072027/.093856`，明确non-pass且不续macro10。451 conditions全部完成，Action Meta 0、
 held gradient 0、operator/solve/chunk与唯一rank16合同正常；train、held-video和task-holdout同样低，失败不是泛化。
 
+进一步按数值层复核发现F1与canonical B1存在此前未资格化的TF32断层：F1用FP64，runtime继承source设置的TF32，旧F0又只比较
+两条共同TF32路径。真实深层q/v/action-out panel中，IEEE FP32相对FP64的最大update-cosine误差不超过`7.4e-5`，而TF32误差
+median为`.52--.68`；held learned-anchor recovery从TF32 `.256/.178/.262`恢复到IEEE `.705/.798/.673`。旧`3062de8`
+checkpoint切换IEEE/FP64只读重放仍约`.08165`，说明必须fresh训练，不能post-hoc冒充修复。唯一数值修正已集成并推送至
+`main@78b7e58`：compiler在native dual forward关闭TF32并保持到backward，run contract/F0显式记录IEEE；不改架构、loss、rank、
+data、optimizer或Gate。全仓`186 passed`，4卡一步真实profile耗时`123.62s`、峰值约`25.65GB`且全部主路径gradient finite/nonzero、
+Action Meta 0。clean detached `78b7e58`真实F0现已通过：TF32实际关闭，chunk4/one-chunk最低update cosine
+`.99999955`、最大相对误差`.000945`，K4置换误差`1.43e-6`，唯一38-target rank16被policy消费。当前从fresh重跑同一
+451-condition F3，不复用旧checkpoint。
+
 non-pass后的结构审计发现两个耦合首因。第一，原task residual含有很大的task-independent common correction：fit-only universal rank4
 在held/task-holdout已达`.825054/.835443`，且可与carrier12以`.998741` cosine重压回rank12；但直接代数相减会把task85 q/v真实
 native input可达性降到约`.828/.765`，所以必须从expert-minus-new-carrier重新投影，不能直接改authority。第二，当前pointwise
 Program/candidate canonicalizer没有取得task selection：wrong full Program后的最终update仍约`.95--.99`，task-local current keys在
-held深层q/v只到`.188/.177`，而direct native reference约`.997`。当前暂停新formal和架构续训，先完成new-carrier native feasibility与
-set-conditioned canonicalizer/Program因果正对照。
+held深层q/v只到`.188/.177`，而direct native reference约`.997`。这些结构工作现保留为条件后继：必须先用fresh IEEE F3排除
+此前共同数值偏差；只有相同451 Gate仍non-pass，才继续new-carrier与set-conditioned canonicalizer正对照。
+
+## IEEE fresh F3 formal launch contract
+
+- canonical code：clean pushed、detached且可由`origin/main`到达的`78b7e58`；formal worktree为
+  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-ieee-f3-formal-78b7e58`，不读取任何旧compiler checkpoint；
+- upstream authority保持不变：G2 `c1493a1/macro_00000020`、source
+  `pi05_source_base_v1_seed7_1k_e2cc238/step_00001000`、同一50-task/451-condition native-teacher manifest、mapping split、
+  tokenizer与LIBERO data root；Action Meta、source、Program与scale仍冻结；
+- 唯一因果变量是native dual FP32 matmul从TF32改为IEEE，并由F0证明实际生效；model、loss、rank12+4、data、seed、LR、schedule、
+  每步固定6 logical tasks（3 meta+3 target）、每task两条K1 fit videos及F3 `.75/.50/.8` Gate均不变；
+- fresh训练到macro5，共25 optimizer steps；gpu01物理`0,1,2,3,4,5`、world6、`NCCL_P2P_DISABLE=1`。若产生有效step，任何
+  topology或科学合同变化都必须新root fresh；只有optimizer step前的工程失败才可在保留错误证据后清理incomplete root；
+- output为`runs/outputs/pi05_ecp_shared_compiler_g3_f3_ieee_fold0_m5_gpu01p012345_r6_20260828/`，log同stem放在
+  `runs/logs/`；checkpoint、trainer state、metrics、run contract与completion保留。预计新增低于0.5GB；launch前`/data1`
+  quota使用约`670.9GiB/1TiB`，余量充分；
+- macro5后必须完整只读评估451 conditions并报告fit/held/p10/task-holdout、四family、held/fit、breadth与相邻趋势；不以train loss、
+  direct-anchor panel或12-condition诊断代替。shuffled/reversed、validation/test、closed-loop held5均不进入该Gate。
+
+精确训练命令：
+
+```bash
+env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_ecp_shared_compiler.py --config configs/pi05_ecp_shared_compiler_g3_v3.json --phase f3 --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_shared_compiler_g3_f3_ieee_fold0_m5_gpu01p012345_r6_20260828 --stop-after-macro 5 --log-every 1
+```
 
 ## F3 functional-anchor formal contract与结论
 

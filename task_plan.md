@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-08-27。
+更新时间：2026-08-28。
 
 ## 当前目标
 
@@ -332,10 +332,24 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   `.171/.130`，相同原teacher的direct native reference约`.997`。fit-only backward约`99.88%`原始gradient energy落在candidate
   encoders/trunks。该证据链同时定位到错误carrier/residual分解与pointwise functional canonicalizer/Program acquisition，不是
   train/held泛化、operator、chunk、Action Meta、欠训或普通超参问题。
-- [ ] 先做fit-only decomposition-feasibility oracle：只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
+- [x] 在继续改结构前复核F1与canonical B1的数值口径，发现F1解析上限使用FP64，而runtime继承source初始化的TF32；既有F0只比较
+  两条相同TF32路径，未能发现共同偏差。真实深层q、v与action-out的受监督native-anchor panel中，IEEE FP32相对FP64的最大
+  update-cosine绝对误差仅`7.4e-5`，TF32误差median约`.52--.68`；held learned-anchor recovery分别由TF32
+  `.256/.178/.262`恢复为IEEE `.705/.798/.673`。旧`3062de8` checkpoint改用IEEE/FP64只读重放仍约`.08165`，所以不得
+  post-hoc冒充成功，必须从fresh检验正确梯度。
+- [x] 将唯一canonical compiler的native dual score/reduction固定为IEEE FP32并保持该process setting穿过backward；不改Program、
+  bank、query-key公式、loss、rank、data、optimizer或Gate。clean pushed `main@78b7e58`已通过`186`项CPU回归；4卡真实fresh一步
+  profile覆盖固定6 tasks/12 K1 conditions，全部主路径gradient finite/nonzero、Action Meta 0，耗时`123.62s`、峰值约
+  `25.65GB`。
+- [x] clean pushed detached `78b7e58`的真实F0通过新增IEEE数值资格：TF32实际关闭，chunk4/one-chunk最低update cosine
+  `.99999955`、最大相对误差`.000945`，K4置换误差`1.43e-6`，全部关键gradient非零，Action Meta 0，唯一38-target
+  rank16被policy实际消费。
+- [ ] 从fresh重跑原451-condition F3 primary；旧checkpoint只读重放不能替代fresh训练。只有fresh IEEE F3仍non-pass，才按最早
+  失效接口恢复下述carrier/canonicalizer结构工作。
+- [ ] 条件式做fit-only decomposition-feasibility oracle：只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
   **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、
   四family native direct/free-code可达性、跨video consensus与唯一rank16；若不成立，不保留该carrier，不能直接复用代数差分factor。
-- [ ] 在新旧decomposition的可达证据确定后，做最小task-local canonicalizer正对照：让Program query读取固定尺寸、set-equivariant的
+- [ ] 条件式在新旧decomposition的可达证据确定后，做最小task-local canonicalizer正对照：让Program query读取固定尺寸、set-equivariant的
   bank-global context并最终仍以query-key signed weights池化真实X/Y；先在代表性深层q/v与action families上超过current pointwise
   image，且correct/wrong Program形成实质functional差异。candidate basis、Program和scale必须有明确parameter ownership；rank
   spectrum/scale用独立credit训练，不能再以四rank等幅冻结形成隐藏ceiling。只有这些接口通过才保留一个canonical实现并fresh重跑

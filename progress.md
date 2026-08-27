@@ -1,13 +1,12 @@
 # EMBER progress
 
-更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 mapping evidence为
-clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM F3 macro5/macro10 non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。最新fit-only exact B0/B1解析见证已经完成candidate-key/compatibility image裁决：浅层q/v可在极弱
-谱尾恢复，而layer9/17深层q/v即使到`1e-6`也只有`.52--.65`，相同direct-native reference仍约`.995--.997`。当前因此只扩展
-shared bounded scalar compatibility，不重开G2或改变Program、bank/operator、rank、data、loss和Gate。`a2a56a7`首轮真实F0在
-训练前只因chunk有效更新合同失败；机制对照定位到两个随机signed branches抵消并被满幅joint启动放大。antithetic branches加
-small-nonzero joint residual的唯一修正现已由clean pushed detached `e784eb9`通过完整F0和六卡真实mapping profile，下一步从fresh
-运行同一F3 mapping Gate，尚未把F0或profile冒充shared mapping成功。
+更新时间：2026-08-27。当前G2 formal authority仍是clean pushed `main@c1493a1`的`macro_00000020`，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过。最新G3 evidence为clean pushed detached `main@55710bb`的additive joint compatibility fresh
+macro5/macro10及完整451-condition F3：macro10 fit/held-video/held p10/task-holdout为
+`.126205/.128720/.103610/.129465`，held/fit为`1.019925`，远低于`.75/.50`且低于前一fixed-owner query的held `.163128`，Gate
+明确non-pass。四任务fit-only因果消融进一步证明该checkpoint几乎等于旧dot路径：关掉joint后的family update cosine minimum
+`.999450`，只保留joint时recovery仅`.0018--.0116`；wrong-language/wrong-dynamic替换也几乎不改变最终update。当前不续macro20，
+不把“joint参数有非零梯度”误写成新函数族已被有效训练，先按下述根因审计修订Program-to-functional-content接口。
 
 ## 当前状态
 
@@ -581,20 +580,29 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及`c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0`五次有明确机制差异的
-   F3均在完整451 conditions上non-pass，不续训旧checkpoint或做参数小扫；
-2. fixed-key/raw/FiLM tangent与`4117117` F0证明direct-native solve退化为raw-query transfer，该路线未启动formal；same-task三video
-   bank-global oracle把最早接口收窄到task-stable anchor code识别，而不是parameter ownership、谱floor或loss权重；
-3. task-stable `P_lang` anchor与per-event feature gauge把held median提高到`.142120`；fixed-owner/group query FiLM进一步提高到
-   `.163128`，但增量几乎只来自action-in，q/v仍为`.032001/.111951`。六task fixed-FiLM与full free-query probes已排除“formal幅度
-   太小”及“只扩大owner query head就足够”的直接解释。exact current-key见证进一步证明layer9/17 q/v在`1e-6`谱下完整update仅
-   `.5186/.5583/.6537/.6079`，而direct-native约`.995--.997`；所以当前最早接口是线性点积compatibility image的深层input容量，
-   不是pair loss或共享梯度。唯一活动修正以旧点积为残差，加入family-shared additive joint bounded scalar scorer；逐video
-   dual/score、task/video键、held gradients和解析系数仍不得进入deployment。首轮`a2a56a7` F0的feature/solve/K4均正常，但
-   chunk minimum cosine/maximum relative error为`.9999365/.01127`；缩放joint至0仍失败，antithetic branches加`.03`非零joint
-   residual已在clean detached `e784eb9` formal F0达到`.9999965/.002641`并通过全部K1/K4、gradient、信息墙与唯一rank16资格项。
-   world6真实mapping profile一步`89.83s`、峰值约`25.60/26.00GB`且joint梯度非零；下一步直接fresh F3 macro5；
-4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
+1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及
+   `c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0/55710bb`六个有明确机制差异的F3均在完整451 conditions上non-pass。最新joint
+   macro10所有451条件都相对macro5改善，但fit、held-video与task-holdout都停在约`.13`，不是held-only overfit，也没有依据续训
+   macro20或做seed/LR/width/rank小扫；
+2. `55710bb`的additive joint scorer在四个独立fit tasks上被直接证伪为实际活动路径：dot-only相对baseline的16个family update
+   cosine median/minimum为`.999752/.999450`，joint-only recovery仅`.0018--.0116`，joint/dot score RMS median约`.0735`。小幅
+   nonzero gradient没有克服small-scalar residual的credit starvation，故本轮formal没有真正检验“高容量nonlinear content mapping
+   已学会”；
+3. 当前`stable_rank_event`只读取`P_lang`，完整`P_scene/P_process/rho/tau/sigma`不进入content query。task85与wrong task93的
+   `P_lang` cosine为`.99704`，经过当前query trunk后各family input/output query为`.9947--1.0`；而同task full `rank_event`
+   cosine为`.99750`、wrong-task dynamic为`.92811`。四任务wrong-language/wrong-dynamic最终update仍分别至少`.98020/.99211`相似，
+   说明G2已经提供的稳定可区分动态Program被当前P_lang-only query丢弃，输出退化为近task-agnostic family default；
+4. 同一task85的两fit-video训练、第三video无梯度factor-capacity对照直接优化最终B0/B1 factor。200步后current-key train/held分别为：
+   浅层q `.4235/.4237`、浅层v `.4849/.4852`、layer9 q `.2920/.2425`、layer9 v `.2905/.2212`、layer17 q
+   `.2741/.1345`，而action-in为`.9963/.9961`；owner-local raw-native projection没有消除深层缺口。另一个score对照中相同约
+   `.983` score cosine对action-in产生`.991` factor，却对浅层q/v只产生`.125/.075`，说明高条件数solve会放大很小的anchor误差，
+   内部score/cosine不能代替最终factor或closed-loop；
+5. 当前最早失效链为：`P_lang`-only task query坍为近相同code -> small residual使joint interaction实际未启用 -> q/v深层
+   pointwise candidate chart与高条件数solve不能形成跨video稳定functional anchor。下一修正必须同时以最小机制正对照证明：完整
+   G2 Program内容真实进入query、nonlinear interaction对输出有实质因果作用、浅/中/深q/v及action control的task-local factor可达性
+   明显提高，并用fit authority约束solve的误差放大；在此之前不启动新formal F3。raw native key、逐video dual/score、task/video表、
+   held gradients和旧realizer仍不得恢复；
+6. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
-5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
-6. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。
+7. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
+8. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。

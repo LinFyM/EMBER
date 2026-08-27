@@ -304,6 +304,12 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   `a2a56a7` F0只在chunk有效更新上失败；固定bank因果对照排除单纯scale并证明antithetic signed rows加`.03`非零joint residual
   可恢复合同。clean pushed detached `e784eb9`完整F0的chunk cosine/relative error为`.9999965/.002641`，K4、全部joint梯度、
   Action Meta 0和唯一rank16均通过；world6真实一步为`89.83s`、单卡峰值约25.60GB，现从fresh进入相同F3。
+- [x] clean pushed detached `55710bb`的joint compatibility已fresh完成macro5/macro10及完整451-condition F3；macro10
+  fit/held/p10/task-holdout为`.126205/.128720/.103610/.129465`，Gate non-pass且低于`3e4e9a0`。四task path ablation证明
+  dot-only更新几乎不变、joint-only recovery近零；wrong Program替换证明当前query近task-agnostic。task85跨三video final-factor
+  对照又证明action-in可达约`.996`，但浅层q/v只有`.42/.49`、layer9 held约`.24/.22`、layer17 q held`.13`，raw-native
+  projection也不充分。当前停止该checkpoint与macro20，不启动新formal；下一实现前先用fit-only最小正对照同时证明full Program
+  task content、实质nonlinear interaction及condition-stable深层q/v factor acquisition，不能继续点积残差小修或超参扫。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

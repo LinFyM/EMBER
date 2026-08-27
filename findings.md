@@ -722,6 +722,36 @@ K4 teacher reads均为0，38-target/76-tensor唯一rank16被policy实际消费�
 optimizer step：`89.83s`，单卡峰值allocated/reserved约`25.60/26.00GB`，4,102,024个compiler参数为唯一trainable owner，
 joint gradient probes全部非零且held/validation/test gradients为0。这只解封从fresh运行同一451-condition F3，不证明shared mapping。
 
+### 50. joint compatibility formal non-pass揭示Program、interaction与conditioning三层连续失效
+
+clean pushed detached `main@55710bb`的additive joint compatibility从fresh运行到macro5并按原world6 topology exact-resume至
+macro10，两个checkpoint均完整评估451 conditions。macro10 fit/held-video/task-holdout task median为
+`.126205/.128720/.129465`，held p10 `.103610`、held/fit `1.019925`；held q/v/action-in/action-out为
+`.025341/.095210/.121352/.276225`。所有451 conditions相对macro5改善且fit/held/task-holdout一致，说明没有评测缺失或单独的
+held泛化崩溃，但绝对值低于前一owner-query FiLM的`.163128`并远低于`.75/.50`，所以明确non-pass且不续macro20。
+
+四个fit-only tasks的checkpoint因果消融显示：关闭joint后16个family update cosine median/minimum为`.999752/.999450`且recovery
+平均只变`-.000175`；只保留joint时recovery仅`.0018--.0116`。joint/dot score RMS median约`.0735`，macro5到10 joint
+query/key参数相对变化通常只有约`1--2%`，small scalar residual使其虽然有梯度却没有成为实际selection路径。该结果淘汰当前
+small-residual additive启动/credit实现，不淘汰所有nonlinear compatibility。
+
+同一因果panel还揭示任务条件坍缩。task85与wrong task93的`P_lang` cosine为`.99704`，当前P_lang-only query trunk输出的各family
+query cosine为`.9947--1.0`；wrong-language替换后最终update family cosine minimum仍为`.98020`。相反，G2完整full
+`rank_event`在same-task不同video间为`.99750`，wrong-task dynamic为`.92811`，说明稳定且可区分的动态Program信息实际存在，但当前
+`stable_rank_event`没有读取它。wrong-dynamic替换后的最终update minimum仍为`.99211`，与代码中dynamic fields只控制measure、
+不进入content query完全一致。
+
+最后，task85两条fit video训练、第三条video零梯度的task-local final-factor对照把candidate/solve接口分开。200步后current-key
+train/held为target0 q `.4235/.4237`、target1 v `.4849/.4852`、target18 q `.2920/.2425`、target19 v
+`.2905/.2212`、target34 q `.2741/.1345`，action-in target36则为`.9963/.9961`。直接读取raw native并学习owner-local
+projection没有消除深层held缺口，故不能把“把key换回raw X”恢复为canonical修正。score-supervised对照还显示约`.983` score
+cosine对action-in可给`.991` factor，却对浅层q/v仅给`.125/.075`，证明高条件数native solve会把很小的anchor误差放大为大方向误差。
+
+由此当前最早失效链按顺序为：P_lang-only task code近坍缩；small-residual joint interaction未实际工作；高维q/v的pointwise
+candidate chart加高条件数solve无法产生跨video稳定functional anchor。F1 analytic operator、G1 free-code、G2 full Program、真实
+X/Y banks、chunked replay、rank4和唯一rank16均不受该局部non-pass影响。下一版只能由同时针对这三个接口的机制证据驱动，不能再用
+loss下降、非零gradient、score cosine或seed/LR/width小扫冒充修复。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

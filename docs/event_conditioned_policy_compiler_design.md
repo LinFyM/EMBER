@@ -227,9 +227,23 @@ task lookup或LR/seed/width小扫替代。
 `main@3e4e9a0`的上述FiLM从fresh到macro10后，451-condition fit/held/task-holdout为`.162011/.163128/.164562`，增量主要来自
 action-in，q/v仍为`.032001/.111951`。后继exact current-key见证表明：浅层target0/1在`1e-6`谱尾可达约`.994/.997`，但
 layer9 target18/19只能`.5186/.5583`、layer17 target34/35只能`.6537/.6079`，相同direct-native reference仍约
-`.995--.997`；深层短板主要在input score image。多种单target gauge-aware pair credit也未消除该差距。因此当前活动修正不是再扩大
+`.995--.997`；深层短板主要在input score image。多种单target gauge-aware pair credit也未消除该差距。因此当时活动修正不是再扩大
 owner query或改loss，而是按专家原本允许的一般bounded scalar `f_j`加入上式joint compatibility；点积作为残差保留，除此之外不改
 Program、native values、B0/solve/B1、rank、data或F3 Gate。该checkpoint-incompatible实现必须先通过真实F0，再fresh接受同一F3 Gate。
+
+`main@55710bb`的上述joint实现随后完成fresh macro5/macro10及完整451-condition评估。macro10 fit/held/p10/task-holdout为
+`.126205/.128720/.103610/.129465`，明确non-pass且低于`3e4e9a0`。四task因果消融中dot-only更新与baseline cosine
+minimum `.999450`，joint-only recovery仅`.0018--.0116`；所以small-residual additive path虽有非零gradient，实际上没有成为
+selection owner。wrong Program消融又证明P_lang-only query近task-agnostic：task85/wrong93的`P_lang` cosine `.99704`，query
+trunk后为`.9947--1.0`，而G2 full `rank_event`仍能保持same-task `.99750`、wrong-task `.92811`的有用间隔。当前不再把
+P_lang-only/small-residual joint scorer视为待续训canonical修正，也不启动macro20。
+
+task-local final-factor正对照进一步限定下一修正：两fit-video训练、第三video零梯度时，action-in可达约`.996`，但浅层q/v仅
+`.42/.49`、layer9 held约`.24/.22`、layer17 q held约`.13`；直接换成owner-local raw native projection也不改善深层held。
+因此下一实现尚未被写死为某个新decoder，但必须同时满足三个可证伪条件后才可fresh formal：完整G2 Program的task-dynamic内容真实
+进入query并保持same-task稳定；nonlinear query-candidate interaction在path ablation中对最终factor有实质因果作用；fit-only浅/中/
+深q/v与action control的final-factor acquisition明显提高且对solve condition number稳定。不得用task/video表、逐video analytic
+dual/score、raw-key直连、held outcome或参数小扫替代这些条件。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，
@@ -593,6 +607,11 @@ static-first-repeated、first-only、final-only、first+final，最后才跑shuf
 继续复用：Stage 0 v3、full-layer/horizon capture、transition matcher、event binding/segmenter、strict evaluator/controls、task expert bank、
 successful members、effect calibration、probe-particle capture、carrier/mobile-rank4容量证据，以及natural occupancy/action/reward基础设施。
 
-当前尚未实现且已完成全仓库orientation；得到owner明确许可后首先负责：真实38-target native input/output hooks、chunked bank accumulator、
-signed rank4 compiler、free-code oracle optimizer及其strict250 evaluation wiring。它们必须形成一个canonical实现面，不恢复任何
-退役Writer或realizer。
+当前活动树已经实现并验证真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、
+G2 Natural Program、B0 statistics/spectral solve、B1 exact signed replay、small-core rank4 canonicalization、rank12+4唯一rank16、
+F0/F1/F2/F3 mapping与strict evaluator wiring；Action Meta默认路径保持关闭。`55710bb`仍是唯一tracked compiler实现面，但其
+P_lang-only/small-residual joint scorer已有formal non-pass与根因证据，不能被当作通过组件或Final初始化authority。
+
+当前尚未实现的是满足上一节三个正对照的下一版shared Program-to-functional-anchor mapping，以及其通过后才允许恢复的F4 scale/
+functional、F5 Dynamic-K、F6 held5 closed-loop、G4/G5和Final。下一版必须替换失败接口而保持一个canonical运行面；不得恢复退役
+Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

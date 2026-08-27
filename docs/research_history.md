@@ -699,3 +699,34 @@ canonicalization或bank-global statistic到稳定functional anchor的映射，�
 - `runs/analysis/pi05_ecp_g3_input_owner_local_capacity_3e4e9a0_m10_gpu01p012346_20260827/`；
 - `runs/analysis/pi05_ecp_g3_output_owner_local_capacity_3e4e9a0_m10_gpu01p012346_20260827/`；
 - `runs/analysis/pi05_ecp_g3_free_owner_query_capacity_3e4e9a0_m10_gpu01p012346_20260827/`。
+
+## 38. additive joint compatibility F3 non-pass与三层根因定位
+
+在exact current-key image证明深层q/v线性点积失容后，`main@55710bb`保留真实X/Y、B0 covariance solve、B1 exact replay、
+frozen G2 Program、rank/data/loss/Gate，只给四family加入bounded additive joint compatibility并保留dot residual。该实现先以
+antithetic signed rows和small-nonzero joint scalar通过formal F0，随后从fresh训练到macro5并按world6 exact-resume至macro10。
+两个checkpoint各由六个独立worker完整评估451 conditions。macro10 fit/held-video/task-holdout task median为
+`.126205/.128720/.129465`，held p10 `.103610`、held/fit `1.019925`；held q/v/action-in/action-out为
+`.025341/.095210/.121352/.276225`，Gate明确non-pass且低于前一owner-query FiLM `.163128`。
+
+fit-only checkpoint path ablation覆盖tasks `16/72/85/93`。关闭joint后16个family update cosine median/minimum为
+`.999752/.999450`，recovery平均变化仅`-.000175`；joint-only recovery为`.0018--.0116`。wrong-language与wrong-dynamic替换
+也几乎不改变最终update。对task85进一步读取内部Program：same-task full `rank_event` cosine `.99750`，wrong-task dynamic为
+`.92811`；但wrong-task `P_lang`本身为`.99704`，经当前P_lang-only query trunk后各family为`.9947--1.0`。因此该formal实际仍
+依赖旧dot路径，并把G2 full Program中的主要task-dynamic信息排除在content query之外；非零gradient不足以证明joint路径被使用。
+
+同一task85又完成两fit-video训练、第三video零梯度的task-local final-factor对照。200步后current frozen key的train/held为：
+target0 q `.4235/.4237`、target1 v `.4849/.4852`、target18 q `.2920/.2425`、target19 v
+`.2905/.2212`、target34 q `.2741/.1345`，action-in target36为`.9963/.9961`。owner-local raw-native projection没有
+改善深层held。另一个score-supervised对照中，约`.983` score cosine对action-in产生约`.991` factor，但对浅层q/v只产生
+`.125/.075`，直接显示高条件数solve对小anchor误差的放大。解析direct reference仍约`.99--1.0`，所以F1算术与native span没有
+失败；失败的是从稳定Program和candidate content识别可跨video工作的近精确functional anchor。
+
+该结果淘汰`55710bb`的P_lang-only/small-residual joint scorer及“换成raw native key即可”的直接修正，不淘汰G1/G2、
+bank-conditioned两阶段Pass B、signed pooling、rank4或所有nonlinear scorer。关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_joint_compatibility_fold0_m5_55710bb_gpu01p023456_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_joint_compatibility_macro10_mapping_eval_55710bb_gpu01p023456_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_joint_path_causality_t{16,72,85,93}_55710bb_macro10_20260827.json`；
+- `runs/analysis/pi05_ecp_g3_joint_path_context_t85_55710bb_macro10_20260827.json`；
+- `runs/analysis/pi05_ecp_g3_input_content_capacity_t85_j{0,1,18,19,34,36}_s200_factor_55710bb_macro10_20260827.json`。

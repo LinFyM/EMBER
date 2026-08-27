@@ -103,16 +103,16 @@ class FixedOwnerQueryFiLM(torch.nn.Module):
         )
 
     def input(self, query: torch.Tensor, *, target: int) -> torch.Tensor:
-        return self._apply(
+        return self._modulate(
             query, scale=self.input_scale[target], shift=self.input_shift[target]
         )
 
     def output(self, query: torch.Tensor, *, target: int) -> torch.Tensor:
-        return self._apply(
+        return self._modulate(
             query, scale=self.output_scale[target], shift=self.output_shift[target]
         )
 
-    def _apply(
+    def _modulate(
         self,
         query: torch.Tensor,
         *,

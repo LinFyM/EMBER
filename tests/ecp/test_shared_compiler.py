@@ -191,6 +191,7 @@ def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
     compiler = SharedNativeFactorCompiler(
         owners, program_width=8, event_slots=4, anchor_width=6
     )
+    compiler.to(torch.device("cpu"))
     state = compiler.anchor_scorer.program_state(_program(len(owners), 8, 4))
     input_before = compiler.anchor_scorer.input_queries(state).detach().clone()
     output_groups = compiler.anchor_scorer.query_owner_film.output_shift[0].shape[0]

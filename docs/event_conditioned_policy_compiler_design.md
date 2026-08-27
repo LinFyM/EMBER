@@ -254,8 +254,23 @@ task-local final-factor正对照进一步限定下一修正：两fit-video训练
 held video上的overall recovery median/p10/min达到`.945820/.935622/.908717`，四family最低也远高于`.75`；因此稳定functional
 target广泛存在，旧`.13`不是teacher不可一致。第二，family-shared native input top128只保留q/v约`.797`能量，而固定target自己的
 top128在抽查深层targets上约`.959--.976`，浅层接近1；因此target-native basis是由谱证据指定的ownership修正，不是width sweep。
-结合full Program wrong-task separation与旧joint旁路消融，当前canonical实现就是上文的full-Program query、target-native basis、
-primary normalized bilinear compatibility和fit-only consensus paired-update credit；保持真实banks、B0/solve/B1、rank/data/Gate不变。
+结合full Program wrong-task separation与旧joint旁路消融，`3062de8`曾把上文的full-Program query、target-native basis、primary
+normalized bilinear compatibility和fit-only consensus paired-update credit实现为唯一canonical surface；真实banks、B0/solve/B1、
+rank/data/Gate不变。该实现已从fresh完成macro5及完整451 conditions，但fit/held/p10/task-holdout仅
+`.084298/.082754/.072027/.093856`，因此明确non-pass且不续macro10。
+
+non-pass后的fit-only结构审计进一步修订了问题定义。40-task universal rank4在不读取task/video时已能取得held `.825054`、
+task-holdout `.835443`，说明现有carrier遗漏了大块公共修正，也说明仅用`.75/.50` recovery会接受universal shortcut。把
+`carrier12+universal4`重压rank12虽有`.998741` update cosine，但直接相减后的task85 q/v residual在真实native input bank中只剩
+约`.828/.765`解析可达性，不能直接成为新teacher。wrong full Program仍让最终q/v/action-in/action-out保持
+`.973/.981/.992/.948`，而wrong bank已把q/v/action-out降到`.863/.834/.569`；task-local current pointwise keys对held深层q/v也只到
+`.188/.177`，direct native reference则约`.997`。所以当前没有新的已裁决replacement：下一步先分别验证new-carrier下重新投影的
+native feasibility，以及读取bank-global fixed-size context的set-conditioned functional canonicalizer；两项正对照通过后才能登记
+下一唯一实现。最终权重仍必须由Program query与native content keys计算，不能变成task/frame lookup或高维factor head。
+
+当前F3固定四rank等幅即使给定完美direction，overall median/p10 ceiling也只有`.767572/.751380`，q/v family约
+`.666693/.723261`。下一实现因此应让spectrum/scale拥有与selection隔离的fit-only credit：selection loss对scale stop-gradient，
+scale/group-gain loss不得反传Program/candidate selection；这不提前恢复F4的functional/flow职责，也不得按held结果调`s_ref`。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，
@@ -512,7 +527,10 @@ G3按以下最小因果顺序推进，前一接口通过后才恢复后一职责
    F3通过，正式淘汰并删除off执行面，不继续pointwise key变体。
 4. **F3 bank-conditioned mapping**：开启regularized current-bank solve，冻结Program/source/carrier；held-video recovery median至少
    `0.75`、p10至少`0.50`、train/held ratio至少`0.8`，且两个相邻checkpoint稳定。train高held低时先检查functional anchor seed与
-   content泛化，不靠加宽或回归逐video dual。
+   content泛化，不靠加宽或回归逐video dual。以上数值是必要条件而非充分条件：fit-only task-independent prototype不得被计为pass；
+   formal前须用fit-only正对照预注册correct-vs-wrong Program资格，并按meta/target role分别汇报，确保task-conditioned selection而非
+   common update承担增量。若carrier重拟合，teacher必须来自`full expert - new carrier`后重新做的真实native projection，不能直接使用
+   代数差分factor。F3可用独立spectrum credit训练scale/group-gain，但selection与scale彼此stop-gradient；functional/flow仍留到F4。
 5. **F4 scale/functional qualification**：恢复全部75 fit tasks；K1 teacher只覆盖既有50 tasks并以mapping loss保护selection，
    scale/video职责独立更新。teacher paired update不得退化，functional、cross-episode flow、carrier preservation要改善；若低置信
    residual仍破坏carrier，再按第4节deployment-visible evidence加入confidence退回机制。
@@ -625,6 +643,8 @@ F0/F1/F2/F3 mapping与strict evaluator wiring；Action Meta默认路径保持关
 non-pass并已在唯一canonical实现面中被full-Program/target-native primary bilinear scorer替换；fit-only consensus只属于mapping
 loader，未进入Writer model state。
 
-当前尚未完成的是该新mapping的fresh完整451-condition F3 Gate，以及其通过后才允许恢复的F4 scale/functional、F5 Dynamic-K、
-F6 held5 closed-loop、G4/G5和Final。后续必须保持一个canonical运行面；不得恢复退役
+full-Program/target-native primary bilinear mapping已经fresh完成完整451-condition F3并non-pass；它仍是唯一活动代码面，但不再是
+待续训科学候选。当前尚未完成的是new-carrier native feasibility、set-conditioned functional canonicalizer/Program因果正对照及其
+通过后形成的下一唯一mapping实现；之后才允许fresh重跑F3，并在通过后恢复F4 scale/functional、F5 Dynamic-K、F6 held5 closed-loop、
+G4/G5和Final。后续必须保持一个canonical运行面；不得恢复退役
 Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

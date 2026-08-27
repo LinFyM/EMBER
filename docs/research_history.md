@@ -751,3 +751,32 @@ profile完整通过。以上仍是fit-only机制与工程qualification，不是4
 
 - `runs/analysis/pi05_ecp_g3_fit_consensus_update_held_video_ceiling_20260827.json`；
 - `runs/analysis/pi05_ecp_g3_fit_teacher_native_input_subspace_spectrum_20260827.json`。
+
+## 40. full-Program functional-anchor F3 formal non-pass与双重结构根因
+
+clean pushed detached `main@3062de8`的full-Program、38-target native basis、primary normalized bilinear functional-anchor实现从fresh
+完成macro5/25 steps；完整451-condition评测的fit/held-video/p10/task-holdout为
+`.084298/.082754/.072027/.093856`，held/fit `.981684`。四family held q/v/action-in/action-out为
+`.020707/.065711/.084290/.171636`，F3 Gate明确non-pass。train、held-video与task-holdout等量级，F1 operator/solve、信息墙、
+Action Meta 0、chunk replay与唯一rank16均正常；因此没有续macro10，也没有做超参扫。
+
+后续fit-only几何发现一套由40 fit tasks构造的task-independent universal rank4在held-video/task-holdout上已达
+`.825054/.835443` median，足以绕过原`.75/.50` mapping Gate而不证明Program/video因果。把它与现有carrier12合并后再压回rank12的
+update cosine为`.998741`，但直接代数相减后的task residual在task85 q/v真实native input bank中只保留约`.828/.765`解析可达性；
+所以这只是新carrier假设，必须从完整expert-minus-new-carrier重新投影验证，不能直接作为新teacher。
+
+四task因果干预中，wrong-task full Program仍保留q/v/action-in/action-out平均`.973/.981/.992/.948`的最终update cosine；wrong-task
+bank则使q/v/action-out降到`.863/.834/.569`，说明当前模型主要响应bank common content而非task Program。task85两fit-video的
+task-local current-key scorer对held q/v input subspace只到`.188/.177`，新target-native pointwise projection也只有`.171/.130`，
+原teacher direct native reference约`.997`；去掉universal项没有修复。一次fit-only backward又显示约`99.88%`原始gradient energy
+位于candidate encoders/trunks。综合证据把最早接口定位为：旧carrier遗漏公共修正，同时pointwise Program-to-functional-content
+canonicalizer没有获得task-conditioned selection；两者均需机制正对照后再形成唯一下一实现。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_functional_anchor_fold0_m5_gpu01p012345_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_functional_anchor_macro5_mapping_eval_3062de8_gpu01p012345_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_fit_consensus_geometry_v3_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_causality_t{16,72,85,93}_3062de8_macro5_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_input_content*_t85_j{18,19}_s200_factor_3062de8_macro5_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_gradient_groups_t85_3062de8_macro5_20260828.json`。

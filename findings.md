@@ -770,6 +770,47 @@ fit-video rank4 consensus的set-valued four-family paired-update direction；逐
 真实K1/K4 smoke和world6一步profile证明full Program、target candidates、Q/K、owner query和group gain均获得finite/nonzero梯度，
 Action Meta/source/Program/scale仍冻结，输出仍是唯一38-target rank16。该证据只证明新机制可优化，不等于F3 mapping已通过。
 
+### 52. functional-anchor F3揭示common-residual shortcut与pointwise acquisition双重结构失效
+
+clean pushed detached `main@3062de8`的full-Program/target-native primary bilinear replacement从fresh完成macro5/25 optimizer steps，
+随后六个只读workers完整覆盖451 conditions。fit、held-video、task-holdout task median为
+`.084298/.082754/.093856`，held p10 `.072027`、held/fit `.981684`；held q/v/action-in/action-out为
+`.020707/.065711/.084290/.171636`。训练、同task新video和task holdout同样低，排除了泛化崩溃；F1 solve residual、feature retained
+trace、Action Meta 0、唯一rank16和信息墙均正常。训练mean recovery从macro1 `.001057`升至macro5 `.077663`，但绝对F3 Gate仍差
+近一个数量级，因此不续macro10。
+
+fit-only update geometry暴露了此前Gate与teacher decomposition共同遗漏的shortcut。由40个fit tasks形成的一套task-independent
+universal rank4，在held-video/task-holdout上的overall median/p10分别为`.825054/.682588`与`.835443/.658992`；meta-meta、
+meta-target、target-target pairwise median分别为`.780820/.621810/.553756`。这意味着原F3 `.75/.50`口径本身可能被公共LoRA方向
+通过，而无需Program/video因果。现有`carrier12 + universal4`可被rank12以`.998741` update cosine重拟合；再加task-difference rank4
+对held原完整adapter的median/p10为`.956049/.946049`。但这只证明LoRA几何：直接从原native teacher减去universal后，task85 q/v
+在真实bank中的analytic input recovery仅约`.828/.765`，current key task-local held recovery也只有`.199/.135`。因此新的carrier
+假设必须从完整expert-minus-new-carrier重新做native projection/free-code capacity，不能把代数差分factor直接当新teacher或闭环成功。
+
+四task frozen-checkpoint因果干预给出一致的ownership证据。same-task dynamic替换后的四family update cosine均约`.999`；完全
+wrong-task Program后的q/v/action-in/action-out均值仍为`.973/.981/.992/.948`，recovery没有实质改变。相反，wrong-task native bank
+使q/v/action-out降到`.863/.834/.569`，但action-in仍为`.99990`。所以full Program信号确实连到query，却在context/scorer中被压平，
+当前输出主要跟随bank-common content而非task semantics。单task两fit-video factor正对照进一步显示，current frozen keys对held q/v
+input subspace只到`.188/.177`，新学target-native pointwise projection也只有`.171/.130`，而原teacher direct native reference为
+`.997/.997`；去掉common项没有修复该image。当前pointwise Program-query/candidate-key anchor即使有bank solve，也没有形成稳定的
+functional canonicalizer。
+
+最后，一次fit-only、零optimizer-step backward中global preclip norm为`21.51`而clip为1；约`99.88%`原始gradient energy位于
+input/output candidate encoders与family trunks，Program context、queries、compatibility和topology参数只占极小部分。Adam的逐坐标
+归一化意味着该比例不能单独证明某组实际step必然小，但它与checkpoint输出近task-independent、task-local capacity低值共同证明，
+当前图把绝大部分学习负担放在从头建立38-target native坐标，而没有获得Program-conditioned selection。下一修正必须先分别通过
+new-carrier native feasibility与set-conditioned canonicalizer/Program causality正对照，再fresh接受相同451 Gate；不再通过续训、
+LR/seed/width扫或universal prototype制造表面pass。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_functional_anchor_fold0_m5_gpu01p012345_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_functional_anchor_macro5_mapping_eval_3062de8_gpu01p012345_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_fit_consensus_geometry_v3_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_causality_t{16,72,85,93}_3062de8_macro5_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_input_content*_t85_j{18,19}_s200_factor_3062de8_macro5_20260828.json`；
+- `runs/analysis/pi05_ecp_g3_functional_anchor_gradient_groups_t85_3062de8_macro5_20260828.json`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

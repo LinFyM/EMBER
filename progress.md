@@ -1,14 +1,18 @@
 # EMBER progress
 
-更新时间：2026-08-27。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过；最新完整F3 Gate仍是`main@55710bb` macro10的fit/held/p10/task-holdout
-`.126205/.128720/.103610/.129465` non-pass。其后fit-only根因审计已证明稳定functional target本身广泛存在：40-task consensus在
-预注册held video上的recovery median/p10/min为`.945820/.935622/.908717`；同时family-shared q/v native top128只保留约`.797`
-能量，而target-owned top128在抽查深层targets为`.959--.976`。当前唯一implementation replacement据此改为full G2 Program query、
-38-target native basis、无residual bypass的normalized bilinear compatibility及fit-video consensus paired-update-only credit；真实K1/K4
-smoke与world6一步profile已经通过，但尚未启动fresh 451-condition formal，因此不能把这些内部正证据写成F3 Gate pass。
+更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过；最新完整F3 Gate现为clean pushed detached `main@3062de8`的functional-anchor macro5：
+fit/held/p10/task-holdout为`.084298/.082754/.072027/.093856`，明确non-pass且不续macro10。451 conditions全部完成，Action Meta 0、
+held gradient 0、operator/solve/chunk与唯一rank16合同正常；train、held-video和task-holdout同样低，失败不是泛化。
 
-## F3 functional-anchor formal launch contract
+non-pass后的结构审计发现两个耦合首因。第一，原task residual含有很大的task-independent common correction：fit-only universal rank4
+在held/task-holdout已达`.825054/.835443`，且可与carrier12以`.998741` cosine重压回rank12；但直接代数相减会把task85 q/v真实
+native input可达性降到约`.828/.765`，所以必须从expert-minus-new-carrier重新投影，不能直接改authority。第二，当前pointwise
+Program/candidate canonicalizer没有取得task selection：wrong full Program后的最终update仍约`.95--.99`，task-local current keys在
+held深层q/v只到`.188/.177`，而direct native reference约`.997`。当前暂停新formal和架构续训，先完成new-carrier native feasibility与
+set-conditioned canonicalizer/Program因果正对照。
+
+## F3 functional-anchor formal contract与结论
 
 - canonical workspace：`/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-functional-anchor-formal`，从包含本记录的clean pushed
   `origin/main` detached创建；训练前再次核对branch为空、status clean且HEAD等于origin/main；
@@ -23,6 +27,9 @@ smoke与world6一步profile已经通过，但尚未启动fresh 451-condition for
   `runs/logs/`同stem文件；预计单checkpoint与trainer state低于0.5GB，`/data1` launch前quota为`670.8G/1T`；
 - resume：fresh run不读取旧checkpoint；若科学合同、world topology或实现改变则使用新root fresh。只有optimizer step前的明确工程
   失败可在保存错误证据后清理incomplete root；一旦产生有效step/checkpoint便不得覆盖或伪装续跑。
+
+该合同已完整执行并正常结束。macro1到macro5 train mean recovery为`.001057/.011125/.031016/.053658/.077663`；随后固定六worker
+完整评估451 conditions并形成上述non-pass。checkpoint、trainer state、raw rows、aggregate及completion均保留；没有resume macro10。
 
 精确训练命令：
 
@@ -603,21 +610,22 @@ G1--G5 Gate或架构修正依据。
 ## 当前下一步与延期漂移
 
 1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及
-   `c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0/55710bb`六个有明确机制差异的F3均在完整451 conditions上non-pass。最新joint
-   macro10停在held `.128720`，不续macro20，也不做seed/LR/width/rank小扫；
-2. 旧joint根因链已经闭合：P_lang-only query丢弃full Program的wrong-task间隔，tiny additive项被dominant dot旁路，family-first
-   压缩又在owner调制前丢失深层q/v方向。40-task fit-only consensus held recovery `.945820/.935622/.908717`证明稳定functional
-   target存在；target-native谱证明38-target basis是结构性ownership修正，不是增加全局width；
-3. 当前唯一compiler selection由full G2 `rank_event` query和target-native keys经primary normalized bilinear content compatibility计算；
-   没有dot/additive residual旁路、task/video/frame/member lookup或逐video解析dual。P_lang+owner/rank的确定性稳定视图只留给后续
-   scale/group-gain；
-4. mapping loader只用每task/member的mapping-fit videos形成rank4 consensus update，明确排除预注册held video。训练loss只取
-   set-valued four-family paired update；input/output subspace降为诊断，held-video/task-holdout评估仍对原始逐video teacher只读。
-   consensus不进入compiler forward/checkpoint/deployment；
-5. 真实K1/K4 smoke已通过chunk有效更新、K4均匀/置换、Action Meta 0、76 tensors与policy consume；world6一步profile的6 tasks/
-   12 K1 conditions耗时`91.44s`、peak allocated约`25.65GB`，Q/K/owner/gain gradients均finite/nonzero。首次profile发现并修复旧稳定
-   神经旁路64个无梯度参数，第二次完整通过。下一步完成main集成后，从clean pushed detached commit fresh运行相同F3 macro5并完整
-   评估451 conditions；只有primary Gate和相邻趋势决定是否推进，不用profile或consensus ceiling代替；
+   `c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0/55710bb/3062de8`七个有明确机制差异的F3均在完整451 conditions上non-pass。
+   最新`3062de8` macro5停在held `.082754`，不续macro10，也不做seed/LR/width/rank小扫；
+2. `3062de8` train/held/task-holdout同样弱，当前不是泛化问题。wrong Program影响远小于wrong bank、task-local pointwise keys远低于
+   direct native reference、candidate参数承担约`99.88%`原始gradient energy；因此full Program虽连通但没有成为functional
+   selection owner，现有target-native pointwise anchor也没有解决跨bank canonicalization；
+3. fit-only universal rank4能以`.825054` held median形成不读task/video的F3 shortcut，并提示现carrier遗漏公共修正；
+   `carrier12+universal4`重压rank12虽达`.998741` cosine，但直接差分会损失native feasibility。下一步先拟合candidate carrier，随后从
+   完整expert-minus-new-carrier重新生成并验证native residual；任何新carrier都必须同时通过压缩、retention、四family free/direct
+   capacity、跨video consensus与唯一rank16合同；
+4. decomposition可达性明确后，先做小型task-local set-conditioned canonicalizer正对照。Program query可以读取固定尺寸、
+   set-equivariant bank-global context，但最终仍须以content query-key signed weights池化真实X/Y，不得输出高维factor或使用task/frame
+   lookup。只有代表性深层q/v和action family同时超过current pointwise image、correct Program实质优于wrong Program后才实现唯一
+   shared path；
+5. 新F3必须保留原451 primary并阻断universal shortcut：使用new-carrier下native-feasible task residual、role-balanced汇报和
+   correct/wrong Program因果资格；rank spectrum/scale以与selection隔离的credit更新，不能让固定等幅rank形成隐藏ceiling。通过前不恢复
+   F4 functional、F5 Dynamic-K或held5 closed-loop；
 6. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 7. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

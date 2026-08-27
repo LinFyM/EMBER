@@ -320,8 +320,26 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   world6真实一步profile覆盖6 tasks/12 K1 conditions，耗时`91.44s`、peak allocated约`25.65GB`，所有Q/K/owner/gain probes
   finite/nonzero。首次profile精确暴露旧P_lang-only稳定神经支路64个无梯度参数，已删除该冗余旁路并以确定性P_lang+owner/rank
   稳定视图修复，未放宽跨卡梯度完整性检查。
-- [ ] 将上述唯一实现面集成至clean pushed main，从detached frozen worktree fresh启动同一F3；先评macro5完整451 conditions，只有
-  primary recovery及相邻趋势有信息量才按预注册节点推进，不以consensus ceiling、profile loss或train recovery代替Gate。
+- [x] 上述唯一实现面已集成至clean pushed `main@3062de8`，并从detached frozen worktree fresh完成macro5/25 steps及完整
+  451-condition F3。fit/held-video/p10/task-holdout task recovery为`.084298/.082754/.072027/.093856`、held/fit
+  `.981684`；held q/v/action-in/action-out为`.020707/.065711/.084290/.171636`。primary Gate明确non-pass，不续macro10。
+- [x] 完成non-pass后的结构根因审计。fit-only universal rank4在held-video/task-holdout上已达`.825054/.835443`，证明当前
+  residual label含有很大的task-independent common correction；`carrier12 + universal4`重新压回rank12的update cosine为
+  `.998741`，但把common项直接从task residual相减后，task85 q/v在真实bank中的解析input可达性只剩约`.828/.765`，所以不能把
+  代数重心化冒充native-feasible新teacher。四task因果干预又显示wrong Program后的最终update仍为q/v/action-in/action-out
+  `.973/.981/.992/.948`，而wrong bank已降为`.863/.834/.9999/.569`；Program路径虽连通，却没有成为task selection owner。
+  task-local两fit-video正对照中，current keys对held q/v input subspace只到`.188/.177`，新target-native pointwise projection也仅
+  `.171/.130`，相同原teacher的direct native reference约`.997`。fit-only backward约`99.88%`原始gradient energy落在candidate
+  encoders/trunks。该证据链同时定位到错误carrier/residual分解与pointwise functional canonicalizer/Program acquisition，不是
+  train/held泛化、operator、chunk、Action Meta、欠训或普通超参问题。
+- [ ] 先做fit-only decomposition-feasibility oracle：只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
+  **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、
+  四family native direct/free-code可达性、跨video consensus与唯一rank16；若不成立，不保留该carrier，不能直接复用代数差分factor。
+- [ ] 在新旧decomposition的可达证据确定后，做最小task-local canonicalizer正对照：让Program query读取固定尺寸、set-equivariant的
+  bank-global context并最终仍以query-key signed weights池化真实X/Y；先在代表性深层q/v与action families上超过current pointwise
+  image，且correct/wrong Program形成实质functional差异。candidate basis、Program和scale必须有明确parameter ownership；rank
+  spectrum/scale用独立credit训练，不能再以四rank等幅冻结形成隐藏ceiling。只有这些接口通过才保留一个canonical实现并fresh重跑
+  同一451-condition F3；不以universal shortcut、内部loss或任务查表通过Gate。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

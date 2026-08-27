@@ -669,6 +669,19 @@ video/member/frame ID，task-dependent query仍由共享trunk读取`P_lang`。�
 不变、chunk有效更新一致性及唯一完整rank16 materialization全部保持。该证据排除了“新路径未接图”的工程问题，但不回答它能否
 提高shared mapping；后者仍只由fresh F3的451-condition primary及相邻checkpoint Gate判断。
 
+### 47. fixed-owner query只实质帮助action-in，q/v瓶颈继续下沉到candidate compatibility image
+
+clean detached `3e4e9a0`的fresh F3 macro10把held median从stable-anchor的`.142120`提高到`.163128`，40/40 tasks同向改善，但
+q/v仍只有`.032001/.111951`；action-in由`.180031`提高到`.256629`，几乎解释了全部新增收益。四臂ablation进一步显示input
+owner-query路径的overall因果效应只有`.000193`，output路径的主要效应也是action-in `.056749`，所以“query owner梯度已接通”与
+“q/v functional selection已学会”必须严格区分。
+
+仅优化fixed FiLM的task-local probes即使把query移动约半个base RMS，也不能改善完整q/v update。更强的free-query正控制直接移除
+FiLM、family trunk和Program-to-query表达约束，却在六个fit tasks上只把q/v update median由`.02983/.10730`提高到
+`.06519/.14487`。这不是严格收敛上界，但足以阻止下一步盲目扩展owner query head：当前candidate encoder、whitened compatibility与
+bounded anchor形成的可达image至少同样可疑。F1已证明真实X/Y、covariance solve和signed replay在analytic anchors下约`.9998`，故
+下一项高信息量工作是把“free score可达、current-key free query可达、shared Program query可达”三层容量分开，而不是再改loss或续训。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

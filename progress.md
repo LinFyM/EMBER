@@ -1,9 +1,9 @@
 # EMBER progress
 
-更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 mapping evidence仍为
-clean pushed `main@20acc33`的task-stable feature-anchor F3 macro5/macro10 non-pass，F1 bank-operator仍由clean pushed
-`main@435cb4a`通过。fixed-owner/group query FiLM已由clean pushed detached `main@d64f7ad`完成formal F0并通过全部资格检查；
-下一步从fresh运行同一F3 Gate，不重开G2、不改变bank/operator/rank/loss/data或Gate。
+更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 mapping evidence为
+clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM F3 macro5/macro10 non-pass，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过。最新fit-only机制诊断已把最早接口从fixed FiLM本身继续推进到candidate-key/compatibility
+image；在完成对应的收敛或解析容量裁决前，不直接实现更大的owner-query projection，也不重开G2或改变bank/operator/rank/data/Gate。
 
 ## 当前状态
 
@@ -163,6 +163,25 @@ clean pushed detached `main@d64f7ad`的formal F0随后通过全部资格项：�
 `6.04e-5`，feature metric误差`5.96e-8`；唯一完整rank16仍为38 targets/76 tensors并被policy实际消费。F0总时长`592.16s`，
 峰值allocated/reserved约`34.00/42.81GB`。该结果只证明新query路径与部署合同接通；下一步必须从fresh运行同一F3 primary及
 相邻checkpoint Gate，不用macro20盲续旧结构。
+
+该fresh F3已由clean pushed detached `main@3e4e9a0`完成macro5/macro10及451-condition完整评估。macro10 fit、held-video、
+task-holdout task median为`.162011/.163128/.164562`，held p10 `.133783`、held/fit `1.00689`；相对stable-anchor macro10，40/40
+held tasks全部改善，held median增加`.02007`。但held q/v/action-in/action-out只有`.032001/.111951/.256629/.256391`，仍远低于
+F3 `.75/.50` primary，两个相邻checkpoint均不能通过Gate。增量几乎全部来自action-in；因此不续macro20，也不把内部loss下降冒充
+shared mapping成功。
+
+同一checkpoint的四臂只读ablation显示：移除input owner-query路径使overall仅下降`.000193`，移除output路径下降`.014820`，其中
+action-in单独下降`.056749`而q/v变化约`1e-3`。随后六个fit-only task-local probes覆盖meta `1/36/43`与target `85/93/94`：仅优化
+fixed input FiLM并让query移动约`.53--.56`个base RMS时，q/v input recovery median只由`.09844/.09725`升至`.13306/.13525`，完整
+update反而由`.02983/.10730`降至`.02686/.10292`；仅优化fixed output FiLM并移动约`.48--.50`个base RMS时，q/v output由
+`.02150/.14045`升至`.05619/.21256`，完整update仅为`.03356/.08511`。这排除了“formal FiLM只是幅度太小”的解释。
+
+更强的正控制直接把同一六task的q/v input与output owner/rank/event queries全部变成task-local free tensors，同时冻结Program、
+candidate encoders、policy和bank operator；20步后q/v update median只由`.02983/.10730`升至`.06519/.14487`，q input/output为
+`.18546/.09746`，v为`.19614/.29710`。六task方向一致，Action Meta、held/validation/test gradients及shuffled/reversed use均为0。
+该20-step probe不是严格数学上界，但它已经否定“只把fixed FiLM换成更大的target-specific query head就足够”的直接推断；结合F1同bank
+analytic operator约`.9998`，下一步必须先对当前candidate feature/compatibility image做cached-to-convergence或解析容量裁决，再决定
+是修candidate canonicalizer还是让Program mapping利用更合适的bank-global sufficient statistics。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约
@@ -557,17 +576,15 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及`c1e26ce/84903aa/c3fc8e3`三次有明确机制差异的F3均在完整
-   451 conditions上non-pass，不续训旧checkpoint或做参数小扫；
+1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及`c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0`五次有明确机制差异的
+   F3均在完整451 conditions上non-pass，不续训旧checkpoint或做参数小扫；
 2. fixed-key/raw/FiLM tangent与`4117117` F0证明direct-native solve退化为raw-query transfer，该路线未启动formal；same-task三video
    bank-global oracle把最早接口收窄到task-stable anchor code识别，而不是parameter ownership、谱floor或loss权重；
-3. 当前唯一canonical修正以frozen G2 `P_lang`产生task-stable anchor query、动态Program控制event/frame measure，并在每video、每event
-   建立detached candidate-feature gauge；world6真实profile、全仓183 tests与architecture guard已通过。clean pushed detached F0的feature/
-   solve metric误差均为`5.96e-8`、有效update cosine最低`0.99999827`、K4置换误差`1.91e-6`，唯一non-pass是FP32 reduction order经
-   白化谱放大后单target最大相对update误差`0.1852%`略过旧`0.1%`线。当前先以FP64小Gram只计算验证指标，并以cosine最低
-   `0.99999`、最大相对误差`0.5%`及median相对误差`0.1%`联合约束正常数值误差；compiler/bank/训练数值路径均不改变。新clean
-   pushed authority重跑F0后才fresh启动同一F3 primary及相邻checkpoint Gate；只有通过后才恢复scale/functional、K2/K4和held5
-   strict250。逐video dual/score、task/video键和解析系数仍不得进入deployment；
+3. task-stable `P_lang` anchor与per-event feature gauge把held median提高到`.142120`；fixed-owner/group query FiLM进一步提高到
+   `.163128`，但增量几乎只来自action-in，q/v仍为`.032001/.111951`。六task fixed-FiLM与full free-query probes已排除“formal幅度
+   太小”及“只扩大owner query head就足够”的直接解释。当前先把free score、current-key free query和shared Program query三层
+   capacity分开，对candidate-key/compatibility image做cached-to-convergence或解析裁决；逐video dual/score、task/video键、held
+   gradients和解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

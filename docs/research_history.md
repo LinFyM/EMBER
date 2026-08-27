@@ -670,3 +670,32 @@ macro10 non-pass、F1 operator结论或后续`.75/.50` primary与相邻checkpoin
 - `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_7e232b0_task93_gpu01p0_20260827.log`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_d64f7ad_task93_gpu01p2_20260827.json`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_owner_query_film_f0_d64f7ad_task93_gpu01p2_20260827.log`。
+
+## 37. fixed-owner query F3 non-pass与candidate-compatibility image定位
+
+clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM从fresh训练到macro5，再按同一world6 topology exact-resume到
+macro10/50 updates；两个checkpoint均完整评估451 conditions。macro10 fit、held-video、task-holdout task median为
+`.162011/.163128/.164562`，held p10 `.133783`、held/fit `1.00689`。相对`20acc33` stable-anchor macro10，40/40 held tasks改善且
+held median增加`.02007`；但held q/v/action-in/action-out为`.032001/.111951/.256629/.256391`，仍远低于`.75/.50` primary，
+相邻Gate不能通过。新增幅度主要来自action-in，不能把overall增量解释为38-target query ownership已解决。
+
+同checkpoint四臂ablation中，移除input owner-query路径使overall仅下降`.000193`；移除output路径下降`.014820`，其中action-in下降
+`.056749`而q/v约为`1e-3`。六个fit-only tasks（meta `1/36/43`、target `85/93/94`）随后分别只优化fixed input或output FiLM 20步。
+即使query相对base移动约`.48--.56` RMS，input probe的q/v完整update由`.02983/.10730`降到`.02686/.10292`，output probe只到
+`.03356/.08511`。因此不是formal训练把FiLM幅度压得太小。
+
+更宽松的task-local正控制把q/v两侧所有owner/rank/event queries直接设为free tensors，保留相同candidate keys、B0 covariance solve、
+B1 exact signed replay和唯一rank16合同。六task 20步后的q/v update median仅为`.06519/.14487`，q input/output为
+`.18546/.09746`、v为`.19614/.29710`；所有task方向一致。该probe仍不是收敛后的严格上界，但已说明fixed FiLM不是唯一或最早充分
+瓶颈，不能直接把它替换成更大的per-target query projection并期待通过。结合F1 analytic operator约`.9998`，下一机制裁决应缓存同一
+真实bank，对当前candidate-key/compatibility image做收敛或解析容量审计；若该image本身不足，则修复functional candidate
+canonicalization或bank-global statistic到稳定functional anchor的映射，而不是继续扫LR、seed、width或训练长度。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_owner_query_film_fold0_m5_3e4e9a0_gpu01p012346_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_owner_query_film_macro10_mapping_eval_3e4e9a0_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_owner_query_path_ablation_3e4e9a0_m10_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_input_owner_local_capacity_3e4e9a0_m10_gpu01p012346_20260827/`；
+- `runs/analysis/pi05_ecp_g3_output_owner_local_capacity_3e4e9a0_m10_gpu01p012346_20260827/`；
+- `runs/analysis/pi05_ecp_g3_free_owner_query_capacity_3e4e9a0_m10_gpu01p012346_20260827/`。

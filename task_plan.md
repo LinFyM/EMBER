@@ -291,8 +291,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   `d64f7ad`以唯一rename修复并新增`.to(device)`回归。clean pushed detached `d64f7ad`随后通过真实K1/K4
   forward/gradient/chunk/materialization全部资格项，新input/output owner-query gradients为`.015828/.000958`，Action Meta 0，
   K4置换误差`1.91e-6`，chunk有效更新cosine最低`.99999826`且相对误差最高`.001863`，唯一38-target rank16被policy消费。
-- [ ] 从clean pushed detached authority fresh运行fixed-owner/group query FiLM同一F3 macro5；若有增量则按相同world topology
-  exact-resume到macro10并完整评估451 conditions。profile、诊断和内部loss仍不得冒充`.75/.50` primary及相邻checkpoint Gate。
+- [x] clean pushed detached `3e4e9a0`的fixed-owner/group query FiLM已从fresh运行macro5并按相同world6 topology exact-resume到
+  macro10，451-condition fit/held/task-holdout为`.162011/.163128/.164562`、held p10 `.133783`；40/40 held tasks相对stable
+  anchor改善，但增量主要来自action-in，`.75/.50` primary与相邻Gate仍non-pass，不续macro20。
+- [ ] 在保留F1 operator、G2 Program、rank、bank、data与Gate的前提下，先用同一真实fit bank完成candidate-key/compatibility image的
+  cached-to-convergence或解析容量裁决。六task fixed-FiLM与free-query 20-step probes已分别排除“FiLM幅度太小”和“只扩大owner query
+  projection即可”的直接解释，但后者不是严格数学上界。根据最早失败层再单变量修复candidate canonicalizer或bank-global functional
+  anchor mapping；不得用LR/seed/width小扫、held梯度或逐video lookup替代该裁决。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

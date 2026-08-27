@@ -300,7 +300,9 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   线性dot-product score image对深层input失容，而不是再调loss、owner projection、LR或训练步数。
 - [ ] 用一个canonical family-shared additive joint compatibility替换“只有线性点积”的限制，同时保留点积残差及既有Program、
   candidate encoder、B0/solve/B1、rank、data、loss和Gate。先完成定向CPU合同、真实K1/K4 F0、显存/吞吐profile及Action Meta 0证明；
-  通过后从clean pushed detached commit fresh运行相同451-condition F3，不把内部容量或loss下降冒充mapping Gate。
+  通过后从clean pushed detached commit fresh运行相同451-condition F3，不把内部容量或loss下降冒充mapping Gate。首轮
+  `a2a56a7` F0只在chunk有效更新上失败；固定bank因果对照排除单纯scale并证明antithetic signed rows加`.03`非零joint residual
+  可恢复合同，当前以该唯一初始化修正重跑F0，不改Gate或其它科学变量。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

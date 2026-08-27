@@ -4,7 +4,9 @@
 clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM F3 macro5/macro10 non-pass，F1 bank-operator仍由
 clean pushed `main@435cb4a`通过。最新fit-only exact B0/B1解析见证已经完成candidate-key/compatibility image裁决：浅层q/v可在极弱
 谱尾恢复，而layer9/17深层q/v即使到`1e-6`也只有`.52--.65`，相同direct-native reference仍约`.995--.997`。当前因此只扩展
-shared bounded scalar compatibility，不重开G2或改变Program、bank/operator、rank、data、loss和Gate。
+shared bounded scalar compatibility，不重开G2或改变Program、bank/operator、rank、data、loss和Gate。`a2a56a7`首轮真实F0在
+训练前只因chunk有效更新合同失败；机制对照已定位到两个随机signed branches抵消并被满幅joint启动放大，当前正以antithetic
+branches加small-nonzero joint residual做唯一初始化修正，尚未把诊断pass冒充formal F0。
 
 ## 当前状态
 
@@ -587,7 +589,9 @@ G1--G5 Gate或架构修正依据。
    太小”及“只扩大owner query head就足够”的直接解释。exact current-key见证进一步证明layer9/17 q/v在`1e-6`谱下完整update仅
    `.5186/.5583/.6537/.6079`，而direct-native约`.995--.997`；所以当前最早接口是线性点积compatibility image的深层input容量，
    不是pair loss或共享梯度。唯一活动修正以旧点积为残差，加入family-shared additive joint bounded scalar scorer；逐video
-   dual/score、task/video键、held gradients和解析系数仍不得进入deployment；
+   dual/score、task/video键、held gradients和解析系数仍不得进入deployment。首轮`a2a56a7` F0的feature/solve/K4均正常，但
+   chunk minimum cosine/maximum relative error为`.9999365/.01127`；缩放joint至0仍失败，antithetic branches加`.03`非零joint
+   residual的固定bank对照达到`.9999965/.00264`，因此只修fresh初始化后从新clean detached commit重跑完整F0；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

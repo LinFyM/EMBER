@@ -701,6 +701,20 @@ native covariance solve和B1 signed pooling仍有容量；当前受限的`query 
 query/candidate的一个bounded scalar，不输出高维factor，不含task/video/frame/member表；Program、candidate encoder、真实banks、
 B0/solve/B1、rank、data、loss和F3 Gate均不变。该修正只有在真实F0及fresh 451-condition F3通过后才算shared mapping成立。
 
+### 49. joint scorer首轮F0失败来自signed初始化抵消，而不是chunk边界或新函数族本身
+
+clean pushed detached `a2a56a7`的首轮真实F0在训练前被chunk Gate拦截：同一cached task93 K1 bank的chunk4/one-chunk
+feature metric误差为0、solve metric误差约`7.2e-13`，但38-target有效更新minimum cosine为`.9999365`、maximum relative
+error为`.01127`，未达到`.99999/.005`合同。K4置换误差仍为`1.91e-6`且Action Meta为0；因此这是signed factor数值接口，
+不是video boundary、bank capture、solve或scientific mapping non-pass。
+
+固定同一真实bank的机制对照进一步隔离了原因。仅把additive scalar缩到`.1/.03/0`时maximum relative error仍为
+`.00863/.00859/.00859`，排除“只因joint幅度过大”；保持旧随机初始化流并以`.03`启动可降到`.00184`。更直接地，把positive/
+negative query rows初始化为严格antithetic且joint以`.03`非零残差启动时，在不依赖旧随机状态下达到minimum cosine
+`.9999965`、maximum relative error`.00264`；同一antithetic初始化若让joint满幅启动仍为`.00678`。故当前唯一修正同时采用
+可立即解绑训练的antithetic signed初始化和small-nonzero joint residual。它不改Program、bank、operator、rank、loss、data或Gate，
+也不放宽F0阈值；下一步必须从新clean pushed detached commit重跑完整K1/K4 F0。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

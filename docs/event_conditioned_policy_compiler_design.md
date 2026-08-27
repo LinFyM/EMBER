@@ -182,6 +182,10 @@ g = tanh(q dot f_tilde / sqrt(128)
          + w_family^T tanh(Wq_family q + Wk_family f_tilde))
 ```
 
+初始化时positive/negative query rows取严格antithetic值，但仍是两组独立参数、首步后即可分化；additive scalar以默认权重的
+`0.03`倍作为非零残差启动。前者避免两个无关随机signed branches在bank solve后偶然抵消，后者保留已验证dot路径且使
+joint query/key/scalar从第一步均可获得梯度；这些只约束fresh初始化，不在训练中绑权或限制joint项幅度。
+
 input/output分别按family共享参数；output groups按同一family scorer逐group计算以保持真实group measure和流式显存边界。
 以每视频单位质量的基础measure记native value为`v_n`，随后构造：
 

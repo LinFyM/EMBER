@@ -9,6 +9,9 @@ import torch
 from ember.ecp.bank_conditioning.operator import BankConditioningError
 
 
+JOINT_SCALAR_INITIAL_SCALE = 0.03
+
+
 class BoundedJointCompatibility(torch.nn.Module):
     """Score candidate content without emitting a native factor or lookup row.
 
@@ -26,6 +29,12 @@ class BoundedJointCompatibility(torch.nn.Module):
         self.query_projection = torch.nn.Linear(self.width, self.width, bias=False)
         self.key_projection = torch.nn.Linear(self.width, self.width, bias=True)
         self.scalar = torch.nn.Linear(self.width, 1, bias=False)
+        # Start as a small, nonzero residual around the established dot path.
+        # Nonzero weights give query/key/scalar gradients on the first step;
+        # the small amplitude avoids replacing the signed anchor before the
+        # joint content function has learned useful compatibility.
+        with torch.no_grad():
+            self.scalar.weight.mul_(JOINT_SCALAR_INITIAL_SCALE)
 
     def forward(self, query: torch.Tensor, key: torch.Tensor) -> torch.Tensor:
         """Score `[rank,event,branch,width]` against event-indexed candidates."""

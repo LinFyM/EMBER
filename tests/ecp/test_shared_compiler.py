@@ -4,6 +4,9 @@ from types import SimpleNamespace
 
 import torch
 
+from ember.ecp.bank_conditioning.compatibility import (
+    JOINT_SCALAR_INITIAL_SCALE,
+)
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
@@ -225,6 +228,29 @@ def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
     torch.testing.assert_close(input_before[1:], input_after[1:])
     assert not torch.equal(output_before[0], output_after[0])
     torch.testing.assert_close(output_before[1:], output_after[1:])
+
+
+def test_signed_queries_and_joint_residual_have_stable_initialization() -> None:
+    compiler = SharedNativeFactorCompiler(
+        _owners(), program_width=8, event_slots=4, anchor_width=6
+    )
+    scorer = compiler.anchor_scorer
+    for side in ("input", "output"):
+        heads = getattr(scorer, f"{side}_anchor_query")
+        for head in heads.values():
+            final = head[-1]
+            width = scorer.feature_width
+            torch.testing.assert_close(
+                final.weight[width:], -final.weight[:width]
+            )
+            torch.testing.assert_close(final.bias[width:], -final.bias[:width])
+        compatibilities = getattr(scorer, f"{side}_joint_compatibility")
+        for compatibility in compatibilities.values():
+            weight = compatibility.scalar.weight
+            assert bool(torch.count_nonzero(weight))
+            assert float(weight.detach().abs().max()) <= (
+                JOINT_SCALAR_INITIAL_SCALE / compatibility.width**0.5
+            )
 
 
 def test_anchor_code_is_stable_when_only_video_program_fields_change() -> None:

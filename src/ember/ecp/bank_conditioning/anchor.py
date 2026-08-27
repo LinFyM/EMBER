@@ -350,12 +350,25 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         return widths.pop()
 
     def _query_head(self, width: int) -> torch.nn.Sequential:
-        return torch.nn.Sequential(
+        head = torch.nn.Sequential(
             torch.nn.LayerNorm(width),
             torch.nn.Linear(width, 2 * width),
             torch.nn.GELU(),
             torch.nn.Linear(2 * width, 2 * self.feature_width),
         )
+        final = head[-1]
+        # Signed pooling begins with a genuine positive/negative pair instead
+        # of two unrelated random branches that can nearly cancel after the
+        # bank solve.  The rows remain independent parameters and may diverge
+        # immediately under learned credit.
+        with torch.no_grad():
+            final.weight[self.feature_width :].copy_(
+                -final.weight[: self.feature_width]
+            )
+            final.bias[self.feature_width :].copy_(
+                -final.bias[: self.feature_width]
+            )
+        return head
 
     def program_state(self, program: NaturalProgram) -> AnchorProgramState:
         targets = len(self.owners)

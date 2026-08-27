@@ -8,6 +8,28 @@ clean pushed `main@435cb4a`通过；最新完整F3 Gate仍是`main@55710bb` macr
 38-target native basis、无residual bypass的normalized bilinear compatibility及fit-video consensus paired-update-only credit；真实K1/K4
 smoke与world6一步profile已经通过，但尚未启动fresh 451-condition formal，因此不能把这些内部正证据写成F3 Gate pass。
 
+## F3 functional-anchor formal launch contract
+
+- canonical workspace：`/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-functional-anchor-formal`，从包含本记录的clean pushed
+  `origin/main` detached创建；训练前再次核对branch为空、status clean且HEAD等于origin/main；
+- upstream authority：G2 `c1493a1/macro_00000020`、source `pi05_source_base_v1_seed7_1k_e2cc238/step_00001000`、现有
+  50-task/451-condition native-teacher manifest、固定mapping split与LIBERO data root；Action Meta关闭；
+- scale与科学合同：F3 global statistics on，从fresh到macro5，共25 optimizer steps；每步固定6 logical tasks、3 meta+3 target、
+  每task两条K1 fit videos，fit-video consensus仅作训练label，held/validation/test gradient为0。macro5后完整只读451-condition Gate，
+  不用train loss或consensus ceiling代替；
+- runtime：gpu01物理`0,1,2,3,4,5`，world6 torchrun/DDP-style手工gradient sum，`NCCL_P2P_DISABLE=1`、`OMP_NUM_THREADS=8`；
+  启动前live snapshot显示六卡均为空闲且Default mode，gpu02已有他人任务，故不跨节点；
+- output：`runs/outputs/pi05_ecp_shared_compiler_g3_f3_functional_anchor_fold0_m5_gpu01p012345_r6_20260827/`，日志在
+  `runs/logs/`同stem文件；预计单checkpoint与trainer state低于0.5GB，`/data1` launch前quota为`670.8G/1T`；
+- resume：fresh run不读取旧checkpoint；若科学合同、world topology或实现改变则使用新root fresh。只有optimizer step前的明确工程
+  失败可在保存错误证据后清理incomplete root；一旦产生有效step/checkpoint便不得覆盖或伪装续跑。
+
+精确训练命令：
+
+```bash
+env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_ecp_shared_compiler.py --config configs/pi05_ecp_shared_compiler_g3_v3.json --phase f3 --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_shared_compiler_g3_f3_functional_anchor_fold0_m5_gpu01p012345_r6_20260827 --stop-after-macro 5 --log-every 1
+```
+
 ## 当前状态
 
 两轮专家回复均已收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的

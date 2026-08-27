@@ -2,8 +2,9 @@
 
 更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 mapping evidence为
 clean pushed detached `main@3e4e9a0`的fixed-owner/group query FiLM F3 macro5/macro10 non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。最新fit-only机制诊断已把最早接口从fixed FiLM本身继续推进到candidate-key/compatibility
-image；在完成对应的收敛或解析容量裁决前，不直接实现更大的owner-query projection，也不重开G2或改变bank/operator/rank/data/Gate。
+clean pushed `main@435cb4a`通过。最新fit-only exact B0/B1解析见证已经完成candidate-key/compatibility image裁决：浅层q/v可在极弱
+谱尾恢复，而layer9/17深层q/v即使到`1e-6`也只有`.52--.65`，相同direct-native reference仍约`.995--.997`。当前因此只扩展
+shared bounded scalar compatibility，不重开G2或改变Program、bank/operator、rank、data、loss和Gate。
 
 ## 当前状态
 
@@ -39,10 +40,11 @@ Program/native anchor compatibility、可开关的FP64谱solve和B1 exact signed
 各video的adj/init/goal边界。F2的off模式精确定义为`C=I`：保留centered first-moment native anchor与B1，不是固定query或第二套
 deployment Writer。50-task/451-condition split预注册为329 fit、40 held-video、82 held-task；每macro用固定5次`3 target + 3 meta`
 更新覆盖全部15个target-fit并轮换15/25个meta-fit，world size只做cost-balanced吞吐分片。mapping训练只解冻anchor scorer，
-Program/source/scale/Action Meta均冻结；相邻checkpoint稳定性和held/fit口径已进入Gate。全仓在当前实现上为`180 passed`。
+Program/source/scale/Action Meta均冻结；相邻checkpoint稳定性和held/fit口径已进入Gate。全仓当前为`184 passed`。
 
 实现ownership保持单一：`shared_compiler.py`是唯一deployment Writer的B0/B1 orchestration；`bank_conditioning/anchor.py`与
-`operator.py`分别拥有content mapping和数值operator；`mapping*.py`只拥有F2/F3 acquisition/evaluation/Gate，`f0.py`只拥有一次
+`compatibility.py`分别拥有Program/candidate content与joint scalar score，`operator.py`拥有数值operator；`mapping*.py`只拥有F2/F3
+acquisition/evaluation/Gate，`f0.py`只拥有一次
 formal prelaunch qualification，三个scripts均为薄入口。旧v1/v2 config与旧training/evaluation模块只用于读取既有formal history，
 active train入口已唯一指向v3 mapping，不是fallback。若F2失败且F3通过，删除`C=I` off执行模式；F3结束后mapping-only训练面随
 F4 joint owner演化或退役，不另建平行Writer。
@@ -582,9 +584,10 @@ G1--G5 Gate或架构修正依据。
    bank-global oracle把最早接口收窄到task-stable anchor code识别，而不是parameter ownership、谱floor或loss权重；
 3. task-stable `P_lang` anchor与per-event feature gauge把held median提高到`.142120`；fixed-owner/group query FiLM进一步提高到
    `.163128`，但增量几乎只来自action-in，q/v仍为`.032001/.111951`。六task fixed-FiLM与full free-query probes已排除“formal幅度
-   太小”及“只扩大owner query head就足够”的直接解释。当前先把free score、current-key free query和shared Program query三层
-   capacity分开，对candidate-key/compatibility image做cached-to-convergence或解析裁决；逐video dual/score、task/video键、held
-   gradients和解析系数仍不得进入deployment；
+   太小”及“只扩大owner query head就足够”的直接解释。exact current-key见证进一步证明layer9/17 q/v在`1e-6`谱下完整update仅
+   `.5186/.5583/.6537/.6079`，而direct-native约`.995--.997`；所以当前最早接口是线性点积compatibility image的深层input容量，
+   不是pair loss或共享梯度。唯一活动修正以旧点积为残差，加入family-shared additive joint bounded scalar scorer；逐video
+   dual/score、task/video键、held gradients和解析系数仍不得进入deployment；
 4. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 5. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

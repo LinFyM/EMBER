@@ -344,7 +344,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
     ) -> torch.Tensor:
         keys = self.anchor_scorer.input_keys(value, metadata, target=target)
         event = self.anchor_scorer.input_compatibility(
-            query, whitener.whiten(keys)
+            query, whitener.whiten(keys), target=target
         )
         return self._effective_input_compatibility(event, weights, ratio)
 
@@ -368,7 +368,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             ),
             dim=1,
         )
-        event = self.anchor_scorer.output_compatibility(query, whitened)
+        event = self.anchor_scorer.output_compatibility(
+            query, whitened, target=target
+        )
         return self._effective_output_compatibility(event, weights, ratio)
 
     def _add_statistics_chunk(

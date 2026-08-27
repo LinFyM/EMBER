@@ -211,6 +211,27 @@ def _run_task(
     }
 
 
+def _mapping_gradient_probes(runtime: MappingRuntime) -> dict[str, Any]:
+    scorer = runtime.compiler.anchor_scorer
+    probes = {
+        "input_anchor": scorer.input_anchor_query["q"][-1].weight.grad,
+        "output_anchor": scorer.output_anchor_query["q"][-1].weight.grad,
+        "input_owner_query": scorer.query_owner_film.input_shift.grad,
+        "output_owner_query": scorer.query_owner_film.output_shift[0].grad,
+        "group_gain": scorer.group_gain["q"][-1].weight.grad,
+    }
+    for side in ("input", "output"):
+        joint = getattr(scorer, f"{side}_joint_compatibility")["q"]
+        probes.update(
+            {
+                f"{side}_joint_query": joint.query_projection.weight.grad,
+                f"{side}_joint_key": joint.key_projection.weight.grad,
+                f"{side}_joint_scalar": joint.scalar.weight.grad,
+            }
+        )
+    return probes
+
+
 def run_mapping_optimizer_step(
     runtime: MappingRuntime,
     *,
@@ -262,23 +283,7 @@ def run_mapping_optimizer_step(
     _sum_gradients(
         runtime.trainable_parameters, world_size=runtime.context.world_size
     )
-    probes = {
-        "input_anchor": runtime.compiler.anchor_scorer.input_anchor_query[
-            "q"
-        ][-1].weight.grad,
-        "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query[
-            "q"
-        ][-1].weight.grad,
-        "input_owner_query": (
-            runtime.compiler.anchor_scorer.query_owner_film.input_shift.grad
-        ),
-        "output_owner_query": (
-            runtime.compiler.anchor_scorer.query_owner_film.output_shift[0].grad
-        ),
-        "group_gain": runtime.compiler.anchor_scorer.group_gain["q"][
-            -1
-        ].weight.grad,
-    }
+    probes = _mapping_gradient_probes(runtime)
     probe_norms = {}
     for name, gradient in probes.items():
         if gradient is None or not bool(torch.isfinite(gradient).all()):

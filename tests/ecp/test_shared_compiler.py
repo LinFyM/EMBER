@@ -149,6 +149,8 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     assert set(compiler.anchor_scorer.language_context) == families
     assert set(compiler.anchor_scorer.input_candidates) == families
     assert set(compiler.anchor_scorer.output_candidates) == families
+    assert set(compiler.anchor_scorer.input_joint_compatibility) == families
+    assert set(compiler.anchor_scorer.output_joint_compatibility) == families
     assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
     assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
     assert (
@@ -159,6 +161,18 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         compiler.anchor_scorer.output_candidates["q"].direction_input.weight.grad
         is not None
     )
+    for scorer in (
+        compiler.anchor_scorer.input_joint_compatibility["q"],
+        compiler.anchor_scorer.output_joint_compatibility["q"],
+    ):
+        for parameter in (
+            scorer.query_projection.weight,
+            scorer.key_projection.weight,
+            scorer.scalar.weight,
+        ):
+            assert parameter.grad is not None
+            assert bool(torch.isfinite(parameter.grad).all())
+            assert bool(torch.count_nonzero(parameter.grad))
     assert compiler.anchor_scorer.input_owner_scale.grad is not None
     assert compiler.anchor_scorer.output_owner_scale.grad is not None
     assert compiler.anchor_scorer.query_owner_film.input_shift.grad is not None

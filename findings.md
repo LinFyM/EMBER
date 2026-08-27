@@ -682,6 +682,25 @@ FiLM、family trunk和Program-to-query表达约束，却在六个fit tasks上只
 bounded anchor形成的可达image至少同样可疑。F1已证明真实X/Y、covariance solve和signed replay在analytic anchors下约`.9998`，故
 下一项高信息量工作是把“free score可达、current-key free query可达、shared Program query可达”三层容量分开，而不是再改loss或续训。
 
+### 48. 深层target解析见证证明线性query-key image本身失容，根因不只是loss或共享梯度
+
+在`3e4e9a0/macro10`同一task85/video34真实bank上，六task free-query延长到100步后q/v update仍仅约`.1455/.2197`；进一步把
+credit缩到单个target，分别使用update-only、先subspace后update、small-core SVD balanced pair和条件最小二乘pair，也只得到约
+`.06--.21`。这些对照均为fit-only、Action Meta 0、冻结Program/candidate/operator，并且没有held/validation梯度；它们排除了
+“只因18个target平均稀释”以及“换一个gauge-aware pair loss就会恢复”的解释。
+
+更决定性的exact B0/solve/B1解析见证将teacher native dual投影回**当前冻结candidate key产生的compatibility image**。浅层
+target0 q与target1 v在放宽到`1e-6`奇异尾时仍可达到约`.994/.997`，但layer9的target18/19只能达到
+`.5186/.5583`，layer17的target34/35也只有`.6537/.6079`；稳定`1e-3`谱下四个深层target更只有
+`.0861/.0892/.1824/.2076`。相同bank直接native factor reference仍为`.995--.997`，而深层失败主要来自input侧：`1e-6`下input
+rank均值仅约`.51--.65`，output侧已约`.995--1.0`，且所需input key-image coefficient RMS最高约`5.7e4`。因此真实X/Y、rank4、
+native covariance solve和B1 signed pooling仍有容量；当前受限的`query dot whitened_key`函数族却无法稳定表示深层input选择。
+
+这一结果为单一结构修正提供了直接资格：保留旧点积作为已验证浅层残差，同时按专家原式允许的
+`tanh f_j(c, X_hat, metadata, assignment)`加入family-shared additive joint compatibility。它仍只输出每个
+query/candidate的一个bounded scalar，不输出高维factor，不含task/video/frame/member表；Program、candidate encoder、真实banks、
+B0/solve/B1、rank、data、loss和F3 Gate均不变。该修正只有在真实F0及fresh 451-condition F3通过后才算shared mapping成立。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

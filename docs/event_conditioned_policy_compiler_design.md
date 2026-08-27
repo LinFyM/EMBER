@@ -173,7 +173,16 @@ f_tilde_e,n = K_e^(-1/2) (f_n - m_e)
 
 anchor query只由`P_lang`、固定owner/event/rank topology和family-shared参数产生，因此同一task不同video使用相同task anchor code；
 `P_scene/P_process/rho/tau/sigma`及Pass A canonical assignment仍决定每个video的event/frame measure。query与`f_tilde`的content dot
-product经有界非线性产生正/负compatibility。它不是固定系数、普通平均或自由查表，candidate bank仍是LoRA方向的必要Value路径。
+product保留为已验证的线性残差；当前shared scorer再用family-shared additive attention计算非分离的query/key content项，两者相加后经
+有界非线性产生正/负compatibility。它只输出scalar，不是固定系数、普通平均、自由查表或高维factor，candidate bank仍是LoRA方向的
+必要Value路径。首版具体形式为：
+
+```text
+g = tanh(q dot f_tilde / sqrt(128)
+         + w_family^T tanh(Wq_family q + Wk_family f_tilde))
+```
+
+input/output分别按family共享参数；output groups按同一family scorer逐group计算以保持真实group measure和流式显存边界。
 以每视频单位质量的基础measure记native value为`v_n`，随后构造：
 
 ```text
@@ -210,6 +219,13 @@ zero-init bounded fixed-owner input FiLM及fixed-owner/output-group FiLM。它�
 video/member/frame表；task dependence仍由共享query trunk基于`P_lang`计算。该修正不改变Program schema、真实banks、rank、teacher、
 data、optimizer或F3 Gate，与旧checkpoint不兼容，必须fresh验证。若仍失败，应按F3 owner/group与task-content分解继续定位，不能用
 task lookup或LR/seed/width小扫替代。
+
+`main@3e4e9a0`的上述FiLM从fresh到macro10后，451-condition fit/held/task-holdout为`.162011/.163128/.164562`，增量主要来自
+action-in，q/v仍为`.032001/.111951`。后继exact current-key见证表明：浅层target0/1在`1e-6`谱尾可达约`.994/.997`，但
+layer9 target18/19只能`.5186/.5583`、layer17 target34/35只能`.6537/.6079`，相同direct-native reference仍约
+`.995--.997`；深层短板主要在input score image。多种单target gauge-aware pair credit也未消除该差距。因此当前活动修正不是再扩大
+owner query或改loss，而是按专家原本允许的一般bounded scalar `f_j`加入上式joint compatibility；点积作为残差保留，除此之外不改
+Program、native values、B0/solve/B1、rank、data或F3 Gate。该checkpoint-incompatible实现必须先通过真实F0，再fresh接受同一F3 Gate。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，

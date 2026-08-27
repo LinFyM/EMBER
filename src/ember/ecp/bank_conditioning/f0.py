@@ -442,6 +442,24 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         .direction_input.weight.grad,
         "output_candidate": runtime.compiler.anchor_scorer.output_candidates["q"]
         .direction_input.weight.grad,
+        "input_joint_query": runtime.compiler.anchor_scorer.input_joint_compatibility[
+            "q"
+        ].query_projection.weight.grad,
+        "input_joint_key": runtime.compiler.anchor_scorer.input_joint_compatibility[
+            "q"
+        ].key_projection.weight.grad,
+        "input_joint_scalar": runtime.compiler.anchor_scorer.input_joint_compatibility[
+            "q"
+        ].scalar.weight.grad,
+        "output_joint_query": runtime.compiler.anchor_scorer.output_joint_compatibility[
+            "q"
+        ].query_projection.weight.grad,
+        "output_joint_key": runtime.compiler.anchor_scorer.output_joint_compatibility[
+            "q"
+        ].key_projection.weight.grad,
+        "output_joint_scalar": runtime.compiler.anchor_scorer.output_joint_compatibility[
+            "q"
+        ].scalar.weight.grad,
         "stable_language": runtime.compiler.anchor_scorer.language_context["q"][
             1
         ].weight.grad,

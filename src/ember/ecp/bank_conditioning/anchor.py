@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -18,6 +17,7 @@ from ember.ecp.native_factors import (
 )
 from ember.ecp.natural_program import NaturalProgram
 
+from ember.ecp.bank_conditioning.compatibility import BoundedJointCompatibility
 from ember.ecp.bank_conditioning.operator import BankConditioningError
 
 
@@ -216,24 +216,10 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         self.group_gain = torch.nn.ModuleDict(
             {family.value: self._group_gain_head(width) for family in families}
         )
-        self.input_candidates = torch.nn.ModuleDict(
-            {
-                family.value: NativeCandidateEncoder(
-                    self._family_native_width(family, output=False),
-                    self.feature_width,
-                )
-                for family in families
-            }
-        )
-        self.output_candidates = torch.nn.ModuleDict(
-            {
-                family.value: NativeCandidateEncoder(
-                    self._family_native_width(family, output=True),
-                    self.feature_width,
-                )
-                for family in families
-            }
-        )
+        self.input_candidates = self._candidate_encoders(families, output=False)
+        self.output_candidates = self._candidate_encoders(families, output=True)
+        self.input_joint_compatibility = self._compatibility_heads(families)
+        self.output_joint_compatibility = self._compatibility_heads(families)
         hidden = 2 * self.feature_width
         self.input_owner_scale = torch.nn.Parameter(
             torch.zeros(len(self.owners), hidden)
@@ -261,6 +247,29 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         )
         self.time_metadata = torch.nn.Linear(2, self.feature_width, bias=False)
         self._reset_structured_parameters(families)
+
+    def _compatibility_heads(
+        self, families: Sequence[TargetFamily]
+    ) -> torch.nn.ModuleDict:
+        return torch.nn.ModuleDict(
+            {
+                family.value: BoundedJointCompatibility(self.feature_width)
+                for family in families
+            }
+        )
+
+    def _candidate_encoders(
+        self, families: Sequence[TargetFamily], *, output: bool
+    ) -> torch.nn.ModuleDict:
+        return torch.nn.ModuleDict(
+            {
+                family.value: NativeCandidateEncoder(
+                    self._family_native_width(family, output=output),
+                    self.feature_width,
+                )
+                for family in families
+            }
+        )
 
     def _reset_structured_parameters(
         self, families: Sequence[TargetFamily]
@@ -531,27 +540,38 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         return functional.normalize(encoded + metadata, dim=-1)
 
     def input_compatibility(
-        self, query: torch.Tensor, key: torch.Tensor
+        self, query: torch.Tensor, key: torch.Tensor, *, target: int
     ) -> torch.Tensor:
         if (
-            query.shape[-1] != self.feature_width
+            not 0 <= target < len(self.owners)
+            or query.ndim != 4
+            or query.shape[-1] != self.feature_width
             or key.shape[0] != self.event_slots
             or key.shape[-1] != self.feature_width
             or key.ndim != 5
         ):
             raise BankConditioningError("input anchor query/key width changed")
-        score = torch.einsum("rebd,etphd->rebtph", query, key)
-        return torch.tanh(score / math.sqrt(self.feature_width))
+        family = self.owners[target].family.value
+        return self.input_joint_compatibility[family](query, key)
 
     def output_compatibility(
-        self, query: torch.Tensor, key: torch.Tensor
+        self, query: torch.Tensor, key: torch.Tensor, *, target: int
     ) -> torch.Tensor:
         if (
-            query.shape[-1] != self.feature_width
+            not 0 <= target < len(self.owners)
+            or query.ndim != 5
+            or query.shape[-1] != self.feature_width
             or key.shape[0] != self.event_slots
             or key.shape[-1] != self.feature_width
             or key.ndim != 7
+            or query.shape[0] != key.shape[1]
         ):
             raise BankConditioningError("output anchor query/key width changed")
-        score = torch.einsum("grebd,egtphud->grebtphu", query, key)
-        return torch.tanh(score / math.sqrt(self.feature_width))
+        family = self.owners[target].family.value
+        scorer = self.output_joint_compatibility[family]
+        return torch.stack(
+            tuple(
+                scorer(query[group], key[:, group])
+                for group in range(query.shape[0])
+            )
+        )

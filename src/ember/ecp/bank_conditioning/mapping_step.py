@@ -108,6 +108,20 @@ def load_mapping_condition_teachers(
     return rows
 
 
+def load_mapping_consensus_teachers(
+    runtime: MappingRuntime, condition: MappingCondition
+):
+    expected = tuple(sorted(runtime.mapping_split.member_names[condition.authority_id]))
+    rows = runtime.consensus_teachers.lookup_members(
+        authority_id=condition.authority_id,
+        video_demo=condition.video_demo,
+        member_names=expected,
+    )
+    if tuple(row.member_name for row in rows) != expected:
+        raise RuntimeError("G3 mapping consensus lost its complete member set")
+    return rows
+
+
 def mapping_recovery_record(loss: Any) -> dict[str, Any]:
     return {
         "mapping_loss": float(loss.total.detach()),
@@ -151,8 +165,9 @@ def _run_task(
 ) -> dict[str, Any]:
     tick = time.monotonic()
     temperature = float(runtime.config["optimization"]["mapping"]["temperature"])
+    primary_teachers = load_mapping_consensus_teachers(runtime, condition)
+    companion_teachers = load_mapping_consensus_teachers(runtime, companion)
     primary_output, metrics = prepare_mapping_condition_output(runtime, condition)
-    primary_teachers = load_mapping_condition_teachers(runtime, condition)
     primary_loss = paired_mapping_loss(
         output=primary_output,
         teachers=primary_teachers,
@@ -164,7 +179,6 @@ def _run_task(
     companion_output, companion_metrics = prepare_mapping_condition_output(
         runtime, companion
     )
-    companion_teachers = load_mapping_condition_teachers(runtime, companion)
     companion_loss = paired_mapping_loss(
         output=companion_output,
         teachers=companion_teachers,
@@ -194,6 +208,7 @@ def _run_task(
         "role": condition.role,
         "video_demo": condition.video_demo,
         "companion_video_demo": companion.video_demo,
+        "teacher_target": "fit_video_rank4_truncated_mean_update",
         **mapping_recovery_record(primary_loss),
         "companion": mapping_recovery_record(companion_loss),
         "cross_video_loss": float(consistency.total.detach()),
@@ -221,12 +236,14 @@ def _mapping_gradient_probes(runtime: MappingRuntime) -> dict[str, Any]:
         "group_gain": scorer.group_gain["q"][-1].weight.grad,
     }
     for side in ("input", "output"):
-        joint = getattr(scorer, f"{side}_joint_compatibility")["q"]
+        compatibility = getattr(scorer, f"{side}_compatibility_heads")["q"]
         probes.update(
             {
-                f"{side}_joint_query": joint.query_projection.weight.grad,
-                f"{side}_joint_key": joint.key_projection.weight.grad,
-                f"{side}_joint_scalar": joint.scalar.weight.grad,
+                f"{side}_bilinear_query": (
+                    compatibility.query_projection.weight.grad
+                ),
+                f"{side}_bilinear_key": compatibility.key_projection.weight.grad,
+                f"{side}_bilinear_scale": compatibility.logit_scale.grad,
             }
         )
     return probes

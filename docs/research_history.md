@@ -730,3 +730,24 @@ bank-conditioned两阶段Pass B、signed pooling、rank4或所有nonlinear score
 - `runs/analysis/pi05_ecp_g3_joint_path_causality_t{16,72,85,93}_55710bb_macro10_20260827.json`；
 - `runs/analysis/pi05_ecp_g3_joint_path_context_t85_55710bb_macro10_20260827.json`；
 - `runs/analysis/pi05_ecp_g3_input_content_capacity_t85_j{0,1,18,19,34,36}_s200_factor_55710bb_macro10_20260827.json`。
+
+## 39. fit-only functional consensus与target-native谱诊断
+
+`55710bb` non-pass之后，没有继续macro20或做超参扫，而是先问两个更早的可证伪问题。第一，使用40个mapping-fit tasks、每task全部
+mapping-fit videos且明确排除预注册held video，对每个verified member的真实rank4 updates做small-core均值与rank4 truncated SVD。
+该fit-only consensus在held video上的overall recovery median/p10/min为`.945820/.935622/.908717`，mean为`.945704`；q/v/action-in/
+action-out family median分别为`.931557/.924778/~1/.926581`。set-valued member upper bound几乎相同，说明member歧义也不是主要限制。
+
+第二，对同一fit teacher authority读取native input方向谱。family-shared q/v top128 energy均约`.7966`，top256约`.88`，达到90%需要
+约306/309维；固定target自己的top128在target0/1接近1、target18/19约`.966`、target34约`.976`、target37约`.959`，action-in
+完整32D为1。由此淘汰“先family压缩、后owner调制足以保留深层方向”，但不支持简单扩大全局width；证据指向38-target native basis后
+再family-share。
+
+当前replacement据此使用full G2 Program query、target-native basis、无residual bypass的normalized bilinear compatibility，以及
+fit-video consensus paired-update-only credit。真实K1/K4 smoke通过chunk、K4 permutation、76 tensors、policy consume和Action Meta 0；
+world6一步profile覆盖6 tasks/12 K1 conditions，`91.44s`、peak allocated约`25.65GB`，Q/K/owner/gain gradients均finite/nonzero。
+首次profile在同步前发现旧P_lang-only稳定神经支路64个参数无梯度；该冗余旁路被删除并以确定性P_lang+owner/rank稳定视图替代，第二次
+profile完整通过。以上仍是fit-only机制与工程qualification，不是451-condition F3 Gate。关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_fit_consensus_update_held_video_ceiling_20260827.json`；
+- `runs/analysis/pi05_ecp_g3_fit_teacher_native_input_subspace_spectrum_20260827.json`。

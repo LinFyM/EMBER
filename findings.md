@@ -752,6 +752,24 @@ candidate chart加高条件数solve无法产生跨video稳定functional anchor�
 X/Y banks、chunked replay、rank4和唯一rank16均不受该局部non-pass影响。下一版只能由同时针对这三个接口的机制证据驱动，不能再用
 loss下降、非零gradient、score cosine或seed/LR/width小扫冒充修复。
 
+### 51. 稳定functional target存在，旧G3同时丢失target-native方向与主selection路径
+
+对40个mapping-fit tasks逐task/member只使用fit videos平均真实rank4 update，并在small core中截断回rank4；预注册held video从构造中
+完全排除，只作只读验证。该consensus在held video上的overall update recovery median/p10/min为
+`.945820/.935622/.908717`，q/v/action-in/action-out family均远高于F3 `.75`门；set-valued member upper bound与固定fit-only member
+selection几乎相同。稳定的跨video functional target因此广泛存在，旧shared compiler约`.13`不能再解释为teacher本身互相矛盾。
+
+同一fit authority的native input谱显示，family-shared q/v basis top128只能保留约`.7966`能量、达到90%分别需要约306/309维；按38个
+固定LoRA target各自取basis时，target0/1 top128接近1，target18/19约`.966`，target34约`.976`、target37约`.959`。这证明压缩发生在
+owner调制之前会系统性丢失深层方向；38-target basis后再family-share是有机制证据的parameter ownership，不是扫宽度。action-in完整
+32D为1，继续作为正控制。
+
+由此当前唯一replacement同时更改三个相互依赖接口：完整G2 `rank_event`进入selection query；真实native direction/log-magnitude先经
+target-owned 128D basis再进入family trunk；旧dominant dot加tiny additive residual被单一normalized bilinear Q/K兼容度替换。训练只用
+fit-video rank4 consensus的set-valued four-family paired-update direction；逐video input/output subspace不再等权牵引不同bank gauge。
+真实K1/K4 smoke和world6一步profile证明full Program、target candidates、Q/K、owner query和group gain均获得finite/nonzero梯度，
+Action Meta/source/Program/scale仍冻结，输出仍是唯一38-target rank16。该证据只证明新机制可优化，不等于F3 mapping已通过。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

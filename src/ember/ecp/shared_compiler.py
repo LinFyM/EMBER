@@ -93,9 +93,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
 
     The scorer contains no task-, video-, member-, or frame-indexed parameters.
     B0a derives detached per-event feature gauges from the current video bank.
-    B0b converts stable language anchors and whitened candidate content into
-    native anchors, then conditions them on the native covariance. B1 rereads
-    that same bank and pools real X/Y values with explicit softmax branches.
+    B0b combines the full frozen Program with fixed-target native content to
+    form native anchors, then conditions them on the native covariance. B1
+    rereads that bank and pools real X/Y values with explicit softmax branches.
     """
 
     def __init__(

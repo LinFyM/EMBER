@@ -1,12 +1,12 @@
 # EMBER progress
 
-更新时间：2026-08-27。当前G2 formal authority仍是clean pushed `main@c1493a1`的`macro_00000020`，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。最新G3 evidence为clean pushed detached `main@55710bb`的additive joint compatibility fresh
-macro5/macro10及完整451-condition F3：macro10 fit/held-video/held p10/task-holdout为
-`.126205/.128720/.103610/.129465`，held/fit为`1.019925`，远低于`.75/.50`且低于前一fixed-owner query的held `.163128`，Gate
-明确non-pass。四任务fit-only因果消融进一步证明该checkpoint几乎等于旧dot路径：关掉joint后的family update cosine minimum
-`.999450`，只保留joint时recovery仅`.0018--.0116`；wrong-language/wrong-dynamic替换也几乎不改变最终update。当前不续macro20，
-不把“joint参数有非零梯度”误写成新函数族已被有效训练，先按下述根因审计修订Program-to-functional-content接口。
+更新时间：2026-08-27。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过；最新完整F3 Gate仍是`main@55710bb` macro10的fit/held/p10/task-holdout
+`.126205/.128720/.103610/.129465` non-pass。其后fit-only根因审计已证明稳定functional target本身广泛存在：40-task consensus在
+预注册held video上的recovery median/p10/min为`.945820/.935622/.908717`；同时family-shared q/v native top128只保留约`.797`
+能量，而target-owned top128在抽查深层targets为`.959--.976`。当前唯一implementation replacement据此改为full G2 Program query、
+38-target native basis、无residual bypass的normalized bilinear compatibility及fit-video consensus paired-update-only credit；真实K1/K4
+smoke与world6一步profile已经通过，但尚未启动fresh 451-condition formal，因此不能把这些内部正证据写成F3 Gate pass。
 
 ## 当前状态
 
@@ -582,26 +582,20 @@ G1--G5 Gate或架构修正依据。
 
 1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及
    `c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0/55710bb`六个有明确机制差异的F3均在完整451 conditions上non-pass。最新joint
-   macro10所有451条件都相对macro5改善，但fit、held-video与task-holdout都停在约`.13`，不是held-only overfit，也没有依据续训
-   macro20或做seed/LR/width/rank小扫；
-2. `55710bb`的additive joint scorer在四个独立fit tasks上被直接证伪为实际活动路径：dot-only相对baseline的16个family update
-   cosine median/minimum为`.999752/.999450`，joint-only recovery仅`.0018--.0116`，joint/dot score RMS median约`.0735`。小幅
-   nonzero gradient没有克服small-scalar residual的credit starvation，故本轮formal没有真正检验“高容量nonlinear content mapping
-   已学会”；
-3. 当前`stable_rank_event`只读取`P_lang`，完整`P_scene/P_process/rho/tau/sigma`不进入content query。task85与wrong task93的
-   `P_lang` cosine为`.99704`，经过当前query trunk后各family input/output query为`.9947--1.0`；而同task full `rank_event`
-   cosine为`.99750`、wrong-task dynamic为`.92811`。四任务wrong-language/wrong-dynamic最终update仍分别至少`.98020/.99211`相似，
-   说明G2已经提供的稳定可区分动态Program被当前P_lang-only query丢弃，输出退化为近task-agnostic family default；
-4. 同一task85的两fit-video训练、第三video无梯度factor-capacity对照直接优化最终B0/B1 factor。200步后current-key train/held分别为：
-   浅层q `.4235/.4237`、浅层v `.4849/.4852`、layer9 q `.2920/.2425`、layer9 v `.2905/.2212`、layer17 q
-   `.2741/.1345`，而action-in为`.9963/.9961`；owner-local raw-native projection没有消除深层缺口。另一个score对照中相同约
-   `.983` score cosine对action-in产生`.991` factor，却对浅层q/v只产生`.125/.075`，说明高条件数solve会放大很小的anchor误差，
-   内部score/cosine不能代替最终factor或closed-loop；
-5. 当前最早失效链为：`P_lang`-only task query坍为近相同code -> small residual使joint interaction实际未启用 -> q/v深层
-   pointwise candidate chart与高条件数solve不能形成跨video稳定functional anchor。下一修正必须同时以最小机制正对照证明：完整
-   G2 Program内容真实进入query、nonlinear interaction对输出有实质因果作用、浅/中/深q/v及action control的task-local factor可达性
-   明显提高，并用fit authority约束solve的误差放大；在此之前不启动新formal F3。raw native key、逐video dual/score、task/video表、
-   held gradients和旧realizer仍不得恢复；
+   macro10停在held `.128720`，不续macro20，也不做seed/LR/width/rank小扫；
+2. 旧joint根因链已经闭合：P_lang-only query丢弃full Program的wrong-task间隔，tiny additive项被dominant dot旁路，family-first
+   压缩又在owner调制前丢失深层q/v方向。40-task fit-only consensus held recovery `.945820/.935622/.908717`证明稳定functional
+   target存在；target-native谱证明38-target basis是结构性ownership修正，不是增加全局width；
+3. 当前唯一compiler selection由full G2 `rank_event` query和target-native keys经primary normalized bilinear content compatibility计算；
+   没有dot/additive residual旁路、task/video/frame/member lookup或逐video解析dual。P_lang+owner/rank的确定性稳定视图只留给后续
+   scale/group-gain；
+4. mapping loader只用每task/member的mapping-fit videos形成rank4 consensus update，明确排除预注册held video。训练loss只取
+   set-valued four-family paired update；input/output subspace降为诊断，held-video/task-holdout评估仍对原始逐video teacher只读。
+   consensus不进入compiler forward/checkpoint/deployment；
+5. 真实K1/K4 smoke已通过chunk有效更新、K4均匀/置换、Action Meta 0、76 tensors与policy consume；world6一步profile的6 tasks/
+   12 K1 conditions耗时`91.44s`、peak allocated约`25.65GB`，Q/K/owner/gain gradients均finite/nonzero。首次profile发现并修复旧稳定
+   神经旁路64个无梯度参数，第二次完整通过。下一步完成main集成后，从clean pushed detached commit fresh运行相同F3 macro5并完整
+   评估451 conditions；只有primary Gate和相邻趋势决定是否推进，不用profile或consensus ceiling代替；
 6. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 7. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

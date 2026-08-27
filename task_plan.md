@@ -310,6 +310,18 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   对照又证明action-in可达约`.996`，但浅层q/v只有`.42/.49`、layer9 held约`.24/.22`、layer17 q held`.13`，raw-native
   projection也不充分。当前停止该checkpoint与macro20，不启动新formal；下一实现前先用fit-only最小正对照同时证明full Program
   task content、实质nonlinear interaction及condition-stable深层q/v factor acquisition，不能继续点积残差小修或超参扫。
+- [x] 完成40-task fit-only稳定functional target审计：只用mapping-fit videos形成task/member rank4 consensus update，在预注册held
+  video上的overall recovery median/p10/min为`.945820/.935622/.908717`；member set上界几乎相同，证明旧`.13`不是teacher
+  inconsistency。固定target native input谱又显示family-shared top128对q/v仅约`.797`，target-owned top128在抽查深层targets为
+  `.959--.976`，给出ownership修正的直接机制依据。
+- [x] 用一个canonical replacement接通full G2 `rank_event` query、38-target native basis后接family trunk、无residual bypass的
+  normalized bilinear compatibility，以及fit-video consensus paired-update-only mapping credit；原逐video input/output subspace只作
+  诊断，mapping held video严格排除在consensus之外。真实K1/K4 smoke通过chunk/置换/唯一rank16/Action Meta 0及全部主路径梯度；
+  world6真实一步profile覆盖6 tasks/12 K1 conditions，耗时`91.44s`、peak allocated约`25.65GB`，所有Q/K/owner/gain probes
+  finite/nonzero。首次profile精确暴露旧P_lang-only稳定神经支路64个无梯度参数，已删除该冗余旁路并以确定性P_lang+owner/rank
+  稳定视图修复，未放宽跨卡梯度完整性检查。
+- [ ] 将上述唯一实现面集成至clean pushed main，从detached frozen worktree fresh启动同一F3；先评macro5完整451 conditions，只有
+  primary recovery及相邻趋势有信息量才按预注册节点推进，不以consensus ceiling、profile loss或train recovery代替Gate。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

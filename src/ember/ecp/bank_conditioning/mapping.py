@@ -355,12 +355,11 @@ def paired_mapping_loss(
     owners: Sequence[TargetOwner],
     temperature: float,
 ) -> MappingLoss:
-    """Give both factor sides and their pairing one global-member credit.
+    """Use one set-valued, four-family paired-update objective.
 
-    The member posterior is selected by the complete four-family update and is
-    then detached before it supervises either factor subspace.  This preserves
-    one global member for all 38 targets while avoiding the high-dimensional
-    bilinear starvation of update-only acquisition.
+    Input/output subspaces remain diagnostics.  They are bank-dependent
+    projections of the same functional update and therefore cannot be an
+    equal-weight mapping target across videos.
     """
 
     if not teachers or temperature <= 0:
@@ -388,7 +387,7 @@ def paired_mapping_loss(
     )
     best = int(distances.detach().argmin())
     return MappingLoss(
-        total=credit.selection,
+        total=credit.update_direction,
         input_subspace=credit.input_subspace,
         output_subspace=credit.output_subspace,
         update_direction=credit.update_direction,

@@ -39,6 +39,7 @@ from ember.ecp.bank_conditioning.mapping import (
     SharedCompilerMappingSplit,
     load_mapping_split,
 )
+from ember.ecp.bank_conditioning.consensus import FitConsensusTeacherStore
 from ember.ecp.bank_conditioning.mapping_step import run_mapping_optimizer_step
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherStore
 from ember.ecp.stage0_training import stage0_source_authority, tokenize_stage0_languages
@@ -79,7 +80,9 @@ class MappingRuntime:
     compiler: SharedNativeFactorCompiler
     owners: tuple[TargetOwner, ...]
     ranks: SharedCompilerRankAssets
+    rank4_contract: Any
     native_teachers: NativeTeacherStore
+    consensus_teachers: FitConsensusTeacherStore
     query_points: int
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     frozen_parameters: tuple[torch.nn.Parameter, ...]
@@ -104,6 +107,7 @@ class _TrainingAssets:
     source_config: dict[str, Any]
     policy: torch.nn.Module
     ranks: SharedCompilerRankAssets
+    rank4_contract: Any
     owners: tuple[TargetOwner, ...]
     program: NaturalProgramModel
     compiler: SharedNativeFactorCompiler
@@ -325,6 +329,7 @@ def _load_training_assets(
         source_config=source_config,
         policy=policy,
         ranks=ranks,
+        rank4_contract=rank4_contract,
         owners=owners,
         program=program,
         compiler=compiler,
@@ -358,6 +363,9 @@ def prepare_mapping_runtime(
         mapping_split, seed=int(config["optimization"]["seed"])
     )
     assets = _load_training_assets(args, config, context, tasks)
+    consensus_teachers = FitConsensusTeacherStore(
+        assets.native_teachers, mapping_split, assets.rank4_contract
+    )
 
     initialize_deferred_process_group(
         context, rendezvous_root=args.output_dir.parent
@@ -412,7 +420,9 @@ def prepare_mapping_runtime(
         compiler=assets.compiler,
         owners=assets.owners,
         ranks=assets.ranks,
+        rank4_contract=assets.rank4_contract,
         native_teachers=assets.native_teachers,
+        consensus_teachers=consensus_teachers,
         query_points=assets.query_points,
         trainable_parameters=assets.trainable,
         frozen_parameters=assets.frozen,

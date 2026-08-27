@@ -177,12 +177,12 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             config.get("schema_version") == G3_CONFIG_SCHEMA,
             config.get("status") == "active_bank_conditioned_mapping_compiler",
             model.get("selection")
-            == "task_stable_anchor_joint_content_compatibility_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
+            == "full_program_target_native_bilinear_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
             model.get("anchor_width") == 128,
             model.get("anchor_parameter_ownership")
-            == "family_shared_task_stable_language_anchor_with_fixed_owner_candidate_query_film_and_joint_scalar_compatibility",
+            == "fixed_target_native_basis_then_family_shared_trunk_with_full_program_query",
             model.get("anchor_compatibility")
-            == "residual_dot_plus_family_shared_additive_bounded_scalar",
+            == "primary_family_shared_normalized_bilinear_bounded_scalar",
             model.get("relative_eigenvalue_floor") == 1e-6,
             model.get("feature_whitening")
             == "detached_per_event_symmetric_inverse_square_root",
@@ -197,9 +197,11 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             data.get("mapping_K") == [1],
             data.get("task_role_weighting") == "three_meta_plus_three_target",
             mapping.get("member_reduction")
-            == "set_valued_global_member_subspace_and_paired_update",
+            == "set_valued_global_member_paired_update",
             mapping.get("selection_credit")
-            == "equal_input_subspace_output_subspace_and_paired_update",
+            == "paired_update_primary_subspaces_diagnostic_only",
+            mapping.get("teacher_target")
+            == "fit_video_rank4_truncated_mean_update_excluding_mapping_held_video",
             mapping.get("target_reduction") == "four_families_equal",
             mapping.get("student_scale_gradient") == "stopped",
             mapping.get("old_functional_selection_gradient") == "blocked",

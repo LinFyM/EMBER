@@ -4,9 +4,6 @@ from types import SimpleNamespace
 
 import torch
 
-from ember.ecp.bank_conditioning.compatibility import (
-    JOINT_SCALAR_INITIAL_SCALE,
-)
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
@@ -147,41 +144,43 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     loss = sum(value.square().mean() for value in observed.residual.a)
     loss = loss + sum(value.square().mean() for value in observed.residual.b)
     loss.backward()
+    assert all(
+        parameter.grad is not None
+        for parameter in compiler.anchor_scorer.parameters()
+        if parameter.requires_grad
+    )
     families = {family.value for family in TargetFamily}
     assert set(compiler.anchor_scorer.program_context) == families
-    assert set(compiler.anchor_scorer.language_context) == families
-    assert set(compiler.anchor_scorer.input_candidates) == families
-    assert set(compiler.anchor_scorer.output_candidates) == families
-    assert set(compiler.anchor_scorer.input_joint_compatibility) == families
-    assert set(compiler.anchor_scorer.output_joint_compatibility) == families
+    assert len(compiler.anchor_scorer.input_candidates) == len(owners)
+    assert len(compiler.anchor_scorer.output_candidates) == len(owners)
+    assert set(compiler.anchor_scorer.input_candidate_trunks) == families
+    assert set(compiler.anchor_scorer.output_candidate_trunks) == families
+    assert set(compiler.anchor_scorer.input_compatibility_heads) == families
+    assert set(compiler.anchor_scorer.output_compatibility_heads) == families
     assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
     assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
     assert (
-        compiler.anchor_scorer.input_candidates["q"].direction_input.weight.grad
+        compiler.anchor_scorer.input_candidates[0].direction.weight.grad
         is not None
     )
     assert (
-        compiler.anchor_scorer.output_candidates["q"].direction_input.weight.grad
+        compiler.anchor_scorer.output_candidates[0].direction.weight.grad
         is not None
     )
     for scorer in (
-        compiler.anchor_scorer.input_joint_compatibility["q"],
-        compiler.anchor_scorer.output_joint_compatibility["q"],
+        compiler.anchor_scorer.input_compatibility_heads["q"],
+        compiler.anchor_scorer.output_compatibility_heads["q"],
     ):
         for parameter in (
             scorer.query_projection.weight,
             scorer.key_projection.weight,
-            scorer.scalar.weight,
+            scorer.logit_scale,
         ):
             assert parameter.grad is not None
             assert bool(torch.isfinite(parameter.grad).all())
             assert bool(torch.count_nonzero(parameter.grad))
-    assert compiler.anchor_scorer.input_owner_scale.grad is not None
-    assert compiler.anchor_scorer.output_owner_scale.grad is not None
     assert compiler.anchor_scorer.query_owner_film.input_shift.grad is not None
     assert compiler.anchor_scorer.query_owner_film.output_shift[0].grad is not None
-    assert bool(torch.count_nonzero(compiler.anchor_scorer.input_owner_scale.grad))
-    assert bool(torch.count_nonzero(compiler.anchor_scorer.output_owner_scale.grad))
     assert bool(
         torch.count_nonzero(compiler.anchor_scorer.query_owner_film.input_shift.grad)
     )
@@ -230,7 +229,7 @@ def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
     torch.testing.assert_close(output_before[1:], output_after[1:])
 
 
-def test_signed_queries_and_joint_residual_have_stable_initialization() -> None:
+def test_signed_queries_and_primary_bilinear_have_stable_initialization() -> None:
     compiler = SharedNativeFactorCompiler(
         _owners(), program_width=8, event_slots=4, anchor_width=6
     )
@@ -244,16 +243,14 @@ def test_signed_queries_and_joint_residual_have_stable_initialization() -> None:
                 final.weight[width:], -final.weight[:width]
             )
             torch.testing.assert_close(final.bias[width:], -final.bias[:width])
-        compatibilities = getattr(scorer, f"{side}_joint_compatibility")
+        compatibilities = getattr(scorer, f"{side}_compatibility_heads")
         for compatibility in compatibilities.values():
-            weight = compatibility.scalar.weight
-            assert bool(torch.count_nonzero(weight))
-            assert float(weight.detach().abs().max()) <= (
-                JOINT_SCALAR_INITIAL_SCALE / compatibility.width**0.5
+            torch.testing.assert_close(
+                compatibility.logit_scale.detach(), torch.zeros(())
             )
 
 
-def test_anchor_code_is_stable_when_only_video_program_fields_change() -> None:
+def test_anchor_code_uses_video_program_fields() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
         owners, program_width=8, event_slots=4, anchor_width=6
@@ -275,7 +272,7 @@ def test_anchor_code_is_stable_when_only_video_program_fields_change() -> None:
         first_state.stable_rank_event, changed_state.stable_rank_event
     )
     torch.testing.assert_close(first_state.stable_rank, changed_state.stable_rank)
-    torch.testing.assert_close(
+    assert not torch.allclose(
         compiler.anchor_scorer.input_queries(first_state),
         compiler.anchor_scorer.input_queries(changed_state),
     )

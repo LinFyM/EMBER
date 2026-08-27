@@ -16,6 +16,7 @@ from ember.ecp.bank_conditioning.mapping_eval_runtime import (
     balanced_mapping_assignments,
 )
 from ember.ecp.bank_conditioning.mapping_gate import summarize_mapping_rows
+from ember.ecp.bank_conditioning.consensus import truncated_mean_update
 from ember.ecp.bank_conditioning.f0 import _low_rank_update_similarity
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherFactors
 
@@ -83,6 +84,19 @@ def test_f0_chunk_reference_compares_effective_update_not_rank_gauge() -> None:
     assert relative_error <= 1e-6
 
 
+def test_functional_consensus_averages_updates_not_factor_gauges() -> None:
+    generator = torch.Generator().manual_seed(19)
+    a = torch.randn(4, 9, generator=generator)
+    b = torch.randn(7, 4, generator=generator)
+    q, _ = torch.linalg.qr(torch.randn(4, 4, generator=generator))
+    consensus_a, consensus_b = truncated_mean_update(
+        ((a, b), (q @ a, b @ q.transpose(0, 1))), rank=4
+    )
+    torch.testing.assert_close(
+        consensus_b @ consensus_a, b @ a, rtol=2e-5, atol=2e-5
+    )
+
+
 def test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped() -> None:
     output = _output()
     exact = _teacher(output, member="exact")
@@ -106,7 +120,7 @@ def test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped() -> Non
     assert all(
         torch.isfinite(component) and component >= 0 for component in components
     )
-    torch.testing.assert_close(loss.total, sum(components) / 3.0)
+    torch.testing.assert_close(loss.total, loss.update_direction)
     loss.total.backward()
     assert all(value.grad is not None for value in output.input_directions)
     assert all(value.grad is not None for value in output.output_directions)

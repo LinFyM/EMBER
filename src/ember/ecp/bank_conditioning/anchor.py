@@ -75,6 +75,69 @@ class NativeCandidateEncoder(torch.nn.Module):
         )
 
 
+class FixedOwnerQueryFiLM(torch.nn.Module):
+    """Bounded query modulation with fixed LoRA-owner/group ownership."""
+
+    def __init__(
+        self,
+        output_counts: Sequence[int],
+        *,
+        feature_width: int,
+        event_slots: int,
+    ) -> None:
+        super().__init__()
+        self.feature_width = int(feature_width)
+        self.event_slots = int(event_slots)
+        input_shape = (len(output_counts), 2, self.feature_width)
+        self.input_scale = torch.nn.Parameter(torch.zeros(input_shape))
+        self.input_shift = torch.nn.Parameter(torch.zeros(input_shape))
+        self.output_scale = self._output_rows(output_counts)
+        self.output_shift = self._output_rows(output_counts)
+
+    def _output_rows(self, output_counts: Sequence[int]) -> torch.nn.ParameterList:
+        return torch.nn.ParameterList(
+            [
+                torch.nn.Parameter(torch.zeros(groups, 2, self.feature_width))
+                for groups in output_counts
+            ]
+        )
+
+    def input(self, query: torch.Tensor, *, target: int) -> torch.Tensor:
+        return self._apply(
+            query, scale=self.input_scale[target], shift=self.input_shift[target]
+        )
+
+    def output(self, query: torch.Tensor, *, target: int) -> torch.Tensor:
+        return self._apply(
+            query, scale=self.output_scale[target], shift=self.output_shift[target]
+        )
+
+    def _apply(
+        self,
+        query: torch.Tensor,
+        *,
+        scale: torch.Tensor,
+        shift: torch.Tensor,
+    ) -> torch.Tensor:
+        if scale.shape != shift.shape or query.shape[-4:] != (
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            2,
+            self.feature_width,
+        ):
+            raise BankConditioningError("native anchor query topology changed")
+        leading = scale.shape[:-2]
+        if query.shape[: len(leading)] != leading or scale.shape[-2:] != (
+            2,
+            self.feature_width,
+        ):
+            raise BankConditioningError("fixed-owner query modulation changed")
+        broadcast = (*leading, 1, 1, 2, self.feature_width)
+        return query * (1.0 + torch.tanh(scale).reshape(broadcast)) + torch.tanh(
+            shift
+        ).reshape(broadcast)
+
+
 class ProgramNativeAnchorScorer(torch.nn.Module):
     """Produce bounded scalar anchor compatibilities from authorized content."""
 
@@ -137,6 +200,15 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         )
         self.output_anchor_query = torch.nn.ModuleDict(
             {family.value: self._query_head(width) for family in families}
+        )
+        # The family trunks learn a shared content coordinate system, while
+        # these fixed-topology FiLM rows give each real LoRA owner an
+        # independent gradient path.  They are not task or video tables: the
+        # task dependence remains entirely in the Program-conditioned query.
+        self.query_owner_film = FixedOwnerQueryFiLM(
+            output_counts,
+            feature_width=self.feature_width,
+            event_slots=self.event_slots,
         )
         self.event_score = torch.nn.ModuleDict(
             {family.value: torch.nn.Linear(width, 1) for family in families}
@@ -364,13 +436,16 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
     def input_queries(self, state: AnchorProgramState) -> torch.Tensor:
         return torch.stack(
             tuple(
-                self.input_anchor_query[owner.family.value](
-                    state.stable_rank_event[target]
-                ).reshape(
-                    G1_RESIDUAL_RANK,
-                    self.event_slots,
-                    2,
-                    self.feature_width,
+                self.query_owner_film.input(
+                    self.input_anchor_query[owner.family.value](
+                        state.stable_rank_event[target]
+                    ).reshape(
+                        G1_RESIDUAL_RANK,
+                        self.event_slots,
+                        2,
+                        self.feature_width,
+                    ),
+                    target=target,
                 )
                 for target, owner in enumerate(self.owners)
             )
@@ -383,12 +458,15 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
             :groups, None, None
         ]
         family = self.owners[target].family.value
-        return self.output_anchor_query[family](context).reshape(
-            groups,
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            2,
-            self.feature_width,
+        return self.query_owner_film.output(
+            self.output_anchor_query[family](context).reshape(
+                groups,
+                G1_RESIDUAL_RANK,
+                self.event_slots,
+                2,
+                self.feature_width,
+            ),
+            target=target,
         )
 
     def output_group_gains(

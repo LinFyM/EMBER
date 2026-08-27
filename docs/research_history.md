@@ -613,3 +613,38 @@ minimum-norm selection落入巨大train-only nullspace，不是继续调谱floor
 - `runs/analysis/pi05_ecp_g3_feature_anchor_canonicalizer_c3fc8e3_gpu01_20260827/`；
 - `runs/analysis/pi05_ecp_g3_feature_anchor_invsqrt_c3fc8e3_gpu01_20260827/`；
 - `runs/analysis/pi05_ecp_g3_feature_anchor_eventblock_invsqrt_c3fc8e3_gpu01_20260827/`。
+
+## 35. task-stable feature anchor正式增量与fixed-owner query修正资格
+
+clean pushed detached `main@20acc33`先通过stable-anchor F0：K1有效更新cosine最低`.99999826`、相对误差最高`.001863`，K4置换
+误差`1.91e-6`，Action Meta 0、38 targets/76 tensors且唯一rank16被policy消费。随后F3从fresh训练到macro5并按world6 topology
+exact-resume到macro10/50 updates；训练mean recovery由macro1 `.000902`连续升至macro5 `.038661`和macro10 `.127151`。
+
+macro5与macro10均完整评估451 conditions。macro10 fit、held-video、task-holdout task median为
+`.141080/.142120/.145828`，held p10 `.116653`、held/fit `1.00737`；macro5到10 held median增加`.092745`且40/40 held tasks改善。
+held q/v/action-in/action-out为`.030186/.110266/.180031/.253562`。相对`c3fc8e3` held `.074620`，stable anchor获得约一倍增量并
+消除了fit/held/task-holdout落差，但仍远低于F3 `.75/.50` Gate，两个checkpoint均不能通过primary/adjacent。
+
+为定位绝对获取瓶颈，对meta tasks `1/32/52`和target tasks `92/93/94`各缓存三条真实K1 native banks，从macro10只在单task/
+单fit-video上继续优化anchor scorer 20步；另一fit与held video只读。六task train overall从`.113--.163`升到`.203--.251`，fit/
+held probe均为`.200--.247`，但q train update只到`.0197--.0277`，action-in/out通常达到`.31--.49`。这证明stable code能跨bank迁移，
+q低值并非仅由多任务语义竞争或held-video泛化造成。q/v同层teacher input subspace median overlap约`.07--.18`，也不支持强行共享
+q/v input factors。
+
+同一macro10 task93/video31对18个q targets逐target反传：family-shared output-query的aggregate-to-norm-sum为`.26769`，153对中
+74对为负；input-query为`.27231`，76对为负。output/input key trunk分别为`.60173/.36429`，但candidate侧已有fixed-owner bounded
+FiLM。语言只读panel显示raw exact-language masked mean effective task rank `4.30`，`P_lang`去owner-only baseline后的四family rank约
+`3.20--3.56`且same-task跨video差为0；这保留了可用task信号，当前证据不足以把G2 language reader列为更早接口。
+
+因此下一单变量修正是给family-shared query trunks补上与candidate侧对称的zero-init bounded fixed-owner input FiLM及fixed-owner/
+output-group FiLM。固定行只对应真实LoRA target/group拓扑，task dependence仍来自`P_lang`，无task/video/member/frame lookup；banks、
+feature gauge、native solve、loss、rank、data、optimizer与Gate不变，旧checkpoint不兼容。实现通过184项CPU回归且architecture guard无
+hard violation；正式结论仍须clean pushed detached F0及fresh F3。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_stable_anchor_fold0_m5_20acc33_gpu01p012346_r6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_stable_anchor_macro5_mapping_eval_20acc33_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_stable_anchor_macro10_mapping_eval_20acc33_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_stable_anchor_single_task_probes_20acc33_gpu01p012346_w6_20260827/`；
+- `runs/analysis/pi05_ecp_g3_stable_anchor_query_gradient_diag_20acc33_gpu01p1_20260827/`。

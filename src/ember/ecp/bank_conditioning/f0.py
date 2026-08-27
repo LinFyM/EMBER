@@ -432,6 +432,12 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query["q"][
             -1
         ].weight.grad,
+        "input_owner_query": (
+            runtime.compiler.anchor_scorer.query_owner_film.input_shift.grad
+        ),
+        "output_owner_query": (
+            runtime.compiler.anchor_scorer.query_owner_film.output_shift[0].grad
+        ),
         "input_candidate": runtime.compiler.anchor_scorer.input_candidates["q"]
         .direction_input.weight.grad,
         "output_candidate": runtime.compiler.anchor_scorer.output_candidates["q"]

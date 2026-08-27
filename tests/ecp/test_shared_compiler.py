@@ -161,8 +161,16 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     )
     assert compiler.anchor_scorer.input_owner_scale.grad is not None
     assert compiler.anchor_scorer.output_owner_scale.grad is not None
+    assert compiler.anchor_scorer.query_owner_film.input_shift.grad is not None
+    assert compiler.anchor_scorer.query_owner_film.output_shift[0].grad is not None
     assert bool(torch.count_nonzero(compiler.anchor_scorer.input_owner_scale.grad))
     assert bool(torch.count_nonzero(compiler.anchor_scorer.output_owner_scale.grad))
+    assert bool(
+        torch.count_nonzero(compiler.anchor_scorer.query_owner_film.input_shift.grad)
+    )
+    assert bool(
+        torch.count_nonzero(compiler.anchor_scorer.query_owner_film.output_shift[0].grad)
+    )
     assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
@@ -176,6 +184,32 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     )
     names = set(dict(compiler.named_parameters()))
     assert not {"input_logits", "output_logits", "event_logits"} & names
+
+
+def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4, anchor_width=6
+    )
+    state = compiler.anchor_scorer.program_state(_program(len(owners), 8, 4))
+    input_before = compiler.anchor_scorer.input_queries(state).detach().clone()
+    output_groups = compiler.anchor_scorer.query_owner_film.output_shift[0].shape[0]
+    output_before = compiler.anchor_scorer.output_queries(
+        state, target=0, groups=output_groups
+    ).detach().clone()
+
+    with torch.no_grad():
+        compiler.anchor_scorer.query_owner_film.input_shift[0, 0, 0] = 0.5
+        compiler.anchor_scorer.query_owner_film.output_shift[0][0, 0, 0] = 0.5
+
+    input_after = compiler.anchor_scorer.input_queries(state).detach()
+    output_after = compiler.anchor_scorer.output_queries(
+        state, target=0, groups=output_groups
+    ).detach()
+    assert not torch.equal(input_before[0], input_after[0])
+    torch.testing.assert_close(input_before[1:], input_after[1:])
+    assert not torch.equal(output_before[0], output_after[0])
+    torch.testing.assert_close(output_before[1:], output_after[1:])
 
 
 def test_anchor_code_is_stable_when_only_video_program_fields_change() -> None:

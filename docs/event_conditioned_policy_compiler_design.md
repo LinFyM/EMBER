@@ -198,11 +198,18 @@ transfer，所以clean pushed `4117117`只完成F0工程验证，没有浪费for
 
 同一task三video的bank-global反事实则给出更精确证据：两video minimum-norm feature code对第三video的q/v/action-out近零，但把第三
 video只加入共同code估计后，三者立即达到约`.90--.93`；每event symmetric inverse-square-root保持该正控制，同时action-in的两video
-inductive held已达`.986`。这说明当前最早接口是**task-stable anchor code的可识别性**，而不是再调loss、谱floor或candidate width。
-当前唯一canonical修正因此保留四family共享candidate trunk和fixed-owner bounded modulation，但让anchor query只依赖same-task稳定
-`P_lang`，再对每video、每event白化candidate features；动态Program字段只控制event/frame measure。它不改变Program schema、真实
-banks、rank、teacher、data、optimizer或F3 Gate，与旧checkpoint不兼容，必须fresh验证。若仍失败，应按F3 family/held分解继续定位
-最早接口，不能用task lookup或LR/seed/width小扫替代。
+inductive held已达`.986`。这把当时最早接口定位为**task-stable anchor code的可识别性**，而不是再调loss、谱floor或candidate width。
+`main@20acc33`随后以same-task稳定`P_lang`产生anchor query、按video/event白化candidate features，macro10完整451-condition的
+fit/held-video/task-holdout median提高到`.141080/.142120/.145828`，held/fit为`1.00737`且40/40 held tasks从macro5改善；迁移接口
+因此获得正证据，但`.75/.50` primary仍未通过，q held仅`.030186`。
+
+后继六task单任务probe与q的18-target gradient decomposition把最早接口进一步收窄到query parameter ownership：另一fit/held video
+能跟随train，但q 20-step update仍仅`.0197--.0277`；q input/output shared query梯度合成后只剩各target norm和的`.272/.268`。
+当前唯一canonical修正因此保留四family共享Program/query/candidate trunks、stable `P_lang`和per-event gauge，同时在query输出加入
+zero-init bounded fixed-owner input FiLM及fixed-owner/output-group FiLM。它们只表示38个真实LoRA targets及其native groups，不是task/
+video/member/frame表；task dependence仍由共享query trunk基于`P_lang`计算。该修正不改变Program schema、真实banks、rank、teacher、
+data、optimizer或F3 Gate，与旧checkpoint不兼容，必须fresh验证。若仍失败，应按F3 owner/group与task-content分解继续定位，不能用
+task lookup或LR/seed/width小扫替代。
 
 同一canonical实现保留一次预注册的`global_statistics_off`消融：令`C=I`，关闭current-bank covariance/preconditioning，但仍用B0
 按单位measure形成centered native anchor并由B1 exact replay。它隔离的是“candidate-local compatibility加first-moment anchor是否已足够”，

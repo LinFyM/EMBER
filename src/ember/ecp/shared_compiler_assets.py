@@ -180,7 +180,7 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             == "task_stable_anchor_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
             model.get("anchor_width") == 128,
             model.get("anchor_parameter_ownership")
-            == "family_shared_task_stable_language_anchor_with_fixed_owner_candidate_key",
+            == "family_shared_task_stable_language_anchor_with_fixed_owner_candidate_and_query_film",
             model.get("relative_eigenvalue_floor") == 1e-6,
             model.get("feature_whitening")
             == "detached_per_event_symmetric_inverse_square_root",

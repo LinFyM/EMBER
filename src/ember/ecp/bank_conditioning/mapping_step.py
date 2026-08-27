@@ -269,6 +269,12 @@ def run_mapping_optimizer_step(
         "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query[
             "q"
         ][-1].weight.grad,
+        "input_owner_query": (
+            runtime.compiler.anchor_scorer.query_owner_film.input_shift.grad
+        ),
+        "output_owner_query": (
+            runtime.compiler.anchor_scorer.query_owner_film.output_shift[0].grad
+        ),
         "group_gain": runtime.compiler.anchor_scorer.group_gain["q"][
             -1
         ].weight.grad,

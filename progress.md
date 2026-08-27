@@ -1,9 +1,9 @@
 # EMBER progress
 
 更新时间：2026-08-27。当前G2 formal authority：clean pushed `main@c1493a1`的`macro_00000020`；最新G3 formal
-evidence为clean pushed `main@c3fc8e3`的family/fixed-owner F3 macro5/macro10 mapping non-pass，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。后续fixed-key、raw/FiLM tangent与same-task三video bank-global反事实把最早接口从parameter
-ownership继续收窄到task-stable anchor code的可识别性；当前活动修正为`P_lang`稳定anchor加per-event candidate-feature whitening。
+evidence为clean pushed `main@20acc33`的task-stable feature-anchor F3 macro5/macro10 mapping non-pass，F1 bank-operator仍由
+clean pushed `main@435cb4a`通过。该修正已把held-video与task-holdout泛化恢复到fit水平并将绝对recovery提高约一倍，但q family
+仍形成结构性内瓶颈；当前活动修正仅为fixed-owner/group query FiLM，不重开G2、不改变bank/operator/rank/loss/data或Gate。
 
 ## 当前状态
 
@@ -134,7 +134,26 @@ exact signed replay；没有task/video/member/frame lookup、第二adapter或Act
 `0,1,2,3,4,6`的world6真实profile完成固定`3 meta + 3 target`一组forward/backward/update/checkpoint，step为`77.806s`，峰值
 allocated/reserved为`25.59/25.99GB`；feature retained rank最低约`94--96/128`、retained trace最低约`.999999`，native solve
 residual约`1e-12`，held/validation/test gradients、Program/source/scale trainable与Action Meta均为0。该profile只证明工程图与六卡
-吞吐。全仓`183 passed`，architecture guard无hard violation；下一步仍须clean pushed detached F0后从fresh运行同一F3 Gate。
+吞吐。全仓`183 passed`，architecture guard无hard violation；随后clean pushed detached `main@20acc33`的F0也通过：K1有效更新
+cosine最低`.99999826`、相对误差最高`.001863`，K4置换误差`1.91e-6`，Action Meta 0、38 targets/76 tensors且policy实际消费
+唯一rank16。
+
+同一commit从fresh训练F3至macro5并按world6 exact-resume到macro10/50 updates。macro10完整451-condition fit/held-video/
+task-holdout median为`.141080/.142120/.145828`，held p10 `.116653`、held/fit `1.00737`；macro5到10的40/40 held-video tasks均改善，
+held median净增`.092745`。stable anchor因此实质修复了跨video/task迁移并显著提高绝对获取，但仍远低于`.75/.50` primary。
+macro10 held q/v/action-in/action-out仅`.030186/.110266/.180031/.253562`，q明显成为最早接口。
+
+六个task-local、单fit-video 20-step定位probe覆盖meta `1/32/52`与target `92/93/94`：overall train recovery由
+`.113--.163`升到`.203--.251`，另一fit video和held video均紧随至`.200--.247`，但q update只到`.0197--.0277`；action-in/out
+通常升至约`.31--.49`。这排除了当前最早问题是视频泛化或纯多任务语义竞争。macro10 task93的q target-gradient分解进一步显示，
+18个q owners在family-shared input/output query heads上的aggregate gradient仅为各target norm和的`.272/.268`，153对中分别
+`76/74`对为负；candidate key共享trunk为`.364/.602`且已有fixed-owner FiLM。语言诊断同时确认`P_lang`去owner baseline后的
+task variation非零、same-task跨video严格相同，故不以未证明的G2重训替代最早q接口。
+
+当前唯一机制修正对现有family-shared query trunks增加zero-init bounded fixed-owner input FiLM及fixed-owner/output-group FiLM，
+让38个真实LoRA targets获得互不相消的query梯度路径；task dependence仍只来自`P_lang`，没有task/video/member/frame lookup。
+该修正与旧checkpoint不兼容，必须从fresh验证；实现分支已通过184项CPU回归与architecture guard hard checks，下一步是clean
+pushed detached F0及同一F3 Gate，不用macro20盲续旧结构。
 
 真实吞吐profile没有用dummy占卡：同一固定六任务、同一梯度结果的F3 optimizer step，gpu01单卡为`181.21s`、峰值allocated/reserved
 约`25.14/25.42GB`，计算段SM/UTL为`70--100%`；物理1/2/4/5/6五卡弹性分片为`44.96s`，约`4.03x`加速，各卡约

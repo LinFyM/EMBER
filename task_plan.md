@@ -281,8 +281,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   raw-query transfer，因此没有启动无信息的`4117117` formal。same-task三video bank-global oracle显示共同feature code的transductive
   q/v/action-out约`.90--.93`，但两video minimum-norm inductive近零，最早接口为task-stable code识别。当前单一修正使用冻结G2
   exact-language-only `P_lang`生成same-task稳定anchor query，动态Program只控制event/frame measure，并对每video、每event candidate
-  features做detached symmetric inverse-square-root；仍保留真实X/Y、native solve、两softmax之差与唯一rank16。world6真实一步profile
-  已通过，下一步是clean pushed detached F0与fresh同一F3 Gate；profile、analytic oracle和内部loss均不得冒充Gate。
+  features做detached symmetric inverse-square-root；仍保留真实X/Y、native solve、两softmax之差与唯一rank16。clean detached
+  `20acc33`的F0通过，fresh macro10完整451-condition fit/held/task-holdout提升到`.141080/.142120/.145828`，40/40 held tasks从
+  macro5改善且held/fit为`1.00737`，证明稳定anchor修复了迁移但仍未过`.75/.50`。六task单任务20-step probes的另一fit/held均跟随
+  train，但q仅`.0197--.0277`；task93 q的18个target在shared input/output query head上合成梯度只有norm和的`.272/.268`，而
+  candidate trunk已有fixed-owner FiLM。当前单一修正因此给query trunks增加zero-init bounded fixed-owner input及fixed-owner/
+  output-group FiLM；不重训G2，不改rank、bank、loss、data或Gate。实现通过184项CPU回归和architecture hard checks；下一步是
+  clean pushed detached F0与fresh同一F3 Gate，profile、诊断和内部loss仍不得冒充Gate。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

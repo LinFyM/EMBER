@@ -643,6 +643,24 @@ rollout前一次Writer调用。world6真实profile已完成一组3+3 optimizer u
 `25.59/25.99GB`，Action Meta/source/Program/scale trainable及held gradient均为0；这只获得clean detached F0/formal F3资格，不能
 冒充mapping Gate。
 
+### 45. stable anchor修复了迁移，当前最早接口是q target在shared query head中的梯度相消
+
+clean detached `main@20acc33`的stable-anchor F3从fresh训练并exact-resume到macro10后，完整451-condition fit/held-video/
+task-holdout median达到`.141080/.142120/.145828`，held/fit为`1.00737`，且40/40 held tasks相对macro5改善。这比此前
+family/fixed-owner macro10的held `.074620`有实质增量，说明task-stable `P_lang`加per-event feature gauge确实修复了跨video与
+跨task迁移；但held p10仅`.116653`且q/v/action-in/action-out为`.030186/.110266/.180031/.253562`，仍不满足F3 Gate。
+
+六个meta/target task各自只用一条fit video继续优化20步时，另一fit与held video始终跟随train，overall达到约`.20--.25`；q却只到
+`.0197--.0277`，而action-in/out通常到`.31--.49`。所以最早问题不是held泛化、视频不稳定或仅仅50-task语义竞争。task93的18个q
+targets对family-shared input/output query heads产生近正交且大量相消的梯度：aggregate-to-norm-sum仅`.272/.268`，153对中有
+`76/74`对负向；candidate key trunk的相应比例为`.364/.602`，但它已经拥有fixed-owner FiLM，query侧没有对称的owner梯度路径。
+
+冻结G2 `P_lang`的owner-baseline-free task variation仍有约`3.2--3.6` effective rank并严格same-task跨video不变；这不足以证明最终
+语义容量已充分，却也不支持在更早query-ownership接口未修复时重训G2。当前最小因果修正只给family-shared query trunks加入
+zero-init bounded fixed-owner input FiLM与fixed-owner/output-group FiLM；它们表示38-target及真实output-group固定拓扑，不包含task/
+video/member/frame ID，task-dependent query仍由共享trunk读取`P_lang`。若fresh F3仍失败，再按owner/group与task-content分解决定是否
+重开language content接口，不能把该probe或内部recovery冒充shared mapping Gate。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

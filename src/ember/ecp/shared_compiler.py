@@ -98,6 +98,8 @@ class SharedNativeFactorCompiler(torch.nn.Module):
     rereads that bank and pools real X/Y values with explicit softmax branches.
     """
 
+    native_dual_matmul_precision = "ieee_fp32"
+
     def __init__(
         self,
         owners: Sequence[TargetOwner],
@@ -679,6 +681,12 @@ class SharedNativeFactorCompiler(torch.nn.Module):
     ) -> SharedCompilerOutput:
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compiler video set or scale authority changed")
+        if s_ref.device.type == "cuda":
+            # The retained native covariance can have condition near 1e6.
+            # TF32 score products then destroy the signed dual cancellation.
+            # Keep this process-wide setting through autograd backward; the
+            # frozen policy runs under BF16 and does not need TF32 FP32 GEMMs.
+            torch.backends.cuda.matmul.allow_tf32 = False
         for video in videos:
             self._validate_video(video)
         state = self.anchor_scorer.program_state(program)

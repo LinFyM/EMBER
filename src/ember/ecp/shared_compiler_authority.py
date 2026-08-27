@@ -332,6 +332,7 @@ def build_mapping_run_contract(
         "model": {
             **dict(config["model"]),
             "active_global_statistics": bool(compiler.global_statistics),
+            "native_dual_matmul_precision": compiler.native_dual_matmul_precision,
             "compiler_forward_signature": list(
                 inspect.signature(compiler.forward).parameters
             ),

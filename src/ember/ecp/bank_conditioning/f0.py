@@ -608,6 +608,11 @@ def _qualification_checks(result: Mapping[str, Any]) -> dict[str, bool]:
         and result["action_meta_parameters"] == 0,
         "source_and_program_frozen": result["source_trainable"] == 0
         and result["program_trainable"] == 0,
+        "native_dual_uses_ieee_fp32": result[
+            "native_dual_matmul_precision"
+        ]
+        == "ieee_fp32"
+        and not result["tf32_enabled_after_compiler_forward"],
         "unique_complete_rank16": result["rank16_tensor_count"] == 76
         and result["rank16_targets"] == 38,
         "checkpoint_has_no_lookup_or_teacher_state": not result[
@@ -659,6 +664,12 @@ def _build_result(
         "program_trainable": runtime.inventory[
             "natural_program_trainable_parameter_count"
         ],
+        "native_dual_matmul_precision": (
+            runtime.compiler.native_dual_matmul_precision
+        ),
+        "tf32_enabled_after_compiler_forward": (
+            torch.backends.cuda.matmul.allow_tf32
+        ),
         "gradient_norms": k1.gradient_norms,
         "chunked_to_nonchunked_raw_slot_maximum_error": k1.raw_slot_error,
         "chunked_to_nonchunked_update_cosine_minimum": (

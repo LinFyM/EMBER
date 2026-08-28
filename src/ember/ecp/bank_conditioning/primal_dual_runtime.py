@@ -38,6 +38,16 @@ class PrimalDualVideoResult:
 
 
 @dataclass(frozen=True)
+class PreparedPrimalDualVideo:
+    """Detached current-bank operator reusable across task-local updates."""
+
+    video: Any
+    frame_measure: torch.Tensor
+    input_operators: tuple[SpectralNativeCovariance, ...]
+    output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...]
+
+
+@dataclass(frozen=True)
 class _ReplayPlan:
     input_queries: tuple[torch.Tensor, ...]
     output_queries: tuple[tuple[torch.Tensor, ...], ...]
@@ -307,16 +317,30 @@ class PrimalDualVideoOperator:
             query_scales,
         )
 
-    def _plan(
-        self,
-        video: Any,
-        input_primals: tuple[torch.Tensor, ...],
-        output_primals: tuple[torch.Tensor, ...],
-    ) -> _ReplayPlan:
+    def prepare(self, video: Any) -> PreparedPrimalDualVideo:
+        """Read B0 once and retain only its detached spectral operator."""
+
+        self.validate_video(video)
         frame, input_stats, output_stats = self._covariance_statistics(video)
         input_operators, output_operators = self._solve_operators(
             input_stats, output_stats
         )
+        return PreparedPrimalDualVideo(
+            video=video,
+            frame_measure=frame,
+            input_operators=input_operators,
+            output_operators=output_operators,
+        )
+
+    def _plan(
+        self,
+        prepared: PreparedPrimalDualVideo,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+    ) -> _ReplayPlan:
+        frame = prepared.frame_measure
+        input_operators = prepared.input_operators
+        output_operators = prepared.output_operators
         queries = self._queries(
             input_primals, output_primals, input_operators, output_operators
         )
@@ -433,14 +457,14 @@ class PrimalDualVideoOperator:
             ),
         )
 
-    def __call__(
+    def apply(
         self,
-        video: Any,
+        prepared: PreparedPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
     ) -> PrimalDualVideoResult:
-        plan = self._plan(video, input_primals, output_primals)
-        inputs, outputs = self._replay(video, plan)
+        plan = self._plan(prepared, input_primals, output_primals)
+        inputs, outputs = self._replay(prepared.video, plan)
         return PrimalDualVideoResult(
             input_values=inputs,
             output_values=outputs,
@@ -449,3 +473,11 @@ class PrimalDualVideoOperator:
             solve_metrics=plan.solve_metrics,
             conditioning_metrics=plan.conditioning_metrics,
         )
+
+    def __call__(
+        self,
+        video: Any,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+    ) -> PrimalDualVideoResult:
+        return self.apply(self.prepare(video), input_primals, output_primals)

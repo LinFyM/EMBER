@@ -1,5 +1,34 @@
 # EMBER progress
 
+## 2026-08-28 v5 P0通过，P1六任务资格已预注册
+
+clean pushed detached `main@e2f9d33`上的真实38-target P0已在gpu01物理1完成并通过。K1/K4均使用纯Native Stage 0，实际
+Action Meta module/parameter为0，source与G2 Program trainable为0；38 targets最终物化76 tensors的唯一rank12+4 rank16 adapter，
+并由真实policy消费。外部frame chunk为4与one-chunk的raw primal、solve、conditioning和relative error均为0，minimum update
+cosine为`0.9999999999999998`；K4 video集合置换最大误差`2.384185791015625e-07`且`beta=[.25,.25,.25,.25]`。全部
+Program/primal/event/scale梯度有限非零。K1/K4分别耗时`38.07/148.15s`，policy consumption为`.164s`，peak allocated/reserved
+约`15.83/18.57GiB`；artifact为
+`runs/analysis/pi05_ecp_shared_compiler_g3_v5_f0_e2f9d33_task93_gpu01p1_20260828.json`。
+
+P0前两次真实运行暴露并修复了一个工程而非科学失败：FP32 covariance按外部chunk分组会在近`1e6`条件数下改变截断谱；随后即使
+solve一致，signed replay仍因chunk归并顺序有约`.0176`最大相对差。当前B0与B1都按固定candidate microblock归并（input 400、
+output 1600 candidates），外部frame chunk只影响流式读取与至多一个microblock remainder，不再改变数值定义。旧functional-polar
+没有恢复为active路径。
+
+P1固定使用`configs/pi05_ecp_primal_capacity_p1_v1.json`：3个meta-fit tasks`[1,8,9]`、3个target-fit tasks`[72,73,75]`，
+覆盖q/v浅中深及action-in/out八个targets；每task用最低ordinal的两条mapping-fit videos等权优化，同一预注册held video全程零梯度、
+不选checkpoint。每task只优化跨两条fit video共享的input/output native primals；scale固定为held-excluded fit-consensus初始化并受
+`s_ref`上界约束，G2/source/shared compiler/scale/Action Meta全部冻结。固定500 steps且只保留final task code。Gate要求fit/held
+median recovery分别`>=.80/.75`、held/fit`>=.85`、held相对optimistic native projection median`>=.80`、四family held median
+均`>=.65`且六个task held均`>=.65`。六个独立单GPU worker只并行task、不改变task权重或科学batch；P1只裁决current-bank
+primal→dual/replay的多task方向容量，不证明shared Program mapping。
+
+P1 retained-code ownership保持阶段专用且不产生第二个Writer：`primal_capacity.py`只拥有task-local primal/fixed-scale数学，
+`primal_dual_runtime.py`新增的`prepare/apply`接口只让同一detached bank operator在固定步优化中复用，`primal_capacity_run.py`只拥有
+单task worker与固定训练合同，`primal_capacity_aggregate.py`只拥有六任务Gate聚合，脚本只是薄入口。新增代码量来自三条真实视频的
+重资产准备、固定步训练证据与并发安全的task-level artifact三项职责；没有通用框架、版本fallback或并行deployment路径。P1完成后
+runner/config作为可复现capacity evidence保留但不被P2/Writer forward调用；P2只复用已验证的primal-dual operator与损失原语。
+
 更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由clean pushed
 `main@435cb4a`通过。最新完整F3仍是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/task-holdout为
 `.086508/.083131/.072629/.096191`，四family held为`.021698/.065269/.085933/.173804`，明确non-pass且未续训。
@@ -7,8 +36,8 @@
 full functional-polar、S1 native-Q sketch与S2 set-summary/query-conditioned/cross-image scorer均已按各自Gate non-pass，不再是deployment
 候选。behavior-aligned identifiability也已完成：真实cross-episode flow-gradient验证rank4 policy descent且三条bank均有`.90--.91`
 可达方向；旧selector与bank-independent dual的held仅`.0229/.0745`，而Program/task primal经每条当前bank的global covariance对偶化后
-fit/held立即恢复到`.904--.911/.901`。因此当前下一步不再是behavior诊断或新scorer，而是v5 Program-primal/current-bank-global-dual
-的38-target P0。
+fit/held立即恢复到`.904--.911/.901`。v5的38-target P0现已通过，当前下一步是上述六任务P1；只有其通过才训练P2 shared
+Program-to-primal mapping。
 
 第三位专家已锁定远程`main@9b52e59`及其可达历史完成审计；1033行原文逐字保存为
 `docs/expert_review_20260828_g3_functional_sketch.md`。最新裁决是：full functional-polar保留为fit-only teacher/reference和容量诊断，

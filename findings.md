@@ -1048,6 +1048,19 @@ dual：candidate covariance随video旋转，fit score会过拟合自己的dual�
 solve/replay使用同一个全局时间quadrature measure。该结果是one-task/one-target nonformal机制证据，只选择下一P0实现，不证明38-target、
 multi-family、shared Program mapping或G3 Gate。validation/test action/reward、shuffled/reversed与Action Meta均未使用。
 
+### 64. v5真实P0通过并把下一失效接口收敛到multi-task primal容量
+
+clean pushed detached `e2f9d33`的真实task93、38-target K1/K4 P0全部通过：Action Meta module/parameter 0、source/G2冻结、76 tensors
+唯一rank16、真实policy consumption、uniform K4和全部primal/Program/event/scale梯度均成立。K4 permutation最大误差仅
+`2.384185791015625e-07`；最终chunk4与one-chunk的raw/solve/conditioning error均为0，minimum update cosine为
+`0.9999999999999998`。因此v5当前没有未解释的hook、bank边界、两pass、chunk、materialization或信息墙工程故障。
+
+P0也给出一个可复用的数值边界：近`1e6`条件数下，B0 covariance与B1 signed replay都必须按固定candidate microblock归并，不能让
+外部frame chunk改变浮点归并树；input/output microblock分别为400/1600 candidates，流式状态只缓存不足一个block的remainder。
+这不是扩大模型或增加防御校验，而是让chunked算法与其reference拥有同一个数值定义。下一资格只在六个预注册fit tasks、多family/
+深度targets上优化跨video稳定primal，held video保持零梯度；scale固定到fit-only authority并推迟到F4。若P1失败，首先按family、
+input/output group和retained spectrum解释，不能修改shared Program scorer或用task93单点外推。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

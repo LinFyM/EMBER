@@ -122,6 +122,24 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     expected = compiler(program, (one_chunk,), s_ref=scale)
     observed = compiler(program, (two_chunks,), s_ref=scale)
 
+    state = compiler.primal_scorer.program_state(program)
+    input_primals = compiler.primal_scorer.input_primals(state)
+    output_primals = compiler.primal_scorer.output_primals(state)
+    prepared = compiler.bank_operator.prepare(one_chunk)
+    replayed = compiler.bank_operator.apply(
+        prepared, input_primals, output_primals
+    )
+    direct = compiler.bank_operator(
+        one_chunk, input_primals, output_primals
+    )
+    for left, right in zip(
+        (*replayed.input_values, *replayed.output_values),
+        (*direct.input_values, *direct.output_values),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right)
+    torch.testing.assert_close(replayed.solve_metrics, direct.solve_metrics)
+
     assert torch.equal(expected.video_weights, torch.ones(1))
     for target, (a_direction, b_direction) in enumerate(
         zip(observed.input_directions, observed.output_directions, strict=True)

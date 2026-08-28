@@ -1,0 +1,88 @@
+{
+  "schema_version": "ember_ecp_primal_capacity_p1_v1",
+  "status": "active_preregistered",
+  "model_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
+  "panel": {
+    "task_ids": [1, 8, 9, 72, 73, 75],
+    "task_roles": {
+      "meta_fit": [1, 8, 9],
+      "target_fit": [72, 73, 75]
+    },
+    "target_indices": [0, 16, 34, 1, 17, 35, 36, 37],
+    "target_semantics": [
+      "q_layer0",
+      "q_layer8",
+      "q_layer17",
+      "v_layer0",
+      "v_layer8",
+      "v_layer17",
+      "action_in",
+      "action_out"
+    ],
+    "fit_video_selection": "lowest_two_mapping_fit_video_ordinals",
+    "held_video_selection": "pre_registered_mapping_video_holdout",
+    "fit_videos_per_task": 2,
+    "held_videos_per_task": 1
+  },
+  "capacity_code": {
+    "input": "one_free_rank4_native_primal_per_selected_target",
+    "output": "one_free_rank4_native_primal_per_selected_target_and_native_group",
+    "scale": "fixed_fit_consensus_scale_clipped_by_s_ref_held_excluded",
+    "shared_across_task_videos": true,
+    "initialization": "rank4_truncated_mean_of_all_fit_consensus_members",
+    "current_bank_operator": "per_video_global_covariance_dual_exact_signed_replay",
+    "covariance_frame_chunk": 4,
+    "video_weight": "K1_identity"
+  },
+  "optimization": {
+    "seed": 20260828,
+    "steps": 500,
+    "report_steps": [0, 1, 50, 100, 200, 350, 500],
+    "primal_learning_rate": 0.02,
+    "scale_trainable": false,
+    "betas": [0.9, 0.95],
+    "weight_decay": 0.0,
+    "gradient_clip_norm": 1.0,
+    "teacher_temperature": 0.1,
+    "fit_video_reduction": "equal_two_video_mean",
+    "cross_video_weight": 0.25,
+    "cross_video_margin": 0.05,
+    "held_video_gradients": 0,
+    "held_video_checkpoint_selection": false,
+    "early_stop": false
+  },
+  "gate": {
+    "fit_median_recovery_minimum": 0.80,
+    "held_median_recovery_minimum": 0.75,
+    "held_to_fit_minimum": 0.85,
+    "held_relative_to_optimistic_median_minimum": 0.80,
+    "held_family_median_minimum": 0.65,
+    "per_task_held_recovery_minimum": 0.65,
+    "all_six_tasks_required": true,
+    "all_four_families_required": true
+  },
+  "execution": {
+    "worker_topology": "six_independent_single_gpu_task_workers_no_nccl",
+    "workers": 6,
+    "task_weighting": "one_task_one_worker_equal_aggregate",
+    "retain": ["one_final_task_code", "task_report", "aggregate", "completion"],
+    "checkpoint_selection": "fixed_final_step_500_only"
+  },
+  "information_wall": {
+    "role": "fit_only_task_local_primal_capacity_qualification",
+    "deployment_candidate": false,
+    "training_only": [
+      "fit_task native feasible teacher factors",
+      "fit task consensus members",
+      "task local code ownership"
+    ],
+    "held_video_used_for_gradient": false,
+    "held_video_used_for_checkpoint_selection": false,
+    "validation_or_test_action_reward_reads": 0,
+    "action_meta_installed": false,
+    "source_or_g2_trainable_parameters": 0,
+    "shared_program_scorer_trainable_parameters": 0,
+    "task_local_scale_trainable_parameters": 0,
+    "shuffled_or_reversed_use": false
+  }
+}

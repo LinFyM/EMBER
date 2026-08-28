@@ -412,7 +412,10 @@ G3按以下因果顺序推进：
 2. **P1 multi-family task-local primal capacity**：在预注册meta/target fit tasks、浅/中/深q/v与两个action targets上，直接用fit-only
    teacher/behavior方向作为primal，经过每条当前bank的同一global dual/replay；video holdout零梯度。要求相对各自optimistic native
    projection无数量级损失并保持跨video，先证明该operator不只对task93/q20成立。失败按family、input/output、group、retained spectrum
-   定位，不修改Program scorer。
+   定位，不修改Program scorer。首版固定为meta-fit`[1,8,9]`、target-fit`[72,73,75]`及八个浅/中/深/action targets；每task两条
+   fit video等权、固定500 steps，只优化跨videos共享的input/output primals。scale使用held-excluded fit-consensus常量并受`s_ref`
+   上界约束，不进入optimizer；其独立学习仍属于F4。Gate为fit/held median`>=.80/.75`、held/fit`>=.85`、held相对optimistic
+   median`>=.80`、四family held median及每task held均`>=.65`。
 3. **P2 Frozen-Program shared mapping**：P1通过后，从fresh训练共享full-Program-to-primal scorer；使用原329 fit、40 held-video、82
    task-holdout与set-valued whole-member paired effective-update credit，scale继续冻结。两个相邻single checkpoints必须满足held median
    `>=.75`、p10`>=.50`、held/fit`>=.8`，并分别报告q/v/action与meta/target。correct-vs-wrong Program同role panel的role median margin
@@ -516,8 +519,9 @@ successful members、effect calibration、probe-particle capture、carrier/mobil
 当前活动树已经实现真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、G2 Natural
 Program、Program-to-target-native primal scorer、per-video global covariance、截断谱primal-to-dual solve、IEEE exact signed replay、uniform
 K aggregation、small-core rank4 canonicalization、rank12+4唯一rank16和451-condition mapping/evaluator wiring；Action Meta默认关闭。
-fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。尚待真实P0资格的是完整38-target K1/K4吞吐、GPU
-chunk/gradient/materialization与policy consumption；P0后还需P1 multi-family task-local capacity和P2 shared Program mapping Gate。
+fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。clean pushed detached `e2f9d33`的完整38-target K1/K4
+P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
+当前待完成P1 multi-family task-local primal capacity，只有其通过后才进入P2 shared Program mapping Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为

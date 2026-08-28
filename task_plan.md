@@ -393,10 +393,14 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   - [x] 单一机制反事实把同一behavior primal按每条bank全局covariance对偶化，并以同一全局measure replay：IEEE下fit为
     `.9112/.9043`、held为`.9005`，三条bank solve总计`.734s`；eventwise replay反而失真。该结果选择Program-primal→current-bank
     global dual接口，不恢复旧functional polar或继续scorer版本链；它仍只是one-task/one-target诊断，不冒充G3 Gate。
-- [ ] P0：从clean pushed detached commit运行真实38-target K1/K4 F0，验证两次流式read、四类Y边界、chunk一致、全部primal梯度、
-  Action Meta 0、source/G2冻结、uniform K、唯一rank16 materialization/policy consumption，以及显存和吞吐。
-- [ ] P1：在预注册多task、多family、浅/中/深targets上做task-local primal current-bank dual capacity资格；video holdout零梯度，必须
-  相对各自optimistic native projection无数量级损失并保持跨video，不能用task93/q20单点外推。
+- [x] P0：clean pushed detached `e2f9d33`的真实38-target K1/K4 F0已通过；两次流式read、四类Y边界、chunk一致、全部primal/
+  Program梯度、Action Meta 0、source/G2冻结、uniform K、唯一rank16 materialization与policy consumption均成立。固定candidate
+  microblocks使chunk4/one-chunk raw/solve/conditioning error为0，minimum update cosine为`0.9999999999999998`。
+- [ ] P1：按`configs/pi05_ecp_primal_capacity_p1_v1.json`在meta/target各3 tasks及q/v浅中深、action-in/out八targets上做task-local
+  primal current-bank dual capacity资格；两条最低ordinal fit videos等权优化，预注册video holdout零梯度且不选模。只优化跨videos
+  共享的input/output primals，fit-only consensus scale固定并受`s_ref`上界约束，scale学习推迟到F4。固定500 steps的六任务Gate要求
+  fit/held median`>=.80/.75`、held/fit`>=.85`、held/optimistic median`>=.80`、四family及六task held均`>=.65`；不能用
+  task93/q20单点或内部loss代替。
 - [ ] P2：P1通过后从fresh训练共享full-Program-to-primal scorer并恢复完整451-condition mapping。保留held median`>=.75`、p10
   `>=.50`、held/fit`>=.8`、相邻checkpoint稳定和correct-vs-wrong Program role median margin`>=.10`；内部loss不能代替。
 - [ ] 条件式做fit-only decomposition-feasibility oracle：仅当P2 shared mapping已显著取得selection而残余证据仍指向common

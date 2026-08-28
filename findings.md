@@ -866,6 +866,33 @@ anchor三次流式读取，总计四次native read；全部发生在rollout前�
 F3；internal polar residual、solve cosine或loss下降不能代替`.75/.50/.8` Gate。旧`C=I`与Euclidean normalized-bilinear active开关删除，
 其formal artifacts和Git历史保留。
 
+### 55. functional-polar机制有解析依据，但当前per-condition执行形态被真实吞吐否决
+
+在不启动formal的前提下，对task93/video的真实K1 condition逐段profile。首个可运行版本即使已经只capture一次frozen X/Y，仍需
+`82.114s`：Pass A `5.283s`、native capture `5.622s`、compiler forward `59.595s`、backward `11.615s`；其中233个bank的polar
+约`38.15s`。`da3fd3e`将同shape polar批处理、统计/solve改为IEEE FP32、矩形functional image改为thin-QR small SVD，并按解析见证
+让q input及v/action使用per-event、只保留q output global polar。最终condition为`58.332s`、compiler forward `35.753s`、polar
+约`14.15s`，peak allocated/reserved约`29.34/30.70GB`。全量cache coalescing与移除activation checkpoint分别在约
+`43.36/44.37GB`真实OOM，已回退。
+
+这次约`29%`端到端和`63%` polar降本仍不足以改变结论：即使假设polar与feature whitening免费，现有B0 anchor/solve、B1 replay和
+其余stream编排仍约`14.4s` forward；再加Pass A/native capture/backward，不能靠小型kernel、dtype、batch或更多GPU压到与25-step
+macro5相称的墙钟。正式schedule固定300个K1 condition，六卡理想训练下限约`49min`，完整451-condition Gate还需额外几十分钟。
+卡数也不能改变每个rank两条video的重算临界路径。因此吞吐失败属于结构接口，不是GPU调度失败。
+
+这项负结果只否决“把full 233-bank covariance/eigh/functional SVD/B0 solve放在每次deployment/shared forward中”的当前执行形态；
+它不推翻task-local `.996/.999/1.000/.998` functional witness、真实X/Y、signed pooling、G1/G2、rank4或bank-global context的必要性。
+当前没有formal F0/F3新结果，也没有新checkpoint。可能的后继包括把昂贵full operator降为fit-only teacher/诊断，再让轻量共享student
+基于Program和当前bank低维summary生成dense signed measure并exact pool真实X/Y；但该方向尚未经过专家审查和容量/因果正控，不是
+active design，更不能恢复旧fixed realizer、FactorHead或task/video lookup。
+
+### 56. 当前源码保留的是可审查reference，不是另一个已获资格的Writer
+
+`da3fd3e`没有添加新runner、策略flag或并行Writer，只在现有`functional_polar.py`数学owner、`shared_compiler.py`编排owner和
+mapping condition loader中保存上述最佳执行形态；同一condition frozen X/Y cache是ephemeral、只用于mapping acquisition/evaluation，
+不进checkpoint且不改变部署信息墙。deterministic leading blocks、batched global/per-event polar与矩形QR-SVD均有定向合同；全仓
+`189 passed`。代码被保留是为了让远程专家能从完整源文件复核复杂度和降本边界，不能据此声称真实K1/K4 F0、吞吐Gate或F3已通过。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

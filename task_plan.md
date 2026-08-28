@@ -350,9 +350,14 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] 沿实际post-`Wk` bank把旧Euclidean query坐标与真实`C_r C_0^+ H` functional image逐层对照。深层q/v与两个action
   family的task-local functional-polar见证约为`.996/.999/1.000/.998`；跨rank共享polar使v/action-out降至`.915/.831`，raw
   non-whitened chart使q降至`.911`。因此最早接口是Program query在错误metric中被单位化，而不是bank/key/rank/G2/optimizer失容。
-- [ ] 完成唯一v4 functional-polar implementation的真实F0：每video依次流式累计feature statistics、base/replay covariance与event
-  key images，以rank-specific global cross-event polar变换raw full-Program query，再做bounded B0 anchor/native solve与B1 exact replay；
-  必须通过K1/K4 forward、gradient、chunk、materialization、Action Meta 0和吞吐/显存资格。内部polar witness不等于F3 Gate。
+- [x] 对唯一v4 functional-polar实现完成真实K1分段profile和有边界的执行优化：`da3fd3e`复用单次frozen X/Y capture、按shape合批
+  functional polar、以IEEE FP32累计/求解并用thin-QR small SVD；全仓`189 passed`。condition由`82.114s`降至`58.332s`，但25-step
+  macro5在六卡上的理想训练下限仍约`49min`且未含451评测，故吞吐资格non-pass；未运行K4 F0、formal F3、训练或评测。
+- [ ] 暂停当前full per-bank functional-polar formal launch，先完成全新专家复核。专家应锁定本次最新远程main，完整审计
+  `ed2883bd`之后的Git、F3 formal/diagnostic evidence与`da3fd3e`执行剖面，判断应如何获得数量级降本并保留Program/video因果性；
+  在证据形成前不把fit-only teacher distillation、low-dimensional bank sketch或其它建议自行登记为active design。
+- [ ] 只有后继唯一canonical实现先通过与规模相称的真实吞吐资格，才完成K1/K4 forward、gradient、chunk、materialization、
+  Action Meta 0 F0；内部polar witness或低维surrogate不能替代。
 - [ ] F0通过后从clean pushed detached commit fresh运行相同451-condition F3；保持frozen G2 Program、fit-only consensus teacher、
   rank/data/optimizer/Gate不变，并执行固定40-task fit-only correct-vs-wrong Program panel：每task最低video ordinal、同role下一task
   循环配对、primary native bank/teacher不变，meta与target两个role的median causal margin都必须`>=.10`。只有single checkpoints满足

@@ -13,12 +13,22 @@ v/action families，但q需要跨event global polar；跨rank共享polar使v/act
 又使q降至`.911`。因此最早失效接口已收窄为：raw Program query在普通Euclidean坐标中被单位化，未按真实rank-specific functional
 metric定标；不是native bank、candidate content、G2 Program、rank4、optimizer或泛化失容。
 
-当前隔离实现面`codex/g3-functional-polar`据此保留一个canonical v4路径：每video依次流式读取feature statistics、base/replay
-covariance与event native/key images、bounded Program-conditioned anchors，最后exact signed replay；以detached rank-specific global
-cross-event polar变换full-Program raw query，B0 coefficient norm固定不超过`1e-3`，B1 native score RMS统一为`.02`。输入candidate
-仍无type轴，输出仍为abs/adj/init/goal，所有weights仍由共享Program query与当前content keys计算，bank-derived polar不是task/video
-查表且不进入checkpoint。CPU定向合同当前已通过；下一步是clean pushed detached真实K1/K4 F0和吞吐资格，未通过前不启动formal F3。
-旧`C=I` off开关与Euclidean normalized-bilinear运行面已从active v4退役，历史formal evidence不删除。
+`main@e139bc7`后的隔离提交`da3fd3e`保留同一个canonical v4路径并只做执行优化：mapping acquisition把同一condition的frozen X/Y
+capture一次后在B0/B1复用；233个同shape functional polar按family/native shape合批；native statistics、whitening和spectral solve使用
+IEEE FP32；矩形functional image用thin-QR后只对小矩阵做SVD；q input及v/action使用per-event polar，q output保留global polar。
+deterministic leading-block accumulation保持frame chunk边界不改变统计。旧`C=I`与Euclidean路径仍未恢复，也没有新增parallel Writer。
+
+真实gpu01单K1 task93/video profile把condition从`82.114s`降到`58.332s`，其中compiler forward从`59.595s`降到`35.753s`，polar
+从约`38.15s`降到`14.15s`；最终Pass A/native capture/backward分别约`5.283/5.632/11.664s`，feature whitening、B0 solve、B1 replay
+仍约`7.232/5.811/2.691s`，peak allocated/reserved约`29.34/30.70GB`。尝试把全部frame cache合并或移除activation checkpoint分别在
+约`43.36/44.37GB`发生真实OOM，均已回退，不在提交中。当前macro5只有25 updates，却固定产生`25*6*2=300`个K1 condition；按六卡
+理想均衡且不计同步/保存，训练下限仍约`49min`，451-condition评测还会额外需要几十分钟。该成本与规模不相称，吞吐资格明确
+non-pass。
+
+因此没有把CPU合同、task-local polar witness或局部加速冒充F0/F3通过，也没有启动functional-polar formal F3、训练、strict评测或
+保留新checkpoint。当前GPU无该任务进程。`da3fd3e`仅保存专家可审查的最佳已实现执行形态和定向合同；下一步先由全新专家结合
+`ed2883bd`之后的完整Git/实验历史判断：full per-bank polar是否还能获得数量级结构性降本，还是应把昂贵operator限制为fit-only
+teacher/诊断并重新设计轻量shared content selection。任何具体替代尚未登记为active design。
 
 ## IEEE fresh F3 formal launch contract
 

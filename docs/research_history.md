@@ -805,3 +805,16 @@ native solve和B1 exact signed replay。最终weights仍由共享Program query�
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f3_ieee_macro5_mapping_eval_78b7e58_gpu01p012345_w6_20260828/`；
 - `runs/analysis/pi05_ecp_g3_native_dual_precision_audit_abff0a7_20260828/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f0_ieee_precision_78b7e58_gpu01p1_20260828.json`。
+
+## 42. functional-polar执行优化与吞吐资格non-pass
+
+在没有启动新formal run的情况下，对v4做真实task93/video K1 profile。初始可运行condition为`82.114s`，其中compiler forward
+`59.595s`、backward `11.615s`、Pass A/native capture约`5.283/5.622s`。`da3fd3e`保持同一个compiler和科学公式，只加入单次
+frozen X/Y replay cache、同shape polar batching、IEEE FP32 statistics/solve、global/per-event解析分工及thin-QR small SVD；全仓
+`189 passed`。最终condition降为`58.332s`，compiler forward `35.753s`，polar由约`38.15s`降为`14.15s`，peak allocated/reserved
+约`29.34/30.70GB`。full cache coalescing与去activation checkpoint均在A40上真实OOM并已回退。
+
+macro5只有25 optimizer updates，却固定执行300个K1 conditions；六卡理想训练下限仍约`49min`，并未包括451-condition Gate评测。
+owner据此明确墙钟成本必须与规模相称。当前full per-bank polar执行形态的吞吐资格non-pass，未运行K4 F0、formal F3、训练或评测，
+没有新checkpoint或scientific Gate结果。该结论保留functional witness的科学证据，只要求在下一formal前获得数量级结构性降本；后继
+设计先交由全新专家复核，不在历史记录中预判。

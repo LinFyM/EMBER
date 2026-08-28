@@ -114,6 +114,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 - 吞吐优化同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、step wall time、计算段SM/UTL、memory UTL与显存峰值
   调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
   48GB本身不构成低效，选择仍以真实吞吐和安全余量为准。
+- 实际墙钟成本必须与训练/评测规模相称。formal launch前要用真实condition/step profile外推完整训练和Gate评测；若一个只有少量更新的
+  资格实验仍需几十分钟或数小时，且瓶颈来自每condition重复的大算子，就应先判定吞吐资格non-pass并修正执行结构，不能靠堆更多GPU、
+  缩减必要评测或要求owner接受原始吞吐来掩盖。
 - EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
 - gpu01曾标记prohibited的设备只能按UUID/serial身份继承该限制，不能把节点重启后的逻辑index 0机械等同于旧物理0；GPU身份、
   枚举映射和状态每次都要重新确认。2026-08-26重启后旧prohibited设备未被枚举，当前逻辑0是原物理1，不受该旧标记限制。

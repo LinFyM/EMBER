@@ -1,0 +1,63 @@
+{
+  "schema_version": "ember_ecp_set_summary_s2_v1",
+  "status": "active_task_local_free_query_positive_control",
+  "authorities": {
+    "reference_config": "configs/pi05_ecp_shared_compiler_g3_v4.json",
+    "s1_nonpass_config": "configs/pi05_ecp_functional_sketch_s1_v1.json",
+    "s1_formal_report": "runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/report.json",
+    "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json"
+  },
+  "model": {
+    "function_class": "measure_normalized_mean_variance_deepsets_separable_scalar_energy",
+    "feature_width": 128,
+    "hidden_width": 256,
+    "event_slots": 8,
+    "residual_rank": 4,
+    "logit_bound": 8.0,
+    "candidate_energy_basis_width": 128,
+    "q_event_context": "all_eight_ordered_event_summaries",
+    "other_family_event_context": "local_canonical_event_summary",
+    "candidate_encoder": "frozen_existing_target_native_encoder_family_trunk_and_projected_key",
+    "input_candidate_index": ["video", "frame", "probe", "horizon"],
+    "output_candidate_index": ["video", "frame", "probe", "horizon", "type"],
+    "value": "exact_real_native_XY_signed_positive_negative_pooling",
+    "output_group_topology": "shared_fixed_group_embeddings_no_task_or_video_identity"
+  },
+  "witness": {
+    "authority_id": 93,
+    "target": 20,
+    "fit_videos": [18, 48],
+    "held_video": 0,
+    "member_names": ["target_step1000", "target_step2000"],
+    "selection_rule": "reuse_both_preexisting_task93_q20_fit_conditions_and_smallest_distinct_video_demo_for_zero_gradient_holdout",
+    "fit_effective_update_median_minimum": 0.9,
+    "held_effective_update_minimum": 0.8,
+    "held_input_subspace_minimum": 0.8,
+    "held_output_subspace_minimum": 0.8,
+    "held_to_fit_minimum": 0.8,
+    "claim_boundary": "passing_only_qualifies_this_function_class_for_the_formal_12_task_free_query_control"
+  },
+  "optimization": {
+    "seed": 20260828,
+    "steps": 1000,
+    "report_interval": 100,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "betas": [0.9, 0.95],
+    "epsilon": 1e-8,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "member_softmin_temperature": 0.05,
+    "cross_video_dispersion_weight": 0.25,
+    "precision": "frozen_policy_bfloat16_student_float32"
+  },
+  "information_wall": {
+    "deployment_inputs": ["exact language", "same-task action-hidden ordered videos"],
+    "capacity_only_task_local_state": ["free_rank_event_codes", "free_event_weights"],
+    "forbidden_forward_state": ["task_id", "video_id", "frame_id", "member_id", "teacher_factor", "teacher_action", "reward", "outcome"],
+    "held_video_gradient": false,
+    "held_video_checkpoint_selection": false,
+    "action_meta_installed": false,
+    "shuffled_or_reversed_use": false
+  }
+}

@@ -9,12 +9,13 @@ full functional-polar task-local见证约`.996/.999/1.000/.998`，但真实K1 co
 
 第三位专家已锁定远程`main@9b52e59`及其可达历史完成审计；1033行原文逐字保存为
 `docs/expert_review_20260828_g3_functional_sketch.md`。最新裁决是：full functional-polar保留为fit-only teacher/reference和容量诊断，
-不再作为deployment候选；当前唯一active G3路径改为low-dimensional bank-adaptive functional sketch，先做无训练S1容量/吞吐Gate，
-再做12-task冻结sketch的轻量shared student，只有absolute、video/task泛化与Program×bank因果均通过才恢复完整451-condition F3。
+不再作为deployment候选；其S1失败分支明确要求full polar/native-Q sketch都只作diagnostic，后继只能采用pure low-dimensional
+set-summary student，并先通过task-local free-query正控。S1现已触发该失败分支，只有set-summary的absolute、video/task泛化与
+Program×bank因果均通过才恢复完整451-condition F3。
 
-owner接受该方向，并明确四项实现边界：fit row的universal baseline必须leave-one-task-out，task-holdout只用fit tasks；12-task阶段
-每role各保留一个true task-holdout；首个student的fixed nested projection、sketch basis与bank statistics全部冻结/detached；具体
-causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint一次校准并sealed。
+owner接受该方向，并明确：fit row的universal baseline必须leave-one-task-out，task-holdout只用fit tasks；12-task阶段每role各保留
+一个true task-holdout；具体causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint
+一次校准并sealed。S1失败后不再冻结/训练其native-Q sketch，首版改为冻结现有candidate encoder并训练set-summary/scalar-energy。
 
 当前clean pushed `main@27bde62`已接通sealed fixed nested projection、流式
 native/key cross-image、`r_s={16,32,64}`共享前缀、`C_rQ` full-native free-query正控和exact signed replay。28项相关合同通过，实际
@@ -23,7 +24,22 @@ effective-update为`.156687--.157438`，input/output full-native free-query最�
 `.9999769`；同task/video/member/target的sealed F1 analytic positive仍为`.995560--.997907`。因此含per-row minimum`.95`的S1
 容量Gate已被正式反例否决，不运行其余96 conditions，也不训练该native-Q sketch。exploratory完整`H`最佳top64仍远低于门，补充排除
 fixed random projection抽坏；该早停不估计50-task分布。当前按专家预定fallback设计不经过native-Q rank64瓶颈的pure low-dimensional
-set-summary candidate-logit执行面，先做12-task task-local free-query正控，未开始shared训练。
+set-summary candidate-logit执行面，先做task93/q20机制witness，再进入12-task task-local free-query正控，未开始shared训练。
+
+当前实现面已把S1的frozen runtime与真实candidate-bank构造抽成共享owner，并新增measure-normalized mean/variance DeepSets summary、
+candidate-local nonlinear basis×bank/code-conditioned coefficients的bounded positive/negative scalar energy、event-normalized exact X/Y
+pooling和固定task-local rank/event code；不含native-Q lift、per-video/per-candidate参数或teacher forward。31项相关合同通过。gpu01物理2
+两步真实smoke已完成：task93的fit videos 18/48与zero-gradient held video 0全部成功capture，Action Meta/source/G2/compiler实际可训练
+参数均为0；去除event-invariant key的8倍重复编码后，训练为`4.27 step/s`、peak allocated/reserved约`5.42/5.84GiB`，两步fit/held
+update从约0提升到`.00927/.00983`。该smoke只证明forward/gradient/吞吐接通，不是容量Gate；下一步从clean pushed detached commit运行
+固定1000-step witness，held不产生梯度且不参与checkpoint选择。
+
+本轮retained-code ownership与lifecycle明确如下：`native_bank_runtime.py`唯一拥有frozen source/G2/compiler加载、K1 capture及真实candidate
+bank边界，并已从S1 analyzer删除213行重复实现，供S1诊断和S2共同复用；`set_summary.py`唯一拥有当前deployment-candidate的集合摘要、
+scalar energy与exact signed pooling数学；`probe_ecp_g3_set_summary_witness.py`只拥有固定task93/q20资格流程和formal artifact写入，不成为
+第二个Writer。S1 analyzer/config保留为明确`deployment_candidate=false`的历史诊断入口。witness runner的移除触发点是12-task正控把同一
+student执行面吸收到canonical S2 trainer后；届时只由Git与formal artifact保留task93专用流程，不继续并行增长。新增代码量来自真实
+bank共享owner、独立数学owner和可复现资格入口三个不可混合职责，不构造通用框架或版本fallback。
 
 ## S1 task93/q20 formal early-disqualifier launch contract
 

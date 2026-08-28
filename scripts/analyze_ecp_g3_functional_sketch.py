@@ -6,9 +6,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
 
 
@@ -28,234 +26,36 @@ from ember.ecp.bank_conditioning import (
     functional_target_queries,
     materialized_signed_pool,
 )
-from ember.ecp.bank_conditioning.anchor_solve import candidate_mass
-from ember.ecp.bank_conditioning.mapping_eval_runtime import load_mapping_tasks
-from ember.ecp.bank_conditioning.mapping_training import _load_training_assets
+from ember.ecp.bank_conditioning.native_bank_runtime import (
+    NativeCandidateBank,
+    materialize_condition_banks,
+    prepare_frozen_native_bank_runtime,
+    prepare_k1_condition,
+)
 from ember.ecp.native_factors import (
     G1_RESIDUAL_RANK,
-    NativeOutputBankState,
     native_output_group_count,
     rms_normalize,
 )
-from ember.ecp.shared_compiler_assets import (
-    authority_path,
-    load_shared_compiler_config,
-)
-from ember.ecp.shared_compiler_authority import pure_shared_compiler_inventory
 from ember.ecp.shared_compiler_dual_basis import update_geometry
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
 )
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_source_setup import initialize_distributed, seed_everything
 from scripts.analyze_ecp_bank_conditioned_operator import (
     _dual_sources,
     _task_shards,
 )
-from scripts.analyze_ecp_g3_dual_basis import (
-    _prepare_condition,
-    _teacher_rows,
-)
+from scripts.analyze_ecp_g3_dual_basis import _teacher_rows
 
 
 WORKER_SCHEMA = "ember_ecp_g3_functional_sketch_s1_worker_v1"
 REPORT_SCHEMA = "ember_ecp_g3_functional_sketch_s1_report_v1"
 
 
-@dataclass(frozen=True)
-class _GroupBank:
-    values: torch.Tensor
-    keys: torch.Tensor
-    base_mass: torch.Tensor
-    event_mass: torch.Tensor
-    replay_mass: torch.Tensor
-
-
-@dataclass
-class _SketchRuntime:
-    context: Any
-    config: dict[str, Any]
-    task_by_id: dict[int, Any]
-    video_store: Any
-    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
-    policy: torch.nn.Module
-    program: torch.nn.Module
-    compiler: torch.nn.Module
-    owners: tuple[Any, ...]
-    native_teachers: Any
-    query_points: int
-    inventory: dict[str, Any]
-
-    def close(self) -> None:
-        self.video_store.close()
-
-
-def _prepare_runtime(args: argparse.Namespace) -> _SketchRuntime:
-    """Load only the current frozen v4 bank path, without the retired trainer."""
-
-    context = initialize_distributed(require_numa=False, defer_process_group=True)
-    if context.world_size != 1 or context.rank != 0:
-        raise ValueError("functional-sketch workers are independent single-GPU jobs")
-    config = load_shared_compiler_config(args.reference_config)
-    seed_everything(int(config["optimization"]["seed"]), context)
-    tasks = load_mapping_tasks(
-        config, asset_root=args.asset_root, data_root=args.data_root
-    )
-    source_checkpoint = authority_path(
-        config, "source_checkpoint", asset_root=args.asset_root
-    )
-    tokenizer = authority_path(config, "tokenizer", asset_root=args.asset_root)
-    assets = _load_training_assets(
-        SimpleNamespace(
-            asset_root=args.asset_root,
-            checkpoint=source_checkpoint,
-            source_run=source_checkpoint.parent.parent,
-            tokenizer_path=tokenizer,
-        ),
-        config,
-        context,
-        tasks,
-    )
-    inventory = pure_shared_compiler_inventory(
-        policy=assets.policy,
-        program=assets.program,
-        compiler=assets.compiler,
-        owners=assets.owners,
-    )
-    assets.compiler.requires_grad_(False).eval()
-    if any(
-        parameter.requires_grad
-        for module in (assets.policy, assets.program, assets.compiler)
-        for parameter in module.parameters()
-    ):
-        assets.video_store.close()
-        raise RuntimeError("functional-sketch S1 unexpectedly loaded trainable state")
-    torch.cuda.reset_peak_memory_stats(context.device)
-    return _SketchRuntime(
-        context=context,
-        config=config,
-        task_by_id={task.authority_id: task for task in tasks},
-        video_store=assets.video_store,
-        language_tokens=assets.language_tokens,
-        policy=assets.policy,
-        program=assets.program,
-        compiler=assets.compiler,
-        owners=assets.owners,
-        native_teachers=assets.native_teachers,
-        query_points=assets.query_points,
-        inventory=inventory,
-    )
-
-
-def _candidate_keys(
-    scorer: Any,
-    value: torch.Tensor,
-    metadata: torch.Tensor,
-    *,
-    target: int,
-    output: bool,
-) -> torch.Tensor:
-    if output:
-        raw = scorer.output_keys(value, metadata, target=target)
-        return scorer.output_projected_keys(raw, target=target)
-    raw = scorer.input_keys(value, metadata, target=target)
-    return scorer.input_projected_keys(raw, target=target)
-
-
-def _condition_banks(
-    runtime: Any,
-    condition: Any,
-    targets: Sequence[int],
-) -> tuple[Any, dict[tuple[int, str, int], _GroupBank]]:
-    video = condition.videos[0]
-    scorer = runtime.compiler.anchor_scorer
-    state = scorer.program_state(condition.program)
-    base_frame, event_frame, frame_measure = runtime.compiler._video_measures(
-        video, state.event_weights
-    )
-    events = event_frame.shape[0]
-    input_values: dict[int, list[torch.Tensor]] = {target: [] for target in targets}
-    input_keys: dict[int, list[torch.Tensor]] = {target: [] for target in targets}
-    output_values: dict[tuple[int, int], list[torch.Tensor]] = {}
-    output_keys: dict[tuple[int, int], list[torch.Tensor]] = {}
-    boundaries = {
-        target: NativeOutputBankState(
-            final=video.native.final_outputs[target].detach()
-        )
-        for target in targets
-    }
-    next_frame = 0
-    with torch.no_grad():
-        for chunk in video.native.chunks():
-            stop = next_frame + chunk.frame_count
-            if chunk.start_frame != next_frame or stop > video.native.frame_count:
-                raise RuntimeError("functional-sketch native chunks changed")
-            assignment = video.canonical_assignment[next_frame:stop].float()
-            frame_metadata = scorer.frame_metadata(
-                assignment, video.frame_positions[next_frame:stop]
-            )
-            x_metadata = scorer.candidate_metadata(frame_metadata, output=False)
-            y_metadata = scorer.candidate_metadata(frame_metadata, output=True)
-            for target in targets:
-                owner = runtime.owners[target]
-                x = chunk.inputs[target].detach()
-                input_values[target].append(x)
-                key = _candidate_keys(
-                    scorer, x, x_metadata, target=target, output=False
-                )
-                input_keys[target].append(key[None].expand(events, *key.shape))
-
-                dynamic = boundaries[target].build(
-                    chunk.outputs[target].detach(), start_frame=next_frame
-                )
-                groups = native_output_group_count(owner)
-                grouped = dynamic.reshape(
-                    *dynamic.shape[:-1], groups, owner.out_features // groups
-                ).movedim(-2, 0)
-                keys = _candidate_keys(
-                    scorer,
-                    grouped,
-                    y_metadata[None],
-                    target=target,
-                    output=True,
-                )
-                for group in range(groups):
-                    output_values.setdefault((target, group), []).append(grouped[group])
-                    event_key = keys[group][None].expand(events, *keys[group].shape)
-                    output_keys.setdefault((target, group), []).append(event_key)
-            next_frame = stop
-    if next_frame != video.native.frame_count or any(
-        boundary.next_frame != next_frame for boundary in boundaries.values()
-    ):
-        raise RuntimeError("functional-sketch native stream ended early")
-
-    x_base = candidate_mass(base_frame, output=False)
-    x_event = candidate_mass(event_frame, output=False)
-    y_base = candidate_mass(base_frame, output=True)
-    y_event = candidate_mass(event_frame, output=True)
-    banks: dict[tuple[int, str, int], _GroupBank] = {}
-    for target in targets:
-        banks[(target, "input", 0)] = _GroupBank(
-            values=torch.cat(input_values[target], dim=0),
-            keys=torch.cat(input_keys[target], dim=1),
-            base_mass=x_base,
-            event_mass=x_event,
-            replay_mass=candidate_mass(frame_measure[target], output=False),
-        )
-        for group in range(native_output_group_count(runtime.owners[target])):
-            banks[(target, "output", group)] = _GroupBank(
-                values=torch.cat(output_values[(target, group)], dim=0),
-                keys=torch.cat(output_keys[(target, group)], dim=1),
-                base_mass=y_base,
-                event_mass=y_event,
-                replay_mass=candidate_mass(frame_measure[target], output=True),
-            )
-    return state, banks
-
-
 def _statistics(
-    bank: _GroupBank,
+    bank: NativeCandidateBank,
     projection: torch.Tensor,
     *,
     rank: int,
@@ -321,7 +121,7 @@ def _score_rms(queries: Any, statistics: Any) -> torch.Tensor:
 
 def _pool(
     query: torch.Tensor,
-    bank: _GroupBank,
+    bank: NativeCandidateBank,
     *,
     frame_chunk: int,
     streamed: bool,
@@ -356,7 +156,7 @@ def _target_rank_result(
     teacher_b: torch.Tensor,
     teacher_scales: torch.Tensor,
     state: Any,
-    banks: Mapping[tuple[int, str, int], _GroupBank],
+    banks: Mapping[tuple[int, str, int], NativeCandidateBank],
     rank: int,
     config: Mapping[str, Any],
     projections: Mapping[str, torch.Tensor],
@@ -522,10 +322,15 @@ def _condition_rows(
     record = source["record"]
     task_id = int(record["authority_id"])
     video_demo = int(record["video_demo"])
-    condition = _prepare_condition(runtime, task_id, video_demo)
+    condition = prepare_k1_condition(
+        runtime,
+        task_id=task_id,
+        video_demo=video_demo,
+        robustness_view="g3_functional_sketch_k1",
+    )
     captured = time.perf_counter()
     targets = args.target_indices
-    state, banks = _condition_banks(runtime, condition, targets)
+    state, banks = materialize_condition_banks(runtime, condition, targets)
     bank_ready = time.perf_counter()
     member_names = tuple(map(str, record["member_names"]))
     teachers = runtime.native_teachers.lookup_members(
@@ -683,7 +488,11 @@ def worker(args: argparse.Namespace) -> None:
     )
     runtime = None
     try:
-        runtime = _prepare_runtime(args)
+        runtime = prepare_frozen_native_bank_runtime(
+            reference_config=args.reference_config,
+            asset_root=args.asset_root,
+            data_root=args.data_root,
+        )
         runtime_ready = time.perf_counter()
         reference = _reference_rows(config, args.asset_root)
         rows = []

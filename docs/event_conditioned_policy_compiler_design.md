@@ -176,13 +176,17 @@ G3不回归每条video的解析dual/score，也不把deployment selection写成t
 ```text
 h_n        = phi_g(v_n, time, probe, horizon[, type])          [m]
 s_e        = concat(E_pie[psi(h_n)], Var_pie[psi(h_n)])        [2m]
+c_e        = ordered_q_context(s_1:8) or local_context(s_e)     [m]
 z_jre      = full Program readout or task-local free code       [m]
-l_n^+-     = b * tanh(MLP_g^+-(h_n, s_1:8/e, z_jre,
-                              h_n * gate_g(s_1:8/e, z_jre), metadata_n))
+B_n^+-     = candidate_basis_g(h_n)                             [2,m]
+C_jre^+-   = condition_g(z_jre, c_e, z_jre * c_e)               [2,m]
+l_n^+-     = b * tanh(<B_n^+-, C_jre^+-> / sqrt(m) + bias_jre^+-)
 ```
 
 这里每个event/video的`pi`先归一化为unit mass，因此长视频或候选数更多不会自动获得更大质量；K1严格identity。q family的score读取全部
-8个有序event summaries，v/action先读取当前event summary。正负分支独立计算且有界，最后才分别softmax并相减。首个正控冻结现有
+8个有序event summaries，v/action先读取当前event summary。上式是candidate-local非线性basis与Program/bank-conditioned系数形成的
+轻量separable scalar-energy，并非native value上的`q^T X/Y`或固定key查表；它只限制标量打分器，不限制最后真实native factor的维度。
+正负分支独立计算且有界，最后才分别softmax并相减。首个正控冻结现有
 candidate encoder/source/G2/carrier/scale，只训练family-shared summary/scorer与task-local low-dimensional free codes，以隔离
 “该函数类是否有容量”；若连fit rows都学不到，再以该证据决定是否解冻或替换candidate encoder，而不把所有职责一次联合训练。
 

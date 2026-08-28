@@ -47,6 +47,15 @@ from ember.ecp.bank_conditioning.whitening import (
     build_feature_whitening_plan,
     identity_feature_whitening_plan,
 )
+from ember.ecp.bank_conditioning.set_summary import (
+    SetConditionedScalarEnergy,
+    SetSummaryFactorSelector,
+    SetSummaryStatistics,
+    StreamingSetMoments,
+    StreamingSetSignedPool,
+    TaskLocalSelectionCode,
+    materialized_set_signed_pool,
+)
 
 __all__ = [
     "AnchorProgramState",
@@ -62,6 +71,9 @@ __all__ = [
     "NativeCandidateEncoder",
     "ProgramNativeAnchorScorer",
     "SketchCrossImage",
+    "SetConditionedScalarEnergy",
+    "SetSummaryFactorSelector",
+    "SetSummaryStatistics",
     "SketchedFunctionalStatistics",
     "SpectralBankQuery",
     "StreamingBankStatistics",
@@ -71,6 +83,9 @@ __all__ = [
     "StreamingSketchCrossImage",
     "StreamingFeatureStatistics",
     "StreamingSignedPool",
+    "StreamingSetMoments",
+    "StreamingSetSignedPool",
+    "TaskLocalSelectionCode",
     "batched_spectral_bank_query",
     "bank_adaptive_basis",
     "batched_feature_whiteners",
@@ -80,6 +95,7 @@ __all__ = [
     "bounded_relative_group_gain",
     "materialized_bank_statistics",
     "materialized_signed_pool",
+    "materialized_set_signed_pool",
     "functional_polar_queries",
     "fixed_nested_projection",
     "functional_target_queries",

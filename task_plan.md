@@ -368,6 +368,8 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   首先只跑task93/q20机制witness：同一task-local code共同拟合两条video，第三条严格zero-gradient；fit median`>=.90`、held及input/output
   pushforward各`>=.80`、held/fit`>=.8`才进入12-task正控。首版使用measure-normalized mean/variance DeepSets summary和共享bounded
   candidate scalar energy，冻结现有candidate encoder；失败只淘汰这一明确函数类。
+  - [x] 接通共享frozen native-bank runtime、separable scalar-energy、exact signed pooling、固定final-step runner及三视频真实gradient smoke；
+    31项定向合同通过，Action Meta和全部旧authority实际冻结，正式1000-step witness待clean detached launch。
 - [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
   保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
   leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。

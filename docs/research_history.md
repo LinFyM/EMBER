@@ -868,3 +868,26 @@ key projections，共609 tensors/8,006,400 parameters；其余函数类、数据
 
 - `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/`；
 - `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01p0_20260828/`。
+
+## 46. Program-primal/current-bank-global-dual的P0与P1通过
+
+后续behavior-identifiability证据表明task93/q20的cross-episode flow gradient存在有效rank4 descent，而旧selector和bank-independent
+dual无法跨视频保持；同一稳定primal经每条当前bank的global covariance对偶化并用同一measure replay后，fit/held立即恢复到约
+`.904--.911/.901`。active v5据此改为共享Program预测native primal、当前video bank确定性产生dual，再对真实X/Y做antithetic
+signed pooling；旧functional-polar与low-dimensional scorer均未恢复。
+
+clean pushed detached `main@e2f9d33`的真实38-target K1/K4 P0通过。固定candidate microblock修复了近`1e6`条件数下外部chunk改变
+FP32 covariance/replay归并树的问题；最终chunk4/one-chunk raw/solve/conditioning error为0，minimum update cosine
+`0.9999999999999998`，K4 permutation error`2.384185791015625e-07`。Action Meta 0、source/G2冻结、全部梯度、四类Y边界、
+uniform K、76-tensor唯一rank16与真实policy consumption均成立。
+
+随后clean pushed detached `main@c9e8198`在六个预注册fit tasks、q/v浅中深及action-in/out八targets上完成P1。每task只优化跨两条
+fit video共享的task-local primals，预注册held video零梯度，fit-only scale固定。fit/held median recovery为`.971731/.954539`，
+held/fit`.982308`，held/optimistic`.992193`；四family held medians为`.939825/.941630/.995402/.945222`，minimum task
+held`.935001`，全部Gate通过。该结果只证明current-bank primal→dual/replay的跨task/video容量，未证明shared Program mapping；下一
+历史阶段是P2 frozen full-Program-to-primal scorer。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_shared_compiler_g3_v5_f0_e2f9d33_task93_gpu01p1_20260828.json`；
+- `runs/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/`。

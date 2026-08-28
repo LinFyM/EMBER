@@ -1061,6 +1061,16 @@ P0也给出一个可复用的数值边界：近`1e6`条件数下，B0 covariance
 深度targets上优化跨video稳定primal，held video保持零梯度；scale固定到fit-only authority并推迟到F4。若P1失败，首先按family、
 input/output group和retained spectrum解释，不能修改shared Program scorer或用task93单点外推。
 
+clean pushed detached `c9e8198`的P1正式结果把上述多task外推成立：六task fit/held median为`.971731/.954539`，held/fit
+`.982308`，held相对各自optimistic projection `.992193`；q/v/action-in/action-out held medians均在`.9398--.9954`，最弱task
+held仍为`.9350`。初始step0已经在`.9573--.9709`，500步只稳定提升约`.0047--.0082`，说明结果主要来自正确的task primal→
+current-bank dual接口而非长时间拟合或偶然optimizer峰值。meta与target两role、浅中深与action均成立，held完全零梯度。
+
+因此native bank、global covariance/solve、signed pooling、rank4、固定fit scale和跨video operator已经不再是G3当前首因；P2若fit低，
+最早接口就是frozen full Program到task-specific primal的shared可识别性，不能再修改bank operator掩盖。P2若fit高而video/task held低，
+才处理shared generalization；absolute高而correct-vs-wrong Program margin低则是universal shortcut。P1并未验证Program或deployment
+Writer，不能把task-local code带入P2 forward/checkpoint。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -521,7 +521,9 @@ Program、Program-to-target-native primal scorer、per-video global covariance�
 K aggregation、small-core rank4 canonicalization、rank12+4唯一rank16和451-condition mapping/evaluator wiring；Action Meta默认关闭。
 fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。clean pushed detached `e2f9d33`的完整38-target K1/K4
 P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
-当前待完成P1 multi-family task-local primal capacity，只有其通过后才进入P2 shared Program mapping Gate。
+clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
+optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把当前最早未验证接口收敛到P2 shared
+full-Program-to-primal mapping；scale继续冻结到F4，P1内部结果不能冒充shared或closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为

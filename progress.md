@@ -50,6 +50,19 @@ X/Y materialization，随后每步以全candidate exact softmax批量重放；ca
 - evidence/Gate：保留每task final code、curve、fit/held/optimistic rows、冻结状态、显存/耗时、aggregate与completion。Gate沿本节前述
   `.80/.75/.85/.80/.65`合同；P1通过只解封P2 shared mapping，不证明Writer或closed-loop通过。shuffled/reversed不使用。
 
+P1 formal已由clean pushed detached `main@c9e8198`在gpu01物理0--5完成并通过，artifact为
+`runs/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/`。fit/held median recovery为
+`.971731/.954539`，held/fit `.982308`，held相对optimistic native projection median `.992193`；held q/v/action-in/action-out
+family medians分别为`.939825/.941630/.995402/.945222`，minimum task held为`.935001`。全部七项Gate checks为true，六task、
+meta/target两role及四family均非擦线通过。逐task held为task1 `.960931`、8 `.954449`、9 `.935001`、72 `.955273`、
+73 `.953605`、75 `.954629`；最弱细项是task9 action-out `.874307`，仍远高于`.65`门槛。
+
+六个worker都保存固定step500的17-tensor task code和完整`0/1/50/100/200/350/500`曲线，无partial/failure；final gradients有限，
+held backward为0，Action Meta/source/G2/shared compiler/scale trainable全部为0。每task total约`224.8--226.8s`，train约
+`78.5--99.6s`，peak allocated/reserved约`9.83--11.57/18.01--18.11GiB`；六卡总墙钟约3分47秒。P1因此证明v5 current-bank
+global dual/exact signed replay在多task、多family、浅中深及未参与梯度的视频上保留接近optimistic的task-local primal方向；它不证明
+shared Program mapping。当前最早未验证接口唯一收敛到P2 frozen full-Program-to-primal scorer，scale仍冻结到F4。
+
 更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由clean pushed
 `main@435cb4a`通过。最新完整F3仍是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/task-holdout为
 `.086508/.083131/.072629/.096191`，四family held为`.021698/.065269/.085933/.173804`，明确non-pass且未续训。

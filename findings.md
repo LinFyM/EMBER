@@ -1027,6 +1027,27 @@ rank从64直接提高到224/384后，task93/q20两条videos、两个members的ef
 改为行为/functional equivalence，而不是继续追逐唯一参数分解；若两者都失败，则先处理behavior credit/optimization，不能直接发射shared
 或完整451-condition F3。该诊断不使用validation/test action/reward，也不恢复旧Writer、realizer或full-polar deployment。
 
+### 63. behavior credit确认根因是bank-specific dual坐标，global primal-to-dual恢复跨视频方向
+
+授权fit task93/q20的定向诊断用与video demos完全跨episode的action demos 1--4，在唯一rank12+4 adapter下读取真实PI0.5 flow
+gradient。carrier baseline loss为`.0991105`；dense gradient的canonical rank4 descent降到`.0880155`，反向则升到`.1148061`，top4
+捕获gradient能量`.80575`。因此行为credit、符号、rank4与materialization均有效，不是parameter-teacher独有的伪方向。两条fit videos
+18/48及全程零梯度held video0的optimistic真实bank signed update recovery分别为`.91037/.90435/.90243`，方向存在于每条bank。
+
+同一behavior target下，旧2.648M query-conditioned三次读取selector训练500步后fit仅`.288/.298`且held坍塌到`.0229`；跨videos共享的
+bank-independent full-native dual训练1000步后fit约`.231--.236`、held`.0745`。这共同证明Program或task code不能直接预测一个跨bank固定
+dual：candidate covariance随video旋转，fit score会过拟合自己的dual坐标。
+
+把稳定task intent改写为native primal `d`，再对每条当前bank的全局单位质量covariance做`q=C^+d`，并在完全相同的全局measure下以
+`softmax(+q^Tv)-softmax(-q^Tv)`重放，未训练即在videos 18/48/0取得`.91122/.90437/.90055`，一步后仍为
+`.91122/.90430/.90053`；input约`.824--.834`、output约`.982--.989`。三个q20 bank的全局inverse总计`.734s`，input retained rank
+`471--487`，八个output groups约`239--256`。必须禁用TF32；允许TF32的同构run因近`1e6`条件数发生灾难性抵消，不构成科学反例。
+
+最早接口因此明确为“共享Program预测跨视频稳定primal，当前video bank确定性提供dual坐标”，不是再造candidate scorer。global solve后
+按event分别replay会施加`C_e C_global^+`并重新旋转，已经失败；event assignment改为只在Program/rank-event聚合中形成primal，native
+solve/replay使用同一个全局时间quadrature measure。该结果是one-task/one-target nonformal机制证据，只选择下一P0实现，不证明38-target、
+multi-family、shared Program mapping或G3 Gate。validation/test action/reward、shuffled/reversed与Action Meta均未使用。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

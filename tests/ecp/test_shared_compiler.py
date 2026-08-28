@@ -109,7 +109,7 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     width = 8
     events = 4
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=width, event_slots=events, anchor_width=6
+        owners, program_width=width, event_slots=events
     )
     program = _program(len(owners), width, events)
     one_chunk = _video(
@@ -142,52 +142,31 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
             measure.sum(-1), torch.ones_like(measure[..., 0])
         )
 
-    loss = sum(value.square().mean() for value in observed.residual.a)
-    loss = loss + sum(value.square().mean() for value in observed.residual.b)
+    generator = torch.Generator().manual_seed(101)
+    loss = sum(
+        (value * torch.randn(value.shape, generator=generator)).mean()
+        for value in observed.residual.a
+    )
+    loss = loss + sum(
+        (value * torch.randn(value.shape, generator=generator)).mean()
+        for value in observed.residual.b
+    )
     loss.backward()
     assert all(
         parameter.grad is not None
-        for parameter in compiler.anchor_scorer.parameters()
+        for parameter in compiler.primal_scorer.parameters()
         if parameter.requires_grad
     )
     families = {family.value for family in TargetFamily}
-    assert set(compiler.anchor_scorer.program_context) == families
-    assert len(compiler.anchor_scorer.input_candidates) == len(owners)
-    assert len(compiler.anchor_scorer.output_candidates) == len(owners)
-    assert set(compiler.anchor_scorer.input_candidate_trunks) == families
-    assert set(compiler.anchor_scorer.output_candidate_trunks) == families
-    assert set(compiler.anchor_scorer.input_compatibility_heads) == families
-    assert set(compiler.anchor_scorer.output_compatibility_heads) == families
-    assert compiler.anchor_scorer.input_anchor_query["q"][-1].weight.grad is not None
-    assert compiler.anchor_scorer.output_anchor_query["q"][-1].weight.grad is not None
-    assert (
-        compiler.anchor_scorer.input_candidates[0].direction.weight.grad
-        is not None
-    )
-    assert (
-        compiler.anchor_scorer.output_candidates[0].direction.weight.grad
-        is not None
-    )
-    for scorer in (
-        compiler.anchor_scorer.input_compatibility_heads["q"],
-        compiler.anchor_scorer.output_compatibility_heads["q"],
-    ):
-        for parameter in (
-            scorer.query_projection.weight,
-            scorer.key_projection.weight,
-        ):
-            assert parameter.grad is not None
-            assert bool(torch.isfinite(parameter.grad).all())
-            assert bool(torch.count_nonzero(parameter.grad))
-    assert compiler.anchor_scorer.query_owner_film.input_shift.grad is not None
-    assert compiler.anchor_scorer.query_owner_film.output_shift[0].grad is not None
-    assert bool(
-        torch.count_nonzero(compiler.anchor_scorer.query_owner_film.input_shift.grad)
-    )
-    assert bool(
-        torch.count_nonzero(compiler.anchor_scorer.query_owner_film.output_shift[0].grad)
-    )
-    assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
+    assert set(compiler.primal_scorer.program_context) == families
+    assert set(compiler.primal_scorer.input_trunk) == families
+    assert set(compiler.primal_scorer.output_trunk) == families
+    assert len(compiler.primal_scorer.input_primal_heads) == len(owners)
+    assert len(compiler.primal_scorer.output_primal_heads) == len(owners)
+    assert compiler.primal_scorer.input_primal_heads[0].weight.grad is not None
+    assert compiler.primal_scorer.output_primal_heads[0].weight.grad is not None
+    assert bool(torch.count_nonzero(compiler.primal_scorer.owner_embedding.grad))
+    assert bool(torch.count_nonzero(compiler.primal_scorer.group_embedding.grad))
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
     assert observed.conditioning_metrics.shape == (1, 6)
@@ -197,65 +176,43 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     assert float(observed.conditioning_metrics[..., 3].min()) > 0
     assert float(observed.conditioning_metrics[..., 4].min()) > 0
     assert float(observed.conditioning_metrics[..., 5].min()) > 0
-    assert all(
-        bool(((gain >= 0.0) & (gain <= 1.0)).all())
-        for gain in observed.output_group_gains
-    )
+    assert all(torch.equal(gain, torch.ones_like(gain)) for gain in observed.output_group_gains)
     names = set(dict(compiler.named_parameters()))
-    assert not {"input_logits", "output_logits", "event_logits"} & names
+    assert not any(
+        token in name
+        for name in names
+        for token in ("candidate", "compatibility", "functional_polar", "task_lookup")
+    )
 
 
-def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
+def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4, anchor_width=6
+        owners, program_width=8, event_slots=4
     )
     compiler.to(torch.device("cpu"))
-    state = compiler.anchor_scorer.program_state(_program(len(owners), 8, 4))
-    input_before = compiler.anchor_scorer.input_queries(state).detach().clone()
-    output_groups = compiler.anchor_scorer.query_owner_film.output_shift[0].shape[0]
-    output_before = compiler.anchor_scorer.output_queries(
-        state, target=0, groups=output_groups
-    ).detach().clone()
+    scorer = compiler.primal_scorer
+    state = scorer.program_state(_program(len(owners), 8, 4))
+    input_before = tuple(value.detach().clone() for value in scorer.input_primals(state))
+    output_before = tuple(value.detach().clone() for value in scorer.output_primals(state))
 
     with torch.no_grad():
-        compiler.anchor_scorer.query_owner_film.input_shift[0, 0, 0] = 0.5
-        compiler.anchor_scorer.query_owner_film.output_shift[0][0, 0, 0] = 0.5
+        scorer.input_primal_heads[0].weight.add_(0.5)
+        scorer.group_embedding[0].add_(0.5)
 
-    input_after = compiler.anchor_scorer.input_queries(state).detach()
-    output_after = compiler.anchor_scorer.output_queries(
-        state, target=0, groups=output_groups
-    ).detach()
+    input_after = scorer.input_primals(state)
+    output_after = scorer.output_primals(state)
     assert not torch.equal(input_before[0], input_after[0])
-    torch.testing.assert_close(input_before[1:], input_after[1:])
+    for left, right in zip(input_before[1:], input_after[1:], strict=True):
+        torch.testing.assert_close(left, right)
     assert not torch.equal(output_before[0], output_after[0])
-    torch.testing.assert_close(output_before[1:], output_after[1:])
-
-
-def test_signed_queries_and_projected_bilinear_have_stable_initialization() -> None:
-    compiler = SharedNativeFactorCompiler(
-        _owners(), program_width=8, event_slots=4, anchor_width=6
-    )
-    scorer = compiler.anchor_scorer
-    for side in ("input", "output"):
-        heads = getattr(scorer, f"{side}_anchor_query")
-        for head in heads.values():
-            final = head[-1]
-            width = scorer.feature_width
-            torch.testing.assert_close(
-                final.weight[width:], -final.weight[:width]
-            )
-            torch.testing.assert_close(final.bias[width:], -final.bias[:width])
-        compatibilities = getattr(scorer, f"{side}_compatibility_heads")
-        for compatibility in compatibilities.values():
-            assert compatibility.query_projection.bias is None
-            assert compatibility.key_projection.bias is None
+    assert not torch.equal(output_before[1][0], output_after[1][0])
 
 
 def test_anchor_code_uses_video_program_fields() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4, anchor_width=6
+        owners, program_width=8, event_slots=4
     )
     first = _program(len(owners), 8, 4)
     changed = _program(len(owners), 8, 4)
@@ -268,16 +225,12 @@ def test_anchor_code_uses_video_program_fields() -> None:
         tau=torch.rand(first.tau.shape, generator=generator),
         sigma=torch.rand(first.sigma.shape, generator=generator) + 0.1,
     )
-    first_state = compiler.anchor_scorer.program_state(first)
-    changed_state = compiler.anchor_scorer.program_state(changed)
+    first_state = compiler.primal_scorer.program_state(first)
+    changed_state = compiler.primal_scorer.program_state(changed)
     torch.testing.assert_close(
-        first_state.stable_rank_event, changed_state.stable_rank_event
+        first_state.stable_rank, changed_state.stable_rank
     )
-    torch.testing.assert_close(first_state.stable_rank, changed_state.stable_rank)
-    assert not torch.allclose(
-        compiler.anchor_scorer.input_queries(first_state),
-        compiler.anchor_scorer.input_queries(changed_state),
-    )
+    assert not torch.allclose(first_state.rank, changed_state.rank)
     assert not torch.allclose(first_state.event_weights, changed_state.event_weights)
 
 
@@ -286,7 +239,7 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
     width = 8
     events = 4
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=width, event_slots=events, anchor_width=6
+        owners, program_width=width, event_slots=events
     )
     program = _program(len(owners), width, events)
     videos = tuple(
@@ -311,7 +264,7 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
 
 def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
     compiler = SharedNativeFactorCompiler(
-        _owners(), program_width=8, event_slots=4, anchor_width=6
+        _owners(), program_width=8, event_slots=4
     )
     selection, scale_video = _trainable_groups(compiler)
     assert {id(value) for value in selection}.isdisjoint(
@@ -342,10 +295,10 @@ def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
     ) <= 1.00001
 
 
-def test_scale_and_group_gain_heads_do_not_backpropagate_into_selection_context() -> None:
+def test_scale_head_does_not_backpropagate_into_primal_context() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4, anchor_width=6
+        owners, program_width=8, event_slots=4
     )
     selection, scale_video = _trainable_groups(compiler)
     program = _program(len(owners), 8, 4)
@@ -381,20 +334,7 @@ def test_scale_and_group_gain_heads_do_not_backpropagate_into_selection_context(
         for gradient in scale_head
     )
 
-    output = compiler(program, videos, s_ref=torch.ones(len(owners)))
-    gain_gradients = torch.autograd.grad(
-        sum(value.sum() for value in output.output_group_gains),
-        (*selection, *scale_video),
-        allow_unused=True,
-    )
-    assert all(
-        gradient is None or not bool(torch.count_nonzero(gradient))
-        for gradient in gain_gradients[: len(selection)]
-    )
-    assert any(
-        gradient is not None and bool(torch.count_nonzero(gradient))
-        for gradient in gain_gradients[len(selection) :]
-    )
+    assert all(torch.equal(value, torch.ones_like(value)) for value in output.output_group_gains)
     torch.testing.assert_close(output.video_weights, torch.full((2,), 0.5))
 
 

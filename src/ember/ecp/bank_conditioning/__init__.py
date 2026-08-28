@@ -17,6 +17,17 @@ from ember.ecp.bank_conditioning.operator import (
     materialized_signed_pool,
     spectral_bank_query,
 )
+from ember.ecp.bank_conditioning.primal_dual import (
+    NativeCovarianceStatistics,
+    SpectralNativeCovariance,
+    StreamingNativeCovariance,
+    batched_spectral_native_covariances,
+    native_candidate_mass,
+)
+from ember.ecp.bank_conditioning.program_primal import (
+    PrimalProgramState,
+    ProgramNativePrimalScorer,
+)
 from ember.ecp.bank_conditioning.functional_polar import (
     FunctionalBankStatistics,
     FunctionalPolarQueries,
@@ -69,6 +80,9 @@ __all__ = [
     "FeatureWhitener",
     "FeatureWhiteningPlan",
     "NativeCandidateEncoder",
+    "NativeCovarianceStatistics",
+    "PrimalProgramState",
+    "ProgramNativePrimalScorer",
     "ProgramNativeAnchorScorer",
     "SketchCrossImage",
     "SetConditionedScalarEnergy",
@@ -77,6 +91,7 @@ __all__ = [
     "SketchedFunctionalStatistics",
     "SpectralBankQuery",
     "StreamingBankStatistics",
+    "StreamingNativeCovariance",
     "StreamingCenteredAnchor",
     "StreamingFunctionalBankStatistics",
     "StreamingProjectedFunctionalStatistics",
@@ -86,7 +101,9 @@ __all__ = [
     "StreamingSetMoments",
     "StreamingSetSignedPool",
     "TaskLocalSelectionCode",
+    "SpectralNativeCovariance",
     "batched_spectral_bank_query",
+    "batched_spectral_native_covariances",
     "bank_adaptive_basis",
     "batched_feature_whiteners",
     "batched_functional_polar_queries",
@@ -96,6 +113,7 @@ __all__ = [
     "materialized_bank_statistics",
     "materialized_signed_pool",
     "materialized_set_signed_pool",
+    "native_candidate_mass",
     "functional_polar_queries",
     "fixed_nested_projection",
     "functional_target_queries",

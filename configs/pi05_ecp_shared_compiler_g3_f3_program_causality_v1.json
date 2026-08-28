@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_ecp_shared_compiler_g3_f3_program_causality_v1",
   "status": "active_preregistered",
-  "model_config_schema": "ember_ecp_shared_compiler_g3_v4",
+  "model_config_schema": "ember_ecp_shared_compiler_g3_v5",
   "panel": {
     "source": "mapping_fit_only",
     "conditions_per_fit_task": 1,

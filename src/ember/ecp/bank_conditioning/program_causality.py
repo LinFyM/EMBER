@@ -39,7 +39,7 @@ def load_program_causality_contract(path: Path) -> dict[str, Any]:
             contract.get("schema_version") == PROGRAM_CAUSALITY_SCHEMA,
             contract.get("status") == "active_preregistered",
             contract.get("model_config_schema")
-            == "ember_ecp_shared_compiler_g3_v4",
+            == "ember_ecp_shared_compiler_g3_v5",
             panel.get("source") == "mapping_fit_only",
             panel.get("conditions_per_fit_task") == 1,
             panel.get("condition_selection")

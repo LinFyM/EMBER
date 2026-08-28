@@ -27,7 +27,8 @@ from ember.pi05_source_checkpoint import read_json
 G3_CONFIG_SCHEMA_V1 = "ember_ecp_shared_compiler_g3_v1"
 G3_CONFIG_SCHEMA_V2 = "ember_ecp_shared_compiler_g3_v2"
 G3_CONFIG_SCHEMA_V3 = "ember_ecp_shared_compiler_g3_v3"
-G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v4"
+G3_CONFIG_SCHEMA_V4 = "ember_ecp_shared_compiler_g3_v4"
+G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v5"
 
 
 @dataclass(frozen=True)
@@ -164,7 +165,7 @@ def _historical_config_valid(config: Mapping[str, Any]) -> bool:
     )
 
 
-def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
+def _reference_v4_config_valid(config: Mapping[str, Any]) -> bool:
     model = config.get("model", {})
     data = config.get("data", {})
     wall = config.get("information_wall", {})
@@ -184,7 +185,7 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
     )
     return all(
         (
-            config.get("schema_version") == G3_CONFIG_SCHEMA,
+            config.get("schema_version") == G3_CONFIG_SCHEMA_V4,
             lifecycle_valid,
             model.get("selection")
             == "full_program_functional_polar_query_native_content_key_signed_pooling",
@@ -238,11 +239,81 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
     )
 
 
+def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
+    model = config.get("model", {})
+    data = config.get("data", {})
+    wall = config.get("information_wall", {})
+    optimization = config.get("optimization", {})
+    mapping = optimization.get("mapping", {})
+    optimizer = optimization.get("optimizer", {})
+    profile = config.get("profile_defaults", {})
+    formal = config.get("formal_run", {})
+    return all(
+        (
+            config.get("schema_version") == G3_CONFIG_SCHEMA,
+            config.get("status")
+            == "active_program_primal_current_bank_global_dual_compiler",
+            config.get("deployment_candidate") is True,
+            model.get("selection")
+            == "full_program_native_primal_current_bank_global_dual_exact_signed_pooling",
+            model.get("primal_parameter_ownership")
+            == "fixed_target_native_heads_after_family_shared_full_program_context",
+            model.get("native_statistics")
+            == "detached_per_video_global_unit_mass_covariance",
+            model.get("temporal_measure")
+            == "same_global_quadrature_in_covariance_solve_and_signed_replay",
+            model.get("event_use")
+            == "program_rank_event_aggregation_before_native_solve",
+            model.get("relative_eigenvalue_floor") == 1e-6,
+            model.get("replay_score_rms") == 0.02,
+            model.get("native_matmul_precision") == "ieee_fp32_no_tf32",
+            model.get("native_read_sequence")
+            == [
+                "global_native_covariance_statistics",
+                "program_primal_to_current_bank_dual_solve",
+                "exact_global_signed_replay",
+            ],
+            model.get("output_group_gain") == "fixed_unity_first_version",
+            data.get("supported_K") == [1, 2, 4],
+            data.get("mapping_K") == [1],
+            data.get("task_role_weighting") == "three_meta_plus_three_target",
+            mapping.get("member_reduction")
+            == "set_valued_global_member_paired_update",
+            mapping.get("selection_credit")
+            == "paired_update_primary_subspaces_diagnostic_only",
+            mapping.get("teacher_target")
+            == "fit_video_rank4_truncated_mean_update_excluding_mapping_held_video",
+            mapping.get("target_reduction") == "four_families_equal",
+            mapping.get("student_scale_gradient") == "stopped",
+            mapping.get("K2_K4_tensor_reads") == 0,
+            0 < float(mapping.get("temperature", 0)),
+            0 <= float(mapping.get("cross_video_weight", -1)),
+            0 <= float(mapping.get("cross_video_margin", -1)),
+            mapping.get("cross_video_conditions_per_optimizer_step") == 6,
+            optimizer.get("name") == "AdamW",
+            float(optimizer.get("gradient_clip_norm", 0)) > 0,
+            profile.get("allowed_world_sizes") == [1, 2, 3, 4, 5, 6],
+            formal.get("allowed_world_sizes") == [1, 2, 3, 4, 5, 6],
+            formal.get("global_tasks_per_optimizer_step") == 6,
+            formal.get("optimizer_steps_per_macro") == 5,
+            wall.get("native_teacher_training_only") is True,
+            wall.get("native_teacher_deployment_reads") == 0,
+            wall.get("task_video_member_lookup_parameters") is False,
+            wall.get("bank_derived_current_video_dual_is_deployment_visible") is True,
+        )
+    )
+
+
 def load_shared_compiler_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     schema = config.get("schema_version")
     historical = schema in {G3_CONFIG_SCHEMA_V1, G3_CONFIG_SCHEMA_V2}
-    valid = _historical_config_valid(config) if historical else _mapping_config_valid(config)
+    if historical:
+        valid = _historical_config_valid(config)
+    elif schema == G3_CONFIG_SCHEMA_V4:
+        valid = _reference_v4_config_valid(config)
+    else:
+        valid = _mapping_config_valid(config)
     if not _common_config_valid(config) or not valid:
         raise ValueError("unsupported G3 shared compiler config")
     return config

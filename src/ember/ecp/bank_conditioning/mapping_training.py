@@ -286,16 +286,16 @@ def _load_training_assets(
         owners,
         program_width=int(config["model"]["program_width"]),
         event_slots=int(config["model"]["event_slots"]),
-        anchor_width=int(config["model"]["anchor_width"]),
         relative_eigenvalue_floor=float(
             config["model"]["relative_eigenvalue_floor"]
         ),
+        replay_score_rms=float(config["model"]["replay_score_rms"]),
     ).to(context.device)
     compiler.scale_head.requires_grad_(False)
     compiler.train()
     trainable = tuple(value for value in compiler.parameters() if value.requires_grad)
-    if set(map(id, trainable)) != set(map(id, compiler.anchor_scorer.parameters())):
-        raise ValueError("G3 mapping trainable ownership escaped anchor scorer")
+    if set(map(id, trainable)) != set(map(id, compiler.primal_scorer.parameters())):
+        raise ValueError("G3 mapping trainable ownership escaped primal scorer")
     teacher_path = authority_path(
         config, "native_teacher_manifest", asset_root=args.asset_root
     )
@@ -567,7 +567,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v5.json",
     )
     parser.add_argument("--phase", choices=("f3",), required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

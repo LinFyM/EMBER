@@ -131,7 +131,7 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
     )
     if not clean:
         raise RuntimeError("formal F0 requires clean detached pushed authority")
-    config_path = REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json"
+    config_path = REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v5.json"
     config = load_shared_compiler_config(config_path)
     if config.get("schema_version") != G3_CONFIG_SCHEMA:
         raise RuntimeError("F0 requires the active bank-conditioned compiler")
@@ -176,8 +176,8 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
         owners,
         program_width=int(config["model"]["program_width"]),
         event_slots=int(config["model"]["event_slots"]),
-        anchor_width=int(config["model"]["anchor_width"]),
         relative_eigenvalue_floor=float(config["model"]["relative_eigenvalue_floor"]),
+        replay_score_rms=float(config["model"]["replay_score_rms"]),
     ).to(device).train()
     inventory = pure_shared_compiler_inventory(
         policy=policy, program=program, compiler=compiler, owners=owners
@@ -424,41 +424,16 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         owners=runtime.owners,
     )
     loss.total.backward()
+    scorer = runtime.compiler.primal_scorer
     gradients = {
-        "input_anchor": runtime.compiler.anchor_scorer.input_anchor_query["q"][
-            -1
-        ].weight.grad,
-        "output_anchor": runtime.compiler.anchor_scorer.output_anchor_query["q"][
-            -1
-        ].weight.grad,
-        "input_owner_query": (
-            runtime.compiler.anchor_scorer.query_owner_film.input_shift.grad
-        ),
-        "output_owner_query": (
-            runtime.compiler.anchor_scorer.query_owner_film.output_shift[0].grad
-        ),
-        "input_candidate": runtime.compiler.anchor_scorer.input_candidates[0]
-        .direction.weight.grad,
-        "output_candidate": runtime.compiler.anchor_scorer.output_candidates[0]
-        .direction.weight.grad,
-        "input_bilinear_query": runtime.compiler.anchor_scorer.input_compatibility_heads[
-            "q"
-        ].query_projection.weight.grad,
-        "input_bilinear_key": runtime.compiler.anchor_scorer.input_compatibility_heads[
-            "q"
-        ].key_projection.weight.grad,
-        "output_bilinear_query": runtime.compiler.anchor_scorer.output_compatibility_heads[
-            "q"
-        ].query_projection.weight.grad,
-        "output_bilinear_key": runtime.compiler.anchor_scorer.output_compatibility_heads[
-            "q"
-        ].key_projection.weight.grad,
-        "full_program": runtime.compiler.anchor_scorer.program_context["q"][
-            1
-        ].weight.grad,
-        "group_gain": runtime.compiler.anchor_scorer.group_gain["q"][
-            -1
-        ].weight.grad,
+        "input_primal": scorer.input_primal_heads[0].weight.grad,
+        "output_primal": scorer.output_primal_heads[0].weight.grad,
+        "owner_embedding": scorer.owner_embedding.grad,
+        "rank_embedding": scorer.rank_embedding.grad,
+        "event_embedding": scorer.event_embedding.grad,
+        "group_embedding": scorer.group_embedding.grad,
+        "full_program": scorer.program_context["q"][1].weight.grad,
+        "event_weight": scorer.event_score["q"].weight.grad,
         "scale": runtime.compiler.scale_head[-1].weight.grad,
     }
     valid_gradients = all(
@@ -604,7 +579,7 @@ def _qualification_checks(result: Mapping[str, Any]) -> dict[str, bool]:
         "native_dual_uses_ieee_fp32": result[
             "native_dual_matmul_precision"
         ]
-        == "ieee_fp32"
+        == "ieee_fp32_no_tf32"
         and not result["tf32_enabled_after_compiler_forward"],
         "unique_complete_rank16": result["rank16_tensor_count"] == 76
         and result["rank16_targets"] == 38,
@@ -640,7 +615,7 @@ def _build_result(
     consume_seconds: float,
 ) -> dict[str, Any]:
     result = {
-        "schema_version": "ember_ecp_shared_compiler_f0_v1",
+        "schema_version": "ember_ecp_shared_compiler_f0_v2",
         "git": runtime.state,
         "config": str(runtime.config_path),
         "task": runtime.task.authority_id,
@@ -761,13 +736,45 @@ def main() -> None:
     runtime: F0Runtime | None = None
     try:
         runtime = _prepare_runtime(args)
+        print(
+            json.dumps(
+                {
+                    "phase": "runtime_ready",
+                    "task": runtime.task.authority_id,
+                    "seconds": time.monotonic() - runtime.started,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         torch.cuda.reset_peak_memory_stats(runtime.device)
         k1_video, k4_videos = _video_panel(runtime)
         k1 = _run_k1(runtime, video=k1_video, chunk_size=args.chunk)
+        print(
+            json.dumps(
+                {"phase": "k1_complete", "seconds": k1.seconds},
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         response, consume_seconds = _consume_adapter(
             runtime, k1.complete_adapter
         )
+        print(
+            json.dumps(
+                {"phase": "policy_consume_complete", "seconds": consume_seconds},
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         k4 = _run_k4(runtime, videos=k4_videos, chunk_size=args.chunk)
+        print(
+            json.dumps(
+                {"phase": "k4_complete", "seconds": k4.seconds},
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         result = _build_result(
             runtime,
             k1=k1,

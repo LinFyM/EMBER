@@ -8,9 +8,11 @@ from ember.ecp.bank_conditioning import (
     StreamingBankStatistics,
     StreamingFeatureStatistics,
     StreamingFunctionalBankStatistics,
+    StreamingNativeCovariance,
     StreamingSignedPool,
     batched_functional_polar_queries,
     batched_feature_whiteners,
+    batched_spectral_native_covariances,
     bank_adaptive_basis,
     bound_functional_queries,
     bounded_relative_group_gain,
@@ -378,3 +380,43 @@ def test_signed_pool_is_chunk_equivalent_and_group_gain_is_bounded() -> None:
     assert branches.grad is not None
     assert bool(torch.isfinite(branches.grad).all())
     assert bool(torch.count_nonzero(branches.grad))
+
+
+def test_global_primal_dual_replays_the_retained_native_direction() -> None:
+    generator = torch.Generator().manual_seed(131)
+    values = torch.randn(211, 9, generator=generator, dtype=torch.float64)
+    values[:, -1] = values[:, 0] + 1e-4 * values[:, -1]
+    mass = torch.rand(211, generator=generator, dtype=torch.float64) + 0.1
+    mass /= mass.sum()
+    materialized = StreamingNativeCovariance(
+        width=9, device=values.device, dtype=torch.float64
+    )
+    materialized.add(values, mass)
+    streamed = StreamingNativeCovariance(
+        width=9, device=values.device, dtype=torch.float64
+    )
+    for start, stop in ((0, 17), (17, 83), (83, 211)):
+        streamed.add(values[start:stop], mass[start:stop])
+    expected = materialized.finalize()
+    observed = streamed.finalize()
+    torch.testing.assert_close(
+        observed.covariance, expected.covariance, rtol=1e-12, atol=1e-12
+    )
+
+    operator = batched_spectral_native_covariances(
+        (observed,), relative_eigenvalue_floor=1e-6
+    )[0]
+    primal = torch.randn(
+        4, 9, generator=generator, dtype=torch.float64, requires_grad=True
+    )
+    query, score_rms, projection_fraction = operator.dual_and_score_rms(primal)
+    query = query * (1e-3 / score_rms.clamp_min(1e-12))[:, None]
+    replayed = materialized_signed_pool(query, values, mass)
+    projection = (primal @ operator.basis) @ operator.basis.T
+    cosine = torch.nn.functional.cosine_similarity(replayed, projection, dim=-1)
+    assert float(cosine.detach().min()) > 0.99999
+    assert float(projection_fraction.detach().min()) > 0.0
+    (replayed * torch.randn(replayed.shape, generator=generator)).sum().backward()
+    assert primal.grad is not None
+    assert bool(torch.isfinite(primal.grad).all())
+    assert bool(torch.count_nonzero(primal.grad))

@@ -268,24 +268,17 @@ def _run_task(
 
 
 def _mapping_gradient_probes(runtime: MappingRuntime) -> dict[str, Any]:
-    scorer = runtime.compiler.anchor_scorer
+    scorer = runtime.compiler.primal_scorer
     probes = {
-        "input_anchor": scorer.input_anchor_query["q"][-1].weight.grad,
-        "output_anchor": scorer.output_anchor_query["q"][-1].weight.grad,
-        "input_owner_query": scorer.query_owner_film.input_shift.grad,
-        "output_owner_query": scorer.query_owner_film.output_shift[0].grad,
-        "group_gain": scorer.group_gain["q"][-1].weight.grad,
+        "input_primal": scorer.input_primal_heads[0].weight.grad,
+        "output_primal": scorer.output_primal_heads[0].weight.grad,
+        "owner_embedding": scorer.owner_embedding.grad,
+        "rank_embedding": scorer.rank_embedding.grad,
+        "event_embedding": scorer.event_embedding.grad,
+        "group_embedding": scorer.group_embedding.grad,
+        "full_program": scorer.program_context["q"][1].weight.grad,
+        "event_weight": scorer.event_score["q"].weight.grad,
     }
-    for side in ("input", "output"):
-        compatibility = getattr(scorer, f"{side}_compatibility_heads")["q"]
-        probes.update(
-            {
-                f"{side}_bilinear_query": (
-                    compatibility.query_projection.weight.grad
-                ),
-                f"{side}_bilinear_key": compatibility.key_projection.weight.grad,
-            }
-        )
     return probes
 
 

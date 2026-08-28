@@ -4,20 +4,17 @@
 `main@435cb4a`通过。最新完整F3仍是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/task-holdout为
 `.086508/.083131/.072629/.096191`，四family held为`.021698/.065269/.085933/.173804`，明确non-pass且未续训。
 
-full functional-polar task-local见证约`.996/.999/1.000/.998`，但真实K1 condition即使经`da3fd3e`优化仍为`58.332s`，六卡macro5
-理想下限约49分钟且未含451评测；其deployment执行形态吞吐non-pass，未运行K4 F0、新formal F3、训练或评测，也没有新checkpoint。
-
-S2 task-local正控现已走完并明确non-pass。首版mean/variance scalar-energy、显式加载fit-trained chart、解冻q20 chart、query-conditioned
-三次set read在strong及paired-update-only credit下，fit/held最好仍只约`.35/.18`、`.35/.13`、`.30/.04`、`.15/.09`，均远低于
-`.90/.80` Gate；正确event-volume、exact X/Y、held零梯度和Action Meta 0均已核对。按operator稳定秩直接指定的rank224/384
-native/key cross-image补充对照也仅`.159--.163`，384相对224无增益。因此不进入12-task/shared student，不继续read/head/width/LR/
-bound版本链；当前下一步是授权fit-task behavior-aligned identifiability诊断，先区分特定LoRA teacher过窄与selection函数类失容。
+full functional-polar、S1 native-Q sketch与S2 set-summary/query-conditioned/cross-image scorer均已按各自Gate non-pass，不再是deployment
+候选。behavior-aligned identifiability也已完成：真实cross-episode flow-gradient验证rank4 policy descent且三条bank均有`.90--.91`
+可达方向；旧selector与bank-independent dual的held仅`.0229/.0745`，而Program/task primal经每条当前bank的global covariance对偶化后
+fit/held立即恢复到`.904--.911/.901`。因此当前下一步不再是behavior诊断或新scorer，而是v5 Program-primal/current-bank-global-dual
+的38-target P0。
 
 第三位专家已锁定远程`main@9b52e59`及其可达历史完成审计；1033行原文逐字保存为
 `docs/expert_review_20260828_g3_functional_sketch.md`。最新裁决是：full functional-polar保留为fit-only teacher/reference和容量诊断，
-不再作为deployment候选；其S1失败分支要求full polar/native-Q sketch都只作diagnostic，后继pure low-dimensional set-summary
-student必须先通过task-local free-query正控。S1与随后S2正控现均已失败，所以不会恢复完整451-condition F3，也不会把专家原文
-没有写死的后继假装成已裁决架构；先按active failure branch重开teacher/credit identifiability。
+不再作为deployment候选；其S1失败分支要求full polar/native-Q sketch都只作diagnostic，后继轻量student先通过task-local正控。
+S1、S2及behavior反事实现已把根因进一步定位到bank-specific dual坐标；当前v5是根据后续真实证据作出的active修正，不把专家未写死的
+跨video归一化或Final训练形式冒充专家原话。
 
 owner接受该方向，并明确：fit row的universal baseline必须leave-one-task-out，task-holdout只用fit tasks；12-task阶段每role各保留
 一个true task-holdout；具体causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint
@@ -779,23 +776,23 @@ G1--G5 Gate或架构修正依据。
   `>=0.99999988`；一步真实loss backward使全部26,208,000个`output_logits`及其余四类free variables获得有限非零梯度，
   peak allocated为29,771,734,528 bytes。纯Native loader、Action Meta module/parameter 0、38 hooks和76-tensor唯一rank16均保持。
 
+behavior-identifiability已完成：task93/q20真实cross-episode flow-gradient rank4使policy loss从`.09911`降至`.08802`，反向升至
+`.11481`；三条真实bank的optimistic signed recovery均约`.90--.91`。旧query-conditioned selector与bank-independent dual的held仅
+`.0229/.0745`；同一primal经每条bank全局covariance对偶化并以同一全局measure replay后，fit/held立即为
+`.9112/.9043/.9005`，三个q20 inverse仅`.734s`。因此当前单一修正是Program-primal/current-bank-global-dual，不再迭代旧scorer。
+
+实现面正在`codex/g3-sketched-bank`替换为v5 canonical路径：新增共享Program-to-native-primal、流式全局covariance/截断谱solve与exact
+signed replay；旧functional-polar不再由活动compiler编排。全仓CPU合同当前194项通过，尚未形成clean detached真实P0结果。
+
 ## 当前下一步与延期漂移
 
-1. G1、G2与G3 F1 operator已通过；预注册`C=I` F2及八个有明确机制差异的F3（含fresh IEEE `78b7e58`）均在完整451 conditions上
-   non-pass。最新fit/held/p10为`.086508/.083131/.072629`，不续训，也不做seed/LR/width/rank小扫；
-2. actual-operator解析见证已把最早接口定位为Euclidean Program-query坐标与`C_r C_0^+ H` functional metric错配。当前v4只实现
-   rank-specific global functional polar、统一B0 trust与B1 score RMS；保留per-event feature whitening、真实X/Y、full Program、rank4和
-   唯一rank16，不恢复逐video dual、task lookup或高维factor head；
-3. 先完成v4的CPU回归、architecture/diff审查并集成clean pushed main；随后从detached authority做真实K1/K4 F0，验证四次streaming
-   read的chunk边界、全部selection gradient、Action Meta 0、materialization、显存和吞吐。若全局polar吞吐不合理，只能依据已测的
-   q-global/v-action-per-event证据优化计算，不得改变科学Gate或做无信息版本扫；
-4. F0通过后从fresh执行同一451-condition F3 primary，并执行40-task fit-only correct-vs-wrong Program资格防止universal shortcut：
-   每task取最低video ordinal、wrong Program按同role下一task循环配对、primary bank/teacher固定，meta/target各自median margin须
-   `>=.10`。只有held
-   median`>=.75`、p10`>=.50`、held/fit`>=.8`且相邻稳定才恢复F4/F5/F6；内部polar residual或task-local witness不能代替；
-5. universal rank4/new-carrier仍是后续decomposition风险：只有functional-polar已取得明显selection而剩余失败确实指向common
-   correction、scale或carrier时才重开，并必须从`full expert - new carrier`重新做真实native projection；
-6. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
-   video覆盖其余videos；
-7. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；
-8. 32-task fresh refit与71 meta+train24 development recipe的精确顺序延迟到Final前解决，不阻塞G2--G5。
+1. 完成v5 active design/config/code/diff审查，集成clean pushed authority；从detached worktree执行真实38-target K1/K4 P0，验证IEEE、
+   两次native read、Y边界、chunk equivalence、全部primal梯度、Action Meta 0、uniform K、唯一rank16、policy consumption、显存和吞吐；
+2. P0通过后做预注册多task、多family P1 task-local primal capacity，要求相对各自optimistic native projection无数量级损失且held-video
+   保持；task93/q20单点不能直接外推；
+3. P1通过后才从fresh训练P2 full-Program-to-primal shared mapping并完整评估451 conditions。两个相邻single checkpoints须满足held
+   median`>=.75`、p10`>=.50`、held/fit`>=.8`，correct-vs-wrong Program同role median margin须`>=.10`；
+4. G2没有learned video reliability；v5首版固定`beta=1/K`。只有F5证据需要才从uniform初始化有界correction，并防止单条video覆盖；
+5. universal rank4/new-carrier只在shared selection已明显成立且残余确指向decomposition时重开；Action Meta仍按原条件式合同；
+6. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G3；
+7. 32-task fresh refit与71 meta+train24 development recipe冲突延迟到Final前解决，不阻塞G3--G5。

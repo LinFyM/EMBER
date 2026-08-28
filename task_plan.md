@@ -5,7 +5,7 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
-分别通过对应Gate；当前推进Phase G3 low-dimensional bank-adaptive shared compiler。G1只证明真实native banks与signed pooling存在强rank4
+分别通过对应Gate；当前推进Phase G3 Program-primal/current-bank-global-dual shared compiler。G1只证明真实native banks与signed pooling存在强rank4
 residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
 任一阶段仍不代表整体项目goal完成。
 
@@ -192,10 +192,9 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
 
 ### G3 Frozen-Program shared compiler
 
-冻结Program，先用无训练低维bank-adaptive functional sketch证明当前native/key functional image能以数量级更低成本保留；通过后再用
-自然videos与95-task/118-member evidence训练共享full-Program+current-bank-summary到native-candidate content attention、signed pooling、
-scales和bounded K correction，禁止task/frame查表。依据G2证据可从均匀跨video权重初始化有界learned `beta_k`或其他bounded correction，
-并防止单条video覆盖其余videos。held5要求full
+冻结Program。既有sketch/set-summary/query-conditioned路径均已按机制Gate淘汰；当前用共享full Program预测target-native primal，
+由每条当前video的全局单位质量covariance确定性转换为dual query，再对真实X/Y exact signed pool。covariance/dual不进checkpoint，
+禁止task/frame查表；首版跨video固定`beta_k=1/K`，有证据后才允许从uniform初始化有界correction。held5要求full
 `>=60/250`、breadth`>=4/5`、retention`>=33/43`、Goal/Long至少一项非零、相对language和first+final各`+5`、same-task
 retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构版本上限，但无机制差异的小变体不算推进。
 
@@ -361,7 +360,9 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   `C_rQ` full-native free-query与exact signed replay。clean detached `27bde62`的task93/q20 formal早停反例中，同条件F1 positive为
   `.99556--.99791`，rank64仅`.15669--.15744`，chunk最低`.9999769`；因此含row minimum`.95`的容量Gate确定non-pass，不再运行其余
   96 conditions，也不把native-Q sketch训练成shared student。该早停不估计全panel分布。
-- [ ] S2：按专家的S1失败分支实现不经过`Q_g q_tilde`native瓶颈的pure low-dimensional set-summary student。固定6 meta+6 target，
+- [x] S2：按专家的S1失败分支检验不经过`Q_g q_tilde`native瓶颈的pure low-dimensional set-summary student；task93/q20最小
+  正控已足以触发合取Gate non-pass，故未扩大到原计划6 meta+6 target。
+  原预注册面为固定6 meta+6 target，
   其中每role各1个true task-holdout；其余tasks两条fit video、一条zero-gradient video-holdout。scale、G2/source/carrier冻结；先在
   同一candidate-logit/exact-X/Y执行面跑task-local free-query正控，正控通过后才训练shared full-Program+bank-summary query。shared
   结果前用universal negative、free-query positive和`78b7e58`失败checkpoint一次校准并sealed absolute/causal Gate，禁止按结果移动。
@@ -385,18 +386,24 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
     strong credit与按专家最小目标修正的update-only credit分别只到fit/held约`.147/.097`与`.152/.092`，Gate明确失败；按实测秩指定的
     rank224/384 cross-image sketch也仍约`.159--.163`。因此S2 pure low-dimensional score函数类关闭，不进入12-task/shared训练，
     不扫token/width/depth/LR/bound版本链。
-  - [ ] S2b只做behavior-aligned identifiability诊断：选择授权fit task，以与teacher video跨episode的action/flow或冻结functional
-    gradient为credit，在相同真实X/Y、rank4、唯一rank16和held-video零梯度合同下对比direct free logits与轻量selector。先证明实际
-    policy loss下降及跨视频保持，再决定G3是更换selection函数类、把主监督改为functional equivalence，还是先修behavior credit；
-    validation/test action/reward、shuffled/reversed和closed-loop选模均不进入该诊断。
-- [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
-  保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
-  leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。
-- [ ] 条件式做fit-only decomposition-feasibility oracle：仅当functional-polar mapping已显著取得selection而残余证据仍指向common
+  - [x] S2b behavior-identifiability诊断完成：授权fit task93的cross-episode flow loss为`.09911`，真实q20 rank4 descent降至`.08802`、
+    ascent升至`.11481`，rank4捕获dense gradient能量`.8058`。两fit及零梯度held video的optimistic signed update recovery为
+    `.9104/.9044/.9024`；旧query-conditioned scorer训练后held仅`.0229`，bank-independent native dual held仅`.0745`。因此问题仍是
+    bank-specific dual坐标，而非LoRA teacher独有；没有读取validation/test或使用shuffled/reversed。
+  - [x] 单一机制反事实把同一behavior primal按每条bank全局covariance对偶化，并以同一全局measure replay：IEEE下fit为
+    `.9112/.9043`、held为`.9005`，三条bank solve总计`.734s`；eventwise replay反而失真。该结果选择Program-primal→current-bank
+    global dual接口，不恢复旧functional polar或继续scorer版本链；它仍只是one-task/one-target诊断，不冒充G3 Gate。
+- [ ] P0：从clean pushed detached commit运行真实38-target K1/K4 F0，验证两次流式read、四类Y边界、chunk一致、全部primal梯度、
+  Action Meta 0、source/G2冻结、uniform K、唯一rank16 materialization/policy consumption，以及显存和吞吐。
+- [ ] P1：在预注册多task、多family、浅/中/深targets上做task-local primal current-bank dual capacity资格；video holdout零梯度，必须
+  相对各自optimistic native projection无数量级损失并保持跨video，不能用task93/q20单点外推。
+- [ ] P2：P1通过后从fresh训练共享full-Program-to-primal scorer并恢复完整451-condition mapping。保留held median`>=.75`、p10
+  `>=.50`、held/fit`>=.8`、相邻checkpoint稳定和correct-vs-wrong Program role median margin`>=.10`；内部loss不能代替。
+- [ ] 条件式做fit-only decomposition-feasibility oracle：仅当P2 shared mapping已显著取得selection而残余证据仍指向common
   correction/carrier时，只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
   **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、
   四family native direct/free-code可达性、跨video consensus与唯一rank16；若不成立，不保留该carrier，不能直接复用代数差分factor。
-- [ ] 条件式只有S3已取得task-specific selection而残余证据仍指向decomposition时，才重开carrier/common correction；不得绕回逐video
+- [ ] 条件式只有P2已取得task-specific selection而残余证据仍指向decomposition时，才重开carrier/common correction；不得绕回逐video
   dual、task/frame lookup、高维factor head，也不得用universal shortcut、内部loss或普通超参扫通过Gate。candidate basis、Program和
   scale必须保持明确parameter ownership；rank spectrum/scale只在selection取得后用隔离credit处理。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher

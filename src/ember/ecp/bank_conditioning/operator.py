@@ -275,6 +275,7 @@ class StreamingSignedPool:
         *,
         dtype: torch.dtype = torch.float32,
         explicit_branches: bool = False,
+        trusted_positive_measure: bool = False,
     ):
         if query.ndim < 2 or query.shape[-1] <= 0:
             raise BankConditioningError("signed-pool query shape changed")
@@ -288,6 +289,7 @@ class StreamingSignedPool:
             branch_query = torch.stack((query, -query), dim=-2)
         self.width = int(query.shape[-1])
         self.query = branch_query.to(dtype=dtype)
+        self.trusted_positive_measure = bool(trusted_positive_measure)
         self.maximum = torch.full(
             (*self.query_shape, 2),
             -torch.inf,
@@ -318,7 +320,9 @@ class StreamingSignedPool:
             raise BankConditioningError("signed-pool candidate axes changed")
         flat_values = values.detach().to(self.query).reshape(-1, self.width)
         flat_mass = mass.detach().to(self.query).reshape(-1)
-        if torch.any(flat_mass <= 0) or not bool(torch.isfinite(flat_mass).all()):
+        if not self.trusted_positive_measure and (
+            torch.any(flat_mass <= 0) or not bool(torch.isfinite(flat_mass).all())
+        ):
             raise BankConditioningError("signed-pool measure is not positive")
         score = self.query.reshape(-1, 2, self.width) @ flat_values.T
         score = score.reshape(*self.query_shape, 2, flat_values.shape[0])
@@ -354,7 +358,9 @@ class StreamingSignedPool:
         self.candidate_count += int(flat_values.shape[0])
 
     def signed_mean(self) -> torch.Tensor:
-        if self.candidate_count <= 0 or torch.any(self.normalizer <= 0):
+        if self.candidate_count <= 0 or (
+            not self.trusted_positive_measure and torch.any(self.normalizer <= 0)
+        ):
             raise BankConditioningError("signed-pool stream is empty")
         mean = self.weighted_sum / self.normalizer[..., None]
         return mean[..., 0, :] - mean[..., 1, :]

@@ -169,11 +169,7 @@ def _trainable_groups(
     ordinary = []
     scale_and_video = []
     for name, parameter in compiler.named_parameters():
-        destination = (
-            scale_and_video
-            if name.startswith(("scale_head.", "anchor_scorer.group_gain."))
-            else ordinary
-        )
+        destination = scale_and_video if name.startswith("scale_head.") else ordinary
         destination.append(parameter)
     if not ordinary or not scale_and_video:
         raise ValueError("G3 optimizer parameter ownership changed")

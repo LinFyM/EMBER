@@ -253,10 +253,10 @@ def prepare_mapping_evaluation_runtime(
         owners,
         program_width=int(config["model"]["program_width"]),
         event_slots=int(config["model"]["event_slots"]),
-        anchor_width=int(config["model"]["anchor_width"]),
         relative_eigenvalue_floor=float(
             config["model"]["relative_eigenvalue_floor"]
         ),
+        replay_score_rms=float(config["model"]["replay_score_rms"]),
     ).to(context.device)
     macro, training_contract = _load_compiler_checkpoint(
         compiler,

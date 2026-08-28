@@ -18,7 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v5.json",
     )
     parser.add_argument(
         "--program-causality-contract",

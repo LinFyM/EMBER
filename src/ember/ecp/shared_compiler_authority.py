@@ -331,7 +331,7 @@ def build_mapping_run_contract(
         },
         "model": {
             **dict(config["model"]),
-            "active_bank_conditioning": "functional_polar",
+            "active_bank_conditioning": "program_primal_current_bank_global_dual",
             "native_dual_matmul_precision": compiler.native_dual_matmul_precision,
             "compiler_forward_signature": list(
                 inspect.signature(compiler.forward).parameters

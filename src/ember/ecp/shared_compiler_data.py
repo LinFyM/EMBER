@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import torch
 
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.g1_video import prepare_native_video_readout
+from ember.ecp.g1_initialization import (
+    cache_native_video_readout,
+    cached_native_bytes,
+)
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
 from ember.ecp.natural_program_data import (
     NaturalProgramSample,
@@ -37,6 +41,33 @@ class SharedCompilerCondition:
     program: NaturalProgram
     videos: tuple[SharedCompilerVideo, ...]
     metrics: dict[str, object]
+
+
+def cache_shared_compiler_native_replay(
+    condition: SharedCompilerCondition,
+) -> SharedCompilerCondition:
+    """Capture frozen X/Y once for repeated B0/B1 reads in G3 acquisition.
+
+    The canonical Writer remains streaming.  This bounded cache is used only
+    by frozen-bank mapping training/evaluation, where replaying the identical
+    native values four times would otherwise repeat the frozen policy forward.
+    """
+
+    videos = tuple(
+        replace(video, native=cache_native_video_readout(video.native))
+        for video in condition.videos
+    )
+    return replace(
+        condition,
+        videos=videos,
+        metrics={
+            **condition.metrics,
+            "native_replay": "ephemeral_frozen_XY_cache",
+            "native_replay_bytes": sum(
+                cached_native_bytes(video.native) for video in videos
+            ),
+        },
+    )
 
 
 def pack_shared_compiler_videos(

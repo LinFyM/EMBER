@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -11,12 +12,13 @@ from ember.ecp.bank_conditioning import (
     AnchorProgramState,
     FeatureWhiteningPlan,
     FunctionalBankStatistics,
+    FunctionalPolarQueries,
     ProgramNativeAnchorScorer,
     StreamingFunctionalBankStatistics,
     StreamingSignedPool,
+    batched_functional_polar_queries,
     build_feature_whitening_plan,
     bound_functional_queries,
-    functional_polar_queries,
 )
 from ember.ecp.bank_conditioning.anchor_solve import (
     ReplayBankPlan,
@@ -90,6 +92,16 @@ class _FunctionalVideoPlan:
     group_gains: torch.Tensor
     conditioning_metrics: torch.Tensor
     feature_plan: FeatureWhiteningPlan
+
+
+@dataclass(frozen=True)
+class _PolarRequest:
+    identifier: int | tuple[int, int]
+    mode: str
+    raw: torch.Tensor
+    weights: torch.Tensor
+    statistics: FunctionalBankStatistics
+
 
 class SharedNativeFactorCompiler(torch.nn.Module):
     """Generate one rank-four residual through current-bank functional polar.
@@ -223,6 +235,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             events=self.event_slots,
             ranks=G1_RESIDUAL_RANK,
             device=state.rank.device,
+            dtype=torch.float32,
         )
         return _FunctionalStream(
             base_frame=base,
@@ -313,9 +326,13 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                     )
         return stop
 
-    def _functional_pass(
+    def _functional_statistics(
         self, video: SharedCompilerVideo, state: AnchorProgramState
-    ) -> _FunctionalVideoPlan:
+    ) -> tuple[
+        _FunctionalStream,
+        tuple[FunctionalBankStatistics, ...],
+        tuple[tuple[FunctionalBankStatistics, ...], ...],
+    ]:
         _, event_frame, _ = self._video_measures(video, state.event_weights)
         feature_plan = build_feature_whitening_plan(
             video=video,
@@ -349,26 +366,36 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             tuple(value.finalize() for value in groups)
             for groups in stream.output_accumulators
         )
+        return stream, inputs, outputs
+
+    def _functional_polar_requests(
+        self,
+        state: AnchorProgramState,
+        stream: _FunctionalStream,
+        inputs: tuple[FunctionalBankStatistics, ...],
+        outputs: tuple[tuple[FunctionalBankStatistics, ...], ...],
+    ) -> tuple[list[_PolarRequest], list[_PolarRequest]]:
         raw_input = self.anchor_scorer.input_queries(state)
-        input_queries = []
-        output_queries = []
-        metrics = []
+        input_requests: list[_PolarRequest] = []
+        output_requests: list[_PolarRequest] = []
         for target, statistics in enumerate(inputs):
+            output_polar_mode = (
+                "global"
+                if self.owners[target].family.value == "q"
+                else "per_event"
+            )
             raw = self.anchor_scorer.input_projected_queries(
                 raw_input[target], target=target
             )
-            polar = functional_polar_queries(
-                raw,
-                state.event_weights[target],
-                statistics,
-                covariance_floor=self.relative_eigenvalue_floor,
-                image_floor=self.relative_eigenvalue_floor,
+            input_requests.append(
+                _PolarRequest(
+                    identifier=target,
+                    mode="per_event",
+                    raw=raw,
+                    weights=state.event_weights[target],
+                    statistics=statistics,
+                )
             )
-            bounded, _ = bound_functional_queries(
-                (polar.queries,), score_bound=self.anchor_score_bound
-            )
-            input_queries.append(bounded[0])
-            metrics.append(polar.metrics)
             group_raw = self.anchor_scorer.output_queries(
                 state, target=target, groups=len(outputs[target])
             )
@@ -378,15 +405,71 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             group_raw = group_raw * stream.gains[target][
                 :, :, None, None, None
             ]
-            group_polar = tuple(
-                functional_polar_queries(
-                    group_raw[group],
-                    state.event_weights[target],
-                    statistics,
-                    covariance_floor=self.relative_eigenvalue_floor,
-                    image_floor=self.relative_eigenvalue_floor,
+            output_requests.extend(
+                _PolarRequest(
+                    identifier=(target, group),
+                    mode=output_polar_mode,
+                    raw=group_raw[group],
+                    weights=state.event_weights[target],
+                    statistics=statistics,
                 )
                 for group, statistics in enumerate(outputs[target])
+            )
+        return input_requests, output_requests
+
+    def _polarize_requests(
+        self, requests: Sequence[_PolarRequest]
+    ) -> dict[int | tuple[int, int], FunctionalPolarQueries]:
+        buckets: dict[tuple[object, ...], list[_PolarRequest]] = defaultdict(list)
+        for request in requests:
+            statistics = request.statistics
+            buckets[
+                (
+                    request.mode,
+                    statistics.mean.numel(),
+                    statistics.key_images.shape[-1],
+                    statistics.covariance.dtype,
+                )
+            ].append(request)
+        resolved = {}
+        for key, rows in buckets.items():
+            values = batched_functional_polar_queries(
+                tuple(row.raw for row in rows),
+                tuple(row.weights for row in rows),
+                tuple(row.statistics for row in rows),
+                covariance_floor=self.relative_eigenvalue_floor,
+                image_floor=self.relative_eigenvalue_floor,
+                mode=str(key[0]),
+            )
+            resolved.update(
+                (row.identifier, value)
+                for row, value in zip(rows, values, strict=True)
+            )
+        return resolved
+
+    def _functional_video_plan(
+        self,
+        state: AnchorProgramState,
+        stream: _FunctionalStream,
+        inputs: tuple[FunctionalBankStatistics, ...],
+        outputs: tuple[tuple[FunctionalBankStatistics, ...], ...],
+        input_polar: dict[int | tuple[int, int], FunctionalPolarQueries],
+        output_polar: dict[int | tuple[int, int], FunctionalPolarQueries],
+    ) -> _FunctionalVideoPlan:
+        input_queries = []
+        output_queries = []
+        metrics = []
+        for target in range(len(self.owners)):
+            input_value = input_polar[target]
+            bounded, _ = bound_functional_queries(
+                (input_value.queries,),
+                score_bound=self.anchor_score_bound,
+            )
+            input_queries.append(bounded[0])
+            metrics.append(input_value.metrics)
+            group_polar = tuple(
+                output_polar[(target, group)]
+                for group in range(len(outputs[target]))
             )
             bounded, _ = bound_functional_queries(
                 tuple(value.queries for value in group_polar),
@@ -401,8 +484,8 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 stacked[:, 1].min(),
                 stacked[:, 2].max(),
                 stacked[:, 3].min(),
-                feature_plan.metrics[0],
-                feature_plan.metrics[1],
+                stream.feature_plan.metrics[0],
+                stream.feature_plan.metrics[1],
             )
         ).to(state.rank)
         return _FunctionalVideoPlan(
@@ -415,7 +498,23 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             frame_measure=stream.frame_measure,
             group_gains=torch.cat(stream.gains, dim=0),
             conditioning_metrics=conditioning,
-            feature_plan=feature_plan,
+            feature_plan=stream.feature_plan,
+        )
+
+    def _functional_pass(
+        self, video: SharedCompilerVideo, state: AnchorProgramState
+    ) -> _FunctionalVideoPlan:
+        stream, inputs, outputs = self._functional_statistics(video, state)
+        input_requests, output_requests = self._functional_polar_requests(
+            state, stream, inputs, outputs
+        )
+        return self._functional_video_plan(
+            state,
+            stream,
+            inputs,
+            outputs,
+            self._polarize_requests(input_requests),
+            self._polarize_requests(output_requests),
         )
 
     @staticmethod

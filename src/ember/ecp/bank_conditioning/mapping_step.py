@@ -10,6 +10,7 @@ import torch.distributed as dist
 
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler_data import (
+    cache_shared_compiler_native_replay,
     pack_shared_compiler_videos,
     prepare_shared_compiler_condition,
     prepare_shared_compiler_program,
@@ -75,7 +76,7 @@ def prepare_mapping_condition(
     runtime: MappingRuntime, condition: MappingCondition
 ):
     packed, tokens, mask = _pack_mapping_condition(runtime, condition)
-    return prepare_shared_compiler_condition(
+    prepared = prepare_shared_compiler_condition(
         policy=runtime.policy,
         program_model=runtime.program,
         owners=runtime.owners,
@@ -84,6 +85,7 @@ def prepare_mapping_condition(
         language_mask=mask,
         chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
     )
+    return cache_shared_compiler_native_replay(prepared)
 
 
 def prepare_mapping_condition_program(

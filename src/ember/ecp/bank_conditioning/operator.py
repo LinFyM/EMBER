@@ -188,8 +188,15 @@ def batched_spectral_bank_query(
         for row in rows
     ):
         raise BankConditioningError("batched spectral banks changed shape")
-    covariance = torch.stack([row.covariance.double().detach() for row in rows])
-    anchor = torch.stack([row.anchor.double() for row in rows])
+    compute_dtype = rows[0].covariance.dtype
+    if compute_dtype not in (torch.float32, torch.float64):
+        raise BankConditioningError("spectral bank precision changed")
+    covariance = torch.stack(
+        [row.covariance.detach().to(dtype=compute_dtype) for row in rows]
+    )
+    anchor = torch.stack(
+        [row.anchor.to(dtype=compute_dtype) for row in rows]
+    )
     if (
         covariance.ndim != 3
         or covariance.shape[1] != covariance.shape[2]

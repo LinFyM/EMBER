@@ -76,18 +76,33 @@ class StreamingFeatureStatistics:
         width: int,
         device: torch.device,
         dtype: torch.dtype = torch.float32,
+        leading_block_size: int = 4,
     ) -> None:
-        if events <= 0 or width <= 0:
+        if events <= 0 or width <= 0 or leading_block_size <= 0:
             raise BankConditioningError("invalid feature-statistics topology")
         self.events = int(events)
         self.width = int(width)
         self.dtype = dtype
+        self.leading_block_size = int(leading_block_size)
         self.total_mass = torch.zeros(events, device=device, dtype=dtype)
         self.first_moment = torch.zeros(events, width, device=device, dtype=dtype)
         self.second_moment = torch.zeros(
             events, width, width, device=device, dtype=dtype
         )
         self.candidate_count = 0
+        self._pending: tuple[torch.Tensor, torch.Tensor] | None = None
+
+    def _consume(self, keys: torch.Tensor, mass: torch.Tensor) -> None:
+        keys = keys.reshape(-1, self.width)
+        mass = mass.reshape(self.events, -1)
+        self.total_mass = self.total_mass + mass.sum(-1)
+        self.first_moment = self.first_moment + torch.einsum(
+            "en,nd->ed", mass, keys
+        )
+        self.second_moment = self.second_moment + torch.einsum(
+            "en,nd,nf->edf", mass, keys, keys
+        )
+        self.candidate_count += int(keys.shape[0])
 
     def add(self, keys: torch.Tensor, event_mass: torch.Tensor) -> None:
         if (
@@ -97,26 +112,30 @@ class StreamingFeatureStatistics:
             or keys.numel() <= 0
         ):
             raise BankConditioningError("feature-statistics candidate axes changed")
-        flat_keys = keys.detach().to(dtype=self.dtype).reshape(-1, self.width)
-        flat_mass = event_mass.detach().to(dtype=self.dtype).reshape(
-            self.events, -1
-        )
+        flat_keys = keys.detach().to(dtype=self.dtype)
+        flat_mass = event_mass.detach().to(dtype=self.dtype)
         if (
             torch.any(flat_mass < 0)
             or not bool(torch.isfinite(flat_keys).all())
             or not bool(torch.isfinite(flat_mass).all())
         ):
             raise BankConditioningError("feature statistics are invalid")
-        self.total_mass = self.total_mass + flat_mass.sum(-1)
-        self.first_moment = self.first_moment + torch.einsum(
-            "en,nd->ed", flat_mass, flat_keys
-        )
-        self.second_moment = self.second_moment + torch.einsum(
-            "en,nd,nf->edf", flat_mass, flat_keys, flat_keys
-        )
-        self.candidate_count += int(flat_keys.shape[0])
+        if self._pending is not None:
+            old_keys, old_mass = self._pending
+            flat_keys = torch.cat((old_keys, flat_keys), dim=0)
+            flat_mass = torch.cat((old_mass, flat_mass), dim=1)
+            self._pending = None
+        stop = flat_keys.shape[0] - flat_keys.shape[0] % self.leading_block_size
+        for start in range(0, stop, self.leading_block_size):
+            end = start + self.leading_block_size
+            self._consume(flat_keys[start:end], flat_mass[:, start:end])
+        if stop < flat_keys.shape[0]:
+            self._pending = (flat_keys[stop:], flat_mass[:, stop:])
 
     def finalize(self) -> FeatureStatistics:
+        if self._pending is not None:
+            self._consume(*self._pending)
+            self._pending = None
         if (
             self.candidate_count <= 1
             or torch.any(self.total_mass <= 0)
@@ -152,9 +171,7 @@ def batched_feature_whiteners(
         for row in rows
     ):
         raise BankConditioningError("feature-whitening statistics changed shape")
-    covariance = torch.stack(
-        tuple(row.covariance.double().detach() for row in rows)
-    )
+    covariance = torch.stack(tuple(row.covariance.detach() for row in rows))
     eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
     maximum = eigenvalues[..., -1].clamp_min(torch.finfo(eigenvalues.dtype).tiny)
     keep = eigenvalues > maximum[..., None] * float(relative_eigenvalue_floor)

@@ -7,6 +7,7 @@ from ember.ecp.bank_conditioning import (
     StreamingFeatureStatistics,
     StreamingFunctionalBankStatistics,
     StreamingSignedPool,
+    batched_functional_polar_queries,
     batched_feature_whiteners,
     bound_functional_queries,
     bounded_relative_group_gain,
@@ -16,6 +17,18 @@ from ember.ecp.bank_conditioning import (
     normalize_replay_queries,
     spectral_bank_query,
 )
+from ember.ecp.bank_conditioning.functional_polar import _economy_svd_right
+
+
+def test_economy_svd_preserves_right_gram_for_rectangular_batches() -> None:
+    generator = torch.Generator().manual_seed(5)
+    for rows, columns in ((23, 5), (5, 23), (7, 7)):
+        matrix = torch.randn(3, rows, columns, generator=generator).double()
+        singular, right = _economy_svd_right(matrix)
+        reconstructed = right.transpose(-1, -2) @ torch.diag_embed(
+            singular.square()
+        ) @ right
+        torch.testing.assert_close(reconstructed, matrix.transpose(-1, -2) @ matrix)
 
 
 def test_streaming_feature_whitening_is_chunk_equivalent_and_differentiable() -> None:
@@ -113,6 +126,37 @@ def test_functional_polar_statistics_are_chunk_equivalent_and_bounded() -> None:
     assert raw.grad is not None
     assert bool(torch.isfinite(raw.grad).all())
     assert bool(torch.count_nonzero(raw.grad))
+
+    per_event_raw = raw.detach().clone().requires_grad_()
+    per_event = batched_functional_polar_queries(
+        (per_event_raw, per_event_raw),
+        (event_weights, event_weights),
+        (right, right),
+        covariance_floor=1e-8,
+        image_floor=1e-8,
+        mode="per_event",
+    )
+    references = []
+    for event_index in range(events):
+        event_statistics = type(right)(
+            mean=right.mean,
+            covariance=right.covariance,
+            replay_covariances=right.replay_covariances,
+            key_images=right.key_images[event_index : event_index + 1],
+            total_mass=right.total_mass,
+        )
+        references.append(
+            functional_polar_queries(
+                per_event_raw[:, event_index : event_index + 1],
+                torch.ones(ranks, 1),
+                event_statistics,
+                covariance_floor=1e-8,
+                image_floor=1e-8,
+            ).queries
+        )
+    reference = torch.cat(references, dim=1)
+    torch.testing.assert_close(per_event[0].queries, reference)
+    torch.testing.assert_close(per_event[1].queries, reference)
 
     replay_query = torch.randn(ranks, 2, native_width, generator=generator)
     normalized, _ = normalize_replay_queries(

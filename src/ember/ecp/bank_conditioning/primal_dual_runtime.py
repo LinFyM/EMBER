@@ -104,11 +104,14 @@ class PrimalDualVideoOperator:
         ):
             raise NativeFactorError("compiler local video contract changed")
 
-    def _new_statistics(self, device: torch.device) -> tuple[list[Any], list[Any]]:
+    def _candidate_blocks(self) -> tuple[int, int]:
         input_block = (
             self.covariance_frame_chunk * G1_PROBE_COUNT * ACTION_HORIZON
         )
-        output_block = input_block * len(OUTPUT_BANK_TYPES)
+        return input_block, input_block * len(OUTPUT_BANK_TYPES)
+
+    def _new_statistics(self, device: torch.device) -> tuple[list[Any], list[Any]]:
+        input_block, output_block = self._candidate_blocks()
         inputs = [
             StreamingNativeCovariance(
                 width=owner.in_features,
@@ -384,13 +387,22 @@ class PrimalDualVideoOperator:
 
     def _replay(self, video: Any, plan: _ReplayPlan) -> tuple[Any, Any]:
         frame = self.quadrature(video.frame_positions)
+        input_block, output_block = self._candidate_blocks()
         inputs = tuple(
-            StreamingSignedPool(query, trusted_positive_measure=True)
+            StreamingSignedPool(
+                query,
+                trusted_positive_measure=True,
+                canonical_block_candidates=input_block,
+            )
             for query in plan.input_queries
         )
         outputs = tuple(
             tuple(
-                StreamingSignedPool(query, trusted_positive_measure=True)
+                StreamingSignedPool(
+                    query,
+                    trusted_positive_measure=True,
+                    canonical_block_candidates=output_block,
+                )
                 for query in groups
             )
             for groups in plan.output_queries

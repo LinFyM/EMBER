@@ -346,6 +346,21 @@ def test_signed_pool_is_chunk_equivalent_and_group_gain_is_bounded() -> None:
         accumulator.signed_mean(), expected, rtol=1e-12, atol=1e-12
     )
 
+    canonical = StreamingSignedPool(
+        reference,
+        trusted_positive_measure=True,
+        canonical_block_candidates=17,
+    )
+    canonical.add(values, mass)
+    canonical_streamed = StreamingSignedPool(
+        reference,
+        trusted_positive_measure=True,
+        canonical_block_candidates=17,
+    )
+    for start, stop in ((0, 7), (7, 54), (54, 73)):
+        canonical_streamed.add(values[start:stop], mass[start:stop])
+    assert torch.equal(canonical_streamed.signed_mean(), canonical.signed_mean())
+
     maxima = torch.stack((score_maximum, score_maximum * 0.25, score_maximum * 2.0))
     gain = bounded_relative_group_gain(maxima)
     torch.testing.assert_close(gain[2], torch.ones_like(gain[2]))

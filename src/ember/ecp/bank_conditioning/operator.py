@@ -276,8 +276,16 @@ class StreamingSignedPool:
         dtype: torch.dtype = torch.float32,
         explicit_branches: bool = False,
         trusted_positive_measure: bool = False,
+        canonical_block_candidates: int | None = None,
     ):
-        if query.ndim < 2 or query.shape[-1] <= 0:
+        if (
+            query.ndim < 2
+            or query.shape[-1] <= 0
+            or (
+                canonical_block_candidates is not None
+                and canonical_block_candidates <= 0
+            )
+        ):
             raise BankConditioningError("signed-pool query shape changed")
         if explicit_branches:
             if query.ndim < 3 or query.shape[-2] != 2:
@@ -290,6 +298,11 @@ class StreamingSignedPool:
         self.width = int(query.shape[-1])
         self.query = branch_query.to(dtype=dtype)
         self.trusted_positive_measure = bool(trusted_positive_measure)
+        self.canonical_block_candidates = (
+            None
+            if canonical_block_candidates is None
+            else int(canonical_block_candidates)
+        )
         self.maximum = torch.full(
             (*self.query_shape, 2),
             -torch.inf,
@@ -305,6 +318,35 @@ class StreamingSignedPool:
             dtype=dtype,
         )
         self.candidate_count = 0
+        self._pending_values = torch.empty(
+            0, self.width, device=query.device, dtype=dtype
+        )
+        self._pending_mass = torch.empty(0, device=query.device, dtype=dtype)
+
+    def _accumulate(
+        self,
+        flat_values: torch.Tensor,
+        flat_mass: torch.Tensor,
+        bias: torch.Tensor | None,
+    ) -> None:
+        score = self.query.reshape(-1, 2, self.width) @ flat_values.T
+        score = score.reshape(*self.query_shape, 2, flat_values.shape[0])
+        log_mass = flat_mass.log().reshape(
+            *((1,) * len(self.query_shape)), flat_values.shape[0]
+        )
+        logits = score + log_mass[..., None, :]
+        if bias is not None:
+            logits = logits + bias
+        chunk_maximum = logits.amax(-1)
+        maximum = torch.maximum(self.maximum, chunk_maximum)
+        old_scale = torch.exp(self.maximum - maximum)
+        weights = torch.exp(logits - maximum[..., None])
+        self.weighted_sum = self.weighted_sum * old_scale[..., None] + torch.einsum(
+            "...bn,nd->...bd", weights, flat_values
+        )
+        self.normalizer = self.normalizer * old_scale + weights.sum(-1)
+        self.maximum = maximum
+        self.candidate_count += int(flat_values.shape[0])
 
     def add(
         self,
@@ -324,13 +366,12 @@ class StreamingSignedPool:
             torch.any(flat_mass <= 0) or not bool(torch.isfinite(flat_mass).all())
         ):
             raise BankConditioningError("signed-pool measure is not positive")
-        score = self.query.reshape(-1, 2, self.width) @ flat_values.T
-        score = score.reshape(*self.query_shape, 2, flat_values.shape[0])
-        log_mass = flat_mass.log().reshape(
-            *((1,) * len(self.query_shape)), flat_values.shape[0]
-        )
-        logits = score + log_mass[..., None, :]
+        bias = None
         if logit_bias is not None:
+            if self.canonical_block_candidates is not None:
+                raise BankConditioningError(
+                    "canonical signed replay does not accept a logit bias"
+                )
             shared_shape = (*self.query_shape, *mass.shape)
             branch_shape = (*self.query_shape, 2, *mass.shape)
             if logit_bias.shape == shared_shape:
@@ -345,19 +386,31 @@ class StreamingSignedPool:
                 raise BankConditioningError("signed-pool logit bias axes changed")
             if not bool(torch.isfinite(bias).all()):
                 raise BankConditioningError("signed-pool logit bias is non-finite")
-            logits = logits + bias
-        chunk_maximum = logits.amax(-1)
-        maximum = torch.maximum(self.maximum, chunk_maximum)
-        old_scale = torch.exp(self.maximum - maximum)
-        weights = torch.exp(logits - maximum[..., None])
-        self.weighted_sum = self.weighted_sum * old_scale[..., None] + torch.einsum(
-            "...bn,nd->...bd", weights, flat_values
-        )
-        self.normalizer = self.normalizer * old_scale + weights.sum(-1)
-        self.maximum = maximum
-        self.candidate_count += int(flat_values.shape[0])
+        if self.canonical_block_candidates is None:
+            self._accumulate(flat_values, flat_mass, bias)
+            return
+        flat_values = torch.cat((self._pending_values, flat_values))
+        flat_mass = torch.cat((self._pending_mass, flat_mass))
+        block = self.canonical_block_candidates
+        complete = (flat_values.shape[0] // block) * block
+        for start in range(0, complete, block):
+            self._accumulate(
+                flat_values[start : start + block],
+                flat_mass[start : start + block],
+                None,
+            )
+        if complete == flat_values.shape[0]:
+            self._pending_values = self._pending_values.new_empty((0, self.width))
+            self._pending_mass = self._pending_mass.new_empty((0,))
+        else:
+            self._pending_values = flat_values[complete:].clone()
+            self._pending_mass = flat_mass[complete:].clone()
 
     def signed_mean(self) -> torch.Tensor:
+        if self._pending_values.shape[0] > 0:
+            self._accumulate(self._pending_values, self._pending_mass, None)
+            self._pending_values = self._pending_values.new_empty((0, self.width))
+            self._pending_mass = self._pending_mass.new_empty((0,))
         if self.candidate_count <= 0 or (
             not self.trusted_positive_measure and torch.any(self.normalizer <= 0)
         ):

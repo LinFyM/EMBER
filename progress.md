@@ -21,8 +21,36 @@ scale trainable parameter为0。相同raw X/Y与B0 operator在chunked streaming�
 activation可有一个量化步差异，随机近零primal会放大为最低`.867` update cosine；同bank交叉臂为约1.0，故这不是cache或chunk错误，
 且P1已在不同真实videos的有意义primal上证明`.9545` held recovery。
 
-全仓`198 passed`。下一步只做clean pushed detached authority上的world6 cold/hot profile，核对真实step、cache峰值、GPU利用率与
-NCCL/NUMA；通过后立即启动fresh P2 macro5和完整451-condition Gate。shuffled/reversed不使用。
+全仓`198 passed`。clean pushed detached `0a37170`的world6 cold/hot profile均已完成：固定同一3 meta+3 target update的12条K1
+conditions在cold时全部并行构建，单condition build为`4.13--9.95s`，step为`24.84s`、cache合计`6.522GB`；hot时12/12命中，
+单文件load最多`.219s`，完整forward/backward/all-reduce/optimizer step为`6.177s`。两次mean recovery、gradient norm和rank assignment
+完全相同，分别为`.0012211`、`.206293`及每rank一个task；peak allocated/reserved约`15.32/19.73GiB`。六份冻结policy的一次性进程
+启动约139s，但不随step重复。该吞吐足以在六卡上约数分钟构建每macro的新conditions并以约31s执行五个hot updates，不再有
+hours-per-condition问题。
+
+### P2 macro5 formal launch contract
+
+- scientific code authority为clean pushed `main@0a37170`；formal必须从包含本合同、可由`origin/main`到达的clean detached commit执行。
+  本合同后的提交只允许文档更新，不改变P2 config/code/test；fresh optimizer，不resume、不复用profile cache或checkpoint；
+- data/optimization固定为329 mapping-fit conditions、40 held-video和82 task-holdout；训练只用fit，5 macros × 5 optimizer steps，
+  每step固定3 meta+3 target、每task两条K1 videos，world6只做cost-balanced分片。只训练shared full-Program-to-primal scorer；G2、source、
+  scale head、carrier、teacher与Action Meta冻结，scale使用唯一fit-only shared `[38,4]` template；
+- command：`env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_ecp_shared_compiler.py --config
+  configs/pi05_ecp_shared_compiler_g3_v5.json --phase f3 --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path
+  /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root
+  /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_shared_compiler_g3_p2_fold0_m5_gpu01p012345_r6_20260829
+  --condition-cache-root /dev/shm/ember_ecp_g3_p2_formal_20260829 --stop-after-macro 5 --log-every 1`；
+- runtime：launch前重新live检查gpu01/gpu02；首选gpu01物理0--5、自动GPU-local NUMA、deferred NCCL且`NCCL_P2P_DISABLE=1`。
+  profile实测六卡有效并行，非dummy占卡。`/data1` quota为`703874736/1073741824` KiB，formal输出预计`<1GiB`；329 fit cache的
+  raw X/Y为`161.10GiB`，即使所有谱basis满秩的严格上界也约`221.81GiB`，低于gpu01 `/dev/shm 252GiB`，held conditions评估时
+  ephemeral不累计；host available RAM在profile清理前仍约`474GiB`；
+- macro5完成后立即以6个独立GPU workers覆盖全部451 conditions和40对correct-vs-wrong Program；若macro5通过absolute/causal Gate，
+  继续同一run到下一预注册checkpoint形成adjacent稳定性。若non-pass，先按fit、video-held、task-held、role、family和Program-causality
+  定位最早失效接口；不续训掩盖明显fit失容，不做seed/LR/width小扫。shuffled/reversed不使用。
 
 ## 2026-08-28 v5 P0通过，P1六任务资格已预注册
 

@@ -402,9 +402,10 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   dual/replay容量并解封P2，不等于shared mapping或闭环通过。
 - [ ] P2：共享full-Program-to-primal scorer、fit-only shared rank-scale template、run-local compact frozen-condition cache和完整
   451-condition evaluator已接通；真实同bank compact/chunk误差`2.384185791015625e-07`，cache-hit 38-target forward/backward
-  `2.625s`，Action Meta/scale trainable均为0，全仓`198 passed`。下一步从clean pushed detached fresh执行world6 cold/hot profile后
-  formal macro5。Gate保持held median`>=.75`、p10`>=.50`、held/fit`>=.8`、相邻checkpoint稳定和correct-vs-wrong Program role
-  median margin`>=.10`；内部loss不能代替。
+  `2.625s`，Action Meta/scale trainable均为0，全仓`198 passed`。clean detached world6 cold/hot step为`24.84/6.177s`，六卡均各处理
+  一个task且12条cache build/hit、gradient和3+3 role合同完整；formal launch contract已登记，下一步fresh macro5并立即评估451
+  conditions。Gate保持held median`>=.75`、p10`>=.50`、held/fit`>=.8`、相邻checkpoint稳定和correct-vs-wrong Program role median
+  margin`>=.10`；内部loss不能代替。
 - [ ] 条件式做fit-only decomposition-feasibility oracle：仅当P2 shared mapping已显著取得selection而残余证据仍指向common
   correction/carrier时，只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
   **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、

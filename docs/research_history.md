@@ -847,3 +847,24 @@ student。exploratory完整`H`最佳top64仍远低于门，补充排除fixed ran
 关键artifact：
 
 - `runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/`。
+
+## 45. S2 set-summary task93/q20两轮formal non-pass
+
+专家S1失败分支首先在固定task93/q20建立pure low-dimensional set-summary witness：两条video共同拟合、第三条video严格zero-gradient，
+最终仍对真实native X/Y做eventwise signed pooling。clean detached `main@4d84dee`的v1错误地把fresh seeded 128D projection当作existing
+candidate encoder；1000步后fit/held为`.328188/.175318`。同bank nested global/eventwise free logits分别达`.9999996/.9999861`，
+证明bank、signed pooling和两种reduction没有硬容量上限，也暴露v1的candidate authority错误。
+
+clean detached `main@6b97100`的v2显式加载并冻结`78b7e58/macro5`旧F3中fit-trained的candidate encoders、family trunks、metadata与
+key projections，共609 tensors/8,006,400 parameters；其余函数类、数据、loss、1000步与Gate不变。v2 fit median仅`.349191`，held
+`.131624`、held/fit`.37694`、held input/output`.112037/.038104`，五项Gate全部失败；相对v1仅有小幅fit改善且held更差。
+两轮均实测Action Meta 0、source/G2/compiler 0 trainable、无held outcome/gradient及shuffled/reversed。
+
+因此S2尚未进入12-task或shared Program训练。历史证据只淘汰随机chart组合，以及冻结旧25-step F3 chart足以支持当前学生的假设；不把
+它扩大为native bank、signed pooling、set summary或所有candidate encoder失败。下一阶段先以fit-only可训练chart诊断区分“旧chart没有
+获得合适credit”和“candidate score函数类不足”，再决定唯一formal修正。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/`；
+- `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01p0_20260828/`。

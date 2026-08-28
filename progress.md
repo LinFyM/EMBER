@@ -44,6 +44,15 @@ logit饱和；因此bound与normalization不是`.3`量级主因。最早实现�
 该精确加载路径的一步真实smoke已通过：609 tensors、8,006,400 parameters来自登记authority，旧query/Program路径未加载；
 source/G2/compiler trainable与Action Meta均为0，三视频capture、forward、gradient和checkpoint写入正常。
 
+clean pushed detached `main@6b97100`随后在gpu01物理0完成同一1000-step v2 formal witness。fit videos 18/48的best update为
+`.355018/.349191`，fit median`.349191`；zero-gradient held video0仅`.131624`，held/fit`.37694`，held input/output为
+`.112037/.038104`，五项Gate全部失败。相对v1，fit只提高约`.021`而held更差；训练仍为`7.55 step/s`、total`279.57s`，不是
+吞吐、梯度、authority或Action Meta故障。这确认`78b7e58/macro5`的fit-trained frozen 128D candidate chart也不足以让当前
+set-summary/scalar-energy学生获取fit方向，但不等于所有可训练candidate encoder或set-summary路线失容。按预注册分支不进入12-task/
+shared训练；下一步先做不保留的单变量容量诊断：从该authority初始化学生自有candidate value encoder/trunk/key projection并允许其
+接受强factor/subspace credit，旧compiler、Program、source与Action Meta仍冻结。若fit数量级恢复，再将“解冻chart”形成唯一正式
+修正；若仍低，则在发射新formal前替换candidate score函数类，而不是继续调bound、LR或summary宽度。
+
 本轮retained-code ownership与lifecycle明确如下：`native_bank_runtime.py`唯一拥有frozen source/G2/compiler加载、K1 capture及真实candidate
 bank边界，并已从S1 analyzer删除213行重复实现，供S1诊断和S2共同复用；`set_summary.py`唯一拥有当前deployment-candidate的集合摘要、
 scalar energy与exact signed pooling数学；`probe_ecp_g3_set_summary_witness.py`只拥有固定task93/q20资格流程和formal artifact写入，不成为
@@ -81,7 +90,7 @@ env CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELI
 该历史命令已由detached `4d84dee`在gpu01物理0完整执行；artifact有效保留。v1 non-pass只淘汰fresh随机projected key与首版
 set-summary/scalar-energy/paired-credit的组合，不能冒充fit-trained candidate encoder或整个pure set-summary路线已失败。
 
-## S2 task93/q20 set-summary witness v2 formal launch contract
+## S2 task93/q20 set-summary witness v2 formal launch contract与结论
 
 - canonical code：包含本合同与v2 loader/config的clean pushed `origin/main`，从exact commit建立clean detached frozen worktree；formal
   runner核对detached、clean且commit可由`origin/main`到达；
@@ -103,6 +112,13 @@ set-summary/scalar-energy/paired-credit的组合，不能冒充fit-trained candi
 ```bash
 env CUDA_VISIBLE_DEVICES=<GPU> PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/python -u scripts/probe_ecp_g3_set_summary_witness.py --config configs/pi05_ecp_set_summary_s2_v2.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01pX_20260828 --formal
 ```
+
+该合同已由detached `6b97100`在gpu01物理0完整执行，exact output为
+`runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01p0_20260828/`。fit median、held、held/fit、held input/output分别为
+`.349191/.131624/.37694/.112037/.038104`，全部低于`.90/.80/.8/.80/.80`必要门。artifact含single final checkpoint、逐步metrics、
+report与completion；没有held梯度、outcome读取、shuffled/reversed或teacher tensors。该结果淘汰“冻结`78b7e58` candidate chart + 当前
+mean/variance summary + separable scalar energy + paired-only credit”的组合，尚不淘汰允许candidate chart从native value获得直接
+functional credit的学生。
 
 ## S1 task93/q20 formal early-disqualifier launch contract
 

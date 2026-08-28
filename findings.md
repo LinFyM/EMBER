@@ -954,6 +954,24 @@ candidate encoder authority；下一最小修正只加载并冻结其中candidat
 
 - `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/`。
 
+### 60. fit-trained frozen candidate chart只带来小幅fit增益，最早接口转为chart acquisition
+
+clean pushed detached `main@6b97100`显式加载`78b7e58/macro5`的609个candidate encoder/trunk/metadata/key-projection tensors
+（8,006,400 parameters），排除旧query/Program路径，并保持task93/q20、videos 18/48/0、1000 steps、summary、score、loss与Gate
+不变。formal fit median为`.349191`，仅比随机chart v1的`.328188`高约`.021`；held从`.175318`降至`.131624`，held/fit
+`.37694`，held input/output`.112037/.038104`，五项Gate均失败。Action Meta、source/G2/compiler trainable、held outcome/gradient及
+shuffled/reversed use均为0，训练`7.55 step/s`且梯度/loss正常，故这是科学non-pass。
+
+结合相同bank的global/eventwise free logits都约1.0，当前可排除的是**冻结**`78b7e58`的128D score image足以支持该学生这一假设；
+不能据此声称native bank、signed pooling、set summary或所有candidate encoder失败。该authority本身只在旧失败F3中训练25步，且本轮没有
+让native-value chart接受当前task的factor/subspace credit。下一最早接口因此是candidate chart acquisition：先从同一权重初始化学生自有
+value encoder/trunk/key projection做fit-only、无task/video lookup的可训练容量诊断。只有它显著恢复fit，才有依据正式解冻；若仍停留
+在`.3`量级，则应替换candidate score函数类，不把bound、normalization、LR或额外summary宽度当作修正。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01p0_20260828/`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

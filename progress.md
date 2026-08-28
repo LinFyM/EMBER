@@ -41,6 +41,32 @@ scalar energy与exact signed pooling数学；`probe_ecp_g3_set_summary_witness.p
 student执行面吸收到canonical S2 trainer后；届时只由Git与formal artifact保留task93专用流程，不继续并行增长。新增代码量来自真实
 bank共享owner、独立数学owner和可复现资格入口三个不可混合职责，不构造通用框架或版本fallback。
 
+## S2 task93/q20 set-summary witness formal launch contract
+
+- canonical code：包含本合同的clean pushed `origin/main`，从exact commit建立clean detached frozen worktree；实现authority为
+  `ce47ff8`，其后的launch-contract提交不得改变代码、配置或科学口径；formal runner必须核对detached、clean且commit可由
+  `origin/main`到达；
+- fixed evidence：task93、q target20；fit videos为18与48，zero-gradient held video为0；teacher固定为target step1000/2000两个
+  verified members。只训练set-summary scalar-energy selector与跨三条video共享的task-local rank/event free code；source、G2
+  Program、旧compiler、candidate encoder、carrier与scale全部冻结，Action Meta module/parameter必须实测为0；
+- objective：fit-only set-valued paired effective-update loss加跨fit-video dispersion；held video不参与梯度、loss、checkpoint选择或
+  fixed-step schedule。固定AdamW、1000 steps、LR `1e-3`，无early stop、无resume；最终只报告single final checkpoint；
+- Gate：两个fit videos的effective-update median `>=.90`，held effective update、input pushforward和output pushforward均`>=.80`，
+  held/fit `>=.8`；任一失败即淘汰首版mean/variance set-summary + separable scalar-energy函数类，不进入12-task正控。通过也只证明
+  当前函数类具有task-local跨video容量，不代表shared Program mapping或G3通过；
+- execution：单进程单A40。launch前live核对gpu01/gpu02后选择gpu01物理0（UUID
+  `GPU-658b6043-6454-1228-bffc-0e2fe22e5013`、serial `1322123016829`）作为当时空闲设备；它当前没有prohibited authority。
+  两步真实smoke训练为约`4.27 step/s`，1000步连同一次runtime/capture预计总wall约6--7分钟，单task图不能从数据并行获益；
+- storage/output：`/data1` live quota为`703635280/1073741824` KiB，预计新增低于0.1GiB；formal root固定为
+  `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/`且launch前必须不存在。有效non-pass亦保留完整
+  config、checkpoint、metrics、report和completion；shuffled/reversed不使用。
+
+精确命令（`<FORMAL_WORKTREE>`在launch时替换为exact detached路径）：
+
+```bash
+env CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/python -u scripts/probe_ecp_g3_set_summary_witness.py --config configs/pi05_ecp_set_summary_s2_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828 --formal
+```
+
 ## S1 task93/q20 formal early-disqualifier launch contract
 
 - canonical code：包含本合同的clean pushed commit，并从该commit建立detached frozen worktree；worker强制核对clean detached Git；

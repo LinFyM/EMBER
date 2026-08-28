@@ -369,7 +369,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   pushforward各`>=.80`、held/fit`>=.8`才进入12-task正控。首版使用measure-normalized mean/variance DeepSets summary和共享bounded
   candidate scalar energy，冻结现有candidate encoder；失败只淘汰这一明确函数类。
   - [x] 接通共享frozen native-bank runtime、separable scalar-energy、exact signed pooling、固定final-step runner及三视频真实gradient smoke；
-    31项定向合同通过，Action Meta和全部旧authority实际冻结，正式1000-step witness待clean detached launch。
+    31项定向合同通过，Action Meta和全部旧authority实际冻结。
+  - [x] clean detached `4d84dee`完成首轮1000-step witness：fit/held仅`.328/.175`。nested free-logit oracle在global/eventwise均约
+    `1.000`，而固定或fresh 128D score basis即使移除summary映射并加入强factor credit仍不超过约`.36`；首轮runtime进一步确认所谓
+    existing candidate encoder实际是未加载checkpoint的fresh seeded projection，因此该结果只淘汰这一错误authority组合。
+  - [ ] 单一修正为显式加载并冻结`78b7e58/macro5` fit-trained candidate encoder/trunk/metadata/key projection；保持summary、score、loss、
+    videos、1000 steps与Gate不变。真实smoke证明authority与Action Meta 0后，从clean detached commit运行v2 witness；若仍不通过，再依据
+    fit score决定解冻/替换candidate encoder，不提前改summary或进入12-task/shared训练。
 - [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
   保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
   leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。

@@ -43,8 +43,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 
 
-REPORT_SCHEMA = "ember_ecp_g3_set_summary_s2_witness_v1"
-CHECKPOINT_SCHEMA = "ember_ecp_g3_set_summary_s2_witness_checkpoint_v1"
+REPORT_SCHEMA = "ember_ecp_g3_set_summary_s2_witness_v2"
+CHECKPOINT_SCHEMA = "ember_ecp_g3_set_summary_s2_witness_checkpoint_v2"
 
 
 @dataclass(frozen=True)
@@ -73,6 +73,7 @@ class _CapturedWitness:
     output_groups: int
     inventory: dict[str, Any]
     actual_frozen: dict[str, int]
+    candidate_encoder_authority: dict[str, Any]
     runtime_initialization_seconds: float
     capture_seconds: dict[str, float]
     capture_peak_reserved_bytes: int
@@ -350,7 +351,7 @@ def _save_checkpoint(
 
 
 def _validate_config(config: Mapping[str, Any], *, formal: bool, steps: int | None) -> int:
-    if config.get("schema_version") != "ember_ecp_set_summary_s2_v1":
+    if config.get("schema_version") != "ember_ecp_set_summary_s2_v2":
         raise ValueError("set-summary witness config schema changed")
     witness = config["witness"]
     if (
@@ -391,9 +392,17 @@ def _capture_witness(
         reference_config=reference,
         asset_root=args.asset_root,
         data_root=args.data_root,
+        candidate_encoder_checkpoint=(
+            args.asset_root
+            / config["authorities"]["candidate_encoder_checkpoint"]
+        ),
     )
     runtime_ready = time.perf_counter()
     try:
+        if runtime.candidate_encoder_authority.get("authority_commit") != str(
+            config["authorities"]["candidate_encoder_commit"]
+        ):
+            raise RuntimeError("set-summary candidate encoder authority changed")
         witness = config["witness"]
         task_id = int(witness["authority_id"])
         target = int(witness["target"])
@@ -435,6 +444,9 @@ def _capture_witness(
             output_groups=native_output_group_count(runtime.owners[target]),
             inventory=inventory,
             actual_frozen=frozen,
+            candidate_encoder_authority=dict(
+                runtime.candidate_encoder_authority
+            ),
             runtime_initialization_seconds=runtime_ready - started,
             capture_seconds=capture_seconds,
             capture_peak_reserved_bytes=torch.cuda.max_memory_reserved(
@@ -620,6 +632,7 @@ def _report_payload(
         },
         "information_wall": {
             **captured.actual_frozen,
+            "candidate_encoder_authority": captured.candidate_encoder_authority,
             "action_meta_module_count": captured.inventory["action_meta_module_count"],
             "deployment_task_video_frame_free_parameter_count": 0,
             "capacity_task_local_parameter_count": sum(

@@ -470,8 +470,9 @@ G3按以下最小因果顺序推进，前一接口通过后才恢复后一职责
 2. **S2 12-task pure low-dimensional set-summary student容量—因果Gate**：固定选择6 meta+6 target tasks，覆盖困难q/v深层与action controls。每个role各留1个task作
    零梯度true task-holdout，其余10 tasks各使用两条fit video和一条zero-gradient video-holdout。先在同一student执行面把Program query
    换成task-local free low-dimensional query作正控；该执行面不得以`Q_g q_tilde`限制native query，而应从Program/free code、
-   current-bank低维集合摘要、candidate key与metadata直接产生正负candidate logits，再对真实X/Y exact pool。正控不通过就淘汰当前
-   summary/score函数类，禁止用shared训练掩盖。正控通过后才
+current-bank低维集合摘要、candidate key与metadata直接产生正负candidate logits，再对真实X/Y exact pool。正控不通过就先核对
+candidate encoder authority与score image；只有确实加载既定fit-trained encoder后仍失败，才淘汰当前summary/score函数类，禁止用
+shared训练掩盖。正控通过后才
    训练shared Program-to-summary query，loss只保留set-valued paired effective update、universal-centered task-specific excess和
    cross-video dispersion，scale继续冻结。fit、video-holdout、task-holdout以及q/v/action families必须分开报告。
    在12-task Gate前只允许一个最小机制witness：沿既定task93/q20，task-local free code在两条fit videos共同优化，第三条video全程
@@ -592,13 +593,15 @@ successful members、effect calibration、probe-particle capture、carrier/mobil
 当前活动树已经实现真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、G2 Natural
 Program、feature/functional sufficient statistics、functional-polar Program queries、native spectral solve、B1 exact signed replay、
 small-core rank4 canonicalization、rank12+4唯一rank16、S1 functional sketch/formal early disqualifier和451-condition evaluator wiring；
-Action Meta默认关闭。fit-only consensus只属于mapping loader，full-polar/sketch statistics不进入checkpoint model state。尚未实现的是
-pure low-dimensional set-summary scalar-energy student、12-task free-query/shared资格、leave-one-task-out universal-centered credit和
+Action Meta默认关闭。fit-only consensus只属于mapping loader，full-polar/sketch statistics不进入checkpoint model state。task93/q20
+pure low-dimensional set-summary scalar-energy执行面已实现，但首轮formal发现其runtime把fresh seeded random chart误作existing candidate
+encoder；当前只修正为显式加载并冻结`78b7e58/macro5` fit-trained candidate chart。尚未实现的是12-task free-query/shared资格、
+leave-one-task-out universal-centered credit和
 Program×bank crossed Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar的K1吞吐资格non-pass，native-Q sketch的S1容量资格也formal non-pass；两者只保留为
 fit-only teacher/reference或diagnostic，不得再以deployment候选启动formal。当前唯一待资格化实现是pure set-summary scalar-energy
-student：先完成task93/q20最小witness和S2 12-task free-query正控，再训练shared Program映射，并按S3完整451、F4 scale/functional、
+student：先以真实fit-trained candidate encoder重做task93/q20最小witness，再做S2 12-task free-query正控与shared Program映射，并按S3完整451、F4 scale/functional、
 F5 Dynamic-K、F6 held5 closed-loop、G4/G5和Final推进。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

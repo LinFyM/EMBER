@@ -24,24 +24,35 @@ effective-update为`.156687--.157438`，input/output full-native free-query最�
 `.9999769`；同task/video/member/target的sealed F1 analytic positive仍为`.995560--.997907`。因此含per-row minimum`.95`的S1
 容量Gate已被正式反例否决，不运行其余96 conditions，也不训练该native-Q sketch。exploratory完整`H`最佳top64仍远低于门，补充排除
 fixed random projection抽坏；该早停不估计50-task分布。当前按专家预定fallback设计不经过native-Q rank64瓶颈的pure low-dimensional
-set-summary candidate-logit执行面，先做task93/q20机制witness，再进入12-task task-local free-query正控，未开始shared训练。
+set-summary candidate-logit执行面；task93/q20首轮机制witness已formal non-pass，尚未进入12-task或shared训练。
 
 当前实现面已把S1的frozen runtime与真实candidate-bank构造抽成共享owner，并新增measure-normalized mean/variance DeepSets summary、
 candidate-local nonlinear basis×bank/code-conditioned coefficients的bounded positive/negative scalar energy、event-normalized exact X/Y
 pooling和固定task-local rank/event code；不含native-Q lift、per-video/per-candidate参数或teacher forward。31项相关合同通过。gpu01物理2
 两步真实smoke已完成：task93的fit videos 18/48与zero-gradient held video 0全部成功capture，Action Meta/source/G2/compiler实际可训练
-参数均为0；去除event-invariant key的8倍重复编码后，训练为`4.27 step/s`、peak allocated/reserved约`5.42/5.84GiB`，两步fit/held
-update从约0提升到`.00927/.00983`。该smoke只证明forward/gradient/吞吐接通，不是容量Gate；下一步从clean pushed detached commit运行
-固定1000-step witness，held不产生梯度且不参与checkpoint选择。
+参数均为0；去除event-invariant key的8倍重复编码后，训练为`4.27 step/s`、peak allocated/reserved约`5.42/5.84GiB`。clean pushed detached
+`main@4d84dee`随后完成固定1000-step formal：fit median仅`.328188`，held`.175318`，held/fit`.5342`，held input/output仅
+`.100649/.042760`，全部Gate checks失败；total`296.52s`，训练`7.72 step/s`，不是吞吐或运行故障。
+
+fit-only nested oracle把失败进一步定位：同一video18真实bank的global free logits和eventwise free logits分别达到
+`.9999996/.9999861`，排除native X/Y、teacher、signed pooling与eventwise reduction的硬容量上限；固定formal candidate basis后即使移除
+summary/code映射、每video直接优化低维系数并加入强factor credit，fit仍只有`.359/.353`，canonical global reduction更只有`.048`。
+从fresh训练candidate basis并用短期subspace credit时，eventwise bound8/bound14及global bound14也只有`.233/.241/.203`，且均未发生
+logit饱和；因此bound与normalization不是`.3`量级主因。最早实现接口是S2所谓“frozen existing candidate encoder”实际由reference config
+按seed新建、没有加载任何G3 checkpoint，故冻结的是随机128D native/key projection。下一单一因果修正只加载clean detached
+`78b7e58/macro5`中fit-trained candidate encoder/trunk/metadata/key projection并继续冻结它；summary、score、loss、videos、steps和Gate不变。
+该精确加载路径的一步真实smoke已通过：609 tensors、8,006,400 parameters来自登记authority，旧query/Program路径未加载；
+source/G2/compiler trainable与Action Meta均为0，三视频capture、forward、gradient和checkpoint写入正常。
 
 本轮retained-code ownership与lifecycle明确如下：`native_bank_runtime.py`唯一拥有frozen source/G2/compiler加载、K1 capture及真实candidate
 bank边界，并已从S1 analyzer删除213行重复实现，供S1诊断和S2共同复用；`set_summary.py`唯一拥有当前deployment-candidate的集合摘要、
 scalar energy与exact signed pooling数学；`probe_ecp_g3_set_summary_witness.py`只拥有固定task93/q20资格流程和formal artifact写入，不成为
 第二个Writer。S1 analyzer/config保留为明确`deployment_candidate=false`的历史诊断入口。witness runner的移除触发点是12-task正控把同一
 student执行面吸收到canonical S2 trainer后；届时只由Git与formal artifact保留task93专用流程，不继续并行增长。新增代码量来自真实
-bank共享owner、独立数学owner和可复现资格入口三个不可混合职责，不构造通用框架或版本fallback。
+bank共享owner、独立数学owner和可复现资格入口三个不可混合职责，不构造通用框架或版本fallback。共享runtime现同时负责显式加载并记录
+fit-trained candidate encoder authority，避免把fresh seeded projection误报为existing encoder；其余compiler仍冻结且不进入student。
 
-## S2 task93/q20 set-summary witness formal launch contract
+## S2 task93/q20 set-summary witness v1 formal launch contract与结论
 
 - canonical code：包含本合同的clean pushed `origin/main`，从exact commit建立clean detached frozen worktree；实现authority为
   `ce47ff8`，其后的launch-contract提交不得改变代码、配置或科学口径；formal runner必须核对detached、clean且commit可由
@@ -65,6 +76,32 @@ bank共享owner、独立数学owner和可复现资格入口三个不可混合职
 
 ```bash
 env CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/python -u scripts/probe_ecp_g3_set_summary_witness.py --config configs/pi05_ecp_set_summary_s2_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828 --formal
+```
+
+该历史命令已由detached `4d84dee`在gpu01物理0完整执行；artifact有效保留。v1 non-pass只淘汰fresh随机projected key与首版
+set-summary/scalar-energy/paired-credit的组合，不能冒充fit-trained candidate encoder或整个pure set-summary路线已失败。
+
+## S2 task93/q20 set-summary witness v2 formal launch contract
+
+- canonical code：包含本合同与v2 loader/config的clean pushed `origin/main`，从exact commit建立clean detached frozen worktree；formal
+  runner核对detached、clean且commit可由`origin/main`到达；
+- 唯一因果变量：candidate chart从v1的fresh seeded compiler改为clean detached `78b7e58` formal F3 macro5中fit-trained
+  candidate encoders、family trunks、合法metadata和key projections；精确加载609 tensors/8,006,400 parameters。旧query projection、
+  Program query与其余compiler不加载或训练；source、G2、compiler均须实测0 trainable，Action Meta module/parameter为0；
+- 保持不变：task93/q20、fit videos18/48、zero-gradient held video0、两个verified members、mean/variance summary、separable scalar
+  energy、eventwise exact signed pooling、bound8、task-local code、paired update+dispersion、AdamW `1e-3`、固定1000 steps、无early stop/
+  resume、final-step single checkpoint及全部`.90/.80/.80/.80/.8` Gate；
+- 决策：通过才进入12-task free-query正控；fit仍失败则确认fit-trained 128D chart/score image不足，下一接口是解冻或替换candidate
+  encoder，不改summary或启动shared训练。held先失败才讨论跨video泛化。global/eventwise与bound不在本次变更中，因为nested free-logit
+  oracle已证明二者均约1.0，且bound8/14、global对fresh basis均未改变当前数量级；
+- execution/output：单进程单A40，预计runtime/capture约145s、训练约130s、总wall约5分钟，peak reserved约18GiB capture与6GiB
+  training；formal root固定为`runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01pX_20260828/`并在launch时以实时设备替换
+  `X`，root必须不存在。launch前重新live检查gpu01/gpu02与`/data1`独立quota；有效non-pass亦保留，shuffled/reversed不使用。
+
+精确命令（`<FORMAL_WORKTREE>`、`<GPU>`与output中的`X`在launch时替换）：
+
+```bash
+env CUDA_VISIBLE_DEVICES=<GPU> PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/python -u scripts/probe_ecp_g3_set_summary_witness.py --config configs/pi05_ecp_set_summary_s2_v2.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01pX_20260828 --formal
 ```
 
 ## S1 task93/q20 formal early-disqualifier launch contract

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import torch
 
-from ember.ecp.bank_conditioning.native_bank_runtime import NativeCandidateBank
+from ember.ecp.bank_conditioning.native_bank_runtime import (
+    NativeCandidateBank,
+    _is_candidate_encoder_state,
+)
 from ember.ecp.bank_conditioning.set_summary import (
     SetConditionedScalarEnergy,
     SetSummaryFactorSelector,
@@ -12,6 +15,18 @@ from ember.ecp.bank_conditioning.set_summary import (
     materialized_set_signed_pool,
 )
 from ember.ecp.native_factors import G1_RESIDUAL_RANK
+
+
+def test_candidate_encoder_authority_excludes_old_query_path() -> None:
+    assert _is_candidate_encoder_state("input_candidates.20.direction.weight")
+    assert _is_candidate_encoder_state(
+        "output_compatibility_heads.q.key_projection.weight"
+    )
+    assert _is_candidate_encoder_state("frame_event_metadata")
+    assert not _is_candidate_encoder_state(
+        "input_compatibility_heads.q.query_projection.weight"
+    )
+    assert not _is_candidate_encoder_state("program_context.q.1.weight")
 
 
 def _energy(*, global_events: bool = True) -> SetConditionedScalarEnergy:

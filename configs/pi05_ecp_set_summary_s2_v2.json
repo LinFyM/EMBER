@@ -1,14 +1,17 @@
 {
-  "schema_version": "ember_ecp_set_summary_s2_v1",
+  "schema_version": "ember_ecp_set_summary_s2_v2",
   "status": "active_task_local_free_query_positive_control",
   "authorities": {
     "reference_config": "configs/pi05_ecp_shared_compiler_g3_v4.json",
+    "candidate_encoder_checkpoint": "runs/outputs/pi05_ecp_shared_compiler_g3_f3_ieee_fold0_m5_gpu01p012345_r6_20260828/checkpoints/macro_00000005",
+    "candidate_encoder_commit": "78b7e587612eb0fbcd866c7bdcc2fd3bbc2df15d",
     "s1_nonpass_config": "configs/pi05_ecp_functional_sketch_s1_v1.json",
     "s1_formal_report": "runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/report.json",
+    "s2_v1_formal_report": "runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/report.json",
     "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json"
   },
   "model": {
-    "function_class": "measure_normalized_mean_variance_deepsets_separable_scalar_energy",
+    "function_class": "fit_trained_candidate_encoder_measure_normalized_mean_variance_deepsets_separable_scalar_energy",
     "feature_width": 128,
     "hidden_width": 256,
     "event_slots": 8,
@@ -17,7 +20,7 @@
     "candidate_energy_basis_width": 128,
     "q_event_context": "all_eight_ordered_event_summaries",
     "other_family_event_context": "local_canonical_event_summary",
-    "candidate_encoder": "frozen_existing_target_native_encoder_family_trunk_and_projected_key",
+    "candidate_encoder": "frozen_fit_trained_f3_target_native_encoder_family_trunk_and_projected_key",
     "input_candidate_index": ["video", "frame", "probe", "horizon"],
     "output_candidate_index": ["video", "frame", "probe", "horizon", "type"],
     "value": "exact_real_native_XY_signed_positive_negative_pooling",
@@ -29,7 +32,7 @@
     "fit_videos": [18, 48],
     "held_video": 0,
     "member_names": ["target_step1000", "target_step2000"],
-    "selection_rule": "reuse_both_preexisting_task93_q20_fit_conditions_and_smallest_distinct_video_demo_for_zero_gradient_holdout",
+    "selection_rule": "identical_to_v1_only_candidate_encoder_authority_changes",
     "fit_effective_update_median_minimum": 0.9,
     "held_effective_update_minimum": 0.8,
     "held_input_subspace_minimum": 0.8,

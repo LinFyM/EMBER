@@ -931,6 +931,29 @@ task-local free-query正控中证明overall/q/v/action容量，再允许shared P
 
 - `runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/`。
 
+### 59. S2首轮fit失败来自随机candidate chart；free logits仍精确可达
+
+clean pushed detached `main@4d84dee`在固定task93/q20、fit videos 18/48、zero-gradient held video0上完成1000-step set-summary
+witness。fit effective-update median为`.328188`，held为`.175318`、held/fit`.5342`，held input/output subspace仅
+`.100649/.042760`，全部Gate checks失败。训练loss从`.868`持续降至`.673`、梯度有限非零，total wall`296.52s`且训练
+`7.72 step/s`；因此这是fit-bank selection acquisition的科学non-pass，不是运行、吞吐、Action Meta或held泛化先失败。
+
+同一video18 bank的nested oracle把算子与score image分开：解析global free logits达到`.9999996`，按首轮eventwise归一化构造的free
+logits也达到`.9999861`，证明真实X/Y、teacher、signed pooling及两种归一化都具有精确容量。相反，冻结formal candidate basis并允许
+每条fit video独立直接优化低维coefficients、移除summary/code映射且加入强factor/subspace credit，update仍只有`.359/.353`；改成
+canonical global reduction更只有`.048`。从fresh训练同一candidate basis时，eventwise bound8、由解析range推出的bound14及global
+bound14分别只有`.233/.241/.203`，且最终logits均未接近bound。故bound8与eventwise reduction虽有合同差异，却不是当前数量级首因。
+
+代码审计随后找到更早的authority错误：`prepare_frozen_native_bank_runtime`调用`_load_training_assets`后只按config seed新建compiler，
+没有加载任何G3 checkpoint；`materialize_condition_banks`因此把fresh随机`NativeCandidateEncoder -> family trunk -> key projection`输出
+当成“frozen existing candidate encoder”。q20 input stable rank为490，而随机chart只有128维；首轮正控实际检验的是随机降维组合，不能
+淘汰fit-trained existing encoder、set summary本身或Program。clean detached `78b7e58/macro5`的formal F3 checkpoint含完整fit-trained
+candidate encoder authority；下一最小修正只加载并冻结其中candidate encoder/trunks/metadata/key projections，其余函数类与Gate不变。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v1_gpu01p0_20260828/`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

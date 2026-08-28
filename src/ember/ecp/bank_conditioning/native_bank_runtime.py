@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from typing import Any, Sequence
 
 import torch
+from safetensors.torch import load_file
 
 from ember.ecp.bank_conditioning.anchor_solve import candidate_mass
 from ember.ecp.bank_conditioning.mapping_eval_runtime import load_mapping_tasks
@@ -26,6 +27,28 @@ from ember.ecp.shared_compiler_data import (
     prepare_shared_compiler_condition,
 )
 from ember.pi05_source_setup import initialize_distributed, seed_everything
+
+
+_CANDIDATE_ENCODER_PREFIXES = (
+    "input_candidates.",
+    "output_candidates.",
+    "input_candidate_trunks.",
+    "output_candidate_trunks.",
+    "frame_event_metadata",
+    "probe_metadata",
+    "horizon_metadata",
+    "type_metadata",
+    "time_metadata.",
+)
+
+
+def _is_candidate_encoder_state(name: str) -> bool:
+    return name.startswith(_CANDIDATE_ENCODER_PREFIXES) or (
+        name.startswith(
+            ("input_compatibility_heads.", "output_compatibility_heads.")
+        )
+        and ".key_projection." in name
+    )
 
 
 @dataclass(frozen=True)
@@ -63,6 +86,7 @@ class FrozenNativeBankRuntime:
     native_teachers: Any
     query_points: int
     inventory: dict[str, Any]
+    candidate_encoder_authority: dict[str, Any]
 
     def close(self) -> None:
         self.video_store.close()
@@ -73,6 +97,7 @@ def prepare_frozen_native_bank_runtime(
     reference_config: Path,
     asset_root: Path,
     data_root: Path,
+    candidate_encoder_checkpoint: Path | None = None,
 ) -> FrozenNativeBankRuntime:
     """Load the single pure-Native G3 bank path with every authority frozen."""
 
@@ -96,6 +121,10 @@ def prepare_frozen_native_bank_runtime(
         config,
         context,
         tasks,
+    )
+    candidate_authority = _load_candidate_encoder_authority(
+        assets.compiler,
+        checkpoint=candidate_encoder_checkpoint,
     )
     inventory = pure_shared_compiler_inventory(
         policy=assets.policy,
@@ -125,7 +154,85 @@ def prepare_frozen_native_bank_runtime(
         native_teachers=assets.native_teachers,
         query_points=assets.query_points,
         inventory=inventory,
+        candidate_encoder_authority=candidate_authority,
     )
+
+
+def _load_candidate_encoder_authority(
+    compiler: torch.nn.Module,
+    *,
+    checkpoint: Path | None,
+) -> dict[str, Any]:
+    """Load only the existing fit-trained candidate chart into a frozen runtime."""
+
+    if checkpoint is None:
+        return {
+            "kind": "fresh_seeded_reference_config",
+            "checkpoint": None,
+            "loaded_tensor_count": 0,
+        }
+    checkpoint = checkpoint.resolve()
+    manifest_path = checkpoint / "checkpoint_manifest.json"
+    tensor_path = checkpoint / "ecp.safetensors"
+    run_contract_path = checkpoint.parent.parent / "run_contract.json"
+    if (
+        not manifest_path.is_file()
+        or not tensor_path.is_file()
+        or not run_contract_path.is_file()
+    ):
+        raise FileNotFoundError(
+            f"candidate encoder checkpoint is incomplete: {checkpoint}"
+        )
+    from ember.pi05_source_checkpoint import read_json
+
+    manifest = read_json(manifest_path)
+    run_contract = read_json(run_contract_path)
+    if (
+        manifest.get("schema_version") != "ember_ecp_checkpoint_v1"
+        or manifest.get("stage") != "g3_mapping_f3"
+        or int(manifest.get("next_macro", -1)) != 5
+    ):
+        raise ValueError("candidate encoder checkpoint authority changed")
+    authority_commit = str(run_contract.get("git", {}).get("authority_commit", ""))
+    if (
+        run_contract.get("mode") != "formal"
+        or run_contract.get("stage") != "g3_mapping_f3"
+        or len(authority_commit) != 40
+    ):
+        raise ValueError("candidate encoder formal run authority changed")
+    expected_bytes = int(manifest["files"]["ecp.safetensors"]["bytes"])
+    if tensor_path.stat().st_size != expected_bytes:
+        raise ValueError("candidate encoder checkpoint size changed")
+    checkpoint_state = load_file(str(tensor_path), device="cpu")
+    scorer = compiler.anchor_scorer
+    state = scorer.state_dict()
+    selected: dict[str, torch.Tensor] = {}
+    for name, value in state.items():
+        if not _is_candidate_encoder_state(name):
+            continue
+        checkpoint_name = "anchor_scorer." + name
+        loaded = checkpoint_state.get(checkpoint_name)
+        if loaded is None or loaded.shape != value.shape:
+            raise ValueError(
+                f"candidate encoder checkpoint tensor changed: {checkpoint_name}"
+            )
+        selected[name] = loaded
+    expected = {
+        name for name in state if _is_candidate_encoder_state(name)
+    }
+    if set(selected) != expected or not selected:
+        raise ValueError("candidate encoder checkpoint selection is incomplete")
+    state.update(selected)
+    scorer.load_state_dict(state, strict=True)
+    return {
+        "kind": "fit_trained_g3_candidate_encoder",
+        "checkpoint": str(checkpoint),
+        "checkpoint_stage": str(manifest["stage"]),
+        "checkpoint_next_macro": int(manifest["next_macro"]),
+        "authority_commit": authority_commit,
+        "loaded_tensor_count": len(selected),
+        "loaded_parameter_count": sum(value.numel() for value in selected.values()),
+    }
 
 
 def prepare_k1_condition(

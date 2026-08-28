@@ -376,9 +376,13 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   - [x] 单一修正为显式加载并冻结`78b7e58/macro5` fit-trained candidate encoder/trunk/metadata/key projection；保持summary、score、loss、
     videos、1000 steps与Gate不变。clean detached `6b97100`的v2 fit/held仅`.349/.132`、held/fit`.377`，全部Gate失败；相对随机chart
     fit只增加约`.021`。因此不进入12-task/shared训练。
-  - [ ] 先做不保留的candidate-chart acquisition诊断：从`78b7e58`初始化学生自有native-value encoder/trunk/key projection，保持旧
-    compiler、Program、source、Action Meta冻结及同一真实X/Y/signed pooling，用直接factor/subspace credit判断fit容量。显著恢复才形成
-    “解冻chart”的唯一formal修正；若仍为`.3`量级，则替换candidate score函数类。不得以LR/bound/normalization/width小扫代替该裁决。
+  - [x] 完成不保留的candidate-chart acquisition诊断：从`78b7e58`初始化并只解冻q20所选chart的`363,520`参数，与scorer/free code
+    合计`2,648,100` trainable；正确的`rho * event-volume`测度下1000步fit/held仅`.30286/.03527`。因此不形成“解冻chart”formal
+    修正，首版128D mean/variance separable scalar-energy函数类已淘汰；bound/branch/diagonal与低秩operator对照也均未恢复。
+  - [ ] 下一次只检验一个机制不同的candidate score函数类：task-local rank/event query直接多步cross-attend当前candidate set，形成
+    query-conditioned set state后再逐candidate产生bounded signed logits。它必须保持集合置换等变、正确event-volume mixing、真实X/Y
+    exact pooling、跨三视频共享free code、video0零梯度及Action Meta 0；不得含task/video/frame lookup或full covariance/eig/SVD。
+    仍先以task93/q20的`.90/.80/.80/.80/.8` Gate裁决，失败后重开teacher/credit目标，不扫token/width/depth/LR/bound版本链。
 - [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
   保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
   leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。

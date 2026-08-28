@@ -48,10 +48,22 @@ clean pushed detached `main@6b97100`随后在gpu01物理0完成同一1000-step v
 `.355018/.349191`，fit median`.349191`；zero-gradient held video0仅`.131624`，held/fit`.37694`，held input/output为
 `.112037/.038104`，五项Gate全部失败。相对v1，fit只提高约`.021`而held更差；训练仍为`7.55 step/s`、total`279.57s`，不是
 吞吐、梯度、authority或Action Meta故障。这确认`78b7e58/macro5`的fit-trained frozen 128D candidate chart也不足以让当前
-set-summary/scalar-energy学生获取fit方向，但不等于所有可训练candidate encoder或set-summary路线失容。按预注册分支不进入12-task/
-shared训练；下一步先做不保留的单变量容量诊断：从该authority初始化学生自有candidate value encoder/trunk/key projection并允许其
-接受强factor/subspace credit，旧compiler、Program、source与Action Meta仍冻结。若fit数量级恢复，再将“解冻chart”形成唯一正式
-修正；若仍低，则在发射新formal前替换candidate score函数类，而不是继续调bound、LR或summary宽度。
+set-summary/scalar-energy学生获取fit方向，但不等于所有set函数失容。按预注册分支没有进入12-task/shared训练。
+
+后续只读重放首先修正了一个更早的event measure错误：per-event unit-mass bank必须按`rho * pre-normalization event volume`混合；
+raw `rho`或uniform mixing把同一解析dual从`.9956--.9979`降到约`.043--.055`，正确混合恢复`.9757--.9876`。在正确测度下，冻结
+chart的matched 1000-step fit/held为`.31884/.04363`；bound0.1、antithetic branches与native-diagonal三个机制arm仍分别只有约
+`.209/.046`、`.223/.052`和`.050/.034`。这些诊断没有改变formal v1/v2 artifact，只修正后继执行合同。
+
+预注册candidate-chart acquisition也已完成：只解冻q20所选chart的`363,520`参数，并与scorer/free code合计训练`2,648,100`参数；
+source/G2/旧compiler/Action Meta保持冻结，videos18/48训练、video0零梯度。1000步final fit为`.30286`，held仅`.03527`，因此没有形成
+“解冻chart”的formal修正；首版128D mean/variance separable scalar-energy函数类已经按Gate淘汰。
+
+同bank nested operator curve又显示q20 input稳定秩为`483--487/1024`，output groups为`243--256/256`；64/128维低秩修正的完整update
+仅约`.28/.51`，256维约`.83--.85`，input约到384维、output约到192--224维才接近exact。普通或diagonal-preconditioned PCG到256次
+仍不能稳定恢复input，完整update约`.48--.64`。所以不再把对角、少量rank或朴素迭代solve包装成新deployment polar。当前下一步是
+一个明确不同的query-conditioned permutation-equivariant set operator正控：rank/event query多步读取当前candidate set后再逐candidate
+产生signed logits；先只跑task93/q20，仍使用真实X/Y、正确event measure、同一fit/held Gate和Action Meta 0，不先发射12-task/shared。
 
 本轮retained-code ownership与lifecycle明确如下：`native_bank_runtime.py`唯一拥有frozen source/G2/compiler加载、K1 capture及真实candidate
 bank边界，并已从S1 analyzer删除213行重复实现，供S1诊断和S2共同复用；`set_summary.py`唯一拥有当前deployment-candidate的集合摘要、

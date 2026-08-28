@@ -5,8 +5,9 @@
 bank-conditioned两阶段Pass B修正；第三次专家审查锁定`main@9b52e59`及其可达历史，把高成本full functional-polar降为fit-only
 teacher/reference，并提出低维bank-adaptive functional sketch与轻量shared student。clean pushed `main@27bde62`的S1 formal
 counterexample随后证明`r_s<=64` native-query sketch失容；当前严格采用专家预先规定的fallback：full polar与native-Q sketch都只作
-teacher/diagnostic，部署候选改为不经过该native-Q瓶颈的pure low-dimensional set-summary student，且必须先通过task-local free-query
-正控。本文是当前唯一架构依据。
+teacher/diagnostic，部署候选改为不经过该native-Q瓶颈的pure set-summary student，且必须先通过task-local free-query正控。首版128D
+mean/variance separable scalar-energy在修正event measure、解冻所选candidate chart及完成operator对照后仍失容，现已按预注册分支
+淘汰；当前只资格化一个query-conditioned、permutation-equivariant的多步set operator，不把旧函数类继续调参。本文是当前唯一架构依据。
 
 三次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`和`docs/expert_review_20260828_g3_functional_sketch.md`。本文是将专家
@@ -154,6 +155,11 @@ Pass A只保留128维Program。Pass B不得物化完整`K*T*38*50*2048` tensor�
 2. **Pass B1 exact replay**：重读或复用同一video的native chunks，精确重建四类output bank，再以已求得的candidate logits执行
    positive/negative online softmax和真实X/Y weighted sum。低维summary只规划selection，不近似或蒸馏最终Value。
 
+event内部unit-mass只消除长视频/候选数偏置，不能丢掉event在原始时间测度中的体积。若
+`m_e=sum_t assignment_te * temporal_quadrature_t`，则B1的event mixture必须以`rho_e * m_e`为base再归一化；task-local或shared
+event correction只能乘在这个base上。直接用uniform或raw `rho`混合已经归一化的event banks会改变attention measure，确定性重放已把
+`.9956--.9979`的解析方向降到约`.043--.055`，因此不再是允许的实现选择。
+
 两步读取都必须按video维护首个采样帧、末个采样帧和跨chunk的previous activation：`Y_adj`使用同一video的上一采样帧，
 `Y_init`始终使用该video首帧，`Y_goal`始终使用该video末帧。chunk边界不得重置这些状态，video边界必须隔离并重置；可以预缓存
 端点或采用等价的分阶段读取。B1每个softmax分支分别维护running maximum、normalizer与weighted sum。相同输入下chunked sketch/B1
@@ -171,7 +177,7 @@ G3不回归每条video的解析dual/score，也不把deployment selection写成t
 读取真实direction与metadata；normalized time、probe、horizon以及仅输出侧存在的type可以进入低维feature。固定target/group参数只表示
 38个LoRA owner及native groups，跨所有tasks/videos共享，不是task route。
 
-以某个target/native group的真实value `v_n`、低维feature `h_n`和event measure `pi_e,n`记，首个可证伪函数类固定为：
+以某个target/native group的真实value `v_n`、低维feature `h_n`和event measure `pi_e,n`记，已经完成并淘汰的首个可证伪函数类为：
 
 ```text
 h_n        = phi_g(v_n, time, probe, horizon[, type])          [m]
@@ -189,6 +195,12 @@ l_n^+-     = b * tanh(<B_n^+-, C_jre^+-> / sqrt(m) + bias_jre^+-)
 正负分支独立计算且有界，最后才分别softmax并相减。首个正控冻结现有
 candidate encoder/source/G2/carrier/scale，只训练family-shared summary/scorer与task-local low-dimensional free codes，以隔离
 “该函数类是否有容量”；若连fit rows都学不到，再以该证据决定是否解冻或替换candidate encoder，而不把所有职责一次联合训练。
+
+该正控现已完成：正确event-volume mixing下，冻结chart与解冻所选q20 chart的fit/held分别只有约`.319/.044`与`.303/.035`，故上述
+mean/variance、separable basis×coefficient函数类不再是deployment候选。operator诊断又表明q20 input/output分别需要约384/192--224个
+bank-local相关方向才接近exact，排除了对角、64/128D低秩修正和朴素PCG。下一函数类保留低维共享参数和最终exact Value，但允许每个
+rank/event query直接、多步读取当前candidate set，形成query-conditioned set state后再回写candidate logits；这是一项待正控的
+permutation-equivariant内容路径，不是full covariance/eig/SVD、task lookup或已经通过的最终裁决。
 
 S1使用的fixed nested projection、native/key cross-image、`Q_g`、small functional operator与full-native `C_rQ` solve完整保留在
 `functional_sketch.py`及formal evidence中，但其rank64正式反例已经关闭deployment资格。不得继续搜索projection seed/rank、恢复
@@ -502,8 +514,9 @@ provenance键只用于loader pairing。teacher factors、analytic dual、per-con
 forward或checkpoint model state，held video与true task-holdout不得参与teacher构造或梯度。多个verified members由detached whole-
 trajectory responsibilities选择，不平均不兼容members。通过S3后teacher-factor loss只作有退出条件的warmup，不成为G4/Final永久监督。
 
-S1现已失败，结论是`r_s<=64` native-Q sketch未保留operator，因此不训练该sketch shared student；当前先实现pure set-summary
-free-query函数类。若free-query失败，修正candidate/summary函数类；free-query通过而
+S1现已失败，结论是`r_s<=64` native-Q sketch未保留operator，因此不训练该sketch shared student；首版mean/variance separable
+free-query函数类也已按Gate失败并淘汰，当前只实现query-conditioned多步set operator正控。若该free-query仍失败，重开teacher/credit
+可识别性而不再扫summary宽度、token数、depth、bound或LR；free-query通过而
 shared fit低，重开Program sufficiency或credit可识别性，不再修改operator；fit高而video/task held低，处理shared generalization；absolute
 高而causal低，修正teacher/common decomposition。不得用joint training掩盖G3 non-pass，也不得恢复旧realizer/FactorHead/task lookup。
 G1/G2通过结论不受影响。
@@ -594,14 +607,14 @@ successful members、effect calibration、probe-particle capture、carrier/mobil
 Program、feature/functional sufficient statistics、functional-polar Program queries、native spectral solve、B1 exact signed replay、
 small-core rank4 canonicalization、rank12+4唯一rank16、S1 functional sketch/formal early disqualifier和451-condition evaluator wiring；
 Action Meta默认关闭。fit-only consensus只属于mapping loader，full-polar/sketch statistics不进入checkpoint model state。task93/q20
-pure low-dimensional set-summary scalar-energy执行面已实现，但首轮formal发现其runtime把fresh seeded random chart误作existing candidate
-encoder；当前只修正为显式加载并冻结`78b7e58/macro5` fit-trained candidate chart。尚未实现的是12-task free-query/shared资格、
+首版set-summary scalar-energy执行面、fit-trained chart loader及正控均已实现；修正event-volume mixing后，冻结与解冻所选chart仍分别只有
+`.319/.044`和`.303/.035`，该函数类已经淘汰。尚未实现的是query-conditioned多步set operator、12-task free-query/shared资格、
 leave-one-task-out universal-centered credit和
 Program×bank crossed Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar的K1吞吐资格non-pass，native-Q sketch的S1容量资格也formal non-pass；两者只保留为
-fit-only teacher/reference或diagnostic，不得再以deployment候选启动formal。当前唯一待资格化实现是pure set-summary scalar-energy
-student：先以真实fit-trained candidate encoder重做task93/q20最小witness，再做S2 12-task free-query正控与shared Program映射，并按S3完整451、F4 scale/functional、
+fit-only teacher/reference或diagnostic，不得再以deployment候选启动formal。当前唯一待资格化的deployment函数类是query-conditioned
+多步set operator：先完成task93/q20最小witness，再做S2 12-task free-query正控与shared Program映射，并按S3完整451、F4 scale/functional、
 F5 Dynamic-K、F6 held5 closed-loop、G4/G5和Final推进。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

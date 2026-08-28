@@ -972,6 +972,34 @@ value encoder/trunk/key projection做fit-only、无task/video lookup的可训练
 
 - `runs/analysis/pi05_ecp_g3_set_summary_s2_witness_task93_q20_v2_gpu01p0_20260828/`。
 
+### 61. 正确event measure后首版set-summary仍失容，简单近似逆也不能补救
+
+解析dual artifact使用的真实固定测度是`rho_e * assignment_te * temporal_quadrature_t`。现有S2 runtime先把每个event的
+`assignment * quadrature`各自归一成unit mass，再直接以uniform或raw `rho`混合，因而丢失了event的原始时间体积。task93/q20、
+videos18/48、两个verified members的确定性重放显示：global固定测度仍为`.99556--.99791`，错误的uniform/raw-rho event混合只有
+约`.043--.055`；把event权重改为`rho_e * pre-normalization event volume_e`并归一后恢复到`.9757--.9876`。这是真实执行合同错误；
+以后所有eventwise B1都必须保留该体积，不能把unit-mass event bank再用raw `rho`直接平均。
+
+修正该测度后，当前函数类并未恢复。冻结fit-trained chart、原bound8的1000-step matched run只有fit/held
+`.31884/.04363`；bound0.1的independent/antithetic branches分别只有`.20855/.04639`和`.22339/.05198`；完整native H加逐channel
+diagonal preconditioner只有`.05033/.03371`。最后把q20自身candidate chart也从`78b7e58`初始化后解冻，让所选target的
+`363,520`个chart参数与scorer/free code共同接受factor/subspace credit；总trainable为`2,648,100`，1000步fit仍只有`.30286`，
+zero-gradient held仅`.03527`。因此失败不再能归因于frozen/random chart、score bound、正负branch gauge、对角尺度或训练未接通；
+首版128D mean/variance separable scalar-energy函数类按预注册Gate正式淘汰，不进入12-task/shared训练。
+
+同一真实bank上的不训练operator curve解释了为什么小修补无效。q20 input在两条video的稳定秩为`483--487/1024`，八个output group为
+`243--256/256`。isotropic-plus-low-rank correction在rank64/128时完整update仅约`.274--.280/.509--.511`，rank256也只有
+`.832--.846`；input需要约384个bank-local方向才使output-exact update达到约`.983`，output需要约192--224个方向才接近
+`.979--.996`。diagonal-plus-low-rank同样直到接近全维才恢复。普通和diagonal-preconditioned PCG在256次后input residual仍大于1，
+完整update只有约`.48--.64`，且曲线明显失去共轭稳定性；它们不能作为廉价迭代替代。以上均为fit-only disposable诊断，不是S2 Gate，
+但共同排除了“对角/少量rank/朴素PCG即可近似full inverse”这一实现方向。
+
+当前最早接口因此是**query-specific cross-candidate geometry**：单个固定mean/variance summary与separable candidate basis无法表达随当前bank
+旋转的高秩selection。下一函数类只能做一次有明确机制差异的task93/q20正控：让每个rank/event query直接、多步读取当前candidate set，
+形成query-conditioned set state后再回到每个candidate产生signed logits；仍只pool真实X/Y，不含task/video/frame lookup，也不把full
+covariance/eig/SVD或teacher tensor放进deployment。若这一更强的permutation-equivariant set operator仍不能先恢复fit与held，才根据
+结果重开teacher/credit目标，而不是继续扫width、token、LR或bound。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

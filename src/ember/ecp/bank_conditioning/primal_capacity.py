@@ -10,7 +10,7 @@ import torch
 from ember.ecp.bank_conditioning.consensus import truncated_mean_update
 from ember.ecp.bank_conditioning.mapping import paired_mapping_loss
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
-    PreparedPrimalDualVideo,
+    MaterializedPrimalDualVideo,
     PrimalDualVideoOperator,
 )
 from ember.ecp.contracts import TargetOwner
@@ -98,11 +98,11 @@ def subset_teacher(
 def task_local_output(
     *,
     operator: PrimalDualVideoOperator,
-    prepared: PreparedPrimalDualVideo,
+    prepared: MaterializedPrimalDualVideo,
     code: TaskLocalPrimalCode,
     s_ref: torch.Tensor,
 ) -> SharedCompilerOutput:
-    result = operator.apply(
+    result = operator.apply_materialized(
         prepared, code.input_primals(), code.output_primals()
     )
     scales = code.scales(s_ref)

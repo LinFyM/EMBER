@@ -388,7 +388,7 @@ def _prepare_banks(
             video_demo=video,
             chunk_size=frame_chunk_size,
         )
-        prepared[video] = operator.prepare(value)
+        prepared[video] = operator.materialize(operator.prepare(value))
         capture_metrics[str(video)] = metrics
     return prepared, capture_metrics, time.monotonic() - started
 

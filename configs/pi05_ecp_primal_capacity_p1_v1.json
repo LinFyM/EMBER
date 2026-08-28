@@ -63,6 +63,7 @@
   },
   "execution": {
     "worker_topology": "six_independent_single_gpu_task_workers_no_nccl",
+    "fixed_bank_replay": "materialized_exact_softmax_equivalent_to_streaming",
     "workers": 6,
     "task_weighting": "one_task_one_worker_equal_aggregate",
     "retain": ["one_final_task_code", "task_report", "aggregate", "completion"],

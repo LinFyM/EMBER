@@ -48,6 +48,19 @@ class PreparedPrimalDualVideo:
 
 
 @dataclass(frozen=True)
+class MaterializedPrimalDualVideo:
+    """Fit-only fixed-bank replay cache; never used by deployment forward."""
+
+    frame_measure: torch.Tensor
+    input_operators: tuple[SpectralNativeCovariance, ...]
+    output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...]
+    input_values: tuple[torch.Tensor, ...]
+    output_values: tuple[torch.Tensor, ...]
+    input_mass: torch.Tensor
+    output_mass: torch.Tensor
+
+
+@dataclass(frozen=True)
 class _ReplayPlan:
     input_queries: tuple[torch.Tensor, ...]
     output_queries: tuple[tuple[torch.Tensor, ...], ...]
@@ -332,9 +345,73 @@ class PrimalDualVideoOperator:
             output_operators=output_operators,
         )
 
+    def materialize(
+        self, prepared: PreparedPrimalDualVideo
+    ) -> MaterializedPrimalDualVideo:
+        """Pack a fixed fit-only bank once for repeated exact softmax replay."""
+
+        video = prepared.video
+        frame = prepared.frame_measure
+        input_blocks: list[list[torch.Tensor]] = [
+            [] for _ in self.owners
+        ]
+        output_blocks: list[list[torch.Tensor]] = [
+            [] for _ in self.owners
+        ]
+        input_mass, output_mass = [], []
+        boundaries = [
+            NativeOutputBankState(final=value.detach())
+            for value in video.native.final_outputs
+        ]
+        next_frame = 0
+        with torch.no_grad():
+            for chunk in video.native.chunks():
+                stop = next_frame + chunk.frame_count
+                if chunk.start_frame != next_frame or stop > frame.shape[0]:
+                    raise NativeFactorError("materialized replay stream changed")
+                input_mass.append(
+                    native_candidate_mass(frame[next_frame:stop], output=False)
+                    .reshape(-1)
+                    .float()
+                )
+                output_mass.append(
+                    native_candidate_mass(frame[next_frame:stop], output=True)
+                    .reshape(-1)
+                    .float()
+                )
+                for target, (owner, x, y) in enumerate(
+                    zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
+                ):
+                    input_blocks[target].append(
+                        x.detach().reshape(-1, owner.in_features).float()
+                    )
+                    bank = boundaries[target].build(y, start_frame=next_frame)
+                    groups = native_output_group_count(owner)
+                    width = owner.out_features // groups
+                    grouped = bank.reshape(
+                        *bank.shape[:-1], groups, width
+                    ).movedim(-2, 0)
+                    output_blocks[target].append(
+                        grouped.reshape(groups, -1, width).float()
+                    )
+                next_frame = stop
+        if next_frame != video.native.frame_count or any(
+            boundary.next_frame != next_frame for boundary in boundaries
+        ):
+            raise NativeFactorError("materialized replay stream ended early")
+        return MaterializedPrimalDualVideo(
+            frame_measure=frame,
+            input_operators=prepared.input_operators,
+            output_operators=prepared.output_operators,
+            input_values=tuple(torch.cat(rows, dim=0) for rows in input_blocks),
+            output_values=tuple(torch.cat(rows, dim=1) for rows in output_blocks),
+            input_mass=torch.cat(input_mass),
+            output_mass=torch.cat(output_mass),
+        )
+
     def _plan(
         self,
-        prepared: PreparedPrimalDualVideo,
+        prepared: PreparedPrimalDualVideo | MaterializedPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
     ) -> _ReplayPlan:
@@ -374,6 +451,65 @@ class PrimalDualVideoOperator:
             group_gains=frame.new_ones(group_count, G1_RESIDUAL_RANK),
             solve_metrics=queries[2],
             conditioning_metrics=conditioning,
+        )
+
+    @staticmethod
+    def _materialized_signed_pool(
+        query: torch.Tensor,
+        values: torch.Tensor,
+        mass: torch.Tensor,
+    ) -> torch.Tensor:
+        log_mass = mass.to(query).log()
+        if query.ndim == 2 and values.ndim == 2:
+            score = query.float() @ values.float().T
+            signed = (score + log_mass).softmax(-1) - (
+                -score + log_mass
+            ).softmax(-1)
+            return (signed @ values.float()).to(query)
+        if query.ndim == 3 and values.ndim == 3:
+            score = torch.einsum("grd,gnd->grn", query.float(), values.float())
+            signed = (score + log_mass[None, None]).softmax(-1) - (
+                -score + log_mass[None, None]
+            ).softmax(-1)
+            return torch.einsum(
+                "grn,gnd->grd", signed, values.float()
+            ).to(query)
+        raise NativeFactorError("materialized replay axes changed")
+
+    def apply_materialized(
+        self,
+        prepared: MaterializedPrimalDualVideo,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+    ) -> PrimalDualVideoResult:
+        """Replay a fixed diagnostic bank without repeated Python chunk launches."""
+
+        plan = self._plan(prepared, input_primals, output_primals)
+        inputs = tuple(
+            self._materialized_signed_pool(query, values, prepared.input_mass)
+            for query, values in zip(
+                plan.input_queries, prepared.input_values, strict=True
+            )
+        )
+        grouped_outputs = tuple(
+            self._materialized_signed_pool(
+                torch.stack(queries), values, prepared.output_mass
+            )
+            for queries, values in zip(
+                plan.output_queries, prepared.output_values, strict=True
+            )
+        )
+        outputs = tuple(
+            value.permute(1, 0, 2).reshape(G1_RESIDUAL_RANK, -1)
+            for value in grouped_outputs
+        )
+        return PrimalDualVideoResult(
+            input_values=inputs,
+            output_values=outputs,
+            frame_measure=plan.frame_measure,
+            group_gains=plan.group_gains,
+            solve_metrics=plan.solve_metrics,
+            conditioning_metrics=plan.conditioning_metrics,
         )
 
     def _add_replay_chunk(

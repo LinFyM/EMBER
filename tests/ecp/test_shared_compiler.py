@@ -132,12 +132,23 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     direct = compiler.bank_operator(
         one_chunk, input_primals, output_primals
     )
+    materialized = compiler.bank_operator.apply_materialized(
+        compiler.bank_operator.materialize(prepared),
+        input_primals,
+        output_primals,
+    )
     for left, right in zip(
         (*replayed.input_values, *replayed.output_values),
         (*direct.input_values, *direct.output_values),
         strict=True,
     ):
         torch.testing.assert_close(left, right)
+    for left, right in zip(
+        (*materialized.input_values, *materialized.output_values),
+        (*direct.input_values, *direct.output_values),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
     torch.testing.assert_close(replayed.solve_metrics, direct.solve_metrics)
 
     assert torch.equal(expected.video_weights, torch.ones(1))

@@ -29,6 +29,27 @@ P1 retained-code ownership保持阶段专用且不产生第二个Writer：`prima
 重资产准备、固定步训练证据与并发安全的task-level artifact三项职责；没有通用框架、版本fallback或并行deployment路径。P1完成后
 runner/config作为可复现capacity evidence保留但不被P2/Writer forward调用；P2只复用已验证的primal-dual operator与损失原语。
 
+clean pushed detached code authority `5706cc8`增加了不改变P1数学的固定bank训练快路径：三条视频各自完成一次canonical B0和边界正确的
+X/Y materialization，随后每步以全candidate exact softmax批量重放；canonical deployment Writer及P0仍使用chunked streaming。
+真实task1 smoke中，materialized对canonical streaming的minimum update cosine为`.9999081`，maximum relative error为`.01356`，
+而相同初始化recovery只相差约`2e-6`；一步forward/backward从`1.703s`降到`.2266s`，约`7.5x`，固定500步预计`113.3s`。
+三视频准备为`131.3s`，peak allocated/reserved约`11.87/18.03GiB`；Action Meta/source/G2/shared compiler/scale trainable均为0。
+
+### P1 formal launch contract
+
+- canonical authority：包含本合同、可由`origin/main`到达的clean pushed detached commit；scientific code authority为`5706cc8`，
+  后续只允许文档性launch-contract提交，不改变config/code/test；每个task report必须记录同一exact commit；
+- scale/data：固定六tasks`[1,8,9,72,73,75]`、每task两条最低ordinal mapping-fit videos、一个预注册zero-gradient held video、
+  八个targets、500 steps、final-step-only；六个worker分别占一张GPU且无NCCL，task聚合等权；
+- command：在同一frozen worktree分别执行
+  `env CUDA_VISIBLE_DEVICES=<0..5> PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false numactl --cpunodebind=<0|1> --membind=<0|1> /data1/user/ymdai/projects/EMBER/.venv/bin/python -u scripts/probe_ecp_g3_primal_capacity_p1.py worker --config configs/pi05_ecp_primal_capacity_p1_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --task <TASK> --output-dir <FORMAL_ROOT>`；
+  全部worker成功后仅执行一次同脚本`aggregate`子命令；不resume、不覆盖，任一失败保留partial并以新root修正后重跑；
+- live resources：launch前gpu01物理0--6均为Default、空闲且无compute process，首版用物理0--5；0--2绑定NUMA0、3--5绑定
+  NUMA1。gpu02物理0--6有他人任务、7空闲，不跨节点拼卡；`/data1` quota为`703699480/1073741824` KiB，formal新增预计
+  `<0.1GiB`，输出到唯一`runs/analysis/pi05_ecp_primal_capacity_p1_v1_<COMMIT7>_gpu01p012345_20260829/`；
+- evidence/Gate：保留每task final code、curve、fit/held/optimistic rows、冻结状态、显存/耗时、aggregate与completion。Gate沿本节前述
+  `.80/.75/.85/.80/.65`合同；P1通过只解封P2 shared mapping，不证明Writer或closed-loop通过。shuffled/reversed不使用。
+
 更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由clean pushed
 `main@435cb4a`通过。最新完整F3仍是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/task-holdout为
 `.086508/.083131/.072629/.096191`，四family held为`.021698/.065269/.085933/.173804`，明确non-pass且未续训。

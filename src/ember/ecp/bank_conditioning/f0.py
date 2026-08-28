@@ -178,6 +178,7 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
         event_slots=int(config["model"]["event_slots"]),
         relative_eigenvalue_floor=float(config["model"]["relative_eigenvalue_floor"]),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
+        covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
     ).to(device).train()
     inventory = pure_shared_compiler_inventory(
         policy=policy, program=program, compiler=compiler, owners=owners

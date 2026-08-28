@@ -290,6 +290,7 @@ def _load_training_assets(
             config["model"]["relative_eigenvalue_floor"]
         ),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
+        covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
     ).to(context.device)
     compiler.scale_head.requires_grad_(False)
     compiler.train()

@@ -70,6 +70,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         event_slots: int = 8,
         relative_eigenvalue_floor: float = 1e-6,
         replay_score_rms: float = 0.02,
+        covariance_frame_chunk: int = 4,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -77,12 +78,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self.event_slots = int(event_slots)
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
         self.replay_score_rms = float(replay_score_rms)
+        self.covariance_frame_chunk = int(covariance_frame_chunk)
         if (
             not self.owners
             or self.program_width <= 0
             or self.event_slots <= 0
             or not 0.0 < self.relative_eigenvalue_floor < 1.0
             or self.replay_score_rms <= 0.0
+            or self.covariance_frame_chunk <= 0
         ):
             raise NativeFactorError("invalid primal-dual compiler topology")
         self.primal_scorer = ProgramNativePrimalScorer(
@@ -96,6 +99,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             event_slots=self.event_slots,
             relative_eigenvalue_floor=self.relative_eigenvalue_floor,
             replay_score_rms=self.replay_score_rms,
+            covariance_frame_chunk=self.covariance_frame_chunk,
         )
         self.scale_head = torch.nn.Sequential(
             torch.nn.LayerNorm(self.program_width),

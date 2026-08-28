@@ -16,11 +16,13 @@ from ember.ecp.bank_conditioning.primal_dual import (
     batched_spectral_native_covariances,
     native_candidate_mass,
 )
-from ember.ecp.contracts import TargetOwner
+from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.native_factors import (
+    G1_PROBE_COUNT,
     G1_RESIDUAL_RANK,
     NativeFactorError,
     NativeOutputBankState,
+    OUTPUT_BANK_TYPES,
     native_output_group_count,
 )
 
@@ -56,12 +58,14 @@ class PrimalDualVideoOperator:
         event_slots: int,
         relative_eigenvalue_floor: float,
         replay_score_rms: float,
+        covariance_frame_chunk: int,
     ) -> None:
         self.owners = tuple(owners)
         self.program_width = int(program_width)
         self.event_slots = int(event_slots)
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
         self.replay_score_rms = float(replay_score_rms)
+        self.covariance_frame_chunk = int(covariance_frame_chunk)
 
     @staticmethod
     def quadrature(positions: torch.Tensor) -> torch.Tensor:
@@ -101,8 +105,16 @@ class PrimalDualVideoOperator:
             raise NativeFactorError("compiler local video contract changed")
 
     def _new_statistics(self, device: torch.device) -> tuple[list[Any], list[Any]]:
+        input_block = (
+            self.covariance_frame_chunk * G1_PROBE_COUNT * ACTION_HORIZON
+        )
+        output_block = input_block * len(OUTPUT_BANK_TYPES)
         inputs = [
-            StreamingNativeCovariance(width=owner.in_features, device=device)
+            StreamingNativeCovariance(
+                width=owner.in_features,
+                device=device,
+                canonical_block_candidates=input_block,
+            )
             for owner in self.owners
         ]
         outputs = [
@@ -110,6 +122,7 @@ class PrimalDualVideoOperator:
                 StreamingNativeCovariance(
                     width=owner.out_features // native_output_group_count(owner),
                     device=device,
+                    canonical_block_candidates=output_block,
                 )
                 for _ in range(native_output_group_count(owner))
             )

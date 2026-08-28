@@ -266,6 +266,7 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             == "program_rank_event_aggregation_before_native_solve",
             model.get("relative_eigenvalue_floor") == 1e-6,
             model.get("replay_score_rms") == 0.02,
+            int(model.get("frame_chunk_size", 0)) > 0,
             model.get("native_matmul_precision") == "ieee_fp32_no_tf32",
             model.get("native_read_sequence")
             == [

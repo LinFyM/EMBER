@@ -257,6 +257,7 @@ def prepare_mapping_evaluation_runtime(
             config["model"]["relative_eigenvalue_floor"]
         ),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
+        covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
     ).to(context.device)
     macro, training_contract = _load_compiler_checkpoint(
         compiler,

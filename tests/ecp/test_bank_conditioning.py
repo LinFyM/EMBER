@@ -389,19 +389,23 @@ def test_global_primal_dual_replays_the_retained_native_direction() -> None:
     mass = torch.rand(211, generator=generator, dtype=torch.float64) + 0.1
     mass /= mass.sum()
     materialized = StreamingNativeCovariance(
-        width=9, device=values.device, dtype=torch.float64
+        width=9,
+        device=values.device,
+        dtype=torch.float64,
+        canonical_block_candidates=37,
     )
     materialized.add(values, mass)
     streamed = StreamingNativeCovariance(
-        width=9, device=values.device, dtype=torch.float64
+        width=9,
+        device=values.device,
+        dtype=torch.float64,
+        canonical_block_candidates=37,
     )
     for start, stop in ((0, 17), (17, 83), (83, 211)):
         streamed.add(values[start:stop], mass[start:stop])
     expected = materialized.finalize()
     observed = streamed.finalize()
-    torch.testing.assert_close(
-        observed.covariance, expected.covariance, rtol=1e-12, atol=1e-12
-    )
+    assert torch.equal(observed.covariance, expected.covariance)
 
     operator = batched_spectral_native_covariances(
         (observed,), relative_eigenvalue_floor=1e-6

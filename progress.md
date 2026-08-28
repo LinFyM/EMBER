@@ -1,26 +1,24 @@
 # EMBER progress
 
 更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过；最新完整F3 Gate现为clean pushed detached `main@3062de8`的functional-anchor macro5：
-fit/held/p10/task-holdout为`.084298/.082754/.072027/.093856`，明确non-pass且不续macro10。451 conditions全部完成，Action Meta 0、
-held gradient 0、operator/solve/chunk与唯一rank16合同正常；train、held-video和task-holdout同样低，失败不是泛化。
+clean pushed `main@435cb4a`通过。最新完整F3是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/
+task-holdout为`.086508/.083131/.072629/.096191`，held/fit `.960958`；held q/v/action-in/action-out为
+`.021698/.065269/.085933/.173804`。451 conditions、Action Meta 0、held gradient 0、唯一rank16及IEEE数值合同全部成立，但
+`.75/.50`绝对Gate仍差近一个数量级。TF32断层因此是必要数值修正，不是shared mapping的主因；该run不续训。
 
-进一步按数值层复核发现F1与canonical B1存在此前未资格化的TF32断层：F1用FP64，runtime继承source设置的TF32，旧F0又只比较
-两条共同TF32路径。真实深层q/v/action-out panel中，IEEE FP32相对FP64的最大update-cosine误差不超过`7.4e-5`，而TF32误差
-median为`.52--.68`；held learned-anchor recovery从TF32 `.256/.178/.262`恢复到IEEE `.705/.798/.673`。旧`3062de8`
-checkpoint切换IEEE/FP64只读重放仍约`.08165`，说明必须fresh训练，不能post-hoc冒充修复。唯一数值修正已集成并推送至
-`main@78b7e58`：compiler在native dual forward关闭TF32并保持到backward，run contract/F0显式记录IEEE；不改架构、loss、rank、
-data、optimizer或Gate。全仓`186 passed`，4卡一步真实profile耗时`123.62s`、峰值约`25.65GB`且全部主路径gradient finite/nonzero、
-Action Meta 0。clean detached `78b7e58`真实F0现已通过：TF32实际关闭，chunk4/one-chunk最低update cosine
-`.99999955`、最大相对误差`.000945`，K4置换误差`1.43e-6`，唯一38-target rank16被policy消费。当前从fresh重跑同一
-451-condition F3，不复用旧checkpoint。
+随后按实际post-`Wk` candidate bank把整个B0-solve/B1-replay写成线性functional image `J_r=C_r C_0^+ H`，而不是继续分析
+Euclidean key cosine。对task93深层q target34、v target19、action-in target36与action-out target37，直接/functional-polar
+task-local replay update cosine约为`.996/.999/1.000/.998`；旧shared路径对应family只有约`.02--.17`。per-event polar已足以恢复
+v/action families，但q需要跨event global polar；跨rank共享polar使v/action-out降至`.915/.831`，去掉per-event feature whitening
+又使q降至`.911`。因此最早失效接口已收窄为：raw Program query在普通Euclidean坐标中被单位化，未按真实rank-specific functional
+metric定标；不是native bank、candidate content、G2 Program、rank4、optimizer或泛化失容。
 
-non-pass后的结构审计发现两个耦合首因。第一，原task residual含有很大的task-independent common correction：fit-only universal rank4
-在held/task-holdout已达`.825054/.835443`，且可与carrier12以`.998741` cosine重压回rank12；但直接代数相减会把task85 q/v真实
-native input可达性降到约`.828/.765`，所以必须从expert-minus-new-carrier重新投影，不能直接改authority。第二，当前pointwise
-Program/candidate canonicalizer没有取得task selection：wrong full Program后的最终update仍约`.95--.99`，task-local current keys在
-held深层q/v只到`.188/.177`，而direct native reference约`.997`。这些结构工作现保留为条件后继：必须先用fresh IEEE F3排除
-此前共同数值偏差；只有相同451 Gate仍non-pass，才继续new-carrier与set-conditioned canonicalizer正对照。
+当前隔离实现面`codex/g3-functional-polar`据此保留一个canonical v4路径：每video依次流式读取feature statistics、base/replay
+covariance与event native/key images、bounded Program-conditioned anchors，最后exact signed replay；以detached rank-specific global
+cross-event polar变换full-Program raw query，B0 coefficient norm固定不超过`1e-3`，B1 native score RMS统一为`.02`。输入candidate
+仍无type轴，输出仍为abs/adj/init/goal，所有weights仍由共享Program query与当前content keys计算，bank-derived polar不是task/video
+查表且不进入checkpoint。CPU定向合同当前已通过；下一步是clean pushed detached真实K1/K4 F0和吞吐资格，未通过前不启动formal F3。
+旧`C=I` off开关与Euclidean normalized-bilinear运行面已从active v4退役，历史formal evidence不删除。
 
 ## IEEE fresh F3 formal launch contract
 
@@ -106,12 +104,11 @@ deployment Writer。50-task/451-condition split预注册为329 fit、40 held-vid
 更新覆盖全部15个target-fit并轮换15/25个meta-fit，world size只做cost-balanced吞吐分片。mapping训练只解冻anchor scorer，
 Program/source/scale/Action Meta均冻结；相邻checkpoint稳定性和held/fit口径已进入Gate。全仓当前为`184 passed`。
 
-实现ownership保持单一：`shared_compiler.py`是唯一deployment Writer的B0/B1 orchestration；`bank_conditioning/anchor.py`与
-`compatibility.py`分别拥有Program/candidate content与joint scalar score，`operator.py`拥有数值operator；`mapping*.py`只拥有F2/F3
-acquisition/evaluation/Gate，`f0.py`只拥有一次
-formal prelaunch qualification，三个scripts均为薄入口。旧v1/v2 config与旧training/evaluation模块只用于读取既有formal history，
-active train入口已唯一指向v3 mapping，不是fallback。若F2失败且F3通过，删除`C=I` off执行模式；F3结束后mapping-only训练面随
-F4 joint owner演化或退役，不另建平行Writer。
+实现ownership保持单一：`shared_compiler.py`拥有唯一deployment Writer的B0 functional-statistics与B1 replay orchestration；
+`bank_conditioning/anchor.py`、`functional_polar.py`、`anchor_solve.py`和`operator.py`分别拥有Program/candidate content、actual-operator
+gauge、B0 anchor/native solve与exact pooling。`mapping*.py`只拥有F3 acquisition/evaluation/Gate，`f0.py`只拥有一次formal prelaunch
+qualification，scripts均为薄入口。旧v1--v3实现只由Git与formal artifacts保存，active train入口唯一指向v4 functional-polar，
+没有`C=I`、Euclidean compatibility或旧Writer fallback；F3结束后mapping-only训练面随F4 joint owner演化或退役。
 
 clean pushed detached `main@19b5b3f`的formal F0已通过。task93真实K1 gradient与rank12+4 materialization有限，唯一完整LoRA为
 76 tensors/38 targets并被policy实际消费；source/Program trainable与Action Meta module/parameter均为0，checkpoint无lookup/teacher
@@ -642,23 +639,18 @@ G1--G5 Gate或架构修正依据。
 
 ## 当前下一步与延期漂移
 
-1. G1、G2与G3 F1 operator已分别通过；一次预注册`C=I` F2及
-   `c1e26ce/84903aa/c3fc8e3/20acc33/3e4e9a0/55710bb/3062de8`七个有明确机制差异的F3均在完整451 conditions上non-pass。
-   最新`3062de8` macro5停在held `.082754`，不续macro10，也不做seed/LR/width/rank小扫；
-2. `3062de8` train/held/task-holdout同样弱，当前不是泛化问题。wrong Program影响远小于wrong bank、task-local pointwise keys远低于
-   direct native reference、candidate参数承担约`99.88%`原始gradient energy；因此full Program虽连通但没有成为functional
-   selection owner，现有target-native pointwise anchor也没有解决跨bank canonicalization；
-3. fit-only universal rank4能以`.825054` held median形成不读task/video的F3 shortcut，并提示现carrier遗漏公共修正；
-   `carrier12+universal4`重压rank12虽达`.998741` cosine，但直接差分会损失native feasibility。下一步先拟合candidate carrier，随后从
-   完整expert-minus-new-carrier重新生成并验证native residual；任何新carrier都必须同时通过压缩、retention、四family free/direct
-   capacity、跨video consensus与唯一rank16合同；
-4. decomposition可达性明确后，先做小型task-local set-conditioned canonicalizer正对照。Program query可以读取固定尺寸、
-   set-equivariant bank-global context，但最终仍须以content query-key signed weights池化真实X/Y，不得输出高维factor或使用task/frame
-   lookup。只有代表性深层q/v和action family同时超过current pointwise image、correct Program实质优于wrong Program后才实现唯一
-   shared path；
-5. 新F3必须保留原451 primary并阻断universal shortcut：使用new-carrier下native-feasible task residual、role-balanced汇报和
-   correct/wrong Program因果资格；rank spectrum/scale以与selection隔离的credit更新，不能让固定等幅rank形成隐藏ceiling。通过前不恢复
-   F4 functional、F5 Dynamic-K或held5 closed-loop；
+1. G1、G2与G3 F1 operator已通过；预注册`C=I` F2及八个有明确机制差异的F3（含fresh IEEE `78b7e58`）均在完整451 conditions上
+   non-pass。最新fit/held/p10为`.086508/.083131/.072629`，不续训，也不做seed/LR/width/rank小扫；
+2. actual-operator解析见证已把最早接口定位为Euclidean Program-query坐标与`C_r C_0^+ H` functional metric错配。当前v4只实现
+   rank-specific global functional polar、统一B0 trust与B1 score RMS；保留per-event feature whitening、真实X/Y、full Program、rank4和
+   唯一rank16，不恢复逐video dual、task lookup或高维factor head；
+3. 先完成v4的CPU回归、architecture/diff审查并集成clean pushed main；随后从detached authority做真实K1/K4 F0，验证四次streaming
+   read的chunk边界、全部selection gradient、Action Meta 0、materialization、显存和吞吐。若全局polar吞吐不合理，只能依据已测的
+   q-global/v-action-per-event证据优化计算，不得改变科学Gate或做无信息版本扫；
+4. F0通过后从fresh执行同一451-condition F3 primary，并增加correct-vs-wrong Program资格防止universal shortcut。只有held
+   median`>=.75`、p10`>=.50`、held/fit`>=.8`且相邻稳定才恢复F4/F5/F6；内部polar residual或task-local witness不能代替；
+5. universal rank4/new-carrier仍是后续decomposition风险：只有functional-polar已取得明显selection而剩余失败确实指向common
+   correction、scale或carrier时才重开，并必须从`full expert - new carrier`重新做真实native projection；
 6. G2没有引入learned video reliability；G3只在F5根据mapping证据恢复从uniform初始化的bounded K correction，并必须防止单条
    video覆盖其余videos；
 7. target当前只有fold0 manifests；在G4需要至少两个train24 folds前补齐，不阻塞G2/G3；

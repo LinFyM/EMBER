@@ -1,4 +1,4 @@
-"""Frozen single-GPU workers for F2/F3 mapping qualification."""
+"""Frozen single-GPU workers for G3 mapping qualification."""
 
 from __future__ import annotations
 
@@ -247,9 +247,6 @@ def prepare_mapping_evaluation_runtime(
         anchor_width=int(config["model"]["anchor_width"]),
         relative_eigenvalue_floor=float(
             config["model"]["relative_eigenvalue_floor"]
-        ),
-        global_statistics=bool(
-            config["model"]["phase_global_statistics"][args.phase]
         ),
     ).to(context.device)
     macro, training_contract = _load_compiler_checkpoint(

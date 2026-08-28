@@ -104,6 +104,7 @@ def _video(
 
 
 def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
+    torch.manual_seed(5)
     owners = _owners()
     width = 8
     events = 4
@@ -174,7 +175,6 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         for parameter in (
             scorer.query_projection.weight,
             scorer.key_projection.weight,
-            scorer.logit_scale,
         ):
             assert parameter.grad is not None
             assert bool(torch.isfinite(parameter.grad).all())
@@ -190,10 +190,13 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     assert compiler.anchor_scorer.group_gain["q"][-1].weight.grad is not None
     assert compiler.scale_head[-1].weight.grad is not None
     assert bool(torch.isfinite(observed.solve_metrics).all())
-    assert bool(torch.isfinite(observed.feature_whitening_metrics).all())
-    assert float(observed.feature_whitening_metrics[..., 0].min()) > 0
-    assert float(observed.feature_whitening_metrics[..., 1].min()) > 0
-    assert observed.global_statistics_enabled
+    assert observed.conditioning_metrics.shape == (1, 6)
+    assert bool(torch.isfinite(observed.conditioning_metrics).all())
+    assert float(observed.conditioning_metrics[..., 0].min()) > 0
+    assert float(observed.conditioning_metrics[..., 1].min()) > 0
+    assert float(observed.conditioning_metrics[..., 3].min()) > 0
+    assert float(observed.conditioning_metrics[..., 4].min()) > 0
+    assert float(observed.conditioning_metrics[..., 5].min()) > 0
     assert all(
         bool(((gain >= 0.0) & (gain <= 1.0)).all())
         for gain in observed.output_group_gains
@@ -229,7 +232,7 @@ def test_query_film_has_fixed_owner_and_output_group_ownership() -> None:
     torch.testing.assert_close(output_before[1:], output_after[1:])
 
 
-def test_signed_queries_and_primary_bilinear_have_stable_initialization() -> None:
+def test_signed_queries_and_projected_bilinear_have_stable_initialization() -> None:
     compiler = SharedNativeFactorCompiler(
         _owners(), program_width=8, event_slots=4, anchor_width=6
     )
@@ -245,9 +248,8 @@ def test_signed_queries_and_primary_bilinear_have_stable_initialization() -> Non
             torch.testing.assert_close(final.bias[width:], -final.bias[:width])
         compatibilities = getattr(scorer, f"{side}_compatibility_heads")
         for compatibility in compatibilities.values():
-            torch.testing.assert_close(
-                compatibility.logit_scale.detach(), torch.zeros(())
-            )
+            assert compatibility.query_projection.bias is None
+            assert compatibility.key_projection.bias is None
 
 
 def test_anchor_code_uses_video_program_fields() -> None:

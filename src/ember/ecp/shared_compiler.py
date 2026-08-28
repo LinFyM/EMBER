@@ -2,25 +2,28 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Sequence
 
 import torch
-from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.bank_conditioning import (
     AnchorProgramState,
-    BankStatistics,
-    FeatureWhitener,
     FeatureWhiteningPlan,
+    FunctionalBankStatistics,
     ProgramNativeAnchorScorer,
-    SpectralBankQuery,
-    StreamingBankStatistics,
+    StreamingFunctionalBankStatistics,
     StreamingSignedPool,
-    batched_spectral_bank_query,
     build_feature_whitening_plan,
-    identity_feature_whitening_plan,
+    bound_functional_queries,
+    functional_polar_queries,
+)
+from ember.ecp.bank_conditioning.anchor_solve import (
+    ReplayBankPlan,
+    build_replay_bank_plan,
+    candidate_mass,
+    input_event_keys,
+    output_event_keys,
 )
 from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.native_factors import (
@@ -60,42 +63,41 @@ class SharedCompilerOutput:
     frame_measures: tuple[torch.Tensor, ...]
     output_group_gains: tuple[torch.Tensor, ...]
     solve_metrics: torch.Tensor
-    feature_whitening_metrics: torch.Tensor
-    global_statistics_enabled: bool
-
-
-@dataclass(frozen=True)
-class _VideoBankPlan:
-    input_queries: tuple[torch.Tensor, ...]
-    output_queries: tuple[tuple[torch.Tensor, ...], ...]
-    frame_measure: torch.Tensor
-    group_gains: torch.Tensor
-    solve_metrics: torch.Tensor
-    feature_whitening_metrics: torch.Tensor
+    conditioning_metrics: torch.Tensor
 
 
 @dataclass
-class _StatisticsStream:
+class _FunctionalStream:
     base_frame: torch.Tensor
     event_frame: torch.Tensor
     frame_measure: torch.Tensor
-    input_anchor_queries: torch.Tensor
-    input_accumulators: list[StreamingBankStatistics]
-    output_accumulators: list[tuple[StreamingBankStatistics, ...]]
-    output_anchor_queries: tuple[torch.Tensor, ...]
+    input_accumulators: list[StreamingFunctionalBankStatistics]
+    output_accumulators: list[tuple[StreamingFunctionalBankStatistics, ...]]
     gains: tuple[torch.Tensor, ...]
     boundaries: list[NativeOutputBankState]
     feature_plan: FeatureWhiteningPlan
 
 
+@dataclass(frozen=True)
+class _FunctionalVideoPlan:
+    input_queries: tuple[torch.Tensor, ...]
+    output_queries: tuple[torch.Tensor, ...]
+    input_statistics: tuple[FunctionalBankStatistics, ...]
+    output_statistics: tuple[tuple[FunctionalBankStatistics, ...], ...]
+    base_frame: torch.Tensor
+    event_frame: torch.Tensor
+    frame_measure: torch.Tensor
+    group_gains: torch.Tensor
+    conditioning_metrics: torch.Tensor
+    feature_plan: FeatureWhiteningPlan
+
 class SharedNativeFactorCompiler(torch.nn.Module):
-    """Generate one rank-four residual through B0 solve and B1 exact replay.
+    """Generate one rank-four residual through current-bank functional polar.
 
     The scorer contains no task-, video-, member-, or frame-indexed parameters.
-    B0a derives detached per-event feature gauges from the current video bank.
-    B0b combines the full frozen Program with fixed-target native content to
-    form native anchors, then conditions them on the native covariance. B1
-    rereads that bank and pools real X/Y values with explicit softmax branches.
+    B0a derives a detached gauge of the actual B0-solve/B1 operator. B0b uses
+    the full Program in that gauge to form native anchors. B1 rereads the same
+    bank and pools real X/Y values with explicit softmax branches.
     """
 
     native_dual_matmul_precision = "ieee_fp32"
@@ -108,7 +110,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         event_slots: int = 8,
         anchor_width: int = 128,
         relative_eigenvalue_floor: float = 1e-6,
-        global_statistics: bool = True,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -116,7 +117,8 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self.event_slots = int(event_slots)
         self.anchor_width = int(anchor_width)
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
-        self.global_statistics = bool(global_statistics)
+        self.anchor_score_bound = self.relative_eigenvalue_floor**0.5
+        self.replay_score_rms = 0.02
         if (
             not self.owners
             or self.program_width <= 0
@@ -207,125 +209,35 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         frame = frame / frame.sum(-1, keepdim=True).clamp_min(1e-8)
         return base, event, frame
 
-    @staticmethod
-    def _candidate_mass(
-        frame_mass: torch.Tensor,
-        *,
-        output: bool,
-    ) -> torch.Tensor:
-        shape = (frame_mass.shape[0], G1_PROBE_COUNT, ACTION_HORIZON)
-        if output:
-            shape = (*shape, len(OUTPUT_BANK_TYPES))
-        leading = (frame_mass.shape[0], *((1,) * (len(shape) - 1)))
-        return frame_mass.reshape(leading).expand(shape)
-
-    @staticmethod
-    def _effective_input_compatibility(
-        compatibility: torch.Tensor,
-        event_weights: torch.Tensor,
-        event_ratio: torch.Tensor,
-    ) -> torch.Tensor:
-        return torch.einsum(
-            "re,et,rebtph->rbtph",
-            event_weights,
-            event_ratio,
-            compatibility,
-        )
-
-    @staticmethod
-    def _effective_output_compatibility(
-        compatibility: torch.Tensor,
-        event_weights: torch.Tensor,
-        event_ratio: torch.Tensor,
-    ) -> torch.Tensor:
-        return torch.einsum(
-            "re,et,grebtphu->grbtphu",
-            event_weights,
-            event_ratio,
-            compatibility,
-        )
-
-    @staticmethod
-    def _solve_statistics(
-        entries: Sequence[tuple[tuple[Any, ...], BankStatistics]],
-        *,
-        relative_floor: float,
-        enabled: bool,
-    ) -> dict[tuple[Any, ...], SpectralBankQuery | torch.Tensor]:
-        if not enabled:
-            return {key: statistics.anchor for key, statistics in entries}
-        grouped: dict[
-            tuple[int, tuple[int, ...]],
-            list[tuple[tuple[Any, ...], BankStatistics]],
-        ] = defaultdict(list)
-        for key, statistics in entries:
-            grouped[
-                (statistics.mean.numel(), tuple(statistics.anchor.shape[:-1]))
-            ].append((key, statistics))
-        solved: dict[tuple[Any, ...], SpectralBankQuery | torch.Tensor] = {}
-        for rows in grouped.values():
-            queries = batched_spectral_bank_query(
-                tuple(row[1] for row in rows),
-                relative_eigenvalue_floor=relative_floor,
-            )
-            solved.update(
-                (row[0], query) for row, query in zip(rows, queries, strict=True)
-            )
-        return solved
-
-    @staticmethod
-    def _query_tensor(value: SpectralBankQuery | torch.Tensor) -> torch.Tensor:
-        return value.query if isinstance(value, SpectralBankQuery) else value
-
-    def _new_statistics_stream(
+    def _new_functional_stream(
         self,
         video: SharedCompilerVideo,
         state: AnchorProgramState,
         feature_plan: FeatureWhiteningPlan,
-    ) -> _StatisticsStream:
-        base_frame, event_frame, frame_measure = self._video_measures(
-            video, state.event_weights
+    ) -> _FunctionalStream:
+        base, event, frame = self._video_measures(video, state.event_weights)
+        groups = tuple(native_output_group_count(owner) for owner in self.owners)
+        new = lambda width: StreamingFunctionalBankStatistics(
+            native_width=width,
+            key_width=self.anchor_width,
+            events=self.event_slots,
+            ranks=G1_RESIDUAL_RANK,
+            device=state.rank.device,
         )
-        output_groups = tuple(
-            native_output_group_count(owner) for owner in self.owners
-        )
-        return _StatisticsStream(
-            base_frame=base_frame,
-            event_frame=event_frame,
-            frame_measure=frame_measure,
-            input_anchor_queries=self.anchor_scorer.input_queries(state),
-            input_accumulators=[
-                StreamingBankStatistics(
-                    width=owner.in_features,
-                    query_shape=(G1_RESIDUAL_RANK, 2),
-                    device=state.rank.device,
-                    dtype=torch.float64,
-                )
-                for owner in self.owners
-            ],
+        return _FunctionalStream(
+            base_frame=base,
+            event_frame=event,
+            frame_measure=frame,
+            input_accumulators=[new(owner.in_features) for owner in self.owners],
             output_accumulators=[
-                tuple(
-                    StreamingBankStatistics(
-                        width=owner.out_features // groups,
-                        query_shape=(G1_RESIDUAL_RANK, 2),
-                        device=state.rank.device,
-                        dtype=torch.float64,
-                    )
-                    for _ in range(groups)
-                )
-                for owner, groups in zip(self.owners, output_groups, strict=True)
+                tuple(new(owner.out_features // count) for _ in range(count))
+                for owner, count in zip(self.owners, groups, strict=True)
             ],
-            output_anchor_queries=tuple(
-                self.anchor_scorer.output_queries(
-                    state, target=target, groups=groups
-                )
-                for target, groups in enumerate(output_groups)
-            ),
             gains=tuple(
                 self.anchor_scorer.output_group_gains(
-                    state, target=target, groups=groups
+                    state, target=target, groups=count
                 )
-                for target, groups in enumerate(output_groups)
+                for target, count in enumerate(groups)
             ),
             boundaries=[
                 NativeOutputBankState(final=value.detach())
@@ -334,53 +246,10 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             feature_plan=feature_plan,
         )
 
-    def _input_anchor_compatibility(
+    def _add_functional_chunk(
         self,
-        value: torch.Tensor,
-        metadata: torch.Tensor,
-        query: torch.Tensor,
-        weights: torch.Tensor,
-        ratio: torch.Tensor,
-        target: int,
-        whitener: FeatureWhitener,
-    ) -> torch.Tensor:
-        keys = self.anchor_scorer.input_keys(value, metadata, target=target)
-        event = self.anchor_scorer.input_compatibility(
-            query, whitener.whiten(keys), target=target
-        )
-        return self._effective_input_compatibility(event, weights, ratio)
-
-    def _output_anchor_compatibility(
-        self,
-        value: torch.Tensor,
-        metadata: torch.Tensor,
-        query: torch.Tensor,
-        weights: torch.Tensor,
-        ratio: torch.Tensor,
-        target: int,
-        whiteners: tuple[FeatureWhitener, ...],
-    ) -> torch.Tensor:
-        keys = self.anchor_scorer.output_keys(value, metadata, target=target)
-        if len(whiteners) != keys.shape[0]:
-            raise NativeFactorError("compiler output feature groups changed")
-        whitened = torch.stack(
-            tuple(
-                whitener.whiten(keys[group])
-                for group, whitener in enumerate(whiteners)
-            ),
-            dim=1,
-        )
-        event = self.anchor_scorer.output_compatibility(
-            query, whitened, target=target
-        )
-        return self._effective_output_compatibility(event, weights, ratio)
-
-    def _add_statistics_chunk(
-        self,
-        *,
         video: SharedCompilerVideo,
-        state: AnchorProgramState,
-        stream: _StatisticsStream,
+        stream: _FunctionalStream,
         chunk: Any,
         start: int,
     ) -> int:
@@ -389,162 +258,165 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         frame_metadata = self.anchor_scorer.frame_metadata(
             assignment, video.frame_positions[start:stop]
         )
-        input_metadata = self.anchor_scorer.candidate_metadata(
+        x_metadata = self.anchor_scorer.candidate_metadata(
             frame_metadata, output=False
         )
-        output_metadata = self.anchor_scorer.candidate_metadata(
+        y_metadata = self.anchor_scorer.candidate_metadata(
             frame_metadata, output=True
         )
-        event_ratio = stream.event_frame[:, start:stop] / stream.base_frame[
-            start:stop
-        ][None].clamp_min(1e-12)
-        input_mass = self._candidate_mass(
-            stream.base_frame[start:stop], output=False
+        x_base = candidate_mass(stream.base_frame[start:stop], output=False)
+        y_base = candidate_mass(stream.base_frame[start:stop], output=True)
+        x_event = candidate_mass(
+            stream.event_frame[:, start:stop], output=False
         )
-        output_mass = self._candidate_mass(
-            stream.base_frame[start:stop], output=True
+        y_event = candidate_mass(
+            stream.event_frame[:, start:stop], output=True
         )
-        for target, (owner, x, y) in enumerate(
-            zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
-        ):
-            x_compatibility = checkpoint(
-                self._input_anchor_compatibility,
-                x,
-                input_metadata,
-                stream.input_anchor_queries[target],
-                state.event_weights[target],
-                event_ratio,
-                target,
-                stream.feature_plan.input_whiteners[target],
-                use_reentrant=False,
-                preserve_rng_state=False,
-            )
-            stream.input_accumulators[target].add(x, input_mass, x_compatibility)
-            bank = stream.boundaries[target].build(y, start_frame=start)
-            groups = native_output_group_count(owner)
-            grouped = bank.reshape(
-                *bank.shape[:-1], groups, owner.out_features // groups
-            ).movedim(-2, 0)
-            y_compatibility = checkpoint(
-                self._output_anchor_compatibility,
-                grouped,
-                output_metadata[None],
-                stream.output_anchor_queries[target],
-                state.event_weights[target],
-                event_ratio,
-                target,
-                stream.feature_plan.output_whiteners[target],
-                use_reentrant=False,
-                preserve_rng_state=False,
-            )
-            for group, accumulator in enumerate(stream.output_accumulators[target]):
-                accumulator.add(grouped[group], output_mass, y_compatibility[group])
+        with torch.no_grad():
+            for target, (owner, x, y) in enumerate(
+                zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
+            ):
+                x_replay = candidate_mass(
+                    stream.frame_measure[target, :, start:stop], output=False
+                )
+                stream.input_accumulators[target].add(
+                    x,
+                    x_base,
+                    x_replay,
+                    x_event,
+                    input_event_keys(
+                        self.anchor_scorer,
+                        x,
+                        x_metadata,
+                        target=target,
+                        whitener=stream.feature_plan.input_whiteners[target],
+                    ),
+                )
+                bank = stream.boundaries[target].build(y, start_frame=start)
+                count = native_output_group_count(owner)
+                grouped = bank.reshape(
+                    *bank.shape[:-1], count, owner.out_features // count
+                ).movedim(-2, 0)
+                y_replay = candidate_mass(
+                    stream.frame_measure[target, :, start:stop], output=True
+                )
+                keys = output_event_keys(
+                    self.anchor_scorer,
+                    grouped,
+                    y_metadata[None],
+                    target=target,
+                    whiteners=stream.feature_plan.output_whiteners[target],
+                ).movedim(0, 1)
+                for group, accumulator in enumerate(stream.output_accumulators[target]):
+                    accumulator.add(
+                        grouped[group], y_base, y_replay, y_event, keys[group]
+                    )
         return stop
 
-    def _finalize_statistics_stream(
-        self, stream: _StatisticsStream, state: AnchorProgramState
-    ) -> _VideoBankPlan:
-        entries: list[tuple[tuple[Any, ...], BankStatistics]] = [
-            ((target, "input", 0), accumulator.finalize())
-            for target, accumulator in enumerate(stream.input_accumulators)
-        ]
-        entries.extend(
-            ((target, "output", group), accumulator.finalize())
-            for target, accumulators in enumerate(stream.output_accumulators)
-            for group, accumulator in enumerate(accumulators)
-        )
-        solved = self._solve_statistics(
-            entries,
-            relative_floor=self.relative_eigenvalue_floor,
-            enabled=self.global_statistics,
-        )
-        input_queries = tuple(
-            self._query_tensor(solved[(target, "input", 0)]).float()
-            for target in range(len(self.owners))
-        )
-        output_queries = tuple(
-            tuple(
-                self._query_tensor(solved[(target, "output", group)]).float()
-                * target_gains[group, :, None, None]
-                for group in range(target_gains.shape[0])
-            )
-            for target, target_gains in enumerate(stream.gains)
-        )
-        diagnostics = tuple(
-            value for value in solved.values() if isinstance(value, SpectralBankQuery)
-        )
-        solve_metrics = (
-            state.rank.new_tensor(
-                (
-                    max(value.relative_residual_maximum for value in diagnostics),
-                    min(value.retained_trace_fraction for value in diagnostics),
-                    min(value.anchor_projection_minimum for value in diagnostics),
-                    min(value.retained_rank for value in diagnostics),
-                )
-            )
-            if diagnostics
-            else state.rank.new_tensor((0.0, 1.0, 1.0, 0.0))
-        )
-        return _VideoBankPlan(
-            input_queries=input_queries,
-            output_queries=output_queries,
-            frame_measure=stream.frame_measure,
-            group_gains=torch.cat(stream.gains, dim=0),
-            solve_metrics=solve_metrics,
-            feature_whitening_metrics=stream.feature_plan.metrics,
-        )
-
-    def _statistics_pass(
-        self,
-        video: SharedCompilerVideo,
-        state: AnchorProgramState,
-    ) -> _VideoBankPlan:
+    def _functional_pass(
+        self, video: SharedCompilerVideo, state: AnchorProgramState
+    ) -> _FunctionalVideoPlan:
         _, event_frame, _ = self._video_measures(video, state.event_weights)
-        feature_plan = (
-            build_feature_whitening_plan(
-                video=video,
-                event_frame=event_frame,
-                scorer=self.anchor_scorer,
-                owners=self.owners,
-                events=self.event_slots,
-                width=self.anchor_width,
-                relative_eigenvalue_floor=self.relative_eigenvalue_floor,
-            )
-            if self.global_statistics
-            else identity_feature_whitening_plan(
-                self.owners,
-                events=self.event_slots,
-                width=self.anchor_width,
-                reference=state.rank,
-            )
+        feature_plan = build_feature_whitening_plan(
+            video=video,
+            event_frame=event_frame,
+            scorer=self.anchor_scorer,
+            owners=self.owners,
+            events=self.event_slots,
+            width=self.anchor_width,
+            relative_eigenvalue_floor=self.relative_eigenvalue_floor,
         )
-        stream = self._new_statistics_stream(video, state, feature_plan)
+        stream = self._new_functional_stream(video, state, feature_plan)
         next_frame = 0
         for chunk in video.native.chunks():
             stop = next_frame + chunk.frame_count
-            valid = all(
-                (
-                    chunk.start_frame == next_frame,
-                    stop <= video.native.frame_count,
-                    len(chunk.inputs) == len(self.owners),
-                    len(chunk.outputs) == len(self.owners),
-                )
+            if (
+                chunk.start_frame != next_frame
+                or stop > video.native.frame_count
+                or len(chunk.inputs) != len(self.owners)
+                or len(chunk.outputs) != len(self.owners)
+            ):
+                raise NativeFactorError("compiler B0a native stream changed")
+            next_frame = self._add_functional_chunk(
+                video, stream, chunk, next_frame
             )
-            if not valid:
-                raise NativeFactorError("compiler B0 native stream changed")
-            next_frame = self._add_statistics_chunk(
-                video=video,
-                state=state,
-                stream=stream,
-                chunk=chunk,
-                start=next_frame,
-            )
-        complete = next_frame == video.native.frame_count and all(
-            boundary.next_frame == next_frame for boundary in stream.boundaries
+        if next_frame != video.native.frame_count or any(
+            boundary.next_frame != next_frame for boundary in stream.boundaries
+        ):
+            raise NativeFactorError("compiler B0a native stream ended early")
+        inputs = tuple(value.finalize() for value in stream.input_accumulators)
+        outputs = tuple(
+            tuple(value.finalize() for value in groups)
+            for groups in stream.output_accumulators
         )
-        if not complete:
-            raise NativeFactorError("compiler B0 native stream ended early")
-        return self._finalize_statistics_stream(stream, state)
+        raw_input = self.anchor_scorer.input_queries(state)
+        input_queries = []
+        output_queries = []
+        metrics = []
+        for target, statistics in enumerate(inputs):
+            raw = self.anchor_scorer.input_projected_queries(
+                raw_input[target], target=target
+            )
+            polar = functional_polar_queries(
+                raw,
+                state.event_weights[target],
+                statistics,
+                covariance_floor=self.relative_eigenvalue_floor,
+                image_floor=self.relative_eigenvalue_floor,
+            )
+            bounded, _ = bound_functional_queries(
+                (polar.queries,), score_bound=self.anchor_score_bound
+            )
+            input_queries.append(bounded[0])
+            metrics.append(polar.metrics)
+            group_raw = self.anchor_scorer.output_queries(
+                state, target=target, groups=len(outputs[target])
+            )
+            group_raw = self.anchor_scorer.output_projected_queries(
+                group_raw, target=target
+            )
+            group_raw = group_raw * stream.gains[target][
+                :, :, None, None, None
+            ]
+            group_polar = tuple(
+                functional_polar_queries(
+                    group_raw[group],
+                    state.event_weights[target],
+                    statistics,
+                    covariance_floor=self.relative_eigenvalue_floor,
+                    image_floor=self.relative_eigenvalue_floor,
+                )
+                for group, statistics in enumerate(outputs[target])
+            )
+            bounded, _ = bound_functional_queries(
+                tuple(value.queries for value in group_polar),
+                score_bound=self.anchor_score_bound,
+            )
+            output_queries.append(torch.stack(bounded))
+            metrics.extend(value.metrics for value in group_polar)
+        stacked = torch.stack(metrics)
+        conditioning = torch.stack(
+            (
+                stacked[:, 0].min(),
+                stacked[:, 1].min(),
+                stacked[:, 2].max(),
+                stacked[:, 3].min(),
+                feature_plan.metrics[0],
+                feature_plan.metrics[1],
+            )
+        ).to(state.rank)
+        return _FunctionalVideoPlan(
+            input_queries=tuple(input_queries),
+            output_queries=tuple(output_queries),
+            input_statistics=inputs,
+            output_statistics=outputs,
+            base_frame=stream.base_frame,
+            event_frame=stream.event_frame,
+            frame_measure=stream.frame_measure,
+            group_gains=torch.cat(stream.gains, dim=0),
+            conditioning_metrics=conditioning,
+            feature_plan=feature_plan,
+        )
 
     @staticmethod
     def _measure_bias(
@@ -568,7 +440,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
     def _replay_pass(
         self,
         video: SharedCompilerVideo,
-        plan: _VideoBankPlan,
+        plan: ReplayBankPlan,
     ) -> tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]:
         base_frame = self._quadrature(video.frame_positions)
         base_frame = base_frame / base_frame.sum().clamp_min(1e-8)
@@ -605,10 +477,10 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                 or len(chunk.outputs) != len(self.owners)
             ):
                 raise NativeFactorError("compiler B1 native stream changed")
-            input_mass = self._candidate_mass(
+            input_mass = candidate_mass(
                 base_frame[next_frame:stop], output=False
             )
-            output_mass = self._candidate_mass(
+            output_mass = candidate_mass(
                 base_frame[next_frame:stop], output=True
             )
             for target, (owner, x, y) in enumerate(
@@ -661,7 +533,16 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
     ]:
-        plan = self._statistics_pass(video, state)
+        functional = self._functional_pass(video, state)
+        plan = build_replay_bank_plan(
+            video=video,
+            functional=functional,
+            state=state,
+            owners=self.owners,
+            scorer=self.anchor_scorer,
+            relative_floor=self.relative_eigenvalue_floor,
+            replay_score_rms=self.replay_score_rms,
+        )
         input_values, output_values = self._replay_pass(video, plan)
         return (
             input_values,
@@ -669,7 +550,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             plan.frame_measure,
             plan.group_gains,
             plan.solve_metrics,
-            plan.feature_whitening_metrics,
+            plan.conditioning_metrics,
         )
 
     def forward(
@@ -724,8 +605,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             frame_measures=tuple(values[2] for values in pooled),
             output_group_gains=tuple(values[3] for values in pooled),
             solve_metrics=torch.stack(tuple(values[4] for values in pooled)),
-            feature_whitening_metrics=torch.stack(
+            conditioning_metrics=torch.stack(
                 tuple(values[5] for values in pooled)
             ),
-            global_statistics_enabled=self.global_statistics,
         )

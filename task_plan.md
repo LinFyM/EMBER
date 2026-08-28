@@ -263,7 +263,7 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   50 K1-covered tasks/451 task-video（329 fit、40 held-video、82 task-holdout）。fit/held-video/task-holdout task recovery median为
   `.022243/.022858/.018919`；held-video action-in/action-out/q/v median为`.039958/.022185/.004722/.023158`，三个primary checks
   全部失败。Action Meta、held gradient及shuffled/reversed use均为0。由于fit本身已失败，结论是candidate-local first-moment
-  compatibility没有形成，不继续F2或做LR/seed/width小扫；若F3通过，删除off执行面并正式淘汰candidate-local路线。
+  compatibility没有形成，不继续F2或做LR/seed/width小扫；后续actual-operator证据指定v4后已删除off执行面，formal evidence保留。
 - [ ] F3：开启bank-conditioned solve训练shared mapping；held-video recovery median`>=0.75`、p10`>=0.50`、train/held ratio
   （实际口径为held-video task median / fit task median）`>=0.8`且相邻checkpoint稳定。不得恢复逐video dual/score监督、task/video
   lookup、FactorHead或fixed realizer。clean detached `c1e26ce`已从fresh训练至macro5并按原world6 topology exact-resume至
@@ -344,16 +344,25 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] clean pushed detached `78b7e58`的真实F0通过新增IEEE数值资格：TF32实际关闭，chunk4/one-chunk最低update cosine
   `.99999955`、最大相对误差`.000945`，K4置换误差`1.43e-6`，全部关键gradient非零，Action Meta 0，唯一38-target
   rank16被policy实际消费。
-- [ ] 从fresh重跑原451-condition F3 primary；旧checkpoint只读重放不能替代fresh训练。只有fresh IEEE F3仍non-pass，才按最早
-  失效接口恢复下述carrier/canonicalizer结构工作。
-- [ ] 条件式做fit-only decomposition-feasibility oracle：只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
+- [x] clean pushed detached `78b7e58`已从fresh完成IEEE F3 macro5与完整451-condition primary。fit/held/p10/task-holdout为
+  `.086508/.083131/.072629/.096191`，held/fit `.960958`；q/v/action-in/action-out held median为
+  `.021698/.065269/.085933/.173804`。除held/fit外Gate均失败，证明TF32是必要修正但不是`.08`量级shared mapping的主因。
+- [x] 沿实际post-`Wk` bank把旧Euclidean query坐标与真实`C_r C_0^+ H` functional image逐层对照。深层q/v与两个action
+  family的task-local functional-polar见证约为`.996/.999/1.000/.998`；跨rank共享polar使v/action-out降至`.915/.831`，raw
+  non-whitened chart使q降至`.911`。因此最早接口是Program query在错误metric中被单位化，而不是bank/key/rank/G2/optimizer失容。
+- [ ] 完成唯一v4 functional-polar implementation的真实F0：每video依次流式累计feature statistics、base/replay covariance与event
+  key images，以rank-specific global cross-event polar变换raw full-Program query，再做bounded B0 anchor/native solve与B1 exact replay；
+  必须通过K1/K4 forward、gradient、chunk、materialization、Action Meta 0和吞吐/显存资格。内部polar witness不等于F3 Gate。
+- [ ] F0通过后从clean pushed detached commit fresh运行相同451-condition F3；保持frozen G2 Program、fit-only consensus teacher、
+  rank/data/optimizer/Gate不变，并增加correct-vs-wrong Program资格以阻断universal shortcut。只有single checkpoints满足
+  held median`>=.75`、p10`>=.50`、held/fit`>=.8`及相邻稳定才进入F4。
+- [ ] 条件式做fit-only decomposition-feasibility oracle：仅当functional-polar mapping已显著取得selection而残余证据仍指向common
+  correction/carrier时，只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
   **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、
   四family native direct/free-code可达性、跨video consensus与唯一rank16；若不成立，不保留该carrier，不能直接复用代数差分factor。
-- [ ] 条件式在新旧decomposition的可达证据确定后，做最小task-local canonicalizer正对照：让Program query读取固定尺寸、set-equivariant的
-  bank-global context并最终仍以query-key signed weights池化真实X/Y；先在代表性深层q/v与action families上超过current pointwise
-  image，且correct/wrong Program形成实质functional差异。candidate basis、Program和scale必须有明确parameter ownership；rank
-  spectrum/scale用独立credit训练，不能再以四rank等幅冻结形成隐藏ceiling。只有这些接口通过才保留一个canonical实现并fresh重跑
-  同一451-condition F3；不以universal shortcut、内部loss或任务查表通过Gate。
+- [ ] 条件式在v4仍non-pass且最早接口确有新证据时，才修正bank-global canonicalizer或decomposition；不得绕回逐video dual、
+  task/frame lookup、高维factor head，也不得用universal shortcut、内部loss或普通超参扫通过Gate。candidate basis、Program和scale
+  必须保持明确parameter ownership；rank spectrum/scale只在selection取得后用隔离credit处理。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

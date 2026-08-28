@@ -97,7 +97,7 @@ class F0K1:
     update_relative_error_maximum: float
     update_relative_error_median: float
     solve_metric_error: float
-    feature_metric_error: float
+    conditioning_metric_error: float
     seconds: float
 
 
@@ -118,7 +118,7 @@ class F0ChunkEquivalence:
     update_relative_error_maximum: float
     update_relative_error_median: float
     solve_metric_error: float
-    feature_metric_error: float
+    conditioning_metric_error: float
 
 
 def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
@@ -131,7 +131,7 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
     )
     if not clean:
         raise RuntimeError("formal F0 requires clean detached pushed authority")
-    config_path = REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v3.json"
+    config_path = REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json"
     config = load_shared_compiler_config(config_path)
     if config.get("schema_version") != G3_CONFIG_SCHEMA:
         raise RuntimeError("F0 requires the active bank-conditioned compiler")
@@ -178,7 +178,6 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
         event_slots=int(config["model"]["event_slots"]),
         anchor_width=int(config["model"]["anchor_width"]),
         relative_eigenvalue_floor=float(config["model"]["relative_eigenvalue_floor"]),
-        global_statistics=True,
     ).to(device).train()
     inventory = pure_shared_compiler_inventory(
         policy=policy, program=program, compiler=compiler, owners=owners
@@ -380,10 +379,10 @@ def _chunk_equivalence(runtime: F0Runtime, prepared: Any) -> F0ChunkEquivalence:
         .abs()
         .max()
     )
-    feature_error = float(
+    conditioning_error = float(
         (
-            chunked_output.feature_whitening_metrics
-            - reference_output.feature_whitening_metrics
+            chunked_output.conditioning_metrics
+            - reference_output.conditioning_metrics
         )
         .detach()
         .abs()
@@ -396,7 +395,7 @@ def _chunk_equivalence(runtime: F0Runtime, prepared: Any) -> F0ChunkEquivalence:
         update_relative_error_maximum=float(relative_errors.max()),
         update_relative_error_median=float(relative_errors.median()),
         solve_metric_error=solve_error,
-        feature_metric_error=feature_error,
+        conditioning_metric_error=conditioning_error,
     )
 
 
@@ -448,18 +447,12 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         "input_bilinear_key": runtime.compiler.anchor_scorer.input_compatibility_heads[
             "q"
         ].key_projection.weight.grad,
-        "input_bilinear_scale": runtime.compiler.anchor_scorer.input_compatibility_heads[
-            "q"
-        ].logit_scale.grad,
         "output_bilinear_query": runtime.compiler.anchor_scorer.output_compatibility_heads[
             "q"
         ].query_projection.weight.grad,
         "output_bilinear_key": runtime.compiler.anchor_scorer.output_compatibility_heads[
             "q"
         ].key_projection.weight.grad,
-        "output_bilinear_scale": runtime.compiler.anchor_scorer.output_compatibility_heads[
-            "q"
-        ].logit_scale.grad,
         "full_program": runtime.compiler.anchor_scorer.program_context["q"][
             1
         ].weight.grad,
@@ -499,7 +492,7 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
         update_relative_error_maximum=equivalence.update_relative_error_maximum,
         update_relative_error_median=equivalence.update_relative_error_median,
         solve_metric_error=equivalence.solve_metric_error,
-        feature_metric_error=equivalence.feature_metric_error,
+        conditioning_metric_error=equivalence.conditioning_metric_error,
         seconds=time.monotonic() - tick,
     )
 
@@ -631,8 +624,8 @@ def _qualification_checks(result: Mapping[str, Any]) -> dict[str, bool]:
         <= 5e-3
         and result["chunked_to_nonchunked_update_relative_error_median"]
         <= 1e-3,
-        "chunked_matches_nonchunked_feature_whitening": result[
-            "chunked_to_nonchunked_feature_metric_maximum_error"
+        "chunked_matches_nonchunked_conditioning": result[
+            "chunked_to_nonchunked_conditioning_metric_maximum_error"
         ]
         <= 1e-4,
     }
@@ -687,16 +680,16 @@ def _build_result(
         "chunked_to_nonchunked_solve_metric_maximum_error": (
             k1.solve_metric_error
         ),
-        "chunked_to_nonchunked_feature_metric_maximum_error": (
-            k1.feature_metric_error
+        "chunked_to_nonchunked_conditioning_metric_maximum_error": (
+            k1.conditioning_metric_error
         ),
         "chunked_update_cosine_minimum_threshold": 0.99999,
         "chunked_update_relative_error_maximum_threshold": 5e-3,
         "chunked_update_relative_error_median_threshold": 1e-3,
         "chunk_reference": "same cached native X/Y bank, chunk4 versus one chunk",
         "solve_metrics": k1.output.solve_metrics.detach().cpu().tolist(),
-        "feature_whitening_metrics": (
-            k1.output.feature_whitening_metrics.detach().cpu().tolist()
+        "conditioning_metrics": (
+            k1.output.conditioning_metrics.detach().cpu().tolist()
         ),
         "rank16_tensor_count": len(k1.complete_adapter),
         "rank16_targets": len(k1.complete_adapter) // 2,
@@ -738,8 +731,8 @@ def _build_result(
             "chunked_to_nonchunked_solve_metric_maximum_error": result[
                 "chunked_to_nonchunked_solve_metric_maximum_error"
             ],
-            "chunked_to_nonchunked_feature_metric_maximum_error": result[
-                "chunked_to_nonchunked_feature_metric_maximum_error"
+            "chunked_to_nonchunked_conditioning_metric_maximum_error": result[
+                "chunked_to_nonchunked_conditioning_metric_maximum_error"
             ],
             "k4_permutation_maximum_error": result[
                 "k4_permutation_maximum_error"

@@ -780,3 +780,28 @@ canonicalizer没有获得task-conditioned selection；两者均需机制正对�
 - `runs/analysis/pi05_ecp_g3_functional_anchor_causality_t{16,72,85,93}_3062de8_macro5_20260828.json`；
 - `runs/analysis/pi05_ecp_g3_functional_anchor_input_content*_t85_j{18,19}_s200_factor_3062de8_macro5_20260828.json`；
 - `runs/analysis/pi05_ecp_g3_functional_anchor_gradient_groups_t85_3062de8_macro5_20260828.json`。
+
+## 41. IEEE fresh F3 non-pass与functional-polar根因见证
+
+对F1与canonical B1的数值路径复核发现旧runtime继承TF32，导致约`1e6`条件数native dual的score cancellation。`main@78b7e58`
+把native dual FP32 matmul固定为IEEE并通过真实F0；随后从fresh完成macro5/25 steps及完整451-condition评估。fit/held-video/p10/
+task-holdout为`.086508/.083131/.072629/.096191`，held/fit `.960958`；held q/v/action-in/action-out为
+`.021698/.065269/.085933/.173804`。因此IEEE是必要数值修正，但没有改变shared mapping的`.08`量级non-pass；该run未续训。
+
+同一post-`Wk`真实bank的后续解析将actual mapping写为`J_r=C_r C_0^+ H`，其中`C_0`是B0 base covariance、`H`是event-centered
+native/key image、`C_r`是rank-specific B1 replay covariance。task93/video2的深层q target34、v target19、action-in target36、
+action-out target37在该functional image中的task-local replay update cosine约为`.996/.999/1.000/.998`，证明bank/key内容本身有
+容量。per-event polar对q只有约`.947`而其它families接近1；跨rank共享global polar对v/action-out降至`.915/.831`；不用per-event
+feature whitening时q约`.911`。这些read-only witnesses指定了首版rank-specific global cross-event functional polar与保留feature
+whitening的修正，不构成F3 Gate pass。
+
+active v4据此删除旧`C=I`与Euclidean normalized-bilinear开关，只保留当前bank在线计算的detached polar gauge、bounded B0 anchors、
+native solve和B1 exact signed replay。最终weights仍由共享Program query与content keys计算并对真实X/Y加权，不保存task/video状态。
+该实现必须先通过真实K1/K4 F0，再从fresh接受相同451-condition F3；内部解析cosine不能代替Gate。
+
+关键formal artifact：
+
+- `runs/outputs/pi05_ecp_shared_compiler_g3_f3_ieee_fold0_m5_gpu01p012345_r6_20260828/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f3_ieee_macro5_mapping_eval_78b7e58_gpu01p012345_w6_20260828/`；
+- `runs/analysis/pi05_ecp_g3_native_dual_precision_audit_abff0a7_20260828/`；
+- `runs/analysis/pi05_ecp_shared_compiler_g3_f0_ieee_precision_78b7e58_gpu01p1_20260828.json`。

@@ -5,11 +5,15 @@ import torch
 from ember.ecp.bank_conditioning import (
     StreamingBankStatistics,
     StreamingFeatureStatistics,
+    StreamingFunctionalBankStatistics,
     StreamingSignedPool,
     batched_feature_whiteners,
+    bound_functional_queries,
     bounded_relative_group_gain,
+    functional_polar_queries,
     materialized_bank_statistics,
     materialized_signed_pool,
+    normalize_replay_queries,
     spectral_bank_query,
 )
 
@@ -46,6 +50,83 @@ def test_streaming_feature_whitening_is_chunk_equivalent_and_differentiable() ->
     assert differentiable.grad is not None
     assert bool(torch.isfinite(differentiable.grad).all())
     assert bool(torch.count_nonzero(differentiable.grad))
+
+
+def test_functional_polar_statistics_are_chunk_equivalent_and_bounded() -> None:
+    generator = torch.Generator().manual_seed(37)
+    candidates, native_width, key_width = 79, 10, 6
+    events, ranks = 3, 4
+    values = torch.randn(candidates, native_width, generator=generator)
+    keys = torch.randn(events, candidates, key_width, generator=generator)
+    base = torch.rand(candidates, generator=generator) + 0.1
+    base = base / base.sum()
+    replay = torch.rand(ranks, candidates, generator=generator) + 0.1
+    replay = replay / replay.sum(-1, keepdim=True)
+    event = torch.rand(events, candidates, generator=generator) + 0.1
+    event = event / event.sum(-1, keepdim=True)
+
+    def accumulator() -> StreamingFunctionalBankStatistics:
+        return StreamingFunctionalBankStatistics(
+            native_width=native_width,
+            key_width=key_width,
+            events=events,
+            ranks=ranks,
+            device=values.device,
+        )
+
+    expected = accumulator()
+    expected.add(values, base, replay, event, keys)
+    streamed = accumulator()
+    for start, stop in ((0, 13), (13, 51), (51, candidates)):
+        streamed.add(
+            values[start:stop],
+            base[start:stop],
+            replay[:, start:stop],
+            event[:, start:stop],
+            keys[:, start:stop],
+        )
+    left = expected.finalize()
+    right = streamed.finalize()
+    for lhs, rhs in (
+        (left.mean, right.mean),
+        (left.covariance, right.covariance),
+        (left.replay_covariances, right.replay_covariances),
+        (left.key_images, right.key_images),
+    ):
+        torch.testing.assert_close(lhs, rhs, rtol=1e-12, atol=1e-12)
+
+    raw = torch.randn(
+        ranks, events, 2, key_width, generator=generator, requires_grad=True
+    )
+    event_weights = torch.rand(ranks, events, generator=generator)
+    event_weights = event_weights / event_weights.sum(-1, keepdim=True)
+    polar = functional_polar_queries(
+        raw,
+        event_weights,
+        right,
+        covariance_floor=1e-8,
+        image_floor=1e-8,
+    )
+    bounded, _ = bound_functional_queries((polar.queries,), score_bound=1e-3)
+    assert float(bounded[0].detach().norm(dim=-1).amax()) <= 1.00001e-3
+    bounded[0].square().mean().backward()
+    assert raw.grad is not None
+    assert bool(torch.isfinite(raw.grad).all())
+    assert bool(torch.count_nonzero(raw.grad))
+
+    replay_query = torch.randn(ranks, 2, native_width, generator=generator)
+    normalized, _ = normalize_replay_queries(
+        (replay_query,), (right,), score_rms=0.02
+    )
+    score_rms = torch.einsum(
+        "rbd,de,rbe->rb",
+        normalized[0].double(),
+        right.covariance,
+        normalized[0].double(),
+    ).clamp_min(0).sqrt()
+    torch.testing.assert_close(
+        score_rms.amax(-1), torch.full((ranks,), 0.02, dtype=torch.float64)
+    )
 
 
 def _condition(seed: int = 17):

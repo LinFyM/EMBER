@@ -839,6 +839,33 @@ Action Meta 0、source/Program冻结、K4 teacher reads 0，最终76 tensors/38 
 - `runs/analysis/pi05_ecp_g3_ieee_profile_step1_78b7e58_gpu01p1235_w4_20260828/`；
 - `runs/analysis/pi05_ecp_shared_compiler_g3_f0_ieee_precision_78b7e58_gpu01p1_20260828.json`。
 
+### 54. fresh IEEE未修复G3；actual-operator functional metric才是最早错配
+
+clean pushed detached `main@78b7e58`从fresh完成macro5/25 steps及全部451-condition评估。fit/held-video/p10/task-holdout为
+`.086508/.083131/.072629/.096191`，held/fit `.960958`；q/v/action-in/action-out held median为
+`.021698/.065269/.085933/.173804`。因此IEEE修复了此前共同数值偏差，却没有让shared mapping获得绝对功能；fit、held-video和
+task-holdout继续同量级，失败仍不是泛化、Action Meta、信息墙、chunk或评测实现。
+
+真正的功能算子不是candidate anchor/key的普通Euclidean geometry，而是`J_r=C_r C_0^+ H`：`C_0`为B0 base native covariance，
+`H`为event-normalized centered native/post-`Wk` key image，`C_r`为第`r`个rank实际B1 frame measure下的native covariance。旧路径先
+单位化Program query，再在Euclidean key chart中优化；它没有控制经过高条件数B0 solve和rank-specific B1 replay后的方向与幅度。
+
+同一真实task93/video2 bank的task-local解析见证显示，直接在actual functional image中选系数时，深层q target34、v target19、
+action-in target36、action-out target37的update cosine约为`.996/.999/1.000/.998`。这证明现有真实X/Y、candidate content和post-`Wk`
+keys有足够容量，旧`.02--.17`不是rank/video/G2或key内容的上限。进一步消融把实现选择收窄：per-event rank-specific polar对v/action
+families接近1，但q约`.947`，必须跨event global；跨rank共享global polar的q约`.994`，v/action-out却降至`.915/.831`；不用per-event
+feature whitening时q约`.911`。因此首版选择rank-specific global cross-event polar并继续保留feature whitening，不是扫width/LR/seed。
+
+active v4将raw full-Program query经detached current-bank polar gauge变换，再用一个target/rank公共scale把B0 coefficient norm限制到
+`1e-3`；native solve后又用一个target/rank公共gain把实际`C_r` score RMS定为`.02`，最后才执行两个softmax分支和真实X/Y加权。
+bank statistics、polar和gain是当前deployment video在线产生的sufficient statistics，不是task/video table，不进入checkpoint；Q/K、
+Program和candidate parameters仍经实际anchor路径学习。逻辑上仍是一个Pass B0规划加一个B1 replay，但B0内部需feature、functional、
+anchor三次流式读取，总计四次native read；全部发生在rollout前唯一一次Writer调用中。
+
+该task-local witness只证明修正有机制容量，不证明shared Program mapping已通过。下一资格仍是真实K1/K4 F0，随后fresh完整451-condition
+F3；internal polar residual、solve cosine或loss下降不能代替`.75/.50/.8` Gate。旧`C=I`与Euclidean normalized-bilinear active开关删除，
+其formal artifacts和Git历史保留。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -1,4 +1,4 @@
-"""Aggregation and pre-registered Gates for F2/F3 mapping evidence."""
+"""Aggregation and the pre-registered G3 mapping Gate."""
 
 from __future__ import annotations
 
@@ -100,27 +100,6 @@ def _gate_report(
 ) -> dict[str, Any]:
     gate = config["mapping_gate"]
     held = summary["video_holdout"]["task_recovery"]
-    task_held = summary["task_holdout"]["task_recovery"]
-    families = summary["video_holdout"]["task_family_recovery"]
-    if phase == "f2":
-        checks = {
-            "held_video_median": held["median"]
-            >= float(gate["f2_held_video_median_minimum"]),
-            "held_video_each_family_median": min(
-                float(values["median"]) for values in families.values()
-            )
-            >= float(gate["f2_family_minimum"]),
-            "task_holdout_task_mean_median": task_held["median"]
-            >= float(gate["f2_task_holdout_minimum"]),
-        }
-        return {
-            "phase": phase,
-            "primary_checks": checks,
-            "primary_pass": all(checks.values()),
-            "gate_pass": all(checks.values()),
-            "adjacent_checkpoint": "not_required",
-        }
-
     fit_median = float(summary["fit"]["task_recovery"]["median"])
     held_to_fit = float(held["median"]) / fit_median if fit_median > 0 else None
     checks = {

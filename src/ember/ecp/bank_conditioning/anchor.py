@@ -18,7 +18,7 @@ from ember.ecp.native_factors import (
 from ember.ecp.natural_program import NaturalProgram
 
 from ember.ecp.bank_conditioning.compatibility import (
-    NormalizedBilinearCompatibility,
+    ProjectedBilinearCompatibility,
 )
 from ember.ecp.bank_conditioning.operator import BankConditioningError
 
@@ -236,7 +236,7 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
     ) -> torch.nn.ModuleDict:
         return torch.nn.ModuleDict(
             {
-                family.value: NormalizedBilinearCompatibility(self.feature_width)
+                family.value: ProjectedBilinearCompatibility(self.feature_width)
                 for family in families
             }
         )
@@ -517,7 +517,7 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         ):
             raise BankConditioningError("input anchor query/key width changed")
         family = self.owners[target].family.value
-        return self.input_compatibility_heads[family](query, key)
+        return self.input_compatibility_heads[family].score_projected(query, key)
 
     def output_compatibility(
         self, query: torch.Tensor, key: torch.Tensor, *, target: int
@@ -536,7 +536,31 @@ class ProgramNativeAnchorScorer(torch.nn.Module):
         scorer = self.output_compatibility_heads[family]
         return torch.stack(
             tuple(
-                scorer(query[group], key[:, group])
+                scorer.score_projected(query[group], key[:, group])
                 for group in range(query.shape[0])
             )
         )
+
+    def input_projected_queries(
+        self, query: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        return self.input_compatibility_heads[family].project_query(query)
+
+    def output_projected_queries(
+        self, query: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        return self.output_compatibility_heads[family].project_query(query)
+
+    def input_projected_keys(
+        self, key: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        return self.input_compatibility_heads[family].project_key(key)
+
+    def output_projected_keys(
+        self, key: torch.Tensor, *, target: int
+    ) -> torch.Tensor:
+        family = self.owners[target].family.value
+        return self.output_compatibility_heads[family].project_key(key)

@@ -12,8 +12,8 @@ realizer均由Git保存，不再作为可执行fallback。
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
 - G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
-- 当前处于G3 bank-conditioned shared compiler：先流式累计current-bank statistics与Program-conditioned native anchors，再重放同一
-  bank做exact signed pooling；rank12+rank4是首版有证据配置，保留capacity证据触发的重开分支；
+- 当前处于G3 functional-polar shared compiler：先从current native bank在线建立真实B0-solve/B1-replay算子的坐标系，再由共享
+  Program query与content keys形成native anchors并重放同一bank做exact signed pooling；rank12+rank4是首版有证据配置；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；

@@ -259,7 +259,7 @@ def build_mapping_run_contract(
     checkpoint_macros: Sequence[int],
     repo_root: Path,
 ) -> dict[str, Any]:
-    """Freeze the factor-supervised F2/F3 information wall and topology."""
+    """Freeze the factor-supervised G3 information wall and topology."""
 
     repository = git_state(repo_root)
     teacher_root = read_json(native_teacher_store.root_manifest)
@@ -331,7 +331,7 @@ def build_mapping_run_contract(
         },
         "model": {
             **dict(config["model"]),
-            "active_global_statistics": bool(compiler.global_statistics),
+            "active_bank_conditioning": "functional_polar",
             "native_dual_matmul_precision": compiler.native_dual_matmul_precision,
             "compiler_forward_signature": list(
                 inspect.signature(compiler.forward).parameters

@@ -1,4 +1,4 @@
-"""Held-video and held-task qualification for F2/F3 mapping checkpoints."""
+"""Held-video and held-task qualification for G3 mapping checkpoints."""
 
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v3.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json",
     )
-    parser.add_argument("--phase", choices=("f2", "f3"), required=True)
+    parser.add_argument("--phase", choices=("f3",), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--worker-count", type=int, required=True)

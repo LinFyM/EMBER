@@ -26,7 +26,8 @@ from ember.pi05_source_checkpoint import read_json
 
 G3_CONFIG_SCHEMA_V1 = "ember_ecp_shared_compiler_g3_v1"
 G3_CONFIG_SCHEMA_V2 = "ember_ecp_shared_compiler_g3_v2"
-G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v3"
+G3_CONFIG_SCHEMA_V3 = "ember_ecp_shared_compiler_g3_v3"
+G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v4"
 
 
 @dataclass(frozen=True)
@@ -175,24 +176,28 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
     return all(
         (
             config.get("schema_version") == G3_CONFIG_SCHEMA,
-            config.get("status") == "active_bank_conditioned_mapping_compiler",
+            config.get("status") == "active_functional_polar_mapping_compiler",
             model.get("selection")
-            == "full_program_target_native_bilinear_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
+            == "full_program_functional_polar_query_native_content_key_signed_pooling",
             model.get("anchor_width") == 128,
             model.get("anchor_parameter_ownership")
             == "fixed_target_native_basis_then_family_shared_trunk_with_full_program_query",
             model.get("anchor_compatibility")
-            == "primary_family_shared_normalized_bilinear_bounded_scalar",
+            == "shared_projected_bilinear_in_current_bank_functional_coordinates",
             model.get("relative_eigenvalue_floor") == 1e-6,
             model.get("feature_whitening")
             == "detached_per_event_symmetric_inverse_square_root",
+            model.get("functional_gauge")
+            == "detached_rank_specific_global_cross_event_polar_of_native_B0_solve_B1_replay",
+            model.get("anchor_score_bound") == 0.001,
+            model.get("replay_score_rms") == 0.02,
             model.get("native_read_sequence")
             == [
                 "feature_statistics",
-                "native_anchor_statistics",
+                "functional_operator_statistics",
+                "native_anchor_solve",
                 "exact_signed_replay",
             ],
-            model.get("phase_global_statistics") == {"f2": False, "f3": True},
             data.get("supported_K") == [1, 2, 4],
             data.get("mapping_K") == [1],
             data.get("task_role_weighting") == "three_meta_plus_three_target",
@@ -219,7 +224,7 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             wall.get("native_teacher_training_only") is True,
             wall.get("native_teacher_deployment_reads") == 0,
             wall.get("task_video_member_lookup_parameters") is False,
-            wall.get("global_statistics_off_deployment") is False,
+            wall.get("bank_derived_functional_gauge_is_deployment_visible") is True,
         )
     )
 

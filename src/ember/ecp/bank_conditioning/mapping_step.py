@@ -84,9 +84,8 @@ def prepare_mapping_condition_output(
     return output, {
         **prepared.metrics,
         "split_sampled_frames": condition.sampled_frames,
-        "global_statistics": output.global_statistics_enabled,
         "solve_metrics": output.solve_metrics.detach().float().cpu().tolist(),
-        "feature_whitening_metrics": output.feature_whitening_metrics.detach()
+        "conditioning_metrics": output.conditioning_metrics.detach()
         .float()
         .cpu()
         .tolist(),
@@ -243,7 +242,6 @@ def _mapping_gradient_probes(runtime: MappingRuntime) -> dict[str, Any]:
                     compatibility.query_projection.weight.grad
                 ),
                 f"{side}_bilinear_key": compatibility.key_projection.weight.grad,
-                f"{side}_bilinear_scale": compatibility.logit_scale.grad,
             }
         )
     return probes

@@ -1,4 +1,4 @@
-"""Distributed F2/F3 mapping acquisition for the frozen-Program compiler."""
+"""Distributed G3 mapping acquisition for the frozen-Program compiler."""
 
 from __future__ import annotations
 
@@ -290,9 +290,6 @@ def _load_training_assets(
         relative_eigenvalue_floor=float(
             config["model"]["relative_eigenvalue_floor"]
         ),
-        global_statistics=bool(
-            config["model"]["phase_global_statistics"][args.phase]
-        ),
     ).to(context.device)
     compiler.scale_head.requires_grad_(False)
     compiler.train()
@@ -477,7 +474,6 @@ def run_mapping_macro(
         "macro": macro + 1,
         "rank": runtime.context.rank,
         "phase": runtime.args.phase,
-        "global_statistics": runtime.compiler.global_statistics,
         "logical_task_count": len(records),
         "K1_condition_count": 2 * len(records),
         "role_counts": {
@@ -555,7 +551,6 @@ def train(args: argparse.Namespace) -> None:
                 "stage": stage,
                 "completed_macros": runtime.stop_after_macro,
                 "total_macros": runtime.total_macros,
-                "global_statistics": runtime.compiler.global_statistics,
             }
             write_json_atomic(args.output_dir / "segment_completion.json", completion)
             if runtime.stop_after_macro == runtime.total_macros:
@@ -572,9 +567,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v3.json",
+        default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json",
     )
-    parser.add_argument("--phase", choices=("f2", "f3"), required=True)
+    parser.add_argument("--phase", choices=("f3",), required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

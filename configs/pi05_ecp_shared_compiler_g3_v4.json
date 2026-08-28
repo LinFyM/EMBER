@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_shared_compiler_g3_v3",
-  "status": "active_bank_conditioned_mapping_compiler",
+  "schema_version": "ember_ecp_shared_compiler_g3_v4",
+  "status": "active_functional_polar_mapping_compiler",
   "authorities": {
     "g2_config": "configs/pi05_ecp_natural_program_g2_v1.json",
     "g2_program_checkpoint": "runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/checkpoints/macro_00000020",
@@ -85,15 +85,17 @@
     "residual_rank": 4,
     "anchor_width": 128,
     "anchor_parameter_ownership": "fixed_target_native_basis_then_family_shared_trunk_with_full_program_query",
-    "anchor_compatibility": "primary_family_shared_normalized_bilinear_bounded_scalar",
-    "selection": "full_program_target_native_bilinear_per_event_feature_whitening_native_bank_solve_two_softmax_difference",
+    "anchor_compatibility": "shared_projected_bilinear_in_current_bank_functional_coordinates",
+    "selection": "full_program_functional_polar_query_native_content_key_signed_pooling",
     "input_candidate_index": ["video", "frame", "probe", "horizon"],
     "output_candidate_index": ["video", "frame", "probe", "horizon", "type"],
     "output_banks": ["abs", "adj", "init", "goal"],
     "relative_eigenvalue_floor": 1e-6,
     "feature_whitening": "detached_per_event_symmetric_inverse_square_root",
-    "native_read_sequence": ["feature_statistics", "native_anchor_statistics", "exact_signed_replay"],
-    "phase_global_statistics": {"f2": false, "f3": true},
+    "functional_gauge": "detached_rank_specific_global_cross_event_polar_of_native_B0_solve_B1_replay",
+    "anchor_score_bound": 0.001,
+    "replay_score_rms": 0.02,
+    "native_read_sequence": ["feature_statistics", "functional_operator_statistics", "native_anchor_solve", "exact_signed_replay"],
     "output_group_gain": "bounded_zero_to_one_per_target_group_rank",
     "materialization": "unique_rank12_plus_rank4_rank16",
     "frame_chunk_size": 4
@@ -150,9 +152,6 @@
     "optimizer_steps_per_macro": 5
   },
   "mapping_gate": {
-    "f2_held_video_median_minimum": 0.75,
-    "f2_family_minimum": 0.65,
-    "f2_task_holdout_minimum": 0.60,
     "f3_held_video_median_minimum": 0.75,
     "f3_held_video_p10_minimum": 0.50,
     "f3_held_to_fit_minimum": 0.8,
@@ -174,6 +173,6 @@
     "native_teacher_training_only": true,
     "native_teacher_deployment_reads": 0,
     "task_video_member_lookup_parameters": false,
-    "global_statistics_off_deployment": false
+    "bank_derived_functional_gauge_is_deployment_visible": true
   }
 }

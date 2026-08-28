@@ -39,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path)
     parser.add_argument("--training-run", type=Path)
     parser.add_argument("--compiler-checkpoint", type=Path)
+    parser.add_argument("--condition-cache-root", type=Path)
     parser.add_argument("--previous-report", type=Path)
     return parser
 
@@ -55,6 +56,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "data_root",
         "training_run",
         "compiler_checkpoint",
+        "condition_cache_root",
         "previous_report",
     ):
         value = getattr(args, name)
@@ -70,6 +72,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "data_root",
         "training_run",
         "compiler_checkpoint",
+        "condition_cache_root",
     )
     if args.mode == "worker" and any(getattr(args, name) is None for name in worker_required):
         raise ValueError("mapping evaluation worker arguments are incomplete")

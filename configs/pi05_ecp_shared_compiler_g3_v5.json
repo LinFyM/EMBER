@@ -17,7 +17,8 @@
     "stable_carrier": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors",
     "carrier_projection_manifest": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/projection_shared.json",
     "shared_effect_bank": "runs/analysis/pi05_ecp_shared_compiler_g3_effect_bank_37aca5f_gpu01p123456_20260825/manifest.json",
-    "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json"
+    "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json",
+    "frozen_scale_prior": "configs/pi05_ecp_shared_compiler_g3_scale_prior_v1.json"
   },
   "fold": {
     "meta_held_fold": 0,
@@ -97,6 +98,7 @@
     "native_matmul_precision": "ieee_fp32_no_tf32",
     "native_read_sequence": ["global_native_covariance_statistics", "program_primal_to_current_bank_dual_solve", "exact_global_signed_replay"],
     "output_group_gain": "fixed_unity_first_version",
+    "frozen_scale_policy": "fit_only_task_equal_member_median_rank_template_times_s_ref",
     "materialization": "unique_rank12_plus_rank4_rank16",
     "frame_chunk_size": 4
   },

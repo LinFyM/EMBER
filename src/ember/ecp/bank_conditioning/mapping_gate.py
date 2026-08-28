@@ -58,9 +58,13 @@ def summarize_mapping_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
             by_task.setdefault(int(row["authority_id"]), []).append(row)
         task_rows = []
         for task, task_conditions in sorted(by_task.items()):
+            roles = {str(row["role"]) for row in task_conditions}
+            if len(roles) != 1:
+                raise ValueError("mapping task crossed role boundaries")
             task_rows.append(
                 {
                     "authority_id": task,
+                    "role": next(iter(roles)),
                     "condition_count": len(task_conditions),
                     "mean_best_recovery": sum(
                         float(row["mean_best_recovery"])
@@ -77,6 +81,7 @@ def summarize_mapping_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                     },
                 }
             )
+        roles = tuple(sorted({str(row["role"]) for row in task_rows}))
         result[split_name] = {
             "condition_count": len(selected),
             "task_count": len(task_rows),
@@ -91,6 +96,29 @@ def summarize_mapping_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                     [float(row["family_recovery"][family]) for row in task_rows]
                 )
                 for family in FAMILY_NAMES
+            },
+            "role_task_recovery": {
+                role: _distribution(
+                    [
+                        float(row["mean_best_recovery"])
+                        for row in task_rows
+                        if row["role"] == role
+                    ]
+                )
+                for role in roles
+            },
+            "role_task_family_recovery": {
+                role: {
+                    family: _distribution(
+                        [
+                            float(row["family_recovery"][family])
+                            for row in task_rows
+                            if row["role"] == role
+                        ]
+                    )
+                    for family in FAMILY_NAMES
+                }
+                for role in roles
             },
             "tasks": task_rows,
         }
@@ -277,6 +305,15 @@ def _load_worker_evidence(
             == str(args.program_causality_contract),
             int(contract.get("program_causality_contract_bytes", -1))
             == args.program_causality_contract.stat().st_size,
+            contract.get("training_run") == completion.get("training_run"),
+            contract.get("training_run_schema")
+            == completion.get("training_run_schema"),
+            contract.get("training_config")
+            == completion.get("training_config"),
+            contract.get("training_model_contract")
+            == completion.get("training_model_contract"),
+            contract.get("condition_cache_root")
+            == completion.get("condition_cache_root"),
             assigned_keys == observed_keys,
             expected_causal_keys == observed_causal_keys,
             causal_correct_matches,
@@ -329,12 +366,51 @@ def aggregate_mapping_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     macros = {int(row["checkpoint_macro"]) for row in worker_records}
     phases = {str(row["phase"]) for row in worker_records}
     checkpoints = {str(row["checkpoint"]) for row in worker_records}
-    if len(macros) != 1 or phases != {args.phase} or len(checkpoints) != 1:
+    training_runs = {str(row["training_run"]) for row in worker_records}
+    training_commits = {str(row["training_commit"]) for row in worker_records}
+    training_schemas = {
+        str(row["training_run_schema"]) for row in worker_records
+    }
+    training_configs = {
+        json.dumps(row["training_config"], sort_keys=True)
+        for row in worker_records
+    }
+    model_contracts = {
+        json.dumps(row["training_model_contract"], sort_keys=True)
+        for row in worker_records
+    }
+    cache_roots = {
+        str(row["condition_cache_root"]) for row in worker_records
+    }
+    if (
+        len(macros) != 1
+        or phases != {args.phase}
+        or len(checkpoints) != 1
+        or len(training_runs) != 1
+        or len(training_commits) != 1
+        or len(training_schemas) != 1
+        or len(training_configs) != 1
+        or len(model_contracts) != 1
+        or len(cache_roots) != 1
+    ):
         raise ValueError("mapping evaluation workers used different authorities")
     summary = summarize_mapping_rows(rows)
     program_causality = summarize_program_causality_rows(causal_rows)
     previous = read_json(args.previous_report) if args.previous_report else None
     macro = next(iter(macros))
+    lineage = {
+        "training_run": next(iter(training_runs)),
+        "training_commit": next(iter(training_commits)),
+        "training_run_schema": next(iter(training_schemas)),
+        "training_config": json.loads(next(iter(training_configs))),
+        "training_model_contract": json.loads(next(iter(model_contracts))),
+    }
+    if previous is not None and (
+        previous.get("schema_version") != EVALUATION_SCHEMA
+        or previous.get("phase") != args.phase
+        or previous.get("lineage") != lineage
+    ):
+        raise ValueError("adjacent mapping report lineage changed")
     report = {
         "schema_version": EVALUATION_SCHEMA,
         "phase": args.phase,
@@ -343,6 +419,7 @@ def aggregate_mapping_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         "condition_count": len(rows),
         "worker_count": args.worker_count,
         "worker_records": worker_records,
+        "lineage": lineage,
         "summary": summary,
         "program_causality": program_causality,
         "gate": _gate_report(

@@ -29,6 +29,7 @@ G3_CONFIG_SCHEMA_V2 = "ember_ecp_shared_compiler_g3_v2"
 G3_CONFIG_SCHEMA_V3 = "ember_ecp_shared_compiler_g3_v3"
 G3_CONFIG_SCHEMA_V4 = "ember_ecp_shared_compiler_g3_v4"
 G3_CONFIG_SCHEMA = "ember_ecp_shared_compiler_g3_v5"
+G3_SCALE_PRIOR_SCHEMA = "ember_ecp_shared_compiler_g3_scale_prior_v1"
 
 
 @dataclass(frozen=True)
@@ -254,6 +255,7 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
             config.get("status")
             == "active_program_primal_current_bank_global_dual_compiler",
             config.get("deployment_candidate") is True,
+            "frozen_scale_prior" in config.get("authorities", {}),
             model.get("selection")
             == "full_program_native_primal_current_bank_global_dual_exact_signed_pooling",
             model.get("primal_parameter_ownership")
@@ -275,6 +277,8 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
                 "exact_global_signed_replay",
             ],
             model.get("output_group_gain") == "fixed_unity_first_version",
+            model.get("frozen_scale_policy")
+            == "fit_only_task_equal_member_median_rank_template_times_s_ref",
             data.get("supported_K") == [1, 2, 4],
             data.get("mapping_K") == [1],
             data.get("task_role_weighting") == "three_meta_plus_three_target",
@@ -463,6 +467,51 @@ def load_shared_rank_assets(
         },
         s_ref=s_ref.to(device=device),
     )
+
+
+def load_shared_scale_prior(
+    config: Mapping[str, Any],
+    *,
+    asset_root: Path,
+    device: torch.device | str,
+) -> torch.Tensor:
+    """Load the task-agnostic fit-only rank scale prior used while P2 freezes scale."""
+
+    prior = read_json(
+        _checked(authority_path(config, "frozen_scale_prior", asset_root=asset_root))
+    )
+    derivation = prior.get("derivation", {})
+    ratio = torch.tensor(prior.get("scale_ratio", ()), dtype=torch.float32)
+    valid = all(
+        (
+            prior.get("schema_version") == G3_SCALE_PRIOR_SCHEMA,
+            prior.get("status") == "active_fit_only_shared_scale_prior",
+            prior.get("target_count") == 38,
+            prior.get("rank") == 4,
+            ratio.shape == (38, 4),
+            bool(torch.isfinite(ratio).all()),
+            bool(torch.all((ratio > 0) & (ratio < 1))),
+            derivation.get("source") == "native_teacher_fit_consensus",
+            derivation.get("video_source")
+            == "mapping_fit_conditions_excluding_seeded_held_video",
+            derivation.get("member_source")
+            == "complete_verified_member_set_per_task",
+            derivation.get("mapping_fit_task_count") == 40,
+            derivation.get("held_video_used") is False,
+            derivation.get("task_holdout_used") is False,
+            derivation.get("validation_or_test_used") is False,
+            derivation.get("within_task_member_reduction")
+            == "coordinatewise_median",
+            derivation.get("across_task_reduction")
+            == "coordinatewise_task_equal_median",
+            derivation.get("normalization") == "ratio_to_target_s_ref",
+            derivation.get("upper_clip") == 0.999,
+            derivation.get("deployment_task_or_video_lookup") is False,
+        )
+    )
+    if not valid:
+        raise ValueError("G3 frozen shared scale prior changed")
+    return ratio.to(device=device)
 
 
 def load_frozen_g2_program(

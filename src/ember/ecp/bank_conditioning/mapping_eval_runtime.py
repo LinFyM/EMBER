@@ -28,6 +28,7 @@ from ember.ecp.shared_compiler_assets import (
     build_frozen_g2_program,
     load_shared_compiler_config,
     load_shared_rank_assets,
+    load_shared_scale_prior,
 )
 from ember.ecp.shared_compiler_authority import MAPPING_RUN_SCHEMA
 from ember.ecp.bank_conditioning.mapping import (
@@ -35,6 +36,10 @@ from ember.ecp.bank_conditioning.mapping import (
     SharedCompilerMappingSplit,
     load_mapping_split,
     paired_mapping_loss,
+)
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FrozenMappingConditionCache,
+    frozen_condition_cache_authority,
 )
 from ember.ecp.bank_conditioning.mapping_step import (
     load_mapping_condition_teachers,
@@ -69,7 +74,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-EVALUATION_SCHEMA = "ember_ecp_shared_compiler_mapping_evaluation_v2"
+EVALUATION_SCHEMA = "ember_ecp_shared_compiler_mapping_evaluation_v3"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 SPLIT_NAMES = ("fit", "video_holdout", "task_holdout")
 
@@ -88,6 +93,7 @@ class MappingEvaluationRuntime:
     owners: tuple[TargetOwner, ...]
     ranks: SharedCompilerRankAssets
     native_teachers: NativeTeacherStore
+    condition_cache: FrozenMappingConditionCache
     query_points: int
     checkpoint_macro: int
     training_contract: dict[str, Any]
@@ -136,6 +142,10 @@ def _load_compiler_checkpoint(
     tensor = checkpoint / "ecp.safetensors"
     tensor_record = manifest.get("files", {}).get("ecp.safetensors", {})
     expected_stage = f"g3_mapping_{phase}"
+    model_contract = contract.get("model", {})
+    cache_contract = contract.get("runtime", {}).get(
+        "frozen_condition_cache", {}
+    )
     if (
         checkpoint.parent.parent != training_run
         or contract.get("schema_version") != MAPPING_RUN_SCHEMA
@@ -148,6 +158,12 @@ def _load_compiler_checkpoint(
         or manifest.get("run_contract_schema") != MAPPING_RUN_SCHEMA
         or int(manifest.get("next_macro", -1)) != macro
         or int(completion.get("completed_macros", -1)) < macro
+        or model_contract.get("active_bank_conditioning")
+        != "program_primal_current_bank_global_dual"
+        or model_contract.get("frozen_scale_policy")
+        != "fit_only_task_equal_member_median_rank_template_times_s_ref"
+        or cache_contract.get("checkpoint_payload") is not False
+        or cache_contract.get("deployment_input") is not False
         or not tensor.is_file()
         or tensor.stat().st_size != int(tensor_record.get("bytes", -1))
     ):
@@ -258,6 +274,9 @@ def prepare_mapping_evaluation_runtime(
         ),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
         covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
+        scale_prior_ratio=load_shared_scale_prior(
+            config, asset_root=args.asset_root, device=context.device
+        ),
     ).to(context.device)
     macro, training_contract = _load_compiler_checkpoint(
         compiler,
@@ -267,6 +286,11 @@ def prepare_mapping_evaluation_runtime(
         checkpoint=args.compiler_checkpoint,
         device=context.device,
     )
+    if (
+        training_contract["runtime"]["frozen_condition_cache"]["root"]
+        != str(args.condition_cache_root)
+    ):
+        raise ValueError("mapping evaluation condition-cache authority changed")
     rank4_contract = derive_pi05_lora_rank(ranks.contract, rank=4)
     teacher_root_path = authority_path(
         config, "native_teacher_manifest", asset_root=args.asset_root
@@ -296,6 +320,26 @@ def prepare_mapping_evaluation_runtime(
     program_causality_contract = load_program_causality_contract(
         args.program_causality_contract
     )
+    condition_cache = FrozenMappingConditionCache(
+        args.condition_cache_root,
+        owners=owners,
+        operator=compiler.bank_operator,
+        authority=frozen_condition_cache_authority(
+            config_schema=config["schema_version"],
+            config_bytes=args.config.stat().st_size,
+            source_checkpoint=expected_source,
+            g2_program_checkpoint=authority_path(
+                config, "g2_program_checkpoint", asset_root=args.asset_root
+            ),
+            native_observer_checkpoint=authority_path(
+                config,
+                "native_observer_checkpoint",
+                asset_root=args.asset_root,
+            ),
+            frame_stride=int(config["data"]["frame_stride"]),
+            owners=owners,
+        ),
+    )
     _evaluation_wall(policy=policy, program=program, compiler=compiler)
     return MappingEvaluationRuntime(
         config=config,
@@ -310,6 +354,7 @@ def prepare_mapping_evaluation_runtime(
         owners=owners,
         ranks=ranks,
         native_teachers=native_teachers,
+        condition_cache=condition_cache,
         query_points=int(g2["data"]["query_points"]),
         checkpoint_macro=macro,
         training_contract=training_contract,
@@ -374,6 +419,18 @@ def _worker_contract(
         "checkpoint": str(args.compiler_checkpoint),
         "checkpoint_macro": runtime.checkpoint_macro,
         "training_commit": runtime.training_contract["git"]["commit"],
+        "training_run": str(args.training_run),
+        "training_run_schema": runtime.training_contract["schema_version"],
+        "training_config": dict(runtime.training_contract["config"]),
+        "training_model_contract": {
+            "active_bank_conditioning": runtime.training_contract["model"][
+                "active_bank_conditioning"
+            ],
+            "frozen_scale_policy": runtime.training_contract["model"][
+                "frozen_scale_policy"
+            ],
+        },
+        "condition_cache_root": str(args.condition_cache_root),
         "worker_index": args.worker_index,
         "worker_count": args.worker_count,
         "condition_count": len(assigned),
@@ -421,7 +478,9 @@ def _evaluate_condition(
     tick = time.monotonic()
     temperature = float(runtime.config["optimization"]["mapping"]["temperature"])
     with torch.no_grad():
-        prepared = prepare_mapping_condition(runtime, condition)
+        prepared = prepare_mapping_condition(
+            runtime, condition, retain_cache=split_name == "fit"
+        )
         output, metrics = mapping_condition_output(runtime, condition, prepared)
         teachers = load_mapping_condition_teachers(runtime, condition)
         loss = paired_mapping_loss(

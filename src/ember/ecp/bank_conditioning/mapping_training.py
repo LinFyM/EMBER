@@ -28,6 +28,7 @@ from ember.ecp.shared_compiler_assets import (
     build_frozen_g2_program,
     load_shared_compiler_config,
     load_shared_rank_assets,
+    load_shared_scale_prior,
 )
 from ember.ecp.shared_compiler_authority import (
     MAPPING_RUN_SCHEMA,
@@ -40,6 +41,10 @@ from ember.ecp.bank_conditioning.mapping import (
     load_mapping_split,
 )
 from ember.ecp.bank_conditioning.consensus import FitConsensusTeacherStore
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FrozenMappingConditionCache,
+    frozen_condition_cache_authority,
+)
 from ember.ecp.bank_conditioning.mapping_step import run_mapping_optimizer_step
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherStore
 from ember.ecp.stage0_training import stage0_source_authority, tokenize_stage0_languages
@@ -83,6 +88,7 @@ class MappingRuntime:
     rank4_contract: Any
     native_teachers: NativeTeacherStore
     consensus_teachers: FitConsensusTeacherStore
+    condition_cache: FrozenMappingConditionCache
     query_points: int
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     frozen_parameters: tuple[torch.nn.Parameter, ...]
@@ -117,6 +123,7 @@ class _TrainingAssets:
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     query_points: int
     frozen: tuple[torch.nn.Parameter, ...]
+    condition_cache: FrozenMappingConditionCache
 
 
 def _tasks(
@@ -291,6 +298,9 @@ def _load_training_assets(
         ),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
         covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
+        scale_prior_ratio=load_shared_scale_prior(
+            config, asset_root=args.asset_root, device=context.device
+        ),
     ).to(context.device)
     compiler.scale_head.requires_grad_(False)
     compiler.train()
@@ -322,6 +332,26 @@ def _load_training_assets(
         device=context.device,
     )
     g2 = read_json(authority_path(config, "g2_config", asset_root=args.asset_root))
+    condition_cache = FrozenMappingConditionCache(
+        args.condition_cache_root,
+        owners=owners,
+        operator=compiler.bank_operator,
+        authority=frozen_condition_cache_authority(
+            config_schema=config["schema_version"],
+            config_bytes=args.config.stat().st_size,
+            source_checkpoint=expected_checkpoint,
+            g2_program_checkpoint=authority_path(
+                config, "g2_program_checkpoint", asset_root=args.asset_root
+            ),
+            native_observer_checkpoint=authority_path(
+                config,
+                "native_observer_checkpoint",
+                asset_root=args.asset_root,
+            ),
+            frame_stride=int(config["data"]["frame_stride"]),
+            owners=owners,
+        ),
+    )
     return _TrainingAssets(
         source=source,
         source_config=source_config,
@@ -341,6 +371,7 @@ def _load_training_assets(
             *tuple(program.parameters()),
             *tuple(compiler.scale_head.parameters()),
         ),
+        condition_cache=condition_cache,
     )
 
 
@@ -421,6 +452,7 @@ def prepare_mapping_runtime(
         rank4_contract=assets.rank4_contract,
         native_teachers=assets.native_teachers,
         consensus_teachers=consensus_teachers,
+        condition_cache=assets.condition_cache,
         query_points=assets.query_points,
         trainable_parameters=assets.trainable,
         frozen_parameters=assets.frozen,
@@ -578,6 +610,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--tokenizer-path", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--condition-cache-root", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-macro", type=int)
     parser.add_argument("--log-every", type=int, default=1)
@@ -593,6 +626,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "tokenizer_path",
         "data_root",
         "output_dir",
+        "condition_cache_root",
         "resume",
     ):
         value = getattr(args, name)

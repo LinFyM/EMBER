@@ -10,10 +10,12 @@ import torch.distributed as dist
 
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler_data import (
-    cache_shared_compiler_native_replay,
     pack_shared_compiler_videos,
     prepare_shared_compiler_condition,
     prepare_shared_compiler_program,
+)
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FrozenSharedCompilerCondition,
 )
 from ember.ecp.bank_conditioning.mapping import (
     MappingCondition,
@@ -73,24 +75,53 @@ def _pack_mapping_condition(
 
 
 def prepare_mapping_condition(
-    runtime: MappingRuntime, condition: MappingCondition
+    runtime: MappingRuntime,
+    condition: MappingCondition,
+    *,
+    retain_cache: bool = True,
 ):
-    packed, tokens, mask = _pack_mapping_condition(runtime, condition)
-    prepared = prepare_shared_compiler_condition(
-        policy=runtime.policy,
-        program_model=runtime.program,
-        owners=runtime.owners,
-        packed=packed,
-        language_tokens=tokens,
-        language_mask=mask,
-        chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
+    def builder():
+        packed, tokens, mask = _pack_mapping_condition(runtime, condition)
+        return prepare_shared_compiler_condition(
+            policy=runtime.policy,
+            program_model=runtime.program,
+            owners=runtime.owners,
+            packed=packed,
+            language_tokens=tokens,
+            language_mask=mask,
+            chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
+        )
+
+    result = runtime.condition_cache.get_or_build(
+        authority_id=condition.authority_id,
+        video_demo=condition.video_demo,
+        device=runtime.context.device,
+        builder=builder,
+        retain=retain_cache,
     )
-    return cache_shared_compiler_native_replay(prepared)
+    return FrozenSharedCompilerCondition(
+        program=result.condition.program,
+        videos=result.condition.videos,
+        metrics={
+            **result.condition.metrics,
+            "frozen_condition_cache": "hit" if result.hit else "built",
+            "frozen_condition_cache_file_bytes": result.file_bytes,
+            "frozen_condition_cache_build_seconds": result.build_seconds,
+            "frozen_condition_cache_load_seconds": result.load_seconds,
+        },
+    )
 
 
 def prepare_mapping_condition_program(
     runtime: MappingRuntime, condition: MappingCondition
 ):
+    cached = runtime.condition_cache.load_program(
+        authority_id=condition.authority_id,
+        video_demo=condition.video_demo,
+        device=runtime.context.device,
+    )
+    if cached is not None:
+        return cached
     packed, tokens, mask = _pack_mapping_condition(runtime, condition)
     return prepare_shared_compiler_program(
         policy=runtime.policy,
@@ -104,8 +135,12 @@ def prepare_mapping_condition_program(
 def prepare_mapping_condition_output(
     runtime: MappingRuntime,
     condition: MappingCondition,
+    *,
+    retain_cache: bool = True,
 ) -> tuple[Any, Mapping[str, Any]]:
-    prepared = prepare_mapping_condition(runtime, condition)
+    prepared = prepare_mapping_condition(
+        runtime, condition, retain_cache=retain_cache
+    )
     return mapping_condition_output(runtime, condition, prepared)
 
 
@@ -116,11 +151,15 @@ def mapping_condition_output(
     *,
     program: Any | None = None,
 ) -> tuple[Any, Mapping[str, Any]]:
-    output = runtime.compiler(
-        prepared.program if program is None else program,
-        prepared.videos,
-        s_ref=runtime.ranks.s_ref,
-    )
+    selected_program = prepared.program if program is None else program
+    if isinstance(prepared, FrozenSharedCompilerCondition):
+        output = runtime.compiler.forward_compact(
+            selected_program, prepared.videos, s_ref=runtime.ranks.s_ref
+        )
+    else:
+        output = runtime.compiler(
+            selected_program, prepared.videos, s_ref=runtime.ranks.s_ref
+        )
     if len(prepared.videos) != 1 or output.video_weights.shape != (1,):
         raise RuntimeError("G3 mapping condition escaped K1 identity")
     return output, {
@@ -340,7 +379,7 @@ def run_mapping_optimizer_step(
             raise RuntimeError(f"G3 mapping {name} gradient is absent or non-finite")
         probe_norms[name] = float(gradient.float().norm())
     if min(probe_norms.values()) <= 0:
-        raise RuntimeError("G3 mapping anchor or group-gain gradient is zero")
+        raise RuntimeError("G3 mapping primal scorer gradient is zero")
     gradient_norm = _clip_gradients(
         runtime.trainable_parameters,
         maximum=float(

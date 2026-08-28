@@ -32,6 +32,7 @@ from ember.ecp.shared_compiler_assets import (
     build_frozen_g2_program,
     load_shared_compiler_config,
     load_shared_rank_assets,
+    load_shared_scale_prior,
 )
 from ember.ecp.shared_compiler_authority import pure_shared_compiler_inventory
 from ember.ecp.shared_compiler_data import (
@@ -179,6 +180,9 @@ def _prepare_runtime(args: argparse.Namespace) -> F0Runtime:
         relative_eigenvalue_floor=float(config["model"]["relative_eigenvalue_floor"]),
         replay_score_rms=float(config["model"]["replay_score_rms"]),
         covariance_frame_chunk=int(config["model"]["frame_chunk_size"]),
+        scale_prior_ratio=load_shared_scale_prior(
+            config, asset_root=asset_root, device=device
+        ),
     ).to(device).train()
     inventory = pure_shared_compiler_inventory(
         policy=policy, program=program, compiler=compiler, owners=owners

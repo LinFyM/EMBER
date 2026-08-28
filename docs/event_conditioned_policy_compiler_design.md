@@ -419,7 +419,10 @@ G3按以下因果顺序推进：
 3. **P2 Frozen-Program shared mapping**：P1通过后，从fresh训练共享full-Program-to-primal scorer；使用原329 fit、40 held-video、82
    task-holdout与set-valued whole-member paired effective-update credit，scale继续冻结。两个相邻single checkpoints必须满足held median
    `>=.75`、p10`>=.50`、held/fit`>=.8`，并分别报告q/v/action与meta/target。correct-vs-wrong Program同role panel的role median margin
-   必须`>=.10`，防止学习universal primal。内部loss、projection或task93见证不能代替。
+   必须`>=.10`，防止学习universal primal。P2的冻结scale使用排除held video、由40个mapping-fit tasks按task等权导出的唯一共享
+   `[38,4]` rank template乘`s_ref`，不含task/video lookup且不进入optimizer；它只隔离方向Gate，scale学习仍属于F4。冻结Program、
+   raw X/Y与B0 operator可放入run-local node-local cache以消除重复policy capture，但cache不是checkpoint或deployment输入，四类Y bank
+   仍须按单视频边界在线构造。内部loss、projection或task93见证不能代替。
 4. **F4 scale/functional qualification**：P2通过后才解冻独立scale职责并恢复全部75 fit tasks；paired mapping不能退化，functional、
    cross-episode flow和carrier preservation要改善。只有证据指向低置信随机residual破坏carrier时才加入deployment-visible confidence。
 5. **F5 K恢复**：按K1到K2再到K4恢复多视频职责；K2/K4不读teacher，要求K1 identity、集合置换不变、same-task retention`>=80%`。
@@ -519,7 +522,9 @@ successful members、effect calibration、probe-particle capture、carrier/mobil
 当前活动树已经实现真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、G2 Natural
 Program、Program-to-target-native primal scorer、per-video global covariance、截断谱primal-to-dual solve、IEEE exact signed replay、uniform
 K aggregation、small-core rank4 canonicalization、rank12+4唯一rank16和451-condition mapping/evaluator wiring；Action Meta默认关闭。
-fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。clean pushed detached `e2f9d33`的完整38-target K1/K4
+fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。P2另有非checkpoint、非deployment的run-local compact
+frozen-condition cache，仅保存Program、raw X/Y、final Y和B0 operator；fit retained、held ephemeral，四类Y bank仍在线构造。clean pushed
+detached `e2f9d33`的完整38-target K1/K4
 P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
 clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
 optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把当前最早未验证接口收敛到P2 shared

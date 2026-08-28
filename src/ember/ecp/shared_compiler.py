@@ -8,7 +8,10 @@ from typing import Sequence
 import torch
 
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
+    CompactPrimalDualVideo,
+    MaterializedPrimalDualVideo,
     PrimalDualVideoOperator,
+    PrimalDualVideoResult,
 )
 from ember.ecp.bank_conditioning.program_primal import (
     PrimalProgramState,
@@ -71,6 +74,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         relative_eigenvalue_floor: float = 1e-6,
         replay_score_rms: float = 0.02,
         covariance_frame_chunk: int = 4,
+        scale_prior_ratio: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -79,6 +83,11 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
+        if scale_prior_ratio is None:
+            scale_prior_ratio = torch.full(
+                (len(self.owners), 4), 0.1, dtype=torch.float32
+            )
+        scale_prior_ratio = scale_prior_ratio.detach().float()
         if (
             not self.owners
             or self.program_width <= 0
@@ -86,8 +95,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             or not 0.0 < self.relative_eigenvalue_floor < 1.0
             or self.replay_score_rms <= 0.0
             or self.covariance_frame_chunk <= 0
+            or scale_prior_ratio.shape != (len(self.owners), 4)
+            or not bool(torch.isfinite(scale_prior_ratio).all())
+            or not bool(torch.all((scale_prior_ratio > 0) & (scale_prior_ratio < 1)))
         ):
             raise NativeFactorError("invalid primal-dual compiler topology")
+        self.register_buffer(
+            "scale_prior_ratio", scale_prior_ratio.clone(), persistent=True
+        )
         self.primal_scorer = ProgramNativePrimalScorer(
             self.owners,
             program_width=self.program_width,
@@ -108,10 +123,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             torch.nn.Linear(self.program_width, 1),
         )
         torch.nn.init.zeros_(self.scale_head[-1].weight)
-        torch.nn.init.constant_(
-            self.scale_head[-1].bias,
-            float(torch.atanh(torch.tensor(0.1))),
-        )
+        torch.nn.init.zeros_(self.scale_head[-1].bias)
 
     def forward(
         self,
@@ -122,22 +134,78 @@ class SharedNativeFactorCompiler(torch.nn.Module):
     ) -> SharedCompilerOutput:
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compiler video set or scale authority changed")
-        if s_ref.device.type == "cuda":
-            # Retained modes can approach condition 1e6; TF32 destroys the
-            # signed cancellation even when the eigensolve itself is valid.
-            torch.backends.cuda.matmul.allow_tf32 = False
         for video in videos:
             self.bank_operator.validate_video(video)
+        with self.bank_operator.ieee_matmul(s_ref.device):
+            state: PrimalProgramState = self.primal_scorer.program_state(program)
+            input_primals = self.primal_scorer.input_primals(state)
+            output_primals = self.primal_scorer.output_primals(state)
+            pooled = tuple(
+                self.bank_operator(video, input_primals, output_primals)
+                for video in videos
+            )
+            return self._output(state, pooled, s_ref=s_ref)
 
-        state: PrimalProgramState = self.primal_scorer.program_state(program)
-        input_primals = self.primal_scorer.input_primals(state)
-        output_primals = self.primal_scorer.output_primals(state)
-        pooled = tuple(
-            self.bank_operator(video, input_primals, output_primals)
-            for video in videos
-        )
-        beta = state.rank.new_full((len(videos),), 1.0 / len(videos))
-        scale_logits = self.scale_head(state.stable_rank.detach()).squeeze(-1)
+    def forward_materialized(
+        self,
+        program: NaturalProgram,
+        videos: Sequence[MaterializedPrimalDualVideo],
+        *,
+        s_ref: torch.Tensor,
+    ) -> SharedCompilerOutput:
+        """Training-only replay of a frozen bank prepared by canonical B0."""
+
+        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
+            raise NativeFactorError("materialized compiler video set changed")
+        with self.bank_operator.ieee_matmul(s_ref.device):
+            state: PrimalProgramState = self.primal_scorer.program_state(program)
+            input_primals = self.primal_scorer.input_primals(state)
+            output_primals = self.primal_scorer.output_primals(state)
+            pooled = tuple(
+                self.bank_operator.apply_materialized(
+                    video, input_primals, output_primals
+                )
+                for video in videos
+            )
+            return self._output(state, pooled, s_ref=s_ref)
+
+    def forward_compact(
+        self,
+        program: NaturalProgram,
+        videos: Sequence[CompactPrimalDualVideo],
+        *,
+        s_ref: torch.Tensor,
+    ) -> SharedCompilerOutput:
+        """P2 replay of cached raw X/Y without storing expanded output banks."""
+
+        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
+            raise NativeFactorError("compact compiler video set changed")
+        with self.bank_operator.ieee_matmul(s_ref.device):
+            state: PrimalProgramState = self.primal_scorer.program_state(program)
+            input_primals = self.primal_scorer.input_primals(state)
+            output_primals = self.primal_scorer.output_primals(state)
+            pooled = tuple(
+                self.bank_operator.apply_compact(
+                    video, input_primals, output_primals
+                )
+                for video in videos
+            )
+            return self._output(state, pooled, s_ref=s_ref)
+
+    def _output(
+        self,
+        state: PrimalProgramState,
+        pooled: Sequence[PrimalDualVideoResult],
+        *,
+        s_ref: torch.Tensor,
+    ) -> SharedCompilerOutput:
+        if len(pooled) not in (1, 2, 4):
+            raise NativeFactorError("compiler pooled video set changed")
+        beta = state.rank.new_full((len(pooled),), 1.0 / len(pooled))
+        scale_logits = torch.atanh(self.scale_prior_ratio.to(state.rank))
+        scale_logits = scale_logits + self.scale_head(
+            state.stable_rank.detach()
+        ).squeeze(-1)
         scales = s_ref[:, None].to(scale_logits) * torch.tanh(scale_logits)
         input_directions, output_directions, scaled_outputs = [], [], []
         for target in range(len(self.owners)):

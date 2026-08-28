@@ -1,5 +1,29 @@
 # EMBER progress
 
+## 2026-08-29 P2执行面接通，等待clean authority六卡profile
+
+P2保持唯一active v5数学不变，只训练共享full-Program-to-primal scorer。为避免329个fit conditions在每次optimizer update都重新运行
+冻结的Pass A和38-target policy capture，当前实现增加run-local、node-local frozen-condition cache：每个condition只保存冻结Program、
+raw native X/Y、final Y和B0截断谱operator；abs/adj/init/goal仍在每次B1 replay中按单视频边界在线构造。cache不进入Writer
+checkpoint、不是deployment输入，也不保存展开四倍的Y bank。正式训练只持久缓存329个mapping-fit conditions，40个held-video和82个
+task-holdout conditions在451评估中即时构造后释放，避免`/dev/shm`容量被held evidence占用。
+
+原先统一`.1*s_ref`的冻结scale在“方向完全正确”的解析自相似上，fit task median仅`.767177`、p10`.751008`，离P2 held
+median `.75` Gate过近，会把方向学习与scale ceiling混为一谈。首版P2因此使用一个由40个mapping-fit tasks、排除预注册held video的
+complete member consensus按task等权中位数导出的共享`[38,4]` rank template，再乘每target `s_ref`；它对所有task/video相同，scale
+head仍完全冻结且不含lookup。该模板的fit解析ceiling为median `.997017`、p10`.974083`、minimum `.964334`；held仅作post-hoc
+诊断，video/task-holdout medians为`.996952/.997577`。这只移除P2的scale混杂，不证明shared Program mapping；scale学习仍推迟到F4。
+
+gpu01物理0上的真实task1/video16 smoke已证明：cache miss `11.320s`，命中后的完整38-target forward/backward `2.625s`，文件
+`783,773,240` bytes，peak allocated/reserved约`14.19/19.73GiB`；217个primal-scorer参数梯度全部有限非零，Action Meta module为0、
+scale trainable parameter为0。相同raw X/Y与B0 operator在chunked streaming和compact replay间最大绝对误差
+`2.384185791015625e-07`，cache write/read factor误差为0；每次算子调用前后TF32全局状态均恢复。独立重新capture的深层BF16 native
+activation可有一个量化步差异，随机近零primal会放大为最低`.867` update cosine；同bank交叉臂为约1.0，故这不是cache或chunk错误，
+且P1已在不同真实videos的有意义primal上证明`.9545` held recovery。
+
+全仓`198 passed`。下一步只做clean pushed detached authority上的world6 cold/hot profile，核对真实step、cache峰值、GPU利用率与
+NCCL/NUMA；通过后立即启动fresh P2 macro5和完整451-condition Gate。shuffled/reversed不使用。
+
 ## 2026-08-28 v5 P0通过，P1六任务资格已预注册
 
 clean pushed detached `main@e2f9d33`上的真实38-target P0已在gpu01物理1完成并通过。K1/K4均使用纯Native Stage 0，实际

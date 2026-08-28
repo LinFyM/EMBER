@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -61,6 +62,18 @@ class MaterializedPrimalDualVideo:
 
 
 @dataclass(frozen=True)
+class CompactPrimalDualVideo:
+    """Frozen raw X/Y plus B0 operator; output-bank types stay implicit."""
+
+    frame_measure: torch.Tensor
+    input_operators: tuple[SpectralNativeCovariance, ...]
+    output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...]
+    input_values: tuple[torch.Tensor, ...]
+    output_values: tuple[torch.Tensor, ...]
+    final_outputs: tuple[torch.Tensor, ...]
+
+
+@dataclass(frozen=True)
 class _ReplayPlan:
     input_queries: tuple[torch.Tensor, ...]
     output_queries: tuple[tuple[torch.Tensor, ...], ...]
@@ -89,6 +102,21 @@ class PrimalDualVideoOperator:
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
+
+    @staticmethod
+    @contextmanager
+    def ieee_matmul(device: torch.device):
+        """Scope native capture/statistics/replay to the qualified IEEE mode."""
+
+        if device.type != "cuda":
+            yield
+            return
+        previous = torch.backends.cuda.matmul.allow_tf32
+        torch.backends.cuda.matmul.allow_tf32 = False
+        try:
+            yield
+        finally:
+            torch.backends.cuda.matmul.allow_tf32 = previous
 
     @staticmethod
     def quadrature(positions: torch.Tensor) -> torch.Tensor:
@@ -334,10 +362,11 @@ class PrimalDualVideoOperator:
         """Read B0 once and retain only its detached spectral operator."""
 
         self.validate_video(video)
-        frame, input_stats, output_stats = self._covariance_statistics(video)
-        input_operators, output_operators = self._solve_operators(
-            input_stats, output_stats
-        )
+        with self.ieee_matmul(video.frame_positions.device):
+            frame, input_stats, output_stats = self._covariance_statistics(video)
+            input_operators, output_operators = self._solve_operators(
+                input_stats, output_stats
+            )
         return PreparedPrimalDualVideo(
             video=video,
             frame_measure=frame,
@@ -346,9 +375,15 @@ class PrimalDualVideoOperator:
         )
 
     def materialize(
-        self, prepared: PreparedPrimalDualVideo
+        self,
+        prepared: PreparedPrimalDualVideo,
+        *,
+        value_dtype: torch.dtype | None = torch.float32,
     ) -> MaterializedPrimalDualVideo:
         """Pack a fixed fit-only bank once for repeated exact softmax replay."""
+
+        if value_dtype not in (None, torch.bfloat16, torch.float32):
+            raise NativeFactorError("materialized replay storage dtype changed")
 
         video = prepared.video
         frame = prepared.frame_measure
@@ -382,18 +417,20 @@ class PrimalDualVideoOperator:
                 for target, (owner, x, y) in enumerate(
                     zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
                 ):
-                    input_blocks[target].append(
-                        x.detach().reshape(-1, owner.in_features).float()
-                    )
+                    input_value = x.detach().reshape(-1, owner.in_features)
+                    if value_dtype is not None:
+                        input_value = input_value.to(dtype=value_dtype)
+                    input_blocks[target].append(input_value)
                     bank = boundaries[target].build(y, start_frame=next_frame)
                     groups = native_output_group_count(owner)
                     width = owner.out_features // groups
                     grouped = bank.reshape(
                         *bank.shape[:-1], groups, width
                     ).movedim(-2, 0)
-                    output_blocks[target].append(
-                        grouped.reshape(groups, -1, width).float()
-                    )
+                    output_value = grouped.reshape(groups, -1, width)
+                    if value_dtype is not None:
+                        output_value = output_value.to(dtype=value_dtype)
+                    output_blocks[target].append(output_value)
                 next_frame = stop
         if next_frame != video.native.frame_count or any(
             boundary.next_frame != next_frame for boundary in boundaries
@@ -409,9 +446,41 @@ class PrimalDualVideoOperator:
             output_mass=torch.cat(output_mass),
         )
 
+    def compact(self, prepared: PreparedPrimalDualVideo) -> CompactPrimalDualVideo:
+        """Seal raw native values once without expanding four output-bank types."""
+
+        video = prepared.video
+        input_blocks: list[list[torch.Tensor]] = [[] for _ in self.owners]
+        output_blocks: list[list[torch.Tensor]] = [[] for _ in self.owners]
+        next_frame = 0
+        with torch.no_grad():
+            for chunk in video.native.chunks():
+                if chunk.start_frame != next_frame or chunk.frame_count <= 0:
+                    raise NativeFactorError("compact replay stream changed")
+                for target, (x, y) in enumerate(
+                    zip(chunk.inputs, chunk.outputs, strict=True)
+                ):
+                    input_blocks[target].append(x.detach())
+                    output_blocks[target].append(y.detach())
+                next_frame += chunk.frame_count
+        if next_frame != video.native.frame_count:
+            raise NativeFactorError("compact replay stream ended early")
+        return CompactPrimalDualVideo(
+            frame_measure=prepared.frame_measure,
+            input_operators=prepared.input_operators,
+            output_operators=prepared.output_operators,
+            input_values=tuple(torch.cat(rows, dim=0) for rows in input_blocks),
+            output_values=tuple(torch.cat(rows, dim=0) for rows in output_blocks),
+            final_outputs=tuple(value.detach() for value in video.native.final_outputs),
+        )
+
     def _plan(
         self,
-        prepared: PreparedPrimalDualVideo | MaterializedPrimalDualVideo,
+        prepared: (
+            PreparedPrimalDualVideo
+            | MaterializedPrimalDualVideo
+            | CompactPrimalDualVideo
+        ),
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
     ) -> _ReplayPlan:
@@ -484,28 +553,96 @@ class PrimalDualVideoOperator:
     ) -> PrimalDualVideoResult:
         """Replay a fixed diagnostic bank without repeated Python chunk launches."""
 
-        plan = self._plan(prepared, input_primals, output_primals)
-        inputs = tuple(
-            self._materialized_signed_pool(query, values, prepared.input_mass)
-            for query, values in zip(
-                plan.input_queries, prepared.input_values, strict=True
+        with self.ieee_matmul(prepared.frame_measure.device):
+            plan = self._plan(prepared, input_primals, output_primals)
+            inputs = tuple(
+                self._materialized_signed_pool(query, values, prepared.input_mass)
+                for query, values in zip(
+                    plan.input_queries, prepared.input_values, strict=True
+                )
             )
-        )
-        grouped_outputs = tuple(
-            self._materialized_signed_pool(
-                torch.stack(queries), values, prepared.output_mass
+            grouped_outputs = tuple(
+                self._materialized_signed_pool(
+                    torch.stack(queries), values, prepared.output_mass
+                )
+                for queries, values in zip(
+                    plan.output_queries, prepared.output_values, strict=True
+                )
             )
-            for queries, values in zip(
-                plan.output_queries, prepared.output_values, strict=True
+            outputs = tuple(
+                value.permute(1, 0, 2).reshape(G1_RESIDUAL_RANK, -1)
+                for value in grouped_outputs
             )
-        )
-        outputs = tuple(
-            value.permute(1, 0, 2).reshape(G1_RESIDUAL_RANK, -1)
-            for value in grouped_outputs
-        )
         return PrimalDualVideoResult(
             input_values=inputs,
             output_values=outputs,
+            frame_measure=plan.frame_measure,
+            group_gains=plan.group_gains,
+            solve_metrics=plan.solve_metrics,
+            conditioning_metrics=plan.conditioning_metrics,
+        )
+
+    def apply_compact(
+        self,
+        prepared: CompactPrimalDualVideo,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+    ) -> PrimalDualVideoResult:
+        """Replay cached raw X/Y with the canonical fixed-microblock reduction."""
+
+        with self.ieee_matmul(prepared.frame_measure.device):
+            plan = self._plan(prepared, input_primals, output_primals)
+            input_block, output_block = self._candidate_blocks()
+            inputs = tuple(
+                StreamingSignedPool(
+                    query,
+                    trusted_positive_measure=True,
+                    canonical_block_candidates=input_block,
+                )
+                for query in plan.input_queries
+            )
+            outputs = tuple(
+                tuple(
+                    StreamingSignedPool(
+                        query,
+                        trusted_positive_measure=True,
+                        canonical_block_candidates=output_block,
+                    )
+                    for query in groups
+                )
+                for groups in plan.output_queries
+            )
+            x_mass = native_candidate_mass(prepared.frame_measure, output=False)
+            y_mass = native_candidate_mass(prepared.frame_measure, output=True)
+            for target, (owner, x, y) in enumerate(
+                zip(
+                    self.owners,
+                    prepared.input_values,
+                    prepared.output_values,
+                    strict=True,
+                )
+            ):
+                inputs[target].add(x, x_mass)
+                boundary = NativeOutputBankState(
+                    final=prepared.final_outputs[target].detach()
+                )
+                bank = boundary.build(y, start_frame=0)
+                if boundary.next_frame != prepared.frame_measure.shape[0]:
+                    raise NativeFactorError("compact output boundary ended early")
+                groups = native_output_group_count(owner)
+                grouped = bank.reshape(
+                    *bank.shape[:-1], groups, owner.out_features // groups
+                ).movedim(-2, 0)
+                for group, accumulator in enumerate(outputs[target]):
+                    accumulator.add(grouped[group], y_mass)
+        return PrimalDualVideoResult(
+            input_values=tuple(value.signed_mean() for value in inputs),
+            output_values=tuple(
+                torch.cat(
+                    tuple(value.signed_mean() for value in groups), dim=-1
+                )
+                for groups in outputs
+            ),
             frame_measure=plan.frame_measure,
             group_gains=plan.group_gains,
             solve_metrics=plan.solve_metrics,
@@ -599,8 +736,9 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
     ) -> PrimalDualVideoResult:
-        plan = self._plan(prepared, input_primals, output_primals)
-        inputs, outputs = self._replay(prepared.video, plan)
+        with self.ieee_matmul(prepared.frame_measure.device):
+            plan = self._plan(prepared, input_primals, output_primals)
+            inputs, outputs = self._replay(prepared.video, plan)
         return PrimalDualVideoResult(
             input_values=inputs,
             output_values=outputs,

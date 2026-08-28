@@ -9,6 +9,11 @@ from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler import SharedCompilerVideo, SharedNativeFactorCompiler
+from ember.ecp.shared_compiler_data import SharedCompilerCondition
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FrozenMappingConditionCache,
+    frozen_condition_cache_authority,
+)
 from ember.ecp.policy_effects import ExecutionPolicyPrefix, PolicyEffectResponse
 from ember.ecp.shared_compiler_effects import (
     SharedCompilerEffectBank,
@@ -137,6 +142,16 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         input_primals,
         output_primals,
     )
+    materialized_output = compiler.forward_materialized(
+        program,
+        (compiler.bank_operator.materialize(prepared),),
+        s_ref=scale,
+    )
+    compact_output = compiler.forward_compact(
+        program,
+        (compiler.bank_operator.compact(prepared),),
+        s_ref=scale,
+    )
     for left, right in zip(
         (*replayed.input_values, *replayed.output_values),
         (*direct.input_values, *direct.output_values),
@@ -149,7 +164,19 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    for left, right in zip(
+        (*compact_output.residual.a, *compact_output.residual.b),
+        (*expected.residual.a, *expected.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right)
     torch.testing.assert_close(replayed.solve_metrics, direct.solve_metrics)
+    for left, right in zip(
+        (*materialized_output.residual.a, *materialized_output.residual.b),
+        (*expected.residual.a, *expected.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
 
     assert torch.equal(expected.video_weights, torch.ones(1))
     for target, (a_direction, b_direction) in enumerate(
@@ -214,6 +241,95 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     )
 
 
+def test_frozen_mapping_condition_cache_round_trips_exact_bank(tmp_path) -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4
+    )
+    program = _program(len(owners), 8, 4)
+    condition = SharedCompilerCondition(
+        program=program,
+        videos=(
+            _video(owners, seed=59, chunks=(2, 3), width=8, events=4),
+        ),
+        metrics={"K": 1, "video_demos": [3], "sampled_frames": [5]},
+    )
+    authority = frozen_condition_cache_authority(
+        config_schema="test",
+        config_bytes=17,
+        source_checkpoint=tmp_path / "source",
+        g2_program_checkpoint=tmp_path / "g2",
+        native_observer_checkpoint=tmp_path / "observer",
+        frame_stride=5,
+        owners=owners,
+    )
+    cache = FrozenMappingConditionCache(
+        tmp_path / "cache",
+        owners=owners,
+        operator=compiler.bank_operator,
+        authority=authority,
+    )
+    calls = 0
+
+    def build() -> SharedCompilerCondition:
+        nonlocal calls
+        calls += 1
+        return condition
+
+    first = cache.get_or_build(
+        authority_id=7,
+        video_demo=3,
+        device=torch.device("cpu"),
+        builder=build,
+    )
+    second = cache.get_or_build(
+        authority_id=7,
+        video_demo=3,
+        device=torch.device("cpu"),
+        builder=build,
+    )
+    assert calls == 1
+    assert not first.hit and second.hit
+    assert first.file_bytes == second.file_bytes > 0
+    assert first.condition.metrics == second.condition.metrics
+    assert all(
+        first.condition.metrics[key] == value
+        for key, value in condition.metrics.items()
+    )
+    assert first.condition.metrics["native_replay"] == "ephemeral_frozen_XY_cache"
+    ephemeral_first = cache.get_or_build(
+        authority_id=8,
+        video_demo=4,
+        device=torch.device("cpu"),
+        builder=build,
+        retain=False,
+    )
+    ephemeral_second = cache.get_or_build(
+        authority_id=8,
+        video_demo=4,
+        device=torch.device("cpu"),
+        builder=build,
+        retain=False,
+    )
+    assert calls == 3
+    assert not ephemeral_first.hit and not ephemeral_second.hit
+    assert ephemeral_first.file_bytes == ephemeral_second.file_bytes == 0
+    assert not (cache.root / "task_008_video_004.safetensors").exists()
+    scale = torch.ones(len(owners))
+    left = compiler.forward_compact(
+        first.condition.program, first.condition.videos, s_ref=scale
+    )
+    right = compiler.forward_compact(
+        second.condition.program, second.condition.videos, s_ref=scale
+    )
+    for first_value, second_value in zip(
+        (*left.residual.a, *left.residual.b),
+        (*right.residual.a, *right.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(first_value, second_value)
+
+
 def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
@@ -236,6 +352,32 @@ def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
         torch.testing.assert_close(left, right)
     assert not torch.equal(output_before[0], output_after[0])
     assert not torch.equal(output_before[1][0], output_after[1][0])
+
+
+def test_frozen_scale_prior_is_task_agnostic_and_exact_before_f4() -> None:
+    owners = _owners()
+    prior = torch.tensor(
+        [
+            [0.05, 0.10, 0.15, 0.20],
+            [0.12, 0.18, 0.24, 0.30],
+            [0.08, 0.16, 0.32, 0.40],
+            [0.07, 0.14, 0.21, 0.28],
+        ]
+    )
+    compiler = SharedNativeFactorCompiler(
+        owners,
+        program_width=8,
+        event_slots=4,
+        scale_prior_ratio=prior,
+    )
+    scale = torch.tensor([2.0, 3.0, 4.0, 5.0])
+    video = _video(owners, seed=71, chunks=(2, 2), width=8, events=4)
+    first = compiler(_program(len(owners), 8, 4), (video,), s_ref=scale)
+    second = compiler(_program(len(owners), 8, 4), (video,), s_ref=scale)
+    expected = scale[:, None] * prior
+    torch.testing.assert_close(first.residual.scales, expected)
+    torch.testing.assert_close(second.residual.scales, expected)
+    assert not compiler.scale_prior_ratio.requires_grad
 
 
 def test_anchor_code_uses_video_program_fields() -> None:

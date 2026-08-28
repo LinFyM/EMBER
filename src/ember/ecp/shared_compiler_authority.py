@@ -12,6 +12,9 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.native_factors import native_capture_modes
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FROZEN_CONDITION_CACHE_SCHEMA,
+)
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
@@ -19,7 +22,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 RUN_SCHEMA = "ember_ecp_shared_compiler_g3_run_v2"
-MAPPING_RUN_SCHEMA = "ember_ecp_shared_compiler_mapping_run_v1"
+MAPPING_RUN_SCHEMA = "ember_ecp_shared_compiler_mapping_run_v2"
 
 
 def _topology(context: DistributedContext) -> list[Any]:
@@ -281,6 +284,29 @@ def build_mapping_run_contract(
     )
     if forbidden or native_teacher_store.tensor_reads != 0:
         raise ValueError("G3 mapping checkpoint or prelaunch teacher wall changed")
+    final_scale = compiler.scale_head[-1]
+    scale_parameters = tuple(compiler.scale_head.parameters())
+    if (
+        any(value.requires_grad for value in scale_parameters)
+        or bool(torch.count_nonzero(final_scale.weight.detach()))
+        or bool(torch.count_nonzero(final_scale.bias.detach()))
+        or compiler.scale_prior_ratio.shape != (38, 4)
+        or not bool(
+            torch.all(
+                (compiler.scale_prior_ratio > 0)
+                & (compiler.scale_prior_ratio < 1)
+            )
+        )
+    ):
+        raise ValueError("G3 P2 frozen scale policy changed")
+    scale_prior_path = Path(
+        str(config["authorities"]["frozen_scale_prior"])
+    )
+    if not scale_prior_path.is_absolute():
+        scale_prior_path = args.asset_root / scale_prior_path
+    scale_prior_path = scale_prior_path.resolve()
+    if not scale_prior_path.is_file():
+        raise ValueError("G3 P2 frozen scale prior is missing")
     return {
         "schema_version": MAPPING_RUN_SCHEMA,
         "stage": f"g3_mapping_{args.phase}",
@@ -338,6 +364,16 @@ def build_mapping_run_contract(
             ),
             "checkpoint_tensor_names": len(state_names),
             "checkpoint_forbidden_names": list(forbidden),
+            "frozen_scale_policy": (
+                "fit_only_task_equal_member_median_rank_template_times_s_ref"
+            ),
+            "frozen_scale_trainable_parameter_count": 0,
+            "frozen_scale_prior": {
+                "path": str(scale_prior_path),
+                "bytes": scale_prior_path.stat().st_size,
+                "minimum_ratio": float(compiler.scale_prior_ratio.min()),
+                "maximum_ratio": float(compiler.scale_prior_ratio.max()),
+            },
         },
         "optimization": dict(config["optimization"]),
         "information_wall": dict(config["information_wall"]),
@@ -350,6 +386,17 @@ def build_mapping_run_contract(
             "global_logical_tasks_per_optimizer_step": 6,
             "role_weighting": "three meta-fit plus three target-fit",
             "two_K1_videos_per_logical_task": True,
+            "frozen_condition_cache": {
+                "schema_version": FROZEN_CONDITION_CACHE_SCHEMA,
+                "root": str(args.condition_cache_root),
+                "node_local_operational_artifact": True,
+                "retained_conditions": "mapping_fit_only",
+                "held_video_and_task_conditions": "ephemeral_not_retained",
+                "contents": "frozen_Program_raw_XY_and_B0_spectral_operator",
+                "output_bank_types": "constructed_online_with_video_boundaries",
+                "checkpoint_payload": False,
+                "deployment_input": False,
+            },
         },
         "gradient_wall": {
             "source_policy_trainable_parameter_count": 0,

@@ -211,6 +211,7 @@ def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None
                 {
                     "split": split,
                     "authority_id": 1,
+                    "role": "meta_fit" if split != "task_holdout" else "meta_held",
                     "mean_best_recovery": recovery,
                     "best_family_recovery": {
                         name: recovery for name in ("q", "v", "action_in", "action_out")
@@ -223,6 +224,7 @@ def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None
             {
                 "split": split,
                 "authority_id": 2,
+                "role": "target_fit" if split != "task_holdout" else "target_held",
                 "mean_best_recovery": 1.0,
                 "best_family_recovery": {
                     name: 1.0 for name in ("q", "v", "action_in", "action_out")
@@ -232,6 +234,8 @@ def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None
     summary = summarize_mapping_rows(rows)
     assert summary["fit"]["condition_recovery"]["mean"] == 2.0 / 3.0
     assert summary["fit"]["task_recovery"]["mean"] == 0.75
+    assert summary["fit"]["role_task_recovery"]["meta_fit"]["mean"] == 0.5
+    assert summary["fit"]["role_task_recovery"]["target_fit"]["mean"] == 1.0
 
 
 def test_program_causality_panel_is_fit_only_same_role_and_task_robust() -> None:

@@ -1071,6 +1071,21 @@ current-bank dual接口而非长时间拟合或偶然optimizer峰值。meta与ta
 才处理shared generalization；absolute高而correct-vs-wrong Program margin低则是universal shortcut。P1并未验证Program或deployment
 Writer，不能把task-local code带入P2 forward/checkpoint。
 
+### 65. P2必须隔离scale ceiling；compact frozen-bank replay保持同一数学
+
+P2只裁决共享Program能否预测task-specific primal，不能让一个已知过弱的冻结scale把正确方向判成失败。原统一`.1*s_ref`即使直接使用
+teacher方向，fit task-equal update cosine也只有median`.767177`、p10`.751008`、minimum`.742298`，几乎要求方向完美才可能跨过
+held median`.75` Gate。由40个mapping-fit tasks、排除各自预注册held video的fit-consensus scales先按member、再按task等权做
+coordinatewise median，得到唯一共享`[38,4]` ratio template后，fit解析ceiling提高到median`.997017`、p10`.974083`、minimum
+`.964334`；held-video与task-holdout medians也为`.996952/.997577`。这不是task/video lookup或scale sweep：所有condition使用同一个
+fit-only模板，scale head保持冻结，F4仍单独裁决scale学习。
+
+重复冻结policy capture不是P2的科学变量。run-local cache只封存Program、raw X/Y、final Y和同一B0谱operator；输入候选仍没有output
+type，四类output bank在replay时由每条视频自己的first/previous/final状态在线生成。真实task1的相同bank在原frame-chunk streaming与
+compact replay之间最大误差`2.384185791015625e-07`，cache round-trip factor误差0，且IEEE scope调用后恢复进程原TF32状态。因此cache
+只消除重复冻结计算，不改变signed attention measure、视频边界、梯度owner或deployment合同。独立重跑冻结BF16 policy时深层activation
+可发生一个量化步差，不能用随机近零primal下的跨capture cosine冒充cache不一致；同bank reference和P1跨video有意义方向才是正确裁决。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

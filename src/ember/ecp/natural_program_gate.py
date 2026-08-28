@@ -9,6 +9,7 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 
+from ember.ecp.behavior.gate import build_behavior_gate
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramOutput
 from ember.ecp.natural_program_data import (
     NaturalProgramSample,
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from ember.ecp.natural_program_training import NaturalProgramRuntime
 
 
-GATE_SCHEMA = "ember_ecp_natural_program_g2_gate_v1"
+GATE_SCHEMA = "ember_ecp_natural_program_g2_gate_v2"
 
 
 def _owner_event_vector(process: torch.Tensor, presence: torch.Tensor) -> torch.Tensor:
@@ -199,6 +200,21 @@ def _task_gate_record(
 
     active_a = int((output_a.program.rho[0].float() > 0.5).sum())
     active_b = int((output_b.program.rho[0].float() > 0.5).sum())
+    behavior_predictions = None
+    if runtime.model.behavior_decoder is not None:
+        if runtime.behavior_codes is None:
+            raise RuntimeError("G2 held Gate lost behavior-code authority")
+        behavior_predictions = {
+            name: runtime.behavior_codes.decode(
+                runtime.model.behavior_decoder(output.program)[0]
+            ).detach().cpu()
+            for name, output in (
+                ("same_a", output_a),
+                ("same_b", output_b),
+                ("k1", output_k1),
+                ("k4", output_k4),
+            )
+        }
     return {
         "authority_id": task.authority_id,
         "domain": task.domain,
@@ -241,6 +257,7 @@ def _task_gate_record(
                 dim=0,
             ).float().mean()
         ),
+        "behavior_predictions": behavior_predictions,
     }
 
 
@@ -276,7 +293,8 @@ def _distance_rows(
                 **{
                     name: value
                     for name, value in row.items()
-                    if name not in {"embedding_a", "embedding_b"}
+                    if name
+                    not in {"embedding_a", "embedding_b", "behavior_predictions"}
                 },
                 "same_task_distance": same,
                 "nearest_cross_distance_a": cross_a,
@@ -365,6 +383,8 @@ def _build_report(
     *,
     macro: int,
     thresholds: Mapping[str, Any],
+    behavior_authority: Any | None = None,
+    behavior_thresholds: Mapping[str, float] | None = None,
 ) -> dict[str, Any]:
     records.sort(key=lambda row: int(row["authority_id"]))
     if len(records) != 20 or {row["role"] for row in records} != {
@@ -379,6 +399,14 @@ def _build_report(
         probe_passes=probe_passes,
     )
     checks = _threshold_checks(metrics, thresholds)
+    behavior = None
+    if behavior_authority is not None:
+        if behavior_thresholds is None:
+            raise ValueError("G2 behavior Gate lost its thresholds")
+        behavior = build_behavior_gate(
+            records, behavior_authority, behavior_thresholds
+        )
+        checks["behavior_alignment"] = bool(behavior["passed"])
     return {
         "schema_version": GATE_SCHEMA,
         "stage": "g2_natural_program",
@@ -402,6 +430,7 @@ def _build_report(
         "metrics": metrics,
         "checks": checks,
         "passed": all(checks.values()),
+        "behavior_alignment": behavior,
         "tasks": task_rows,
     }
 
@@ -428,6 +457,12 @@ def evaluate_natural_program_gate(
                     records,
                     macro=macro,
                     thresholds=runtime.config["gate"],
+                    behavior_authority=runtime.behavior_codes,
+                    behavior_thresholds=(
+                        runtime.config["behavior_alignment"]["gate"]
+                        if runtime.behavior_codes is not None
+                        else None
+                    ),
                 )
                 path = runtime.args.output_dir / "gates" / f"macro_{macro:08d}.json"
                 if path.exists():

@@ -4,10 +4,10 @@
 
 ## 当前目标
 
-owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
-分别通过对应Gate；当前推进Phase G3 Program-primal/current-bank-global-dual shared compiler。G1只证明真实native banks与signed pooling存在强rank4
-residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
-任一阶段仍不代表整体项目goal完成。
+owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle已通过；G2原动态Gate也已通过，但G3/P2及随后
+95-task held-out诊断证明该Gate只验证了视频动态，没有验证Program能否在未见task上表达policy需要的行为方向。当前按专家预注册fallback
+暂停G3 operator修正，最小重开G2 behavior alignment；通过新增的行为Gate后再冻结Program返回G3。G1/G2局部结论、单次训练或内部指标
+都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -186,9 +186,27 @@ G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块owne
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，
 `natural_program_objective.py`拥有机制loss，`natural_program_authority.py`拥有run provenance与信息墙inventory，
 `natural_program_training.py`拥有macro/checkpoint编排，`natural_program_train_step.py`拥有唯一role-balanced optimizer update，
-`natural_program_gate.py`拥有无梯度held20 Gate。Stage0 encoder、通用
+`natural_program_gate.py`拥有无梯度held20 Gate；`behavior/codes.py`只拥有可由G2/G3共同复用的fit-only行为坐标authority与共享读出器，
+`behavior/gate.py`拥有rank16 basis及exact rank4 held资格。Stage0 encoder、通用
 checkpoint和既有video/action stores只复用，不复制。G3复用并冻结通过Gate的Program schema/model；G2 trainer、label sealer和Gate在
 formal结论固化后仅作为可复现实证runner保留，不成为平行Writer或deployment fallback。
+
+#### G2-B behavior-aligned sufficiency
+
+- [x] 为meta56+target19 fit及meta15+target5 held各封存两组disjoint cross-episode flow-gradient panels；held任务没有optimizer梯度；
+- [x] role-balanced rank16 behavior manifold在held20对独立panel-B/consensus达到`.7160/.8006`，而universal只有`.1908`，证明目标与
+  rank16容量成立；rank32只小幅增加约`.0526`；
+- [x] frozen `c1493a1/macro20` Program的full/process读出器在fit75达到约`.97`，held exact rank4却只有`.2695/.2470`，与
+  language-only`.2687`同量级；最早失效接口确定为G2跨task behavior identifiability，而不是native bank、rank4、G3 dual/operator或训练不足；
+- [x] 接通唯一G2路径上的training-only process decoder、role-balanced behavior loss、旧qualified model-only初始化与fresh optimizer；
+  decoder不能读取task ID、`P_lang/P_scene`或deployment外信息，Program schema保持不变；
+- [x] 接通held20 exact-rank4 Gate：overall/consensus、四family、meta/target role、wrong Program、language增量、K1/K4与跨video一致性
+  均有固定阈值；shuffled/reversed不使用；
+- [x] 真实task74 K4 profile完成：behavior decoder与既有process fusion梯度`.6286/4.4444`，source/Stage0/Action Meta为0，单步
+  `13.30s`；同一Gate对旧frozen Program正确non-pass而非自动放行；
+- [ ] 在clean pushed detached authority封存95-task behavior-code asset，完成六卡formal macro10及同一旧动态+新行为Gate；
+- [ ] non-pass时按fit loss、held role/family、K/view与原动态retention定位最早接口；只有新机制证据才允许继续修正，不做seed/LR/
+  width/rank小扫；通过后冻结唯一Program checkpoint并更新G3 v5 authority。
 
 ### G3 Frozen-Program shared compiler
 

@@ -7,7 +7,10 @@ cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步�
 signed-pooling可达性，但旧共享selector在held video只有`.023`，bank-independent native dual只有`.075`；同一task primal经每条当前
 bank的全局单位质量covariance对偶化后，fit/held立即恢复到`.904--.911/.901`。因此当前活动修正不是继续叠加scorer，而是让共享
 Program预测target-native primal，由当前video bank的确定性全局covariance solve把它变为dual query，再对真实X/Y做exact signed replay。
-该诊断仍只定位接口，不等于G3 Gate；本文是当前唯一架构依据。
+P1随后证明该operator在六tasks、四family和held videos上达到`.9545`。但95-task behavior-sufficiency诊断又发现：fit75行为流形对
+held20具有`.7160` rank16可达性，旧frozen G2 Program的shared读出却只有`.247--.270`且不优于language-only，因此最早失效接口
+进一步上移为G2跨task behavior identifiability。当前先保持Program schema与旧动态Gate，最小增加fit-only behavior alignment并重新
+资格；通过后才恢复G3 Program-to-primal训练。该诊断仍只定位接口，不等于G2/G3 Gate；本文是当前唯一架构依据。
 
 三次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`和`docs/expert_review_20260828_g3_functional_sketch.md`。本文是将专家
@@ -398,7 +401,38 @@ Program readout、监督可识别性、optimizer cadence等最早接口；用可
 “信号存在但没有被当前训练读出”。不设次数上限，但每次修正都必须只针对有新机制证据的接口并重新通过同一资格门，不能靠
 slot数、width、seed或连续架构版本形成无信息迭代。
 
+#### G2-B. policy-behavior sufficiency修正
+
+旧G2 Gate通过后，P1已把native bank、rank4和current-bank primal-to-dual operator排除为首因；P2及其后95-task probe则证明旧
+Program仍缺一项此前没有测量的资格。75 fit tasks各用两组disjoint、与video跨episode的flow-gradient panels，按meta56/target19
+各50%建立normalized behavior kernel PCA；20个meta/target held tasks只作一次固定final诊断。rank16 span在held panel-B/consensus
+达到`.7160/.8006`，universal只有`.1908`，而旧frozen Program即使由能把fit75读到约`.97`的shared reader解释，held exact rank4
+仍只有full`.2695`、process`.2470`、language-only`.2687`。因此旧`22.2047%`动态增量保持有效，但不能再被解释为Program已经足够
+指定未见task的policy adaptation。
+
+当前唯一G2修正保持：
+
+- `P_lang/P_scene/P_process/rho/tau/sigma`固定schema、E=8、boundary-anchored alignment和`beta_k=1/K`；
+- frozen source PI0.5与Native Stage0 v3，Action Meta关闭；
+- 原action/progress/predicate/event/probe/robustness目标与held动态Gate；
+- canonical `scripts/train_ecp_natural_program.py`入口，不增加第二套Program或deployment路径。
+
+新增的训练期behavior decoder只读取`P_process/rho/tau/sigma`，不能读取task ID、`P_lang/P_scene`、behavior label或teacher action作为
+forward输入。它在75 fit tasks上预测上述8个浅/中/深q/v与action-in/out targets的rank16标准化坐标，并把一项role-balanced behavior
+alignment loss反传到Program；decoder与坐标authority都不是deployment输入，G3/Writer抽取Program时不调用它。初始化只加载
+`c1493a1/macro20`共同model tensors，新decoder、optimizer、scheduler与data cursor fresh；这不是old checkpoint续训或target lookup。
+
+20 held tasks同时重新通过旧动态Gate，并在固定K2-A/K2-B/K1/K4 videos上满足：exact rank4对独立panel-B role-equal median至少`.50`、
+对consensus至少`.60`，q/v各`.50`、action-in/out`.35/.50`，correct-vs-same-role-wrong Program margin至少`.10`，meta-held与
+target-held各至少`.45`，相对预封存language-only`.2687`至少增加`.10`，每种video view coordinate至少`.65`且cross-view specific
+consistency至少`.70`。held behavior labels不产生梯度；checkpoint只在预注册macro评估，不用shuffled/reversed。若fit behavior loss
+不降，先检查decoder/Program优化接口；fit高而两role held低，说明Stage0/Program输入仍缺跨task sufficient statistic；behavior通过而旧动态
+Gate回退，则处理表示—事件职责冲突。只有这些机制分支能触发下一修正，不能用seed、LR、width或rank小扫。
+
 ### G3. Frozen-Program shared compiler
+
+以下G3 operator与Gate合同不变，但当前暂停在G2-B资格之前；旧`c1493a1/macro20`仍是动态正证据和初始化authority，不再作为足够的
+final frozen Program。只有G2-B同时通过旧动态Gate与新增behavior Gate，才更新唯一G3 Program checkpoint并恢复P2。
 
 使用meta56+target-fit19、自然videos和现有95-task/118-member evidence，跨episode采样并保持两种task role等质量。G2 Program、source、
 carrier和task experts冻结；首版只训练共享Program-to-primal scorer，当前bank covariance、谱solve、真实X/Y和scale冻结。selection logits

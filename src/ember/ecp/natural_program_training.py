@@ -14,7 +14,12 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
-from ember.ecp.contracts import build_target_owners
+from ember.ecp.behavior.codes import (
+    BehaviorCodeAuthority,
+    load_behavior_code_authority,
+    load_program_model_initialization,
+)
+from ember.ecp.contracts import TargetFamily, build_target_owners
 from ember.ecp.natural_program import NaturalProgramModel
 from ember.ecp.natural_program_authority import (
     RUN_SCHEMA,
@@ -93,6 +98,8 @@ class NaturalProgramRuntime:
     start_macro: int
     metrics_rows: int
     run_contract: dict[str, Any]
+    behavior_codes: BehaviorCodeAuthority | None
+    initialization: dict[str, Any] | None
 
     def close(self) -> None:
         self.video_store.close()
@@ -100,40 +107,84 @@ class NaturalProgramRuntime:
         self.label_store.close()
 
 
+def _common_config_signature(config: Mapping[str, Any]) -> tuple[Any, ...]:
+    data = config.get("data", {})
+    model = config.get("model", {})
+    objective = config.get("objective", {})
+    negatives = int(objective.get("contrastive_negative_languages", 0))
+    return (
+        data.get("K_values"),
+        data.get("video_weights"),
+        data.get("robustness_for_every_task"),
+        model.get("target_owners"),
+        model.get("event_slots"),
+        model.get("program_width"),
+        model.get("process_fusion_inputs"),
+        model.get("temporal_head_inputs"),
+        model.get("native_observer_training"),
+        model.get("temporal_owner_readout"),
+        model.get("canonical_alignment"),
+        config.get("gate", {}).get("shuffled_or_reversed_use"),
+        negatives > 0 and negatives % 2 == 0,
+        objective.get("temporal_residual_mode"),
+    )
+
+
+def _behavior_config_signature(config: Mapping[str, Any]) -> tuple[Any, ...]:
+    behavior = config.get("behavior_alignment")
+    if not isinstance(behavior, Mapping):
+        return ()
+    return (
+        behavior.get("selected_targets"),
+        behavior.get("families"),
+        int(behavior.get("dimension", 0)),
+        behavior.get("decoder_inputs"),
+        int(config["optimization"]["tasks_per_role_per_optimizer_step"]),
+        float(config["objective"]["weights"].get("behavior_alignment", 0.0)) > 0.0,
+        config.get("initialization", {}).get("kind"),
+    )
+
+
 def load_natural_program_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if (
-        config.get("schema_version") != "ember_ecp_natural_program_g2_v1"
-        or config.get("data", {}).get("K_values") != [1, 2, 4]
-        or config.get("data", {}).get("video_weights")
-        != "uniform_beta_1_over_K"
-        or config.get("model", {}).get("target_owners") != 38
-        or config.get("model", {}).get("event_slots") != 8
-        or config.get("model", {}).get("program_width") != 128
-        or config.get("model", {}).get("process_fusion_inputs")
-        != ["native_process", "native_uncertainty"]
-        or config.get("model", {}).get("temporal_head_inputs")
-        != ["P_process", "rho", "tau"]
-        or config.get("model", {}).get("native_observer_training")
-        != "frozen_stage0_v3"
-        or config.get("model", {}).get("temporal_owner_readout")
-        != "fixed_owner_specific_linear_v1"
-        or config.get("model", {}).get("canonical_alignment")
-        != "boundary_anchored_forward_only_dp_v2"
-        or config.get("gate", {}).get("shuffled_or_reversed_use") is not False
-        or config.get("data", {}).get("robustness_for_every_task") is not True
-        or int(config.get("objective", {}).get(
-            "contrastive_negative_languages", 0
-        )) <= 0
-        or int(config.get("objective", {}).get(
-            "contrastive_negative_languages", 0
-        )) % 2
-        or config.get("objective", {}).get("temporal_residual_mode")
-        != "query_centered_mse_v1"
-        or int(config.get("optimization", {}).get(
-            "tasks_per_role_per_optimizer_step", 0
-        )) != 2
-    ):
+    schema = config.get("schema_version")
+    common = (
+        [1, 2, 4],
+        "uniform_beta_1_over_K",
+        True,
+        38,
+        8,
+        128,
+        ["native_process", "native_uncertainty"],
+        ["P_process", "rho", "tau"],
+        "frozen_stage0_v3",
+        "fixed_owner_specific_linear_v1",
+        "boundary_anchored_forward_only_dp_v2",
+        False,
+        True,
+        "query_centered_mse_v1",
+    )
+    if _common_config_signature(config) != common:
+        raise ValueError("unsupported G2 Natural Program config")
+    tasks_per_role = int(
+        config.get("optimization", {}).get("tasks_per_role_per_optimizer_step", 0)
+    )
+    if schema == "ember_ecp_natural_program_g2_v1":
+        if config.get("behavior_alignment") is not None or tasks_per_role != 2:
+            raise ValueError("legacy G2 config unexpectedly enables behavior alignment")
+    elif schema == "ember_ecp_natural_program_g2_behavior_v2":
+        expected_behavior = (
+            [0, 16, 34, 1, 17, 35, 36, 37],
+            ["q", "q", "q", "v", "v", "v", "action_in", "action_out"],
+            16,
+            ["P_process", "rho", "tau", "sigma"],
+            3,
+            True,
+            "qualified_g2_model_only_fresh_optimizer",
+        )
+        if _behavior_config_signature(config) != expected_behavior:
+            raise ValueError("unsupported behavior-aligned G2 config")
+    else:
         raise ValueError("unsupported G2 Natural Program config")
     return config
 
@@ -227,6 +278,8 @@ def _load_program_model(
     owners = build_target_owners(
         load_pi05_lora_contract(_authority(config, "lora_contract"))
     )
+    behavior = config.get("behavior_alignment")
+    family_order = {family.value: index for index, family in enumerate(TargetFamily)}
     native = load_frozen_native_observer(
         stage0_config=load_stage0_config(_authority(config, "stage0_config")),
         owners=owners,
@@ -244,6 +297,18 @@ def _load_program_model(
         event_slots=int(config["model"]["event_slots"]),
         action_phases=int(config["model"]["action_phases"]),
         predicate_slots=int(config["model"]["predicate_slots"]),
+        behavior_targets=(
+            tuple(map(int, behavior["selected_targets"])) if behavior else ()
+        ),
+        behavior_family_ids=(
+            tuple(family_order[str(value)] for value in behavior["families"])
+            if behavior
+            else ()
+        ),
+        behavior_dimension=int(behavior["dimension"]) if behavior else 16,
+        behavior_hidden_width=(
+            int(behavior["decoder_hidden_width"]) if behavior else 64
+        ),
     ).to(context.device)
     model.requires_grad_(True)
     # Stage 0 v3 is an established observer authority.  G2 qualifies the new
@@ -335,6 +400,77 @@ def _resume_cursor(
     return start_macro, metrics_rows
 
 
+def _behavior_alignment_assets(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    model: NaturalProgramModel,
+    device: torch.device,
+) -> tuple[BehaviorCodeAuthority | None, dict[str, Any] | None]:
+    behavior = config.get("behavior_alignment")
+    if behavior is None:
+        return None, None
+    authority = load_behavior_code_authority(
+        _asset_authority(args, config, "behavior_codes"),
+        asset_root=args.asset_root,
+        device=device,
+    )
+    if authority.selected_targets != tuple(map(int, behavior["selected_targets"])):
+        raise ValueError("G2 behavior-code target order changed")
+    initialization = load_program_model_initialization(
+        model,
+        _asset_authority(args, config, "initial_program_checkpoint"),
+        device=device,
+        allowed_new_prefix=str(config["initialization"]["allowed_new_prefix"]),
+        expected_macro=int(config["initialization"]["checkpoint_macro"]),
+    )
+    return authority, initialization
+
+
+def _program_optimizer(
+    model: NaturalProgramModel,
+    config: Mapping[str, Any],
+    *,
+    total_optimizer_steps: int,
+    warmup_optimizer_steps: int,
+) -> tuple[
+    tuple[torch.nn.Parameter, ...],
+    torch.optim.Optimizer,
+    torch.optim.lr_scheduler.LRScheduler,
+]:
+    trainable = tuple(
+        parameter for parameter in model.parameters() if parameter.requires_grad
+    )
+    behavior_parameters = (
+        tuple(model.behavior_decoder.parameters())
+        if model.behavior_decoder is not None
+        else ()
+    )
+    behavior_ids = {id(parameter) for parameter in behavior_parameters}
+    program_parameters = tuple(
+        parameter for parameter in trainable if id(parameter) not in behavior_ids
+    )
+    optimizer_parameters: Any = trainable
+    if behavior_parameters:
+        optimizer_parameters = [
+            {
+                "params": program_parameters,
+                "lr": float(config["optimization"]["scheduler"]["peak_lr"]),
+            },
+            {
+                "params": behavior_parameters,
+                "lr": float(config["optimization"]["behavior_decoder_peak_lr"]),
+            },
+        ]
+    optimizer = build_stage0_optimizer(optimizer_parameters, config["optimization"])
+    scheduler = _scheduler(
+        optimizer,
+        config,
+        total_optimizer_steps,
+        warmup_optimizer_steps,
+    )
+    return trainable, optimizer, scheduler
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> NaturalProgramRuntime:
@@ -361,23 +497,24 @@ def prepare_runtime(
     source, source_config, policy, model = _load_program_model(
         args, config, context
     )
+    behavior_codes, initialization = _behavior_alignment_assets(
+        args, config, model, context.device
+    )
     initialize_deferred_process_group(
         context, rendezvous_root=args.output_dir.parent
     )
     if context.world_size > 1:
         for value in model.state_dict().values():
             dist.broadcast(value, src=0)
-    trainable_parameters = tuple(
-        parameter for parameter in model.parameters() if parameter.requires_grad
-    )
     frozen_parameters = tuple(policy.parameters()) + tuple(model.encoder.parameters())
-    optimizer = build_stage0_optimizer(trainable_parameters, config["optimization"])
-    scheduler = _scheduler(
-        optimizer,
+    trainable_parameters, optimizer, scheduler = _program_optimizer(
+        model,
         config,
-        total * optimizer_steps_per_macro,
-        int(config["optimization"]["scheduler"]["warmup_macros"])
-        * optimizer_steps_per_macro,
+        total_optimizer_steps=total * optimizer_steps_per_macro,
+        warmup_optimizer_steps=(
+            int(config["optimization"]["scheduler"]["warmup_macros"])
+            * optimizer_steps_per_macro
+        ),
     )
 
     video_store, action_store, label_store, language_tokens = _open_program_data(
@@ -400,6 +537,8 @@ def prepare_runtime(
         tasks_per_role_per_optimizer_step=tasks_per_role_per_optimizer_step,
         repo_root=REPO_ROOT,
         native_checkpoint=native_checkpoint,
+        behavior_codes=behavior_codes,
+        initialization=initialization,
     )
     publish_natural_program_run_contract(args, context, contract)
 
@@ -446,6 +585,8 @@ def prepare_runtime(
         start_macro=start_macro,
         metrics_rows=metrics_rows,
         run_contract=contract,
+        behavior_codes=behavior_codes,
+        initialization=initialization,
     )
 
 
@@ -515,6 +656,12 @@ def run_natural_program_macro(
         "optimizer_updates": updates,
         "owner_query_gradient_norm_before_clip": updates[-1][
             "owner_query_gradient_norm_before_clip"
+        ],
+        "behavior_decoder_gradient_norm_before_clip": updates[-1][
+            "behavior_decoder_gradient_norm_before_clip"
+        ],
+        "behavior_program_gradient_norm_before_clip": updates[-1][
+            "behavior_program_gradient_norm_before_clip"
         ],
         "gradient_norm_before_clip": updates[-1]["gradient_norm_before_clip"],
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
@@ -593,7 +740,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_behavior_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

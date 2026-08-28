@@ -19,7 +19,7 @@ def main() -> None:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_behavior_v2.json",
     )
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--assets-root", type=Path, required=True)

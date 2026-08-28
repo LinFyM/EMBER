@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import torch
 
+from ember.ecp.behavior.codes import BehaviorCodeDecoder
 from ember.ecp.stage0 import ECPVideoEncoder, ECPVideoEncoderOutput
 
 
@@ -294,6 +295,10 @@ class NaturalProgramModel(torch.nn.Module):
         event_slots: int = 8,
         action_phases: int = 10,
         predicate_slots: int = 8,
+        behavior_targets: tuple[int, ...] = (),
+        behavior_family_ids: tuple[int, ...] = (),
+        behavior_dimension: int = 16,
+        behavior_hidden_width: int = 64,
     ) -> None:
         super().__init__()
         self.encoder = encoder
@@ -322,6 +327,19 @@ class NaturalProgramModel(torch.nn.Module):
             owners=owners,
             action_phases=action_phases,
             predicate_slots=predicate_slots,
+        )
+        self.behavior_decoder = (
+            BehaviorCodeDecoder(
+                program_width=width,
+                hidden_width=behavior_hidden_width,
+                event_slots=event_slots,
+                selected_targets=behavior_targets,
+                family_ids=behavior_family_ids,
+                family_count=4,
+                dimension=behavior_dimension,
+            )
+            if behavior_targets
+            else None
         )
 
     @staticmethod

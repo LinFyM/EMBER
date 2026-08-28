@@ -8,6 +8,7 @@ from typing import Any, Mapping
 import torch
 import torch.nn.functional as F
 
+from ember.ecp.behavior.codes import behavior_alignment_loss
 from ember.ecp.natural_program import NaturalProgramOutput
 
 
@@ -29,6 +30,7 @@ class NaturalProgramLoss:
     event_budget: torch.Tensor
     tau_order: torch.Tensor
     uncertainty_calibration: torch.Tensor
+    behavior_alignment: torch.Tensor
 
 
 def program_embedding(output: NaturalProgramOutput) -> torch.Tensor:
@@ -96,6 +98,39 @@ def _temporal_prediction_losses(
     )
 
 
+def _behavior_term(
+    output: NaturalProgramOutput,
+    prediction: torch.Tensor | None,
+    robust_prediction: torch.Tensor | None,
+    target: torch.Tensor | None,
+) -> torch.Tensor:
+    values = (prediction, robust_prediction, target)
+    if all(value is None for value in values):
+        return output.program.p_process.new_zeros(())
+    if any(value is None for value in values):
+        raise ValueError("partial behavior-alignment supervision")
+    return behavior_alignment_loss(prediction, robust_prediction, target)
+
+
+def _event_consistency_losses(
+    output: NaturalProgramOutput,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    aligned = _aligned_local_process(output)
+    targets = output.program.p_process.index_select(0, output.video_condition_ids)
+    event_weight = output.program.rho.index_select(0, output.video_condition_ids)
+    same_task = (
+        (aligned - targets).float().square().mean(dim=(2, 3)) * event_weight.float()
+    ).sum() / event_weight.sum().clamp_min(1e-6)
+    probe_weight = output.probe_presence.mean(0)[..., None, None]
+    probe = (
+        (output.probe_process[0] - output.probe_process[1]).float().square()
+        * probe_weight.float()
+    ).sum() / probe_weight.sum().clamp_min(1e-6) / (
+        output.local_process.shape[-2] * output.local_process.shape[-1]
+    )
+    return same_task, probe
+
+
 def natural_program_loss(
     output: NaturalProgramOutput,
     batch: Any,
@@ -104,6 +139,9 @@ def natural_program_loss(
     robust_output: NaturalProgramOutput | None = None,
     negative_embeddings: torch.Tensor | None = None,
     contrastive_temperature: float = 0.1,
+    behavior_prediction: torch.Tensor | None = None,
+    robust_behavior_prediction: torch.Tensor | None = None,
+    behavior_target: torch.Tensor | None = None,
 ) -> NaturalProgramLoss:
     prediction = output.predictions
     action, action_temporal, progress, progress_temporal = (
@@ -139,26 +177,7 @@ def natural_program_loss(
         1.0
     ) / scene_raw.shape[1]
 
-    aligned = _aligned_local_process(output)
-    targets = output.program.p_process.index_select(
-        0, output.video_condition_ids
-    )
-    event_weight = output.program.rho.index_select(
-        0, output.video_condition_ids
-    )
-    same_task_event = (
-        (aligned - targets).float().square().mean(dim=(2, 3)) * event_weight.float()
-    ).sum() / event_weight.sum().clamp_min(1e-6)
-
-    probe_weight = output.probe_presence.mean(0)[..., None, None]
-    probe_stability = (
-        (output.probe_process[0] - output.probe_process[1])
-        .float()
-        .square()
-        * probe_weight.float()
-    ).sum() / probe_weight.sum().clamp_min(1e-6) / (
-        output.local_process.shape[-2] * output.local_process.shape[-1]
-    )
+    same_task_event, probe_stability = _event_consistency_losses(output)
 
     if robust_output is None:
         robustness = output.program.p_process.new_zeros(())
@@ -188,6 +207,12 @@ def natural_program_loss(
     uncertainty_calibration = 0.5 * (
         probe_delta / variance + variance.log()
     ).mean()
+    behavior_alignment = _behavior_term(
+        output,
+        behavior_prediction,
+        robust_behavior_prediction,
+        behavior_target,
+    )
 
     terms = {
         "action": action,
@@ -205,9 +230,10 @@ def natural_program_loss(
         "event_budget": event_budget,
         "tau_order": tau_order,
         "uncertainty_calibration": uncertainty_calibration,
+        "behavior_alignment": behavior_alignment,
     }
-    missing = set(terms) - set(weights)
+    missing = set(terms) - set(weights) - {"behavior_alignment"}
     if missing:
         raise ValueError(f"missing Natural Program loss weights: {sorted(missing)}")
-    total = sum(float(weights[name]) * value for name, value in terms.items())
+    total = sum(float(weights.get(name, 0.0)) * value for name, value in terms.items())
     return NaturalProgramLoss(total=total, **terms)

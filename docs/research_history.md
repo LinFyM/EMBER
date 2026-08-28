@@ -891,3 +891,26 @@ held`.935001`，全部Gate通过。该结果只证明current-bank primal→dual/
 
 - `runs/analysis/pi05_ecp_shared_compiler_g3_v5_f0_e2f9d33_task93_gpu01p1_20260828.json`；
 - `runs/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/`。
+
+## 47. 95-task behavior sufficiency把最早接口上移到G2跨task表征
+
+P1通过后，P2 frozen-Program shared mapping在25 steps只缓慢升至约`.154`，Program-to-primal task-held读出长期约`.20--.26`；继续
+修改operator已与P1证据冲突。按第三次专家复核预注册的“task-local/behavior strong而shared low则重开Program sufficiency”分支，补齐
+95 tasks的两组disjoint cross-episode flow-gradient panels，并从`c1493a1/macro20`提取每task两套disjoint K4及一套K1 Program。
+
+75 fit tasks按meta/target role各50%建立的rank16 behavior manifold，在meta-held15+target-held5对独立panel-B/consensus为
+`.7160/.8006`；universal为`.1908`，rank32只比rank16增加约`.0526`。四个固定1000-step shared readers在fit75可达约`.97--.98`，
+但held exact rank4仅full`.2695`、process`.2470`、dynamic`.2368`、language-only`.2687`。full的q/v/action-in/action-out为
+`.4335/.2873/.1583/.1886`，meta-held/target-held为`.3684/.1707`。wrong-Program margin`.2054`说明旧Program有task identity，
+但没有把未见task映射到正确policy-behavior方向。
+
+该结果不推翻G2原动态Gate，也不恢复旧Writer；它把原结论精确收窄为“Program保留视频动态，但尚未证明policy-behavior sufficiency”。
+活动计划因此暂停G3 operator迭代，保持Program schema、Stage0 v3、uniform K与原loss/Gate，从旧qualified model tensors初始化、fresh optimizer
+增加process-only training decoder和fit-only rank16 behavior alignment；20 held tasks只作exact-rank4 Gate。真实task74 K4一步已证明新增
+loss对decoder与既有process fusion均有有限非零梯度，source/Stage0/Action Meta为0；formal结果尚未产生。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g2_behavior_manifold95_rolebalanced_5781694_gpu01p6_20260829.json`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_program95_combined_5781694_20260829/manifest.json`。

@@ -117,6 +117,19 @@ def _run_task_step(
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output = _forward(runtime, batch, task_id)
         robust_output = _forward(runtime, robust_batch, task_id)
+        behavior_prediction = None
+        robust_behavior_prediction = None
+        behavior_target = None
+        if runtime.model.behavior_decoder is not None:
+            if runtime.behavior_codes is None:
+                raise RuntimeError("G2 behavior decoder lost its target authority")
+            behavior_prediction = runtime.model.behavior_decoder(output.program)
+            robust_behavior_prediction = runtime.model.behavior_decoder(
+                robust_output.program
+            )
+            behavior_target = runtime.behavior_codes.target(
+                task_id, standardized=True
+            )
         loss = natural_program_loss(
             output,
             batch,
@@ -126,6 +139,9 @@ def _run_task_step(
             contrastive_temperature=float(
                 runtime.config["objective"]["contrastive_temperature"]
             ),
+            behavior_prediction=behavior_prediction,
+            robust_behavior_prediction=robust_behavior_prediction,
+            behavior_target=behavior_target,
         )
     if not bool(torch.isfinite(loss.total)):
         raise RuntimeError(f"non-finite G2 loss at macro {macro}, task {task_id}")
@@ -163,6 +179,22 @@ def run_natural_program_optimizer_step(
     owner_gradient_norm = float(owner_gradient.float().norm())
     if owner_gradient_norm <= 0.0:
         raise RuntimeError("G2 owner-specific temporal readout has zero gradient")
+    behavior_gradient_norm = 0.0
+    behavior_program_gradient_norm = 0.0
+    if runtime.model.behavior_decoder is not None:
+        behavior_gradient = runtime.model.behavior_decoder.output_heads[0].weight.grad
+        program_gradient = runtime.model.process_fusion[0].weight.grad
+        if (
+            behavior_gradient is None
+            or program_gradient is None
+            or not bool(torch.isfinite(behavior_gradient).all())
+            or not bool(torch.isfinite(program_gradient).all())
+        ):
+            raise RuntimeError("G2 behavior alignment lost its finite gradient path")
+        behavior_gradient_norm = float(behavior_gradient.float().norm())
+        behavior_program_gradient_norm = float(program_gradient.float().norm())
+        if behavior_gradient_norm <= 0.0 or behavior_program_gradient_norm <= 0.0:
+            raise RuntimeError("G2 behavior alignment has a zero gradient path")
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     gradient_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
     if not bool(torch.isfinite(gradient_norm)):
@@ -188,8 +220,13 @@ def run_natural_program_optimizer_step(
         "global_task_count": global_task_count,
         "role_counts": role_counts,
         "owner_query_gradient_norm_before_clip": owner_gradient_norm,
+        "behavior_decoder_gradient_norm_before_clip": behavior_gradient_norm,
+        "behavior_program_gradient_norm_before_clip": behavior_program_gradient_norm,
         "gradient_norm_before_clip": float(gradient_norm),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
+        "next_lrs": [
+            float(group["lr"]) for group in runtime.optimizer.param_groups
+        ],
         "step_seconds": time.monotonic() - tick,
     }
     return global_records, summary, task_ids

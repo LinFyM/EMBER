@@ -1086,6 +1086,42 @@ compact replay之间最大误差`2.384185791015625e-07`，cache round-trip facto
 只消除重复冻结计算，不改变signed attention measure、视频边界、梯度owner或deployment合同。独立重跑冻结BF16 policy时深层activation
 可发生一个量化步差，不能用随机近零primal下的跨capture cosine冒充cache不一致；同bank reference和P1跨video有意义方向才是正确裁决。
 
+### 66. frozen G2只通过动态Gate，未形成可迁移的policy-behavior坐标
+
+按第三次专家复核预先规定的fallback，在不修改G3 operator的前提下完成95-task behavior sufficiency诊断。每个task用两组互不重叠、
+与video跨episode的256-row flow-gradient panel，在q/v浅中深及action-in/out共8个native targets上形成rank4行为方向；75个fit tasks按
+meta56/target19各占50%建立normalized behavior kernel PCA，meta-held15+target-held5全程零梯度且只在固定final probe读取。
+
+该行为流形本身对未见task有充分容量：held20两panel repeatability role-equal median为`.6666`，fit75 rank16 span对独立panel-B与
+consensus分别达到`.7160/.8006`，q/v/action-in/action-out对panel-B为`.7571/.8009/.5482/.7779`；task-independent universal只有
+`.1908`，rank32相对rank16仅增加约`.0526`。因此rank16是有证据的首版容量，native行为目标、held噪声或rank ceiling不是当前首因。
+
+随后从通过旧G2 Gate的`c1493a1/macro20`为全部95 tasks提取两个disjoint K4与一个K1 frozen Program view。四个匹配读出器固定训练
+1000步，其中full/process/dynamic在fit75的coordinate cosine均达到约`.97--.98`，排除了读出器没有拟合训练条件；但held20的exact
+rank4对panel-B仅为full`.2695`、process`.2470`、dynamic`.2368`，与learned language-only`.2687`同量级，远低于`.7160` span oracle。
+full的q/v/action-in/action-out仅`.4335/.2873/.1583/.1886`，meta-held/target-held分别`.3684/.1707`。wrong-Program margin虽为
+`.2054`，说明Program含task identity，却没有把未见task组织到正确policy-behavior方向。K1/K4与两套K4 view均同样低，故不是某一视频
+cardinality或单次抽样。
+
+最早失效接口由此从G3 scorer/operator上移到**G2跨task行为可识别性**：旧G2的`22.2047%` full-vs-endpoints动态Gate仍是有效正证据，
+但只证明事件、进度与视频动态存在，不能再被解释为Program已足够支持shared policy adaptation。当前最小修正保持Program固定schema、
+Stage0 v3、boundary-anchored alignment、uniform K、全部原动态loss与唯一执行路径；从`c1493a1/macro20`只加载model参数，以fresh optimizer
+新增一个训练期process-only shared behavior decoder。它只读取`P_process/rho/tau/sigma`，以75 fit的role-balanced rank16坐标产生一项
+behavior alignment loss；20 held坐标只进入预注册exact-rank4 Gate，不进入梯度或普通checkpoint选择。首版Gate要求overall/panel-B
+`.50`、consensus`.60`、q/v各`.50`、action-in/out`.35/.50`、wrong margin`.10`、两种held role各`.45`，并保持K1/K4与跨video
+robustness以及原G2全部动态Gate。
+
+真实task74 K4 profile已验证该新增loss为`1.3104`，行为decoder与既有`process_fusion`梯度范数分别`.6286/4.4444`，旧temporal owner
+gradient`.0805`，source/Native Stage0 trainable均为0、Action Meta module/parameter为0；一步墙钟`13.30s`、peak allocated约
+`9.28GiB`。同一新decoder在旧frozen Program上的独立Gate smoke仍只有exact`.2121`、oracle`.7160`并正确non-pass，证明新Gate不是
+被实现错误自动放行。当前因此先formal验证behavior-aligned G2，未恢复旧Writer/realizer，也不继续叠加G3 polar/SVD数学。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g2_behavior_manifold95_rolebalanced_5781694_gpu01p6_20260829.json`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_program95_combined_5781694_20260829/manifest.json`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

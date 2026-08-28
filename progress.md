@@ -1,5 +1,37 @@
 # EMBER progress
 
+## 2026-08-29 G2 behavior sufficiency失败，最小行为对齐修正已通过真实smoke
+
+P2后续分析没有继续改covariance、polar或SVD。当前先补齐了55个任务的两组disjoint 256-row cross-episode flow-gradient panels，与已有
+40-task authority合并为95 tasks；同时从冻结`c1493a1/macro20`为95 tasks提取两套disjoint K4和一套K1 Program，共285份。所有authority
+均只覆盖non-held LIBERO-90与train24，validation/test、Action Meta及held optimizer gradient为0。
+
+75 fit task按meta56/target19各占50%建立的behavior manifold在20个未见task上有明确上限：两panel repeatability`.6666`，rank16
+oracle对panel-B/consensus为`.7160/.8006`，四family为`.7571/.8009/.5482/.7779`，universal仅`.1908`；rank32相对rank16只增加
+约`.0526`。相反，固定1000-step Program probe能把full/process/dynamic在fit75读到约`.97--.98`，held exact rank4却仅
+`.2695/.2470/.2368`，与language-only`.2687`同量级；full的meta-held/target-held为`.3684/.1707`。因此旧G2动态Gate继续成立，
+但Program没有把未见task组织到可迁移的policy-behavior方向，G3 shared mapping non-pass的最早接口已经上移到G2 sufficiency。
+
+当前`codex/g3-behavior-primal`只在同一个Natural Program执行面增加训练期behavior decoder与Gate：decoder只读
+`P_process/rho/tau/sigma`，不读`P_lang/P_scene`、task ID或任何deployment外输入；训练target是75 fit task的role-balanced rank16
+behavior code，20 held只作fixed exact-rank4 qualification。旧`c1493a1/macro20`只初始化共同model tensors，新decoder fresh，optimizer/
+scheduler/data cursor全部fresh；原action/progress/event/robustness loss与旧held动态Gate保持。formal首站固定macro10，使用3 meta+3 target
+role-balanced optimizer step、六卡并行；新Gate要求exact overall`.50`、consensus`.60`、q/v`.50/.50`、action-in/out`.35/.50`、
+wrong margin`.10`、两role各`.45`，并保留K1/K4与cross-video qualification。
+
+真实task74 K4 profile已经完成：behavior loss`1.3104`，decoder/process-fusion/旧temporal-owner梯度分别`.6286/4.4444/.0805`，
+source与Native Stage0 trainable 0、Action Meta module/parameter 0；一步`13.30s`，peak allocated约`9.28GiB`。新exact Gate用旧frozen
+Program和同构decoder做反向smoke得到`.2121`、oracle`.7160`并正确non-pass，12项checks中仅wrong-margin和cross-view一致性通过。
+架构检查没有新增hard violation，全仓回归`201 passed`；下一步是clean commit/push、从detached authority正式封存93KiB behavior-code asset并
+启动六卡macro10，不再消费旧P2 cache或续训旧shared compiler。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_program90_5781694_gpu01p012345_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_manifold95_rolebalanced_5781694_gpu01p6_20260829.json`。
+
 ## 2026-08-29 P2执行面接通，等待clean authority六卡profile
 
 P2保持唯一active v5数学不变，只训练共享full-Program-to-primal scorer。为避免329个fit conditions在每次optimizer update都重新运行

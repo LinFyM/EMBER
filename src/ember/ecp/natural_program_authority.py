@@ -23,7 +23,7 @@ from ember.pi05_source_contract import append_jsonl
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
-RUN_SCHEMA = "ember_ecp_natural_program_g2_run_v2"
+RUN_SCHEMA = "ember_ecp_natural_program_g2_run_v3"
 
 
 def _run_authority_commit(repository: Mapping[str, Any], mode: str) -> str:
@@ -100,6 +100,30 @@ def _topology(context: DistributedContext) -> list[Any]:
     return rows
 
 
+def _behavior_contract(
+    runtime_args: argparse.Namespace,
+    config: Mapping[str, Any],
+    behavior_codes: Any | None,
+) -> dict[str, Any]:
+    if behavior_codes is None:
+        return {"behavior_alignment": None, "behavior_contract": None}
+    return {
+        "behavior_alignment": {
+            "schema_version": behavior_codes.manifest["schema_version"],
+            "manifest": str(
+                runtime_args.asset_root / config["authorities"]["behavior_codes"]
+            ),
+            "tensor_bytes": int(behavior_codes.manifest["tensor_bytes"]),
+            "fit_tasks": len(behavior_codes.fit_task_ids),
+            "held_zero_gradient_tasks": len(behavior_codes.held_task_ids),
+            "selected_targets": list(behavior_codes.selected_targets),
+            "dimension": behavior_codes.dimension,
+            "deployment_forward_reads_behavior_codes": False,
+        },
+        "behavior_contract": dict(config["behavior_alignment"]),
+    }
+
+
 def build_natural_program_run_contract(
     *,
     runtime_args: argparse.Namespace,
@@ -115,6 +139,8 @@ def build_natural_program_run_contract(
     tasks_per_role_per_optimizer_step: int,
     repo_root: Path,
     native_checkpoint: Path,
+    behavior_codes: Any | None,
+    initialization: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     repository = git_state(repo_root)
     native_weights = native_checkpoint / "ecp.safetensors"
@@ -141,6 +167,8 @@ def build_natural_program_run_contract(
             "manifest_bytes": (runtime_args.label_root / "manifest.json").stat().st_size,
             "deployment_forward_reads_labels": False,
         },
+        **_behavior_contract(runtime_args, config, behavior_codes),
+        "initialization": dict(initialization) if initialization else None,
         "native_observer": {
             "checkpoint": str(native_checkpoint),
             "checkpoint_macro": 10,

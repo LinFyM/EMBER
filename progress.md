@@ -1,34 +1,44 @@
 # EMBER progress
 
-更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由
-clean pushed `main@435cb4a`通过。最新完整F3是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/
-task-holdout为`.086508/.083131/.072629/.096191`，held/fit `.960958`；held q/v/action-in/action-out为
-`.021698/.065269/.085933/.173804`。451 conditions、Action Meta 0、held gradient 0、唯一rank16及IEEE数值合同全部成立，但
-`.75/.50`绝对Gate仍差近一个数量级。TF32断层因此是必要数值修正，不是shared mapping的主因；该run不续训。
+更新时间：2026-08-28。G2 formal authority仍是clean pushed `main@c1493a1/macro_00000020`，F1 bank-operator仍由clean pushed
+`main@435cb4a`通过。最新完整F3仍是clean pushed detached `main@78b7e58`的fresh IEEE macro5：fit/held/p10/task-holdout为
+`.086508/.083131/.072629/.096191`，四family held为`.021698/.065269/.085933/.173804`，明确non-pass且未续训。
 
-随后按实际post-`Wk` candidate bank把整个B0-solve/B1-replay写成线性functional image `J_r=C_r C_0^+ H`，而不是继续分析
-Euclidean key cosine。对task93深层q target34、v target19、action-in target36与action-out target37，直接/functional-polar
-task-local replay update cosine约为`.996/.999/1.000/.998`；旧shared路径对应family只有约`.02--.17`。per-event polar已足以恢复
-v/action families，但q需要跨event global polar；跨rank共享polar使v/action-out降至`.915/.831`，去掉per-event feature whitening
-又使q降至`.911`。因此最早失效接口已收窄为：raw Program query在普通Euclidean坐标中被单位化，未按真实rank-specific functional
-metric定标；不是native bank、candidate content、G2 Program、rank4、optimizer或泛化失容。
+full functional-polar task-local见证约`.996/.999/1.000/.998`，但真实K1 condition即使经`da3fd3e`优化仍为`58.332s`，六卡macro5
+理想下限约49分钟且未含451评测；其deployment执行形态吞吐non-pass，未运行K4 F0、新formal F3、训练或评测，也没有新checkpoint。
 
-`main@e139bc7`后的隔离提交`da3fd3e`保留同一个canonical v4路径并只做执行优化：mapping acquisition把同一condition的frozen X/Y
-capture一次后在B0/B1复用；233个同shape functional polar按family/native shape合批；native statistics、whitening和spectral solve使用
-IEEE FP32；矩形functional image用thin-QR后只对小矩阵做SVD；q input及v/action使用per-event polar，q output保留global polar。
-deterministic leading-block accumulation保持frame chunk边界不改变统计。旧`C=I`与Euclidean路径仍未恢复，也没有新增parallel Writer。
+第三位专家已锁定远程`main@9b52e59`及其可达历史完成审计；1033行原文逐字保存为
+`docs/expert_review_20260828_g3_functional_sketch.md`。最新裁决是：full functional-polar保留为fit-only teacher/reference和容量诊断，
+不再作为deployment候选；当前唯一active G3路径改为low-dimensional bank-adaptive functional sketch，先做无训练S1容量/吞吐Gate，
+再做12-task冻结sketch的轻量shared student，只有absolute、video/task泛化与Program×bank因果均通过才恢复完整451-condition F3。
 
-真实gpu01单K1 task93/video profile把condition从`82.114s`降到`58.332s`，其中compiler forward从`59.595s`降到`35.753s`，polar
-从约`38.15s`降到`14.15s`；最终Pass A/native capture/backward分别约`5.283/5.632/11.664s`，feature whitening、B0 solve、B1 replay
-仍约`7.232/5.811/2.691s`，peak allocated/reserved约`29.34/30.70GB`。尝试把全部frame cache合并或移除activation checkpoint分别在
-约`43.36/44.37GB`发生真实OOM，均已回退，不在提交中。当前macro5只有25 updates，却固定产生`25*6*2=300`个K1 condition；按六卡
-理想均衡且不计同步/保存，训练下限仍约`49min`，451-condition评测还会额外需要几十分钟。该成本与规模不相称，吞吐资格明确
-non-pass。
+owner接受该方向，并明确四项实现边界：fit row的universal baseline必须leave-one-task-out，task-holdout只用fit tasks；12-task阶段
+每role各保留一个true task-holdout；首个student的fixed nested projection、sketch basis与bank statistics全部冻结/detached；具体
+causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint一次校准并sealed。
 
-因此没有把CPU合同、task-local polar witness或局部加速冒充F0/F3通过，也没有启动functional-polar formal F3、训练、strict评测或
-保留新checkpoint。当前GPU无该任务进程。`da3fd3e`仅保存专家可审查的最佳已实现执行形态和定向合同；下一步先由全新专家结合
-`ed2883bd`之后的完整Git/实验历史判断：full per-bank polar是否还能获得数量级结构性降本，还是应把昂贵operator限制为fit-only
-teacher/诊断并重新设计轻量shared content selection。任何具体替代尚未登记为active design。
+当前从clean pushed `main@9b52e59`建立唯一隔离实现面`codex/g3-sketched-bank`，已接通sealed fixed nested projection、流式
+native/key cross-image、`r_s={16,32,64}`共享前缀、`C_rQ` full-native free-query正控和exact signed replay。28项相关合同通过，实际
+source/G2/compiler trainable均为0且Action Meta实例为0。dirty exploratory task93/q20两条既定K1条件显示rank64 effective-update
+recovery仅约`.157`，input/output full-native free-query recovery约`.414--.417/.254--.268`；streaming/materialized最低约
+`.999977`。把fixed random `HR`换成完整`H`的最佳top64只把input/output约提高到`.415--.497/.264--.501`，仍远低于S1强门，排除了
+随机投影实现而指向`r_s<=64` native-query basis本身失容。以上只是exploratory早停依据，尚未冒充formal S1结论。
+
+## S1 task93/q20 formal early-disqualifier launch contract
+
+- canonical code：包含本合同的clean pushed commit，并从该commit建立detached frozen worktree；worker强制核对clean detached Git；
+- scale：既定F1 panel中的task93、q target20、全部两条sealed K1 conditions、两个verified members与同一nested rank16/32/64曲线；
+  task93/q20在此前actual-operator根因审计中已是固定witness。S1 Gate含每row至少`.95`，任一正式反例即可否决合取条件，但不能估计
+  50-task family/depth分布；
+- authority：source step1000、G2 `c1493a1/macro20`、native-teacher v2、F1 50-task/98-condition analytic operator与固定LIBERO
+  dataset commit；每条sketch row必须匹配同task/video/member/target的sealed F1 positive row；
+- execution：单进程单A40，不训练、不建optimizer、不读action/outcome/held gradient；source、Program、compiler全部冻结，Action Meta 0；
+  runtime初始化只支付一次并与两条condition分开计时。smoke峰值reserved约18.02GiB，输出预计远低于1MiB；
+- Gate：报告rank64 sketch-to-teacher、streaming/materialized和exact F1 analytic-to-teacher；若sketch任一row低于`.95`则status为
+  `complete_capacity_disqualifier`，停止其余S1条件并转入专家规定的pure low-dimensional set-summary free-query函数类；
+- output：`runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_<authority>_gpu01pX_20260828/`，启动时替换exact commit/device；fresh-only，
+  root必须不存在，失败attempt不得覆盖。launch前live复核gpu01/gpu02及`/data1`独立quota；shuffled/reversed不使用。
+
+以下launch contracts与逐阶段记录是历史证据，不是当前待执行命令；不得从中恢复v4 formal路线。
 
 ## IEEE fresh F3 formal launch contract
 
@@ -78,7 +88,7 @@ env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_T
 env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_ecp_shared_compiler.py --config configs/pi05_ecp_shared_compiler_g3_v3.json --phase f3 --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_shared_compiler_g3_f3_functional_anchor_fold0_m5_gpu01p012345_r6_20260827 --stop-after-macro 5 --log-every 1
 ```
 
-## 当前状态
+## 2026-08-26至v4的历史状态（已被页首最新状态覆盖）
 
 两轮专家回复均已收到、完整阅读并固化。active design现为`docs/event_conditioned_policy_compiler_design.md`中的
 **ECP Native-Factor Compiler**，核心架构、数据角色、阶段Gate、最终controls和停止条件均已明确。

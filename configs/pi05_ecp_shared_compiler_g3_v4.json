@@ -1,6 +1,8 @@
 {
   "schema_version": "ember_ecp_shared_compiler_g3_v4",
-  "status": "active_functional_polar_mapping_compiler",
+  "status": "reference_functional_polar_throughput_nonpass",
+  "deployment_candidate": false,
+  "retained_role": "fit_only_teacher_capacity_oracle_and_diagnostic_reference",
   "authorities": {
     "g2_config": "configs/pi05_ecp_natural_program_g2_v1.json",
     "g2_program_checkpoint": "runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/checkpoints/macro_00000020",

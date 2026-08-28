@@ -1,0 +1,74 @@
+{
+  "schema_version": "ember_ecp_functional_sketch_s1_v1",
+  "status": "active_no_training_capacity_and_throughput_gate",
+  "authorities": {
+    "reference_config": "configs/pi05_ecp_shared_compiler_g3_v4.json",
+    "g2_config": "configs/pi05_ecp_natural_program_g2_v1.json",
+    "g2_program_checkpoint": "runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/checkpoints/macro_00000020",
+    "source_config": "configs/pi05_source_base_v1.json",
+    "source_checkpoint": "runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000",
+    "native_teacher_manifest": "runs/analysis/pi05_ecp_shared_compiler_g3_native_teacher_v2_formal_20260826/manifest.json",
+    "condition_authority": "runs/analysis/pi05_ecp_g3_dual_basis_four_family_loto_e7d86b0_gpu01p012345_20260826",
+    "f1_operator_report": "runs/analysis/pi05_ecp_g3_bank_operator_f1_435cb4a_gpu01p123456x2_20260826/report.json"
+  },
+  "model": {
+    "target_owners": 38,
+    "event_slots": 8,
+    "residual_rank": 4,
+    "key_width": 128,
+    "candidate_key": "frozen_target_native_encoder_then_family_trunk_then_projected_key",
+    "candidate_key_normalization": "event_measure_centered_cross_image_without_full_feature_covariance_whitening",
+    "cross_image_centering": "event_native_and_key_means",
+    "fixed_nested_projection_seed": 20260828,
+    "rank_curve": [16, 32, 64],
+    "family_mode": {
+      "q": "global",
+      "v": "per_event",
+      "action_in": "per_event",
+      "action_out": "per_event"
+    },
+    "relative_singular_floor": 1e-6,
+    "relative_covariance_floor": 1e-6,
+    "replay_score_rms": 0.02,
+    "value": "exact_current_native_XY_signed_pooling"
+  },
+  "panel": {
+    "primary_targets": [20, 21, 36, 37],
+    "depth_targets": [0, 1, 18, 19, 34, 35],
+    "condition_task_count": 50,
+    "condition_count": 98,
+    "K": 1,
+    "held_outcome_reads": 0
+  },
+  "formal_early_disqualifier": {
+    "rule": "a single sealed panel row below the mandatory per-row minimum disproves the full conjunction without running the remaining rows",
+    "authority_id": 93,
+    "target": 20,
+    "target_name_role": "primary q actual-operator witness used before this sketch result",
+    "all_sealed_K1_conditions_for_task": true,
+    "selection_uses_sketch_result": false,
+    "claim_boundary": "may reject S1 capacity; may not estimate family or depth distributions"
+  },
+  "gate": {
+    "each_family_task_median_minimum": 0.98,
+    "each_family_row_minimum": 0.95,
+    "deep_qv_task_median_minimum": 0.95,
+    "deep_qv_row_minimum": 0.90,
+    "streaming_to_materialized_minimum": 0.9999,
+    "single_a40_post_capture_seconds_maximum": 6.0,
+    "single_a40_total_condition_seconds_maximum": 20.0,
+    "single_a40_peak_reserved_gib_maximum": 35.0,
+    "formal_wall_time_must_be_proportional": true,
+    "selection_rule": "smallest_passing_prefix_of_one_rank64_sketch"
+  },
+  "information_wall": {
+    "training": false,
+    "source_program_carrier_trainable_parameters": 0,
+    "action_meta_installed": false,
+    "deployment_inputs": ["exact language", "same-task action-hidden internally ordered videos"],
+    "privileged_capacity_only": ["fit-task native teacher factors", "full functional-polar reference"],
+    "task_or_frame_lookup_parameters": false,
+    "teacher_or_authority_state_in_checkpoint": false,
+    "shuffled_or_reversed_use": false
+  }
+}

@@ -5,7 +5,7 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。Phase G1 task-local free-code capacity oracle和Phase G2 Natural Program已经
-分别通过对应Gate；当前推进Phase G3 bank-conditioned shared compiler。G1只证明真实native banks与signed pooling存在强rank4
+分别通过对应Gate；当前推进Phase G3 low-dimensional bank-adaptive shared compiler。G1只证明真实native banks与signed pooling存在强rank4
 residual，G2只证明Natural Program保留视频动态；二者都不证明deployment Writer的shared Program-to-attention映射成立，单独完成
 任一阶段仍不代表整体项目goal完成。
 
@@ -192,7 +192,8 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
 
 ### G3 Frozen-Program shared compiler
 
-冻结Program，用自然videos与95-task/118-member evidence训练共享Program-query到native-candidate-key的content attention、signed pooling、
+冻结Program，先用无训练低维bank-adaptive functional sketch证明当前native/key functional image能以数量级更低成本保留；通过后再用
+自然videos与95-task/118-member evidence训练共享full-Program+current-bank-summary到native-candidate content attention、signed pooling、
 scales和bounded K correction，禁止task/frame查表。依据G2证据可从均匀跨video权重初始化有界learned `beta_k`或其他bounded correction，
 并防止单条video覆盖其余videos。held5要求full
 `>=60/250`、breadth`>=4/5`、retention`>=33/43`、Goal/Long至少一项非零、相对language和first+final各`+5`、same-task
@@ -353,22 +354,26 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] 对唯一v4 functional-polar实现完成真实K1分段profile和有边界的执行优化：`da3fd3e`复用单次frozen X/Y capture、按shape合批
   functional polar、以IEEE FP32累计/求解并用thin-QR small SVD；全仓`189 passed`。condition由`82.114s`降至`58.332s`，但25-step
   macro5在六卡上的理想训练下限仍约`49min`且未含451评测，故吞吐资格non-pass；未运行K4 F0、formal F3、训练或评测。
-- [ ] 暂停当前full per-bank functional-polar formal launch，先完成全新专家复核。专家应锁定本次最新远程main，完整审计
-  `ed2883bd`之后的Git、F3 formal/diagnostic evidence与`da3fd3e`执行剖面，判断应如何获得数量级降本并保留Program/video因果性；
-  在证据形成前不把fit-only teacher distillation、low-dimensional bank sketch或其它建议自行登记为active design。
-- [ ] 只有后继唯一canonical实现先通过与规模相称的真实吞吐资格，才完成K1/K4 forward、gradient、chunk、materialization、
-  Action Meta 0 F0；内部polar witness或低维surrogate不能替代。
-- [ ] F0通过后从clean pushed detached commit fresh运行相同451-condition F3；保持frozen G2 Program、fit-only consensus teacher、
-  rank/data/optimizer/Gate不变，并执行固定40-task fit-only correct-vs-wrong Program panel：每task最低video ordinal、同role下一task
-  循环配对、primary native bank/teacher不变，meta与target两个role的median causal margin都必须`>=.10`。只有single checkpoints满足
-  held median`>=.75`、p10`>=.50`、held/fit`>=.8`及相邻稳定才进入F4。
+- [x] 全新专家已锁定远程`main@9b52e59`及其可达历史，完整审计G3 formal/diagnostic evidence与full-polar profile；1033行原文逐字
+  保存为`docs/expert_review_20260828_g3_functional_sketch.md`。裁决full functional-polar只作fit-only teacher/reference，当前唯一
+  deployment候选改为low-dimensional bank-adaptive sketch与轻量shared student；不再发射full v4 F0/F3。
+- [ ] S1：复用F1的50 tasks/98 K1 conditions和同一次native capture，接通一次sealed fixed nested projection、current-bank native/key
+  cross-image、`r_s={16,32,64}`共享rank64前缀曲线、小空间functional operator与exact signed replay；全部模型冻结。按active design
+  同时判定per-family/per-depth容量、streaming/materialized一致性、单A40真实K1 wall/显存及完整formal预算，只固定最小通过rank。
+- [ ] S2：S1通过后才实现12-task轻量student。固定6 meta+6 target，其中每role各1个true task-holdout；其余tasks两条fit video、
+  一条zero-gradient video-holdout。sketch basis/statistics、scale、G2/source/carrier冻结；先跑同执行面的task-local free-query正控，
+  再训练shared full-Program+bank-summary query。shared结果前用universal negative、free-query positive和`78b7e58`失败checkpoint一次
+  校准并sealed absolute/causal Gate，禁止按结果移动。
+- [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
+  保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
+  leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。
 - [ ] 条件式做fit-only decomposition-feasibility oracle：仅当functional-polar mapping已显著取得selection而残余证据仍指向common
   correction/carrier时，只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对
   **新carrier**从完整expert update重新计算每task residual，再投影回每条真实native bank。必须同时证明carrier压缩/retention、
   四family native direct/free-code可达性、跨video consensus与唯一rank16；若不成立，不保留该carrier，不能直接复用代数差分factor。
-- [ ] 条件式在v4仍non-pass且最早接口确有新证据时，才修正bank-global canonicalizer或decomposition；不得绕回逐video dual、
-  task/frame lookup、高维factor head，也不得用universal shortcut、内部loss或普通超参扫通过Gate。candidate basis、Program和scale
-  必须保持明确parameter ownership；rank spectrum/scale只在selection取得后用隔离credit处理。
+- [ ] 条件式只有S3已取得task-specific selection而残余证据仍指向decomposition时，才重开carrier/common correction；不得绕回逐video
+  dual、task/frame lookup、高维factor head，也不得用universal shortcut、内部loss或普通超参扫通过Gate。candidate basis、Program和
+  scale必须保持明确parameter ownership；rank spectrum/scale只在selection取得后用隔离credit处理。
 - [ ] F4：恢复全部75 fit tasks的scale/functional/flow/preservation职责；mapping loss保护selection，scale/video独立更新；teacher
   paired update不退化。只有mapping已学会而低置信随机residual仍破坏carrier时，才加入deployment-visible confidence退回机制。
 - [ ] F5：按K1到K2再到K4恢复多视频职责，K2/K4 teacher reads保持0；验证K1 identity、集合置换不变、bounded beta和same-task

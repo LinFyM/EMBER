@@ -3,21 +3,129 @@ from __future__ import annotations
 import torch
 
 from ember.ecp.bank_conditioning import (
+    StreamingProjectedFunctionalStatistics,
+    StreamingSketchCrossImage,
     StreamingBankStatistics,
     StreamingFeatureStatistics,
     StreamingFunctionalBankStatistics,
     StreamingSignedPool,
     batched_functional_polar_queries,
     batched_feature_whiteners,
+    bank_adaptive_basis,
     bound_functional_queries,
     bounded_relative_group_gain,
     functional_polar_queries,
+    fixed_nested_projection,
+    functional_target_queries,
     materialized_bank_statistics,
     materialized_signed_pool,
     normalize_replay_queries,
     spectral_bank_query,
 )
 from ember.ecp.bank_conditioning.functional_polar import _economy_svd_right
+
+
+def test_functional_sketch_is_chunk_equivalent_nested_and_target_recovering() -> None:
+    generator = torch.Generator().manual_seed(83)
+    candidates, native_width, key_width = 71, 12, 8
+    events, ranks, maximum_rank = 3, 4, 6
+    values = torch.randn(candidates, native_width, generator=generator).double()
+    key_map = torch.randn(
+        events, native_width, key_width, generator=generator
+    ).double()
+    keys = torch.einsum("nd,edm->enm", values, key_map)
+    keys += 0.01 * torch.randn(keys.shape, generator=generator).double()
+    base = torch.rand(candidates, generator=generator).double() + 0.1
+    base /= base.sum()
+    event = torch.rand(events, candidates, generator=generator).double() + 0.1
+    event /= event.sum(-1, keepdim=True)
+    replay = torch.rand(ranks, candidates, generator=generator).double() + 0.1
+    replay /= replay.sum(-1, keepdim=True)
+
+    def cross_accumulator() -> StreamingSketchCrossImage:
+        return StreamingSketchCrossImage(
+            native_width=native_width,
+            key_width=key_width,
+            events=events,
+            device=values.device,
+            dtype=torch.float64,
+        )
+
+    materialized = cross_accumulator()
+    materialized.add(values, base, event, keys)
+    streamed = cross_accumulator()
+    for start, stop in ((0, 9), (9, 38), (38, candidates)):
+        streamed.add(
+            values[start:stop],
+            base[start:stop],
+            event[:, start:stop],
+            keys[:, start:stop],
+        )
+    full_cross = materialized.finalize()
+    chunk_cross = streamed.finalize()
+    torch.testing.assert_close(full_cross.mean, chunk_cross.mean)
+    torch.testing.assert_close(full_cross.key_images, chunk_cross.key_images)
+
+    for mode in ("global", "per_event"):
+        projection = fixed_nested_projection(
+            events=events,
+            key_width=key_width,
+            maximum_rank=maximum_rank,
+            mode=mode,
+            seed=20260828,
+            device=values.device,
+            dtype=torch.float64,
+        )
+        repeated = fixed_nested_projection(
+            events=events,
+            key_width=key_width,
+            maximum_rank=maximum_rank,
+            mode=mode,
+            seed=20260828,
+            device=values.device,
+            dtype=torch.float64,
+        )
+        torch.testing.assert_close(projection, repeated)
+        basis = bank_adaptive_basis(
+            full_cross,
+            projection,
+            requested_rank=maximum_rank,
+            mode=mode,
+            relative_singular_floor=1e-10,
+        )
+        assert basis.retained_rank == maximum_rank
+
+        def projected_accumulator() -> StreamingProjectedFunctionalStatistics:
+            return StreamingProjectedFunctionalStatistics(
+                basis, ranks=ranks, device=values.device, dtype=torch.float64
+            )
+
+        expected = projected_accumulator()
+        expected.add(values, base, replay)
+        observed = projected_accumulator()
+        for start, stop in ((0, 9), (9, 38), (38, candidates)):
+            observed.add(
+                values[start:stop], base[start:stop], replay[:, start:stop]
+            )
+        left = expected.finalize(full_cross)
+        right = observed.finalize(chunk_cross)
+        torch.testing.assert_close(left.covariance, right.covariance)
+        torch.testing.assert_close(left.replay_covariances, right.replay_covariances)
+        torch.testing.assert_close(left.replay_images, right.replay_images)
+        torch.testing.assert_close(left.key_images, right.key_images)
+
+        coefficients = torch.randn(
+            2, ranks, maximum_rank, generator=generator, dtype=torch.float64
+        )
+        desired = torch.einsum("mrs,rds->mrd", coefficients, right.replay_images)
+        solved = functional_target_queries(
+            desired,
+            right,
+            relative_floor=1e-10,
+        )
+        assert solved.native.shape == desired.shape
+        assert solved.reduced.shape == (2, ranks, maximum_rank)
+        assert float(solved.linear_recovery.min()) > 0.999999
 
 
 def test_economy_svd_preserves_right_gram_for_rectangular_batches() -> None:

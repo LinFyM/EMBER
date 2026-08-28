@@ -173,10 +173,19 @@ def _mapping_config_valid(config: Mapping[str, Any]) -> bool:
     optimizer = optimization.get("optimizer", {})
     profile = config.get("profile_defaults", {})
     formal = config.get("formal_run", {})
+    status = config.get("status")
+    lifecycle_valid = status == "active_functional_polar_mapping_compiler" or all(
+        (
+            status == "reference_functional_polar_throughput_nonpass",
+            config.get("deployment_candidate") is False,
+            config.get("retained_role")
+            == "fit_only_teacher_capacity_oracle_and_diagnostic_reference",
+        )
+    )
     return all(
         (
             config.get("schema_version") == G3_CONFIG_SCHEMA,
-            config.get("status") == "active_functional_polar_mapping_compiler",
+            lifecycle_valid,
             model.get("selection")
             == "full_program_functional_polar_query_native_content_key_signed_pooling",
             model.get("anchor_width") == 128,

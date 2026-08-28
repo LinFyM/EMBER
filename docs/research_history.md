@@ -818,3 +818,15 @@ macro5只有25 optimizer updates，却固定执行300个K1 conditions；六卡�
 owner据此明确墙钟成本必须与规模相称。当前full per-bank polar执行形态的吞吐资格non-pass，未运行K4 F0、formal F3、训练或评测，
 没有新checkpoint或scientific Gate结果。该结论保留functional witness的科学证据，只要求在下一formal前获得数量级结构性降本；后继
 设计先交由全新专家复核，不在历史记录中预判。
+
+## 43. 第三次专家复核与low-dimensional bank-adaptive sketch路线
+
+第三位全新专家锁定远程`main@9b52e59`及其可达历史，审计了G1/G2、全部G3 formal/diagnostic证据、full functional-polar源码与
+`da3fd3e` profile。1033行原始回复逐字保存为`docs/expert_review_20260828_g3_functional_sketch.md`。专家判断native bank容量、
+current-bank global context必要性与functional coordinate mismatch均已有可靠证据，但连续shared F3没有取得task-specific Program
+ownership；fit-only universal rank4又证明旧absolute recovery可被common residual绕过。full functional-polar因此降为fit-only
+teacher/reference，不再获得另一轮deployment formal资格。
+
+后继按一次无训练low-dimensional nested sketch rank curve、一次12-task free-query/shared student容量—因果Gate、再恢复完整451-condition
+F3的顺序推进。owner接受该路线并补充leave-one-task-out universal、meta/target各一个true task-holdout、首个student冻结sketch
+basis/statistics及在shared结果前一次性校准causal Gate。该节点只形成新active contract，尚未产生新GPU run、checkpoint或Gate结果。

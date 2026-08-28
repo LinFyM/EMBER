@@ -893,6 +893,21 @@ mapping condition loader中保存上述最佳执行形态；同一condition froz
 不进checkpoint且不改变部署信息墙。deterministic leading blocks、batched global/per-event polar与矩形QR-SVD均有定向合同；全仓
 `189 passed`。代码被保留是为了让远程专家能从完整源文件复核复杂度和降本边界，不能据此声称真实K1/K4 F0、吞吐Gate或F3已通过。
 
+### 57. 第三次专家复核把根因收敛到task-specific credit ownership，并将low-dimensional sketch设为唯一下一接口
+
+第三位专家锁定`main@9b52e59`及其可达历史后确认：F1与task-local functional-polar共同证明native bank、signed pooling和actual
+functional image有容量；连续F3的fit/held/task-holdout一起处于`.08--.16`量级，说明失败不是先拟合再泛化，而是shared mapping在
+训练条件自身也没有取得task-specific selection。fit-only universal rank4在held约`.825/.835`又证明旧absolute Gate可被公共修正
+绕过。因此当前最早科学接口同时包含Program对selection的因果ownership、teacher/common residual分解与functional coordinate，不能
+再把坐标修正单独当充分解。
+
+专家建议full functional-polar永久只作fit-only teacher/reference；deployment先用current-bank native/key cross-image与一次sealed
+nested projection构造`r_s<=64`的bank-adaptive native basis，只在小空间累计covariance/operator，再lift query并对真实X/Y做exact
+signed pooling。先做50-task/98-condition无训练rank curve与真实吞吐Gate，再做12-task free-query正控和shared student，最后才恢复
+451-condition。owner接受该方向，并补充：fit task universal必须leave-one-task-out；12 tasks中保留meta/target各一个true task-holdout；
+首个student的projection/basis/statistics冻结；causal数值门在看shared结果前以固定正负controls一次校准。以上只改变G3 shared
+acquisition路线，不推翻G1/G2、唯一rank16、信息墙或Final端到端fresh候选。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

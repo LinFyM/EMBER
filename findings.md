@@ -1000,6 +1000,33 @@ zero-gradient held仅`.03527`。因此失败不再能归因于frozen/random char
 covariance/eig/SVD或teacher tensor放进deployment。若这一更强的permutation-equivariant set operator仍不能先恢复fit与held，才根据
 结果重开teacher/credit目标，而不是继续扫width、token、LR或bound。
 
+### 62. query-conditioned多次读取仍未取得task-local方向，S2轻量score函数类关闭
+
+按上述唯一分支完成了不保留的query-conditioned set operator诊断。每个rank/event/positive-negative query直接读取当前candidate set
+三次，再用query-conditioned key逐candidate产生signed logits；input使用四个128维native heads，output使用两个128维native heads，
+保留真实X/Y exact pooling、正确`rho * event-volume`、跨videos18/48共享free code、video0零梯度和Action Meta 0。该图共
+`2,648,100`个trainable parameters，真实第一步约`.41s`、peak reserved约`22.9GiB`，所以失败不是运行未接通或吞吐不足。
+
+强factor/subspace+update credit到step400的fit/held仅`.14678/.09718`；随后保持同一结构、数据、optimizer与scale，只删除专家明确不建议
+长期使用的equal-subspace约束，改为set-valued paired effective-update加跨视频dispersion，step500也只有fit`.15209`、held`.09229`。
+两种credit都没有数量级跃升，held也未随fit稳定提高。由此淘汰的是当前query-conditioned多次读取、candidate-local rescore这一明确
+函数类；不能把失败归因于旧mean/variance summary、错误event measure、frozen chart或A/B子空间过约束，也不继续扫read次数、head、
+width、LR、bound或seed。
+
+由实测operator秩直接指定而非搜索的补充反事实也关闭了“只把S1 sketch做宽”这一解释。沿同一frozen native/key cross-image把nested
+rank从64直接提高到224/384后，task93/q20两条videos、两个members的effective-update仍仅`.1593--.1630`；input/output linear recovery
+约`.419--.427/.273--.293`，384相对224没有实质增益。单condition约`12.5s`，其中rank curve/replay约`2.0s`，peak reserved
+`19.34GB`，Action Meta及所有authority trainable均为0。这说明该cross-image的有效方向本身不含teacher response；不是projection rank
+不够，也不给恢复full polar deployment或继续projection版本链提供依据。
+
+现有证据尚不能把稳定LoRA teacher直接宣布为错误：fit-only consensus在held video仍约`.946`，同bank exact functional operator仍约
+`.996--.998`。但S2已证明“为了复现这一特定parameter-space teacher而设计的轻量score路径”没有容量或可优化性。下一步只做一个
+更上游的behavior-aligned identifiability诊断：在授权fit task上，以cross-episode teacher action/flow或等价冻结functional gradient
+作为credit，分别检查direct free logits和同一轻量selector能否形成跨视频稳定、实际降低policy loss的native rank4方向。若free logits
+有效而轻量selector仍失败，最早接口仍是selection函数类；若轻量selector对behavior明显强于对teacher LoRA，则G3应把selection主监督
+改为行为/functional equivalence，而不是继续追逐唯一参数分解；若两者都失败，则先处理behavior credit/optimization，不能直接发射shared
+或完整451-condition F3。该诊断不使用validation/test action/reward，也不恢复旧Writer、realizer或full-polar deployment。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

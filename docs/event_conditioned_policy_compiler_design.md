@@ -7,7 +7,9 @@ teacher/reference，并提出低维bank-adaptive functional sketch与轻量share
 counterexample随后证明`r_s<=64` native-query sketch失容；当前严格采用专家预先规定的fallback：full polar与native-Q sketch都只作
 teacher/diagnostic，部署候选改为不经过该native-Q瓶颈的pure set-summary student，且必须先通过task-local free-query正控。首版128D
 mean/variance separable scalar-energy在修正event measure、解冻所选candidate chart及完成operator对照后仍失容，现已按预注册分支
-淘汰；当前只资格化一个query-conditioned、permutation-equivariant的多步set operator，不把旧函数类继续调参。本文是当前唯一架构依据。
+淘汰；query-conditioned、permutation-equivariant多步set operator在strong与update-only credit下也只到约`.15/.09`，按实测秩
+指定的224/384 cross-image sketch仍约`.16`。因此S2轻量score函数类已经关闭，当前不伪造新的deployment候选；先用授权fit-task
+behavior/functional credit区分parameter-teacher过窄与selection函数类失容，再据最早失效接口修订G3。本文是当前唯一架构依据。
 
 三次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`和`docs/expert_review_20260828_g3_functional_sketch.md`。本文是将专家
@@ -198,9 +200,13 @@ candidate encoder/source/G2/carrier/scale，只训练family-shared summary/score
 
 该正控现已完成：正确event-volume mixing下，冻结chart与解冻所选q20 chart的fit/held分别只有约`.319/.044`与`.303/.035`，故上述
 mean/variance、separable basis×coefficient函数类不再是deployment候选。operator诊断又表明q20 input/output分别需要约384/192--224个
-bank-local相关方向才接近exact，排除了对角、64/128D低秩修正和朴素PCG。下一函数类保留低维共享参数和最终exact Value，但允许每个
-rank/event query直接、多步读取当前candidate set，形成query-conditioned set state后再回写candidate logits；这是一项待正控的
-permutation-equivariant内容路径，不是full covariance/eig/SVD、task lookup或已经通过的最终裁决。
+bank-local相关方向才接近exact，排除了对角、64/128D低秩修正和朴素PCG。随后每个rank/event query直接三次读取当前candidate set、
+再回写candidate logits的permutation-equivariant路径，在strong与paired-update-only两种有机制区别的credit下也只有fit/held约
+`.147/.097`与`.152/.092`；扩大原native/key cross-image到rank224/384仍约`.159--.163`。这些结果共同淘汰当前pure low-dimensional
+score函数类，不进入12-task/shared训练，也不继续调read/head/width/LR/bound。下一步不是立刻把某个新scorer写成active architecture，
+而是在授权fit task上比较direct free logits与轻量selector对cross-episode behavior/functional credit的可达性；只有该诊断才能区分
+“特定LoRA parameter teacher过窄”和“selection函数类本身失容”。无论结果如何，真实X/Y Value、event-volume、rank4、唯一rank16、
+信息墙和最终closed-loop Gate不变。
 
 S1使用的fixed nested projection、native/key cross-image、`Q_g`、small functional operator与full-native `C_rQ` solve完整保留在
 `functional_sketch.py`及formal evidence中，但其rank64正式反例已经关闭deployment资格。不得继续搜索projection seed/rank、恢复

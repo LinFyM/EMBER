@@ -379,10 +379,16 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   - [x] 完成不保留的candidate-chart acquisition诊断：从`78b7e58`初始化并只解冻q20所选chart的`363,520`参数，与scorer/free code
     合计`2,648,100` trainable；正确的`rho * event-volume`测度下1000步fit/held仅`.30286/.03527`。因此不形成“解冻chart”formal
     修正，首版128D mean/variance separable scalar-energy函数类已淘汰；bound/branch/diagonal与低秩operator对照也均未恢复。
-  - [ ] 下一次只检验一个机制不同的candidate score函数类：task-local rank/event query直接多步cross-attend当前candidate set，形成
+  - [x] 完成唯一一个机制不同的candidate score函数类：task-local rank/event query直接多步cross-attend当前candidate set，形成
     query-conditioned set state后再逐candidate产生bounded signed logits。它必须保持集合置换等变、正确event-volume mixing、真实X/Y
     exact pooling、跨三视频共享free code、video0零梯度及Action Meta 0；不得含task/video/frame lookup或full covariance/eig/SVD。
-    仍先以task93/q20的`.90/.80/.80/.80/.8` Gate裁决，失败后重开teacher/credit目标，不扫token/width/depth/LR/bound版本链。
+    strong credit与按专家最小目标修正的update-only credit分别只到fit/held约`.147/.097`与`.152/.092`，Gate明确失败；按实测秩指定的
+    rank224/384 cross-image sketch也仍约`.159--.163`。因此S2 pure low-dimensional score函数类关闭，不进入12-task/shared训练，
+    不扫token/width/depth/LR/bound版本链。
+  - [ ] S2b只做behavior-aligned identifiability诊断：选择授权fit task，以与teacher video跨episode的action/flow或冻结functional
+    gradient为credit，在相同真实X/Y、rank4、唯一rank16和held-video零梯度合同下对比direct free logits与轻量selector。先证明实际
+    policy loss下降及跨视频保持，再决定G3是更换selection函数类、把主监督改为functional equivalence，还是先修behavior credit；
+    validation/test action/reward、shuffled/reversed和closed-loop选模均不进入该诊断。
 - [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
   保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
   leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。

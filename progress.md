@@ -7,11 +7,17 @@
 full functional-polar task-local见证约`.996/.999/1.000/.998`，但真实K1 condition即使经`da3fd3e`优化仍为`58.332s`，六卡macro5
 理想下限约49分钟且未含451评测；其deployment执行形态吞吐non-pass，未运行K4 F0、新formal F3、训练或评测，也没有新checkpoint。
 
+S2 task-local正控现已走完并明确non-pass。首版mean/variance scalar-energy、显式加载fit-trained chart、解冻q20 chart、query-conditioned
+三次set read在strong及paired-update-only credit下，fit/held最好仍只约`.35/.18`、`.35/.13`、`.30/.04`、`.15/.09`，均远低于
+`.90/.80` Gate；正确event-volume、exact X/Y、held零梯度和Action Meta 0均已核对。按operator稳定秩直接指定的rank224/384
+native/key cross-image补充对照也仅`.159--.163`，384相对224无增益。因此不进入12-task/shared student，不继续read/head/width/LR/
+bound版本链；当前下一步是授权fit-task behavior-aligned identifiability诊断，先区分特定LoRA teacher过窄与selection函数类失容。
+
 第三位专家已锁定远程`main@9b52e59`及其可达历史完成审计；1033行原文逐字保存为
 `docs/expert_review_20260828_g3_functional_sketch.md`。最新裁决是：full functional-polar保留为fit-only teacher/reference和容量诊断，
-不再作为deployment候选；其S1失败分支明确要求full polar/native-Q sketch都只作diagnostic，后继只能采用pure low-dimensional
-set-summary student，并先通过task-local free-query正控。S1现已触发该失败分支，只有set-summary的absolute、video/task泛化与
-Program×bank因果均通过才恢复完整451-condition F3。
+不再作为deployment候选；其S1失败分支要求full polar/native-Q sketch都只作diagnostic，后继pure low-dimensional set-summary
+student必须先通过task-local free-query正控。S1与随后S2正控现均已失败，所以不会恢复完整451-condition F3，也不会把专家原文
+没有写死的后继假装成已裁决架构；先按active failure branch重开teacher/credit identifiability。
 
 owner接受该方向，并明确：fit row的universal baseline必须leave-one-task-out，task-holdout只用fit tasks；12-task阶段每role各保留
 一个true task-holdout；具体causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint
@@ -61,9 +67,10 @@ source/G2/旧compiler/Action Meta保持冻结，videos18/48训练、video0零梯
 
 同bank nested operator curve又显示q20 input稳定秩为`483--487/1024`，output groups为`243--256/256`；64/128维低秩修正的完整update
 仅约`.28/.51`，256维约`.83--.85`，input约到384维、output约到192--224维才接近exact。普通或diagonal-preconditioned PCG到256次
-仍不能稳定恢复input，完整update约`.48--.64`。所以不再把对角、少量rank或朴素迭代solve包装成新deployment polar。当前下一步是
-一个明确不同的query-conditioned permutation-equivariant set operator正控：rank/event query多步读取当前candidate set后再逐candidate
-产生signed logits；先只跑task93/q20，仍使用真实X/Y、正确event measure、同一fit/held Gate和Action Meta 0，不先发射12-task/shared。
+仍不能稳定恢复input，完整update约`.48--.64`。query-conditioned三次set read的真实step500在update-only credit下fit/held仅
+`.15209/.09229`；同一cross-image直接扩大到rank224/384仍只有`.1593--.1630`。所以不再把对角、少量rank、朴素迭代solve、加宽
+cross-image或多次read包装成新deployment路径。下一诊断只使用授权fit-task cross-episode action/flow或冻结functional gradient，
+分别检查direct free logits和轻量selector能否形成实际policy descent且跨视频稳定的rank4 native residual；在结果前不发射12-task/shared。
 
 本轮retained-code ownership与lifecycle明确如下：`native_bank_runtime.py`唯一拥有frozen source/G2/compiler加载、K1 capture及真实candidate
 bank边界，并已从S1 analyzer删除213行重复实现，供S1诊断和S2共同复用；`set_summary.py`唯一拥有当前deployment-candidate的集合摘要、

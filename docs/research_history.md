@@ -830,3 +830,20 @@ teacher/reference，不再获得另一轮deployment formal资格。
 后继按一次无训练low-dimensional nested sketch rank curve、一次12-task free-query/shared student容量—因果Gate、再恢复完整451-condition
 F3的顺序推进。owner接受该路线并补充leave-one-task-out universal、meta/target各一个true task-holdout、首个student冻结sketch
 basis/statistics及在shared结果前一次性校准causal Gate。该节点只形成新active contract，尚未产生新GPU run、checkpoint或Gate结果。
+
+## 44. low-dimensional native-Q sketch S1 formal non-pass
+
+clean pushed detached `main@27bde62`实现sealed fixed nested projection、current-bank native/key cross-image、rank16/32/64共享前缀、
+流式`C_rQ` full-native free-query与exact X/Y signed replay。预注册S1包含任一row至少`.95`的必要条件，因此沿此前固定使用的
+task93/q20 actual-operator witness运行全部两条sealed K1 conditions作为formal early disqualifier；该早停可否决合取Gate，但不估计
+50-task分布。
+
+四个rank64 task/video/member rows的sketch-to-teacher为`.156687--.157438`，input/output full-native free-query最低为
+`.413974/.253733`；同一exact key的sealed F1 analytic-to-teacher为`.995560--.997907`。streaming/materialized最低`.9999769`，
+Action Meta与所有trainable parameters为0。故S1容量Gate formal non-pass，不继续其余96 conditions，也不训练native-Q sketch shared
+student。exploratory完整`H`最佳top64仍远低于门，补充排除fixed random projection偶然性。按专家预先规定的fallback，下一资格改为
+不经`Q_g q_tilde`瓶颈的pure low-dimensional set-summary candidate-logit执行面，并先做12-task free-query positive control。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/`。

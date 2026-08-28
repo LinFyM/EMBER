@@ -357,13 +357,17 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
 - [x] 全新专家已锁定远程`main@9b52e59`及其可达历史，完整审计G3 formal/diagnostic evidence与full-polar profile；1033行原文逐字
   保存为`docs/expert_review_20260828_g3_functional_sketch.md`。裁决full functional-polar只作fit-only teacher/reference，当前唯一
   deployment候选改为low-dimensional bank-adaptive sketch与轻量shared student；不再发射full v4 F0/F3。
-- [ ] S1：复用F1的50 tasks/98 K1 conditions和同一次native capture，接通一次sealed fixed nested projection、current-bank native/key
-  cross-image、`r_s={16,32,64}`共享rank64前缀曲线、小空间functional operator与exact signed replay；全部模型冻结。按active design
-  同时判定per-family/per-depth容量、streaming/materialized一致性、单A40真实K1 wall/显存及完整formal预算，只固定最小通过rank。
-- [ ] S2：S1通过后才实现12-task轻量student。固定6 meta+6 target，其中每role各1个true task-holdout；其余tasks两条fit video、
-  一条zero-gradient video-holdout。sketch basis/statistics、scale、G2/source/carrier冻结；先跑同执行面的task-local free-query正控，
-  再训练shared full-Program+bank-summary query。shared结果前用universal negative、free-query positive和`78b7e58`失败checkpoint一次
-  校准并sealed absolute/causal Gate，禁止按结果移动。
+- [x] S1：接通F1 condition authority、sealed fixed nested projection、current-bank native/key cross-image、`r_s={16,32,64}`共享前缀、
+  `C_rQ` full-native free-query与exact signed replay。clean detached `27bde62`的task93/q20 formal早停反例中，同条件F1 positive为
+  `.99556--.99791`，rank64仅`.15669--.15744`，chunk最低`.9999769`；因此含row minimum`.95`的容量Gate确定non-pass，不再运行其余
+  96 conditions，也不把native-Q sketch训练成shared student。该早停不估计全panel分布。
+- [ ] S2：按专家的S1失败分支实现不经过`Q_g q_tilde`native瓶颈的pure low-dimensional set-summary student。固定6 meta+6 target，
+  其中每role各1个true task-holdout；其余tasks两条fit video、一条zero-gradient video-holdout。scale、G2/source/carrier冻结；先在
+  同一candidate-logit/exact-X/Y执行面跑task-local free-query正控，正控通过后才训练shared full-Program+bank-summary query。shared
+  结果前用universal negative、free-query positive和`78b7e58`失败checkpoint一次校准并sealed absolute/causal Gate，禁止按结果移动。
+  首先只跑task93/q20机制witness：同一task-local code共同拟合两条video，第三条严格zero-gradient；fit median`>=.90`、held及input/output
+  pushforward各`>=.80`、held/fit`>=.8`才进入12-task正控。首版使用measure-normalized mean/variance DeepSets summary和共享bounded
+  candidate scalar energy，冻结现有candidate encoder；失败只淘汰这一明确函数类。
 - [ ] S3：只有S2的absolute、video/task泛化和Program×bank因果同时通过，才从clean pushed detached commit恢复完整451-condition F3。
   保留held median`>=.75`、p10`>=.50`、held/fit`>=.8`和相邻checkpoint稳定作为absolute必要条件；另须通过sealed
   leave-one-task-out universal-centered、wrong Program、wrong bank、crossed interaction、q/v与own-vs-wrong teacher Gate。

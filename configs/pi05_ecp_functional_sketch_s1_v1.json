@@ -1,6 +1,9 @@
 {
   "schema_version": "ember_ecp_functional_sketch_s1_v1",
-  "status": "active_no_training_capacity_and_throughput_gate",
+  "status": "formal_capacity_nonpass_retained_diagnostic",
+  "deployment_candidate": false,
+  "formal_result": "runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/report.json",
+  "successor": "pure_low_dimensional_set_summary_free_query_positive_control",
   "authorities": {
     "reference_config": "configs/pi05_ecp_shared_compiler_g3_v4.json",
     "g2_config": "configs/pi05_ecp_natural_program_g2_v1.json",

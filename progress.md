@@ -16,12 +16,14 @@ owner接受该方向，并明确四项实现边界：fit row的universal baselin
 每role各保留一个true task-holdout；首个student的fixed nested projection、sketch basis与bank statistics全部冻结/detached；具体
 causal阈值在shared结果前只用universal negative、task-local free-query positive和`78b7e58`失败checkpoint一次校准并sealed。
 
-当前从clean pushed `main@9b52e59`建立唯一隔离实现面`codex/g3-sketched-bank`，已接通sealed fixed nested projection、流式
+当前clean pushed `main@27bde62`已接通sealed fixed nested projection、流式
 native/key cross-image、`r_s={16,32,64}`共享前缀、`C_rQ` full-native free-query正控和exact signed replay。28项相关合同通过，实际
-source/G2/compiler trainable均为0且Action Meta实例为0。dirty exploratory task93/q20两条既定K1条件显示rank64 effective-update
-recovery仅约`.157`，input/output full-native free-query recovery约`.414--.417/.254--.268`；streaming/materialized最低约
-`.999977`。把fixed random `HR`换成完整`H`的最佳top64只把input/output约提高到`.415--.497/.264--.501`，仍远低于S1强门，排除了
-随机投影实现而指向`r_s<=64` native-query basis本身失容。以上只是exploratory早停依据，尚未冒充formal S1结论。
+source/G2/compiler trainable均为0且Action Meta实例为0。clean detached task93/q20 formal已完成：两条既定K1、两个members的rank64
+effective-update为`.156687--.157438`，input/output full-native free-query最低约`.41397/.25373`，streaming/materialized最低
+`.9999769`；同task/video/member/target的sealed F1 analytic positive仍为`.995560--.997907`。因此含per-row minimum`.95`的S1
+容量Gate已被正式反例否决，不运行其余96 conditions，也不训练该native-Q sketch。exploratory完整`H`最佳top64仍远低于门，补充排除
+fixed random projection抽坏；该早停不估计50-task分布。当前按专家预定fallback设计不经过native-Q rank64瓶颈的pure low-dimensional
+set-summary candidate-logit执行面，先做12-task task-local free-query正控，未开始shared训练。
 
 ## S1 task93/q20 formal early-disqualifier launch contract
 
@@ -37,6 +39,12 @@ recovery仅约`.157`，input/output full-native free-query recovery约`.414--.41
   `complete_capacity_disqualifier`，停止其余S1条件并转入专家规定的pure low-dimensional set-summary free-query函数类；
 - output：`runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_<authority>_gpu01pX_20260828/`，启动时替换exact commit/device；fresh-only，
   root必须不存在，失败attempt不得覆盖。launch前live复核gpu01/gpu02及`/data1`独立quota；shuffled/reversed不使用。
+
+该合同已由detached `27bde62`在gpu01物理2完整执行，exact output为
+`runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/`，status
+`complete_capacity_disqualifier`。runtime初始化`128.37s`只支付一次；两条condition分别`12.63/12.84s`，其中Pass A+native capture
+`5.34/5.43s`、bank key/measure`5.00/5.28s`、三rank curve+exact replay`2.29/2.13s`；peak allocated/reserved约`10.34/18.02GiB`，
+formal raw rows、worker completion与report共约28KiB。结果不是训练、closed-loop或shared mapping结论，只关闭该S1 sketch函数类。
 
 以下launch contracts与逐阶段记录是历史证据，不是当前待执行命令；不得从中恢复v4 formal路线。
 

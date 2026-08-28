@@ -908,6 +908,29 @@ signed pooling。先做50-task/98-condition无训练rank curve与真实吞吐Gat
 首个student的projection/basis/statistics冻结；causal数值门在看shared结果前以固定正负controls一次校准。以上只改变G3 shared
 acquisition路线，不推翻G1/G2、唯一rank16、信息墙或Final端到端fresh候选。
 
+### 58. S1证明失败的是`r_s<=64` native-query bottleneck，不是full functional image或chunk实现
+
+clean pushed detached `main@27bde62`在预先沿用的task93/q20 actual-operator witness上完成formal early disqualifier。两条sealed K1
+videos、两个verified members的rank64 sketch-to-teacher effective-update只有`.156687--.157438`，input/output full-native
+`C_rQ` free-query最低为`.413974/.253733`；同task/video/member/target的sealed F1 analytic operator仍为`.995560--.997907`，其
+materialized replay相对analytic为`.999935--.999948`。streaming/materialized最低`.9999769`，source/G2/compiler trainable均为0，
+Action Meta 0，故不能把差距解释为teacher、native bank、chunk边界、TF32或训练不足。
+
+最初只解`Q^T C_r Q`会把小空间投影可解误报为full-native可解；改为仅需`O(d r_s)`的流式`C_rQ`并对真实factor做最优least-squares
+后，上述低值仍存在。进一步dirty exploratory把fixed random `HR`替换为完整cross-image `H`的最佳top64，input/output各rank recovery
+仍仅约`.415--.497/.264--.501`。这排除“随机projection seed抽坏”，把最早失效接口锁定为固定64维native query basis无法同时保留
+真实B1 functional response。由于S1 Gate要求任一row至少`.95`，该正式反例足以否决合取条件而无需浪费资源完成其余96 conditions；
+但不能用它估计50-task分布。
+
+因此full polar与该native-Q sketch都永久降为fit-only teacher/diagnostic，不再往deployment增加polar、SVD、projection rank或seed
+变体。专家预先规定的后继是pure low-dimensional set-summary student：Program或task-local free code与current-bank低维集合摘要、
+candidate content/metadata直接产生正负candidate logits，最终仍exact pool真实X/Y。它必须先在12-task、两fit video到第三held video的
+task-local free-query正控中证明overall/q/v/action容量，再允许shared Program training；该修正不推翻G1/G2或唯一rank16合同。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_functional_sketch_s1_early_q20_27bde62_gpu01p2_20260828/`。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -12,6 +12,7 @@ from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler_data import (
     pack_shared_compiler_videos,
     prepare_shared_compiler_condition,
+    prepare_shared_compiler_program,
 )
 from ember.ecp.bank_conditioning.mapping import (
     MappingCondition,
@@ -48,10 +49,10 @@ def _sum_gradients(
         dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)
 
 
-def prepare_mapping_condition_output(
+def _pack_mapping_condition(
     runtime: MappingRuntime,
     condition: MappingCondition,
-) -> tuple[Any, Mapping[str, Any]]:
+) -> tuple[Any, torch.Tensor, torch.Tensor]:
     task = runtime.task_by_id[condition.authority_id]
     sample = NaturalProgramSample(
         video_demos=(condition.video_demo,),
@@ -67,7 +68,14 @@ def prepare_mapping_condition_output(
         device=runtime.context.device,
     )
     tokens, mask = runtime.language_tokens[condition.authority_id]
-    prepared = prepare_shared_compiler_condition(
+    return packed, tokens, mask
+
+
+def prepare_mapping_condition(
+    runtime: MappingRuntime, condition: MappingCondition
+):
+    packed, tokens, mask = _pack_mapping_condition(runtime, condition)
+    return prepare_shared_compiler_condition(
         policy=runtime.policy,
         program_model=runtime.program,
         owners=runtime.owners,
@@ -76,8 +84,40 @@ def prepare_mapping_condition_output(
         language_mask=mask,
         chunk_size=int(runtime.config["model"]["frame_chunk_size"]),
     )
+
+
+def prepare_mapping_condition_program(
+    runtime: MappingRuntime, condition: MappingCondition
+):
+    packed, tokens, mask = _pack_mapping_condition(runtime, condition)
+    return prepare_shared_compiler_program(
+        policy=runtime.policy,
+        program_model=runtime.program,
+        packed=packed,
+        language_tokens=tokens,
+        language_mask=mask,
+    )
+
+
+def prepare_mapping_condition_output(
+    runtime: MappingRuntime,
+    condition: MappingCondition,
+) -> tuple[Any, Mapping[str, Any]]:
+    prepared = prepare_mapping_condition(runtime, condition)
+    return mapping_condition_output(runtime, condition, prepared)
+
+
+def mapping_condition_output(
+    runtime: MappingRuntime,
+    condition: MappingCondition,
+    prepared: Any,
+    *,
+    program: Any | None = None,
+) -> tuple[Any, Mapping[str, Any]]:
     output = runtime.compiler(
-        prepared.program, prepared.videos, s_ref=runtime.ranks.s_ref
+        prepared.program if program is None else program,
+        prepared.videos,
+        s_ref=runtime.ranks.s_ref,
     )
     if len(prepared.videos) != 1 or output.video_weights.shape != (1,):
         raise RuntimeError("G3 mapping condition escaped K1 identity")

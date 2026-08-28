@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
@@ -15,7 +17,16 @@ from ember.ecp.bank_conditioning.mapping import (
 from ember.ecp.bank_conditioning.mapping_eval_runtime import (
     balanced_mapping_assignments,
 )
-from ember.ecp.bank_conditioning.mapping_gate import summarize_mapping_rows
+from ember.ecp.bank_conditioning.mapping_gate import (
+    _gate_report,
+    summarize_mapping_rows,
+)
+from ember.ecp.bank_conditioning.program_causality import (
+    load_program_causality_contract,
+    program_causality_checks,
+    program_causality_pairs,
+    summarize_program_causality_rows,
+)
 from ember.ecp.bank_conditioning.consensus import truncated_mean_update
 from ember.ecp.bank_conditioning.f0 import _low_rank_update_similarity
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherFactors
@@ -209,3 +220,105 @@ def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None
     summary = summarize_mapping_rows(rows)
     assert summary["fit"]["condition_recovery"]["mean"] == 2.0 / 3.0
     assert summary["fit"]["task_recovery"]["mean"] == 0.75
+
+
+def test_program_causality_panel_is_fit_only_same_role_and_task_robust() -> None:
+    contract = load_program_causality_contract(
+        Path(__file__).resolve().parents[2]
+        / "configs/pi05_ecp_shared_compiler_g3_f3_program_causality_v1.json"
+    )
+    fit = []
+    members = {}
+    for task in range(40):
+        role = "meta_fit" if task < 25 else "target_fit"
+        members[task] = ("member",)
+        fit.extend(
+            MappingCondition(task, role, video, sampled_frames=10 + video)
+            for video in (7, 3)
+        )
+    split = SharedCompilerMappingSplit(
+        fit=tuple(fit), video_held=(), task_held=(), member_names=members
+    )
+    pairs = program_causality_pairs(split)
+    assert len(pairs) == 40
+    assert all(pair.primary.video_demo == 3 for pair in pairs)
+    assert all(
+        pair.primary.authority_id != pair.wrong.authority_id
+        and pair.primary.role == pair.wrong.role
+        for pair in pairs
+    )
+
+    rows = []
+    for pair in pairs:
+        correct = 0.8 if pair.primary.role == "meta_fit" else 0.7
+        wrong = correct - 0.2
+        rows.append(
+            {
+                "authority_id": pair.primary.authority_id,
+                "role": pair.primary.role,
+                "video_demo": pair.primary.video_demo,
+                "wrong_authority_id": pair.wrong.authority_id,
+                "wrong_video_demo": pair.wrong.video_demo,
+                "correct": {
+                    "mean_best_recovery": correct,
+                    "best_family_recovery": {
+                        family: correct
+                        for family in ("q", "v", "action_in", "action_out")
+                    },
+                },
+                "wrong": {
+                    "mean_best_recovery": wrong,
+                    "best_family_recovery": {
+                        family: wrong
+                        for family in ("q", "v", "action_in", "action_out")
+                    },
+                },
+            }
+        )
+    summary = summarize_program_causality_rows(rows)
+    assert program_causality_checks(summary, contract) == {
+        "meta_fit": True,
+        "target_fit": True,
+    }
+    assert summary["meta_fit"]["positive_task_fraction"] == 1.0
+
+    mapping_summary = {
+        "fit": {"task_recovery": {"median": 0.8}},
+        "video_holdout": {
+            "task_recovery": {"median": 0.8, "p10": 0.6},
+            "tasks": [],
+        },
+    }
+    mapping_config = {
+        "mapping_gate": {
+            "f3_held_video_median_minimum": 0.75,
+            "f3_held_video_p10_minimum": 0.5,
+            "f3_held_to_fit_minimum": 0.8,
+            "adjacent_checkpoint_stability": {
+                "maximum_median_absolute_task_delta": 0.1,
+                "maximum_held_median_drop": 0.05,
+            },
+        },
+        "formal_run": {"checkpoint_macros": [1, 2]},
+    }
+    gate = _gate_report(
+        phase="f3",
+        macro=1,
+        config=mapping_config,
+        summary=mapping_summary,
+        program_causality=summary,
+        program_causality_contract=contract,
+        previous=None,
+    )
+    assert gate["primary_pass"]
+    summary["target_fit"]["correct_minus_wrong_program"]["median"] = 0.09
+    failed = _gate_report(
+        phase="f3",
+        macro=1,
+        config=mapping_config,
+        summary=mapping_summary,
+        program_causality=summary,
+        program_causality_contract=contract,
+        previous=None,
+    )
+    assert not failed["primary_checks"]["correct_vs_wrong_program"]

@@ -87,6 +87,88 @@ def _ordinary(value: torch.Tensor) -> torch.Tensor:
     return value.detach().float().clone()
 
 
+def _validate_pass_a_inputs(
+    packed: PackedSharedCompilerVideos,
+    language_tokens: torch.Tensor,
+    language_mask: torch.Tensor,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    boundaries = tuple(map(int, packed.video_offsets.detach().cpu().tolist()))
+    set_boundaries = tuple(
+        map(int, packed.video_set_offsets.detach().cpu().tolist())
+    )
+    if (
+        set_boundaries != (0, len(boundaries) - 1)
+        or len(boundaries) not in (2, 3, 5)
+        or packed.frame_condition_ids.shape != (packed.frames.shape[0],)
+        or torch.count_nonzero(packed.frame_condition_ids).item() != 0
+        or language_tokens.shape[0] != 1
+        or language_mask.shape != language_tokens.shape
+    ):
+        raise ValueError("G3 compiler condition is not one K={1,2,4} task")
+    return boundaries, set_boundaries
+
+
+def _run_frozen_pass_a(
+    *,
+    policy: torch.nn.Module,
+    program_model: NaturalProgramModel,
+    packed: PackedSharedCompilerVideos,
+    language_tokens: torch.Tensor,
+    language_mask: torch.Tensor,
+):
+    device = packed.frames.device
+    autocast = (
+        torch.autocast("cuda", dtype=torch.bfloat16)
+        if device.type == "cuda"
+        else nullcontext()
+    )
+    with torch.inference_mode(), autocast:
+        return program_model(
+            policy=policy,
+            frames=packed.frames,
+            frame_indices=packed.frame_indices,
+            raw_frame_counts=packed.raw_frame_counts,
+            video_offsets=packed.video_offsets,
+            video_set_offsets=packed.video_set_offsets,
+            frame_condition_ids=packed.frame_condition_ids,
+            language_tokens=language_tokens,
+            language_mask=language_mask,
+            query_times=packed.query_times,
+        )
+
+
+def _extract_program(output) -> NaturalProgram:
+    return NaturalProgram(
+        p_lang=_ordinary(output.program.p_lang[0]),
+        p_scene=_ordinary(output.program.p_scene[0]),
+        p_process=_ordinary(output.program.p_process[0]),
+        rho=_ordinary(output.program.rho[0]),
+        tau=_ordinary(output.program.tau[0]),
+        sigma=_ordinary(output.program.sigma[0]),
+    )
+
+
+def prepare_shared_compiler_program(
+    *,
+    policy: torch.nn.Module,
+    program_model: NaturalProgramModel,
+    packed: PackedSharedCompilerVideos,
+    language_tokens: torch.Tensor,
+    language_mask: torch.Tensor,
+) -> NaturalProgram:
+    """Run frozen Pass A without constructing a second task's native bank."""
+
+    _validate_pass_a_inputs(packed, language_tokens, language_mask)
+    output = _run_frozen_pass_a(
+        policy=policy,
+        program_model=program_model,
+        packed=packed,
+        language_tokens=language_tokens,
+        language_mask=language_mask,
+    )
+    return _extract_program(output)
+
+
 def prepare_shared_compiler_condition(
     *,
     policy: torch.nn.Module,

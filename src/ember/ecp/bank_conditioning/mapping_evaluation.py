@@ -20,6 +20,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v4.json",
     )
+    parser.add_argument(
+        "--program-causality-contract",
+        type=Path,
+        default=(
+            REPO_ROOT
+            / "configs/pi05_ecp_shared_compiler_g3_f3_program_causality_v1.json"
+        ),
+    )
     parser.add_argument("--phase", choices=("f3",), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -38,6 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in (
         "config",
+        "program_causality_contract",
         "asset_root",
         "output_dir",
         "source_run",

@@ -486,7 +486,10 @@ G3按以下最小因果顺序推进，前一接口通过后才恢复后一职责
    `0.75`、p10至少`0.50`、train/held ratio至少`0.8`，且两个相邻checkpoint稳定。train高held低时先检查functional anchor seed与
    content泛化，不靠加宽或回归逐video dual。以上数值是必要条件而非充分条件：fit-only task-independent prototype不得被计为pass；
    formal前须用fit-only正对照预注册correct-vs-wrong Program资格，并按meta/target role分别汇报，确保task-conditioned selection而非
-   common update承担增量。若carrier重拟合，teacher必须来自`full expert - new carrier`后重新做的真实native projection，不能直接使用
+   common update承担增量。当前固定panel对40个fit tasks各取不读outcome的最小video ordinal；wrong arm按同一meta/target role内排序后的
+   下一task循环配对，只替换完整global Program，保持primary task的真实native bank和teacher不变。两个role的task-median
+   `correct - wrong Program`都必须至少`0.10`，并作为F3 primary Gate的一部分。若carrier重拟合，teacher必须来自
+   `full expert - new carrier`后重新做的真实native projection，不能直接使用
    代数差分factor。F3可用独立spectrum credit训练scale/group-gain，但selection与scale彼此stop-gradient；functional/flow仍留到F4。
 5. **F4 scale/functional qualification**：恢复全部75 fit tasks；K1 teacher只覆盖既有50 tasks并以mapping loss保护selection，
    scale/video职责独立更新。teacher paired update不得退化，functional、cross-episode flow、carrier preservation要改善；若低置信

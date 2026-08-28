@@ -354,7 +354,8 @@ retention`>=80%`。可以按mapping/compiler/critic证据修正，不设结构�
   key images，以rank-specific global cross-event polar变换raw full-Program query，再做bounded B0 anchor/native solve与B1 exact replay；
   必须通过K1/K4 forward、gradient、chunk、materialization、Action Meta 0和吞吐/显存资格。内部polar witness不等于F3 Gate。
 - [ ] F0通过后从clean pushed detached commit fresh运行相同451-condition F3；保持frozen G2 Program、fit-only consensus teacher、
-  rank/data/optimizer/Gate不变，并增加correct-vs-wrong Program资格以阻断universal shortcut。只有single checkpoints满足
+  rank/data/optimizer/Gate不变，并执行固定40-task fit-only correct-vs-wrong Program panel：每task最低video ordinal、同role下一task
+  循环配对、primary native bank/teacher不变，meta与target两个role的median causal margin都必须`>=.10`。只有single checkpoints满足
   held median`>=.75`、p10`>=.50`、held/fit`>=.8`及相邻稳定才进入F4。
 - [ ] 条件式做fit-only decomposition-feasibility oracle：仅当functional-polar mapping已显著取得selection而残余证据仍指向common
   correction/carrier时，只用授权fit tasks形成shared correction并候选重拟合carrier12；随后针对

@@ -647,7 +647,9 @@ G1--G5 Gate或架构修正依据。
 3. 先完成v4的CPU回归、architecture/diff审查并集成clean pushed main；随后从detached authority做真实K1/K4 F0，验证四次streaming
    read的chunk边界、全部selection gradient、Action Meta 0、materialization、显存和吞吐。若全局polar吞吐不合理，只能依据已测的
    q-global/v-action-per-event证据优化计算，不得改变科学Gate或做无信息版本扫；
-4. F0通过后从fresh执行同一451-condition F3 primary，并增加correct-vs-wrong Program资格防止universal shortcut。只有held
+4. F0通过后从fresh执行同一451-condition F3 primary，并执行40-task fit-only correct-vs-wrong Program资格防止universal shortcut：
+   每task取最低video ordinal、wrong Program按同role下一task循环配对、primary bank/teacher固定，meta/target各自median margin须
+   `>=.10`。只有held
    median`>=.75`、p10`>=.50`、held/fit`>=.8`且相邻稳定才恢复F4/F5/F6；内部polar residual或task-local witness不能代替；
 5. universal rank4/new-carrier仍是后续decomposition风险：只有functional-polar已取得明显selection而剩余失败确实指向common
    correction、scale或carrier时才重开，并必须从`full expert - new carrier`重新做真实native projection；

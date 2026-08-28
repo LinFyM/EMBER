@@ -38,8 +38,15 @@ from ember.ecp.bank_conditioning.mapping import (
 )
 from ember.ecp.bank_conditioning.mapping_step import (
     load_mapping_condition_teachers,
+    mapping_condition_output,
     mapping_recovery_record,
-    prepare_mapping_condition_output,
+    prepare_mapping_condition,
+    prepare_mapping_condition_program,
+)
+from ember.ecp.bank_conditioning.program_causality import (
+    ProgramCausalityPair,
+    load_program_causality_contract,
+    program_causality_pairs,
 )
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherStore
 from ember.ecp.stage0_training import stage0_source_authority, tokenize_stage0_languages
@@ -61,7 +68,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-EVALUATION_SCHEMA = "ember_ecp_shared_compiler_mapping_evaluation_v1"
+EVALUATION_SCHEMA = "ember_ecp_shared_compiler_mapping_evaluation_v2"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 SPLIT_NAMES = ("fit", "video_holdout", "task_holdout")
 
@@ -83,6 +90,7 @@ class MappingEvaluationRuntime:
     query_points: int
     checkpoint_macro: int
     training_contract: dict[str, Any]
+    program_causality_contract: dict[str, Any]
 
     def close(self) -> None:
         self.video_store.close()
@@ -283,6 +291,9 @@ def prepare_mapping_evaluation_runtime(
         device=context.device,
     )
     g2 = read_json(authority_path(config, "g2_config", asset_root=args.asset_root))
+    program_causality_contract = load_program_causality_contract(
+        args.program_causality_contract
+    )
     _evaluation_wall(policy=policy, program=program, compiler=compiler)
     return MappingEvaluationRuntime(
         config=config,
@@ -300,6 +311,7 @@ def prepare_mapping_evaluation_runtime(
         query_points=int(g2["data"]["query_points"]),
         checkpoint_macro=macro,
         training_contract=training_contract,
+        program_causality_contract=program_causality_contract,
     )
 
 
@@ -345,6 +357,7 @@ def _worker_contract(
     runtime: MappingEvaluationRuntime,
     args: argparse.Namespace,
     assigned: Sequence[tuple[str, MappingCondition]],
+    causal_pairs: Sequence[ProgramCausalityPair],
 ) -> dict[str, Any]:
     return {
         "schema_version": EVALUATION_SCHEMA,
@@ -355,7 +368,12 @@ def _worker_contract(
         "worker_index": args.worker_index,
         "worker_count": args.worker_count,
         "condition_count": len(assigned),
+        "program_causality_condition_count": len(causal_pairs),
         "sampled_frame_cost": sum(row.sampled_frames for _, row in assigned),
+        "program_causality_contract": str(args.program_causality_contract),
+        "program_causality_contract_bytes": (
+            args.program_causality_contract.stat().st_size
+        ),
         "physical_visible_device": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "information_wall": _evaluation_wall(
             policy=runtime.policy,
@@ -363,6 +381,80 @@ def _worker_contract(
             compiler=runtime.compiler,
         ),
     }
+
+
+def _assigned_program_pairs(
+    split: SharedCompilerMappingSplit,
+    assigned: Sequence[tuple[str, MappingCondition]],
+) -> tuple[ProgramCausalityPair, ...]:
+    keys = {
+        (condition.authority_id, condition.video_demo)
+        for _, condition in assigned
+    }
+    return tuple(
+        pair
+        for pair in program_causality_pairs(split)
+        if (pair.primary.authority_id, pair.primary.video_demo) in keys
+    )
+
+
+def _evaluate_condition(
+    runtime: MappingEvaluationRuntime,
+    *,
+    split_name: str,
+    condition: MappingCondition,
+    causal_pair: ProgramCausalityPair | None,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    tick = time.monotonic()
+    temperature = float(runtime.config["optimization"]["mapping"]["temperature"])
+    with torch.no_grad():
+        prepared = prepare_mapping_condition(runtime, condition)
+        output, metrics = mapping_condition_output(runtime, condition, prepared)
+        teachers = load_mapping_condition_teachers(runtime, condition)
+        loss = paired_mapping_loss(
+            output=output,
+            teachers=teachers,
+            owners=runtime.owners,
+            temperature=temperature,
+        )
+    record = {
+        "split": split_name,
+        "authority_id": condition.authority_id,
+        "role": condition.role,
+        "video_demo": condition.video_demo,
+        "sampled_frames": condition.sampled_frames,
+        **mapping_recovery_record(loss),
+        "condition_metrics": metrics,
+        "condition_seconds": time.monotonic() - tick,
+    }
+    if causal_pair is None:
+        return record, None
+
+    causal_tick = time.monotonic()
+    with torch.no_grad():
+        wrong_program = prepare_mapping_condition_program(
+            runtime, causal_pair.wrong
+        )
+        wrong_output, _ = mapping_condition_output(
+            runtime, condition, prepared, program=wrong_program
+        )
+        wrong_loss = paired_mapping_loss(
+            output=wrong_output,
+            teachers=teachers,
+            owners=runtime.owners,
+            temperature=temperature,
+        )
+    causal_record = {
+        "authority_id": condition.authority_id,
+        "role": condition.role,
+        "video_demo": condition.video_demo,
+        "wrong_authority_id": causal_pair.wrong.authority_id,
+        "wrong_video_demo": causal_pair.wrong.video_demo,
+        "correct": mapping_recovery_record(loss),
+        "wrong": mapping_recovery_record(wrong_loss),
+        "causal_seconds": time.monotonic() - causal_tick,
+    }
+    return record, causal_record
 
 
 def evaluate_mapping_worker(args: argparse.Namespace) -> None:
@@ -374,45 +466,49 @@ def evaluate_mapping_worker(args: argparse.Namespace) -> None:
         assigned = balanced_mapping_assignments(rows, args.worker_count)[
             args.worker_index
         ]
+        causal_pairs = _assigned_program_pairs(runtime.mapping_split, assigned)
+        causal_by_key = {
+            (pair.primary.authority_id, pair.primary.video_demo): pair
+            for pair in causal_pairs
+        }
         args.output_dir.mkdir(parents=True, exist_ok=True)
         contract_path = args.output_dir / f"worker_{args.worker_index:02d}_contract.json"
         rows_path = args.output_dir / f"worker_{args.worker_index:02d}_rows.jsonl"
+        causal_path = (
+            args.output_dir
+            / f"worker_{args.worker_index:02d}_program_causality_rows.jsonl"
+        )
         completion_path = (
             args.output_dir / f"worker_{args.worker_index:02d}_completion.json"
         )
-        if contract_path.exists() or rows_path.exists() or completion_path.exists():
+        if any(
+            path.exists()
+            for path in (contract_path, rows_path, causal_path, completion_path)
+        ):
             raise ValueError("mapping evaluation worker output already exists")
-        contract = _worker_contract(runtime, args, assigned)
+        contract = _worker_contract(runtime, args, assigned, causal_pairs)
         write_json_atomic(contract_path, contract)
         started = time.monotonic()
-        with rows_path.open("x", encoding="utf-8") as handle:
+        with (
+            rows_path.open("x", encoding="utf-8") as handle,
+            causal_path.open("x", encoding="utf-8") as causal_handle,
+        ):
             for split_name, condition in assigned:
-                tick = time.monotonic()
-                with torch.no_grad():
-                    output, metrics = prepare_mapping_condition_output(
-                        runtime, condition
-                    )
-                    teachers = load_mapping_condition_teachers(runtime, condition)
-                    loss = paired_mapping_loss(
-                        output=output,
-                        teachers=teachers,
-                        owners=runtime.owners,
-                        temperature=float(
-                            runtime.config["optimization"]["mapping"]["temperature"]
-                        ),
-                    )
-                record = {
-                    "split": split_name,
-                    "authority_id": condition.authority_id,
-                    "role": condition.role,
-                    "video_demo": condition.video_demo,
-                    "sampled_frames": condition.sampled_frames,
-                    **mapping_recovery_record(loss),
-                    "condition_metrics": metrics,
-                    "condition_seconds": time.monotonic() - tick,
-                }
+                record, causal_record = _evaluate_condition(
+                    runtime,
+                    split_name=split_name,
+                    condition=condition,
+                    causal_pair=causal_by_key.get(
+                        (condition.authority_id, condition.video_demo)
+                    ),
+                )
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
                 handle.flush()
+                if causal_record is not None:
+                    causal_handle.write(
+                        json.dumps(causal_record, sort_keys=True) + "\n"
+                    )
+                    causal_handle.flush()
         write_json_atomic(
             completion_path,
             {

@@ -19,6 +19,7 @@ from ember.ecp.bank_conditioning.mapping_eval_runtime import (
 from ember.ecp.bank_conditioning.program_causality import (
     load_program_causality_contract,
     program_causality_checks,
+    program_causality_extra_costs,
     program_causality_pairs,
     summarize_program_causality_rows,
 )
@@ -237,6 +238,21 @@ def _load_worker_evidence(
         )
         for row in worker_causal_rows
     }
+    primary_by_key = {
+        (int(row["authority_id"]), int(row["video_demo"])): row
+        for row in worker_rows
+    }
+    causal_correct_matches = all(
+        row["correct"]["mean_best_recovery"]
+        == primary_by_key[(int(row["authority_id"]), int(row["video_demo"]))][
+            "mean_best_recovery"
+        ]
+        and row["correct"]["best_family_recovery"]
+        == primary_by_key[(int(row["authority_id"]), int(row["video_demo"]))][
+            "best_family_recovery"
+        ]
+        for row in worker_causal_rows
+    )
     valid = all(
         (
             contract.get("schema_version") == EVALUATION_SCHEMA,
@@ -246,12 +262,24 @@ def _load_worker_evidence(
             int(contract.get("condition_count", -1)) == len(assigned),
             int(contract.get("program_causality_condition_count", -1))
             == len(expected_causal_keys),
+            int(contract.get("program_causality_extra_cost", -1))
+            == sum(
+                pair.primary.sampled_frames + pair.wrong.sampled_frames
+                for _, condition in assigned
+                if (
+                    pair := causal_by_key.get(
+                        (condition.authority_id, condition.video_demo)
+                    )
+                )
+                is not None
+            ),
             contract.get("program_causality_contract")
             == str(args.program_causality_contract),
             int(contract.get("program_causality_contract_bytes", -1))
             == args.program_causality_contract.stat().st_size,
             assigned_keys == observed_keys,
             expected_causal_keys == observed_causal_keys,
+            causal_correct_matches,
             not seen_keys.intersection(observed_keys),
         )
     )
@@ -267,7 +295,9 @@ def aggregate_mapping_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     )
     split = load_mapping_split(config, asset_root=args.asset_root)
     expected = balanced_mapping_assignments(
-        labeled_mapping_conditions(split), args.worker_count
+        labeled_mapping_conditions(split),
+        args.worker_count,
+        extra_costs=program_causality_extra_costs(split),
     )
     causal_pairs = program_causality_pairs(split)
     causal_by_key = {

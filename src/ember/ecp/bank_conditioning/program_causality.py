@@ -106,6 +106,19 @@ def program_causality_pairs(
     return result
 
 
+def program_causality_extra_costs(
+    split: SharedCompilerMappingSplit,
+) -> dict[tuple[int, int], int]:
+    """Proxy the extra wrong-Pass-A plus wrong-compiler work for queue balance."""
+
+    return {
+        (pair.primary.authority_id, pair.primary.video_demo): (
+            pair.primary.sampled_frames + pair.wrong.sampled_frames
+        )
+        for pair in program_causality_pairs(split)
+    }
+
+
 def _quantile(values: Sequence[float], fraction: float) -> float:
     ordered = sorted(map(float, values))
     if not ordered or not 0.0 <= fraction <= 1.0:

@@ -191,6 +191,18 @@ def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None
     assignments = balanced_mapping_assignments(conditions, worker_count=2)
     loads = [sum(row.sampled_frames for _, row in worker) for worker in assignments]
     assert sorted(loads) == [100, 100]
+    augmented = balanced_mapping_assignments(
+        conditions, worker_count=2, extra_costs={(1, 1): 80}
+    )
+    augmented_loads = [
+        sum(
+            row.sampled_frames
+            + (80 if (row.authority_id, row.video_demo) == (1, 1) else 0)
+            for _, row in worker
+        )
+        for worker in augmented
+    ]
+    assert sorted(augmented_loads) == [140, 140]
 
     rows = []
     for split in ("fit", "video_holdout", "task_holdout"):

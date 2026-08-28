@@ -46,6 +46,7 @@ from ember.ecp.bank_conditioning.mapping_step import (
 from ember.ecp.bank_conditioning.program_causality import (
     ProgramCausalityPair,
     load_program_causality_contract,
+    program_causality_extra_costs,
     program_causality_pairs,
 )
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherStore
@@ -330,7 +331,10 @@ def labeled_mapping_conditions(
 
 
 def balanced_mapping_assignments(
-    rows: Sequence[tuple[str, MappingCondition]], worker_count: int
+    rows: Sequence[tuple[str, MappingCondition]],
+    worker_count: int,
+    *,
+    extra_costs: Mapping[tuple[int, int], int] | None = None,
 ) -> tuple[tuple[tuple[str, MappingCondition], ...], ...]:
     if not 1 <= worker_count <= 6:
         raise ValueError("mapping evaluation worker count must be in [1, 6]")
@@ -338,10 +342,14 @@ def balanced_mapping_assignments(
         [] for _ in range(worker_count)
     ]
     loads = [0] * worker_count
+    extras = extra_costs or {}
+    cost = lambda value: value.sampled_frames + int(
+        extras.get((value.authority_id, value.video_demo), 0)
+    )
     for row in sorted(
         rows,
         key=lambda value: (
-            -value[1].sampled_frames,
+            -cost(value[1]),
             value[0],
             value[1].authority_id,
             value[1].video_demo,
@@ -349,7 +357,7 @@ def balanced_mapping_assignments(
     ):
         worker = min(range(worker_count), key=lambda index: (loads[index], index))
         assignments[worker].append(row)
-        loads[worker] += row[1].sampled_frames
+        loads[worker] += cost(row[1])
     return tuple(tuple(values) for values in assignments)
 
 
@@ -370,6 +378,10 @@ def _worker_contract(
         "condition_count": len(assigned),
         "program_causality_condition_count": len(causal_pairs),
         "sampled_frame_cost": sum(row.sampled_frames for _, row in assigned),
+        "program_causality_extra_cost": sum(
+            pair.primary.sampled_frames + pair.wrong.sampled_frames
+            for pair in causal_pairs
+        ),
         "program_causality_contract": str(args.program_causality_contract),
         "program_causality_contract_bytes": (
             args.program_causality_contract.stat().st_size
@@ -463,9 +475,11 @@ def evaluate_mapping_worker(args: argparse.Namespace) -> None:
     try:
         runtime = prepare_mapping_evaluation_runtime(args, context)
         rows = labeled_mapping_conditions(runtime.mapping_split)
-        assigned = balanced_mapping_assignments(rows, args.worker_count)[
-            args.worker_index
-        ]
+        assigned = balanced_mapping_assignments(
+            rows,
+            args.worker_count,
+            extra_costs=program_causality_extra_costs(runtime.mapping_split),
+        )[args.worker_index]
         causal_pairs = _assigned_program_pairs(runtime.mapping_split, assigned)
         causal_by_key = {
             (pair.primary.authority_id, pair.primary.video_demo): pair

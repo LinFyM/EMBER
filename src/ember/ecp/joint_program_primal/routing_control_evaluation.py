@@ -351,6 +351,7 @@ def evaluate_routing_worker(args: argparse.Namespace) -> None:
         resume=None,
         stop_after_step=1,
         log_every=1,
+        skip_routing_initialization=True,
     )
     runtime = None
     started = time.monotonic()

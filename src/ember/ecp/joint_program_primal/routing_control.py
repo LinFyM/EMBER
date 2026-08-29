@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Mapping
 
 import torch
@@ -25,6 +26,10 @@ from ember.ecp.joint_program_primal.runtime import (
     _optimizer,
     _scheduler,
     _topology,
+)
+from ember.ecp.joint_program_primal.routing_initialization import (
+    FUNCTIONAL_CODE_INITIALIZATION,
+    initialize_functional_code_heads,
 )
 from ember.ecp.natural_program import NaturalProgram
 from ember.ecp.shared_compiler_assets import load_shared_compiler_config
@@ -116,6 +121,7 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
     model = config.get("model", {})
     wall = config.get("information_wall", {})
     critic = config.get("optimization", {}).get("privileged_critic")
+    initialization = model.get("primal_scorer_initialization")
     tasks = tuple(
         map(
             int,
@@ -159,6 +165,26 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_training_only") is True,
             wall.get("action_meta_installed") is False,
             wall.get("shuffled_or_reversed_use") is False,
+            (
+                initialization == "fresh"
+                or all(
+                    (
+                        initialization == FUNCTIONAL_CODE_INITIALIZATION,
+                        critic is None,
+                        model.get("training_signal")
+                        == (
+                            "correct_functional_after_fit_only_functional_"
+                            "positive_control_minimum_norm_head_initialization"
+                        ),
+                        config.get("optimization", {}).get("loss")
+                        == "two_correct_fit_video_functional_only",
+                        wall.get(
+                            "functional_positive_control_initialization_training_only"
+                        )
+                        is True,
+                    )
+                )
+            ),
             critic is None
             or all(
                 (
@@ -242,7 +268,11 @@ def _optimizer_cursor(
     return optimizer, scheduler, checkpoints, stop, optimizer_steps, metrics_rows
 
 
-def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
+def _run_contract(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    initialization: Mapping[str, Any],
+) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
     return {
         "schema_version": ROUTING_CONTROL_RUN_SCHEMA,
@@ -294,6 +324,7 @@ def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
             },
             "removal_trigger": "retire executable control after Gate interpretation and before the next canonical deployment architecture",
         },
+        "primal_scorer_initialization": dict(initialization),
         "model": dict(runtime.config["model"]),
         "optimization": dict(runtime.config["optimization"]),
         "throughput_gate": dict(runtime.config["throughput_gate"]),
@@ -320,6 +351,47 @@ def prepare_routing_control_runtime(
     )
     data = _data_assets(args, config, base, context, authority, model)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    initialization_kind = config["model"]["primal_scorer_initialization"]
+    skip_initialization = bool(
+        getattr(args, "skip_routing_initialization", False)
+    )
+    initialization: dict[str, Any]
+    if args.resume is not None:
+        initialization = {
+            "kind": initialization_kind,
+            "state": "restored_from_checkpoint",
+        }
+    elif skip_initialization:
+        initialization = {
+            "kind": initialization_kind,
+            "state": "skipped_before_immediate_checkpoint_load",
+        }
+    elif initialization_kind == FUNCTIONAL_CODE_INITIALIZATION:
+        initialization_view = SimpleNamespace(
+            owners=model.owners,
+            compiler=model.compiler,
+            context=context,
+        )
+        initialization = (
+            initialize_functional_code_heads(
+                config=config,
+                asset_root=args.asset_root,
+                compiler=model.compiler,
+                owners=model.owners,
+                task_ids=ROUTING_TASK_IDS,
+                program_for_task=lambda task: fixed_routing_program(
+                    initialization_view, task
+                ),
+            )
+            if context.is_main
+            else {}
+        )
+        if context.world_size > 1:
+            rows: list[Any] = [initialization]
+            dist.broadcast_object_list(rows, src=0)
+            initialization = dict(rows[0])
+    else:
+        initialization = {"kind": "fresh", "state": "seeded_random"}
     if context.world_size > 1:
         for value in writer_state.state_dict().values():
             dist.broadcast(value, src=0)
@@ -365,7 +437,9 @@ def prepare_routing_control_runtime(
         metrics_rows=metrics_rows,
         run_contract={},
     )
-    runtime.run_contract = _run_contract(runtime)
+    runtime.run_contract = _run_contract(
+        runtime, initialization=initialization
+    )
     if context.is_main:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         write_json_atomic(args.output_dir / "run_contract.json", runtime.run_contract)

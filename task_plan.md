@@ -1,17 +1,33 @@
 # EMBER task plan
 
-更新时间：2026-08-29。
+更新时间：2026-08-30。
 
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
 operator capacity均已通过；J2/J3在充分functional updates后non-pass。R1固定正交route把train/held-video从J2的`.1708/.1646`提高到
 `.2678/.2798`，wrong-token margin`.2384`，证明清晰route被使用；但q/v/action-in仍约零，完整`.60/.50` Gate未过。checkpoint几何又证明
-route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。R2又证明set-valued critic
-能恢复v/action-out几何，却因q/action-in grouped-output失容而使真实functional低于R1。当前唯一活动阶段因此是同一training-only
-fixed-route图上的R3 owner×group output-head对照；它只替换已被解析上限证实的decoder接口，不改Program、bank、rank、loss或部署输入。
-R1--R3都不能通过G3或进入deployment checkpoint；
+route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。R2证明set-valued critic
+能恢复v/action-out几何，R3 owner×group decoder又把action-in/out提高到`.656/.669`，但q/v和真实functional仍未过门。真实gradient
+分解进一步证明critic通常反向、成功code监督在当前点近正交，而成功方向换用冻结shared scale仍保留`.940`中位functional recovery。
+当前唯一活动阶段因此是同一training-only fixed-route图上的R4：用已验证functional code一次性初始化shared heads，随后只用真实
+functional loss，裁决瓶颈究竟是direction discovery初始化还是更深的shared优化/函数类问题。R1--R4都不能通过G3或进入deployment checkpoint；
 所有局部Gate、单次训练或内部指标都不代表整体项目goal完成。
+
+## 当前R4里程碑
+
+- [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
+- [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
+  一个永久joint loss；
+- [x] 用同bank真实policy forward证明task-local成功方向改用冻结shared scale仍有`.9398`中位recovery，排除scale为首因；
+- [x] 实现一次性functional-code minimum-norm shared-head初始化，保持真实X/Y、current-bank dual/exact signed replay、rank4、
+  frozen scale与唯一rank16不变，并移除R4训练critic；
+- [x] 25项定向CPU合同与gpu01真实六task forward/backward通过：step0 positive-code recovery中位约`.962`、Action Meta 0、teacher reads 0、
+  全部有效gradient有限，峰值`21.882GB`；
+- [ ] 完成diff审查、clean main集成、push与detached formal launch contract；
+- [ ] fresh运行10 warmup+100 effective functional-only updates，在actual step70/110保存single checkpoints并完成原R3 Gate；
+- [ ] 若R4保持强functional/family且causal/stability通过，把“utility-aligned initialization/有限warmup”机制接回Natural Program并继续真正
+  G3；若训练从强step0系统退化，先按最早发生的head/trunk/optimizer接口分析，不做LR/seed/width/rank小扫。
 
 ## 当前G1里程碑
 

@@ -1321,3 +1321,20 @@ q/action-in最优median只有`.691/.392`；让每个native group拥有独立head
 rank均为`40/40`。这不是width扫，而是移除已证实的错误参数共享：q仍8组、action-in仍32个native-width blocks，candidate measure、
 真实X/Y、signed pooling和唯一rank16完全不变。下一R3只检验这一变量；只有四family高而functional仍低，才把根因进一步判为
 set-valued teacher-to-utility不充分。
+
+### 77. R3排除decoder后，首因收敛为从随机shared scorer发现强方向
+
+R3用owner×native-group独立output heads清除了R2的解析容量限制。step110 action-in/out recovery达到`.6562/.6689`，证明decoder修正
+有效；但q/v只有`.2853/.2773`，train/held-video只有`.3053/.2875`。六task真实gradient分解显示，旧fit-only critic相对functional
+gradient的全局cosine median为`-.1489`，q为`-.2696`；成功task-local code的直接监督梯度也仅与functional有`.0324`中位cosine。
+所以提高q/v权重、增加critic、把code loss长期并入或继续普通超参调整都没有依据。
+
+冻结scale并非根因。把十task中六个成功code原方向经同一current bank回放、只换成R3 shared scale后，真实policy functional recovery
+中位`.9398`，范围`.7534--1.0232`且6/6超过`.60`。这与P0/P1、owner×group解析容量一起把最早接口锁到direction discovery：强
+双因子方向在现有图中存在，scale足够，但从随机shared scorer出发的functional或teacher credit都没有把优化带入该basin。
+
+R4据此只做一次确定性边界对照：十个fit-only、functionally validated task-local primal通过现有fixed routing token hidden插值到同一套
+shared owner×group heads；不使用task-local scale，初始化后删除critic，只保留真实functional loss。真实step0六task相对原code recovery
+为`.980/1.155/1.012/.944/.754/.815`，中位约`.962`，证明FP32最大`.00399`的head插值误差没有破坏policy功能。R4若在相邻
+checkpoints保持强解，才允许把utility-aligned初始化/短warmup机制接回Natural Program；R4本身含training-only task route与privileged
+初始化，永远不是deployment或G3通过。

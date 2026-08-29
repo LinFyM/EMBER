@@ -1139,3 +1139,28 @@ clean detached `a4b91bb`的R2完成10 warmup+100 effective updates及step70/110�
 - `runs/outputs/pi05_ecp_routing_token_critic_r2_s110_6c41926_gpu01p013456_r6_20260829/`；
 - `runs/outputs/pi05_ecp_routing_token_critic_r2_gate_step70_a4b91bb_gpu01_w6_20260829/`；
 - `runs/outputs/pi05_ecp_routing_token_critic_r2_gate_step110_a4b91bb_gpu01_w6_20260829/`。
+
+## 58. R3 grouped-output formal non-pass与functional-code初始化资格
+
+clean detached `main@19dbf0e`完成R3 10 warmup+100 effective updates及step70/110 Gate。step110 train/held-video recovery为
+`.305293/.287486`，q/v/action-in/action-out为`.285260/.277323/.656235/.668922`，wrong-token margin`.118578`、same-task
+retention`.986958`。因此owner×group decoder明确修复action-in并维持action-out，但q/v与primary仍non-pass；内部family提升不能替代
+真实functional。
+
+随后六task只读梯度审计显示fit-only critic相对真实functional gradient的全局cosine median`-.148903`，q为`-.269630`；成功
+task-local code监督梯度相对functional也仅`.032449`。同一成功方向只换R3冻结shared scale的真实policy recovery中位`.939783`、
+范围`.753420--1.023163`，6/6均过`.60`。这排除了继续调critic/family权重或解冻scale，支持一次fixed-route、training-only
+functional-code head初始化对照。
+
+R4把十个formal成功task-local primal按fixed-token下现有hidden做FP64 minimum-norm owner×group head插值，不读取其task-local scale；
+初始化后critic删除，只训练真实functional loss。dirty gpu01六task真实step0显示233 heads均rank`40/40`，最大FP64/FP32 fit error
+`1.50e-14/.003992`，相对原positive code recovery为`.980/1.155/1.012/.944/.754/.815`，Action Meta 0、native teacher reads 0、
+唯一rank16及全部冻结边界成立。该profile只给予clean formal资格，不是R4 Gate或G3通过。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_grouped_decoder_r3_s110_67a49f8_gpu01p016_r3_20260829/`；
+- `runs/outputs/pi05_ecp_routing_grouped_decoder_r3_gate_step110_19dbf0e_gpu01_20260829/`；
+- `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_gradient_allocation_19dbf0e_gpu01_20260830/`；
+- `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_utility_code_gradients_19dbf0e_gpu01_20260830/`；
+- `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_shared_scale_transfer_19dbf0e_gpu01_20260830/`。

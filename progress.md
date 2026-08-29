@@ -1,5 +1,25 @@
 # EMBER progress
 
+- 2026-08-30 R3 grouped-output formal与step70/110 Gate已完整结束。step110 train/held-video recovery为
+  `.305293/.287486`，q/v/action-in/action-out为`.285260/.277323/.656235/.668922`，wrong-token margin
+  `.118578`、same-task retention`.986958`。R3确实修复action-in并保持action-out、路由因果和跨video稳定，但train/held及q/v仍未过
+  `.60/.50/.35/.35`，所以明确non-pass，不能接回Natural Program或冒充G3通过。
+
+- R3后续只读根因分解排除了继续调critic权重、family权重或scale。六task上fit-only critic相对真实functional gradient的全局cosine
+  median为`-.148903`，q为`-.269630`；成功task-local code的直接监督梯度相对functional也只有median`.032449`，故二者都不是适合
+  继续叠加的joint loss。相反，把成功code原方向换成R3冻结shared scale后，六task真实functional recovery中位`.939783`、范围
+  `.753420--1.023163`，6/6均`>=.60`。因此最早剩余接口不是bank/operator/rank4/scale，而是fresh shared scorer从随机点发现强双因子
+  方向的credit/initialization。
+
+- 当前R4 fixed-route边界只在训练开始前用十个已formal通过的task-local functional code，按现有owner×group hidden做一次FP64
+  minimum-norm shared-head插值；task-local scale不加载，之后只使用真实panel-A functional loss，critic完全删除。gpu01单卡真实
+  forward/backward已通过：233 heads均hidden rank`40/40`，FP64/写回FP32最大拟合误差为`1.50e-14/.003992`；六task step0相对原
+  positive-code functional recovery为`.980/1.155/1.012/.944/.754/.815`，中位约`.962`。Action Meta module/parameter为0，native teacher
+  tensor reads 0，source/Stage0/scale trainable均0，唯一38-target rank16被policy消费；peak reserved`21.882GB`，无35GB人为门。
+  下一步是clean pushed detached R4 formal及原step70/110 Gate；该对照仍不是deployment Writer或G3 pass。
+
+- owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
+
 - 2026-08-29 clean pushed `67a49f8`的R3三卡真实profile完成：同一global update由每rank两task执行，墙钟`25.334s`，
   三rank最大reserved为`21.815/20.684/20.462GB`（十进制bytes），所有owner×group output heads均有finite nonzero gradient，
   aggregate output-head gradient norm `.005195`。run contract实测trainable参数`11,767,940`，Action Meta module/parameter均0，source、

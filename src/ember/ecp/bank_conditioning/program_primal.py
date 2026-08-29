@@ -197,27 +197,46 @@ class ProgramNativePrimalScorer(torch.nn.Module):
             owner=owner_state,
         )
 
-    def input_primals(self, state: PrimalProgramState) -> tuple[torch.Tensor, ...]:
+    def input_head_features(
+        self, state: PrimalProgramState
+    ) -> tuple[torch.Tensor, ...]:
+        """Return the exact hidden rows consumed by each native input head."""
+
         return tuple(
-            head(self.input_trunk[owner.family.value](state.rank[target]))
-            for target, (owner, head) in enumerate(
-                zip(self.owners, self.input_primal_heads, strict=True)
+            self.input_trunk[owner.family.value](state.rank[target])
+            for target, owner in enumerate(self.owners)
+        )
+
+    def output_head_features(
+        self, state: PrimalProgramState
+    ) -> tuple[torch.Tensor, ...]:
+        """Return ``[group, rank, width]`` rows consumed by output heads."""
+
+        rows = []
+        for target, owner in enumerate(self.owners):
+            groups = native_output_group_count(owner)
+            context = state.rank[target][None] + self.group_embedding[:groups, None]
+            rows.append(self.output_trunk[owner.family.value](context))
+        return tuple(rows)
+
+    def input_primals(self, state: PrimalProgramState) -> tuple[torch.Tensor, ...]:
+        features = self.input_head_features(state)
+        return tuple(
+            head(hidden)
+            for head, hidden in zip(
+                self.input_primal_heads, features, strict=True
             )
         )
 
     def output_primals(
         self, state: PrimalProgramState
     ) -> tuple[torch.Tensor, ...]:
-        rows = []
-        for target, (owner, heads) in enumerate(
-            zip(self.owners, self.output_primal_heads, strict=True)
-        ):
-            groups = native_output_group_count(owner)
-            context = state.rank[target][None] + self.group_embedding[:groups, None]
-            hidden = self.output_trunk[owner.family.value](context)
-            rows.append(
-                torch.stack(
-                    tuple(head(hidden[group]) for group, head in enumerate(heads))
-                )
+        features = self.output_head_features(state)
+        return tuple(
+            torch.stack(
+                tuple(head(hidden[group]) for group, head in enumerate(heads))
             )
-        return tuple(rows)
+            for heads, hidden in zip(
+                self.output_primal_heads, features, strict=True
+            )
+        )

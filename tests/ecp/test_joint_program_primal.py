@@ -16,6 +16,10 @@ from ember.ecp.joint_program_primal.routing_control import (
     fixed_routing_token,
     load_routing_control_config,
 )
+from ember.ecp.joint_program_primal.routing_initialization import (
+    FUNCTIONAL_CODE_INITIALIZATION,
+    minimum_norm_head_solution,
+)
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     _training_world_size,
     routing_task_assignments,
@@ -247,3 +251,37 @@ def test_routing_control_critic_is_fit_only_and_never_a_deployment_input() -> No
     assert critic["weight"] == 0.2
     assert critic["deployment_input"] is False
     assert critic["held_or_validation_reads"] is False
+
+
+def test_routing_functional_code_head_fit_is_exact_and_minimum_norm() -> None:
+    generator = torch.Generator().manual_seed(20260830)
+    features = torch.randn(8, 16, generator=generator)
+    labels = torch.randn(8, 5, generator=generator)
+    weight, report = minimum_norm_head_solution(features, labels)
+    assert weight.shape == (5, 16)
+    assert report["rank"] == 8
+    assert report["fp64_relative_fit_error"] < 1e-10
+    assert torch.allclose(
+        features.double() @ weight.double().T,
+        labels.double(),
+        atol=1e-10,
+        rtol=1e-10,
+    )
+    null_projection = torch.eye(16, dtype=torch.float64) - torch.linalg.pinv(
+        features.double()
+    ) @ features.double()
+    assert torch.linalg.norm(weight.double() @ null_projection) < 1e-10
+
+
+def test_routing_r4_uses_functional_code_initialization_without_critic() -> None:
+    root = Path(__file__).resolve().parents[2]
+    control = load_routing_control_config(
+        root / "configs/pi05_ecp_routing_token_functional_code_init_r4_v1.json"
+    )
+    assert (
+        control["model"]["primal_scorer_initialization"]
+        == FUNCTIONAL_CODE_INITIALIZATION
+    )
+    assert "privileged_critic" not in control["optimization"]
+    assert control["optimization"]["loss"] == "two_correct_fit_video_functional_only"
+    assert control["information_wall"]["task_local_fixed_scales_used"] is False

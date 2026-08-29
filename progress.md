@@ -1,5 +1,38 @@
 # EMBER progress
 
+## 2026-08-29 G2-B pointwise formal non-pass，decoder-free behavior kernel已接通
+
+clean detached `main@5cbe76e`的首轮G2-B从旧`c1493a1/macro20`只加载共同model tensors，以fresh decoder/optimizer运行到
+macro60。训练behavior loss由`1.2723`降至`.7080`，旧动态Gate持续成立且full-vs-endpoints由macro10的`31.85%`升至macro60的
+`39.40%`；但独立panel-B exact rank4在macro10/20/40/60仅`.1837/.2622/.2938/.2828`，最终consensus`.3027`、meta/target held
+`.3803/.1853`。因此该轮不是训练没接通，而是明确scientific non-pass。
+
+冻结macro60后的新reader、linear/kernel CV及Program geometry给出一致归因：reader可把fit code读到近1，但task-holdout仍约`.262`；
+full Program的fit behavior pairwise correlation只从旧`.1610`到`.1694`，official held仍约0。训练reader吸收了pointwise coordinate
+loss，部署Program没有形成可迁移的policy-behavior邻接关系。该结果排除继续增加decoder容量、续训、LR或普通参数微调；不排除固定Program
+schema、Stage0、native bank或G3 primal-to-dual operator。
+
+为避免反复消费official held20，现已固定原fit75内的role-stratified train60/internal-held15。train60 rank16 basis在internal15对
+panel-B/consensus为`.6184/.7158`，q/v/action-in/action-out为`.6556/.7373/.4550/.6676`；official held20本轮不进入训练、
+checkpoint选择或架构修正。当前`codex/g2-behavior-kernel`已删除pointwise decoder和旧v2 config，新增一个无参数的deployment-Program
+behavior kernel：完整`P_lang/P_scene/P_process/rho/tau/sigma`按固定block-equal feature保留owner/event顺序，两组disjoint same-K
+video views在每个role内直接对齐panel-A与consensus factor-cosine topology，并保持cross-view kernel一致。梯度直接归Program，不经过
+training reader；fixed kernel-ridge只在internal Gate上由train60拟合，不是模型或deployment路径。
+
+五卡formal合同为每step 5 meta+5 target、每rank一对role任务；Stage0 v3/source冻结、Action Meta 0、uniform K、原动态loss/Gate和
+Program schema不变。三卡真实一步已验证global autograd gather、全部Program梯度路径、纯Native loader与100% UTL，约`19.73s`、peak
+allocated`9.98GB`；最终factor-cosine authority schema随后升级为v3，故该dirty profile只作执行证据。当前CPU定向与全仓回归为
+`19/19`和`204 passed`；下一步是完成diff/architecture检查、clean push，从detached commit重封v3 authority并执行五卡macro5+internal
+Gate。只有train topology上升而internal两role仍失败，才依据证据重开窄Stage0 grounding tail；official held20继续不读。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/`；
+- `runs/analysis/pi05_ecp_g2b_frozen_program_probe75_20_5cbe76e_gpu02p7_20260829/`；
+- `runs/analysis/pi05_ecp_g2b_program_geometry_old_vs_macro60_5cbe76e_20260829.json`；
+- `runs/analysis/pi05_ecp_g2b_kernel_readout_old_vs_macro60_5cbe76e_20260829.json`；
+- `runs/analysis/pi05_ecp_g2b_internal_task_holdout_basis60_15_5cbe76e_gpu02p7_20260829.json`。
+
 ## 2026-08-29 G2 behavior sufficiency失败，最小行为对齐修正已通过真实smoke
 
 P2后续分析没有继续改covariance、polar或SVD。当前先补齐了55个任务的两组disjoint 256-row cross-episode flow-gradient panels，与已有

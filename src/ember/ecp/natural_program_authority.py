@@ -115,9 +115,13 @@ def _behavior_contract(
             ),
             "tensor_bytes": int(behavior_codes.manifest["tensor_bytes"]),
             "fit_tasks": len(behavior_codes.fit_task_ids),
-            "held_zero_gradient_tasks": len(behavior_codes.held_task_ids),
+            "internal_held_zero_gradient_tasks": len(behavior_codes.held_task_ids),
+            "official_held_zero_gradient_tasks": len(
+                behavior_codes.official_held_task_ids
+            ),
             "selected_targets": list(behavior_codes.selected_targets),
             "dimension": behavior_codes.dimension,
+            "credit_path": "decoder_free_deployed_Program_kernel",
             "deployment_forward_reads_behavior_codes": False,
         },
         "behavior_contract": dict(config["behavior_alignment"]),
@@ -204,20 +208,25 @@ def build_natural_program_run_contract(
                 tasks_per_role_per_optimizer_step
             ),
             "global_tasks_per_macro": (
-                38
+                (
+                    2 * len(behavior_codes.target_gradient_task_ids)
+                    if behavior_codes is not None
+                    else 38
+                )
                 if runtime_args.mode == "formal"
                 else int(config["profile_defaults"]["tasks_per_rank_per_macro"])
                 * context.world_size
             ),
             "task_weight": (
-                "one visit per task per macro; every optimizer step is role-"
-                "balanced and task-mean weighted; the short tail pair rotates"
+                "one visit per target-gradient task plus an equally sized rotating "
+                "meta-gradient subset per macro; every optimizer step is "
+                "role-balanced and task-mean weighted"
                 if runtime_args.mode == "formal"
                 else "one role-balanced optimizer group for execution smoke; "
                 "task-mean weighted"
             ),
             "assignment": (
-                "role-balanced optimizer groups then cost-balanced uneven ranks"
+                "one meta and one target per rank with inverse-cost role pairing"
             ),
             "contrastive_negatives": (
                 "fixed_count_role_balanced_fit_language_content_"
@@ -227,6 +236,12 @@ def build_natural_program_run_contract(
         "gradient_wall": {
             "fit_roles": ["meta_fit", "target_fit"],
             "held_roles": ["meta_held", "target_held"],
+            "internal_fit_task_ids": (
+                list(behavior_codes.fit_task_ids) if behavior_codes is not None else None
+            ),
+            "internal_held_task_ids": (
+                list(behavior_codes.held_task_ids) if behavior_codes is not None else None
+            ),
             "held_task_gradient_count": 0,
             "source_policy_trainable_parameter_count": 0,
             "native_observer_trainable_parameter_count": 0,

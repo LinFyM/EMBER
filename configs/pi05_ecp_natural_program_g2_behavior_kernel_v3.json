@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_natural_program_g2_behavior_v2",
-  "status": "active_behavior_aligned_natural_program",
+  "schema_version": "ember_ecp_natural_program_g2_behavior_kernel_v3",
+  "status": "active_decoder_free_behavior_kernel_natural_program",
   "authorities": {
     "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
@@ -10,7 +10,7 @@
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "native_observer_checkpoint": "runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010",
     "initial_program_checkpoint": "runs/outputs/pi05_ecp_natural_program_g2_boundary_fold0_m10_c1493a1_gpu02p0123_r4_20260825/checkpoints/macro_00000020",
-    "behavior_codes": "runs/outputs/pi05_ecp_g2_behavior_codes_rank16_rolebalanced_20260829/manifest.json"
+    "behavior_codes": "runs/outputs/pi05_ecp_g2_behavior_authority_fold0_v3_20260829/manifest.json"
   },
   "information_wall": {
     "deployment_inputs": [
@@ -18,15 +18,15 @@
       "one or more internally ordered action-hidden same-task videos"
     ],
     "training_only_inputs": [
-      "fit-task cross-episode actions",
-      "fit-task BDDL predicates and simulator contact labels",
-      "fit-task cross-episode flow-gradient behavior coordinates",
+      "internal-fit cross-episode actions",
+      "internal-fit BDDL predicates and simulator contact labels",
+      "internal-fit pairwise flow-gradient behavior kernels",
       "sampler task ownership"
     ],
     "forbidden": [
-      "teacher actions, behavior coordinates, or state as Program inputs",
-      "task ID routing",
-      "held behavior coordinates in gradients or checkpoint selection outside the registered Gate",
+      "teacher actions, behavior kernels, or state as Program inputs",
+      "task ID routing or a task-specific decoder",
+      "internal-held or official-held behavior evidence in gradients",
       "validation or test gradients",
       "Action Meta modules",
       "shuffled or reversed videos"
@@ -38,10 +38,11 @@
     "meta_held_tasks": 15,
     "target_fit_task_ids": [2, 4, 5, 7, 12, 14, 15, 16, 19, 20, 21, 22, 28, 29, 34, 35, 37, 38, 39],
     "target_held_task_ids": [0, 9, 18, 25, 36],
+    "internal_behavior_fold": 0,
     "macro_roles": {
-      "target_fit": 19,
-      "rotating_meta_fit": 19,
-      "weighting": "38 tasks equal; each role contributes 50 percent"
+      "target_fit": 15,
+      "rotating_meta_fit": 15,
+      "weighting": "30 gradient tasks equal; each role contributes 50 percent"
     }
   },
   "model": {
@@ -60,15 +61,29 @@
     "temporal_head_inputs": ["P_process", "rho", "tau"]
   },
   "behavior_alignment": {
+    "kind": "decoder_free_program_kernel_v1",
     "selected_targets": [0, 16, 34, 1, 17, 35, 36, 37],
     "families": ["q", "q", "q", "v", "v", "v", "action_in", "action_out"],
     "dimension": 16,
-    "decoder_hidden_width": 64,
-    "decoder_inputs": ["P_process", "rho", "tau", "sigma"],
-    "fit_target": "role-balanced rank16 coordinates from two disjoint cross-episode flow-gradient panels",
-    "held_use": "zero-gradient qualification only",
+    "program_blocks": [
+      "P_lang",
+      "P_scene",
+      "sqrt_rho_P_process",
+      "sqrt_rho_sigma",
+      "rho",
+      "tau"
+    ],
+    "teacher_kernels": ["panel_a", "consensus"],
+    "internal_fold": 0,
+    "cross_view_weight": 0.5,
+    "evaluator_ridge": 0.01,
+    "fit_target": "role-equal centered off-diagonal functional behavior topology",
+    "held_use": "internal15 zero-gradient qualification; official20 remains sealed",
     "language_reference_exact_rank4": 0.2686840295791626,
     "gate": {
+      "train_pairwise_correlation": 0.5,
+      "held_pairwise_correlation": 0.25,
+      "held_role_minimum_correlation": 0.25,
       "exact_to_panel_b": 0.5,
       "exact_to_consensus": 0.6,
       "q": 0.5,
@@ -84,9 +99,9 @@
     }
   },
   "initialization": {
-    "kind": "qualified_g2_model_only_fresh_optimizer",
+    "kind": "qualified_g2_model_only_strict_fresh_optimizer",
     "checkpoint_macro": 20,
-    "allowed_new_prefix": "behavior_decoder."
+    "allowed_new_prefix": null
   },
   "data": {
     "frame_stride": 5,
@@ -95,7 +110,7 @@
     "query_points": 16,
     "pair_seed": 20260825,
     "video_action_cross_episode": true,
-    "robustness_views": ["speed2", "crop80"],
+    "robustness_views": ["disjoint_same_K_full"],
     "robustness_for_every_task": true,
     "video_weights": "uniform_beta_1_over_K"
   },
@@ -125,8 +140,7 @@
   "optimization": {
     "seed": 20260829,
     "precision": "bfloat16",
-    "tasks_per_role_per_optimizer_step": 3,
-    "behavior_decoder_peak_lr": 0.001,
+    "tasks_per_role_per_optimizer_step": 5,
     "optimizer": {
       "name": "AdamW",
       "betas": [0.9, 0.95],
@@ -142,11 +156,12 @@
     }
   },
   "profile_defaults": {
-    "total_macros": 60,
+    "total_macros": 40,
     "stop_after_macro": 1,
     "checkpoint_macros": [1],
-    "tasks_per_rank_per_macro": 1,
-    "allowed_world_sizes": [1, 4]
+    "tasks_per_rank_per_macro": 2,
+    "tasks_per_role_per_optimizer_step": 3,
+    "allowed_world_sizes": [3]
   },
   "held_panel": {
     "same_task_sets": [
@@ -164,10 +179,10 @@
     "forbidden_conditions": ["shuffled_frames", "reversed_frames"]
   },
   "formal_run": {
-    "total_macros": 60,
-    "checkpoint_macros": [10, 20, 40, 60],
-    "stage_stop_macros": [10, 20, 40, 60],
-    "allowed_world_sizes": [1, 2, 3, 4, 5, 6]
+    "total_macros": 40,
+    "checkpoint_macros": [5, 10, 20, 40],
+    "stage_stop_macros": [5, 10, 20, 40],
+    "allowed_world_sizes": [5]
   },
   "gate": {
     "same_task_nearer_fraction": 0.9,

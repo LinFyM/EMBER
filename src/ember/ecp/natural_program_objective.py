@@ -8,7 +8,6 @@ from typing import Any, Mapping
 import torch
 import torch.nn.functional as F
 
-from ember.ecp.behavior.codes import behavior_alignment_loss
 from ember.ecp.natural_program import NaturalProgramOutput
 
 
@@ -98,20 +97,6 @@ def _temporal_prediction_losses(
     )
 
 
-def _behavior_term(
-    output: NaturalProgramOutput,
-    prediction: torch.Tensor | None,
-    robust_prediction: torch.Tensor | None,
-    target: torch.Tensor | None,
-) -> torch.Tensor:
-    values = (prediction, robust_prediction, target)
-    if all(value is None for value in values):
-        return output.program.p_process.new_zeros(())
-    if any(value is None for value in values):
-        raise ValueError("partial behavior-alignment supervision")
-    return behavior_alignment_loss(prediction, robust_prediction, target)
-
-
 def _event_consistency_losses(
     output: NaturalProgramOutput,
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -139,9 +124,6 @@ def natural_program_loss(
     robust_output: NaturalProgramOutput | None = None,
     negative_embeddings: torch.Tensor | None = None,
     contrastive_temperature: float = 0.1,
-    behavior_prediction: torch.Tensor | None = None,
-    robust_behavior_prediction: torch.Tensor | None = None,
-    behavior_target: torch.Tensor | None = None,
 ) -> NaturalProgramLoss:
     prediction = output.predictions
     action, action_temporal, progress, progress_temporal = (
@@ -207,12 +189,7 @@ def natural_program_loss(
     uncertainty_calibration = 0.5 * (
         probe_delta / variance + variance.log()
     ).mean()
-    behavior_alignment = _behavior_term(
-        output,
-        behavior_prediction,
-        robust_behavior_prediction,
-        behavior_target,
-    )
+    behavior_alignment = output.program.p_process.new_zeros(())
 
     terms = {
         "action": action,

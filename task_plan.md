@@ -5,9 +5,10 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle已通过；G2原动态Gate也已通过，但G3/P2及随后
-95-task held-out诊断证明该Gate只验证了视频动态，没有验证Program能否在未见task上表达policy需要的行为方向。当前按专家预注册fallback
-暂停G3 operator修正，最小重开G2 behavior alignment；通过新增的行为Gate后再冻结Program返回G3。G1/G2局部结论、单次训练或内部指标
-都不代表整体项目goal完成。
+95-task held-out诊断证明该Gate只验证了视频动态，没有验证Program能否在未见task上表达policy需要的行为方向。首轮pointwise behavior
+decoder formal已明确non-pass并定位到credit被训练reader而非部署Program拥有；当前暂停G3 operator修正，改用decoder-free、直接约束完整
+Program跨task behavior topology的单一G2修正。它先在固定internal60/15 fold通过，原official held20不参与本轮修正；通过后再冻结唯一
+Program返回G3。G1/G2局部结论、单次训练或内部指标都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -186,8 +187,9 @@ G2只有一个canonical入口`scripts/train_ecp_natural_program.py`。模块owne
 Pass-A图，`natural_program_data.py`拥有fold/schedule及跨episode packing，`natural_program_labels.py`只拥有training-only派生标签，
 `natural_program_objective.py`拥有机制loss，`natural_program_authority.py`拥有run provenance与信息墙inventory，
 `natural_program_training.py`拥有macro/checkpoint编排，`natural_program_train_step.py`拥有唯一role-balanced optimizer update，
-`natural_program_gate.py`拥有无梯度held20 Gate；`behavior/codes.py`只拥有可由G2/G3共同复用的fit-only行为坐标authority与共享读出器，
-`behavior/gate.py`拥有rank16 basis及exact rank4 held资格。Stage0 encoder、通用
+`natural_program_gate.py`拥有无梯度internal/official Gate；`behavior/codes.py`只拥有可由G2/G3共同复用的fit-only行为坐标与kernel authority，
+`behavior/kernel.py`拥有固定Program feature、pairwise topology loss及evaluator-only readout，`behavior/gate.py`拥有rank16 basis及exact rank4
+资格。Stage0 encoder、通用
 checkpoint和既有video/action stores只复用，不复制。G3复用并冻结通过Gate的Program schema/model；G2 trainer、label sealer和Gate在
 formal结论固化后仅作为可复现实证runner保留，不成为平行Writer或deployment fallback。
 
@@ -200,13 +202,26 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   language-only`.2687`同量级；最早失效接口确定为G2跨task behavior identifiability，而不是native bank、rank4、G3 dual/operator或训练不足；
 - [x] 接通唯一G2路径上的training-only process decoder、role-balanced behavior loss、旧qualified model-only初始化与fresh optimizer；
   decoder不能读取task ID、`P_lang/P_scene`或deployment外信息，Program schema保持不变；
-- [x] 接通held20 exact-rank4 Gate：overall/consensus、四family、meta/target role、wrong Program、language增量、K1/K4与跨video一致性
+- [x] 接通official held20 exact-rank4 Gate：overall/consensus、四family、meta/target role、wrong Program、language增量、K1/K4与跨video一致性
   均有固定阈值；shuffled/reversed不使用；
 - [x] 真实task74 K4 profile完成：behavior decoder与既有process fusion梯度`.6286/4.4444`，source/Stage0/Action Meta为0，单步
   `13.30s`；同一Gate对旧frozen Program正确non-pass而非自动放行；
-- [ ] 在clean pushed detached authority封存95-task behavior-code asset，完成六卡formal macro10及同一旧动态+新行为Gate；
-- [ ] non-pass时按fit loss、held role/family、K/view与原动态retention定位最早接口；只有新机制证据才允许继续修正，不做seed/LR/
-  width/rank小扫；通过后冻结唯一Program checkpoint并更新G3 v5 authority。
+- [x] clean detached `5cbe76e`的pointwise decoder formal完成macro10/20/40/60：behavior loss`1.2723 -> .7080`、旧动态增量
+  `31.85% -> 39.40%`，但panel-B exact只有`.1837/.2622/.2938/.2828`，macro60 meta/target为`.3803/.1853`；Gate明确non-pass；
+- [x] 冻结reader、Program geometry与fit-only kernel/linear反事实共同证明：reader能拟合fit code，但full Program fit topology仅
+  `.1610 -> .1694`、official held约0，task-holdout读出仍约`.262`；最早接口是部署Program的跨task credit ownership，不是decoder
+  容量、LR、训练长度、bank operator或rank；pointwise decoder/config已从active路径删除；
+- [x] 固定role-stratified internal train60/held15，official held20不参与本轮训练/选模/修正；internal rank16 oracle对panel-B/
+  consensus为`.6184/.7158`，四family为`.6556/.7373/.4550/.6676`，足以作为非平凡内部资格；
+- [x] 接通decoder-free behavior kernel：固定block-equal完整Program feature、两组disjoint same-K views、role-equal panel-A+consensus
+  factor-cosine topology loss、五卡5+5 role pairing、internal15 Gate及fit-only evaluator readout；没有新增deployment或training reader参数；
+- [x] 真实三卡一步profile已证明两组video、global kernel loss、distributed gradient、现有language/scene/process路径、纯Native Stage0及
+  Action Meta 0接通；峰值allocated约`9.98GB`、三卡均100% UTL、一步`19.73s`。该profile早于最终cosine-authority schema，只作执行证据，
+  clean v3 authority仍须重跑；
+- [ ] 完成diff/全仓回归、clean push与v3 factor-cosine authority封存；从detached authority执行五卡macro5 formal及旧动态+internal行为Gate；
+- [ ] non-pass时先比较train topology、internal meta/target topology、exact family与旧动态retention：train不升则修Program credit；train升而
+  internal不升才重开窄Stage0 grounding tail；只有新机制证据才允许修正，不做seed/LR/width/rank小扫。internal通过后才读official held20，
+  冻结唯一Program checkpoint并更新G3 v5 authority。
 
 ### G3 Frozen-Program shared compiler
 

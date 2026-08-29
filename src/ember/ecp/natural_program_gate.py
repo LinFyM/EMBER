@@ -10,6 +10,11 @@ import torch.distributed as dist
 import torch.nn.functional as F
 
 from ember.ecp.behavior.gate import build_behavior_gate
+from ember.ecp.behavior.kernel import (
+    kernel_ridge_predictions,
+    program_behavior_features,
+    topology_summary,
+)
 from ember.ecp.natural_program import NaturalProgram, NaturalProgramOutput
 from ember.ecp.natural_program_data import (
     NaturalProgramSample,
@@ -23,7 +28,7 @@ if TYPE_CHECKING:
     from ember.ecp.natural_program_training import NaturalProgramRuntime
 
 
-GATE_SCHEMA = "ember_ecp_natural_program_g2_gate_v2"
+GATE_SCHEMA = "ember_ecp_natural_program_g2_gate_v3"
 
 
 def _owner_event_vector(process: torch.Tensor, presence: torch.Tensor) -> torch.Tensor:
@@ -200,26 +205,25 @@ def _task_gate_record(
 
     active_a = int((output_a.program.rho[0].float() > 0.5).sum())
     active_b = int((output_b.program.rho[0].float() > 0.5).sum())
-    behavior_predictions = None
-    if runtime.model.behavior_decoder is not None:
-        if runtime.behavior_codes is None:
-            raise RuntimeError("G2 held Gate lost behavior-code authority")
-        behavior_predictions = {
-            name: runtime.behavior_codes.decode(
-                runtime.model.behavior_decoder(output.program)[0]
-            ).detach().cpu()
-            for name, output in (
-                ("same_a", output_a),
-                ("same_b", output_b),
-                ("k1", output_k1),
-                ("k4", output_k4),
-            )
-        }
+    if runtime.behavior_codes is None:
+        raise RuntimeError("G2 held Gate lost behavior-kernel authority")
+    behavior_features = {
+        name: program_behavior_features(
+            output.program, runtime.behavior_codes.selected_targets
+        )[0].detach().cpu()
+        for name, output in (
+            ("same_a", output_a),
+            ("same_b", output_b),
+            ("k1", output_k1),
+            ("k4", output_k4),
+        )
+    }
+    role = "meta_held" if task.authority_id < 71 else "target_held"
     return {
         "authority_id": task.authority_id,
         "domain": task.domain,
         "domain_task_id": task.domain_task_id,
-        "role": task.role,
+        "role": role,
         "embedding_a": _program_vector(output_a).detach().cpu(),
         "embedding_b": _program_vector(output_b).detach().cpu(),
         "probe_delta_a": _distance(
@@ -257,8 +261,106 @@ def _task_gate_record(
                 dim=0,
             ).float().mean()
         ),
-        "behavior_predictions": behavior_predictions,
+        "behavior_features": behavior_features,
+        "behavior_predictions": None,
     }
+
+
+def _task_kernel_record(
+    runtime: "NaturalProgramRuntime", task: NaturalProgramTask
+) -> dict[str, Any]:
+    panel = runtime.config["held_panel"]
+    outputs = [
+        _forward(runtime, task, _sample(row), view="full")[0]
+        for row in panel["same_task_sets"]
+    ]
+    if runtime.behavior_codes is None:
+        raise RuntimeError("G2 topology Gate lost behavior authority")
+    return {
+        "authority_id": task.authority_id,
+        "role": "meta_fit" if task.authority_id < 71 else "target_fit",
+        "behavior_features": {
+            name: program_behavior_features(
+                output.program, runtime.behavior_codes.selected_targets
+            )[0].detach().cpu()
+            for name, output in zip(("same_a", "same_b"), outputs, strict=True)
+        },
+    }
+
+
+def _behavior_kernel_qualification(
+    runtime: "NaturalProgramRuntime",
+    train_records: list[dict[str, Any]],
+    held_records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    authority = runtime.behavior_codes
+    if authority is None:
+        raise RuntimeError("G2 behavior-kernel qualification lost its authority")
+    train_records.sort(key=lambda row: int(row["authority_id"]))
+    held_records.sort(key=lambda row: int(row["authority_id"]))
+    device = runtime.context.device
+    train_ids = torch.tensor(
+        [int(row["authority_id"]) for row in train_records],
+        dtype=torch.long,
+        device=device,
+    )
+    held_ids = torch.tensor(
+        [int(row["authority_id"]) for row in held_records],
+        dtype=torch.long,
+        device=device,
+    )
+
+    def features(records: Sequence[Mapping[str, Any]], view: str) -> torch.Tensor:
+        return torch.stack(
+            [row["behavior_features"][view].to(device) for row in records]
+        ).float()
+
+    train_a = features(train_records, "same_a")
+    train_b = features(train_records, "same_b")
+    held_a = features(held_records, "same_a")
+    held_b = features(held_records, "same_b")
+    topology = {
+        "train": topology_summary(
+            features_a=train_a,
+            features_b=train_b,
+            task_ids=train_ids,
+            authority=authority,
+            roles={
+                "meta_fit": authority.meta_gradient_task_ids,
+                "target_fit": authority.target_gradient_task_ids,
+            },
+        ),
+        "held": topology_summary(
+            features_a=held_a,
+            features_b=held_b,
+            task_ids=held_ids,
+            authority=authority,
+            roles={
+                "meta_held": tuple(task for task in authority.held_task_ids if task < 71),
+                "target_held": tuple(task for task in authority.held_task_ids if task >= 71),
+            },
+        ),
+    }
+    targets = torch.stack(
+        [authority.target(int(task), standardized=True) for task in train_ids]
+    )
+    fit_features = torch.cat((train_a, train_b), dim=0)
+    fit_targets = torch.cat((targets, targets), dim=0)
+    ridge = float(runtime.config["behavior_alignment"]["evaluator_ridge"])
+    for view in ("same_a", "same_b", "k1", "k4"):
+        query = features(held_records, view)
+        standardized = kernel_ridge_predictions(
+            train_features=fit_features,
+            train_targets=fit_targets,
+            query_features=query,
+            ridge=ridge,
+        )
+        decoded = authority.decode(standardized).detach().cpu()
+        for row, prediction in zip(held_records, decoded, strict=True):
+            if row["behavior_predictions"] is None:
+                row["behavior_predictions"] = {}
+            row["behavior_predictions"][view] = prediction
+    return topology
 
 
 def _distance_rows(
@@ -295,6 +397,7 @@ def _distance_rows(
                     for name, value in row.items()
                     if name
                     not in {"embedding_a", "embedding_b", "behavior_predictions"}
+                    and name != "behavior_features"
                 },
                 "same_task_distance": same,
                 "nearest_cross_distance_a": cross_a,
@@ -385,9 +488,15 @@ def _build_report(
     thresholds: Mapping[str, Any],
     behavior_authority: Any | None = None,
     behavior_thresholds: Mapping[str, float] | None = None,
+    behavior_topology: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     records.sort(key=lambda row: int(row["authority_id"]))
-    if len(records) != 20 or {row["role"] for row in records} != {
+    expected_count = (
+        len(behavior_authority.held_task_ids)
+        if behavior_authority is not None
+        else 20
+    )
+    if len(records) != expected_count or {row["role"] for row in records} != {
         "meta_held",
         "target_held",
     }:
@@ -407,6 +516,33 @@ def _build_report(
             records, behavior_authority, behavior_thresholds
         )
         checks["behavior_alignment"] = bool(behavior["passed"])
+        if behavior_topology is None:
+            raise ValueError("G2 behavior Gate lost its topology report")
+        train_topology = behavior_topology["train"]
+        held_topology = behavior_topology["held"]
+        train_correlation = 0.5 * (
+            float(train_topology["role_equal_program_to_behavior_a"])
+            + float(train_topology["role_equal_program_to_behavior_b"])
+        )
+        held_correlation = 0.5 * (
+            float(held_topology["role_equal_program_to_behavior_a"])
+            + float(held_topology["role_equal_program_to_behavior_b"])
+        )
+        checks["train_behavior_topology"] = train_correlation >= float(
+            behavior_thresholds["train_pairwise_correlation"]
+        )
+        checks["held_behavior_topology"] = held_correlation >= float(
+            behavior_thresholds["held_pairwise_correlation"]
+        )
+        checks["held_role_behavior_topology"] = all(
+            0.5
+            * (
+                float(value["program_to_behavior_a"])
+                + float(value["program_to_behavior_b"])
+            )
+            > float(behavior_thresholds["held_role_minimum_correlation"])
+            for value in held_topology["by_role"].values()
+        )
     return {
         "schema_version": GATE_SCHEMA,
         "stage": "g2_natural_program",
@@ -431,6 +567,7 @@ def _build_report(
         "checks": checks,
         "passed": all(checks.values()),
         "behavior_alignment": behavior,
+        "behavior_topology": behavior_topology,
         "tasks": task_rows,
     }
 
@@ -438,21 +575,47 @@ def _build_report(
 def evaluate_natural_program_gate(
     runtime: "NaturalProgramRuntime", macro: int
 ) -> dict[str, Any]:
-    held = tuple(
-        task for task in runtime.tasks if task.role in {"meta_held", "target_held"}
-    )
-    groups = _held_assignments(held, runtime.context.world_size)
+    if runtime.behavior_codes is None:
+        held = tuple(
+            task
+            for task in runtime.tasks
+            if task.role in {"meta_held", "target_held"}
+        )
+        train: tuple[NaturalProgramTask, ...] = ()
+    else:
+        held_ids = set(runtime.behavior_codes.held_task_ids)
+        train_ids = set(runtime.behavior_codes.fit_task_ids)
+        held = tuple(task for task in runtime.tasks if task.authority_id in held_ids)
+        train = tuple(task for task in runtime.tasks if task.authority_id in train_ids)
+    held_groups = _held_assignments(held, runtime.context.world_size)
+    train_groups = _held_assignments(train, runtime.context.world_size) if train else ()
     runtime.model.eval()
     try:
         with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
             local = [
                 _task_gate_record(runtime, task)
-                for task in groups[runtime.context.rank]
+                for task in held_groups[runtime.context.rank]
             ]
+            local_train = (
+                [
+                    _task_kernel_record(runtime, task)
+                    for task in train_groups[runtime.context.rank]
+                ]
+                if train_groups
+                else []
+            )
         records = _gather_records(local, runtime.context.world_size)
+        train_records = _gather_records(local_train, runtime.context.world_size)
         payload: list[Any] = [None]
         if runtime.context.is_main:
             try:
+                topology = (
+                    _behavior_kernel_qualification(
+                        runtime, train_records, records
+                    )
+                    if runtime.behavior_codes is not None
+                    else None
+                )
                 report = _build_report(
                     records,
                     macro=macro,
@@ -463,6 +626,7 @@ def evaluate_natural_program_gate(
                         if runtime.behavior_codes is not None
                         else None
                     ),
+                    behavior_topology=topology,
                 )
                 path = runtime.args.output_dir / "gates" / f"macro_{macro:08d}.json"
                 if path.exists():

@@ -182,18 +182,36 @@ class NaturalProgramSchedule:
         *,
         seed: int,
         query_points: int,
+        gradient_task_ids: Sequence[int] | None = None,
     ) -> None:
         self.tasks = tuple(tasks)
         self.by_id = {task.authority_id: task for task in tasks}
+        allowed = (
+            set(map(int, gradient_task_ids))
+            if gradient_task_ids is not None
+            else {
+                task.authority_id
+                for task in tasks
+                if task.role in {"meta_fit", "target_fit"}
+            }
+        )
         self.meta_fit = tuple(
             task.authority_id for task in tasks if task.role == "meta_fit"
+            and task.authority_id in allowed
         )
         self.target_fit = tuple(
             task.authority_id for task in tasks if task.role == "target_fit"
+            and task.authority_id in allowed
         )
         self.seed = int(seed)
         self.query_points = int(query_points)
-        if len(self.by_id) != 95 or self.query_points < 2:
+        if (
+            len(self.by_id) != 95
+            or self.query_points < 2
+            or not self.meta_fit
+            or not self.target_fit
+            or set(self.meta_fit) | set(self.target_fit) != allowed
+        ):
             raise ValueError("invalid Natural Program schedule")
         self._meta_order = tuple(
             int(value)
@@ -225,6 +243,19 @@ class NaturalProgramSchedule:
             k=k,
             robustness_view=robustness,
         )
+
+    def disjoint_sample(
+        self, authority_id: int, visit: int, primary: NaturalProgramSample
+    ) -> NaturalProgramSample:
+        """Choose a same-K view whose video and action episodes are disjoint."""
+
+        occupied = set(primary.video_demos) | set(primary.action_demos)
+        for offset in range(3, 151, 3):
+            candidate = self.sample(authority_id, visit + offset)
+            candidate_rows = set(candidate.video_demos) | set(candidate.action_demos)
+            if candidate.k == primary.k and occupied.isdisjoint(candidate_rows):
+                return candidate
+        raise ValueError("failed to construct a disjoint Natural Program view")
 
     def contrastive_task_ids(
         self, authority_id: int, visit: int, *, count: int
@@ -298,12 +329,28 @@ class NaturalProgramSchedule:
     def optimizer_assignments(
         self, macro: int, world_size: int, *, tasks_per_role: int
     ) -> tuple[tuple[tuple[int, ...], ...], ...]:
-        return tuple(
-            self._assign_tasks(tasks, macro=macro, world_size=world_size)
-            for tasks in self.optimizer_task_groups(
-                macro, tasks_per_role=tasks_per_role
-            )
-        )
+        groups = self.optimizer_task_groups(macro, tasks_per_role=tasks_per_role)
+        assignments = []
+        for tasks in groups:
+            if len(tasks) == 2 * world_size == 2 * tasks_per_role:
+                by_role = {
+                    role: sorted(
+                        (task for task in tasks if self.by_id[task].role == role),
+                        key=lambda task: (-self._sample_cost(task, macro), task),
+                    )
+                    for role in ("target_fit", "meta_fit")
+                }
+                by_role["meta_fit"].reverse()
+                pairs = [
+                    (by_role["target_fit"][rank], by_role["meta_fit"][rank])
+                    for rank in range(world_size)
+                ]
+                assignments.append(tuple(pairs))
+            else:
+                assignments.append(
+                    self._assign_tasks(tasks, macro=macro, world_size=world_size)
+                )
+        return tuple(assignments)
 
     def assignments(self, macro: int, world_size: int) -> tuple[tuple[int, ...], ...]:
         return self._assign_tasks(

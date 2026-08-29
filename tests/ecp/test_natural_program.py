@@ -422,6 +422,37 @@ def test_schedule_contrastive_negatives_are_fixed_fit_only() -> None:
             } == set(expected_group)
 
 
+def test_behavior_kernel_schedule_excludes_internal_holdout_and_pairs_roles():
+    roles = ["meta_fit"] * 56 + ["meta_held"] * 15
+    roles += ["target_fit"] * 19 + ["target_held"] * 5
+    tasks = tuple(
+        SimpleNamespace(
+            authority_id=index,
+            role=role,
+            episode_lengths=(100 + index,) * 50,
+        )
+        for index, role in enumerate(roles)
+    )
+    gradient = tuple(range(45)) + tuple(range(71, 86))
+    schedule = NaturalProgramSchedule(
+        tasks, seed=7, query_points=4, gradient_task_ids=gradient
+    )
+    assert len(schedule.training_task_ids(0)) == 30
+    assert set(schedule.training_task_ids(0)).issubset(gradient)
+    assignments = schedule.optimizer_assignments(
+        0, world_size=5, tasks_per_role=5
+    )
+    assert len(assignments) == 3
+    for update in assignments:
+        assert len(update) == 5
+        for rank in update:
+            assert len(rank) == 2
+            assert {tasks[task].role for task in rank} == {
+                "meta_fit",
+                "target_fit",
+            }
+
+
 def test_scheduler_uses_optimizer_step_cursor() -> None:
     parameter = torch.nn.Parameter(torch.zeros(()))
     optimizer = torch.optim.AdamW([parameter], lr=1e-4)

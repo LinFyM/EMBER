@@ -258,7 +258,16 @@ def _exact_rows(
     panels_a: dict[int, tuple[Any, ...]] = {}
     panels_b: dict[int, tuple[Any, ...]] = {}
     behavior: dict[int, tuple[Any, ...]] = {}
-    for task in authority.task_ids:
+    # The separate official held20 remains untouched while the internal15 Gate
+    # qualifies this correction.  Rank4 reconstruction only needs the
+    # gradient60 basis members and the tasks present in this Gate panel.
+    required_tasks = tuple(
+        sorted(
+            set(authority.fit_task_ids)
+            | {int(row["authority_id"]) for row in records}
+        )
+    )
+    for task in required_tasks:
         panels_a[task], panels_b[task], behavior[task] = load_behavior_panels(
             authority.factor_roots,
             task,
@@ -351,7 +360,7 @@ def build_behavior_gate(
     thresholds: Mapping[str, float],
 ) -> dict[str, Any]:
     if (
-        len(records) != 20
+        len(records) != len(authority.held_task_ids)
         or {int(row["authority_id"]) for row in records}
         != set(authority.held_task_ids)
     ):
@@ -409,7 +418,7 @@ def build_behavior_gate(
         >= float(thresholds["minimum_cross_view_specific"]),
     }
     return {
-        "schema_version": "ember_ecp_g2_behavior_gate_v1",
+        "schema_version": "ember_ecp_g2_behavior_gate_v2",
         "thresholds": dict(thresholds),
         "coordinate": coordinate,
         "exact_rank4": exact,

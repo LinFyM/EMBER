@@ -1122,6 +1122,35 @@ gradient`.0805`，source/Native Stage0 trainable均为0、Action Meta module/par
 - `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/`；
 - `runs/analysis/pi05_ecp_g2_behavior_sufficiency_program95_combined_5781694_20260829/manifest.json`。
 
+### 67. pointwise behavior decoder改善fit loss却未改变Program拓扑，credit必须由部署表示直接拥有
+
+clean detached `5cbe76e`的G2-B pointwise decoder已训练到macro60，不存在“一次non-pass就停止”或训练不足混杂。behavior loss从
+`1.2723`单调降到`.7080`，旧动态full-vs-endpoints同时从`31.85%`升到`39.40%`；但是panel-B exact rank4只在
+`.1837/.2622/.2938/.2828`间变化，最终consensus`.3027`、meta/target held`.3803/.1853`。这表明优化图与原动态职责都在工作，
+只是目标没有转化成跨task的部署能力。
+
+三组冻结反事实把原因收紧到credit ownership。macro60 Program上重新fresh拟合的full reader仍只有约`.262` task-holdout；fit-only
+kernel/linear CV在fit task内几乎完美、到held仍约`.30`；而Program自身full behavior pairwise correlation只从旧`.1610`到`.1694`，
+official held约0。decoder可以为每个训练task建立一套可读code并自己学习坐标变换，loss下降不要求Program中“行为相近的task彼此接近”。
+因此继续增加reader容量、训练步数或普通超参只会强化同一shortcut；该负结果淘汰的是pointwise decoder supervision，不淘汰完整Program
+schema、Stage0、rank16 behavior manifold或G3 current-bank operator。
+
+原fit75内固定的role-stratified train60/internal-held15提供了不反复使用official held20的资格面。train60 rank16 basis在internal15对
+panel-B/consensus为`.6184/.7158`，四family为`.6556/.7373/.4550/.6676`，universal overall仅`.0543`；所以内部holdout既有
+足够上限，也不能由公共方向轻易通过。旧Program的固定block-equal完整feature基线中，train topology约`.186/.205`；internal meta只有
+`.172/.183`，而四个internal target偶然高到`.763/.754`。这说明只看role-equal平均会被小target组误导，Gate必须同时要求两个role各自
+达到`.25`。
+
+当前有机制依据的单一修正是decoder-free behavior kernel。固定抽取`P_lang`、`P_scene`、`sqrt(rho)P_process`、
+`sqrt(rho)sigma`、`rho`、`tau`六个等质量blocks，保留owner/event顺序；两组disjoint same-K views分别形成Program cosine Gram，
+直接对齐train60的panel-A与consensus factor-cosine Gram，并约束跨view Gram一致。它没有新reader、task lookup或held target；梯度必须
+改变部署Program本身的task topology。fixed kernel-ridge只负责internal Gate把Program邻域译回rank16 behavior coordinate，不进入训练图、
+checkpoint或Writer。Stage0首轮继续冻结；只有fit topology明显上升而internal meta/target仍不升，才有证据重开窄grounding tail。
+
+该修正的三卡真实一步已经证明distributed all-gather autograd、role pairing、两组video与language/scene/process梯度均接通；Action Meta、
+source与Stage0 trainable为0。它仍只获得一次internal Gate资格，不能用训练kernel loss或旧动态分数冒充通过，official held20也不能用于
+当前架构修正。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

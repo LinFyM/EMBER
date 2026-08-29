@@ -417,17 +417,29 @@ Program仍缺一项此前没有测量的资格。75 fit tasks各用两组disjoin
 - 原action/progress/predicate/event/probe/robustness目标与held动态Gate；
 - canonical `scripts/train_ecp_natural_program.py`入口，不增加第二套Program或deployment路径。
 
-新增的训练期behavior decoder只读取`P_process/rho/tau/sigma`，不能读取task ID、`P_lang/P_scene`、behavior label或teacher action作为
-forward输入。它在75 fit tasks上预测上述8个浅/中/深q/v与action-in/out targets的rank16标准化坐标，并把一项role-balanced behavior
-alignment loss反传到Program；decoder与坐标authority都不是deployment输入，G3/Writer抽取Program时不调用它。初始化只加载
-`c1493a1/macro20`共同model tensors，新decoder、optimizer、scheduler与data cursor fresh；这不是old checkpoint续训或target lookup。
+首轮process-only pointwise decoder已由clean detached `5cbe76e`从fresh optimizer运行到macro60。训练behavior loss由`1.2723`
+降到`.7080`，旧动态增量仍从macro10的`31.85%`升到macro60的`39.40%`，但独立panel-B exact rank4只沿
+`.1837/.2622/.2938/.2828`变化，最终consensus仅`.3027`；meta/target held分别`.3803/.1853`。冻结macro60 Program后的新reader仍只有
+约`.262` held，full Program的fit pairwise behavior topology只从旧`.1610`变为`.1694`，official held仍约0。该实现因此明确
+non-pass：decoder学会了fit task code，却没有迫使部署Program形成跨task可迁移的policy-behavior几何。继续增加decoder容量、训练时长或
+普通超参不会修复这个credit ownership问题，pointwise decoder已从active路径删除。
 
-20 held tasks同时重新通过旧动态Gate，并在固定K2-A/K2-B/K1/K4 videos上满足：exact rank4对独立panel-B role-equal median至少`.50`、
-对consensus至少`.60`，q/v各`.50`、action-in/out`.35/.50`，correct-vs-same-role-wrong Program margin至少`.10`，meta-held与
-target-held各至少`.45`，相对预封存language-only`.2687`至少增加`.10`，每种video view coordinate至少`.65`且cross-view specific
-consistency至少`.70`。held behavior labels不产生梯度；checkpoint只在预注册macro评估，不用shuffled/reversed。若fit behavior loss
-不降，先检查decoder/Program优化接口；fit高而两role held低，说明Stage0/Program输入仍缺跨task sufficient statistic；behavior通过而旧动态
-Gate回退，则处理表示—事件职责冲突。只有这些机制分支能触发下一修正，不能用seed、LR、width或rank小扫。
+下一资格先把原fit75固定拆成role-stratified internal train60/internal held15；原meta-held15+target-held5作为official held20保持
+不参与本轮训练、选模或架构修正。train60建立的rank16 basis在internal15对独立panel-B/consensus为`.6184/.7158`，q/v/action-in/
+action-out为`.6556/.7373/.4550/.6676`，证明这个内部task holdout具有足够但非平凡的可判别上限。
+
+当前唯一修正不再增加training-only reader参数，而直接让部署Program拥有behavior credit。每个condition从完整固定schema构造block-equal
+feature：`P_lang`、`P_scene`、`sqrt(rho)*P_process`、`sqrt(rho)*sigma`、`rho`、`tau`；每个block独立单位化后保留owner/event顺序。
+每个role内把两组disjoint same-K video views的centered off-diagonal Program cosine kernel，对齐到train60的panel-A与consensus
+factor-cosine kernels，并约束两view kernel一致。该loss不含task decoder、task/frame lookup或held label；其梯度直接进入现有
+language/scene/process/alignment Program参数。Stage0 v3、source、Action Meta、Program schema、原动态loss、uniform K及唯一执行入口均保持。
+
+每个formal optimizer step固定5 meta+5 target、五卡各处理一对role任务；每macro访问全部15 target-gradient tasks和轮换的15/45
+meta-gradient tasks。Gate先只读internal15：train topology相关至少`.50`、internal held role-equal至少`.25`且meta/target各至少`.25`；
+随后用仅在evaluator中由train60拟合的fixed kernel-ridge readout，执行原exact rank4、四family、wrong Program、language增量、K/view与
+旧动态资格。该readout不是模型参数或deployment路径。official held20继续冻结；只有internal Gate先通过后才获得一次最终确认资格。
+若train topology本身不升，最早接口仍是Program credit；若train升而internal meta/target不升，才依据该证据重开Stage0 grounding的窄尾部，
+不解冻整个observer。behavior通过而动态Gate回退时再处理表示—事件职责冲突；shuffled/reversed仍不使用。
 
 ### G3. Frozen-Program shared compiler
 

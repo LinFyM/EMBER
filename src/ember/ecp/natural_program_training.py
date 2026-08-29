@@ -19,7 +19,7 @@ from ember.ecp.behavior.codes import (
     load_behavior_code_authority,
     load_program_model_initialization,
 )
-from ember.ecp.contracts import TargetFamily, build_target_owners
+from ember.ecp.contracts import build_target_owners
 from ember.ecp.natural_program import NaturalProgramModel
 from ember.ecp.natural_program_authority import (
     RUN_SCHEMA,
@@ -138,7 +138,9 @@ def _behavior_config_signature(config: Mapping[str, Any]) -> tuple[Any, ...]:
         behavior.get("selected_targets"),
         behavior.get("families"),
         int(behavior.get("dimension", 0)),
-        behavior.get("decoder_inputs"),
+        behavior.get("kind"),
+        behavior.get("program_blocks"),
+        int(behavior.get("internal_fold", -1)),
         int(config["optimization"]["tasks_per_role_per_optimizer_step"]),
         float(config["objective"]["weights"].get("behavior_alignment", 0.0)) > 0.0,
         config.get("initialization", {}).get("kind"),
@@ -172,15 +174,24 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
     if schema == "ember_ecp_natural_program_g2_v1":
         if config.get("behavior_alignment") is not None or tasks_per_role != 2:
             raise ValueError("legacy G2 config unexpectedly enables behavior alignment")
-    elif schema == "ember_ecp_natural_program_g2_behavior_v2":
+    elif schema == "ember_ecp_natural_program_g2_behavior_kernel_v3":
         expected_behavior = (
             [0, 16, 34, 1, 17, 35, 36, 37],
             ["q", "q", "q", "v", "v", "v", "action_in", "action_out"],
             16,
-            ["P_process", "rho", "tau", "sigma"],
-            3,
+            "decoder_free_program_kernel_v1",
+            [
+                "P_lang",
+                "P_scene",
+                "sqrt_rho_P_process",
+                "sqrt_rho_sigma",
+                "rho",
+                "tau",
+            ],
+            0,
+            5,
             True,
-            "qualified_g2_model_only_fresh_optimizer",
+            "qualified_g2_model_only_strict_fresh_optimizer",
         )
         if _behavior_config_signature(config) != expected_behavior:
             raise ValueError("unsupported behavior-aligned G2 config")
@@ -278,8 +289,6 @@ def _load_program_model(
     owners = build_target_owners(
         load_pi05_lora_contract(_authority(config, "lora_contract"))
     )
-    behavior = config.get("behavior_alignment")
-    family_order = {family.value: index for index, family in enumerate(TargetFamily)}
     native = load_frozen_native_observer(
         stage0_config=load_stage0_config(_authority(config, "stage0_config")),
         owners=owners,
@@ -297,18 +306,6 @@ def _load_program_model(
         event_slots=int(config["model"]["event_slots"]),
         action_phases=int(config["model"]["action_phases"]),
         predicate_slots=int(config["model"]["predicate_slots"]),
-        behavior_targets=(
-            tuple(map(int, behavior["selected_targets"])) if behavior else ()
-        ),
-        behavior_family_ids=(
-            tuple(family_order[str(value)] for value in behavior["families"])
-            if behavior
-            else ()
-        ),
-        behavior_dimension=int(behavior["dimension"]) if behavior else 16,
-        behavior_hidden_width=(
-            int(behavior["decoder_hidden_width"]) if behavior else 64
-        ),
     ).to(context.device)
     model.requires_grad_(True)
     # Stage 0 v3 is an established observer authority.  G2 qualifies the new
@@ -420,7 +417,7 @@ def _behavior_alignment_assets(
         model,
         _asset_authority(args, config, "initial_program_checkpoint"),
         device=device,
-        allowed_new_prefix=str(config["initialization"]["allowed_new_prefix"]),
+        allowed_new_prefix=config["initialization"].get("allowed_new_prefix"),
         expected_macro=int(config["initialization"]["checkpoint_macro"]),
     )
     return authority, initialization
@@ -440,28 +437,7 @@ def _program_optimizer(
     trainable = tuple(
         parameter for parameter in model.parameters() if parameter.requires_grad
     )
-    behavior_parameters = (
-        tuple(model.behavior_decoder.parameters())
-        if model.behavior_decoder is not None
-        else ()
-    )
-    behavior_ids = {id(parameter) for parameter in behavior_parameters}
-    program_parameters = tuple(
-        parameter for parameter in trainable if id(parameter) not in behavior_ids
-    )
-    optimizer_parameters: Any = trainable
-    if behavior_parameters:
-        optimizer_parameters = [
-            {
-                "params": program_parameters,
-                "lr": float(config["optimization"]["scheduler"]["peak_lr"]),
-            },
-            {
-                "params": behavior_parameters,
-                "lr": float(config["optimization"]["behavior_decoder_peak_lr"]),
-            },
-        ]
-    optimizer = build_stage0_optimizer(optimizer_parameters, config["optimization"])
+    optimizer = build_stage0_optimizer(trainable, config["optimization"])
     scheduler = _scheduler(
         optimizer,
         config,
@@ -471,6 +447,35 @@ def _program_optimizer(
     return trainable, optimizer, scheduler
 
 
+def _training_schedule(
+    *,
+    config: Mapping[str, Any],
+    mode: str,
+    tasks: tuple[NaturalProgramTask, ...],
+    behavior_codes: BehaviorCodeAuthority | None,
+) -> tuple[NaturalProgramSchedule, int, int]:
+    schedule = NaturalProgramSchedule(
+        tasks,
+        seed=int(config["data"]["pair_seed"]),
+        query_points=int(config["data"]["query_points"]),
+        gradient_task_ids=(
+            behavior_codes.fit_task_ids if behavior_codes is not None else None
+        ),
+    )
+    formal_tasks_per_role = int(
+        config["optimization"]["tasks_per_role_per_optimizer_step"]
+    )
+    tasks_per_role = int(
+        formal_tasks_per_role
+        if mode == "formal"
+        else config["profile_defaults"]["tasks_per_role_per_optimizer_step"]
+    )
+    formal_steps = len(
+        schedule.optimizer_task_groups(0, tasks_per_role=formal_tasks_per_role)
+    )
+    return schedule, tasks_per_role, formal_steps if mode == "formal" else 1
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> NaturalProgramRuntime:
@@ -478,27 +483,21 @@ def prepare_runtime(
     total, stop, checkpoints = _resolve_runtime(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
     tasks = _tasks(config, args.data_root)
-    schedule = NaturalProgramSchedule(
-        tasks,
-        seed=int(config["data"]["pair_seed"]),
-        query_points=int(config["data"]["query_points"]),
-    )
-    tasks_per_role_per_optimizer_step = int(
-        config["optimization"]["tasks_per_role_per_optimizer_step"]
-    )
-    formal_optimizer_steps_per_macro = len(
-        schedule.optimizer_task_groups(
-            0, tasks_per_role=tasks_per_role_per_optimizer_step
-        )
-    )
-    optimizer_steps_per_macro = (
-        formal_optimizer_steps_per_macro if args.mode == "formal" else 1
-    )
     source, source_config, policy, model = _load_program_model(
         args, config, context
     )
     behavior_codes, initialization = _behavior_alignment_assets(
         args, config, model, context.device
+    )
+    (
+        schedule,
+        tasks_per_role_per_optimizer_step,
+        optimizer_steps_per_macro,
+    ) = _training_schedule(
+        config=config,
+        mode=args.mode,
+        tasks=tasks,
+        behavior_codes=behavior_codes,
     )
     initialize_deferred_process_group(
         context, rendezvous_root=args.output_dir.parent
@@ -657,8 +656,8 @@ def run_natural_program_macro(
         "owner_query_gradient_norm_before_clip": updates[-1][
             "owner_query_gradient_norm_before_clip"
         ],
-        "behavior_decoder_gradient_norm_before_clip": updates[-1][
-            "behavior_decoder_gradient_norm_before_clip"
+        "behavior_kernel_gradient_norm": updates[-1][
+            "behavior_kernel_gradient_norm"
         ],
         "behavior_program_gradient_norm_before_clip": updates[-1][
             "behavior_program_gradient_norm_before_clip"
@@ -740,7 +739,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_natural_program_g2_behavior_v2.json",
+        default=(
+            REPO_ROOT
+            / "configs/pi05_ecp_natural_program_g2_behavior_kernel_v3.json"
+        ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

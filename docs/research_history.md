@@ -914,3 +914,29 @@ loss对decoder与既有process fusion均有有限非零梯度，source/Stage0/Ac
 - `runs/analysis/pi05_ecp_g2_behavior_manifold95_rolebalanced_5781694_gpu01p6_20260829.json`；
 - `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/`；
 - `runs/analysis/pi05_ecp_g2_behavior_sufficiency_program95_combined_5781694_20260829/manifest.json`。
+
+## 48. G2-B pointwise decoder formal non-pass与decoder-free topology修正
+
+clean detached `main@5cbe76e`的pointwise behavior-aligned G2-B以fresh optimizer运行到macro60。behavior loss由`1.2723`降至
+`.7080`，旧动态full-vs-endpoints由macro10的`31.85%`增至macro60的`39.40%`；但panel-B exact rank4在macro10/20/40/60仅
+`.1837/.2622/.2938/.2828`，最终consensus`.3027`，meta/target held为`.3803/.1853`。除behavior alignment外旧动态、K、probe、
+event和same-task checks均通过；因此formal结论为科学non-pass而非工程故障或明显训练不足。
+
+冻结macro60 Program后的fresh reader、fit-only kernel/linear CV及old-vs-new geometry一致表明：fit code可被reader近乎完全拟合，task-held
+仍约`.26--.30`；full Program的fit pairwise behavior correlation只从`.1610`变为`.1694`，official held仍约0。负结果只淘汰“通过
+pointwise training reader把坐标loss间接传给Program即可形成跨task behavior geometry”这一实现；不淘汰Stage0、固定Program schema、
+rank16 behavior basis或G3 primal/current-bank dual。
+
+随后在原fit75内预注册role-stratified train60/internal-held15，原meta-held15+target-held5作为official held20不参与本轮训练、选择或
+修正。train60 basis对internal15的panel-B/consensus oracle为`.6184/.7158`，四family为`.6556/.7373/.4550/.6676`。当前活动实现
+删除pointwise decoder及其v2 config，改为无新参数的完整Program behavior-kernel loss：六个固定block-equal Program fields保留
+owner/event次序，两组disjoint same-K views的Program cosine kernels直接对齐panel-A与consensus factor-cosine kernels。internal Gate
+同时检查train/internal两role topology、旧动态资格，并用train60-only fixed kernel-ridge执行exact rank4 readout；official held20继续冻结。
+三卡一步已验证distributed gradient、纯Native Stage0和Action Meta 0，正式internal结果尚未产生。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/`；
+- `runs/analysis/pi05_ecp_g2b_frozen_program_probe75_20_5cbe76e_gpu02p7_20260829/`；
+- `runs/analysis/pi05_ecp_g2b_program_geometry_old_vs_macro60_5cbe76e_20260829.json`；
+- `runs/analysis/pi05_ecp_g2b_internal_task_holdout_basis60_15_5cbe76e_gpu02p7_20260829.json`。

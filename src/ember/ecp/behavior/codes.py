@@ -1,9 +1,9 @@
-"""Fit-only policy-behavior coordinates for Natural Program alignment.
+"""Fit-only policy-behavior authority for Natural Program topology.
 
 The coordinate authority is produced from two disjoint cross-episode
-flow-gradient panels on the 75 fit tasks.  Held-task coordinates are sealed for
-zero-gradient qualification only.  None of these tensors is a deployment
-input: the shared decoder reads only the deployed Natural Program fields.
+flow-gradient panels.  An internal task fold owns gradients while both the
+internal and official held tasks remain zero-gradient qualifications.  None of
+these tensors is a deployment input.
 """
 
 from __future__ import annotations
@@ -11,15 +11,30 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import torch
-import torch.nn.functional as F
 from safetensors import safe_open
 from safetensors.torch import load_file
 
 
-BEHAVIOR_CODE_SCHEMA = "ember_ecp_g2_behavior_codes_v1"
+BEHAVIOR_CODE_SCHEMA = "ember_ecp_g2_behavior_authority_v3"
+
+
+def fixed_internal_behavior_fold(
+    fit_tasks: tuple[int, ...],
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Return the pre-registered role-stratified 60/15 fold zero."""
+
+    meta = tuple(task for task in fit_tasks if task < 71)
+    target = tuple(task for task in fit_tasks if task >= 71)
+    internal = tuple(meta[index] for index in range(4, len(meta), 5)) + tuple(
+        target[index] for index in (3, 8, 13, 18)
+    )
+    gradient = tuple(task for task in fit_tasks if task not in set(internal))
+    if len(gradient) != 60 or len(internal) != 15:
+        raise ValueError("behavior internal fold zero changed")
+    return gradient, internal
 
 
 @dataclass(frozen=True)
@@ -27,6 +42,7 @@ class BehaviorCodeAuthority:
     task_ids: tuple[int, ...]
     fit_task_ids: tuple[int, ...]
     held_task_ids: tuple[int, ...]
+    official_held_task_ids: tuple[int, ...]
     selected_targets: tuple[int, ...]
     coordinates: torch.Tensor
     mean: torch.Tensor
@@ -35,12 +51,23 @@ class BehaviorCodeAuthority:
     eigenvalues: torch.Tensor
     norms: torch.Tensor
     train_sqrt_weights: torch.Tensor
+    panel_a_gram: torch.Tensor
+    panel_b_gram: torch.Tensor
+    consensus_gram: torch.Tensor
     factor_roots: tuple[Path, ...]
     manifest: Mapping[str, Any]
 
     @property
     def dimension(self) -> int:
         return int(self.coordinates.shape[-1])
+
+    @property
+    def meta_gradient_task_ids(self) -> frozenset[int]:
+        return frozenset(task for task in self.fit_task_ids if task < 71)
+
+    @property
+    def target_gradient_task_ids(self) -> frozenset[int]:
+        return frozenset(task for task in self.fit_task_ids if task >= 71)
 
     def _row(self, authority_id: int) -> int:
         try:
@@ -55,12 +82,78 @@ class BehaviorCodeAuthority:
     def decode(self, standardized: torch.Tensor) -> torch.Tensor:
         return standardized.float() * self.scale + self.mean
 
+    def kernel(self, task_ids: torch.Tensor, *, kind: str) -> torch.Tensor:
+        values = {
+            "panel_a": self.panel_a_gram,
+            "panel_b": self.panel_b_gram,
+            "consensus": self.consensus_gram,
+        }
+        if kind not in values:
+            raise ValueError(f"unsupported behavior kernel: {kind}")
+        rows = torch.tensor(
+            [self._row(int(task)) for task in task_ids.detach().cpu().tolist()],
+            dtype=torch.long,
+            device=values[kind].device,
+        )
+        return values[kind].index_select(1, rows).index_select(2, rows)
+
 
 def _tensor(handle: Any, name: str, device: torch.device) -> torch.Tensor:
     value = handle.get_tensor(name).to(device=device)
     if value.is_floating_point() and not bool(torch.isfinite(value).all()):
         raise ValueError(f"behavior-code tensor is non-finite: {name}")
     return value
+
+
+def _validate_behavior_tensor_contract(
+    *,
+    task_ids: tuple[int, ...],
+    fit: tuple[int, ...],
+    held: tuple[int, ...],
+    official: tuple[int, ...],
+    selected: tuple[int, ...],
+    dimension: int,
+    tensors: Mapping[str, torch.Tensor],
+) -> None:
+    if len(task_ids) != 75 or tuple(sorted(task_ids)) != task_ids:
+        raise ValueError("behavior-code task authority changed")
+    if (len(fit), len(held), len(official), len(selected)) != (60, 15, 20, 8):
+        raise ValueError("behavior-code fold changed")
+    if (
+        set(fit) & set(held)
+        or (set(fit) | set(held)) & set(official)
+        or set(fit) | set(held) != set(task_ids)
+        or set(task_ids) | set(official) != set(range(95))
+    ):
+        raise ValueError("behavior-code fold overlap changed")
+    expected_shapes = {
+        "coordinates": (75, 8, dimension),
+        "mean": (8, dimension),
+        "scale": (8, dimension),
+        "eigenvectors": (8, 60, dimension),
+        "eigenvalues": (8, dimension),
+        "norms": (8, 75),
+        "train_sqrt_weights": (60,),
+        "panel_a_gram": (8, 75, 75),
+        "panel_b_gram": (8, 75, 75),
+        "consensus_gram": (8, 75, 75),
+    }
+    if any(tensors[name].shape != shape for name, shape in expected_shapes.items()):
+        raise ValueError("behavior-code tensor shape changed")
+    for name in ("panel_a_gram", "panel_b_gram", "consensus_gram"):
+        diagonal = tensors[name].diagonal(dim1=-2, dim2=-1)
+        if not torch.allclose(
+            diagonal, torch.ones_like(diagonal), atol=1e-3, rtol=1e-3
+        ):
+            raise ValueError("behavior-code factor-cosine kernel changed")
+    if bool((tensors["scale"] <= 0).any()) or bool(
+        (tensors["eigenvalues"] <= 0).any()
+    ):
+        raise ValueError("behavior-code basis scale changed")
+    if not math.isclose(
+        float(tensors["train_sqrt_weights"].square().sum()), 1.0, rel_tol=1e-5
+    ):
+        raise ValueError("behavior-code role weights changed")
 
 
 def load_behavior_code_authority(
@@ -87,6 +180,9 @@ def load_behavior_code_authority(
         task_ids_tensor = _tensor(handle, "task_ids", torch.device("cpu"))
         fit_tensor = _tensor(handle, "fit_task_ids", torch.device("cpu"))
         held_tensor = _tensor(handle, "held_task_ids", torch.device("cpu"))
+        official_tensor = _tensor(
+            handle, "official_held_task_ids", torch.device("cpu")
+        )
         targets_tensor = _tensor(handle, "selected_targets", torch.device("cpu"))
         coordinates = _tensor(handle, "coordinates", device).float()
         mean = _tensor(handle, "mean", device).float()
@@ -97,36 +193,41 @@ def load_behavior_code_authority(
         train_sqrt_weights = _tensor(
             handle, "train_sqrt_weights", device
         ).float()
+        panel_a_gram = _tensor(handle, "panel_a_gram", device).float()
+        panel_b_gram = _tensor(handle, "panel_b_gram", device).float()
+        consensus_gram = _tensor(handle, "consensus_gram", device).float()
     task_ids = tuple(map(int, task_ids_tensor.tolist()))
     fit = tuple(map(int, fit_tensor.tolist()))
     held = tuple(map(int, held_tensor.tolist()))
+    official = tuple(map(int, official_tensor.tolist()))
     selected = tuple(map(int, targets_tensor.tolist()))
     dimension = int(manifest.get("dimension", -1))
-    if (
-        task_ids != tuple(range(95))
-        or len(fit) != 75
-        or len(held) != 20
-        or set(fit) & set(held)
-        or set(fit) | set(held) != set(task_ids)
-        or len(selected) != 8
-        or coordinates.shape != (95, 8, dimension)
-        or mean.shape != (8, dimension)
-        or scale.shape != (8, dimension)
-        or eigenvectors.shape != (8, 75, dimension)
-        or eigenvalues.shape != (8, dimension)
-        or norms.shape != (8, 95)
-        or train_sqrt_weights.shape != (75,)
-        or bool((scale <= 0).any())
-        or bool((eigenvalues <= 0).any())
-        or not math.isclose(
-            float(train_sqrt_weights.square().sum()), 1.0, rel_tol=1e-5
-        )
-    ):
-        raise ValueError("behavior-code tensor contract changed")
+    tensors = {
+        "coordinates": coordinates,
+        "mean": mean,
+        "scale": scale,
+        "eigenvectors": eigenvectors,
+        "eigenvalues": eigenvalues,
+        "norms": norms,
+        "train_sqrt_weights": train_sqrt_weights,
+        "panel_a_gram": panel_a_gram,
+        "panel_b_gram": panel_b_gram,
+        "consensus_gram": consensus_gram,
+    }
+    _validate_behavior_tensor_contract(
+        task_ids=task_ids,
+        fit=fit,
+        held=held,
+        official=official,
+        selected=selected,
+        dimension=dimension,
+        tensors=tensors,
+    )
     return BehaviorCodeAuthority(
         task_ids=task_ids,
         fit_task_ids=fit,
         held_task_ids=held,
+        official_held_task_ids=official,
         selected_targets=selected,
         coordinates=coordinates,
         mean=mean,
@@ -135,6 +236,9 @@ def load_behavior_code_authority(
         eigenvalues=eigenvalues,
         norms=norms,
         train_sqrt_weights=train_sqrt_weights,
+        panel_a_gram=panel_a_gram,
+        panel_b_gram=panel_b_gram,
+        consensus_gram=consensus_gram,
         factor_roots=factor_roots,
         manifest=manifest,
     )
@@ -145,7 +249,7 @@ def load_program_model_initialization(
     checkpoint: Path,
     *,
     device: torch.device,
-    allowed_new_prefix: str,
+    allowed_new_prefix: str | None,
     expected_macro: int,
 ) -> dict[str, Any]:
     import json
@@ -174,8 +278,11 @@ def load_program_model_initialization(
         if current[name].shape != source[name].shape
     )
     if (
-        not missing
-        or any(not name.startswith(allowed_new_prefix) for name in missing)
+        (missing and allowed_new_prefix is None)
+        or any(
+            allowed_new_prefix is None or not name.startswith(allowed_new_prefix)
+            for name in missing
+        )
         or unexpected
         or mismatched
     ):
@@ -191,119 +298,3 @@ def load_program_model_initialization(
         "fresh_prefix": allowed_new_prefix,
         "optimizer_loaded": False,
     }
-
-
-class BehaviorCodeDecoder(torch.nn.Module):
-    """Training-only shared reader of event-bearing Program fields.
-
-    The decoder has no task lookup and deliberately cannot read ``P_lang`` or
-    ``P_scene``.  Its only route is the video-derived process, uncertainty,
-    event mass, and aligned time.  It is not called by deployment extraction.
-    """
-
-    def __init__(
-        self,
-        *,
-        program_width: int,
-        hidden_width: int,
-        event_slots: int,
-        selected_targets: Sequence[int],
-        family_ids: Sequence[int],
-        family_count: int,
-        dimension: int,
-    ) -> None:
-        super().__init__()
-        targets = tuple(map(int, selected_targets))
-        families = tuple(map(int, family_ids))
-        if (
-            len(targets) != 8
-            or len(set(targets)) != len(targets)
-            or len(families) != len(targets)
-            or min(targets) < 0
-            or max(targets) >= 38
-            or min(families) < 0
-            or max(families) >= family_count
-            or dimension <= 0
-        ):
-            raise ValueError("invalid behavior-code decoder contract")
-        self.register_buffer(
-            "selected_targets", torch.tensor(targets, dtype=torch.long)
-        )
-        self.register_buffer("family_ids", torch.tensor(families, dtype=torch.long))
-        self.field_context = torch.nn.Sequential(
-            torch.nn.LayerNorm(2 * program_width),
-            torch.nn.Linear(2 * program_width, 2 * hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(2 * hidden_width, hidden_width),
-            torch.nn.LayerNorm(hidden_width),
-        )
-        self.scalar_context = torch.nn.Linear(3, hidden_width, bias=False)
-        self.target_embedding = torch.nn.Parameter(
-            torch.empty(len(targets), hidden_width)
-        )
-        self.family_embedding = torch.nn.Parameter(
-            torch.empty(family_count, hidden_width)
-        )
-        self.event_embedding = torch.nn.Parameter(
-            torch.empty(event_slots, hidden_width)
-        )
-        self.event_score = torch.nn.Linear(hidden_width, 1)
-        self.output_trunk = torch.nn.Sequential(
-            torch.nn.LayerNorm(hidden_width),
-            torch.nn.Linear(hidden_width, hidden_width),
-            torch.nn.GELU(),
-            torch.nn.LayerNorm(hidden_width),
-        )
-        self.output_heads = torch.nn.ModuleList(
-            torch.nn.Linear(hidden_width, dimension, bias=False)
-            for _ in targets
-        )
-        for value in (
-            self.target_embedding,
-            self.family_embedding,
-            self.event_embedding,
-        ):
-            torch.nn.init.normal_(value, std=hidden_width**-0.5)
-        torch.nn.init.zeros_(self.event_score.weight)
-        torch.nn.init.zeros_(self.event_score.bias)
-
-    def forward(self, program: Any) -> torch.Tensor:
-        targets = self.selected_targets.to(program.p_process.device)
-        process = program.p_process.float().index_select(-2, targets)
-        sigma = program.sigma.float().index_select(-2, targets)
-        fields = torch.cat((process, sigma), dim=-1)
-        rho = program.rho.float().clamp_min(1e-8)
-        rho = rho / rho.sum(-1, keepdim=True).clamp_min(1e-8)
-        scalar = self.scalar_context(
-            torch.cat((rho[..., None], program.tau.float()), dim=-1)
-        )
-        context = (
-            self.field_context(fields)
-            + scalar[:, :, None]
-            + self.event_embedding[None, :, None]
-            + self.target_embedding[None, None]
-            + self.family_embedding[self.family_ids][None, None]
-        )
-        weights = (
-            self.event_score(context).squeeze(-1) + rho[:, :, None].log()
-        ).softmax(1)
-        pooled = torch.einsum("cej,cejw->cjw", weights, context)
-        hidden = self.output_trunk(pooled)
-        return torch.stack(
-            [head(hidden[:, index]) for index, head in enumerate(self.output_heads)],
-            dim=1,
-        )
-
-
-def behavior_alignment_loss(
-    prediction: torch.Tensor,
-    robust_prediction: torch.Tensor,
-    standardized_target: torch.Tensor,
-) -> torch.Tensor:
-    target = standardized_target.float()[None]
-    if prediction.shape != target.shape or robust_prediction.shape != target.shape:
-        raise ValueError("behavior-code prediction shape changed")
-    return 0.5 * (
-        F.mse_loss(prediction.float(), target)
-        + F.mse_loss(robust_prediction.float(), target)
-    )

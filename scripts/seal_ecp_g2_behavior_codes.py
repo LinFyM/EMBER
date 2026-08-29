@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seal fit-only rank-16 policy-behavior coordinates for G2 alignment."""
+"""Seal internal-fit policy-behavior coordinates and cosine kernels for G2."""
 
 from __future__ import annotations
 
@@ -16,7 +16,10 @@ from ember.ecp.behavior.gate import (
     fit_behavior_basis,
     load_behavior_panels,
 )
-from ember.ecp.behavior.codes import BEHAVIOR_CODE_SCHEMA
+from ember.ecp.behavior.codes import (
+    BEHAVIOR_CODE_SCHEMA,
+    fixed_internal_behavior_fold,
+)
 from ember.ecp.natural_program_data import load_natural_program_tasks
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -53,57 +56,83 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _task_fold(tasks: Sequence[Any]) -> tuple[
-    dict[int, str], tuple[int, ...], tuple[int, ...], tuple[int, ...], dict[str, int]
+    dict[int, str],
+    tuple[int, ...],
+    tuple[int, ...],
+    tuple[int, ...],
+    tuple[int, ...],
+    dict[str, int],
 ]:
     roles = {task.authority_id: task.role for task in tasks}
     all_tasks = tuple(sorted(roles))
-    fit = tuple(
+    fit75 = tuple(
         task for task in all_tasks if roles[task] in {"meta_fit", "target_fit"}
     )
-    held = tuple(task for task in all_tasks if task not in fit)
-    if len(fit) != 75 or len(held) != 20:
+    official = tuple(task for task in all_tasks if task not in fit75)
+    fit, held = fixed_internal_behavior_fold(fit75)
+    if len(fit75) != 75 or len(official) != 20:
         raise ValueError("behavior-code fold changed")
     role_counts = {
         role: sum(roles[task] == role for task in all_tasks)
         for role in ("meta_fit", "meta_held", "target_fit", "target_held")
     }
-    return roles, all_tasks, fit, held, role_counts
+    authority_tasks = tuple(sorted((*fit, *held)))
+    return roles, authority_tasks, fit, held, official, role_counts
 
 
-def _load_consensus(
+def _load_panels(
     roots: Sequence[Path],
     tasks: Sequence[int],
     selected_targets: Sequence[int],
     device: torch.device,
-) -> dict[int, tuple[Any, ...]]:
-    behavior = {}
+) -> tuple[
+    dict[int, tuple[Any, ...]],
+    dict[int, tuple[Any, ...]],
+    dict[int, tuple[Any, ...]],
+]:
+    panel_a = {}
+    panel_b = {}
+    consensus = {}
     for task in tasks:
-        _, _, behavior[task] = load_behavior_panels(
+        panel_a[task], panel_b[task], consensus[task] = load_behavior_panels(
             roots, task, selected_targets, device
         )
-    return behavior
+    return panel_a, panel_b, consensus
 
 
 def _fit_tensors(
     behavior: Mapping[int, tuple[Any, ...]],
+    panel_a: Mapping[int, tuple[Any, ...]],
+    panel_b: Mapping[int, tuple[Any, ...]],
     *,
     all_tasks: tuple[int, ...],
     fit: tuple[int, ...],
     held: tuple[int, ...],
+    official: tuple[int, ...],
     roles: Mapping[int, str],
     selected_targets: tuple[int, ...],
     dimension: int,
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
+    def cosine_gram(value: torch.Tensor) -> torch.Tensor:
+        norms = value.diag().clamp_min(1e-20).sqrt()
+        return (
+            value / (norms[:, None] * norms[None]).clamp_min(1e-20)
+        ).clamp(-1.0, 1.0)
+
     all_index = {task: index for index, task in enumerate(all_tasks)}
     train_index = torch.tensor([all_index[task] for task in fit], device=device)
     train_weights = torch.tensor(
         [0.5 / sum(roles[value] == roles[task] for value in fit) for task in fit],
         device=device,
     )
+    consensus_inner_products = tuple(
+        behavior_gram(behavior, all_tasks, target)
+        for target in range(len(selected_targets))
+    )
     bases = tuple(
         fit_behavior_basis(
-            behavior_gram(behavior, all_tasks, target),
+            consensus_inner_products[target],
             train_index,
             train_weights,
             dimension=dimension,
@@ -114,6 +143,7 @@ def _fit_tensors(
         "task_ids": torch.tensor(all_tasks, dtype=torch.int64),
         "fit_task_ids": torch.tensor(fit, dtype=torch.int64),
         "held_task_ids": torch.tensor(held, dtype=torch.int64),
+        "official_held_task_ids": torch.tensor(official, dtype=torch.int64),
         "selected_targets": torch.tensor(selected_targets, dtype=torch.int64),
         "coordinates": torch.stack([basis.coordinates for basis in bases], dim=1)
         .cpu()
@@ -128,6 +158,21 @@ def _fit_tensors(
         .contiguous(),
         "norms": torch.stack([basis.norms for basis in bases]).cpu().contiguous(),
         "train_sqrt_weights": bases[0].train_sqrt_weights.cpu().contiguous(),
+        "panel_a_gram": torch.stack(
+            [
+                cosine_gram(behavior_gram(panel_a, all_tasks, target))
+                for target in range(len(selected_targets))
+            ]
+        ).cpu().contiguous(),
+        "panel_b_gram": torch.stack(
+            [
+                cosine_gram(behavior_gram(panel_b, all_tasks, target))
+                for target in range(len(selected_targets))
+            ]
+        ).cpu().contiguous(),
+        "consensus_gram": torch.stack(
+            [cosine_gram(value) for value in consensus_inner_products]
+        ).cpu().contiguous(),
     }
 
 
@@ -139,6 +184,7 @@ def _manifest(
     all_tasks: tuple[int, ...],
     fit: tuple[int, ...],
     held: tuple[int, ...],
+    official: tuple[int, ...],
     role_counts: Mapping[str, int],
     roots: tuple[Path, ...],
     asset_root: Path,
@@ -152,14 +198,23 @@ def _manifest(
         "dimension": dimension,
         "selected_targets": list(selected_targets),
         "task_count": len(all_tasks),
+        "official_held_task_count": len(official),
         "fit_tasks": list(fit),
         "held_zero_gradient_tasks": list(held),
+        "official_held_zero_gradient_tasks": list(official),
         "role_counts": dict(role_counts),
-        "fit_role_weighting": "meta_fit_0.5_target_fit_0.5",
+        "fit_role_weighting": "internal_meta_fit_0.5_internal_target_fit_0.5",
         "factor_roots": [str(root.relative_to(asset_root)) for root in roots],
         "behavior_target": "two_disjoint_256_row_cross_episode_flow_gradient_panels",
-        "basis": "fit75_role_equal_consensus_normalized_kernel_pca",
+        "basis": "internal_train60_role_equal_consensus_normalized_kernel_pca",
+        "behavior_kernels": [
+            "panel_a_factor_cosine",
+            "panel_b_factor_cosine",
+            "consensus_factor_cosine",
+        ],
+        "internal_fold": 0,
         "held_used_for_training_or_checkpoint_selection": False,
+        "official_held_used_for_training_or_checkpoint_selection": False,
         "validation_or_test_reads": 0,
         "action_meta_loaded": False,
         "source_policy_loaded": False,
@@ -178,15 +233,20 @@ def main() -> None:
     if len(roots) != 2 or any(not root.is_dir() for root in roots):
         raise ValueError("behavior factor roots changed")
     tasks = _tasks(config, args.asset_root, args.data_root)
-    roles, all_tasks, fit, held, role_counts = _task_fold(tasks)
+    roles, all_tasks, fit, held, official, role_counts = _task_fold(tasks)
     device = torch.device("cuda")
     torch.backends.cuda.matmul.allow_tf32 = False
-    behavior = _load_consensus(roots, all_tasks, selected_targets, device)
+    panel_a, panel_b, behavior = _load_panels(
+        roots, all_tasks, selected_targets, device
+    )
     tensors = _fit_tensors(
         behavior,
+        panel_a=panel_a,
+        panel_b=panel_b,
         all_tasks=all_tasks,
         fit=fit,
         held=held,
+        official=official,
         roles=roles,
         selected_targets=selected_targets,
         dimension=dimension,
@@ -202,6 +262,7 @@ def main() -> None:
         all_tasks=all_tasks,
         fit=fit,
         held=held,
+        official=official,
         role_counts=role_counts,
         roots=roots,
         asset_root=args.asset_root,

@@ -16,6 +16,7 @@ from ember.writer.functional import (
     LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
     task_logical_batch_policy_rng_seed,
+    writer_chain_rule_surrogate,
 )
 
 if TYPE_CHECKING:
@@ -122,11 +123,7 @@ def cross_episode_flow_loss(
     )
     if details or not bool(torch.isfinite(value)):
         raise RuntimeError("G3 cross-episode PI0.5 flow loss changed")
-    bridge = value.detach().clone()
-    for name, tensor in complete.items():
-        bridge = bridge + (
-            (tensor - tensor.detach()) * gradients[name].to(tensor)
-        ).sum()
+    bridge = value.detach() + writer_chain_rule_surrogate(complete, gradients)
     return bridge, {
         "functional_action_demos": list(query.demo_indices),
         "functional_action_frames": list(query.frame_indices),

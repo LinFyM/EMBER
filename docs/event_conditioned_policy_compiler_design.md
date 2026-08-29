@@ -638,8 +638,10 @@ P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K�
 clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
 optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把下游operator从当前首因中排除；随后
 95-task证据及G2-B v3--v5只证明独立Program behavior-geometry目标失败。第四次专家裁决要求复用已有P2 cache/operator/scorer，新增
-Program与primal联合functional反传、task-local functional正控和12-task Gate；这些J2行为当前尚未实现。scale继续冻结到F4，P1内部
-结果不能冒充shared或closed-loop Gate。
+Program与primal联合functional反传、task-local functional正控和12-task Gate。当前代码已在唯一`joint_program_primal`执行面接通
+可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
+condition cache；task1真实profile已证明Action Meta 0、唯一rank16、held零梯度与physical microbatch4的`28.95GiB`峰值。10-task正控和
+12-task joint仍未形成formal Gate结论；scale继续冻结到F4，P1或profile内部结果不能冒充shared或closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为

@@ -17,6 +17,20 @@ free-primal正控，再执行固定10 gradient tasks+2 true task-held的12-task 
 不缓存Program或LoRA；六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`。只做一个最小真实
 forward/backward/materialization和必要定向合同检查，随后尽快进入有信息量的正控/formal。
 
+J2实现面现已接通：Natural Program拆为冻结evidence capture与可微Program compile，condition cache升到v4且不缓存Program；
+`joint_program_primal/`唯一子包分别由`runtime.py`持有authority/model/cache/data、`train_step.py`持有role-balanced functional update、
+`gate.py`持有task-local正控与Gate、`training.py`持有CLI循环，唯一脚本只做phase dispatch。旧P2 runner继续作为历史artifact解释器，
+不再是active optimizer路径；J2作出阶段结论后该子包将被吸收进后续canonical Writer或退役，不保留第二部署实现。
+
+gpu01物理0上的task1真实positive-control profile完成。38-target rank12+4唯一rank16、两fit视频共享free primal、第三held视频零梯度、
+panel A/B和carrier replay均接通；Action Meta argument/module/parameter均为0，source/Stage0/scale/temporal decoder trainable均为0。
+physical microbatch8时单步`9.459s`但peak reserved`42.154GiB`，超过合同；只把keyed logical16的物理microbatch改为4后，单步
+`9.497s`、peak allocated/reserved`28.370/28.951GiB`，无吞吐损失且低于`35GiB`。三条bank cold build合计`27.877s`，hot load
+`.655s`。一步后两个fit与held视频在独立panel B均优于carrier，held benefit`.00601`、factor recovery`.92696`；这只是机制smoke，
+不是10-task正控Gate。封存carrier loss与当前replay绝对差`8.52e-5`，在rows/seed/checkpoint/carrier/microbatch identity均锁定后按项目
+BF16/TF32数值政策使用`1e-4` replay容差并把实际误差留在报告。下一步是定向回归、clean pushed detached authority及六卡并行
+10-task formal positive control；尚不启动12-task joint formal。
+
 ## 2026-08-29 G2 global-calibrated behavior-kernel v5 formal non-pass，暂停新增版本
 
 clean pushed `main@7f4df1b`的detached frozen worktree已在gpu01物理`0--4`完成五卡macro5/15 updates、唯一checkpoint和

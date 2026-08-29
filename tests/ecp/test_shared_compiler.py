@@ -6,7 +6,7 @@ import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
-from ember.ecp.natural_program import NaturalProgram
+from ember.ecp.natural_program import FrozenProgramEvidence, NaturalProgram
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler import SharedCompilerVideo, SharedNativeFactorCompiler
 from ember.ecp.shared_compiler_data import SharedCompilerCondition
@@ -328,6 +328,70 @@ def test_frozen_mapping_condition_cache_round_trips_exact_bank(tmp_path) -> None
         strict=True,
     ):
         torch.testing.assert_close(first_value, second_value)
+
+
+def test_joint_cache_stores_frozen_evidence_but_not_program(tmp_path) -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4
+    )
+    tensors = {
+        "language_embeddings": torch.randn(1, 3, 8),
+        "language_mask": torch.ones(1, 3, dtype=torch.bool),
+        "patch_states": torch.randn(1, 5, 2, 8),
+        "frame_mask": torch.ones(1, 5, dtype=torch.bool),
+        "process": torch.randn(2, 1, 4, 4, 8),
+        "uncertainty": torch.rand(2, 1, 4, 4, 8),
+        "presence": torch.rand(2, 1, 4),
+        "state_posterior": torch.rand(2, 1, 5, 4),
+        "frame_indices": torch.arange(5),
+        "raw_frame_counts": torch.tensor([21]),
+        "video_offsets": torch.tensor([0, 5]),
+        "video_set_offsets": torch.tensor([0, 1]),
+        "frame_condition_ids": torch.zeros(5, dtype=torch.long),
+    }
+    evidence = FrozenProgramEvidence(**tensors)
+    condition = SharedCompilerCondition(
+        program=_program(len(owners), 8, 4),
+        videos=(_video(owners, seed=61, chunks=(2, 3), width=8, events=4),),
+        metrics={"K": 1},
+        evidence=evidence,
+    )
+    cache = FrozenMappingConditionCache(
+        tmp_path / "joint_cache",
+        owners=owners,
+        operator=compiler.bank_operator,
+        authority=frozen_condition_cache_authority(
+            config_schema="joint-test",
+            config_bytes=19,
+            source_checkpoint=tmp_path / "source",
+            g2_program_checkpoint=tmp_path / "g2",
+            native_observer_checkpoint=tmp_path / "observer",
+            frame_stride=5,
+            owners=owners,
+        ),
+        cache_program=False,
+    )
+    first = cache.get_or_build(
+        authority_id=7,
+        video_demo=3,
+        device=torch.device("cpu"),
+        builder=lambda: condition,
+    )
+    second = cache.get_or_build(
+        authority_id=7,
+        video_demo=3,
+        device=torch.device("cpu"),
+        builder=lambda: condition,
+    )
+    assert first.condition.program is None
+    assert second.condition.program is None
+    assert first.condition.evidence is not None
+    assert second.condition.evidence is not None
+    for name, expected in tensors.items():
+        torch.testing.assert_close(
+            getattr(second.condition.evidence, name), expected
+        )
 
 
 def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:

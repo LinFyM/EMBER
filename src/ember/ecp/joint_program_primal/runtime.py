@@ -1,0 +1,796 @@
+"""Runtime and launch contract for J2 joint Program--primal qualification."""
+
+from __future__ import annotations
+
+import argparse
+import math
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Mapping
+
+import torch
+import torch.distributed as dist
+
+from ember.ecp.bank_conditioning.consensus import FitConsensusTeacherStore
+from ember.ecp.bank_conditioning.frozen_condition_cache import (
+    FROZEN_CONDITION_CACHE_SCHEMA,
+    FrozenMappingConditionCache,
+    frozen_condition_cache_authority,
+)
+from ember.ecp.bank_conditioning.mapping import (
+    MappingCondition,
+    SharedCompilerMappingSplit,
+    load_mapping_split,
+)
+from ember.ecp.checkpoint import load_ecp_checkpoint
+from ember.ecp.contracts import TargetOwner, build_target_owners
+from ember.ecp.natural_program import NaturalProgramModel
+from ember.ecp.natural_program_data import (
+    NaturalProgramTask,
+    load_natural_program_tasks,
+)
+from ember.ecp.shared_compiler import SharedNativeFactorCompiler
+from ember.ecp.shared_compiler_assets import (
+    SharedCompilerRankAssets,
+    authority_path,
+    build_frozen_g2_program,
+    load_shared_compiler_config,
+    load_shared_rank_assets,
+    load_shared_scale_prior,
+)
+from ember.ecp.shared_compiler_native_teacher import NativeTeacherStore
+from ember.ecp.stage0_training import (
+    stage0_source_authority,
+    tokenize_stage0_languages,
+)
+from ember.ecp.native_factors import native_capture_modes
+from ember.pi05_eval_contract import (
+    git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
+)
+from ember.pi05_lora import derive_pi05_lora_rank
+from ember.pi05_processing import Pi05LiberoProcessor
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    read_json,
+    write_json_atomic,
+)
+from ember.pi05_source_contract import reconcile_metrics
+from ember.pi05_source_setup import (
+    initialize_deferred_process_group,
+    load_config,
+    load_policy,
+    load_stats,
+    seed_everything,
+)
+from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
+from ember.writer.functional import prepare_frozen_writer_policy
+from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
+
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
+J2_SCHEMA = "ember_ecp_joint_program_primal_j2_v1"
+J2_RUN_SCHEMA = "ember_ecp_joint_program_primal_run_v1"
+J2_STAGE = "j2_joint_program_primal"
+
+
+@dataclass(frozen=True)
+class FunctionalPanelVisit:
+    action_demos: tuple[int, ...]
+    action_frames: tuple[int, ...]
+    policy_rng_seed: int
+    flow_loss: float
+
+
+@dataclass(frozen=True)
+class FunctionalPanelAuthority:
+    task_id: int
+    role: str
+    panel_a: tuple[FunctionalPanelVisit, ...]
+    panel_b: tuple[FunctionalPanelVisit, ...]
+    program_video_demos: tuple[int, ...]
+    path: Path
+
+
+@dataclass(frozen=True)
+class JointTaskConditions:
+    fit_views: tuple[MappingCondition, MappingCondition]
+    held_video: MappingCondition
+
+
+class JointWriterState(torch.nn.Module):
+    """Checkpoint only trainable Writer modules, never source/Stage0 weights."""
+
+    def __init__(
+        self,
+        program: NaturalProgramModel,
+        compiler: SharedNativeFactorCompiler,
+    ) -> None:
+        super().__init__()
+        self.language_reader = program.language_reader
+        self.scene_reader = program.scene_reader
+        self.process_fusion = program.process_fusion
+        self.aligner = program.aligner
+        self.primal_scorer = compiler.primal_scorer
+
+
+@dataclass
+class JointProgramPrimalRuntime:
+    args: argparse.Namespace
+    config: dict[str, Any]
+    base_config: dict[str, Any]
+    context: DistributedContext
+    tasks: tuple[NaturalProgramTask, ...]
+    task_by_id: dict[int, NaturalProgramTask]
+    mapping_split: SharedCompilerMappingSplit
+    task_conditions: dict[int, JointTaskConditions]
+    panels: dict[int, FunctionalPanelAuthority]
+    video_store: RawTeacherVideoStore
+    query_dataset: FunctionalQueryDataset
+    query_processor: Pi05LiberoProcessor
+    panel_batch_cache: dict[tuple[int, str, int], dict[str, Any]]
+    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
+    policy: torch.nn.Module
+    program: NaturalProgramModel
+    compiler: SharedNativeFactorCompiler
+    writer_state: JointWriterState
+    owners: tuple[TargetOwner, ...]
+    ranks: SharedCompilerRankAssets
+    rank4_contract: Any
+    native_teachers: NativeTeacherStore
+    consensus_teachers: FitConsensusTeacherStore
+    condition_cache: FrozenMappingConditionCache
+    query_points: int
+    trainable_parameters: tuple[torch.nn.Parameter, ...]
+    frozen_parameters: tuple[torch.nn.Parameter, ...]
+    optimizer: torch.optim.Optimizer
+    scheduler: torch.optim.lr_scheduler.LRScheduler
+    gradient_presence: tuple[bool, ...] | None
+    optimizer_steps: int
+    stop_after_step: int
+    checkpoint_steps: tuple[int, ...]
+    metrics_rows: int
+    run_contract: dict[str, Any]
+
+    def close(self) -> None:
+        self.video_store.close()
+        self.query_dataset.close()
+
+
+@dataclass(frozen=True)
+class _AuthorityAssets:
+    selected_tasks: tuple[NaturalProgramTask, ...]
+    task_by_id: dict[int, NaturalProgramTask]
+    panels: dict[int, FunctionalPanelAuthority]
+    mapping_split: SharedCompilerMappingSplit
+    task_conditions: dict[int, JointTaskConditions]
+    expected_checkpoint: Path
+    source: dict[str, Any]
+    source_config: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class _ModelAssets:
+    policy: torch.nn.Module
+    ranks: SharedCompilerRankAssets
+    owners: tuple[TargetOwner, ...]
+    rank4_contract: Any
+    program: NaturalProgramModel
+    compiler: SharedNativeFactorCompiler
+    writer_state: JointWriterState
+    trainable: tuple[torch.nn.Parameter, ...]
+    frozen: tuple[torch.nn.Parameter, ...]
+    native_teachers: NativeTeacherStore
+    consensus_teachers: FitConsensusTeacherStore
+
+
+@dataclass(frozen=True)
+class _DataAssets:
+    video_store: RawTeacherVideoStore
+    query_dataset: FunctionalQueryDataset
+    query_processor: Pi05LiberoProcessor
+    language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
+    condition_cache: FrozenMappingConditionCache
+    query_points: int
+
+
+@dataclass(frozen=True)
+class _OptimizerCursor:
+    optimizer: torch.optim.Optimizer
+    scheduler: torch.optim.lr_scheduler.LRScheduler
+    checkpoints: tuple[int, ...]
+    stop: int
+    optimizer_steps: int
+    metrics_rows: int
+
+
+def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
+    config = read_json(path.resolve())
+    split = config.get("task_split", {})
+    data = config.get("data", {})
+    joint = config.get("optimization", {}).get("joint", {})
+    tasks = tuple(
+        map(
+            int,
+            (
+                *split.get("gradient_meta", ()),
+                *split.get("gradient_target", ()),
+                *split.get("true_task_held_meta", ()),
+                *split.get("true_task_held_target", ()),
+            ),
+        )
+    )
+    valid = all(
+        (
+            config.get("schema_version") == J2_SCHEMA,
+            len(tasks) == len(set(tasks)) == 12,
+            split.get("gradient_meta") == [1, 8, 9, 32, 52],
+            split.get("gradient_target") == [72, 73, 75, 93, 94],
+            split.get("true_task_held_meta") == [2],
+            split.get("true_task_held_target") == [74],
+            set(map(int, config.get("authorities", {}).get("functional_panel_records", {})))
+            == set(tasks),
+            data.get("K") == 1,
+            data.get("fit_video_views_per_task") == 2,
+            data.get("panel_visits") == 16,
+            data.get("rows_per_visit") == 16,
+            joint.get("warmup_optimizer_steps") == 10,
+            joint.get("effective_optimizer_steps") == 100,
+            joint.get("checkpoint_effective_steps") == [60, 100],
+            joint.get("global_tasks_per_optimizer_step") == 6,
+            joint.get("video_views_per_task") == 2,
+            config.get("information_wall", {}).get("action_meta_installed") is False,
+            config.get("information_wall", {}).get("shuffled_or_reversed_use") is False,
+        )
+    )
+    if not valid:
+        raise ValueError("unsupported J2 joint Program-primal config")
+    return config
+
+
+def _tasks(
+    base: Mapping[str, Any], data_root: Path, asset_root: Path
+) -> tuple[NaturalProgramTask, ...]:
+    fold = base["fold"]
+    return load_natural_program_tasks(
+        meta_protocol_path=authority_path(base, "meta_protocol", asset_root=asset_root),
+        source_manifest_path=authority_path(
+            base, "source_manifest", asset_root=asset_root
+        ),
+        target_manifest_path=authority_path(
+            base, "target_manifest", asset_root=asset_root
+        ),
+        data_root=data_root,
+        target_fit_ids=fold["target_fit_task_ids"],
+        target_held_ids=fold["target_held_task_ids"],
+        held_meta_fold=int(fold["meta_held_fold"]),
+    )
+
+
+def _panel_visit(row: Mapping[str, Any]) -> FunctionalPanelVisit:
+    demos = tuple(map(int, row.get("action_demos", ())))
+    frames = tuple(map(int, row.get("action_frames", ())))
+    seed = int(row.get("policy_rng_seed", -1))
+    flow_loss = float(row.get("flow_loss", float("nan")))
+    if (
+        len(demos) != len(frames)
+        or len(demos) != 16
+        or seed < 0
+        or not math.isfinite(flow_loss)
+        or flow_loss <= 0
+    ):
+        raise ValueError("J2 functional panel visit changed")
+    return FunctionalPanelVisit(demos, frames, seed, flow_loss)
+
+
+def _load_panels(
+    config: Mapping[str, Any], *, asset_root: Path
+) -> dict[int, FunctionalPanelAuthority]:
+    output = {}
+    for task_key, relative in config["authorities"]["functional_panel_records"].items():
+        task_id = int(task_key)
+        path = (asset_root / str(relative)).resolve()
+        row = read_json(path)
+        panel_a = tuple(_panel_visit(value) for value in row.get("panel_a_visits", ()))
+        panel_b = tuple(_panel_visit(value) for value in row.get("panel_b_visits", ()))
+        videos = tuple(map(int, row.get("program_video_demos", ())))
+        a_demos = {demo for visit in panel_a for demo in visit.action_demos}
+        b_demos = {demo for visit in panel_b for demo in visit.action_demos}
+        if (
+            int(row.get("task", -1)) != task_id
+            or row.get("role") not in {"meta_fit", "target_fit"}
+            or len(panel_a) != 16
+            or len(panel_b) != 16
+            or int(row.get("logical_rows_per_panel", -1)) != 256
+            or not videos
+            or a_demos.intersection(b_demos)
+            or a_demos.intersection(videos)
+            or b_demos.intersection(videos)
+            or row.get("episode_sets_pairwise_disjoint") is not True
+        ):
+            raise ValueError("J2 functional panel authority changed")
+        output[task_id] = FunctionalPanelAuthority(
+            task_id=task_id,
+            role=str(row["role"]),
+            panel_a=panel_a,
+            panel_b=panel_b,
+            program_video_demos=videos,
+            path=path,
+        )
+    return output
+
+
+def _task_conditions(
+    config: Mapping[str, Any], split: SharedCompilerMappingSplit
+) -> dict[int, JointTaskConditions]:
+    gradient = tuple(
+        map(
+            int,
+            (
+                *config["task_split"]["gradient_meta"],
+                *config["task_split"]["gradient_target"],
+            ),
+        )
+    )
+    output = {}
+    for task_id in gradient:
+        fit = split.fit_by_task[task_id]
+        held = split.video_held_by_task[task_id]
+        if len(fit) < 2 or len(held) != 1:
+            raise ValueError("J2 mapping video split changed")
+        output[task_id] = JointTaskConditions(
+            fit_views=(fit[0], fit[1]), held_video=held[0]
+        )
+    return output
+
+
+def _joint_parameter_ownership(
+    program: NaturalProgramModel,
+    compiler: SharedNativeFactorCompiler,
+) -> tuple[JointWriterState, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
+    program.requires_grad_(False).eval()
+    compiler.requires_grad_(False).eval()
+    writer = JointWriterState(program, compiler)
+    writer.requires_grad_(True).train()
+    program.encoder.requires_grad_(False).eval()
+    program.decoder.requires_grad_(False).eval()
+    compiler.scale_head.requires_grad_(False).eval()
+    trainable = tuple(writer.parameters())
+    roots = (program, compiler)
+    frozen = tuple(
+        parameter
+        for root in roots
+        for parameter in root.parameters()
+        if not parameter.requires_grad
+    )
+    if not trainable or len(set(map(id, trainable))) != len(trainable):
+        raise ValueError("J2 trainable parameter ownership changed")
+    return writer, trainable, frozen
+
+
+def _optimizer(
+    parameters: tuple[torch.nn.Parameter, ...], config: Mapping[str, Any]
+) -> torch.optim.AdamW:
+    cell = config["optimization"]["joint"]["optimizer"]
+    return torch.optim.AdamW(
+        parameters,
+        lr=float(cell["peak_lr"]),
+        betas=tuple(cell["betas"]),
+        eps=float(cell["eps"]),
+        weight_decay=float(cell["weight_decay"]),
+    )
+
+
+def _scheduler(
+    optimizer: torch.optim.Optimizer, config: Mapping[str, Any]
+) -> torch.optim.lr_scheduler.LambdaLR:
+    joint = config["optimization"]["joint"]
+    cell = joint["optimizer"]
+    warmup = int(joint["warmup_optimizer_steps"])
+    total = warmup + int(joint["effective_optimizer_steps"])
+    floor = float(cell["decay_lr"]) / float(cell["peak_lr"])
+
+    def scale(step: int) -> float:
+        if step < warmup:
+            return (step + 1) / warmup
+        progress = (step - warmup) / max(total - warmup, 1)
+        return floor + (1.0 - floor) * 0.5 * (1.0 + math.cos(math.pi * progress))
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
+
+
+def _inventory(
+    policy: torch.nn.Module,
+    program: NaturalProgramModel,
+    compiler: SharedNativeFactorCompiler,
+    owners: tuple[TargetOwner, ...],
+) -> dict[str, Any]:
+    action_meta = [
+        f"{prefix}.{name}:{type(module).__name__}"
+        for root, prefix in ((policy, "policy"), (program, "program"))
+        for name, module in root.named_modules()
+        if isinstance(module, (MetaLoRAStack, MetaLoRAProjection))
+    ]
+    trainable = [
+        *(f"program.{name}" for name, value in program.named_parameters() if value.requires_grad),
+        *(f"compiler.{name}" for name, value in compiler.named_parameters() if value.requires_grad),
+    ]
+    forbidden = [
+        name
+        for name in trainable
+        if any(token in name for token in ("task_lookup", "video_lookup", "frame_lookup", "free_logits"))
+    ]
+    if (
+        action_meta
+        or any(value.requires_grad for value in policy.parameters())
+        or any(value.requires_grad for value in program.encoder.parameters())
+        or any(value.requires_grad for value in program.decoder.parameters())
+        or any(value.requires_grad for value in compiler.scale_head.parameters())
+        or forbidden
+        or set(native_capture_modes(policy, owners)) != {"identity_lora_base_layer"}
+    ):
+        raise ValueError("J2 pure-Native information wall changed")
+    return {
+        "action_meta_argument": None,
+        "install_action_meta_lora": False,
+        "action_meta_module_count": 0,
+        "action_meta_parameter_count": 0,
+        "source_policy_trainable_parameter_count": 0,
+        "native_stage0_trainable_parameter_count": 0,
+        "temporal_decoder_trainable_parameter_count": 0,
+        "scale_trainable_parameter_count": 0,
+        "trainable_parameter_names": trainable,
+        "trainable_parameter_count": sum(value.numel() for value in (*program.parameters(), *compiler.parameters()) if value.requires_grad),
+        "task_video_frame_free_parameter_count": 0,
+        "native_capture_modes": list(native_capture_modes(policy, owners)),
+    }
+
+
+def _topology(context: DistributedContext) -> list[dict[str, Any]]:
+    local = {
+        "rank": context.rank,
+        "local_rank": context.local_rank,
+        "device": str(context.device),
+        "numa_node": context.numa_node,
+        "cpu_affinity": list(context.cpu_affinity or ()),
+    }
+    rows: list[Any] = [None] * context.world_size
+    if context.world_size > 1:
+        dist.all_gather_object(rows, local)
+    else:
+        rows[0] = local
+    return rows
+
+
+def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
+    state = git_state(REPO_ROOT)
+    return {
+        "schema_version": J2_RUN_SCHEMA,
+        "stage": J2_STAGE,
+        "phase": runtime.args.phase,
+        "mode": runtime.args.mode,
+        "git": {
+            "branch": state["branch"],
+            "commit": state["commit"],
+            "authority_commit": state["commit"] if runtime.args.mode == "formal" else state["authority_commit"],
+        },
+        "config": {"path": str(runtime.args.config), "bytes": runtime.args.config.stat().st_size},
+        "base_g3_config": {"path": str(runtime.args.base_config), "bytes": runtime.args.base_config.stat().st_size},
+        "source_checkpoint": str(runtime.args.checkpoint),
+        "tokenizer": str(runtime.args.tokenizer_path),
+        "data_root": str(runtime.args.data_root),
+        "condition_cache": {
+            "root": str(runtime.args.condition_cache_root),
+            "schema_version": FROZEN_CONDITION_CACHE_SCHEMA,
+            "program_output_cached": False,
+            "checkpoint_payload": False,
+        },
+        "task_split": dict(runtime.config["task_split"]),
+        "functional_panels": {
+            str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
+            for task, panel in runtime.panels.items()
+        },
+        "model": dict(runtime.config["model"]),
+        "optimization": dict(runtime.config["optimization"]),
+        "throughput_gate": dict(runtime.config["throughput_gate"]),
+        "information_wall": dict(runtime.config["information_wall"]),
+        "inventory": _inventory(runtime.policy, runtime.program, runtime.compiler, runtime.owners),
+        "world_topology": _topology(runtime.context),
+    }
+
+
+def _authority_assets(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: Mapping[str, Any],
+    base: Mapping[str, Any],
+) -> _AuthorityAssets:
+    if context.world_size not in config["profile"]["allowed_world_sizes"]:
+        raise ValueError("J2 world size is outside its launch contract")
+    if args.mode == "formal":
+        state = git_state(REPO_ROOT)
+        if (
+            not git_state_is_clean_pushed_or_frozen_authority(state)
+            or state.get("branch") != ""
+            or state.get("upstream") is not None
+        ):
+            raise ValueError("formal J2 requires clean detached origin/main authority")
+    seed_everything(int(config["optimization"]["seed"]), context)
+    all_tasks = _tasks(base, args.data_root, args.asset_root)
+    task_by_id = {task.authority_id: task for task in all_tasks}
+    panels = _load_panels(config, asset_root=args.asset_root)
+    selected_tasks = tuple(task_by_id[task] for task in sorted(panels))
+    mapping_split = load_mapping_split(base, asset_root=args.asset_root)
+    expected_checkpoint = authority_path(
+        base, "source_checkpoint", asset_root=args.asset_root
+    )
+    expected_tokenizer = authority_path(
+        base, "tokenizer", asset_root=args.asset_root
+    )
+    if (
+        args.checkpoint != expected_checkpoint
+        or args.source_run != expected_checkpoint.parent.parent
+        or args.tokenizer_path != expected_tokenizer
+    ):
+        raise ValueError("J2 source or tokenizer authority changed")
+    return _AuthorityAssets(
+        selected_tasks=selected_tasks,
+        task_by_id=task_by_id,
+        panels=panels,
+        mapping_split=mapping_split,
+        task_conditions=_task_conditions(config, mapping_split),
+        expected_checkpoint=expected_checkpoint,
+        source=stage0_source_authority(args),
+        source_config=load_config(
+            authority_path(base, "source_base_config", asset_root=args.asset_root)
+        ),
+    )
+
+
+def _model_assets(
+    args: argparse.Namespace,
+    context: DistributedContext,
+    base: Mapping[str, Any],
+    authority: _AuthorityAssets,
+) -> _ModelAssets:
+    policy = load_policy(
+        Path(authority.source["model_path"]), authority.source_config, context.device
+    )
+    policy.requires_grad_(False).eval()
+    ranks = load_shared_rank_assets(
+        base,
+        asset_root=args.asset_root,
+        held_global_ids=set(map(int, base["fold"]["target_held_task_ids"])),
+        device=context.device,
+    )
+    owners = build_target_owners(ranks.contract)
+    rank4_contract = derive_pi05_lora_rank(ranks.contract, rank=4)
+    program = build_frozen_g2_program(
+        base, asset_root=args.asset_root, owners=owners, device=context.device
+    )
+    prepare_frozen_writer_policy(policy, ranks.contract)
+    model = base["model"]
+    compiler = SharedNativeFactorCompiler(
+        owners,
+        program_width=int(model["program_width"]),
+        event_slots=int(model["event_slots"]),
+        relative_eigenvalue_floor=float(model["relative_eigenvalue_floor"]),
+        replay_score_rms=float(model["replay_score_rms"]),
+        covariance_frame_chunk=int(model["frame_chunk_size"]),
+        scale_prior_ratio=load_shared_scale_prior(
+            base, asset_root=args.asset_root, device=context.device
+        ),
+    ).to(context.device)
+    writer_state, trainable, frozen = _joint_parameter_ownership(program, compiler)
+    teacher_path = authority_path(
+        base, "native_teacher_manifest", asset_root=args.asset_root
+    )
+    teacher_root = read_json(teacher_path)
+    native_teachers = NativeTeacherStore(
+        teacher_path,
+        contract=rank4_contract,
+        expected_fit_task_ids=set(map(int, teacher_root["coverage"]["task_ids"])),
+        expected_full_fit_task_ids=set(
+            map(int, teacher_root["fit_authority_task_ids"])
+        ),
+        device=context.device,
+    )
+    return _ModelAssets(
+        policy=policy,
+        ranks=ranks,
+        owners=owners,
+        rank4_contract=rank4_contract,
+        program=program,
+        compiler=compiler,
+        writer_state=writer_state,
+        trainable=trainable,
+        frozen=frozen,
+        native_teachers=native_teachers,
+        consensus_teachers=FitConsensusTeacherStore(
+            native_teachers, authority.mapping_split, rank4_contract
+        ),
+    )
+
+
+def _data_assets(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    base: Mapping[str, Any],
+    context: DistributedContext,
+    authority: _AuthorityAssets,
+    model: _ModelAssets,
+) -> _DataAssets:
+    task_authorities = tuple(
+        task.writer_authority() for task in authority.selected_tasks
+    )
+    video_store = RawTeacherVideoStore(
+        task_authorities,
+        frame_stride=int(base["data"]["frame_stride"]),
+        max_open_files=8,
+    )
+    query_dataset = FunctionalQueryDataset(
+        task_authorities,
+        demo_indices=range(50),
+        action_chunk_size=int(authority.source_config["features"]["chunk_size"]),
+        max_open_files_per_worker=8,
+    )
+    query_processor = Pi05LiberoProcessor(
+        load_stats(
+            authority.source_config,
+            authority.source_config["data"]["active_task_ids"],
+        ),
+        args.tokenizer_path,
+        int(authority.source_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+    language_tokens = tokenize_stage0_languages(
+        authority.selected_tasks,
+        tokenizer_path=args.tokenizer_path,
+        max_length=int(authority.source_config["features"]["tokenizer_max_length"]),
+        device=context.device,
+    )
+    cache_authority = frozen_condition_cache_authority(
+        config_schema=str(config["schema_version"]),
+        config_bytes=args.config.stat().st_size,
+        source_checkpoint=authority.expected_checkpoint,
+        g2_program_checkpoint=authority_path(
+            base, "g2_program_checkpoint", asset_root=args.asset_root
+        ),
+        native_observer_checkpoint=authority_path(
+            base, "native_observer_checkpoint", asset_root=args.asset_root
+        ),
+        frame_stride=int(base["data"]["frame_stride"]),
+        owners=model.owners,
+    )
+    return _DataAssets(
+        video_store=video_store,
+        query_dataset=query_dataset,
+        query_processor=query_processor,
+        language_tokens=language_tokens,
+        condition_cache=FrozenMappingConditionCache(
+            args.condition_cache_root,
+            owners=model.owners,
+            operator=model.compiler.bank_operator,
+            authority=cache_authority,
+            cache_program=False,
+        ),
+        query_points=int(
+            read_json(
+                authority_path(base, "g2_config", asset_root=args.asset_root)
+            )["data"]["query_points"]
+        ),
+    )
+
+
+def _optimizer_cursor(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    writer_state: JointWriterState,
+    trainable: tuple[torch.nn.Parameter, ...],
+) -> _OptimizerCursor:
+    optimizer = _optimizer(trainable, config)
+    scheduler = _scheduler(optimizer, config)
+    joint = config["optimization"]["joint"]
+    warmup = int(joint["warmup_optimizer_steps"])
+    effective = int(joint["effective_optimizer_steps"])
+    checkpoints = tuple(
+        warmup + int(value) for value in joint["checkpoint_effective_steps"]
+    )
+    stop = int(
+        args.stop_after_step
+        or (1 if args.mode == "profile" else warmup + effective)
+    )
+    allowed_stops = {1} if args.mode == "profile" else set(checkpoints)
+    if stop not in allowed_stops:
+        raise ValueError("J2 stop step is not pre-registered")
+    optimizer_steps = 0
+    metrics_rows = 0
+    if args.resume is not None:
+        optimizer_steps, expected_rows = load_ecp_checkpoint(
+            checkpoint=args.resume,
+            stage=J2_STAGE,
+            context=context,
+            model=writer_state,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            run_contract_schema=J2_RUN_SCHEMA,
+        )
+        if context.is_main:
+            metrics_rows = reconcile_metrics(
+                args.output_dir / "metrics.jsonl",
+                optimizer_steps,
+                expected_rows,
+                cursor_key="optimizer_step",
+            )
+    return _OptimizerCursor(
+        optimizer=optimizer,
+        scheduler=scheduler,
+        checkpoints=checkpoints,
+        stop=stop,
+        optimizer_steps=optimizer_steps,
+        metrics_rows=metrics_rows,
+    )
+
+
+def prepare_joint_program_primal_runtime(
+    args: argparse.Namespace, context: DistributedContext
+) -> JointProgramPrimalRuntime:
+    config = load_joint_program_primal_config(args.config)
+    base_path = (args.asset_root / config["authorities"]["base_g3_config"]).resolve()
+    if args.base_config != base_path:
+        raise ValueError("J2 base G3 config authority changed")
+    base = load_shared_compiler_config(base_path)
+    authority = _authority_assets(args, context, config, base)
+    model = _model_assets(args, context, base, authority)
+    data = _data_assets(args, config, base, context, authority, model)
+    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    if context.world_size > 1:
+        for value in model.writer_state.state_dict().values():
+            dist.broadcast(value, src=0)
+    cursor = _optimizer_cursor(
+        args, config, context, model.writer_state, model.trainable
+    )
+    runtime = JointProgramPrimalRuntime(
+        args=args,
+        config=config,
+        base_config=base,
+        context=context,
+        tasks=authority.selected_tasks,
+        task_by_id=authority.task_by_id,
+        mapping_split=authority.mapping_split,
+        task_conditions=authority.task_conditions,
+        panels=authority.panels,
+        video_store=data.video_store,
+        query_dataset=data.query_dataset,
+        query_processor=data.query_processor,
+        panel_batch_cache={},
+        language_tokens=data.language_tokens,
+        policy=model.policy,
+        program=model.program,
+        compiler=model.compiler,
+        writer_state=model.writer_state,
+        owners=model.owners,
+        ranks=model.ranks,
+        rank4_contract=model.rank4_contract,
+        native_teachers=model.native_teachers,
+        consensus_teachers=model.consensus_teachers,
+        condition_cache=data.condition_cache,
+        query_points=data.query_points,
+        trainable_parameters=model.trainable,
+        frozen_parameters=model.frozen,
+        optimizer=cursor.optimizer,
+        scheduler=cursor.scheduler,
+        gradient_presence=None,
+        optimizer_steps=cursor.optimizer_steps,
+        stop_after_step=cursor.stop,
+        checkpoint_steps=cursor.checkpoints,
+        metrics_rows=cursor.metrics_rows,
+        run_contract={},
+    )
+    runtime.run_contract = _run_contract(runtime)
+    if context.is_main:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        write_json_atomic(args.output_dir / "run_contract.json", runtime.run_contract)
+    torch.cuda.reset_peak_memory_stats(context.device)
+    return runtime

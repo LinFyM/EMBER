@@ -214,6 +214,51 @@ def test_alignment_is_monotone_and_two_probe_forward_has_gradients() -> None:
     assert any(parameter.grad is not None for parameter in model.parameters())
 
 
+def test_cached_frozen_evidence_recompiles_program_without_decoder_graph() -> None:
+    torch.manual_seed(41)
+    model = _model().eval()
+    model.encoder.requires_grad_(False)
+    frames = torch.randint(0, 256, (3, 3, 8, 8), dtype=torch.uint8)
+    common = {
+        "policy": SimpleNamespace(),
+        "frames": frames,
+        "frame_indices": torch.tensor([0, 5, 10]),
+        "raw_frame_counts": torch.tensor([11]),
+        "video_offsets": torch.tensor([0, 3]),
+        "video_set_offsets": torch.tensor([0, 1]),
+        "frame_condition_ids": torch.zeros(3, dtype=torch.long),
+        "language_tokens": torch.randint(0, 64, (1, 6)),
+        "language_mask": torch.tensor([[True, True, True, True, False, False]]),
+    }
+    evidence = model.encode_frozen_evidence(**common)
+    assert all(
+        not getattr(evidence, name).requires_grad
+        for name in evidence.__dataclass_fields__
+    )
+    query_times = torch.linspace(0.0, 1.0, 6)[None]
+    without_decoder = model.compile_program(
+        evidence, query_times=query_times, decode_predictions=False
+    )
+    with_decoder = model.compile_program(evidence, query_times=query_times)
+    assert without_decoder.predictions is None
+    assert with_decoder.predictions is not None
+    for name in ("p_lang", "p_scene", "p_process", "rho", "tau", "sigma"):
+        torch.testing.assert_close(
+            getattr(without_decoder.program, name),
+            getattr(with_decoder.program, name),
+        )
+    (
+        without_decoder.program.p_lang.square().mean()
+        + without_decoder.program.p_scene.square().mean()
+        + without_decoder.program.p_process.square().mean()
+    ).backward()
+    assert all(parameter.grad is None for parameter in model.encoder.parameters())
+    assert model.language_reader.queries.grad is not None
+    assert model.scene_reader.queries.grad is not None
+    assert model.process_fusion[0].weight.grad is not None
+    assert all(parameter.grad is None for parameter in model.decoder.parameters())
+
+
 def test_temporal_heads_have_no_direct_language_or_scene_bypass() -> None:
     torch.manual_seed(5)
     model = _model()

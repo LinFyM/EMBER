@@ -259,7 +259,7 @@ P0/P1已经把真实native banks、rank4、current-bank global dual与exact sign
 cross-episode teacher action/flow loss反传；source、Native Stage0、bank operator、carrier、scale和Action Meta保持冻结。
 
 - [x] 固化第四次专家原文与active contract；v5仍作为protocol non-pass历史证据，但不再作为恢复G3前的硬Gate；
-- [ ] 审计并复用Natural Program frozen evidence、P2 compact condition cache、current-bank operator和
+- [x] 审计并复用Natural Program frozen evidence、P2 compact condition cache、current-bank operator和
   `functional_lora_loss_gradient()`，建立唯一J2模块所有权，移除active optimizer对behavior-Gram的依赖；
 - [ ] 用相同functional objective先完成10个gradient tasks的task-local、两fit-video共享free-primal正控；第三video严格零梯度。
   held-video recovery median须`>=.80`，四family各`>=.70`且每task显著优于carrier，否则先修functional panel/scale/authority；
@@ -272,7 +272,9 @@ cross-episode teacher action/flow loss反传；source、Native Stage0、bank ope
   interaction`>=.05`、same-task retention`>=.80`，checkpoint 60到100 task median回落不超过`.05`，event/K1/信息墙继续通过；
 - [ ] 速度资格：先缓存冻结language/Stage0 raw evidence、X/Y、covariance eigensystem和固定action batches，不缓存Program或LoRA；
   六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，完整评价墙钟不超过训练主体一半。world size按live吞吐弹性
-  选择，不改变task权重或Gate；仅做最小真实forward/backward/materialization与定向合同检查，不跑冗余全仓测试。
+  选择，不改变task权重或Gate；仅做最小真实forward/backward/materialization与定向合同检查，不跑冗余全仓测试。task1真实
+  positive-control profile已锁定logical16/physical microbatch4：三条bank hot prepare`.655s`、单步`9.50s`、peak reserved
+  `28.95GiB`，满足单卡内存/吞吐前置合同；六卡joint update仍须在正控后单独profile。
 
 J2通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen

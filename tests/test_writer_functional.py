@@ -17,11 +17,13 @@ from ember.writer.functional import (
     INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
+    functional_lora_loss_value,
     pi05_mean_flow_loss,
     prepare_frozen_writer_policy,
     scoped_policy_flow_noise_sampling,
     scoped_policy_flow_time_sampling,
     scoped_policy_randomness,
+    writer_chain_rule_surrogate,
 )
 from ember.writer.errors import WriterModelError
 
@@ -354,11 +356,9 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
         _contract(),
         batch=batch,
     )
-    bridged_gradient = torch.autograd.grad(
-        tuple(state.values()),
-        writer.scale,
-        grad_outputs=tuple(gradients[name] for name in state),
-    )
+    surrogate = writer_chain_rule_surrogate(state, gradients)
+    assert float(surrogate.detach()) == 0.0
+    bridged_gradient = torch.autograd.grad(surrogate, writer.scale)
     assert details["loss"] == float(loss)
     assert all(parameter.grad is None for parameter in policy.parameters())
     assert torch.allclose(bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6)
@@ -470,8 +470,17 @@ def test_pi05_loss_only_independent_logical_b20_matches_physical_slices(
         policy_microbatch_size=policy_microbatch_size,
         **common,
     )
+    value_loss, value_details = functional_lora_loss_value(
+        policy,
+        state,
+        contract,
+        batch=batch,
+        policy_microbatch_size=policy_microbatch_size,
+        **common,
+    )
     assert policy.detail_calls == 0
-    assert full_details == micro_details == {}
+    assert full_details == micro_details == value_details == {}
+    assert torch.allclose(value_loss, full_loss, atol=1e-7, rtol=1e-6)
     assert torch.allclose(micro_loss, full_loss, atol=1e-7, rtol=1e-6)
     for name in full_gradients:
         assert torch.allclose(

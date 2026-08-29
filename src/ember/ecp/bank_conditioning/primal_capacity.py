@@ -10,6 +10,7 @@ import torch
 from ember.ecp.bank_conditioning.consensus import truncated_mean_update
 from ember.ecp.bank_conditioning.mapping import paired_mapping_loss
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
+    CompactPrimalDualVideo,
     MaterializedPrimalDualVideo,
     PrimalDualVideoOperator,
 )
@@ -98,13 +99,18 @@ def subset_teacher(
 def task_local_output(
     *,
     operator: PrimalDualVideoOperator,
-    prepared: MaterializedPrimalDualVideo,
+    prepared: MaterializedPrimalDualVideo | CompactPrimalDualVideo,
     code: TaskLocalPrimalCode,
     s_ref: torch.Tensor,
 ) -> SharedCompilerOutput:
-    result = operator.apply_materialized(
-        prepared, code.input_primals(), code.output_primals()
-    )
+    if isinstance(prepared, CompactPrimalDualVideo):
+        result = operator.apply_compact(
+            prepared, code.input_primals(), code.output_primals()
+        )
+    else:
+        result = operator.apply_materialized(
+            prepared, code.input_primals(), code.output_primals()
+        )
     scales = code.scales(s_ref)
     inputs = tuple(rms_normalize(value) for value in result.input_values)
     outputs = tuple(rms_normalize(value) for value in result.output_values)

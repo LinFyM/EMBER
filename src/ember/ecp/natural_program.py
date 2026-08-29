@@ -35,7 +35,7 @@ class NaturalProgramPredictions:
 @dataclass(frozen=True)
 class NaturalProgramOutput:
     program: NaturalProgram
-    predictions: NaturalProgramPredictions
+    predictions: NaturalProgramPredictions | None
     local_scene: torch.Tensor
     local_process: torch.Tensor
     local_presence: torch.Tensor
@@ -47,6 +47,25 @@ class NaturalProgramOutput:
     canonical_assignment: torch.Tensor
     frame_mask: torch.Tensor
     video_condition_ids: torch.Tensor
+
+
+@dataclass(frozen=True)
+class FrozenProgramEvidence:
+    """Deployment-visible frozen source/Stage0 evidence for Pass-A compilation."""
+
+    language_embeddings: torch.Tensor
+    language_mask: torch.Tensor
+    patch_states: torch.Tensor
+    frame_mask: torch.Tensor
+    process: torch.Tensor
+    uncertainty: torch.Tensor
+    presence: torch.Tensor
+    state_posterior: torch.Tensor
+    frame_indices: torch.Tensor
+    raw_frame_counts: torch.Tensor
+    video_offsets: torch.Tensor
+    video_set_offsets: torch.Tensor
+    frame_condition_ids: torch.Tensor
 
 
 class OwnerLanguageReader(torch.nn.Module):
@@ -407,6 +426,74 @@ class NaturalProgramModel(torch.nn.Module):
         )
 
     @staticmethod
+    def _ordinary_evidence(value: torch.Tensor) -> torch.Tensor:
+        """Turn an inference tensor into an ordinary detached cache tensor."""
+
+        return value.detach().clone()
+
+    def encode_frozen_evidence(
+        self,
+        *,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        raw_frame_counts: torch.Tensor,
+        video_offsets: torch.Tensor,
+        video_set_offsets: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+    ) -> FrozenProgramEvidence:
+        """Run only frozen source/Stage0 work and return cacheable evidence."""
+
+        with torch.inference_mode():
+            language_embeddings = self.encoder.embed_language_conditions(
+                policy, language_tokens
+            )
+            common = {
+                "policy": policy,
+                "frames": frames,
+                "video_offsets": video_offsets,
+                "frame_condition_ids": frame_condition_ids,
+                "language_tokens": language_tokens,
+                "language_mask": language_mask,
+            }
+            positive = self._encode_videos_independently(
+                **common, suffix_noise=self.encoder.fixed_suffix_noise
+            )
+            negative = self._encode_videos_independently(
+                **common, suffix_noise=-self.encoder.fixed_suffix_noise
+            )
+            stacked = {
+                "process": torch.stack((positive.process, negative.process)),
+                "uncertainty": torch.stack(
+                    (positive.uncertainty, negative.uncertainty)
+                ),
+                "presence": torch.stack((positive.presence, negative.presence)),
+                "state_posterior": torch.stack(
+                    (positive.state_posterior, negative.state_posterior)
+                ),
+            }
+            patch_states = positive.patch_states
+            frame_mask = positive.frame_mask
+        ordinary = self._ordinary_evidence
+        return FrozenProgramEvidence(
+            language_embeddings=ordinary(language_embeddings),
+            language_mask=ordinary(language_mask),
+            patch_states=ordinary(patch_states),
+            frame_mask=ordinary(frame_mask),
+            process=ordinary(stacked["process"]),
+            uncertainty=ordinary(stacked["uncertainty"]),
+            presence=ordinary(stacked["presence"]),
+            state_posterior=ordinary(stacked["state_posterior"]),
+            frame_indices=ordinary(frame_indices),
+            raw_frame_counts=ordinary(raw_frame_counts),
+            video_offsets=ordinary(video_offsets),
+            video_set_offsets=ordinary(video_set_offsets),
+            frame_condition_ids=ordinary(frame_condition_ids),
+        )
+
+    @staticmethod
     def _padded_positions(
         frame_indices: torch.Tensor,
         raw_frame_counts: torch.Tensor,
@@ -440,7 +527,7 @@ class NaturalProgramModel(torch.nn.Module):
 
     def _local_program(
         self,
-        probes: tuple[ECPVideoEncoderOutput, ECPVideoEncoderOutput],
+        evidence: FrozenProgramEvidence,
         *,
         p_lang: torch.Tensor,
         video_condition_ids: torch.Tensor,
@@ -456,16 +543,16 @@ class NaturalProgramModel(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
     ]:
-        frame_mask = probes[0].frame_mask
+        frame_mask = evidence.frame_mask
         p_scene = self.scene_reader(
-            probes[0].patch_states,
+            evidence.patch_states,
             frame_mask,
             p_lang,
             video_condition_ids,
         )
-        process = torch.stack([row.process for row in probes])
-        uncertainty = torch.stack([row.uncertainty for row in probes])
-        presence = torch.stack([row.presence for row in probes])
+        process = evidence.process
+        uncertainty = evidence.uncertainty
+        presence = evidence.presence
         probe_program = []
         for probe in range(2):
             probe_program.append(
@@ -493,7 +580,7 @@ class NaturalProgramModel(torch.nn.Module):
         positions = self._padded_positions(
             frame_indices, raw_frame_counts, video_offsets, frame_mask
         )
-        posterior = torch.stack([row.state_posterior for row in probes])
+        posterior = evidence.state_posterior
         local_tau = self._temporal_moments(posterior, positions, frame_mask)
         return (
             p_scene,
@@ -617,6 +704,72 @@ class NaturalProgramModel(torch.nn.Module):
             torch.cat(alignments),
         )
 
+    def compile_program(
+        self,
+        evidence: FrozenProgramEvidence,
+        *,
+        query_times: torch.Tensor,
+        decode_predictions: bool = True,
+    ) -> NaturalProgramOutput:
+        """Compile cached frozen evidence through the differentiable Program."""
+
+        p_lang = self.language_reader(
+            evidence.language_embeddings, evidence.language_mask
+        )
+        video_condition_ids = evidence.frame_condition_ids.index_select(
+            0, evidence.video_offsets[:-1].to(evidence.frame_condition_ids.device)
+        )
+        (
+            local_scene,
+            local_process,
+            local_presence,
+            local_tau,
+            local_sigma,
+            probe_process,
+            probe_presence,
+        ) = self._local_program(
+            evidence,
+            p_lang=p_lang,
+            video_condition_ids=video_condition_ids,
+            frame_indices=evidence.frame_indices,
+            raw_frame_counts=evidence.raw_frame_counts,
+            video_offsets=evidence.video_offsets,
+        )
+        program, alignment = self._aggregate(
+            p_lang=p_lang,
+            local_scene=local_scene,
+            local_process=local_process,
+            local_presence=local_presence,
+            local_tau=local_tau,
+            local_sigma=local_sigma,
+            video_set_offsets=evidence.video_set_offsets,
+        )
+        local_assignment = evidence.state_posterior.mean(0)
+        canonical_assignment = torch.einsum(
+            "vte,vce->vtc", local_assignment, alignment
+        )
+        canonical_assignment = canonical_assignment / canonical_assignment.sum(
+            -1, keepdim=True
+        ).clamp_min(1e-6)
+        canonical_assignment = canonical_assignment * evidence.frame_mask[..., None]
+        return NaturalProgramOutput(
+            program=program,
+            predictions=(
+                self.decoder(program, query_times) if decode_predictions else None
+            ),
+            local_scene=local_scene,
+            local_process=local_process,
+            local_presence=local_presence,
+            local_tau=local_tau,
+            local_sigma=local_sigma,
+            probe_process=probe_process,
+            probe_presence=probe_presence,
+            alignment=alignment,
+            canonical_assignment=canonical_assignment,
+            frame_mask=evidence.frame_mask,
+            video_condition_ids=video_condition_ids,
+        )
+
     def forward(
         self,
         *,
@@ -631,74 +784,15 @@ class NaturalProgramModel(torch.nn.Module):
         language_mask: torch.Tensor,
         query_times: torch.Tensor,
     ) -> NaturalProgramOutput:
-        language_embeddings = self.encoder.embed_language_conditions(
-            policy, language_tokens
-        )
-        p_lang = self.language_reader(language_embeddings, language_mask)
-        common = {
-            "policy": policy,
-            "frames": frames,
-            "video_offsets": video_offsets,
-            "frame_condition_ids": frame_condition_ids,
-            "language_tokens": language_tokens,
-            "language_mask": language_mask,
-        }
-        positive = self._encode_videos_independently(
-            **common, suffix_noise=self.encoder.fixed_suffix_noise
-        )
-        negative = self._encode_videos_independently(
-            **common, suffix_noise=-self.encoder.fixed_suffix_noise
-        )
-        video_condition_ids = frame_condition_ids.index_select(
-            0, video_offsets[:-1].to(frame_condition_ids.device)
-        )
-        (
-            local_scene,
-            local_process,
-            local_presence,
-            local_tau,
-            local_sigma,
-            probe_process,
-            probe_presence,
-        ) = self._local_program(
-            (positive, negative),
-            p_lang=p_lang,
-            video_condition_ids=video_condition_ids,
+        evidence = self.encode_frozen_evidence(
+            policy=policy,
+            frames=frames,
             frame_indices=frame_indices,
             raw_frame_counts=raw_frame_counts,
             video_offsets=video_offsets,
-        )
-        program, alignment = self._aggregate(
-            p_lang=p_lang,
-            local_scene=local_scene,
-            local_process=local_process,
-            local_presence=local_presence,
-            local_tau=local_tau,
-            local_sigma=local_sigma,
             video_set_offsets=video_set_offsets,
+            frame_condition_ids=frame_condition_ids,
+            language_tokens=language_tokens,
+            language_mask=language_mask,
         )
-        local_assignment = torch.stack(
-            (positive.state_posterior, negative.state_posterior)
-        ).mean(0)
-        canonical_assignment = torch.einsum(
-            "vte,vce->vtc", local_assignment, alignment
-        )
-        canonical_assignment = canonical_assignment / canonical_assignment.sum(
-            -1, keepdim=True
-        ).clamp_min(1e-6)
-        canonical_assignment = canonical_assignment * positive.frame_mask[..., None]
-        return NaturalProgramOutput(
-            program=program,
-            predictions=self.decoder(program, query_times),
-            local_scene=local_scene,
-            local_process=local_process,
-            local_presence=local_presence,
-            local_tau=local_tau,
-            local_sigma=local_sigma,
-            probe_process=probe_process,
-            probe_presence=probe_presence,
-            alignment=alignment,
-            canonical_assignment=canonical_assignment,
-            frame_mask=positive.frame_mask,
-            video_condition_ids=video_condition_ids,
-        )
+        return self.compile_program(evidence, query_times=query_times)

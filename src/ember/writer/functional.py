@@ -634,6 +634,102 @@ def functional_lora_loss_gradient(
     )
 
 
+def functional_lora_loss_value(
+    policy: torch.nn.Module,
+    state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    *,
+    batch: Mapping[str, Any],
+    policy_rng_seed: int | None = None,
+    policy_rng_device: torch.device | str | None = None,
+    flow_time_sampling_scheme: str | None = None,
+    flow_noise_sampling_scheme: str | None = None,
+    policy_microbatch_size: int | None = None,
+    collect_policy_details: bool = True,
+) -> tuple[torch.Tensor, Mapping[str, Any]]:
+    """Evaluate a frozen-policy LoRA loss without constructing leaf gradients."""
+
+    if any(parameter.requires_grad for parameter in policy.parameters()):
+        raise WriterModelError("functional LoRA value received a trainable policy")
+    logical_batch_size, microbatch_size = functional_microbatch_contract(
+        batch,
+        policy_microbatch_size,
+        policy_rng_seed=policy_rng_seed,
+        flow_time_sampling_scheme=flow_time_sampling_scheme,
+        flow_noise_sampling_scheme=flow_noise_sampling_scheme,
+    )
+    frozen_state = {name: value.detach() for name, value in state.items()}
+    loss_sum: torch.Tensor | None = None
+    detail_sum: dict[str, Any] = {}
+    for start in range(0, logical_batch_size, microbatch_size):
+        stop = min(start + microbatch_size, logical_batch_size)
+        microbatch = {
+            name: (
+                value[start:stop]
+                if isinstance(value, torch.Tensor)
+                and value.ndim > 0
+                and value.shape[0] == logical_batch_size
+                else value
+            )
+            for name, value in batch.items()
+        }
+        physical = microbatch_size < logical_batch_size
+        random_batch_size = logical_batch_size if physical else None
+        with torch.no_grad(), scoped_policy_randomness(
+            policy_rng_seed, policy_rng_device
+        ):
+            with scoped_policy_flow_noise_sampling(
+                policy,
+                flow_noise_sampling_scheme,
+                logical_batch_size=random_batch_size,
+                batch_offset=start,
+            ):
+                with scoped_policy_flow_time_sampling(
+                    policy,
+                    flow_time_sampling_scheme,
+                    logical_batch_size=random_batch_size,
+                    batch_offset=start,
+                ):
+                    with _scoped_policy_detail_collection(
+                        policy, collect_policy_details
+                    ):
+                        output = functional_lora_call(
+                            policy, frozen_state, contract, microbatch
+                        )
+        if (
+            not isinstance(output, tuple)
+            or len(output) != 2
+            or not isinstance(output[0], torch.Tensor)
+            or output[0].ndim != 0
+            or not isinstance(output[1], Mapping)
+        ):
+            raise WriterModelError("functional policy did not return a scalar loss")
+        weight = (stop - start) / logical_batch_size
+        weighted = output[0].detach().float() * weight
+        loss_sum = weighted if loss_sum is None else loss_sum + weighted
+        _accumulate_policy_details(detail_sum, output[1], weight)
+    if loss_sum is None:
+        raise WriterModelError("functional policy microbatch loop was empty")
+    return loss_sum, detail_sum
+
+
+def writer_chain_rule_surrogate(
+    generated_state: Mapping[str, torch.Tensor],
+    detached_leaf_gradients: Mapping[str, torch.Tensor],
+) -> torch.Tensor:
+    """Backpropagate frozen-policy LoRA leaf gradients into the Writer graph."""
+
+    if set(generated_state) != set(detached_leaf_gradients) or not generated_state:
+        raise WriterModelError("functional Writer gradient keys changed")
+    terms = []
+    for name, value in generated_state.items():
+        gradient = detached_leaf_gradients[name]
+        if gradient.shape != value.shape or gradient.requires_grad:
+            raise WriterModelError("functional Writer leaf gradient changed")
+        terms.append(((value - value.detach()) * gradient.to(value)).sum())
+    return torch.stack(terms).sum()
+
+
 def _accumulate_policy_details(
     destination: dict[str, Any],
     source: Mapping[str, Any],

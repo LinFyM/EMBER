@@ -14,7 +14,11 @@ from ember.ecp.g1_initialization import (
     cache_native_video_readout,
     cached_native_bytes,
 )
-from ember.ecp.natural_program import NaturalProgram, NaturalProgramModel
+from ember.ecp.natural_program import (
+    FrozenProgramEvidence,
+    NaturalProgram,
+    NaturalProgramModel,
+)
 from ember.ecp.natural_program_data import (
     NaturalProgramSample,
     NaturalProgramTask,
@@ -41,6 +45,7 @@ class SharedCompilerCondition:
     program: NaturalProgram
     videos: tuple[SharedCompilerVideo, ...]
     metrics: dict[str, object]
+    evidence: FrozenProgramEvidence | None = None
 
 
 def cache_shared_compiler_native_replay(
@@ -153,8 +158,8 @@ def _run_frozen_pass_a(
         if device.type == "cuda"
         else nullcontext()
     )
-    with torch.inference_mode(), autocast:
-        return program_model(
+    with autocast:
+        evidence = program_model.encode_frozen_evidence(
             policy=policy,
             frames=packed.frames,
             frame_indices=packed.frame_indices,
@@ -164,8 +169,14 @@ def _run_frozen_pass_a(
             frame_condition_ids=packed.frame_condition_ids,
             language_tokens=language_tokens,
             language_mask=language_mask,
-            query_times=packed.query_times,
         )
+        with torch.inference_mode():
+            output = program_model.compile_program(
+                evidence,
+                query_times=packed.query_times,
+                decode_predictions=False,
+            )
+    return evidence, output
 
 
 def _extract_program(output) -> NaturalProgram:
@@ -179,6 +190,41 @@ def _extract_program(output) -> NaturalProgram:
     )
 
 
+def prepare_joint_program_primal_condition(
+    *,
+    program_model: NaturalProgramModel,
+    condition: Any,
+    query_times: torch.Tensor,
+) -> tuple[NaturalProgram, Any]:
+    """Recompile a differentiable Program from cached frozen J2 evidence."""
+
+    evidence = getattr(condition, "evidence", None)
+    videos = getattr(condition, "videos", ())
+    if evidence is None or len(videos) != 1 or query_times.ndim != 2:
+        raise ValueError("J2 condition lost frozen evidence or K1 identity")
+    device = evidence.language_embeddings.device
+    autocast = (
+        torch.autocast("cuda", dtype=torch.bfloat16)
+        if device.type == "cuda"
+        else nullcontext()
+    )
+    with autocast:
+        output = program_model.compile_program(
+            evidence,
+            query_times=query_times,
+            decode_predictions=False,
+        )
+    program = NaturalProgram(
+        p_lang=output.program.p_lang[0].float(),
+        p_scene=output.program.p_scene[0].float(),
+        p_process=output.program.p_process[0].float(),
+        rho=output.program.rho[0].float(),
+        tau=output.program.tau[0].float(),
+        sigma=output.program.sigma[0].float(),
+    )
+    return program, output
+
+
 def prepare_shared_compiler_program(
     *,
     policy: torch.nn.Module,
@@ -190,7 +236,7 @@ def prepare_shared_compiler_program(
     """Run frozen Pass A without constructing a second task's native bank."""
 
     _validate_pass_a_inputs(packed, language_tokens, language_mask)
-    output = _run_frozen_pass_a(
+    _, output = _run_frozen_pass_a(
         policy=policy,
         program_model=program_model,
         packed=packed,
@@ -226,25 +272,13 @@ def prepare_shared_compiler_condition(
         or chunk_size <= 0
     ):
         raise ValueError("G3 compiler condition is not one K={1,2,4} task")
-    device = packed.frames.device
-    autocast = (
-        torch.autocast("cuda", dtype=torch.bfloat16)
-        if device.type == "cuda"
-        else nullcontext()
+    evidence, output = _run_frozen_pass_a(
+        policy=policy,
+        program_model=program_model,
+        packed=packed,
+        language_tokens=language_tokens,
+        language_mask=language_mask,
     )
-    with torch.inference_mode(), autocast:
-        output = program_model(
-            policy=policy,
-            frames=packed.frames,
-            frame_indices=packed.frame_indices,
-            raw_frame_counts=packed.raw_frame_counts,
-            video_offsets=packed.video_offsets,
-            video_set_offsets=packed.video_set_offsets,
-            frame_condition_ids=packed.frame_condition_ids,
-            language_tokens=language_tokens,
-            language_mask=language_mask,
-            query_times=packed.query_times,
-        )
     program = NaturalProgram(
         p_lang=_ordinary(output.program.p_lang[0]),
         p_scene=_ordinary(output.program.p_scene[0]),
@@ -285,6 +319,7 @@ def prepare_shared_compiler_condition(
             )
         )
     return SharedCompilerCondition(
+        evidence=evidence,
         program=program,
         videos=tuple(videos),
         metrics={

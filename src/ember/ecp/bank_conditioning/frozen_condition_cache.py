@@ -26,7 +26,7 @@ from ember.ecp.bank_conditioning.primal_dual_runtime import (
 )
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.native_factors import native_output_group_count
-from ember.ecp.natural_program import NaturalProgram
+from ember.ecp.natural_program import FrozenProgramEvidence, NaturalProgram
 from ember.ecp.shared_compiler_data import (
     SharedCompilerCondition,
     cache_shared_compiler_native_replay,
@@ -34,17 +34,19 @@ from ember.ecp.shared_compiler_data import (
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
-FROZEN_CONDITION_CACHE_SCHEMA = "ember_ecp_g3_frozen_condition_cache_v3"
+FROZEN_CONDITION_CACHE_SCHEMA = "ember_ecp_g3_frozen_condition_cache_v4"
 _PROGRAM_FIELDS = ("p_lang", "p_scene", "p_process", "rho", "tau", "sigma")
+_EVIDENCE_FIELDS = tuple(FrozenProgramEvidence.__dataclass_fields__)
 
 
 @dataclass(frozen=True)
 class FrozenSharedCompilerCondition:
     """One frozen Program, raw native bank, and its B0 spectral operator."""
 
-    program: NaturalProgram
+    program: NaturalProgram | None
     videos: tuple[CompactPrimalDualVideo, ...]
     metrics: dict[str, Any]
+    evidence: FrozenProgramEvidence | None = None
 
 
 @dataclass(frozen=True)
@@ -107,10 +109,23 @@ def _operator_tensors(
 def _condition_tensors(
     condition: FrozenSharedCompilerCondition,
 ) -> dict[str, torch.Tensor]:
-    tensors = {
-        f"program.{name}": _cpu_tensor(getattr(condition.program, name))
-        for name in _PROGRAM_FIELDS
-    }
+    tensors: dict[str, torch.Tensor] = {}
+    if condition.program is not None:
+        tensors.update(
+            {
+                f"program.{name}": _cpu_tensor(getattr(condition.program, name))
+                for name in _PROGRAM_FIELDS
+            }
+        )
+    if condition.evidence is not None:
+        tensors.update(
+            {
+                f"evidence.{name}": _cpu_tensor(
+                    getattr(condition.evidence, name)
+                )
+                for name in _EVIDENCE_FIELDS
+            }
+        )
     for video_index, video in enumerate(condition.videos):
         prefix = f"video.{video_index}"
         tensors[f"{prefix}.frame_measure"] = _cpu_tensor(video.frame_measure)
@@ -168,9 +183,19 @@ def _decode_condition(
     owners: Sequence[TargetOwner],
 ) -> FrozenSharedCompilerCondition:
     video_count = int(metadata["video_count"])
-    program = NaturalProgram(
-        **{name: tensors[f"program.{name}"] for name in _PROGRAM_FIELDS}
-    )
+    program = None
+    if metadata.get("has_program") == "true":
+        program = NaturalProgram(
+            **{name: tensors[f"program.{name}"] for name in _PROGRAM_FIELDS}
+        )
+    evidence = None
+    if metadata.get("has_program_evidence") == "true":
+        evidence = FrozenProgramEvidence(
+            **{
+                name: tensors[f"evidence.{name}"]
+                for name in _EVIDENCE_FIELDS
+            }
+        )
     videos = []
     for video_index in range(video_count):
         prefix = f"video.{video_index}"
@@ -224,6 +249,7 @@ def _decode_condition(
         program=program,
         videos=tuple(videos),
         metrics=metrics,
+        evidence=evidence,
     )
 
 
@@ -247,10 +273,12 @@ class FrozenMappingConditionCache:
         owners: Sequence[TargetOwner],
         operator: PrimalDualVideoOperator,
         authority: Mapping[str, Any],
+        cache_program: bool = True,
     ) -> None:
         self.root = root.resolve()
         self.owners = tuple(owners)
         self.operator = operator
+        self.cache_program = bool(cache_program)
         if not self.root.is_absolute() or self.root in (
             Path("/"),
             Path("/tmp"),
@@ -263,6 +291,7 @@ class FrozenMappingConditionCache:
             **dict(authority),
             "checkpoint_payload": False,
             "deployment_input": False,
+            "cache_program_output": self.cache_program,
         }
         lock_path = self.root / ".manifest.lock"
         with lock_path.open("a+") as handle:
@@ -289,9 +318,10 @@ class FrozenMappingConditionCache:
                 for video in cached.videos
             )
         return FrozenSharedCompilerCondition(
-            program=cached.program,
+            program=cached.program if self.cache_program else None,
             videos=videos,
             metrics=dict(cached.metrics),
+            evidence=cached.evidence,
         )
 
     def _save(
@@ -310,6 +340,8 @@ class FrozenMappingConditionCache:
             "authority_id": str(authority_id),
             "video_demo": str(video_demo),
             "video_count": str(len(condition.videos)),
+            "has_program": str(condition.program is not None).lower(),
+            "has_program_evidence": str(condition.evidence is not None).lower(),
             "metrics_json": json.dumps(
                 condition.metrics, sort_keys=True, separators=(",", ":")
             ),
@@ -413,5 +445,7 @@ class FrozenMappingConditionCache:
                 or int(metadata.get("video_demo", -1)) != video_demo
             ):
                 raise ValueError("frozen condition cache file schema changed")
+            if metadata.get("has_program") != "true":
+                return None
             values = {name: handle.get_tensor(f"program.{name}") for name in _PROGRAM_FIELDS}
         return NaturalProgram(**values)

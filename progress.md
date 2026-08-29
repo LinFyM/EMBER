@@ -31,6 +31,36 @@ physical microbatch8时单步`9.459s`但peak reserved`42.154GiB`，超过合同�
 BF16/TF32数值政策使用`1e-4` replay容差并把实际误差留在报告。下一步是定向回归、clean pushed detached authority及六卡并行
 10-task formal positive control；尚不启动12-task joint formal。
 
+### J2 10-task functional positive-control formal launch contract
+
+- implementation authority为clean pushed `main@c4704cb04d521154faf384abd1bf5b9af7ead9c2`；formal从包含本合同、但不再修改
+  `src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。每task fresh task-local code/AdamW，不resume profile或其它task，
+  profile checkpoint不进入formal；失败输出保留并标invalid，修复后使用新run identity；
+- 固定gradient meta`[1,8,9,32,52]`与gradient target`[72,73,75,93,94]`。每task 100 updates，每update用同一panel-A visit的
+  logical16 actions及两条fit K1 videos等权，合计32,000个task-view-action rows；第三held video、16个panel-B visits及held teacher只在
+  训练结束后零梯度读取。source、Stage0、Natural Program/shared scorer、operator、carrier、scale与Action Meta全冻结，只优化该task
+  跨两fit videos共享的free primal；输出不是deployment candidate；
+- model/data authority沿用source checkpoint`runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000`、
+  tokenizer`models/tokenizers/openpi/paligemma_tokenizer.model`和target data
+  `data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。输出根为
+  `runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829/`，每task独立子目录；node-local cache为
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`。预计formal输出`<0.1GiB`，10task cache约`24GiB`，不复制模型或dataset；
+- 运行方式为gpu01上独立single-process workers，不使用NCCL：首波GPU`0--5`并行task`[1,8,9,72,73,75]`，第二波用可用GPU并行
+  `[32,52,93,94]`。物理0--2绑定NUMA0、3--6绑定NUMA1；每worker logical16/physical microbatch4，实测peak reserved
+  `28.95GiB`。实际launch前重新检查gpu01/gpu02、进程/显存/UTL、NUMA、`/data1` quota、gpu01 `/dev/shm`及output不存在；有几张
+  合适卡就并行几张，不等待凑6且不改变task权重；
+- 单worker命令模板：`env CUDA_VISIBLE_DEVICES=<GPU> PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  numactl --cpunodebind=<NUMA> --membind=<NUMA> /data1/user/ymdai/projects/EMBER/.venv/bin/python -u
+  scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_joint_program_primal_j2_v1.json --base-config
+  configs/pi05_ecp_shared_compiler_g3_v5.json --phase positive-control --mode formal --task <TASK> --asset-root
+  /data1/user/ymdai/projects/EMBER --source-run <SOURCE_RUN> --checkpoint <SOURCE_CHECKPOINT> --tokenizer-path <TOKENIZER>
+  --data-root <TARGET_DATA> --output-dir <OUTPUT_ROOT>/task_<TASK> --condition-cache-root <CACHE_ROOT> --log-every 1`；所有相对
+  script/config路径从同一detached formal worktree解析，asset authority仍指canonical main根；
+- 每task必须保留run contract、100-step curve、唯一task-local code、完整panel A/B与held-video report及completion。Gate要求10task
+  held factor recovery median`>=.80`、q/v/action-in/action-out各task-family汇总`>=.70`、每task held panel-B显著优于carrier，且
+  Action Meta 0、held/panel-B backward 0、唯一rank16和数值/内存合同全部成立。该正控通过只证明functional objective能驱动
+  native free-primal，不证明shared Program mapping；形成aggregate Gate结论后才允许做六卡joint one-step profile和12-task formal。
+
 ## 2026-08-29 G2 global-calibrated behavior-kernel v5 formal non-pass，暂停新增版本
 
 clean pushed `main@7f4df1b`的detached frozen worktree已在gpu01物理`0--4`完成五卡macro5/15 updates、唯一checkpoint和

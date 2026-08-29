@@ -218,7 +218,12 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
 - [x] 真实三卡一步profile已证明两组video、global kernel loss、distributed gradient、现有language/scene/process路径、纯Native Stage0及
   Action Meta 0接通；峰值allocated约`9.98GB`、三卡均100% UTL、一步`19.73s`。该profile早于最终cosine-authority schema，只作执行证据，
   clean v3 authority仍须重跑；
-- [ ] 完成diff/全仓回归、clean push与v3 factor-cosine authority封存；从detached authority执行五卡macro5 formal及旧动态+internal行为Gate；
+- [x] 完成diff/全仓回归与clean pushed `main@c8fee96`集成；从detached authority重封v3 factor-cosine asset，确认fit60/
+  internal-held15 tensors、official held20 tensor overlap 0和对角误差`1.19e-7`；
+- [x] 从clean detached `c8fee96`完成三卡真实一步profile：两组video、global autograd kernel loss、Program全部梯度、
+  source/Stage0冻结、Action Meta 0与显存/吞吐合同均通过；该profile只作执行证据，不代替Gate；
+- [ ] 从只新增formal launch contract文档的clean pushed descendant建立detached worktree，执行五卡macro5 formal及旧动态+
+  internal行为Gate；
 - [ ] non-pass时先比较train topology、internal meta/target topology、exact family与旧动态retention：train不升则修Program credit；train升而
   internal不升才重开窄Stage0 grounding tail；只有新机制证据才允许修正，不做seed/LR/width/rank小扫。internal通过后才读official held20，
   冻结唯一Program checkpoint并更新G3 v5 authority。

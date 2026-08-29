@@ -21,9 +21,37 @@ training reader；fixed kernel-ridge只在internal Gate上由train60拟合，不
 
 五卡formal合同为每step 5 meta+5 target、每rank一对role任务；Stage0 v3/source冻结、Action Meta 0、uniform K、原动态loss/Gate和
 Program schema不变。三卡真实一步已验证global autograd gather、全部Program梯度路径、纯Native loader与100% UTL，约`19.73s`、peak
-allocated`9.98GB`；最终factor-cosine authority schema随后升级为v3，故该dirty profile只作执行证据。当前CPU定向与全仓回归为
-`19/19`和`204 passed`；下一步是完成diff/architecture检查、clean push，从detached commit重封v3 authority并执行五卡macro5+internal
-Gate。只有train topology上升而internal两role仍失败，才依据证据重开窄Stage0 grounding tail；official held20继续不读。
+allocated`9.98GB`；最终factor-cosine authority schema随后升级为v3，故该dirty profile只作执行证据。实现已以clean
+pushed `main@c8fee96`集成，diff/architecture检查无hard violation，全仓回归`204 passed`。从该detached commit重封的v3
+authority只含train60/internal-held15的behavior tensors，official held20仅保留ID provenance且tensor overlap为0；其
+factor-cosine对角最大误差为`1.19e-7`。clean三卡profile的单步为`19.66s`，alignment/cross-view loss为
+`.7062/.00958`，Program panel-A/panel-B correlation为`.6300/.6311`，直接behavior-kernel/process/temporal梯度分别为
+`2.239/1.008/.0434`，Stage0/source trainable 0、Action Meta module/parameter 0。这仍只是执行profile，不是Gate结果。
+
+### G2 behavior-kernel macro5 formal launch contract
+
+- scientific code authority为clean pushed `main@c8fee96`；formal从只新增本合同文档、不改动`src/ scripts/ configs/ tests/`的
+  clean pushed descendant建立detached frozen worktree，运行时再核对commit与code diff。fresh optimizer，不resume、不复用profile checkpoint；
+- behavior authority固定为
+  `/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_g2_behavior_authority_fold0_v3_20260829`；其中fit60用于梯度与fixed
+  evaluator fit，internal-held15只用于Gate，official held20不读behavior tensors、不训练、不选模也不修正架构；
+- formal规模为5 macros × 3 optimizer steps；每step为5 meta+5 target、每rank一对role task、两组disjoint same-K views。仅训练
+  Natural Program；source、Native Stage0冻结，Action Meta必须为0。macro5存一个checkpoint后执行旧dynamic Gate和internal behavior Gate；
+- command：`env CUDA_VISIBLE_DEVICES=0,1,2,3,4 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=5 scripts/train_ecp_natural_program.py --config
+  configs/pi05_ecp_natural_program_g2_behavior_kernel_v3.json --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path
+  /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root
+  /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --label-root
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_labels_g2_v2_cpu_20260825 --output-dir
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_g2_behavior_kernel_fold0_m5_c8fee96_gpu01p01234_r5_20260829
+  --stop-after-macro 5 --log-every 1`；
+- 预定使gpu01物理`0--4`、world5和`NCCL_P2P_DISABLE=1`，不使用dummy第六卡。launch前必须重新live检查gpu01/gpu02的显存、
+  utilization与process，并重查`/data1` quota；output预计小于`0.1GiB`且目录必须事前不存在；
+- Gate先要求train topology `>=.50`、internal held role-equal `>=.25`、internal meta/target各`>=.25`，再用fit60-only
+  kernel-ridge产生rank16 coordinates评估exact behavior/family/wrong/language/view和旧dynamic合同。train不升时修Program credit；train升而
+  internal失败时才重开窄Stage0 grounding tail；不做seed/LR/width/rank小扫。只有internal全Gate通过后才允许一次读official held20。
 
 关键artifacts：
 

@@ -1,0 +1,119 @@
+{
+  "schema_version": "ember_ecp_routing_token_control_r1_v1",
+  "status": "training_only_routing_boundary_control",
+  "frozen_condition_cache_authority": {
+    "config_schema": "ember_ecp_joint_program_primal_j2_v1",
+    "config_bytes": 6017,
+    "reason": "reuse byte-identical frozen language, Stage0 evidence, real X/Y and covariance authorities"
+  },
+  "authorities": {
+    "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
+    "positive_control_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829",
+    "functional_panel_records": {
+      "1": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_0/task_001.json",
+      "8": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_008.json",
+      "9": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_009.json",
+      "32": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_5/task_032.json",
+      "52": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_052.json",
+      "72": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_072.json",
+      "73": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_073.json",
+      "75": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_3/task_075.json",
+      "93": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_093.json",
+      "94": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_3/task_094.json",
+      "2": "runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829/shard_1/task_002.json",
+      "74": "runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829/shard_5/task_074.json"
+    }
+  },
+  "task_split": {
+    "gradient_meta": [1, 8, 9, 32, 52],
+    "gradient_target": [72, 73, 75, 93, 94],
+    "true_task_held_meta": [2],
+    "true_task_held_target": [74],
+    "gradient_video_views": "first_two_sorted_mapping_fit_conditions",
+    "same_task_held_video": "pre_registered_mapping_video_holdout",
+    "selection_uses_outcomes": false
+  },
+  "model": {
+    "program_source": "fixed_nontrainable_128d_orthogonal_task_token",
+    "token_construction": "mean_zero_unit_rms_sylvester_hadamard_rows",
+    "primal_scorer_initialization": "fresh",
+    "trainable": ["ProgramNativePrimalScorer"],
+    "frozen": [
+      "source_pi05",
+      "native_stage0_v3",
+      "natural_program",
+      "current_bank_primal_to_dual",
+      "exact_signed_replay",
+      "carrier12",
+      "scale_prior",
+      "scale_head",
+      "action_meta"
+    ],
+    "generated_adapter": "one_complete_38_target_rank12_plus_rank4_rank16",
+    "deployment_candidate": false
+  },
+  "data": {
+    "K": 1,
+    "fit_video_views_per_task": 2,
+    "held_videos_per_gradient_task": 1,
+    "functional_panel_train": "panel_a",
+    "functional_panel_evaluation": "panel_b",
+    "panel_visits": 16,
+    "rows_per_visit": 16,
+    "logical_rows_per_panel": 256,
+    "video_action_cross_episode": true,
+    "task_role_weighting": "three_meta_plus_three_target_per_global_update"
+  },
+  "optimization": {
+    "seed": 20260829,
+    "loss": "two_correct_fit_video_functional_flow_only",
+    "functional_policy_microbatch_size": 2,
+    "joint": {
+      "warmup_optimizer_steps": 10,
+      "effective_optimizer_steps": 100,
+      "checkpoint_effective_steps": [60, 100],
+      "global_tasks_per_optimizer_step": 6,
+      "video_views_per_task": 2,
+      "optimizer": {
+        "name": "AdamW",
+        "peak_lr": 0.0001,
+        "decay_lr": 0.000001,
+        "betas": [0.9, 0.95],
+        "eps": 1e-8,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1.0
+      }
+    }
+  },
+  "profile": {
+    "task_group": [1, 8, 9, 72, 73, 75],
+    "panel_visit": 0,
+    "allowed_world_sizes": [1, 2, 3, 4, 5, 6]
+  },
+  "throughput_gate": {
+    "six_gpu_global_update_target_seconds": 15,
+    "six_gpu_global_update_hard_seconds": 25,
+    "maximum_reserved_bytes_per_gpu": 37580963840,
+    "evaluation_to_training_wall_maximum": 0.5,
+    "cache_frozen_language_stage0_xy_covariance_and_action_batches": true,
+    "cache_program_or_generated_lora": false
+  },
+  "information_wall": {
+    "training_only": [
+      "gradient-task authority ID selects one fixed nontrainable orthogonal routing token",
+      "gradient-task panel A teacher actions and flow"
+    ],
+    "zero_gradient": ["panel B", "same-task held video", "tasks 2 and 74"],
+    "forbidden_interpretation": [
+      "deployment Writer",
+      "shared Natural Program to attention mapping",
+      "G3 pass"
+    ],
+    "fixed_routing_token_training_only": true,
+    "deployment_candidate": false,
+    "action_meta_installed": false,
+    "task_or_frame_lookup_parameters": false,
+    "shuffled_or_reversed_use": false,
+    "second_adapter_deployed": false
+  }
+}

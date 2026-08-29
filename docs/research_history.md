@@ -1077,3 +1077,22 @@ qualification，训练时交替wrong Program与wrong bank；若仍无train数量
 - `runs/outputs/pi05_ecp_j2_joint_program_primal_12task_s110_1d775a4_gpu01p012345_r6_20260829/`；
 - `runs/outputs/pi05_ecp_j2_joint_gate_step110_2cd4091_gpu01p012345_w6_20260829/`；
 - `runs/analysis/pi05_ecp_j2_checkpoint110_gradient_geometry_2cd4091_gpu01p5_20260829/report.json`。
+
+## 55. J3 counterfactual functional routing formal non-pass
+
+clean detached `f8bfb7a`在gpu01六卡完成10 warmup+100 effective J3 updates，step70/110随后由clean detached `3f6f94e`的六个
+独立worker完成paired Gate。训练counterfactual gap持续增大且全部Program/scorer梯度有限非零，证明配对分支不是no-op；但step70/110
+correct train recovery仅`.136913/.148649`、held-video`.131572/.147689`，都没有超过J2。step110 q/v/action-in/action-out为
+`.000466/-.004513/.008217/-.001500`，wrong Program/bank margins`.010192/.012540`、interaction`.005426`，核心Gate全部non-pass。
+
+逐task比较显示correct fit只有task52/72/75三项优于J2，而wrong Program、wrong bank和endpoints controls分别有8/10、7/10、9/10改善。
+因此J3学到的主要是让错误组合变坏，而不是提高正确Program+bank的task-specific方向；少数outlier抬高mean，median仍远离`.10`。
+该结果淘汰当前pairwise cyclic negative hinge作为充分routing credit，并触发active design中“train低于`.40`且routing未展开时停止继续
+contrastive/normalization/optimizer技巧、重开representation/function class”的分支；它不淘汰P0/P1已通过的native bank/operator/rank4，
+也不触发只适用于train/held-video已高而task-held低的raw Stage0 probe。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_j3_counterfactual_program_primal_12task_s110_9af7c19_gpu01p012345_r6_20260829/`；
+- `runs/outputs/pi05_ecp_j3_counterfactual_gate_step70_3f6f94e_gpu01p123456_w6_20260829/`；
+- `runs/outputs/pi05_ecp_j3_counterfactual_gate_step110_3f6f94e_gpu01p123456_w6_20260829/`。

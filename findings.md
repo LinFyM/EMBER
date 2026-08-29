@@ -1275,3 +1275,16 @@ LR/seed/width/rank小扫或raw Stage0探针替代。
 - formal checkpoints/raw rows保留在ignored `runs/`；精确旧代码用Git恢复。人工process路线与约11.6GB可重建主要产物已
   删除，recovery Gate A残留作为历史formal evidence保留，不恢复为当前数据或训练路线。
 - 不新增checksum sidecar、重复证据JSON或一实验一文档；跨轮结论只更新本文件、`progress.md`和`research_history.md`。
+
+### 74. J3只学会破坏负例，未形成正确task route
+
+J3 step70/110的correct train/held-video recovery仅`.1369/.1316`与`.1486/.1477`，均没有超过J2；四family仍约零。
+counterfactual训练并非断图：训练normalized gap持续增大，formal Gate中wrong Program/bank controls在8/10与7/10 tasks改善，interaction也从
+J2的`.0024`升至`.0054`。但correct fit只有3/10改善，少数task8/32的错误臂大幅变坏抬高mean，median margin仍只有约`.01`。因此该机制
+提供的是“这不是正确task”的稀疏排斥信号，scorer可以靠制造不对称坏negative降低hinge，却没有获得“正确task应选哪条native primal”的
+稠密正routing坐标。最早接口仍是Natural Program表示与scorer函数类之间，不能再用margin/weight/LR/seed/width/rank小扫修饰。
+
+下一对照固定真实bank/operator/functional loss，只用训练期正交routing token替代Natural Program内容并仅训练现有scorer。若train/held-video
+达到`.60/.50`及四family门，说明scorer能利用清晰route，根因是Natural Program没有形成可分离task representation；若仍失败，则根因下移到
+当前additive family-shared scorer无法把清晰route变成target-native primals，需要更强multiplicative/nonlinear head。该token表不是参数、
+不是deployment input、不能通过G3，并在Gate解释后退出活动树。

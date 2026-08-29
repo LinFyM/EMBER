@@ -1,5 +1,25 @@
 # EMBER progress
 
+## 2026-08-29 J3 Gate non-pass，R1 routing-token边界对照接通
+
+J3 step70/110六worker paired Gate已全部自然完成。step70 train/held-video recovery为`.136913/.131572`，step110为
+`.148649/.147689`，都低于J2对应`.159588/.148662`与`.170800/.164623`；step110 q/v/action-in/action-out仅
+`.000466/-.004513/.008217/-.001500`。wrong Program、wrong bank和interaction为`.010192/.012540/.005426`，仍远低于`.10/.10/.05`
+Gate。逐task correct fit只有task52/72/75三项优于J2，而wrong Program、wrong bank、endpoints分别有8/10、7/10、9/10改善：J3确实收到
+counterfactual credit，但主要学会让negative变坏，没有学会正确task-specific positive route。该结果满足active design停止继续
+contrastive/normalization/optimizer技巧的条件；raw Stage0 probe不适用，因为train与held-video从未变强。
+
+当前单一R1边界对照给10个gradient tasks固定、非参数化、均值零且两两正交的128D routing token，只训练现有
+`ProgramNativePrimalScorer`。同一task两fit video共享token，held video与panel B零梯度；每条video仍独立提供真实X/Y/current-bank
+operator，最终仍是唯一完整rank12+4 rank16。该对照显式标记`deployment_candidate=false`，不能证明shared Natural Program mapping或G3
+通过；Gate解释后、下一canonical architecture实现前删除执行代码，由Git/formal artifacts保留。
+
+定向CPU合同`8 passed`，10-token Gram精确为`128I`且每token均值0。gpu01物理1--6真实一步profile全部复用既有23GiB `/dev/shm`
+condition cache，没有重建Stage0/X/Y；只有scorer的`7,512,196`参数trainable，source/Stage0/Natural Program/operator/scale/Action Meta
+trainable均0，native teacher tensor reads 0，所有关键scorer gradient probes有限非零。global step为`12.383s`，per-rank peak reserved
+最大`21,778,923,520` bytes（`20.28GiB`），符合六卡`<=15/25s`与`<35GiB`合同。下一步是完成diff审查、clean main集成，随后从detached
+authority fresh运行step70/110 formal与只含correct/wrong-token/family必要臂的六worker Gate。
+
 ## 2026-08-29 J3 formal训练完成，step70/110 Gate启动
 
 clean detached `f8bfb7a`在gpu01物理`0--5`自然完成全部110 optimizer steps；actual step70/110两个single checkpoints、

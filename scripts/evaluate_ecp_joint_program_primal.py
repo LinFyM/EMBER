@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate or aggregate one frozen J3 counterfactual checkpoint."""
+"""Evaluate or aggregate a J3 or routing-control checkpoint."""
 
 from __future__ import annotations
 
@@ -9,6 +9,13 @@ from pathlib import Path
 
 from ember.ecp.joint_program_primal.evaluation import evaluate_worker
 from ember.ecp.joint_program_primal.evaluation_gate import aggregate_evaluation
+from ember.ecp.joint_program_primal.routing_control import ROUTING_CONTROL_SCHEMA
+from ember.ecp.joint_program_primal.routing_control_evaluation import (
+    ROUTING_GATE_SCHEMA,
+    aggregate_routing_evaluation,
+    evaluate_routing_worker,
+)
+from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -79,9 +86,17 @@ def _resolve(args: argparse.Namespace) -> argparse.Namespace:
 def main() -> int:
     args = _resolve(build_parser().parse_args())
     if args.command == "worker":
-        evaluate_worker(args)
+        if read_json(args.config).get("schema_version") == ROUTING_CONTROL_SCHEMA:
+            evaluate_routing_worker(args)
+        else:
+            evaluate_worker(args)
         return 0
-    report = aggregate_evaluation(
+    aggregate = (
+        aggregate_routing_evaluation
+        if read_json(args.gate_config).get("schema_version") == ROUTING_GATE_SCHEMA
+        else aggregate_evaluation
+    )
+    report = aggregate(
         output_dir=args.output_dir,
         gate_config=args.gate_config,
         compiler_run=args.compiler_run,

@@ -5,11 +5,11 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
-operator capacity均已通过；J2 joint Program--primal formal在充分100个post-warmup functional updates后明确non-pass。真实功能梯度已到达
-Program和scorer，train/held-video recovery却只有`.1708/.1646`，wrong Program/bank与interaction近零；根因审计进一步发现十task生成
-primals仍高度同向，而task-local成功primals和真实功能梯度均强烈task-specific。当前唯一活动阶段改为J3 counterfactual functional
-routing qualification：保持Writer部署函数类及全部已通过模块不变，只让训练loss以配对wrong Program或wrong bank直接排除公共残差捷径。
-G1/G2/J2局部结论、单次训练或内部指标都不代表整体项目goal完成。
+operator capacity均已通过；J2与J3 joint Program--primal都在充分100个post-warmup functional updates后明确non-pass。J3能让部分错误配对
+变坏，却把correct train/held-video recovery从J2的`.1708/.1646`降至`.1486/.1477`，四family仍近零；因此不能继续叠加contrastive、
+normalization或optimizer技巧。当前唯一活动阶段是training-only orthogonal routing-token boundary control：保持真实video bank、signed replay、
+rank12+4、functional loss和scorer不变，以固定、非参数化、彼此正交的task token隔离“Natural Program表示不分离”与“scorer函数类本身
+不可用”。它不能通过G3，也不能进入deployment checkpoint。G1/G2/J2/J3局部结论、单次训练或内部指标都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -252,7 +252,7 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   `docs/expert_review_20260829_joint_program_primal.md`。裁决取消独立Program behavior-Gram硬Gate，恢复推进的唯一机制是joint
   Program--primal functional credit；不续训v5，不用seed/LR/width/rank小扫，也不先解冻Stage0。
 
-### J2 / G3 Joint Program--primal functional qualification（当前）
+### J2 / G3 Joint Program--primal functional qualification（已完成，non-pass）
 
 P0/P1已经把真实native banks、rank4、current-bank global dual与exact signed replay排除为当前首因。当前不再冻结Program后单训P2，
 而只联合两个尚不可分的相邻接口：Natural Program与`ProgramNativePrimalScorer`。功能链必须实际生成唯一38-target rank16 LoRA并由
@@ -280,7 +280,7 @@ cross-episode teacher action/flow loss反传；source、Native Stage0、bank ope
   task93一步loss相对差`.060%`、step`13.32s`、peak reserved`32.41GiB`，系统修正通过。六卡joint真实profile进一步为
   `11.73s/global step`、per-rank peak reserved`18.25--20.29GiB`，所有Program/primal梯度probe非零，速度Gate通过。
 
-### J3 / G3 Counterfactual functional routing qualification（当前）
+### J3 / G3 Counterfactual functional routing qualification（已完成，non-pass）
 
 J2正控高而shared train低，已满足把问题定位到Program--primal函数类或functional credit的分支。零optimizer-step审计排除clip和断图：
 十task Program/primal pairwise cosine约`.93--.95`，生成effective update median`.678`且action-in`.997`；相反成功free-primal input/output
@@ -292,13 +292,34 @@ cancellation ratio`.421--.536`。因此纯correct-pair loss允许公共残差捷
   反传；部署forward、参数、Program schema、bank operator、rank12+4、Action Meta和信息墙全部不变；
 - [x] 用zero-step/one-step真实检查证明correct/negative配对、梯度符号、task/role等权、wrong condition无teacher-factor读取、Action Meta 0、
   38-target唯一rank16及全部trainable/frozen ownership；profile目标仍为六卡`<=30s/update`、硬上限`45s`和`<35GiB/GPU`；
-- [ ] 从fresh Program initialization/scorer运行同一10 gradient+2 task-held、10 warmup+100 effective updates，并在60/100评价原J2 Gate。
+- [x] 从fresh Program initialization/scorer运行同一10 gradient+2 task-held、10 warmup+100 effective updates，并在60/100评价原J2 Gate。
   J3必须同时取得train/held-video数量级提升与wrong Program/bank因果margin；只让错误臂变坏、correct recovery仍低不通过；
-- [ ] 若J3仍使train recovery低于`.40`且task routing未展开，则停止继续叠加contrastive、normalization或optimizer技巧，按已满足的
+- [x] J3 step70/110 Gate均non-pass。step110 train/held-video为`.148649/.147689`，q/v/action-in/action-out为
+  `.000466/-.004513/.008217/-.001500`；wrong Program/bank与interaction为`.010192/.012540/.005426`。错误controls在多数task上改善，
+  correct fit recovery却只有3/10高于J2，故训练主要学会破坏negative而不是选择正确task方向；
+- [x] J3仍使train recovery低于`.40`且task routing未展开，停止继续叠加contrastive、normalization或optimizer技巧，按已满足的
   function-class停止证据重开Program-conditioned nonlinear capacity/representation接口；不得转去raw Stage0 probe，因为该probe只属于
   train和held-video已高而task-held低的分支。
 
-J3通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
+### R1 / G3 training-only orthogonal routing-token boundary control（当前）
+
+该对照不是新deployment Writer，也不能通过G3。它只给10个gradient tasks各分配一个固定、均值零、unit-RMS、两两正交的128D
+Sylvester-Hadamard token，并把同一token填入固定Program schema；authority ID只在训练期选择token，token不是参数，task/frame查表参数仍为0。
+每task两fit videos共享同一token，held video零梯度；bank继续来自各自真实视频，`ProgramNativePrimalScorer`以外全部冻结。
+
+- [x] 接通独立schema/checkpoint authority与同一train/eval脚本dispatch；保持唯一rank12+4 rank16、真实X/Y/current-bank dual、
+  exact signed replay、panel A/B边界、Action Meta 0及shuffled/reversed 0；临时执行面owner为本R1诊断，Gate解释完成后、实现下一canonical
+  deployment architecture前删除，仅由Git与formal artifacts保留；
+- [x] 定向CPU合同与六卡真实一步通过：10 token Gram精确为`128I`且均值0；只有scorer的`7,512,196`参数trainable，所有关键scorer
+  gradient probes有限非零，native teacher reads 0；global step`12.383s`，最大reserved`20.28GiB`，明显优于J3三forward；
+- [ ] 从clean pushed detached authority以10 warmup+100 effective、step70/110运行formal；同一两fit correct functional primary，不加入
+  counterfactual loss。Gate要求train median`>=.60`、held-video`>=.50`、held/train`>=.80`、q/v各`>=.35`、action-in/out各`>=.30`、
+  wrong-token margin`>=.10`、same-task retention`>=.80`及相邻稳定性；六卡评价只跑10 gradient tasks的correct、wrong-token和family必要臂；
+- [ ] 若通过，证明current scorer/operator/functional credit能利用清晰task route，最早接口锁定为deployment-visible Natural Program没有形成
+  可分离routing representation，下一canonical修正学习共享`z(P)`；若失败，证明即使完美分离输入也无法被当前scorer利用，下一canonical
+  修正改为更强的Program-conditioned multiplicative/nonlinear primal head。两种结果都不得把固定token表保留到deployment。
+
+后续canonical G3通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen
 Stage0 sufficiency probe：raw task-held比Program高`>=.15`且达到`.40`才把最早接口归为Program压缩；raw也低于`.25`才允许考虑窄解冻
 Stage0 process/presence/uncertainty tail。不得直接解冻VLM/source/整个Stage0。

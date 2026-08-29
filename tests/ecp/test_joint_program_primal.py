@@ -9,6 +9,14 @@ from ember.ecp.joint_program_primal.evaluation import (
     balanced_task_assignments,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
+from ember.ecp.joint_program_primal.routing_control import (
+    ROUTING_TASK_IDS,
+    fixed_routing_program,
+    fixed_routing_token,
+)
+from ember.ecp.joint_program_primal.routing_control_evaluation import (
+    routing_task_assignments,
+)
 from ember.ecp.joint_program_primal.train_step import (
     counterfactual_arm,
     counterfactual_hinge,
@@ -167,3 +175,61 @@ def test_six_worker_gate_assignment_keeps_exactly_two_tasks_per_worker() -> None
     assignments = balanced_task_assignments(runtime, worker_count=6)
     assert all(len(tasks) == 2 for tasks in assignments)
     assert {task for tasks in assignments for task in tasks} == set(task_ids)
+
+
+def test_routing_control_tokens_are_fixed_mean_zero_and_orthogonal() -> None:
+    tokens = torch.stack([fixed_routing_token(task) for task in ROUTING_TASK_IDS])
+    assert torch.equal(tokens.mean(1), torch.zeros(len(ROUTING_TASK_IDS)))
+    assert torch.equal(tokens @ tokens.T, 128 * torch.eye(len(ROUTING_TASK_IDS)))
+
+    runtime = SimpleNamespace(
+        owners=tuple(range(38)),
+        compiler=SimpleNamespace(event_slots=8, program_width=128),
+        context=SimpleNamespace(device=torch.device("cpu")),
+    )
+    program = fixed_routing_program(runtime, ROUTING_TASK_IDS[0])
+    assert program.p_lang.shape == (38, 128)
+    assert program.p_scene.shape == (38, 128)
+    assert program.p_process.shape == (8, 38, 128)
+    assert program.sigma.shape == (8, 38, 128)
+    assert torch.allclose(program.rho, torch.full((8,), 0.125))
+    assert torch.allclose(program.tau[0], torch.tensor([0.0, 0.125]))
+    assert torch.allclose(program.tau[-1], torch.tensor([0.875, 1.0]))
+
+
+def test_routing_control_gate_balances_only_ten_gradient_tasks() -> None:
+    task_ids = (*ROUTING_TASK_IDS, 2, 74)
+    fit_ids = set(ROUTING_TASK_IDS)
+    fit = {
+        task: tuple(
+            MappingCondition(task, "meta_fit" if task < 72 else "target_fit", demo, 10)
+            for demo in (0, 1)
+        )
+        for task in fit_ids
+    }
+    held = {
+        task: (
+            MappingCondition(
+                task, "meta_fit" if task < 72 else "target_fit", 2, 10
+            ),
+        )
+        for task in fit_ids
+    }
+    runtime = SimpleNamespace(
+        config={
+            "task_split": {
+                "gradient_meta": [1, 8, 9, 32, 52],
+                "gradient_target": [72, 73, 75, 93, 94],
+            }
+        },
+        mapping_split=SimpleNamespace(
+            fit_by_task=fit, video_held_by_task=held, task_held=()
+        ),
+        panels={
+            task: SimpleNamespace(role="meta_fit" if task < 72 else "target_fit")
+            for task in task_ids
+        },
+    )
+    assignments = routing_task_assignments(runtime, worker_count=6)
+    assert max(map(len, assignments)) == 2
+    assert {task for row in assignments for task in row} == set(ROUTING_TASK_IDS)

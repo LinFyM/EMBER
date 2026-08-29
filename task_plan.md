@@ -5,10 +5,10 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle已通过；G2原动态Gate也已通过，但G3/P2及随后
-95-task held-out诊断证明该Gate只验证了视频动态，没有验证Program能否在未见task上表达policy需要的行为方向。首轮pointwise behavior
-decoder formal已明确non-pass并定位到credit被训练reader而非部署Program拥有；当前暂停G3 operator修正，改用decoder-free、直接约束完整
-Program跨task behavior topology的单一G2修正。它先在固定internal60/15 fold通过，原official held20不参与本轮修正；通过后再冻结唯一
-Program返回G3。G1/G2局部结论、单次训练或内部指标都不代表整体项目goal完成。
+95-task held-out诊断证明该Gate只验证了视频动态，没有验证Program能否在未见task上表达policy需要的行为方向。pointwise decoder与
+decoder-free v3--v5三轮formal均已明确non-pass：v5虽然把Program任务间spread拉开并保持动态Gate，却没有让其几何对齐真实policy
+behavior，train60 topology与independent exact readout反而未改善。根据预注册停止条件与owner本轮要求，当前暂停G2/G3，不续训、不读
+official held20、不新增v6；先固化完整证据并等待专家复核形成新的机制设计。G1/G2局部结论、单次训练或内部指标都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -242,8 +242,13 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   dispersion对齐；不增加参数、reader、task route或deployment路径，不改数据、task权重、动态Gate、Stage0冻结与official wall；
 - [x] v5三卡真实一步profile完成：behavior/Program梯度`1.7323/2.7450`，step `18.35s`、peak `9.98GB`，source/Stage0
   trainable 0、Action Meta module/parameter 0；定向`19 passed`、全仓`204 passed`；
-- [ ] 从clean pushed v5 authority建立detached worktree，以同一五卡macro5规模复评全部internal与旧动态Gate；若没有相对v3/v4的
-  数量级改善，停止继续叠加G2版本并整理完整专家复核证据；internal通过后才允许一次读取official held20、冻结唯一Program并恢复G3 P2。
+- [x] 从clean pushed `main@7f4df1b`的detached worktree完成五卡v5 macro5 formal及全部internal/旧动态Gate；旧动态增量
+  `20.8602%`通过，但train topology仅`.2160/.2208`、internal meta`.2022/.2169`、exact panel-B/consensus
+  `.1054/.1289`且wrong margin`-.0466`，明确non-pass；official held20未读。
+- [x] 冻结v5 checkpoint拆解六个Program blocks：full/process跨task std由v4的`.020/.086`扩大到`.046/.220`，但其teacher
+  consensus相关从`.150/.135`降到`.142/.131`；已定位为“产生区分但区分方向不对应policy behavior”，不是loss未接通。
+- [ ] 暂停G2/G3新增实现并向专家提交v3--v5 formal、block geometry与训练轨迹；只有形成新的机制证据和active design后才恢复，
+  不把续训、seed/LR/width/rank小扫或解冻整个Stage0当作下一版本。
 
 ### G3 Frozen-Program shared compiler
 

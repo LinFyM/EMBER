@@ -9,8 +9,9 @@ bank的全局单位质量covariance对偶化后，fit/held立即恢复到`.904--
 Program预测target-native primal，由当前video bank的确定性全局covariance solve把它变为dual query，再对真实X/Y做exact signed replay。
 P1随后证明该operator在六tasks、四family和held videos上达到`.9545`。但95-task behavior-sufficiency诊断又发现：fit75行为流形对
 held20具有`.7160` rank16可达性，旧frozen G2 Program的shared读出却只有`.247--.270`且不优于language-only，因此最早失效接口
-进一步上移为G2跨task behavior identifiability。当前先保持Program schema与旧动态Gate，最小增加fit-only behavior alignment并重新
-资格；通过后才恢复G3 Program-to-primal训练。该诊断仍只定位接口，不等于G2/G3 Gate；本文是当前唯一架构依据。
+进一步上移为G2跨task behavior identifiability。随后pointwise decoder与decoder-free v3--v5依次失败；v5虽扩大Program跨task
+spread并保持旧动态Gate，却没有对齐真实policy behavior。当前不再新增G2版本，G3 Program-to-primal训练继续暂停，先以完整formal与
+block geometry证据接受专家复核；在形成新的机制证据和active design前没有v6。本文仍是当前唯一架构依据。
 
 三次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`和`docs/expert_review_20260828_g3_functional_sketch.md`。本文是将专家
@@ -455,16 +456,22 @@ clean detached macro5 formal的train topology仍只有`.2360/.2362`，internal m
 `.145/.316`。原逐batch centered、normalized objective允许每批独立的affine gauge和near-collapse，因此joint graph没有规定
 全局绝对几何；v4被淘汰，official held20未读。
 
-当前唯一v5修正保持全部Program schema、数据、5+5 role质量、K、动态loss/Gate、Stage0冻结与information wall，只把behavior target
-改为固定PSD lift `K_target=(1+K_behavior)/2`。训练直接对齐raw Program off-diagonal Gram，残差和cross-view差异按完整
-joint/meta/target fit scope预先计算的per-owner teacher dispersion缩放，不再由当前mini-batch中心化或单位化。该修正不增加模型参数、
-reader、forward或task route；若同一macro5 internal formal仍不能产生相对v3/v4的数量级改善，则停止新增G2版本并整理专家复核证据，
-而不是解冻Stage0或做seed/LR/width/rank小扫。
+v5保持全部Program schema、数据、5+5 role质量、K、动态loss/Gate、Stage0冻结与information wall，只把behavior target改为固定PSD
+lift `K_target=(1+K_behavior)/2`；raw Program off-diagonal Gram及cross-view差异按完整scope的固定per-owner teacher dispersion
+缩放。clean detached `7f4df1b`的macro5 formal中旧动态增量`20.8602%`通过，但train topology仅`.2160/.2208`、internal meta
+`.2022/.2169`、exact panel-B/consensus`.1054/.1289`且wrong margin`-.0466`，明确non-pass。冻结block审计显示full/process
+std从v4的`.020/.086`扩大到`.046/.220`，其teacher consensus相关却从`.150/.135`降到`.142/.131`：固定绝对gauge能让
+Program拉开tasks，却没有把拉开方向对齐policy behavior。official held20未读。
+
+因此当前没有v6或其它活动G2修正；不续训、不解冻整个Stage0，也不做seed/LR/width/rank小扫。下一步是向专家提交pointwise与
+v3--v5的完整formal、训练轨迹和block geometry，要求新的机制解释如何让部署Program拥有可迁移的policy-behavior方向。新的设计在
+owner authority下登记前，G2/G3均保持暂停。
 
 ### G3. Frozen-Program shared compiler
 
 以下G3 operator与Gate合同不变，但当前暂停在G2-B资格之前；旧`c1493a1/macro20`仍是动态正证据和初始化authority，不再作为足够的
-final frozen Program。只有G2-B同时通过旧动态Gate与新增behavior Gate，才更新唯一G3 Program checkpoint并恢复P2。
+final frozen Program。v5 behavior Gate已non-pass，故不得恢复P2；只有后续有机制依据的G2修正同时通过旧动态Gate与新增behavior Gate，
+才更新唯一G3 Program checkpoint并恢复P2。
 
 使用meta56+target-fit19、自然videos和现有95-task/118-member evidence，跨episode采样并保持两种task role等质量。G2 Program、source、
 carrier和task experts冻结；首版只训练共享Program-to-primal scorer，当前bank covariance、谱solve、真实X/Y和scale冻结。selection logits
@@ -594,10 +601,11 @@ detached `e2f9d33`的完整38-target K1/K4
 P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
 clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
 optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把当前最早未验证接口收敛到P2 shared
-full-Program-to-primal mapping；scale继续冻结到F4，P1内部结果不能冒充shared或closed-loop Gate。
+full-Program-to-primal mapping；随后95-task证据及G2-B v3--v5 non-pass把更早阻塞接口上移为G2跨task policy-behavior identifiability。
+因此P2实现虽保留，当前没有formal资格；scale继续冻结到F4，P1内部结果不能冒充shared或closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
 fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类是Program primal + current-bank
-global dual + exact signed replay，按P0、P1、P2、F4、F5、F6、G4/G5和Final推进。
+global dual + exact signed replay；但阶段推进当前停在G2-B专家复核点，不能越过未通过的Program behavior Gate直接恢复P2。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

@@ -1186,6 +1186,26 @@ std `.1478`作为显式误差，而不是再次标准化掉。该结果只证明
 train60和internal meta，就应停止继续构造v6，向专家报告“现有固定Program字段/observer无法通过这种直接全局behavior credit形成
 可迁移几何”的证据，而不是做seed、LR、width或训练长度小扫。
 
+### 70. v5扩大了Program任务差异，却没有把差异对齐policy behavior
+
+clean pushed detached `main@7f4df1b`的v5 macro5/15 updates运行、checkpoint和Gate全部正常，旧动态full-vs-endpoints改善
+`20.8602%`并继续通过；source/Stage0冻结、Action Meta 0、official held20未读。但train60 topology A/B只有
+`.2160/.2208`，internal meta`.2022/.2169`，exact panel-B/consensus role-equal`.1054/.1289`，wrong Program
+margin`-.0466`。这些关键量均没有相对v3/v4产生数量级改善，且错误Program在多数family上不比正确Program差。
+
+冻结block审计说明v5的global calibration不是完全无效：full Program cosine均值/标准差由v4约`.965/.020`变为`.926/.046`，
+process由`.898/.086`变为`.750/.220`，所以raw Gram的绝对均值/幅度已经获得梯度；两套video的full/process cross-view仍约
+`.970/.994`，排除了视频抽样不稳定。可是full/process对teacher consensus的相关从约`.150/.135`变为`.142/.131`，表明
+新增spread主要沿错误方向增长。macro4--5 behavior alignment平均值约`12.6190/12.6196`，所有梯度有限且非零；这不是NaN、loader、
+Action Meta或冻结错误，而是当前固定block-equal Program feature与直接pairwise geometry credit没有形成正确的task-specific
+policy-behavior ownership。
+
+因此v3--v5形成一条完整排除链：v3的role-local graph不连通；v4连通graph但batch-local affine gauge仍允许near-collapse；v5固定
+绝对gauge后能拉开任务，却没有对齐behavior方向。该证据淘汰这三种objective及pointwise decoder，阻止继续G3 P2或用训练时长、
+seed/LR/width/rank小扫掩盖；它不证明native bank、G1、current-bank primal-to-dual operator、Stage0或固定Program schema根本无解。
+最早未解决接口仍是G2部署Program的跨task behavior identifiability，下一设计必须解释为何正确policy效果会由当前Program字段可识别地
+拥有，而不能只再增加一种几何归一化。当前按owner要求停在专家复核前，不新增v6，也不消费official held20。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

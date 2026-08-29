@@ -990,3 +990,34 @@ Program schema、initialization、旧动态Gate、internal15/official20边界、
 - `runs/outputs/pi05_ecp_natural_program_g2_joint_behavior_kernel_fold0_m5_37885a6_gpu01p01234_r5_20260829/`；
 - `runs/analysis/pi05_ecp_g2_behavior_block_geometry_init_v3_v4_20260829.json`；
 - `runs/outputs/pi05_ecp_g2_global_kernel_v5_profile2_dirty_gpu01p012_r3_20260829/`。
+
+## 51. G2-B global-calibrated v5 formal non-pass与专家复核暂停点
+
+clean pushed detached `main@7f4df1b`的v5在gpu01物理`0--4`完成macro5/15 optimizer updates、唯一checkpoint及全部预注册
+internal Gate，formal进程自然结束。source policy与Native Stage0 trainable为0，Action Meta argument为null且module/parameter为0；
+official held20没有被读取。旧动态职责全部通过：full相对endpoints改善`20.860189%`、median active events 3、one-event 0，
+same-task/probe/K1/K4/tau checks均成立。
+
+新增behavior Gate则明确non-pass。train60 role-equal topology A/B为`.216014/.220817`，meta fit为
+`.190522/.189068`；internal meta为`.202199/.216887`，四个internal target的`.750762/.766971`继续复现旧Program已有
+偶然高值。fit60-only exact rank4 reader对panel-B/consensus role-equal仅`.105413/.128861`，四family panel-B为
+q`.138678`、v`.089924`、action-in`.160061`、action-out`.078307`；wrong-Program margin overall`-.046567`。
+同一internal basis的top16 span oracle仍为panel-B`.618395`、consensus`.715843`，所以资格目标本身没有失去容量。
+
+冻结block geometry给出了v5机制实际发生了什么。相对v4，full Program off-diagonal cosine均值/标准差从约`.96484/.01978`
+移到`.92578/.04590`，process从`.89844/.08643`移到`.75000/.21973`；两view cross-correlation分别`.97026/.99427`。
+也就是说固定raw target确实扩大了task spread并保持跨video稳定。然而full/process对teacher consensus的平均相关从
+`.14972/.13494`降到`.14242/.13111`。训练中固定lifted-teacher std约`.14780`，Program joint std在macro5仍仅约
+`.02954/.03111`；behavior alignment宏平均在macro4--5为`12.61899/12.61955`，梯度有限非零但已经平台化。v5学到的是
+“把tasks区分开”，不是“依照真实policy效果区分”。
+
+同口径v3/v4/v5的train A/B依次为`.2315/.2358`、`.2360/.2362`、`.2160/.2208`；exact panel-B依次
+`.1207/.1129/.1054`，wrong margin始终为负。按预注册停止条件及owner本轮要求，v5不延长、不读official held20、不新增v6，
+G3 P2继续暂停。该阶段只淘汰pointwise decoder和v3--v5直接Program behavior-credit实现；Stage0、Program schema、G1/native bank及
+current-bank primal-to-dual operator没有被这一负结果整体否定。仓库在完整证据固化后停于专家复核点。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_global_behavior_kernel_fold0_m5_2d859f0_gpu01p01234_r5_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_block_geometry_v5_2d859f0_gpu01p01234_r5_20260829.json`；
+- `runs/analysis/pi05_ecp_g2_behavior_block_geometry_init_v3_v4_20260829.json`。

@@ -1,5 +1,33 @@
 # EMBER progress
 
+## 2026-08-29 G2 global-calibrated behavior-kernel v5 formal non-pass，暂停新增版本
+
+clean pushed `main@7f4df1b`的detached frozen worktree已在gpu01物理`0--4`完成五卡macro5/15 updates、唯一checkpoint和
+全部预注册internal Gate。run自然结束且无工程错误；source policy与Native Stage0 trainable均为0，Action Meta argument为null、
+module/parameter均为0。旧动态职责继续通过并略有提高：full相对endpoints改善`20.8602%`、active events中位数3、one-event 0，
+same-task/probe/K1/K4/tau全部通过。但新增behavior Gate明确失败：train60 topology A/B仅`.2160/.2208`，internal meta
+`.2022/.2169`，internal target`.7508/.7670`仍是此前已存在的偶然高值；fit60-only exact panel-B/consensus role-equal仅
+`.1054/.1289`，wrong-Program margin为`-.0466`。official held20保持未读，不能用旧动态通过、target小组高值或internal loss冒充
+policy-behavior sufficiency。
+
+冻结checkpoint的block geometry确认v5确实消除了“完全不展开”的表象，但展开方向仍错。相对v4，full Program跨task cosine的
+均值/标准差从约`.965/.020`移到`.926/.046`，process块从`.898/.086`移到`.750/.220`；它们朝固定lift目标的尺度移动，且两套
+video的cross-view仍分别约`.970/.994`。然而full/process对独立teacher consensus的相关反而从约`.150/.135`变为
+`.142/.131`，train/meta及exact读出也没有改善。训练末期Program spread仍远低于固定teacher尺度，behavior alignment在macro4--5
+约`12.6190/12.6196`平台化；梯度有限且非零，说明不是loss未接通或数值NaN，而是当前目标让Program学会了“把任务拉开”，没有学会
+“按真实policy效果正确拉开”。
+
+v3、v4、v5在同一macro5口径的train A/B依次为`.2315/.2358`、`.2360/.2362`、`.2160/.2208`；exact panel-B依次
+`.1207/.1129/.1054`，wrong margin均为负。根据预注册停止条件与owner本轮要求，不续训、不读official held20、不新增v6，也不恢复
+G3 P2。当前结论只淘汰pointwise decoder及v3--v5这组三种直接Program behavior-credit实现，不证明Stage0、Program schema或整个
+Native-Factor路线根本不可能；最早未解决接口仍是G2部署Program的跨task policy-behavior可识别性。下一步暂停在专家复核前。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_global_behavior_kernel_fold0_m5_2d859f0_gpu01p01234_r5_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_block_geometry_v5_2d859f0_gpu01p01234_r5_20260829.json`；
+- 对照：`runs/analysis/pi05_ecp_g2_behavior_block_geometry_init_v3_v4_20260829.json`。
+
 ## 2026-08-29 G2 behavior-kernel v4 formal non-pass，global-calibrated v5已接通
 
 clean detached `main@4eb8b8c`的五卡v4完成macro5/15 updates及全部internal Gate。旧动态职责仍通过：full相对

@@ -1,4 +1,4 @@
-"""Canonical J3 counterfactual joint Program--primal training entrypoint."""
+"""Canonical joint Program--primal functional training entrypoint."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import save_ecp_checkpoint
 from ember.ecp.joint_program_primal.runtime import (
-    J2_RUN_SCHEMA,
-    J2_STAGE,
     REPO_ROOT,
     JointProgramPrimalRuntime,
+    joint_run_schema,
+    joint_stage,
     prepare_joint_program_primal_runtime,
 )
 from ember.ecp.joint_program_primal.train_step import (
@@ -49,11 +49,6 @@ def train(args: argparse.Namespace) -> None:
                             "effective_optimizer_step",
                             "global_step_seconds",
                             "mean_functional_loss",
-                            "counterfactual_arm",
-                            "counterfactual_view_index",
-                            "mean_counterfactual_normalized_gap",
-                            "mean_counterfactual_hinge_loss",
-                            "active_counterfactual_fraction",
                             "gradient_norm_before_clip",
                             "gradient_probe_norms",
                             "next_lr",
@@ -64,6 +59,15 @@ def train(args: argparse.Namespace) -> None:
                             "elapsed_seconds",
                         )
                     }
+                    for name in (
+                        "counterfactual_arm",
+                        "counterfactual_view_index",
+                        "mean_counterfactual_normalized_gap",
+                        "mean_counterfactual_hinge_loss",
+                        "active_counterfactual_fraction",
+                    ):
+                        if name in row:
+                            console[name] = row[name]
                     console["rank_performance"] = [
                         {
                             name: value[name]
@@ -82,17 +86,17 @@ def train(args: argparse.Namespace) -> None:
                 save_ecp_checkpoint(
                     output_dir=args.output_dir,
                     macro=runtime.optimizer_steps,
-                    stage=J2_STAGE,
+                    stage=joint_stage(runtime.config),
                     context=context,
                     model=runtime.writer_state,
                     optimizer=runtime.optimizer,
                     scheduler=runtime.scheduler,
-                    run_contract_schema=J2_RUN_SCHEMA,
+                    run_contract_schema=joint_run_schema(runtime.config),
                     metrics_rows=runtime.metrics_rows,
                 )
         if context.is_main:
             completion = {
-                "stage": J2_STAGE,
+                "stage": joint_stage(runtime.config),
                 "completed_optimizer_steps": runtime.optimizer_steps,
                 "completed_effective_steps": max(0, runtime.optimizer_steps - 10),
             }

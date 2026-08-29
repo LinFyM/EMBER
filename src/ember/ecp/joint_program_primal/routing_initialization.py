@@ -9,6 +9,7 @@ import torch
 from safetensors import safe_open
 from safetensors.torch import load_file
 
+from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.native_factors import native_output_group_count, rms_normalize
 from ember.ecp.natural_program import NaturalProgram
@@ -21,6 +22,95 @@ FUNCTIONAL_CODE_INITIALIZATION = (
 FUNCTIONAL_CODE_INITIALIZATION_SCHEMA = (
     "ember_ecp_routing_functional_code_initialization_v1"
 )
+R5_SHARED_FUNCTIONAL_CHART = "r5_shared_functional_chart_step110"
+
+
+def load_passed_r5_primal_scorer(
+    config: Mapping[str, Any],
+    compiler: torch.nn.Module,
+    *,
+    asset_root: Path,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Restore the passed R5 shared scorer, never its fixed routing inputs."""
+
+    checkpoint = (
+        asset_root / str(config["authorities"]["r5_primal_scorer_checkpoint"])
+    ).resolve()
+    aggregate_path = (
+        asset_root / str(config["authorities"]["r5_gate_aggregate"])
+    ).resolve()
+    run_root = checkpoint.parent.parent
+    run_contract = read_json(run_root / "run_contract.json")
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    aggregate = read_json(aggregate_path)
+    files = manifest.get("files", {})
+    expected_files = {
+        "ecp.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(6)),
+    }
+    if (
+        checkpoint_macro(checkpoint) != 110
+        or aggregate.get("schema_version")
+        != "ember_ecp_routing_token_control_gate_report_v1"
+        or aggregate.get("status") != "complete"
+        or aggregate.get("gate_pass") is not True
+        or aggregate.get("primary_pass") is not True
+        or not aggregate.get("checks")
+        or not all(bool(value) for value in aggregate["checks"].values())
+        or Path(str(aggregate.get("checkpoint", {}).get("path", ""))).resolve()
+        != checkpoint
+        or int(aggregate.get("checkpoint", {}).get("optimizer_step", -1)) != 110
+        or run_contract.get("schema_version")
+        != "ember_ecp_routing_token_control_run_v2"
+        or run_contract.get("stage")
+        != "g3_training_only_routing_token_grouped_decoder_control"
+        or run_contract.get("phase") != "joint"
+        or run_contract.get("mode") != "formal"
+        or run_contract.get("model", {}).get("primal_scorer_trainable_partition")
+        != "native_heads_only"
+        or run_contract.get("information_wall", {}).get(
+            "primal_scorer_feature_chart_frozen"
+        )
+        is not True
+        or run_contract.get("inventory", {}).get("action_meta_module_count") != 0
+        or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
+        or manifest.get("stage")
+        != "g3_training_only_routing_token_grouped_decoder_control"
+        or int(manifest.get("next_macro", -1)) != 110
+        or int(manifest.get("world_size", -1)) != 6
+        or manifest.get("run_contract_schema")
+        != "ember_ecp_routing_token_control_run_v2"
+        or set(files) != expected_files
+    ):
+        raise ValueError("R5 shared functional-chart authority changed")
+    for name, record in files.items():
+        path = checkpoint / name
+        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
+            raise ValueError(f"R5 checkpoint file changed: {name}")
+    payload = load_file(str(checkpoint / "ecp.safetensors"), device=str(device))
+    prefix = "primal_scorer."
+    scorer_state = {
+        name[len(prefix) :]: tensor
+        for name, tensor in payload.items()
+        if name.startswith(prefix)
+    }
+    if len(scorer_state) != len(payload) or set(scorer_state) != set(
+        compiler.primal_scorer.state_dict()
+    ):
+        raise ValueError("R5 scorer tensor inventory changed")
+    compiler.primal_scorer.load_state_dict(scorer_state, strict=True)
+    return {
+        "kind": R5_SHARED_FUNCTIONAL_CHART,
+        "checkpoint": str(checkpoint),
+        "gate_aggregate": str(aggregate_path),
+        "optimizer_step": 110,
+        "training_commit": str(run_contract["git"]["commit"]),
+        "tensor_bytes": int(files["ecp.safetensors"]["bytes"]),
+        "fixed_routing_token_loaded": False,
+        "task_lookup_parameters_loaded": False,
+    }
 
 
 def minimum_norm_head_solution(

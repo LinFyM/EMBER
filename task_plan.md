@@ -11,11 +11,13 @@ route在scorer内部没有塌缩，而task-local正控在开始functional优化�
 能恢复v/action-out几何，R3 owner×group decoder又把action-in/out提高到`.656/.669`，但q/v和真实functional仍未过门。R4用已验证
 functional code初始化shared heads后，step110 train/held-video已达`.819/.839`，q/v/action-out及路由、跨video、稳定性均过门，仅
 action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in失败来自minimum-norm初始化所依赖的feature chart在训练中
-漂移：heads自身几乎未动，接回initial chart即可保留`.998` outer recovery。当前唯一活动阶段因此是R5：冻结初始化后的feature chart，
-只让233个native heads接受同一真实functional loss，直接裁决该moving-coordinate根因。R1--R5都不能通过G3或进入deployment checkpoint；
-所有局部Gate、单次训练或内部指标都不代表整体项目goal完成。
+漂移：heads自身几乎未动，接回initial chart即可保留`.998` outer recovery。R5冻结初始化后的feature chart、只让233个native heads接受
+同一真实functional loss后，step70/110均通过全部primary checks；step110 train/held为`.940/.963`，四family为`.816--.839`且相邻稳定，
+所以moving-coordinate根因已被正式修复。当前唯一活动阶段为R6：把这套passed shared scorer接回真实Natural Program，移除fixed route，
+训练Program与native heads并保持feature chart冻结，以原12-task完整Gate裁决真正G3。R1--R5均不是deployment checkpoint；任何局部Gate、
+单次训练或内部指标都不代表整体项目goal完成。
 
-## 当前R5里程碑
+## R5结论与当前R6里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
@@ -34,9 +36,15 @@ action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in�
 - [x] 完成13项定向CPU合同和单卡真实forward/backward/materialization profile：233 heads全部有gradient、chart冻结、Action Meta 0、
   teacher reads 0、唯一rank16及显存/吞吐成立；
 - [x] 完成diff审查、clean main集成、push与detached formal launch contract；
-- [ ] fresh运行原10 warmup+100 effective、actual step70/110并执行同一paired Gate；
-- [ ] 只有R5相邻checkpoint保持强functional、四family、route与same-task稳定，才把“utility-aligned初始化必须绑定稳定feature chart”接回
-  Natural Program继续真正G3；若仍失败，按最早失效接口分析，不做LR/seed/width/rank小扫。
+- [x] fresh运行原10 warmup+100 effective、actual step70/110并执行同一paired Gate；R5相邻checkpoint保持强functional、四family、
+  route与same-task稳定，step110完整Gate pass；
+- [x] 依据R4/R5证据选定最小接回合同：R5 shared scorer初始化、Natural Program + native heads trainable、feature chart frozen、
+  correct functional-only、fixed route不加载；
+- [x] 完成R6定向合同与真实forward/backward/materialization smoke：Natural Program和全部native heads有gradient、feature chart冻结、
+  fixed route/lookup/Action Meta为0、唯一rank16与吞吐成立；
+- [ ] 完成R6 diff审查、main集成、push与detached formal launch contract；
+- [ ] fresh运行R6原12-task 10 warmup+100 effective、actual step70/110并执行完整Gate；若失败按train→held-video→task-held→controls的最早
+  失效接口分析，不做LR/seed/width/rank小扫。
 
 ## 当前G1里程碑
 

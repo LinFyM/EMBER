@@ -339,6 +339,68 @@ def functional_loss_and_backward(
     return value
 
 
+def _run_correct_task(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    task_id: int,
+    visit_index: int,
+) -> dict[str, Any]:
+    """Use only the generated-policy functional objective for one task."""
+
+    tick = time.monotonic()
+    panel_batch, panel = functional_panel_batch(
+        runtime,
+        task_id=task_id,
+        panel_name="a",
+        visit_index=visit_index,
+    )
+    views = []
+    for condition in runtime.task_conditions[task_id].fit_views:
+        complete, output, program_output, metrics = generated_rank16(
+            runtime, condition
+        )
+        loss, gradients = functional_loss_derivative(
+            runtime,
+            state=complete,
+            batch=panel_batch,
+            policy_rng_seed=panel.policy_rng_seed,
+        )
+        backward_functional_derivative(complete, gradients, weight=1.0 / 12.0)
+        views.append(
+            {
+                "video_demo": condition.video_demo,
+                "sampled_frames": condition.sampled_frames,
+                "functional_loss": loss,
+                "canonical_active_events": int(
+                    (program_output.program.rho[0].detach() > 0.2).sum()
+                ),
+                "solve_metrics": output.solve_metrics.detach()
+                .float()
+                .cpu()
+                .tolist(),
+                "conditioning_metrics": output.conditioning_metrics.detach()
+                .float()
+                .cpu()
+                .tolist(),
+                "condition_metrics": metrics,
+            }
+        )
+        del complete, output, program_output
+    return {
+        "authority_id": task_id,
+        "role": runtime.task_conditions[task_id].fit_views[0].role,
+        "panel": "a",
+        "panel_visit": visit_index,
+        "functional_policy_rng_seed": panel.policy_rng_seed,
+        "action_demos": list(panel.action_demos),
+        "action_frames": list(panel.action_frames),
+        "mean_functional_loss": sum(row["functional_loss"] for row in views)
+        / len(views),
+        "views": views,
+        "task_seconds": time.monotonic() - tick,
+    }
+
+
 def _run_task(
     runtime: JointProgramPrimalRuntime,
     *,
@@ -511,16 +573,57 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
         "program_language": runtime.program.language_reader.queries.grad,
         "program_scene": runtime.program.scene_reader.queries.grad,
         "program_process": runtime.program.process_fusion[0].weight.grad,
-        "primal_input": scorer.input_primal_heads[0].weight.grad,
-        "primal_output": scorer.output_primal_heads[0][0].weight.grad,
-        "primal_program_context": scorer.program_context["q"][1].weight.grad,
-        "primal_event_score": scorer.event_score["q"].weight.grad,
     }
     result = {}
     for name, gradient in probes.items():
         if gradient is None or not bool(torch.isfinite(gradient).all()):
             raise RuntimeError(f"J2 {name} gradient is absent or non-finite")
         result[name] = float(gradient.float().norm())
+    input_gradients = tuple(
+        head.weight.grad for head in scorer.input_primal_heads
+    )
+    output_gradients = tuple(
+        head.weight.grad
+        for owner_heads in scorer.output_primal_heads
+        for head in owner_heads
+    )
+    if any(gradient is None for gradient in (*input_gradients, *output_gradients)):
+        raise RuntimeError("J2 native-head gradient is absent")
+    input_norms = torch.stack(
+        tuple(gradient.float().norm() for gradient in input_gradients)
+    )
+    output_norms = torch.stack(
+        tuple(gradient.float().norm() for gradient in output_gradients)
+    )
+    if (
+        not bool(torch.isfinite(input_norms).all())
+        or not bool(torch.all(input_norms > 0))
+        or not bool(torch.isfinite(output_norms).all())
+        or not bool(torch.all(output_norms > 0))
+    ):
+        raise RuntimeError("J2 native-head gradient is non-finite or zero")
+    result["primal_input"] = float(input_norms.square().sum().sqrt())
+    result["primal_output"] = float(output_norms.square().sum().sqrt())
+    feature_probes = {
+        "primal_program_context": scorer.program_context["q"][1].weight.grad,
+        "primal_rank_context": scorer.rank_context["q"][1].weight.grad,
+        "primal_event_score": scorer.event_score["q"].weight.grad,
+        "owner_embedding": scorer.owner_embedding.grad,
+        "rank_embedding": scorer.rank_embedding.grad,
+    }
+    partition = runtime.config["model"].get(
+        "primal_scorer_trainable_partition", "all"
+    )
+    if partition == "all":
+        for name, gradient in feature_probes.items():
+            if gradient is None or not bool(torch.isfinite(gradient).all()):
+                raise RuntimeError(f"J2 {name} gradient is absent or non-finite")
+            result[name] = float(gradient.float().norm())
+    elif partition == "native_heads_only":
+        if any(gradient is not None for gradient in feature_probes.values()):
+            raise RuntimeError("J2 frozen primal feature chart has gradients")
+    else:
+        raise RuntimeError("J2 primal-scorer partition changed")
     if min(result.values()) <= 0:
         raise RuntimeError("J2 Program--primal functional gradient is zero")
     return result
@@ -552,8 +655,9 @@ def run_joint_program_primal_optimizer_step(
     """Run exactly six tasks x two fit videos with task/role-equal weight."""
 
     group = joint_task_group(runtime, runtime.optimizer_steps)
-    pairs = counterfactual_task_pairs(runtime, group)
-    arm = counterfactual_arm(runtime.optimizer_steps)
+    use_counterfactual = "counterfactual" in runtime.config["optimization"]["joint"]
+    pairs = counterfactual_task_pairs(runtime, group) if use_counterfactual else {}
+    arm = counterfactual_arm(runtime.optimizer_steps) if use_counterfactual else None
     counterfactual_view_index = runtime.optimizer_steps % 2
     assignments = _task_assignments(runtime, group)
     visit_index = runtime.optimizer_steps % int(runtime.config["data"]["panel_visits"])
@@ -563,17 +667,27 @@ def run_joint_program_primal_optimizer_step(
     tick = time.monotonic()
     teacher_reads = runtime.native_teachers.tensor_reads
     runtime.optimizer.zero_grad(set_to_none=True)
-    local_records = [
-        _run_task(
-            runtime,
-            task_id=task,
-            wrong_task_id=pairs[task],
-            visit_index=visit_index,
-            counterfactual_view_index=counterfactual_view_index,
-            arm=arm,
-        )
-        for task in assignments[runtime.context.rank]
-    ]
+    if use_counterfactual:
+        local_records = [
+            _run_task(
+                runtime,
+                task_id=task,
+                wrong_task_id=pairs[task],
+                visit_index=visit_index,
+                counterfactual_view_index=counterfactual_view_index,
+                arm=str(arm),
+            )
+            for task in assignments[runtime.context.rank]
+        ]
+    else:
+        local_records = [
+            _run_correct_task(
+                runtime,
+                task_id=task,
+                visit_index=visit_index,
+            )
+            for task in assignments[runtime.context.rank]
+        ]
     if runtime.native_teachers.tensor_reads != teacher_reads:
         raise RuntimeError("J2 joint loss read training-only native teachers")
     if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
@@ -621,7 +735,7 @@ def run_joint_program_primal_optimizer_step(
             ),
         },
     )
-    return {
+    row = {
         "optimizer_step": runtime.optimizer_steps,
         "effective_optimizer_step": max(0, runtime.optimizer_steps - 10),
         "panel_visit": visit_index,
@@ -629,25 +743,6 @@ def run_joint_program_primal_optimizer_step(
         "role_counts": role_counts,
         "mean_functional_loss": sum(
             float(row["mean_functional_loss"]) for row in records
-        )
-        / len(records),
-        "counterfactual_arm": arm,
-        "counterfactual_view_index": counterfactual_view_index,
-        "counterfactual_pairs": {
-            str(task): wrong for task, wrong in sorted(pairs.items())
-        },
-        "mean_counterfactual_normalized_gap": sum(
-            float(row["counterfactual"]["normalized_gap"])
-            for row in records
-        )
-        / len(records),
-        "mean_counterfactual_hinge_loss": sum(
-            float(row["counterfactual"]["hinge_loss"])
-            for row in records
-        )
-        / len(records),
-        "active_counterfactual_fraction": sum(
-            bool(row["counterfactual"]["active"]) for row in records
         )
         / len(records),
         "gradient_probe_norms": probes,
@@ -659,3 +754,29 @@ def run_joint_program_primal_optimizer_step(
         "conditions": records,
         "native_teacher_tensor_reads": runtime.native_teachers.tensor_reads,
     }
+    if use_counterfactual:
+        row.update(
+            {
+                "counterfactual_arm": arm,
+                "counterfactual_view_index": counterfactual_view_index,
+                "counterfactual_pairs": {
+                    str(task): wrong for task, wrong in sorted(pairs.items())
+                },
+                "mean_counterfactual_normalized_gap": sum(
+                    float(value["counterfactual"]["normalized_gap"])
+                    for value in records
+                )
+                / len(records),
+                "mean_counterfactual_hinge_loss": sum(
+                    float(value["counterfactual"]["hinge_loss"])
+                    for value in records
+                )
+                / len(records),
+                "active_counterfactual_fraction": sum(
+                    bool(value["counterfactual"]["active"])
+                    for value in records
+                )
+                / len(records),
+            }
+        )
+    return row

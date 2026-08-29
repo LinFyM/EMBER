@@ -1189,3 +1189,24 @@ step已证明`10,297,344` trainable、全部heads有限非零gradient、chart零
 - `runs/analysis/pi05_ecp_routing_functional_code_init_r4_initial_state_capture_0b51c57_gpu01p0_20260830/`；
 - `runs/analysis/pi05_ecp_routing_functional_code_init_r4_action_in_code_audit_0b51c57_20260830/`；
 - `runs/analysis/pi05_ecp_routing_functional_code_chart_frozen_r5_profile_dirty_gpu01p0_20260830/`。
+
+## 60. R5 fixed feature-chart formal pass与Natural Program接回
+
+clean detached `9e6b6a7`在gpu01物理`0,1,2,3,4,6`完成R5 10 warmup+100 effective updates。110条metrics连续，actual
+step70/110 world6 checkpoints完整，训练墙钟`1503.63s`、最大peak reserved`32,916,897,792` bytes；Action Meta、source/
+Stage0/scale trainable和native teacher reads均为0。六个独立worker随后在物理`0--5`完成同一paired Gate。
+
+step70/110 train recovery为`.933583/.940336`，held-video为`.957202/.963277`；step110 q/v/action-in/action-out为
+`.815834/.839439/.820583/.837113`，wrong-token margin`.895772`、same-task retention`1.006591`、held/train
+`1.024396`。两点全部primary checks通过，step110相邻稳定性通过，R5正式pass。它只证明冻结feature chart可保留utility-aligned
+shared heads与真实functional优化，不证明fixed routing token可部署或Natural Program mapping已成立。
+
+基于该单变量证据，下一R6加载R5 step110共享scorer，移除fixed route，恢复`c1493a1/macro20` Natural Program；只训练Program
+readers/fusion/aligner和233 native heads，完整feature chart继续冻结。训练只用两fit-video生成的唯一rank16在disjoint panel A上的
+PI0.5 flow，不恢复J3 counterfactual或其它探索loss；完整12-task Gate仍是唯一资格。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9e6b6a7_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_gate_step70_9e6b6a7_gpu01p012345_w6_20260830/`；
+- `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_gate_step110_9e6b6a7_gpu01p012345_w6_20260830/`。

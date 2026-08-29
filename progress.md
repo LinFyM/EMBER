@@ -1,5 +1,28 @@
 # EMBER progress
 
+- 2026-08-30 R5 fixed feature-chart正式训练与step70/110 paired Gate已完整结束。训练从clean pushed detached
+  `9e6b6a7`在gpu01物理`0,1,2,3,4,6`自然完成110步，110 rows连续、两个world6 checkpoint完整，墙钟
+  `1503.63s`、最大peak reserved `32,916,897,792` bytes；Action Meta、source/Stage0/scale trainable和native teacher reads
+  均为0。六个独立worker随后在物理`0--5`完成同一paired Gate。step70/110 train recovery为`.933583/.940336`，held-video
+  为`.957202/.963277`；step110 q/v/action-in/action-out为`.815834/.839439/.820583/.837113`，wrong-token margin
+  `.895772`、same-task retention`1.006591`、held/train`1.024396`。两点全部primary checks通过，step110相邻稳定性也通过，
+  所以R5 Gate正式pass。该结果直接确认R4唯一缺口是初始化后feature chart漂移；冻结chart后233 heads既能接受真实functional
+  gradient，又能完整保留强功能坐标。R5仍含fixed task route和privileged一次性初始化，不是deployment Writer或G3 pass。
+
+- 当前唯一活动接回实验为R6：加载已经通过R5 Gate的step110**共享scorer权重**，彻底移除fixed routing token forward；恢复
+  `c1493a1/macro20` Natural Program，只训练Program readers/fusion/aligner与233 native heads，同时继续冻结完整primal feature chart、
+  source、Native Stage0、current-bank operator、carrier、scale和Action Meta。训练loss只保留两条fit video生成的唯一rank16在disjoint
+  panel A上的真实PI0.5 flow loss，不恢复J3 counterfactual、Program Gram、factor regression或其它探索loss。这个单变量接回既遵守最新
+  专家“Program与scorer接受真实functional credit”的主张，又用R4/R5新证据消除了moving-coordinate gauge。tasks2/74、panel B、
+  same-task held与validation/test零梯度；正式仍由原12-task完整Gate裁决train、held-video、true task-held、四family、language/endpoints、
+  wrong Program/bank interaction、event、same-task和相邻稳定性。通过R5的fixed token不会作为参数或输入加载。
+
+- R6首个dirty真实gpu01物理0 profile已通过：实际trainable `11,178,369`，由Natural Program 26个参数tensor与233个native
+  heads组成；run contract明确`fixed_routing_token_loaded=false`、task/video/frame lookup参数0、Action Meta module/parameter 0，
+  source/Stage0/scale trainable 0。Program language/scene/process与input/output head gradient均finite nonzero，完整frozen feature chart无
+  gradient，native teacher reads 0；单卡六task一步`55.26s`，peak allocated/reserved`21.21/21.88GB`，仍由真实X/Y、唯一rank12+4
+  rank16和policy functional backward构成。该profile只证明执行合同，不替代R6 formal或Gate。
+
 - 2026-08-30 R3 grouped-output formal与step70/110 Gate已完整结束。step110 train/held-video recovery为
   `.305293/.287486`，q/v/action-in/action-out为`.285260/.277323/.656235/.668922`，wrong-token margin
   `.118578`、same-task retention`.986958`。R3确实修复action-in并保持action-out、路由因果和跨video稳定，但train/held及q/v仍未过

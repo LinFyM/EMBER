@@ -22,6 +22,12 @@ from ember.ecp.joint_program_primal.routing_initialization import (
     FUNCTIONAL_CODE_INITIALIZATION,
     minimum_norm_head_solution,
 )
+from ember.ecp.joint_program_primal.runtime import (
+    CHART_RECONNECT_SCHEMA,
+    SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
+    _joint_parameter_ownership,
+    load_joint_program_primal_config,
+)
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     _training_world_size,
     routing_task_assignments,
@@ -343,3 +349,73 @@ def test_routing_r5_freezes_feature_chart_and_trains_only_native_heads() -> None
         "primal_scorer.input_primal_heads.0.weight",
         "primal_scorer.output_primal_heads.0.0.weight",
     }
+
+
+def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_natural_program_chart_reconnect_r6_v1.json"
+    )
+    assert config["schema_version"] == CHART_RECONNECT_SCHEMA
+    assert config["optimization"]["loss"] == (
+        "generated_rank16_cross_episode_pi05_flow_only"
+    )
+    assert "counterfactual" not in config["optimization"]["joint"]
+    assert config["information_wall"]["fixed_routing_token_deployment_input"] is False
+
+    class TinyProgram(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = torch.nn.Linear(2, 2)
+            self.decoder = torch.nn.Linear(2, 2)
+            self.language_reader = torch.nn.Linear(2, 2)
+            self.scene_reader = torch.nn.Linear(2, 2)
+            self.process_fusion = torch.nn.Sequential(torch.nn.Linear(2, 2))
+            self.aligner = torch.nn.Linear(2, 2)
+
+    class TinyCompiler(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            scorer = torch.nn.Module()
+            scorer.feature_chart = torch.nn.Linear(4, 4)
+            scorer.input_primal_heads = torch.nn.ModuleList(
+                [torch.nn.Linear(4, 3, bias=False)]
+            )
+            scorer.output_primal_heads = torch.nn.ModuleList(
+                [torch.nn.ModuleList([torch.nn.Linear(4, 2, bias=False)])]
+            )
+            self.primal_scorer = scorer
+            self.scale_head = torch.nn.Linear(2, 1)
+
+    program = TinyProgram()
+    compiler = TinyCompiler()
+    _, trainable, frozen = _joint_parameter_ownership(
+        program,
+        compiler,
+        scorer_partition=JOINT_NATIVE_HEADS_ONLY,
+    )
+    expected_modules = (
+        program.language_reader,
+        program.scene_reader,
+        program.process_fusion,
+        program.aligner,
+        compiler.primal_scorer.input_primal_heads,
+        compiler.primal_scorer.output_primal_heads,
+    )
+    expected = {
+        id(parameter)
+        for module in expected_modules
+        for parameter in module.parameters()
+    }
+    assert {id(parameter) for parameter in trainable} == expected
+    assert all(parameter.requires_grad for parameter in trainable)
+    assert all(not parameter.requires_grad for parameter in frozen)
+    assert all(not parameter.requires_grad for parameter in program.encoder.parameters())
+    assert all(not parameter.requires_grad for parameter in program.decoder.parameters())
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.feature_chart.parameters()
+    )
+    assert all(
+        not parameter.requires_grad for parameter in compiler.scale_head.parameters()
+    )

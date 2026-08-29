@@ -516,9 +516,11 @@ R2在同一fixed-route边界加入fit-only set-valued paired-update critic后，
 R3的owner×group decoder把action-in/out恢复到`.656/.669`，但primary仍non-pass。R4再用functionally validated code一次性初始化
 shared heads，step110 train/held-video达到`.819/.839`，q/v/action-out及route、video稳定均过门，仅action-in`.249<.30`。只读graft
 证明heads自身几乎未动，失败来自初始化所依赖的feature chart在整条context/trunk链中漂移；checkpoint heads接回initial chart仍有
-`.998` action-in outer recovery。因此当前R5只冻结初始化后的feature chart、训练233 native heads，保持functional loss、bank/operator、
-rank、scale、数据、预算和Gate不变。R4/R5仍含privileged初始化和fixed task route，不能冒充G3或deployment；只有R5稳定通过后才把
-“utility-aligned初始化必须绑定稳定chart”机制接回Natural Program。
+`.998` action-in outer recovery。R5只冻结初始化后的feature chart、训练233 native heads后，step70/110 train recovery达到
+`.934/.940`、held-video`.957/.963`，四family全部`.816--.839`且相邻稳定，正式通过全部Gate。因此moving-coordinate根因已经
+闭环成立。R4/R5仍含privileged初始化和fixed task route，不能冒充G3或deployment；当前R6加载passed R5共享scorer、完全移除fixed
+route，恢复G2 Natural Program，只训练Program与native heads并继续冻结feature chart。loss仅为generated rank16的cross-episode
+functional flow，不恢复counterfactual或几何loss；完整12-task Gate仍负责证明shared Natural Program mapping、task-held泛化和视频因果。
 
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
 Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`，12-task完整评价墙钟不超过训练主体一半。显存没有人为
@@ -666,11 +668,13 @@ optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.
 Program与primal联合functional反传、task-local functional正控和12-task Gate。当前代码已在唯一`joint_program_primal`执行面接通
 可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
 condition cache。10-task正控已通过；J2/J3与R1--R3均形成formal non-pass/partial结论。R4 functional-code初始化已把train/held提高到
-`.819/.839`，但action-in因feature chart drift未过门；当前R5在同一training-only fixed-route执行面冻结初始化chart，仅训练全部native
-heads。Action Meta保持0，scale继续冻结到F4。R5通过也不能冒充shared或closed-loop Gate。
+`.819/.839`，但action-in因feature chart drift未过门；R5冻结初始化chart、仅训练全部native heads后step110 train/held为
+`.940/.963`且四family全部通过。当前R6移除fixed route并接回Natural Program，feature chart、Action Meta和scale继续冻结。R5通过
+不能冒充shared或closed-loop Gate，R6仍须通过原12-task完整资格。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
 fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
-global dual + exact signed replay；阶段推进已进入R5 fixed-chart function-class资格，不再受独立Program behavior-Gram Gate阻塞。
+global dual + exact signed replay；R5 fixed-chart function-class已经通过，阶段推进进入R6 Natural Program shared mapping资格，
+不再受独立Program behavior-Gram Gate阻塞。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

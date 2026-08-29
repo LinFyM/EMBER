@@ -1,4 +1,4 @@
-"""Runtime and launch contract for counterfactual joint Program--primal training."""
+"""Runtime and launch contract for joint Program--primal functional training."""
 
 from __future__ import annotations
 
@@ -44,6 +44,10 @@ from ember.ecp.stage0_training import (
     tokenize_stage0_languages,
 )
 from ember.ecp.native_factors import native_capture_modes
+from ember.ecp.joint_program_primal.routing_initialization import (
+    R5_SHARED_FUNCTIONAL_CHART,
+    load_passed_r5_primal_scorer,
+)
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
@@ -72,6 +76,12 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 J2_SCHEMA = "ember_ecp_joint_program_primal_j3_v1"
 J2_RUN_SCHEMA = "ember_ecp_joint_program_primal_run_v2"
 J2_STAGE = "j3_counterfactual_functional_routing"
+CHART_RECONNECT_SCHEMA = "ember_ecp_natural_program_chart_reconnect_r6_v1"
+CHART_RECONNECT_RUN_SCHEMA = "ember_ecp_natural_program_chart_reconnect_run_v1"
+CHART_RECONNECT_STAGE = "g3_natural_program_functional_chart_reconnect"
+FRESH_SCORER = "fresh"
+SCORER_ALL_PARAMETERS = "all"
+SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
 
 
 @dataclass(frozen=True)
@@ -152,6 +162,7 @@ class JointProgramPrimalRuntime:
     stop_after_step: int
     checkpoint_steps: tuple[int, ...]
     metrics_rows: int
+    primal_scorer_initialization: dict[str, Any]
     run_contract: dict[str, Any]
 
     def close(self) -> None:
@@ -186,6 +197,7 @@ class _ModelAssets:
     frozen: tuple[torch.nn.Parameter, ...]
     native_teachers: NativeTeacherStore
     consensus_teachers: FitConsensusTeacherStore
+    primal_scorer_initialization: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -208,6 +220,18 @@ class _OptimizerCursor:
     metrics_rows: int
 
 
+def is_chart_reconnect_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == CHART_RECONNECT_SCHEMA
+
+
+def joint_run_schema(config: Mapping[str, Any]) -> str:
+    return CHART_RECONNECT_RUN_SCHEMA if is_chart_reconnect_config(config) else J2_RUN_SCHEMA
+
+
+def joint_stage(config: Mapping[str, Any]) -> str:
+    return CHART_RECONNECT_STAGE if is_chart_reconnect_config(config) else J2_STAGE
+
+
 def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     split = config.get("task_split", {})
@@ -226,15 +250,19 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             ),
         )
     )
-    valid = all(
+    schema = config.get("schema_version")
+    wall = config.get("information_wall", {})
+    model = config.get("model", {})
+    authorities = config.get("authorities", {})
+    common_valid = all(
         (
-            config.get("schema_version") == J2_SCHEMA,
+            schema in {J2_SCHEMA, CHART_RECONNECT_SCHEMA},
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
             split.get("gradient_target") == [72, 73, 75, 93, 94],
             split.get("true_task_held_meta") == [2],
             split.get("true_task_held_target") == [74],
-            set(map(int, config.get("authorities", {}).get("functional_panel_records", {})))
+            set(map(int, authorities.get("functional_panel_records", {})))
             == set(tasks),
             data.get("K") == 1,
             data.get("fit_video_views_per_task") == 2,
@@ -245,6 +273,23 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             joint.get("checkpoint_effective_steps") == [60, 100],
             joint.get("global_tasks_per_optimizer_step") == 6,
             joint.get("video_views_per_task") == 2,
+            cache_authority.get("config_schema")
+            == "ember_ecp_joint_program_primal_j2_v1",
+            cache_authority.get("config_bytes") == 6017,
+            wall.get("action_meta_installed") is False,
+            wall.get("shuffled_or_reversed_use") is False,
+        )
+    )
+    counterfactual_valid = all(
+        (
+            schema == J2_SCHEMA,
+            config.get("status")
+            == "active_counterfactual_functional_routing_qualification",
+            model.get("primal_scorer_initialization") == FRESH_SCORER,
+            model.get("primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS)
+            == SCORER_ALL_PARAMETERS,
+            config.get("optimization", {}).get("loss")
+            == "correct_flow_plus_paired_counterfactual_functional_margin",
             counterfactual.get("arm_schedule")
             == "alternate_wrong_program_wrong_bank",
             counterfactual.get("negative_pairing") == "same_role_cyclic_next",
@@ -253,18 +298,32 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             counterfactual.get("weight") == 1.0,
             counterfactual.get("margin_scale")
             == "formal_positive_control_fit_panel_a_mean_benefit",
-            isinstance(
-                config.get("authorities", {}).get("positive_control_root"), str
-            ),
-            cache_authority.get("config_schema")
-            == "ember_ecp_joint_program_primal_j2_v1",
-            cache_authority.get("config_bytes") == 6017,
-            config.get("information_wall", {}).get("action_meta_installed") is False,
-            config.get("information_wall", {}).get("shuffled_or_reversed_use") is False,
+            isinstance(authorities.get("positive_control_root"), str),
         )
     )
-    if not valid:
-        raise ValueError("unsupported J3 counterfactual Program-primal config")
+    reconnect_valid = all(
+        (
+            schema == CHART_RECONNECT_SCHEMA,
+            config.get("status")
+            == "active_natural_program_chart_reconnect_qualification",
+            model.get("program_initialization")
+            == "c1493a1_macro20_model_tensors",
+            model.get("primal_scorer_initialization")
+            == R5_SHARED_FUNCTIONAL_CHART,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_NATIVE_HEADS_ONLY,
+            config.get("optimization", {}).get("loss")
+            == "generated_rank16_cross_episode_pi05_flow_only",
+            "counterfactual" not in joint,
+            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
+            isinstance(authorities.get("r5_gate_aggregate"), str),
+            wall.get("functional_chart_initialization_training_only") is True,
+            wall.get("primal_scorer_feature_chart_frozen") is True,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
+    if not common_valid or not (counterfactual_valid or reconnect_valid):
+        raise ValueError("unsupported joint Program-primal functional config")
     return config
 
 
@@ -421,15 +480,32 @@ def _task_conditions(
 def _joint_parameter_ownership(
     program: NaturalProgramModel,
     compiler: SharedNativeFactorCompiler,
+    *,
+    scorer_partition: str = SCORER_ALL_PARAMETERS,
 ) -> tuple[JointWriterState, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
     writer = JointWriterState(program, compiler)
-    writer.requires_grad_(True).train()
+    for module in (
+        program.language_reader,
+        program.scene_reader,
+        program.process_fusion,
+        program.aligner,
+    ):
+        module.requires_grad_(True).train()
+    if scorer_partition == SCORER_ALL_PARAMETERS:
+        compiler.primal_scorer.requires_grad_(True).train()
+    elif scorer_partition == SCORER_NATIVE_HEADS_ONLY:
+        compiler.primal_scorer.input_primal_heads.requires_grad_(True).train()
+        compiler.primal_scorer.output_primal_heads.requires_grad_(True).train()
+    else:
+        raise ValueError("unsupported joint primal-scorer partition")
     program.encoder.requires_grad_(False).eval()
     program.decoder.requires_grad_(False).eval()
     compiler.scale_head.requires_grad_(False).eval()
-    trainable = tuple(writer.parameters())
+    trainable = tuple(
+        parameter for parameter in writer.parameters() if parameter.requires_grad
+    )
     roots = (program, compiler)
     frozen = tuple(
         parameter
@@ -538,9 +614,9 @@ def _topology(context: DistributedContext) -> list[dict[str, Any]]:
 
 def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
-    return {
-        "schema_version": J2_RUN_SCHEMA,
-        "stage": J2_STAGE,
+    contract = {
+        "schema_version": joint_run_schema(runtime.config),
+        "stage": joint_stage(runtime.config),
         "phase": runtime.args.phase,
         "mode": runtime.args.mode,
         "git": {
@@ -564,7 +640,18 @@ def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
         },
-        "counterfactual_margin_authority": {
+        "primal_scorer_initialization": dict(
+            runtime.primal_scorer_initialization
+        ),
+        "model": dict(runtime.config["model"]),
+        "optimization": dict(runtime.config["optimization"]),
+        "throughput_gate": dict(runtime.config["throughput_gate"]),
+        "information_wall": dict(runtime.config["information_wall"]),
+        "inventory": _inventory(runtime.policy, runtime.program, runtime.compiler, runtime.owners),
+        "world_topology": _topology(runtime.context),
+    }
+    if runtime.counterfactual_margin_scales:
+        contract["counterfactual_margin_authority"] = {
             "source": "formal_positive_control_fit_panel_a_mean_benefit",
             "files": [
                 {"path": str(path), "bytes": path.stat().st_size}
@@ -574,14 +661,8 @@ def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
                 str(task): value
                 for task, value in runtime.counterfactual_margin_scales.items()
             },
-        },
-        "model": dict(runtime.config["model"]),
-        "optimization": dict(runtime.config["optimization"]),
-        "throughput_gate": dict(runtime.config["throughput_gate"]),
-        "information_wall": dict(runtime.config["information_wall"]),
-        "inventory": _inventory(runtime.policy, runtime.program, runtime.compiler, runtime.owners),
-        "world_topology": _topology(runtime.context),
-    }
+        }
+    return contract
 
 
 def _authority_assets(
@@ -604,9 +685,12 @@ def _authority_assets(
     all_tasks = _tasks(base, args.data_root, args.asset_root)
     task_by_id = {task.authority_id: task for task in all_tasks}
     panels = _load_panels(config, asset_root=args.asset_root)
-    margin_scales, positive_control_files = _counterfactual_margin_scales(
-        config, asset_root=args.asset_root
-    )
+    if is_chart_reconnect_config(config):
+        margin_scales, positive_control_files = {}, ()
+    else:
+        margin_scales, positive_control_files = _counterfactual_margin_scales(
+            config, asset_root=args.asset_root
+        )
     selected_tasks = tuple(task_by_id[task] for task in sorted(panels))
     mapping_split = load_mapping_split(base, asset_root=args.asset_root)
     expected_checkpoint = authority_path(
@@ -640,6 +724,7 @@ def _authority_assets(
 def _model_assets(
     args: argparse.Namespace,
     context: DistributedContext,
+    config: Mapping[str, Any],
     base: Mapping[str, Any],
     authority: _AuthorityAssets,
 ) -> _ModelAssets:
@@ -671,7 +756,34 @@ def _model_assets(
             base, asset_root=args.asset_root, device=context.device
         ),
     ).to(context.device)
-    writer_state, trainable, frozen = _joint_parameter_ownership(program, compiler)
+    scorer_initialization = str(config["model"]["primal_scorer_initialization"])
+    if scorer_initialization == R5_SHARED_FUNCTIONAL_CHART:
+        initialization = load_passed_r5_primal_scorer(
+            config, compiler, asset_root=args.asset_root, device=context.device
+        )
+    elif scorer_initialization == FRESH_SCORER:
+        initialization = {
+            "kind": FRESH_SCORER,
+            "state": "seeded_random",
+            "fixed_routing_token_loaded": False,
+            "task_lookup_parameters_loaded": False,
+        }
+    elif config.get("schema_version") == "ember_ecp_routing_token_control_r1_v1":
+        initialization = {
+            "kind": scorer_initialization,
+            "state": "deferred_to_routing_control",
+        }
+    else:
+        raise ValueError("unsupported joint primal-scorer initialization")
+    writer_state, trainable, frozen = _joint_parameter_ownership(
+        program,
+        compiler,
+        scorer_partition=str(
+            config["model"].get(
+                "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+            )
+        ),
+    )
     teacher_path = authority_path(
         base, "native_teacher_manifest", asset_root=args.asset_root
     )
@@ -699,6 +811,7 @@ def _model_assets(
         consensus_teachers=FitConsensusTeacherStore(
             native_teachers, authority.mapping_split, rank4_contract
         ),
+        primal_scorer_initialization=initialization,
     )
 
 
@@ -799,12 +912,12 @@ def _optimizer_cursor(
     if args.resume is not None:
         optimizer_steps, expected_rows = load_ecp_checkpoint(
             checkpoint=args.resume,
-            stage=J2_STAGE,
+            stage=joint_stage(config),
             context=context,
             model=writer_state,
             optimizer=optimizer,
             scheduler=scheduler,
-            run_contract_schema=J2_RUN_SCHEMA,
+            run_contract_schema=joint_run_schema(config),
         )
         if context.is_main:
             metrics_rows = reconcile_metrics(
@@ -832,7 +945,7 @@ def prepare_joint_program_primal_runtime(
         raise ValueError("J2 base G3 config authority changed")
     base = load_shared_compiler_config(base_path)
     authority = _authority_assets(args, context, config, base)
-    model = _model_assets(args, context, base, authority)
+    model = _model_assets(args, context, config, base, authority)
     data = _data_assets(args, config, base, context, authority, model)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     if context.world_size > 1:
@@ -878,6 +991,7 @@ def prepare_joint_program_primal_runtime(
         stop_after_step=cursor.stop,
         checkpoint_steps=cursor.checkpoints,
         metrics_rows=cursor.metrics_rows,
+        primal_scorer_initialization=model.primal_scorer_initialization,
         run_contract={},
     )
     runtime.run_contract = _run_contract(runtime)

@@ -1356,3 +1356,17 @@ R5据此只冻结functional-code初始化后的完整feature chart，并让38 in
 数据、rank、scale、bank/operator、seed、LR、预算或Gate。首个真实step确认trainable仅`10,297,344` head参数，全部233 heads有finite
 nonzero gradient，frozen chart无gradient，Action Meta/source/Stage0/scale均0，native teacher reads 0且仍生成唯一完整rank16。R5若
 通过也仍只是training-only fixed-route边界；它证明的是utility-aligned head初始化必须绑定稳定chart，不证明Natural Program shared route。
+
+### 79. R5正式闭合moving-chart根因；最小G3接回是Natural Program加native heads、固定功能chart
+
+R5 step70/110的train recovery为`.933583/.940336`，held-video为`.957202/.963277`；step110 q/v/action-in/action-out为
+`.815834/.839439/.820583/.837113`，wrong-token margin`.895772`、same-task retention`1.006591`。两个checkpoint全部primary
+checks通过，step110相邻稳定性也通过。与R4仅action-in`.249310`失败相比，唯一改变就是冻结初始化后的feature chart，因此R4缺口的
+因果解释已得到正式Gate支持：不是heads、bank、scale、rank或functional loss失效，而是高条件数minimum-norm heads依赖的内部坐标移动。
+
+R5不允许直接冒充G3，因为它仍由training-only authority ID选择fixed orthogonal token。接回真实Writer的最小机制不是恢复fresh scorer、
+counterfactual或更多几何loss，而是加载R5已通过的**共享**scorer权重，删除fixed-token forward，恢复G2 Natural Program并保持chart冻结。
+R5已经证明233 native heads在固定chart上接受functional gradient不会破坏强坐标，因此R6让Natural Program与这些heads共同训练；这保留
+专家要求的Program--scorer真实functional credit，同时消除J2/R4实证的moving-coordinate gauge。loss只保留generated rank16的跨episode
+PI0.5 flow，source/Stage0/operator/carrier/scale/Action Meta继续冻结。R5 checkpoint不含task lookup参数，fixed token既不是参数也不会
+被R6加载；tasks2/74与全部held controls仍零梯度。R6只有通过完整12-task train/held/task-held/family/causal/stability Gate才是G3资格。

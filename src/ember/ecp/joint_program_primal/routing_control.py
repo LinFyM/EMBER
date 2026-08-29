@@ -375,7 +375,7 @@ def prepare_routing_control_runtime(
         raise ValueError("routing-control base G3 config authority changed")
     base = load_shared_compiler_config(base_path)
     authority = _authority_assets(args, context, config, base)
-    model = _model_assets(args, context, base, authority)
+    model = _model_assets(args, context, config, base, authority)
     writer_state, trainable, frozen = _scorer_parameter_ownership(
         model.program,
         model.compiler,
@@ -469,6 +469,7 @@ def prepare_routing_control_runtime(
         stop_after_step=stop,
         checkpoint_steps=checkpoints,
         metrics_rows=metrics_rows,
+        primal_scorer_initialization=dict(initialization),
         run_contract={},
     )
     runtime.run_contract = _run_contract(

@@ -29,9 +29,9 @@ from ember.ecp.joint_program_primal.gate import (
     _functional_value,
 )
 from ember.ecp.joint_program_primal.runtime import (
-    J2_RUN_SCHEMA,
-    J2_STAGE,
     JointProgramPrimalRuntime,
+    joint_run_schema,
+    joint_stage,
     load_joint_program_primal_config,
     prepare_joint_program_primal_runtime,
 )
@@ -62,6 +62,7 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 J2_GATE_SCHEMA = "ember_ecp_counterfactual_program_primal_gate_v1"
+CHART_RECONNECT_GATE_SCHEMA = "ember_ecp_natural_program_chart_reconnect_gate_v1"
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -70,10 +71,20 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     evaluation = config.get("evaluation", {})
     wall = config.get("information_wall", {})
+    schema = config.get("schema_version")
+    status = config.get("status")
     if (
-        config.get("schema_version") != J2_GATE_SCHEMA
-        or config.get("status")
-        != "active_counterfactual_functional_routing_qualification"
+        (schema, status)
+        not in {
+            (
+                J2_GATE_SCHEMA,
+                "active_counterfactual_functional_routing_qualification",
+            ),
+            (
+                CHART_RECONNECT_GATE_SCHEMA,
+                "active_natural_program_chart_reconnect_qualification",
+            ),
+        }
         or config.get("checkpoint_optimizer_steps") != [70, 110]
         or evaluation.get("functional_panel") != "panel_b"
         or evaluation.get("panel_visits") != 16
@@ -103,24 +114,33 @@ def _checkpoint_authority(
     step = checkpoint_macro(compiler_checkpoint)
     run_contract = read_json(compiler_run / "run_contract.json")
     manifest = read_json(compiler_checkpoint / "checkpoint_manifest.json")
+    training_world_size = int(manifest.get("world_size", -1))
+    topology = run_contract.get("world_topology", ())
+    allowed_world_sizes = set(map(int, runtime.config["profile"]["allowed_world_sizes"]))
     files = manifest.get("files", {})
     expected = {
         "ecp.safetensors",
         "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(6)),
+        *(f"rank_{rank:02d}_state.pt" for rank in range(training_world_size)),
     }
+    expected_run_schema = joint_run_schema(runtime.config)
+    expected_stage = joint_stage(runtime.config)
     if (
         compiler_checkpoint.parent.parent != compiler_run
         or step not in set(map(int, gate["checkpoint_optimizer_steps"]))
-        or run_contract.get("schema_version") != J2_RUN_SCHEMA
-        or run_contract.get("stage") != J2_STAGE
+        or run_contract.get("schema_version") != expected_run_schema
+        or run_contract.get("stage") != expected_stage
         or run_contract.get("phase") != "joint"
         or run_contract.get("mode") != "formal"
+        or training_world_size not in allowed_world_sizes
+        or not isinstance(topology, list)
+        or len(topology) != training_world_size
+        or sorted(int(row.get("rank", -1)) for row in topology)
+        != list(range(training_world_size))
         or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or manifest.get("stage") != J2_STAGE
+        or manifest.get("stage") != expected_stage
         or int(manifest.get("next_macro", -1)) != step
-        or int(manifest.get("world_size", -1)) != 6
-        or manifest.get("run_contract_schema") != J2_RUN_SCHEMA
+        or manifest.get("run_contract_schema") != expected_run_schema
         or set(files) != expected
     ):
         raise ValueError("J2 evaluation checkpoint authority changed")
@@ -147,7 +167,7 @@ def _checkpoint_authority(
         "optimizer_step": step,
         "path": str(compiler_checkpoint),
         "training_commit": str(run_contract["git"]["commit"]),
-        "world_size": int(manifest["world_size"]),
+        "world_size": training_world_size,
         "tensor_bytes": int(files["ecp.safetensors"]["bytes"]),
     }
 

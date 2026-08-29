@@ -20,6 +20,28 @@ trainable均0，native teacher tensor reads 0，所有关键scorer gradient prob
 最大`21,778,923,520` bytes（`20.28GiB`），符合六卡`<=15/25s`与`<35GiB`合同。下一步是完成diff审查、clean main集成，随后从detached
 authority fresh运行step70/110 formal与只含correct/wrong-token/family必要臂的六worker Gate。
 
+### R1 routing-token formal launch contract
+
+- implementation authority为clean pushed `main@ec86fdb74b4271b0a70a65db30b5c6af82168d02`；formal从包含本段launch contract、但不再修改
+  `src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。scorer、optimizer和scheduler fresh，不resume任何J2/J3/profile；
+- 数据固定为10个gradient tasks、每task两fit K1 videos、panel A的16 visits；第三same-task video、panel B、task2/74、validation/test全部
+  零梯度。训练只有correct functional loss，不含J3 counterfactual；Natural Program模型、source、Stage0、bank operator、scale、carrier和
+  Action Meta冻结，唯一trainable为现有`ProgramNativePrimalScorer`；token由training-only authority ID确定，不能作为deployment输入；
+- world6固定global每step 3 meta+3 target、每task两video与原optimizer cadence；10 warmup+100 effective，在actual step70/110保存唯一
+  checkpoints。exact command使用gpu01物理1--6、GPU-local NUMA、deferred NCCL、`NCCL_P2P_DISABLE=1`，入口仍为
+  `scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_routing_token_control_r1_v1.json --base-config
+  /data1/user/ymdai/projects/EMBER/configs/pi05_ecp_shared_compiler_g3_v5.json --mode formal --phase joint`，其余source/tokenizer/data参数沿J3
+  authority，condition cache固定`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`；
+- formal输出根固定为
+  `runs/outputs/pi05_ecp_routing_token_control_r1_s110_ec86fdb_gpu01p123456_r6_20260829/`，log固定为同stem的`runs/logs/*.log`；launch前
+  已确认output root不存在。预计checkpoint/log远低于`1GiB`，不复制dataset/model/cache；
+- 2026-08-29 19:52 CST live检查：gpu01物理3/4/6完全空闲、5仅`.10GiB/0%`，1/2各有他人约`2.98GiB/5%`短进程；以profile
+  `20.28GiB`峰值仍保留约`22.8GiB`余量且不会显著干扰，故使用1--6。gpu02物理0--3与5满载、6占`17.6GiB`、7占`3.0GiB/8%`，
+  没有更优同节点六卡组；不跨节点拼卡。`/data1` quota为`708013312/1073741824KiB`，剩余约`348.8GiB`；
+- formal完成后只用同一clean authority的六个独立single-GPU workers评价actual step70/110，每worker顺序复用一次runtime；只计算三条correct
+  views、wrong-token/correct-bank和八target family必要臂，不运行language/endpoints/wrong-bank/true-task-held冗余arms。Gate不以训练loss、
+  hidden cosine或checkpoint union代替functional recovery，shuffled/reversed仍不使用。
+
 ## 2026-08-29 J3 formal训练完成，step70/110 Gate启动
 
 clean detached `f8bfb7a`在gpu01物理`0--5`自然完成全部110 optimizer steps；actual step70/110两个single checkpoints、

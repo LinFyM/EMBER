@@ -1,5 +1,31 @@
 # EMBER progress
 
+## 2026-08-29 G2 behavior-kernel v4 formal non-pass，global-calibrated v5已接通
+
+clean detached `main@4eb8b8c`的五卡v4完成macro5/15 updates及全部internal Gate。旧动态职责仍通过：full相对
+endpoints改善`14.6553%`、active events中位数4、one-event 0、same-task/probe/K1/K4全通。但全量train60
+topology A/B仅`.2360/.2362`，internal meta为`.2064/.2257`，internal target的`.7512/.7634`仍是旧Program已有的
+偶然高值；fit60-only reader的panel-B/consensus exact role-equal仅`.1129/.1177`，wrong margin为负。因此加入joint edges
+虽然把监督图连通，却没有产生全局behavior geometry；official held20仍未读取。
+
+固定checkpoint的block geometry进一步定位了比Stage0更早的目标退化：v4 full Program的跨task off-diagonal cosine均值约
+`.965`、标准差约`.020`，teacher behavior kernel则为`.145/.316`。v3/v4使用的逐batch centered、Frobenius-normalized
+kernel loss会消除每批的平移与尺度，因而允许不同batch各自使用不同affine gauge，也不会惩罚接近公共向量的低方差Program；连通
+pair graph本身不能修复这个自由度。这解释了local correlation可达`.7`而全量train60与exact readout几乎不升。
+
+当前唯一v5修正不增加模型参数、reader或deployment路径。它把teacher cosine确定性lift为
+`K_target=(1+K_behavior)/2`，直接对齐raw Program off-diagonal cosine；每个owner的残差及跨view差异只除以由完整
+train60、meta45或target15预先计算的固定teacher dispersion，不再按当前mini-batch重心或范数重新定标。这样公共轴仍允许
+lifted kernel精确成为Gram，但task差异的绝对均值与幅度不能再由batch-local gauge抹掉。数据、5+5 task权重、两组video、
+Program schema、旧动态Gate、internal15/official20边界、纯Native Stage0和Action Meta关闭均不变；v4 config已由v5替换，
+保持一个canonical执行面。
+
+三卡真实一步profile已验证该目标不是弱梯度或数值死路：behavior alignment loss `12.2518`，behavior-kernel与Program梯度
+分别`1.7323/2.7450`，总梯度`3.4997`后沿用既有clip；step `18.35s`、peak allocated `9.98GB`。初始Program/teacher
+off-diagonal std为`.0141/.1478`，符合诊断预期；source与Stage0 trainable 0，Action Meta module/parameter 0。定向回归
+`19 passed`、全仓`204 passed`、diff check与config load通过；该profile不是Gate结果，下一步只能从clean pushed detached
+authority运行同一macro5 formal，若仍无数量级改善则停止继续叠加G2版本并整理专家复核证据。
+
 ## 2026-08-29 G2 behavior-kernel v3 formal non-pass，joint-role v4已接通
 
 clean detached `main@60fb18b`的五卡v3从`c1493a1/macro20` model-only初始化、fresh optimizer运行到macro5/15

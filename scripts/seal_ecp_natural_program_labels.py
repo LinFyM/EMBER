@@ -21,7 +21,7 @@ def main() -> None:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_ecp_natural_program_g2_behavior_kernel_v4.json"
+            / "configs/pi05_ecp_natural_program_g2_behavior_kernel_v5.json"
         ),
     )
     parser.add_argument("--data-root", type=Path, required=True)

@@ -91,6 +91,18 @@ def kernel_correlation(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
     )
 
 
+def _off_diagonal(kernel: torch.Tensor) -> torch.Tensor:
+    count = kernel.shape[-1]
+    mask = ~torch.eye(count, dtype=torch.bool, device=kernel.device)
+    return kernel[:, mask]
+
+
+def lifted_behavior_kernel(kernel: torch.Tensor) -> torch.Tensor:
+    """Give every task a fixed common axis without erasing behavior scale."""
+
+    return 0.5 * (kernel.float().clamp(-1.0, 1.0) + 1.0)
+
+
 def _gather_features(
     local_features: torch.Tensor,
     local_task_ids: torch.Tensor,
@@ -115,32 +127,42 @@ def _topology_scope_loss(
     task_ids: torch.Tensor,
     selection: torch.Tensor,
     authority: Any,
+    teacher_scales: tuple[torch.Tensor, torch.Tensor],
 ) -> tuple[torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
     if int(selection.sum()) < 3:
         raise ValueError("behavior-kernel optimizer step lost a topology scope")
     ids = task_ids[selection]
-    normalized_teachers = tuple(
-        normalized_centered_kernel(authority.kernel(ids, kind=kind))
+    raw_teachers = tuple(
+        authority.kernel(ids, kind=kind).float()
         for kind in ("panel_a", "consensus")
+    )
+    calibrated_teachers = tuple(
+        lifted_behavior_kernel(value) for value in raw_teachers
     )
     programs = []
     losses = []
     correlations = {}
     for view, name in enumerate(("a", "b")):
-        normalized = normalized_centered_kernel(
-            program_gram(features[selection, view])
-        )
-        programs.append(normalized)
+        program = program_gram(features[selection, view])
+        programs.append(program)
         losses.extend(
-            (normalized - teacher).square().sum(dim=(-1, -2)).mean()
-            for teacher in normalized_teachers
+            (
+                (
+                    _off_diagonal(program) - _off_diagonal(teacher)
+                ) / scale[:, None]
+            ).square().mean()
+            for teacher, scale in zip(
+                calibrated_teachers, teacher_scales, strict=True
+            )
         )
-        correlations[name] = (
-            normalized * normalized_teachers[-1]
-        ).sum(dim=(-1, -2)).mean()
+        correlations[name] = kernel_correlation(program, raw_teachers[-1]).mean()
+        correlations[f"program_std_{name}"] = _off_diagonal(program).std(-1).mean()
+    correlations["teacher_std"] = teacher_scales[-1].mean()
     cross_view = (
-        (programs[0] - programs[1]).square().sum(dim=(-1, -2)).mean()
-    )
+        (
+            _off_diagonal(programs[0]) - _off_diagonal(programs[1])
+        ) / teacher_scales[-1][:, None]
+    ).square().mean()
     return torch.stack(losses).mean(), cross_view, correlations
 
 
@@ -184,7 +206,21 @@ def distributed_behavior_kernel_loss(
     alignments: dict[str, torch.Tensor] = {}
     cross_views: dict[str, torch.Tensor] = {}
     scope_correlations: dict[str, dict[str, torch.Tensor]] = {}
+    global_scope_ids = {
+        "joint": authority.fit_task_ids,
+        "meta": tuple(sorted(authority.meta_gradient_task_ids)),
+        "target": tuple(sorted(authority.target_gradient_task_ids)),
+    }
     for scope, selection in selections.items():
+        scale_ids = torch.tensor(
+            global_scope_ids[scope], dtype=torch.long, device=features.device
+        )
+        teacher_scales = tuple(
+            _off_diagonal(
+                lifted_behavior_kernel(authority.kernel(scale_ids, kind=kind))
+            ).std(-1).clamp_min(1e-3)
+            for kind in ("panel_a", "consensus")
+        )
         (
             alignments[scope],
             cross_views[scope],
@@ -194,6 +230,7 @@ def distributed_behavior_kernel_loss(
             task_ids=task_ids,
             selection=selection,
             authority=authority,
+            teacher_scales=teacher_scales,
         )
     alignment = sum(
         scope_weights[scope] * value for scope, value in alignments.items()
@@ -226,6 +263,15 @@ def distributed_behavior_kernel_loss(
         )
         metrics[f"behavior_kernel_{scope}_correlation_b"] = float(
             correlations["b"].detach()
+        )
+        metrics[f"behavior_kernel_{scope}_program_std_a"] = float(
+            correlations["program_std_a"].detach()
+        )
+        metrics[f"behavior_kernel_{scope}_program_std_b"] = float(
+            correlations["program_std_b"].detach()
+        )
+        metrics[f"behavior_kernel_{scope}_teacher_std"] = float(
+            correlations["teacher_std"].detach()
         )
     return total, metrics
 

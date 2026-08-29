@@ -233,11 +233,17 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   trainable 0、Action Meta 0；定向与全仓回归`19/19`与`204 passed`；
 - [x] 完成v4 diff/architecture检查、`204 passed`、clean pushed `main@37885a6`集成与detached三卡profile；无hard
   violation，clean profile与dirty profile的loss/梯度/吞吐逐项一致；
-- [ ] 从只新增v4 formal launch contract文档的clean pushed descendant建立detached worktree，以同一五卡macro5规模复评全部
-  internal与旧动态Gate；
-- [ ] non-pass时先比较train topology、internal meta/target topology、exact family与旧动态retention：train不升则修Program credit；train升而
-  internal不升才重开窄Stage0 grounding tail；只有新机制证据才允许修正，不做seed/LR/width/rank小扫。internal通过后才读official held20，
-  冻结唯一Program checkpoint并更新G3 v5 authority。
+- [x] 从clean pushed `main@4eb8b8c`的detached worktree完成五卡v4 macro5 formal及全部internal/旧动态Gate；旧动态
+  Gate保持通过，但train topology仅`.2360/.2362`、internal meta仅`.2064/.2257`、exact panel-B/consensus仅
+  `.1129/.1177`，因此明确non-pass且official held20未读；
+- [x] 用固定checkpoint block geometry定位v4更早失效：full Program off-diagonal cosine均值/标准差约`.965/.020`，而teacher为
+  `.145/.316`；逐batch centered+normalized loss允许batch-local affine gauge与near-collapse，连通credit graph不能约束绝对几何；
+- [x] 接通唯一v5 global calibration：teacher固定lift为`(1+K)/2`，raw Program off-diagonal Gram按完整scope的固定teacher
+  dispersion对齐；不增加参数、reader、task route或deployment路径，不改数据、task权重、动态Gate、Stage0冻结与official wall；
+- [x] v5三卡真实一步profile完成：behavior/Program梯度`1.7323/2.7450`，step `18.35s`、peak `9.98GB`，source/Stage0
+  trainable 0、Action Meta module/parameter 0；定向`19 passed`、全仓`204 passed`；
+- [ ] 从clean pushed v5 authority建立detached worktree，以同一五卡macro5规模复评全部internal与旧动态Gate；若没有相对v3/v4的
+  数量级改善，停止继续叠加G2版本并整理完整专家复核证据；internal通过后才允许一次读取official held20、冻结唯一Program并恢复G3 P2。
 
 ### G3 Frozen-Program shared compiler
 

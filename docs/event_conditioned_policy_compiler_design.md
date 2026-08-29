@@ -449,11 +449,17 @@ internal meta仅`.2152/.2332`，exact panel-B/consensus仅`.1207/.1253`。旧动
 components。这个objective允许每个小组在彼此无约束的坐标中各自对齐；因此该non-pass的最早接口是全局credit graph，
 不是Stage0、Program schema、梯度路径或训练时长。
 
-当前唯一v4修正在每个原5 meta+5 target batch中同时对齐joint、meta和target kernels，权重固定为`.5/.25/.25`。
-panel-A与consensus的真实meta-target cross-role关系平均相关`.8629`；加入joint edges后，原15个batches对fit60覆盖483/1770
-pairs、minimum degree 9且只有1个connected component。该修正不增加模型参数、reader、forward、task route或deployment路径，不改
-5+5 role质量、K、动态loss、Gate或information wall。只有v4的全train topology明显上升而internal两role仍失败，才重新考虑窄
-Stage0 grounding tail。
+v4在每个原5 meta+5 target batch中以`.5/.25/.25`对齐joint/meta/target kernels，把监督图连成唯一60-task component；但
+clean detached macro5 formal的train topology仍只有`.2360/.2362`，internal meta`.2064/.2257`、exact panel-B/consensus
+`.1129/.1177`，旧动态Gate则保持通过。固定checkpoint显示full Program跨task cosine约为均值`.965`、标准差`.020`，teacher为
+`.145/.316`。原逐batch centered、normalized objective允许每批独立的affine gauge和near-collapse，因此joint graph没有规定
+全局绝对几何；v4被淘汰，official held20未读。
+
+当前唯一v5修正保持全部Program schema、数据、5+5 role质量、K、动态loss/Gate、Stage0冻结与information wall，只把behavior target
+改为固定PSD lift `K_target=(1+K_behavior)/2`。训练直接对齐raw Program off-diagonal Gram，残差和cross-view差异按完整
+joint/meta/target fit scope预先计算的per-owner teacher dispersion缩放，不再由当前mini-batch中心化或单位化。该修正不增加模型参数、
+reader、forward或task route；若同一macro5 internal formal仍不能产生相对v3/v4的数量级改善，则停止新增G2版本并整理专家复核证据，
+而不是解冻Stage0或做seed/LR/width/rank小扫。
 
 ### G3. Frozen-Program shared compiler
 

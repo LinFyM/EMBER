@@ -1168,6 +1168,24 @@ behavior authority的meta-target cross-role panel-A与consensus关系相关`.862
 60-task component。v4因此使用`.5 joint + .25 meta + .25 target`，保留两role等质量与原资源成本。三卡真实一步
 已证明joint关系真正改变loss且梯度直接进Program，step `18.33s`、peak `9.98GB`、Action Meta/Stage0/source均保持冻结。
 
+### 69. 连通pair graph仍不足；batch-local affine gauge允许Program近坍缩
+
+v4 formal证明joint edges只是必要条件而非充分条件。虽然每批关系图已经跨role连通，macro5全量train60 topology仍只有
+`.2360/.2362`，internal meta为`.2064/.2257`，exact panel-B/consensus为`.1129/.1177`，与v3没有实质改善；旧动态
+Gate则以`14.6553%`增量继续通过。固定checkpoint的full Program跨task cosine集中在均值约`.965`、标准差约`.020`，而
+teacher behavior cosine为`.145/.316`，说明部署Program几乎把所有task放在一个小球帽内。
+
+根因在监督坐标而不是graph、LR或训练长度。逐batch双中心化会删除kernel常量偏移，Frobenius单位化又删除幅度；因此同一真实
+behavior geometry可在不同batch中对应不同的`aK+b`，且接近公共向量的低方差Program在中心化后仍可取得较高局部相关。
+这也解释了为何local batch correlation很高，却不能组成全局可读坐标。v5采用PSD且可实现的固定lift
+`K_target=(1+K_behavior)/2`，直接拟合raw off-diagonal Gram，并只用完整train scope预先确定的teacher dispersion统一量纲。
+它保留公共轴来表示正负behavior cosine，却不再允许当前batch自行选择均值或尺度；没有新增参数、decoder或信息路径。
+
+三卡真实一步显示这个修正给出的behavior/Program梯度为`1.7323/2.7450`，并把初始Program std `.0141`与固定teacher
+std `.1478`作为显式误差，而不是再次标准化掉。该结果只证明机制与优化面接通；若同一macro5 formal仍不能显著抬升全量
+train60和internal meta，就应停止继续构造v6，向专家报告“现有固定Program字段/observer无法通过这种直接全局behavior credit形成
+可迁移几何”的证据，而不是做seed、LR、width或训练长度小扫。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

@@ -964,3 +964,29 @@ degree 9、唯一connected component，却不增加reader、模型参数、forwa
 
 - `runs/outputs/pi05_ecp_natural_program_g2_behavior_kernel_fold0_m5_c8fee96_gpu01p01234_r5_20260829/`；
 - `runs/outputs/pi05_ecp_g2_joint_behavior_kernel_v4_profile_dirty_gpu01p012_r3_20260829/`。
+
+## 50. G2-B joint-role v4 formal non-pass与global-calibrated v5
+
+clean detached `main@4eb8b8c`的v4完成五卡macro5/15 updates。旧动态Gate继续通过：full相对endpoints改善
+`14.6553%`、active events中位数4、one-event 0、same-task/probe/K1/K4全部成立；但train60 topology A/B仅
+`.2360/.2362`，internal meta为`.2064/.2257`，internal target为`.7512/.7634`，exact panel-B/consensus role-equal
+仅`.1129/.1177`且wrong margin为负。v4因此明确non-pass，official held20未被读取；joint credit graph没有带来比v3更强的
+全局behavior identifiability。
+
+随后对固定v3/v4 checkpoint的六个Program blocks做只读geometry审计。v4 full Program off-diagonal cosine均值/标准差约
+`.965/.020`，teacher behavior kernel为`.145/.316`；有限变化主要在language/scene，dynamic/process geometry基本没有改写。
+原loss对每个mini-batch分别双中心化并按Frobenius norm单位化，因而对batch-local affine变换近似不敏感，也允许near-collapse
+Program在中心化后取得局部相关。该证据把最早接口从pair graph推进到监督坐标的global calibration，不支持解冻Stage0、续训v4或
+做普通超参扫描。
+
+v5不增加参数或模型路径，确定性使用`(1+K_behavior)/2`作为raw Program Gram target，并按完整joint/meta/target fit scope的
+固定per-owner teacher dispersion缩放off-diagonal误差与cross-view误差。v4 config被v5替换；数据、5+5 role权重、两组video、
+Program schema、initialization、旧动态Gate、internal15/official20边界、纯Native Stage0与Action Meta 0均保持。dirty三卡真实一步为
+`18.35s`、peak `9.98GB`，behavior/Program梯度`1.7323/2.7450`，初始Program/teacher std `.0141/.1478`；该profile只证明
+执行与梯度，不是Gate。formal若仍无数量级改善，当前约定停止新增G2版本并整理专家复核材料。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_joint_behavior_kernel_fold0_m5_37885a6_gpu01p01234_r5_20260829/`；
+- `runs/analysis/pi05_ecp_g2_behavior_block_geometry_init_v3_v4_20260829.json`；
+- `runs/outputs/pi05_ecp_g2_global_kernel_v5_profile2_dirty_gpu01p012_r3_20260829/`。

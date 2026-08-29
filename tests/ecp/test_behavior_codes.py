@@ -49,10 +49,11 @@ def test_behavior_kernel_loss_has_no_task_decoder_and_backpropagates():
     class Authority:
         meta_gradient_task_ids = frozenset((1, 2, 3))
         target_gradient_task_ids = frozenset((72, 73, 74))
+        fit_task_ids = (1, 2, 3, 72, 73, 74)
 
         def __init__(self):
-            latent = torch.randn(6, 8, 5)
-            self.value = torch.einsum("ntd,mtd->tnm", latent, latent)
+            self.latent = torch.nn.functional.normalize(torch.randn(6, 8, 5), dim=-1)
+            self.value = torch.einsum("ntd,mtd->tnm", self.latent, self.latent)
             self.index = {task: row for row, task in enumerate((1, 2, 3, 72, 73, 74))}
 
         def kernel(self, task_ids, *, kind):
@@ -83,9 +84,36 @@ def test_behavior_kernel_loss_has_no_task_decoder_and_backpropagates():
         cross_view_weight=0.5,
         scope_weights={"joint": 0.5, "meta": 0.25, "target": 0.25},
     )
+    lifted = torch.cat(
+        (
+            torch.full((6, 8, 1), 2**-0.5),
+            authority.latent * (2**-0.5),
+        ),
+        dim=-1,
+    )
+    exact_loss, _ = distributed_behavior_kernel_loss(
+        local_features=torch.stack((lifted, lifted), dim=1),
+        local_task_ids=torch.tensor([1, 2, 3, 72, 73, 74]),
+        authority=authority,
+        world_size=1,
+        cross_view_weight=0.5,
+        scope_weights={"joint": 0.5, "meta": 0.25, "target": 0.25},
+    )
+    collapsed = torch.ones(6, 2, 8, 6)
+    collapsed = torch.nn.functional.normalize(collapsed, dim=-1)
+    collapsed_loss, _ = distributed_behavior_kernel_loss(
+        local_features=collapsed,
+        local_task_ids=torch.tensor([1, 2, 3, 72, 73, 74]),
+        authority=authority,
+        world_size=1,
+        cross_view_weight=0.5,
+        scope_weights={"joint": 0.5, "meta": 0.25, "target": 0.25},
+    )
     loss.backward()
     assert torch.isfinite(loss)
     assert not torch.allclose(loss, flipped_loss)
+    assert exact_loss < 1e-12
+    assert collapsed_loss > 0.01
     assert features.grad is not None and features.grad.abs().sum() > 0
     assert set(metrics) == {
         "behavior_kernel_alignment_loss",
@@ -98,6 +126,15 @@ def test_behavior_kernel_loss_has_no_task_decoder_and_backpropagates():
         "behavior_kernel_meta_correlation_b",
         "behavior_kernel_target_correlation_a",
         "behavior_kernel_target_correlation_b",
+        "behavior_kernel_joint_program_std_a",
+        "behavior_kernel_joint_program_std_b",
+        "behavior_kernel_joint_teacher_std",
+        "behavior_kernel_meta_program_std_a",
+        "behavior_kernel_meta_program_std_b",
+        "behavior_kernel_meta_teacher_std",
+        "behavior_kernel_target_program_std_a",
+        "behavior_kernel_target_program_std_b",
+        "behavior_kernel_target_teacher_std",
     }
 
 

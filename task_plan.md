@@ -13,11 +13,13 @@ functional code初始化shared heads后，step110 train/held-video已达`.819/.8
 action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in失败来自minimum-norm初始化所依赖的feature chart在训练中
 漂移：heads自身几乎未动，接回initial chart即可保留`.998` outer recovery。R5冻结初始化后的feature chart、只让233个native heads接受
 同一真实functional loss后，step70/110均通过全部primary checks；step110 train/held为`.940/.963`，四family为`.816--.839`且相邻稳定，
-所以moving-coordinate根因已被正式修复。当前唯一活动阶段为R6：把这套passed shared scorer接回真实Natural Program，移除fixed route，
-训练Program与native heads并保持feature chart冻结，以原12-task完整Gate裁决真正G3。R1--R5均不是deployment checkpoint；任何局部Gate、
+所以moving-coordinate根因已被正式修复。R6把这套passed shared scorer接回真实Natural Program后，train/held却只有`.165/.143`，
+Program-to-functional-code从fixed token的`.9985`降到约`.02`；同task跨video仍约`.9994`，证明失败是稳定但错误的内容坐标，而不是
+video噪声或heads漂移。当前唯一活动阶段为R7：冻结R5已验证heads，只训练Natural Program和共享feature chart，让真实Program内容先
+取得task-level functional-code坐标，再用原12-task真实bank/rank16 functional Gate裁决。R1--R7都不是deployment checkpoint；任何局部Gate、
 单次训练或内部指标都不代表整体项目goal完成。
 
-## R5结论与当前R6里程碑
+## R5--R7当前里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
@@ -43,8 +45,16 @@ action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in�
 - [x] 完成R6定向合同与真实forward/backward/materialization smoke：Natural Program和全部native heads有gradient、feature chart冻结、
   fixed route/lookup/Action Meta为0、唯一rank16与吞吐成立；
 - [x] 完成R6 diff审查、main集成、push与detached formal launch contract；
-- [ ] fresh运行R6原12-task 10 warmup+100 effective、actual step70/110并执行完整Gate；若失败按train→held-video→task-held→controls的最早
-  失效接口分析，不做LR/seed/width/rank小扫。
+- [x] fresh运行R6原12-task 10 warmup+100 effective、actual step70/110并执行完整Gate；step110 train/held/task-held为
+  `.165181/.143114/-.034333`，R6明确non-pass；
+- [x] 用共同R5/R6 heads、三video minimum-norm fit和task2/74 held诊断证明fixed-token chart没有Natural Program内容几何，简单head refit
+  只能插值fit views而不能泛化；
+- [x] 接通R7 fit-only functional-code chart acquisition：R5 native heads冻结，只训练Natural Program+feature chart，使用task-level
+  positive-control outer-update direction作为training-only label；Action Meta、policy functional action、task-local scale及held信息均不读；
+- [x] 完成R7定向合同、旧配置兼容、真实单步gradient/ownership/吞吐检查；
+- [ ] 从clean pushed detached authority fresh运行R7 10 warmup+100 effective并评价step70/110原12-task完整functional Gate。若train/held
+  已高而task-held低，按active design进入matched raw Stage0 sufficiency；若train/held仍低，则先审计Program内容到固定heads的获取，不能用
+  acquisition loss或fit插值冒充G3，也不做无机制超参小扫。
 
 ## 当前G1里程碑
 
@@ -378,7 +388,7 @@ teacher/member/action都不进入deployment输入，held video、panel B、task2
   owner×group独立head后四family median/min均为`1.0/1.0`，每组hidden rank为`40/40`。因此下一修正是decoder，不把R2解释成
   Program、bank或critic未生效。
 
-### R3 / G3 training-only owner×group decoder control（当前）
+### R3 / G3 training-only owner×group decoder control（已完成，non-pass）
 
 - [x] 只把每个owner的共享output head替换为每个native output group独立的linear head；group仍是q固定8、action-in native-width 32，
   v/action-out为1。新增约426万参数，不含task/video/frame lookup，输入primal、Program、bank dual/replay、scale及唯一rank16均不变；
@@ -387,7 +397,7 @@ teacher/member/action都不进入deployment输入，held video、panel B、task2
   `400s/checkpoint`降至约`303s`，不读取或利用科学结果；
 - [x] 21项定向CPU合同及clean pushed三卡真实forward/gradient/materialization profile通过：global update `25.334s`，峰值reserved
   `21.815GB`，所有owner×group heads有finite nonzero gradient；Action Meta 0、source/Stage0/scale冻结、唯一rank16均由run contract实测；
-- [ ] 从只含本launch contract和world-flexible checkpoint reader的clean pushed detached descendant启动fresh formal与step70/110 Gate。
+- [x] 从只含本launch contract和world-flexible checkpoint reader的clean pushed detached descendant启动fresh formal与step70/110 Gate。
   四family及functional一起恢复才把critic+decoder接回Natural Program；若四family高而functional仍低，才判定set-valued teacher-to-utility
   不充分并重做credit；若解析容量存在但训练仍未取得，则定位优化/parameter ownership而非扫普通超参。
 

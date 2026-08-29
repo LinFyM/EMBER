@@ -1370,3 +1370,17 @@ R5已经证明233 native heads在固定chart上接受functional gradient不会�
 专家要求的Program--scorer真实functional credit，同时消除J2/R4实证的moving-coordinate gauge。loss只保留generated rank16的跨episode
 PI0.5 flow，source/Stage0/operator/carrier/scale/Action Meta继续冻结。R5 checkpoint不含task lookup参数，fixed token既不是参数也不会
 被R6加载；tasks2/74与全部held controls仍零梯度。R6只有通过完整12-task train/held/task-held/family/causal/stability Gate才是G3资格。
+
+### 80. R6证明passed fixed-token chart没有Natural Program内容几何；下一接口是固定heads下的chart acquisition
+
+R6 step110 train/held-video只有`.165181/.143114`，task-held mean为`-.034333`，除action-out`.319160`外q/v/action-in均近零；
+wrong Program/bank与interaction也只有`.077886/.001131/.000018`。这不是同task video不稳：在共同R5/R6 mapping下，同task不同video
+输出cosine约`.9994`。决定性坐标对照是，R5 fixed token通过R5 heads的functional-code cosine为`.998514`，G2 Natural Program通过
+同一heads只有`.010736`，R6最终Program通过R5或R6 heads也仅`.020074/.020914`。因此R5证明的是稳定、utility-aligned的固定token
+codebook，并没有证明deployment-visible Program已位于该chart中；R6的functional gradient不足以从错误坐标直接旋转到该codebook。
+
+对实际G2 Program hidden用两fit-video做minimum-norm head solve可把80/80训练行精确插值，但第三held video code cosine仅`.353777`，
+task2/74仍约零；简单“重新拟合heads”会利用高条件数nullspace记住fit views，不是共享映射解。下一R7因而冻结R5已通过的233 heads，
+只让Natural Program及其共享feature chart用10个gradient task的validated task-level positive-control outer-update direction获取内容坐标。
+该label仅训练期使用、同task两video共享且held零梯度；它是隔离最早接口的mapping acquisition，不是deployment输入，也不能靠内部loss
+通过G3。R7之后仍须用真实native banks、current-bank dual、exact signed replay和唯一rank16执行完整12-task functional Gate。

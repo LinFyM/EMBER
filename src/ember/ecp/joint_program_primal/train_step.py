@@ -14,6 +14,7 @@ from ember.ecp.bank_conditioning.mapping import (
     MappingCondition,
     SharedCompilerMappingSchedule,
 )
+from ember.ecp.native_factors import native_output_group_count, rms_normalize
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.native_materialization import (
     compose_rank12_plus_rank4,
@@ -401,6 +402,128 @@ def _run_correct_task(
     }
 
 
+def _outer_update_cosine(
+    predicted_input: torch.Tensor,
+    predicted_output: torch.Tensor,
+    target_input: torch.Tensor,
+    target_output: torch.Tensor,
+    rank_scale: torch.Tensor,
+) -> torch.Tensor:
+    """Gauge-invariant cosine between two rank-four primal updates."""
+
+    predicted_a = rms_normalize(predicted_input.float())
+    target_a = rms_normalize(target_input.float())
+    predicted_b = rms_normalize(predicted_output.float()).permute(1, 0, 2).flatten(1)
+    target_b = rms_normalize(target_output.float()).permute(1, 0, 2).flatten(1)
+    scale = rank_scale.float()[:, None]
+    predicted_b = predicted_b * scale
+    target_b = target_b * scale
+    cross_a = predicted_a @ target_a.transpose(0, 1)
+    cross_b = predicted_b @ target_b.transpose(0, 1)
+    predicted_norm = (
+        (predicted_a @ predicted_a.transpose(0, 1))
+        * (predicted_b @ predicted_b.transpose(0, 1))
+    ).sum().clamp_min(1e-12).sqrt()
+    target_norm = (
+        (target_a @ target_a.transpose(0, 1))
+        * (target_b @ target_b.transpose(0, 1))
+    ).sum().clamp_min(1e-12).sqrt()
+    return ((cross_a * cross_b).sum() / (predicted_norm * target_norm)).clamp(
+        -1.0, 1.0
+    )
+
+
+def _functional_code_outer_loss(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    task_id: int,
+    program: Any,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    target = runtime.functional_code_targets.get(task_id)
+    if target is None:
+        raise RuntimeError("R7 functional-code target is absent")
+    scorer = runtime.compiler.primal_scorer
+    state = scorer.program_state(program)
+    predicted_inputs = scorer.input_primals(state)
+    predicted_outputs = scorer.output_primals(state)
+    family_rows: dict[str, list[torch.Tensor]] = {
+        name: [] for name in ("q", "v", "action_in", "action_out")
+    }
+    for index, owner in enumerate(runtime.owners):
+        expected_groups = native_output_group_count(owner)
+        if predicted_outputs[index].shape[0] != expected_groups:
+            raise RuntimeError("R7 output primal grouping changed")
+        family_rows[owner.family.value].append(
+            _outer_update_cosine(
+                predicted_inputs[index],
+                predicted_outputs[index],
+                target.inputs[index],
+                target.outputs[index],
+                runtime.compiler.scale_prior_ratio[index],
+            )
+        )
+    family = {
+        name: torch.stack(values).mean() for name, values in family_rows.items()
+    }
+    loss = torch.stack(tuple(1.0 - family[name] for name in family_rows)).mean()
+    return loss, {name: float(value.detach()) for name, value in family.items()}
+
+
+def _run_functional_code_task(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    task_id: int,
+    visit_index: int,
+) -> dict[str, Any]:
+    """Acquire a content chart from one task-level code shared by two videos."""
+
+    tick = time.monotonic()
+    views = []
+    for condition in runtime.task_conditions[task_id].fit_views:
+        prepared, metrics = prepare_joint_condition(runtime, condition)
+        query_times = torch.linspace(
+            0.0,
+            1.0,
+            runtime.query_points,
+            dtype=torch.float32,
+            device=runtime.context.device,
+        )[None]
+        program, program_output = prepare_joint_program_primal_condition(
+            program_model=runtime.program,
+            condition=prepared,
+            query_times=query_times,
+        )
+        loss, family = _functional_code_outer_loss(
+            runtime, task_id=task_id, program=program
+        )
+        (loss / 12.0).backward()
+        views.append(
+            {
+                "video_demo": condition.video_demo,
+                "sampled_frames": condition.sampled_frames,
+                "functional_code_outer_loss": float(loss.detach()),
+                "family_outer_cosine": family,
+                "canonical_active_events": int(
+                    (program_output.program.rho[0].detach() > 0.2).sum()
+                ),
+                "condition_metrics": metrics,
+            }
+        )
+        del prepared, program, program_output
+    return {
+        "authority_id": task_id,
+        "role": runtime.task_conditions[task_id].fit_views[0].role,
+        "panel": "fit_only_functional_code",
+        "panel_visit": visit_index,
+        "mean_acquisition_loss": sum(
+            row["functional_code_outer_loss"] for row in views
+        )
+        / len(views),
+        "views": views,
+        "task_seconds": time.monotonic() - tick,
+    }
+
+
 def _run_task(
     runtime: JointProgramPrimalRuntime,
     *,
@@ -587,34 +710,46 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
         for owner_heads in scorer.output_primal_heads
         for head in owner_heads
     )
-    if any(gradient is None for gradient in (*input_gradients, *output_gradients)):
-        raise RuntimeError("J2 native-head gradient is absent")
-    input_norms = torch.stack(
-        tuple(gradient.float().norm() for gradient in input_gradients)
-    )
-    output_norms = torch.stack(
-        tuple(gradient.float().norm() for gradient in output_gradients)
-    )
-    if (
-        not bool(torch.isfinite(input_norms).all())
-        or not bool(torch.all(input_norms > 0))
-        or not bool(torch.isfinite(output_norms).all())
-        or not bool(torch.all(output_norms > 0))
-    ):
-        raise RuntimeError("J2 native-head gradient is non-finite or zero")
-    result["primal_input"] = float(input_norms.square().sum().sqrt())
-    result["primal_output"] = float(output_norms.square().sum().sqrt())
     feature_probes = {
         "primal_program_context": scorer.program_context["q"][1].weight.grad,
         "primal_rank_context": scorer.rank_context["q"][1].weight.grad,
         "primal_event_score": scorer.event_score["q"].weight.grad,
+        "primal_input_trunk": scorer.input_trunk["q"][1].weight.grad,
+        "primal_output_trunk": scorer.output_trunk["q"][1].weight.grad,
         "owner_embedding": scorer.owner_embedding.grad,
         "rank_embedding": scorer.rank_embedding.grad,
     }
     partition = runtime.config["model"].get(
         "primal_scorer_trainable_partition", "all"
     )
-    if partition == "all":
+    if partition in {"all", "native_heads_only"}:
+        if any(
+            gradient is None for gradient in (*input_gradients, *output_gradients)
+        ):
+            raise RuntimeError("J2 native-head gradient is absent")
+        input_norms = torch.stack(
+            tuple(gradient.float().norm() for gradient in input_gradients)
+        )
+        output_norms = torch.stack(
+            tuple(gradient.float().norm() for gradient in output_gradients)
+        )
+        if (
+            not bool(torch.isfinite(input_norms).all())
+            or not bool(torch.all(input_norms > 0))
+            or not bool(torch.isfinite(output_norms).all())
+            or not bool(torch.all(output_norms > 0))
+        ):
+            raise RuntimeError("J2 native-head gradient is non-finite or zero")
+        result["primal_input"] = float(input_norms.square().sum().sqrt())
+        result["primal_output"] = float(output_norms.square().sum().sqrt())
+    elif partition == "feature_chart_only":
+        if any(
+            gradient is not None for gradient in (*input_gradients, *output_gradients)
+        ):
+            raise RuntimeError("R7 frozen native heads accumulated gradients")
+    else:
+        raise RuntimeError("J2 primal-scorer partition changed")
+    if partition in {"all", "feature_chart_only"}:
         for name, gradient in feature_probes.items():
             if gradient is None or not bool(torch.isfinite(gradient).all()):
                 raise RuntimeError(f"J2 {name} gradient is absent or non-finite")
@@ -622,8 +757,6 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
     elif partition == "native_heads_only":
         if any(gradient is not None for gradient in feature_probes.values()):
             raise RuntimeError("J2 frozen primal feature chart has gradients")
-    else:
-        raise RuntimeError("J2 primal-scorer partition changed")
     if min(result.values()) <= 0:
         raise RuntimeError("J2 Program--primal functional gradient is zero")
     return result
@@ -656,6 +789,10 @@ def run_joint_program_primal_optimizer_step(
 
     group = joint_task_group(runtime, runtime.optimizer_steps)
     use_counterfactual = "counterfactual" in runtime.config["optimization"]["joint"]
+    use_functional_code = (
+        runtime.config["optimization"]["loss"]
+        == "fit_only_functional_code_outer_direction_only"
+    )
     pairs = counterfactual_task_pairs(runtime, group) if use_counterfactual else {}
     arm = counterfactual_arm(runtime.optimizer_steps) if use_counterfactual else None
     counterfactual_view_index = runtime.optimizer_steps % 2
@@ -676,6 +813,15 @@ def run_joint_program_primal_optimizer_step(
                 visit_index=visit_index,
                 counterfactual_view_index=counterfactual_view_index,
                 arm=str(arm),
+            )
+            for task in assignments[runtime.context.rank]
+        ]
+    elif use_functional_code:
+        local_records = [
+            _run_functional_code_task(
+                runtime,
+                task_id=task,
+                visit_index=visit_index,
             )
             for task in assignments[runtime.context.rank]
         ]
@@ -735,15 +881,16 @@ def run_joint_program_primal_optimizer_step(
             ),
         },
     )
+    primary_metric = (
+        "mean_acquisition_loss" if use_functional_code else "mean_functional_loss"
+    )
     row = {
         "optimizer_step": runtime.optimizer_steps,
         "effective_optimizer_step": max(0, runtime.optimizer_steps - 10),
         "panel_visit": visit_index,
         "task_group": list(group),
         "role_counts": role_counts,
-        "mean_functional_loss": sum(
-            float(row["mean_functional_loss"]) for row in records
-        )
+        primary_metric: sum(float(row[primary_metric]) for row in records)
         / len(records),
         "gradient_probe_norms": probes,
         "gradient_norm_before_clip": gradient_norm,

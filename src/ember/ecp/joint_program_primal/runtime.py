@@ -45,7 +45,9 @@ from ember.ecp.stage0_training import (
 )
 from ember.ecp.native_factors import native_capture_modes
 from ember.ecp.joint_program_primal.routing_initialization import (
+    FunctionalCodeTarget,
     R5_SHARED_FUNCTIONAL_CHART,
+    load_functional_code_targets,
     load_passed_r5_primal_scorer,
 )
 from ember.pi05_eval_contract import (
@@ -79,9 +81,19 @@ J2_STAGE = "j3_counterfactual_functional_routing"
 CHART_RECONNECT_SCHEMA = "ember_ecp_natural_program_chart_reconnect_r6_v1"
 CHART_RECONNECT_RUN_SCHEMA = "ember_ecp_natural_program_chart_reconnect_run_v1"
 CHART_RECONNECT_STAGE = "g3_natural_program_functional_chart_reconnect"
+FUNCTIONAL_CHART_ACQUISITION_SCHEMA = (
+    "ember_ecp_functional_code_chart_acquisition_r7_v1"
+)
+FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA = (
+    "ember_ecp_functional_code_chart_acquisition_run_v1"
+)
+FUNCTIONAL_CHART_ACQUISITION_STAGE = (
+    "g3_fit_only_functional_code_chart_acquisition"
+)
 FRESH_SCORER = "fresh"
 SCORER_ALL_PARAMETERS = "all"
 SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
+SCORER_FEATURE_CHART_ONLY = "feature_chart_only"
 
 
 @dataclass(frozen=True)
@@ -163,6 +175,8 @@ class JointProgramPrimalRuntime:
     checkpoint_steps: tuple[int, ...]
     metrics_rows: int
     primal_scorer_initialization: dict[str, Any]
+    functional_code_targets: dict[int, FunctionalCodeTarget]
+    functional_code_authority: dict[str, Any]
     run_contract: dict[str, Any]
 
     def close(self) -> None:
@@ -198,6 +212,8 @@ class _ModelAssets:
     native_teachers: NativeTeacherStore
     consensus_teachers: FitConsensusTeacherStore
     primal_scorer_initialization: dict[str, Any]
+    functional_code_targets: dict[int, FunctionalCodeTarget]
+    functional_code_authority: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -224,12 +240,30 @@ def is_chart_reconnect_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == CHART_RECONNECT_SCHEMA
 
 
+def is_functional_chart_acquisition_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == FUNCTIONAL_CHART_ACQUISITION_SCHEMA
+
+
+def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
+    return is_chart_reconnect_config(config) or is_functional_chart_acquisition_config(
+        config
+    )
+
+
 def joint_run_schema(config: Mapping[str, Any]) -> str:
-    return CHART_RECONNECT_RUN_SCHEMA if is_chart_reconnect_config(config) else J2_RUN_SCHEMA
+    if is_chart_reconnect_config(config):
+        return CHART_RECONNECT_RUN_SCHEMA
+    if is_functional_chart_acquisition_config(config):
+        return FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA
+    return J2_RUN_SCHEMA
 
 
 def joint_stage(config: Mapping[str, Any]) -> str:
-    return CHART_RECONNECT_STAGE if is_chart_reconnect_config(config) else J2_STAGE
+    if is_chart_reconnect_config(config):
+        return CHART_RECONNECT_STAGE
+    if is_functional_chart_acquisition_config(config):
+        return FUNCTIONAL_CHART_ACQUISITION_STAGE
+    return J2_STAGE
 
 
 def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
@@ -256,7 +290,12 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
     authorities = config.get("authorities", {})
     common_valid = all(
         (
-            schema in {J2_SCHEMA, CHART_RECONNECT_SCHEMA},
+            schema
+            in {
+                J2_SCHEMA,
+                CHART_RECONNECT_SCHEMA,
+                FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+            },
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
             split.get("gradient_target") == [72, 73, 75, 93, 94],
@@ -322,7 +361,31 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_deployment_input") is False,
         )
     )
-    if not common_valid or not (counterfactual_valid or reconnect_valid):
+    acquisition_valid = all(
+        (
+            schema == FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+            config.get("status")
+            == "active_fit_only_functional_code_chart_acquisition",
+            model.get("program_initialization")
+            == "c1493a1_macro20_model_tensors",
+            model.get("primal_scorer_initialization")
+            == R5_SHARED_FUNCTIONAL_CHART,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_FEATURE_CHART_ONLY,
+            config.get("optimization", {}).get("loss")
+            == "fit_only_functional_code_outer_direction_only",
+            "counterfactual" not in joint,
+            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
+            isinstance(authorities.get("r5_gate_aggregate"), str),
+            isinstance(authorities.get("positive_control_root"), str),
+            wall.get("functional_code_labels_training_only") is True,
+            wall.get("native_heads_frozen") is True,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
+    if not common_valid or not (
+        counterfactual_valid or reconnect_valid or acquisition_valid
+    ):
         raise ValueError("unsupported joint Program-primal functional config")
     return config
 
@@ -498,6 +561,10 @@ def _joint_parameter_ownership(
     elif scorer_partition == SCORER_NATIVE_HEADS_ONLY:
         compiler.primal_scorer.input_primal_heads.requires_grad_(True).train()
         compiler.primal_scorer.output_primal_heads.requires_grad_(True).train()
+    elif scorer_partition == SCORER_FEATURE_CHART_ONLY:
+        compiler.primal_scorer.requires_grad_(True).train()
+        compiler.primal_scorer.input_primal_heads.requires_grad_(False).eval()
+        compiler.primal_scorer.output_primal_heads.requires_grad_(False).eval()
     else:
         raise ValueError("unsupported joint primal-scorer partition")
     program.encoder.requires_grad_(False).eval()
@@ -662,6 +729,10 @@ def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
                 for task, value in runtime.counterfactual_margin_scales.items()
             },
         }
+    if runtime.functional_code_authority:
+        contract["functional_code_target_authority"] = dict(
+            runtime.functional_code_authority
+        )
     return contract
 
 
@@ -685,7 +756,7 @@ def _authority_assets(
     all_tasks = _tasks(base, args.data_root, args.asset_root)
     task_by_id = {task.authority_id: task for task in all_tasks}
     panels = _load_panels(config, asset_root=args.asset_root)
-    if is_chart_reconnect_config(config):
+    if is_r5_chart_config(config):
         margin_scales, positive_control_files = {}, ()
     else:
         margin_scales, positive_control_files = _counterfactual_margin_scales(
@@ -797,6 +868,27 @@ def _model_assets(
         ),
         device=context.device,
     )
+    functional_code_targets: dict[int, FunctionalCodeTarget] = {}
+    functional_code_authority: dict[str, Any] = {}
+    if is_functional_chart_acquisition_config(config):
+        gradient_tasks = tuple(
+            map(
+                int,
+                (
+                    *config["task_split"]["gradient_meta"],
+                    *config["task_split"]["gradient_target"],
+                ),
+            )
+        )
+        functional_code_targets, functional_code_authority = (
+            load_functional_code_targets(
+                config,
+                asset_root=args.asset_root,
+                task_ids=gradient_tasks,
+                owners=owners,
+                device=context.device,
+            )
+        )
     return _ModelAssets(
         policy=policy,
         ranks=ranks,
@@ -812,6 +904,8 @@ def _model_assets(
             native_teachers, authority.mapping_split, rank4_contract
         ),
         primal_scorer_initialization=initialization,
+        functional_code_targets=functional_code_targets,
+        functional_code_authority=functional_code_authority,
     )
 
 
@@ -992,6 +1086,8 @@ def prepare_joint_program_primal_runtime(
         checkpoint_steps=cursor.checkpoints,
         metrics_rows=cursor.metrics_rows,
         primal_scorer_initialization=model.primal_scorer_initialization,
+        functional_code_targets=model.functional_code_targets,
+        functional_code_authority=model.functional_code_authority,
         run_contract={},
     )
     runtime.run_contract = _run_contract(runtime)

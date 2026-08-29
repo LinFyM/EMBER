@@ -15,6 +15,12 @@ spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次�
 Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；已经通过
 P1的current-bank operator继续冻结。本文仍是当前唯一架构依据。
 
+R5随后用training-only fixed route建立并正式通过稳定functional chart，但R6移除fixed route、接回Natural Program后的step110
+train/held只有`.165/.143`，Program-to-code约`.02`；同task跨video却约`.9994`稳定。共同heads与minimum-norm held-view审计证明R5 chart
+是没有Natural Program内容几何的fixed-token codebook，R6 functional-only credit没有完成内容坐标获取。当前R7冻结R5已验证的native
+heads，只训练Natural Program及共享feature chart，用gradient-task validated outer-update directions隔离获取content chart；该监督仅训练期
+可见且不能通过G3，最终仍由真实bank、signed replay、唯一rank16和原12-task functional Gate裁决。
+
 四次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
 `docs/expert_review_20260829_joint_program_primal.md`。本文是将专家
@@ -518,9 +524,11 @@ shared heads，step110 train/held-video达到`.819/.839`，q/v/action-out及rout
 证明heads自身几乎未动，失败来自初始化所依赖的feature chart在整条context/trunk链中漂移；checkpoint heads接回initial chart仍有
 `.998` action-in outer recovery。R5只冻结初始化后的feature chart、训练233 native heads后，step70/110 train recovery达到
 `.934/.940`、held-video`.957/.963`，四family全部`.816--.839`且相邻稳定，正式通过全部Gate。因此moving-coordinate根因已经
-闭环成立。R4/R5仍含privileged初始化和fixed task route，不能冒充G3或deployment；当前R6加载passed R5共享scorer、完全移除fixed
-route，恢复G2 Natural Program，只训练Program与native heads并继续冻结feature chart。loss仅为generated rank16的cross-episode
-functional flow，不恢复counterfactual或几何loss；完整12-task Gate仍负责证明shared Natural Program mapping、task-held泛化和视频因果。
+  闭环成立。R4/R5仍含privileged初始化和fixed task route，不能冒充G3或deployment。R6加载passed R5共享scorer、移除fixed route并
+  恢复Natural Program后，step110 train/held仅`.165/.143`，Program-to-functional-code约`.02`，完整Gate non-pass；共同heads与held-view
+  拟合证明R5 chart本身没有deployment content geometry。当前R7冻结R5 native heads，只训练Program和feature chart，以fit-only task-level
+  outer-update direction获取内容坐标；不读取functional action loss、task-local scale或held信息。R7内部fit不能通过G3，仍由原12-task
+  generated-rank16 functional Gate负责证明shared mapping、task-held泛化和视频因果。
 
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
 Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`，12-task完整评价墙钟不超过训练主体一半。显存没有人为
@@ -669,12 +677,13 @@ Program与primal联合functional反传、task-local functional正控和12-task G
 可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
 condition cache。10-task正控已通过；J2/J3与R1--R3均形成formal non-pass/partial结论。R4 functional-code初始化已把train/held提高到
 `.819/.839`，但action-in因feature chart drift未过门；R5冻结初始化chart、仅训练全部native heads后step110 train/held为
-`.940/.963`且四family全部通过。当前R6移除fixed route并接回Natural Program，feature chart、Action Meta和scale继续冻结。R5通过
-不能冒充shared或closed-loop Gate，R6仍须通过原12-task完整资格。
+  `.940/.963`且四family全部通过。R6移除fixed route并接回Natural Program后完整Gate non-pass；R7现已在同一canonical
+  `joint_program_primal`执行面接通fit-only functional-code chart acquisition，冻结233 heads、训练Program+feature chart，Action Meta、
+  source、Stage0和scale仍为0。R5/R7内部chart结果都不能冒充shared或closed-loop Gate，R7 checkpoint仍须通过原12-task完整资格。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
 fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
-global dual + exact signed replay；R5 fixed-chart function-class已经通过，阶段推进进入R6 Natural Program shared mapping资格，
+global dual + exact signed replay；R5 fixed-chart function-class已经通过，R6接回失败后阶段进入R7 content-chart acquisition资格，
 不再受独立Program behavior-Gram Gate阻塞。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

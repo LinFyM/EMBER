@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
@@ -23,6 +24,67 @@ FUNCTIONAL_CODE_INITIALIZATION_SCHEMA = (
     "ember_ecp_routing_functional_code_initialization_v1"
 )
 R5_SHARED_FUNCTIONAL_CHART = "r5_shared_functional_chart_step110"
+
+
+@dataclass(frozen=True)
+class FunctionalCodeTarget:
+    """Fit-only task-level primal directions used to acquire a shared chart."""
+
+    inputs: tuple[torch.Tensor, ...]
+    outputs: tuple[torch.Tensor, ...]
+
+
+def load_functional_code_targets(
+    config: Mapping[str, Any],
+    *,
+    asset_root: Path,
+    task_ids: tuple[int, ...],
+    owners: Sequence[TargetOwner],
+    device: torch.device,
+) -> tuple[dict[int, FunctionalCodeTarget], dict[str, Any]]:
+    """Load validated task-level codes as training labels, never inputs."""
+
+    owners = tuple(owners)
+    aggregate_path, code_paths = _functional_code_authority(
+        config, asset_root=asset_root, task_ids=task_ids
+    )
+    expected_keys = {"fixed_scales"}
+    expected_keys.update(f"input_code.{target}" for target in range(len(owners)))
+    expected_keys.update(f"output_code.{target}" for target in range(len(owners)))
+    targets = {}
+    for task, code_path in zip(task_ids, code_paths, strict=True):
+        tensors = load_file(str(code_path), device=str(device))
+        if set(tensors) != expected_keys or tensors["fixed_scales"].shape != (
+            len(owners),
+            4,
+        ):
+            raise ValueError(f"functional-code tensor schema changed for task {task}")
+        inputs, outputs = [], []
+        for target, owner in enumerate(owners):
+            input_code = rms_normalize(tensors[f"input_code.{target}"].float())
+            output_code = rms_normalize(tensors[f"output_code.{target}"].float())
+            groups = native_output_group_count(owner)
+            if input_code.shape != (4, owner.in_features) or output_code.shape != (
+                groups,
+                4,
+                owner.out_features // groups,
+            ):
+                raise ValueError(
+                    f"functional-code native shape changed for task {task}, target {target}"
+                )
+            inputs.append(input_code)
+            outputs.append(output_code)
+        targets[task] = FunctionalCodeTarget(tuple(inputs), tuple(outputs))
+    return targets, {
+        "schema_version": "ember_ecp_functional_code_target_authority_v1",
+        "task_ids": list(task_ids),
+        "deployment_input": False,
+        "gradient_tasks_only": True,
+        "files": [
+            {"path": str(path), "bytes": path.stat().st_size}
+            for path in (aggregate_path, *code_paths)
+        ],
+    }
 
 
 def load_passed_r5_primal_scorer(

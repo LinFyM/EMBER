@@ -42,13 +42,18 @@ def train(args: argparse.Namespace) -> None:
                 append_jsonl(args.output_dir / "metrics.jsonl", row)
                 runtime.metrics_rows += 1
                 if runtime.optimizer_steps % args.log_every == 0:
+                    primary_metric = (
+                        "mean_acquisition_loss"
+                        if "mean_acquisition_loss" in row
+                        else "mean_functional_loss"
+                    )
                     console = {
                         name: row[name]
                         for name in (
                             "optimizer_step",
                             "effective_optimizer_step",
                             "global_step_seconds",
-                            "mean_functional_loss",
+                            primary_metric,
                             "gradient_norm_before_clip",
                             "gradient_probe_norms",
                             "next_lr",

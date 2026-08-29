@@ -24,6 +24,8 @@ from ember.ecp.joint_program_primal.routing_initialization import (
 )
 from ember.ecp.joint_program_primal.runtime import (
     CHART_RECONNECT_SCHEMA,
+    FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+    SCORER_FEATURE_CHART_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
@@ -33,6 +35,7 @@ from ember.ecp.joint_program_primal.routing_control_evaluation import (
     routing_task_assignments,
 )
 from ember.ecp.joint_program_primal.train_step import (
+    _outer_update_cosine,
     counterfactual_arm,
     counterfactual_hinge,
     counterfactual_task_pairs,
@@ -418,4 +421,93 @@ def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> Non
     )
     assert all(
         not parameter.requires_grad for parameter in compiler.scale_head.parameters()
+    )
+
+
+def test_r7_acquires_content_chart_with_fixed_validated_heads() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_functional_code_chart_acquisition_r7_v1.json"
+    )
+    assert config["schema_version"] == FUNCTIONAL_CHART_ACQUISITION_SCHEMA
+    assert config["optimization"]["loss"] == (
+        "fit_only_functional_code_outer_direction_only"
+    )
+    assert config["information_wall"]["native_heads_frozen"] is True
+
+    class TinyProgram(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = torch.nn.Linear(2, 2)
+            self.decoder = torch.nn.Linear(2, 2)
+            self.language_reader = torch.nn.Linear(2, 2)
+            self.scene_reader = torch.nn.Linear(2, 2)
+            self.process_fusion = torch.nn.Sequential(torch.nn.Linear(2, 2))
+            self.aligner = torch.nn.Linear(2, 2)
+
+    class TinyCompiler(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            scorer = torch.nn.Module()
+            scorer.feature_chart = torch.nn.Linear(4, 4)
+            scorer.input_primal_heads = torch.nn.ModuleList(
+                [torch.nn.Linear(4, 3, bias=False)]
+            )
+            scorer.output_primal_heads = torch.nn.ModuleList(
+                [torch.nn.ModuleList([torch.nn.Linear(4, 2, bias=False)])]
+            )
+            self.primal_scorer = scorer
+            self.scale_head = torch.nn.Linear(2, 1)
+
+    program = TinyProgram()
+    compiler = TinyCompiler()
+    _, trainable, frozen = _joint_parameter_ownership(
+        program,
+        compiler,
+        scorer_partition=SCORER_FEATURE_CHART_ONLY,
+    )
+    expected_modules = (
+        program.language_reader,
+        program.scene_reader,
+        program.process_fusion,
+        program.aligner,
+        compiler.primal_scorer.feature_chart,
+    )
+    expected = {
+        id(parameter)
+        for module in expected_modules
+        for parameter in module.parameters()
+    }
+    assert {id(parameter) for parameter in trainable} == expected
+    assert all(parameter.requires_grad for parameter in trainable)
+    assert all(not parameter.requires_grad for parameter in frozen)
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.input_primal_heads.parameters()
+    )
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.output_primal_heads.parameters()
+    )
+
+
+def test_functional_code_outer_cosine_is_rank_permutation_invariant() -> None:
+    generator = torch.Generator().manual_seed(7)
+    input_code = torch.randn(4, 7, generator=generator)
+    output_code = torch.randn(2, 4, 5, generator=generator)
+    permutation = torch.tensor([2, 0, 3, 1])
+    signs = torch.tensor([1.0, -1.0, -1.0, 1.0])
+    predicted_input = input_code[permutation] * signs[:, None]
+    predicted_output = output_code[:, permutation] * signs[None, :, None]
+    scale = torch.ones(4)
+    assert torch.allclose(
+        _outer_update_cosine(
+            predicted_input,
+            predicted_output,
+            input_code,
+            output_code,
+            scale,
+        ),
+        torch.tensor(1.0),
+        atol=1e-6,
     )

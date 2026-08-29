@@ -1210,3 +1210,25 @@ PI0.5 flow，不恢复J3 counterfactual或其它探索loss；完整12-task Gate�
 - `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9e6b6a7_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_gate_step70_9e6b6a7_gpu01p012345_w6_20260830/`；
 - `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_gate_step110_9e6b6a7_gpu01p012345_w6_20260830/`。
+
+## 61. R6 Natural Program接回non-pass与content-chart根因
+
+clean detached `1a6a59b`在gpu01物理`0,1,2,3,4,6`完成R6 10 warmup+100 effective updates，step70/110随后执行完整
+12-task paired Gate。step70/110 train recovery为`.145063/.165181`，held-video为`.138406/.143114`，task-held mean为
+`.012597/-.034333`；step110 q/v/action-in/action-out为`.038887/-.025071/-.007718/.319160`，wrong Program/bank margin
+`.077886/.001131`、interaction`.000018`。两点均明确non-pass，R5 shared scorer没有因接回Natural Program而形成G3。
+
+同一R5 heads的只读对照把fixed token functional-code cosine测为`.998514`，G2 Natural Program仅`.010736`；R6最终Program通过
+R5/R6 heads分别只有`.020074/.020914`。同task三video在共同mapping下输出却约`.9994`稳定，排除普通video variance。两fit-video
+minimum-norm head solve可精确插值80/80行，但第三held view仅`.353777`，task2/74约零。历史结论因此收窄为：R5建立的是无Natural
+Program内容几何的fixed-token utility chart；R6 functional-only credit未能完成Program到该chart的获取，继续训练或简单head refit没有依据。
+
+下一活动R7冻结R5通过的native heads，只训练Natural Program和共享feature chart，以gradient-task validated positive-control
+outer-update directions作fit-only training labels。它不读held/action reward作为deployment输入，仍须由原12-task真实bank/唯一rank16
+functional Gate裁决，不能以内部分数替代。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_s110_1a6a59b_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_gate_step110_1a6a59b_gpu01p01246_w5_20260830/`；
+- `runs/analysis/pi05_ecp_r6_program_chart_alignment_v2_49ec54b_gpu01p0_20260830/result.json`。

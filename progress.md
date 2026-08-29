@@ -20,6 +20,26 @@
 
 - owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
 
+### R4 functional-code initialization formal launch contract
+
+- implementation authority为clean pushed `main@69a6b2440a33d614dbad6295fde0685524365be8`；formal从仅增加本launch记录、
+  不再改训练图/config的clean pushed detached descendant fresh执行，不resume R1--R3/J2/J3或dirty profile；
+- 数据、10 tasks、两fit K1 views、panel A、10 warmup+100 effective、actual step70/110、fixed routing token、真实X/Y、
+  current-bank dual/exact replay、frozen shared scale和唯一rank16与R3相同。唯一变化是optimizer构造前用10个fit-only functional
+  positive-control code一次性插值现有shared heads，随后只保留correct functional loss；task-local scale、critic、teacher tensor均不进入
+  训练forward，held/panel B/task2/74/validation/test零梯度，Action Meta 0；
+- 2026-08-30 01:17 CST live检查gpu01物理0--6均仅有他人约`2.4--3.2GB`、`0--3%` UTL进程，R4单卡实测自身
+  peak reserved`21.882GB`，叠加后仍有约20GB以上余量且不会干扰。按单节点上限选物理`0--5`做world6，不等待完全空卡；gpu02
+  0--3约30GB、5--6较重、4/7虽轻但不跨节点拼卡。显存只以不OOM、安全余量和真实吞吐判断，不执行35GB阈值；
+- gpu01复用`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`现有23GB cache，`/dev/shm`尚余39GB；
+  `strg01` `/data1` quota为`708770936/1073741824KiB`、约余348GB，formal输出预计远低于1GB且root启动前不存在；
+- exact command使用`CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 NCCL_P2P_DISABLE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8
+  TOKENIZERS_PARALLELISM=false PYTHONPATH=src .../.venv/bin/torchrun --standalone --nproc-per-node=6
+  scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_routing_token_functional_code_init_r4_v1.json --mode formal
+  --phase joint`及既有source/tokenizer/data/base/cache authorities；输出固定为
+  `runs/outputs/pi05_ecp_routing_functional_code_init_r4_s110_69a6b24_gpu01p012345_r6_20260830/`。训练自然到step110后用同一clean
+  authority六个独立workers评价step70/110；不以step0、loss或内部code fit替代Gate，不运行shuffled/reversed。
+
 - 2026-08-29 clean pushed `67a49f8`的R3三卡真实profile完成：同一global update由每rank两task执行，墙钟`25.334s`，
   三rank最大reserved为`21.815/20.684/20.462GB`（十进制bytes），所有owner×group output heads均有finite nonzero gradient，
   aggregate output-head gradient norm `.005195`。run contract实测trainable参数`11,767,940`，Action Meta module/parameter均0，source、

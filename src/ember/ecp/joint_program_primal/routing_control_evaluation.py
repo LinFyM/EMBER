@@ -53,6 +53,7 @@ def load_routing_control_gate(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     evaluation = config.get("evaluation", {})
     wall = config.get("information_wall", {})
+    task_cost_seconds = evaluation.get("task_cost_seconds", {})
     if (
         config.get("schema_version") != ROUTING_GATE_SCHEMA
         or config.get("status") != "training_only_routing_boundary_control"
@@ -62,6 +63,8 @@ def load_routing_control_gate(path: Path) -> dict[str, Any]:
         or evaluation.get("panel_visits") != 16
         or evaluation.get("wrong_token_pairing")
         != "next_gradient_task_within_same_role_cyclic"
+        or set(map(int, task_cost_seconds)) != set(ROUTING_TASK_IDS)
+        or min(map(float, task_cost_seconds.values()), default=0.0) <= 0.0
         or wall.get("fixed_routing_token_training_only") is not True
         or wall.get("deployment_candidate") is not False
         or wall.get("action_meta_installed") is not False
@@ -149,20 +152,14 @@ def _wrong_task(runtime: Any, task_id: int) -> int:
 
 
 def routing_task_assignments(
-    runtime: Any, worker_count: int
+    worker_count: int,
+    task_cost_seconds: Mapping[str, Any],
 ) -> tuple[tuple[int, ...], ...]:
     if not 1 <= worker_count <= 6:
         raise ValueError("routing-control evaluator worker count changed")
-    costs = {}
-    for task in ROUTING_TASK_IDS:
-        first, second, held = _task_conditions(runtime, task)
-        wrong = _task_conditions(runtime, _wrong_task(runtime, task))[0]
-        costs[task] = (
-            2 * first.sampled_frames
-            + second.sampled_frames
-            + held.sampled_frames
-            + wrong.sampled_frames
-        )
+    costs = {int(task): float(value) for task, value in task_cost_seconds.items()}
+    if set(costs) != set(ROUTING_TASK_IDS) or min(costs.values()) <= 0.0:
+        raise ValueError("routing-control evaluator cost authority changed")
     rows: list[list[int]] = [[] for _ in range(worker_count)]
     loads = [0] * worker_count
     maximum_tasks = (len(ROUTING_TASK_IDS) + worker_count - 1) // worker_count
@@ -337,7 +334,10 @@ def evaluate_routing_worker(args: argparse.Namespace) -> None:
     started = time.monotonic()
     try:
         runtime = prepare_routing_control_runtime(runtime_args, context)
-        assignments = routing_task_assignments(runtime, args.worker_count)
+        assignments = routing_task_assignments(
+            args.worker_count,
+            gate["evaluation"]["task_cost_seconds"],
+        )
         setup_seconds = time.monotonic() - started
         for compiler_checkpoint, output_dir in zip(
             args.compiler_checkpoints, args.output_dirs, strict=True

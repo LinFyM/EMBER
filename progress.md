@@ -1,5 +1,12 @@
 # EMBER progress
 
+- 2026-08-29 R2 formal及完整Gate已结束，step110 train/held-video为`.205796/.193603`，低于R1；q/v/action-in/action-out则由
+  R1近零提高到`.220453/.407617/.166808/.663453`，held/train`.940749`、same-task retention`.978070`、wrong-token margin
+  `.090559`。这证明critic进入并恢复了v/action-out，但q/action-in仍受group-shared decoder限制，不完整组合也损害真实functional。
+  critic recovery最后20步平台约`.322`，不续训或扫weight。固定R2 hidden的解析反事实给出shared-group q/action-in上限
+  `.691/.392`，owner×group heads则四family median/min均为`1.0/1.0`、每组hidden rank `40/40`。当前实现面已进入R3：只替换
+  output group heads，保持R2其余机制与Gate；20项定向CPU合同已通过，尚未启动真实profile或formal。
+
 - 2026-08-29 owner纠正此前由执行面自行加入的`<35GiB/GPU`限制：它不是当前authority，也不再作为后续profile或launch硬门。
   最长真实样本、allocator波动和共驻进程仍有安全余量且不OOM时，可以使用更高显存；运行选择以真实吞吐和持续UTL为准。
   已从active requirements/design/plan移除该人为上限。当前从detached `a4b91bb`启动的R2配置仍把旧值记录为该run的历史provenance，

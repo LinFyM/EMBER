@@ -310,7 +310,7 @@ def _mapping_gradient_probes(runtime: MappingRuntime) -> dict[str, Any]:
     scorer = runtime.compiler.primal_scorer
     probes = {
         "input_primal": scorer.input_primal_heads[0].weight.grad,
-        "output_primal": scorer.output_primal_heads[0].weight.grad,
+        "output_primal": scorer.output_primal_heads[0][0].weight.grad,
         "owner_embedding": scorer.owner_embedding.grad,
         "rank_embedding": scorer.rank_embedding.grad,
         "event_embedding": scorer.event_embedding.grad,

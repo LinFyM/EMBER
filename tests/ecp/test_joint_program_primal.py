@@ -200,52 +200,36 @@ def test_routing_control_tokens_are_fixed_mean_zero_and_orthogonal() -> None:
 
 
 def test_routing_control_gate_balances_only_ten_gradient_tasks() -> None:
-    task_ids = (*ROUTING_TASK_IDS, 2, 74)
-    fit_ids = set(ROUTING_TASK_IDS)
-    fit = {
-        task: tuple(
-            MappingCondition(task, "meta_fit" if task < 72 else "target_fit", demo, 10)
-            for demo in (0, 1)
-        )
-        for task in fit_ids
+    costs = {
+        "1": 197,
+        "8": 195,
+        "9": 97,
+        "32": 199,
+        "52": 195,
+        "72": 195,
+        "73": 99,
+        "75": 198,
+        "93": 108,
+        "94": 105,
     }
-    held = {
-        task: (
-            MappingCondition(
-                task, "meta_fit" if task < 72 else "target_fit", 2, 10
-            ),
-        )
-        for task in fit_ids
-    }
-    runtime = SimpleNamespace(
-        config={
-            "task_split": {
-                "gradient_meta": [1, 8, 9, 32, 52],
-                "gradient_target": [72, 73, 75, 93, 94],
-            }
-        },
-        mapping_split=SimpleNamespace(
-            fit_by_task=fit, video_held_by_task=held, task_held=()
-        ),
-        panels={
-            task: SimpleNamespace(role="meta_fit" if task < 72 else "target_fit")
-            for task in task_ids
-        },
+    assignments = routing_task_assignments(
+        worker_count=6, task_cost_seconds=costs
     )
-    assignments = routing_task_assignments(runtime, worker_count=6)
     assert max(map(len, assignments)) == 2
     assert {task for row in assignments for task in row} == set(ROUTING_TASK_IDS)
+    loads = [sum(costs[str(task)] for task in row) for row in assignments]
+    assert max(loads) == 303
 
 
 def test_routing_control_critic_is_fit_only_and_never_a_deployment_input() -> None:
     root = Path(__file__).resolve().parents[2]
-    functional_only = load_routing_control_config(
-        root / "configs/pi05_ecp_routing_token_control_r1_v1.json"
-    )
     critic_control = load_routing_control_config(
-        root / "configs/pi05_ecp_routing_token_critic_r2_v1.json"
+        root / "configs/pi05_ecp_routing_token_grouped_decoder_r3_v1.json"
     )
-    assert functional_only["optimization"].get("privileged_critic") is None
+    assert (
+        critic_control["model"]["output_primal_decoder"]
+        == "owner_group_specific_linear_heads"
+    )
     critic = critic_control["optimization"]["privileged_critic"]
     assert critic["kind"] == "fit_only_set_valued_paired_update_direction"
     assert critic["weight"] == 0.2

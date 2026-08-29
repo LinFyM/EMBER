@@ -88,10 +88,13 @@ class ProgramNativePrimalScorer(torch.nn.Module):
             for owner in self.owners
         )
         self.output_primal_heads = torch.nn.ModuleList(
-            torch.nn.Linear(
-                width,
-                owner.out_features // native_output_group_count(owner),
-                bias=False,
+            torch.nn.ModuleList(
+                torch.nn.Linear(
+                    width,
+                    owner.out_features // native_output_group_count(owner),
+                    bias=False,
+                )
+                for _ in range(native_output_group_count(owner))
             )
             for owner in self.owners
         )
@@ -206,10 +209,15 @@ class ProgramNativePrimalScorer(torch.nn.Module):
         self, state: PrimalProgramState
     ) -> tuple[torch.Tensor, ...]:
         rows = []
-        for target, (owner, head) in enumerate(
+        for target, (owner, heads) in enumerate(
             zip(self.owners, self.output_primal_heads, strict=True)
         ):
             groups = native_output_group_count(owner)
             context = state.rank[target][None] + self.group_embedding[:groups, None]
-            rows.append(head(self.output_trunk[owner.family.value](context)))
+            hidden = self.output_trunk[owner.family.value](context)
+            rows.append(
+                torch.stack(
+                    tuple(head(hidden[group]) for group, head in enumerate(heads))
+                )
+            )
         return tuple(rows)

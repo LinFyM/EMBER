@@ -432,7 +432,7 @@ def _run_k1(runtime: F0Runtime, *, video: int, chunk_size: int) -> F0K1:
     scorer = runtime.compiler.primal_scorer
     gradients = {
         "input_primal": scorer.input_primal_heads[0].weight.grad,
-        "output_primal": scorer.output_primal_heads[0].weight.grad,
+        "output_primal": scorer.output_primal_heads[0][0].weight.grad,
         "owner_embedding": scorer.owner_embedding.grad,
         "rank_embedding": scorer.rank_embedding.grad,
         "event_embedding": scorer.event_embedding.grad,

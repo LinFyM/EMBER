@@ -512,7 +512,7 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
         "program_scene": runtime.program.scene_reader.queries.grad,
         "program_process": runtime.program.process_fusion[0].weight.grad,
         "primal_input": scorer.input_primal_heads[0].weight.grad,
-        "primal_output": scorer.output_primal_heads[0].weight.grad,
+        "primal_output": scorer.output_primal_heads[0][0].weight.grad,
         "primal_program_context": scorer.program_context["q"][1].weight.grad,
         "primal_event_score": scorer.event_score["q"].weight.grad,
     }

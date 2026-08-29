@@ -125,9 +125,28 @@ def _run_task(
 
 def _scorer_gradient_probes(runtime: Any) -> dict[str, float]:
     scorer = runtime.compiler.primal_scorer
+    output_gradients = tuple(
+        head.weight.grad
+        for owner_heads in scorer.output_primal_heads
+        for head in owner_heads
+    )
+    if any(gradient is None for gradient in output_gradients):
+        raise RuntimeError("routing-control output-group gradient is absent")
+    output_norms = torch.stack(
+        tuple(
+            gradient.float().norm()
+            for gradient in output_gradients
+            if gradient is not None
+        )
+    )
+    if not bool(torch.isfinite(output_norms).all()) or not bool(
+        torch.all(output_norms > 0)
+    ):
+        raise RuntimeError(
+            "routing-control output-group gradient is non-finite or zero"
+        )
     probes = {
         "primal_input": scorer.input_primal_heads[0].weight.grad,
-        "primal_output": scorer.output_primal_heads[0].weight.grad,
         "primal_program_context": scorer.program_context["q"][1].weight.grad,
         "primal_rank_context": scorer.rank_context["q"][1].weight.grad,
         "primal_event_score": scorer.event_score["q"].weight.grad,
@@ -141,6 +160,7 @@ def _scorer_gradient_probes(runtime: Any) -> dict[str, float]:
                 f"routing-control {name} gradient is absent or non-finite"
             )
         result[name] = float(gradient.float().norm())
+    result["primal_output"] = float(output_norms.square().sum().sqrt())
     if min(result.values()) <= 0:
         raise RuntimeError("routing-control scorer functional gradient is zero")
     return result

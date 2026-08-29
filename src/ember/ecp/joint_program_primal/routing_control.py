@@ -35,10 +35,11 @@ from ember.pi05_source_setup import initialize_deferred_process_group
 
 
 ROUTING_CONTROL_SCHEMA = "ember_ecp_routing_token_control_r1_v1"
-ROUTING_CONTROL_RUN_SCHEMA = "ember_ecp_routing_token_control_run_v1"
-ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_control"
+ROUTING_CONTROL_RUN_SCHEMA = "ember_ecp_routing_token_control_run_v2"
+ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_grouped_decoder_control"
 ROUTING_TASK_IDS = (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
 ROUTING_WIDTH = 128
+OUTPUT_PRIMAL_DECODER = "owner_group_specific_linear_heads"
 
 
 class RoutingControlWriterState(torch.nn.Module):
@@ -152,6 +153,7 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             joint.get("video_views_per_task") == 2,
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
+            model.get("output_primal_decoder") == OUTPUT_PRIMAL_DECODER,
             model.get("trainable") == ["ProgramNativePrimalScorer"],
             model.get("deployment_candidate") is False,
             wall.get("fixed_routing_token_training_only") is True,

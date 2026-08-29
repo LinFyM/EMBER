@@ -1308,3 +1308,16 @@ functional optimizer step时，它已拥有最终收益的中位约`.431`。因�
 稀疏而不是route/gradient缺失。下一最小对照应在同一fixed-route/scorer图上加入已有set-valued paired-update critic；若四family恢复，
 瓶颈是direction discovery credit，若仍失败才根据q/action-in grouped-output证据替换primal decoder。该critic只在fit训练期使用，不能
 成为deployment输入或G3通过捷径。
+
+### 76. R2证明critic有效，但group-shared output decoder只能恢复半套解
+
+R2 step110的q/v/action-in/action-out family recovery为`.2205/.4076/.1668/.6635`，相对R1近零是数量级提升；训练日志中的critic
+recovery也由0升至约`.322`并在最后20步平台。因此fit-only set-valued critic不是no-op，继续增加weight、LR或步数不再是有机制的新实验。
+但真实train/held recovery只有`.2058/.1936`，低于R1的`.2678/.2798`，wrong-token margin也由`.2384`降至`.0906`。部分teacher几何
+恢复会挤掉R1的action-out功能捷径，却没有形成完整强LoRA，内部指标不能替代functional primary。
+
+最早剩余接口由解析capacity确定。保持R2的task hidden与10个成功free-primal code不变，当前一个owner所有output groups共享head时，
+q/action-in最优median只有`.691/.392`；让每个native group拥有独立head后，四family median和minimum都为`1.0`，所有group的hidden
+rank均为`40/40`。这不是width扫，而是移除已证实的错误参数共享：q仍8组、action-in仍32个native-width blocks，candidate measure、
+真实X/Y、signed pooling和唯一rank16完全不变。下一R3只检验这一变量；只有四family高而functional仍低，才把根因进一步判为
+set-valued teacher-to-utility不充分。

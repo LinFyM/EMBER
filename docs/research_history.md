@@ -1120,3 +1120,22 @@ validation/test零梯度；结果只用于裁决下一canonical Natural Program 
 - `runs/outputs/pi05_ecp_routing_token_control_r1_s110_ec86fdb_gpu01p123456_r6_20260829/`；
 - `runs/outputs/pi05_ecp_routing_token_control_r1_gate_step110_8c213c5_gpu01p123456_w6_20260829/`；
 - `runs/analysis/pi05_ecp_routing_critic_r2_weight1_profile_dirty_gpu01p013456_r6_20260829/`。
+
+## 57. R2 set-valued critic formal non-pass与R3 grouped-output裁决
+
+clean detached `a4b91bb`的R2完成10 warmup+100 effective updates及step70/110完整Gate。step110 train/held-video recovery为
+`.205796/.193603`，低于R1的`.267809/.279828`；held/train`.940749`、same-task retention`.978070`，wrong-token margin
+`.090559`。与此同时q/v/action-in/action-out family recovery从R1近零提高到`.220453/.407617/.166808/.663453`，训练critic recovery
+最后20步稳定在约`.322`。故critic真实进入并恢复了v/action-out，但未形成四family完整功能解；结果不能用续训或weight小扫修饰。
+
+固定R2 hidden对10个成功free-primal code做FP64 least-squares反事实：当前共享group output head的q/action-in median/min上限为
+`.690917/.654797`与`.391981/.325906`，v/action-out为`1.0`；每个owner×native group使用独立head后，四family median/min均为
+`1.0/1.0`，每组hidden rank为`40/40`。因此R3只移除该错误参数共享，新增约426万参数，不改Program、bank、critic、rank、scale、
+数据或Gate。R2 evaluator另暴露旧frame-count cost proxy把长任务两两配对，单checkpoint长尾约`400s`；R3只用R2 task wall time
+预注册timing cost map，预计最长worker约`303s`，该调度不读取科学结果。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_token_critic_r2_s110_6c41926_gpu01p013456_r6_20260829/`；
+- `runs/outputs/pi05_ecp_routing_token_critic_r2_gate_step70_a4b91bb_gpu01_w6_20260829/`；
+- `runs/outputs/pi05_ecp_routing_token_critic_r2_gate_step110_a4b91bb_gpu01_w6_20260829/`。

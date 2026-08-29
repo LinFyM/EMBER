@@ -512,10 +512,10 @@ Program/bank虽在多数task上变坏，correct只有3/10改善，四family仍�
 后续R1用固定、非参数化的10个正交task token替代Natural Program内容，只训练同一scorer。step110 train/held-video提高到
 `.2678/.2798`，wrong-token margin`.2384`且9/10 tasks优于J2，证明清晰route有实质作用；但q/v/action-in仍约零，完整Gate non-pass。
 checkpoint几何确认route在scorer内部没有重新塌缩，而task-local正控在functional优化前已由teacher consensus初始化获得最终收益约43%。
-因此当前R2只在同一fixed-route边界对照加入fit-only set-valued paired-update critic，以区分functional-only direction discovery不足与
-primal decoder函数类失容；teacher/member不进入deployment输入，held/panel B/task2/74仍零梯度。R2不能通过G3。若它恢复四family，
-下一canonical资格把同一training-only critic接回Natural Program并继续以functional recovery作primary；若仍失败，则依据q/action-in
-grouped-output容量证据替换当前additive/group-shared primal decoder，而不是再改route或扫普通超参。
+R2在同一fixed-route边界加入fit-only set-valued paired-update critic后，v/action-out恢复到`.408/.663`，q/action-in只到`.220/.167`，
+真实train/held反而低于R1为`.206/.194`。这说明稠密critic已生效，但当前共享group decoder只能产生不完整的四family组合。固定hidden的
+解析反事实进一步证明现有q/action-in output上限约`.691/.392`，而owner×group独立head四family均可精确拟合成功code。因此当前R3只替换
+该decoder接口并保持critic、Program、bank、rank、scale和信息墙不变；R2/R3都不能通过G3，只有R3边界成功后才把机制接回Natural Program。
 
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
 Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`，12-task完整评价墙钟不超过训练主体一半。显存没有人为
@@ -662,12 +662,12 @@ optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.
 95-task证据及G2-B v3--v5只证明独立Program behavior-geometry目标失败。第四次专家裁决要求复用已有P2 cache/operator/scorer，新增
 Program与primal联合functional反传、task-local functional正控和12-task Gate。当前代码已在唯一`joint_program_primal`执行面接通
 可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
-condition cache。10-task正控已通过；J2/J3充分functional训练、R1 fixed-route control均已形成formal non-pass/partial结论。当前R2仍只在
-training-only fixed-route边界对照中读取fit-only set-valued critic，Action Meta保持0，scale继续冻结到F4；R2通过也不能冒充shared或
-closed-loop Gate。
+condition cache。10-task正控已通过；J2/J3充分functional训练、R1 fixed-route control及R2 critic control均已形成formal non-pass/partial
+结论。当前R3仍只在training-only fixed-route边界中把output primal改为owner×native-group独立head，并读取fit-only set-valued critic；
+Action Meta保持0，scale继续冻结到F4。R3通过也不能冒充shared或closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
 fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
-global dual + exact signed replay；阶段推进已进入R2 direction-credit/function-class分解，不再受独立Program behavior-Gram Gate阻塞。
+global dual + exact signed replay；阶段推进已进入R3 grouped-output function-class资格，不再受独立Program behavior-Gram Gate阻塞。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

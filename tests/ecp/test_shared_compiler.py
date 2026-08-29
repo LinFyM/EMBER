@@ -5,7 +5,11 @@ from types import SimpleNamespace
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
-from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
+from ember.ecp.native_factors import (
+    NativeTargetChunk,
+    NativeVideoReadout,
+    native_output_group_count,
+)
 from ember.ecp.natural_program import FrozenProgramEvidence, NaturalProgram
 from ember.ecp.natural_program_data import NaturalProgramSample
 from ember.ecp.shared_compiler import SharedCompilerVideo, SharedNativeFactorCompiler
@@ -219,8 +223,16 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     assert set(compiler.primal_scorer.output_trunk) == families
     assert len(compiler.primal_scorer.input_primal_heads) == len(owners)
     assert len(compiler.primal_scorer.output_primal_heads) == len(owners)
+    for owner, heads in zip(
+        owners, compiler.primal_scorer.output_primal_heads, strict=True
+    ):
+        assert len(heads) == native_output_group_count(owner)
+        assert len({head.weight.data_ptr() for head in heads}) == len(heads)
     assert compiler.primal_scorer.input_primal_heads[0].weight.grad is not None
-    assert compiler.primal_scorer.output_primal_heads[0].weight.grad is not None
+    for heads in compiler.primal_scorer.output_primal_heads:
+        for head in heads:
+            assert head.weight.grad is not None
+            assert bool(torch.count_nonzero(head.weight.grad))
     assert bool(torch.count_nonzero(compiler.primal_scorer.owner_embedding.grad))
     assert bool(torch.count_nonzero(compiler.primal_scorer.group_embedding.grad))
     assert compiler.scale_head[-1].weight.grad is not None

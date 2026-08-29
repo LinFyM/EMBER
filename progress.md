@@ -1,5 +1,22 @@
 # EMBER progress
 
+## 2026-08-29 第四次专家复核已采纳，J2 joint Program--primal functional qualification启动
+
+第四位专家锁定远程`main@910fb204e8e3a5374ec988aa5e1da5bc042754aa`及`9b52e59..910fb20`的完整历史，复核了P0/P1、P2执行面、
+95-task authority和G2-B pointwise/v3--v5全部formal与诊断。1075行原始回复已逐字保存为
+`docs/expert_review_20260829_joint_program_primal.md`。owner接受其主裁决并许可继续推进。
+
+最新边界是：V5仍是合法的protocol non-pass，但15次updates中前9次仍在warmup，且固定block-equal、单位化、等权Program Gram并非
+最终functional坐标；它只淘汰该目标，不能证明Program schema或Native Stage0结构性失败。P0/P1已经证明shared primal经每条current
+bank的dual/replay在六tasks、四family和held videos上保留`.94--.995`量级容量。因此当前最早未解决接口是Natural Program与shared
+`ProgramNativePrimalScorer`之间的联合可识别性和functional credit。
+
+当前唯一实现面为`codex/ecp-j2-joint-program-primal`。下一步复用P2 compact condition cache、current-bank operator和functional
+gradient，联合训练Program与primal scorer；source、Native Stage0、operator、carrier、scale与Action Meta冻结。先完成同loss的task-local
+free-primal正控，再执行固定10 gradient tasks+2 true task-held的12-task J2 Gate。冻结evidence/X-Y/covariance/action panels只缓存一次，
+不缓存Program或LoRA；六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`。只做一个最小真实
+forward/backward/materialization和必要定向合同检查，随后尽快进入有信息量的正控/formal。
+
 ## 2026-08-29 G2 global-calibrated behavior-kernel v5 formal non-pass，暂停新增版本
 
 clean pushed `main@7f4df1b`的detached frozen worktree已在gpu01物理`0--4`完成五卡macro5/15 updates、唯一checkpoint和
@@ -1124,7 +1141,7 @@ behavior-identifiability已完成：task93/q20真实cross-episode flow-gradient 
 实现面正在`codex/g3-sketched-bank`替换为v5 canonical路径：新增共享Program-to-native-primal、流式全局covariance/截断谱solve与exact
 signed replay；旧functional-polar不再由活动compiler编排。全仓CPU合同当前194项通过，尚未形成clean detached真实P0结果。
 
-## 当前下一步与延期漂移
+## 2026-08-28历史下一步与延期漂移（已被页首J2状态覆盖）
 
 1. 完成v5 active design/config/code/diff审查，集成clean pushed authority；从detached worktree执行真实38-target K1/K4 P0，验证IEEE、
    两次native read、Y边界、chunk equivalence、全部primal梯度、Action Meta 0、uniform K、唯一rank16、policy consumption、显存和吞吐；

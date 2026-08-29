@@ -1021,3 +1021,21 @@ current-bank primal-to-dual operator没有被这一负结果整体否定。仓�
 - `runs/outputs/pi05_ecp_natural_program_g2_global_behavior_kernel_fold0_m5_2d859f0_gpu01p01234_r5_20260829/`；
 - `runs/analysis/pi05_ecp_g2_behavior_block_geometry_v5_2d859f0_gpu01p01234_r5_20260829.json`；
 - `runs/analysis/pi05_ecp_g2_behavior_block_geometry_init_v3_v4_20260829.json`。
+
+## 52. 第四次专家复核与J2 joint Program--primal functional裁决
+
+第四位专家锁定远程`main@910fb204e8e3a5374ec988aa5e1da5bc042754aa`及`9b52e59..910fb20`的25个提交，重新审计S1/S2、
+Program-primal/current-bank dual、P0/P1/P2、95-task behavior authority及G2-B pointwise/v3--v5。1075行原始回复逐字保存为
+`docs/expert_review_20260829_joint_program_primal.md`。
+
+专家确认P0/P1已把native bank、rank4、current-bank dual和exact signed replay从当前首因中排除；V5则是合法protocol non-pass，但
+不能证明Program schema或Stage0结构性失败，因为它只有15次optimizer updates、前9次处于warmup，且监督的是固定block-equal、单位化、
+等权Program Gram，而不是Program经primal、真实bank和唯一rank16 LoRA后的functional effect。V3--V5只淘汰各自的独立Program
+behavior-geometry目标。
+
+owner采纳主裁决：取消独立Program behavior-Gram硬Gate，当前唯一活动资格改为joint Natural Program--shared primal functional
+training。generated完整38-target rank16 LoRA在cross-episode teacher action/flow panel上的真实功能损失同时给Program与primal scorer
+credit；source、Native Stage0、已通过P1的current-bank operator、carrier、scale与Action Meta冻结。首个决定性实验固定10个gradient
+tasks与两个true task-held，先做同loss的task-local跨video共享free-primal正控，再按train/held-video/task-held、四family、wrong
+Program/bank、interaction、same-task和相邻checkpoint形成Gate。只有train与held-video强而task-held弱时，才进入matched raw frozen
+Stage0 sufficiency probe；不恢复v6、旧P2 frozen-Program formal、realizer或functional-polar deployment。

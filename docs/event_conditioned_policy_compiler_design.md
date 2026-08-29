@@ -1,7 +1,7 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-28第三次专家复核、owner最新裁决与其后behavior-identifiability证据更新的active architecture contract。三次专家审查
-依次建立Native-Factor主线、要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
+状态：2026-08-29第四次专家复核与owner最新裁决更新的active architecture contract。前三次专家审查依次建立Native-Factor主线、
+要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
 formal S1与定向S2依次淘汰rank64 native-Q sketch、mean/variance scalar energy、query-conditioned多步set scorer及rank224/384
 cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步证明：behavior rank4方向在三条真实bank中均有约`.90--.91`
 signed-pooling可达性，但旧共享selector在held video只有`.023`，bank-independent native dual只有`.075`；同一task primal经每条当前
@@ -10,11 +10,14 @@ Program预测target-native primal，由当前video bank的确定性全局covaria
 P1随后证明该operator在六tasks、四family和held videos上达到`.9545`。但95-task behavior-sufficiency诊断又发现：fit75行为流形对
 held20具有`.7160` rank16可达性，旧frozen G2 Program的shared读出却只有`.247--.270`且不优于language-only，因此最早失效接口
 进一步上移为G2跨task behavior identifiability。随后pointwise decoder与decoder-free v3--v5依次失败；v5虽扩大Program跨task
-spread并保持旧动态Gate，却没有对齐真实policy behavior。当前不再新增G2版本，G3 Program-to-primal训练继续暂停，先以完整formal与
-block geometry证据接受专家复核；在形成新的机制证据和active design前没有v6。本文仍是当前唯一架构依据。
+spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次专家复核明确：这些实验只淘汰对应的独立reader与behavior-Gram目标，
+尚不能把联合失败归因于Program schema或Stage0。当前取消“Program先独立通过behavior-Gram”的硬Gate，唯一活动资格改为联合训练
+Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；已经通过
+P1的current-bank operator继续冻结。本文仍是当前唯一架构依据。
 
-三次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
-`docs/expert_review_20260826_bank_conditioned_native_factor.md`和`docs/expert_review_20260828_g3_functional_sketch.md`。本文是将专家
+四次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
+`docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
+`docs/expert_review_20260829_joint_program_primal.md`。本文是将专家
 原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。第二次专家建议Final默认从通过Gate的组件初始化；owner
 最新明确补充，整套Writer完全随机初始化并直接端到端fresh训练必须保留为Final正式可选项，G1--G3不构成强制训练课程。
 
@@ -241,11 +244,10 @@ policy-effect space继续用于消除LoRA gauge、参数不等价和q-family能�
 
 永久冻结：source PI0.5、PaliGemma/VLM、native Action Expert、原始38个target weights、最终rank12 carrier。默认没有Action Meta。
 
-Writer可训练：local patch/language projections、38个language queries、owner scene reader、transition matcher、event binding、ordered
-segmenter、Dynamic-K alignment/aggregation、rank queries、native bank key/query projections、signed pooling logits和target scales。
-
-Program与compiler分别通过后必须联合解冻全部Writer；backbone与carrier始终冻结。outer credit只更新event posterior、Program、rank
-attention和scale，不直接扰动百万级A/B tensor。
+J2可训练：Natural Program已有的local patch/language projections、38个language queries、owner scene reader、transition matcher、event
+binding、ordered segmenter、Dynamic-K alignment/aggregation，以及共享`ProgramNativePrimalScorer`。source、Native Stage0、current-bank
+covariance/dual/replay operator、carrier、target scale和Action Meta冻结；真实X/Y与operator仍保持可微地把functional credit传回Program和
+primal scorer。J2通过后的F4才恢复scale，G4才解冻其余经资格验证的Writer职责；backbone与carrier始终冻结。
 
 Action Meta只在base Writer出现明确闭环增量后做matched controls，Stage 0/compiler冻结。只有明确净收益且无breadth/retention
 损害才启用并永久冻结；否则保持关闭，不再把中性结果解释为加入理由。
@@ -263,14 +265,14 @@ Action Meta只在base Writer出现明确闭环增量后做matched controls，Sta
 
 ## 9. 实际执行序列与Gate
 
-专家原回复按概念依赖把Natural Program列为Stage 1、capacity oracle列为Stage 2，但最终明确capacity oracle是当前唯一下一步，
-通过后才训练fresh Program。为避免编号混淆，仓库使用以下实际序列。
+2026-08-24专家原回复按概念依赖把Natural Program列为Stage 1、capacity oracle列为Stage 2，但当时最终明确capacity oracle是首个
+下一步；该阶段现已完成。为避免历史编号混淆，仓库沿用以下阶段名，当前执行点以J2小节为准。
 
 ### G0. Authority冻结
 
 固定fold manifests、baseline rows、carrier/task-expert/effect authority和role-balanced sampler，不做模型选择，不创建新数据。
 
-### G1. Native-factor task-local capacity oracle（当前首个机制Gate）
+### G1. Native-factor task-local capacity oracle（已通过）
 
 先实现真实q/v/action-in/action-out input/output hooks与signed rank4 factor capacity path。使用冻结的现有Stage 0 v3、fold0 held5自然
 teacher videos、known successful experts/mobile projections和carrier43；不碰validation/test。G1不得因最终deployment禁止task-local查表而
@@ -463,21 +465,56 @@ lift `K_target=(1+K_behavior)/2`；raw Program off-diagonal Gram及cross-view差
 std从v4的`.020/.086`扩大到`.046/.220`，其teacher consensus相关却从`.150/.135`降到`.142/.131`：固定绝对gauge能让
 Program拉开tasks，却没有把拉开方向对齐policy behavior。official held20未读。
 
-因此当前没有v6或其它活动G2修正；不续训、不解冻整个Stage0，也不做seed/LR/width/rank小扫。下一步是向专家提交pointwise与
-v3--v5的完整formal、训练轨迹和block geometry，要求新的机制解释如何让部署Program拥有可迁移的policy-behavior方向。新的设计在
-owner authority下登记前，G2/G3均保持暂停。
+因此没有v6或其它独立G2 behavior-geometry修正；不续训v5、不解冻整个Stage0，也不做seed/LR/width/rank小扫。第四次专家复核指出，
+固定block-equal、各block单位化并等权的Program Gram既过强又与最终功能坐标不匹配；`rho/tau`还被复制到selected owners，使约三分之一
+几何在不同target native kernels之间被强制共享。v5仍是合法的protocol non-pass，但不能证明Program schema或Stage0结构性不可能。
+当前因此删除这个独立硬Gate，让Program和相邻primal scorer共同接受generated-LoRA functional credit。
 
-### G3. Frozen-Program shared compiler
+### J2 / G3. Joint Program--primal functional qualification
 
-以下G3 operator与Gate合同不变，但当前暂停在G2-B资格之前；旧`c1493a1/macro20`仍是动态正证据和初始化authority，不再作为足够的
-final frozen Program。v5 behavior Gate已non-pass，故不得恢复P2；只有后续有机制依据的G2修正同时通过旧动态Gate与新增behavior Gate，
-才更新唯一G3 Program checkpoint并恢复P2。
+当前最早未解决接口是Natural Program与shared `ProgramNativePrimalScorer`之间的联合可识别性和functional credit，不再要求二者先后
+独立通过人为规定的参数或behavior几何。使用cross-episode teacher action/flow panel A计算generated-LoRA真实功能损失；完整链为
+`raw frozen evidence -> Natural Program -> shared primal -> frozen current-bank dual/replay -> unique rank16 LoRA -> functional loss`。
+只有Program与primal scorer训练；source、Native Stage0、current-bank operator、carrier、scale、Action Meta与policy weights均冻结。
+teacher action/flow只在授权训练task上形成loss，绝不进入deployment输入；task-held、held-video panel B和checkpoint选择外条件均零梯度。
 
-使用meta56+target-fit19、自然videos和现有95-task/118-member evidence，跨episode采样并保持两种task role等质量。G2 Program、source、
-carrier和task experts冻结；首版只训练共享Program-to-primal scorer，当前bank covariance、谱solve、真实X/Y和scale冻结。selection logits
-最终仍为`q_dual^T v_n`，禁止task/frame查表。
+首个12-task qualification固定gradient meta`[1,8,9,32,52]`、gradient target`[72,73,75,93,94]`、true task-held meta`2`和
+target`74`。每个gradient task以两条mapping-fit K1 videos和panel A训练，第三条预注册video与disjoint panel B只读；selected浅/中/深
+q/v及action-in/out八targets只负责分family报告，Writer始终实际生成38-target完整LoRA。Natural Program从
+`c1493a1/macro20`共同model tensors初始化，primal scorer、optimizer和scheduler fresh；不得加载v3/v4/v5 checkpoint。
 
-G3按以下因果顺序推进：
+在完全相同functional loss上先优化每task跨两条fit videos共享的task-local free primal，第三video零梯度。正控要求held-video recovery
+median`>=.80`、四family各`>=.70`且每task显著优于carrier；失败首先归因于functional panel、scale或teacher-to-utility authority，
+不能归因于shared Program。正控通过后进行joint训练。为消解第四次专家原文“100 total updates”与停止条件“约100 post-warmup
+updates”的口径冲突，formal按最多10步warmup后100个有效joint updates计数，在post-warmup 60和100保存相邻checkpoints；总
+optimizer steps最多110，不把低LR warmup冒充充分优化。
+
+Primary normalized functional recovery为
+`(L_carrier-L_shared)/(L_carrier-L_free_primal)`。12-task Gate同时要求：gradient train median`>=.60`、same-task held-video
+median`>=.50`、两个true task-held平均`>=.40`且各`>=.30`、held/train`>=.80`；q/v各`>=.35`、action-in/out各`>=.30`；
+full相对language-only与endpoints各`>=.10`；correct-vs-wrong Program和bank margins各`>=.10`，interaction`>=.05`；same-task-other
+retention`>=.80`；post-warmup 60到100 task-median回落不超过`.05`；event不坍缩、K1 identity和信息墙继续通过。factor/update
+cosine只作secondary geometry diagnostic，不能替代generated-LoRA functional result。
+
+速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
+Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，12-task完整评价墙钟不超过
+训练主体一半。world size按live availability、LoRA/s、functional updates/s、UTL和显存峰值弹性选择，不能改变task权重或科学batch。
+
+通过12-task Gate后恢复40 fit/10 task holdout、329 fit/40 held-video/82 task-held的完整shared functional qualification，仍联合
+Program+primal，primary Gate为held-video median`>=.60`、p10`>=.35`、task-holdout median`>=.40`、held/train`>=.80`、
+meta/target各`>=.35`、q/v各`>=.35`、Program/bank margins各`>=.10`、interaction`>=.05`、多数tasks为正且相邻checkpoint稳定。
+
+若12-task train与held-video高而true task-held低，才做同split、同capacity、同loss/budget的raw frozen Stage0 sufficiency probe；输入只换为
+deployment-visible owner/event process、presence、uncertainty、patch/scene transition、exact-language embedding和normalized time。
+raw task-held比Program高`>=.15`且达到`.40`，才把最早接口判为Program压缩/schema；raw也低于`.25`且free primal强，才判为frozen
+Stage0上游瓶颈并允许窄解冻process/presence/uncertainty tail。不得直接解冻VLM、source policy或整个Stage0。
+
+#### 已完成的Frozen-Program G3历史证据与可复用面
+
+下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置
+中的`deployment_candidate`恢复。
+
+此前G3按以下因果顺序推进：
 
 1. **P0真实38-target operator F0**：在clean pushed detached authority上验证K1/K4 forward、全部primal/Program梯度、Action Meta 0、
    source/G2冻结、四类Y边界、chunked/non-chunked等价、uniform K aggregation、唯一rank12+4 materialization和一次真实policy consumption；
@@ -504,15 +541,14 @@ G3按以下因果顺序推进：
    `60/250`、breadth至少4/5、carrier retention至少`33/43`、Goal或Long非零、相对language与first+final各净增至少5、same-task
    retention至少80%。
 
-P1/P2的teacher只来自fit-task mapping-fit videos；provenance键仅用于loader pairing。teacher factor、behavior gradient、covariance、
-dual、member identity与authority ID不得进入checkpoint或deployment输入，held video/task不得产生梯度。通过P2后factor teacher只作有退出
-条件的组件监督，不成为G4/Final永久依赖。若P1高而P2 fit低，最早接口是Program-to-primal可识别性；fit高而video/task held低，处理
-shared generalization；absolute高而Program causal低，处理universal shortcut。不得用joint training掩盖G3 non-pass，也不得恢复旧
-realizer、functional-polar deployment或task lookup。G1/G2通过结论不受影响。
+上述旧P1/P2 teacher边界仍适用于历史artifact：provenance只用于loader pairing，teacher factor、behavior gradient、covariance、dual、
+member identity与authority ID不得进入checkpoint或deployment输入，held video/task不得产生梯度。J2不以teacher factor为primary，而以
+generated-LoRA cross-episode functional result为primary；它只联合两个相邻未识别接口，不得解冻已通过的operator或掩盖正控失败。
+任何阶段都不得恢复旧realizer、functional-polar deployment或task lookup。G1、原G2动态Gate与P0/P1结论不受影响。
 
 ### G4. Joint Writer
 
-只有G3有真实闭环信号才解冻全部Writer，继续冻结backbone、carrier和task experts。
+只有J2及完整shared functional qualification通过并取得真实closed-loop信号，才解冻全部Writer；backbone、carrier和task experts继续冻结。
 
 G3的native-feasible LoRA teacher只作shared mapping组件验证，不是G4/Final必须存在的监督资产。正式联合训练不得预设目标LoRA；
 可直接使用授权fit/meta tasks的teacher actions、functional及on-policy闭环信号，并由实际closed-loop证据选择最小充分loss集合。
@@ -600,12 +636,13 @@ frozen-condition cache，仅保存Program、raw X/Y、final Y和B0 operator；fi
 detached `e2f9d33`的完整38-target K1/K4
 P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
 clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
-optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把当前最早未验证接口收敛到P2 shared
-full-Program-to-primal mapping；随后95-task证据及G2-B v3--v5 non-pass把更早阻塞接口上移为G2跨task policy-behavior identifiability。
-因此P2实现虽保留，当前没有formal资格；scale继续冻结到F4，P1内部结果不能冒充shared或closed-loop Gate。
+optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把下游operator从当前首因中排除；随后
+95-task证据及G2-B v3--v5只证明独立Program behavior-geometry目标失败。第四次专家裁决要求复用已有P2 cache/operator/scorer，新增
+Program与primal联合functional反传、task-local functional正控和12-task Gate；这些J2行为当前尚未实现。scale继续冻结到F4，P1内部
+结果不能冒充shared或closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
-fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类是Program primal + current-bank
-global dual + exact signed replay；但阶段推进当前停在G2-B专家复核点，不能越过未通过的Program behavior Gate直接恢复P2。
+fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
+global dual + exact signed replay；阶段推进已进入J2 joint functional implementation，不再受独立Program behavior-Gram Gate阻塞。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

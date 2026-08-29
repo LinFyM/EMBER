@@ -1,7 +1,8 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。专家原文见`docs/expert_review_20260824_native_factor.md`与
-`docs/expert_review_20260826_bank_conditioned_native_factor.md`，精确分数、提交和历史脉络见
+只记录跨session仍影响决策的结论。四次专家原文见`docs/expert_review_20260824_native_factor.md`、
+`docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`与
+`docs/expert_review_20260829_joint_program_primal.md`，精确分数、提交和历史脉络见
 `docs/research_history.md`；当前唯一架构合同见`docs/event_conditioned_policy_compiler_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
@@ -1203,8 +1204,23 @@ policy-behavior ownership。
 因此v3--v5形成一条完整排除链：v3的role-local graph不连通；v4连通graph但batch-local affine gauge仍允许near-collapse；v5固定
 绝对gauge后能拉开任务，却没有对齐behavior方向。该证据淘汰这三种objective及pointwise decoder，阻止继续G3 P2或用训练时长、
 seed/LR/width/rank小扫掩盖；它不证明native bank、G1、current-bank primal-to-dual operator、Stage0或固定Program schema根本无解。
-最早未解决接口仍是G2部署Program的跨task behavior identifiability，下一设计必须解释为何正确policy效果会由当前Program字段可识别地
-拥有，而不能只再增加一种几何归一化。当前按owner要求停在专家复核前，不新增v6，也不消费official held20。
+最早未解决接口仍是部署Program与shared primal scorer之间的联合behavior identifiability；不能只再增加一种Program几何归一化。
+
+### 71. 第四次专家复核把独立behavior-Gram Gate改为joint functional credit
+
+第四位专家锁定`main@910fb20`及`9b52e59..910fb20`历史后，确认P0/P1已经把native bank、rank4、current-bank dual和exact replay从
+当前首因中排除；V5只有15次updates、前9次warmup，而且监督固定block-equal、单位化且等权的Program Gram。`rho/tau`还跨selected
+owners重复，使不同target native kernels被迫共享大量几何。因此V5是有效protocol non-pass，却既不是公平的联合functional测试，也不
+证明Program schema或Stage0结构性不可能。
+
+当前最早未解决接口精确改为Natural Program与`ProgramNativePrimalScorer`之间的联合可识别性和functional credit。唯一下一实验联合
+这两个相邻模块，用generated完整rank16 LoRA在cross-episode action/flow panel上的真实功能损失反传；source、Native Stage0、已通过P1的
+bank operator、carrier、scale与Action Meta全部冻结。这样既不恢复frozen-Program P2，也不是提前解冻全Writer的黑箱训练。
+
+12-task Gate必须先有同loss的task-local、跨fit-video共享free-primal正控，再同时报告train、held-video、true task-held、四family、
+language/endpoints、wrong Program、wrong bank、interaction、same-task和相邻checkpoint。只有train与held-video强而task-held弱时，才做
+matched raw frozen Stage0 sufficiency probe；raw相对Program task-held增加至少`.15`且达到`.40`才归因Program压缩，raw也低于`.25`
+才允许把最早瓶颈上移到Stage0。原文逐字保存在`docs/expert_review_20260829_joint_program_primal.md`。
 
 ## 已关闭路线
 

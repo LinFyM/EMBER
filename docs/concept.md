@@ -31,7 +31,8 @@ Action Expert target对齐的Program；同一condition在冻结PI0.5各目标层
 ```text
 exact language + ordered action-hidden videos
               -> Pass A: q_V(owner-specific Program)
-              -> Pass B0: Program-conditioned native anchors + current-bank statistics
+              -> shared Program-to-native-primal scorer
+              -> Pass B0: current-bank statistics
               -> regularized bank-conditioned query solve
               -> Pass B1: replay the same bank and exact signed pooling of real X/Y
               -> current first implementation: rank4 task residual + frozen rank12 carrier
@@ -76,8 +77,9 @@ Program字段，也不在内存中整段物化。内部两阶段读取仍属于r
 - 只使用现成且授权的LIBERO tasks，不制作人工process数据集。
 - train24与审计后的non-held LIBERO-90 meta tasks产生梯度；validation/test不产生梯度。
 - video与action query跨episode；多个successful policies用独立优化lineages构成分布，不把同一轨迹的checkpoint当独立任务知识。
-- 当前先用task-local free-code证明native factor bank与pooling具有闭环容量；通过后再训练Natural Program和冻结Program的shared
-  compiler，避免在核心参数基底无效时训练更大的Writer。
+- task-local free-code已经证明native factor bank与pooling有容量；P0/P1进一步证明current-bank operator能跨video保留共享primal。
+  当前不再强迫Program先独立匹配一个人为规定的behavior Gram，而是只联合相邻的Natural Program与shared primal scorer，直接由
+  generated-LoRA的跨episode functional loss给credit；已通过的bank operator仍冻结，因此这不是提前把整个Writer变成黑箱。
 - staged gates用于定位接口，不是Final必须重演的训练课程。Final既保留从已验证组件初始化的fresh joint run，也保留整套Writer
   完全随机初始化并直接端到端fresh训练的正式选项，由同一closed-loop合同选择。
 - shuffled/reversed只在最终selected checkpoint已选定并冻结后评测时序特异性，不进入训练、loss、
@@ -89,7 +91,8 @@ Program字段，也不在内存中整段物化。内部两阶段读取仍属于r
 解析投影在held5具有5/5容量；policy-effect objective对known-success paths有用；fit-span realizer会丢失held低能量创新。12+4因此
 是首版最合理的参数分配，但不是不可由capacity evidence推翻的永久结论。
 
-G1已经证明自然视频产生的target-native banks与exact signed pooling可形成强task-local rank4 residual；G2已经证明Natural Program
-保留了可用的视频动态。当前未知集中在G3：共享compiler能否用Program-conditioned内容兼容性与每个当前bank的统计量，学习跨task、
-跨video稳定的bank-conditioned selection。旧candidate-local one-pass实现对随bank covariance旋转的解析dual/score不可辨识；下一步
-先验证新operator能否精确恢复native-factor容量，再验证shared anchor mapping，而不是继续回归逐video dual标签。
+G1已经证明自然视频产生的target-native banks与exact signed pooling可形成强task-local rank4 residual；原G2动态Gate证明Natural
+Program保留了可用视频动态；P0/P1又证明同一task primal经不同current banks对偶化和replay仍能跨video恢复约`.94--.995`。目前最早
+未解决接口是部署Program与shared primal scorer的联合可识别性和functional credit。G2-B v3--v5证明三种直接Program behavior-geometry
+目标无效，却没有证明固定Program schema或Stage 0结构性不可能。当前先做12-task joint functional Gate；只有train与held-video强而
+true task-held弱时，才用matched raw frozen Stage0 probe区分Program压缩与Stage0 evidence瓶颈。

@@ -12,14 +12,16 @@ realizer均由Git保存，不再作为可执行fallback。
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
 - G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
-- 当前处于G3 functional-polar shared compiler：先从current native bank在线建立真实B0-solve/B1-replay算子的坐标系，再由共享
-  Program query与content keys形成native anchors并重放同一bank做exact signed pooling；rank12+rank4是首版有证据配置；
+- P0/P1已经证明current-bank primal-to-dual与exact signed replay在六task、四family和held videos上保留强容量；当前唯一活动
+  资格是J2 joint Program--primal functional qualification：联合训练Natural Program与共享`ProgramNativePrimalScorer`，直接用
+  唯一完整rank16 LoRA的跨episode action/flow功能损失给credit，同时冻结source、Native Stage 0、bank operator、carrier和scale；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-全仓库orientation、G1和G2已完成；当前按active design推进G3 F0--F6，不恢复任何退役Writer/realizer路线。
+全仓库orientation、G1、原G2动态Gate和G3 P0/P1已完成。G2-B v3--v5只淘汰各自的独立behavior-geometry目标；当前不再要求
+Program先独立通过behavior-Gram硬Gate，也不恢复任何退役Writer/realizer路线。
 
 ## 阅读顺序
 
@@ -29,8 +31,10 @@ realizer均由Git保存，不再作为可执行fallback。
 4. `docs/concept.md`：科学问题与ECP假设；
 5. `docs/expert_review_20260824_native_factor.md`：2026-08-24专家回复原文；
 6. `docs/expert_review_20260826_bank_conditioned_native_factor.md`：2026-08-26第二次专家回复原文；
-7. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
-8. `docs/research_history.md`：影响当前决策的历史证据。
+7. `docs/expert_review_20260828_g3_functional_sketch.md`：2026-08-28第三次专家回复原文；
+8. `docs/expert_review_20260829_joint_program_primal.md`：2026-08-29第四次专家回复原文；
+9. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
+10. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

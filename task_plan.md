@@ -270,11 +270,12 @@ cross-episode teacher action/flow loss反传；source、Native Stage0、bank ope
 - [ ] Gate：train median`>=.60`、held-video`>=.50`、两个true task-held平均`>=.40`且各`>=.30`、held/train`>=.80`；q/v各
   `>=.35`、action-in/out各`>=.30`；full相对language/endpoints各`>=.10`；wrong Program与wrong bank margins各`>=.10`、
   interaction`>=.05`、same-task retention`>=.80`，checkpoint 60到100 task median回落不超过`.05`，event/K1/信息墙继续通过；
-- [ ] 速度资格：先缓存冻结language/Stage0 raw evidence、X/Y、covariance eigensystem和固定action batches，不缓存Program或LoRA；
+- [x] 速度资格：先缓存冻结language/Stage0 raw evidence、X/Y、covariance eigensystem和固定action batches，不缓存Program或LoRA；
   六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，完整评价墙钟不超过训练主体一半。world size按live吞吐弹性
   选择，不改变task权重或Gate；仅做最小真实forward/backward/materialization与定向合同检查，不跑冗余全仓测试。task1真实
   positive-control formal发现task93在physical microbatch4下peak reserved`37.07GiB`；同一logical16/bank/seed改为physical2后，
-  task93一步loss相对差`.060%`、step`13.32s`、peak reserved`32.41GiB`，系统修正通过。六卡joint update仍须单独profile。
+  task93一步loss相对差`.060%`、step`13.32s`、peak reserved`32.41GiB`，系统修正通过。六卡joint真实profile进一步为
+  `11.73s/global step`、per-rank peak reserved`18.25--20.29GiB`，所有Program/primal梯度probe非零，速度Gate通过。
 
 J2通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen

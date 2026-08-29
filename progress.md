@@ -82,6 +82,41 @@ primal scorer梯度、role/task权重、global step墙钟及峰值；通过后�
   Action Meta 0、held/panel-B backward 0、唯一rank16和数值/内存合同全部成立。该正控通过只证明functional objective能驱动
   native free-primal，不证明shared Program mapping；形成aggregate Gate结论后才允许做六卡joint one-step profile和12-task formal。
 
+## 2026-08-29 J2六卡joint速度资格通过，12-task functional qualification启动
+
+clean pushed `main@3fd5c6f`在gpu01物理`0--5`完成world6真实joint一步profile。固定task group为
+`[1,8,9,72,73,75]`（3 meta + 3 target），12/12 condition全部命中冻结cache；global step为`11.7321s`，六rank分别为
+`11.7235--11.7321s`，负载均衡。per-rank peak reserved为`18.25--20.29GiB`，远低于`35GiB`；Program language/scene/process/context、
+primal input/output/event score的七组gradient probe全部finite且非零。native teacher tensor reads为0，source、Stage0、scale、decoder、
+Action Meta以及task/frame free parameter均为0，trainable参数只有共享Program与primal scorer的`8,393,221`个；全部条件最终仍物化唯一
+38-target rank12+4 rank16 adapter。profile evidence位于
+`runs/analysis/pi05_ecp_j2_joint_world6_mb2_profile_3fd5c6f_gpu01p012345_20260829/`。随后`main@1d775a4`只把formal stdout收紧为
+step/rank摘要，完整condition与solve diagnostics继续保留在JSONL，不改变科学图或optimizer；定向16项回归与compile通过。
+
+### J2 12-task joint formal launch contract
+
+- scientific implementation authority为clean pushed `main@1d775a445486d84a9743e363360ca7a2863cac46`；formal从只新增本合同文档、
+  不再修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。Natural Program只加载`c1493a1/macro20`的model
+  tensors，primal scorer、optimizer与scheduler fresh；不加载positive-control、P2或G3 v3--v5 checkpoint；
+- gradient tasks固定为meta`[1,8,9,32,52]`和target`[72,73,75,93,94]`，true task-held固定为`[2,74]`。每个global step取
+  3 meta + 3 target，按确定性cycle使每个gradient task在每5步出现3次；每个task使用两条fit K1 video与同一panel-A visit的
+  keyed logical16 actions，physical microbatch2。第三same-task video、panel B、task-held、validation/test全部零梯度；
+- 总计110 actual optimizer steps，其中前10步warmup、后100步为effective joint training；保存actual step70与110两个single
+  checkpoints。source policy、Native Stage0、current-bank operator、rank12 carrier、scale、temporal decoder与Action Meta全冻结；
+  只训练共享Natural Program与Program-to-primal scorer，不使用teacher LoRA target、shuffled或reversed；
+- model/data authority沿用source run
+  `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722`、checkpoint`checkpoints/step_00001000`、tokenizer
+  `models/tokenizers/openpi/paligemma_tokenizer.model`与target data`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。
+  复用node-local冻结cache`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`，其中不含Program或LoRA；formal输出根为
+  `runs/outputs/pi05_ecp_j2_joint_program_primal_12task_s110_1d775a4_gpu01p012345_r6_20260829/`，预计新增小于`1GiB`；
+- launch固定gpu01 world6物理`0--5`、`NCCL_P2P_DISABLE=1`、deferred NCCL与GPU-local NUMA；实际launch前重新检查gpu01/gpu02、
+  process/显存/UTL、`/data1` quota、`/dev/shm`、output不存在和detached worktree等于origin/main。已测global step`11.73s`、
+  per-rank peak reserved最大`20.29GiB`，满足`<=30s`目标、`45s`硬上限和`<35GiB`内存门；exact resume锁定world6/topology；
+- step70/110使用同一固定零梯度evaluator报告functional recovery、family、same-task held video、true task-held、language/endpoints、
+  wrong Program、wrong bank、interaction、same-task retention、event/K1与信息墙。primary为相对同一carrier与task-local free-primal正控的
+  generated-LoRA functional recovery；训练loss、factor/update cosine及checkpoint union不能代替Gate。若non-pass，按最早失效接口定位，
+  不用seed/LR/width/slot/rank小扫修饰结果。
+
 ## 2026-08-29 G2 global-calibrated behavior-kernel v5 formal non-pass，暂停新增版本
 
 clean pushed `main@7f4df1b`的detached frozen worktree已在gpu01物理`0--4`完成五卡macro5/15 updates、唯一checkpoint和

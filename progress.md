@@ -17,10 +17,38 @@ role-equal为`.4997/.5131`看似高，其中四个target held的`.7842/.7930`是
 minimum degree 9且唯一一个60-task component。
 
 当前单一v4修正因此保留原5+5、15 updates、两组video、六个Program blocks与全部Gate，只把behavior loss改为
-`0.5 * joint + 0.25 * meta + 0.25 * target`的centered off-diagonal topology。它不墙reader、参数、forward、task route或
-deployment路径。dirty三卡真实一步已通：joint/meta/target A关联为`.1615/.8314/.4287`，直接kernel/process/owner
-梯度为`1.391/.842/.0434`，step `18.33s`、peak allocated `9.98GB`，source/Stage0 trainable 0、Action Meta 0。该结果只证明
-新credit graph接通；下一步是clean集成、detached profile与同一macro5/internal Gate。
+`0.5 * joint + 0.25 * meta + 0.25 * target`的centered off-diagonal topology。它不增加reader、参数、forward、task route或
+deployment路径。实现已经过`204 passed`、diff与architecture检查后clean pushed到`main@37885a6`，无hard violation。clean
+detached三卡真实一步的joint/meta/target A关联为`.1615/.8314/.4287`，直接kernel/process/owner梯度为
+`1.391/.842/.0434`，step `18.31s`、peak allocated `9.98GB`，source/Stage0 trainable 0、Action Meta 0；与dirty profile逐项一致。
+该结果只证明新credit graph接通，不是Gate。
+
+### G2 joint-role behavior-kernel v4 macro5 formal launch contract
+
+- scientific code authority为clean pushed `main@37885a6`；formal从只新增本合同文档、不改动`src/ scripts/ configs/ tests/`的
+  clean pushed descendant建立detached frozen worktree。fresh optimizer，从同一`c1493a1/macro20` Program model-only初始化，不resume v3、
+  不复用profile checkpoint；
+- data、authority和Gate与v3完全相同：fit60 behavior tensors用于梯度与fixed evaluator，internal-held15只作Gate，
+  official held20不读、不训练、不选模、不修正。唯一因果变量是每批在原role kernels外加入等质量joint kernel，权重
+  固定`.5/.25/.25`；
+- formal规模仍为5 macros × 3 optimizer steps，每step 5 meta+5 target、每rank一对role task、两组disjoint same-K views。仅训练
+  Natural Program；source、Native Stage0冻结，Action Meta必须为0。macro5存一个checkpoint后执行旧dynamic Gate和完整internal
+  behavior Gate；
+- command：`env CUDA_VISIBLE_DEVICES=0,1,2,3,4 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=5 scripts/train_ecp_natural_program.py --config
+  configs/pi05_ecp_natural_program_g2_behavior_kernel_v4.json --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path
+  /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root
+  /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --label-root
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_labels_g2_v2_cpu_20260825 --output-dir
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_g2_joint_behavior_kernel_fold0_m5_37885a6_gpu01p01234_r5_20260829
+  --stop-after-macro 5 --log-every 1`；
+- 预定使gpu01物理`0--4`、world5和`NCCL_P2P_DISABLE=1`，不使用dummy第六卡。launch前再次live检查gpu01/gpu02的显存、
+  utilization和process，并复核`/data1` quota；output预计小于`0.1GiB`且目录必须事前不存在；
+- Gate与失败解释不变：train topology `>=.50`、internal held role-equal `>=.25`、internal meta/target各`>=.25`，再评
+  exact/family/wrong/language/view和旧dynamic合同。joint mini-batch metric不代替全train60 Gate；train仍不升时先分析Program表示可达性，
+  train明显升而internal失败时才重开窄Stage0 grounding tail；不做seed/LR/width/rank小扫。
 
 ## 2026-08-29 G2-B pointwise formal non-pass，decoder-free behavior kernel已接通
 

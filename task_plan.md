@@ -231,7 +231,10 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   唯一60-task component；不增加reader、参数、forward或deployment路径，且保持原task/video质量、Stage0冻结与official wall；
 - [x] v4三卡真实一步profile完成：joint梯度确实进入Program，step `18.33s`、peak `9.98GB`、source/Stage0
   trainable 0、Action Meta 0；定向与全仓回归`19/19`与`204 passed`；
-- [ ] 完成v4 diff/architecture检查、clean push与detached profile，再以同一五卡macro5规模复评全部internal与旧动态Gate；
+- [x] 完成v4 diff/architecture检查、`204 passed`、clean pushed `main@37885a6`集成与detached三卡profile；无hard
+  violation，clean profile与dirty profile的loss/梯度/吞吐逐项一致；
+- [ ] 从只新增v4 formal launch contract文档的clean pushed descendant建立detached worktree，以同一五卡macro5规模复评全部
+  internal与旧动态Gate；
 - [ ] non-pass时先比较train topology、internal meta/target topology、exact family与旧动态retention：train不升则修Program credit；train升而
   internal不升才重开窄Stage0 grounding tail；只有新机制证据才允许修正，不做seed/LR/width/rank小扫。internal通过后才读official held20，
   冻结唯一Program checkpoint并更新G3 v5 authority。

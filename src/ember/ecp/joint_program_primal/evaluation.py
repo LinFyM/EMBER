@@ -211,8 +211,14 @@ def balanced_task_assignments(
         )
     rows: list[list[int]] = [[] for _ in range(worker_count)]
     loads = [0] * worker_count
+    maximum_tasks = (len(tasks) + worker_count - 1) // worker_count
     for task in sorted(tasks, key=lambda value: (-costs[value], value)):
-        worker = min(range(worker_count), key=lambda value: (loads[value], value))
+        eligible = [
+            worker
+            for worker in range(worker_count)
+            if len(rows[worker]) < maximum_tasks
+        ]
+        worker = min(eligible, key=lambda value: (loads[value], value))
         rows[worker].append(task)
         loads[worker] += costs[task]
     return tuple(tuple(sorted(row)) for row in rows)

@@ -6,6 +6,7 @@ from ember.ecp.joint_program_primal.evaluation import (
     _language_program,
     _normalized,
     _task_conditions,
+    balanced_task_assignments,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.train_step import (
@@ -127,3 +128,42 @@ def test_true_task_holdout_uses_lowest_three_sealed_videos() -> None:
     )
     selected = _task_conditions(runtime, 2)
     assert tuple(row.video_demo for row in selected) == (4, 25, 27)
+
+
+def test_six_worker_gate_assignment_keeps_exactly_two_tasks_per_worker() -> None:
+    task_ids = (1, 2, 8, 9, 32, 52, 72, 73, 74, 75, 93, 94)
+    fit_ids = set(task_ids) - {2, 74}
+    fit = {
+        task: tuple(
+            MappingCondition(task, "meta_fit" if task < 72 else "target_fit", demo, 10)
+            for demo in (0, 1)
+        )
+        for task in fit_ids
+    }
+    held = {
+        task: (
+            MappingCondition(
+                task, "meta_fit" if task < 72 else "target_fit", 2, 10
+            ),
+        )
+        for task in fit_ids
+    }
+    task_held = tuple(
+        MappingCondition(task, "meta_fit" if task < 72 else "target_fit", demo, 10)
+        for task in (2, 74)
+        for demo in (0, 1, 2)
+    )
+    runtime = SimpleNamespace(
+        mapping_split=SimpleNamespace(
+            fit_by_task=fit,
+            video_held_by_task=held,
+            task_held=task_held,
+        ),
+        panels={
+            task: SimpleNamespace(role="meta_fit" if task < 72 else "target_fit")
+            for task in task_ids
+        },
+    )
+    assignments = balanced_task_assignments(runtime, worker_count=6)
+    assert all(len(tasks) == 2 for tasks in assignments)
+    assert {task for tasks in assignments for task in tasks} == set(task_ids)

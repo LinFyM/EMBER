@@ -185,6 +185,7 @@ def run_natural_program_optimizer_step(
         cross_view_weight=float(
             runtime.config["behavior_alignment"]["cross_view_weight"]
         ),
+        scope_weights=runtime.config["behavior_alignment"]["scope_weights"],
     )
     kernel_weight = float(
         runtime.config["objective"]["weights"]["behavior_alignment"]

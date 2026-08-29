@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_natural_program_g2_behavior_kernel_v3",
-  "status": "active_decoder_free_behavior_kernel_natural_program",
+  "schema_version": "ember_ecp_natural_program_g2_behavior_kernel_v4",
+  "status": "active_joint_decoder_free_behavior_kernel_natural_program",
   "authorities": {
     "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
@@ -61,7 +61,7 @@
     "temporal_head_inputs": ["P_process", "rho", "tau"]
   },
   "behavior_alignment": {
-    "kind": "decoder_free_program_kernel_v1",
+    "kind": "joint_role_decoder_free_program_kernel_v2",
     "selected_targets": [0, 16, 34, 1, 17, 35, 36, 37],
     "families": ["q", "q", "q", "v", "v", "v", "action_in", "action_out"],
     "dimension": 16,
@@ -74,10 +74,11 @@
       "tau"
     ],
     "teacher_kernels": ["panel_a", "consensus"],
+    "scope_weights": {"joint": 0.5, "meta": 0.25, "target": 0.25},
     "internal_fold": 0,
     "cross_view_weight": 0.5,
     "evaluator_ridge": 0.01,
-    "fit_target": "role-equal centered off-diagonal functional behavior topology",
+    "fit_target": "balanced joint-plus-role centered off-diagonal functional behavior topology",
     "held_use": "internal15 zero-gradient qualification; official20 remains sealed",
     "language_reference_exact_rank4": 0.2686840295791626,
     "gate": {

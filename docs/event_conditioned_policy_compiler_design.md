@@ -428,7 +428,7 @@ non-pass：decoder学会了fit task code，却没有迫使部署Program形成跨
 不参与本轮训练、选模或架构修正。train60建立的rank16 basis在internal15对独立panel-B/consensus为`.6184/.7158`，q/v/action-in/
 action-out为`.6556/.7373/.4550/.6676`，证明这个内部task holdout具有足够但非平凡的可判别上限。
 
-当前唯一修正不再增加training-only reader参数，而直接让部署Program拥有behavior credit。每个condition从完整固定schema构造block-equal
+首个decoder-free修正不再增加training-only reader参数，而直接让部署Program拥有behavior credit。每个condition从完整固定schema构造block-equal
 feature：`P_lang`、`P_scene`、`sqrt(rho)*P_process`、`sqrt(rho)*sigma`、`rho`、`tau`；每个block独立单位化后保留owner/event顺序。
 每个role内把两组disjoint same-K video views的centered off-diagonal Program cosine kernel，对齐到train60的panel-A与consensus
 factor-cosine kernels，并约束两view kernel一致。该loss不含task decoder、task/frame lookup或held label；其梯度直接进入现有
@@ -440,6 +440,20 @@ meta-gradient tasks。Gate先只读internal15：train topology相关至少`.50`�
 旧动态资格。该readout不是模型参数或deployment路径。official held20继续冻结；只有internal Gate先通过后才获得一次最终确认资格。
 若train topology本身不升，最早接口仍是Program credit；若train升而internal meta/target不升，才依据该证据重开Stage0 grounding的窄尾部，
 不解冻整个observer。behavior通过而动态Gate回退时再处理表示—事件职责冲突；shuffled/reversed仍不使用。
+
+v3已从clean detached `60fb18b`完成macro5/15 updates和全部internal Gate。局部5+5 batch的correlation最高达
+`.7036/.7037`，但全量train60只`.2315/.2358`；internal target的`.7842/.7930`基本复现旧Program偶然高值，
+internal meta仅`.2152/.2332`，exact panel-B/consensus仅`.1207/.1253`。旧动态Gate仍通过，official held20未读。
+
+对确定性sampler的图分析进一步表明，v3在meta45上只给126/990个task pairs提供相对约束，并分成5个互不连通的
+components。这个objective允许每个小组在彼此无约束的坐标中各自对齐；因此该non-pass的最早接口是全局credit graph，
+不是Stage0、Program schema、梯度路径或训练时长。
+
+当前唯一v4修正在每个原5 meta+5 target batch中同时对齐joint、meta和target kernels，权重固定为`.5/.25/.25`。
+panel-A与consensus的真实meta-target cross-role关系平均相关`.8629`；加入joint edges后，原15个batches对fit60覆盖483/1770
+pairs、minimum degree 9且只有1个connected component。该修正不增加模型参数、reader、forward、task route或deployment路径，不改
+5+5 role质量、K、动态loss、Gate或information wall。只有v4的全train topology明显上升而internal两role仍失败，才重新考虑窄
+Stage0 grounding tail。
 
 ### G3. Frozen-Program shared compiler
 

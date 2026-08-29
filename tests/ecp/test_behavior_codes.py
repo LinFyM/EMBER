@@ -62,21 +62,42 @@ def test_behavior_kernel_loss_has_no_task_decoder_and_backpropagates():
 
     torch.manual_seed(8)
     features = torch.randn(6, 2, 8, 12, requires_grad=True)
+    authority = Authority()
     loss, metrics = distributed_behavior_kernel_loss(
         local_features=features,
         local_task_ids=torch.tensor([1, 2, 3, 72, 73, 74]),
-        authority=Authority(),
+        authority=authority,
         world_size=1,
         cross_view_weight=0.5,
+        scope_weights={"joint": 0.5, "meta": 0.25, "target": 0.25},
+    )
+    cross_flipped = Authority()
+    cross_flipped.value = authority.value.clone()
+    cross_flipped.value[:, :3, 3:] *= -1
+    cross_flipped.value[:, 3:, :3] *= -1
+    flipped_loss, _ = distributed_behavior_kernel_loss(
+        local_features=features,
+        local_task_ids=torch.tensor([1, 2, 3, 72, 73, 74]),
+        authority=cross_flipped,
+        world_size=1,
+        cross_view_weight=0.5,
+        scope_weights={"joint": 0.5, "meta": 0.25, "target": 0.25},
     )
     loss.backward()
     assert torch.isfinite(loss)
+    assert not torch.allclose(loss, flipped_loss)
     assert features.grad is not None and features.grad.abs().sum() > 0
     assert set(metrics) == {
         "behavior_kernel_alignment_loss",
         "behavior_kernel_cross_view_loss",
         "behavior_kernel_correlation_a",
         "behavior_kernel_correlation_b",
+        "behavior_kernel_joint_correlation_a",
+        "behavior_kernel_joint_correlation_b",
+        "behavior_kernel_meta_correlation_a",
+        "behavior_kernel_meta_correlation_b",
+        "behavior_kernel_target_correlation_a",
+        "behavior_kernel_target_correlation_b",
     }
 
 

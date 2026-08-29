@@ -1151,6 +1151,23 @@ checkpoint或Writer。Stage0首轮继续冻结；只有fit topology明显上升�
 source与Stage0 trainable为0。它仍只获得一次internal Gate资格，不能用训练kernel loss或旧动态分数冒充通过，official held20也不能用于
 当前架构修正。
 
+### 68. v3只学到batch-local behavior排序，需要连通的joint-role credit graph
+
+clean detached `60fb18b`的v3 macro5训练和Gate从运行层面全部正常：15 updates的最后local A/B correlation为
+`.7036/.7037`，direct behavior-kernel梯度持续非零，旧动态Gate仍以`13.945%` full-vs-endpoints改善通过。但Gate上
+train60 A/B只`.2315/.2358`，相对旧block-equal基线`.186/.205`只小幅改善；internal meta仅`.2152/.2332`，
+target的`.7842/.7930`与旧`.763/.754`同量级。exact panel-B/consensus role-equal仅`.1207/.1253`，所以不能用局部
+train metric、偶然target小组或旧动态代替behavior Gate。official held20在整个formal中仍为0 reads。
+
+根因是objective图而不是optimizer超参。v3每step在meta和target内部各自对5个tasks做centered kernel；预注册15个batches对
+meta45只产生126/990条edges，且是5个不连通components。即使无限续训，该loss也没有直接约束components之间的相对
+几何。这解释了为什么小批几何迅速改善而全量几何基本不动，也排除直接解冻Stage0、加reader或做LR/seed小扫。
+
+behavior authority的meta-target cross-role panel-A与consensus关系相关`.8629`，是可用而非域噪声。在原5+5 batch中加入一个
+等质量joint kernel后，不增加任何forward就把15个batches的总监督图变为483/1770 edges、minimum degree 9、唯一1个
+60-task component。v4因此使用`.5 joint + .25 meta + .25 target`，保留两role等质量与原资源成本。三卡真实一步
+已证明joint关系真正改变loss且梯度直接进Program，step `18.33s`、peak `9.98GB`、Action Meta/Stage0/source均保持冻结。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

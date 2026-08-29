@@ -1,5 +1,27 @@
 # EMBER progress
 
+## 2026-08-29 G2 behavior-kernel v3 formal non-pass，joint-role v4已接通
+
+clean detached `main@60fb18b`的五卡v3从`c1493a1/macro20` model-only初始化、fresh optimizer运行到macro5/15
+updates，数值、五卡利用、checkpoint、纯Native Stage0与Action Meta 0全部正常。最后一个local 5+5 batch的panel-A/B
+correlation达`.7036/.7037`，旧动态Gate也仍全通：full-vs-endpoints改善`13.945%`、active events中位数4、one-event 0、
+same-task/probe/K1/K4全通。但全量train60 topology A/B只有`.2315/.2358`，低于`.50` Gate；internal-held15
+role-equal为`.4997/.5131`看似高，其中四个target held的`.7842/.7930`是旧Program已有的偶然高值，11个meta held仅
+`.2152/.2332`，未过两role各`.25`。fit60-only reader的panel-B/consensus exact role-equal只`.1207/.1253`，wrong margin为负；
+因此该checkpoint明确non-pass，official held20没有被读取。
+
+最早失效接口不是Stage0 grounding，而是v3的局部关系目标没有定义全局坐标。当前15个optimizer batches在meta45上只覆盖
+126/990对（`12.7%`），且明确分成5个互不连通的components；所以每个5-task小组可以单独获得高correlation，却没有
+任何梯度规定不同组之间的相对几何。authority中meta-target跨role的panel-A与consensus关系是稳定的，平均相关`.8629`；
+在现有每批5 meta+5 target上加入跨role共同topology后，15个batches的监督图会变为覆盖483/1770对（`27.3%`）、
+minimum degree 9且唯一一个60-task component。
+
+当前单一v4修正因此保留原5+5、15 updates、两组video、六个Program blocks与全部Gate，只把behavior loss改为
+`0.5 * joint + 0.25 * meta + 0.25 * target`的centered off-diagonal topology。它不墙reader、参数、forward、task route或
+deployment路径。dirty三卡真实一步已通：joint/meta/target A关联为`.1615/.8314/.4287`，直接kernel/process/owner
+梯度为`1.391/.842/.0434`，step `18.33s`、peak allocated `9.98GB`，source/Stage0 trainable 0、Action Meta 0。该结果只证明
+新credit graph接通；下一步是clean集成、detached profile与同一macro5/internal Gate。
+
 ## 2026-08-29 G2-B pointwise formal non-pass，decoder-free behavior kernel已接通
 
 clean detached `main@5cbe76e`的首轮G2-B从旧`c1493a1/macro20`只加载共同model tensors，以fresh decoder/optimizer运行到

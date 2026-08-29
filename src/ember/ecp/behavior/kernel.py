@@ -109,6 +109,41 @@ def _gather_features(
     return gathered_features, torch.cat(gathered_ids)
 
 
+def _topology_scope_loss(
+    *,
+    features: torch.Tensor,
+    task_ids: torch.Tensor,
+    selection: torch.Tensor,
+    authority: Any,
+) -> tuple[torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
+    if int(selection.sum()) < 3:
+        raise ValueError("behavior-kernel optimizer step lost a topology scope")
+    ids = task_ids[selection]
+    normalized_teachers = tuple(
+        normalized_centered_kernel(authority.kernel(ids, kind=kind))
+        for kind in ("panel_a", "consensus")
+    )
+    programs = []
+    losses = []
+    correlations = {}
+    for view, name in enumerate(("a", "b")):
+        normalized = normalized_centered_kernel(
+            program_gram(features[selection, view])
+        )
+        programs.append(normalized)
+        losses.extend(
+            (normalized - teacher).square().sum(dim=(-1, -2)).mean()
+            for teacher in normalized_teachers
+        )
+        correlations[name] = (
+            normalized * normalized_teachers[-1]
+        ).sum(dim=(-1, -2)).mean()
+    cross_view = (
+        (programs[0] - programs[1]).square().sum(dim=(-1, -2)).mean()
+    )
+    return torch.stack(losses).mean(), cross_view, correlations
+
+
 def distributed_behavior_kernel_loss(
     *,
     local_features: torch.Tensor,
@@ -116,6 +151,7 @@ def distributed_behavior_kernel_loss(
     authority: Any,
     world_size: int,
     cross_view_weight: float,
+    scope_weights: Mapping[str, float],
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Align Program and behavior relations while keeping credit in Program."""
 
@@ -124,53 +160,73 @@ def distributed_behavior_kernel_loss(
     features, task_ids = _gather_features(
         local_features, local_task_ids, world_size=world_size
     )
-    losses = []
-    view_correlations: dict[str, list[torch.Tensor]] = {"a": [], "b": []}
-    cross_view = []
-    for role, role_ids in (
-        ("meta", authority.meta_gradient_task_ids),
-        ("target", authority.target_gradient_task_ids),
-    ):
-        del role
-        selection = torch.tensor(
-            [int(value) in role_ids for value in task_ids.detach().cpu().tolist()],
+    task_id_rows = task_ids.detach().cpu().tolist()
+    selections = {
+        "joint": torch.ones(
+            task_ids.shape, dtype=torch.bool, device=features.device
+        ),
+        "meta": torch.tensor(
+            [int(value) in authority.meta_gradient_task_ids for value in task_id_rows],
             dtype=torch.bool,
             device=features.device,
+        ),
+        "target": torch.tensor(
+            [int(value) in authority.target_gradient_task_ids for value in task_id_rows],
+            dtype=torch.bool,
+            device=features.device,
+        ),
+    }
+    scope_weights = {name: float(value) for name, value in scope_weights.items()}
+    if set(scope_weights) != set(selections) or not math.isclose(
+        sum(scope_weights.values()), 1.0
+    ) or any(value <= 0.0 for value in scope_weights.values()):
+        raise ValueError("behavior-kernel topology scope weights changed")
+    alignments: dict[str, torch.Tensor] = {}
+    cross_views: dict[str, torch.Tensor] = {}
+    scope_correlations: dict[str, dict[str, torch.Tensor]] = {}
+    for scope, selection in selections.items():
+        (
+            alignments[scope],
+            cross_views[scope],
+            scope_correlations[scope],
+        ) = _topology_scope_loss(
+            features=features,
+            task_ids=task_ids,
+            selection=selection,
+            authority=authority,
         )
-        if int(selection.sum()) < 3:
-            raise ValueError("behavior-kernel optimizer step lost a task role")
-        ids = task_ids[selection]
-        teacher_a = authority.kernel(ids, kind="panel_a")
-        teacher_consensus = authority.kernel(ids, kind="consensus")
-        normalized_teachers = tuple(
-            normalized_centered_kernel(value) for value in (teacher_a, teacher_consensus)
-        )
-        programs = []
-        for view, name in enumerate(("a", "b")):
-            program = program_gram(features[selection, view])
-            normalized = normalized_centered_kernel(program)
-            programs.append(normalized)
-            for teacher in normalized_teachers:
-                losses.append((normalized - teacher).square().sum(dim=(-1, -2)).mean())
-            view_correlations[name].append(
-                (normalized * normalized_teachers[-1]).sum(dim=(-1, -2)).mean()
-            )
-        cross_view.append(
-            (programs[0] - programs[1]).square().sum(dim=(-1, -2)).mean()
-        )
-    alignment = torch.stack(losses).mean()
-    view_loss = torch.stack(cross_view).mean()
+    alignment = sum(
+        scope_weights[scope] * value for scope, value in alignments.items()
+    )
+    view_loss = sum(
+        scope_weights[scope] * value for scope, value in cross_views.items()
+    )
     total = alignment + float(cross_view_weight) * view_loss
     metrics = {
         "behavior_kernel_alignment_loss": float(alignment.detach()),
         "behavior_kernel_cross_view_loss": float(view_loss.detach()),
         "behavior_kernel_correlation_a": float(
-            torch.stack(view_correlations["a"]).mean().detach()
+            sum(
+                scope_weights[scope] * values["a"]
+                for scope, values in scope_correlations.items()
+            )
+            .detach()
         ),
         "behavior_kernel_correlation_b": float(
-            torch.stack(view_correlations["b"]).mean().detach()
+            sum(
+                scope_weights[scope] * values["b"]
+                for scope, values in scope_correlations.items()
+            )
+            .detach()
         ),
     }
+    for scope, correlations in scope_correlations.items():
+        metrics[f"behavior_kernel_{scope}_correlation_a"] = float(
+            correlations["a"].detach()
+        )
+        metrics[f"behavior_kernel_{scope}_correlation_b"] = float(
+            correlations["b"].detach()
+        )
     return total, metrics
 
 

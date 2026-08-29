@@ -140,6 +140,7 @@ def _behavior_config_signature(config: Mapping[str, Any]) -> tuple[Any, ...]:
         int(behavior.get("dimension", 0)),
         behavior.get("kind"),
         behavior.get("program_blocks"),
+        behavior.get("scope_weights"),
         int(behavior.get("internal_fold", -1)),
         int(config["optimization"]["tasks_per_role_per_optimizer_step"]),
         float(config["objective"]["weights"].get("behavior_alignment", 0.0)) > 0.0,
@@ -174,12 +175,12 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
     if schema == "ember_ecp_natural_program_g2_v1":
         if config.get("behavior_alignment") is not None or tasks_per_role != 2:
             raise ValueError("legacy G2 config unexpectedly enables behavior alignment")
-    elif schema == "ember_ecp_natural_program_g2_behavior_kernel_v3":
+    elif schema == "ember_ecp_natural_program_g2_behavior_kernel_v4":
         expected_behavior = (
             [0, 16, 34, 1, 17, 35, 36, 37],
             ["q", "q", "q", "v", "v", "v", "action_in", "action_out"],
             16,
-            "decoder_free_program_kernel_v1",
+            "joint_role_decoder_free_program_kernel_v2",
             [
                 "P_lang",
                 "P_scene",
@@ -188,6 +189,7 @@ def load_natural_program_config(path: Path) -> dict[str, Any]:
                 "rho",
                 "tau",
             ],
+            {"joint": 0.5, "meta": 0.25, "target": 0.25},
             0,
             5,
             True,
@@ -741,7 +743,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=(
             REPO_ROOT
-            / "configs/pi05_ecp_natural_program_g2_behavior_kernel_v3.json"
+            / "configs/pi05_ecp_natural_program_g2_behavior_kernel_v4.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

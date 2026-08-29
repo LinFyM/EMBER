@@ -940,3 +940,27 @@ owner/event次序，两组disjoint same-K views的Program cosine kernels直接�
 - `runs/analysis/pi05_ecp_g2b_frozen_program_probe75_20_5cbe76e_gpu02p7_20260829/`；
 - `runs/analysis/pi05_ecp_g2b_program_geometry_old_vs_macro60_5cbe76e_20260829.json`；
 - `runs/analysis/pi05_ecp_g2b_internal_task_holdout_basis60_15_5cbe76e_gpu02p7_20260829.json`。
+
+## 49. G2-B role-local kernel formal non-pass与joint-role credit graph修正
+
+clean detached `main@60fb18b`的v3以五卡、fresh optimizer运行macro5/15 updates并完成预注册internal Gate。最后一个
+5+5 batch的panel-A/B correlation为`.7036/.7037`；旧动态Gate也以full-vs-endpoints `13.945%`改善、active-events中位数4、
+one-event 0、same-task/probe/K1/K4全部通过。然而全量train60 topology仅`.2315/.2358`，internal meta仅
+`.2152/.2332`；internal target的`.7842/.7930`为旧Program已有的高基线，不是本轮产生的新能力。train60-only
+kernel-ridge的panel-B/consensus exact role-equal只`.1207/.1253`，wrong Program margin为负。故v3为明确scientific non-pass，
+official held20没有被读取。
+
+确定性schedule审计给出了比“训练不够”更早的解释：v3的role-local 5-task kernels在meta45上只约束126/990 task
+pairs，并分成5个互不连通components。每个component可在自己的相对坐标中取得高local correlation，而objective不会给它们之间
+的几何梯度。这一证据只淘汰role-local minibatch topology objective，不淘汰decoder-free Program credit、Stage0、Program schema或behavior authority。
+
+新v4利用authority中稳定的meta-target cross-role关系（panel-A对consensus平均`.8629`），在原5 meta+5 target batch内以
+`.5/.25/.25`等质量对齐joint/meta/target kernels。这把预注册15个batches的fit60监督图改为483/1770 edges、minimum
+degree 9、唯一connected component，却不增加reader、模型参数、forward或deployment路径。dirty三卡真实profile保持`18.33s`
+一步与`9.98GB` peak，joint loss对Program梯度非零，source/Stage0/Action Meta仍全部冻结。该profile只作执行证据，v4仍须重跑
+同一macro5/internal Gate。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_natural_program_g2_behavior_kernel_fold0_m5_c8fee96_gpu01p01234_r5_20260829/`；
+- `runs/outputs/pi05_ecp_g2_joint_behavior_kernel_v4_profile_dirty_gpu01p012_r3_20260829/`。

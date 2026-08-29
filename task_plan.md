@@ -222,8 +222,16 @@ formal结论固化后仅作为可复现实证runner保留，不成为平行Write
   internal-held15 tensors、official held20 tensor overlap 0和对角误差`1.19e-7`；
 - [x] 从clean detached `c8fee96`完成三卡真实一步profile：两组video、global autograd kernel loss、Program全部梯度、
   source/Stage0冻结、Action Meta 0与显存/吞吐合同均通过；该profile只作执行证据，不代替Gate；
-- [ ] 从只新增formal launch contract文档的clean pushed descendant建立detached worktree，执行五卡macro5 formal及旧动态+
-  internal行为Gate；
+- [x] 从clean pushed `main@60fb18b`的detached worktree执行五卡v3 macro5 formal及旧动态+internal行为Gate；旧动态
+  Gate保持通过，但train topology仅`.2315/.2358`、internal meta仅`.2152/.2332`、exact panel-B/consensus仅
+  `.1207/.1253`，因此明确non-pass且official held20未读；
+- [x] 用batch co-occurrence graph定位v3目标的最早失效：meta45的15个batches只覆盖126/990对且分成5个不连通
+  components，local batch correlation升到`.70`不能确定全局Program几何；该证据不支持解冻Stage0或续训v3；
+- [x] 接通v4 joint-role topology：在原5+5 batch内以`.5/.25/.25`等质量组合joint/meta/target kernels，使监督图成为
+  唯一60-task component；不增加reader、参数、forward或deployment路径，且保持原task/video质量、Stage0冻结与official wall；
+- [x] v4三卡真实一步profile完成：joint梯度确实进入Program，step `18.33s`、peak `9.98GB`、source/Stage0
+  trainable 0、Action Meta 0；定向与全仓回归`19/19`与`204 passed`；
+- [ ] 完成v4 diff/architecture检查、clean push与detached profile，再以同一五卡macro5规模复评全部internal与旧动态Gate；
 - [ ] non-pass时先比较train topology、internal meta/target topology、exact family与旧动态retention：train不升则修Program credit；train升而
   internal不升才重开窄Stage0 grounding tail；只有新机制证据才允许修正，不做seed/LR/width/rank小扫。internal通过后才读official held20，
   冻结唯一Program checkpoint并更新G3 v5 authority。

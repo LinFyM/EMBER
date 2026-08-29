@@ -1,5 +1,32 @@
 # EMBER progress
 
+## 2026-08-29 J3 formal训练完成，step70/110 Gate启动
+
+clean detached `f8bfb7a`在gpu01物理`0--5`自然完成全部110 optimizer steps；actual step70/110两个single checkpoints、
+optimizer/scheduler/sampler/RNG与六rank state均已落盘，输出根为
+`runs/outputs/pi05_ecp_j3_counterfactual_program_primal_12task_s110_9af7c19_gpu01p012345_r6_20260829/`。训练主体约
+44分钟，单步约`17.7--27.1s`，六卡peak reserved最大约`30.63GiB`，没有OOM、non-finite、gradient clip、native teacher
+tensor read或Action Meta漂移。counterfactual normalized gap随训练有所增加但远未稳定达到`.10` margin；这是定位信号，不能替代
+预注册Gate。
+
+### J3 step70/110 formal Gate launch contract
+
+- evaluator scientific authority固定为clean pushed detached `3f6f94ee4a1bf3a930142d585d352b271e048737`；training authority为上述
+  clean detached `f8bfb7a`及其同一run中的actual step70/110，不融合checkpoint，不新增训练或选模信号；
+- 六个独立single-GPU workers各负责两个balanced tasks，每个worker只加载一次source/Stage0/Writer runtime并按step70、step110顺序
+  评价，复用`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` condition cache与
+  `/dev/shm/ember_ecp_j2_gate_endpoints_2cd4091_gpu01_20260829` endpoint cache；worker之间不用NCCL；
+- 2026-08-29 launch前live检查gpu01物理3/4/5/6完全空闲，1/2仅有他人约`.5GiB`、`0--1%` UTL轻进程且峰值余量充分，
+  0约`.9GiB/7%`故避开；gpu02没有更合适的同节点六卡组。选择gpu01物理`1--6`，每worker由runtime绑定GPU-local NUMA；
+  `/data1` quota为`708009412/1073741824KiB`，formal training根仅`226MiB`，两个Gate根预计远低于剩余约`349GiB`；
+- 每个worker执行`CUDA_VISIBLE_DEVICES=<1..6> PYTHONPATH=src ... evaluate_ecp_joint_program_primal.py worker`，共同使用canonical
+  J3 train/gate/base configs、source checkpoint、tokenizer、dataset、compiler run、step70/110 checkpoints及上述两cache roots，
+  `--worker-index <0..5> --worker-count 6`；输出根固定为
+  `runs/outputs/pi05_ecp_j3_counterfactual_gate_step{70,110}_3f6f94e_gpu01p123456_w6_20260829/`。六worker成功后分别aggregate，
+  step110只以step70 aggregate作为相邻稳定性previous report；失败或不完整输出不得冒充formal evidence；
+- Gate仍只认gradient-task train recovery、same-task held-video retention、两task true task-held、四family、correct-vs-wrong
+  Program/bank/interaction、信息墙与相邻稳定性。内部loss和训练时hinge不构成通过，shuffled/reversed不在本阶段使用。
+
 ## 2026-08-29 J2 formal non-pass，J3 counterfactual functional routing启动
 
 clean detached `5fd80b6`在gpu01物理`0--5`完成12-task J2全部110 optimizer steps（10 warmup+100 effective），保存actual

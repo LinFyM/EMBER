@@ -78,6 +78,8 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
         or evaluation.get("panel_visits") != 16
         or evaluation.get("wrong_pairing")
         != "next_j2_authority_id_within_same_meta_or_target_role_cyclic"
+        or evaluation.get("true_task_held_views")
+        != "lowest_three_sorted_task_holdout_videos_mean"
         or evaluation.get("selected_family_report_targets")
         != [0, 16, 34, 1, 17, 35, 36, 37]
         or wall.get("shuffled_or_reversed_use") is not False
@@ -152,11 +154,30 @@ def _checkpoint_authority(
 def _task_conditions(
     runtime: JointProgramPrimalRuntime, task_id: int
 ) -> tuple[MappingCondition, MappingCondition, MappingCondition]:
-    fit = runtime.mapping_split.fit_by_task[task_id]
-    held = runtime.mapping_split.video_held_by_task[task_id]
-    if len(fit) < 2 or len(held) != 1:
-        raise ValueError("J2 evaluation task video panel changed")
-    return fit[0], fit[1], held[0]
+    fit = runtime.mapping_split.fit_by_task.get(task_id)
+    if fit is not None:
+        held = runtime.mapping_split.video_held_by_task[task_id]
+        if len(fit) < 2 or len(held) != 1:
+            raise ValueError("J2 gradient-task video panel changed")
+        return fit[0], fit[1], held[0]
+
+    task_held = tuple(
+        sorted(
+            (
+                condition
+                for condition in runtime.mapping_split.task_held
+                if condition.authority_id == task_id
+            ),
+            key=lambda condition: condition.video_demo,
+        )
+    )
+    sealed_demos = tuple(map(int, runtime.panels[task_id].program_video_demos))
+    if (
+        len(task_held) < 3
+        or tuple(condition.video_demo for condition in task_held) != sealed_demos
+    ):
+        raise ValueError("J2 true task-holdout video panel changed")
+    return task_held[0], task_held[1], task_held[2]
 
 
 def _wrong_task(runtime: JointProgramPrimalRuntime, task_id: int) -> int:

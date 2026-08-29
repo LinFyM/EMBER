@@ -5,9 +5,11 @@ import torch
 from ember.ecp.joint_program_primal.evaluation import (
     _language_program,
     _normalized,
+    _task_conditions,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.train_step import joint_task_group
+from ember.ecp.bank_conditioning.mapping import MappingCondition
 from ember.ecp.natural_program import NaturalProgram
 
 
@@ -69,3 +71,15 @@ def test_functional_recovery_and_interaction_use_one_free_primal_measure() -> No
     }
     assert controls["primary_correct"]["functional_recovery"] == 0.8
     assert abs(_interaction(controls) - 0.2) < 1e-12
+
+
+def test_true_task_holdout_uses_lowest_three_sealed_videos() -> None:
+    rows = tuple(MappingCondition(2, "meta_fit", demo, 10 + demo) for demo in range(9))
+    runtime = SimpleNamespace(
+        mapping_split=SimpleNamespace(
+            fit_by_task={}, video_held_by_task={}, task_held=rows
+        ),
+        panels={2: SimpleNamespace(program_video_demos=tuple(range(9)))},
+    )
+    selected = _task_conditions(runtime, 2)
+    assert tuple(row.video_demo for row in selected) == (0, 1, 2)

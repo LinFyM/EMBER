@@ -10,7 +10,7 @@
     "functional_panel": "panel_b",
     "panel_visits": 16,
     "gradient_correct_views": "two_fit_plus_same_task_held",
-    "true_task_held_views": "two_fit_plus_video_held_mean",
+    "true_task_held_views": "lowest_three_sorted_task_holdout_videos_mean",
     "primary_control_view": "lowest_fit_video_demo",
     "wrong_pairing": "next_j2_authority_id_within_same_meta_or_target_role_cyclic",
     "language_only": "keep_p_lang_zero_scene_process_sigma_uniform_rho_canonical_tau",

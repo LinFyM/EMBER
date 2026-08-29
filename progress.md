@@ -45,9 +45,14 @@
   peak reserved`21.87GB`，即便共驻也有约18GB余量。计划用物理`0--5`做world6，并在实际launch紧邻时重查，若任一卡变为高UTL则
   换用当时低UTL的同节点卡或按可用1--6卡弹性分片，不等待、不抢占。gpu02只有物理7全空，物理4约2GB，其余重占用，故不跨节点；
 - gpu01复用现有23GB condition cache，`/dev/shm`尚余39GB；`strg01` `/data1` quota为`676.3G/1T`，R4完整run仅302MB，
-  R5预计同量级且远低于剩余额度。exact entry使用`NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL的既有torchrun；输出固定为
+  R5预计同量级且远低于剩余额度。exact entry使用`NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL的既有torchrun；原计划输出为
   `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9c5ff0d_gpu01p012345_r6_20260830/`。自然完成后以最多六个独立
   single-GPU workers顺序评价step70/110同一paired Gate；不以训练loss、step0或内部geometry替代Gate。
+- 02:39 CST紧邻launch重查时，物理5的他人进程升至`100%` UTL，故未与其共驻；物理3已降至约`1.64GB/0%`且物理6仍约
+  `5.34GB/0%`，实际选择`0,1,2,3,4,6`做world6。formal authority为clean pushed detached
+  `9e6b6a71cb724bcfe37cb915902c2da7df18de28`，实际输出为
+  `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9e6b6a7_gpu01p012346_r6_20260830/`；只发生调度与
+  provenance命名变化，科学配置、初始化、loss和Gate均未改变。
 
 - owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
 

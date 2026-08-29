@@ -486,6 +486,7 @@ def _evaluate_task(
     gate: Mapping[str, Any],
     positive_control_root: Path,
     endpoint_cache: FrozenMappingConditionCache,
+    task_held_free_cache: dict[tuple[int, int], float],
 ) -> dict[str, Any]:
     started = time.monotonic()
     gradient = task_id in {
@@ -502,7 +503,16 @@ def _evaluate_task(
             positive_control_root, task_id
         )
     else:
-        code = _task_local_code(runtime, task_id, (first, second))
+        if any(
+            (task_id, condition.video_demo) not in task_held_free_cache
+            for condition in correct_conditions
+        ):
+            code = _task_local_code(runtime, task_id, (first, second))
+        free_reference = {
+            condition.video_demo: task_held_free_cache[(task_id, condition.video_demo)]
+            for condition in correct_conditions
+            if (task_id, condition.video_demo) in task_held_free_cache
+        }
         free_authority = {
             "method": "frozen_fit_teacher_initialized_code_without_action_gradient",
             "panel_b_backward_calls": 0,
@@ -517,11 +527,16 @@ def _evaluate_task(
         with torch.inference_mode():
             program = _compile_program(runtime, prepared)
             state, output = _complete_state(runtime, program=program, bank=prepared)
-            if code is not None:
+            if condition.video_demo not in free_reference:
+                if code is None:
+                    raise RuntimeError("J2 task-held free-primal cache is incomplete")
                 free_state = _task_local_state(runtime, code, prepared)
-        if code is not None:
+        if condition.video_demo not in free_reference:
             free_value = _panel_value(runtime, task_id=task_id, state=free_state)
             free_reference[condition.video_demo] = float(free_value["generated_loss"])
+            task_held_free_cache[(task_id, condition.video_demo)] = float(
+                free_value["generated_loss"]
+            )
             del free_state
         value = _panel_value(runtime, task_id=task_id, state=state)
         correct_rows[condition.video_demo] = _normalized(
@@ -675,7 +690,7 @@ def evaluate_worker(args: argparse.Namespace) -> None:
     gate = load_joint_program_primal_gate(args.gate_config)
     if args.config != (args.asset_root / gate["training_config"]).resolve():
         raise ValueError("J2 evaluator training config authority changed")
-    config = load_joint_program_primal_config(args.config)
+    load_joint_program_primal_config(args.config)
     positive_root = (
         args.asset_root / gate["authorities"]["positive_control_root"]
     ).resolve()
@@ -684,6 +699,13 @@ def evaluate_worker(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     if context.world_size != 1:
         raise ValueError("J2 evaluation workers are independent single-GPU processes")
+    if (
+        len(args.compiler_checkpoints) != len(args.output_dirs)
+        or len(args.compiler_checkpoints) != 2
+        or [checkpoint_macro(path) for path in args.compiler_checkpoints]
+        != list(map(int, gate["checkpoint_optimizer_steps"]))
+    ):
+        raise ValueError("J2 paired evaluator checkpoint panel changed")
     runtime_args = argparse.Namespace(
         config=args.config,
         base_config=args.base_config,
@@ -695,7 +717,7 @@ def evaluate_worker(args: argparse.Namespace) -> None:
         checkpoint=args.checkpoint,
         tokenizer_path=args.tokenizer_path,
         data_root=args.data_root,
-        output_dir=args.output_dir / f"worker_{args.worker_index:02d}_runtime",
+        output_dir=args.output_dirs[0] / f"worker_{args.worker_index:02d}_runtime",
         condition_cache_root=args.condition_cache_root,
         resume=None,
         stop_after_step=1,
@@ -705,54 +727,65 @@ def evaluate_worker(args: argparse.Namespace) -> None:
     started = time.monotonic()
     try:
         runtime = prepare_joint_program_primal_runtime(runtime_args, context)
-        checkpoint = _checkpoint_authority(
-            runtime,
-            compiler_run=args.compiler_run,
-            compiler_checkpoint=args.compiler_checkpoint,
-            gate=gate,
-        )
         assignments = balanced_task_assignments(runtime, args.worker_count)
         endpoint_cache = _endpoint_cache(runtime, args.endpoint_cache_root)
-        worker_dir = args.output_dir / f"worker_{args.worker_index:02d}"
-        if worker_dir.exists():
-            raise ValueError("J2 evaluator worker output already exists")
-        worker_dir.mkdir(parents=True)
-        rows = []
-        for task_id in assignments[args.worker_index]:
-            rows.append(
-                _evaluate_task(
-                    runtime,
-                    task_id=task_id,
-                    gate=gate,
-                    positive_control_root=positive_root,
-                    endpoint_cache=endpoint_cache,
-                )
+        setup_seconds = time.monotonic() - started
+        task_held_free_cache: dict[tuple[int, int], float] = {}
+        for compiler_checkpoint, output_dir in zip(
+            args.compiler_checkpoints, args.output_dirs, strict=True
+        ):
+            checkpoint_started = time.monotonic()
+            checkpoint = _checkpoint_authority(
+                runtime,
+                compiler_run=args.compiler_run,
+                compiler_checkpoint=compiler_checkpoint,
+                gate=gate,
             )
-            runtime.panel_batch_cache.clear()
-            torch.cuda.empty_cache()
-        payload = {
-            "schema_version": J2_EVALUATION_SCHEMA,
-            "status": "complete",
-            "worker_index": args.worker_index,
-            "worker_count": args.worker_count,
-            "assignments": [list(row) for row in assignments],
-            "checkpoint": checkpoint,
-            "tasks": rows,
-            "elapsed_seconds": time.monotonic() - started,
-            "physical_visible_device": __import__("os").environ.get(
-                "CUDA_VISIBLE_DEVICES"
-            ),
-            "git": {"commit": state["commit"], "branch": state["branch"]},
-        }
-        write_json_atomic(worker_dir / "result.json", payload)
-        write_json_atomic(
-            worker_dir / "completion.json",
-            {
+            torch.cuda.reset_peak_memory_stats(context.device)
+            rows = []
+            for task_id in assignments[args.worker_index]:
+                rows.append(
+                    _evaluate_task(
+                        runtime,
+                        task_id=task_id,
+                        gate=gate,
+                        positive_control_root=positive_root,
+                        endpoint_cache=endpoint_cache,
+                        task_held_free_cache=task_held_free_cache,
+                    )
+                )
+                runtime.panel_batch_cache.clear()
+                torch.cuda.empty_cache()
+            evaluation_seconds = time.monotonic() - checkpoint_started
+            worker_dir = output_dir / f"worker_{args.worker_index:02d}"
+            if worker_dir.exists():
+                raise ValueError("J2 evaluator worker output already exists")
+            worker_dir.mkdir(parents=True)
+            payload = {
                 "schema_version": J2_EVALUATION_SCHEMA,
+                "status": "complete",
                 "worker_index": args.worker_index,
-                "task_count": len(rows),
-            },
-        )
+                "worker_count": args.worker_count,
+                "assignments": [list(row) for row in assignments],
+                "checkpoint": checkpoint,
+                "tasks": rows,
+                "shared_runtime_setup_seconds": setup_seconds,
+                "checkpoint_evaluation_seconds": evaluation_seconds,
+                "elapsed_seconds": setup_seconds / 2.0 + evaluation_seconds,
+                "physical_visible_device": __import__("os").environ.get(
+                    "CUDA_VISIBLE_DEVICES"
+                ),
+                "git": {"commit": state["commit"], "branch": state["branch"]},
+            }
+            write_json_atomic(worker_dir / "result.json", payload)
+            write_json_atomic(
+                worker_dir / "completion.json",
+                {
+                    "schema_version": J2_EVALUATION_SCHEMA,
+                    "worker_index": args.worker_index,
+                    "task_count": len(rows),
+                },
+            )
     finally:
         if runtime is not None:
             runtime.close()

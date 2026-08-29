@@ -38,10 +38,12 @@ def _worker_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument("--tokenizer-path", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--compiler-run", type=Path, required=True)
-    parser.add_argument("--compiler-checkpoint", type=Path, required=True)
+    parser.add_argument(
+        "--compiler-checkpoints", type=Path, nargs=2, required=True
+    )
     parser.add_argument("--condition-cache-root", type=Path, required=True)
     parser.add_argument("--endpoint-cache-root", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--output-dirs", type=Path, nargs=2, required=True)
     parser.add_argument("--worker-index", type=int, required=True)
     parser.add_argument("--worker-count", type=int, required=True)
 
@@ -67,6 +69,10 @@ def _resolve(args: argparse.Namespace) -> argparse.Namespace:
     for name, value in vars(args).items():
         if isinstance(value, Path):
             setattr(args, name, value.resolve())
+        elif isinstance(value, list) and value and all(
+            isinstance(item, Path) for item in value
+        ):
+            setattr(args, name, [item.resolve() for item in value])
     return args
 
 
@@ -99,4 +105,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

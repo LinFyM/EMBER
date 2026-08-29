@@ -25,6 +25,31 @@ critic压倒functional，不做weight/LR/seed sweep。下一步是完成clean集
 - `runs/outputs/pi05_ecp_routing_token_control_r1_gate_step110_8c213c5_gpu01p123456_w6_20260829/`；
 - `runs/analysis/pi05_ecp_routing_critic_r2_weight1_profile_dirty_gpu01p013456_r6_20260829/`。
 
+### R2 fixed-route set-valued critic formal launch contract
+
+- implementation authority为clean pushed `main@6c41926417ca7985583994e59b8c9fc52658d782`；formal从只新增本launch contract、
+  不再修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。scorer、optimizer、scheduler全部fresh，不resume
+  R1/J2/J3或dirty profile；
+- 数据固定为10个gradient tasks、每task两条fit K1 videos、panel A 16 visits和fit-only consensus member set。每view同时使用原correct
+  functional primary与weight`.2`的set-valued paired effective-update critic；第三same-task video、panel B、task2/74、validation/test
+  全部零梯度。固定token只由训练期authority ID选择；source、Native Stage0、Natural Program、current-bank operator、scale、carrier、
+  Action Meta与policy weights冻结，唯一trainable仍为`ProgramNativePrimalScorer`；
+- world6固定每step 3 meta+3 target、每task两video，10 warmup+100 effective，在actual step70/110保存single checkpoints。exact training
+  entry为`CUDA_VISIBLE_DEVICES=0,1,3,4,5,6 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_ecp_joint_program_primal.py --config
+  configs/pi05_ecp_routing_token_critic_r2_v1.json --base-config /data1/user/ymdai/projects/EMBER/configs/pi05_ecp_shared_compiler_g3_v5.json
+  --mode formal --phase joint`，其余source/tokenizer/data参数沿R1 authority；condition cache固定复用
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`，不重建Stage0/X/Y；
+- formal输出根固定为`runs/outputs/pi05_ecp_routing_token_critic_r2_s110_6c41926_gpu01p013456_r6_20260829/`，log使用同stem；launch前
+  root不存在。R1同结构train+Gate仅约`206MiB`，本轮预计低于`1GiB`；2026-08-29 21:12 CST `/data1` quota为
+  `708237836/1073741824KiB`，剩余约`348.6GiB`，`/dev/shm` cache为`23GiB`且尚余`39GiB`；
+- 2026-08-29 20:59 CST live GPU检查：gpu01物理3/4/6完全空闲，5仅`.10GiB/0%`，0/1为他人`.47/.55GiB`且`0/4%`，峰值余量
+  充分；物理2为他人`3.1GiB/49%`，故避开。gpu02物理0--3各约`30GiB`，5/6忙，4/7虽低但不足同节点六卡；不跨节点拼卡。
+  选择gpu01物理`0,1,3,4,5,6`，runtime按真实PCI自动绑定各GPU本地NUMA，deferred NCCL且`NCCL_P2P_DISABLE=1`；
+- formal训练完成后，从同一clean authority用六个独立single-GPU workers依次评价actual step70/110，只跑R1已预注册的三条correct views、
+  wrong-token/correct-bank与八target family必要臂。Gate仍为train/held `.60/.50`、q/v `.35`、action-in/out `.30`、wrong-token
+  margin`.10`、retention与相邻稳定；critic loss或内部cosine不能替代functional Gate，shuffled/reversed不使用。
+
 ## 2026-08-29 J3 Gate non-pass，R1 routing-token边界对照接通
 
 J3 step70/110六worker paired Gate已全部自然完成。step70 train/held-video recovery为`.136913/.131572`，step110为

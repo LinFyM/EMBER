@@ -17,6 +17,7 @@ from ember.ecp.joint_program_primal.routing_control import (
     load_routing_control_config,
 )
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
+    _training_world_size,
     routing_task_assignments,
 )
 from ember.ecp.joint_program_primal.train_step import (
@@ -219,6 +220,17 @@ def test_routing_control_gate_balances_only_ten_gradient_tasks() -> None:
     assert {task for row in assignments for task in row} == set(ROUTING_TASK_IDS)
     loads = [sum(costs[str(task)] for task in row) for row in assignments]
     assert max(loads) == 303
+
+
+def test_routing_control_gate_accepts_the_recorded_flexible_training_world() -> None:
+    runtime = SimpleNamespace(
+        config={"profile": {"allowed_world_sizes": [1, 2, 3, 4, 5, 6]}}
+    )
+    run_contract = {
+        "world_topology": [{"rank": rank} for rank in range(3)]
+    }
+    manifest = {"world_size": 3}
+    assert _training_world_size(runtime, run_contract, manifest) == 3
 
 
 def test_routing_control_critic_is_fit_only_and_never_a_deployment_input() -> None:

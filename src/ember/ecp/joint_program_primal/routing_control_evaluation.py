@@ -75,6 +75,25 @@ def load_routing_control_gate(path: Path) -> dict[str, Any]:
     return config
 
 
+def _training_world_size(
+    runtime: Any,
+    run_contract: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+) -> int:
+    world_size = int(manifest.get("world_size", -1))
+    topology = run_contract.get("world_topology", ())
+    allowed = set(map(int, runtime.config["profile"]["allowed_world_sizes"]))
+    if (
+        world_size not in allowed
+        or not isinstance(topology, list)
+        or len(topology) != world_size
+        or sorted(int(row.get("rank", -1)) for row in topology)
+        != list(range(world_size))
+    ):
+        raise ValueError("routing-control training world authority changed")
+    return world_size
+
+
 def _checkpoint_authority(
     runtime: Any,
     *,
@@ -87,11 +106,15 @@ def _checkpoint_authority(
     step = checkpoint_macro(compiler_checkpoint)
     run_contract = read_json(compiler_run / "run_contract.json")
     manifest = read_json(compiler_checkpoint / "checkpoint_manifest.json")
+    training_world_size = _training_world_size(runtime, run_contract, manifest)
     files = manifest.get("files", {})
     expected = {
         "ecp.safetensors",
         "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(6)),
+        *(
+            f"rank_{rank:02d}_state.pt"
+            for rank in range(training_world_size)
+        ),
     }
     if (
         compiler_checkpoint.parent.parent != compiler_run
@@ -104,7 +127,6 @@ def _checkpoint_authority(
         or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
         or manifest.get("stage") != ROUTING_CONTROL_STAGE
         or int(manifest.get("next_macro", -1)) != step
-        or int(manifest.get("world_size", -1)) != 6
         or manifest.get("run_contract_schema") != ROUTING_CONTROL_RUN_SCHEMA
         or set(files) != expected
     ):
@@ -129,7 +151,7 @@ def _checkpoint_authority(
         "optimizer_step": step,
         "path": str(compiler_checkpoint),
         "training_commit": str(run_contract["git"]["commit"]),
-        "world_size": int(manifest["world_size"]),
+        "world_size": training_world_size,
         "tensor_bytes": int(files["ecp.safetensors"]["bytes"]),
     }
 

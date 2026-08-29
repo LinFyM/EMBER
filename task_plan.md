@@ -352,9 +352,32 @@ teacher/member/action都不进入deployment输入，held video、panel B、task2
 - [x] 保持R2 functional+fit-only set-valued critic、数据、预算、seed、Gate与Action Meta 0；后续配置移除人为35GiB门；
 - [x] 用R2两checkpoint的纯timing evidence预注册R3 evaluator cost map，把六个长/四个短task按实测cost做LPT分配，预计最长worker由约
   `400s/checkpoint`降至约`303s`，不读取或利用科学结果；
-- [ ] 完成最小CPU合同、真实六卡forward/gradient/materialization profile，随后clean pushed detached fresh formal与step70/110 Gate。
+- [x] 21项定向CPU合同及clean pushed三卡真实forward/gradient/materialization profile通过：global update `25.334s`，峰值reserved
+  `21.815GB`，所有owner×group heads有finite nonzero gradient；Action Meta 0、source/Stage0/scale冻结、唯一rank16均由run contract实测；
+- [ ] 从只含本launch contract和world-flexible checkpoint reader的clean pushed detached descendant启动fresh formal与step70/110 Gate。
   四family及functional一起恢复才把critic+decoder接回Natural Program；若四family高而functional仍低，才判定set-valued teacher-to-utility
   不充分并重做credit；若解析容量存在但训练仍未取得，则定位优化/parameter ownership而非扫普通超参。
+
+### R3 formal launch contract
+
+- implementation authority为clean pushed `main@67a49f88a9825c7437ea2b985240561a3d4624a4`；formal只从加入本launch记录和
+  world-flexible Gate checkpoint reader、不再改变训练图或科学配置的clean pushed detached descendant fresh启动，不resume R1/R2/J2/J3；
+- 数据、seed、10 warmup+100 effective、step70/110、functional+weight`.2` fit-only critic、固定token、两fit views、panel A、
+  real native X/Y/current-bank dual/exact replay、rank4、scale和唯一rank16完全锁定R3 config。panel B、same-task held、task2/74、
+  validation/test零梯度；Action Meta实际不安装；
+- formal world size从launch时同节点真正合适的1--6张A40选择，不等待凑6。六个role-balanced tasks及12个views的loss权重始终固定，
+  gradients使用SUM all-reduce；world size只改变每rank串行task数和可接受的浮点reduction order。checkpoint完整保存实际world topology，
+  exact resume锁该topology，Gate按manifest读取对应rank states；
+- 2026-08-29 22:41--22:51 CST live状态：gpu01物理1/6空闲，0只有他人约`.55GB`间歇短作业且峰值余量充分，2--5持续高UTL；
+  gpu02只有物理4低显存，其余为约17--33GB占用或高UTL，不跨节点拼卡。因此首选gpu01物理`0,1,6`、world3，若正式exec前状态
+  改善则使用当时更多真正增吞吐的同节点卡；不得使用2--5干扰现有训练。三卡profile已实测该映射无OOM；同路径R2的task93/94最坏
+  reserved约`32.95GB`，R3只新增约`16.2MiB`参数存储，46GB A40仍有合理余量，不设35GB人为门；
+- `/data1` quota为`708448164/1073741824KiB`，约余`348.4GiB`；复用gpu01 `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`
+  23GB cache且`/dev/shm`约余39GB，不重建Stage0/X/Y。formal根固定为
+  `runs/outputs/pi05_ecp_routing_grouped_decoder_r3_s110_67a49f8_gpu01p016_r3_20260829/`，预计新增远低于1GB；
+- training自然完成后，以最多六个独立single-GPU workers评价同一step70/110的两fit+held、wrong-token和八target family臂，使用R3 timing-only
+  cost map。只按预注册functional/family/causal/stability Gate裁决；critic loss、internal cosine、checkpoint union或shuffled/reversed均不能
+  选模或修架构。
 
 后续canonical G3通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen

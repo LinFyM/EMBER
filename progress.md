@@ -1,5 +1,13 @@
 # EMBER progress
 
+- 2026-08-29 clean pushed `67a49f8`的R3三卡真实profile完成：同一global update由每rank两task执行，墙钟`25.334s`，
+  三rank最大reserved为`21.815/20.684/20.462GB`（十进制bytes），所有owner×group output heads均有finite nonzero gradient，
+  aggregate output-head gradient norm `.005195`。run contract实测trainable参数`11,767,940`，Action Meta module/parameter均0，source、
+  Native Stage0、scale均0 trainable，task/video/frame-free parameter为0，仍只生成一套完整38-target rank12+4 rank16。该三卡结果只证明
+  图和资源合同，不冒充六卡吞吐。当前formal改用可用卡数决定的world size；六task梯度始终按固定`1/12`逐view加权并SUM all-reduce，
+  因此只改变任务在rank间的分配与reduction低位顺序，不改变task权重。Gate现按checkpoint记录的1--6 world topology读取对应rank states，
+  不再错误硬编码world6。
+
 - 2026-08-29 R2 formal及完整Gate已结束，step110 train/held-video为`.205796/.193603`，低于R1；q/v/action-in/action-out则由
   R1近零提高到`.220453/.407617/.166808/.663453`，held/train`.940749`、same-task retention`.978070`、wrong-token margin
   `.090559`。这证明critic进入并恢复了v/action-out，但q/action-in仍受group-shared decoder限制，不完整组合也损害真实functional。

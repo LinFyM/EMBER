@@ -42,6 +42,11 @@
   `NCCL_P2P_DISABLE=1`、GPU-local NUMA/deferred NCCL；预注册输出为
   `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_s110_43dca6b_gpu01p012345_r6_20260830/`。自然完成后用最多六个独立
   single-GPU workers依次评价step70/110完整12-task Gate；不以训练loss或内部geometry替代Gate。
+- 03:43 CST紧邻launch复查时物理5的他人进程升至`100%` UTL、物理6降至`0%`，故实际排除5并使用gpu01物理
+  `0,1,2,3,4,6` world6。formal authority为clean pushed detached
+  `1a6a59bdc2f623dc76c89f4cac3b5e9f279c351b`，实际输出为
+  `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_s110_1a6a59b_gpu01p012346_r6_20260830/`；只发生实时调度、
+  provenance命名与docs-only authority变化，科学config、初始化、loss、budget和Gate均未改变。
 
 - 2026-08-30 R3 grouped-output formal与step70/110 Gate已完整结束。step110 train/held-video recovery为
   `.305293/.287486`，q/v/action-in/action-out为`.285260/.277323/.656235/.668922`，wrong-token margin

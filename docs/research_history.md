@@ -1039,3 +1039,20 @@ credit；source、Native Stage0、已通过P1的current-bank operator、carrier�
 tasks与两个true task-held，先做同loss的task-local跨video共享free-primal正控，再按train/held-video/task-held、四family、wrong
 Program/bank、interaction、same-task和相邻checkpoint形成Gate。只有train与held-video强而task-held弱时，才进入matched raw frozen
 Stage0 sufficiency probe；不恢复v6、旧P2 frozen-Program formal、realizer或functional-polar deployment。
+
+## 53. J2 task-local functional positive control formal通过
+
+clean pushed detached `main@f3677a5`在gpu01完成10个gradient tasks各100次task-local functional updates。每task只训练跨两条fit K1
+videos共享的free primal；第三held video、panel B和held teacher零梯度，Action Meta 0，source/Stage0/Program/shared scorer/scale冻结，
+实际生成唯一38-target rank16。held/fit functional benefit retention median/min为`1.0144/.8896`，held factor recovery median
+`.8078`，四family medians为`.7973/.7722/.8436/.8481`；10/10 held panel-B经paired t与sign test均显著优于carrier。
+
+formal physical microbatch4的评价/训练最大墙钟比`.1957`，但最长task93峰值`37.07GiB`违反`<35GiB`系统合同。保持logical16、keyed
+randomness、banks与loss不变，仅将physical microbatch改为2的task93真实一步将peak降到`32.41GiB`，step1 loss相对差`.060%`、
+step`13.32s`；active runtime据此锁定physical2，无需重复10-task科学formal。该阶段排除functional panel、scale与free-primal可达性
+为当前首因，但没有检验shared Program mapping；下一步仍是六卡joint profile与12-task joint Gate。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829/`；
+- `runs/analysis/pi05_ecp_j2_pc_task93_mb2_memory_profile_f3677a5_gpu01p3_20260829/`。

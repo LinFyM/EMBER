@@ -1222,6 +1222,18 @@ language/endpoints、wrong Program、wrong bank、interaction、same-task和相�
 matched raw frozen Stage0 sufficiency probe；raw相对Program task-held增加至少`.15`且达到`.40`才归因Program压缩，raw也低于`.25`
 才允许把最早瓶颈上移到Stage0。原文逐字保存在`docs/expert_review_20260829_joint_program_primal.md`。
 
+### 72. task-local functional正控排除了panel/scale不可达，shared Program仍待J2验证
+
+10个预注册gradient tasks各自用同一task-local primal共享两条fit K1 videos、100次真实functional updates，第三video和disjoint
+panel B严格零梯度。held/fit functional benefit retention median/min为`1.0144/.8896`，10/10 held panel-B均显著优于carrier；
+held factor recovery median`.8078`，q/v/action-in/action-out medians为`.7973/.7722/.8436/.8481`。因此当前action/flow panel、
+frozen scale、current-bank dual/replay与free-primal之间确有跨video稳定的功能下降方向；以后joint若fit低，不能再归因“teacher action
+监督本身不工作”或“native operator没有可达行为方向”。
+
+这不证明shared Program→primal成立。task8/75的factor recovery只有`.742/.749`，但functional held benefit分别为`.00335/.02005`
+且显著为正，进一步说明factor cosine只能作几何诊断，不能覆盖functional primary。系统上physical microbatch4在长task93达到
+`37.07GiB`；同logical16改physical2后为`32.41GiB`且step1 loss仅`.060%`相对差，所以这是规约/激活内存问题，不是科学结构问题。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

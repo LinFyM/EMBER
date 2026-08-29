@@ -489,6 +489,11 @@ median`>=.80`、四family各`>=.70`且每task显著优于carrier；失败首先�
 updates”的口径冲突，formal按最多10步warmup后100个有效joint updates计数，在post-warmup 60和100保存相邻checkpoints；总
 optimizer steps最多110，不把低LR warmup冒充充分优化。
 
+该10-task正控现已formal通过：held/fit functional benefit retention median`1.0144`、held factor recovery median`.8078`，四family
+medians均`>=.7722`，且10/10 held panel-B分别经paired t与sign test显著优于carrier。physical microbatch4只在最长task93出现
+`37.07GiB`峰值；不改变logical16/noise/bank/loss的physical2 profile将其降到`32.41GiB`，step1 loss相对差`.060%`，因此active
+runtime锁定physical2。该pass只清除了functional authority/scale/free-primal与系统吞吐前置问题，不构成shared Writer通过。
+
 Primary normalized functional recovery为
 `(L_carrier-L_shared)/(L_carrier-L_free_primal)`。12-task Gate同时要求：gradient train median`>=.60`、same-task held-video
 median`>=.50`、两个true task-held平均`>=.40`且各`>=.30`、held/train`>=.80`；q/v各`>=.35`、action-in/out各`>=.30`；

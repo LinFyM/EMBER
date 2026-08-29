@@ -66,7 +66,7 @@
   "optimization": {
     "seed": 20260829,
     "loss": "generated_rank16_cross_episode_pi05_flow_only",
-    "functional_policy_microbatch_size": 4,
+    "functional_policy_microbatch_size": 2,
     "task_local_positive_control": {
       "updates": 100,
       "learning_rate": 0.02,

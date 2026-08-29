@@ -11,7 +11,7 @@
 bank的dual/replay在六tasks、四family和held videos上保留`.94--.995`量级容量。因此当前最早未解决接口是Natural Program与shared
 `ProgramNativePrimalScorer`之间的联合可识别性和functional credit。
 
-当前唯一实现面为`codex/ecp-j2-joint-program-primal`。下一步复用P2 compact condition cache、current-bank operator和functional
+J2实现已集成canonical `main`。当前复用P2 compact condition cache、current-bank operator和functional
 gradient，联合训练Program与primal scorer；source、Native Stage0、operator、carrier、scale与Action Meta冻结。先完成同loss的task-local
 free-primal正控，再执行固定10 gradient tasks+2 true task-held的12-task J2 Gate。冻结evidence/X-Y/covariance/action panels只缓存一次，
 不缓存Program或LoRA；六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`。只做一个最小真实
@@ -30,6 +30,27 @@ physical microbatch8时单步`9.459s`但peak reserved`42.154GiB`，超过合同�
 不是10-task正控Gate。封存carrier loss与当前replay绝对差`8.52e-5`，在rows/seed/checkpoint/carrier/microbatch identity均锁定后按项目
 BF16/TF32数值政策使用`1e-4` replay容差并把实际误差留在报告。下一步是定向回归、clean pushed detached authority及六卡并行
 10-task formal positive control；尚不启动12-task joint formal。
+
+## 2026-08-29 J2 10-task functional positive control通过，physical microbatch2锁定
+
+clean pushed detached `main@f3677a5`在gpu01以最多六个独立workers完成全部10个gradient tasks、每task 100 updates及完整16-visit
+panel A/B与第三held video评价。两条fit K1 videos共享一个task-local free primal，第三video、panel B和held teacher均零梯度；所有task
+Action Meta 0、source/Stage0/Program/shared scorer/scale冻结，实际物化唯一38-target rank12+4 rank16，task-local checkpoint明确不是
+deployment candidate。
+
+科学正控通过：held/fit functional benefit retention median/min为`1.0144/.8896`，held native-factor recovery median为`.8078`；
+q/v/action-in/action-out family medians为`.7973/.7722/.8436/.8481`。10/10 task的held panel-B均显著优于carrier，单侧paired
+t-test最大p值`.00275`、符号检验最大p值`.03841`；held平均benefit median/min为`.00870/.00302`，所有30个video条件的panel-B
+mean benefit均为正。该结果证明当前action/flow panel、frozen scale与native free-primal之间存在稳定、跨video可达的功能下降方向，
+不证明shared Program mapping已经成立。
+
+formal训练每task`686.97--1274.58s`，完整评价`130.44--134.83s`，最大eval/train ratio`.1957`，全部低于`.5`。physical
+microbatch4时9/10 task低于35GiB，但最长task93为`37.07GiB`，故原系统配置单点non-pass。只把keyed logical16的physical microbatch
+改为2后，同task93、同banks/seed一步profile的loss绝对/相对差为`3.99e-5/.060%`、gradient norm差`2.08%`，step`13.32s`、
+peak allocated/reserved`26.89/32.41GiB`，低位规约与吞吐可接受且内存过线；active config因此唯一锁定physical2，不重复科学formal。
+aggregate与raw evidence位于`runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829/`，系统profile
+位于`runs/analysis/pi05_ecp_j2_pc_task93_mb2_memory_profile_f3677a5_gpu01p3_20260829/`。下一步只做六卡joint一步profile，验证Program与
+primal scorer梯度、role/task权重、global step墙钟及峰值；通过后才启动12-task joint formal。
 
 ### J2 10-task functional positive-control formal launch contract
 

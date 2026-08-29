@@ -619,3 +619,5 @@ shuffled/reversed；方法完全冻结后只打开Test8一次。
 - 不人为限制各阶段时间、修正次数、结构版本或训练轮数；遇到scientific non-pass先按Gate定位接口，有新证据就修正，无新机制的
   slot/width/rank/seed版本链不算有效尝试；
 - 优先复用、并行和提高吞吐，进展顺利时力争数天内完成整体架构实现并推进关键Gate。
+- GPU显存不设`35GiB`或其它人为硬上限；以最长真实样本稳定不OOM、allocator波动及共驻进程仍有安全余量为边界，按实测吞吐和持续
+  UTL选择microbatch、chunk与worker数。已完成实验中出现的`<35GiB`只记录当时profile合同，不约束后续运行。

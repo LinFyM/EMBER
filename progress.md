@@ -1,5 +1,10 @@
 # EMBER progress
 
+- 2026-08-29 owner纠正此前由执行面自行加入的`<35GiB/GPU`限制：它不是当前authority，也不再作为后续profile或launch硬门。
+  最长真实样本、allocator波动和共驻进程仍有安全余量且不OOM时，可以使用更高显存；运行选择以真实吞吐和持续UTL为准。
+  已从active requirements/design/plan移除该人为上限。当前从detached `a4b91bb`启动的R2配置仍把旧值记录为该run的历史provenance，
+  但runtime代码不执行此阈值、当前run也不会因越过35GiB自动停止；后续配置不再继承该字段。
+
 ## 2026-08-29 R1 partial/non-pass，R2 fixed-route set-valued critic接通
 
 R1已在clean detached `8c213c5`完成110-step formal与step70/110六worker Gate。step110 train/held-video recovery为

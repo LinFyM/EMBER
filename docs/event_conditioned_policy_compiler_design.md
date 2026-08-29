@@ -518,8 +518,9 @@ primal decoder函数类失容；teacher/member不进入deployment输入，held/p
 grouped-output容量证据替换当前additive/group-shared primal decoder，而不是再改route或扫普通超参。
 
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
-Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，12-task完整评价墙钟不超过
-训练主体一半。world size按live availability、LoRA/s、functional updates/s、UTL和显存峰值弹性选择，不能改变task权重或科学batch。
+Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`，12-task完整评价墙钟不超过训练主体一半。显存没有人为
+`35GiB`上限；以最长真实样本不OOM、allocator与共驻进程仍有安全余量为边界，在提高真实LoRA/s、functional updates/s和持续UTL时
+允许使用更高显存。world size按live availability和上述实测量弹性选择，不能改变task权重或科学batch。
 
 通过12-task Gate后恢复40 fit/10 task holdout、329 fit/40 held-video/82 task-held的完整shared functional qualification，仍联合
 Program+primal，primary Gate为held-video median`>=.60`、p10`>=.35`、task-holdout median`>=.40`、held/train`>=.80`、

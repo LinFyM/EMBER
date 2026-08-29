@@ -113,7 +113,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
 - 吞吐优化同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、step wall time、计算段SM/UTL、memory UTL与显存峰值
   调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
-  48GB本身不构成低效，选择仍以真实吞吐和安全余量为准。
+  48GB本身不构成低效。反之也不得自设`35GiB`或其它固定显存上限：最长真实样本、allocator波动和共驻进程仍有安全余量且不OOM时，
+  可以使用更高显存；最终选择以真实吞吐、持续利用率和稳定余量为准。
 - 实际墙钟成本必须与训练/评测规模相称。formal launch前要用真实condition/step profile外推完整训练和Gate评测；若一个只有少量更新的
   资格实验仍需几十分钟或数小时，且瓶颈来自每condition重复的大算子，就应先判定吞吐资格non-pass并修正执行结构，不能靠堆更多GPU、
   缩减必要评测或要求owner接受原始吞吐来掩盖。

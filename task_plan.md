@@ -25,7 +25,8 @@ functional loss，裁决瓶颈究竟是direction discovery初始化还是更深�
 - [x] 25项定向CPU合同与gpu01真实六task forward/backward通过：step0 positive-code recovery中位约`.962`、Action Meta 0、teacher reads 0、
   全部有效gradient有限，峰值`21.882GB`；
 - [x] 完成diff审查、clean main集成、push与detached formal launch contract；
-- [ ] fresh运行10 warmup+100 effective functional-only updates，在actual step70/110保存single checkpoints并完成原R3 Gate；
+- [x] fresh运行10 warmup+100 effective functional-only updates，在actual step70/110保存完整single checkpoints；
+- [ ] 用六个独立workers完成step70/110原R3 paired Gate并形成fixed-route边界结论；
 - [ ] 若R4保持强functional/family且causal/stability通过，把“utility-aligned initialization/有限warmup”机制接回Natural Program并继续真正
   G3；若训练从强step0系统退化，先按最早发生的head/trunk/optimizer接口分析，不做LR/seed/width/rank小扫。
 

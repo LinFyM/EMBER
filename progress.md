@@ -12,11 +12,12 @@
   方向的credit/initialization。
 
 - 当前R4 fixed-route边界只在训练开始前用十个已formal通过的task-local functional code，按现有owner×group hidden做一次FP64
-  minimum-norm shared-head插值；task-local scale不加载，之后只使用真实panel-A functional loss，critic完全删除。gpu01单卡真实
-  forward/backward已通过：233 heads均hidden rank`40/40`，FP64/写回FP32最大拟合误差为`1.50e-14/.003992`；六task step0相对原
-  positive-code functional recovery为`.980/1.155/1.012/.944/.754/.815`，中位约`.962`。Action Meta module/parameter为0，native teacher
-  tensor reads 0，source/Stage0/scale trainable均0，唯一38-target rank16被policy消费；peak reserved`21.882GB`，无35GB人为门。
-  下一步是clean pushed detached R4 formal及原step70/110 Gate；该对照仍不是deployment Writer或G3 pass。
+  minimum-norm shared-head插值；task-local scale不加载，之后只使用真实panel-A functional loss，critic完全删除。clean detached
+  `0b51c57`已在gpu01物理0--5自然完成全部110步formal，墙钟`1517.15s`，actual step70/110两个single checkpoints及六rank
+  optimizer/scheduler/sampler/RNG状态完整。step70/110前十个training visits的recovery中位分别`.7132/.7887`，minimum view分别
+  `.4735/.5648`；早期warmup把step0约`.962`中位一度扰动到约`.30`，随后稳定恢复，说明强初始化没有随functional-only训练系统崩落。
+  全程Action Meta module/parameter为0、native teacher reads 0、source/Stage0/scale trainable均0，最大peak reserved
+  `32,944,160,768` bytes，无OOM/non-finite。下一步只剩原step70/110 paired Gate；该对照仍不是deployment Writer或G3 pass。
 
 - owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
 
@@ -39,6 +40,20 @@
   --phase joint`及既有source/tokenizer/data/base/cache authorities；输出固定为
   `runs/outputs/pi05_ecp_routing_functional_code_init_r4_s110_69a6b24_gpu01p012345_r6_20260830/`。训练自然到step110后用同一clean
   authority六个独立workers评价step70/110；不以step0、loss或内部code fit替代Gate，不运行shuffled/reversed。
+
+### R4 step70/110 formal Gate launch contract
+
+- evaluator scientific authority固定为clean pushed detached `0b51c57c1c266931bd56b23f63aece7dbf65a50e`；训练authority固定为上述
+  naturally completed R4 run及其actual step70/110，不融合checkpoint、不重新初始化head、不读task-local scale；
+- 2026-08-30 01:50 CST live检查gpu01物理0/1/2完全空闲，6仅`.491GB/0%`，3/4为他人约`2.99/3.08GB`且`0%` UTL，
+  仍有充分峰值余量；选择物理`0,1,2,3,4,6`做六个独立single-GPU workers，避免物理5的重复共驻。gpu02物理0--3约30GB、
+  5/6高UTL，只有4/7较空，不如gpu01同节点组合；不跨节点、不NCCL、不占卡等待；
+- 复用gpu01的23GB condition cache与1.1GB endpoint cache，`/dev/shm`尚余39GB；`strg01` `/data1` quota为
+  `709087004/1073741824KiB`、约余348GB。每worker只加载一次runtime，按预注册wall-time cost queue承担任务并顺序评价两个
+  checkpoints；输出固定为
+  `runs/outputs/pi05_ecp_routing_functional_code_init_r4_gate_step{70,110}_0b51c57_gpu01p012346_w6_20260830/`；
+- Gate仍只认train/held-video、held/train、q/v/action-in/action-out、wrong-token、same-task retention及step70--110相邻稳定性。
+  panel B与held video零梯度，fixed token/privileged初始化只作training-only边界解释，validation/test及shuffled/reversed均不使用。
 
 - 2026-08-29 clean pushed `67a49f8`的R3三卡真实profile完成：同一global update由每rank两task执行，墙钟`25.334s`，
   三rank最大reserved为`21.815/20.684/20.462GB`（十进制bytes），所有owner×group output heads均有finite nonzero gradient，

@@ -31,6 +31,29 @@ Action Meta module/parameter为0，38-target唯一rank16及冻结ownership不变
 `runs/analysis/pi05_ecp_j3_counterfactual_world6_profile_dirty_gpu01p012345_20260829/`。下一步是clean commit/push和detached fresh
 12-task/100-effective formal，不从J2 checkpoint resume。
 
+### J3 12-task counterfactual formal launch contract
+
+- scientific implementation authority为clean pushed `main@9af7c194df2f121369e2f4ad7098563b6ddcc3fd`；formal从包含本合同且不再
+  修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。Natural Program仍从`c1493a1/macro20` model tensors
+  初始化，primal scorer、optimizer和scheduler fresh；禁止resume J2/J3 profile或任何旧G3 checkpoint；
+- 数据、10 gradient+2 task-held、两fit/一held K1 video、panel A/B、logical16/physical2、100 effective updates及step70/110
+  checkpoints全部沿用J2。唯一改动是每task每step在两条correct views外增加一条counterfactual view：same-role active三task循环配对，
+  step0起wrong Program与wrong bank交替，fit view 0/1同步交替。hinge margin为该task formal positive-control两fit-video panel-A mean
+  benefit的`.10`倍，权重按六task等质量；margin满足即不反传negative；
+- source、Native Stage0、current-bank operator、carrier12、scale和Action Meta冻结；训练只读gradient-task panel A actions/flow及已封存
+  positive-control fit-panel标量，不读teacher factors、panel B、held video、task-held、validation/test、reward或outcome。每个condition仍只
+  生成一个完整38-target rank12+4 rank16 adapter，shuffled/reversed不使用；
+- formal输出根为
+  `runs/outputs/pi05_ecp_j3_counterfactual_program_primal_12task_s110_9af7c19_gpu01p012345_r6_20260829/`，预计新增`<1GiB`；复用
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`的23GiB frozen cache，其content authority未变且profile全部命中，不重建
+  language/Stage0/X-Y/covariance；
+- 2026-08-29 launch前live状态：gpu01逻辑0--5对应已复核UUID/serial，显存占用约`0.01--0.92GiB`、UTL`0--2%`，0--2的他人
+  小进程峰值余量充足；旧prohibited设备未枚举，当前逻辑0不继承旧限制。gpu02 0--3满载、5--6忙、7空闲，因此不跨节点拼卡；
+  `/data1` user quota为`707772604/1073741824KiB`，`/dev/shm`尚余39GiB。launch使用gpu01 0--5、GPU-local NUMA、deferred NCCL、
+  `NCCL_P2P_DISABLE=1`；
+- profile实测`21.696s/global step`、peak reserved`20.395GiB`，故formal继续锁定world6并预期约40分钟训练主体；目标/硬上限仍为
+  `<=30/45s`及`<35GiB/GPU`。完成后对step70/110执行同一J3 Gate；correct recovery不提升时，negative变坏本身不构成通过。
+
 ## 2026-08-29 第四次专家复核已采纳，J2 joint Program--primal functional qualification启动
 
 第四位专家锁定远程`main@910fb204e8e3a5374ec988aa5e1da5bc042754aa`及`9b52e59..910fb20`的完整历史，复核了P0/P1、P2执行面、

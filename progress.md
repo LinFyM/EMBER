@@ -45,13 +45,14 @@
 
 - evaluator scientific authority固定为clean pushed detached `0b51c57c1c266931bd56b23f63aece7dbf65a50e`；训练authority固定为上述
   naturally completed R4 run及其actual step70/110，不融合checkpoint、不重新初始化head、不读task-local scale；
-- 2026-08-30 01:50 CST live检查gpu01物理0/1/2完全空闲，6仅`.491GB/0%`，3/4为他人约`2.99/3.08GB`且`0%` UTL，
-  仍有充分峰值余量；选择物理`0,1,2,3,4,6`做六个独立single-GPU workers，避免物理5的重复共驻。gpu02物理0--3约30GB、
-  5/6高UTL，只有4/7较空，不如gpu01同节点组合；不跨节点、不NCCL、不占卡等待；
+- 2026-08-30 01:50 CST live检查gpu01物理0/1/2完全空闲，3--6为他人约`.49--3.14GB`轻进程；紧邻launch的二次检查发现
+  物理3已升到`99%` UTL，故不按旧快照共驻，最终选择物理`0,1,2,4,5,6`做六个独立single-GPU workers；其中4/5/6约
+  `3.01/3.14/3.08GB`且当时`0%` UTL，仍有充分峰值余量。gpu02物理0--3约30GB、5/6高UTL，只有4/7较空，不如gpu01
+  同节点组合；不跨节点、不NCCL、不占卡等待；
 - 复用gpu01的23GB condition cache与1.1GB endpoint cache，`/dev/shm`尚余39GB；`strg01` `/data1` quota为
   `709087004/1073741824KiB`、约余348GB。每worker只加载一次runtime，按预注册wall-time cost queue承担任务并顺序评价两个
   checkpoints；输出固定为
-  `runs/outputs/pi05_ecp_routing_functional_code_init_r4_gate_step{70,110}_0b51c57_gpu01p012346_w6_20260830/`；
+  `runs/outputs/pi05_ecp_routing_functional_code_init_r4_gate_step{70,110}_0b51c57_gpu01p012456_w6_20260830/`；
 - Gate仍只认train/held-video、held/train、q/v/action-in/action-out、wrong-token、same-task retention及step70--110相邻稳定性。
   panel B与held video零梯度，fixed token/privileged初始化只作training-only边界解释，validation/test及shuffled/reversed均不使用。
 

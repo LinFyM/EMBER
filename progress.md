@@ -52,7 +52,7 @@ BF16/TF32数值政策使用`1e-4` replay容差并把实际误差留在报告。�
 - 单worker命令模板：`env CUDA_VISIBLE_DEVICES=<GPU> PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
   numactl --cpunodebind=<NUMA> --membind=<NUMA> /data1/user/ymdai/projects/EMBER/.venv/bin/python -u
   scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_joint_program_primal_j2_v1.json --base-config
-  configs/pi05_ecp_shared_compiler_g3_v5.json --phase positive-control --mode formal --task <TASK> --asset-root
+  /data1/user/ymdai/projects/EMBER/configs/pi05_ecp_shared_compiler_g3_v5.json --phase positive-control --mode formal --task <TASK> --asset-root
   /data1/user/ymdai/projects/EMBER --source-run <SOURCE_RUN> --checkpoint <SOURCE_CHECKPOINT> --tokenizer-path <TOKENIZER>
   --data-root <TARGET_DATA> --output-dir <OUTPUT_ROOT>/task_<TASK> --condition-cache-root <CACHE_ROOT> --log-every 1`；所有相对
   script/config路径从同一detached formal worktree解析，asset authority仍指canonical main根；

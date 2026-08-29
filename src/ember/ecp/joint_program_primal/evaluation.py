@@ -286,9 +286,10 @@ def _endpoint_cache(
     runtime: JointProgramPrimalRuntime, root: Path
 ) -> FrozenMappingConditionCache:
     base = runtime.base_config
+    shared = runtime.config["frozen_condition_cache_authority"]
     authority = frozen_condition_cache_authority(
-        config_schema=f"{runtime.config['schema_version']}:endpoints",
-        config_bytes=runtime.args.config.stat().st_size,
+        config_schema=f"{shared['config_schema']}:endpoints",
+        config_bytes=int(shared["config_bytes"]),
         source_checkpoint=runtime.args.checkpoint,
         g2_program_checkpoint=authority_path(
             base, "g2_program_checkpoint", asset_root=runtime.args.asset_root

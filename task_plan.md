@@ -42,7 +42,7 @@ action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in�
   correct functional-only、fixed route不加载；
 - [x] 完成R6定向合同与真实forward/backward/materialization smoke：Natural Program和全部native heads有gradient、feature chart冻结、
   fixed route/lookup/Action Meta为0、唯一rank16与吞吐成立；
-- [ ] 完成R6 diff审查、main集成、push与detached formal launch contract；
+- [x] 完成R6 diff审查、main集成、push与detached formal launch contract；
 - [ ] fresh运行R6原12-task 10 warmup+100 effective、actual step70/110并执行完整Gate；若失败按train→held-video→task-held→controls的最早
   失效接口分析，不做LR/seed/width/rank小扫。
 

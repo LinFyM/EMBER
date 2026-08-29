@@ -23,6 +23,26 @@
   gradient，native teacher reads 0；单卡六task一步`55.26s`，peak allocated/reserved`21.21/21.88GB`，仍由真实X/Y、唯一rank12+4
   rank16和policy functional backward构成。该profile只证明执行合同，不替代R6 formal或Gate。
 
+### R6 Natural Program chart reconnect formal launch contract
+
+- implementation authority为clean pushed `main@43dca6b8de937ea74fcbe38bd0a9d464f8619644`；formal从只增加本launch记录、未再
+  修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant fresh执行，不resume J2/J3/R1--R5 optimizer或任何dirty
+  profile。初始化只加载R5 step110通过Gate的共享scorer tensors及G2 `c1493a1/macro20` Program tensors；fixed token与task lookup均不
+  是checkpoint参数且不进入forward；optimizer/scheduler fresh。
+- 科学合同固定为12 tasks：gradient meta`[1,8,9,32,52]`、gradient target`[72,73,75,93,94]`、true task-held`2/74`；每个
+  gradient task两fit K1 videos与panel A，10 warmup+100 effective、actual step70/110。只训练Natural Program readers/fusion/aligner
+  与233 heads；feature chart、source、Native Stage0、current-bank dual/exact replay、carrier12、scale和Action Meta冻结。loss只有正确
+  generated rank16的cross-episode PI0.5 flow；panel B、same-task held、task2/74、validation/test零梯度，不使用shuffled/reversed。
+- 2026-08-30 03:41 CST live检查gpu01物理0/1/2完全空闲；3/4为他人约`5.33GB/0%`、5约`1.67GB/0%`，profile自身peak
+  reserved`21.88GB`，有充分余量；物理6约`5.34GB/99%`故排除。gpu02物理0--3约30GB，5/6重占用，4仅约2GB、7空闲但不跨节点
+  拼卡。计划紧邻launch复查后用gpu01物理`0--5` world6；若3/4/5任一卡升为持续高UTL，则按实际合适卡弹性降为world5/4，不改变
+  task权重或科学batch，不等待凑6、不干扰他人。
+- gpu01复用`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` 23GB cache，shm尚余39GB；`strg01` `/data1`
+  quota为`709,430,440/1,073,741,824` blocks，R5完整run 280MB，R6预计同量级，峰值远低于剩余额度。exact entry使用
+  `NCCL_P2P_DISABLE=1`、GPU-local NUMA/deferred NCCL；预注册输出为
+  `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_s110_43dca6b_gpu01p012345_r6_20260830/`。自然完成后用最多六个独立
+  single-GPU workers依次评价step70/110完整12-task Gate；不以训练loss或内部geometry替代Gate。
+
 - 2026-08-30 R3 grouped-output formal与step70/110 Gate已完整结束。step110 train/held-video recovery为
   `.305293/.287486`，q/v/action-in/action-out为`.285260/.277323/.656235/.668922`，wrong-token margin
   `.118578`、same-task retention`.986958`。R3确实修复action-in并保持action-out、路由因果和跨video稳定，但train/held及q/v仍未过

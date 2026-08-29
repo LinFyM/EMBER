@@ -26,6 +26,34 @@ off-diagonal std为`.0141/.1478`，符合诊断预期；source与Stage0 trainabl
 `19 passed`、全仓`204 passed`、diff check与config load通过；该profile不是Gate结果，下一步只能从clean pushed detached
 authority运行同一macro5 formal，若仍无数量级改善则停止继续叠加G2版本并整理专家复核证据。
 
+### G2 global-calibrated behavior-kernel v5 macro5 formal launch contract
+
+- scientific code authority为clean pushed `main@2d859f0`；formal从只新增本合同文档、不改`src/ scripts/ configs/ tests/`的
+  clean pushed descendant建立detached frozen worktree。fresh optimizer，从`c1493a1/macro20`只加载Program model tensors；不resume
+  v3/v4，不复用dirty profile checkpoint；
+- 唯一因果变量是v5固定global calibration：teacher使用`(1+K_behavior)/2`，raw Program off-diagonal Gram及cross-view差异
+  按完整joint/meta/target fit scope的固定per-owner teacher dispersion缩放。fit60用于梯度与fixed evaluator，internal15只作Gate，
+  official held20保持0 reads；数据、每step 5 meta+5 target、两组disjoint same-K views、`.5/.25/.25`scope权重、Program schema、
+  dynamic loss/Gate和optimizer全部与v4一致；
+- formal规模为5 macros × 3 optimizer steps，world5每rank一对role task。只训练Natural Program；source与Native Stage0冻结，
+  Action Meta argument为null、module/parameter必须为0；不使用shuffled/reversed；
+- command：`env CUDA_VISIBLE_DEVICES=0,1,2,3,4 NCCL_P2P_DISABLE=1 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false
+  /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=5 scripts/train_ecp_natural_program.py --config
+  configs/pi05_ecp_natural_program_g2_behavior_kernel_v5.json --mode formal --asset-root /data1/user/ymdai/projects/EMBER --source-run
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path
+  /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --data-root
+  /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --label-root
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_labels_g2_v2_cpu_20260825 --output-dir
+  /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_natural_program_g2_global_behavior_kernel_fold0_m5_2d859f0_gpu01p01234_r5_20260829
+  --stop-after-macro 5 --log-every 1`；
+- `2026-08-29 11:47 CST` live preflight中gpu01物理`0--6`均无compute process、util 0且free memory约`45.9--46.1GiB`；
+  选择`0--4`满足world5且不占第六卡。gpu02仅物理7空闲，其余均有他人任务，故不跨节点拼卡。`/data1` user quota为
+  `674.7GiB/1TiB`，shared filesystem可用`84TiB`；同规模v4 formal为`16MiB`，本run预计峰值新增小于`0.1GiB`，output事前不存在；
+- macro5后一次性执行旧dynamic与完整internal behavior Gate。通过仍要求train topology`>=.50`、internal role-equal及meta/target
+  各`>=.25`，再满足exact/family/wrong/language/view阈值；训练mini-batch loss/std不代替Gate。若v5相对v3/v4仍没有数量级改善，
+  不延长、不读official held20、不新增v6，固化最早接口与完整证据后暂停并准备专家复核。
+
 ## 2026-08-29 G2 behavior-kernel v3 formal non-pass，joint-role v4已接通
 
 clean detached `main@60fb18b`的五卡v3从`c1493a1/macro20` model-only初始化、fresh optimizer运行到macro5/15

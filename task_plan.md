@@ -33,7 +33,7 @@ action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in�
 - [x] 在唯一routing-control实现面加入`native_heads_only`参数所有权与R5 sealed config，不新增平行模型或fallback；
 - [x] 完成13项定向CPU合同和单卡真实forward/backward/materialization profile：233 heads全部有gradient、chart冻结、Action Meta 0、
   teacher reads 0、唯一rank16及显存/吞吐成立；
-- [ ] 完成diff审查、clean main集成、push与detached formal launch contract；
+- [x] 完成diff审查、clean main集成、push与detached formal launch contract；
 - [ ] fresh运行原10 warmup+100 effective、actual step70/110并执行同一paired Gate；
 - [ ] 只有R5相邻checkpoint保持强functional、四family、route与same-task稳定，才把“utility-aligned初始化必须绑定稳定feature chart”接回
   Natural Program继续真正G3；若仍失败，按最早失效接口分析，不做LR/seed/width/rank小扫。

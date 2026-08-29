@@ -33,6 +33,22 @@
   Stage0/scale均0，全部233 heads有finite nonzero gradient，frozen chart无gradient，native teacher reads 0，唯一rank16被真实policy消费；
   单卡step`53.05s`、peak allocated/reserved`21.19/21.87GB`。该profile只证明执行面，不冒充R5 Gate或G3通过。
 
+### R5 fixed feature-chart formal launch contract
+
+- implementation authority为clean pushed `main@9c5ff0d6772c7ac974273b30f61545a1662cf067`；formal从只增加本launch记录、未再修改
+  `src/ scripts/ configs/ tests/`的clean pushed detached descendant fresh执行，不resume R4或任何旧G3 checkpoint；
+- 科学合同与R4完全相同：10 gradient tasks、每task两fit K1 views、panel A、10 warmup+100 effective、actual step70/110、fixed
+  routing token、一次fit-only functional-code head初始化、真实X/Y、current-bank dual/exact signed replay、frozen shared scale和唯一rank16。
+  唯一变量是初始化后feature chart冻结，optimizer只含233 native heads；critic、task-local scale和teacher tensor不读，panel B、same-task
+  held、task2/74、validation/test零梯度，Action Meta 0，shuffled/reversed不用；
+- 2026-08-30 02:37 CST live检查gpu01物理0/1/2完全空闲，3--6为他人约`5.3--5.45GB`且`0%` UTL轻进程；单卡profile自身
+  peak reserved`21.87GB`，即便共驻也有约18GB余量。计划用物理`0--5`做world6，并在实际launch紧邻时重查，若任一卡变为高UTL则
+  换用当时低UTL的同节点卡或按可用1--6卡弹性分片，不等待、不抢占。gpu02只有物理7全空，物理4约2GB，其余重占用，故不跨节点；
+- gpu01复用现有23GB condition cache，`/dev/shm`尚余39GB；`strg01` `/data1` quota为`676.3G/1T`，R4完整run仅302MB，
+  R5预计同量级且远低于剩余额度。exact entry使用`NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL的既有torchrun；输出固定为
+  `runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9c5ff0d_gpu01p012345_r6_20260830/`。自然完成后以最多六个独立
+  single-GPU workers顺序评价step70/110同一paired Gate；不以训练loss、step0或内部geometry替代Gate。
+
 - owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
 
 ### R4 functional-code initialization formal launch contract

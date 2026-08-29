@@ -1,4 +1,4 @@
-"""Runtime and launch contract for J2 joint Program--primal qualification."""
+"""Runtime and launch contract for counterfactual joint Program--primal training."""
 
 from __future__ import annotations
 
@@ -69,9 +69,9 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-J2_SCHEMA = "ember_ecp_joint_program_primal_j2_v1"
-J2_RUN_SCHEMA = "ember_ecp_joint_program_primal_run_v1"
-J2_STAGE = "j2_joint_program_primal"
+J2_SCHEMA = "ember_ecp_joint_program_primal_j3_v1"
+J2_RUN_SCHEMA = "ember_ecp_joint_program_primal_run_v2"
+J2_STAGE = "j3_counterfactual_functional_routing"
 
 
 @dataclass(frozen=True)
@@ -129,6 +129,8 @@ class JointProgramPrimalRuntime:
     query_dataset: FunctionalQueryDataset
     query_processor: Pi05LiberoProcessor
     panel_batch_cache: dict[tuple[int, str, int], dict[str, Any]]
+    counterfactual_margin_scales: dict[int, float]
+    positive_control_files: tuple[Path, ...]
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     policy: torch.nn.Module
     program: NaturalProgramModel
@@ -167,6 +169,8 @@ class _AuthorityAssets:
     expected_checkpoint: Path
     source: dict[str, Any]
     source_config: dict[str, Any]
+    counterfactual_margin_scales: dict[int, float]
+    positive_control_files: tuple[Path, ...]
 
 
 @dataclass(frozen=True)
@@ -209,6 +213,8 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
     split = config.get("task_split", {})
     data = config.get("data", {})
     joint = config.get("optimization", {}).get("joint", {})
+    counterfactual = joint.get("counterfactual", {})
+    cache_authority = config.get("frozen_condition_cache_authority", {})
     tasks = tuple(
         map(
             int,
@@ -239,13 +245,81 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             joint.get("checkpoint_effective_steps") == [60, 100],
             joint.get("global_tasks_per_optimizer_step") == 6,
             joint.get("video_views_per_task") == 2,
+            counterfactual.get("arm_schedule")
+            == "alternate_wrong_program_wrong_bank",
+            counterfactual.get("negative_pairing") == "same_role_cyclic_next",
+            counterfactual.get("negative_views_per_task") == 1,
+            counterfactual.get("normalized_margin") == 0.1,
+            counterfactual.get("weight") == 1.0,
+            counterfactual.get("margin_scale")
+            == "formal_positive_control_fit_panel_a_mean_benefit",
+            isinstance(
+                config.get("authorities", {}).get("positive_control_root"), str
+            ),
+            cache_authority.get("config_schema")
+            == "ember_ecp_joint_program_primal_j2_v1",
+            cache_authority.get("config_bytes") == 6017,
             config.get("information_wall", {}).get("action_meta_installed") is False,
             config.get("information_wall", {}).get("shuffled_or_reversed_use") is False,
         )
     )
     if not valid:
-        raise ValueError("unsupported J2 joint Program-primal config")
+        raise ValueError("unsupported J3 counterfactual Program-primal config")
     return config
+
+
+def _counterfactual_margin_scales(
+    config: Mapping[str, Any], *, asset_root: Path
+) -> tuple[dict[int, float], tuple[Path, ...]]:
+    """Load training-fit positive-control benefits used only as hinge margins."""
+
+    root = (
+        asset_root / str(config["authorities"]["positive_control_root"])
+    ).resolve()
+    aggregate_path = root / "aggregate.json"
+    aggregate = read_json(aggregate_path)
+    if (
+        aggregate.get("schema_version")
+        != "ember_ecp_j2_functional_positive_control_aggregate_v1"
+        or aggregate.get("overall_gate")
+        != "pass_after_runtime_microbatch_correction"
+    ):
+        raise ValueError("J3 positive-control aggregate authority changed")
+    gradient_tasks = tuple(
+        map(
+            int,
+            (
+                *config["task_split"]["gradient_meta"],
+                *config["task_split"]["gradient_target"],
+            ),
+        )
+    )
+    if {int(row["task"]) for row in aggregate.get("tasks", ())} != set(
+        gradient_tasks
+    ):
+        raise ValueError("J3 positive-control task coverage changed")
+    scales: dict[int, float] = {}
+    files = [aggregate_path]
+    for task in gradient_tasks:
+        path = root / f"task_{task:03d}" / "result.json"
+        row = read_json(path)
+        fit = row.get("evaluation", {}).get("fit_videos", ())
+        benefits = [
+            float(value.get("panel_a", {}).get("benefit_over_carrier", float("nan")))
+            for value in fit
+        ]
+        if (
+            row.get("schema_version")
+            != "ember_ecp_j2_functional_positive_control_task_v1"
+            or row.get("status") != "complete"
+            or int(row.get("task", -1)) != task
+            or len(benefits) != 2
+            or not all(math.isfinite(value) and value > 0 for value in benefits)
+        ):
+            raise ValueError(f"J3 positive-control fit authority changed for task {task}")
+        scales[task] = sum(benefits) / len(benefits)
+        files.append(path)
+    return scales, tuple(files)
 
 
 def _tasks(
@@ -490,6 +564,17 @@ def _run_contract(runtime: JointProgramPrimalRuntime) -> dict[str, Any]:
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
         },
+        "counterfactual_margin_authority": {
+            "source": "formal_positive_control_fit_panel_a_mean_benefit",
+            "files": [
+                {"path": str(path), "bytes": path.stat().st_size}
+                for path in runtime.positive_control_files
+            ],
+            "task_scales": {
+                str(task): value
+                for task, value in runtime.counterfactual_margin_scales.items()
+            },
+        },
         "model": dict(runtime.config["model"]),
         "optimization": dict(runtime.config["optimization"]),
         "throughput_gate": dict(runtime.config["throughput_gate"]),
@@ -519,6 +604,9 @@ def _authority_assets(
     all_tasks = _tasks(base, args.data_root, args.asset_root)
     task_by_id = {task.authority_id: task for task in all_tasks}
     panels = _load_panels(config, asset_root=args.asset_root)
+    margin_scales, positive_control_files = _counterfactual_margin_scales(
+        config, asset_root=args.asset_root
+    )
     selected_tasks = tuple(task_by_id[task] for task in sorted(panels))
     mapping_split = load_mapping_split(base, asset_root=args.asset_root)
     expected_checkpoint = authority_path(
@@ -544,6 +632,8 @@ def _authority_assets(
         source_config=load_config(
             authority_path(base, "source_base_config", asset_root=args.asset_root)
         ),
+        counterfactual_margin_scales=margin_scales,
+        positive_control_files=positive_control_files,
     )
 
 
@@ -650,8 +740,8 @@ def _data_assets(
         device=context.device,
     )
     cache_authority = frozen_condition_cache_authority(
-        config_schema=str(config["schema_version"]),
-        config_bytes=args.config.stat().st_size,
+        config_schema=str(config["frozen_condition_cache_authority"]["config_schema"]),
+        config_bytes=int(config["frozen_condition_cache_authority"]["config_bytes"]),
         source_checkpoint=authority.expected_checkpoint,
         g2_program_checkpoint=authority_path(
             base, "g2_program_checkpoint", asset_root=args.asset_root
@@ -765,6 +855,8 @@ def prepare_joint_program_primal_runtime(
         query_dataset=data.query_dataset,
         query_processor=data.query_processor,
         panel_batch_cache={},
+        counterfactual_margin_scales=authority.counterfactual_margin_scales,
+        positive_control_files=authority.positive_control_files,
         language_tokens=data.language_tokens,
         policy=model.policy,
         program=model.program,

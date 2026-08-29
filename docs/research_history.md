@@ -1056,3 +1056,24 @@ step`13.32s`；active runtime据此锁定physical2，无需重复10-task科学fo
 
 - `runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829/`；
 - `runs/analysis/pi05_ecp_j2_pc_task93_mb2_memory_profile_f3677a5_gpu01p3_20260829/`。
+
+## 54. J2 joint Program--primal formal non-pass与task-specific routing根因
+
+clean detached `5fd80b6`在gpu01六卡完成10 warmup+100 effective joint updates，step70/110均由修正后的独立sealed video authority
+执行完整12-task Gate。train recovery为`.159588/.170800`，held-video为`.148662/.164623`；step110 task-held task2/task74为
+`.122798/-.109179`，q/v/action-in/action-out medians为`-.001007/.001435/.008965/-.000434`，full相对language/endpoints
+`.086578/.033435`，wrong Program/bank margins`.008033/.007142`、interaction`.002387`。held/train、same-task retention、event、
+K1与信息墙通过，但primary和全部task-specific causal指标明确non-pass；相邻checkpoint仅小幅改善，不支持继续同一训练。
+
+训练日志与checkpoint110零step审计排除clip和断图。Program/primal task-pair cosine median约`.93--.95`，生成update仍高度公共；成功
+free-primal input/output code task-pair median仅`.203/.149`。真实functional task-gradient median cosine`-.0229`、`62.22%` pairs
+为负，六task组cancellation ratio`.4208--.5360`，且各Program/scorer有效组均有有限非零梯度。故最早接口是近同条件表示下的
+task-specific functional routing：纯correct-pair loss允许common residual shortcut。后继只获得一次配对counterfactual functional
+qualification，训练时交替wrong Program与wrong bank；若仍无train数量级提升，则停止该credit修正而重开函数类/representation，不把
+问题错误上移到只适用于“train高、task-held低”分支的raw Stage0。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_j2_joint_program_primal_12task_s110_1d775a4_gpu01p012345_r6_20260829/`；
+- `runs/outputs/pi05_ecp_j2_joint_gate_step110_2cd4091_gpu01p012345_w6_20260829/`；
+- `runs/analysis/pi05_ecp_j2_checkpoint110_gradient_geometry_2cd4091_gpu01p5_20260829/report.json`。

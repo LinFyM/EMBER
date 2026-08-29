@@ -1,5 +1,36 @@
 # EMBER progress
 
+## 2026-08-29 J2 formal non-pass，J3 counterfactual functional routing启动
+
+clean detached `5fd80b6`在gpu01物理`0--5`完成12-task J2全部110 optimizer steps（10 warmup+100 effective），保存actual
+step70/110两个single checkpoints；训练自然结束，所有Program/scorer gradient finite且非零，Action Meta、source、Stage0、operator、
+carrier和scale均冻结。step70/110的gradient-task train recovery为`.159588/.170800`，same-task held-video
+`.148662/.164623`；step110 task-held task2/task74为`.122798/-.109179`，四family medians均约零，correct-vs-wrong
+Program/bank仅`.008033/.007142`、interaction`.002387`。same-task retention`.9771`、held/train`.9638`、event/K1和信息墙通过；
+结果仍远低于Gate，不能以稳定或video retention冒充primary通过。正式报告位于
+`runs/outputs/pi05_ecp_j2_joint_program_primal_12task_s110_1d775a4_gpu01p012345_r6_20260829/`及两个
+`pi05_ecp_j2_joint_gate_step{70,110}_2cd4091_gpu01p012345_w6_20260829/`根。
+
+non-pass后的零optimizer-step checkpoint110审计排除gradient clip、断图和单纯video overfit。十task Program/primal pairwise cosine
+median约`.93--.95`，generated effective update median`.678`且action-in`.997`；成功task-local free-primal input/output code
+median却只有`.203/.149`。同一functional panel的task-gradient pairwise cosine median`-.0229`、`62.22%`为负，预注册六task组
+cancellation ratio`.4208--.5360`。纯correct-pair functional loss因此学到common residual；它没有建立Program/bank对task-specific
+policy effect的ownership。审计artifact为
+`runs/analysis/pi05_ecp_j2_checkpoint110_gradient_geometry_2cd4091_gpu01p5_20260829/report.json`。
+
+当前只做一个有机制依据的J3修正：在原joint执行面保留correct functional primary，增加same-role cyclic、与correct共享task panel和
+policy RNG的单条counterfactual view；wrong Program与wrong bank逐step交替，用bounded margin在满足后停止反向推动。该修正不增加
+deployment参数、输入或forward，不改native bank、rank、Stage0、scale或Action Meta。每task从2次变3次policy functional forward，六卡
+目标仍`<=30s/update`。
+
+dirty六卡真实step0 qualification已经通过。六个same-role cyclic wrong-Program pairs均与correct共享task panel、policy RNG和bank view，
+6/6初始normalized gap接近0且hinge激活，符合J2的common-residual诊断；完整gradient到达Program/scorer，native teacher tensor reads为0，
+Action Meta module/parameter为0，38-target唯一rank16及冻结ownership不变。global step`21.696s`，较J2两forward的`11.73s`符合三forward
+规模且低于30秒目标；六卡peak reserved最大`20.395GiB`，全部冻结cache命中。确定性合同锁定step1切换wrong-bank和第二fit view，不为
+该同构分支重复一次完整加载。profile位于
+`runs/analysis/pi05_ecp_j3_counterfactual_world6_profile_dirty_gpu01p012345_20260829/`。下一步是clean commit/push和detached fresh
+12-task/100-effective formal，不从J2 checkpoint resume。
+
 ## 2026-08-29 第四次专家复核已采纳，J2 joint Program--primal functional qualification启动
 
 第四位专家锁定远程`main@910fb204e8e3a5374ec988aa5e1da5bc042754aa`及`9b52e59..910fb20`的完整历史，复核了P0/P1、P2执行面、

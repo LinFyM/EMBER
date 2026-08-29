@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
@@ -55,6 +56,56 @@ def joint_task_group(
          *
             (target[(offset + index) % 5] for index in range(3)))
     )
+
+
+def counterfactual_task_pairs(
+    runtime: JointProgramPrimalRuntime, group: tuple[int, ...]
+) -> dict[int, int]:
+    """Pair each task to the next active task within the same fixed role."""
+
+    split = runtime.config["task_split"]
+    meta = set(map(int, split["gradient_meta"]))
+    target = set(map(int, split["gradient_target"]))
+    roles = (
+        tuple(task for task in group if task in meta),
+        tuple(task for task in group if task in target),
+    )
+    if any(len(tasks) != 3 for tasks in roles):
+        raise RuntimeError("J3 counterfactual role pairing changed")
+    pairs = {
+        task: tasks[(index + 1) % len(tasks)]
+        for tasks in roles
+        for index, task in enumerate(tasks)
+    }
+    if set(pairs) != set(group) or any(task == wrong for task, wrong in pairs.items()):
+        raise RuntimeError("J3 counterfactual task pairing changed")
+    return pairs
+
+
+def counterfactual_arm(optimizer_step: int) -> str:
+    if optimizer_step < 0:
+        raise ValueError("J3 optimizer step must be non-negative")
+    return "wrong_program" if optimizer_step % 2 == 0 else "wrong_bank"
+
+
+def counterfactual_hinge(
+    *,
+    correct_loss: float,
+    negative_loss: float,
+    margin_scale: float,
+    normalized_margin: float,
+) -> tuple[bool, float, float, float]:
+    """Return active, gap, raw margin and the bounded-support hinge value."""
+
+    values = (correct_loss, negative_loss, margin_scale, normalized_margin)
+    if not all(math.isfinite(value) for value in values) or min(
+        margin_scale, normalized_margin
+    ) <= 0:
+        raise ValueError("J3 counterfactual margin input changed")
+    gap = negative_loss - correct_loss
+    margin = normalized_margin * margin_scale
+    hinge = max(0.0, margin - gap)
+    return hinge > 0, gap, margin, hinge
 
 
 def _condition_cost(condition: MappingCondition) -> int:
@@ -175,10 +226,21 @@ def prepare_joint_condition(
     }
 
 
-def generated_rank16(
-    runtime: JointProgramPrimalRuntime, condition: MappingCondition
+def generated_rank16_pair(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    program_condition: MappingCondition,
+    bank_condition: MappingCondition,
 ) -> tuple[dict[str, torch.Tensor], Any, Any, Mapping[str, Any]]:
-    prepared, metrics = prepare_joint_condition(runtime, condition)
+    """Generate one adapter from an explicit Program/bank pairing."""
+
+    program_prepared, program_metrics = prepare_joint_condition(
+        runtime, program_condition
+    )
+    if bank_condition == program_condition:
+        bank_prepared, bank_metrics = program_prepared, program_metrics
+    else:
+        bank_prepared, bank_metrics = prepare_joint_condition(runtime, bank_condition)
     query_times = torch.linspace(
         0.0,
         1.0,
@@ -188,11 +250,11 @@ def generated_rank16(
     )[None]
     program, program_output = prepare_joint_program_primal_condition(
         program_model=runtime.program,
-        condition=prepared,
+        condition=program_prepared,
         query_times=query_times,
     )
     output = runtime.compiler.forward_compact(
-        program, prepared.videos, s_ref=runtime.ranks.s_ref
+        program, bank_prepared.videos, s_ref=runtime.ranks.s_ref
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=False
@@ -203,18 +265,28 @@ def generated_rank16(
         rank16_contract=runtime.ranks.contract,
     )
     if output.video_weights.shape != (1,) or float(output.video_weights[0]) != 1.0:
-        raise RuntimeError("J2 generated adapter escaped K1 identity")
-    return complete, output, program_output, metrics
+        raise RuntimeError("J3 generated adapter escaped K1 identity")
+    return complete, output, program_output, {
+        "program": program_metrics,
+        "bank": bank_metrics,
+    }
 
 
-def functional_loss_and_backward(
+def generated_rank16(
+    runtime: JointProgramPrimalRuntime, condition: MappingCondition
+) -> tuple[dict[str, torch.Tensor], Any, Any, Mapping[str, Any]]:
+    return generated_rank16_pair(
+        runtime, program_condition=condition, bank_condition=condition
+    )
+
+
+def functional_loss_derivative(
     runtime: JointProgramPrimalRuntime,
     *,
     state: Mapping[str, torch.Tensor],
     batch: Mapping[str, Any],
     policy_rng_seed: int,
-    loss_divisor: float,
-) -> float:
+) -> tuple[float, dict[str, torch.Tensor]]:
     value, details, gradients = functional_lora_loss_gradient(
         runtime.policy,
         state,
@@ -229,18 +301,52 @@ def functional_loss_and_backward(
         ),
         collect_policy_details=False,
     )
-    if details or not bool(torch.isfinite(value)) or loss_divisor <= 0:
-        raise RuntimeError("J2 functional policy loss changed")
-    (writer_chain_rule_surrogate(state, gradients) / loss_divisor).backward()
-    return float(value.float())
+    if details or not bool(torch.isfinite(value)):
+        raise RuntimeError("J3 functional policy loss changed")
+    return float(value.float()), gradients
+
+
+def backward_functional_derivative(
+    state: Mapping[str, torch.Tensor],
+    gradients: Mapping[str, torch.Tensor],
+    *,
+    weight: float,
+) -> None:
+    if not math.isfinite(weight) or weight == 0:
+        raise ValueError("J3 functional surrogate weight changed")
+    (writer_chain_rule_surrogate(state, gradients) * float(weight)).backward()
+
+
+def functional_loss_and_backward(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    state: Mapping[str, torch.Tensor],
+    batch: Mapping[str, Any],
+    policy_rng_seed: int,
+    loss_divisor: float,
+) -> float:
+    """Retained task-local positive-control wrapper around the shared derivative."""
+
+    if loss_divisor <= 0:
+        raise ValueError("functional loss divisor must be positive")
+    value, gradients = functional_loss_derivative(
+        runtime,
+        state=state,
+        batch=batch,
+        policy_rng_seed=policy_rng_seed,
+    )
+    backward_functional_derivative(state, gradients, weight=1.0 / loss_divisor)
+    return value
 
 
 def _run_task(
     runtime: JointProgramPrimalRuntime,
     *,
     task_id: int,
+    wrong_task_id: int,
     visit_index: int,
-    loss_divisor: float,
+    counterfactual_view_index: int,
+    arm: str,
 ) -> dict[str, Any]:
     tick = time.monotonic()
     panel_batch, panel = functional_panel_batch(
@@ -249,18 +355,30 @@ def _run_task(
         panel_name="a",
         visit_index=visit_index,
     )
+    fit_views = runtime.task_conditions[task_id].fit_views
+    wrong_views = runtime.task_conditions[wrong_task_id].fit_views
+    if counterfactual_view_index not in {0, 1} or arm not in {
+        "wrong_program",
+        "wrong_bank",
+    }:
+        raise RuntimeError("J3 counterfactual view or arm changed")
     views = []
-    for condition in runtime.task_conditions[task_id].fit_views:
+    selected_gradients: dict[str, torch.Tensor] | None = None
+    selected_loss: float | None = None
+    for view_index, condition in enumerate(fit_views):
         complete, output, program_output, metrics = generated_rank16(
             runtime, condition
         )
-        loss = functional_loss_and_backward(
+        loss, gradients = functional_loss_derivative(
             runtime,
             state=complete,
             batch=panel_batch,
             policy_rng_seed=panel.policy_rng_seed,
-            loss_divisor=loss_divisor,
         )
+        backward_functional_derivative(complete, gradients, weight=1.0 / 12.0)
+        if view_index == counterfactual_view_index:
+            selected_loss = loss
+            selected_gradients = gradients
         views.append(
             {
                 "video_demo": condition.video_demo,
@@ -278,6 +396,70 @@ def _run_task(
             }
         )
         del complete, output, program_output
+    if selected_loss is None or selected_gradients is None:
+        raise RuntimeError("J3 lost its paired correct functional derivative")
+
+    correct_condition = fit_views[counterfactual_view_index]
+    wrong_condition = wrong_views[counterfactual_view_index]
+    program_condition = (
+        wrong_condition if arm == "wrong_program" else correct_condition
+    )
+    bank_condition = wrong_condition if arm == "wrong_bank" else correct_condition
+    negative, negative_output, negative_program, negative_metrics = (
+        generated_rank16_pair(
+            runtime,
+            program_condition=program_condition,
+            bank_condition=bank_condition,
+        )
+    )
+    negative_loss, negative_gradients = functional_loss_derivative(
+        runtime,
+        state=negative,
+        batch=panel_batch,
+        policy_rng_seed=panel.policy_rng_seed,
+    )
+    counterfactual = runtime.config["optimization"]["joint"]["counterfactual"]
+    margin_scale = float(runtime.counterfactual_margin_scales[task_id])
+    normalized_margin = float(counterfactual["normalized_margin"])
+    active, gap, margin, hinge_loss = counterfactual_hinge(
+        correct_loss=selected_loss,
+        negative_loss=negative_loss,
+        margin_scale=margin_scale,
+        normalized_margin=normalized_margin,
+    )
+    if active:
+        pair_weight = float(counterfactual["weight"]) / 6.0
+        backward_functional_derivative(
+            negative, negative_gradients, weight=-pair_weight
+        )
+        del negative, negative_output, negative_program
+        correct, correct_output, correct_program, _ = generated_rank16(
+            runtime, correct_condition
+        )
+        backward_functional_derivative(
+            correct, selected_gradients, weight=pair_weight
+        )
+        del correct, correct_output, correct_program
+    else:
+        del negative, negative_output, negative_program
+    counterfactual_record = {
+        "arm": arm,
+        "wrong_task": wrong_task_id,
+        "view_index": counterfactual_view_index,
+        "correct_video_demo": correct_condition.video_demo,
+        "wrong_video_demo": wrong_condition.video_demo,
+        "program_task": wrong_task_id if arm == "wrong_program" else task_id,
+        "bank_task": wrong_task_id if arm == "wrong_bank" else task_id,
+        "correct_functional_loss": selected_loss,
+        "negative_functional_loss": negative_loss,
+        "negative_minus_correct": gap,
+        "margin_scale": margin_scale,
+        "normalized_margin": normalized_margin,
+        "normalized_gap": gap / margin_scale,
+        "hinge_loss": hinge_loss,
+        "active": active,
+        "condition_metrics": negative_metrics,
+    }
     role = runtime.task_conditions[task_id].fit_views[0].role
     return {
         "authority_id": task_id,
@@ -289,6 +471,7 @@ def _run_task(
         "action_frames": list(panel.action_frames),
         "mean_functional_loss": sum(row["functional_loss"] for row in views)
         / len(views),
+        "counterfactual": counterfactual_record,
         "views": views,
         "task_seconds": time.monotonic() - tick,
     }
@@ -369,6 +552,9 @@ def run_joint_program_primal_optimizer_step(
     """Run exactly six tasks x two fit videos with task/role-equal weight."""
 
     group = joint_task_group(runtime, runtime.optimizer_steps)
+    pairs = counterfactual_task_pairs(runtime, group)
+    arm = counterfactual_arm(runtime.optimizer_steps)
+    counterfactual_view_index = runtime.optimizer_steps % 2
     assignments = _task_assignments(runtime, group)
     visit_index = runtime.optimizer_steps % int(runtime.config["data"]["panel_visits"])
     if runtime.context.world_size > 1:
@@ -381,8 +567,10 @@ def run_joint_program_primal_optimizer_step(
         _run_task(
             runtime,
             task_id=task,
+            wrong_task_id=pairs[task],
             visit_index=visit_index,
-            loss_divisor=12.0,
+            counterfactual_view_index=counterfactual_view_index,
+            arm=arm,
         )
         for task in assignments[runtime.context.rank]
     ]
@@ -441,6 +629,25 @@ def run_joint_program_primal_optimizer_step(
         "role_counts": role_counts,
         "mean_functional_loss": sum(
             float(row["mean_functional_loss"]) for row in records
+        )
+        / len(records),
+        "counterfactual_arm": arm,
+        "counterfactual_view_index": counterfactual_view_index,
+        "counterfactual_pairs": {
+            str(task): wrong for task, wrong in sorted(pairs.items())
+        },
+        "mean_counterfactual_normalized_gap": sum(
+            float(row["counterfactual"]["normalized_gap"])
+            for row in records
+        )
+        / len(records),
+        "mean_counterfactual_hinge_loss": sum(
+            float(row["counterfactual"]["hinge_loss"])
+            for row in records
+        )
+        / len(records),
+        "active_counterfactual_fraction": sum(
+            bool(row["counterfactual"]["active"]) for row in records
         )
         / len(records),
         "gradient_probe_norms": probes,

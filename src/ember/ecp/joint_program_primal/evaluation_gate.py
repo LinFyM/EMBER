@@ -1,4 +1,4 @@
-"""Aggregate the fixed J2 functional evaluation and apply its Gate."""
+"""Aggregate the fixed J3 functional evaluation and apply its Gate."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from ember.ecp.joint_program_primal.evaluation import (
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
-J2_GATE_REPORT_SCHEMA = "ember_ecp_joint_program_primal_gate_report_v1"
+J2_GATE_REPORT_SCHEMA = "ember_ecp_counterfactual_program_primal_gate_report_v1"
 
 
 def _quantile(values: Sequence[float], fraction: float) -> float:
@@ -350,4 +350,3 @@ def aggregate_evaluation(
         },
     )
     return report
-

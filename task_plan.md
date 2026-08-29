@@ -5,11 +5,11 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
-operator capacity均已通过。95-task诊断和G2-B pointwise/v3--v5 formal证明旧Program尚未形成可迁移policy-behavior方向，但第四次
-专家复核纠正了结论边界：这些结果只淘汰独立reader与固定behavior-Gram目标，不足以证明Program schema或Stage0结构性失败。当前唯一
-活动阶段是J2 joint Program--primal functional qualification：联合训练Natural Program与共享primal scorer，让generated rank16 LoRA
-在cross-episode action/flow上的真实功能损失提供credit；source、Native Stage0、current-bank operator、carrier、scale与Action Meta
-均冻结。G1/G2局部结论、单次训练或内部指标都不代表整体项目goal完成。
+operator capacity均已通过；J2 joint Program--primal formal在充分100个post-warmup functional updates后明确non-pass。真实功能梯度已到达
+Program和scorer，train/held-video recovery却只有`.1708/.1646`，wrong Program/bank与interaction近零；根因审计进一步发现十task生成
+primals仍高度同向，而task-local成功primals和真实功能梯度均强烈task-specific。当前唯一活动阶段改为J3 counterfactual functional
+routing qualification：保持Writer部署函数类及全部已通过模块不变，只让训练loss以配对wrong Program或wrong bank直接排除公共残差捷径。
+G1/G2/J2局部结论、单次训练或内部指标都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -263,11 +263,14 @@ cross-episode teacher action/flow loss反传；source、Native Stage0、bank ope
   `functional_lora_loss_gradient()`，建立唯一J2模块所有权，移除active optimizer对behavior-Gram的依赖；
 - [x] 用相同functional objective先完成10个gradient tasks的task-local、两fit-video共享free-primal正控；第三video严格零梯度。
   held-video recovery median须`>=.80`，四family各`>=.70`且每task显著优于carrier，否则先修functional panel/scale/authority；
-- [ ] 完成12-task joint Gate：gradient meta`[1,8,9,32,52]`、gradient target`[72,73,75,93,94]`，true task-held meta`2`、
+- [x] 完成12-task joint Gate：gradient meta`[1,8,9,32,52]`、gradient target`[72,73,75,93,94]`，true task-held meta`2`、
   target`74`。两条fit K1 views与panel A训练，第三video及disjoint panel B只读，selected八targets负责family报告但实际生成完整38-target LoRA；
-- [ ] 首轮以最多10步warmup后100个有效joint updates计数，在post-warmup 60/100保存相邻checkpoint；这消解专家原文“100 total”与
+- [x] 首轮以最多10步warmup后100个有效joint updates计数，在post-warmup 60/100保存相邻checkpoint；这消解专家原文“100 total”与
   “约100 post-warmup”两种口径，最多110个实际optimizer steps，不以warmup中的低LR步骤冒充充分优化；
-- [ ] Gate：train median`>=.60`、held-video`>=.50`、两个true task-held平均`>=.40`且各`>=.30`、held/train`>=.80`；q/v各
+- [x] Gate已形成明确non-pass：step70/110 train median`.1596/.1708`、held-video`.1487/.1646`；task-held平均`.0050/.0068`且task74
+  为负；step110 q/v/action-in/action-out为`-.0010/.0014/.0090/-.0004`，full相对language/endpoints为`.0866/.0334`，wrong
+  Program/bank margins`.0080/.0071`、interaction`.0024`。held/train、same-task、event/K1、信息墙和step110吞吐通过，但不改变primary
+  non-pass。原Gate要求仍为train median`>=.60`、held-video`>=.50`、两个true task-held平均`>=.40`且各`>=.30`、held/train`>=.80`；q/v各
   `>=.35`、action-in/out各`>=.30`；full相对language/endpoints各`>=.10`；wrong Program与wrong bank margins各`>=.10`、
   interaction`>=.05`、same-task retention`>=.80`，checkpoint 60到100 task median回落不超过`.05`，event/K1/信息墙继续通过；
 - [x] 速度资格：先缓存冻结language/Stage0 raw evidence、X/Y、covariance eigensystem和固定action batches，不缓存Program或LoRA；
@@ -277,7 +280,25 @@ cross-episode teacher action/flow loss反传；source、Native Stage0、bank ope
   task93一步loss相对差`.060%`、step`13.32s`、peak reserved`32.41GiB`，系统修正通过。六卡joint真实profile进一步为
   `11.73s/global step`、per-rank peak reserved`18.25--20.29GiB`，所有Program/primal梯度probe非零，速度Gate通过。
 
-J2通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
+### J3 / G3 Counterfactual functional routing qualification（当前）
+
+J2正控高而shared train低，已满足把问题定位到Program--primal函数类或functional credit的分支。零optimizer-step审计排除clip和断图：
+十task Program/primal pairwise cosine约`.93--.95`，生成effective update median`.678`且action-in`.997`；相反成功free-primal input/output
+code median仅`.203/.149`。同一panel的task functional-gradient pairwise cosine median`-.023`、`62.2%`为负，六task组gradient
+cancellation ratio`.421--.536`。因此纯correct-pair loss允许公共残差捷径，不能再以延长J2或普通超参修改处理。
+
+- [x] 在唯一`joint_program_primal`执行面加入配对counterfactual credit：每step保留两条correct fit views；仅新增一条交替的same-role
+  cyclic wrong-Program或wrong-bank view，并用同task、同panel、同policy RNG的bounded margin surrogate。错误组合只在margin未满足时
+  反传；部署forward、参数、Program schema、bank operator、rank12+4、Action Meta和信息墙全部不变；
+- [x] 用zero-step/one-step真实检查证明correct/negative配对、梯度符号、task/role等权、wrong condition无teacher-factor读取、Action Meta 0、
+  38-target唯一rank16及全部trainable/frozen ownership；profile目标仍为六卡`<=30s/update`、硬上限`45s`和`<35GiB/GPU`；
+- [ ] 从fresh Program initialization/scorer运行同一10 gradient+2 task-held、10 warmup+100 effective updates，并在60/100评价原J2 Gate。
+  J3必须同时取得train/held-video数量级提升与wrong Program/bank因果margin；只让错误臂变坏、correct recovery仍低不通过；
+- [ ] 若J3仍使train recovery低于`.40`且task routing未展开，则停止继续叠加contrastive、normalization或optimizer技巧，按已满足的
+  function-class停止证据重开Program-conditioned nonlinear capacity/representation接口；不得转去raw Stage0 probe，因为该probe只属于
+  train和held-video已高而task-held低的分支。
+
+J3通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen
 Stage0 sufficiency probe：raw task-held比Program高`>=.15`且达到`.40`才把最早接口归为Program压缩；raw也低于`.25`才允许考虑窄解冻
 Stage0 process/presence/uncertainty tail。不得直接解冻VLM/source/整个Stage0。

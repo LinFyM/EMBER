@@ -501,6 +501,19 @@ full相对language-only与endpoints各`>=.10`；correct-vs-wrong Program和bank 
 retention`>=.80`；post-warmup 60到100 task-median回落不超过`.05`；event不坍缩、K1 identity和信息墙继续通过。factor/update
 cosine只作secondary geometry diagnostic，不能替代generated-LoRA functional result。
 
+J2现已按上述完整预算formal执行并明确non-pass。step110 train/held-video recovery仅`.1708/.1646`，四family约零，wrong Program/bank
+与interaction也近零；checkpoint审计同时证明gradient到达全部有效模块、clip未触发，但生成Program/primal仍高度task-common，而
+task-local成功primals和真实functional gradients均强烈task-specific。因此不能进入“train高、task-held低”才允许的raw Stage0分支，
+也不能续训或做普通optimizer/width/rank小扫。
+
+下一次唯一资格为counterfactual functional routing。部署Writer函数、参数与输入完全不变；训练时在两条correct fit views之外，每task
+只增加一条same-role cyclic counterfactual view，并逐step交替：wrong Program+correct bank，或correct Program+wrong bank。negative与
+correct严格共享task action panel、policy RNG和被比较的bank view；只有配对functional margin未满足时才以有界surrogate反传，避免无限
+把错误组合推坏。该机制直接针对J2暴露的common-residual shortcut，不加入Program Gram、factor reconstruction或task/frame lookup。
+首次formal仍fresh、100 effective updates并使用原J2 Gate；correct recovery必须数量级提高且两个wrong margins同时提高，仅使negative
+变差不算通过。若train仍低于`.40`且task方向不展开，则停止继续叠加counterfactual/normalization技巧，转而重开Program-conditioned
+nonlinear function class或representation接口。
+
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
 Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，12-task完整评价墙钟不超过
 训练主体一半。world size按live availability、LoRA/s、functional updates/s、UTL和显存峰值弹性选择，不能改变task权重或科学batch。

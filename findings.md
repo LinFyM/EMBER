@@ -1234,6 +1234,20 @@ frozen scale、current-bank dual/replay与free-primal之间确有跨video稳定�
 且显著为正，进一步说明factor cosine只能作几何诊断，不能覆盖functional primary。系统上physical microbatch4在长task93达到
 `37.07GiB`；同logical16改physical2后为`32.41GiB`且step1 loss仅`.060%`相对差，所以这是规约/激活内存问题，不是科学结构问题。
 
+### 73. J2充分训练仍学成公共残差；最早接口是task-specific functional routing
+
+clean detached J2以10 warmup+100 effective updates联合训练Natural Program与shared primal scorer，step70/110 train recovery仅
+`.1596/.1708`、held-video`.1487/.1646`；step110两个task-held为`.1228/-.1092`，四family均约零，wrong Program/bank margin
+`.0080/.0071`、interaction`.0024`。held/train、same-task、event/K1、信息墙和相邻数值稳定成立，故这是结构性科学non-pass，不是
+video overfit、Action Meta污染、工程断图或偶然checkpoint。
+
+checkpoint110零optimizer-step审计显示Program/primal task-pair cosine median约`.93--.95`，generated update median`.678`且
+action-in`.997`；但十task成功free-primal input/output code median只有`.203/.149`。同一panel的真实task gradient cosine median
+`-.023`，`62.2%` task pairs为负，六task更新组的cancellation ratio为`.421--.536`；global gradient norm始终低于clip阈值且所有
+有效Program/scorer组均有gradient。也就是说，相近条件表示被要求产生彼此接近正交的功能方向，而纯correct-pair objective允许一个
+对所有task略有帮助的common residual。下一修正必须直接建立Program/bank与task functional effect的配对ownership，不能靠续训、
+LR/seed/width/rank小扫或raw Stage0探针替代。
+
 ## 已关闭路线
 
 - 旧action-memory、LOOM、CVADR、LMMPC/LPCP及其gradient/credit小变体；

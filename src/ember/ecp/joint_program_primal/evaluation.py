@@ -1,4 +1,4 @@
-"""Fixed zero-gradient functional evaluation for J2 checkpoints."""
+"""Fixed zero-gradient functional evaluation for J3 checkpoints."""
 
 from __future__ import annotations
 
@@ -61,8 +61,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed
 
 
-J2_GATE_SCHEMA = "ember_ecp_joint_program_primal_gate_v1"
-J2_EVALUATION_SCHEMA = "ember_ecp_joint_program_primal_evaluation_task_v1"
+J2_GATE_SCHEMA = "ember_ecp_counterfactual_program_primal_gate_v1"
+J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
 
@@ -72,12 +72,13 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
     wall = config.get("information_wall", {})
     if (
         config.get("schema_version") != J2_GATE_SCHEMA
-        or config.get("status") != "active_12_task_functional_qualification"
+        or config.get("status")
+        != "active_counterfactual_functional_routing_qualification"
         or config.get("checkpoint_optimizer_steps") != [70, 110]
         or evaluation.get("functional_panel") != "panel_b"
         or evaluation.get("panel_visits") != 16
         or evaluation.get("wrong_pairing")
-        != "next_j2_authority_id_within_same_meta_or_target_role_cyclic"
+        != "next_j3_authority_id_within_same_meta_or_target_role_cyclic"
         or evaluation.get("true_task_held_views")
         != "lowest_three_sorted_task_holdout_videos_mean"
         or evaluation.get("selected_family_report_targets")
@@ -86,7 +87,7 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
         or wall.get("action_meta_installed") is not False
         or wall.get("single_complete_rank16") is not True
     ):
-        raise ValueError("unsupported J2 functional Gate config")
+        raise ValueError("unsupported J3 functional Gate config")
     return config
 
 

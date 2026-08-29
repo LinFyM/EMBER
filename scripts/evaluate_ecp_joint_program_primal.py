@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate or aggregate one frozen J2 joint Program--primal checkpoint."""
+"""Evaluate or aggregate one frozen J3 counterfactual checkpoint."""
 
 from __future__ import annotations
 
@@ -19,13 +19,13 @@ def _worker_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_joint_program_primal_j2_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_joint_program_primal_j3_v1.json",
     )
     parser.add_argument(
         "--gate-config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_joint_program_primal_j2_gate_v1.json",
+        / "configs/pi05_ecp_joint_program_primal_j3_gate_v1.json",
     )
     parser.add_argument(
         "--base-config",

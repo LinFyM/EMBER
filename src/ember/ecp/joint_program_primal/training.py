@@ -1,4 +1,4 @@
-"""Canonical J2 joint Program--primal training entrypoint."""
+"""Canonical J3 counterfactual joint Program--primal training entrypoint."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from ember.pi05_source_setup import initialize_distributed
 
 def train(args: argparse.Namespace) -> None:
     if args.phase != "joint":
-        raise ValueError("J2 joint trainer received the positive-control phase")
+        raise ValueError("J3 joint trainer received the positive-control phase")
     context = initialize_distributed(
         require_numa=args.mode == "formal", defer_process_group=True
     )
@@ -49,6 +49,11 @@ def train(args: argparse.Namespace) -> None:
                             "effective_optimizer_step",
                             "global_step_seconds",
                             "mean_functional_loss",
+                            "counterfactual_arm",
+                            "counterfactual_view_index",
+                            "mean_counterfactual_normalized_gap",
+                            "mean_counterfactual_hinge_loss",
+                            "active_counterfactual_fraction",
                             "gradient_norm_before_clip",
                             "gradient_probe_norms",
                             "next_lr",
@@ -106,7 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_joint_program_primal_j2_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_joint_program_primal_j3_v1.json",
     )
     parser.add_argument(
         "--base-config",
@@ -148,7 +153,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         if value is not None:
             setattr(args, name, value.resolve())
     if args.log_every <= 0:
-        raise ValueError("J2 log interval must be positive")
+        raise ValueError("J3 log interval must be positive")
     if (args.phase == "positive-control") != (args.task is not None):
-        raise ValueError("J2 task is required only for the positive control")
+        raise ValueError("J3 task is required only for the positive control")
     return args

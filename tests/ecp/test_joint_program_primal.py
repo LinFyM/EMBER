@@ -8,7 +8,12 @@ from ember.ecp.joint_program_primal.evaluation import (
     _task_conditions,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
-from ember.ecp.joint_program_primal.train_step import joint_task_group
+from ember.ecp.joint_program_primal.train_step import (
+    counterfactual_arm,
+    counterfactual_hinge,
+    counterfactual_task_pairs,
+    joint_task_group,
+)
 from ember.ecp.bank_conditioning.mapping import MappingCondition
 from ember.ecp.natural_program import NaturalProgram
 
@@ -30,6 +35,38 @@ def test_joint_task_schedule_is_role_balanced_and_task_equal() -> None:
         for task in (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
     }
     assert set(counts.values()) == {3}
+
+
+def test_counterfactual_schedule_is_same_role_cyclic_and_alternating() -> None:
+    runtime = SimpleNamespace(
+        config={
+            "task_split": {
+                "gradient_meta": [1, 8, 9, 32, 52],
+                "gradient_target": [72, 73, 75, 93, 94],
+            }
+        }
+    )
+    group = joint_task_group(runtime, 0)
+    pairs = counterfactual_task_pairs(runtime, group)
+    assert pairs == {1: 8, 8: 9, 9: 1, 72: 73, 73: 75, 75: 72}
+    assert counterfactual_arm(0) == "wrong_program"
+    assert counterfactual_arm(1) == "wrong_bank"
+    active, gap, margin, hinge = counterfactual_hinge(
+        correct_loss=0.20,
+        negative_loss=0.205,
+        margin_scale=0.10,
+        normalized_margin=0.10,
+    )
+    assert active is True
+    assert torch.allclose(
+        torch.tensor((gap, margin, hinge)), torch.tensor((0.005, 0.01, 0.005))
+    )
+    assert counterfactual_hinge(
+        correct_loss=0.20,
+        negative_loss=0.22,
+        margin_scale=0.10,
+        normalized_margin=0.10,
+    )[0] is False
 
 
 def test_language_control_removes_every_video_program_field() -> None:

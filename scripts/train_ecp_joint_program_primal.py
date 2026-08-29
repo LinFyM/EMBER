@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the J2 functional positive control or joint Program--primal training."""
+"""Run the retained positive control or J3 counterfactual joint training."""
 
 from ember.ecp.joint_program_primal.gate import run_positive_control
 from ember.ecp.joint_program_primal.training import (

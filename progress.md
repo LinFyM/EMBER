@@ -1,5 +1,22 @@
 # EMBER progress
 
+- 2026-08-30 R7 functional-code chart acquisition formal与完整12-task Gate已结束。clean pushed detached
+  `024fc55`在gpu01物理`0,1,2,3,4,6`完成110步，110条metrics连续、step70/110 world6 checkpoints完整；训练墙钟
+  `114.12s`，最大peak reserved `19,367,198,720` bytes，Action Meta/source/Stage0/scale trainable和native teacher reads
+  均为0。六个独立worker随后在同六卡依次评价两个checkpoint。step70/110 train recovery为`-.183186/-.133386`，
+  held-video为`-.177017/-.129792`，task2/74分别为`.580899/-.594765`与`.554032/-.576694`；step110
+  q/v/action-in/action-out内部outer direction为`.725096/.737788/.743253/.642195`，但wrong Program/bank margin只有
+  `.091741/-.003368`、interaction`.001064`。两个checkpoint均primary non-pass；evaluation/training wall ratio也因本轮
+  acquisition训练仅114秒而为`>3.8`，但这不是科学non-pass的原因。
+
+- R7把最早失效接口进一步收窄为**冻结R5 chart与Natural Program的联合函数类不相容**，不能靠续训或小调参修复。R5 fixed
+  route在同一heads下functional-code cosine约`.9985`且真实闭环通过；R7的dense、四family等权outer-code监督虽把内部方向提高到
+  `.64--.74`，110步已平台在loss约`.337`，却仍使全部target-role gradient tasks闭环为负，而同task fit/held video同步，排除
+  video overfit。既有shared-scale transfer又已证明原成功方向换用相同shared scale仍有`.9398`中位recovery，故当前不重开bank、
+  rank4、scale、Action Meta或functional panel。下一单变量修正是保留同一validated functional-code labels与完整Gate，但让Natural
+  Program和整个primal scorer共同取得该绝对输出坐标；direct code supervision持续锚定输出，因此不同于R4/R6的functional-only
+  moving-coordinate训练。先以真实fit/gradient smoke证明它能越过R7训练上限，再决定formal；内部code结果仍不能替代真实Gate。
+
 - 2026-08-30 R6 Natural Program chart reconnect正式训练与step70/110完整12-task Gate已结束。clean pushed detached
   `1a6a59b`在gpu01物理`0,1,2,3,4,6`自然完成110步，训练墙钟`1508.97s`、最大peak reserved
   `32,937,869,312` bytes，Action Meta/source/Stage0/scale trainable与native teacher reads均为0。step70/110 train recovery
@@ -13,7 +30,7 @@
   minimum-norm拟合可精确插值训练两view，但第三held view只有`.353777`，task2/74 task-held约零；这证明R5通过的fixed-token chart
   是无deployment内容几何的训练task codebook，不能靠重新拟合heads自然接回Program。
 
-- 当前唯一活动修正为R7 fit-only functional-code chart acquisition：保留R5已验证的38 input+195 output native heads并全部冻结，
+- 已完成的R7 fit-only functional-code chart acquisition保留R5已验证的38 input+195 output native heads并全部冻结，
   只训练Natural Program readers/fusion/aligner及其共享feature chart，以10个gradient tasks各自已验证的task-level positive-control
   primal作为training-only label；两条fit videos共享同一label，目标只用按四family等权、对rank gauge不变的完整outer-update direction
   cosine。R7不读取policy functional actions、counterfactual、teacher member或task-local scale，labels不进入deployment forward，

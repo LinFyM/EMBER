@@ -1384,3 +1384,17 @@ task2/74仍约零；简单“重新拟合heads”会利用高条件数nullspace�
 只让Natural Program及其共享feature chart用10个gradient task的validated task-level positive-control outer-update direction获取内容坐标。
 该label仅训练期使用、同task两video共享且held零梯度；它是隔离最早接口的mapping acquisition，不是deployment输入，也不能靠内部loss
 通过G3。R7之后仍须用真实native banks、current-bank dual、exact signed replay和唯一rank16执行完整12-task functional Gate。
+
+### 81. R7排除“冻结功能chart后只训练Program侧即可取得内容坐标”
+
+R7在同一10个gradient tasks上使用validated task-local positive-control outer-update direction作dense、四family等权训练标签，冻结
+R5已通过的38 input与195 output native heads，只训练Natural Program readers/fusion/aligner及共享feature chart。clean detached
+`024fc55`的110步训练将内部family direction提高到约`.64--.74`，但loss在约`.337`平台；完整Gate的step70/110 train recovery仅
+`-.183186/-.133386`、held-video仅`-.177017/-.129792`，全部target-role gradient tasks仍为负。task2保持约`.55`而task74约
+`-.58`，wrong-bank与interaction仍约零，因此不能以少数meta task改善或内部cosine宣称成功。
+
+该结果只淘汰“Natural Program必须迁就冻结R5任意chart”的具体函数类。R5 fixed route经同一heads仍有约`.9985` code cosine和强闭环，
+R7 fit/held video同步，历史shared-scale transfer又已排除scale ceiling，所以当前没有依据修改bank、rank4、scale、视频采样或延长训练。
+下一最小机制检验是在**同一绝对functional-code label持续锚定输出**时联合训练Program与完整primal scorer。它不同于R4/R6只靠弱
+functional loss造成的moving-coordinate：当heads移动时，outer-update target仍固定，不能通过共同坐标漂移逃避。若该联合函数类连
+gradient-task fit都不能显著越过R7平台，才把问题上移；若fit/held-video强而task-held低，才触发matched raw Stage0 probe。

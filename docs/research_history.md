@@ -1232,3 +1232,25 @@ functional Gate裁决，不能以内部分数替代。
 - `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_s110_1a6a59b_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_natural_program_chart_reconnect_r6_gate_step110_1a6a59b_gpu01p01246_w5_20260830/`；
 - `runs/analysis/pi05_ecp_r6_program_chart_alignment_v2_49ec54b_gpu01p0_20260830/result.json`。
+
+## 62. R7冻结chart acquisition formal non-pass
+
+clean detached `024fc55`在gpu01物理`0,1,2,3,4,6`完成R7 10 warmup+100 effective updates；110条metrics连续，
+step70/110 world6 checkpoints完整，训练墙钟`114.12s`，最大peak reserved `19,367,198,720` bytes。Action Meta、source、
+Stage0、scale trainable与native teacher reads均为0。六个独立worker随后在同六卡依次完成两个checkpoint的12-task paired Gate。
+
+step70/110 train recovery为`-.183186/-.133386`，held-video为`-.177017/-.129792`；step110 task2/74为
+`.554032/-.576694`，q/v/action-in/action-out内部outer direction为`.725096/.737788/.743253/.642195`，wrong Program/bank
+margin为`.091741/-.003368`，interaction`.001064`。两个checkpoint均primary non-pass；短训练导致的evaluation/training wall
+ratio失败只是附加系统项，不改变科学结论。
+
+R7证明dense functional-code direction supervision仍不能让Natural Program适配冻结R5的任意feature chart：内部方向中等偏高却不够
+精确，target role闭环统一为负，且训练已平台；它没有反证validated code、bank、rank4、shared scale或exact replay。下一修正保持
+同一labels、数据、预算和真实Gate，只取消冻结chart约束，让Program与完整primal scorer在绝对outer-update target下联合取得坐标；
+先做短程真实fit/gradient资格，不以内部loss替代闭环。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_s110_89131fe_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_gate_step70_024fc55_gpu01p012346_w6_20260830/`；
+- `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_gate_step110_024fc55_gpu01p012346_w6_20260830/`。

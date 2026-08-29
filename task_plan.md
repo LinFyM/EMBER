@@ -15,8 +15,10 @@ action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in�
 同一真实functional loss后，step70/110均通过全部primary checks；step110 train/held为`.940/.963`，四family为`.816--.839`且相邻稳定，
 所以moving-coordinate根因已被正式修复。R6把这套passed shared scorer接回真实Natural Program后，train/held却只有`.165/.143`，
 Program-to-functional-code从fixed token的`.9985`降到约`.02`；同task跨video仍约`.9994`，证明失败是稳定但错误的内容坐标，而不是
-video噪声或heads漂移。当前唯一活动阶段为R7：冻结R5已验证heads，只训练Natural Program和共享feature chart，让真实Program内容先
-取得task-level functional-code坐标，再用原12-task真实bank/rank16 functional Gate裁决。R1--R7都不是deployment checkpoint；任何局部Gate、
+video噪声或heads漂移。R7进一步冻结R5 heads、用task-level functional-code dense监督训练Natural Program和feature chart；内部方向
+升至`.64--.74`，但step110 train/held仍为`-.133/-.130`，target role全部为负，证明Natural Program无法在冻结的任意R5 chart中取得
+足够精确的功能坐标。当前下一资格只改变这一接口：同一validated code supervision下联合训练Program与完整primal scorer，让绝对
+outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradient smoke，越过R7上限后才formal。R1--R7都不是deployment checkpoint；任何局部Gate、
 单次训练或内部指标都不代表整体项目goal完成。
 
 ## R5--R7当前里程碑
@@ -52,9 +54,12 @@ video噪声或heads漂移。当前唯一活动阶段为R7：冻结R5已验证hea
 - [x] 接通R7 fit-only functional-code chart acquisition：R5 native heads冻结，只训练Natural Program+feature chart，使用task-level
   positive-control outer-update direction作为training-only label；Action Meta、policy functional action、task-local scale及held信息均不读；
 - [x] 完成R7定向合同、旧配置兼容、真实单步gradient/ownership/吞吐检查；
-- [ ] 从clean pushed detached authority fresh运行R7 10 warmup+100 effective并评价step70/110原12-task完整functional Gate。若train/held
-  已高而task-held低，按active design进入matched raw Stage0 sufficiency；若train/held仍低，则先审计Program内容到固定heads的获取，不能用
-  acquisition loss或fit插值冒充G3，也不做无机制超参小扫。
+- [x] 从clean pushed detached authority fresh运行R7 10 warmup+100 effective并评价step70/110原12-task完整functional Gate；
+  step110 train/held为`-.133386/-.129792`，target gradient tasks全部为负，R7正式non-pass；
+- [ ] 接通同一functional-code outer-direction监督下的Program+完整primal scorer联合获取，保持数据、bank、rank、scale、loss口径、
+  optimizer预算和Gate不变；先用真实短程fit/gradient证明确实突破冻结chart的`.337` loss/约`.66`方向平台，否则不formal；
+- [ ] 若联合获取使train/held-video显著通过而true task-held仍低，按active design进入matched raw Stage0 sufficiency；若train本身仍低，
+  先定位Program/scorer联合函数类或label-to-utility接口，不用训练时长、seed/LR/width/rank小扫掩盖。
 
 ## 当前G1里程碑
 

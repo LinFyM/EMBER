@@ -17,9 +17,11 @@ P1的current-bank operator继续冻结。本文仍是当前唯一架构依据。
 
 R5随后用training-only fixed route建立并正式通过稳定functional chart，但R6移除fixed route、接回Natural Program后的step110
 train/held只有`.165/.143`，Program-to-code约`.02`；同task跨video却约`.9994`稳定。共同heads与minimum-norm held-view审计证明R5 chart
-是没有Natural Program内容几何的fixed-token codebook，R6 functional-only credit没有完成内容坐标获取。当前R7冻结R5已验证的native
-heads，只训练Natural Program及共享feature chart，用gradient-task validated outer-update directions隔离获取content chart；该监督仅训练期
-可见且不能通过G3，最终仍由真实bank、signed replay、唯一rank16和原12-task functional Gate裁决。
+是没有Natural Program内容几何的fixed-token codebook，R6 functional-only credit没有完成内容坐标获取。R7冻结R5 native heads并以
+gradient-task validated outer-update directions训练Natural Program及feature chart，内部方向升至`.64--.74`，但step110真实train/held
+仍为`-.133/-.130`且target role全部为负；因此“Program侧适配冻结任意chart”也已淘汰。当前下一资格保持同一绝对code labels、数据、
+bank、rank与scale，只让Program和完整primal scorer共同取得输出坐标；训练标签仅训练期可见，任何内部fit都不能通过G3，最终仍由真实
+bank、signed replay、唯一rank16和原12-task functional Gate裁决。
 
 四次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和

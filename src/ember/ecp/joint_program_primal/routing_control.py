@@ -114,6 +114,7 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
     joint = config.get("optimization", {}).get("joint", {})
     model = config.get("model", {})
     wall = config.get("information_wall", {})
+    critic = config.get("optimization", {}).get("privileged_critic")
     tasks = tuple(
         map(
             int,
@@ -156,6 +157,17 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_training_only") is True,
             wall.get("action_meta_installed") is False,
             wall.get("shuffled_or_reversed_use") is False,
+            critic is None
+            or all(
+                (
+                    critic.get("kind")
+                    == "fit_only_set_valued_paired_update_direction",
+                    float(critic.get("weight", 0.0)) > 0.0,
+                    float(critic.get("temperature", 0.0)) > 0.0,
+                    critic.get("deployment_input") is False,
+                    critic.get("held_or_validation_reads") is False,
+                )
+            ),
         )
     )
     if not valid:

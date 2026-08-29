@@ -1,5 +1,30 @@
 # EMBER progress
 
+## 2026-08-29 R1 partial/non-pass，R2 fixed-route set-valued critic接通
+
+R1已在clean detached `8c213c5`完成110-step formal与step70/110六worker Gate。step110 train/held-video recovery为
+`.267809/.279828`，held/train`1.044879`，wrong-token margin`.238352`，same-task retention`.990982`；相对J2 fit中位`.1708`
+提升约57%，10 tasks中9个改善，证明固定清晰route被scorer实质使用且跨video稳定。但q/v/action-in/action-out仅
+`.003698/.007820/.001111/.033335`，train/held与四family主Gate仍明确non-pass；结果不是G3通过。
+
+只读checkpoint几何显示四family hidden cross-task cosine约`.18--.27`，q/v正确task-local code检索8--9/10，排除route在scorer内部再次
+坍缩；但coupled primal alignment只有约`.0015/.0051/.0085/.0675`。step70--110各family参数更新同量级；固定hidden最优last-head
+least-squares可精确拟合全部input及v/action-out output，但q/action-in output受现有group-shared 128D head限制在约`.658/.363`。
+同时，J2 task-local正控由teacher consensus初始化，step1已经拥有最终功能收益的中位`.431`，因此它没有证明functional loss能从随机
+方向发现强解。R1的精确结论是：Natural Program近公共表示确是一个瓶颈，但即使route清晰，functional-only credit仍只找到
+action-out shortcut，且grouped-output函数类另有容量限制。
+
+R2保持R1全部部署图与Gate，只为gradient-task fit views加入已有fit-only、set-valued paired-update critic；teacher/member不进入
+deployment，held/panel B/task2/74/validation/test零梯度。weight1六卡真实一步在gpu01物理`0,1,3,4,5,6`为`15.094s`、最大reserved
+`20.29GiB`、联合gradient norm`.1201`，相同初始化R1 functional-only norm`.02575`；据此formal固定weight`.2`作一次量纲校准，避免
+critic压倒functional，不做weight/LR/seed sweep。下一步是完成clean集成、formal launch contract，然后fresh step70/110与原Gate。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_token_control_r1_s110_ec86fdb_gpu01p123456_r6_20260829/`；
+- `runs/outputs/pi05_ecp_routing_token_control_r1_gate_step110_8c213c5_gpu01p123456_w6_20260829/`；
+- `runs/analysis/pi05_ecp_routing_critic_r2_weight1_profile_dirty_gpu01p013456_r6_20260829/`。
+
 ## 2026-08-29 J3 Gate non-pass，R1 routing-token边界对照接通
 
 J3 step70/110六worker paired Gate已全部自然完成。step70 train/held-video recovery为`.136913/.131572`，step110为

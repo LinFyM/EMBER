@@ -1288,3 +1288,23 @@ J2的`.0024`升至`.0054`。但correct fit只有3/10改善，少数task8/32的�
 达到`.60/.50`及四family门，说明scorer能利用清晰route，根因是Natural Program没有形成可分离task representation；若仍失败，则根因下移到
 当前additive family-shared scorer无法把清晰route变成target-native primals，需要更强multiplicative/nonlinear head。该token表不是参数、
 不是deployment input、不能通过G3，并在Gate解释后退出活动树。
+
+### 75. 清晰route有效但不充分；functional-only没有从随机scorer发现四族强方向
+
+R1用10个固定正交task token替代Natural Program内容后，step110 train/held-video由J2的`.1708/.1646`提高到
+`.2678/.2798`，10 tasks中9个fit改善，wrong-token margin达到`.2384`且same-task retention`.9910`。因此Natural Program原来的近公共
+表示确实是一个真实瓶颈，不能再声称route完全未被使用。但q/v/action-in/action-out仍只有`.0037/.0078/.0011/.0333`，所以清晰
+route远不足以让现有functional-only scorer达到`.60/.50` Gate。
+
+checkpoint几何把“route”与“方向发现”分开：不同token进入scorer后，四family hidden cross-task cosine只有`.18--.27`；q/v预测对10个
+task-local成功code的正确task检索为8--9/10，说明任务身份没有再次坍缩。然而预测与自身成功code的coupled primal cosine仅
+q`.0015`、v`.0051`、action-in`.0085`、action-out`.0675`。各family step70到110参数更新量相近，排除简单断图或某个head完全不动。
+固定hidden的最优last-head线性解可将全部input以及v/action-out output拟合到`1.0`，但q八组和action-in三十二组output在当前共享128D
+group feature下上限约`.658/.363`：函数类对这两族确有结构限制，但它也没有用上v/action-out已经具备的表示容量。
+
+更关键的可比性修正来自J2正控初始化。`TaskLocalPrimalCode`并非随机初始化，而是先从fit-only teacher consensus构造方向；在第一个
+functional optimizer step时，它已拥有最终收益的中位约`.431`。因此J2正控证明“好方向可跨video并被functional loss精修”，不证明
+“functional loss能从随机shared scorer发现好方向”。R1从随机scorer只学到task-specific action-out shortcut，符合高维双因子发现credit
+稀疏而不是route/gradient缺失。下一最小对照应在同一fixed-route/scorer图上加入已有set-valued paired-update critic；若四family恢复，
+瓶颈是direction discovery credit，若仍失败才根据q/action-in grouped-output证据替换primal decoder。该critic只在fit训练期使用，不能
+成为deployment输入或G3通过捷径。

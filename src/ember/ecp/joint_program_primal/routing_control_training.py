@@ -10,6 +10,11 @@ from typing import Any
 import torch
 import torch.distributed as dist
 
+from ember.ecp.bank_conditioning.mapping import paired_mapping_loss
+from ember.ecp.bank_conditioning.mapping_step import (
+    load_mapping_consensus_teachers,
+    mapping_recovery_record,
+)
 from ember.ecp.checkpoint import save_ecp_checkpoint
 from ember.ecp.joint_program_primal.routing_control import (
     ROUTING_CONTROL_RUN_SCHEMA,
@@ -65,6 +70,7 @@ def _run_task(
         runtime, task_id=task_id, panel_name="a", visit_index=visit_index
     )
     views = []
+    critic = runtime.config["optimization"].get("privileged_critic")
     for condition in runtime.task_conditions[task_id].fit_views:
         complete, output, metrics = _generated_rank16(runtime, task_id, condition)
         loss, gradients = functional_loss_derivative(
@@ -73,6 +79,19 @@ def _run_task(
             batch=batch,
             policy_rng_seed=panel.policy_rng_seed,
         )
+        critic_record = None
+        if critic is not None:
+            teachers = load_mapping_consensus_teachers(runtime, condition)
+            critic_loss = paired_mapping_loss(
+                output=output,
+                teachers=teachers,
+                owners=runtime.owners,
+                temperature=float(critic["temperature"]),
+            )
+            (
+                float(critic["weight"]) * critic_loss.total / 12.0
+            ).backward(retain_graph=True)
+            critic_record = mapping_recovery_record(critic_loss)
         backward_functional_derivative(complete, gradients, weight=1.0 / 12.0)
         views.append(
             {
@@ -84,6 +103,7 @@ def _run_task(
                 .float()
                 .cpu()
                 .tolist(),
+                "privileged_critic": critic_record,
                 "condition_metrics": metrics,
             }
         )
@@ -142,8 +162,18 @@ def run_routing_control_optimizer_step(runtime: Any) -> dict[str, Any]:
         _run_task(runtime, task_id=task, visit_index=visit_index)
         for task in assignments[runtime.context.rank]
     ]
-    if runtime.native_teachers.tensor_reads != teacher_reads:
-        raise RuntimeError("routing-control training read native teachers")
+    critic = runtime.config["optimization"].get("privileged_critic")
+    if (
+        critic is None
+        and runtime.native_teachers.tensor_reads != teacher_reads
+    ):
+        raise RuntimeError(
+            "routing-control functional-only training read native teachers"
+        )
+    if critic is not None and runtime.native_teachers.tensor_reads <= 0:
+        raise RuntimeError(
+            "routing-control privileged critic did not read fit teachers"
+        )
     if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
         raise RuntimeError("routing-control frozen authority accumulated gradients")
     _sum_gradients(runtime)
@@ -189,7 +219,7 @@ def run_routing_control_optimizer_step(runtime: Any) -> dict[str, Any]:
             ),
         },
     )
-    return {
+    row = {
         "optimizer_step": runtime.optimizer_steps,
         "effective_optimizer_step": max(0, runtime.optimizer_steps - 10),
         "panel_visit": visit_index,
@@ -210,6 +240,20 @@ def run_routing_control_optimizer_step(runtime: Any) -> dict[str, Any]:
         "fixed_routing_token_training_only": True,
         "deployment_candidate": False,
     }
+    critic_rows = [
+        view["privileged_critic"]
+        for record in records
+        for view in record["views"]
+        if view["privileged_critic"] is not None
+    ]
+    if critic_rows:
+        row["mean_privileged_critic_loss"] = sum(
+            float(value["mapping_loss"]) for value in critic_rows
+        ) / len(critic_rows)
+        row["mean_privileged_critic_recovery"] = sum(
+            float(value["mean_best_recovery"]) for value in critic_rows
+        ) / len(critic_rows)
+    return row
 
 
 def train_routing_control(args: argparse.Namespace) -> None:
@@ -246,6 +290,12 @@ def train_routing_control(args: argparse.Namespace) -> None:
                             "elapsed_seconds",
                         )
                     }
+                    for name in (
+                        "mean_privileged_critic_loss",
+                        "mean_privileged_critic_recovery",
+                    ):
+                        if name in row:
+                            console[name] = row[name]
                     console["rank_performance"] = [
                         {
                             name: value[name]

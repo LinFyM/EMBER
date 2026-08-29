@@ -506,13 +506,16 @@ J2现已按上述完整预算formal执行并明确non-pass。step110 train/held-
 task-local成功primals和真实functional gradients均强烈task-specific。因此不能进入“train高、task-held低”才允许的raw Stage0分支，
 也不能续训或做普通optimizer/width/rank小扫。
 
-下一次唯一资格为counterfactual functional routing。部署Writer函数、参数与输入完全不变；训练时在两条correct fit views之外，每task
-只增加一条same-role cyclic counterfactual view，并逐step交替：wrong Program+correct bank，或correct Program+wrong bank。negative与
-correct严格共享task action panel、policy RNG和被比较的bank view；只有配对functional margin未满足时才以有界surrogate反传，避免无限
-把错误组合推坏。该机制直接针对J2暴露的common-residual shortcut，不加入Program Gram、factor reconstruction或task/frame lookup。
-首次formal仍fresh、100 effective updates并使用原J2 Gate；correct recovery必须数量级提高且两个wrong margins同时提高，仅使negative
-变差不算通过。若train仍低于`.40`且task方向不展开，则停止继续叠加counterfactual/normalization技巧，转而重开Program-conditioned
-nonlinear function class或representation接口。
+J3 counterfactual functional routing已按上述边界formal non-pass。step110 correct train/held-video仅`.1486/.1477`，低于J2；错误
+Program/bank虽在多数task上变坏，correct只有3/10改善，四family仍约零。因此不再叠加counterfactual、normalization或optimizer技巧。
+
+后续R1用固定、非参数化的10个正交task token替代Natural Program内容，只训练同一scorer。step110 train/held-video提高到
+`.2678/.2798`，wrong-token margin`.2384`且9/10 tasks优于J2，证明清晰route有实质作用；但q/v/action-in仍约零，完整Gate non-pass。
+checkpoint几何确认route在scorer内部没有重新塌缩，而task-local正控在functional优化前已由teacher consensus初始化获得最终收益约43%。
+因此当前R2只在同一fixed-route边界对照加入fit-only set-valued paired-update critic，以区分functional-only direction discovery不足与
+primal decoder函数类失容；teacher/member不进入deployment输入，held/panel B/task2/74仍零梯度。R2不能通过G3。若它恢复四family，
+下一canonical资格把同一training-only critic接回Natural Program并继续以functional recovery作primary；若仍失败，则依据q/action-in
+grouped-output容量证据替换当前additive/group-shared primal decoder，而不是再改route或扫普通超参。
 
 速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
 Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`、每卡peak reserved`<35GiB`，12-task完整评价墙钟不超过
@@ -658,11 +661,12 @@ optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.
 95-task证据及G2-B v3--v5只证明独立Program behavior-geometry目标失败。第四次专家裁决要求复用已有P2 cache/operator/scorer，新增
 Program与primal联合functional反传、task-local functional正控和12-task Gate。当前代码已在唯一`joint_program_primal`执行面接通
 可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
-condition cache；task1真实profile已证明Action Meta 0、唯一rank16、held零梯度与physical microbatch4的`28.95GiB`峰值。10-task正控和
-12-task joint仍未形成formal Gate结论；scale继续冻结到F4，P1或profile内部结果不能冒充shared或closed-loop Gate。
+condition cache。10-task正控已通过；J2/J3充分functional训练、R1 fixed-route control均已形成formal non-pass/partial结论。当前R2仍只在
+training-only fixed-route边界对照中读取fit-only set-valued critic，Action Meta保持0，scale继续冻结到F4；R2通过也不能冒充shared或
+closed-loop Gate。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
 fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
-global dual + exact signed replay；阶段推进已进入J2 joint functional implementation，不再受独立Program behavior-Gram Gate阻塞。
+global dual + exact signed replay；阶段推进已进入R2 direction-credit/function-class分解，不再受独立Program behavior-Gram Gate阻塞。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

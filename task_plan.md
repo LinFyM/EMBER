@@ -5,11 +5,12 @@
 ## 当前目标
 
 owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
-operator capacity均已通过；J2与J3 joint Program--primal都在充分100个post-warmup functional updates后明确non-pass。J3能让部分错误配对
-变坏，却把correct train/held-video recovery从J2的`.1708/.1646`降至`.1486/.1477`，四family仍近零；因此不能继续叠加contrastive、
-normalization或optimizer技巧。当前唯一活动阶段是training-only orthogonal routing-token boundary control：保持真实video bank、signed replay、
-rank12+4、functional loss和scorer不变，以固定、非参数化、彼此正交的task token隔离“Natural Program表示不分离”与“scorer函数类本身
-不可用”。它不能通过G3，也不能进入deployment checkpoint。G1/G2/J2/J3局部结论、单次训练或内部指标都不代表整体项目goal完成。
+operator capacity均已通过；J2/J3在充分functional updates后non-pass。R1固定正交route把train/held-video从J2的`.1708/.1646`提高到
+`.2678/.2798`，wrong-token margin`.2384`，证明清晰route被使用；但q/v/action-in仍约零，完整`.60/.50` Gate未过。checkpoint几何又证明
+route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。当前唯一活动阶段因此是同一
+training-only fixed-route图上的R2 set-valued critic对照：不改bank、scorer、rank或部署输入，只加入fit-only privileged update-direction
+critic，区分“functional-only无法从随机方向发现四族解”与“当前scorer函数类本身失容”。R1/R2都不能通过G3或进入deployment checkpoint；
+所有局部Gate、单次训练或内部指标都不代表整体项目goal完成。
 
 ## 当前G1里程碑
 
@@ -301,7 +302,7 @@ cancellation ratio`.421--.536`。因此纯correct-pair loss允许公共残差捷
   function-class停止证据重开Program-conditioned nonlinear capacity/representation接口；不得转去raw Stage0 probe，因为该probe只属于
   train和held-video已高而task-held低的分支。
 
-### R1 / G3 training-only orthogonal routing-token boundary control（当前）
+### R1 / G3 training-only orthogonal routing-token boundary control（已完成，partial/non-pass）
 
 该对照不是新deployment Writer，也不能通过G3。它只给10个gradient tasks各分配一个固定、均值零、unit-RMS、两两正交的128D
 Sylvester-Hadamard token，并把同一token填入固定Program schema；authority ID只在训练期选择token，token不是参数，task/frame查表参数仍为0。
@@ -312,12 +313,34 @@ Sylvester-Hadamard token，并把同一token填入固定Program schema；authori
   deployment architecture前删除，仅由Git与formal artifacts保留；
 - [x] 定向CPU合同与六卡真实一步通过：10 token Gram精确为`128I`且均值0；只有scorer的`7,512,196`参数trainable，所有关键scorer
   gradient probes有限非零，native teacher reads 0；global step`12.383s`，最大reserved`20.28GiB`，明显优于J3三forward；
-- [ ] 从clean pushed detached authority以10 warmup+100 effective、step70/110运行formal；同一两fit correct functional primary，不加入
+- [x] 从clean pushed detached authority以10 warmup+100 effective、step70/110运行formal；同一两fit correct functional primary，不加入
   counterfactual loss。Gate要求train median`>=.60`、held-video`>=.50`、held/train`>=.80`、q/v各`>=.35`、action-in/out各`>=.30`、
   wrong-token margin`>=.10`、same-task retention`>=.80`及相邻稳定性；六卡评价只跑10 gradient tasks的correct、wrong-token和family必要臂；
-- [ ] 若通过，证明current scorer/operator/functional credit能利用清晰task route，最早接口锁定为deployment-visible Natural Program没有形成
-  可分离routing representation，下一canonical修正学习共享`z(P)`；若失败，证明即使完美分离输入也无法被当前scorer利用，下一canonical
-  修正改为更强的Program-conditioned multiplicative/nonlinear primal head。两种结果都不得把固定token表保留到deployment。
+- [x] step110 train/held-video为`.267809/.279828`、held/train`1.0449`、wrong-token margin`.238352`、same-task retention`.9910`；相对J2
+  9/10 tasks改善，但q/v/action-in/action-out仅`.003698/.007820/.001111/.033335`，所以R1只证明route有实质增量，整体Gate non-pass；
+- [x] checkpoint几何把该non-pass进一步定位：四family hidden cross-task cosine仅约`.18--.27`，q/v对正确task-local code检索8--9/10，
+  因此清晰token没有在scorer内重新坍缩；但对强解的coupled primal alignment仍只有q`.0015`、v`.0051`、action-in`.0085`、
+  action-out`.0675`。step70到110各family参数都有同量级更新，排除某个head没有梯度；固定hidden上的最优last-head least-squares虽可将
+  input、v-output、action-out-output拟合到`1.0`，q/action-in output仍分别受当前group-shared 128D head限制在约`.658/.363`；
+- [x] 复核task-local正控发现其code由fit-only teacher consensus初始化，optimizer step1已拥有最终functional benefit的中位约`.431`；它证明
+  好方向可被functional loss精修，却没有证明从随机scorer能发现方向。R1因此不能简单解释成“完美route也无用”，而是同时暴露
+  functional discovery credit不足和q/action-in grouped-output函数类上限。
+
+### R2 / G3 training-only fixed-route set-valued critic control（当前）
+
+R2保持R1固定token、现有`ProgramNativePrimalScorer`、两条真实fit banks、current-bank dual/exact replay、functional panel和唯一rank16
+完全不变；每条fit view只额外读取已有fit-only consensus member set，以gauge-aware paired effective-update direction提供训练期稠密critic。
+teacher/member/action都不进入deployment输入，held video、panel B、task2/74及validation/test仍零梯度。该对照仍不是deployment Writer。
+
+- [x] 最小实现复用R1 trainer/evaluator，只在配置存在`privileged_critic`时累计set-valued paired-update loss并严格要求fit teacher实际被读；
+  R1 functional-only路径继续要求native teacher reads 0。Action Meta、Program/source/Stage0/operator/scale/carrier仍全部冻结；
+- [x] weight-1六卡真实profile为`15.094s/global step`、最大reserved`20.29GiB`，初始critic recovery约`-.00061`，联合gradient norm
+  `.1201`；相同seed/group的R1 functional-only norm为`.02575`。因此formal固定critic weight`.2`，使两种credit在初始化处约等量；这是一次
+  梯度量纲校准，不做weight/LR/seed sweep。即使weight1的速度也仅刚超过`15s`目标且远低于`25s`硬线，故R2没有吞吐阻塞；
+- [ ] 从fresh scorer在clean pushed detached authority上运行同一10 warmup+100 effective、step70/110及原R1 Gate。通过意味着当前scorer在
+  清晰route和稠密方向critic下可用，下一canonical G3应把同一training-only set-valued critic接回Natural Program并以functional primary
+  检验task-held；若critic geometry显著提高但functional仍低，先裁决teacher-to-utility；若四family仍无法展开，则根据q/action-in
+  grouped-output上限替换当前additive/group-shared primal decoder，不再改route或做普通超参扫。
 
 后续canonical G3通过后，恢复完整40 fit/10 task-holdout、329 fit/40 held-video/82 task-held的shared functional qualification；primary改为
 generated-LoRA functional recovery，而factor/update cosine只作诊断。若train与held-video强、true task-held弱，则只做matched raw frozen

@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 import torch
@@ -13,6 +14,7 @@ from ember.ecp.joint_program_primal.routing_control import (
     ROUTING_TASK_IDS,
     fixed_routing_program,
     fixed_routing_token,
+    load_routing_control_config,
 )
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     routing_task_assignments,
@@ -233,3 +235,19 @@ def test_routing_control_gate_balances_only_ten_gradient_tasks() -> None:
     assignments = routing_task_assignments(runtime, worker_count=6)
     assert max(map(len, assignments)) == 2
     assert {task for row in assignments for task in row} == set(ROUTING_TASK_IDS)
+
+
+def test_routing_control_critic_is_fit_only_and_never_a_deployment_input() -> None:
+    root = Path(__file__).resolve().parents[2]
+    functional_only = load_routing_control_config(
+        root / "configs/pi05_ecp_routing_token_control_r1_v1.json"
+    )
+    critic_control = load_routing_control_config(
+        root / "configs/pi05_ecp_routing_token_critic_r2_v1.json"
+    )
+    assert functional_only["optimization"].get("privileged_critic") is None
+    critic = critic_control["optimization"]["privileged_critic"]
+    assert critic["kind"] == "fit_only_set_valued_paired_update_direction"
+    assert critic["weight"] == 0.2
+    assert critic["deployment_input"] is False
+    assert critic["held_or_validation_reads"] is False

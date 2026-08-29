@@ -1096,3 +1096,27 @@ contrastive/normalization/optimizer技巧、重开representation/function class�
 - `runs/outputs/pi05_ecp_j3_counterfactual_program_primal_12task_s110_9af7c19_gpu01p012345_r6_20260829/`；
 - `runs/outputs/pi05_ecp_j3_counterfactual_gate_step70_3f6f94e_gpu01p123456_w6_20260829/`；
 - `runs/outputs/pi05_ecp_j3_counterfactual_gate_step110_3f6f94e_gpu01p123456_w6_20260829/`。
+
+## 56. R1 orthogonal routing-token control partial/non-pass与R2 critic分解
+
+clean detached `8c213c5`的R1以10个固定、非参数化正交token替代Natural Program内容，只训练原
+`ProgramNativePrimalScorer`。step110 train/held-video recovery为`.267809/.279828`，held/train`1.044879`、wrong-token margin
+`.238352`、same-task retention`.990982`；相对J2 fit中位提升约57%且9/10 tasks改善，证明清晰task route有真实因果作用。但
+q/v/action-in/action-out仅`.003698/.007820/.001111/.033335`，完整Gate non-pass，固定token也不构成deployment或G3通过。
+
+后续只读几何显示scorer内部task hidden未坍缩，q/v能以8--9/10检索正确task-local code，却只产生极弱的coupled primal alignment；
+q/action-in grouped-output在固定hidden的最优128D last-head拟合上限约`.658/.363`。同时J2 task-local正控由teacher consensus初始化，
+首步已获得最终functional benefit的中位约`.431`，所以正控没有检验从随机方向发现解。当前根因被细分为：Natural Program route不清晰、
+functional-only direction discovery credit不足，以及q/action-in grouped-output函数类限制，而不是bank/operator/rank4、video泛化、断图或
+普通训练长度。
+
+R2保持R1真实banks、current-bank dual/exact signed replay、scorer、functional primary、rank12+4与Gate不变，只给gradient-task fit views
+加入已有fit-only set-valued paired-update critic。weight1真实六卡一步为`15.094s`、最大reserved`20.29GiB`，联合gradient norm`.1201`；
+相同初始化functional-only为`.02575`，故formal一次性固定critic weight`.2`。R2仍是training-only边界对照，held/panel B/task2/74/
+validation/test零梯度；结果只用于裁决下一canonical Natural Program shared compiler是否需要稠密privileged critic或更换primal decoder。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_token_control_r1_s110_ec86fdb_gpu01p123456_r6_20260829/`；
+- `runs/outputs/pi05_ecp_routing_token_control_r1_gate_step110_8c213c5_gpu01p123456_w6_20260829/`；
+- `runs/analysis/pi05_ecp_routing_critic_r2_weight1_profile_dirty_gpu01p013456_r6_20260829/`。

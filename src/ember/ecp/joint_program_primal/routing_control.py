@@ -45,6 +45,8 @@ ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_grouped_decoder_control"
 ROUTING_TASK_IDS = (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
 ROUTING_WIDTH = 128
 OUTPUT_PRIMAL_DECODER = "owner_group_specific_linear_heads"
+SCORER_ALL_PARAMETERS = "all"
+SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
 
 
 class RoutingControlWriterState(torch.nn.Module):
@@ -122,6 +124,9 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
     wall = config.get("information_wall", {})
     critic = config.get("optimization", {}).get("privileged_critic")
     initialization = model.get("primal_scorer_initialization")
+    scorer_partition = model.get(
+        "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+    )
     tasks = tuple(
         map(
             int,
@@ -160,7 +165,20 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("output_primal_decoder") == OUTPUT_PRIMAL_DECODER,
-            model.get("trainable") == ["ProgramNativePrimalScorer"],
+            (
+                scorer_partition == SCORER_ALL_PARAMETERS
+                and model.get("trainable") == ["ProgramNativePrimalScorer"]
+            )
+            or (
+                scorer_partition == SCORER_NATIVE_HEADS_ONLY
+                and initialization == FUNCTIONAL_CODE_INITIALIZATION
+                and wall.get("primal_scorer_feature_chart_frozen") is True
+                and model.get("trainable")
+                == [
+                    "ProgramNativePrimalScorer.input_primal_heads",
+                    "ProgramNativePrimalScorer.output_primal_heads",
+                ]
+            ),
             model.get("deployment_candidate") is False,
             wall.get("fixed_routing_token_training_only") is True,
             wall.get("action_meta_installed") is False,
@@ -204,13 +222,25 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
 
 
 def _scorer_parameter_ownership(
-    program: torch.nn.Module, compiler: torch.nn.Module
+    program: torch.nn.Module,
+    compiler: torch.nn.Module,
+    *,
+    partition: str,
 ) -> tuple[RoutingControlWriterState, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
-    compiler.primal_scorer.requires_grad_(True).train()
+    scorer = compiler.primal_scorer
+    if partition == SCORER_ALL_PARAMETERS:
+        scorer.requires_grad_(True).train()
+    elif partition == SCORER_NATIVE_HEADS_ONLY:
+        scorer.input_primal_heads.requires_grad_(True).train()
+        scorer.output_primal_heads.requires_grad_(True).train()
+    else:
+        raise ValueError("unsupported routing-control scorer partition")
     writer = RoutingControlWriterState(compiler.primal_scorer)
-    trainable = tuple(writer.parameters())
+    trainable = tuple(
+        parameter for parameter in writer.parameters() if parameter.requires_grad
+    )
     frozen = tuple(
         parameter
         for root in (program, compiler)
@@ -347,7 +377,11 @@ def prepare_routing_control_runtime(
     authority = _authority_assets(args, context, config, base)
     model = _model_assets(args, context, base, authority)
     writer_state, trainable, frozen = _scorer_parameter_ownership(
-        model.program, model.compiler
+        model.program,
+        model.compiler,
+        partition=config["model"].get(
+            "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+        ),
     )
     data = _data_assets(args, config, base, context, authority, model)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)

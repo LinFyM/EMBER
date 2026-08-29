@@ -1164,3 +1164,28 @@ R4把十个formal成功task-local primal按fixed-token下现有hidden做FP64 min
 - `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_gradient_allocation_19dbf0e_gpu01_20260830/`；
 - `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_utility_code_gradients_19dbf0e_gpu01_20260830/`；
 - `runs/analysis/pi05_ecp_routing_grouped_decoder_r3_shared_scale_transfer_19dbf0e_gpu01_20260830/`。
+
+## 59. R4 functional-code initialization formal与moving-chart根因
+
+clean detached `0b51c57`完成R4 10 warmup+100 effective updates及step70/110 paired Gate。step110 train/held-video recovery为
+`.819437/.839139`，q/v/action-in/action-out为`.439578/.388131/.249310/.400750`，wrong-token margin`.913637`、same-task
+retention`1.002751`。除action-in外全部主检查通过；step70到110 train median继续提高`.041888`，但相邻pass因两个checkpoint的
+action-in都未过而为false。R4因此是明确formal non-pass，同时首次证明强fixed-route shared functional解可跨训练与held video稳定保留。
+
+随后从同一deterministic initialization封存pre-step state，并对step70/110做head/chart/module graft。action-in raw outer recovery从
+step0约`.999988`降至`.298330/.301140`；在当前checkpoint hidden上只重拟合33个action-in heads可恢复到约`1.0`，hidden仍full rank
+`40/40`。initial到step110的all-head relative drift仅`.000810`，feature-chart drift`.008930`；initial heads接checkpoint chart仍
+`.301099`，checkpoint heads接initial chart保留`.998320`。program/rank context与input/output trunk各自微小移动都可单独破坏初始化
+坐标，故这是distributed moving-coordinate问题，不是head、scale、bank、训练长度或单模块bug。
+
+下一R5只冻结初始化后的feature chart、训练全部233 native heads，保持数据、loss、optimizer、budget、Gate及信息墙不变。dirty单卡真实
+step已证明`10,297,344` trainable、全部heads有限非零gradient、chart零gradient、Action Meta和native teacher reads为0、唯一rank16及
+真实policy consumption成立；该profile不构成formal结果。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_routing_functional_code_init_r4_s110_69a6b24_gpu01p012345_r6_20260830/`；
+- `runs/outputs/pi05_ecp_routing_functional_code_init_r4_gate_step110_0b51c57_gpu01p012456_w6_20260830/`；
+- `runs/analysis/pi05_ecp_routing_functional_code_init_r4_initial_state_capture_0b51c57_gpu01p0_20260830/`；
+- `runs/analysis/pi05_ecp_routing_functional_code_init_r4_action_in_code_audit_0b51c57_20260830/`；
+- `runs/analysis/pi05_ecp_routing_functional_code_chart_frozen_r5_profile_dirty_gpu01p0_20260830/`。

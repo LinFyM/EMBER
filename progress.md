@@ -17,7 +17,21 @@
   optimizer/scheduler/sampler/RNG状态完整。step70/110前十个training visits的recovery中位分别`.7132/.7887`，minimum view分别
   `.4735/.5648`；早期warmup把step0约`.962`中位一度扰动到约`.30`，随后稳定恢复，说明强初始化没有随functional-only训练系统崩落。
   全程Action Meta module/parameter为0、native teacher reads 0、source/Stage0/scale trainable均0，最大peak reserved
-  `32,944,160,768` bytes，无OOM/non-finite。下一步只剩原step70/110 paired Gate；该对照仍不是deployment Writer或G3 pass。
+  `32,944,160,768` bytes，无OOM/non-finite。原step70/110 paired Gate也已完整结束：step110 train/held-video为
+  `.819437/.839139`、q/v/action-in/action-out为`.439578/.388131/.249310/.400750`，wrong-token margin`.913637`、same-task
+  retention`1.002751`；11项主检查只剩action-in低于`.30`，因此R4 formal仍为non-pass，但已证明fixed route、真实bank/operator、
+  shared scale、functional-only训练和跨video稳定可共同保留强功能解。
+
+- R4 action-in只读反事实已把最早失效接口锁定为**初始化后feature chart漂移**，不是head、scale或训练不足。真实step0 action-in
+  outer recovery约`.999988`，step70/110降为`.298330/.301140`；在各checkpoint当前hidden上只重拟合33个action-in heads即可恢复到
+  `1.0`，hidden仍为full rank`40/40`。initial→step110的all-head relative drift仅`.000810`，feature-chart drift为`.008930`；把initial
+  heads接到checkpoint chart仍只有`.301099`，把checkpoint heads接回initial chart则保留`.998320`。program/rank context及input/output
+  trunk任一单独移动都可破坏action-in，说明这是整条特征链的distributed coordinate co-adaptation，而非单模块断图或超参问题。
+
+- 当前R5只改变这一项参数所有权：同样一次性functional-code初始化后冻结完整feature chart，仅让38 input和195 output native heads
+  接受原functional loss。13项定向CPU合同与gpu01物理0单卡真实step已通过；实际trainable为`10,297,344`、Action Meta/source/
+  Stage0/scale均0，全部233 heads有finite nonzero gradient，frozen chart无gradient，native teacher reads 0，唯一rank16被真实policy消费；
+  单卡step`53.05s`、peak allocated/reserved`21.19/21.87GB`。该profile只证明执行面，不冒充R5 Gate或G3通过。
 
 - owner在`2026-08-30T01:05:31+08:00`留下本轮真实推进锚点；此后进度按该绝对时间记录，不用对话压缩中的相对时点替代。
 

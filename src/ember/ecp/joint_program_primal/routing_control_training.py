@@ -19,6 +19,8 @@ from ember.ecp.checkpoint import save_ecp_checkpoint
 from ember.ecp.joint_program_primal.routing_control import (
     ROUTING_CONTROL_RUN_SCHEMA,
     ROUTING_CONTROL_STAGE,
+    SCORER_ALL_PARAMETERS,
+    SCORER_NATIVE_HEADS_ONLY,
     fixed_routing_program,
     prepare_routing_control_runtime,
 )
@@ -125,13 +127,26 @@ def _run_task(
 
 def _scorer_gradient_probes(runtime: Any) -> dict[str, float]:
     scorer = runtime.compiler.primal_scorer
+    input_gradients = tuple(
+        head.weight.grad for head in scorer.input_primal_heads
+    )
     output_gradients = tuple(
         head.weight.grad
         for owner_heads in scorer.output_primal_heads
         for head in owner_heads
     )
-    if any(gradient is None for gradient in output_gradients):
-        raise RuntimeError("routing-control output-group gradient is absent")
+    if any(
+        gradient is None
+        for gradient in (*input_gradients, *output_gradients)
+    ):
+        raise RuntimeError("routing-control native-head gradient is absent")
+    input_norms = torch.stack(
+        tuple(
+            gradient.float().norm()
+            for gradient in input_gradients
+            if gradient is not None
+        )
+    )
     output_norms = torch.stack(
         tuple(
             gradient.float().norm()
@@ -139,28 +154,41 @@ def _scorer_gradient_probes(runtime: Any) -> dict[str, float]:
             if gradient is not None
         )
     )
-    if not bool(torch.isfinite(output_norms).all()) or not bool(
-        torch.all(output_norms > 0)
+    if (
+        not bool(torch.isfinite(input_norms).all())
+        or not bool(torch.all(input_norms > 0))
+        or not bool(torch.isfinite(output_norms).all())
+        or not bool(torch.all(output_norms > 0))
     ):
         raise RuntimeError(
-            "routing-control output-group gradient is non-finite or zero"
+            "routing-control native-head gradient is non-finite or zero"
         )
-    probes = {
-        "primal_input": scorer.input_primal_heads[0].weight.grad,
+    result = {
+        "primal_input": float(input_norms.square().sum().sqrt()),
+        "primal_output": float(output_norms.square().sum().sqrt()),
+    }
+    partition = runtime.config["model"].get(
+        "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+    )
+    feature_probes = {
         "primal_program_context": scorer.program_context["q"][1].weight.grad,
         "primal_rank_context": scorer.rank_context["q"][1].weight.grad,
         "primal_event_score": scorer.event_score["q"].weight.grad,
         "owner_embedding": scorer.owner_embedding.grad,
         "rank_embedding": scorer.rank_embedding.grad,
     }
-    result = {}
-    for name, gradient in probes.items():
-        if gradient is None or not bool(torch.isfinite(gradient).all()):
-            raise RuntimeError(
-                f"routing-control {name} gradient is absent or non-finite"
-            )
-        result[name] = float(gradient.float().norm())
-    result["primal_output"] = float(output_norms.square().sum().sqrt())
+    if partition == SCORER_ALL_PARAMETERS:
+        for name, gradient in feature_probes.items():
+            if gradient is None or not bool(torch.isfinite(gradient).all()):
+                raise RuntimeError(
+                    f"routing-control {name} gradient is absent or non-finite"
+                )
+            result[name] = float(gradient.float().norm())
+    elif partition == SCORER_NATIVE_HEADS_ONLY:
+        if any(gradient is not None for gradient in feature_probes.values()):
+            raise RuntimeError("routing-control frozen feature chart has gradients")
+    else:
+        raise RuntimeError("routing-control scorer partition changed")
     if min(result.values()) <= 0:
         raise RuntimeError("routing-control scorer functional gradient is zero")
     return result
@@ -257,6 +285,9 @@ def run_routing_control_optimizer_step(runtime: Any) -> dict[str, Any]:
         "global_step_seconds": max(float(row["seconds"]) for row in performance),
         "conditions": records,
         "native_teacher_tensor_reads": runtime.native_teachers.tensor_reads,
+        "primal_scorer_trainable_partition": runtime.config["model"].get(
+            "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+        ),
         "fixed_routing_token_training_only": True,
         "deployment_candidate": False,
     }

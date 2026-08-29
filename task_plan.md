@@ -8,13 +8,14 @@ owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code c
 operator capacity均已通过；J2/J3在充分functional updates后non-pass。R1固定正交route把train/held-video从J2的`.1708/.1646`提高到
 `.2678/.2798`，wrong-token margin`.2384`，证明清晰route被使用；但q/v/action-in仍约零，完整`.60/.50` Gate未过。checkpoint几何又证明
 route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。R2证明set-valued critic
-能恢复v/action-out几何，R3 owner×group decoder又把action-in/out提高到`.656/.669`，但q/v和真实functional仍未过门。真实gradient
-分解进一步证明critic通常反向、成功code监督在当前点近正交，而成功方向换用冻结shared scale仍保留`.940`中位functional recovery。
-当前唯一活动阶段因此是同一training-only fixed-route图上的R4：用已验证functional code一次性初始化shared heads，随后只用真实
-functional loss，裁决瓶颈究竟是direction discovery初始化还是更深的shared优化/函数类问题。R1--R4都不能通过G3或进入deployment checkpoint；
+能恢复v/action-out几何，R3 owner×group decoder又把action-in/out提高到`.656/.669`，但q/v和真实functional仍未过门。R4用已验证
+functional code初始化shared heads后，step110 train/held-video已达`.819/.839`，q/v/action-out及路由、跨video、稳定性均过门，仅
+action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in失败来自minimum-norm初始化所依赖的feature chart在训练中
+漂移：heads自身几乎未动，接回initial chart即可保留`.998` outer recovery。当前唯一活动阶段因此是R5：冻结初始化后的feature chart，
+只让233个native heads接受同一真实functional loss，直接裁决该moving-coordinate根因。R1--R5都不能通过G3或进入deployment checkpoint；
 所有局部Gate、单次训练或内部指标都不代表整体项目goal完成。
 
-## 当前R4里程碑
+## 当前R5里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
@@ -26,9 +27,16 @@ functional loss，裁决瓶颈究竟是direction discovery初始化还是更深�
   全部有效gradient有限，峰值`21.882GB`；
 - [x] 完成diff审查、clean main集成、push与detached formal launch contract；
 - [x] fresh运行10 warmup+100 effective functional-only updates，在actual step70/110保存完整single checkpoints；
-- [ ] 用六个独立workers完成step70/110原R3 paired Gate并形成fixed-route边界结论；
-- [ ] 若R4保持强functional/family且causal/stability通过，把“utility-aligned initialization/有限warmup”机制接回Natural Program并继续真正
-  G3；若训练从强step0系统退化，先按最早发生的head/trunk/optimizer接口分析，不做LR/seed/width/rank小扫。
+- [x] 用六个独立workers完成R4 step70/110 paired Gate；step110除action-in`.2493`外全部主检查通过，R4 formal non-pass；
+- [x] 完成initial/step70/step110 head、chart和module graft，证明33个action-in heads在当前hidden可精确重拟合，失败来自整条
+  feature chart的distributed coordinate drift；
+- [x] 在唯一routing-control实现面加入`native_heads_only`参数所有权与R5 sealed config，不新增平行模型或fallback；
+- [x] 完成13项定向CPU合同和单卡真实forward/backward/materialization profile：233 heads全部有gradient、chart冻结、Action Meta 0、
+  teacher reads 0、唯一rank16及显存/吞吐成立；
+- [ ] 完成diff审查、clean main集成、push与detached formal launch contract；
+- [ ] fresh运行原10 warmup+100 effective、actual step70/110并执行同一paired Gate；
+- [ ] 只有R5相邻checkpoint保持强functional、四family、route与same-task稳定，才把“utility-aligned初始化必须绑定稳定feature chart”接回
+  Natural Program继续真正G3；若仍失败，按最早失效接口分析，不做LR/seed/width/rank小扫。
 
 ## 当前G1里程碑
 

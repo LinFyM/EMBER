@@ -1338,3 +1338,21 @@ shared owner×group heads；不使用task-local scale，初始化后删除critic
 为`.980/1.155/1.012/.944/.754/.815`，中位约`.962`，证明FP32最大`.00399`的head插值误差没有破坏policy功能。R4若在相邻
 checkpoints保持强解，才允许把utility-aligned初始化/短warmup机制接回Natural Program；R4本身含training-only task route与privileged
 初始化，永远不是deployment或G3通过。
+
+### 78. R4把强functional解保留到`.82/.84`，唯一剩余action-in失败来自moving feature chart
+
+R4 step110的train/held-video recovery达到`.819437/.839139`，q/v/action-out为`.439578/.388131/.400750`，wrong-token margin
+`.913637`、same-task retention`1.002751`；11项primary checks只有action-in`.249310<.30`。因此functional-code初始化确实把shared
+scorer送入强功能basin，R4 non-pass不能解释为bank、operator、rank4、scale、route、video overfit或functional loss整体失效。
+
+action-in的最早接口由三组相互支持的graft证据锁定。第一，step0/70/110 raw outer recovery约`.999988/.298330/.301140`，但固定
+各checkpoint当前hidden、只FP64重拟合33个action-in heads即可恢复到`1.0`；40个hidden rows始终full rank，minimum singular ratio约
+`.0025`。第二，initial到step110的action-in/all-head relative drift只有`.000784/.000810`，feature chart为`.008930`；checkpoint chart
+加initial heads仍是`.301099`，initial chart加checkpoint heads则为`.998320`。第三，program context、rank context、input trunk或output
+trunk任一从checkpoint单独移入initial graph都把outer降到约`.22--.32`，而只移动embedding/event模块几乎不影响。故根因是
+minimum-norm heads所依赖的高条件数feature坐标在整条链中distributed co-adapt，不是某个head更新过大或单层bug。
+
+R5据此只冻结functional-code初始化后的完整feature chart，并让38 input加195 output native heads继续接受相同functional loss；不改
+数据、rank、scale、bank/operator、seed、LR、预算或Gate。首个真实step确认trainable仅`10,297,344` head参数，全部233 heads有finite
+nonzero gradient，frozen chart无gradient，Action Meta/source/Stage0/scale均0，native teacher reads 0且仍生成唯一完整rank16。R5若
+通过也仍只是training-only fixed-route边界；它证明的是utility-aligned head初始化必须绑定稳定chart，不证明Natural Program shared route。

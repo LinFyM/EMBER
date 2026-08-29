@@ -12,6 +12,8 @@ from ember.ecp.joint_program_primal.evaluation import (
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.routing_control import (
     ROUTING_TASK_IDS,
+    SCORER_NATIVE_HEADS_ONLY,
+    _scorer_parameter_ownership,
     fixed_routing_program,
     fixed_routing_token,
     load_routing_control_config,
@@ -285,3 +287,59 @@ def test_routing_r4_uses_functional_code_initialization_without_critic() -> None
     assert "privileged_critic" not in control["optimization"]
     assert control["optimization"]["loss"] == "two_correct_fit_video_functional_only"
     assert control["information_wall"]["task_local_fixed_scales_used"] is False
+
+
+def test_routing_r5_freezes_feature_chart_and_trains_only_native_heads() -> None:
+    root = Path(__file__).resolve().parents[2]
+    control = load_routing_control_config(
+        root
+        / "configs/pi05_ecp_routing_token_functional_code_chart_frozen_r5_v1.json"
+    )
+    assert (
+        control["model"]["primal_scorer_trainable_partition"]
+        == SCORER_NATIVE_HEADS_ONLY
+    )
+
+    class TinyCompiler(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            scorer = torch.nn.Module()
+            scorer.feature_chart = torch.nn.Linear(4, 4)
+            scorer.input_primal_heads = torch.nn.ModuleList(
+                [torch.nn.Linear(4, 3, bias=False)]
+            )
+            scorer.output_primal_heads = torch.nn.ModuleList(
+                [
+                    torch.nn.ModuleList(
+                        [torch.nn.Linear(4, 2, bias=False)]
+                    )
+                ]
+            )
+            self.primal_scorer = scorer
+
+    program = torch.nn.Linear(2, 2)
+    compiler = TinyCompiler()
+    writer, trainable, frozen = _scorer_parameter_ownership(
+        program, compiler, partition=SCORER_NATIVE_HEADS_ONLY
+    )
+    expected = {
+        id(parameter)
+        for module in (
+            compiler.primal_scorer.input_primal_heads,
+            compiler.primal_scorer.output_primal_heads,
+        )
+        for parameter in module.parameters()
+    }
+    assert {id(parameter) for parameter in trainable} == expected
+    assert all(parameter.requires_grad for parameter in trainable)
+    assert all(not parameter.requires_grad for parameter in frozen)
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.feature_chart.parameters()
+    )
+    assert set(writer.state_dict()) == {
+        "primal_scorer.feature_chart.weight",
+        "primal_scorer.feature_chart.bias",
+        "primal_scorer.input_primal_heads.0.weight",
+        "primal_scorer.output_primal_heads.0.0.weight",
+    }

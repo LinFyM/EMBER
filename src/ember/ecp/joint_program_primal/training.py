@@ -42,7 +42,37 @@ def train(args: argparse.Namespace) -> None:
                 append_jsonl(args.output_dir / "metrics.jsonl", row)
                 runtime.metrics_rows += 1
                 if runtime.optimizer_steps % args.log_every == 0:
-                    print(json.dumps(row, sort_keys=True), flush=True)
+                    console = {
+                        name: row[name]
+                        for name in (
+                            "optimizer_step",
+                            "effective_optimizer_step",
+                            "global_step_seconds",
+                            "mean_functional_loss",
+                            "gradient_norm_before_clip",
+                            "gradient_probe_norms",
+                            "next_lr",
+                            "task_group",
+                            "role_counts",
+                            "rank_assignments",
+                            "native_teacher_tensor_reads",
+                            "elapsed_seconds",
+                        )
+                    }
+                    console["rank_performance"] = [
+                        {
+                            name: value[name]
+                            for name in (
+                                "rank",
+                                "tasks",
+                                "seconds",
+                                "max_cuda_allocated_bytes",
+                                "max_cuda_reserved_bytes",
+                            )
+                        }
+                        for value in row["rank_performance"]
+                    ]
+                    print(json.dumps(console, sort_keys=True), flush=True)
             if runtime.optimizer_steps in runtime.checkpoint_steps:
                 save_ecp_checkpoint(
                     output_dir=args.output_dir,

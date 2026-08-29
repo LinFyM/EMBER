@@ -74,12 +74,19 @@ def test_functional_recovery_and_interaction_use_one_free_primal_measure() -> No
 
 
 def test_true_task_holdout_uses_lowest_three_sealed_videos() -> None:
-    rows = tuple(MappingCondition(2, "meta_fit", demo, 10 + demo) for demo in range(9))
+    sealed = (4, 25, 27, 31, 32, 38, 39, 40, 46)
+    rows = tuple(MappingCondition(2, "meta_fit", demo, 10 + demo) for demo in sealed)
     runtime = SimpleNamespace(
         mapping_split=SimpleNamespace(
             fit_by_task={}, video_held_by_task={}, task_held=rows
         ),
-        panels={2: SimpleNamespace(program_video_demos=tuple(range(9)))},
+        # Functional-panel action episodes are a separate authority from the
+        # sealed native-teacher videos used to compile the Program and bank.
+        panels={
+            2: SimpleNamespace(
+                role="meta_fit", program_video_demos=tuple(range(9))
+            )
+        },
     )
     selected = _task_conditions(runtime, 2)
-    assert tuple(row.video_demo for row in selected) == (0, 1, 2)
+    assert tuple(row.video_demo for row in selected) == (4, 25, 27)

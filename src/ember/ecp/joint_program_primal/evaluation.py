@@ -171,10 +171,12 @@ def _task_conditions(
             key=lambda condition: condition.video_demo,
         )
     )
-    sealed_demos = tuple(map(int, runtime.panels[task_id].program_video_demos))
     if (
         len(task_held) < 3
-        or tuple(condition.video_demo for condition in task_held) != sealed_demos
+        or any(
+            condition.role != runtime.panels[task_id].role
+            for condition in task_held
+        )
     ):
         raise ValueError("J2 true task-holdout video panel changed")
     return task_held[0], task_held[1], task_held[2]

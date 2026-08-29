@@ -25,6 +25,24 @@
   owner/rank embedding梯度全部有限非零，冻结native heads无gradient，Action Meta/source/Stage0/scale trainable和native teacher reads均为0。
   27项定向回归、旧J3/R6/R7 config兼容加载与compile检查通过。该smoke只证明图、所有权和吞吐，不替代R7 formal/Gate。
 
+### R7 functional-code chart acquisition formal launch contract
+
+- implementation authority为clean pushed `main@89131fef43f7e5468adc8e4d9c4eab4ef9af1009`；formal从只增加本launch记录、未再
+  修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant fresh执行，不resume R4--R6 optimizer或dirty profile。
+  Program加载G2 `c1493a1/macro20`，scorer加载R5 step110；R5 native heads冻结，optimizer/scheduler fresh。
+- 科学合同固定10个gradient tasks及两个true task-held：每个gradient task两条fit K1 videos共享一个validated task-level outer-update
+  direction label，10 warmup+100 effective、actual step70/110。只训练Natural Program readers/fusion/aligner和共享feature chart；
+  native heads、source、Stage0、current-bank operator、carrier12、scale、policy和Action Meta冻结。训练不读functional panel action、
+  counterfactual、member tensor、task-local scale、held video、task2/74、validation/test或shuffled/reversed。
+- 2026-08-30 05:26 CST live检查gpu01物理`0--6`均无compute进程、显存`14--97MiB`且UTL 0；按单节点最多6卡合同选择
+  `0,1,2,3,4,6` world6，不占用第七张。gpu02物理0--3、5、6高UTL，4有常驻服务、7空闲，故不跨节点拼卡。R7单卡真实峰值
+  reserved约`19.35GB`，六卡同一task权重有充分余量；launch紧邻时若状态变化则只按实时可用1--6卡弹性分片。
+- gpu01复用`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` 23GB cache，shm尚余39GB；`strg01` `/data1` quota为
+  `709,740,920/1,073,741,824` blocks，R6完整run约300MB，R7预估同量级，峰值远低于剩余额度。exact entry使用
+  `CUDA_VISIBLE_DEVICES=0,1,2,3,4,6`、`NCCL_P2P_DISABLE=1`、GPU-local NUMA/deferred NCCL及world6 torchrun；输出固定为
+  `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_s110_89131fe_gpu01p012346_r6_20260830/`。自然完成后用最多六个独立
+  single-GPU workers依次评价step70/110原12-task Gate；不以acquisition loss、fit code cosine或checkpoint union替代真实functional结果。
+
 - 2026-08-30 R5 fixed feature-chart正式训练与step70/110 paired Gate已完整结束。训练从clean pushed detached
   `9e6b6a7`在gpu01物理`0,1,2,3,4,6`自然完成110步，110 rows连续、两个world6 checkpoint完整，墙钟
   `1503.63s`、最大peak reserved `32,916,897,792` bytes；Action Meta、source/Stage0/scale trainable和native teacher reads

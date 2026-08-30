@@ -1,6 +1,6 @@
 # EMBER progress
 
-- 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
+- 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
 - R5成功primal的10-task cross-bank正控已在clean detached `2090799`完成。正确bank functional recovery中位
   `.930860`，same-role cyclic错误task bank反而为`.945799`；correct-minus-wrong中位`-.003819`，只有`2/10`

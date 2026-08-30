@@ -1521,3 +1521,16 @@ correct-over-wrong margin，也对同task第三video施加过强坐标畸变。
 replay保留`C_B^{1/4}`的真实bank作用。它是由两端证据指定的一次结构性bias--capacity折中，不授权幂次、LR、seed或step sweep。
 先跑同一10-task fit-only zero-training bridge和原`.75/.10/8-of-10` Gate；若仍不能同时过capacity与margin，后续重开
 common-coordinate/operator形式而不是继续调谱幂。
+
+### 89. tempered中点暴露单一谱幂的capacity--specificity Pareto
+
+clean detached `db88418`在同一10 tasks、两fit/一held/一wrong bank和同一R5 primal authority下完成唯一
+`.75` zero-training bridge。correct/wrong recovery中位为`.925312/.885043`，margin中位只有`.054500`；虽然
+correct bank在`8/10`更好，但只有`2/10` margin达到`.10`，wrong bank `10/10`仍保持正收益，收益保留中位
+`.941988`，correct/wrong update cosine中位`.608882`。这不是capacity失败，而是bank-specificity失败。
+
+结合half `.5`的`.725204/.188873/.541238`与full `1.0`的`.930860/.945799/-.003819`，三个预先限定点形成
+清晰Pareto：谱逆幂越大，正确capacity越好，但错误bank的可互换utility也同时恢复。因此不再测`.625/.875`或
+通过训练粉饰这个结构冲突。下一机制假设将“实现强task direction”与“证明Program和current bank兼容”分开：保留
+full-inverse的强方向，但先审订其在固定score-RMS缩放前的raw dual energy是否已暴露correct/wrong兼容。只有绝对
+内容信号成立，才实现bounded compatibility gate；成对correct/wrong比值只能用于审计，不是deployment可读输入。

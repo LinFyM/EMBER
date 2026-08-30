@@ -566,11 +566,12 @@ median仅`.110012`，所以也未满足“所有family均缺少可读信息”�
 能力与correct-over-wrong bank必要增量；通过前不得再用当前global-`C^+d`路径训练Program/scorer版本。具体interaction修正必须由
 正控证据选择，不恢复退役candidate scorer、full functional-polar deployment或task/video lookup。
 
-half operator的后续task-local formal现已完成：两fit-video functional recovery中位`.950541`，第三same-task held correct/wrong
-为`.725204/.188873`，bank margin`.541238`且correct-better `10/10`。因此bank必要性已恢复，但correct未达`.75`，不能恢复shared
-Program/scorer。当前只允许一次tempered谱中点probe：dual使用`C_B^{-3/4}`，fit-only teacher effect使用补幂`C_B^{-1/4}`，使
-replay保留quarter-root current-bank作用；仍以同一held/wrong Gate裁决且不做幂次小扫。若不能同时过capacity与margin，后续必须重开
-common-coordinate/operator形式，而不是继续训练Program版本或调谱幂。
+half operator的task-local formal在held correct/wrong上为`.725204/.188873`，margin`.541238`；唯一tempered `.75`
+bridge又得到`.925312/.885043/.054500`。结合full inverse的`.930860/.945799/-.003819`，已确认单一谱幂的
+capacity--specificity Pareto，停止谱幂小扫。当前先做一个只读内容信号审计：保持full-inverse成功方向，检查其
+query被统一缩放到fixed replay score RMS之前所需的raw dual energy，是否能以deployment可读的绝对内容信号区分correct/
+wrong bank。若成立，才在强direction外加独立、有界、不允许单bank覆盖的compatibility gate；若不成立，则重查
+Program--bank semantic key，不得把成对反事实比值、task/video lookup或退役scorer作为deployment输入。
 
 #### 已完成的Frozen-Program G3历史证据与可复用面
 

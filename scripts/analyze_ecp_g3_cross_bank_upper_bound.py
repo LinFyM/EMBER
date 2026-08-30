@@ -235,6 +235,79 @@ def _complete_code_state(
     return complete, output
 
 
+def _raw_dual_energy_rows(
+    runtime: Any,
+    *,
+    bank: Any,
+    input_primals: tuple[torch.Tensor, ...],
+    output_primals: tuple[torch.Tensor, ...],
+) -> list[dict[str, Any]]:
+    if len(bank.videos) != 1:
+        raise ValueError("dual-energy audit escaped K1")
+    video = bank.videos[0]
+    power = runtime.compiler.bank_operator.inverse_covariance_power
+    candidates = [
+        ("input", target, owner.family.value, 0, primal, operator)
+        for target, (owner, primal, operator) in enumerate(
+            zip(runtime.owners, input_primals, video.input_operators, strict=True)
+        )
+    ]
+    candidates.extend(
+        ("output", target, owner.family.value, group, primals[group], operator)
+        for target, (owner, primals, operators) in enumerate(
+            zip(runtime.owners, output_primals, video.output_operators, strict=True)
+        )
+        for group, operator in enumerate(operators)
+    )
+    rows = []
+    for side, target, family, group, primal, operator in candidates:
+        _, raw_rms, projection = operator.dual_and_score_rms(
+            primal, inverse_covariance_power=power
+        )
+        for rank, (energy, retained) in enumerate(
+            zip(raw_rms.tolist(), projection.tolist(), strict=True)
+        ):
+            rows.append(
+                {
+                    "side": side,
+                    "target": target,
+                    "family": family,
+                    "group": group,
+                    "rank": rank,
+                    "raw_score_rms": float(energy),
+                    "projection": float(retained),
+                }
+            )
+    if len(rows) != 4 * len(candidates):
+        raise ValueError("dual-energy audit row count changed")
+    return rows
+
+
+def _raw_dual_energy_audit(
+    runtime: Any,
+    correct_bank: Any,
+    wrong_bank: Any,
+    program: Any,
+    code: TaskLocalPrimalCode | None,
+    input_primals: tuple[torch.Tensor, ...] | None,
+    output_primals: tuple[torch.Tensor, ...] | None,
+) -> dict[str, list[dict[str, Any]]]:
+    if code is not None:
+        input_primals, output_primals = code.input_primals(), code.output_primals()
+    elif input_primals is None or output_primals is None:
+        state = runtime.compiler.primal_scorer.program_state(program)
+        scorer = runtime.compiler.primal_scorer
+        input_primals = scorer.input_primals(state)
+        output_primals = scorer.output_primals(state)
+    return {
+        name: _raw_dual_energy_rows(
+            runtime, bank=bank, input_primals=input_primals,
+            output_primals=output_primals,
+        )
+        for name, bank in (("correct", correct_bank), ("wrong", wrong_bank))
+    }
+
+
 def _distribution(values: Sequence[float]) -> dict[str, float | int]:
     rows = tuple(map(float, values))
     if not rows:
@@ -334,9 +407,7 @@ def _evaluate_task(
         raise ValueError("R5 fit/held video authority changed")
     wrong_task = _wrong_task(runtime, task_id)
     wrong_first = _task_conditions(runtime, wrong_task)[0]
-    free_reference, free_authority = _positive_control_losses(
-        positive_root, task_id
-    )
+    free_reference, free_authority = _positive_control_losses(positive_root, task_id)
     with torch.inference_mode():
         (
             program,
@@ -356,7 +427,6 @@ def _evaluate_task(
             primal_mode=primal_mode,
             trained_code_root=trained_code_root,
         )
-
     correct_prepared, _ = prepare_joint_condition(runtime, correct_condition)
     wrong_prepared, _ = prepare_joint_condition(runtime, wrong_first)
     teacher_reads = runtime.native_teachers.tensor_reads
@@ -387,6 +457,10 @@ def _evaluate_task(
                 bank=wrong_prepared,
                 code=code,
             )
+        dual_energy = _raw_dual_energy_audit(
+            runtime, correct_prepared, wrong_prepared, program, code,
+            input_primals, output_primals,
+        )
     correct_record = _normalized(
         _panel_value(runtime, task_id=task_id, state=correct_state),
         free_reference[correct_condition.video_demo],
@@ -397,7 +471,6 @@ def _evaluate_task(
     )
     if runtime.native_teachers.tensor_reads != teacher_reads:
         raise RuntimeError("cross-bank diagnostic read native teachers")
-
     correct_residual = residual_lora_state(
         correct_output.residual, runtime.rank4_contract, canonicalize=False
     )
@@ -430,6 +503,7 @@ def _evaluate_task(
         "primal_mode": primal_mode,
         "fit_transport_alignment": transport_alignment,
         "trained_code_authority": trained_code_authority,
+        "dual_energy": dual_energy,
         "elapsed_seconds": time.monotonic() - started,
     }
 

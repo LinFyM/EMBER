@@ -15,10 +15,12 @@
   普通transport cosine和teacher-factor recovery均不能解释弱task；functional优化改善9/10 task但无法消除第三video坐标偏移。
   这说明`C_B^{-1/2}`保留了足够bank特异性，却留下过强的`C_B^{1/2}`效果畸变。
 
-- 下一单变量机制probe固定谱逆幂为`.75`，即half与full inverse的唯一log-spectral中点；相配套的fit-only transport使用
-  `C_B^{-1/4}`，replay仍保留`C_B^{1/4}` current-bank作用。该选择由`.5`的高margin/低capacity与`1.0`的高capacity/零margin两个
-  端点直接夹定，不做`.625/.875`等幂次小扫。先以两fit/一held/一wrong的同一10-task zero-training bridge检验原`.75/.10/8-of-10`
-  Gate；若不出现同时的容量与margin增量，就停止继续调谱幂并重开更上游的common-coordinate/operator形式。
+- 唯一tempered `.75` zero-training bridge已从clean detached `db88418`完成。held correct/wrong recovery中位为
+  `.925312/.885043`，margin仅`.054500`；correct bank在`8/10`更好，但只有`2/10` margin达到`.10`，wrong bank
+  `10/10`仍有正收益，收益保留中位`.941988`。它恢复了capacity却也恢复了wrong-bank utility，与`.5`的高margin/
+  低capacity及`1.0`的高capacity/零margin共同确认单一谱幂是明确Pareto，因此停止幂次调参。下一步不直接叠加新模型：先
+  审计full-inverse强方向在被统一缩放到`0.02`之前的raw dual energy，检验correct/wrong bank是否已有可用的内容
+  兼容信号；只有该证据成立才为full-inverse direction增加独立bounded compatibility gate。
 
 - bank-interaction positive control的retained实现已接通，并已完成下述formal launch预检。唯一canonical operator新增固定
   `inverse_covariance_power=.5`；每个gradient task只用两条fit video的teacher初始化形成共同half-whitened task-local code，随后只以

@@ -91,10 +91,13 @@ cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位�
   pooling、rank4、唯一rank16与same-task跨video能力必须保留，同时correct bank相对same-role wrong bank产生必要功能增量；只有该
   正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。half operator formal得到correct/wrong/margin中位
   `.725204/.188873/.541238`与correct-better `10/10`；bank interaction强过门但correct未达`.75`，因此总体严格non-pass。
-- [ ] 只检验一次由两个已测端点夹定的tempered operator：固定`C_B^{-3/4}` dual、相配套fit-only `C_B^{-1/4}` transport，先做
-  zero-training 10-task held/wrong bridge。仍使用真实X/Y、signed replay、rank4和唯一rank16；Gate不变，不做谱幂小扫。若同时恢复
-  correct capacity与bank margin，再接同一task-local functional formal；否则停止调幂并分析common-coordinate/operator形式，不训练
-  shared Program/scorer版本。
+- [x] 完成由两个已测端点夹定的唯一tempered bridge：`C_B^{-3/4}` dual + fit-only `C_B^{-1/4}`
+  transport的correct/wrong/margin中位为`.925312/.885043/.054500`，correct-better `8/10`但margin达`.10`仅
+  `2/10`，严格non-pass。该结果连同`.5/1.0`端点证明单一谱幂无法同时提供capacity与bank必要性，停止谱幂调参。
+- [ ] 只读审计full-inverse强方向的raw dual energy：在operator把每个query统一定标到`replay_score_rms=.02`之前，按
+  input/output、target、output group与rank成对记录correct/wrong bank所需energy。若它提供可泛化的绝对兼容信号，则
+  保留full-inverse capacity direction并单独加有界bounded compatibility gate；若绝对分布重叠，则不用成对反事实比值冒充
+  deployment signal，改查Program--bank content semantic key。两个分支都不恢复退役scorer，不先训练新shared版本。
 
 ## 当前G1里程碑
 

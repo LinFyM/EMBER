@@ -1371,3 +1371,17 @@ meta fit/held为`.997452/.898189`，target为`.796767/.614878`，而旧full inve
 
 - `runs/outputs/pi05_ecp_g3_bank_interaction_positive_control_10task_89b130a_gpu01p012_gpu02p47_20260830/`；
 - `runs/analysis/pi05_ecp_g3_bank_interaction_positive_control_gate_55fded4_gpu01p012_gpu02p47_w5_20260830/`。
+
+## 69. tempered `.75` fit-transport cross-bank bridge
+
+clean pushed detached `db88418`使用R5成功primal、两条fit video的`C_B^{-1/4}` transport和held bank的
+`C_B^{-3/4}` replay，在同一10 tasks上完成唯一预注册tempered bridge。没有backward、Action Meta、teacher tensor、
+shuffled/reversed或checkpoint选择。
+
+held correct/wrong recovery中位为`.925312/.885043`，correct-minus-wrong中位`.054500`；correct bank在`8/10`
+更好，但margin达`.10`仅`2/10`，wrong bank `10/10`仍有正效用。结果严格non-pass，并与half/full端点一起终止
+谱幂调参：单一幂次无法同时保留correct capacity与wrong-bank specificity。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_fit_transport_tempered_cross_bank_db88418_gpu01p012_gpu02p47_w5_20260830/`。

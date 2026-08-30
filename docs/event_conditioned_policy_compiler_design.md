@@ -12,8 +12,9 @@ held20具有`.7160` rank16可达性，旧frozen G2 Program的shared读出却只�
 进一步上移为G2跨task behavior identifiability。随后pointwise decoder与decoder-free v3--v5依次失败；v5虽扩大Program跨task
 spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次专家复核明确：这些实验只淘汰对应的独立reader与behavior-Gram目标，
 尚不能把联合失败归因于Program schema或Stage0。当前取消“Program先独立通过behavior-Gram”的硬Gate，唯一活动资格改为联合训练
-Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；已经通过
-P1的current-bank operator继续冻结。本文仍是当前唯一架构依据。
+Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；P1的
+current-bank operator在J2--R11中保持冻结。后续cross-bank正控现已重开该operator的**因果交互**而非容量，详见下文当前裁决。
+本文仍是当前唯一架构依据。
 
 R5随后用training-only fixed route建立并正式通过稳定functional chart，但R6移除fixed route、接回Natural Program后的step110
 train/held只有`.165/.143`，Program-to-code约`.02`；同task跨video却约`.9994`稳定。共同heads与minimum-norm held-view审计证明R5 chart
@@ -22,6 +23,12 @@ gradient-task validated outer-update directions训练Natural Program及feature c
 仍为`-.133/-.130`且target role全部为负；因此“Program侧适配冻结任意chart”也已淘汰。当前下一资格保持同一绝对code labels、数据、
 bank、rank与scale，只让Program和完整primal scorer共同取得输出坐标；训练标签仅训练期可见，任何内部fit都不能通过G3，最终仍由真实
 bank、signed replay、唯一rank16和原12-task functional Gate裁决。
+
+R8--R11随后完整检验了fresh联合、稳定content初始化、真实functional refinement和matched raw Stage0。R10已把train/held提高到
+`.560/.544`并通过四family与wrong-Program，但task-held仅`.151`且wrong-bank/interaction近零；R11 raw Stage0反而把task-held降到
+`-.092`，排除Program schema首因。最新R5成功primal cross-bank正控又证明错误task bank可保留`100.4%`中位功能收益，故当前最早接口
+已经从Program/scorer移到global-`C^+d` operator的bank交互可识别性。下一资格不是新的Program版本，而是先建立同时保留same-task
+跨video能力与correct-over-wrong bank必要增量的task-local operator正控。
 
 四次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
@@ -553,6 +560,12 @@ median仅`.110012`，所以也未满足“所有family均缺少可读信息”�
 效用，说明当前primal-to-dual operator与wrong-bank Gate的组合缺少可识别交互，先修正bank interaction；若该正控有强bank margin，才
 继续把R10/R11失败定位到shared Program/scorer的target-task归纳偏置。该诊断只读，不恢复旧candidate scorer或退役路线。
 
+该cross-bank正控现已在clean detached `2090799`完成：正确/错误bank recovery中位`.930860/.945799`，correct-minus-wrong
+中位`-.003819`，正确bank仅`2/10`更好且`0/10`达到`.10`，错误bank`10/10`保持正收益。由此保留P0/P1的capacity结论，但撤销
+“capacity通过即可把operator从bank因果首因中排除”的过强解释。当前下一Gate先要求task-local operator同时保持same-task跨video
+能力与correct-over-wrong bank必要增量；通过前不得再用当前global-`C^+d`路径训练Program/scorer版本。具体interaction修正必须由
+正控证据选择，不恢复退役candidate scorer、full functional-polar deployment或task/video lookup。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置
@@ -680,19 +693,21 @@ frozen-condition cache，仅保存Program、raw X/Y、final Y和B0 operator；fi
 detached `e2f9d33`的完整38-target K1/K4
 P0已通过：chunk4/one-chunk等价、全部梯度、Action Meta 0、uniform K、唯一rank16 materialization与真实policy consumption均成立。
 clean pushed detached `c9e8198`的P1六任务formal也已通过：fit/held median`.971731/.954539`、held/fit`.982308`、held相对
-optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这把下游operator从当前首因中排除；随后
+optimistic median`.992193`，四family medians均`>=.9398`且minimum task held`.935001`。这在当时排除了operator的capacity与
+same-task跨video稳定性；最新cross-bank正控说明它并未验证跨task bank因果可识别性。随后
 95-task证据及G2-B v3--v5只证明独立Program behavior-geometry目标失败。第四次专家裁决要求复用已有P2 cache/operator/scorer，新增
 Program与primal联合functional反传、task-local functional正控和12-task Gate。当前代码已在唯一`joint_program_primal`执行面接通
 可微Program compile、functional LoRA chain rule、free-primal正控、role-balanced joint update、Gate wiring及不缓存Program的v4 frozen
 condition cache。10-task正控已通过；J2/J3与R1--R3均形成formal non-pass/partial结论。R4 functional-code初始化已把train/held提高到
 `.819/.839`，但action-in因feature chart drift未过门；R5冻结初始化chart、仅训练全部native heads后step110 train/held为
-  `.940/.963`且四family全部通过。R6移除fixed route并接回Natural Program后完整Gate non-pass；R7现已在同一canonical
-  `joint_program_primal`执行面接通fit-only functional-code chart acquisition，冻结233 heads、训练Program+feature chart，Action Meta、
-  source、Stage0和scale仍为0。R5/R7内部chart结果都不能冒充shared或closed-loop Gate，R7 checkpoint仍须通过原12-task完整资格。
+`.940/.963`且四family全部通过。R6--R9排除了简单Program接回、冻结chart acquisition与outer-code替代utility；R10真实functional
+refinement取得`.560/.544`，R11 matched raw Stage0则明确更差。clean detached `2090799`的cross-bank正控最终显示正确/错误bank
+recovery中位`.931/.946`，因此当前global dual仍是唯一retained参考执行面，却不再是已获deployment资格的因果operator。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
-fit-only reference或diagnostic，不得再以deployment候选启动formal。当前唯一canonical deployment函数类仍是Program primal + current-bank
-global dual + exact signed replay；R5 fixed-chart function-class已经通过，R6接回失败后阶段进入R7 content-chart acquisition资格，
-不再受独立Program behavior-Gram Gate阻塞。
+fit-only reference或diagnostic，不得再以deployment候选启动formal。当前活动树只保留Program primal + current-bank global dual +
+exact signed replay这一实现面作为可复用capacity/reference；在operator-level correct-over-wrong bank正控通过前，它不能再启动shared
+Program formal或被称为deployment-qualified。后继interaction修正必须继续复用真实X/Y、signed pooling、rank4与唯一rank16，并以
+task-local same-task/wrong-bank功能证据选择，而不是恢复旧版本链。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

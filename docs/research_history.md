@@ -1321,3 +1321,18 @@ frozen Stage0或解冻VLM/source/全Stage0。
 - `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_s110_0590f63_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_gate_step70_25f38ce_gpu01p012346_w6_20260830/`；
 - `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_gate_step110_25f38ce_gpu01p012346_w6_20260830/`。
+
+## 66. R5成功primal的cross-bank functional upper bound
+
+clean pushed detached `2090799`复用R5 step110通过Gate的10个task-local成功primals，对每个task保持原panel B、carrier、scale、
+policy RNG和完整rank16，只把K1 native bank换为同role cyclic错误task。六个独立workers完成全部10 task；无backward、Action Meta、
+teacher tensor或shuffled/reversed使用。
+
+正确bank recovery中位`.930860`，错误bank中位`.945799`，correct-minus-wrong中位`-.003819`；正确bank仅`2/10`更好、`0/10`
+达到`.10` margin，错误bank`10/10`保持正收益，收益保留中位`1.003960`。因此P0/P1的capacity结论仍成立，但当前global covariance
+`C^+d`接口不能建立wrong-bank可识别性；R10/R11的bank因果失败不能继续归因Program/scorer。后续先修operator-level bank interaction
+并通过task-local正控，再恢复shared G3。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_r5_successful_primal_cross_bank_2090799_gpu01p012346_w6_20260830/`。

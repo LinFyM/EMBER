@@ -1470,3 +1470,22 @@ R10/R11另有共同结构证据：wrong-bank margin分别仅`.007864/-.003253`�
 primal-to-dual solve会让每条高覆盖bank近似重建同一Program primal，跨task bank可能因此退化为通用实现基底。下一步先用R5/task-local
 成功primal做cross-task wrong-bank functional upper-bound；若成功primal换错bank仍保留效用，则Gate失败首先属于operator的bank交互
 可识别性，不能继续归咎Program；若正控有强bank margin，才保留shared decoder/target generalization为首因。
+
+### 86. R5成功primal的cross-bank正控证明global primal-to-dual缺少bank交互可识别性
+
+clean pushed detached `2090799`在R5 step110已通过的10个gradient tasks上固定每task成功Program/primal，只把当前K1 bank替换为
+same-role cyclic错误task bank，并继续在原task的同一panel B、policy RNG、carrier、scale和唯一rank16下评价。正确bank recovery
+median/mean为`.930860/.920532`，错误bank为`.945799/.948615`；correct-minus-wrong median/mean为
+`-.003819/-.028083`。只有`2/10` task正确bank略好，`0/10`达到预注册`.10` margin；错误bank`10/10`保持正收益，wrong-to-correct
+benefit retention median/mean为`1.003960/1.030162`。两套materialized rank4 update并非逐值相同，overall cosine中位`.900724`，
+但真实policy效用基本等价，说明结论不是诊断误把同一bank重复加载。
+
+该结果不否定G1/P0/P1证明的native bank、signed pooling、rank4和same-task跨video容量；它否定的是更强但此前未被正控验证的推论：
+`q=C_B^+d`后在同一bank重放会令正确bank对task utility具有必要性。小score下该路径近似`C_B C_B^+d`，当不同task bank都高覆盖时，
+每条bank都能实现同一Program primal，因而Value虽来自真实X/Y，bank身份却退化为可互换的数值基底。R10/R11 near-zero wrong-bank与
+interaction由此首先归因operator/Gate组合不可识别，而不是Program schema、shared scorer、优化时长或Stage0。
+
+下一实验不得再训练一个只改Program/scorer的版本。必须先用task-local成功方向建立bank-interaction positive control：保持真实native
+X/Y、正负softmax signed pooling、rank4、唯一rank16和same-task held-video能力，同时让correct bank相对same-role wrong bank有明确
+必要增量。该正控决定如何修正current-bank query/measure；在证据前不恢复已淘汰的mean/variance、query-conditioned set scorer、
+full functional-polar deployment或task/video lookup。

@@ -2,6 +2,13 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- R5成功primal的10-task cross-bank正控已在clean detached `2090799`完成。正确bank functional recovery中位
+  `.930860`，same-role cyclic错误task bank反而为`.945799`；correct-minus-wrong中位`-.003819`，只有`2/10`
+  task正确bank更好且`0/10`达到`.10` margin，错误bank在`10/10` task保持正收益，收益保留中位`1.003960`。
+  因而R10/R11的near-zero wrong-bank不是shared Program偶然没学到，而是当前全局`C^+d` operator把高覆盖bank退化为
+  可互换的实现基底：它保留task-local capacity，却没有为wrong-bank Gate提供可识别交互。下一修正先建立既保持same-task
+  跨video能力、又让correct bank有必要增量的operator正控；在该正控通过前不再训练Program/scorer版本。
+
 - R11 matched raw-Stage0 sufficiency已经在clean detached `25f38ce`完成110/110步训练及step70/110完整12-task Gate。
   step70/110 train recovery为`.218691/.292321`，held-video为`.232166/.288053`，true task-held为
   `-.139011/-.092369`；step110 task2/74分别为`.116054/-.300793`。raw task-held不但没有相对R10提高`>=.15`

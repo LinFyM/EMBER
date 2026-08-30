@@ -30,10 +30,10 @@ functional训练中漂移的feature chart，移除outer-code loss，只让Natura
 R10 step110把train/held从R9负值提高到`.560/.544`，四family与Program因果margin通过，但task-held仅`.151`、target74为负，wrong-bank与
 interaction近零，因此仍正式non-pass。预注册的R11 matched raw-Stage0 probe现已完成：step110 train/held/task-held为
 `.292/.288/-.092`，相对R10 task-held下降`.244`；target gradient median仅`.110`，v-family仅`.102`，而q/action仍约
-`.47--.55`。因此Program schema/压缩不是首因，也不能把局部v失败扩写成整个frozen Stage0无信息。当前先用已通过的R5/task-local
-成功primal做cross-task wrong-bank functional upper-bound，判定current-bank operator是否在跨task时把不同bank变成近似通用基底；
-该只读结果决定下一结构修正bank interaction还是shared Program/scorer。R1--R11均不是deployment checkpoint，局部结果不代表整体
-goal完成。
+`.47--.55`。因此Program schema/压缩不是首因，也不能把局部v失败扩写成整个frozen Stage0无信息。R5/task-local成功primal的
+cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位收益，correct-minus-wrong中位`-.0038`，证明当前global
+`C^+d` operator缺少bank交互可识别性。下一步先建立保持same-task capacity且产生correct-over-wrong必要增量的operator-level正控，
+不再训练一个只改Program/scorer的新版本。R1--R11均不是deployment checkpoint，局部结果不代表整体goal完成。
 
 ## R5--R10当前里程碑
 
@@ -83,8 +83,13 @@ goal完成。
 - [x] 完成matched raw Stage0 sufficiency：相同12-task split、scorer容量、functional loss、预算和Gate，只交换部署可见上游表示；
   clean detached world6 step70/110与完整Gate均完成，step110 train/held/task-held为`.292321/.288053/-.092369`，相对R10
   task-held下降`.243844`，明确不支持Program schema/压缩首因；q/action仍可读而v仅`.101550`，不满足全Stage0停止条件；
-- [ ] 用R5/task-local成功primal执行只读cross-task wrong-bank functional upper-bound；只有正控证明正确bank本身有必要增量，才继续
-  把wrong-bank失败归因shared Program/scorer，否则先修正operator的bank交互可识别性。
+- [x] 用R5/task-local成功primal执行只读cross-task wrong-bank functional upper-bound：正确/错误bank recovery中位
+  `.930860/.945799`，correct-minus-wrong中位`-.003819`，正确bank仅`2/10`更好、`0/10`达到`.10`，错误bank`10/10`
+  仍有正收益。该正控明确否定当前global-`C^+d` operator的bank交互可识别性，不能继续把wrong-bank失败归因shared
+  Program/scorer。
+- [ ] 在不恢复退役candidate scorer或parameter teacher路线的前提下，先建立operator-level interaction正控：真实X/Y、signed
+  pooling、rank4、唯一rank16与same-task跨video能力必须保留，同时correct bank相对same-role wrong bank产生必要功能增量；只有该
+  正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。
 
 ## 当前G1里程碑
 

@@ -65,7 +65,7 @@
   "optimization": {
     "seed": 20260830,
     "loss": "task_local_fit_symmetric_transport_functional_only",
-    "functional_policy_microbatch_size": 2,
+    "functional_policy_microbatch_size": 4,
     "task_local_positive_control": {
       "initialization": "fit_symmetric_transport",
       "updates": 100,

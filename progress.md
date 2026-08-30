@@ -2,7 +2,7 @@
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
-- bank-interaction positive control的retained实现已接通，formal尚未启动。唯一canonical operator新增固定
+- bank-interaction positive control的retained实现已接通，并已完成下述formal launch预检。唯一canonical operator新增固定
   `inverse_covariance_power=.5`；每个gradient task只用两条fit video的teacher初始化形成共同half-whitened task-local code，随后只以
   panel A真实functional flow优化100步。same-task held video、same-role wrong bank和panel B全部零梯度；最终分别把同一code作用于held
   正确bank与错误bank，仍只物化carrier12 + residual4的一套完整38-target rank16。trained-code诊断不读取或使用Program，Action Meta
@@ -15,6 +15,36 @@
   held/wrong-bank/panel-B backward calls全为0，Action Meta module/parameter为0，唯一rank16 checkpoint完整。fit-symmetric初始化的两video
   transport alignment median为`.916812`，单步held factor diagnostic为`.683043`，三条video的panel B均高于carrier；实际train/eval/总
   计算为`9.59/10.48/23.24s`，峰值allocated/reserved为`22.38/23.66GB`。该smoke只证明实现、信息墙与吞吐，不构成Gate结果。
+
+### G3 bank-interaction positive-control formal launch contract
+
+- scientific authority为clean pushed `main@89b130af2fbc9c486d3e2e74349aa517be504cdc`及只增加本launch记录和吞吐配置的
+  clean pushed descendant；formal从该descendant的detached frozen worktree fresh执行，不resume、不覆盖已有输出。10个gradient
+  tasks分别只优化一个task-local code 100步，使用两条fit K1 video、panel A action/flow与fixed half operator；Natural Program、
+  shared scorer、source、Native Stage0、carrier12、scale及Action Meta全部冻结。same-task held video、same-role wrong bank与panel B
+  全程零梯度，最终只以同一sealed code在held correct / wrong bank上的真实functional recovery裁决`.75/.10/8-of-10` Gate；该Gate
+  即使通过也只证明operator/task-local capacity，不冒充shared Program mapping或G3通过，且不使用shuffled/reversed。
+- task32真实一步把functional microbatch从2提高到4后，train/eval/总计算由`9.59/10.48/23.24s`降至
+  `8.90/9.46/20.88s`，峰值reserved由`23.66GB`升至`31.01GB`，信息墙、初始化与唯一rank16 inventory不变。由于总计算提高约
+  `10.2%`且仍有安全A40余量，formal固定microbatch 4；不继续以更高batch换取很小的额外收益和更窄的共享卡余量。
+- 2026-08-30 13:41 CST紧邻launch检查：gpu01物理`0,1,2`均15MiB、UTL 0且无compute process；`3--6`为他人
+  `34.6GB/100%`任务。gpu02物理7完全空闲；物理4只有同一他人的两个`982MiB`进程、合计1.98GB且UTL 0，按本图实测
+  `31.01GB`峰值仍留约13GB，故安全共驻；其余设备忙或峰值余量不足。所有四张完全空闲卡均优先使用，再增加这一张低占用卡，
+  不抢占、暂停或干扰他人。gpu01当前物理0为已复核可用UUID，旧prohibited设备未枚举。
+- 五个独立single-GPU workers按旧同图cost配对：gpu01 `p0:[93,8]`、`p1:[94,52]`、`p2:[1,72]`，gpu02
+  `p7:[32,9]`、`p4:[73,75]`，每卡同时最多一个task；gpu01使用NUMA0，gpu02使用NUMA1，不跨节点NCCL。gpu01复用
+  23GB `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` cache且shm尚余39GB；gpu02使用新
+  `/dev/shm/ember_ecp_bank_interaction_89b130a_gpu02_20260830`，shm尚余250GB。`strg01` `/data1` quota为
+  `711995060/1073741824` blocks，formal checkpoint/result预计远低于1GB；输出根已确认不存在。
+- exact entry为每task设置对应`CUDA_VISIBLE_DEVICES`、GPU-local `numactl`和`PYTHONPATH=src`后运行
+  `scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_bank_interaction_positive_control_v1.json --base-config
+  /data1/user/ymdai/projects/EMBER/configs/pi05_ecp_shared_compiler_g3_v5.json --mode formal --phase positive-control --task <task>
+  --asset-root /data1/user/ymdai/projects/EMBER --source-run .../pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  .../checkpoints/step_00001000 --tokenizer-path .../models/tokenizers/openpi/paligemma_tokenizer.model --data-root
+  .../data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir
+  .../runs/outputs/pi05_ecp_g3_bank_interaction_positive_control_10task_89b130a_gpu01p012_gpu02p47_20260830/task_<id>
+  --condition-cache-root <node-cache> --log-every 10`。每个worker完成第一项后立即执行配对第二项；全部sealed code完成后才启动
+  `trained_code` held-correct / same-role-wrong分析与aggregate Gate。
 
 - 两条clean detached bridge diagnostics已限定当前正控。直接把R5旧坐标交给half operator会令correct recovery中位降至`.076821`；先用
   两条fit bank分别做inverse-square-root transport再平均，则zero-training的held correct/wrong recovery中位为

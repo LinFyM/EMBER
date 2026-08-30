@@ -63,6 +63,24 @@
   当步24/38 heads非零是固定低分位support的预期稀疏credit：其余heads仍有zero gradient tensor并保持R12初始化，不是target缺失。
   该smoke只证明诊断图、参数所有权和吞吐成立，不是support泛化或G3结果。
 
+### R13 decoupled compatibility diagnostic formal launch contract
+
+- implementation authority为clean pushed `main@82607b64e3c515611b7b0e82d63019ceb5b2d8e9`；formal从只增加本launch记录的clean pushed
+  detached descendant fresh启动，不resume、不覆盖任何现有输出。固定10 warmup + 100 effective updates，在actual step70/110各保留一个
+  checkpoint；只训练38个compatibility input heads，R12 Natural Program与functional primals、source/Stage0、scale、carrier12及Action
+  Meta全部冻结。该run是credit-ownership诊断；`.80/.20`是implementation可分性标准，任何结果都不把full/half二值route宣布为G3通过。
+- 2026-08-30 19:58 CST紧邻launch检查：gpu01物理0/1/2均约`15MiB`、UTL 0且无compute process，3--6由他人约`34.6GB`、
+  UTL 100任务占用；gpu02只有物理7完整空闲，4/5/6及0--3均有他人显存或任务，故选择gpu01 `0,1,2` world3，不跨节点拼卡。
+  当前物理0 UUID为已复核可用的`GPU-658b6043-6454-1228-bffc-0e2fe22e5013`，旧prohibited设备未枚举。
+- 复用gpu01 `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`的23GB frozen-condition cache；`strg01` `/data1` quota为
+  `712361984/1073741824` blocks。R12同规模正式训练根为272MB，R13预计峰值新增低于0.5GB。输出固定为
+  `runs/outputs/pi05_ecp_decoupled_compatibility_r13_s110_82607b6_gpu01p012_r3_20260830`且launch前不存在。
+- exact entry使用`CUDA_VISIBLE_DEVICES=0,1,2`、`NCCL_P2P_DISABLE=1`、GPU-local NUMA/deferred NCCL及world3
+  `torchrun scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_decoupled_compatibility_r13_v1.json --base-config
+  configs/pi05_ecp_shared_compiler_g3_v5.json --mode formal --phase joint ... --stop-after-step 110 --log-every 1`。完成step70/110后对同一
+  12-task panel运行support与必要functional对照；validation/test及shuffled/reversed均不读取。证据足够区分compatibility acquisition、
+  same-task video与task-held泛化后立即暂停，交由owner决定专家询问方式。
+
 - half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
   video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/
   source/Stage0为0，Action Meta为0，held/wrong/panel-B backward均为0，仍只生成一套完整rank16。五个独立workers随后评价同一sealed

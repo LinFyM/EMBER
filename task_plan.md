@@ -29,12 +29,12 @@ candidate交互是否忽略bank。通过后立即恢复Natural Program并联合�
 ## 当前co-conditioned interaction里程碑
 
 - [x] 完整记录第五次专家原文并把binary full/half从active plan退役；
-- [ ] 扩展canonical fixed-microblock signed-pooling以支持逐candidate、branch-specific bounded bias，保持chunk/K边界与IEEE数值合同；
-- [ ] 从现有`rank_event`和owner×group native heads产生event-specific native queries，并接通只输出candidate corrections的
+- [x] 扩展canonical fixed-microblock signed-pooling以支持逐candidate、branch-specific bounded bias，保持chunk/K边界与IEEE数值合同；
+- [x] 从现有`rank_event`和owner×group native heads产生event-specific native queries，并接通只输出candidate corrections的
   `ProgramBankInteractionScorer`；
-- [ ] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
-- [ ] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
-- [ ] 通过定向CPU合同及最小真实forward/gradient/materialization/throughput smoke；
+- [x] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
+- [x] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
+- [ ] 定向CPU合同已通过；从clean pushed detached authority补做最终真实zero-init/forward/gradient/materialization/throughput smoke；
 - [ ] 从clean pushed detached authority运行两个相邻checkpoint的formal qualification并按最早失效接口裁决；
 - [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
 

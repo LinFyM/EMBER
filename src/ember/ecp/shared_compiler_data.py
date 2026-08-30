@@ -8,6 +8,9 @@ from typing import Any
 
 import torch
 
+from ember.ecp.bank_conditioning.program_bank_interaction import (
+    ProgramBankContext,
+)
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.g1_video import prepare_native_video_readout
 from ember.ecp.g1_initialization import (
@@ -18,6 +21,7 @@ from ember.ecp.natural_program import (
     FrozenProgramEvidence,
     NaturalProgram,
     NaturalProgramModel,
+    NaturalProgramOutput,
 )
 from ember.ecp.natural_program_data import (
     NaturalProgramSample,
@@ -46,6 +50,49 @@ class SharedCompilerCondition:
     videos: tuple[SharedCompilerVideo, ...]
     metrics: dict[str, object]
     evidence: FrozenProgramEvidence | None = None
+
+
+def program_bank_contexts(
+    output: NaturalProgramOutput,
+    evidence: FrozenProgramEvidence,
+) -> tuple[ProgramBankContext, ...]:
+    """Recover per-bank local context without caching learned Program output."""
+
+    boundaries = tuple(map(int, evidence.video_offsets.detach().cpu().tolist()))
+    videos = len(boundaries) - 1
+    if (
+        videos <= 0
+        or output.local_scene.shape[0] != videos
+        or output.canonical_assignment.shape[0] != videos
+        or evidence.raw_frame_counts.shape != (videos,)
+    ):
+        raise ValueError("Program-bank context video topology changed")
+    rows = []
+    for video, (start, stop) in enumerate(
+        zip(boundaries[:-1], boundaries[1:], strict=True)
+    ):
+        count = stop - start
+        raw_count = int(evidence.raw_frame_counts[video])
+        if (
+            count <= 0
+            or int(output.frame_mask[video, :count].sum().detach().cpu()) != count
+        ):
+            raise ValueError("Program-bank context frame mask changed")
+        rows.append(
+            ProgramBankContext(
+                canonical_assignment=output.canonical_assignment[video, :count],
+                frame_positions=(
+                    evidence.frame_indices[start:stop].float()
+                    / max(raw_count - 1, 1)
+                ),
+                local_scene=output.local_scene[video],
+                local_process=output.local_process[video],
+                local_presence=output.local_presence[video],
+                local_tau=output.local_tau[video],
+                local_sigma=output.local_sigma[video],
+            )
+        )
+    return tuple(rows)
 
 
 def cache_shared_compiler_native_replay(

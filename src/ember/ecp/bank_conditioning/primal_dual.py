@@ -148,6 +148,7 @@ class StreamingNativeCovariance:
 class SpectralNativeCovariance:
     """Detached retained eigenspace that maps primal rows to native duals."""
 
+    mean: torch.Tensor
     basis: torch.Tensor
     eigenvalues: torch.Tensor
     native_width: int
@@ -155,19 +156,6 @@ class SpectralNativeCovariance:
     eigenvalue_floor: torch.Tensor
     retained_condition: torch.Tensor
     retained_trace_fraction: torch.Tensor
-
-    def retained_projection(self, primal: torch.Tensor) -> torch.Tensor:
-        """Measure how much of each primal row lies in this bank's support."""
-
-        if primal.ndim != 2 or primal.shape[-1] != self.native_width:
-            raise BankConditioningError("native primal width changed")
-        basis = self.basis.to(primal)
-        coordinates = primal.float() @ basis.float()
-        projected = coordinates @ basis.float().T
-        return (
-            projected.norm(dim=-1)
-            / primal.float().norm(dim=-1).clamp_min(1e-30)
-        ).to(primal)
 
     def dual_and_score_rms(
         self,
@@ -255,6 +243,7 @@ def batched_spectral_native_covariances(
         trace = retained.sum() / positive[index].sum().clamp_min(1e-30)
         results.append(
             SpectralNativeCovariance(
+                mean=rows[index].mean.detach(),
                 basis=eigenvectors[index][:, mask],
                 eigenvalues=retained,
                 native_width=shape[0],

@@ -183,9 +183,13 @@ Pass A只保留128维Program。Pass B不得物化完整`K*T*38*50*2048` tensor�
    `q=C^+d`；covariance/eigensystem全部detached，不进入checkpoint。
 2. **B1 co-conditioned exact global signed replay**：重读或复用同一video chunks，以同一个全局measure计算base score
    `l_n=q^T v_n`，把每个rank的base score RMS统一到`.02`；随后由未聚合的Program event query、当前video的local event context和
-   candidate content产生bounded、measure-centered、逐candidate的positive/negative branch correction，最后执行一套显式signed
-   softmax并只对真实X/Y values加权求和。input侧没有type轴；output侧四类bank共同构成候选集合。interaction最后层零初始化时必须
-   严格退化为既有full base replay。
+candidate content产生bounded、measure-centered、逐candidate的positive/negative branch correction，最后执行一套显式signed
+softmax并只对真实X/Y values加权求和。input侧没有type轴；output侧四类bank共同构成候选集合。interaction最后层零初始化时必须
+严格退化为既有full base replay。
+
+实现允许不显式物化`delta`的全局measure均值：对每个rank减去该均值只会给positive与negative branch分别增加一个候选无关常数，
+两个softmax各自严格不变。因此canonical streaming保留这一softmax gauge的未定center表示，功能上与显式measure-centered公式等价，
+并避免为不可观测常数增加第三次全视频读取；不得把frame chunk各自中心化，因为那会改变chunk间相对measure。
 
 solve与replay必须使用完全相同的全局measure。此前“全局solve后按event分别replay”实际施加`C_e C_global^+`，会重新旋转方向，已由
 task93/q20反例淘汰；event assignment与canonical alignment仍通过G2 Program的`rank_event/event_weights`决定primal内容，不再改变

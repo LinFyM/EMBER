@@ -10,6 +10,14 @@ from pathlib import Path
 from ember.ecp.joint_program_primal.evaluation import evaluate_worker
 from ember.ecp.joint_program_primal.evaluation_gate import aggregate_evaluation
 from ember.ecp.joint_program_primal.routing_control import ROUTING_CONTROL_SCHEMA
+from ember.ecp.joint_program_primal.routing_control import (
+    PROGRAM_BANK_INTERACTION_SCHEMA,
+)
+from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
+    PROGRAM_BANK_INTERACTION_GATE_SCHEMA,
+    aggregate_program_bank_interaction_evaluation,
+    evaluate_program_bank_interaction_worker,
+)
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     ROUTING_GATE_SCHEMA,
     aggregate_routing_evaluation,
@@ -49,6 +57,7 @@ def _worker_parser(subparsers: argparse._SubParsersAction) -> None:
         "--compiler-checkpoints", type=Path, nargs=2, required=True
     )
     parser.add_argument("--condition-cache-root", type=Path, required=True)
+    parser.add_argument("--program-bank-condition-cache-root", type=Path)
     parser.add_argument("--endpoint-cache-root", type=Path, required=True)
     parser.add_argument("--output-dirs", type=Path, nargs=2, required=True)
     parser.add_argument("--worker-index", type=int, required=True)
@@ -86,16 +95,21 @@ def _resolve(args: argparse.Namespace) -> argparse.Namespace:
 def main() -> int:
     args = _resolve(build_parser().parse_args())
     if args.command == "worker":
-        if read_json(args.config).get("schema_version") == ROUTING_CONTROL_SCHEMA:
+        schema = read_json(args.config).get("schema_version")
+        if schema == PROGRAM_BANK_INTERACTION_SCHEMA:
+            evaluate_program_bank_interaction_worker(args)
+        elif schema == ROUTING_CONTROL_SCHEMA:
             evaluate_routing_worker(args)
         else:
             evaluate_worker(args)
         return 0
-    aggregate = (
-        aggregate_routing_evaluation
-        if read_json(args.gate_config).get("schema_version") == ROUTING_GATE_SCHEMA
-        else aggregate_evaluation
-    )
+    gate_schema = read_json(args.gate_config).get("schema_version")
+    if gate_schema == PROGRAM_BANK_INTERACTION_GATE_SCHEMA:
+        aggregate = aggregate_program_bank_interaction_evaluation
+    elif gate_schema == ROUTING_GATE_SCHEMA:
+        aggregate = aggregate_routing_evaluation
+    else:
+        aggregate = aggregate_evaluation
     report = aggregate(
         output_dir=args.output_dir,
         gate_config=args.gate_config,

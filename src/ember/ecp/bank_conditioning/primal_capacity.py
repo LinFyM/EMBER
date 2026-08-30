@@ -304,21 +304,18 @@ def task_local_output(
     prepared: MaterializedPrimalDualVideo | CompactPrimalDualVideo,
     code: TaskLocalPrimalCode,
     s_ref: torch.Tensor,
-    inverse_covariance_power_override: float | None = None,
 ) -> SharedCompilerOutput:
     if isinstance(prepared, CompactPrimalDualVideo):
         result = operator.apply_compact(
             prepared,
             code.input_primals(),
             code.output_primals(),
-            inverse_covariance_power_override=inverse_covariance_power_override,
         )
     else:
         result = operator.apply_materialized(
             prepared,
             code.input_primals(),
             code.output_primals(),
-            inverse_covariance_power_override=inverse_covariance_power_override,
         )
     scales = code.scales(s_ref)
     inputs = tuple(rms_normalize(value) for value in result.input_values)
@@ -336,16 +333,6 @@ def task_local_output(
         output_group_gains=(result.group_gains,),
         solve_metrics=result.solve_metrics[None],
         conditioning_metrics=result.conditioning_metrics[None],
-        compatibility_supports=(
-            None
-            if result.compatibility_support is None
-            else result.compatibility_support[None]
-        ),
-        selected_inverse_covariance_powers=(
-            None
-            if result.selected_inverse_covariance_power is None
-            else scales.new_tensor((result.selected_inverse_covariance_power,))
-        ),
     )
 
 

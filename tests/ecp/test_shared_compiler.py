@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import torch
 
+from ember.ecp.bank_conditioning.program_bank_interaction import (
+    ProgramBankContext,
+    ProgramBankInteractionScorer,
+)
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     NativeTargetChunk,
@@ -155,6 +160,7 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         program,
         (compiler.bank_operator.compact(prepared),),
         s_ref=scale,
+        bank_contexts=(compiler._bank_context(one_chunk),),
     )
     for left, right in zip(
         (*replayed.input_values, *replayed.output_values),
@@ -294,12 +300,16 @@ def test_frozen_mapping_condition_cache_round_trips_exact_bank(tmp_path) -> None
         device=torch.device("cpu"),
         builder=build,
     )
-    second = cache.get_or_build(
-        authority_id=7,
-        video_demo=3,
-        device=torch.device("cpu"),
-        builder=build,
-    )
+    with patch(
+        "ember.ecp.bank_conditioning.frozen_condition_cache._candidate_mean",
+        side_effect=AssertionError("new cache mean should load without fallback"),
+    ):
+        second = cache.get_or_build(
+            authority_id=7,
+            video_demo=3,
+            device=torch.device("cpu"),
+            builder=build,
+        )
     assert calls == 1
     assert not first.hit and second.hit
     assert first.file_bytes == second.file_bytes > 0
@@ -329,10 +339,16 @@ def test_frozen_mapping_condition_cache_round_trips_exact_bank(tmp_path) -> None
     assert not (cache.root / "task_008_video_004.safetensors").exists()
     scale = torch.ones(len(owners))
     left = compiler.forward_compact(
-        first.condition.program, first.condition.videos, s_ref=scale
+        first.condition.program,
+        first.condition.videos,
+        s_ref=scale,
+        bank_contexts=(compiler._bank_context(condition.videos[0]),),
     )
     right = compiler.forward_compact(
-        second.condition.program, second.condition.videos, s_ref=scale
+        second.condition.program,
+        second.condition.videos,
+        s_ref=scale,
+        bank_contexts=(compiler._bank_context(condition.videos[0]),),
     )
     for first_value, second_value in zip(
         (*left.residual.a, *left.residual.b),
@@ -416,6 +432,20 @@ def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
     state = scorer.program_state(_program(len(owners), 8, 4))
     input_before = tuple(value.detach().clone() for value in scorer.input_primals(state))
     output_before = tuple(value.detach().clone() for value in scorer.output_primals(state))
+    input_events = scorer.input_event_queries(state)
+    output_events = scorer.output_event_queries(state)
+    assert [value.shape for value in input_events] == [
+        (4, 4, owner.in_features) for owner in owners
+    ]
+    assert [value.shape for value in output_events] == [
+        (
+            native_output_group_count(owner),
+            4,
+            4,
+            owner.out_features // native_output_group_count(owner),
+        )
+        for owner in owners
+    ]
 
     with torch.no_grad():
         scorer.input_primal_heads[0].weight.add_(0.5)
@@ -428,6 +458,143 @@ def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
         torch.testing.assert_close(left, right)
     assert not torch.equal(output_before[0], output_after[0])
     assert not torch.equal(output_before[1][0], output_after[1][0])
+
+
+def test_program_bank_interaction_is_zero_initialized_and_candidate_local() -> None:
+    torch.manual_seed(43)
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4
+    )
+    scorer = compiler.primal_scorer
+    state = scorer.program_state(_program(len(owners), 8, 4))
+    video = _video(owners, seed=47, chunks=(2, 3), width=8, events=4)
+    context = ProgramBankContext(
+        canonical_assignment=video.canonical_assignment,
+        frame_positions=video.frame_positions,
+        local_scene=video.local_scene,
+        local_process=video.local_process,
+        local_presence=video.local_presence,
+        local_tau=video.local_tau,
+        local_sigma=video.local_sigma,
+    )
+    interaction = ProgramBankInteractionScorer(
+        owners, program_width=8, event_slots=4
+    )
+    generator = torch.Generator().manual_seed(53)
+    input_values = torch.randn(5, 2, 50, 4, generator=generator)
+    input_mean = input_values.reshape(-1, 4).mean(0)
+    input_kwargs = {
+        "target": 0,
+        "program_event_state": state.rank_event[0],
+        "native_event_query": scorer.input_event_queries(state)[0],
+        "event_weights": state.event_weights[0],
+        "values": input_values,
+        "native_mean": input_mean,
+        "context": context,
+    }
+    zero = interaction.input_logit_corrections(**input_kwargs)
+    assert zero.shape == (4, 2, 5, 2, 50)
+    assert torch.equal(zero, torch.zeros_like(zero))
+
+    with torch.no_grad():
+        interaction.correction[TargetFamily.Q.value][-1].weight.normal_(std=0.1)
+    changed = interaction.input_logit_corrections(**input_kwargs)
+    assert bool(torch.count_nonzero(changed))
+    torch.testing.assert_close(changed[:, 0], -changed[:, 1])
+    candidate_changed = interaction.input_logit_corrections(
+        **{**input_kwargs, "values": input_values.roll(1, dims=0)}
+    )
+    assert not torch.equal(changed, candidate_changed)
+
+    output_values = torch.randn(5, 2, 50, 4, 2, generator=generator)
+    output_mean = output_values.reshape(-1, 2).mean(0)
+    output = interaction.output_logit_corrections(
+        target=0,
+        program_event_state=state.rank_event[0],
+        native_event_query=scorer.output_event_queries(state)[0][0],
+        event_weights=state.event_weights[0],
+        values=output_values,
+        native_mean=output_mean,
+        context=context,
+    )
+    assert output.shape == (4, 2, 5, 2, 50, 4)
+    (changed.square().mean() + output.square().mean()).backward()
+    gradients = tuple(
+        parameter.grad
+        for parameter in interaction.parameters()
+        if parameter.requires_grad
+    )
+    assert any(
+        gradient is not None and bool(torch.count_nonzero(gradient))
+        for gradient in gradients
+    )
+    assert all(
+        gradient is None or bool(torch.isfinite(gradient).all())
+        for gradient in gradients
+    )
+
+
+def test_interaction_replay_is_chunk_equivalent_and_has_an_off_arm() -> None:
+    torch.manual_seed(59)
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=8, event_slots=4
+    )
+    program = _program(len(owners), 8, 4)
+    one = _video(owners, seed=61, chunks=(5,), width=8, events=4)
+    scale = torch.ones(len(owners))
+    zero_on = compiler(program, (one,), s_ref=scale)
+    zero_off = compiler(program, (one,), s_ref=scale, interaction_off=True)
+    for left, right in zip(
+        (*zero_on.residual.a, *zero_on.residual.b),
+        (*zero_off.residual.a, *zero_off.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=0.0, atol=0.0)
+    with torch.no_grad():
+        for head in compiler.interaction_scorer.correction.values():
+            head[-1].weight.normal_(std=0.1)
+    chunked = _video(owners, seed=61, chunks=(2, 3), width=8, events=4)
+    expected = compiler(program, (one,), s_ref=scale)
+    observed = compiler(program, (chunked,), s_ref=scale)
+    off = compiler(program, (one,), s_ref=scale, interaction_off=True)
+    prepared = compiler.bank_operator.prepare(one)
+    compact = compiler.forward_compact(
+        program,
+        (compiler.bank_operator.compact(prepared),),
+        s_ref=scale,
+        bank_contexts=(compiler._bank_context(one),),
+    )
+    for left, right in zip(
+        (*expected.residual.a, *expected.residual.b),
+        (*observed.residual.a, *observed.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    for left, right in zip(
+        (*expected.residual.a, *expected.residual.b),
+        (*compact.residual.a, *compact.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    assert any(
+        not torch.equal(left, right)
+        for left, right in zip(
+            (*expected.residual.a, *expected.residual.b),
+            (*off.residual.a, *off.residual.b),
+            strict=True,
+        )
+    )
+    sum(value.square().mean() for value in expected.residual.a).backward()
+    final_gradients = tuple(
+        head[-1].weight.grad
+        for head in compiler.interaction_scorer.correction.values()
+    )
+    assert any(
+        gradient is not None and bool(torch.count_nonzero(gradient))
+        for gradient in final_gradients
+    )
 
 
 def test_frozen_scale_prior_is_task_agnostic_and_exact_before_f4() -> None:

@@ -322,6 +322,8 @@ class StreamingSignedPool:
             0, self.width, device=query.device, dtype=dtype
         )
         self._pending_mass = torch.empty(0, device=query.device, dtype=dtype)
+        self._pending_bias: torch.Tensor | None = None
+        self._uses_bias: bool | None = None
 
     def _accumulate(
         self,
@@ -368,16 +370,12 @@ class StreamingSignedPool:
             raise BankConditioningError("signed-pool measure is not positive")
         bias = None
         if logit_bias is not None:
-            if self.canonical_block_candidates is not None:
-                raise BankConditioningError(
-                    "canonical signed replay does not accept a logit bias"
-                )
             shared_shape = (*self.query_shape, *mass.shape)
             branch_shape = (*self.query_shape, 2, *mass.shape)
             if logit_bias.shape == shared_shape:
                 bias = logit_bias.to(self.query).reshape(
                     *self.query_shape, 1, flat_values.shape[0]
-                )
+                ).expand(*self.query_shape, 2, flat_values.shape[0])
             elif logit_bias.shape == branch_shape:
                 bias = logit_bias.to(self.query).reshape(
                     *self.query_shape, 2, flat_values.shape[0]
@@ -386,31 +384,48 @@ class StreamingSignedPool:
                 raise BankConditioningError("signed-pool logit bias axes changed")
             if not bool(torch.isfinite(bias).all()):
                 raise BankConditioningError("signed-pool logit bias is non-finite")
+        uses_bias = bias is not None
+        if self._uses_bias is None:
+            self._uses_bias = uses_bias
+        elif self._uses_bias != uses_bias:
+            raise BankConditioningError("signed-pool bias mode changed mid-stream")
         if self.canonical_block_candidates is None:
             self._accumulate(flat_values, flat_mass, bias)
             return
         flat_values = torch.cat((self._pending_values, flat_values))
         flat_mass = torch.cat((self._pending_mass, flat_mass))
+        if bias is not None:
+            if self._pending_bias is not None:
+                bias = torch.cat((self._pending_bias, bias), dim=-1)
+        elif self._pending_bias is not None:
+            raise BankConditioningError("signed-pool pending bias state changed")
         block = self.canonical_block_candidates
         complete = (flat_values.shape[0] // block) * block
         for start in range(0, complete, block):
             self._accumulate(
                 flat_values[start : start + block],
                 flat_mass[start : start + block],
-                None,
+                None if bias is None else bias[..., start : start + block],
             )
         if complete == flat_values.shape[0]:
             self._pending_values = self._pending_values.new_empty((0, self.width))
             self._pending_mass = self._pending_mass.new_empty((0,))
+            self._pending_bias = None
         else:
             self._pending_values = flat_values[complete:].clone()
             self._pending_mass = flat_mass[complete:].clone()
+            self._pending_bias = (
+                None if bias is None else bias[..., complete:].clone()
+            )
 
     def signed_mean(self) -> torch.Tensor:
         if self._pending_values.shape[0] > 0:
-            self._accumulate(self._pending_values, self._pending_mass, None)
+            self._accumulate(
+                self._pending_values, self._pending_mass, self._pending_bias
+            )
             self._pending_values = self._pending_values.new_empty((0, self.width))
             self._pending_mass = self._pending_mass.new_empty((0,))
+            self._pending_bias = None
         if self.candidate_count <= 0 or (
             not self.trusted_positive_measure and torch.any(self.normalizer <= 0)
         ):

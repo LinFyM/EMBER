@@ -45,11 +45,7 @@ def train(args: argparse.Namespace) -> None:
                     primary_metric = (
                         "mean_acquisition_loss"
                         if "mean_acquisition_loss" in row
-                        else (
-                            "mean_functional_loss"
-                            if "mean_functional_loss" in row
-                            else "mean_bank_compatibility_loss"
-                        )
+                        else "mean_functional_loss"
                     )
                     console = {
                         name: row[name]
@@ -74,14 +70,6 @@ def train(args: argparse.Namespace) -> None:
                         "mean_counterfactual_normalized_gap",
                         "mean_counterfactual_hinge_loss",
                         "active_counterfactual_fraction",
-                        "mean_bank_compatibility_loss",
-                        "mean_positive_route_support",
-                        "minimum_positive_route_support",
-                        "positive_full_route_fraction",
-                        "mean_negative_route_support",
-                        "maximum_negative_route_support",
-                        "negative_full_route_fraction",
-                        "mean_training_support_margin",
                     ):
                         if name in row:
                             console[name] = row[name]
@@ -151,6 +139,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--condition-cache-root", type=Path, required=True)
+    parser.add_argument("--program-bank-condition-cache-root", type=Path)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--log-every", type=int, default=1)
@@ -168,6 +157,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "data_root",
         "output_dir",
         "condition_cache_root",
+        "program_bank_condition_cache_root",
         "resume",
     ):
         value = getattr(args, name)

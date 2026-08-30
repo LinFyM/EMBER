@@ -85,6 +85,7 @@ def test_task_local_primal_code_has_shared_primals_and_fixed_fit_scale() -> None
 def _spectral_operator(width: int, exponent: float) -> SpectralNativeCovariance:
     eigenvalues = torch.linspace(0.05, 1.0, width).pow(exponent)
     return SpectralNativeCovariance(
+        mean=torch.zeros(width),
         basis=torch.eye(width),
         eigenvalues=eigenvalues,
         native_width=width,

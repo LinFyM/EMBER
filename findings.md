@@ -1633,3 +1633,15 @@ deployment forward，loss只含correct functional flow与bounded wrong-bank neut
 Natural Program接回并联合训练Program、interaction与native heads；若fixed-route本身失败，则根因先落在candidate interaction、
 streaming实现或native/local evidence，而不是Program schema。原始1132行回复逐字保存于
 `docs/expert_review_20260830_program_bank_interaction.md`。
+
+### 96. candidate-level interaction实现面已接通；binary route从active tree退役
+
+当前唯一compiler在R5 full-inverse base query与exact signed replay之间加入共享`ProgramBankInteractionScorer`：未聚合event query、当前
+video local context与真实X/Y candidate内容共同产生bounded `+delta/-delta` branch bias，input没有output type轴，output保留
+abs/adj/init/goal四类。最后层zero-init，最终仍只形成一组rank4 residual并与carrier12一次性物化为唯一完整rank16。全局measure-centering
+只选择softmax的常数gauge；不显式减均值与公式严格等价，且避免第三次全视频读取，frame chunk不得各自中心化。
+
+R12/R13的support probes、threshold、动态selected power与full/half hard/soft route已经从active source、launcher和Gate删除；历史config
+明确拒绝加载，证据继续由Git/config/formal artifacts保存。定向ECP CPU合同`111 passed`、全仓CPU合同`234 passed`；formal前仍须由clean pushed detached
+authority完成真实zero-init等价、gradient/materialization、cache hit/miss及吞吐smoke。上述只证明执行面有qualification资格，不是fixed-token
+机制Gate或G3通过。

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import torch
 
 from ember.ecp.bank_conditioning import (
@@ -27,11 +25,6 @@ from ember.ecp.bank_conditioning import (
     spectral_bank_query,
 )
 from ember.ecp.bank_conditioning.functional_polar import _economy_svd_right
-from ember.ecp.bank_conditioning.primal_dual import SpectralNativeCovariance
-from ember.ecp.bank_conditioning.primal_dual_runtime import (
-    PrimalDualVideoOperator,
-)
-from ember.ecp.contracts import TargetFamily, TargetOwner
 
 
 def test_functional_sketch_is_chunk_equivalent_nested_and_target_recovering() -> None:
@@ -403,6 +396,42 @@ def test_signed_pool_is_chunk_equivalent_and_group_gain_is_bounded() -> None:
     assert bool(torch.isfinite(branches.grad).all())
     assert bool(torch.count_nonzero(branches.grad))
 
+    branch_bias = (
+        torch.randn(
+            reference.shape[0],
+            2,
+            values.shape[0],
+            generator=torch.Generator().manual_seed(31),
+            dtype=torch.float64,
+        )
+        * 0.03
+    ).requires_grad_()
+    biased_expected = materialized_signed_pool(
+        reference, values, mass, logit_bias=branch_bias
+    )
+    biased_canonical = StreamingSignedPool(
+        reference,
+        dtype=torch.float64,
+        trusted_positive_measure=True,
+        canonical_block_candidates=17,
+    )
+    for start, stop in ((0, 7), (7, 54), (54, 73)):
+        biased_canonical.add(
+            values[start:stop],
+            mass[start:stop],
+            branch_bias[..., start:stop],
+        )
+    torch.testing.assert_close(
+        biased_canonical.signed_mean(),
+        biased_expected,
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    biased_expected.square().mean().backward()
+    assert branch_bias.grad is not None
+    assert bool(torch.isfinite(branch_bias.grad).all())
+    assert bool(torch.count_nonzero(branch_bias.grad))
+
 
 def test_global_primal_dual_replays_the_retained_native_direction() -> None:
     generator = torch.Generator().manual_seed(131)
@@ -427,11 +456,13 @@ def test_global_primal_dual_replays_the_retained_native_direction() -> None:
         streamed.add(values[start:stop], mass[start:stop])
     expected = materialized.finalize()
     observed = streamed.finalize()
+    assert torch.equal(observed.mean, expected.mean)
     assert torch.equal(observed.covariance, expected.covariance)
 
     operator = batched_spectral_native_covariances(
         (observed,), relative_eigenvalue_floor=1e-6
     )[0]
+    assert torch.equal(operator.mean, observed.mean)
     primal = torch.randn(
         4, 9, generator=generator, dtype=torch.float64, requires_grad=True
     )
@@ -478,100 +509,3 @@ def test_global_primal_dual_replays_the_retained_native_direction() -> None:
     assert primal.grad is not None
     assert bool(torch.isfinite(primal.grad).all())
     assert bool(torch.count_nonzero(primal.grad))
-
-
-def test_bank_compatibility_support_is_differentiable_and_routes_hard() -> None:
-    owners = tuple(
-        TargetOwner(index, f"v_{index}", TargetFamily.V, index, 4, 4)
-        for index in range(38)
-    )
-    runtime = PrimalDualVideoOperator(
-        owners,
-        program_width=8,
-        event_slots=4,
-        relative_eigenvalue_floor=1e-6,
-        replay_score_rms=0.02,
-        covariance_frame_chunk=2,
-        compatibility_support_threshold=0.906622976064682,
-    )
-
-    def spectral(basis: torch.Tensor) -> SpectralNativeCovariance:
-        rank = basis.shape[1]
-        return SpectralNativeCovariance(
-            basis=basis,
-            eigenvalues=torch.ones(rank),
-            native_width=4,
-            retained_rank=rank,
-            eigenvalue_floor=torch.tensor(1e-6),
-            retained_condition=torch.tensor(1.0),
-            retained_trace_fraction=torch.tensor(1.0),
-        )
-
-    full = spectral(torch.eye(4))
-    supported = spectral(torch.eye(4)[:, :3])
-    low = spectral(torch.eye(4)[:, :1])
-    high_primals = []
-    for index in range(38):
-        value = 0.05 * torch.randn(
-            4, 4, generator=torch.Generator().manual_seed(index + 7)
-        )
-        value[:, 0] += 1.0
-        high_primals.append(value.requires_grad_())
-    high_primals = tuple(high_primals)
-    low_primals = tuple(
-        torch.tensor([[0.1, 1.0, 0.0, 0.0]]).expand(4, -1).clone()
-        for _ in owners
-    )
-    output_primals = tuple(torch.ones(1, 4, 4) for _ in owners)
-
-    route, training = runtime.input_projection_supports(
-        high_primals, tuple(supported for _ in owners)
-    )
-    values = torch.cat(
-        tuple(supported.retained_projection(value) for value in high_primals)
-    )
-    assert torch.equal(route, values.kthvalue(16).values)
-    assert torch.equal(training, values.sort().values[11:20].mean())
-    training.backward()
-    assert all(value.grad is not None for value in high_primals)
-    assert any(bool(torch.count_nonzero(value.grad)) for value in high_primals)
-
-    def prepared(operator: SpectralNativeCovariance) -> SimpleNamespace:
-        return SimpleNamespace(
-            frame_measure=torch.ones(1),
-            input_operators=tuple(operator for _ in owners),
-            output_operators=tuple((full,) for _ in owners),
-        )
-
-    high_plan = runtime._plan(prepared(supported), high_primals, output_primals)
-    low_plan = runtime._plan(prepared(low), low_primals, output_primals)
-    decoupled_plan = runtime._plan(
-        prepared(supported),
-        low_primals,
-        output_primals,
-        compatibility_input_primals=high_primals,
-    )
-    forced = runtime._plan(
-        prepared(low),
-        low_primals,
-        output_primals,
-        inverse_covariance_power_override=1.0,
-    )
-    forced_supported = runtime._plan(
-        prepared(supported),
-        low_primals,
-        output_primals,
-        inverse_covariance_power_override=1.0,
-    )
-    assert high_plan.selected_inverse_covariance_power == 1.0
-    assert low_plan.selected_inverse_covariance_power == 0.5
-    assert decoupled_plan.selected_inverse_covariance_power == 1.0
-    for observed, expected in zip(
-        decoupled_plan.input_queries,
-        forced_supported.input_queries,
-        strict=True,
-    ):
-        torch.testing.assert_close(observed, expected)
-    assert low_plan.compatibility_support is not None
-    assert forced.selected_inverse_covariance_power == 1.0
-    assert forced.compatibility_support is None

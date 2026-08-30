@@ -19,13 +19,19 @@ from typing import Any, Callable, Mapping, Sequence
 import torch
 from safetensors.torch import load_file, save_file
 
-from ember.ecp.bank_conditioning.primal_dual import SpectralNativeCovariance
+from ember.ecp.bank_conditioning.primal_dual import (
+    SpectralNativeCovariance,
+    native_candidate_mass,
+)
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
     CompactPrimalDualVideo,
     PrimalDualVideoOperator,
 )
 from ember.ecp.contracts import TargetOwner
-from ember.ecp.native_factors import native_output_group_count
+from ember.ecp.native_factors import (
+    NativeOutputBankState,
+    native_output_group_count,
+)
 from ember.ecp.natural_program import FrozenProgramEvidence, NaturalProgram
 from ember.ecp.shared_compiler_data import (
     SharedCompilerCondition,
@@ -93,6 +99,7 @@ def _operator_tensors(
     prefix: str,
     operator: SpectralNativeCovariance,
 ) -> None:
+    tensors[f"{prefix}.mean"] = _cpu_tensor(operator.mean)
     tensors[f"{prefix}.basis"] = _cpu_tensor(operator.basis)
     tensors[f"{prefix}.eigenvalues"] = _cpu_tensor(operator.eigenvalues)
     tensors[f"{prefix}.eigenvalue_floor"] = _cpu_tensor(
@@ -155,6 +162,7 @@ def _load_operator(
     prefix: str,
     *,
     expected_width: int,
+    fallback_mean: Callable[[], torch.Tensor],
 ) -> SpectralNativeCovariance:
     basis = tensors[f"{prefix}.basis"]
     eigenvalues = tensors[f"{prefix}.eigenvalues"]
@@ -165,7 +173,11 @@ def _load_operator(
         or basis.shape[1] <= 0
     ):
         raise ValueError("frozen condition spectral operator changed")
+    mean = tensors.get(f"{prefix}.mean")
+    if mean is None:
+        mean = fallback_mean()
     return SpectralNativeCovariance(
+        mean=mean,
         basis=basis,
         eigenvalues=eigenvalues,
         native_width=expected_width,
@@ -174,6 +186,13 @@ def _load_operator(
         retained_condition=tensors[f"{prefix}.retained_condition"],
         retained_trace_fraction=tensors[f"{prefix}.retained_trace_fraction"],
     )
+
+
+def _candidate_mean(values: torch.Tensor, mass: torch.Tensor) -> torch.Tensor:
+    width = values.shape[-1]
+    flat_values = values.detach().float().reshape(-1, width)
+    flat_mass = mass.detach().float().reshape(-1)
+    return torch.einsum("n,nd->d", flat_mass, flat_values) / flat_mass.sum()
 
 
 def _decode_condition(
@@ -199,6 +218,7 @@ def _decode_condition(
     videos = []
     for video_index in range(video_count):
         prefix = f"video.{video_index}"
+        frame_measure = tensors[f"{prefix}.frame_measure"]
         input_values = tuple(
             tensors[f"{prefix}.input_values.{target}"]
             for target in range(len(owners))
@@ -211,11 +231,44 @@ def _decode_condition(
             tensors[f"{prefix}.final_outputs.{target}"]
             for target in range(len(owners))
         )
+        input_mass = native_candidate_mass(frame_measure, output=False)
+        output_mass = native_candidate_mass(frame_measure, output=True)
+        input_means: dict[int, torch.Tensor] = {}
+        output_means: dict[tuple[int, int], torch.Tensor] = {}
+
+        def input_mean(target: int) -> torch.Tensor:
+            if target not in input_means:
+                input_means[target] = _candidate_mean(
+                    input_values[target], input_mass
+                )
+            return input_means[target]
+
+        def output_mean(target: int, group: int) -> torch.Tensor:
+            key = (target, group)
+            if key not in output_means:
+                owner = owners[target]
+                groups = native_output_group_count(owner)
+                boundary = NativeOutputBankState(
+                    final=final_outputs[target].detach()
+                )
+                bank = boundary.build(output_values[target], start_frame=0)
+                grouped = bank.reshape(
+                    *bank.shape[:-1],
+                    groups,
+                    owner.out_features // groups,
+                ).movedim(-2, 0)
+                for index, value in enumerate(grouped):
+                    output_means[(target, index)] = _candidate_mean(
+                        value, output_mass
+                    )
+            return output_means[key]
+
         input_operators = tuple(
             _load_operator(
                 tensors,
                 f"{prefix}.input_operator.{target}",
                 expected_width=owner.in_features,
+                fallback_mean=lambda target=target: input_mean(target),
             )
             for target, owner in enumerate(owners)
         )
@@ -227,6 +280,9 @@ def _decode_condition(
                     expected_width=(
                         owner.out_features // native_output_group_count(owner)
                     ),
+                    fallback_mean=lambda target=target, group=group: output_mean(
+                        target, group
+                    ),
                 )
                 for group in range(native_output_group_count(owner))
             )
@@ -234,7 +290,7 @@ def _decode_condition(
         )
         videos.append(
             CompactPrimalDualVideo(
-                frame_measure=tensors[f"{prefix}.frame_measure"],
+                frame_measure=frame_measure,
                 input_operators=input_operators,
                 output_operators=output_operators,
                 input_values=input_values,

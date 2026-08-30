@@ -2,7 +2,11 @@
 """Run the retained positive control, J3, or routing boundary control."""
 
 from ember.ecp.joint_program_primal.routing_control import (
+    PROGRAM_BANK_INTERACTION_SCHEMA,
     ROUTING_CONTROL_SCHEMA,
+)
+from ember.ecp.joint_program_primal.program_bank_interaction_training import (
+    train_program_bank_interaction,
 )
 from ember.ecp.joint_program_primal.routing_control_training import (
     train_routing_control,
@@ -20,6 +24,11 @@ if __name__ == "__main__":
     arguments = finalize_args(build_parser().parse_args())
     if arguments.phase == "positive-control":
         run_positive_control(arguments)
+    elif (
+        read_json(arguments.config).get("schema_version")
+        == PROGRAM_BANK_INTERACTION_SCHEMA
+    ):
+        train_program_bank_interaction(arguments)
     elif read_json(arguments.config).get("schema_version") == ROUTING_CONTROL_SCHEMA:
         train_routing_control(arguments)
     else:

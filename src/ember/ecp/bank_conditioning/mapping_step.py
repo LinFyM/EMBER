@@ -154,7 +154,10 @@ def mapping_condition_output(
     selected_program = prepared.program if program is None else program
     if isinstance(prepared, FrozenSharedCompilerCondition):
         output = runtime.compiler.forward_compact(
-            selected_program, prepared.videos, s_ref=runtime.ranks.s_ref
+            selected_program,
+            prepared.videos,
+            s_ref=runtime.ranks.s_ref,
+            interaction_off=True,
         )
     else:
         output = runtime.compiler(

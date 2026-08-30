@@ -7,6 +7,11 @@ from typing import Sequence
 
 import torch
 
+from ember.ecp.bank_conditioning.program_bank_interaction import (
+    ProgramBankContext,
+    ProgramBankInteractionScorer,
+    ProgramBankInteractionState,
+)
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
     CompactPrimalDualVideo,
     MaterializedPrimalDualVideo,
@@ -51,8 +56,6 @@ class SharedCompilerOutput:
     output_group_gains: tuple[torch.Tensor, ...]
     solve_metrics: torch.Tensor
     conditioning_metrics: torch.Tensor
-    compatibility_supports: torch.Tensor | None = None
-    selected_inverse_covariance_powers: torch.Tensor | None = None
 
 
 class SharedNativeFactorCompiler(torch.nn.Module):
@@ -77,8 +80,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         replay_score_rms: float = 0.02,
         covariance_frame_chunk: int = 4,
         inverse_covariance_power: float = 1.0,
-        compatibility_support_threshold: float | None = None,
-        separate_compatibility_probes: bool = False,
+        interaction_semantic_width: int = 32,
+        interaction_hidden_width: int = 64,
+        interaction_correction_bound: float = 0.1,
         scale_prior_ratio: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
@@ -89,14 +93,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
         self.inverse_covariance_power = float(inverse_covariance_power)
-        self.compatibility_support_threshold = (
-            None
-            if compatibility_support_threshold is None
-            else float(compatibility_support_threshold)
-        )
-        self.separate_compatibility_probes = bool(
-            separate_compatibility_probes
-        )
         if scale_prior_ratio is None:
             scale_prior_ratio = torch.full(
                 (len(self.owners), 4), 0.1, dtype=torch.float32
@@ -110,10 +106,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             or self.replay_score_rms <= 0.0
             or self.covariance_frame_chunk <= 0
             or self.inverse_covariance_power not in (0.5, 0.75, 1.0)
-            or (
-                self.compatibility_support_threshold is not None
-                and not 0.0 < self.compatibility_support_threshold < 1.0
-            )
             or scale_prior_ratio.shape != (len(self.owners), 4)
             or not bool(torch.isfinite(scale_prior_ratio).all())
             or not bool(torch.all((scale_prior_ratio > 0) & (scale_prior_ratio < 1)))
@@ -126,7 +118,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             self.owners,
             program_width=self.program_width,
             event_slots=self.event_slots,
-            separate_compatibility_probes=self.separate_compatibility_probes,
+        )
+        self.interaction_scorer = ProgramBankInteractionScorer(
+            self.owners,
+            program_width=self.program_width,
+            event_slots=self.event_slots,
+            semantic_width=interaction_semantic_width,
+            hidden_width=interaction_hidden_width,
+            correction_bound=interaction_correction_bound,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,
@@ -136,9 +135,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             replay_score_rms=self.replay_score_rms,
             covariance_frame_chunk=self.covariance_frame_chunk,
             inverse_covariance_power=self.inverse_covariance_power,
-            compatibility_support_threshold=(
-                self.compatibility_support_threshold
-            ),
         )
         self.scale_head = torch.nn.Sequential(
             torch.nn.LayerNorm(self.program_width),
@@ -149,12 +145,43 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         torch.nn.init.zeros_(self.scale_head[-1].weight)
         torch.nn.init.zeros_(self.scale_head[-1].bias)
 
+    @staticmethod
+    def _bank_context(video: SharedCompilerVideo) -> ProgramBankContext:
+        return ProgramBankContext(
+            canonical_assignment=video.canonical_assignment,
+            frame_positions=video.frame_positions,
+            local_scene=video.local_scene,
+            local_process=video.local_process,
+            local_presence=video.local_presence,
+            local_tau=video.local_tau,
+            local_sigma=video.local_sigma,
+        )
+
+    def _interaction_states(
+        self,
+        state: PrimalProgramState,
+        contexts: Sequence[ProgramBankContext],
+    ) -> tuple[ProgramBankInteractionState, ...]:
+        input_queries = self.primal_scorer.input_event_queries(state)
+        output_queries = self.primal_scorer.output_event_queries(state)
+        return tuple(
+            ProgramBankInteractionState(
+                context=context,
+                rank_event=state.rank_event,
+                event_weights=state.event_weights,
+                input_event_queries=input_queries,
+                output_event_queries=output_queries,
+            )
+            for context in contexts
+        )
+
     def forward(
         self,
         program: NaturalProgram,
         videos: Sequence[SharedCompilerVideo],
         *,
         s_ref: torch.Tensor,
+        interaction_off: bool = False,
     ) -> SharedCompilerOutput:
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compiler video set or scale authority changed")
@@ -164,19 +191,21 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
-            compatibility_primals = (
-                self.primal_scorer.compatibility_input_primals(state)
-                if self.separate_compatibility_probes
-                else input_primals
+            interaction_states = self._interaction_states(
+                state, tuple(self._bank_context(video) for video in videos)
             )
             pooled = tuple(
                 self.bank_operator(
                     video,
                     input_primals,
                     output_primals,
-                    compatibility_input_primals=compatibility_primals,
+                    interaction_scorer=self.interaction_scorer,
+                    interaction_state=interaction_state,
+                    interaction_off=interaction_off,
                 )
-                for video in videos
+                for video, interaction_state in zip(
+                    videos, interaction_states, strict=True
+                )
             )
             return self._output(state, pooled, s_ref=s_ref)
 
@@ -195,17 +224,11 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
-            compatibility_primals = (
-                self.primal_scorer.compatibility_input_primals(state)
-                if self.separate_compatibility_probes
-                else input_primals
-            )
             pooled = tuple(
                 self.bank_operator.apply_materialized(
                     video,
                     input_primals,
                     output_primals,
-                    compatibility_input_primals=compatibility_primals,
                 )
                 for video in videos
             )
@@ -217,57 +240,42 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         videos: Sequence[CompactPrimalDualVideo],
         *,
         s_ref: torch.Tensor,
-        inverse_covariance_power_override: float | None = None,
+        bank_contexts: Sequence[ProgramBankContext] | None = None,
+        interaction_off: bool = False,
     ) -> SharedCompilerOutput:
         """P2 replay of cached raw X/Y without storing expanded output banks."""
 
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compact compiler video set changed")
+        if bank_contexts is None:
+            if not interaction_off:
+                raise NativeFactorError("compact compiler bank context changed")
+            bank_contexts = ()
+        elif len(bank_contexts) != len(videos):
+            raise NativeFactorError("compact compiler bank context changed")
         with self.bank_operator.ieee_matmul(s_ref.device):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
-            compatibility_primals = (
-                self.primal_scorer.compatibility_input_primals(state)
-                if self.separate_compatibility_probes
-                else input_primals
+            interaction_states: tuple[ProgramBankInteractionState | None, ...] = (
+                self._interaction_states(state, bank_contexts)
+                if bank_contexts
+                else (None,) * len(videos)
             )
             pooled = tuple(
                 self.bank_operator.apply_compact(
                     video,
                     input_primals,
                     output_primals,
-                    compatibility_input_primals=compatibility_primals,
-                    inverse_covariance_power_override=(
-                        inverse_covariance_power_override
-                    ),
+                    interaction_scorer=self.interaction_scorer,
+                    interaction_state=interaction_state,
+                    interaction_off=interaction_off,
                 )
-                for video in videos
+                for video, interaction_state in zip(
+                    videos, interaction_states, strict=True
+                )
             )
             return self._output(state, pooled, s_ref=s_ref)
-
-    def bank_compatibility_supports(
-        self,
-        program: NaturalProgram,
-        videos: Sequence[CompactPrimalDualVideo],
-    ) -> tuple[tuple[torch.Tensor, torch.Tensor], ...]:
-        """Score Program--bank compatibility without replaying native values."""
-
-        if len(videos) not in (1, 2, 4):
-            raise NativeFactorError("compiler compatibility video set changed")
-        with self.bank_operator.ieee_matmul(program.p_lang.device):
-            state = self.primal_scorer.program_state(program)
-            input_primals = (
-                self.primal_scorer.compatibility_input_primals(state)
-                if self.separate_compatibility_probes
-                else self.primal_scorer.input_primals(state)
-            )
-            return tuple(
-                self.bank_operator.input_projection_supports(
-                    input_primals, video.input_operators
-                )
-                for video in videos
-            )
 
     def _output(
         self,
@@ -311,29 +319,5 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             solve_metrics=torch.stack(tuple(row.solve_metrics for row in pooled)),
             conditioning_metrics=torch.stack(
                 tuple(row.conditioning_metrics for row in pooled)
-            ),
-            compatibility_supports=(
-                torch.stack(
-                    tuple(
-                        row.compatibility_support
-                        for row in pooled
-                        if row.compatibility_support is not None
-                    )
-                )
-                if all(row.compatibility_support is not None for row in pooled)
-                else None
-            ),
-            selected_inverse_covariance_powers=(
-                state.rank.new_tensor(
-                    tuple(
-                        float(row.selected_inverse_covariance_power)
-                        for row in pooled
-                    )
-                )
-                if all(
-                    row.selected_inverse_covariance_power is not None
-                    for row in pooled
-                )
-                else None
             ),
         )

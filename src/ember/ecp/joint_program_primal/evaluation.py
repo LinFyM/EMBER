@@ -29,8 +29,6 @@ from ember.ecp.joint_program_primal.gate import (
     _functional_value,
 )
 from ember.ecp.joint_program_primal.runtime import (
-    BANK_COMPATIBILITY_SCHEMA,
-    DECOUPLED_COMPATIBILITY_SCHEMA,
     JointProgramPrimalRuntime,
     joint_run_schema,
     joint_stage,
@@ -75,10 +73,6 @@ FUNCTIONAL_REFINEMENT_GATE_SCHEMA = (
     "ember_ecp_r9_initialized_functional_refinement_gate_v1"
 )
 RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA = "ember_ecp_raw_stage0_sufficiency_gate_v1"
-BANK_COMPATIBILITY_GATE_SCHEMA = "ember_ecp_bank_compatibility_gate_v1"
-DECOUPLED_COMPATIBILITY_GATE_SCHEMA = (
-    "ember_ecp_decoupled_compatibility_gate_v1"
-)
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -116,14 +110,6 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
                 RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA,
                 "active_raw_stage0_sufficiency_diagnostic_qualification",
             ),
-            (
-                BANK_COMPATIBILITY_GATE_SCHEMA,
-                "active_shared_program_bank_compatibility_qualification",
-            ),
-            (
-                DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
-                "active_decoupled_bank_compatibility_diagnostic",
-            ),
         }
         or config.get("checkpoint_optimizer_steps") != [70, 110]
         or evaluation.get("functional_panel") != "panel_b"
@@ -137,30 +123,8 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
         or wall.get("shuffled_or_reversed_use") is not False
         or wall.get("action_meta_installed") is not False
         or wall.get("single_complete_rank16") is not True
-        or (
-            schema == DECOUPLED_COMPATIBILITY_GATE_SCHEMA
-            and (
-                config.get("scientific_role")
-                != "bounded_credit_ownership_diagnostic_not_a_final_binary_route"
-                or wall.get("binary_route_final_architecture_claim") is not False
-            )
-        )
     ):
         raise ValueError("unsupported J3 functional Gate config")
-    if schema in {
-        BANK_COMPATIBILITY_GATE_SCHEMA,
-        DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
-    }:
-        thresholds = config.get("gate", {})
-        if (
-            thresholds.get("compatibility_support_threshold")
-            != 0.906622976064682
-            or thresholds.get("matched_full_route_fraction_minimum") != 0.80
-            or thresholds.get("mismatched_full_route_fraction_maximum") != 0.20
-            or thresholds.get("matched_mismatched_support_margin_minimum")
-            != 0.001
-        ):
-            raise ValueError("unsupported compatibility Gate thresholds")
     return config
 
 
@@ -345,7 +309,10 @@ def _complete_state(
 ) -> tuple[dict[str, torch.Tensor], SharedCompilerOutput]:
     teacher_reads = runtime.native_teachers.tensor_reads
     output = runtime.compiler.forward_compact(
-        program, bank.videos, s_ref=runtime.ranks.s_ref
+        program,
+        bank.videos,
+        s_ref=runtime.ranks.s_ref,
+        interaction_off=True,
     )
     if (
         runtime.native_teachers.tensor_reads != teacher_reads
@@ -362,19 +329,6 @@ def _complete_state(
         rank16_contract=runtime.ranks.contract,
     )
     return complete, output
-
-
-def _compatibility_route(output: SharedCompilerOutput) -> dict[str, float] | None:
-    support = output.compatibility_supports
-    powers = output.selected_inverse_covariance_powers
-    if support is None:
-        return None
-    if support.shape != (1,) or powers is None or powers.shape != (1,):
-        raise RuntimeError("R12 evaluation compatibility route changed")
-    return {
-        "support": float(support[0]),
-        "selected_inverse_covariance_power": float(powers[0]),
-    }
 
 
 def _endpoint_cache(
@@ -553,7 +507,6 @@ def _task_local_state(
         prepared=bank.videos[0],
         code=code,
         s_ref=runtime.ranks.s_ref,
-        inverse_covariance_power_override=1.0,
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=True
@@ -804,45 +757,6 @@ def _evaluate_task(
             runtime.context.device
         ),
     }
-    if runtime.config.get("schema_version") in {
-        BANK_COMPATIBILITY_SCHEMA,
-        DECOUPLED_COMPATIBILITY_SCHEMA,
-    }:
-        route = {
-            "threshold": float(
-                runtime.config["model"]["compatibility_support_threshold"]
-            ),
-            "correct": {
-                str(condition.video_demo): _compatibility_route(
-                    outputs[condition.video_demo]
-                )
-                for condition in correct_conditions
-            },
-            "language_only": _compatibility_route(language_output),
-            "endpoints": _compatibility_route(endpoints_output),
-            "wrong_program_correct_bank": _compatibility_route(
-                wrong_correct_bank_output
-            ),
-            "correct_program_wrong_bank": _compatibility_route(
-                correct_wrong_bank_output
-            ),
-            "wrong_program_wrong_bank": _compatibility_route(
-                wrong_wrong_output
-            ),
-        }
-        if any(
-            value is None
-            for value in (
-                *route["correct"].values(),
-                route["language_only"],
-                route["endpoints"],
-                route["wrong_program_correct_bank"],
-                route["correct_program_wrong_bank"],
-                route["wrong_program_wrong_bank"],
-            )
-        ):
-            raise RuntimeError("R12 evaluation lost its compatibility route")
-        result["compatibility_route"] = route
     return result
 
 

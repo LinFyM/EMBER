@@ -15,9 +15,11 @@ from typing import Any, Mapping
 import torch
 import torch.distributed as dist
 
-from ember.ecp.checkpoint import load_ecp_checkpoint
+from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint
 from ember.ecp.joint_program_primal.runtime import (
     REPO_ROOT,
+    R5_SHARED_FUNCTIONAL_CHART,
+    SCORER_INTERACTION_ONLY,
     JointProgramPrimalRuntime,
     _authority_assets,
     _data_assets,
@@ -42,6 +44,15 @@ from ember.pi05_source_setup import initialize_deferred_process_group
 ROUTING_CONTROL_SCHEMA = "ember_ecp_routing_token_control_r1_v1"
 ROUTING_CONTROL_RUN_SCHEMA = "ember_ecp_routing_token_control_run_v2"
 ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_grouped_decoder_control"
+PROGRAM_BANK_INTERACTION_SCHEMA = (
+    "ember_ecp_program_bank_candidate_interaction_v1"
+)
+PROGRAM_BANK_INTERACTION_RUN_SCHEMA = (
+    "ember_ecp_program_bank_candidate_interaction_run_v1"
+)
+PROGRAM_BANK_INTERACTION_STAGE = (
+    "g3_program_bank_candidate_interaction_qualification"
+)
 ROUTING_TASK_IDS = (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
 ROUTING_WIDTH = 128
 OUTPUT_PRIMAL_DECODER = "owner_group_specific_linear_heads"
@@ -55,6 +66,34 @@ class RoutingControlWriterState(torch.nn.Module):
     def __init__(self, scorer: torch.nn.Module) -> None:
         super().__init__()
         self.primal_scorer = scorer
+
+
+class InteractionControlWriterState(torch.nn.Module):
+    """Checkpoint only the learned interaction layered over frozen R5."""
+
+    def __init__(self, interaction_scorer: torch.nn.Module) -> None:
+        super().__init__()
+        self.interaction_scorer = interaction_scorer
+
+
+def is_program_bank_interaction_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == PROGRAM_BANK_INTERACTION_SCHEMA
+
+
+def routing_run_schema(config: Mapping[str, Any]) -> str:
+    return (
+        PROGRAM_BANK_INTERACTION_RUN_SCHEMA
+        if is_program_bank_interaction_config(config)
+        else ROUTING_CONTROL_RUN_SCHEMA
+    )
+
+
+def routing_stage(config: Mapping[str, Any]) -> str:
+    return (
+        PROGRAM_BANK_INTERACTION_STAGE
+        if is_program_bank_interaction_config(config)
+        else ROUTING_CONTROL_STAGE
+    )
 
 
 def _hadamard(order: int) -> torch.Tensor:
@@ -143,10 +182,8 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             ),
         )
     )
-    valid = all(
+    common_valid = all(
         (
-            config.get("schema_version") == ROUTING_CONTROL_SCHEMA,
-            config.get("status") == "training_only_routing_boundary_control",
             tasks == ROUTING_TASK_IDS,
             len(all_tasks) == len(set(all_tasks)) == 12,
             split.get("true_task_held_meta") == [2],
@@ -162,6 +199,14 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             joint.get("checkpoint_effective_steps") == [60, 100],
             joint.get("global_tasks_per_optimizer_step") == 6,
             joint.get("video_views_per_task") == 2,
+            wall.get("action_meta_installed") is False,
+            wall.get("shuffled_or_reversed_use") is False,
+        )
+    )
+    routing_valid = all(
+        (
+            config.get("schema_version") == ROUTING_CONTROL_SCHEMA,
+            config.get("status") == "training_only_routing_boundary_control",
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("output_primal_decoder") == OUTPUT_PRIMAL_DECODER,
@@ -181,8 +226,6 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             ),
             model.get("deployment_candidate") is False,
             wall.get("fixed_routing_token_training_only") is True,
-            wall.get("action_meta_installed") is False,
-            wall.get("shuffled_or_reversed_use") is False,
             (
                 initialization == "fresh"
                 or all(
@@ -216,7 +259,51 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             ),
         )
     )
-    if not valid:
+    interaction = joint.get("wrong_bank_neutralization", {})
+    authorities = config.get("authorities", {})
+    interaction_valid = all(
+        (
+            is_program_bank_interaction_config(config),
+            config.get("status")
+            == "active_co_conditioned_bank_interaction_qualification",
+            model.get("program_source")
+            == "fixed_nontrainable_128d_orthogonal_task_token",
+            model.get("primal_scorer_initialization")
+            == R5_SHARED_FUNCTIONAL_CHART,
+            scorer_partition == SCORER_INTERACTION_ONLY,
+            model.get("inverse_covariance_power") == 1.0,
+            "compatibility_support_threshold" not in model,
+            "separate_compatibility_probes" not in model,
+            model.get("interaction_semantic_width") == 32,
+            model.get("interaction_hidden_width") == 64,
+            model.get("interaction_correction_bound") == 0.1,
+            model.get("trainable") == ["ProgramBankInteractionScorer"],
+            model.get("deployment_candidate") is False,
+            config.get("optimization", {}).get("loss")
+            == "correct_flow_plus_bounded_wrong_bank_benefit",
+            interaction.get("pairing")
+            == "same_role_all_other_gradient_tasks_deterministic_cycle",
+            interaction.get("video_view_schedule")
+            == "alternate_two_fit_views_per_wrong_task",
+            interaction.get("conditioning_language")
+            == "correct_task_exact_language",
+            interaction.get("denominator")
+            == "formal_free_primal_panel_a_mean_benefit",
+            interaction.get("epsilon") == 1e-6,
+            interaction.get("weight") == 1.0,
+            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
+            isinstance(authorities.get("r5_gate_aggregate"), str),
+            isinstance(authorities.get("positive_control_root"), str),
+            wall.get("fixed_routing_token_training_only") is True,
+            wall.get("wrong_bank_exact_language_fixed") is True,
+            wall.get("interaction_off_training_uses") == 0,
+            wall.get("single_complete_rank16") is True,
+            config.get("throughput_gate", {}).get("cross_language_bank_cache")
+            == "explicit_separate_operational_root",
+            critic is None,
+        )
+    )
+    if not common_valid or not (routing_valid or interaction_valid):
         raise ValueError("unsupported G3 routing-token boundary-control config")
     return config
 
@@ -226,7 +313,7 @@ def _scorer_parameter_ownership(
     compiler: torch.nn.Module,
     *,
     partition: str,
-) -> tuple[RoutingControlWriterState, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
+) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
     scorer = compiler.primal_scorer
@@ -235,9 +322,15 @@ def _scorer_parameter_ownership(
     elif partition == SCORER_NATIVE_HEADS_ONLY:
         scorer.input_primal_heads.requires_grad_(True).train()
         scorer.output_primal_heads.requires_grad_(True).train()
+    elif partition == SCORER_INTERACTION_ONLY:
+        compiler.interaction_scorer.requires_grad_(True).train()
     else:
         raise ValueError("unsupported routing-control scorer partition")
-    writer = RoutingControlWriterState(compiler.primal_scorer)
+    writer = (
+        InteractionControlWriterState(compiler.interaction_scorer)
+        if partition == SCORER_INTERACTION_ONLY
+        else RoutingControlWriterState(compiler.primal_scorer)
+    )
     trainable = tuple(
         parameter for parameter in writer.parameters() if parameter.requires_grad
     )
@@ -256,7 +349,7 @@ def _optimizer_cursor(
     args: argparse.Namespace,
     config: Mapping[str, Any],
     context: Any,
-    writer_state: RoutingControlWriterState,
+    writer_state: torch.nn.Module,
     trainable: tuple[torch.nn.Parameter, ...],
 ) -> tuple[torch.optim.Optimizer, Any, tuple[int, ...], int, int, int]:
     optimizer = _optimizer(trainable, config)
@@ -278,23 +371,6 @@ def _optimizer_cursor(
         raise ValueError("routing-control stop step is not pre-registered")
     optimizer_steps = 0
     metrics_rows = 0
-    if args.resume is not None:
-        optimizer_steps, expected_rows = load_ecp_checkpoint(
-            checkpoint=args.resume,
-            stage=ROUTING_CONTROL_STAGE,
-            context=context,
-            model=writer_state,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            run_contract_schema=ROUTING_CONTROL_RUN_SCHEMA,
-        )
-        if context.is_main:
-            metrics_rows = reconcile_metrics(
-                args.output_dir / "metrics.jsonl",
-                optimizer_steps,
-                expected_rows,
-                cursor_key="optimizer_step",
-            )
     return optimizer, scheduler, checkpoints, stop, optimizer_steps, metrics_rows
 
 
@@ -305,8 +381,8 @@ def _run_contract(
 ) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
     return {
-        "schema_version": ROUTING_CONTROL_RUN_SCHEMA,
-        "stage": ROUTING_CONTROL_STAGE,
+        "schema_version": routing_run_schema(runtime.config),
+        "stage": routing_stage(runtime.config),
         "phase": runtime.args.phase,
         "mode": runtime.args.mode,
         "git": {
@@ -331,6 +407,11 @@ def _run_contract(
         "data_root": str(runtime.args.data_root),
         "condition_cache": {
             "root": str(runtime.args.condition_cache_root),
+            "program_bank_root": (
+                str(runtime.args.program_bank_condition_cache_root)
+                if is_program_bank_interaction_config(runtime.config)
+                else None
+            ),
             "program_output_cached": False,
             "checkpoint_payload": False,
         },
@@ -352,7 +433,13 @@ def _run_contract(
                 str(task): index + 1
                 for index, task in enumerate(ROUTING_TASK_IDS)
             },
-            "removal_trigger": "retire executable control after Gate interpretation and before the next canonical deployment architecture",
+            "removal_trigger": (
+                "retire executable control after Gate interpretation and before "
+                "the next canonical deployment architecture"
+            ),
+            "candidate_interaction_qualification": is_program_bank_interaction_config(
+                runtime.config
+            ),
         },
         "primal_scorer_initialization": dict(initialization),
         "model": dict(runtime.config["model"]),
@@ -370,6 +457,16 @@ def prepare_routing_control_runtime(
     args: argparse.Namespace, context: Any
 ) -> JointProgramPrimalRuntime:
     config = load_routing_control_config(args.config)
+    program_bank_root = getattr(args, "program_bank_condition_cache_root", None)
+    if is_program_bank_interaction_config(config):
+        if (
+            program_bank_root is None
+            or not program_bank_root.is_absolute()
+            or program_bank_root == args.condition_cache_root
+        ):
+            raise ValueError("interaction cross-language cache root changed")
+    elif program_bank_root is not None:
+        raise ValueError("cross-language cache is only valid for interaction")
     base_path = (args.asset_root / config["authorities"]["base_g3_config"]).resolve()
     if args.base_config != base_path:
         raise ValueError("routing-control base G3 config authority changed")
@@ -390,7 +487,9 @@ def prepare_routing_control_runtime(
         getattr(args, "skip_routing_initialization", False)
     )
     initialization: dict[str, Any]
-    if args.resume is not None:
+    if is_program_bank_interaction_config(config):
+        initialization = dict(model.primal_scorer_initialization)
+    elif args.resume is not None:
         initialization = {
             "kind": initialization_kind,
             "state": "restored_from_checkpoint",
@@ -477,8 +576,83 @@ def prepare_routing_control_runtime(
     runtime.run_contract = _run_contract(
         runtime, initialization=initialization
     )
-    if context.is_main:
+    contract_path = args.output_dir / "run_contract.json"
+    interaction = is_program_bank_interaction_config(config)
+    if interaction and args.mode == "formal":
+        topology = runtime.run_contract["world_topology"]
+        if (
+            not 1 <= len(topology) <= 6
+            or len({str(row.get("hostname", "")) for row in topology}) != 1
+            or sorted(int(row.get("rank", -1)) for row in topology)
+            != list(range(len(topology)))
+            or sorted(int(row.get("local_rank", -1)) for row in topology)
+            != list(range(len(topology)))
+            or len({str(row.get("device", "")) for row in topology})
+            != len(topology)
+        ):
+            raise ValueError("interaction formal topology changed")
+    contract_error = None
+    if interaction and context.is_main:
+        try:
+            if args.resume is not None:
+                if (
+                    args.mode != "formal"
+                    or args.resume.resolve().parent.parent
+                    != args.output_dir.resolve()
+                    or checkpoint_macro(args.resume) != 70
+                    or stop != 110
+                    or not contract_path.is_file()
+                    or read_json(contract_path) != runtime.run_contract
+                ):
+                    raise ValueError("interaction resume authority changed")
+            else:
+                if args.output_dir.exists() and any(args.output_dir.iterdir()):
+                    raise ValueError("fresh interaction output root is not empty")
+                args.output_dir.mkdir(parents=True, exist_ok=True)
+                write_json_atomic(contract_path, runtime.run_contract)
+        except Exception as error:  # propagate rank-zero filesystem failures
+            contract_error = f"{type(error).__name__}: {error}"
+    if interaction:
+        if context.world_size > 1:
+            payload = [contract_error]
+            dist.broadcast_object_list(payload, src=0)
+            contract_error = payload[0]
+        if contract_error is not None:
+            raise ValueError(contract_error)
+    elif context.is_main and args.resume is None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        write_json_atomic(args.output_dir / "run_contract.json", runtime.run_contract)
+        write_json_atomic(contract_path, runtime.run_contract)
+    if context.world_size > 1:
+        dist.barrier()
+    if args.resume is not None:
+        optimizer_steps, expected_rows = load_ecp_checkpoint(
+            checkpoint=args.resume,
+            stage=routing_stage(config),
+            context=context,
+            model=writer_state,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            run_contract_schema=routing_run_schema(config),
+        )
+        metrics_rows = 0
+        reconcile_error = None
+        if context.is_main:
+            try:
+                metrics_rows = reconcile_metrics(
+                    args.output_dir / "metrics.jsonl",
+                    optimizer_steps,
+                    expected_rows,
+                    cursor_key="optimizer_step",
+                )
+            except Exception as error:  # keep all ranks on the same resume path
+                reconcile_error = f"{type(error).__name__}: {error}"
+        if context.world_size > 1:
+            payload = [metrics_rows, reconcile_error]
+            dist.broadcast_object_list(payload, src=0)
+            metrics_rows, reconcile_error = payload
+        if reconcile_error is not None:
+            raise ValueError(reconcile_error)
+        runtime.optimizer_steps = optimizer_steps
+        runtime.metrics_rows = int(metrics_rows)
     torch.cuda.reset_peak_memory_stats(context.device)
     return runtime

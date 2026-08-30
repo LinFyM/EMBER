@@ -17,29 +17,33 @@ from ember.ecp.joint_program_primal.evaluation import (
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.routing_control import (
     ROUTING_TASK_IDS,
+    SCORER_INTERACTION_ONLY,
     SCORER_NATIVE_HEADS_ONLY,
     _scorer_parameter_ownership,
     fixed_routing_program,
     fixed_routing_token,
     load_routing_control_config,
 )
+from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
+    _checks as interaction_gate_checks,
+    load_program_bank_interaction_gate,
+)
+from ember.ecp.joint_program_primal.program_bank_interaction_training import (
+    _wrong_bank_pair,
+)
 from ember.ecp.joint_program_primal.routing_initialization import (
     FUNCTIONAL_CODE_INITIALIZATION,
-    R10_FUNCTIONAL_CONTENT,
     R9_STABLE_CONTENT,
     minimum_norm_head_solution,
 )
 from ember.ecp.joint_program_primal.runtime import (
-    BANK_COMPATIBILITY_SCHEMA,
     CHART_RECONNECT_SCHEMA,
     FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
     FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
     FUNCTIONAL_REFINEMENT_SCHEMA,
     RAW_STAGE0_SUFFICIENCY_SCHEMA,
-    DECOUPLED_COMPATIBILITY_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
-    SCORER_COMPATIBILITY_PROBES_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
@@ -594,92 +598,6 @@ def test_r11_swaps_only_to_raw_frozen_stage0_functional_input() -> None:
     assert gate["checkpoint_optimizer_steps"] == [70, 110]
 
 
-def test_r12_learns_cross_video_bank_compatibility_from_r10() -> None:
-    root = Path(__file__).resolve().parents[2]
-    config = load_joint_program_primal_config(
-        root / "configs/pi05_ecp_bank_compatibility_r12_v1.json"
-    )
-    assert config["schema_version"] == BANK_COMPATIBILITY_SCHEMA
-    assert config["model"]["program_initialization"] == R10_FUNCTIONAL_CONTENT
-    assert config["model"]["primal_scorer_initialization"] == (
-        R10_FUNCTIONAL_CONTENT
-    )
-    assert config["model"]["primal_scorer_trainable_partition"] == (
-        JOINT_NATIVE_HEADS_ONLY
-    )
-    compatibility = config["optimization"]["joint"]["bank_compatibility"]
-    assert compatibility["positive_pairing"] == (
-        "each_fit_program_to_other_same_task_fit_bank"
-    )
-    assert compatibility["correct_functional_operator"] == (
-        "full_inverse_teacher_forced"
-    )
-    assert compatibility["deployment_operator"] == (
-        "hard_full_if_supported_else_half"
-    )
-    assert config["information_wall"]["action_meta_installed"] is False
-    gate = load_joint_program_primal_gate(
-        root / "configs/pi05_ecp_bank_compatibility_r12_gate_v1.json"
-    )
-    assert gate["gate"]["matched_full_route_fraction_minimum"] == 0.80
-    assert gate["gate"]["mismatched_full_route_fraction_maximum"] == 0.20
-
-
-def test_r13_decouples_routing_probes_from_frozen_functional_primals() -> None:
-    root = Path(__file__).resolve().parents[2]
-    config = load_joint_program_primal_config(
-        root / "configs/pi05_ecp_decoupled_compatibility_r13_v1.json"
-    )
-    assert config["schema_version"] == DECOUPLED_COMPATIBILITY_SCHEMA
-    assert config["model"]["primal_scorer_trainable_partition"] == (
-        SCORER_COMPATIBILITY_PROBES_ONLY
-    )
-    assert config["model"]["separate_compatibility_probes"] is True
-    assert config["optimization"]["loss"] == (
-        "cross_video_bank_compatibility_probe_only"
-    )
-    assert config["information_wall"][
-        "separate_compatibility_probe_not_lora_factor"
-    ] is True
-    gate = load_joint_program_primal_gate(
-        root / "configs/pi05_ecp_decoupled_compatibility_r13_gate_v1.json"
-    )
-    assert gate["gate"]["matched_full_route_fraction_minimum"] == 0.80
-
-    owners = (
-        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
-        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
-    )
-    program = NaturalProgramModel(
-        torch.nn.Identity(), prefix_width=6, width=4, owners=2, event_slots=2
-    )
-    compiler = SharedNativeFactorCompiler(
-        owners,
-        program_width=4,
-        event_slots=2,
-        separate_compatibility_probes=True,
-    )
-    _, trainable, frozen = _joint_parameter_ownership(
-        program,
-        compiler,
-        scorer_partition=SCORER_COMPATIBILITY_PROBES_ONLY,
-    )
-    probes = compiler.primal_scorer.compatibility_input_heads
-    assert probes is not None
-    expected = {id(parameter) for parameter in probes.parameters()}
-    assert {id(parameter) for parameter in trainable} == expected
-    assert all(parameter.requires_grad for parameter in trainable)
-    assert all(not parameter.requires_grad for parameter in frozen)
-    assert all(
-        not parameter.requires_grad
-        for parameter in compiler.primal_scorer.input_primal_heads.parameters()
-    )
-    assert all(
-        not parameter.requires_grad
-        for parameter in compiler.primal_scorer.output_primal_heads.parameters()
-    )
-
-
 def test_bank_interaction_positive_control_uses_fixed_half_operator() -> None:
     root = Path(__file__).resolve().parents[2]
     config = load_joint_program_primal_config(
@@ -693,6 +611,129 @@ def test_bank_interaction_positive_control_uses_fixed_half_operator() -> None:
     assert config["information_wall"]["held_video_backward_calls"] == 0
     assert config["information_wall"]["wrong_bank_backward_calls"] == 0
     assert config["information_wall"]["action_meta_installed"] is False
+
+
+def test_retired_binary_routes_are_not_active_configs() -> None:
+    root = Path(__file__).resolve().parents[2]
+    for name in (
+        "pi05_ecp_bank_compatibility_r12_v1.json",
+        "pi05_ecp_decoupled_compatibility_r13_v1.json",
+    ):
+        try:
+            load_joint_program_primal_config(root / "configs" / name)
+        except ValueError:
+            continue
+        raise AssertionError(f"retired binary route remained executable: {name}")
+
+
+def test_candidate_interaction_qualification_is_continuous_and_interaction_only() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_routing_control_config(
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_v1.json"
+    )
+    gate = load_program_bank_interaction_gate(
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v1.json"
+    )
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        SCORER_INTERACTION_ONLY
+    )
+    assert config["model"]["inverse_covariance_power"] == 1.0
+    assert "compatibility_support_threshold" not in config["model"]
+    assert "separate_compatibility_probes" not in config["model"]
+    assert config["model"]["trainable"] == ["ProgramBankInteractionScorer"]
+    assert config["information_wall"]["wrong_bank_exact_language_fixed"] is True
+    assert config["information_wall"]["action_meta_installed"] is False
+    assert gate["evaluation"]["control_arms"] == [
+        "correct_interaction_on",
+        "unseen_wrong_interaction_on",
+        "same_unseen_wrong_interaction_off",
+    ]
+
+    owners = (
+        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
+        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
+    )
+    program = NaturalProgramModel(
+        torch.nn.Identity(), prefix_width=6, width=4, owners=2, event_slots=2
+    )
+    compiler = SharedNativeFactorCompiler(
+        owners, program_width=4, event_slots=2
+    )
+    writer, trainable, frozen = _scorer_parameter_ownership(
+        program, compiler, partition=SCORER_INTERACTION_ONLY
+    )
+    expected = {id(value) for value in compiler.interaction_scorer.parameters()}
+    assert {id(value) for value in writer.parameters()} == expected
+    assert {id(value) for value in trainable} == expected
+    assert all(value.requires_grad for value in trainable)
+    assert all(not value.requires_grad for value in frozen)
+    assert all(
+        not value.requires_grad for value in compiler.primal_scorer.parameters()
+    )
+
+
+def test_candidate_interaction_wrong_banks_cycle_all_same_role_other_tasks() -> None:
+    runtime = SimpleNamespace(
+        config={
+            "task_split": {
+                "gradient_meta": [1, 8, 9, 32, 52],
+                "gradient_target": [72, 73, 75, 93, 94],
+            }
+        },
+        optimizer_steps=0,
+    )
+    observed = []
+    for step in range(8):
+        runtime.optimizer_steps = step
+        observed.append(_wrong_bank_pair(runtime, 1))
+    assert observed == [
+        (8, 0),
+        (8, 1),
+        (9, 0),
+        (9, 1),
+        (32, 0),
+        (32, 1),
+        (52, 0),
+        (52, 1),
+    ]
+
+
+def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
+    root = Path(__file__).resolve().parents[2]
+    gate = load_program_bank_interaction_gate(
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v1.json"
+    )
+
+    def distribution(median: float) -> dict[str, float | int]:
+        return {"count": 10, "median": median}
+
+    summary = {
+        "correct_fit": distribution(0.90),
+        "same_task_held": distribution(0.85),
+        "held_to_fit": 0.94,
+        "unseen_wrong_on": distribution(0.20),
+        "correct_minus_wrong": distribution(0.70),
+        "wrong_off_minus_on": distribution(0.45),
+        "correct_better_than_wrong_tasks": 10,
+        "family": {
+            name: distribution(0.01)
+            for name in ("q_proj", "v_proj", "action_in", "action_out")
+        },
+        "information_wall_pass": True,
+        "training_global_step_seconds_maximum": 44.0,
+        "evaluation_to_training_wall": 0.40,
+    }
+    checks = interaction_gate_checks(gate, summary)
+    assert checks and all(checks.values())
+    summary["wrong_off_minus_on"] = distribution(0.39)
+    failed = interaction_gate_checks(gate, summary)
+    assert failed["wrong_off_minus_on"] is False
+    assert sum(not value for value in failed.values()) == 1
+    summary["wrong_off_minus_on"] = distribution(0.45)
+    summary["training_global_step_seconds_maximum"] = 45.01
+    failed = interaction_gate_checks(gate, summary)
+    assert failed["training_throughput"] is False
+    assert sum(not value for value in failed.values()) == 1
 
 
 def test_raw_stage0_view_preserves_direct_event_fields_and_k1_time() -> None:

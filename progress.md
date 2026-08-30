@@ -7,14 +7,37 @@
 
 - 已从clean pushed `main@b59d7bdd5fd7c2990c2f6e0eb28f170419ac7a84`建立唯一实现分支
   `codex/g3-program-bank-interaction`与worktree
-  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-program-bank-interaction`。当前先完成authority/active-contract同步，并行只读审计
-  streaming operator与joint train/eval最小改动面；尚未修改科学代码、配置或启动GPU。
+  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-program-bank-interaction`。authority/active-contract已经先行提交并推送；当前科学实现、
+  sealed config、train/eval Gate与cache-seal入口已接通，正在完成formal前的clean commit和真实smoke。
 
 - 当前下一阶段固定为co-conditioned bank-interaction positive control：R5 fixed token、feature chart、native heads、source、Native
   Stage0、B0 full solve、carrier、scale与Action Meta冻结，只训练event-specific candidate interaction scorer。correct/wrong bank使用
   同一base-full-plus-correction deployment forward，loss只含correct functional flow和bounded wrong-bank neutralization；step0必须
   严格复现R5 full path。实现先扩展fixed-microblock branch bias，再接通event-native queries、local `ProgramBankContext`、唯一signed
   pooling和精简Gate；通过定向合同及真实forward/gradient/materialization/throughput smoke后才进入formal。
+
+- canonical streaming signed pool现支持fixed microblock下的branch-specific bias并保持跨frame chunk pending state；candidate scorer严格区分
+  input `(frame,probe,horizon)`与output `(frame,probe,horizon,type)`，读取未聚合event query、当前bank local context及真实native content，
+  输出`+delta/-delta`后只执行一套exact signed pooling。delta的全局measure均值是两个branch各自softmax内的常数gauge，canonical实现
+  保留与显式center完全等价的未定gauge表示，避免为无功能差异增加第三次全视频读取。
+
+- active R12/R13 support probe、threshold、condition-dependent selected power、full/half hard/soft route及对应训练评测入口已从唯一执行面删除；
+  历史config会fail loudly，原始结果继续由Git与formal artifacts保存。底层固定inverse-power primitive仅保留给历史分析/正控，不再由
+  condition动态选择。generic历史J2/J3 pairing明确保持`interaction_off`与旧cache语义，避免半迁移入口。
+
+- interaction qualification只checkpoint/优化`ProgramBankInteractionScorer`；R5 Program/native heads、source、Native Stage0、scale、carrier与
+  Action Meta全部冻结。correct与wrong使用同一exact-language forward；训练完成/70→110 exact resume、single-node world topology、
+  checkpoint/commit、六worker coverage、相邻Gate及aggregation commit均已绑定。缓存脚本精确预封80个training wrong pairs与10个unseen
+  Gate pairs；新cache直接读取封存native means，旧v4 cache才惰性回算fallback。
+
+- 当前定向`tests/ecp`为`111 passed`、全仓CPU合同为`234 passed`，并额外修复了审计发现的optimizer-step控制流错位、multi-rank fresh-root竞态、aggregate authority
+  漏洞与non-finite branch bias污染风险。此前同一数学路径的gpu01 world3真实profile为cold `67.559s`、warm `38.663s`，全部四family
+  final-layer gradient非零、Action Meta与native teacher reads均为0；该profile早于最终收口，只作吞吐先验，clean detached最终smoke仍是
+  formal launch前置条件。
+
+- cross-language 90-pair cache预计约`60GB`，不能放入gpu01当前仅约`39GB`空闲的`/dev/shm`。formal前将重新核对`/data1`独立quota并把该
+  operational cache放入有足够预算的`/data1`根，复用既有23GB base cache且不删除任何历史资产；seal workers完成后先验证worker union
+  精确90、无重复/遗漏，再启动训练。
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 

@@ -479,20 +479,42 @@ def test_program_bank_interaction_is_zero_initialized_and_candidate_local() -> N
         local_sigma=video.local_sigma,
     )
     interaction = ProgramBankInteractionScorer(
-        owners, program_width=8, event_slots=4
+        owners, program_width=8, event_slots=4, replay_score_rms=0.02
     )
     generator = torch.Generator().manual_seed(53)
     input_values = torch.randn(5, 2, 50, 4, generator=generator)
     input_mean = input_values.reshape(-1, 4).mean(0)
+    input_base_query = torch.randn(
+        4, 4, generator=generator, requires_grad=True
+    )
     input_kwargs = {
         "target": 0,
         "program_event_state": state.rank_event[0],
         "native_event_query": scorer.input_event_queries(state)[0],
         "event_weights": state.event_weights[0],
+        "base_query": input_base_query,
         "values": input_values,
         "native_mean": input_mean,
         "context": context,
     }
+    expected_base_score = torch.einsum(
+        "rd,...d->r...", input_base_query.detach(), input_values - input_mean
+    ) / 0.02
+    observed_base_score = interaction._base_score_feature(
+        input_base_query, input_values - input_mean
+    )
+    torch.testing.assert_close(
+        observed_base_score[:, 0, ..., 0], expected_base_score
+    )
+    torch.testing.assert_close(
+        interaction._base_score_feature(
+            input_base_query,
+            (input_values + 7.0) - (input_mean + 7.0),
+        ),
+        observed_base_score,
+        rtol=2e-4,
+        atol=2e-4,
+    )
     zero = interaction.input_logit_corrections(**input_kwargs)
     assert zero.shape == (4, 2, 5, 2, 50)
     assert torch.equal(zero, torch.zeros_like(zero))
@@ -509,11 +531,15 @@ def test_program_bank_interaction_is_zero_initialized_and_candidate_local() -> N
 
     output_values = torch.randn(5, 2, 50, 4, 2, generator=generator)
     output_mean = output_values.reshape(-1, 2).mean(0)
+    output_base_query = torch.randn(
+        4, 2, generator=generator, requires_grad=True
+    )
     output = interaction.output_logit_corrections(
         target=0,
         program_event_state=state.rank_event[0],
         native_event_query=scorer.output_event_queries(state)[0][0],
         event_weights=state.event_weights[0],
+        base_query=output_base_query,
         values=output_values,
         native_mean=output_mean,
         context=context,
@@ -533,6 +559,13 @@ def test_program_bank_interaction_is_zero_initialized_and_candidate_local() -> N
         gradient is None or bool(torch.isfinite(gradient).all())
         for gradient in gradients
     )
+    base_score_column_gradient = interaction.correction[
+        TargetFamily.Q.value
+    ][1].weight.grad[:, 3]
+    assert bool(torch.count_nonzero(base_score_column_gradient))
+    assert bool(torch.isfinite(base_score_column_gradient).all())
+    assert input_base_query.grad is None
+    assert output_base_query.grad is None
 
 
 def test_interaction_replay_is_chunk_equivalent_and_has_an_off_arm() -> None:

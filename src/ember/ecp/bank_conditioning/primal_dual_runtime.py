@@ -692,6 +692,7 @@ class PrimalDualVideoOperator:
                             interaction_state.input_event_queries[target]
                         ),
                         event_weights=interaction_state.event_weights[target],
+                        base_query=plan.input_queries[target],
                         values=x,
                         native_mean=prepared.input_operators[target].mean,
                         context=interaction_state.context,
@@ -723,6 +724,7 @@ class PrimalDualVideoOperator:
                             event_weights=(
                                 interaction_state.event_weights[target]
                             ),
+                            base_query=plan.output_queries[target][group],
                             values=grouped[group],
                             native_mean=(
                                 prepared.output_operators[target][group].mean
@@ -758,6 +760,8 @@ class PrimalDualVideoOperator:
         boundaries: list[NativeOutputBankState],
         input_operators: tuple[SpectralNativeCovariance, ...],
         output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...],
+        input_queries: tuple[torch.Tensor, ...],
+        output_queries: tuple[tuple[torch.Tensor, ...], ...],
         interaction_scorer: ProgramBankInteractionScorer | None,
         interaction_state: ProgramBankInteractionState | None,
         interaction_off: bool,
@@ -791,6 +795,7 @@ class PrimalDualVideoOperator:
                         interaction_state.input_event_queries[target]
                     ),
                     event_weights=interaction_state.event_weights[target],
+                    base_query=input_queries[target],
                     values=x,
                     native_mean=input_operators[target].mean,
                     context=chunk_context,
@@ -815,6 +820,7 @@ class PrimalDualVideoOperator:
                             interaction_state.output_event_queries[target][group]
                         ),
                         event_weights=interaction_state.event_weights[target],
+                        base_query=output_queries[target][group],
                         values=grouped[group],
                         native_mean=output_operators[target][group].mean,
                         context=chunk_context,
@@ -871,6 +877,8 @@ class PrimalDualVideoOperator:
                 boundaries=boundaries,
                 input_operators=prepared.input_operators,
                 output_operators=prepared.output_operators,
+                input_queries=plan.input_queries,
+                output_queries=plan.output_queries,
                 interaction_scorer=interaction_scorer,
                 interaction_state=interaction_state,
                 interaction_off=interaction_off,

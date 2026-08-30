@@ -60,7 +60,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
     """Produce bounded per-candidate corrections, never factors or routes."""
 
     _metadata_width = 8
-    _correction_feature_width = 4 + _metadata_width
+    _correction_feature_width = 5 + _metadata_width
 
     def __init__(
         self,
@@ -71,6 +71,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         semantic_width: int = 32,
         hidden_width: int = 64,
         correction_bound: float = 0.1,
+        replay_score_rms: float,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -79,6 +80,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         self.semantic_width = int(semantic_width)
         self.hidden_width = int(hidden_width)
         self.correction_bound = float(correction_bound)
+        self.replay_score_rms = float(replay_score_rms)
         if (
             not self.owners
             or min(
@@ -89,6 +91,8 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             )
             <= 0
             or not 0.0 < self.correction_bound <= 1.0
+            or not math.isfinite(self.replay_score_rms)
+            or self.replay_score_rms <= 0.0
         ):
             raise BankConditioningError("invalid Program-bank interaction topology")
         families = tuple(TargetFamily)
@@ -141,6 +145,26 @@ class ProgramBankInteractionScorer(torch.nn.Module):
     @staticmethod
     def _rms_normalize(value: torch.Tensor) -> torch.Tensor:
         return value / value.square().mean(-1, keepdim=True).clamp_min(1e-12).sqrt()
+
+    def _base_score_feature(
+        self, base_query: torch.Tensor, centered: torch.Tensor
+    ) -> torch.Tensor:
+        """Expose the detached B1 base score without changing candidate measure."""
+
+        candidate_axes = centered.shape[:-1]
+        if base_query.shape != (G1_RESIDUAL_RANK, centered.shape[-1]):
+            raise BankConditioningError("Program-bank base-query axes changed")
+        score = torch.einsum(
+            "rd,...d->r...", base_query.detach().float(), centered.detach().float()
+        ) / self.replay_score_rms
+        return score.reshape(
+            G1_RESIDUAL_RANK, 1, *candidate_axes, 1
+        ).expand(
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            *candidate_axes,
+            1,
+        )
 
     def _validate_context(self, context: ProgramBankContext) -> int:
         frames = int(context.frame_positions.shape[0])
@@ -210,6 +234,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         program_event_state: torch.Tensor,
         native_event_query: torch.Tensor,
         event_weights: torch.Tensor,
+        base_query: torch.Tensor,
         values: torch.Tensor,
         native_mean: torch.Tensor,
         context: ProgramBankContext,
@@ -229,6 +254,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             or native_event_query.shape
             != (G1_RESIDUAL_RANK, self.event_slots, width)
             or event_weights.shape != (G1_RESIDUAL_RANK, self.event_slots)
+            or base_query.shape != (G1_RESIDUAL_RANK, width)
             or values.shape != (*candidate_axes, width)
             or native_mean.shape != (width,)
         ):
@@ -283,6 +309,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
                 native_alignment[..., None],
                 semantic_alignment[..., None],
                 (native_alignment * semantic_alignment)[..., None],
+                self._base_score_feature(base_query, centered),
                 log_norm.reshape(1, 1, *candidate_axes, 1).expand(
                     G1_RESIDUAL_RANK,
                     self.event_slots,
@@ -320,6 +347,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         program_event_state: torch.Tensor,
         native_event_query: torch.Tensor,
         event_weights: torch.Tensor,
+        base_query: torch.Tensor,
         values: torch.Tensor,
         native_mean: torch.Tensor,
         context: ProgramBankContext,
@@ -329,6 +357,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             "program_event_state": program_event_state,
             "native_event_query": native_event_query,
             "event_weights": event_weights,
+            "base_query": base_query,
             "values": values,
             "native_mean": native_mean,
             "context": context,
@@ -345,6 +374,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         program_event_state: torch.Tensor,
         native_event_query: torch.Tensor,
         event_weights: torch.Tensor,
+        base_query: torch.Tensor,
         values: torch.Tensor,
         native_mean: torch.Tensor,
         context: ProgramBankContext,
@@ -354,6 +384,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             "program_event_state": program_event_state,
             "native_event_query": native_event_query,
             "event_weights": event_weights,
+            "base_query": base_query,
             "values": values,
             "native_mean": native_mean,
             "context": context,

@@ -126,6 +126,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             semantic_width=interaction_semantic_width,
             hidden_width=interaction_hidden_width,
             correction_bound=interaction_correction_bound,
+            replay_score_rms=self.replay_score_rms,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,

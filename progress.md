@@ -20,6 +20,25 @@
   native teacher reads 0、global update`1.132s`、peak reserved约`19.46GB/GPU`。17项定向CPU合同通过。下一步从clean pushed
   detached authority fresh运行step70/110，并只由真实Program→bank→signed replay→唯一rank16的原12-task panel-B Gate裁决。
 
+### R9 stable-chart joint acquisition formal launch contract
+
+- implementation authority为clean pushed `main@43be484cd22d73468741600bdb660fbef5975181`；formal将从只增加本launch记录、
+  不再修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant fresh执行。初始化加载G2
+  `c1493a1/macro20` Program和R5 passed shared scorer tensors，但不加载fixed routing token、task lookup或旧optimizer；
+  Program与完整scorer随后共同训练，optimizer/scheduler fresh。
+- 科学合同固定10个gradient tasks、每task两条fit K1 videos共享同一validated task-level outer-update label、10 warmup+100
+  effective、actual step70/110。训练只读fit-only functional-code labels，不读panel actions、held video、task2/74、validation/test、
+  shuffled/reversed或task-local scale；source、Native Stage0、current-bank operator、carrier12、shared scale和Action Meta冻结。
+  R9 acquisition loss只作取得functional chart的训练信号，正式结论仍由两个checkpoint的原12-task cross-episode panel-B Gate给出。
+- 2026-08-30 08:08 CST紧邻launch检查：gpu01物理`0--6`均无compute process、显存`14--97MiB`且UTL 0；按单节点上限选择
+  `0,1,2,3,4,6` world6，不占第七张。gpu02物理`0--3,5,6`为他人高UTL，4有约2GB服务、7空闲，故不跨节点拼卡。
+  owner预告gpu01约11--12时可能重启；本run按实测启动加训练远短于该窗口，在08时段启动，不在临近窗口发起长任务。
+- gpu01复用23GB frozen-condition cache，`/dev/shm`尚余39GB；`strg01` `/data1` quota为
+  `711064088/1073741824` blocks，R5同类完整run约280MB，R9预估低于1GB，峰值远低于剩余额度。exact entry使用
+  `CUDA_VISIBLE_DEVICES=0,1,2,3,4,6`、`NCCL_P2P_DISABLE=1`、deferred NCCL和world6 torchrun；输出固定为
+  `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_s110_43be484_gpu01p012346_r6_20260830/`。训练自然结束后以最多六个
+  独立single-GPU workers评价step70/110；不以acquisition loss、outer cosine或checkpoint union替代functional Gate。
+
 - 2026-08-30 R7 functional-code chart acquisition formal与完整12-task Gate已结束。clean pushed detached
   `024fc55`在gpu01物理`0,1,2,3,4,6`完成110步，110条metrics连续、step70/110 world6 checkpoints完整；训练墙钟
   `114.12s`，最大peak reserved `19,367,198,720` bytes，Action Meta/source/Stage0/scale trainable和native teacher reads

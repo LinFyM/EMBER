@@ -546,6 +546,13 @@ deployment-visible owner/event process、presence、uncertainty、patch/scene tr
 raw task-held比Program高`>=.15`且达到`.40`，才把最早接口判为Program压缩/schema；raw也低于`.25`且free primal强，才判为frozen
 Stage0上游瓶颈并允许窄解冻process/presence/uncertainty tail。不得直接解冻VLM、source policy或整个Stage0。
 
+R11已完成该matched probe并明确non-pass：step110 raw train/held/task-held为`.292321/.288053/-.092369`，相对R10 task-held
+`.151475`下降`.243844`，因此Program schema/压缩不是当前首因。其q/action仍约`.47--.55`而v仅`.101550`，target-role train
+median仅`.110012`，所以也未满足“所有family均缺少可读信息”的frozen-Stage0停止条件，不能据此解冻VLM、source或整个Stage0。
+在新增Writer结构前，先以R5/task-local成功primal做cross-task wrong-bank functional upper-bound：若正确成功primal换错bank仍保持
+效用，说明当前primal-to-dual operator与wrong-bank Gate的组合缺少可识别交互，先修正bank interaction；若该正控有强bank margin，才
+继续把R10/R11失败定位到shared Program/scorer的target-task归纳偏置。该诊断只读，不恢复旧candidate scorer或退役路线。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置

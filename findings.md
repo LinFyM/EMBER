@@ -1451,3 +1451,22 @@ R10仍不是G3 pass。step110 task-held mean仅`.151475`，meta2为`.375386`而t
 救分版本。下一实验保持相同scorer容量、functional loss、数据、预算、bank/operator/rank/scale和Gate，只交换Natural Program压缩与
 部署可见raw frozen Stage0 evidence。raw task-held只有比R10高至少`.15`且达到`.40`，才能把首因判给Program schema；raw fit高但held低
 指向task diversity/shared decoder归纳偏置，raw task-held低于`.25`才支持frozen Stage0为上游瓶颈。
+
+### 85. R11排除Program压缩首因，并暴露target-role与v-family的选择性失效
+
+R11保持R10的12-task split、R9初始化、functional loss、110步预算、scorer容量、bank/operator/rank/scale与Gate，只把Natural
+Program压缩替换为部署可见raw frozen Stage0 evidence。clean detached step70/110 train recovery为`.218691/.292321`，held-video为
+`.232166/.288053`，true task-held为`-.139011/-.092369`。step110 task2/74分别为`.116054/-.300793`；相对R10 task-held
+`.151475`下降`.243844`，没有达到“提高`.15`且绝对`.40`”的schema判据。因此不能停止当前Program schema，也不能重新设计schema
+来解释R10的剩余失败。
+
+R10与R11的110步task、action demo/frame、panel visit完全逐值配对。R11最后40步对五个target tasks的functional loss全部更高，task72/73
+在全部66次出现中`0/66`优于R10；target gradient train median仅`.110012`，而meta为`.470816`。family分解更有选择性：q、action-in、
+action-out仍为`.550257/.494693/.474379`，只有v降到`.101550`；R10对应四项为`.645745/.717575/.548006/.614858`。
+这既不是所有raw字段都不可读，也不满足“q/v/action均缺少信息”的frozen-Stage0停止条件。R11 language gradient约为R10的`3.99x`，
+native input/output head gradient约为`1.13x/.92x`，无断图或clip；更多同预算优化没有机制依据。
+
+R10/R11另有共同结构证据：wrong-bank margin分别仅`.007864/-.003253`，interaction均约零，而wrong-Program明显有影响。当前
+primal-to-dual solve会让每条高覆盖bank近似重建同一Program primal，跨task bank可能因此退化为通用实现基底。下一步先用R5/task-local
+成功primal做cross-task wrong-bank functional upper-bound；若成功primal换错bank仍保留效用，则Gate失败首先属于operator的bank交互
+可识别性，不能继续归咎Program；若正控有强bank margin，才保留shared decoder/target generalization为首因。

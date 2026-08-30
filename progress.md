@@ -2,6 +2,28 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- R11 matched raw-Stage0 sufficiency已经在clean detached `25f38ce`完成110/110步训练及step70/110完整12-task Gate。
+  step70/110 train recovery为`.218691/.292321`，held-video为`.232166/.288053`，true task-held为
+  `-.139011/-.092369`；step110 task2/74分别为`.116054/-.300793`。raw task-held不但没有相对R10提高`>=.15`
+  并达到`.40`，反而比R10 `.151475`下降`.243844`，因此明确排除“Natural Program schema/压缩是当前首因”。
+
+- R11 step110 q/v/action-in/action-out分别为`.550257/.101550/.494693/.474379`；meta/target gradient-task train
+  medians分别为`.470816/.110012`。在与R10逐step完全相同的task、action demo/frame和panel schedule上，R11对五个target
+  tasks的训练loss全部更差，task72/73在110步中从未优于R10；但q与两类action仍可读，只有v统一坍缩。R11全部有效梯度
+  finite/nonzero、无clip/teacher read/Action Meta，same-task video稳定且110相对70继续改善，故不是断图、数值错误、普通
+  video variance或偶然checkpoint。该证据既不支持Stage0全量解冻，也未满足专家“所有family均缺少可读信息”的frozen-Stage0
+  停止条件；它把最早接口留在raw/shared decoder函数类、target-role functional归纳偏置及Program--bank交互之间。
+
+- R11六卡训练墙钟`1435.70s`，最大reserved `32.94GB`；两个checkpoint由六个独立workers完整评价，step70/110主循环墙钟
+  `571.45/502.77s`，raw rows、aggregate、completion及两个world6 checkpoints均完整，无OOM/NCCL/NaN或掉worker。正式
+  artifacts为`runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_s110_0590f63_gpu01p012346_r6_20260830/`及对应
+  `...r11_gate_step70/110_25f38ce_gpu01p012346_w6_20260830/`。
+
+- 下一步先不凭R11直接新增Writer版本。R10的wrong-bank margin`.007864`与R11的`-.003253`、interaction均近零，且当前
+  primal-to-dual operator会在每条bank上近似重建同一Program primal；先用R5/task-local成功primal做只读cross-task wrong-bank
+  functional upper-bound，判定“正确成功primal换错bank”是否仍保持效用。若正控本身也无bank margin，说明现Gate与operator的
+  组合不可识别，必须修正bank interaction；若正控有强margin，才把失败留给shared Program/scorer，不重开已通过的operator。
+
 - matched raw-Stage0 sufficiency retained执行面已经接通。R11从与R10相同的R9 step110完整Writer初始化，保持相同12-task split、
   panel-A真实functional flow、110步预算、scorer容量、native heads、bank/operator/carrier/scale和Gate；唯一输入改动是绕过Natural
   Program process fusion与canonical aligner，让同一scorer直接读取exact-language embedding、first/final patch relation、two-probe

@@ -28,9 +28,12 @@ tasks全部为负，wrong-bank与interaction近零。R9因此正式non-pass，�
 **outer-code近似不能替代policy utility**。当前R10只把R9 step110作为training-only稳定内容坐标初始化，冻结已有R4/R5证据表明会在
 functional训练中漂移的feature chart，移除outer-code loss，只让Natural Program与native heads接受真实cross-episode panel-A flow。
 R10 step110把train/held从R9负值提高到`.560/.544`，四family与Program因果margin通过，但task-held仅`.151`、target74为负，wrong-bank与
-interaction近零，因此仍正式non-pass。当前按专家预注册分支做唯一matched raw-Stage0 sufficiency probe：保持scorer、functional loss、
-预算、bank/operator/rank/scale和Gate不变，只替换Program压缩输入；先区分Program schema、frozen Stage0与shared decoder/generalization，
-再决定G3下一结构。R1--R11均不是deployment checkpoint，局部结果不代表整体goal完成。
+interaction近零，因此仍正式non-pass。预注册的R11 matched raw-Stage0 probe现已完成：step110 train/held/task-held为
+`.292/.288/-.092`，相对R10 task-held下降`.244`；target gradient median仅`.110`，v-family仅`.102`，而q/action仍约
+`.47--.55`。因此Program schema/压缩不是首因，也不能把局部v失败扩写成整个frozen Stage0无信息。当前先用已通过的R5/task-local
+成功primal做cross-task wrong-bank functional upper-bound，判定current-bank operator是否在跨task时把不同bank变成近似通用基底；
+该只读结果决定下一结构修正bank interaction还是shared Program/scorer。R1--R11均不是deployment checkpoint，局部结果不代表整体
+goal完成。
 
 ## R5--R10当前里程碑
 
@@ -77,9 +80,11 @@ interaction近零，因此仍正式non-pass。当前按专家预注册分支做�
 - [x] 完成R10 R9-initialized functional refinement的retained实现、18项定向合同、真实world6 step1、clean formal step70/110与完整
   12-task Gate；step110 train/held为`.559896/.544189`、四family与Program margin通过，但task-held`.151475`、wrong-bank与interaction
   失败，R10正式non-pass；
-- [ ] 完成matched raw Stage0 sufficiency：相同12-task split、scorer容量、functional loss、预算和Gate，只交换部署可见上游表示；
-  retained实现、20项定向合同及真实单rank六task step1已通过，待clean pushed detached world6 step70/110与完整Gate；以raw相对
-  Program task-held是否提高`>=.15`且达到`.40`区分Program压缩、frozen Stage0与shared decoder/generalization。
+- [x] 完成matched raw Stage0 sufficiency：相同12-task split、scorer容量、functional loss、预算和Gate，只交换部署可见上游表示；
+  clean detached world6 step70/110与完整Gate均完成，step110 train/held/task-held为`.292321/.288053/-.092369`，相对R10
+  task-held下降`.243844`，明确不支持Program schema/压缩首因；q/action仍可读而v仅`.101550`，不满足全Stage0停止条件；
+- [ ] 用R5/task-local成功primal执行只读cross-task wrong-bank functional upper-bound；只有正控证明正确bank本身有必要增量，才继续
+  把wrong-bank失败归因shared Program/scorer，否则先修正operator的bank交互可识别性。
 
 ## 当前G1里程碑
 

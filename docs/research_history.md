@@ -1301,3 +1301,23 @@ per-task结果显示meta gradient tasks总体强而target gradient tasks仅`.186
 - `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_s110_731a769_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_gate_step70_f3baa81_gpu01p012346_w6_20260830/`；
 - `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_gate_step110_f3baa81_gpu01p012346_w6_20260830/`。
+
+## 65. R11 matched raw-Stage0 sufficiency明确non-pass
+
+clean pushed detached `25f38ce`保持R10除上游表示外的全部合同，只用exact-language embedding、scene transition、raw
+owner/event process、presence、uncertainty和normalized time构造同shape输入。gpu01物理`0,1,2,3,4,6`完成10 warmup+100 effective
+updates；110条metrics连续，step70/110 world6 checkpoints完整，训练墙钟`1435.70s`，最大reserved `32.94GB`。随后六个独立worker
+完成两个checkpoint的12-task paired panel-B、四family与全部controls；Action Meta、native teacher reads、held backward和
+shuffled/reversed use均为0。
+
+step70/110 train recovery为`.218691/.292321`，held-video为`.232166/.288053`，true task-held为`-.139011/-.092369`；step110
+meta/target gradient medians为`.470816/.110012`，task2/74为`.116054/-.300793`。q/v/action-in/action-out为
+`.550257/.101550/.494693/.474379`，wrong-Program、wrong-bank和interaction为`.077357/-.003253/-.001410`。raw task-held相对
+R10不增反降`.243844`，故Program schema/压缩首因判据明确失败；同时q/action仍可读、失效集中在v与target role，不能据此停止整个
+frozen Stage0或解冻VLM/source/全Stage0。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_s110_0590f63_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_gate_step70_25f38ce_gpu01p012346_w6_20260830/`；
+- `runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_gate_step110_25f38ce_gpu01p012346_w6_20260830/`。

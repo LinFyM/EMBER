@@ -66,6 +66,9 @@ CHART_RECONNECT_GATE_SCHEMA = "ember_ecp_natural_program_chart_reconnect_gate_v1
 FUNCTIONAL_CHART_ACQUISITION_GATE_SCHEMA = (
     "ember_ecp_functional_code_chart_acquisition_gate_v1"
 )
+FUNCTIONAL_CODE_STABLE_JOINT_GATE_SCHEMA = (
+    "ember_ecp_functional_code_stable_chart_joint_gate_v1"
+)
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -90,6 +93,10 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
             (
                 FUNCTIONAL_CHART_ACQUISITION_GATE_SCHEMA,
                 "active_fit_only_functional_code_chart_acquisition_qualification",
+            ),
+            (
+                FUNCTIONAL_CODE_STABLE_JOINT_GATE_SCHEMA,
+                "active_fit_only_functional_code_stable_chart_joint_qualification",
             ),
         }
         or config.get("checkpoint_optimizer_steps") != [70, 110]

@@ -1398,3 +1398,19 @@ R7 fit/held video同步，历史shared-scale transfer又已排除scale ceiling�
 下一最小机制检验是在**同一绝对functional-code label持续锚定输出**时联合训练Program与完整primal scorer。它不同于R4/R6只靠弱
 functional loss造成的moving-coordinate：当heads移动时，outer-update target仍固定，不能通过共同坐标漂移逃避。若该联合函数类连
 gradient-task fit都不能显著越过R7平台，才把问题上移；若fit/held-video强而task-held低，才触发matched raw Stage0 probe。
+
+### 82. R9稳定功能chart初始化同时改善fit与零梯度task-held，取得完整functional Gate资格
+
+fresh Program+fresh scorer的R8直接outer-code joint在110步只到约`.449`方向；绕过learned process fusion的raw-process版本约`.456`，
+加入contextual language、scene transition和raw process的完整raw Stage0版本约`.452`。contextual language/scene在12 task三video上本身
+可稳定区分task，三种matched结果却几乎相同，因此当前不能把首因归给Program字段遗漏、Stage0压缩或普通视频噪声。
+
+只把scorer初始化改为R5已通过的共享functional chart、其后仍让Program与完整scorer联合训练，R9在同预算把训练任务直接outer
+direction提高到约`.712`，最终loss`.334220`；相同实现的retained world6 step1逐值复现，全部Program/scorer路径有finite nonzero
+gradient。该变化证明随机Program/scorer双线性坐标的共同发现是R8/R7的一项真实瓶颈，而不是数学形式本身没有容量。
+
+决定性的任务外只读检查没有重拟合head：最终R9 Writer对零梯度task2/task74三条video的正确outer recovery分别约`.731/.550`，
+总中位`.640`，same-task跨video约`.9998`。这说明稳定chart引入的是可迁移共享先验，不只是10-task codebook记忆；同时task74对task2
+label反而更近，correct-vs-wrong总margin`-.0139`，表明task-specific ownership尚未由内部几何完全证明。故R9已经越过“不要formal”的
+机制门槛，但不能由内部方向宣布G3通过；下一唯一裁决是原12-task cross-episode panel-B functional Gate，包括train、held-video、
+true task-held、四family、language/endpoints、wrong Program/bank、interaction、same-task与相邻checkpoint。

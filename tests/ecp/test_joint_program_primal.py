@@ -8,6 +8,7 @@ from ember.ecp.joint_program_primal.evaluation import (
     _normalized,
     _task_conditions,
     balanced_task_assignments,
+    load_joint_program_primal_gate,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.routing_control import (
@@ -25,6 +26,8 @@ from ember.ecp.joint_program_primal.routing_initialization import (
 from ember.ecp.joint_program_primal.runtime import (
     CHART_RECONNECT_SCHEMA,
     FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+    FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
+    SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
@@ -489,6 +492,37 @@ def test_r7_acquires_content_chart_with_fixed_validated_heads() -> None:
         not parameter.requires_grad
         for parameter in compiler.primal_scorer.output_primal_heads.parameters()
     )
+
+
+def test_r9_jointly_acquires_functional_code_from_stable_chart() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root
+        / "configs/pi05_ecp_functional_code_stable_chart_joint_r9_v1.json"
+    )
+    assert config["schema_version"] == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        SCORER_ALL_PARAMETERS
+    )
+    assert config["model"]["primal_scorer_initialization"] == (
+        "r5_shared_functional_chart_step110"
+    )
+    assert config["optimization"]["loss"] == (
+        "fit_only_functional_code_outer_direction_only"
+    )
+    assert config["information_wall"]["native_heads_trainable"] is True
+    assert config["information_wall"][
+        "absolute_outer_code_target_anchors_moving_heads"
+    ] is True
+    assert config["information_wall"][
+        "stable_r5_shared_chart_initialization"
+    ] is True
+    gate = load_joint_program_primal_gate(
+        root
+        / "configs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_v1.json"
+    )
+    assert gate["checkpoint_optimizer_steps"] == [70, 110]
+    assert gate["gate"]["true_task_held_mean_minimum"] == 0.40
 
 
 def test_functional_code_outer_cosine_is_rank_permutation_invariant() -> None:

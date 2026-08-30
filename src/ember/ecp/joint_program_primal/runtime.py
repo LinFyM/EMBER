@@ -90,6 +90,15 @@ FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA = (
 FUNCTIONAL_CHART_ACQUISITION_STAGE = (
     "g3_fit_only_functional_code_chart_acquisition"
 )
+FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA = (
+    "ember_ecp_functional_code_stable_chart_joint_r9_v1"
+)
+FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA = (
+    "ember_ecp_functional_code_stable_chart_joint_run_v1"
+)
+FUNCTIONAL_CODE_STABLE_JOINT_STAGE = (
+    "g3_fit_only_functional_code_stable_chart_joint_acquisition"
+)
 FRESH_SCORER = "fresh"
 SCORER_ALL_PARAMETERS = "all"
 SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
@@ -241,7 +250,10 @@ def is_chart_reconnect_config(config: Mapping[str, Any]) -> bool:
 
 
 def is_functional_chart_acquisition_config(config: Mapping[str, Any]) -> bool:
-    return config.get("schema_version") == FUNCTIONAL_CHART_ACQUISITION_SCHEMA
+    return config.get("schema_version") in {
+        FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+        FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
+    }
 
 
 def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
@@ -253,6 +265,8 @@ def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
 def joint_run_schema(config: Mapping[str, Any]) -> str:
     if is_chart_reconnect_config(config):
         return CHART_RECONNECT_RUN_SCHEMA
+    if config.get("schema_version") == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA:
+        return FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA
     return J2_RUN_SCHEMA
@@ -261,6 +275,8 @@ def joint_run_schema(config: Mapping[str, Any]) -> str:
 def joint_stage(config: Mapping[str, Any]) -> str:
     if is_chart_reconnect_config(config):
         return CHART_RECONNECT_STAGE
+    if config.get("schema_version") == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA:
+        return FUNCTIONAL_CODE_STABLE_JOINT_STAGE
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_STAGE
     return J2_STAGE
@@ -295,6 +311,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
                 J2_SCHEMA,
                 CHART_RECONNECT_SCHEMA,
                 FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
+                FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
             },
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
@@ -375,16 +392,41 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             config.get("optimization", {}).get("loss")
             == "fit_only_functional_code_outer_direction_only",
             "counterfactual" not in joint,
-            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
-            isinstance(authorities.get("r5_gate_aggregate"), str),
             isinstance(authorities.get("positive_control_root"), str),
             wall.get("functional_code_labels_training_only") is True,
             wall.get("native_heads_frozen") is True,
             wall.get("fixed_routing_token_deployment_input") is False,
         )
     )
+    joint_acquisition_valid = all(
+        (
+            schema == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
+            config.get("status")
+            == "active_fit_only_functional_code_stable_chart_joint_acquisition",
+            model.get("program_initialization")
+            == "c1493a1_macro20_model_tensors",
+            model.get("primal_scorer_initialization")
+            == R5_SHARED_FUNCTIONAL_CHART,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_ALL_PARAMETERS,
+            config.get("optimization", {}).get("loss")
+            == "fit_only_functional_code_outer_direction_only",
+            "counterfactual" not in joint,
+            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
+            isinstance(authorities.get("r5_gate_aggregate"), str),
+            isinstance(authorities.get("positive_control_root"), str),
+            wall.get("functional_code_labels_training_only") is True,
+            wall.get("native_heads_trainable") is True,
+            wall.get("absolute_outer_code_target_anchors_moving_heads") is True,
+            wall.get("stable_r5_shared_chart_initialization") is True,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
     if not common_valid or not (
-        counterfactual_valid or reconnect_valid or acquisition_valid
+        counterfactual_valid
+        or reconnect_valid
+        or acquisition_valid
+        or joint_acquisition_valid
     ):
         raise ValueError("unsupported joint Program-primal functional config")
     return config

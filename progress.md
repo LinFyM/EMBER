@@ -1,5 +1,25 @@
 # EMBER progress
 
+- 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
+
+- R7之后的fit-only诊断已经把下一修正收敛到稳定功能坐标初始化。fresh Program+fresh scorer在同一10-task、110-step、
+  四family等权outer-update目标下最终loss为`.550870`；绕过learned process fusion、直接使用raw Stage0 process为`.543792`，
+  再加入contextual language与scene transition的完整raw Stage0版本为`.548213`。三者几乎相同，且contextual language/scene
+  本身在12 task三video上可作`12/12`最近中心识别，所以当前没有证据把首因归给遗漏Program字段、视频噪声或Stage0压缩。
+
+- R9只改变一个有因果依据的变量：从已通过R5 Gate的共享functional chart初始化scorer，然后让Natural Program与完整scorer在
+  同一绝对outer-update标签下联合训练；fixed routing token和task lookup均不加载。110步最终loss`.334220`，训练任务直接
+  outer recovery中位约`.7121`、四family约`.66--.75`，明显越过fresh约`.45`与R7平台，证明随机moving bilinear坐标确是一个真实
+  优化瓶颈。更关键的是，R9 checkpoint直接作用于两个全程零梯度task-held时，task2/task74三video中位分别为`.7307/.5501`，
+  总中位`.6404`且same-task cross-video约`.9998`；这排除了“只记住10个监督任务”的简单解释。task74仍更接近task2 label，
+  总correct-vs-wrong margin为`-.0139`，所以该内部结果只赋予完整12-task functional Gate资格，不是G3 pass。
+
+- R9 retained实现已接到唯一`joint_program_primal`执行面：加载R5 scorer但不加载fixed route，随后Program与scorer全部
+  `12,648,965`参数可训练；source、Native Stage0、scale与Action Meta均冻结/缺席，task/video/frame free parameter为0。
+  retained world6真实step1与disposable R9逐值一致：loss`.9462876469`、全部Program/scorer梯度probe finite/nonzero、
+  native teacher reads 0、global update`1.132s`、peak reserved约`19.46GB/GPU`。17项定向CPU合同通过。下一步从clean pushed
+  detached authority fresh运行step70/110，并只由真实Program→bank→signed replay→唯一rank16的原12-task panel-B Gate裁决。
+
 - 2026-08-30 R7 functional-code chart acquisition formal与完整12-task Gate已结束。clean pushed detached
   `024fc55`在gpu01物理`0,1,2,3,4,6`完成110步，110条metrics连续、step70/110 world6 checkpoints完整；训练墙钟
   `114.12s`，最大peak reserved `19,367,198,720` bytes，Action Meta/source/Stage0/scale trainable和native teacher reads

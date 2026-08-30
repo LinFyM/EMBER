@@ -18,10 +18,15 @@ Program-to-functional-code从fixed token的`.9985`降到约`.02`；同task跨vid
 video噪声或heads漂移。R7进一步冻结R5 heads、用task-level functional-code dense监督训练Natural Program和feature chart；内部方向
 升至`.64--.74`，但step110 train/held仍为`-.133/-.130`，target role全部为负，证明Natural Program无法在冻结的任意R5 chart中取得
 足够精确的功能坐标。当前下一资格只改变这一接口：同一validated code supervision下联合训练Program与完整primal scorer，让绝对
-outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradient smoke，越过R7上限后才formal。R1--R7都不是deployment checkpoint；任何局部Gate、
-单次训练或内部指标都不代表整体项目goal完成。
+outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradient smoke，越过R7上限后才formal。R1--R7都不是deployment
+checkpoint；任何局部Gate、单次训练或内部指标都不代表整体项目goal完成。
 
-## R5--R7当前里程碑
+R8 matched诊断已经排除fresh joint、raw process与完整raw Stage0字段遗漏：三者110步方向均停在约`.45`。R9改为从R5已通过的共享
+functional chart初始化同一joint函数类，并在初始化后继续联合训练Program与全部scorer；训练task方向升至约`.71`，两个零梯度
+task-held直接方向为`.731/.550`、中位`.640`且跨video稳定，达到运行完整functional Gate的资格。它仍有task74 wrong-route margin为负，
+所以当前状态是**R9 retained实现已通过真实step1，等待clean formal step70/110与12-task Gate**，不是G3已通过。
+
+## R5--R9当前里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
@@ -56,8 +61,11 @@ outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradi
 - [x] 完成R7定向合同、旧配置兼容、真实单步gradient/ownership/吞吐检查；
 - [x] 从clean pushed detached authority fresh运行R7 10 warmup+100 effective并评价step70/110原12-task完整functional Gate；
   step110 train/held为`-.133386/-.129792`，target gradient tasks全部为负，R7正式non-pass；
-- [ ] 接通同一functional-code outer-direction监督下的Program+完整primal scorer联合获取，保持数据、bank、rank、scale、loss口径、
-  optimizer预算和Gate不变；先用真实短程fit/gradient证明确实突破冻结chart的`.337` loss/约`.66`方向平台，否则不formal；
+- [x] 用fresh scorer、raw process与完整raw Stage0 matched diagnostics排除遗漏Program字段；只以R5 passed shared chart初始化
+  scorer后，同一joint outer-code训练把fit提高至约`.71`并在task-held取得`.640`中位方向；
+- [x] 接通R9 retained config/schema与Gate，真实world6 step1逐值复现disposable结果，全部Program/scorer梯度、Action Meta 0、
+  source/Stage0/scale冻结、无lookup和吞吐合同成立；
+- [ ] 从clean pushed detached R9 authority运行10 warmup+100 effective、actual step70/110，并执行原12-task完整functional Gate；
 - [ ] 若联合获取使train/held-video显著通过而true task-held仍低，按active design进入matched raw Stage0 sufficiency；若train本身仍低，
   先定位Program/scorer联合函数类或label-to-utility接口，不用训练时长、seed/LR/width/rank小扫掩盖。
 

@@ -44,7 +44,7 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 PROGRAM_BANK_INTERACTION_COMPLETION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_completion_v2"
+    "ember_ecp_program_bank_candidate_interaction_completion_v3"
 )
 
 
@@ -56,7 +56,7 @@ def _wrong_bank_credit(
     epsilon: float,
     weight: float,
 ) -> dict[str, float | bool]:
-    """Return a raw-unit training credit plus normalized reporting metric."""
+    """Return an anchored raw-unit training credit plus reporting metric."""
 
     denominator = free_benefit + epsilon
     benefit = carrier_loss - wrong_loss

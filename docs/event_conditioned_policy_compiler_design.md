@@ -649,11 +649,13 @@ correct-minus-wrong、interaction-off差异、四family无系统性反向、K1/�
 correct fit `>=.85`、held `>=.80`、held/fit `>=.85`、wrong `<=.25`、margin `>=.50`、task级`10/10` correct>wrong以及
 interaction-off相对on的wrong margin差`>=.40`；这些只裁决本接口，不是正式validation性能目标。
 
-首轮formal把专家原文中的wrong hinge按`B_wrong/(B_free+eps)`直接反传，而correct仍是raw flow loss，实际令wrong相对同task两条
-correct的梯度先验放大约`15.7--359.6x`。结果correct/wrong同时降至负recovery且跨task相关`.95/.96`，而interaction-off仍为
-`.940`；因此它首先淘汰该混合量纲的normalized-gradient实现，尚未检验平衡credit下的candidate函数类。当前fresh修正保持全部
-architecture、data、optimizer与Gate不变，将两条correct均值与一条active wrong hinge都置于raw functional-loss单位：每task两条
-correct总反传质量`1/6`，wrong固定`-1/6`，`B_free`归一量只作报告。若该目标下仍共同坍塌，才将失败归因下移到candidate交互表示。
+首轮formal把wrong hinge除以`B_free`后反传，实际把wrong相对两条correct放大约`15.7--359.6x`，令correct/wrong同时降到负
+recovery；这只淘汰混合量纲目标。第二轮改成raw-unit 1:1后，step70/110 correct为`.652/.673`、held为`.643/.663`、wrong为
+`.346/.345`，明显恢复但仍未过`.85/.80/.25/.50/10-of-10`机制门。其最早接口仍是目标而非函数类：active时每task目标正比于
+`.5(Lc1+Lc2)-Lw`，三臂共同增加同一损失时目标严格不变，训练轨迹正是correct与wrong共同下降、wrong略多。当前唯一fresh修正
+保持architecture、data、optimizer与Gate不变，将两条correct各保持`+1/12`、wrong改为`-1/12`；positive总质量是negative的两倍，
+共同破坏不再是零代价方向，`B_free`仍只报告。只有该2:1 positive anchor仍不能保住correct或分离wrong，才把首因下移到candidate
+feature或interaction函数类。
 
 若通过，立即以Natural Program替换fixed token，联合训练Natural Program、interaction scorer和native heads，再进入scale/preservation、
 K2/K4及held5 strict250；不再插入chart、support或binary阶段。若失败，按最早接口解释：step0不能复现R5是实现/加载/streaming错误；

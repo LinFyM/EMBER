@@ -1,0 +1,57 @@
+{
+  "schema_version": "ember_ecp_program_bank_candidate_interaction_gate_v3",
+  "status": "active_co_conditioned_bank_interaction_qualification",
+  "training_config": "configs/pi05_ecp_program_bank_candidate_interaction_v3.json",
+  "authorities": {
+    "positive_control_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829"
+  },
+  "checkpoint_optimizer_steps": [70, 110],
+  "evaluation": {
+    "evaluated_task_ids": [1, 8, 9, 32, 52, 72, 73, 75, 93, 94],
+    "functional_panel": "panel_b",
+    "panel_visits": 16,
+    "correct_views": "two_fit_plus_same_task_held",
+    "unseen_wrong_meta_bank_task": 2,
+    "unseen_wrong_target_bank_task": 74,
+    "unseen_wrong_video": "lowest_sorted_task_holdout_video",
+    "conditioning_language": "correct_task_exact_language",
+    "wrong_recovery_denominator": "mean_two_correct_fit_free_primal_panel_b_losses",
+    "control_arms": [
+      "correct_interaction_on",
+      "unseen_wrong_interaction_on",
+      "same_unseen_wrong_interaction_off"
+    ],
+    "selected_family_report_targets": [0, 16, 34, 1, 17, 35, 36, 37]
+  },
+  "gate": {
+    "correct_fit_recovery_median_minimum": 0.85,
+    "same_task_held_recovery_median_minimum": 0.80,
+    "held_to_fit_minimum": 0.85,
+    "unseen_wrong_recovery_median_maximum": 0.25,
+    "correct_minus_wrong_median_minimum": 0.50,
+    "correct_better_than_wrong_required_tasks": 10,
+    "wrong_off_minus_on_median_minimum": 0.40,
+    "family_median_minimum": 0.0,
+    "maximum_adjacent_correct_fit_median_drop": 0.05
+  },
+  "efficiency_diagnostics": {
+    "qualification_gate": false,
+    "reported_metrics": [
+      "training_global_step_seconds_maximum",
+      "training_global_step_seconds_median",
+      "evaluation_to_training_wall"
+    ]
+  },
+  "information_wall": {
+    "panel_b_backward_calls": 0,
+    "same_task_held_backward_calls": 0,
+    "unseen_wrong_backward_calls": 0,
+    "validation_or_test_reads": 0,
+    "fixed_routing_token_training_only": true,
+    "wrong_bank_exact_language_fixed": true,
+    "deployment_candidate": false,
+    "shuffled_or_reversed_use": false,
+    "action_meta_installed": false,
+    "single_complete_rank16": true
+  }
+}

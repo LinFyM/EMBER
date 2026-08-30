@@ -631,10 +631,10 @@ def test_retired_binary_routes_are_not_active_configs() -> None:
 def test_candidate_interaction_qualification_is_continuous_and_interaction_only() -> None:
     root = Path(__file__).resolve().parents[2]
     config = load_routing_control_config(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_v2.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_v3.json"
     )
     gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v2.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v3.json"
     )
     assert config["model"]["primal_scorer_trainable_partition"] == (
         SCORER_INTERACTION_ONLY
@@ -651,11 +651,17 @@ def test_candidate_interaction_qualification_is_continuous_and_interaction_only(
         "same_unseen_wrong_interaction_off",
     ]
     assert config["optimization"]["loss"] == (
-        "mean_correct_raw_flow_plus_mean_raw_wrong_bank_benefit_hinge"
+        "mean_correct_raw_flow_plus_half_weight_raw_wrong_bank_benefit_hinge"
     )
     assert config["optimization"]["joint"]["wrong_bank_neutralization"][
         "backward_units"
     ] == "raw_functional_flow_loss"
+    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
+        "task_balance"
+    ] == "two_correct_views_total_is_twice_one_wrong_arm"
+    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
+        "weight"
+    ] == 0.5
 
     owners = (
         TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
@@ -706,23 +712,26 @@ def test_candidate_interaction_wrong_banks_cycle_all_same_role_other_tasks() -> 
     ]
 
 
-def test_candidate_interaction_raw_wrong_credit_matches_correct_task_mass() -> None:
+def test_candidate_interaction_raw_wrong_credit_preserves_positive_anchor() -> None:
     active = _wrong_bank_credit(
         carrier_loss=0.10,
         wrong_loss=0.08,
         free_benefit=0.01,
         epsilon=1e-6,
-        weight=1.0,
+        weight=0.5,
     )
     inactive = _wrong_bank_credit(
         carrier_loss=0.10,
         wrong_loss=0.11,
         free_benefit=0.01,
         epsilon=1e-6,
-        weight=1.0,
+        weight=0.5,
     )
     assert active["active"] is True
-    assert active["backward_weight"] == -1.0 / 6.0
+    assert active["backward_weight"] == -1.0 / 12.0
+    correct_total_weight = 2.0 / 12.0
+    assert correct_total_weight == -2.0 * active["backward_weight"]
+    assert correct_total_weight + active["backward_weight"] == 1.0 / 12.0
     assert float(active["legacy_normalized_amplification"]) > 99.0
     assert inactive["active"] is False
     assert inactive["backward_weight"] == 0.0
@@ -758,7 +767,7 @@ def test_candidate_interaction_information_wall_allows_warm_diagnostic_cache() -
 def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
     root = Path(__file__).resolve().parents[2]
     gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v2.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v3.json"
     )
 
     def distribution(median: float) -> dict[str, float | int]:

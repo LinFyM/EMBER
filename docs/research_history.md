@@ -1507,3 +1507,21 @@ step70→110 exact resume及两个checkpoint的十task完整Gate。step70/110 co
 loss恶化且无法恢复，global clip不能改变支配方向。因此该结果淘汰normalized-gradient loss实现，不淘汰candidate-interaction函数类。
 下一次fresh资格只改变这一机制变量：wrong改为raw-unit固定`-1/6`，normalized recovery仅报告；其余architecture/data/seed/LR/steps/Gate
 均保持。step110另有diagnostic teacher cache使物理read delta为0的aggregation记账问题，deployment信息墙本身未违反。
+
+## 76. raw-unit 1:1 interaction formal与positive-anchor修正
+
+clean pushed detached `cbe3124f1e48a1b0f51e8ab2faeba00e98bceebd`完成110个连续optimizer steps、step70→110 exact resume及
+五worker两个checkpoint完整Gate。step70/110 correct fit为`.652284/.672942`、same-task held为`.642756/.663154`、unseen wrong-on
+为`.346082/.345229`、correct-minus-wrong为`.189253/.185745`，correct优于wrong均为`9/10`；interaction-off保持`.940432`，
+四family与信息墙通过。两个checkpoint稳定但strict non-pass，不能接回Natural Program。
+
+本轮相对首轮负recovery取得大幅恢复，说明raw-unit修正确实去除了wrong量纲支配，也证明candidate interaction具有部分bank分离能力。
+但1:1 objective仍有解析缺口：两条correct各`+1/12`、active wrong `-1/6`，使三臂共同恶化同一损失时目标严格不变。训练轨迹与此
+一致，correct/wrong从接近`1.00/.98`共同下降，只产生约`.18` margin。下一fresh资格只把wrong降为`-1/12`，形成positive:negative
+总质量2:1并惩罚共同破坏；架构、数据、seed、LR、步数、Gate与信息墙不变。该修正仍是fixed-route局部资格，不冒充shared G3。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_s110_6694e99_gpu01p012_r3_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_gate_step70_cbe3124_gpu01p012_gpu02p47_w5_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_gate_step110_cbe3124_gpu01p012_gpu02p47_w5_20260831/`。

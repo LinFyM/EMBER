@@ -1,5 +1,16 @@
 # EMBER progress
 
+- clean pushed detached `main@cbe3124`已完成raw-unit 1:1 candidate interaction的110步训练、step70→110 exact resume和五worker
+  相邻Gate。step70/110 correct fit为`.652284/.672942`、same-task held为`.642756/.663154`、unseen wrong-on为
+  `.346082/.345229`、correct-minus-wrong为`.189253/.185745`，均只有`9/10` task正确bank更好；interaction-off保持
+  `.940432`，四family均非反向，信息墙通过。两个checkpoint稳定但strict non-pass，不能接回Natural Program。
+
+- 本轮相对首轮约`-.39`的共同坍塌有数量级增量，证明raw量纲修正有效、candidate interaction能产生部分bank差异；但它还暴露了更早的
+  解析目标缺口。active wrong时每task反传目标为`(Lc1+Lc2)/12-Lw/6`，三臂共同恶化同一`delta`时变化严格为0；训练从前十步
+  correct/wrong recovery约`1.005/.984`共同降到后段约`.64/.45`，与该common-mode平坦方向一致。下一唯一修正保持全部架构、数据、
+  seed、LR、步数和Gate不变，只把wrong weight从`-1/6`改为`-1/12`，使correct:wrong总质量2:1并严格保护absolute correct utility。
+  只有该positive-anchor formal仍不能分离，才检查candidate/local特征与shared correction表示。
+
 - clean pushed detached `main@c7874f3`已经完成candidate-level interaction首轮formal训练、step70→110 exact resume及两个checkpoint的
   五worker完整Gate。step70/110 correct fit为`-.388363/-.386363`、same-task held为`-.392916/-.393941`、unseen wrong-on为
   `-.405269/-.398702`，correct-minus-wrong为`-.018599/-.020456`且只有`5/10` task正确bank更好；interaction-off始终为

@@ -1672,3 +1672,17 @@ tensor-read增量为0。旧aggregator错误要求每个checkpoint的diagnostic r
 `information_wall_pass`标为false。所有deployment arms在两个checkpoint的teacher reads始终为0，panel-B、held与unseen-wrong
 backward也始终为0。当前修正允许diagnostic物理delta为非负，同时继续严格要求deployment为0；它只修复记账，不改变上述scientific
 non-pass。
+
+### 99. raw-unit 1:1 credit证明candidate有部分分离，但目标仍不识别absolute correct utility
+
+clean pushed detached `cbe3124`完成raw-unit candidate interaction的110步训练、step70→110 exact resume与五worker相邻Gate。
+step70/110 correct fit为`.652284/.672942`、same-task held为`.642756/.663154`、unseen wrong为`.346082/.345229`、margin为
+`.189253/.185745`，correct更好均为`9/10`；interaction-off稳定`.940432`，held/fit约`.985`，四family与信息墙通过。结果相对首轮
+correct/wrong约`-.39/-.40`显著恢复，证明去掉`1/B_free`放大是正确修正，candidate scorer也并非完全忽略bank；但仍未达到
+`.85/.80/.25/.50/10-of-10`机制门，不能接回Natural Program。
+
+最早接口仍是objective。两条correct各`+1/12`、active wrong `-1/6`时，目标正比于`.5(Lc1+Lc2)-Lw`；若correct1、correct2与wrong
+沿共同方向都增加同一损失`delta`，目标变化严格为0。step1的correct/wrong分臂梯度等大反向，后续correct/wrong recovery又从前十步
+约`1.005/.984`共同降到后段约`.64/.45`，正是这一平坦方向的实验证据。因此该non-pass尚不能淘汰candidate/local feature或interaction
+函数类。下一轮只把wrong改为`-1/12`，使两条positive总质量是negative的两倍；共同破坏将增加目标`delta/12`。这不是weight sweep，
+而是解析移除与absolute-utility Gate冲突的零代价模式。若2:1后correct保持而wrong仍高，才把根因下移到bank-specific表示。

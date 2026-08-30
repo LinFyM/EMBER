@@ -20,12 +20,13 @@ measure、一组rank4 residual和一套carrier12+residual4的完整rank16；不�
 及额外unseen wrong banks零梯度。correct和wrong bank都走同一个deployment forward，loss只含correct functional flow与bounded
 wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor/outer-code reconstruction或teacher LoRA target。
 
-首轮formal已经完成并明确non-pass：step70/110 correct fit为`-.388/-.386`、held为`-.393/-.394`，unseen wrong-on为
-`-.405/-.399`，而interaction-off仍为`.940`；correct与wrong结果相关`.95/.96`，说明模型学到的是对所有bank近乎相同的破坏性
-correction。最早接口不是函数类或bank容量，而是loss量纲：两条correct合计反传质量为`1/6`，wrong却额外除以很小的
-`B_free`，被放大约`15.7--359.6x`，global clip不能改变方向支配。当前唯一修正保持架构、数据、seed、LR、步数和Gate不变，fresh
-改为同量纲raw hinge：每task两条correct合计`1/6`、一条active wrong为`-1/6`；`B_free`归一值仅保留作报告。该重跑通过前仍不能
-宣称candidate interaction或G3成立。
+首轮formal的normalized wrong credit把wrong相对correct放大约`15.7--359.6x`，令correct/wrong共同降到约`-.39/-.40`。第二轮
+raw-unit 1:1 credit已完成相邻Gate：step70/110 correct fit为`.652/.673`、held为`.643/.663`、unseen wrong-on为`.346/.345`，
+interaction-off仍为`.940`；margin只有`.189/.186`且均为`9/10` task正确bank更好，所以仍strict non-pass。它证明量纲修正确有大幅
+增量、candidate scorer也能形成部分bank差异，但两条correct总权重`1/6`与wrong `-1/6`使active-hinge目标对三臂共同恶化存在解析
+精确的零代价方向，实际轨迹也从correct/wrong约`1.00/.98`共同降到约`.67/.35`。当前唯一修正仍不改变架构、数据、seed、LR、步数
+或Gate，只把wrong改为`-1/12`，形成correct:wrong总质量2:1；共同破坏会被严格惩罚，`B_free`继续只作报告。该positive-anchor重跑
+通过前仍不能宣称candidate interaction或G3成立。
 
 完成顺序：先扩展fixed-microblock streaming signed pool的branch bias并通过materialized/streaming、chunk和gradient合同；再接通
 event-native queries、`ProgramBankContext`、candidate interaction scorer、唯一forward与精简Gate；随后做最小真实
@@ -44,8 +45,9 @@ candidate交互是否忽略bank。通过后立即恢复Natural Program并联合�
 - [x] 全仓CPU合同及clean pushed detached真实zero-init/forward/gradient/materialization/throughput smoke通过；
 - [x] 从clean pushed detached authority完成首轮两个相邻checkpoint的formal qualification；结果为bank-insensitive destructive
   non-pass，并把首因定位到wrong credit的`1/B_free`梯度放大；
-- [ ] 以唯一raw-unit balanced objective fresh重跑同一qualification；先用首个真实global step记录correct/wrong分臂梯度，随后仍只以
-  step70/110完整functional Gate裁决；
+- [x] 以raw-unit 1:1 objective fresh完成同一qualification；step70/110均稳定non-pass，并解析证明目标存在common-destruction
+  平坦方向；
+- [ ] 以唯一2:1 positive-anchor objective fresh重跑同一qualification；仍只以step70/110完整functional Gate裁决；
 - [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
 
 ## R5--R13历史里程碑

@@ -2,6 +2,14 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- R10 retained实现与真实world6 step1已经接通。唯一`joint_program_primal`执行面严格加载R9 step110完整Writer tensor inventory，
+  但不加载旧optimizer、fixed route或task lookup；feature chart与source/Stage0/operator/carrier/scale冻结，仅Natural Program和233个
+  native heads共`11,178,369`参数可训练，outer-code label/loss完全退出。18项定向CPU合同通过；gpu01物理`0,1,2,3,4,6`上的
+  六任务真实panel-A PI0.5 flow step1自然exit 0，loss`.1093948570`，Program language/scene/process和native input/output
+  gradient probes全部finite/nonzero，frozen parameters无gradient，native teacher reads、Action Meta module/parameter、task/video/frame
+  free parameters均为0。38-target rank12+4唯一rank16对两fit视频实际完成materialization；global update`11.489s`，各卡peak reserved
+  `19.62--21.80GB`，所以实现、信息墙、显存与吞吐均有formal资格。该smoke只证明真实功能梯度接通，不构成G3 Gate结果。
+
 - R9 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续，step70/110 loss为
   `.354164/.334220`，两个world6 checkpoints完整；Action Meta/source/Stage0/scale trainable与native teacher reads均为0，
   Program和完整scorer梯度持续finite/nonzero。六个独立worker在gpu01物理`0,1,2,3,4,6`顺序评价两个checkpoint，12/12 tasks、

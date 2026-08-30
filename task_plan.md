@@ -72,7 +72,8 @@ functional训练中漂移的feature chart，移除outer-code loss，只让Natura
   step110 train/held/task-held为`-.131825/-.129718/-.011724`，内部四family全部过门但真实primary明确non-pass；
 - [x] 依据R9的role/task/causal分解把最早接口定位为code-to-utility：不是继续outer-code训练、raw Stage0、scale、bank或超参小扫；
 - [ ] 接通R10 R9-initialized functional refinement：完整加载R9 Program/scorer，冻结feature chart，只训练Natural Program与native
-  heads，loss仅为generated rank16的cross-episode PI0.5 flow；完成真实step1与同一12-task Gate；
+  heads，loss仅为generated rank16的cross-episode PI0.5 flow；retained实现、18项定向合同与真实world6 step1已经通过，待从clean
+  pushed detached authority完成step70/110及同一12-task Gate；
 - [ ] 只有R10 train/held-video显著通过而true task-held仍低才进入matched raw Stage0 sufficiency；若train本身仍低，继续按真实
   functional gradient/ownership定位Program/scorer函数类，不用训练时长、seed/LR/width/rank小扫掩盖。
 

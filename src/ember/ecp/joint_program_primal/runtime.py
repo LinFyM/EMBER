@@ -47,8 +47,10 @@ from ember.ecp.native_factors import native_capture_modes
 from ember.ecp.joint_program_primal.routing_initialization import (
     FunctionalCodeTarget,
     R5_SHARED_FUNCTIONAL_CHART,
+    R9_STABLE_CONTENT,
     load_functional_code_targets,
     load_passed_r5_primal_scorer,
+    load_r9_stable_writer,
 )
 from ember.pi05_eval_contract import (
     git_state,
@@ -99,6 +101,11 @@ FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA = (
 FUNCTIONAL_CODE_STABLE_JOINT_STAGE = (
     "g3_fit_only_functional_code_stable_chart_joint_acquisition"
 )
+FUNCTIONAL_REFINEMENT_SCHEMA = "ember_ecp_r9_initialized_functional_refinement_r10_v1"
+FUNCTIONAL_REFINEMENT_RUN_SCHEMA = (
+    "ember_ecp_r9_initialized_functional_refinement_run_v1"
+)
+FUNCTIONAL_REFINEMENT_STAGE = "g3_r9_initialized_functional_refinement"
 FRESH_SCORER = "fresh"
 SCORER_ALL_PARAMETERS = "all"
 SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
@@ -257,8 +264,10 @@ def is_functional_chart_acquisition_config(config: Mapping[str, Any]) -> bool:
 
 
 def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
-    return is_chart_reconnect_config(config) or is_functional_chart_acquisition_config(
-        config
+    return (
+        is_chart_reconnect_config(config)
+        or is_functional_chart_acquisition_config(config)
+        or config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA
     )
 
 
@@ -267,6 +276,8 @@ def joint_run_schema(config: Mapping[str, Any]) -> str:
         return CHART_RECONNECT_RUN_SCHEMA
     if config.get("schema_version") == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA:
         return FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA
+    if config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA:
+        return FUNCTIONAL_REFINEMENT_RUN_SCHEMA
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA
     return J2_RUN_SCHEMA
@@ -277,6 +288,8 @@ def joint_stage(config: Mapping[str, Any]) -> str:
         return CHART_RECONNECT_STAGE
     if config.get("schema_version") == FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA:
         return FUNCTIONAL_CODE_STABLE_JOINT_STAGE
+    if config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA:
+        return FUNCTIONAL_REFINEMENT_STAGE
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_STAGE
     return J2_STAGE
@@ -312,6 +325,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
                 CHART_RECONNECT_SCHEMA,
                 FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
                 FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
+                FUNCTIONAL_REFINEMENT_SCHEMA,
             },
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
@@ -422,11 +436,32 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_deployment_input") is False,
         )
     )
+    refinement_valid = all(
+        (
+            schema == FUNCTIONAL_REFINEMENT_SCHEMA,
+            config.get("status")
+            == "active_r9_initialized_functional_refinement",
+            model.get("program_initialization") == R9_STABLE_CONTENT,
+            model.get("primal_scorer_initialization") == R9_STABLE_CONTENT,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_NATIVE_HEADS_ONLY,
+            config.get("optimization", {}).get("loss")
+            == "generated_rank16_cross_episode_pi05_flow_only",
+            "counterfactual" not in joint,
+            isinstance(authorities.get("r9_writer_checkpoint"), str),
+            isinstance(authorities.get("r9_gate_aggregate"), str),
+            wall.get("r9_writer_initialization_training_only") is True,
+            wall.get("primal_scorer_feature_chart_frozen") is True,
+            wall.get("outer_code_loss_active") is False,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
     if not common_valid or not (
         counterfactual_valid
         or reconnect_valid
         or acquisition_valid
         or joint_acquisition_valid
+        or refinement_valid
     ):
         raise ValueError("unsupported joint Program-primal functional config")
     return config
@@ -881,6 +916,8 @@ def _model_assets(
             "fixed_routing_token_loaded": False,
             "task_lookup_parameters_loaded": False,
         }
+    elif scorer_initialization == R9_STABLE_CONTENT:
+        initialization = None
     elif config.get("schema_version") == "ember_ecp_routing_token_control_r1_v1":
         initialization = {
             "kind": scorer_initialization,
@@ -897,6 +934,15 @@ def _model_assets(
             )
         ),
     )
+    if scorer_initialization == R9_STABLE_CONTENT:
+        initialization = load_r9_stable_writer(
+            config,
+            writer_state,
+            asset_root=args.asset_root,
+            device=context.device,
+        )
+    if initialization is None:
+        raise RuntimeError("joint Writer initialization was not resolved")
     teacher_path = authority_path(
         base, "native_teacher_manifest", asset_root=args.asset_root
     )

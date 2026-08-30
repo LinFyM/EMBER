@@ -21,12 +21,14 @@ from ember.ecp.joint_program_primal.routing_control import (
 )
 from ember.ecp.joint_program_primal.routing_initialization import (
     FUNCTIONAL_CODE_INITIALIZATION,
+    R9_STABLE_CONTENT,
     minimum_norm_head_solution,
 )
 from ember.ecp.joint_program_primal.runtime import (
     CHART_RECONNECT_SCHEMA,
     FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
     FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
+    FUNCTIONAL_REFINEMENT_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
@@ -520,6 +522,32 @@ def test_r9_jointly_acquires_functional_code_from_stable_chart() -> None:
     gate = load_joint_program_primal_gate(
         root
         / "configs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_v1.json"
+    )
+    assert gate["checkpoint_optimizer_steps"] == [70, 110]
+    assert gate["gate"]["true_task_held_mean_minimum"] == 0.40
+
+
+def test_r10_refines_r9_content_with_functional_flow_only() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root
+        / "configs/pi05_ecp_r9_initialized_functional_refinement_r10_v1.json"
+    )
+    assert config["schema_version"] == FUNCTIONAL_REFINEMENT_SCHEMA
+    assert config["model"]["program_initialization"] == R9_STABLE_CONTENT
+    assert config["model"]["primal_scorer_initialization"] == R9_STABLE_CONTENT
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        JOINT_NATIVE_HEADS_ONLY
+    )
+    assert config["optimization"]["loss"] == (
+        "generated_rank16_cross_episode_pi05_flow_only"
+    )
+    assert "counterfactual" not in config["optimization"]["joint"]
+    assert config["information_wall"]["primal_scorer_feature_chart_frozen"] is True
+    assert config["information_wall"]["outer_code_loss_active"] is False
+    gate = load_joint_program_primal_gate(
+        root
+        / "configs/pi05_ecp_r9_initialized_functional_refinement_r10_gate_v1.json"
     )
     assert gate["checkpoint_optimizer_steps"] == [70, 110]
     assert gate["gate"]["true_task_held_mean_minimum"] == 0.40

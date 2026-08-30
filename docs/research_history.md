@@ -1351,3 +1351,23 @@ video及same-role wrong bank不参与构造并保持零梯度。10-task held cor
 
 - `runs/analysis/pi05_ecp_g3_symmetric_whitening_cross_bank_3cd4ecf_gpu01p012346_w6_20260830/`；
 - `runs/analysis/pi05_ecp_g3_fit_transport_half_cross_bank_3297dbd_gpu01p0_w6_20260830/`。
+
+## 68. half-operator task-local functional formal与bank-interaction Gate
+
+clean pushed detached `55fded4`在gpu01物理`0,1,2`及gpu02物理`4,7`完成10-task task-local formal。每task仅以两条fit K1
+videos和panel A真实functional flow优化一个shared-across-video code 100步；全部sealed checkpoint为`321,792`个task-local参数，
+Writer/source/Stage0/Action Meta均为0，held/wrong/panel-B backward为0，输出仍是唯一完整rank16。五个独立worker随后在第三条
+same-task held video与same-role wrong bank上完成panel B评价。
+
+held correct/wrong recovery中位为`.725204/.188873`，margin中位`.541238`，正确bank在`10/10` task更好且`10/10`达到
+`.10` margin。bank interaction已强过门，但correct未达到预注册`.75`，所以总Gate non-pass。fit-video recovery中位为`.950541`；
+meta fit/held为`.997452/.898189`，target为`.796767/.614878`，而旧full inverse target correct中位仍为`.945032`。
+该分解把最早接口锁定为half operator的same-task fit-to-held谱坐标转移：不是bank没有因果增量，也不是单纯延长task-local优化可修复。
+
+下一只读bridge预注册唯一inverse power`.75`与补幂fit transport`.25`，对应在replay中保留current-bank quarter-root作用；不做其它
+幂次小扫。若同一10-task原Gate不能同时恢复correct capacity与margin，则停止继续调谱幂并转向common-coordinate/operator结构。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_g3_bank_interaction_positive_control_10task_89b130a_gpu01p012_gpu02p47_20260830/`；
+- `runs/analysis/pi05_ecp_g3_bank_interaction_positive_control_gate_55fded4_gpu01p012_gpu02p47_w5_20260830/`。

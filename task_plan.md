@@ -87,12 +87,14 @@ cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位�
   `.930860/.945799`，correct-minus-wrong中位`-.003819`，正确bank仅`2/10`更好、`0/10`达到`.10`，错误bank`10/10`
   仍有正收益。该正控明确否定当前global-`C^+d` operator的bank交互可识别性，不能继续把wrong-bank失败归因shared
   Program/scorer。
-- [ ] 在不恢复退役candidate scorer或parameter teacher路线的前提下，先建立operator-level interaction正控：真实X/Y、signed
+- [x] 在不恢复退役candidate scorer或parameter teacher路线的前提下，先建立operator-level interaction正控：真实X/Y、signed
   pooling、rank4、唯一rank16与same-task跨video能力必须保留，同时correct bank相对same-role wrong bank产生必要功能增量；只有该
-  正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。固定half operator、fit-symmetric task-local初始化、100步
-  fit-only functional优化、sealed-code held/wrong-bank evaluator与`.75/.10/8-of-10` Gate实现已经接通；`105`项ECP回归与task32真实
-  单步smoke通过，Action Meta/Writer/source/held/wrong gradients均为0。下一步是clean main集成后从detached authority完成10-task
-  formal优化与同一panel-B correct-vs-wrong Gate；不把其结果冒充shared Program mapping。
+  正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。half operator formal得到correct/wrong/margin中位
+  `.725204/.188873/.541238`与correct-better `10/10`；bank interaction强过门但correct未达`.75`，因此总体严格non-pass。
+- [ ] 只检验一次由两个已测端点夹定的tempered operator：固定`C_B^{-3/4}` dual、相配套fit-only `C_B^{-1/4}` transport，先做
+  zero-training 10-task held/wrong bridge。仍使用真实X/Y、signed replay、rank4和唯一rank16；Gate不变，不做谱幂小扫。若同时恢复
+  correct capacity与bank margin，再接同一task-local functional formal；否则停止调幂并分析common-coordinate/operator形式，不训练
+  shared Program/scorer版本。
 
 ## 当前G1里程碑
 

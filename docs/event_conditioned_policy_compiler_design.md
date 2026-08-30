@@ -566,6 +566,12 @@ median仅`.110012`，所以也未满足“所有family均缺少可读信息”�
 能力与correct-over-wrong bank必要增量；通过前不得再用当前global-`C^+d`路径训练Program/scorer版本。具体interaction修正必须由
 正控证据选择，不恢复退役candidate scorer、full functional-polar deployment或task/video lookup。
 
+half operator的后续task-local formal现已完成：两fit-video functional recovery中位`.950541`，第三same-task held correct/wrong
+为`.725204/.188873`，bank margin`.541238`且correct-better `10/10`。因此bank必要性已恢复，但correct未达`.75`，不能恢复shared
+Program/scorer。当前只允许一次tempered谱中点probe：dual使用`C_B^{-3/4}`，fit-only teacher effect使用补幂`C_B^{-1/4}`，使
+replay保留quarter-root current-bank作用；仍以同一held/wrong Gate裁决且不做幂次小扫。若不能同时过capacity与margin，后续必须重开
+common-coordinate/operator形式，而不是继续训练Program版本或调谱幂。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置

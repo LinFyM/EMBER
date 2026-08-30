@@ -164,7 +164,7 @@ class SpectralNativeCovariance:
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if primal.ndim != 2 or primal.shape[-1] != self.native_width:
             raise BankConditioningError("native primal width changed")
-        if inverse_covariance_power not in (0.5, 1.0):
+        if inverse_covariance_power not in (0.5, 0.75, 1.0):
             raise BankConditioningError("native inverse covariance power changed")
         basis = self.basis.to(primal)
         eigenvalues = self.eigenvalues.to(primal)
@@ -176,7 +176,7 @@ class SpectralNativeCovariance:
             score_rms = (
                 coordinates.square() / eigenvalues.float()[None]
             ).sum(-1).clamp_min(0).sqrt()
-        else:
+        elif inverse_covariance_power == 0.5:
             # Symmetric whitening normalizes conditioning without algebraically
             # cancelling the current bank: in the linear regime C q is
             # proportional to C^(1/2) d rather than d.
@@ -184,6 +184,19 @@ class SpectralNativeCovariance:
                 1e-30
             )
             dual_coordinates = coordinates / relative.sqrt()[None]
+            query = dual_coordinates @ basis.float().T
+            score_rms = (
+                dual_coordinates.square() * eigenvalues.float()[None]
+            ).sum(-1).clamp_min(0).sqrt()
+        else:
+            # The single tempered control is the log-spectral midpoint between
+            # half whitening and the full inverse.  C^(-3/4) leaves a
+            # quarter-root current-bank interaction instead of either fully
+            # cancelling C or retaining the stronger half-root distortion.
+            relative = eigenvalues.float() / eigenvalues.float()[-1].clamp_min(
+                1e-30
+            )
+            dual_coordinates = coordinates / relative.pow(0.75)[None]
             query = dual_coordinates @ basis.float().T
             score_rms = (
                 dual_coordinates.square() * eigenvalues.float()[None]

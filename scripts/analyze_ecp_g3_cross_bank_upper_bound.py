@@ -15,7 +15,7 @@ from safetensors.torch import load_file
 
 from ember.ecp.bank_conditioning.primal_capacity import (
     TaskLocalPrimalCode,
-    inverse_sqrt_primal_transport,
+    inverse_fractional_primal_transport,
     task_local_output,
 )
 from ember.ecp.joint_program_primal.evaluation import (
@@ -60,7 +60,11 @@ def _fit_transport_primals(
     *,
     program: Any,
     conditions: Sequence[Any],
+    inverse_power: float,
 ) -> tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]]:
+    if inverse_power not in (0.5, 0.75):
+        raise ValueError("fit transport operator power changed")
+    transport_power = 1.0 - inverse_power
     compiler = runtime.compiler
     state = compiler.primal_scorer.program_state(program)
     base_inputs = compiler.primal_scorer.input_primals(state)
@@ -74,7 +78,9 @@ def _fit_transport_primals(
         video = prepared.videos[0]
         transported_inputs.append(
             tuple(
-                inverse_sqrt_primal_transport(operator, primal)
+                inverse_fractional_primal_transport(
+                    operator, primal, inverse_power=transport_power
+                )
                 for operator, primal in zip(
                     video.input_operators, base_inputs, strict=True
                 )
@@ -84,7 +90,11 @@ def _fit_transport_primals(
             tuple(
                 torch.stack(
                     tuple(
-                        inverse_sqrt_primal_transport(operator, primal[group])
+                        inverse_fractional_primal_transport(
+                            operator,
+                            primal[group],
+                            inverse_power=transport_power,
+                        )
                         for group, operator in enumerate(operators)
                     )
                 )
@@ -274,13 +284,14 @@ def _primal_authority(
     if primal_mode in ("checkpoint", "fit_transport"):
         program = fixed_routing_program(runtime, task_id)
     if primal_mode == "fit_transport":
-        if inverse_power != 0.5:
-            raise ValueError("fit transport requires symmetric whitening")
+        if inverse_power not in (0.5, 0.75):
+            raise ValueError("fit transport requires a bank-retaining operator")
         input_primals, output_primals, transport_alignment = (
             _fit_transport_primals(
                 runtime,
                 program=program,
                 conditions=tuple(by_video[value] for value in fit_videos),
+                inverse_power=inverse_power,
             )
         )
         correct_condition = by_video[held_video]
@@ -424,7 +435,7 @@ def _evaluate_task(
 
 
 def worker(args: argparse.Namespace) -> None:
-    if args.inverse_power not in (0.5, 1.0):
+    if args.inverse_power not in (0.5, 0.75, 1.0):
         raise ValueError("cross-bank diagnostic inverse power changed")
     if args.primal_mode not in ("checkpoint", "fit_transport", "trained_code"):
         raise ValueError("cross-bank diagnostic primal mode changed")

@@ -97,7 +97,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             or not 0.0 < self.relative_eigenvalue_floor < 1.0
             or self.replay_score_rms <= 0.0
             or self.covariance_frame_chunk <= 0
-            or self.inverse_covariance_power not in (0.5, 1.0)
+            or self.inverse_covariance_power not in (0.5, 0.75, 1.0)
             or scale_prior_ratio.shape != (len(self.owners), 4)
             or not bool(torch.isfinite(scale_prior_ratio).all())
             or not bool(torch.all((scale_prior_ratio > 0) & (scale_prior_ratio < 1)))

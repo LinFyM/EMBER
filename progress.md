@@ -2,6 +2,24 @@
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
+  video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/
+  source/Stage0为0，Action Meta为0，held/wrong/panel-B backward均为0，仍只生成一套完整rank16。五个独立workers随后评价同一sealed
+  code在same-task held bank与same-role cyclic wrong bank上的panel B结果；correct/wrong recovery中位为`.725204/.188873`，margin
+  中位`.541238`，正确bank在`10/10`更好且`10/10` margin达到`.10`。bank interaction两项强过门，但correct低于预注册`.75`，所以
+  总Gate严格non-pass，不能因只差`.024796`而放宽。
+
+- 分层结果把最早失效接口锁定为half operator的fit-to-held谱坐标转移，而不是bank因果、断图或普通优化不足。训练后fit-video
+  recovery中位`.950541`，held下降`.225337`到`.725204`；meta的fit/held为`.997452/.898189`，target为
+  `.796767/.614878`，而旧full-inverse target correct上界仍为`.945032`。初始fit-transport held与最终held的跨task相关为约`.91`，
+  普通transport cosine和teacher-factor recovery均不能解释弱task；functional优化改善9/10 task但无法消除第三video坐标偏移。
+  这说明`C_B^{-1/2}`保留了足够bank特异性，却留下过强的`C_B^{1/2}`效果畸变。
+
+- 下一单变量机制probe固定谱逆幂为`.75`，即half与full inverse的唯一log-spectral中点；相配套的fit-only transport使用
+  `C_B^{-1/4}`，replay仍保留`C_B^{1/4}` current-bank作用。该选择由`.5`的高margin/低capacity与`1.0`的高capacity/零margin两个
+  端点直接夹定，不做`.625/.875`等幂次小扫。先以两fit/一held/一wrong的同一10-task zero-training bridge检验原`.75/.10/8-of-10`
+  Gate；若不出现同时的容量与margin增量，就停止继续调谱幂并重开更上游的common-coordinate/operator形式。
+
 - bank-interaction positive control的retained实现已接通，并已完成下述formal launch预检。唯一canonical operator新增固定
   `inverse_covariance_power=.5`；每个gradient task只用两条fit video的teacher初始化形成共同half-whitened task-local code，随后只以
   panel A真实functional flow优化100步。same-task held video、same-role wrong bank和panel B全部零梯度；最终分别把同一code作用于held

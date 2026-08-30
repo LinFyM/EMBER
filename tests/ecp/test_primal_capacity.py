@@ -7,7 +7,7 @@ import torch
 
 from ember.ecp.bank_conditioning.primal_capacity import (
     TaskLocalPrimalCode,
-    initialize_fit_symmetric_transport,
+    initialize_fit_spectral_transport,
 )
 from ember.ecp.bank_conditioning.primal_dual import SpectralNativeCovariance
 from ember.ecp.bank_conditioning.primal_capacity_run import (
@@ -95,7 +95,7 @@ def _spectral_operator(width: int, exponent: float) -> SpectralNativeCovariance:
     )
 
 
-def test_task_local_code_serialization_and_fit_symmetric_transport() -> None:
+def test_task_local_code_serialization_and_fit_spectral_transport() -> None:
     owners = _owners()
     original = TaskLocalPrimalCode(
         owners,
@@ -124,7 +124,7 @@ def test_task_local_code_serialization_and_fit_symmetric_transport() -> None:
         )
 
     before = tuple(value.detach().clone() for value in code.input_code)
-    report = initialize_fit_symmetric_transport(code, (bank(1.0), bank(2.0)))
+    report = initialize_fit_spectral_transport(code, (bank(1.0), bank(2.0)))
     assert set(report) == {"minimum", "median", "mean"}
     assert all(torch.isfinite(torch.tensor(value)) for value in report.values())
     assert any(
@@ -132,3 +132,12 @@ def test_task_local_code_serialization_and_fit_symmetric_transport() -> None:
         for left, right in zip(before, code.input_code, strict=True)
     )
     assert all(bool(torch.isfinite(value).all()) for value in code.parameters())
+
+    tempered = TaskLocalPrimalCode.from_serialized(owners, serialized)
+    tempered_report = initialize_fit_spectral_transport(
+        tempered,
+        (bank(1.0), bank(2.0)),
+        operator_inverse_power=0.75,
+    )
+    assert set(tempered_report) == {"minimum", "median", "mean"}
+    assert all(bool(torch.isfinite(value).all()) for value in tempered.parameters())

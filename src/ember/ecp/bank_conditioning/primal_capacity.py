@@ -167,24 +167,34 @@ class TaskLocalPrimalCode(torch.nn.Module):
         return self.fixed_scales.to(s_ref)
 
 
-def inverse_sqrt_primal_transport(
-    operator: object, primal: torch.Tensor
+def inverse_fractional_primal_transport(
+    operator: object,
+    primal: torch.Tensor,
+    *,
+    inverse_power: float,
 ) -> torch.Tensor:
+    if inverse_power not in (0.25, 0.5):
+        raise ValueError("fit spectral transport inverse power changed")
     basis = operator.basis.to(primal).float()
     eigenvalues = operator.eigenvalues.to(primal).float()
     relative = eigenvalues / eigenvalues[-1].clamp_min(1e-30)
     coordinates = primal.float() @ basis
-    transported = (coordinates / relative.sqrt()[None]) @ basis.T
+    denominator = (
+        relative.sqrt() if inverse_power == 0.5 else relative.pow(0.25)
+    )
+    transported = (coordinates / denominator[None]) @ basis.T
     if not bool(torch.isfinite(transported).all()):
-        raise ValueError("fit symmetric transport became non-finite")
+        raise ValueError("fit spectral transport became non-finite")
     return transported.to(primal)
 
 
-def initialize_fit_symmetric_transport(
+def initialize_fit_spectral_transport(
     code: TaskLocalPrimalCode,
     banks: Sequence[CompactPrimalDualVideo],
+    *,
+    operator_inverse_power: float = 0.5,
 ) -> dict[str, float]:
-    """Put one fit-only task code in the shared half-whitened coordinate.
+    """Put one fit-only task code in the shared spectral coordinate.
 
     Each fit video independently transports the same teacher-initialized code;
     the arithmetic mean is only a task-local capacity initialization.  Held or
@@ -192,8 +202,9 @@ def initialize_fit_symmetric_transport(
     """
 
     rows = tuple(banks)
-    if len(rows) != 2:
-        raise ValueError("fit symmetric transport requires exactly two videos")
+    if len(rows) != 2 or operator_inverse_power not in (0.5, 0.75):
+        raise ValueError("fit spectral transport contract changed")
+    transport_power = 1.0 - operator_inverse_power
     base_inputs = code.input_primals()
     base_outputs = code.output_primals()
     transported_inputs = []
@@ -206,7 +217,9 @@ def initialize_fit_symmetric_transport(
             raise ValueError("fit symmetric transport target count changed")
         transported_inputs.append(
             tuple(
-                inverse_sqrt_primal_transport(operator, primal)
+                inverse_fractional_primal_transport(
+                    operator, primal, inverse_power=transport_power
+                )
                 for operator, primal in zip(
                     bank.input_operators, base_inputs, strict=True
                 )
@@ -216,7 +229,11 @@ def initialize_fit_symmetric_transport(
             tuple(
                 torch.stack(
                     tuple(
-                        inverse_sqrt_primal_transport(operator, primal[group])
+                        inverse_fractional_primal_transport(
+                            operator,
+                            primal[group],
+                            inverse_power=transport_power,
+                        )
                         for group, operator in enumerate(operators)
                     )
                 )

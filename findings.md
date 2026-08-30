@@ -1502,3 +1502,22 @@ margin，wrong-to-correct update cosine中位仅`.078233`。这证明half operat
 functional flow优化一个task-local共同code，再在zero-gradient held/wrong bank上复评。该优化仍是operator capacity upper bound，
 不是Program-conditioned shared attention；若`.75/.10/8-of-10`通过，才恢复shared mapping，若correct capacity仍低则先分析
 fit-to-held坐标迁移，不训练另一个Program/scorer版本。
+
+### 88. half operator正式恢复bank必要性，但fit-to-held capacity仍差一个结构接口
+
+clean pushed detached `55fded4`完成10个gradient task的half-operator task-local formal。每task只用两条fit K1 videos与panel A
+functional flow优化同一个code 100步，same-task held、same-role wrong bank和panel B零梯度；全部checkpoint的Action Meta/Writer/
+source/Stage0 trainable为0且只物化carrier12+residual4的一套完整rank16。五个独立worker的held correct/wrong recovery中位为
+`.725204/.188873`，correct-minus-wrong中位`.541238`；正确bank在`10/10` task更好且全部达到`.10` margin。因correct仍低于
+`.75`，总Gate严格non-pass，但global-`C^+d`的bank interchangeability根因已经被消除。
+
+最早失效接口不是笼统“训练不够”。最终fit-video recovery中位`.950541`而held为`.725204`；meta fit/held为
+`.997452/.898189`，target为`.796767/.614878`，旧full-inverse target correct上界仍为`.945032`。9/10 task相对未优化
+fit-transport有所改善，但初始held与最终held跨task相关约`.91`，说明functional更新主要沿用初始bank坐标质量；transport flattened
+cosine约`.91`和held teacher-factor recovery约`.63`均不预测真实held效用。half solve在线性区留下`C_B^{1/2}`作用，既带来强
+correct-over-wrong margin，也对同task第三video施加过强坐标畸变。
+
+下一probe只取inverse power`.5`与`1.0`的log-spectral中点`.75`，并把teacher effect以补幂`C_B^{-1/4}`送入共同task code；于是
+replay保留`C_B^{1/4}`的真实bank作用。它是由两端证据指定的一次结构性bias--capacity折中，不授权幂次、LR、seed或step sweep。
+先跑同一10-task fit-only zero-training bridge和原`.75/.10/8-of-10` Gate；若仍不能同时过capacity与margin，后续重开
+common-coordinate/operator形式而不是继续调谱幂。

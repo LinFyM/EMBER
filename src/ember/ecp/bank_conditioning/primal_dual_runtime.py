@@ -104,7 +104,7 @@ class PrimalDualVideoOperator:
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
         self.inverse_covariance_power = float(inverse_covariance_power)
-        if self.inverse_covariance_power not in (0.5, 1.0):
+        if self.inverse_covariance_power not in (0.5, 0.75, 1.0):
             raise NativeFactorError("invalid native inverse covariance power")
 
     @staticmethod

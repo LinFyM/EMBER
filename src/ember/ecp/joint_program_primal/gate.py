@@ -14,7 +14,7 @@ from safetensors.torch import save_file
 from ember.ecp.bank_conditioning.primal_capacity import (
     BANK_INTERACTION_CONTROL_SCHEMA,
     TaskLocalPrimalCode,
-    initialize_fit_symmetric_transport,
+    initialize_fit_spectral_transport,
     recovery_record,
     task_local_output,
 )
@@ -89,7 +89,7 @@ def _positive_control_code(
             raise RuntimeError("fit symmetric transport lost its half operator")
         fit = runtime.task_conditions[task_id].fit_views
         initialization_report["cross_video_transport_alignment"] = (
-            initialize_fit_symmetric_transport(
+            initialize_fit_spectral_transport(
                 code,
                 tuple(banks[row.video_demo] for row in fit),
             )

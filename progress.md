@@ -40,6 +40,37 @@
   operational cache放入有足够预算的`/data1`根，复用既有23GB base cache且不删除任何历史资产；seal workers完成后先验证worker union
   精确90、无重复/遗漏，再启动训练。
 
+### Candidate-level Program--bank interaction qualification formal launch contract
+
+- scientific implementation authority为clean pushed `main@200a7784fad1c0312f5b2cdea893f64eae95a60b`；cache seal、训练和Gate从只新增
+  本launch记录、未再修改`src/ scripts/ configs/ tests/`的clean pushed detached descendant执行。初始化固定为R5 step110 shared
+  functional chart；source、Native Stage0、R5 scorer、full inverse operator、carrier12、scale与Action Meta冻结，只训练
+  `ProgramBankInteractionScorer`。fresh运行10 warmup + 100 effective updates，在actual step70与110保存相邻single checkpoints；
+  step70到110只允许同一output root、world topology与sampler state的exact resume。
+- 数据固定为10个gradient tasks各两条fit K1 video、panel A functional flow与same-role其它gradient-task wrong banks；wrong bank始终使用
+  correct task exact language。same-task held video、unseen task2/74 wrong banks、panel B、validation/test与shuffled/reversed全部零梯度。
+  每个condition仍只物化一套carrier12 + continuous rank4 residual的完整38-target rank16；fixed routing token仅是本positive control的
+  training-only Program authority，任何结果都不冒充Natural Program shared mapping或最终deployment Writer。
+- 2026-08-31 00:05 CST live storage authority：`strg01` `/data1` quota为`716461192/1073741824KiB`，约余341GiB；共享
+  filesystem尚余84TiB。90-pair cache精确预估`60,690,522,734B`（56.52GiB），故固定写入共享
+  `runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831/`，不写gpu01 `/dev/shm`；base frozen-condition
+  cache继续复用gpu01的`/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`。独立seal workers结束后必须核对同一commit/root、
+  完整worker index、90个唯一`(program task, bank task, video demo)`、无遗漏/重复且native teacher reads为0。
+- 同时刻gpu01物理0/1/2均为A40、`15MiB/0%`且无compute process，3--6为他人约34.6GiB/100%任务；gpu02物理7完全空闲，
+  其余设备有他人显存或高UTL进程。训练是single-node collective，计划在紧邻launch复查后使用gpu01 `0,1,2` world3、
+  `NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL；不跨节点拼卡。cache seal和后续独立Gate workers可在不干扰他人的前提下使用
+  两节点实时合适设备。
+- formal训练输出固定为
+  `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v1_s110_200a778_gpu01p012_r3_20260831/`；入口为detached worktree中的
+  `torchrun --standalone --nproc-per-node=3 scripts/train_ecp_joint_program_primal.py`，training config固定使用canonical asset root中的
+  `configs/pi05_ecp_program_bank_candidate_interaction_v1.json`，base config为`configs/pi05_ecp_shared_compiler_g3_v5.json`，并绑定现有
+  source run、source step1000、tokenizer、sealed dataset、base condition cache及上述cross-language cache。先fresh `--stop-after-step 70`，
+  再从`checkpoints/macro_00000070` exact resume到`--stop-after-step 110`。
+- Gate同时评价actual step70/110的correct two-fit + same-task-held、unseen wrong interaction-on及同一wrong interaction-off。资格要求仍为
+  fit/held/held-to-fit至少`.85/.80/.85`、unseen wrong至多`.25`、correct-wrong至少`.50`、10/10 task correct更好、wrong off-on至少
+  `.40`、四family不系统反向、step110相对step70 fit下降不超过`.05`，并满足`<=45s/global update`与evaluation/training wall ratio
+  `<=.5`。内部loss、cache完成或单个checkpoint均不能替代该Gate；non-pass按最早失效接口解释，不做seed/LR/width/rank小扫。
+
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
 - full-inverse raw bank审计已经把新接口从“是否有兼容信号”推进到“shared Program是否学会该信号”。R5成功primal在三条same-task

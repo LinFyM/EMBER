@@ -2,6 +2,17 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- matched raw-Stage0 sufficiency retained执行面已经接通。R11从与R10相同的R9 step110完整Writer初始化，保持相同12-task split、
+  panel-A真实functional flow、110步预算、scorer容量、native heads、bank/operator/carrier/scale和Gate；唯一输入改动是绕过Natural
+  Program process fusion与canonical aligner，让同一scorer直接读取exact-language embedding、first/final patch relation、two-probe
+  owner/event process、presence、uncertainty及normalized event time。该NaturalProgram-shaped对象只是scorer的固定shape carrier，R11
+  明确是diagnostic而非deployment Writer。
+
+- 20项定向CPU合同通过；gpu01物理0上的真实六task单rank step1也通过。初始mean functional loss`.112984`，language/scene及全部233
+  native heads梯度finite/nonzero，native teacher reads为0；Action Meta、source/Stage0、process fusion、aligner、feature chart、scale均
+  0 trainable，实际trainable `11,061,760`，peak reserved `21.88GB`。单rank因串行承担六个task用`53.94s`，只作图与materialization
+  smoke；formal仍按world6每rank一task获取真实吞吐。
+
 - R10 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续、墙钟`1442.70s`，step70/110两个
   world6 checkpoints完整；全部110步Program/native-head gradients finite/nonzero，native teacher reads、Action Meta、source/Stage0/
   operator/scale trainable均为0。六个独立worker在gpu01物理`0,1,2,3,4,6`完成两个checkpoint的12/12 paired panel-B与全部controls，

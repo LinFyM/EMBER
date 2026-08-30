@@ -52,6 +52,7 @@ from ember.ecp.joint_program_primal.routing_initialization import (
     load_passed_r5_primal_scorer,
     load_r9_stable_writer,
 )
+from ember.ecp.joint_program_primal.raw_stage0 import RAW_STAGE0_PROGRAM_INPUT
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
@@ -106,6 +107,9 @@ FUNCTIONAL_REFINEMENT_RUN_SCHEMA = (
     "ember_ecp_r9_initialized_functional_refinement_run_v1"
 )
 FUNCTIONAL_REFINEMENT_STAGE = "g3_r9_initialized_functional_refinement"
+RAW_STAGE0_SUFFICIENCY_SCHEMA = "ember_ecp_raw_stage0_sufficiency_r11_v1"
+RAW_STAGE0_SUFFICIENCY_RUN_SCHEMA = "ember_ecp_raw_stage0_sufficiency_run_v1"
+RAW_STAGE0_SUFFICIENCY_STAGE = "g3_raw_stage0_sufficiency_diagnostic"
 FRESH_SCORER = "fresh"
 SCORER_ALL_PARAMETERS = "all"
 SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
@@ -267,8 +271,13 @@ def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
     return (
         is_chart_reconnect_config(config)
         or is_functional_chart_acquisition_config(config)
-        or config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA
+        or config.get("schema_version")
+        in {FUNCTIONAL_REFINEMENT_SCHEMA, RAW_STAGE0_SUFFICIENCY_SCHEMA}
     )
+
+
+def is_raw_stage0_sufficiency_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == RAW_STAGE0_SUFFICIENCY_SCHEMA
 
 
 def joint_run_schema(config: Mapping[str, Any]) -> str:
@@ -278,6 +287,8 @@ def joint_run_schema(config: Mapping[str, Any]) -> str:
         return FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA
     if config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA:
         return FUNCTIONAL_REFINEMENT_RUN_SCHEMA
+    if is_raw_stage0_sufficiency_config(config):
+        return RAW_STAGE0_SUFFICIENCY_RUN_SCHEMA
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA
     return J2_RUN_SCHEMA
@@ -290,6 +301,8 @@ def joint_stage(config: Mapping[str, Any]) -> str:
         return FUNCTIONAL_CODE_STABLE_JOINT_STAGE
     if config.get("schema_version") == FUNCTIONAL_REFINEMENT_SCHEMA:
         return FUNCTIONAL_REFINEMENT_STAGE
+    if is_raw_stage0_sufficiency_config(config):
+        return RAW_STAGE0_SUFFICIENCY_STAGE
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_STAGE
     return J2_STAGE
@@ -326,6 +339,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
                 FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
                 FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
                 FUNCTIONAL_REFINEMENT_SCHEMA,
+                RAW_STAGE0_SUFFICIENCY_SCHEMA,
             },
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
@@ -456,12 +470,37 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_deployment_input") is False,
         )
     )
+    raw_stage0_valid = all(
+        (
+            schema == RAW_STAGE0_SUFFICIENCY_SCHEMA,
+            config.get("status") == "active_raw_stage0_sufficiency_diagnostic",
+            model.get("program_initialization") == R9_STABLE_CONTENT,
+            model.get("program_input") == RAW_STAGE0_PROGRAM_INPUT,
+            model.get("primal_scorer_initialization") == R9_STABLE_CONTENT,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_NATIVE_HEADS_ONLY,
+            config.get("optimization", {}).get("loss")
+            == "generated_rank16_cross_episode_pi05_flow_only",
+            "counterfactual" not in joint,
+            isinstance(authorities.get("r9_writer_checkpoint"), str),
+            isinstance(authorities.get("r9_gate_aggregate"), str),
+            wall.get("diagnostic_only") is True,
+            wall.get("deployment_writer") is False,
+            wall.get("r9_writer_initialization_training_only") is True,
+            wall.get("natural_program_process_fusion_active") is False,
+            wall.get("canonical_alignment_active") is False,
+            wall.get("primal_scorer_feature_chart_frozen") is True,
+            wall.get("outer_code_loss_active") is False,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
     if not common_valid or not (
         counterfactual_valid
         or reconnect_valid
         or acquisition_valid
         or joint_acquisition_valid
         or refinement_valid
+        or raw_stage0_valid
     ):
         raise ValueError("unsupported joint Program-primal functional config")
     return config
@@ -622,16 +661,15 @@ def _joint_parameter_ownership(
     compiler: SharedNativeFactorCompiler,
     *,
     scorer_partition: str = SCORER_ALL_PARAMETERS,
+    raw_stage0_input: bool = False,
 ) -> tuple[JointWriterState, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
     writer = JointWriterState(program, compiler)
-    for module in (
-        program.language_reader,
-        program.scene_reader,
-        program.process_fusion,
-        program.aligner,
-    ):
+    program_modules = [program.language_reader, program.scene_reader]
+    if not raw_stage0_input:
+        program_modules.extend((program.process_fusion, program.aligner))
+    for module in program_modules:
         module.requires_grad_(True).train()
     if scorer_partition == SCORER_ALL_PARAMETERS:
         compiler.primal_scorer.requires_grad_(True).train()
@@ -933,6 +971,7 @@ def _model_assets(
                 "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
             )
         ),
+        raw_stage0_input=is_raw_stage0_sufficiency_config(config),
     )
     if scorer_initialization == R9_STABLE_CONTENT:
         initialization = load_r9_stable_writer(

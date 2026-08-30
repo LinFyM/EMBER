@@ -29,11 +29,16 @@ from ember.ecp.joint_program_primal.runtime import (
     FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
     FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
     FUNCTIONAL_REFINEMENT_SCHEMA,
+    RAW_STAGE0_SUFFICIENCY_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
+)
+from ember.ecp.joint_program_primal.raw_stage0 import (
+    RAW_STAGE0_PROGRAM_INPUT,
+    prepare_raw_stage0_primal_condition,
 )
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     _training_world_size,
@@ -47,7 +52,11 @@ from ember.ecp.joint_program_primal.train_step import (
     joint_task_group,
 )
 from ember.ecp.bank_conditioning.mapping import MappingCondition
-from ember.ecp.natural_program import NaturalProgram
+from ember.ecp.natural_program import (
+    FrozenProgramEvidence,
+    NaturalProgram,
+    NaturalProgramModel,
+)
 
 
 def test_joint_task_schedule_is_role_balanced_and_task_equal() -> None:
@@ -551,6 +560,76 @@ def test_r10_refines_r9_content_with_functional_flow_only() -> None:
     )
     assert gate["checkpoint_optimizer_steps"] == [70, 110]
     assert gate["gate"]["true_task_held_mean_minimum"] == 0.40
+
+
+def test_r11_swaps_only_to_raw_frozen_stage0_functional_input() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_raw_stage0_sufficiency_r11_v1.json"
+    )
+    assert config["schema_version"] == RAW_STAGE0_SUFFICIENCY_SCHEMA
+    assert config["model"]["program_input"] == RAW_STAGE0_PROGRAM_INPUT
+    assert config["model"]["program_initialization"] == R9_STABLE_CONTENT
+    assert config["model"]["primal_scorer_initialization"] == R9_STABLE_CONTENT
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        JOINT_NATIVE_HEADS_ONLY
+    )
+    assert config["optimization"]["loss"] == (
+        "generated_rank16_cross_episode_pi05_flow_only"
+    )
+    assert config["information_wall"]["diagnostic_only"] is True
+    assert config["information_wall"]["deployment_writer"] is False
+    gate = load_joint_program_primal_gate(
+        root / "configs/pi05_ecp_raw_stage0_sufficiency_r11_gate_v1.json"
+    )
+    assert gate["checkpoint_optimizer_steps"] == [70, 110]
+
+
+def test_raw_stage0_view_preserves_direct_event_fields_and_k1_time() -> None:
+    model = NaturalProgramModel(
+        torch.nn.Identity(),
+        prefix_width=6,
+        width=4,
+        owners=3,
+        event_slots=2,
+    )
+    generator = torch.Generator().manual_seed(20260830)
+    process = torch.randn(2, 1, 2, 3, 4, generator=generator)
+    uncertainty = torch.rand(2, 1, 2, 3, 4, generator=generator) + 0.1
+    presence = torch.rand(2, 1, 2, generator=generator) + 0.1
+    posterior = torch.rand(2, 1, 3, 2, generator=generator)
+    posterior = posterior / posterior.sum(-1, keepdim=True)
+    evidence = FrozenProgramEvidence(
+        language_embeddings=torch.randn(1, 5, 6, generator=generator),
+        language_mask=torch.ones(1, 5, dtype=torch.bool),
+        patch_states=torch.randn(1, 3, 2, 4, generator=generator),
+        frame_mask=torch.ones(1, 3, dtype=torch.bool),
+        process=process,
+        uncertainty=uncertainty,
+        presence=presence,
+        state_posterior=posterior,
+        frame_indices=torch.tensor([0, 5, 10]),
+        raw_frame_counts=torch.tensor([11]),
+        video_offsets=torch.tensor([0, 3]),
+        video_set_offsets=torch.tensor([0, 1]),
+        frame_condition_ids=torch.zeros(3, dtype=torch.long),
+    )
+    program, output = prepare_raw_stage0_primal_condition(
+        program_model=model,
+        condition=SimpleNamespace(evidence=evidence, videos=(object(),)),
+        query_times=torch.linspace(0, 1, 5)[None],
+    )
+    expected_sigma = (
+        uncertainty.square().mean(0)
+        + (process - process.mean(0, keepdim=True)).square().mean(0)
+    )[0].clamp_min(1e-6).sqrt()
+    assert torch.equal(program.p_process, process.mean(0)[0])
+    assert torch.equal(program.rho, presence.mean(0)[0])
+    assert torch.allclose(program.sigma, expected_sigma)
+    assert program.tau.shape == (2, 2)
+    assert program.p_lang.shape == (3, 4)
+    assert program.p_scene.shape == (3, 4)
+    assert output.program.p_process.shape == (1, 2, 3, 4)
 
 
 def test_functional_code_outer_cosine_is_rank_permutation_invariant() -> None:

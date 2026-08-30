@@ -36,6 +36,7 @@ from ember.ecp.joint_program_primal.runtime import (
     prepare_joint_program_primal_runtime,
 )
 from ember.ecp.joint_program_primal.train_step import (
+    compile_joint_program,
     functional_panel_batch,
     prepare_joint_condition,
 )
@@ -50,7 +51,6 @@ from ember.ecp.shared_compiler import SharedCompilerOutput
 from ember.ecp.shared_compiler_assets import authority_path
 from ember.ecp.shared_compiler_data import (
     pack_shared_compiler_videos,
-    prepare_joint_program_primal_condition,
     prepare_shared_compiler_condition,
 )
 from ember.pi05_eval_contract import (
@@ -72,6 +72,7 @@ FUNCTIONAL_CODE_STABLE_JOINT_GATE_SCHEMA = (
 FUNCTIONAL_REFINEMENT_GATE_SCHEMA = (
     "ember_ecp_r9_initialized_functional_refinement_gate_v1"
 )
+RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA = "ember_ecp_raw_stage0_sufficiency_gate_v1"
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -104,6 +105,10 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
             (
                 FUNCTIONAL_REFINEMENT_GATE_SCHEMA,
                 "active_r9_initialized_functional_refinement_qualification",
+            ),
+            (
+                RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA,
+                "active_raw_stage0_sufficiency_diagnostic_qualification",
             ),
         }
         or config.get("checkpoint_optimizer_steps") != [70, 110]
@@ -273,8 +278,8 @@ def _compile_program(runtime: JointProgramPrimalRuntime, condition: Any) -> Natu
         dtype=torch.float32,
         device=runtime.context.device,
     )[None]
-    program, _ = prepare_joint_program_primal_condition(
-        program_model=runtime.program,
+    program, _ = compile_joint_program(
+        runtime,
         condition=condition,
         query_times=times,
     )

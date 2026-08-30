@@ -25,6 +25,10 @@ from ember.ecp.shared_compiler_data import (
     prepare_joint_program_primal_condition,
     prepare_shared_compiler_condition,
 )
+from ember.ecp.joint_program_primal.raw_stage0 import (
+    RAW_STAGE0_PROGRAM_INPUT,
+    prepare_raw_stage0_primal_condition,
+)
 from ember.ecp.stage0_train_step import _gather_records
 from ember.writer.functional import (
     ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
@@ -227,6 +231,27 @@ def prepare_joint_condition(
     }
 
 
+def compile_joint_program(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    condition: Any,
+    query_times: torch.Tensor,
+) -> tuple[Any, Any]:
+    """Compile the config-selected input while preserving one scorer path."""
+
+    if runtime.config["model"].get("program_input") == RAW_STAGE0_PROGRAM_INPUT:
+        return prepare_raw_stage0_primal_condition(
+            program_model=runtime.program,
+            condition=condition,
+            query_times=query_times,
+        )
+    return prepare_joint_program_primal_condition(
+        program_model=runtime.program,
+        condition=condition,
+        query_times=query_times,
+    )
+
+
 def generated_rank16_pair(
     runtime: JointProgramPrimalRuntime,
     *,
@@ -249,8 +274,8 @@ def generated_rank16_pair(
         dtype=torch.float32,
         device=runtime.context.device,
     )[None]
-    program, program_output = prepare_joint_program_primal_condition(
-        program_model=runtime.program,
+    program, program_output = compile_joint_program(
+        runtime,
         condition=program_prepared,
         query_times=query_times,
     )
@@ -692,11 +717,12 @@ def _sum_gradients(runtime: JointProgramPrimalRuntime) -> None:
 
 def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
     scorer = runtime.compiler.primal_scorer
-    probes = {
+    probes: dict[str, torch.Tensor | None] = {
         "program_language": runtime.program.language_reader.queries.grad,
         "program_scene": runtime.program.scene_reader.queries.grad,
-        "program_process": runtime.program.process_fusion[0].weight.grad,
     }
+    if runtime.config["model"].get("program_input") != RAW_STAGE0_PROGRAM_INPUT:
+        probes["program_process"] = runtime.program.process_fusion[0].weight.grad
     result = {}
     for name, gradient in probes.items():
         if gradient is None or not bool(torch.isfinite(gradient).all()):

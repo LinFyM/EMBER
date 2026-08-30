@@ -78,7 +78,8 @@ interaction近零，因此仍正式non-pass。当前按专家预注册分支做�
   12-task Gate；step110 train/held为`.559896/.544189`、四family与Program margin通过，但task-held`.151475`、wrong-bank与interaction
   失败，R10正式non-pass；
 - [ ] 完成matched raw Stage0 sufficiency：相同12-task split、scorer容量、functional loss、预算和Gate，只交换部署可见上游表示；
-  以raw相对Program task-held是否提高`>=.15`且达到`.40`区分Program压缩、frozen Stage0与shared decoder/generalization。
+  retained实现、20项定向合同及真实单rank六task step1已通过，待clean pushed detached world6 step70/110与完整Gate；以raw相对
+  Program task-held是否提高`>=.15`且达到`.40`区分Program压缩、frozen Stage0与shared decoder/generalization。
 
 ## 当前G1里程碑
 

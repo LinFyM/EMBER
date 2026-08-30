@@ -10,6 +10,26 @@
   free parameters均为0。38-target rank12+4唯一rank16对两fit视频实际完成materialization；global update`11.489s`，各卡peak reserved
   `19.62--21.80GB`，所以实现、信息墙、显存与吞吐均有formal资格。该smoke只证明真实功能梯度接通，不构成G3 Gate结果。
 
+### R10 R9-initialized functional refinement formal launch contract
+
+- implementation authority为clean pushed `main@731a769becdb80b1e3d470ddb00911402d5e1fb4`；formal从只增加本launch记录、
+  不再改变`src/ scripts/ configs/ tests/`的clean pushed detached descendant fresh执行。初始化只加载R9 step110的Program/scorer
+  model tensors，不加载旧optimizer；feature chart、source、Native Stage0、bank operator、carrier12、shared scale和Action Meta冻结，
+  Natural Program与233个native heads使用fresh optimizer/scheduler。
+- 科学合同固定原10 gradient tasks、每task两条fit K1 videos、panel-A跨episode PI0.5 flow；10 warmup+100 effective，actual
+  step70/110保存两个single checkpoints。outer-code labels/loss、native teachers、panel B、held video、task2/74、validation/test、
+  shuffled/reversed、fixed route、task lookup均不产生训练梯度。正式裁决只使用原12-task panel-B functional Gate，不以内loss替代。
+- 2026-08-30 08:53 CST紧邻launch检查：gpu01物理`0--6`均无compute process、显存`14--97MiB`且UTL 0，选择
+  `0,1,2,3,4,6` world6；当前逻辑0 UUID仍为已确认可用的`GPU-658b6043-6454-1228-bffc-0e2fe22e5013`，旧prohibited设备
+  未枚举。gpu02只有零散空闲卡，故不跨节点拼卡。owner预告gpu01约11--12时可能重启；按R6同机制约25分钟训练预算，08时段
+  launch并在重启窗口前留有充分余量。
+- 复用gpu01 `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`的23GB frozen-condition cache，`/dev/shm`
+  尚余39GB；`strg01` `/data1` quota为`711365652/1073741824` blocks，R9同规模输出292MB，R10峰值新增预计低于1GB。
+  exact entry使用`CUDA_VISIBLE_DEVICES=0,1,2,3,4,6`、`NCCL_P2P_DISABLE=1`、deferred NCCL、GPU-local NUMA与world6
+  `torchrun scripts/train_ecp_joint_program_primal.py --config configs/pi05_ecp_r9_initialized_functional_refinement_r10_v1.json
+  --phase joint --mode formal ... --output-dir runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_s110_731a769_gpu01p012346_r6_20260830
+  --condition-cache-root /dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829 --stop-after-step 110 --log-every 1`；输出根已确认不存在。
+
 - R9 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续，step70/110 loss为
   `.354164/.334220`，两个world6 checkpoints完整；Action Meta/source/Stage0/scale trainable与native teacher reads均为0，
   Program和完整scorer梯度持续finite/nonzero。六个独立worker在gpu01物理`0,1,2,3,4,6`顺序评价两个checkpoint，12/12 tasks、

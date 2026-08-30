@@ -68,7 +68,7 @@ def _r5_rows(path: Path) -> dict[int, Mapping[str, Any]]:
     }
     if (
         report.get("gate_pass") is not True
-        or report.get("checkpoint") != 110
+        or int(report.get("checkpoint", {}).get("optimizer_step", -1)) != 110
         or set(rows) != set(ROUTING_TASK_IDS)
     ):
         raise ValueError("R5 passed aggregate authority changed")

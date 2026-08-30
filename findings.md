@@ -1414,3 +1414,20 @@ gradient。该变化证明随机Program/scorer双线性坐标的共同发现是R
 label反而更近，correct-vs-wrong总margin`-.0139`，表明task-specific ownership尚未由内部几何完全证明。故R9已经越过“不要formal”的
 机制门槛，但不能由内部方向宣布G3通过；下一唯一裁决是原12-task cross-episode panel-B functional Gate，包括train、held-video、
 true task-held、四family、language/endpoints、wrong Program/bank、interaction、same-task与相邻checkpoint。
+
+### 83. R9把随机chart瓶颈与code-to-utility失败正式分离
+
+R9 clean formal完整复现了诊断的outer-code获取：step70/110 acquisition loss为`.354164/.334220`，step110内部q/v/action-in/
+action-out medians为`.728694/.744085/.745741/.642526`，四family均过内部门且same-task视频方向稳定。这确认R5稳定共享chart是有效
+初始化先验，随机Program/scorer双线性坐标共同发现确实是R7/R8的一个真实优化瓶颈。
+
+真实policy却给出相反的充分性结论。step70/110 train recovery仅`-.181514/-.131825`，held-video仅`-.175532/-.129718`，
+task-held mean仅`-.009468/-.011724`；五个target-role gradient tasks在两个checkpoint全部为负，task74也约`-.59`。step110
+full-over-endpoints、wrong-bank margin与interaction分别为`-.082736/-.003829/.001946`。因此较高outer cosine不是功能等价LoRA，
+也不能替代cross-episode action/flow credit；继续延长outer-code训练或雕琢相似度没有机制依据。
+
+下一最小修正不是回到fresh functional优化。R4/R5已正式证明functional loss会破坏高条件数feature chart，而固定chart时native heads可
+稳定保持强解；R9又首次取得与Natural Program共同形成的内容坐标。因此R10加载R9 step110 Program/scorer model tensors、冻结feature
+chart、移除outer-code loss，只让Program与native heads接受真实functional flow。它检验“稳定内容初始化能否把弱functional gradient
+送入正确basin”；若train仍低，才说明当前Program/heads函数类或functional credit本身不足；若train/held高而task-held低，才触发
+active design的matched raw Stage0 sufficiency分支。

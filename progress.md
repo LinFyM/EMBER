@@ -2,6 +2,23 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- R9 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续，step70/110 loss为
+  `.354164/.334220`，两个world6 checkpoints完整；Action Meta/source/Stage0/scale trainable与native teacher reads均为0，
+  Program和完整scorer梯度持续finite/nonzero。六个独立worker在gpu01物理`0,1,2,3,4,6`顺序评价两个checkpoint，12/12 tasks、
+  panel-B、language/endpoints、wrong Program/bank、interaction、same-task和信息墙证据齐全，evaluation自然exit 0。
+
+- R9 step70/110真实functional train recovery为`-.181514/-.131825`，held-video为`-.175532/-.129718`，true task-held mean为
+  `-.009468/-.011724`；step110 task2/74分别为`.561846/-.585295`，五个target-role gradient tasks全部为负。与此同时step110
+  q/v/action-in/action-out outer family medians为`.728694/.744085/.745741/.642526`，全部超过内部阈值；full-over-language通过，
+  但full-over-endpoints `-.082736`、wrong-bank margin `-.003829`、interaction `.001946`均失败。R9因此是正式scientific non-pass；
+  evaluation/training wall ratio`3.68`也未过，但不是科学结论的原因。
+
+- 该分解证明R9确实解决了fresh coupled chart难优化的问题，却同时证明约`.60--.75`的outer方向近似不足以保证真实policy utility，
+  尤其不能靠继续优化内部cosine修复target-role负收益。当前最早接口是code-to-utility，不触发raw Stage0分支，也不重开bank、operator、
+  rank4、scale或Action Meta。下一R10只把预注册R9 step110 model tensors作为稳定内容坐标初始化；根据R4/R5正式证据冻结feature chart，
+  让Natural Program与233个native heads接受真实panel-A cross-episode flow，outer-code loss退出。先做真实forward/backward/update和
+  materialization smoke，再以同一step70/110 12-task functional Gate裁决；内部loss仍不能通过G3。
+
 - R7之后的fit-only诊断已经把下一修正收敛到稳定功能坐标初始化。fresh Program+fresh scorer在同一10-task、110-step、
   四family等权outer-update目标下最终loss为`.550870`；绕过learned process fusion、直接使用raw Stage0 process为`.543792`，
   再加入contextual language与scene transition的完整raw Stage0版本为`.548213`。三者几乎相同，且contextual language/scene

@@ -21,12 +21,15 @@ video噪声或heads漂移。R7进一步冻结R5 heads、用task-level functional
 outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradient smoke，越过R7上限后才formal。R1--R7都不是deployment
 checkpoint；任何局部Gate、单次训练或内部指标都不代表整体项目goal完成。
 
-R8 matched诊断已经排除fresh joint、raw process与完整raw Stage0字段遗漏：三者110步方向均停在约`.45`。R9改为从R5已通过的共享
-functional chart初始化同一joint函数类，并在初始化后继续联合训练Program与全部scorer；训练task方向升至约`.71`，两个零梯度
-task-held直接方向为`.731/.550`、中位`.640`且跨video稳定，达到运行完整functional Gate的资格。它仍有task74 wrong-route margin为负，
-所以当前状态是**R9 retained实现已通过真实step1，等待clean formal step70/110与12-task Gate**，不是G3已通过。
+R8 matched诊断已经排除fresh joint、raw process与完整raw Stage0字段遗漏：三者110步方向均停在约`.45`。R9从R5已通过的共享
+functional chart初始化并联合获取Program/scorer坐标，内部四family升至约`.60--.75`且零梯度task2方向为正；但clean formal
+step70/110的真实functional train/held/task-held分别只有`-.182/-.176/-.009`与`-.132/-.130/-.012`，五个target-role gradient
+tasks全部为负，wrong-bank与interaction近零。R9因此正式non-pass，并把最早接口从随机chart可优化性进一步定位为
+**outer-code近似不能替代policy utility**。当前R10只把R9 step110作为training-only稳定内容坐标初始化，冻结已有R4/R5证据表明会在
+functional训练中漂移的feature chart，移除outer-code loss，只让Natural Program与native heads接受真实cross-episode panel-A flow；
+先用真实梯度/功能smoke确认这条转换，再运行同一12-task Gate。R1--R10均不是deployment checkpoint，局部结果不代表整体goal完成。
 
-## R5--R9当前里程碑
+## R5--R10当前里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为
@@ -65,9 +68,13 @@ task-held直接方向为`.731/.550`、中位`.640`且跨video稳定，达到运�
   scorer后，同一joint outer-code训练把fit提高至约`.71`并在task-held取得`.640`中位方向；
 - [x] 接通R9 retained config/schema与Gate，真实world6 step1逐值复现disposable结果，全部Program/scorer梯度、Action Meta 0、
   source/Stage0/scale冻结、无lookup和吞吐合同成立；
-- [ ] 从clean pushed detached R9 authority运行10 warmup+100 effective、actual step70/110，并执行原12-task完整functional Gate；
-- [ ] 若联合获取使train/held-video显著通过而true task-held仍低，按active design进入matched raw Stage0 sufficiency；若train本身仍低，
-  先定位Program/scorer联合函数类或label-to-utility接口，不用训练时长、seed/LR/width/rank小扫掩盖。
+- [x] 从clean pushed detached R9 authority运行10 warmup+100 effective、actual step70/110并执行原12-task完整functional Gate；
+  step110 train/held/task-held为`-.131825/-.129718/-.011724`，内部四family全部过门但真实primary明确non-pass；
+- [x] 依据R9的role/task/causal分解把最早接口定位为code-to-utility：不是继续outer-code训练、raw Stage0、scale、bank或超参小扫；
+- [ ] 接通R10 R9-initialized functional refinement：完整加载R9 Program/scorer，冻结feature chart，只训练Natural Program与native
+  heads，loss仅为generated rank16的cross-episode PI0.5 flow；完成真实step1与同一12-task Gate；
+- [ ] 只有R10 train/held-video显著通过而true task-held仍低才进入matched raw Stage0 sufficiency；若train本身仍低，继续按真实
+  functional gradient/ownership定位Program/scorer函数类，不用训练时长、seed/LR/width/rank小扫掩盖。
 
 ## 当前G1里程碑
 

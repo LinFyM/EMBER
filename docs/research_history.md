@@ -1254,3 +1254,26 @@ R7证明dense functional-code direction supervision仍不能让Natural Program�
 - `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_s110_89131fe_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_gate_step70_024fc55_gpu01p012346_w6_20260830/`；
 - `runs/outputs/pi05_ecp_functional_code_chart_acquisition_r7_gate_step110_024fc55_gpu01p012346_w6_20260830/`。
+
+## 63. R9稳定chart联合获取与code-to-utility non-pass
+
+clean pushed detached `7b614da`从R5 passed shared chart初始化scorer、从G2初始化Natural Program，随后用10个gradient tasks的固定
+outer-update labels联合训练全部Program/scorer参数。110条metrics连续，step70/110 loss为`.354164/.334220`，两个world6 checkpoint
+完整；Action Meta、source、Stage0与scale trainable均为0。相同实现的直接task-held诊断曾得到`.6404`中位outer方向，因此获得原
+12-task functional Gate资格。
+
+六个独立worker完整评价step70/110。step110 train/held-video/true-task-held functional recovery为
+`-.131825/-.129718/-.011724`，task2/74为`.561846/-.585295`，五个target-role gradient tasks全部为负；q/v/action-in/action-out
+outer medians却为`.728694/.744085/.745741/.642526`。full-over-endpoints、wrong-bank与interaction分别为
+`-.082736/-.003829/.001946`，故primary与adjacent Gate明确non-pass。信息墙、K1、event、唯一rank16、worker/checkpoint覆盖均通过；
+evaluation/training wall ratio失败是附加系统项，不是科学失败原因。
+
+该轮同时保留两条结论：稳定chart初始化解决了fresh joint的部分可优化性，但outer-code相似度不足以表示真实policy utility。后继不续训
+outer loss、不触发raw Stage0，也不重开bank/operator/rank/scale；只把R9 model tensors作为training-only初始化，按R4/R5坐标漂移证据
+冻结feature chart，再用真实cross-episode functional flow细化Natural Program与native heads。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_s110_43be484_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_step70_43be484_gpu01p012346_w6_20260830/`；
+- `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_step110_43be484_gpu01p012346_w6_20260830/`。

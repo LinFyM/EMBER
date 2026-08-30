@@ -1385,3 +1385,40 @@ held correct/wrong recovery中位为`.925312/.885043`，correct-minus-wrong中�
 关键artifact：
 
 - `runs/analysis/pi05_ecp_g3_fit_transport_tempered_cross_bank_db88418_gpu01p012_gpu02p47_w5_20260830/`。
+
+## 70. full-inverse normalized-energy审计与operator-level正控
+
+clean pushed `2551f7c`基于R5 step110成功primals审计10 tasks、30个same-task video pairs与50个same-role wrong-bank pairs。
+普通raw dual energy不能区分正确bank；gauge-free input retained projection p10却达到AUC `1.0`、逐task严格分离`10/10`，全局正确
+minimum `.907248`高于错误maximum `.905998`。input sorted projection第12--20位均值同样AUC `1.0`，成为后续训练的平滑低分位
+calibration统计。该值只由当前primal与当前bank计算，不使用成对比值、task ID或文件名。
+
+三项固定因果检查随后区分了信号的作用位置。support只缩放最终rank4 residual时correct/wrong/margin为
+`.954661/.930365/.031766`，不能建立必要性；用阈值`.906622976064682`在full/half inverse query之间hard switch时为
+`.950915/.005173/.908899`，correct-better与margin达`.10`均为`10/10`；按sigmoid在线性空间混合两套query时correct降到
+`.238736`，明确non-pass。由此终止幅值gate、soft query interpolation、temperature与谱幂小扫，保留near-binary content route。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_normalized_energy_grid_2551f7c_gpu01p012_gpu02p47_w5_20260830/`；
+- `runs/analysis/pi05_ecp_g3_projection_energy_gate_cross_bank_2551f7c_gpu01p012_gpu02p47_w5_20260830/`；
+- `runs/analysis/pi05_ecp_g3_projection_switched_operator_cross_bank_2551f7c_gpu01p012_gpu02p47_w5_20260830/`；
+- `runs/analysis/pi05_ecp_g3_soft_operator_mixture_cross_bank_2551f7c_gpu01p012_gpu02p47_w5_20260830/`。
+
+## 71. R10 hard-route compatibility qualification诊断
+
+同一固定p10阈值被原样用于R10 step70/110两个sealed checkpoints的完整12-task panel-B Gate；五个独立workers完成所有原qualification
+arms。step70 train/held/task-held为`-.455230/-.556757/-.401290`，step110为`-.482993/-.631937/-.533894`，两个checkpoint均
+strict non-pass。step110 q/v/action-in/action-out为`.079345/.127917/.495778/.190120`，correct-wrong-bank margin
+`-.087550`、interaction`.071561`。
+
+根因由support rows直接给出。step70/110 matched-vs-mismatched AUC只有`.551215/.558160`，逐task严格分离均为`0/12`；step110
+matched/mismatched中位为`.867304/.864599`，大多数正确pair被送入half端点。选中full的正确conditions与原R10结果吻合，证明hard
+operator正控没有实现错误；R10 Natural Program primals本身未学到R5成功primals已存在的bank兼容几何。后续不再把固定门直接套在
+R10上，而从R10 step110 model tensors与fresh optimizer启动shared compatibility qualification：cross-video same-task positive、
+same-role cyclic negative的projection calibration与原correct functional loss共同训练；held、task2/74和panel B零梯度，Action Meta 0。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_r10_hard_operator_switch_gate_step70_2551f7c_gpu01p012_gpu02p7_w5_20260830/`；
+- `runs/analysis/pi05_ecp_g3_r10_hard_operator_switch_gate_step110_2551f7c_gpu01p012_gpu02p7_w5_20260830/`。

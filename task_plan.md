@@ -35,6 +35,15 @@ cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位�
 `C^+d` operator缺少bank交互可识别性。下一步先建立保持same-task capacity且产生correct-over-wrong必要增量的operator-level正控，
 不再训练一个只改Program/scorer的新版本。R1--R11均不是deployment checkpoint，局部结果不代表整体goal完成。
 
+operator正控现已闭合。R5成功primal的deployment-visible input projection p10在三条same-task与五个same-role wrong banks上AUC `1.0`、
+逐task严格分离`10/10`；最终residual幅值gate失败，但固定内容阈值在full/half operator坐标间hard switch得到
+correct/wrong/margin `.950915/.005173/.908899`与`10/10`强margin。soft query interpolation把correct降至`.238736`，故不是继续调
+温度；R10原checkpoint的matched/mismatched support AUC又只有`.558160`、严格分离`0/12`，hard route令step110 train/held坍缩到
+`-.482993/-.631937`。当前最早接口因此是Natural Program/scorer未学习bank compatibility，而不是operator端点缺容量。下一实现只在
+R10稳定functional basin上加入共享、cross-video positive / same-role negative的projection calibration，并用近二值内容route选择
+full/half；correct functional loss保留，其它authority全部冻结。它必须先同时恢复正确support、错误support margin和R10正确functional，
+才有资格重跑完整12-task G3 Gate。
+
 ## R5--R10当前里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
@@ -94,10 +103,16 @@ cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位�
 - [x] 完成由两个已测端点夹定的唯一tempered bridge：`C_B^{-3/4}` dual + fit-only `C_B^{-1/4}`
   transport的correct/wrong/margin中位为`.925312/.885043/.054500`，correct-better `8/10`但margin达`.10`仅
   `2/10`，严格non-pass。该结果连同`.5/1.0`端点证明单一谱幂无法同时提供capacity与bank必要性，停止谱幂调参。
-- [ ] 只读审计full-inverse强方向的raw dual energy：在operator把每个query统一定标到`replay_score_rms=.02`之前，按
-  input/output、target、output group与rank成对记录correct/wrong bank所需energy。若它提供可泛化的绝对兼容信号，则
-  保留full-inverse capacity direction并单独加有界bounded compatibility gate；若绝对分布重叠，则不用成对反事实比值冒充
-  deployment signal，改查Program--bank content semantic key。两个分支都不恢复退役scorer，不先训练新shared版本。
+- [x] 完成full-inverse raw/normalized energy grid：R5成功primal的input projection p10在30个same-task video与50个same-role wrong
+  banks上AUC `1.0`，且逐task/global均严格分离；普通raw dual energy方向相反，故只保留gauge-free projection作为compatibility authority。
+- [x] 完成最终residual幅值gate、operator hard switch与固定soft query mixture三项因果分解：幅值gate margin`.031766`、soft mixture
+  correct仅`.238736`均non-pass；hard switch correct/wrong/margin `.950915/.005173/.908899`且`10/10`通过，证明必须选择operator
+  coordinate而非缩放或连续插值。
+- [x] 将同一hard switch套到R10 step70/110完整12-task Gate并记录全部support：step110 matched/mismatched AUC`.558160`、严格
+  分离`0/12`，train/held坍缩到`-.482993/-.631937`。因此固定门不是shared解，下一修正必须训练Program--bank compatibility。
+- [ ] 在唯一joint Program--primal执行面实现R10-initialized shared compatibility qualification：固定support统计和hard full/half route；
+  同task fit videos交叉positive、同role cyclic wrong bank negative；显式calibration与原correct functional loss共同训练，held/task2/74/
+  panel B零梯度，Action Meta 0、唯一rank16、无task lookup。先以真实gradient比例和materialization smoke裁决formal资格。
 
 ## 当前G1里程碑
 

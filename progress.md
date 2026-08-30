@@ -2,6 +2,28 @@
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- full-inverse raw bank审计已经把新接口从“是否有兼容信号”推进到“shared Program是否学会该信号”。R5成功primal在三条same-task
+  videos与五个same-role wrong banks上的input projection p10达到AUC `1.0`、逐task严格分离`10/10`；正确全局minimum
+  `.907248`仍高于错误global maximum `.905998`。单纯把该support乘到最终rank4 residual则明确失败：correct/wrong recovery
+  中位`.954661/.930365`、margin仅`.031766`，证明兼容性不能只是最终音量旋钮。
+
+- 同一固定support阈值在operator坐标上做task-local hard positive control取得correct/wrong/margin
+  `.950915/.005173/.908899`，correct-better与margin达`.10`均为`10/10`。因此强full方向与bank-specific half方向本身足以组合，缺口是
+  **Program--bank compatibility决定operator坐标**，不是继续调谱幂。固定sigmoid后在线性混合full/half query却把correct中位降到
+  `.238736`，说明两端之间的signed-attention几何不可线性插值；后继必须保留近二值/离散选择，不能用温度小扫修饰。
+
+- 该hard switch随后原样作用到R10 Natural Program step70/110完整12-task Gate。step110 train/held/task-held从原
+  `.559896/.544189/.151475`降到`-.482993/-.631937/-.533894`；matched/mismatched Program-bank support AUC仅`.558160`、逐task
+  严格分离`0/12`，中位`.867304/.864599`，多数正确视频也被错误送入half。由此排除“固定门直接救活R10”，并把最早接口精确锁定为
+  R10 shared Program/scorer没有学习R5已有的内容兼容几何。
+
+- 当前唯一修正是R10-initialized shared compatibility qualification：保持真实X/Y、signed pooling、rank4、carrier12+residual4唯一
+  rank16、Natural Program、functional panel与Action Meta 0；用同task两条fit video交叉形成positive Program-bank pairs、同role
+  cyclic task形成negative pairs，以input projection低分位band的共享calibration loss显式训练Program/native heads，同时保留correct
+  cross-episode functional loss。deployment只按当前Program与当前bank内容做固定近二值full/half选择，不读task ID或成对反事实；
+  held video、task2/74、panel B保持零梯度。先做定向CPU合同、真实多卡gradient/materialization与loss-gradient比例profile，再决定
+  formal，不再扫threshold、temperature、谱幂、LR或seed。
+
 - half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
   video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/
   source/Stage0为0，Action Meta为0，held/wrong/panel-B backward均为0，仍只生成一套完整rank16。五个独立workers随后评价同一sealed

@@ -1534,3 +1534,29 @@ correct bank在`8/10`更好，但只有`2/10` margin达到`.10`，wrong bank `10
 通过训练粉饰这个结构冲突。下一机制假设将“实现强task direction”与“证明Program和current bank兼容”分开：保留
 full-inverse的强方向，但先审订其在固定score-RMS缩放前的raw dual energy是否已暴露correct/wrong兼容。只有绝对
 内容信号成立，才实现bounded compatibility gate；成对correct/wrong比值只能用于审计，不是deployment可读输入。
+
+### 90. gauge-free retained projection是可部署的bank兼容信号，最终幅值不是
+
+R5成功primal的full-inverse审计覆盖10 tasks、每task三条same-task videos和五条same-role wrong banks。普通raw dual energy受谱尺度
+支配且方向不稳定；把primal投影到当前bank retained eigenspace后，input projection p10在30个正确与50个错误pairs上AUC `1.0`，
+逐task严格分离`10/10`，全局正确minimum `.907248`仍高于错误maximum `.905998`。input排序projection第12--20位的均值同样AUC
+`1.0`且global gap `.001571`，可作为训练时分散梯度的平滑低分位统计；最终部署判定仍使用固定p10与两类分布中点阈值
+`.906622976064682`。该信号只依赖当前Program primal和当前native bank，不读取task ID、文件名或成对correct/wrong比值。
+
+把同一support作为最终rank4 residual的scalar amplitude gate并不能产生bank必要性：correct/wrong/margin中位为
+`.954661/.930365/.031766`，只有`2/10`达到`.10` margin。兼容性因此不能只是“把已经选出的同一方向调小”；它必须作用在产生
+signed-pooling weights的operator坐标之前。
+
+### 91. operator hard switch闭合正控，但R10 shared Program尚未学习兼容几何
+
+在R5成功primal上，以固定p10阈值在full inverse和half inverse两套query之间做near-binary hard选择，correct/wrong/margin中位达到
+`.950915/.005173/.908899`，`10/10` correct更好且`10/10` margin达到`.10`。这证明强task direction、真实bank specificity和唯一
+rank16可以同时成立。相反，把full/half query按sigmoid support线性混合使correct降到`.238736`、margin仅`.116017`；signed-attention
+几何不能用普通endpoint interpolation代表，故不再做temperature或谱幂小扫。
+
+同一固定hard route作用到R10 step70/110完整12-task Gate后明确失败。step110 matched/mismatched support AUC仅`.558160`、逐task
+严格分离`0/12`；train/held/task-held从原`.559896/.544189/.151475`降为`-.482993/-.631937/-.533894`。当route选中full时结果与
+原R10逐值吻合，排除wrapper或materialization错误；失败来自Natural Program primals不具R5的compatibility geometry。因此不能把
+task-local正控的固定阈值冒充shared compiler成功。下一最小修正从R10 stable functional tensors与fresh optimizer开始，以跨fit-video
+same-task positive和same-role cyclic negative显式训练shared projection calibration，同时保留correct cross-episode functional loss；
+held、task2/74、panel B零梯度，部署只读当前Program和当前bank并作near-binary operator route。

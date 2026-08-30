@@ -573,6 +573,20 @@ query被统一缩放到fixed replay score RMS之前所需的raw dual energy，�
 wrong bank。若成立，才在强direction外加独立、有界、不允许单bank覆盖的compatibility gate；若不成立，则重查
 Program--bank semantic key，不得把成对反事实比值、task/video lookup或退役scorer作为deployment输入。
 
+该审计与三项正控现已完成。普通raw dual energy不具正确方向，但gauge-free input retained projection p10在R5成功primal的30个
+same-task video与50个same-role wrong banks上AUC `1.0`、逐task严格分离`10/10`，全局正确minimum `.907248`高于错误maximum
+`.905998`。把support只乘到最终rank4 residual不能建立utility margin；固定阈值改为选择full/half operator坐标则得到
+correct/wrong/margin `.950915/.005173/.908899`及`10/10`强margin。相反，固定sigmoid线性混合两套query令correct降至`.238736`，
+故首版route必须是近二值内容选择，而不是连续query插值、谱幂或幅值调节。
+
+同一hard route对R10 Natural Program step70/110完整Gate的诊断进一步显示：现有shared primal的matched/mismatched support AUC仅
+`.551/.558`，逐task严格分离均为`0/12`；多数正确video被选为half，step110 train/held/task-held降至
+`-.482993/-.631937/-.533894`。这不否定operator正控，而是明确证明R10没有学到该compatibility。当前shared qualification从R10
+step110 model tensors、fresh optimizer开始；每个Program view以另一条same-task fit bank为positive、同role cyclic task bank为negative，
+用固定input projection低分位calibration训练Natural Program与native heads，并继续用原correct pair的cross-episode functional loss维持
+task direction。held video、task2/74、panel B及validation/test零梯度；route只读当前Program与当前bank，不读task ID、文件名或成对
+反事实。首个mechanism Gate要求positive跨阈值、negative低于阈值、correct functional不退化；未满足前不运行完整formal G3。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置

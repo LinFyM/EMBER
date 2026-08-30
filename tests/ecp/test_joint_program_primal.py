@@ -26,9 +26,11 @@ from ember.ecp.joint_program_primal.routing_control import (
 )
 from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
     _checks as interaction_gate_checks,
+    _information_wall_pass,
     load_program_bank_interaction_gate,
 )
 from ember.ecp.joint_program_primal.program_bank_interaction_training import (
+    _wrong_bank_credit,
     _wrong_bank_pair,
 )
 from ember.ecp.joint_program_primal.routing_initialization import (
@@ -629,10 +631,10 @@ def test_retired_binary_routes_are_not_active_configs() -> None:
 def test_candidate_interaction_qualification_is_continuous_and_interaction_only() -> None:
     root = Path(__file__).resolve().parents[2]
     config = load_routing_control_config(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_v1.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_v2.json"
     )
     gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v1.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v2.json"
     )
     assert config["model"]["primal_scorer_trainable_partition"] == (
         SCORER_INTERACTION_ONLY
@@ -648,6 +650,12 @@ def test_candidate_interaction_qualification_is_continuous_and_interaction_only(
         "unseen_wrong_interaction_on",
         "same_unseen_wrong_interaction_off",
     ]
+    assert config["optimization"]["loss"] == (
+        "mean_correct_raw_flow_plus_mean_raw_wrong_bank_benefit_hinge"
+    )
+    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
+        "backward_units"
+    ] == "raw_functional_flow_loss"
 
     owners = (
         TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
@@ -698,10 +706,59 @@ def test_candidate_interaction_wrong_banks_cycle_all_same_role_other_tasks() -> 
     ]
 
 
+def test_candidate_interaction_raw_wrong_credit_matches_correct_task_mass() -> None:
+    active = _wrong_bank_credit(
+        carrier_loss=0.10,
+        wrong_loss=0.08,
+        free_benefit=0.01,
+        epsilon=1e-6,
+        weight=1.0,
+    )
+    inactive = _wrong_bank_credit(
+        carrier_loss=0.10,
+        wrong_loss=0.11,
+        free_benefit=0.01,
+        epsilon=1e-6,
+        weight=1.0,
+    )
+    assert active["active"] is True
+    assert active["backward_weight"] == -1.0 / 6.0
+    assert float(active["legacy_normalized_amplification"]) > 99.0
+    assert inactive["active"] is False
+    assert inactive["backward_weight"] == 0.0
+
+
+def test_candidate_interaction_information_wall_allows_warm_diagnostic_cache() -> None:
+    wall = {
+        "deployment_native_teacher_tensor_reads": 0,
+        "diagnostic_native_teacher_tensor_reads": 1,
+        "panel_b_backward_calls": 0,
+        "same_task_held_backward_calls": 0,
+        "unseen_wrong_backward_calls": 0,
+        "validation_or_test_reads": 0,
+        "action_meta_installed": False,
+        "action_meta_module_count": 0,
+        "action_meta_parameter_count": 0,
+        "single_complete_rank16": True,
+        "K1_identity": True,
+        "shuffled_or_reversed_use": False,
+        "fixed_routing_token_training_only": True,
+        "wrong_bank_exact_language_fixed": True,
+        "deployment_candidate": False,
+    }
+    assert _information_wall_pass([{"information_wall": wall}])
+    assert _information_wall_pass(
+        [{"information_wall": {**wall, "diagnostic_native_teacher_tensor_reads": 0}}]
+    )
+    assert not _information_wall_pass(
+        [{"information_wall": {**wall, "deployment_native_teacher_tensor_reads": 1}}]
+    )
+
+
 def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
     root = Path(__file__).resolve().parents[2]
     gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v1.json"
+        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v2.json"
     )
 
     def distribution(median: float) -> dict[str, float | int]:

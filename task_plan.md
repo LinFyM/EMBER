@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-08-30。
+更新时间：2026-08-31。
 
 ## 当前目标
 
@@ -20,6 +20,13 @@ measure、一组rank4 residual和一套carrier12+residual4的完整rank16；不�
 及额外unseen wrong banks零梯度。correct和wrong bank都走同一个deployment forward，loss只含correct functional flow与bounded
 wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor/outer-code reconstruction或teacher LoRA target。
 
+首轮formal已经完成并明确non-pass：step70/110 correct fit为`-.388/-.386`、held为`-.393/-.394`，unseen wrong-on为
+`-.405/-.399`，而interaction-off仍为`.940`；correct与wrong结果相关`.95/.96`，说明模型学到的是对所有bank近乎相同的破坏性
+correction。最早接口不是函数类或bank容量，而是loss量纲：两条correct合计反传质量为`1/6`，wrong却额外除以很小的
+`B_free`，被放大约`15.7--359.6x`，global clip不能改变方向支配。当前唯一修正保持架构、数据、seed、LR、步数和Gate不变，fresh
+改为同量纲raw hinge：每task两条correct合计`1/6`、一条active wrong为`-1/6`；`B_free`归一值仅保留作报告。该重跑通过前仍不能
+宣称candidate interaction或G3成立。
+
 完成顺序：先扩展fixed-microblock streaming signed pool的branch bias并通过materialized/streaming、chunk和gradient合同；再接通
 event-native queries、`ProgramBankContext`、candidate interaction scorer、唯一forward与精简Gate；随后做最小真实
 forward/gradient/materialization和吞吐诊断。只有上述执行面正确、step0严格复现R5 full path后，才从clean pushed frozen worktree启动
@@ -35,7 +42,10 @@ candidate交互是否忽略bank。通过后立即恢复Natural Program并联合�
 - [x] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
 - [x] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
 - [x] 全仓CPU合同及clean pushed detached真实zero-init/forward/gradient/materialization/throughput smoke通过；
-- [ ] 从clean pushed detached authority运行两个相邻checkpoint的formal qualification并按最早失效接口裁决；
+- [x] 从clean pushed detached authority完成首轮两个相邻checkpoint的formal qualification；结果为bank-insensitive destructive
+  non-pass，并把首因定位到wrong credit的`1/B_free`梯度放大；
+- [ ] 以唯一raw-unit balanced objective fresh重跑同一qualification；先用首个真实global step记录correct/wrong分臂梯度，随后仍只以
+  step70/110完整functional Gate裁决；
 - [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
 
 ## R5--R13历史里程碑

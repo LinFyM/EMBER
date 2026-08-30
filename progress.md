@@ -1,5 +1,22 @@
 # EMBER progress
 
+- clean pushed detached `main@c7874f3`已经完成candidate-level interaction首轮formal训练、step70→110 exact resume及两个checkpoint的
+  五worker完整Gate。step70/110 correct fit为`-.388363/-.386363`、same-task held为`-.392916/-.393941`、unseen wrong-on为
+  `-.405269/-.398702`，correct-minus-wrong为`-.018599/-.020456`且只有`5/10` task正确bank更好；interaction-off始终为
+  `.940432`。两个checkpoint均strict non-pass。Action Meta为0、deployment native-teacher reads为0、held/panel-B backward为0，且每个
+  condition仍只有一套完整38-target rank16；因此这是科学non-pass，不是加载、信息墙、adapter或R5 base capacity故障。
+
+- 当前最早失效接口已由三路独立审计与formal轨迹共同锁定为loss/gradient单位。每条correct view权重`1/12`，同task两条合计`1/6`；
+  active wrong原按`-1/[6(B_free+eps)]`反传，在实际小`B_free`下先验放大约`15.7--359.6x`。global clip只统一缩放合成梯度，不能恢复
+  correct/wrong相对方向。训练前段wrong hinge迅速归零、correct loss反而恶化，最终correct与wrong recovery Pearson达到`.95/.96`，
+  精确对应“共同破坏所有bank”的便宜解；这淘汰当前normalized-gradient objective，尚未淘汰candidate-interaction函数类。
+
+- 当前唯一修正位于`codex/g3-interaction-balanced-credit`：架构、真实X/Y、candidate集合、signed pooling、rank4、唯一rank16、十task数据、
+  seed/LR/步数和原Gate全部保持，只把wrong backward改成raw functional-loss单位的固定`-1/6`，与两条correct总质量1:1；
+  `B_free`归一hinge继续报告但不进入梯度。首个真实step额外记录一次correct/wrong分臂gradient norm/cosine，避免再让隐藏尺度问题进入
+  formal。evaluation同时修正相邻checkpoint复用diagnostic teacher cache时物理read delta可为0的记账语义；deployment read仍必须严格为0。
+  该修正完成clean验证后从fresh detached authority重跑，不resume首轮checkpoint。
+
 - 2026-08-30第五次专家复核已经完整消费，1132行原文逐字保存为
   `docs/expert_review_20260830_program_bank_interaction.md`并与owner最新授权共同更新active design。专家确认R5/P0/P1是capacity
   primitive，R12/R13则充分终止binary full/half门卫；早期“soft mixture失败意味着后继必须近二值”的表述已被明确纠正：失败只

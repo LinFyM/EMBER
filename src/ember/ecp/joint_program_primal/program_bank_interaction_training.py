@@ -44,8 +44,107 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 PROGRAM_BANK_INTERACTION_COMPLETION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_completion_v1"
+    "ember_ecp_program_bank_candidate_interaction_completion_v2"
 )
+
+
+def _wrong_bank_credit(
+    *,
+    carrier_loss: float,
+    wrong_loss: float,
+    free_benefit: float,
+    epsilon: float,
+    weight: float,
+) -> dict[str, float | bool]:
+    """Return a raw-unit training credit plus normalized reporting metric."""
+
+    denominator = free_benefit + epsilon
+    benefit = carrier_loss - wrong_loss
+    active = benefit > 0.0
+    normalized_benefit = max(0.0, benefit / denominator)
+    values = (
+        carrier_loss,
+        wrong_loss,
+        free_benefit,
+        epsilon,
+        weight,
+        denominator,
+        benefit,
+        normalized_benefit,
+    )
+    if (
+        not all(math.isfinite(value) for value in values)
+        or min(free_benefit, epsilon, weight, denominator) <= 0.0
+    ):
+        raise RuntimeError("interaction wrong-bank credit changed")
+    return {
+        "benefit": benefit,
+        "normalized_benefit": normalized_benefit,
+        "active": active,
+        "backward_weight": -weight / 6.0 if active else 0.0,
+        "legacy_normalized_amplification": 1.0 / denominator,
+    }
+
+
+def _gradient_snapshot(runtime: Any) -> tuple[torch.Tensor, ...]:
+    return tuple(
+        (
+            torch.zeros_like(parameter)
+            if parameter.grad is None
+            else parameter.grad.detach().clone()
+        )
+        for parameter in runtime.trainable_parameters
+    )
+
+
+def _branch_gradient_balance(
+    runtime: Any,
+    *,
+    before: tuple[torch.Tensor, ...],
+    after_correct: tuple[torch.Tensor, ...],
+    after_wrong: tuple[torch.Tensor, ...],
+) -> dict[str, Any]:
+    correct = tuple(right - left for left, right in zip(before, after_correct))
+    wrong = tuple(right - left for left, right in zip(after_correct, after_wrong))
+
+    def norm(values: tuple[torch.Tensor, ...]) -> torch.Tensor:
+        return (
+            torch.stack(tuple(value.float().square().sum() for value in values))
+            .sum()
+            .sqrt()
+        )
+
+    correct_norm = norm(correct)
+    wrong_norm = norm(wrong)
+    dot = torch.stack(
+        tuple(
+            (left.float() * right.float()).sum()
+            for left, right in zip(correct, wrong)
+        )
+    ).sum()
+    denominator = correct_norm * wrong_norm
+    cosine = dot / denominator if float(denominator) > 0.0 else torch.zeros_like(dot)
+    family = {}
+    parameter_index = {
+        id(parameter): index
+        for index, parameter in enumerate(runtime.trainable_parameters)
+    }
+    for name, head in runtime.compiler.interaction_scorer.correction.items():
+        parameter = head[-1].weight
+        index = parameter_index[id(parameter)]
+        family[name] = {
+            "correct": float(correct[index].float().norm()),
+            "wrong": float(wrong[index].float().norm()),
+        }
+    return {
+        "correct_norm": float(correct_norm),
+        "wrong_norm": float(wrong_norm),
+        "wrong_to_correct_norm": float(wrong_norm / correct_norm)
+        if float(correct_norm) > 0.0
+        else None,
+        "cosine": float(cosine),
+        "family_final_weight": family,
+    }
 
 
 def _wrong_bank_pair(runtime: Any, task_id: int) -> tuple[int, int]:
@@ -116,6 +215,8 @@ def generated_interaction_rank16(
 
 def _run_task(runtime: Any, *, task_id: int, visit_index: int) -> dict[str, Any]:
     tick = time.monotonic()
+    record_gradient_balance = runtime.optimizer_steps == 0
+    before = _gradient_snapshot(runtime) if record_gradient_balance else None
     batch, panel = functional_panel_batch(
         runtime, task_id=task_id, panel_name="a", visit_index=visit_index
     )
@@ -149,6 +250,10 @@ def _run_task(runtime: Any, *, task_id: int, visit_index: int) -> dict[str, Any]
         )
         del complete, output
 
+    after_correct = (
+        _gradient_snapshot(runtime) if record_gradient_balance else None
+    )
+
     wrong_task, wrong_view = _wrong_bank_pair(runtime, task_id)
     wrong_condition = runtime.task_conditions[wrong_task].fit_views[wrong_view]
     wrong, wrong_output, wrong_metrics = generated_interaction_rank16(
@@ -168,30 +273,27 @@ def _run_task(runtime: Any, *, task_id: int, visit_index: int) -> dict[str, Any]
     free_benefit = float(runtime.counterfactual_margin_scales[task_id])
     epsilon = float(cell["epsilon"])
     weight = float(cell["weight"])
-    denominator = free_benefit + epsilon
-    benefit = float(panel.flow_loss) - wrong_loss
-    active = benefit > 0.0
-    normalized_benefit = max(0.0, benefit / denominator)
-    if (
-        not all(
-            math.isfinite(value)
-            for value in (
-                free_benefit,
-                epsilon,
-                weight,
-                denominator,
-                benefit,
-                normalized_benefit,
-            )
-        )
-        or min(free_benefit, epsilon, weight, denominator) <= 0.0
-    ):
-        raise RuntimeError("interaction wrong-bank normalization changed")
-    if active:
+    credit = _wrong_bank_credit(
+        carrier_loss=float(panel.flow_loss),
+        wrong_loss=wrong_loss,
+        free_benefit=free_benefit,
+        epsilon=epsilon,
+        weight=weight,
+    )
+    if credit["active"]:
         backward_functional_derivative(
             wrong,
             wrong_gradients,
-            weight=-weight / (6.0 * denominator),
+            weight=float(credit["backward_weight"]),
+        )
+    branch_gradient_balance = None
+    if record_gradient_balance:
+        assert before is not None and after_correct is not None
+        branch_gradient_balance = _branch_gradient_balance(
+            runtime,
+            before=before,
+            after_correct=after_correct,
+            after_wrong=_gradient_snapshot(runtime),
         )
     wrong_record = {
         "program_task": task_id,
@@ -202,12 +304,17 @@ def _run_task(runtime: Any, *, task_id: int, visit_index: int) -> dict[str, Any]
         "functional_policy_rng_seed": panel.policy_rng_seed,
         "carrier_functional_loss": float(panel.flow_loss),
         "wrong_functional_loss": wrong_loss,
-        "wrong_benefit_over_carrier": benefit,
+        "wrong_benefit_over_carrier": credit["benefit"],
         "free_primal_benefit_denominator": free_benefit,
         "epsilon": epsilon,
-        "normalized_benefit_hinge": normalized_benefit,
-        "active": active,
-        "backward_weight": -weight / (6.0 * denominator) if active else 0.0,
+        "normalized_benefit_hinge": credit["normalized_benefit"],
+        "active": credit["active"],
+        "backward_units": "raw_functional_flow_loss",
+        "backward_weight": credit["backward_weight"],
+        "legacy_normalized_amplification": credit[
+            "legacy_normalized_amplification"
+        ],
+        "branch_gradient_balance": branch_gradient_balance,
         "interaction_off": False,
         "solve_metrics": wrong_output.solve_metrics.detach().float().cpu().tolist(),
         "conditioning_metrics": wrong_output.conditioning_metrics.detach()

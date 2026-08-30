@@ -1646,3 +1646,29 @@ R12/R13的support probes、threshold、动态selected power与full/half hard/sof
 `02b3588`的真实smoke进一步证明：zero-init interaction-on/off的76个完整rank16 tensors逐值相等，Action Meta/source/Stage0/scale
 trainable与native teacher reads均为0；world3 microbatch2/4 step分别为`43.889/39.847s`，后者peak reserved最高`33.52GiB`并被选为formal
 吞吐设置。上述只证明执行面有qualification资格，不是fixed-token机制Gate或G3通过。
+
+### 97. 首轮candidate interaction formal学到共同破坏；最早接口是wrong credit单位
+
+clean pushed detached `c7874f3`完成110个连续optimizer steps、step70→110 exact resume与两个checkpoint的十task完整Gate。step70/110
+correct fit recovery中位为`-.388363/-.386363`，same-task held为`-.392916/-.393941`，unseen wrong interaction-on为
+`-.405269/-.398702`；correct-minus-wrong为`-.018599/-.020456`，均只有`5/10` task正确bank更好。相同unseen wrong关闭interaction后
+仍为`.940432`，证明R5 base direction、current bank、full operator与rank4 materialization容量未丢失。correct和wrong-on跨task Pearson
+为`.9523/.9604`，模型学到的不是兼容交互，而是近乎bank-insensitive的共同破坏。
+
+根因首先落在目标函数而非candidate函数类。实现逐字遵循专家原式：12条correct views各`1/12`，六条active wrong各
+`-1/[6(B_free+eps)]`。但前者是raw flow loss，后者是除以很小`B_free`的无量纲recovery；实际wrong相对同task两条correct的解析
+系数被放大约`15.7--359.6x`。global norm clip不能改变该相对方向。轨迹也吻合：wrong hinge在约step32后大多关闭，correct loss却从
+前十步均值`.0875`恶化到约`.1155`并未恢复；q/v family承受主要早期梯度并在Gate中降至约`.026/-.049`。因此本轮只淘汰
+normalized-gradient objective，不能据此终止真实X/Y、continuous signed pooling或candidate interaction。
+
+唯一有证据的下一修正是保持其余全部变量不变，把wrong hinge改回raw functional-loss单位：每task两条correct的反传质量合计`1/6`，
+一条active wrong固定`-1/6`；normalized benefit仅作报告。这使两臂同量纲、task仍等权且不引入新阈值或超参。若该平衡目标下correct与
+wrong仍同步坍塌，才把首因下移到candidate representation/function class；若保住correct而wrong仍高，则查bank可分性。
+
+### 98. 相邻checkpoint的diagnostic teacher cache是记账问题，不是信息墙泄漏
+
+同一worker按顺序评价step70与step110时，family diagnostic在step70首次读取并缓存native teacher；step110继续执行相同逻辑诊断但物理
+tensor-read增量为0。旧aggregator错误要求每个checkpoint的diagnostic read delta都严格大于0，因而只把step110的
+`information_wall_pass`标为false。所有deployment arms在两个checkpoint的teacher reads始终为0，panel-B、held与unseen-wrong
+backward也始终为0。当前修正允许diagnostic物理delta为非负，同时继续严格要求deployment为0；它只修复记账，不改变上述scientific
+non-pass。

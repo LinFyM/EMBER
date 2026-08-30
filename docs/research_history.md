@@ -1493,3 +1493,17 @@ logit correction。最终只有一套continuous signed measure、一个rank4 res
 第二operator。首个资格固定R5通过的fixed route/chart/heads与其余authority，只训练interaction scorer，用correct functional flow与
 bounded wrong-bank neutralization通过同一deployment forward裁决；通过后立即接回Natural Program并联合训练Program、interaction与
 native heads。此节点只形成新的active contract，尚未产生代码、GPU smoke或formal结果。
+
+## 75. candidate-level interaction首轮formal与balanced-credit修正
+
+clean pushed detached `c7874f39fe927993adb3b67a3e8b9767892c608b`完成fixed-routing-token candidate interaction的110步训练、
+step70→110 exact resume及两个checkpoint的十task完整Gate。step70/110 correct fit为`-.388363/-.386363`、same-task held为
+`-.392916/-.393941`、unseen wrong-on为`-.405269/-.398702`、correct-minus-wrong为`-.018599/-.020456`，correct更好均为
+`5/10`；interaction-off为`.940432`。Action Meta、deployment teacher reads及held/panel-B backward均为0，每个condition只物化一套
+完整rank16。结果是明确scientific non-pass，并显示interaction对正确和错误bank施加了高度相关的共同破坏。
+
+最早接口是专家原式在实际数值尺度下的量纲失衡：correct使用raw flow loss，而wrong hinge除以很小的free-primal benefit；代码对应
+两条correct合计`1/6`与active wrong `-1/[6(B_free+eps)]`，后者被放大约`15.7--359.6x`。训练轨迹中wrong hinge迅速关闭、correct
+loss恶化且无法恢复，global clip不能改变支配方向。因此该结果淘汰normalized-gradient loss实现，不淘汰candidate-interaction函数类。
+下一次fresh资格只改变这一机制变量：wrong改为raw-unit固定`-1/6`，normalized recovery仅报告；其余architecture/data/seed/LR/steps/Gate
+均保持。step110另有diagnostic teacher cache使物理read delta为0的aggregation记账问题，deployment信息墙本身未违反。

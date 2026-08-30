@@ -45,10 +45,10 @@ ROUTING_CONTROL_SCHEMA = "ember_ecp_routing_token_control_r1_v1"
 ROUTING_CONTROL_RUN_SCHEMA = "ember_ecp_routing_token_control_run_v2"
 ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_grouped_decoder_control"
 PROGRAM_BANK_INTERACTION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_v1"
+    "ember_ecp_program_bank_candidate_interaction_v2"
 )
 PROGRAM_BANK_INTERACTION_RUN_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_run_v1"
+    "ember_ecp_program_bank_candidate_interaction_run_v2"
 )
 PROGRAM_BANK_INTERACTION_STAGE = (
     "g3_program_bank_candidate_interaction_qualification"
@@ -280,15 +280,18 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             model.get("trainable") == ["ProgramBankInteractionScorer"],
             model.get("deployment_candidate") is False,
             config.get("optimization", {}).get("loss")
-            == "correct_flow_plus_bounded_wrong_bank_benefit",
+            == "mean_correct_raw_flow_plus_mean_raw_wrong_bank_benefit_hinge",
             interaction.get("pairing")
             == "same_role_all_other_gradient_tasks_deterministic_cycle",
             interaction.get("video_view_schedule")
             == "alternate_two_fit_views_per_wrong_task",
             interaction.get("conditioning_language")
             == "correct_task_exact_language",
-            interaction.get("denominator")
+            interaction.get("report_denominator")
             == "formal_free_primal_panel_a_mean_benefit",
+            interaction.get("backward_units") == "raw_functional_flow_loss",
+            interaction.get("task_balance")
+            == "two_correct_views_mean_equals_one_wrong_arm",
             interaction.get("epsilon") == 1e-6,
             interaction.get("weight") == 1.0,
             isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),

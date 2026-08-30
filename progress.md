@@ -1,15 +1,24 @@
 # EMBER progress
 
-- clean pushed detached `main@cbe3124`已完成raw-unit 1:1 candidate interaction的110步训练、step70→110 exact resume和五worker
-  相邻Gate。step70/110 correct fit为`.652284/.672942`、same-task held为`.642756/.663154`、unseen wrong-on为
-  `.346082/.345229`、correct-minus-wrong为`.189253/.185745`，均只有`9/10` task正确bank更好；interaction-off保持
-  `.940432`，四family均非反向，信息墙通过。两个checkpoint稳定但strict non-pass，不能接回Natural Program。
+- clean pushed detached `main@248d768`已完成2:1 positive-anchor candidate interaction的110步训练、step70→110 exact resume及
+  五worker相邻Gate。step70/110 correct fit为`.922565/.929101`、same-task held为`.931639/.953285`，但unseen wrong-on仍为
+  `.932045/.934305`、correct-minus-wrong为`-.002346/-.005576`，只有`5/10`和`4/10` task正确bank更好；信息墙、四family、
+  absolute correct及same-task检查通过，bank因果分离检查失败。该结果证明positive anchor已解决共同破坏，却没有让shared correction
+  学会选择性作用于wrong bank，因此strict non-pass，不能接回Natural Program。
 
-- 本轮相对首轮约`-.39`的共同坍塌有数量级增量，证明raw量纲修正有效、candidate interaction能产生部分bank差异；但它还暴露了更早的
-  解析目标缺口。active wrong时每task反传目标为`(Lc1+Lc2)/12-Lw/6`，三臂共同恶化同一`delta`时变化严格为0；训练从前十步
-  correct/wrong recovery约`1.005/.984`共同降到后段约`.64/.45`，与该common-mode平坦方向一致。下一唯一修正保持全部架构、数据、
-  seed、LR、步数和Gate不变，只把wrong weight从`-1/6`改为`-1/12`，使correct:wrong总质量2:1并严格保护absolute correct utility。
-  只有该positive-anchor formal仍不能分离，才检查candidate/local特征与shared correction表示。
+- step110 full10逐层审计显示input feature、LayerNorm/MLP与最终pooled update对wrong bank都有明显可分信号，wrong相对natural的
+  separation median分别约`3.105/3.299/3.142/4.306`；但实际correction gauge RMS只有约`1.5e-5`量级，base-score RMS约`.0202`，
+  远低于`.0125`的event-envelope，pooling KL约`1e-8`。同一十task的task-local free-delta反事实随后在保持真实X/Y、signed pooling、
+  rank4与唯一rank16时，以absolute delta p95 median仅`.0020`把wrong panel-B recovery压到`-.5277`中位，10/10 task均低于`.25`，
+  且无bound saturation。最早失效接口由此锁定为shared scorer没有取得可用selection correction，而不是operator、bound或bank容量。
+
+- 当前唯一机制修正为v4 base-score-conditioned interaction：把B1实际使用的
+  `stop_gradient(q0·(value-global_B0_mean))/.02`加入逐candidate feature；不改Program/event、candidate measure、signed pooling、
+  loss、seed、LR、步数、rank、scale或Gate。input仍无output-type轴，output仍保留abs/adj/init/goal；base feature只沿event展开，
+  compact与streaming均复用同一query/全局mean。实现分支已通过`238 passed`、chunk/compact、translation、detached-gradient及
+  architecture review。gpu01物理0/1/2真实world3一步为`51.326s`，三卡peak reserved最高约`33.52GiB`；四family final weights均有
+  finite nonzero gradient，Action Meta/source/Stage0/scale trainable均0、native teacher reads 0，仍只物化唯一完整rank16。真实smoke
+  已通过；下一步clean集成并从fresh detached authority启动同一formal。
 
 ### Positive-anchor candidate interaction formal launch contract
 

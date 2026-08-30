@@ -1686,3 +1686,26 @@ correct/wrong约`-.39/-.40`显著恢复，证明去掉`1/B_free`放大是正确�
 约`1.005/.984`共同降到后段约`.64/.45`，正是这一平坦方向的实验证据。因此该non-pass尚不能淘汰candidate/local feature或interaction
 函数类。下一轮只把wrong改为`-1/12`，使两条positive总质量是negative的两倍；共同破坏将增加目标`delta/12`。这不是weight sweep，
 而是解析移除与absolute-utility Gate冲突的零代价模式。若2:1后correct保持而wrong仍高，才把根因下移到bank-specific表示。
+
+### 100. positive anchor保住强方向；free-delta把根因定位到shared correction acquisition
+
+clean pushed detached `248d768`的2:1 positive-anchor已完成110步、step70→110 exact resume及十task相邻Gate。step70/110的correct
+fit为`.922565/.929101`、same-task held为`.931639/.953285`，说明absolute utility、跨视频稳定与四family都已恢复；但unseen wrong-on
+为`.932045/.934305`，correct-minus-wrong为`-.002346/-.005576`，正确bank更好仅`5/10`和`4/10`。因此该Gate明确淘汰“剩余问题仍是
+positive/negative loss质量”的解释：当前scorer基本保留R5 base path，却没有形成有功能意义的bank选择。
+
+full10逐层诊断进一步把“没有选择”分解为可观测性与执行幅度。input feature、learned LayerNorm、MLP correction及pooled update shift的
+wrong/natural separation median分别约`3.105/3.299/3.142/4.306`，证明当前bank差异没有在早层消失；base signed score本身也有
+`1.507`中位分离。但实际shared correction gauge RMS仅约`1.5e-5`，相对base score RMS`.0202`及`.0125` event envelope近于零，
+pooling KL约`1e-8`。也就是说hidden里存在bank差异，但它没有被转化为足以改变signed measure的logit动作。
+
+同一operator上的task-local free-delta提供了决定性正控：保持真实native X/Y、相同positive/negative softmax、rank4 residual、carrier12
+与唯一rank16，只直接优化逐candidate delta；十task的absolute delta p95 median仅`.0019996`、无一触及shared event envelope，便把
+wrong panel-A/B recovery降到`-.2303/-.5277`中位，10/10 task均满足wrong `<=.25`。因此bound、signed pooling形式与rank4不是当前
+充分根因；最早失效接口是shared scorer没能在现有feature坐标中取得这些小而有效的selection correction。该反事实是condition-local
+upper bound，不证明shared Program mapping已经成立。
+
+当前单一修正让scorer显式看到B1正在使用的detached base score：
+`s0=q0·(value-global_B0_mean)/replay_score_rms`。旧feature知道candidate与event query是否相似，却不知道candidate在当前强base
+measure中的位置；新增`s0`只补这个缺失坐标，不改变candidate集合、measure、value、event assignment、loss、rank或Gate。若fresh v4
+仍只产生数值近零correction，则应继续审计Program/event credit如何驱动shared scorer，而不是扩大bound或扫普通超参。

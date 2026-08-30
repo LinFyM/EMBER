@@ -20,19 +20,20 @@ measure、一组rank4 residual和一套carrier12+residual4的完整rank16；不�
 及额外unseen wrong banks零梯度。correct和wrong bank都走同一个deployment forward，loss只含correct functional flow与bounded
 wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor/outer-code reconstruction或teacher LoRA target。
 
-首轮formal的normalized wrong credit把wrong相对correct放大约`15.7--359.6x`，令correct/wrong共同降到约`-.39/-.40`。第二轮
-raw-unit 1:1 credit已完成相邻Gate：step70/110 correct fit为`.652/.673`、held为`.643/.663`、unseen wrong-on为`.346/.345`，
-interaction-off仍为`.940`；margin只有`.189/.186`且均为`9/10` task正确bank更好，所以仍strict non-pass。它证明量纲修正确有大幅
-增量、candidate scorer也能形成部分bank差异，但两条correct总权重`1/6`与wrong `-1/6`使active-hinge目标对三臂共同恶化存在解析
-精确的零代价方向，实际轨迹也从correct/wrong约`1.00/.98`共同降到约`.67/.35`。当前唯一修正仍不改变架构、数据、seed、LR、步数
-或Gate，只把wrong改为`-1/12`，形成correct:wrong总质量2:1；共同破坏会被严格惩罚，`B_free`继续只作报告。该positive-anchor重跑
-通过前仍不能宣称candidate interaction或G3成立。
+2:1 positive-anchor已完成相邻Gate：step70/110 correct fit为`.923/.929`、held为`.932/.953`，但unseen wrong-on为
+`.932/.934`、margin为`-.002/-.006`且正确bank更好只有`5/10`和`4/10`。这排除了共同破坏和absolute utility不足，却确认learned
+correction几乎没有选择性改变signed measure。full10逐层审计显示raw/hidden特征与pooled update都能区分wrong bank，但correction
+RMS约`1e-5`、pooling KL约`1e-8`；task-local free-delta只需`.002` p95 correction便在10/10 task把wrong recovery压到`.25`以下，
+没有触及现有bound。因此当前最早接口是shared scorer缺少B1实际score坐标，而不是native bank、operator、rank4、bound、loss权重或
+普通优化超参。
 
-完成顺序：先扩展fixed-microblock streaming signed pool的branch bias并通过materialized/streaming、chunk和gradient合同；再接通
-event-native queries、`ProgramBankContext`、candidate interaction scorer、唯一forward与精简Gate；随后做最小真实
-forward/gradient/materialization和吞吐诊断。只有上述执行面正确、step0严格复现R5 full path后，才从clean pushed frozen worktree启动
-formal positive control。若correct fit先失效，优先查实现/数值；fit强而held弱则查frame/event归一化；correct/held强而wrong仍强则查
-candidate交互是否忽略bank。通过后立即恢复Natural Program并联合训练Program、interaction与native heads，不再插入binary或新chart阶段。
+当前唯一修正把B1 base signed score
+`stop_gradient(q0·(value-global_B0_mean))/replay_score_rms`加入candidate feature。其余Program/event、candidate measure、
+positive/negative branch、真实X/Y value、loss、optimizer、data、rank、scale与Gate全部不变；v4必须fresh，旧interaction checkpoint
+不加载。完成顺序为：定向CPU与真实world3 forward/gradient/materialization smoke；clean pushed detached authority fresh训练到
+step70并exact-resume到110；执行同一完整functional Gate。若v4仍保持correct却无法压低wrong，将据最早失效层重新审计
+Program/event与candidate correction acquisition，而不是做seed/LR/width/bound小扫；通过后立即恢复Natural Program并联合训练
+Program、interaction与native heads，不插入binary或新chart阶段。
 
 ## 当前co-conditioned interaction里程碑
 
@@ -47,7 +48,10 @@ candidate交互是否忽略bank。通过后立即恢复Natural Program并联合�
   non-pass，并把首因定位到wrong credit的`1/B_free`梯度放大；
 - [x] 以raw-unit 1:1 objective fresh完成同一qualification；step70/110均稳定non-pass，并解析证明目标存在common-destruction
   平坦方向；
-- [ ] 以唯一2:1 positive-anchor objective fresh重跑同一qualification；仍只以step70/110完整functional Gate裁决；
+- [x] 以唯一2:1 positive-anchor objective fresh完成同一qualification；absolute correct恢复但wrong bank未被压低，strict non-pass；
+- [x] 完成full10 feature-to-measure审计与task-local free-delta reachability，锁定shared correction acquisition为最早接口；
+- [x] 完成v4 base-score-conditioned interaction定向CPU合同及真实world3 forward/gradient/materialization smoke；
+- [ ] clean集成并完成同一step70/110 fresh qualification；
 - [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
 
 ## R5--R13历史里程碑

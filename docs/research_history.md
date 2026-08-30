@@ -1525,3 +1525,31 @@ clean pushed detached `cbe3124f1e48a1b0f51e8ab2faeba00e98bceebd`完成110个连�
 - `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_s110_6694e99_gpu01p012_r3_20260831/`；
 - `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_gate_step70_cbe3124_gpu01p012_gpu02p47_w5_20260831/`；
 - `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_gate_step110_cbe3124_gpu01p012_gpu02p47_w5_20260831/`。
+
+## 77. positive-anchor formal、shared-correction审计与free-delta reachability
+
+clean pushed detached `248d7689308ae96a959d44f0a8a7a1adbe3596b7`完成2:1 positive-anchor candidate interaction的110步训练、
+step70→110 exact resume及五worker相邻Gate。step70/110 correct fit为`.922565/.929101`、same-task held为
+`.931639/.953285`，但unseen wrong-on为`.932045/.934305`、correct-minus-wrong为`-.002346/-.005576`，正确bank更好只有
+`5/10`和`4/10`。四family、absolute correct、same-task与信息墙通过；unseen wrong、margin、correct-better及wrong off-on失败。
+因此positive anchor解决了此前共同破坏，却没有产生bank因果分离。
+
+step110 full10逐层诊断显示wrong bank在input feature、learned LayerNorm、MLP correction与pooled update中并未不可区分；相应
+separation-ratio median约为`3.105/3.299/3.142/4.306`。但shared correction gauge RMS约`1.5e-5`，base-score RMS约`.0202`，
+pooling KL约`1e-8`，说明learned interaction在功能上近于关闭。同一十task、相同真实X/Y和signed-pooling operator上的task-local
+free-delta反事实以absolute delta p95 median`.0019996`、零bound saturation把wrong panel-B recovery压到`-.5277`中位，10/10 task
+均低于`.25`。这证明现有bound/operator能表达强bank suppression，但不证明shared Program mapping。
+
+基于该最早失效接口，下一fresh候选只增加B1 base-score feature
+`stop_gradient(q0·(value-global_B0_mean))/replay_score_rms`；input/output candidate索引、event assignment、candidate measure、真实
+X/Y values、positive/negative signed pooling、loss、optimizer、data、rank、scale与Gate均不变。旧v1--v3 checkpoint/config保留为历史
+证据但不再由active loader执行。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_gate_step70_248d768_gpu01p012_gpu02p47_w5_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_gate_step110_248d768_gpu01p012_gpu02p47_w5_20260831/`；
+- `runs/analysis/pi05_ecp_program_bank_candidate_interaction_v3_anchor_bank_separation_full10_step110_248d768_gpu01p012_gpu02p47_w5_20260831/`；
+- `runs/analysis/pi05_ecp_g3_free_delta_reachability_full10_248d768_gpu01p012_gpu02p47_20260831/`；
+- `runs/analysis/pi05_ecp_g3_free_delta_reachability_retry4_248d768_gpu01p012_gpu02p7_20260831/recovered_full10_summary.json`。

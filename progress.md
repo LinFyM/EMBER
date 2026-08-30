@@ -20,6 +20,27 @@
   finite nonzero gradient，Action Meta/source/Stage0/scale trainable均0、native teacher reads 0，仍只物化唯一完整rank16。真实smoke
   已通过；下一步clean集成并从fresh detached authority启动同一formal。
 
+### Base-score-conditioned candidate interaction formal launch contract
+
+- scientific implementation authority为clean pushed `main@90cd380936b8c2bd933499b419ae5bf9486e73aa`，全仓CPU合同`238 passed`，
+  architecture guard无hard violation。formal从只新增本launch记录、不改变科学实现的clean pushed detached descendant执行。相对v3的
+  唯一机制变化是scorer额外读取detached B1 base score feature；interaction层因13维输入而全部fresh初始化，只复用R5 frozen primal
+  scorer及既有raw-X/Y、B0和Program-bank caches。loss、seed、LR、warmup/effective steps、data、rank、scale与Gate逐项保持v3不变。
+- 输入继续复用source step1000、sealed dataset/tokenizer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` base cache与
+  `runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831/` cross-language cache；不复制或重建。
+  输出固定为`runs/outputs/pi05_ecp_program_bank_candidate_interaction_v4_base_score_s110_90cd380_gpu01p012_r3_20260831/`，launch前确认不存在。
+  上一formal仅`51MiB`；2026-08-31 06:43 CST `strg01` live `/data1` quota usage为`776282020/1073741824KiB`、limit
+  `1084227584KiB`，共享空间余`84TiB`，预计新增远低于`1GiB`。
+- 同时live检查两节点：gpu01物理0/1/2均为`15MiB/0%`且无compute process，物理3--6为他人约34.6GiB/100%任务；gpu02物理7空闲，
+  其余只有物理4低显存但有他人进程，训练必须single-node collective且gpu01已有三张完整空闲卡与本地cache，因此使用gpu01 `0,1,2`
+  world3，不跨节点拼卡或干扰他人。固定`NCCL_P2P_DISABLE=1`、NUMA0与deferred NCCL；step70→110 exact resume锁定world3。
+- exact entry为detached formal worktree中的`torchrun --standalone --nproc-per-node=3 scripts/train_ecp_joint_program_primal.py`，配置
+  `configs/pi05_ecp_program_bank_candidate_interaction_v4.json`与base `configs/pi05_ecp_shared_compiler_g3_v5.json`。先fresh执行
+  `--stop-after-step 70`，首个global step核对v4 schema、interaction-only、四family gradient、Action Meta/source/Stage0/scale 0、
+  native teacher reads 0及single rank16；成立后连续到70，再从该checkpoint exact resume到110。完整Gate固定使用
+  `configs/pi05_ecp_program_bank_candidate_interaction_gate_v4.json`；efficiency只报告，shuffled/reversed不运行。
+
 ### Positive-anchor candidate interaction formal launch contract
 
 - scientific implementation authority为clean pushed `main@fd202516c71baf183a04d181f72fe9a2ae08f2df`，全仓CPU合同`236 passed`；

@@ -1614,3 +1614,22 @@ non-pass。
 当前独立线性probe + binary full/half route实现，不否定真实X/Y、signed pooling、rank4或强full方向；同时它不支持继续做阈值、
 temperature、weight、LR、seed、谱幂或同类probe容量小扫。下一科学问题应回到Program与当前bank如何共同产生唯一functional
 direction，而不是先做一个门卫再选择两套预制坐标；在专家复核前暂停新架构。
+
+### 95. 第五次专家复核终止binary门卫并指定candidate-level共同选向
+
+第五次专家锁定`main@b59d7bdd`及其可达历史，确认G1/P0/P1/R5的容量正证据与wrong-bank失败并不矛盾：full-inverse
+`q=C_B^+d_P`会主动消除大部分bank spectrum，只要正确与错误bank的retained subspace都覆盖`d_P`，两者就能重放相同强方向。
+R12/R13的support probe则只在方向形成之后做条件级二值选择，既没有让bank参与决定方向，也把小校准误差放大成full/half的巨大
+功能跳变。因此“soft mixture失败意味着后继必须近二值”是过强外推；充分淘汰的是两套谱端点及其hard/soft选择，不是所有连续交互。
+
+新的唯一机制假设保留full-inverse base query作为zero-init容量保持项，在exact signed pooling前加入Program--bank候选级共同交互。
+未聚合的`rank_event[j,r,e]`经既有owner×group native heads形成event-native query；每个candidate correction同时读取full-native
+alignment、当前video local process/sigma/presence/tau、frame-to-canonical-event assignment、probe/horizon/type与显式乘积。
+correction最后层zero-init、bounded且按当前unit-mass measure centered，分别进入positive/negative branch logits；最终仍只对真实X/Y
+做一套signed pooling、形成一个rank4 residual与一套完整rank16，不输出route类别或第二坐标。
+
+首个qualification必须在R5 fixed-route强方向上冻结其余全部模块，只训练interaction scorer；correct与wrong bank使用同一个
+deployment forward，loss只含correct functional flow与bounded wrong-bank neutralization。若correct/held保持而wrong显著下降，才把
+Natural Program接回并联合训练Program、interaction与native heads；若fixed-route本身失败，则根因先落在candidate interaction、
+streaming实现或native/local evidence，而不是Program schema。原始1132行回复逐字保存于
+`docs/expert_review_20260830_program_bank_interaction.md`。

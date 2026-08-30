@@ -1,6 +1,6 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-29第四次专家复核与owner最新裁决更新的active architecture contract。前三次专家审查依次建立Native-Factor主线、
+状态：2026-08-30第五次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
 要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
 formal S1与定向S2依次淘汰rank64 native-Q sketch、mean/variance scalar energy、query-conditioned多步set scorer及rank224/384
 cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步证明：behavior rank4方向在三条真实bank中均有约`.90--.91`
@@ -14,7 +14,9 @@ spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次�
 尚不能把联合失败归因于Program schema或Stage0。当前取消“Program先独立通过behavior-Gram”的硬Gate，唯一活动资格改为联合训练
 Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；P1的
 current-bank operator在J2--R11中保持冻结。后续cross-bank正控现已重开该operator的**因果交互**而非容量，详见下文当前裁决。
-本文仍是当前唯一架构依据。
+本文仍是当前唯一架构依据。第五次专家复核进一步确认P0/P1与R5保留的是capacity primitive，而R12/R13已经充分终止binary
+full/half门卫。当前唯一新增接口是在capacity-preserving full query之后、exact signed pooling之前加入Program--bank候选级联合交互；
+它连续修正每个真实candidate的signed logits，并最终只形成一套signed measure、rank4 residual和完整rank16。
 
 R5随后用training-only fixed route建立并正式通过稳定functional chart，但R6移除fixed route、接回Natural Program后的step110
 train/held只有`.165/.143`，Program-to-code约`.02`；同task跨video却约`.9994`稳定。共同heads与minimum-norm held-view审计证明R5 chart
@@ -30,9 +32,9 @@ R8--R11随后完整检验了fresh联合、稳定content初始化、真实functio
 已经从Program/scorer移到global-`C^+d` operator的bank交互可识别性。下一资格不是新的Program版本，而是先建立同时保留same-task
 跨video能力与correct-over-wrong bank必要增量的task-local operator正控。
 
-四次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
+五次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
-`docs/expert_review_20260829_joint_program_primal.md`。本文是将专家
+`docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`。本文是将专家
 原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。第二次专家建议Final默认从通过Gate的组件初始化；owner
 最新明确补充，整套Writer完全随机初始化并直接端到端fresh训练必须保留为Final正式可选项，G1--G3不构成强制训练课程。
 
@@ -58,20 +60,24 @@ exact language + K ordered action-hidden videos
         +-- Pass B0: target-native values
                 -> per-video global unit-mass native covariance
                 -> Program-conditioned target-native primal direction
-                -> current-bank primal-to-dual spectral solve
+                -> current-bank full primal-to-dual base query
         +-- Pass B1: replay or reuse the same native bank
-                -> q_dual dot real X/Y content logits
-                -> exact antithetic signed pooling of real native X/Y
-                -> current first implementation: task-specific rank4 residual
+                -> unaggregated Program event queries
+                -> local event context x real X/Y candidate content
+                -> bounded centered per-candidate branch-logit correction
+                -> one exact antithetic signed measure over real native X/Y
+                -> one task-specific rank4 residual
                 -> concatenate frozen shared rank12 carrier
                 -> one complete 38-target rank16 LoRA
 ```
 
 Pass A与Pass B读取同一个冻结backbone，并共享owner、event、video assignment。Pass A回答视频表达什么目标、场景和过程，并把8个
-event的内容与权重聚合成每个owner/rank的primal意图；Pass B0只从当前video的真实native candidates累计全局单位质量covariance，
-以其截断谱逆把primal转为该bank自己的dual query。Pass B1重读或复用同一bank，由`q_dual^T v_n`的正负softmax之差精确pool真实X/Y。
-Program不直接成为LoRA factor，covariance/dual也不进checkpoint；最终Value仍必须来自当前视频真实activations。B0与B1是同一个
-Writer的两次流式读取，不是两套模型，且共同发生在rollout前唯一一次Writer运行中。full functional-polar只作历史fit-only reference。
+event内容保留为owner/rank/event query；Pass B0只从当前video的真实native candidates累计全局单位质量covariance，以其截断谱逆
+产生capacity-preserving full base query。Pass B1重读或复用同一bank，由Program event query、当前视频local event evidence和每个
+candidate native content共同产生逐candidate correction，再以一个positive/negative softmax之差精确pool真实X/Y。Program不直接成为
+LoRA factor，covariance/dual与interaction output也不进checkpoint；最终Value仍必须来自当前视频真实activations。B0与B1是同一个
+Writer的两次流式读取，不是两套模型，且共同发生在rollout前唯一一次Writer运行中。full/half二值route、full functional-polar与
+其它谱端点只作历史诊断，不是active forward。
 
 ## 2. 固定目标与Program schema
 
@@ -175,8 +181,11 @@ Pass A只保留128维Program。Pass B不得物化完整`K*T*38*50*2048` tensor�
    每个output native group在线累计mean/covariance。共享Program网络把`P_lang/P_scene/P_process/rho/tau/sigma`映射为每个
    target/rank/event的native primal，并先在Program空间按event weights合并。以相对特征值门`1e-6`截断当前bank covariance，计算
    `q=C^+d`；covariance/eigensystem全部detached，不进入checkpoint。
-2. **B1 exact global signed replay**：重读或复用同一video chunks，以同一个全局measure计算`l_n=q^T v_n`，把每个rank的score RMS统一到
-   `.02`，再执行显式`softmax(+l)-softmax(-l)`并只对真实X/Y values加权求和。input侧没有type轴；output侧四类bank共同构成候选集合。
+2. **B1 co-conditioned exact global signed replay**：重读或复用同一video chunks，以同一个全局measure计算base score
+   `l_n=q^T v_n`，把每个rank的base score RMS统一到`.02`；随后由未聚合的Program event query、当前video的local event context和
+   candidate content产生bounded、measure-centered、逐candidate的positive/negative branch correction，最后执行一套显式signed
+   softmax并只对真实X/Y values加权求和。input侧没有type轴；output侧四类bank共同构成候选集合。interaction最后层零初始化时必须
+   严格退化为既有full base replay。
 
 solve与replay必须使用完全相同的全局measure。此前“全局solve后按event分别replay”实际施加`C_e C_global^+`，会重新旋转方向，已由
 task93/q20反例淘汰；event assignment与canonical alignment仍通过G2 Program的`rank_event/event_weights`决定primal内容，不再改变
@@ -190,24 +199,34 @@ sum；chunked结果必须与同输入non-chunked reference在正常数值误差�
 ## 4. Native-factor compiler
 
 G1与G3的边界不变：G1可直接优化task-local selection logits/weights，回答是否存在强rank4组合；G3必须由跨tasks共享的完整Program
-产生primal，不能包含task/video/frame/member lookup。固定target-native heads和owner/family/rank/event/group embeddings只表示38个
-真实LoRA owners及其拓扑，跨所有tasks/videos共享，不是task route。
+与当前bank candidate共同产生weights，不能包含task/video/frame/member lookup。固定target-native heads和
+owner/family/rank/event/group embeddings只表示38个真实LoRA owners及其拓扑，跨所有tasks/videos共享，不是task route。
 
-对某个target/native group，令当前video真实candidate为`v_n`、全局单位质量为`mu_n`、Program primal为`d_jr`：
+对某个target/native group，令当前video真实candidate为`v_n`、全局单位质量为`mu_n`、Program primal为`d_jr`。保留full base query：
 
 ```text
 m       = sum_n mu_n v_n
 C       = sum_n mu_n (v_n-m)(v_n-m)^T
-q_jr    = C^+ d_jr                         # retained current-bank dual
-l_jrn   = alpha_jr q_jr^T v_n              # alpha fixes score RMS to .02
-w_jrn   = softmax_n(+l_jrn) - softmax_n(-l_jrn)
-f_jr    = sum_n w_jrn v_n                  # real native Value only
+q0_jr   = C^+ d_jr                         # capacity-preserving full base query
+l0_jrn  = alpha_jr q0_jr^T v_n             # alpha fixes base-score RMS to .02
 ```
 
-input侧每target/rank有一个scale；output groups各自求dual，但同一target/rank使用跨groups公共scale，避免独立归一化抹掉block相对幅度。
-小score下`f≈2 alpha C C^+ d`，所以Program学习的是跨video稳定的primal，而当前bank负责把它转换成自己的dual坐标。该机制仍是
-Program query与native candidate content的signed cross-attention，不是固定系数、普通平均或free table；Program高维输出是查询意图，
-不是直接部署factor，最终factor必须经过当前bank真实X/Y Value路径。
+继续保留未聚合的`rank_event[j,r,e]`，复用owner×group native heads得到event-specific full-native query `u_jre`。对candidate
+`n=(t,p,h,u)`，interaction scorer同时读取：`u_jre`与centered native value的normalized full-native alignment、Program event query与
+当前video local process/sigma/presence/tau及frame-to-canonical-event assignment的semantic alignment、二者乘积、candidate RMS以及
+probe/horizon/type metadata。它输出最后层zero-init、bounded且在当前measure下centered的逐candidate correction`delta_jrn`：
+
+```text
+lplus_jrn  = log(mu_n) + l0_jrn + delta_jrn
+lminus_jrn = log(mu_n) - l0_jrn - delta_jrn
+w_jrn      = softmax_n(lplus_jrn) - softmax_n(lminus_jrn)
+f_jr       = sum_n w_jrn v_n                 # real native Value only
+```
+
+input侧每target/rank有一个scale；output groups各自求base dual，但同一target/rank使用跨groups公共scale，避免独立归一化抹掉block相对
+幅度。interaction不是condition级开关或幅值：换bank会改变candidate方向、local semantics、assignment、softmax normalizer与最终真实
+Value。`interaction_off`只作同一checkpoint的因果评测臂；canonical forward始终只有一套continuous signed measure，不再选择full/half、
+`.75`或其它谱坐标。Program高维输出仍只是查询意图，最终factor必须经过当前bank真实X/Y Value路径。
 
 每条video独立完成B0/B1后，首版固定`beta_k=1/K`合并其raw factors再统一normalize；这保证K1 identity、视频集合置换不变，且不让长视频
 仅因candidate更多支配。只有F5已有证据时才从uniform初始化有界learned beta，并必须防止单条video覆盖其余videos。
@@ -608,9 +627,27 @@ mismatched均为`.167`，support AUC为`.826/.831`、逐task严格排序均为`9
 
 R13也显示二值route的功能脆弱性：step70到110只有task8一个fit video以约`.000060`越过固定阈值，就令该task fit recovery从
 `-.208`跳到`.964`，而same-task held与task-held aggregate完全不变。独立probe因此只证明credit ownership可以部分迁移，未证明
-可靠的跨video/task compatibility，更不确立full/half或其它二值开关为最终G3架构。当前设计在此暂停；不授权threshold、temperature、
-weight、LR、seed、谱幂或同类probe小扫。恢复G3前应结合专家复核，重新明确Program与当前bank如何共同生成唯一functional direction，
-而不是继续精修一个先分类、再选择两套预制坐标的门卫。
+可靠的跨video/task compatibility，更不确立full/half或其它二值开关为最终G3架构。第五次专家复核据此正式退役binary门卫；不授权
+threshold、temperature、weight、LR、seed、谱幂或同类probe小扫。
+
+#### 当前G3：co-conditioned bank-interaction qualification
+
+当前只增加一个局部接口Gate。使用既有十个gradient tasks、每task两条fit K1 video/panel A训练、第三条same-task video与panel B零梯度；
+training wrong bank按同role gradient tasks确定性轮换，evaluation再加入task2/task74的unseen same-role wrong bank。初始化并冻结R5
+step110 fixed token、feature chart、native heads、source、Native Stage0、B0 full solve、carrier、scale与Action Meta，只训练
+event-specific candidate interaction scorer。fixed token仍是training-only capacity positive control，不是deployment route。
+
+correct与wrong都必须走同一个base-full-plus-candidate-correction forward，不得teacher-force full、切换operator或用support surrogate。
+loss只含correct cross-episode functional flow与bounded wrong-bank benefit hinge；不含support BCE、p10、route labels、factor cosine、
+outer-code、subspace/spectral loss或teacher LoRA target。两个相邻checkpoint同时检查correct fit、same-task held、unseen wrong bank、
+correct-minus-wrong、interaction-off差异、四family无系统性反向、K1/唯一rank16/信息墙与相邻稳定性。专家建议的机制资格值为
+correct fit `>=.85`、held `>=.80`、held/fit `>=.85`、wrong `<=.25`、margin `>=.50`、task级`10/10` correct>wrong以及
+interaction-off相对on的wrong margin差`>=.40`；这些只裁决本接口，不是正式validation性能目标。
+
+若通过，立即以Natural Program替换fixed token，联合训练Natural Program、interaction scorer和native heads，再进入scale/preservation、
+K2/K4及held5 strict250；不再插入chart、support或binary阶段。若失败，按最早接口解释：step0不能复现R5是实现/加载/streaming错误；
+fit低说明interaction破坏容量；fit强held弱说明frame/event归一化或跨video归纳失败；correct/held强而wrong仍强说明interaction忽略bank或
+现有candidate/local evidence不具特异性。
 
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
@@ -693,8 +730,9 @@ Final前待owner裁决：本节描述71 meta+train24 fresh development recipe，
 方法选定后的32-task fresh refit。两者的精确顺序与validation8数据角色延迟到Final前明确，不阻塞G1--G5，
 当前不默认任一种合并方式。
 
-部署时Pass A生成唯一Program；Pass B0流式统计当前native banks并求bank-conditioned queries，Pass B1重放同一banks做exact signed
-pooling、生成rank4 residual并与carrier拼接；安装唯一rank16 LoRA后闭环运行，不再观看teacher video。
+部署时Pass A生成唯一Program；Pass B0流式统计当前native banks并求full base queries，Pass B1重放同一banks，以Program event、
+local event context和candidate content形成逐candidate correction后执行唯一exact signed pooling，生成rank4 residual并与carrier拼接；
+安装唯一rank16 LoRA后闭环运行，不再观看teacher video。
 
 ## 11. Validation8、controls与Test8
 
@@ -731,7 +769,7 @@ static-first-repeated、first-only、final-only、first+final，最后才跑shuf
 继续复用：Stage 0 v3、full-layer/horizon capture、transition matcher、event binding/segmenter、strict evaluator/controls、task expert bank、
 successful members、effect calibration、probe-particle capture、carrier/mobile-rank4容量证据，以及natural occupancy/action/reward基础设施。
 
-当前活动树已经实现真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、G2 Natural
+当前基线代码已经实现真实38-target native input/output hooks、abs/adj/init/goal banks、跨chunk/视频边界状态、G1 free-code、G2 Natural
 Program、Program-to-target-native primal scorer、per-video global covariance、截断谱primal-to-dual solve、IEEE exact signed replay、uniform
 K aggregation、small-core rank4 canonicalization、rank12+4唯一rank16和451-condition mapping/evaluator wiring；Action Meta默认关闭。
 fit-only consensus只属于mapping loader，covariance/dual/teacher不进入checkpoint。P2另有非checkpoint、非deployment的run-local compact
@@ -748,12 +786,12 @@ condition cache。10-task正控已通过；J2/J3与R1--R3均形成formal non-pas
 `.819/.839`，但action-in因feature chart drift未过门；R5冻结初始化chart、仅训练全部native heads后step110 train/held为
 `.940/.963`且四family全部通过。R6--R9排除了简单Program接回、冻结chart acquisition与outer-code替代utility；R10真实functional
 refinement取得`.560/.544`，R11 matched raw Stage0则明确更差。clean detached `2090799`的cross-bank正控最终显示正确/错误bank
-recovery中位`.931/.946`，因此当前global dual仍是唯一retained参考执行面，却不再是已获deployment资格的因果operator。
+recovery中位`.931/.946`，因此global dual只作为capacity-preserving base query，不再是独立的deployment-qualified causal operator。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
 由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
-fit-only reference或diagnostic，不得再以deployment候选启动formal。当前活动树只保留Program primal + current-bank global dual +
-exact signed replay这一实现面作为可复用capacity/reference；在operator-level correct-over-wrong bank正控通过前，它不能再启动shared
-Program formal或被称为deployment-qualified。后继interaction修正必须继续复用真实X/Y、signed pooling、rank4与唯一rank16，并以
-task-local same-task/wrong-bank功能证据选择，而不是恢复旧版本链。
+fit-only reference或diagnostic，不得再以deployment候选启动formal。R12/R13 full/half route、support classifier、threshold与selected
+inverse power同样只由Git/config/formal artifacts保留，不属于active forward。当前唯一实现面在Program primal + current-bank full base
+query + exact signed replay之间加入candidate-level co-conditioned correction；它继续复用真实X/Y、rank4与唯一rank16，并先由R5 fixed-route
+same-task/wrong-bank functional qualification裁决，再接回Natural Program。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

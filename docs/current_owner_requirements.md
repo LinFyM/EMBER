@@ -60,7 +60,9 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 1. 用冻结PI0.5原生language、patch和Action Expert内部时序结构形成owner-specific、ordered Video Program；
 2. 用同一Program先从38个LoRA目标的真实input/output activations流式累计每视频单位质量的bank statistics和native anchors，
-   形成regularized bank-conditioned queries，再重放同一bank，以正负softmax之差对真实X/Y做exact signed pooling并选取rank4因子；
+   形成capacity-preserving full base queries；再重放同一bank，让未聚合Program event、当前视频local event context与每个真实candidate
+   content共同修正positive/negative logits，以唯一signed measure对真实X/Y做exact pooling并选取rank4因子；不得退化为condition级
+   binary route、support gate或两套operator选择；
 3. 首版与frozen rank12 carrier严格拼接成唯一rank16 LoRA；rank分解保留由容量实验重开的机制；
 4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
 5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。

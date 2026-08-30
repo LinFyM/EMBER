@@ -1477,3 +1477,19 @@ direction，而不是继续精修二值门卫。
 - `runs/outputs/pi05_ecp_decoupled_compatibility_r13_s110_82607b6_gpu01p012_r3_20260830/`；
 - `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step70_82607b6_gpu01p012_gpu02p457_w6_20260830/`；
 - `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step110_82607b6_gpu01p012_gpu02p457_w6_20260830/`。
+
+## 74. 第五次专家复核与Program--Bank候选级联合交互裁决
+
+第五位专家锁定远程`main@b59d7bdd5fd7c2990c2f6e0eb28f170419ac7a84`及其可达历史，完整复核J2--R13、
+R5 cross-bank与当前代码。1132行原始回复逐字保存为
+`docs/expert_review_20260830_program_bank_interaction.md`。专家确认wrong-bank证据正确重开bank/operator接口，但指出full-inverse
+`C_B^+d_P`把当前bank主要当作坐标系而非方向证据；R12/R13再以condition级support选择full/half，只会把小匹配误差放大成离散功能
+跳变。R13已经充分终止当前binary门卫、support classifier、threshold及谱端点选择，但没有终止真实X/Y、signed pooling、rank4、
+Natural Program或Native-Factor主线。
+
+owner采纳唯一后继：保留full-inverse base query作为zero-init容量保持项，在exact signed pooling前加入Program event query、当前video
+local event context与每个真实native candidate的共同交互，产生bounded、measure-centered的逐candidate positive/negative branch
+logit correction。最终只有一套continuous signed measure、一个rank4 residual及carrier12+residual4的完整rank16，不输出route类别或
+第二operator。首个资格固定R5通过的fixed route/chart/heads与其余authority，只训练interaction scorer，用correct functional flow与
+bounded wrong-bank neutralization通过同一deployment forward裁决；通过后立即接回Natural Program并联合训练Program、interaction与
+native heads。此节点只形成新的active contract，尚未产生代码、GPU smoke或formal结果。

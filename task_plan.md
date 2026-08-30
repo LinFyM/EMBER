@@ -4,58 +4,41 @@
 
 ## 当前目标
 
-owner此前已正式许可推进ECP Native-Factor Compiler，但现已暂时关闭持续性goal；当前只授权完成R13正式诊断、固化证据并在可咨询
-专家的节点暂停，不继续实现下一版架构。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
-operator capacity均已通过；J2/J3在充分functional updates后non-pass。R1固定正交route把train/held-video从J2的`.1708/.1646`提高到
-`.2678/.2798`，wrong-token margin`.2384`，证明清晰route被使用；但q/v/action-in仍约零，完整`.60/.50` Gate未过。checkpoint几何又证明
-route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。R2证明set-valued critic
-能恢复v/action-out几何，R3 owner×group decoder又把action-in/out提高到`.656/.669`，但q/v和真实functional仍未过门。R4用已验证
-functional code初始化shared heads后，step110 train/held-video已达`.819/.839`，q/v/action-out及路由、跨video、稳定性均过门，仅
-action-in为`.249<.30`。checkpoint/head/chart graft进一步证明，action-in失败来自minimum-norm初始化所依赖的feature chart在训练中
-漂移：heads自身几乎未动，接回initial chart即可保留`.998` outer recovery。R5冻结初始化后的feature chart、只让233个native heads接受
-同一真实functional loss后，step70/110均通过全部primary checks；step110 train/held为`.940/.963`，四family为`.816--.839`且相邻稳定，
-所以moving-coordinate根因已被正式修复。R6把这套passed shared scorer接回真实Natural Program后，train/held却只有`.165/.143`，
-Program-to-functional-code从fixed token的`.9985`降到约`.02`；同task跨video仍约`.9994`，证明失败是稳定但错误的内容坐标，而不是
-video噪声或heads漂移。R7进一步冻结R5 heads、用task-level functional-code dense监督训练Natural Program和feature chart；内部方向
-升至`.64--.74`，但step110 train/held仍为`-.133/-.130`，target role全部为负，证明Natural Program无法在冻结的任意R5 chart中取得
-足够精确的功能坐标。当前下一资格只改变这一接口：同一validated code supervision下联合训练Program与完整primal scorer，让绝对
-outer-update label锚定输出并消除冻结chart约束；先做真实fit/gradient smoke，越过R7上限后才formal。R1--R7都不是deployment
-checkpoint；任何局部Gate、单次训练或内部指标都不代表整体项目goal完成。
+owner已授权依据2026-08-30第五次专家复核继续推进；本轮不创建新的持续性goal。G1 free-code、G2动态Program Gate、P0/P1
+capacity primitive以及R5 fixed-route functional chart均保留为正证据；R13只证明独立compatibility probe有有限增量，已充分否定
+“先分类、再在full/half两套谱坐标间切换”的canonical路线。第五次专家原文逐字保存为
+`docs/expert_review_20260830_program_bank_interaction.md`。
 
-R8 matched诊断已经排除fresh joint、raw process与完整raw Stage0字段遗漏：三者110步方向均停在约`.45`。R9从R5已通过的共享
-functional chart初始化并联合获取Program/scorer坐标，内部四family升至约`.60--.75`且零梯度task2方向为正；但clean formal
-step70/110的真实functional train/held/task-held分别只有`-.182/-.176/-.009`与`-.132/-.130/-.012`，五个target-role gradient
-tasks全部为负，wrong-bank与interaction近零。R9因此正式non-pass，并把最早接口从随机chart可优化性进一步定位为
-**outer-code近似不能替代policy utility**。当前R10只把R9 step110作为training-only稳定内容坐标初始化，冻结已有R4/R5证据表明会在
-functional训练中漂移的feature chart，移除outer-code loss，只让Natural Program与native heads接受真实cross-episode panel-A flow。
-R10 step110把train/held从R9负值提高到`.560/.544`，四family与Program因果margin通过，但task-held仅`.151`、target74为负，wrong-bank与
-interaction近零，因此仍正式non-pass。预注册的R11 matched raw-Stage0 probe现已完成：step110 train/held/task-held为
-`.292/.288/-.092`，相对R10 task-held下降`.244`；target gradient median仅`.110`，v-family仅`.102`，而q/action仍约
-`.47--.55`。因此Program schema/压缩不是首因，也不能把局部v失败扩写成整个frozen Stage0无信息。R5/task-local成功primal的
-cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位收益，correct-minus-wrong中位`-.0038`，证明当前global
-`C^+d` operator缺少bank交互可识别性。下一步先建立保持same-task capacity且产生correct-over-wrong必要增量的operator-level正控，
-不再训练一个只改Program/scorer的新版本。R1--R11均不是deployment checkpoint，局部结果不代表整体goal完成。
+当前唯一活动实现是 **Program--Bank co-conditioned candidate interaction**：保留R5/R10验证过的full-inverse base query作为
+zero-init容量保持项，但在exact signed pooling前，由未聚合的Program event query、当前视频local event context与每个真实native
+X/Y candidate共同产生bounded、measure-centered、逐candidate的positive/negative branch logit correction。它只形成一套连续signed
+measure、一组rank4 residual和一套carrier12+residual4的完整rank16；不再输出route类别、support threshold、selected inverse power或
+第二套operator。
 
-operator正控现已闭合。R5成功primal的deployment-visible input projection p10在三条same-task与五个same-role wrong banks上AUC `1.0`、
-逐task严格分离`10/10`；最终residual幅值gate失败，但固定内容阈值在full/half operator坐标间hard switch得到
-correct/wrong/margin `.950915/.005173/.908899`与`10/10`强margin。soft query interpolation把correct降至`.238736`，故不是继续调
-温度；R10原checkpoint的matched/mismatched support AUC又只有`.558160`、严格分离`0/12`，hard route令step110 train/held坍缩到
-`-.482993/-.631937`。当前最早接口因此是Natural Program/scorer未学习bank compatibility，而不是operator端点缺容量。下一实现只在
-R10稳定functional basin上加入共享、cross-video positive / same-role negative的projection calibration，并用近二值内容route选择
-full/half；correct functional loss保留，其它authority全部冻结。它必须先同时恢复正确support、错误support margin和R10正确functional，
-才有资格重跑完整12-task G3 Gate。
+首个决定性资格固定R5 step110 route token、feature chart、native heads、source、Native Stage0、full covariance solve、carrier、scale
+与Action Meta，只训练新的interaction scorer。十个既有gradient tasks用两条fit K1 video与panel A训练；第三条same-task video、panel B
+及额外unseen wrong banks零梯度。correct和wrong bank都走同一个deployment forward，loss只含correct functional flow与bounded
+wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor/outer-code reconstruction或teacher LoRA target。
 
-R12及其唯一解耦诊断R13均已完成step70/110 formal与完整paired Gate。R13只训练38个独立compatibility input heads，冻结R12
-Natural Program、functional primals与scale；step70/110 matched full-route为`.639/.667`，mismatched均为`.167`，support AUC为
-`.826/.831`且逐task严格排序均为`9/12`。这相对R12的`.528/.083`与AUC`.762`证明credit解耦有真实帮助，但step110
-train/held/task-held仅`.483/.049/.033`；gradient fit、same-task held与true task-held的正确放行分别只有`16/20`、`5/10`和`3/6`。
-task52/72/74的正确support仍低于各自wrong bank，任何保持wrong full-route不超过`.20`的全局阈值最多只能放行`.722`的正确pairs。
-step70到110唯一新增放行是task8一个fit video以约`0.000060`越过固定阈值，令train表面跃升而held/task-held完全不变。R13因此
-严格non-pass，并排除“只把compatibility credit交给独立线性probe即可修复”这一假设；它不把二值route确立为G3架构。当前在此暂停，
-不做threshold、temperature、loss weight、LR、seed、谱幂或同类probe小扫；下一步先与owner组织专家问题，重点讨论如何让Program与
-当前bank共同产生唯一functional direction，而不是继续精修full/half门卫。
+完成顺序：先扩展fixed-microblock streaming signed pool的branch bias并通过materialized/streaming、chunk和gradient合同；再接通
+event-native queries、`ProgramBankContext`、candidate interaction scorer、唯一forward与精简Gate；随后做最小真实
+forward/gradient/materialization和吞吐资格。只有上述执行面正确、step0严格复现R5 full path后，才从clean pushed frozen worktree启动
+formal positive control。若correct fit先失效，优先查实现/数值；fit强而held弱则查frame/event归一化；correct/held强而wrong仍强则查
+candidate交互是否忽略bank。通过后立即恢复Natural Program并联合训练Program、interaction与native heads，不再插入binary或新chart阶段。
 
-## R5--R10当前里程碑
+## 当前co-conditioned interaction里程碑
+
+- [x] 完整记录第五次专家原文并把binary full/half从active plan退役；
+- [ ] 扩展canonical fixed-microblock signed-pooling以支持逐candidate、branch-specific bounded bias，保持chunk/K边界与IEEE数值合同；
+- [ ] 从现有`rank_event`和owner×group native heads产生event-specific native queries，并接通只输出candidate corrections的
+  `ProgramBankInteractionScorer`；
+- [ ] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
+- [ ] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
+- [ ] 通过定向CPU合同及最小真实forward/gradient/materialization/throughput smoke；
+- [ ] 从clean pushed detached authority运行两个相邻checkpoint的formal qualification并按最早失效接口裁决；
+- [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
+
+## R5--R13历史里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
 - [x] 用六task真实functional/critic gradient分解证明旧critic方向不适合继续加权，用utility-code gradient证明不能把成功code再作为

@@ -1,5 +1,21 @@
 # EMBER progress
 
+- 2026-08-30第五次专家复核已经完整消费，1132行原文逐字保存为
+  `docs/expert_review_20260830_program_bank_interaction.md`并与owner最新授权共同更新active design。专家确认R5/P0/P1是capacity
+  primitive，R12/R13则充分终止binary full/half门卫；早期“soft mixture失败意味着后继必须近二值”的表述已被明确纠正：失败只
+  淘汰两套谱端点的hard/soft选择，下一接口必须让Program与bank在candidate层共同形成唯一连续signed measure。
+
+- 已从clean pushed `main@b59d7bdd5fd7c2990c2f6e0eb28f170419ac7a84`建立唯一实现分支
+  `codex/g3-program-bank-interaction`与worktree
+  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-program-bank-interaction`。当前先完成authority/active-contract同步，并行只读审计
+  streaming operator与joint train/eval最小改动面；尚未修改科学代码、配置或启动GPU。
+
+- 当前下一阶段固定为co-conditioned bank-interaction positive control：R5 fixed token、feature chart、native heads、source、Native
+  Stage0、B0 full solve、carrier、scale与Action Meta冻结，只训练event-specific candidate interaction scorer。correct/wrong bank使用
+  同一base-full-plus-correction deployment forward，loss只含correct functional flow和bounded wrong-bank neutralization；step0必须
+  严格复现R5 full path。实现先扩展fixed-microblock branch bias，再接通event-native queries、local `ProgramBankContext`、唯一signed
+  pooling和精简Gate；通过定向合同及真实forward/gradient/materialization/throughput smoke后才进入formal。
+
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
 - full-inverse raw bank审计已经把新接口从“是否有兼容信号”推进到“shared Program是否学会该信号”。R5成功primal在三条same-task

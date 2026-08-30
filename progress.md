@@ -81,6 +81,35 @@
   12-task panel运行support与必要functional对照；validation/test及shuffled/reversed均不读取。证据足够区分compatibility acquisition、
   same-task video与task-held泛化后立即暂停，交由owner决定专家询问方式。
 
+### R13 decoupled compatibility diagnostic formal结果与暂停点
+
+- clean pushed detached `0489da362508a199236583ad9f910c73a1dd5c5c`已在gpu01物理0/1/2完成10 warmup + 100 effective
+  updates；actual step70/110两个world3 checkpoints完整，训练墙钟`415.093s`。实际trainable仍只有38个compatibility input heads
+  `4,853,760`参数；R12 Natural Program、functional input/output primals、scale、source、Native Stage0、carrier12和Action Meta均冻结，
+  native teacher reads为0。六个独立workers随后在gpu01物理0/1/2与gpu02物理4/5/7完成两个checkpoint的完整12-task paired panel，
+  全部自然exit 0；validation/test及shuffled/reversed均未读取。
+- step70/110都strict non-pass。train recovery为`.298505/.483082`，same-task held均为`.048744`，true task-held均为
+  `.032951`；step110 q/v/action-in/action-out为`.262289/.333634/.570474/.318540`。correct-wrong-bank与interaction中位已达
+  `.688182/.843922`，但不能补偿正确视频误路由造成的闭环损失。evaluation throughput check也失败：慢worker每checkpoint约
+  `765s`，相对`415s`训练墙钟ratio约`1.84`；这是次要系统non-pass，不改变科学结论。
+- matched/mismatched full-route fraction由step70的`.638889/.166667`变为step110的`.666667/.166667`；support AUC由
+  `.826389`变为`.831019`，逐task严格分离均为`9/12`。step110按数据角色拆分，gradient fit正确pair只放行`16/20`，第三条
+  same-task held只放行`5/10`，true task-held两task共只放行`3/6`。task52/72/74仍存在正确minimum低于wrong-bank support的
+  排序冲突：`.882963<.901375`、`.892215<.903325`、`.876816<.909853`。阈值无关审计显示，在wrong full-route不超过`.20`
+  时，任何全局阈值最多放行`.722222`的正确pairs，因此不能靠移动固定阈值通过`.80/.20`诊断标准。
+- 功能分解再次确认端点有用但门卫不可靠。step110的36条正确conditions中，24条走full时recovery中位`.572070`且minimum
+  `.181790`；12条走half时中位`-.893770`且maximum仍为`-.300972`。step70到110只新增task8 video6一条full route：support从
+  `.906201`升到`.906683`，仅高于固定阈值`.906623`约`.000060`，却令task8 fit recovery从`-.207688`跳到`.963754`；其held
+  video仍走half并保持`-1.597779`，所以整体held与task-held逐值不变。这是离散route阈值脆弱性，不是相邻功能稳定跃升。
+- R13证明把compatibility credit从functional primal中拆开会改善识别，但独立共享线性probe既未完整拟合gradient tasks，也没有
+  same-task held或task-held泛化；“credit ownership冲突”是R12的问题之一，却不是充分根因。该诊断不建立G3、full/half或其它
+  二值route的最终合理性。按owner最新边界，当前不续训、不扫阈值/temperature/LR/seed/weight/谱幂、不实现下一版架构；证据已经足够
+  向专家询问如何让Program与当前bank共同生成唯一functional direction，现于该咨询节点暂停。
+- formal artifacts：
+  `runs/outputs/pi05_ecp_decoupled_compatibility_r13_s110_82607b6_gpu01p012_r3_20260830/`、
+  `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step70_82607b6_gpu01p012_gpu02p457_w6_20260830/`、
+  `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step110_82607b6_gpu01p012_gpu02p457_w6_20260830/`。
+
 - half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
   video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/
   source/Stage0为0，Action Meta为0，held/wrong/panel-B backward均为0，仍只生成一套完整rank16。五个独立workers随后评价同一sealed

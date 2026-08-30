@@ -1590,3 +1590,27 @@ shared loss weight又会重新破坏functional basin。最早接口因此是cred
 又被迫充当bank match classifier。下一轮只用独立compatibility probe作有界credit-ownership诊断；probe仍由共享Program内容生成、
 只读当前bank retained support并控制full/half坐标，不产生第二residual、lookup或adapter。该诊断的二值route不是最终架构主张，
 其预注册`.80/.20`仅判断compatibility是否可分；无论结果如何都不能代替Program与bank联合产生functional direction的G3证据。
+
+### 94. 独立compatibility probe缓解credit冲突，但不能形成可泛化的二值门卫
+
+R13从R12 step110逐tensor初始化38个独立input probes，只训练这`4,853,760`个参数；Natural Program、functional primals与scale
+全部冻结，因此probe只决定full/half operator坐标，不参与真实signed-pooling factors。clean detached `0489da3`完成10 warmup +
+100 effective updates及step70/110两个完整12-task Gate。Action Meta、native teacher、held backward、validation/test和
+shuffled/reversed使用均为0。
+
+解耦确有真实增量：step70/110 matched support AUC为`.826389/.831019`，高于R12 step110的`.761574`；逐task严格正确高于wrong
+由`8/12`提高到`9/12`，matched full-route由`.527778`提高到`.638889/.666667`。但最终mismatched仍为`.166667`，gradient fit、
+same-task held和true task-held正确放行仅`16/20`、`5/10`和`3/6`。task52/72/74继续出现正确minimum低于wrong support，且在
+wrong full-route不超过`.20`时，任何全局阈值最多放行`.722222`的正确pairs；这不是移动`.906623`阈值能修复的校准问题。
+
+闭环功能完全受离散route支配。step110的36条正确conditions中，24条full recovery中位`.572070`、minimum`.181790`，12条half
+中位`-.893770`、maximum`-.300972`。step70到110仅task8 video6的support从`.906201`变为`.906683`并越过阈值约`.000060`，就令
+task8 fit recovery从`-.207688`跳到`.963754`；same-task held与task-held aggregate却逐值不变，分别仍为`.048744/.032951`。
+因此train中位升到`.483082`不是稳健功能学习，而是一个脆弱离散翻转。q/v仍只有`.262289/.333634`，两个checkpoint均strict
+non-pass。
+
+结论是：R12的credit ownership冲突真实存在，拆分probe可部分缓解，但它不是充分根因。固定Natural Program hidden经过每target共享
+线性head后做retained-subspace support，连部分训练任务都无法同时满足positive/negative排序，更不能跨video/task泛化。该结果只淘汰
+当前独立线性probe + binary full/half route实现，不否定真实X/Y、signed pooling、rank4或强full方向；同时它不支持继续做阈值、
+temperature、weight、LR、seed、谱幂或同类probe容量小扫。下一科学问题应回到Program与当前bank如何共同产生唯一functional
+direction，而不是先做一个门卫再选择两套预制坐标；在专家复核前暂停新架构。

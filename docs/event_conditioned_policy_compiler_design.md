@@ -599,14 +599,18 @@ bank margin与interaction通过，但正确视频一旦误入half，functional r
 因此只有`.299/-.504/-.129`。task52/72及zero-gradient task74还出现correct support低于wrong-bank support，说明这不是移动固定阈值
 或延长同一schedule能修复的校准误差。
 
-下一轮只作有界credit-ownership诊断：保持hard full/half operator、functional primals、真实X/Y、signed pooling、rank4、carrier12
-与唯一rank16不变，只把route
-职责交给独立的共享compatibility probes。probe由同一个Natural Program的owner/rank内容生成，对当前bank retained eigenspace计算
-deployment-visible support；它不进入LoRA outer product、不生成第二residual，也不读取task ID、video ID或成对反事实。首轮冻结R12
-functional basin，只训练probe并检查matched/mismatched `.80/.20`、support margin、same-task held与task-held泛化；其中`.80/.20`是
-implementation预注册的诊断可分性标准，不是owner或专家规定的性能目标。无论通过与否，它都不把full/half或其它二值开关确立为
-最终G3架构，也不能单独证明视频因果性；结果只用于区分compatibility credit是否可迁移，随后暂停并结合专家意见决定如何恢复
-Program与bank联合生成唯一functional direction。该诊断不授权threshold、temperature、weight、LR、seed或谱幂小扫。
+有界credit-ownership诊断R13已完成：保持hard full/half operator、functional primals、真实X/Y、signed pooling、rank4、carrier12
+与唯一rank16不变，只把route职责交给38个独立共享compatibility input heads。step70/110 matched full-route为`.639/.667`，
+mismatched均为`.167`，support AUC为`.826/.831`、逐task严格排序均为`9/12`；这相对R12有增量，但step110 train/held/task-held
+仅`.483/.049/.033`。gradient fit、same-task held与true task-held正确放行分别只有`16/20`、`5/10`和`3/6`，task52/72/74仍
+存在正确support低于wrong-bank support的排序冲突。任何保持wrong full-route不超过`.20`的全局阈值最多放行`.722`的正确pairs，
+所以失败不是固定阈值校准。
+
+R13也显示二值route的功能脆弱性：step70到110只有task8一个fit video以约`.000060`越过固定阈值，就令该task fit recovery从
+`-.208`跳到`.964`，而same-task held与task-held aggregate完全不变。独立probe因此只证明credit ownership可以部分迁移，未证明
+可靠的跨video/task compatibility，更不确立full/half或其它二值开关为最终G3架构。当前设计在此暂停；不授权threshold、temperature、
+weight、LR、seed、谱幂或同类probe小扫。恢复G3前应结合专家复核，重新明确Program与当前bank如何共同生成唯一functional direction，
+而不是继续精修一个先分类、再选择两套预制坐标的门卫。
 
 #### 已完成的Frozen-Program G3历史证据与可复用面
 

@@ -1445,3 +1445,35 @@ rank4或hard operator正控。随后登记的独立Program-conditioned compatibi
 - `runs/outputs/pi05_ecp_bank_compatibility_r12_s70_fdab4ae_gpu01p012_r3_20260830/`；
 - `runs/outputs/pi05_ecp_bank_compatibility_r12_gate_step70_fdab4ae_gpu01p012_gpu02p457_w6_20260830/`；
 - `runs/outputs/pi05_ecp_bank_compatibility_r12_gate_step110_fdab4ae_gpu01p012_gpu02p457_w6_20260830/`。
+
+## 73. R13 decoupled compatibility probe有部分增量但不能泛化
+
+clean pushed detached `0489da362508a199236583ad9f910c73a1dd5c5c`从R12 step110初始化38个独立compatibility input
+heads，冻结Natural Program、functional input/output primals、scale、source、Native Stage0、carrier12与Action Meta。gpu01物理
+0/1/2完成10 warmup + 100 effective updates，actual step70/110两个world3 checkpoints完整，训练墙钟`415.093s`；实际trainable
+只有`4,853,760`个probe参数，native teacher reads为0。六个独立workers随后在gpu01物理0/1/2与gpu02物理4/5/7完成两个
+checkpoint的12-task paired panel；全部自然exit 0，validation/test及shuffled/reversed均未读取。
+
+step70/110均strict non-pass。train recovery为`.298505/.483082`，same-task held均为`.048744`，true task-held均为
+`.032951`；step110 q/v/action-in/action-out为`.262289/.333634/.570474/.318540`。matched/mismatched full-route从
+`.638889/.166667`变为`.666667/.166667`，support AUC从`.826389`变为`.831019`，逐task严格正确高于wrong均为`9/12`。
+按角色拆分，step110 gradient fit、same-task held、true task-held正确放行为`16/20`、`5/10`、`3/6`。task52/72/74的
+正确support minimum仍低于wrong bank；在wrong full-route不超过`.20`时，任何全局阈值最多放行`.722222`的正确pairs。
+
+二值route对功能结果具有决定性且脆弱的影响。step110的36条正确conditions中，24条full recovery中位`.572070`且minimum
+`.181790`，12条half中位`-.893770`且maximum`-.300972`。step70到110只新增task8 video6一条full route：support从`.906201`
+升到`.906683`，仅越过固定阈值约`.000060`，却令task8 fit recovery从`-.207688`跳到`.963754`；其held video仍为
+`-1.597779`，整体held与task-held逐值不变。correct-wrong-bank与interaction虽升至`.688182/.843922`，仍不能补偿正确视频的
+误路由。
+
+该结果证明把compatibility credit从functional primal拆开有真实但有限的帮助，因此R12的credit ownership冲突是一个问题；但独立
+共享线性probe连部分gradient tasks都无法完整拟合，也没有跨video/task泛化，所以它不是充分解。R13只淘汰当前probe + binary
+full/half route实现，不否定真实X/Y、signed pooling、rank4或强full方向；也不授权阈值、temperature、weight、LR、seed、谱幂或
+同类probe容量小扫。owner已暂时关闭持续性goal，当前停在专家咨询节点；后继问题是Program与当前bank如何共同生成唯一functional
+direction，而不是继续精修二值门卫。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_decoupled_compatibility_r13_s110_82607b6_gpu01p012_r3_20260830/`；
+- `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step70_82607b6_gpu01p012_gpu02p457_w6_20260830/`；
+- `runs/outputs/pi05_ecp_decoupled_compatibility_r13_gate_step110_82607b6_gpu01p012_gpu02p457_w6_20260830/`。

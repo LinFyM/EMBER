@@ -4,7 +4,8 @@
 
 ## 当前目标
 
-owner已正式许可推进ECP Native-Factor Compiler。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
+owner此前已正式许可推进ECP Native-Factor Compiler，但现已暂时关闭持续性goal；当前只授权完成R13正式诊断、固化证据并在可咨询
+专家的节点暂停，不继续实现下一版架构。G1 task-local free-code capacity oracle、G2原动态Gate以及G3 P0/P1 current-bank
 operator capacity均已通过；J2/J3在充分functional updates后non-pass。R1固定正交route把train/held-video从J2的`.1708/.1646`提高到
 `.2678/.2798`，wrong-token margin`.2384`，证明清晰route被使用；但q/v/action-in仍约零，完整`.60/.50` Gate未过。checkpoint几何又证明
 route在scorer内部没有塌缩，而task-local正控在开始functional优化前已由teacher初始化获得最终收益的约43%。R2证明set-valued critic
@@ -44,13 +45,15 @@ R10稳定functional basin上加入共享、cross-video positive / same-role nega
 full/half；correct functional loss保留，其它authority全部冻结。它必须先同时恢复正确support、错误support margin和R10正确functional，
 才有资格重跑完整12-task G3 Gate。
 
-R12已完成step70/110 formal与完整paired Gate。step110 matched/mismatched full-route为`.528/.083`，bank margin与interaction已经达到
-`.145/.578`，但train/held/task-held只有`.299/-.504/-.129`。逐视频分解显示full-route recovery中位`.583`，half-route为`-1.093`；
-因此最早失效接口是正确bank route recall，而不是operator端点或R10 functional basin。下一唯一机制修正将functional primals与
-compatibility probes解耦：先冻结现有functional方向，只训练共享Program-conditioned probe读取当前bank support。该轮只是有界诊断；
-`.80/.20/.001`是implementation预注册的可分性标准，不是owner或专家硬Gate，即使通过也不把full/half二值route确立为G3架构。
-完成support、task-held与必要functional对照后暂停，结合专家意见决定真正的Program--bank联合方向生成；不授权阈值、loss weight、
-LR、seed或谱幂小扫。
+R12及其唯一解耦诊断R13均已完成step70/110 formal与完整paired Gate。R13只训练38个独立compatibility input heads，冻结R12
+Natural Program、functional primals与scale；step70/110 matched full-route为`.639/.667`，mismatched均为`.167`，support AUC为
+`.826/.831`且逐task严格排序均为`9/12`。这相对R12的`.528/.083`与AUC`.762`证明credit解耦有真实帮助，但step110
+train/held/task-held仅`.483/.049/.033`；gradient fit、same-task held与true task-held的正确放行分别只有`16/20`、`5/10`和`3/6`。
+task52/72/74的正确support仍低于各自wrong bank，任何保持wrong full-route不超过`.20`的全局阈值最多只能放行`.722`的正确pairs。
+step70到110唯一新增放行是task8一个fit video以约`0.000060`越过固定阈值，令train表面跃升而held/task-held完全不变。R13因此
+严格non-pass，并排除“只把compatibility credit交给独立线性probe即可修复”这一假设；它不把二值route确立为G3架构。当前在此暂停，
+不做threshold、temperature、loss weight、LR、seed、谱幂或同类probe小扫；下一步先与owner组织专家问题，重点讨论如何让Program与
+当前bank共同产生唯一functional direction，而不是继续精修full/half门卫。
 
 ## R5--R10当前里程碑
 
@@ -128,8 +131,9 @@ LR、seed或谱幂小扫。
 - [x] 在canonical shared compiler中拆分functional input primals与compatibility probes；从R12 step110初始化并冻结functional
   basin，只让共享probe接受same-task cross-video positive / same-role negative credit。定向合同、全仓测试及真实world3
   forward/gradient/ownership smoke均通过，Action Meta与teacher reads为0。
-- [ ] 从clean pushed detached authority完成R13 step70/110及12-task support/functional诊断；随后无论结果如何暂停，不把二值route
-  通过包装成G3通过，并与owner讨论给专家的完整问题与证据。
+- [x] 从clean pushed detached `0489da3`完成R13 step70/110及六worker 12-task support/functional诊断；两个checkpoint均strict
+  non-pass，证据已定位到独立probe的训练拟合、same-task held与task-held泛化不足。按owner边界暂停，不把二值route包装成G3通过，
+  不继续下一版架构，等待讨论给专家的完整问题与证据。
 
 ## 当前G1里程碑
 

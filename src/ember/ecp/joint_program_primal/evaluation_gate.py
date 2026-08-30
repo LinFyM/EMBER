@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.ecp.joint_program_primal.evaluation import (
+    BANK_COMPATIBILITY_GATE_SCHEMA,
     FAMILY_NAMES,
     J2_EVALUATION_SCHEMA,
     load_joint_program_primal_gate,
@@ -189,6 +190,31 @@ def _checks(
         "evaluation_throughput": summary["evaluation_to_training_wall"]
         <= float(thresholds["evaluation_to_training_wall_maximum"]),
     }
+    if gate.get("schema_version") == BANK_COMPATIBILITY_GATE_SCHEMA:
+        compatibility = summary.get("compatibility")
+        if not isinstance(compatibility, Mapping):
+            raise ValueError("R12 Gate lost compatibility summary")
+        checks.update(
+            {
+                "matched_full_route_fraction": float(
+                    compatibility["matched_full_route_fraction"]
+                )
+                >= float(thresholds["matched_full_route_fraction_minimum"]),
+                "mismatched_full_route_fraction": float(
+                    compatibility["mismatched_full_route_fraction"]
+                )
+                <= float(thresholds["mismatched_full_route_fraction_maximum"]),
+                "matched_mismatched_support_margin": compatibility[
+                    "paired_support_margin"
+                ]
+                is not None
+                and compatibility["paired_support_margin"]["count"] == 12
+                and compatibility["paired_support_margin"]["median"]
+                >= float(
+                    thresholds["matched_mismatched_support_margin_minimum"]
+                ),
+            }
+        )
     stability: dict[str, Any] = {"status": "pending_adjacent_checkpoint", "pass": False}
     if previous is not None:
         previous_step = int(previous["checkpoint"]["optimizer_step"])
@@ -292,6 +318,51 @@ def aggregate_evaluation(
     evaluation_wall = max(float(row["elapsed_seconds"]) for row in workers)
     training_wall = float(training_metric["elapsed_seconds"])
     checkpoint_step = int(workers[0]["checkpoint"]["optimizer_step"])
+    compatibility = None
+    if all("compatibility_route" in row for row in tasks):
+        threshold = float(gate["gate"]["compatibility_support_threshold"])
+        matched = [
+            float(value["support"])
+            for row in tasks
+            for value in row["compatibility_route"]["correct"].values()
+        ]
+        mismatched = [
+            float(
+                row["compatibility_route"]["correct_program_wrong_bank"][
+                    "support"
+                ]
+            )
+            for row in tasks
+        ]
+        paired_margin = []
+        for row in tasks:
+            first = str(row["fit_videos"][0])
+            paired_margin.append(
+                float(
+                    row["compatibility_route"]["correct"][first]["support"]
+                )
+                - float(
+                    row["compatibility_route"]["correct_program_wrong_bank"][
+                        "support"
+                    ]
+                )
+            )
+        compatibility = {
+            "threshold": threshold,
+            "matched_support": _distribution(matched),
+            "mismatched_support": _distribution(mismatched),
+            "paired_support_margin": _distribution(paired_margin),
+            "matched_full_route_fraction": sum(
+                value >= threshold for value in matched
+            )
+            / len(matched),
+            "mismatched_full_route_fraction": sum(
+                value >= threshold for value in mismatched
+            )
+            / len(mismatched),
+        }
+    elif gate.get("schema_version") == BANK_COMPATIBILITY_GATE_SCHEMA:
+        raise ValueError("R12 workers omitted compatibility route evidence")
     summary = {
         "checkpoint_optimizer_step": checkpoint_step,
         "gradient_train": train,
@@ -318,6 +389,7 @@ def aggregate_evaluation(
             "one_event_fraction": sum(value <= 1 for value in active) / len(active),
         },
         "information_wall_pass": wall_pass,
+        "compatibility": compatibility,
         "evaluation_wall_seconds": evaluation_wall,
         "training_wall_seconds": training_wall,
         "evaluation_to_training_wall": evaluation_wall / max(training_wall, 1e-12),

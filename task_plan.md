@@ -110,9 +110,13 @@ full/half；correct functional loss保留，其它authority全部冻结。它必
   coordinate而非缩放或连续插值。
 - [x] 将同一hard switch套到R10 step70/110完整12-task Gate并记录全部support：step110 matched/mismatched AUC`.558160`、严格
   分离`0/12`，train/held坍缩到`-.482993/-.631937`。因此固定门不是shared解，下一修正必须训练Program--bank compatibility。
-- [ ] 在唯一joint Program--primal执行面实现R10-initialized shared compatibility qualification：固定support统计和hard full/half route；
-  同task fit videos交叉positive、同role cyclic wrong bank negative；显式calibration与原correct functional loss共同训练，held/task2/74/
-  panel B零梯度，Action Meta 0、唯一rank16、无task lookup。先以真实gradient比例和materialization smoke裁决formal资格。
+- [x] 在唯一joint Program--primal执行面实现R10-initialized shared compatibility qualification：固定p10 support与hard full/half deployment
+  route；同task fit videos交叉positive、同role cyclic wrong bank negative；正确functional teacher-force full endpoint。230项全量CPU合同和
+  gpu01三卡真实六task forward/backward/materialization通过，Action Meta 0、teacher reads 0、唯一rank16。gradient-ratio证据把compatibility
+  weight从会压倒functional约百倍的`1.0`固定为`.01`，复测总norm`.2451`且各关键gradient finite/nonzero。
+- [ ] 从clean pushed detached authority运行R12 formal至step70；检查positive/negative support、route fraction、cross-role/task分解及
+  correct functional训练曲线。只有机制资格成立才exact-resume到step110并运行两个single checkpoints的完整12-task paired G3 Gate；
+  non-pass先定位support acquisition、held generalization或hard-route utility中最早失效者。
 
 ## 当前G1里程碑
 

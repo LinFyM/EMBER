@@ -70,6 +70,14 @@ def train(args: argparse.Namespace) -> None:
                         "mean_counterfactual_normalized_gap",
                         "mean_counterfactual_hinge_loss",
                         "active_counterfactual_fraction",
+                        "mean_bank_compatibility_loss",
+                        "mean_positive_route_support",
+                        "minimum_positive_route_support",
+                        "positive_full_route_fraction",
+                        "mean_negative_route_support",
+                        "maximum_negative_route_support",
+                        "negative_full_route_fraction",
+                        "mean_training_support_margin",
                     ):
                         if name in row:
                             console[name] = row[name]

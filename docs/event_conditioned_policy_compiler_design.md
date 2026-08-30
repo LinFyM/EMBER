@@ -587,6 +587,13 @@ step110 model tensors、fresh optimizer开始；每个Program view以另一条sa
 task direction。held video、task2/74、panel B及validation/test零梯度；route只读当前Program与当前bank，不读task ID、文件名或成对
 反事实。首个mechanism Gate要求positive跨阈值、negative低于阈值、correct functional不退化；未满足前不运行完整formal G3。
 
+首版训练实现把route supervision与task-direction supervision严格分工。每条fit Program以另一条same-task fit bank为positive，并以当前
+同role cyclic task的对应交换view为negative；training support使用input projection排序第12--20位均值以分散梯度，而部署判定保持固定
+p10。compatibility用温度`.02`的二元calibration；正确functional分支在训练时teacher-force已通过正控的full endpoint，避免尚未学会的
+hard route先把R10功能basin送入half并制造错误credit，evaluation/deployment则没有override。三卡同图梯度profile显示weight `1.0`
+压倒functional约百倍，唯一机制比例修正为`.01`后总norm`.2451`且不clip，input/output/Program梯度均finite；该值固定进入首轮formal，
+不作weight sweep。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置

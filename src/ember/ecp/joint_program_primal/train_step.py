@@ -257,6 +257,7 @@ def generated_rank16_pair(
     *,
     program_condition: MappingCondition,
     bank_condition: MappingCondition,
+    inverse_covariance_power_override: float | None = None,
 ) -> tuple[dict[str, torch.Tensor], Any, Any, Mapping[str, Any]]:
     """Generate one adapter from an explicit Program/bank pairing."""
 
@@ -280,7 +281,10 @@ def generated_rank16_pair(
         query_times=query_times,
     )
     output = runtime.compiler.forward_compact(
-        program, bank_prepared.videos, s_ref=runtime.ranks.s_ref
+        program,
+        bank_prepared.videos,
+        s_ref=runtime.ranks.s_ref,
+        inverse_covariance_power_override=inverse_covariance_power_override,
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=False
@@ -299,10 +303,16 @@ def generated_rank16_pair(
 
 
 def generated_rank16(
-    runtime: JointProgramPrimalRuntime, condition: MappingCondition
+    runtime: JointProgramPrimalRuntime,
+    condition: MappingCondition,
+    *,
+    inverse_covariance_power_override: float | None = None,
 ) -> tuple[dict[str, torch.Tensor], Any, Any, Mapping[str, Any]]:
     return generated_rank16_pair(
-        runtime, program_condition=condition, bank_condition=condition
+        runtime,
+        program_condition=condition,
+        bank_condition=condition,
+        inverse_covariance_power_override=inverse_covariance_power_override,
     )
 
 
@@ -422,6 +432,174 @@ def _run_correct_task(
         "action_frames": list(panel.action_frames),
         "mean_functional_loss": sum(row["functional_loss"] for row in views)
         / len(views),
+        "views": views,
+        "task_seconds": time.monotonic() - tick,
+    }
+
+
+def _run_bank_compatibility_task(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    task_id: int,
+    wrong_task_id: int,
+    visit_index: int,
+) -> dict[str, Any]:
+    """Preserve the R10 full direction while learning current-bank routing."""
+
+    tick = time.monotonic()
+    panel_batch, panel = functional_panel_batch(
+        runtime,
+        task_id=task_id,
+        panel_name="a",
+        visit_index=visit_index,
+    )
+    fit_views = runtime.task_conditions[task_id].fit_views
+    wrong_views = runtime.task_conditions[wrong_task_id].fit_views
+    cell = runtime.config["optimization"]["joint"]["bank_compatibility"]
+    threshold = float(cell["threshold"])
+    temperature = float(cell["temperature"])
+    weight = float(cell["weight"])
+    if temperature <= 0.0 or weight <= 0.0:
+        raise RuntimeError("R12 compatibility loss scale changed")
+
+    query_times = torch.linspace(
+        0.0,
+        1.0,
+        runtime.query_points,
+        dtype=torch.float32,
+        device=runtime.context.device,
+    )[None]
+    views = []
+    for view_index, condition in enumerate(fit_views):
+        complete, output, program_output, functional_metrics = generated_rank16(
+            runtime,
+            condition,
+            inverse_covariance_power_override=1.0,
+        )
+        functional_loss, gradients = functional_loss_derivative(
+            runtime,
+            state=complete,
+            batch=panel_batch,
+            policy_rng_seed=panel.policy_rng_seed,
+        )
+        backward_functional_derivative(complete, gradients, weight=1.0 / 12.0)
+        if (
+            output.compatibility_supports is not None
+            or output.selected_inverse_covariance_powers is None
+            or not bool(
+                torch.all(output.selected_inverse_covariance_powers == 1.0)
+            )
+        ):
+            raise RuntimeError("R12 correct functional teacher route changed")
+
+        program_prepared, program_metrics = prepare_joint_condition(
+            runtime, condition
+        )
+        swapped_index = 1 - view_index
+        positive_condition = fit_views[swapped_index]
+        negative_condition = wrong_views[swapped_index]
+        positive_prepared, positive_metrics = prepare_joint_condition(
+            runtime, positive_condition
+        )
+        negative_prepared, negative_metrics = prepare_joint_condition(
+            runtime, negative_condition
+        )
+        program, compatibility_program_output = compile_joint_program(
+            runtime,
+            condition=program_prepared,
+            query_times=query_times,
+        )
+        support_rows = runtime.compiler.bank_compatibility_supports(
+            program,
+            (
+                positive_prepared.videos[0],
+                negative_prepared.videos[0],
+            ),
+        )
+        if len(support_rows) != 2:
+            raise RuntimeError("R12 compatibility pair topology changed")
+        (positive_route, positive_training), (
+            negative_route,
+            negative_training,
+        ) = support_rows
+        positive_logit = (positive_training - threshold) / temperature
+        negative_logit = (negative_training - threshold) / temperature
+        compatibility_loss = 0.5 * (
+            torch.nn.functional.softplus(-positive_logit)
+            + torch.nn.functional.softplus(negative_logit)
+        )
+        (compatibility_loss * (weight / 12.0)).backward()
+        views.append(
+            {
+                "video_demo": condition.video_demo,
+                "sampled_frames": condition.sampled_frames,
+                "functional_loss": functional_loss,
+                "functional_operator": "full_inverse_teacher_forced",
+                "compatibility": {
+                    "positive_video_demo": positive_condition.video_demo,
+                    "negative_task": wrong_task_id,
+                    "negative_video_demo": negative_condition.video_demo,
+                    "route_threshold": threshold,
+                    "temperature": temperature,
+                    "weight": weight,
+                    "positive_route_support": float(positive_route.detach()),
+                    "positive_training_support": float(
+                        positive_training.detach()
+                    ),
+                    "negative_route_support": float(negative_route.detach()),
+                    "negative_training_support": float(
+                        negative_training.detach()
+                    ),
+                    "positive_full_route": bool(
+                        float(positive_route.detach()) >= threshold
+                    ),
+                    "negative_full_route": bool(
+                        float(negative_route.detach()) >= threshold
+                    ),
+                    "training_support_margin": float(
+                        (positive_training - negative_training).detach()
+                    ),
+                    "loss": float(compatibility_loss.detach()),
+                },
+                "canonical_active_events": int(
+                    (
+                        compatibility_program_output.program.rho[0].detach()
+                        > 0.2
+                    ).sum()
+                ),
+                "condition_metrics": {
+                    "functional": functional_metrics,
+                    "program": program_metrics,
+                    "positive_bank": positive_metrics,
+                    "negative_bank": negative_metrics,
+                },
+            }
+        )
+        del (
+            complete,
+            output,
+            program_output,
+            program,
+            compatibility_program_output,
+            program_prepared,
+            positive_prepared,
+            negative_prepared,
+        )
+    return {
+        "authority_id": task_id,
+        "role": runtime.task_conditions[task_id].fit_views[0].role,
+        "panel": "a_plus_cross_video_bank_compatibility",
+        "panel_visit": visit_index,
+        "functional_policy_rng_seed": panel.policy_rng_seed,
+        "action_demos": list(panel.action_demos),
+        "action_frames": list(panel.action_frames),
+        "mean_functional_loss": sum(row["functional_loss"] for row in views)
+        / len(views),
+        "mean_bank_compatibility_loss": sum(
+            row["compatibility"]["loss"] for row in views
+        )
+        / len(views),
+        "wrong_task": wrong_task_id,
         "views": views,
         "task_seconds": time.monotonic() - tick,
     }
@@ -819,7 +997,15 @@ def run_joint_program_primal_optimizer_step(
         runtime.config["optimization"]["loss"]
         == "fit_only_functional_code_outer_direction_only"
     )
-    pairs = counterfactual_task_pairs(runtime, group) if use_counterfactual else {}
+    use_bank_compatibility = (
+        runtime.config["optimization"]["loss"]
+        == "correct_flow_plus_cross_video_bank_compatibility"
+    )
+    pairs = (
+        counterfactual_task_pairs(runtime, group)
+        if use_counterfactual or use_bank_compatibility
+        else {}
+    )
     arm = counterfactual_arm(runtime.optimizer_steps) if use_counterfactual else None
     counterfactual_view_index = runtime.optimizer_steps % 2
     assignments = _task_assignments(runtime, group)
@@ -839,6 +1025,16 @@ def run_joint_program_primal_optimizer_step(
                 visit_index=visit_index,
                 counterfactual_view_index=counterfactual_view_index,
                 arm=str(arm),
+            )
+            for task in assignments[runtime.context.rank]
+        ]
+    elif use_bank_compatibility:
+        local_records = [
+            _run_bank_compatibility_task(
+                runtime,
+                task_id=task,
+                wrong_task_id=pairs[task],
+                visit_index=visit_index,
             )
             for task in assignments[runtime.context.rank]
         ]
@@ -950,6 +1146,56 @@ def run_joint_program_primal_optimizer_step(
                     for value in records
                 )
                 / len(records),
+            }
+        )
+    if use_bank_compatibility:
+        compatibility_rows = [
+            view["compatibility"]
+            for record in records
+            for view in record["views"]
+        ]
+        row.update(
+            {
+                "mean_bank_compatibility_loss": sum(
+                    float(value["loss"]) for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "mean_positive_route_support": sum(
+                    float(value["positive_route_support"])
+                    for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "minimum_positive_route_support": min(
+                    float(value["positive_route_support"])
+                    for value in compatibility_rows
+                ),
+                "positive_full_route_fraction": sum(
+                    bool(value["positive_full_route"])
+                    for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "mean_negative_route_support": sum(
+                    float(value["negative_route_support"])
+                    for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "maximum_negative_route_support": max(
+                    float(value["negative_route_support"])
+                    for value in compatibility_rows
+                ),
+                "negative_full_route_fraction": sum(
+                    bool(value["negative_full_route"])
+                    for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "mean_training_support_margin": sum(
+                    float(value["training_support_margin"])
+                    for value in compatibility_rows
+                )
+                / len(compatibility_rows),
+                "bank_compatibility_pairs": {
+                    str(task): wrong for task, wrong in sorted(pairs.items())
+                },
             }
         )
     return row

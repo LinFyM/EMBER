@@ -1560,3 +1560,14 @@ rank16可以同时成立。相反，把full/half query按sigmoid support线性�
 task-local正控的固定阈值冒充shared compiler成功。下一最小修正从R10 stable functional tensors与fresh optimizer开始，以跨fit-video
 same-task positive和same-role cyclic negative显式训练shared projection calibration，同时保留correct cross-episode functional loss；
 held、task2/74、panel B零梯度，部署只读当前Program和当前bank并作near-binary operator route。
+
+### 92. compatibility credit必须与R10 functional basin同量级，不能直接等权
+
+R12三卡六task真实profile对同一R10 step110初始化做了唯一gradient-ratio裁决。compatibility weight `1.0`时总gradient norm为
+`19.5798`，Program process与input-head probe为`8.72597/.098985`；R10纯functional首步对应约`.083307/.000690`，即新credit大约高
+两个数量级并必然触发clip。该设置会把“保护强function direction”的设计目标变成名义约束，不能进入formal。
+
+按实测比例把weight固定为`.01`后，同图总norm为`.245101`且不clip；Program process、input、output probes为
+`.121945/.001164/.000523`，新旧credit处于同一量级，真实functional loss保持`.101959`。初始positive/negative full-route fraction为
+`.0833/0`，说明模型并非靠阈值先验通过；training-support margin已为`.004154`但task间有正有负，formal仍需证明shared acquisition与
+held泛化。该比例是一次机制校准，不授权weight、LR或seed sweep。

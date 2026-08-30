@@ -28,6 +28,10 @@ from ember.ecp.native_factors import (
 )
 
 
+INPUT_PROJECTION_ROUTE_FRACTION = 0.10
+INPUT_PROJECTION_TRAINING_BAND = (12, 20)
+
+
 @dataclass(frozen=True)
 class PrimalDualVideoResult:
     input_values: tuple[torch.Tensor, ...]
@@ -36,6 +40,8 @@ class PrimalDualVideoResult:
     group_gains: torch.Tensor
     solve_metrics: torch.Tensor
     conditioning_metrics: torch.Tensor
+    compatibility_support: torch.Tensor | None = None
+    selected_inverse_covariance_power: float | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +87,8 @@ class _ReplayPlan:
     group_gains: torch.Tensor
     solve_metrics: torch.Tensor
     conditioning_metrics: torch.Tensor
+    compatibility_support: torch.Tensor | None
+    selected_inverse_covariance_power: float
 
 
 class PrimalDualVideoOperator:
@@ -96,6 +104,7 @@ class PrimalDualVideoOperator:
         replay_score_rms: float,
         covariance_frame_chunk: int,
         inverse_covariance_power: float = 1.0,
+        compatibility_support_threshold: float | None = None,
     ) -> None:
         self.owners = tuple(owners)
         self.program_width = int(program_width)
@@ -104,7 +113,18 @@ class PrimalDualVideoOperator:
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
         self.inverse_covariance_power = float(inverse_covariance_power)
-        if self.inverse_covariance_power not in (0.5, 0.75, 1.0):
+        self.compatibility_support_threshold = (
+            None
+            if compatibility_support_threshold is None
+            else float(compatibility_support_threshold)
+        )
+        if (
+            self.inverse_covariance_power not in (0.5, 0.75, 1.0)
+            or (
+                self.compatibility_support_threshold is not None
+                and not 0.0 < self.compatibility_support_threshold < 1.0
+            )
+        ):
             raise NativeFactorError("invalid native inverse covariance power")
 
     @staticmethod
@@ -317,12 +337,47 @@ class PrimalDualVideoOperator:
             )
         )
 
+    def input_projection_supports(
+        self,
+        input_primals: tuple[torch.Tensor, ...],
+        input_operators: tuple[SpectralNativeCovariance, ...],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return the fixed deployment p10 and smoother training-band support."""
+
+        if len(input_primals) != len(self.owners) or len(input_operators) != len(
+            self.owners
+        ):
+            raise NativeFactorError("bank compatibility input ownership changed")
+        values = torch.cat(
+            tuple(
+                operator.retained_projection(primal)
+                for primal, operator in zip(
+                    input_primals, input_operators, strict=True
+                )
+            )
+        )
+        expected = len(self.owners) * G1_RESIDUAL_RANK
+        if values.ndim != 1 or values.numel() != expected:
+            raise NativeFactorError("bank compatibility projection grid changed")
+        route_index = max(
+            1,
+            int(INPUT_PROJECTION_ROUTE_FRACTION * (values.numel() - 1)) + 1,
+        )
+        route_support = values.kthvalue(route_index).values
+        begin, end = INPUT_PROJECTION_TRAINING_BAND
+        if not 1 <= begin <= end <= values.numel():
+            raise NativeFactorError("bank compatibility training band changed")
+        training_support = values.sort().values[begin - 1 : end].mean()
+        return route_support, training_support
+
     def _queries(
         self,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         input_operators: tuple[SpectralNativeCovariance, ...],
         output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...],
+        *,
+        inverse_covariance_power: float,
     ) -> tuple[Any, ...]:
         input_queries, output_queries, metrics = [], [], []
         projections, raw_rms_values, query_scales = [], [], []
@@ -331,7 +386,7 @@ class PrimalDualVideoOperator:
         ):
             query, raw_rms, projection = operator.dual_and_score_rms(
                 primal,
-                inverse_covariance_power=self.inverse_covariance_power,
+                inverse_covariance_power=inverse_covariance_power,
             )
             scale = self.replay_score_rms / raw_rms.clamp_min(1e-12)
             input_queries.append(query * scale[:, None])
@@ -345,7 +400,7 @@ class PrimalDualVideoOperator:
             rows = tuple(
                 operator.dual_and_score_rms(
                     primals[group],
-                    inverse_covariance_power=self.inverse_covariance_power,
+                    inverse_covariance_power=inverse_covariance_power,
                 )
                 for group, operator in enumerate(operators)
             )
@@ -493,12 +548,42 @@ class PrimalDualVideoOperator:
         ),
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
+        *,
+        inverse_covariance_power_override: float | None = None,
     ) -> _ReplayPlan:
         frame = prepared.frame_measure
         input_operators = prepared.input_operators
         output_operators = prepared.output_operators
+        if (
+            inverse_covariance_power_override is not None
+            and inverse_covariance_power_override not in (0.5, 0.75, 1.0)
+        ):
+            raise NativeFactorError("native inverse covariance override changed")
+        compatibility_support = None
+        selected_power = (
+            self.inverse_covariance_power
+            if inverse_covariance_power_override is None
+            else float(inverse_covariance_power_override)
+        )
+        if (
+            inverse_covariance_power_override is None
+            and self.compatibility_support_threshold is not None
+        ):
+            compatibility_support, _ = self.input_projection_supports(
+                input_primals, input_operators
+            )
+            selected_power = (
+                1.0
+                if float(compatibility_support.detach())
+                >= self.compatibility_support_threshold
+                else 0.5
+            )
         queries = self._queries(
-            input_primals, output_primals, input_operators, output_operators
+            input_primals,
+            output_primals,
+            input_operators,
+            output_operators,
+            inverse_covariance_power=selected_power,
         )
         operators = (*input_operators, *(row for rows in output_operators for row in rows))
         retained_fractions = frame.new_tensor(
@@ -530,6 +615,8 @@ class PrimalDualVideoOperator:
             group_gains=frame.new_ones(group_count, G1_RESIDUAL_RANK),
             solve_metrics=queries[2],
             conditioning_metrics=conditioning,
+            compatibility_support=compatibility_support,
+            selected_inverse_covariance_power=selected_power,
         )
 
     @staticmethod
@@ -560,11 +647,20 @@ class PrimalDualVideoOperator:
         prepared: MaterializedPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
+        *,
+        inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         """Replay a fixed diagnostic bank without repeated Python chunk launches."""
 
         with self.ieee_matmul(prepared.frame_measure.device):
-            plan = self._plan(prepared, input_primals, output_primals)
+            plan = self._plan(
+                prepared,
+                input_primals,
+                output_primals,
+                inverse_covariance_power_override=(
+                    inverse_covariance_power_override
+                ),
+            )
             inputs = tuple(
                 self._materialized_signed_pool(query, values, prepared.input_mass)
                 for query, values in zip(
@@ -590,6 +686,10 @@ class PrimalDualVideoOperator:
             group_gains=plan.group_gains,
             solve_metrics=plan.solve_metrics,
             conditioning_metrics=plan.conditioning_metrics,
+            compatibility_support=plan.compatibility_support,
+            selected_inverse_covariance_power=(
+                plan.selected_inverse_covariance_power
+            ),
         )
 
     def apply_compact(
@@ -597,11 +697,20 @@ class PrimalDualVideoOperator:
         prepared: CompactPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
+        *,
+        inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         """Replay cached raw X/Y with the canonical fixed-microblock reduction."""
 
         with self.ieee_matmul(prepared.frame_measure.device):
-            plan = self._plan(prepared, input_primals, output_primals)
+            plan = self._plan(
+                prepared,
+                input_primals,
+                output_primals,
+                inverse_covariance_power_override=(
+                    inverse_covariance_power_override
+                ),
+            )
             input_block, output_block = self._candidate_blocks()
             inputs = tuple(
                 StreamingSignedPool(
@@ -657,6 +766,10 @@ class PrimalDualVideoOperator:
             group_gains=plan.group_gains,
             solve_metrics=plan.solve_metrics,
             conditioning_metrics=plan.conditioning_metrics,
+            compatibility_support=plan.compatibility_support,
+            selected_inverse_covariance_power=(
+                plan.selected_inverse_covariance_power
+            ),
         )
 
     def _add_replay_chunk(
@@ -745,9 +858,18 @@ class PrimalDualVideoOperator:
         prepared: PreparedPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
+        *,
+        inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         with self.ieee_matmul(prepared.frame_measure.device):
-            plan = self._plan(prepared, input_primals, output_primals)
+            plan = self._plan(
+                prepared,
+                input_primals,
+                output_primals,
+                inverse_covariance_power_override=(
+                    inverse_covariance_power_override
+                ),
+            )
             inputs, outputs = self._replay(prepared.video, plan)
         return PrimalDualVideoResult(
             input_values=inputs,
@@ -756,6 +878,10 @@ class PrimalDualVideoOperator:
             group_gains=plan.group_gains,
             solve_metrics=plan.solve_metrics,
             conditioning_metrics=plan.conditioning_metrics,
+            compatibility_support=plan.compatibility_support,
+            selected_inverse_covariance_power=(
+                plan.selected_inverse_covariance_power
+            ),
         )
 
     def __call__(

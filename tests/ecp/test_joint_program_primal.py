@@ -24,10 +24,12 @@ from ember.ecp.joint_program_primal.routing_control import (
 )
 from ember.ecp.joint_program_primal.routing_initialization import (
     FUNCTIONAL_CODE_INITIALIZATION,
+    R10_FUNCTIONAL_CONTENT,
     R9_STABLE_CONTENT,
     minimum_norm_head_solution,
 )
 from ember.ecp.joint_program_primal.runtime import (
+    BANK_COMPATIBILITY_SCHEMA,
     CHART_RECONNECT_SCHEMA,
     FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
     FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
@@ -586,6 +588,37 @@ def test_r11_swaps_only_to_raw_frozen_stage0_functional_input() -> None:
         root / "configs/pi05_ecp_raw_stage0_sufficiency_r11_gate_v1.json"
     )
     assert gate["checkpoint_optimizer_steps"] == [70, 110]
+
+
+def test_r12_learns_cross_video_bank_compatibility_from_r10() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_bank_compatibility_r12_v1.json"
+    )
+    assert config["schema_version"] == BANK_COMPATIBILITY_SCHEMA
+    assert config["model"]["program_initialization"] == R10_FUNCTIONAL_CONTENT
+    assert config["model"]["primal_scorer_initialization"] == (
+        R10_FUNCTIONAL_CONTENT
+    )
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        JOINT_NATIVE_HEADS_ONLY
+    )
+    compatibility = config["optimization"]["joint"]["bank_compatibility"]
+    assert compatibility["positive_pairing"] == (
+        "each_fit_program_to_other_same_task_fit_bank"
+    )
+    assert compatibility["correct_functional_operator"] == (
+        "full_inverse_teacher_forced"
+    )
+    assert compatibility["deployment_operator"] == (
+        "hard_full_if_supported_else_half"
+    )
+    assert config["information_wall"]["action_meta_installed"] is False
+    gate = load_joint_program_primal_gate(
+        root / "configs/pi05_ecp_bank_compatibility_r12_gate_v1.json"
+    )
+    assert gate["gate"]["matched_full_route_fraction_minimum"] == 0.80
+    assert gate["gate"]["mismatched_full_route_fraction_maximum"] == 0.20
 
 
 def test_bank_interaction_positive_control_uses_fixed_half_operator() -> None:

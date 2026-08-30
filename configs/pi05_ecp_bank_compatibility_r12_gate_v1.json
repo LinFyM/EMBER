@@ -1,0 +1,56 @@
+{
+  "schema_version": "ember_ecp_bank_compatibility_gate_v1",
+  "status": "active_shared_program_bank_compatibility_qualification",
+  "training_config": "configs/pi05_ecp_bank_compatibility_r12_v1.json",
+  "authorities": {
+    "positive_control_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829"
+  },
+  "checkpoint_optimizer_steps": [70, 110],
+  "evaluation": {
+    "functional_panel": "panel_b",
+    "panel_visits": 16,
+    "gradient_correct_views": "two_fit_plus_same_task_held",
+    "true_task_held_views": "lowest_three_sorted_task_holdout_videos_mean",
+    "primary_control_view": "lowest_fit_video_demo",
+    "wrong_pairing": "next_j3_authority_id_within_same_meta_or_target_role_cyclic",
+    "language_only": "keep_p_lang_zero_scene_process_sigma_uniform_rho_canonical_tau",
+    "endpoints": "rebuild_pass_a_and_native_bank_from_first_and_final_sampled_frames",
+    "task_held_free_primal": "frozen_fit_teacher_initialized_code_without_action_gradient",
+    "selected_family_report_targets": [0, 16, 34, 1, 17, 35, 36, 37]
+  },
+  "gate": {
+    "train_median_minimum": 0.60,
+    "held_video_median_minimum": 0.50,
+    "true_task_held_mean_minimum": 0.40,
+    "true_task_held_each_minimum": 0.30,
+    "held_to_train_minimum": 0.80,
+    "q_minimum": 0.35,
+    "v_minimum": 0.35,
+    "action_in_minimum": 0.30,
+    "action_out_minimum": 0.30,
+    "full_over_language_minimum": 0.10,
+    "full_over_endpoints_minimum": 0.10,
+    "correct_wrong_program_margin_minimum": 0.10,
+    "correct_wrong_bank_margin_minimum": 0.10,
+    "interaction_minimum": 0.05,
+    "same_task_other_retention_minimum": 0.80,
+    "compatibility_support_threshold": 0.906622976064682,
+    "matched_full_route_fraction_minimum": 0.80,
+    "mismatched_full_route_fraction_maximum": 0.20,
+    "matched_mismatched_support_margin_minimum": 0.001,
+    "maximum_checkpoint_task_median_drop": 0.05,
+    "minimum_median_active_events": 2,
+    "maximum_one_event_fraction": 0.0,
+    "evaluation_to_training_wall_maximum": 0.50
+  },
+  "information_wall": {
+    "panel_b_backward_calls": 0,
+    "same_task_held_backward_calls": 0,
+    "true_task_held_backward_calls": 0,
+    "validation_or_test_reads": 0,
+    "fixed_routing_token_deployment_input": false,
+    "shuffled_or_reversed_use": false,
+    "action_meta_installed": false,
+    "single_complete_rank16": true
+  }
+}

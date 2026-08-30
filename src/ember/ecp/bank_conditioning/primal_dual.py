@@ -156,6 +156,19 @@ class SpectralNativeCovariance:
     retained_condition: torch.Tensor
     retained_trace_fraction: torch.Tensor
 
+    def retained_projection(self, primal: torch.Tensor) -> torch.Tensor:
+        """Measure how much of each primal row lies in this bank's support."""
+
+        if primal.ndim != 2 or primal.shape[-1] != self.native_width:
+            raise BankConditioningError("native primal width changed")
+        basis = self.basis.to(primal)
+        coordinates = primal.float() @ basis.float()
+        projected = coordinates @ basis.float().T
+        return (
+            projected.norm(dim=-1)
+            / primal.float().norm(dim=-1).clamp_min(1e-30)
+        ).to(primal)
+
     def dual_and_score_rms(
         self,
         primal: torch.Tensor,

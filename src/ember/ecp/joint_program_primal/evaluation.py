@@ -29,6 +29,7 @@ from ember.ecp.joint_program_primal.gate import (
     _functional_value,
 )
 from ember.ecp.joint_program_primal.runtime import (
+    BANK_COMPATIBILITY_SCHEMA,
     JointProgramPrimalRuntime,
     joint_run_schema,
     joint_stage,
@@ -73,6 +74,7 @@ FUNCTIONAL_REFINEMENT_GATE_SCHEMA = (
     "ember_ecp_r9_initialized_functional_refinement_gate_v1"
 )
 RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA = "ember_ecp_raw_stage0_sufficiency_gate_v1"
+BANK_COMPATIBILITY_GATE_SCHEMA = "ember_ecp_bank_compatibility_gate_v1"
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -110,6 +112,10 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
                 RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA,
                 "active_raw_stage0_sufficiency_diagnostic_qualification",
             ),
+            (
+                BANK_COMPATIBILITY_GATE_SCHEMA,
+                "active_shared_program_bank_compatibility_qualification",
+            ),
         }
         or config.get("checkpoint_optimizer_steps") != [70, 110]
         or evaluation.get("functional_panel") != "panel_b"
@@ -125,6 +131,17 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
         or wall.get("single_complete_rank16") is not True
     ):
         raise ValueError("unsupported J3 functional Gate config")
+    if schema == BANK_COMPATIBILITY_GATE_SCHEMA:
+        thresholds = config.get("gate", {})
+        if (
+            thresholds.get("compatibility_support_threshold")
+            != 0.906622976064682
+            or thresholds.get("matched_full_route_fraction_minimum") != 0.80
+            or thresholds.get("mismatched_full_route_fraction_maximum") != 0.20
+            or thresholds.get("matched_mismatched_support_margin_minimum")
+            != 0.001
+        ):
+            raise ValueError("unsupported R12 compatibility Gate thresholds")
     return config
 
 
@@ -328,6 +345,19 @@ def _complete_state(
     return complete, output
 
 
+def _compatibility_route(output: SharedCompilerOutput) -> dict[str, float] | None:
+    support = output.compatibility_supports
+    powers = output.selected_inverse_covariance_powers
+    if support is None:
+        return None
+    if support.shape != (1,) or powers is None or powers.shape != (1,):
+        raise RuntimeError("R12 evaluation compatibility route changed")
+    return {
+        "support": float(support[0]),
+        "selected_inverse_covariance_power": float(powers[0]),
+    }
+
+
 def _endpoint_cache(
     runtime: JointProgramPrimalRuntime, root: Path
 ) -> FrozenMappingConditionCache:
@@ -504,6 +534,7 @@ def _task_local_state(
         prepared=bank.videos[0],
         code=code,
         s_ref=runtime.ranks.s_ref,
+        inverse_covariance_power_override=1.0,
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=True
@@ -630,7 +661,7 @@ def _evaluate_task(
 
     prepared, _ = prepare_joint_condition(runtime, first)
     with torch.inference_mode():
-        language_state, _ = _complete_state(
+        language_state, language_output = _complete_state(
             runtime, program=_language_program(primary_program), bank=prepared
         )
     language = _normalized(
@@ -641,7 +672,7 @@ def _evaluate_task(
     endpoints_prepared = _endpoint_condition(runtime, endpoint_cache, first)
     with torch.inference_mode():
         endpoints_program = _compile_program(runtime, endpoints_prepared)
-        endpoints_state, _ = _complete_state(
+        endpoints_state, endpoints_output = _complete_state(
             runtime, program=endpoints_program, bank=endpoints_prepared
         )
     endpoints = _normalized(
@@ -654,10 +685,10 @@ def _evaluate_task(
     wrong_prepared, _ = prepare_joint_condition(runtime, wrong_condition)
     with torch.inference_mode():
         wrong_program = _compile_program(runtime, wrong_prepared)
-        correct_wrong_bank_state, _ = _complete_state(
+        correct_wrong_bank_state, correct_wrong_bank_output = _complete_state(
             runtime, program=primary_program, bank=wrong_prepared
         )
-        wrong_wrong_state, _ = _complete_state(
+        wrong_wrong_state, wrong_wrong_output = _complete_state(
             runtime, program=wrong_program, bank=wrong_prepared
         )
     correct_wrong_bank = _normalized(
@@ -672,7 +703,7 @@ def _evaluate_task(
 
     primary_prepared, _ = prepare_joint_condition(runtime, first)
     with torch.inference_mode():
-        wrong_correct_bank_state, _ = _complete_state(
+        wrong_correct_bank_state, wrong_correct_bank_output = _complete_state(
             runtime, program=wrong_program, bank=primary_prepared
         )
     wrong_correct_bank = _normalized(
@@ -700,7 +731,7 @@ def _evaluate_task(
     task_held_recovery = _mean_recovery(
         [correct_rows[row.video_demo] for row in correct_conditions]
     )
-    return {
+    result = {
         "schema_version": J2_EVALUATION_SCHEMA,
         "task": task_id,
         "role": runtime.panels[task_id].role,
@@ -754,6 +785,43 @@ def _evaluate_task(
             runtime.context.device
         ),
     }
+    if runtime.config.get("schema_version") == BANK_COMPATIBILITY_SCHEMA:
+        route = {
+            "threshold": float(
+                runtime.config["model"]["compatibility_support_threshold"]
+            ),
+            "correct": {
+                str(condition.video_demo): _compatibility_route(
+                    outputs[condition.video_demo]
+                )
+                for condition in correct_conditions
+            },
+            "language_only": _compatibility_route(language_output),
+            "endpoints": _compatibility_route(endpoints_output),
+            "wrong_program_correct_bank": _compatibility_route(
+                wrong_correct_bank_output
+            ),
+            "correct_program_wrong_bank": _compatibility_route(
+                correct_wrong_bank_output
+            ),
+            "wrong_program_wrong_bank": _compatibility_route(
+                wrong_wrong_output
+            ),
+        }
+        if any(
+            value is None
+            for value in (
+                *route["correct"].values(),
+                route["language_only"],
+                route["endpoints"],
+                route["wrong_program_correct_bank"],
+                route["correct_program_wrong_bank"],
+                route["wrong_program_wrong_bank"],
+            )
+        ):
+            raise RuntimeError("R12 evaluation lost its compatibility route")
+        result["compatibility_route"] = route
+    return result
 
 
 def evaluate_worker(args: argparse.Namespace) -> None:

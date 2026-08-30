@@ -24,6 +24,19 @@
   held video、task2/74、panel B保持零梯度。先做定向CPU合同、真实多卡gradient/materialization与loss-gradient比例profile，再决定
   formal，不再扫threshold、temperature、谱幂、LR或seed。
 
+- R12 canonical实现已接通：`SpectralNativeCovariance`暴露可微retained projection；每个K1 bank独立计算固定p10 route support与排序
+  12--20位training support；deployment在当前Program/current bank上near-binary选择full/half operator，历史config保持原路径。正确
+  functional训练分支teacher-force已验证的full endpoint，cross-video positive与same-role cyclic negative只监督共享support；evaluation
+  额外记录matched/mismatched route并把`.80/.20/.001`机制门纳入原完整G3 Gate。没有新增task/video lookup、第二adapter或Action Meta。
+
+- 230项全量CPU合同通过。gpu01物理`0,1,2`三卡真实六task profile完整运行：R10 step110 tensors严格加载，11,178,369个trainable仅为
+  Natural Program与native heads，Action Meta/source/Stage0/scale trainable均为0，native teacher reads为0；单步`20.92s`，三卡peak
+  reserved约`20.4--21.8GB`。weight `1.0`使总gradient norm达`19.58`并压倒原functional约百倍；按同图线性比例唯一修正为`.01`后
+  norm为`.2451`、不触发clip，input/output head gradient为`.001164/.000523`，Program process为`.12195`，与R10 functional基线
+  `.08331`同量级。初始positive/negative full-route fraction为`.0833/0`、training-support margin `.004154`，因此该run有真实学习空间且
+  negative没有先验误过门。下一步从clean pushed detached commit启动world-size弹性formal到step70，先依据support学习曲线与正确functional
+  稳定性裁决机制资格，再决定是否exact-resume到step110和完整paired Gate。
+
 - half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
   video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/
   source/Stage0为0，Action Meta为0，held/wrong/panel-B backward均为0，仍只生成一套完整rank16。五个独立workers随后评价同一sealed

@@ -67,6 +67,7 @@ def load_program_bank_interaction_gate(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     evaluation = config.get("evaluation", {})
     gate = config.get("gate", {})
+    efficiency = config.get("efficiency_diagnostics", {})
     wall = config.get("information_wall", {})
     if (
         config.get("schema_version") != PROGRAM_BANK_INTERACTION_GATE_SCHEMA
@@ -109,8 +110,13 @@ def load_program_bank_interaction_gate(path: Path) -> dict[str, Any]:
         or gate.get("wrong_off_minus_on_median_minimum") != 0.40
         or gate.get("family_median_minimum") != 0.0
         or gate.get("maximum_adjacent_correct_fit_median_drop") != 0.05
-        or gate.get("global_update_seconds_maximum") != 45.0
-        or gate.get("evaluation_to_training_wall_maximum") != 0.5
+        or efficiency.get("qualification_gate") is not False
+        or efficiency.get("reported_metrics")
+        != [
+            "training_global_step_seconds_maximum",
+            "training_global_step_seconds_median",
+            "evaluation_to_training_wall",
+        ]
         or wall.get("panel_b_backward_calls") != 0
         or wall.get("same_task_held_backward_calls") != 0
         or wall.get("unseen_wrong_backward_calls") != 0
@@ -860,10 +866,6 @@ def _checks(
             for name, value in summary["family"].items()
         },
         "information_wall": bool(summary["information_wall_pass"]),
-        "training_throughput": summary["training_global_step_seconds_maximum"]
-        <= float(thresholds["global_update_seconds_maximum"]),
-        "evaluation_throughput": summary["evaluation_to_training_wall"]
-        <= float(thresholds["evaluation_to_training_wall_maximum"]),
     }
 
 

@@ -264,11 +264,17 @@ class SharedCompilerMappingSchedule:
             raise ValueError("G3 mapping global batch or world size changed")
         rows: list[list[int]] = [[] for _ in range(world_size)]
         loads = [0] * world_size
+        maximum_tasks = math.ceil(len(group) / world_size)
         for task in sorted(
             group,
             key=lambda value: (-conditions[value].sampled_frames, value),
         ):
-            rank = min(range(world_size), key=lambda value: (loads[value], value))
+            eligible = [
+                rank
+                for rank in range(world_size)
+                if len(rows[rank]) < maximum_tasks
+            ]
+            rank = min(eligible, key=lambda value: (loads[value], value))
             rows[rank].append(task)
             loads[rank] += conditions[task].sampled_frames
         return tuple(tuple(row) for row in rows)

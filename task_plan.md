@@ -22,7 +22,7 @@ wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor
 
 完成顺序：先扩展fixed-microblock streaming signed pool的branch bias并通过materialized/streaming、chunk和gradient合同；再接通
 event-native queries、`ProgramBankContext`、candidate interaction scorer、唯一forward与精简Gate；随后做最小真实
-forward/gradient/materialization和吞吐资格。只有上述执行面正确、step0严格复现R5 full path后，才从clean pushed frozen worktree启动
+forward/gradient/materialization和吞吐诊断。只有上述执行面正确、step0严格复现R5 full path后，才从clean pushed frozen worktree启动
 formal positive control。若correct fit先失效，优先查实现/数值；fit强而held弱则查frame/event归一化；correct/held强而wrong仍强则查
 candidate交互是否忽略bank。通过后立即恢复Natural Program并联合训练Program、interaction与native heads，不再插入binary或新chart阶段。
 

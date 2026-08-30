@@ -300,6 +300,7 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             wall.get("single_complete_rank16") is True,
             config.get("throughput_gate", {}).get("cross_language_bank_cache")
             == "explicit_separate_operational_root",
+            config.get("throughput_gate", {}).get("qualification_gate") is False,
             critic is None,
         )
     )

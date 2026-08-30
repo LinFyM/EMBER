@@ -32,9 +32,15 @@
     "correct_better_than_wrong_required_tasks": 10,
     "wrong_off_minus_on_median_minimum": 0.40,
     "family_median_minimum": 0.0,
-    "maximum_adjacent_correct_fit_median_drop": 0.05,
-    "global_update_seconds_maximum": 45.0,
-    "evaluation_to_training_wall_maximum": 0.5
+    "maximum_adjacent_correct_fit_median_drop": 0.05
+  },
+  "efficiency_diagnostics": {
+    "qualification_gate": false,
+    "reported_metrics": [
+      "training_global_step_seconds_maximum",
+      "training_global_step_seconds_median",
+      "evaluation_to_training_wall"
+    ]
   },
   "information_wall": {
     "panel_b_backward_calls": 0,

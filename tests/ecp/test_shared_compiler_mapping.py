@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import torch
@@ -178,6 +179,7 @@ def test_mapping_schedule_keeps_fixed_role_weight_and_world_invariance() -> None
         assignments = schedule.assignments(group, conditions, world_size)
         assert sorted(task for row in assignments for task in row) == sorted(group)
         assert len(assignments) == world_size
+        assert max(map(len, assignments)) <= math.ceil(len(group) / world_size)
 
 
 def test_mapping_evaluation_balances_cost_and_weights_tasks_not_videos() -> None:

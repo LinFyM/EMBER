@@ -562,8 +562,9 @@ shared heads，step110 train/held-video达到`.819/.839`，q/v/action-out及rout
   outer-update direction获取内容坐标；不读取functional action loss、task-local scale或held信息。R7内部fit不能通过G3，仍由原12-task
   generated-rank16 functional Gate负责证明shared mapping、task-held泛化和视频因果。
 
-速度也是资格：冻结language embeddings、raw Stage0 evidence、X/Y、covariance eigensystem和fixed action batches只捕获一次；不得缓存
-Program输出或generated LoRA。六卡global update目标`<=30s`、硬上限`45s`，12-task完整评价墙钟不超过训练主体一半。显存没有人为
+速度是必须持续优化和报告的系统诊断，但不参与科学qualification：冻结language embeddings、raw Stage0 evidence、X/Y、covariance
+eigensystem和fixed action batches只捕获一次；不得缓存Program输出或generated LoRA。报告global update wall、evaluation/training wall、
+显存峰值与持续UTL，并以真实profile选择并行度和microbatch；不能用自行设定的wall阈值否决满足机制Gate的checkpoint。显存没有人为
 `35GiB`上限；以最长真实样本不OOM、allocator与共驻进程仍有安全余量为边界，在提高真实LoRA/s、functional updates/s和持续UTL时
 允许使用更高显存。world size按live availability和上述实测量弹性选择，不能改变task权重或科学batch。
 

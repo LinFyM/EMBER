@@ -720,8 +720,9 @@ def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
             for name in ("q_proj", "v_proj", "action_in", "action_out")
         },
         "information_wall_pass": True,
-        "training_global_step_seconds_maximum": 44.0,
-        "evaluation_to_training_wall": 0.40,
+        "training_global_step_seconds_maximum": 440.0,
+        "training_global_step_seconds_median": 400.0,
+        "evaluation_to_training_wall": 4.0,
     }
     checks = interaction_gate_checks(gate, summary)
     assert checks and all(checks.values())
@@ -730,10 +731,9 @@ def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
     assert failed["wrong_off_minus_on"] is False
     assert sum(not value for value in failed.values()) == 1
     summary["wrong_off_minus_on"] = distribution(0.45)
-    summary["training_global_step_seconds_maximum"] = 45.01
-    failed = interaction_gate_checks(gate, summary)
-    assert failed["training_throughput"] is False
-    assert sum(not value for value in failed.values()) == 1
+    assert all(interaction_gate_checks(gate, summary).values())
+    assert "training_throughput" not in interaction_gate_checks(gate, summary)
+    assert "evaluation_throughput" not in interaction_gate_checks(gate, summary)
 
 
 def test_raw_stage0_view_preserves_direct_event_fields_and_k1_time() -> None:

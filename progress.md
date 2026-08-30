@@ -68,8 +68,15 @@
   再从`checkpoints/macro_00000070` exact resume到`--stop-after-step 110`。
 - Gate同时评价actual step70/110的correct two-fit + same-task-held、unseen wrong interaction-on及同一wrong interaction-off。资格要求仍为
   fit/held/held-to-fit至少`.85/.80/.85`、unseen wrong至多`.25`、correct-wrong至少`.50`、10/10 task correct更好、wrong off-on至少
-  `.40`、四family不系统反向、step110相对step70 fit下降不超过`.05`，并满足`<=45s/global update`与evaluation/training wall ratio
-  `<=.5`。内部loss、cache完成或单个checkpoint均不能替代该Gate；non-pass按最早失效接口解释，不做seed/LR/width/rank小扫。
+  `.40`、四family不系统反向、step110相对step70 fit下降不超过`.05`。内部loss、cache完成或单个checkpoint均不能替代该Gate；
+  non-pass按最早失效接口解释，不做seed/LR/width/rank小扫。owner于首个formal吞吐诊断后明确：wall、显存、UTL及
+  evaluation/training ratio继续报告和优化，但不再作为科学qualification硬门，不能否决满足机制条件的checkpoint。
+
+- clean detached `8043148`首个formal attempt在6步时主动停止且没有checkpoint，不能作为科学结果。实测step2--5为`54.67--61.79s`，
+  根因是旧frame-only greedy assignment在world3把三个均含固定256-row policy functional成本的tasks放到同一rank、另一个rank只放一个；
+  并非GPU闲置、cache miss或模型规模本身。当前窄修正保持每步原六task、3 meta/3 target、每task权重、loss与optimizer cadence不变，
+  先把rank task-count限制在`ceil(6/world_size)`，再按frame cost平衡；同时按owner authority删除自行设置的`45s`与evaluation/training
+  qualification checks，仅保留效率诊断。修正完成后从新clean pushed detached authority fresh重跑，不resume该invalid attempt。
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 

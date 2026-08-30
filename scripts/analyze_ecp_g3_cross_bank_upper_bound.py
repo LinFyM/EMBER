@@ -92,17 +92,105 @@ def _fractional_video(video: Any, inverse_power: float) -> Any:
     )
 
 
+def _inverse_sqrt_transport(operator: Any, primal: torch.Tensor) -> torch.Tensor:
+    basis = operator.basis.to(primal).float()
+    eigenvalues = operator.eigenvalues.to(primal).float()
+    relative = eigenvalues / eigenvalues[-1].clamp_min(1e-30)
+    coordinates = primal.float() @ basis
+    return ((coordinates / relative.sqrt()[None]) @ basis.T).to(primal)
+
+
+def _fit_transport_primals(
+    runtime: Any,
+    *,
+    program: Any,
+    conditions: Sequence[Any],
+) -> tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]]:
+    compiler = runtime.compiler
+    state = compiler.primal_scorer.program_state(program)
+    base_inputs = compiler.primal_scorer.input_primals(state)
+    base_outputs = compiler.primal_scorer.output_primals(state)
+    transported_inputs: list[tuple[torch.Tensor, ...]] = []
+    transported_outputs: list[tuple[torch.Tensor, ...]] = []
+    for condition in conditions:
+        prepared, _ = prepare_joint_condition(runtime, condition)
+        if len(prepared.videos) != 1:
+            raise ValueError("fit-transport diagnostic escaped K1")
+        video = prepared.videos[0]
+        transported_inputs.append(
+            tuple(
+                _inverse_sqrt_transport(operator, primal)
+                for operator, primal in zip(
+                    video.input_operators, base_inputs, strict=True
+                )
+            )
+        )
+        transported_outputs.append(
+            tuple(
+                torch.stack(
+                    tuple(
+                        _inverse_sqrt_transport(operator, primal[group])
+                        for group, operator in enumerate(operators)
+                    )
+                )
+                for operators, primal in zip(
+                    video.output_operators, base_outputs, strict=True
+                )
+            )
+        )
+        del prepared
+        torch.cuda.empty_cache()
+    if len(transported_inputs) != 2:
+        raise ValueError("fit-transport diagnostic requires two fit videos")
+    cosines = []
+    for left, right in zip(
+        (*transported_inputs[0], *transported_outputs[0]),
+        (*transported_inputs[1], *transported_outputs[1]),
+        strict=True,
+    ):
+        flat_left = left.float().reshape(left.shape[0], -1)
+        flat_right = right.float().reshape(right.shape[0], -1)
+        cosines.extend(
+            torch.nn.functional.cosine_similarity(
+                flat_left, flat_right, dim=-1
+            ).tolist()
+        )
+    return (
+        tuple(
+            0.5 * (left + right)
+            for left, right in zip(
+                transported_inputs[0], transported_inputs[1], strict=True
+            )
+        ),
+        tuple(
+            0.5 * (left + right)
+            for left, right in zip(
+                transported_outputs[0], transported_outputs[1], strict=True
+            )
+        ),
+        {
+            "minimum": min(cosines),
+            "median": statistics.median(cosines),
+            "mean": statistics.fmean(cosines),
+        },
+    )
+
+
 def _complete_state(
     runtime: Any,
     *,
     program: Any,
     bank: Any,
     inverse_power: float,
+    input_primals: tuple[torch.Tensor, ...] | None = None,
+    output_primals: tuple[torch.Tensor, ...] | None = None,
 ) -> tuple[dict[str, torch.Tensor], Any]:
     compiler = runtime.compiler
     state = compiler.primal_scorer.program_state(program)
-    input_primals = compiler.primal_scorer.input_primals(state)
-    output_primals = compiler.primal_scorer.output_primals(state)
+    if input_primals is None:
+        input_primals = compiler.primal_scorer.input_primals(state)
+    if output_primals is None:
+        output_primals = compiler.primal_scorer.output_primals(state)
     pooled = tuple(
         compiler.bank_operator.apply_compact(
             _fractional_video(video, inverse_power),
@@ -161,41 +249,65 @@ def _evaluate_task(
     positive_root: Path,
     r5_row: Mapping[str, Any],
     inverse_power: float,
+    primal_mode: str,
 ) -> dict[str, Any]:
     started = time.monotonic()
-    first = _task_conditions(runtime, task_id)[0]
+    task_conditions = _task_conditions(runtime, task_id)
+    by_video = {int(row.video_demo): row for row in task_conditions}
+    fit_videos = tuple(map(int, r5_row["fit_videos"]))
+    held_video = int(r5_row["held_video"])
+    if set((*fit_videos, held_video)) != set(by_video):
+        raise ValueError("R5 fit/held video authority changed")
+    first = by_video[fit_videos[0]]
     wrong_task = _wrong_task(runtime, task_id)
     wrong_first = _task_conditions(runtime, wrong_task)[0]
     free_reference, free_authority = _positive_control_losses(
         positive_root, task_id
     )
-    if int(r5_row["fit_videos"][0]) != int(first.video_demo):
-        raise ValueError("R5 primary view authority changed")
+    correct_condition = first
+    input_primals = output_primals = None
+    transport_alignment: dict[str, float] | None = None
+    with torch.inference_mode():
+        program = fixed_routing_program(runtime, task_id)
+        if primal_mode == "fit_transport":
+            if inverse_power != 0.5:
+                raise ValueError("fit transport requires symmetric whitening")
+            input_primals, output_primals, transport_alignment = (
+                _fit_transport_primals(
+                    runtime,
+                    program=program,
+                    conditions=tuple(by_video[value] for value in fit_videos),
+                )
+            )
+            correct_condition = by_video[held_video]
 
-    correct_prepared, _ = prepare_joint_condition(runtime, first)
+    correct_prepared, _ = prepare_joint_condition(runtime, correct_condition)
     wrong_prepared, _ = prepare_joint_condition(runtime, wrong_first)
     teacher_reads = runtime.native_teachers.tensor_reads
     with torch.inference_mode():
-        program = fixed_routing_program(runtime, task_id)
         correct_state, correct_output = _complete_state(
             runtime,
             program=program,
             bank=correct_prepared,
             inverse_power=inverse_power,
+            input_primals=input_primals,
+            output_primals=output_primals,
         )
         wrong_state, wrong_output = _complete_state(
             runtime,
             program=program,
             bank=wrong_prepared,
             inverse_power=inverse_power,
+            input_primals=input_primals,
+            output_primals=output_primals,
         )
     correct_record = _normalized(
         _panel_value(runtime, task_id=task_id, state=correct_state),
-        free_reference[first.video_demo],
+        free_reference[correct_condition.video_demo],
     )
     wrong_record = _normalized(
         _panel_value(runtime, task_id=task_id, state=wrong_state),
-        free_reference[first.video_demo],
+        free_reference[correct_condition.video_demo],
     )
     if runtime.native_teachers.tensor_reads != teacher_reads:
         raise RuntimeError("cross-bank diagnostic read native teachers")
@@ -214,7 +326,7 @@ def _evaluate_task(
     return {
         "task": task_id,
         "role": runtime.panels[task_id].role,
-        "correct_video_demo": int(first.video_demo),
+        "correct_video_demo": int(correct_condition.video_demo),
         "wrong_task": wrong_task,
         "wrong_video_demo": int(wrong_first.video_demo),
         "correct": dict(correct_record),
@@ -229,6 +341,8 @@ def _evaluate_task(
         "action_meta_installed": False,
         "single_complete_rank16": True,
         "inverse_covariance_power": inverse_power,
+        "primal_mode": primal_mode,
+        "fit_transport_alignment": transport_alignment,
         "elapsed_seconds": time.monotonic() - started,
     }
 
@@ -236,6 +350,8 @@ def _evaluate_task(
 def worker(args: argparse.Namespace) -> None:
     if args.inverse_power not in (0.5, 1.0):
         raise ValueError("cross-bank diagnostic inverse power changed")
+    if args.primal_mode not in ("checkpoint", "fit_transport"):
+        raise ValueError("cross-bank diagnostic primal mode changed")
     state = git_state(Path(__file__).resolve().parents[1])
     if (
         not git_state_is_clean_pushed_or_frozen_authority(state)
@@ -292,6 +408,7 @@ def worker(args: argparse.Namespace) -> None:
                     positive_root=positive_root,
                     r5_row=r5_rows[task_id],
                     inverse_power=args.inverse_power,
+                    primal_mode=args.primal_mode,
                 )
             )
             runtime.panel_batch_cache.clear()
@@ -315,6 +432,7 @@ def worker(args: argparse.Namespace) -> None:
                     "CUDA_VISIBLE_DEVICES"
                 ),
                 "inverse_covariance_power": args.inverse_power,
+                "primal_mode": args.primal_mode,
             },
         )
         write_json_atomic(
@@ -336,6 +454,7 @@ def aggregate(args: argparse.Namespace) -> None:
     rows = []
     commits = set()
     powers = set()
+    primal_modes = set()
     for worker_index in range(args.worker_count):
         root = args.output_dir / f"worker_{worker_index:02d}"
         result = read_json(root / "result.json")
@@ -351,9 +470,12 @@ def aggregate(args: argparse.Namespace) -> None:
         rows.extend(result["tasks"])
         commits.add(result["git"]["commit"])
         powers.add(float(result.get("inverse_covariance_power", 1.0)))
+        primal_modes.add(str(result.get("primal_mode", "checkpoint")))
     if len(rows) != len(ROUTING_TASK_IDS) or {row["task"] for row in rows} != set(
         ROUTING_TASK_IDS
-    ) or len(commits) != 1 or powers != {args.inverse_power}:
+    ) or len(commits) != 1 or powers != {args.inverse_power} or primal_modes != {
+        args.primal_mode
+    }:
         raise ValueError("cross-bank aggregate task or commit authority changed")
     rows.sort(key=lambda row: row["task"])
     margins = [float(row["correct_minus_wrong_recovery"]) for row in rows]
@@ -379,7 +501,8 @@ def aggregate(args: argparse.Namespace) -> None:
         ),
     }
     operator_bank_interaction_identifiable = (
-        float(summary["correct_minus_wrong_recovery"]["median"]) >= 0.10
+        float(summary["correct_recovery"]["median"]) >= 0.75
+        and float(summary["correct_minus_wrong_recovery"]["median"]) >= 0.10
         and int(summary["correct_bank_better_count"]) >= 8
     )
     write_json_atomic(
@@ -390,10 +513,12 @@ def aggregate(args: argparse.Namespace) -> None:
             "worker_count": args.worker_count,
             "git_commit": next(iter(commits)),
             "inverse_covariance_power": args.inverse_power,
+            "primal_mode": args.primal_mode,
             "operator_bank_interaction_identifiable": (
                 operator_bank_interaction_identifiable
             ),
             "decision_rule": {
+                "median_correct_recovery": 0.75,
                 "median_correct_minus_wrong_recovery": 0.10,
                 "minimum_correct_bank_better_tasks": 8,
             },
@@ -434,10 +559,20 @@ def parser() -> argparse.ArgumentParser:
     work.add_argument("--worker-index", type=int, required=True)
     work.add_argument("--worker-count", type=int, required=True)
     work.add_argument("--inverse-power", type=float, default=1.0)
+    work.add_argument(
+        "--primal-mode",
+        choices=("checkpoint", "fit_transport"),
+        default="checkpoint",
+    )
     collect = commands.add_parser("aggregate")
     collect.add_argument("--output-dir", type=Path, required=True)
     collect.add_argument("--worker-count", type=int, required=True)
     collect.add_argument("--inverse-power", type=float, default=1.0)
+    collect.add_argument(
+        "--primal-mode",
+        choices=("checkpoint", "fit_transport"),
+        default="checkpoint",
+    )
     return root
 
 

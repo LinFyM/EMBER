@@ -45,13 +45,13 @@ ROUTING_CONTROL_SCHEMA = "ember_ecp_routing_token_control_r1_v1"
 ROUTING_CONTROL_RUN_SCHEMA = "ember_ecp_routing_token_control_run_v2"
 ROUTING_CONTROL_STAGE = "g3_training_only_routing_token_grouped_decoder_control"
 PROGRAM_BANK_INTERACTION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_v3"
+    "ember_ecp_program_bank_candidate_interaction_v4"
 )
 PROGRAM_BANK_INTERACTION_RUN_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_run_v3"
+    "ember_ecp_program_bank_candidate_interaction_run_v4"
 )
 PROGRAM_BANK_INTERACTION_STAGE = (
-    "g3_program_bank_candidate_interaction_qualification"
+    "g3_program_bank_candidate_interaction_base_score_qualification"
 )
 ROUTING_TASK_IDS = (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
 ROUTING_WIDTH = 128
@@ -265,13 +265,18 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
         (
             is_program_bank_interaction_config(config),
             config.get("status")
-            == "active_co_conditioned_bank_interaction_qualification",
+            == "active_base_score_conditioned_bank_interaction_qualification",
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("primal_scorer_initialization")
             == R5_SHARED_FUNCTIONAL_CHART,
             scorer_partition == SCORER_INTERACTION_ONLY,
             model.get("inverse_covariance_power") == 1.0,
+            model.get("interaction_base_score_feature")
+            == (
+                "detached_q0_dot_value_minus_global_b0_mean_div_"
+                "replay_score_rms"
+            ),
             "compatibility_support_threshold" not in model,
             "separate_compatibility_probes" not in model,
             model.get("interaction_semantic_width") == 32,

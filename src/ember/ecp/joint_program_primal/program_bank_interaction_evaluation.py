@@ -53,13 +53,13 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 PROGRAM_BANK_INTERACTION_GATE_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_gate_v3"
+    "ember_ecp_program_bank_candidate_interaction_gate_v4"
 )
 PROGRAM_BANK_INTERACTION_EVALUATION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_evaluation_task_v3"
+    "ember_ecp_program_bank_candidate_interaction_evaluation_task_v4"
 )
 PROGRAM_BANK_INTERACTION_GATE_REPORT_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_gate_report_v3"
+    "ember_ecp_program_bank_candidate_interaction_gate_report_v4"
 )
 
 
@@ -72,9 +72,9 @@ def load_program_bank_interaction_gate(path: Path) -> dict[str, Any]:
     if (
         config.get("schema_version") != PROGRAM_BANK_INTERACTION_GATE_SCHEMA
         or config.get("status")
-        != "active_co_conditioned_bank_interaction_qualification"
+        != "active_base_score_conditioned_bank_interaction_qualification"
         or config.get("training_config")
-        != "configs/pi05_ecp_program_bank_candidate_interaction_v3.json"
+        != "configs/pi05_ecp_program_bank_candidate_interaction_v4.json"
         or config.get("authorities", {}).get("positive_control_root")
         != (
             "runs/outputs/"

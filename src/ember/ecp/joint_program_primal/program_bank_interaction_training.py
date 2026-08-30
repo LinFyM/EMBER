@@ -44,7 +44,7 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 PROGRAM_BANK_INTERACTION_COMPLETION_SCHEMA = (
-    "ember_ecp_program_bank_candidate_interaction_completion_v3"
+    "ember_ecp_program_bank_candidate_interaction_completion_v4"
 )
 
 

@@ -17,6 +17,28 @@
   formal。evaluation同时修正相邻checkpoint复用diagnostic teacher cache时物理read delta可为0的记账语义；deployment read仍必须严格为0。
   该修正完成clean验证后从fresh detached authority重跑，不resume首轮checkpoint。
 
+### Balanced-credit candidate interaction formal launch contract
+
+- scientific implementation authority为clean pushed `main@6694e9966ead24be393451d2d1ec9b1fd9ef3755`，全仓CPU合同`236 passed`；
+  formal从只增加本launch记录的clean pushed detached descendant执行。唯一科学变化是wrong backward从
+  `-1/[6(B_free+eps)]`改为raw-unit `-1/6`；architecture、R5 zero-init、十task/两fit视频、wrong cycle、panel A、seed、LR、
+  microbatch4、10 warmup + 100 effective、step70/110 checkpoints及完整Gate均不变。fresh启动，不读取或resume首轮
+  `c7874f3` interaction checkpoint；首个global step只额外报告一次六task correct/wrong分臂gradient norm/cosine，不作为Gate。
+- 输入authority继续复用source step1000、sealed dataset、tokenizer、gpu01 `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`
+  23GB base cache与`runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831/` 57GB immutable
+  cross-language cache；不重建或复制cache。输出固定为
+  `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v2_balanced_s110_6694e99_gpu01p012_r3_20260831/`，预计新增远低于1GiB，
+  launch前确认root不存在。2026-08-31 02:25 CST `strg01` `/data1` quota为`740.2G/1T`，预算充分。
+- 2026-08-31 02:24 CST live GPU：gpu01物理0/1/2分别为UUID `GPU-658b6043`、`GPU-845a7b73`、`GPU-47449b15`，均仅
+  `15MiB/0%`且无compute process；物理3--6为他人约34.6GiB/100%任务。gpu02仅物理7完全空闲，物理4虽低UTL但有他人进程；本训练
+  必须single-node collective，故使用gpu01 `0,1,2` world3，而不是跨节点拼卡或干扰他人。固定`NCCL_P2P_DISABLE=1`、NUMA0与deferred
+  NCCL；exact resume锁定world3。
+- exact entry为detached worktree内`torchrun --standalone --nproc-per-node=3 scripts/train_ecp_joint_program_primal.py`，配置
+  `configs/pi05_ecp_program_bank_candidate_interaction_v2.json`与base `configs/pi05_ecp_shared_compiler_g3_v5.json`。先fresh执行
+  `--stop-after-step 70`，首个step落盘后立即检查分臂梯度、finite、参数所有权、Action Meta 0、native teacher reads 0与唯一rank16；
+  若不成立则在产生科学checkpoint前停止，若成立则让同一进程连续到70，再从step70 exact resume到110。formal Gate仍使用
+  `configs/pi05_ecp_program_bank_candidate_interaction_gate_v2.json`；shuffled/reversed不运行。
+
 - 2026-08-30第五次专家复核已经完整消费，1132行原文逐字保存为
   `docs/expert_review_20260830_program_bank_interaction.md`并与owner最新授权共同更新active design。专家确认R5/P0/P1是capacity
   primitive，R12/R13则充分终止binary full/half门卫；早期“soft mixture失败意味着后继必须近二值”的表述已被明确纠正：失败只

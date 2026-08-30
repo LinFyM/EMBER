@@ -11,6 +11,32 @@
   seed、LR、步数和Gate不变，只把wrong weight从`-1/6`改为`-1/12`，使correct:wrong总质量2:1并严格保护absolute correct utility。
   只有该positive-anchor formal仍不能分离，才检查candidate/local特征与shared correction表示。
 
+### Positive-anchor candidate interaction formal launch contract
+
+- scientific implementation authority为clean pushed `main@fd202516c71baf183a04d181f72fe9a2ae08f2df`，全仓CPU合同`236 passed`；
+  formal从只新增本launch记录、未改变科学实现的clean pushed detached descendant执行。相对raw-unit v2的唯一科学变化是active
+  wrong backward由`-1/6`变为`-1/12`，两条correct仍各为`+1/12`，因此correct:wrong总质量为`2:1`；architecture、R5 zero-init、
+  十task/两fit视频、wrong cycle、panel A、seed、LR、microbatch4、10 warmup + 100 effective、step70/110 checkpoints和完整Gate
+  全部保持。必须fresh启动，不读取或resume `c7874f3`或`cbe3124` interaction checkpoint。
+- 输入继续复用source step1000、sealed dataset、tokenizer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` 23GB base cache与
+  `runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831/` 57GB immutable cross-language cache；
+  不复制或重建。输出固定为
+  `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/`，launch前已确认不存在；
+  参照上一formal仅51MB，预计新增远低于1GiB。2026-08-31 04:11 CST `strg01` live `/data1` quota为`740.2G/1T`，共享空间余
+  `84TiB`，预算充分。
+- 2026-08-31 04:11 CST live GPU：gpu01物理0/1/2分别为UUID `GPU-658b6043`、`GPU-845a7b73`、`GPU-47449b15`，均仅
+  `15MiB/0%`且无compute process；物理3--6为他人约34.6GiB/100%任务。gpu02物理0--3满载、5/6有显著他人负载，物理4有他人
+  低UTL进程且只有7完全空闲；训练是single-node collective，故使用gpu01 `0,1,2` world3，固定`NCCL_P2P_DISABLE=1`、NUMA0与
+  deferred NCCL，不跨节点拼卡或干扰他人。exact resume锁定world3。
+- exact entry为detached formal worktree中的
+  `torchrun --standalone --nproc-per-node=3 scripts/train_ecp_joint_program_primal.py`，使用
+  `configs/pi05_ecp_program_bank_candidate_interaction_v3.json`与base `configs/pi05_ecp_shared_compiler_g3_v5.json`。先fresh执行
+  `--stop-after-step 70`，首个global step立即检查v3 schema、只训练interaction scorer、两条correct各`+1/12`、active wrong
+  `-1/12`、分臂gradient finite且wrong/correct相对v2按权重下降、Action Meta module/parameter 0、source/Stage0/scale trainable 0、
+  native teacher reads 0及76 tensors唯一rank16；不成立则在形成科学结论前停止。成立后连续到70，再从step70 exact resume到110；
+  formal Gate固定使用`configs/pi05_ecp_program_bank_candidate_interaction_gate_v3.json`，shuffled/reversed不运行。
+
 - clean pushed detached `main@c7874f3`已经完成candidate-level interaction首轮formal训练、step70→110 exact resume及两个checkpoint的
   五worker完整Gate。step70/110 correct fit为`-.388363/-.386363`、same-task held为`-.392916/-.393941`、unseen wrong-on为
   `-.405269/-.398702`，correct-minus-wrong为`-.018599/-.020456`且只有`5/10` task正确bank更好；interaction-off始终为

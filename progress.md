@@ -13,6 +13,22 @@
   0 trainable，实际trainable `11,061,760`，peak reserved `21.88GB`。单rank因串行承担六个task用`53.94s`，只作图与materialization
   smoke；formal仍按world6每rank一task获取真实吞吐。
 
+### R11 matched raw-Stage0 sufficiency formal launch contract
+
+- implementation authority为clean pushed `main@0590f63f5f0f98f687818cedc596155f171410f1`；formal从包含本launch记录的clean
+  pushed detached authority启动，不resume、不覆盖现有输出。训练为10 warmup+100 effective、actual step70/110，之后用同一12-task
+  panel-B Gate只读评价；R11只作根因诊断，即使内部Gate通过也不是deployment checkpoint或整个G3 pass。
+- 2026-08-30 10:07 CST紧邻launch检查：gpu01物理`0--6`均仅`14--97MiB`、UTL 0且无compute process；gpu02物理0--3满载、
+  6有高UTL任务，只有4/7适合而不能形成更高吞吐同节点组。选择gpu01物理`0,1,2,3,4,6` world6；当前逻辑0是已复核可用
+  UUID `GPU-658b6043-6454-1228-bffc-0e2fe22e5013`，旧prohibited设备未枚举。owner预告gpu01约11--12时可能重启；按R10同图
+  `24.0min`正式墙钟，10:10前launch预计约10:35结束，保留约25分钟以上安全余量，不在窗口附近续跑或启动新长任务。
+- 复用gpu01 `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` 23GB frozen-condition cache，shm尚余39GB；
+  `strg01` `/data1` quota为`711675436/1073741824` blocks，预计新增低于1GB。exact entry使用`CUDA_VISIBLE_DEVICES=0,1,2,3,4,6`、
+  `NCCL_P2P_DISABLE=1`、GPU-local NUMA/deferred NCCL和world6 `torchrun scripts/train_ecp_joint_program_primal.py --config
+  configs/pi05_ecp_raw_stage0_sufficiency_r11_v1.json --phase joint --mode formal ... --output-dir
+  runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_s110_0590f63_gpu01p012346_r6_20260830 --condition-cache-root
+  /dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829 --stop-after-step 110 --log-every 1`；输出根已确认不存在。
+
 - R10 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续、墙钟`1442.70s`，step70/110两个
   world6 checkpoints完整；全部110步Program/native-head gradients finite/nonzero，native teacher reads、Action Meta、source/Stage0/
   operator/scale trainable均为0。六个独立worker在gpu01物理`0,1,2,3,4,6`完成两个checkpoint的12/12 paired panel-B与全部controls，

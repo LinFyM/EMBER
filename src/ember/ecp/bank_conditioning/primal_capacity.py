@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import statistics
 from dataclasses import replace
-from typing import Sequence
+from typing import Any, Mapping, Sequence
 
 import torch
 
@@ -22,6 +23,39 @@ from ember.ecp.native_factors import (
 )
 from ember.ecp.shared_compiler import SharedCompilerOutput
 from ember.ecp.shared_compiler_native_teacher import NativeTeacherFactors
+
+
+BANK_INTERACTION_CONTROL_SCHEMA = "ember_ecp_bank_interaction_positive_control_v1"
+
+
+def is_bank_interaction_control_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == BANK_INTERACTION_CONTROL_SCHEMA
+
+
+def bank_interaction_control_config_valid(config: Mapping[str, Any]) -> bool:
+    model = config.get("model", {})
+    optimization = config.get("optimization", {})
+    wall = config.get("information_wall", {})
+    return all(
+        (
+            is_bank_interaction_control_config(config),
+            config.get("status") == "active_bank_interaction_positive_control",
+            model.get("program_initialization") == "c1493a1_macro20_model_tensors",
+            model.get("primal_scorer_initialization") == "fresh",
+            model.get("inverse_covariance_power") == 0.5,
+            optimization.get("loss")
+            == "task_local_fit_symmetric_transport_functional_only",
+            optimization.get("task_local_positive_control", {}).get("initialization")
+            == "fit_symmetric_transport",
+            "counterfactual" not in optimization.get("joint", {}),
+            wall.get("diagnostic_only") is True,
+            wall.get("deployment_candidate") is False,
+            wall.get("task_local_primals_training_only") is True,
+            wall.get("held_video_backward_calls") == 0,
+            wall.get("wrong_bank_backward_calls") == 0,
+            wall.get("single_complete_rank16") is True,
+        )
+    )
 
 
 class TaskLocalPrimalCode(torch.nn.Module):
@@ -71,6 +105,56 @@ class TaskLocalPrimalCode(torch.nn.Module):
         )
         self.register_buffer("fixed_scales", s_ref[:, None] * ratio)
 
+    @classmethod
+    def from_serialized(
+        cls,
+        owners: Sequence[TargetOwner],
+        state: dict[str, torch.Tensor],
+    ) -> TaskLocalPrimalCode:
+        """Load a sealed task code without rereading training-only teachers."""
+
+        owner_rows = tuple(owners)
+        expected = {
+            "fixed_scales",
+            *(f"input_code.{index}" for index in range(len(owner_rows))),
+            *(f"output_code.{index}" for index in range(len(owner_rows))),
+        }
+        if set(state) != expected:
+            raise ValueError("serialized task-local primal inventory changed")
+        fixed_scales = state["fixed_scales"]
+        if fixed_scales.shape != (len(owner_rows), 4):
+            raise ValueError("serialized task-local scales changed")
+        code = cls.__new__(cls)
+        torch.nn.Module.__init__(code)
+        code.owners = owner_rows
+        input_rows = tuple(
+            state[f"input_code.{index}"] for index in range(len(owner_rows))
+        )
+        output_rows = tuple(
+            state[f"output_code.{index}"] for index in range(len(owner_rows))
+        )
+        if any(
+            value.shape != (4, owner.in_features)
+            for value, owner in zip(input_rows, owner_rows, strict=True)
+        ) or any(
+            value.shape
+            != (
+                native_output_group_count(owner),
+                4,
+                owner.out_features // native_output_group_count(owner),
+            )
+            for value, owner in zip(output_rows, owner_rows, strict=True)
+        ):
+            raise ValueError("serialized task-local primal shape changed")
+        code.input_code = torch.nn.ParameterList(
+            torch.nn.Parameter(value.clone()) for value in input_rows
+        )
+        code.output_code = torch.nn.ParameterList(
+            torch.nn.Parameter(value.clone()) for value in output_rows
+        )
+        code.register_buffer("fixed_scales", fixed_scales.clone())
+        return code
+
     def input_primals(self) -> tuple[torch.Tensor, ...]:
         return tuple(rms_normalize(value) for value in self.input_code)
 
@@ -81,6 +165,107 @@ class TaskLocalPrimalCode(torch.nn.Module):
         if s_ref.shape != (len(self.owners),):
             raise ValueError("P1 fixed scale authority changed")
         return self.fixed_scales.to(s_ref)
+
+
+def inverse_sqrt_primal_transport(
+    operator: object, primal: torch.Tensor
+) -> torch.Tensor:
+    basis = operator.basis.to(primal).float()
+    eigenvalues = operator.eigenvalues.to(primal).float()
+    relative = eigenvalues / eigenvalues[-1].clamp_min(1e-30)
+    coordinates = primal.float() @ basis
+    transported = (coordinates / relative.sqrt()[None]) @ basis.T
+    if not bool(torch.isfinite(transported).all()):
+        raise ValueError("fit symmetric transport became non-finite")
+    return transported.to(primal)
+
+
+def initialize_fit_symmetric_transport(
+    code: TaskLocalPrimalCode,
+    banks: Sequence[CompactPrimalDualVideo],
+) -> dict[str, float]:
+    """Put one fit-only task code in the shared half-whitened coordinate.
+
+    Each fit video independently transports the same teacher-initialized code;
+    the arithmetic mean is only a task-local capacity initialization.  Held or
+    wrong-task banks never enter this operation.
+    """
+
+    rows = tuple(banks)
+    if len(rows) != 2:
+        raise ValueError("fit symmetric transport requires exactly two videos")
+    base_inputs = code.input_primals()
+    base_outputs = code.output_primals()
+    transported_inputs = []
+    transported_outputs = []
+    for bank in rows:
+        if (
+            len(bank.input_operators) != len(base_inputs)
+            or len(bank.output_operators) != len(base_outputs)
+        ):
+            raise ValueError("fit symmetric transport target count changed")
+        transported_inputs.append(
+            tuple(
+                inverse_sqrt_primal_transport(operator, primal)
+                for operator, primal in zip(
+                    bank.input_operators, base_inputs, strict=True
+                )
+            )
+        )
+        transported_outputs.append(
+            tuple(
+                torch.stack(
+                    tuple(
+                        inverse_sqrt_primal_transport(operator, primal[group])
+                        for group, operator in enumerate(operators)
+                    )
+                )
+                for operators, primal in zip(
+                    bank.output_operators, base_outputs, strict=True
+                )
+            )
+        )
+
+    averaged_inputs = tuple(
+        0.5 * (left + right)
+        for left, right in zip(
+            transported_inputs[0], transported_inputs[1], strict=True
+        )
+    )
+    averaged_outputs = tuple(
+        0.5 * (left + right)
+        for left, right in zip(
+            transported_outputs[0], transported_outputs[1], strict=True
+        )
+    )
+    cosines = []
+    for left, right in zip(
+        (*transported_inputs[0], *transported_outputs[0]),
+        (*transported_inputs[1], *transported_outputs[1]),
+        strict=True,
+    ):
+        width = left.shape[-1]
+        cosines.extend(
+            torch.nn.functional.cosine_similarity(
+                left.float().reshape(-1, width),
+                right.float().reshape(-1, width),
+                dim=-1,
+            ).tolist()
+        )
+    with torch.no_grad():
+        for parameter, value in zip(
+            code.input_code, averaged_inputs, strict=True
+        ):
+            parameter.copy_(value.to(parameter))
+        for parameter, value in zip(
+            code.output_code, averaged_outputs, strict=True
+        ):
+            parameter.copy_(value.to(parameter))
+    return {
+        "minimum": min(cosines),
+        "median": statistics.median(cosines),
+        "mean": statistics.fmean(cosines),
+    }
 
 
 def subset_teacher(

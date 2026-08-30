@@ -1336,3 +1336,18 @@ teacher tensor或shuffled/reversed使用。
 关键artifact：
 
 - `runs/analysis/pi05_ecp_g3_r5_successful_primal_cross_bank_2090799_gpu01p012346_w6_20260830/`。
+
+## 67. symmetric half operator的fit-only cross-bank bridge diagnostic
+
+clean detached诊断先把R5旧primal直接用于`C_B^{-1/2}` replay，correct recovery中位降至`.076821`，排除“只换inverse幂次即可”这一
+错误解释。随后每task只用两条fit bank分别对teacher-initialized primal做inverse-square-root transport并平均，第三条same-task held
+video及same-role wrong bank不参与构造并保持零梯度。10-task held correct/wrong recovery中位为`.647543/.134170`，margin中位
+`.480161`；正确bank在`10/10` task更好且全部达到`.10` margin，但correct中位未达到预注册`.75`，因此总体non-pass。
+
+这条结果证明half operator可保留真实X/Y bank的功能特异性，却没有证明未经优化的fit-transport code具有足够same-task held capacity，
+更没有证明shared Program mapping。后续只授权固定half operator下的task-local fit-only functional capacity control。
+
+关键artifacts：
+
+- `runs/analysis/pi05_ecp_g3_symmetric_whitening_cross_bank_3cd4ecf_gpu01p012346_w6_20260830/`；
+- `runs/analysis/pi05_ecp_g3_fit_transport_half_cross_bank_3297dbd_gpu01p0_w6_20260830/`。

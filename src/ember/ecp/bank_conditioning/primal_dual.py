@@ -157,17 +157,37 @@ class SpectralNativeCovariance:
     retained_trace_fraction: torch.Tensor
 
     def dual_and_score_rms(
-        self, primal: torch.Tensor
+        self,
+        primal: torch.Tensor,
+        *,
+        inverse_covariance_power: float = 1.0,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if primal.ndim != 2 or primal.shape[-1] != self.native_width:
             raise BankConditioningError("native primal width changed")
+        if inverse_covariance_power not in (0.5, 1.0):
+            raise BankConditioningError("native inverse covariance power changed")
         basis = self.basis.to(primal)
         eigenvalues = self.eigenvalues.to(primal)
         coordinates = primal.float() @ basis.float()
-        query = (coordinates / eigenvalues.float()[None]) @ basis.float().T
-        score_rms = (
-            coordinates.square() / eigenvalues.float()[None]
-        ).sum(-1).clamp_min(0).sqrt()
+        if inverse_covariance_power == 1.0:
+            # Preserve the qualified full-inverse path exactly, including its
+            # low-order reduction sequence, for every historical config.
+            query = (coordinates / eigenvalues.float()[None]) @ basis.float().T
+            score_rms = (
+                coordinates.square() / eigenvalues.float()[None]
+            ).sum(-1).clamp_min(0).sqrt()
+        else:
+            # Symmetric whitening normalizes conditioning without algebraically
+            # cancelling the current bank: in the linear regime C q is
+            # proportional to C^(1/2) d rather than d.
+            relative = eigenvalues.float() / eigenvalues.float()[-1].clamp_min(
+                1e-30
+            )
+            dual_coordinates = coordinates / relative.sqrt()[None]
+            query = dual_coordinates @ basis.float().T
+            score_rms = (
+                dual_coordinates.square() * eigenvalues.float()[None]
+            ).sum(-1).clamp_min(0).sqrt()
         projected = coordinates @ basis.float().T
         projection = projected.norm(dim=-1) / primal.float().norm(
             dim=-1

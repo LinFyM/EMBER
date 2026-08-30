@@ -11,6 +11,7 @@ from typing import Any, Mapping
 import torch
 import torch.distributed as dist
 
+from ember.ecp.bank_conditioning import primal_capacity
 from ember.ecp.bank_conditioning.consensus import FitConsensusTeacherStore
 from ember.ecp.bank_conditioning.frozen_condition_cache import (
     FROZEN_CONDITION_CACHE_SCHEMA,
@@ -84,18 +85,10 @@ J2_STAGE = "j3_counterfactual_functional_routing"
 CHART_RECONNECT_SCHEMA = "ember_ecp_natural_program_chart_reconnect_r6_v1"
 CHART_RECONNECT_RUN_SCHEMA = "ember_ecp_natural_program_chart_reconnect_run_v1"
 CHART_RECONNECT_STAGE = "g3_natural_program_functional_chart_reconnect"
-FUNCTIONAL_CHART_ACQUISITION_SCHEMA = (
-    "ember_ecp_functional_code_chart_acquisition_r7_v1"
-)
-FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA = (
-    "ember_ecp_functional_code_chart_acquisition_run_v1"
-)
-FUNCTIONAL_CHART_ACQUISITION_STAGE = (
-    "g3_fit_only_functional_code_chart_acquisition"
-)
-FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA = (
-    "ember_ecp_functional_code_stable_chart_joint_r9_v1"
-)
+FUNCTIONAL_CHART_ACQUISITION_SCHEMA = "ember_ecp_functional_code_chart_acquisition_r7_v1"
+FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA = "ember_ecp_functional_code_chart_acquisition_run_v1"
+FUNCTIONAL_CHART_ACQUISITION_STAGE = "g3_fit_only_functional_code_chart_acquisition"
+FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA = "ember_ecp_functional_code_stable_chart_joint_r9_v1"
 FUNCTIONAL_CODE_STABLE_JOINT_RUN_SCHEMA = (
     "ember_ecp_functional_code_stable_chart_joint_run_v1"
 )
@@ -103,9 +96,7 @@ FUNCTIONAL_CODE_STABLE_JOINT_STAGE = (
     "g3_fit_only_functional_code_stable_chart_joint_acquisition"
 )
 FUNCTIONAL_REFINEMENT_SCHEMA = "ember_ecp_r9_initialized_functional_refinement_r10_v1"
-FUNCTIONAL_REFINEMENT_RUN_SCHEMA = (
-    "ember_ecp_r9_initialized_functional_refinement_run_v1"
-)
+FUNCTIONAL_REFINEMENT_RUN_SCHEMA = "ember_ecp_r9_initialized_functional_refinement_run_v1"
 FUNCTIONAL_REFINEMENT_STAGE = "g3_r9_initialized_functional_refinement"
 RAW_STAGE0_SUFFICIENCY_SCHEMA = "ember_ecp_raw_stage0_sufficiency_r11_v1"
 RAW_STAGE0_SUFFICIENCY_RUN_SCHEMA = "ember_ecp_raw_stage0_sufficiency_run_v1"
@@ -271,8 +262,11 @@ def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
     return (
         is_chart_reconnect_config(config)
         or is_functional_chart_acquisition_config(config)
-        or config.get("schema_version")
-        in {FUNCTIONAL_REFINEMENT_SCHEMA, RAW_STAGE0_SUFFICIENCY_SCHEMA}
+        or config.get("schema_version") in {
+            FUNCTIONAL_REFINEMENT_SCHEMA,
+            RAW_STAGE0_SUFFICIENCY_SCHEMA,
+            primal_capacity.BANK_INTERACTION_CONTROL_SCHEMA,
+        }
     )
 
 
@@ -339,7 +333,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
                 FUNCTIONAL_CHART_ACQUISITION_SCHEMA,
                 FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
                 FUNCTIONAL_REFINEMENT_SCHEMA,
-                RAW_STAGE0_SUFFICIENCY_SCHEMA,
+                RAW_STAGE0_SUFFICIENCY_SCHEMA, primal_capacity.BANK_INTERACTION_CONTROL_SCHEMA,
             },
             len(tasks) == len(set(tasks)) == 12,
             split.get("gradient_meta") == [1, 8, 9, 32, 52],
@@ -500,7 +494,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
         or acquisition_valid
         or joint_acquisition_valid
         or refinement_valid
-        or raw_stage0_valid
+        or raw_stage0_valid or primal_capacity.bank_interaction_control_config_valid(config)
     ):
         raise ValueError("unsupported joint Program-primal functional config")
     return config
@@ -919,8 +913,7 @@ def _model_assets(
     )
     policy.requires_grad_(False).eval()
     ranks = load_shared_rank_assets(
-        base,
-        asset_root=args.asset_root,
+        base, asset_root=args.asset_root,
         held_global_ids=set(map(int, base["fold"]["target_held_task_ids"])),
         device=context.device,
     )
@@ -938,6 +931,7 @@ def _model_assets(
         relative_eigenvalue_floor=float(model["relative_eigenvalue_floor"]),
         replay_score_rms=float(model["replay_score_rms"]),
         covariance_frame_chunk=int(model["frame_chunk_size"]),
+        inverse_covariance_power=float(config["model"].get("inverse_covariance_power", 1.0)),
         scale_prior_ratio=load_shared_scale_prior(
             base, asset_root=args.asset_root, device=context.device
         ),
@@ -1161,6 +1155,11 @@ def prepare_joint_program_primal_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> JointProgramPrimalRuntime:
     config = load_joint_program_primal_config(args.config)
+    if (
+        primal_capacity.is_bank_interaction_control_config(config)
+        and args.phase != "positive-control"
+    ):
+        raise ValueError("bank-interaction control cannot train a shared Writer")
     base_path = (args.asset_root / config["authorities"]["base_g3_config"]).resolve()
     if args.base_config != base_path:
         raise ValueError("J2 base G3 config authority changed")

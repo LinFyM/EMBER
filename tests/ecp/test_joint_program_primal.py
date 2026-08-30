@@ -3,6 +3,9 @@ from types import SimpleNamespace
 
 import torch
 
+from ember.ecp.bank_conditioning.primal_capacity import (
+    BANK_INTERACTION_CONTROL_SCHEMA,
+)
 from ember.ecp.joint_program_primal.evaluation import (
     _language_program,
     _normalized,
@@ -583,6 +586,21 @@ def test_r11_swaps_only_to_raw_frozen_stage0_functional_input() -> None:
         root / "configs/pi05_ecp_raw_stage0_sufficiency_r11_gate_v1.json"
     )
     assert gate["checkpoint_optimizer_steps"] == [70, 110]
+
+
+def test_bank_interaction_positive_control_uses_fixed_half_operator() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_bank_interaction_positive_control_v1.json"
+    )
+    assert config["schema_version"] == BANK_INTERACTION_CONTROL_SCHEMA
+    assert config["model"]["inverse_covariance_power"] == 0.5
+    assert config["optimization"]["task_local_positive_control"][
+        "initialization"
+    ] == "fit_symmetric_transport"
+    assert config["information_wall"]["held_video_backward_calls"] == 0
+    assert config["information_wall"]["wrong_bank_backward_calls"] == 0
+    assert config["information_wall"]["action_meta_installed"] is False
 
 
 def test_raw_stage0_view_preserves_direct_event_fields_and_k1_time() -> None:

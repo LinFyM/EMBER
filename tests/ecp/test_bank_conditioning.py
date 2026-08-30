@@ -429,6 +429,26 @@ def test_global_primal_dual_replays_the_retained_native_direction() -> None:
         4, 9, generator=generator, dtype=torch.float64, requires_grad=True
     )
     query, score_rms, projection_fraction = operator.dual_and_score_rms(primal)
+    explicit_query, explicit_rms, explicit_projection = operator.dual_and_score_rms(
+        primal, inverse_covariance_power=1.0
+    )
+    assert torch.equal(query, explicit_query)
+    assert torch.equal(score_rms, explicit_rms)
+    assert torch.equal(projection_fraction, explicit_projection)
+
+    basis = operator.basis.to(primal)
+    eigenvalues = operator.eigenvalues.to(primal)
+    relative = eigenvalues / eigenvalues[-1]
+    transported = ((primal @ basis) / relative.sqrt()[None]) @ basis.T
+    half_query, half_rms, _ = operator.dual_and_score_rms(
+        transported, inverse_covariance_power=0.5
+    )
+    assert float(
+        torch.nn.functional.cosine_similarity(
+            query.detach(), half_query.detach(), dim=-1
+        ).min()
+    ) > 0.999999
+    assert bool(torch.isfinite(half_rms).all())
     query = query * (1e-3 / score_rms.clamp_min(1e-12))[:, None]
     replayed = materialized_signed_pool(query, values, mass)
     projection = (primal @ operator.basis) @ operator.basis.T

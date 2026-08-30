@@ -89,7 +89,10 @@ cross-task wrong-bank upper-bound现已完成：错误bank保留`100.4%`中位�
   Program/scorer。
 - [ ] 在不恢复退役candidate scorer或parameter teacher路线的前提下，先建立operator-level interaction正控：真实X/Y、signed
   pooling、rank4、唯一rank16与same-task跨video能力必须保留，同时correct bank相对same-role wrong bank产生必要功能增量；只有该
-  正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。
+  正控通过，才恢复shared Program/scorer训练并重跑完整12-task Gate。固定half operator、fit-symmetric task-local初始化、100步
+  fit-only functional优化、sealed-code held/wrong-bank evaluator与`.75/.10/8-of-10` Gate实现已经接通；`105`项ECP回归与task32真实
+  单步smoke通过，Action Meta/Writer/source/held/wrong gradients均为0。下一步是clean main集成后从detached authority完成10-task
+  formal优化与同一panel-B correct-vs-wrong Gate；不把其结果冒充shared Program mapping。
 
 ## 当前G1里程碑
 

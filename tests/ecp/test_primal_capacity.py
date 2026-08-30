@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 
-from ember.ecp.bank_conditioning.primal_capacity import TaskLocalPrimalCode
+from ember.ecp.bank_conditioning.primal_capacity import (
+    TaskLocalPrimalCode,
+    initialize_fit_symmetric_transport,
+)
+from ember.ecp.bank_conditioning.primal_dual import SpectralNativeCovariance
 from ember.ecp.bank_conditioning.primal_capacity_run import (
     P1_SCHEMA,
     load_primal_capacity_config,
@@ -75,3 +80,55 @@ def test_task_local_primal_code_has_shared_primals_and_fixed_fit_scale() -> None
         value.grad is not None and bool(torch.isfinite(value.grad).all())
         for value in code.parameters()
     )
+
+
+def _spectral_operator(width: int, exponent: float) -> SpectralNativeCovariance:
+    eigenvalues = torch.linspace(0.05, 1.0, width).pow(exponent)
+    return SpectralNativeCovariance(
+        basis=torch.eye(width),
+        eigenvalues=eigenvalues,
+        native_width=width,
+        retained_rank=width,
+        eigenvalue_floor=torch.tensor(1e-6),
+        retained_condition=eigenvalues[-1] / eigenvalues[0],
+        retained_trace_fraction=torch.tensor(1.0),
+    )
+
+
+def test_task_local_code_serialization_and_fit_symmetric_transport() -> None:
+    owners = _owners()
+    original = TaskLocalPrimalCode(
+        owners,
+        (_teacher(11, owners), _teacher(13, owners)),
+        s_ref=torch.ones(len(owners)),
+    )
+    serialized = {
+        name: value.detach().clone() for name, value in original.state_dict().items()
+    }
+    code = TaskLocalPrimalCode.from_serialized(owners, serialized)
+    for name, value in code.state_dict().items():
+        assert torch.equal(value, serialized[name])
+
+    def bank(exponent: float) -> SimpleNamespace:
+        return SimpleNamespace(
+            input_operators=tuple(
+                _spectral_operator(owner.in_features, exponent) for owner in owners
+            ),
+            output_operators=tuple(
+                tuple(
+                    _spectral_operator(value.shape[-1], exponent)
+                    for _ in range(value.shape[0])
+                )
+                for value in code.output_primals()
+            ),
+        )
+
+    before = tuple(value.detach().clone() for value in code.input_code)
+    report = initialize_fit_symmetric_transport(code, (bank(1.0), bank(2.0)))
+    assert set(report) == {"minimum", "median", "mean"}
+    assert all(torch.isfinite(torch.tensor(value)) for value in report.values())
+    assert any(
+        not torch.equal(left, right)
+        for left, right in zip(before, code.input_code, strict=True)
+    )
+    assert all(bool(torch.isfinite(value).all()) for value in code.parameters())

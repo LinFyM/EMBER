@@ -2,6 +2,26 @@
 
 - 2026-08-30 01:05:31 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- bank-interaction positive control的retained实现已接通，formal尚未启动。唯一canonical operator新增固定
+  `inverse_covariance_power=.5`；每个gradient task只用两条fit video的teacher初始化形成共同half-whitened task-local code，随后只以
+  panel A真实functional flow优化100步。same-task held video、same-role wrong bank和panel B全部零梯度；最终分别把同一code作用于held
+  正确bank与错误bank，仍只物化carrier12 + residual4的一套完整38-target rank16。trained-code诊断不读取或使用Program，Action Meta
+  loader/module/parameter均为0。全量`tests/ecp`为`105 passed`，architecture guard无hard violation。结构owner仍是已有
+  `PrimalDualVideoOperator`、positive-control runner与cross-bank analyzer，没有新增module、entrypoint或fallback；task-local
+  half-transport/trained-code分支只活到本Gate裁决。若non-pass则在报告后退役，若pass则只把half operator保留给shared G3并在shared
+  qualification接通后移除task-local执行分支，formal config/artifact与Git历史保存证据。
+
+- gpu01物理0上的task32单步真实smoke自然exit 0：实际可训练参数只有task-local code `321,792`，Writer、source policy与Stage0均为0；
+  held/wrong-bank/panel-B backward calls全为0，Action Meta module/parameter为0，唯一rank16 checkpoint完整。fit-symmetric初始化的两video
+  transport alignment median为`.916812`，单步held factor diagnostic为`.683043`，三条video的panel B均高于carrier；实际train/eval/总
+  计算为`9.59/10.48/23.24s`，峰值allocated/reserved为`22.38/23.66GB`。该smoke只证明实现、信息墙与吞吐，不构成Gate结果。
+
+- 两条clean detached bridge diagnostics已限定当前正控。直接把R5旧坐标交给half operator会令correct recovery中位降至`.076821`；先用
+  两条fit bank分别做inverse-square-root transport再平均，则zero-training的held correct/wrong recovery中位为
+  `.647543/.134170`，margin中位`.480161`，正确bank在`10/10` task更好且`10/10`达到`.10` margin。它证明half operator能恢复
+  bank interaction，但correct中位仍低于预注册`.75`，所以不能冒充通过；当前100步fit-only task-local functional优化只检验能否补足
+  这段capacity，而不训练shared Program mapping。
+
 - R5成功primal的10-task cross-bank正控已在clean detached `2090799`完成。正确bank functional recovery中位
   `.930860`，same-role cyclic错误task bank反而为`.945799`；correct-minus-wrong中位`-.003819`，只有`2/10`
   task正确bank更好且`0/10`达到`.10` margin，错误bank在`10/10` task保持正收益，收益保留中位`1.003960`。
@@ -25,11 +45,6 @@
   `571.45/502.77s`，raw rows、aggregate、completion及两个world6 checkpoints均完整，无OOM/NCCL/NaN或掉worker。正式
   artifacts为`runs/outputs/pi05_ecp_raw_stage0_sufficiency_r11_s110_0590f63_gpu01p012346_r6_20260830/`及对应
   `...r11_gate_step70/110_25f38ce_gpu01p012346_w6_20260830/`。
-
-- 下一步先不凭R11直接新增Writer版本。R10的wrong-bank margin`.007864`与R11的`-.003253`、interaction均近零，且当前
-  primal-to-dual operator会在每条bank上近似重建同一Program primal；先用R5/task-local成功primal做只读cross-task wrong-bank
-  functional upper-bound，判定“正确成功primal换错bank”是否仍保持效用。若正控本身也无bank margin，说明现Gate与operator的
-  组合不可识别，必须修正bank interaction；若正控有强margin，才把失败留给shared Program/scorer，不重开已通过的operator。
 
 - matched raw-Stage0 sufficiency retained执行面已经接通。R11从与R10相同的R9 step110完整Writer初始化，保持相同12-task split、
   panel-A真实functional flow、110步预算、scorer容量、native heads、bank/operator/carrier/scale和Gate；唯一输入改动是绕过Natural

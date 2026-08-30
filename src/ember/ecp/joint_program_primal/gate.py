@@ -12,7 +12,9 @@ import torch.distributed as dist
 from safetensors.torch import save_file
 
 from ember.ecp.bank_conditioning.primal_capacity import (
+    BANK_INTERACTION_CONTROL_SCHEMA,
     TaskLocalPrimalCode,
+    initialize_fit_symmetric_transport,
     recovery_record,
     task_local_output,
 )
@@ -39,6 +41,15 @@ from ember.writer.functional import (
 
 
 POSITIVE_CONTROL_SCHEMA = "ember_ecp_j2_functional_positive_control_task_v1"
+BANK_INTERACTION_CONTROL_RESULT_SCHEMA = (
+    "ember_ecp_bank_interaction_positive_control_task_v1"
+)
+
+
+def _result_schema(runtime: JointProgramPrimalRuntime) -> str:
+    if runtime.config["schema_version"] == BANK_INTERACTION_CONTROL_SCHEMA:
+        return BANK_INTERACTION_CONTROL_RESULT_SCHEMA
+    return POSITIVE_CONTROL_SCHEMA
 
 
 def _task_teachers(
@@ -60,8 +71,10 @@ def _task_teachers(
 
 
 def _positive_control_code(
-    runtime: JointProgramPrimalRuntime, task_id: int
-) -> tuple[TaskLocalPrimalCode, torch.optim.Optimizer]:
+    runtime: JointProgramPrimalRuntime,
+    task_id: int,
+    banks: Mapping[int, Any],
+) -> tuple[TaskLocalPrimalCode, torch.optim.Optimizer, dict[str, Any]]:
     runtime.writer_state.requires_grad_(False).eval()
     code = TaskLocalPrimalCode(
         runtime.owners,
@@ -69,6 +82,20 @@ def _positive_control_code(
         s_ref=runtime.ranks.s_ref,
     ).to(runtime.context.device)
     cell = runtime.config["optimization"]["task_local_positive_control"]
+    initialization = str(cell.get("initialization", "teacher_factor_consensus"))
+    initialization_report: dict[str, Any] = {"kind": initialization}
+    if initialization == "fit_symmetric_transport":
+        if runtime.compiler.bank_operator.inverse_covariance_power != 0.5:
+            raise RuntimeError("fit symmetric transport lost its half operator")
+        fit = runtime.task_conditions[task_id].fit_views
+        initialization_report["cross_video_transport_alignment"] = (
+            initialize_fit_symmetric_transport(
+                code,
+                tuple(banks[row.video_demo] for row in fit),
+            )
+        )
+    elif initialization != "teacher_factor_consensus":
+        raise ValueError("unsupported task-local positive-control initialization")
     optimizer = torch.optim.AdamW(
         code.parameters(),
         lr=float(cell["learning_rate"]),
@@ -81,7 +108,7 @@ def _positive_control_code(
         or not all(parameter.requires_grad for parameter in code.parameters())
     ):
         raise RuntimeError("J2 positive-control parameter ownership changed")
-    return code, optimizer
+    return code, optimizer, initialization_report
 
 
 def _task_banks(
@@ -369,7 +396,11 @@ def _evaluate_positive_control(
 
 
 def _save_code(
-    output_dir: Path, code: TaskLocalPrimalCode, task_id: int
+    output_dir: Path,
+    code: TaskLocalPrimalCode,
+    task_id: int,
+    *,
+    schema: str,
 ) -> Path:
     path = output_dir / "task_local_primal.safetensors"
     save_file(
@@ -379,12 +410,101 @@ def _save_code(
         },
         str(path),
         metadata={
-            "schema_version": POSITIVE_CONTROL_SCHEMA,
+            "schema_version": schema,
             "task": str(task_id),
             "deployment_candidate": "false",
         },
     )
     return path
+
+
+def _positive_control_parameter_ownership(
+    runtime: JointProgramPrimalRuntime,
+    code: TaskLocalPrimalCode,
+) -> dict[str, int | float]:
+    return {
+        "task_local_trainable_parameter_count": sum(
+            value.numel() for value in code.parameters() if value.requires_grad
+        ),
+        "writer_trainable_parameter_count": sum(
+            value.numel()
+            for value in runtime.writer_state.parameters()
+            if value.requires_grad
+        ),
+        "source_policy_trainable_parameter_count": sum(
+            value.numel()
+            for value in runtime.policy.parameters()
+            if value.requires_grad
+        ),
+        "operator_inverse_covariance_power": (
+            runtime.compiler.bank_operator.inverse_covariance_power
+        ),
+    }
+
+
+def _positive_control_report(
+    runtime: JointProgramPrimalRuntime,
+    *,
+    args: Any,
+    task_id: int,
+    started: float,
+    curve: list[dict[str, Any]],
+    code_initialization: Mapping[str, Any],
+    parameter_ownership: Mapping[str, int | float],
+    carrier_validation: Mapping[str, Any] | None,
+    evaluation: Mapping[str, Any],
+    bank_metrics: Mapping[int, Any],
+    prepare_seconds: float,
+    train_seconds: float,
+    evaluation_seconds: float,
+    checkpoint: Path,
+) -> dict[str, Any]:
+    condition = runtime.task_conditions[task_id]
+    result_schema = _result_schema(runtime)
+    updates = 1 if args.mode == "profile" else int(
+        runtime.config["optimization"]["task_local_positive_control"]["updates"]
+    )
+    return {
+        "schema_version": result_schema,
+        "status": "complete",
+        "task": task_id,
+        "role": condition.fit_views[0].role,
+        "fit_videos": [row.video_demo for row in condition.fit_views],
+        "held_video": condition.held_video.video_demo,
+        "updates": updates,
+        "curve": curve,
+        "task_local_code_initialization": dict(code_initialization),
+        "parameter_ownership": dict(parameter_ownership),
+        "inverse_covariance_power": (
+            runtime.compiler.bank_operator.inverse_covariance_power
+        ),
+        "carrier_panel_authority_validation": carrier_validation,
+        "evaluation": dict(evaluation),
+        "bank_metrics": dict(bank_metrics),
+        "prepare_seconds": prepare_seconds,
+        "train_seconds": train_seconds,
+        "evaluation_seconds": evaluation_seconds,
+        "evaluation_to_training_wall": evaluation_seconds
+        / max(train_seconds, 1e-12),
+        "total_seconds": time.monotonic() - started,
+        "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(
+            runtime.context.device
+        ),
+        "max_cuda_reserved_bytes": torch.cuda.max_memory_reserved(
+            runtime.context.device
+        ),
+        "native_teacher_tensor_reads": runtime.native_teachers.tensor_reads,
+        "checkpoint": {
+            "path": str(checkpoint),
+            "bytes": checkpoint.stat().st_size,
+            "deployment_candidate": False,
+        },
+        "held_backward_calls": 0,
+        "wrong_bank_backward_calls": 0,
+        "panel_b_backward_calls": 0,
+        "action_meta_installed": False,
+        "single_complete_rank16": True,
+    }
 
 
 def run_positive_control(args: Any) -> None:
@@ -416,8 +536,15 @@ def run_positive_control(args: Any) -> None:
             if args.mode == "profile"
             else None
         )
-        code, optimizer = _positive_control_code(runtime, task_id)
         banks, bank_metrics, prepare_seconds = _task_banks(runtime, task_id)
+        code, optimizer, code_initialization = _positive_control_code(
+            runtime, task_id, banks
+        )
+        parameter_ownership = _positive_control_parameter_ownership(runtime, code)
+        runtime.run_contract["positive_control_parameter_ownership"] = (
+            parameter_ownership
+        )
+        write_json_atomic(args.output_dir / "run_contract.json", runtime.run_contract)
         curve, train_seconds = _train_positive_control(
             runtime,
             task_id=task_id,
@@ -428,52 +555,33 @@ def run_positive_control(args: Any) -> None:
         evaluation, evaluation_seconds = _evaluate_positive_control(
             runtime, task_id=task_id, code=code, banks=banks
         )
-        checkpoint = _save_code(args.output_dir, code, task_id)
-        report = {
-            "schema_version": POSITIVE_CONTROL_SCHEMA,
-            "status": "complete",
-            "task": task_id,
-            "role": runtime.task_conditions[task_id].fit_views[0].role,
-            "fit_videos": [
-                row.video_demo for row in runtime.task_conditions[task_id].fit_views
-            ],
-            "held_video": runtime.task_conditions[task_id].held_video.video_demo,
-            "updates": 1 if args.mode == "profile" else int(
-                runtime.config["optimization"]["task_local_positive_control"][
-                    "updates"
-                ]
-            ),
-            "curve": curve,
-            "carrier_panel_authority_validation": carrier_validation,
-            "evaluation": evaluation,
-            "bank_metrics": bank_metrics,
-            "prepare_seconds": prepare_seconds,
-            "train_seconds": train_seconds,
-            "evaluation_seconds": evaluation_seconds,
-            "evaluation_to_training_wall": evaluation_seconds
-            / max(train_seconds, 1e-12),
-            "total_seconds": time.monotonic() - started,
-            "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(
-                context.device
-            ),
-            "max_cuda_reserved_bytes": torch.cuda.max_memory_reserved(
-                context.device
-            ),
-            "native_teacher_tensor_reads": runtime.native_teachers.tensor_reads,
-            "checkpoint": {
-                "path": str(checkpoint),
-                "bytes": checkpoint.stat().st_size,
-                "deployment_candidate": False,
-            },
-            "held_backward_calls": 0,
-            "panel_b_backward_calls": 0,
-            "action_meta_installed": False,
-            "single_complete_rank16": True,
-        }
+        result_schema = _result_schema(runtime)
+        checkpoint = _save_code(
+            args.output_dir,
+            code,
+            task_id,
+            schema=result_schema,
+        )
+        report = _positive_control_report(
+            runtime,
+            args=args,
+            task_id=task_id,
+            started=started,
+            curve=curve,
+            code_initialization=code_initialization,
+            parameter_ownership=parameter_ownership,
+            carrier_validation=carrier_validation,
+            evaluation=evaluation,
+            bank_metrics=bank_metrics,
+            prepare_seconds=prepare_seconds,
+            train_seconds=train_seconds,
+            evaluation_seconds=evaluation_seconds,
+            checkpoint=checkpoint,
+        )
         write_json_atomic(args.output_dir / "result.json", report)
         write_json_atomic(
             args.output_dir / "completion.json",
-            {"schema_version": POSITIVE_CONTROL_SCHEMA, "task": task_id},
+            {"schema_version": result_schema, "task": task_id},
         )
     finally:
         if runtime is not None:

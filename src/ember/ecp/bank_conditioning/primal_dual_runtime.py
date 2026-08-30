@@ -95,6 +95,7 @@ class PrimalDualVideoOperator:
         relative_eigenvalue_floor: float,
         replay_score_rms: float,
         covariance_frame_chunk: int,
+        inverse_covariance_power: float = 1.0,
     ) -> None:
         self.owners = tuple(owners)
         self.program_width = int(program_width)
@@ -102,6 +103,9 @@ class PrimalDualVideoOperator:
         self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
         self.replay_score_rms = float(replay_score_rms)
         self.covariance_frame_chunk = int(covariance_frame_chunk)
+        self.inverse_covariance_power = float(inverse_covariance_power)
+        if self.inverse_covariance_power not in (0.5, 1.0):
+            raise NativeFactorError("invalid native inverse covariance power")
 
     @staticmethod
     @contextmanager
@@ -325,7 +329,10 @@ class PrimalDualVideoOperator:
         for target, (primal, operator) in enumerate(
             zip(input_primals, input_operators, strict=True)
         ):
-            query, raw_rms, projection = operator.dual_and_score_rms(primal)
+            query, raw_rms, projection = operator.dual_and_score_rms(
+                primal,
+                inverse_covariance_power=self.inverse_covariance_power,
+            )
             scale = self.replay_score_rms / raw_rms.clamp_min(1e-12)
             input_queries.append(query * scale[:, None])
             projections.append(projection)
@@ -336,7 +343,10 @@ class PrimalDualVideoOperator:
             zip(output_primals, output_operators, strict=True)
         ):
             rows = tuple(
-                operator.dual_and_score_rms(primals[group])
+                operator.dual_and_score_rms(
+                    primals[group],
+                    inverse_covariance_power=self.inverse_covariance_power,
+                )
                 for group, operator in enumerate(operators)
             )
             rms = torch.stack(tuple(row[1] for row in rows))

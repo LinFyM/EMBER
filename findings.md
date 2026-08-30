@@ -1489,3 +1489,16 @@ interaction由此首先归因operator/Gate组合不可识别，而不是Program 
 X/Y、正负softmax signed pooling、rank4、唯一rank16和same-task held-video能力，同时让correct bank相对same-role wrong bank有明确
 必要增量。该正控决定如何修正current-bank query/measure；在证据前不恢复已淘汰的mean/variance、query-conditioned set scorer、
 full functional-polar deployment或task/video lookup。
+
+### 87. symmetric half operator恢复bank因果margin，但未经优化的correct capacity仍未过门
+
+把R5成功primal的旧full-inverse坐标直接改用`C_B^{-1/2}`并不成立：10-task correct recovery中位只有`.076821`，说明operator与
+primal坐标必须成对解释，不能把一次公式替换冒充修复。随后只使用每task两条fit video，把同一teacher-initialized primal分别经各自
+bank的inverse-square-root transport后取均值；第三条same-task held video及wrong bank完全不参与构造。clean detached结果的held
+correct/wrong recovery中位为`.647543/.134170`，correct-minus-wrong为`.480161`；正确bank在`10/10` task更好且全部超过`.10`
+margin，wrong-to-correct update cosine中位仅`.078233`。这证明half operator没有再代数消去bank，correct-bank必要性可恢复。
+
+该桥接正控仍因correct recovery中位低于预注册`.75`而明确non-pass；它只授权下一步在固定half operator下，用两条fit video和真实
+functional flow优化一个task-local共同code，再在zero-gradient held/wrong bank上复评。该优化仍是operator capacity upper bound，
+不是Program-conditioned shared attention；若`.75/.10/8-of-10`通过，才恢复shared mapping，若correct capacity仍低则先分析
+fit-to-held坐标迁移，不训练另一个Program/scorer版本。

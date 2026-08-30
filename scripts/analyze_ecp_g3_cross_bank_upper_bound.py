@@ -60,6 +60,8 @@ class _FractionalSpectralOperator:
     def dual_and_score_rms(
         self, primal: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if self.inverse_power == 1.0:
+            return self.source.dual_and_score_rms(primal)
         if primal.ndim != 2 or primal.shape[-1] != self.native_width:
             raise ValueError("fractional-dual native width changed")
         basis = self.basis.to(primal).float()

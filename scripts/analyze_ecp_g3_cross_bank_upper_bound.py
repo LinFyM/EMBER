@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import statistics
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -13,7 +14,6 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.joint_program_primal.evaluation import (
-    _complete_state,
     _normalized,
     _panel_value,
     _positive_control_losses,
@@ -31,7 +31,10 @@ from ember.ecp.joint_program_primal.routing_control_evaluation import (
     routing_task_assignments,
 )
 from ember.ecp.joint_program_primal.train_step import prepare_joint_condition
-from ember.ecp.native_materialization import residual_lora_state
+from ember.ecp.native_materialization import (
+    compose_rank12_plus_rank4,
+    residual_lora_state,
+)
 from ember.ecp.shared_compiler_span import _low_rank_geometry
 from ember.pi05_eval_contract import (
     git_state,
@@ -42,6 +45,80 @@ from ember.pi05_source_setup import initialize_distributed
 
 
 SCHEMA = "ember_ecp_g3_cross_bank_upper_bound_v1"
+
+
+class _FractionalSpectralOperator:
+    """Diagnostic symmetric whitening without changing the retained operator."""
+
+    def __init__(self, source: Any, inverse_power: float) -> None:
+        self.source = source
+        self.inverse_power = float(inverse_power)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.source, name)
+
+    def dual_and_score_rms(
+        self, primal: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if primal.ndim != 2 or primal.shape[-1] != self.native_width:
+            raise ValueError("fractional-dual native width changed")
+        basis = self.basis.to(primal).float()
+        eigenvalues = self.eigenvalues.to(primal).float()
+        coordinates = primal.float() @ basis
+        relative = eigenvalues / eigenvalues[-1].clamp_min(1e-30)
+        dual_coordinates = coordinates / relative.pow(self.inverse_power)[None]
+        query = dual_coordinates @ basis.T
+        score_rms = (
+            dual_coordinates.square() * eigenvalues[None]
+        ).sum(-1).clamp_min(0).sqrt()
+        projected = coordinates @ basis.T
+        projection = projected.norm(dim=-1) / primal.float().norm(
+            dim=-1
+        ).clamp_min(1e-30)
+        return query.to(primal), score_rms.to(primal), projection.to(primal)
+
+
+def _fractional_video(video: Any, inverse_power: float) -> Any:
+    wrap = lambda row: _FractionalSpectralOperator(row, inverse_power)
+    return replace(
+        video,
+        input_operators=tuple(wrap(row) for row in video.input_operators),
+        output_operators=tuple(
+            tuple(wrap(row) for row in groups)
+            for groups in video.output_operators
+        ),
+    )
+
+
+def _complete_state(
+    runtime: Any,
+    *,
+    program: Any,
+    bank: Any,
+    inverse_power: float,
+) -> tuple[dict[str, torch.Tensor], Any]:
+    compiler = runtime.compiler
+    state = compiler.primal_scorer.program_state(program)
+    input_primals = compiler.primal_scorer.input_primals(state)
+    output_primals = compiler.primal_scorer.output_primals(state)
+    pooled = tuple(
+        compiler.bank_operator.apply_compact(
+            _fractional_video(video, inverse_power),
+            input_primals,
+            output_primals,
+        )
+        for video in bank.videos
+    )
+    output = compiler._output(state, pooled, s_ref=runtime.ranks.s_ref)
+    residual = residual_lora_state(
+        output.residual, runtime.rank4_contract, canonicalize=True
+    )
+    complete = compose_rank12_plus_rank4(
+        carrier_state=runtime.ranks.carrier_rank12,
+        residual_state=residual,
+        rank16_contract=runtime.ranks.contract,
+    )
+    return complete, output
 
 
 def _distribution(values: Sequence[float]) -> dict[str, float | int]:
@@ -81,6 +158,7 @@ def _evaluate_task(
     task_id: int,
     positive_root: Path,
     r5_row: Mapping[str, Any],
+    inverse_power: float,
 ) -> dict[str, Any]:
     started = time.monotonic()
     first = _task_conditions(runtime, task_id)[0]
@@ -89,7 +167,6 @@ def _evaluate_task(
     free_reference, free_authority = _positive_control_losses(
         positive_root, task_id
     )
-    correct_record = r5_row["controls"]["primary_correct"]
     if int(r5_row["fit_videos"][0]) != int(first.video_demo):
         raise ValueError("R5 primary view authority changed")
 
@@ -98,12 +175,22 @@ def _evaluate_task(
     teacher_reads = runtime.native_teachers.tensor_reads
     with torch.inference_mode():
         program = fixed_routing_program(runtime, task_id)
-        _, correct_output = _complete_state(
-            runtime, program=program, bank=correct_prepared
+        correct_state, correct_output = _complete_state(
+            runtime,
+            program=program,
+            bank=correct_prepared,
+            inverse_power=inverse_power,
         )
         wrong_state, wrong_output = _complete_state(
-            runtime, program=program, bank=wrong_prepared
+            runtime,
+            program=program,
+            bank=wrong_prepared,
+            inverse_power=inverse_power,
         )
+    correct_record = _normalized(
+        _panel_value(runtime, task_id=task_id, state=correct_state),
+        free_reference[first.video_demo],
+    )
     wrong_record = _normalized(
         _panel_value(runtime, task_id=task_id, state=wrong_state),
         free_reference[first.video_demo],
@@ -139,11 +226,14 @@ def _evaluate_task(
         "panel_b_backward_calls": 0,
         "action_meta_installed": False,
         "single_complete_rank16": True,
+        "inverse_covariance_power": inverse_power,
         "elapsed_seconds": time.monotonic() - started,
     }
 
 
 def worker(args: argparse.Namespace) -> None:
+    if args.inverse_power not in (0.5, 1.0):
+        raise ValueError("cross-bank diagnostic inverse power changed")
     state = git_state(Path(__file__).resolve().parents[1])
     if (
         not git_state_is_clean_pushed_or_frozen_authority(state)
@@ -199,6 +289,7 @@ def worker(args: argparse.Namespace) -> None:
                     task_id=task_id,
                     positive_root=positive_root,
                     r5_row=r5_rows[task_id],
+                    inverse_power=args.inverse_power,
                 )
             )
             runtime.panel_batch_cache.clear()
@@ -221,6 +312,7 @@ def worker(args: argparse.Namespace) -> None:
                 "physical_visible_device": __import__("os").environ.get(
                     "CUDA_VISIBLE_DEVICES"
                 ),
+                "inverse_covariance_power": args.inverse_power,
             },
         )
         write_json_atomic(
@@ -241,6 +333,7 @@ def worker(args: argparse.Namespace) -> None:
 def aggregate(args: argparse.Namespace) -> None:
     rows = []
     commits = set()
+    powers = set()
     for worker_index in range(args.worker_count):
         root = args.output_dir / f"worker_{worker_index:02d}"
         result = read_json(root / "result.json")
@@ -255,9 +348,10 @@ def aggregate(args: argparse.Namespace) -> None:
             raise ValueError("cross-bank worker evidence changed")
         rows.extend(result["tasks"])
         commits.add(result["git"]["commit"])
+        powers.add(float(result.get("inverse_covariance_power", 1.0)))
     if len(rows) != len(ROUTING_TASK_IDS) or {row["task"] for row in rows} != set(
         ROUTING_TASK_IDS
-    ) or len(commits) != 1:
+    ) or len(commits) != 1 or powers != {args.inverse_power}:
         raise ValueError("cross-bank aggregate task or commit authority changed")
     rows.sort(key=lambda row: row["task"])
     margins = [float(row["correct_minus_wrong_recovery"]) for row in rows]
@@ -293,6 +387,7 @@ def aggregate(args: argparse.Namespace) -> None:
             "status": "complete",
             "worker_count": args.worker_count,
             "git_commit": next(iter(commits)),
+            "inverse_covariance_power": args.inverse_power,
             "operator_bank_interaction_identifiable": (
                 operator_bank_interaction_identifiable
             ),
@@ -336,9 +431,11 @@ def parser() -> argparse.ArgumentParser:
         work.add_argument(f"--{name.replace('_', '-')}", type=Path, required=True)
     work.add_argument("--worker-index", type=int, required=True)
     work.add_argument("--worker-count", type=int, required=True)
+    work.add_argument("--inverse-power", type=float, default=1.0)
     collect = commands.add_parser("aggregate")
     collect.add_argument("--output-dir", type=Path, required=True)
     collect.add_argument("--worker-count", type=int, required=True)
+    collect.add_argument("--inverse-power", type=float, default=1.0)
     return root
 
 

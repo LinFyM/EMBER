@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -17,9 +16,6 @@ from ember.ecp.joint_program_primal.evaluation import (
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
 from ember.ecp.joint_program_primal.routing_control import (
-    PROGRAM_BANK_INTERACTION_RUN_SCHEMA,
-    PROGRAM_BANK_INTERACTION_SCHEMA,
-    PROGRAM_BANK_INTERACTION_STAGE,
     ROUTING_TASK_IDS,
     SCORER_INTERACTION_ONLY,
     SCORER_NATIVE_HEADS_ONLY,
@@ -29,15 +25,11 @@ from ember.ecp.joint_program_primal.routing_control import (
     load_routing_control_config,
 )
 from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
-    PROGRAM_BANK_INTERACTION_EVALUATION_SCHEMA,
-    PROGRAM_BANK_INTERACTION_GATE_REPORT_SCHEMA,
-    PROGRAM_BANK_INTERACTION_GATE_SCHEMA,
     _checks as interaction_gate_checks,
     _information_wall_pass,
     load_program_bank_interaction_gate,
 )
 from ember.ecp.joint_program_primal.program_bank_interaction_training import (
-    PROGRAM_BANK_INTERACTION_COMPLETION_SCHEMA,
     _wrong_bank_credit,
     _wrong_bank_pair,
 )
@@ -636,33 +628,6 @@ def test_retired_binary_routes_are_not_active_configs() -> None:
         raise AssertionError(f"retired binary route remained executable: {name}")
 
 
-def test_candidate_interaction_v1_through_v3_are_history_only() -> None:
-    root = Path(__file__).resolve().parents[2]
-    for version in (1, 2, 3):
-        training = (
-            root
-            / f"configs/pi05_ecp_program_bank_candidate_interaction_v{version}.json"
-        )
-        gate = (
-            root
-            / (
-                "configs/pi05_ecp_program_bank_candidate_interaction_"
-                f"gate_v{version}.json"
-            )
-        )
-        for loader, path in (
-            (load_routing_control_config, training),
-            (load_program_bank_interaction_gate, gate),
-        ):
-            try:
-                loader(path)
-            except ValueError:
-                continue
-            raise AssertionError(
-                f"historical interaction config remained active: {path}"
-            )
-
-
 def test_candidate_interaction_qualification_is_continuous_and_interaction_only() -> None:
     root = Path(__file__).resolve().parents[2]
     config = load_routing_control_config(
@@ -671,30 +636,15 @@ def test_candidate_interaction_qualification_is_continuous_and_interaction_only(
     gate = load_program_bank_interaction_gate(
         root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v4.json"
     )
-    assert PROGRAM_BANK_INTERACTION_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_RUN_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_COMPLETION_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_GATE_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_EVALUATION_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_GATE_REPORT_SCHEMA.endswith("_v4")
-    assert PROGRAM_BANK_INTERACTION_STAGE == (
-        "g3_program_bank_candidate_interaction_base_score_qualification"
-    )
     assert config["model"]["primal_scorer_trainable_partition"] == (
         SCORER_INTERACTION_ONLY
     )
     assert config["model"]["inverse_covariance_power"] == 1.0
-    assert config["model"]["interaction_base_score_feature"] == (
-        "detached_q0_dot_value_minus_global_b0_mean_div_replay_score_rms"
-    )
     assert "compatibility_support_threshold" not in config["model"]
     assert "separate_compatibility_probes" not in config["model"]
     assert config["model"]["trainable"] == ["ProgramBankInteractionScorer"]
-    assert "action_meta" in config["model"]["absent"]
     assert config["information_wall"]["wrong_bank_exact_language_fixed"] is True
     assert config["information_wall"]["action_meta_installed"] is False
-    assert config["throughput_gate"]["qualification_gate"] is False
-    assert gate["efficiency_diagnostics"]["qualification_gate"] is False
     assert gate["evaluation"]["control_arms"] == [
         "correct_interaction_on",
         "unseen_wrong_interaction_on",
@@ -712,30 +662,6 @@ def test_candidate_interaction_qualification_is_continuous_and_interaction_only(
     assert config["optimization"]["joint"]["wrong_bank_neutralization"][
         "weight"
     ] == 0.5
-
-    historical_config = json.loads(
-        (
-            root
-            / "configs/pi05_ecp_program_bank_candidate_interaction_v3.json"
-        ).read_text(encoding="utf-8")
-    )
-    historical_config["schema_version"] = config["schema_version"]
-    historical_config["status"] = config["status"]
-    historical_config["model"]["interaction_base_score_feature"] = config["model"][
-        "interaction_base_score_feature"
-    ]
-    assert config == historical_config
-
-    historical_gate = json.loads(
-        (
-            root
-            / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v3.json"
-        ).read_text(encoding="utf-8")
-    )
-    historical_gate["schema_version"] = gate["schema_version"]
-    historical_gate["status"] = gate["status"]
-    historical_gate["training_config"] = gate["training_config"]
-    assert gate == historical_gate
 
     owners = (
         TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),

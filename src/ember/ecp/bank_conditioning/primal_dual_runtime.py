@@ -688,9 +688,9 @@ class PrimalDualVideoOperator:
                     interaction_scorer.input_logit_corrections(
                         target=target,
                         program_event_state=interaction_state.rank_event[target],
-                        native_event_query=(
-                            interaction_state.input_event_queries[target]
-                        ),
+                        native_event_query=interaction_state.input_event_queries[
+                            target
+                        ],
                         event_weights=interaction_state.event_weights[target],
                         base_query=plan.input_queries[target],
                         values=x,
@@ -758,10 +758,7 @@ class PrimalDualVideoOperator:
         inputs: tuple[Any, ...],
         outputs: tuple[tuple[Any, ...], ...],
         boundaries: list[NativeOutputBankState],
-        input_operators: tuple[SpectralNativeCovariance, ...],
-        output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...],
-        input_queries: tuple[torch.Tensor, ...],
-        output_queries: tuple[tuple[torch.Tensor, ...], ...],
+        prepared: PreparedPrimalDualVideo, plan: _ReplayPlan,
         interaction_scorer: ProgramBankInteractionScorer | None,
         interaction_state: ProgramBankInteractionState | None,
         interaction_off: bool,
@@ -791,13 +788,11 @@ class PrimalDualVideoOperator:
                 interaction_scorer.input_logit_corrections(
                     target=target,
                     program_event_state=interaction_state.rank_event[target],
-                    native_event_query=(
-                        interaction_state.input_event_queries[target]
-                    ),
+                    native_event_query=interaction_state.input_event_queries[target],
                     event_weights=interaction_state.event_weights[target],
-                    base_query=input_queries[target],
+                    base_query=plan.input_queries[target],
                     values=x,
-                    native_mean=input_operators[target].mean,
+                    native_mean=prepared.input_operators[target].mean,
                     context=chunk_context,
                 )
                 if interaction_enabled
@@ -820,9 +815,9 @@ class PrimalDualVideoOperator:
                             interaction_state.output_event_queries[target][group]
                         ),
                         event_weights=interaction_state.event_weights[target],
-                        base_query=output_queries[target][group],
+                        base_query=plan.output_queries[target][group],
                         values=grouped[group],
-                        native_mean=output_operators[target][group].mean,
+                        native_mean=prepared.output_operators[target][group].mean,
                         context=chunk_context,
                     )
                     if interaction_enabled
@@ -875,10 +870,7 @@ class PrimalDualVideoOperator:
                 inputs=inputs,
                 outputs=outputs,
                 boundaries=boundaries,
-                input_operators=prepared.input_operators,
-                output_operators=prepared.output_operators,
-                input_queries=plan.input_queries,
-                output_queries=plan.output_queries,
+                prepared=prepared, plan=plan,
                 interaction_scorer=interaction_scorer,
                 interaction_state=interaction_state,
                 interaction_off=interaction_off,

@@ -2,6 +2,26 @@
 
 - 2026-08-30 07:03:26 CST是owner本轮睡眠推进锚点；后续汇报按该机器确认绝对时刻核对，不以对话压缩位置替代。
 
+- R10 clean detached formal与原12-task functional Gate已经完整结束。训练110/110步连续、墙钟`1442.70s`，step70/110两个
+  world6 checkpoints完整；全部110步Program/native-head gradients finite/nonzero，native teacher reads、Action Meta、source/Stage0/
+  operator/scale trainable均为0。六个独立worker在gpu01物理`0,1,2,3,4,6`完成两个checkpoint的12/12 paired panel-B与全部controls，
+  raw rows、aggregate和completion均齐全，无错误签名。
+
+- R10 step70/110 train recovery为`.532227/.559896`，held-video为`.500728/.544189`，held/train为`.940817/.971946`；相对R9
+  的负值是决定性功能跃升。step110 q/v/action-in/action-out为`.645745/.614858/.717575/.548006`，same-task retention`.990228`、
+  wrong-Program margin`.279494`，均通过；但task-held mean仅`.151475`（meta2 `.375386`、target74 `-.072436`），wrong-bank margin
+  `.007864`、interaction`-.002683`、full-over-endpoints`.061382`，train也仍低于`.60`，所以两个checkpoint正式non-pass。
+
+- per-role分解显示五个meta gradient tasks在step110为`.620--.947`量级（task9为`.679`，亦为正），五个target gradient tasks仅
+  `.186--.499`，且未参与梯度的target74为负；同一target tasks在R5 fixed-route正控均约`.84--1.01`，故不是bank/operator/rank/scale容量。
+  correct Program换wrong bank几乎不变，而wrong Program明显变差，说明R10已建立Program主导的功能route，但尚未建立对未见target task
+  可迁移的Program--bank配对交互。不能靠续训、seed/LR/width/rank小扫或outer loss修复。
+
+- 该结果符合最新专家预注册的“fit与same-task held明显可学、true task-held低”分支，当前只进入matched raw-Stage0 sufficiency probe：
+  保持同一12-task split、primal scorer容量、functional loss、训练预算、冻结bank/operator/carrier/scale和完整Gate，只把Natural Program
+  压缩输入替换为部署可见raw frozen Stage0 evidence。它仅诊断Program压缩、Stage0信息与shared decoder/generalization三者，不是新的
+  deployment Writer；raw task-held只有相对R10提高至少`.15`且达到`.40`才允许把首因归给Program schema。
+
 - R10 retained实现与真实world6 step1已经接通。唯一`joint_program_primal`执行面严格加载R9 step110完整Writer tensor inventory，
   但不加载旧optimizer、fixed route或task lookup；feature chart与source/Stage0/operator/carrier/scale冻结，仅Natural Program和233个
   native heads共`11,178,369`参数可训练，outer-code label/loss完全退出。18项定向CPU合同通过；gpu01物理`0,1,2,3,4,6`上的

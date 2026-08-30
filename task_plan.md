@@ -26,8 +26,11 @@ functional chart初始化并联合获取Program/scorer坐标，内部四family�
 step70/110的真实functional train/held/task-held分别只有`-.182/-.176/-.009`与`-.132/-.130/-.012`，五个target-role gradient
 tasks全部为负，wrong-bank与interaction近零。R9因此正式non-pass，并把最早接口从随机chart可优化性进一步定位为
 **outer-code近似不能替代policy utility**。当前R10只把R9 step110作为training-only稳定内容坐标初始化，冻结已有R4/R5证据表明会在
-functional训练中漂移的feature chart，移除outer-code loss，只让Natural Program与native heads接受真实cross-episode panel-A flow；
-先用真实梯度/功能smoke确认这条转换，再运行同一12-task Gate。R1--R10均不是deployment checkpoint，局部结果不代表整体goal完成。
+functional训练中漂移的feature chart，移除outer-code loss，只让Natural Program与native heads接受真实cross-episode panel-A flow。
+R10 step110把train/held从R9负值提高到`.560/.544`，四family与Program因果margin通过，但task-held仅`.151`、target74为负，wrong-bank与
+interaction近零，因此仍正式non-pass。当前按专家预注册分支做唯一matched raw-Stage0 sufficiency probe：保持scorer、functional loss、
+预算、bank/operator/rank/scale和Gate不变，只替换Program压缩输入；先区分Program schema、frozen Stage0与shared decoder/generalization，
+再决定G3下一结构。R1--R11均不是deployment checkpoint，局部结果不代表整体goal完成。
 
 ## R5--R10当前里程碑
 
@@ -71,11 +74,11 @@ functional训练中漂移的feature chart，移除outer-code loss，只让Natura
 - [x] 从clean pushed detached R9 authority运行10 warmup+100 effective、actual step70/110并执行原12-task完整functional Gate；
   step110 train/held/task-held为`-.131825/-.129718/-.011724`，内部四family全部过门但真实primary明确non-pass；
 - [x] 依据R9的role/task/causal分解把最早接口定位为code-to-utility：不是继续outer-code训练、raw Stage0、scale、bank或超参小扫；
-- [ ] 接通R10 R9-initialized functional refinement：完整加载R9 Program/scorer，冻结feature chart，只训练Natural Program与native
-  heads，loss仅为generated rank16的cross-episode PI0.5 flow；retained实现、18项定向合同与真实world6 step1已经通过，待从clean
-  pushed detached authority完成step70/110及同一12-task Gate；
-- [ ] 只有R10 train/held-video显著通过而true task-held仍低才进入matched raw Stage0 sufficiency；若train本身仍低，继续按真实
-  functional gradient/ownership定位Program/scorer函数类，不用训练时长、seed/LR/width/rank小扫掩盖。
+- [x] 完成R10 R9-initialized functional refinement的retained实现、18项定向合同、真实world6 step1、clean formal step70/110与完整
+  12-task Gate；step110 train/held为`.559896/.544189`、四family与Program margin通过，但task-held`.151475`、wrong-bank与interaction
+  失败，R10正式non-pass；
+- [ ] 完成matched raw Stage0 sufficiency：相同12-task split、scorer容量、functional loss、预算和Gate，只交换部署可见上游表示；
+  以raw相对Program task-held是否提高`>=.15`且达到`.40`区分Program压缩、frozen Stage0与shared decoder/generalization。
 
 ## 当前G1里程碑
 

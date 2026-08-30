@@ -1277,3 +1277,27 @@ outer loss、不触发raw Stage0，也不重开bank/operator/rank/scale；只把
 - `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_s110_43be484_gpu01p012346_r6_20260830/`；
 - `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_step70_43be484_gpu01p012346_w6_20260830/`；
 - `runs/outputs/pi05_ecp_functional_code_stable_chart_joint_r9_gate_step110_43be484_gpu01p012346_w6_20260830/`。
+
+## 64. R10真实functional refinement取得数量级跃升但task-held与bank interaction non-pass
+
+clean pushed detached `f3baa81`从R9 step110完整Writer model tensors初始化，冻结feature chart，移除outer-code loss，只训练Natural
+Program与233 native heads。gpu01物理`0,1,2,3,4,6`完成10 warmup+100 effective updates，110条metrics连续、step70/110 world6
+checkpoints完整，训练墙钟`1442.70s`，最大peak reserved `32,937,869,312` bytes；Action Meta、source、Stage0、operator、scale
+trainable和native teacher reads均为0。六个独立worker随后完成两个checkpoint的12-task paired panel-B与全部controls。
+
+step70/110 train recovery为`.532227/.559896`，held-video为`.500728/.544189`，held/train为`.940817/.971946`；step110
+q/v/action-in/action-out为`.645745/.614858/.717575/.548006`，same-task retention`.990228`、wrong-Program margin`.279494`。
+这相对R9负值是明确功能跃升，证明稳定content initialization经真实flow refinement可转化为policy utility。两个checkpoint仍primary
+non-pass：step110 task-held mean`.151475`（task2 `.375386`、task74 `-.072436`），wrong-bank`.007864`、interaction`-.002683`、
+full-over-endpoints`.061382`，train也低于`.60`。
+
+per-task结果显示meta gradient tasks总体强而target gradient tasks仅`.186--.499`；同一target tasks在R5 fixed-route正控均强，故剩余
+最早接口是跨target-task的共享表示/generalization及Program--current-bank配对，而不是bank/operator/rank/scale。按专家预注册结果解释，
+下一步是同scorer、loss、预算与Gate的raw frozen Stage0 sufficiency probe；它只作根因诊断，不登记为deployment Writer，也不授权在结果前
+改Program schema或解冻Stage0。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_s110_731a769_gpu01p012346_r6_20260830/`；
+- `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_gate_step70_f3baa81_gpu01p012346_w6_20260830/`；
+- `runs/outputs/pi05_ecp_r9_initialized_functional_refinement_r10_gate_step110_f3baa81_gpu01p012346_w6_20260830/`。

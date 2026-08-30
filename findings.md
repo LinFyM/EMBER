@@ -1431,3 +1431,23 @@ full-over-endpoints、wrong-bank margin与interaction分别为`-.082736/-.003829
 chart、移除outer-code loss，只让Program与native heads接受真实functional flow。它检验“稳定内容初始化能否把弱functional gradient
 送入正确basin”；若train仍低，才说明当前Program/heads函数类或functional credit本身不足；若train/held高而task-held低，才触发
 active design的matched raw Stage0 sufficiency分支。
+
+### 84. R10证明稳定内容初始化可转化为真实效用，并把剩余瓶颈收窄到target-task泛化与Program--bank交互
+
+R10从R9 step110完整Writer tensors初始化，冻结feature chart，移除outer-code loss，只让Natural Program与233 native heads接受真实
+cross-episode panel-A PI0.5 flow。clean detached formal连续完成110步；step70/110 train recovery为`.532227/.559896`，held-video为
+`.500728/.544189`，相对R9的`-.181514/-.131825`与`-.175532/-.129718`发生数量级翻转。四family、same-task retention、
+full-over-language和wrong-Program margin均通过，证明R9 content basin加真实functional credit确实抓住了主根因，不能再把当前问题描述为
+“Program/scorer无法优化”或“内部方向完全不能转化为policy utility”。
+
+R10仍不是G3 pass。step110 task-held mean仅`.151475`，meta2为`.375386`而target74为`-.072436`；五个target gradient tasks也只有
+`.185780--.499314`，显著弱于meta tasks。wrong-bank margin`.007864`、interaction`-.002683`、full-over-endpoints`.061382`，说明
+模型主要由Program决定一套功能residual，却几乎不要求该Program与正确当前video bank配对。R5在相同target tasks上的fixed-route正控均约
+`.84--1.01`，且P0/P1/operator/family Gate都已通过，所以该role差距不能归因于native bank、rank4、scale或replay容量；续训和小型
+超参扫描也没有机制依据。
+
+最新专家预先规定，只有“fit与same-task held明显可学而true task-held低”之后才能做matched raw Stage0 probe。R10恰好提供该证据，
+尽管train median`.560`未越过`.60`硬线：held已过`.50`、所有family已过且target tasks由全负转为多数显著正，足以把probe作为诊断而非
+救分版本。下一实验保持相同scorer容量、functional loss、数据、预算、bank/operator/rank/scale和Gate，只交换Natural Program压缩与
+部署可见raw frozen Stage0 evidence。raw task-held只有比R10高至少`.15`且达到`.40`，才能把首因判给Program schema；raw fit高但held低
+指向task diversity/shared decoder归纳偏置，raw task-held低于`.25`才支持frozen Stage0为上游瓶颈。

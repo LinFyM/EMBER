@@ -6,6 +6,7 @@ import torch
 from ember.ecp.bank_conditioning.primal_capacity import (
     BANK_INTERACTION_CONTROL_SCHEMA,
 )
+from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.joint_program_primal.evaluation import (
     _language_program,
     _normalized,
@@ -35,8 +36,10 @@ from ember.ecp.joint_program_primal.runtime import (
     FUNCTIONAL_CODE_STABLE_JOINT_SCHEMA,
     FUNCTIONAL_REFINEMENT_SCHEMA,
     RAW_STAGE0_SUFFICIENCY_SCHEMA,
+    DECOUPLED_COMPATIBILITY_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
+    SCORER_COMPATIBILITY_PROBES_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
@@ -62,6 +65,7 @@ from ember.ecp.natural_program import (
     NaturalProgram,
     NaturalProgramModel,
 )
+from ember.ecp.shared_compiler import SharedNativeFactorCompiler
 
 
 def test_joint_task_schedule_is_role_balanced_and_task_equal() -> None:
@@ -619,6 +623,61 @@ def test_r12_learns_cross_video_bank_compatibility_from_r10() -> None:
     )
     assert gate["gate"]["matched_full_route_fraction_minimum"] == 0.80
     assert gate["gate"]["mismatched_full_route_fraction_maximum"] == 0.20
+
+
+def test_r13_decouples_routing_probes_from_frozen_functional_primals() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = load_joint_program_primal_config(
+        root / "configs/pi05_ecp_decoupled_compatibility_r13_v1.json"
+    )
+    assert config["schema_version"] == DECOUPLED_COMPATIBILITY_SCHEMA
+    assert config["model"]["primal_scorer_trainable_partition"] == (
+        SCORER_COMPATIBILITY_PROBES_ONLY
+    )
+    assert config["model"]["separate_compatibility_probes"] is True
+    assert config["optimization"]["loss"] == (
+        "cross_video_bank_compatibility_probe_only"
+    )
+    assert config["information_wall"][
+        "separate_compatibility_probe_not_lora_factor"
+    ] is True
+    gate = load_joint_program_primal_gate(
+        root / "configs/pi05_ecp_decoupled_compatibility_r13_gate_v1.json"
+    )
+    assert gate["gate"]["matched_full_route_fraction_minimum"] == 0.80
+
+    owners = (
+        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
+        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
+    )
+    program = NaturalProgramModel(
+        torch.nn.Identity(), prefix_width=6, width=4, owners=2, event_slots=2
+    )
+    compiler = SharedNativeFactorCompiler(
+        owners,
+        program_width=4,
+        event_slots=2,
+        separate_compatibility_probes=True,
+    )
+    _, trainable, frozen = _joint_parameter_ownership(
+        program,
+        compiler,
+        scorer_partition=SCORER_COMPATIBILITY_PROBES_ONLY,
+    )
+    probes = compiler.primal_scorer.compatibility_input_heads
+    assert probes is not None
+    expected = {id(parameter) for parameter in probes.parameters()}
+    assert {id(parameter) for parameter in trainable} == expected
+    assert all(parameter.requires_grad for parameter in trainable)
+    assert all(not parameter.requires_grad for parameter in frozen)
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.input_primal_heads.parameters()
+    )
+    assert all(
+        not parameter.requires_grad
+        for parameter in compiler.primal_scorer.output_primal_heads.parameters()
+    )
 
 
 def test_bank_interaction_positive_control_uses_fixed_half_operator() -> None:

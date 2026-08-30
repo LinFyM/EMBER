@@ -545,14 +545,33 @@ def test_bank_compatibility_support_is_differentiable_and_routes_hard() -> None:
 
     high_plan = runtime._plan(prepared(supported), high_primals, output_primals)
     low_plan = runtime._plan(prepared(low), low_primals, output_primals)
+    decoupled_plan = runtime._plan(
+        prepared(supported),
+        low_primals,
+        output_primals,
+        compatibility_input_primals=high_primals,
+    )
     forced = runtime._plan(
         prepared(low),
         low_primals,
         output_primals,
         inverse_covariance_power_override=1.0,
     )
+    forced_supported = runtime._plan(
+        prepared(supported),
+        low_primals,
+        output_primals,
+        inverse_covariance_power_override=1.0,
+    )
     assert high_plan.selected_inverse_covariance_power == 1.0
     assert low_plan.selected_inverse_covariance_power == 0.5
+    assert decoupled_plan.selected_inverse_covariance_power == 1.0
+    for observed, expected in zip(
+        decoupled_plan.input_queries,
+        forced_supported.input_queries,
+        strict=True,
+    ):
+        torch.testing.assert_close(observed, expected)
     assert low_plan.compatibility_support is not None
     assert forced.selected_inverse_covariance_power == 1.0
     assert forced.compatibility_support is None

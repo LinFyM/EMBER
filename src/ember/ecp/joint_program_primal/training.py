@@ -45,7 +45,11 @@ def train(args: argparse.Namespace) -> None:
                     primary_metric = (
                         "mean_acquisition_loss"
                         if "mean_acquisition_loss" in row
-                        else "mean_functional_loss"
+                        else (
+                            "mean_functional_loss"
+                            if "mean_functional_loss" in row
+                            else "mean_bank_compatibility_loss"
+                        )
                     )
                     console = {
                         name: row[name]

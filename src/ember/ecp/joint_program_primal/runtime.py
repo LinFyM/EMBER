@@ -49,10 +49,12 @@ from ember.ecp.joint_program_primal.routing_initialization import (
     FunctionalCodeTarget,
     R5_SHARED_FUNCTIONAL_CHART,
     R10_FUNCTIONAL_CONTENT,
+    R12_FUNCTIONAL_CONTENT,
     R9_STABLE_CONTENT,
     load_functional_code_targets,
     load_passed_r5_primal_scorer,
     load_r10_functional_writer,
+    load_r12_functional_writer,
     load_r9_stable_writer,
 )
 from ember.ecp.joint_program_primal.raw_stage0 import RAW_STAGE0_PROGRAM_INPUT
@@ -106,10 +108,16 @@ RAW_STAGE0_SUFFICIENCY_STAGE = "g3_raw_stage0_sufficiency_diagnostic"
 BANK_COMPATIBILITY_SCHEMA = "ember_ecp_bank_compatibility_r12_v1"
 BANK_COMPATIBILITY_RUN_SCHEMA = "ember_ecp_bank_compatibility_run_v1"
 BANK_COMPATIBILITY_STAGE = "g3_shared_program_bank_compatibility_qualification"
+DECOUPLED_COMPATIBILITY_SCHEMA = "ember_ecp_decoupled_compatibility_r13_v1"
+DECOUPLED_COMPATIBILITY_RUN_SCHEMA = (
+    "ember_ecp_decoupled_compatibility_run_v1"
+)
+DECOUPLED_COMPATIBILITY_STAGE = "g3_decoupled_bank_compatibility_diagnostic"
 FRESH_SCORER = "fresh"
 SCORER_ALL_PARAMETERS = "all"
 SCORER_NATIVE_HEADS_ONLY = "native_heads_only"
 SCORER_FEATURE_CHART_ONLY = "feature_chart_only"
+SCORER_COMPATIBILITY_PROBES_ONLY = "compatibility_probes_only"
 
 
 @dataclass(frozen=True)
@@ -271,6 +279,7 @@ def is_r5_chart_config(config: Mapping[str, Any]) -> bool:
             FUNCTIONAL_REFINEMENT_SCHEMA,
             RAW_STAGE0_SUFFICIENCY_SCHEMA,
             BANK_COMPATIBILITY_SCHEMA,
+            DECOUPLED_COMPATIBILITY_SCHEMA,
             primal_capacity.BANK_INTERACTION_CONTROL_SCHEMA,
         }
     )
@@ -284,6 +293,10 @@ def is_bank_compatibility_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == BANK_COMPATIBILITY_SCHEMA
 
 
+def is_decoupled_compatibility_config(config: Mapping[str, Any]) -> bool:
+    return config.get("schema_version") == DECOUPLED_COMPATIBILITY_SCHEMA
+
+
 def joint_run_schema(config: Mapping[str, Any]) -> str:
     if is_chart_reconnect_config(config):
         return CHART_RECONNECT_RUN_SCHEMA
@@ -295,6 +308,8 @@ def joint_run_schema(config: Mapping[str, Any]) -> str:
         return RAW_STAGE0_SUFFICIENCY_RUN_SCHEMA
     if is_bank_compatibility_config(config):
         return BANK_COMPATIBILITY_RUN_SCHEMA
+    if is_decoupled_compatibility_config(config):
+        return DECOUPLED_COMPATIBILITY_RUN_SCHEMA
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_RUN_SCHEMA
     return J2_RUN_SCHEMA
@@ -311,6 +326,8 @@ def joint_stage(config: Mapping[str, Any]) -> str:
         return RAW_STAGE0_SUFFICIENCY_STAGE
     if is_bank_compatibility_config(config):
         return BANK_COMPATIBILITY_STAGE
+    if is_decoupled_compatibility_config(config):
+        return DECOUPLED_COMPATIBILITY_STAGE
     if is_functional_chart_acquisition_config(config):
         return FUNCTIONAL_CHART_ACQUISITION_STAGE
     return J2_STAGE
@@ -350,6 +367,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
                 FUNCTIONAL_REFINEMENT_SCHEMA,
                 RAW_STAGE0_SUFFICIENCY_SCHEMA,
                 BANK_COMPATIBILITY_SCHEMA,
+                DECOUPLED_COMPATIBILITY_SCHEMA,
                 primal_capacity.BANK_INTERACTION_CONTROL_SCHEMA,
             },
             len(tasks) == len(set(tasks)) == 12,
@@ -548,6 +566,51 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
             wall.get("fixed_routing_token_deployment_input") is False,
         )
     )
+    decoupled_compatibility_valid = all(
+        (
+            schema == DECOUPLED_COMPATIBILITY_SCHEMA,
+            config.get("status")
+            == "active_decoupled_bank_compatibility_diagnostic",
+            config.get("scientific_role")
+            == "bounded_credit_ownership_diagnostic_not_a_final_binary_route",
+            model.get("program_initialization") == R12_FUNCTIONAL_CONTENT,
+            model.get("primal_scorer_initialization")
+            == R12_FUNCTIONAL_CONTENT,
+            model.get("primal_scorer_trainable_partition")
+            == SCORER_COMPATIBILITY_PROBES_ONLY,
+            model.get("separate_compatibility_probes") is True,
+            model.get("inverse_covariance_power") == 1.0,
+            model.get("compatibility_support_threshold")
+            == 0.906622976064682,
+            config.get("optimization", {}).get("loss")
+            == "cross_video_bank_compatibility_probe_only",
+            "counterfactual" not in joint,
+            compatibility.get("positive_pairing")
+            == "each_fit_program_to_other_same_task_fit_bank",
+            compatibility.get("negative_pairing")
+            == "same_role_cyclic_other_task_same_swapped_view",
+            compatibility.get("deployment_support")
+            == "decoupled_input_projection_p10_order16_of_152",
+            compatibility.get("training_support")
+            == "mean_sorted_input_projection_positions_12_through_20",
+            compatibility.get("threshold") == 0.906622976064682,
+            compatibility.get("temperature") == 0.02,
+            compatibility.get("weight") == 1.0,
+            compatibility.get("functional_primals") == "frozen_r12",
+            compatibility.get("deployment_operator")
+            == "hard_full_if_supported_else_half",
+            isinstance(authorities.get("r12_writer_checkpoint"), str),
+            isinstance(authorities.get("r12_gate_aggregate"), str),
+            wall.get("r12_writer_initialization_training_only") is True,
+            wall.get("functional_basin_frozen") is True,
+            wall.get("compatibility_pair_labels_training_only") is True,
+            wall.get("deployment_content_hard_route") is True,
+            wall.get("separate_compatibility_probe_not_lora_factor") is True,
+            wall.get("binary_route_final_architecture_claim") is False,
+            wall.get("outer_code_loss_active") is False,
+            wall.get("fixed_routing_token_deployment_input") is False,
+        )
+    )
     if not common_valid or not (
         counterfactual_valid
         or reconnect_valid
@@ -556,6 +619,7 @@ def load_joint_program_primal_config(path: Path) -> dict[str, Any]:
         or refinement_valid
         or raw_stage0_valid
         or compatibility_valid
+        or decoupled_compatibility_valid
         or primal_capacity.bank_interaction_control_config_valid(config)
     ):
         raise ValueError("unsupported joint Program-primal functional config")
@@ -722,9 +786,11 @@ def _joint_parameter_ownership(
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
     writer = JointWriterState(program, compiler)
-    program_modules = [program.language_reader, program.scene_reader]
-    if not raw_stage0_input:
-        program_modules.extend((program.process_fusion, program.aligner))
+    program_modules = []
+    if scorer_partition != SCORER_COMPATIBILITY_PROBES_ONLY:
+        program_modules.extend((program.language_reader, program.scene_reader))
+        if not raw_stage0_input:
+            program_modules.extend((program.process_fusion, program.aligner))
     for module in program_modules:
         module.requires_grad_(True).train()
     if scorer_partition == SCORER_ALL_PARAMETERS:
@@ -736,6 +802,11 @@ def _joint_parameter_ownership(
         compiler.primal_scorer.requires_grad_(True).train()
         compiler.primal_scorer.input_primal_heads.requires_grad_(False).eval()
         compiler.primal_scorer.output_primal_heads.requires_grad_(False).eval()
+    elif scorer_partition == SCORER_COMPATIBILITY_PROBES_ONLY:
+        heads = compiler.primal_scorer.compatibility_input_heads
+        if heads is None:
+            raise ValueError("separate compatibility probes are absent")
+        heads.requires_grad_(True).train()
     else:
         raise ValueError("unsupported joint primal-scorer partition")
     program.encoder.requires_grad_(False).eval()
@@ -997,6 +1068,9 @@ def _model_assets(
         compatibility_support_threshold=config["model"].get(
             "compatibility_support_threshold"
         ),
+        separate_compatibility_probes=bool(
+            config["model"].get("separate_compatibility_probes", False)
+        ),
         scale_prior_ratio=load_shared_scale_prior(
             base, asset_root=args.asset_root, device=context.device
         ),
@@ -1016,6 +1090,8 @@ def _model_assets(
     elif scorer_initialization == R9_STABLE_CONTENT:
         initialization = None
     elif scorer_initialization == R10_FUNCTIONAL_CONTENT:
+        initialization = None
+    elif scorer_initialization == R12_FUNCTIONAL_CONTENT:
         initialization = None
     elif config.get("schema_version") == "ember_ecp_routing_token_control_r1_v1":
         initialization = {
@@ -1043,6 +1119,13 @@ def _model_assets(
         )
     elif scorer_initialization == R10_FUNCTIONAL_CONTENT:
         initialization = load_r10_functional_writer(
+            config,
+            writer_state,
+            asset_root=args.asset_root,
+            device=context.device,
+        )
+    elif scorer_initialization == R12_FUNCTIONAL_CONTENT:
+        initialization = load_r12_functional_writer(
             config,
             writer_state,
             asset_root=args.asset_root,

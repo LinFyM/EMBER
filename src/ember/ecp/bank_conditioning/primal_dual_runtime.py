@@ -549,6 +549,7 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
+        compatibility_input_primals: tuple[torch.Tensor, ...] | None = None,
         inverse_covariance_power_override: float | None = None,
     ) -> _ReplayPlan:
         frame = prepared.frame_measure
@@ -570,7 +571,12 @@ class PrimalDualVideoOperator:
             and self.compatibility_support_threshold is not None
         ):
             compatibility_support, _ = self.input_projection_supports(
-                input_primals, input_operators
+                (
+                    input_primals
+                    if compatibility_input_primals is None
+                    else compatibility_input_primals
+                ),
+                input_operators,
             )
             selected_power = (
                 1.0
@@ -648,6 +654,7 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
+        compatibility_input_primals: tuple[torch.Tensor, ...] | None = None,
         inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         """Replay a fixed diagnostic bank without repeated Python chunk launches."""
@@ -657,6 +664,7 @@ class PrimalDualVideoOperator:
                 prepared,
                 input_primals,
                 output_primals,
+                compatibility_input_primals=compatibility_input_primals,
                 inverse_covariance_power_override=(
                     inverse_covariance_power_override
                 ),
@@ -698,6 +706,7 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
+        compatibility_input_primals: tuple[torch.Tensor, ...] | None = None,
         inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         """Replay cached raw X/Y with the canonical fixed-microblock reduction."""
@@ -707,6 +716,7 @@ class PrimalDualVideoOperator:
                 prepared,
                 input_primals,
                 output_primals,
+                compatibility_input_primals=compatibility_input_primals,
                 inverse_covariance_power_override=(
                     inverse_covariance_power_override
                 ),
@@ -859,6 +869,7 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
+        compatibility_input_primals: tuple[torch.Tensor, ...] | None = None,
         inverse_covariance_power_override: float | None = None,
     ) -> PrimalDualVideoResult:
         with self.ieee_matmul(prepared.frame_measure.device):
@@ -866,6 +877,7 @@ class PrimalDualVideoOperator:
                 prepared,
                 input_primals,
                 output_primals,
+                compatibility_input_primals=compatibility_input_primals,
                 inverse_covariance_power_override=(
                     inverse_covariance_power_override
                 ),
@@ -889,5 +901,12 @@ class PrimalDualVideoOperator:
         video: Any,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
+        *,
+        compatibility_input_primals: tuple[torch.Tensor, ...] | None = None,
     ) -> PrimalDualVideoResult:
-        return self.apply(self.prepare(video), input_primals, output_primals)
+        return self.apply(
+            self.prepare(video),
+            input_primals,
+            output_primals,
+            compatibility_input_primals=compatibility_input_primals,
+        )

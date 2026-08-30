@@ -594,6 +594,20 @@ hard route先把R10功能basin送入half并制造错误credit，evaluation/deplo
 压倒functional约百倍，唯一机制比例修正为`.01`后总norm`.2451`且不clip，input/output/Program梯度均finite；该值固定进入首轮formal，
 不作weight sweep。
 
+R12 formal已经裁决上述“同一functional primal兼任route probe”的实现。step110 matched/mismatched full-route为`.528/.083`，
+bank margin与interaction通过，但正确视频一旦误入half，functional recovery中位从full组的`.583`降到`-1.093`；train/held/task-held
+因此只有`.299/-.504/-.129`。task52/72及zero-gradient task74还出现correct support低于wrong-bank support，说明这不是移动固定阈值
+或延长同一schedule能修复的校准误差。
+
+下一轮只作有界credit-ownership诊断：保持hard full/half operator、functional primals、真实X/Y、signed pooling、rank4、carrier12
+与唯一rank16不变，只把route
+职责交给独立的共享compatibility probes。probe由同一个Natural Program的owner/rank内容生成，对当前bank retained eigenspace计算
+deployment-visible support；它不进入LoRA outer product、不生成第二residual，也不读取task ID、video ID或成对反事实。首轮冻结R12
+functional basin，只训练probe并检查matched/mismatched `.80/.20`、support margin、same-task held与task-held泛化；其中`.80/.20`是
+implementation预注册的诊断可分性标准，不是owner或专家规定的性能目标。无论通过与否，它都不把full/half或其它二值开关确立为
+最终G3架构，也不能单独证明视频因果性；结果只用于区分compatibility credit是否可迁移，随后暂停并结合专家意见决定如何恢复
+Program与bank联合生成唯一functional direction。该诊断不授权threshold、temperature、weight、LR、seed或谱幂小扫。
+
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
 下列P0/P1与旧F0--F3结果继续约束实现；编号不再构成当前执行顺序。P0/P1有效，旧P2 frozen-Program formal被J2取代，不能因旧配置

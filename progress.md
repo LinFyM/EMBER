@@ -17,7 +17,7 @@
   严格分离`0/12`，中位`.867304/.864599`，多数正确视频也被错误送入half。由此排除“固定门直接救活R10”，并把最早接口精确锁定为
   R10 shared Program/scorer没有学习R5已有的内容兼容几何。
 
-- 当前唯一修正是R10-initialized shared compatibility qualification：保持真实X/Y、signed pooling、rank4、carrier12+residual4唯一
+- R12是R10-initialized shared compatibility qualification：保持真实X/Y、signed pooling、rank4、carrier12+residual4唯一
   rank16、Natural Program、functional panel与Action Meta 0；用同task两条fit video交叉形成positive Program-bank pairs、同role
   cyclic task形成negative pairs，以input projection低分位band的共享calibration loss显式训练Program/native heads，同时保留correct
   cross-episode functional loss。deployment只按当前Program与当前bank内容做固定近二值full/half选择，不读task ID或成对反事实；
@@ -34,8 +34,34 @@
   reserved约`20.4--21.8GB`。weight `1.0`使总gradient norm达`19.58`并压倒原functional约百倍；按同图线性比例唯一修正为`.01`后
   norm为`.2451`、不触发clip，input/output head gradient为`.001164/.000523`，Program process为`.12195`，与R10 functional基线
   `.08331`同量级。初始positive/negative full-route fraction为`.0833/0`、training-support margin `.004154`，因此该run有真实学习空间且
-  negative没有先验误过门。下一步从clean pushed detached commit启动world-size弹性formal到step70，先依据support学习曲线与正确functional
-  稳定性裁决机制资格，再决定是否exact-resume到step110和完整paired Gate。
+  negative没有先验误过门。
+
+- R12已从clean pushed detached `fdab4ae`完成step70及exact-resume step110，两个完整12-task paired Gate均为strict non-pass。
+  matched full-route fraction由`.444444`升至`.527778`，仍低于`.80`；mismatched full-route维持`.083333`并通过`.20`上限，paired
+  support margin中位由`.018712`升至`.021072`。step110 correct-vs-wrong bank margin与interaction已达`.145007/.578436`，但
+  train/held/task-held仅`.298505/-.504329/-.129071`，q/v/action-out仍未过门。六个独立workers与两个single checkpoints均完整，
+  Action Meta、held backward、validation/test与shuffled/reversed使用均为0；formal artifacts位于
+  `runs/outputs/pi05_ecp_bank_compatibility_r12_s70_fdab4ae_gpu01p012_r3_20260830/`及对应step70/110 Gate roots。
+
+- R12最早失效接口是**正确bank召回不足，不是hard-route utility或native direction capacity**。10个gradient tasks的30条正确视频中，
+  17条走full时functional recovery中位`.583340`，13条走half时中位`-1.092634`；task1/73/93/94三条视频全走full并保持正收益，
+  task8/52/75全走half，task9/32/72的held video也被误路由。route与fit/held恢复强对应，而wrong-bank rejection、Program margin和
+  interaction已经成立。继续延长同一schedule、移动固定阈值或扫compatibility weight都不能解决task52/72等correct/wrong support
+  排序冲突。
+
+- 下一轮只作有界诊断，不把二值route登记为最终G3候选。functional primals继续唯一负责生成真实signed-pooling rank4 residual；新增共享、
+  Program-conditioned compatibility probes只读取当前native bank的retained support并选择full/half坐标，不成为LoRA factor、不读取
+  task/video lookup。先冻结R12 functional basin，单独验证probe的matched/mismatched分离及held-task泛化；`.80/.20`只是implementation
+  预注册的诊断标准，不是owner或专家authority。即使达到也不宣布G3通过；完成该证据后暂停，与owner讨论如何向专家询问二值route
+  与真正Program--bank联合方向生成的边界。这样直接检验credit ownership冲突，不改变rank、scale、operator端点、数据或阈值。
+
+- R13诊断实现已经接通：新增的38个compatibility input heads从R12 functional input heads逐tensor初始化，functional Program、input/output
+  primals与scale全部冻结；route support只读新probe，真实signed-pooling query仍只读原functional primals。31项定向合同及全仓`231/231`
+  CPU测试通过。gpu01物理0/1/2的world3真实六task step1自然exit 0，global update `2.809s`，loss `.581739`，positive/negative
+  support `.909952/.892334`，probe总gradient norm `.029251`且finite，native teacher reads为0；实际trainable只有38个probe weights
+  `4,853,760`参数，Action Meta/source/Stage0/Natural Program/functional scorer/scale均0 trainable，峰值reserved约`19.46GB/rank`。
+  当步24/38 heads非零是固定低分位support的预期稀疏credit：其余heads仍有zero gradient tensor并保持R12初始化，不是target缺失。
+  该smoke只证明诊断图、参数所有权和吞吐成立，不是support泛化或G3结果。
 
 - half-operator task-local formal与held/wrong Gate已从clean pushed detached `55fded4`完成。10/10 tasks各自只用两条fit K1
   video、panel A与100步真实functional flow优化一个共同code；10个checkpoint均为`321,792` task-local trainable parameters，Writer/

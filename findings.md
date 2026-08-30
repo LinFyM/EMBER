@@ -1571,3 +1571,22 @@ R12三卡六task真实profile对同一R10 step110初始化做了唯一gradient-r
 `.121945/.001164/.000523`，新旧credit处于同一量级，真实functional loss保持`.101959`。初始positive/negative full-route fraction为
 `.0833/0`，说明模型并非靠阈值先验通过；training-support margin已为`.004154`但task间有正有负，formal仍需证明shared acquisition与
 held泛化。该比例是一次机制校准，不授权weight、LR或seed sweep。
+
+### 93. R12证明hard route有功能效用，但functional primal不能同时充当可靠compatibility probe
+
+clean pushed detached `fdab4ae`完成R12 10 warmup + 100 effective updates、step70/110相邻checkpoints及六worker完整12-task Gate。
+matched full-route fraction从`.444444`升至`.527778`，mismatched保持`.083333`；paired support margin中位从`.018712`升至
+`.021072`，correct-wrong-bank margin与interaction在step110达到`.145007/.578436`并通过。这证明显式compatibility credit确实学到
+了部分Program--bank因果，而不是随机阈值或完全无信号。
+
+primary仍严格non-pass：step110 train/held/task-held为`.298505/-.504329/-.129071`。决定性分解来自同一checkpoint的30条gradient-task
+正确视频：17条选择full operator时functional recovery中位`.583340`，13条选择half时中位`-1.092634`。task1/73/93/94三条视频均
+走full并保持正收益；task8/52/75均走half，task9/32/72则把至少一条same-task video误送half。由此排除“hard switch本身破坏强方向”
+和“native family整体失容”；低q/v aggregate主要是误路由后的结果。
+
+训练后仍存在不能由一个全局阈值修复的排序冲突：task52正确support minimum`.880578`低于wrong-bank`.904879`，task72为
+`.887717<.903647`，zero-gradient task74为`.875199<.905141`。继续降低阈值会同时放行wrong banks，续训同一decay schedule或提高
+shared loss weight又会重新破坏functional basin。最早接口因此是credit ownership：同一functional input primal既要产生policy utility，
+又被迫充当bank match classifier。下一轮只用独立compatibility probe作有界credit-ownership诊断；probe仍由共享Program内容生成、
+只读当前bank retained support并控制full/half坐标，不产生第二residual、lookup或adapter。该诊断的二值route不是最终架构主张，
+其预注册`.80/.20`仅判断compatibility是否可分；无论结果如何都不能代替Program与bank联合产生functional direction的G3证据。

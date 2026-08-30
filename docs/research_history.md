@@ -1422,3 +1422,26 @@ same-role cyclic negative的projection calibration与原correct functional loss�
 
 - `runs/analysis/pi05_ecp_g3_r10_hard_operator_switch_gate_step70_2551f7c_gpu01p012_gpu02p7_w5_20260830/`；
 - `runs/analysis/pi05_ecp_g3_r10_hard_operator_switch_gate_step110_2551f7c_gpu01p012_gpu02p7_w5_20260830/`。
+
+## 72. R12 shared Program--bank compatibility formal
+
+clean pushed detached `fdab4ae`从R10 step110 functional tensors与fresh optimizer启动，用same-task cross-video positive、same-role
+cyclic negative训练共享retained-projection calibration，同时在正确训练分支teacher-force full operator保护functional direction。
+10 warmup + 100 effective updates连续完成，保存step70/110两个完整checkpoints；Action Meta/source/Stage0/scale冻结，仍只生成一套
+carrier12+residual4 rank16。
+
+两个checkpoint均完成六个独立worker的12-task paired Gate并strict non-pass。step70/110 matched full-route fraction为
+`.444444/.527778`，mismatched均为`.083333`；step110 paired support margin中位`.021072`，correct-wrong-bank与interaction已达
+`.145007/.578436`，但train/held/task-held只有`.298505/-.504329/-.129071`。正确video按实际route分组后，full的functional recovery
+中位`.583340`，half为`-1.092634`；说明operator正控仍有效，失败来自正确bank召回不足。task52/72及held task74还存在correct support
+低于wrong-bank support的排序冲突，不能通过移动全局阈值修复。
+
+该结果只淘汰“同一functional primal兼任compatibility classifier”的R12实现，不淘汰Natural Program、真实X/Y、signed pooling、
+rank4或hard operator正控。随后登记的独立Program-conditioned compatibility probe只作credit-ownership诊断：保持functional primal
+唯一负责LoRA residual，检查support与held-task泛化，但不把full/half二值坐标选择登记为最终G3架构。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_bank_compatibility_r12_s70_fdab4ae_gpu01p012_r3_20260830/`；
+- `runs/outputs/pi05_ecp_bank_compatibility_r12_gate_step70_fdab4ae_gpu01p012_gpu02p457_w6_20260830/`；
+- `runs/outputs/pi05_ecp_bank_compatibility_r12_gate_step110_fdab4ae_gpu01p012_gpu02p457_w6_20260830/`。

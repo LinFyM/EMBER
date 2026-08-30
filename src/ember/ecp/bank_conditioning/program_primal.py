@@ -44,11 +44,15 @@ class ProgramNativePrimalScorer(torch.nn.Module):
         *,
         program_width: int,
         event_slots: int,
+        separate_compatibility_probes: bool = False,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
         self.program_width = int(program_width)
         self.event_slots = int(event_slots)
+        self.separate_compatibility_probes = bool(
+            separate_compatibility_probes
+        )
         if not self.owners or self.program_width <= 0 or self.event_slots <= 0:
             raise BankConditioningError("invalid Program-primal topology")
 
@@ -86,6 +90,14 @@ class ProgramNativePrimalScorer(torch.nn.Module):
         self.input_primal_heads = torch.nn.ModuleList(
             torch.nn.Linear(width, owner.in_features, bias=False)
             for owner in self.owners
+        )
+        self.compatibility_input_heads = (
+            torch.nn.ModuleList(
+                torch.nn.Linear(width, owner.in_features, bias=False)
+                for owner in self.owners
+            )
+            if self.separate_compatibility_probes
+            else None
         )
         self.output_primal_heads = torch.nn.ModuleList(
             torch.nn.ModuleList(
@@ -227,6 +239,31 @@ class ProgramNativePrimalScorer(torch.nn.Module):
                 self.input_primal_heads, features, strict=True
             )
         )
+
+    def compatibility_input_primals(
+        self, state: PrimalProgramState
+    ) -> tuple[torch.Tensor, ...]:
+        """Return routing-only probes without changing functional factors."""
+
+        heads = self.compatibility_input_heads
+        if heads is None:
+            return self.input_primals(state)
+        features = self.input_head_features(state)
+        return tuple(
+            head(hidden) for head, hidden in zip(heads, features, strict=True)
+        )
+
+    def initialize_compatibility_probes_from_functional(self) -> None:
+        """Start the routing probes at the loaded functional coordinates."""
+
+        heads = self.compatibility_input_heads
+        if heads is None:
+            raise BankConditioningError("separate compatibility probes are disabled")
+        with torch.no_grad():
+            for probe, functional_head in zip(
+                heads, self.input_primal_heads, strict=True
+            ):
+                probe.weight.copy_(functional_head.weight)
 
     def output_primals(
         self, state: PrimalProgramState

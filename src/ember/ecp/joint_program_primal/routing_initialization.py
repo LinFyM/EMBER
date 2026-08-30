@@ -26,6 +26,7 @@ FUNCTIONAL_CODE_INITIALIZATION_SCHEMA = (
 R5_SHARED_FUNCTIONAL_CHART = "r5_shared_functional_chart_step110"
 R9_STABLE_CONTENT = "r9_stable_content_step110"
 R10_FUNCTIONAL_CONTENT = "r10_functional_content_step110"
+R12_FUNCTIONAL_CONTENT = "r12_functional_content_step110"
 
 
 @dataclass(frozen=True)
@@ -356,6 +357,99 @@ def load_r10_functional_writer(
         "functional_basin_qualified": True,
         "bank_compatibility_qualified": False,
         "fixed_routing_token_loaded": False,
+        "task_lookup_parameters_loaded": False,
+    }
+
+
+def load_r12_functional_writer(
+    config: Mapping[str, Any],
+    writer: torch.nn.Module,
+    *,
+    asset_root: Path,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Restore R12 functional tensors and initialize routing-only probes."""
+
+    checkpoint = (
+        asset_root / str(config["authorities"]["r12_writer_checkpoint"])
+    ).resolve()
+    aggregate_path = (
+        asset_root / str(config["authorities"]["r12_gate_aggregate"])
+    ).resolve()
+    run_contract = read_json(checkpoint.parent.parent / "run_contract.json")
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    aggregate = read_json(aggregate_path)
+    world_size = int(manifest.get("world_size", -1))
+    files = manifest.get("files", {})
+    expected_files = {
+        "ecp.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+    }
+    checks = aggregate.get("checks", {})
+    compatibility = aggregate.get("summary", {}).get("compatibility", {})
+    if (
+        checkpoint_macro(checkpoint) != 110
+        or aggregate.get("schema_version")
+        != "ember_ecp_counterfactual_program_primal_gate_report_v1"
+        or aggregate.get("status") != "complete"
+        or aggregate.get("primary_pass") is not False
+        or aggregate.get("gate_pass") is not False
+        or checks.get("correct_wrong_bank") is not True
+        or checks.get("interaction") is not True
+        or checks.get("matched_full_route_fraction") is not False
+        or float(compatibility.get("matched_full_route_fraction", -1.0))
+        != 0.5277777777777778
+        or float(compatibility.get("mismatched_full_route_fraction", -1.0))
+        != 0.08333333333333333
+        or Path(str(aggregate.get("checkpoint", {}).get("path", ""))).resolve()
+        != checkpoint
+        or int(aggregate.get("checkpoint", {}).get("optimizer_step", -1)) != 110
+        or run_contract.get("schema_version")
+        != "ember_ecp_bank_compatibility_run_v1"
+        or run_contract.get("stage")
+        != "g3_shared_program_bank_compatibility_qualification"
+        or run_contract.get("phase") != "joint"
+        or run_contract.get("mode") != "formal"
+        or run_contract.get("inventory", {}).get("action_meta_module_count") != 0
+        or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
+        or manifest.get("stage")
+        != "g3_shared_program_bank_compatibility_qualification"
+        or int(manifest.get("next_macro", -1)) != 110
+        or world_size != 3
+        or manifest.get("run_contract_schema")
+        != "ember_ecp_bank_compatibility_run_v1"
+        or set(files) != expected_files
+    ):
+        raise ValueError("R12 functional-content Writer authority changed")
+    for name, record in files.items():
+        path = checkpoint / name
+        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
+            raise ValueError(f"R12 checkpoint file changed: {name}")
+    payload = load_file(str(checkpoint / "ecp.safetensors"), device=str(device))
+    expected_state = set(writer.state_dict())
+    probe_prefix = "primal_scorer.compatibility_input_heads."
+    probe_keys = {name for name in expected_state if name.startswith(probe_prefix)}
+    if (
+        not probe_keys
+        or set(payload) != expected_state - probe_keys
+        or any(name.startswith(probe_prefix) for name in payload)
+    ):
+        raise ValueError("R12-to-probe Writer tensor inventory changed")
+    missing, unexpected = writer.load_state_dict(payload, strict=False)
+    if set(missing) != probe_keys or unexpected:
+        raise ValueError("R12 functional Writer load changed")
+    writer.primal_scorer.initialize_compatibility_probes_from_functional()
+    return {
+        "kind": R12_FUNCTIONAL_CONTENT,
+        "checkpoint": str(checkpoint),
+        "gate_aggregate": str(aggregate_path),
+        "optimizer_step": 110,
+        "training_commit": str(run_contract["git"]["commit"]),
+        "tensor_bytes": int(files["ecp.safetensors"]["bytes"]),
+        "functional_basin_frozen": True,
+        "compatibility_probes_initialized_from_functional": True,
+        "action_meta_loaded": False,
         "task_lookup_parameters_loaded": False,
     }
 

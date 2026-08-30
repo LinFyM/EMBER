@@ -10,6 +10,7 @@ from typing import Any, Mapping, Sequence
 
 from ember.ecp.joint_program_primal.evaluation import (
     BANK_COMPATIBILITY_GATE_SCHEMA,
+    DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
     FAMILY_NAMES,
     J2_EVALUATION_SCHEMA,
     load_joint_program_primal_gate,
@@ -190,7 +191,10 @@ def _checks(
         "evaluation_throughput": summary["evaluation_to_training_wall"]
         <= float(thresholds["evaluation_to_training_wall_maximum"]),
     }
-    if gate.get("schema_version") == BANK_COMPATIBILITY_GATE_SCHEMA:
+    if gate.get("schema_version") in {
+        BANK_COMPATIBILITY_GATE_SCHEMA,
+        DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
+    }:
         compatibility = summary.get("compatibility")
         if not isinstance(compatibility, Mapping):
             raise ValueError("R12 Gate lost compatibility summary")

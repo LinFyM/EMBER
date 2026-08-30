@@ -30,6 +30,7 @@ from ember.ecp.joint_program_primal.gate import (
 )
 from ember.ecp.joint_program_primal.runtime import (
     BANK_COMPATIBILITY_SCHEMA,
+    DECOUPLED_COMPATIBILITY_SCHEMA,
     JointProgramPrimalRuntime,
     joint_run_schema,
     joint_stage,
@@ -75,6 +76,9 @@ FUNCTIONAL_REFINEMENT_GATE_SCHEMA = (
 )
 RAW_STAGE0_SUFFICIENCY_GATE_SCHEMA = "ember_ecp_raw_stage0_sufficiency_gate_v1"
 BANK_COMPATIBILITY_GATE_SCHEMA = "ember_ecp_bank_compatibility_gate_v1"
+DECOUPLED_COMPATIBILITY_GATE_SCHEMA = (
+    "ember_ecp_decoupled_compatibility_gate_v1"
+)
 J2_EVALUATION_SCHEMA = "ember_ecp_counterfactual_program_primal_evaluation_task_v1"
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 
@@ -116,6 +120,10 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
                 BANK_COMPATIBILITY_GATE_SCHEMA,
                 "active_shared_program_bank_compatibility_qualification",
             ),
+            (
+                DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
+                "active_decoupled_bank_compatibility_diagnostic",
+            ),
         }
         or config.get("checkpoint_optimizer_steps") != [70, 110]
         or evaluation.get("functional_panel") != "panel_b"
@@ -129,9 +137,20 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
         or wall.get("shuffled_or_reversed_use") is not False
         or wall.get("action_meta_installed") is not False
         or wall.get("single_complete_rank16") is not True
+        or (
+            schema == DECOUPLED_COMPATIBILITY_GATE_SCHEMA
+            and (
+                config.get("scientific_role")
+                != "bounded_credit_ownership_diagnostic_not_a_final_binary_route"
+                or wall.get("binary_route_final_architecture_claim") is not False
+            )
+        )
     ):
         raise ValueError("unsupported J3 functional Gate config")
-    if schema == BANK_COMPATIBILITY_GATE_SCHEMA:
+    if schema in {
+        BANK_COMPATIBILITY_GATE_SCHEMA,
+        DECOUPLED_COMPATIBILITY_GATE_SCHEMA,
+    }:
         thresholds = config.get("gate", {})
         if (
             thresholds.get("compatibility_support_threshold")
@@ -141,7 +160,7 @@ def load_joint_program_primal_gate(path: Path) -> dict[str, Any]:
             or thresholds.get("matched_mismatched_support_margin_minimum")
             != 0.001
         ):
-            raise ValueError("unsupported R12 compatibility Gate thresholds")
+            raise ValueError("unsupported compatibility Gate thresholds")
     return config
 
 
@@ -785,7 +804,10 @@ def _evaluate_task(
             runtime.context.device
         ),
     }
-    if runtime.config.get("schema_version") == BANK_COMPATIBILITY_SCHEMA:
+    if runtime.config.get("schema_version") in {
+        BANK_COMPATIBILITY_SCHEMA,
+        DECOUPLED_COMPATIBILITY_SCHEMA,
+    }:
         route = {
             "threshold": float(
                 runtime.config["model"]["compatibility_support_threshold"]

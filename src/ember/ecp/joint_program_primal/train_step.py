@@ -447,12 +447,18 @@ def _run_bank_compatibility_task(
     """Preserve the R10 full direction while learning current-bank routing."""
 
     tick = time.monotonic()
-    panel_batch, panel = functional_panel_batch(
-        runtime,
-        task_id=task_id,
-        panel_name="a",
-        visit_index=visit_index,
+    probe_only = (
+        runtime.config["optimization"]["loss"]
+        == "cross_video_bank_compatibility_probe_only"
     )
+    panel_batch = panel = None
+    if not probe_only:
+        panel_batch, panel = functional_panel_batch(
+            runtime,
+            task_id=task_id,
+            panel_name="a",
+            visit_index=visit_index,
+        )
     fit_views = runtime.task_conditions[task_id].fit_views
     wrong_views = runtime.task_conditions[wrong_task_id].fit_views
     cell = runtime.config["optimization"]["joint"]["bank_compatibility"]
@@ -471,26 +477,33 @@ def _run_bank_compatibility_task(
     )[None]
     views = []
     for view_index, condition in enumerate(fit_views):
-        complete, output, program_output, functional_metrics = generated_rank16(
-            runtime,
-            condition,
-            inverse_covariance_power_override=1.0,
-        )
-        functional_loss, gradients = functional_loss_derivative(
-            runtime,
-            state=complete,
-            batch=panel_batch,
-            policy_rng_seed=panel.policy_rng_seed,
-        )
-        backward_functional_derivative(complete, gradients, weight=1.0 / 12.0)
-        if (
-            output.compatibility_supports is not None
-            or output.selected_inverse_covariance_powers is None
-            or not bool(
-                torch.all(output.selected_inverse_covariance_powers == 1.0)
+        functional_loss = None
+        functional_metrics = None
+        if not probe_only:
+            if panel_batch is None or panel is None:
+                raise RuntimeError("R12 functional panel is absent")
+            complete, output, program_output, functional_metrics = generated_rank16(
+                runtime,
+                condition,
+                inverse_covariance_power_override=1.0,
             )
-        ):
-            raise RuntimeError("R12 correct functional teacher route changed")
+            functional_loss, gradients = functional_loss_derivative(
+                runtime,
+                state=complete,
+                batch=panel_batch,
+                policy_rng_seed=panel.policy_rng_seed,
+            )
+            backward_functional_derivative(
+                complete, gradients, weight=1.0 / 12.0
+            )
+            if (
+                output.compatibility_supports is not None
+                or output.selected_inverse_covariance_powers is None
+                or not bool(
+                    torch.all(output.selected_inverse_covariance_powers == 1.0)
+                )
+            ):
+                raise RuntimeError("R12 correct functional teacher route changed")
 
         program_prepared, program_metrics = prepare_joint_condition(
             runtime, condition
@@ -534,7 +547,11 @@ def _run_bank_compatibility_task(
                 "video_demo": condition.video_demo,
                 "sampled_frames": condition.sampled_frames,
                 "functional_loss": functional_loss,
-                "functional_operator": "full_inverse_teacher_forced",
+                "functional_operator": (
+                    "frozen_r12_not_evaluated"
+                    if probe_only
+                    else "full_inverse_teacher_forced"
+                ),
                 "compatibility": {
                     "positive_video_demo": positive_condition.video_demo,
                     "negative_task": wrong_task_id,
@@ -576,25 +593,23 @@ def _run_bank_compatibility_task(
             }
         )
         del (
-            complete,
-            output,
-            program_output,
             program,
             compatibility_program_output,
             program_prepared,
             positive_prepared,
             negative_prepared,
         )
-    return {
+        if not probe_only:
+            del complete, output, program_output
+    result = {
         "authority_id": task_id,
         "role": runtime.task_conditions[task_id].fit_views[0].role,
-        "panel": "a_plus_cross_video_bank_compatibility",
+        "panel": (
+            "cross_video_bank_compatibility_probe_only"
+            if probe_only
+            else "a_plus_cross_video_bank_compatibility"
+        ),
         "panel_visit": visit_index,
-        "functional_policy_rng_seed": panel.policy_rng_seed,
-        "action_demos": list(panel.action_demos),
-        "action_frames": list(panel.action_frames),
-        "mean_functional_loss": sum(row["functional_loss"] for row in views)
-        / len(views),
         "mean_bank_compatibility_loss": sum(
             row["compatibility"]["loss"] for row in views
         )
@@ -603,6 +618,21 @@ def _run_bank_compatibility_task(
         "views": views,
         "task_seconds": time.monotonic() - tick,
     }
+    if not probe_only:
+        if panel is None:
+            raise RuntimeError("R12 functional panel record is absent")
+        result.update(
+            {
+                "functional_policy_rng_seed": panel.policy_rng_seed,
+                "action_demos": list(panel.action_demos),
+                "action_frames": list(panel.action_frames),
+                "mean_functional_loss": sum(
+                    float(row["functional_loss"]) for row in views
+                )
+                / len(views),
+            }
+        )
+    return result
 
 
 def _outer_update_cosine(
@@ -901,6 +931,39 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
     }
     if runtime.config["model"].get("program_input") != RAW_STAGE0_PROGRAM_INPUT:
         probes["program_process"] = runtime.program.process_fusion[0].weight.grad
+    partition = runtime.config["model"].get(
+        "primal_scorer_trainable_partition", "all"
+    )
+    if partition == "compatibility_probes_only":
+        if any(gradient is not None for gradient in probes.values()):
+            raise RuntimeError("R13 frozen Program accumulated gradients")
+        heads = scorer.compatibility_input_heads
+        if heads is None:
+            raise RuntimeError("R13 compatibility probes are absent")
+        gradients = tuple(head.weight.grad for head in heads)
+        if any(gradient is None for gradient in gradients):
+            raise RuntimeError("R13 compatibility-probe gradient is absent")
+        norms = torch.stack(
+            tuple(gradient.float().norm() for gradient in gradients)
+        )
+        if not bool(torch.isfinite(norms).all()) or not bool(torch.any(norms > 0)):
+            raise RuntimeError("R13 compatibility-probe gradient is invalid")
+        frozen = (
+            *(head.weight.grad for head in scorer.input_primal_heads),
+            *(
+                head.weight.grad
+                for owner_heads in scorer.output_primal_heads
+                for head in owner_heads
+            ),
+            scorer.program_context["q"][1].weight.grad,
+            scorer.input_trunk["q"][1].weight.grad,
+        )
+        if any(gradient is not None for gradient in frozen):
+            raise RuntimeError("R13 functional scorer accumulated gradients")
+        return {
+            "compatibility_input": float(norms.square().sum().sqrt()),
+            "compatibility_active_heads": float((norms > 0).sum()),
+        }
     result = {}
     for name, gradient in probes.items():
         if gradient is None or not bool(torch.isfinite(gradient).all()):
@@ -923,9 +986,6 @@ def _gradient_probes(runtime: JointProgramPrimalRuntime) -> dict[str, float]:
         "owner_embedding": scorer.owner_embedding.grad,
         "rank_embedding": scorer.rank_embedding.grad,
     }
-    partition = runtime.config["model"].get(
-        "primal_scorer_trainable_partition", "all"
-    )
     if partition in {"all", "native_heads_only"}:
         if any(
             gradient is None for gradient in (*input_gradients, *output_gradients)
@@ -997,10 +1057,14 @@ def run_joint_program_primal_optimizer_step(
         runtime.config["optimization"]["loss"]
         == "fit_only_functional_code_outer_direction_only"
     )
-    use_bank_compatibility = (
-        runtime.config["optimization"]["loss"]
-        == "correct_flow_plus_cross_video_bank_compatibility"
+    loss_name = runtime.config["optimization"]["loss"]
+    use_decoupled_compatibility = (
+        loss_name == "cross_video_bank_compatibility_probe_only"
     )
+    use_bank_compatibility = loss_name in {
+        "correct_flow_plus_cross_video_bank_compatibility",
+        "cross_video_bank_compatibility_probe_only",
+    }
     pairs = (
         counterfactual_task_pairs(runtime, group)
         if use_counterfactual or use_bank_compatibility
@@ -1104,7 +1168,13 @@ def run_joint_program_primal_optimizer_step(
         },
     )
     primary_metric = (
-        "mean_acquisition_loss" if use_functional_code else "mean_functional_loss"
+        "mean_bank_compatibility_loss"
+        if use_decoupled_compatibility
+        else (
+            "mean_acquisition_loss"
+            if use_functional_code
+            else "mean_functional_loss"
+        )
     )
     row = {
         "optimizer_step": runtime.optimizer_steps,

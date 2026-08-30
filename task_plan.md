@@ -44,6 +44,14 @@ R10稳定functional basin上加入共享、cross-video positive / same-role nega
 full/half；correct functional loss保留，其它authority全部冻结。它必须先同时恢复正确support、错误support margin和R10正确functional，
 才有资格重跑完整12-task G3 Gate。
 
+R12已完成step70/110 formal与完整paired Gate。step110 matched/mismatched full-route为`.528/.083`，bank margin与interaction已经达到
+`.145/.578`，但train/held/task-held只有`.299/-.504/-.129`。逐视频分解显示full-route recovery中位`.583`，half-route为`-1.093`；
+因此最早失效接口是正确bank route recall，而不是operator端点或R10 functional basin。下一唯一机制修正将functional primals与
+compatibility probes解耦：先冻结现有functional方向，只训练共享Program-conditioned probe读取当前bank support。该轮只是有界诊断；
+`.80/.20/.001`是implementation预注册的可分性标准，不是owner或专家硬Gate，即使通过也不把full/half二值route确立为G3架构。
+完成support、task-held与必要functional对照后暂停，结合专家意见决定真正的Program--bank联合方向生成；不授权阈值、loss weight、
+LR、seed或谱幂小扫。
+
 ## R5--R10当前里程碑
 
 - [x] 完成R3 clean formal与step70/110完整Gate，确认action-in/out恢复但q/v与train/held仍non-pass；
@@ -114,9 +122,14 @@ full/half；correct functional loss保留，其它authority全部冻结。它必
   route；同task fit videos交叉positive、同role cyclic wrong bank negative；正确functional teacher-force full endpoint。230项全量CPU合同和
   gpu01三卡真实六task forward/backward/materialization通过，Action Meta 0、teacher reads 0、唯一rank16。gradient-ratio证据把compatibility
   weight从会压倒functional约百倍的`1.0`固定为`.01`，复测总norm`.2451`且各关键gradient finite/nonzero。
-- [ ] 从clean pushed detached authority运行R12 formal至step70；检查positive/negative support、route fraction、cross-role/task分解及
-  correct functional训练曲线。只有机制资格成立才exact-resume到step110并运行两个single checkpoints的完整12-task paired G3 Gate；
-  non-pass先定位support acquisition、held generalization或hard-route utility中最早失效者。
+- [x] 从clean pushed detached `fdab4ae`运行R12 formal至step70并exact-resume step110；两个single checkpoints的完整12-task paired
+  Gate均non-pass。step110 matched/mismatched full-route`.528/.083`，correct-wrong-bank与interaction通过，但正确half-route直接导致
+  train/held/task-held失败；已定位为shared support acquisition，而非hard-route utility或普通held噪声。
+- [x] 在canonical shared compiler中拆分functional input primals与compatibility probes；从R12 step110初始化并冻结functional
+  basin，只让共享probe接受same-task cross-video positive / same-role negative credit。定向合同、全仓测试及真实world3
+  forward/gradient/ownership smoke均通过，Action Meta与teacher reads为0。
+- [ ] 从clean pushed detached authority完成R13 step70/110及12-task support/functional诊断；随后无论结果如何暂停，不把二值route
+  通过包装成G3通过，并与owner讨论给专家的完整问题与证据。
 
 ## 当前G1里程碑
 

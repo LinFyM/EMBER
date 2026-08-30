@@ -78,6 +78,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         covariance_frame_chunk: int = 4,
         inverse_covariance_power: float = 1.0,
         compatibility_support_threshold: float | None = None,
+        separate_compatibility_probes: bool = False,
         scale_prior_ratio: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
@@ -92,6 +93,9 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             None
             if compatibility_support_threshold is None
             else float(compatibility_support_threshold)
+        )
+        self.separate_compatibility_probes = bool(
+            separate_compatibility_probes
         )
         if scale_prior_ratio is None:
             scale_prior_ratio = torch.full(
@@ -122,6 +126,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             self.owners,
             program_width=self.program_width,
             event_slots=self.event_slots,
+            separate_compatibility_probes=self.separate_compatibility_probes,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,
@@ -159,8 +164,18 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
+            compatibility_primals = (
+                self.primal_scorer.compatibility_input_primals(state)
+                if self.separate_compatibility_probes
+                else input_primals
+            )
             pooled = tuple(
-                self.bank_operator(video, input_primals, output_primals)
+                self.bank_operator(
+                    video,
+                    input_primals,
+                    output_primals,
+                    compatibility_input_primals=compatibility_primals,
+                )
                 for video in videos
             )
             return self._output(state, pooled, s_ref=s_ref)
@@ -180,9 +195,17 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
+            compatibility_primals = (
+                self.primal_scorer.compatibility_input_primals(state)
+                if self.separate_compatibility_probes
+                else input_primals
+            )
             pooled = tuple(
                 self.bank_operator.apply_materialized(
-                    video, input_primals, output_primals
+                    video,
+                    input_primals,
+                    output_primals,
+                    compatibility_input_primals=compatibility_primals,
                 )
                 for video in videos
             )
@@ -204,11 +227,17 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
+            compatibility_primals = (
+                self.primal_scorer.compatibility_input_primals(state)
+                if self.separate_compatibility_probes
+                else input_primals
+            )
             pooled = tuple(
                 self.bank_operator.apply_compact(
                     video,
                     input_primals,
                     output_primals,
+                    compatibility_input_primals=compatibility_primals,
                     inverse_covariance_power_override=(
                         inverse_covariance_power_override
                     ),
@@ -228,7 +257,11 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             raise NativeFactorError("compiler compatibility video set changed")
         with self.bank_operator.ieee_matmul(program.p_lang.device):
             state = self.primal_scorer.program_state(program)
-            input_primals = self.primal_scorer.input_primals(state)
+            input_primals = (
+                self.primal_scorer.compatibility_input_primals(state)
+                if self.separate_compatibility_probes
+                else self.primal_scorer.input_primals(state)
+            )
             return tuple(
                 self.bank_operator.input_projection_supports(
                     input_primals, video.input_operators

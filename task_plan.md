@@ -34,7 +34,7 @@ candidate交互是否忽略bank。通过后立即恢复Natural Program并联合�
   `ProgramBankInteractionScorer`；
 - [x] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
 - [x] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
-- [ ] 定向CPU合同已通过；从clean pushed detached authority补做最终真实zero-init/forward/gradient/materialization/throughput smoke；
+- [x] 全仓CPU合同及clean pushed detached真实zero-init/forward/gradient/materialization/throughput smoke通过；
 - [ ] 从clean pushed detached authority运行两个相邻checkpoint的formal qualification并按最早失效接口裁决；
 - [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
 

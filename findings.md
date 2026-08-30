@@ -1642,6 +1642,7 @@ abs/adj/init/goal四类。最后层zero-init，最终仍只形成一组rank4 res
 只选择softmax的常数gauge；不显式减均值与公式严格等价，且避免第三次全视频读取，frame chunk不得各自中心化。
 
 R12/R13的support probes、threshold、动态selected power与full/half hard/soft route已经从active source、launcher和Gate删除；历史config
-明确拒绝加载，证据继续由Git/config/formal artifacts保存。定向ECP CPU合同`111 passed`、全仓CPU合同`234 passed`；formal前仍须由clean pushed detached
-authority完成真实zero-init等价、gradient/materialization、cache hit/miss及吞吐smoke。上述只证明执行面有qualification资格，不是fixed-token
-机制Gate或G3通过。
+明确拒绝加载，证据继续由Git/config/formal artifacts保存。定向ECP CPU合同`111 passed`、全仓CPU合同`234 passed`；clean pushed detached
+`02b3588`的真实smoke进一步证明：zero-init interaction-on/off的76个完整rank16 tensors逐值相等，Action Meta/source/Stage0/scale
+trainable与native teacher reads均为0；world3 microbatch2/4 step分别为`43.889/39.847s`，后者peak reserved最高`33.52GiB`并被选为formal
+吞吐设置。上述只证明执行面有qualification资格，不是fixed-token机制Gate或G3通过。

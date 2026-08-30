@@ -31,9 +31,10 @@
   Gate pairs；新cache直接读取封存native means，旧v4 cache才惰性回算fallback。
 
 - 当前定向`tests/ecp`为`111 passed`、全仓CPU合同为`234 passed`，并额外修复了审计发现的optimizer-step控制流错位、multi-rank fresh-root竞态、aggregate authority
-  漏洞与non-finite branch bias污染风险。此前同一数学路径的gpu01 world3真实profile为cold `67.559s`、warm `38.663s`，全部四family
-  final-layer gradient非零、Action Meta与native teacher reads均为0；该profile早于最终收口，只作吞吐先验，clean detached最终smoke仍是
-  formal launch前置条件。
+  漏洞与non-finite branch bias污染风险。clean pushed detached `02b3588`在gpu01物理0/1/2完成最终真实smoke：zero-init interaction-on/off
+  的76个rank16 state tensors与a/b residual逐值完全相等，maximum difference为0，K1 weight为1；Action Meta/source/Stage0/scale trainable、
+  native teacher reads均为0。world3真实step在policy microbatch2下为`43.889s`、peak reserved `20.07--26.70GiB`；唯一吞吐裁决把microbatch
+  提到4后为`39.847s`、peak `27.29--33.52GiB`，仍保留至少约12.5GiB物理余量，故formal固定microbatch4，不再做小扫。
 
 - cross-language 90-pair cache预计约`60GB`，不能放入gpu01当前仅约`39GB`空闲的`/dev/shm`。formal前将重新核对`/data1`独立quota并把该
   operational cache放入有足够预算的`/data1`根，复用既有23GB base cache且不删除任何历史资产；seal workers完成后先验证worker union

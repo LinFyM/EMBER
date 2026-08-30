@@ -75,7 +75,7 @@
   "optimization": {
     "seed": 20260830,
     "loss": "correct_flow_plus_bounded_wrong_bank_benefit",
-    "functional_policy_microbatch_size": 2,
+    "functional_policy_microbatch_size": 4,
     "joint": {
       "warmup_optimizer_steps": 10,
       "effective_optimizer_steps": 100,

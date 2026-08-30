@@ -470,6 +470,8 @@ def prepare_routing_control_runtime(
         checkpoint_steps=checkpoints,
         metrics_rows=metrics_rows,
         primal_scorer_initialization=dict(initialization),
+        functional_code_targets={},
+        functional_code_authority={},
         run_contract={},
     )
     runtime.run_contract = _run_contract(

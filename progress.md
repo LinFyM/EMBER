@@ -30,6 +30,22 @@
   held/Panel-B/validation-test/shuffled-reversed读写均为0且每condition仍只生成一套完整rank16。profile根为
   `runs/analysis/pi05_ecp_event_bank_set_s2_functional_polish_profile_s2_25e4101_gpu01p026_r3_20260901`。
 
+### S2 functional-polish formal launch record
+
+- scientific implementation/config authority仍为clean pushed `25e4101`，profile证据已由`3bb8972`登记；formal从包含本记录且不再改变
+  科学代码/配置的clean pushed detached descendant执行。唯一输入复用source step1000、sealed dataset/tokenizer、gpu01既有23GB
+  condition cache、既有90-pair Program-bank cache、R5 scorer与旧effective-surrogate interaction step110；不复制或重建资产。
+- exact training entry为world3 `torchrun --standalone --nproc-per-node=3 scripts/train_ecp_bank_set_shared.py`，配置
+  `configs/pi05_ecp_event_bank_set_s2_functional_polish_v1.json`、`--mode formal --stop-after-step 70`、
+  `CUDA_VISIBLE_DEVICES=0,2,6 NCCL_P2P_DISABLE=1`。每步固定8 task、16个Panel-A paired VJP；只保存既有预注册checkpoint70，先做
+  Panel-B信息性screen，证据支持才按完全相同world topology exact-resume到110。任何不兼容或不完整输出都不覆盖或冒充formal。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_s70_3bb8972_gpu01p026_r3_20260901`。2026-09-01 03:40 CST live检查
+  gpu01物理`0,2,6`分别为UUID `GPU-658b6043`、`GPU-47449b15`、`GPU-21b5514a`，均仅`15MiB/0%`、Default且无compute
+  process；其余同节点卡在他人高负载任务中，故使用这三张完整空闲卡而不跨节点。`/data1` quota为
+  `777184320/1073741824` blocks，shared余`84TiB`；同类110步run约`25MB`，本段预计远低于`100MB`。launch前再核对live设备与
+  output仍为空；profile实测约`92--99s/step`、peak约`30.68GiB`，容量与预计两小时内完成step70均成立。
+
 - 2026-09-01 S2首轮effective-rank4 shared LOTO在step70/110稳定non-pass；真实policy梯度审计随后证明surrogate从fresh起即错配：
   16臂factor-vs-functional cosine中位`.0219`、6臂为负。相同shared EBSRI图的2:1 direct-functional锚点对8个gradient tasks却有
   raw共同下降方向，minimum-norm最小投影`.1129`。因此唯一修正保持架构/split/rank/Gate不变，只改为Panel-A direct VJP：correct

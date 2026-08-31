@@ -1,6 +1,6 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-30第五次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
+状态：2026-08-31第六次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
 要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
 formal S1与定向S2依次淘汰rank64 native-Q sketch、mean/variance scalar energy、query-conditioned多步set scorer及rank224/384
 cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步证明：behavior rank4方向在三条真实bank中均有约`.90--.91`
@@ -15,8 +15,11 @@ spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次�
 Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；P1的
 current-bank operator在J2--R11中保持冻结。后续cross-bank正控现已重开该operator的**因果交互**而非容量，详见下文当前裁决。
 本文仍是当前唯一架构依据。第五次专家复核进一步确认P0/P1与R5保留的是capacity primitive，而R12/R13已经充分终止binary
-full/half门卫。当前唯一新增接口是在capacity-preserving full query之后、exact signed pooling之前加入Program--bank候选级联合交互；
-它连续修正每个真实candidate的signed logits，并最终只形成一套signed measure、rank4 residual和完整rank16。
+full/half门卫。随后scalar/base-score及32维vector pointwise candidate interaction均在fixed-route资格中暴露capacity--specificity
+冲突：它们要么同时保留correct/wrong，要么以损失correct换取wrong suppression。第六次专家复核据此终止当前set-independent
+pointwise函数类；当前唯一新增接口是在capacity-preserving full query之后、exact signed pooling之前加入Program-relative、
+event-conditioned whole-bank summary，再由该summary条件化同一套逐candidate continuous correction。最终仍只形成一套signed measure、
+rank4 residual和完整rank16。
 
 R5随后用training-only fixed route建立并正式通过稳定functional chart，但R6移除fixed route、接回Natural Program后的step110
 train/held只有`.165/.143`，Program-to-code约`.02`；同task跨video却约`.9994`稳定。共同heads与minimum-norm held-view审计证明R5 chart
@@ -32,9 +35,10 @@ R8--R11随后完整检验了fresh联合、稳定content初始化、真实functio
 已经从Program/scorer移到global-`C^+d` operator的bank交互可识别性。下一资格不是新的Program版本，而是先建立同时保留same-task
 跨video能力与correct-over-wrong bank必要增量的task-local operator正控。
 
-五次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
+六次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
-`docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`。本文是将专家
+`docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`和
+`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。本文是将专家
 原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。第二次专家建议Final默认从通过Gate的组件初始化；owner
 最新明确补充，整套Writer完全随机初始化并直接端到端fresh训练必须保留为Final正式可选项，G1--G3不构成强制训练课程。
 
@@ -61,9 +65,11 @@ exact language + K ordered action-hidden videos
                 -> per-video global unit-mass native covariance
                 -> Program-conditioned target-native primal direction
                 -> current-bank full primal-to-dual base query
+                -> Program-relative rank x event candidate coordinates
+                -> event-conditioned whole-bank moments / induced summaries
         +-- Pass B1: replay or reuse the same native bank
                 -> unaggregated Program event queries
-                -> local event context x real X/Y candidate content
+                -> local candidate x whole-bank-summary FiLM context
                 -> bounded centered per-candidate branch-logit correction
                 -> one exact antithetic signed measure over real native X/Y
                 -> one task-specific rank4 residual
@@ -72,12 +78,13 @@ exact language + K ordered action-hidden videos
 ```
 
 Pass A与Pass B读取同一个冻结backbone，并共享owner、event、video assignment。Pass A回答视频表达什么目标、场景和过程，并把8个
-event内容保留为owner/rank/event query；Pass B0只从当前video的真实native candidates累计全局单位质量covariance，以其截断谱逆
-产生capacity-preserving full base query。Pass B1重读或复用同一bank，由Program event query、当前视频local event evidence和每个
-candidate native content共同产生逐candidate correction，再以一个positive/negative softmax之差精确pool真实X/Y。Program不直接成为
-LoRA factor，covariance/dual与interaction output也不进checkpoint；最终Value仍必须来自当前视频真实activations。B0与B1是同一个
-Writer的两次流式读取，不是两套模型，且共同发生在rollout前唯一一次Writer运行中。full/half二值route、full functional-polar与
-其它谱端点只作历史诊断，不是active forward。
+event内容保留为owner/rank/event query；Pass B0从同一video的真实native candidates累计全局单位质量covariance、full base query，
+并以全部4 rank x 8 event native queries测量整个candidate set，形成每event的相对分布摘要。Pass B1重读或复用同一bank；每个candidate
+的correction同时读取自身Program-relative坐标与B0 whole-bank summary，再以一个positive/negative softmax之差精确pool真实X/Y。
+Program不直接成为LoRA factor，B0 summary不得输出match类别、开关或LoRA方向，covariance/dual/summary与interaction output也不进
+checkpoint；最终Value仍必须来自当前视频真实activations。B0与B1是同一个Writer的两次流式读取，不是两套模型，且共同发生在rollout
+前唯一一次Writer运行中。full/half二值route、set-independent pointwise scorer、full functional-polar与其它谱端点只作历史诊断，
+不是active forward。
 
 ## 2. 固定目标与Program schema
 
@@ -635,32 +642,43 @@ R13也显示二值route的功能脆弱性：step70到110只有task8一个fit vid
 可靠的跨video/task compatibility，更不确立full/half或其它二值开关为最终G3架构。第五次专家复核据此正式退役binary门卫；不授权
 threshold、temperature、weight、LR、seed、谱幂或同类probe小扫。
 
-#### 当前G3：co-conditioned bank-interaction qualification
+#### 当前G3：Event-Conditioned Bank-Set Relative Interaction
 
-当前只增加一个局部接口Gate。使用既有十个gradient tasks、每task两条fit K1 video/panel A训练、第三条same-task video与panel B零梯度；
-training wrong bank按同role gradient tasks确定性轮换，evaluation再加入task2/task74的unseen same-role wrong bank。初始化并冻结R5
-step110 fixed token、feature chart、native heads、source、Native Stage0、B0 full solve、carrier、scale与Action Meta，只训练
-event-specific candidate interaction scorer。fixed token仍是training-only capacity positive control，不是deployment route。
+scalar/base-score pointwise v3/v4在十task上correct/held约`.93/.95`而wrong仍约`.93`；六task correct--wrong首步functional gradient
+cosine约`-.96`。随后32维vector pointwise task-local诊断虽能把task1/task93 wrong压至负recovery，却把correct降到约`.72/.60`。
+这些结果终止当前set-independent pointwise函数类及其loss/width/bound/LR/seed小扫，但不淘汰whole-bank-conditioned continuous
+interaction、真实X/Y、signed pooling、rank4、full base、Natural Program或Stage0。
 
-correct与wrong都必须走同一个base-full-plus-candidate-correction forward，不得teacher-force full、切换operator或用support surrogate。
-loss只含correct cross-episode functional flow与bounded wrong-bank benefit hinge；不含support BCE、p10、route labels、factor cosine、
-outer-code、subspace/spectral loss或teacher LoRA target。两个相邻checkpoint同时检查correct fit、same-task held、unseen wrong bank、
-correct-minus-wrong、interaction-off差异、四family无系统性反向、K1/唯一rank16/信息墙与相邻稳定性。专家建议的机制资格值为
-correct fit `>=.85`、held `>=.80`、held/fit `>=.85`、wrong `<=.25`、margin `>=.50`、task级`10/10` correct>wrong以及
-interaction-off相对on的wrong margin差`>=.40`；这些只裁决本接口，不是正式validation性能目标。
+当前唯一后继是Event-Conditioned Bank-Set Relative Interaction（EBSRI）。对每个input/output native owner，Program的4 rank x 8 event
+queries直接定义每个candidate的32维相对坐标`kappa_n[r,e]`；Pass B0在每条video内按unit-mass measure与frame-to-event assignment流式
+累计event mean、dispersion及一对antithetic induced summaries。input X保持`(t,p,h)`候选且没有type轴；output Y保持
+`(t,p,h,u)`联合候选，并允许B0同时形成all-type与candidate自身type summary。Pass B1对`kappa`作event-relative标准化，由
+`Program/local event/summary`产生FiLM参数，再对每个candidate生成唯一bounded branch correction。最终仍只对真实X/Y执行一个exact
+positive-minus-negative pooling，形成一个rank4 residual与一套carrier12+residual4完整rank16。
 
-首轮formal把wrong hinge除以`B_free`后反传，实际把wrong相对两条correct放大约`15.7--359.6x`，令correct/wrong同时降到负
-recovery；这只淘汰混合量纲目标。第二轮改成raw-unit 1:1后，step70/110 correct为`.652/.673`、held为`.643/.663`、wrong为
-`.346/.345`，明显恢复但仍未过`.85/.80/.25/.50/10-of-10`机制门。其最早接口仍是目标而非函数类：active时每task目标正比于
-`.5(Lc1+Lc2)-Lw`，三臂共同增加同一损失时目标严格不变，训练轨迹正是correct与wrong共同下降、wrong略多。当前唯一fresh修正
-保持architecture、data、optimizer与Gate不变，将两条correct各保持`+1/12`、wrong改为`-1/12`；positive总质量是negative的两倍，
-共同破坏不再是零代价方向，`B_free`仍只报告。只有该2:1 positive anchor仍不能保住correct或分离wrong，才把首因下移到candidate
-feature或interaction函数类。
+EBSRI不得成为task matcher或连续开关：B0 summary不输出类别、residual或LoRA factor，Program仍直接定义query，真实X/Y仍是唯一Value
+路径。每条video独立完成B0/B1并以`beta_k=1/K`聚合；K1 identity、video集合置换不变、帧内保序、unit-mass与previous/first/final状态
+不跨video。B0/B1必须支持chunked online moments/log-sum-exp，并与相同输入的non-chunked reference在正常数值误差内一致。
 
-若通过，立即以Natural Program替换fixed token，联合训练Natural Program、interaction scorer和native heads，再进入scale/preservation、
-K2/K4及held5 strict250；不再插入chart、support或binary阶段。若失败，按最早接口解释：step0不能复现R5是实现/加载/streaming错误；
-fit低说明interaction破坏容量；fit强held弱说明frame/event归一化或跨video归纳失败；correct/held强而wrong仍强说明interaction忽略bank或
-现有candidate/local evidence不具特异性。
+资格严格按一个架构的四个接口推进：
+
+1. **S0 free-summary factorization**：只用task1/93。R5 base、native heads、真实X/Y、signed pooling、scale/carrier全冻结；同task correct
+   fit views共享一个training-only free summary，wrong fit views共享另一个。只训练新FiLM/correction，correct held、wrong fit1、panel B
+   零梯度。free summary只是容量上界，不是部署输入、binary route或checkpoint候选。训练可用exact-effective-rank4高速目标，但裁决必须
+   看panel-B functional recovery；若teacher代表元与功能结论冲突，补一次直接constrained functional feasibility，不得误杀架构。
+2. **S1 real-summary task-local**：S0通过后，以同一代码把free summary替换为真实B0 set encoder；每task独立训练，检查correct held与
+   zero-gradient wrong view泛化。S0失败不实现复杂set encoder；S0通过而S1失败，首因落在set encoder/query-relative descriptor或真实
+   bank content。
+3. **S2 fixed-route shared task-LOTO**：S1通过后共享同一set encoder/interaction，在8个gradient tasks训练并hold out一个meta与一个
+   target interaction task；通过才在全部10 tasks fresh refit形成component initialization。
+4. **S3 Natural Program joint G3**：移除fixed route，联合训练Natural Program、set interaction与native heads；source、Stage0、scale、
+   carrier与Action Meta继续冻结，恢复原12-task true task-held functional Gate，不加入teacher reconstruction、Program Gram、support、
+   binary或谱loss。
+
+S0/S1每task机制资格为correct fit0/fit1各`>=.85`、correct held`>=.80`、wrong fit0/fit1各`<=.25`、correct-minus-wrong`>=.50`、
+全部pair correct>wrong、zero-init逐tensor复现R5、无大面积bound saturation且input/output family不系统反向。这些是专家建议的接口资格，
+不是正式validation目标；唯一正式性能线仍是validation8 strict paired correct严格`>145/400`。吞吐秒数只作工程目标，不作科学Gate；
+fixed-route阶段必须缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理，避免逐target/rank/event Python小kernel。
 
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
@@ -802,9 +820,10 @@ refinement取得`.560/.544`，R11 matched raw Stage0则明确更差。clean deta
 recovery中位`.931/.946`，因此global dual只作为capacity-preserving base query，不再是独立的deployment-qualified causal operator。
 
 旧`C=I`、P_lang-only、joint residual和full-Program Euclidean normalized-bilinear实现均已有formal non-pass并从active执行面退役；历史
-由Git/config/artifacts保留。v4 full functional-polar、native-Q sketch、set-summary与query-conditioned scorer均已non-pass，只保留为
-fit-only reference或diagnostic，不得再以deployment候选启动formal。R12/R13 full/half route、support classifier、threshold与selected
-inverse power同样只由Git/config/formal artifacts保留，不属于active forward。当前唯一实现面在Program primal + current-bank full base
-query + exact signed replay之间加入candidate-level co-conditioned correction；它继续复用真实X/Y、rank4与唯一rank16，并先由R5 fixed-route
-same-task/wrong-bank functional qualification裁决，再接回Natural Program。
+由Git/config/artifacts保留。旧full functional-polar、native-Q sketch、旧query-conditioned set scorer及scalar/vector set-independent
+pointwise correction只保留为fit-only reference或diagnostic，不得再以deployment候选启动formal。R12/R13 full/half route、support
+classifier、threshold与selected inverse power同样只由Git/config/formal artifacts保留，不属于active forward。当前唯一实现面在Program
+primal + current-bank full base query + exact signed replay之间加入Program-relative event bank-set summary与summary-conditioned continuous
+correction；它继续复用真实X/Y、rank4与唯一rank16，并严格按S0 free summary、S1 real summary、S2 fixed-route task-LOTO、S3 Natural
+Program joint四个最早接口推进。旧vector分支不得合并，新EBSRI必须在同一canonical scorer/streaming owner内替换旧pointwise职责。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

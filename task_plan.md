@@ -4,50 +4,37 @@
 
 ## 当前目标
 
-owner允许继续推进但本轮不创建持续性goal，并要求在需要新一轮专家判断的节点停止。当前已到该节点：G1 free-code、G2动态Program
-Gate、P0/P1 capacity primitive与R5 fixed-route functional chart继续作为正证据；第五次专家指定的candidate-level Program--bank共同选向
-已经完成fixed-token资格与最小task-local函数类审计，但尚未取得能够接回Natural Program的capacity--specificity结果。
+owner已恢复持续性goal并采纳2026-08-31第六次专家复核的唯一推荐路线。G1 free-code、G2动态Program Gate、P0/P1 capacity primitive、
+R5 fixed-route functional chart及v1--v4/vector负证据继续有效；当前不恢复binary、旧Writer、人工process、GOMQ/PECS、谱幂或pointwise
+V5。第六次专家1320行原文逐字保存为
+`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。
 
-base-score v4相邻formal已完成。step70/110的correct fit为`.922509/.929947`、same-task held为`.926447/.953521`，但unseen wrong-on
-为`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有`5/10`和`4/10`。因此新增B1实际score坐标仍几乎
-只保留R5强方向，没有形成bank因果选择；v4 strict non-pass，不能进入Natural Program joint G3。
+当前唯一活动假设是 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
+Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内
+流式形成event-conditioned whole-bank moments/induced summaries；Pass B1用该summary条件化每candidate correction，再对真实X/Y执行
+唯一exact signed pooling。B0不做match分类、开关或LoRA生成；最终仍只有一个rank4 residual与一套carrier12+residual4完整rank16。
 
-随后审计表明问题也不能靠继续改loss质量解决：v2/v3/v4在六个代表task的首步correct-vs-wrong functional gradient cosine中位分别为
-`-.961291/-.961291/-.966288`，wrong/correct gradient norm ratio中位为`1.0597/.5298/.5038`。当前逐candidate local chart下，保住
-correct与压低wrong所需的功能梯度近乎反向；改变权重只改变哪一臂占优，不产生选择性方向。
+当前阶段只实现并裁决S0 free-summary factorization。task1/93各自使用training-only correct/wrong summary token验证下游FiLM/correction
+能否在同一factorization中同时保留R5 correct方向并压低wrong；真实X/Y、base/native heads/signed pooling/scale/carrier冻结，correct held、
+wrong fit1与panel B零梯度。S0通过才接入真实B0 set encoder形成S1；S1通过才进入shared fixed-route task-LOTO S2；S2通过才恢复
+Natural Program joint S3。机制Gate的`.85/.80/.25/.50`只裁决该接口，正式目标仍唯一为validation8 strict paired correct严格
+`>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
-为区分“shared跨task学习失败”与“当前candidate函数类本身不够”，远程分支`codex/g3-vector-interaction@2295f48`只增加32维
-native query/key逐元素交互；它没有合并为canonical实现。最终的task-local上界直接监督完整effective rank4矩阵，而不是拟合任意
-candidate logit。task1的correct fit0/fit1/held panel-B recovery为`.720904/.717564/.711262`，wrong fit0/fit1为
-`-.527627/-.519287`；task93为`.591613/.601969/.569709`与`-.379331/-.418162`。zero-gradient wrong view1与fit wrong同样被压低，
-zero-gradient correct held也与fit correct接近，证明vector interaction确实读取并泛化了bank内容；但两task都无法同时保住R5级correct
-方向，因此未达到本次机制资格，不授权task-LOTO或shared G3。
+固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理；两task各用一张GPU独立运行，不做无意义
+DDP。吞吐秒数是工程优化目标而非科学Gate，但不得继续16--26分钟/task的逐target/rank/event Python小kernel实现。若S0内部teacher
+representative与panel-B功能结论冲突，先做一次直接constrained functional feasibility；不得用内部MSE误杀架构。
 
-当前暂停新增架构、训练和评测。没有v5、seed/LR/width/bound小扫，也不把task-local结果冒充shared Program mapping。下一次决策需要
-判断：应在candidate函数类中加入跨candidate的bank-set/global event summary或改变交互因子化，还是现有证据已足以终止当前local
-candidate-interaction类并重开更上游的Program--bank联合编译方式。该问题在owner决定是否再次咨询专家前不自行实施。
+## 当前EBSRI里程碑
 
-## 当前co-conditioned interaction里程碑
-
-- [x] 完整记录第五次专家原文并把binary full/half从active plan退役；
-- [x] 扩展canonical fixed-microblock signed-pooling以支持逐candidate、branch-specific bounded bias，保持chunk/K边界与IEEE数值合同；
-- [x] 从现有`rank_event`和owner×group native heads产生event-specific native queries，并接通只输出candidate corrections的
-  `ProgramBankInteractionScorer`；
-- [x] 将shared compiler收敛为base full query + candidate correction +唯一exact signed measure，删除active route/support/power输出；
-- [x] 接通R5 fixed-route positive-control训练与精简Gate，确保correct/wrong使用同一deployment forward且只训练interaction模块；
-- [x] 全仓CPU合同及clean pushed detached真实zero-init/forward/gradient/materialization/throughput smoke通过；
-- [x] 从clean pushed detached authority完成首轮两个相邻checkpoint的formal qualification；结果为bank-insensitive destructive
-  non-pass，并把首因定位到wrong credit的`1/B_free`梯度放大；
-- [x] 以raw-unit 1:1 objective fresh完成同一qualification；step70/110均稳定non-pass，并解析证明目标存在common-destruction
-  平坦方向；
-- [x] 以唯一2:1 positive-anchor objective fresh完成同一qualification；absolute correct恢复但wrong bank未被压低，strict non-pass；
-- [x] 完成full10 feature-to-measure审计与task-local free-delta reachability，锁定shared correction acquisition为最早接口；
-- [x] 完成v4 base-score-conditioned interaction定向CPU合同及真实world3 forward/gradient/materialization smoke；
-- [x] clean集成并完成同一step70/110 fresh qualification；v4保持correct但wrong仍同样强，strict non-pass；
-- [x] 完成v2/v3/v4 correct--wrong functional gradient冲突审计，确认不是继续调credit权重即可解决；
-- [x] 完成32维vector interaction的pointwise反例与exact-effective-rank4 task-local资格；确认存在真实bank selectivity，但当前local
-  candidate函数类仍不能同时保住correct与压低wrong；
-- [ ] 在owner决定是否再次咨询专家前暂停；不进入task-LOTO、Natural Program joint G3或新的架构版本。
+- [x] 完整记录第六次专家原文，并把当前scalar/vector set-independent pointwise函数类从active plan退役；
+- [x] 将EBSRI、S0--S3、信息墙、唯一rank16和失败定位同步到active design；
+- [ ] 从clean pushed `main`建立`codex/`隔离实现面，确认唯一canonical owner及旧pointwise removal trigger；
+- [ ] 接通共享EBSRI数据结构与S0 free-summary路径，zero-init逐tensor复现R5；
+- [ ] 用tracked driver/config验证input/output候选索引、chunk边界、K1、Action Meta 0、真实X/Y与唯一rank16；
+- [ ] 缓存冻结query-relative descriptors并按shape批处理，完成task1/93真实forward/gradient/materialization与吞吐profile；
+- [ ] 并行完成task1/93 S0 panel-B functional Gate；S0 non-pass按teacher representative与factorization最早接口裁决；
+- [ ] S0通过后实现真实B0 moments/induced summaries并执行S1 task-local Gate；
+- [ ] S1通过后依次推进S2 fixed-route task-LOTO与S3 Natural Program joint G3。
 
 ## R5--R13历史里程碑
 

@@ -1,5 +1,21 @@
 # EMBER progress
 
+- 2026-08-31 owner已恢复持续性goal并授权按第六次专家复核继续高效推进。1320行原始回复已逐字保存为
+  `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。专家锁定并复核`main@92617d0`与未合并
+  `codex/g3-vector-interaction@2295f48`，确认此前正确执行第五次方案并已到其失败边界；被淘汰的是当前scalar/base-score及32维vector
+  set-independent pointwise interaction，不是whole-bank-conditioned continuous interaction、真实X/Y、signed pooling、rank4、full base、
+  Natural Program、Stage0或Native-Factor整体。
+
+- 当前唯一活动设计为Event-Conditioned Bank-Set Relative Interaction（EBSRI）：B0用Program的4 rank x 8 event native queries构造
+  candidate的32维相对坐标，并在每条video内累计event moments与线性induced summaries；B1用whole-bank summary通过FiLM条件化同一套
+  bounded candidate correction，再以真实X/Y形成唯一signed measure、rank4 residual与完整rank16。B0不得成为task matcher、binary/
+  continuous gate或LoRA generator；Pass A/B仍读取同一video set，K视频逐条独立后uniform聚合。
+
+- 当前执行S0 free-summary factorization，不直接搭完整set encoder：task1/93分别用training-only correct/wrong summary token先判断下游
+  factorization能否同时保留correct与压低wrong；S0通过才进入真实summary S1，随后才是shared task-LOTO S2与Natural Program joint
+  S3。下一formal前必须把driver/config/evidence纳入Git、缓存冻结query-relative descriptors并按shape批处理；吞吐秒数只作工程目标，
+  不作科学Gate。此刻尚未启动新的GPU任务。
+
 - 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
   Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的
   `codex/g3-vector-interaction@2295f48`保留为机制证据，不是第二条active实现面。

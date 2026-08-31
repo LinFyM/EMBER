@@ -1749,3 +1749,16 @@ correct held也与两个fit views接近，证明vector content function确实读
 query/key函数类存在稳定的capacity--specificity冲突。由于高容量task-local资格已在两个代表task一致失败，不进入task-LOTO或shared
 Natural Program G3，也不创建v5。需要专家/owner判断的是：增加跨candidate bank-set/global-event summary或改变交互因子化是否仍属
 第五次专家机制的合理最小修正，还是应终止当前candidate-interaction类并重开Program--bank联合编译接口。
+
+### 104. 第六次专家复核把缺失接口锁定为Program-conditioned whole-bank相对上下文
+
+专家复核`main@92617d0`与`codex/g3-vector-interaction@2295f48`后确认：旧scorer并非完全没有global信息，但learned correction仍由
+set-independent函数逐candidate产生；mean/covariance/full base及最终softmax没有让该函数知道candidate在Program-relative whole-bank
+分布中的位置。correct/wrong local feature分布重叠时，二者参数Jacobian相似，于是保correct与压wrong梯度约`-.96`反向。vector分支
+增加局部坐标宽度但没有改变依赖关系，因此其失败足以终止当前pointwise家族，不足以淘汰set-conditioned continuous interaction。
+
+唯一后继EBSRI先以全部rank/event Program-native queries形成每candidate的32维相对坐标，再按event累计whole-bank mean、dispersion与
+少量线性induced summaries；B1用summary FiLM条件化candidate correction。它新增的是bank-specific条件状态和Jacobian，而不是另一个
+classifier、operator或更宽pointwise MLP。S0先用training-only free summary裁决下游factorization，S1才检验真实bank能否产生summary；
+随后才允许task-LOTO与Natural Program joint。若S0 effective target与functional Gate冲突，直接功能可行性优先，不能由teacher代表元
+误杀架构。吞吐必须通过冻结descriptor cache与shape batching优化，但自定wall秒数不参与科学qualification。

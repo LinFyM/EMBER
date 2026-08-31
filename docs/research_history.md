@@ -1602,3 +1602,22 @@ v5或普通超参小扫；当前停在专家咨询节点，待判断是否引入
 关键artifact：
 
 - `runs/analysis/pi05_ecp_g3_effective_rank4_tasklocal_2295f48_gpu01p01_20260831/`。
+
+## 81. 第六次专家复核终止local pointwise家族并指定EBSRI
+
+第六次专家锁定远程`main@92617d070e3a573f640875b9f5bd355c162177d7`与未合并诊断分支
+`codex/g3-vector-interaction@2295f481dcd284e4bae92afeaf2cf5c4b2d3e5c2`，确认第五次candidate-interaction方案已被正确实现并达到其
+预设失败边界。scalar/base-score formal在十task上correct/held与wrong同时约`.93/.95/.93`，vector task-local则以correct降至约
+`.72/.60`换取wrong负recovery；结合约`-.96`的correct--wrong功能梯度、free-delta容量与基础执行合同，足以从canonical停止当前
+set-independent pointwise函数类及其普通超参小扫。
+
+专家没有把该结果外推为所有逐candidate连续函数的数学不可能，也没有淘汰真实X/Y、exact signed pooling、antithetic correction、
+rank4 residual、full-inverse capacity anchor、Natural Program、Stage0或Native-Factor整体。新假设指出旧learned correction缺少
+Program-conditioned、event-conditioned whole-bank相对分布：单candidate局部特征相似时，correct/wrong bank产生相似参数Jacobian，
+无法形成只改变wrong的第三方向。
+
+唯一推荐架构Event-Conditioned Bank-Set Relative Interaction以Program的4 rank x 8 event native queries构造每candidate的32维
+相对坐标；B0按video/event流式累计mean、dispersion与少量antithetic induced summaries，B1由summary-conditioned FiLM调制同一套
+continuous correction，再对真实X/Y形成唯一signed measure、rank4 residual和完整rank16。推进顺序固定为S0 free-summary
+factorization、S1 real-summary task-local、S2 fixed-route shared task-LOTO、S3 Natural Program joint；每一步只裁决最早接口。
+1320行原始回复逐字保存于`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。

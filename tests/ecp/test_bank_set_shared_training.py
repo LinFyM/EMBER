@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from ember.ecp.joint_program_primal import bank_set_shared_training
 from ember.ecp.joint_program_primal.bank_set_shared_training import (
     ALL_INTERACTION_TASKS,
     ARM_SCHEDULE,
@@ -12,6 +13,7 @@ from ember.ecp.joint_program_primal.bank_set_shared_training import (
     HELD_INTERACTION_TASKS,
     WRONG_TASK_RING,
     _apply_task_profile,
+    _shared_wrong_teacher,
     _validate_shared_config,
     _validate_task_cursors,
     balanced_task_assignments,
@@ -121,3 +123,27 @@ def test_s2_profiles_switch_b1_per_task_and_held_never_enters_train_ring() -> No
     config["shared_training"]["wrong_task_by_task"]["8"] = 1
     with pytest.raises(ValueError, match="task contract changed"):
         _validate_shared_config(config)
+
+
+def test_s2_adapts_sealed_wrong_teacher_settings_without_mutating_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = {"updates": 1, "learning_rate": 0.02, "panel_a_visit": 0}
+    runtime = SimpleNamespace(
+        config={
+            "optimization": {"joint": {}, "wrong_free_delta_teacher": settings}
+        }
+    )
+    observed = {}
+
+    def teacher(runtime, task, arm, base_output):
+        observed.update(runtime.config["optimization"]["joint"])
+        return "teacher", {"task": task}
+
+    monkeypatch.setattr(bank_set_shared_training, "_wrong_teacher", teacher)
+    assert _shared_wrong_teacher(runtime, 8, object(), object()) == (
+        "teacher",
+        {"task": 8},
+    )
+    assert observed == {"wrong_free_delta_teacher": settings}
+    assert runtime.config["optimization"]["joint"] == {}

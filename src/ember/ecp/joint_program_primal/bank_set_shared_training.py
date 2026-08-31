@@ -289,6 +289,23 @@ def _clear_panel_cache(runtime: Any, task: int) -> None:
             del runtime.panel_batch_cache[key]
 
 
+def _shared_wrong_teacher(
+    runtime: Any, task: int, arm: TaskLocalArm, base_output: Any
+) -> tuple[Any, Mapping[str, Any]]:
+    """Adapt the S2 config location to the S1-proven teacher helper."""
+
+    joint = runtime.config["optimization"]["joint"]
+    if "wrong_free_delta_teacher" in joint:
+        raise ValueError("S2 wrong-teacher settings escaped their sealed location")
+    joint["wrong_free_delta_teacher"] = runtime.config["optimization"][
+        "wrong_free_delta_teacher"
+    ]
+    try:
+        return _wrong_teacher(runtime, task, arm, base_output)
+    finally:
+        del joint["wrong_free_delta_teacher"]
+
+
 def _build_task_targets(runtime: Any, task: int) -> SharedTaskTargets:
     targets: dict[str, EffectiveTarget] = {}
     for name in ("correct_fit0", "correct_fit1", "correct_held"):
@@ -300,7 +317,7 @@ def _build_task_targets(runtime: Any, task: int) -> SharedTaskTargets:
     wrong_arm = _prepare_arm(runtime, _arm_spec(runtime, task, "wrong_fit0"))
     with torch.no_grad():
         wrong_base = _base_output(runtime, wrong_arm.bank)
-    wrong_teacher, teacher_metrics = _wrong_teacher(
+    wrong_teacher, teacher_metrics = _shared_wrong_teacher(
         runtime, task, wrong_arm, wrong_base
     )
     wrong_target = _target(wrong_teacher)
@@ -319,9 +336,14 @@ def _build_task_targets(runtime: Any, task: int) -> SharedTaskTargets:
         },
         wrong_teacher_metrics=teacher_metrics,
         authority={
-            "correct": "same_bank_r5_base_output",
-            "wrong": "one_step_functional_wrong_free_delta_teacher",
-            "denominator": "wrong_base_to_wrong_teacher_family_distance",
+            "correct": "each_bank_frozen_r5_base_residual",
+            "wrong": (
+                "task_wrong_fit0_one_round_functional_free_delta_"
+                "suppressive_teacher"
+            ),
+            "denominator": (
+                "wrong_fit0_r5_base_to_suppressive_teacher_squared_distance"
+            ),
         },
     )
     del wrong_teacher, wrong_target, wrong_base, wrong_arm

@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_event_bank_set_shared_loto_v1",
+  "schema_version": "ember_ecp_event_bank_set_shared_direct_functional_v1",
   "stage": "g3_event_bank_set_s2_fixed_route_shared_loto",
-  "status": "preregistered_fixed_route_shared_loto",
+  "status": "preregistered_fixed_route_shared_direct_functional",
   "frozen_condition_cache_authority": {
     "config_schema": "ember_ecp_joint_program_primal_j2_v1",
     "config_bytes": 6017,
@@ -162,7 +162,7 @@
     "K": 1,
     "fit_video_views_per_task": 2,
     "held_videos_per_task": 1,
-    "functional_panel_train": "panel_a_only_for_wrong_fit0_one_round_suppressive_teacher",
+    "functional_panel_train": "panel_a_only_gradient_tasks_exact_cross_episode_task_cycle",
     "functional_panel_evaluation": "panel_b",
     "panel_visits": 16,
     "rows_per_visit": 16,
@@ -171,14 +171,18 @@
   },
   "optimization": {
     "seed": 20260831,
-    "loss": "family_equal_effective_rank4_shared_loto_then_panel_b_gate",
-    "result_or_action_gradient_calls": 0,
-    "wrong_free_delta_teacher": {
-      "updates": 1,
-      "learning_rate": 0.02,
-      "panel_a_visit": 0,
-      "gradient_clip_norm": 1.0,
-      "target_authority": "wrong_fit0_one_round_functional_free_delta_suppressive_teacher"
+    "loss": "exact_panel_a_functional_vjp_raw_correct_wrong_neutralization_hinge_then_panel_b_gate",
+    "result_or_action_gradient_calls_per_optimizer_step": 6,
+    "direct_functional": {
+      "panel": "a",
+      "correct_objective": "generated_raw_flow_loss",
+      "correct_backward_mass": 1.0,
+      "wrong_objective": "max(carrier_raw_flow_loss-generated_raw_flow_loss,0)",
+      "wrong_backward_mass": 0.5,
+      "inactive_wrong_leaf_gradients": "explicit_zero",
+      "panel_visit_schedule": "task_appearance_cursor_floor_div_4_mod_16",
+      "memory_schedule": "no_grad_bank_leaf_vjp_cpu_offload_fresh_bank_replay",
+      "task_gradient_combiner": "raw_equal_task_sum_no_normalization_or_mgda"
     },
     "joint": {
       "warmup_optimizer_steps": 10,
@@ -187,8 +191,8 @@
       "global_tasks_per_optimizer_step": 6,
       "optimizer": {
         "name": "AdamW",
-        "peak_lr": 0.0007,
-        "decay_lr": 0.000007,
+        "peak_lr": 0.0001,
+        "decay_lr": 0.000001,
         "betas": [0.9, 0.95],
         "eps": 0.00000001,
         "weight_decay": 0.01,
@@ -205,6 +209,14 @@
     "queue": "persistent_workers_atomic_dynamic_claim_long_first",
     "real_bank_lifetime": "one_job_only_then_release",
     "target_cache": "small_cpu_effective_targets_and_family_denominators_only",
+    "target_cache_scope": "diagnostics_and_gate_only_never_training",
+    "target_cache_wrong_free_delta_teacher": {
+      "updates": 1,
+      "learning_rate": 0.02,
+      "panel_a_visit": 0,
+      "gradient_clip_norm": 1.0,
+      "target_authority": "wrong_fit0_one_round_functional_free_delta_suppressive_teacher"
+    },
     "correct_effective_target": "each_bank_frozen_r5_base_residual",
     "wrong_effective_target": "task_wrong_fit0_one_round_functional_free_delta_suppressive_teacher",
     "effective_family_denominator": "wrong_fit0_r5_base_to_suppressive_teacher_squared_distance",
@@ -234,7 +246,8 @@
     "same_task_held_backward_calls": 0,
     "wrong_fit1_backward_calls": 0,
     "panel_b_backward_calls": 0,
-    "result_or_action_gradient_calls": 0,
+    "result_or_action_gradient_calls_per_optimizer_step": 6,
+    "result_or_action_gradient_scope": "gradient_tasks_panel_a_only",
     "forbidden_task_ids": [2, 74],
     "forbidden_task_reads": 0,
     "validation_or_test_reads": 0,

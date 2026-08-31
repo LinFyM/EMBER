@@ -1,7 +1,8 @@
-"""Stable configuration and ownership contract for EBSRI S2 shared LOTO."""
+"""Configuration and ownership contract for direct-functional EBSRI S2."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -16,9 +17,14 @@ from ember.ecp.joint_program_primal.runtime import (
 from ember.pi05_source_checkpoint import read_json
 
 
-BANK_SET_SHARED_SCHEMA = "ember_ecp_event_bank_set_shared_loto_v1"
-BANK_SET_SHARED_RUN_SCHEMA = "ember_ecp_event_bank_set_shared_loto_run_v1"
+BANK_SET_SHARED_SCHEMA = "ember_ecp_event_bank_set_shared_direct_functional_v1"
+BANK_SET_SHARED_RUN_SCHEMA = (
+    "ember_ecp_event_bank_set_shared_direct_functional_run_v1"
+)
 BANK_SET_SHARED_STAGE = "g3_event_bank_set_s2_fixed_route_shared_loto"
+BANK_SET_SHARED_STATUS = "preregistered_fixed_route_shared_direct_functional"
+BANK_SET_SHARED_TRAIN_PANEL = "panel_a_only_gradient_tasks_exact_cross_episode_task_cycle"
+BANK_SET_SHARED_LOSS = "exact_panel_a_functional_vjp_raw_correct_wrong_neutralization_hinge_then_panel_b_gate"
 
 BANK_SET_SHARED_GRADIENT_META_TASKS = (8, 9, 32, 52)
 BANK_SET_SHARED_GRADIENT_TARGET_TASKS = (72, 73, 75, 94)
@@ -52,6 +58,36 @@ BANK_SET_SHARED_WRONG_TASK_BY_TASK = {
     94: 72,
 }
 BANK_SET_SHARED_EVALUATION_WRONG_TASK_BY_TASK = {1: 8, 93: 94}
+BANK_SET_SHARED_DIRECT_FUNCTIONAL = {
+    "panel": "a",
+    "correct_objective": "generated_raw_flow_loss",
+    "correct_backward_mass": 1.0,
+    "wrong_objective": "max(carrier_raw_flow_loss-generated_raw_flow_loss,0)",
+    "wrong_backward_mass": 0.5,
+    "inactive_wrong_leaf_gradients": "explicit_zero",
+    "panel_visit_schedule": "task_appearance_cursor_floor_div_4_mod_16",
+    "memory_schedule": "no_grad_bank_leaf_vjp_cpu_offload_fresh_bank_replay",
+    "task_gradient_combiner": "raw_equal_task_sum_no_normalization_or_mgda",
+}
+BANK_SET_SHARED_TARGET_CACHE_TEACHER = {
+    "updates": 1,
+    "learning_rate": 0.02,
+    "panel_a_visit": 0,
+    "gradient_clip_norm": 1.0,
+    "target_authority": (
+        "wrong_fit0_one_round_functional_free_delta_suppressive_teacher"
+    ),
+}
+
+
+@dataclass(frozen=True)
+class FunctionalArmObjective:
+    kind: str
+    value: float
+    benefit_over_carrier: float
+    backward_mass: float
+    gradient_active: bool
+
 
 def _task_profile(
     replay: int, group_batch: int, policy_batch: int, frames: tuple[int, int, int]
@@ -120,6 +156,40 @@ def task_cursor_counts(global_macro: int) -> tuple[int, ...]:
     return tuple(counts)
 
 
+def task_panel_a_visit(task_cursor: int, panel_visits: int) -> int:
+    """Cycle Panel-A after one task completes its four-arm schedule."""
+
+    if task_cursor < 0 or panel_visits <= 0:
+        raise ValueError("S2 task cursor or Panel-A visit count is invalid")
+    return (task_cursor // len(BANK_SET_SHARED_ARM_SCHEDULE)) % panel_visits
+
+
+def functional_arm_objective(
+    arm_name: str,
+    *,
+    generated_loss: float,
+    carrier_loss: float,
+    correct_backward_mass: float,
+    wrong_backward_mass: float,
+) -> FunctionalArmObjective:
+    """Return the raw-unit objective and signed Writer backward mass."""
+
+    if min(correct_backward_mass, wrong_backward_mass) <= 0:
+        raise ValueError("S2 direct-functional backward mass must be positive")
+    benefit = float(carrier_loss) - float(generated_loss)
+    if arm_name in {"correct_fit0", "correct_fit1"}:
+        return FunctionalArmObjective(
+            "raw_flow_loss", float(generated_loss), benefit,
+            float(correct_backward_mass), True,
+        )
+    if arm_name != "wrong_fit0":
+        raise ValueError("S2 direct-functional objective received a zero-gradient arm")
+    return FunctionalArmObjective(
+        "raw_unit_neutralization_hinge", max(benefit, 0.0), benefit,
+        -float(wrong_backward_mass), benefit > 0.0,
+    )
+
+
 def is_bank_set_shared_config(config: Mapping[str, Any]) -> bool:
     """Return whether ``config`` claims the sealed S2 schema."""
 
@@ -129,7 +199,9 @@ def is_bank_set_shared_config(config: Mapping[str, Any]) -> bool:
 def _config_valid(config: Mapping[str, Any]) -> bool:
     shared = config.get("shared_training", {})
     model = config.get("model", {})
+    data = config.get("data", {})
     optimization = config.get("optimization", {})
+    optimizer = optimization.get("joint", {}).get("optimizer", {})
     evaluation = config.get("evaluation", {})
     gate = config.get("gate", {})
     wall = config.get("information_wall", {})
@@ -141,7 +213,7 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
         (
             is_bank_set_shared_config(config),
             config.get("stage") == BANK_SET_SHARED_STAGE,
-            config.get("status") == "preregistered_fixed_route_shared_loto",
+            config.get("status") == BANK_SET_SHARED_STATUS,
             cache.get("config_schema") == "ember_ecp_joint_program_primal_j2_v1",
             cache.get("config_bytes") == 6017,
             s1_gate.get("aggregate_schema")
@@ -194,15 +266,20 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             model.get("generated_adapter")
             == "one_complete_38_target_rank12_plus_rank4_rank16",
             model.get("deployment_candidate") is False,
-            optimization.get("loss")
-            == "family_equal_effective_rank4_shared_loto_then_panel_b_gate",
-            optimization.get("result_or_action_gradient_calls") == 0,
+            data.get("functional_panel_train") == BANK_SET_SHARED_TRAIN_PANEL,
+            data.get("video_action_cross_episode") is True,
+            optimization.get("loss") == BANK_SET_SHARED_LOSS,
+            optimization.get("result_or_action_gradient_calls_per_optimizer_step")
+            == 6,
+            optimization.get("direct_functional") == BANK_SET_SHARED_DIRECT_FUNCTIONAL,
             optimization.get("joint", {}).get("warmup_optimizer_steps") == 10,
             optimization.get("joint", {}).get("effective_optimizer_steps") == 100,
             optimization.get("joint", {}).get("checkpoint_effective_steps")
             == [60, 100],
             optimization.get("joint", {}).get("global_tasks_per_optimizer_step")
             == 6,
+            optimizer.get("peak_lr") == 0.0001,
+            optimizer.get("decay_lr") == 0.000001,
             evaluation.get("checkpoint_optimizer_steps") == [70, 110],
             evaluation.get("arms") == list(BANK_SET_SHARED_ARMS),
             evaluation.get("functional_panel") == "panel_b",
@@ -211,6 +288,10 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             evaluation.get("real_bank_lifetime") == "one_job_only_then_release",
             evaluation.get("target_cache")
             == "small_cpu_effective_targets_and_family_denominators_only",
+            evaluation.get("target_cache_scope")
+            == "diagnostics_and_gate_only_never_training",
+            evaluation.get("target_cache_wrong_free_delta_teacher")
+            == BANK_SET_SHARED_TARGET_CACHE_TEACHER,
             gate.get("correct_fit_median_minimum") == 0.85,
             gate.get("same_task_held_median_minimum") == 0.80,
             gate.get("wrong_median_maximum") == 0.25,
@@ -221,7 +302,12 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             gate.get("roles_required") == ["meta", "target"],
             wall.get("forbidden_task_ids") == list(BANK_SET_SHARED_FORBIDDEN_TASKS),
             wall.get("forbidden_task_reads") == 0,
-            wall.get("result_or_action_gradient_calls") == 0,
+            wall.get("held_interaction_task_backward_calls") == 0,
+            wall.get("same_task_held_backward_calls") == 0,
+            wall.get("wrong_fit1_backward_calls") == 0,
+            wall.get("result_or_action_gradient_calls_per_optimizer_step") == 6,
+            wall.get("result_or_action_gradient_scope")
+            == "gradient_tasks_panel_a_only",
             wall.get("panel_b_backward_calls") == 0,
             wall.get("action_meta_installed") is False,
             wall.get("shuffled_or_reversed_use") is False,

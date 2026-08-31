@@ -13,12 +13,15 @@ from ember.ecp.joint_program_primal.bank_set_shared_training import (
     HELD_INTERACTION_TASKS,
     WRONG_TASK_RING,
     _apply_task_profile,
+    _functional_arm_objective,
+    _functional_task_loss,
     _shared_wrong_teacher,
     _validate_shared_config,
     _validate_task_cursors,
     balanced_task_assignments,
     shared_task_group,
     task_cursor_counts,
+    task_panel_a_visit,
 )
 
 
@@ -50,6 +53,35 @@ def test_s2_each_task_has_its_own_four_beat_arm_cursor() -> None:
         assert tuple(arms[:8]) == 2 * ARM_SCHEDULE
     assert task_cursor_counts(4) == {task: 3 for task in GRADIENT_TASKS}
     assert task_cursor_counts(8) == {task: 6 for task in GRADIENT_TASKS}
+
+
+def test_s2_panel_a_visit_and_raw_unit_objectives_follow_task_cycle() -> None:
+    assert [task_panel_a_visit(cursor, 16) for cursor in range(8)] == [
+        0, 0, 0, 0, 1, 1, 1, 1
+    ]
+    assert task_panel_a_visit(63, 16) == 15
+    assert task_panel_a_visit(64, 16) == 0
+
+    correct = _functional_arm_objective(
+        "correct_fit0", generated_loss=0.7, carrier_loss=1.0,
+        correct_backward_mass=1.0, wrong_backward_mass=0.5,
+    )
+    active_wrong = _functional_arm_objective(
+        "wrong_fit0", generated_loss=0.4, carrier_loss=1.0,
+        correct_backward_mass=1.0, wrong_backward_mass=0.5,
+    )
+    inactive_wrong = _functional_arm_objective(
+        "wrong_fit0", generated_loss=1.2, carrier_loss=1.0,
+        correct_backward_mass=1.0, wrong_backward_mass=0.5,
+    )
+    assert (correct.kind, correct.value, correct.backward_mass) == (
+        "raw_flow_loss", 0.7, 1.0
+    )
+    assert (active_wrong.value, active_wrong.backward_mass) == pytest.approx(
+        (0.6, -0.5)
+    )
+    assert inactive_wrong.value == 0.0
+    assert inactive_wrong.gradient_active is False
 
 
 def test_s2_cursor_buffer_is_checkpoint_reconstructible() -> None:
@@ -131,7 +163,8 @@ def test_s2_adapts_sealed_wrong_teacher_settings_without_mutating_config(
     settings = {"updates": 1, "learning_rate": 0.02, "panel_a_visit": 0}
     runtime = SimpleNamespace(
         config={
-            "optimization": {"joint": {}, "wrong_free_delta_teacher": settings}
+            "optimization": {"joint": {}},
+            "evaluation": {"target_cache_wrong_free_delta_teacher": settings},
         }
     )
     observed = {}
@@ -147,3 +180,87 @@ def test_s2_adapts_sealed_wrong_teacher_settings_without_mutating_config(
     )
     assert observed == {"wrong_free_delta_teacher": settings}
     assert runtime.config["optimization"]["joint"] == {}
+
+
+def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameter = torch.nn.Parameter(torch.tensor(2.0))
+    calls: list[bool] = []
+    loss = {"value": 0.7}
+    condition = SimpleNamespace(video_demo=80)
+    panel = SimpleNamespace(
+        policy_rng_seed=123,
+        flow_loss=1.0,
+        action_demos=tuple(range(16)),
+        action_frames=tuple(range(16)),
+    )
+    runtime = SimpleNamespace(
+        config={
+            "data": {"panel_visits": 16},
+            "optimization": {"direct_functional": {
+                "correct_backward_mass": 1.0, "wrong_backward_mass": 0.5,
+            }},
+        },
+        context=SimpleNamespace(device=torch.device("cpu")),
+    )
+
+    monkeypatch.setattr(
+        bank_set_shared_training,
+        "_arm_spec",
+        lambda _runtime, task, name: SimpleNamespace(
+            task=task, role="meta_fit", name=name, bank_task=9,
+            condition=condition, receives_gradient=True,
+        ),
+    )
+    monkeypatch.setattr(
+        bank_set_shared_training,
+        "_prepare_arm",
+        lambda *_args: SimpleNamespace(
+            bank=SimpleNamespace(condition_metrics={"ok": 1})
+        ),
+    )
+
+    def interaction_output(*_args):
+        calls.append(torch.is_grad_enabled())
+        return parameter * 1.0
+
+    def panel_batch(_runtime, *, task_id, panel_name, visit_index):
+        assert (task_id, panel_name, visit_index) == (8, "a", 2)
+        return {"batch": True}, panel
+
+    monkeypatch.setattr(
+        bank_set_shared_training, "_shared_interaction_output", interaction_output
+    )
+    monkeypatch.setattr(
+        bank_set_shared_training, "_complete", lambda _runtime, output: {"leaf": output}
+    )
+    monkeypatch.setattr(bank_set_shared_training, "functional_panel_batch", panel_batch)
+    monkeypatch.setattr(
+        bank_set_shared_training,
+        "functional_loss_derivative",
+        lambda *_args, **_kwargs: (loss["value"], {"leaf": torch.tensor(3.0)}),
+    )
+    monkeypatch.setattr(
+        bank_set_shared_training, "_apply_task_profile", lambda *_args: {"ok": 1}
+    )
+    monkeypatch.setattr(bank_set_shared_training, "_clear_panel_cache", lambda *_: None)
+
+    row = _functional_task_loss(
+        runtime, 8, "correct_fit0", task_cursor=9, task_weight=1.0 / 6.0
+    )
+    assert calls == [False, True]
+    assert parameter.grad == pytest.approx(torch.tensor(0.5))
+    assert row["panel_visit"] == 2
+    assert row["backward_mass"] == 1.0
+
+    calls.clear()
+    parameter.grad = None
+    loss["value"] = 1.2
+    row = _functional_task_loss(
+        runtime, 8, "wrong_fit0", task_cursor=9, task_weight=1.0 / 6.0
+    )
+    assert calls == [False, True]
+    assert parameter.grad is not None and float(parameter.grad) == 0.0
+    assert row["gradient_active"] is False
+    assert row["backward_mass"] == -0.5

@@ -1,9 +1,9 @@
-"""Fixed-route shared EBSRI S2 training with one resident bank per rank.
+"""Fixed-route shared EBSRI S2 direct-functional training.
 
 The S1 task-local module remains the numerical owner for real B0/B1 replay,
-effective-rank4 targets, the one-step functional wrong teacher, and rank16
-materialization.  This module owns only the shared multi-task schedule,
-distributed target caching, exact-resume cursor, and resource lifecycle.
+rank16 materialization, and the effective-rank4 cache used only by evaluation.
+Training uses exact cross-episode Panel-A LoRA-leaf VJPs with a memory-safe
+no-grad bank pass followed by one fresh Writer replay.
 """
 
 from __future__ import annotations
@@ -20,9 +20,14 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import save_ecp_checkpoint
 from ember.ecp.contracts import TargetFamily
+from ember.ecp.joint_program_primal.bank_set_shared_contract import (
+    functional_arm_objective as _functional_arm_objective,
+    task_panel_a_visit,
+)
 from ember.ecp.joint_program_primal.bank_set_tasklocal import (
     TaskLocalArm,
     _base_output,
+    _complete,
     _family_distances,
     _output,
     _prepare_bank,
@@ -32,6 +37,11 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal import (
 from ember.ecp.joint_program_primal.bank_set_tasklocal_evaluation import (
     FAMILIES,
     EffectiveTarget,
+)
+from ember.ecp.joint_program_primal.train_step import (
+    backward_functional_derivative,
+    functional_loss_derivative,
+    functional_panel_batch,
 )
 from ember.pi05_source_checkpoint import (
     capture_rng,
@@ -292,13 +302,13 @@ def _clear_panel_cache(runtime: Any, task: int) -> None:
 def _shared_wrong_teacher(
     runtime: Any, task: int, arm: TaskLocalArm, base_output: Any
 ) -> tuple[Any, Mapping[str, Any]]:
-    """Adapt the S2 config location to the S1-proven teacher helper."""
+    """Bridge the diagnostic-only S2 cache setting to the S1 helper."""
 
     joint = runtime.config["optimization"]["joint"]
     if "wrong_free_delta_teacher" in joint:
         raise ValueError("S2 wrong-teacher settings escaped their sealed location")
-    joint["wrong_free_delta_teacher"] = runtime.config["optimization"][
-        "wrong_free_delta_teacher"
+    joint["wrong_free_delta_teacher"] = runtime.config["evaluation"][
+        "target_cache_wrong_free_delta_teacher"
     ]
     try:
         return _wrong_teacher(runtime, task, arm, base_output)
@@ -455,32 +465,91 @@ def _sum_gradients(runtime: Any) -> None:
         dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)
 
 
-def _task_loss(
+def _cpu_leaf_gradients(
+    gradients: Mapping[str, torch.Tensor], *, active: bool
+) -> dict[str, torch.Tensor]:
+    result = {
+        name: (
+            value.detach().to(device="cpu").contiguous()
+            if active
+            else torch.zeros_like(
+                value, device="cpu", memory_format=torch.preserve_format
+            )
+        )
+        for name, value in gradients.items()
+    }
+    if not result or any(value.requires_grad for value in result.values()):
+        raise RuntimeError("S2 Panel-A leaf-gradient offload changed")
+    return result
+
+
+def _functional_task_loss(
     runtime: Any,
     task: int,
     arm_name: str,
-    cache: SharedTaskTargets,
     *,
+    task_cursor: int,
     task_weight: float,
 ) -> dict[str, Any]:
+    """Backpropagate one exact Panel-A VJP with no bank/policy graph overlap."""
+
     tick = time.monotonic()
     spec = _arm_spec(runtime, task, arm_name)
     if not spec.receives_gradient or task in HELD_INTERACTION_TASKS:
         raise RuntimeError("S2 selected a zero-gradient interaction arm")
+    visit = task_panel_a_visit(
+        task_cursor, int(runtime.config["data"]["panel_visits"])
+    )
+
+    # First pass materializes only detached rank16 leaves.  The real bank and
+    # its no-grad replay are released before the frozen policy VJP begins.
+    first_arm = _prepare_arm(runtime, spec)
+    with torch.no_grad():
+        first_output = _shared_interaction_output(runtime, first_arm)
+        detached_state = {
+            name: value.detach()
+            for name, value in _complete(runtime, first_output).items()
+        }
+    condition_metrics = dict(first_arm.bank.condition_metrics)
+    del first_output, first_arm
+
+    batch, panel = functional_panel_batch(
+        runtime, task_id=task, panel_name="a", visit_index=visit
+    )
+    generated_loss, leaf_gradients = functional_loss_derivative(
+        runtime,
+        state=detached_state,
+        batch=batch,
+        policy_rng_seed=panel.policy_rng_seed,
+    )
+    settings = runtime.config["optimization"]["direct_functional"]
+    objective = _functional_arm_objective(
+        arm_name,
+        generated_loss=generated_loss,
+        carrier_loss=float(panel.flow_loss),
+        correct_backward_mass=float(settings["correct_backward_mass"]),
+        wrong_backward_mass=float(settings["wrong_backward_mass"]),
+    )
+    cpu_leaf_gradients = _cpu_leaf_gradients(
+        leaf_gradients, active=objective.gradient_active
+    )
+    del leaf_gradients, detached_state, batch
+    _clear_panel_cache(runtime, task)
+
+    # Second pass is the only Writer graph.  Even an inactive wrong hinge uses
+    # explicit zero leaf gradients, so every shared parameter has a grad tensor.
     arm = _prepare_arm(runtime, spec)
-    target_name = arm_name
-    target = _device_target(cache.targets[target_name], runtime.context.device)
-    denominators = {
-        family: value.to(runtime.context.device)
-        for family, value in cache.denominators.items()
-    }
     output = _shared_interaction_output(runtime, arm)
-    distances = _family_distances(runtime, output, target)
-    normalized = {
-        family: distances[family] / denominators[family] for family in FAMILIES
+    state = _complete(runtime, output)
+    device_leaf_gradients = {
+        name: value.to(device=runtime.context.device)
+        for name, value in cpu_leaf_gradients.items()
     }
-    loss = torch.stack(tuple(normalized.values())).mean()
-    (loss * float(task_weight)).backward()
+    backward_functional_derivative(
+        state,
+        device_leaf_gradients,
+        weight=objective.backward_mass * float(task_weight),
+    )
     row = {
         "task": task,
         "role": spec.role,
@@ -488,21 +557,29 @@ def _task_loss(
         "bank_task": spec.bank_task,
         "video_demo": int(spec.condition.video_demo),
         "task_weight": float(task_weight),
-        "normalized_effective_rank4_mse": float(loss.detach()),
-        "families": {
-            family.value: float(value.detach()) for family, value in normalized.items()
-        },
-        "condition_metrics": dict(arm.bank.condition_metrics),
+        "panel": "a",
+        "panel_visit": visit,
+        "functional_policy_rng_seed": int(panel.policy_rng_seed),
+        "action_demos": list(panel.action_demos),
+        "action_frames": list(panel.action_frames),
+        "carrier_flow_loss": float(panel.flow_loss),
+        "generated_flow_loss": float(generated_loss),
+        "benefit_over_carrier": objective.benefit_over_carrier,
+        "training_objective": objective.value,
+        "objective_kind": objective.kind,
+        "backward_mass": objective.backward_mass,
+        "applied_backward_mass": objective.backward_mass * float(task_weight),
+        "gradient_active": objective.gradient_active,
+        "condition_metrics": condition_metrics,
         "profile": _apply_task_profile(runtime, task),
+        "memory_schedule": "no_grad_bank_leaf_vjp_cpu_offload_fresh_bank_replay",
         "task_seconds": time.monotonic() - tick,
     }
-    del output, loss, normalized, distances, denominators, target, arm
+    del state, output, arm, device_leaf_gradients, cpu_leaf_gradients
     return row
 
 
-def run_shared_optimizer_step(
-    runtime: Any, target_cache: Mapping[int, SharedTaskTargets]
-) -> dict[str, Any]:
+def run_shared_optimizer_step(runtime: Any) -> dict[str, Any]:
     """Run one six-task, task/role-equal update with world-size invariant mass."""
 
     step = int(runtime.optimizer_steps)
@@ -521,11 +598,11 @@ def run_shared_optimizer_step(
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
     local = [
-        _task_loss(
+        _functional_task_loss(
             runtime,
             task,
             arms[task],
-            target_cache[task],
+            task_cursor=cursors_before[task],
             task_weight=1.0 / len(group),
         )
         for task in assignments[runtime.context.rank]
@@ -557,9 +634,18 @@ def run_shared_optimizer_step(
         "task_group": list(group),
         "task_cursors_before": {str(task): cursors_before[task] for task in GRADIENT_TASKS},
         "task_cursors_after": {str(task): cursors_after[task] for task in GRADIENT_TASKS},
-        "mean_normalized_effective_rank4_mse": statistics.fmean(
-            float(value["normalized_effective_rank4_mse"]) for value in records
+        "mean_training_objective": statistics.fmean(
+            float(value["training_objective"]) for value in records
         ),
+        "mean_generated_flow_loss": statistics.fmean(
+            float(value["generated_flow_loss"]) for value in records
+        ),
+        "wrong_hinge_active_count": sum(
+            int(value["gradient_active"])
+            for value in records
+            if value["arm"] == "wrong_fit0"
+        ),
+        "panel_a_functional_vjp_calls": len(records),
         "tasks": records,
         "gradient_norm_before_clip": float(norm),
         "next_lr": float(runtime.scheduler.get_last_lr()[0]),
@@ -572,10 +658,10 @@ def run_shared_optimizer_step(
     }
 
 
-def _train(runtime: Any, target_cache: Mapping[int, SharedTaskTargets]) -> None:
+def _train(runtime: Any) -> None:
     contract = _contract_module()
     while runtime.optimizer_steps < runtime.stop_after_step:
-        row = run_shared_optimizer_step(runtime, target_cache)
+        row = run_shared_optimizer_step(runtime)
         if runtime.context.is_main:
             append_jsonl(runtime.args.output_dir / "metrics.jsonl", row)
             runtime.metrics_rows += 1
@@ -614,22 +700,9 @@ def run(args: Any) -> None:
             or int(inventory.get("action_meta_parameter_count", -1)) != 0
         ):
             raise RuntimeError("S2 runtime loaded Action Meta")
-        tick = time.monotonic()
-        target_tasks = (
-            shared_task_group(0) if args.mode == "profile" else GRADIENT_TASKS
-        )
-        target_cache = prepare_shared_target_cache(
-            runtime, target_tasks, distributed=True
-        )
-        teacher_seconds = time.monotonic() - tick
-        teacher_peak = (
-            int(torch.cuda.max_memory_allocated())
-            if runtime.context.device.type == "cuda"
-            else 0
-        )
         if runtime.context.device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(runtime.context.device)
-        _train(runtime, target_cache)
+        _train(runtime)
         if runtime.context.is_main:
             write_json_atomic(
                 args.output_dir / "completion.json",
@@ -641,16 +714,26 @@ def run(args: Any) -> None:
                         str(task): value
                         for task, value in _validate_task_cursors(runtime).items()
                     },
-                    "teacher_cache": {
-                        "tasks": list(target_tasks),
-                        "device": "cpu",
-                        "distributed_once": True,
-                        "seconds": teacher_seconds,
-                        "peak_cuda_allocated_bytes": teacher_peak,
+                    "functional_training": {
+                        "panel": "a",
+                        "cumulative_vjp_calls_from_fresh_step0": (
+                            runtime.optimizer_steps * 6
+                        ),
+                        "target_cache_builds": 0,
+                        "target_cache_scope": "evaluation_diagnostics_gate_only",
+                        "memory_schedule": (
+                            "no_grad_bank_leaf_vjp_cpu_offload_fresh_bank_replay"
+                        ),
                     },
                     "information_wall": {
                         "held_interaction_backward_calls": 0,
                         "held_as_training_wrong_bank_calls": 0,
+                        "same_task_held_backward_calls": 0,
+                        "wrong_fit1_backward_calls": 0,
+                        "panel_b_backward_calls": 0,
+                        "cumulative_result_or_action_gradient_calls_from_fresh_step0": (
+                            runtime.optimizer_steps * 6
+                        ),
                         "validation_or_test_reads": 0,
                         "action_meta_installed": False,
                         "single_complete_rank16": True,
@@ -682,9 +765,7 @@ def load_shared_checkpoint(runtime: Any, checkpoint: Path) -> Mapping[str, Any]:
 
 
 def evaluate_shared_job(
-    runtime: Any,
-    job: Mapping[str, Any],
-    *,
+    runtime: Any, job: Mapping[str, Any], *,
     target_cache: Mapping[int, SharedTaskTargets],
 ) -> Mapping[str, Any]:
     from ember.ecp.joint_program_primal.bank_set_shared_runtime import (

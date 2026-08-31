@@ -33,11 +33,14 @@ from ember.ecp.joint_program_primal.bank_set_shared_evaluation import (
     BANK_SET_SHARED_WORKER_SCHEMA,
     build_job_queue,
 )
+from ember.ecp.joint_program_primal.bank_set_shared_runtime import _optimizer_cursor
 from ember.pi05_source_checkpoint import write_json_atomic
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = ROOT / "configs/pi05_ecp_event_bank_set_s2_shared_loto_v1.json"
+CONFIG = (
+    ROOT / "configs/pi05_ecp_event_bank_set_s2_shared_direct_functional_v1.json"
+)
 
 
 def test_shared_config_seals_loto_roles_rings_profiles_and_wall() -> None:
@@ -60,6 +63,25 @@ def test_shared_config_seals_loto_roles_rings_profiles_and_wall() -> None:
     assert config["information_wall"]["forbidden_task_ids"] == [2, 74]
     assert config["model"]["absent"][0] == "action_meta"
     assert config["model"]["generated_adapter"].endswith("rank16")
+    direct = config["optimization"]["direct_functional"]
+    assert direct["correct_backward_mass"] == 1.0
+    assert direct["wrong_backward_mass"] == 0.5
+    assert direct["task_gradient_combiner"].endswith("no_normalization_or_mgda")
+    assert config["optimization"]["joint"]["optimizer"]["peak_lr"] == 0.0001
+    assert config["evaluation"]["target_cache_scope"].endswith("never_training")
+
+
+def test_shared_profile_allows_two_steps_but_formal_stops_remain_sealed() -> None:
+    config = load_bank_set_shared_config(CONFIG)
+    trainable = (torch.nn.Parameter(torch.tensor(0.0)),)
+    args = SimpleNamespace(mode="profile", stop_after_step=2)
+    assert _optimizer_cursor(args, config, trainable)[3] == 2
+    args.stop_after_step = 3
+    with pytest.raises(ValueError, match="not pre-registered"):
+        _optimizer_cursor(args, config, trainable)
+    args.mode, args.stop_after_step = "formal", 2
+    with pytest.raises(ValueError, match="not pre-registered"):
+        _optimizer_cursor(args, config, trainable)
 
 
 class _TinyInteraction(torch.nn.Module):

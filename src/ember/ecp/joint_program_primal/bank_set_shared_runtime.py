@@ -86,7 +86,8 @@ def _run_contract(runtime: Any, contract: Any) -> dict[str, Any]:
             "root": str(runtime.args.condition_cache_root),
             "program_bank_root": str(runtime.args.program_bank_condition_cache_root),
             "resident_real_banks_per_rank": 1,
-            "teacher_targets": "distributed_once_then_cpu_all_gather",
+            "training_target_cache_builds": 0,
+            "evaluation_target_cache": "lazy_per_task_cpu_diagnostics_gate_only",
         },
         "task_split": dict(runtime.config["task_split"]),
         "shared_training": dict(runtime.config["shared_training"]),
@@ -133,7 +134,7 @@ def _optimizer_cursor(
             else warmup + int(joint["effective_optimizer_steps"])
         )
     )
-    if stop not in ({1} if args.mode == "profile" else set(checkpoints)):
+    if stop not in ({1, 2} if args.mode == "profile" else set(checkpoints)):
         raise ValueError("S2 stop step is not pre-registered")
     return optimizer, scheduler, checkpoints, stop
 

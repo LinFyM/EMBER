@@ -318,12 +318,12 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
         covariance_frame_chunk=1,
     )
     for heads in (
-        compiler.bank_set_interaction.input_correction,
-        compiler.bank_set_interaction.output_correction,
+        compiler.bank_set_interaction.input_condition,
+        compiler.bank_set_interaction.output_condition,
     ):
         for head in heads.values():
-            torch.nn.init.normal_(head.weight, std=0.01)
-            torch.nn.init.normal_(head.bias, std=0.01)
+            torch.nn.init.normal_(head[-1].weight, std=0.01)
+            torch.nn.init.normal_(head[-1].bias, std=0.01)
     program = _program(len(owners), 8, 4)
     video = _video(owners, seed=223, chunks=(2, 3), width=8, events=4)
     compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
@@ -413,11 +413,11 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
         for value in (*gradient_pool.input_values, *gradient_pool.output_values)
     ).backward()
     assert all(
-        head.weight.grad is not None
-        and bool(torch.isfinite(head.weight.grad).all())
+        head[-1].weight.grad is not None
+        and bool(torch.isfinite(head[-1].weight.grad).all())
         for heads in (
-            compiler.bank_set_interaction.input_correction,
-            compiler.bank_set_interaction.output_correction,
+            compiler.bank_set_interaction.input_condition,
+            compiler.bank_set_interaction.output_condition,
         )
         for head in heads.values()
     )

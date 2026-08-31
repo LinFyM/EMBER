@@ -228,7 +228,7 @@ def _prepare_arms(runtime: Any, task: int) -> dict[str, TaskLocalArm]:
         )[0]
         summaries = None
         if routing_stage(runtime.config) == BANK_SET_S0_STAGE:
-            # These frozen summaries are later consumed by trainable FiLM heads.
+            # These frozen summaries later generate trainable candidate heads.
             # no_grad keeps them ordinary tensors; inference tensors cannot be
             # saved by autograd for the head-weight backward.
             with torch.no_grad():

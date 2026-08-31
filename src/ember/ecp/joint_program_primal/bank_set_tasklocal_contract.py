@@ -53,7 +53,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     gate = config.get("gate", {})
     trainable = (
         [
-            "EventConditionedBankSetInteraction.candidate_correction_trunk/FiLM/final_heads",
+            "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
             "training_only_free_correct/free_wrong",
         ]
         if config.get("stage") == BANK_SET_S0_STAGE
@@ -142,10 +142,8 @@ def bank_set_parameter_ownership(
     allowed_roots = {
         "bank_set_interaction.input_candidate",
         "bank_set_interaction.output_candidate",
-        "bank_set_interaction.input_film",
-        "bank_set_interaction.output_film",
-        "bank_set_interaction.input_correction",
-        "bank_set_interaction.output_correction",
+        "bank_set_interaction.input_condition",
+        "bank_set_interaction.output_condition",
     }
     if stage == BANK_SET_S1_STAGE:
         allowed_roots.add("bank_set_interaction.set_encoder")

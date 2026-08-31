@@ -154,32 +154,22 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 for family in families
             }
         )
-        self.input_film = torch.nn.ModuleDict(
+        self.input_condition = torch.nn.ModuleDict(
             {
-                family.value: self._film_network(
+                family.value: self._condition_network(
                     self.event_context_width + self.summary_width
                 )
                 for family in families
             }
         )
-        self.output_film = torch.nn.ModuleDict(
+        self.output_condition = torch.nn.ModuleDict(
             {
-                family.value: self._film_network(
+                family.value: self._condition_network(
                     self.event_context_width + 2 * self.summary_width
                 )
                 for family in families
             }
         )
-        self.input_correction = torch.nn.ModuleDict(
-            {family.value: torch.nn.Linear(self.hidden_width, 1) for family in families}
-        )
-        self.output_correction = torch.nn.ModuleDict(
-            {family.value: torch.nn.Linear(self.hidden_width, 1) for family in families}
-        )
-        for heads in (self.input_correction, self.output_correction):
-            for head in heads.values():
-                torch.nn.init.zeros_(head.weight)
-                torch.nn.init.zeros_(head.bias)
 
     def _candidate_network(self, width: int) -> torch.nn.Sequential:
         return torch.nn.Sequential(
@@ -189,17 +179,51 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             torch.nn.Linear(self.hidden_width, self.hidden_width),
         )
 
-    def _film_network(self, width: int) -> torch.nn.Sequential:
+    def _condition_network(self, width: int) -> torch.nn.Sequential:
+        """Generate a candidate head directly from Program and bank summary."""
+
         network = torch.nn.Sequential(
             torch.nn.LayerNorm(width),
             torch.nn.Linear(width, 2 * self.hidden_width),
             torch.nn.GELU(),
-            torch.nn.Linear(2 * self.hidden_width, 2 * self.hidden_width),
+            torch.nn.Linear(2 * self.hidden_width, self.hidden_width + 1),
         )
-        with torch.no_grad():
-            network[-1].bias[: self.hidden_width].fill_(1.0)
-            network[-1].bias[self.hidden_width :].zero_()
+        torch.nn.init.zeros_(network[-1].weight)
+        torch.nn.init.zeros_(network[-1].bias)
         return network
+
+    def input_event_delta(
+        self, *, family: str, hidden: torch.Tensor, condition: torch.Tensor
+    ) -> torch.Tensor:
+        parameters = self.input_condition[family](condition)
+        candidate_axes = hidden.ndim - parameters.ndim
+        weight = parameters[..., : self.hidden_width].reshape(
+            *parameters.shape[:-1], *((1,) * candidate_axes), self.hidden_width
+        )
+        bias = parameters[..., self.hidden_width].reshape(
+            *parameters.shape[:-1], *((1,) * candidate_axes)
+        )
+        score = (hidden * weight).sum(-1) / math.sqrt(self.hidden_width) + bias
+        return self.correction_bound * torch.tanh(score)
+
+    def output_event_delta(
+        self, *, family: str, hidden: torch.Tensor, condition: torch.Tensor
+    ) -> torch.Tensor:
+        parameters = self.output_condition[family](condition)
+        candidate_axes = hidden.ndim - parameters.ndim
+        prefix = parameters.shape[:-2]
+        types = parameters.shape[-2]
+        weight = parameters[..., : self.hidden_width].reshape(
+            *prefix,
+            *((1,) * candidate_axes),
+            types,
+            self.hidden_width,
+        )
+        bias = parameters[..., self.hidden_width].reshape(
+            *prefix, *((1,) * candidate_axes), types
+        )
+        score = (hidden * weight).sum(-1) / math.sqrt(self.hidden_width) + bias
+        return self.correction_bound * torch.tanh(score)
 
     def _validate_context(self, context: ProgramBankContext) -> int:
         frames = int(context.frame_positions.shape[0])
@@ -450,20 +474,10 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
-        gamma, beta = self.input_film[family](condition).chunk(2, dim=-1)
-        affine = hidden * gamma.reshape(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *((1,) * len(candidate_shape)),
-            self.hidden_width,
-        ) + beta.reshape(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *((1,) * len(candidate_shape)),
-            self.hidden_width,
-        )
-        event_delta = self.correction_bound * torch.tanh(
-            self.input_correction[family](affine).squeeze(-1)
+        event_delta = self.input_event_delta(
+            family=family,
+            hidden=hidden,
+            condition=condition,
         )
         correction = self._collapse_events(
             event_delta, event_weights, context.canonical_assignment
@@ -540,17 +554,10 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
-        gamma, beta = self.output_film[family](condition).chunk(2, dim=-1)
-        affine_shape = (
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *((1,) * (len(candidate_shape) - 1)),
-            len(OUTPUT_BANK_TYPES),
-            self.hidden_width,
-        )
-        affine = hidden * gamma.reshape(affine_shape) + beta.reshape(affine_shape)
-        event_delta = self.correction_bound * torch.tanh(
-            self.output_correction[family](affine).squeeze(-1)
+        event_delta = self.output_event_delta(
+            family=family,
+            hidden=hidden,
+            condition=condition,
         )
         correction = self._collapse_events(
             event_delta, event_weights, context.canonical_assignment

@@ -64,9 +64,13 @@ def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
     )
     assert correction.shape == (4, 2, 3, 2, 50)
     assert torch.equal(correction, torch.zeros_like(correction))
+    correction[:, 0].sum().backward()
+    head = module.input_condition[TargetFamily.Q.value][-1]
+    assert head.weight.grad is not None
+    assert bool(head.weight.grad.abs().sum() > 0)
 
 
-def test_free_summary_changes_the_same_film_path_and_has_gradient() -> None:
+def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> None:
     module, context, state, weights, frame = _fixture()
     values = torch.randn(3, 2, 50, 4)
     native_query = torch.randn(4, 2, 4)
@@ -81,7 +85,7 @@ def test_free_summary_changes_the_same_film_path_and_has_gradient() -> None:
         context=context,
     )
     with torch.no_grad():
-        module.input_correction[TargetFamily.Q.value].weight.normal_(std=0.05)
+        module.input_condition[TargetFamily.Q.value][-1].weight.normal_(std=0.05)
     free_a = torch.nn.Parameter(torch.zeros_like(summary.condition))
     free_b = torch.nn.Parameter(torch.ones_like(summary.condition))
     common = dict(
@@ -123,7 +127,7 @@ def test_output_reads_all_and_own_type_but_keeps_one_joint_candidate_axis() -> N
     )
     assert len(summary.by_type) == 4
     with torch.no_grad():
-        module.output_correction[TargetFamily.Q.value].weight.normal_(std=0.05)
+        module.output_condition[TargetFamily.Q.value][-1].weight.normal_(std=0.05)
     correction = module.output_logit_corrections(
         target=0,
         program_event_state=state,

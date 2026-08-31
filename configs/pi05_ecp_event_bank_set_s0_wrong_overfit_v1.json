@@ -96,7 +96,7 @@
       "93": 4
     },
     "trainable": [
-      "EventConditionedBankSetInteraction.candidate_correction_trunk/FiLM/final_heads",
+      "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
       "training_only_free_correct/free_wrong"
     ],
     "frozen": [

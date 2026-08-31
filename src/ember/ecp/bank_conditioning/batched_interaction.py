@@ -78,12 +78,10 @@ def batched_input_corrections(
     )
     with _candidate_mlp_matmul(features.device):
         hidden = interaction.input_candidate[family](features)
-        gamma, beta = interaction.input_film[family](condition).chunk(2, dim=-1)
-        affine = hidden * gamma[:, :, :, None, None, None] + beta[
-            :, :, :, None, None, None
-        ]
-        event_delta = interaction.correction_bound * torch.tanh(
-            interaction.input_correction[family](affine).squeeze(-1)
+        event_delta = interaction.input_event_delta(
+            family=family,
+            hidden=hidden,
+            condition=condition,
         )
     correction = (
         event_delta
@@ -164,12 +162,10 @@ def batched_output_corrections(
     )
     with _candidate_mlp_matmul(features.device):
         hidden = interaction.output_candidate[family](features)
-        gamma, beta = interaction.output_film[family](condition).chunk(2, dim=-1)
-        affine = hidden * gamma[:, :, :, None, None, None] + beta[
-            :, :, :, None, None, None
-        ]
-        event_delta = interaction.correction_bound * torch.tanh(
-            interaction.output_correction[family](affine).squeeze(-1)
+        event_delta = interaction.output_event_delta(
+            family=family,
+            hidden=hidden,
+            condition=condition,
         )
     correction = (
         event_delta

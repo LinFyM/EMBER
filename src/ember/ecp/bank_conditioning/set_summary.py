@@ -1,292 +1,241 @@
-"""Low-dimensional set summaries that score exact native X/Y candidates."""
+"""Program-relative, event-conditioned summaries of native candidate banks."""
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Sequence
 
 import torch
+import torch.nn.functional as functional
 
 from ember.ecp.bank_conditioning.operator import BankConditioningError
-from ember.ecp.native_factors import G1_RESIDUAL_RANK, rms_normalize
-
-if TYPE_CHECKING:
-    from ember.ecp.bank_conditioning.native_bank_runtime import NativeCandidateBank
+from ember.ecp.contracts import ACTION_HORIZON
+from ember.ecp.native_factors import (
+    G1_PROBE_COUNT,
+    G1_RESIDUAL_RANK,
+    OUTPUT_BANK_TYPES,
+)
 
 
 @dataclass(frozen=True)
-class SetSummaryStatistics:
-    """Per-event unit-measure first and diagonal second centered moments."""
+class EventBankSetSummary:
+    """Finalized summary for one input bank or one output-summary scope."""
 
-    value: torch.Tensor
+    mean: torch.Tensor
+    log_variance: torch.Tensor
+    induced_positive: torch.Tensor
+    induced_negative: torch.Tensor
+    log_partition: torch.Tensor
     event_mass: torch.Tensor
+    condition_override: torch.Tensor | None = None
 
-
-class StreamingSetMoments:
-    """Accumulate low-dimensional set moments without retaining candidates."""
-
-    def __init__(self, *, events: int, width: int, reference: torch.Tensor) -> None:
-        if min(events, width) <= 0:
-            raise BankConditioningError("invalid set-summary moment topology")
-        self.events = int(events)
-        self.width = int(width)
-        self.mass = reference.new_zeros(events, dtype=torch.float32)
-        self.first = reference.new_zeros(events, width, dtype=torch.float32)
-        self.second = reference.new_zeros(events, width, dtype=torch.float32)
-        self.candidate_count = 0
-
-    def add(self, features: torch.Tensor, event_mass: torch.Tensor) -> None:
-        if (
-            features.ndim < 2
-            or features.shape[-1] != self.width
-            or event_mass.shape != (self.events, *features.shape[:-1])
-        ):
-            raise BankConditioningError("set-summary candidate axes changed")
-        flat = features.float().reshape(-1, self.width)
-        mass = event_mass.detach().float().reshape(self.events, -1)
-        if (
-            torch.any(mass < 0)
-            or not bool(torch.isfinite(mass).all())
-            or not bool(torch.isfinite(flat).all())
-        ):
-            raise BankConditioningError("set-summary stream is invalid")
-        self.mass = self.mass + mass.sum(-1)
-        self.first = self.first + torch.einsum("en,nw->ew", mass, flat)
-        self.second = self.second + torch.einsum(
-            "en,nw->ew", mass, flat.square()
+    @property
+    def condition(self) -> torch.Tensor:
+        value = torch.cat(
+            (
+                self.mean,
+                self.log_variance,
+                self.induced_positive,
+                self.induced_negative,
+                self.log_partition,
+            ),
+            dim=-1,
         )
-        self.candidate_count += int(flat.shape[0])
+        if self.condition_override is None:
+            return value
+        if self.condition_override.shape != value.shape:
+            raise BankConditioningError("bank-set condition override shape changed")
+        return self.condition_override
 
-    def finalize(self) -> SetSummaryStatistics:
-        if self.candidate_count <= 0 or not torch.any(self.mass > 0):
-            raise BankConditioningError("set-summary stream is empty")
-        denominator = self.mass[:, None].clamp_min(1e-12)
-        mean = self.first / denominator
-        variance = (self.second / denominator - mean.square()).clamp_min(0)
-        active = self.mass > 0
-        value = torch.cat((mean, variance), dim=-1)
-        value = torch.where(active[:, None], value, torch.zeros_like(value))
-        return SetSummaryStatistics(value=value, event_mass=self.mass)
+    def with_condition(self, condition: torch.Tensor) -> EventBankSetSummary:
+        """Use a training-only free summary without changing set coordinates."""
 
-
-class TaskLocalSelectionCode(torch.nn.Module):
-    """Capacity-only free rank/event code shared by every video of one task."""
-
-    def __init__(self, *, events: int, width: int) -> None:
-        super().__init__()
-        if min(events, width) <= 0:
-            raise BankConditioningError("invalid task-local selection code")
-        self.code = torch.nn.Parameter(torch.empty(G1_RESIDUAL_RANK, events, width))
-        self.event_logits = torch.nn.Parameter(
-            torch.zeros(G1_RESIDUAL_RANK, events)
+        if condition.shape != self.condition.shape:
+            raise BankConditioningError("free bank-set summary shape changed")
+        return EventBankSetSummary(
+            mean=self.mean,
+            log_variance=self.log_variance,
+            induced_positive=self.induced_positive,
+            induced_negative=self.induced_negative,
+            log_partition=self.log_partition,
+            event_mass=self.event_mass,
+            condition_override=condition,
         )
-        torch.nn.init.normal_(self.code, std=width**-0.5)
-
-    def forward(self) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.code, self.event_logits.softmax(-1)
 
 
-class SetConditionedScalarEnergy(torch.nn.Module):
-    """Score each current candidate from content, set context, and a small code."""
+@dataclass(frozen=True)
+class OutputEventBankSetSummary:
+    """All-type and own-type context for one joint dynamic output bank."""
+
+    all_types: EventBankSetSummary
+    by_type: tuple[EventBankSetSummary, ...]
+
+    def __post_init__(self) -> None:
+        if len(self.by_type) != len(OUTPUT_BANK_TYPES):
+            raise BankConditioningError("output bank-set type summary changed")
+
+
+def program_relative_coordinates(
+    native_event_query: torch.Tensor,
+    values: torch.Tensor,
+    native_mean: torch.Tensor,
+) -> torch.Tensor:
+    """Return each candidate's complete rank-by-event native coordinate."""
+
+    if (
+        native_event_query.ndim != 3
+        or native_event_query.shape[0] != G1_RESIDUAL_RANK
+        or values.ndim < 2
+        or native_event_query.shape[-1] != values.shape[-1]
+        or native_mean.shape != (values.shape[-1],)
+    ):
+        raise BankConditioningError("Program-relative coordinate axes changed")
+    centered = values.float() - native_mean.detach().float()
+    candidate = centered / centered.square().mean(-1, keepdim=True).clamp_min(
+        1e-12
+    ).sqrt()
+    query = native_event_query.float()
+    query = query / query.square().mean(-1, keepdim=True).clamp_min(1e-12).sqrt()
+    coordinate = torch.einsum("red,...d->...re", query, candidate)
+    coordinate = coordinate / math.sqrt(values.shape[-1])
+    return coordinate.flatten(-2)
+
+
+def candidate_metadata(
+    frame_positions: torch.Tensor,
+    *,
+    output: bool,
+    like: torch.Tensor,
+) -> torch.Tensor:
+    """Candidate metadata without inventing an output-type axis for input X."""
+
+    frames = frame_positions.to(like).clamp(0.0, 1.0)
+    probes = torch.linspace(-1.0, 1.0, G1_PROBE_COUNT, device=like.device)
+    horizons = torch.linspace(-1.0, 1.0, ACTION_HORIZON, device=like.device)
+    if not output:
+        shape = (frames.shape[0], G1_PROBE_COUNT, ACTION_HORIZON)
+        return torch.stack(
+            torch.broadcast_tensors(
+                frames[:, None, None],
+                probes[None, :, None],
+                horizons[None, None, :],
+            ),
+            dim=-1,
+        ).expand(*shape, 3)
+    types = functional.one_hot(
+        torch.arange(len(OUTPUT_BANK_TYPES), device=like.device),
+        num_classes=len(OUTPUT_BANK_TYPES),
+    ).to(like)
+    shape = (
+        frames.shape[0],
+        G1_PROBE_COUNT,
+        ACTION_HORIZON,
+        len(OUTPUT_BANK_TYPES),
+    )
+    return torch.cat(
+        (
+            frames[:, None, None, None, None].expand(*shape, 1),
+            probes[None, :, None, None, None].expand(*shape, 1),
+            horizons[None, None, :, None, None].expand(*shape, 1),
+            types[None, None, None].expand(*shape, len(OUTPUT_BANK_TYPES)),
+        ),
+        dim=-1,
+    )
+
+
+def event_candidate_measure(
+    frame_measure: torch.Tensor,
+    assignment: torch.Tensor,
+    *,
+    output: bool,
+) -> torch.Tensor:
+    """Unit-scope event measure; fixed candidate multiplicity cannot bias log-Z."""
+
+    if (
+        frame_measure.ndim != 1
+        or assignment.ndim != 2
+        or assignment.shape[0] != frame_measure.shape[0]
+        or torch.any(frame_measure < 0)
+        or torch.any(assignment < 0)
+    ):
+        raise BankConditioningError("event candidate measure axes changed")
+    events = assignment.shape[1]
+    base = frame_measure.float()[:, None, None]
+    base = base.expand(-1, G1_PROBE_COUNT, ACTION_HORIZON)
+    base = base / float(G1_PROBE_COUNT * ACTION_HORIZON)
+    mass = assignment.float().T.reshape(events, -1, 1, 1) * base
+    if output:
+        mass = mass[..., None].expand(-1, -1, -1, -1, len(OUTPUT_BANK_TYPES))
+        mass = mass / float(len(OUTPUT_BANK_TYPES))
+    return mass
+
+
+class StreamingEventBankSummary:
+    """Online moments and antithetic induced attention for one summary scope."""
 
     def __init__(
         self,
         *,
-        feature_width: int,
-        event_slots: int,
-        global_events: bool,
-        hidden_width: int,
-        logit_bound: float,
+        events: int,
+        coordinate_width: int,
+        value_width: int,
+        reference: torch.Tensor,
     ) -> None:
-        super().__init__()
-        if (
-            min(feature_width, event_slots, hidden_width) <= 0
-            or logit_bound <= 0
-        ):
-            raise BankConditioningError("invalid set-conditioned energy topology")
-        self.feature_width = int(feature_width)
-        self.event_slots = int(event_slots)
-        self.global_events = bool(global_events)
-        self.logit_bound = float(logit_bound)
-        self.summary_features = self._feature_network(feature_width)
-        summary_width = 2 * feature_width
-        if self.global_events:
-            self.summary_context = torch.nn.Sequential(
-                torch.nn.LayerNorm(event_slots * summary_width),
-                torch.nn.Linear(event_slots * summary_width, hidden_width),
-                torch.nn.GELU(),
-                torch.nn.Linear(hidden_width, event_slots * feature_width),
-            )
-        else:
-            self.summary_context = torch.nn.Sequential(
-                torch.nn.LayerNorm(summary_width),
-                torch.nn.Linear(summary_width, hidden_width),
-                torch.nn.GELU(),
-                torch.nn.Linear(hidden_width, feature_width),
-            )
-        self.code_context = torch.nn.Sequential(
-            torch.nn.LayerNorm(feature_width),
-            torch.nn.Linear(feature_width, feature_width),
-        )
-        self.candidate_basis = torch.nn.Sequential(
-            torch.nn.LayerNorm(feature_width),
-            torch.nn.Linear(feature_width, hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, 2 * feature_width),
-        )
-        self.condition_coefficients = torch.nn.Sequential(
-            torch.nn.LayerNorm(3 * feature_width),
-            torch.nn.Linear(3 * feature_width, hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(hidden_width, 2 * feature_width + 2),
-        )
-        self._reset_energy()
-
-    @staticmethod
-    def _feature_network(width: int) -> torch.nn.Sequential:
-        return torch.nn.Sequential(
-            torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, 2 * width),
-            torch.nn.GELU(),
-            torch.nn.Linear(2 * width, width),
-            torch.nn.LayerNorm(width),
-        )
-
-    def _reset_energy(self) -> None:
-        candidate = self.candidate_basis[-1]
-        condition = self.condition_coefficients[-1]
-        with torch.no_grad():
-            torch.nn.init.normal_(candidate.weight[: self.feature_width], std=0.02)
-            candidate.weight[self.feature_width :].copy_(
-                candidate.weight[: self.feature_width]
-            )
-            candidate.bias.zero_()
-            torch.nn.init.normal_(
-                condition.weight[: self.feature_width], std=0.02
-            )
-            condition.weight[
-                self.feature_width : 2 * self.feature_width
-            ].copy_(-condition.weight[: self.feature_width])
-            condition.weight[2 * self.feature_width :].zero_()
-            condition.bias.zero_()
-
-    def summarize(
-        self, keys: torch.Tensor, event_mass: torch.Tensor
-    ) -> SetSummaryStatistics:
-        encoded = self.summary_features(keys.float())
-        accumulator = StreamingSetMoments(
-            events=self.event_slots,
-            width=self.feature_width,
-            reference=encoded,
-        )
-        accumulator.add(encoded, event_mass)
-        return accumulator.finalize()
-
-    def _context(self, statistics: SetSummaryStatistics) -> torch.Tensor:
-        if statistics.value.shape != (
-            self.event_slots,
-            2 * self.feature_width,
-        ):
-            raise BankConditioningError("set-summary statistics changed shape")
-        if self.global_events:
-            return self.summary_context(statistics.value.reshape(1, -1)).reshape(
-                self.event_slots, self.feature_width
-            )
-        return self.summary_context(statistics.value)
-
-    def score(
-        self,
-        keys: torch.Tensor,
-        code: torch.Tensor,
-        statistics: SetSummaryStatistics,
-        *,
-        topology: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        candidate_shape = keys.shape[:-1]
-        if (
-            keys.shape[-1] != self.feature_width
-            or code.shape
-            != (G1_RESIDUAL_RANK, self.event_slots, self.feature_width)
-        ):
-            raise BankConditioningError("set-conditioned score axes changed")
-        context = self._context(statistics)
-        code_context = self.code_context(code.float())
-        if topology is not None:
-            if topology.shape != (self.feature_width,):
-                raise BankConditioningError("set-conditioned topology changed")
-            code_context = code_context + topology
-        event_context = context[None].expand(G1_RESIDUAL_RANK, -1, -1)
-        condition = self.condition_coefficients(
-            torch.cat(
-                (code_context, event_context, code_context * event_context), dim=-1
-            )
-        )
-        coefficients = condition[..., : 2 * self.feature_width].reshape(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            2,
-            self.feature_width,
-        )
-        branch_bias = condition[..., 2 * self.feature_width :]
-        basis = self.candidate_basis(keys.float()).reshape(
-            -1, 2, self.feature_width
-        )
-        logits = torch.einsum("nbw,rebw->renb", basis, coefficients)
-        logits = logits / self.feature_width**0.5 + branch_bias[:, :, None]
-        logits = self.logit_bound * torch.tanh(logits)
-        return logits.reshape(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *candidate_shape,
-            2,
-        )
-
-
-class StreamingSetSignedPool:
-    """Online softmax of explicit scalar branches followed by event mixing."""
-
-    def __init__(self, *, ranks: int, events: int, width: int, reference: torch.Tensor):
-        if min(ranks, events, width) <= 0:
-            raise BankConditioningError("invalid set-signed pool topology")
-        self.ranks = int(ranks)
+        if min(events, coordinate_width, value_width) <= 0:
+            raise BankConditioningError("invalid event bank-set summary topology")
         self.events = int(events)
-        self.width = int(width)
-        shape = (ranks, events, 2)
-        self.maximum = reference.new_full(shape, -torch.inf, dtype=torch.float32)
-        self.normalizer = reference.new_zeros(shape, dtype=torch.float32)
-        self.weighted_sum = reference.new_zeros(
-            *shape, width, dtype=torch.float32
+        self.coordinate_width = int(coordinate_width)
+        self.value_width = int(value_width)
+        self.mass = reference.new_zeros(events, dtype=torch.float32)
+        self.first = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
+        self.second = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
+        self.maximum = reference.new_full((events, 2), -torch.inf, dtype=torch.float32)
+        self.normalizer = reference.new_zeros(events, 2, dtype=torch.float32)
+        self.weighted = reference.new_zeros(
+            events, 2, value_width, dtype=torch.float32
         )
         self.candidate_count = 0
 
     def add(
         self,
-        values: torch.Tensor,
+        coordinates: torch.Tensor,
         event_mass: torch.Tensor,
-        branch_logits: torch.Tensor,
+        inducing_query: torch.Tensor,
+        summary_values: torch.Tensor,
     ) -> None:
-        candidate_shape = values.shape[:-1]
-        expected = (self.ranks, self.events, *candidate_shape, 2)
+        candidate_shape = coordinates.shape[:-1]
         if (
-            values.ndim < 2
-            or values.shape[-1] != self.width
+            coordinates.shape[-1] != self.coordinate_width
             or event_mass.shape != (self.events, *candidate_shape)
-            or branch_logits.shape != expected
+            or inducing_query.shape != (self.events, self.coordinate_width)
+            or summary_values.shape != (*candidate_shape, self.value_width)
         ):
-            raise BankConditioningError("set-signed pool candidate axes changed")
-        value = values.detach().float().reshape(-1, self.width)
+            raise BankConditioningError("event bank-set candidate axes changed")
+        coordinate = coordinates.float().reshape(-1, self.coordinate_width)
+        values = summary_values.float().reshape(-1, self.value_width)
         mass = event_mass.detach().float().reshape(self.events, -1)
-        score = branch_logits.float().reshape(
-            self.ranks, self.events, -1, 2
-        ).permute(0, 1, 3, 2)
-        if torch.any(mass < 0) or not bool(torch.isfinite(score).all()):
-            raise BankConditioningError("set-signed pool stream is invalid")
+        if (
+            torch.any(mass < 0)
+            or not bool(torch.isfinite(coordinate).all())
+            or not bool(torch.isfinite(values).all())
+            or not bool(torch.isfinite(mass).all())
+        ):
+            raise BankConditioningError("event bank-set stream is invalid")
+        self.mass = self.mass + mass.sum(-1)
+        self.first = self.first + torch.einsum("en,nk->ek", mass, coordinate)
+        self.second = self.second + torch.einsum(
+            "en,nk->ek", mass, coordinate.square()
+        )
+        normalized = functional.layer_norm(coordinate, (self.coordinate_width,))
+        score = torch.einsum(
+            "ek,nk->en", inducing_query.float(), normalized
+        ) / math.sqrt(self.coordinate_width)
         log_mass = torch.where(
             mass > 0,
             mass.clamp_min(1e-30).log(),
             torch.full_like(mass, -torch.inf),
         )
-        logits = score + log_mass[None, :, None]
+        logits = log_mass[:, None] + torch.stack((score, -score), dim=1)
         chunk_maximum = logits.amax(-1)
         maximum = torch.maximum(self.maximum, chunk_maximum).detach()
         finite = torch.isfinite(maximum)
@@ -301,114 +250,147 @@ class StreamingSetSignedPool:
             torch.exp(logits - shift[..., None]),
             torch.zeros_like(logits),
         )
-        self.weighted_sum = self.weighted_sum * old_scale[..., None] + torch.einsum(
-            "rebn,nd->rebd", weights, value
+        self.weighted = self.weighted * old_scale[..., None] + torch.einsum(
+            "ebn,nv->ebv", weights, values
         )
         self.normalizer = self.normalizer * old_scale + weights.sum(-1)
         self.maximum = maximum
-        self.candidate_count += int(value.shape[0])
+        self.candidate_count += int(coordinate.shape[0])
 
-    def signed_factor(self, event_weights: torch.Tensor) -> torch.Tensor:
-        if (
-            self.candidate_count <= 0
-            or event_weights.shape != (self.ranks, self.events)
+    def finalize(self) -> EventBankSetSummary:
+        if self.candidate_count <= 0 or not torch.all(self.mass > 0):
+            raise BankConditioningError("event bank-set summary has an empty event")
+        denominator = self.mass[:, None]
+        mean = self.first / denominator
+        variance = (self.second / denominator - mean.square()).clamp_min(1e-6)
+        induced = self.weighted / self.normalizer.clamp_min(1e-30)[..., None]
+        log_partition = self.maximum + self.normalizer.clamp_min(1e-30).log()
+        if not all(
+            bool(torch.isfinite(value).all())
+            for value in (mean, variance, induced, log_partition)
         ):
-            raise BankConditioningError("set-signed pool is empty")
-        active = self.normalizer.amin(-1) > 0
-        if not torch.all(active.any(-1)):
-            raise BankConditioningError("set-signed pool has no active event")
-        branch = self.weighted_sum / self.normalizer.clamp_min(1e-30)[..., None]
-        signed = branch[..., 0, :] - branch[..., 1, :]
-        weights = event_weights.float() * active
-        weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-30)
-        return torch.einsum("re,red->rd", weights, signed)
+            raise BankConditioningError("event bank-set summary is non-finite")
+        return EventBankSetSummary(
+            mean=mean,
+            log_variance=variance.log(),
+            induced_positive=induced[:, 0],
+            induced_negative=induced[:, 1],
+            log_partition=log_partition,
+            event_mass=self.mass,
+        )
 
 
-def materialized_set_signed_pool(
-    values: torch.Tensor,
-    event_mass: torch.Tensor,
-    branch_logits: torch.Tensor,
-    event_weights: torch.Tensor,
-) -> torch.Tensor:
-    accumulator = StreamingSetSignedPool(
-        ranks=branch_logits.shape[0],
-        events=branch_logits.shape[1],
-        width=values.shape[-1],
-        reference=branch_logits,
-    )
-    accumulator.add(values, event_mass, branch_logits)
-    return accumulator.signed_factor(event_weights)
-
-
-class SetSummaryFactorSelector(torch.nn.Module):
-    """Produce one rank-four residual by exact input/output candidate pooling."""
+class EventBankSetSummaryStream:
+    """Chunk-facing encoder state that retains only online summary statistics."""
 
     def __init__(
         self,
         *,
-        feature_width: int,
-        event_slots: int,
-        output_groups: int,
-        global_events: bool,
-        hidden_width: int,
-        logit_bound: float,
+        accumulator: StreamingEventBankSummary,
+        inducing_query: torch.Tensor,
+        value_network: torch.nn.Module,
+        output: bool,
     ) -> None:
-        super().__init__()
-        if output_groups <= 0:
-            raise BankConditioningError("set-summary selector has no output group")
-        arguments = dict(
-            feature_width=feature_width,
-            event_slots=event_slots,
-            global_events=global_events,
-            hidden_width=hidden_width,
-            logit_bound=logit_bound,
-        )
-        self.input_energy = SetConditionedScalarEnergy(**arguments)
-        self.output_energy = SetConditionedScalarEnergy(**arguments)
-        self.output_group_embedding = torch.nn.Parameter(
-            torch.empty(output_groups, feature_width)
-        )
-        torch.nn.init.normal_(self.output_group_embedding, std=feature_width**-0.5)
+        self.accumulator = accumulator
+        self.inducing_query = inducing_query
+        self.value_network = value_network
+        self.output = bool(output)
 
-    @staticmethod
-    def _factor(
-        energy: SetConditionedScalarEnergy,
-        bank: NativeCandidateBank,
-        code: torch.Tensor,
-        event_weights: torch.Tensor,
-        topology: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        statistics = energy.summarize(bank.content_keys, bank.event_mass)
-        logits = energy.score(
-            bank.content_keys, code, statistics, topology=topology
-        )
-        return materialized_set_signed_pool(
-            bank.values, bank.event_mass, logits, event_weights
-        )
-
-    def forward(
+    def add(
         self,
         *,
-        input_bank: NativeCandidateBank,
-        output_banks: Sequence[NativeCandidateBank],
-        code: torch.Tensor,
-        event_weights: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        if len(output_banks) != self.output_group_embedding.shape[0]:
-            raise BankConditioningError("set-summary output groups changed")
-        input_factor = self._factor(
-            self.input_energy, input_bank, code, event_weights
+        coordinates: torch.Tensor,
+        metadata: torch.Tensor,
+        event_mass: torch.Tensor,
+    ) -> None:
+        expected_metadata = 7 if self.output else 3
+        if metadata.shape != (*coordinates.shape[:-1], expected_metadata):
+            raise BankConditioningError("event bank-set metadata axes changed")
+        summary_values = self.value_network(
+            torch.cat((coordinates, metadata.float()), dim=-1)
         )
-        output_blocks = tuple(
-            self._factor(
-                self.output_energy,
-                bank,
-                code,
-                event_weights,
-                self.output_group_embedding[group],
-            )
-            for group, bank in enumerate(output_banks)
+        self.accumulator.add(
+            coordinates, event_mass, self.inducing_query, summary_values
         )
-        return rms_normalize(input_factor), rms_normalize(
-            torch.cat(output_blocks, dim=-1)
+
+    def finalize(self) -> EventBankSetSummary:
+        return self.accumulator.finalize()
+
+
+class EventBankSetEncoder(torch.nn.Module):
+    """Generate real B0 summaries; S0 bypasses only this learned source."""
+
+    def __init__(
+        self,
+        *,
+        context_width: int,
+        coordinate_width: int,
+        summary_value_width: int,
+        hidden_width: int,
+    ) -> None:
+        super().__init__()
+        if min(context_width, coordinate_width, summary_value_width, hidden_width) <= 0:
+            raise BankConditioningError("invalid event bank-set encoder topology")
+        self.coordinate_width = int(coordinate_width)
+        self.summary_value_width = int(summary_value_width)
+        self.inducing = torch.nn.Sequential(
+            torch.nn.LayerNorm(context_width),
+            torch.nn.Linear(context_width, hidden_width),
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_width, coordinate_width),
+        )
+        self.input_value = self._value_network(coordinate_width + 3, hidden_width)
+        self.output_value = self._value_network(coordinate_width + 7, hidden_width)
+
+    def _value_network(self, width: int, hidden: int) -> torch.nn.Sequential:
+        return torch.nn.Sequential(
+            torch.nn.LayerNorm(width),
+            torch.nn.Linear(width, hidden),
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden, self.summary_value_width),
+        )
+
+    def summarize(
+        self,
+        *,
+        coordinates: torch.Tensor,
+        metadata: torch.Tensor,
+        event_mass: torch.Tensor,
+        event_context: torch.Tensor,
+        output: bool,
+    ) -> EventBankSetSummary:
+        stream = self.new_stream(
+            event_context=event_context,
+            output=output,
+            reference=coordinates,
+            events=event_mass.shape[0],
+        )
+        stream.add(
+            coordinates=coordinates,
+            metadata=metadata,
+            event_mass=event_mass,
+        )
+        return stream.finalize()
+
+    def new_stream(
+        self,
+        *,
+        event_context: torch.Tensor,
+        output: bool,
+        reference: torch.Tensor,
+        events: int,
+    ) -> EventBankSetSummaryStream:
+        query = self.inducing(event_context.float())
+        network = self.output_value if output else self.input_value
+        accumulator = StreamingEventBankSummary(
+            events=events,
+            coordinate_width=self.coordinate_width,
+            value_width=self.summary_value_width,
+            reference=reference,
+        )
+        return EventBankSetSummaryStream(
+            accumulator=accumulator,
+            inducing_query=query,
+            value_network=network,
+            output=output,
         )

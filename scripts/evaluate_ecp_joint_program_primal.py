@@ -13,11 +13,6 @@ from ember.ecp.joint_program_primal.routing_control import ROUTING_CONTROL_SCHEM
 from ember.ecp.joint_program_primal.routing_control import (
     PROGRAM_BANK_INTERACTION_SCHEMA,
 )
-from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
-    PROGRAM_BANK_INTERACTION_GATE_SCHEMA,
-    aggregate_program_bank_interaction_evaluation,
-    evaluate_program_bank_interaction_worker,
-)
 from ember.ecp.joint_program_primal.routing_control_evaluation import (
     ROUTING_GATE_SCHEMA,
     aggregate_routing_evaluation,
@@ -97,16 +92,20 @@ def main() -> int:
     if args.command == "worker":
         schema = read_json(args.config).get("schema_version")
         if schema == PROGRAM_BANK_INTERACTION_SCHEMA:
-            evaluate_program_bank_interaction_worker(args)
+            raise ValueError(
+                "retired pointwise Program-bank interaction config is not executable"
+            )
         elif schema == ROUTING_CONTROL_SCHEMA:
             evaluate_routing_worker(args)
         else:
             evaluate_worker(args)
         return 0
     gate_schema = read_json(args.gate_config).get("schema_version")
-    if gate_schema == PROGRAM_BANK_INTERACTION_GATE_SCHEMA:
-        aggregate = aggregate_program_bank_interaction_evaluation
-    elif gate_schema == ROUTING_GATE_SCHEMA:
+    if gate_schema == "ember_ecp_program_bank_candidate_interaction_gate_v4":
+        raise ValueError(
+            "retired pointwise Program-bank interaction Gate is not executable"
+        )
+    if gate_schema == ROUTING_GATE_SCHEMA:
         aggregate = aggregate_routing_evaluation
     else:
         aggregate = aggregate_evaluation

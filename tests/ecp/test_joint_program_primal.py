@@ -1,6 +1,4 @@
-import json
 from pathlib import Path
-import subprocess
 from types import SimpleNamespace
 
 import torch
@@ -17,26 +15,20 @@ from ember.ecp.joint_program_primal.evaluation import (
     load_joint_program_primal_gate,
 )
 from ember.ecp.joint_program_primal.evaluation_gate import _interaction
+from ember.ecp.joint_program_primal.bank_set_tasklocal import (
+    EffectiveTarget,
+    _CorrectionCollector,
+    _effective_rank4_diagnostics,
+)
 from ember.ecp.joint_program_primal.routing_control import (
+    BANK_SET_S0_STAGE,
+    BANK_SET_S1_STAGE,
     ROUTING_TASK_IDS,
-    SCORER_INTERACTION_ONLY,
     SCORER_NATIVE_HEADS_ONLY,
     _scorer_parameter_ownership,
     fixed_routing_program,
     fixed_routing_token,
     load_routing_control_config,
-)
-from ember.ecp.joint_program_primal.program_bank_interaction_evaluation import (
-    _checks as interaction_gate_checks,
-    _git_commit_is_ancestor,
-    _information_wall_pass,
-    _tracked_json_config_authority,
-    _worker_commit_authority_matches,
-    load_program_bank_interaction_gate,
-)
-from ember.ecp.joint_program_primal.program_bank_interaction_training import (
-    _wrong_bank_credit,
-    _wrong_bank_pair,
 )
 from ember.ecp.joint_program_primal.routing_initialization import (
     FUNCTIONAL_CODE_INITIALIZATION,
@@ -51,6 +43,7 @@ from ember.ecp.joint_program_primal.runtime import (
     RAW_STAGE0_SUFFICIENCY_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
+    SCORER_INTERACTION_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
@@ -77,6 +70,51 @@ from ember.ecp.natural_program import (
     NaturalProgramModel,
 )
 from ember.ecp.shared_compiler import SharedNativeFactorCompiler
+
+
+def test_bank_set_final_diagnostics_are_gauge_invariant_and_streaming() -> None:
+    owners = (
+        TargetOwner(0, "q", TargetFamily.Q, 0, 3, 5),
+        TargetOwner(1, "v", TargetFamily.V, 0, 4, 6),
+        TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 2, 7),
+        TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 5, 2),
+    )
+    generator = torch.Generator().manual_seed(37)
+    a = tuple(
+        torch.randn(4, owner.in_features, generator=generator) for owner in owners
+    )
+    b = tuple(
+        torch.randn(4, owner.out_features, generator=generator) for owner in owners
+    )
+    output = SimpleNamespace(
+        residual=SimpleNamespace(a=a, b=b, scales=torch.ones(len(owners), 4))
+    )
+    target = EffectiveTarget(
+        a=tuple(value.clone() for value in a),
+        b=tuple(value.clone() for value in b),
+    )
+    diagnostics = _effective_rank4_diagnostics(
+        SimpleNamespace(owners=owners),
+        output,
+        target,
+        {family: torch.ones(()) for family in TargetFamily},
+    )
+    assert diagnostics["negative_family_cosines"] == []
+    assert len(diagnostics["targets"]) == len(owners)
+    assert all(
+        abs(row["cosine"] - 1.0) < 1e-6
+        and row["normalized_squared_error"] < 1e-5
+        for row in diagnostics["families"].values()
+    )
+
+    collector = _CorrectionCollector(0.1)
+    for side in ("input", "output"):
+        for owner in owners:
+            collector.observe(side, owner, torch.tensor([0.0, 0.05, 0.1]))
+    correction = collector.finalize()
+    assert correction["all"]["count"] == 24
+    assert abs(correction["all"]["near_bound_fraction"] - 1.0 / 3.0) < 1e-6
+    assert correction["all"]["p95_absolute"] == 0.1
 
 
 def test_joint_task_schedule_is_role_balanced_and_task_equal() -> None:
@@ -388,6 +426,46 @@ def test_routing_r5_freezes_feature_chart_and_trains_only_native_heads() -> None
     }
 
 
+def test_bank_set_s0_and_s1_have_explicit_trainable_parameter_ownership() -> None:
+    owners = (
+        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 8),
+        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
+        TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 4, 4),
+        TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 4, 4),
+    )
+    for stage in (BANK_SET_S0_STAGE, BANK_SET_S1_STAGE):
+        program = torch.nn.Linear(2, 2)
+        compiler = SharedNativeFactorCompiler(
+            owners, program_width=8, event_slots=4
+        )
+        writer, trainable, frozen = _scorer_parameter_ownership(
+            program,
+            compiler,
+            partition=SCORER_INTERACTION_ONLY,
+            stage=stage,
+        )
+        names = {
+            name
+            for name, parameter in writer.named_parameters()
+            if parameter.requires_grad
+        }
+        assert {id(value) for value in trainable} == {
+            id(value) for value in writer.parameters() if value.requires_grad
+        }
+        assert all(not value.requires_grad for value in frozen)
+        assert all(
+            not value.requires_grad for value in compiler.primal_scorer.parameters()
+        )
+        assert ({name for name in names if name.startswith("free_")}) == (
+            {"free_correct", "free_wrong"}
+            if stage == BANK_SET_S0_STAGE
+            else set()
+        )
+        assert any("set_encoder" in name for name in names) is (
+            stage == BANK_SET_S1_STAGE
+        )
+
+
 def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> None:
     root = Path(__file__).resolve().parents[2]
     config = load_joint_program_primal_config(
@@ -633,260 +711,6 @@ def test_retired_binary_routes_are_not_active_configs() -> None:
         raise AssertionError(f"retired binary route remained executable: {name}")
 
 
-def test_candidate_interaction_config_authority_is_content_based(
-    tmp_path: Path,
-) -> None:
-    root = Path(__file__).resolve().parents[2]
-    relative = "configs/pi05_ecp_program_bank_candidate_interaction_v4.json"
-    current = root / relative
-    payload = json.loads(current.read_text(encoding="utf-8"))
-    commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.strip()
-    recorded = {
-        "path": f"/different/frozen/root/{relative}",
-        "bytes": current.stat().st_size,
-    }
-
-    assert _tracked_json_config_authority(
-        recorded,
-        current,
-        payload,
-        repo_root=root,
-        training_commit=commit,
-        relative_path=relative,
-    )
-
-    changed = tmp_path / current.name
-    changed.write_bytes(current.read_bytes().replace(b'"weight": 0.5', b'"weight": 0.6'))
-    assert changed.stat().st_size == current.stat().st_size
-    assert not _tracked_json_config_authority(
-        recorded,
-        changed,
-        payload,
-        repo_root=root,
-        training_commit=commit,
-        relative_path=relative,
-    )
-    assert not _tracked_json_config_authority(
-        {**recorded, "path": f"/different/frozen/root/{current.name}"},
-        current,
-        payload,
-        repo_root=root,
-        training_commit=commit,
-        relative_path=relative,
-    )
-
-
-def test_candidate_interaction_commit_authorities_are_separate() -> None:
-    root = Path(__file__).resolve().parents[2]
-    head = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.strip()
-    parent = subprocess.run(
-        ["git", "rev-parse", "HEAD^"],
-        cwd=root,
-        check=True,
-        text=True,
-        capture_output=True,
-    ).stdout.strip()
-    assert _git_commit_is_ancestor(root, head, head)
-    assert _git_commit_is_ancestor(root, parent, head)
-    assert not _git_commit_is_ancestor(root, head, parent)
-
-    workers = [
-        {
-            "checkpoint": {"training_commit": parent},
-            "authority": {"evaluator_commit": head},
-            "git": {"commit": head},
-        }
-        for _ in range(5)
-    ]
-    assert _worker_commit_authority_matches(workers)
-    workers[0]["git"]["commit"] = parent
-    assert not _worker_commit_authority_matches(workers)
-
-
-def test_candidate_interaction_qualification_is_continuous_and_interaction_only() -> None:
-    root = Path(__file__).resolve().parents[2]
-    config = load_routing_control_config(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_v4.json"
-    )
-    gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v4.json"
-    )
-    assert config["model"]["primal_scorer_trainable_partition"] == (
-        SCORER_INTERACTION_ONLY
-    )
-    assert config["model"]["inverse_covariance_power"] == 1.0
-    assert "compatibility_support_threshold" not in config["model"]
-    assert "separate_compatibility_probes" not in config["model"]
-    assert config["model"]["trainable"] == ["ProgramBankInteractionScorer"]
-    assert config["information_wall"]["wrong_bank_exact_language_fixed"] is True
-    assert config["information_wall"]["action_meta_installed"] is False
-    assert gate["evaluation"]["control_arms"] == [
-        "correct_interaction_on",
-        "unseen_wrong_interaction_on",
-        "same_unseen_wrong_interaction_off",
-    ]
-    assert config["optimization"]["loss"] == (
-        "mean_correct_raw_flow_plus_half_weight_raw_wrong_bank_benefit_hinge"
-    )
-    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
-        "backward_units"
-    ] == "raw_functional_flow_loss"
-    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
-        "task_balance"
-    ] == "two_correct_views_total_is_twice_one_wrong_arm"
-    assert config["optimization"]["joint"]["wrong_bank_neutralization"][
-        "weight"
-    ] == 0.5
-
-    owners = (
-        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),
-        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
-    )
-    program = NaturalProgramModel(
-        torch.nn.Identity(), prefix_width=6, width=4, owners=2, event_slots=2
-    )
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=4, event_slots=2
-    )
-    writer, trainable, frozen = _scorer_parameter_ownership(
-        program, compiler, partition=SCORER_INTERACTION_ONLY
-    )
-    expected = {id(value) for value in compiler.interaction_scorer.parameters()}
-    assert {id(value) for value in writer.parameters()} == expected
-    assert {id(value) for value in trainable} == expected
-    assert all(value.requires_grad for value in trainable)
-    assert all(not value.requires_grad for value in frozen)
-    assert all(
-        not value.requires_grad for value in compiler.primal_scorer.parameters()
-    )
-
-
-def test_candidate_interaction_wrong_banks_cycle_all_same_role_other_tasks() -> None:
-    runtime = SimpleNamespace(
-        config={
-            "task_split": {
-                "gradient_meta": [1, 8, 9, 32, 52],
-                "gradient_target": [72, 73, 75, 93, 94],
-            }
-        },
-        optimizer_steps=0,
-    )
-    observed = []
-    for step in range(8):
-        runtime.optimizer_steps = step
-        observed.append(_wrong_bank_pair(runtime, 1))
-    assert observed == [
-        (8, 0),
-        (8, 1),
-        (9, 0),
-        (9, 1),
-        (32, 0),
-        (32, 1),
-        (52, 0),
-        (52, 1),
-    ]
-
-
-def test_candidate_interaction_raw_wrong_credit_preserves_positive_anchor() -> None:
-    active = _wrong_bank_credit(
-        carrier_loss=0.10,
-        wrong_loss=0.08,
-        free_benefit=0.01,
-        epsilon=1e-6,
-        weight=0.5,
-    )
-    inactive = _wrong_bank_credit(
-        carrier_loss=0.10,
-        wrong_loss=0.11,
-        free_benefit=0.01,
-        epsilon=1e-6,
-        weight=0.5,
-    )
-    assert active["active"] is True
-    assert active["backward_weight"] == -1.0 / 12.0
-    correct_total_weight = 2.0 / 12.0
-    assert correct_total_weight == -2.0 * active["backward_weight"]
-    assert correct_total_weight + active["backward_weight"] == 1.0 / 12.0
-    assert float(active["legacy_normalized_amplification"]) > 99.0
-    assert inactive["active"] is False
-    assert inactive["backward_weight"] == 0.0
-
-
-def test_candidate_interaction_information_wall_allows_warm_diagnostic_cache() -> None:
-    wall = {
-        "deployment_native_teacher_tensor_reads": 0,
-        "diagnostic_native_teacher_tensor_reads": 1,
-        "panel_b_backward_calls": 0,
-        "same_task_held_backward_calls": 0,
-        "unseen_wrong_backward_calls": 0,
-        "validation_or_test_reads": 0,
-        "action_meta_installed": False,
-        "action_meta_module_count": 0,
-        "action_meta_parameter_count": 0,
-        "single_complete_rank16": True,
-        "K1_identity": True,
-        "shuffled_or_reversed_use": False,
-        "fixed_routing_token_training_only": True,
-        "wrong_bank_exact_language_fixed": True,
-        "deployment_candidate": False,
-    }
-    assert _information_wall_pass([{"information_wall": wall}])
-    assert _information_wall_pass(
-        [{"information_wall": {**wall, "diagnostic_native_teacher_tensor_reads": 0}}]
-    )
-    assert not _information_wall_pass(
-        [{"information_wall": {**wall, "deployment_native_teacher_tensor_reads": 1}}]
-    )
-
-
-def test_candidate_interaction_gate_requires_every_mechanism_check() -> None:
-    root = Path(__file__).resolve().parents[2]
-    gate = load_program_bank_interaction_gate(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_gate_v4.json"
-    )
-
-    def distribution(median: float) -> dict[str, float | int]:
-        return {"count": 10, "median": median}
-
-    summary = {
-        "correct_fit": distribution(0.90),
-        "same_task_held": distribution(0.85),
-        "held_to_fit": 0.94,
-        "unseen_wrong_on": distribution(0.20),
-        "correct_minus_wrong": distribution(0.70),
-        "wrong_off_minus_on": distribution(0.45),
-        "correct_better_than_wrong_tasks": 10,
-        "family": {
-            name: distribution(0.01)
-            for name in ("q_proj", "v_proj", "action_in", "action_out")
-        },
-        "information_wall_pass": True,
-        "training_global_step_seconds_maximum": 440.0,
-        "training_global_step_seconds_median": 400.0,
-        "evaluation_to_training_wall": 4.0,
-    }
-    checks = interaction_gate_checks(gate, summary)
-    assert checks and all(checks.values())
-    summary["wrong_off_minus_on"] = distribution(0.39)
-    failed = interaction_gate_checks(gate, summary)
-    assert failed["wrong_off_minus_on"] is False
-    assert sum(not value for value in failed.values()) == 1
-    summary["wrong_off_minus_on"] = distribution(0.45)
-    assert all(interaction_gate_checks(gate, summary).values())
-    assert "training_throughput" not in interaction_gate_checks(gate, summary)
-    assert "evaluation_throughput" not in interaction_gate_checks(gate, summary)
 
 
 def test_raw_stage0_view_preserves_direct_event_fields_and_k1_time() -> None:

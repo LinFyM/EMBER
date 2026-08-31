@@ -308,11 +308,10 @@ def _complete_state(
     bank: Any,
 ) -> tuple[dict[str, torch.Tensor], SharedCompilerOutput]:
     teacher_reads = runtime.native_teachers.tensor_reads
-    output = runtime.compiler.forward_compact(
+    output = runtime.compiler.forward_base_compact(
         program,
         bank.videos,
         s_ref=runtime.ranks.s_ref,
-        interaction_off=True,
     )
     if (
         runtime.native_teachers.tensor_reads != teacher_reads

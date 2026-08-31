@@ -8,13 +8,12 @@ from typing import Sequence
 import torch
 
 from ember.ecp.bank_conditioning.program_bank_interaction import (
+    EventConditionedBankSetInteraction,
     ProgramBankContext,
-    ProgramBankInteractionScorer,
     ProgramBankInteractionState,
 )
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
     CompactPrimalDualVideo,
-    MaterializedPrimalDualVideo,
     PrimalDualVideoOperator,
     PrimalDualVideoResult,
 )
@@ -80,7 +79,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         replay_score_rms: float = 0.02,
         covariance_frame_chunk: int = 4,
         inverse_covariance_power: float = 1.0,
-        interaction_semantic_width: int = 32,
+        interaction_summary_value_width: int = 16,
         interaction_hidden_width: int = 64,
         interaction_correction_bound: float = 0.1,
         scale_prior_ratio: torch.Tensor | None = None,
@@ -119,11 +118,11 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             program_width=self.program_width,
             event_slots=self.event_slots,
         )
-        self.interaction_scorer = ProgramBankInteractionScorer(
+        self.bank_set_interaction = EventConditionedBankSetInteraction(
             self.owners,
             program_width=self.program_width,
             event_slots=self.event_slots,
-            semantic_width=interaction_semantic_width,
+            summary_value_width=interaction_summary_value_width,
             hidden_width=interaction_hidden_width,
             correction_bound=interaction_correction_bound,
             replay_score_rms=self.replay_score_rms,
@@ -182,7 +181,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         videos: Sequence[SharedCompilerVideo],
         *,
         s_ref: torch.Tensor,
-        interaction_off: bool = False,
     ) -> SharedCompilerOutput:
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compiler video set or scale authority changed")
@@ -200,38 +198,12 @@ class SharedNativeFactorCompiler(torch.nn.Module):
                     video,
                     input_primals,
                     output_primals,
-                    interaction_scorer=self.interaction_scorer,
+                    bank_set_interaction=self.bank_set_interaction,
                     interaction_state=interaction_state,
-                    interaction_off=interaction_off,
                 )
                 for video, interaction_state in zip(
                     videos, interaction_states, strict=True
                 )
-            )
-            return self._output(state, pooled, s_ref=s_ref)
-
-    def forward_materialized(
-        self,
-        program: NaturalProgram,
-        videos: Sequence[MaterializedPrimalDualVideo],
-        *,
-        s_ref: torch.Tensor,
-    ) -> SharedCompilerOutput:
-        """Training-only replay of a frozen bank prepared by canonical B0."""
-
-        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
-            raise NativeFactorError("materialized compiler video set changed")
-        with self.bank_operator.ieee_matmul(s_ref.device):
-            state: PrimalProgramState = self.primal_scorer.program_state(program)
-            input_primals = self.primal_scorer.input_primals(state)
-            output_primals = self.primal_scorer.output_primals(state)
-            pooled = tuple(
-                self.bank_operator.apply_materialized(
-                    video,
-                    input_primals,
-                    output_primals,
-                )
-                for video in videos
             )
             return self._output(state, pooled, s_ref=s_ref)
 
@@ -241,40 +213,55 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         videos: Sequence[CompactPrimalDualVideo],
         *,
         s_ref: torch.Tensor,
-        bank_contexts: Sequence[ProgramBankContext] | None = None,
-        interaction_off: bool = False,
+        bank_contexts: Sequence[ProgramBankContext],
     ) -> SharedCompilerOutput:
         """P2 replay of cached raw X/Y without storing expanded output banks."""
 
         if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
             raise NativeFactorError("compact compiler video set changed")
-        if bank_contexts is None:
-            if not interaction_off:
-                raise NativeFactorError("compact compiler bank context changed")
-            bank_contexts = ()
-        elif len(bank_contexts) != len(videos):
+        if len(bank_contexts) != len(videos):
             raise NativeFactorError("compact compiler bank context changed")
         with self.bank_operator.ieee_matmul(s_ref.device):
             state: PrimalProgramState = self.primal_scorer.program_state(program)
             input_primals = self.primal_scorer.input_primals(state)
             output_primals = self.primal_scorer.output_primals(state)
-            interaction_states: tuple[ProgramBankInteractionState | None, ...] = (
-                self._interaction_states(state, bank_contexts)
-                if bank_contexts
-                else (None,) * len(videos)
-            )
+            interaction_states = self._interaction_states(state, bank_contexts)
             pooled = tuple(
                 self.bank_operator.apply_compact(
                     video,
                     input_primals,
                     output_primals,
-                    interaction_scorer=self.interaction_scorer,
+                    bank_set_interaction=self.bank_set_interaction,
                     interaction_state=interaction_state,
-                    interaction_off=interaction_off,
                 )
                 for video, interaction_state in zip(
                     videos, interaction_states, strict=True
                 )
+            )
+            return self._output(state, pooled, s_ref=s_ref)
+
+    def forward_base_compact(
+        self,
+        program: NaturalProgram,
+        videos: Sequence[CompactPrimalDualVideo],
+        *,
+        s_ref: torch.Tensor,
+    ) -> SharedCompilerOutput:
+        """Frozen R5 reference for diagnostics; never a deployment route."""
+
+        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
+            raise NativeFactorError("compact base-reference video set changed")
+        with self.bank_operator.ieee_matmul(s_ref.device):
+            state: PrimalProgramState = self.primal_scorer.program_state(program)
+            input_primals = self.primal_scorer.input_primals(state)
+            output_primals = self.primal_scorer.output_primals(state)
+            pooled = tuple(
+                self.bank_operator.apply_compact(
+                    video,
+                    input_primals,
+                    output_primals,
+                )
+                for video in videos
             )
             return self._output(state, pooled, s_ref=s_ref)
 

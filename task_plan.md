@@ -28,10 +28,10 @@ representative与panel-B功能结论冲突，先做一次直接constrained funct
 
 - [x] 完整记录第六次专家原文，并把当前scalar/vector set-independent pointwise函数类从active plan退役；
 - [x] 将EBSRI、S0--S3、信息墙、唯一rank16和失败定位同步到active design；
-- [ ] 从clean pushed `main`建立`codex/`隔离实现面，确认唯一canonical owner及旧pointwise removal trigger；
-- [ ] 接通共享EBSRI数据结构与S0 free-summary路径，zero-init逐tensor复现R5；
-- [ ] 用tracked driver/config验证input/output候选索引、chunk边界、K1、Action Meta 0、真实X/Y与唯一rank16；
-- [ ] 缓存冻结query-relative descriptors并按shape批处理，完成task1/93真实forward/gradient/materialization与吞吐profile；
+- [x] 从clean pushed `main`建立`codex/`隔离实现面，确认唯一canonical owner及旧pointwise removal trigger；
+- [x] 接通共享EBSRI数据结构与S0 free-summary路径，zero-init逐tensor复现R5；
+- [x] 用tracked driver/config验证input/output候选索引、chunk边界、K1、Action Meta 0、真实X/Y与唯一rank16；
+- [x] 缓存冻结query-relative descriptors并按shape批处理correction，完成task1/93真实forward/gradient/materialization与吞吐profile；
 - [ ] 并行完成task1/93 S0 panel-B functional Gate；S0 non-pass按teacher representative与factorization最早接口裁决；
 - [ ] S0通过后实现真实B0 moments/induced summaries并执行S1 task-local Gate；
 - [ ] S1通过后依次推进S2 fixed-route task-LOTO与S3 Natural Program joint G3。

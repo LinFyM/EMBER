@@ -363,11 +363,10 @@ def generated_rank16_pair(
         condition=program_prepared,
         query_times=query_times,
     )
-    output = runtime.compiler.forward_compact(
+    output = runtime.compiler.forward_base_compact(
         program,
         bank_prepared.videos,
         s_ref=runtime.ranks.s_ref,
-        interaction_off=True,
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=False

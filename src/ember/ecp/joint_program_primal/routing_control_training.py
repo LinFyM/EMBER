@@ -48,11 +48,10 @@ from ember.pi05_source_setup import initialize_distributed
 def _generated_rank16(runtime: Any, task_id: int, condition: Any):
     prepared, metrics = prepare_joint_condition(runtime, condition)
     program = fixed_routing_program(runtime, task_id)
-    output = runtime.compiler.forward_compact(
+    output = runtime.compiler.forward_base_compact(
         program,
         prepared.videos,
         s_ref=runtime.ranks.s_ref,
-        interaction_off=True,
     )
     residual = residual_lora_state(
         output.residual, runtime.rank4_contract, canonicalize=False

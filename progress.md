@@ -1,5 +1,14 @@
 # EMBER progress
 
+- 2026-08-31 EBSRI S0实现面已经接通：B0按真实input与joint abs/adj/init/goal output候选流式形成event bank-set summary，
+  B1从冻结run-local query-relative descriptors批量计算shared correction，并仍由每个native owner/group独立对真实X/Y执行FP32 signed
+  pooling；output时间边界跨chunk保持、不同video不串接。S0只训练candidate trunk/FiLM/final heads与training-only free correct/wrong
+  summaries，真实set encoder、R5 Program/native heads、source、Native Stage0、scale/carrier全部冻结，Action Meta module/parameter为0，最终只
+  物化一套38-target carrier12+residual4 rank16。task1/93真实profile分别为`2.841s/step`、`10.726s/step`，peak allocated约
+  `41.09GB/29.08GB`；zero equivalence、wrong teacher suppression、forward/gradient/materialization均成立。一次跨group batched signed
+  accumulator虽在小张量测试等价，却在真实R5零修正产生`.269/.180`偏差，已在formal前撤回；不以吞吐放宽数值/功能合同。当前
+  `113 passed`，下一步不再增加profile，直接clean集成并并行启动task1/93 formal S0。
+
 - 2026-08-31 owner已恢复持续性goal并授权按第六次专家复核继续高效推进。1320行原始回复已逐字保存为
   `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。专家锁定并复核`main@92617d0`与未合并
   `codex/g3-vector-interaction@2295f48`，确认此前正确执行第五次方案并已到其失败边界；被淘汰的是当前scalar/base-score及32维vector
@@ -11,10 +20,10 @@
   bounded candidate correction，再以真实X/Y形成唯一signed measure、rank4 residual与完整rank16。B0不得成为task matcher、binary/
   continuous gate或LoRA generator；Pass A/B仍读取同一video set，K视频逐条独立后uniform聚合。
 
-- 当前执行S0 free-summary factorization，不直接搭完整set encoder：task1/93分别用training-only correct/wrong summary token先判断下游
+- 当前执行S0 free-summary factorization，不直接训练完整set encoder：task1/93分别用training-only correct/wrong summary token先判断下游
   factorization能否同时保留correct与压低wrong；S0通过才进入真实summary S1，随后才是shared task-LOTO S2与Natural Program joint
-  S3。下一formal前必须把driver/config/evidence纳入Git、缓存冻结query-relative descriptors并按shape批处理；吞吐秒数只作工程目标，
-  不作科学Gate。此刻尚未启动新的GPU任务。
+  S3。driver/config与冻结descriptor/shape-batched correction已经完成，待clean pushed detached authority立即启动formal；吞吐秒数只作
+  工程目标，不作科学Gate。
 
 - 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
   Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的

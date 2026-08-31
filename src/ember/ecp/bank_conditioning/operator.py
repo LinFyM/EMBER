@@ -276,6 +276,7 @@ class StreamingSignedPool:
         dtype: torch.dtype = torch.float32,
         explicit_branches: bool = False,
         trusted_positive_measure: bool = False,
+        trusted_finite_bias: bool = False,
         canonical_block_candidates: int | None = None,
     ):
         if (
@@ -298,6 +299,7 @@ class StreamingSignedPool:
         self.width = int(query.shape[-1])
         self.query = branch_query.to(dtype=dtype)
         self.trusted_positive_measure = bool(trusted_positive_measure)
+        self.trusted_finite_bias = bool(trusted_finite_bias)
         self.canonical_block_candidates = (
             None
             if canonical_block_candidates is None
@@ -382,7 +384,7 @@ class StreamingSignedPool:
                 )
             else:
                 raise BankConditioningError("signed-pool logit bias axes changed")
-            if not bool(torch.isfinite(bias).all()):
+            if not self.trusted_finite_bias and not bool(torch.isfinite(bias).all()):
                 raise BankConditioningError("signed-pool logit bias is non-finite")
         uses_bias = bias is not None
         if self._uses_bias is None:

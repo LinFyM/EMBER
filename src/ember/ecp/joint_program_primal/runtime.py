@@ -152,7 +152,7 @@ class JointWriterState(torch.nn.Module):
         self.aligner = program.aligner
         self.primal_scorer = compiler.primal_scorer
         if include_interaction:
-            self.interaction_scorer = compiler.interaction_scorer
+            self.bank_set_interaction = compiler.bank_set_interaction
 
 
 @dataclass
@@ -693,7 +693,7 @@ def _joint_parameter_ownership(
         compiler.primal_scorer.input_primal_heads.requires_grad_(False).eval()
         compiler.primal_scorer.output_primal_heads.requires_grad_(False).eval()
     elif scorer_partition == SCORER_INTERACTION_ONLY:
-        compiler.interaction_scorer.requires_grad_(True).train()
+        compiler.bank_set_interaction.requires_grad_(True).train()
     else:
         raise ValueError("unsupported joint primal-scorer partition")
     program.encoder.requires_grad_(False).eval()
@@ -951,10 +951,10 @@ def _model_assets(
         event_slots=int(model["event_slots"]),
         relative_eigenvalue_floor=float(model["relative_eigenvalue_floor"]),
         replay_score_rms=float(model["replay_score_rms"]),
-        covariance_frame_chunk=int(model["frame_chunk_size"]),
+        covariance_frame_chunk=int(config["model"].get("replay_frame_chunk_size", model["frame_chunk_size"])),
         inverse_covariance_power=float(config["model"].get("inverse_covariance_power", 1.0)),
-        interaction_semantic_width=int(
-            config["model"].get("interaction_semantic_width", 32)
+        interaction_summary_value_width=int(
+            config["model"].get("interaction_summary_value_width", 16)
         ),
         interaction_hidden_width=int(
             config["model"].get("interaction_hidden_width", 64)

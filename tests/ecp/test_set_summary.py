@@ -2,160 +2,133 @@ from __future__ import annotations
 
 import torch
 
-from ember.ecp.bank_conditioning.native_bank_runtime import (
-    NativeCandidateBank,
-    _is_candidate_encoder_state,
-)
 from ember.ecp.bank_conditioning.set_summary import (
-    SetConditionedScalarEnergy,
-    SetSummaryFactorSelector,
-    StreamingSetMoments,
-    StreamingSetSignedPool,
-    TaskLocalSelectionCode,
-    materialized_set_signed_pool,
+    EventBankSetEncoder,
+    StreamingEventBankSummary,
+    candidate_metadata,
+    event_candidate_measure,
+    program_relative_coordinates,
 )
-from ember.ecp.native_factors import G1_RESIDUAL_RANK
 
 
-def test_candidate_encoder_authority_excludes_old_query_path() -> None:
-    assert _is_candidate_encoder_state("input_candidates.20.direction.weight")
-    assert _is_candidate_encoder_state(
-        "output_compatibility_heads.q.key_projection.weight"
+def _candidates():
+    generator = torch.Generator().manual_seed(20260831)
+    values = torch.randn(5, 2, 3, 7, generator=generator)
+    query = torch.randn(4, 3, 7, generator=generator)
+    mean = torch.randn(7, generator=generator)
+    assignment = torch.rand(5, 3, generator=generator).softmax(-1)
+    frame = torch.rand(5, generator=generator)
+    frame = frame / frame.sum()
+    return values, query, mean, assignment, frame
+
+
+def test_candidate_indices_keep_input_and_output_measures_distinct() -> None:
+    values, _, _, assignment, frame = _candidates()
+    positions = torch.linspace(0.0, 1.0, 5)
+    input_metadata = candidate_metadata(positions, output=False, like=values)
+    output_metadata = candidate_metadata(positions, output=True, like=values)
+    input_mass = event_candidate_measure(frame, assignment, output=False)
+    output_mass = event_candidate_measure(frame, assignment, output=True)
+
+    assert input_metadata.shape == (5, 2, 50, 3)
+    assert output_metadata.shape == (5, 2, 50, 4, 7)
+    assert input_mass.shape == (3, 5, 2, 50)
+    assert output_mass.shape == (3, 5, 2, 50, 4)
+    torch.testing.assert_close(input_mass.sum(), output_mass.sum())
+    torch.testing.assert_close(input_mass.sum(), assignment.mul(frame[:, None]).sum())
+
+
+def test_program_relative_coordinates_are_basis_invariant() -> None:
+    values, query, mean, _, _ = _candidates()
+    coordinate = program_relative_coordinates(query, values, mean)
+    orthogonal, _ = torch.linalg.qr(torch.randn(7, 7))
+    rotated = program_relative_coordinates(
+        torch.einsum("red,df->ref", query, orthogonal),
+        values @ orthogonal,
+        mean @ orthogonal,
     )
-    assert _is_candidate_encoder_state("frame_event_metadata")
-    assert not _is_candidate_encoder_state(
-        "input_compatibility_heads.q.query_projection.weight"
-    )
-    assert not _is_candidate_encoder_state("program_context.q.1.weight")
+    assert coordinate.shape == (5, 2, 3, 12)
+    torch.testing.assert_close(coordinate, rotated, atol=2e-5, rtol=2e-5)
 
 
-def _energy(*, global_events: bool = True) -> SetConditionedScalarEnergy:
-    torch.manual_seed(7)
-    return SetConditionedScalarEnergy(
-        feature_width=8,
-        event_slots=3,
-        global_events=global_events,
-        hidden_width=16,
-        logit_bound=4.0,
-    )
+def _summary_inputs():
+    generator = torch.Generator().manual_seed(17)
+    coordinates = torch.randn(13, 12, generator=generator)
+    mass = torch.rand(3, 13, generator=generator).clamp_min(1e-4)
+    query = torch.randn(3, 12, generator=generator, requires_grad=True)
+    values = torch.randn(13, 5, generator=generator, requires_grad=True)
+    return coordinates, mass, query, values
 
 
-def _flat_candidates() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    generator = torch.Generator().manual_seed(11)
-    values = torch.randn(13, 6, generator=generator)
-    keys = torch.randn(13, 8, generator=generator)
-    keys = torch.nn.functional.normalize(keys, dim=-1)
-    mass = torch.rand(3, 13, generator=generator)
-    mass[0, :2] = 0
-    return values, keys, mass
-
-
-def _code() -> tuple[torch.Tensor, torch.Tensor]:
-    generator = torch.Generator().manual_seed(13)
-    code = torch.randn(G1_RESIDUAL_RANK, 3, 8, generator=generator)
-    weights = torch.randn(G1_RESIDUAL_RANK, 3, generator=generator).softmax(-1)
-    return code, weights
-
-
-def test_set_summary_candidate_permutation_invariance() -> None:
-    energy = _energy()
-    values, keys, mass = _flat_candidates()
-    code, event_weights = _code()
-    statistics = energy.summarize(keys, mass)
-    logits = energy.score(keys, code, statistics)
-    expected = materialized_set_signed_pool(
-        values, mass, logits, event_weights
-    )
-
-    permutation = torch.tensor((8, 2, 12, 0, 6, 5, 4, 9, 1, 11, 3, 10, 7))
-    permuted_statistics = energy.summarize(keys[permutation], mass[:, permutation])
-    permuted_logits = energy.score(
-        keys[permutation], code, permuted_statistics
-    )
-    actual = materialized_set_signed_pool(
-        values[permutation],
-        mass[:, permutation],
-        permuted_logits,
-        event_weights,
-    )
-    torch.testing.assert_close(statistics.value, permuted_statistics.value)
-    torch.testing.assert_close(expected, actual, atol=2e-6, rtol=2e-6)
-
-
-def test_set_summary_streaming_matches_materialized_across_chunks() -> None:
-    energy = _energy()
-    values, keys, mass = _flat_candidates()
-    code, event_weights = _code()
-    statistics = energy.summarize(keys, mass)
-    logits = energy.score(keys, code, statistics)
-    expected = materialized_set_signed_pool(
-        values, mass, logits, event_weights
-    )
-
-    pool = StreamingSetSignedPool(
-        ranks=G1_RESIDUAL_RANK,
+def _accumulate(chunks):
+    coordinates, mass, query, values = _summary_inputs()
+    accumulator = StreamingEventBankSummary(
         events=3,
-        width=values.shape[-1],
-        reference=logits,
+        coordinate_width=12,
+        value_width=5,
+        reference=coordinates,
     )
-    moments = StreamingSetMoments(events=3, width=8, reference=keys)
-    encoded = energy.summary_features(keys)
-    for start, stop in ((0, 2), (2, 7), (7, 8), (8, 13)):
-        pool.add(values[start:stop], mass[:, start:stop], logits[:, :, start:stop])
-        moments.add(encoded[start:stop], mass[:, start:stop])
-    actual = pool.signed_factor(event_weights)
-    streamed_statistics = moments.finalize()
-    torch.testing.assert_close(expected, actual, atol=2e-6, rtol=2e-6)
-    torch.testing.assert_close(
-        statistics.value, streamed_statistics.value, atol=2e-6, rtol=2e-6
-    )
+    for start, stop in chunks:
+        accumulator.add(
+            coordinates[start:stop],
+            mass[:, start:stop],
+            query,
+            values[start:stop],
+        )
+    return accumulator.finalize(), query, values
 
 
-def _bank(*, value_width: int, seed: int) -> NativeCandidateBank:
-    generator = torch.Generator().manual_seed(seed)
-    values = torch.randn(5, 2, value_width, generator=generator)
-    keys = torch.randn(5, 2, 8, generator=generator)
-    keys = torch.nn.functional.normalize(keys, dim=-1)
-    event_mass = torch.rand(3, 5, 2, generator=generator)
-    base_mass = torch.rand(5, 2, generator=generator).clamp_min(1e-3)
-    replay_mass = torch.rand(
-        G1_RESIDUAL_RANK, 5, 2, generator=generator
-    ).clamp_min(1e-3)
-    return NativeCandidateBank(
-        values=values,
-        content_keys=keys,
-        base_mass=base_mass,
-        event_mass=event_mass,
-        replay_mass=replay_mass,
-    )
-
-
-def test_set_summary_selector_has_real_gradient_without_video_parameters() -> None:
-    torch.manual_seed(17)
-    selector = SetSummaryFactorSelector(
-        feature_width=8,
-        event_slots=3,
-        output_groups=2,
-        global_events=True,
-        hidden_width=16,
-        logit_bound=4.0,
-    )
-    free = TaskLocalSelectionCode(events=3, width=8)
-    code, event_weights = free()
-    a, b = selector(
-        input_bank=_bank(value_width=6, seed=19),
-        output_banks=(
-            _bank(value_width=5, seed=23),
-            _bank(value_width=5, seed=29),
+def test_event_summary_matches_irregular_chunks_and_has_gradient() -> None:
+    full, _, _ = _accumulate(((0, 13),))
+    chunked, query, values = _accumulate(((0, 2), (2, 7), (7, 8), (8, 13)))
+    for left, right in zip(
+        (
+            full.mean,
+            full.log_variance,
+            full.induced_positive,
+            full.induced_negative,
+            full.log_partition,
         ),
-        code=code,
-        event_weights=event_weights,
+        (
+            chunked.mean,
+            chunked.log_variance,
+            chunked.induced_positive,
+            chunked.induced_negative,
+            chunked.log_partition,
+        ),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, atol=2e-6, rtol=2e-6)
+    chunked.condition.square().mean().backward()
+    assert query.grad is not None and bool(torch.isfinite(query.grad).all())
+    assert values.grad is not None and bool(torch.isfinite(values.grad).all())
+
+
+def test_real_encoder_is_candidate_permutation_invariant() -> None:
+    torch.manual_seed(31)
+    encoder = EventBankSetEncoder(
+        context_width=11,
+        coordinate_width=12,
+        summary_value_width=5,
+        hidden_width=16,
     )
-    assert a.shape == (G1_RESIDUAL_RANK, 6)
-    assert b.shape == (G1_RESIDUAL_RANK, 10)
-    loss = a.square().mean() + b.square().mean() + 0.01 * a.sum()
-    loss.backward()
-    parameters = tuple(selector.parameters()) + tuple(free.parameters())
-    assert parameters
-    assert all(parameter.grad is not None for parameter in parameters)
-    assert all(torch.isfinite(parameter.grad).all() for parameter in parameters)
+    coordinates = torch.randn(13, 12)
+    metadata = torch.randn(13, 3)
+    mass = torch.rand(3, 13).clamp_min(1e-4)
+    context = torch.randn(3, 11)
+    expected = encoder.summarize(
+        coordinates=coordinates,
+        metadata=metadata,
+        event_mass=mass,
+        event_context=context,
+        output=False,
+    )
+    permutation = torch.tensor((8, 2, 12, 0, 6, 5, 4, 9, 1, 11, 3, 10, 7))
+    actual = encoder.summarize(
+        coordinates=coordinates[permutation],
+        metadata=metadata[permutation],
+        event_mass=mass[:, permutation],
+        event_context=context,
+        output=False,
+    )
+    torch.testing.assert_close(expected.condition, actual.condition, atol=2e-6, rtol=2e-6)

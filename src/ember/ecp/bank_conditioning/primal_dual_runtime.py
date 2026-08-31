@@ -5,14 +5,26 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import torch
 
+from ember.ecp.bank_conditioning.compact_replay import (
+    CompactPrimalDualVideo,
+    PrimalDualVideoResult,
+    ReplayPlan,
+    apply_compact_replay,
+    summarize_compact_replay,
+)
+from ember.ecp.bank_conditioning.candidate_descriptors import (
+    FrozenReplayDescriptors,
+    build_frozen_replay_descriptors,
+)
 from ember.ecp.bank_conditioning.operator import StreamingSignedPool
 from ember.ecp.bank_conditioning.program_bank_interaction import (
-    ProgramBankInteractionScorer,
+    EventConditionedBankSetInteraction,
     ProgramBankInteractionState,
+    ProgramBankSetSummaries,
 )
 from ember.ecp.bank_conditioning.primal_dual import (
     NativeCovarianceStatistics,
@@ -30,16 +42,6 @@ from ember.ecp.native_factors import (
     OUTPUT_BANK_TYPES,
     native_output_group_count,
 )
-
-
-@dataclass(frozen=True)
-class PrimalDualVideoResult:
-    input_values: tuple[torch.Tensor, ...]
-    output_values: tuple[torch.Tensor, ...]
-    frame_measure: torch.Tensor
-    group_gains: torch.Tensor
-    solve_metrics: torch.Tensor
-    conditioning_metrics: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -63,28 +65,6 @@ class MaterializedPrimalDualVideo:
     output_values: tuple[torch.Tensor, ...]
     input_mass: torch.Tensor
     output_mass: torch.Tensor
-
-
-@dataclass(frozen=True)
-class CompactPrimalDualVideo:
-    """Frozen raw X/Y plus B0 operator; output-bank types stay implicit."""
-
-    frame_measure: torch.Tensor
-    input_operators: tuple[SpectralNativeCovariance, ...]
-    output_operators: tuple[tuple[SpectralNativeCovariance, ...], ...]
-    input_values: tuple[torch.Tensor, ...]
-    output_values: tuple[torch.Tensor, ...]
-    final_outputs: tuple[torch.Tensor, ...]
-
-
-@dataclass(frozen=True)
-class _ReplayPlan:
-    input_queries: tuple[torch.Tensor, ...]
-    output_queries: tuple[tuple[torch.Tensor, ...], ...]
-    frame_measure: torch.Tensor
-    group_gains: torch.Tensor
-    solve_metrics: torch.Tensor
-    conditioning_metrics: torch.Tensor
 
 
 class PrimalDualVideoOperator:
@@ -187,13 +167,12 @@ class PrimalDualVideoOperator:
 
     @staticmethod
     def _interaction_enabled(
-        scorer: ProgramBankInteractionScorer | None,
+        scorer: EventConditionedBankSetInteraction | None,
         state: ProgramBankInteractionState | None,
-        interaction_off: bool,
     ) -> bool:
         if (scorer is None) != (state is None):
             raise NativeFactorError("Program-bank interaction ownership changed")
-        return scorer is not None and not interaction_off
+        return scorer is not None
 
     def _new_statistics(self, device: torch.device) -> tuple[list[Any], list[Any]]:
         input_block, output_block = self._candidate_blocks()
@@ -525,7 +504,7 @@ class PrimalDualVideoOperator:
         ),
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
-    ) -> _ReplayPlan:
+    ) -> ReplayPlan:
         frame = prepared.frame_measure
         input_operators = prepared.input_operators
         output_operators = prepared.output_operators
@@ -557,7 +536,7 @@ class PrimalDualVideoOperator:
             )
         ).detach()
         group_count = sum(native_output_group_count(owner) for owner in self.owners)
-        return _ReplayPlan(
+        return ReplayPlan(
             input_queries=queries[0],
             output_queries=queries[1],
             frame_measure=frame[None, None].expand(
@@ -599,7 +578,7 @@ class PrimalDualVideoOperator:
     ) -> PrimalDualVideoResult:
         """Replay a fixed diagnostic bank without repeated Python chunk launches."""
 
-        with self.ieee_matmul(prepared.frame_measure.device):
+        with self.ieee_matmul(input_primals[0].device):
             plan = self._plan(
                 prepared,
                 input_primals,
@@ -632,122 +611,78 @@ class PrimalDualVideoOperator:
             conditioning_metrics=plan.conditioning_metrics,
         )
 
+    def summarize_compact(
+        self,
+        prepared: CompactPrimalDualVideo,
+        *,
+        plan: ReplayPlan,
+        bank_set_interaction: EventConditionedBankSetInteraction,
+        interaction_state: ProgramBankInteractionState,
+    ) -> ProgramBankSetSummaries:
+        """B0.5 summary scan over a fixed compact bank in qualified IEEE mode."""
+
+        with self.ieee_matmul(interaction_state.input_event_queries[0].device):
+            return summarize_compact_replay(
+                self,
+                prepared,
+                plan=plan,
+                bank_set_interaction=bank_set_interaction,
+                interaction_state=interaction_state,
+            )
+
+    def describe_compact(
+        self,
+        prepared: CompactPrimalDualVideo,
+        *,
+        plan: ReplayPlan,
+        interaction_state: ProgramBankInteractionState,
+    ) -> FrozenReplayDescriptors:
+        """Freeze fixed-route candidate descriptors outside optimizer steps."""
+
+        with self.ieee_matmul(interaction_state.input_event_queries[0].device):
+            return build_frozen_replay_descriptors(
+                self,
+                prepared,
+                plan=plan,
+                interaction_state=interaction_state,
+            )
+
     def apply_compact(
         self,
         prepared: CompactPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
-        interaction_scorer: ProgramBankInteractionScorer | None = None,
+        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
         interaction_state: ProgramBankInteractionState | None = None,
-        interaction_off: bool = False,
+        summaries: ProgramBankSetSummaries | None = None,
+        direct_input_logit_biases: Sequence[torch.Tensor] | None = None,
+        direct_output_logit_biases: Sequence[Sequence[torch.Tensor]] | None = None,
+        correction_observer: (
+            Callable[[str, TargetOwner, torch.Tensor], None] | None
+        ) = None,
+        frozen_descriptors: FrozenReplayDescriptors | None = None,
+        interaction_group_batch_size: int = 1,
+        replay_plan: ReplayPlan | None = None,
     ) -> PrimalDualVideoResult:
-        """Replay cached raw X/Y with the canonical fixed-microblock reduction."""
+        """B1 exact replay over cached raw X/Y through the canonical owner."""
 
-        with self.ieee_matmul(prepared.frame_measure.device):
-            self._validate_interaction_state(interaction_state)
-            interaction_enabled = self._interaction_enabled(
-                interaction_scorer, interaction_state, interaction_off
-            )
-            plan = self._plan(
+        with self.ieee_matmul(input_primals[0].device):
+            return apply_compact_replay(
+                self,
                 prepared,
                 input_primals,
                 output_primals,
+                bank_set_interaction=bank_set_interaction,
+                interaction_state=interaction_state,
+                summaries=summaries,
+                direct_input_logit_biases=direct_input_logit_biases,
+                direct_output_logit_biases=direct_output_logit_biases,
+                correction_observer=correction_observer,
+                frozen_descriptors=frozen_descriptors,
+                interaction_group_batch_size=interaction_group_batch_size,
+                replay_plan=replay_plan,
             )
-            input_block, output_block = self._candidate_blocks()
-            inputs = tuple(
-                StreamingSignedPool(
-                    query,
-                    trusted_positive_measure=True,
-                    canonical_block_candidates=input_block,
-                )
-                for query in plan.input_queries
-            )
-            outputs = tuple(
-                tuple(
-                    StreamingSignedPool(
-                        query,
-                        trusted_positive_measure=True,
-                        canonical_block_candidates=output_block,
-                    )
-                    for query in groups
-                )
-                for groups in plan.output_queries
-            )
-            x_mass = native_candidate_mass(prepared.frame_measure, output=False)
-            y_mass = native_candidate_mass(prepared.frame_measure, output=True)
-            for target, (owner, x, y) in enumerate(
-                zip(
-                    self.owners,
-                    prepared.input_values,
-                    prepared.output_values,
-                    strict=True,
-                )
-            ):
-                input_bias = (
-                    interaction_scorer.input_logit_corrections(
-                        target=target,
-                        program_event_state=interaction_state.rank_event[target],
-                        native_event_query=interaction_state.input_event_queries[
-                            target
-                        ],
-                        event_weights=interaction_state.event_weights[target],
-                        base_query=plan.input_queries[target],
-                        values=x,
-                        native_mean=prepared.input_operators[target].mean,
-                        context=interaction_state.context,
-                    )
-                    if interaction_enabled
-                    else None
-                )
-                inputs[target].add(x, x_mass, input_bias)
-                boundary = NativeOutputBankState(
-                    final=prepared.final_outputs[target].detach()
-                )
-                bank = boundary.build(y, start_frame=0)
-                if boundary.next_frame != prepared.frame_measure.shape[0]:
-                    raise NativeFactorError("compact output boundary ended early")
-                groups = native_output_group_count(owner)
-                grouped = bank.reshape(
-                    *bank.shape[:-1], groups, owner.out_features // groups
-                ).movedim(-2, 0)
-                for group, accumulator in enumerate(outputs[target]):
-                    output_bias = (
-                        interaction_scorer.output_logit_corrections(
-                            target=target,
-                            program_event_state=(
-                                interaction_state.rank_event[target]
-                            ),
-                            native_event_query=(
-                                interaction_state.output_event_queries[target][group]
-                            ),
-                            event_weights=(
-                                interaction_state.event_weights[target]
-                            ),
-                            base_query=plan.output_queries[target][group],
-                            values=grouped[group],
-                            native_mean=(
-                                prepared.output_operators[target][group].mean
-                            ),
-                            context=interaction_state.context,
-                        )
-                        if interaction_enabled
-                        else None
-                    )
-                    accumulator.add(grouped[group], y_mass, output_bias)
-        return PrimalDualVideoResult(
-            input_values=tuple(value.signed_mean() for value in inputs),
-            output_values=tuple(
-                torch.cat(
-                    tuple(value.signed_mean() for value in groups), dim=-1
-                )
-                for groups in outputs
-            ),
-            frame_measure=plan.frame_measure,
-            group_gains=plan.group_gains,
-            solve_metrics=plan.solve_metrics,
-            conditioning_metrics=plan.conditioning_metrics,
-        )
 
     def _add_replay_chunk(
         self,
@@ -758,10 +693,7 @@ class PrimalDualVideoOperator:
         inputs: tuple[Any, ...],
         outputs: tuple[tuple[Any, ...], ...],
         boundaries: list[NativeOutputBankState],
-        prepared: PreparedPrimalDualVideo, plan: _ReplayPlan,
-        interaction_scorer: ProgramBankInteractionScorer | None,
-        interaction_state: ProgramBankInteractionState | None,
-        interaction_off: bool,
+        prepared: PreparedPrimalDualVideo, plan: ReplayPlan,
     ) -> int:
         stop = start + chunk.frame_count
         if (
@@ -773,67 +705,23 @@ class PrimalDualVideoOperator:
             raise NativeFactorError("compiler B1 native stream changed")
         x_mass = native_candidate_mass(frame[start:stop], output=False)
         y_mass = native_candidate_mass(frame[start:stop], output=True)
-        interaction_enabled = self._interaction_enabled(
-            interaction_scorer, interaction_state, interaction_off
-        )
-        chunk_context = (
-            interaction_state.context.frame_slice(start, stop)
-            if interaction_enabled
-            else None
-        )
         for target, (owner, x, y) in enumerate(
             zip(self.owners, chunk.inputs, chunk.outputs, strict=True)
         ):
-            input_bias = (
-                interaction_scorer.input_logit_corrections(
-                    target=target,
-                    program_event_state=interaction_state.rank_event[target],
-                    native_event_query=interaction_state.input_event_queries[target],
-                    event_weights=interaction_state.event_weights[target],
-                    base_query=plan.input_queries[target],
-                    values=x,
-                    native_mean=prepared.input_operators[target].mean,
-                    context=chunk_context,
-                )
-                if interaction_enabled
-                else None
-            )
-            inputs[target].add(x, x_mass, input_bias)
+            inputs[target].add(x, x_mass)
             bank = boundaries[target].build(y, start_frame=start)
             groups = native_output_group_count(owner)
             grouped = bank.reshape(
                 *bank.shape[:-1], groups, owner.out_features // groups
             ).movedim(-2, 0)
             for group, accumulator in enumerate(outputs[target]):
-                output_bias = (
-                    interaction_scorer.output_logit_corrections(
-                        target=target,
-                        program_event_state=(
-                            interaction_state.rank_event[target]
-                        ),
-                        native_event_query=(
-                            interaction_state.output_event_queries[target][group]
-                        ),
-                        event_weights=interaction_state.event_weights[target],
-                        base_query=plan.output_queries[target][group],
-                        values=grouped[group],
-                        native_mean=prepared.output_operators[target][group].mean,
-                        context=chunk_context,
-                    )
-                    if interaction_enabled
-                    else None
-                )
-                accumulator.add(grouped[group], y_mass, output_bias)
+                accumulator.add(grouped[group], y_mass)
         return stop
 
     def _replay(
         self,
         prepared: PreparedPrimalDualVideo,
-        plan: _ReplayPlan,
-        *,
-        interaction_scorer: ProgramBankInteractionScorer | None,
-        interaction_state: ProgramBankInteractionState | None,
-        interaction_off: bool,
+        plan: ReplayPlan,
     ) -> tuple[Any, Any]:
         video = prepared.video
         frame = self.quadrature(video.frame_positions)
@@ -871,9 +759,6 @@ class PrimalDualVideoOperator:
                 outputs=outputs,
                 boundaries=boundaries,
                 prepared=prepared, plan=plan,
-                interaction_scorer=interaction_scorer,
-                interaction_state=interaction_state,
-                interaction_off=interaction_off,
             )
         if next_frame != video.native.frame_count or any(
             boundary.next_frame != next_frame for boundary in boundaries
@@ -893,24 +778,25 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
-        interaction_scorer: ProgramBankInteractionScorer | None = None,
+        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
         interaction_state: ProgramBankInteractionState | None = None,
-        interaction_off: bool = False,
     ) -> PrimalDualVideoResult:
-        with self.ieee_matmul(prepared.frame_measure.device):
+        with self.ieee_matmul(input_primals[0].device):
             self._validate_interaction_state(interaction_state)
+            if self._interaction_enabled(bank_set_interaction, interaction_state):
+                return self.apply_compact(
+                    self.compact(prepared),
+                    input_primals,
+                    output_primals,
+                    bank_set_interaction=bank_set_interaction,
+                    interaction_state=interaction_state,
+                )
             plan = self._plan(
                 prepared,
                 input_primals,
                 output_primals,
             )
-            inputs, outputs = self._replay(
-                prepared,
-                plan,
-                interaction_scorer=interaction_scorer,
-                interaction_state=interaction_state,
-                interaction_off=interaction_off,
-            )
+            inputs, outputs = self._replay(prepared, plan)
         return PrimalDualVideoResult(
             input_values=inputs,
             output_values=outputs,
@@ -926,15 +812,13 @@ class PrimalDualVideoOperator:
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
         *,
-        interaction_scorer: ProgramBankInteractionScorer | None = None,
+        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
         interaction_state: ProgramBankInteractionState | None = None,
-        interaction_off: bool = False,
     ) -> PrimalDualVideoResult:
         return self.apply(
             self.prepare(video),
             input_primals,
             output_primals,
-            interaction_scorer=interaction_scorer,
+            bank_set_interaction=bank_set_interaction,
             interaction_state=interaction_state,
-            interaction_off=interaction_off,
         )

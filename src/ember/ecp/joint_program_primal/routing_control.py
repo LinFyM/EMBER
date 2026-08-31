@@ -16,9 +16,17 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint
+from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    BANK_SET_S0_STAGE,
+    BANK_SET_S1_STAGE,
+    BANK_SET_TASKLOCAL_RUN_SCHEMA,
+    bank_set_config_valid,
+    bank_set_parameter_ownership,
+    is_bank_set_tasklocal_config,
+    writer_trainable_inventory,
+)
 from ember.ecp.joint_program_primal.runtime import (
     REPO_ROOT,
-    R5_SHARED_FUNCTIONAL_CHART,
     SCORER_INTERACTION_ONLY,
     JointProgramPrimalRuntime,
     _authority_assets,
@@ -69,32 +77,20 @@ class RoutingControlWriterState(torch.nn.Module):
         self.primal_scorer = scorer
 
 
-class InteractionControlWriterState(torch.nn.Module):
-    """Checkpoint only the learned interaction layered over frozen R5."""
-
-    def __init__(self, interaction_scorer: torch.nn.Module) -> None:
-        super().__init__()
-        self.interaction_scorer = interaction_scorer
-
-
 def is_program_bank_interaction_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == PROGRAM_BANK_INTERACTION_SCHEMA
 
 
 def routing_run_schema(config: Mapping[str, Any]) -> str:
-    return (
-        PROGRAM_BANK_INTERACTION_RUN_SCHEMA
-        if is_program_bank_interaction_config(config)
-        else ROUTING_CONTROL_RUN_SCHEMA
-    )
+    if is_bank_set_tasklocal_config(config):
+        return BANK_SET_TASKLOCAL_RUN_SCHEMA
+    return ROUTING_CONTROL_RUN_SCHEMA
 
 
 def routing_stage(config: Mapping[str, Any]) -> str:
-    return (
-        PROGRAM_BANK_INTERACTION_STAGE
-        if is_program_bank_interaction_config(config)
-        else ROUTING_CONTROL_STAGE
-    )
+    if is_bank_set_tasklocal_config(config):
+        return str(config["stage"])
+    return ROUTING_CONTROL_STAGE
 
 
 def _hadamard(order: int) -> torch.Tensor:
@@ -157,6 +153,10 @@ def fixed_routing_program(
 
 def load_routing_control_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
+    if is_program_bank_interaction_config(config):
+        raise ValueError(
+            "retired pointwise Program-bank interaction config is not executable"
+        )
     split = config.get("task_split", {})
     data = config.get("data", {})
     joint = config.get("optimization", {}).get("joint", {})
@@ -195,8 +195,10 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             joint.get("warmup_optimizer_steps") == 10,
             joint.get("effective_optimizer_steps") == 100,
             joint.get("checkpoint_effective_steps") == [60, 100],
-            joint.get("global_tasks_per_optimizer_step") == 6,
-            joint.get("video_views_per_task") == 2,
+            joint.get("global_tasks_per_optimizer_step")
+            == (1 if is_bank_set_tasklocal_config(config) else 6),
+            joint.get("video_views_per_task")
+            == (3 if is_bank_set_tasklocal_config(config) else 2),
             wall.get("action_meta_installed") is False,
             wall.get("shuffled_or_reversed_use") is False,
         )
@@ -257,60 +259,8 @@ def load_routing_control_config(path: Path) -> dict[str, Any]:
             ),
         )
     )
-    interaction = joint.get("wrong_bank_neutralization", {})
-    authorities = config.get("authorities", {})
-    interaction_valid = all(
-        (
-            is_program_bank_interaction_config(config),
-            config.get("status")
-            == "active_base_score_conditioned_bank_interaction_qualification",
-            model.get("program_source")
-            == "fixed_nontrainable_128d_orthogonal_task_token",
-            model.get("primal_scorer_initialization")
-            == R5_SHARED_FUNCTIONAL_CHART,
-            scorer_partition == SCORER_INTERACTION_ONLY,
-            model.get("inverse_covariance_power") == 1.0,
-            model.get("interaction_base_score_feature")
-            == INTERACTION_BASE_SCORE_FEATURE,
-            "compatibility_support_threshold" not in model,
-            "separate_compatibility_probes" not in model,
-            model.get("interaction_semantic_width") == 32,
-            model.get("interaction_hidden_width") == 64,
-            model.get("interaction_correction_bound") == 0.1,
-            model.get("trainable") == ["ProgramBankInteractionScorer"],
-            model.get("deployment_candidate") is False,
-            config.get("optimization", {}).get("loss")
-            == (
-                "mean_correct_raw_flow_plus_half_weight_raw_wrong_bank_"
-                "benefit_hinge"
-            ),
-            interaction.get("pairing")
-            == "same_role_all_other_gradient_tasks_deterministic_cycle",
-            interaction.get("video_view_schedule")
-            == "alternate_two_fit_views_per_wrong_task",
-            interaction.get("conditioning_language")
-            == "correct_task_exact_language",
-            interaction.get("report_denominator")
-            == "formal_free_primal_panel_a_mean_benefit",
-            interaction.get("backward_units") == "raw_functional_flow_loss",
-            interaction.get("task_balance")
-            == "two_correct_views_total_is_twice_one_wrong_arm",
-            interaction.get("epsilon") == 1e-6,
-            interaction.get("weight") == 0.5,
-            isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
-            isinstance(authorities.get("r5_gate_aggregate"), str),
-            isinstance(authorities.get("positive_control_root"), str),
-            wall.get("fixed_routing_token_training_only") is True,
-            wall.get("wrong_bank_exact_language_fixed") is True,
-            wall.get("interaction_off_training_uses") == 0,
-            wall.get("single_complete_rank16") is True,
-            config.get("throughput_gate", {}).get("cross_language_bank_cache")
-            == "explicit_separate_operational_root",
-            config.get("throughput_gate", {}).get("qualification_gate") is False,
-            critic is None,
-        )
-    )
-    if not common_valid or not (routing_valid or interaction_valid):
+    bank_set_valid = bank_set_config_valid(config)
+    if not common_valid or not (routing_valid or bank_set_valid):
         raise ValueError("unsupported G3 routing-token boundary-control config")
     return config
 
@@ -320,6 +270,7 @@ def _scorer_parameter_ownership(
     compiler: torch.nn.Module,
     *,
     partition: str,
+    stage: str = ROUTING_CONTROL_STAGE,
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
@@ -330,14 +281,10 @@ def _scorer_parameter_ownership(
         scorer.input_primal_heads.requires_grad_(True).train()
         scorer.output_primal_heads.requires_grad_(True).train()
     elif partition == SCORER_INTERACTION_ONLY:
-        compiler.interaction_scorer.requires_grad_(True).train()
+        return bank_set_parameter_ownership(program, compiler, stage=stage)
     else:
         raise ValueError("unsupported routing-control scorer partition")
-    writer = (
-        InteractionControlWriterState(compiler.interaction_scorer)
-        if partition == SCORER_INTERACTION_ONLY
-        else RoutingControlWriterState(compiler.primal_scorer)
-    )
+    writer = RoutingControlWriterState(compiler.primal_scorer)
     trainable = tuple(
         parameter for parameter in writer.parameters() if parameter.requires_grad
     )
@@ -387,6 +334,43 @@ def _run_contract(
     initialization: Mapping[str, Any],
 ) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
+    inventory = _inventory(
+        runtime.policy, runtime.program, runtime.compiler, runtime.owners
+    )
+    inventory.update(writer_trainable_inventory(runtime.writer_state))
+    task_local_qualification = None
+    if is_bank_set_tasklocal_config(runtime.config):
+        task = int(runtime.args.task)
+        wrong_task = int(
+            runtime.config["task_local"]["wrong_task_by_task"][str(task)]
+        )
+        correct = runtime.task_conditions[task]
+        wrong = runtime.task_conditions[wrong_task]
+        task_local_qualification = {
+            "program_language_authority": task,
+            "wrong_bank_task": wrong_task,
+            "arms": [
+                {
+                    "name": name,
+                    "bank_task": bank_task,
+                    "video_demo": int(condition.video_demo),
+                    "receives_gradient": receives_gradient,
+                    "summary_token": (
+                        ("free_correct" if name.startswith("correct") else "free_wrong")
+                        if routing_stage(runtime.config) == BANK_SET_S0_STAGE
+                        else "real_bank_set_summary"
+                    ),
+                }
+                for name, bank_task, condition, receives_gradient in (
+                    ("correct_fit0", task, correct.fit_views[0], True),
+                    ("correct_fit1", task, correct.fit_views[1], True),
+                    ("correct_held", task, correct.held_video, False),
+                    ("wrong_fit0", wrong_task, wrong.fit_views[0], True),
+                    ("wrong_fit1", wrong_task, wrong.fit_views[1], False),
+                )
+            ],
+            "panel_b_receives_gradient": False,
+        }
     return {
         "schema_version": routing_run_schema(runtime.config),
         "stage": routing_stage(runtime.config),
@@ -416,13 +400,14 @@ def _run_contract(
             "root": str(runtime.args.condition_cache_root),
             "program_bank_root": (
                 str(runtime.args.program_bank_condition_cache_root)
-                if is_program_bank_interaction_config(runtime.config)
+                if is_bank_set_tasklocal_config(runtime.config)
                 else None
             ),
             "program_output_cached": False,
             "checkpoint_payload": False,
         },
         "task_split": dict(runtime.config["task_split"]),
+        "task_local_qualification": task_local_qualification,
         "functional_panels": {
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
@@ -444,28 +429,39 @@ def _run_contract(
                 "retire executable control after Gate interpretation and before "
                 "the next canonical deployment architecture"
             ),
-            "candidate_interaction_qualification": is_program_bank_interaction_config(
+            "event_bank_set_qualification": is_bank_set_tasklocal_config(
                 runtime.config
             ),
+            "task": runtime.args.task,
         },
         "primal_scorer_initialization": dict(initialization),
         "model": dict(runtime.config["model"]),
         "optimization": dict(runtime.config["optimization"]),
         "throughput_gate": dict(runtime.config["throughput_gate"]),
         "information_wall": dict(runtime.config["information_wall"]),
-        "inventory": _inventory(
-            runtime.policy, runtime.program, runtime.compiler, runtime.owners
-        ),
+        "inventory": inventory,
         "world_topology": _topology(runtime.context),
     }
 
 
-def prepare_routing_control_runtime(
-    args: argparse.Namespace, context: Any
-) -> JointProgramPrimalRuntime:
+def _resolve_routing_inputs(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     config = load_routing_control_config(args.config)
+    if is_bank_set_tasklocal_config(config):
+        config["optimization"]["functional_policy_microbatch_size"] = int(
+            config["optimization"]["functional_policy_microbatch_size_by_task"][
+                str(args.task)
+            ]
+        )
+        config["model"]["replay_frame_chunk_size"] = int(
+            config["model"]["replay_frame_chunk_size_by_task"][str(args.task)]
+        )
+        config["model"]["interaction_group_batch_size"] = int(
+            config["model"]["interaction_group_batch_size_by_task"][str(args.task)]
+        )
     program_bank_root = getattr(args, "program_bank_condition_cache_root", None)
-    if is_program_bank_interaction_config(config):
+    if is_bank_set_tasklocal_config(config):
         if (
             program_bank_root is None
             or not program_bank_root.is_absolute()
@@ -477,36 +473,29 @@ def prepare_routing_control_runtime(
     base_path = (args.asset_root / config["authorities"]["base_g3_config"]).resolve()
     if args.base_config != base_path:
         raise ValueError("routing-control base G3 config authority changed")
-    base = load_shared_compiler_config(base_path)
-    authority = _authority_assets(args, context, config, base)
-    model = _model_assets(args, context, config, base, authority)
-    writer_state, trainable, frozen = _scorer_parameter_ownership(
-        model.program,
-        model.compiler,
-        partition=config["model"].get(
-            "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
-        ),
-    )
-    data = _data_assets(args, config, base, context, authority, model)
-    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    return config, load_shared_compiler_config(base_path)
+
+
+def _writer_initialization(
+    args: argparse.Namespace,
+    context: Any,
+    config: Mapping[str, Any],
+    model: Any,
+) -> dict[str, Any]:
     initialization_kind = config["model"]["primal_scorer_initialization"]
-    skip_initialization = bool(
-        getattr(args, "skip_routing_initialization", False)
-    )
-    initialization: dict[str, Any]
-    if is_program_bank_interaction_config(config):
-        initialization = dict(model.primal_scorer_initialization)
-    elif args.resume is not None:
-        initialization = {
+    if is_bank_set_tasklocal_config(config):
+        return dict(model.primal_scorer_initialization)
+    if args.resume is not None:
+        return {
             "kind": initialization_kind,
             "state": "restored_from_checkpoint",
         }
-    elif skip_initialization:
-        initialization = {
+    if bool(getattr(args, "skip_routing_initialization", False)):
+        return {
             "kind": initialization_kind,
             "state": "skipped_before_immediate_checkpoint_load",
         }
-    elif initialization_kind == FUNCTIONAL_CODE_INITIALIZATION:
+    if initialization_kind == FUNCTIONAL_CODE_INITIALIZATION:
         initialization_view = SimpleNamespace(
             owners=model.owners,
             compiler=model.compiler,
@@ -530,15 +519,31 @@ def prepare_routing_control_runtime(
             rows: list[Any] = [initialization]
             dist.broadcast_object_list(rows, src=0)
             initialization = dict(rows[0])
-    else:
-        initialization = {"kind": "fresh", "state": "seeded_random"}
+        return initialization
+    return {"kind": "fresh", "state": "seeded_random"}
+
+
+def _new_routing_runtime(
+    *,
+    args: argparse.Namespace,
+    context: Any,
+    config: dict[str, Any],
+    base: dict[str, Any],
+    authority: Any,
+    model: Any,
+    data: Any,
+    writer_state: torch.nn.Module,
+    trainable: tuple[torch.nn.Parameter, ...],
+    frozen: tuple[torch.nn.Parameter, ...],
+    initialization: Mapping[str, Any],
+) -> JointProgramPrimalRuntime:
     if context.world_size > 1:
         for value in writer_state.state_dict().values():
             dist.broadcast(value, src=0)
     optimizer, scheduler, checkpoints, stop, optimizer_steps, metrics_rows = (
         _optimizer_cursor(args, config, context, writer_state, trainable)
     )
-    runtime = JointProgramPrimalRuntime(
+    return JointProgramPrimalRuntime(
         args=args,
         config=config,
         base_config=base,
@@ -580,45 +585,64 @@ def prepare_routing_control_runtime(
         functional_code_authority={},
         run_contract={},
     )
-    runtime.run_contract = _run_contract(
-        runtime, initialization=initialization
+
+
+def _formal_topology_valid(runtime: JointProgramPrimalRuntime) -> bool:
+    topology = runtime.run_contract["world_topology"]
+    return all(
+        (
+            1 <= len(topology) <= 6,
+            len({str(row.get("hostname", "")) for row in topology}) == 1,
+            sorted(int(row.get("rank", -1)) for row in topology)
+            == list(range(len(topology))),
+            sorted(int(row.get("local_rank", -1)) for row in topology)
+            == list(range(len(topology))),
+            len({str(row.get("device", "")) for row in topology}) == len(topology),
+        )
     )
+
+
+def _write_bank_set_contract(runtime: JointProgramPrimalRuntime, path: Path) -> str | None:
+    args = runtime.args
+    try:
+        if args.resume is not None:
+            valid = all(
+                (
+                    args.mode == "formal",
+                    args.resume.resolve().parent.parent == args.output_dir.resolve(),
+                    checkpoint_macro(args.resume) == 70,
+                    runtime.stop_after_step == 110,
+                    path.is_file(),
+                    path.is_file() and read_json(path) == runtime.run_contract,
+                )
+            )
+            if not valid:
+                raise ValueError("interaction resume authority changed")
+        else:
+            if args.output_dir.exists() and any(args.output_dir.iterdir()):
+                raise ValueError("fresh interaction output root is not empty")
+            args.output_dir.mkdir(parents=True, exist_ok=True)
+            write_json_atomic(path, runtime.run_contract)
+    except Exception as error:  # propagate rank-zero filesystem failures
+        return f"{type(error).__name__}: {error}"
+    return None
+
+
+def _seal_routing_contract(
+    runtime: JointProgramPrimalRuntime, *, initialization: Mapping[str, Any]
+) -> None:
+    args = runtime.args
+    context = runtime.context
+    runtime.run_contract = _run_contract(runtime, initialization=initialization)
     contract_path = args.output_dir / "run_contract.json"
-    interaction = is_program_bank_interaction_config(config)
-    if interaction and args.mode == "formal":
-        topology = runtime.run_contract["world_topology"]
-        if (
-            not 1 <= len(topology) <= 6
-            or len({str(row.get("hostname", "")) for row in topology}) != 1
-            or sorted(int(row.get("rank", -1)) for row in topology)
-            != list(range(len(topology)))
-            or sorted(int(row.get("local_rank", -1)) for row in topology)
-            != list(range(len(topology)))
-            or len({str(row.get("device", "")) for row in topology})
-            != len(topology)
-        ):
-            raise ValueError("interaction formal topology changed")
-    contract_error = None
-    if interaction and context.is_main:
-        try:
-            if args.resume is not None:
-                if (
-                    args.mode != "formal"
-                    or args.resume.resolve().parent.parent
-                    != args.output_dir.resolve()
-                    or checkpoint_macro(args.resume) != 70
-                    or stop != 110
-                    or not contract_path.is_file()
-                    or read_json(contract_path) != runtime.run_contract
-                ):
-                    raise ValueError("interaction resume authority changed")
-            else:
-                if args.output_dir.exists() and any(args.output_dir.iterdir()):
-                    raise ValueError("fresh interaction output root is not empty")
-                args.output_dir.mkdir(parents=True, exist_ok=True)
-                write_json_atomic(contract_path, runtime.run_contract)
-        except Exception as error:  # propagate rank-zero filesystem failures
-            contract_error = f"{type(error).__name__}: {error}"
+    interaction = is_bank_set_tasklocal_config(runtime.config)
+    if interaction and args.mode == "formal" and not _formal_topology_valid(runtime):
+        raise ValueError("interaction formal topology changed")
+    contract_error = (
+        _write_bank_set_contract(runtime, contract_path)
+        if interaction and context.is_main
+        else None
+    )
     if interaction:
         if context.world_size > 1:
             payload = [contract_error]
@@ -631,15 +655,20 @@ def prepare_routing_control_runtime(
         write_json_atomic(contract_path, runtime.run_contract)
     if context.world_size > 1:
         dist.barrier()
+
+
+def _restore_routing_cursor(runtime: JointProgramPrimalRuntime) -> None:
+    args = runtime.args
+    context = runtime.context
     if args.resume is not None:
         optimizer_steps, expected_rows = load_ecp_checkpoint(
             checkpoint=args.resume,
-            stage=routing_stage(config),
+            stage=routing_stage(runtime.config),
             context=context,
-            model=writer_state,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            run_contract_schema=routing_run_schema(config),
+            model=runtime.writer_state,
+            optimizer=runtime.optimizer,
+            scheduler=runtime.scheduler,
+            run_contract_schema=routing_run_schema(runtime.config),
         )
         metrics_rows = 0
         reconcile_error = None
@@ -661,5 +690,39 @@ def prepare_routing_control_runtime(
             raise ValueError(reconcile_error)
         runtime.optimizer_steps = optimizer_steps
         runtime.metrics_rows = int(metrics_rows)
+
+
+def prepare_routing_control_runtime(
+    args: argparse.Namespace, context: Any
+) -> JointProgramPrimalRuntime:
+    config, base = _resolve_routing_inputs(args)
+    authority = _authority_assets(args, context, config, base)
+    model = _model_assets(args, context, config, base, authority)
+    writer_state, trainable, frozen = _scorer_parameter_ownership(
+        model.program,
+        model.compiler,
+        partition=config["model"].get(
+            "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
+        ),
+        stage=routing_stage(config),
+    )
+    data = _data_assets(args, config, base, context, authority, model)
+    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    initialization = _writer_initialization(args, context, config, model)
+    runtime = _new_routing_runtime(
+        args=args,
+        context=context,
+        config=config,
+        base=base,
+        authority=authority,
+        model=model,
+        data=data,
+        writer_state=writer_state,
+        trainable=trainable,
+        frozen=frozen,
+        initialization=initialization,
+    )
+    _seal_routing_contract(runtime, initialization=initialization)
+    _restore_routing_cursor(runtime)
     torch.cuda.reset_peak_memory_stats(context.device)
     return runtime

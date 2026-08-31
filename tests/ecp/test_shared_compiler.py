@@ -5,10 +5,6 @@ from unittest.mock import patch
 
 import torch
 
-from ember.ecp.bank_conditioning.program_bank_interaction import (
-    ProgramBankContext,
-    ProgramBankInteractionScorer,
-)
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     NativeTargetChunk,
@@ -117,6 +113,44 @@ def _video(
     )
 
 
+def _assert_shared_compiler_topology(compiler, owners) -> None:
+    families = {family.value for family in TargetFamily}
+    assert set(compiler.primal_scorer.program_context) == families
+    assert set(compiler.primal_scorer.input_trunk) == families
+    assert set(compiler.primal_scorer.output_trunk) == families
+    assert len(compiler.primal_scorer.input_primal_heads) == len(owners)
+    assert len(compiler.primal_scorer.output_primal_heads) == len(owners)
+    for owner, heads in zip(
+        owners, compiler.primal_scorer.output_primal_heads, strict=True
+    ):
+        assert len(heads) == native_output_group_count(owner)
+        assert len({head.weight.data_ptr() for head in heads}) == len(heads)
+    names = set(dict(compiler.named_parameters()))
+    assert not any(
+        token in name
+        for name in names
+        for token in ("compatibility", "functional_polar", "task_lookup")
+    )
+    assert any(name.startswith("bank_set_interaction.") for name in names)
+
+
+def _summary_tensors(summaries):
+    fields = (
+        "mean",
+        "log_variance",
+        "induced_positive",
+        "induced_negative",
+        "log_partition",
+        "event_mass",
+    )
+    for summary in summaries.inputs:
+        yield from (getattr(summary, name) for name in fields)
+    for groups in summaries.outputs:
+        for summary in groups:
+            for scope in (summary.all_types, *summary.by_type):
+                yield from (getattr(scope, name) for name in fields)
+
+
 def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     torch.manual_seed(5)
     owners = _owners()
@@ -151,14 +185,10 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         input_primals,
         output_primals,
     )
-    materialized_output = compiler.forward_materialized(
-        program,
-        (compiler.bank_operator.materialize(prepared),),
-        s_ref=scale,
-    )
+    compact = compiler.bank_operator.compact(prepared)
     compact_output = compiler.forward_compact(
         program,
-        (compiler.bank_operator.compact(prepared),),
+        (compact,),
         s_ref=scale,
         bank_contexts=(compiler._bank_context(one_chunk),),
     )
@@ -181,13 +211,6 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     ):
         torch.testing.assert_close(left, right)
     torch.testing.assert_close(replayed.solve_metrics, direct.solve_metrics)
-    for left, right in zip(
-        (*materialized_output.residual.a, *materialized_output.residual.b),
-        (*expected.residual.a, *expected.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-
     assert torch.equal(expected.video_weights, torch.ones(1))
     for target, (a_direction, b_direction) in enumerate(
         zip(observed.input_directions, observed.output_directions, strict=True)
@@ -223,17 +246,7 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
         for parameter in compiler.primal_scorer.parameters()
         if parameter.requires_grad
     )
-    families = {family.value for family in TargetFamily}
-    assert set(compiler.primal_scorer.program_context) == families
-    assert set(compiler.primal_scorer.input_trunk) == families
-    assert set(compiler.primal_scorer.output_trunk) == families
-    assert len(compiler.primal_scorer.input_primal_heads) == len(owners)
-    assert len(compiler.primal_scorer.output_primal_heads) == len(owners)
-    for owner, heads in zip(
-        owners, compiler.primal_scorer.output_primal_heads, strict=True
-    ):
-        assert len(heads) == native_output_group_count(owner)
-        assert len({head.weight.data_ptr() for head in heads}) == len(heads)
+    _assert_shared_compiler_topology(compiler, owners)
     assert compiler.primal_scorer.input_primal_heads[0].weight.grad is not None
     for heads in compiler.primal_scorer.output_primal_heads:
         for head in heads:
@@ -251,11 +264,179 @@ def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
     assert float(observed.conditioning_metrics[..., 4].min()) > 0
     assert float(observed.conditioning_metrics[..., 5].min()) > 0
     assert all(torch.equal(gain, torch.ones_like(gain)) for gain in observed.output_group_gains)
-    names = set(dict(compiler.named_parameters()))
-    assert not any(
-        token in name
-        for name in names
-        for token in ("candidate", "compatibility", "functional_polar", "task_lookup")
+
+
+def test_direct_free_logits_zero_reproduce_base_and_receive_gradients() -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(owners, program_width=8, event_slots=4)
+    program = _program(len(owners), 8, 4)
+    video = _video(owners, seed=19, chunks=(2, 3), width=8, events=4)
+    compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
+    state = compiler.primal_scorer.program_state(program)
+    input_primals = compiler.primal_scorer.input_primals(state)
+    output_primals = compiler.primal_scorer.output_primals(state)
+    base = compiler.bank_operator.apply_compact(compact, input_primals, output_primals)
+    direct_inputs = tuple(
+        torch.zeros(4, 2, *value.shape[:-1], requires_grad=True)
+        for value in compact.input_values
+    )
+    direct_outputs = tuple(
+        tuple(
+            torch.zeros(4, 2, *value.shape[:-1], 4, requires_grad=True)
+            for _ in range(native_output_group_count(owner))
+        )
+        for owner, value in zip(owners, compact.output_values, strict=True)
+    )
+    observed = compiler.bank_operator.apply_compact(
+        compact,
+        input_primals,
+        output_primals,
+        direct_input_logit_biases=direct_inputs,
+        direct_output_logit_biases=direct_outputs,
+    )
+    for left, right in zip(
+        (*observed.input_values, *observed.output_values),
+        (*base.input_values, *base.output_values),
+        strict=True,
+    ):
+        assert torch.equal(left, right)
+    sum(
+        value.square().mean()
+        for value in (*observed.input_values, *observed.output_values)
+    ).backward()
+    assert all(value.grad is not None for value in direct_inputs)
+    assert all(value.grad is not None for rows in direct_outputs for value in rows)
+
+
+def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() -> None:
+    torch.manual_seed(211)
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners,
+        program_width=8,
+        event_slots=4,
+        covariance_frame_chunk=1,
+    )
+    for heads in (
+        compiler.bank_set_interaction.input_correction,
+        compiler.bank_set_interaction.output_correction,
+    ):
+        for head in heads.values():
+            torch.nn.init.normal_(head.weight, std=0.01)
+            torch.nn.init.normal_(head.bias, std=0.01)
+    program = _program(len(owners), 8, 4)
+    video = _video(owners, seed=223, chunks=(2, 3), width=8, events=4)
+    compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
+    context = (compiler._bank_context(video),)
+    program_state = compiler.primal_scorer.program_state(program)
+    input_primals = compiler.primal_scorer.input_primals(program_state)
+    output_primals = compiler.primal_scorer.output_primals(program_state)
+    interaction_state = compiler._interaction_states(program_state, context)[0]
+    plan = compiler.bank_operator._plan(compact, input_primals, output_primals)
+    summaries = compiler.bank_operator.summarize_compact(
+        compact,
+        plan=plan,
+        bank_set_interaction=compiler.bank_set_interaction,
+        interaction_state=interaction_state,
+    )
+    descriptors = compiler.bank_operator.describe_compact(
+        compact,
+        plan=plan,
+        interaction_state=interaction_state,
+    )
+    assert descriptors.input_metadata.device.type == "cpu"
+    assert descriptors.output_metadata.device.type == "cpu"
+    assert all(value.coordinates.device.type == "cpu" for value in descriptors.inputs)
+    observed_corrections = []
+    with torch.inference_mode():
+        uncached_pool = compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=interaction_state,
+            summaries=summaries,
+        )
+        cached_pool = compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=interaction_state,
+            summaries=summaries,
+            frozen_descriptors=descriptors,
+            interaction_group_batch_size=2,
+        )
+        chunked = compiler.forward_compact(
+            program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
+        )
+        compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=interaction_state,
+            summaries=summaries,
+            correction_observer=lambda side, owner, value: observed_corrections.append(
+                (side, owner.family, value.detach().clone())
+            ),
+        )
+        compiler.bank_operator.covariance_frame_chunk = 5
+        reference_summaries = compiler.bank_operator.summarize_compact(
+            compact,
+            plan=plan,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=interaction_state,
+        )
+        reference = compiler.forward_compact(
+            program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
+        )
+    for left, right in zip(
+        (*cached_pool.input_values, *cached_pool.output_values),
+        (*uncached_pool.input_values, *uncached_pool.output_values),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    compiler.zero_grad(set_to_none=True)
+    gradient_pool = compiler.bank_operator.apply_compact(
+        compact,
+        input_primals,
+        output_primals,
+        bank_set_interaction=compiler.bank_set_interaction,
+        interaction_state=interaction_state,
+        summaries=summaries,
+        frozen_descriptors=descriptors,
+        interaction_group_batch_size=2,
+    )
+    sum(
+        value.square().mean()
+        for value in (*gradient_pool.input_values, *gradient_pool.output_values)
+    ).backward()
+    assert all(
+        head.weight.grad is not None
+        and bool(torch.isfinite(head.weight.grad).all())
+        for heads in (
+            compiler.bank_set_interaction.input_correction,
+            compiler.bank_set_interaction.output_correction,
+        )
+        for head in heads.values()
+    )
+    for left, right in zip(
+        _summary_tensors(summaries), _summary_tensors(reference_summaries), strict=True
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    for left, right in zip(
+        (*chunked.residual.a, *chunked.residual.b),
+        (*reference.residual.a, *reference.residual.b),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    assert {(side, family) for side, family, _ in observed_corrections} == {
+        (side, family) for side in ("input", "output") for family in TargetFamily
+    }
+    assert all(
+        value.ndim >= 4 and bool(torch.isfinite(value).all())
+        for _, _, value in observed_corrections
     )
 
 
@@ -458,141 +639,6 @@ def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
         torch.testing.assert_close(left, right)
     assert not torch.equal(output_before[0], output_after[0])
     assert not torch.equal(output_before[1][0], output_after[1][0])
-
-
-def test_program_bank_interaction_is_zero_initialized_and_candidate_local() -> None:
-    torch.manual_seed(43)
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4
-    )
-    scorer = compiler.primal_scorer
-    state = scorer.program_state(_program(len(owners), 8, 4))
-    video = _video(owners, seed=47, chunks=(2, 3), width=8, events=4)
-    context = ProgramBankContext(
-        canonical_assignment=video.canonical_assignment,
-        frame_positions=video.frame_positions,
-        local_scene=video.local_scene,
-        local_process=video.local_process,
-        local_presence=video.local_presence,
-        local_tau=video.local_tau,
-        local_sigma=video.local_sigma,
-    )
-    interaction = ProgramBankInteractionScorer(
-        owners, program_width=8, event_slots=4, replay_score_rms=0.02
-    )
-    generator = torch.Generator().manual_seed(53)
-    input_values = torch.randn(5, 2, 50, 4, generator=generator)
-    input_mean = input_values.reshape(-1, 4).mean(0)
-    input_base_query = torch.randn(4, 4, generator=generator, requires_grad=True)
-    input_kwargs = {
-        "target": 0,
-        "program_event_state": state.rank_event[0],
-        "native_event_query": scorer.input_event_queries(state)[0],
-        "event_weights": state.event_weights[0],
-        "base_query": input_base_query,
-        "values": input_values,
-        "native_mean": input_mean,
-        "context": context,
-    }
-    zero = interaction.input_logit_corrections(**input_kwargs)
-    assert zero.shape == (4, 2, 5, 2, 50)
-    assert torch.equal(zero, torch.zeros_like(zero))
-
-    with torch.no_grad():
-        interaction.correction[TargetFamily.Q.value][-1].weight.normal_(std=0.1)
-    changed = interaction.input_logit_corrections(**input_kwargs)
-    assert bool(torch.count_nonzero(changed))
-    torch.testing.assert_close(changed[:, 0], -changed[:, 1])
-    candidate_changed = interaction.input_logit_corrections(
-        **{**input_kwargs, "values": input_values.roll(1, dims=0)}
-    )
-    assert not torch.equal(changed, candidate_changed)
-
-    output_values = torch.randn(5, 2, 50, 4, 2, generator=generator)
-    output_mean = output_values.reshape(-1, 2).mean(0)
-    output_base_query = torch.randn(4, 2, generator=generator, requires_grad=True)
-    output = interaction.output_logit_corrections(
-        target=0,
-        program_event_state=state.rank_event[0],
-        native_event_query=scorer.output_event_queries(state)[0][0],
-        event_weights=state.event_weights[0],
-        base_query=output_base_query,
-        values=output_values,
-        native_mean=output_mean,
-        context=context,
-    )
-    assert output.shape == (4, 2, 5, 2, 50, 4)
-    (changed.square().mean() + output.square().mean()).backward()
-    base_score_column_gradient = interaction.correction[
-        TargetFamily.Q.value
-    ][1].weight.grad[:, 3]
-    assert bool(torch.count_nonzero(base_score_column_gradient))
-    assert bool(torch.isfinite(base_score_column_gradient).all())
-    assert input_base_query.grad is None
-    assert output_base_query.grad is None
-
-
-def test_interaction_replay_is_chunk_equivalent_and_has_an_off_arm() -> None:
-    torch.manual_seed(59)
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4
-    )
-    program = _program(len(owners), 8, 4)
-    one = _video(owners, seed=61, chunks=(5,), width=8, events=4)
-    scale = torch.ones(len(owners))
-    zero_on = compiler(program, (one,), s_ref=scale)
-    zero_off = compiler(program, (one,), s_ref=scale, interaction_off=True)
-    for left, right in zip(
-        (*zero_on.residual.a, *zero_on.residual.b),
-        (*zero_off.residual.a, *zero_off.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=0.0, atol=0.0)
-    with torch.no_grad():
-        for head in compiler.interaction_scorer.correction.values():
-            head[-1].weight.normal_(std=0.1)
-    chunked = _video(owners, seed=61, chunks=(2, 3), width=8, events=4)
-    expected = compiler(program, (one,), s_ref=scale)
-    observed = compiler(program, (chunked,), s_ref=scale)
-    off = compiler(program, (one,), s_ref=scale, interaction_off=True)
-    prepared = compiler.bank_operator.prepare(one)
-    compact = compiler.forward_compact(
-        program,
-        (compiler.bank_operator.compact(prepared),),
-        s_ref=scale,
-        bank_contexts=(compiler._bank_context(one),),
-    )
-    for left, right in zip(
-        (*expected.residual.a, *expected.residual.b),
-        (*observed.residual.a, *observed.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for left, right in zip(
-        (*expected.residual.a, *expected.residual.b),
-        (*compact.residual.a, *compact.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    assert any(
-        not torch.equal(left, right)
-        for left, right in zip(
-            (*expected.residual.a, *expected.residual.b),
-            (*off.residual.a, *off.residual.b),
-            strict=True,
-        )
-    )
-    sum(value.square().mean() for value in expected.residual.a).backward()
-    final_gradients = tuple(
-        head[-1].weight.grad
-        for head in compiler.interaction_scorer.correction.values()
-    )
-    assert any(
-        gradient is not None and bool(torch.count_nonzero(gradient))
-        for gradient in final_gradients
-    )
 
 
 def test_frozen_scale_prior_is_task_agnostic_and_exact_before_f4() -> None:

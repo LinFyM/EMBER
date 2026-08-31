@@ -1,4 +1,4 @@
-"""Candidate-level Program--bank corrections for exact native signed pooling."""
+"""Event-conditioned whole-bank interaction for exact native signed pooling."""
 
 from __future__ import annotations
 
@@ -7,13 +7,19 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import torch
-import torch.nn.functional as functional
-from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.bank_conditioning.operator import BankConditioningError
-from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
+from ember.ecp.bank_conditioning.set_summary import (
+    EventBankSetEncoder,
+    EventBankSetSummary,
+    EventBankSetSummaryStream,
+    OutputEventBankSetSummary,
+    candidate_metadata,
+    event_candidate_measure,
+    program_relative_coordinates,
+)
+from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
-    G1_PROBE_COUNT,
     G1_RESIDUAL_RANK,
     OUTPUT_BANK_TYPES,
 )
@@ -56,11 +62,35 @@ class ProgramBankInteractionState:
     output_event_queries: tuple[torch.Tensor, ...]
 
 
-class ProgramBankInteractionScorer(torch.nn.Module):
-    """Produce bounded per-candidate corrections, never factors or routes."""
+@dataclass(frozen=True)
+class ProgramBankSetSummaries:
+    """Finalized input/output summaries for every target in one video."""
 
-    _metadata_width = 8
-    _correction_feature_width = 5 + _metadata_width
+    inputs: tuple[EventBankSetSummary, ...]
+    outputs: tuple[tuple[OutputEventBankSetSummary, ...], ...]
+
+    def with_condition(self, condition: torch.Tensor) -> ProgramBankSetSummaries:
+        """Broadcast one S0 training token across native owners and scopes."""
+
+        return ProgramBankSetSummaries(
+            inputs=tuple(value.with_condition(condition) for value in self.inputs),
+            outputs=tuple(
+                tuple(
+                    OutputEventBankSetSummary(
+                        all_types=value.all_types.with_condition(condition),
+                        by_type=tuple(
+                            row.with_condition(condition) for row in value.by_type
+                        ),
+                    )
+                    for value in groups
+                )
+                for groups in self.outputs
+            ),
+        )
+
+
+class EventConditionedBankSetInteraction(torch.nn.Module):
+    """Condition exact candidate corrections on the whole current native bank."""
 
     def __init__(
         self,
@@ -68,7 +98,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         *,
         program_width: int,
         event_slots: int,
-        semantic_width: int = 32,
+        summary_value_width: int = 16,
         hidden_width: int = 64,
         correction_bound: float = 0.1,
         replay_score_rms: float,
@@ -77,7 +107,8 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         self.owners = tuple(owners)
         self.program_width = int(program_width)
         self.event_slots = int(event_slots)
-        self.semantic_width = int(semantic_width)
+        self.coordinate_width = G1_RESIDUAL_RANK * self.event_slots
+        self.summary_value_width = int(summary_value_width)
         self.hidden_width = int(hidden_width)
         self.correction_bound = float(correction_bound)
         self.replay_score_rms = float(replay_score_rms)
@@ -86,7 +117,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             or min(
                 self.program_width,
                 self.event_slots,
-                self.semantic_width,
+                self.summary_value_width,
                 self.hidden_width,
             )
             <= 0
@@ -94,77 +125,81 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             or not math.isfinite(self.replay_score_rms)
             or self.replay_score_rms <= 0.0
         ):
-            raise BankConditioningError("invalid Program-bank interaction topology")
+            raise BankConditioningError("invalid bank-set interaction topology")
+        self.event_context_width = 4 * self.program_width + 3
+        self.summary_width = 2 * (
+            self.coordinate_width + self.summary_value_width
+        ) + 2
         families = tuple(TargetFamily)
-        self.program_query = torch.nn.ModuleDict(
+        self.set_encoder = torch.nn.ModuleDict(
             {
-                family.value: torch.nn.Linear(
-                    self.program_width, self.semantic_width, bias=False
+                family.value: EventBankSetEncoder(
+                    context_width=self.event_context_width,
+                    coordinate_width=self.coordinate_width,
+                    summary_value_width=self.summary_value_width,
+                    hidden_width=self.hidden_width,
                 )
                 for family in families
             }
         )
-        local_width = 3 * self.program_width + 3
-        self.local_key = torch.nn.ModuleDict(
+        self.input_candidate = torch.nn.ModuleDict(
             {
-                family.value: torch.nn.Sequential(
-                    torch.nn.LayerNorm(local_width),
-                    torch.nn.Linear(local_width, 2 * self.semantic_width),
-                    torch.nn.GELU(),
-                    torch.nn.Linear(2 * self.semantic_width, self.semantic_width),
-                    torch.nn.LayerNorm(self.semantic_width),
+                family.value: self._candidate_network(2 * self.coordinate_width + 5)
+                for family in families
+            }
+        )
+        self.output_candidate = torch.nn.ModuleDict(
+            {
+                family.value: self._candidate_network(2 * self.coordinate_width + 9)
+                for family in families
+            }
+        )
+        self.input_film = torch.nn.ModuleDict(
+            {
+                family.value: self._film_network(
+                    self.event_context_width + self.summary_width
                 )
                 for family in families
             }
         )
-        self.metadata_key = torch.nn.ModuleDict(
+        self.output_film = torch.nn.ModuleDict(
             {
-                family.value: torch.nn.Linear(
-                    self._metadata_width, self.semantic_width, bias=False
+                family.value: self._film_network(
+                    self.event_context_width + 2 * self.summary_width
                 )
                 for family in families
             }
         )
-        self.correction = torch.nn.ModuleDict(
-            {
-                family.value: torch.nn.Sequential(
-                    torch.nn.LayerNorm(self._correction_feature_width),
-                    torch.nn.Linear(
-                        self._correction_feature_width, self.hidden_width
-                    ),
-                    torch.nn.GELU(),
-                    torch.nn.Linear(self.hidden_width, 1),
-                )
-                for family in families
-            }
+        self.input_correction = torch.nn.ModuleDict(
+            {family.value: torch.nn.Linear(self.hidden_width, 1) for family in families}
         )
-        for family in families:
-            torch.nn.init.zeros_(self.correction[family.value][-1].weight)
-            torch.nn.init.zeros_(self.correction[family.value][-1].bias)
+        self.output_correction = torch.nn.ModuleDict(
+            {family.value: torch.nn.Linear(self.hidden_width, 1) for family in families}
+        )
+        for heads in (self.input_correction, self.output_correction):
+            for head in heads.values():
+                torch.nn.init.zeros_(head.weight)
+                torch.nn.init.zeros_(head.bias)
 
-    @staticmethod
-    def _rms_normalize(value: torch.Tensor) -> torch.Tensor:
-        return value / value.square().mean(-1, keepdim=True).clamp_min(1e-12).sqrt()
-
-    def _base_score_feature(
-        self, base_query: torch.Tensor, centered: torch.Tensor
-    ) -> torch.Tensor:
-        """Expose the detached B1 base score without changing candidate measure."""
-
-        candidate_axes = centered.shape[:-1]
-        if base_query.shape != (G1_RESIDUAL_RANK, centered.shape[-1]):
-            raise BankConditioningError("Program-bank base-query axes changed")
-        score = torch.einsum(
-            "rd,...d->r...", base_query.detach().float(), centered.detach().float()
-        ) / self.replay_score_rms
-        return score.reshape(
-            G1_RESIDUAL_RANK, 1, *candidate_axes, 1
-        ).expand(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *candidate_axes,
-            1,
+    def _candidate_network(self, width: int) -> torch.nn.Sequential:
+        return torch.nn.Sequential(
+            torch.nn.LayerNorm(width),
+            torch.nn.Linear(width, self.hidden_width),
+            torch.nn.GELU(),
+            torch.nn.Linear(self.hidden_width, self.hidden_width),
         )
+
+    def _film_network(self, width: int) -> torch.nn.Sequential:
+        network = torch.nn.Sequential(
+            torch.nn.LayerNorm(width),
+            torch.nn.Linear(width, 2 * self.hidden_width),
+            torch.nn.GELU(),
+            torch.nn.Linear(2 * self.hidden_width, 2 * self.hidden_width),
+        )
+        with torch.no_grad():
+            network[-1].bias[: self.hidden_width].fill_(1.0)
+            network[-1].bias[self.hidden_width :].zero_()
+        return network
 
     def _validate_context(self, context: ProgramBankContext) -> int:
         frames = int(context.frame_positions.shape[0])
@@ -184,90 +219,20 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             raise BankConditioningError("Program-bank local context changed")
         return frames
 
-    def _metadata(
-        self, context: ProgramBankContext, *, output: bool, like: torch.Tensor
-    ) -> torch.Tensor:
-        frames = context.frame_positions.to(like).clamp(0.0, 1.0)
-        probes = torch.linspace(-1.0, 1.0, G1_PROBE_COUNT, device=like.device)
-        horizons = torch.linspace(-1.0, 1.0, ACTION_HORIZON, device=like.device)
-        if output:
-            types = functional.one_hot(
-                torch.arange(len(OUTPUT_BANK_TYPES), device=like.device),
-                num_classes=len(OUTPUT_BANK_TYPES),
-            ).to(dtype=like.dtype)
-            shape = (
-                frames.shape[0],
-                G1_PROBE_COUNT,
-                ACTION_HORIZON,
-                len(OUTPUT_BANK_TYPES),
-            )
-            return torch.cat(
-                (
-                    frames[:, None, None, None, None].expand(*shape, 1),
-                    probes[None, :, None, None, None].expand(*shape, 1),
-                    horizons[None, None, :, None, None].expand(*shape, 1),
-                    types[None, None, None].expand(*shape, len(OUTPUT_BANK_TYPES)),
-                    torch.ones(*shape, 1, device=like.device, dtype=like.dtype),
-                ),
-                dim=-1,
-            )
-        shape = (frames.shape[0], G1_PROBE_COUNT, ACTION_HORIZON)
-        return torch.cat(
-            (
-                frames[:, None, None, None].expand(*shape, 1),
-                probes[None, :, None, None].expand(*shape, 1),
-                horizons[None, None, :, None].expand(*shape, 1),
-                torch.zeros(
-                    *shape,
-                    len(OUTPUT_BANK_TYPES) + 1,
-                    device=like.device,
-                    dtype=like.dtype,
-                ),
-            ),
-            dim=-1,
-        )
-
-    def _corrections(
+    def _event_context(
         self,
         *,
         target: int,
         program_event_state: torch.Tensor,
-        native_event_query: torch.Tensor,
-        event_weights: torch.Tensor,
-        base_query: torch.Tensor,
-        values: torch.Tensor,
-        native_mean: torch.Tensor,
         context: ProgramBankContext,
-        output: bool,
-    ) -> torch.Tensor:
-        frames = self._validate_context(context)
-        owner = self.owners[target]
-        candidate_axes = (
-            (frames, G1_PROBE_COUNT, ACTION_HORIZON, len(OUTPUT_BANK_TYPES))
-            if output
-            else (frames, G1_PROBE_COUNT, ACTION_HORIZON)
-        )
-        width = values.shape[-1]
-        if (
-            program_event_state.shape
-            != (G1_RESIDUAL_RANK, self.event_slots, self.program_width)
-            or native_event_query.shape
-            != (G1_RESIDUAL_RANK, self.event_slots, width)
-            or event_weights.shape != (G1_RESIDUAL_RANK, self.event_slots)
-            or base_query.shape != (G1_RESIDUAL_RANK, width)
-            or values.shape != (*candidate_axes, width)
-            or native_mean.shape != (width,)
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self._validate_context(context)
+        if program_event_state.shape != (
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            self.program_width,
         ):
-            raise BankConditioningError("Program-bank candidate axes changed")
-
-        family = owner.family.value
-        centered = values.detach().float() - native_mean.detach().float()
-        candidate_unit = self._rms_normalize(centered)
-        native_query = self._rms_normalize(native_event_query.float())
-        native_alignment = torch.einsum(
-            "red,...d->re...", native_query, candidate_unit
-        ) / math.sqrt(width)
-
+            raise BankConditioningError("Program bank-set event state changed")
         local = torch.cat(
             (
                 context.local_scene[target].float()[None].expand(
@@ -280,65 +245,146 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             ),
             dim=-1,
         )
-        semantic_query = self._rms_normalize(
-            self.program_query[family](program_event_state.float())
-        )
-        local_key = self._rms_normalize(self.local_key[family](local))
-        metadata = self._metadata(context, output=output, like=values.float())
-        metadata_key = self.metadata_key[family](metadata.float())
-        semantic_alignment = (
-            torch.einsum("res,es->re", semantic_query, local_key).reshape(
-                G1_RESIDUAL_RANK,
-                self.event_slots,
-                *((1,) * len(candidate_axes)),
-            )
-            + torch.einsum("res,...s->re...", semantic_query, metadata_key)
-        ) / math.sqrt(self.semantic_width)
-
-        log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
-        expanded_metadata = metadata.reshape(
-            1, 1, *candidate_axes, self._metadata_width
-        ).expand(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *candidate_axes,
-            self._metadata_width,
-        )
-        features = torch.cat(
+        rank = torch.cat(
             (
-                native_alignment[..., None],
-                semantic_alignment[..., None],
-                (native_alignment * semantic_alignment)[..., None],
-                self._base_score_feature(base_query, centered),
-                log_norm.reshape(1, 1, *candidate_axes, 1).expand(
-                    G1_RESIDUAL_RANK,
-                    self.event_slots,
-                    *candidate_axes,
-                    1,
-                ),
-                expanded_metadata,
+                program_event_state.float(),
+                local[None].expand(G1_RESIDUAL_RANK, -1, -1),
             ),
             dim=-1,
         )
-        event_correction = self.correction_bound * torch.tanh(
-            self.correction[family](features).squeeze(-1)
+        inducing = torch.cat((program_event_state.float().mean(0), local), dim=-1)
+        return rank, inducing
+
+    def summarize_input(
+        self,
+        *,
+        target: int,
+        program_event_state: torch.Tensor,
+        native_event_query: torch.Tensor,
+        values: torch.Tensor,
+        native_mean: torch.Tensor,
+        frame_measure: torch.Tensor,
+        context: ProgramBankContext,
+    ) -> EventBankSetSummary:
+        coordinates = program_relative_coordinates(
+            native_event_query, values, native_mean
         )
-        assignment = context.canonical_assignment.float().T.reshape(
+        metadata = candidate_metadata(
+            context.frame_positions, output=False, like=values
+        )
+        mass = event_candidate_measure(
+            frame_measure, context.canonical_assignment, output=False
+        )
+        _, inducing = self._event_context(
+            target=target,
+            program_event_state=program_event_state,
+            context=context,
+        )
+        return self.set_encoder[self.owners[target].family.value].summarize(
+            coordinates=coordinates,
+            metadata=metadata,
+            event_mass=mass,
+            event_context=inducing,
+            output=False,
+        )
+
+    def summary_stream(
+        self,
+        *,
+        target: int,
+        program_event_state: torch.Tensor,
+        context: ProgramBankContext,
+        output: bool,
+        reference: torch.Tensor,
+    ) -> EventBankSetSummaryStream:
+        """Create one B0 online stream with a query fixed by Program and bank."""
+
+        _, inducing = self._event_context(
+            target=target,
+            program_event_state=program_event_state,
+            context=context,
+        )
+        encoder = self.set_encoder[self.owners[target].family.value]
+        return encoder.new_stream(
+            event_context=inducing,
+            output=output,
+            reference=reference,
+            events=self.event_slots,
+        )
+
+    def summarize_output(
+        self,
+        *,
+        target: int,
+        program_event_state: torch.Tensor,
+        native_event_query: torch.Tensor,
+        values: torch.Tensor,
+        native_mean: torch.Tensor,
+        frame_measure: torch.Tensor,
+        context: ProgramBankContext,
+    ) -> OutputEventBankSetSummary:
+        coordinates = program_relative_coordinates(
+            native_event_query, values, native_mean
+        )
+        metadata = candidate_metadata(
+            context.frame_positions, output=True, like=values
+        )
+        mass = event_candidate_measure(
+            frame_measure, context.canonical_assignment, output=True
+        )
+        _, inducing = self._event_context(
+            target=target,
+            program_event_state=program_event_state,
+            context=context,
+        )
+        encoder = self.set_encoder[self.owners[target].family.value]
+        all_types = encoder.summarize(
+            coordinates=coordinates,
+            metadata=metadata,
+            event_mass=mass,
+            event_context=inducing,
+            output=True,
+        )
+        by_type = tuple(
+            encoder.summarize(
+                coordinates=coordinates[..., kind, :],
+                metadata=metadata[..., kind, :],
+                event_mass=mass[..., kind] * len(OUTPUT_BANK_TYPES),
+                event_context=inducing,
+                output=True,
+            )
+            for kind in range(len(OUTPUT_BANK_TYPES))
+        )
+        return OutputEventBankSetSummary(all_types=all_types, by_type=by_type)
+
+    def _base_score(
+        self, base_query: torch.Tensor, centered: torch.Tensor
+    ) -> torch.Tensor:
+        if base_query.shape != (G1_RESIDUAL_RANK, centered.shape[-1]):
+            raise BankConditioningError("bank-set base query axes changed")
+        return torch.einsum(
+            "rd,...d->r...", base_query.detach().float(), centered.detach().float()
+        ) / self.replay_score_rms
+
+    def _collapse_events(
+        self,
+        event_delta: torch.Tensor,
+        event_weights: torch.Tensor,
+        assignment: torch.Tensor,
+    ) -> torch.Tensor:
+        candidate_ndim = event_delta.ndim - 2
+        event_assignment = assignment.float().T.reshape(
             1,
             self.event_slots,
-            frames,
-            *((1,) * (len(candidate_axes) - 1)),
+            assignment.shape[0],
+            *((1,) * (candidate_ndim - 1)),
         )
         weights = event_weights.float().reshape(
             G1_RESIDUAL_RANK,
             self.event_slots,
-            *((1,) * len(candidate_axes)),
+            *((1,) * candidate_ndim),
         )
-        correction = (event_correction * assignment * weights).sum(1)
-        # Subtracting the global measure mean is a per-rank softmax gauge:
-        # it cancels exactly inside each branch. Keeping this equivalent
-        # representative avoids a third full-video streaming pass.
-        return torch.stack((correction, -correction), dim=1)
+        return (event_delta * event_assignment * weights).sum(1)
 
     def input_logit_corrections(
         self,
@@ -351,21 +397,78 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         values: torch.Tensor,
         native_mean: torch.Tensor,
         context: ProgramBankContext,
+        summary: EventBankSetSummary,
     ) -> torch.Tensor:
-        arguments = {
-            "target": target,
-            "program_event_state": program_event_state,
-            "native_event_query": native_event_query,
-            "event_weights": event_weights,
-            "base_query": base_query,
-            "values": values,
-            "native_mean": native_mean,
-            "context": context,
-            "output": False,
-        }
-        if self.training and torch.is_grad_enabled():
-            return checkpoint(self._corrections, use_reentrant=False, **arguments)
-        return self._corrections(**arguments)
+        rank_context, _ = self._event_context(
+            target=target,
+            program_event_state=program_event_state,
+            context=context,
+        )
+        coordinates = program_relative_coordinates(
+            native_event_query, values, native_mean
+        )
+        standardized = (
+            coordinates[None]
+            - summary.mean.reshape(self.event_slots, *((1,) * (coordinates.ndim - 1)), -1)
+        ) / (
+            0.5
+            * summary.log_variance.reshape(
+                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
+            )
+        ).exp()
+        metadata = candidate_metadata(
+            context.frame_positions, output=False, like=values
+        )
+        centered = values.float() - native_mean.detach().float()
+        log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
+        score = self._base_score(base_query, centered)
+        candidate_shape = coordinates.shape[:-1]
+        features = torch.cat(
+            (
+                standardized[None].expand(G1_RESIDUAL_RANK, -1, *candidate_shape, -1),
+                coordinates.reshape(1, 1, *candidate_shape, -1).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+                score.reshape(G1_RESIDUAL_RANK, 1, *candidate_shape, 1).expand(
+                    -1, self.event_slots, *candidate_shape, -1
+                ),
+                log_norm.reshape(1, 1, *candidate_shape, 1).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+                metadata.reshape(1, 1, *candidate_shape, 3).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+            ),
+            dim=-1,
+        )
+        family = self.owners[target].family.value
+        hidden = self.input_candidate[family](features)
+        condition = torch.cat(
+            (
+                rank_context,
+                summary.condition[None].expand(G1_RESIDUAL_RANK, -1, -1),
+            ),
+            dim=-1,
+        )
+        gamma, beta = self.input_film[family](condition).chunk(2, dim=-1)
+        affine = hidden * gamma.reshape(
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            *((1,) * len(candidate_shape)),
+            self.hidden_width,
+        ) + beta.reshape(
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            *((1,) * len(candidate_shape)),
+            self.hidden_width,
+        )
+        event_delta = self.correction_bound * torch.tanh(
+            self.input_correction[family](affine).squeeze(-1)
+        )
+        correction = self._collapse_events(
+            event_delta, event_weights, context.canonical_assignment
+        )
+        return torch.stack((correction, -correction), dim=1)
 
     def output_logit_corrections(
         self,
@@ -378,18 +481,78 @@ class ProgramBankInteractionScorer(torch.nn.Module):
         values: torch.Tensor,
         native_mean: torch.Tensor,
         context: ProgramBankContext,
+        summary: OutputEventBankSetSummary,
     ) -> torch.Tensor:
-        arguments = {
-            "target": target,
-            "program_event_state": program_event_state,
-            "native_event_query": native_event_query,
-            "event_weights": event_weights,
-            "base_query": base_query,
-            "values": values,
-            "native_mean": native_mean,
-            "context": context,
-            "output": True,
-        }
-        if self.training and torch.is_grad_enabled():
-            return checkpoint(self._corrections, use_reentrant=False, **arguments)
-        return self._corrections(**arguments)
+        rank_context, _ = self._event_context(
+            target=target,
+            program_event_state=program_event_state,
+            context=context,
+        )
+        coordinates = program_relative_coordinates(
+            native_event_query, values, native_mean
+        )
+        all_summary = summary.all_types
+        candidate_shape = coordinates.shape[:-1]
+        standardized = (
+            coordinates[None]
+            - all_summary.mean.reshape(
+                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
+            )
+        ) / (
+            0.5
+            * all_summary.log_variance.reshape(
+                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
+            )
+        ).exp()
+        metadata = candidate_metadata(
+            context.frame_positions, output=True, like=values
+        )
+        centered = values.float() - native_mean.detach().float()
+        log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
+        score = self._base_score(base_query, centered)
+        features = torch.cat(
+            (
+                standardized[None].expand(G1_RESIDUAL_RANK, -1, *candidate_shape, -1),
+                coordinates.reshape(1, 1, *candidate_shape, -1).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+                score.reshape(G1_RESIDUAL_RANK, 1, *candidate_shape, 1).expand(
+                    -1, self.event_slots, *candidate_shape, -1
+                ),
+                log_norm.reshape(1, 1, *candidate_shape, 1).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+                metadata.reshape(1, 1, *candidate_shape, 7).expand(
+                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
+                ),
+            ),
+            dim=-1,
+        )
+        family = self.owners[target].family.value
+        hidden = self.output_candidate[family](features)
+        own = torch.stack(tuple(value.condition for value in summary.by_type), dim=1)
+        all_condition = all_summary.condition[:, None].expand(-1, len(OUTPUT_BANK_TYPES), -1)
+        condition = torch.cat(
+            (
+                rank_context[:, :, None].expand(-1, -1, len(OUTPUT_BANK_TYPES), -1),
+                all_condition[None].expand(G1_RESIDUAL_RANK, -1, -1, -1),
+                own[None].expand(G1_RESIDUAL_RANK, -1, -1, -1),
+            ),
+            dim=-1,
+        )
+        gamma, beta = self.output_film[family](condition).chunk(2, dim=-1)
+        affine_shape = (
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            *((1,) * (len(candidate_shape) - 1)),
+            len(OUTPUT_BANK_TYPES),
+            self.hidden_width,
+        )
+        affine = hidden * gamma.reshape(affine_shape) + beta.reshape(affine_shape)
+        event_delta = self.correction_bound * torch.tanh(
+            self.output_correction[family](affine).squeeze(-1)
+        )
+        correction = self._collapse_events(
+            event_delta, event_weights, context.canonical_assignment
+        )
+        return torch.stack((correction, -correction), dim=1)

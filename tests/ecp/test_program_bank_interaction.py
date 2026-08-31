@@ -1,52 +1,139 @@
-from pathlib import Path
+from __future__ import annotations
 
 import torch
 
 from ember.ecp.bank_conditioning.program_bank_interaction import (
-    ProgramBankInteractionScorer,
+    EventConditionedBankSetInteraction,
+    ProgramBankContext,
 )
 from ember.ecp.contracts import TargetFamily, TargetOwner
-from ember.ecp.joint_program_primal.routing_control import (
-    INTERACTION_BASE_SCORE_FEATURE,
-    load_routing_control_config,
-)
 
 
-def test_v4_contract_activates_base_score_feature() -> None:
-    root = Path(__file__).resolve().parents[2]
-    config = load_routing_control_config(
-        root / "configs/pi05_ecp_program_bank_candidate_interaction_v4.json"
-    )
-    assert config["model"]["interaction_base_score_feature"] == (
-        INTERACTION_BASE_SCORE_FEATURE
-    )
-
-
-def test_base_score_feature_matches_b1_score_and_is_translation_invariant() -> None:
-    scorer = ProgramBankInteractionScorer(
-        (TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16),),
-        program_width=8,
-        event_slots=4,
+def _fixture():
+    torch.manual_seed(20260831)
+    owner = TargetOwner(0, "q", TargetFamily.Q, 0, 4, 8)
+    module = EventConditionedBankSetInteraction(
+        (owner,),
+        program_width=6,
+        event_slots=2,
+        summary_value_width=4,
+        hidden_width=12,
         replay_score_rms=0.02,
     )
-    generator = torch.Generator().manual_seed(20260831)
-    values = torch.randn(5, 2, 50, 4, generator=generator)
-    mean = values.reshape(-1, 4).mean(0)
-    query = torch.randn(4, 4, generator=generator, requires_grad=True)
-    centered = values - mean
-    observed = scorer._base_score_feature(query, centered)
-    expected = torch.einsum("rd,...d->r...", query.detach(), centered) / 0.02
-
-    assert observed.shape == (4, 4, 5, 2, 50, 1)
-    torch.testing.assert_close(observed[:, 0, ..., 0], expected)
-    torch.testing.assert_close(observed[:, 0], observed[:, -1])
-    torch.testing.assert_close(
-        scorer._base_score_feature(
-            query,
-            (values + 7.0) - (mean + 7.0),
-        ),
-        observed,
-        rtol=2e-4,
-        atol=2e-4,
+    assignment = torch.rand(3, 2).softmax(-1)
+    context = ProgramBankContext(
+        canonical_assignment=assignment,
+        frame_positions=torch.linspace(0.0, 1.0, 3),
+        local_scene=torch.randn(1, 6),
+        local_process=torch.randn(2, 1, 6),
+        local_presence=torch.rand(2),
+        local_tau=torch.rand(2, 2),
+        local_sigma=torch.randn(2, 1, 6),
     )
-    assert query.grad is None
+    state = torch.randn(4, 2, 6)
+    weights = torch.randn(4, 2).softmax(-1)
+    frame = torch.rand(3)
+    frame = frame / frame.sum()
+    return module, context, state, weights, frame
+
+
+def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
+    module, context, state, weights, frame = _fixture()
+    values = torch.randn(3, 2, 50, 4)
+    native_query = torch.randn(4, 2, 4)
+    mean = values.reshape(-1, 4).mean(0)
+    summary = module.summarize_input(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        values=values,
+        native_mean=mean,
+        frame_measure=frame,
+        context=context,
+    )
+    correction = module.input_logit_corrections(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        event_weights=weights,
+        base_query=torch.randn(4, 4),
+        values=values,
+        native_mean=mean,
+        context=context,
+        summary=summary,
+    )
+    assert correction.shape == (4, 2, 3, 2, 50)
+    assert torch.equal(correction, torch.zeros_like(correction))
+
+
+def test_free_summary_changes_the_same_film_path_and_has_gradient() -> None:
+    module, context, state, weights, frame = _fixture()
+    values = torch.randn(3, 2, 50, 4)
+    native_query = torch.randn(4, 2, 4)
+    mean = values.reshape(-1, 4).mean(0)
+    summary = module.summarize_input(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        values=values,
+        native_mean=mean,
+        frame_measure=frame,
+        context=context,
+    )
+    with torch.no_grad():
+        module.input_correction[TargetFamily.Q.value].weight.normal_(std=0.05)
+    free_a = torch.nn.Parameter(torch.zeros_like(summary.condition))
+    free_b = torch.nn.Parameter(torch.ones_like(summary.condition))
+    common = dict(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        event_weights=weights,
+        base_query=torch.randn(4, 4),
+        values=values,
+        native_mean=mean,
+        context=context,
+    )
+    left = module.input_logit_corrections(
+        **common, summary=summary.with_condition(free_a)
+    )
+    right = module.input_logit_corrections(
+        **common, summary=summary.with_condition(free_b)
+    )
+    assert not torch.equal(left, right)
+    torch.testing.assert_close(left[:, 0], -left[:, 1])
+    (left.square().mean() + right.square().mean()).backward()
+    assert free_a.grad is not None and bool(torch.isfinite(free_a.grad).all())
+    assert free_b.grad is not None and bool(torch.isfinite(free_b.grad).all())
+
+
+def test_output_reads_all_and_own_type_but_keeps_one_joint_candidate_axis() -> None:
+    module, context, state, weights, frame = _fixture()
+    values = torch.randn(3, 2, 50, 4, 4)
+    native_query = torch.randn(4, 2, 4)
+    mean = values.reshape(-1, 4).mean(0)
+    summary = module.summarize_output(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        values=values,
+        native_mean=mean,
+        frame_measure=frame,
+        context=context,
+    )
+    assert len(summary.by_type) == 4
+    with torch.no_grad():
+        module.output_correction[TargetFamily.Q.value].weight.normal_(std=0.05)
+    correction = module.output_logit_corrections(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        event_weights=weights,
+        base_query=torch.randn(4, 4),
+        values=values,
+        native_mean=mean,
+        context=context,
+        summary=summary,
+    )
+    assert correction.shape == (4, 2, 3, 2, 50, 4)
+    torch.testing.assert_close(correction[:, 0], -correction[:, 1])

@@ -16,6 +16,7 @@ from ember.ecp.native_factors import (
     G1_PROBE_COUNT,
     G1_RESIDUAL_RANK,
     OUTPUT_BANK_TYPES,
+    native_output_group_count,
 )
 
 
@@ -60,7 +61,9 @@ class ProgramBankInteractionScorer(torch.nn.Module):
     """Produce bounded per-candidate corrections, never factors or routes."""
 
     _metadata_width = 8
-    _correction_feature_width = 5 + _metadata_width
+    _interaction_width = 32
+    _scalar_feature_width = 5 + _metadata_width
+    _correction_feature_width = _scalar_feature_width + _interaction_width
 
     def __init__(
         self,
@@ -90,12 +93,53 @@ class ProgramBankInteractionScorer(torch.nn.Module):
                 self.hidden_width,
             )
             <= 0
+            or self.semantic_width != self._interaction_width
             or not 0.0 < self.correction_bound <= 1.0
             or not math.isfinite(self.replay_score_rms)
             or self.replay_score_rms <= 0.0
         ):
             raise BankConditioningError("invalid Program-bank interaction topology")
         families = tuple(TargetFamily)
+        self._native_widths = self._family_side_widths(self.owners)
+        self.native_query_projection = torch.nn.ModuleDict(
+            {
+                side: torch.nn.ModuleDict(
+                    {
+                        family.value: torch.nn.Linear(
+                            self._native_widths[side][family.value],
+                            self._interaction_width,
+                            bias=False,
+                        )
+                        for family in families
+                        if family.value in self._native_widths[side]
+                    }
+                )
+                for side in ("input", "output")
+            }
+        )
+        self.native_key_projection = torch.nn.ModuleDict(
+            {
+                side: torch.nn.ModuleDict(
+                    {
+                        family.value: torch.nn.Linear(
+                            self._native_widths[side][family.value],
+                            self._interaction_width,
+                            bias=False,
+                        )
+                        for family in families
+                        if family.value in self._native_widths[side]
+                    }
+                )
+                for side in ("input", "output")
+            }
+        )
+        for side in ("input", "output"):
+            for family in self.native_query_projection[side]:
+                query = self.native_query_projection[side][family]
+                candidate = self.native_key_projection[side][family]
+                torch.nn.init.orthogonal_(query.weight)
+                with torch.no_grad():
+                    candidate.weight.copy_(query.weight)
         self.program_query = torch.nn.ModuleDict(
             {
                 family.value: torch.nn.Linear(
@@ -143,6 +187,25 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             torch.nn.init.zeros_(self.correction[family.value][-1].bias)
 
     @staticmethod
+    def _family_side_widths(
+        owners: Sequence[TargetOwner],
+    ) -> dict[str, dict[str, int]]:
+        widths: dict[str, dict[str, int]] = {"input": {}, "output": {}}
+        for owner in owners:
+            current = {
+                "input": owner.in_features,
+                "output": owner.out_features // native_output_group_count(owner),
+            }
+            for side, width in current.items():
+                family = owner.family.value
+                previous = widths[side].setdefault(family, width)
+                if width <= 0 or previous != width:
+                    raise BankConditioningError(
+                        f"Program-bank {side} native width changed within {family}"
+                    )
+        return widths
+
+    @staticmethod
     def _rms_normalize(value: torch.Tensor) -> torch.Tensor:
         return value / value.square().mean(-1, keepdim=True).clamp_min(1e-12).sqrt()
 
@@ -164,6 +227,49 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             self.event_slots,
             *candidate_axes,
             1,
+        )
+
+    def _vector_interaction(
+        self,
+        *,
+        family: str,
+        side: str,
+        native_query: torch.Tensor,
+        candidate_unit: torch.Tensor,
+        semantic_query: torch.Tensor,
+        local_key: torch.Tensor,
+        metadata_key: torch.Tensor,
+        candidate_axes: tuple[int, ...],
+    ) -> torch.Tensor:
+        native_query_vector = self._rms_normalize(
+            self.native_query_projection[side][family](native_query)
+        )
+        native_candidate_vector = self._rms_normalize(
+            self.native_key_projection[side][family](candidate_unit)
+        )
+        semantic_key = self._rms_normalize(
+            local_key.reshape(
+                self.event_slots,
+                *((1,) * len(candidate_axes)),
+                self._interaction_width,
+            )
+            + metadata_key.reshape(1, *candidate_axes, self._interaction_width)
+        )
+        query_interaction = native_query_vector * semantic_query
+        candidate_interaction = (
+            native_candidate_vector.reshape(1, *candidate_axes, self._interaction_width)
+            * semantic_key
+        )
+        return query_interaction.reshape(
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            *((1,) * len(candidate_axes)),
+            self._interaction_width,
+        ) * candidate_interaction.reshape(
+            1,
+            self.event_slots,
+            *candidate_axes,
+            self._interaction_width,
         )
 
     def _validate_context(self, context: ProgramBankContext) -> int:
@@ -248,6 +354,8 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             else (frames, G1_PROBE_COUNT, ACTION_HORIZON)
         )
         width = values.shape[-1]
+        side = "output" if output else "input"
+        family = owner.family.value
         if (
             program_event_state.shape
             != (G1_RESIDUAL_RANK, self.event_slots, self.program_width)
@@ -257,10 +365,10 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             or base_query.shape != (G1_RESIDUAL_RANK, width)
             or values.shape != (*candidate_axes, width)
             or native_mean.shape != (width,)
+            or self._native_widths[side].get(family) != width
         ):
             raise BankConditioningError("Program-bank candidate axes changed")
 
-        family = owner.family.value
         centered = values.detach().float() - native_mean.detach().float()
         candidate_unit = self._rms_normalize(centered)
         native_query = self._rms_normalize(native_event_query.float())
@@ -294,6 +402,16 @@ class ProgramBankInteractionScorer(torch.nn.Module):
             )
             + torch.einsum("res,...s->re...", semantic_query, metadata_key)
         ) / math.sqrt(self.semantic_width)
+        vector_interaction = self._vector_interaction(
+            family=family,
+            side=side,
+            native_query=native_query,
+            candidate_unit=candidate_unit,
+            semantic_query=semantic_query,
+            local_key=local_key,
+            metadata_key=metadata_key,
+            candidate_axes=candidate_axes,
+        )
 
         log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
         expanded_metadata = metadata.reshape(
@@ -317,6 +435,7 @@ class ProgramBankInteractionScorer(torch.nn.Module):
                     1,
                 ),
                 expanded_metadata,
+                vector_interaction,
             ),
             dim=-1,
         )

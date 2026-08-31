@@ -23,6 +23,12 @@
 - 先从clean pushed detached authority做world-size可调的1--2步真实profile，核验旧interaction逐tensor加载、fresh cursor/optimizer、
   16 VJP、finite combined gradient、唯一rank16、Action Meta 0、显存与吞吐。随后运行到既有第一个预注册checkpoint70并做Panel-B
   信息性screen；只有证据仍支持才续到110和完整相邻Gate。该screen不降低或替代正式S2 Gate，也不自行新增性能通过线。
+- clean pushed `25e4101`的gpu01物理`0,2,6` world3真实profile已自然exit 0。step1/2分别覆盖全部8 task的
+  `correct_fit0/fit1 + wrong_fit0`，每步16次Panel-A VJP，15/16与16/16个scheduled condition有active finite unit gradient；
+  combined norm为`.1882/.1413`，游标全部严格推进至`2`。步时`98.66/92.28s`，peak allocated约`30.68GiB`。run contract确认
+  旧interaction只作为fresh初始化加载，旧optimizer/scheduler/cursor均未加载；Action Meta module/parameter为0，source/Stage0冻结，
+  held/Panel-B/validation-test/shuffled-reversed读写均为0且每condition仍只生成一套完整rank16。profile根为
+  `runs/analysis/pi05_ecp_event_bank_set_s2_functional_polish_profile_s2_25e4101_gpu01p026_r3_20260901`。
 
 - 2026-09-01 S2首轮effective-rank4 shared LOTO在step70/110稳定non-pass；真实policy梯度审计随后证明surrogate从fresh起即错配：
   16臂factor-vs-functional cosine中位`.0219`、6臂为负。相同shared EBSRI图的2:1 direct-functional锚点对8个gradient tasks却有

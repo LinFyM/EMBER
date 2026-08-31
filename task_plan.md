@@ -41,7 +41,10 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
 - [x] 并行完成task1/93 S0 panel-B functional Gate；两task全部checks及aggregate通过；
 - [x] 以已有真实B0 moments/induced summaries完成S1 task-local Gate；两task全部checks及aggregate通过；
 - [x] 以直接Panel-A功能梯度fresh重跑S2并完成完整相邻Gate；correct恢复而wrong因果分离稳定non-pass；
-- [ ] 以旧interaction初始化、fresh optimizer/cursors和paired unit-gradient direct polish做一次限定S2机制检验；通过后再形成10-task component initialization；
+- [x] 完成旧interaction初始化、fresh optimizer/cursors和paired unit-gradient direct polish的world3真实profile：16 VJP、finite gradient、
+  同步cursor、Action Meta 0、唯一rank16及显存/吞吐合同均成立；
+- [ ] 从同一clean pushed authority运行限定S2 functional-polish formal、Panel-B screen及证据支持下的完整相邻Gate；通过后再形成
+  10-task component initialization；
 - [ ] S2通过后推进S3 Natural Program joint G3。
 
 ## R5--R13历史里程碑

@@ -51,19 +51,27 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     authorities = config.get("authorities", {})
     wall = config.get("information_wall", {})
     gate = config.get("gate", {})
+    stage = config.get("stage")
+    is_s0 = stage == BANK_SET_S0_STAGE
+    is_s1 = stage == BANK_SET_S1_STAGE
     trainable = (
         [
             "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
             "training_only_free_correct/free_wrong",
         ]
-        if config.get("stage") == BANK_SET_S0_STAGE
+        if is_s0
         else ["EventConditionedBankSetInteraction"]
+    )
+    expected_summary_source = (
+        "one_training_only_free_correct_and_free_wrong_token_per_task"
+        if is_s0
+        else "real_b0_program_relative_event_bank_set_encoder"
     )
     return all(
         (
             is_bank_set_tasklocal_config(config),
             config.get("status") == "active_event_bank_set_tasklocal_qualification",
-            config.get("stage") in {BANK_SET_S0_STAGE, BANK_SET_S1_STAGE},
+            is_s0 or is_s1,
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("primal_scorer_initialization") == R5_SHARED_FUNCTIONAL_CHART,
@@ -92,6 +100,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             task_local.get("wrong_task_by_task") == {"1": 8, "93": 94},
             task_local.get("wrong_conditioning_language")
             == "correct_task_exact_language",
+            task_local.get("summary_source") == expected_summary_source,
             task_local.get("effective_target_is_gate") is False,
             task_local.get("functional_gate_authority") is True,
             gate.get("correct_fit_each_minimum") == 0.85,
@@ -106,6 +115,8 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             isinstance(authorities.get("r5_gate_aggregate"), str),
             isinstance(authorities.get("positive_control_root"), str),
             wall.get("fixed_routing_token_training_only") is True,
+            wall.get("free_summary_tokens_training_only_not_component_candidate")
+            is is_s0,
             wall.get("wrong_bank_exact_language_fixed") is True,
             wall.get("single_complete_rank16") is True,
             config.get("throughput_gate", {}).get("cross_language_bank_cache")

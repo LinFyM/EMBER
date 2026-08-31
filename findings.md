@@ -1762,3 +1762,15 @@ set-independent函数逐candidate产生；mean/covariance/full base及最终soft
 classifier、operator或更宽pointwise MLP。S0先用training-only free summary裁决下游factorization，S1才检验真实bank能否产生summary；
 随后才允许task-LOTO与Natural Program joint。若S0 effective target与functional Gate冲突，直接功能可行性优先，不能由teacher代表元
 误杀架构。吞吐必须通过冻结descriptor cache与shape batching优化，但自定wall秒数不参与科学qualification。
+
+### 105. S0通过证明whole-bank condition可解决capacity--specificity，最早接口上移到真实summary
+
+首版EBSRI S0的间接FiLM+共享zero-head在task1/93上correct与wrong recovery都约`.92--.99`，correction RMS仅约`2.5e-5`；free-token
+swap几乎无效。相同Panel-B visits上的exact teacher强抑制、以及只训练wrong的scale-matched对照分别排除了teacher代表性与下游
+signed-pooling/rank4容量问题：task1/task93 wrong-only均把两个wrong views压至负recovery，但会同步破坏correct，说明缺失的是条件分离。
+
+当前单变量修正让Program/event context与summary直接生成candidate linear head，而不是先做FiLM再经过共享zero-head。clean pushed
+`3b7124e`的task1 correct fit0/fit1/held为`.948785/.922930/.929913`，wrong fit0/fit1为`-.535224/-.491055`；task93分别为
+`.905449/.909439/.894417`与`-.161546/-.169201`。两task Gate及aggregate全部pass，zero-gradient views与family方向也通过。
+因此S0已证明whole-bank condition与当前真实X/Y→signed pooling→rank4 factorization联合可行；它不证明真实bank能解码condition，更不证明
+shared compiler。下一最早接口严格是S1真实B0 set encoder的task-local decodability，且S1必须fresh，不能加载free-summary S0状态。

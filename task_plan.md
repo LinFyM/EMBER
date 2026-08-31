@@ -14,10 +14,11 @@ Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event nat
 流式形成event-conditioned whole-bank moments/induced summaries；Pass B1用该summary条件化每candidate correction，再对真实X/Y执行
 唯一exact signed pooling。B0不做match分类、开关或LoRA生成；最终仍只有一个rank4 residual与一套carrier12+residual4完整rank16。
 
-当前阶段只实现并裁决S0 free-summary factorization。task1/93各自使用training-only correct/wrong summary token验证下游FiLM/correction
-能否在同一factorization中同时保留R5 correct方向并压低wrong；真实X/Y、base/native heads/signed pooling/scale/carrier冻结，correct held、
-wrong fit1与panel B零梯度。S0通过才接入真实B0 set encoder形成S1；S1通过才进入shared fixed-route task-LOTO S2；S2通过才恢复
-Natural Program joint S3。机制Gate的`.85/.80/.25/.50`只裁决该接口，正式目标仍唯一为validation8 strict paired correct严格
+S0 free-summary factorization已经在task1/93上同时通过，证明给定whole-bank condition时当前factorization可以保留R5 correct方向并
+压低wrong。当前阶段为S1 real-summary task-local：从fresh R5初始化，删除training-only free token并训练真实B0 set encoder与同一
+direct-conditioned interaction；真实X/Y、base/native heads/signed pooling/scale/carrier继续冻结，correct held、wrong fit1与panel B
+零梯度。S1通过才进入shared fixed-route task-LOTO S2；S2通过才恢复Natural Program joint S3。机制Gate的`.85/.80/.25/.50`只裁决
+该接口，正式目标仍唯一为validation8 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
 固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理；两task各用一张GPU独立运行，不做无意义
@@ -32,8 +33,8 @@ representative与panel-B功能结论冲突，先做一次直接constrained funct
 - [x] 接通共享EBSRI数据结构与S0 free-summary路径，zero-init逐tensor复现R5；
 - [x] 用tracked driver/config验证input/output候选索引、chunk边界、K1、Action Meta 0、真实X/Y与唯一rank16；
 - [x] 缓存冻结query-relative descriptors并按shape批处理correction，完成task1/93真实forward/gradient/materialization与吞吐profile；
-- [ ] 并行完成task1/93 S0 panel-B functional Gate；S0 non-pass按teacher representative与factorization最早接口裁决；
-- [ ] S0通过后实现真实B0 moments/induced summaries并执行S1 task-local Gate；
+- [x] 并行完成task1/93 S0 panel-B functional Gate；两task全部checks及aggregate通过；
+- [ ] 以已有真实B0 moments/induced summaries执行S1 task-local Gate；
 - [ ] S1通过后依次推进S2 fixed-route task-LOTO与S3 Natural Program joint G3。
 
 ## R5--R13历史里程碑

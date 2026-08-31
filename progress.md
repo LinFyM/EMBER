@@ -1,5 +1,15 @@
 # EMBER progress
 
+- 2026-08-31 EBSRI S0 direct-summary formal双task aggregate已经通过。旧FiLM+共享zero-head在task1/93上correct与wrong均近似R5、
+  summary-token swap几乎无效；Panel-B teacher与wrong-only scale-matched overfit随后证明真实bank、signed pooling、rank4与factor网络可产生
+  强抑制，最早失效是summary条件没有取得candidate-head控制。当前实现让Program/event context与summary直接生成每family candidate
+  linear head，仍保持step0严格interaction-off。clean pushed `3b7124e`的task1 correct fit0/fit1/held recovery为
+  `.948785/.922930/.929913`，wrong fit0/fit1为`-.535224/-.491055`；task93为
+  `.905449/.909439/.894417`与`-.161546/-.169201`。两task全部absolute、margin、all-pairs、saturation与family checks通过，
+  Action Meta 0、held/wrong-fit1/Panel-B backward 0、validation/test reads 0、无shuffled/reversed且唯一rank16。aggregate位于
+  `runs/outputs/pi05_ecp_event_bank_set_direct_s0_gate_s110_3b7124e_gpu01p01_20260831/`。当前立即进入S1：从fresh R5初始化，唯一科学
+  变量是删除training-only free summaries并训练真实B0 set encoder；不加载S0 checkpoint，不改变loss、LR、teacher、宽度、rank或Gate。
+
 - 2026-08-31 EBSRI S0实现面已经接通：B0按真实input与joint abs/adj/init/goal output候选流式形成event bank-set summary，
   B1从冻结run-local query-relative descriptors批量计算shared correction，并仍由每个native owner/group独立对真实X/Y执行FP32 signed
   pooling；output时间边界跨chunk保持、不同video不串接。S0只训练candidate trunk/FiLM/final heads与training-only free correct/wrong
@@ -7,7 +17,7 @@
   物化一套38-target carrier12+residual4 rank16。task1/93真实profile分别为`2.841s/step`、`10.726s/step`，peak allocated约
   `41.09GB/29.08GB`；zero equivalence、wrong teacher suppression、forward/gradient/materialization均成立。一次跨group batched signed
   accumulator虽在小张量测试等价，却在真实R5零修正产生`.269/.180`偏差，已在formal前撤回；不以吞吐放宽数值/功能合同。当前
-  `113 passed`，下一步不再增加profile，直接clean集成并并行启动task1/93 formal S0。
+  `113 passed`，随后已在上述clean authority完成并行task1/93 formal S0。
 
 - 2026-08-31 owner已恢复持续性goal并授权按第六次专家复核继续高效推进。1320行原始回复已逐字保存为
   `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。专家锁定并复核`main@92617d0`与未合并
@@ -20,10 +30,9 @@
   bounded candidate correction，再以真实X/Y形成唯一signed measure、rank4 residual与完整rank16。B0不得成为task matcher、binary/
   continuous gate或LoRA generator；Pass A/B仍读取同一video set，K视频逐条独立后uniform聚合。
 
-- 当前执行S0 free-summary factorization，不直接训练完整set encoder：task1/93分别用training-only correct/wrong summary token先判断下游
-  factorization能否同时保留correct与压低wrong；S0通过才进入真实summary S1，随后才是shared task-LOTO S2与Natural Program joint
-  S3。driver/config与冻结descriptor/shape-batched correction已经完成，待clean pushed detached authority立即启动formal；吞吐秒数只作
-  工程目标，不作科学Gate。
+- 当前执行S1 real-summary task-local Gate：task1/93分别从fresh R5训练真实B0 set encoder与同一direct-conditioned interaction，
+  correct held、wrong fit1与Panel B仍零梯度。S1通过才进入shared task-LOTO S2，随后才是Natural Program joint S3；吞吐秒数只作工程
+  目标，不作科学Gate。
 
 - 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
   Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的

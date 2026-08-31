@@ -652,8 +652,9 @@ interaction、真实X/Y、signed pooling、rank4、full base、Natural Program�
 当前唯一后继是Event-Conditioned Bank-Set Relative Interaction（EBSRI）。对每个input/output native owner，Program的4 rank x 8 event
 queries直接定义每个candidate的32维相对坐标`kappa_n[r,e]`；Pass B0在每条video内按unit-mass measure与frame-to-event assignment流式
 累计event mean、dispersion及一对antithetic induced summaries。input X保持`(t,p,h)`候选且没有type轴；output Y保持
-`(t,p,h,u)`联合候选，并允许B0同时形成all-type与candidate自身type summary。Pass B1对`kappa`作event-relative标准化，由
-`Program/local event/summary`产生FiLM参数，再对每个candidate生成唯一bounded branch correction。最终仍只对真实X/Y执行一个exact
+`(t,p,h,u)`联合候选，并允许B0同时形成all-type与candidate自身type summary。Pass B1对`kappa`作event-relative标准化；S0实验证明
+间接FiLM+共享zero-head没有取得summary控制后，当前canonical由`Program/local event/summary`直接生成每family candidate linear head，
+再对每个candidate产生唯一bounded branch correction。最终仍只对真实X/Y执行一个exact
 positive-minus-negative pooling，形成一个rank4 residual与一套carrier12+residual4完整rank16。
 
 EBSRI不得成为task matcher或连续开关：B0 summary不输出类别、residual或LoRA factor，Program仍直接定义query，真实X/Y仍是唯一Value
@@ -663,7 +664,7 @@ EBSRI不得成为task matcher或连续开关：B0 summary不输出类别、resid
 资格严格按一个架构的四个接口推进：
 
 1. **S0 free-summary factorization**：只用task1/93。R5 base、native heads、真实X/Y、signed pooling、scale/carrier全冻结；同task correct
-   fit views共享一个training-only free summary，wrong fit views共享另一个。只训练新FiLM/correction，correct held、wrong fit1、panel B
+   fit views共享一个training-only free summary，wrong fit views共享另一个。只训练candidate trunk/direct condition-generated head，correct held、wrong fit1、panel B
    零梯度。free summary只是容量上界，不是部署输入、binary route或checkpoint候选。训练可用exact-effective-rank4高速目标，但裁决必须
    看panel-B functional recovery；若teacher代表元与功能结论冲突，补一次直接constrained functional feasibility，不得误杀架构。
 2. **S1 real-summary task-local**：S0通过后，以同一代码把free summary替换为真实B0 set encoder；每task独立训练，检查correct held与

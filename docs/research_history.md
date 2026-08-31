@@ -1621,3 +1621,23 @@ Program-conditioned、event-conditioned whole-bank相对分布：单candidate局
 continuous correction，再对真实X/Y形成唯一signed measure、rank4 residual和完整rank16。推进顺序固定为S0 free-summary
 factorization、S1 real-summary task-local、S2 fixed-route shared task-LOTO、S3 Natural Program joint；每一步只裁决最早接口。
 1320行原始回复逐字保存于`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。
+
+## 82. EBSRI S0 direct-summary双task formal通过
+
+首版S0间接FiLM+共享zero-head的correct与wrong均保持约`.92--.99`，correction近零且free-token swap无因果效应。Panel-B exact teacher
+与scale-matched wrong-only对照证明同一真实bank、signed pooling、rank4及factor网络可以产生强抑制，最早失效是summary条件未取得candidate
+head控制。后继单变量修正由Program/event context与summary直接生成每family candidate linear head，仍严格zero-init并保持其它数据、
+teacher、loss、rank、scale、carrier与信息墙不变。
+
+clean pushed detached `3b7124e87514454387cf6e575c8526f470f2a8de`完成task1/93各110步与五臂Panel-B。task1 correct
+fit0/fit1/held recovery为`.948785/.922930/.929913`，wrong fit0/fit1为`-.535224/-.491055`；task93为
+`.905449/.909439/.894417`与`-.161546/-.169201`。两task全部absolute、wrong、margin、all-pairs、saturation与family checks通过，
+Action Meta和validation/test reads为0，held/wrong-fit1/Panel-B无反传，未使用shuffled/reversed，且只生成一套完整rank16。双task
+aggregate正式`pass`：
+
+- `runs/outputs/pi05_ecp_event_bank_set_direct_s0_task1_s110_3b7124e_gpu01p0_20260831/`；
+- `runs/outputs/pi05_ecp_event_bank_set_direct_s0_task93_s110_3b7124e_gpu01p1_20260831/`；
+- `runs/outputs/pi05_ecp_event_bank_set_direct_s0_gate_s110_3b7124e_gpu01p01_20260831/`。
+
+该结果只证明给定whole-bank condition时factorization可行，不证明真实set summary、跨task共享或Natural Program。下一阶段S1从fresh R5
+初始化，只把training-only free summary替换为真实B0 set encoder。

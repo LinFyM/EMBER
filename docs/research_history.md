@@ -1654,3 +1654,21 @@ S1只证明真实whole-bank summary在task-local训练中可以保持correct并�
 fixed-route shared task-LOTO；只有该Gate通过，才可用全部10 tasks fresh refit并继续S3 Natural Program joint。随后
 `main@cdcae8b`解耦B0 summary与B1 replay chunk：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`，峰值约
 `41.1GB`；这是系统吞吐事实，不改变S1科学裁决。
+
+## 84. S2 effective代表元稳定non-pass，直接功能梯度审计支持一次同图修正
+
+首轮S2在8个gradient tasks共享同一EBSRI set encoder/interaction，并hold out task1/93。step70/110相邻结果稳定，但step110
+meta/target gradient correct中位仅约`.604/.639`，held task1/93 correct为`.507/.731`，task93 wrong为`.676`，两个checkpoint均
+primary non-pass。60个correct jobs的effective recovery与正式Panel-B只有Pearson `.417`、Spearman `.433`；高内部恢复没有稳定转化为
+真实policy功能，因此不能靠继续训练该surrogate通过。
+
+随后在同一真实native banks、唯一rank16与8个gradient tasks上做无optimizer-step梯度审计。fresh状态16个correct/wrong条件的旧
+factor gradient与直接Panel-A policy gradient cosine中位`.0219237`，最小`-.16748`且6个为负，证明错配并非训练后才产生。
+与此同时，四拍schedule对应的2:1 correct/wrong direct-functional raw mean对8个task的投影全部为正，范围`.1318--.6323`；归一化
+minimum-norm共同下降方向最小投影`.112935`。所以证据没有否定shared EBSRI参数化，允许的最小修正是保持图、数据、rank、split和Gate，
+将训练代表元换成真实Panel-A功能VJP。
+
+实现提交`25477c9`采用两遍内存调度、correct质量1与wrong有界neutralization质量.5，LR `1e-4`。gpu01物理`0,1,3,4,5,6`的world6
+两步profile覆盖wrong与correct两种分支，步时`27.697/17.719s`、peak allocated `32.931GB`，finite nonzero aggregate gradient、Action Meta 0、
+held/Panel-B backward 0、target-cache build 0与唯一rank16全部成立。profile只证明实现与资源合同；科学裁决仍需fresh step70/110及完整
+100-job Panel-B Gate。

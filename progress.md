@@ -1,5 +1,30 @@
 # EMBER progress
 
+- 2026-09-01 S2首轮effective-rank4 shared LOTO在step70/110稳定non-pass；真实policy梯度审计随后证明surrogate从fresh起即错配：
+  16臂factor-vs-functional cosine中位`.0219`、6臂为负。相同shared EBSRI图的2:1 direct-functional锚点对8个gradient tasks却有
+  raw共同下降方向，minimum-norm最小投影`.1129`。因此唯一修正保持架构/split/rank/Gate不变，只改为Panel-A direct VJP：correct
+  质量1、wrong有界neutralization质量.5、LR `1e-4`，不做MGDA或普通超参小扫。
+
+- direct-functional实现`25477c9`的gpu01 world6两步真实profile已经自然exit 0，输出根为
+  `runs/analysis/pi05_ecp_event_bank_set_s2_direct_functional_profile_s2_25477c9_gpu01p013456_r6_20260901`。step0六个wrong与step1四个
+  correct/两个wrong均有finite nonzero aggregate gradient，步时`27.70/17.72s`，peak allocated `32.93GB`；12次VJP、Action Meta 0、
+  held/Panel-B/validation backward 0、target-cache build 0且唯一rank16均由run contract/completion确认。
+
+### S2 direct-functional fresh formal launch contract
+
+- scientific authority为包含`25477c9`及本记录的clean pushed `main`，从其detached frozen worktree fresh执行；不resume旧surrogate或profile，
+  不覆盖已有输出。仍只训练8个gradient tasks的同一shared `EventConditionedBankSetInteraction`，task1/93为interaction holdout；fixed route、
+  wrong rings、四拍arms、真实X/Y、signed pooling、rank4、carrier12、两相邻checkpoint70/110和完整Panel-B Gate均不变。
+- formal训练只读Panel A跨episode actions并用直接policy VJP；correct raw flow、wrong有界neutralization hinge按schedule总质量2:1。
+  Panel B、correct-held、wrong-fit1、task1/93、validation/test、shuffled/reversed均零梯度；source、Native Stage0、R5 scorer、carrier、scale与
+  Action Meta冻结，最终每condition仍只物化一套38-target rank16。
+- 2026-09-01 00:31 CST live检查gpu01物理`0,1,3,4,5,6`为空闲合适卡，物理2有他人约2.7GB且持续利用，故不用；gpu02多数卡已有
+  约30GB任务。formal在launch前再核对同一live状态，有几张合适卡就用几张、单节点最多6张；world size一经formal启动即固定。
+  `/data1` quota为`776989728/1073741824` blocks，复用23GB node cache及既有model/data，新增run预计远低于1GB。
+- 训练输出预定为`runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901`。从fresh运行110步，
+  保存single checkpoints70/110；完成后以独立persistent workers执行原100个task-arm-checkpoint jobs和相邻稳定性。只有完整S2 Gate通过才
+  做10-task fresh refit并进入S3；non-pass按最早失效接口分析，不以内部loss、续训或seed/LR/width小扫替代Gate。
+
 - 2026-08-31 EBSRI S1 real-summary task-local双task aggregate正式通过，formal根为
   `runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`。task1 correct fit0/fit1/held
   recovery为`.942/.953/.962`，wrong fit0/fit1为`-.529/-.517`；task93分别为`.928/.905/.881`与

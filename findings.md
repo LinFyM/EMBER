@@ -1786,3 +1786,19 @@ all-pairs、saturation与family checks通过，Action Meta为0、Panel B backwar
 因此不能据此声称shared compiler成立。当前下一资格严格是S2 fixed-route shared task-LOTO，在8个gradient tasks训练并hold out一个meta与
 一个target interaction task，通过后才允许全部10 tasks fresh refit。工程上`main@cdcae8b`解耦B0 summary与B1 replay chunk后，wrong
 约由`12s`降至`6.3s`、task1 correct约由`35.5s`降至`13.3s`，峰值约`41.1GB`；该profile不参与科学Gate。
+
+### 107. S2首轮non-pass的最早原因是effective代表元错配，不是shared参数化已被否定
+
+S2 effective-rank4训练在step70/110稳定non-pass：step110 meta/target gradient correct中位仅约`.604/.639`，两个held interaction
+task1/93 correct为`.507/.731`，task93 wrong仍`.676`；相邻稳定但绝对功能与分离均不足。60个correct jobs中effective recovery与
+Panel-B仅Pearson `.417`、Spearman `.433`，说明内部四family距离不能可靠代表真实policy功能。
+
+同一真实bank与Writer图的16-arm梯度审计把原因进一步前移。fresh状态下旧factor surrogate与直接Panel-A功能梯度cosine中位仅
+`.0219`，16臂中6个为负；这不是训练后漂移。另一方面，按既定四拍schedule形成的2:1 correct/wrong有界功能锚点，其raw equal-task
+均值对8个gradient tasks投影全部为正，minimum-norm共同方向的最小投影约`.1129`。因此当前证据支持保持EBSRI结构不变、把训练信号
+换成直接功能VJP；它没有证明shared mapping已经通过，也不授权扫普通超参。
+
+首版修正固定correct raw flow loss质量1、wrong `max(carrier-generated,0)`有界neutralization质量.5、LR `1e-4`，不做task-gradient
+normalization或MGDA。两遍执行先以no-grad真实bank物化唯一rank16 leaves，再做policy VJP并CPU offload leaf gradients，最后fresh replay
+Writer链式反传，避免policy与bank graph同时驻留。held task、same-task held、wrong fit1、Panel B、validation/test与shuffled/reversed均
+不反传，Action Meta仍未安装。

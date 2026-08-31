@@ -42,10 +42,6 @@
   target interaction task；通过后才用全部10 tasks fresh refit形成component initialization，随后才进入Natural Program joint S3。
   S1的task-local通过不能替代这个shared mapping Gate；吞吐秒数只作工程目标，不作科学Gate。
 
-- 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
-  Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的
-  `codex/g3-vector-interaction@2295f48`保留为机制证据，不是第二条active实现面。
-
 - clean pushed detached v4的step70/110相邻Gate已经完整结束。correct fit为`.922509/.929947`、same-task held为
   `.926447/.953521`，但unseen wrong-on为`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有
   `5/10`和`4/10`；信息墙与四family通过，bank因果分离失败。B1 base score没有修复shared correction acquisition，v4 strict

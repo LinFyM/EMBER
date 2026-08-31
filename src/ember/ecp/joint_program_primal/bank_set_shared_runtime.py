@@ -12,7 +12,6 @@ from safetensors.torch import load_file
 
 from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint
 from ember.ecp.joint_program_primal.bank_set_shared_training import (
-    ARM_SCHEDULE,
     GRADIENT_TASKS,
     SharedArmSpec,
     SharedTaskTargets,
@@ -93,15 +92,21 @@ def _run_contract(runtime: Any, contract: Any) -> dict[str, Any]:
         "shared_training": dict(runtime.config["shared_training"]),
         "task_profiles": dict(runtime.config["shared_training"]["task_profiles"]),
         "schedule": {
-            "global_tasks_per_optimizer_step": 6,
-            "tasks_per_role": 3,
+            "global_tasks_per_optimizer_step": 8,
+            "conditions_per_optimizer_step": 16,
+            "tasks_per_role": 4,
             "role_task_pool": 4,
-            "task_weight": "one_sixth_for_each_active_task",
+            "task_weight": "one_eighth_for_each_active_task",
             "role_weight": "one_half_each",
-            "arm_cursor": "independent_per_task_appearance_count",
-            "cursor_reconstruction": "deterministic_from_global_optimizer_step",
-            "arm_schedule": list(ARM_SCHEDULE),
+            "arm_cursor": "all_tasks_advance_once_per_optimizer_step",
+            "cursor_reconstruction": "each_cursor_equals_global_optimizer_step",
+            "correct_view_schedule": "fit0_even_fit1_odd_optimizer_step",
+            "paired_wrong_arm": "wrong_fit0",
+            "gradient_combiner": (
+                "scheduled_condition_unit_l2_mean_zero_for_inactive_no_mgda"
+            ),
         },
+        "interaction_pretraining": dict(runtime.interaction_pretraining),
         "positive_control_denominators": [
             {"path": str(path), "bytes": path.stat().st_size}
             for path in runtime.positive_control_files
@@ -113,6 +118,60 @@ def _run_contract(runtime: Any, contract: Any) -> dict[str, Any]:
         "information_wall": dict(runtime.config["information_wall"]),
         "inventory": inventory,
         "world_topology": _topology(runtime.context),
+    }
+
+
+def _interaction_pretraining(runtime: Any, contract: Any, *, apply: bool) -> dict[str, Any]:
+    authority = runtime.config["authorities"]["interaction_pretraining"]
+    checkpoint = (runtime.args.asset_root / authority["checkpoint"]).resolve()
+    run_contract_path = (runtime.args.asset_root / authority["run_contract"]).resolve()
+    gate_path = (runtime.args.asset_root / authority["gate_aggregate"]).resolve()
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    source_contract = read_json(run_contract_path)
+    gate = read_json(gate_path)
+    if not all(
+        (
+            checkpoint_macro(checkpoint) == int(authority["optimizer_step"]) == 110,
+            manifest.get("stage") == contract.BANK_SET_SHARED_STAGE,
+            int(manifest.get("next_macro", -1)) == 110,
+            manifest.get("run_contract_schema") == authority["source_run_schema"],
+            source_contract.get("schema_version") == authority["source_run_schema"],
+            source_contract.get("stage") == contract.BANK_SET_SHARED_STAGE,
+            source_contract.get("mode") == "formal",
+            source_contract.get("git", {}).get("commit") == authority["source_commit"],
+            source_contract.get("task_split") == runtime.config["task_split"],
+            gate.get("schema_version")
+            == "ember_ecp_event_bank_set_shared_loto_aggregate_v1",
+            gate.get("status") == "complete",
+            gate.get("gate_pass") is False,
+            authority["scope"]
+            == "full_event_conditioned_bank_set_interaction_only",
+            authority["optimizer_or_scheduler_state_loaded"] is False,
+            authority["task_arm_cursors_loaded"] is False,
+            authority["training_only"] is True,
+        )
+    ):
+        raise ValueError("S2 interaction-pretraining authority changed")
+    tensors = load_file(str(checkpoint / "ecp.safetensors"), device="cpu")
+    expected = set(runtime.writer_state.state_dict())
+    interaction = {name: value for name, value in tensors.items() if name != "task_arm_cursors"}
+    if set(interaction) != expected - {"task_arm_cursors"}:
+        raise ValueError("S2 interaction-pretraining tensor inventory changed")
+    if apply:
+        state = {
+            **interaction,
+            "task_arm_cursors": torch.zeros_like(
+                runtime.writer_state.task_arm_cursors, device="cpu"
+            ),
+        }
+        runtime.writer_state.load_state_dict(state, strict=True)
+    return {
+        **dict(authority),
+        "checkpoint": str(checkpoint),
+        "checkpoint_bytes": (checkpoint / "ecp.safetensors").stat().st_size,
+        "run_contract": str(run_contract_path),
+        "gate_aggregate": str(gate_path),
+        "applied_to_fresh_initialization": True,
     }
 
 
@@ -204,6 +263,11 @@ def _build_runtime(
         functional_code_targets={},
         functional_code_authority={},
         run_contract={},
+    )
+    runtime.interaction_pretraining = _interaction_pretraining(
+        runtime,
+        contract,
+        apply=training and getattr(args, "resume", None) is None,
     )
     runtime.run_contract = _run_contract(runtime, contract)
     if training:

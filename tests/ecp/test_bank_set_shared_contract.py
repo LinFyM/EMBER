@@ -39,7 +39,7 @@ from ember.pi05_source_checkpoint import write_json_atomic
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = (
-    ROOT / "configs/pi05_ecp_event_bank_set_s2_shared_direct_functional_v1.json"
+    ROOT / "configs/pi05_ecp_event_bank_set_s2_functional_polish_v1.json"
 )
 
 
@@ -53,10 +53,10 @@ def test_shared_config_seals_loto_roles_rings_profiles_and_wall() -> None:
         "72": 73, "73": 75, "75": 94, "94": 72,
     }
     assert shared["evaluation_wrong_task_by_task"] == {"1": 8, "93": 94}
-    assert config["optimization"]["joint"]["global_tasks_per_optimizer_step"] == 6
+    assert config["optimization"]["joint"]["global_tasks_per_optimizer_step"] == 8
     assert config["task_split"]["held_interaction_meta"] == [1]
-    assert task_cursor_counts(70) == (52, 53, 53, 52, 52, 53, 53, 52)
-    assert task_cursor_counts(110) == (82, 83, 83, 82, 82, 83, 83, 82)
+    assert task_cursor_counts(70) == (70,) * 8
+    assert task_cursor_counts(110) == (110,) * 8
     assert shared["task_profiles"] == {
         str(task): profile for task, profile in BANK_SET_SHARED_TASK_PROFILES.items()
     }
@@ -65,8 +65,11 @@ def test_shared_config_seals_loto_roles_rings_profiles_and_wall() -> None:
     assert config["model"]["generated_adapter"].endswith("rank16")
     direct = config["optimization"]["direct_functional"]
     assert direct["correct_backward_mass"] == 1.0
-    assert direct["wrong_backward_mass"] == 0.5
-    assert direct["task_gradient_combiner"].endswith("no_normalization_or_mgda")
+    assert direct["wrong_backward_mass"] == 1.0
+    assert direct["task_gradient_combiner"] == (
+        "scheduled_condition_unit_l2_mean_zero_for_inactive_no_mgda"
+    )
+    assert config["authorities"]["interaction_pretraining"]["optimizer_step"] == 110
     assert config["optimization"]["joint"]["optimizer"]["peak_lr"] == 0.0001
     assert config["evaluation"]["target_cache_scope"].endswith("never_training")
 
@@ -94,7 +97,7 @@ class _TinyInteraction(torch.nn.Module):
         self.output_condition = torch.nn.Linear(2, 2)
 
 
-def test_shared_ownership_checkpoints_only_fresh_interaction_and_cursors() -> None:
+def test_shared_ownership_checkpoints_only_interaction_and_cursors() -> None:
     program = torch.nn.Linear(2, 2)
     compiler = torch.nn.Module()
     compiler.base = torch.nn.Linear(2, 2)
@@ -109,7 +112,8 @@ def test_shared_ownership_checkpoints_only_fresh_interaction_and_cursors() -> No
     assert inventory["task_arm_cursor_task_order"] == list(
         BANK_SET_SHARED_GRADIENT_TASKS
     )
-    assert inventory["fresh_interaction_shared_across_tasks"] is True
+    assert inventory["interaction_shared_across_tasks"] is True
+    assert inventory["interaction_initialization_owned_by_runtime_authority"] is True
 
 
 def _mapping_split() -> SharedCompilerMappingSplit:

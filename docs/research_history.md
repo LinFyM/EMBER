@@ -1672,3 +1672,28 @@ minimum-norm共同下降方向最小投影`.112935`。所以证据没有否定sh
 两步profile覆盖wrong与correct两种分支，步时`27.697/17.719s`、peak allocated `32.931GB`，finite nonzero aggregate gradient、Action Meta 0、
 held/Panel-B backward 0、target-cache build 0与唯一rank16全部成立。profile只证明实现与资源合同；科学裁决仍需fresh step70/110及完整
 100-job Panel-B Gate。
+
+## 85. direct-functional S2稳定non-pass与interaction-bootstrap诊断
+
+clean pushed detached `25477c922c66b5167520cac8c7a20776ff1f2ec1`完成fresh direct-functional S2 110步，独立detached
+`3e156324c84b4f0908be06ec7b588f7132d6ccc5`随后完成step70/110共100个
+Panel-B jobs。step110 meta/target gradient correct为`.879627/.930968`，task1/93 correct为`.949350/.899343`；但meta/target wrong为
+`.444409/.904698`，task1/93 wrong为`.931056/.899985`，对应margin`.265943/.017216/-.002605/-.015191`。两个checkpoint均primary
+non-pass，而相邻稳定性通过。所有job保持Action Meta 0、唯一38-target rank16、held/Panel-B backward 0、forbidden reads 0且未使用
+shuffled/reversed：
+
+- `runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901/`；
+- `runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_gate_25477c9_eval3e15632_gpu01p013456_w6_20260901/`。
+
+随后对direct step110的8 task×correct/wrong做无optimizer-step梯度审计。每task两臂的oriented cosine约`-.917,-.861,-.884,-.935,
+-.927,-.700,-.659,-.705`；raw与简单normalized均值均非所有条件下降。16-condition normalized MGDA存在最小投影`.00675`，只说明
+局部可行，不授权把MGDA引入最终Writer。对旧effective-surrogate step110重复同一审计时，unit-normalized简单均值对全部16条件正投影，
+最小`.03279`；排除已inactive的task52 wrong后仍为`.03680`。旧delta本身对direct gradients近正交且8/16 uphill，所以它不是正确解，
+但已形成从fresh direct路径缺少的bank-discriminative表示：
+
+- `runs/analysis/pi05_ecp_event_bank_set_s2_gradient_geometry_direct_step110_25477c9_gpu01p6_gpu02p456_20260901/`；
+- `runs/analysis/pi05_ecp_event_bank_set_s2_gradient_geometry_step110_f8d33fa_gpu01p013456_20260831/`。
+
+由此下一次限定检验保持EBSRI架构、split、rank与Gate不变，只加载旧interaction作为training-only初始化，重置optimizer/scheduler/cursors，
+并以全部8 task的paired correct/wrong unit-gradient direct polish训练。该组合不是fresh、不能拆分归因，也不证明Natural Program；若真实
+Panel-B仍不能把wrong选择性迁移到held task，应停止继续精修该组合，而把原因落到shared coordinate/跨task interaction泛化。

@@ -1,5 +1,29 @@
 # EMBER progress
 
+- 2026-09-01 direct-functional S2的110步formal与100-job相邻Gate已经完整结束。step70→110的meta gradient correct从`.682`升至
+  `.880`、target从`.923`升至`.931`，task1/93 correct分别保持`.939→.949`与`.915→.899`；但step110 meta/target wrong仍为
+  `.444/.905`，task1/93 wrong为`.931/.900`，margin也仅`.266/.017`与`-.003/-.015`。相邻稳定性通过而两个checkpoint primary均
+  non-pass。Action Meta、held/Panel-B/validation backward、forbidden reads与shuffled/reversed均为0，每condition仍是一套38-target
+  rank16。结果根为`runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_gate_25477c9_eval3e15632_gpu01p013456_w6_20260901`。
+
+- 同checkpoint的16-condition梯度审计显示8个task内correct与oriented-wrong cosine为`-.935--.659`，direct checkpoint上的raw mean与
+  unit-normalized mean分别有多臂负投影；MGDA虽存在严格共同方向，但不作为训练算法。旧effective-surrogate step110的16个
+  unit-normalized direct gradients简单均值则全部正投影，最小约`.0368`（排除已inactive的task52 wrong后仍成立），说明旧训练已形成
+  bank-discriminative representation，而direct-from-zero主要败在representation bootstrap与raw scale composition。该结论不证明held
+  task93会迁移；它只是支持一次限定的旧interaction初始化+normalized direct polish，不授权MGDA、LR/seed/rank/width小扫。
+
+### S2 functional-polish launch contract
+
+- 唯一科学改动组合为：只加载旧effective-surrogate step110的完整`EventConditionedBankSetInteraction`；optimizer、scheduler、RNG与
+  8个task cursor从零开始。R5 fixed route、真实X/Y、EBSRI B0/B1、signed pooling、rank4、carrier12、split、Panel-B Gate和
+  Action Meta缺席均不变。该run明确不是fresh，也不加载旧optimizer或任何held outcome。
+- 每个optimizer step覆盖全部8个gradient tasks；correct按step奇偶轮换fit0/fit1，并与wrong-fit0成对。16个条件分别求真实Panel-A
+  VJP，active gradient各自unit-L2后以预注册`1/16`质量合成；inactive wrong hinge贡献显式零，保持task/role名义等权。不采用MGDA，
+  held task1/93、correct-held、wrong-fit1、Panel B、validation/test与shuffled/reversed继续零梯度。
+- 先从clean pushed detached authority做world-size可调的1--2步真实profile，核验旧interaction逐tensor加载、fresh cursor/optimizer、
+  16 VJP、finite combined gradient、唯一rank16、Action Meta 0、显存与吞吐。随后运行到既有第一个预注册checkpoint70并做Panel-B
+  信息性screen；只有证据仍支持才续到110和完整相邻Gate。该screen不降低或替代正式S2 Gate，也不自行新增性能通过线。
+
 - 2026-09-01 S2首轮effective-rank4 shared LOTO在step70/110稳定non-pass；真实policy梯度审计随后证明surrogate从fresh起即错配：
   16臂factor-vs-functional cosine中位`.0219`、6臂为负。相同shared EBSRI图的2:1 direct-functional锚点对8个gradient tasks却有
   raw共同下降方向，minimum-norm最小投影`.1129`。因此唯一修正保持架构/split/rank/Gate不变，只改为Panel-A direct VJP：correct

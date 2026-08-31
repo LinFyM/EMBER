@@ -1802,3 +1802,20 @@ Panel-B仅Pearson `.417`、Spearman `.433`，说明内部四family距离不能�
 normalization或MGDA。两遍执行先以no-grad真实bank物化唯一rank16 leaves，再做policy VJP并CPU offload leaf gradients，最后fresh replay
 Writer链式反传，避免policy与bank graph同时驻留。held task、same-task held、wrong fit1、Panel B、validation/test与shuffled/reversed均
 不反传，Action Meta仍未安装。
+
+### 108. direct-functional从fresh保住correct但没有取得wrong选择性；旧表示支持一次限定polish
+
+direct-functional formal step70/110及100-job Panel-B Gate已完成。step110 meta/target gradient correct为`.880/.931`，task1/93
+correct为`.949/.899`；但meta/target wrong仍为`.444/.905`，task1/93 wrong为`.931/.900`，四组margin分别`.266/.017/-.003/-.015`。
+相邻checkpoint稳定却都primary non-pass。wrong hinge累计绝大多数时候active，所以不能归因于训练没有看到negative credit；真实policy
+梯度解决了旧surrogate破坏correct的问题，却仍没有从零建立可迁移的bank-selective表示。
+
+后验16-condition审计把原因从普通loss质量进一步收窄。direct step110每taskcorrect与oriented-wrong方向高度反向（cosine约
+`-.935--.659`），raw mean与简单unit-normalized mean都存在负投影；MGDA虽能构造共同方向，但它只是几何诊断。旧effective-surrogate
+step110上，同一16个direct gradients的unit-normalized简单均值对全部条件均正投影，最小约`.0328`，排除inactive task52 wrong后最小
+约`.0368`。旧trained delta与direct目标近正交，故旧checkpoint不是direct解；它提供的是已bootstrap的bank-discriminative Jacobian。
+
+这支持且只支持一次组合机制测试：加载旧interaction、fresh optimizer/scheduler/cursors，全部8 task每步各取一个轮换correct与一个wrong，
+每个active condition梯度unit-L2后按固定`1/16`质量合成，inactive hinge为零；不使用MGDA。该测试同时改变初始化与梯度composition，
+通过不能分别归因，也不能冒充from-scratch或Natural Program成功。若预注册checkpoint的真实Panel-B仍无wrong迁移，就应把最早失效接口
+定为当前shared interaction coordinate/跨task泛化，而不是继续堆normalization或扫超参。

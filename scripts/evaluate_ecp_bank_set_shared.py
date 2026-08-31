@@ -19,7 +19,7 @@ from ember.ecp.joint_program_primal.bank_set_shared_evaluation import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = (
     REPO_ROOT
-    / "configs/pi05_ecp_event_bank_set_s2_shared_direct_functional_v1.json"
+    / "configs/pi05_ecp_event_bank_set_s2_functional_polish_v1.json"
 )
 DEFAULT_BASE_CONFIG = REPO_ROOT / "configs/pi05_ecp_shared_compiler_g3_v5.json"
 

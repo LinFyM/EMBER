@@ -1,4 +1,4 @@
-"""Fixed-route shared EBSRI S2 direct-functional training.
+"""Fixed-route shared EBSRI S2 functional-polish training.
 
 The S1 task-local module remains the numerical owner for real B0/B1 replay,
 rank16 materialization, and the effective-rank4 cache used only by evaluation.
@@ -9,7 +9,6 @@ no-grad bank pass followed by one fresh Writer replay.
 from __future__ import annotations
 
 import copy
-import statistics
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,7 +57,6 @@ GRADIENT_TASKS = (*GRADIENT_META_TASKS, *GRADIENT_TARGET_TASKS)
 HELD_INTERACTION_TASKS = (1, 93)
 ALL_INTERACTION_TASKS = (1, 8, 9, 32, 52, 72, 73, 75, 93, 94)
 WRONG_TASK_RING = {8: 9, 9: 32, 32: 52, 52: 8, 72: 73, 73: 75, 75: 94, 94: 72}
-ARM_SCHEDULE = ("wrong_fit0", "correct_fit0", "wrong_fit0", "correct_fit1")
 
 
 @dataclass(frozen=True)
@@ -88,30 +86,12 @@ def _contract_module() -> Any:
     return bank_set_shared_contract
 
 
-def shared_task_group(optimizer_step: int) -> tuple[int, ...]:
-    """Return three of four tasks per role, independent of world size."""
-
-    if optimizer_step < 0:
-        raise ValueError("S2 optimizer step must be non-negative")
-    offset = optimizer_step % 4
-    return tuple(
-        task
-        for role in (GRADIENT_META_TASKS, GRADIENT_TARGET_TASKS)
-        for task in (role[(offset + index) % 4] for index in range(3))
-    )
-
-
 def task_cursor_counts(optimizer_step: int) -> dict[int, int]:
-    """Reconstruct the eight independent arm cursors from the global macro."""
+    """Reconstruct all-task paired-functional cursors from the global macro."""
 
     if optimizer_step < 0:
         raise ValueError("S2 optimizer step must be non-negative")
-    cycles, remainder = divmod(optimizer_step, 4)
-    counts = {task: 3 * cycles for task in GRADIENT_TASKS}
-    for step in range(remainder):
-        for task in shared_task_group(step):
-            counts[task] += 1
-    return counts
+    return {task: optimizer_step for task in GRADIENT_TASKS}
 
 
 def balanced_task_assignments(
@@ -143,7 +123,9 @@ def _validate_shared_config(config: Mapping[str, Any]) -> None:
         tuple(map(int, split["gradient_target"])) == GRADIENT_TARGET_TASKS,
         tuple(map(int, shared["gradient_task_ids"])) == GRADIENT_TASKS,
         tuple(map(int, shared["held_interaction_task_ids"])) == HELD_INTERACTION_TASKS,
-        tuple(shared["arm_schedule"]) == ARM_SCHEDULE,
+        tuple(shared["optimizer_step_arms"])
+        == ("alternating_correct_fit0_fit1", "wrong_fit0"),
+        shared["correct_view_schedule"] == "fit0_even_fit1_odd_optimizer_step",
         {task: rings[task] for task in GRADIENT_TASKS} == WRONG_TASK_RING,
         not set(HELD_INTERACTION_TASKS).intersection(
             rings[task] for task in GRADIENT_TASKS
@@ -450,21 +432,6 @@ def _advance_task_cursors(runtime: Any, group: Sequence[int]) -> None:
             cursor[indices[int(task)]] += 1
 
 
-def _sum_gradients(runtime: Any) -> None:
-    presence = tuple(parameter.grad is not None for parameter in runtime.trainable_parameters)
-    if not all(presence):
-        missing = [index for index, present in enumerate(presence) if not present]
-        raise RuntimeError(f"S2 shared interaction gradients are absent: {missing}")
-    if runtime.context.world_size <= 1:
-        return
-    rows: list[Any] = [None] * runtime.context.world_size
-    dist.all_gather_object(rows, presence)
-    if any(row != presence for row in rows):
-        raise RuntimeError("S2 ranks disagreed on shared gradient ownership")
-    for parameter in runtime.trainable_parameters:
-        dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)
-
-
 def _cpu_leaf_gradients(
     gradients: Mapping[str, torch.Tensor], *, active: bool
 ) -> dict[str, torch.Tensor]:
@@ -580,82 +547,13 @@ def _functional_task_loss(
 
 
 def run_shared_optimizer_step(runtime: Any) -> dict[str, Any]:
-    """Run one six-task, task/role-equal update with world-size invariant mass."""
+    """Run the canonical all-task paired unit-gradient polish step."""
 
-    step = int(runtime.optimizer_steps)
-    group = shared_task_group(step)
-    cursors_before = _validate_task_cursors(runtime)
-    arms = {task: ARM_SCHEDULE[cursors_before[task] % len(ARM_SCHEDULE)] for task in group}
-    costs = {
-        task: int(_arm_spec(runtime, task, arms[task]).condition.sampled_frames)
-        for task in group
-    }
-    assignments = balanced_task_assignments(group, costs, runtime.context.world_size)
-    if runtime.context.world_size > 1:
-        dist.barrier()
-    if runtime.context.device.type == "cuda":
-        torch.cuda.synchronize(runtime.context.device)
-    tick = time.monotonic()
-    runtime.optimizer.zero_grad(set_to_none=True)
-    local = [
-        _functional_task_loss(
-            runtime,
-            task,
-            arms[task],
-            task_cursor=cursors_before[task],
-            task_weight=1.0 / len(group),
-        )
-        for task in assignments[runtime.context.rank]
-    ]
-    _sum_gradients(runtime)
-    clip = float(runtime.config["optimization"]["joint"]["optimizer"]["gradient_clip_norm"])
-    norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
-    if not bool(torch.isfinite(norm)):
-        raise RuntimeError("S2 shared interaction gradient norm is non-finite")
-    runtime.optimizer.step()
-    runtime.scheduler.step()
-    _advance_task_cursors(runtime, group)
-    runtime.optimizer_steps += 1
-    cursors_after = _validate_task_cursors(runtime)
-    if runtime.context.device.type == "cuda":
-        torch.cuda.synchronize(runtime.context.device)
-    if runtime.context.world_size > 1:
-        gathered: list[Any] = [None] * runtime.context.world_size
-        dist.all_gather_object(gathered, local)
-    else:
-        gathered = [local]
-    records = [value for row in gathered for value in row]
-    order = {task: index for index, task in enumerate(group)}
-    records.sort(key=lambda value: order[int(value["task"])])
-    if {int(value["task"]) for value in records} != set(group):
-        raise RuntimeError("S2 optimizer step lost a global task")
-    return {
-        "optimizer_step": runtime.optimizer_steps,
-        "task_group": list(group),
-        "task_cursors_before": {str(task): cursors_before[task] for task in GRADIENT_TASKS},
-        "task_cursors_after": {str(task): cursors_after[task] for task in GRADIENT_TASKS},
-        "mean_training_objective": statistics.fmean(
-            float(value["training_objective"]) for value in records
-        ),
-        "mean_generated_flow_loss": statistics.fmean(
-            float(value["generated_flow_loss"]) for value in records
-        ),
-        "wrong_hinge_active_count": sum(
-            int(value["gradient_active"])
-            for value in records
-            if value["arm"] == "wrong_fit0"
-        ),
-        "panel_a_functional_vjp_calls": len(records),
-        "tasks": records,
-        "gradient_norm_before_clip": float(norm),
-        "next_lr": float(runtime.scheduler.get_last_lr()[0]),
-        "step_seconds": time.monotonic() - tick,
-        "peak_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated())
-        if runtime.context.device.type == "cuda"
-        else 0,
-        "world_size_invariant_task_weight": 1.0 / len(group),
-        "role_weight": {"meta_fit": 0.5, "target_fit": 0.5},
-    }
+    from ember.ecp.joint_program_primal.bank_set_shared_gradient_combiner import (
+        run_paired_unit_gradient_step,
+    )
+
+    return run_paired_unit_gradient_step(runtime)
 
 
 def _train(runtime: Any) -> None:
@@ -716,8 +614,8 @@ def run(args: Any) -> None:
                     },
                     "functional_training": {
                         "panel": "a",
-                        "cumulative_vjp_calls_from_fresh_step0": (
-                            runtime.optimizer_steps * 6
+                        "cumulative_vjp_calls_from_polish_step0": (
+                            runtime.optimizer_steps * 16
                         ),
                         "target_cache_builds": 0,
                         "target_cache_scope": "evaluation_diagnostics_gate_only",
@@ -731,8 +629,8 @@ def run(args: Any) -> None:
                         "same_task_held_backward_calls": 0,
                         "wrong_fit1_backward_calls": 0,
                         "panel_b_backward_calls": 0,
-                        "cumulative_result_or_action_gradient_calls_from_fresh_step0": (
-                            runtime.optimizer_steps * 6
+                        "cumulative_result_or_action_gradient_calls_from_polish_step0": (
+                            runtime.optimizer_steps * 16
                         ),
                         "validation_or_test_reads": 0,
                         "action_meta_installed": False,

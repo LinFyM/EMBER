@@ -4,9 +4,13 @@ import pytest
 import torch
 
 from ember.ecp.joint_program_primal import bank_set_shared_training
+from ember.ecp.joint_program_primal.bank_set_shared_gradient_combiner import (
+    balanced_condition_assignments,
+    paired_conditions,
+    run_paired_unit_gradient_step,
+)
 from ember.ecp.joint_program_primal.bank_set_shared_training import (
     ALL_INTERACTION_TASKS,
-    ARM_SCHEDULE,
     GRADIENT_META_TASKS,
     GRADIENT_TARGET_TASKS,
     GRADIENT_TASKS,
@@ -19,48 +23,110 @@ from ember.ecp.joint_program_primal.bank_set_shared_training import (
     _validate_shared_config,
     _validate_task_cursors,
     balanced_task_assignments,
-    shared_task_group,
     task_cursor_counts,
     task_panel_a_visit,
 )
 
 
 def test_s2_schedule_is_role_task_and_world_size_invariant() -> None:
-    groups = tuple(shared_task_group(step) for step in range(4))
-    assert all(len(group) == len(set(group)) == 6 for group in groups)
-    assert all(len(set(group).intersection(GRADIENT_META_TASKS)) == 3 for group in groups)
-    assert all(len(set(group).intersection(GRADIENT_TARGET_TASKS)) == 3 for group in groups)
-    assert not any(set(group).intersection(HELD_INTERACTION_TASKS) for group in groups)
-    counts = {task: sum(task in group for group in groups) for task in GRADIENT_TASKS}
-    assert set(counts.values()) == {3}
+    even = paired_conditions(0, GRADIENT_TASKS)
+    odd = paired_conditions(1, GRADIENT_TASKS)
+    assert len(even) == len(set(even)) == 16
+    assert len(odd) == len(set(odd)) == 16
+    assert {task for task, _ in even} == set(GRADIENT_TASKS)
+    assert not set(HELD_INTERACTION_TASKS).intersection(task for task, _ in even)
+    assert {arm for _, arm in even} == {"correct_fit0", "wrong_fit0"}
+    assert {arm for _, arm in odd} == {"correct_fit1", "wrong_fit0"}
+    assert sum(task in GRADIENT_META_TASKS for task, _ in even) == 8
+    assert sum(task in GRADIENT_TARGET_TASKS for task, _ in even) == 8
 
     for world_size in range(1, 7):
-        group = groups[0]
-        costs = {task: task % 37 + 1 for task in group}
-        assignments = balanced_task_assignments(group, costs, world_size)
-        assert {task for row in assignments for task in row} == set(group)
-        assert sum(len(row) for row in assignments) == 6
-        assert sum(1.0 / 6.0 for row in assignments for _ in row) == pytest.approx(1.0)
+        costs = {condition: condition[0] % 37 + 1 for condition in even}
+        assignments = balanced_condition_assignments(even, costs, world_size)
+        assert {value for row in assignments for value in row} == set(even)
+        assert sum(len(row) for row in assignments) == 16
+        assert sum(1.0 / 16.0 for row in assignments for _ in row) == pytest.approx(1.0)
 
 
-def test_s2_each_task_has_its_own_four_beat_arm_cursor() -> None:
-    observed = {task: [] for task in GRADIENT_TASKS}
-    for step in range(12):
-        before = task_cursor_counts(step)
-        for task in shared_task_group(step):
-            observed[task].append(ARM_SCHEDULE[before[task] % len(ARM_SCHEDULE)])
-    for arms in observed.values():
-        assert tuple(arms[:8]) == 2 * ARM_SCHEDULE
-    assert task_cursor_counts(4) == {task: 3 for task in GRADIENT_TASKS}
-    assert task_cursor_counts(8) == {task: 6 for task in GRADIENT_TASKS}
+def test_s2_each_task_cursor_advances_once_per_paired_step() -> None:
+    assert task_cursor_counts(0) == {task: 0 for task in GRADIENT_TASKS}
+    assert task_cursor_counts(4) == {task: 4 for task in GRADIENT_TASKS}
+    assert task_cursor_counts(8) == {task: 8 for task in GRADIENT_TASKS}
+
+
+def test_s2_unit_gradient_combiner_preserves_scheduled_condition_mass(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameter = torch.nn.Parameter(torch.tensor(0.0))
+    optimizer = torch.optim.SGD((parameter,), lr=1.0)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.0)
+    runtime = SimpleNamespace(
+        optimizer_steps=0,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        trainable_parameters=(parameter,),
+        context=SimpleNamespace(
+            world_size=1, rank=0, device=torch.device("cpu")
+        ),
+        config={
+            "optimization": {
+                "direct_functional": {
+                    "condition_gradient_norm_epsilon": 1e-12,
+                },
+                "joint": {"optimizer": {"gradient_clip_norm": 10.0}},
+            }
+        },
+    )
+
+    monkeypatch.setattr(
+        bank_set_shared_training,
+        "_validate_task_cursors",
+        lambda value: {
+            task: int(value.optimizer_steps) for task in GRADIENT_TASKS
+        },
+    )
+    monkeypatch.setattr(
+        bank_set_shared_training, "_advance_task_cursors", lambda *_: None
+    )
+    monkeypatch.setattr(
+        bank_set_shared_training,
+        "_arm_spec",
+        lambda *_args: SimpleNamespace(
+            condition=SimpleNamespace(sampled_frames=1)
+        ),
+    )
+
+    def condition_loss(_runtime, task, arm, **_kwargs):
+        active = not (task == GRADIENT_TASKS[0] and arm == "wrong_fit0")
+        parameter.grad = torch.tensor(
+            2.0 if arm.startswith("correct") else (-3.0 if active else 0.0)
+        )
+        return {
+            "task": task,
+            "arm": arm,
+            "gradient_active": active,
+            "training_objective": 1.0,
+            "generated_flow_loss": 1.0,
+        }
+
+    monkeypatch.setattr(
+        bank_set_shared_training, "_functional_task_loss", condition_loss
+    )
+    row = run_paired_unit_gradient_step(runtime)
+    assert parameter.item() == pytest.approx(-1.0 / 16.0)
+    assert row["unit_gradient_active_condition_count"] == 15
+    assert row["world_size_invariant_scheduled_condition_weight"] == 1.0 / 16.0
+    assert sum(task["effective_unit_gradient_mass"] for task in row["tasks"]) == (
+        pytest.approx(15.0 / 16.0)
+    )
 
 
 def test_s2_panel_a_visit_and_raw_unit_objectives_follow_task_cycle() -> None:
     assert [task_panel_a_visit(cursor, 16) for cursor in range(8)] == [
-        0, 0, 0, 0, 1, 1, 1, 1
+        0, 1, 2, 3, 4, 5, 6, 7
     ]
-    assert task_panel_a_visit(63, 16) == 15
-    assert task_panel_a_visit(64, 16) == 0
+    assert task_panel_a_visit(15, 16) == 15
+    assert task_panel_a_visit(16, 16) == 0
 
     correct = _functional_arm_objective(
         "correct_fit0", generated_loss=0.7, carrier_loss=1.0,
@@ -129,7 +195,10 @@ def _config() -> dict:
             "wrong_task_by_task": {
                 str(task): wrong for task, wrong in WRONG_TASK_RING.items()
             },
-            "arm_schedule": list(ARM_SCHEDULE),
+            "optimizer_step_arms": [
+                "alternating_correct_fit0_fit1", "wrong_fit0"
+            ],
+            "correct_view_schedule": "fit0_even_fit1_odd_optimizer_step",
             "task_profiles": profiles,
         },
         "model": {},
@@ -226,7 +295,7 @@ def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
         return parameter * 1.0
 
     def panel_batch(_runtime, *, task_id, panel_name, visit_index):
-        assert (task_id, panel_name, visit_index) == (8, "a", 2)
+        assert (task_id, panel_name, visit_index) == (8, "a", 9)
         return {"batch": True}, panel
 
     monkeypatch.setattr(
@@ -251,7 +320,7 @@ def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
     )
     assert calls == [False, True]
     assert parameter.grad == pytest.approx(torch.tensor(0.5))
-    assert row["panel_visit"] == 2
+    assert row["panel_visit"] == 9
     assert row["backward_mass"] == 1.0
 
     calls.clear()

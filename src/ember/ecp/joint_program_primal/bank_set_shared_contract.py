@@ -1,4 +1,4 @@
-"""Configuration and ownership contract for direct-functional EBSRI S2."""
+"""Configuration and ownership contract for functional-polish EBSRI S2."""
 
 from __future__ import annotations
 
@@ -17,14 +17,16 @@ from ember.ecp.joint_program_primal.runtime import (
 from ember.pi05_source_checkpoint import read_json
 
 
-BANK_SET_SHARED_SCHEMA = "ember_ecp_event_bank_set_shared_direct_functional_v1"
+BANK_SET_SHARED_SCHEMA = "ember_ecp_event_bank_set_shared_functional_polish_v1"
 BANK_SET_SHARED_RUN_SCHEMA = (
-    "ember_ecp_event_bank_set_shared_direct_functional_run_v1"
+    "ember_ecp_event_bank_set_shared_functional_polish_run_v1"
 )
 BANK_SET_SHARED_STAGE = "g3_event_bank_set_s2_fixed_route_shared_loto"
-BANK_SET_SHARED_STATUS = "preregistered_fixed_route_shared_direct_functional"
+BANK_SET_SHARED_STATUS = "preregistered_fixed_route_shared_functional_polish"
 BANK_SET_SHARED_TRAIN_PANEL = "panel_a_only_gradient_tasks_exact_cross_episode_task_cycle"
-BANK_SET_SHARED_LOSS = "exact_panel_a_functional_vjp_raw_correct_wrong_neutralization_hinge_then_panel_b_gate"
+BANK_SET_SHARED_LOSS = (
+    "exact_panel_a_paired_all_task_unit_gradient_functional_polish_then_panel_b_gate"
+)
 
 BANK_SET_SHARED_GRADIENT_META_TASKS = (8, 9, 32, 52)
 BANK_SET_SHARED_GRADIENT_TARGET_TASKS = (72, 73, 75, 94)
@@ -41,11 +43,9 @@ BANK_SET_SHARED_ARMS = (
     "wrong_fit0",
     "wrong_fit1",
 )
-BANK_SET_SHARED_ARM_SCHEDULE = (
+BANK_SET_SHARED_OPTIMIZER_STEP_ARMS = (
+    "alternating_correct_fit0_fit1",
     "wrong_fit0",
-    "correct_fit0",
-    "wrong_fit0",
-    "correct_fit1",
 )
 BANK_SET_SHARED_WRONG_TASK_BY_TASK = {
     8: 9,
@@ -63,11 +63,37 @@ BANK_SET_SHARED_DIRECT_FUNCTIONAL = {
     "correct_objective": "generated_raw_flow_loss",
     "correct_backward_mass": 1.0,
     "wrong_objective": "max(carrier_raw_flow_loss-generated_raw_flow_loss,0)",
-    "wrong_backward_mass": 0.5,
+    "wrong_backward_mass": 1.0,
     "inactive_wrong_leaf_gradients": "explicit_zero",
-    "panel_visit_schedule": "task_appearance_cursor_floor_div_4_mod_16",
+    "panel_visit_schedule": "optimizer_step_mod_16_shared_by_paired_correct_wrong",
     "memory_schedule": "no_grad_bank_leaf_vjp_cpu_offload_fresh_bank_replay",
-    "task_gradient_combiner": "raw_equal_task_sum_no_normalization_or_mgda",
+    "task_gradient_combiner": (
+        "scheduled_condition_unit_l2_mean_zero_for_inactive_no_mgda"
+    ),
+    "condition_gradient_norm_epsilon": 1e-12,
+    "all_gradient_tasks_each_optimizer_step": True,
+    "paired_conditions_per_task": 2,
+}
+INTERACTION_PRETRAINING = {
+    "checkpoint": (
+        "runs/outputs/pi05_ecp_event_bank_set_s2_shared_loto_s110_"
+        "f8d33fa_gpu01p013456_r6_20260831/checkpoints/macro_00000110"
+    ),
+    "run_contract": (
+        "runs/outputs/pi05_ecp_event_bank_set_s2_shared_loto_s110_"
+        "f8d33fa_gpu01p013456_r6_20260831/run_contract.json"
+    ),
+    "gate_aggregate": (
+        "runs/outputs/pi05_ecp_event_bank_set_s2_shared_loto_gate_"
+        "f8d33fa_eval5864397_gpu01p013456_w6_20260831/aggregate.json"
+    ),
+    "source_run_schema": "ember_ecp_event_bank_set_shared_loto_run_v1",
+    "source_commit": "f8d33fac84a3447c4593f97048a88704006efc37",
+    "optimizer_step": 110,
+    "scope": "full_event_conditioned_bank_set_interaction_only",
+    "optimizer_or_scheduler_state_loaded": False,
+    "task_arm_cursors_loaded": False,
+    "training_only": True,
 }
 BANK_SET_SHARED_TARGET_CACHE_TEACHER = {
     "updates": 1,
@@ -121,7 +147,7 @@ BANK_SET_SHARED_TASK_PROFILES: dict[int, dict[str, Any]] = {
 
 
 class SharedInteractionWriterState(torch.nn.Module):
-    """Checkpoint only fresh shared interaction state and exact-resume cursors."""
+    """Checkpoint only shared interaction state and exact-resume cursors."""
 
     def __init__(self, bank_set_interaction: torch.nn.Module) -> None:
         super().__init__()
@@ -143,17 +169,11 @@ def _string_keyed(value: Mapping[int, Any]) -> dict[str, Any]:
 
 
 def task_cursor_counts(global_macro: int) -> tuple[int, ...]:
-    """Return role-equal 3-of-4 task appearances after ``global_macro``."""
+    """Return all-task paired-functional appearances after ``global_macro``."""
 
     if global_macro < 0:
         raise ValueError("S2 global macro cannot be negative")
-    counts = [0] * len(BANK_SET_SHARED_GRADIENT_TASKS)
-    for macro in range(global_macro):
-        start = macro % 4
-        for role_start in (0, 4):
-            for offset in range(3):
-                counts[role_start + (start + offset) % 4] += 1
-    return tuple(counts)
+    return (global_macro,) * len(BANK_SET_SHARED_GRADIENT_TASKS)
 
 
 def task_panel_a_visit(task_cursor: int, panel_visits: int) -> int:
@@ -161,7 +181,7 @@ def task_panel_a_visit(task_cursor: int, panel_visits: int) -> int:
 
     if task_cursor < 0 or panel_visits <= 0:
         raise ValueError("S2 task cursor or Panel-A visit count is invalid")
-    return (task_cursor // len(BANK_SET_SHARED_ARM_SCHEDULE)) % panel_visits
+    return task_cursor % panel_visits
 
 
 def functional_arm_objective(
@@ -196,15 +216,10 @@ def is_bank_set_shared_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == BANK_SET_SHARED_SCHEMA
 
 
-def _config_valid(config: Mapping[str, Any]) -> bool:
+def _identity_and_data_valid(config: Mapping[str, Any]) -> bool:
     shared = config.get("shared_training", {})
     model = config.get("model", {})
     data = config.get("data", {})
-    optimization = config.get("optimization", {})
-    optimizer = optimization.get("joint", {}).get("optimizer", {})
-    evaluation = config.get("evaluation", {})
-    gate = config.get("gate", {})
-    wall = config.get("information_wall", {})
     split = config.get("task_split", {})
     cache = config.get("frozen_condition_cache_authority", {})
     s1_gate = config.get("authorities", {}).get("required_s1_gate", {})
@@ -244,7 +259,10 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             == _string_keyed(BANK_SET_SHARED_WRONG_TASK_BY_TASK),
             shared.get("evaluation_wrong_task_by_task")
             == _string_keyed(BANK_SET_SHARED_EVALUATION_WRONG_TASK_BY_TASK),
-            shared.get("arm_schedule") == list(BANK_SET_SHARED_ARM_SCHEDULE),
+            shared.get("optimizer_step_arms")
+            == list(BANK_SET_SHARED_OPTIMIZER_STEP_ARMS),
+            shared.get("correct_view_schedule")
+            == "fit0_even_fit1_odd_optimizer_step",
             shared.get("gradient_arms") == [
                 "correct_fit0",
                 "correct_fit1",
@@ -254,32 +272,57 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             == ["correct_held", "wrong_fit1", "panel_b"],
             profiles == _string_keyed(BANK_SET_SHARED_TASK_PROFILES),
             shared.get("task_weighting")
-            == "role_equal_then_task_equal_global_optimizer_step",
+            == (
+                "all_eight_tasks_each_step_equal_role_task_and_scheduled_"
+                "condition_mass"
+            ),
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("primal_scorer_initialization") == R5_SHARED_FUNCTIONAL_CHART,
             model.get("primal_scorer_trainable_partition")
             == SCORER_INTERACTION_ONLY,
             model.get("interaction_initialization")
-            == "fresh_event_conditioned_bank_set_interaction_zero_correction",
+            == (
+                "effective_surrogate_step110_training_only_full_interaction_"
+                "fresh_optimizer"
+            ),
             model.get("trainable") == ["EventConditionedBankSetInteraction"],
             model.get("generated_adapter")
             == "one_complete_38_target_rank12_plus_rank4_rank16",
             model.get("deployment_candidate") is False,
             data.get("functional_panel_train") == BANK_SET_SHARED_TRAIN_PANEL,
             data.get("video_action_cross_episode") is True,
+        )
+    )
+
+
+def _optimization_valid(config: Mapping[str, Any]) -> bool:
+    optimization = config.get("optimization", {})
+    optimizer = optimization.get("joint", {}).get("optimizer", {})
+    return all(
+        (
             optimization.get("loss") == BANK_SET_SHARED_LOSS,
             optimization.get("result_or_action_gradient_calls_per_optimizer_step")
-            == 6,
+            == 16,
             optimization.get("direct_functional") == BANK_SET_SHARED_DIRECT_FUNCTIONAL,
             optimization.get("joint", {}).get("warmup_optimizer_steps") == 10,
             optimization.get("joint", {}).get("effective_optimizer_steps") == 100,
             optimization.get("joint", {}).get("checkpoint_effective_steps")
             == [60, 100],
             optimization.get("joint", {}).get("global_tasks_per_optimizer_step")
-            == 6,
+            == 8,
             optimizer.get("peak_lr") == 0.0001,
             optimizer.get("decay_lr") == 0.000001,
+        )
+    )
+
+
+def _evaluation_and_wall_valid(config: Mapping[str, Any]) -> bool:
+    evaluation = config.get("evaluation", {})
+    gate = config.get("gate", {})
+    wall = config.get("information_wall", {})
+    return all(
+        (
             evaluation.get("checkpoint_optimizer_steps") == [70, 110],
             evaluation.get("arms") == list(BANK_SET_SHARED_ARMS),
             evaluation.get("functional_panel") == "panel_b",
@@ -305,7 +348,7 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             wall.get("held_interaction_task_backward_calls") == 0,
             wall.get("same_task_held_backward_calls") == 0,
             wall.get("wrong_fit1_backward_calls") == 0,
-            wall.get("result_or_action_gradient_calls_per_optimizer_step") == 6,
+            wall.get("result_or_action_gradient_calls_per_optimizer_step") == 16,
             wall.get("result_or_action_gradient_scope")
             == "gradient_tasks_panel_a_only",
             wall.get("panel_b_backward_calls") == 0,
@@ -313,6 +356,19 @@ def _config_valid(config: Mapping[str, Any]) -> bool:
             wall.get("shuffled_or_reversed_use") is False,
             wall.get("single_complete_rank16") is True,
             config.get("privileged_critic") is None,
+            config.get("authorities", {}).get("interaction_pretraining")
+            == INTERACTION_PRETRAINING,
+        )
+    )
+
+
+def _config_valid(config: Mapping[str, Any]) -> bool:
+    return all(
+        check(config)
+        for check in (
+            _identity_and_data_valid,
+            _optimization_valid,
+            _evaluation_and_wall_valid,
         )
     )
 
@@ -413,7 +469,7 @@ def bank_set_shared_parameter_ownership(
     program: torch.nn.Module,
     compiler: torch.nn.Module,
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
-    """Freeze R5/Program and expose only one fresh shared interaction module."""
+    """Freeze R5/Program and expose only the shared interaction module."""
 
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
@@ -479,5 +535,6 @@ def writer_trainable_inventory(writer: torch.nn.Module) -> dict[str, Any]:
         "descriptor_authority": (
             "frozen_program_native_query_kappa_base_score_metadata_event_assignment"
         ),
-        "fresh_interaction_shared_across_tasks": True,
+        "interaction_shared_across_tasks": True,
+        "interaction_initialization_owned_by_runtime_authority": True,
     }

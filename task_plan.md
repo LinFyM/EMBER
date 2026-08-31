@@ -17,11 +17,13 @@ Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event nat
 S0 free-summary factorization与S1 real-summary task-local已经在task1/93上依次通过。S1 formal根为
 `runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`；两task correct fit/held均过门、wrong均为负，
 Action Meta 0、唯一rank16且Panel B backward 0。S1只证明真实B0 summary在各task内可解码condition，不证明shared mapping。
-首轮S2 fixed-route shared task-LOTO以effective-rank4 representative训练后稳定non-pass；fresh与step110真实policy梯度审计进一步证明
-该surrogate从初始化起就没有可靠代表Panel-A功能方向，而同一shared EBSRI参数化存在8-task共同的直接功能下降方向。当前保持架构、
-split、rank、arms与Gate不变，唯一改为Panel-A direct-functional VJP：correct原始flow loss质量1，wrong有界neutralization hinge质量.5，
-LR `1e-4`。通过两步真实world6 profile后，下一动作是fresh重跑完整S2 fixed-route shared task-LOTO；通过后才用全部10 tasks fresh refit
-形成component initialization，再恢复Natural Program joint S3。机制Gate只裁决相应接口，正式目标仍唯一为validation8 strict paired correct严格
+首轮S2 fixed-route shared task-LOTO以effective-rank4 representative训练后稳定non-pass；第二轮从fresh改用真实Panel-A direct VJP后，
+step70/110均恢复了强correct，却仍未把wrong bank压低。后验梯度几何说明当前不是继续调correct/wrong质量：每task两臂近反向，raw或
+简单normalized全局均值在direct checkpoint上都不是共同下降方向；但旧surrogate step110已经形成bank-discriminative interaction表示，
+在该状态上16个unit-normalized direct condition的简单均值对全部训练条件均为正。当前只做一次有退出条件的同架构机制检验：加载旧
+interaction作为training-only初始化，optimizer/scheduler/cursors全部fresh，以8 task成对correct/wrong、固定每condition `1/16`
+质量的unit-gradient direct-functional polish。它同时改变初始化与梯度组合，因此即使通过也只证明组合课程可行，不能分别归因或冒充
+from-scratch shared compiler。通过后才用全部10 tasks形成component initialization并恢复Natural Program joint S3。机制Gate只裁决相应接口，正式目标仍唯一为validation8 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
 固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理。`main@cdcae8b`已将B0 summary与B1 replay
@@ -38,7 +40,8 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
 - [x] 缓存冻结query-relative descriptors并按shape批处理correction，完成task1/93真实forward/gradient/materialization与吞吐profile；
 - [x] 并行完成task1/93 S0 panel-B functional Gate；两task全部checks及aggregate通过；
 - [x] 以已有真实B0 moments/induced summaries完成S1 task-local Gate；两task全部checks及aggregate通过；
-- [ ] 以直接Panel-A功能梯度fresh重跑S2 fixed-route shared task-LOTO，并在通过后用全部10 tasks fresh refit；
+- [x] 以直接Panel-A功能梯度fresh重跑S2并完成完整相邻Gate；correct恢复而wrong因果分离稳定non-pass；
+- [ ] 以旧interaction初始化、fresh optimizer/cursors和paired unit-gradient direct polish做一次限定S2机制检验；通过后再形成10-task component initialization；
 - [ ] S2通过后推进S3 Natural Program joint G3。
 
 ## R5--R13历史里程碑

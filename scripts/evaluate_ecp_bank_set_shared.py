@@ -70,7 +70,10 @@ def _arguments() -> argparse.Namespace:
         args.phase = "shared_loto"
         args.task = None
         args.resume = None
-        args.stop_after_step = 1
+        # Runtime construction reuses the training cursor validator even though
+        # workers never step an optimizer.  Select an allowed cursor for each
+        # mode; the checkpoint loader immediately replaces it with 70 or 110.
+        args.stop_after_step = 1 if args.mode == "profile" else 70
         args.log_every = 1
         args.skip_routing_initialization = True
     return args

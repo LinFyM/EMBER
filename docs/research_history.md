@@ -1641,3 +1641,16 @@ aggregate正式`pass`：
 
 该结果只证明给定whole-bank condition时factorization可行，不证明真实set summary、跨task共享或Natural Program。下一阶段S1从fresh R5
 初始化，只把training-only free summary替换为真实B0 set encoder。
+
+## 83. EBSRI S1 real-summary task-local双task formal通过
+
+EBSRI S1从fresh R5初始化，以真实B0 set encoder替换training-only free summary，并保持direct condition-generated head、真实X/Y、
+exact signed pooling、rank4 residual、carrier12和其它Gate合同不变。formal aggregate根为
+`runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`。task1 correct fit0/fit1/held recovery为
+`.942/.953/.962`，wrong fit0/fit1为`-.529/-.517`；task93分别为`.928/.905/.881`与`-.188/-.180`。两task全部checks通过，
+Action Meta为0、Panel B backward为0，并且只生成一套38-target carrier12+residual4 rank16。
+
+S1只证明真实whole-bank summary在task-local训练中可以保持correct并抑制wrong，不证明跨task shared mapping。当前下一阶段因此是S2
+fixed-route shared task-LOTO；只有该Gate通过，才可用全部10 tasks fresh refit并继续S3 Natural Program joint。随后
+`main@cdcae8b`解耦B0 summary与B1 replay chunk：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`，峰值约
+`41.1GB`；这是系统吞吐事实，不改变S1科学裁决。

@@ -69,7 +69,7 @@ exact language + K ordered action-hidden videos
                 -> event-conditioned whole-bank moments / induced summaries
         +-- Pass B1: replay or reuse the same native bank
                 -> unaggregated Program event queries
-                -> local candidate x whole-bank-summary FiLM context
+                -> direct condition-generated candidate head from Program / local event / whole-bank summary
                 -> bounded centered per-candidate branch-logit correction
                 -> one exact antithetic signed measure over real native X/Y
                 -> one task-specific rank4 residual
@@ -667,10 +667,10 @@ EBSRI不得成为task matcher或连续开关：B0 summary不输出类别、resid
    fit views共享一个training-only free summary，wrong fit views共享另一个。只训练candidate trunk/direct condition-generated head，correct held、wrong fit1、panel B
    零梯度。free summary只是容量上界，不是部署输入、binary route或checkpoint候选。训练可用exact-effective-rank4高速目标，但裁决必须
    看panel-B functional recovery；若teacher代表元与功能结论冲突，补一次直接constrained functional feasibility，不得误杀架构。
-2. **S1 real-summary task-local**：S0通过后，以同一代码把free summary替换为真实B0 set encoder；每task独立训练，检查correct held与
+2. **S1 real-summary task-local（已通过）**：S0通过后，以同一代码把free summary替换为真实B0 set encoder；每task独立训练，检查correct held与
    zero-gradient wrong view泛化。S0失败不实现复杂set encoder；S0通过而S1失败，首因落在set encoder/query-relative descriptor或真实
    bank content。
-3. **S2 fixed-route shared task-LOTO**：S1通过后共享同一set encoder/interaction，在8个gradient tasks训练并hold out一个meta与一个
+3. **S2 fixed-route shared task-LOTO（当前）**：S1通过后共享同一set encoder/interaction，在8个gradient tasks训练并hold out一个meta与一个
    target interaction task；通过才在全部10 tasks fresh refit形成component initialization。
 4. **S3 Natural Program joint G3**：移除fixed route，联合训练Natural Program、set interaction与native heads；source、Stage0、scale、
    carrier与Action Meta继续冻结，恢复原12-task true task-held functional Gate，不加入teacher reconstruction、Program Gram、support、
@@ -680,6 +680,12 @@ S0/S1每task机制资格为correct fit0/fit1各`>=.85`、correct held`>=.80`、w
 全部pair correct>wrong、zero-init逐tensor复现R5、无大面积bound saturation且input/output family不系统反向。这些是专家建议的接口资格，
 不是正式validation目标；唯一正式性能线仍是validation8 strict paired correct严格`>145/400`。吞吐秒数只作工程目标，不作科学Gate；
 fixed-route阶段必须缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理，避免逐target/rank/event Python小kernel。
+
+S1 formal aggregate `runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`已正式`pass`：task1 correct
+fit0/fit1/held为`.942/.953/.962`、wrong fit0/fit1为`-.529/-.517`；task93分别为`.928/.905/.881`与`-.188/-.180`。
+Action Meta为0、Panel B backward为0，并且只物化一套完整rank16。该结果只通过task-local real-summary接口，不证明shared mapping；
+当前执行点因此是S2。`main@cdcae8b`解耦B0 summary与B1 replay chunk后，wrong约`12s -> 6.3s`、task1 correct约
+`35.5s -> 13.3s`，峰值约`41.1GB`；吞吐profile不参与S2资格。
 
 #### 已完成的Frozen-Program G3历史证据与可复用面
 
@@ -826,5 +832,5 @@ pointwise correction只保留为fit-only reference或diagnostic，不得再以de
 classifier、threshold与selected inverse power同样只由Git/config/formal artifacts保留，不属于active forward。当前唯一实现面在Program
 primal + current-bank full base query + exact signed replay之间加入Program-relative event bank-set summary与summary-conditioned continuous
 correction；它继续复用真实X/Y、rank4与唯一rank16，并严格按S0 free summary、S1 real summary、S2 fixed-route task-LOTO、S3 Natural
-Program joint四个最早接口推进。旧vector分支不得合并，新EBSRI必须在同一canonical scorer/streaming owner内替换旧pointwise职责。
+Program joint四个最早接口推进。S0/S1已经通过，当前唯一下一接口为S2 shared task-LOTO；S1不构成shared mapping证据。旧vector分支不得合并，新EBSRI必须在同一canonical scorer/streaming owner内替换旧pointwise职责。
 后续必须保持一个canonical运行面；不得恢复退役Writer/realizer、GOMQ/PECS、人工process、task lookup或第二adapter。

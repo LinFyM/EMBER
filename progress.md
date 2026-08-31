@@ -1,5 +1,13 @@
 # EMBER progress
 
+- 2026-08-31 EBSRI S1 real-summary task-local双task aggregate正式通过，formal根为
+  `runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`。task1 correct fit0/fit1/held
+  recovery为`.942/.953/.962`，wrong fit0/fit1为`-.529/-.517`；task93分别为`.928/.905/.881`与
+  `-.188/-.180`。两task全部Gate checks通过，Action Meta为0、Panel B backward为0，并且只物化一套38-target
+  carrier12+residual4 rank16。该结果证明真实B0 set summary在task-local条件下足以驱动direct condition-generated head，
+  不证明跨task shared mapping；当前下一阶段是S2 fixed-route shared task-LOTO。随后`main@cdcae8b`将B0 summary与B1 replay
+  chunk解耦；同口径profile中wrong约由`12s`降至`6.3s`，task1 correct约由`35.5s`降至`13.3s`，峰值约`41.1GB`。
+
 - 2026-08-31 EBSRI S0 direct-summary formal双task aggregate已经通过。旧FiLM+共享zero-head在task1/93上correct与wrong均近似R5、
   summary-token swap几乎无效；Panel-B teacher与wrong-only scale-matched overfit随后证明真实bank、signed pooling、rank4与factor网络可产生
   强抑制，最早失效是summary条件没有取得candidate-head控制。当前实现让Program/event context与summary直接生成每family candidate
@@ -12,7 +20,7 @@
 
 - 2026-08-31 EBSRI S0实现面已经接通：B0按真实input与joint abs/adj/init/goal output候选流式形成event bank-set summary，
   B1从冻结run-local query-relative descriptors批量计算shared correction，并仍由每个native owner/group独立对真实X/Y执行FP32 signed
-  pooling；output时间边界跨chunk保持、不同video不串接。S0只训练candidate trunk/FiLM/final heads与training-only free correct/wrong
+  pooling；output时间边界跨chunk保持、不同video不串接。S0只训练candidate trunk/direct condition-generated heads与training-only free correct/wrong
   summaries，真实set encoder、R5 Program/native heads、source、Native Stage0、scale/carrier全部冻结，Action Meta module/parameter为0，最终只
   物化一套38-target carrier12+residual4 rank16。task1/93真实profile分别为`2.841s/step`、`10.726s/step`，peak allocated约
   `41.09GB/29.08GB`；zero equivalence、wrong teacher suppression、forward/gradient/materialization均成立。一次跨group batched signed
@@ -26,13 +34,13 @@
   Natural Program、Stage0或Native-Factor整体。
 
 - 当前唯一活动设计为Event-Conditioned Bank-Set Relative Interaction（EBSRI）：B0用Program的4 rank x 8 event native queries构造
-  candidate的32维相对坐标，并在每条video内累计event moments与线性induced summaries；B1用whole-bank summary通过FiLM条件化同一套
-  bounded candidate correction，再以真实X/Y形成唯一signed measure、rank4 residual与完整rank16。B0不得成为task matcher、binary/
+  candidate的32维相对坐标，并在每条video内累计event moments与线性induced summaries；B1由Program/local event/whole-bank summary
+  直接生成每family candidate head及bounded correction，再以真实X/Y形成唯一signed measure、rank4 residual与完整rank16。B0不得成为task matcher、binary/
   continuous gate或LoRA generator；Pass A/B仍读取同一video set，K视频逐条独立后uniform聚合。
 
-- 当前执行S1 real-summary task-local Gate：task1/93分别从fresh R5训练真实B0 set encoder与同一direct-conditioned interaction，
-  correct held、wrong fit1与Panel B仍零梯度。S1通过才进入shared task-LOTO S2，随后才是Natural Program joint S3；吞吐秒数只作工程
-  目标，不作科学Gate。
+- 当前执行S2 fixed-route shared task-LOTO：共享同一set encoder/interaction，在8个gradient tasks训练并hold out一个meta与一个
+  target interaction task；通过后才用全部10 tasks fresh refit形成component initialization，随后才进入Natural Program joint S3。
+  S1的task-local通过不能替代这个shared mapping Gate；吞吐秒数只作工程目标，不作科学Gate。
 
 - 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
   Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的

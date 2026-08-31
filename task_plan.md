@@ -14,16 +14,17 @@ Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event nat
 流式形成event-conditioned whole-bank moments/induced summaries；Pass B1用该summary条件化每candidate correction，再对真实X/Y执行
 唯一exact signed pooling。B0不做match分类、开关或LoRA生成；最终仍只有一个rank4 residual与一套carrier12+residual4完整rank16。
 
-S0 free-summary factorization已经在task1/93上同时通过，证明给定whole-bank condition时当前factorization可以保留R5 correct方向并
-压低wrong。当前阶段为S1 real-summary task-local：从fresh R5初始化，删除training-only free token并训练真实B0 set encoder与同一
-direct-conditioned interaction；真实X/Y、base/native heads/signed pooling/scale/carrier继续冻结，correct held、wrong fit1与panel B
-零梯度。S1通过才进入shared fixed-route task-LOTO S2；S2通过才恢复Natural Program joint S3。机制Gate的`.85/.80/.25/.50`只裁决
-该接口，正式目标仍唯一为validation8 strict paired correct严格
+S0 free-summary factorization与S1 real-summary task-local已经在task1/93上依次通过。S1 formal根为
+`runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`；两task correct fit/held均过门、wrong均为负，
+Action Meta 0、唯一rank16且Panel B backward 0。S1只证明真实B0 summary在各task内可解码condition，不证明shared mapping。
+当前阶段为S2 fixed-route shared task-LOTO：共享同一set encoder/interaction，在8个gradient tasks训练并hold out一个meta与一个target
+interaction task；通过后才用全部10 tasks fresh refit形成component initialization，再恢复Natural Program joint S3。机制Gate只裁决
+相应接口，正式目标仍唯一为validation8 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
-固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理；两task各用一张GPU独立运行，不做无意义
-DDP。吞吐秒数是工程优化目标而非科学Gate，但不得继续16--26分钟/task的逐target/rank/event Python小kernel实现。若S0内部teacher
-representative与panel-B功能结论冲突，先做一次直接constrained functional feasibility；不得用内部MSE误杀架构。
+固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理。`main@cdcae8b`已将B0 summary与B1 replay
+chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`，峰值约`41.1GB`。吞吐秒数是工程优化目标而非科学Gate，
+不得以性能profile替代shared task-LOTO资格。
 
 ## 当前EBSRI里程碑
 
@@ -34,8 +35,9 @@ representative与panel-B功能结论冲突，先做一次直接constrained funct
 - [x] 用tracked driver/config验证input/output候选索引、chunk边界、K1、Action Meta 0、真实X/Y与唯一rank16；
 - [x] 缓存冻结query-relative descriptors并按shape批处理correction，完成task1/93真实forward/gradient/materialization与吞吐profile；
 - [x] 并行完成task1/93 S0 panel-B functional Gate；两task全部checks及aggregate通过；
-- [ ] 以已有真实B0 moments/induced summaries执行S1 task-local Gate；
-- [ ] S1通过后依次推进S2 fixed-route task-LOTO与S3 Natural Program joint G3。
+- [x] 以已有真实B0 moments/induced summaries完成S1 task-local Gate；两task全部checks及aggregate通过；
+- [ ] 执行S2 fixed-route shared task-LOTO，并在通过后用全部10 tasks fresh refit；
+- [ ] S2通过后推进S3 Natural Program joint G3。
 
 ## R5--R13历史里程碑
 

@@ -1774,3 +1774,15 @@ signed-pooling/rank4容量问题：task1/task93 wrong-only均把两个wrong view
 `.905449/.909439/.894417`与`-.161546/-.169201`。两task Gate及aggregate全部pass，zero-gradient views与family方向也通过。
 因此S0已证明whole-bank condition与当前真实X/Y→signed pooling→rank4 factorization联合可行；它不证明真实bank能解码condition，更不证明
 shared compiler。下一最早接口严格是S1真实B0 set encoder的task-local decodability，且S1必须fresh，不能加载free-summary S0状态。
+
+### 106. S1通过证明真实summary可作task-local条件，shared mapping仍待S2
+
+EBSRI S1以fresh R5初始化、真实B0 set encoder和direct condition-generated head完成task1/93各110步formal；双taskaggregate根为
+`runs/outputs/pi05_ecp_event_bank_set_s1_gate_s110_a1f14e4_gpu01p01_20260831`。task1 correct fit0/fit1/held recovery为
+`.942/.953/.962`、wrong fit0/fit1为`-.529/-.517`；task93分别为`.928/.905/.881`与`-.188/-.180`。全部absolute、wrong、margin、
+all-pairs、saturation与family checks通过，Action Meta为0、Panel B backward为0，最终只有一套38-target carrier12+residual4 rank16。
+
+这把最早接口从“真实bank能否形成有效summary”推进到“同一set encoder/interaction能否跨task共享”：S1的scorer仍按task独立训练，
+因此不能据此声称shared compiler成立。当前下一资格严格是S2 fixed-route shared task-LOTO，在8个gradient tasks训练并hold out一个meta与
+一个target interaction task，通过后才允许全部10 tasks fresh refit。工程上`main@cdcae8b`解耦B0 summary与B1 replay chunk后，wrong
+约由`12s`降至`6.3s`、task1 correct约由`35.5s`降至`13.3s`，峰值约`41.1GB`；该profile不参与科学Gate。

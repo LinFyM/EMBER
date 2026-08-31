@@ -1709,3 +1709,43 @@ upper bound，不证明shared Program mapping已经成立。
 `s0=q0·(value-global_B0_mean)/replay_score_rms`。旧feature知道candidate与event query是否相似，却不知道candidate在当前强base
 measure中的位置；新增`s0`只补这个缺失坐标，不改变candidate集合、measure、value、event assignment、loss、rank或Gate。若fresh v4
 仍只产生数值近零correction，则应继续审计Program/event credit如何驱动shared scorer，而不是扩大bound或扫普通超参。
+
+### 101. base-score v4仍保住correct也保住wrong；score标量不是缺失的充分坐标
+
+clean pushed detached `b7d2638`完成v4 step70/110相邻functional Gate。step70/110 correct fit为`.922509/.929947`、same-task held为
+`.926447/.953521`，但unseen wrong-on为`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有
+`5/10`和`4/10`。因此新增B1实际base-score标量没有破坏R5强correct方向，却也几乎没有改变wrong bank；v4 strict non-pass。
+
+六个代表task的首步分臂梯度解释了v2--v4为何只在两个坏端点间移动。correct-vs-wrong functional gradient cosine中位依次为
+`-.961291/-.961291/-.966288`，wrong/correct norm ratio中位为`1.0597/.5298/.5038`。改变wrong credit从1:1到2:1或增加base
+score只改变近乎反向的两臂谁占优，不产生能“只改wrong而保住correct”的第三个参数方向。这个结果把最早接口从普通loss权重与单一
+base-score标量下移到candidate交互函数类；不授权继续做weight、LR、seed、width或bound小扫。
+
+### 102. vector pointwise回归的共同破坏来自内部目标错配，不能直接裁决函数类
+
+远程未合并分支`codex/g3-vector-interaction@2295f48`在原scalar/local feature外增加32维Program/native-query与candidate-key逐元素
+乘积，新增约24.4万参数；真实X/Y candidate、signed pooling、rank4与唯一rank16均不变。task-local pointwise回归直接拟合
+free-delta teacher的逐candidate normalized gauge，并把correct target设为零。它能把task1/task93 wrong recovery分别压到约
+`-.548/-.301`，但correct也降至约`-.555/-.525`与`-.425/-.410`。
+
+这一负结果不能说明vector feature不读bank：逐candidate logit gauge并不唯一，相近的pointwise误差也不保证最终outer-product rank4
+更新相近。该目标把所有candidate单位等权，而实际功能由softmax、X/Y value、small-core SVD与per-target scale共同决定。因此它只
+淘汰pointwise free-delta imitation作为资格目标；最终裁决必须直接比较完整effective rank4或闭环功能。
+
+### 103. exact-effective-rank4 task-local资格证明真实选择性，也暴露capacity--specificity冲突
+
+最终task-local诊断让完整vector scorer在单个task内自由优化，直接最小化四family最终effective rank4矩阵距离：wrong fit0追随同一
+真实signed-pooling operator上的free-delta teacher，两个correct fit views追随interaction-off R5强方向；correct held、wrong fit1与
+panel B均零梯度。它仍只使用真实native X/Y、positive-minus-negative pooling、rank4 residual与唯一carrier12+residual4 rank16；
+Action Meta、native teacher reads、validation/test与shuffled/reversed均为0。
+
+80 updates后，task1 correct fit0/fit1/held panel-B recovery为`.720904/.717564/.711262`，wrong fit0/fit1为
+`-.527627/-.519287`；task93为`.591613/.601969/.569709`与`-.379331/-.418162`。wrong fit1从未反传却与fit0同样被压低，
+correct held也与两个fit views接近，证明vector content function确实读取bank差异并跨同类view泛化；这与旧pointwise共同破坏不同。
+然而两task都无法在压低wrong的同时保住R5约`.94`的correct强方向。effective-rank4误差中task1 correct mean约`.323`而wrong约
+`.100`，task93 correct约`.242`而wrong约`.111`；action-in是wrong teacher最难拟合的family之一。
+
+因此不能把当前失败表述为native bank无信息、rank4无容量或shared跨task训练单独失败；更精确的结论是首版逐candidate local
+query/key函数类存在稳定的capacity--specificity冲突。由于高容量task-local资格已在两个代表task一致失败，不进入task-LOTO或shared
+Natural Program G3，也不创建v5。需要专家/owner判断的是：增加跨candidate bank-set/global-event summary或改变交互因子化是否仍属
+第五次专家机制的合理最小修正，还是应终止当前candidate-interaction类并重开Program--bank联合编译接口。

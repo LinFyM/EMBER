@@ -1553,3 +1553,52 @@ X/Y values、positive/negative signed pooling、loss、optimizer、data、rank�
 - `runs/analysis/pi05_ecp_program_bank_candidate_interaction_v3_anchor_bank_separation_full10_step110_248d768_gpu01p012_gpu02p47_w5_20260831/`；
 - `runs/analysis/pi05_ecp_g3_free_delta_reachability_full10_248d768_gpu01p012_gpu02p47_20260831/`；
 - `runs/analysis/pi05_ecp_g3_free_delta_reachability_retry4_248d768_gpu01p012_gpu02p7_20260831/recovered_full10_summary.json`。
+
+## 78. base-score-conditioned v4 formal仍不产生bank选择性
+
+clean pushed detached `b7d2638fa33ee620e488eef59c4ef2aff76c2122`完成v4 110步fresh训练、step70→110 exact resume及五worker
+相邻Gate。step70/110 correct fit为`.922509/.929947`、same-task held为`.926447/.953521`，但unseen wrong-on为
+`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有`5/10`和`4/10`。信息墙与四family通过，
+bank因果分离失败；两个checkpoint均strict non-pass。
+
+相对v3唯一新增的B1 base signed score没有破坏correct容量，也没有让shared scorer取得free-delta证明存在的微小有效correction。
+六task首步梯度分解显示v2/v3/v4 correct-vs-wrong functional gradient cosine中位为`-.961291/-.961291/-.966288`，对应
+wrong/correct norm ratio中位`1.0597/.5298/.5038`。因此此前三轮并非随机训练波动：在当前local candidate chart里，两臂要求的
+共享参数方向近乎相反，loss质量只决定落在哪个坏端点。
+
+关键artifacts：
+
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v4_base_score_s110_90cd380_gpu01p012_r3_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v4_base_score_gate_step70_b7d2638_gpu01p012_gpu02p47_w5_20260831/`；
+- `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v4_base_score_gate_step110_b7d2638_gpu01p012_gpu02p47_w5_20260831/`。
+
+## 79. 32维vector interaction的pointwise task-local目标不是可靠资格
+
+`codex/g3-vector-interaction@2295f481dcd284e4bae92afeaf2cf5c4b2d3e5c2`在scalar/local chart外加入32维Program/native-query与
+candidate-key逐元素interaction；候选集合、真实X/Y value、positive/negative signed pooling、rank4 residual与唯一rank16均不变。
+该分支已推送但未合并到`main`，因为后续资格没有通过。
+
+首个task-local诊断逐candidate拟合free-delta teacher的normalized gauge。task1/task93的wrong recovery可降至约
+`-.548/-.301`，correct却也降至约`-.555/-.525`与`-.425/-.410`。审计发现这个目标与最终功能错配：candidate logits存在softmax
+常数gauge，且相同pointwise误差经真实X/Y、softmax与small-core SVD后可形成很不同的effective rank4。该结果只淘汰pointwise
+free-delta imitation，不足以淘汰vector interaction函数类。
+
+## 80. exact-effective-rank4 task-local资格在两个task暴露同一capacity--specificity冲突
+
+最终诊断直接监督最终effective rank4矩阵：wrong fit0追随task-local free-delta teacher，两个correct fit views追随interaction-off R5
+强方向；四family按teacher displacement等质量。correct held、wrong fit1与panel B零梯度。完整vector scorer在单task内自由优化80步，
+仍使用真实native X/Y、signed pooling、rank4、carrier12+residual4和唯一完整rank16；Action Meta未安装，deployment native teacher
+reads、validation/test与shuffled/reversed均为0。
+
+task1的correct fit0/fit1/held panel-B recovery为`.720904/.717564/.711262`，wrong fit0/fit1为`-.527627/-.519287`；task93为
+`.591613/.601969/.569709`与`-.379331/-.418162`。zero-gradient wrong fit1与correct held均泛化到各自fit结果，证明vector scorer
+确实按bank内容产生不同更新；但它在两个代表task都无法同时恢复R5级correct方向。task1 correct/wrong effective-rank4 normalized MSE
+mean约`.323/.100`，task93约`.242/.111`，其中wrong action-in仍是明显弱项。
+
+这项task-local上界没有shared或deployment成功含义，但它比shared formal更严格地排除了“只需跨task学习更好”：首版逐candidate
+local query/key interaction本身就没有展现足够的capacity--specificity组合。按预先约定，不进入task-LOTO、Natural Program joint G3、
+v5或普通超参小扫；当前停在专家咨询节点，待判断是否引入bank-set/global-event级摘要或改变交互因子化，还是终止该函数类。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_g3_effective_rank4_tasklocal_2295f48_gpu01p01_20260831/`。

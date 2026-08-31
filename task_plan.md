@@ -4,36 +4,28 @@
 
 ## 当前目标
 
-owner已授权依据2026-08-30第五次专家复核继续推进；本轮不创建新的持续性goal。G1 free-code、G2动态Program Gate、P0/P1
-capacity primitive以及R5 fixed-route functional chart均保留为正证据；R13只证明独立compatibility probe有有限增量，已充分否定
-“先分类、再在full/half两套谱坐标间切换”的canonical路线。第五次专家原文逐字保存为
-`docs/expert_review_20260830_program_bank_interaction.md`。
+owner允许继续推进但本轮不创建持续性goal，并要求在需要新一轮专家判断的节点停止。当前已到该节点：G1 free-code、G2动态Program
+Gate、P0/P1 capacity primitive与R5 fixed-route functional chart继续作为正证据；第五次专家指定的candidate-level Program--bank共同选向
+已经完成fixed-token资格与最小task-local函数类审计，但尚未取得能够接回Natural Program的capacity--specificity结果。
 
-当前唯一活动实现是 **Program--Bank co-conditioned candidate interaction**：保留R5/R10验证过的full-inverse base query作为
-zero-init容量保持项，但在exact signed pooling前，由未聚合的Program event query、当前视频local event context与每个真实native
-X/Y candidate共同产生bounded、measure-centered、逐candidate的positive/negative branch logit correction。它只形成一套连续signed
-measure、一组rank4 residual和一套carrier12+residual4的完整rank16；不再输出route类别、support threshold、selected inverse power或
-第二套operator。
+base-score v4相邻formal已完成。step70/110的correct fit为`.922509/.929947`、same-task held为`.926447/.953521`，但unseen wrong-on
+为`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有`5/10`和`4/10`。因此新增B1实际score坐标仍几乎
+只保留R5强方向，没有形成bank因果选择；v4 strict non-pass，不能进入Natural Program joint G3。
 
-首个决定性资格固定R5 step110 route token、feature chart、native heads、source、Native Stage0、full covariance solve、carrier、scale
-与Action Meta，只训练新的interaction scorer。十个既有gradient tasks用两条fit K1 video与panel A训练；第三条same-task video、panel B
-及额外unseen wrong banks零梯度。correct和wrong bank都走同一个deployment forward，loss只含correct functional flow与bounded
-wrong-bank benefit hinge，不再使用support BCE、p10、route labels、factor/outer-code reconstruction或teacher LoRA target。
+随后审计表明问题也不能靠继续改loss质量解决：v2/v3/v4在六个代表task的首步correct-vs-wrong functional gradient cosine中位分别为
+`-.961291/-.961291/-.966288`，wrong/correct gradient norm ratio中位为`1.0597/.5298/.5038`。当前逐candidate local chart下，保住
+correct与压低wrong所需的功能梯度近乎反向；改变权重只改变哪一臂占优，不产生选择性方向。
 
-2:1 positive-anchor已完成相邻Gate：step70/110 correct fit为`.923/.929`、held为`.932/.953`，但unseen wrong-on为
-`.932/.934`、margin为`-.002/-.006`且正确bank更好只有`5/10`和`4/10`。这排除了共同破坏和absolute utility不足，却确认learned
-correction几乎没有选择性改变signed measure。full10逐层审计显示raw/hidden特征与pooled update都能区分wrong bank，但correction
-RMS约`1e-5`、pooling KL约`1e-8`；task-local free-delta只需`.002` p95 correction便在10/10 task把wrong recovery压到`.25`以下，
-没有触及现有bound。因此当前最早接口是shared scorer缺少B1实际score坐标，而不是native bank、operator、rank4、bound、loss权重或
-普通优化超参。
+为区分“shared跨task学习失败”与“当前candidate函数类本身不够”，远程分支`codex/g3-vector-interaction@2295f48`只增加32维
+native query/key逐元素交互；它没有合并为canonical实现。最终的task-local上界直接监督完整effective rank4矩阵，而不是拟合任意
+candidate logit。task1的correct fit0/fit1/held panel-B recovery为`.720904/.717564/.711262`，wrong fit0/fit1为
+`-.527627/-.519287`；task93为`.591613/.601969/.569709`与`-.379331/-.418162`。zero-gradient wrong view1与fit wrong同样被压低，
+zero-gradient correct held也与fit correct接近，证明vector interaction确实读取并泛化了bank内容；但两task都无法同时保住R5级correct
+方向，因此未达到本次机制资格，不授权task-LOTO或shared G3。
 
-当前唯一修正把B1 base signed score
-`stop_gradient(q0·(value-global_B0_mean))/replay_score_rms`加入candidate feature。其余Program/event、candidate measure、
-positive/negative branch、真实X/Y value、loss、optimizer、data、rank、scale与Gate全部不变；v4必须fresh，旧interaction checkpoint
-不加载。完成顺序为：定向CPU与真实world3 forward/gradient/materialization smoke；clean pushed detached authority fresh训练到
-step70并exact-resume到110；执行同一完整functional Gate。若v4仍保持correct却无法压低wrong，将据最早失效层重新审计
-Program/event与candidate correction acquisition，而不是做seed/LR/width/bound小扫；通过后立即恢复Natural Program并联合训练
-Program、interaction与native heads，不插入binary或新chart阶段。
+当前暂停新增架构、训练和评测。没有v5、seed/LR/width/bound小扫，也不把task-local结果冒充shared Program mapping。下一次决策需要
+判断：应在candidate函数类中加入跨candidate的bank-set/global event summary或改变交互因子化，还是现有证据已足以终止当前local
+candidate-interaction类并重开更上游的Program--bank联合编译方式。该问题在owner决定是否再次咨询专家前不自行实施。
 
 ## 当前co-conditioned interaction里程碑
 
@@ -51,8 +43,11 @@ Program、interaction与native heads，不插入binary或新chart阶段。
 - [x] 以唯一2:1 positive-anchor objective fresh完成同一qualification；absolute correct恢复但wrong bank未被压低，strict non-pass；
 - [x] 完成full10 feature-to-measure审计与task-local free-delta reachability，锁定shared correction acquisition为最早接口；
 - [x] 完成v4 base-score-conditioned interaction定向CPU合同及真实world3 forward/gradient/materialization smoke；
-- [ ] clean集成并完成同一step70/110 fresh qualification；
-- [ ] 若qualification通过，立即进入Natural Program + interaction + native heads的shared G3 functional Gate。
+- [x] clean集成并完成同一step70/110 fresh qualification；v4保持correct但wrong仍同样强，strict non-pass；
+- [x] 完成v2/v3/v4 correct--wrong functional gradient冲突审计，确认不是继续调credit权重即可解决；
+- [x] 完成32维vector interaction的pointwise反例与exact-effective-rank4 task-local资格；确认存在真实bank selectivity，但当前local
+  candidate函数类仍不能同时保住correct与压低wrong；
+- [ ] 在owner决定是否再次咨询专家前暂停；不进入task-LOTO、Natural Program joint G3或新的架构版本。
 
 ## R5--R13历史里程碑
 

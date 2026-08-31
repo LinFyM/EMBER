@@ -1,5 +1,31 @@
 # EMBER progress
 
+- 2026-08-31已按owner要求推进至新的专家咨询节点并暂停。没有持续性goal、没有运行中的EMBER GPU任务，也没有启动task-LOTO、
+  Natural Program joint G3或v5。canonical `main`继续保留已验证的v4实现；32维vector interaction只在已推送但未合并的
+  `codex/g3-vector-interaction@2295f48`保留为机制证据，不是第二条active实现面。
+
+- clean pushed detached v4的step70/110相邻Gate已经完整结束。correct fit为`.922509/.929947`、same-task held为
+  `.926447/.953521`，但unseen wrong-on为`.930806/.933331`、correct-minus-wrong为`-.001784/-.006375`，正确bank更好只有
+  `5/10`和`4/10`；信息墙与四family通过，bank因果分离失败。B1 base score没有修复shared correction acquisition，v4 strict
+  non-pass。formal aggregates位于
+  `runs/outputs/pi05_ecp_program_bank_candidate_interaction_v4_base_score_gate_step{70,110}_b7d2638_gpu01p012_gpu02p47_w5_20260831/`。
+
+- 六task首步梯度分解显示v2/v3/v4的correct-vs-wrong functional gradient cosine中位为
+  `-.961291/-.961291/-.966288`，wrong/correct norm ratio中位为`1.0597/.5298/.5038`。这解释了前三轮的表面反复：权重变化只在
+  “共同破坏correct以压wrong”和“保住correct也保住wrong”之间移动，当前local candidate chart没有产生第三个选择性方向。
+
+- 最小32维native query/key vector interaction先用pointwise free-delta gauge回归得到wrong压低但correct同样被破坏，说明该内部目标
+  与最终rank4功能不对齐；随后改用完整effective-rank4矩阵距离作task-local上界，不改变真实X/Y、signed pooling、rank4、
+  carrier12+residual4、唯一rank16或信息墙。80 updates后task1的correct fit0/fit1/held panel-B recovery为
+  `.720904/.717564/.711262`，wrong fit0/fit1为`-.527627/-.519287`；task93为`.591613/.601969/.569709`与
+  `-.379331/-.418162`。wrong fit1与correct held均零梯度却分别泛化到同类结果，证明模型真的读取bank内容；但correct远低于R5强
+  正控，两个代表task一致暴露capacity--specificity冲突。本次诊断结果在
+  `runs/analysis/pi05_ecp_g3_effective_rank4_tasklocal_2295f48_gpu01p01_20260831/`，不作shared或deployment成功声明。
+
+- 当前结论不是“bank没有信息”或“rank4不够”，而是第五次专家建议的首版逐candidate local交互仍不足以同时表达capacity与
+  specificity。继续扫loss、LR、seed、width或bound没有新机制信息；后继需要决定是否加入bank-set/global-event级统计或更换交互
+  因子化，抑或终止这一candidate-interaction函数类。在owner决定是否再次咨询专家前停止实施。
+
 - clean pushed detached `main@248d768`已完成2:1 positive-anchor candidate interaction的110步训练、step70→110 exact resume及
   五worker相邻Gate。step70/110 correct fit为`.922565/.929101`、same-task held为`.931639/.953285`，但unseen wrong-on仍为
   `.932045/.934305`、correct-minus-wrong为`-.002346/-.005576`，只有`5/10`和`4/10` task正确bank更好；信息墙、四family、

@@ -10,6 +10,7 @@ from typing import Any, Callable, Mapping
 
 import torch
 import torch.distributed as dist
+from safetensors.torch import load_file
 
 from ember.ecp.checkpoint import save_ecp_checkpoint
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily
@@ -283,14 +284,20 @@ def _interaction_output(
     runtime: Any,
     arm: TaskLocalArm,
     *,
+    summary_token: str | None = None,
     correction_observer: Callable[[str, Any, torch.Tensor], None] | None = None,
 ) -> Any:
     stage = routing_stage(runtime.config)
     summaries = arm.summaries
     if stage == BANK_SET_S0_STAGE:
+        token_kind = summary_token or (
+            "correct" if arm.name.startswith("correct") else "wrong"
+        )
+        if token_kind not in {"correct", "wrong"}:
+            raise ValueError("bank-set summary-token intervention changed")
         token = (
             runtime.writer_state.free_correct
-            if arm.name.startswith("correct")
+            if token_kind == "correct"
             else runtime.writer_state.free_wrong
         )
         summaries = summaries.with_condition(token)
@@ -379,6 +386,16 @@ def _wrong_teacher(runtime: Any, task: int, arm: TaskLocalArm, base_output: Any)
     if not bool(torch.isfinite(norm)):
         raise RuntimeError("wrong free-delta teacher gradient is non-finite")
     optimizer.step()
+    bias_count = 0
+    bias_square_sum = torch.zeros((), device=runtime.context.device)
+    bias_maximum = torch.zeros((), device=runtime.context.device)
+    with torch.no_grad():
+        for target_code in code.targets:
+            for logits in (target_code.input_logits, *target_code.output_logits):
+                bias = 0.1 * torch.tanh(logits.detach().float())
+                bias_count += bias.numel()
+                bias_square_sum = bias_square_sum + bias.square().sum()
+                bias_maximum = torch.maximum(bias_maximum, bias.abs().max())
     with torch.no_grad():
         teacher = _output(runtime, arm.bank, _free_pool(runtime, arm.bank, code))
         teacher_state = _complete(runtime, teacher)
@@ -407,6 +424,11 @@ def _wrong_teacher(runtime: Any, task: int, arm: TaskLocalArm, base_output: Any)
         "panel_a_functional_suppression": recovery - recovery_after,
         "gradient_norm_before_clip": float(norm),
         "parameter_count": sum(value.numel() for value in code.parameters()),
+        "candidate_correction": {
+            "count": bias_count,
+            "rms": float((bias_square_sum / bias_count).sqrt()),
+            "maximum_absolute": float(bias_maximum),
+        },
         "zero_maximum_absolute_error": zero_error,
     }
 
@@ -462,7 +484,12 @@ def _targets(runtime: Any, task: int, arms: Mapping[str, TaskLocalArm]):
         for value in denominator.values()
     ):
         raise RuntimeError("wrong effective-rank4 teacher missed a family")
-    return target, {family: value.detach() for family, value in denominator.items()}, teacher_metrics
+    return (
+        target,
+        {family: value.detach() for family, value in denominator.items()},
+        teacher_metrics,
+        wrong_teacher,
+    )
 
 
 def _zero_equivalence(runtime: Any, arms: Mapping[str, TaskLocalArm]) -> float:
@@ -591,6 +618,158 @@ def _panel_b(
     }
 
 
+def _correct_fit_free_loss(
+    runtime: Any, task: int, arms: Mapping[str, TaskLocalArm]
+) -> float:
+    root = (
+        runtime.args.asset_root / runtime.config["authorities"]["positive_control_root"]
+    ).resolve()
+    source = read_json(root / f"task_{task:03d}" / "result.json")
+    rows = (*source["evaluation"]["fit_videos"], source["evaluation"]["held_video"])
+    free = {
+        int(row["video_demo"]): float(row["panel_b"]["free_primal_loss"])
+        for row in rows
+    }
+    return statistics.fmean(
+        free[arms[name].bank.video_demo] for name in ("correct_fit0", "correct_fit1")
+    )
+
+
+def _low_rank_inner(
+    left_a: torch.Tensor,
+    left_b: torch.Tensor,
+    right_a: torch.Tensor,
+    right_b: torch.Tensor,
+) -> torch.Tensor:
+    return (
+        (left_b.float() @ right_b.float().transpose(0, 1))
+        * (left_a.float() @ right_a.float().transpose(0, 1))
+    ).sum()
+
+
+def _delta_geometry(
+    runtime: Any,
+    *,
+    generated: Any,
+    base: Any,
+    target: EffectiveTarget,
+) -> dict[str, Any]:
+    rows = {
+        family: {
+            "prediction": generated.residual.scales.new_zeros(()),
+            "target": generated.residual.scales.new_zeros(()),
+            "cross": generated.residual.scales.new_zeros(()),
+        }
+        for family in FAMILIES
+    }
+    for owner, actual_a, actual_b, base_a, base_b, target_a, target_b in zip(
+        runtime.owners,
+        generated.residual.a,
+        generated.residual.b,
+        base.residual.a,
+        base.residual.b,
+        target.a,
+        target.b,
+        strict=True,
+    ):
+        aa = _low_rank_inner(actual_a, actual_b, actual_a, actual_b)
+        bb = _low_rank_inner(base_a, base_b, base_a, base_b)
+        tt = _low_rank_inner(target_a, target_b, target_a, target_b)
+        ab = _low_rank_inner(actual_a, actual_b, base_a, base_b)
+        at = _low_rank_inner(actual_a, actual_b, target_a, target_b)
+        bt = _low_rank_inner(base_a, base_b, target_a, target_b)
+        row = rows[owner.family]
+        row["prediction"] = row["prediction"] + (aa + bb - 2.0 * ab)
+        row["target"] = row["target"] + (tt + bb - 2.0 * bt)
+        row["cross"] = row["cross"] + (at - ab - bt + bb)
+    result = {}
+    for family, row in rows.items():
+        prediction = row["prediction"].clamp_min(0.0)
+        target_norm = row["target"].clamp_min(1e-24)
+        cross = row["cross"]
+        cosine = cross / (prediction * target_norm).clamp_min(1e-24).sqrt()
+        best_scale = cross / prediction.clamp_min(1e-24)
+        result[family.value] = {
+            "prediction_to_target_norm_ratio": float(
+                (prediction / target_norm).sqrt()
+            ),
+            "delta_cosine": float(cosine.clamp(-1.0, 1.0)),
+            "best_prediction_scale": float(best_scale),
+            "best_scaled_normalized_mse": float(
+                ((target_norm - cross.square() / prediction.clamp_min(1e-24)) / target_norm)
+                .clamp(0.0, 1.0)
+            ),
+        }
+    return result
+
+
+def _identifiability_diagnostic(
+    runtime: Any,
+    *,
+    task: int,
+    arms: Mapping[str, TaskLocalArm],
+    targets: Mapping[str, EffectiveTarget],
+    denominators: Mapping[TargetFamily, torch.Tensor],
+    wrong_teacher: Any,
+) -> dict[str, Any]:
+    teacher_state = _complete(runtime, wrong_teacher)
+    teacher_panel_b = _panel_b(
+        runtime,
+        task=task,
+        state=teacher_state,
+        free_loss=_correct_fit_free_loss(runtime, task, arms),
+        visits=16,
+    )
+    interventions = {}
+    with torch.no_grad():
+        for name, arm in arms.items():
+            base = _base_output(runtime, arm.bank)
+            base_target = _target(base)
+            token_outputs = {}
+            token_rows = {}
+            for token_kind in ("correct", "wrong"):
+                collector = _CorrectionCollector(
+                    float(runtime.config["model"]["interaction_correction_bound"])
+                )
+                output = _interaction_output(
+                    runtime,
+                    arm,
+                    summary_token=token_kind,
+                    correction_observer=collector.observe,
+                )
+                token_outputs[token_kind] = output
+                departure = _family_distances(runtime, output, base_target)
+                row = {
+                    "departure_normalized_by_wrong_teacher": {
+                        family.value: float(departure[family] / denominators[family])
+                        for family in FAMILIES
+                    },
+                    "correction": collector.finalize()["all"],
+                }
+                if name == "wrong_fit0":
+                    row["teacher_delta_geometry"] = _delta_geometry(
+                        runtime,
+                        generated=output,
+                        base=base,
+                        target=targets["wrong_fit0"],
+                    )
+                token_rows[token_kind] = row
+            token_effect = _family_distances(
+                runtime, token_outputs["wrong"], _target(token_outputs["correct"])
+            )
+            interventions[name] = {
+                "tokens": token_rows,
+                "token_effect_normalized_by_wrong_teacher": {
+                    family.value: float(token_effect[family] / denominators[family])
+                    for family in FAMILIES
+                },
+            }
+    return {
+        "teacher_panel_b": teacher_panel_b,
+        "token_interventions": interventions,
+    }
+
+
 def _evaluate(
     runtime: Any,
     task: int,
@@ -697,7 +876,9 @@ def run(args: Any) -> None:
         started = time.monotonic()
         arms = _prepare_arms(runtime, args.task)
         step0_error = _zero_equivalence(runtime, arms)
-        targets, denominators, teacher = _targets(runtime, args.task, arms)
+        targets, denominators, teacher, _wrong_teacher_output = _targets(
+            runtime, args.task, arms
+        )
         _train(runtime, arms, targets, denominators)
         evaluation = _evaluate(runtime, args.task, arms, targets, denominators)
         result = {
@@ -734,6 +915,79 @@ def run(args: Any) -> None:
                     "task": args.task,
                     "gate": evaluation["gate"],
                     "completed_optimizer_steps": runtime.optimizer_steps,
+                },
+            )
+    finally:
+        if runtime is not None:
+            runtime.close()
+        if dist.is_available() and dist.is_initialized():
+            dist.destroy_process_group()
+
+
+def diagnose(args: Any) -> None:
+    """Audit teacher representativeness and free-summary control without training."""
+
+    if (
+        args.task not in TASKS
+        or args.phase != "joint"
+        or args.resume is not None
+        or args.diagnose_checkpoint is None
+    ):
+        raise ValueError("bank-set identifiability diagnostic arguments changed")
+    context = initialize_distributed(require_numa=True, defer_process_group=True)
+    runtime = None
+    try:
+        runtime = prepare_routing_control_runtime(args, context)
+        if routing_stage(runtime.config) != BANK_SET_S0_STAGE:
+            raise ValueError("bank-set free-summary diagnostic requires S0")
+        checkpoint = args.diagnose_checkpoint
+        tensor_path = checkpoint / "ecp.safetensors" if checkpoint.is_dir() else checkpoint
+        if not tensor_path.is_file():
+            raise FileNotFoundError(tensor_path)
+        runtime.writer_state.load_state_dict(
+            load_file(str(tensor_path), device=str(context.device)), strict=True
+        )
+        started = time.monotonic()
+        arms = _prepare_arms(runtime, args.task)
+        targets, denominators, teacher, wrong_teacher = _targets(
+            runtime, args.task, arms
+        )
+        diagnostic = _identifiability_diagnostic(
+            runtime,
+            task=args.task,
+            arms=arms,
+            targets=targets,
+            denominators=denominators,
+            wrong_teacher=wrong_teacher,
+        )
+        result = {
+            "schema_version": "ember_ecp_event_bank_set_s0_identifiability_v1",
+            "status": "complete",
+            "stage": routing_stage(runtime.config),
+            "task": args.task,
+            "writer_checkpoint": {
+                "path": str(tensor_path.resolve()),
+                "bytes": tensor_path.stat().st_size,
+            },
+            "wrong_teacher": teacher,
+            "diagnostic": diagnostic,
+            "elapsed_seconds": time.monotonic() - started,
+            "information_wall": {
+                "panel_b_backward_calls": 0,
+                "validation_or_test_reads": 0,
+                "action_meta_installed": False,
+                "single_complete_rank16": True,
+                "shuffled_or_reversed_use": False,
+            },
+        }
+        if context.is_main:
+            write_json_atomic(args.output_dir / "identifiability.json", result)
+            write_json_atomic(
+                args.output_dir / "completion.json",
+                {
+                    "stage": routing_stage(runtime.config),
+                    "task": args.task,
+                    "status": "complete",
                 },
             )
     finally:

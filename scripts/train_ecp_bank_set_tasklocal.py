@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from ember.ecp.joint_program_primal.bank_set_tasklocal import run
+from ember.ecp.joint_program_primal.bank_set_tasklocal import diagnose, run
 from ember.ecp.joint_program_primal.bank_set_tasklocal_evaluation import (
     aggregate_tasklocal,
 )
@@ -39,6 +39,11 @@ def _parser() -> argparse.ArgumentParser:
     execute.add_argument("--condition-cache-root", type=Path, required=True)
     execute.add_argument("--program-bank-condition-cache-root", type=Path, required=True)
     execute.add_argument("--resume", type=Path)
+    execute.add_argument(
+        "--diagnose-checkpoint",
+        type=Path,
+        help="run the no-gradient S0 identifiability audit from this checkpoint",
+    )
     execute.add_argument("--stop-after-step", type=int)
     execute.add_argument("--log-every", type=int, default=10)
     aggregate = commands.add_parser("aggregate", help="seal the two formal tasks")
@@ -70,7 +75,7 @@ def _arguments() -> argparse.Namespace:
 if __name__ == "__main__":
     arguments = _arguments()
     if arguments.command == "run":
-        run(arguments)
+        (diagnose if arguments.diagnose_checkpoint is not None else run)(arguments)
     else:
         report = aggregate_tasklocal(
             config_path=arguments.config,

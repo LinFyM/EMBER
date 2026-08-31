@@ -624,7 +624,7 @@ def run(args: Any) -> None:
                         ),
                     },
                     "information_wall": {
-                        "held_interaction_backward_calls": 0,
+                        "held_interaction_task_backward_calls": 0,
                         "held_as_training_wrong_bank_calls": 0,
                         "same_task_held_backward_calls": 0,
                         "wrong_fit1_backward_calls": 0,

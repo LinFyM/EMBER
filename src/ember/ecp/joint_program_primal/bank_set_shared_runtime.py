@@ -10,7 +10,11 @@ import torch
 import torch.distributed as dist
 from safetensors.torch import load_file
 
-from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint
+from ember.ecp.checkpoint import (
+    ECP_CHECKPOINT_SCHEMA,
+    checkpoint_macro,
+    load_ecp_checkpoint,
+)
 from ember.ecp.joint_program_primal.bank_set_shared_training import (
     GRADIENT_TASKS,
     SharedArmSpec,
@@ -121,6 +125,25 @@ def _run_contract(runtime: Any, contract: Any) -> dict[str, Any]:
     }
 
 
+def _checkpoint_files_valid(checkpoint: Path, manifest: Mapping[str, Any]) -> bool:
+    world_size = int(manifest.get("world_size", -1))
+    files = manifest.get("files", {})
+    expected = {
+        "ecp.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+    }
+    return (
+        world_size > 0
+        and set(files) == expected
+        and all(
+            (checkpoint / name).is_file()
+            and (checkpoint / name).stat().st_size == int(row.get("bytes", -1))
+            for name, row in files.items()
+        )
+    )
+
+
 def _interaction_pretraining(runtime: Any, contract: Any, *, apply: bool) -> dict[str, Any]:
     authority = runtime.config["authorities"]["interaction_pretraining"]
     checkpoint = (runtime.args.asset_root / authority["checkpoint"]).resolve()
@@ -129,9 +152,14 @@ def _interaction_pretraining(runtime: Any, contract: Any, *, apply: bool) -> dic
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     source_contract = read_json(run_contract_path)
     gate = read_json(gate_path)
+    source_wall = source_contract.get("information_wall", {})
+    source_inventory = source_contract.get("inventory", {})
     if not all(
         (
             checkpoint_macro(checkpoint) == int(authority["optimizer_step"]) == 110,
+            checkpoint.parent.name == "checkpoints",
+            checkpoint.parent.parent == run_contract_path.parent,
+            manifest.get("schema_version") == ECP_CHECKPOINT_SCHEMA,
             manifest.get("stage") == contract.BANK_SET_SHARED_STAGE,
             int(manifest.get("next_macro", -1)) == 110,
             manifest.get("run_contract_schema") == authority["source_run_schema"],
@@ -140,6 +168,21 @@ def _interaction_pretraining(runtime: Any, contract: Any, *, apply: bool) -> dic
             source_contract.get("mode") == "formal",
             source_contract.get("git", {}).get("commit") == authority["source_commit"],
             source_contract.get("task_split") == runtime.config["task_split"],
+            source_wall.get("held_interaction_task_backward_calls") == 0,
+            source_wall.get("same_task_held_backward_calls") == 0,
+            source_wall.get("wrong_fit1_backward_calls") == 0,
+            source_wall.get("panel_b_backward_calls") == 0,
+            source_wall.get("result_or_action_gradient_calls") == 0,
+            source_wall.get("forbidden_task_reads") == 0,
+            source_wall.get("validation_or_test_reads") == 0,
+            source_wall.get("action_meta_installed") is False,
+            source_wall.get("shuffled_or_reversed_use") is False,
+            source_wall.get("single_complete_rank16") is True,
+            source_inventory.get("action_meta_module_count") == 0,
+            source_inventory.get("action_meta_parameter_count") == 0,
+            len(source_contract.get("world_topology", ()))
+            == int(manifest.get("world_size", -1)),
+            _checkpoint_files_valid(checkpoint, manifest),
             gate.get("schema_version")
             == "ember_ecp_event_bank_set_shared_loto_aggregate_v1",
             gate.get("status") == "complete",
@@ -495,9 +538,12 @@ def evaluate_shared_job(
         "information_wall": {
             "receives_gradient": False,
             "panel_b_backward_calls": 0,
-            "held_interaction_backward_calls": 0,
+            "held_interaction_task_backward_calls": 0,
+            "same_task_held_backward_calls": 0,
+            "wrong_fit1_backward_calls": 0,
             "result_or_action_gradient_calls": 0,
             "forbidden_task_reads": 0,
+            "validation_or_test_reads": 0,
             "action_meta_installed": False,
             "shuffled_or_reversed_use": False,
             "single_complete_rank16": True,

@@ -5,6 +5,7 @@ import torch
 
 from ember.ecp.joint_program_primal import bank_set_shared_training
 from ember.ecp.joint_program_primal.bank_set_shared_gradient_combiner import (
+    _scheduled_unit_mean,
     balanced_condition_assignments,
     paired_conditions,
     run_paired_unit_gradient_step,
@@ -52,6 +53,28 @@ def test_s2_each_task_cursor_advances_once_per_paired_step() -> None:
     assert task_cursor_counts(0) == {task: 0 for task in GRADIENT_TASKS}
     assert task_cursor_counts(4) == {task: 4 for task in GRADIENT_TASKS}
     assert task_cursor_counts(8) == {task: 8 for task in GRADIENT_TASKS}
+
+
+def test_s2_scheduled_unit_mean_is_partition_invariant() -> None:
+    conditions = paired_conditions(0, GRADIENT_TASKS)
+    costs = {condition: condition[0] % 17 + 1 for condition in conditions}
+    gradients = {
+        condition: torch.tensor((float(index + 1), float(-(index % 3))))
+        for index, condition in enumerate(conditions)
+    }
+    gradients[conditions[1]] = torch.zeros(2)  # one inactive wrong hinge
+    expected = sum(gradients.values(), torch.zeros(2)) / len(conditions)
+    for world_size in range(1, 7):
+        assignments = balanced_condition_assignments(
+            conditions, costs, world_size
+        )
+        partials = [
+            sum((gradients[value] for value in row), torch.zeros(2))
+            for row in assignments
+        ]
+        assert torch.allclose(
+            _scheduled_unit_mean(partials, len(conditions)), expected
+        )
 
 
 def test_s2_unit_gradient_combiner_preserves_scheduled_condition_mass(
@@ -268,7 +291,7 @@ def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
         config={
             "data": {"panel_visits": 16},
             "optimization": {"direct_functional": {
-                "correct_backward_mass": 1.0, "wrong_backward_mass": 0.5,
+                "correct_backward_mass": 1.0, "wrong_backward_mass": 1.0,
             }},
         },
         context=SimpleNamespace(device=torch.device("cpu")),
@@ -316,10 +339,10 @@ def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
     monkeypatch.setattr(bank_set_shared_training, "_clear_panel_cache", lambda *_: None)
 
     row = _functional_task_loss(
-        runtime, 8, "correct_fit0", task_cursor=9, task_weight=1.0 / 6.0
+        runtime, 8, "correct_fit0", task_cursor=9, task_weight=1.0
     )
     assert calls == [False, True]
-    assert parameter.grad == pytest.approx(torch.tensor(0.5))
+    assert parameter.grad == pytest.approx(torch.tensor(3.0))
     assert row["panel_visit"] == 9
     assert row["backward_mass"] == 1.0
 
@@ -327,9 +350,9 @@ def test_s2_functional_task_uses_two_passes_and_structural_zero_hinge(
     parameter.grad = None
     loss["value"] = 1.2
     row = _functional_task_loss(
-        runtime, 8, "wrong_fit0", task_cursor=9, task_weight=1.0 / 6.0
+        runtime, 8, "wrong_fit0", task_cursor=9, task_weight=1.0
     )
     assert calls == [False, True]
     assert parameter.grad is not None and float(parameter.grad) == 0.0
     assert row["gradient_active"] is False
-    assert row["backward_mass"] == -0.5
+    assert row["backward_mass"] == -1.0

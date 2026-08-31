@@ -12,6 +12,7 @@ from ember.ecp.joint_program_primal.bank_set_shared_contract import (
     BANK_SET_SHARED_GRADIENT_TARGET_TASKS,
     BANK_SET_SHARED_HELD_META_TASKS,
     BANK_SET_SHARED_HELD_TARGET_TASKS,
+    BANK_SET_SHARED_RUN_SCHEMA,
     BANK_SET_SHARED_TASKS,
     load_bank_set_shared_config,
 )
@@ -29,8 +30,12 @@ BANK_SET_SHARED_AGGREGATE_SCHEMA = (
 FAMILY_NAMES = ("q", "v", "action_in", "action_out")
 _EXPECTED_WALL = {
     "panel_b_backward_calls": 0,
+    "held_interaction_task_backward_calls": 0,
+    "same_task_held_backward_calls": 0,
+    "wrong_fit1_backward_calls": 0,
     "result_or_action_gradient_calls": 0,
     "forbidden_task_reads": 0,
+    "validation_or_test_reads": 0,
     "action_meta_installed": False,
     "shuffled_or_reversed_use": False,
     "single_complete_rank16": True,
@@ -71,10 +76,38 @@ def _raw_panel_valid(panel: Mapping[str, Any]) -> bool:
     return float(panel.get("free_primal_benefit", 0.0)) > 0.0
 
 
-def _load_evidence(output_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def _load_evidence(
+    output_dir: Path, config_path: Path
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     queue = read_json(output_dir / "queue.json")
-    if queue.get("schema_version") != BANK_SET_SHARED_QUEUE_SCHEMA:
+    expected_config = {
+        "path": str(config_path.resolve()),
+        "bytes": config_path.stat().st_size,
+    }
+    if (
+        queue.get("schema_version") != BANK_SET_SHARED_QUEUE_SCHEMA
+        or queue.get("status") != "ready"
+        or queue.get("config") != expected_config
+    ):
         raise ValueError("S2 aggregate queue schema changed")
+    compiler_contract = read_json(Path(queue["compiler_run"]) / "run_contract.json")
+    compiler_authority = queue.get("compiler_authority", {})
+    training_commit = str(compiler_contract.get("git", {}).get("commit", ""))
+    if not all(
+        (
+            compiler_contract.get("schema_version") == BANK_SET_SHARED_RUN_SCHEMA,
+            compiler_contract.get("config") == expected_config,
+            compiler_authority.get("run_contract_schema")
+            == BANK_SET_SHARED_RUN_SCHEMA,
+            compiler_authority.get("training_commit") == training_commit,
+            training_commit,
+            all(
+                str(row.get("training_commit", "")) == training_commit
+                for row in queue.get("checkpoints", ())
+            ),
+        )
+    ):
+        raise ValueError("S2 aggregate compiler authority changed")
     jobs = {str(row["id"]): row for row in queue.get("jobs", ())}
     result_paths = sorted((output_dir / "results").glob("*.json"))
     if len(jobs) != 100 or {path.stem for path in result_paths} != set(jobs):
@@ -296,7 +329,7 @@ def aggregate_shared_evaluation(
     """Seal both adjacent checkpoints; Panel B is the only scientific verdict."""
 
     config = load_bank_set_shared_config(config_path)
-    queue, results = _load_evidence(output_dir)
+    queue, results = _load_evidence(output_dir, config_path)
     steps = list(map(int, config["evaluation"]["checkpoint_optimizer_steps"]))
     checkpoint_rows = []
     task_rows_by_step = {}
@@ -354,6 +387,8 @@ def aggregate_shared_evaluation(
         "gate_pass": primary_pass and stability_pass,
         "queue": {
             "schema_version": queue["schema_version"],
+            "config": dict(queue["config"]),
+            "compiler_authority": dict(queue["compiler_authority"]),
             "job_count": len(queue["jobs"]),
             "worker_count": int(queue["worker_count"]),
             "policy": queue["queue_policy"],

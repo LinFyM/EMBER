@@ -74,6 +74,20 @@ def _install_gradient(
         raise RuntimeError("S2 flat-gradient layout changed")
 
 
+def _scheduled_unit_mean(
+    partial_sums: Sequence[torch.Tensor], scheduled: int
+) -> torch.Tensor:
+    if scheduled <= 0 or not partial_sums:
+        raise ValueError("S2 scheduled condition mass changed")
+    shape = partial_sums[0].shape
+    if any(value.shape != shape for value in partial_sums):
+        raise ValueError("S2 condition-gradient partition shape changed")
+    total = torch.stack(tuple(partial_sums), dim=0).sum(dim=0)
+    if not bool(torch.isfinite(total).all()):
+        raise RuntimeError("S2 unit-gradient sum is non-finite")
+    return total / scheduled
+
+
 def _condition_assignments(
     runtime: Any, conditions: Sequence[Condition]
 ) -> tuple[tuple[Condition, ...], ...]:
@@ -155,9 +169,9 @@ def _reduce_condition_gradients(
     if runtime.context.world_size > 1:
         dist.all_reduce(local_sum, op=dist.ReduceOp.SUM)
         dist.all_reduce(active_count, op=dist.ReduceOp.SUM)
-    if not bool(torch.isfinite(local_sum).all()) or float(active_count) <= 0:
+    if float(active_count) <= 0:
         raise RuntimeError("S2 unit-gradient reduction is invalid")
-    return local_sum / scheduled, int(active_count.item())
+    return _scheduled_unit_mean((local_sum,), scheduled), int(active_count.item())
 
 
 def _apply_optimizer_gradient(runtime: Any, combined: torch.Tensor) -> float:

@@ -31,10 +31,11 @@ from ember.ecp.joint_program_primal.bank_set_shared_evaluation import (
     BANK_SET_SHARED_JOB_RESULT_SCHEMA,
     BANK_SET_SHARED_QUEUE_SCHEMA,
     BANK_SET_SHARED_WORKER_SCHEMA,
+    _worker_queue_valid,
     build_job_queue,
 )
 from ember.ecp.joint_program_primal.bank_set_shared_runtime import _optimizer_cursor
-from ember.pi05_source_checkpoint import write_json_atomic
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -85,6 +86,34 @@ def test_shared_profile_allows_two_steps_but_formal_stops_remain_sealed() -> Non
     args.mode, args.stop_after_step = "formal", 2
     with pytest.raises(ValueError, match="not pre-registered"):
         _optimizer_cursor(args, config, trainable)
+
+
+def test_worker_queue_is_bound_to_runtime_paths(tmp_path: Path) -> None:
+    args = SimpleNamespace(
+        config=CONFIG.resolve(),
+        base_config=(ROOT / "configs/pi05_ecp_shared_compiler_g3_v5.json").resolve(),
+        asset_root=ROOT.resolve(),
+        compiler_run=(tmp_path / "compiler").resolve(),
+        worker_count=4,
+        worker_index=2,
+    )
+    queue = {
+        "schema_version": BANK_SET_SHARED_QUEUE_SCHEMA,
+        "status": "ready",
+        "worker_count": 4,
+        "config": {"path": str(args.config), "bytes": args.config.stat().st_size},
+        "base_config": str(args.base_config),
+        "asset_root": str(args.asset_root),
+        "compiler_run": str(args.compiler_run),
+        "compiler_authority": {
+            "run_contract_schema": BANK_SET_SHARED_RUN_SCHEMA,
+            "training_commit": "c" * 40,
+        },
+        "checkpoints": [{"training_commit": "c" * 40}],
+    }
+    assert _worker_queue_valid(queue, args)
+    queue["asset_root"] = str(tmp_path / "wrong")
+    assert not _worker_queue_valid(queue, args)
 
 
 class _TinyInteraction(torch.nn.Module):
@@ -220,8 +249,12 @@ def _job_metric(job: dict[str, object], value: float) -> dict[str, object]:
     )
     wall = {
         "panel_b_backward_calls": 0,
+        "held_interaction_task_backward_calls": 0,
+        "same_task_held_backward_calls": 0,
+        "wrong_fit1_backward_calls": 0,
         "result_or_action_gradient_calls": 0,
         "forbidden_task_reads": 0,
+        "validation_or_test_reads": 0,
         "action_meta_installed": False,
         "shuffled_or_reversed_use": False,
         "single_complete_rank16": True,
@@ -269,11 +302,29 @@ def test_aggregate_applies_role_loto_ratio_and_adjacent_gate(
         asset_root=ROOT,
         checkpoints=checkpoints,
     )
+    compiler_run = tmp_path / "compiler_run"
+    compiler_run.mkdir()
+    training_commit = "b" * 40
+    write_json_atomic(compiler_run / "run_contract.json", {
+        "schema_version": BANK_SET_SHARED_RUN_SCHEMA,
+        "config": {"path": str(CONFIG.resolve()), "bytes": CONFIG.stat().st_size},
+        "git": {"commit": training_commit},
+    })
     for name in ("results", "workers"):
         (tmp_path / name).mkdir()
     write_json_atomic(tmp_path / "queue.json", {
         "schema_version": BANK_SET_SHARED_QUEUE_SCHEMA,
+        "status": "ready",
         "worker_count": 2,
+        "config": {"path": str(CONFIG.resolve()), "bytes": CONFIG.stat().st_size},
+        "compiler_run": str(compiler_run),
+        "compiler_authority": {
+            "run_contract_schema": BANK_SET_SHARED_RUN_SCHEMA,
+            "training_commit": training_commit,
+        },
+        "checkpoints": [
+            {**row, "training_commit": training_commit} for row in checkpoints
+        ],
         "queue_policy": "persistent_workers_atomic_dynamic_claim_long_first",
         "jobs": jobs,
     })
@@ -307,3 +358,8 @@ def test_aggregate_applies_role_loto_ratio_and_adjacent_gate(
     assert report["gate_pass"] is True
     later_meta = report["checkpoint_reports"][1]["roles"]["meta"]
     assert later_meta["held_to_gradient_correct_fit"] == pytest.approx(1.0)
+    queue = read_json(tmp_path / "queue.json")
+    queue["config"]["bytes"] += 1
+    write_json_atomic(tmp_path / "queue.json", queue)
+    with pytest.raises(ValueError, match="queue schema changed"):
+        aggregate_shared_evaluation(output_dir=tmp_path, config_path=CONFIG)

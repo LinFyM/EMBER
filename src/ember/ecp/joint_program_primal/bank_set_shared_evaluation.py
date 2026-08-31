@@ -14,6 +14,7 @@ import torch.distributed as dist
 from ember.ecp.bank_conditioning.mapping import load_mapping_split
 from ember.ecp.joint_program_primal.bank_set_shared_contract import (
     BANK_SET_SHARED_ARMS,
+    BANK_SET_SHARED_RUN_SCHEMA,
     BANK_SET_SHARED_TASKS,
     checkpoint_authority,
     load_bank_set_shared_config,
@@ -155,6 +156,9 @@ def prepare_job_queue(
     ]
     if [row["optimizer_step"] for row in checkpoints] != expected_steps:
         raise ValueError("S2 adjacent checkpoint order changed")
+    training_commits = {str(row["training_commit"]) for row in checkpoints}
+    if len(training_commits) != 1:
+        raise ValueError("S2 adjacent checkpoints use different training commits")
     jobs = build_job_queue(
         config_path=config_path,
         base_config_path=base_config_path,
@@ -172,7 +176,12 @@ def prepare_job_queue(
         "worker_count": worker_count,
         "config": {"path": str(config_path), "bytes": config_path.stat().st_size},
         "base_config": str(base_config_path),
+        "asset_root": str(asset_root),
         "compiler_run": str(compiler_run),
+        "compiler_authority": {
+            "run_contract_schema": BANK_SET_SHARED_RUN_SCHEMA,
+            "training_commit": training_commits.pop(),
+        },
         "checkpoints": checkpoints,
         "queue_policy": "persistent_workers_atomic_dynamic_claim_long_first",
         "jobs": jobs,
@@ -221,6 +230,33 @@ def _validate_backend_row(row: Mapping[str, Any], job: Mapping[str, Any]) -> Non
         raise ValueError(f"S2 backend result contract changed for {job['id']}")
 
 
+def _worker_queue_valid(queue: Mapping[str, Any], args: Any) -> bool:
+    expected_config = {
+        "path": str(args.config),
+        "bytes": args.config.stat().st_size,
+    }
+    compiler = queue.get("compiler_authority", {})
+    training_commit = str(compiler.get("training_commit", ""))
+    return all(
+        (
+            queue.get("schema_version") == BANK_SET_SHARED_QUEUE_SCHEMA,
+            queue.get("status") == "ready",
+            int(queue.get("worker_count", -1)) == args.worker_count,
+            0 <= args.worker_index < args.worker_count,
+            queue.get("config") == expected_config,
+            queue.get("base_config") == str(args.base_config),
+            queue.get("asset_root") == str(args.asset_root),
+            queue.get("compiler_run") == str(args.compiler_run),
+            compiler.get("run_contract_schema") == BANK_SET_SHARED_RUN_SCHEMA,
+            len(training_commit) == 40,
+            all(
+                str(row.get("training_commit", "")) == training_commit
+                for row in queue.get("checkpoints", ())
+            ),
+        )
+    )
+
+
 def evaluate_worker(args: Any) -> dict[str, Any]:
     """Persistently claim jobs; one real bank is prepared and released per job."""
 
@@ -232,12 +268,7 @@ def evaluate_worker(args: Any) -> dict[str, Any]:
     ):
         raise ValueError("formal S2 evaluation requires detached frozen authority")
     queue = read_json(args.output_dir / "queue.json")
-    if (
-        queue.get("schema_version") != BANK_SET_SHARED_QUEUE_SCHEMA
-        or queue.get("status") != "ready"
-        or int(queue.get("worker_count", -1)) != args.worker_count
-        or not 0 <= args.worker_index < args.worker_count
-    ):
+    if not _worker_queue_valid(queue, args):
         raise ValueError("S2 evaluation queue authority changed")
     backend = importlib.import_module(_BACKEND_MODULE)
     required = (

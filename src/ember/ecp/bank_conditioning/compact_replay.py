@@ -137,7 +137,7 @@ def summarize_compact_replay(
     bank_set_interaction: EventConditionedBankSetInteraction,
     interaction_state: ProgramBankInteractionState,
 ) -> ProgramBankSetSummaries:
-    """B0.5 scan over exact input and joint output candidate sets."""
+    """B0.5 scan over exact candidate sets independently of B1 replay chunks."""
 
     operator._validate_interaction_state(interaction_state)
     if not operator._interaction_enabled(bank_set_interaction, interaction_state):
@@ -145,6 +145,7 @@ def summarize_compact_replay(
     inputs = []
     outputs = []
     frames = int(prepared.frame_measure.shape[0])
+    summary_frame_chunk = frames
     for target, (owner, x, y) in enumerate(
         zip(
             operator.owners,
@@ -184,8 +185,8 @@ def summarize_compact_replay(
             for _ in range(groups)
         )
         boundary = NativeOutputBankState(final=prepared.final_outputs[target].detach())
-        for start in range(0, frames, operator.covariance_frame_chunk):
-            stop = min(start + operator.covariance_frame_chunk, frames)
+        for start in range(0, frames, summary_frame_chunk):
+            stop = min(start + summary_frame_chunk, frames)
             context = interaction_state.context.frame_slice(start, stop)
             frame_measure = prepared.frame_measure[start:stop]
             input_coordinates = program_relative_coordinates(

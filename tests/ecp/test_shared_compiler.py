@@ -367,6 +367,15 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
             frozen_descriptors=descriptors,
             interaction_group_batch_size=2,
         )
+        cached_summary_pool = compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=interaction_state,
+            frozen_descriptors=descriptors,
+            interaction_group_batch_size=2,
+        )
         chunked = compiler.forward_compact(
             program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
         )
@@ -397,6 +406,12 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    for left, right in zip(
+        (*cached_summary_pool.input_values, *cached_summary_pool.output_values),
+        (*uncached_pool.input_values, *uncached_pool.output_values),
+        strict=True,
+    ):
+        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
     compiler.zero_grad(set_to_none=True)
     gradient_pool = compiler.bank_operator.apply_compact(
         compact,
@@ -404,7 +419,6 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
         output_primals,
         bank_set_interaction=compiler.bank_set_interaction,
         interaction_state=interaction_state,
-        summaries=summaries,
         frozen_descriptors=descriptors,
         interaction_group_batch_size=2,
     )
@@ -420,6 +434,12 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
             compiler.bank_set_interaction.output_condition,
         )
         for head in heads.values()
+    )
+    assert all(
+        parameter.grad is not None
+        and bool(torch.isfinite(parameter.grad).all())
+        and bool(parameter.grad.abs().sum() > 0)
+        for parameter in compiler.bank_set_interaction.set_encoder.parameters()
     )
     for left, right in zip(
         _summary_tensors(summaries), _summary_tensors(reference_summaries), strict=True

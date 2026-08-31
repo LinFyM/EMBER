@@ -50,7 +50,9 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   absolute/held-transfer均primary non-pass；
 - [x] 完成旧checkpoint的四组无训练context-path依赖消融；确认absolute B1 context与B0 summary均被使用，但不把OOD置零结果当fresh因果
   裁决；
-- [ ] 实现唯一absolute-route quotient候选并从冻结R5 fresh完成S0；task1/93各自必须满足correct fit0/fit1均`>=.85`、correct held
+- [x] 实现唯一absolute-route quotient候选并通过全仓CPU合同与task1一步真实forward/gradient/materialization profile；确认absolute
+  `rank_event`不再直达可训练B0/B1，task-independent slots进入参数inventory，Action Meta为0且唯一rank16不变；
+- [ ] 从冻结R5 fresh完成S0；task1/93各自必须满足correct fit0/fit1均`>=.85`、correct held
   `>=.80`、wrong fit0/fit1均`<=.25`、margin`>=.50`、全部correct严格优于wrong，并保持zero-init、family、saturation和信息墙合同；
 - [ ] 只有fresh S0通过，才以不加载S0 interaction状态的fresh R5完成S1，并按相同双task绝对Gate裁决真实B0 summary；
 - [ ] 只有fresh S1通过，才fresh执行原split S2及相邻Gate；若S1通过而S2仍失败，则否定absolute-code主因，转向`kappa`/summary

@@ -1,5 +1,33 @@
 # EMBER progress
 
+- 2026-09-01 absolute-route quotient EBSRI已在唯一canonical interaction中接通：可训练B0/B1不再读取absolute `rank_event`，改用无task轴的
+  trainable rank4/event8 structural slots；Program仍经冻结R5 base、event weights、native queries、`kappa`及video-local context作用。
+  全仓`253 passed`。clean pushed `main@0d8d901`在gpu01物理0完成task1一步真实S0 profile：38-target forward/backward、wrong teacher、
+  五臂materialization与Panel-B forward均自然exit 0，step为`2.768s`、peak allocated `41.258GB`；writer inventory显式包含两个slot
+  parameters，Action Meta module/parameter为0，source/Native Stage0/set encoder冻结，held/wrong-fit1/Panel-B backward与validation-test、
+  shuffled/reversed reads均为0，每condition仍只有一套完整rank16。一步Gate non-pass只反映未训练profile，不参与科学裁决。profile根为
+  `runs/analysis/pi05_ecp_event_bank_set_quotient_s0_task1_profile_s1_0d8d901_gpu01p0_20260901`。
+
+### Absolute-route quotient S0 formal launch contract
+
+- scientific implementation authority为clean pushed `0d8d901`；formal从包含本记录、但不改变科学代码/config的clean pushed detached
+  descendant执行。两个独立single-process task分别是task1/program-bank wrong8与task93/wrong94，各自从冻结R5 scorer fresh初始化
+  interaction、free summaries、optimizer/scheduler/RNG；不加载旧S0/S1/S2 interaction或optimizer。每task运行10 warmup+100 effective
+  optimizer steps并保存actual step70/110，随后以既有五臂Panel-B和双taskaggregate裁决。S0只检验给定free whole-bank condition时，
+  quotient B1 factorization能否同时保correct、压wrong；通过不代表真实B0 summary或shared compiler成立。
+- exact entry为两个并行的`python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置
+  `configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json`，共享只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829` condition cache和既有90-pair Program-bank cache。task1固定gpu01物理0，
+  task93固定物理2；任务本身是独立优化问题，不用DDP，也不以额外空卡dummy并行。`NCCL_P2P_DISABLE=1`保留在环境中但不建立NCCL组。
+- 输出固定为`runs/outputs/pi05_ecp_event_bank_set_quotient_s0_task{1,93}_s110_0d8d901_gpu01p{0,2}_20260901`，launch前必须均不存在；
+  aggregate另写`runs/outputs/pi05_ecp_event_bank_set_quotient_s0_gate_s110_0d8d901_gpu01p02_20260901`。旧同类两task各约`21MB`，本轮连同
+  aggregate预计低于`100MB`。2026-09-01 07:47 CST live `/data1` quota为`777230572/1073741824KiB`、shared余`84TiB`；gpu01物理
+  0/2均为`15MiB/0%`且无compute process，1/3/4为他人满载，5/6空闲。gpu02只有物理5完全空闲但所需node-local cache在gpu01，故用
+  gpu01两张完整空闲卡并行，不跨节点复制cache。
+- 任一输出异常不覆盖或冒充formal；只有同一clean commit、同一task/world1/device与完整macro70 checkpoint才允许exact-resume到110。
+  S0 Gate仍严格要求每task correct fit0/fit1`>=.85`、held`>=.80`、wrong fit0/fit1`<=.25`、margin`>=.50`、all-pairs、family与
+  saturation通过。只有双taskaggregate pass才fresh进入S1。
+
 - 2026-09-01 S2 functional-polish已从step70 exact-resume到110并完成step70/110共100-job正式Panel-B Gate，结果根为
   `runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901`。step110
   meta/target gradient correct为`.827/.772`、same-task held为`.811/.757`、wrong为`-1.060/-.082`、margin为

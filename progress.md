@@ -45,6 +45,15 @@
   process；其余同节点卡在他人高负载任务中，故使用这三张完整空闲卡而不跨节点。`/data1` quota为
   `777184320/1073741824` blocks，shared余`84TiB`；同类110步run约`25MB`，本段预计远低于`100MB`。launch前再核对live设备与
   output仍为空；profile实测约`92--99s/step`、peak约`30.68GiB`，容量与预计两小时内完成step70均成立。
+- detached `bb98b81`已在gpu01物理`0,2,6` world3自然完成step70并保存完整checkpoint；70步共1120次Panel-A VJP，全部数值
+  finite，步时中位`88.54s`、peak allocated约`30.68GiB`，8个cursor均为70。completion确认Action Meta 0、held/Panel-B/
+  validation-test/shuffled-reversed backward或reads均为0，仍只生成一套完整rank16。
+- checkpoint70的单点Panel-B screen已用gpu01物理`0,2,5,6`四个独立persistent workers完成50/50 jobs并通过raw-row、pairing、
+  information-wall与bank-lifecycle校验。meta/target gradient-task correct-fit中位为`.767/.749`、wrong为`-1.030/-.086`、margin为
+  `1.656/.685`；held task1 correct/wrong/margin为`.509/.099/.370`，task93为`.616/.549/.048`。虽然单点primary diagnostics未过，
+  但10/10 task均满足每个correct view严格优于每个wrong view，首次同时取得广泛bank specificity与仍为正的correct capacity；相对旧
+  direct step70的correct后移恢复证据足以支持按预注册合同exact-resume到110，而不支持宣布Gate通过或进入S3。screen根为
+  `runs/analysis/pi05_ecp_event_bank_set_s2_functional_polish_screen_s70_bb98b81_gpu01p0256_w4_20260901`。
 
 - 2026-09-01 S2首轮effective-rank4 shared LOTO在step70/110稳定non-pass；真实policy梯度审计随后证明surrogate从fresh起即错配：
   16臂factor-vs-functional cosine中位`.0219`、6臂为负。相同shared EBSRI图的2:1 direct-functional锚点对8个gradient tasks却有

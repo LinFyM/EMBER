@@ -531,9 +531,12 @@ def _train(
     targets: Mapping[str, EffectiveTarget],
     denominators: Mapping[TargetFamily, torch.Tensor],
 ) -> None:
+    schedule = tuple(runtime.config["task_local"].get("arm_schedule", ARM_SCHEDULE))
+    if not schedule or any(name not in ARM_SCHEDULE for name in schedule):
+        raise ValueError("bank-set task-local arm schedule changed")
     while runtime.optimizer_steps < runtime.stop_after_step:
         tick = time.monotonic()
-        name = ARM_SCHEDULE[runtime.optimizer_steps % len(ARM_SCHEDULE)]
+        name = schedule[runtime.optimizer_steps % len(schedule)]
         runtime.optimizer.zero_grad(set_to_none=True)
         output = _interaction_output(runtime, arms[name])
         distance = _family_distances(runtime, output, targets[name])

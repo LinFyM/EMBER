@@ -1,5 +1,23 @@
 # EMBER progress
 
+- 2026-09-01 S2 functional-polish已从step70 exact-resume到110并完成step70/110共100-job正式Panel-B Gate，结果根为
+  `runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901`。step110
+  meta/target gradient correct为`.827/.772`、same-task held为`.811/.757`、wrong为`-1.060/-.082`、margin为
+  `1.744/.715`；held task1 correct/held/wrong/margin为`.514/.498/.097/.381`，task93为
+  `.613/.614/.566/.030`，held/train为`.622/.794`。10/10 task仍保持全部correct view严格优于wrong，且step70→110相邻稳定，
+  但两个checkpoint和两个role均primary non-pass；因此“旧bank-discriminative初始化+paired unit-gradient direct polish”机制已经
+  裁决完毕，不再续训或调质量，也不能进入S3。Action Meta、held/Panel-B/validation-test backward、forbidden reads和
+  shuffled/reversed均为0，每condition仍只生成一套完整rank16。
+
+- 对step110做的四组无训练context-path消融显示，旧checkpoint同时依赖B1 absolute event context和真实B0 summary：保留summary但
+  去掉B1 raw context时，meta/target gradient correct降至`-.151/.129`；只保留B1 raw context时为`.373/.490`；只去掉B0 absolute
+  context时仍有`.636/.720`；两条absolute context均去掉时为`-.032/.138`。这是OOD inference intervention，只能证明旁路被使用，
+  不能证明fresh quotient训练会成功。代码审查确认fixed Hadamard task token经冻结R5成为`rank_event`后同时直达B0 inducing和B1
+  generated head，而basis-invariant内容路径另由native query形成`kappa`。当前唯一可证伪结构候选是从可训练B0/B1删除该absolute
+  code直达，以task-independent rank/event slots保留结构容量；R5 base、event weights、native query→`kappa`、video-local context、
+  真实X/Y、bounded correction、exact signed pooling和唯一rank16全部保持。因B0/B1 factorization均改变，必须从R5 fresh依次重跑
+  S0→S1→S2；若S0/S1通过而S2仍失败，就否定absolute-code旁路为主因并转查`kappa`/summary decodability或task diversity。
+
 - 2026-09-01 direct-functional S2的110步formal与100-job相邻Gate已经完整结束。step70→110的meta gradient correct从`.682`升至
   `.880`、target从`.923`升至`.931`，task1/93 correct分别保持`.939→.949`与`.915→.899`；但step110 meta/target wrong仍为
   `.444/.905`，task1/93 wrong为`.931/.900`，margin也仅`.266/.017`与`-.003/-.015`。相邻稳定性通过而两个checkpoint primary均

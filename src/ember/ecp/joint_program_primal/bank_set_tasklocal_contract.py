@@ -57,6 +57,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     trainable = (
         [
             "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
+            "EventConditionedBankSetInteraction.task_independent_rank/event_slots",
             "training_only_free_correct/free_wrong",
         ]
         if is_s0
@@ -81,6 +82,8 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("interaction_summary_value_width") == 16,
             model.get("interaction_hidden_width") == 64,
             model.get("interaction_correction_bound") == 0.1,
+            model.get("interaction_context_basis")
+            == "task_independent_trainable_rank_event_slots_no_absolute_program_code",
             model.get("replay_frame_chunk_size_by_task") == {"1": 4, "93": 32},
             model.get("interaction_group_batch_size_by_task")
             == {"1": 16, "93": 4},
@@ -156,12 +159,17 @@ def bank_set_parameter_ownership(
         "bank_set_interaction.input_condition",
         "bank_set_interaction.output_condition",
     }
+    allowed_parameters = {
+        "bank_set_interaction.rank_slot_context",
+        "bank_set_interaction.event_slot_context",
+    }
     if stage == BANK_SET_S1_STAGE:
         allowed_roots.add("bank_set_interaction.set_encoder")
     unexpected = sorted(
         name
         for name in named_trainable
         if name not in {"free_correct", "free_wrong"}
+        and name not in allowed_parameters
         and not any(name.startswith(f"{root}.") for root in allowed_roots)
     )
     free = {name for name in named_trainable if name.startswith("free_")}
@@ -190,6 +198,7 @@ def writer_trainable_inventory(writer: torch.nn.Module) -> dict[str, Any]:
         "writer_trainable_parameter_names": [name for name, _ in named],
         "writer_trainable_parameter_count": sum(value.numel() for _, value in named),
         "descriptor_authority": (
-            "frozen_program_native_query_kappa_base_score_metadata_event_assignment"
+            "frozen_program_native_query_kappa_base_score_metadata_event_assignment_"
+            "plus_task_independent_rank_event_slots"
         ),
     }

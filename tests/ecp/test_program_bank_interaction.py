@@ -70,6 +70,26 @@ def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
     assert bool(head.weight.grad.abs().sum() > 0)
 
 
+def test_interaction_context_quotients_out_absolute_program_code() -> None:
+    module, context, state, _, _ = _fixture()
+    other_state = torch.randn_like(state)
+
+    rank, inducing = module._event_context(
+        target=0, program_event_state=state, context=context
+    )
+    other_rank, other_inducing = module._event_context(
+        target=0, program_event_state=other_state, context=context
+    )
+
+    torch.testing.assert_close(rank, other_rank)
+    torch.testing.assert_close(inducing, other_inducing)
+    assert not torch.equal(rank[0, 0], rank[1, 0])
+    assert not torch.equal(rank[0, 0], rank[0, 1])
+    (rank.square().mean() + inducing.square().mean()).backward()
+    assert module.rank_slot_context.grad is not None
+    assert module.event_slot_context.grad is not None
+
+
 def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> None:
     module, context, state, weights, frame = _fixture()
     values = torch.randn(3, 2, 50, 4)

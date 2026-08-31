@@ -1819,3 +1819,21 @@ step110上，同一16个direct gradients的unit-normalized简单均值对全部�
 每个active condition梯度unit-L2后按固定`1/16`质量合成，inactive hinge为零；不使用MGDA。该测试同时改变初始化与梯度composition，
 通过不能分别归因，也不能冒充from-scratch或Natural Program成功。若预注册checkpoint的真实Panel-B仍无wrong迁移，就应把最早失效接口
 定为当前shared interaction coordinate/跨task泛化，而不是继续堆normalization或扫超参。
+
+### 109. functional-polish稳定non-pass把首要假设收窄到absolute Program chart旁路
+
+functional-polish完整step70/110 Gate中，step110 gradient wrong已压至meta/target `-1.060/-.082`，但gradient correct只有
+`.827/.772`；held task1/93 correct为`.514/.613`，其中task93 wrong仍`.566`。step70→110稳定，10/10 task全部correct view严格优于
+wrong，却没有达到absolute capacity与held/train transfer门槛。结合S0/S1 task-local formal通过，这排除了“whole-bank condition或真实
+B0 summary在单task内没有功能容量”，也结束了effective surrogate、fresh direct loss和旧表示direct polish这组三类shared训练尝试；
+它仍不证明Natural Program失败。
+
+代码审查确认当前interaction并非只读relative coordinates：Hadamard fixed token经冻结R5形成`rank_event`后，除通过native query形成
+`kappa`外，还直接进入B0 inducing与B1 condition-generated head。专家原式本身包含该`z`路径，所以这是忠实实现经LOTO暴露出的可证伪
+结构问题，不是软件bug。S1每task独立训练且code在task内恒定，不能约束跨code泛化。旧checkpoint的四组无训练消融又确认B1 absolute
+context和B0 summary都被实际使用，但这种OOD置零不能裁决fresh结构。
+
+唯一候选是把absolute route state从可训练B0/B1中quotient掉：Program仍通过冻结R5决定base、event weights与native queries，并通过
+`kappa`进入shared interaction；逐rank/event容量由task-independent slot parameters保留。因B0和B1都改变，必须从R5 fresh依次重跑
+S0、S1、S2。若S0失败，说明该约束损害当前factorization容量；若S0/S1通过而S2仍失败，则应否定absolute-code旁路为主因，转向
+relative coordinate/summary decodability或task diversity，而不是继续做loss或普通超参小扫。

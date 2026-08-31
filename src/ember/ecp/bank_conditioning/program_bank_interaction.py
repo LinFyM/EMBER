@@ -170,6 +170,17 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 for family in families
             }
         )
+        slots = torch.empty(
+            G1_RESIDUAL_RANK + self.event_slots, self.program_width
+        )
+        torch.nn.init.orthogonal_(slots)
+        slots.mul_(math.sqrt(self.program_width))
+        self.rank_slot_context = torch.nn.Parameter(
+            slots[:G1_RESIDUAL_RANK].clone()
+        )
+        self.event_slot_context = torch.nn.Parameter(
+            slots[G1_RESIDUAL_RANK:].clone()
+        )
 
     def _candidate_network(self, width: int) -> torch.nn.Sequential:
         return torch.nn.Sequential(
@@ -269,14 +280,22 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
+        # The trainable interaction may identify structural rank/event slots, but
+        # must not turn the fixed task Program code into an eight-entry function
+        # table. Task content still reaches B0/B1 through the frozen native
+        # queries, their Program-relative coordinates, base scores, event
+        # assignment/weights, and the resulting real-bank summaries.
+        rank_slot = self.rank_slot_context.float()[:, None]
+        event_slot = self.event_slot_context.float()[None]
+        structural = (rank_slot + event_slot) / math.sqrt(2.0)
         rank = torch.cat(
             (
-                program_event_state.float(),
+                structural,
                 local[None].expand(G1_RESIDUAL_RANK, -1, -1),
             ),
             dim=-1,
         )
-        inducing = torch.cat((program_event_state.float().mean(0), local), dim=-1)
+        inducing = torch.cat((self.event_slot_context.float(), local), dim=-1)
         return rank, inducing
 
     def summarize_input(

@@ -53,6 +53,7 @@
     "interaction_summary_value_width": 16,
     "interaction_hidden_width": 64,
     "interaction_correction_bound": 0.1,
+    "interaction_context_basis": "task_independent_trainable_rank_event_slots_no_absolute_program_code",
     "replay_frame_chunk_size_by_task": {
       "1": 4,
       "93": 32
@@ -63,6 +64,7 @@
     },
     "trainable": [
       "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
+      "EventConditionedBankSetInteraction.task_independent_rank/event_slots",
       "training_only_free_correct/free_wrong"
     ],
     "frozen": [

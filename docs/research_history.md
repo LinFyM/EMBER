@@ -1697,3 +1697,21 @@ shuffled/reversed：
 由此下一次限定检验保持EBSRI架构、split、rank与Gate不变，只加载旧interaction作为training-only初始化，重置optimizer/scheduler/cursors，
 并以全部8 task的paired correct/wrong unit-gradient direct polish训练。该组合不是fresh、不能拆分归因，也不证明Natural Program；若真实
 Panel-B仍不能把wrong选择性迁移到held task，应停止继续精修该组合，而把原因落到shared coordinate/跨task interaction泛化。
+
+## 86. functional-polish S2正式non-pass并提出absolute chart直达假设
+
+clean pushed detached authority完成旧effective-surrogate interaction初始化、fresh optimizer/cursors及8 task paired unit-gradient
+direct-functional polish，随后完成step70/110共100个Panel-B jobs。正式aggregate为
+`runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901/aggregate.json`。
+step110 meta/target gradient correct为`.827073/.771768`、same-task held为`.810918/.756753`、wrong为
+`-1.059941/-.082424`、margin为`1.743702/.714894`；held task1 correct/held/wrong/margin为
+`.514425/.497590/.097308/.380736`，task93为`.612724/.613756/.566386/.029681`，held/train为
+`.621982/.793923`。step70→110相邻稳定，10/10 task全部correct view严格优于wrong，但两个checkpoint和两个role均primary non-pass。
+Action Meta、held/Panel-B/validation-test backward、forbidden reads和shuffled/reversed均为0，且每condition仍只有一套完整rank16。
+
+随后四组无训练context-path intervention显示旧checkpoint同时依赖B1 raw event context与真实B0 summary；因为置零后的输入处于训练分布外，
+这些结果只作为依赖定位，不作Gate或模型选择。代码审查确认fixed Hadamard token经冻结R5映射为`rank_event`后，B0 inducing及B1
+condition-generated head均直接读取该absolute chart state，同时native query另行形成Program-relative `kappa`。这与专家原式的`z`
+条件一致，不是实现偏差。结合S1 task-local通过而S2 held迁移失败，当前提出“absolute route state允许interaction按已见code专门化”的
+可证伪结构假设；但gradient correct仍未过线且两个held task表现不同，故尚非正式根因。下一检验只删除可训练B0/B1的absolute state直达，
+保留R5 base/event weights/native query→`kappa`与全部native-factor执行合同，并从R5 fresh依次重跑S0、S1、S2。

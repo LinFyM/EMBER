@@ -422,6 +422,8 @@ def evaluate_shared_job(
                 "wrong" if spec.name.startswith("wrong") else "correct"
             ],
             "family_denominator": cached.authority["denominator"],
+            "cached_on_cpu": True,
+            "real_bank_cached": False,
             "source": dict(cached.authority),
         },
         "condition_metrics": dict(arm.bank.condition_metrics),
@@ -432,6 +434,7 @@ def evaluate_shared_job(
             "result_or_action_gradient_calls": 0,
             "forbidden_task_reads": 0,
             "action_meta_installed": False,
+            "shuffled_or_reversed_use": False,
             "single_complete_rank16": True,
             "adapter_rank": 16,
             "adapter_target_count": 38,

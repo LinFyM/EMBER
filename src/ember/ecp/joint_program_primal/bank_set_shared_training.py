@@ -593,8 +593,11 @@ def run(args: Any) -> None:
         ):
             raise RuntimeError("S2 runtime loaded Action Meta")
         tick = time.monotonic()
+        target_tasks = (
+            shared_task_group(0) if args.mode == "profile" else GRADIENT_TASKS
+        )
         target_cache = prepare_shared_target_cache(
-            runtime, GRADIENT_TASKS, distributed=True
+            runtime, target_tasks, distributed=True
         )
         teacher_seconds = time.monotonic() - tick
         teacher_peak = (
@@ -617,7 +620,7 @@ def run(args: Any) -> None:
                         for task, value in _validate_task_cursors(runtime).items()
                     },
                     "teacher_cache": {
-                        "tasks": list(GRADIENT_TASKS),
+                        "tasks": list(target_tasks),
                         "device": "cpu",
                         "distributed_once": True,
                         "seconds": teacher_seconds,

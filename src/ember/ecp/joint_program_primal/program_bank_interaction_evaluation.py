@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import statistics
+import subprocess
 import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -61,6 +62,86 @@ PROGRAM_BANK_INTERACTION_EVALUATION_SCHEMA = (
 PROGRAM_BANK_INTERACTION_GATE_REPORT_SCHEMA = (
     "ember_ecp_program_bank_candidate_interaction_gate_report_v4"
 )
+
+
+def _git_commit_is_ancestor(
+    repo_root: Path, ancestor: str, descendant: str
+) -> bool:
+    if len(ancestor) != 40 or len(descendant) != 40:
+        return False
+    return (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+        ).returncode
+        == 0
+    )
+
+
+def _tracked_json_config_authority(
+    recorded: Mapping[str, Any],
+    runtime_path: Path,
+    runtime_config: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    training_commit: str,
+    relative_path: str,
+) -> bool:
+    recorded_path = Path(str(recorded.get("path", "")))
+    tracked_path = Path(relative_path)
+    if (
+        tracked_path.is_absolute()
+        or ".." in tracked_path.parts
+        or len(recorded_path.parts) < len(tracked_path.parts)
+        or recorded_path.parts[-len(tracked_path.parts) :]
+        != tracked_path.parts
+        or not runtime_path.is_file()
+        or runtime_path.name != tracked_path.name
+        or len(training_commit) != 40
+    ):
+        return False
+    blob = subprocess.run(
+        ["git", "show", f"{training_commit}:{tracked_path.as_posix()}"],
+        cwd=repo_root,
+        check=False,
+        capture_output=True,
+    )
+    if blob.returncode != 0:
+        return False
+    try:
+        tracked_config = json.loads(blob.stdout.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return (
+        int(recorded.get("bytes", -1))
+        == len(blob.stdout)
+        == runtime_path.stat().st_size
+        and tracked_config == runtime_config
+        and read_json(runtime_path) == runtime_config
+    )
+
+
+def _worker_commit_authority_matches(
+    workers: Sequence[Mapping[str, Any]],
+) -> bool:
+    training = {
+        str(row.get("checkpoint", {}).get("training_commit", ""))
+        for row in workers
+    }
+    evaluators = {
+        str(row.get("authority", {}).get("evaluator_commit", ""))
+        for row in workers
+    }
+    worker_commits = {
+        str(row.get("git", {}).get("commit", "")) for row in workers
+    }
+    return (
+        len(training) == len(evaluators) == len(worker_commits) == 1
+        and worker_commits == evaluators
+        and all(len(value) == 40 for value in (*training, *evaluators))
+    )
 
 
 def load_program_bank_interaction_gate(path: Path) -> dict[str, Any]:
@@ -171,6 +252,7 @@ def _checkpoint_authority(
     manifest = read_json(compiler_checkpoint / "checkpoint_manifest.json")
     training_world_size = _training_world_size(runtime, run_contract, manifest)
     run_git = run_contract.get("git", {})
+    training_commit = str(run_git.get("commit", ""))
     run_config = run_contract.get("config", {})
     run_base = run_contract.get("base_g3_config", {})
     initialization = run_contract.get("primal_scorer_initialization", {})
@@ -197,6 +279,23 @@ def _checkpoint_authority(
             for rank in range(training_world_size)
         ),
     }
+    repo_root = Path(__file__).resolve().parents[4]
+    config_authority_matches = _tracked_json_config_authority(
+        run_config,
+        runtime.args.config,
+        runtime.config,
+        repo_root=repo_root,
+        training_commit=training_commit,
+        relative_path=str(gate["training_config"]),
+    )
+    base_config_authority_matches = _tracked_json_config_authority(
+        run_base,
+        runtime.args.base_config,
+        read_json(runtime.args.base_config),
+        repo_root=repo_root,
+        training_commit=training_commit,
+        relative_path=str(runtime.config["authorities"]["base_g3_config"]),
+    )
     if (
         compiler_checkpoint.parent.parent != compiler_run
         or step not in set(map(int, gate["checkpoint_optimizer_steps"]))
@@ -206,18 +305,12 @@ def _checkpoint_authority(
         or run_contract.get("phase") != "joint"
         or run_contract.get("mode") != "formal"
         or run_git.get("branch") != ""
-        or run_git.get("commit") != evaluator_commit
-        or run_git.get("authority_commit") != evaluator_commit
-        or run_config
-        != {
-            "path": str(runtime.args.config),
-            "bytes": runtime.args.config.stat().st_size,
-        }
-        or run_base
-        != {
-            "path": str(runtime.args.base_config),
-            "bytes": runtime.args.base_config.stat().st_size,
-        }
+        or training_commit != run_git.get("authority_commit")
+        or not _git_commit_is_ancestor(
+            repo_root, training_commit, evaluator_commit
+        )
+        or not config_authority_matches
+        or not base_config_authority_matches
         or run_contract.get("model") != runtime.config["model"]
         or run_contract.get("optimization") != runtime.config["optimization"]
         or run_contract.get("task_split") != runtime.config["task_split"]
@@ -574,7 +667,10 @@ def evaluate_program_bank_interaction_worker(args: argparse.Namespace) -> None:
         setup_seconds = time.monotonic() - started
         authority = {
             "compiler_run": str(args.compiler_run),
-            "training_config": {
+            "training_config": dict(
+                read_json(args.compiler_run / "run_contract.json")["config"]
+            ),
+            "evaluator_config": {
                 "path": str(args.config),
                 "bytes": args.config.stat().st_size,
             },
@@ -693,9 +789,7 @@ def _load_workers(
         != compiler_run.resolve()
         or Path(str(authorities[0].get("compiler_run", ""))).resolve()
         != compiler_run.resolve()
-        or len({str(row["git"]["commit"]) for row in workers}) != 1
-        or str(workers[0]["git"]["commit"])
-        != str(checkpoints[0].get("training_commit"))
+        or not _worker_commit_authority_matches(workers)
     ):
         raise ValueError("interaction task coverage changed")
     return sorted(tasks, key=lambda row: int(row["task"])), workers
@@ -899,18 +993,36 @@ def aggregate_program_bank_interaction_evaluation(
     expected_training = run_contract.get("config")
     if not isinstance(expected_training, Mapping):
         raise ValueError("interaction training config authority changed")
-    expected_training_path = Path(str(expected_training.get("path", ""))).resolve()
+    evaluator_training_path = (
+        gate_config.parent / Path(str(gate["training_config"])).name
+    ).resolve()
+    expected_evaluator_training = {
+        "path": str(evaluator_training_path),
+        "bytes": evaluator_training_path.stat().st_size,
+    }
     if (
         worker_authority.get("gate_config") != expected_gate
         or worker_authority.get("training_config") != expected_training
-        or not expected_training_path.is_file()
-        or expected_training_path.name != Path(gate["training_config"]).name
-        or expected_training_path.stat().st_size
-        != int(expected_training.get("bytes", -1))
+        or worker_authority.get("evaluator_config")
+        != expected_evaluator_training
+        or not _tracked_json_config_authority(
+            expected_training,
+            evaluator_training_path,
+            read_json(evaluator_training_path),
+            repo_root=Path(__file__).resolve().parents[4],
+            training_commit=str(run_contract.get("git", {}).get("commit", "")),
+            relative_path=str(gate["training_config"]),
+        )
         or Path(str(worker_authority.get("compiler_run", ""))).resolve()
         != compiler_run.resolve()
         or worker_authority.get("evaluator_commit") != state.get("commit")
-        or workers[0]["checkpoint"].get("training_commit") != state.get("commit")
+        or workers[0]["checkpoint"].get("training_commit")
+        != run_contract.get("git", {}).get("commit")
+        or not _git_commit_is_ancestor(
+            Path(__file__).resolve().parents[4],
+            str(run_contract.get("git", {}).get("commit", "")),
+            str(state.get("commit", "")),
+        )
     ):
         raise ValueError("interaction aggregation authority changed")
     summary = _evaluation_summary(

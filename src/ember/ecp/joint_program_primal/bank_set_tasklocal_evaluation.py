@@ -16,6 +16,7 @@ from ember.ecp.contracts import TargetFamily
 from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
     BANK_CONDITIONED_PRIMAL_STAGE,
     BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+    BANK_SET_TASKLOCAL_RESULT_SCHEMA,
     BANK_SET_TASKLOCAL_SCHEMA,
 )
 from ember.ecp.joint_program_primal.routing_control import (
@@ -28,7 +29,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 TASKS = (1, 93)
 FAMILIES = tuple(TargetFamily)
-RESULT_SCHEMA = "ember_ecp_program_through_bank_tasklocal_result_v1"
+RESULT_SCHEMA = BANK_SET_TASKLOCAL_RESULT_SCHEMA
 AGGREGATE_SCHEMA = BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA
 
 

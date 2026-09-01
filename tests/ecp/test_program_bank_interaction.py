@@ -115,6 +115,26 @@ def test_program_content_enters_only_the_real_b0_set_query() -> None:
     assert module.event_slot_context.grad is not None
 
 
+def test_tasklocal_free_b0_query_is_shared_across_program_variants() -> None:
+    module, _, state, _ = _fixture()
+    initial = torch.randn(
+        len(module.owners),
+        state.shape[0],
+        module.event_slots,
+        module.coordinate_width,
+    )
+    module.install_tasklocal_free_b0_query(initial)
+    changed = state.clone()
+    changed[0, 0] = changed[0, 0] + torch.randn_like(changed[0, 0])
+    first = module.b0_inducing_query(target=0, program_event_state=state)
+    second = module.b0_inducing_query(target=0, program_event_state=changed)
+    torch.testing.assert_close(first, initial[0])
+    torch.testing.assert_close(second, initial[0])
+    first.square().mean().backward()
+    assert module.tasklocal_free_b0_query.grad is not None
+    assert module.owner_slot_context.grad is None
+
+
 def test_real_b0_summary_has_rank_event_native_anchor() -> None:
     module, context, state, frame = _fixture()
     values = torch.randn(3, 2, 50, 4)

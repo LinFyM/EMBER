@@ -21,11 +21,14 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
     BANK_SET_S0_STAGE,
     BANK_SET_S1_STAGE,
     BANK_SET_TASKLOCAL_RUN_SCHEMA,
+    PROGRAM_CONDITIONED_B0_QUERY,
+    TASKLOCAL_FREE_B0_QUERY,
     bank_set_config_valid,
     bank_set_parameter_ownership,
     is_bank_set_tasklocal_config,
     required_s0_gate_authority,
     required_s1_non_pass_authority,
+    required_primal_task93_non_pass_authority,
     writer_trainable_inventory,
 )
 from ember.ecp.joint_program_primal.runtime import (
@@ -274,6 +277,7 @@ def _scorer_parameter_ownership(
     *,
     partition: str,
     stage: str = ROUTING_CONTROL_STAGE,
+    free_b0_query_initial: torch.Tensor | None = None,
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     program.requires_grad_(False).eval()
     compiler.requires_grad_(False).eval()
@@ -284,7 +288,12 @@ def _scorer_parameter_ownership(
         scorer.input_primal_heads.requires_grad_(True).train()
         scorer.output_primal_heads.requires_grad_(True).train()
     elif partition == SCORER_INTERACTION_ONLY:
-        return bank_set_parameter_ownership(program, compiler, stage=stage)
+        return bank_set_parameter_ownership(
+            program,
+            compiler,
+            stage=stage,
+            free_b0_query_initial=free_b0_query_initial,
+        )
     else:
         raise ValueError("unsupported routing-control scorer partition")
     writer = RoutingControlWriterState(compiler.primal_scorer)
@@ -420,6 +429,9 @@ def _run_contract(
         "required_s1_non_pass": required_s1_non_pass_authority(
             runtime.config, asset_root=runtime.args.asset_root
         ),
+        "required_primal_task93_non_pass": required_primal_task93_non_pass_authority(
+            runtime.config, asset_root=runtime.args.asset_root
+        ),
         "functional_panels": {
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
@@ -444,6 +456,9 @@ def _run_contract(
             "event_bank_set_qualification": is_bank_set_tasklocal_config(
                 runtime.config
             ),
+            "b0_query_source": runtime.config.get("model", {}).get(
+                "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
+            ),
             "task": runtime.args.task,
         },
         "primal_scorer_initialization": dict(initialization),
@@ -462,6 +477,7 @@ def _resolve_routing_inputs(
     config = load_routing_control_config(args.config)
     required_s0_gate_authority(config, asset_root=args.asset_root)
     required_s1_non_pass_authority(config, asset_root=args.asset_root)
+    required_primal_task93_non_pass_authority(config, asset_root=args.asset_root)
     if is_bank_set_tasklocal_config(config):
         config["optimization"]["functional_policy_microbatch_size"] = int(
             config["optimization"]["functional_policy_microbatch_size_by_task"][
@@ -713,6 +729,27 @@ def prepare_routing_control_runtime(
     config, base = _resolve_routing_inputs(args)
     authority = _authority_assets(args, context, config, base)
     model = _model_assets(args, context, config, base, authority)
+    free_b0_query_initial = None
+    if config.get("model", {}).get(
+        "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
+    ) == TASKLOCAL_FREE_B0_QUERY:
+        view = SimpleNamespace(
+            owners=model.owners,
+            compiler=model.compiler,
+            context=context,
+        )
+        with torch.no_grad():
+            program = fixed_routing_program(view, int(args.task))
+            state = model.compiler.primal_scorer.program_state(program)
+            free_b0_query_initial = torch.stack(
+                tuple(
+                    model.compiler.bank_set_interaction.b0_inducing_query(
+                        target=target,
+                        program_event_state=state.rank_event[target],
+                    )
+                    for target in range(len(model.owners))
+                )
+            ).detach()
     writer_state, trainable, frozen = _scorer_parameter_ownership(
         model.program,
         model.compiler,
@@ -720,6 +757,7 @@ def prepare_routing_control_runtime(
             "primal_scorer_trainable_partition", SCORER_ALL_PARAMETERS
         ),
         stage=routing_stage(config),
+        free_b0_query_initial=free_b0_query_initial,
     )
     data = _data_assets(args, config, base, context, authority, model)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)

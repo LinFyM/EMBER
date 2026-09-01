@@ -197,6 +197,20 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         self.event_slot_context = torch.nn.Parameter(
             slots[len(self.owners) + G1_RESIDUAL_RANK :].clone()
         )
+        self.register_parameter("tasklocal_free_b0_query", None)
+
+    def install_tasklocal_free_b0_query(self, initial: torch.Tensor) -> None:
+        """Install one diagnostic query per target, shared by every bank scope."""
+
+        expected = (
+            len(self.owners),
+            G1_RESIDUAL_RANK,
+            self.event_slots,
+            self.coordinate_width,
+        )
+        if self.tasklocal_free_b0_query is not None or initial.shape != expected:
+            raise BankConditioningError("task-local free B0 query axes changed")
+        self.tasklocal_free_b0_query = torch.nn.Parameter(initial.detach().clone())
 
     def _primal_gate_network(self, width: int) -> torch.nn.Sequential:
         network = torch.nn.Sequential(
@@ -411,6 +425,11 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
     ) -> torch.Tensor:
         """Compute the one target query shared by all of its B0 scopes."""
 
+        if not 0 <= target < len(self.owners):
+            raise BankConditioningError("Program bank-set target changed")
+        self._validate_program_event_state(program_event_state)
+        if self.tasklocal_free_b0_query is not None:
+            return self.tasklocal_free_b0_query[target]
         context = self._b0_query_context(
             target=target,
             program_event_state=program_event_state,

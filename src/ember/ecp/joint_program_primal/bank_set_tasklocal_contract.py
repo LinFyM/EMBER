@@ -25,12 +25,19 @@ from ember.pi05_source_checkpoint import read_json
 
 BANK_SET_TASKLOCAL_SCHEMA = "ember_ecp_program_through_bank_tasklocal_v1"
 BANK_SET_TASKLOCAL_RUN_SCHEMA = "ember_ecp_program_through_bank_tasklocal_run_v1"
+BANK_SET_TASKLOCAL_RESULT_SCHEMA = (
+    "ember_ecp_program_through_bank_tasklocal_result_v1"
+)
 BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA = (
     "ember_ecp_program_through_bank_tasklocal_aggregate_v1"
 )
 BANK_SET_S0_STAGE = "g3_program_through_bank_s0_free_summary"
 BANK_SET_S1_STAGE = "g3_program_through_bank_s1_real_summary"
 BANK_CONDITIONED_PRIMAL_STAGE = "g3_bank_conditioned_primal_tasklocal"
+PROGRAM_CONDITIONED_B0_QUERY = "program_shared_inducing"
+TASKLOCAL_FREE_B0_QUERY = (
+    "tasklocal_free_target_rank_event_shared_across_banks_videos_and_scopes"
+)
 
 
 class FreeProgramBankSetConditionTree(torch.nn.Module):
@@ -224,6 +231,72 @@ def required_s1_non_pass_authority(
     }
 
 
+def required_primal_task93_non_pass_authority(
+    config: Mapping[str, Any], *, asset_root: Path
+) -> dict[str, Any] | None:
+    """Bind Q_free to the task93 specificity failure that requested it."""
+
+    model = config.get("model", {})
+    if model.get("b0_query_source") != TASKLOCAL_FREE_B0_QUERY:
+        return None
+    specification = config.get("authorities", {}).get(
+        "required_primal_task93_non_pass", {}
+    )
+    relative = specification.get("path")
+    if not isinstance(relative, str) or Path(relative).is_absolute():
+        raise ValueError("Q_free predecessor path changed")
+    path = (asset_root / relative).resolve()
+    contract_path = path.parent / "run_contract.json"
+    if (
+        not path.is_file()
+        or path.stat().st_size != specification.get("bytes")
+        or not contract_path.is_file()
+        or contract_path.stat().st_size != specification.get("run_contract_bytes")
+    ):
+        raise ValueError("Q_free predecessor artifact changed")
+    result = read_json(path)
+    contract = read_json(contract_path)
+    checks = result.get("evaluation", {}).get("checks", {})
+    valid = all(
+        (
+            result.get("schema_version") == BANK_SET_TASKLOCAL_RESULT_SCHEMA,
+            result.get("status") == "complete",
+            result.get("stage") == BANK_CONDITIONED_PRIMAL_STAGE,
+            result.get("task") == 93,
+            result.get("completed_optimizer_steps") == 110,
+            result.get("evaluation", {}).get("gate") == "non_pass",
+            checks
+            == {
+                "correct_fit_each": True,
+                "correct_held": True,
+                "wrong_each": False,
+                "margin": False,
+                "all_pairs": True,
+            },
+            contract.get("schema_version") == BANK_SET_TASKLOCAL_RUN_SCHEMA,
+            contract.get("stage") == BANK_CONDITIONED_PRIMAL_STAGE,
+            contract.get("git", {}).get("authority_commit")
+            == specification.get("authority_commit"),
+            contract.get("diagnostic", {}).get(
+                "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
+            )
+            == PROGRAM_CONDITIONED_B0_QUERY,
+        )
+    )
+    if not valid:
+        raise ValueError("Q_free predecessor did not isolate task93 specificity")
+    return {
+        "path": str(path),
+        "bytes": path.stat().st_size,
+        "run_contract": str(contract_path),
+        "run_contract_bytes": contract_path.stat().st_size,
+        "stage": result["stage"],
+        "task": result["task"],
+        "gate": result["evaluation"]["gate"],
+        "authority_commit": contract["git"]["authority_commit"],
+    }
+
+
 def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     model = config.get("model", {})
     task_local = config.get("task_local", {})
@@ -234,8 +307,11 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     is_s0 = stage == BANK_SET_S0_STAGE
     is_s1 = stage == BANK_SET_S1_STAGE
     is_primal = stage == BANK_CONDITIONED_PRIMAL_STAGE
+    query_source = model.get("b0_query_source", PROGRAM_CONDITIONED_B0_QUERY)
+    free_query = is_primal and query_source == TASKLOCAL_FREE_B0_QUERY
     required_s0 = authorities.get("required_s0_gate", {})
     required_s1 = authorities.get("required_s1_non_pass", {})
+    required_primal = authorities.get("required_primal_task93_non_pass", {})
     required_predecessor = required_s1 if is_primal else required_s0
     required_predecessor_stage = (
         BANK_SET_S1_STAGE if is_primal else BANK_SET_S0_STAGE
@@ -251,11 +327,19 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
         else (
             ["EventConditionedBankSetInteraction"]
             if is_s1
-            else [
-                "EventConditionedBankSetInteraction.set_encoder",
-                "EventConditionedBankSetInteraction.task_independent_owner/rank/event_slots",
-                "EventConditionedBankSetInteraction.family_shared_primal_gates",
-            ]
+            else (
+                [
+                    "EventConditionedBankSetInteraction.tasklocal_free_b0_query",
+                    "EventConditionedBankSetInteraction.set_encoder_value_networks",
+                    "EventConditionedBankSetInteraction.family_shared_primal_gates",
+                ]
+                if free_query
+                else [
+                    "EventConditionedBankSetInteraction.set_encoder",
+                    "EventConditionedBankSetInteraction.task_independent_owner/rank/event_slots",
+                    "EventConditionedBankSetInteraction.family_shared_primal_gates",
+                ]
+            )
         )
     )
     expected_summary_source = (
@@ -264,7 +348,11 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
         else (
             "real_b0_program_relative_event_bank_set_encoder"
             if is_s1
-            else "real_b0_program_relative_native_anchor"
+            else (
+                "real_b0_tasklocal_free_query_native_anchor"
+                if free_query
+                else "real_b0_program_relative_native_anchor"
+            )
         )
     )
     return all(
@@ -273,6 +361,9 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             config.get("status")
             == "active_program_through_bank_tasklocal_qualification",
             is_s0 or is_s1 or is_primal,
+            query_source
+            in {PROGRAM_CONDITIONED_B0_QUERY, TASKLOCAL_FREE_B0_QUERY},
+            is_primal or query_source == PROGRAM_CONDITIONED_B0_QUERY,
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("primal_scorer_initialization") == R5_SHARED_FUNCTIONAL_CHART,
@@ -353,6 +444,18 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
                     )
                 )
             ),
+            (
+                all(
+                    (
+                        isinstance(required_primal.get("path"), str),
+                        isinstance(required_primal.get("bytes"), int),
+                        isinstance(required_primal.get("run_contract_bytes"), int),
+                        isinstance(required_primal.get("authority_commit"), str),
+                    )
+                )
+                if free_query
+                else "required_primal_task93_non_pass" not in authorities
+            ),
             wall.get("fixed_routing_token_training_only") is True,
             wall.get("free_summary_tokens_training_only_not_component_candidate")
             is is_s0,
@@ -371,6 +474,7 @@ def bank_set_parameter_ownership(
     compiler: torch.nn.Module,
     *,
     stage: str,
+    free_b0_query_initial: torch.Tensor | None = None,
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     interaction = compiler.bank_set_interaction
     interaction.requires_grad_(False).eval()
@@ -380,12 +484,19 @@ def bank_set_parameter_ownership(
     elif stage == BANK_SET_S1_STAGE:
         interaction.requires_grad_(True).train()
     elif stage == BANK_CONDITIONED_PRIMAL_STAGE:
-        interaction.set_encoder.requires_grad_(True).train()
+        if free_b0_query_initial is None:
+            interaction.set_encoder.requires_grad_(True).train()
+            interaction.owner_slot_context.requires_grad_(True)
+            interaction.rank_slot_context.requires_grad_(True)
+            interaction.event_slot_context.requires_grad_(True)
+        else:
+            interaction.install_tasklocal_free_b0_query(free_b0_query_initial)
+            for encoder in interaction.set_encoder.values():
+                encoder.input_value.requires_grad_(True).train()
+                encoder.output_value.requires_grad_(True).train()
+            interaction.tasklocal_free_b0_query.requires_grad_(True)
         interaction.input_primal_gate.requires_grad_(True).train()
         interaction.output_primal_gate.requires_grad_(True).train()
-        interaction.owner_slot_context.requires_grad_(True)
-        interaction.rank_slot_context.requires_grad_(True)
-        interaction.event_slot_context.requires_grad_(True)
     else:
         raise ValueError("bank-set interaction stage changed")
     writer = InteractionControlWriterState(
@@ -417,6 +528,8 @@ def bank_set_parameter_ownership(
             "bank_set_interaction.input_primal_gate",
             "bank_set_interaction.output_primal_gate",
         }
+        if free_b0_query_initial is not None:
+            allowed_parameters = {"bank_set_interaction.tasklocal_free_b0_query"}
     unexpected = sorted(
         name
         for name in named_trainable

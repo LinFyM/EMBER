@@ -24,6 +24,9 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_evaluation import (
     EffectiveTarget,
     effective_rank4_diagnostics as _effective_rank4_diagnostics,
 )
+from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    TASKLOCAL_FREE_B0_QUERY,
+)
 from ember.ecp.joint_program_primal.routing_control import (
     BANK_CONDITIONED_PRIMAL_STAGE,
     BANK_SET_S0_STAGE,
@@ -633,6 +636,18 @@ def _train(
         }
         loss = torch.stack(tuple(normalized.values())).mean()
         loss.backward()
+        if (
+            runtime.optimizer_steps == 0
+            and runtime.config.get("model", {}).get("b0_query_source")
+            == TASKLOCAL_FREE_B0_QUERY
+        ):
+            query = runtime.writer_state.bank_set_interaction.tasklocal_free_b0_query
+            if (
+                query.grad is None
+                or not bool(torch.isfinite(query.grad).all())
+                or not bool(query.grad.abs().sum() > 0)
+            ):
+                raise RuntimeError("task-local free B0 query has no finite gradient")
         norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, 1.0)
         if not bool(torch.isfinite(loss)) or not bool(torch.isfinite(norm)):
             raise RuntimeError("bank-set effective-rank4 training became non-finite")

@@ -1,0 +1,171 @@
+{
+  "schema_version": "ember_ecp_program_through_bank_tasklocal_v1",
+  "stage": "g3_bank_conditioned_primal_tasklocal",
+  "status": "active_program_through_bank_tasklocal_qualification",
+  "frozen_condition_cache_authority": {
+    "config_schema": "ember_ecp_joint_program_primal_j2_v1",
+    "config_bytes": 6017,
+    "reason": "reuse frozen Stage0 and native-bank authority while retaining exact conditioning language in every correct/wrong pairing"
+  },
+  "authorities": {
+    "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
+    "r5_primal_scorer_checkpoint": "runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_s110_9e6b6a7_gpu01p012346_r6_20260830/checkpoints/macro_00000110",
+    "r5_gate_aggregate": "runs/outputs/pi05_ecp_routing_functional_code_chart_frozen_r5_gate_step110_9e6b6a7_gpu01p012345_w6_20260830/aggregate.json",
+    "positive_control_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829",
+    "functional_panel_records": {
+      "1": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_0/task_001.json",
+      "2": "runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829/shard_1/task_002.json",
+      "8": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_008.json",
+      "9": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_009.json",
+      "32": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_5/task_032.json",
+      "52": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_052.json",
+      "72": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_072.json",
+      "73": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_073.json",
+      "74": "runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829/shard_5/task_074.json",
+      "75": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_3/task_075.json",
+      "93": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_093.json",
+      "94": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_3/task_094.json"
+    },
+    "required_s1_non_pass": {
+      "path": "runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_9047230_gpu01p23_20260901/aggregate.json",
+      "bytes": 2504,
+      "aggregate_schema": "ember_ecp_program_through_bank_tasklocal_aggregate_v1",
+      "stage": "g3_program_through_bank_s1_real_summary",
+      "required_gate": "non_pass",
+      "authority_commit": "1cdfbfa7bf05ebe369807afdf6d8c99313a9d458"
+    },
+    "required_primal_task93_non_pass": {
+      "path": "runs/outputs/pi05_ecp_bank_conditioned_primal_task93_s110_eb9f295_gpu01p2_20260901/evaluation.json",
+      "bytes": 74071,
+      "run_contract_bytes": 27859,
+      "authority_commit": "4eea388a41fa17026d2dd7a7f9d05b3d1caf16c3"
+    }
+  },
+  "task_split": {
+    "gradient_meta": [1, 8, 9, 32, 52],
+    "gradient_target": [72, 73, 75, 93, 94],
+    "true_task_held_meta": [2],
+    "true_task_held_target": [74],
+    "selection_uses_outcomes": false
+  },
+  "task_local": {
+    "task_ids": [1, 93],
+    "wrong_task_by_task": {"1": 8, "93": 94},
+    "correct_gradient_arms": ["fit0", "fit1"],
+    "wrong_gradient_arms": ["fit0"],
+    "zero_gradient_arms": ["correct_held", "wrong_fit1", "panel_b"],
+    "wrong_conditioning_language": "correct_task_exact_language",
+    "summary_source": "real_b0_tasklocal_free_query_native_anchor",
+    "effective_target_is_gate": false,
+    "functional_gate_authority": true
+  },
+  "model": {
+    "program_source": "fixed_nontrainable_128d_orthogonal_task_token",
+    "b0_query_source": "tasklocal_free_target_rank_event_shared_across_banks_videos_and_scopes",
+    "primal_scorer_initialization": "r5_shared_functional_chart_step110",
+    "primal_scorer_trainable_partition": "interaction_only",
+    "inverse_covariance_power": 1,
+    "interaction_summary_value_width": 16,
+    "interaction_hidden_width": 64,
+    "interaction_context_basis": "real_b0_native_anchor_additive_primal_before_full_inverse_and_exact_replay",
+    "replay_frame_chunk_size_by_task": {"1": 4, "93": 32},
+    "trainable": [
+      "EventConditionedBankSetInteraction.tasklocal_free_b0_query",
+      "EventConditionedBankSetInteraction.set_encoder_value_networks",
+      "EventConditionedBankSetInteraction.family_shared_primal_gates"
+    ],
+    "frozen": [
+      "source_pi05",
+      "native_stage0_v3",
+      "natural_program",
+      "program_to_b0_inducing_and_owner_rank_event_slots",
+      "r5_program_native_primal_scorer",
+      "current_bank_covariance_and_full_inverse_operator",
+      "real_native_XY",
+      "exact_signed_replay",
+      "carrier12",
+      "scale_prior_and_head"
+    ],
+    "absent": ["action_meta", "task_or_frame_lookup_in_deployment"],
+    "generated_adapter": "one_complete_38_target_rank12_plus_rank4_rank16",
+    "deployment_candidate": false
+  },
+  "data": {
+    "K": 1,
+    "fit_video_views_per_task": 2,
+    "held_videos_per_gradient_task": 1,
+    "functional_panel_train": "panel_a_teacher_only_for_one_step_wrong_teacher",
+    "functional_panel_evaluation": "panel_b",
+    "panel_visits": 16,
+    "rows_per_visit": 16,
+    "logical_rows_per_panel": 256,
+    "video_action_cross_episode": true
+  },
+  "optimization": {
+    "seed": 20260831,
+    "loss": "family_equal_effective_rank4_diagnostic_then_functional_panel_b_gate",
+    "functional_policy_microbatch_size": 2,
+    "functional_policy_microbatch_size_by_task": {"1": 8, "93": 2},
+    "joint": {
+      "warmup_optimizer_steps": 10,
+      "effective_optimizer_steps": 100,
+      "checkpoint_effective_steps": [60, 100],
+      "global_tasks_per_optimizer_step": 1,
+      "video_views_per_task": 3,
+      "wrong_free_delta_teacher": {
+        "updates": 1,
+        "learning_rate": 0.02,
+        "panel_a_visit": 0,
+        "gradient_clip_norm": 1
+      },
+      "optimizer": {
+        "name": "AdamW",
+        "peak_lr": 0.0007,
+        "decay_lr": 0.000007,
+        "betas": [0.9, 0.95],
+        "eps": 1e-8,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1
+      }
+    }
+  },
+  "mechanism_calibration": {
+    "kind": "task93_qfree_after_program_query_specificity_non_pass",
+    "graph": "one_free_query_per_target_rank_event_shared_across_all_banks_videos_and_input_output_scopes_then_real_signed_B0_anchor_additive_primal_full_inverse_exact_replay",
+    "claim_boundary": "diagnoses_B0_query_mapping_capacity_only_not_shared_or_deployment_Writer"
+  },
+  "gate": {
+    "correct_fit_each_minimum": 0.85,
+    "correct_held_minimum": 0.8,
+    "wrong_each_maximum": 0.25,
+    "minimum_correct_minus_maximum_wrong": 0.5,
+    "all_correct_better_than_all_wrong": true,
+    "effective_target_is_gate": false,
+    "panel_b_backward_calls": 0
+  },
+  "profile": {"task_group": [93], "allowed_world_sizes": [1]},
+  "throughput_gate": {
+    "qualification_gate": false,
+    "cross_language_bank_cache": "explicit_separate_operational_root",
+    "cache_frozen_xy_operator_summary_coordinates_and_action_batches": false,
+    "reported_metrics": [
+      "step_seconds",
+      "evaluation_seconds",
+      "peak_cuda_memory",
+      "gpu_utilization"
+    ]
+  },
+  "information_wall": {
+    "fixed_routing_token_training_only": true,
+    "tasklocal_free_b0_query_training_only": true,
+    "free_summary_tokens_training_only_not_component_candidate": false,
+    "wrong_bank_exact_language_fixed": true,
+    "panel_b_backward_calls": 0,
+    "same_task_held_backward_calls": 0,
+    "wrong_fit1_backward_calls": 0,
+    "validation_or_test_reads": 0,
+    "action_meta_installed": false,
+    "shuffled_or_reversed_use": false,
+    "single_complete_rank16": true
+  }
+}

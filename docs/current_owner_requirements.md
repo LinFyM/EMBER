@@ -67,6 +67,11 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
 5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。
 
+截至2026-09-01，最新Program-through-bank与bank-conditioned-primal链已停止
+`summary -> family-scalar gate -> shared event-additive anchor`这一具体parameterization，新的全局专家复核正在判断应继续ECP、替换
+Program--bank联合方向接口、直接做整体joint训练，还是开启新的Writer架构分支。本节保留的是仍有效的目标、信息墙和Native-Factor证据，
+不是等待期内已经获准执行的新架构；专家回复经owner裁决并更新active design前，没有active实现或GPU训练路线。
+
 唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
 `sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。
 
@@ -104,6 +109,11 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   支持时可以继续修正，不能因为预设次数耗尽而停止，也不能用无新信息的seed/LR/width小扫冒充修正。
 - 在证据质量不下降的前提下尽可能快地推进，积极复用资产、并行独立工作并提高代码和GPU吞吐；进展顺利时应力争数天内完成
   整体架构实现并推进关键Gate，不能借“分阶段”把工作人为拉长。
+- 一旦canonical代码通过最小真实forward/gradient/materialization smoke并具备有效科学裁决条件，应立即启动有信息量的实验；文档整理、
+  通用重构、非必要合同、清理和补充分析不得阻塞科学结果，能在训练或评测等待期间并行完成的工作应移到等待期间。
+- 自行提出的throughput阈值只用于发现执行结构是否明显失衡，不是科学authority；若阈值与真实工作量不匹配，应直接修订或删除，不能让
+  不合理的自设Gate阻塞实验。反之，少量更新却需要几十分钟或数小时的明显失衡仍必须先优化，不能要求owner接受原始吞吐。
+- subagent只在存在可独立、并行且能显著缩短关键路径的实现、审计或评测工作时使用；不为形式并行，也不让多代理协调反而拖慢主结果。
 - 遇到困难先回看专家原始意见与修正，检查执行是否偏移，再决定是否实验或咨询。
 - 专家意见是设计约束与启发：不能为了速度随意丢弃，也不能不经理解机械照搬。
 - 只有性能显著跃升、路线存在实质歧义或需要新增权限时，在关键节点暂停和owner讨论；不频繁汇报。
@@ -111,6 +121,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 ## 7. GPU、仓库与文档
 
 - 每次GPU launch前同时live检查gpu01/gpu02；单个job只用一个节点，最多6张真正提高吞吐的A40。
+- gpu01和gpu02都属于可用计算池；不存在按节点名或逻辑index永久禁用的设备。任何临时prohibited状态只能按当时明确的UUID/serial和
+  owner指令继承，并在每次launch前用live身份、进程、显存与utilization重新裁决。节点暂时离线或重启不代表长期禁用。
 - 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
 - 吞吐优化同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、step wall time、计算段SM/UTL、memory UTL与显存峰值
@@ -121,8 +133,10 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   资格实验仍需几十分钟或数小时，且瓶颈来自每condition重复的大算子，就应先判定吞吐资格non-pass并修正执行结构，不能靠堆更多GPU、
   缩减必要评测或要求owner接受原始吞吐来掩盖。
 - EMBER并发总量通常不超过6张；只有大量空闲时最多8张。可与低显存、低util进程安全共驻，但不得抢占、kill或reset。
-- gpu01曾标记prohibited的设备只能按UUID/serial身份继承该限制，不能把节点重启后的逻辑index 0机械等同于旧物理0；GPU身份、
-  枚举映射和状态每次都要重新确认。2026-08-26重启后旧prohibited设备未被枚举，当前逻辑0是原物理1，不受该旧标记限制。
+- 调度应优先使用满足峰值余量的真正空闲卡；只有空闲卡不合适或并行布局确有收益时才与他人低显存、低util进程共驻，不能在有等价空闲卡
+  时无故挤到他人设备。允许共驻不等于降低单卡利用率要求，也不允许干扰对方任务。
+- gpu01历史上曾标记prohibited的设备只能按当时UUID/serial身份继承，不能把任何节点重启后的逻辑index 0机械等同于旧设备。当前没有
+  按逻辑index永久禁止的GPU记录；身份、枚举映射、健康、进程、显存与utilization每次launch都必须live确认。
 - 正式训练遵守storage quota、clean pushed commit和frozen worktree合同；探索实验不做冗余流程。
 - canonical集成目标是`main`。只有需要隔离或并发写入时创建`codex/*`分支和worktree，验证后尽快合并、推送并清理。
 - 不在活动树保留退役实现、平行fallback、过时配置、重复文档或临时结果；历史由Git、formal artifacts和一份精简历史记录保存。

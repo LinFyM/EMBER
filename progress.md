@@ -1,5 +1,21 @@
 # EMBER progress
 
+### 2026-09-01第七次专家复核已落盘并获owner执行授权
+
+- 专家1359行原文已完整保存为`docs/expert_review_20260901_program_through_bank_bottleneck.md`。该复核锁定
+  `main@d6f5715bf49277f1d8618e34fa9da84981eb827c`，审计了S0/S1正证据、三类S2 non-pass及三次quotient S0；原始换行从CRLF规范化为
+  仓库LF，正文逐字一致。
+- 专家判断当前最早缺口不是native bank、rank4或task-local容量，而是共享Program→current-bank选择规则尚未被识别。absolute Program
+  旁路与S0 global free token的scope不匹配是首要假设，但三次quotient并未无混杂证明它；专家主观置信度约60%，不是既成事实。
+- owner已采纳唯一后继：Program-through-Bank Bottleneck EBSRI。Program只可作为query读取真实bank；B0输出逐target/rank/event及output
+  group/type对齐的set response；B1不得读取raw/centered/relational Program code，只能由bank response和固定结构形成bounded candidate
+  correction；最终仍为真实X/Y的唯一exact signed measure、一个rank4 residual与一套完整rank16。
+- 实验顺序固定为topology-matched free-summary S0 → real Program-through-bank S1 → fresh direct-functional shared S2。S0失败即停止当前
+  fixed-base+summary-only correction函数类并把bank response前移到primal；A/B通过而S2在训练任务通过、held interaction稳定失败，则停止
+  当前shared coordinate，不能继续quotient、surrogate、polish或梯度技巧。
+- canonical实现从clean pushed main建立`codex/g3-program-through-bank-bottleneck`独立worktree；截至本记录只新增专家原文与authority索引，
+  尚未修改科学代码、配置或启动GPU。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

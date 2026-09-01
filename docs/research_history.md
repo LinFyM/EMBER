@@ -1774,3 +1774,20 @@ all/by-type拓扑。该差异在full-`z`存在时可被逐target Program context
 架构并咨询专家；咨询范围必须覆盖自第六次意见以来S0/S1通过、三类S2失败及三次quotient S0反证的完整链条，解释为何仍未跨过G3并给出
 具体后续计划。Program直接query、whole-bank context、B0/B1职责和absolute-code旁路是关键接口之一，但不是唯一问题。截至该边界，
 没有新的S0/S1/S2启动，未提交的候选草案不属于active history；formal evidence均保留。
+
+## 91. 第七次专家复核与Program-through-bank bottleneck裁决
+
+专家对`main@d6f5715bf49277f1d8618e34fa9da84981eb827c`及其可达历史完成复核，1359行原文保存于
+`docs/expert_review_20260901_program_through_bank_bottleneck.md`。复核确认S0/S1 task-local通过与三类S2 shared失败并不矛盾：前者证明
+每任务存在解，后者证明当前共享、可迁移选择规则尚未被识别。fresh direct-functional保持correct但wrong同样高；surrogate bootstrap
+加unit-gradient polish在八个训练任务形成bank specificity，却降低correct absolute capacity并不能稳定迁移到task1/93。
+
+代码审计进一步纠正了quotient归因：S0的`with_condition()`把一个training-only `[E,S]` token覆盖到所有input targets、output groups和
+all/by-type scopes，inducing-dependent summary字段在B1前被覆盖；full-z另有逐target/rank/event raw `z`直达B1，而quotient没有。因此三次
+quotient只证明“删除raw code且仍使用过窄global condition”不能恢复task93，不能证明scope-matched summary-only B1或真实
+Program-conditioned set read不可行。
+
+owner据此采纳唯一后继Program-through-Bank Bottleneck EBSRI：Program仍产生native queries、base primal与event weights，但只能通过
+query真实candidate set形成逐target/rank/event及output group/type匹配的bank response；B1只读该response和固定结构，最终仍以一个exact
+signed measure pool真实X/Y、形成一个rank4 residual与唯一完整rank16。预注册顺序为topology-matched free-summary S0、real
+Program-through-bank S1、fresh direct-functional shared S2；失败按最早接口分别转向bank-conditioned primal或停止当前shared coordinate。

@@ -1,8 +1,10 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。四次专家原文见`docs/expert_review_20260824_native_factor.md`、
+只记录跨session仍影响决策的结论。七次专家原文见`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`与
-`docs/expert_review_20260829_joint_program_primal.md`，精确分数、提交和历史脉络见
+`docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`、
+`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`与
+`docs/expert_review_20260901_program_through_bank_bottleneck.md`，精确分数、提交和历史脉络见
 `docs/research_history.md`；当前唯一架构合同见`docs/event_conditioned_policy_compiler_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
@@ -1902,3 +1904,15 @@ signed-attention算子内直接交互，B0可作为其流式统计阶段；反�
 问题是为何S0/S1 task-local容量、direct正确能力与polish训练任务bank specificity始终不能在shared held迁移中同时成立。下一次专家复核
 必须覆盖这整条因果链，判断首因究竟在Program/shared coordinate、训练信号、task diversity、whole-bank交互还是base+correction分解，
 并给出最小无混杂Gate；不能把咨询缩窄成B0命名争论。未裁决前不把任何B0-only/topology-matched草案写成active architecture。
+
+### 114. 第七次专家复核把下一裁决收敛为Program-through-bank bottleneck三步链
+
+专家完整审计确认：full-z S0与real-summary S1只证明每任务存在capacity/specificity解；fresh direct-functional S2保住correct却没有
+wrong-bank specificity，functional-polish在训练任务产生specificity但损失absolute correct与held-task迁移。因此最早未解决接口是共享
+Program如何通过当前真实bank形成可迁移选择规则，而不是native bank、signed pooling或rank4容量。
+
+absolute Program code旁路是首要解释，但rank/event、owner与relational quotient同时用一个global free token替代真实B0的
+target/group/type/rank/event作用域，故其失败不能淘汰summary-only B1。owner已采纳唯一无混杂检验：先用与真实B0完全同构的structured
+free summaries做S0，再以Program query真实bank做S1，最后fresh direct-functional shared S2。B1不得直接读取任何高维Program code；
+若S0失败，停止fixed-base+summary-only correction并把bank response前移到primal；若A/B通过而shared held稳定失败，停止当前shared
+coordinate而非继续loss、quotient或梯度技巧。

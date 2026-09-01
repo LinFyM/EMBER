@@ -1,6 +1,6 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-08-31第六次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
+状态：2026-09-01第七次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
 要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
 formal S1与定向S2依次淘汰rank64 native-Q sketch、mean/variance scalar energy、query-conditioned多步set scorer及rank224/384
 cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步证明：behavior rank4方向在三条真实bank中均有约`.90--.91`
@@ -35,10 +35,11 @@ R8--R11随后完整检验了fresh联合、稳定content初始化、真实functio
 已经从Program/scorer移到global-`C^+d` operator的bank交互可识别性。下一资格不是新的Program版本，而是先建立同时保留same-task
 跨video能力与correct-over-wrong bank必要增量的task-local operator正控。
 
-六次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
+七次专家原文分别逐字保存于`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`和
 `docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`和
-`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。本文是将专家
+`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`和
+`docs/expert_review_20260901_program_through_bank_bottleneck.md`。本文是将专家
 原文与owner后续裁决转成可执行合同的解释层，不替代原文；任何疑似曲解或冲突先核对原文，再按owner最新明确表达修正。第二次专家建议Final默认从通过Gate的组件初始化；owner
 最新明确补充，整套Writer完全随机初始化并直接端到端fresh训练必须保留为Final正式可选项，G1--G3不构成强制训练课程。
 
@@ -47,6 +48,20 @@ owner后续明确取消专家原文中的阶段工期估计、固定修正次数
 并推进关键Gate。
 
 人工process数据、神经`q_pi`、fixed effect-code realizer、fit-task fixed span、PECS/GOMQ/v24和并行旧Writer均不属于本路线。
+
+### 2026-09-01 active amendment：Program-through-Bank Bottleneck
+
+本节覆盖下文与其冲突的旧EBSRI B0/B1细节。Program仍可生成native event queries、base primal和event weights，也可作为query读取当前
+真实candidate set；但B1不得直接读取raw、centered或relational Program state及其它高维task code。B0 set read必须形成与真实执行作用域
+匹配的input `[target,rank,event,S]`、output all/by-type `[target,group,rank,event,(type),S]` response；B1只由这些bank responses与
+固定owner/rank/event结构形成candidate correction，不得存在summary-independent的task correction。summary values只能来自candidate-
+derived信息，Program query本身或hidden residual不得旁路传给B1。
+
+最终候选轴、单位质量、video边界、chunked online accumulator、exact positive-minus-negative pooling、rank4 residual、carrier12与唯一
+完整rank16合同均不变。当前资格链只包含：topology-matched structured free-summary S0 → real Program-through-bank S1 → fresh
+direct-functional shared S2。不得恢复quotient、effective surrogate、unit-gradient polish或把内部loss用于选模。若S0在实现与Panel-B
+核验后失败，停止当前fixed-base+summary-only correction函数类并把bank response前移到primal；若S0/S1通过而S2在gradient tasks通过、
+task1/93 held interaction稳定失败，则停止当前shared coordinate并重新裁决canonical coordinate或task diversity。
 
 ## 1. 核心裁决
 

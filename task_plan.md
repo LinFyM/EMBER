@@ -4,12 +4,19 @@
 
 ## 当前目标
 
-owner已恢复持续性goal并采纳2026-08-31第六次专家复核的唯一推荐路线。G1 free-code、G2动态Program Gate、P0/P1 capacity primitive、
+owner已采纳2026-09-01第七次专家复核的唯一推荐路线并授权立即实现与实验。G1 free-code、G2动态Program Gate、P0/P1 capacity primitive、
 R5 fixed-route functional chart及v1--v4/vector负证据继续有效；当前不恢复binary、旧Writer、人工process、GOMQ/PECS、谱幂或pointwise
 V5。第六次专家1320行原文逐字保存为
-`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`。
+`docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`；第七次专家1359行原文逐字保存为
+`docs/expert_review_20260901_program_through_bank_bottleneck.md`。
 
-当前唯一活动假设是 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
+当前唯一活动修正是 **Program-through-Bank Bottleneck EBSRI**：Program仍产生native queries、base primal与event weights，但只能作为
+query读取当前真实candidate set；B0形成逐target/rank/event及output group/type匹配的bank response，B1只读该response与固定
+owner/rank/event结构，不得读取raw、centered或relational Program state。最终仍只对真实X/Y执行一个positive-minus-negative exact
+signed measure，形成一个rank4 residual并与carrier12物化为唯一完整rank16。先依次执行topology-matched free-summary S0、真实
+Program-through-bank S1与fresh direct-functional shared S2；不再继续quotient、effective-surrogate、unit-gradient polish或普通超参小扫。
+
+已验证前身为 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
 Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内
 流式形成event-conditioned whole-bank moments/induced summaries；Pass B1用该summary条件化每candidate correction，再对真实X/Y执行
 唯一exact signed pooling。B0不做match分类、开关或LoRA生成；最终仍只有一个rank4 residual与一套carrier12+residual4完整rank16。
@@ -31,8 +38,8 @@ native query→`kappa`、video-local context、真实X/Y、bounded correction、
 condition head使用，却只保留raw `z`约`2.3--2.7%`的centered energy，且task93 q层关系几乎共线；同时也确认full-`z`把Program
 同时送入B0 inducing与B1 condition，而所有quotient版本共同删除了B0的Program-conditioned读取。现有S0又把一个global free token
 广播到真实B0本来分别拥有的target/group/type scopes，故三次quotient non-pass不能在无混杂条件下裁决B0、B1及absolute-code旁路各自
-必要性。owner已要求在继续新结构前咨询专家；当前没有active successor architecture，任何未提交的B0-only或topology-matched草案都不构成
-authority，也不启动GPU。正式目标仍唯一为validation8
+必要性。第七次专家已完成复核，owner明确采纳其Program-through-bank bottleneck并授权实现与实验；旧未提交草案仍不是authority，新的
+唯一实现必须从clean main fresh接通并按S0→S1→S2最早接口裁决。正式目标仍唯一为validation8
 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
@@ -78,14 +85,16 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
 - [x] 对full-`z` pass与rank-only/owner/relational三种non-pass做同合同parameter/Jacobian、summary拓扑及专家停止条件审计；确认
   relational路径实际被使用、三个quotient共同删除B0 Program inducing、且global free token比真实B0拓扑更窄，因此不能把失败唯一归因
   于B1 absolute mean或correction factorization；
-- [ ] 由专家完整复核自第六次意见以来的S0/S1通过、三类S2 non-pass、absolute-route假设及三次quotient S0反证，解释为何一天推进后
+- [x] 由专家完整复核自第六次意见以来的S0/S1通过、三类S2 non-pass、absolute-route假设及三次quotient S0反证，解释为何一天推进后
   仍未跨过G3、哪些归因成立及哪里可能走偏，并给出下一步具体架构、训练信号、冻结边界、Gate顺序与停止条件。Program如何进入B0/B1、
   whole-bank context的形式及absolute-code旁路只是其中一个关键接口，不把咨询缩窄成“B0是否必要”；专家回复与owner裁决落盘前不提交
-  候选架构或启动formal；
-- [ ] 只有fresh S0通过，才以不加载S0 interaction状态的fresh R5完成S1，并按相同双task绝对Gate裁决真实B0 summary；
-- [ ] 只有fresh S1通过，才fresh执行原split S2及相邻Gate；若S1通过而S2仍失败，则否定absolute-code主因，转向`kappa`/summary
-  decodability或task-diversity诊断；
-- [ ] 只有quotient S2正式通过，才形成10-task component initialization并推进S3 Natural Program joint G3。
+  候选架构或启动formal；第七次原文现已完整落盘，owner已采纳其唯一推荐路线；
+- [ ] 实现topology-matched structured free-summary S0，完成raw Program旁路不变性、scope isolation、chunk/K与zero-init合同后，fresh执行
+  task1/93双task Panel-B Gate；
+- [ ] 只有S0通过，才以不加载S0 interaction状态的fresh R5完成真实Program-through-bank S1，并按同一双task绝对Gate裁决B0 query/set
+  representation；
+- [ ] 只有S1通过，才fresh执行direct-functional shared S2及相邻Gate；不得加载surrogate/polish interaction或使用unit-gradient组合；
+- [ ] 只有bottleneck S2正式通过，才接回Natural Program joint S3并继续held5 strict250 closed-loop。
 
 ## R5--R13历史里程碑
 

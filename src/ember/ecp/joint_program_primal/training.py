@@ -120,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_joint_program_primal_j3_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_pnbtt_e1_family_key_v2.json",
     )
     parser.add_argument(
         "--base-config",
@@ -166,7 +166,9 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         if value is not None:
             setattr(args, name, value.resolve())
     if args.log_every <= 0:
-        raise ValueError("J3 log interval must be positive")
+        raise ValueError("joint compiler log interval must be positive")
     if (args.phase == "positive-control") != (args.task is not None):
-        raise ValueError("J3 task is required only for the positive control")
+        raise ValueError(
+            "task is required only for the retained positive control"
+        )
     return args

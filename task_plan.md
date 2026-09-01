@@ -39,8 +39,8 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
 4. [x] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
    materialization；退役旧base/gate/anchor在deployment主路径中的所有权；
 5. [x] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
-6. [ ] E1 task1/93 topology-matched free-query transport capacity；实现与双卡真实profile已通过，下一步从clean pushed detached authority启动
-   step70/110 formal及零梯度Panel-B；
+6. [ ] E1 task1/93 topology-matched free-query transport capacity；已从clean pushed detached `2664e0d`在gpu01:1/2启动formal，
+   step70后并行零梯度Panel-B与原拓扑resume到step110，再由两个相邻checkpoint联合裁决；
 7. [ ] E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与full-vs-language/endpoints；
 8. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
 9. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；

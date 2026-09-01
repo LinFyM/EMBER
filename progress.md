@@ -10,9 +10,10 @@
   matched whole-Writer joint，直至满足正式闭环合同或出现真实阻塞。
 - 当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`；旧
   `summary -> family-scalar gate -> shared event-additive anchor`不再是active实现。
-- PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。E1 formal正从该提交的
-  detached worktree在gpu01:1/2运行到step70；到达后将立即在另两张合适GPU上并行零梯度Panel-B，并用原拓扑
-  resume到step110。实现分支同时完成退役shared-compiler测试收敛，25项active focused tests通过。
+- PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。E1 macro70 Panel-B为
+  `non_pass`：两task的all-pairs、near-bound和信息墙通过，但correct/held仅为task1 `.628597/.639663/.606223`、
+  task93 `.676496/.711490/.668680`；task93 wrong-fit1为`.257616`。同一run已在gpu01:1/2 resume到step110，
+  macro70评测与续训曾在3/4与1/2上四卡并行。
 
 ## 最新科学结论
 
@@ -55,6 +56,9 @@
   不误用fixed-token S1语义或cache。
 
 ## 最新formal evidence
+
+- PNBTT E1 free-query transport：
+  `runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`；macro70已完成，macro110同run续训中。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -103,10 +107,11 @@
   （synthetic leaf-gradient最大误差`0`）。接入真实`D_policy`后的最新两步profile在task1/task93 microbatch 8/4下稳定完成，分别为
   `25.000/24.665s`；rank0/1峰值allocated为`39.773/36.154GB`、reserved为`46.376/44.109GB`。step1 free-query梯度非零且shared key按
   非对称LoRA零初始化预期为0；step2 shared-key梯度为`.293542`，task1/93 paired policy distance为`.003844/.002297`，correct/wrong已分离。
-- 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 formal训练已从clean pushed detached `2664e0d`启动，
-  输出根为`runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`；当前训练、梯度和
-  paired `D_policy`均finite，formal裁决只等step70/110的完整Panel-B。
+- 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 macro70已完成五臂各16次Panel-B，评测用时111.4秒；
+  correct容量是当前主要缺口，wrong与near-bound不是主因。同run已无改变resume到step110，只待相邻checkpoint完整裁决。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
   set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
   detached scientific authority。
+- `50f876cb0e5e2e3623a4b77e768d67658960fccc`修正detached formal评测把会正常前进的`origin/main` tip误当训练身份的问题；
+  现在仍锁定实际commit、clean/detached拓扑与全部科学合同，只允许包含该commit的authority tip前进。26项focused tests通过。
 - `HANDOFF.md`已消费并删除；长期信息全部由authority、active design、本文件与Git保存。

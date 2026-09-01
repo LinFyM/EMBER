@@ -124,6 +124,19 @@
   Panel-B物化后总`126.36s`。writer trainable仍为`585,152`，Action Meta 0、source/Native Stage0 trainable 0、Panel-B/correct-held/
   wrong-fit1 backward 0及唯一完整rank16全部成立。该profile只裁决显存可执行性；一步未形成bank specificity，不作S1 Gate解释。
 
+### Program-through-Bank Bottleneck S1 formal relaunch contract
+
+- 修订后的scientific/config authority为clean pushed `d1384181277e2a0375cce51b78fb74b5f93da09e`；formal仍从只增加本relaunch
+  record的clean pushed detached descendant执行。除task93 interaction group batch `4 -> 2`外，fresh初始化、双task、数据、训练步数、
+  optimizer、checkpoint、五臂Panel-B、Gate、信息墙和唯一rank16全部沿用上节launch合同；不载入三条失败/中止run的任何状态。
+- 新fresh输出固定为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task1_s110_d138418_gpu01p2_20260901`、
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task93_s110_d138418_gpu01p3_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_d138418_gpu01p23_20260901`；2026-09-01 14:45 CST三根均不存在。
+  紧邻relaunch同时live检查gpu01/gpu02：gpu01物理2/3均为`15MiB/0%`、Default且无compute process，节点cache存在；gpu02物理5空闲
+  但无第三个qualification unit。`/data1` quota为`777734132/1073741824KiB`。两任务继续分别使用物理2/NUMA0与物理3/NUMA1并行
+  world1运行，不使用allocator实验环境变量；exec前再次核对设备、root与detached authority。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

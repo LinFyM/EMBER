@@ -21,7 +21,8 @@ def _parser() -> argparse.ArgumentParser:
     execute.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json",
+        default=REPO_ROOT
+        / "configs/pi05_ecp_event_bank_set_bottleneck_s0_v1.json",
     )
     execute.add_argument(
         "--base-config",
@@ -50,7 +51,8 @@ def _parser() -> argparse.ArgumentParser:
     aggregate.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json",
+        default=REPO_ROOT
+        / "configs/pi05_ecp_event_bank_set_bottleneck_s0_v1.json",
     )
     aggregate.add_argument("--task-output-dirs", type=Path, nargs=2, required=True)
     aggregate.add_argument("--output-dir", type=Path, required=True)

@@ -62,26 +62,20 @@ def batched_input_corrections(
     family: str,
     descriptors: Sequence[CandidateDescriptor],
     summaries: Sequence[Any],
-    rank_context: torch.Tensor,
+    structural_gate: torch.Tensor,
     event_weights: torch.Tensor,
     assignment: torch.Tensor,
     metadata: torch.Tensor,
 ) -> torch.Tensor:
     features = _input_features(descriptors, summaries, metadata)
     summary_condition = torch.stack(tuple(value.condition for value in summaries))
-    condition = torch.cat(
-        (
-            rank_context,
-            summary_condition[:, None].expand(-1, G1_RESIDUAL_RANK, -1, -1),
-        ),
-        dim=-1,
-    )
     with _candidate_mlp_matmul(features.device):
         hidden = interaction.input_candidate[family](features)
         event_delta = interaction.input_event_delta(
             family=family,
             hidden=hidden,
-            condition=condition,
+            condition=summary_condition,
+            structural_gate=structural_gate,
         )
     correction = (
         event_delta
@@ -137,7 +131,7 @@ def batched_output_corrections(
     family: str,
     descriptors: Sequence[CandidateDescriptor],
     summaries: Sequence[Any],
-    rank_context: torch.Tensor,
+    structural_gate: torch.Tensor,
     event_weights: torch.Tensor,
     assignment: torch.Tensor,
     metadata: torch.Tensor,
@@ -148,15 +142,16 @@ def batched_output_corrections(
     )
     own_condition = torch.stack(
         tuple(
-            torch.stack(tuple(scope.condition for scope in value.by_type), dim=1)
+            torch.stack(tuple(scope.condition for scope in value.by_type), dim=2)
             for value in summaries
         )
     )
     condition = torch.cat(
         (
-            rank_context[:, :, :, None].expand(-1, -1, -1, len(OUTPUT_BANK_TYPES), -1),
-            all_condition[:, None, :, None].expand(-1, G1_RESIDUAL_RANK, -1, len(OUTPUT_BANK_TYPES), -1),
-            own_condition[:, None].expand(-1, G1_RESIDUAL_RANK, -1, -1, -1),
+            all_condition[:, :, :, None].expand(
+                -1, -1, -1, len(OUTPUT_BANK_TYPES), -1
+            ),
+            own_condition,
         ),
         dim=-1,
     )
@@ -166,6 +161,9 @@ def batched_output_corrections(
             family=family,
             hidden=hidden,
             condition=condition,
+            structural_gate=structural_gate[:, :, :, None].expand(
+                -1, -1, -1, len(OUTPUT_BANK_TYPES), -1
+            ),
         )
     correction = (
         event_delta

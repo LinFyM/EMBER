@@ -6,16 +6,85 @@ from typing import Any, Mapping
 
 import torch
 
+from ember.ecp.bank_conditioning.program_bank_interaction import (
+    OutputProgramBankSetConditions,
+    ProgramBankSetConditions,
+)
 from ember.ecp.joint_program_primal.runtime import (
     R5_SHARED_FUNCTIONAL_CHART,
     SCORER_INTERACTION_ONLY,
 )
+from ember.ecp.native_factors import (
+    G1_RESIDUAL_RANK,
+    OUTPUT_BANK_TYPES,
+    native_output_group_count,
+)
 
 
-BANK_SET_TASKLOCAL_SCHEMA = "ember_ecp_event_bank_set_tasklocal_v1"
-BANK_SET_TASKLOCAL_RUN_SCHEMA = "ember_ecp_event_bank_set_tasklocal_run_v1"
-BANK_SET_S0_STAGE = "g3_event_bank_set_s0_free_summary"
-BANK_SET_S1_STAGE = "g3_event_bank_set_s1_real_summary"
+BANK_SET_TASKLOCAL_SCHEMA = "ember_ecp_program_through_bank_tasklocal_v1"
+BANK_SET_TASKLOCAL_RUN_SCHEMA = "ember_ecp_program_through_bank_tasklocal_run_v1"
+BANK_SET_S0_STAGE = "g3_program_through_bank_s0_free_summary"
+BANK_SET_S1_STAGE = "g3_program_through_bank_s1_real_summary"
+
+
+class FreeProgramBankSetConditionTree(torch.nn.Module):
+    """Train-only S0 parameters with exactly the real B0 scope topology."""
+
+    def __init__(self, interaction: torch.nn.Module) -> None:
+        super().__init__()
+        reference = next(interaction.parameters())
+        shape = (
+            G1_RESIDUAL_RANK,
+            interaction.event_slots,
+            interaction.summary_width,
+        )
+
+        def parameter() -> torch.nn.Parameter:
+            value = torch.nn.Parameter(
+                torch.empty(shape, device=reference.device, dtype=reference.dtype)
+            )
+            torch.nn.init.normal_(value, std=0.02)
+            return value
+
+        self.inputs = torch.nn.ParameterList(
+            [parameter() for _ in interaction.owners]
+        )
+        self.outputs_all = torch.nn.ModuleList()
+        self.outputs_by_type = torch.nn.ModuleList()
+        for owner in interaction.owners:
+            groups = native_output_group_count(owner)
+            self.outputs_all.append(
+                torch.nn.ParameterList([parameter() for _ in range(groups)])
+            )
+            self.outputs_by_type.append(
+                torch.nn.ModuleList(
+                    [
+                        torch.nn.ParameterList(
+                            [parameter() for _ in OUTPUT_BANK_TYPES]
+                        )
+                        for _ in range(groups)
+                    ]
+                )
+            )
+
+    def conditions(self) -> ProgramBankSetConditions:
+        return ProgramBankSetConditions(
+            inputs=tuple(self.inputs),
+            outputs=tuple(
+                tuple(
+                    OutputProgramBankSetConditions(
+                        all_types=all_types,
+                        by_type=tuple(by_type),
+                    )
+                    for all_types, by_type in zip(
+                        target_all, target_by_type, strict=True
+                    )
+                )
+                for target_all, target_by_type in zip(
+                    self.outputs_all, self.outputs_by_type, strict=True
+                )
+            ),
+        )
 
 
 class InteractionControlWriterState(torch.nn.Module):
@@ -25,20 +94,17 @@ class InteractionControlWriterState(torch.nn.Module):
         self,
         bank_set_interaction: torch.nn.Module,
         *,
-        free_summary_shape: tuple[int, int] | None = None,
+        structured_free_summary: bool = False,
     ) -> None:
         super().__init__()
         self.bank_set_interaction = bank_set_interaction
-        if free_summary_shape is not None:
-            reference = next(bank_set_interaction.parameters())
-            self.free_correct = torch.nn.Parameter(
-                torch.empty(free_summary_shape, device=reference.device, dtype=reference.dtype)
+        if structured_free_summary:
+            self.free_correct = FreeProgramBankSetConditionTree(
+                bank_set_interaction
             )
-            self.free_wrong = torch.nn.Parameter(
-                torch.empty(free_summary_shape, device=reference.device, dtype=reference.dtype)
+            self.free_wrong = FreeProgramBankSetConditionTree(
+                bank_set_interaction
             )
-            torch.nn.init.normal_(self.free_correct, std=0.02)
-            torch.nn.init.normal_(self.free_wrong, std=0.02)
 
 
 def is_bank_set_tasklocal_config(config: Mapping[str, Any]) -> bool:
@@ -57,24 +123,22 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     trainable = (
         [
             "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
-            (
-                "EventConditionedBankSetInteraction.target_centered_program_relation_"
-                "plus_task_independent_rank/event_slots"
-            ),
-            "training_only_free_correct/free_wrong",
+            "EventConditionedBankSetInteraction.task_independent_owner/rank/event_structure",
+            "training_only_scope_matched_free_correct/free_wrong",
         ]
         if is_s0
         else ["EventConditionedBankSetInteraction"]
     )
     expected_summary_source = (
-        "one_training_only_free_correct_and_free_wrong_token_per_task"
+        "scope_matched_training_only_free_correct_and_free_wrong_tree_per_task"
         if is_s0
         else "real_b0_program_relative_event_bank_set_encoder"
     )
     return all(
         (
             is_bank_set_tasklocal_config(config),
-            config.get("status") == "active_event_bank_set_tasklocal_qualification",
+            config.get("status")
+            == "active_program_through_bank_tasklocal_qualification",
             is_s0 or is_s1,
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
@@ -86,7 +150,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("interaction_hidden_width") == 64,
             model.get("interaction_correction_bound") == 0.1,
             model.get("interaction_context_basis")
-            == "target_centered_program_relation_plus_task_independent_rank_event_slots",
+            == "program_through_bank_summary_only_b1_with_fixed_owner_rank_event_structure",
             model.get("replay_frame_chunk_size_by_task") == {"1": 4, "93": 32},
             model.get("interaction_group_batch_size_by_task")
             == {"1": 16, "93": 4},
@@ -147,9 +211,7 @@ def bank_set_parameter_ownership(
         raise ValueError("bank-set interaction stage changed")
     writer = InteractionControlWriterState(
         interaction,
-        free_summary_shape=(compiler.event_slots, interaction.summary_width)
-        if stage == BANK_SET_S0_STAGE
-        else None,
+        structured_free_summary=stage == BANK_SET_S0_STAGE,
     )
     named_trainable = {
         name: parameter
@@ -161,21 +223,27 @@ def bank_set_parameter_ownership(
         "bank_set_interaction.output_candidate",
         "bank_set_interaction.input_condition",
         "bank_set_interaction.output_condition",
+        "bank_set_interaction.structural_gate",
     }
     allowed_parameters = {
         "bank_set_interaction.rank_slot_context",
         "bank_set_interaction.event_slot_context",
+        "bank_set_interaction.owner_slot_context",
     }
     if stage == BANK_SET_S1_STAGE:
         allowed_roots.add("bank_set_interaction.set_encoder")
     unexpected = sorted(
         name
         for name in named_trainable
-        if name not in {"free_correct", "free_wrong"}
+        if not name.startswith(("free_correct.", "free_wrong."))
         and name not in allowed_parameters
         and not any(name.startswith(f"{root}.") for root in allowed_roots)
     )
-    free = {name for name in named_trainable if name.startswith("free_")}
+    free = {
+        name.split(".", 1)[0]
+        for name in named_trainable
+        if name.startswith("free_")
+    }
     expected_free = {"free_correct", "free_wrong"} if stage == BANK_SET_S0_STAGE else set()
     if unexpected or free != expected_free or not named_trainable:
         raise ValueError(
@@ -202,7 +270,7 @@ def writer_trainable_inventory(writer: torch.nn.Module) -> dict[str, Any]:
         "writer_trainable_parameter_count": sum(value.numel() for _, value in named),
         "descriptor_authority": (
             "frozen_program_native_query_kappa_base_score_metadata_event_assignment_"
-            "plus_target_centered_program_rank_event_relation_and_task_independent_"
-            "rank_event_slots"
+            "plus_program_through_bank_responses_and_task_independent_owner_rank_event_"
+            "structure"
         ),
     }

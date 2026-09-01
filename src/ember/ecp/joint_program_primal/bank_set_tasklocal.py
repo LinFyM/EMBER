@@ -295,12 +295,12 @@ def _interaction_output(
         )
         if token_kind not in {"correct", "wrong"}:
             raise ValueError("bank-set summary-token intervention changed")
-        token = (
+        tree = (
             runtime.writer_state.free_correct
             if token_kind == "correct"
             else runtime.writer_state.free_wrong
         )
-        summaries = summaries.with_condition(token)
+        summaries = summaries.with_condition(tree.conditions())
     elif stage != BANK_SET_S1_STAGE:
         raise RuntimeError("bank-set task-local summary source changed")
     pooled = runtime.compiler.bank_operator.apply_compact(

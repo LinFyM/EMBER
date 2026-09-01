@@ -8,11 +8,14 @@ import statistics
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import torch
 
 from ember.ecp.contracts import TargetFamily
+from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    BANK_SET_TASKLOCAL_SCHEMA,
+)
 from ember.ecp.joint_program_primal.routing_control import (
     BANK_SET_S0_STAGE,
     BANK_SET_S1_STAGE,
@@ -23,8 +26,12 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 TASKS = (1, 93)
 FAMILIES = tuple(TargetFamily)
-RESULT_SCHEMA = "ember_ecp_event_bank_set_tasklocal_result_v1"
-AGGREGATE_SCHEMA = "ember_ecp_event_bank_set_tasklocal_aggregate_v1"
+RESULT_SCHEMA = "ember_ecp_program_through_bank_tasklocal_result_v1"
+AGGREGATE_SCHEMA = "ember_ecp_program_through_bank_tasklocal_aggregate_v1"
+
+
+def _free_parameter_roots(names: Sequence[str]) -> set[str]:
+    return {name.split(".", 1)[0] for name in names if name.startswith("free_")}
 
 
 @dataclass(frozen=True)
@@ -294,8 +301,7 @@ def _load_formal_task(
             contract.get("information_wall", {}).get("action_meta_installed") is False,
             int(inventory.get("action_meta_module_count", -1)) == 0,
             int(inventory.get("action_meta_parameter_count", -1)) == 0,
-            {name for name in trainable_names if name.startswith("free_")}
-            == expected_free,
+            _free_parameter_roots(trainable_names) == expected_free,
             any("set_encoder" in name for name in trainable_names)
             is expected_set_encoder_trainable,
             int(inventory.get("writer_trainable_parameter_count", 0)) > 0,
@@ -363,7 +369,7 @@ def aggregate_tasklocal(
     config = load_routing_control_config(config_path)
     stage = str(config.get("stage", ""))
     if (
-        config.get("schema_version") != "ember_ecp_event_bank_set_tasklocal_v1"
+        config.get("schema_version") != BANK_SET_TASKLOCAL_SCHEMA
         or stage not in {BANK_SET_S0_STAGE, BANK_SET_S1_STAGE}
         or len(task_output_dirs) != len(TASKS)
     ):

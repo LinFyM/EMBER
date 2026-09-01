@@ -55,7 +55,7 @@ def _summary_inputs():
     generator = torch.Generator().manual_seed(17)
     coordinates = torch.randn(13, 12, generator=generator)
     mass = torch.rand(3, 13, generator=generator).clamp_min(1e-4)
-    query = torch.randn(3, 12, generator=generator, requires_grad=True)
+    query = torch.randn(4, 3, 12, generator=generator, requires_grad=True)
     values = torch.randn(13, 5, generator=generator, requires_grad=True)
     return coordinates, mass, query, values
 
@@ -115,7 +115,7 @@ def test_real_encoder_is_candidate_permutation_invariant() -> None:
     coordinates = torch.randn(13, 12)
     metadata = torch.randn(13, 3)
     mass = torch.rand(3, 13).clamp_min(1e-4)
-    context = torch.randn(3, 11)
+    context = torch.randn(4, 3, 11)
     expected = encoder.summarize(
         coordinates=coordinates,
         metadata=metadata,

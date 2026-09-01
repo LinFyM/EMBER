@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -323,7 +324,6 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
     ):
         for head in heads.values():
             torch.nn.init.normal_(head[-1].weight, std=0.01)
-            torch.nn.init.normal_(head[-1].bias, std=0.01)
     program = _program(len(owners), 8, 4)
     video = _video(owners, seed=223, chunks=(2, 3), width=8, events=4)
     compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
@@ -376,6 +376,28 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
             frozen_descriptors=descriptors,
             interaction_group_batch_size=2,
         )
+        changed_state = replace(
+            interaction_state,
+            rank_event=torch.randn_like(interaction_state.rank_event),
+        )
+        changed_uncached_pool = compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=changed_state,
+            summaries=summaries,
+        )
+        changed_cached_pool = compiler.bank_operator.apply_compact(
+            compact,
+            input_primals,
+            output_primals,
+            bank_set_interaction=compiler.bank_set_interaction,
+            interaction_state=changed_state,
+            summaries=summaries,
+            frozen_descriptors=descriptors,
+            interaction_group_batch_size=2,
+        )
         chunked = compiler.forward_compact(
             program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
         )
@@ -412,6 +434,13 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
+    for changed in (changed_uncached_pool, changed_cached_pool):
+        for left, right in zip(
+            (*changed.input_values, *changed.output_values),
+            (*uncached_pool.input_values, *uncached_pool.output_values),
+            strict=True,
+        ):
+            torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
     compiler.zero_grad(set_to_none=True)
     gradient_pool = compiler.bank_operator.apply_compact(
         compact,

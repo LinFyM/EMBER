@@ -14,7 +14,26 @@
   fixed-base+summary-only correction函数类并把bank response前移到primal；A/B通过而S2在训练任务通过、held interaction稳定失败，则停止
   当前shared coordinate，不能继续quotient、surrogate、polish或梯度技巧。
 - canonical实现从clean pushed main建立`codex/g3-program-through-bank-bottleneck`独立worktree；截至本记录只新增专家原文与authority索引，
-  尚未修改科学代码、配置或启动GPU。
+  随后已在该唯一实现面接通下述S0 candidate；formal结论仍须由clean pushed detached run给出。
+
+### Program-through-Bank Bottleneck S0实现与真实profile
+
+- rank-specific B0现保留共享`[E,D]` moments，并为input及output all/by-type作用域分别形成`[R,E,S]` response；training-only
+  free correct/wrong改为逐38 target、output group和四type严格匹配的树，不再广播global token。B1的raw/centered/relational Program及
+  high-dimensional local code旁路已删除，只保留summary、合法task-independent owner/rank/event结构，以及candidate-derived
+  standardized/raw kappa、base score、log norm和metadata。固定结构只调制summary生成的weight，bias仍只能由summary产生；零summary
+  因而不能形成非零condition-specific correction。最终仍重放一个联合output candidate measure并物化唯一rank12+4 rank16。
+- B0 online accumulator支持rank-specific antithetic query、running maximum/normalizer/weighted sum；B0 summary与B1 replay均按frame chunk
+  运行并保留原有Y adjacent/init/goal视频边界状态。新增合同覆盖raw Program固定summary/κ时的B1不变性、Program或bank改变时B0变化、
+  zero-summary、scope isolation、candidate/video permutation、chunked reference、input无type轴及output联合轴。
+- 全仓CPU回归在最终结构调制细节修正前为`254 passed`，修正后的全部直接相关合同为`7 passed`，compile与diff check通过。gpu01物理0的
+  task1真实一步profile自然exit 0：step0逐tensor误差`0`，optimizer step为`2.805s`，evaluation为`106.77s`，peak allocated
+  `41,297,756,160` bytes；38-target真实bank、finite gradient、Panel-B materialization、single complete rank16、source/Native Stage0
+  trainable 0及Action Meta module/parameter 0均成立。该临时profile核对后删除，不冒充formal evidence。
+- 唯一active owner仍是现有`bank_conditioning/program_bank_interaction.py`、`set_summary.py`、`compact_replay.py`与同一task-local runner；
+  没有新增平行compiler或entrypoint。architecture guard对既有大文件给出review，并因`test_shared_compiler.py`中同一个cached/uncached/
+  chunked真实fixture增加29行而触发legacy size/function ratchet；该增量是禁止B1 raw Program旁路所需的同输入不变性断言，拆出会复制整套
+  replay fixture，故保留为cohesive narrow exception。实现文件无`>800`新增/增长，formal后按Gate只保留这一个canonical路径。
 
 ### EBSRI B0/B1 interface expert-consultation boundary
 

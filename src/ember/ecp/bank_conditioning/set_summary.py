@@ -31,10 +31,24 @@ class EventBankSetSummary:
 
     @property
     def condition(self) -> torch.Tensor:
+        if (
+            self.induced_positive.ndim != 3
+            or self.induced_positive.shape != self.induced_negative.shape
+            or self.induced_positive.shape[:2]
+            != (G1_RESIDUAL_RANK, self.mean.shape[0])
+            or self.log_variance.shape != self.mean.shape
+            or self.log_partition.shape
+            != (G1_RESIDUAL_RANK, self.mean.shape[0], 2)
+        ):
+            raise BankConditioningError("rank-specific bank-set summary changed")
+        mean = self.mean[None].expand(G1_RESIDUAL_RANK, -1, -1)
+        log_variance = self.log_variance[None].expand(
+            G1_RESIDUAL_RANK, -1, -1
+        )
         value = torch.cat(
             (
-                self.mean,
-                self.log_variance,
+                mean,
+                log_variance,
                 self.induced_positive,
                 self.induced_negative,
                 self.log_partition,
@@ -189,10 +203,14 @@ class StreamingEventBankSummary:
         self.mass = reference.new_zeros(events, dtype=torch.float32)
         self.first = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
         self.second = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
-        self.maximum = reference.new_full((events, 2), -torch.inf, dtype=torch.float32)
-        self.normalizer = reference.new_zeros(events, 2, dtype=torch.float32)
+        self.maximum = reference.new_full(
+            (G1_RESIDUAL_RANK, events, 2), -torch.inf, dtype=torch.float32
+        )
+        self.normalizer = reference.new_zeros(
+            G1_RESIDUAL_RANK, events, 2, dtype=torch.float32
+        )
         self.weighted = reference.new_zeros(
-            events, 2, value_width, dtype=torch.float32
+            G1_RESIDUAL_RANK, events, 2, value_width, dtype=torch.float32
         )
         self.candidate_count = 0
 
@@ -207,7 +225,8 @@ class StreamingEventBankSummary:
         if (
             coordinates.shape[-1] != self.coordinate_width
             or event_mass.shape != (self.events, *candidate_shape)
-            or inducing_query.shape != (self.events, self.coordinate_width)
+            or inducing_query.shape
+            != (G1_RESIDUAL_RANK, self.events, self.coordinate_width)
             or summary_values.shape != (*candidate_shape, self.value_width)
         ):
             raise BankConditioningError("event bank-set candidate axes changed")
@@ -228,14 +247,14 @@ class StreamingEventBankSummary:
         )
         normalized = functional.layer_norm(coordinate, (self.coordinate_width,))
         score = torch.einsum(
-            "ek,nk->en", inducing_query.float(), normalized
+            "rek,nk->ren", inducing_query.float(), normalized
         ) / math.sqrt(self.coordinate_width)
         log_mass = torch.where(
             mass > 0,
             mass.clamp_min(1e-30).log(),
             torch.full_like(mass, -torch.inf),
         )
-        logits = log_mass[:, None] + torch.stack((score, -score), dim=1)
+        logits = log_mass[None, :, None] + torch.stack((score, -score), dim=2)
         chunk_maximum = logits.amax(-1)
         maximum = torch.maximum(self.maximum, chunk_maximum).detach()
         finite = torch.isfinite(maximum)
@@ -251,7 +270,7 @@ class StreamingEventBankSummary:
             torch.zeros_like(logits),
         )
         self.weighted = self.weighted * old_scale[..., None] + torch.einsum(
-            "ebn,nv->ebv", weights, values
+            "rebn,nv->rebv", weights, values
         )
         self.normalizer = self.normalizer * old_scale + weights.sum(-1)
         self.maximum = maximum
@@ -273,8 +292,8 @@ class StreamingEventBankSummary:
         return EventBankSetSummary(
             mean=mean,
             log_variance=variance.log(),
-            induced_positive=induced[:, 0],
-            induced_negative=induced[:, 1],
+            induced_positive=induced[:, :, 0],
+            induced_negative=induced[:, :, 1],
             log_partition=log_partition,
             event_mass=self.mass,
         )

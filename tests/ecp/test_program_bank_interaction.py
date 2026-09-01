@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import inspect
+
 import torch
 
 from ember.ecp.bank_conditioning.program_bank_interaction import (
     EventConditionedBankSetInteraction,
+    OutputProgramBankSetConditions,
     ProgramBankContext,
+    ProgramBankSetConditions,
+    ProgramBankSetSummaries,
+)
+from ember.ecp.bank_conditioning.set_summary import (
+    EventBankSetSummary,
+    OutputEventBankSetSummary,
 )
 from ember.ecp.contracts import TargetFamily, TargetOwner
 
@@ -53,7 +62,6 @@ def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
     )
     correction = module.input_logit_corrections(
         target=0,
-        program_event_state=state,
         native_event_query=native_query,
         event_weights=weights,
         base_query=torch.randn(4, 4),
@@ -70,40 +78,68 @@ def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
     assert bool(head.weight.grad.abs().sum() > 0)
 
 
-def test_interaction_context_quotients_out_target_wide_absolute_program_code() -> None:
-    module, context, state, _, _ = _fixture()
-    absolute_offset = torch.randn(1, 1, state.shape[-1])
+def test_program_content_only_enters_b0_query_and_not_b1_signature() -> None:
+    module, _, state, _, _ = _fixture()
+    changed = state.clone()
+    changed[0, 0] = changed[0, 0] + torch.randn_like(changed[0, 0])
 
-    rank, inducing = module._event_context(
-        target=0, program_event_state=state, context=context
-    )
-    other_rank, other_inducing = module._event_context(
-        target=0, program_event_state=state + absolute_offset, context=context
-    )
+    query = module._b0_query_context(target=0, program_event_state=state)
+    other = module._b0_query_context(target=0, program_event_state=changed)
 
-    torch.testing.assert_close(rank, other_rank, atol=2e-6, rtol=2e-6)
-    torch.testing.assert_close(inducing, other_inducing)
-    assert not torch.equal(rank[0, 0], rank[1, 0])
-    assert not torch.equal(rank[0, 0], rank[0, 1])
-    (rank.square().mean() + inducing.square().mean()).backward()
+    assert not torch.equal(query, other)
+    assert "program_event_state" not in inspect.signature(
+        module.input_logit_corrections
+    ).parameters
+    assert "program_event_state" not in inspect.signature(
+        module.output_logit_corrections
+    ).parameters
+    query.square().mean().backward()
+    assert module.owner_slot_context.grad is not None
     assert module.rank_slot_context.grad is not None
     assert module.event_slot_context.grad is not None
 
 
-def test_interaction_context_retains_rank_event_program_relations() -> None:
-    module, context, state, _, _ = _fixture()
-    changed = state.clone()
-    changed[0, 0] = changed[0, 0] + torch.randn_like(changed[0, 0])
-
-    rank, inducing = module._event_context(
-        target=0, program_event_state=state, context=context
+def test_real_b0_summary_is_rank_specific() -> None:
+    module, context, state, _, frame = _fixture()
+    values = torch.randn(3, 2, 50, 4)
+    native_query = torch.randn(4, 2, 4)
+    summary = module.summarize_input(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        values=values,
+        native_mean=values.reshape(-1, 4).mean(0),
+        frame_measure=frame,
+        context=context,
     )
-    other_rank, other_inducing = module._event_context(
-        target=0, program_event_state=changed, context=context
+    assert summary.induced_positive.shape == (4, 2, 4)
+    assert summary.condition.shape == (4, 2, module.summary_width)
+    changed_state = state.clone()
+    changed_state[0, 0] = changed_state[0, 0] + torch.randn_like(
+        changed_state[0, 0]
     )
-
-    assert not torch.equal(rank, other_rank)
-    torch.testing.assert_close(inducing, other_inducing)
+    changed_program = module.summarize_input(
+        target=0,
+        program_event_state=changed_state,
+        native_event_query=native_query,
+        values=values,
+        native_mean=values.reshape(-1, 4).mean(0),
+        frame_measure=frame,
+        context=context,
+    )
+    changed_values = values.clone()
+    changed_values[0, 0, 0] = changed_values[0, 0, 0] + 1.0
+    changed_bank = module.summarize_input(
+        target=0,
+        program_event_state=state,
+        native_event_query=native_query,
+        values=changed_values,
+        native_mean=values.reshape(-1, 4).mean(0),
+        frame_measure=frame,
+        context=context,
+    )
+    assert not torch.equal(summary.condition, changed_program.condition)
+    assert not torch.equal(summary.condition, changed_bank.condition)
 
 
 def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> None:
@@ -123,10 +159,9 @@ def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> Non
     with torch.no_grad():
         module.input_condition[TargetFamily.Q.value][-1].weight.normal_(std=0.05)
     free_a = torch.nn.Parameter(torch.zeros_like(summary.condition))
-    free_b = torch.nn.Parameter(torch.ones_like(summary.condition))
+    free_b = torch.nn.Parameter(torch.randn_like(summary.condition))
     common = dict(
         target=0,
-        program_event_state=state,
         native_event_query=native_query,
         event_weights=weights,
         base_query=torch.randn(4, 4),
@@ -141,6 +176,7 @@ def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> Non
         **common, summary=summary.with_condition(free_b)
     )
     assert not torch.equal(left, right)
+    assert torch.equal(left, torch.zeros_like(left))
     torch.testing.assert_close(left[:, 0], -left[:, 1])
     (left.square().mean() + right.square().mean()).backward()
     assert free_a.grad is not None and bool(torch.isfinite(free_a.grad).all())
@@ -166,7 +202,6 @@ def test_output_reads_all_and_own_type_but_keeps_one_joint_candidate_axis() -> N
         module.output_condition[TargetFamily.Q.value][-1].weight.normal_(std=0.05)
     correction = module.output_logit_corrections(
         target=0,
-        program_event_state=state,
         native_event_query=native_query,
         event_weights=weights,
         base_query=torch.randn(4, 4),
@@ -177,3 +212,50 @@ def test_output_reads_all_and_own_type_but_keeps_one_joint_candidate_axis() -> N
     )
     assert correction.shape == (4, 2, 3, 2, 50, 4)
     torch.testing.assert_close(correction[:, 0], -correction[:, 1])
+
+
+def test_free_summary_tree_does_not_broadcast_across_native_scopes() -> None:
+    def summary() -> EventBankSetSummary:
+        return EventBankSetSummary(
+            mean=torch.zeros(2, 32),
+            log_variance=torch.zeros(2, 32),
+            induced_positive=torch.zeros(4, 2, 4),
+            induced_negative=torch.zeros(4, 2, 4),
+            log_partition=torch.zeros(4, 2, 2),
+            event_mass=torch.ones(2),
+        )
+
+    def output() -> OutputEventBankSetSummary:
+        return OutputEventBankSetSummary(
+            all_types=summary(), by_type=tuple(summary() for _ in range(4))
+        )
+
+    base = ProgramBankSetSummaries(
+        inputs=(summary(), summary()), outputs=((output(),), (output(),))
+    )
+    tokens = [
+        torch.full((4, 2, base.inputs[0].condition.shape[-1]), float(index))
+        for index in range(12)
+    ]
+    conditions = ProgramBankSetConditions(
+        inputs=(tokens[0], tokens[1]),
+        outputs=(
+            (
+                OutputProgramBankSetConditions(
+                    all_types=tokens[2], by_type=tuple(tokens[3:7])
+                ),
+            ),
+            (
+                OutputProgramBankSetConditions(
+                    all_types=tokens[7], by_type=tuple(tokens[8:12])
+                ),
+            ),
+        ),
+    )
+    observed = base.with_condition(conditions)
+    actual = [*observed.inputs]
+    for groups in observed.outputs:
+        for group in groups:
+            actual.extend((group.all_types, *group.by_type))
+    for scope, token in zip(actual, tokens, strict=True):
+        assert torch.equal(scope.condition, token)

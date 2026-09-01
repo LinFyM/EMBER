@@ -48,6 +48,7 @@ from ember.ecp.joint_program_primal.runtime import (
     _joint_parameter_ownership,
     load_joint_program_primal_config,
 )
+from ember.ecp.native_factors import native_output_group_count
 from ember.ecp.joint_program_primal.raw_stage0 import (
     RAW_STAGE0_PROGRAM_INPUT,
     prepare_raw_stage0_primal_condition,
@@ -456,7 +457,7 @@ def test_bank_set_s0_and_s1_have_explicit_trainable_parameter_ownership() -> Non
         assert all(
             not value.requires_grad for value in compiler.primal_scorer.parameters()
         )
-        assert ({name for name in names if name.startswith("free_")}) == (
+        assert ({name.split(".", 1)[0] for name in names if name.startswith("free_")}) == (
             {"free_correct", "free_wrong"}
             if stage == BANK_SET_S0_STAGE
             else set()
@@ -464,6 +465,22 @@ def test_bank_set_s0_and_s1_have_explicit_trainable_parameter_ownership() -> Non
         assert any("set_encoder" in name for name in names) is (
             stage == BANK_SET_S1_STAGE
         )
+        if stage == BANK_SET_S0_STAGE:
+            tree = writer.free_correct.conditions()
+            assert len(tree.inputs) == len(owners)
+            assert [len(groups) for groups in tree.outputs] == [
+                native_output_group_count(owner) for owner in owners
+            ]
+            tensors = list(tree.inputs)
+            for groups in tree.outputs:
+                for group in groups:
+                    assert len(group.by_type) == 4
+                    tensors.extend((group.all_types, *group.by_type))
+            assert all(
+                value.shape == (4, 4, compiler.bank_set_interaction.summary_width)
+                for value in tensors
+            )
+            assert len({value.data_ptr() for value in tensors}) == len(tensors)
 
 
 def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> None:

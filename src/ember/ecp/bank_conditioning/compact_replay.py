@@ -145,7 +145,7 @@ def summarize_compact_replay(
     inputs = []
     outputs = []
     frames = int(prepared.frame_measure.shape[0])
-    summary_frame_chunk = frames
+    summary_frame_chunk = max(1, int(operator.covariance_frame_chunk))
     for target, (owner, x, y) in enumerate(
         zip(
             operator.owners,
@@ -324,7 +324,6 @@ def _interaction_input_bias(
         partial(
             interaction.input_logit_corrections,
             target=target,
-            program_event_state=state.rank_event[target],
             native_event_query=state.input_event_queries[target],
             event_weights=state.event_weights[target],
             base_query=plan.input_queries[target],
@@ -352,7 +351,6 @@ def _interaction_output_bias(
         partial(
             interaction.output_logit_corrections,
             target=target,
-            program_event_state=state.rank_event[target],
             native_event_query=state.output_event_queries[target][group],
             event_weights=state.event_weights[target],
             base_query=plan.output_queries[target][group],
@@ -465,12 +463,8 @@ def _replay_cached_interaction(
 ) -> None:
     frames = int(prepared.frame_measure.shape[0])
     device = prepared.frame_measure.device
-    rank_context = tuple(
-        interaction._event_context(
-            target=target,
-            program_event_state=state.rank_event[target],
-            context=state.context,
-        )[0]
+    structural_gates = tuple(
+        interaction._b1_structural_gate(target)
         for target in range(len(operator.owners))
     )
     input_buckets = {
@@ -534,8 +528,8 @@ def _replay_cached_interaction(
                     interaction,
                     family=family.value,
                     summaries=tuple(summaries.inputs[target] for target in batch),
-                    rank_context=torch.stack(
-                        tuple(rank_context[target] for target in batch)
+                    structural_gate=torch.stack(
+                        tuple(structural_gates[target] for target in batch)
                     ),
                     event_weights=torch.stack(
                         tuple(state.event_weights[target] for target in batch)
@@ -570,8 +564,8 @@ def _replay_cached_interaction(
                         summaries.outputs[target][group]
                         for target, group in batch
                     ),
-                    rank_context=torch.stack(
-                        tuple(rank_context[target] for target, _ in batch)
+                    structural_gate=torch.stack(
+                        tuple(structural_gates[target] for target, _ in batch)
                     ),
                     event_weights=torch.stack(
                         tuple(state.event_weights[target] for target, _ in batch)

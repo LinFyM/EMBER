@@ -1,5 +1,32 @@
 # EMBER progress
 
+### Owner-preserving absolute-route quotient S0 formal launch contract
+
+- scientific implementation/config authority为clean pushed `03b731437985998d4fbbcb5745fbe9d0fa24d0ef`；formal从只增加本launch
+  record的clean pushed detached descendant
+  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-g3-ebsri-owner-quotient-s0-formal`执行。两个world1进程分别以task1/wrong8和
+  task93/wrong94从冻结R5 scorer fresh初始化owner/rank/event slots、interaction、free summaries、optimizer/scheduler/RNG；不加载
+  首版quotient或任何旧S0/S1/S2 interaction/checkpoint。每task严格10 warmup+100 effective steps，保存actual checkpoint70/110，
+  完成既有五臂Panel-B后才聚合；S0只裁决owner-preserving free-summary factorization，不证明真实B0或shared mapping。
+- exact entry为两个独立的
+  `python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置
+  `configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json`，共同只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`与既有90-pair Program-bank cache；环境固定
+  `NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`及GPU-local NUMA。task1固定gpu01物理0，task93固定物理1；二者是
+  全部独立qualification units，额外空卡不能提高同一world1任务吞吐，故不做重复训练或dummy占卡。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task1_s110_03b7314_gpu01p0_20260901`、
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task93_s110_03b7314_gpu01p1_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_gate_s110_03b7314_gpu01p01_20260901`；launch前均不存在，不覆盖旧evidence。
+  2026-09-01 08:53 CST live检查gpu01物理0/1分别为UUID `GPU-658b6043`/`GPU-845a7b73`、`15MiB/0%`、Default且无compute
+  process；gpu01其余卡此刻也空闲，gpu02多数有30GB级任务，但本阶段没有第三个独立task。`/data1` quota为
+  `777281932/1073741824KiB`、shared余`84TiB`；同类双run新增约几十MB，远低于余量。
+- profile已以真实task1验证step `2.758s`、peak allocated `41.258GB`、五臂materialization、finite gradient、owner/rank/event
+  inventory、Action Meta 0、source/Native Stage0 frozen与唯一rank16。formal启动前再做一次live设备/输出检查；若外部进程后发导致峰值
+  余量不足，只停止本任务并在新root fresh迁移，不干预他人。只有同一commit、task、world1/device且完整macro70 checkpoint才允许
+  exact-resume。S0 Gate维持correct fit0/fit1各`>=.85`、held`>=.80`、wrong各`<=.25`、margin`>=.50`、all-pairs、family、
+  saturation与信息墙全部通过；双taskaggregate pass前不得进入S1。
+
 - 2026-09-01 首版absolute-route quotient S0已从clean pushed detached `6c33760`在gpu01物理5/6完成双task formal，aggregate为
   `runs/outputs/pi05_ecp_event_bank_set_quotient_s0_gate_s110_0d8d901_gpu01p56_retry1_20260901/aggregate.json`，结论`non_pass`。
   task1 correct fit0/fit1/held为`.851/.846/.877`、wrong为`-.372/-.369`，仅fit1差`.0044`；task93为

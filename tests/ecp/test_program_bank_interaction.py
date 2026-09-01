@@ -135,6 +135,46 @@ def test_tasklocal_free_b0_query_is_shared_across_program_variants() -> None:
     assert module.owner_slot_context.grad is None
 
 
+def test_tasklocal_free_native_anchor_augments_instead_of_replacing_bank() -> None:
+    module, context, state, frame = _fixture()
+    summaries = _summaries(module, context, state, frame)
+    for heads in (module.input_primal_gate, module.output_primal_gate):
+        torch.nn.init.constant_(heads[TargetFamily.Q.value][-1].weight, 0.1)
+    base_input = (torch.randn(4, 4),)
+    groups = native_output_group_count(module.owners[0])
+    base_output = (torch.randn(groups, 4, 8 // groups),)
+    with torch.no_grad():
+        expected = module.bank_conditioned_primals(
+            input_primals=base_input,
+            output_primals=base_output,
+            summaries=summaries,
+        )
+    module.install_tasklocal_free_native_anchor()
+    with torch.no_grad():
+        zero = module.bank_conditioned_primals(
+            input_primals=base_input,
+            output_primals=base_output,
+            summaries=summaries,
+        )
+    torch.testing.assert_close(zero[0][0], expected[0][0])
+    torch.testing.assert_close(zero[1][0], expected[1][0])
+    with torch.no_grad():
+        module.tasklocal_free_input_anchor[0].fill_(0.25)
+        module.tasklocal_free_output_anchor[0][0].fill_(-0.25)
+    actual = module.bank_conditioned_primals(
+        input_primals=base_input,
+        output_primals=base_output,
+        summaries=summaries,
+    )
+    assert not torch.equal(actual[0][0], expected[0][0])
+    assert not torch.equal(actual[1][0][0], expected[1][0][0])
+    (actual[0][0].square().mean() + actual[1][0].square().mean()).backward()
+    assert module.tasklocal_free_input_anchor[0].grad is not None
+    assert bool(module.tasklocal_free_input_anchor[0].grad.abs().sum() > 0)
+    assert module.tasklocal_free_output_anchor[0][0].grad is not None
+    assert bool(module.tasklocal_free_output_anchor[0][0].grad.abs().sum() > 0)
+
+
 def test_real_b0_summary_has_rank_event_native_anchor() -> None:
     module, context, state, frame = _fixture()
     values = torch.randn(3, 2, 50, 4)

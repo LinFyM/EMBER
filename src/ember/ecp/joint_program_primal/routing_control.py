@@ -765,11 +765,7 @@ def prepare_routing_control_runtime(
     if config.get("model", {}).get(
         "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
     ) == TASKLOCAL_FREE_B0_QUERY:
-        view = SimpleNamespace(
-            owners=model.owners,
-            compiler=model.compiler,
-            context=context,
-        )
+        view = SimpleNamespace(owners=model.owners, compiler=model.compiler, context=context)
         with torch.no_grad():
             program = fixed_routing_program(view, int(args.task))
             state = model.compiler.primal_scorer.program_state(program)
@@ -782,6 +778,8 @@ def prepare_routing_control_runtime(
                     for target in range(len(model.owners))
                 )
             ).detach()
+        if config.get("model", {}).get("tasklocal_free_native_anchor", False):
+            model.compiler.bank_set_interaction.install_tasklocal_free_native_anchor()
     writer_state, trainable, frozen = _scorer_parameter_ownership(
         model.program,
         model.compiler,

@@ -23,6 +23,7 @@ from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     G1_RESIDUAL_RANK,
     OUTPUT_BANK_TYPES,
+    native_output_group_count,
 )
 
 
@@ -198,6 +199,8 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             slots[len(self.owners) + G1_RESIDUAL_RANK :].clone()
         )
         self.register_parameter("tasklocal_free_b0_query", None)
+        self.tasklocal_free_input_anchor = None
+        self.tasklocal_free_output_anchor = None
 
     def install_tasklocal_free_b0_query(self, initial: torch.Tensor) -> None:
         """Install one diagnostic query per target, shared by every bank scope."""
@@ -211,6 +214,99 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         if self.tasklocal_free_b0_query is not None or initial.shape != expected:
             raise BankConditioningError("task-local free B0 query axes changed")
         self.tasklocal_free_b0_query = torch.nn.Parameter(initial.detach().clone())
+
+    def install_tasklocal_free_native_anchor(self) -> None:
+        """Add one shared full-native basis without replacing the real anchor."""
+
+        if (
+            self.tasklocal_free_input_anchor is not None
+            or self.tasklocal_free_output_anchor is not None
+        ):
+            raise BankConditioningError("task-local free native anchor already exists")
+        reference = next(self.parameters())
+
+        def parameter(width: int) -> torch.nn.Parameter:
+            return torch.nn.Parameter(
+                torch.zeros(
+                    G1_RESIDUAL_RANK,
+                    self.event_slots,
+                    width,
+                    device=reference.device,
+                    dtype=reference.dtype,
+                )
+            )
+
+        self.tasklocal_free_input_anchor = torch.nn.ParameterList(
+            [parameter(owner.in_features) for owner in self.owners]
+        )
+        self.tasklocal_free_output_anchor = torch.nn.ModuleList(
+            [
+                torch.nn.ParameterList(
+                    [
+                        parameter(
+                            owner.out_features // native_output_group_count(owner)
+                        )
+                        for _ in range(native_output_group_count(owner))
+                    ]
+                )
+                for owner in self.owners
+            ]
+        )
+
+    def validate_tasklocal_free_gradients(
+        self, *, require_native_anchor: bool
+    ) -> None:
+        """Check the one delayed-gradient step owned by task-local controls."""
+
+        query = self.tasklocal_free_b0_query
+        if (
+            query is None
+            or query.grad is None
+            or not bool(torch.isfinite(query.grad).all())
+            or not bool(query.grad.abs().sum() > 0)
+        ):
+            raise BankConditioningError(
+                "task-local free B0 query has no finite gradient"
+            )
+        if not require_native_anchor:
+            return
+        inputs = self.tasklocal_free_input_anchor
+        outputs = self.tasklocal_free_output_anchor
+        if inputs is None or outputs is None:
+            raise BankConditioningError("task-local free native anchor is absent")
+        anchors = (*tuple(inputs.parameters()), *tuple(outputs.parameters()))
+        gradients = tuple(value.grad for value in anchors)
+        if (
+            not gradients
+            or any(value is None for value in gradients)
+            or not bool(
+                torch.stack(tuple(torch.isfinite(value).all() for value in gradients)).all()
+            )
+            or not bool(
+                torch.stack(tuple(value.abs().sum() for value in gradients)).sum() > 0
+            )
+        ):
+            raise BankConditioningError(
+                "task-local free native anchor has no finite gradient"
+            )
+
+    def _augmented_native_anchor(
+        self,
+        *,
+        target: int,
+        group: int | None,
+        candidate: torch.Tensor,
+    ) -> torch.Tensor:
+        inputs = self.tasklocal_free_input_anchor
+        outputs = self.tasklocal_free_output_anchor
+        if (inputs is None) != (outputs is None):
+            raise BankConditioningError("task-local free native anchor ownership changed")
+        if inputs is None:
+            return candidate
+        free = inputs[target] if group is None else outputs[target][group]
+        if free.shape != candidate.shape:
+            raise BankConditioningError("task-local free native anchor axes changed")
+        return candidate + free.to(candidate)
 
     def _primal_gate_network(self, width: int) -> torch.nn.Sequential:
         network = torch.nn.Sequential(
@@ -268,7 +364,11 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             conditioned_inputs.append(
                 self._add_native_anchor(
                     input_primals[target],
-                    input_summary.native_anchor,
+                    self._augmented_native_anchor(
+                        target=target,
+                        group=None,
+                        candidate=input_summary.native_anchor,
+                    ),
                     input_gate,
                 )
             )
@@ -277,8 +377,12 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 raise BankConditioningError(
                     "bank-conditioned output primal group count changed"
                 )
-            for base, summary in zip(
-                output_primals[target], summaries.outputs[target], strict=True
+            for group, (base, summary) in enumerate(
+                zip(
+                    output_primals[target],
+                    summaries.outputs[target],
+                    strict=True,
+                )
             ):
                 condition = torch.cat(
                     (
@@ -290,7 +394,13 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 gate = self.output_primal_gate[family](condition).squeeze(-1)
                 groups.append(
                     self._add_native_anchor(
-                        base, summary.all_types.native_anchor, gate
+                        base,
+                        self._augmented_native_anchor(
+                            target=target,
+                            group=group,
+                            candidate=summary.all_types.native_anchor,
+                        ),
+                        gate,
                     )
                 )
             conditioned_outputs.append(torch.stack(tuple(groups)))

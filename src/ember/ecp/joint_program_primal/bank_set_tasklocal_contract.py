@@ -38,6 +38,12 @@ PROGRAM_CONDITIONED_B0_QUERY = "program_shared_inducing"
 TASKLOCAL_FREE_B0_QUERY = (
     "tasklocal_free_target_rank_event_shared_across_banks_videos_and_scopes"
 )
+TASKLOCAL_QUERY_STEP_CALIBRATIONS = frozenset(
+    {
+        "task93_qfree_query_space_step_calibration_after_undertravel_non_pass",
+        "task93_afree_nested_native_anchor_after_calibrated_qfree_tradeoff_non_pass",
+    }
+)
 
 
 class FreeProgramBankSetConditionTree(torch.nn.Module):
@@ -376,8 +382,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("interaction_hidden_width") == 64,
             (
                 query_lr_multiplier == G1_RESIDUAL_RANK * 8
-                if calibration_kind
-                == "task93_qfree_query_space_step_calibration_after_undertravel_non_pass"
+                if calibration_kind in TASKLOCAL_QUERY_STEP_CALIBRATIONS
                 else "tasklocal_free_b0_query_lr_multiplier" not in model
             ),
             (
@@ -477,6 +482,21 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     )
 
 
+def _enable_installed_free_native_anchors(interaction: torch.nn.Module) -> set[str]:
+    inputs = interaction.tasklocal_free_input_anchor
+    outputs = interaction.tasklocal_free_output_anchor
+    if inputs is None and outputs is None:
+        return set()
+    if inputs is None or outputs is None:
+        raise ValueError("task-local free native anchor ownership changed")
+    inputs.requires_grad_(True)
+    outputs.requires_grad_(True)
+    return {
+        "bank_set_interaction.tasklocal_free_input_anchor",
+        "bank_set_interaction.tasklocal_free_output_anchor",
+    }
+
+
 def bank_set_parameter_ownership(
     program: torch.nn.Module,
     compiler: torch.nn.Module,
@@ -486,6 +506,7 @@ def bank_set_parameter_ownership(
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     interaction = compiler.bank_set_interaction
     interaction.requires_grad_(False).eval()
+    free_anchor_roots: set[str] = set()
     if stage == BANK_SET_S0_STAGE:
         interaction.requires_grad_(True).train()
         interaction.set_encoder.requires_grad_(False).eval()
@@ -503,6 +524,7 @@ def bank_set_parameter_ownership(
                 encoder.input_value.requires_grad_(True).train()
                 encoder.output_value.requires_grad_(True).train()
             interaction.tasklocal_free_b0_query.requires_grad_(True)
+            free_anchor_roots = _enable_installed_free_native_anchors(interaction)
         interaction.input_primal_gate.requires_grad_(True).train()
         interaction.output_primal_gate.requires_grad_(True).train()
     else:
@@ -538,6 +560,7 @@ def bank_set_parameter_ownership(
         }
         if free_b0_query_initial is not None:
             allowed_parameters = {"bank_set_interaction.tasklocal_free_b0_query"}
+            allowed_roots.update(free_anchor_roots)
     unexpected = sorted(
         name
         for name in named_trainable

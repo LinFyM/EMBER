@@ -1,6 +1,6 @@
 # EMBER progress
 
-### Bank-conditioned primal双task结论与calibrated Q_free formal launch contract
+### Bank-conditioned primal双task结论、calibrated Q_free结论与A_free资格
 
 - 原bank-conditioned primal双task Gate已完整结束并聚合到
   `runs/outputs/pi05_ecp_bank_conditioned_primal_gate_s110_eb9f295_gpu01p12_20260901/aggregate.json`。task1 correct
@@ -27,6 +27,21 @@
   `runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_calibrated_task93_s110_fdc669f_gpu01p0_20260901`，从包含本launch record的clean pushed
   detached descendant执行。通过才说明充分移动的task-local query能在当前真实summary/anchor/gate/operator图中建立specificity；若仍non-pass，
   先以internal teacher是否拟合及实际query位移定位，再决定预登记A_free，不能把未拟合surrogate冒充capacity裁决。
+- calibrated Q_free formal已自然完成110步与五臂各16次Panel-B。correct fit0/fit1/held为
+  `.808258/.826103/.794860`，wrong fit0/fit1为`.526405/.533515`；只有all-pairs通过，absolute correct/held、wrong和margin均non-pass。
+  final correct/wrong normalized effective-rank4 MSE为`.061264/.724100`。step70 query相对初始化的RMS位移为`.366061`，是首轮
+  Q_free的约`21.5x`，且q/v/action-in/action-out均发生实质移动，因此首轮under-travel已被有效排除。标定确实把wrong从
+  `.815/.832`降到`.526/.534`，但同时把correct从`.915/.907/.885`降到`.808/.826/.795`，形成稳定capacity--specificity权衡；
+  下一最早接口是candidate-derived native anchor span/coupling与shared scalar gate，而不是继续调query LR。
+- 预登记A_free只在上述同一calibrated Q_free图内，为38 targets的input及native output groups各加一个zero-init、逐rank/event的
+  task-local full-native anchor basis；它与真实candidate anchor相加而非替换，跨全部correct/wrong arms、banks和videos共享，且无output
+  type轴。真实X/Y、summary→gate、current-bank full inverse、exact replay、carrier12+residual4唯一rank16、数据、steps、loss和Panel-B
+  Gate均不变，Action Meta继续实际为0。A_free通过只定位candidate anchor span/coupling，仍不证明shared Writer；失败则否定当前
+  summary + family-scalar gate + event-additive shared basis这一组合函数类，不外推为整个ECP失败。
+- 重构后task93两步真实profile自然exit0：zero-init step0最大误差`0`，step2 query与free-anchor梯度检查均通过，实际optimizer LRs仍为
+  `0.0007/0.0224`，writer trainable为`2,792,656`且含234个`free_` named tensors；Action Meta module/parameter均为0，source/Stage0
+  trainable为0，Panel-B backward为0并只物化唯一rank16。两步为`12.77/13.04s`，峰值`33,600,059,904` bytes。定向合同`8 passed`、
+  新旧config解析、compile、diff check及architecture guard无hard violation；该profile只证明实现接通，不作A_free Gate结果。
 
 ### Bank-conditioned primal task93定位与Q_free formal launch contract
 

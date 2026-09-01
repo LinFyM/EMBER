@@ -1941,3 +1941,16 @@ aggregate为`non_pass`：task1 correct fit0/fit1/held recovery为`.827/.855/.798
 same-task held能力。按专家预注册停止条件，这淘汰的是“fixed base + whole-bank summary只作bounded logit correction”这一具体函数类，
 不是Program、native bank或ECP整体。后继必须让whole-bank response更早参与bank-conditioned primal形成，再做current-bank global dual与
 唯一exact replay；不得进入原S2或用LR/seed/width/rank/normalization小扫掩盖该接口。
+
+### 117. bank-conditioned primal恢复correct容量，但calibrated free query暴露anchor耦合权衡
+
+把whole-bank response前移到primal后，task1/task93的task-local formal correct fit/held均约`.888--.951`，证明真实summary、native
+anchor、current-bank full inverse与exact replay能够恢复absolute容量和same-task保持；但wrong仍为`.428--.654`，所以原共享query/anchor/gate
+合取不具备充分bank specificity。
+
+首轮task93 Q_free因query-space位移只有普通Program网络的约`1/38`而不能裁决free-query容量。按固定`4 rank × 8 event = 32`坐标宽度
+标定后，query位移扩大约`21.5x`，wrong recovery从`.815/.832`降到`.526/.534`；与此同时correct fit/held从
+`.915/.907/.885`降到`.808/.826/.795`。这排除了“direct query只是没走够”的主要解释，并显露同一图内稳定的
+capacity--specificity权衡。下一项有机制依据的task-local资格是nested A_free：保持真实candidate anchor，额外学习跨所有arms/banks/videos
+共享的逐target/rank/event full-native basis，检验最早缺口是否在candidate anchor span/coupling。它不是deployment候选，也不能把通过冒充
+Program-conditioned shared attention成功。

@@ -371,3 +371,40 @@ def test_pnbtt_free_query_identity_and_final_canonical_update_are_exact() -> Non
     torch.testing.assert_close(
         canonical_b @ canonical_a, b @ a, rtol=2e-5, atol=2e-5
     )
+
+
+def test_pnbtt_fullrank16_oracle_keeps_one_rank16_native_value_path() -> None:
+    owners = _owners()
+    compiler = SharedNativeFactorCompiler(
+        owners,
+        program_width=8,
+        event_slots=2,
+        key_width=4,
+        query_hidden_width=16,
+        residual_rank=16,
+        scale_prior_ratio=torch.full((len(owners), 16), 0.05),
+        covariance_ridge=1e-3,
+        native_rms_epsilon=1e-6,
+        direction_epsilon=1e-3,
+        query_epsilon=1e-3,
+        score_epsilon=1e-3,
+        replay_chunk_size=17,
+    )
+    program = _program(targets=len(owners), width=8, events=2)
+    video = _video(owners, seed=37, width=8, events=2)
+    query = torch.randn(
+        len(owners), 16, 2, len(PNBTT_SIDES), 4, requires_grad=True
+    )
+
+    output = compiler(program, (video,), s_ref=torch.ones(len(owners)), query_override=query)
+
+    assert compiler.residual_rank == 16
+    assert compiler.tangent_transport.residual_rank == 16
+    assert all(value.shape[0] == 16 for value in output.residual.a)
+    assert all(value.shape[0] == 16 for value in output.residual.b)
+    assert not any("task_lookup" in name for name, _ in compiler.named_parameters())
+    sum(
+        value.square().mean()
+        for value in (*output.residual.a, *output.residual.b)
+    ).backward()
+    assert query.grad is not None and bool(torch.isfinite(query.grad).all())

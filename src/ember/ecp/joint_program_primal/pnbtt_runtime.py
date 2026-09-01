@@ -58,6 +58,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 PNBTT_TASKLOCAL_SCHEMA = "ember_ecp_pnbtt_tasklocal_v2"
 PNBTT_TASKLOCAL_RUN_SCHEMA = "ember_ecp_pnbtt_tasklocal_run_v1"
 PNBTT_E1_STAGE = "g3_pnbtt_e1_family_key_transport"
+PNBTT_FULLRANK_SCALE_SCHEMA = "ember_ecp_pnbtt_fullrank16_scale_prior_v1"
 
 
 @dataclass(frozen=True)
@@ -101,7 +102,7 @@ class PNBTTTaskLocalRuntime:
     writer_state: PNBTTTaskLocalWriterState
     owners: tuple[Any, ...]
     ranks: Any
-    rank4_contract: Any
+    residual_contract: Any
     condition_cache: FrozenMappingConditionCache
     query_points: int
     trainable_parameters: tuple[torch.nn.Parameter, ...]
@@ -124,11 +125,79 @@ def is_pnbtt_tasklocal_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == PNBTT_TASKLOCAL_SCHEMA
 
 
+def _configured_residual_rank(config: Mapping[str, Any]) -> int:
+    return int(config.get("model", {}).get("residual_rank", 4))
+
+
+def _load_pnbtt_scale_prior(
+    config: Mapping[str, Any],
+    base: Mapping[str, Any],
+    *,
+    asset_root: Path,
+    device: torch.device | str,
+) -> torch.Tensor:
+    residual_rank = _configured_residual_rank(config)
+    if residual_rank == 4:
+        return load_shared_scale_prior(base, asset_root=asset_root, device=device)
+    if residual_rank != 16:
+        raise ValueError("PNBTT task-local residual rank changed")
+    prior = read_json(
+        authority_path(config, "fullrank16_scale_prior", asset_root=asset_root)
+    )
+    derivation = prior.get("derivation", {})
+    ratio = torch.tensor(prior.get("scale_ratio", ()), dtype=torch.float32)
+    valid = all(
+        (
+            prior.get("schema_version") == PNBTT_FULLRANK_SCALE_SCHEMA,
+            prior.get("status") == "frozen_fit19_task_expert_fullrank16_scale_prior",
+            prior.get("target_count") == 38,
+            prior.get("rank") == 16,
+            ratio.shape == (38, 16),
+            bool(torch.isfinite(ratio).all()),
+            bool(torch.all((ratio >= 0) & (ratio < 1))),
+            bool(torch.all(ratio.square().sum(-1) > 0)),
+            derivation.get("source")
+            == "independent_task_local_rank16_policy_experts",
+            derivation.get("fit_task_count") == 19,
+            derivation.get("held_global_task_ids") == [0, 9, 18, 25, 36],
+            derivation.get("held_task_used") is False,
+            derivation.get("validation_or_test_used") is False,
+            derivation.get("matrix") == "complete_task_expert_lora_from_source",
+            derivation.get("factorization")
+            == "exact_small_core_singular_component_matrix_rms",
+            derivation.get("across_task_reduction")
+            == "coordinatewise_task_equal_median",
+            derivation.get("normalization")
+            == "ratio_to_fit19_expert_minus_carrier_s_ref",
+            derivation.get("upper_clip") == 0.999,
+            derivation.get("deployment_task_or_video_lookup") is False,
+        )
+    )
+    if not valid:
+        raise ValueError("PNBTT full-rank16 scale prior changed")
+    return ratio.to(device=device)
+
+
 def load_pnbtt_tasklocal_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     model = config.get("model", {})
     task_local = config.get("task_local", {})
     optimization = config.get("optimization", {})
+    residual_rank = _configured_residual_rank(config)
+    rank_contract_valid = (
+        residual_rank == 4
+        and model.get("generated_adapter")
+        == "one_complete_38_target_rank12_plus_rank4_rank16"
+    ) or (
+        residual_rank == 16
+        and config.get("status") == "active_pnbtt_e1_fullrank16_oracle"
+        and model.get("generated_adapter")
+        == "one_complete_38_target_pnbtt_fullrank16"
+        and model.get("carrier_rank") == 0
+        and model.get("scale_prior")
+        == "fit19_task_expert_fullrank16_frozen_task_agnostic"
+        and "fullrank16_scale_prior" in config.get("authorities", {})
+    )
     valid = all(
         (
             is_pnbtt_tasklocal_config(config),
@@ -146,6 +215,7 @@ def load_pnbtt_tasklocal_config(path: Path) -> dict[str, Any]:
             int(model.get("key_hidden_width", 0)) > 0,
             int(model.get("target_key_rank", 0)) > 0,
             int(model.get("event_slots", 0)) == 8,
+            rank_contract_valid,
             0.0 < float(config.get("gate", {}).get("near_bound_weight_threshold", 0)) < 1.0,
             config.get("gate", {}).get("adjacent_checkpoint_conclusion_consistent")
             is True,
@@ -380,7 +450,10 @@ def prepare_pnbtt_tasklocal_runtime(
         device=context.device,
     )
     owners = build_target_owners(ranks.contract)
-    rank4_contract = derive_pi05_lora_rank(ranks.contract, rank=4)
+    residual_rank = _configured_residual_rank(config)
+    residual_contract = derive_pi05_lora_rank(
+        ranks.contract, rank=residual_rank
+    )
     program = build_frozen_g2_program(
         base, asset_root=args.asset_root, owners=owners, device=context.device
     )
@@ -403,9 +476,13 @@ def prepare_pnbtt_tasklocal_runtime(
         replay_chunk_size=int(model["replay_chunk_size"]),
         temperature_by_side=tuple(model["temperature_by_side"]),
         type_balance=torch.tensor(model["fixed_type_balance"], dtype=torch.float32),
-        scale_prior_ratio=load_shared_scale_prior(
-            base, asset_root=args.asset_root, device=context.device
+        scale_prior_ratio=_load_pnbtt_scale_prior(
+            config,
+            base,
+            asset_root=args.asset_root,
+            device=context.device,
         ),
+        residual_rank=residual_rank,
         relative_eigenvalue_floor=float(base["model"]["relative_eigenvalue_floor"]),
         replay_score_rms=float(base["model"]["replay_score_rms"]),
         covariance_frame_chunk=int(base["model"]["frame_chunk_size"]),
@@ -418,6 +495,7 @@ def prepare_pnbtt_tasklocal_runtime(
         event_slots=int(model["event_slots"]),
         key_width=int(model["key_width"]),
         query_epsilon=float(model["query_epsilon"]),
+        residual_rank=residual_rank,
     ).to(context.device)
     free_query.requires_grad_(True).train()
     writer = PNBTTTaskLocalWriterState(compiler, free_query)
@@ -500,7 +578,7 @@ def prepare_pnbtt_tasklocal_runtime(
         writer_state=writer,
         owners=owners,
         ranks=ranks,
-        rank4_contract=rank4_contract,
+        residual_contract=residual_contract,
         condition_cache=condition_cache,
         query_points=int(
             read_json(authority_path(base, "g2_config", asset_root=args.asset_root))[

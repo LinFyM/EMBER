@@ -44,6 +44,7 @@ class ProgramTangentQuery(torch.nn.Module):
         key_width: int,
         hidden_width: int,
         query_epsilon: float,
+        residual_rank: int = G1_RESIDUAL_RANK,
     ) -> None:
         super().__init__()
         self.target_count = len(tuple(owners))
@@ -51,9 +52,12 @@ class ProgramTangentQuery(torch.nn.Module):
         self.event_slots = int(event_slots)
         self.key_width = int(key_width)
         self.query_epsilon = float(query_epsilon)
+        self.residual_rank = int(residual_rank)
+        if self.residual_rank <= 0:
+            raise ValueError("PNBTT residual rank must be positive")
         identity_width = 16
         self.target_identity = torch.nn.Embedding(self.target_count, identity_width)
-        self.rank_identity = torch.nn.Embedding(G1_RESIDUAL_RANK, identity_width)
+        self.rank_identity = torch.nn.Embedding(self.residual_rank, identity_width)
         self.event_identity = torch.nn.Embedding(self.event_slots, identity_width)
         self.side_identity = torch.nn.Embedding(len(PNBTT_SIDES), identity_width)
         context_width = 4 * self.program_width + 3 + 4 * identity_width
@@ -94,7 +98,7 @@ class ProgramTangentQuery(torch.nn.Module):
             raise BankConditioningError("PNBTT Natural Program schema changed")
         device = program.p_lang.device
         target_ids = torch.arange(targets, device=device)
-        rank_ids = torch.arange(G1_RESIDUAL_RANK, device=device)
+        rank_ids = torch.arange(self.residual_rank, device=device)
         event_ids = torch.arange(events, device=device)
         side_ids = torch.arange(len(PNBTT_SIDES), device=device)
         base = torch.cat(
@@ -108,7 +112,7 @@ class ProgramTangentQuery(torch.nn.Module):
             ),
             dim=-1,
         )
-        shape = (targets, G1_RESIDUAL_RANK, events, len(PNBTT_SIDES), -1)
+        shape = (targets, self.residual_rank, events, len(PNBTT_SIDES), -1)
         base = base[:, None, :, None].expand(*shape[:-1], base.shape[-1])
         target = self.target_identity(target_ids)[:, None, None, None].expand(
             *shape[:-1], -1
@@ -146,15 +150,19 @@ class TaskLocalFreeTangentQuery(torch.nn.Module):
         event_slots: int,
         key_width: int,
         query_epsilon: float,
+        residual_rank: int = G1_RESIDUAL_RANK,
     ) -> None:
         super().__init__()
         self.task_ids = tuple(map(int, task_ids))
         self.query_epsilon = float(query_epsilon)
+        self.residual_rank = int(residual_rank)
+        if self.residual_rank <= 0:
+            raise ValueError("PNBTT residual rank must be positive")
         self.raw_query = torch.nn.Parameter(
             torch.zeros(
                 len(self.task_ids),
                 len(tuple(owners)),
-                G1_RESIDUAL_RANK,
+                self.residual_rank,
                 int(event_slots),
                 len(PNBTT_SIDES),
                 int(key_width),

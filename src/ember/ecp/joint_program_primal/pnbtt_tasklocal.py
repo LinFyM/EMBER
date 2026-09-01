@@ -18,7 +18,7 @@ from ember.ecp.shared_compiler_data import (
     prepare_joint_program_primal_condition,
     program_bank_contexts,
 )
-from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 
 
 @dataclass(frozen=True)
@@ -170,14 +170,21 @@ def generated_rank16(
         bank_contexts=arm.bank_contexts,
         query_override=runtime.free_query(task),
     )
+    residual_rank = runtime.compiler.residual_rank
     residual = residual_lora_state(
-        output.residual, runtime.rank4_contract, canonicalize=bool(canonicalize)
+        output.residual, runtime.residual_contract, canonicalize=bool(canonicalize)
     )
-    complete = compose_rank12_plus_rank4(
-        carrier_state=runtime.ranks.carrier_rank12,
-        residual_state=residual,
-        rank16_contract=runtime.ranks.contract,
-    )
+    if residual_rank == G1_RESIDUAL_RANK:
+        complete = compose_rank12_plus_rank4(
+            carrier_state=runtime.ranks.carrier_rank12,
+            residual_state=residual,
+            rank16_contract=runtime.ranks.contract,
+        )
+    elif residual_rank == runtime.ranks.contract.rank == 16:
+        complete = residual
+        validate_lora_state(complete, runtime.ranks.contract)
+    else:
+        raise RuntimeError("PNBTT E1 residual rank escaped its single-adapter contract")
     if (
         len(runtime.owners) != 38
         or output.video_weights.shape != (1,)

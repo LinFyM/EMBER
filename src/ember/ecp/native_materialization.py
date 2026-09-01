@@ -46,28 +46,42 @@ def low_rank_balanced_svd(
         or b.ndim != 2
         or a.shape[0] != b.shape[1]
         or not 0 < output_rank <= a.shape[0]
-        or a.shape[1] < output_rank
-        or b.shape[0] < output_rank
     ):
         raise NativeFactorError("low-rank core factorization changed shape")
     qb, rb = torch.linalg.qr(b.float(), mode="reduced")
     qa, ra = torch.linalg.qr(a.float().transpose(0, 1), mode="reduced")
     u, singular, vh = torch.linalg.svd(rb @ ra.transpose(0, 1), full_matrices=False)
-    u = u[:, :output_rank]
-    singular = singular[:output_rank]
-    vh = vh[:output_rank]
+    effective_rank = min(output_rank, singular.shape[0])
+    u = u[:, :effective_rank]
+    singular = singular[:effective_rank]
+    vh = vh[:effective_rank]
     root = singular.clamp_min(0).sqrt()
     canonical_b = (qb @ u) * root[None]
     canonical_a = root[:, None] * (vh @ qa.transpose(0, 1))
     pivots = canonical_a.abs().argmax(-1)
     signs = torch.sign(
         canonical_a[
-            torch.arange(output_rank, device=canonical_a.device), pivots
+            torch.arange(effective_rank, device=canonical_a.device), pivots
         ]
     )
     signs = torch.where(signs == 0, torch.ones_like(signs), signs)
     canonical_a = canonical_a * signs[:, None]
     canonical_b = canonical_b * signs[None]
+    if effective_rank < output_rank:
+        canonical_a = torch.cat(
+            (
+                canonical_a,
+                canonical_a.new_zeros(output_rank - effective_rank, a.shape[1]),
+            ),
+            dim=0,
+        )
+        canonical_b = torch.cat(
+            (
+                canonical_b,
+                canonical_b.new_zeros(b.shape[0], output_rank - effective_rank),
+            ),
+            dim=1,
+        )
     return canonical_a.to(a), canonical_b.to(b)
 
 
@@ -77,22 +91,27 @@ def residual_lora_state(
     *,
     canonicalize: bool,
 ) -> dict[str, torch.Tensor]:
-    """Convert native factors to one complete rank-four residual state."""
+    """Convert native factors to one complete residual state of the contract rank."""
 
     if len(residual.a) != len(contract.targets) or len(residual.b) != len(
         contract.targets
     ):
-        raise NativeFactorError("G1 residual target count changed")
+        raise NativeFactorError("native residual target count changed")
+    residual_rank = int(contract.rank)
+    if residual_rank <= 0:
+        raise NativeFactorError("native residual rank changed")
     state: dict[str, torch.Tensor] = {}
     for target, a, b in zip(contract.targets, residual.a, residual.b, strict=True):
-        if a.shape != (G1_RESIDUAL_RANK, target.in_features) or b.shape != (
-            G1_RESIDUAL_RANK,
+        if a.shape != (residual_rank, target.in_features) or b.shape != (
+            residual_rank,
             target.out_features,
         ):
-            raise NativeFactorError(f"G1 factor shape changed: {target.name}")
+            raise NativeFactorError(f"native factor shape changed: {target.name}")
         b_columns = b.transpose(0, 1)
         if canonicalize:
-            a, b_columns = small_core_balanced_svd(a, b_columns)
+            a, b_columns = low_rank_balanced_svd(
+                a, b_columns, output_rank=residual_rank
+            )
         state[target.name + LORA_A_SUFFIX] = a
         state[target.name + LORA_B_SUFFIX] = b_columns
     return state

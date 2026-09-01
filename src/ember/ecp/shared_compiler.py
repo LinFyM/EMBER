@@ -70,6 +70,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         temperature_by_side: Sequence[float] = (1.0, 1.0, 1.0, 1.0, 1.0),
         type_balance: torch.Tensor | None = None,
         scale_prior_ratio: torch.Tensor | None = None,
+        residual_rank: int = 4,
         relative_eigenvalue_floor: float = 1e-6,
         replay_score_rms: float = 0.02,
         covariance_frame_chunk: int = 4,
@@ -80,11 +81,14 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         self.owners = tuple(owners)
         self.program_width = int(program_width)
         self.event_slots = int(event_slots)
+        self.residual_rank = int(residual_rank)
+        if self.residual_rank <= 0:
+            raise NativeFactorError("PNBTT residual rank must be positive")
         if type_balance is None:
             type_balance = torch.full((4, 4), 0.25, dtype=torch.float32)
         if scale_prior_ratio is None:
             scale_prior_ratio = torch.full(
-                (len(self.owners), 4), 0.1, dtype=torch.float32
+                (len(self.owners), self.residual_rank), 0.1, dtype=torch.float32
             )
         if retired_options:
             unexpected = ", ".join(sorted(retired_options))
@@ -96,6 +100,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             key_width=int(key_width),
             hidden_width=int(query_hidden_width),
             query_epsilon=float(query_epsilon),
+            residual_rank=self.residual_rank,
         )
         self.tangent_transport = NativeBankTangentTransport(
             self.owners,
@@ -111,6 +116,7 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             temperature_by_side=temperature_by_side,
             type_balance=type_balance,
             scale_prior_ratio=scale_prior_ratio,
+            residual_rank=self.residual_rank,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,

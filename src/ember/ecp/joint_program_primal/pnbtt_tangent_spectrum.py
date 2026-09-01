@@ -771,6 +771,8 @@ def analyze_pnbtt_tangent_spectrum(args: Any) -> None:
     started = time.monotonic()
     try:
         runtime = prepare_pnbtt_tasklocal_runtime(args, context)
+        if runtime.compiler.residual_rank != G1_RESIDUAL_RANK:
+            raise ValueError("the preregistered tangent spectrum is rank4-only")
         checkpoint = _load_writer_checkpoint(runtime, args.writer_checkpoint)
         assigned = local_tasks(runtime)
         if len(assigned) != 1:

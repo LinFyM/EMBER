@@ -20,6 +20,7 @@ from ember.ecp.native_materialization import (
     compose_rank12_plus_rank4,
     extract_rank12_carrier,
     extract_rank4_residual,
+    low_rank_balanced_svd,
     residual_lora_state,
     small_core_balanced_svd,
 )
@@ -305,3 +306,19 @@ def test_small_core_balanced_svd_has_rank_four_shapes() -> None:
 
     assert canonical_a.shape == a.shape
     assert canonical_b.shape == b.shape
+
+
+def test_low_rank_balanced_svd_pads_an_overcomplete_rank16_target() -> None:
+    generator = torch.Generator().manual_seed(31)
+    a = torch.randn(16, 32, generator=generator)
+    b = torch.randn(7, 16, generator=generator)
+
+    canonical_a, canonical_b = low_rank_balanced_svd(a, b, output_rank=16)
+
+    assert canonical_a.shape == a.shape
+    assert canonical_b.shape == b.shape
+    torch.testing.assert_close(
+        canonical_b @ canonical_a, b @ a, rtol=3e-5, atol=3e-5
+    )
+    assert torch.equal(canonical_a[7:], torch.zeros_like(canonical_a[7:]))
+    assert torch.equal(canonical_b[:, 7:], torch.zeros_like(canonical_b[:, 7:]))

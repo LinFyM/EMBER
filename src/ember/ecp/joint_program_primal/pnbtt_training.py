@@ -143,6 +143,10 @@ def _chain_rule_backward(
         for video, context in zip(arm.videos, arm.bank_contexts, strict=True)
     )
     event_weights = pnbtt_event_weights(arm.program)
+    residual_rank = runtime.compiler.residual_rank
+    residual_offset = 12 if residual_rank == 4 else 0
+    if residual_rank not in (4, 16) or residual_offset + residual_rank != 16:
+        raise RuntimeError("PNBTT E1 rank allocation changed")
     with runtime.compiler.bank_operator.ieee_matmul(runtime.context.device):
         for target, contract_target in enumerate(runtime.ranks.contract.targets):
             a, b, _ = runtime.compiler.tangent_transport.forward_target(
@@ -152,8 +156,12 @@ def _chain_rule_backward(
                 event_weights=event_weights,
                 s_ref=runtime.ranks.s_ref[target],
             )
-            a_gradient = gradients[contract_target.name + LORA_A_SUFFIX][12:]
-            b_gradient = gradients[contract_target.name + LORA_B_SUFFIX][:, 12:]
+            a_gradient = gradients[contract_target.name + LORA_A_SUFFIX][
+                residual_offset : residual_offset + residual_rank
+            ]
+            b_gradient = gradients[contract_target.name + LORA_B_SUFFIX][
+                :, residual_offset : residual_offset + residual_rank
+            ]
             if a_gradient.shape != a.shape or b_gradient.shape != b.transpose(0, 1).shape:
                 raise RuntimeError("PNBTT E1 targetwise leaf gradient changed")
             surrogate = ((a - a.detach()) * a_gradient.to(a)).sum()

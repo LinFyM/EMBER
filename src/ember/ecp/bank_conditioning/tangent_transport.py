@@ -133,6 +133,7 @@ class NativeBankTangentTransport(torch.nn.Module):
         temperature_by_side: Sequence[float],
         type_balance: torch.Tensor,
         scale_prior_ratio: torch.Tensor,
+        residual_rank: int = G1_RESIDUAL_RANK,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -143,6 +144,9 @@ class NativeBankTangentTransport(torch.nn.Module):
         self.direction_epsilon = float(direction_epsilon)
         self.score_epsilon = float(score_epsilon)
         self.replay_chunk_size = int(replay_chunk_size)
+        self.residual_rank = int(residual_rank)
+        if self.residual_rank <= 0:
+            raise BankConditioningError("PNBTT residual rank must be positive")
         self.key_encoder = NativeTangentKey(
             self.owners,
             key_width=self.key_width,
@@ -154,7 +158,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             raise BankConditioningError("PNBTT temperature contract changed")
         if type_balance.shape != (len(PNBTT_FAMILIES), len(OUTPUT_BANK_TYPES)):
             raise BankConditioningError("PNBTT fixed type balance changed")
-        if scale_prior_ratio.shape != (len(self.owners), G1_RESIDUAL_RANK):
+        if scale_prior_ratio.shape != (len(self.owners), self.residual_rank):
             raise BankConditioningError("PNBTT frozen scale prior changed")
         self.register_buffer("temperature_by_side", temperatures, persistent=True)
         self.register_buffer("type_balance", type_balance.detach().float(), persistent=True)
@@ -407,14 +411,14 @@ class NativeBankTangentTransport(torch.nn.Module):
         )
         directions = torch.einsum(
             "e,sred->srd", rho, output_result.direction
-        ).reshape(len(OUTPUT_BANK_TYPES), groups, G1_RESIDUAL_RANK, -1)
+        ).reshape(len(OUTPUT_BANK_TYPES), groups, self.residual_rank, -1)
         normalized_types = safe_rms_normalize(
             directions, epsilon=self.direction_epsilon
         )
         combined = torch.einsum(
             "t,tgrd->grd", self.type_balance[family], normalized_types
         )
-        raw_output = combined.permute(1, 0, 2).reshape(G1_RESIDUAL_RANK, -1)
+        raw_output = combined.permute(1, 0, 2).reshape(self.residual_rank, -1)
         return raw_input, raw_output, torch.cat((input_metric, output_metric))
 
     def forward_target(
@@ -432,7 +436,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             not 0 <= int(target) < len(self.owners)
             or target_queries.shape
             != (
-                G1_RESIDUAL_RANK,
+                self.residual_rank,
                 self.event_slots,
                 len(PNBTT_SIDES),
                 self.key_width,
@@ -469,7 +473,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             or queries.shape
             != (
                 len(self.owners),
-                G1_RESIDUAL_RANK,
+                self.residual_rank,
                 self.event_slots,
                 len(PNBTT_SIDES),
                 self.key_width,

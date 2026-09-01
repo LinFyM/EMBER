@@ -1,5 +1,33 @@
 # EMBER progress
 
+### Bank-conditioned primal双task结论与calibrated Q_free formal launch contract
+
+- 原bank-conditioned primal双task Gate已完整结束并聚合到
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_gate_s110_eb9f295_gpu01p12_20260901/aggregate.json`。task1 correct
+  fit0/fit1/held为`.951176/.931413/.925321`，wrong fit0/fit1为`.427589/.477107`；task93对应为
+  `.916810/.923003/.887701`与`.626985/.653524`。两task的correct、held及all-pairs全部通过，wrong和margin全部失败；因此
+  whole-bank response前移已经恢复capacity与same-task保持，但现有query/anchor/gate合取仍不能抑制wrong bank，aggregate正式non-pass。
+- 首轮Q_free从clean detached `53f485bb6d554b26f461b7e98e5482cc13c91b47`完成110步和五臂各16次Panel-B，root为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_task93_s110_5cb1be6_gpu01p2_r1_20260901`。correct
+  fit0/fit1/held为`.915284/.907124/.885331`，wrong fit0/fit1为`.815014/.831839`，故Gate non-pass；Action Meta 0、Panel-B
+  backward 0、唯一rank16与信息墙均成立。内部wrong normalized effective-rank4 MSE到step110仍为`.929400`，因此该结果没有先拟合其
+  diagnostic teacher，不能据此淘汰free-query函数类或直接进入A_free。
+- 同一fixed task93 Program与同一初始inducing上重建实际query-space位移：普通Program→inducing网络在step70/110相对初始query的RMS位移为
+  `.644234/.700342`，首轮直接Q_free只有`.017055/.018488`；q/v分别相差约`31--38x`。最早失效接口是direct parameter沿用shared-network
+  base LR导致query-space under-travel，而不是已有证据所说的native bank或rank4容量。该证据支持一次固定机制标定，不支持LR/seed扫。
+- 科学实现commit `fdc669f`只为`tasklocal_free_b0_query`建立独立optimizer group，以固定query coordinate width `4 rank × 8 event = 32`
+  作为LR multiplier；value nets、primal gates、初始化、数据、arm schedule、family-equal diagnostic loss、10+100步、checkpoint70/110与五臂
+  Panel-B Gate全部不变。新config为`configs/pi05_ecp_bank_conditioned_primal_qfree_calibrated_task93_v1.json`，并显式登记首轮Q_free non-pass
+  artifact；这不是deployment候选或shared Writer成功证据。
+- gpu01物理0的两步真实profile自然exit0：step0最大误差`0`，实际optimizer initial LRs为`0.0007/0.0224`，step2 free-query gradient有限非零，
+  Action Meta module/parameter均为0，source/Stage0 trainable为0，唯一rank16及materialization/Panel-B路径成立；两步约`12.46/12.39s`，峰值
+  `33,569,167,872` bytes。定向合同`7 passed`、新旧config解析、compile与diff check通过。
+- formal只fresh运行task93/wrong94这一资格单元，world1、110步、actual checkpoint70/110及原五臂16-visit Panel-B；不读取首轮Q_free
+  checkpoint/optimizer/cursor，不使用validation/test/shuffled/reversed。计划root为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_calibrated_task93_s110_fdc669f_gpu01p0_20260901`，从包含本launch record的clean pushed
+  detached descendant执行。通过才说明充分移动的task-local query能在当前真实summary/anchor/gate/operator图中建立specificity；若仍non-pass，
+  先以internal teacher是否拟合及实际query位移定位，再决定预登记A_free，不能把未拟合surrogate冒充capacity裁决。
+
 ### Bank-conditioned primal task93定位与Q_free formal launch contract
 
 - clean detached `4eea388a41fa17026d2dd7a7f9d05b3d1caf16c3`上的task93原五臂formal已自然完成110步与各16次Panel-B：correct fit0/fit1/held recovery为

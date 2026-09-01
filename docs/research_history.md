@@ -1864,3 +1864,21 @@ step110 free-anchor合并RMS为`.17664`，input/output为`.21929/.12706`，与ca
 shared S2，primal pivot虽恢复correct却在原query、calibrated Q_free、base-LR与充分校准A_free下持续无法满足wrong/margin。当前停止
 `summary→family-scalar G`加event-additive native anchor这一具体parameterization；该负结果不外推为Program schema、真实native X/Y、
 signed pooling、rank4或整个ECP根本失败。
+
+## 97. PNBTT首个单key-chart E1 formal稳定non-pass
+
+PNBTT E1科学authority为`2664e0d3705da3cdfb4bde2e7633317e0b102b4a`，formal root为
+`runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`。task1/93在gpu01物理1/2完成110步；训练期间
+macro70 Panel-B在物理3/4并行执行，随后macro110完成相同五臂各16次评测。`evaluations/qualification.json`及逐task结论均为相邻一致
+`non_pass`。
+
+macro70 task1 correct fit0/fit1/held为`.628597/.639663/.606223`、wrong为`.126684/.192265`；task93 correct为
+`.676496/.711490/.668680`、wrong为`-.000097/.257616`。macro110 task1为`.641984/.660311/.622909`与
+`.122637/.186146`；task93为`.713247/.737497/.685649`与`.006121/.269427`。all-pairs、all-correct > all-wrong与near-bound
+均通过，task1 wrong通过；主要缺口是correct/held和`.50` margin。70到110改善只有`.013--.037`，near-bound最大值为macro70
+task1/task93 `.022005/.008557`、macro110 `.017115/.009780`，不是饱和或训练不足。
+
+两枚checkpoint、五臂Panel-B、Action Meta 0、held/wrong-fit1/Panel-B backward 0、validation/test读取0、shuffled/reversed未运行及
+唯一完整38-target rank16合同全部成立。Natural Program在E1冻结，所以只淘汰当前single-key-chart tangent parameterization，不进入E2。
+下一步按专家§5.10计算`T=Cov(v,k)`功能梯度投影谱，再在`m`扩展或family-shared trunk + target-specific低秩key projection之间做有
+机制依据的唯一修订并fresh重跑E1。

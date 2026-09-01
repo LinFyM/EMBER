@@ -136,6 +136,13 @@ functional loss -> frozen policy with generated LoRA -> rank4 residual
 E1失败只说明transport函数类不足，应按bank tangent机制证据修正；不得责怪Natural Program或做无信息超参小扫。通过后fresh进入E2，
 不加载task-local query或optimizer。
 
+首个E1 single-key-chart formal已在macro70/110相邻一致`non_pass`。step110 task1 correct fit0/fit1/held为
+`.641984/.660311/.622909`、wrong为`.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为
+`.006121/.269427`。all-pairs与near-bound成立，主要缺口是correct/held与`.50` margin；70到110改善仅`.013--.037`。
+因此当前不进入E2，也不追加训练或做普通超参扫。下一步严格按专家§5.10计算train-task `T=Cov(v,k)`功能梯度投影谱：只有`m`
+截断有效cross-family谱时才增大`m`；若一个key chart无法覆盖q/v/action-in/out，则改为family-shared trunk加target-specific低秩
+key projection，再fresh重跑E1。该结论不涉及冻结的Natural Program。
+
 ### E2：真实frozen Natural Program到bank transport
 
 - 数据与E1相同，增加matched K=1/2/4；

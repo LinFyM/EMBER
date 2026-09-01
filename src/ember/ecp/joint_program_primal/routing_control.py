@@ -318,7 +318,33 @@ def _optimizer_cursor(
     writer_state: torch.nn.Module,
     trainable: tuple[torch.nn.Parameter, ...],
 ) -> tuple[torch.optim.Optimizer, Any, tuple[int, ...], int, int, int]:
-    optimizer = _optimizer(trainable, config)
+    query_source = config.get("model", {}).get(
+        "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
+    )
+    query_lr_multiplier = float(
+        config.get("model", {}).get("tasklocal_free_b0_query_lr_multiplier", 1.0)
+    )
+    if query_source == TASKLOCAL_FREE_B0_QUERY and query_lr_multiplier != 1.0:
+        query = writer_state.bank_set_interaction.tasklocal_free_b0_query
+        ordinary = tuple(
+            parameter for parameter in trainable if parameter is not query
+        )
+        if query is None or not ordinary or len(ordinary) + 1 != len(trainable):
+            raise ValueError("task-local free B0 query optimizer ownership changed")
+        cell = config["optimization"]["joint"]["optimizer"]
+        peak_lr = float(cell["peak_lr"])
+        optimizer = torch.optim.AdamW(
+            (
+                {"params": ordinary},
+                {"params": (query,), "lr": peak_lr * query_lr_multiplier},
+            ),
+            lr=peak_lr,
+            betas=tuple(cell["betas"]),
+            eps=float(cell["eps"]),
+            weight_decay=float(cell["weight_decay"]),
+        )
+    else:
+        optimizer = _optimizer(trainable, config)
     scheduler = _scheduler(optimizer, config)
     joint = config["optimization"]["joint"]
     warmup = int(joint["warmup_optimizer_steps"])
@@ -459,6 +485,12 @@ def _run_contract(
             "b0_query_source": runtime.config.get("model", {}).get(
                 "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
             ),
+            "tasklocal_free_b0_query_lr_multiplier": runtime.config.get(
+                "model", {}
+            ).get("tasklocal_free_b0_query_lr_multiplier", 1.0),
+            "optimizer_group_initial_lrs": [
+                float(group["initial_lr"]) for group in runtime.optimizer.param_groups
+            ],
             "task": runtime.args.task,
         },
         "primal_scorer_initialization": dict(initialization),

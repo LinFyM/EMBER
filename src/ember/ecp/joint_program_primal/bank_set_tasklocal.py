@@ -654,6 +654,7 @@ def _train(
         runtime.optimizer.step()
         runtime.scheduler.step()
         runtime.optimizer_steps += 1
+        next_lrs = tuple(map(float, runtime.scheduler.get_last_lr()))
         row = {
             "optimizer_step": runtime.optimizer_steps,
             "arm": name,
@@ -663,10 +664,12 @@ def _train(
                 for family, value in normalized.items()
             },
             "gradient_norm_before_clip": float(norm),
-            "next_lr": float(runtime.scheduler.get_last_lr()[0]),
+            "next_lr": next_lrs[0],
             "step_seconds": time.monotonic() - tick,
             "peak_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
         }
+        if len(next_lrs) > 1:
+            row["tasklocal_free_b0_query_next_lr"] = next_lrs[1]
         if runtime.context.is_main:
             append_jsonl(runtime.args.output_dir / "metrics.jsonl", row)
             runtime.metrics_rows += 1

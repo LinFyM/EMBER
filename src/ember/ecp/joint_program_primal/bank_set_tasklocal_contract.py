@@ -309,6 +309,8 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     is_primal = stage == BANK_CONDITIONED_PRIMAL_STAGE
     query_source = model.get("b0_query_source", PROGRAM_CONDITIONED_B0_QUERY)
     free_query = is_primal and query_source == TASKLOCAL_FREE_B0_QUERY
+    calibration_kind = config.get("mechanism_calibration", {}).get("kind")
+    query_lr_multiplier = model.get("tasklocal_free_b0_query_lr_multiplier")
     required_s0 = authorities.get("required_s0_gate", {})
     required_s1 = authorities.get("required_s1_non_pass", {})
     required_primal = authorities.get("required_primal_task93_non_pass", {})
@@ -372,6 +374,12 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("inverse_covariance_power") == 1.0,
             model.get("interaction_summary_value_width") == 16,
             model.get("interaction_hidden_width") == 64,
+            (
+                query_lr_multiplier == G1_RESIDUAL_RANK * 8
+                if calibration_kind
+                == "task93_qfree_query_space_step_calibration_after_undertravel_non_pass"
+                else "tasklocal_free_b0_query_lr_multiplier" not in model
+            ),
             (
                 model.get("interaction_correction_bound") == 0.1
                 if not is_primal

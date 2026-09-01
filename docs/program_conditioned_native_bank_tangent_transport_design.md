@@ -136,6 +136,11 @@ functional loss -> frozen policy with generated LoRA -> rank4 residual
 E1失败只说明transport函数类不足，应按bank tangent机制证据修正；不得责怪Natural Program或做无信息超参小扫。通过后fresh进入E2，
 不加载task-local query或optimizer。
 
+首个单key-chart参数化已在`2664e0d`formal上完成step70/110裁决并稳定`non_pass`。step110 task1
+correct fit0/fit1/held为`.641984/.660311/.622909`，task93为`.713247/.737497/.685649`；near-bound最高仅
+`.017115/.009780`，wrong大部分受控。因此当前不进入E2，也不延长训练或扫宽度/温度；先按专家§5.10对
+`T=Cov(v,k)`做functional-gradient投影谱，再只修正证据指向的bank tangent参数化并fresh复证E1。
+
 ### E2：真实frozen Natural Program到bank transport
 
 - 数据与E1相同，增加matched K=1/2/4；

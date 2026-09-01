@@ -1,5 +1,26 @@
 # EMBER progress
 
+### Bank-conditioned primal task93定位与Q_free formal launch contract
+
+- clean detached `4eea388a41fa17026d2dd7a7f9d05b3d1caf16c3`上的task93原五臂formal已自然完成110步与各16次Panel-B：correct fit0/fit1/held recovery为
+  `.916810/.923003/.887701`，wrong fit0/fit1为`.626985/.653524`。correct与same-task held全部通过，但wrong和margin失败；wrong fit0虽接收梯度仍与
+  zero-gradient wrong fit1同向失败，最早接口是B0 query/anchor/gate specificity，不是correct容量、跨视频保持、Action Meta或运行故障。task1原formal继续在其
+  clean detached authority上运行，不因本诊断重启。
+- conditional Q_free科学实现/config authority为clean pushed `7b1943f7adb735f0be4d056ae011e90ccc707490`。它只把B0 post-inducing query释放为
+  `[38,4,8,32]` task-local参数；同一target query跨correct/wrong五臂、全部bank/video以及input、所有output group、all/by-type scope共享，绝无
+  per-arm/per-bank lookup。Program inducing与owner/rank/event slots冻结，fresh训练free query、input/output value nets与family primal gates；R5、真实X/Y、
+  current-bank full inverse、exact replay、carrier12与scale冻结，Action Meta 0，最终仍为唯一rank12+4 rank16。Q_free只定位task-local B0 query函数类，
+  不是deployment或shared Writer候选。
+- 定向CPU合同`7 passed`，compile/config/predecessor authority通过。gpu01物理2的真实一步profile自然exit0：step0逐tensor误差`0`、free query实际在optimizer且
+  Program inducing/slots实际不在optimizer、source/Native Stage0/Action Meta trainable/module均为0、唯一rank16成立；一步`12.421s`、峰值
+  `31,019,887,616` bytes。同期数学不变的B0公共量/同步hoist把task1四步从约`22.9/70.0/23.7/60.1s`降至
+  `15.4/48.5/16.1/41.0s`，step0仍精确为0；吞吐不是科学Gate。
+- Q_free formal只跑当前失败资格单元task93/wrong94，fresh 10 warmup+100 effective steps、actual checkpoint70/110及原五臂16-visit Panel-B，Gate与原合同
+  完全相同。输出为`runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_task93_s110_7b1943f_gpu01p2_20260901`；使用gpu01物理2/NUMA0、world1，
+  不读取原失败checkpoint，只以其evaluation/run-contract作non-pass authority。launch前gpu01物理2为`15MiB/0%`且无compute PID，gpu02无更优空卡；
+  `/data1` quota为`777776604/1073741824KiB`，预计新增远低于`200MB`。若Q_free通过，定位Program/structure→B0 query parameterization；若失败，
+  才运行预登记的共享full-native nested anchor增广A_free，不做LR/seed/width/rank小扫。
+
 ### Bank-conditioned primal实现与formal launch contract
 
 - clean pushed科学authority为`eb9f295638e4f2f2f47c472cb57bb8607aae21e7`。唯一active计算图按专家§7.1实现为：Program-query真实B0以同一antithetic权重同时形成summary与native anchor，family-shared gate产生

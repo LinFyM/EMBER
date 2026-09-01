@@ -12,14 +12,15 @@
   `python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置
   `configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json`，共同只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
   `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`与既有90-pair Program-bank cache；环境固定
-  `NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`及GPU-local NUMA。task1固定gpu01物理0，task93固定物理1；二者是
+  `NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`及GPU-local NUMA。task1固定gpu01物理5，task93固定物理6；二者是
   全部独立qualification units，额外空卡不能提高同一world1任务吞吐，故不做重复训练或dummy占卡。
 - fresh输出固定为
-  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task1_s110_03b7314_gpu01p0_20260901`、
-  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task93_s110_03b7314_gpu01p1_20260901`，aggregate为
-  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_gate_s110_03b7314_gpu01p01_20260901`；launch前均不存在，不覆盖旧evidence。
-  2026-09-01 08:53 CST live检查gpu01物理0/1分别为UUID `GPU-658b6043`/`GPU-845a7b73`、`15MiB/0%`、Default且无compute
-  process；gpu01其余卡此刻也空闲，gpu02多数有30GB级任务，但本阶段没有第三个独立task。`/data1` quota为
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task1_s110_03b7314_gpu01p5_20260901`、
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_task93_s110_03b7314_gpu01p6_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_gate_s110_03b7314_gpu01p56_20260901`；launch前均不存在，不覆盖旧evidence。
+  2026-09-01 08:53 CST初检时gpu01物理0/1空闲，但08:55最终preflight发现另一用户已在两卡各启动约21.5GB进程；本任务尚未启动，
+  原p0/p1 roots仍不存在，也未干预对方。随即核验物理5/6分别为UUID `GPU-87fd2935`/`GPU-21b5514a`、`98/15MiB`、`0%`、
+  Default且无compute process，故改在5/6 fresh启动；gpu02多数有30GB级任务，本阶段也没有第三个独立task。`/data1` quota为
   `777281932/1073741824KiB`、shared余`84TiB`；同类双run新增约几十MB，远低于余量。
 - profile已以真实task1验证step `2.758s`、peak allocated `41.258GB`、五臂materialization、finite gradient、owner/rank/event
   inventory、Action Meta 0、source/Native Stage0 frozen与唯一rank16。formal启动前再做一次live设备/输出检查；若外部进程后发导致峰值

@@ -151,6 +151,12 @@ correct--wrong operator重合并解释wrong改善，但q/v correct功能梯度�
 key chart。下一步只运行专家§5.10允许的一次同构PNBTT task-local full-rank16 oracle；其输出仍必须是唯一38-target rank16，只有相对
 rank4 residual明显改善才重开carrier/task rank分配。该结论不涉及冻结的Natural Program，也不授权width、LR、seed或rank sweep。
 
+该唯一oracle采用两个合法rank16分配端点的直接比较：已完成arm为`carrier12 + PNBTT task4`，oracle为`carrier0 + PNBTT task16`。
+后者仍由相同current-bank key/value、whitening、signed replay与free query生成，最终只物化一套38-target rank16；不在训练或评测中
+形成rank28、压缩两套adapter或部署第二carrier。task16 scale先验冻结为fit19、非held rank16 Action Experts完整LoRA的逐target
+small-core singular component matrix-RMS task-equal median，并以同一fit19 expert-minus-carrier `s_ref`归一；validation/test、held task、
+task/video lookup均为0。除rank分配及其必要的冻结scale authority外，E1数据、loss、seed、LR、110步与Gate保持不变。
+
 ### E2：真实frozen Natural Program到bank transport
 
 - 数据与E1相同，增加matched K=1/2/4；

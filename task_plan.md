@@ -50,7 +50,8 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
 9. [x] 在v2 macro110上复跑同一train-only tangent spectrum：`m=128`仍未截断有效谱，family chart只在部分output side降低
    correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
 10. [ ] 只运行专家允许的一次同构PNBTT task-local full-rank16 oracle，输出仍为唯一38-target rank16；只有它相对rank4 residual
-   明显改善才重开carrier/task rank分配，否则停止rank扩展并按E1失败边界裁决下一接口；
+   明显改善才重开carrier/task rank分配，否则停止rank扩展并按E1失败边界裁决下一接口；实现与双A40真实两步profile已完成，下一动作是
+   clean detached formal macro70/110及相邻Panel-B裁决；
 11. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
    full-vs-language/endpoints；
 12. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；

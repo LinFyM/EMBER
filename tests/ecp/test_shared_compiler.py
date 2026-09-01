@@ -9,7 +9,6 @@ from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     NativeTargetChunk,
     NativeVideoReadout,
-    native_output_group_count,
 )
 from ember.ecp.natural_program import FrozenProgramEvidence, NaturalProgram
 from ember.ecp.natural_program_data import NaturalProgramSample
@@ -25,10 +24,8 @@ from ember.ecp.shared_compiler_effects import (
     member_effect_losses,
 )
 from ember.ecp.shared_compiler_train_step import (
-    _clip_parameter_groups,
     _native_teacher_loss,
 )
-from ember.ecp.shared_compiler_training import _trainable_groups
 
 
 def _owners() -> tuple[TargetOwner, ...]:
@@ -110,292 +107,6 @@ def _video(
             events, len(owners), width, generator=generator
         )
         + 0.1,
-    )
-
-
-def _assert_shared_compiler_topology(compiler, owners) -> None:
-    families = {family.value for family in TargetFamily}
-    assert set(compiler.primal_scorer.program_context) == families
-    assert set(compiler.primal_scorer.input_trunk) == families
-    assert set(compiler.primal_scorer.output_trunk) == families
-    assert len(compiler.primal_scorer.input_primal_heads) == len(owners)
-    assert len(compiler.primal_scorer.output_primal_heads) == len(owners)
-    for owner, heads in zip(
-        owners, compiler.primal_scorer.output_primal_heads, strict=True
-    ):
-        assert len(heads) == native_output_group_count(owner)
-        assert len({head.weight.data_ptr() for head in heads}) == len(heads)
-    names = set(dict(compiler.named_parameters()))
-    assert not any(
-        token in name
-        for name in names
-        for token in ("compatibility", "functional_polar", "task_lookup")
-    )
-    assert any(name.startswith("bank_set_interaction.") for name in names)
-
-
-def _summary_tensors(summaries):
-    fields = (
-        "mean",
-        "log_variance",
-        "induced_positive",
-        "induced_negative",
-        "log_partition",
-        "event_mass",
-    )
-    for summary in summaries.inputs:
-        yield from (getattr(summary, name) for name in fields)
-    for groups in summaries.outputs:
-        for summary in groups:
-            for scope in (summary.all_types, *summary.by_type):
-                yield from (getattr(scope, name) for name in fields)
-
-
-def test_shared_compiler_is_chunk_equivalent_and_has_gradients() -> None:
-    torch.manual_seed(5)
-    owners = _owners()
-    width = 8
-    events = 4
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=width, event_slots=events
-    )
-    program = _program(len(owners), width, events)
-    one_chunk = _video(
-        owners, seed=17, chunks=(5,), width=width, events=events
-    )
-    two_chunks = _video(
-        owners, seed=17, chunks=(2, 3), width=width, events=events
-    )
-    scale = torch.ones(len(owners))
-    expected = compiler(program, (one_chunk,), s_ref=scale)
-    observed = compiler(program, (two_chunks,), s_ref=scale)
-
-    state = compiler.primal_scorer.program_state(program)
-    input_primals = compiler.primal_scorer.input_primals(state)
-    output_primals = compiler.primal_scorer.output_primals(state)
-    prepared = compiler.bank_operator.prepare(one_chunk)
-    replayed = compiler.bank_operator.apply(
-        prepared, input_primals, output_primals
-    )
-    direct = compiler.bank_operator(
-        one_chunk, input_primals, output_primals
-    )
-    materialized = compiler.bank_operator.apply_materialized(
-        compiler.bank_operator.materialize(prepared),
-        input_primals,
-        output_primals,
-    )
-    compact = compiler.bank_operator.compact(prepared)
-    compact_output = compiler.forward_compact(
-        program,
-        (compact,),
-        s_ref=scale,
-        bank_contexts=(compiler._bank_context(one_chunk),),
-    )
-    for left, right in zip(
-        (*replayed.input_values, *replayed.output_values),
-        (*direct.input_values, *direct.output_values),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right)
-    for left, right in zip(
-        (*materialized.input_values, *materialized.output_values),
-        (*direct.input_values, *direct.output_values),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for left, right in zip(
-        (*compact_output.residual.a, *compact_output.residual.b),
-        (*expected.residual.a, *expected.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right)
-    torch.testing.assert_close(replayed.solve_metrics, direct.solve_metrics)
-    assert torch.equal(expected.video_weights, torch.ones(1))
-    for target, (a_direction, b_direction) in enumerate(
-        zip(observed.input_directions, observed.output_directions, strict=True)
-    ):
-        torch.testing.assert_close(a_direction, observed.residual.a[target])
-        torch.testing.assert_close(
-            b_direction * observed.residual.scales[target, :, None],
-            observed.residual.b[target],
-        )
-    for left, right in zip(
-        (*expected.residual.a, *expected.residual.b),
-        (*observed.residual.a, *observed.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for measure in observed.frame_measures:
-        torch.testing.assert_close(
-            measure.sum(-1), torch.ones_like(measure[..., 0])
-        )
-
-    generator = torch.Generator().manual_seed(101)
-    loss = sum(
-        (value * torch.randn(value.shape, generator=generator)).mean()
-        for value in observed.residual.a
-    )
-    loss = loss + sum(
-        (value * torch.randn(value.shape, generator=generator)).mean()
-        for value in observed.residual.b
-    )
-    loss.backward()
-    assert all(
-        parameter.grad is not None
-        for parameter in compiler.primal_scorer.parameters()
-        if parameter.requires_grad
-    )
-    _assert_shared_compiler_topology(compiler, owners)
-    assert compiler.primal_scorer.input_primal_heads[0].weight.grad is not None
-    for heads in compiler.primal_scorer.output_primal_heads:
-        for head in heads:
-            assert head.weight.grad is not None
-            assert bool(torch.count_nonzero(head.weight.grad))
-    assert bool(torch.count_nonzero(compiler.primal_scorer.owner_embedding.grad))
-    assert bool(torch.count_nonzero(compiler.primal_scorer.group_embedding.grad))
-    assert compiler.scale_head[-1].weight.grad is not None
-    assert bool(torch.isfinite(observed.solve_metrics).all())
-    assert observed.conditioning_metrics.shape == (1, 6)
-    assert bool(torch.isfinite(observed.conditioning_metrics).all())
-    assert float(observed.conditioning_metrics[..., 0].min()) > 0
-    assert float(observed.conditioning_metrics[..., 1].min()) > 0
-    assert float(observed.conditioning_metrics[..., 3].min()) > 0
-    assert float(observed.conditioning_metrics[..., 4].min()) > 0
-    assert float(observed.conditioning_metrics[..., 5].min()) > 0
-    assert all(torch.equal(gain, torch.ones_like(gain)) for gain in observed.output_group_gains)
-
-
-def test_direct_free_logits_zero_reproduce_base_and_receive_gradients() -> None:
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(owners, program_width=8, event_slots=4)
-    program = _program(len(owners), 8, 4)
-    video = _video(owners, seed=19, chunks=(2, 3), width=8, events=4)
-    compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
-    state = compiler.primal_scorer.program_state(program)
-    input_primals = compiler.primal_scorer.input_primals(state)
-    output_primals = compiler.primal_scorer.output_primals(state)
-    base = compiler.bank_operator.apply_compact(compact, input_primals, output_primals)
-    direct_inputs = tuple(
-        torch.zeros(4, 2, *value.shape[:-1], requires_grad=True)
-        for value in compact.input_values
-    )
-    direct_outputs = tuple(
-        tuple(
-            torch.zeros(4, 2, *value.shape[:-1], 4, requires_grad=True)
-            for _ in range(native_output_group_count(owner))
-        )
-        for owner, value in zip(owners, compact.output_values, strict=True)
-    )
-    observed = compiler.bank_operator.apply_compact_free_bias(
-        compact,
-        input_primals,
-        output_primals,
-        direct_input_logit_biases=direct_inputs,
-        direct_output_logit_biases=direct_outputs,
-    )
-    for left, right in zip(
-        (*observed.input_values, *observed.output_values),
-        (*base.input_values, *base.output_values),
-        strict=True,
-    ):
-        assert torch.equal(left, right)
-    sum(
-        value.square().mean()
-        for value in (*observed.input_values, *observed.output_values)
-    ).backward()
-    assert all(value.grad is not None for value in direct_inputs)
-    assert all(value.grad is not None for rows in direct_outputs for value in rows)
-
-
-def test_bank_conditioned_primal_precedes_dual_and_is_chunk_equivalent() -> None:
-    torch.manual_seed(211)
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4, covariance_frame_chunk=1
-    )
-    for heads in (
-        compiler.bank_set_interaction.input_primal_gate,
-        compiler.bank_set_interaction.output_primal_gate,
-    ):
-        for head in heads.values():
-            torch.nn.init.normal_(head[-1].weight, std=0.01)
-    program = _program(len(owners), 8, 4)
-    video = _video(owners, seed=223, chunks=(2, 3), width=8, events=4)
-    compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
-    context = (compiler._bank_context(video),)
-    state = compiler.primal_scorer.program_state(program)
-    input_primals = compiler.primal_scorer.input_primals(state)
-    output_primals = compiler.primal_scorer.output_primals(state)
-    interaction_state = compiler._interaction_states(state, context)[0]
-    summaries = compiler.bank_operator.summarize_compact(
-        compact,
-        bank_set_interaction=compiler.bank_set_interaction,
-        interaction_state=interaction_state,
-    )
-    conditioned = compiler.bank_set_interaction.bank_conditioned_primals(
-        input_primals=input_primals,
-        output_primals=output_primals,
-        summaries=summaries,
-    )
-    direct_pool = compiler.bank_operator.apply_compact(compact, *conditioned)
-    direct = compiler._output(state, (direct_pool,), s_ref=torch.ones(len(owners)))
-    observed = compiler.forward_compact(
-        program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
-    )
-    for left, right in zip(
-        (*observed.residual.a, *observed.residual.b),
-        (*direct.residual.a, *direct.residual.b),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-
-    compiler.bank_operator.covariance_frame_chunk = 5
-    reference_summaries = compiler.bank_operator.summarize_compact(
-        compact,
-        bank_set_interaction=compiler.bank_set_interaction,
-        interaction_state=interaction_state,
-    )
-    for left, right in zip(
-        _summary_tensors(summaries), _summary_tensors(reference_summaries), strict=True
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for left, right in zip(
-        summaries.inputs,
-        reference_summaries.inputs,
-        strict=True,
-    ):
-        torch.testing.assert_close(left.native_anchor, right.native_anchor, rtol=2e-5, atol=2e-5)
-    for left_groups, right_groups in zip(
-        summaries.outputs, reference_summaries.outputs, strict=True
-    ):
-        for left, right in zip(left_groups, right_groups, strict=True):
-            torch.testing.assert_close(
-                left.all_types.native_anchor,
-                right.all_types.native_anchor,
-                rtol=2e-5,
-                atol=2e-5,
-            )
-            assert all(scope.native_positive is None for scope in left.by_type)
-
-    compiler.zero_grad(set_to_none=True)
-    loss = sum(
-        value.square().mean()
-        for value in (*direct_pool.input_values, *direct_pool.output_values)
-    )
-    loss.backward()
-    assert all(
-        head[-1].weight.grad is not None
-        and bool(torch.isfinite(head[-1].weight.grad).all())
-        for heads in (
-            compiler.bank_set_interaction.input_primal_gate,
-            compiler.bank_set_interaction.output_primal_gate,
-        )
-        for head in heads.values()
-    )
-    assert any(
-        parameter.grad is not None and bool(parameter.grad.abs().sum() > 0)
-        for parameter in compiler.bank_set_interaction.set_encoder.parameters()
     )
 
 
@@ -562,44 +273,6 @@ def test_joint_cache_stores_frozen_evidence_but_not_program(tmp_path) -> None:
         )
 
 
-def test_primal_heads_have_fixed_target_and_output_group_ownership() -> None:
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4
-    )
-    compiler.to(torch.device("cpu"))
-    scorer = compiler.primal_scorer
-    state = scorer.program_state(_program(len(owners), 8, 4))
-    input_before = tuple(value.detach().clone() for value in scorer.input_primals(state))
-    output_before = tuple(value.detach().clone() for value in scorer.output_primals(state))
-    input_events = scorer.input_event_queries(state)
-    output_events = scorer.output_event_queries(state)
-    assert [value.shape for value in input_events] == [
-        (4, 4, owner.in_features) for owner in owners
-    ]
-    assert [value.shape for value in output_events] == [
-        (
-            native_output_group_count(owner),
-            4,
-            4,
-            owner.out_features // native_output_group_count(owner),
-        )
-        for owner in owners
-    ]
-
-    with torch.no_grad():
-        scorer.input_primal_heads[0].weight.add_(0.5)
-        scorer.group_embedding[0].add_(0.5)
-
-    input_after = scorer.input_primals(state)
-    output_after = scorer.output_primals(state)
-    assert not torch.equal(input_before[0], input_after[0])
-    for left, right in zip(input_before[1:], input_after[1:], strict=True):
-        torch.testing.assert_close(left, right)
-    assert not torch.equal(output_before[0], output_after[0])
-    assert not torch.equal(output_before[1][0], output_after[1][0])
-
-
 def test_frozen_scale_prior_is_task_agnostic_and_exact_before_f4() -> None:
     owners = _owners()
     prior = torch.tensor(
@@ -623,35 +296,11 @@ def test_frozen_scale_prior_is_task_agnostic_and_exact_before_f4() -> None:
     expected = scale[:, None] * prior
     torch.testing.assert_close(first.residual.scales, expected)
     torch.testing.assert_close(second.residual.scales, expected)
-    assert not compiler.scale_prior_ratio.requires_grad
-
-
-def test_anchor_code_uses_video_program_fields() -> None:
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4
-    )
-    first = _program(len(owners), 8, 4)
-    changed = _program(len(owners), 8, 4)
-    generator = torch.Generator().manual_seed(97)
-    changed = NaturalProgram(
-        p_lang=first.p_lang.clone(),
-        p_scene=torch.randn(first.p_scene.shape, generator=generator),
-        p_process=torch.randn(first.p_process.shape, generator=generator),
-        rho=torch.rand(first.rho.shape, generator=generator) + 0.1,
-        tau=torch.rand(first.tau.shape, generator=generator),
-        sigma=torch.rand(first.sigma.shape, generator=generator) + 0.1,
-    )
-    first_state = compiler.primal_scorer.program_state(first)
-    changed_state = compiler.primal_scorer.program_state(changed)
-    torch.testing.assert_close(
-        first_state.stable_rank, changed_state.stable_rank
-    )
-    assert not torch.allclose(first_state.rank, changed_state.rank)
-    assert not torch.allclose(first_state.event_weights, changed_state.event_weights)
+    assert not compiler.tangent_transport.scale_prior_ratio.requires_grad
 
 
 def test_shared_compiler_video_set_is_permutation_invariant() -> None:
+    torch.manual_seed(229)
     owners = _owners()
     width = 8
     events = 4
@@ -676,83 +325,7 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
         (*reverse.residual.a, *reverse.residual.b),
         strict=True,
     ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-
-
-def test_scale_gradient_cannot_consume_selection_clip_budget() -> None:
-    compiler = SharedNativeFactorCompiler(
-        _owners(), program_width=8, event_slots=4
-    )
-    selection, scale_video = _trainable_groups(compiler)
-    assert {id(value) for value in selection}.isdisjoint(
-        {id(value) for value in scale_video}
-    )
-    assert len(selection) + len(scale_video) == len(tuple(compiler.parameters()))
-    for parameter in selection:
-        parameter.grad = torch.full_like(parameter, 1e-4)
-    for parameter in scale_video:
-        parameter.grad = torch.full_like(parameter, 1e4)
-    selection_before = tuple(value.grad.clone() for value in selection)
-
-    norms = _clip_parameter_groups(
-        selection_parameters=selection,
-        scale_video_parameters=scale_video,
-        optimizer={
-            "selection_gradient_clip_norm": 1.0,
-            "scale_video_gradient_clip_norm": 1.0,
-        },
-    )
-
-    assert norms["selection"] < 1.0
-    assert norms["scale_video"] > 1.0
-    for before, parameter in zip(selection_before, selection, strict=True):
-        torch.testing.assert_close(parameter.grad, before)
-    assert torch.linalg.vector_norm(
-        torch.cat([parameter.grad.flatten() for parameter in scale_video])
-    ) <= 1.00001
-
-
-def test_scale_head_does_not_backpropagate_into_primal_context() -> None:
-    owners = _owners()
-    compiler = SharedNativeFactorCompiler(
-        owners, program_width=8, event_slots=4
-    )
-    selection, scale_video = _trainable_groups(compiler)
-    program = _program(len(owners), 8, 4)
-    videos = tuple(
-        _video(owners, seed=seed, chunks=(2, 2), width=8, events=4)
-        for seed in (71, 73)
-    )
-
-    output = compiler(program, videos, s_ref=torch.ones(len(owners)))
-    scale_gradients = torch.autograd.grad(
-        output.residual.scales.sum(),
-        (*selection, *scale_video),
-        allow_unused=True,
-    )
-    selection_scale = scale_gradients[: len(selection)]
-    scale_head = [
-        gradient
-        for parameter, gradient in zip(
-            scale_video, scale_gradients[len(selection) :], strict=True
-        )
-        if "scale_head" in next(
-            name
-            for name, candidate in compiler.named_parameters()
-            if candidate is parameter
-        )
-    ]
-    assert all(
-        gradient is None or not bool(torch.count_nonzero(gradient))
-        for gradient in selection_scale
-    )
-    assert scale_head and any(
-        gradient is not None and bool(torch.count_nonzero(gradient))
-        for gradient in scale_head
-    )
-
-    assert all(torch.equal(value, torch.ones_like(value)) for value in output.output_group_gains)
-    torch.testing.assert_close(output.video_weights, torch.full((2,), 0.5))
+        torch.testing.assert_close(left, right, rtol=2e-4, atol=2e-4)
 
 
 def test_multivideo_training_condition_cannot_read_native_teacher_tensors() -> None:

@@ -78,6 +78,8 @@ class PNBTTTaskLocalWriterState(torch.nn.Module):
         self.tangent_transport = compiler.tangent_transport
         if free_query is not None:
             self.free_query = free_query
+
+
 @dataclass
 class PNBTTTaskLocalRuntime:
     args: argparse.Namespace
@@ -116,6 +118,8 @@ class PNBTTTaskLocalRuntime:
     def close(self) -> None:
         self.video_store.close()
         self.query_dataset.close()
+
+
 def is_pnbtt_tasklocal_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == PNBTT_TASKLOCAL_SCHEMA
 
@@ -150,6 +154,8 @@ def load_pnbtt_tasklocal_config(path: Path) -> dict[str, Any]:
     if not valid:
         raise ValueError("invalid PNBTT task-local config")
     return config
+
+
 def _condition_rows(
     split: Any, task_ids: tuple[int, ...]
 ) -> dict[int, PNBTTTaskConditions]:

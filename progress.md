@@ -137,6 +137,20 @@
   但无第三个qualification unit。`/data1` quota为`777734132/1073741824KiB`。两任务继续分别使用物理2/NUMA0与物理3/NUMA1并行
   world1运行，不使用allocator实验环境变量；exec前再次核对设备、root与detached authority。
 
+### Program-through-Bank Bottleneck S1最长视频流式反向修正
+
+- `d138418` formal的task93先连续完成wrong/correct-fit0/wrong三步；第4步87-frame `correct_fit1`在group2 output-candidate
+  重算时仍因200MiB申请OOM。group1把单次申请继续降到100MiB后仍在整条视频图累积到约43.62GiB时OOM，故group batching已经到
+  最小值，不能再靠allocator、batch或超参处理。task1由本任务停止，两个partial root继续只作formal工程证据，不进入aggregate。
+- 最早工程根因是B1虽按chunk算candidate correction，却把每个chunk的correction、GPU descriptor slice及临时完整output bank沿在线
+  softmax图保留到最终loss backward。修正把singleton correction与`maximum/normalizer/weighted_sum`状态转移放进同一重算段；descriptor
+  只在该段forward/backward即时从CPU authority搬入，output group从冻结完整Y按`previous/first/final`直接重建，跨chunk不保留临时四类bank。
+  这只改变反向物化策略，不改变candidate、abs/adj/init/goal边界、signed measure、pool结果、loss、梯度权重或rank16输出。
+- 定向CPU合同以group1 checkpoint路径对照既有group2 cached reference，pool output在`rtol/atol=2e-5`内一致，set encoder及condition heads
+  梯度finite/nonzero；canonical signed-pool chunk equivalence同时通过。task93最长`correct_fit1`真实一步profile自然exit 0：step0误差`0`、
+  forward/backward/optimizer为`26.439s`、peak allocated `39,831,382,016` bytes，Action Meta 0、source/Native Stage0 trainable 0、
+  Panel-B/correct-held/wrong-fit1 backward 0及唯一完整rank16全部成立。临时单臂schedule已从canonical config删除；正式task93工程group固定为1。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

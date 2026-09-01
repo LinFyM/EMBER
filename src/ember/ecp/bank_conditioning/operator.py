@@ -327,12 +327,15 @@ class StreamingSignedPool:
         self._pending_bias: torch.Tensor | None = None
         self._uses_bias: bool | None = None
 
-    def _accumulate(
+    def _accumulated_state(
         self,
         flat_values: torch.Tensor,
         flat_mass: torch.Tensor,
         bias: torch.Tensor | None,
-    ) -> None:
+        maximum: torch.Tensor,
+        normalizer: torch.Tensor,
+        weighted_sum: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         score = self.query.reshape(-1, 2, self.width) @ flat_values.T
         score = score.reshape(*self.query_shape, 2, flat_values.shape[0])
         log_mass = flat_mass.log().reshape(
@@ -342,14 +345,29 @@ class StreamingSignedPool:
         if bias is not None:
             logits = logits + bias
         chunk_maximum = logits.amax(-1)
-        maximum = torch.maximum(self.maximum, chunk_maximum)
-        old_scale = torch.exp(self.maximum - maximum)
-        weights = torch.exp(logits - maximum[..., None])
-        self.weighted_sum = self.weighted_sum * old_scale[..., None] + torch.einsum(
+        next_maximum = torch.maximum(maximum, chunk_maximum)
+        old_scale = torch.exp(maximum - next_maximum)
+        weights = torch.exp(logits - next_maximum[..., None])
+        next_weighted_sum = weighted_sum * old_scale[..., None] + torch.einsum(
             "...bn,nd->...bd", weights, flat_values
         )
-        self.normalizer = self.normalizer * old_scale + weights.sum(-1)
-        self.maximum = maximum
+        next_normalizer = normalizer * old_scale + weights.sum(-1)
+        return next_maximum, next_normalizer, next_weighted_sum
+
+    def _accumulate(
+        self,
+        flat_values: torch.Tensor,
+        flat_mass: torch.Tensor,
+        bias: torch.Tensor | None,
+    ) -> None:
+        self.maximum, self.normalizer, self.weighted_sum = self._accumulated_state(
+            flat_values,
+            flat_mass,
+            bias,
+            self.maximum,
+            self.normalizer,
+            self.weighted_sum,
+        )
         self.candidate_count += int(flat_values.shape[0])
 
     def add(

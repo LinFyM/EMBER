@@ -13,6 +13,9 @@ from ember.ecp.bank_conditioning.batched_interaction import (
     batched_input_corrections,
     batched_output_corrections,
 )
+from ember.ecp.bank_conditioning.checkpointed_replay import (
+    replay_checkpointed_singletons,
+)
 from ember.ecp.bank_conditioning.candidate_descriptors import (
     CandidateDescriptor,
     FrozenReplayDescriptors,
@@ -638,19 +641,31 @@ def apply_compact_replay(
         trusted_finite_bias=frozen_descriptors is not None,
     )
     if frozen_descriptors is not None:
-        _replay_cached_interaction(
-            operator,
-            prepared,
-            plan=plan,
-            inputs=inputs,
-            outputs=outputs,
-            interaction=bank_set_interaction,
-            state=interaction_state,
-            summaries=summaries,
-            descriptors=frozen_descriptors,
-            group_batch_size=interaction_group_batch_size,
-            observer=correction_observer,
-        )
+        if torch.is_grad_enabled() and interaction_group_batch_size == 1:
+            replay_checkpointed_singletons(
+                operator,
+                prepared,
+                inputs=inputs,
+                outputs=outputs,
+                interaction=bank_set_interaction,
+                state=interaction_state,
+                summaries=summaries,
+                descriptors=frozen_descriptors,
+            )
+        else:
+            _replay_cached_interaction(
+                operator,
+                prepared,
+                plan=plan,
+                inputs=inputs,
+                outputs=outputs,
+                interaction=bank_set_interaction,
+                state=interaction_state,
+                summaries=summaries,
+                descriptors=frozen_descriptors,
+                group_batch_size=interaction_group_batch_size,
+                observer=correction_observer,
+            )
     else:
         for target in range(len(operator.owners)):
             _replay_target(

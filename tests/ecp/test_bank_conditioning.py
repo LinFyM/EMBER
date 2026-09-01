@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 
 from ember.ecp.bank_conditioning import (
@@ -23,6 +25,16 @@ from ember.ecp.bank_conditioning import (
     materialized_signed_pool,
     normalize_replay_queries,
     spectral_bank_query,
+)
+from ember.ecp.bank_conditioning.checkpointed_replay import (
+    _output_values,
+    checkpointed_singleton_pool_add,
+)
+from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
+from ember.ecp.native_factors import (
+    G1_PROBE_COUNT,
+    NativeOutputBankState,
+    native_output_group_count,
 )
 from ember.ecp.bank_conditioning.functional_polar import _economy_svd_right
 
@@ -431,6 +443,89 @@ def test_signed_pool_is_chunk_equivalent_and_group_gain_is_bounded() -> None:
     assert branch_bias.grad is not None
     assert bool(torch.isfinite(branch_bias.grad).all())
     assert bool(torch.count_nonzero(branch_bias.grad))
+
+
+def test_checkpointed_signed_pool_matches_direct_output_and_gradient() -> None:
+    generator = torch.Generator().manual_seed(37)
+    query = torch.randn(3, 5, generator=generator, dtype=torch.float64)
+    values = torch.randn(3, 7, 5, generator=generator, dtype=torch.float64)
+    mass = torch.rand(3, 7, generator=generator, dtype=torch.float64) + 0.1
+    bias = 0.03 * torch.randn(
+        3, 2, 3, 7, generator=generator, dtype=torch.float64
+    )
+
+    direct_bias = bias.clone().requires_grad_()
+    direct = StreamingSignedPool(
+        query,
+        dtype=torch.float64,
+        trusted_positive_measure=True,
+        trusted_finite_bias=True,
+        canonical_block_candidates=14,
+    )
+    direct.add(values, mass, direct_bias)
+    direct_output = direct.signed_mean()
+    direct_gradient = torch.autograd.grad(direct_output.square().sum(), direct_bias)[0]
+
+    checkpointed_bias = bias.clone().requires_grad_()
+    observed = StreamingSignedPool(
+        query,
+        dtype=torch.float64,
+        trusted_positive_measure=True,
+        trusted_finite_bias=True,
+        canonical_block_candidates=14,
+    )
+    checkpointed_singleton_pool_add(
+        observed,
+        values=values[:2],
+        mass=mass[:2],
+        correction=lambda: checkpointed_bias[..., :2, :],
+        final_chunk=False,
+    )
+    checkpointed_singleton_pool_add(
+        observed,
+        values=values[2:],
+        mass=mass[2:],
+        correction=lambda: checkpointed_bias[..., 2:, :],
+        final_chunk=True,
+    )
+    observed_output = observed.signed_mean()
+    observed_gradient = torch.autograd.grad(
+        observed_output.square().sum(), checkpointed_bias
+    )[0]
+    torch.testing.assert_close(observed_output, direct_output, rtol=1e-12, atol=1e-12)
+    torch.testing.assert_close(
+        observed_gradient, direct_gradient, rtol=1e-12, atol=1e-12
+    )
+
+
+def test_checkpointed_output_group_preserves_video_boundary_banks() -> None:
+    owner = TargetOwner(0, "q", TargetFamily.Q, 0, 4, 16)
+    generator = torch.Generator().manual_seed(41)
+    raw = torch.randn(
+        5, G1_PROBE_COUNT, ACTION_HORIZON, 16, generator=generator
+    )
+    final = torch.randn(G1_PROBE_COUNT, ACTION_HORIZON, 16, generator=generator)
+    prepared = SimpleNamespace(output_values=(raw,), final_outputs=(final,))
+    operator = SimpleNamespace(owners=(owner,))
+    boundary = NativeOutputBankState(final=final)
+    groups = native_output_group_count(owner)
+    for start, stop in ((0, 2), (2, 5)):
+        bank = boundary.build(raw[start:stop], start_frame=start)
+        expected = bank.reshape(
+            *bank.shape[:-1], groups, owner.out_features // groups
+        ).movedim(-2, 0)
+        for group in range(groups):
+            torch.testing.assert_close(
+                _output_values(
+                    operator,
+                    prepared,
+                    target=0,
+                    group=group,
+                    start=start,
+                    stop=stop,
+                ),
+                expected[group],
+            )
 
 
 def test_global_primal_dual_replays_the_retained_native_direction() -> None:

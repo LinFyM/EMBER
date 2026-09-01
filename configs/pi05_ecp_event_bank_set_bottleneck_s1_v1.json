@@ -99,7 +99,7 @@
     },
     "interaction_group_batch_size_by_task": {
       "1": 16,
-      "93": 2
+      "93": 1
     },
     "trainable": [
       "EventConditionedBankSetInteraction"

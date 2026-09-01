@@ -208,7 +208,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             == "program_through_bank_summary_only_b1_with_fixed_owner_rank_event_structure",
             model.get("replay_frame_chunk_size_by_task") == {"1": 4, "93": 32},
             model.get("interaction_group_batch_size_by_task")
-            == {"1": 16, "93": 2},
+            == {"1": 16, "93": 1},
             model.get("trainable") == trainable,
             model.get("deployment_candidate") is False,
             config.get("optimization", {}).get("loss")

@@ -10,10 +10,10 @@
   matched whole-Writer joint，直至满足正式闭环合同或出现真实阻塞。
 - 当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`；旧
   `summary -> family-scalar gate -> shared event-additive anchor`不再是active实现。
-- PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。首个单key-chart E1在
-  macro70/110稳定`non_pass`；step110 task1 correct fit0/fit1/held为`.641984/.660311/.622909`，task93为
-  `.713247/.737497/.685649`，wrong为`.122637/.186146`与`.006121/.269427`。两checkpoint all-pairs、near-bound、
-  训练完整性和信息墙成立，当前不进入E2；下一步是专家§5.10的`T=Cov(v,k)`功能梯度投影谱。
+- PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。首个single-key-chart E1在
+  macro70/110相邻checkpoint均为`non_pass`。step110 task1 correct fit0/fit1/held为`.641984/.660311/.622909`、wrong为
+  `.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为`.006121/.269427`。all-pairs、near-bound与
+  信息墙通过，主要缺口是correct/held和`.50` margin；70到110的改善仅`.013--.037`，已形成稳定裁决。
 
 ## 最新科学结论
 
@@ -50,17 +50,17 @@
   canonicalization与首版carrier12+residual4。
 - Program只产生低维query；当前bank的真实candidate产生key并继续作为唯一native value。B0只做可微key-space whitening，B1在同一bank
   上执行一次联合measure的antithetic signed transport；没有base primal、bounded correction、family scalar gate或free anchor。
-- 最短关键路径是：active docs/main推送 -> 唯一实现worktree -> E0真实smoke -> E1 task1/93 free-query -> E2真实G2 Program。
-  首个E1单chart已失败，现按functional-gradient投影谱只修正bank tangent参数化并fresh复证E1；只有E1通过才进E2，
-  E1/E2通过后立即进入shared/whole-Writer，E1通过而E2失败才触发专家B路线。
+- 首个E1 single-key-chart已稳定non-pass；它只淘汰当前per-target/side线性key chart + free query + whitening signed transport函数类，
+  不裁决冻结的Natural Program。当前严格按专家§5.10先检查`T=Cov(v,k)`功能梯度投影谱，决定是`m`截谱还是需要
+  family-shared trunk + target-specific低秩key projection，完成针对性修订并fresh重跑E1；E1通过后才进入E2。
 - 专家远程artifact缺口中大部分本地已存在；当前实质缺少G2逐condition Program tensors，因此E2从frozen G2 checkpoint按condition重算，
   不误用fixed-token S1语义或cache。
 
 ## 最新formal evidence
 
 - PNBTT E1 free-query transport：
-  `runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`；110步、macro70/110、两次五臂Panel-B与
-  `evaluations/qualification.json`均完整，结论`non_pass`。
+  `runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`；110步、macro70/110 Panel-B与
+  `evaluations/qualification.json`均完成，最终为相邻一致`non_pass`。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -109,9 +109,9 @@
   （synthetic leaf-gradient最大误差`0`）。接入真实`D_policy`后的最新两步profile在task1/task93 microbatch 8/4下稳定完成，分别为
   `25.000/24.665s`；rank0/1峰值allocated为`39.773/36.154GB`、reserved为`46.376/44.109GB`。step1 free-query梯度非零且shared key按
   非对称LoRA零初始化预期为0；step2 shared-key梯度为`.293542`，task1/93 paired policy distance为`.003844/.002297`，correct/wrong已分离。
-- 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 macro70/110分别完成五臂各16次Panel-B，两者都为
-  `non_pass`且per-task结论一致。step70->110 correct/held只改善`.013--.037`，同时near-bound最高仅`.0220`；
-  correct tangent capacity是主缺口，不是饱和、OOM、训练时长或Natural Program。E2暂不启动，当前执行专家§5.10机制诊断。
+- 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 macro70/110均完成五臂各16次Panel-B；两枚checkpoint的task gate均为
+  `non_pass`，总体与逐task结论一致。step110相对step70的correct/held改善仅`.013--.037`；near-bound最大值从未超过`.022005`，
+  因此当前失败不是softmax饱和、训练过短或Natural Program。下一动作是专家指定的`T=Cov(v,k)`功能梯度投影谱，不进入E2。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
   set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
   detached scientific authority。

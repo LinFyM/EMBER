@@ -2018,3 +2018,19 @@ carrier的单侧functional上界继续保留，validation/test、held、wrong fi
 policy distance为`.003844/.002297`且finite。rank0/1峰值allocated为`39.773/36.154GB`、reserved为`46.376/44.109GB`，task1已接近
 A40安全上限，task93虽有更多显存余量但与task1步时平衡，因此不为占满显存继续增大microbatch。该profile仍只属工程准入，不是E1
 科学Gate；正式结论只认clean pushed detached commit上的step70/110与零梯度Panel-B。
+
+### 122. 首个PNBTT单key-chart E1稳定non-pass，最早缺口是free-query tangent capacity
+
+clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`的E1在macro70/110相邻checkpoint均为`non_pass`。step110
+task1 correct fit0/fit1/held为`.641984/.660311/.622909`、wrong为`.122637/.186146`；task93 correct为
+`.713247/.737497/.685649`、wrong为`.006121/.269427`。两task的all-correct > all-wrong、all-pairs与near-bound均通过，task1
+wrong也通过；task93 wrong-fit1仅轻微超过`.25`。主要失败是correct/held绝对容量及`.50` margin。
+
+macro70到110的correct/held改善仅`.013--.037`，near-bound最大值分别不超过`.022005/.017115`量级，说明不是query logit饱和或仅需
+更多同类训练。110步、两枚checkpoint、五臂各16次Panel-B、Action Meta 0、held/wrong-fit1/Panel-B零梯度、validation/test零读取及
+唯一完整38-target rank16均完整。E1冻结Natural Program，因此该负证据只淘汰当前per-target/side单线性key chart + free query +
+whitening signed transport函数类，不淘汰Program。
+
+后继严格按专家§5.10检查train-task `T=Cov(v,k)`功能梯度投影谱：若key dimension截断有效cross-family谱才增大`m`；若一个chart无法
+同时覆盖q/v/action-in/out，则采用family-shared trunk + target-specific低秩key projection。没有证据前不改rank，不做width、head、
+LR或seed扫；修订后fresh重跑E1，通过前不进入E2。

@@ -39,11 +39,12 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
 4. [x] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
    materialization；退役旧base/gate/anchor在deployment主路径中的所有权；
 5. [x] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
-6. [x] 首个单key-chart E1 task1/93 formal已完成；macro70/110均因correct/held不足稳定`non_pass`，
-   all-pairs、near-bound、相邻结论、训练完整性与信息墙成立；
-7. [ ] 按专家§5.10计算训练task的`T=Cov(v,k)` functional-gradient投影谱，区分key维度截断与单chart跨family不足，
-   只实现证据指向的bank tangent参数化修正并fresh复证E1；
-8. [ ] E1通过后进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与full-vs-language/endpoints；
+6. [x] 首个single-key-chart E1 task1/93已在macro70/110得到相邻一致`non_pass`：all-pairs、near-bound、信息墙及大部分wrong
+   约束成立，但correct/held与`.50` margin稳定不足；
+7. [ ] 按专家§5.10先计算train-task `T=Cov(v,k)`功能梯度投影谱；据此只在`m`截谱时增大key维，或在单chart跨family不足时
+   改为family-shared trunk + target-specific低秩key projection，随后fresh重跑E1；
+8. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
+   full-vs-language/endpoints；
 9. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
 10. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
 11. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。

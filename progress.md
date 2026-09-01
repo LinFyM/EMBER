@@ -17,7 +17,8 @@
 - 专家§5.10要求的train-only tangent spectrum诊断已在`8306a4cb43ee612671955354fbe0c508de996344`完成：task1/93各16个
   Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，未读取held或Panel-B。`m=128`对应每个operator的1024列，
   99%谱能量rank与末端10%能量均表明没有有效谱被key width截断；q/v各side的功能梯度保留率和跨family差异则支持专家规定的
-  family-shared nonlinear trunk + target-specific低秩key projection。当前保持`m=128`和rank4不变，正在做这一个结构修订的fresh E1。
+  family-shared nonlinear trunk + target-specific低秩key projection。当前保持`m=128`和rank4不变，这一个结构修订的fresh E1
+  已从clean detached `75db5f84`启动并持续运行。
 
 ## 最新科学结论
 
@@ -69,6 +70,9 @@
 - PNBTT E1 tangent spectrum：
   `runs/analysis/pi05_ecp_pnbtt_e1_tangent_spectrum_m128_step110_8306a4c_gpu01p12_20260902/`；task1/93共380个
   target-side spectra、16个Panel-A visits、三条gradient arms，`completion.json`完整，耗时`376.97s`。
+- PNBTT family-key E1（进行中）：
+  `runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`；训练authority固定为clean detached
+  `75db5f84`，gpu01物理1/2双rank，macro70/110仍是唯一正式裁决点，完成前不把中间loss当科学结论。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -89,10 +93,12 @@
 
 ## 仓库与workspace整理
 
-- 交接前58个累积worktree已清理；首个E1与spectrum结束后对应detached worktree也已删除。当前只保留canonical main与唯一
-  `codex/pnbtt`实现worktree；新formal从待推送commit另建clean detached worktree。
+- 交接前58个累积worktree已清理；首个E1与spectrum结束后对应detached worktree也已删除。当前只保留canonical main、唯一
+  `codex/pnbtt`实现worktree与正在运行family-key E1的clean detached worktree；formal结束后再删除其detached worktree。
 - 删除8个local `codex/*` branch：已合并分支由`main`保存；两个未合并EBSRI S2草案因S1预注册non-pass而失去执行资格；历史
   `g3-vector-interaction@2295f48`仍由`origin/codex/g3-vector-interaction`保存。
+- 已删除完整并入`main`的远程`codex/g3-bank-set-relative-interaction`与`codex/g3-v4-evaluator-authority`；未合并的
+  `origin/codex/g3-vector-interaction@2295f48`明确保留。
 - 两个旧dirty worktree分别是已被clean S0/S1链和后续G3历史取代的实现草案；确认无运行进程、无formal authority引用后随worktree清理，
   未提交内容不可恢复。
 - `.codex/tmp`中约`5.1GB`旧smoke/profile/script/cross-language临时cache已删除；其中影响决策的结论均已进入`findings.md`或
@@ -127,10 +133,14 @@
 - v2 implementation `02633a3964ecfd9d40f9827ba98456c87c07552b`已在clean pushed main完成双A40两步真实profile。step2
   family-key aggregate gradient为`.155687`，task1/93 free-query gradient为`13.945/9.212`，correct/wrong已分离；单步
   `25.266s`，两rank峰值allocated为`39.789/37.260GB`、reserved为`46.272/44.082GB`，无OOM或non-finite。
-- fresh E1 formal launch contract：从`02633a39`之后只增加本记录的clean pushed detached commit运行；配置为
+- `0f052cccc9ddb96fbcaaa2a036fdc61ee190d945`在不改变当前K1 E1的前提下补齐E2前置硬合同：每条视频在每个有效
+  event/scope先归一为等质量再按`1/K`混合，并缓存授权内容排序键以稳定集合归约；K2每半event mass精确为`.5`，相同Program
+  context下的native内容换序测试通过。`a2c3fe9e`同时把canonical runner默认配置从退役J3收敛到当前PNBTT v2；两提交均已
+  fast-forward并推送至`main`，正在运行的E1仍固定在其祖先`75db5f84`。
+- fresh E1 formal launch：从`02633a39`之后只增加本记录的clean pushed detached `75db5f84`运行；配置为
   `configs/pi05_ecp_pnbtt_e1_family_key_v2.json`，task1/93双rank DDP、110 optimizer steps、macro70/110 checkpoints，数据、
-  Panel-A/B、loss与Gate完全复用首个E1。计划使用gpu01物理1/2并在launch瞬间复核，固定`NCCL_P2P_DISABLE=1`和NUMA0；输出为
-  `runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`且必须fresh空目录。`/data1`当前user用量
+  Panel-A/B、loss与Gate完全复用首个E1。使用gpu01物理1/2，launch瞬间两卡均空闲，固定`NCCL_P2P_DISABLE=1`和NUMA0；输出
+  `runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`在launch时为fresh空目录。`/data1`当前user用量
   `772469868/1073741824 KiB`，参考上一E1的`257MB`，本轮含两个checkpoint峰值估计小于`1GB`。只允许同commit、同world-size2、
   同config exact resume；不覆盖无效root。科学裁决仍只认macro70/110五臂各16次Panel-B及相邻一致E1 Gate。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、

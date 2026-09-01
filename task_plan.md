@@ -27,8 +27,12 @@ task-dependent rank×event关系：从每个`z[target,4,8,128]`减去其rank/eve
 rank4/event8 slots组合；target-wide absolute offset、B0 absolute inducing与owner lookup仍不恢复，也不新增参数。冻结R5 base/event weights/
 native query→`kappa`、video-local context、真实X/Y、bounded correction、exact signed pooling、rank4+carrier12与唯一rank16不变。
 该relational版本的fresh S0现已正式non-pass：task1仅fit1为`.846`，task93 correct/held仍约`.70--.72`，与rank-only几乎相同；工程与
-信息墙合同完整。因此不进入S1，也不继续组合owner/relational或扫普通超参。当前先以full-`z` pass和三种quotient non-pass审计最早接口及
-专家停止条件，只有新的机制证据才能决定严格真实B0拓扑positive control或重开bank-conditioned primal。正式目标仍唯一为validation8
+信息墙合同完整。因此不进入S1，也不继续组合owner/relational或扫普通超参。后续parameter/Jacobian与代码拓扑审计确认`z_rel`确实被
+condition head使用，却只保留raw `z`约`2.3--2.7%`的centered energy，且task93 q层关系几乎共线；同时也确认full-`z`把Program
+同时送入B0 inducing与B1 condition，而所有quotient版本共同删除了B0的Program-conditioned读取。现有S0又把一个global free token
+广播到真实B0本来分别拥有的target/group/type scopes，故三次quotient non-pass不能在无混杂条件下裁决B0、B1及absolute-code旁路各自
+必要性。owner已要求在继续新结构前咨询专家；当前没有active successor architecture，任何未提交的B0-only或topology-matched草案都不构成
+authority，也不启动GPU。正式目标仍唯一为validation8
 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
@@ -71,8 +75,13 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   Program inducing、Action Meta 0、冻结边界及唯一rank16；
 - [x] 从clean pushed detached authority fresh完成relational S0；task1仅fit1为`.846`，task93 correct/held约`.70--.72`，正式
   aggregate non-pass；工程、信息墙、Panel-B及唯一rank16合同完整，故不进入S1；
-- [ ] 对full-`z` pass与rank-only/owner/relational三种non-pass做同合同parameter/Jacobian、summary拓扑及专家停止条件审计，明确最早
-  失效接口，并只在形成新机制证据后决定下一项；
+- [x] 对full-`z` pass与rank-only/owner/relational三种non-pass做同合同parameter/Jacobian、summary拓扑及专家停止条件审计；确认
+  relational路径实际被使用、三个quotient共同删除B0 Program inducing、且global free token比真实B0拓扑更窄，因此不能把失败唯一归因
+  于B1 absolute mean或correction factorization；
+- [ ] 由专家完整复核自第六次意见以来的S0/S1通过、三类S2 non-pass、absolute-route假设及三次quotient S0反证，解释为何一天推进后
+  仍未跨过G3、哪些归因成立及哪里可能走偏，并给出下一步具体架构、训练信号、冻结边界、Gate顺序与停止条件。Program如何进入B0/B1、
+  whole-bank context的形式及absolute-code旁路只是其中一个关键接口，不把咨询缩窄成“B0是否必要”；专家回复与owner裁决落盘前不提交
+  候选架构或启动formal；
 - [ ] 只有fresh S0通过，才以不加载S0 interaction状态的fresh R5完成S1，并按相同双task绝对Gate裁决真实B0 summary；
 - [ ] 只有fresh S1通过，才fresh执行原split S2及相邻Gate；若S1通过而S2仍失败，则否定absolute-code主因，转向`kappa`/summary
   decodability或task-diversity诊断；

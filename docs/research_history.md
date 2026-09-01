@@ -1761,3 +1761,16 @@ task93与rank/event-only quotient结果几乎相同，说明target-centered rank
 由此预注册的relational quotient修正链结束，不进入S1，不组合owner+relation，也不做普通超参小扫。后继必须先审计global free token与
 真实B0 target/group/type summary的拓扑差异、condition网络是否实际利用relational维度，以及专家停止当前correction factorization并重开
 bank-conditioned primal的条件，形成新的机制证据后才能继续。
+
+## 90. post-quotient接口审计与专家复核边界
+
+后续只读parameter/Jacobian复核证明relational输入实际进入condition head并获得非零优化状态，但task93 q层间关系近共线，且centered
+部分只保留raw Program state约`2.3--2.7%` energy；这解释了其能改变wrong suppression却不能恢复correct。代码逐版对照同时发现原
+full-`z`不仅在B1使用Program state，也在更早的B0 inducing使用其rank mean；三个quotient共同删除了该B0 Program-conditioned读取，
+所以既有S0无法把B0与B1责任分开归因。
+
+另一个混杂来自S0正控：一个global free token广播到全部target/group/type，而真实B0 summary具有逐target input及逐target/group
+all/by-type拓扑。该差异在full-`z`存在时可被逐target Program context补偿，删除`z`后可能成为额外容量瓶颈。owner随后要求停止未定
+架构并咨询专家；咨询范围必须覆盖自第六次意见以来S0/S1通过、三类S2失败及三次quotient S0反证的完整链条，解释为何仍未跨过G3并给出
+具体后续计划。Program直接query、whole-bank context、B0/B1职责和absolute-code旁路是关键接口之一，但不是唯一问题。截至该边界，
+没有新的S0/S1/S2启动，未提交的候选草案不属于active history；formal evidence均保留。

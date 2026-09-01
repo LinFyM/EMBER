@@ -1,5 +1,27 @@
 # EMBER progress
 
+### EBSRI B0/B1 interface expert-consultation boundary
+
+- relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实
+  `z_rel`会显著改变head输出；但task93的18个q owner/layer之间`z_rel`两两cosine约`.9931--.9974`，且centered residual只占raw
+  `z` energy约`2.35--2.65%`。它主要增强wrong suppression而未恢复correct，不能靠owner+relation、LR、步数或normalization继续拼接。
+- 更早的代码拓扑复核纠正了“失败只在B1”的表述：原full-`z`在B0 inducing使用`program_event_state.mean(0)`，并在B1使用完整
+  `program_event_state`；rank-only、owner与relational quotient共同把B0改为task-independent inducing，relational只向B1补回centered
+  relation。因此现有对照没有单独隔离B0 Program-conditioned set读取、B1 absolute code直达及二者联合效应。
+- S0还有独立拓扑混杂：一个`[E,S]` free condition被广播到全部38 targets、output groups及all/by-type scopes，而真实B0分别产生input
+  `S^X_{j,e}`、output `S^{Y,all}_{jg,e}`和`S^{Y,u}_{jg,e}`。full-`z`可用逐target code补偿这个粗正控；删除`z`后，global token可能成为
+  部署B0不存在的额外瓶颈。该事实不自动授权per-target lookup，也不证明B0必须独立存在。
+- owner已明确指出：若Program能够基于内容直接query真实bank并在B1形成signed attention，就必须重新证明B0作为独立中间层的必要作用，
+  不能用命名或实现上的两次扫描替代科学论证。当前关键歧义是：需要的是独立B0 whole-set state、折入B1的set-aware attention，还是更早的
+  bank-conditioned primal；以及如何禁止可绕过video的absolute-code旁路，同时保留合法Program-query路径。
+- owner进一步明确，本次咨询不是只裁决B0独立必要性；重点是让专家审计从其第六次意见之后的完整执行：S0/S1为何能过、effective/
+  direct-functional/functional-polish三类S2为何分别失败、absolute-route解释是否成立、三次quotient S0为何越修越损伤correct，以及这些
+  结果是否暴露更上游的Program、shared coordinate、训练信号、task diversity或base+correction问题。专家必须据此给出可执行的后续
+  架构与训练/Gate计划，而不是只点评一个局部模块。
+- 本轮停止未定架构实现与全部GPU工作，保留所有formal evidence。isolated worktree中的topology-matched free-summary/B0-only草案未提交、
+  未推送、未成为active design；其29项定向CPU通过只说明草案代码可执行，不是科学证据。下一步先把本审计推送远程并向专家提交锁定commit
+  的完整复核问题；专家回复与owner裁决前不启动新S0/S1/S2。
+
 ### Target-centered relational quotient S0 formal launch contract
 
 - scientific implementation/config authority为clean pushed `ad647576d187a3df69a3f5d6b93f6f5c979817b6`；formal从只增加本launch

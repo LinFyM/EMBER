@@ -1884,3 +1884,21 @@ task93结果与rank/event-only quotient的`.709/.727/.725`几乎相同，远低�
 中心化并RMS归一的rank×event关系，并不足以代替被删除的raw Program context。owner slot与relational context已经分别接受同合同fresh
 反证，不能再把两者相加或做normalization/步数/LR小扫当作有机制证据的下一版。最早接口必须在full-`z`与三个quotient的condition网络实际
 使用、真实B0 target/group/type summary拓扑，以及专家“global free token失败则停止correction factorization”的适用边界之间重新裁决。
+
+### 113. quotient对照同时改变了B0 Program读取与S0 summary拓扑，B0/B1职责尚未被无混杂裁决
+
+checkpoint参数与Jacobian审计排除了relational支路未训练的解释：它的condition权重、Adam一二阶矩及输出干预均显著非零；但task93的
+18个q owner/layer `z_rel`两两cosine约`.9931--.9974`，centered residual只保留raw `z`约`2.65%` energy，实际结果也只是wrong更负、
+correct不升。owner与relational逐target误差变化高度同向，故两项相加没有机制依据。
+
+更重要的是，full-`z`的`_event_context`同时让B0 inducing读取`program_event_state.mean(0)`、B1读取完整`program_event_state`；三个
+quotient版本共同删除前者，relational只在B1恢复centered relation。因此full-`z`与quotient的差异不能唯一解释为“B1 absolute task mean
+必要/有害”，更早的Program-conditioned whole-set读取也未被单独隔离。与此同时，S0用一个global `[E,S]` token覆盖所有targets、output
+groups及all/by-type scopes，而真实B0的summary是逐target/group/type的ragged结构。删除逐target `z`后，这个训练期正控可能比部署B0
+人为更窄。
+
+这些证据既不证明应恢复raw `z`直达B1，也不单独裁决B0的最终形式：如果Program query与native candidate keys在一个真正set-aware的
+signed-attention算子内直接交互，B0可作为其流式统计阶段；反之，旧pointwise路线的负结果又说明只做独立candidate打分不足。更大的未决
+问题是为何S0/S1 task-local容量、direct正确能力与polish训练任务bank specificity始终不能在shared held迁移中同时成立。下一次专家复核
+必须覆盖这整条因果链，判断首因究竟在Program/shared coordinate、训练信号、task diversity、whole-bank交互还是base+correction分解，
+并给出最小无混杂Gate；不能把咨询缩窄成B0命名争论。未裁决前不把任何B0-only/topology-matched草案写成active architecture。

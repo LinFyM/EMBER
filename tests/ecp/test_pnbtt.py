@@ -4,6 +4,7 @@ import torch
 
 from ember.ecp.bank_conditioning.key_value_replay import (
     differentiable_key_moments,
+    safe_rms_normalize,
     signed_key_value_pool,
     whiten_queries,
 )
@@ -14,6 +15,12 @@ from ember.ecp.bank_conditioning.tangent_parameterization import (
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.joint_program_primal.pnbtt_evaluation import (
     _same_frozen_training_git,
+)
+from ember.ecp.joint_program_primal.pnbtt_tangent_spectrum import (
+    projection_spectrum,
+    safe_rms_vjp,
+    weighted_cross_covariance,
+    whitened_cross_covariance,
 )
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.native_materialization import small_core_balanced_svd
@@ -28,6 +35,73 @@ def _owners() -> tuple[TargetOwner, ...]:
         TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 2, 4),
         TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 4, 2),
     )
+
+
+def test_pnbtt_tangent_spectrum_matches_direct_covariance_and_autograd() -> None:
+    generator = torch.Generator().manual_seed(101)
+    scopes, events, candidates, value_width, key_width = 2, 3, 17, 7, 5
+    values = torch.randn(scopes, candidates, value_width, generator=generator)
+    keys = torch.randn(scopes, candidates, key_width, generator=generator)
+    mass = torch.rand(scopes, events, candidates, generator=generator) + 0.1
+    mass = mass / mass.sum(-1, keepdim=True)
+    expected = []
+    for scope in range(scopes):
+        by_event = []
+        for event in range(events):
+            weights = mass[scope, event]
+            value_mean = (weights[:, None] * values[scope]).sum(0)
+            key_mean = (weights[:, None] * keys[scope]).sum(0)
+            by_event.append(
+                torch.einsum(
+                    "n,nd,nm->dm",
+                    weights,
+                    values[scope] - value_mean,
+                    keys[scope] - key_mean,
+                )
+            )
+        expected.append(torch.stack(by_event))
+    cross = weighted_cross_covariance(values, keys, mass)
+    torch.testing.assert_close(cross, torch.stack(expected), rtol=2e-5, atol=2e-5)
+
+    covariance = torch.einsum(
+        "sen,senm,senp->semp",
+        mass,
+        keys[:, None] - torch.einsum("sen,snm->sem", mass, keys)[:, :, None],
+        keys[:, None] - torch.einsum("sen,snm->sem", mass, keys)[:, :, None],
+    )
+    identity = torch.eye(key_width)
+    cholesky = torch.linalg.cholesky(covariance + 1e-2 * identity)
+    whitened = whitened_cross_covariance(cross, cholesky)
+    torch.testing.assert_close(
+        whitened,
+        cross @ torch.linalg.inv(cholesky).transpose(-1, -2),
+        rtol=2e-5,
+        atol=2e-5,
+    )
+
+    value = torch.randn(4, 11, generator=generator, requires_grad=True)
+    upstream = torch.randn(4, 11, generator=generator)
+    (safe_rms_normalize(value, epsilon=1e-2) * upstream).sum().backward()
+    torch.testing.assert_close(
+        safe_rms_vjp(value.detach(), upstream, epsilon=1e-2),
+        value.grad,
+        rtol=2e-5,
+        atol=2e-5,
+    )
+
+
+def test_pnbtt_projection_spectrum_reports_reachable_and_missing_gradients() -> None:
+    matrix = torch.tensor(
+        [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]], dtype=torch.float32
+    )
+    gradients = torch.tensor(
+        [[1.0, 2.0, 0.0], [0.0, 0.0, 3.0]], dtype=torch.float32
+    )
+    result = projection_spectrum(matrix, {"probe": gradients})
+    retention = result["functional_gradient"]["probe"]["retention"]
+    assert retention["maximum"] == 1.0
+    assert retention["minimum"] == 0.0
+    assert result["effective_rank_by_relative_singular_value"]["0.001"] == 2
 
 
 def test_frozen_training_git_allows_only_authority_tip_to_advance() -> None:

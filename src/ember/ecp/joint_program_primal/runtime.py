@@ -959,9 +959,6 @@ def _model_assets(
         interaction_hidden_width=int(
             config["model"].get("interaction_hidden_width", 64)
         ),
-        interaction_correction_bound=float(
-            config["model"].get("interaction_correction_bound", 0.1)
-        ),
         scale_prior_ratio=load_shared_scale_prior(
             base, asset_root=args.asset_root, device=context.device
         ),

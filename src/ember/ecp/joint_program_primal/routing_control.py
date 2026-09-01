@@ -17,6 +17,7 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint
 from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    BANK_CONDITIONED_PRIMAL_STAGE,
     BANK_SET_S0_STAGE,
     BANK_SET_S1_STAGE,
     BANK_SET_TASKLOCAL_RUN_SCHEMA,
@@ -24,6 +25,7 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
     bank_set_parameter_ownership,
     is_bank_set_tasklocal_config,
     required_s0_gate_authority,
+    required_s1_non_pass_authority,
     writer_trainable_inventory,
 )
 from ember.ecp.joint_program_primal.runtime import (
@@ -412,6 +414,9 @@ def _run_contract(
         "required_s0_gate": required_s0_gate_authority(
             runtime.config, asset_root=runtime.args.asset_root
         ),
+        "required_s1_non_pass": required_s1_non_pass_authority(
+            runtime.config, asset_root=runtime.args.asset_root
+        ),
         "functional_panels": {
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
@@ -453,6 +458,7 @@ def _resolve_routing_inputs(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     config = load_routing_control_config(args.config)
     required_s0_gate_authority(config, asset_root=args.asset_root)
+    required_s1_non_pass_authority(config, asset_root=args.asset_root)
     if is_bank_set_tasklocal_config(config):
         config["optimization"]["functional_policy_microbatch_size"] = int(
             config["optimization"]["functional_policy_microbatch_size_by_task"][
@@ -462,9 +468,10 @@ def _resolve_routing_inputs(
         config["model"]["replay_frame_chunk_size"] = int(
             config["model"]["replay_frame_chunk_size_by_task"][str(args.task)]
         )
-        config["model"]["interaction_group_batch_size"] = int(
-            config["model"]["interaction_group_batch_size_by_task"][str(args.task)]
-        )
+        if routing_stage(config) != BANK_CONDITIONED_PRIMAL_STAGE:
+            config["model"]["interaction_group_batch_size"] = int(
+                config["model"]["interaction_group_batch_size_by_task"][str(args.task)]
+            )
     program_bank_root = getattr(args, "program_bank_condition_cache_root", None)
     if is_bank_set_tasklocal_config(config):
         if (

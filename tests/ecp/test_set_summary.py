@@ -57,16 +57,18 @@ def _summary_inputs():
     mass = torch.rand(3, 13, generator=generator).clamp_min(1e-4)
     query = torch.randn(4, 3, 12, generator=generator, requires_grad=True)
     values = torch.randn(13, 5, generator=generator, requires_grad=True)
-    return coordinates, mass, query, values
+    native = torch.randn(13, 7, generator=generator, requires_grad=True)
+    return coordinates, mass, query, values, native
 
 
 def _accumulate(chunks):
-    coordinates, mass, query, values = _summary_inputs()
+    coordinates, mass, query, values, native = _summary_inputs()
     accumulator = StreamingEventBankSummary(
         events=3,
         coordinate_width=12,
         value_width=5,
         reference=coordinates,
+        native_width=7,
     )
     for start, stop in chunks:
         accumulator.add(
@@ -74,19 +76,23 @@ def _accumulate(chunks):
             mass[:, start:stop],
             query,
             values[start:stop],
+            native[start:stop],
         )
-    return accumulator.finalize(), query, values
+    return accumulator.finalize(), query, values, native
 
 
 def test_event_summary_matches_irregular_chunks_and_has_gradient() -> None:
-    full, _, _ = _accumulate(((0, 13),))
-    chunked, query, values = _accumulate(((0, 2), (2, 7), (7, 8), (8, 13)))
+    full, _, _, _ = _accumulate(((0, 13),))
+    chunked, query, values, native = _accumulate(
+        ((0, 2), (2, 7), (7, 8), (8, 13))
+    )
     for left, right in zip(
         (
             full.mean,
             full.log_variance,
             full.induced_positive,
             full.induced_negative,
+            full.native_anchor,
             full.log_partition,
         ),
         (
@@ -94,14 +100,16 @@ def test_event_summary_matches_irregular_chunks_and_has_gradient() -> None:
             chunked.log_variance,
             chunked.induced_positive,
             chunked.induced_negative,
+            chunked.native_anchor,
             chunked.log_partition,
         ),
         strict=True,
     ):
         torch.testing.assert_close(left, right, atol=2e-6, rtol=2e-6)
-    chunked.condition.square().mean().backward()
+    (chunked.condition.square().mean() + chunked.native_anchor.square().mean()).backward()
     assert query.grad is not None and bool(torch.isfinite(query.grad).all())
     assert values.grad is not None and bool(torch.isfinite(values.grad).all())
+    assert native.grad is None
 
 
 def test_real_encoder_is_candidate_permutation_invariant() -> None:
@@ -116,12 +124,14 @@ def test_real_encoder_is_candidate_permutation_invariant() -> None:
     metadata = torch.randn(13, 3)
     mass = torch.rand(3, 13).clamp_min(1e-4)
     context = torch.randn(4, 3, 11)
+    native = torch.randn(13, 7)
     expected = encoder.summarize(
         coordinates=coordinates,
         metadata=metadata,
         event_mass=mass,
         event_context=context,
         output=False,
+        native_values=native,
     )
     permutation = torch.tensor((8, 2, 12, 0, 6, 5, 4, 9, 1, 11, 3, 10, 7))
     actual = encoder.summarize(
@@ -130,5 +140,9 @@ def test_real_encoder_is_candidate_permutation_invariant() -> None:
         event_mass=mass[:, permutation],
         event_context=context,
         output=False,
+        native_values=native[permutation],
     )
     torch.testing.assert_close(expected.condition, actual.condition, atol=2e-6, rtol=2e-6)
+    torch.testing.assert_close(
+        expected.native_anchor, actual.native_anchor, atol=2e-6, rtol=2e-6
+    )

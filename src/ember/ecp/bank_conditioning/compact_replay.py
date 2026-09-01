@@ -1,25 +1,12 @@
-"""Exact compact-bank summary and signed replay for EBSRI."""
+"""Compact whole-bank summary and exact native signed replay."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 import torch
-from torch.utils.checkpoint import checkpoint
 
-from ember.ecp.bank_conditioning.batched_interaction import (
-    batched_input_corrections,
-    batched_output_corrections,
-)
-from ember.ecp.bank_conditioning.checkpointed_replay import (
-    replay_checkpointed_singletons,
-)
-from ember.ecp.bank_conditioning.candidate_descriptors import (
-    CandidateDescriptor,
-    FrozenReplayDescriptors,
-)
 from ember.ecp.bank_conditioning.operator import StreamingSignedPool
 from ember.ecp.bank_conditioning.primal_dual import (
     SpectralNativeCovariance,
@@ -36,7 +23,6 @@ from ember.ecp.bank_conditioning.set_summary import (
     event_candidate_measure,
     program_relative_coordinates,
 )
-from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     G1_RESIDUAL_RANK,
     NativeFactorError,
@@ -78,65 +64,10 @@ class ReplayPlan:
     conditioning_metrics: torch.Tensor
 
 
-def _candidate_correction(
-    call: Callable[..., torch.Tensor], values: torch.Tensor
-) -> torch.Tensor:
-    """Recompute large frozen-candidate features during backward."""
-
-    if not torch.is_grad_enabled():
-        return call(values=values)
-    return checkpoint(
-        lambda candidate: call(values=candidate),
-        values,
-        use_reentrant=False,
-        preserve_rng_state=False,
-    )
-
-
-def _batched_candidate_correction(
-    call: Callable[..., torch.Tensor],
-    descriptors: Sequence[CandidateDescriptor],
-) -> torch.Tensor:
-    if not torch.is_grad_enabled():
-        return call(descriptors=descriptors)
-    flat = tuple(
-        value
-        for descriptor in descriptors
-        for value in (
-            descriptor.coordinates,
-            descriptor.base_score,
-            descriptor.log_norm,
-        )
-    )
-
-    def rebuild(*values: torch.Tensor) -> torch.Tensor:
-        rows = tuple(
-            CandidateDescriptor(
-                coordinates=values[index],
-                base_score=values[index + 1],
-                log_norm=values[index + 2],
-            )
-            for index in range(0, len(values), 3)
-        )
-        return call(descriptors=rows)
-
-    return checkpoint(
-        rebuild,
-        *flat,
-        use_reentrant=False,
-        preserve_rng_state=False,
-    )
-
-
-def _batches(values: Sequence[Any], size: int) -> tuple[Sequence[Any], ...]:
-    return tuple(values[start : start + size] for start in range(0, len(values), size))
-
-
 def summarize_compact_replay(
     operator: Any,
     prepared: CompactPrimalDualVideo,
     *,
-    plan: ReplayPlan,
     bank_set_interaction: EventConditionedBankSetInteraction,
     interaction_state: ProgramBankInteractionState,
 ) -> ProgramBankSetSummaries:
@@ -172,7 +103,7 @@ def summarize_compact_replay(
                     program_event_state=interaction_state.rank_event[target],
                     context=interaction_state.context,
                     output=True,
-                    reference=y,
+                    reference=prepared.output_operators[target][group].mean,
                 ),
                 tuple(
                     bank_set_interaction.summary_stream(
@@ -180,12 +111,13 @@ def summarize_compact_replay(
                         program_event_state=interaction_state.rank_event[target],
                         context=interaction_state.context,
                         output=True,
-                        reference=y,
+                        reference=prepared.output_operators[target][group].mean,
+                        collect_native=False,
                     )
                     for _ in OUTPUT_BANK_TYPES
                 ),
             )
-            for _ in range(groups)
+            for group in range(groups)
         )
         boundary = NativeOutputBankState(final=prepared.final_outputs[target].detach())
         for start in range(0, frames, summary_frame_chunk):
@@ -205,6 +137,7 @@ def summarize_compact_replay(
                 event_mass=event_candidate_measure(
                     frame_measure, context.canonical_assignment, output=False
                 ),
+                native_values=x[start:stop],
             )
             bank = boundary.build(y[start:stop], start_frame=start)
             grouped = bank.reshape(
@@ -227,6 +160,7 @@ def summarize_compact_replay(
                     coordinates=coordinates,
                     metadata=metadata,
                     event_mass=mass,
+                    native_values=values,
                 )
                 for kind, stream in enumerate(by_type):
                     stream.add(
@@ -247,41 +181,6 @@ def summarize_compact_replay(
             )
         )
     return ProgramBankSetSummaries(inputs=tuple(inputs), outputs=tuple(outputs))
-
-
-def _validate_replay_arguments(
-    operator: Any,
-    *,
-    bank_set_interaction: EventConditionedBankSetInteraction | None,
-    interaction_state: ProgramBankInteractionState | None,
-    summaries: ProgramBankSetSummaries | None,
-    direct_input_logit_biases: Sequence[torch.Tensor] | None,
-    direct_output_logit_biases: Sequence[Sequence[torch.Tensor]] | None,
-    correction_observer: Callable[[str, TargetOwner, torch.Tensor], None] | None,
-) -> tuple[bool, bool]:
-    operator._validate_interaction_state(interaction_state)
-    interaction_enabled = operator._interaction_enabled(
-        bank_set_interaction, interaction_state
-    )
-    direct_biases = direct_input_logit_biases is not None
-    if direct_biases != (direct_output_logit_biases is not None):
-        raise NativeFactorError("direct signed-pool bias ownership changed")
-    if direct_biases and interaction_enabled:
-        raise NativeFactorError("direct and bank-set biases cannot be combined")
-    if correction_observer is not None and (
-        not interaction_enabled or torch.is_grad_enabled()
-    ):
-        raise NativeFactorError(
-            "correction diagnostics require inference-only bank-set replay"
-        )
-    if direct_biases and (
-        len(direct_input_logit_biases) != len(operator.owners)
-        or len(direct_output_logit_biases) != len(operator.owners)
-    ):
-        raise NativeFactorError("direct signed-pool target count changed")
-    if summaries is not None and not interaction_enabled:
-        raise NativeFactorError("compact bank-set summary ownership changed")
-    return interaction_enabled, direct_biases
 
 
 def _new_pools(
@@ -312,73 +211,15 @@ def _new_pools(
     return inputs, outputs
 
 
-def _interaction_input_bias(
-    *,
-    interaction: EventConditionedBankSetInteraction,
-    state: ProgramBankInteractionState,
-    summaries: ProgramBankSetSummaries,
-    plan: ReplayPlan,
-    prepared: CompactPrimalDualVideo,
-    target: int,
-    values: torch.Tensor,
-    context: Any,
-) -> torch.Tensor:
-    return _candidate_correction(
-        partial(
-            interaction.input_logit_corrections,
-            target=target,
-            native_event_query=state.input_event_queries[target],
-            event_weights=state.event_weights[target],
-            base_query=plan.input_queries[target],
-            native_mean=prepared.input_operators[target].mean,
-            context=context,
-            summary=summaries.inputs[target],
-        ),
-        values,
-    )
-
-
-def _interaction_output_bias(
-    *,
-    interaction: EventConditionedBankSetInteraction,
-    state: ProgramBankInteractionState,
-    summaries: ProgramBankSetSummaries,
-    plan: ReplayPlan,
-    prepared: CompactPrimalDualVideo,
-    target: int,
-    group: int,
-    values: torch.Tensor,
-    context: Any,
-) -> torch.Tensor:
-    return _candidate_correction(
-        partial(
-            interaction.output_logit_corrections,
-            target=target,
-            native_event_query=state.output_event_queries[target][group],
-            event_weights=state.event_weights[target],
-            base_query=plan.output_queries[target][group],
-            native_mean=prepared.output_operators[target][group].mean,
-            context=context,
-            summary=summaries.outputs[target][group],
-        ),
-        values,
-    )
-
-
 def _replay_target(
     operator: Any,
     prepared: CompactPrimalDualVideo,
     *,
-    plan: ReplayPlan,
     target: int,
     inputs: Any,
     outputs: Any,
-    interaction: EventConditionedBankSetInteraction | None,
-    state: ProgramBankInteractionState | None,
-    summaries: ProgramBankSetSummaries | None,
     direct_inputs: Sequence[torch.Tensor] | None,
     direct_outputs: Sequence[Sequence[torch.Tensor]] | None,
-    observer: Callable[[str, TargetOwner, torch.Tensor], None] | None,
 ) -> None:
     owner = operator.owners[target]
     x = prepared.input_values[target]
@@ -386,7 +227,6 @@ def _replay_target(
     boundary = NativeOutputBankState(final=prepared.final_outputs[target].detach())
     groups = native_output_group_count(owner)
     frames = int(prepared.frame_measure.shape[0])
-    interaction_enabled = interaction is not None
     for start in range(0, frames, operator.covariance_frame_chunk):
         stop = min(start + operator.covariance_frame_chunk, frames)
         x_chunk = x[start:stop]
@@ -397,27 +237,11 @@ def _replay_target(
         y_mass = native_candidate_mass(
             prepared.frame_measure[start:stop], output=True
         )
-        context = state.context.frame_slice(start, stop) if state is not None else None
         input_bias = (
-            _interaction_input_bias(
-                interaction=interaction,
-                state=state,
-                summaries=summaries,
-                plan=plan,
-                prepared=prepared,
-                target=target,
-                values=x_chunk,
-                context=context,
-            )
-            if interaction_enabled
-            else (
-                direct_inputs[target][..., start:stop, :, :]
-                if direct_inputs is not None
-                else None
-            )
+            None
+            if direct_inputs is None
+            else direct_inputs[target][..., start:stop, :, :]
         )
-        if observer is not None:
-            observer("input", owner, input_bias[:, 0])
         inputs[target].add(x_chunk, x_mass, input_bias)
         bank = boundary.build(y_chunk, start_frame=start)
         grouped = bank.reshape(
@@ -425,170 +249,13 @@ def _replay_target(
         ).movedim(-2, 0)
         for group, accumulator in enumerate(outputs[target]):
             output_bias = (
-                _interaction_output_bias(
-                    interaction=interaction,
-                    state=state,
-                    summaries=summaries,
-                    plan=plan,
-                    prepared=prepared,
-                    target=target,
-                    group=group,
-                    values=grouped[group],
-                    context=context,
-                )
-                if interaction_enabled
-                else (
-                    direct_outputs[target][group][..., start:stop, :, :, :]
-                    if direct_outputs is not None
-                    else None
-                )
+                None
+                if direct_outputs is None
+                else direct_outputs[target][group][..., start:stop, :, :, :]
             )
-            if observer is not None:
-                observer("output", owner, output_bias[:, 0])
             accumulator.add(grouped[group], y_mass, output_bias)
     if boundary.next_frame != frames:
         raise NativeFactorError("compact output boundary ended early")
-
-
-def _replay_cached_interaction(
-    operator: Any,
-    prepared: CompactPrimalDualVideo,
-    *,
-    plan: ReplayPlan,
-    inputs: Any,
-    outputs: Any,
-    interaction: EventConditionedBankSetInteraction,
-    state: ProgramBankInteractionState,
-    summaries: ProgramBankSetSummaries,
-    descriptors: FrozenReplayDescriptors,
-    group_batch_size: int,
-    observer: Callable[[str, TargetOwner, torch.Tensor], None] | None,
-) -> None:
-    frames = int(prepared.frame_measure.shape[0])
-    device = prepared.frame_measure.device
-    structural_gates = tuple(
-        interaction._b1_structural_gate(target)
-        for target in range(len(operator.owners))
-    )
-    input_buckets = {
-        family: tuple(
-            target
-            for target, owner in enumerate(operator.owners)
-            if owner.family is family
-        )
-        for family in TargetFamily
-    }
-    output_buckets = {
-        family: tuple(
-            (target, group)
-            for target, owner in enumerate(operator.owners)
-            if owner.family is family
-            for group in range(native_output_group_count(owner))
-        )
-        for family in TargetFamily
-    }
-    boundaries = tuple(
-        NativeOutputBankState(final=value.detach()) for value in prepared.final_outputs
-    )
-    for start in range(0, frames, operator.covariance_frame_chunk):
-        stop = min(start + operator.covariance_frame_chunk, frames)
-        measure = prepared.frame_measure[start:stop]
-        assignment = state.context.canonical_assignment[start:stop]
-        input_mass = native_candidate_mass(measure, output=False)
-        output_mass = native_candidate_mass(measure, output=True)
-        input_metadata = descriptors.metadata_slice(
-            start, stop, output=False, device=device
-        )
-        output_metadata = descriptors.metadata_slice(
-            start, stop, output=True, device=device
-        )
-        grouped_outputs = []
-        for target, (owner, y, boundary) in enumerate(
-            zip(
-                operator.owners,
-                prepared.output_values,
-                boundaries,
-                strict=True,
-            )
-        ):
-            bank = boundary.build(y[start:stop], start_frame=start)
-            groups = native_output_group_count(owner)
-            grouped_outputs.append(
-                bank.reshape(
-                    *bank.shape[:-1], groups, owner.out_features // groups
-                ).movedim(-2, 0)
-            )
-        for family, targets in input_buckets.items():
-            for batch in _batches(targets, group_batch_size):
-                cached = tuple(
-                    descriptors.inputs[target].frame_slice(
-                        start, stop, device=device
-                    )
-                    for target in batch
-                )
-                call = partial(
-                    batched_input_corrections,
-                    interaction,
-                    family=family.value,
-                    summaries=tuple(summaries.inputs[target] for target in batch),
-                    structural_gate=torch.stack(
-                        tuple(structural_gates[target] for target in batch)
-                    ),
-                    event_weights=torch.stack(
-                        tuple(state.event_weights[target] for target in batch)
-                    ),
-                    assignment=assignment,
-                    metadata=input_metadata,
-                )
-                correction = _batched_candidate_correction(call, cached)
-                for row, target in enumerate(batch):
-                    if observer is not None:
-                        observer(
-                            "input", operator.owners[target], correction[row, :, 0]
-                        )
-                    inputs[target].add(
-                        prepared.input_values[target][start:stop],
-                        input_mass,
-                        correction[row],
-                    )
-        for family, entries in output_buckets.items():
-            for batch in _batches(entries, group_batch_size):
-                cached = tuple(
-                    descriptors.outputs[target][group].frame_slice(
-                        start, stop, device=device
-                    )
-                    for target, group in batch
-                )
-                call = partial(
-                    batched_output_corrections,
-                    interaction,
-                    family=family.value,
-                    summaries=tuple(
-                        summaries.outputs[target][group]
-                        for target, group in batch
-                    ),
-                    structural_gate=torch.stack(
-                        tuple(structural_gates[target] for target, _ in batch)
-                    ),
-                    event_weights=torch.stack(
-                        tuple(state.event_weights[target] for target, _ in batch)
-                    ),
-                    assignment=assignment,
-                    metadata=output_metadata,
-                )
-                correction = _batched_candidate_correction(call, cached)
-                for row, (target, group) in enumerate(batch):
-                    if observer is not None:
-                        observer(
-                            "output", operator.owners[target], correction[row, :, 0]
-                        )
-                    outputs[target][group].add(
-                        grouped_outputs[target][group],
-                        output_mass,
-                        correction[row],
-                    )
-    if any(boundary.next_frame != frames for boundary in boundaries):
-        raise NativeFactorError("cached interaction output boundary ended early")
 
 
 def apply_compact_replay(
@@ -597,91 +264,38 @@ def apply_compact_replay(
     input_primals: tuple[torch.Tensor, ...],
     output_primals: tuple[torch.Tensor, ...],
     *,
-    bank_set_interaction: EventConditionedBankSetInteraction | None = None,
-    interaction_state: ProgramBankInteractionState | None = None,
-    summaries: ProgramBankSetSummaries | None = None,
     direct_input_logit_biases: Sequence[torch.Tensor] | None = None,
     direct_output_logit_biases: Sequence[Sequence[torch.Tensor]] | None = None,
-    correction_observer: Callable[[str, TargetOwner, torch.Tensor], None] | None = None,
-    frozen_descriptors: FrozenReplayDescriptors | None = None,
-    interaction_group_batch_size: int = 1,
     replay_plan: ReplayPlan | None = None,
 ) -> PrimalDualVideoResult:
-    """B1 exact replay over raw X/Y with one finalized summary."""
+    """Dualize one primal set and replay exactly once over the real X/Y bank."""
 
-    interaction_enabled, _ = _validate_replay_arguments(
-        operator,
-        bank_set_interaction=bank_set_interaction,
-        interaction_state=interaction_state,
-        summaries=summaries,
-        direct_input_logit_biases=direct_input_logit_biases,
-        direct_output_logit_biases=direct_output_logit_biases,
-        correction_observer=correction_observer,
-    )
+    direct_biases = direct_input_logit_biases is not None
+    if direct_biases != (direct_output_logit_biases is not None):
+        raise NativeFactorError("direct signed-pool bias ownership changed")
+    if direct_biases and (
+        len(direct_input_logit_biases) != len(operator.owners)
+        or len(direct_output_logit_biases) != len(operator.owners)
+    ):
+        raise NativeFactorError("direct signed-pool target count changed")
     plan = (
         operator._plan(prepared, input_primals, output_primals)
         if replay_plan is None
         else replay_plan
     )
-    if interaction_enabled and summaries is None:
-        summaries = summarize_compact_replay(
+    inputs, outputs = _new_pools(
+        operator, plan, trusted_finite_bias=direct_biases
+    )
+    for target in range(len(operator.owners)):
+        _replay_target(
             operator,
             prepared,
-            plan=plan,
-            bank_set_interaction=bank_set_interaction,
-            interaction_state=interaction_state,
+            target=target,
+            inputs=inputs,
+            outputs=outputs,
+            direct_inputs=direct_input_logit_biases,
+            direct_outputs=direct_output_logit_biases,
         )
-    if interaction_group_batch_size <= 0 or (
-        frozen_descriptors is not None and not interaction_enabled
-    ):
-        raise NativeFactorError("cached interaction replay contract changed")
-    inputs, outputs = _new_pools(
-        operator,
-        plan,
-        trusted_finite_bias=frozen_descriptors is not None,
-    )
-    if frozen_descriptors is not None:
-        if torch.is_grad_enabled() and interaction_group_batch_size == 1:
-            replay_checkpointed_singletons(
-                operator,
-                prepared,
-                inputs=inputs,
-                outputs=outputs,
-                interaction=bank_set_interaction,
-                state=interaction_state,
-                summaries=summaries,
-                descriptors=frozen_descriptors,
-            )
-        else:
-            _replay_cached_interaction(
-                operator,
-                prepared,
-                plan=plan,
-                inputs=inputs,
-                outputs=outputs,
-                interaction=bank_set_interaction,
-                state=interaction_state,
-                summaries=summaries,
-                descriptors=frozen_descriptors,
-                group_batch_size=interaction_group_batch_size,
-                observer=correction_observer,
-            )
-    else:
-        for target in range(len(operator.owners)):
-            _replay_target(
-                operator,
-                prepared,
-                plan=plan,
-                target=target,
-                inputs=inputs,
-                outputs=outputs,
-                interaction=bank_set_interaction,
-                state=interaction_state,
-                summaries=summaries,
-                direct_inputs=direct_input_logit_biases,
-                direct_outputs=direct_output_logit_biases,
-                observer=correction_observer,
-            )
     return PrimalDualVideoResult(
         input_values=tuple(value.signed_mean() for value in inputs),
         output_values=tuple(

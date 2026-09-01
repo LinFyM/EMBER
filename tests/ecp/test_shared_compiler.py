@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -288,7 +287,7 @@ def test_direct_free_logits_zero_reproduce_base_and_receive_gradients() -> None:
         )
         for owner, value in zip(owners, compact.output_values, strict=True)
     )
-    observed = compiler.bank_operator.apply_compact(
+    observed = compiler.bank_operator.apply_compact_free_bias(
         compact,
         input_primals,
         output_primals,
@@ -309,18 +308,15 @@ def test_direct_free_logits_zero_reproduce_base_and_receive_gradients() -> None:
     assert all(value.grad is not None for rows in direct_outputs for value in rows)
 
 
-def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() -> None:
+def test_bank_conditioned_primal_precedes_dual_and_is_chunk_equivalent() -> None:
     torch.manual_seed(211)
     owners = _owners()
     compiler = SharedNativeFactorCompiler(
-        owners,
-        program_width=8,
-        event_slots=4,
-        covariance_frame_chunk=1,
+        owners, program_width=8, event_slots=4, covariance_frame_chunk=1
     )
     for heads in (
-        compiler.bank_set_interaction.input_condition,
-        compiler.bank_set_interaction.output_condition,
+        compiler.bank_set_interaction.input_primal_gate,
+        compiler.bank_set_interaction.output_primal_gate,
     ):
         for head in heads.values():
             torch.nn.init.normal_(head[-1].weight, std=0.01)
@@ -328,164 +324,78 @@ def test_bank_set_replay_matches_nonchunked_reference_with_nonzero_correction() 
     video = _video(owners, seed=223, chunks=(2, 3), width=8, events=4)
     compact = compiler.bank_operator.compact(compiler.bank_operator.prepare(video))
     context = (compiler._bank_context(video),)
-    program_state = compiler.primal_scorer.program_state(program)
-    input_primals = compiler.primal_scorer.input_primals(program_state)
-    output_primals = compiler.primal_scorer.output_primals(program_state)
-    interaction_state = compiler._interaction_states(program_state, context)[0]
-    plan = compiler.bank_operator._plan(compact, input_primals, output_primals)
+    state = compiler.primal_scorer.program_state(program)
+    input_primals = compiler.primal_scorer.input_primals(state)
+    output_primals = compiler.primal_scorer.output_primals(state)
+    interaction_state = compiler._interaction_states(state, context)[0]
     summaries = compiler.bank_operator.summarize_compact(
         compact,
-        plan=plan,
         bank_set_interaction=compiler.bank_set_interaction,
         interaction_state=interaction_state,
     )
-    descriptors = compiler.bank_operator.describe_compact(
-        compact,
-        plan=plan,
-        interaction_state=interaction_state,
+    conditioned = compiler.bank_set_interaction.bank_conditioned_primals(
+        input_primals=input_primals,
+        output_primals=output_primals,
+        summaries=summaries,
     )
-    assert descriptors.input_metadata.device.type == "cpu"
-    assert descriptors.output_metadata.device.type == "cpu"
-    assert all(value.coordinates.device.type == "cpu" for value in descriptors.inputs)
-    observed_corrections = []
-    with torch.inference_mode():
-        uncached_pool = compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=interaction_state,
-            summaries=summaries,
-        )
-        cached_pool = compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=interaction_state,
-            summaries=summaries,
-            frozen_descriptors=descriptors,
-            interaction_group_batch_size=2,
-        )
-        cached_summary_pool = compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=interaction_state,
-            frozen_descriptors=descriptors,
-            interaction_group_batch_size=2,
-        )
-        changed_state = replace(
-            interaction_state,
-            rank_event=torch.randn_like(interaction_state.rank_event),
-        )
-        changed_uncached_pool = compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=changed_state,
-            summaries=summaries,
-        )
-        changed_cached_pool = compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=changed_state,
-            summaries=summaries,
-            frozen_descriptors=descriptors,
-            interaction_group_batch_size=2,
-        )
-        chunked = compiler.forward_compact(
-            program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
-        )
-        compiler.bank_operator.apply_compact(
-            compact,
-            input_primals,
-            output_primals,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=interaction_state,
-            summaries=summaries,
-            correction_observer=lambda side, owner, value: observed_corrections.append(
-                (side, owner.family, value.detach().clone())
-            ),
-        )
-        compiler.bank_operator.covariance_frame_chunk = 5
-        reference_summaries = compiler.bank_operator.summarize_compact(
-            compact,
-            plan=plan,
-            bank_set_interaction=compiler.bank_set_interaction,
-            interaction_state=interaction_state,
-        )
-        reference = compiler.forward_compact(
-            program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
-        )
+    direct_pool = compiler.bank_operator.apply_compact(compact, *conditioned)
+    direct = compiler._output(state, (direct_pool,), s_ref=torch.ones(len(owners)))
+    observed = compiler.forward_compact(
+        program, (compact,), s_ref=torch.ones(len(owners)), bank_contexts=context
+    )
     for left, right in zip(
-        (*cached_pool.input_values, *cached_pool.output_values),
-        (*uncached_pool.input_values, *uncached_pool.output_values),
+        (*observed.residual.a, *observed.residual.b),
+        (*direct.residual.a, *direct.residual.b),
         strict=True,
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for left, right in zip(
-        (*cached_summary_pool.input_values, *cached_summary_pool.output_values),
-        (*uncached_pool.input_values, *uncached_pool.output_values),
-        strict=True,
-    ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    for changed in (changed_uncached_pool, changed_cached_pool):
-        for left, right in zip(
-            (*changed.input_values, *changed.output_values),
-            (*uncached_pool.input_values, *uncached_pool.output_values),
-            strict=True,
-        ):
-            torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    compiler.zero_grad(set_to_none=True)
-    gradient_pool = compiler.bank_operator.apply_compact(
+
+    compiler.bank_operator.covariance_frame_chunk = 5
+    reference_summaries = compiler.bank_operator.summarize_compact(
         compact,
-        input_primals,
-        output_primals,
         bank_set_interaction=compiler.bank_set_interaction,
         interaction_state=interaction_state,
-        frozen_descriptors=descriptors,
-        interaction_group_batch_size=2,
-    )
-    sum(
-        value.square().mean()
-        for value in (*gradient_pool.input_values, *gradient_pool.output_values)
-    ).backward()
-    assert all(
-        head[-1].weight.grad is not None
-        and bool(torch.isfinite(head[-1].weight.grad).all())
-        for heads in (
-            compiler.bank_set_interaction.input_condition,
-            compiler.bank_set_interaction.output_condition,
-        )
-        for head in heads.values()
-    )
-    assert all(
-        parameter.grad is not None
-        and bool(torch.isfinite(parameter.grad).all())
-        and bool(parameter.grad.abs().sum() > 0)
-        for parameter in compiler.bank_set_interaction.set_encoder.parameters()
     )
     for left, right in zip(
         _summary_tensors(summaries), _summary_tensors(reference_summaries), strict=True
     ):
         torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
     for left, right in zip(
-        (*chunked.residual.a, *chunked.residual.b),
-        (*reference.residual.a, *reference.residual.b),
+        summaries.inputs,
+        reference_summaries.inputs,
         strict=True,
     ):
-        torch.testing.assert_close(left, right, rtol=2e-5, atol=2e-5)
-    assert {(side, family) for side, family, _ in observed_corrections} == {
-        (side, family) for side in ("input", "output") for family in TargetFamily
-    }
+        torch.testing.assert_close(left.native_anchor, right.native_anchor, rtol=2e-5, atol=2e-5)
+    for left_groups, right_groups in zip(
+        summaries.outputs, reference_summaries.outputs, strict=True
+    ):
+        for left, right in zip(left_groups, right_groups, strict=True):
+            torch.testing.assert_close(
+                left.all_types.native_anchor,
+                right.all_types.native_anchor,
+                rtol=2e-5,
+                atol=2e-5,
+            )
+            assert all(scope.native_positive is None for scope in left.by_type)
+
+    compiler.zero_grad(set_to_none=True)
+    loss = sum(
+        value.square().mean()
+        for value in (*direct_pool.input_values, *direct_pool.output_values)
+    )
+    loss.backward()
     assert all(
-        value.ndim >= 4 and bool(torch.isfinite(value).all())
-        for _, _, value in observed_corrections
+        head[-1].weight.grad is not None
+        and bool(torch.isfinite(head[-1].weight.grad).all())
+        for heads in (
+            compiler.bank_set_interaction.input_primal_gate,
+            compiler.bank_set_interaction.output_primal_gate,
+        )
+        for head in heads.values()
+    )
+    assert any(
+        parameter.grad is not None and bool(parameter.grad.abs().sum() > 0)
+        for parameter in compiler.bank_set_interaction.set_encoder.parameters()
     )
 
 

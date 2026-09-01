@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 import torch
 
@@ -15,10 +15,6 @@ from ember.ecp.bank_conditioning.compact_replay import (
     ReplayPlan,
     apply_compact_replay,
     summarize_compact_replay,
-)
-from ember.ecp.bank_conditioning.candidate_descriptors import (
-    FrozenReplayDescriptors,
-    build_frozen_replay_descriptors,
 )
 from ember.ecp.bank_conditioning.operator import StreamingSignedPool
 from ember.ecp.bank_conditioning.program_bank_interaction import (
@@ -615,7 +611,6 @@ class PrimalDualVideoOperator:
         self,
         prepared: CompactPrimalDualVideo,
         *,
-        plan: ReplayPlan,
         bank_set_interaction: EventConditionedBankSetInteraction,
         interaction_state: ProgramBankInteractionState,
     ) -> ProgramBankSetSummaries:
@@ -625,25 +620,7 @@ class PrimalDualVideoOperator:
             return summarize_compact_replay(
                 self,
                 prepared,
-                plan=plan,
                 bank_set_interaction=bank_set_interaction,
-                interaction_state=interaction_state,
-            )
-
-    def describe_compact(
-        self,
-        prepared: CompactPrimalDualVideo,
-        *,
-        plan: ReplayPlan,
-        interaction_state: ProgramBankInteractionState,
-    ) -> FrozenReplayDescriptors:
-        """Freeze fixed-route candidate descriptors outside optimizer steps."""
-
-        with self.ieee_matmul(interaction_state.input_event_queries[0].device):
-            return build_frozen_replay_descriptors(
-                self,
-                prepared,
-                plan=plan,
                 interaction_state=interaction_state,
             )
 
@@ -652,18 +629,6 @@ class PrimalDualVideoOperator:
         prepared: CompactPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
-        *,
-        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
-        interaction_state: ProgramBankInteractionState | None = None,
-        summaries: ProgramBankSetSummaries | None = None,
-        direct_input_logit_biases: Sequence[torch.Tensor] | None = None,
-        direct_output_logit_biases: Sequence[Sequence[torch.Tensor]] | None = None,
-        correction_observer: (
-            Callable[[str, TargetOwner, torch.Tensor], None] | None
-        ) = None,
-        frozen_descriptors: FrozenReplayDescriptors | None = None,
-        interaction_group_batch_size: int = 1,
-        replay_plan: ReplayPlan | None = None,
     ) -> PrimalDualVideoResult:
         """B1 exact replay over cached raw X/Y through the canonical owner."""
 
@@ -673,15 +638,27 @@ class PrimalDualVideoOperator:
                 prepared,
                 input_primals,
                 output_primals,
-                bank_set_interaction=bank_set_interaction,
-                interaction_state=interaction_state,
-                summaries=summaries,
+            )
+
+    def apply_compact_free_bias(
+        self,
+        prepared: CompactPrimalDualVideo,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+        *,
+        direct_input_logit_biases: Sequence[torch.Tensor],
+        direct_output_logit_biases: Sequence[Sequence[torch.Tensor]],
+    ) -> PrimalDualVideoResult:
+        """Training-only privileged teacher; never a deployment Writer route."""
+
+        with self.ieee_matmul(input_primals[0].device):
+            return apply_compact_replay(
+                self,
+                prepared,
+                input_primals,
+                output_primals,
                 direct_input_logit_biases=direct_input_logit_biases,
                 direct_output_logit_biases=direct_output_logit_biases,
-                correction_observer=correction_observer,
-                frozen_descriptors=frozen_descriptors,
-                interaction_group_batch_size=interaction_group_batch_size,
-                replay_plan=replay_plan,
             )
 
     def _add_replay_chunk(
@@ -777,20 +754,8 @@ class PrimalDualVideoOperator:
         prepared: PreparedPrimalDualVideo,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
-        *,
-        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
-        interaction_state: ProgramBankInteractionState | None = None,
     ) -> PrimalDualVideoResult:
         with self.ieee_matmul(input_primals[0].device):
-            self._validate_interaction_state(interaction_state)
-            if self._interaction_enabled(bank_set_interaction, interaction_state):
-                return self.apply_compact(
-                    self.compact(prepared),
-                    input_primals,
-                    output_primals,
-                    bank_set_interaction=bank_set_interaction,
-                    interaction_state=interaction_state,
-                )
             plan = self._plan(
                 prepared,
                 input_primals,
@@ -811,14 +776,9 @@ class PrimalDualVideoOperator:
         video: Any,
         input_primals: tuple[torch.Tensor, ...],
         output_primals: tuple[torch.Tensor, ...],
-        *,
-        bank_set_interaction: EventConditionedBankSetInteraction | None = None,
-        interaction_state: ProgramBankInteractionState | None = None,
     ) -> PrimalDualVideoResult:
         return self.apply(
             self.prepare(video),
             input_primals,
             output_primals,
-            bank_set_interaction=bank_set_interaction,
-            interaction_state=interaction_state,
         )

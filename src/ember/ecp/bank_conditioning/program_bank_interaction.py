@@ -123,7 +123,7 @@ class ProgramBankSetSummaries:
 
 
 class EventConditionedBankSetInteraction(torch.nn.Module):
-    """Condition exact candidate corrections on the whole current native bank."""
+    """Use a Program-conditioned whole-bank read to form native primals."""
 
     def __init__(
         self,
@@ -133,8 +133,6 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         event_slots: int,
         summary_value_width: int = 16,
         hidden_width: int = 64,
-        correction_bound: float = 0.1,
-        replay_score_rms: float,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -143,8 +141,6 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         self.coordinate_width = G1_RESIDUAL_RANK * self.event_slots
         self.summary_value_width = int(summary_value_width)
         self.hidden_width = int(hidden_width)
-        self.correction_bound = float(correction_bound)
-        self.replay_score_rms = float(replay_score_rms)
         if (
             not self.owners
             or min(
@@ -154,13 +150,9 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 self.hidden_width,
             )
             <= 0
-            or not 0.0 < self.correction_bound <= 1.0
-            or not math.isfinite(self.replay_score_rms)
-            or self.replay_score_rms <= 0.0
         ):
             raise BankConditioningError("invalid bank-set interaction topology")
         self.b0_query_context_width = 4 * self.program_width
-        self.b1_structural_context_width = 3 * self.program_width
         self.summary_width = 2 * (
             self.coordinate_width + self.summary_value_width
         ) + 2
@@ -176,33 +168,17 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 for family in families
             }
         )
-        self.input_candidate = torch.nn.ModuleDict(
+        self.input_primal_gate = torch.nn.ModuleDict(
             {
-                family.value: self._candidate_network(2 * self.coordinate_width + 5)
+                family.value: self._primal_gate_network(self.summary_width)
                 for family in families
             }
         )
-        self.output_candidate = torch.nn.ModuleDict(
+        self.output_primal_gate = torch.nn.ModuleDict(
             {
-                family.value: self._candidate_network(2 * self.coordinate_width + 9)
-                for family in families
-            }
-        )
-        self.input_condition = torch.nn.ModuleDict(
-            {
-                family.value: self._condition_network(self.summary_width)
-                for family in families
-            }
-        )
-        self.output_condition = torch.nn.ModuleDict(
-            {
-                family.value: self._condition_network(2 * self.summary_width)
-                for family in families
-            }
-        )
-        self.structural_gate = torch.nn.ModuleDict(
-            {
-                family.value: self._structure_network()
+                family.value: self._primal_gate_network(
+                    (1 + len(OUTPUT_BANK_TYPES)) * self.summary_width
+                )
                 for family in families
             }
         )
@@ -222,83 +198,89 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             slots[len(self.owners) + G1_RESIDUAL_RANK :].clone()
         )
 
-    def _candidate_network(self, width: int) -> torch.nn.Sequential:
-        return torch.nn.Sequential(
-            torch.nn.LayerNorm(width),
-            torch.nn.Linear(width, self.hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(self.hidden_width, self.hidden_width),
-        )
-
-    def _condition_network(self, width: int) -> torch.nn.Sequential:
-        """Generate a candidate head only from the current-bank response."""
-
+    def _primal_gate_network(self, width: int) -> torch.nn.Sequential:
         network = torch.nn.Sequential(
             torch.nn.LayerNorm(width, elementwise_affine=False),
-            torch.nn.Linear(width, 2 * self.hidden_width, bias=False),
+            torch.nn.Linear(width, self.hidden_width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(
-                2 * self.hidden_width, self.hidden_width + 1, bias=False
-            ),
+            torch.nn.Linear(self.hidden_width, 1, bias=False),
         )
         torch.nn.init.zeros_(network[-1].weight)
         return network
 
-    def _structure_network(self) -> torch.nn.Sequential:
-        network = torch.nn.Sequential(
-            torch.nn.LayerNorm(self.b1_structural_context_width),
-            torch.nn.Linear(self.b1_structural_context_width, self.hidden_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(self.hidden_width, self.hidden_width),
+    @staticmethod
+    def _add_native_anchor(
+        base: torch.Tensor,
+        anchor: torch.Tensor,
+        gate: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            base.ndim != 2
+            or anchor.shape[:1] != base.shape[:1]
+            or anchor.shape[-1] != base.shape[-1]
+            or gate.shape != anchor.shape[:2]
+            or anchor.ndim != 3
+        ):
+            raise BankConditioningError("bank-conditioned primal axes changed")
+        correction = torch.einsum(
+            "re,red->rd", gate.float(), anchor.float()
         )
-        torch.nn.init.zeros_(network[-1].weight)
-        torch.nn.init.zeros_(network[-1].bias)
-        return network
+        return base + correction.to(base)
 
-    def input_event_delta(
+    def bank_conditioned_primals(
         self,
         *,
-        family: str,
-        hidden: torch.Tensor,
-        condition: torch.Tensor,
-        structural_gate: torch.Tensor,
-    ) -> torch.Tensor:
-        parameters = self.input_condition[family](condition)
-        candidate_axes = hidden.ndim - parameters.ndim
-        weight = (parameters[..., : self.hidden_width] * structural_gate).reshape(
-            *parameters.shape[:-1], *((1,) * candidate_axes), self.hidden_width
-        )
-        bias = parameters[..., self.hidden_width].reshape(
-            *parameters.shape[:-1], *((1,) * candidate_axes)
-        )
-        score = (hidden * weight).sum(-1) / math.sqrt(self.hidden_width) + bias
-        return self.correction_bound * torch.tanh(score)
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+        summaries: ProgramBankSetSummaries,
+    ) -> tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]:
+        """Form each current-bank primal before dualization and exact replay."""
 
-    def output_event_delta(
-        self,
-        *,
-        family: str,
-        hidden: torch.Tensor,
-        condition: torch.Tensor,
-        structural_gate: torch.Tensor,
-    ) -> torch.Tensor:
-        parameters = self.output_condition[family](condition)
-        candidate_axes = hidden.ndim - parameters.ndim
-        prefix = parameters.shape[:-2]
-        types = parameters.shape[-2]
-        weight = (
-            parameters[..., : self.hidden_width] * structural_gate
-        ).reshape(
-            *prefix,
-            *((1,) * candidate_axes),
-            types,
-            self.hidden_width,
-        )
-        bias = parameters[..., self.hidden_width].reshape(
-            *prefix, *((1,) * candidate_axes), types
-        )
-        score = (hidden * weight).sum(-1) / math.sqrt(self.hidden_width) + bias
-        return self.correction_bound * torch.tanh(score)
+        if (
+            len(input_primals) != len(self.owners)
+            or len(output_primals) != len(self.owners)
+            or len(summaries.inputs) != len(self.owners)
+            or len(summaries.outputs) != len(self.owners)
+        ):
+            raise BankConditioningError("bank-conditioned primal target count changed")
+        conditioned_inputs = []
+        conditioned_outputs = []
+        for target, owner in enumerate(self.owners):
+            family = owner.family.value
+            input_summary = summaries.inputs[target]
+            input_gate = self.input_primal_gate[family](
+                input_summary.condition
+            ).squeeze(-1)
+            conditioned_inputs.append(
+                self._add_native_anchor(
+                    input_primals[target],
+                    input_summary.native_anchor,
+                    input_gate,
+                )
+            )
+            groups = []
+            if output_primals[target].shape[0] != len(summaries.outputs[target]):
+                raise BankConditioningError(
+                    "bank-conditioned output primal group count changed"
+                )
+            for base, summary in zip(
+                output_primals[target], summaries.outputs[target], strict=True
+            ):
+                condition = torch.cat(
+                    (
+                        summary.all_types.condition,
+                        *(value.condition for value in summary.by_type),
+                    ),
+                    dim=-1,
+                )
+                gate = self.output_primal_gate[family](condition).squeeze(-1)
+                groups.append(
+                    self._add_native_anchor(
+                        base, summary.all_types.native_anchor, gate
+                    )
+                )
+            conditioned_outputs.append(torch.stack(tuple(groups)))
+        return tuple(conditioned_inputs), tuple(conditioned_outputs)
 
     def _validate_context(self, context: ProgramBankContext) -> int:
         frames = int(context.frame_positions.shape[0])
@@ -357,13 +339,6 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             dim=-1,
         )
 
-    def _b1_structural_gate(self, target: int) -> torch.Tensor:
-        """Return task-independent owner/rank/event modulation for B1."""
-
-        family = self.owners[target].family.value
-        raw = self.structural_gate[family](self._structural_context(target))
-        return 1.0 + torch.tanh(raw)
-
     def summarize_input(
         self,
         *,
@@ -395,6 +370,7 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             event_mass=mass,
             event_context=inducing,
             output=False,
+            native_values=values,
         )
 
     def summary_stream(
@@ -405,6 +381,7 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         context: ProgramBankContext,
         output: bool,
         reference: torch.Tensor,
+        collect_native: bool = True,
     ) -> EventBankSetSummaryStream:
         """Create one B0 online stream with a query fixed by Program and bank."""
 
@@ -419,6 +396,7 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             output=output,
             reference=reference,
             events=self.event_slots,
+            collect_native=collect_native,
         )
 
     def summarize_output(
@@ -453,6 +431,7 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             event_mass=mass,
             event_context=inducing,
             output=True,
+            native_values=values,
         )
         by_type = tuple(
             encoder.summarize(
@@ -461,179 +440,8 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
                 event_mass=mass[..., kind] * len(OUTPUT_BANK_TYPES),
                 event_context=inducing,
                 output=True,
+                native_values=None,
             )
             for kind in range(len(OUTPUT_BANK_TYPES))
         )
         return OutputEventBankSetSummary(all_types=all_types, by_type=by_type)
-
-    def _base_score(
-        self, base_query: torch.Tensor, centered: torch.Tensor
-    ) -> torch.Tensor:
-        if base_query.shape != (G1_RESIDUAL_RANK, centered.shape[-1]):
-            raise BankConditioningError("bank-set base query axes changed")
-        return torch.einsum(
-            "rd,...d->r...", base_query.detach().float(), centered.detach().float()
-        ) / self.replay_score_rms
-
-    def _collapse_events(
-        self,
-        event_delta: torch.Tensor,
-        event_weights: torch.Tensor,
-        assignment: torch.Tensor,
-    ) -> torch.Tensor:
-        candidate_ndim = event_delta.ndim - 2
-        event_assignment = assignment.float().T.reshape(
-            1,
-            self.event_slots,
-            assignment.shape[0],
-            *((1,) * (candidate_ndim - 1)),
-        )
-        weights = event_weights.float().reshape(
-            G1_RESIDUAL_RANK,
-            self.event_slots,
-            *((1,) * candidate_ndim),
-        )
-        return (event_delta * event_assignment * weights).sum(1)
-
-    def input_logit_corrections(
-        self,
-        *,
-        target: int,
-        native_event_query: torch.Tensor,
-        event_weights: torch.Tensor,
-        base_query: torch.Tensor,
-        values: torch.Tensor,
-        native_mean: torch.Tensor,
-        context: ProgramBankContext,
-        summary: EventBankSetSummary,
-    ) -> torch.Tensor:
-        self._validate_context(context)
-        structural_gate = self._b1_structural_gate(target)
-        coordinates = program_relative_coordinates(
-            native_event_query, values, native_mean
-        )
-        standardized = (
-            coordinates[None]
-            - summary.mean.reshape(self.event_slots, *((1,) * (coordinates.ndim - 1)), -1)
-        ) / (
-            0.5
-            * summary.log_variance.reshape(
-                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
-            )
-        ).exp()
-        metadata = candidate_metadata(
-            context.frame_positions, output=False, like=values
-        )
-        centered = values.float() - native_mean.detach().float()
-        log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
-        score = self._base_score(base_query, centered)
-        candidate_shape = coordinates.shape[:-1]
-        features = torch.cat(
-            (
-                standardized[None].expand(G1_RESIDUAL_RANK, -1, *candidate_shape, -1),
-                coordinates.reshape(1, 1, *candidate_shape, -1).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-                score.reshape(G1_RESIDUAL_RANK, 1, *candidate_shape, 1).expand(
-                    -1, self.event_slots, *candidate_shape, -1
-                ),
-                log_norm.reshape(1, 1, *candidate_shape, 1).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-                metadata.reshape(1, 1, *candidate_shape, 3).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-            ),
-            dim=-1,
-        )
-        family = self.owners[target].family.value
-        hidden = self.input_candidate[family](features)
-        event_delta = self.input_event_delta(
-            family=family,
-            hidden=hidden,
-            condition=summary.condition,
-            structural_gate=structural_gate,
-        )
-        correction = self._collapse_events(
-            event_delta, event_weights, context.canonical_assignment
-        )
-        return torch.stack((correction, -correction), dim=1)
-
-    def output_logit_corrections(
-        self,
-        *,
-        target: int,
-        native_event_query: torch.Tensor,
-        event_weights: torch.Tensor,
-        base_query: torch.Tensor,
-        values: torch.Tensor,
-        native_mean: torch.Tensor,
-        context: ProgramBankContext,
-        summary: OutputEventBankSetSummary,
-    ) -> torch.Tensor:
-        self._validate_context(context)
-        structural_gate = self._b1_structural_gate(target)
-        coordinates = program_relative_coordinates(
-            native_event_query, values, native_mean
-        )
-        all_summary = summary.all_types
-        candidate_shape = coordinates.shape[:-1]
-        standardized = (
-            coordinates[None]
-            - all_summary.mean.reshape(
-                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
-            )
-        ) / (
-            0.5
-            * all_summary.log_variance.reshape(
-                self.event_slots, *((1,) * (coordinates.ndim - 1)), -1
-            )
-        ).exp()
-        metadata = candidate_metadata(
-            context.frame_positions, output=True, like=values
-        )
-        centered = values.float() - native_mean.detach().float()
-        log_norm = centered.square().mean(-1).clamp_min(1e-12).sqrt().log()
-        score = self._base_score(base_query, centered)
-        features = torch.cat(
-            (
-                standardized[None].expand(G1_RESIDUAL_RANK, -1, *candidate_shape, -1),
-                coordinates.reshape(1, 1, *candidate_shape, -1).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-                score.reshape(G1_RESIDUAL_RANK, 1, *candidate_shape, 1).expand(
-                    -1, self.event_slots, *candidate_shape, -1
-                ),
-                log_norm.reshape(1, 1, *candidate_shape, 1).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-                metadata.reshape(1, 1, *candidate_shape, 7).expand(
-                    G1_RESIDUAL_RANK, self.event_slots, *candidate_shape, -1
-                ),
-            ),
-            dim=-1,
-        )
-        family = self.owners[target].family.value
-        hidden = self.output_candidate[family](features)
-        own = torch.stack(
-            tuple(value.condition for value in summary.by_type), dim=2
-        )
-        all_condition = all_summary.condition[:, :, None].expand(
-            -1, -1, len(OUTPUT_BANK_TYPES), -1
-        )
-        condition = torch.cat(
-            (all_condition, own),
-            dim=-1,
-        )
-        event_delta = self.output_event_delta(
-            family=family,
-            hidden=hidden,
-            condition=condition,
-            structural_gate=structural_gate[:, :, None].expand(
-                -1, -1, len(OUTPUT_BANK_TYPES), -1
-            ),
-        )
-        correction = self._collapse_events(
-            event_delta, event_weights, context.canonical_assignment
-        )
-        return torch.stack((correction, -correction), dim=1)

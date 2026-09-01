@@ -25,6 +25,7 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_evaluation import (
     effective_rank4_diagnostics as _effective_rank4_diagnostics,
 )
 from ember.ecp.joint_program_primal.routing_control import (
+    BANK_CONDITIONED_PRIMAL_STAGE,
     BANK_SET_S0_STAGE,
     BANK_SET_S1_STAGE,
     fixed_routing_program,
@@ -70,8 +71,8 @@ class PreparedTaskLocalBank:
     program_state: Any
     input_primals: tuple[torch.Tensor, ...]
     output_primals: tuple[torch.Tensor, ...]
-    plan: Any
-    frozen_descriptors: Any
+    plan: Any | None
+    frozen_descriptors: Any | None
 
 
 @dataclass(frozen=True)
@@ -178,17 +179,21 @@ def _prepare_bank(
                 value.detach()
                 for value in runtime.compiler.primal_scorer.output_primals(state)
             )
-            plan = runtime.compiler.bank_operator._plan(
-                prepared.videos[0], input_primals, output_primals
-            )
             interaction_state = runtime.compiler._interaction_states(
                 state, (context,)
             )[0]
-            frozen_descriptors = runtime.compiler.bank_operator.describe_compact(
-                prepared.videos[0],
-                plan=plan,
-                interaction_state=interaction_state,
-            )
+            if routing_stage(runtime.config) == BANK_CONDITIONED_PRIMAL_STAGE:
+                plan = None
+                frozen_descriptors = None
+            else:
+                plan = runtime.compiler.bank_operator._plan(
+                    prepared.videos[0], input_primals, output_primals
+                )
+                frozen_descriptors = runtime.compiler.bank_operator.describe_compact(
+                    prepared.videos[0],
+                    plan=plan,
+                    interaction_state=interaction_state,
+                )
     return PreparedTaskLocalBank(
         program_task=program_task,
         bank_task=bank_task,
@@ -234,7 +239,6 @@ def _prepare_arms(runtime: Any, task: int) -> dict[str, TaskLocalArm]:
             with torch.no_grad():
                 summaries = runtime.compiler.bank_operator.summarize_compact(
                     bank.video,
-                    plan=bank.plan,
                     bank_set_interaction=runtime.compiler.bank_set_interaction,
                     interaction_state=interaction_state,
                 )
@@ -286,8 +290,79 @@ def _interaction_output(
     *,
     summary_token: str | None = None,
     correction_observer: Callable[[str, Any, torch.Tensor], None] | None = None,
+    primal_observer: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> Any:
     stage = routing_stage(runtime.config)
+    if stage == BANK_CONDITIONED_PRIMAL_STAGE:
+        if summary_token is not None or correction_observer is not None:
+            raise ValueError("bank-conditioned primal has no correction intervention")
+        summaries, input_primals, output_primals = runtime.compiler._condition_bank(
+            arm.bank.video,
+            input_primals=arm.bank.input_primals,
+            output_primals=arm.bank.output_primals,
+            interaction_state=arm.interaction_state,
+        )
+        if primal_observer is not None:
+            base_square = torch.zeros((), device=runtime.context.device)
+            delta_square = torch.zeros_like(base_square)
+            anchor_square = torch.zeros_like(base_square)
+            anchor_count = 0
+            gates = []
+            interaction = runtime.compiler.bank_set_interaction
+            for target, owner in enumerate(runtime.owners):
+                base = arm.bank.input_primals[target].float()
+                delta = input_primals[target].float() - base
+                base_square = base_square + base.square().sum()
+                delta_square = delta_square + delta.square().sum()
+                anchor = summaries.inputs[target].native_anchor.float()
+                anchor_square = anchor_square + anchor.square().sum()
+                anchor_count += anchor.numel()
+                gates.append(
+                    interaction.input_primal_gate[owner.family.value](
+                        summaries.inputs[target].condition
+                    ).squeeze(-1)
+                )
+                for group, summary in enumerate(summaries.outputs[target]):
+                    base = arm.bank.output_primals[target][group].float()
+                    delta = output_primals[target][group].float() - base
+                    base_square = base_square + base.square().sum()
+                    delta_square = delta_square + delta.square().sum()
+                    anchor = summary.all_types.native_anchor.float()
+                    anchor_square = anchor_square + anchor.square().sum()
+                    anchor_count += anchor.numel()
+                    condition = torch.cat(
+                        (
+                            summary.all_types.condition,
+                            *(scope.condition for scope in summary.by_type),
+                        ),
+                        dim=-1,
+                    )
+                    gates.append(
+                        interaction.output_primal_gate[owner.family.value](
+                            condition
+                        ).squeeze(-1)
+                    )
+            gate = torch.cat(tuple(value.reshape(-1) for value in gates))
+            primal_observer(
+                {
+                    "response_source": "real_b0_summary_and_native_anchor",
+                    "delta_to_base_rms_ratio": float(
+                        (delta_square / base_square.clamp_min(1e-30)).sqrt()
+                    ),
+                    "native_anchor_rms": float(
+                        (anchor_square / anchor_count).sqrt()
+                    ),
+                    "gate_rms": float(gate.float().square().mean().sqrt()),
+                    "gate_maximum_absolute": float(gate.float().abs().max()),
+                    "candidate_logit_bias_calls": 0,
+                }
+            )
+        pooled = runtime.compiler.bank_operator.apply_compact(
+            arm.bank.video,
+            input_primals,
+            output_primals,
+        )
+        return _output(runtime, arm.bank, pooled)
     summaries = arm.summaries
     if stage == BANK_SET_S0_STAGE:
         token_kind = summary_token or (
@@ -321,7 +396,7 @@ def _interaction_output(
 
 
 def _free_pool(runtime: Any, bank: PreparedTaskLocalBank, code: _FreeDeltaBank) -> Any:
-    return runtime.compiler.bank_operator.apply_compact(
+    return runtime.compiler.bank_operator.apply_compact_free_bias(
         bank.video,
         bank.input_primals,
         bank.output_primals,
@@ -510,7 +585,20 @@ def _zero_equivalence(runtime: Any, arms: Mapping[str, TaskLocalArm]) -> float:
     return maximum
 
 
-def _summary_mass_metrics(arms: Mapping[str, TaskLocalArm]) -> dict[str, float] | None:
+def _summary_mass_metrics(
+    runtime: Any, arms: Mapping[str, TaskLocalArm]
+) -> dict[str, float] | None:
+    if routing_stage(runtime.config) == BANK_CONDITIONED_PRIMAL_STAGE:
+        values = tuple(
+            torch.einsum(
+                "f,fe->e",
+                arm.bank.video.frame_measure.detach().float(),
+                arm.bank.context.canonical_assignment.detach().float(),
+            )
+            for arm in arms.values()
+        )
+        masses = torch.cat(values)
+        return {"minimum": float(masses.min()), "maximum": float(masses.max())}
     values = []
     for arm in arms.values():
         if arm.summaries is None:
@@ -797,13 +885,24 @@ def _evaluate(
     )
     visits = 16 if runtime.args.mode == "formal" else 1
     evaluated = {}
+    primal_stage = routing_stage(runtime.config) == BANK_CONDITIONED_PRIMAL_STAGE
     for name, arm in arms.items():
-        collector = _CorrectionCollector(
-            float(runtime.config["model"]["interaction_correction_bound"])
+        collector = (
+            None
+            if primal_stage
+            else _CorrectionCollector(
+                float(runtime.config["model"]["interaction_correction_bound"])
+            )
         )
+        primal_diagnostics: dict[str, Any] = {}
         with torch.inference_mode():
             output = _interaction_output(
-                runtime, arm, correction_observer=collector.observe
+                runtime,
+                arm,
+                correction_observer=(None if collector is None else collector.observe),
+                primal_observer=(
+                    primal_diagnostics.update if primal_stage else None
+                ),
             )
             state = _complete(runtime, output)
             effective = _effective_rank4_diagnostics(
@@ -824,9 +923,12 @@ def _evaluate(
                 ),
                 visits=visits,
             ),
-            "correction": collector.finalize(),
             "effective_rank4": effective,
         }
+        if collector is not None:
+            evaluated[name]["correction"] = collector.finalize()
+        if primal_stage:
+            evaluated[name]["primal_response"] = primal_diagnostics
     correct = [
         evaluated[name]["functional_recovery"]
         for name in ("correct_fit0", "correct_fit1")
@@ -847,12 +949,12 @@ def _evaluate(
             (*correct, evaluated["correct_held"]["functional_recovery"])
         )
         > max(wrong),
-        "correction_not_broadly_saturated": max(
+    }
+    if not primal_stage:
+        checks["correction_not_broadly_saturated"] = max(
             row["correction"]["all"]["near_bound_fraction"]
             for row in evaluated.values()
-        )
-        < float(gate["maximum_near_bound_fraction"]),
-    }
+        ) < float(gate["maximum_near_bound_fraction"])
     return {
         "arms": evaluated,
         "checks": checks,
@@ -891,7 +993,7 @@ def run(args: Any) -> None:
             "task": args.task,
             "role": runtime.panels[args.task].role,
             "step0_maximum_absolute_error": step0_error,
-            "summary_event_mass": _summary_mass_metrics(arms),
+            "summary_event_mass": _summary_mass_metrics(runtime, arms),
             "wrong_teacher": teacher,
             "effective_family_denominators": {
                 family.value: float(value) for family, value in denominators.items()

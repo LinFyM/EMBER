@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as functional
+from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.bank_conditioning.operator import BankConditioningError
 from ember.ecp.contracts import ACTION_HORIZON
@@ -27,6 +28,8 @@ class EventBankSetSummary:
     induced_negative: torch.Tensor
     log_partition: torch.Tensor
     event_mass: torch.Tensor
+    native_positive: torch.Tensor | None = None
+    native_negative: torch.Tensor | None = None
     condition_override: torch.Tensor | None = None
 
     @property
@@ -36,6 +39,16 @@ class EventBankSetSummary:
             or self.induced_positive.shape != self.induced_negative.shape
             or self.induced_positive.shape[:2]
             != (G1_RESIDUAL_RANK, self.mean.shape[0])
+            or ((self.native_positive is None) != (self.native_negative is None))
+            or (
+                self.native_positive is not None
+                and (
+                    self.native_positive.ndim != 3
+                    or self.native_positive.shape != self.native_negative.shape
+                    or self.native_positive.shape[:2]
+                    != (G1_RESIDUAL_RANK, self.mean.shape[0])
+                )
+            )
             or self.log_variance.shape != self.mean.shape
             or self.log_partition.shape
             != (G1_RESIDUAL_RANK, self.mean.shape[0], 2)
@@ -61,6 +74,14 @@ class EventBankSetSummary:
             raise BankConditioningError("bank-set condition override shape changed")
         return self.condition_override
 
+    @property
+    def native_anchor(self) -> torch.Tensor:
+        """Real native signed response selected by the B0 set query."""
+
+        if self.native_positive is None or self.native_negative is None:
+            raise BankConditioningError("bank-set scope has no native anchor")
+        return self.native_positive - self.native_negative
+
     def with_condition(self, condition: torch.Tensor) -> EventBankSetSummary:
         """Use a training-only free summary without changing set coordinates."""
 
@@ -71,6 +92,8 @@ class EventBankSetSummary:
             log_variance=self.log_variance,
             induced_positive=self.induced_positive,
             induced_negative=self.induced_negative,
+            native_positive=self.native_positive,
+            native_negative=self.native_negative,
             log_partition=self.log_partition,
             event_mass=self.event_mass,
             condition_override=condition,
@@ -194,12 +217,16 @@ class StreamingEventBankSummary:
         coordinate_width: int,
         value_width: int,
         reference: torch.Tensor,
+        native_width: int | None = None,
     ) -> None:
-        if min(events, coordinate_width, value_width) <= 0:
+        if min(events, coordinate_width, value_width) <= 0 or (
+            native_width is not None and native_width <= 0
+        ):
             raise BankConditioningError("invalid event bank-set summary topology")
         self.events = int(events)
         self.coordinate_width = int(coordinate_width)
         self.value_width = int(value_width)
+        self.native_width = None if native_width is None else int(native_width)
         self.mass = reference.new_zeros(events, dtype=torch.float32)
         self.first = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
         self.second = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
@@ -212,6 +239,17 @@ class StreamingEventBankSummary:
         self.weighted = reference.new_zeros(
             G1_RESIDUAL_RANK, events, 2, value_width, dtype=torch.float32
         )
+        self.native_weighted = (
+            None
+            if self.native_width is None
+            else reference.new_zeros(
+                G1_RESIDUAL_RANK,
+                events,
+                2,
+                self.native_width,
+                dtype=torch.float32,
+            )
+        )
         self.candidate_count = 0
 
     def add(
@@ -220,6 +258,7 @@ class StreamingEventBankSummary:
         event_mass: torch.Tensor,
         inducing_query: torch.Tensor,
         summary_values: torch.Tensor,
+        native_values: torch.Tensor | None = None,
     ) -> None:
         candidate_shape = coordinates.shape[:-1]
         if (
@@ -228,15 +267,26 @@ class StreamingEventBankSummary:
             or inducing_query.shape
             != (G1_RESIDUAL_RANK, self.events, self.coordinate_width)
             or summary_values.shape != (*candidate_shape, self.value_width)
+            or (native_values is None) != (self.native_width is None)
+            or (
+                native_values is not None
+                and native_values.shape != (*candidate_shape, self.native_width)
+            )
         ):
             raise BankConditioningError("event bank-set candidate axes changed")
         coordinate = coordinates.float().reshape(-1, self.coordinate_width)
         values = summary_values.float().reshape(-1, self.value_width)
+        native = (
+            None
+            if native_values is None
+            else native_values.detach().float().reshape(-1, self.native_width)
+        )
         mass = event_mass.detach().float().reshape(self.events, -1)
         if (
             torch.any(mass < 0)
             or not bool(torch.isfinite(coordinate).all())
             or not bool(torch.isfinite(values).all())
+            or (native is not None and not bool(torch.isfinite(native).all()))
             or not bool(torch.isfinite(mass).all())
         ):
             raise BankConditioningError("event bank-set stream is invalid")
@@ -246,6 +296,45 @@ class StreamingEventBankSummary:
             "en,nk->ek", mass, coordinate.square()
         )
         normalized = functional.layer_norm(coordinate, (self.coordinate_width,))
+        arguments = (
+            self.maximum,
+            self.normalizer,
+            self.weighted,
+            inducing_query,
+            normalized,
+            mass,
+            values,
+        )
+        if native is None:
+            call = self._attention_update_without_native
+        else:
+            call = self._attention_update_with_native
+            arguments = (*arguments, self.native_weighted, native)
+        updated = (
+            checkpoint(
+                call,
+                *arguments,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+            if torch.is_grad_enabled()
+            else call(*arguments)
+        )
+        self.maximum, self.normalizer, self.weighted = updated[:3]
+        if native is not None:
+            self.native_weighted = updated[3]
+        self.candidate_count += int(coordinate.shape[0])
+
+    def _attention_core(
+        self,
+        maximum_before: torch.Tensor,
+        normalizer_before: torch.Tensor,
+        weighted_before: torch.Tensor,
+        inducing_query: torch.Tensor,
+        normalized: torch.Tensor,
+        mass: torch.Tensor,
+        values: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         score = torch.einsum(
             "rek,nk->ren", inducing_query.float(), normalized
         ) / math.sqrt(self.coordinate_width)
@@ -255,12 +344,14 @@ class StreamingEventBankSummary:
             torch.full_like(mass, -torch.inf),
         )
         logits = log_mass[None, :, None] + torch.stack((score, -score), dim=2)
-        chunk_maximum = logits.amax(-1)
-        maximum = torch.maximum(self.maximum, chunk_maximum).detach()
+        maximum = torch.maximum(maximum_before, logits.amax(-1)).detach()
         finite = torch.isfinite(maximum)
         old_scale = torch.where(
-            torch.isfinite(self.maximum),
-            torch.exp(self.maximum - torch.where(finite, maximum, self.maximum)),
+            torch.isfinite(maximum_before),
+            torch.exp(
+                maximum_before
+                - torch.where(finite, maximum, maximum_before)
+            ),
             torch.zeros_like(maximum),
         )
         shift = torch.where(finite, maximum, torch.zeros_like(maximum))
@@ -269,12 +360,57 @@ class StreamingEventBankSummary:
             torch.exp(logits - shift[..., None]),
             torch.zeros_like(logits),
         )
-        self.weighted = self.weighted * old_scale[..., None] + torch.einsum(
+        normalizer = normalizer_before * old_scale + weights.sum(-1)
+        weighted = weighted_before * old_scale[..., None] + torch.einsum(
             "rebn,nv->rebv", weights, values
         )
-        self.normalizer = self.normalizer * old_scale + weights.sum(-1)
-        self.maximum = maximum
-        self.candidate_count += int(coordinate.shape[0])
+        return maximum, normalizer, weighted, weights, old_scale
+
+    def _attention_update_without_native(
+        self,
+        maximum: torch.Tensor,
+        normalizer: torch.Tensor,
+        weighted: torch.Tensor,
+        inducing_query: torch.Tensor,
+        normalized: torch.Tensor,
+        mass: torch.Tensor,
+        values: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return self._attention_core(
+            maximum,
+            normalizer,
+            weighted,
+            inducing_query,
+            normalized,
+            mass,
+            values,
+        )[:3]
+
+    def _attention_update_with_native(
+        self,
+        maximum: torch.Tensor,
+        normalizer: torch.Tensor,
+        weighted: torch.Tensor,
+        inducing_query: torch.Tensor,
+        normalized: torch.Tensor,
+        mass: torch.Tensor,
+        values: torch.Tensor,
+        native_weighted: torch.Tensor,
+        native: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        maximum, normalizer, weighted, weights, old_scale = self._attention_core(
+            maximum,
+            normalizer,
+            weighted,
+            inducing_query,
+            normalized,
+            mass,
+            values,
+        )
+        native_weighted = native_weighted * old_scale[..., None] + torch.einsum(
+            "rebn,nd->rebd", weights, native
+        )
+        return maximum, normalizer, weighted, native_weighted
 
     def finalize(self) -> EventBankSetSummary:
         if self.candidate_count <= 0 or not torch.all(self.mass > 0):
@@ -283,17 +419,27 @@ class StreamingEventBankSummary:
         mean = self.first / denominator
         variance = (self.second / denominator - mean.square()).clamp_min(1e-6)
         induced = self.weighted / self.normalizer.clamp_min(1e-30)[..., None]
+        native = (
+            None
+            if self.native_weighted is None
+            else self.native_weighted
+            / self.normalizer.clamp_min(1e-30)[..., None]
+        )
         log_partition = self.maximum + self.normalizer.clamp_min(1e-30).log()
         if not all(
             bool(torch.isfinite(value).all())
             for value in (mean, variance, induced, log_partition)
         ):
             raise BankConditioningError("event bank-set summary is non-finite")
+        if native is not None and not bool(torch.isfinite(native).all()):
+            raise BankConditioningError("event bank-set native anchor is non-finite")
         return EventBankSetSummary(
             mean=mean,
             log_variance=variance.log(),
             induced_positive=induced[:, :, 0],
             induced_negative=induced[:, :, 1],
+            native_positive=(None if native is None else native[:, :, 0]),
+            native_negative=(None if native is None else native[:, :, 1]),
             log_partition=log_partition,
             event_mass=self.mass,
         )
@@ -321,15 +467,28 @@ class EventBankSetSummaryStream:
         coordinates: torch.Tensor,
         metadata: torch.Tensor,
         event_mass: torch.Tensor,
+        native_values: torch.Tensor | None = None,
     ) -> None:
         expected_metadata = 7 if self.output else 3
         if metadata.shape != (*coordinates.shape[:-1], expected_metadata):
             raise BankConditioningError("event bank-set metadata axes changed")
-        summary_values = self.value_network(
-            torch.cat((coordinates, metadata.float()), dim=-1)
+        features = torch.cat((coordinates, metadata.float()), dim=-1)
+        summary_values = (
+            checkpoint(
+                self.value_network,
+                features,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+            if torch.is_grad_enabled()
+            else self.value_network(features)
         )
         self.accumulator.add(
-            coordinates, event_mass, self.inducing_query, summary_values
+            coordinates,
+            event_mass,
+            self.inducing_query,
+            summary_values,
+            native_values,
         )
 
     def finalize(self) -> EventBankSetSummary:
@@ -377,17 +536,20 @@ class EventBankSetEncoder(torch.nn.Module):
         event_mass: torch.Tensor,
         event_context: torch.Tensor,
         output: bool,
+        native_values: torch.Tensor | None = None,
     ) -> EventBankSetSummary:
         stream = self.new_stream(
             event_context=event_context,
             output=output,
-            reference=coordinates,
+            reference=(coordinates if native_values is None else native_values),
             events=event_mass.shape[0],
+            collect_native=native_values is not None,
         )
         stream.add(
             coordinates=coordinates,
             metadata=metadata,
             event_mass=event_mass,
+            native_values=native_values,
         )
         return stream.finalize()
 
@@ -398,6 +560,7 @@ class EventBankSetEncoder(torch.nn.Module):
         output: bool,
         reference: torch.Tensor,
         events: int,
+        collect_native: bool = True,
     ) -> EventBankSetSummaryStream:
         query = self.inducing(event_context.float())
         network = self.output_value if output else self.input_value
@@ -405,6 +568,7 @@ class EventBankSetEncoder(torch.nn.Module):
             events=events,
             coordinate_width=self.coordinate_width,
             value_width=self.summary_value_width,
+            native_width=(reference.shape[-1] if collect_native else None),
             reference=reference,
         )
         return EventBankSetSummaryStream(

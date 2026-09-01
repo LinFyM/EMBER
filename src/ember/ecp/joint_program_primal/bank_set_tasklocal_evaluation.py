@@ -14,6 +14,7 @@ import torch
 
 from ember.ecp.contracts import TargetFamily
 from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    BANK_CONDITIONED_PRIMAL_STAGE,
     BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
     BANK_SET_TASKLOCAL_SCHEMA,
 )
@@ -252,9 +253,10 @@ def _load_formal_task(
     expected_model["replay_frame_chunk_size"] = int(
         expected_model["replay_frame_chunk_size_by_task"][str(task)]
     )
-    expected_model["interaction_group_batch_size"] = int(
-        expected_model["interaction_group_batch_size_by_task"][str(task)]
-    )
+    if stage != BANK_CONDITIONED_PRIMAL_STAGE:
+        expected_model["interaction_group_batch_size"] = int(
+            expected_model["interaction_group_batch_size_by_task"][str(task)]
+        )
     expected_optimization = dict(config["optimization"])
     expected_optimization["functional_policy_microbatch_size"] = int(
         expected_optimization["functional_policy_microbatch_size_by_task"][str(task)]
@@ -263,7 +265,10 @@ def _load_formal_task(
     expected_free = (
         {"free_correct", "free_wrong"} if stage == BANK_SET_S0_STAGE else set()
     )
-    expected_set_encoder_trainable = stage == BANK_SET_S1_STAGE
+    expected_set_encoder_trainable = stage in {
+        BANK_SET_S1_STAGE,
+        BANK_CONDITIONED_PRIMAL_STAGE,
+    }
     teacher = result.get("wrong_teacher", {})
     summary_mass = result.get("summary_event_mass")
     valid = all(
@@ -306,9 +311,11 @@ def _load_formal_task(
             any("set_encoder" in name for name in trainable_names)
             is expected_set_encoder_trainable,
             int(inventory.get("writer_trainable_parameter_count", 0)) > 0,
-            summary_mass is None
-            if stage == BANK_SET_S1_STAGE
-            else float(summary_mass.get("minimum", 0.0)) > 0.0,
+            (
+                summary_mass is None
+                if stage == BANK_SET_S1_STAGE
+                else float(summary_mass.get("minimum", 0.0)) > 0.0
+            ),
             float(teacher.get("panel_a_recovery_after_update", math.inf)) <= 0.25,
             float(teacher.get("panel_a_recovery_after_update", math.inf))
             < float(teacher.get("panel_a_recovery_before_update", -math.inf)),
@@ -338,10 +345,6 @@ def _load_formal_task(
         "functional_recovery": {
             name: float(value["functional_recovery"]) for name, value in arms.items()
         },
-        "maximum_near_bound_fraction": max(
-            float(value["correction"]["all"]["near_bound_fraction"])
-            for value in arms.values()
-        ),
         "negative_family_cosines": {
             name: value["effective_rank4"]["negative_family_cosines"]
             for name, value in arms.items()
@@ -355,6 +358,15 @@ def _load_formal_task(
             int(value["peak_cuda_allocated_bytes"]) for value in metrics
         ),
     }
+    if stage != BANK_CONDITIONED_PRIMAL_STAGE:
+        row["maximum_near_bound_fraction"] = max(
+            float(value["correction"]["all"]["near_bound_fraction"])
+            for value in arms.values()
+        )
+    else:
+        row["primal_response"] = {
+            name: value["primal_response"] for name, value in arms.items()
+        }
     return task, commit, row
 
 
@@ -371,7 +383,12 @@ def aggregate_tasklocal(
     stage = str(config.get("stage", ""))
     if (
         config.get("schema_version") != BANK_SET_TASKLOCAL_SCHEMA
-        or stage not in {BANK_SET_S0_STAGE, BANK_SET_S1_STAGE}
+        or stage
+        not in {
+            BANK_SET_S0_STAGE,
+            BANK_SET_S1_STAGE,
+            BANK_CONDITIONED_PRIMAL_STAGE,
+        }
         or len(task_output_dirs) != len(TASKS)
     ):
         raise ValueError("bank-set task-local aggregate authority changed")

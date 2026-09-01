@@ -21,8 +21,7 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal import (
     _effective_rank4_diagnostics,
 )
 from ember.ecp.joint_program_primal.routing_control import (
-    BANK_SET_S0_STAGE,
-    BANK_SET_S1_STAGE,
+    BANK_CONDITIONED_PRIMAL_STAGE,
     ROUTING_TASK_IDS,
     SCORER_NATIVE_HEADS_ONLY,
     _scorer_parameter_ownership,
@@ -48,7 +47,6 @@ from ember.ecp.joint_program_primal.runtime import (
     _joint_parameter_ownership,
     load_joint_program_primal_config,
 )
-from ember.ecp.native_factors import native_output_group_count
 from ember.ecp.joint_program_primal.raw_stage0 import (
     RAW_STAGE0_PROGRAM_INPUT,
     prepare_raw_stage0_primal_condition,
@@ -427,60 +425,42 @@ def test_routing_r5_freezes_feature_chart_and_trains_only_native_heads() -> None
     }
 
 
-def test_bank_set_s0_and_s1_have_explicit_trainable_parameter_ownership() -> None:
+def test_bank_conditioned_primal_has_explicit_trainable_parameter_ownership() -> None:
     owners = (
         TargetOwner(0, "q", TargetFamily.Q, 0, 4, 8),
         TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
         TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 4, 4),
         TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 4, 4),
     )
-    for stage in (BANK_SET_S0_STAGE, BANK_SET_S1_STAGE):
-        program = torch.nn.Linear(2, 2)
-        compiler = SharedNativeFactorCompiler(
-            owners, program_width=8, event_slots=4
-        )
-        writer, trainable, frozen = _scorer_parameter_ownership(
-            program,
-            compiler,
-            partition=SCORER_INTERACTION_ONLY,
-            stage=stage,
-        )
-        names = {
-            name
-            for name, parameter in writer.named_parameters()
-            if parameter.requires_grad
-        }
-        assert {id(value) for value in trainable} == {
-            id(value) for value in writer.parameters() if value.requires_grad
-        }
-        assert all(not value.requires_grad for value in frozen)
-        assert all(
-            not value.requires_grad for value in compiler.primal_scorer.parameters()
-        )
-        assert ({name.split(".", 1)[0] for name in names if name.startswith("free_")}) == (
-            {"free_correct", "free_wrong"}
-            if stage == BANK_SET_S0_STAGE
-            else set()
-        )
-        assert any("set_encoder" in name for name in names) is (
-            stage == BANK_SET_S1_STAGE
-        )
-        if stage == BANK_SET_S0_STAGE:
-            tree = writer.free_correct.conditions()
-            assert len(tree.inputs) == len(owners)
-            assert [len(groups) for groups in tree.outputs] == [
-                native_output_group_count(owner) for owner in owners
-            ]
-            tensors = list(tree.inputs)
-            for groups in tree.outputs:
-                for group in groups:
-                    assert len(group.by_type) == 4
-                    tensors.extend((group.all_types, *group.by_type))
-            assert all(
-                value.shape == (4, 4, compiler.bank_set_interaction.summary_width)
-                for value in tensors
-            )
-            assert len({value.data_ptr() for value in tensors}) == len(tensors)
+    program = torch.nn.Linear(2, 2)
+    compiler = SharedNativeFactorCompiler(owners, program_width=8, event_slots=4)
+    writer, trainable, frozen = _scorer_parameter_ownership(
+        program,
+        compiler,
+        partition=SCORER_INTERACTION_ONLY,
+        stage=BANK_CONDITIONED_PRIMAL_STAGE,
+    )
+    names = {
+        name for name, parameter in writer.named_parameters() if parameter.requires_grad
+    }
+    assert {id(value) for value in trainable} == {
+        id(value) for value in writer.parameters() if value.requires_grad
+    }
+    assert all(not value.requires_grad for value in frozen)
+    assert all(not value.requires_grad for value in compiler.primal_scorer.parameters())
+    assert any("set_encoder" in name for name in names)
+    assert any("input_primal_gate" in name for name in names)
+    assert any("output_primal_gate" in name for name in names)
+    assert {
+        "bank_set_interaction.owner_slot_context",
+        "bank_set_interaction.rank_slot_context",
+        "bank_set_interaction.event_slot_context",
+    }.issubset(names)
+    assert not any(
+        token in name
+        for name in names
+        for token in ("candidate", "condition", "structural_gate", "free_")
+    )
 
 
 def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> None:

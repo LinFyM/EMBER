@@ -30,6 +30,7 @@ BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA = (
 )
 BANK_SET_S0_STAGE = "g3_program_through_bank_s0_free_summary"
 BANK_SET_S1_STAGE = "g3_program_through_bank_s1_real_summary"
+BANK_CONDITIONED_PRIMAL_STAGE = "g3_bank_conditioned_primal_tasklocal"
 
 
 class FreeProgramBankSetConditionTree(torch.nn.Module):
@@ -165,6 +166,64 @@ def required_s0_gate_authority(
     }
 
 
+def required_s1_non_pass_authority(
+    config: Mapping[str, Any], *, asset_root: Path
+) -> dict[str, Any] | None:
+    """Bind the primal branch to the formal S1 failure that triggered it."""
+
+    if config.get("stage") != BANK_CONDITIONED_PRIMAL_STAGE:
+        return None
+    specification = config.get("authorities", {}).get("required_s1_non_pass", {})
+    relative = specification.get("path")
+    if not isinstance(relative, str) or Path(relative).is_absolute():
+        raise ValueError("bank-conditioned-primal S1 authority path changed")
+    path = (asset_root / relative).resolve()
+    if not path.is_file() or path.stat().st_size != specification.get("bytes"):
+        raise ValueError("bank-conditioned-primal S1 authority artifact changed")
+    aggregate = read_json(path)
+    expected_passes = {
+        "wrong_each",
+        "margin",
+        "all_pairs",
+        "correction_not_broadly_saturated",
+    }
+    valid = all(
+        (
+            specification.get("aggregate_schema")
+            == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+            specification.get("stage") == BANK_SET_S1_STAGE,
+            specification.get("required_gate") == "non_pass",
+            aggregate.get("schema_version")
+            == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+            aggregate.get("status") == "complete",
+            aggregate.get("stage") == BANK_SET_S1_STAGE,
+            aggregate.get("gate") == "non_pass",
+            aggregate.get("authority_commit")
+            == specification.get("authority_commit"),
+            set(aggregate.get("tasks", {})) == {"1", "93"},
+            all(
+                row.get("gate") == "non_pass"
+                and set(row.get("checks", {}))
+                == expected_passes | {"correct_fit_each", "correct_held"}
+                and all(row["checks"][name] for name in expected_passes)
+                and not row["checks"]["correct_fit_each"]
+                and not row["checks"]["correct_held"]
+                for row in aggregate.get("tasks", {}).values()
+            ),
+        )
+    )
+    if not valid:
+        raise ValueError("required Program-through-bank S1 result changed")
+    return {
+        "path": str(path),
+        "bytes": path.stat().st_size,
+        "aggregate_schema": aggregate["schema_version"],
+        "stage": aggregate["stage"],
+        "gate": aggregate["gate"],
+        "authority_commit": aggregate["authority_commit"],
+    }
+
+
 def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     model = config.get("model", {})
     task_local = config.get("task_local", {})
@@ -174,7 +233,14 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     stage = config.get("stage")
     is_s0 = stage == BANK_SET_S0_STAGE
     is_s1 = stage == BANK_SET_S1_STAGE
+    is_primal = stage == BANK_CONDITIONED_PRIMAL_STAGE
     required_s0 = authorities.get("required_s0_gate", {})
+    required_s1 = authorities.get("required_s1_non_pass", {})
+    required_predecessor = required_s1 if is_primal else required_s0
+    required_predecessor_stage = (
+        BANK_SET_S1_STAGE if is_primal else BANK_SET_S0_STAGE
+    )
+    required_predecessor_gate = "non_pass" if is_primal else "pass"
     trainable = (
         [
             "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
@@ -182,19 +248,31 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             "training_only_scope_matched_free_correct/free_wrong",
         ]
         if is_s0
-        else ["EventConditionedBankSetInteraction"]
+        else (
+            ["EventConditionedBankSetInteraction"]
+            if is_s1
+            else [
+                "EventConditionedBankSetInteraction.set_encoder",
+                "EventConditionedBankSetInteraction.task_independent_owner/rank/event_slots",
+                "EventConditionedBankSetInteraction.family_shared_primal_gates",
+            ]
+        )
     )
     expected_summary_source = (
         "scope_matched_training_only_free_correct_and_free_wrong_tree_per_task"
         if is_s0
-        else "real_b0_program_relative_event_bank_set_encoder"
+        else (
+            "real_b0_program_relative_event_bank_set_encoder"
+            if is_s1
+            else "real_b0_program_relative_native_anchor"
+        )
     )
     return all(
         (
             is_bank_set_tasklocal_config(config),
             config.get("status")
             == "active_program_through_bank_tasklocal_qualification",
-            is_s0 or is_s1,
+            is_s0 or is_s1 or is_primal,
             model.get("program_source")
             == "fixed_nontrainable_128d_orthogonal_task_token",
             model.get("primal_scorer_initialization") == R5_SHARED_FUNCTIONAL_CHART,
@@ -203,12 +281,24 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("inverse_covariance_power") == 1.0,
             model.get("interaction_summary_value_width") == 16,
             model.get("interaction_hidden_width") == 64,
-            model.get("interaction_correction_bound") == 0.1,
+            (
+                model.get("interaction_correction_bound") == 0.1
+                if not is_primal
+                else "interaction_correction_bound" not in model
+            ),
             model.get("interaction_context_basis")
-            == "program_through_bank_summary_only_b1_with_fixed_owner_rank_event_structure",
+            == (
+                "program_through_bank_summary_only_b1_with_fixed_owner_rank_event_structure"
+                if not is_primal
+                else "real_b0_native_anchor_additive_primal_before_full_inverse_and_exact_replay"
+            ),
             model.get("replay_frame_chunk_size_by_task") == {"1": 4, "93": 32},
-            model.get("interaction_group_batch_size_by_task")
-            == {"1": 16, "93": 1},
+            (
+                model.get("interaction_group_batch_size_by_task")
+                == {"1": 16, "93": 1}
+                if not is_primal
+                else "interaction_group_batch_size_by_task" not in model
+            ),
             model.get("trainable") == trainable,
             model.get("deployment_candidate") is False,
             config.get("optimization", {}).get("loss")
@@ -235,20 +325,32 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             gate.get("all_correct_better_than_all_wrong") is True,
             gate.get("effective_target_is_gate") is False,
             gate.get("panel_b_backward_calls") == 0,
-            gate.get("maximum_near_bound_fraction") == 0.5,
+            (
+                gate.get("maximum_near_bound_fraction") == 0.5
+                if not is_primal
+                else "maximum_near_bound_fraction" not in gate
+            ),
             isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
             isinstance(authorities.get("r5_gate_aggregate"), str),
             isinstance(authorities.get("positive_control_root"), str),
-            is_s0
-            or all(
-                (
-                    isinstance(required_s0.get("path"), str),
-                    isinstance(required_s0.get("bytes"), int),
-                    required_s0.get("aggregate_schema")
-                    == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
-                    required_s0.get("stage") == BANK_SET_S0_STAGE,
-                    required_s0.get("required_gate") == "pass",
-                    isinstance(required_s0.get("authority_commit"), str),
+            (
+                True
+                if is_s0
+                else all(
+                    (
+                        isinstance(required_predecessor.get("path"), str),
+                        isinstance(required_predecessor.get("bytes"), int),
+                        required_predecessor.get("aggregate_schema")
+                        == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+                        required_predecessor.get("stage")
+                        == required_predecessor_stage,
+                        required_predecessor.get("required_gate")
+                        == required_predecessor_gate,
+                        isinstance(
+                            required_predecessor.get("authority_commit"),
+                            str,
+                        ),
+                    )
                 )
             ),
             wall.get("fixed_routing_token_training_only") is True,
@@ -271,10 +373,20 @@ def bank_set_parameter_ownership(
     stage: str,
 ) -> tuple[torch.nn.Module, tuple[torch.nn.Parameter, ...], tuple[torch.nn.Parameter, ...]]:
     interaction = compiler.bank_set_interaction
-    interaction.requires_grad_(True).train()
+    interaction.requires_grad_(False).eval()
     if stage == BANK_SET_S0_STAGE:
+        interaction.requires_grad_(True).train()
         interaction.set_encoder.requires_grad_(False).eval()
-    elif stage != BANK_SET_S1_STAGE:
+    elif stage == BANK_SET_S1_STAGE:
+        interaction.requires_grad_(True).train()
+    elif stage == BANK_CONDITIONED_PRIMAL_STAGE:
+        interaction.set_encoder.requires_grad_(True).train()
+        interaction.input_primal_gate.requires_grad_(True).train()
+        interaction.output_primal_gate.requires_grad_(True).train()
+        interaction.owner_slot_context.requires_grad_(True)
+        interaction.rank_slot_context.requires_grad_(True)
+        interaction.event_slot_context.requires_grad_(True)
+    else:
         raise ValueError("bank-set interaction stage changed")
     writer = InteractionControlWriterState(
         interaction,
@@ -299,6 +411,12 @@ def bank_set_parameter_ownership(
     }
     if stage == BANK_SET_S1_STAGE:
         allowed_roots.add("bank_set_interaction.set_encoder")
+    elif stage == BANK_CONDITIONED_PRIMAL_STAGE:
+        allowed_roots = {
+            "bank_set_interaction.set_encoder",
+            "bank_set_interaction.input_primal_gate",
+            "bank_set_interaction.output_primal_gate",
+        }
     unexpected = sorted(
         name
         for name in named_trainable

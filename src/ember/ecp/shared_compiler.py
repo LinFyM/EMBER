@@ -81,7 +81,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         inverse_covariance_power: float = 1.0,
         interaction_summary_value_width: int = 16,
         interaction_hidden_width: int = 64,
-        interaction_correction_bound: float = 0.1,
         scale_prior_ratio: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
@@ -124,8 +123,6 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             event_slots=self.event_slots,
             summary_value_width=interaction_summary_value_width,
             hidden_width=interaction_hidden_width,
-            correction_bound=interaction_correction_bound,
-            replay_score_rms=self.replay_score_rms,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,
@@ -193,19 +190,60 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             interaction_states = self._interaction_states(
                 state, tuple(self._bank_context(video) for video in videos)
             )
+            prepared = tuple(self.bank_operator.prepare(video) for video in videos)
+            compact = tuple(self.bank_operator.compact(video) for video in prepared)
             pooled = tuple(
-                self.bank_operator(
+                self._bank_conditioned_video(
                     video,
-                    input_primals,
-                    output_primals,
-                    bank_set_interaction=self.bank_set_interaction,
+                    input_primals=input_primals,
+                    output_primals=output_primals,
                     interaction_state=interaction_state,
                 )
-                for video, interaction_state in zip(
-                    videos, interaction_states, strict=True
-                )
+                for video, interaction_state in zip(compact, interaction_states, strict=True)
             )
             return self._output(state, pooled, s_ref=s_ref)
+
+    def _bank_conditioned_video(
+        self,
+        video: CompactPrimalDualVideo,
+        *,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+        interaction_state: ProgramBankInteractionState,
+    ) -> PrimalDualVideoResult:
+        _, conditioned_inputs, conditioned_outputs = self._condition_bank(
+            video,
+            input_primals=input_primals,
+            output_primals=output_primals,
+            interaction_state=interaction_state,
+        )
+        return self.bank_operator.apply_compact(
+            video, conditioned_inputs, conditioned_outputs
+        )
+
+    def _condition_bank(
+        self,
+        video: CompactPrimalDualVideo,
+        *,
+        input_primals: tuple[torch.Tensor, ...],
+        output_primals: tuple[torch.Tensor, ...],
+        interaction_state: ProgramBankInteractionState,
+    ):
+        """Read B0 once and form the only primals consumed by current-bank dualization."""
+
+        summaries = self.bank_operator.summarize_compact(
+            video,
+            bank_set_interaction=self.bank_set_interaction,
+            interaction_state=interaction_state,
+        )
+        conditioned_inputs, conditioned_outputs = (
+            self.bank_set_interaction.bank_conditioned_primals(
+                input_primals=input_primals,
+                output_primals=output_primals,
+                summaries=summaries,
+            )
+        )
+        return summaries, conditioned_inputs, conditioned_outputs
 
     def forward_compact(
         self,
@@ -227,11 +265,10 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             output_primals = self.primal_scorer.output_primals(state)
             interaction_states = self._interaction_states(state, bank_contexts)
             pooled = tuple(
-                self.bank_operator.apply_compact(
+                self._bank_conditioned_video(
                     video,
-                    input_primals,
-                    output_primals,
-                    bank_set_interaction=self.bank_set_interaction,
+                    input_primals=input_primals,
+                    output_primals=output_primals,
                     interaction_state=interaction_state,
                 )
                 for video, interaction_state in zip(

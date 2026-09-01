@@ -111,6 +111,19 @@
   `min(correct)-max(wrong)>=.50`、all-pairs、family、saturation、zero-init、信息墙、Action Meta 0和唯一rank16全部通过。aggregate pass前
   不进入S2；工程正确后的non-pass按专家停止条件归因于B0 Program-query/current-bank response接口，不做普通超参小扫。
 
+### Program-through-Bank Bottleneck S1 task93显存修正
+
+- 首次formal在同一clean authority上并行接通后，task1正常到optimizer step30；task93的wrong step1完成，但首个79-frame correct step在
+  B1 output candidate checkpoint重算时OOM。原生allocator与`expandable_segments`/`cudaMallocAsync`两种不改变计算的allocator均在同一
+  400MiB重算申请处失败，说明不是可由allocator消除的纯碎片。旧task1随后由本任务主动中止，因为任何config bytes修订都会使其无法与
+  新task93 evidence聚合；三个失败/中止root保留为formal工程证据，不冒充科学non-pass或qualification结果。
+- 最早失效接口是task93 `interaction_group_batch_size=4`的单次output-head重算，而非B0数学、loss或Gate。唯一修正把task93该工程batch
+  从4降为2；task1仍为16，replay frame chunk、candidate集合、顺序、loss、梯度质量、optimizer和Gate完全不变。为直接覆盖最坏的79-frame
+  correct臂，dirty profile只把第一步诊断arm临时改为`correct_fit0`，核对后已从canonical config删除，不进入formal训练合同。
+- task93 group2真实profile自然exit 0：correct一步`21.110s`，peak allocated `45,584,205,312` bytes，step0逐tensor误差`0`，五臂
+  Panel-B物化后总`126.36s`。writer trainable仍为`585,152`，Action Meta 0、source/Native Stage0 trainable 0、Panel-B/correct-held/
+  wrong-fit1 backward 0及唯一完整rank16全部成立。该profile只裁决显存可执行性；一步未形成bank specificity，不作S1 Gate解释。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

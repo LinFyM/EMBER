@@ -35,6 +35,29 @@
   chunked真实fixture增加29行而触发legacy size/function ratchet；该增量是禁止B1 raw Program旁路所需的同输入不变性断言，拆出会复制整套
   replay fixture，故保留为cohesive narrow exception。实现文件无`>800`新增/增长，formal后按Gate只保留这一个canonical路径。
 
+### Program-through-Bank Bottleneck S0 formal launch contract
+
+- scientific implementation/config authority为clean pushed `b11dc3eec4de47c0861f92bab7fb9a331b90fce4`；formal只从包含本launch
+  record、但不改变科学代码/config的clean pushed detached descendant执行。task1/wrong8和task93/wrong94各自为独立world1优化，均从
+  冻结R5 scorer fresh初始化structured free correct/wrong tree、summary-only candidate heads、task-independent owner/rank/event结构、
+  optimizer/scheduler/RNG；不得载入任何旧S0/S1/S2/quotient/surrogate/polish interaction。每task严格10 warmup+100 effective steps，
+  保存actual checkpoint70/110并完成correct fit0/fit1/held、wrong fit0/fit1五臂Panel-B，随后双task aggregate裁决。
+- exact entry为两个并行的`python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置唯一新文件
+  `configs/pi05_ecp_event_bank_set_bottleneck_s0_v1.json`；共享只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`与既有90-pair Program-bank cache。task1使用gpu01物理2/NUMA0，task93使用
+  物理3/NUMA1，分别绑定不重叠CPU；两者是全部qualification units，额外GPU不能缩短单个world1任务，故不做DDP、重复run或dummy占卡。
+  环境固定`NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_task1_s110_b11dc3e_gpu01p2_20260901`、
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_task93_s110_b11dc3e_gpu01p3_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901`；13:19 live检查三根均不存在。
+  gpu01物理2/3均为`15MiB/0%`、Default且无compute process，节点cache存在；gpu02也已同时检查但仅物理5完全空闲，且无本阶段第三个独立
+  unit。`/data1` quota为`777396796/1073741824KiB`，同类双run加aggregate预计远低于`100MB`。紧邻exec再次核对设备与输出根；若外部
+  进程后发使峰值余量不足，只停止本任务并换新root/device fresh运行，不干预他人。
+- S0 Gate保持专家原合同：两task的correct fit0/fit1各`>=.85`、held`>=.80`、wrong fit0/fit1各`<=.25`、
+  `min(correct)-max(wrong)>=.50`、all-pairs、family、saturation、zero-init、信息墙、Action Meta 0和唯一rank16全部通过。aggregate pass前
+  不进入S1；工程正确后的non-pass直接淘汰fixed-base+summary-only correction函数类，不以LR/seed/width/rank/步数小扫修补。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

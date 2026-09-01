@@ -1916,3 +1916,19 @@ task1 margin通过；correct/held与task93 margin失败。70到110的correct/hel
 该结果只淘汰当前family-shared nonlinear key chart + target-specific rank16 key residual + rank4 PNBTT参数化。它比首版更强压低wrong，
 但没有恢复correct absolute capacity，故不进入E2、不续训、不做width/LR/seed小扫。按专家§5.10，下一证据是同checkpoint的train-only
 `T=Cov(v,k)`功能梯度投影谱；只有同构PNBTT task-local full-rank16 oracle明显优于rank4时才重开carrier/task rank分配。
+
+## 100. Family-key v2 tangent spectrum停止继续修改key chart
+
+retained root为
+`runs/analysis/pi05_ecp_pnbtt_e1_family_key_tangent_spectrum_m128_step110_75db5f84_gpu01p12_20260902/`，加载同一v2
+macro110，只使用task1/93 Panel-A correct fit0/fit1与wrong fit0，每task 16 visits，共380个target-side
+`T=Cov_mu(v,k)L^{-T}`谱；held、Panel-B、validation/test读取均为0，`completion.json`自然完成，耗时`381.48s`。
+
+`m=128`仍未截断有效谱。相对首版，q/v input的correct-preserve-wrong中位只从`.555/.463`变为`.566/.476`；q四类output为
+`.174/.235/.220/.224`，v为`.643/.769/.685/.693`，其中v adj/init/goal还低于首版。family chart把action-out
+adj/goal correct--wrong operator cosine从`.839/.748`降至`.712/.627`，解释了formal wrong改善，但q/v input仍约`.958`且
+abs仍约`.927/.963`，没有恢复correct方向可达性。尾端10%谱能量继续近零。
+
+该证据停止`m`扩展和更多key-chart变体，也不授权LR、seed或rank sweep。它本身不证明rank4 ceiling；按专家§5.10只准入一次同构
+PNBTT task-local full-rank16 oracle，且输出仍为唯一38-target rank16。只有该oracle相对rank4 residual明显改善才重开carrier/task
+rank分配，否则停止rank扩展。

@@ -47,13 +47,15 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
    没有截断有效谱，但q/v各side的功能梯度保留率与correct/wrong operator几何显示单一线性key坐标不足；
 8. [x] 保持`m=128`、residual rank4及全部E1数据/loss/Gate不变，完成family-shared nonlinear trunk + target-specific rank16
    low-rank key projection的fresh E1；macro70/110均为`non_pass`，wrong明显改善但correct/held稳定不足；
-9. [ ] 在v2 macro110上复跑同一train-only tangent spectrum；只有机制证据支持且同构PNBTT task-local full-rank16 oracle明显优于
-   rank4 residual时才重开carrier/task rank分配，否则不扫width、LR、seed或rank；
-10. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
+9. [x] 在v2 macro110上复跑同一train-only tangent spectrum：`m=128`仍未截断有效谱，family chart只在部分output side降低
+   correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
+10. [ ] 只运行专家允许的一次同构PNBTT task-local full-rank16 oracle，输出仍为唯一38-target rank16；只有它相对rank4 residual
+   明显改善才重开carrier/task rank分配，否则停止rank扩展并按E1失败边界裁决下一接口；
+11. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
    full-vs-language/endpoints；
-11. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
-12. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
-13. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
+12. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
+13. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
+14. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
 额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。

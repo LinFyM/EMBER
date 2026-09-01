@@ -146,8 +146,10 @@ target/side加rank16线性低秩residual projection。该target residual只调�
 仍先独立保序、集合阶段固定等质量。该v2 fresh formal也在macro70/110相邻一致`non_pass`：step110 task1 correct/held为
 `.616630/.620958/.601512`、wrong为`.027332/.051458`；task93 correct/held为`.707775/.725727/.655429`、wrong为
 `.047247/.223365`。它明显提高wrong specificity，但没有恢复absolute correct capacity，70到110改善仅`.0053--.0210`。
-因此当前仍不进入E2；先在v2 step110上复跑同一train-only tangent spectrum。只有同构PNBTT task-local full-rank16 oracle明显优于
-rank4 residual时才按专家§5.10重开carrier/task rank分配，不做width、LR、seed或更多key-chart小扫。该结论不涉及冻结的Natural Program。
+v2 step110上的同一train-only tangent spectrum已经完成。`m=128`仍没有截断有效谱；family chart降低了部分output-side
+correct--wrong operator重合并解释wrong改善，但q/v correct功能梯度保留没有实质提高。因而当前仍不进入E2，也不再增加`m`或修改
+key chart。下一步只运行专家§5.10允许的一次同构PNBTT task-local full-rank16 oracle；其输出仍必须是唯一38-target rank16，只有相对
+rank4 residual明显改善才重开carrier/task rank分配。该结论不涉及冻结的Natural Program，也不授权width、LR、seed或rank sweep。
 
 ### E2：真实frozen Natural Program到bank transport
 

@@ -18,7 +18,9 @@
   Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，未读取held或Panel-B。`m=128`对应每个operator的1024列，
   99%谱能量rank与末端10%能量均表明没有有效谱被key width截断；q/v各side的功能梯度保留率和跨family差异则支持专家规定的
   family-shared nonlinear trunk + target-specific低秩key projection。该结构修订的fresh E1已从clean detached `75db5f84`
-  完成，macro70/110相邻一致`non_pass`；当前在同一step110上做train-only tangent spectrum，不进入E2。
+  完成，macro70/110相邻一致`non_pass`。同一step110的v2 train-only spectrum也已完成：key width仍未截谱，family chart只分离了
+  部分output-side correct/wrong几何，没有恢复q/v correct功能梯度可达性。当前不进入E2，也不再修改key chart；下一步只做专家允许的
+  单次同构task-local full-rank16 oracle。
 
 ## 最新科学结论
 
@@ -55,10 +57,11 @@
   canonicalization与首版carrier12+residual4。
 - Program只产生低维query；当前bank的真实candidate产生key并继续作为唯一native value。B0只做可微key-space whitening，B1在同一bank
   上执行一次联合measure的antithetic signed transport；没有base primal、bounded correction、family scalar gate或free anchor。
-- 首个E1 single-key-chart已稳定non-pass；它只淘汰当前per-target/side线性key chart + free query + whitening signed transport函数类，
-  不裁决冻结的Natural Program。`T=Cov(v,k)`诊断已排除`m=128`截断：q的correct-preserve-wrong梯度保留率中位为input约`.555`、
-  output约`.175--.240`，v为input约`.463`、output约`.620--.808`，而abs/input的correct--wrong operator cosine多为
-  `.922--.979`。因此当前唯一修订是按family拆分共享非线性chart并保留target-specific低秩projection；E1通过后才进入E2。
+- 首个E1 single-key-chart与family-key v2均稳定non-pass。v2 spectrum相对首版的q correct-preserve-wrong中位仅从input
+  `.555`到`.566`，四类output约为`.174/.235/.220/.224`；v input从`.463`到`.476`，abs改善到`.643`，但adj/init/goal反而从
+  `.808/.727/.734`降到`.769/.685/.693`。尾端10%谱能量仍近零；family chart主要把action-out adj/goal operator cosine从
+  `.839/.748`降到`.712/.627`，与formal wrong改善一致，却未补足correct容量。因此不增加`m`或继续改chart；只用一次同构
+  full-rank16 oracle判别carrier12/task4是否是剩余瓶颈，E1通过前不进入E2。
 - 专家远程artifact缺口中大部分本地已存在；当前实质缺少G2逐condition Program tensors，因此E2从frozen G2 checkpoint按condition重算，
   不误用fixed-token S1语义或cache。
 
@@ -74,6 +77,10 @@
   `runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`；训练authority固定为clean detached
   `75db5f84`，gpu01物理1/2双rank；110步、macro70/110五臂各16次Panel-B、两个checkpoint与
   `evaluations/qualification.json`完整，最终为相邻一致`non_pass`。
+- PNBTT family-key tangent spectrum：
+  `runs/analysis/pi05_ecp_pnbtt_e1_family_key_tangent_spectrum_m128_step110_75db5f84_gpu01p12_20260902/`；同一v2 macro110、
+  task1/93各16个Panel-A visits、共380个target-side spectra，held/Panel-B/validation/test均未使用，`completion.json`完整，
+  耗时`381.48s`。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -95,7 +102,8 @@
 ## 仓库与workspace整理
 
 - 交接前58个累积worktree已清理；首个E1与spectrum结束后对应detached worktree也已删除。当前只保留canonical main、唯一
-  `codex/pnbtt`实现worktree与family-key E1的clean detached evidence worktree；当前v2 spectrum仍在使用，结束后再清理。
+  `codex/pnbtt`实现worktree与已结束的family-key E1 clean detached evidence worktree；v2 spectrum日志已移入formal root，确认无进程后
+  即清理该detached worktree。
 - 删除8个local `codex/*` branch：已合并分支由`main`保存；两个未合并EBSRI S2草案因S1预注册non-pass而失去执行资格；历史
   `g3-vector-interaction@2295f48`仍由`origin/codex/g3-vector-interaction`保存。
 - 已删除完整并入`main`的远程`codex/g3-bank-set-relative-interaction`与`codex/g3-v4-evaluator-authority`；未合并的
@@ -149,6 +157,11 @@
   `.616630/.620958/.601512`、wrong为`.027332/.051458`；task93 correct为`.707775/.725727/.655429`、wrong为
   `.047247/.223365`。wrong、all-pairs与near-bound均通过，task1 margin也通过；两task correct/held和task93 margin稳定不足，
   70到110的correct/held改善只有`.0053--.0210`。因此family-key提高了specificity但没有恢复absolute capacity，不追加训练且不进入E2。
+- v2 tangent spectrum也已自然完成：仍为380个train-side Panel-A spectra、每task 16 visits，耗时`381.48s`。相对首版，q/v input的
+  correct-preserve-wrong中位只小幅变化为`.566/.476`；q四类output为`.174/.235/.220/.224`，v为
+  `.643/.769/.685/.693`，没有形成correct容量所需的新可达方向。action-out adj/goal correct--wrong operator cosine降至
+  `.712/.627`，解释了wrong specificity改善；但q/v input仍约`.958`，abs仍约`.927/.963`。全部非结构性operator的尾端谱能量仍远低于
+  width上限，因此停止增加`m`或继续改key chart。该诊断本身不证明rank4 ceiling；只准入专家限定的一次同构full-rank16 oracle。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
   set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
   detached scientific authority。

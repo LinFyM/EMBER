@@ -2059,3 +2059,21 @@ correct/held和task93 `.50` margin未过。70到110的correct/held只改善`.005
 因此当前family-shared nonlinear trunk + family-side heads + target-specific rank16 key residual没有使rank4 PNBTT通过E1；这仍不涉及冻结的
 Natural Program，也不淘汰真实X/Y、signed replay或更一般的bank tangent transport。下一步只在train-side Panel-A复跑同一
 `T=Cov(v,k)`谱；只有同构full-rank16 oracle明显优于rank4时才按专家§5.10重开rank分配，不做width、LR、seed或额外chart小扫。
+
+### 125. v2谱确认family chart只改善specificity，不解决q/v correct可达性
+
+在同一clean detached `75db5f847e849c8953d4afeae4b7682e185ee734`的v2 macro110上，复用首版完全相同的train-only
+`T=Cov_mu(v,k)L^{-T}`诊断：task1/93各16个Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，共380个
+target-side spectra；held、Panel-B、validation/test均未读取。retained root为
+`runs/analysis/pi05_ecp_pnbtt_e1_family_key_tangent_spectrum_m128_step110_75db5f84_gpu01p12_20260902/`，自然完成耗时
+`381.48s`。
+
+相对首版，correct-preserve-wrong保留率中位的q input仅`.555→.566`，q abs/adj/init/goal为
+`.174/.235/.220/.224`；v input仅`.463→.476`，v abs为`.643`，adj/init/goal反而从`.808/.727/.734`降至
+`.769/.685/.693`。`m=128`的尾端10%谱能量仍近零，故没有增加width的依据。family chart确实把action-out adj/goal的
+correct--wrong operator cosine从`.839/.748`降到`.712/.627`，q/v goal也从约`.491/.509`降到`.439/.442`，与formal wrong
+显著下降一致；但q/v input仍约`.958`，q/v abs仍约`.927/.963`，correct方向没有被打开。
+
+因此停止继续修改key chart、增加`m`或做LR/seed/width小扫。该谱只证明v2的收益是specificity-side几何分离，不单独证明rank4 ceiling；
+下一证据严格限于专家允许的一次同构PNBTT task-local full-rank16 oracle。只有它相对rank4 residual明显改善，才重开carrier/task
+rank分配；否则rank扩展停止。

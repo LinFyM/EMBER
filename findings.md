@@ -1854,3 +1854,21 @@ LoRA owner坐标。十个fixed-route task的跨task平均结构占raw state ener
 让B0 inducing读取task-independent owner+event slots、B1读取owner+rank+event slots，同时继续完全忽略`program_event_state`数值；
 R5 base/event weights/native queries→`kappa`、真实bank、signed pooling、rank4+carrier12、loss、预算与Gate均不变。只有该版本fresh
 S0通过，才可进入fresh S1/S2继续检验task-code旁路假设。
+
+### 111. owner slot未恢复task93；缺口是B1的task-dependent rank×event关系
+
+owner-preserving quotient的fresh S0中，task1 correct fit0/fit1/held为`.882/.866/.890`且wrong为`-.412/-.394`，正式通过；
+task93 correct为`.685/.696/.662`、wrong为`-.168/-.179`，正式non-pass。运行、checkpoint、Panel-B、finite、信息墙、Action Meta 0与
+唯一rank16合同均完整，因此owner补回不是有效机制解。
+
+full-`z`、rank/event-only与owner三版本保持数据、seed、loss、步数和Gate一致。task93 correct均值依次为`.903/.721/.681`；owner版在
+前四个wrong更新后就首先损伤q-family，step8 correct-fit1 q-NMSE为`.165`（full/rank为`.095/.114`），step10 correct-fit0为
+`.335`（`.229/.273`），step110 correct q为`.197`而wrong q改善到`.166`。owner slots没有塌缩或饱和，correction也远未触`.1`
+bound；同一个global free token在full-`z`版本已经通过。因此最早缺口不是target ID或free token容量，而是把
+`rank_event[target,rank,event]`替成可分离slots时删掉了task-dependent rank×event关系，使correct与wrong更新在共享q表示中错误干扰。
+
+唯一可证伪修正是target-centered relational context：只在B1使用
+`z_rel=(z-mean_{rank,event}(z))/RMS(z-mean_{rank,event}(z))`，其中每个target的整个`[4,8,128]`共享一个RMS标量；再与
+task-independent rank/event slots等尺度组合。B0 inducing仍不读取`z_rel`，target-wide加性offset被quotient，且不增加参数。逐slot
+normalization会抹掉冻结R5中`.075--.289`的关系强度差，不能使用。若该版本fresh S0仍失败，应停止这一relational-quotient机制，不能以
+per-target free表、LR、步数、width或seed小扫替代根因裁决。

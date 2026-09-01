@@ -1731,3 +1731,19 @@ raw energy约`37.49%`；该结构的centered variance中，rank+event无owner近
 owner+rank+event解释`94.96%`，owner+自由rank-event pair为`94.97%`。这说明首版quotient在切除absolute task state时也切除了固定
 target ownership，形成了明确实验混杂。后继修正只补回无task轴的owner38 slot，并继续以rank4/event8 slots表示其余固定结构；B0/B1
 仍不读取`program_event_state`数值，不恢复task route，也不改变训练或Gate合同。
+
+## 88. owner-preserving quotient S0 non-pass与relational B1定位
+
+clean pushed detached `21caa20e228f0a7e4f523a0cf939a61a014381e0`完成owner-preserving quotient的task1/93 fresh S0，aggregate为
+`runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_gate_s110_03b7314_gpu01p56_20260901/aggregate.json`。task1 correct
+fit0/fit1/held为`.881943/.865835/.890028`、wrong为`-.412478/-.394324`并正式通过；task93为
+`.685079/.695883/.662119`与`-.167709/-.178537`，correct与held正式non-pass。两run均自然exit 0、110步、五臂Panel-B及
+checkpoint70/110完整finite，Action Meta与held/wrong-fit1/Panel-B backward为0，未读validation/test或shuffled/reversed，且每condition
+仍只生成一套完整rank16，因此结果是结构性负证据。
+
+同合同full-`z`、rank/event-only和owner版本的task93逐step/family审计显示，owner补回后correct均值从rank版`.721`反降至`.681`；
+第8--10步已首先出现q-family correct-vs-wrong干扰，最终correct q-NMSE为`.197`而wrong q为`.166`。slot范数、正交性、移动量、
+free-token norm和correction幅度均排除塌缩、饱和或简单训练不足。冻结R5重建又显示，对每个target从`rank_event[4,8,128]`减去其
+rank/event均值后，task1/93全局RMS为`.153/.163`，per-target RMS约`.141--.183/.146--.183`，内部slot RMS保留约
+`.075--.289`的有效强度差。由此后继只允许一次无新增参数的relational B1检验：每target中心化并按整个tensor单RMS归一，保留内部
+rank/event关系，B0仍用task-independent inducing。该检验若fresh S0失败，就停止这一quotient机制，不靠普通超参修补。

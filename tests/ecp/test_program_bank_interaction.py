@@ -70,61 +70,40 @@ def test_bank_set_interaction_is_zero_initialized_with_real_summary() -> None:
     assert bool(head.weight.grad.abs().sum() > 0)
 
 
-def test_interaction_context_quotients_out_absolute_program_code() -> None:
+def test_interaction_context_quotients_out_target_wide_absolute_program_code() -> None:
     module, context, state, _, _ = _fixture()
-    other_state = torch.randn_like(state)
+    absolute_offset = torch.randn(1, 1, state.shape[-1])
 
     rank, inducing = module._event_context(
         target=0, program_event_state=state, context=context
     )
     other_rank, other_inducing = module._event_context(
-        target=0, program_event_state=other_state, context=context
+        target=0, program_event_state=state + absolute_offset, context=context
     )
 
-    torch.testing.assert_close(rank, other_rank)
+    torch.testing.assert_close(rank, other_rank, atol=2e-6, rtol=2e-6)
     torch.testing.assert_close(inducing, other_inducing)
     assert not torch.equal(rank[0, 0], rank[1, 0])
     assert not torch.equal(rank[0, 0], rank[0, 1])
     (rank.square().mean() + inducing.square().mean()).backward()
-    assert module.owner_slot_context.grad is not None
     assert module.rank_slot_context.grad is not None
     assert module.event_slot_context.grad is not None
 
 
-def test_interaction_context_retains_task_independent_target_ownership() -> None:
-    torch.manual_seed(20260901)
-    owners = (
-        TargetOwner(0, "q0", TargetFamily.Q, 0, 4, 8),
-        TargetOwner(1, "q1", TargetFamily.Q, 1, 4, 8),
-    )
-    module = EventConditionedBankSetInteraction(
-        owners,
-        program_width=6,
-        event_slots=2,
-        summary_value_width=4,
-        hidden_width=12,
-        replay_score_rms=0.02,
-    )
-    context = ProgramBankContext(
-        canonical_assignment=torch.rand(3, 2).softmax(-1),
-        frame_positions=torch.linspace(0.0, 1.0, 3),
-        local_scene=torch.zeros(2, 6),
-        local_process=torch.zeros(2, 2, 6),
-        local_presence=torch.zeros(2),
-        local_tau=torch.zeros(2, 2),
-        local_sigma=torch.zeros(2, 2, 6),
-    )
-    state = torch.randn(4, 2, 6)
+def test_interaction_context_retains_rank_event_program_relations() -> None:
+    module, context, state, _, _ = _fixture()
+    changed = state.clone()
+    changed[0, 0] = changed[0, 0] + torch.randn_like(changed[0, 0])
 
-    rank0, inducing0 = module._event_context(
+    rank, inducing = module._event_context(
         target=0, program_event_state=state, context=context
     )
-    rank1, inducing1 = module._event_context(
-        target=1, program_event_state=state, context=context
+    other_rank, other_inducing = module._event_context(
+        target=0, program_event_state=changed, context=context
     )
 
-    assert not torch.equal(rank0, rank1)
-    assert not torch.equal(inducing0, inducing1)
+    assert not torch.equal(rank, other_rank)
+    torch.testing.assert_close(inducing, other_inducing)
 
 
 def test_free_summary_generates_a_distinct_candidate_head_with_gradient() -> None:

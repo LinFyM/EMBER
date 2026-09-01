@@ -1,5 +1,31 @@
 # EMBER progress
 
+### Target-centered relational quotient S0 candidate
+
+- 2026-09-01 owner-preserving quotient S0已在clean pushed detached `21caa20`完整结束，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_owner_quotient_s0_gate_s110_03b7314_gpu01p56_20260901/aggregate.json`，正式结论
+  `non_pass`。task1 correct fit0/fit1/held为`.882/.866/.890`、wrong为`-.412/-.394`，全部Gate通过；task93 correct为
+  `.685/.696/.662`、wrong为`-.168/-.179`，只有correct/held失败。两run均自然exit 0、110步及五臂Panel-B完整、checkpoint
+  finite、Action Meta 0、held/wrong-fit1/Panel-B backward与validation/test/shuffled/reversed reads为0，且只物化一套完整rank16；
+  因而这是结构性科学non-pass，不进入S1。
+- 同合同三版本的task93对照把最早缺口定位到B1的task-dependent rank×event关系，而不是owner identity、bootstrap、free-token幅度或
+  correction饱和：full-`z`、rank/event quotient、owner quotient的correct均值分别为`.903/.721/.681`，held为
+  `.894/.725/.662`；owner版在第8--10步经历四次wrong更新后，correct q-NMSE已从full/rank的`.095/.114`与
+  `.229/.273`恶化到`.165/.335`，step110 correct q-NMSE为`.197`而wrong q反而改善到`.166`。owner slots正交、几乎未移动，
+  correction最大约`.0122 < .1`且free-token norm与其它版本相当，排除了塌缩、触bound或简单训练不足。
+- 当前唯一机制修正因此不是增加per-target free lookup，而是在rank/event quotient基线上只向B1恢复每个target内部的Program关系：
+  `z_rel=(z-mean_{r,e}(z))/RMS_{r,e,width}`，再与task-independent rank/event slots等尺度组合；B0 inducing继续不读取该关系。
+  该变换对target-wide加性offset不变、保留rank/event相对方向与幅度，且不增加参数。冻结R5测得task1/93的centered全局RMS为
+  `.153/.163`，per-target RMS范围约`.141--.183/.146--.183`，因此按每target整个`[4,8,128]`用一个RMS标量归一，不能逐slot
+  抹掉关系强度。下一步只做全仓CPU合同和真实一步profile；通过后从R5 fresh重跑原110-step S0，不改seed、loss、LR、width、rank或Gate。
+  若该单点修正仍无法恢复双task correct Gate，就停止这一relational-quotient机制，不做普通超参小扫。
+- 唯一canonical interaction已接通上述target-centered relational B1；全仓`254 passed`。gpu01物理0的一步真实task1 profile自然
+  exit 0：step为`2.755s`、peak allocated `41.258GB`、step0逐tensor误差0、五臂materialization与finite gradient完整；writer inventory
+  只有free correct/wrong、rank/event slots和既有candidate/condition网络，Action Meta module/parameter为0，source/Native Stage0/scale
+  trainable为0，held/wrong-fit1/Panel-B backward与validation/test/shuffled/reversed use为0，且只生成一套完整rank16。profile根为
+  `runs/analysis/pi05_ecp_event_bank_set_relational_quotient_s0_task1_profile_s1_dirty_gpu01p0_20260901`；一步Gate non-pass只反映未训练
+  profile，不作科学裁决。下一步完成diff审查、clean main集成和pushed detached formal launch。
+
 ### Owner-preserving absolute-route quotient S0 formal launch contract
 
 - scientific implementation/config authority为clean pushed `03b731437985998d4fbbcb5745fbe9d0fa24d0ef`；formal从只增加本launch

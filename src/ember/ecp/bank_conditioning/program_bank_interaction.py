@@ -171,19 +171,15 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             }
         )
         slots = torch.empty(
-            len(self.owners) + G1_RESIDUAL_RANK + self.event_slots,
-            self.program_width,
+            G1_RESIDUAL_RANK + self.event_slots, self.program_width
         )
         torch.nn.init.orthogonal_(slots)
         slots.mul_(math.sqrt(self.program_width))
-        owner_end = len(self.owners)
-        rank_end = owner_end + G1_RESIDUAL_RANK
-        self.owner_slot_context = torch.nn.Parameter(slots[:owner_end].clone())
         self.rank_slot_context = torch.nn.Parameter(
-            slots[owner_end:rank_end].clone()
+            slots[:G1_RESIDUAL_RANK].clone()
         )
         self.event_slot_context = torch.nn.Parameter(
-            slots[rank_end:].clone()
+            slots[G1_RESIDUAL_RANK:].clone()
         )
 
     def _candidate_network(self, width: int) -> torch.nn.Sequential:
@@ -284,17 +280,17 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
-        # The trainable interaction may identify structural rank/event slots, but
-        # must not turn the fixed task Program code into an eight-entry function
-        # table. Task content still reaches B0/B1 through the frozen native
-        # queries, their Program-relative coordinates, base scores, event
-        # assignment/weights, and the resulting real-bank summaries.
-        owner_slot = self.owner_slot_context[target].float()
+        # Remove the target-wide absolute Program gauge while retaining the
+        # task-dependent relation among this target's rank/event states.  The
+        # shared head therefore sees relational Program content rather than a
+        # target-wide absolute offset.  B0 remains task-independent apart from the
+        # Program-relative native coordinates and real-bank summaries.
+        relational = program_event_state.float()
+        relational = relational - relational.mean(dim=(0, 1), keepdim=True)
+        relational = relational / relational.square().mean().clamp_min(1e-12).sqrt()
         rank_slot = self.rank_slot_context.float()[:, None]
         event_slot = self.event_slot_context.float()[None]
-        structural = (
-            owner_slot[None, None] + rank_slot + event_slot
-        ) / math.sqrt(3.0)
+        structural = (relational + rank_slot + event_slot) / math.sqrt(3.0)
         rank = torch.cat(
             (
                 structural,
@@ -302,10 +298,7 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
-        inducing_structural = (
-            owner_slot[None] + self.event_slot_context.float()
-        ) / math.sqrt(2.0)
-        inducing = torch.cat((inducing_structural, local), dim=-1)
+        inducing = torch.cat((self.event_slot_context.float(), local), dim=-1)
         return rank, inducing
 
     def summarize_input(

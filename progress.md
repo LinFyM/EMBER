@@ -123,7 +123,16 @@
 - `T=Cov(v,k)`诊断已自然完成：380个谱均来自train-side Panel-A，operator列数固定1024；除结构性零bank外，99%谱能量rank远低于
   1024且末端10%能量通常不超过`1e-6`量级，因此不增加`m`。q/v的功能梯度保留与correct/wrong operator重合暴露的是chart
   表达问题。family-shared nonlinear trunk + target-specific rank16 low-rank projection已经接入；`m=128`、rank4、query、loss、
-  数据与Gate未改，35项PNBTT/shared-compiler/joint-primal focused tests通过，最新真实GPU profile尚待从该代码版本执行。
+  数据与Gate未改，35项PNBTT/shared-compiler/joint-primal focused tests通过。
+- v2 implementation `02633a3964ecfd9d40f9827ba98456c87c07552b`已在clean pushed main完成双A40两步真实profile。step2
+  family-key aggregate gradient为`.155687`，task1/93 free-query gradient为`13.945/9.212`，correct/wrong已分离；单步
+  `25.266s`，两rank峰值allocated为`39.789/37.260GB`、reserved为`46.272/44.082GB`，无OOM或non-finite。
+- fresh E1 formal launch contract：从`02633a39`之后只增加本记录的clean pushed detached commit运行；配置为
+  `configs/pi05_ecp_pnbtt_e1_family_key_v2.json`，task1/93双rank DDP、110 optimizer steps、macro70/110 checkpoints，数据、
+  Panel-A/B、loss与Gate完全复用首个E1。计划使用gpu01物理1/2并在launch瞬间复核，固定`NCCL_P2P_DISABLE=1`和NUMA0；输出为
+  `runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`且必须fresh空目录。`/data1`当前user用量
+  `772469868/1073741824 KiB`，参考上一E1的`257MB`，本轮含两个checkpoint峰值估计小于`1GB`。只允许同commit、同world-size2、
+  同config exact resume；不覆盖无效root。科学裁决仍只认macro70/110五臂各16次Panel-B及相邻一致E1 Gate。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
   set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
   detached scientific authority。

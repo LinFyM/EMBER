@@ -118,9 +118,9 @@
 
 ## 仓库与workspace整理
 
-- 交接前58个累积worktree已清理；首个E1、family-key E1、两次spectrum及full-rank16 formal结束后对应detached evidence worktree均已删除。当前只保留
-  canonical main与唯一`codex/pnbtt`实现worktree；训练/评测日志已移入各自formal root，`.codex/tmp`已为空。
-- full-rank16 formal结束并核对证据后，其clean detached worktree已通过`git worktree remove`清理；formal root及两枚checkpoint完整保留。
+- 交接前58个累积worktree已清理；首个E1、family-key E1、两次spectrum及full-rank16 formal结束后对应detached evidence worktree均已删除。
+  PNBTT结论完整快进至远程`main`后，已合并的`codex/pnbtt`实现worktree与本地/远程分支也清理；当前只保留canonical main。
+  训练/评测日志已移入各自formal root，`.codex/tmp`已为空。
 - full-rank16 formal启动后已删除被提交记录取代的两步disposable profile及两个非运行worktree的Python/pytest cache。为保持一个
   canonical Writer运行面，删除4个只暴露已退役EBSRI/J3/routing-control路线的旧runner：`train_ecp_bank_set_shared.py`、
   `train_ecp_bank_set_tasklocal.py`、`evaluate_ecp_bank_set_shared.py`、`evaluate_ecp_joint_program_primal.py`；历史modules、configs、tests和

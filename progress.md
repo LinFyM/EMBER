@@ -27,6 +27,12 @@
 - 任一输出异常不覆盖或冒充formal；只有同一clean commit、同一task/world1/device与完整macro70 checkpoint才允许exact-resume到110。
   S0 Gate仍严格要求每task correct fit0/fit1`>=.85`、held`>=.80`、wrong fit0/fit1`<=.25`、margin`>=.50`、all-pairs、family与
   saturation通过。只有双taskaggregate pass才fresh进入S1。
+- 07:56 CST首次在物理0/2启动后，另一用户于约两分钟内新占用这两卡各约18.5GB；与本任务`41.26GB`实测峰值不相容。为避免OOM和
+  互相干扰，只向本任务两个tmux发送SIGINT，二者均在准备descriptors期间、step1之前退出；原p0/p2 roots各只含run contract，无metrics、
+  checkpoint或科学结果，保留为明确aborted provenance且不resume、不聚合。更新后的fresh roots为
+  `runs/outputs/pi05_ecp_event_bank_set_quotient_s0_task1_s110_0d8d901_gpu01p5_retry1_20260901`与
+  `runs/outputs/pi05_ecp_event_bank_set_quotient_s0_task93_s110_0d8d901_gpu01p6_retry1_20260901`；改用仍完全空闲的物理5/6并在新
+  clean pushed detached authority上fresh重启，其余科学合同不变。
 
 - 2026-09-01 S2 functional-polish已从step70 exact-resume到110并完成step70/110共100-job正式Panel-B Gate，结果根为
   `runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901`。step110

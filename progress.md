@@ -2,7 +2,7 @@
 
 ### Target-centered relational quotient S0 formal launch contract
 
-- scientific implementation/config authority为clean pushed `ad64757428c223629c08b2cd01dfbb70f68cff69`；formal从只增加本launch
+- scientific implementation/config authority为clean pushed `ad647576d187a3df69a3f5d6b93f6f5c979817b6`；formal从只增加本launch
   record的clean pushed detached descendant执行。task1/wrong8与task93/wrong94各自以独立world1进程从冻结R5 scorer fresh初始化
   rank/event slots、interaction、global free correct/wrong、optimizer/scheduler/RNG；不加载owner、旧quotient或其它S0/S1/S2 interaction。
   每task仍为10 warmup+100 effective steps，保存actual checkpoint70/110并完成既有五臂Panel-B后聚合。该S0只裁决target-centered

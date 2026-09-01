@@ -1928,3 +1928,16 @@ formal aggregate正式通过：task1 correct fit0/fit1/held为`.989/.974/.989`�
 当前fixed-base+bounded correction函数类在真实X/Y、exact signed pooling、rank4和唯一rank16下确有强capacity--specificity解。它仍是
 task-local free-summary upper bound，不证明Program能通过真实bank产生这些summary，也不证明shared compiler；下一最早接口严格是fresh
 S1的Program query→scope-matched real B0 response。S1不得继承S0 interaction状态，aggregate只作准入authority。
+
+### 116. real Program-through-bank S1失败，淘汰correction-only bank response
+
+fresh S1从R5只训练真实B0 set encoder与summary-only B1，未加载S0 interaction/free tree。clean detached `1cdfbfa`的正式双task
+aggregate为`non_pass`：task1 correct fit0/fit1/held recovery为`.827/.855/.798`、wrong为`-.660/-.628`；task93 correct为
+`.777/.793/.720`、wrong为`-.178/-.151`。两taskwrong、margin、all-pairs与saturation全部通过，near-bound fraction为0；step0、
+110步、五臂Panel-B、chunked output bank边界、Action Meta 0、冻结边界及唯一rank16均完整。因此这是科学non-pass，不是OOM或实现错误。
+
+与同拓扑free-summary S0的`.917--.989` correct/held正证据对照，B1、真实X/Y、signed pooling和rank4容量不是首因；损失出现在Program query
+经真实B0 set read形成bank response时。当前B0仍能学到“把wrong压低”的specificity，却不能同时保留正确方向的absolute capacity与
+same-task held能力。按专家预注册停止条件，这淘汰的是“fixed base + whole-bank summary只作bounded logit correction”这一具体函数类，
+不是Program、native bank或ECP整体。后继必须让whole-bank response更早参与bank-conditioned primal形成，再做current-bank global dual与
+唯一exact replay；不得进入原S2或用LR/seed/width/rank/normalization小扫掩盖该接口。

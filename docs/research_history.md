@@ -1806,3 +1806,21 @@ rank16及全部信息墙合同完整。
 这一结果只回答topology-matched free-summary S0：切断raw Program旁路后，summary-only B1与fixed base+bounded correction仍有充分
 capacity和bank specificity。它不证明真实B0或shared mapping。下一阶段按专家顺序从R5 fresh运行real Program-through-bank S1，S0只提供
 aggregate准入证据，不能加载其interaction、free summaries、optimizer或cursor。
+
+## 93. Program-through-bank bottleneck S1双task正式non-pass
+
+scientific implementation/config authority为`90472301990f3c86d6aabc6acae214f175ab017b`；formal从只增加launch record的clean detached
+`1cdfbfa7bf05ebe369807afdf6d8c99313a9d458`在gpu01物理2/3并行完成task1/93各110步。aggregate为
+`runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_9047230_gpu01p23_20260901/aggregate.json`，结论`non_pass`。
+
+task1 correct fit0/fit1/held recovery为`.826825/.855228/.797545`，wrong fit0/fit1为`-.659529/-.628416`；task93 correct为
+`.776511/.792673/.719798`，wrong为`-.178132/-.151166`。两task的wrong、margin、all-pairs和correction saturation checks均通过，
+near-bound fraction为0；失败只在correct absolute与zero-gradient same-task held保持。两run自然exit0，step0误差0、110步、五臂Panel-B、
+Action Meta 0、冻结source/Native Stage0、唯一完整rank16及信息墙均成立。最长视频的checkpointed chunk replay已以真实forward/backward和
+非chunked合同验证，故先前OOM修正不改变该科学结论。
+
+S0与S1唯一科学变化是scope-matched free summary tree换成真实Program-query/current-bank B0。S0强通过而S1同时损伤两task correct/held、
+仍压低wrong，按专家第5.2与7.1节把最早失效接口定位为real B0 representation或Program→set query，而非B1、真实native X/Y、signed
+pooling或rank4容量。原fresh shared S2因此没有启动；当前fixed-base+summary-only bounded correction函数类停止。后继只按专家失败分支
+让whole-bank response更早参与bank-conditioned primal形成，再做current-bank dual与唯一exact replay，不恢复quotient/surrogate/polish，
+也不做普通超参小扫。

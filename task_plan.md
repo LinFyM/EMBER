@@ -10,15 +10,16 @@ V5。第六次专家1320行原文逐字保存为
 `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`；第七次专家1359行原文逐字保存为
 `docs/expert_review_20260901_program_through_bank_bottleneck.md`。
 
-当前唯一活动修正是 **Program-through-Bank Bottleneck EBSRI**：Program仍产生native queries、base primal与event weights，但只能作为
-query读取当前真实candidate set；B0形成逐target/rank/event及output group/type匹配的bank response，B1只读该response与固定
-owner/rank/event结构，不得读取raw、centered或relational Program state。最终仍只对真实X/Y执行一个positive-minus-negative exact
-signed measure，形成一个rank4 residual并与carrier12物化为唯一完整rank16。先依次执行topology-matched free-summary S0、真实
-Program-through-bank S1与fresh direct-functional shared S2；不再继续quotient、effective-surrogate、unit-gradient polish或普通超参小扫。
+Program-through-Bank Bottleneck EBSRI的无混杂裁决现已结束。topology-matched free-summary S0正式通过，证明summary-only B1与
+fixed-base+bounded correction存在强task-local解；但只把free tree换成真实Program-query/current-bank B0的fresh S1正式non-pass：task1
+correct fit0/fit1/held为`.827/.855/.798`，task93为`.777/.793/.720`，而两taskwrong、margin、all-pairs和saturation仍全部通过。工程、
+信息墙、Action Meta 0、真实X/Y、chunked exact replay和唯一rank16合同完整。因此S1失败定位在real B0 representation或Program→set
+query不能保持correct能力，不在B1容量；按专家预注册条件不启动shared S2，不以LR/seed/width/rank/normalization修补当前函数类。
 
-Program-through-bank bottleneck的topology-matched S0现已正式通过：task1 correct/held约`.974--.989`、wrong约`-.566`，task93
-correct/held约`.917--.947`、wrong约`-.342--.394`，全部Gate checks、Action Meta 0和唯一rank16成立。该结果把最早接口推进到真实
-Program-through-bank B0；当前立即执行fresh S1，S0只传递aggregate准入证据，不传interaction状态。
+当前唯一活动方向改为专家第7.1节规定的 **bank-conditioned primal**：whole-bank response不再只作为base query之后的logit correction，
+而要更早参与primal方向形成；随后才对当前bank做global dual并执行唯一exact signed replay，最终仍为一个rank4 residual与一套完整
+carrier12+residual4 rank16。第一步只基于专家公式、正式S0/S1和既有R5/P1证据收紧最小计算图、训练所有权及task-local Gate；在该审计
+完成前不把具体head、normalization或loss细节写成authority，也不恢复quotient、effective-surrogate、unit-gradient polish或普通超参小扫。
 
 已验证前身为 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
 Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内
@@ -95,10 +96,12 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   候选架构或启动formal；第七次原文现已完整落盘，owner已采纳其唯一推荐路线；
 - [x] 实现topology-matched structured free-summary S0，完成raw Program旁路不变性、scope isolation、chunk/K与zero-init合同后，fresh执行
   task1/93双task Panel-B Gate；
-- [ ] 只有S0通过，才以不加载S0 interaction状态的fresh R5完成真实Program-through-bank S1，并按同一双task绝对Gate裁决B0 query/set
-  representation；
-- [ ] 只有S1通过，才fresh执行direct-functional shared S2及相邻Gate；不得加载surrogate/polish interaction或使用unit-gradient组合；
-- [ ] 只有bottleneck S2正式通过，才接回Natural Program joint S3并继续held5 strict250 closed-loop。
+- [x] S0通过后，以不加载S0 interaction状态的fresh R5完成真实Program-through-bank S1；双task均因correct/held保持不足正式non-pass，
+  wrong/margin/all-pairs/saturation及全部工程合同通过；
+- [x] 依据S1最早接口停止fixed-base+summary-only correction函数类，不启动原fresh direct-functional shared S2，也不做普通超参小扫；
+- [ ] 按专家第7.1节与现有R5/P1证据实现最小bank-conditioned primal task-local裁决：whole-bank response参与primal形成，current-bank
+  global dual与唯一exact replay保持；通过后才重新定义shared qualification，失败则按新的最早接口裁决；
+- [ ] 只有bank-conditioned primal及后继shared Gate正式通过，才接回Natural Program joint并继续held5 strict250 closed-loop。
 
 ## R5--R13历史里程碑
 

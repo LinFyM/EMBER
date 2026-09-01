@@ -10,9 +10,9 @@
 - owner已采纳唯一后继：Program-through-Bank Bottleneck EBSRI。Program只可作为query读取真实bank；B0输出逐target/rank/event及output
   group/type对齐的set response；B1不得读取raw/centered/relational Program code，只能由bank response和固定结构形成bounded candidate
   correction；最终仍为真实X/Y的唯一exact signed measure、一个rank4 residual与一套完整rank16。
-- 实验顺序固定为topology-matched free-summary S0 → real Program-through-bank S1 → fresh direct-functional shared S2。S0失败即停止当前
-  fixed-base+summary-only correction函数类并把bank response前移到primal；A/B通过而S2在训练任务通过、held interaction稳定失败，则停止
-  当前shared coordinate，不能继续quotient、surrogate、polish或梯度技巧。
+- 实验顺序固定为topology-matched free-summary S0 → real Program-through-bank S1 → fresh direct-functional shared S2。S0已通过而S1现已
+  正式non-pass，因此没有进入S2；按专家预注册停止条件，当前fixed-base+summary-only correction函数类已经淘汰，下一接口必须把
+  whole-bank response前移到bank-conditioned primal形成阶段，不能继续quotient、surrogate、polish、普通超参或梯度技巧。
 - canonical实现从clean pushed main建立`codex/g3-program-through-bank-bottleneck`独立worktree；截至本记录只新增专家原文与authority索引，
   随后已在该唯一实现面接通下述S0 candidate；formal结论仍须由clean pushed detached run给出。
 
@@ -164,6 +164,25 @@
 - 紧邻launch同时live检查：gpu01物理2/3均为`15MiB/0%`、Default且无compute PID，分别绑定NUMA0/1；gpu02无更合适的两个独立空闲
   qualification unit。gpu01的23G condition cache与57G program-bank cache均存在。`/data1` quota为
   `777742580/1073741824KiB`，双run预计新增远低于400MB。exec前再次核对设备、root及detached commit，不等待或占用额外GPU。
+
+### Program-through-Bank Bottleneck S1 formal Gate non-pass
+
+- clean detached `1cdfbfa7bf05ebe369807afdf6d8c99313a9d458`上的task1/93两条fresh world1 run均自然exit 0，完整完成110/110 optimizer
+  steps、checkpoint70/110及五臂Panel-B。正式aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_9047230_gpu01p23_20260901/aggregate.json`，结论`non_pass`；
+  scientific implementation/config authority为`90472301990f3c86d6aabc6acae214f175ab017b`。
+- task1 correct fit0/fit1/held recovery为`.826825/.855228/.797545`，wrong fit0/fit1为`-.659529/-.628416`；task93 correct为
+  `.776511/.792673/.719798`，wrong为`-.178132/-.151166`。两task的wrong、margin、all-pairs及correction saturation checks全部通过，
+  near-bound fraction为0；失败项只在correct absolute与zero-gradient same-task held保持。
+- step0逐tensor误差均为0；Action Meta module/parameter为0，source/Native Stage0 trainable为0，correct-held、wrong-fit1、Panel-B及
+  validation/test/shuffled/reversed均未产生梯度或读取，每condition仍只物化一套完整rank12+4 rank16。task1/93峰值分别为
+  `41,235,517,440/39,836,119,552` bytes，median step为`26.208/22.530s`；最长视频的chunked replay已与reference对齐，故该结论不是
+  OOM、边界状态、pooling或Action Meta污染造成的工程假失败。
+- S0的scope-matched free summary已证明B1及真实X/Y→signed pooling→rank4链有充分capacity，而S1只把free tree换成真实
+  Program-query/current-bank B0后同时损伤两task correct/held、仍能强抑制wrong。最早失效接口因此是real B0 representation或
+  Program→set query不能形成保持能力的bank response，不是B1容量。按专家第7.1节停止条件，不启动fresh shared S2，也不扫
+  LR/seed/width/rank/normalization；下一活动分支是让whole-bank response更早形成bank-conditioned primal，再做current-bank dual与唯一
+  exact replay。具体最小实现与Gate先按专家公式及现有R5/P1证据做无写入接口审计，不能把尚未裁决的细节写成既定架构。
 
 ### EBSRI B0/B1 interface expert-consultation boundary
 

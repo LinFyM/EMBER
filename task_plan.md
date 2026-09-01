@@ -18,8 +18,11 @@ query不能保持correct能力，不在B1容量；按专家预注册条件不启
 
 当前唯一活动方向改为专家第7.1节规定的 **bank-conditioned primal**：whole-bank response不再只作为base query之后的logit correction，
 而要更早参与primal方向形成；随后才对当前bank做global dual并执行唯一exact signed replay，最终仍为一个rank4 residual与一套完整
-carrier12+residual4 rank16。第一步只基于专家公式、正式S0/S1和既有R5/P1证据收紧最小计算图、训练所有权及task-local Gate；在该审计
-完成前不把具体head、normalization或loss细节写成authority，也不恢复quotient、effective-surrogate、unit-gradient polish或普通超参小扫。
+carrier12+residual4 rank16。原图与calibrated Q_free已经证明whole-bank前移能恢复correct，但当前query/anchor/gate仍有
+capacity--specificity权衡；base-LR A_free的同checkpoint零锚审计又证明其policy因果贡献极小、anchor幅度只到candidate约`3.7%`。
+当前只执行一次固定rank4×event8坐标步长的full-native anchor校准，以无混杂裁决task-local函数类；不恢复quotient、effective-surrogate、
+unit-gradient polish，不做LR/seed/width/rank小扫。该task93 Gate通过才补task1并重新定义shared qualification；充分优化后non-pass则按
+最早失效接口结束这一具体bank-conditioned-primal parameterization，不能外推为Program、native bank或ECP整体失败。
 
 已验证前身为 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
 Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内

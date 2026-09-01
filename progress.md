@@ -50,6 +50,31 @@
 - launch前`/data1` quota为`777795408/1073741824KiB`，预计新增远低于`200MB`；fresh output不存在、cache存在。gpu01物理0为
   `GPU-658b6043-6454-1228-bffc-0e2fe22e5013`、Default，外部轻量进程约`3.1GiB/15%`，结合A_free实测峰值仍有约`9GiB`余量；
   gpu01其余卡及gpu02均有更重现存任务。该单task world1无法由DDP提高吞吐，故不复制同一资格单元；exec紧邻时再次确认显存余量与root。
+- A_free formal已自然完成110步、checkpoint70/110及五臂各16次Panel-B。correct fit0/fit1/held为
+  `.815168/.833221/.797238`，wrong fit0/fit1为`.511850/.524298`；只有all-pairs通过，correct、held、wrong与margin均non-pass。
+  final correct/wrong effective-rank4 normalized MSE约`.05053/.69090`，Action Meta 0、source/Stage0 trainable 0、Panel-B backward 0、
+  validation/test/shuffled/reversed 0及唯一rank16合同完整。该结果只淘汰base-LR、zero-init、小幅nested A_free，不能外推为任意full-native
+  free-anchor span或bank-conditioned primal失败。
+- checkpoint110只读审计确认233个free-anchor tensors全部非零、全部optimizer moments非零，合并RMS为`.009404`，但真实candidate-anchor
+  RMS约`.251--.255`，只达到约`3.7%`。逐臂审计又显示free-anchor primal delta RMS约`.062--.065`，仅为candidate delta的约
+  `7--8%`；correct-vs-wrong summary/gate/candidate并非相同，condition/gate/candidate-delta cosine约`.991/.969/.798`，故不是计算图把bank
+  信息完全抹平。
+- 同一checkpoint、同一五臂Panel-B及相同RNG的零梯度配对审计把全部`F_free`精确置零：correct recovery只变化
+  `.00021/.00023/.00266`，wrong仅回升`.01145/.01084`。A_free虽有真实policy因果作用，但幅度远不足以裁决full-native span；最早混杂是
+  direct free-anchor沿用base LR导致anchor-space under-travel，而不是断图、OOM、Action Meta或rank16 materialization。
+- 科学commit `e02f4ca`只把既有free-native anchors移入固定`4 rank × 8 event = 32`坐标步长组；free query仍为`.0224`，anchor从
+  `.0007`改为`.0224`，value nets与family gates仍为`.0007`。新config为
+  `configs/pi05_ecp_bank_conditioned_primal_afree_calibrated_task93_v1.json`；这是一项由同checkpoint因果审计支持的固定校准，不做LR扫、
+  不加参数或新网络。最终两步真实gpu02物理4 smoke自然exit0：initial LRs为`.0007/.0224/.0224`，step0误差`0`，step2 query与全部
+  anchors梯度检查通过，Action Meta/source/Stage0 trainable均为0，峰值`33,600,059,904` bytes、两步`13.53/13.33s`；15项CPU合同、
+  config/compile/diff及architecture guard无hard violation。
+- calibrated A_free formal只fresh运行task93/wrong94，10 warmup+100 effective、checkpoint70/110及原五臂16-visit Panel-B，数据、seed、
+  loss、arm schedule与Gate不变；不读A_free checkpoint/optimizer/cursor，只绑定其formal non-pass与零锚因果证据。计划root为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_afree_calibrated_task93_s110_e02f4ca_gpu02p4_20260901`，从包含本launch record的clean pushed
+  detached descendant执行。launch前gpu02物理4为`1.98GiB/0%`、Default，仅两个外部`.982GiB`轻量进程；实测峰值仍留约`10GiB`余量，
+  gpu02物理6为`4.59GiB/0%`备用，gpu01物理0为`3.11GiB/53%`，其余设备为高占用任务。gpu02已复用只读23GB condition cache；
+  `/data1` quota为`777863584/1073741824KiB`，前一formal仅66MB且新root不存在，预计新增低于100MB。单task world1没有可并行的第二资格单元；
+  若本Gate通过才立即在另一合适GPU执行task1，若non-pass则以充分行使后的anchor规模、逐层分离与Panel-B定位当前函数类最早失效接口。
 
 ### Bank-conditioned primal task93定位与Q_free formal launch contract
 

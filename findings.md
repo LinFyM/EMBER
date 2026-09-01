@@ -1954,3 +1954,15 @@ anchor、current-bank full inverse与exact replay能够恢复absolute容量和sa
 capacity--specificity权衡。下一项有机制依据的task-local资格是nested A_free：保持真实candidate anchor，额外学习跨所有arms/banks/videos
 共享的逐target/rank/event full-native basis，检验最早缺口是否在candidate anchor span/coupling。它不是deployment候选，也不能把通过冒充
 Program-conditioned shared attention成功。
+
+### 118. base-LR A_free只产生微弱policy因果作用，尚未裁决full-native span
+
+A_free task93 formal的correct fit0/fit1/held为`.815/.833/.797`，wrong为`.512/.524`，仍是capacity--specificity non-pass；但checkpoint
+审计显示233个free anchors虽全部进图、更新且optimizer moments非零，合并RMS仅`.00940`，约为真实candidate anchor的`3.7%`。它产生的
+primal delta约为candidate delta的`7--8%`，因此“参数非零”不能冒充full-native capacity已经被充分行使。
+
+更关键的同checkpoint配对因果审计把全部free anchors精确置零后，correct只变化至多`.00266`，wrong suppression只损失约`.011`；同时
+correct/wrong的raw condition、gate和candidate delta本身存在可测方向差，排除了bank输入被完全抹平。故这轮只证伪base-LR、小幅
+A_free，不证伪任意free-native span。下一项且唯一校准把既有anchor的optimizer step按固定`4×8=32`坐标宽度提高到与已验证free-query
+相同的`.0224`，其余图、loss、数据、Gate和参数量不变；这不是普通LR扫。只有充分移动后的同一Panel-B仍non-pass，才能把最早缺口推进到
+summary→family-scalar gate与event-additive shared anchor的表达/耦合，而不是继续指责under-travel。

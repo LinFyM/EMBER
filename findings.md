@@ -1916,3 +1916,15 @@ target/group/type/rank/event作用域，故其失败不能淘汰summary-only B1�
 free summaries做S0，再以Program query真实bank做S1，最后fresh direct-functional shared S2。B1不得直接读取任何高维Program code；
 若S0失败，停止fixed-base+summary-only correction并把bank response前移到primal；若A/B通过而shared held稳定失败，停止当前shared
 coordinate而非继续loss、quotient或梯度技巧。
+
+### 115. scope-matched summary-only B1容量正式成立，最早接口推进到真实B0
+
+Program-through-bank bottleneck S0从fresh R5只训练summary-only candidate heads、task-independent owner/rank/event结构及逐scope
+free correct/wrong trees；raw/centered/relational Program和high-dimensional local code均不能直达B1。clean detached `bc5c34a`的双task
+formal aggregate正式通过：task1 correct fit0/fit1/held为`.989/.974/.989`、wrong为`-.565/-.566`；task93 correct为
+`.947/.940/.917`、wrong为`-.342/-.394`。全部margin/all-pairs/saturation及信息墙成立。
+
+这是一项结构正证据：过去三个quotient S0的task93 non-pass主要受global free token作用域不足混杂，不能用来否定summary-only B1。
+当前fixed-base+bounded correction函数类在真实X/Y、exact signed pooling、rank4和唯一rank16下确有强capacity--specificity解。它仍是
+task-local free-summary upper bound，不证明Program能通过真实bank产生这些summary，也不证明shared compiler；下一最早接口严格是fresh
+S1的Program query→scope-matched real B0 response。S1不得继承S0 interaction状态，aggregate只作准入authority。

@@ -1791,3 +1791,18 @@ owner据此采纳唯一后继Program-through-Bank Bottleneck EBSRI：Program仍�
 query真实candidate set形成逐target/rank/event及output group/type匹配的bank response；B1只读该response和固定结构，最终仍以一个exact
 signed measure pool真实X/Y、形成一个rank4 residual与唯一完整rank16。预注册顺序为topology-matched free-summary S0、real
 Program-through-bank S1、fresh direct-functional shared S2；失败按最早接口分别转向bank-conditioned primal或停止当前shared coordinate。
+
+## 92. Program-through-bank bottleneck S0双task正式通过
+
+clean pushed implementation authority为`b11dc3eec4de47c0861f92bab7fb9a331b90fce4`，formal从只增加launch record的clean detached
+`bc5c34a8400e571cee58a259ce039eea32b0a318`在gpu01物理2/3并行完成task1/93各110步。aggregate为
+`runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/aggregate.json`，结论`pass`。
+
+task1 correct fit0/fit1/held recovery为`.989173/.974203/.989332`，wrong fit0/fit1为`-.565043/-.565553`；task93 correct为
+`.946634/.939966/.916589`，wrong为`-.341756/-.393537`。两task的correct、held、wrong、margin、all-pairs、family与saturation
+全部通过，near-bound fraction为0；110步、checkpoint70/110、五臂Panel-B、Action Meta 0、zero-gradient held/wrong-fit1、唯一完整
+rank16及全部信息墙合同完整。
+
+这一结果只回答topology-matched free-summary S0：切断raw Program旁路后，summary-only B1与fixed base+bounded correction仍有充分
+capacity和bank specificity。它不证明真实B0或shared mapping。下一阶段按专家顺序从R5 fresh运行real Program-through-bank S1，S0只提供
+aggregate准入证据，不能加载其interaction、free summaries、optimizer或cursor。

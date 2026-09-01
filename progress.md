@@ -58,6 +58,21 @@
   `min(correct)-max(wrong)>=.50`、all-pairs、family、saturation、zero-init、信息墙、Action Meta 0和唯一rank16全部通过。aggregate pass前
   不进入S1；工程正确后的non-pass直接淘汰fixed-base+summary-only correction函数类，不以LR/seed/width/rank/步数小扫修补。
 
+### Program-through-Bank Bottleneck S0 formal Gate通过
+
+- clean detached `bc5c34a8400e571cee58a259ce039eea32b0a318`上的task1/93两条world1 run均自然exit 0，110/110 optimizer
+  steps、checkpoint70/110、五臂各16次Panel-B visits及双task aggregate完整。aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/aggregate.json`，正式结论`pass`。
+- task1 correct fit0/fit1/held为`.989173/.974203/.989332`，wrong fit0/fit1为`-.565043/-.565553`；task93 correct为
+  `.946634/.939966/.916589`，wrong为`-.341756/-.393537`。两task的correct、held、wrong、margin、all-pairs及correction saturation
+  checks全部通过，near-bound fraction均为0。
+- step0逐tensor误差均为0；Action Meta module/parameter为0，source/Native Stage0 trainable为0，correct-held、wrong-fit1及Panel-B
+  backward calls均为0，validation/test与shuffled/reversed未读，每condition仍只物化一套完整rank12+4 rank16。task1/93峰值分别为
+  `41,297,756,160/29,294,701,568` bytes，median step为`5.42/11.24s`，formal evidence完整保留。
+- 该Gate只证明无raw Program旁路、scope-matched summary-only B1与fixed-base+bounded correction存在强capacity--specificity解；不证明
+  real Program→B0 set read或shared task-LOTO已成立。下一步严格以fresh R5进入S1，不加载S0 interaction、free tree、optimizer或cursor；
+  S0 aggregate只作准入authority。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

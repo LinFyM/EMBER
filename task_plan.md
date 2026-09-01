@@ -16,6 +16,10 @@ owner/rank/event结构，不得读取raw、centered或relational Program state�
 signed measure，形成一个rank4 residual并与carrier12物化为唯一完整rank16。先依次执行topology-matched free-summary S0、真实
 Program-through-bank S1与fresh direct-functional shared S2；不再继续quotient、effective-surrogate、unit-gradient polish或普通超参小扫。
 
+Program-through-bank bottleneck的topology-matched S0现已正式通过：task1 correct/held约`.974--.989`、wrong约`-.566`，task93
+correct/held约`.917--.947`、wrong约`-.342--.394`，全部Gate checks、Action Meta 0和唯一rank16成立。该结果把最早接口推进到真实
+Program-through-bank B0；当前立即执行fresh S1，S0只传递aggregate准入证据，不传interaction状态。
+
 已验证前身为 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
 Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内
 流式形成event-conditioned whole-bank moments/induced summaries；Pass B1用该summary条件化每candidate correction，再对真实X/Y执行
@@ -89,7 +93,7 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   仍未跨过G3、哪些归因成立及哪里可能走偏，并给出下一步具体架构、训练信号、冻结边界、Gate顺序与停止条件。Program如何进入B0/B1、
   whole-bank context的形式及absolute-code旁路只是其中一个关键接口，不把咨询缩窄成“B0是否必要”；专家回复与owner裁决落盘前不提交
   候选架构或启动formal；第七次原文现已完整落盘，owner已采纳其唯一推荐路线；
-- [ ] 实现topology-matched structured free-summary S0，完成raw Program旁路不变性、scope isolation、chunk/K与zero-init合同后，fresh执行
+- [x] 实现topology-matched structured free-summary S0，完成raw Program旁路不变性、scope isolation、chunk/K与zero-init合同后，fresh执行
   task1/93双task Panel-B Gate；
 - [ ] 只有S0通过，才以不加载S0 interaction状态的fresh R5完成真实Program-through-bank S1，并按同一双task绝对Gate裁决B0 query/set
   representation；

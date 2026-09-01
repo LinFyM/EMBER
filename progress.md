@@ -88,6 +88,29 @@
   fresh shared S2，工程正确后的non-pass则把最早缺口定位为Program-query真实bank形成scope-matched response的B0接口，不以旧S0状态或
   LR/seed/width/rank小扫修补。
 
+### Program-through-Bank Bottleneck S1 formal launch contract
+
+- scientific implementation/config authority为clean pushed `fa8dda6a77993d60ae8441d3876bbf9e0a2d4789`；formal只从包含本launch
+  record、但不改变科学代码/config的clean pushed detached descendant执行。task1/wrong8和task93/wrong94各自为独立world1优化，均从
+  冻结R5 scorer fresh初始化真实B0 set encoder、B1 summary-only candidate heads、task-independent owner/rank/event结构、optimizer、
+  scheduler及RNG；S0 aggregate只作pass准入，不加载S0 interaction、free tree、checkpoint、optimizer或cursor。每task严格10 warmup+100
+  effective steps，保存actual checkpoint70/110并完成correct fit0/fit1/held、wrong fit0/fit1五臂Panel-B，随后双task aggregate裁决。
+- exact entry为两个并行的`python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置
+  `configs/pi05_ecp_event_bank_set_bottleneck_s1_v1.json`；共享只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`及既有90-pair Program-bank cache。task1使用gpu01物理2/NUMA0，task93使用
+  物理3/NUMA1，分别绑定不重叠CPU；两者是全部qualification units，额外GPU不能缩短单个world1任务，故不做DDP、重复run或dummy占卡。
+  环境固定`NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task1_s110_fa8dda6_gpu01p2_20260901`、
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task93_s110_fa8dda6_gpu01p3_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_fa8dda6_gpu01p23_20260901`；2026-09-01 14:07 CST三根均不存在。
+  紧邻launch同时live检查gpu01/gpu02：gpu01物理2/3均为`15MiB/0%`、Default且无compute process，节点cache存在；gpu02仅物理5完全
+  空闲但无第三个独立unit。`/data1` quota为`777725660/1073741824KiB`，同类双run预计远低于`400MB`。exec前再次核对设备与输出根；
+  若外部进程后发使峰值余量不足，只停止本任务并换新root/device fresh运行，不干预他人。
+- S1 Gate与S0相同：两task的correct fit0/fit1各`>=.85`、held`>=.80`、wrong fit0/fit1各`<=.25`、
+  `min(correct)-max(wrong)>=.50`、all-pairs、family、saturation、zero-init、信息墙、Action Meta 0和唯一rank16全部通过。aggregate pass前
+  不进入S2；工程正确后的non-pass按专家停止条件归因于B0 Program-query/current-bank response接口，不做普通超参小扫。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

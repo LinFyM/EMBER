@@ -1,5 +1,26 @@
 # EMBER progress
 
+### Bank-conditioned primal实现与formal launch contract
+
+- clean pushed科学authority为`eb9f295638e4f2f2f47c472cb57bb8607aae21e7`。唯一active计算图按专家§7.1实现为：Program-query真实B0以同一antithetic权重同时形成summary与native anchor，family-shared gate产生
+  `d_B=d0+sum_e G(S)A`，随后才作current-bank full inverse和一次exact replay；旧candidate-logit correction不再进入compiler。
+  source、Stage0、Natural Program、R5 scorer、scale和carrier12冻结，Action Meta module/parameter均为0，最终仍只物化一套完整rank12+4
+  rank16。input无type轴，output只由all-types joint measure形成anchor；四个type summary只作gate context。Y adjacent/init/goal跨chunk及
+  video边界保持。定向CPU合同此前为46项通过；当前authority修订后compile、config/S1 predecessor authority及18项核心定向合同通过，
+  task1/task93真实forward/backward/materialization smoke均自然结束，最长task93峰值由流式checkpoint降至`32,452,854,784` bytes。
+- formal为task1/wrong8与task93/wrong94两个独立world1任务，各fresh训练10 warmup+100 effective steps、保存actual checkpoint70/110，
+  完成correct fit0/fit1/held与wrong fit0/fit1的16-visit Panel-B后双task聚合；不载入S0/S1 interaction、optimizer或cursor。exact entry为两个并行
+  `python scripts/train_ecp_bank_set_tasklocal.py run --config configs/pi05_ecp_bank_conditioned_primal_tasklocal_v1.json --mode formal --stop-after-step 110`，
+  共同只读source step1000、sealed tokenizer/data、R5 checkpoint、gpu01 condition cache与90-pair Program-bank cache。task1使用gpu01物理1，
+  task93使用物理2，分别绑定NUMA0；二者是全部独立qualification units，不用DDP改变逐步task/arm质量。fresh roots为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_task1_s110_eb9f295_gpu01p1_20260901`、
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_task93_s110_eb9f295_gpu01p2_20260901`及
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_gate_s110_eb9f295_gpu01p12_20260901`。
+- launch前live检查gpu01物理0--4均`15MiB/0%`且无compute PID，选择1/2；gpu01物理5/6为他人`100%`任务，gpu02现有占用不优于gpu01空卡。
+  三个fresh roots均不存在，两项cache及模型/data authority存在。`/data1` quota为`777755924/1073741824KiB`，双run与aggregate预计新增
+  远低于`400MB`。Gate沿用task-local五臂：每个correct fit`>=.85`、held`>=.80`、每个wrong`<=.25`、margin`>=.50`且all-pairs；
+  内部loss不作Gate。若non-pass，先按correct-fit、held或wrong最早失效接口裁决，再决定是否执行预登记的free-query/free-anchor条件正控。
+
 ### 2026-09-01第七次专家复核已落盘并获owner执行授权
 
 - 专家1359行原文已完整保存为`docs/expert_review_20260901_program_through_bank_bottleneck.md`。该复核锁定

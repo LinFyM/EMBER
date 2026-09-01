@@ -41,7 +41,6 @@ _TRAINING_IDENTITY_KEYS = (
     "schema_version",
     "stage",
     "mode",
-    "git",
     "config",
     "base_config",
     "source_checkpoint",
@@ -55,6 +54,28 @@ _TRAINING_IDENTITY_KEYS = (
     "information_wall",
     "inventory",
 )
+_STABLE_TRAINING_GIT_KEYS = (
+    "branch",
+    "commit",
+    "upstream",
+    "upstream_commit",
+    "authority_ref",
+    "dirty_paths",
+)
+
+
+def _same_frozen_training_git(
+    training: Mapping[str, Any], current: Mapping[str, Any]
+) -> bool:
+    """Ignore only the moving tip of the authority that still contains HEAD."""
+
+    return (
+        all(
+            training.get(key) == current.get(key)
+            for key in _STABLE_TRAINING_GIT_KEYS
+        )
+        and current.get("authority_contains_commit") is True
+    )
 
 
 def _training_authority(
@@ -64,9 +85,14 @@ def _training_authority(
     if checkpoint.parent != training_root / "checkpoints":
         raise ValueError("PNBTT E1 checkpoint escaped its training root")
     contract = read_json(training_root / "run_contract.json")
-    if any(
-        contract.get(key) != runtime.run_contract.get(key)
-        for key in _TRAINING_IDENTITY_KEYS
+    if (
+        any(
+            contract.get(key) != runtime.run_contract.get(key)
+            for key in _TRAINING_IDENTITY_KEYS
+        )
+        or not _same_frozen_training_git(
+            contract.get("git", {}), runtime.run_contract.get("git", {})
+        )
     ):
         raise ValueError("PNBTT E1 evaluation/training authority changed")
     return training_root, contract

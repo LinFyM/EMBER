@@ -12,6 +12,9 @@ from ember.ecp.bank_conditioning.tangent_parameterization import (
     TaskLocalFreeTangentQuery,
 )
 from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.joint_program_primal.pnbtt_evaluation import (
+    _same_frozen_training_git,
+)
 from ember.ecp.native_factors import NativeTargetChunk, NativeVideoReadout
 from ember.ecp.native_materialization import small_core_balanced_svd
 from ember.ecp.natural_program import NaturalProgram
@@ -24,6 +27,32 @@ def _owners() -> tuple[TargetOwner, ...]:
         TargetOwner(1, "v", TargetFamily.V, 0, 4, 6),
         TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 2, 4),
         TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 4, 2),
+    )
+
+
+def test_frozen_training_git_allows_only_authority_tip_to_advance() -> None:
+    training = {
+        "branch": "",
+        "commit": "1" * 40,
+        "origin_main": "1" * 40,
+        "upstream": None,
+        "upstream_commit": None,
+        "authority_ref": "origin/main",
+        "authority_commit": "1" * 40,
+        "authority_contains_commit": True,
+        "dirty_paths": [],
+    }
+    current = {
+        **training,
+        "origin_main": "2" * 40,
+        "authority_commit": "2" * 40,
+    }
+    assert _same_frozen_training_git(training, current)
+    assert not _same_frozen_training_git(
+        training, {**current, "commit": "3" * 40}
+    )
+    assert not _same_frozen_training_git(
+        training, {**current, "authority_contains_commit": False}
     )
 
 

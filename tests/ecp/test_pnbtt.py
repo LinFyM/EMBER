@@ -12,6 +12,7 @@ from ember.ecp.bank_conditioning.tangent_parameterization import (
     PNBTT_SIDES,
     TaskLocalFreeTangentQuery,
 )
+from ember.ecp.bank_conditioning.tangent_transport import TangentTransportVideo
 from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.joint_program_primal.pnbtt_evaluation import (
     _same_frozen_training_git,
@@ -268,6 +269,27 @@ def test_pnbtt_full_transport_has_zero_step0_fixed_k_mass_and_bank_sensitivity()
     swapped = _video(owners, seed=17, width=8, events=2)
     zero = _video(owners, seed=23, width=8, events=2, zero_values=True)
     scale = torch.ones(len(owners))
+
+    tangent_videos = tuple(
+        TangentTransportVideo(
+            native=compiler._compact_native(video),
+            context=compiler._bank_context(video),
+        )
+        for video in (first, second)
+    )
+    candidates_per_video = first.native.frame_count * 2 * 50
+    for scope in (
+        compiler.tangent_transport._input_scope(tangent_videos, target=0),
+        compiler.tangent_transport._output_scope(tangent_videos, target=0),
+    ):
+        torch.testing.assert_close(
+            scope.event_mass[..., :candidates_per_video].sum(-1),
+            torch.full_like(scope.event_mass[..., 0], 0.5),
+        )
+        torch.testing.assert_close(
+            scope.event_mass[..., candidates_per_video:].sum(-1),
+            torch.full_like(scope.event_mass[..., 0], 0.5),
+        )
 
     with torch.no_grad():
         step0 = compiler(program, (first,), s_ref=scale)

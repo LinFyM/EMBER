@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -311,6 +312,20 @@ def test_shared_compiler_video_set_is_permutation_invariant() -> None:
     videos = tuple(
         _video(owners, seed=seed, chunks=(2, 2), width=width, events=events)
         for seed in (31, 37, 41, 43)
+    )
+    reference = videos[0]
+    videos = tuple(
+        replace(
+            video,
+            canonical_assignment=reference.canonical_assignment,
+            frame_positions=reference.frame_positions,
+            local_scene=reference.local_scene,
+            local_process=reference.local_process,
+            local_presence=reference.local_presence,
+            local_tau=reference.local_tau,
+            local_sigma=reference.local_sigma,
+        )
+        for video in videos
     )
     scale = torch.ones(len(owners))
     forward = compiler(program, videos, s_ref=scale)

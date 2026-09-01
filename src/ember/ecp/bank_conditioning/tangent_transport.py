@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
+from functools import cached_property, partial
 from typing import Sequence
 
 import torch
@@ -50,6 +50,48 @@ PNBTT_FAMILIES = (
 class TangentTransportVideo:
     native: CompactPrimalDualVideo
     context: ProgramBankContext
+
+    @cached_property
+    def canonical_order_key(self) -> tuple[bytes, ...]:
+        """Content identity used only to stabilize unordered-set reductions."""
+
+        context_tensors = (
+            self.context.canonical_assignment,
+            self.context.frame_positions,
+            self.context.local_scene,
+            self.context.local_process,
+            self.context.local_presence,
+            self.context.local_tau,
+            self.context.local_sigma,
+        )
+        native_tensors = (
+            self.native.frame_measure,
+            self.native.input_values[0],
+            self.native.input_values[-1],
+            self.native.output_values[0],
+            self.native.output_values[-1],
+            self.native.final_outputs[0],
+            self.native.final_outputs[-1],
+        )
+        context = torch.cat(
+            tuple(value.detach().float().flatten() for value in context_tensors)
+        )
+        native_samples = []
+        for value in native_tensors:
+            flat = value.detach().float().flatten()
+            if flat.numel() > 16:
+                indices = torch.linspace(
+                    0, flat.numel() - 1, 16, device=flat.device
+                ).long()
+                flat = flat.index_select(0, indices)
+            native_samples.append(flat)
+        native = torch.cat(native_samples)
+        return (
+            repr(tuple(tuple(value.shape) for value in context_tensors)).encode(),
+            context.contiguous().cpu().numpy().tobytes(),
+            repr(tuple(tuple(value.shape) for value in native_tensors)).encode(),
+            native.contiguous().cpu().numpy().tobytes(),
+        )
 
 
 @dataclass(frozen=True)
@@ -130,19 +172,20 @@ class NativeBankTangentTransport(torch.nn.Module):
         if len(packed) <= 1:
             return packed
 
-        def signature(video: TangentTransportVideo) -> bytes:
-            context = video.context
-            compact = torch.cat(
-                (
-                    context.local_scene.detach().float().flatten(),
-                    context.local_process.detach().float().flatten(),
-                    context.local_presence.detach().float().flatten(),
-                    context.local_tau.detach().float().flatten(),
-                )
-            )
-            return compact.contiguous().cpu().numpy().tobytes()
+        return tuple(sorted(packed, key=lambda video: video.canonical_order_key))
 
-        return tuple(sorted(packed, key=signature))
+    @staticmethod
+    def _equal_video_event_mass(value: torch.Tensor) -> torch.Tensor:
+        """Give each valid video-event scope unit mass before the fixed 1/K mix."""
+
+        if value.ndim < 2 or torch.any(value < 0) or not bool(torch.isfinite(value).all()):
+            raise BankConditioningError("PNBTT per-video event measure changed")
+        total = value.sum(-1, keepdim=True)
+        return torch.where(
+            total > 0,
+            value / total.clamp_min(1e-30),
+            torch.zeros_like(value),
+        )
 
     @staticmethod
     def _metadata(context: ProgramBankContext) -> torch.Tensor:
@@ -186,7 +229,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             event = (
                 assignment[:, :, None, None] * base[None].float()
             ).reshape(self.event_slots, -1)
-            event = event / base.float().sum().clamp_min(1e-30) * beta
+            event = self._equal_video_event_mass(event) * beta
             values.append(flat_value)
             metadata.append(candidate_metadata.reshape(-1, 3))
             base_masses.append(flat_base)
@@ -235,10 +278,11 @@ class NativeBankTangentTransport(torch.nn.Module):
             )
             scoped_base = scoped_base.expand(-1, groups, -1).float()
             assignment = context.canonical_assignment.float().T
-            event = assignment[:, :, None, None, None] * normalized_base[None]
+            event = assignment[:, :, None, None, None] * base[None].float()
             event = event.permute(4, 0, 1, 2, 3).reshape(
                 types, self.event_slots, -1
             )
+            event = self._equal_video_event_mass(event) * beta
             event = event[:, None].expand(-1, groups, -1, -1)
             candidate_metadata = self._metadata(context).reshape(-1, 3)
             scoped_metadata = candidate_metadata[None, None].expand(

@@ -2075,5 +2075,26 @@ correct--wrong operator cosine从`.839/.748`降到`.712/.627`，q/v goal也从�
 显著下降一致；但q/v input仍约`.958`，q/v abs仍约`.927/.963`，correct方向没有被打开。
 
 因此停止继续修改key chart、增加`m`或做LR/seed/width小扫。该谱只证明v2的收益是specificity-side几何分离，不单独证明rank4 ceiling；
-下一证据严格限于专家允许的一次同构PNBTT task-local full-rank16 oracle。只有它相对rank4 residual明显改善，才重开carrier/task
+当时的下一证据因而严格限于专家允许的一次同构PNBTT task-local full-rank16 oracle。只有它相对rank4 residual明显改善，才重开carrier/task
 rank分配；否则rank扩展停止。
+
+### 126. Full-rank16 oracle暴露稳定的任务依赖容量--特异性反转，不重开rank分配
+
+唯一专家允许的同构oracle从clean detached
+`1897b8dceecf93d1b3063b6f42a78f286cb699b2`完成110步与macro70/110五臂Panel-B，formal root为
+`runs/outputs/pi05_ecp_pnbtt_e1_fullrank16_oracle_s110_57969a68_gpu01p12_20260902/`。它只把
+`carrier12+task4`替换为`carrier0+task16`，保持family-key PNBTT、free query、数据、loss、LR、seed、110步cadence与Gate不变；
+每condition仍只输出一套38-target rank16，Action Meta、held/Panel-B backward和validation/test reads均为0。
+
+macro70 task1 correct fit0/fit1/held为`.953328/.933839/.941449`、wrong为`.648060/.719726`；task93
+correct为`.557237/.561168/.411465`、wrong为`-.001312/-.007719`。macro110 task1 correct为
+`.960297/.941644/.948351`、wrong为`.634156/.711548`；task93 correct为`.586174/.595686/.449605`、wrong为
+`-.006466/-.021862`。两checkpoint总体与逐task均相邻一致`non_pass`，且all-pairs、near-bound、训练完成性与信息墙均成立。
+
+该结果的正证据是：task16 transport并非全然无容量，它在task1恢复了高correct，在task93将wrong压到近0。负证据是：两种性质
+在两任务上稳定反转，没有同时满足correct/held与wrong/margin，也没有相对rank4形成一致、广泛、明显更优的端点。因此
+按专家§5.10不重开carrier/task rank分配，不试中间rank、scale、seed、LR或额外chart，不进入E2。
+
+这一non-pass只结束已允许的PNBTT E1扩展序列。E1冻结Natural Program，所以它不裁决Program schema、G2、native X/Y、signed pooling或整个ECP。
+专家次选B需要“E1 free-query real-bank transport先通过，再由frozen G2 Program导致系统失败”，而当前第一前提未满足；whole-Writer D也是A通过
+容量与real Program Gate后的后续。因此当前是一个真实的route/authority阻塞，但仍不足以宣告ECP或zero-interaction的根本停止。

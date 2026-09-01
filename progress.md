@@ -6,10 +6,10 @@
 
 - canonical集成目标为`main`。锁定科学提交为`a185fe223d1ef77635d83696c3e164a48520edbf`；第八次全局专家原文已逐字归档并在
   `3101232204265f379ad2282ecf9a1a9ee30bad8c`推送。
-- owner已在2026-09-02正式采纳专家主选A并建立active goal：以PNBTT替换已停止的Program--bank接口，持续推进E0--E4和最终
-  matched whole-Writer joint，直至满足正式闭环合同或出现真实阻塞。
-- 当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`；旧
-  `summary -> family-scalar gate -> shared event-additive anchor`不再是active实现。
+- owner已在2026-09-02正式采纳专家主选A并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地推进到
+  最终合同或真实阻塞。这一goal仍保持active，但专家允许的PNBTT E1容量修订序列已全部完成且稳定non-pass。
+- `docs/program_conditioned_native_bank_tangent_transport_design.md`作为刚结束的科学authority保留；当前没有获准的新active design或
+  implementation route。旧`summary -> family-scalar gate -> shared event-additive anchor`同样不是active实现。
 - PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。首个single-key-chart E1在
   macro70/110相邻checkpoint均为`non_pass`。step110 task1 correct fit0/fit1/held为`.641984/.660311/.622909`、wrong为
   `.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为`.006121/.269427`。all-pairs、near-bound与
@@ -19,8 +19,9 @@
   99%谱能量rank与末端10%能量均表明没有有效谱被key width截断；q/v各side的功能梯度保留率和跨family差异则支持专家规定的
   family-shared nonlinear trunk + target-specific低秩key projection。该结构修订的fresh E1已从clean detached `75db5f84`
   完成，macro70/110相邻一致`non_pass`。同一step110的v2 train-only spectrum也已完成：key width仍未截谱，family chart只分离了
-  部分output-side correct/wrong几何，没有恢复q/v correct功能梯度可达性。当前不进入E2，也不再修改key chart；下一步只做专家允许的
-  单次同构task-local full-rank16 oracle。该oracle实现与两步真实profile已在`57969a68`完成，当前准备clean detached formal。
+  部分output-side correct/wrong几何，没有恢复q/v correct功能梯度可达性。专家允许的单次同构task-local full-rank16 oracle也已
+  完成：macro70/110总体与逐task均相邻一致`non_pass`，任务1恢复correct却无法压低wrong，任务93压低wrong却无法
+  恢复correct。该反转在70到110稳定，没有相对rank4形成“明显更优”，因此不重开rank分配，不进入E2。
 
 ## 最新科学结论
 
@@ -48,10 +49,19 @@
   但也伤害correct；candidate delta的correct/wrong cosine约`.718--.772`，占主导的free delta约`.993--.995`。
 - 最早缺口因此是高相似summary经family-scalar gate调制共享event-additive anchor时只能近同向移动correct/wrong，无法把bank内容差异
   放大为所需功能分离。停止边界只覆盖这一具体parameterization。
+- PNBTT的single-key chart、首次tangent spectrum、family-key chart、v2 spectrum和唯一full-rank16 oracle已按专家§5.10顺序
+  全部执行。full-rank16 macro70上task1 correct fit0/fit1/held为`.953328/.933839/.941449`、wrong为
+  `.648060/.719726`；task93 correct为`.557237/.561168/.411465`、wrong为`-.001312/-.007719`。macro110为
+  task1 `.960297/.941644/.948351` vs `.634156/.711548`，task93 `.586174/.595686/.449605` vs
+  `-.006466/-.021862`。两checkpoint均为`non_pass`，任务依赖反转稳定。
+- 正证据是task16 transport在task1可恢复高correct，在task93可产生强specificity；负证据是它不能在两任务上同时兼得，也没有
+  相对rank4呈现一致、广泛、明显更优。因此当前PNBTT E1扩展序列结束，不进入E2、不做中间rank或小超参扫。
+- 次选B只在“E1 free-query real-bank transport通过，但换成frozen G2 Program后系统失败”时触发；当前第一前提未满足。
+  whole-Writer D同样是A通过容量与real Program Gate后的后续，当前未获准。这是可执行路线的authority阻塞，不是ECP根本停止证据。
 
 完整历史及每个旧架构的结果在`docs/research_history.md`；长期跨轮结论在`findings.md`；八份专家原文均位于`docs/`。
 
-## 当前active路线
+## 刚结束的PNBTT路线与当前边界
 
 - PNBTT保留G2 Natural Program、真实38-target X/Y及四类output bank、frame quadrature、exact signed replay、small-core
   canonicalization与首版carrier12+residual4。
@@ -60,14 +70,13 @@
 - 首个E1 single-key-chart与family-key v2均稳定non-pass。v2 spectrum相对首版的q correct-preserve-wrong中位仅从input
   `.555`到`.566`，四类output约为`.174/.235/.220/.224`；v input从`.463`到`.476`，abs改善到`.643`，但adj/init/goal反而从
   `.808/.727/.734`降到`.769/.685/.693`。尾端10%谱能量仍近零；family chart主要把action-out adj/goal operator cosine从
-  `.839/.748`降到`.712/.627`，与formal wrong改善一致，却未补足correct容量。因此不增加`m`或继续改chart；只用一次同构
-  full-rank16 oracle判别carrier12/task4是否是剩余瓶颈，E1通过前不进入E2。
+  `.839/.748`降到`.712/.627`，与formal wrong改善一致，却未补足correct容量。因此不增加`m`或继续改chart。
 - 唯一full-rank16 oracle只比较rank分配端点：保持相同family-key PNBTT、free query、数据、loss、Gate和110步cadence，将
   `carrier12+task4`改为`carrier0+task16`；最终仍是单一38-target rank16，不形成rank28或第二adapter。task16冻结幅度先验由与`s_ref`
   一致的fit19、非held task-local rank16 Action Experts做exact small-core singular component RMS后task-equal median得到；不读取
-  validation/test，也没有task/video lookup。
-- 专家远程artifact缺口中大部分本地已存在；当前实质缺少G2逐condition Program tensors，因此E2从frozen G2 checkpoint按condition重算，
-  不误用fixed-token S1语义或cache。
+  validation/test，也没有task/video lookup。该oracle已稳定non-pass，未触发rank重开条件。
+- 当前没有active implementation route。E2所需的G2逐condition Program tensors可从frozen G2 checkpoint按condition重算，但E1未通过，
+  因此不得启动这一工作，也不得误用fixed-token S1语义或cache。
 
 ## 最新formal evidence
 
@@ -85,6 +94,10 @@
   `runs/analysis/pi05_ecp_pnbtt_e1_family_key_tangent_spectrum_m128_step110_75db5f84_gpu01p12_20260902/`；同一v2 macro110、
   task1/93各16个Panel-A visits、共380个target-side spectra，held/Panel-B/validation/test均未使用，`completion.json`完整，
   耗时`381.48s`。
+- PNBTT full-rank16 oracle：
+  `runs/outputs/pi05_ecp_pnbtt_e1_fullrank16_oracle_s110_57969a68_gpu01p12_20260902/`；训练authority为clean detached
+  `1897b8dceecf93d1b3063b6f42a78f286cb699b2`，110步、macro70/110 checkpoints、两次五臂各16次Panel-B、raw metrics、
+  run contracts、completion与`evaluations/qualification.json`均完整；总体与逐task均相邻一致`non_pass`。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -105,13 +118,13 @@
 
 ## 仓库与workspace整理
 
-- 交接前58个累积worktree已清理；首个E1、family-key E1及两次spectrum结束后对应detached evidence worktree均已删除。当前只保留
-  canonical main与唯一`codex/pnbtt`实现worktree；v2训练/spectrum日志已移入各自formal root，`.codex/tmp`仅保留正在运行formal的
-  临时launcher与外置日志。
+- 交接前58个累积worktree已清理；首个E1、family-key E1、两次spectrum及full-rank16 formal结束后对应detached evidence worktree均已删除。当前只保留
+  canonical main与唯一`codex/pnbtt`实现worktree；训练/评测日志已移入各自formal root，`.codex/tmp`已为空。
+- full-rank16 formal结束并核对证据后，其clean detached worktree已通过`git worktree remove`清理；formal root及两枚checkpoint完整保留。
 - full-rank16 formal启动后已删除被提交记录取代的两步disposable profile及两个非运行worktree的Python/pytest cache。为保持一个
   canonical Writer运行面，删除4个只暴露已退役EBSRI/J3/routing-control路线的旧runner：`train_ecp_bank_set_shared.py`、
   `train_ecp_bank_set_tasklocal.py`、`evaluate_ecp_bank_set_shared.py`、`evaluate_ecp_joint_program_primal.py`；历史modules、configs、tests和
-  formal artifacts仍保留审计，active PNBTT训练与checkpoint评测统一由`train_ecp_joint_program_primal.py`执行。
+  formal artifacts仍保留审计，PNBTT的已结束训练与checkpoint评测均由唯一`train_ecp_joint_program_primal.py`运行面执行。
 - 删除8个local `codex/*` branch：已合并分支由`main`保存；两个未合并EBSRI S2草案因S1预注册non-pass而失去执行资格；历史
   `g3-vector-interaction@2295f48`仍由`origin/codex/g3-vector-interaction`保存。
 - 已删除完整并入`main`的远程`codex/g3-bank-set-relative-interaction`与`codex/g3-v4-evaluator-authority`；未合并的
@@ -122,8 +135,8 @@
   `docs/research_history.md`。后续profile只作可删除工程证据，不与formal roots混存。
 - 未删除或移动dataset、models、formal runs、checkpoints、raw rows、aggregate、source policy、task experts、condition caches或
   ownership不清资产。
-- tracked科学代码、测试和历史configs暂不在专家裁决前退役，避免提前删除新路线可能需要审计或复用的实现；active计算面仍以当前main为唯一
-  canonical source，旧结果不得因文件仍存在而恢复为路线。
+- tracked科学代码、测试和历史configs暂不在新专家裁决前退役，避免提前删除新路线可能需要审计或复用的实现；当前main是唯一
+  canonical source，但没有active计算路线，旧结果不得因文件仍存在而恢复为路线。
 
 ## 当前执行状态
 
@@ -142,7 +155,7 @@
   非对称LoRA零初始化预期为0；step2 shared-key梯度为`.293542`，task1/93 paired policy distance为`.003844/.002297`，correct/wrong已分离。
 - 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 macro70/110均完成五臂各16次Panel-B；两枚checkpoint的task gate均为
   `non_pass`，总体与逐task结论一致。step110相对step70的correct/held改善仅`.013--.037`；near-bound最大值从未超过`.022005`，
-  因此当前失败不是softmax饱和、训练过短或Natural Program。下一动作是专家指定的`T=Cov(v,k)`功能梯度投影谱，不进入E2。
+  因此首个E1失败不是softmax饱和、训练过短或Natural Program；后续已按专家指定完成`T=Cov(v,k)`功能梯度投影谱。
 - `T=Cov(v,k)`诊断已自然完成：380个谱均来自train-side Panel-A，operator列数固定1024；除结构性零bank外，99%谱能量rank远低于
   1024且末端10%能量通常不超过`1e-6`量级，因此不增加`m`。q/v的功能梯度保留与correct/wrong operator重合暴露的是chart
   表达问题。family-shared nonlinear trunk + target-specific rank16 low-rank projection已经接入；`m=128`、rank4、query、loss、
@@ -152,8 +165,8 @@
   `25.266s`，两rank峰值allocated为`39.789/37.260GB`、reserved为`46.272/44.082GB`，无OOM或non-finite。
 - `0f052cccc9ddb96fbcaaa2a036fdc61ee190d945`在不改变当前K1 E1的前提下补齐E2前置硬合同：每条视频在每个有效
   event/scope先归一为等质量再按`1/K`混合，并缓存授权内容排序键以稳定集合归约；K2每半event mass精确为`.5`，相同Program
-  context下的native内容换序测试通过。`a2c3fe9e`同时把canonical runner默认配置从退役J3收敛到当前PNBTT v2；两提交均已
-  fast-forward并推送至`main`，正在运行的E1仍固定在其祖先`75db5f84`。
+  context下的native内容换序测试通过。`a2c3fe9e`同时把canonical runner默认配置从退役J3收敛到当时PNBTT v2；两提交均已
+  fast-forward并推送至`main`，family-key E1在运行期间仍固定在其祖先`75db5f84`。
 - fresh E1 formal launch：从`02633a39`之后只增加本记录的clean pushed detached `75db5f84`运行；配置为
   `configs/pi05_ecp_pnbtt_e1_family_key_v2.json`，task1/93双rank DDP、110 optimizer steps、macro70/110 checkpoints，数据、
   Panel-A/B、loss与Gate完全复用首个E1。使用gpu01物理1/2，launch瞬间两卡均空闲，固定`NCCL_P2P_DISABLE=1`和NUMA0；输出
@@ -175,19 +188,27 @@
   shape。16项native/PNBTT与22项shared-compiler/functional focused tests通过。gpu01物理1/2两步真实profile自然完成，step1/2为
   `29.469/28.910s`；step2 task1/93 free-query梯度`9.883/11.488`、shared-key梯度`.205305`，全部finite。两rank峰值
   allocated为`39.841/38.584GB`、reserved为`45.722/44.080GB`，没有OOM；相对rank4约`25.3s`只增加约17%步时。
-- 计划formal root为
+- full-rank16 formal已从clean detached `1897b8dceecf93d1b3063b6f42a78f286cb699b2`自然完成，root为
   `runs/outputs/pi05_ecp_pnbtt_e1_fullrank16_oracle_s110_57969a68_gpu01p12_20260902/`。配置固定
   `configs/pi05_ecp_pnbtt_e1_fullrank16_oracle_v1.json`，task1/93双rank、110步、macro70/110、五臂各16次Panel-B；除rank分配和对应
-  fit19冻结task16 scale prior外，E1数据、三项loss、LR、seed与Gate均不变。launch前重新live检查两节点、配额与目标root；只从最新
-  clean pushed detached commit运行，不覆盖任何旧root。
+  fit19冻结task16 scale prior外，E1数据、三项loss、LR、seed与Gate均不变。两枚checkpoint、Writer、optimizer/trainer state、raw rows、
+  run contracts、completion、evaluation logs和qualification均完整，所有launcher exit为0。
 - formal launch preflight已同时检查两节点：gpu01物理1/2均仅`15MiB`、util `0%`，物理3/4也空闲；gpu02物理5空闲、4/6可共驻，
   0--3与7为他人高负载任务。训练选择gpu01物理1/2与NUMA0，因为两task一rank一卡已是有效拓扑且复用该节点23GB condition cache；
   不跨节点拼卡、不干扰他人。`/data1` user blocks为`772567180/1073741824 KiB`，参考上一formal仅`94684 KiB`且本轮两个更大
   Writer checkpoints仍预估小于`1GB`；目标root确认不存在。固定`NCCL_P2P_DISABLE=1`、world-size2、相同commit exact resume，
   macro70出现后可在仍空闲的物理3/4并行Panel-B以隐藏评测时间。
+- full-rank16 macro70 task1 correct fit0/fit1/held为`.953328/.933839/.941449`、wrong为`.648060/.719726`；task93
+  correct为`.557237/.561168/.411465`、wrong为`-.001312/-.007719`。macro110 task1 correct为
+  `.960297/.941644/.948351`、wrong为`.634156/.711548`；task93 correct为`.586174/.595686/.449605`、wrong为
+  `-.006466/-.021862`。两枚task gate均为`non_pass`，overall/per-task conclusion consistent与training complete均为true。该结果在
+  task1通过correct/held却失败wrong/margin，在task93则通过wrong/margin却失败correct/held；两task的all-pairs和near-bound都通过。
+  因此它是稳定科学non-pass，不是训练未完成、饱和、OOM或评测错误。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
-  set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
-  detached scientific authority。
+  set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变当时冻结的
+  detached scientific authority，该formal运行现已完成。
 - `50f876cb0e5e2e3623a4b77e768d67658960fccc`修正detached formal评测把会正常前进的`origin/main` tip误当训练身份的问题；
   现在仍锁定实际commit、clean/detached拓扑与全部科学合同，只允许包含该commit的authority tip前进。26项focused tests通过。
-- `HANDOFF.md`已消费并删除；长期信息全部由authority、active design、本文件与Git保存。
+- 当前没有EMBER训练、评测或GPU任务。下一步必须是owner将full-rank16 formal证据返回专家，或明确授权一条不与已有触发条件冲突的
+  新路线。在此之前不实现新架构、不改实验配置、不启动E2/B/D或GPU工作；这一暂停是authority阻塞，不是对ECP的根本否定。
+- `HANDOFF.md`已消费并删除；长期信息全部由authority、已结束的PNBTT design、本文件与Git保存。

@@ -1932,3 +1932,26 @@ abs仍约`.927/.963`，没有恢复correct方向可达性。尾端10%谱能量�
 该证据停止`m`扩展和更多key-chart变体，也不授权LR、seed或rank sweep。它本身不证明rank4 ceiling；按专家§5.10只准入一次同构
 PNBTT task-local full-rank16 oracle，且输出仍为唯一38-target rank16。只有该oracle相对rank4 residual明显改善才重开carrier/task
 rank分配，否则停止rank扩展。
+
+## 101. PNBTT full-rank16 oracle稳定non-pass并结束已授权的E1扩展序列
+
+oracle实现authority为`57969a6895adfe2e336e5d83a30d1a80c12d47d2`，formal从只增加launch记录的clean detached
+`1897b8dceecf93d1b3063b6f42a78f286cb699b2`运行，root为
+`runs/outputs/pi05_ecp_pnbtt_e1_fullrank16_oracle_s110_57969a68_gpu01p12_20260902/`。task1/93在gpu01物理1/2完成110步，
+macro70在物理3/4与训练并行评测，macro110在训练结束后使用同样两卡完成；两个checkpoint、五臂各16次Panel-B、raw metrics、
+run contracts、completion和相邻qualification均完整，所有launcher exit为0。
+
+macro70 task1 correct fit0/fit1/held为`.953328/.933839/.941449`、wrong为`.648060/.719726`；task93 correct为
+`.557237/.561168/.411465`、wrong为`-.001312/-.007719`。macro110 task1 correct为
+`.960297/.941644/.948351`、wrong为`.634156/.711548`；task93 correct为`.586174/.595686/.449605`、wrong为
+`-.006466/-.021862`。在task1，correct/held、all-pairs和near-bound通过，wrong/margin失败；在task93，wrong/margin、all-pairs和
+near-bound通过，correct/held失败。两枚checkpoint总体和逐task均相邻一致`non_pass`。
+
+该oracle只将`carrier12+task4`替换为`carrier0+task16`，其余family-key PNBTT、free query、E1数据、三项loss、LR、seed、110步
+cadence与Gate均不变；仍只物化一套38-target rank16，Action Meta、held/wrong-fit1/Panel-B backward和validation/test读取均为0。
+70到110的结果稳定表明：task16可在单task上分别恢复capacity或specificity，但两者在task1/93上反转，没有相对rank4形成一致、广泛、明显
+更优的rank分配证据。按专家§5.10，rank扩展至此停止，不运行中间rank、scale、seed、LR或额外chart变体。
+
+E1的free-query real-bank transport仍未通过，所以E2不启动；专家次选B所要求的“E1通过但换成frozen G2 Program后系统失败”未发生，
+whole-Writer D的A路线前置Gate也未满足。因此PNBTT不再是active implementation route，需要owner返回新专家裁决或明确扩展authority才能继续。
+这一停止只覆盖已实际测试的PNBTT E1函数类与扩展序列，不裁决冻结的Natural Program、G2、native X/Y、signed pooling或整个ECP。

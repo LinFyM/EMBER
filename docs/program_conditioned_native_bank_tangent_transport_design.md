@@ -1,6 +1,6 @@
 # Program-Conditioned Native-Bank Tangent Transport
 
-状态：**active design**
+状态：**concluded scientific authority; not an active implementation route**
 owner裁决日期：2026-09-02
 方法authority：`docs/expert_review_20260902_global_route_reassessment.md`第5--8节。
 
@@ -9,7 +9,7 @@ dimension、数值solver、cache shard和microbatch属于实现选择，但不�
 
 ## 1. 目标与停止边界
 
-当前唯一active路线是保留Stage0、G2 Natural Program、真实native X/Y、四类output bank、frame quadrature、exact signed
+本路线在2026-09-02实际保留Stage0、G2 Natural Program、真实native X/Y、四类output bank、frame quadrature、exact signed
 pooling、small-core canonicalization和首版carrier12+residual4，删除deployment主路径中的：
 
 - absolute Program primal；
@@ -147,8 +147,8 @@ target/side加rank16线性低秩residual projection。该target residual只调�
 `.616630/.620958/.601512`、wrong为`.027332/.051458`；task93 correct/held为`.707775/.725727/.655429`、wrong为
 `.047247/.223365`。它明显提高wrong specificity，但没有恢复absolute correct capacity，70到110改善仅`.0053--.0210`。
 v2 step110上的同一train-only tangent spectrum已经完成。`m=128`仍没有截断有效谱；family chart降低了部分output-side
-correct--wrong operator重合并解释wrong改善，但q/v correct功能梯度保留没有实质提高。因而当前仍不进入E2，也不再增加`m`或修改
-key chart。下一步只运行专家§5.10允许的一次同构PNBTT task-local full-rank16 oracle；其输出仍必须是唯一38-target rank16，只有相对
+correct--wrong operator重合并解释wrong改善，但q/v correct功能梯度保留没有实质提高。因而当时不进入E2，也不再增加`m`或修改
+key chart，随后只运行专家§5.10允许的一次同构PNBTT task-local full-rank16 oracle；其输出仍必须是唯一38-target rank16，只有相对
 rank4 residual明显改善才重开carrier/task rank分配。该结论不涉及冻结的Natural Program，也不授权width、LR、seed或rank sweep。
 
 该唯一oracle采用两个合法rank16分配端点的直接比较：已完成arm为`carrier12 + PNBTT task4`，oracle为`carrier0 + PNBTT task16`。
@@ -156,6 +156,17 @@ rank4 residual明显改善才重开carrier/task rank分配。该结论不涉及�
 形成rank28、压缩两套adapter或部署第二carrier。task16 scale先验冻结为fit19、非held rank16 Action Experts完整LoRA的逐target
 small-core singular component matrix-RMS task-equal median，并以同一fit19 expert-minus-carrier `s_ref`归一；validation/test、held task、
 task/video lookup均为0。除rank分配及其必要的冻结scale authority外，E1数据、loss、seed、LR、110步与Gate保持不变。
+
+该唯一full-rank16 oracle已在clean detached `1897b8dceecf93d1b3063b6f42a78f286cb699b2`完成formal训练和
+macro70/110 Panel-B，两枚checkpoint的总体与逐task结论均相邻一致`non_pass`。macro110上task1 correct
+fit0/fit1/held为`.960297/.941644/.948351`，但wrong为`.634156/.711548`；task93 wrong为
+`-.006466/-.021862`，但correct仅`.586174/.595686/.449605`。macro70已呈现同一反转，到110没有翻转。
+
+因此full-rank16只证明当前transport能在单个任务上分别表现高correct容量或强wrong specificity，没有形成一致、广泛、
+相对rank4明显更优的rank分配证据。按专家§5.10，E1的single chart、tangent spectrum、family chart、v2 spectrum和唯一
+full-rank16 oracle序列至此耗尽：不重开rank分配，不进入E2，不做中间rank、scale、seed、LR或额外chart扫描。
+PNBTT作为当前active implementation route结束；在owner返回新专家裁决或明确扩展authority前，不实现新路线。
+这一边界不裁决冻结的Natural Program，也不等于ECP或zero-interaction根本停止。
 
 ### E2：真实frozen Natural Program到bank transport
 

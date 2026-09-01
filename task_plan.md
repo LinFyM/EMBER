@@ -8,13 +8,13 @@ EMBER最终目标仍是：从exact language与一条或多条same-task、action-
 38-target rank16 LoRA，并在固定validation8取得稳定、具备breadth、Goal/Long贡献、same-task鲁棒性和视频因果性的strict paired
 correct `>145/400`。
 
-owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，依次完成
-E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专家未要求的流程性Gate，持续推进到满足最终合同或出现
-经过充分尝试仍无法继续的真实阻塞。
+owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地
+推进E0--E4与matched whole-Writer joint adjudication，直到满足最终合同或出现经充分尝试仍无法继续的真实阻塞。
 
-当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`。实现必须从最新clean pushed `main`建立唯一
-`codex/pnbtt`分支/worktree；最小真实forward/gradient/materialization smoke后立即进入E1/E2，不用全量测试、通用重构或文档整理
-阻塞科学结果。GPU只在实际launch前同时live检查gpu01/gpu02。
+PNBTT E0和专家允许的E1容量修订序列现已全部完成；最后一次同构task-local full-rank16 oracle仍在macro70/110相邻一致
+`non_pass`，且没有相对rank4呈现专家要求的“明显更优”。因此`docs/program_conditioned_native_bank_tangent_transport_design.md`
+作为刚结束的科学authority保留，但当前没有获准的新active design或implementation route。E2、次选B和whole-Writer D的
+专家前置触发条件均未满足；下一动作是将这一formal证据返回专家，或由owner明确扩展方法authority，不自行发明新路线。
 
 ## 当前科学停止点
 
@@ -32,6 +32,12 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
   native X/Y、signed pooling、rank4或整个ECP失败。
 - PNBTT family-key v2也已在macro70/110相邻一致`non_pass`：它显著压低wrong，但correct/held容量仍不足。该结果只停止当前
   family-shared nonlinear key chart + target-specific rank16 key residual + rank4 transport，不裁决Natural Program或整个PNBTT。
+- 唯一full-rank16 oracle也在macro70/110稳定`non_pass`。macro110上task1 correct fit0/fit1/held为
+  `.960297/.941644/.948351`，但wrong为`.634156/.711548`；task93 wrong为`-.006466/-.021862`，但correct仅
+  `.586174/.595686/.449605`。这一任务依赖的容量--特异性反转在70到110保持，没有呈现一致广泛的明显改善，
+  所以按专家§5.10停止rank扩展，不进入E2。
+- 这是当前路线/authority阻塞，不是整个ECP的根本停止证据：E1冻结Natural Program，因而未形成“PNBTT容量已通过但真实
+  Program系统失败”的B路线触发条件；matched whole-Writer两臂也尚未被允许运行。
 
 ## 当前执行顺序
 
@@ -49,13 +55,11 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
    low-rank key projection的fresh E1；macro70/110均为`non_pass`，wrong明显改善但correct/held稳定不足；
 9. [x] 在v2 macro110上复跑同一train-only tangent spectrum：`m=128`仍未截断有效谱，family chart只在部分output side降低
    correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
-10. [ ] 只运行专家允许的一次同构PNBTT task-local full-rank16 oracle，输出仍为唯一38-target rank16；只有它相对rank4 residual
-   明显改善才重开carrier/task rank分配，否则停止rank扩展并按E1失败边界裁决下一接口；实现与双A40真实两步profile已完成，下一动作是
-   clean detached formal macro70/110及相邻Panel-B裁决；
-11. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
-   full-vs-language/endpoints；
-12. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
-13. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
+10. [x] 完成专家允许的唯一同构PNBTT task-local full-rank16 oracle；macro70/110相邻一致`non_pass`，稳定呈现task1高correct/
+    高wrong与task93低wrong/低correct的反转，未相对rank4明显更优，因此不重开carrier/task rank分配；
+11. [ ] E1通过后才能进入E2真实frozen G2 Natural Program到bank transport；当前E1未通过，本步未触发；
+12. [ ] E2通过后才能进入E3；只有E1容量通过而E2真实Program系统失败才触发次选B，当前未触发；
+13. [ ] E4 matched component-init与fully-random whole-Writer joint只在上游Gate满足后运行，当前未获准；
 14. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为

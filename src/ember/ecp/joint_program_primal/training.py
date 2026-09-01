@@ -141,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--condition-cache-root", type=Path, required=True)
     parser.add_argument("--program-bank-condition-cache-root", type=Path)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--evaluate-checkpoint", type=Path)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--log-every", type=int, default=1)
     return parser
@@ -159,6 +160,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "condition_cache_root",
         "program_bank_condition_cache_root",
         "resume",
+        "evaluate_checkpoint",
     ):
         value = getattr(args, name)
         if value is not None:

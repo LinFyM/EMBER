@@ -10,7 +10,9 @@
   matched whole-Writer joint，直至满足正式闭环合同或出现真实阻塞。
 - 当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`；旧
   `summary -> family-scalar gate -> shared event-additive anchor`不再是active实现。
-- 当前尚未启动训练、评测或GPU任务；先完成active authority提交和唯一`codex/pnbtt`实现面，launch前才live检查gpu01/gpu02。
+- 唯一`codex/pnbtt`实现worktree已完成PNBTT运行面与E0；接入专家要求的paired generated-to-carrier `D_policy`后，最新双卡两步真实
+  profile已结束且不作为formal evidence。当前无运行中GPU任务，下一步将实现提交、推送并从clean pushed detached authority启动
+  E1 step70/110 formal与零梯度Panel-B。
 
 ## 最新科学结论
 
@@ -88,5 +90,17 @@
 ## 当前执行状态
 
 - 第八次专家原文、代码/config/authority冲突和formal evidence已完成逐项复核；未发现推翻主路线判断的结果错误。
-- active authority正在收敛；随后从clean pushed main建立唯一`codex/pnbtt`分支/worktree并开始实现。
+- PNBTT canonical compiler已接通：Natural Program只供query，real bank同时供key/value；包含可微batched key whitening、joint-K等video
+  质量、exact chunked antithetic signed replay、四类output scope、38-target rank4 materialization及唯一carrier12+residual4 rank16。
+- E1 task-local free-query训练与Panel-B evaluator已接通；policy、Program、carrier/scale、native values与Action Meta均冻结，correct fit0/fit1和
+  wrong fit0产生梯度，held/wrong fit1/Panel-B为零梯度。task8/94只提供unrelated Panel-A states，preservation用同一keyed flow
+  time/noise比较generated与carrier真实action velocity；wrong-video仍有单侧carrier上界。run contract从真实policy/Program模块审计
+  Action Meta，而非声明式写零。
+- E0 synthetic hard checks通过：zero native value给出zero residual；candidate/video排列与chunked replay误差仅为FP32低位；K2 video质量各
+  `.5`；bank swap改变方向；forward/gradient finite；真实policy消费唯一38-target rank16。
+- 首个真实双卡profile因一次性保留38-target covariance/Cholesky autograd图在A40约44GiB OOM；按target即时链式回传后不改变梯度
+  （synthetic leaf-gradient最大误差`0`）。接入真实`D_policy`后的最新两步profile在task1/task93 microbatch 8/4下稳定完成，分别为
+  `25.000/24.665s`；rank0/1峰值allocated为`39.773/36.154GB`、reserved为`46.376/44.109GB`。step1 free-query梯度非零且shared key按
+  非对称LoRA零初始化预期为0；step2 shared-key梯度为`.293542`，task1/93 paired policy distance为`.003844/.002297`，correct/wrong已分离。
+- 上述profile只验证工程图与吞吐，不参与E1科学Gate。代码收敛、提交与clean-main integration正在进行，随后立即启动formal。
 - `HANDOFF.md`已消费并删除；长期信息全部由authority、active design、本文件与Git保存。

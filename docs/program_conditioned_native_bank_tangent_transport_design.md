@@ -63,7 +63,9 @@ u     = C^(-1/2) q
 ```
 
 `C^(-1/2)`必须在训练时保持对query/key projection可微；只在数值必要时对小矩阵使用FP64。B0不产生base primal或native
-direction，只保存`O(m^2)` sufficient statistics。
+direction，语义上的持久输出只有`O(m^2)` sufficient statistics。当前E1/K1实现为尽快取得transport资格证据，会在单target内瞬时
+物化candidate/key/event-mass张量并在targetwise回传后释放；进入E2的K2/K4前必须改成真正chunk-streaming moments/replay，不能把当前
+瞬时张量实现误报成`O(m^2)`峰值内存。
 
 ### B1：唯一signed bank transport
 
@@ -80,8 +82,9 @@ video reliability。
 
 ### 唯一rank4 residual与rank16
 
-event只通过归一化`rho`聚合。output types只允许task-independent、预注册的family/type RMS平衡，不能重新引入condition-dependent
-family scalar gate。每个target形成四对`a_r/b_r`并物化rank4 residual，再复用small-core balanced SVD，与frozen carrier12严格
+event只通过归一化`rho`聚合。output types先各自用同一固定epsilon做无参数safe-RMS normalization，再按预注册的family/type固定权重
+混合；该归一化规则可随当前bank数值确定尺度，但没有condition输出的可学习scalar，也不能重新引入family gate。每个target形成四对
+`a_r/b_r`并物化rank4 residual，再复用small-core balanced SVD，与frozen carrier12严格
 拼接为唯一38-target rank16 LoRA。
 
 代码事实修正：历史`A_free`实际位于`gate * (candidate_anchor + free_anchor)`内部，且按task-local module、target、group、
@@ -165,9 +168,11 @@ E3是whole-Writer run的早期检查点，不是独立长期课程。E2通过而
 
 ## 6. 最小loss与扩容
 
-只使用专家规定的三项：跨episode correct functional loss、wrong-video necessity loss、carrier/source preservation loss。权重只从
-train tasks的梯度量级预注册校准；不使用validation调权。不加入behavior-Gram、factor reconstruction、cosine、hidden separation、
-chart alignment、effective teacher或polish loss。
+只使用专家规定的三项：跨episode correct functional loss、wrong-video necessity loss、carrier/source preservation loss。E1的
+preservation在task8/task94 Panel-A states上，以同一keyed flow time/noise直接计算generated与carrier真实policy action-velocity MSE，
+并保留wrong-video adapter不能显著劣于carrier的单侧约束；不能用第二份teacher-action flow loss冒充`D_policy`。权重只从train tasks的
+梯度量级预注册校准；不使用validation调权。不加入behavior-Gram、factor reconstruction、cosine、hidden separation、chart
+alignment、effective teacher或polish loss。
 
 on-policy仅在离线functional loss已产生稳定闭环增量后加入；Action Meta仅在base Writer有明确闭环增量后做matched control。
 
@@ -177,6 +182,10 @@ scale小扫替代接口判断。
 
 ## 7. 执行与证据
 
+- 运行面所有权：`shared_compiler.py`只编排canonical PNBTT；`tangent_parameterization.py`拥有Program/free query与native key；
+  `key_value_replay.py`拥有可微moments/whitening与antithetic replay；`tangent_transport.py`拥有joint-K native scopes和38-target
+  transport；`pnbtt_runtime.py`、`pnbtt_tasklocal.py`、`pnbtt_training.py`、`pnbtt_evaluation.py`分别拥有authority/data、E1 arms与唯一
+  rank16、Panel-A VJP和零梯度Panel-B。旧`bank_operator`只为既有frozen cache schema提供序列化兼容，live forward不得调用其spectral solve；
 - 实现面保持一个canonical PNBTT runner/config schema；旧sealed configs只由Git和formal artifacts保存，不原地改status字节；
 - E0 smoke后立即profile真实condition，再按live gpu01/gpu02状态选择1--6张A40；不固定两卡或35GB；
 - formal run来自clean pushed commit的detached frozen worktree，保留exact command、环境、data/cache authority、checkpoint、raw rows、

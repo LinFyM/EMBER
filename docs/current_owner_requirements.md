@@ -129,8 +129,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   owner指令继承，并在每次launch前用live身份、进程、显存与utilization重新裁决。节点暂时离线或重启不代表长期禁用。
 - 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
-- 吞吐优化同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、step wall time、计算段SM/UTL、memory UTL与显存峰值
-  调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
+- 训练、functional forward、推理和closed-loop评测的吞吐优化都同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、
+  samples/s、step wall time、计算段SM/UTL、memory UTL与显存峰值调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、
+  dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满
   48GB本身不构成低效。反之也不得自设`35GiB`或其它固定显存上限：最长真实样本、allocator波动和共驻进程仍有安全余量且不OOM时，
   可以使用更高显存；最终选择以真实吞吐、持续利用率和稳定余量为准。
 - 实际墙钟成本必须与训练/评测规模相称。formal launch前要用真实condition/step profile外推完整训练和Gate评测；若一个只有少量更新的
@@ -145,6 +146,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 - canonical集成目标是`main`。只有需要隔离或并发写入时创建`codex/*`分支和worktree，验证后尽快合并、推送并清理。
 - 不在活动树保留退役实现、平行fallback、过时配置、重复文档或临时结果；历史由Git、formal artifacts和一份精简历史记录保存。
 - 代码、文档、branch、worktree和运行产物应在每个阶段及时整理，不等到几十版后集中失控。
+- 训练、评测或其它长GPU阶段等待期间，并行完成已确认的退役代码、陈旧文档、temporary artifacts和workspace收敛；清理不得占用
+  关键GPU资源、干扰运行进程或反过来延迟下一科学节点。
 
 ## 8. 沟通与交接
 

@@ -1994,3 +1994,27 @@ anchor under-travel。相对base-LR A_free，correct改善约`.02--.04`，wrong�
 bank-conditioned-primal parameterization，不启动task1/shared/Natural Program。负证据不淘汰真实native X/Y、signed pooling、rank4、
 Program schema或ECP整体；任何后继都必须是能让Program与当前bank内容共同决定方向的结构性机制，而非anchor/query LR、seed、width、
 rank或更多同类scalar gate修补。
+
+### 120. PNBTT真实图已接通，E1的首个工程阻塞由targetwise链式回传解除
+
+PNBTT E0已在真实frozen policy、G2 Program与38-target native bank上接通：Program只产生低维query，当前bank的candidate经共享key encoder
+决定whitened transport geometry，并继续作为唯一native value；四类output scope用joint-K等video质量和exact chunked antithetic signed
+measure生成rank4 residual，最终只物化一套carrier12+residual4 rank16。synthetic hard checks覆盖zero-value、candidate/video permutation、
+K1/K2、chunk equivalence、bank swap、finite gradient与唯一materialization，Action Meta从真实模块inventory审计为0。
+
+首个双卡真实profile在三条functional VJP后保留全部38-target covariance/Cholesky图，A40约44GiB处OOM；这是可复现工程内存问题，不是
+科学non-pass。将functional leaf gradient按target立即链回Writer后，synthetic full-vs-targetwise leaf-gradient最大误差为0，真实两步profile
+在task1/task93 microbatch 8/4下约`18.9--19.1s/step`稳定完成。非对称LoRA零初始化使初始effective delta严格为0但output-query首步可得
+梯度；第二步shared-key projection梯度为`.451895`，correct/wrong已产生分离。该结果只准入E1 formal，不作为E1 Gate证据。
+
+### 121. E1 preservation已修正为专家规定的paired policy distance并通过真实双卡梯度profile
+
+早期E1草案曾在task8/task94 states上再次计算teacher-action flow-loss hinge；这仍依赖unrelated teacher action，不等价于专家要求的
+`D_policy(pi_generated, pi_carrier)`。当前实现已改为在同一Panel-A states、完全相同的keyed flow time/noise下，直接比较generated与
+carrier的真实PI05 action velocity MSE；carrier输出可按panel visit只读缓存，source policy与carrier始终冻结。wrong-video adapter相对
+carrier的单侧functional上界继续保留，validation/test、held、wrong fit1与Panel-B仍无梯度。
+
+最新task1/task93双A40两步profile分别耗时`25.000/24.665s`，两rank计算段均接近满载；step2 shared-key梯度`.293542`，paired
+policy distance为`.003844/.002297`且finite。rank0/1峰值allocated为`39.773/36.154GB`、reserved为`46.376/44.109GB`，task1已接近
+A40安全上限，task93虽有更多显存余量但与task1步时平衡，因此不为占满显存继续增大microbatch。该profile仍只属工程准入，不是E1
+科学Gate；正式结论只认clean pushed detached commit上的step70/110与零梯度Panel-B。

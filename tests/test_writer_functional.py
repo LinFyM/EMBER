@@ -5,6 +5,9 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from ember.ecp.joint_program_primal.pnbtt_policy_distance import (
+    paired_policy_velocity_distance_gradient,
+)
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -425,6 +428,65 @@ def test_pi05_loss_only_masks_action_chunk_tail() -> None:
     velocity = policy.model.action_out_proj(policy.model.projection(actions)) + 0.005
     expected = (-actions - velocity)[0, 0].square().mean()
     assert torch.allclose(loss, expected)
+
+
+def test_pnbtt_policy_distance_pairs_rng_caches_carrier_and_only_grads_generated() -> None:
+    from lerobot.utils.constants import (
+        ACTION,
+        OBS_LANGUAGE_ATTENTION_MASK,
+        OBS_LANGUAGE_TOKENS,
+    )
+
+    policy = _TinyPi05Policy()
+    contract = _tiny_pi05_contract()
+    carrier = prepare_frozen_writer_policy(policy, contract)
+    generated = {name: value.detach().clone() for name, value in carrier.items()}
+    generated[next(name for name in generated if ".lora_B." in name)].fill_(0.03)
+    batch = {
+        "image": torch.randn(20, 3, 4, 4),
+        ACTION: torch.randn(20, 2, 3),
+        OBS_LANGUAGE_TOKENS: torch.ones(20, 4, dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(20, 4, dtype=torch.bool),
+    }
+    common = {
+        "batch": batch,
+        "policy_rng_seed": 303,
+        "policy_rng_device": torch.device("cpu"),
+        "flow_time_sampling_scheme": LATIN_BETA_TIME_SAMPLING_SCHEME,
+        "flow_noise_sampling_scheme": ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        "policy_microbatch_size": 4,
+    }
+    distance, gradients, cached = paired_policy_velocity_distance_gradient(
+        policy, generated, carrier, contract, **common
+    )
+    draws = tuple(policy.model.flow_draws)
+    assert distance > 0
+    assert cached.shape == (20, 2, 3)
+    assert len(draws) == 10
+    assert all(
+        torch.equal(draws[index][axis], draws[index + 1][axis])
+        for index in range(0, len(draws), 2)
+        for axis in (0, 1)
+    )
+    assert any(bool(torch.count_nonzero(value)) for value in gradients.values())
+    assert all(bool(torch.isfinite(value).all()) for value in gradients.values())
+
+    policy.model.flow_draws.clear()
+    replayed, replayed_gradients, replayed_cache = (
+        paired_policy_velocity_distance_gradient(
+            policy,
+            generated,
+            carrier,
+            contract,
+            cached_carrier_velocity=cached,
+            **common,
+        )
+    )
+    assert replayed == pytest.approx(distance, rel=1e-7, abs=1e-9)
+    assert replayed_cache.data_ptr() == cached.data_ptr()
+    assert len(policy.model.flow_draws) == 5
+    for name in gradients:
+        torch.testing.assert_close(replayed_gradients[name], gradients[name])
 
 
 @pytest.mark.parametrize("policy_microbatch_size", (16, 10))

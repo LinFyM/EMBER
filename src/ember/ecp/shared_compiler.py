@@ -1,4 +1,4 @@
-"""Current-bank primal-to-dual Pass B for the frozen-Program G3 compiler."""
+"""Canonical PNBTT Writer compiler over frozen PI0.5 native banks."""
 
 from __future__ import annotations
 
@@ -7,33 +7,26 @@ from typing import Sequence
 
 import torch
 
-from ember.ecp.bank_conditioning.program_bank_interaction import (
-    EventConditionedBankSetInteraction,
-    ProgramBankContext,
-    ProgramBankInteractionState,
-)
 from ember.ecp.bank_conditioning.primal_dual_runtime import (
     CompactPrimalDualVideo,
     PrimalDualVideoOperator,
-    PrimalDualVideoResult,
 )
-from ember.ecp.bank_conditioning.program_primal import (
-    PrimalProgramState,
-    ProgramNativePrimalScorer,
+from ember.ecp.bank_conditioning.program_bank_interaction import ProgramBankContext
+from ember.ecp.bank_conditioning.tangent_transport import (
+    NativeBankTangentTransport,
+    ProgramTangentQuery,
+    TangentTransportResult,
+    TangentTransportVideo,
+    pnbtt_event_weights,
 )
 from ember.ecp.contracts import TargetOwner
-from ember.ecp.native_factors import (
-    NativeFactorError,
-    NativeFactorResidual,
-    NativeVideoReadout,
-    rms_normalize,
-)
+from ember.ecp.native_factors import NativeFactorError, NativeVideoReadout
 from ember.ecp.natural_program import NaturalProgram
 
 
 @dataclass(frozen=True)
 class SharedCompilerVideo:
-    """One independently ordered video and its frozen G2 alignment evidence."""
+    """One independently ordered video and its G2 alignment evidence."""
 
     native: NativeVideoReadout
     canonical_assignment: torch.Tensor
@@ -45,26 +38,15 @@ class SharedCompilerVideo:
     local_sigma: torch.Tensor
 
 
-@dataclass(frozen=True)
-class SharedCompilerOutput:
-    residual: NativeFactorResidual
-    input_directions: tuple[torch.Tensor, ...]
-    output_directions: tuple[torch.Tensor, ...]
-    video_weights: torch.Tensor
-    frame_measures: tuple[torch.Tensor, ...]
-    output_group_gains: tuple[torch.Tensor, ...]
-    solve_metrics: torch.Tensor
-    conditioning_metrics: torch.Tensor
+SharedCompilerOutput = TangentTransportResult
 
 
 class SharedNativeFactorCompiler(torch.nn.Module):
-    """Generate one rank-four residual through the current native bank.
+    """Generate the only rank-four residual through PNBTT.
 
-    The shared network predicts native *primal* directions from the complete
-    Program.  For every video, B0 accumulates global unit-mass X/Y covariance,
-    maps the primal into that bank's dual coordinate, and B1 applies exact
-    antithetic signed pooling to the same real native candidates.  The final
-    output remains one task residual and one complete rank16 adapter.
+    ``bank_operator`` is retained temporarily only as the serializer for the
+    existing frozen K1 X/Y caches.  It is not on the PNBTT deployment forward;
+    B0/B1 are owned solely by ``tangent_transport``.
     """
 
     native_dual_matmul_precision = "ieee_fp32_no_tf32"
@@ -75,72 +57,66 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         *,
         program_width: int = 128,
         event_slots: int = 8,
+        key_width: int = 128,
+        query_hidden_width: int = 256,
+        covariance_ridge: float = 1e-3,
+        native_rms_epsilon: float = 1e-6,
+        direction_epsilon: float = 1e-2,
+        query_epsilon: float = 1e-4,
+        score_epsilon: float = 1e-4,
+        replay_chunk_size: int = 2048,
+        temperature_by_side: Sequence[float] = (1.0, 1.0, 1.0, 1.0, 1.0),
+        type_balance: torch.Tensor | None = None,
+        scale_prior_ratio: torch.Tensor | None = None,
         relative_eigenvalue_floor: float = 1e-6,
         replay_score_rms: float = 0.02,
         covariance_frame_chunk: int = 4,
         inverse_covariance_power: float = 1.0,
-        interaction_summary_value_width: int = 16,
-        interaction_hidden_width: int = 64,
-        scale_prior_ratio: torch.Tensor | None = None,
+        **retired_options: object,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
         self.program_width = int(program_width)
         self.event_slots = int(event_slots)
-        self.relative_eigenvalue_floor = float(relative_eigenvalue_floor)
-        self.replay_score_rms = float(replay_score_rms)
-        self.covariance_frame_chunk = int(covariance_frame_chunk)
-        self.inverse_covariance_power = float(inverse_covariance_power)
+        if type_balance is None:
+            type_balance = torch.full((4, 4), 0.25, dtype=torch.float32)
         if scale_prior_ratio is None:
             scale_prior_ratio = torch.full(
                 (len(self.owners), 4), 0.1, dtype=torch.float32
             )
-        scale_prior_ratio = scale_prior_ratio.detach().float()
-        if (
-            not self.owners
-            or self.program_width <= 0
-            or self.event_slots <= 0
-            or not 0.0 < self.relative_eigenvalue_floor < 1.0
-            or self.replay_score_rms <= 0.0
-            or self.covariance_frame_chunk <= 0
-            or self.inverse_covariance_power not in (0.5, 0.75, 1.0)
-            or scale_prior_ratio.shape != (len(self.owners), 4)
-            or not bool(torch.isfinite(scale_prior_ratio).all())
-            or not bool(torch.all((scale_prior_ratio > 0) & (scale_prior_ratio < 1)))
-        ):
-            raise NativeFactorError("invalid primal-dual compiler topology")
-        self.register_buffer(
-            "scale_prior_ratio", scale_prior_ratio.clone(), persistent=True
-        )
-        self.primal_scorer = ProgramNativePrimalScorer(
+        if retired_options:
+            unexpected = ", ".join(sorted(retired_options))
+            raise NativeFactorError(f"retired compiler option reached PNBTT: {unexpected}")
+        self.query = ProgramTangentQuery(
             self.owners,
             program_width=self.program_width,
             event_slots=self.event_slots,
+            key_width=int(key_width),
+            hidden_width=int(query_hidden_width),
+            query_epsilon=float(query_epsilon),
         )
-        self.bank_set_interaction = EventConditionedBankSetInteraction(
+        self.tangent_transport = NativeBankTangentTransport(
             self.owners,
-            program_width=self.program_width,
             event_slots=self.event_slots,
-            summary_value_width=interaction_summary_value_width,
-            hidden_width=interaction_hidden_width,
+            key_width=int(key_width),
+            covariance_ridge=float(covariance_ridge),
+            native_rms_epsilon=float(native_rms_epsilon),
+            direction_epsilon=float(direction_epsilon),
+            score_epsilon=float(score_epsilon),
+            replay_chunk_size=int(replay_chunk_size),
+            temperature_by_side=temperature_by_side,
+            type_balance=type_balance,
+            scale_prior_ratio=scale_prior_ratio,
         )
         self.bank_operator = PrimalDualVideoOperator(
             self.owners,
             program_width=self.program_width,
             event_slots=self.event_slots,
-            relative_eigenvalue_floor=self.relative_eigenvalue_floor,
-            replay_score_rms=self.replay_score_rms,
-            covariance_frame_chunk=self.covariance_frame_chunk,
-            inverse_covariance_power=self.inverse_covariance_power,
+            relative_eigenvalue_floor=float(relative_eigenvalue_floor),
+            replay_score_rms=float(replay_score_rms),
+            covariance_frame_chunk=int(covariance_frame_chunk),
+            inverse_covariance_power=float(inverse_covariance_power),
         )
-        self.scale_head = torch.nn.Sequential(
-            torch.nn.LayerNorm(self.program_width),
-            torch.nn.Linear(self.program_width, self.program_width),
-            torch.nn.GELU(),
-            torch.nn.Linear(self.program_width, 1),
-        )
-        torch.nn.init.zeros_(self.scale_head[-1].weight)
-        torch.nn.init.zeros_(self.scale_head[-1].bias)
 
     @staticmethod
     def _bank_context(video: SharedCompilerVideo) -> ProgramBankContext:
@@ -154,22 +130,34 @@ class SharedNativeFactorCompiler(torch.nn.Module):
             local_sigma=video.local_sigma,
         )
 
-    def _interaction_states(
-        self,
-        state: PrimalProgramState,
-        contexts: Sequence[ProgramBankContext],
-    ) -> tuple[ProgramBankInteractionState, ...]:
-        input_queries = self.primal_scorer.input_event_queries(state)
-        output_queries = self.primal_scorer.output_event_queries(state)
-        return tuple(
-            ProgramBankInteractionState(
-                context=context,
-                rank_event=state.rank_event,
-                event_weights=state.event_weights,
-                input_event_queries=input_queries,
-                output_event_queries=output_queries,
-            )
-            for context in contexts
+    def _compact_native(self, video: SharedCompilerVideo) -> CompactPrimalDualVideo:
+        """Stream only raw frozen X/Y needed by PNBTT; never solve the old dual."""
+
+        self.bank_operator.validate_video(video)
+        input_blocks: list[list[torch.Tensor]] = [[] for _ in self.owners]
+        output_blocks: list[list[torch.Tensor]] = [[] for _ in self.owners]
+        next_frame = 0
+        with torch.no_grad():
+            for chunk in video.native.chunks():
+                if chunk.start_frame != next_frame or chunk.frame_count <= 0:
+                    raise NativeFactorError("PNBTT native stream changed")
+                for target, (x, y) in enumerate(
+                    zip(chunk.inputs, chunk.outputs, strict=True)
+                ):
+                    input_blocks[target].append(x.detach())
+                    output_blocks[target].append(y.detach())
+                next_frame += chunk.frame_count
+        if next_frame != video.native.frame_count:
+            raise NativeFactorError("PNBTT native stream ended early")
+        return CompactPrimalDualVideo(
+            frame_measure=self.bank_operator.quadrature(video.frame_positions),
+            input_operators=(),
+            output_operators=(),
+            input_values=tuple(torch.cat(rows, dim=0) for rows in input_blocks),
+            output_values=tuple(torch.cat(rows, dim=0) for rows in output_blocks),
+            final_outputs=tuple(
+                value.detach() for value in video.native.final_outputs
+            ),
         )
 
     def forward(
@@ -178,72 +166,20 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         videos: Sequence[SharedCompilerVideo],
         *,
         s_ref: torch.Tensor,
+        query_override: torch.Tensor | None = None,
     ) -> SharedCompilerOutput:
-        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
-            raise NativeFactorError("compiler video set or scale authority changed")
-        for video in videos:
-            self.bank_operator.validate_video(video)
+        if len(videos) not in (1, 2, 4):
+            raise NativeFactorError("PNBTT video cardinality changed")
         with self.bank_operator.ieee_matmul(s_ref.device):
-            state: PrimalProgramState = self.primal_scorer.program_state(program)
-            input_primals = self.primal_scorer.input_primals(state)
-            output_primals = self.primal_scorer.output_primals(state)
-            interaction_states = self._interaction_states(
-                state, tuple(self._bank_context(video) for video in videos)
+            compact = tuple(self._compact_native(video) for video in videos)
+            contexts = tuple(self._bank_context(video) for video in videos)
+            return self.forward_compact(
+                program,
+                compact,
+                s_ref=s_ref,
+                bank_contexts=contexts,
+                query_override=query_override,
             )
-            prepared = tuple(self.bank_operator.prepare(video) for video in videos)
-            compact = tuple(self.bank_operator.compact(video) for video in prepared)
-            pooled = tuple(
-                self._bank_conditioned_video(
-                    video,
-                    input_primals=input_primals,
-                    output_primals=output_primals,
-                    interaction_state=interaction_state,
-                )
-                for video, interaction_state in zip(compact, interaction_states, strict=True)
-            )
-            return self._output(state, pooled, s_ref=s_ref)
-
-    def _bank_conditioned_video(
-        self,
-        video: CompactPrimalDualVideo,
-        *,
-        input_primals: tuple[torch.Tensor, ...],
-        output_primals: tuple[torch.Tensor, ...],
-        interaction_state: ProgramBankInteractionState,
-    ) -> PrimalDualVideoResult:
-        _, conditioned_inputs, conditioned_outputs = self._condition_bank(
-            video,
-            input_primals=input_primals,
-            output_primals=output_primals,
-            interaction_state=interaction_state,
-        )
-        return self.bank_operator.apply_compact(
-            video, conditioned_inputs, conditioned_outputs
-        )
-
-    def _condition_bank(
-        self,
-        video: CompactPrimalDualVideo,
-        *,
-        input_primals: tuple[torch.Tensor, ...],
-        output_primals: tuple[torch.Tensor, ...],
-        interaction_state: ProgramBankInteractionState,
-    ):
-        """Read B0 once and form the only primals consumed by current-bank dualization."""
-
-        summaries = self.bank_operator.summarize_compact(
-            video,
-            bank_set_interaction=self.bank_set_interaction,
-            interaction_state=interaction_state,
-        )
-        conditioned_inputs, conditioned_outputs = (
-            self.bank_set_interaction.bank_conditioned_primals(
-                input_primals=input_primals,
-                output_primals=output_primals,
-                summaries=summaries,
-            )
-        )
-        return summaries, conditioned_inputs, conditioned_outputs
 
     def forward_compact(
         self,
@@ -252,97 +188,19 @@ class SharedNativeFactorCompiler(torch.nn.Module):
         *,
         s_ref: torch.Tensor,
         bank_contexts: Sequence[ProgramBankContext],
+        query_override: torch.Tensor | None = None,
     ) -> SharedCompilerOutput:
-        """P2 replay of cached raw X/Y without storing expanded output banks."""
-
-        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
-            raise NativeFactorError("compact compiler video set changed")
-        if len(bank_contexts) != len(videos):
-            raise NativeFactorError("compact compiler bank context changed")
-        with self.bank_operator.ieee_matmul(s_ref.device):
-            state: PrimalProgramState = self.primal_scorer.program_state(program)
-            input_primals = self.primal_scorer.input_primals(state)
-            output_primals = self.primal_scorer.output_primals(state)
-            interaction_states = self._interaction_states(state, bank_contexts)
-            pooled = tuple(
-                self._bank_conditioned_video(
-                    video,
-                    input_primals=input_primals,
-                    output_primals=output_primals,
-                    interaction_state=interaction_state,
-                )
-                for video, interaction_state in zip(
-                    videos, interaction_states, strict=True
-                )
-            )
-            return self._output(state, pooled, s_ref=s_ref)
-
-    def forward_base_compact(
-        self,
-        program: NaturalProgram,
-        videos: Sequence[CompactPrimalDualVideo],
-        *,
-        s_ref: torch.Tensor,
-    ) -> SharedCompilerOutput:
-        """Frozen R5 reference for diagnostics; never a deployment route."""
-
-        if len(videos) not in (1, 2, 4) or s_ref.shape != (len(self.owners),):
-            raise NativeFactorError("compact base-reference video set changed")
-        with self.bank_operator.ieee_matmul(s_ref.device):
-            state: PrimalProgramState = self.primal_scorer.program_state(program)
-            input_primals = self.primal_scorer.input_primals(state)
-            output_primals = self.primal_scorer.output_primals(state)
-            pooled = tuple(
-                self.bank_operator.apply_compact(
-                    video,
-                    input_primals,
-                    output_primals,
-                )
-                for video in videos
-            )
-            return self._output(state, pooled, s_ref=s_ref)
-
-    def _output(
-        self,
-        state: PrimalProgramState,
-        pooled: Sequence[PrimalDualVideoResult],
-        *,
-        s_ref: torch.Tensor,
-    ) -> SharedCompilerOutput:
-        if len(pooled) not in (1, 2, 4):
-            raise NativeFactorError("compiler pooled video set changed")
-        beta = state.rank.new_full((len(pooled),), 1.0 / len(pooled))
-        scale_logits = torch.atanh(self.scale_prior_ratio.to(state.rank))
-        scale_logits = scale_logits + self.scale_head(
-            state.stable_rank.detach()
-        ).squeeze(-1)
-        scales = s_ref[:, None].to(scale_logits) * torch.tanh(scale_logits)
-        input_directions, output_directions, scaled_outputs = [], [], []
-        for target in range(len(self.owners)):
-            raw_input = torch.stack(
-                tuple(row.input_values[target] for row in pooled)
-            ).mean(0)
-            raw_output = torch.stack(
-                tuple(row.output_values[target] for row in pooled)
-            ).mean(0)
-            input_direction = rms_normalize(raw_input)
-            output_direction = rms_normalize(raw_output)
-            input_directions.append(input_direction)
-            output_directions.append(output_direction)
-            scaled_outputs.append(output_direction * scales[target, :, None])
-        return SharedCompilerOutput(
-            residual=NativeFactorResidual(
-                a=tuple(input_directions),
-                b=tuple(scaled_outputs),
-                scales=scales,
-            ),
-            input_directions=tuple(input_directions),
-            output_directions=tuple(output_directions),
-            video_weights=beta,
-            frame_measures=tuple(row.frame_measure for row in pooled),
-            output_group_gains=tuple(row.group_gains for row in pooled),
-            solve_metrics=torch.stack(tuple(row.solve_metrics for row in pooled)),
-            conditioning_metrics=torch.stack(
-                tuple(row.conditioning_metrics for row in pooled)
-            ),
+        if len(videos) not in (1, 2, 4) or len(bank_contexts) != len(videos):
+            raise NativeFactorError("PNBTT compact video/context cardinality changed")
+        queries = self.query(program) if query_override is None else query_override
+        tangent_videos = tuple(
+            TangentTransportVideo(native=video, context=context)
+            for video, context in zip(videos, bank_contexts, strict=True)
         )
+        with self.bank_operator.ieee_matmul(s_ref.device):
+            return self.tangent_transport(
+                queries=queries,
+                videos=tangent_videos,
+                event_weights=pnbtt_event_weights(program),
+                s_ref=s_ref,
+            )

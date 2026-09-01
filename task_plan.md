@@ -35,11 +35,12 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
 
 1. [x] 逐字归档第八次专家原文并核对其引用的代码、配置、提交和formal artifacts；
 2. [x] owner确认主选A/PNBTT并建立持续推进goal；
-3. [ ] 登记active authority，建立唯一`codex/pnbtt`实现worktree；
-4. [ ] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
+3. [x] 登记active authority，建立唯一`codex/pnbtt`实现worktree；
+4. [x] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
    materialization；退役旧base/gate/anchor在deployment主路径中的所有权；
-5. [ ] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
-6. [ ] E1 task1/93 topology-matched free-query transport capacity；
+5. [x] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
+6. [ ] E1 task1/93 topology-matched free-query transport capacity；实现与双卡真实profile已通过，下一步从clean pushed detached authority启动
+   step70/110 formal及零梯度Panel-B；
 7. [ ] E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与full-vs-language/endpoints；
 8. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
 9. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；

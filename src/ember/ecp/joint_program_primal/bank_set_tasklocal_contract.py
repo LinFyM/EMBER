@@ -44,6 +44,9 @@ TASKLOCAL_QUERY_STEP_CALIBRATIONS = frozenset(
         "task93_afree_nested_native_anchor_after_calibrated_qfree_tradeoff_non_pass",
     }
 )
+TASKLOCAL_NATIVE_ANCHOR_STEP_CALIBRATIONS = frozenset(
+    {"task93_afree_anchor_space_step_calibration_after_undertravel_non_pass"}
+)
 
 
 class FreeProgramBankSetConditionTree(torch.nn.Module):
@@ -128,6 +131,35 @@ class InteractionControlWriterState(torch.nn.Module):
 
 def is_bank_set_tasklocal_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == BANK_SET_TASKLOCAL_SCHEMA
+
+
+def _tasklocal_step_calibration_valid(
+    model: Mapping[str, Any], calibration_kind: Any
+) -> bool:
+    query_calibrated = calibration_kind in (
+        TASKLOCAL_QUERY_STEP_CALIBRATIONS
+        | TASKLOCAL_NATIVE_ANCHOR_STEP_CALIBRATIONS
+    )
+    anchor_calibrated = (
+        calibration_kind in TASKLOCAL_NATIVE_ANCHOR_STEP_CALIBRATIONS
+    )
+    return all(
+        (
+            (
+                model.get("tasklocal_free_b0_query_lr_multiplier")
+                == G1_RESIDUAL_RANK * 8
+                if query_calibrated
+                else "tasklocal_free_b0_query_lr_multiplier" not in model
+            ),
+            (
+                model.get("tasklocal_free_native_anchor") is True
+                and model.get("tasklocal_free_native_anchor_lr_multiplier")
+                == G1_RESIDUAL_RANK * 8
+                if anchor_calibrated
+                else "tasklocal_free_native_anchor_lr_multiplier" not in model
+            ),
+        )
+    )
 
 
 def required_s0_gate_authority(
@@ -316,7 +348,6 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     query_source = model.get("b0_query_source", PROGRAM_CONDITIONED_B0_QUERY)
     free_query = is_primal and query_source == TASKLOCAL_FREE_B0_QUERY
     calibration_kind = config.get("mechanism_calibration", {}).get("kind")
-    query_lr_multiplier = model.get("tasklocal_free_b0_query_lr_multiplier")
     required_s0 = authorities.get("required_s0_gate", {})
     required_s1 = authorities.get("required_s1_non_pass", {})
     required_primal = authorities.get("required_primal_task93_non_pass", {})
@@ -380,11 +411,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             model.get("inverse_covariance_power") == 1.0,
             model.get("interaction_summary_value_width") == 16,
             model.get("interaction_hidden_width") == 64,
-            (
-                query_lr_multiplier == G1_RESIDUAL_RANK * 8
-                if calibration_kind in TASKLOCAL_QUERY_STEP_CALIBRATIONS
-                else "tasklocal_free_b0_query_lr_multiplier" not in model
-            ),
+            _tasklocal_step_calibration_valid(model, calibration_kind),
             (
                 model.get("interaction_correction_bound") == 0.1
                 if not is_primal
@@ -495,6 +522,55 @@ def _enable_installed_free_native_anchors(interaction: torch.nn.Module) -> set[s
         "bank_set_interaction.tasklocal_free_input_anchor",
         "bank_set_interaction.tasklocal_free_output_anchor",
     }
+
+
+def tasklocal_optimizer_parameter_groups(
+    writer_state: torch.nn.Module,
+    trainable: tuple[torch.nn.Parameter, ...],
+    model: Mapping[str, Any],
+    *,
+    peak_lr: float,
+) -> tuple[dict[str, Any], ...] | None:
+    """Partition only the pre-registered task-local coordinate calibrations."""
+
+    if model.get("b0_query_source") != TASKLOCAL_FREE_B0_QUERY:
+        return None
+    query_multiplier = float(
+        model.get("tasklocal_free_b0_query_lr_multiplier", 1.0)
+    )
+    anchor_multiplier = float(
+        model.get("tasklocal_free_native_anchor_lr_multiplier", 1.0)
+    )
+    if query_multiplier == anchor_multiplier == 1.0:
+        return None
+    interaction = writer_state.bank_set_interaction
+    query = interaction.tasklocal_free_b0_query
+    if query is None:
+        raise ValueError("task-local free B0 query optimizer is absent")
+    anchors = ()
+    if anchor_multiplier != 1.0:
+        if (
+            interaction.tasklocal_free_input_anchor is None
+            or interaction.tasklocal_free_output_anchor is None
+        ):
+            raise ValueError("task-local free native anchor optimizer is absent")
+        anchors = (
+            *tuple(interaction.tasklocal_free_input_anchor.parameters()),
+            *tuple(interaction.tasklocal_free_output_anchor.parameters()),
+        )
+    calibrated = {id(query), *(id(parameter) for parameter in anchors)}
+    ordinary = tuple(
+        parameter for parameter in trainable if id(parameter) not in calibrated
+    )
+    if not ordinary or len(ordinary) + 1 + len(anchors) != len(trainable):
+        raise ValueError("task-local calibrated optimizer ownership changed")
+    groups: list[dict[str, Any]] = [
+        {"params": ordinary},
+        {"params": (query,), "lr": peak_lr * query_multiplier},
+    ]
+    if anchors:
+        groups.append({"params": anchors, "lr": peak_lr * anchor_multiplier})
+    return tuple(groups)
 
 
 def bank_set_parameter_ownership(

@@ -29,6 +29,7 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
     required_s0_gate_authority,
     required_s1_non_pass_authority,
     required_primal_task93_non_pass_authority,
+    tasklocal_optimizer_parameter_groups,
     writer_trainable_inventory,
 )
 from ember.ecp.joint_program_primal.runtime import (
@@ -318,26 +319,14 @@ def _optimizer_cursor(
     writer_state: torch.nn.Module,
     trainable: tuple[torch.nn.Parameter, ...],
 ) -> tuple[torch.optim.Optimizer, Any, tuple[int, ...], int, int, int]:
-    query_source = config.get("model", {}).get(
-        "b0_query_source", PROGRAM_CONDITIONED_B0_QUERY
+    cell = config["optimization"]["joint"]["optimizer"]
+    peak_lr = float(cell["peak_lr"])
+    groups = tasklocal_optimizer_parameter_groups(
+        writer_state, trainable, config.get("model", {}), peak_lr=peak_lr
     )
-    query_lr_multiplier = float(
-        config.get("model", {}).get("tasklocal_free_b0_query_lr_multiplier", 1.0)
-    )
-    if query_source == TASKLOCAL_FREE_B0_QUERY and query_lr_multiplier != 1.0:
-        query = writer_state.bank_set_interaction.tasklocal_free_b0_query
-        ordinary = tuple(
-            parameter for parameter in trainable if parameter is not query
-        )
-        if query is None or not ordinary or len(ordinary) + 1 != len(trainable):
-            raise ValueError("task-local free B0 query optimizer ownership changed")
-        cell = config["optimization"]["joint"]["optimizer"]
-        peak_lr = float(cell["peak_lr"])
+    if groups is not None:
         optimizer = torch.optim.AdamW(
-            (
-                {"params": ordinary},
-                {"params": (query,), "lr": peak_lr * query_lr_multiplier},
-            ),
+            groups,
             lr=peak_lr,
             betas=tuple(cell["betas"]),
             eps=float(cell["eps"]),

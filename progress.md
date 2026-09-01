@@ -26,6 +26,17 @@
   correct fit0/fit1各`>=.85`、held`>=.80`、wrong fit0/fit1各`<=.25`、margin`>=.50`、all-pairs、family、saturation及信息墙全部通过；
   aggregate pass前不得进入S1，non-pass不得靠LR、seed、width、rank或步数小扫修补。
 
+- formal已从clean detached `1b08337`在gpu01物理3/4自然完成，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json`，结论
+  `non_pass`。task1 correct fit0/fit1/held为`.883/.846/.870`、wrong为`-.411/-.396`，仅fit1差门槛约`.0044`；task93为
+  `.704/.717/.724`与`-.203/-.217`，correct/held明确失败。两run均110步、checkpoint70/110、五臂各16 visits、finite与exit0
+  完整，Action Meta 0、held/wrong-fit1/Panel-B backward和validation/test/shuffled/reversed reads为0，每condition仍只生成一套完整
+  rank16；GPU3/4全程无第二compute PID且结束后释放。因此这是结构性科学non-pass，不进入S1。
+- 结果与rank/event-only task93 `.709/.727/.725`几乎相同，证明仅把target-centered rank×event关系送回B1不足以恢复full-`z`
+  的`.905/.909/.894` correct容量；owner-only也已失败。按预注册边界，当前停止继续叠加quotient、owner、normalization或普通超参，先对
+  full-`z` pass与三种quotient non-pass做同合同parameter/Jacobian、summary拓扑及专家停止条件审计，再决定是需要严格的真实B0拓扑
+  positive control，还是停止当前EBSRI correction factorization并重开bank-conditioned primal。未形成新机制证据前不启动下一版本。
+
 ### Target-centered relational quotient S0 candidate
 
 - 2026-09-01 owner-preserving quotient S0已在clean pushed detached `21caa20`完整结束，aggregate为

@@ -1872,3 +1872,15 @@ bound；同一个global free token在full-`z`版本已经通过。因此最早�
 task-independent rank/event slots等尺度组合。B0 inducing仍不读取`z_rel`，target-wide加性offset被quotient，且不增加参数。逐slot
 normalization会抹掉冻结R5中`.075--.289`的关系强度差，不能使用。若该版本fresh S0仍失败，应停止这一relational-quotient机制，不能以
 per-target free表、LR、步数、width或seed小扫替代根因裁决。
+
+### 112. target-centered relation没有恢复quotient S0容量
+
+target-centered relational B1从clean detached `1b08337`完成task1/93 fresh S0。task1 correct fit0/fit1/held为
+`.883/.846/.870`、wrong为`-.411/-.396`，只差一个fit约`.0044`；task93为`.704/.717/.724`与`-.203/-.217`，
+correct/held明确non-pass。两条run的step、checkpoint、五臂Panel-B、finite、信息墙、Action Meta 0及唯一rank16合同全部完整，不能归因于
+工程失败或训练不足。
+
+task93结果与rank/event-only quotient的`.709/.727/.725`几乎相同，远低于full-`z`的`.905/.909/.894`；因此只保留每target内部
+中心化并RMS归一的rank×event关系，并不足以代替被删除的raw Program context。owner slot与relational context已经分别接受同合同fresh
+反证，不能再把两者相加或做normalization/步数/LR小扫当作有机制证据的下一版。最早接口必须在full-`z`与三个quotient的condition网络实际
+使用、真实B0 target/group/type summary拓扑，以及专家“global free token失败则停止correction factorization”的适用边界之间重新裁决。

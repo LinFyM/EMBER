@@ -1747,3 +1747,17 @@ free-token norm和correction幅度均排除塌缩、饱和或简单训练不足�
 rank/event均值后，task1/93全局RMS为`.153/.163`，per-target RMS约`.141--.183/.146--.183`，内部slot RMS保留约
 `.075--.289`的有效强度差。由此后继只允许一次无新增参数的relational B1检验：每target中心化并按整个tensor单RMS归一，保留内部
 rank/event关系，B0仍用task-independent inducing。该检验若fresh S0失败，就停止这一quotient机制，不靠普通超参修补。
+
+## 89. target-centered relational quotient S0正式non-pass
+
+clean pushed detached `1b0833744363d69bf843aa2a9efb1b7243c72bdf`在gpu01物理3/4完成relational quotient task1/93 fresh S0，
+aggregate为`runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json`。
+task1 correct fit0/fit1/held为`.882725/.845604/.870278`、wrong为`-.410601/-.395834`，仅correct-fit1未过`.85`；task93为
+`.704350/.717381/.723679`与`-.202943/-.216522`，correct/held未过。两run均自然exit0、110步、checkpoint70/110、五臂各16 visits
+及全部tensor finite，Action Meta、held/wrong-fit1/Panel-B backward与validation/test/shuffled/reversed reads为0，每condition仍只生成一套
+完整rank16。
+
+task93与rank/event-only quotient结果几乎相同，说明target-centered rank×event relation未恢复full-`z`容量；owner-only也已正式失败。
+由此预注册的relational quotient修正链结束，不进入S1，不组合owner+relation，也不做普通超参小扫。后继必须先审计global free token与
+真实B0 target/group/type summary的拓扑差异、condition网络是否实际利用relational维度，以及专家停止当前correction factorization并重开
+bank-conditioned primal的条件，形成新的机制证据后才能继续。

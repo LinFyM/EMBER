@@ -25,9 +25,11 @@ task93 S0 correct约`.71--.73`；补回task-independent owner38 slot后task93反
 token本来就通过，因此不先用per-target free lookup掩盖该缺口。当前唯一候选是在rank/event quotient上只向B1恢复target内部的
 task-dependent rank×event关系：从每个`z[target,4,8,128]`减去其rank/event均值，再以该target全tensor的单一RMS归一，并与无task轴
 rank4/event8 slots组合；target-wide absolute offset、B0 absolute inducing与owner lookup仍不恢复，也不新增参数。冻结R5 base/event weights/
-native query→`kappa`、video-local context、真实X/Y、bounded correction、exact signed pooling、rank4+carrier12与唯一rank16不变。该假设必须
-fresh依次重跑S0、S1、S2反证；通过后才用全部10 tasks形成component initialization并恢复Natural Program joint S3。机制Gate只裁决
-相应接口，正式目标仍唯一为validation8 strict paired correct严格
+native query→`kappa`、video-local context、真实X/Y、bounded correction、exact signed pooling、rank4+carrier12与唯一rank16不变。
+该relational版本的fresh S0现已正式non-pass：task1仅fit1为`.846`，task93 correct/held仍约`.70--.72`，与rank-only几乎相同；工程与
+信息墙合同完整。因此不进入S1，也不继续组合owner/relational或扫普通超参。当前先以full-`z` pass和三种quotient non-pass审计最早接口及
+专家停止条件，只有新的机制证据才能决定严格真实B0拓扑positive control或重开bank-conditioned primal。正式目标仍唯一为validation8
+strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
 固定route阶段先缓存冻结`kappa/base score/metadata/event assignment`并按family/shape批处理。`main@cdcae8b`已将B0 summary与B1 replay
@@ -67,8 +69,10 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   rank×event关系后correct-vs-wrong共享表示干扰，排除owner identity、bootstrap、free-token幅度及饱和；
 - [x] 实现target-centered relational B1且完成全仓CPU合同与真实一步profile，确认对target-wide offset不变、关系内容有效、B0仍无absolute
   Program inducing、Action Meta 0、冻结边界及唯一rank16；
-- [ ] 从clean pushed detached authority fresh完成relational S0；task1/93各自必须满足correct fit0/fit1均`>=.85`、correct held
-  `>=.80`、wrong fit0/fit1均`<=.25`、margin`>=.50`、全部correct严格优于wrong，并保持zero-init、family、saturation和信息墙合同；
+- [x] 从clean pushed detached authority fresh完成relational S0；task1仅fit1为`.846`，task93 correct/held约`.70--.72`，正式
+  aggregate non-pass；工程、信息墙、Panel-B及唯一rank16合同完整，故不进入S1；
+- [ ] 对full-`z` pass与rank-only/owner/relational三种non-pass做同合同parameter/Jacobian、summary拓扑及专家停止条件审计，明确最早
+  失效接口，并只在形成新机制证据后决定下一项；
 - [ ] 只有fresh S0通过，才以不加载S0 interaction状态的fresh R5完成S1，并按相同双task绝对Gate裁决真实B0 summary；
 - [ ] 只有fresh S1通过，才fresh执行原split S2及相邻Gate；若S1通过而S2仍失败，则否定absolute-code主因，转向`kappa`/summary
   decodability或task-diversity诊断；

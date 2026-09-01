@@ -1,5 +1,31 @@
 # EMBER progress
 
+### Target-centered relational quotient S0 formal launch contract
+
+- scientific implementation/config authority为clean pushed `ad64757428c223629c08b2cd01dfbb70f68cff69`；formal从只增加本launch
+  record的clean pushed detached descendant执行。task1/wrong8与task93/wrong94各自以独立world1进程从冻结R5 scorer fresh初始化
+  rank/event slots、interaction、global free correct/wrong、optimizer/scheduler/RNG；不加载owner、旧quotient或其它S0/S1/S2 interaction。
+  每task仍为10 warmup+100 effective steps，保存actual checkpoint70/110并完成既有五臂Panel-B后聚合。该S0只裁决target-centered
+  relational B1在global free whole-bank condition下的capacity--specificity，不证明真实B0、shared mapping或Natural Program。
+- exact entry为两个独立的
+  `python scripts/train_ecp_bank_set_tasklocal.py run --mode formal --stop-after-step 110`，配置
+  `configs/pi05_ecp_event_bank_set_s0_free_summary_v1.json`，共同只读source step1000、sealed dataset/tokenizer、R5 scorer、gpu01
+  `/dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829`及既有90-pair Program-bank cache。task1预定gpu01物理3、task93物理4，均绑
+  NUMA1；二者是全部独立qualification units，额外卡不能缩短任一world1任务，故不用DDP、重复训练或dummy占卡。固定
+  `NCCL_P2P_DISABLE=1 PYTHONPATH=src TOKENIZERS_PARALLELISM=false`。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_task1_s110_ad64757_gpu01p3_20260901`、
+  `runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_task93_s110_ad64757_gpu01p4_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901`；launch前均必须不存在，不覆盖旧evidence。
+  2026-09-01 live检查时gpu01物理0/1/3/4/5完整空闲，2有他人约22.2GB进程、6约4GB且100% UTL；gpu02物理0--3约30GB、7约31.6GB，
+  4/5/6均有他人进程，故选择gpu01完整空闲3/4而不共驻或跨节点。当前gpu01逻辑0 UUID仍为已复核可用的
+  `GPU-658b6043-6454-1228-bffc-0e2fe22e5013`，旧prohibited设备未枚举。`/data1` quota为
+  `777333348/1073741824KiB`、limit `1084227584KiB`，shared余`84TiB`；同类双run各约21MB，新增远低于余量。
+- 全仓`254 passed`，真实task1一步profile为`2.755s`、peak allocated `41.258GB`且信息墙完整。紧邻exec再次live核验设备、输出根和
+  detached clean authority；若外部进程后发导致峰值余量不足，只停止本任务并用新root fresh迁移，不干预他人。S0 Gate不变：两task
+  correct fit0/fit1各`>=.85`、held`>=.80`、wrong fit0/fit1各`<=.25`、margin`>=.50`、all-pairs、family、saturation及信息墙全部通过；
+  aggregate pass前不得进入S1，non-pass不得靠LR、seed、width、rank或步数小扫修补。
+
 ### Target-centered relational quotient S0 candidate
 
 - 2026-09-01 owner-preserving quotient S0已在clean pushed detached `21caa20`完整结束，aggregate为

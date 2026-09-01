@@ -75,6 +75,28 @@
   gpu02物理6为`4.59GiB/0%`备用，gpu01物理0为`3.11GiB/53%`，其余设备为高占用任务。gpu02已复用只读23GB condition cache；
   `/data1` quota为`777863584/1073741824KiB`，前一formal仅66MB且新root不存在，预计新增低于100MB。单task world1没有可并行的第二资格单元；
   若本Gate通过才立即在另一合适GPU执行task1，若non-pass则以充分行使后的anchor规模、逐层分离与Panel-B定位当前函数类最早失效接口。
+- calibrated A_free已从clean pushed detached `144d59b6e1d47fb7a3725cac5a4a708ad1b66001`在gpu02物理4自然完成110步、
+  checkpoint70/110及五臂各16次Panel-B，root为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_afree_calibrated_task93_s110_e02f4ca_gpu02p4_20260901`。correct fit0/fit1/held为
+  `.853296/.858892/.818467`，三项刚性通过；wrong fit0/fit1为`.611592/.668511`，wrong和margin正式失败，all-pairs通过，Gate为
+  `non_pass`。Action Meta/source/Stage0 trainable均为0，Panel-B/held/wrong-fit1 backward为0，validation/test/shuffled/reversed为0，
+  checkpoint与唯一完整rank16合同均完整；峰值`35,401,738,752` bytes，故不是工程或资源失败。
+- anchor已经被充分行使：step70合并RMS`.16203`，step110为`.17664`，其中input/output为`.21929/.12706`，相对真实candidate anchor
+  `.188--.192`已同量级；step70→110仍移动`.0253/.0267`。因此本轮排除了base-LR under-travel。相较base-LR A_free，correct提高
+  `.0381/.0257/.0212`，但wrong反而提高`.0997/.1442`；相较原candidate-only bank-conditioned primal，wrong两臂一降一升且总体没有
+  稳健改善，不能靠继续同类步长校准解释。
+- 同一checkpoint的F=0配对Panel-B显示：去掉free anchor后correct为`.879708/.883433/.849663`、wrong为`.750229/.756445`；加入F会把
+  correct降低`.0245--.0312`、wrong降低`.0879--.1386`，margin从约`.123`提高到`.185`，说明F有真实specificity贡献但远不足`.50`
+  Gate。逐层几何显示free delta RMS在correct/wrong为`1.25--1.28/1.31`，已是candidate delta的约`3x/2.2x`，但correct-vs-wrong
+  free-delta cosine约`.993`；raw condition约`.991--.992`，family-scalar gate约`.965--.971`，而bank-dependent candidate delta已降到
+  `.718--.772`。最早结构缺口因此是高相似summary经family-scalar gate调制共享event-additive anchor时只能近同向抑制两臂，不能把真实
+  candidate差异转成强功能分离；不是native bank相同、anchor没动或current-bank replay未执行。
+- base-LR与calibrated两轮的逐层/零锚审计已保存在
+  `runs/analysis/pi05_ecp_bank_conditioned_primal_afree_causal_audit_144d59b_gpu02p46_20260901/`。至此第七次专家意见的S0→S1→失败后
+  bank-conditioned-primal链已全部实际执行：S0通过，S1按预注册条件non-pass并停止shared S2，§7.1 pivot恢复correct但task93在原query、
+  calibrated Q_free、base-LR A_free与充分校准A_free下均无法通过wrong/margin。当前不启动task1、shared qualification、Natural Program
+  或新的G3结构；停止的是本轮`summary→family-scalar G`加event-additive native anchor这一具体parameterization，不外推为Program、
+  native X/Y、rank4或整个ECP根本失败，等待owner决定是否再次咨询专家或授权新的结构性路线。
 
 ### Bank-conditioned primal task93定位与Q_free formal launch contract
 

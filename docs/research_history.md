@@ -1824,3 +1824,43 @@ S0与S1唯一科学变化是scope-matched free summary tree换成真实Program-q
 pooling或rank4容量。原fresh shared S2因此没有启动；当前fixed-base+summary-only bounded correction函数类停止。后继只按专家失败分支
 让whole-bank response更早参与bank-conditioned primal形成，再做current-bank dual与唯一exact replay，不恢复quotient/surrogate/polish，
 也不做普通超参小扫。
+
+## 94. bank-conditioned primal恢复correct但原query仍缺乏wrong specificity
+
+按第七次专家§7.1失败分支，`eb9f295638e4f2f2f47c472cb57bb8607aae21e7`把whole-bank response前移为
+`d_B=d0+sum_e G(S)A_B`，再对当前bank做full inverse与唯一exact signed replay。双task formal aggregate为
+`runs/outputs/pi05_ecp_bank_conditioned_primal_gate_s110_eb9f295_gpu01p12_20260901/aggregate.json`。task1 correct
+fit0/fit1/held为`.951/.931/.925`、wrong为`.428/.477`；task93 correct为`.917/.923/.888`、wrong为`.627/.654`。两taskcorrect、held与
+all-pairs通过，wrong与margin失败；Action Meta、source/Stage0梯度、held/wrong-fit1/Panel-B backward和forbidden reads均为0，唯一rank16
+与checkpoint合同完整。该结果证明whole-bank前移恢复capacity，但当前Program query/native anchor/family gate不能提供充分bank specificity。
+
+## 95. Q_free与base-LR A_free依次排除query under-travel并暴露anchor优化混杂
+
+首轮task93 Q_free因direct query位移只有普通Program网络约`1/38`而不能裁决容量；固定`4 rank × 8 event=32`步长校准后，formal correct
+为`.808/.826/.795`、wrong为`.526/.534`，形成capacity--specificity权衡。对应roots为
+`runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_task93_s110_5cb1be6_gpu01p2_r1_20260901/`与
+`runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_calibrated_task93_s110_fdc669f_gpu01p0_20260901/`。
+
+随后nested A_free保持真实candidate anchor，并加跨全部arms/banks/videos共享的逐target/rank/event full-native basis。base-LR formal root为
+`runs/outputs/pi05_ecp_bank_conditioned_primal_afree_task93_s110_b0d81bb_gpu01p0_20260901/`，correct为`.815/.833/.797`、wrong为
+`.512/.524`。checkpoint中233个anchors全部进图且optimizer moments非零，但合并RMS仅`.0094`、约为candidate的`3.7%`；同checkpoint
+F=0只改变correct至多`.0027`、wrong约`.011`。因此该轮只淘汰小幅A_free，不淘汰充分行使的full-native span。
+
+## 96. calibrated A_free正式non-pass并结束第七次专家执行链
+
+科学实现`e02f4ca`只把既有free anchors移到固定32倍坐标步长组；formal从clean pushed detached
+`144d59b6e1d47fb7a3725cac5a4a708ad1b66001`在gpu02物理4完整运行，root为
+`runs/outputs/pi05_ecp_bank_conditioned_primal_afree_calibrated_task93_s110_e02f4ca_gpu02p4_20260901/`。correct fit0/fit1/held为
+`.853296/.858892/.818467`并全部通过，wrong fit0/fit1为`.611592/.668511`，wrong和margin失败，all-pairs通过；110步、checkpoint70/110、
+五臂各16次Panel-B、Action Meta 0、唯一rank16及信息墙完整，Gate为`non_pass`。
+
+step110 free-anchor合并RMS为`.17664`，input/output为`.21929/.12706`，与candidate anchor`.188--.192`同量级，排除under-travel。
+同checkpoint F=0使correct变为`.879708/.883433/.849663`、wrong变为`.750229/.756445`：F把wrong压低`.088--.139`，同时把correct压低
+`.025--.031`，margin只从`.123`增至`.185`。逐层审计显示bank-dependent candidate delta的correct/wrong cosine约`.718--.772`，但
+幅度占主导的free delta cosine约`.993`，summary/gate约`.991/.965--.971`。正式审计保存在
+`runs/analysis/pi05_ecp_bank_conditioned_primal_afree_causal_audit_144d59b_gpu02p46_20260901/`。
+
+至此第七次专家建议的scope-matched S0、real S1及其失败后的bank-conditioned-primal分支均已实际执行。S0通过，S1触发预注册停止并未进入
+shared S2，primal pivot虽恢复correct却在原query、calibrated Q_free、base-LR与充分校准A_free下持续无法满足wrong/margin。当前停止
+`summary→family-scalar G`加event-additive native anchor这一具体parameterization；该负结果不外推为Program schema、真实native X/Y、
+signed pooling、rank4或整个ECP根本失败。

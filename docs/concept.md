@@ -31,10 +31,10 @@ Action Expert target对齐的Program；同一condition在冻结PI0.5各目标层
 ```text
 exact language + ordered action-hidden videos
               -> Pass A: q_V(owner-specific Program)
-              -> shared Program-to-native-primal scorer
-              -> Pass B0: current-bank statistics
-              -> capacity-preserving full base query
-              -> Pass B1: Program event x local event x real candidate interaction
+              -> Program queries read the real native bank
+              -> Pass B0: scope-matched target/rank/event/type bank responses
+              -> Program + current-bank content jointly form the primal direction
+              -> Pass B1: current-bank dual and exact signed candidate pooling
               -> one exact signed measure over real X/Y
               -> rank4 task residual + frozen rank12 carrier
               -> one complete rank16 LoRA
@@ -69,10 +69,11 @@ sigma     [8, 38, 128]   # cross-video uncertainty
 ```
 
 这是专家复核后固定的schema。Pass B另外读取每个q/v/action-in/action-out目标的真实input/output以及output的adjacent、init、goal
-differences。当前bank-conditioned实现先按每条视频单位质量流式累计均值、协方差和Program-conditioned native anchors，求解
-full base query；再重放同一bank，让未聚合Program event query、当前视频local event context与每个真实candidate content共同修正
-positive/negative branch logits，最后由唯一signed measure对真实X/Y做exact pooling并产生rank4 outer products。这些量不是Program
-字段，也不在内存中整段物化。内部两阶段读取仍属于rollout前一次Writer调用。
+differences；这些量不是Program字段，也不在内存中整段物化。稳定结构原则是Program只能以query等方式读取当前真实bank，不能用
+absolute code绕过bank直接决定LoRA；Program与current-bank content必须共同形成方向，再由当前bank上的唯一signed measure对真实X/Y做
+exact pooling并产生rank4 outer products。内部两阶段读取仍属于rollout前一次Writer调用。2026-09-01的Program-through-bank实验链已经
+停止一种具体实现：高相似summary经family-scalar gate调制共享event-additive anchor不能提供足够wrong-bank功能分离；当前没有把另一种
+bank-conditioned primal写成已验证的active realization。
 
 ## 训练原则
 
@@ -80,8 +81,9 @@ positive/negative branch logits，最后由唯一signed measure对真实X/Y做ex
 - train24与审计后的non-held LIBERO-90 meta tasks产生梯度；validation/test不产生梯度。
 - video与action query跨episode；多个successful policies用独立优化lineages构成分布，不把同一轨迹的checkpoint当独立任务知识。
 - task-local free-code已经证明native factor bank与pooling有容量；P0/P1进一步证明full-inverse primitive能跨video保留共享primal，
-  但wrong-bank反事实证明它会消除bank specificity。当前先在R5强fixed-route正控上只训练candidate-level Program--bank interaction，
-  用correct与wrong bank的同一deployment forward functional loss裁决；通过后立即联合Natural Program、interaction与native heads。
+  但wrong-bank反事实证明它会消除bank specificity。Program-through-bank的scope-matched free-summary正控通过，真实Program read却未保留
+  correct/held；随后bank-conditioned-primal恢复correct，但原query、free query和充分行使的full-native free anchor都无法同时压低wrong。
+  后继若获授权必须直接修复Program与当前bank共同决定功能方向的接口，不能继续用scalar gate、anchor步长或普通超参修补同一函数类。
 - staged gates用于定位接口，不是Final必须重演的训练课程。Final既保留从已验证组件初始化的fresh joint run，也保留整套Writer
   完全随机初始化并直接端到端fresh训练的正式选项，由同一closed-loop合同选择。
 - shuffled/reversed只在最终selected checkpoint已选定并冻结后评测时序特异性，不进入训练、loss、
@@ -95,6 +97,6 @@ positive/negative branch logits，最后由唯一signed measure对真实X/Y做ex
 
 G1已经证明自然视频产生的target-native banks与exact signed pooling可形成强task-local rank4 residual；原G2动态Gate证明Natural
 Program保留了可用视频动态；P0/P1证明full-inverse primitive有同任务跨video容量。R10又证明真实functional credit能把Natural Program
-推到中等效用，但R5 cross-bank、R12与R13共同证明bank进入得太晚，而binary full/half只会放大误判。当前最早未解决接口是：Program
-event、local video event和每个native candidate能否共同形成既保留correct utility、又抑制wrong-bank utility的唯一连续signed measure。
-这项fixed-route资格通过后才接回Natural Program；若其本身失败，先定位candidate interaction而不是归罪Program schema或Stage0。
+推到中等效用，而R5 cross-bank、R12/R13和最新Program-through-bank链共同证明：现有共享坐标和scalar-gated additive anchor尚不能把
+bank中已经存在的差异转为足够强的功能分离。当前知道的最早缺口是Program与current-bank content的联合方向形成；不知道的是哪种共享、
+可泛化且不绕过video的结构能解决它。该负结果不淘汰Program schema、Stage0、真实native X/Y、signed pooling、rank4或ECP整体。

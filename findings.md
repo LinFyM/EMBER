@@ -1966,3 +1966,20 @@ correct/wrong的raw condition、gate和candidate delta本身存在可测方向�
 A_free，不证伪任意free-native span。下一项且唯一校准把既有anchor的optimizer step按固定`4×8=32`坐标宽度提高到与已验证free-query
 相同的`.0224`，其余图、loss、数据、Gate和参数量不变；这不是普通LR扫。只有充分移动后的同一Panel-B仍non-pass，才能把最早缺口推进到
 summary→family-scalar gate与event-additive shared anchor的表达/耦合，而不是继续指责under-travel。
+
+### 119. 充分行使A_free仍只能同时抑制correct与wrong，当前bank-conditioned-primal参数化停止
+
+固定32倍anchor-space校准把free-anchor合并RMS从`.0094`提高到`.1766`，已与真实candidate anchor同量级；formal correct
+fit0/fit1/held为`.853/.859/.818`并全部过门，但wrong仍为`.612/.669`，margin只有约`.185`。因此task93 Gate明确non-pass，且不能再归因
+anchor under-travel。相对base-LR A_free，correct改善约`.02--.04`，wrong却恶化约`.10--.14`；相对最初candidate-only primal，wrong
+也没有稳健净改善。
+
+同checkpoint把F精确置零后，correct升至`.880/.883/.850`、wrong升至`.750/.756`。F确实对wrong产生更强抑制并把margin从`.123`
+增到`.185`，但也损伤correct，距离`.50`仍很大。原因在逐层几何中可见：真实candidate delta的correct/wrong cosine已约
+`.72--.77`，但占主导的free delta cosine约`.993`；summary和family-scalar gate仍约`.991/.965--.971`。共享F只能借少量scalar gate
+差异近同向移动两种bank，无法把bank-dependent candidate内容放大为所需功能分离。
+
+这满足第七次专家失败分支之后的task-local结构裁决：停止当前`summary→family-scalar G`与event-additive `A_B+F`的具体
+bank-conditioned-primal parameterization，不启动task1/shared/Natural Program。负证据不淘汰真实native X/Y、signed pooling、rank4、
+Program schema或ECP整体；任何后继都必须是能让Program与当前bank内容共同决定方向的结构性机制，而非anchor/query LR、seed、width、
+rank或更多同类scalar gate修补。

@@ -63,6 +63,13 @@ direct-functional shared S2。不得恢复quotient、effective surrogate、unit-
 核验后失败，停止当前fixed-base+summary-only correction函数类并把bank response前移到primal；若S0/S1通过而S2在gradient tasks通过、
 task1/93 held interaction稳定失败，则停止当前shared coordinate并重新裁决canonical coordinate或task diversity。
 
+执行结果：scope-matched S0正式通过；real Program-through-bank S1在两task均因correct/held不足正式non-pass，故按上段预注册条件没有启动
+shared S2，而是执行专家§7.1的bank-conditioned-primal失败分支。该pivot能恢复task1/93 correct与same-task held，但原query、充分校准
+Q_free、nested full-native A_free及anchor与candidate同量级后的最终裁决都无法在task93同时满足wrong与margin。最终充分行使版本为
+correct `.853/.859/.818`、wrong `.612/.669`；同checkpoint零锚和逐层几何把最早缺口定位为高相似summary经family-scalar gate调制
+共享event-additive anchor时的功能分离不足。该具体parameterization现已停止，本文下方旧“当前S2”等时点措辞不再恢复为执行路线；
+在owner作出新的结构裁决前不启动shared/Natural Program或新的训练版本。
+
 ## 1. 核心裁决
 
 ECP目标不变：exact language和`K`条action-hidden ordered videos在rollout前一次性生成唯一一套38-target rank16 LoRA。

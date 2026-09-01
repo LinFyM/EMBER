@@ -16,13 +16,15 @@ correct fit0/fit1/held为`.827/.855/.798`，task93为`.777/.793/.720`，而两ta
 信息墙、Action Meta 0、真实X/Y、chunked exact replay和唯一rank16合同完整。因此S1失败定位在real B0 representation或Program→set
 query不能保持correct能力，不在B1容量；按专家预注册条件不启动shared S2，不以LR/seed/width/rank/normalization修补当前函数类。
 
-当前唯一活动方向改为专家第7.1节规定的 **bank-conditioned primal**：whole-bank response不再只作为base query之后的logit correction，
-而要更早参与primal方向形成；随后才对当前bank做global dual并执行唯一exact signed replay，最终仍为一个rank4 residual与一套完整
-carrier12+residual4 rank16。原图与calibrated Q_free已经证明whole-bank前移能恢复correct，但当前query/anchor/gate仍有
-capacity--specificity权衡；base-LR A_free的同checkpoint零锚审计又证明其policy因果贡献极小、anchor幅度只到candidate约`3.7%`。
-当前只执行一次固定rank4×event8坐标步长的full-native anchor校准，以无混杂裁决task-local函数类；不恢复quotient、effective-surrogate、
-unit-gradient polish，不做LR/seed/width/rank小扫。该task93 Gate通过才补task1并重新定义shared qualification；充分优化后non-pass则按
-最早失效接口结束这一具体bank-conditioned-primal parameterization，不能外推为Program、native bank或ECP整体失败。
+专家第7.1节规定的 **bank-conditioned primal** 分支也已完成：whole-bank response先参与primal方向形成，随后才对当前bank做global dual
+并执行唯一exact signed replay，最终仍为一个rank4 residual与一套完整carrier12+residual4 rank16。原图、calibrated Q_free、base-LR
+A_free与充分校准A_free依次排除了correct容量、query under-travel和anchor under-travel；最终task93 correct/held通过，但wrong
+`.612/.669`与margin正式non-pass。零锚及逐层审计把最早缺口定位为高相似summary经family-scalar gate调制共享event-additive anchor时
+只能近同向抑制correct/wrong，不能形成强功能分离。
+
+至此第七次专家意见的全部条件链已执行到合法停止边界：不补task1、不进入shared qualification、Natural Program或closed-loop，也不以
+LR/seed/width/rank继续修补同一函数类。当前没有active实现或GPU训练；等待owner决定是否再次咨询专家或授权新的结构性路线。该停止只
+约束本轮`summary→family-scalar G`加event-additive native anchor parameterization，不能外推为Program、native bank或ECP整体失败。
 
 已验证前身为 **Event-Conditioned Bank-Set Relative Interaction（EBSRI）**。Pass A继续从同一language/video set形成Program；
 Pass B0除既有mean/covariance/full base外，以Program的4 rank x 8 event native queries构造每candidate的32维相对坐标，并在每条video内
@@ -102,8 +104,9 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
 - [x] S0通过后，以不加载S0 interaction状态的fresh R5完成真实Program-through-bank S1；双task均因correct/held保持不足正式non-pass，
   wrong/margin/all-pairs/saturation及全部工程合同通过；
 - [x] 依据S1最早接口停止fixed-base+summary-only correction函数类，不启动原fresh direct-functional shared S2，也不做普通超参小扫；
-- [ ] 按专家第7.1节与现有R5/P1证据实现最小bank-conditioned primal task-local裁决：whole-bank response参与primal形成，current-bank
-  global dual与唯一exact replay保持；通过后才重新定义shared qualification，失败则按新的最早接口裁决；
+- [x] 按专家第7.1节与现有R5/P1证据完成最小bank-conditioned primal task-local裁决：whole-bank response参与primal形成，current-bank
+  global dual与唯一exact replay保持；原query、calibrated Q_free、nested A_free与充分行使后的A_free均已完成formal/因果审计，task93
+  稳定保留correct却无法压低wrong，最早缺口定位到高相似summary经family-scalar gate调制共享event-additive anchor的功能分离不足；
 - [ ] 只有bank-conditioned primal及后继shared Gate正式通过，才接回Natural Program joint并继续held5 strict250 closed-loop。
 
 ## R5--R13历史里程碑

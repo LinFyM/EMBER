@@ -151,6 +151,20 @@
   forward/backward/optimizer为`26.439s`、peak allocated `39,831,382,016` bytes，Action Meta 0、source/Native Stage0 trainable 0、
   Panel-B/correct-held/wrong-fit1 backward 0及唯一完整rank16全部成立。临时单臂schedule已从canonical config删除；正式task93工程group固定为1。
 
+### Program-through-Bank Bottleneck S1 final formal relaunch contract
+
+- scientific/config authority为clean pushed `90472301990f3c86d6aabc6acae214f175ab017b`；formal从只增加本launch record的clean pushed
+  detached descendant执行，不加载任何partial S1状态。task1/wrong8与task93/wrong94仍是两个独立world1 fresh R5任务，各10 warmup+100
+  effective steps、checkpoint70/110和完整五臂Panel-B；唯一工程变化是task93 group1的math-equivalent checkpointed replay。optimizer、loss、
+  candidate、signed measure、Gate、Action Meta 0和唯一rank16合同均不变，不使用allocator实验环境变量。
+- fresh输出固定为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task1_s110_9047230_gpu01p2_20260901`、
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_task93_s110_9047230_gpu01p3_20260901`，aggregate为
+  `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s1_gate_s110_9047230_gpu01p23_20260901`；2026-09-01 16:01 CST三根均不存在。
+- 紧邻launch同时live检查：gpu01物理2/3均为`15MiB/0%`、Default且无compute PID，分别绑定NUMA0/1；gpu02无更合适的两个独立空闲
+  qualification unit。gpu01的23G condition cache与57G program-bank cache均存在。`/data1` quota为
+  `777742580/1073741824KiB`，双run预计新增远低于400MB。exec前再次核对设备、root及detached commit，不等待或占用额外GPU。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

@@ -1899,3 +1899,20 @@ head或rank扫。
 后继v2只改key parameterization：四个family各有共享input/output nonlinear trunk与side heads，每target/side增加rank16线性低秩
 residual projection；`m=128`、rank4、free query、E1数据、三项loss、Gate和formal cadence均保持不变。fresh E1真实profile与formal
 结果尚未产生，不能把该结构修订写成科学通过。
+
+## 99. PNBTT family-key E1 formal相邻一致non-pass
+
+v2实现authority为`02633a3964ecfd9d40f9827ba98456c87c07552b`，formal从只增加launch记录的clean detached
+`75db5f847e849c8953d4afeae4b7682e185ee734`运行，root为
+`runs/outputs/pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902/`。task1/93在gpu01物理1/2完成110步；
+macro70与macro110 Panel-B依次在物理3/4执行，两个checkpoint、raw metrics、completion和相邻qualification均完整。
+
+macro70 task1 correct fit0/fit1/held为`.598648/.599961/.581859`、wrong为`.028320/.041884`；task93 correct为
+`.693744/.706930/.650097`、wrong为`.036270/.224452`。macro110 task1 correct为`.616630/.620958/.601512`、wrong为
+`.027332/.051458`；task93 correct为`.707775/.725727/.655429`、wrong为`.047247/.223365`。wrong、all-pairs、near-bound和
+task1 margin通过；correct/held与task93 margin失败。70到110的correct/held改善仅`.0053--.0210`，总体与逐task均相邻一致
+`non_pass`。
+
+该结果只淘汰当前family-shared nonlinear key chart + target-specific rank16 key residual + rank4 PNBTT参数化。它比首版更强压低wrong，
+但没有恢复correct absolute capacity，故不进入E2、不续训、不做width/LR/seed小扫。按专家§5.10，下一证据是同checkpoint的train-only
+`T=Cov(v,k)`功能梯度投影谱；只有同构PNBTT task-local full-rank16 oracle明显优于rank4时才重开carrier/task rank分配。

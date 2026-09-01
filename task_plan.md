@@ -30,6 +30,8 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
   wrong与margin正式non-pass。
 - 当前只停止`summary -> family-scalar gate -> shared event-additive anchor`这一具体参数化；不外推为Program schema、Stage0、
   native X/Y、signed pooling、rank4或整个ECP失败。
+- PNBTT family-key v2也已在macro70/110相邻一致`non_pass`：它显著压低wrong，但correct/held容量仍不足。该结果只停止当前
+  family-shared nonlinear key chart + target-specific rank16 key residual + rank4 transport，不裁决Natural Program或整个PNBTT。
 
 ## 当前执行顺序
 
@@ -43,13 +45,15 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
    约束成立，但correct/held与`.50` margin稳定不足；
 7. [x] 按专家§5.10在task1/93、Panel-A三条gradient arms和step110上完成`T=Cov(v,k)`功能梯度投影谱：`m=128`
    没有截断有效谱，但q/v各side的功能梯度保留率与correct/wrong operator几何显示单一线性key坐标不足；
-8. [ ] 保持`m=128`、residual rank4及全部E1数据/loss/Gate不变，只改为family-shared nonlinear trunk + target-specific rank16
-   low-rank key projection，完成最新真实smoke后从fresh clean pushed commit重跑E1；
-9. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
+8. [x] 保持`m=128`、residual rank4及全部E1数据/loss/Gate不变，完成family-shared nonlinear trunk + target-specific rank16
+   low-rank key projection的fresh E1；macro70/110均为`non_pass`，wrong明显改善但correct/held稳定不足；
+9. [ ] 在v2 macro110上复跑同一train-only tangent spectrum；只有机制证据支持且同构PNBTT task-local full-rank16 oracle明显优于
+   rank4 residual时才重开carrier/task rank分配，否则不扫width、LR、seed或rank；
+10. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
    full-vs-language/endpoints；
-10. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
-11. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
-12. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
+11. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
+12. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
+13. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
 额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。

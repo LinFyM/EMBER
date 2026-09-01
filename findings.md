@@ -2047,3 +2047,15 @@ LR或seed扫；修订后fresh重跑E1，通过前不进入E2。
 “wrong容易压低但correct容量不足”的结果一致：单一线性key坐标没有把不同family/target需要的功能方向分离出来，并非key width截谱。
 按专家§5.10，下一且唯一修订保持`m=128`、rank4、数据、loss和Gate不变，采用family-shared nonlinear input/output trunk、family-side
 key heads与target-specific rank16线性低秩residual projection，再fresh重跑E1；仍没有full-rank16 oracle证据重开rank分配。
+
+### 124. Family-key v2稳定压低wrong但没有恢复E1 correct capacity
+
+clean detached `75db5f847e849c8953d4afeae4b7682e185ee734`的family-key E1在macro70/110相邻checkpoint均为`non_pass`。
+macro110 task1 correct fit0/fit1/held为`.616630/.620958/.601512`、wrong为`.027332/.051458`；task93 correct为
+`.707775/.725727/.655429`、wrong为`.047247/.223365`。两task的wrong、all-pairs与near-bound均通过，task1 margin通过；
+correct/held和task93 `.50` margin未过。70到110的correct/held只改善`.0053--.0210`，不是训练不足或softmax饱和。
+
+相对首个single-key-chart，v2把wrong尤其task1降得更低，却把task1 correct进一步降低，形成更明确的specificity--capacity取舍。
+因此当前family-shared nonlinear trunk + family-side heads + target-specific rank16 key residual没有使rank4 PNBTT通过E1；这仍不涉及冻结的
+Natural Program，也不淘汰真实X/Y、signed replay或更一般的bank tangent transport。下一步只在train-side Panel-A复跑同一
+`T=Cov(v,k)`谱；只有同构full-rank16 oracle明显优于rank4时才按专家§5.10重开rank分配，不做width、LR、seed或额外chart小扫。

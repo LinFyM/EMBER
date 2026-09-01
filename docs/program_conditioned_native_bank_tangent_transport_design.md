@@ -143,7 +143,11 @@ E1失败只说明transport函数类不足，应按bank tangent机制证据修正
 operator列没有截断有效谱，而q/v各side的功能梯度保留率与correct/wrong operator重合表明单一线性key坐标不足。按专家§5.10，
 v2保持`m=128`、rank4及E1其余合同不变，使用四个family各自共享的input/output nonlinear trunk与family-side head，并对每个
 target/side加rank16线性低秩residual projection。该target residual只调整key，不读取task、arm、filename或policy outcome；所有视频
-仍先独立保序、集合阶段固定等质量。完成最新真实smoke后从fresh clean pushed commit重跑E1；该结论不涉及冻结的Natural Program。
+仍先独立保序、集合阶段固定等质量。该v2 fresh formal也在macro70/110相邻一致`non_pass`：step110 task1 correct/held为
+`.616630/.620958/.601512`、wrong为`.027332/.051458`；task93 correct/held为`.707775/.725727/.655429`、wrong为
+`.047247/.223365`。它明显提高wrong specificity，但没有恢复absolute correct capacity，70到110改善仅`.0053--.0210`。
+因此当前仍不进入E2；先在v2 step110上复跑同一train-only tangent spectrum。只有同构PNBTT task-local full-rank16 oracle明显优于
+rank4 residual时才按专家§5.10重开carrier/task rank分配，不做width、LR、seed或更多key-chart小扫。该结论不涉及冻结的Natural Program。
 
 ### E2：真实frozen Natural Program到bank transport
 

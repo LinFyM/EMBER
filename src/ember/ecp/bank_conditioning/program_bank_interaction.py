@@ -382,22 +382,41 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         output: bool,
         reference: torch.Tensor,
         collect_native: bool = True,
+        inducing_query: torch.Tensor | None = None,
+        trusted_finite: bool = False,
     ) -> EventBankSetSummaryStream:
         """Create one B0 online stream with a query fixed by Program and bank."""
 
         self._validate_context(context)
-        inducing = self._b0_query_context(
-            target=target,
-            program_event_state=program_event_state,
-        )
         encoder = self.set_encoder[self.owners[target].family.value]
         return encoder.new_stream(
-            event_context=inducing,
+            event_context=(
+                self._b0_query_context(
+                    target=target,
+                    program_event_state=program_event_state,
+                )
+                if inducing_query is None
+                else None
+            ),
+            inducing_query=inducing_query,
             output=output,
             reference=reference,
             events=self.event_slots,
             collect_native=collect_native,
+            trusted_finite=trusted_finite,
         )
+
+    def b0_inducing_query(
+        self, *, target: int, program_event_state: torch.Tensor
+    ) -> torch.Tensor:
+        """Compute the one target query shared by all of its B0 scopes."""
+
+        context = self._b0_query_context(
+            target=target,
+            program_event_state=program_event_state,
+        )
+        encoder = self.set_encoder[self.owners[target].family.value]
+        return encoder.inducing(context.float())
 
     def summarize_output(
         self,

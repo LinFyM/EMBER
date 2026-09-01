@@ -324,7 +324,10 @@ def _optimizer_cursor(
             else warmup + int(joint["effective_optimizer_steps"])
         )
     )
-    if stop not in ({1} if args.mode == "profile" else set(checkpoints)):
+    if args.mode == "profile":
+        if stop < 1 or stop > warmup + int(joint["effective_optimizer_steps"]):
+            raise ValueError("routing-control profile stop step is out of range")
+    elif stop not in set(checkpoints):
         raise ValueError("routing-control stop step is not pre-registered")
     optimizer_steps = 0
     metrics_rows = 0

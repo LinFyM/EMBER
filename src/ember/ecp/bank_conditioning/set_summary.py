@@ -218,6 +218,7 @@ class StreamingEventBankSummary:
         value_width: int,
         reference: torch.Tensor,
         native_width: int | None = None,
+        trusted_finite: bool = False,
     ) -> None:
         if min(events, coordinate_width, value_width) <= 0 or (
             native_width is not None and native_width <= 0
@@ -227,6 +228,7 @@ class StreamingEventBankSummary:
         self.coordinate_width = int(coordinate_width)
         self.value_width = int(value_width)
         self.native_width = None if native_width is None else int(native_width)
+        self.trusted_finite = bool(trusted_finite)
         self.mass = reference.new_zeros(events, dtype=torch.float32)
         self.first = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
         self.second = reference.new_zeros(events, coordinate_width, dtype=torch.float32)
@@ -282,7 +284,7 @@ class StreamingEventBankSummary:
             else native_values.detach().float().reshape(-1, self.native_width)
         )
         mass = event_mass.detach().float().reshape(self.events, -1)
-        if (
+        if not self.trusted_finite and (
             torch.any(mass < 0)
             or not bool(torch.isfinite(coordinate).all())
             or not bool(torch.isfinite(values).all())
@@ -413,7 +415,9 @@ class StreamingEventBankSummary:
         return maximum, normalizer, weighted, native_weighted
 
     def finalize(self) -> EventBankSetSummary:
-        if self.candidate_count <= 0 or not torch.all(self.mass > 0):
+        if self.candidate_count <= 0 or (
+            not self.trusted_finite and not torch.all(self.mass > 0)
+        ):
             raise BankConditioningError("event bank-set summary has an empty event")
         denominator = self.mass[:, None]
         mean = self.first / denominator
@@ -426,12 +430,16 @@ class StreamingEventBankSummary:
             / self.normalizer.clamp_min(1e-30)[..., None]
         )
         log_partition = self.maximum + self.normalizer.clamp_min(1e-30).log()
-        if not all(
+        if not self.trusted_finite and not all(
             bool(torch.isfinite(value).all())
             for value in (mean, variance, induced, log_partition)
         ):
             raise BankConditioningError("event bank-set summary is non-finite")
-        if native is not None and not bool(torch.isfinite(native).all()):
+        if (
+            not self.trusted_finite
+            and native is not None
+            and not bool(torch.isfinite(native).all())
+        ):
             raise BankConditioningError("event bank-set native anchor is non-finite")
         return EventBankSetSummary(
             mean=mean,
@@ -469,11 +477,22 @@ class EventBankSetSummaryStream:
         event_mass: torch.Tensor,
         native_values: torch.Tensor | None = None,
     ) -> None:
+        summary_values = self.encode(coordinates=coordinates, metadata=metadata)
+        self.add_encoded(
+            coordinates=coordinates,
+            event_mass=event_mass,
+            summary_values=summary_values,
+            native_values=native_values,
+        )
+
+    def encode(
+        self, *, coordinates: torch.Tensor, metadata: torch.Tensor
+    ) -> torch.Tensor:
         expected_metadata = 7 if self.output else 3
         if metadata.shape != (*coordinates.shape[:-1], expected_metadata):
             raise BankConditioningError("event bank-set metadata axes changed")
         features = torch.cat((coordinates, metadata.float()), dim=-1)
-        summary_values = (
+        return (
             checkpoint(
                 self.value_network,
                 features,
@@ -483,6 +502,15 @@ class EventBankSetSummaryStream:
             if torch.is_grad_enabled()
             else self.value_network(features)
         )
+
+    def add_encoded(
+        self,
+        *,
+        coordinates: torch.Tensor,
+        event_mass: torch.Tensor,
+        summary_values: torch.Tensor,
+        native_values: torch.Tensor | None = None,
+    ) -> None:
         self.accumulator.add(
             coordinates,
             event_mass,
@@ -556,13 +584,23 @@ class EventBankSetEncoder(torch.nn.Module):
     def new_stream(
         self,
         *,
-        event_context: torch.Tensor,
+        event_context: torch.Tensor | None = None,
+        inducing_query: torch.Tensor | None = None,
         output: bool,
         reference: torch.Tensor,
         events: int,
         collect_native: bool = True,
+        trusted_finite: bool = False,
     ) -> EventBankSetSummaryStream:
-        query = self.inducing(event_context.float())
+        if (event_context is None) == (inducing_query is None):
+            raise BankConditioningError("event bank-set query ownership changed")
+        query = (
+            self.inducing(event_context.float())
+            if inducing_query is None
+            else inducing_query
+        )
+        if query.shape[:2] != (G1_RESIDUAL_RANK, events):
+            raise BankConditioningError("event bank-set inducing query axes changed")
         network = self.output_value if output else self.input_value
         accumulator = StreamingEventBankSummary(
             events=events,
@@ -570,6 +608,7 @@ class EventBankSetEncoder(torch.nn.Module):
             value_width=self.summary_value_width,
             native_width=(reference.shape[-1] if collect_native else None),
             reference=reference,
+            trusted_finite=trusted_finite,
         )
         return EventBankSetSummaryStream(
             accumulator=accumulator,

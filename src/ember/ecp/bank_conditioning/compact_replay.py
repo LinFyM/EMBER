@@ -80,6 +80,35 @@ def summarize_compact_replay(
     outputs = []
     frames = int(prepared.frame_measure.shape[0])
     summary_frame_chunk = max(1, int(operator.covariance_frame_chunk))
+    chunks = []
+    reference = prepared.input_values[0]
+    for start in range(0, frames, summary_frame_chunk):
+        stop = min(start + summary_frame_chunk, frames)
+        context = interaction_state.context.frame_slice(start, stop)
+        frame_measure = prepared.frame_measure[start:stop]
+        chunks.append(
+            (
+                start,
+                stop,
+                context,
+                candidate_metadata(
+                    context.frame_positions, output=False, like=reference
+                ),
+                candidate_metadata(
+                    context.frame_positions, output=True, like=reference
+                ),
+                event_candidate_measure(
+                    frame_measure,
+                    context.canonical_assignment,
+                    output=False,
+                ),
+                event_candidate_measure(
+                    frame_measure,
+                    context.canonical_assignment,
+                    output=True,
+                ),
+            )
+        )
     for target, (owner, x, y) in enumerate(
         zip(
             operator.owners,
@@ -88,12 +117,18 @@ def summarize_compact_replay(
             strict=True,
         )
     ):
+        inducing_query = bank_set_interaction.b0_inducing_query(
+            target=target,
+            program_event_state=interaction_state.rank_event[target],
+        )
         input_stream = bank_set_interaction.summary_stream(
             target=target,
             program_event_state=interaction_state.rank_event[target],
             context=interaction_state.context,
             output=False,
             reference=x,
+            inducing_query=inducing_query,
+            trusted_finite=True,
         )
         groups = native_output_group_count(owner)
         output_streams = tuple(
@@ -104,6 +139,8 @@ def summarize_compact_replay(
                     context=interaction_state.context,
                     output=True,
                     reference=prepared.output_operators[target][group].mean,
+                    inducing_query=inducing_query,
+                    trusted_finite=True,
                 ),
                 tuple(
                     bank_set_interaction.summary_stream(
@@ -113,6 +150,8 @@ def summarize_compact_replay(
                         output=True,
                         reference=prepared.output_operators[target][group].mean,
                         collect_native=False,
+                        inducing_query=inducing_query,
+                        trusted_finite=True,
                     )
                     for _ in OUTPUT_BANK_TYPES
                 ),
@@ -120,10 +159,15 @@ def summarize_compact_replay(
             for group in range(groups)
         )
         boundary = NativeOutputBankState(final=prepared.final_outputs[target].detach())
-        for start in range(0, frames, summary_frame_chunk):
-            stop = min(start + summary_frame_chunk, frames)
-            context = interaction_state.context.frame_slice(start, stop)
-            frame_measure = prepared.frame_measure[start:stop]
+        for (
+            start,
+            stop,
+            context,
+            input_metadata,
+            output_metadata,
+            input_mass,
+            output_mass,
+        ) in chunks:
             input_coordinates = program_relative_coordinates(
                 interaction_state.input_event_queries[target],
                 x[start:stop],
@@ -131,12 +175,8 @@ def summarize_compact_replay(
             )
             input_stream.add(
                 coordinates=input_coordinates,
-                metadata=candidate_metadata(
-                    context.frame_positions, output=False, like=x
-                ),
-                event_mass=event_candidate_measure(
-                    frame_measure, context.canonical_assignment, output=False
-                ),
+                metadata=input_metadata,
+                event_mass=input_mass,
                 native_values=x[start:stop],
             )
             bank = boundary.build(y[start:stop], start_frame=start)
@@ -150,23 +190,22 @@ def summarize_compact_replay(
                     values,
                     prepared.output_operators[target][group].mean,
                 )
-                metadata = candidate_metadata(
-                    context.frame_positions, output=True, like=values
-                )
-                mass = event_candidate_measure(
-                    frame_measure, context.canonical_assignment, output=True
-                )
-                all_types.add(
+                summary_values = all_types.encode(
                     coordinates=coordinates,
-                    metadata=metadata,
-                    event_mass=mass,
+                    metadata=output_metadata,
+                )
+                all_types.add_encoded(
+                    coordinates=coordinates,
+                    event_mass=output_mass,
+                    summary_values=summary_values,
                     native_values=values,
                 )
                 for kind, stream in enumerate(by_type):
-                    stream.add(
+                    stream.add_encoded(
                         coordinates=coordinates[..., kind, :],
-                        metadata=metadata[..., kind, :],
-                        event_mass=mass[..., kind] * len(OUTPUT_BANK_TYPES),
+                        event_mass=output_mass[..., kind]
+                        * len(OUTPUT_BANK_TYPES),
+                        summary_values=summary_values[..., kind, :],
                     )
         if boundary.next_frame != frames:
             raise NativeFactorError("compact summary output boundary ended early")

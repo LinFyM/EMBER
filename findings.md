@@ -1837,3 +1837,20 @@ context和B0 summary都被实际使用，但这种OOD置零不能裁决fresh结�
 `kappa`进入shared interaction；逐rank/event容量由task-independent slot parameters保留。因B0和B1都改变，必须从R5 fresh依次重跑
 S0、S1、S2。若S0失败，说明该约束损害当前factorization容量；若S0/S1通过而S2仍失败，则应否定absolute-code旁路为主因，转向
 relative coordinate/summary decodability或task diversity，而不是继续做loss或普通超参小扫。
+
+### 110. 首版absolute quotient误删固定target owner坐标，S0 non-pass不等于旁路假设失败
+
+首版quotient从B0/B1完全删除`program_event_state`数值并改用task-independent rank/event slots后，fresh S0 task1 correct
+fit0/fit1/held为`.851/.846/.877`、wrong为`-.372/-.369`；task93为`.709/.727/.725`与`-.182/-.189`。两条run的
+step、五臂Panel-B、checkpoint、finite、信息墙与唯一rank16合同全部完整，因此task93的correct容量下降是真实结构性non-pass；不得靠
+延长步数或调LR进入S1。
+
+但代码与冻结R5 state分解证明这个实验同时删掉了两类信息。`rank_event[task,target,rank,event,width]`不仅含task token，还含固定38-target
+LoRA owner坐标。十个fixed-route task的跨task平均结构占raw state energy约`37.49%`；在其centered variance中，无target轴的rank+event
+加性结构只解释`4.10%`，owner轴单独解释`90.86%`，owner+rank+event解释`94.96%`，自由rank-event pair仅再增加约`.008%`。
+因此该S0只否定“删掉task state且也删掉owner identity”的首版实现，不能裁决absolute task-code旁路是不是shared LOTO根因。
+
+38个owner是唯一LoRA合同的固定target ownership，不是task、frame、filename或held lookup，保留它符合信息墙。下一项且唯一机制修正是
+让B0 inducing读取task-independent owner+event slots、B1读取owner+rank+event slots，同时继续完全忽略`program_event_state`数值；
+R5 base/event weights/native queries→`kappa`、真实bank、signed pooling、rank4+carrier12、loss、预算与Gate均不变。只有该版本fresh
+S0通过，才可进入fresh S1/S2继续检验task-code旁路假设。

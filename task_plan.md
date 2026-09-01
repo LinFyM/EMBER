@@ -21,9 +21,11 @@ Action Meta 0、唯一rank16且Panel B backward 0。S1只证明真实B0 summary�
 最后一轮虽在10/10 task取得correct严格优于wrong的bank specificity，却在held absolute capacity与held/train transfer上稳定non-pass。
 当前不再精修loss、质量、normalization或旧checkpoint。代码与无训练context消融把首要结构假设收窄到absolute Program chart旁路：
 fixed token经R5形成的`rank_event`除通过native query产生`kappa`外，还被可训练B0/B1直接读取，可能允许shared interaction按8个已见
-code专门化。当前唯一候选是absolute-route quotient EBSRI：只删除B0 inducing和B1 generated head对该absolute state的直达，以
-task-independent rank/event slots保留结构容量；冻结R5 base/event weights/native query→`kappa`、video-local context、真实X/Y、
-bounded correction、exact signed pooling、rank4+carrier12与唯一rank16不变。该假设必须fresh依次重跑S0、S1、S2反证；通过后才用
+code专门化。首版absolute-route quotient确实删除了该直达，但只保留task-independent rank/event slots的fresh S0在task1近过、task93
+明确non-pass。R5 `rank_event`分解显示该版本同时误删了固定38-target ownership：rank+event只解释task-independent结构方差`4.10%`，
+owner+rank+event解释`94.96%`。当前唯一候选因此修正为owner-preserving absolute-route quotient：B0/B1仍不读取absolute task state，
+只以无task轴的owner38/rank4/event8 slots保留固定LoRA结构容量；冻结R5 base/event weights/native query→`kappa`、video-local context、
+真实X/Y、bounded correction、exact signed pooling、rank4+carrier12与唯一rank16不变。该假设必须fresh依次重跑S0、S1、S2反证；通过后才用
 全部10 tasks形成component initialization并恢复Natural Program joint S3。机制Gate只裁决相应接口，正式目标仍唯一为validation8 strict paired correct严格
 `>145/400`及稳定性、breadth、Goal/Long、same-task与最终视频因果controls。
 
@@ -52,7 +54,13 @@ chunk解耦：wrong profile约`12s -> 6.3s`、task1 correct约`35.5s -> 13.3s`�
   裁决；
 - [x] 实现唯一absolute-route quotient候选并通过全仓CPU合同与task1一步真实forward/gradient/materialization profile；确认absolute
   `rank_event`不再直达可训练B0/B1，task-independent slots进入参数inventory，Action Meta为0且唯一rank16不变；
-- [ ] 从冻结R5 fresh完成S0；task1/93各自必须满足correct fit0/fit1均`>=.85`、correct held
+- [x] 从冻结R5 fresh完成首版rank/event-only quotient S0；工程合同完整，但task1 fit1为`.846`、task93 correct/held约`.71--.73`，
+  aggregate正式non-pass，不进入S1；
+- [x] 分解冻结R5十task `rank_event`，确认首版只保留的rank+event轴解释task-independent结构方差`4.10%`，而固定owner轴单独解释
+  `90.86%`；据此只补回合法、无task轴的38-target owner slot，不恢复absolute task code；
+- [x] 完成owner-preserving quotient的全量CPU合同及真实task1 forward/gradient/materialization profile，确认三类slots、Action Meta 0、
+  冻结边界、唯一rank16与显存/吞吐合同；
+- [ ] 从clean pushed detached authority fresh完成owner-preserving S0；task1/93各自必须满足correct fit0/fit1均`>=.85`、correct held
   `>=.80`、wrong fit0/fit1均`<=.25`、margin`>=.50`、全部correct严格优于wrong，并保持zero-init、family、saturation和信息墙合同；
 - [ ] 只有fresh S0通过，才以不加载S0 interaction状态的fresh R5完成S1，并按相同双task绝对Gate裁决真实B0 summary；
 - [ ] 只有fresh S1通过，才fresh执行原split S2及相邻Gate；若S1通过而S2仍失败，则否定absolute-code主因，转向`kappa`/summary

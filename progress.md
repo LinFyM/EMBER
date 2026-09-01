@@ -1,5 +1,22 @@
 # EMBER progress
 
+- 2026-09-01 首版absolute-route quotient S0已从clean pushed detached `6c33760`在gpu01物理5/6完成双task formal，aggregate为
+  `runs/outputs/pi05_ecp_event_bank_set_quotient_s0_gate_s110_0d8d901_gpu01p56_retry1_20260901/aggregate.json`，结论`non_pass`。
+  task1 correct fit0/fit1/held为`.851/.846/.877`、wrong为`-.372/-.369`，仅fit1差`.0044`；task93为
+  `.709/.727/.725`与`-.182/-.189`，correct/held明确未过。两run均自然exit 0、110步与五臂Panel-B完整、checkpoint70/110
+  finite，Action Meta及held/wrong-fit1/Panel-B backward为0，validation-test和shuffled/reversed未读，且只生成一套完整rank16；故这是
+  结构性科学non-pass，不是运行错误，也不进入S1或靠续训/LR修补。
+
+- 对冻结R5在10个fixed-route task上的`rank_event[task,38,4,8,128]`做CPU平衡分解后发现，跨task平均的结构部分占raw energy约
+  `37.49%`；在该task-independent结构的centered variance中，首版quotient保留的rank+event轴只解释`4.10%`，固定38-target owner轴
+  单独解释`90.86%`，owner+rank+event解释`94.96%`，而把rank-event改为自由pair只再增加约`.008%`。因此首版在切除absolute task
+  state时误删了LoRA target ownership这一合法固定坐标，S0结果不能单独否定“task-code旁路损害shared LOTO”。当前唯一机制修正是在
+  B0/B1加入无task轴的trainable owner38 slot，并与既有rank4/event8 slots组合；仍完全忽略`program_event_state`数值，不恢复task code，
+  也不改loss、步数、width、rank、data或Gate。全仓`254 passed`；gpu01物理0的一步真实task1 profile自然完成，step为`2.758s`、
+  peak allocated `41.258GB`，五臂materialization及finite gradient成立，inventory含owner/rank/event slots，Action Meta为0且信息墙完整。
+  profile根为`runs/analysis/pi05_ecp_event_bank_set_owner_quotient_s0_task1_profile_s1_6c33760_gpu01p0_20260901`；其一步Gate non-pass不作
+  科学裁决。下一步从clean pushed detached authority fresh重跑同一S0。
+
 - 2026-09-01 absolute-route quotient EBSRI已在唯一canonical interaction中接通：可训练B0/B1不再读取absolute `rank_event`，改用无task轴的
   trainable rank4/event8 structural slots；Program仍经冻结R5 base、event weights、native queries、`kappa`及video-local context作用。
   全仓`253 passed`。clean pushed `main@0d8d901`在gpu01物理0完成task1一步真实S0 profile：38-target forward/backward、wrong teacher、

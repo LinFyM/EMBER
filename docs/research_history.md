@@ -1715,3 +1715,19 @@ condition-generated head均直接读取该absolute chart state，同时native qu
 条件一致，不是实现偏差。结合S1 task-local通过而S2 held迁移失败，当前提出“absolute route state允许interaction按已见code专门化”的
 可证伪结构假设；但gradient correct仍未过线且两个held task表现不同，故尚非正式根因。下一检验只删除可训练B0/B1的absolute state直达，
 保留R5 base/event weights/native query→`kappa`与全部native-factor执行合同，并从R5 fresh依次重跑S0、S1、S2。
+
+## 87. rank/event-only absolute quotient S0 non-pass与target-owner混杂定位
+
+clean pushed detached `6c33760c01acac0ce4c66a927465104ba293d091`完成首版absolute-route quotient的task1/93 fresh S0。正式
+aggregate为
+`runs/outputs/pi05_ecp_event_bank_set_quotient_s0_gate_s110_0d8d901_gpu01p56_retry1_20260901/aggregate.json`。task1
+correct fit0/fit1/held recovery为`.850909/.845630/.877463`，wrong fit0/fit1为`-.371508/-.368927`；task93为
+`.709234/.727288/.725272`与`-.182036/-.189203`。task1仅第二fit略低于`.85`，task93 correct/held明确失败，双task aggregate
+为`non_pass`。两个run均自然完成110步、五臂Panel-B和checkpoint70/110，Action Meta、held/wrong-fit1/Panel-B backward及
+validation/test/shuffled/reversed reads为0，仍只生成一套完整rank16，故结果不是工程故障。
+
+随后只读加载冻结R5 scorer，在10个fixed Hadamard tasks上形成完整`rank_event[10,38,4,8,128]`并做平衡分解。跨task均值结构占
+raw energy约`37.49%`；该结构的centered variance中，rank+event无owner近似解释`4.10%`，owner单轴解释`90.86%`，
+owner+rank+event解释`94.96%`，owner+自由rank-event pair为`94.97%`。这说明首版quotient在切除absolute task state时也切除了固定
+target ownership，形成了明确实验混杂。后继修正只补回无task轴的owner38 slot，并继续以rank4/event8 slots表示其余固定结构；B0/B1
+仍不读取`program_event_state`数值，不恢复task route，也不改变训练或Gate合同。

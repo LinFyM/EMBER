@@ -171,15 +171,19 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             }
         )
         slots = torch.empty(
-            G1_RESIDUAL_RANK + self.event_slots, self.program_width
+            len(self.owners) + G1_RESIDUAL_RANK + self.event_slots,
+            self.program_width,
         )
         torch.nn.init.orthogonal_(slots)
         slots.mul_(math.sqrt(self.program_width))
+        owner_end = len(self.owners)
+        rank_end = owner_end + G1_RESIDUAL_RANK
+        self.owner_slot_context = torch.nn.Parameter(slots[:owner_end].clone())
         self.rank_slot_context = torch.nn.Parameter(
-            slots[:G1_RESIDUAL_RANK].clone()
+            slots[owner_end:rank_end].clone()
         )
         self.event_slot_context = torch.nn.Parameter(
-            slots[G1_RESIDUAL_RANK:].clone()
+            slots[rank_end:].clone()
         )
 
     def _candidate_network(self, width: int) -> torch.nn.Sequential:
@@ -285,9 +289,12 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
         # table. Task content still reaches B0/B1 through the frozen native
         # queries, their Program-relative coordinates, base scores, event
         # assignment/weights, and the resulting real-bank summaries.
+        owner_slot = self.owner_slot_context[target].float()
         rank_slot = self.rank_slot_context.float()[:, None]
         event_slot = self.event_slot_context.float()[None]
-        structural = (rank_slot + event_slot) / math.sqrt(2.0)
+        structural = (
+            owner_slot[None, None] + rank_slot + event_slot
+        ) / math.sqrt(3.0)
         rank = torch.cat(
             (
                 structural,
@@ -295,7 +302,10 @@ class EventConditionedBankSetInteraction(torch.nn.Module):
             ),
             dim=-1,
         )
-        inducing = torch.cat((self.event_slot_context.float(), local), dim=-1)
+        inducing_structural = (
+            owner_slot[None] + self.event_slot_context.float()
+        ) / math.sqrt(2.0)
+        inducing = torch.cat((inducing_structural, local), dim=-1)
         return rank, inducing
 
     def summarize_input(

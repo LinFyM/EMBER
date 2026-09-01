@@ -102,6 +102,9 @@ def test_pnbtt_projection_spectrum_reports_reachable_and_missing_gradients() -> 
     assert retention["maximum"] == 1.0
     assert retention["minimum"] == 0.0
     assert result["effective_rank_by_relative_singular_value"]["0.001"] == 2
+    zero = projection_spectrum(torch.zeros(3, 2), {"probe": gradients})
+    assert zero["spectral_energy_rank"]["99pct"] == 0
+    assert zero["functional_gradient"]["probe"]["retention"]["maximum"] == 0.0
 
 
 def test_frozen_training_git_allows_only_authority_tip_to_advance() -> None:

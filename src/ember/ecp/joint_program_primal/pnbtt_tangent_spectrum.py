@@ -214,7 +214,8 @@ def projection_spectrum(
         matrix, torch.cat(packed, dim=0)
     )
     square = singular.square()
-    total_spectral = square.sum().clamp_min(torch.finfo(square.dtype).tiny)
+    raw_total_spectral = square.sum()
+    total_spectral = raw_total_spectral.clamp_min(torch.finfo(square.dtype).tiny)
     effective = {
         threshold: int((singular > singular[0] * float(threshold)).sum())
         for threshold in (1e-2, 1e-3, 1e-4, 1e-6)
@@ -222,13 +223,20 @@ def projection_spectrum(
     cumulative = square.cumsum(0) / total_spectral
 
     def energy_rank(level: float) -> int:
-        return int(torch.searchsorted(cumulative, level).item()) + 1
+        if float(raw_total_spectral) == 0.0:
+            return 0
+        return min(
+            int(torch.searchsorted(cumulative, level).item()) + 1,
+            int(square.numel()),
+        )
 
     reports: dict[str, Any] = {}
     combined = torch.cat(packed, dim=0).float()
     total_gradient = combined.square().sum(-1)
     projected_gradient = coefficients.square().sum(-1)
-    retention = projected_gradient / total_gradient.clamp_min(1e-30)
+    retention = (
+        projected_gradient / total_gradient.clamp_min(1e-30)
+    ).clamp(min=0.0, max=1.0)
     for name, (start, stop) in spans.items():
         selected = retention[start:stop]
         selected_residual = residual[start:stop]

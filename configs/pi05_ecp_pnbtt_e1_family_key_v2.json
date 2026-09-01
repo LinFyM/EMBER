@@ -1,0 +1,141 @@
+{
+  "schema_version": "ember_ecp_pnbtt_tasklocal_v2",
+  "stage": "g3_pnbtt_e1_family_key_transport",
+  "status": "active_pnbtt_e1_family_key_transport_capacity",
+  "frozen_condition_cache_authority": {
+    "config_schema": "ember_ecp_joint_program_primal_j2_v1",
+    "config_bytes": 6017,
+    "reason": "reuse frozen Stage0 evidence and compact real native X/Y while recomputing frozen G2 Program context"
+  },
+  "authorities": {
+    "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
+    "positive_control_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829",
+    "functional_panel_records": {
+      "1": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_0/task_001.json",
+      "8": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_1/task_008.json",
+      "93": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_2/task_093.json",
+      "94": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829/shard_3/task_094.json"
+    },
+    "tangent_spectrum": "runs/analysis/pi05_ecp_pnbtt_e1_tangent_spectrum_m128_step110_8306a4c_gpu01p12_20260902/result.json"
+  },
+  "task_split": {
+    "gradient_meta": [1],
+    "gradient_target": [93],
+    "preservation_only": [8, 94],
+    "selection_uses_outcomes": false
+  },
+  "task_local": {
+    "task_ids": [1, 93],
+    "wrong_task_by_task": {"1": 8, "93": 94},
+    "preservation_only_task_by_task": {"1": 8, "93": 94},
+    "correct_gradient_arms": ["fit0", "fit1"],
+    "wrong_gradient_arms": ["fit0"],
+    "zero_gradient_arms": ["correct_held", "wrong_fit1", "panel_b"],
+    "wrong_conditioning_language": "correct_task_exact_language",
+    "same_task_query_identity": "one_free_query_row_shared_by_all_correct_and_wrong_banks",
+    "global_task_weighting": "task1_and_task93_equal_independent_of_world_size"
+  },
+  "model": {
+    "query_source": "tasklocal_free_query",
+    "program_width": 128,
+    "event_slots": 8,
+    "key_width": 128,
+    "key_hidden_width": 128,
+    "target_key_rank": 16,
+    "key_parameterization": "family_shared_nonlinear_trunk_plus_target_low_rank_residual",
+    "query_hidden_width": 256,
+    "covariance_ridge": 0.001,
+    "native_rms_epsilon": 0.000001,
+    "direction_epsilon": 0.01,
+    "query_epsilon": 0.01,
+    "score_epsilon": 0.01,
+    "replay_chunk_size": 2048,
+    "temperature_by_side": [1.0, 1.0, 1.0, 1.0, 1.0],
+    "fixed_type_balance": [
+      [0.25, 0.25, 0.25, 0.25],
+      [0.25, 0.25, 0.25, 0.25],
+      [0.25, 0.25, 0.25, 0.25],
+      [0.25, 0.25, 0.25, 0.25]
+    ],
+    "native_value_path": "real_X_and_Y_only",
+    "joint_k_measure": "fixed_equal_video_mass_then_one_pool",
+    "generated_adapter": "one_complete_38_target_rank12_plus_rank4_rank16"
+  },
+  "data": {
+    "K": 1,
+    "fit_video_views_per_task": 2,
+    "held_videos_per_task": 1,
+    "wrong_video_views_per_task": 2,
+    "functional_panel_train": "panel_a",
+    "functional_panel_evaluation": "panel_b",
+    "panel_visits": 16,
+    "rows_per_visit": 16,
+    "video_action_cross_episode": true
+  },
+  "optimization": {
+    "seed": 20260902,
+    "loss": "correct_functional_plus_wrong_necessity_plus_wrong_carrier_bound_and_unrelated_policy_distance",
+    "functional_policy_microbatch_size": 2,
+    "functional_policy_microbatch_size_by_task": {"1": 8, "93": 4},
+    "joint": {
+      "warmup_optimizer_steps": 10,
+      "effective_optimizer_steps": 100,
+      "checkpoint_effective_steps": [60, 100],
+      "global_tasks_per_optimizer_step": 2,
+      "functional_objective": {
+        "correct_weight": 1.0,
+        "necessity_weight": 1.0,
+        "preservation_weight": 1.0,
+        "normalized_necessity_margin": 0.1,
+        "normalized_preservation_tolerance": 0.1,
+        "margin_scale": "formal_positive_control_fit_panel_a_mean_benefit"
+      },
+      "optimizer": {
+        "name": "AdamW",
+        "peak_lr": 0.0001,
+        "decay_lr": 0.000001,
+        "betas": [0.9, 0.95],
+        "eps": 1e-8,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1.0
+      }
+    }
+  },
+  "gate": {
+    "correct_fit_each_minimum": 0.85,
+    "correct_held_minimum": 0.8,
+    "wrong_each_maximum": 0.25,
+    "minimum_correct_minus_maximum_wrong": 0.5,
+    "all_correct_better_than_all_wrong": true,
+    "near_bound_weight_threshold": 0.95,
+    "maximum_near_bound_fraction": 0.5,
+    "adjacent_checkpoint_conclusion_consistent": true,
+    "panel_b_backward_calls": 0
+  },
+  "profile": {
+    "task_group": [1, 93],
+    "allowed_world_sizes": [1, 2]
+  },
+  "throughput": {
+    "per_task_policy_microbatch": true,
+    "profile_before_formal": true,
+    "maximize_effective_gpu_utilization": true,
+    "safe_gpu_colocation_allowed": true
+  },
+  "information_wall": {
+    "training_only": [
+      "two task-local free query rows for E1 mechanism capacity",
+      "panel A teacher actions and functional flow gradients",
+      "task8/task94 Panel A states for paired generated-to-carrier policy-distance preservation only",
+      "positive-control train-task margin scales",
+      "authority IDs for loader pairing only"
+    ],
+    "zero_gradient": ["correct held", "wrong fit1", "panel B", "validation", "test"],
+    "deployment_task_lookup_parameters": false,
+    "program_to_native_value_path": false,
+    "action_meta_installed": false,
+    "single_complete_rank16": true,
+    "shuffled_or_reversed_use": false,
+    "second_adapter_deployed": false
+  }
+}

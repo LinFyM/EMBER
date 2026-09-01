@@ -81,6 +81,8 @@ class NativeBankTangentTransport(torch.nn.Module):
         *,
         event_slots: int,
         key_width: int,
+        key_hidden_width: int,
+        target_key_rank: int,
         covariance_ridge: float,
         native_rms_epsilon: float,
         direction_epsilon: float,
@@ -99,7 +101,12 @@ class NativeBankTangentTransport(torch.nn.Module):
         self.direction_epsilon = float(direction_epsilon)
         self.score_epsilon = float(score_epsilon)
         self.replay_chunk_size = int(replay_chunk_size)
-        self.key_encoder = NativeTangentKey(self.owners, key_width=self.key_width)
+        self.key_encoder = NativeTangentKey(
+            self.owners,
+            key_width=self.key_width,
+            hidden_width=int(key_hidden_width),
+            target_projection_rank=int(target_key_rank),
+        )
         temperatures = torch.tensor(tuple(temperature_by_side), dtype=torch.float32)
         if temperatures.shape != (len(PNBTT_SIDES),) or torch.any(temperatures <= 0):
             raise BankConditioningError("PNBTT temperature contract changed")
@@ -112,6 +119,30 @@ class NativeBankTangentTransport(torch.nn.Module):
         self.register_buffer(
             "scale_prior_ratio", scale_prior_ratio.detach().float(), persistent=True
         )
+
+    @staticmethod
+    def _canonical_videos(
+        videos: Sequence[TangentTransportVideo],
+    ) -> tuple[TangentTransportVideo, ...]:
+        """Fix only floating reduction order for a mathematically unordered set."""
+
+        packed = tuple(videos)
+        if len(packed) <= 1:
+            return packed
+
+        def signature(video: TangentTransportVideo) -> bytes:
+            context = video.context
+            compact = torch.cat(
+                (
+                    context.local_scene.detach().float().flatten(),
+                    context.local_process.detach().float().flatten(),
+                    context.local_presence.detach().float().flatten(),
+                    context.local_tau.detach().float().flatten(),
+                )
+            )
+            return compact.contiguous().cpu().numpy().tobytes()
+
+        return tuple(sorted(packed, key=signature))
 
     @staticmethod
     def _metadata(context: ProgramBankContext) -> torch.Tensor:
@@ -367,6 +398,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             or s_ref.ndim != 0
         ):
             raise BankConditioningError("PNBTT target transport input changed")
+        videos = self._canonical_videos(videos)
         rho = event_weights.float().clamp_min(0)
         rho = rho / rho.sum().clamp_min(1e-30)
         raw_input, raw_output, metric = self._target_transport(
@@ -402,6 +434,7 @@ class NativeBankTangentTransport(torch.nn.Module):
             or s_ref.shape != (len(self.owners),)
         ):
             raise BankConditioningError("PNBTT transport input contract changed")
+        videos = self._canonical_videos(videos)
         rho = event_weights.float().clamp_min(0)
         rho = rho / rho.sum().clamp_min(1e-30)
         raw_inputs, raw_outputs, metrics = [], [], []

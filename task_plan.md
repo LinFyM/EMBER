@@ -41,13 +41,15 @@ E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专�
 5. [x] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
 6. [x] 首个single-key-chart E1 task1/93已在macro70/110得到相邻一致`non_pass`：all-pairs、near-bound、信息墙及大部分wrong
    约束成立，但correct/held与`.50` margin稳定不足；
-7. [ ] 按专家§5.10先计算train-task `T=Cov(v,k)`功能梯度投影谱；据此只在`m`截谱时增大key维，或在单chart跨family不足时
-   改为family-shared trunk + target-specific低秩key projection，随后fresh重跑E1；
-8. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
+7. [x] 按专家§5.10在task1/93、Panel-A三条gradient arms和step110上完成`T=Cov(v,k)`功能梯度投影谱：`m=128`
+   没有截断有效谱，但q/v各side的功能梯度保留率与correct/wrong operator几何显示单一线性key坐标不足；
+8. [ ] 保持`m=128`、residual rank4及全部E1数据/loss/Gate不变，只改为family-shared nonlinear trunk + target-specific rank16
+   low-rank key projection，完成最新真实smoke后从fresh clean pushed commit重跑E1；
+9. [ ] E1通过后才进入E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与
    full-vs-language/endpoints；
-9. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
-10. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
-11. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
+10. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
+11. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
+12. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
 额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。

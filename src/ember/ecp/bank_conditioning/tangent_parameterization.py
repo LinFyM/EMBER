@@ -8,7 +8,7 @@ import torch
 
 from ember.ecp.bank_conditioning.key_value_replay import safe_rms_normalize
 from ember.ecp.bank_conditioning.operator import BankConditioningError
-from ember.ecp.contracts import TargetOwner
+from ember.ecp.contracts import TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     G1_RESIDUAL_RANK,
     OUTPUT_BANK_TYPES,
@@ -18,6 +18,18 @@ from ember.ecp.natural_program import NaturalProgram
 
 
 PNBTT_SIDES = ("input", *OUTPUT_BANK_TYPES)
+PNBTT_KEY_FAMILIES = (
+    TargetFamily.Q,
+    TargetFamily.V,
+    TargetFamily.ACTION_IN,
+    TargetFamily.ACTION_OUT,
+)
+
+
+def _native_key_value_width(owner: TargetOwner, side: int) -> int:
+    if side == 0:
+        return int(owner.in_features)
+    return int(owner.out_features // native_output_group_count(owner))
 
 
 class ProgramTangentQuery(torch.nn.Module):
@@ -173,33 +185,104 @@ class TaskLocalFreeTangentQuery(torch.nn.Module):
         )
 
 
-class NativeTangentKey(torch.nn.Module):
-    """Map normalized real native candidates and legal metadata into key space."""
+class _LowRankTargetKeyResidual(torch.nn.Module):
+    """Necessary target chart residual without a task/video lookup."""
 
-    def __init__(self, owners: Sequence[TargetOwner], *, key_width: int) -> None:
+    def __init__(self, input_width: int, key_width: int, rank: int) -> None:
+        super().__init__()
+        if min(input_width, key_width, rank) <= 0 or rank > min(
+            input_width, key_width
+        ):
+            raise ValueError("invalid target key residual rank")
+        self.down = torch.nn.Linear(input_width, rank, bias=False)
+        self.up = torch.nn.Linear(rank, key_width, bias=False)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.up(self.down(value))
+
+
+class NativeTangentKey(torch.nn.Module):
+    """Family-shared nonlinear chart plus target-specific low-rank residual."""
+
+    def __init__(
+        self,
+        owners: Sequence[TargetOwner],
+        *,
+        key_width: int,
+        hidden_width: int,
+        target_projection_rank: int,
+    ) -> None:
         super().__init__()
         self.owners = tuple(owners)
         self.key_width = int(key_width)
-        self.input_projection = torch.nn.ModuleList(
-            torch.nn.Linear(owner.in_features, self.key_width, bias=False)
-            for owner in self.owners
-        )
-        self.output_projection = torch.nn.ModuleList(
+        self.hidden_width = int(hidden_width)
+        self.target_projection_rank = int(target_projection_rank)
+        if min(self.key_width, self.hidden_width, self.target_projection_rank) <= 0:
+            raise ValueError("invalid family key chart width")
+
+        family_widths = []
+        for family in PNBTT_KEY_FAMILIES:
+            selected = tuple(owner for owner in self.owners if owner.family is family)
+            if not selected:
+                raise ValueError("PNBTT key family lost all target owners")
+            input_widths = {owner.in_features for owner in selected}
+            output_widths = {
+                owner.out_features // native_output_group_count(owner)
+                for owner in selected
+            }
+            if len(input_widths) != 1 or len(output_widths) != 1:
+                raise ValueError("PNBTT family key chart dimensions changed")
+            family_widths.append(
+                (next(iter(input_widths)), next(iter(output_widths)))
+            )
+        self.family_widths = tuple(family_widths)
+
+        # The first trunk is shared by all input targets in one family; the
+        # second is shared by all four real Y bank types and all output groups.
+        self.family_content_trunks = torch.nn.ModuleList(
             torch.nn.ModuleList(
-                torch.nn.Linear(
-                    owner.out_features // native_output_group_count(owner),
-                    self.key_width,
-                    bias=False,
+                torch.nn.Sequential(
+                    torch.nn.Linear(width, self.hidden_width),
+                    torch.nn.GELU(),
                 )
-                for _ in OUTPUT_BANK_TYPES
+                for width in widths
+            )
+            for widths in self.family_widths
+        )
+        self.family_side_heads = torch.nn.ModuleList(
+            torch.nn.ModuleList(
+                torch.nn.Linear(self.hidden_width, self.key_width, bias=False)
+                for _ in PNBTT_SIDES
+            )
+            for _ in PNBTT_KEY_FAMILIES
+        )
+        self.family_metadata_projection = torch.nn.ModuleList(
+            torch.nn.ModuleList(
+                torch.nn.Linear(3, self.key_width, bias=False)
+                for _ in PNBTT_SIDES
+            )
+            for _ in PNBTT_KEY_FAMILIES
+        )
+        self.family_side_norm = torch.nn.ModuleList(
+            torch.nn.ModuleList(
+                torch.nn.LayerNorm(self.key_width) for _ in PNBTT_SIDES
+            )
+            for _ in PNBTT_KEY_FAMILIES
+        )
+        self.target_side_residual = torch.nn.ModuleList(
+            torch.nn.ModuleList(
+                _LowRankTargetKeyResidual(
+                    _native_key_value_width(owner, side),
+                    self.key_width,
+                    min(
+                        self.target_projection_rank,
+                        _native_key_value_width(owner, side),
+                        self.key_width,
+                    ),
+                )
+                for side in range(len(PNBTT_SIDES))
             )
             for owner in self.owners
-        )
-        self.metadata_projection = torch.nn.ModuleList(
-            torch.nn.Linear(3, self.key_width, bias=False) for _ in PNBTT_SIDES
-        )
-        self.side_norm = torch.nn.ModuleList(
-            torch.nn.LayerNorm(self.key_width) for _ in PNBTT_SIDES
         )
 
     def forward(
@@ -210,10 +293,27 @@ class NativeTangentKey(torch.nn.Module):
         normalized_values: torch.Tensor,
         metadata: torch.Tensor,
     ) -> torch.Tensor:
-        if side == 0:
-            content = self.input_projection[target](normalized_values)
-        else:
-            content = self.output_projection[target][side - 1](normalized_values)
-        return self.side_norm[side](
-            content + self.metadata_projection[side](metadata.to(content))
+        if (
+            not 0 <= int(target) < len(self.owners)
+            or not 0 <= int(side) < len(PNBTT_SIDES)
+        ):
+            raise BankConditioningError("PNBTT family key chart owner changed")
+        owner = self.owners[int(target)]
+        family = PNBTT_KEY_FAMILIES.index(owner.family)
+        expected_width = self.family_widths[family][0 if side == 0 else 1]
+        if normalized_values.shape[-1] != expected_width or metadata.shape != (
+            *normalized_values.shape[:-1],
+            3,
+        ):
+            raise BankConditioningError("PNBTT family key candidate shape changed")
+        trunk = self.family_content_trunks[family][0 if side == 0 else 1]
+        shared = self.family_side_heads[family][side](trunk(normalized_values))
+        residual = self.target_side_residual[int(target)][int(side)](
+            normalized_values
+        )
+        metadata_key = self.family_metadata_projection[family][side](
+            metadata.to(shared)
+        )
+        return self.family_side_norm[family][side](
+            shared + residual + metadata_key
         )

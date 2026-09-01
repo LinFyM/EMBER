@@ -139,9 +139,11 @@ E1失败只说明transport函数类不足，应按bank tangent机制证据修正
 首个E1 single-key-chart formal已在macro70/110相邻一致`non_pass`。step110 task1 correct fit0/fit1/held为
 `.641984/.660311/.622909`、wrong为`.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为
 `.006121/.269427`。all-pairs与near-bound成立，主要缺口是correct/held与`.50` margin；70到110改善仅`.013--.037`。
-因此当前不进入E2，也不追加训练或做普通超参扫。下一步严格按专家§5.10计算train-task `T=Cov(v,k)`功能梯度投影谱：只有`m`
-截断有效cross-family谱时才增大`m`；若一个key chart无法覆盖q/v/action-in/out，则改为family-shared trunk加target-specific低秩
-key projection，再fresh重跑E1。该结论不涉及冻结的Natural Program。
+因此当前不进入E2，也不追加训练或做普通超参扫。train-task `T=Cov(v,k)L^{-T}`功能梯度投影谱已经完成：`m=128`对应的1024
+operator列没有截断有效谱，而q/v各side的功能梯度保留率与correct/wrong operator重合表明单一线性key坐标不足。按专家§5.10，
+v2保持`m=128`、rank4及E1其余合同不变，使用四个family各自共享的input/output nonlinear trunk与family-side head，并对每个
+target/side加rank16线性低秩residual projection。该target residual只调整key，不读取task、arm、filename或policy outcome；所有视频
+仍先独立保序、集合阶段固定等质量。完成最新真实smoke后从fresh clean pushed commit重跑E1；该结论不涉及冻结的Natural Program。
 
 ### E2：真实frozen Natural Program到bank transport
 

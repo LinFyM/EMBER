@@ -14,6 +14,10 @@
   macro70/110相邻checkpoint均为`non_pass`。step110 task1 correct fit0/fit1/held为`.641984/.660311/.622909`、wrong为
   `.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为`.006121/.269427`。all-pairs、near-bound与
   信息墙通过，主要缺口是correct/held和`.50` margin；70到110的改善仅`.013--.037`，已形成稳定裁决。
+- 专家§5.10要求的train-only tangent spectrum诊断已在`8306a4cb43ee612671955354fbe0c508de996344`完成：task1/93各16个
+  Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，未读取held或Panel-B。`m=128`对应每个operator的1024列，
+  99%谱能量rank与末端10%能量均表明没有有效谱被key width截断；q/v各side的功能梯度保留率和跨family差异则支持专家规定的
+  family-shared nonlinear trunk + target-specific低秩key projection。当前保持`m=128`和rank4不变，正在做这一个结构修订的fresh E1。
 
 ## 最新科学结论
 
@@ -51,8 +55,9 @@
 - Program只产生低维query；当前bank的真实candidate产生key并继续作为唯一native value。B0只做可微key-space whitening，B1在同一bank
   上执行一次联合measure的antithetic signed transport；没有base primal、bounded correction、family scalar gate或free anchor。
 - 首个E1 single-key-chart已稳定non-pass；它只淘汰当前per-target/side线性key chart + free query + whitening signed transport函数类，
-  不裁决冻结的Natural Program。当前严格按专家§5.10先检查`T=Cov(v,k)`功能梯度投影谱，决定是`m`截谱还是需要
-  family-shared trunk + target-specific低秩key projection，完成针对性修订并fresh重跑E1；E1通过后才进入E2。
+  不裁决冻结的Natural Program。`T=Cov(v,k)`诊断已排除`m=128`截断：q的correct-preserve-wrong梯度保留率中位为input约`.555`、
+  output约`.175--.240`，v为input约`.463`、output约`.620--.808`，而abs/input的correct--wrong operator cosine多为
+  `.922--.979`。因此当前唯一修订是按family拆分共享非线性chart并保留target-specific低秩projection；E1通过后才进入E2。
 - 专家远程artifact缺口中大部分本地已存在；当前实质缺少G2逐condition Program tensors，因此E2从frozen G2 checkpoint按condition重算，
   不误用fixed-token S1语义或cache。
 
@@ -61,6 +66,9 @@
 - PNBTT E1 free-query transport：
   `runs/outputs/pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902/`；110步、macro70/110 Panel-B与
   `evaluations/qualification.json`均完成，最终为相邻一致`non_pass`。
+- PNBTT E1 tangent spectrum：
+  `runs/analysis/pi05_ecp_pnbtt_e1_tangent_spectrum_m128_step110_8306a4c_gpu01p12_20260902/`；task1/93共380个
+  target-side spectra、16个Panel-A visits、三条gradient arms，`completion.json`完整，耗时`376.97s`。
 
 - Program-through-bank S0：
   `runs/outputs/pi05_ecp_program_through_bank_bottleneck_s0_gate_s110_b11dc3e_gpu01p23_20260901/`
@@ -81,14 +89,14 @@
 
 ## 仓库与workspace整理
 
-- 交接前58个累积worktree已清理；当前只保留canonical main、唯一`codex/pnbtt`实现worktree和正在运行E1的
-  detached formal worktree。formal结束并集成后再清理任务所有worktree。
+- 交接前58个累积worktree已清理；首个E1与spectrum结束后对应detached worktree也已删除。当前只保留canonical main与唯一
+  `codex/pnbtt`实现worktree；新formal从待推送commit另建clean detached worktree。
 - 删除8个local `codex/*` branch：已合并分支由`main`保存；两个未合并EBSRI S2草案因S1预注册non-pass而失去执行资格；历史
   `g3-vector-interaction@2295f48`仍由`origin/codex/g3-vector-interaction`保存。
 - 两个旧dirty worktree分别是已被clean S0/S1链和后续G3历史取代的实现草案；确认无运行进程、无formal authority引用后随worktree清理，
   未提交内容不可恢复。
 - `.codex/tmp`中约`5.1GB`旧smoke/profile/script/cross-language临时cache已删除；其中影响决策的结论均已进入`findings.md`或
-  `docs/research_history.md`。`.codex/tmp`当前为空。
+  `docs/research_history.md`。后续profile只作可删除工程证据，不与formal roots混存。
 - 未删除或移动dataset、models、formal runs、checkpoints、raw rows、aggregate、source policy、task experts、condition caches或
   ownership不清资产。
 - tracked科学代码、测试和历史configs暂不在专家裁决前退役，避免提前删除新路线可能需要审计或复用的实现；active计算面仍以当前main为唯一
@@ -112,6 +120,10 @@
 - 上述profile只验证工程图与吞吐，不参与E1科学Gate。E1 macro70/110均完成五臂各16次Panel-B；两枚checkpoint的task gate均为
   `non_pass`，总体与逐task结论一致。step110相对step70的correct/held改善仅`.013--.037`；near-bound最大值从未超过`.022005`，
   因此当前失败不是softmax饱和、训练过短或Natural Program。下一动作是专家指定的`T=Cov(v,k)`功能梯度投影谱，不进入E2。
+- `T=Cov(v,k)`诊断已自然完成：380个谱均来自train-side Panel-A，operator列数固定1024；除结构性零bank外，99%谱能量rank远低于
+  1024且末端10%能量通常不超过`1e-6`量级，因此不增加`m`。q/v的功能梯度保留与correct/wrong operator重合暴露的是chart
+  表达问题。family-shared nonlinear trunk + target-specific rank16 low-rank projection已经接入；`m=128`、rank4、query、loss、
+  数据与Gate未改，35项PNBTT/shared-compiler/joint-primal focused tests通过，最新真实GPU profile尚待从该代码版本执行。
 - `c992b3f0d1fc5954f55ad939368881aa7a78a52e`已删除430行仅绑定退役primal/gate/anchor拓扑的stale tests，保留active cache、
   set不变性、信息墙和member-effect合同；25项focused tests通过。该清理提交已fast-forward至`main`，不改变正在运行的
   detached scientific authority。

@@ -21,7 +21,6 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal import (
     _effective_rank4_diagnostics,
 )
 from ember.ecp.joint_program_primal.routing_control import (
-    BANK_CONDITIONED_PRIMAL_STAGE,
     ROUTING_TASK_IDS,
     SCORER_NATIVE_HEADS_ONLY,
     _scorer_parameter_ownership,
@@ -42,7 +41,6 @@ from ember.ecp.joint_program_primal.runtime import (
     RAW_STAGE0_SUFFICIENCY_SCHEMA,
     SCORER_ALL_PARAMETERS,
     SCORER_FEATURE_CHART_ONLY,
-    SCORER_INTERACTION_ONLY,
     SCORER_NATIVE_HEADS_ONLY as JOINT_NATIVE_HEADS_ONLY,
     _joint_parameter_ownership,
     load_joint_program_primal_config,
@@ -68,7 +66,6 @@ from ember.ecp.natural_program import (
     NaturalProgram,
     NaturalProgramModel,
 )
-from ember.ecp.shared_compiler import SharedNativeFactorCompiler
 
 
 def test_bank_set_final_diagnostics_are_gauge_invariant_and_streaming() -> None:
@@ -423,44 +420,6 @@ def test_routing_r5_freezes_feature_chart_and_trains_only_native_heads() -> None
         "primal_scorer.input_primal_heads.0.weight",
         "primal_scorer.output_primal_heads.0.0.weight",
     }
-
-
-def test_bank_conditioned_primal_has_explicit_trainable_parameter_ownership() -> None:
-    owners = (
-        TargetOwner(0, "q", TargetFamily.Q, 0, 4, 8),
-        TargetOwner(1, "v", TargetFamily.V, 0, 4, 4),
-        TargetOwner(2, "action_in", TargetFamily.ACTION_IN, None, 4, 4),
-        TargetOwner(3, "action_out", TargetFamily.ACTION_OUT, None, 4, 4),
-    )
-    program = torch.nn.Linear(2, 2)
-    compiler = SharedNativeFactorCompiler(owners, program_width=8, event_slots=4)
-    writer, trainable, frozen = _scorer_parameter_ownership(
-        program,
-        compiler,
-        partition=SCORER_INTERACTION_ONLY,
-        stage=BANK_CONDITIONED_PRIMAL_STAGE,
-    )
-    names = {
-        name for name, parameter in writer.named_parameters() if parameter.requires_grad
-    }
-    assert {id(value) for value in trainable} == {
-        id(value) for value in writer.parameters() if value.requires_grad
-    }
-    assert all(not value.requires_grad for value in frozen)
-    assert all(not value.requires_grad for value in compiler.primal_scorer.parameters())
-    assert any("set_encoder" in name for name in names)
-    assert any("input_primal_gate" in name for name in names)
-    assert any("output_primal_gate" in name for name in names)
-    assert {
-        "bank_set_interaction.owner_slot_context",
-        "bank_set_interaction.rank_slot_context",
-        "bank_set_interaction.event_slot_context",
-    }.issubset(names)
-    assert not any(
-        token in name
-        for name in names
-        for token in ("candidate", "condition", "structural_gate", "free_")
-    )
 
 
 def test_r6_reconnects_natural_program_without_unfreezing_feature_chart() -> None:

@@ -1882,3 +1882,20 @@ task1/task93 `.022005/.008557`、macro110 `.017115/.009780`，不是饱和或训
 唯一完整38-target rank16合同全部成立。Natural Program在E1冻结，所以只淘汰当前single-key-chart tangent parameterization，不进入E2。
 下一步按专家§5.10计算`T=Cov(v,k)`功能梯度投影谱，再在`m`扩展或family-shared trunk + target-specific低秩key projection之间做有
 机制依据的唯一修订并fresh重跑E1。
+
+## 98. PNBTT tangent spectrum排除key-width截断并进入family-key修订
+
+诊断实现authority为`8306a4cb43ee612671955354fbe0c508de996344`，retained root为
+`runs/analysis/pi05_ecp_pnbtt_e1_tangent_spectrum_m128_step110_8306a4c_gpu01p12_20260902/`。它加载首个E1 macro110，
+只在task1/93 Panel-A的correct fit0/fit1与wrong fit0上各取16个visits，计算38 targets × input/四类output × 两task共380个
+`T=Cov_mu(v,k)L^{-T}`谱及功能梯度投影；held、Panel-B、validation/test读取均为0，`completion.json`自然完成，耗时`376.97s`。
+
+当前`m=128`给每个operator 1024列。99%谱能量rank远低于该上限且末端10%能量通常只有`0--1e-6`量级，故不触发专家允许的
+`m`扩展。q input/output的correct-preserve-wrong梯度保留率中位约`.555/.175--.240`，v约`.463/.620--.808`；q/v/action
+abs或input的correct--wrong operator cosine约`.922--.979`，说明正确与错误bank在当前线性key坐标下仍高度重合且各family可达功能
+梯度显著不均。该证据按专家§5.10触发family-shared nonlinear trunk + target-specific低秩key projection，而不是width、LR、seed、
+head或rank扫。
+
+后继v2只改key parameterization：四个family各有共享input/output nonlinear trunk与side heads，每target/side增加rank16线性低秩
+residual projection；`m=128`、rank4、free query、E1数据、三项loss、Gate和formal cadence均保持不变。fresh E1真实profile与formal
+结果尚未产生，不能把该结构修订写成科学通过。

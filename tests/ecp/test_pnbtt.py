@@ -321,6 +321,14 @@ def test_pnbtt_full_transport_has_zero_step0_fixed_k_mass_and_bank_sensitivity()
     assert all(parameter.grad is not None for parameter in key_parameters)
     assert all(bool(torch.isfinite(parameter.grad).all()) for parameter in key_parameters)
     names = tuple(name for name, _ in compiler.named_parameters())
+    assert any("family_content_trunks" in name for name in names)
+    assert any("family_side_heads" in name for name in names)
+    assert any("target_side_residual" in name for name in names)
+    assert not any(
+        token in name
+        for name in names
+        for token in ("key_encoder.input_projection", "key_encoder.output_projection")
+    )
     assert not any("task_lookup" in name or "video_reliability" in name for name in names)
 
 

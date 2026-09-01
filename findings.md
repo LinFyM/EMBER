@@ -2034,3 +2034,16 @@ whitening signed transport函数类，不淘汰Program。
 后继严格按专家§5.10检查train-task `T=Cov(v,k)`功能梯度投影谱：若key dimension截断有效cross-family谱才增大`m`；若一个chart无法
 同时覆盖q/v/action-in/out，则采用family-shared trunk + target-specific低秩key projection。没有证据前不改rank，不做width、head、
 LR或seed扫；修订后fresh重跑E1，通过前不进入E2。
+
+### 123. Tangent spectrum排除`m=128`截谱并指定family-key修订
+
+在首个E1 step110上只使用task1/93的Panel-A correct fit0/fit1与wrong fit0功能梯度，对每个task、38 targets及input/四类output计算
+`T=Cov_mu(v,k)L^{-T}`的谱与功能梯度投影；共380个target-side spectra、每task 16 visits，held、Panel-B、validation/test均未读取。
+每个operator有`8 events × 128 keys = 1024`列。除action-in不存在的adj/init/goal结构性零operator外，99%谱能量集中在远少于
+1024的维度，末端10%谱能量通常为`0--1e-6`量级；因此没有机制证据增加`m`。
+
+真正缺口在chart/function class：correct-preserve-wrong功能梯度保留率中位，q input约`.555`而四类output仅`.175--.240`，v input约
+`.463`、output约`.620--.808`；与此同时q/v/action的abs或input correct--wrong operator cosine约`.922--.979`。这与首个E1
+“wrong容易压低但correct容量不足”的结果一致：单一线性key坐标没有把不同family/target需要的功能方向分离出来，并非key width截谱。
+按专家§5.10，下一且唯一修订保持`m=128`、rank4、数据、loss和Gate不变，采用family-shared nonlinear input/output trunk、family-side
+key heads与target-specific rank16线性低秩residual projection，再fresh重跑E1；仍没有full-rank16 oracle证据重开rank分配。

@@ -55,9 +55,9 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
-PNBTT_TASKLOCAL_SCHEMA = "ember_ecp_pnbtt_tasklocal_v1"
+PNBTT_TASKLOCAL_SCHEMA = "ember_ecp_pnbtt_tasklocal_v2"
 PNBTT_TASKLOCAL_RUN_SCHEMA = "ember_ecp_pnbtt_tasklocal_run_v1"
-PNBTT_E1_STAGE = "g3_pnbtt_e1_free_query_transport"
+PNBTT_E1_STAGE = "g3_pnbtt_e1_family_key_transport"
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,11 @@ def load_pnbtt_tasklocal_config(path: Path) -> dict[str, Any]:
             tuple(config.get("task_split", {}).get("preservation_only", ()))
             == (8, 94),
             model.get("query_source") == "tasklocal_free_query",
+            model.get("key_parameterization")
+            == "family_shared_nonlinear_trunk_plus_target_low_rank_residual",
             int(model.get("key_width", 0)) > 0,
+            int(model.get("key_hidden_width", 0)) > 0,
+            int(model.get("target_key_rank", 0)) > 0,
             int(model.get("event_slots", 0)) == 8,
             0.0 < float(config.get("gate", {}).get("near_bound_weight_threshold", 0)) < 1.0,
             config.get("gate", {}).get("adjacent_checkpoint_conclusion_consistent")
@@ -388,6 +392,8 @@ def prepare_pnbtt_tasklocal_runtime(
         program_width=int(model["program_width"]),
         event_slots=int(model["event_slots"]),
         key_width=int(model["key_width"]),
+        key_hidden_width=int(model["key_hidden_width"]),
+        target_key_rank=int(model["target_key_rank"]),
         query_hidden_width=int(model["query_hidden_width"]),
         covariance_ridge=float(model["covariance_ridge"]),
         native_rms_epsilon=float(model["native_rms_epsilon"]),

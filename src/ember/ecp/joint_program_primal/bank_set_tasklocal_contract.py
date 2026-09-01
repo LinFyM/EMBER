@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Mapping
 
 import torch
@@ -19,10 +20,14 @@ from ember.ecp.native_factors import (
     OUTPUT_BANK_TYPES,
     native_output_group_count,
 )
+from ember.pi05_source_checkpoint import read_json
 
 
 BANK_SET_TASKLOCAL_SCHEMA = "ember_ecp_program_through_bank_tasklocal_v1"
 BANK_SET_TASKLOCAL_RUN_SCHEMA = "ember_ecp_program_through_bank_tasklocal_run_v1"
+BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA = (
+    "ember_ecp_program_through_bank_tasklocal_aggregate_v1"
+)
 BANK_SET_S0_STAGE = "g3_program_through_bank_s0_free_summary"
 BANK_SET_S1_STAGE = "g3_program_through_bank_s1_real_summary"
 
@@ -111,6 +116,55 @@ def is_bank_set_tasklocal_config(config: Mapping[str, Any]) -> bool:
     return config.get("schema_version") == BANK_SET_TASKLOCAL_SCHEMA
 
 
+def required_s0_gate_authority(
+    config: Mapping[str, Any], *, asset_root: Path
+) -> dict[str, Any] | None:
+    """Validate that S1 only consumes the passed S0 aggregate, never its state."""
+
+    if config.get("stage") != BANK_SET_S1_STAGE:
+        return None
+    specification = config.get("authorities", {}).get("required_s0_gate", {})
+    relative = specification.get("path")
+    if not isinstance(relative, str) or Path(relative).is_absolute():
+        raise ValueError("Program-through-bank S0 gate path changed")
+    path = (asset_root / relative).resolve()
+    if not path.is_file() or path.stat().st_size != specification.get("bytes"):
+        raise ValueError("Program-through-bank S0 gate artifact changed")
+    aggregate = read_json(path)
+    valid = all(
+        (
+            specification.get("aggregate_schema")
+            == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+            specification.get("stage") == BANK_SET_S0_STAGE,
+            specification.get("required_gate") == "pass",
+            aggregate.get("schema_version")
+            == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+            aggregate.get("status") == "complete",
+            aggregate.get("stage") == BANK_SET_S0_STAGE,
+            aggregate.get("gate") == "pass",
+            aggregate.get("authority_commit")
+            == specification.get("authority_commit"),
+            set(aggregate.get("tasks", {})) == {"1", "93"},
+            all(
+                row.get("gate") == "pass"
+                and bool(row.get("checks"))
+                and all(row["checks"].values())
+                for row in aggregate.get("tasks", {}).values()
+            ),
+        )
+    )
+    if not valid:
+        raise ValueError("Program-through-bank S0 gate did not pass")
+    return {
+        "path": str(path),
+        "bytes": path.stat().st_size,
+        "aggregate_schema": aggregate["schema_version"],
+        "stage": aggregate["stage"],
+        "gate": aggregate["gate"],
+        "authority_commit": aggregate["authority_commit"],
+    }
+
+
 def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     model = config.get("model", {})
     task_local = config.get("task_local", {})
@@ -120,6 +174,7 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
     stage = config.get("stage")
     is_s0 = stage == BANK_SET_S0_STAGE
     is_s1 = stage == BANK_SET_S1_STAGE
+    required_s0 = authorities.get("required_s0_gate", {})
     trainable = (
         [
             "EventConditionedBankSetInteraction.candidate_trunk/condition_generated_heads",
@@ -184,6 +239,18 @@ def bank_set_config_valid(config: Mapping[str, Any]) -> bool:
             isinstance(authorities.get("r5_primal_scorer_checkpoint"), str),
             isinstance(authorities.get("r5_gate_aggregate"), str),
             isinstance(authorities.get("positive_control_root"), str),
+            is_s0
+            or all(
+                (
+                    isinstance(required_s0.get("path"), str),
+                    isinstance(required_s0.get("bytes"), int),
+                    required_s0.get("aggregate_schema")
+                    == BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+                    required_s0.get("stage") == BANK_SET_S0_STAGE,
+                    required_s0.get("required_gate") == "pass",
+                    isinstance(required_s0.get("authority_commit"), str),
+                )
+            ),
             wall.get("fixed_routing_token_training_only") is True,
             wall.get("free_summary_tokens_training_only_not_component_candidate")
             is is_s0,

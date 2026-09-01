@@ -73,6 +73,21 @@
   real Program→B0 set read或shared task-LOTO已成立。下一步严格以fresh R5进入S1，不加载S0 interaction、free tree、optimizer或cursor；
   S0 aggregate只作准入authority。
 
+### Program-through-Bank Bottleneck S1实现与真实profile
+
+- S1以S0 aggregate的schema、bytes、stage、pass、authority commit及task1/93全部checks作为只读准入authority，但不读取S0 checkpoint、
+  free-summary tree、interaction、optimizer或cursor。新增唯一配置`configs/pi05_ecp_event_bank_set_bottleneck_s1_v1.json`，fresh R5下移除
+  training-only free summary，训练完整`EventConditionedBankSetInteraction`，其中真实B0 set encoder与B1 summary-only bounded correction共同可训；
+  source、Native Stage0、Natural Program、R5 primal scorer、真实X/Y、carrier12和scale仍冻结。
+- 新合同拒绝缺失、尺寸漂移或任一task/check non-pass的S0 authority；全仓CPU回归为`256 passed`，配置加载与diff check通过。task1真实一步
+  dirty profile在gpu01物理2自然exit 0：step0逐tensor误差`0`，writer trainable为`585,152`且包含真实set encoder，optimizer step为
+  `12.708s`，全五臂Panel-B物化在总`160.32s`内完成，peak allocated `41,235,517,440` bytes。Action Meta module/parameter为0，
+  source/Native Stage0 trainable为0，Panel-B/correct-held/wrong-fit1 backward均为0，并保持唯一完整rank16。一步后的correct/wrong recovery均约
+  `.18`只验证真实图与零初始化附近数值，不作S1 Gate判断；临时profile核对后删除。
+- S1 formal仍严格复用task1/wrong8与task93/wrong94、10 warmup+100 effective steps及原五臂Gate。两task应并行world1执行；通过才允许
+  fresh shared S2，工程正确后的non-pass则把最早缺口定位为Program-query真实bank形成scope-matched response的B0接口，不以旧S0状态或
+  LR/seed/width/rank小扫修补。
+
 ### EBSRI B0/B1 interface expert-consultation boundary
 
 - relational quotient正式non-pass后，parameter/Jacobian审计确认`z_rel`不是死路径：condition结构段全部获得梯度与Adam状态，移除真实

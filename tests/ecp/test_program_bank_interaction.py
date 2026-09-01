@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 
+import pytest
 import torch
 
 from ember.ecp.bank_conditioning.program_bank_interaction import (
@@ -16,6 +17,13 @@ from ember.ecp.bank_conditioning.set_summary import (
     OutputEventBankSetSummary,
 )
 from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
+    BANK_SET_S0_STAGE,
+    BANK_SET_S1_STAGE,
+    BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+    required_s0_gate_authority,
+)
+from ember.pi05_source_checkpoint import write_json_atomic
 
 
 def _fixture():
@@ -259,3 +267,43 @@ def test_free_summary_tree_does_not_broadcast_across_native_scopes() -> None:
             actual.extend((group.all_types, *group.by_type))
     for scope, token in zip(actual, tokens, strict=True):
         assert torch.equal(scope.condition, token)
+
+
+def test_s1_requires_passed_s0_gate_without_consuming_checkpoint_state(
+    tmp_path,
+) -> None:
+    authority_commit = "b" * 40
+    aggregate = {
+        "schema_version": BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+        "status": "complete",
+        "stage": BANK_SET_S0_STAGE,
+        "gate": "pass",
+        "authority_commit": authority_commit,
+        "tasks": {
+            task: {"gate": "pass", "checks": {"margin": True}}
+            for task in ("1", "93")
+        },
+    }
+    path = tmp_path / "aggregate.json"
+    write_json_atomic(path, aggregate)
+    config = {
+        "stage": BANK_SET_S1_STAGE,
+        "authorities": {
+            "required_s0_gate": {
+                "path": path.name,
+                "bytes": path.stat().st_size,
+                "aggregate_schema": BANK_SET_TASKLOCAL_AGGREGATE_SCHEMA,
+                "stage": BANK_SET_S0_STAGE,
+                "required_gate": "pass",
+                "authority_commit": authority_commit,
+            }
+        },
+    }
+    observed = required_s0_gate_authority(config, asset_root=tmp_path)
+    assert observed is not None and observed["gate"] == "pass"
+
+    aggregate["tasks"]["93"]["checks"]["margin"] = False
+    write_json_atomic(path, aggregate)
+    config["authorities"]["required_s0_gate"]["bytes"] = path.stat().st_size
+    with pytest.raises(ValueError, match="did not pass"):
+        required_s0_gate_authority(config, asset_root=tmp_path)

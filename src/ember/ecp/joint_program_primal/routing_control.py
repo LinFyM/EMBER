@@ -23,6 +23,7 @@ from ember.ecp.joint_program_primal.bank_set_tasklocal_contract import (
     bank_set_config_valid,
     bank_set_parameter_ownership,
     is_bank_set_tasklocal_config,
+    required_s0_gate_authority,
     writer_trainable_inventory,
 )
 from ember.ecp.joint_program_primal.runtime import (
@@ -408,6 +409,9 @@ def _run_contract(
         },
         "task_split": dict(runtime.config["task_split"]),
         "task_local_qualification": task_local_qualification,
+        "required_s0_gate": required_s0_gate_authority(
+            runtime.config, asset_root=runtime.args.asset_root
+        ),
         "functional_panels": {
             str(task): {"path": str(panel.path), "bytes": panel.path.stat().st_size}
             for task, panel in runtime.panels.items()
@@ -448,6 +452,7 @@ def _resolve_routing_inputs(
     args: argparse.Namespace,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     config = load_routing_control_config(args.config)
+    required_s0_gate_authority(config, asset_root=args.asset_root)
     if is_bank_set_tasklocal_config(config):
         config["optimization"]["functional_policy_microbatch_size"] = int(
             config["optimization"]["functional_policy_microbatch_size_by_task"][

@@ -106,7 +106,12 @@
 ## 仓库与workspace整理
 
 - 交接前58个累积worktree已清理；首个E1、family-key E1及两次spectrum结束后对应detached evidence worktree均已删除。当前只保留
-  canonical main与唯一`codex/pnbtt`实现worktree；v2训练/spectrum日志已移入各自formal root，`.codex/tmp`只保留当前可删除profile。
+  canonical main与唯一`codex/pnbtt`实现worktree；v2训练/spectrum日志已移入各自formal root，`.codex/tmp`仅保留正在运行formal的
+  临时launcher与外置日志。
+- full-rank16 formal启动后已删除被提交记录取代的两步disposable profile及两个非运行worktree的Python/pytest cache。为保持一个
+  canonical Writer运行面，删除4个只暴露已退役EBSRI/J3/routing-control路线的旧runner：`train_ecp_bank_set_shared.py`、
+  `train_ecp_bank_set_tasklocal.py`、`evaluate_ecp_bank_set_shared.py`、`evaluate_ecp_joint_program_primal.py`；历史modules、configs、tests和
+  formal artifacts仍保留审计，active PNBTT训练与checkpoint评测统一由`train_ecp_joint_program_primal.py`执行。
 - 删除8个local `codex/*` branch：已合并分支由`main`保存；两个未合并EBSRI S2草案因S1预注册non-pass而失去执行资格；历史
   `g3-vector-interaction@2295f48`仍由`origin/codex/g3-vector-interaction`保存。
 - 已删除完整并入`main`的远程`codex/g3-bank-set-relative-interaction`与`codex/g3-v4-evaluator-authority`；未合并的

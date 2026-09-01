@@ -20,6 +20,10 @@
   不读取原失败checkpoint，只以其evaluation/run-contract作non-pass authority。launch前gpu01物理2为`15MiB/0%`且无compute PID，gpu02无更优空卡；
   `/data1` quota为`777776604/1073741824KiB`，预计新增远低于`200MB`。若Q_free通过，定位Program/structure→B0 query parameterization；若失败，
   才运行预登记的共享full-native nested anchor增广A_free，不做LR/seed/width/rank小扫。
+- 首次Q_free formal在第一个optimizer update前被新增的gradient-presence检查主动终止：零初始化primal gate按设计令step1只更新gate，free query应从step2才有
+  梯度，因此该检查时点错误，不是scientific non-pass。两步真实profile随后证明step2 free-query gradient有限非零。唯一修正commit为
+  `5cb1be686408f1a677d6bd874b10f40c1745fe83`，只把检查从step1移到step2；fresh relaunch root改为
+  `runs/outputs/pi05_ecp_bank_conditioned_primal_qfree_task93_s110_5cb1be6_gpu01p2_r1_20260901`，其余科学合同、数据、seed、schedule、loss与Gate不变。
 
 ### Bank-conditioned primal实现与formal launch contract
 

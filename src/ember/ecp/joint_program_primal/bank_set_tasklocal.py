@@ -637,7 +637,7 @@ def _train(
         loss = torch.stack(tuple(normalized.values())).mean()
         loss.backward()
         if (
-            runtime.optimizer_steps == 0
+            runtime.optimizer_steps == 1
             and runtime.config.get("model", {}).get("b0_query_source")
             == TASKLOCAL_FREE_B0_QUERY
         ):

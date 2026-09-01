@@ -42,6 +42,14 @@
   `0.0007/0.0224`，writer trainable为`2,792,656`且含234个`free_` named tensors；Action Meta module/parameter均为0，source/Stage0
   trainable为0，Panel-B backward为0并只物化唯一rank16。两步为`12.77/13.04s`，峰值`33,600,059,904` bytes。定向合同`8 passed`、
   新旧config解析、compile、diff check及architecture guard无hard violation；该profile只证明实现接通，不作A_free Gate结果。
+- A_free formal固定只fresh运行task93/wrong94这一资格单元，world1、10 warmup+100 effective steps、actual checkpoint70/110及原五臂
+  16-visit Panel-B；不读取任何Q_free checkpoint/optimizer/cursor，不用validation/test/shuffled/reversed。science authority为clean pushed
+  `b0d81bb5592007f846721d5121a9d5b1306bf771`，formal从只增加本launch record的clean pushed detached descendant、worktree
+  `/data1/user/ymdai/projects/EMBER-worktrees/ecp-afree-task93-formal-b0d81bb`执行。exact entry为
+  `CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false numactl --cpunodebind=0 --membind=0 python -u scripts/train_ecp_bank_set_tasklocal.py run --config configs/pi05_ecp_bank_conditioned_primal_afree_task93_v1.json --base-config /data1/user/ymdai/projects/EMBER/configs/pi05_ecp_shared_compiler_g3_v5.json --mode formal --task 93 --asset-root /data1/user/ymdai/projects/EMBER --source-run runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path models/tokenizers/openpi/paligemma_tokenizer.model --data-root data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir runs/outputs/pi05_ecp_bank_conditioned_primal_afree_task93_s110_b0d81bb_gpu01p0_20260901 --condition-cache-root /dev/shm/ember_ecp_j2_pc_10task_c4704cb_gpu01_20260829 --program-bank-condition-cache-root runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831 --stop-after-step 110 --log-every 1`，其中所有相对asset路径在实际exec中展开为canonical绝对路径。
+- launch前`/data1` quota为`777795408/1073741824KiB`，预计新增远低于`200MB`；fresh output不存在、cache存在。gpu01物理0为
+  `GPU-658b6043-6454-1228-bffc-0e2fe22e5013`、Default，外部轻量进程约`3.1GiB/15%`，结合A_free实测峰值仍有约`9GiB`余量；
+  gpu01其余卡及gpu02均有更重现存任务。该单task world1无法由DDP提高吞吐，故不复制同一资格单元；exec紧邻时再次确认显存余量与root。
 
 ### Bank-conditioned primal task93定位与Q_free formal launch contract
 

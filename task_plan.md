@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-01。
+更新时间：2026-09-02。
 
 ## 当前目标与状态
 
@@ -8,15 +8,13 @@ EMBER最终目标仍是：从exact language与一条或多条same-task、action-
 38-target rank16 LoRA，并在固定validation8取得稳定、具备breadth、Goal/Long贡献、same-task鲁棒性和视频因果性的strict paired
 correct `>145/400`。
 
-当前没有active实现、训练、评测或GPU任务，也没有active goal。owner已把远程
-`main@a185fe223d1ef77635d83696c3e164a48520edbf`交给一位此前未参与项目的全新专家做全历史与路线复核。专家正在判断：
+owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，依次完成
+E0--E4与matched whole-Writer joint adjudication，效率优先，不增加专家未要求的流程性Gate，持续推进到满足最终合同或出现
+经过充分尝试仍无法继续的真实阻塞。
 
-1. 继续ECP Native-Factor并替换已定位的Program--bank联合方向接口；
-2. 保留部分Native-Factor证据但另开新的Writer架构分支；
-3. 直接进行更整体的端到端Writer裁决；
-4. 现有证据是否已接近ECP或zero-interaction合同的根本停止条件。
-
-专家回复返回并经owner确认前，不创建新架构版本、不启动formal、不修改实验配置、不占用GPU，也不自行恢复旧路线。
+当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`。实现必须从最新clean pushed `main`建立唯一
+`codex/pnbtt`分支/worktree；最小真实forward/gradient/materialization smoke后立即进入E1/E2，不用全量测试、通用重构或文档整理
+阻塞科学结果。GPU只在实际launch前同时live检查gpu01/gpu02。
 
 ## 当前科学停止点
 
@@ -33,23 +31,22 @@ correct `>145/400`。
 - 当前只停止`summary -> family-scalar gate -> shared event-additive anchor`这一具体参数化；不外推为Program schema、Stage0、
   native X/Y、signed pooling、rank4或整个ECP失败。
 
-## 等待专家期间
+## 当前执行顺序
 
-- [x] 把最新实现、结果、七次专家原文、96节研究历史和停止边界推送远程；
-- [x] 向全新专家提交锁定`a185fe2`的全历史复核prompt；
-- [x] 收敛当前计划/进度文档，记录owner长期效率、GPU和协作要求；
-- [x] 清理已完成worktree、local task branch与`.codex/tmp`，保留formal evidence、checkpoint、dataset、cache authority与Git历史；
-- [x] 建立一次性`HANDOFF.md`供新session消费；
-- [ ] 等待owner转交专家原始回复。
+1. [x] 逐字归档第八次专家原文并核对其引用的代码、配置、提交和formal artifacts；
+2. [x] owner确认主选A/PNBTT并建立持续推进goal；
+3. [ ] 登记active authority，建立唯一`codex/pnbtt`实现worktree；
+4. [ ] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
+   materialization；退役旧base/gate/anchor在deployment主路径中的所有权；
+5. [ ] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
+6. [ ] E1 task1/93 topology-matched free-query transport capacity；
+7. [ ] E2真实frozen G2 Natural Program到bank transport，含K1/K2/K4、same-task与full-vs-language/endpoints；
+8. [ ] E2通过后立即把E3作为whole-Writer run的早期shared资格；若E1通过而E2系统性失败，严格触发专家B路线；
+9. [ ] E4 matched component-init与fully-random whole-Writer joint，最终由validation8 strict paired400合同裁决；
+10. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
 
-## 专家回复后的唯一顺序
-
-1. 将专家原文完整、逐字保存到新的`docs/expert_review_*.md`，不改写历史原文；
-2. 对照专家引用的文件、提交、代码和结果复核其事实与归因，区分专家明确规定、owner裁决和实现建议；
-3. 先向owner给出通俗核心结论、分歧和推荐路线，由owner确认方向；
-4. 只有owner授权后，才更新active design与本计划，从最新clean pushed `main`建立唯一`codex/*`实现面；
-5. 新路线仍必须从最早可证伪接口开始，先做最小真实smoke，再迅速启动有信息量的实验；不得恢复旧Writer、GOMQ、PECS、v24、
-   quotient、surrogate/polish或同类scalar-gate小修，除非新证据明确要求。
+实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
+额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。
 
 ## 继续推进时仍有效的边界
 

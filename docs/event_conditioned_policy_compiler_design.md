@@ -1,6 +1,9 @@
 # EMBER ECP Native-Factor Compiler
 
-状态：2026-09-01第七次专家复核与owner最新裁决更新的active architecture contract。前四次专家审查依次建立Native-Factor主线、
+状态：**历史架构合同，已于2026-09-02被
+`docs/program_conditioned_native_bank_tangent_transport_design.md`取代。** 下文“当前/active/下一步”只表示当时历史时点，不得恢复执行。
+
+2026-09-01第七次专家复核与当时owner裁决曾将其登记为active architecture contract。前四次专家审查依次建立Native-Factor主线、
 要求current-bank conditioning，并把不可接受吞吐的full functional-polar降为fit-only reference。随后
 formal S1与定向S2依次淘汰rank64 native-Q sketch、mean/variance scalar energy、query-conditioned多步set scorer及rank224/384
 cross-image。授权fit-task的cross-episode真实flow-gradient诊断进一步证明：behavior rank4方向在三条真实bank中均有约`.90--.91`
@@ -14,7 +17,7 @@ spread并保持旧动态Gate，却没有对齐真实policy behavior。第四次�
 尚不能把联合失败归因于Program schema或Stage0。当前取消“Program先独立通过behavior-Gram”的硬Gate，唯一活动资格改为联合训练
 Natural Program与shared target-native primal scorer，并直接以generated rank16 LoRA的跨episode functional loss给credit；P1的
 current-bank operator在J2--R11中保持冻结。后续cross-bank正控现已重开该operator的**因果交互**而非容量，详见下文当前裁决。
-本文仍是当前唯一架构依据。第五次专家复核进一步确认P0/P1与R5保留的是capacity primitive，而R12/R13已经充分终止binary
+本文当时仍是唯一架构依据。第五次专家复核进一步确认P0/P1与R5保留的是capacity primitive，而R12/R13已经充分终止binary
 full/half门卫。随后scalar/base-score及32维vector pointwise candidate interaction均在fixed-route资格中暴露capacity--specificity
 冲突：它们要么同时保留correct/wrong，要么以损失correct换取wrong suppression。第六次专家复核据此终止当前set-independent
 pointwise函数类；当前唯一新增接口是在capacity-preserving full query之后、exact signed pooling之前加入Program-relative、

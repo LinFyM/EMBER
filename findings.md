@@ -1,13 +1,24 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。七次专家原文见`docs/expert_review_20260824_native_factor.md`、
+只记录跨session仍影响决策的结论。八次专家原文见`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`与
 `docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`、
 `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`与
-`docs/expert_review_20260901_program_through_bank_bottleneck.md`，精确分数、提交和历史脉络见
-`docs/research_history.md`；当前唯一架构合同见`docs/event_conditioned_policy_compiler_design.md`。本文件是结论索引，不替代原文。
+`docs/expert_review_20260901_program_through_bank_bottleneck.md`、
+`docs/expert_review_20260902_global_route_reassessment.md`，精确分数、提交和历史脉络见`docs/research_history.md`；当前唯一active
+架构合同见`docs/program_conditioned_native_bank_tangent_transport_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
+
+### 0. 当前唯一active路线是PNBTT
+
+2026-09-02全局复核确认：现有证据只停止`summary -> family-scalar gate -> shared event-additive anchor`具体函数类，不否定
+Natural Program、Stage0、真实X/Y、signed pooling、rank4或整个ECP。owner已采纳专家主选A：Program只产生低维query，当前真实bank
+candidate同时决定key-space geometry和native value方向，以可微whitening后的唯一antithetic signed measure形成rank4 residual。
+
+代码核验补充两点：旧`A_free`实际与candidate anchor一起受同一gate门控，且只在arms/banks/videos间共享；旧S1的主query来自fixed
+orthogonal task token，但仍使用真实G2 canonical event assignment。因此S1不能裁决完整G2 Program作为query的充分性，PNBTT E2是当前
+真正缺失的资格。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 

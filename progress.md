@@ -1,14 +1,16 @@
 # EMBER progress
 
-更新时间：2026-09-01。
+更新时间：2026-09-02。
 
 ## 当前快照
 
-- canonical集成目标为`main`。本次交接整理以clean pushed
-  `a185fe223d1ef77635d83696c3e164a48520edbf`为科学前驱；整理提交完成后以远程`main`实际HEAD为准。
-- 当前无EMBER训练、评测、诊断或GPU进程，无active goal，无active实现分支。
-- 一位全新专家正在对`a185fe2`及其完整可达历史做全局路线复核；owner尚未转交回复。
-- 专家回复及owner裁决前，不推进新架构、不修改实验配置、不启动GPU工作。
+- canonical集成目标为`main`。锁定科学提交为`a185fe223d1ef77635d83696c3e164a48520edbf`；第八次全局专家原文已逐字归档并在
+  `3101232204265f379ad2282ecf9a1a9ee30bad8c`推送。
+- owner已在2026-09-02正式采纳专家主选A并建立active goal：以PNBTT替换已停止的Program--bank接口，持续推进E0--E4和最终
+  matched whole-Writer joint，直至满足正式闭环合同或出现真实阻塞。
+- 当前active design为`docs/program_conditioned_native_bank_tangent_transport_design.md`；旧
+  `summary -> family-scalar gate -> shared event-additive anchor`不再是active实现。
+- 当前尚未启动训练、评测或GPU任务；先完成active authority提交和唯一`codex/pnbtt`实现面，launch前才live检查gpu01/gpu02。
 
 ## 最新科学结论
 
@@ -37,7 +39,18 @@
 - 最早缺口因此是高相似summary经family-scalar gate调制共享event-additive anchor时只能近同向移动correct/wrong，无法把bank内容差异
   放大为所需功能分离。停止边界只覆盖这一具体parameterization。
 
-完整历史及每个旧架构的结果在`docs/research_history.md`；长期跨轮结论在`findings.md`；七份专家原文均位于`docs/`。
+完整历史及每个旧架构的结果在`docs/research_history.md`；长期跨轮结论在`findings.md`；八份专家原文均位于`docs/`。
+
+## 当前active路线
+
+- PNBTT保留G2 Natural Program、真实38-target X/Y及四类output bank、frame quadrature、exact signed replay、small-core
+  canonicalization与首版carrier12+residual4。
+- Program只产生低维query；当前bank的真实candidate产生key并继续作为唯一native value。B0只做可微key-space whitening，B1在同一bank
+  上执行一次联合measure的antithetic signed transport；没有base primal、bounded correction、family scalar gate或free anchor。
+- 最短关键路径是：active docs/main推送 -> 唯一实现worktree -> E0真实smoke -> E1 task1/93 free-query -> E2真实G2 Program。
+  E1/E2通过后立即进入shared/whole-Writer；E1通过而E2失败才触发专家B路线。
+- 专家远程artifact缺口中大部分本地已存在；当前实质缺少G2逐condition Program tensors，因此E2从frozen G2 checkpoint按condition重算，
+  不误用fixed-token S1语义或cache。
 
 ## 最新formal evidence
 
@@ -72,9 +85,8 @@
 - tracked科学代码、测试和历史configs暂不在专家裁决前退役，避免提前删除新路线可能需要审计或复用的实现；active计算面仍以当前main为唯一
   canonical source，旧结果不得因文件仍存在而恢复为路线。
 
-## 新session交接状态
+## 当前执行状态
 
-- 临时索引为`HANDOFF.md`；新session必须先按`AGENTS.md`完整阅读authority，再消费该索引。
-- owner的长期效率、GPU、吞吐、subagent、专家联系、goal和Final joint-training要求已统一进入
-  `docs/current_owner_requirements.md`，不依赖HANDOFF保存。
-- 新session收到专家回复后，先保存原文、核对证据并向owner解释；未经owner确认不直接实现专家方案。
+- 第八次专家原文、代码/config/authority冲突和formal evidence已完成逐项复核；未发现推翻主路线判断的结果错误。
+- active authority正在收敛；随后从clean pushed main建立唯一`codex/pnbtt`分支/worktree并开始实现。
+- `HANDOFF.md`已消费并删除；长期信息全部由authority、active design、本文件与Git保存。

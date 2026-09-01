@@ -56,21 +56,25 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 ## 4. 当前方法方向
 
-经过专家和owner反复讨论，当前方向称为ECP Native-Factor Compiler。它不是GOMQ、PECS或历史v24的改名。其核心是：
+经过2026-09-02全局专家复核与owner正式裁决，当前唯一active方向是ECP Native-Factor Compiler中的
+**Program-Conditioned Native-Bank Tangent Transport（PNBTT）**。完整方法合同见
+`docs/program_conditioned_native_bank_tangent_transport_design.md`；专家原文见
+`docs/expert_review_20260902_global_route_reassessment.md`。它不是GOMQ、PECS、历史v24或旧G3的改名。其核心是：
 
-1. 用冻结PI0.5原生language、patch和Action Expert内部时序结构形成owner-specific、ordered Video Program；
-2. 用同一Program先从38个LoRA目标的真实input/output activations流式累计每视频单位质量的bank statistics和native anchors，
-   形成capacity-preserving full base queries；再重放同一bank，让未聚合Program event、当前视频local event context与每个真实candidate
-   content共同修正positive/negative logits，以唯一signed measure对真实X/Y做exact pooling并选取rank4因子；不得退化为condition级
-   binary route、support gate或两套operator选择；
-3. 首版与frozen rank12 carrier严格拼接成唯一rank16 LoRA；rank分解保留由容量实验重开的机制；
-4. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
-5. Program与compiler分别通过Gate后，最终必须在冻结backbone下联合训练全部Writer。
+1. 保留冻结PI0.5原生language、patch和Action Expert内部时序结构形成的owner-specific、ordered Natural Program；
+2. Program只能产生低维query；当前真实X/Y candidate产生低维key，最终value始终是原始真实native candidate；
+3. B0只流式建立当前bank的key-space mean/covariance/whitening，B1在同一bank上执行唯一antithetic exact signed selection；
+   不再产生base primal，也不再使用`base + bounded correction`、family scalar gate、shared/free native anchor或summary token；
+4. 每条视频独立保序编码，跨视频以固定等质量`1/K`形成一个联合candidate measure；不得学习video reliability、平均raw
+   features或先生成多套LoRA再平均；
+5. 首版继续把唯一native-bank rank4 residual与frozen rank12 carrier严格拼成一套38-target rank16；rank分配只由同构容量证据重开；
+6. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
+7. E1 free-query transport与E2真实frozen Natural Program资格通过后，立即进入shared/whole-Writer训练；Final必须matched比较
+   component-init与同拓扑fully-random fresh候选。
 
-截至2026-09-01，最新Program-through-bank与bank-conditioned-primal链已停止
-`summary -> family-scalar gate -> shared event-additive anchor`这一具体parameterization，新的全局专家复核正在判断应继续ECP、替换
-Program--bank联合方向接口、直接做整体joint训练，还是开启新的Writer架构分支。本节保留的是仍有效的目标、信息墙和Native-Factor证据，
-不是等待期内已经获准执行的新架构；专家回复经owner裁决并更新active design前，没有active实现或GPU训练路线。
+当前旧G3的`summary -> family-scalar gate -> shared event-additive anchor`函数类正式退役；旧sealed configs和代码只作历史复现与
+选择性kernel复用，不构成active fallback。若E1通过而E2在排除bank chart/优化问题后系统性失败，按专家条件转入直接由language与
+ordered native-bank tokens产生signed measure的B路线；只有matched whole-Writer两臂都不能产生稳定闭环增量，才讨论根本停止。
 
 唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
 `sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。

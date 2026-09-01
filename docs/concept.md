@@ -72,8 +72,11 @@ sigma     [8, 38, 128]   # cross-video uncertainty
 differences；这些量不是Program字段，也不在内存中整段物化。稳定结构原则是Program只能以query等方式读取当前真实bank，不能用
 absolute code绕过bank直接决定LoRA；Program与current-bank content必须共同形成方向，再由当前bank上的唯一signed measure对真实X/Y做
 exact pooling并产生rank4 outer products。内部两阶段读取仍属于rollout前一次Writer调用。2026-09-01的Program-through-bank实验链已经
-停止一种具体实现：高相似summary经family-scalar gate调制共享event-additive anchor不能提供足够wrong-bank功能分离；当前没有把另一种
-bank-conditioned primal写成已验证的active realization。
+停止一种具体实现：高相似summary经family-scalar gate调制共享event-additive anchor不能提供足够wrong-bank功能分离。2026-09-02
+owner采纳全局专家主选A，当前active realization为PNBTT：Program只形成低维query，真实candidate形成低维key且自身继续作为唯一native
+value；B0只建立current-bank key covariance/whitening，B1用同一bank上的antithetic signed measure直接pool真实X/Y。这样wrong bank会
+改变矩阵值transport，而不是只改变一个scalar或公共anchor幅度。完整合同见
+`docs/program_conditioned_native_bank_tangent_transport_design.md`。
 
 ## 训练原则
 

@@ -26,7 +26,14 @@ authority。owner主要使用语音输入；明显同音词、术语识别和断
 6. `docs/research_history.md`
 7. `docs/expert_review_20260824_native_factor.md`
 8. `docs/expert_review_20260826_bank_conditioned_native_factor.md`
-9. 当前active design，仅当`progress.md`明确登记时读取。
+9. `docs/expert_review_20260828_g3_functional_sketch.md`
+10. `docs/expert_review_20260829_joint_program_primal.md`
+11. `docs/expert_review_20260830_program_bank_interaction.md`
+12. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`
+13. `docs/expert_review_20260901_program_through_bank_bottleneck.md`
+14. `docs/expert_review_20260902_global_route_reassessment.md`
+15. 当前active design，仅当`progress.md`明确登记时读取；当前为
+    `docs/program_conditioned_native_bank_tangent_transport_design.md`。
 
 旧架构先查`research_history`；只有需要精确公式、实现或命令时，才从该文档登记的Git
 快照和formal artifact选择性读取。不得把重复阅读几十份退役设计当成推进前置步骤。

@@ -12,16 +12,17 @@ realizer均由Git保存，不再作为可执行fallback。
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
 - G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
-- P0/P1已经证明current-bank primal-to-dual与exact signed replay在六task、四family和held videos上保留强容量；当前唯一活动
-  资格是J2 joint Program--primal functional qualification：联合训练Natural Program与共享`ProgramNativePrimalScorer`，直接用
-  唯一完整rank16 LoRA的跨episode action/flow功能损失给credit，同时冻结source、Native Stage 0、bank operator、carrier和scale；
+- P0/P1证明current-bank operator与exact signed replay具有强task-local容量；随后旧G3的
+  `summary -> family-scalar gate -> shared event-additive anchor`在充分校准后仍不能同时保留correct并压低wrong，已经正式停止；
+- 当前唯一active路线是Program-Conditioned Native-Bank Tangent Transport（PNBTT）：Program只产生低维query，真实bank candidate
+  产生key并继续作为唯一native value，通过current-bank whitening与antithetic signed transport形成rank4 residual；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-全仓库orientation、G1、原G2动态Gate和G3 P0/P1已完成。G2-B v3--v5只淘汰各自的独立behavior-geometry目标；当前不再要求
-Program先独立通过behavior-Gram硬Gate，也不恢复任何退役Writer/realizer路线。
+全仓库orientation、G1、原G2动态Gate及旧G3全链已完成。当前依照2026-09-02全局专家复核执行PNBTT E0--E4；不恢复任何
+退役Writer/realizer路线，也不增加behavior-Gram、factor reconstruction或其它非专家Gate。
 
 ## 阅读顺序
 
@@ -33,8 +34,12 @@ Program先独立通过behavior-Gram硬Gate，也不恢复任何退役Writer/real
 6. `docs/expert_review_20260826_bank_conditioned_native_factor.md`：2026-08-26第二次专家回复原文；
 7. `docs/expert_review_20260828_g3_functional_sketch.md`：2026-08-28第三次专家回复原文；
 8. `docs/expert_review_20260829_joint_program_primal.md`：2026-08-29第四次专家回复原文；
-9. `docs/event_conditioned_policy_compiler_design.md`：基于原文和owner裁决的当前唯一架构、阶段Gate与停止条件；
-10. `docs/research_history.md`：影响当前决策的历史证据。
+9. `docs/expert_review_20260830_program_bank_interaction.md`：2026-08-30第五次专家回复原文；
+10. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`：2026-08-31第六次专家回复原文；
+11. `docs/expert_review_20260901_program_through_bank_bottleneck.md`：2026-09-01第七次专家回复原文；
+12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
+13. `docs/program_conditioned_native_bank_tangent_transport_design.md`：owner批准的当前唯一active架构与E0--E4合同；
+14. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

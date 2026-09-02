@@ -60,8 +60,8 @@ PNBTT E0、key-chart修订与唯一full-rank16 oracle均已完成；full-rank16�
    correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
 10. [x] 完成专家允许的唯一同构PNBTT task-local full-rank16 oracle；macro70/110相邻一致`non_pass`，稳定呈现task1高correct/
     高wrong与task93低wrong/低correct的反转，未相对rank4明显更优，因此不重开carrier/task rank分配；
-10a. [ ] fresh运行同一family-key rank4 E1，唯一改动为`normalized_necessity_margin .10 -> .50`；先用两步真实profile确认necessity梯度在
-     formal margin未满足时仍active，然后立即运行macro70/110与相邻Panel-B；
+10a. [ ] fresh运行同一family-key rank4 E1，唯一改动为`normalized_necessity_margin .10 -> .50`；两步真实profile已确认necessity梯度在
+     formal margin未满足时持续active，当前立即启动macro70/110并在checkpoint出现后并行相邻Panel-B；
 11. [ ] gate-aligned E1通过后立即进入E2真实frozen G2 Natural Program到bank transport；
 12. [ ] E2通过后才能进入E3；只有E1容量通过而E2真实Program系统失败才触发次选B，当前未触发；
 13. [ ] E4 matched component-init与fully-random whole-Writer joint只在上游Gate满足后运行，当前未获准；

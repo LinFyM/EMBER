@@ -213,5 +213,16 @@
 - `50f876cb0e5e2e3623a4b77e768d67658960fccc`修正detached formal评测把会正常前进的`origin/main` tip误当训练身份的问题；
   现在仍锁定实际commit、clean/detached拓扑与全部科学合同，只允许包含该commit的authority tip前进。26项focused tests通过。
 - 重新核对专家§6/7.2与三个formal metrics后，确认旧`.10` necessity hinge在formal `.50` margin失败时已关闭，先前的route/authority blocker裁决因此撤销。
-  当前没有运行中的EMBER任务；下一动作是提交并推送唯一`.50` config，做两步真实profile后立即启动fresh macro70/110 formal。
+  唯一`.50` config已由`e65c63888033639c58d29f285aed6cd8331c07e8`提交并推送。gpu01物理1/2双rank两步真实profile自然完成：step1/2
+  `active_necessity_fraction`均为`1.0`，step2 task1/93 free-query梯度为`15.319/9.216`、shared-key梯度为`.171069`，correct/wrong已分离；
+  单步`26.063/25.363s`，两rank峰值allocated约`39.79/37.26GB`、reserved约`46.27/44.08GB`，无OOM或non-finite。该profile只证明
+  gate-aligned hinge真实接通，不作科学Gate证据。
+- gate-aligned E1 formal launch contract：从包含`e65c6388`且clean pushed的detached `main`运行
+  `scripts/train_ecp_joint_program_primal.py`，配置固定`configs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_v1.json`，source checkpoint、
+  tokenizer、dataset、G2/native authority与两个frozen cache均复用family-key E1；task1/93双rank DDP、110 optimizer steps、macro70/110，
+  唯一科学变量是necessity margin `.10 -> .50`。环境固定`CUDA_VISIBLE_DEVICES=1,2`、`NCCL_P2P_DISABLE=1`、NUMA0与canonical venv；
+  输出`runs/outputs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_s110_e65c6388_gpu01p12_20260902/`在preflight时不存在。live检查时gpu01物理1--4
+  均空闲，训练用1/2、保留3/4给checkpoint Panel-B并行；gpu02物理5空闲，4/6可安全共驻，其余为他人高负载任务。`/data1` user blocks为
+  `772766460/1073741824 KiB`，参考同构rank4 formal峰值估计小于`1GB`。只允许同commit、world-size2、config和输入的exact resume；无效root
+  不覆盖而另名保留。裁决只认macro70/110五臂各16次Panel-B与相邻一致E1 Gate。
 - `HANDOFF.md`已消费并删除；长期信息全部由authority、active PNBTT design、本文件与Git保存。

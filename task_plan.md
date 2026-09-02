@@ -11,10 +11,12 @@ correct `>145/400`。
 owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地
 推进E0--E4与matched whole-Writer joint adjudication，直到满足最终合同或出现经充分尝试仍无法继续的真实阻塞。
 
-PNBTT E0和专家允许的E1容量修订序列现已全部完成；最后一次同构task-local full-rank16 oracle仍在macro70/110相邻一致
-`non_pass`，且没有相对rank4呈现专家要求的“明显更优”。因此`docs/program_conditioned_native_bank_tangent_transport_design.md`
-作为刚结束的科学authority保留，但当前没有获准的新active design或implementation route。E2、次选B和whole-Writer D的
-专家前置触发条件均未满足；下一动作是将这一formal证据返回专家，或由owner明确扩展方法authority，不自行发明新路线。
+PNBTT E0、key-chart修订与唯一full-rank16 oracle均已完成；full-rank16未相对rank4呈现专家要求的“明显更优”，因此rank扩展仍正式停止。
+但对三个E1 formal `metrics.jsonl`的后续审计发现：训练中`normalized_necessity_margin=.10`，而专家明确的E1 formal Gate为`.50`；
+`active_necessity_fraction`在约第10步后长期为0，即大部分训练没有对正式所需correct--wrong separation传递necessity梯度。
+专家§6明确说E1失败后应修改bank-tangent parameterization，§7.2又把wrong-video necessity列为三项最小loss之一；因此先前的
+“无active route”裁决过早。当前active design恢复为同一PNBTT family-key rank4图，唯一修订是将训练necessity margin与`.50` formal Gate对齐；
+不改chart、rank、LR、seed、数据、Gate或评测口径，从fresh重跑E1。
 
 ## 当前科学停止点
 
@@ -36,8 +38,9 @@ PNBTT E0和专家允许的E1容量修订序列现已全部完成；最后一次�
   `.960297/.941644/.948351`，但wrong为`.634156/.711548`；task93 wrong为`-.006466/-.021862`，但correct仅
   `.586174/.595686/.449605`。这一任务依赖的容量--特异性反转在70到110保持，没有呈现一致广泛的明显改善，
   所以按专家§5.10停止rank扩展，不进入E2。
-- 这是当前路线/authority阻塞，不是整个ECP的根本停止证据：E1冻结Natural Program，因而未形成“PNBTT容量已通过但真实
-  Program系统失败”的B路线触发条件；matched whole-Writer两臂也尚未被允许运行。
+- 三个E1 formal的necessity hinge都使用`.10`训练margin，却用`.50`作正式裁决；首版在step2后、family-key与full-rank16在约step10后
+  `active_necessity_fraction`持续为0。这是比进一步chart发散更早的训练目标错配，也意味着旧non-pass不能证明专家规定的necessity objective已被充分执行。
+- 当前唯一active修订是gate-aligned necessity E1；full-rank16的负rank裁决仍有效，所以回到`carrier12+task4`，不重开rank扩展。
 
 ## 当前执行顺序
 
@@ -57,7 +60,9 @@ PNBTT E0和专家允许的E1容量修订序列现已全部完成；最后一次�
    correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
 10. [x] 完成专家允许的唯一同构PNBTT task-local full-rank16 oracle；macro70/110相邻一致`non_pass`，稳定呈现task1高correct/
     高wrong与task93低wrong/低correct的反转，未相对rank4明显更优，因此不重开carrier/task rank分配；
-11. [ ] E1通过后才能进入E2真实frozen G2 Natural Program到bank transport；当前E1未通过，本步未触发；
+10a. [ ] fresh运行同一family-key rank4 E1，唯一改动为`normalized_necessity_margin .10 -> .50`；先用两步真实profile确认necessity梯度在
+     formal margin未满足时仍active，然后立即运行macro70/110与相邻Panel-B；
+11. [ ] gate-aligned E1通过后立即进入E2真实frozen G2 Natural Program到bank transport；
 12. [ ] E2通过后才能进入E3；只有E1容量通过而E2真实Program系统失败才触发次选B，当前未触发；
 13. [ ] E4 matched component-init与fully-random whole-Writer joint只在上游Gate满足后运行，当前未获准；
 14. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。

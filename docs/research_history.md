@@ -1955,3 +1955,19 @@ cadence与Gate均不变；仍只物化一套38-target rank16，Action Meta、hel
 E1的free-query real-bank transport仍未通过，所以E2不启动；专家次选B所要求的“E1通过但换成frozen G2 Program后系统失败”未发生，
 whole-Writer D的A路线前置Gate也未满足。因此PNBTT不再是active implementation route，需要owner返回新专家裁决或明确扩展authority才能继续。
 这一停止只覆盖已实际测试的PNBTT E1函数类与扩展序列，不裁决冻结的Natural Program、G2、native X/Y、signed pooling或整个ECP。
+
+## 102. Train-side loss audit撤销“PNBTT已无active route”的过早裁决
+
+后续逐步审计三个PNBTT E1 formal root的`metrics.jsonl`：
+
+- `pi05_ecp_pnbtt_e1_free_query_s110_2664e0d_gpu01p12_20260902`；
+- `pi05_ecp_pnbtt_e1_family_key_s110_02633a39_gpu01p12_20260902`；
+- `pi05_ecp_pnbtt_e1_fullrank16_oracle_s110_57969a68_gpu01p12_20260902`。
+
+三者的`normalized_necessity_margin`均为`.10`，而formal E1 Gate要求minimum correct minus maximum wrong至少`.50`。首个run在step2后、
+后两个run在约step10后`active_necessity_fraction`长期为0；当Panel-A normalized separation超过`.10`后，wrong-video necessity hinge就停止提供梯度，
+即使Panel-B formal `.50` margin仍失败。这与专家§7.2将wrong-video necessity列为三项最小loss之一的意图直接不对齐。
+
+因此第101节中full-rank16不重开rank分配的裁决仍有效，但“已授权E1序列耗尽”与“需要新专家authority”被本节后续证据取代。新的唯一
+active config为`configs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_v1.json`；它保持family-key rank4、LR、seed、数据、loss权重、Gate和评测口径不变，
+只将`normalized_necessity_margin`对齐为`.50`，从fresh重跑E1。

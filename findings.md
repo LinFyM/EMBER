@@ -2098,3 +2098,16 @@ correct为`.557237/.561168/.411465`、wrong为`-.001312/-.007719`。macro110 tas
 这一non-pass只结束已允许的PNBTT E1扩展序列。E1冻结Natural Program，所以它不裁决Program schema、G2、native X/Y、signed pooling或整个ECP。
 专家次选B需要“E1 free-query real-bank transport先通过，再由frozen G2 Program导致系统失败”，而当前第一前提未满足；whole-Writer D也是A通过
 容量与real Program Gate后的后续。因此当前是一个真实的route/authority阻塞，但仍不足以宣告ECP或zero-interaction的根本停止。
+
+### 127. E1的`.10` necessity hinge在`.50` formal margin失败时过早关闭，因而恢复一次gate-aligned fresh E1
+
+在宣告路线阻塞后，重新对照专家§6的E1失败解释和§7.2的三项最小loss，并逐步审计single-chart、family-key和full-rank16三个
+formal `metrics.jsonl`，发现三个config都使用`normalized_necessity_margin=.10`，而同一E1正式Gate要求
+`minimum correct - maximum wrong >= .50`。single-chart从step2后、family-key与full-rank16从约step10后，
+`active_necessity_fraction`长期为0；即后续大部分训练在formal separation仍失败时已不再传递wrong-video contrast梯度。
+
+这不改写旧formal结果：它们准确证明各自实际训练的`.10` hinge参数化为`non_pass`，full-rank16也仍未相对rank4“明显更优”，
+所以rank扩展仍停止。但该证据不足以说专家明确要求的necessity objective已充分行使，先前“PNBTT无active route”的裁决过早。
+
+当前唯一修订从family-key rank4 v2机械派生：`normalized_necessity_margin .10 -> .50`，其余chart、`carrier12+task4`、LR、seed、数据、
+loss权重、Gate、checkpoint cadence和Panel-B口径不变，必须fresh训练。这是已存在loss与formal成功条件的直接对齐，不是width/rank/LR/seed扫描或新架构。

@@ -1,6 +1,6 @@
 # Program-Conditioned Native-Bank Tangent Transport
 
-状态：**concluded scientific authority; not an active implementation route**
+状态：**active design; gate-aligned necessity remediation**
 owner裁决日期：2026-09-02
 方法authority：`docs/expert_review_20260902_global_route_reassessment.md`第5--8节。
 
@@ -163,10 +163,19 @@ fit0/fit1/held为`.960297/.941644/.948351`，但wrong为`.634156/.711548`；task
 `-.006466/-.021862`，但correct仅`.586174/.595686/.449605`。macro70已呈现同一反转，到110没有翻转。
 
 因此full-rank16只证明当前transport能在单个任务上分别表现高correct容量或强wrong specificity，没有形成一致、广泛、
-相对rank4明显更优的rank分配证据。按专家§5.10，E1的single chart、tangent spectrum、family chart、v2 spectrum和唯一
-full-rank16 oracle序列至此耗尽：不重开rank分配，不进入E2，不做中间rank、scale、seed、LR或额外chart扫描。
-PNBTT作为当前active implementation route结束；在owner返回新专家裁决或明确扩展authority前，不实现新路线。
-这一边界不裁决冻结的Natural Program，也不等于ECP或zero-interaction根本停止。
+相对rank4明显更优的rank分配证据。按专家§5.10，不重开rank分配，不做中间rank、scale、seed、LR或额外chart扫描。
+
+但后续对single-chart、family-key和full-rank16三个formal `metrics.jsonl`的train-side审计发现一个更早的合同错配：
+
+- 三个config的`normalized_necessity_margin`均为`.10`；
+- 同一E1的formal Gate明确要求`minimum correct - maximum wrong >= .50`；
+- single-chart从step2后、family-key与full-rank16从约step10后，`active_necessity_fraction`长期为0；
+- 因而后续大部分functional训练并未在formal separation不足时继续提供专家§7.2规定的wrong-video necessity梯度。
+
+旧formal non-pass仍准确裁决它们实际训练的`.10` hinge参数化，full-rank16的负rank比较也仍有效；但它们不足以宣告专家规定的
+necessity objective已被充分行使。当前唯一active修订是从fresh重跑相同family-key `carrier12+task4` PNBTT，将
+`normalized_necessity_margin` 从`.10`对齐到`.50`。chart、rank、LR、seed、数据、loss类型、Gate、checkpoint cadence与Panel-B口径全部不变。
+这是修正已存在的三项最小loss与formal Gate的直接错配，不是超参扫或新架构。该fresh E1通过则立即进入E2；失败则再按最早接口证据裁决。
 
 ### E2：真实frozen Natural Program到bank transport
 

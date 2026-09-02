@@ -44,8 +44,24 @@
 - 专家规定的process Huber loss与无量纲权重`1.0`已在最终代码上完成额外真实单卡一步profile：task1冻结process normalizer为
   `.0558371`，首步normalized process loss为`1.17047`；Frame/Event/Predictor/Composer梯度范数分别为
   `1.23987/.991191/2.50437/3.34321`，峰值allocated/reserved仍为`26.64/35.52GB`。该profile只验证最终目标图与资源，不作方法选择。
-- 当前下一动作是完成shared实现的全量回归、集成并推送clean main，随后从新detached authority尽快并行启动12-task K1
-  component-init full/coarse matched formal；不增加新的科学门槛。
+- shared实现及最终Huber目标图已经完成回归并提交为`0c5c7e99`；当前下一动作是把本launch合同集成并推送clean main，随后从新
+  detached authority并行启动12-task K1 component-init full/coarse matched formal；不增加新的科学门槛。
+- Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
+  最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
+  carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为
+  meta `1/8/9/32/52`及target `72/73/75/93/94`，task2/74只作true task-held零梯度评估；每step固定3 meta + 3 target，K1、
+  两条fit正确视频交替训练，第三条same-task视频只评估。两臂均为component-init、single-process/single-A40、10 warmup + 100
+  effective updates、正确视频cross-episode Panel-A 16 rows、Huber positive process权重`1.0`、单侧preservation `.05`，保存
+  step70/110并在12 tasks三条视频上各做16次零梯度Panel-B。两臂唯一差异是Process读取full 19-layer x 50-horizon x 2-probe
+  response或coarse final-layer horizon mean；Composer与完整dynamic X/Y bank、参数量、seed、schedule和world size完全相同。
+  full固定gpu01:2，输出`runs/outputs/pi05_ecp_policy_response_writer_shared_12task_k1_component_full_s110_0c5c7e99_gpu01p2_20260902/`；
+  coarse固定gpu02:5，输出`runs/outputs/pi05_ecp_policy_response_writer_shared_12task_k1_component_coarse_s110_0c5c7e99_gpu02p5_20260902/`。
+  合同记录时live状态分别为`15MiB/0%`与`159MiB/0%`，后者只有gqma `148MiB`低占用进程；launch前必须再同时检查两节点，若
+  状态漂移则不盲目占用。`/data1` quota blocks为`773293620/1073741824`、limit `1084227584 KiB`，两个root均不存在；参考正式run
+  每条约`45MB`，即使保守估计小于`1GB`也远低于余量，冻结evidence cache仅驻CPU内存。exact resume只允许同commit、同node/GPU、
+  config、输入及world size；无效root不覆盖。两条exact commands为：
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-formal-0c5c7e99 && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_shared_12task_k1_component_full_s110_0c5c7e99_gpu01p2_20260902 --phase shared --representation full --initialization component --mode formal`；
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-formal-0c5c7e99 && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=5 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_shared_12task_k1_component_coarse_s110_0c5c7e99_gpu02p5_20260902 --phase shared --representation coarse --initialization component --mode formal`。
 - Policy-Response Writer task-local formal launch contract：scientific implementation为clean pushed `66df1974`，formal从包含本条合同的
   最新clean pushed detached `main`运行；唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`，复用其中固定source checkpoint、
   Stage0/native observer、carrier12、s_ref、J2 Panel A/B、mapping fit/held split与数据

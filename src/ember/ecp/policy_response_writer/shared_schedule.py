@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import random
+from functools import lru_cache
+from math import gcd, lcm
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -225,6 +227,55 @@ def role_balanced_task_owners(
     return tuple(tuple(sorted(row)) for row in rows)
 
 
+@lru_cache(maxsize=32)
+def _owner_spreading_phase_offsets(
+    orders: tuple[tuple[int, ...], tuple[int, ...]],
+    owners: tuple[tuple[int, ...], ...],
+    tasks_per_role: int,
+) -> tuple[int, int]:
+    """Choose fixed role phases that reduce per-step cache-owner stragglers."""
+
+    owner_by_task = {
+        task: rank for rank, row in enumerate(owners) for task in row
+    }
+    period = lcm(
+        *(
+            len(order) // gcd(len(order), tasks_per_role)
+            for order in orders
+        )
+    )
+    best_score: tuple[int, int, int, int, int] | None = None
+    best_phases = (0, 0)
+    for left_phase in range(len(orders[0])):
+        for right_phase in range(len(orders[1])):
+            maximum_load = 0
+            active_owner_visits = 0
+            squared_load = 0
+            for step in range(period):
+                loads = [0] * len(owners)
+                for order, phase in zip(
+                    orders, (left_phase, right_phase), strict=True
+                ):
+                    offset = step * tasks_per_role + phase
+                    for index in range(tasks_per_role):
+                        task = order[(offset + index) % len(order)]
+                        loads[owner_by_task[task]] += 1
+                maximum_load = max(maximum_load, max(loads))
+                active_owner_visits += sum(value > 0 for value in loads)
+                squared_load += sum(value * value for value in loads)
+            score = (
+                -maximum_load,
+                active_owner_visits,
+                -squared_load,
+                -left_phase,
+                -right_phase,
+            )
+            if best_score is None or score > best_score:
+                best_score = score
+                best_phases = (left_phase, right_phase)
+    return best_phases
+
+
 def owner_balanced_task_group(
     meta: Sequence[int],
     target: Sequence[int],
@@ -250,7 +301,7 @@ def owner_balanced_task_group(
     ):
         raise ValueError("shared Writer owner-balanced schedule changed")
 
-    selected: list[int] = []
+    role_orders: list[tuple[int, ...]] = []
     for role_index, role in enumerate(roles):
         by_rank = {
             rank: [task for task in role if owner_by_task[task] == rank]
@@ -264,7 +315,7 @@ def owner_balanced_task_group(
         rank_offset = (role_index * tasks_per_role) % len(ranks)
         rank_order = (*ranks[rank_offset:], *ranks[:rank_offset])
         cursors = {rank: 0 for rank in ranks}
-        ordered = []
+        ordered: list[int] = []
         while len(ordered) < len(role):
             for rank in rank_order:
                 cursor = cursors[rank]
@@ -272,7 +323,14 @@ def owner_balanced_task_group(
                 if cursor < len(values):
                     ordered.append(values[cursor])
                     cursors[rank] += 1
-        offset = (optimizer_step * tasks_per_role) % len(ordered)
+        role_orders.append(tuple(ordered))
+
+    phases = _owner_spreading_phase_offsets(
+        (role_orders[0], role_orders[1]), owners, tasks_per_role
+    )
+    selected: list[int] = []
+    for ordered, phase in zip(role_orders, phases, strict=True):
+        offset = (optimizer_step * tasks_per_role + phase) % len(ordered)
         selected.extend(
             ordered[(offset + index) % len(ordered)]
             for index in range(tasks_per_role)

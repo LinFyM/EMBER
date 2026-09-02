@@ -307,6 +307,37 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
         0.96 * len(three_rank_loads)
     )
 
+    four_owners = role_balanced_task_owners(
+        {task: 100 + task % 17 for task in tasks},
+        meta=meta,
+        target=target,
+        held=(100, 101),
+        world_size=4,
+    )
+    four_owner_by_task = {
+        task: rank for rank, row in enumerate(four_owners) for task in row
+    }
+    four_rank_loads = []
+    for step in range(330):
+        group = owner_balanced_task_group(
+            meta,
+            target,
+            step,
+            task_owners=four_owners,
+            tasks_per_role=3,
+            seed=19,
+        )
+        four_rank_loads.append(
+            [
+                sum(four_owner_by_task[task] == rank for task in group)
+                for rank in range(4)
+            ]
+        )
+    assert all(max(loads) <= 2 for loads in four_rank_loads)
+    assert sum(min(loads) >= 1 for loads in four_rank_loads) >= (
+        0.70 * len(four_rank_loads)
+    )
+
     four = [
         training_video_demos(
             (3, 7, 11, 13),

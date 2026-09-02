@@ -71,18 +71,20 @@
   formal从包含本条合同的最新clean pushed detached `main`运行。唯一科学变量是gradient mapping数量；固定coarse、K1、component-init、
   同一Writer/model/rank/seed/LR、correct-only cross-episode functional、positive prefix-only process与preservation。55 meta与18 target按role
   各占每update一半，task在role内等权；task2/74及所有其它held任务零梯度。10 warmup + 1200 effective updates，保存macro610/1210；
-  macro610出现后训练继续，另行物化并做held5 correct-only strict250。输出root固定为
-  `runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu02p456_20260903/`且launch前不存在。
-  2026-09-03 00:02 CST再次同时live检查两节点：gpu01物理0的既有任务连续利用率在`4--55%`，不再选用；改用gpu02同NUMA1的
-  物理4/5/6，显存/util为`5186/159/4749 MiB`与`2/0/0%`。物理4的两个`982MiB`进程与gqma、物理6的`4584MiB`进程与gqma均低util，
-  实测Writer峰值加既有占用仍留约`13GiB`，可安全共驻且不触碰他人进程。少于6卡时meta/target cache同时平衡到全部rank；330步
-  schedule审计中三卡`330/330`均有真实任务，`318/330`步精确每卡两个任务，其余12步为`1/2/3`，task频率仍严格相等。gpu02
-  available host memory为`259479396352 bytes`；按75-task真实video长度共5285个采样帧、已测`22164019 bytes/frame`估计训练加Panel-B
-  冻结cache峰值`109.1GiB`，三个model process仍有充分余量。`/data1` quota blocks为
-  `773577068/1073741824`、limit `1084227584 KiB`；旧两checkpoint shared run各`82MB`，本run保守新增小于`2GB`且不复制dataset/model。
-  固定`NCCL_P2P_DISABLE=1`、world-size3与每rank GPU-local NUMA绑定；exact resume只允许同commit、同物理卡、world size、config、输入与
+  macro610出现后训练继续，另行物化并做held5 correct-only strict250。00:05第一次尝试在gpu02物理4/5/6装载时，另一用户在物理5的
+  新任务从`1.48GB`增长到`24.4GB`并开始计算；EMBER在生成run contract、output root、checkpoint或任何科学step前主动停止，未触碰
+  对方进程，也没有产生可恢复或可解释的科学状态。修正后输出root固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu01p2456_20260903/`且launch前不存在。
+  2026-09-03 00:23 CST同时live检查两节点：gpu01物理2/4/5/6分别为`15/15/98/15 MiB`、util全`0%`且无compute process；gpu02
+  物理5已有`26520MiB/74%`动态任务，其余可共驻卡不比gpu01四张空卡更合适，故不跨节点拼卡。四卡真实75-task schedule owner各持
+  `18/19/19/19` tasks、采样frame cost为`1818/1850/1815/1807`；只依据静态task/cache owner自动选择两role固定phase后，完整1210步
+  每rank最多2个task，`905/1210`步四卡都有真实task，其余305步为三卡各2个task，meta task恰为66次、target为201或202次，不读取
+  outcome且不改变科学权重。gpu01 available host memory为`247500165120 bytes`；按75-task真实video长度共5285个采样帧、已测
+  `22164019 bytes/frame`估计训练加Panel-B冻结cache峰值`109.1GiB`，四个model process仍有充分余量。`/data1` quota blocks为
+  `773575340/1073741824`、limit `1084227584 KiB`；旧shared run约`82MB`，本run保守新增小于`2GB`且不复制dataset/model。
+  固定`NCCL_P2P_DISABLE=1`、world-size4与每rank GPU-local NUMA绑定；exact resume只允许同commit、同物理卡、world size、config、输入与
   output root。exact process command为：
-  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-scale-formal-1a11115b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=4,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=3 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu02p456_20260903 --phase shared --representation coarse --initialization component --mode formal`。
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-scale-formal-1a11115b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu01p2456_20260903 --phase shared --representation coarse --initialization component --mode formal`。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

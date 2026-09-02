@@ -15,8 +15,24 @@
   G1 bank容量；full/coarse对照只裁决前端表示。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
-- 当前主worktree为clean canonical main且尚无新GPU任务。下一动作是推送authority/design更新，从该clean main创建唯一
-  `codex/policy-response-writer`实现worktree，完成复用/ownership审计后开始接通真实图。
+- 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一
+  `codex/policy-response-writer`实现worktree。Frozen Capture、repeatable Frame/Event blocks、Current-Video Native Factor Composer、
+  task-local functional runtime、formal checkpoint/resume与唯一rank16 materialization已经接通；旧PNBTT/J2 runtime只复用数据、
+  functional与checkpoint基础设施，不是active fallback。
+- 新Composer沿用G1已证明的非对称启动：native A方向在初始化存在，`tanh(scale_head)`令有效B与mobile update严格为零；真实功能梯度
+  第一步只打开scale，第二步再进入Frame/Event/Composer，避免随机新Writer在训练前破坏carrier。相同projected native keys在context
+  read与signed pooling间复用，task-local阶段缓存冻结Process输出，不改变任何科学变量。
+- 相关定向测试为`23 passed`；完整`tests/ecp`排除既有失败后为`140 passed`，唯一未通过项
+  `test_shared_compiler_mapping.py::test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped`在未修改的canonical main上同样失败，
+  是退役SharedCompiler测试与当前`TangentTransportResult`字段不一致的既有问题，不由本实现引入。
+- task1真实smoke保存在disposable
+  `.codex/tmp/policy_response_smoke_zero_scale_task1_20260902/`：51帧、19 layer x 50 horizon x 2 probe与38-target X/Y一次捕获，
+  初始A非零/B严格零；打开scale后functional梯度到达Frame `.002874`、Event `.003822`、Composer `.237721`，prefix-only frozen-target
+  process梯度到达Frame/Event/predictor，76 tensors、rank12+4到唯一rank16全部通过，峰值allocated约`30.59GB`。
+- task1/task93两步task-local profile只作工程证据。step1均只有scale-head梯度，step2 input/output branches与task query均有非零梯度；
+  task93三个correct Panel-B视频两步后均自发略优于carrier。去重后task93 step耗时由`34.80/34.15s`降至`28.47/26.24s`，
+  allocated峰值由`39.63GB`降至`32.89GB`、reserved由`47.30GB`降至`40.22GB`。下一动作是提交、合并并推送该实现，从clean
+  detached authority并行运行task1/task93的110步formal正控及step70/110只读Panel-B。
 
 ## 最新科学结论
 

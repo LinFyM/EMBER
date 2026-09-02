@@ -26,8 +26,9 @@ active fallback。
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-新active design已经登记；下一步从最新clean pushed main建立唯一实现worktree，接通真实forward/gradient/materialization与task-local
-Composer正控后立即进入GPU shared实验，不恢复任何退役Writer/realizer路线。
+新active design的Frozen Capture、Video Process、Native Factor Composer、唯一rank16物化与task-local functional runtime已经在唯一
+实现worktree接通；真实PI0.5 smoke及task1/task93两步profile通过。下一步从clean pushed detached authority运行正式task-local
+Composer正控，随后立即进入12-task K1 full/coarse matched shared实验，不恢复任何退役Writer/realizer路线。
 
 ## 阅读顺序
 
@@ -82,6 +83,7 @@ scripts/train_source_sft.py
 scripts/train_task_experts.py
 scripts/train_ecp_stage0.py
 scripts/train_ecp_stage0_action_meta.py
+scripts/train_ecp_policy_response_writer.py
 scripts/evaluate_source_sft_validation_loss.py
 scripts/evaluate_ecp_stage0.py
 scripts/evaluate_pi05.py

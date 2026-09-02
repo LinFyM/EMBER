@@ -15,6 +15,7 @@ from ember.ecp.native_factors import (
     NativeVideoReadout,
     OnlineSoftmaxAccumulator,
     TaskLocalNativeFactorOracle,
+    rms_normalize,
 )
 from ember.ecp.native_materialization import (
     compose_rank12_plus_rank4,
@@ -306,6 +307,30 @@ def test_small_core_balanced_svd_has_rank_four_shapes() -> None:
 
     assert canonical_a.shape == a.shape
     assert canonical_b.shape == b.shape
+
+
+def test_rms_normalize_has_finite_gradient_at_exact_zero() -> None:
+    value = torch.zeros(4, 7, requires_grad=True)
+
+    rms_normalize(value).square().sum().backward()
+
+    assert value.grad is not None
+    assert torch.isfinite(value.grad).all()
+
+
+def test_small_core_balanced_svd_disables_outer_autocast() -> None:
+    generator = torch.Generator().manual_seed(29)
+    a = torch.randn(G1_RESIDUAL_RANK, 11, generator=generator)
+    b = torch.randn(13, G1_RESIDUAL_RANK, generator=generator)
+
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        canonical_a, canonical_b = small_core_balanced_svd(a, b)
+
+    assert canonical_a.dtype == a.dtype
+    assert canonical_b.dtype == b.dtype
+    torch.testing.assert_close(
+        canonical_b @ canonical_a, b @ a, rtol=3e-5, atol=3e-5
+    )
 
 
 def test_low_rank_balanced_svd_pads_an_overcomplete_rank16_target() -> None:

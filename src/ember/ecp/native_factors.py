@@ -322,7 +322,16 @@ class OnlineSoftmaxAccumulator:
 def rms_normalize(value: torch.Tensor, *, epsilon: float = 1e-8) -> torch.Tensor:
     """Normalize native vectors in matrix-RMS units used by frozen s_ref."""
 
-    scale = value.float().square().mean(-1, keepdim=True).sqrt().clamp_min(epsilon)
+    # Clamp the squared norm before sqrt.  Clamping afterwards leaves an
+    # infinite sqrt derivative at an exact zero vector and can create 0*inf
+    # NaNs in the deliberately zero-initialized mobile-factor path.
+    scale = (
+        value.float()
+        .square()
+        .mean(-1, keepdim=True)
+        .clamp_min(epsilon * epsilon)
+        .sqrt()
+    )
     return value / scale.to(value.dtype)
 
 

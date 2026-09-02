@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import Mapping
 
 import torch
@@ -48,16 +49,27 @@ def low_rank_balanced_svd(
         or not 0 < output_rank <= a.shape[0]
     ):
         raise NativeFactorError("low-rank core factorization changed shape")
-    qb, rb = torch.linalg.qr(b.float(), mode="reduced")
-    qa, ra = torch.linalg.qr(a.float().transpose(0, 1), mode="reduced")
-    u, singular, vh = torch.linalg.svd(rb @ ra.transpose(0, 1), full_matrices=False)
-    effective_rank = min(output_rank, singular.shape[0])
-    u = u[:, :effective_rank]
-    singular = singular[:effective_rank]
-    vh = vh[:effective_rank]
-    root = singular.clamp_min(0).sqrt()
-    canonical_b = (qb @ u) * root[None]
-    canonical_a = root[:, None] * (vh @ qa.transpose(0, 1))
+    autocast = (
+        torch.autocast(device_type=a.device.type, enabled=False)
+        if a.device.type in {"cpu", "cuda"}
+        else nullcontext()
+    )
+    # The canonicalizer is a tiny rank-core operation.  Keep it explicitly
+    # FP32 even when its caller is inside BF16 autocast: CUDA's batched SVD has
+    # no BF16 implementation, and reduced precision is undesirable here.
+    with autocast:
+        qb, rb = torch.linalg.qr(b.float(), mode="reduced")
+        qa, ra = torch.linalg.qr(a.float().transpose(0, 1), mode="reduced")
+        u, singular, vh = torch.linalg.svd(
+            rb @ ra.transpose(0, 1), full_matrices=False
+        )
+        effective_rank = min(output_rank, singular.shape[0])
+        u = u[:, :effective_rank]
+        singular = singular[:effective_rank]
+        vh = vh[:effective_rank]
+        root = singular.clamp_min(0).sqrt()
+        canonical_b = (qb @ u) * root[None]
+        canonical_a = root[:, None] * (vh @ qa.transpose(0, 1))
     pivots = canonical_a.abs().argmax(-1)
     signs = torch.sign(
         canonical_a[

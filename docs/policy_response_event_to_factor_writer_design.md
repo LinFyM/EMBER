@@ -321,8 +321,14 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 ## 12. 工程与生命周期
 
 - 新Writer保持一个canonical训练/评测入口；合法差异放入同一配置或窄strategy边界，不复制runner。
+- active source ownership固定为：`capture.py`只拥有冻结PI0.5/native taps；`process.py`只拥有Frame/Event表示与causal target；
+  `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`、`tasklocal.py`及
+  `tasklocal_contract.py`分别拥有共享runtime基础、task-local正控循环与formal evidence合同。唯一CLI是
+  `scripts/train_ecp_policy_response_writer.py`。
 - 复用observer hooks、native X/Y capture、events、chunked replay、materializer、J2 data/functional infrastructure与evaluator。
 - PNBTT、EBSRI、旧G3与Natural Program完整实现只保留为历史复现和kernel来源，不得作为active fallback。
+- 当前不删除这些tracked历史实现；待新Writer完成matched shared裁决并冻结论文方法后，才审计删除无独占复现价值且已由Git/formal
+  artifacts覆盖的旧可执行入口。此前它们不能被新runtime导入为备选Writer路径。
 - 新active source按Frozen Capture、Video Process、Factor Composer、Training Runtime四项责任组织；避免继续增长现有超大runtime文件。
 - 首个真实profile按LoRA/s、最长视频稳定性、GPU利用率和峰值显存选择frame/target microbatch。
 - 每次GPU launch前同时live检查gpu01与gpu02，使用1至6张真正提高吞吐的A40，可在不干扰他人的前提下安全共驻。

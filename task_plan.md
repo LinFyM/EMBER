@@ -55,21 +55,22 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 2. [x] owner确认Policy-Response Event-to-Factor Writer主案；
 3. [x] 建立持续推进goal；
 4. [x] 登记active design并校正owner requirements、concept、findings、task plan与progress；
-5. [ ] 从最新clean pushed main建立唯一codex/policy-response-writer分支和worktree；
-6. [ ] 盘点并复用observer、events、native X/Y、chunked replay、materializer、J2 data/functional runtime与evaluator，确定唯一
+5. [x] 从最新clean pushed main建立唯一codex/policy-response-writer分支和worktree；
+6. [x] 盘点并复用observer、events、native X/Y、chunked replay、materializer、J2 data/functional runtime与evaluator，确定唯一
    runtime owner及旧路径退休触发；
-7. [ ] 实现Frozen Capture接口、Frame Policy-Response Blocks、Ordered Event Blocks、Current-Video Native Factor Composer与
+7. [x] 实现Frozen Capture接口、Frame Policy-Response Blocks、Ordered Event Blocks、Current-Video Native Factor Composer与
    positive-only objectives；
-8. [ ] 完成最小真实forward/gradient/materialization smoke及task1/task93 task-local Composer正控；
-9. [ ] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
-10. [ ] 在相邻checkpoint出现有意义correct功能信号后尽快运行held5 correct-only strict250，不用冗长内部阈值阻塞闭环；
-11. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
+8. [x] 完成最小真实forward/gradient/materialization smoke及task1/task93两步task-local工程profile；
+9. [ ] 从clean pushed detached authority正式运行task1/task93 task-local Composer正控并评估step70/110；
+10. [ ] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
+11. [ ] 在相邻checkpoint出现有意义correct功能信号后尽快运行held5 correct-only strict250，不用冗长内部阈值阻塞闭环；
+12. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
     reversed controls；controls不回流训练；
-12. [ ] 根据最早失效接口作有依据修正：Composer、representation、functional credit、task组合覆盖或positive-only可辨识性；
-13. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
-14. [ ] 扩大到train24与经审计non-held meta tasks，运行validation8相邻single-checkpoint strict paired400；
-15. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-16. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+13. [ ] 根据最早失效接口作有依据修正：Composer、representation、functional credit、task组合覆盖或positive-only可辨识性；
+14. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
+15. [ ] 扩大到train24与经审计non-held meta tasks，运行validation8相邻single-checkpoint strict paired400；
+16. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+17. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

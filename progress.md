@@ -67,6 +67,20 @@
   一出现即可在训练继续时并行做held5 correct250，不新增人为内部门。单卡两步真实profile已解析两套completed Panel roots中的75个
   task authority，完成真实capture、functional反传、process反传和唯一rank16物化；step2 Frame/Event/Predictor/Composer梯度均非零，
   峰值allocated/reserved为`27.55/38.17GB`。profile当时为资源上界读取4 fit + 1 held视频；正式首轮已缩为2 fit，profile不作方法选择。
+- 73-task scale component-init formal launch contract：scientific implementation为`1a11115bd719aa00ec4a80ac61ee09a200944443`，
+  formal从包含本条合同的最新clean pushed detached `main`运行。唯一科学变量是gradient mapping数量；固定coarse、K1、component-init、
+  同一Writer/model/rank/seed/LR、correct-only cross-episode functional、positive prefix-only process与preservation。55 meta与18 target按role
+  各占每update一半，task在role内等权；task2/74及所有其它held任务零梯度。10 warmup + 1200 effective updates，保存macro610/1210；
+  macro610出现后训练继续，另行物化并做held5 correct-only strict250。输出root固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu01p0256_20260902/`且launch前不存在。
+  2026-09-02 23:53 CST同时live检查两节点：选用gpu01物理0/2/5/6，显存/util分别为`2847/15/98/15 MiB`与全0%；物理0只与
+  yhzhang的`2801MiB/0%`低占用进程共驻，物理2/5/6无compute process，不触碰他人进程。gpu02当时只有物理4/5/6可考虑，三卡
+  并行度低于gpu01四卡，故不跨节点拼接。gpu01 available host memory为`242948390912 bytes`；按75-task真实video长度共5285个采样帧、
+  已测`22164019 bytes/frame`估计训练加Panel-B冻结cache峰值`109.1GiB`，四个model process仍有充分余量。`/data1` quota blocks为
+  `773577068/1073741824`、limit `1084227584 KiB`；旧两checkpoint shared run各`82MB`，本run保守新增小于`2GB`且不复制dataset/model。
+  固定`NCCL_P2P_DISABLE=1`、world-size4与每rank GPU-local NUMA绑定；exact resume只允许同commit、同物理卡、world size、config、输入与
+  output root。exact process command为：
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-scale-formal-1a11115b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,2,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu01p0256_20260902 --phase shared --representation coarse --initialization component --mode formal`。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

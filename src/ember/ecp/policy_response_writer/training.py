@@ -79,13 +79,14 @@ class PolicyResponseRuntime:
     panels: dict[int, Any]
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     video_store: RawTeacherVideoStore
-    query_dataset: FunctionalQueryDataset
-    query_processor: Pi05LiberoProcessor
+    query_dataset: FunctionalQueryDataset | None
+    query_processor: Pi05LiberoProcessor | None
     initialization: dict[str, object]
 
     def close(self) -> None:
         self.video_store.close()
-        self.query_dataset.close()
+        if self.query_dataset is not None:
+            self.query_dataset.close()
 
 
 def load_policy_response_config(path: Path) -> dict[str, Any]:
@@ -170,8 +171,78 @@ def _runtime_task_ids(
     return selected_ids
 
 
+def _runtime_tasks_and_panels(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    tasks: tuple[Any, ...],
+    *,
+    deployment_global_ids: tuple[int, ...] | None,
+) -> tuple[tuple[Any, ...], dict[int, Any]]:
+    task_by_id = {task.authority_id: task for task in tasks}
+    if deployment_global_ids is not None:
+        expected = set(deployment_global_ids)
+        selected = tuple(
+            sorted(
+                (
+                    task
+                    for task in tasks
+                    if task.role == "target_held"
+                    and task.domain_task_id in expected
+                ),
+                key=lambda task: task.domain_task_id,
+            )
+        )
+        if tuple(task.domain_task_id for task in selected) != deployment_global_ids:
+            raise ValueError("Policy-Response Writer deployment tasks changed")
+        return selected, {}
+
+    selected_ids = _selected_task_ids(config)
+    runtime_ids = _runtime_task_ids(args, selected_ids)
+    if not set(runtime_ids) <= set(selected_ids):
+        raise ValueError("Policy-Response Writer task escaped its registered split")
+    panel_config = read_json(
+        (
+            args.asset_root
+            / str(config["authorities"]["functional_panel_config"])
+        ).resolve()
+    )
+    panels = _load_panels(panel_config, asset_root=args.asset_root)
+    if not set(runtime_ids) <= set(panels):
+        raise ValueError("Policy-Response Writer functional panels changed")
+    return tuple(task_by_id[value] for value in runtime_ids), panels
+
+
+def _functional_runtime_inputs(
+    *,
+    authorities: tuple[Any, ...],
+    source_config: Mapping[str, Any],
+    base: Mapping[str, Any],
+    args: argparse.Namespace,
+    context: DistributedContext,
+    enabled: bool,
+) -> tuple[FunctionalQueryDataset | None, Pi05LiberoProcessor | None]:
+    if not enabled:
+        return None, None
+    dataset = FunctionalQueryDataset(
+        authorities,
+        demo_indices=range(50),
+        action_chunk_size=int(source_config["features"]["chunk_size"]),
+        max_open_files_per_worker=4,
+    )
+    processor = Pi05LiberoProcessor(
+        load_stats(source_config, source_config["data"]["active_task_ids"]),
+        authority_path(base, "tokenizer", asset_root=args.asset_root),
+        int(source_config["features"]["tokenizer_max_length"]),
+        str(context.device),
+    )
+    return dataset, processor
+
+
 def prepare_runtime(
-    args: argparse.Namespace, context: DistributedContext
+    args: argparse.Namespace,
+    context: DistributedContext,
+    *,
+    deployment_global_ids: tuple[int, ...] | None = None,
 ) -> PolicyResponseRuntime:
     config = load_policy_response_config(args.config)
     _validate_launch_authority(args)
@@ -224,34 +295,25 @@ def prepare_runtime(
     initialization = _initialize_writer(writer, stage0, args.initialization)
     tasks = _tasks(base, args.data_root, args.asset_root)
     task_by_id = {task.authority_id: task for task in tasks}
-    selected_ids = _selected_task_ids(config)
-    runtime_ids = _runtime_task_ids(args, selected_ids)
-    if not set(runtime_ids) <= set(selected_ids):
-        raise ValueError("Policy-Response Writer task escaped its registered split")
-    selected_tasks = tuple(task_by_id[value] for value in runtime_ids)
-    panel_config = read_json(
-        (args.asset_root / str(config["authorities"]["functional_panel_config"])).resolve()
+    selected_tasks, panels = _runtime_tasks_and_panels(
+        args,
+        config,
+        tasks,
+        deployment_global_ids=deployment_global_ids,
     )
-    panels = _load_panels(panel_config, asset_root=args.asset_root)
-    if not set(runtime_ids) <= set(panels):
-        raise ValueError("Policy-Response Writer functional panels changed")
     authorities = tuple(task.writer_authority() for task in selected_tasks)
     video_store = RawTeacherVideoStore(
         authorities,
         frame_stride=int(config["data"]["frame_stride"]),
         max_open_files=4,
     )
-    query_dataset = FunctionalQueryDataset(
-        authorities,
-        demo_indices=range(50),
-        action_chunk_size=int(source_config["features"]["chunk_size"]),
-        max_open_files_per_worker=4,
-    )
-    query_processor = Pi05LiberoProcessor(
-        load_stats(source_config, source_config["data"]["active_task_ids"]),
-        authority_path(base, "tokenizer", asset_root=args.asset_root),
-        int(source_config["features"]["tokenizer_max_length"]),
-        str(context.device),
+    query_dataset, query_processor = _functional_runtime_inputs(
+        authorities=authorities,
+        source_config=source_config,
+        base=base,
+        args=args,
+        context=context,
+        enabled=deployment_global_ids is None,
     )
     language_tokens = tokenize_stage0_languages(
         selected_tasks,
@@ -337,6 +399,8 @@ def functional_panel_batch(
     visit_index: int,
     rows: int | None = None,
 ) -> tuple[dict[str, Any], Any]:
+    if runtime.query_dataset is None or runtime.query_processor is None:
+        raise ValueError("Policy-Response Writer deployment has no functional data")
     panel = runtime.panels[task_id]
     visits = panel.panel_a if panel_name == "a" else panel.panel_b
     visit = visits[visit_index % len(visits)]

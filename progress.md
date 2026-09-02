@@ -50,8 +50,9 @@
   结论，正式裁决等待step70/110及零梯度Panel-B。
 - 等待训练期间已在唯一Writer CLI内接通`materialize` phase：冻结shared checkpoint后，用held5每task固定correct demo5各调用Writer
   一次，物化五套独立且完整的38-target rank16 adapters，并交给既有`evaluate_pi05.py` static task-LoRA运行面做correct-only
-  strict250。配置固定为`configs/pi05_ecp_policy_response_writer_held5_eval_v1.json`；不读取held action/reward，不生成wrong、shuffle、
-  reverse、no-video或language-only条件，不复制Evaluator。该路径目前只完成代码与authority接线，尚未产生或宣称held5结果。
+  strict250。配置固定为`configs/pi05_ecp_policy_response_writer_held5_eval_v1.json`；deployment runtime不实例化functional action/state
+  dataset或processor，不读取held action/reward，不生成wrong、shuffle、reverse、no-video或language-only条件，也不复制Evaluator。
+  该路径目前只完成代码与authority接线，尚未产生或宣称held5结果。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

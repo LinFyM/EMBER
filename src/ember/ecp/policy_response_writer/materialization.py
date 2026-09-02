@@ -20,13 +20,12 @@ from ember.ecp.policy_response_writer.training import (
     prepare_runtime,
 )
 from ember.ecp.shared_compiler_assets import authority_path
-from ember.ecp.stage0_training import stage0_source_authority, tokenize_stage0_languages
+from ember.ecp.stage0_training import stage0_source_authority
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_source_setup import initialize_distributed, load_config
+from ember.pi05_source_setup import initialize_distributed
 from ember.static_task_lora import STATIC_TASK_LORA_MANIFEST_SCHEMA
-from ember.writer.data import RawTeacherVideoStore
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
@@ -250,7 +249,7 @@ def prepare_materialization_runtime(
     if args.config != (REPO_ROOT / evaluation["training_config"]).resolve():
         raise ValueError("Policy-Response Writer materializer training config changed")
     macro, shared_contract = _load_writer_checkpoint(args, evaluation)
-    args.phase = "shared"
+    args.phase = "materialize"
     args.task = None
     args.video_demo = None
     args.representation = str(shared_contract["representation"])
@@ -261,7 +260,13 @@ def prepare_materialization_runtime(
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     if context.world_size != 1:
         raise ValueError("Policy-Response Writer materialization requires one GPU")
-    runtime = prepare_runtime(args, context)
+    runtime = prepare_runtime(
+        args,
+        context,
+        deployment_global_ids=tuple(
+            map(int, evaluation["target_held_global_ids"])
+        ),
+    )
     held = _held_tasks(runtime, evaluation)
     source_checkpoint = authority_path(
         runtime.base, "source_checkpoint", asset_root=args.asset_root
@@ -274,21 +279,8 @@ def prepare_materialization_runtime(
         runtime.base, "tokenizer", asset_root=args.asset_root
     )
     source = stage0_source_authority(args)
-    source_config = load_config(
-        authority_path(runtime.base, "source_base_config", asset_root=args.asset_root)
-    )
-    runtime.video_store.close()
-    runtime.video_store = RawTeacherVideoStore(
-        tuple(task.writer_authority() for task in held),
-        frame_stride=int(runtime.config["data"]["frame_stride"]),
-        max_open_files=5,
-    )
-    runtime.language_tokens = tokenize_stage0_languages(
-        held,
-        tokenizer_path=args.tokenizer_path,
-        max_length=int(source_config["features"]["tokenizer_max_length"]),
-        device=context.device,
-    )
+    if runtime.query_dataset is not None or runtime.query_processor is not None:
+        raise ValueError("Policy-Response Writer materialization opened functional data")
     runtime.writer.load_state_dict(
         load_file(
             str(args.writer_checkpoint / "ecp.safetensors"),

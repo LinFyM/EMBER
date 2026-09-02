@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import torch
 
@@ -14,6 +15,10 @@ from ember.ecp.policy_response_writer.shared import (
     causal_cutoff,
     functional_objective,
     shared_task_group,
+)
+from ember.ecp.policy_response_writer.training import (
+    _functional_runtime_inputs,
+    _runtime_tasks_and_panels,
 )
 
 
@@ -215,3 +220,27 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert improving["preservation_active"] is False
     assert protected["gradient_mass"] > improving["gradient_mass"]
     assert causal_cutoff(20, 8, optimizer_step=100, task=93, demo=2) in range(8, 20)
+
+
+def test_deployment_runtime_has_no_functional_data_path() -> None:
+    tasks = (
+        SimpleNamespace(authority_id=72, role="target_fit", domain_task_id=2),
+        SimpleNamespace(authority_id=76, role="target_held", domain_task_id=9),
+        SimpleNamespace(authority_id=71, role="target_held", domain_task_id=0),
+    )
+    selected, panels = _runtime_tasks_and_panels(
+        SimpleNamespace(), {}, tasks, deployment_global_ids=(0, 9)
+    )
+    dataset, processor = _functional_runtime_inputs(
+        authorities=(),
+        source_config={},
+        base={},
+        args=SimpleNamespace(),
+        context=SimpleNamespace(),
+        enabled=False,
+    )
+
+    assert tuple(task.authority_id for task in selected) == (71, 76)
+    assert panels == {}
+    assert dataset is None
+    assert processor is None

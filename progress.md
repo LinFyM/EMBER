@@ -33,6 +33,24 @@
   task93三个correct Panel-B视频两步后均自发略优于carrier。去重后task93 step耗时由`34.80/34.15s`降至`28.47/26.24s`，
   allocated峰值由`39.63GB`降至`32.89GB`、reserved由`47.30GB`降至`40.22GB`。下一动作是提交、合并并推送该实现，从clean
   detached authority并行运行task1/task93的110步formal正控及step70/110只读Panel-B。
+- Policy-Response Writer task-local formal launch contract：scientific implementation为clean pushed `66df1974`，formal从包含本条合同的
+  最新clean pushed detached `main`运行；唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`，复用其中固定source checkpoint、
+  Stage0/native observer、carrier12、s_ref、J2 Panel A/B、mapping fit/held split与数据
+  `data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。task1使用fit videos 5/6、held 24，task93使用2/3、held 46；
+  每task独立single-process A40、10 warmup+100 effective updates、Panel-A correct-only 16 rows/step、checkpoints 70/110，每checkpoint
+  对三条correct视频各做16次只读Panel-B。task1命令固定`CUDA_VISIBLE_DEVICES=5`在gpu02，输出
+  `runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task1_full_s110_66df1974_gpu02p5_20260902/`；task93固定
+  `CUDA_VISIBLE_DEVICES=2`在gpu01，输出
+  `runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task93_full_s110_66df1974_gpu01p2_20260902/`；两者均设置
+  `NCCL_P2P_DISABLE=1 PYTHONPATH=src`并使用canonical `.venv/bin/python scripts/train_ecp_policy_response_writer.py --phase task-local
+  --representation full --mode formal`及相同asset/data roots。launch前live状态为gpu01:2 `15MiB/0%`，gpu02:5 `159MiB/0%`且只有
+  gqma `148MiB`低占用进程；不会触碰他人进程。`/data1` user blocks为`772868852/1084227584 KiB`，两个run含四枚checkpoint
+  保守峰值小于`2GB`，3.04/5.67GB frozen evidence与小型Process cache仅驻内存；两个目标root均不存在。裁决比较step70/110
+  fit/held correct functional recovery与既有同task free-primal正控，不使用wrong、held或Panel-B梯度。只允许同commit、同节点/物理卡、
+  config、输入与single-process拓扑exact resume；无效或superseded root不覆盖，另名保留。
+  两条exact process commands分别为：
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-formal-66df1974 && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=5 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task1_full_s110_66df1974_gpu02p5_20260902 --phase task-local --task 1 --representation full --mode formal`；
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-formal-66df1974 && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task93_full_s110_66df1974_gpu01p2_20260902 --phase task-local --task 93 --representation full --mode formal`。
 
 ## 最新科学结论
 

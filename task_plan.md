@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-02。
+更新时间：2026-09-03。
 
 ## 当前goal
 
@@ -71,8 +71,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 13. [x] 首轮最早接口定位为10-task shared映射的task-disjoint方向与组合覆盖不足；full前端没有提供增量且更破坏carrier，故首个
     有依据修正固定为coarse、K1并把自然梯度映射扩大到55 meta + 18 target，其余模型与loss不变；
 14. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
-15. [ ] 完成55 meta + 18 target的scale component-init训练，在macro610训练继续运行时先做held5 correct250，并在macro1210相邻裁决；
-    shared信号成立后再进入validation8相邻single-checkpoint strict paired400；
+15. [ ] 完成55 meta + 18 target的scale component-init训练。macro610 held5 correct250已完成为`26/250`、breadth`2/5`，相对carrier
+    retained/gained/lost=`22/4/21`，为显著non-pass；训练继续到预注册macro1210作相邻裁决。只有shared信号成立后才进入
+    mixed-K、fully-random及validation8相邻single-checkpoint strict paired400；
 16. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 17. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 

@@ -2081,3 +2081,33 @@ task-local Composer强、10-task shared弱且true-task-held为负，最早接口
 target-fit；task2/74仍为true-task-held。每task选择最前两条outcome-independent正确视频作fit、最后一条作held，10 warmup + 1200
 effective updates，macro610在训练继续时先做held5 correct250，macro1210作相邻裁决。这个scale实验检验mapping diversity，而不是恢复
 full前端或进行超参数小扫。
+
+## 107. 73-task scale macro610 closed-loop显著退化
+
+scale component-init formal从clean pushed detached `df7a7f5a837192027ea4d9e8f566d0d2459e26df`在gpu01物理2/4/5/6继续运行；
+固定coarse、K1、同一Writer/rank/LR/seed与positive-only objectives，梯度mapping为55 meta + 18 target-fit，五个held target和其它held
+tasks均零梯度。macro610 checkpoint完整保存后，使用每个held task固定correct demo5各调用Writer一次并物化唯一38-target rank16 bank：
+
+- materialization：
+  `runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m610_held5_correct_k1_materialized_df7a7f5a_gpu02p4_20260903/`；
+- strict250：
+  `runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m610_held5_correct_k1_strict250_6ddceff5_gpu02p46_r2_20260903/`。
+
+评测包含250个严格配对状态、20个cost-balanced shards和四个persistent workers，全部return code为0。结果为`26/250`，逐task
+Long/Goal/Object/Spatial0/Spatial9=`0/0/1/25/0`，breadth`2/5`。相对carrier43，retained/gained/lost为`22/4/21`、success-set
+Jaccard约`.4681`、paired exact p约`.00091`；相对旧coarse macro70同样为`22/4/21`，相对macro110为`21/5/20`。因此扩大自然
+mapping在macro610没有恢复shared closed-loop，反而显著损伤carrier支持。
+
+这是有效科学non-pass而非信息墙或评测故障：held action/reward/state、validation/test、wrong、shuffle和reverse读取均为0；每task-condition
+只有一次Writer调用，部署端无Action Meta、第二adapter或runtime teacher-video读取。为支持scale checkpoint，evaluator中只接受旧
+`{70,110}`的实验专用硬编码由`6ddceff5f30f02282d75c95a0ba9bae8d20a5652`修正为正数macro且checkpoint目录名必须精确匹配；构造测试和
+真实macro610 bank reinspection均通过，该修复没有改变policy、LoRA或rollout合同。
+
+train-side functional benefit从前100步约`.00012`持续升至601步后的约`.0038--.0042`，但held closed-loop下降。物化矩阵进一步显示
+macro610 mobile4整体函数范数为carrier12的`1.81--2.15`倍；旧macro70/110为`.49--.66`倍，正式G1四个非零mobile held tasks约
+`.77--.80`倍。放大遍及38 targets，尤其多层q-proj，而非单target爆炸；不同held task mobile方向余弦约`.03--.49`，也不是所有输出
+完全塌成同一向量。当前定位因此是shared train functional credit向held task外推时的幅度/功能错位，而不是残差没训练、单层数值错误或
+纯task-collapse。
+
+macro610不冻结checkpoint、不运行negative controls，也不准入mixed-K、fully-random或validation。训练继续到预注册macro1210，使用相邻
+closed-loop判断该失败是否稳定或进一步加剧；只有该结果完成后才裁决当前positive-only Event-to-Factor共享函数类。

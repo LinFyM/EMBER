@@ -50,6 +50,14 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 task在完整1210步中获得约与原110步实验相同的更新曝光，同时增加自然mapping多样性。若该规模仍不能把held5稳定带过carrier，便是对
 当前positive-only Event-to-Factor共享函数类更强的停止证据，不能再用full前端或LR/seed小扫解释。
 
+该scale实验的macro610 held5 strict250已完成，为`26/250`，逐task Long/Goal/Object/Spatial0/Spatial9为`0/0/1/25/0`、breadth
+`2/5`。相对carrier43是retained/gained/lost=`22/4/21`，paired exact p约`.00091`；相对旧coarse macro70同样净丢失17。
+与此同时，train-side functional benefit随训练持续上升，held materialization的mobile4整体函数范数却已达到carrier12的
+`1.81--2.15`倍；旧macro70/110仅约`.49--.66`倍，正式G1在四个非零mobile held tasks约`.77--.80`倍。放大遍及38 targets，
+并非单层non-finite或所有task输出塌成同一方向。因此macro610排除“规模Writer没有训练到/残差没移动”，反而暴露shared train functional
+credit向held task外推时的幅度与功能错位。它不单独裁决完整1210-step函数类；预注册macro1210仍需完成相邻closed-loop，期间不运行
+mixed-K、fully-random、validation或负controls。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

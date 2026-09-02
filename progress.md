@@ -1,11 +1,11 @@
 # EMBER progress
 
-更新时间：2026-09-02。
+更新时间：2026-09-03。
 
 ## 当前快照
 
-- canonical集成目标为`main`。最新专家补充意见已逐字归档并推送至
-  `7f5fefe134f7ebba2d09b906186eb5c140cccce9`；归档没有修改科学代码或实验配置。
+- canonical集成目标为clean pushed `main`；当前最新科学/evaluator代码tip为
+  `6ddceff5f30f02282d75c95a0ba9bae8d20a5652`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -90,6 +90,22 @@
   信息墙；四rank冻结cache完成后首个optimizer step在00:34结束。step10完成时最近5步平均`28.92s`，Frame/Event/Predictor/Composer
   梯度均finite nonzero，最大CUDA reserved为`40.883GiB`，gpu01 available host memory仍为`122612895744 bytes`。当前训练继续；
   macro610 ETA只作运行调度估计，不作科学证据。已完成旧12-task formal的clean detached worktree已删除，commit与全部formal outputs保留。
+- scale macro610 checkpoint已完整保存并在训练继续时完成held5 correct-only物化与strict250。物化root为
+  `runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m610_held5_correct_k1_materialized_df7a7f5a_gpu02p4_20260903/`；
+  五个held task各只调用Writer一次，held action/reward/state、validation/test、wrong、shuffle和reverse读取均为0，输出均为唯一完整
+  38-target rank16。旧evaluator把合法Writer checkpoint硬编码为`{70,110}`；`6ddceff5`将其收敛为正数macro且目录名必须精确匹配，
+  相关测试`5 passed`并对真实macro610 bank完成reinspection。该修复不改变model、adapter或评测科学合同。
+- macro610 strict250 root为
+  `runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m610_held5_correct_k1_strict250_6ddceff5_gpu02p46_r2_20260903/`；
+  250个严格配对状态、20个shards和四worker均完整，return code全0。结果为`26/250`，逐task Long/Goal/Object/Spatial0/Spatial9为
+  `0/0/1/25/0`，breadth `2/5`。相对carrier43保留`22`、获得`4`、丢失`21`，paired exact p约`.00091`；相对coarse
+  macro70同样为`22/4/21`，因此是显著净退化。materialized mobile4整体函数范数已从旧macro70/110约为carrier12的
+  `.49--.66`倍增至macro610的`1.81--2.15`倍；38 targets普遍放大而非单target爆炸。训练functional benefit仍持续上升，故当前最早
+  警报是train functional proxy与held closed-loop脱节并伴随shared residual外推过强，而不是Writer没动或评测故障。
+- 该单点不运行controls、不进入mixed-K、fully-random或validation。73-task训练继续到预注册macro1210，以相邻checkpoint判断当前
+  non-pass是中途过渡还是稳定/加剧；随后才按closed-loop证据决定继续或停止当前positive-only Event-to-Factor共享函数类。等待期间只删除了
+  一个无invocation、无shard且已被完整retry1取代的80KiB旧full-macro110 prepare root；formal evidence未删除。当前保留训练与评测两个
+  clean detached worktree，`.codex/tmp`只含在跑训练的rendezvous。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

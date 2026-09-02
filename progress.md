@@ -44,8 +44,14 @@
 - 专家规定的process Huber loss与无量纲权重`1.0`已在最终代码上完成额外真实单卡一步profile：task1冻结process normalizer为
   `.0558371`，首步normalized process loss为`1.17047`；Frame/Event/Predictor/Composer梯度范数分别为
   `1.23987/.991191/2.50437/3.34321`，峰值allocated/reserved仍为`26.64/35.52GB`。该profile只验证最终目标图与资源，不作方法选择。
-- shared实现及最终Huber目标图已经完成回归并提交为`0c5c7e99`；当前下一动作是把本launch合同集成并推送clean main，随后从新
-  detached authority并行启动12-task K1 component-init full/coarse matched formal；不增加新的科学门槛。
+- shared实现及最终Huber目标图已经完成回归并提交为`0c5c7e99`；launch合同随clean pushed
+  `main@1290673a0b51158c0a4f1fc02ff0f32a729996e0`冻结。12-task K1 component-init full/coarse两条matched formal已分别在
+  gpu01物理2与gpu02物理5并行运行，进程、梯度、显存与step输出健康；早期functional benefit仍在正负噪声尺度交替，不提前作科学
+  结论，正式裁决等待step70/110及零梯度Panel-B。
+- 等待训练期间已在唯一Writer CLI内接通`materialize` phase：冻结shared checkpoint后，用held5每task固定correct demo5各调用Writer
+  一次，物化五套独立且完整的38-target rank16 adapters，并交给既有`evaluate_pi05.py` static task-LoRA运行面做correct-only
+  strict250。配置固定为`configs/pi05_ecp_policy_response_writer_held5_eval_v1.json`；不读取held action/reward，不生成wrong、shuffle、
+  reverse、no-video或language-only条件，不复制Evaluator。该路径目前只完成代码与authority接线，尚未产生或宣称held5结果。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

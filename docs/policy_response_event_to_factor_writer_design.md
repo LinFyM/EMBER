@@ -329,8 +329,10 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
   `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
   唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared.py`拥有task schedule、evidence cache与shared
   orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；`shared_evaluation.py`只拥有零梯度Panel-B评估；
-  `shared_contract.py`只拥有formal authority与resume合同。唯一CLI仍是`scripts/train_ecp_policy_response_writer.py`，这些文件不是平行
-  Writer或版本化fallback。
+  `shared_contract.py`只拥有formal authority与resume合同；`materialization.py`只把冻结shared checkpoint与固定正确视频物化成
+  每task唯一完整rank16 adapter。唯一Writer CLI仍是`scripts/train_ecp_policy_response_writer.py`；closed-loop继续复用通用
+  `scripts/evaluate_pi05.py`及其static task-LoRA bank、dynamic queue与paired rollout，不复制Evaluator。这些文件不是平行Writer、
+  平行Evaluator或版本化fallback。
 - 复用observer hooks、native X/Y capture、events、chunked replay、materializer、J2 data/functional infrastructure与evaluator。
 - PNBTT、EBSRI、旧G3与Natural Program完整实现只保留为历史复现和kernel来源，不得作为active fallback。
 - 当前不删除这些tracked历史实现；待新Writer完成matched shared裁决并冻结论文方法后，才审计删除无独占复现价值且已由Git/formal

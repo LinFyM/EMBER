@@ -1,0 +1,540 @@
+"""Freeze one shared Policy-Response Writer checkpoint into held5 task LoRAs."""
+
+from __future__ import annotations
+
+import argparse
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Mapping
+
+import torch
+import torch.distributed as dist
+from safetensors.torch import load_file, save_file
+
+from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
+from ember.ecp.policy_response_writer.shared import SHARED_RUN_SCHEMA, SHARED_STAGE
+from ember.ecp.policy_response_writer.training import (
+    PolicyResponseRuntime,
+    capture_video,
+    prepare_runtime,
+)
+from ember.ecp.shared_compiler_assets import authority_path
+from ember.ecp.stage0_training import stage0_source_authority, tokenize_stage0_languages
+from ember.lora import validate_lora_state
+from ember.pi05_eval_contract import git_state
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_source_setup import initialize_distributed, load_config
+from ember.static_task_lora import STATIC_TASK_LORA_MANIFEST_SCHEMA
+from ember.writer.data import RawTeacherVideoStore
+from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
+
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
+HELD5_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_held5_eval_v1"
+MATERIALIZED_ADAPTER_SCHEMA = (
+    "ember_ecp_policy_response_writer_materialized_adapter_v1"
+)
+
+
+@dataclass
+class WriterMaterializationRuntime:
+    runtime: PolicyResponseRuntime
+    evaluation: dict[str, Any]
+    shared_contract: dict[str, Any]
+    writer_macro: int
+    held: tuple[Any, ...]
+    target_keys: dict[int, tuple[str, int]]
+    source: dict[str, Any]
+    state: dict[str, Any]
+    wall: dict[str, Any]
+
+    def close(self) -> None:
+        self.runtime.close()
+
+
+def load_held5_evaluation_config(path: Path) -> dict[str, Any]:
+    config = read_json(path.resolve())
+    condition = config.get("condition", {})
+    wall = config.get("information_wall", {})
+    if (
+        config.get("schema_version") != HELD5_EVALUATION_SCHEMA
+        or config.get("status") != "active_correct_only_held5_materialization"
+        or config.get("training_config")
+        != "configs/pi05_ecp_policy_response_writer_v1.json"
+        or config.get("task_subset")
+        != "configs/pi05_train24_fold0_held5_eval_v1.json"
+        or config.get("target_held_global_ids") != [0, 9, 18, 25, 36]
+        or config.get("checkpoint_candidates") != [70, 110]
+        or condition
+        != {
+            "name": "correct_k1",
+            "video_demos": [5],
+            "K": 1,
+            "selection": "fixed_first_member_of_existing_correct_5_6_7_8_panel",
+            "outcome_dependence": False,
+            "gradient_use": False,
+            "checkpoint_selection_use": True,
+        }
+        or wall
+        != {
+            "validation_or_test_use": False,
+            "held_action_or_reward_reads": 0,
+            "shuffled_or_reversed_use": False,
+            "wrong_video_use": False,
+            "language_only_use": False,
+            "writer_invocations_per_task_condition": 1,
+            "single_complete_rank16": True,
+        }
+    ):
+        raise ValueError("unsupported Policy-Response Writer held5 evaluation config")
+    return config
+
+
+def _shared_contract_matches(
+    args: argparse.Namespace, contract: Mapping[str, Any]
+) -> bool:
+    config = contract.get("config", {})
+    return all(
+        (
+            contract.get("schema_version") == SHARED_RUN_SCHEMA,
+            contract.get("stage") == SHARED_STAGE,
+            contract.get("mode") == "formal",
+            contract.get("representation") in {"full", "coarse"},
+            contract.get("initialization_request") == "component",
+            int(contract.get("stop_step", -1)) == 110,
+            len(contract.get("world_topology", ())) == 1,
+            Path(str(config.get("path", ""))).name == args.config.name,
+            int(config.get("bytes", -1)) == args.config.stat().st_size,
+        )
+    )
+
+
+def _checkpoint_manifest_matches(
+    manifest: Mapping[str, Any], *, macro: int, world_size: int
+) -> bool:
+    expected_files = {
+        "ecp.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+    }
+    return all(
+        (
+            manifest.get("schema_version") == ECP_CHECKPOINT_SCHEMA,
+            manifest.get("stage") == SHARED_STAGE,
+            manifest.get("run_contract_schema") == SHARED_RUN_SCHEMA,
+            int(manifest.get("next_macro", -1)) == macro,
+            int(manifest.get("world_size", -1)) == world_size,
+            set(manifest.get("files", {})) == expected_files,
+        )
+    )
+
+
+def _completion_matches(completion: Mapping[str, Any]) -> bool:
+    return all(
+        (
+            completion.get("status") == "complete",
+            completion.get("phase") == "shared",
+            int(completion.get("optimizer_steps", -1)) == 110,
+        )
+    )
+
+
+def _load_writer_checkpoint(
+    args: argparse.Namespace,
+    evaluation: Mapping[str, Any],
+) -> tuple[int, dict[str, Any]]:
+    run_root = args.writer_run.resolve()
+    checkpoint = args.writer_checkpoint.resolve()
+    macro = checkpoint_macro(checkpoint)
+    contract = read_json(run_root / "run_contract.json")
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    completion = read_json(run_root / "completion.json")
+    world_size = len(contract.get("world_topology", ()))
+    if not all(
+        (
+            checkpoint.parent.parent == run_root,
+            macro in set(map(int, evaluation["checkpoint_candidates"])),
+            _shared_contract_matches(args, contract),
+            _checkpoint_manifest_matches(manifest, macro=macro, world_size=world_size),
+            _completion_matches(completion),
+            (checkpoint / "ecp.safetensors").is_file(),
+        )
+    ):
+        raise ValueError("Policy-Response Writer checkpoint authority changed")
+    for name, record in manifest["files"].items():
+        path = checkpoint / name
+        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
+            raise ValueError(f"Policy-Response Writer checkpoint file changed: {name}")
+    return macro, contract
+
+
+def _held_tasks(
+    runtime: PolicyResponseRuntime, evaluation: Mapping[str, Any]
+) -> tuple[Any, ...]:
+    expected = tuple(map(int, evaluation["target_held_global_ids"]))
+    tasks = tuple(
+        sorted(
+            (
+                task
+                for task in runtime.task_by_id.values()
+                if task.role == "target_held" and task.domain_task_id in set(expected)
+            ),
+            key=lambda task: task.domain_task_id,
+        )
+    )
+    if len(tasks) != 5 or tuple(task.domain_task_id for task in tasks) != expected:
+        raise ValueError("Policy-Response Writer held5 task authority changed")
+    return tasks
+
+
+def _target_keys(runtime: PolicyResponseRuntime) -> dict[int, tuple[str, int]]:
+    path = authority_path(
+        runtime.base, "target_manifest", asset_root=runtime.args.asset_root
+    )
+    manifest = read_json(path)
+    return {
+        int(row["global_task_id"]): (str(row["suite"]), int(row["task_id"]))
+        for row in manifest["tasks"]
+        if row["split_role"] == "train"
+    }
+
+
+def _freeze_and_inspect(runtime: PolicyResponseRuntime) -> dict[str, Any]:
+    modules = (
+        (runtime.policy, "policy"),
+        (runtime.stage0, "stage0"),
+        (runtime.writer, "writer"),
+    )
+    for module, _ in modules:
+        module.requires_grad_(False).eval()
+    action_meta = [
+        f"{prefix}.{name}:{type(module).__name__}"
+        for root, prefix in modules
+        for name, module in root.named_modules()
+        if isinstance(module, (MetaLoRAStack, MetaLoRAProjection))
+    ]
+    trainable = [
+        f"{prefix}.{name}"
+        for root, prefix in modules
+        for name, value in root.named_parameters()
+        if value.requires_grad
+    ]
+    if action_meta or trainable or any(root.training for root, _ in modules):
+        raise ValueError("Policy-Response Writer materialization wall changed")
+    return {
+        "action_meta_module_instances": action_meta,
+        "action_meta_module_count": 0,
+        "action_meta_parameter_count": 0,
+        "trainable_parameter_names": trainable,
+        "trainable_parameter_count": 0,
+        "held_action_reads": 0,
+        "held_reward_reads": 0,
+        "held_state_reads": 0,
+    }
+
+
+def prepare_materialization_runtime(
+    args: argparse.Namespace,
+) -> WriterMaterializationRuntime:
+    if any(
+        value is None
+        for value in (
+            args.evaluation_config,
+            args.writer_run,
+            args.writer_checkpoint,
+        )
+    ):
+        raise ValueError("Policy-Response Writer materialization assets are required")
+    evaluation = load_held5_evaluation_config(args.evaluation_config)
+    if args.config != (REPO_ROOT / evaluation["training_config"]).resolve():
+        raise ValueError("Policy-Response Writer materializer training config changed")
+    macro, shared_contract = _load_writer_checkpoint(args, evaluation)
+    args.phase = "shared"
+    args.task = None
+    args.video_demo = None
+    args.representation = str(shared_contract["representation"])
+    args.initialization = str(shared_contract["initialization_request"])
+    args.mode = "formal"
+    args.stop_after_step = None
+    args.resume = None
+    context = initialize_distributed(require_numa=True, defer_process_group=True)
+    if context.world_size != 1:
+        raise ValueError("Policy-Response Writer materialization requires one GPU")
+    runtime = prepare_runtime(args, context)
+    held = _held_tasks(runtime, evaluation)
+    source_checkpoint = authority_path(
+        runtime.base, "source_checkpoint", asset_root=args.asset_root
+    )
+    if str(source_checkpoint) != str(shared_contract.get("source_checkpoint")):
+        raise ValueError("Policy-Response Writer materializer source changed")
+    args.checkpoint = source_checkpoint
+    args.source_run = source_checkpoint.parent.parent
+    args.tokenizer_path = authority_path(
+        runtime.base, "tokenizer", asset_root=args.asset_root
+    )
+    source = stage0_source_authority(args)
+    source_config = load_config(
+        authority_path(runtime.base, "source_base_config", asset_root=args.asset_root)
+    )
+    runtime.video_store.close()
+    runtime.video_store = RawTeacherVideoStore(
+        tuple(task.writer_authority() for task in held),
+        frame_stride=int(runtime.config["data"]["frame_stride"]),
+        max_open_files=5,
+    )
+    runtime.language_tokens = tokenize_stage0_languages(
+        held,
+        tokenizer_path=args.tokenizer_path,
+        max_length=int(source_config["features"]["tokenizer_max_length"]),
+        device=context.device,
+    )
+    runtime.writer.load_state_dict(
+        load_file(
+            str(args.writer_checkpoint / "ecp.safetensors"),
+            device=str(context.device),
+        ),
+        strict=True,
+    )
+    return WriterMaterializationRuntime(
+        runtime=runtime,
+        evaluation=evaluation,
+        shared_contract=shared_contract,
+        writer_macro=macro,
+        held=held,
+        target_keys=_target_keys(runtime),
+        source=source,
+        state=git_state(REPO_ROOT),
+        wall=_freeze_and_inspect(runtime),
+    )
+
+
+def _adapter_record(
+    runtime: WriterMaterializationRuntime,
+    *,
+    task: Any,
+    checkpoint: Path,
+    adapter_path: Path,
+    adapter_bytes: int,
+    manifest_path: Path,
+) -> dict[str, Any]:
+    suite, task_id = runtime.target_keys[task.domain_task_id]
+    return {
+        "suite": suite,
+        "task_id": task_id,
+        "natural_program_authority_id": task.authority_id,
+        "global_task_id": task.domain_task_id,
+        "language": task.language,
+        "condition": "correct_k1",
+        "representation": runtime.runtime.args.representation,
+        "writer_macro": runtime.writer_macro,
+        "checkpoint": str(checkpoint),
+        "checkpoint_manifest_bytes": manifest_path.stat().st_size,
+        "adapter_path": str(adapter_path),
+        "adapter_bytes": adapter_bytes,
+        "single_complete_rank16": True,
+    }
+
+
+def _capture_and_materialize(
+    prepared: WriterMaterializationRuntime,
+    *,
+    task: Any,
+    demos: tuple[int, ...],
+) -> tuple[dict[str, torch.Tensor], list[dict[str, Any]]]:
+    runtime = prepared.runtime
+    videos = []
+    captures = []
+    for demo in demos:
+        video, capture = capture_video(
+            runtime, task_id=task.authority_id, video_demo=demo
+        )
+        videos.append(video)
+        captures.append(capture)
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        output = runtime.writer(
+            tuple(videos),
+            s_ref=runtime.ranks.s_ref,
+            representation=runtime.args.representation,
+        )
+        complete = runtime.writer.materialize(
+            output,
+            carrier_state=runtime.ranks.carrier_rank12,
+            rank4_contract=runtime.rank4_contract,
+            rank16_contract=runtime.ranks.contract,
+            canonicalize=True,
+        )
+    validate_lora_state(complete, runtime.ranks.contract)
+    return complete, captures
+
+
+def _materialize_task(
+    prepared: WriterMaterializationRuntime,
+    *,
+    task: Any,
+    demos: tuple[int, ...],
+    partial_root: Path,
+    final_root: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    complete, captures = _capture_and_materialize(
+        prepared, task=task, demos=demos
+    )
+    suite, task_id = prepared.target_keys[task.domain_task_id]
+    relative = Path("adapters") / f"{suite}_task_{task_id:02d}"
+    write_root = partial_root / relative
+    final_checkpoint = final_root / relative
+    write_root.mkdir(parents=True)
+    adapter_path = write_root / "adapter.safetensors"
+    save_file(
+        {
+            name: value.detach().float().cpu().contiguous()
+            for name, value in complete.items()
+        },
+        str(adapter_path),
+    )
+    manifest_path = write_root / "manifest.json"
+    write_json_atomic(
+        manifest_path,
+        {
+            "schema_version": MATERIALIZED_ADAPTER_SCHEMA,
+            "condition": "correct_k1",
+            "representation": prepared.runtime.args.representation,
+            "writer_macro": prepared.writer_macro,
+            "writer_checkpoint": str(prepared.runtime.args.writer_checkpoint),
+            "authority_id": task.authority_id,
+            "global_task_id": task.domain_task_id,
+            "suite": suite,
+            "task_id": task_id,
+            "language": task.language,
+            "video_demos": list(demos),
+            "capture": captures,
+            "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+            "single_complete_rank16": True,
+            "files": {"adapter.safetensors": adapter_path.stat().st_size},
+        },
+    )
+    record = _adapter_record(
+        prepared,
+        task=task,
+        checkpoint=final_checkpoint,
+        adapter_path=final_checkpoint / "adapter.safetensors",
+        adapter_bytes=adapter_path.stat().st_size,
+        manifest_path=manifest_path,
+    )
+    del complete
+    torch.cuda.empty_cache()
+    return record, captures
+
+
+def _bank_payload(
+    prepared: WriterMaterializationRuntime,
+    *,
+    records: list[dict[str, Any]],
+    captures: list[dict[str, Any]],
+    lora_path: Path,
+) -> dict[str, Any]:
+    representation = str(prepared.runtime.args.representation)
+    return {
+        "schema_version": STATIC_TASK_LORA_MANIFEST_SCHEMA,
+        "status": "sealed",
+        "arm": f"ecp_policy_response_writer_{representation}_correct_k1",
+        "source": prepared.source,
+        "lora_contract": {"path": str(lora_path), "bytes": lora_path.stat().st_size},
+        "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        "single_complete_rank16": True,
+        "training_commit": str(prepared.shared_contract["git"]["commit"]),
+        "materialization_commit": str(prepared.state["commit"]),
+        "shared_run_contract": prepared.shared_contract,
+        "writer_checkpoint": {
+            "path": str(prepared.runtime.args.writer_checkpoint),
+            "macro": prepared.writer_macro,
+        },
+        "condition": {
+            **prepared.evaluation["condition"],
+            "representation": representation,
+        },
+        "tasks": records,
+        "information_wall": {
+            "deployment_inputs": [
+                "exact language",
+                "same-task action-hidden internally ordered videos",
+            ],
+            "action_meta_installed": False,
+            "second_adapter_deployed": False,
+            "teacher_video_runtime_reads": 0,
+            "writer_invocations_per_task_condition": 1,
+            "total_writer_invocations": len(records),
+            "materialization_teacher_video_count": len(captures),
+            "validation_action_or_reward_reads": 0,
+            "test_action_or_reward_reads": 0,
+            "shuffled_or_reversed_use": False,
+            "wrong_video_use": False,
+            **prepared.wall,
+        },
+        "content_hash_policy": "disabled_by_owner",
+    }
+
+
+def _seal_bank(
+    *,
+    partial_root: Path,
+    final_root: Path,
+    payload: Mapping[str, Any],
+    representation: str,
+    writer_macro: int,
+) -> None:
+    write_json_atomic(partial_root / "manifest.json", payload)
+    write_json_atomic(
+        partial_root / "completion.json",
+        {
+            "schema_version": "ember_ecp_policy_response_writer_materialization_completion_v1",
+            "condition": "correct_k1",
+            "representation": representation,
+            "tasks": len(payload["tasks"]),
+            "writer_macro": writer_macro,
+        },
+    )
+    partial_root.rename(final_root)
+
+
+def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, Any]:
+    prepared = prepare_materialization_runtime(args)
+    final_root = args.output_dir
+    partial_root = final_root.parent / f".{final_root.name}.partial-{os.getpid()}"
+    if final_root.exists() or partial_root.exists():
+        raise ValueError("Policy-Response Writer materialization output already exists")
+    partial_root.mkdir(parents=True)
+    demos = tuple(map(int, prepared.evaluation["condition"]["video_demos"]))
+    records: list[dict[str, Any]] = []
+    captures: list[dict[str, Any]] = []
+    try:
+        with torch.inference_mode():
+            for task in prepared.held:
+                record, task_captures = _materialize_task(
+                    prepared,
+                    task=task,
+                    demos=demos,
+                    partial_root=partial_root,
+                    final_root=final_root,
+                )
+                records.append(record)
+                captures.extend(task_captures)
+    finally:
+        prepared.close()
+        if dist.is_available() and dist.is_initialized():
+            dist.destroy_process_group()
+    lora_path = authority_path(
+        prepared.runtime.base, "lora_contract", asset_root=args.asset_root
+    )
+    payload = _bank_payload(
+        prepared, records=records, captures=captures, lora_path=lora_path
+    )
+    representation = str(prepared.runtime.args.representation)
+    _seal_bank(
+        partial_root=partial_root,
+        final_root=final_root,
+        payload=payload,
+        representation=representation,
+        writer_macro=prepared.writer_macro,
+    )
+    return payload

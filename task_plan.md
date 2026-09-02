@@ -63,7 +63,7 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 8. [x] 完成最小真实forward/gradient/materialization smoke及task1/task93两步task-local工程profile；
 9. [x] 从clean pushed detached authority正式运行task1/task93 task-local Composer正控并评估step70/110；两task、两checkpoint的
    fit与held-video均自发优于carrier，确认Composer保留可泛化current-bank功能容量；
-10. [ ] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
+10. [x] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
 11. [ ] 在相邻checkpoint出现有意义correct功能信号后尽快运行held5 correct-only strict250，不用冗长内部阈值阻塞闭环；
 12. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
     reversed controls；controls不回流训练；

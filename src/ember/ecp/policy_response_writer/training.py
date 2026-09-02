@@ -594,6 +594,17 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
 
 
 def run(args: argparse.Namespace) -> None:
+    if args.phase == "materialize":
+        from ember.ecp.policy_response_writer.materialization import (
+            materialize_writer_evaluation_bank,
+        )
+
+        payload = materialize_writer_evaluation_bank(args)
+        print(
+            f"sealed {len(payload['tasks'])} {payload['arm']} rank16 adapters",
+            flush=True,
+        )
+        return
     context = initialize_distributed(
         require_numa=args.mode == "formal",
         defer_process_group=True,
@@ -645,7 +656,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--phase", choices=("smoke", "task-local", "shared"), required=True)
+    parser.add_argument(
+        "--phase",
+        choices=("smoke", "task-local", "shared", "materialize"),
+        required=True,
+    )
     parser.add_argument("--task", type=int)
     parser.add_argument("--video-demo", type=int)
     parser.add_argument("--representation", choices=("full", "coarse"), default="full")
@@ -655,12 +670,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mode", choices=("profile", "formal"), default="profile")
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--evaluation-config", type=Path)
+    parser.add_argument("--writer-run", type=Path)
+    parser.add_argument("--writer-checkpoint", type=Path)
     return parser
 
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in ("config", "asset_root", "data_root", "output_dir"):
         setattr(args, name, getattr(args, name).resolve())
-    if args.resume is not None:
-        args.resume = args.resume.resolve()
+    for name in ("resume", "evaluation_config", "writer_run", "writer_checkpoint"):
+        value = getattr(args, name)
+        if value is not None:
+            setattr(args, name, value.resolve())
     return args

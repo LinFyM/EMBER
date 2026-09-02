@@ -109,10 +109,26 @@
   `.05044--.30470`、中位`.14753`，功能响应norm却只有G1的`.4563--.7444`。因此参数残差虽过大，真正policy effect并非“正确方向
   过强”，而是主要落在低效或错误功能方向；事后缩放只会趋近carrier，不能补出G1效应。该诊断零梯度、使用封存G1 privileged
   effect reference，只作non-pass定位，不参与checkpoint选择。
-- 该单点不运行controls、不进入mixed-K、fully-random或validation。73-task训练继续到预注册macro1210，以相邻checkpoint判断当前
-  non-pass是中途过渡还是稳定/加剧；随后才按closed-loop证据决定继续或停止当前positive-only Event-to-Factor共享函数类。等待期间只删除了
-  一个无invocation、无shard且已被完整retry1取代的80KiB旧full-macro110 prepare root；formal evidence未删除。当前保留训练与评测两个
-  clean detached worktree，`.codex/tmp`只含在跑训练的rendezvous。
+- 对照专家§7.5与§9.4继续审计后确认，首版只实现逐rank bounded gain，却遗漏完整per-target effective-update RMS cap。macro610
+  held5有`94/190`个task-target完整mobile `B@A`超过fit19 task-equal全局`s_ref`、最大`2.2433 x`；fit-only shared template为
+  `0/38`，正式G1 held5只有`5/190`个轻微超过。固定压回`1 x s_ref`的post-hoc strict250已经完整结束：`33/250`、breadth
+  `1/5`，Long/Goal/Object/Spatial0/Spatial9=`0/0/0/33/0`。相对原macro610 retained/gained/lost=`20/13/6`、paired exact
+  `p=.16707`；它局部恢复Spatial0净8条，却丢掉Object唯一成功，证明scale boundary有保护作用但不能补出跨suite正确方向。root为
+  `runs/analysis/pi05_ecp_policy_response_writer_scale73_coarse_m610_sref_effective_cap_b8ad986_gpu02p46_20260903/`，manifest明确登记
+  `training_gradient_use=false`与`checkpoint_selection_use=false`，四worker、250 rows及return code均完整。
+- 原训练前804步的global clip触发率为`.8781`；scale-head/其余方向norm中位为`2.5992/.5839`，同一norm分组后方向侧预计只有
+  `.0386`的step触发、有效方向倍率中位恢复`2.6533 x`。唯一实现worktree现为
+  `codex/policy-response-writer-scale-boundary`：Composer按完整rank4 Gram矩阵计算RMS并在不物化dense `B@A`时统一缩放B，shared
+  optimizer把`scale_head`与其余Writer参数各自按原norm `1.0`裁剪；active scale config已显式记录两项。focused tests为
+  `9 passed`，包含dense等价、cap内外、零初始化finite gradient、完整Composer integration和独立裁剪预算。task1/task93两步真实
+  shared profile均已`exit 0`完成：step耗时分别为`15.73/13.81s`与`30.14/25.96s`，Frame/Event/Process/Composer梯度均finite且
+  nonzero；峰值allocated/reserved分别为`23.47/34.81GB`与`33.30/41.56GB`。source policy、native observer与task-local参数均
+  trainable=`0`，wrong/held/Panel-B backward及shuffle/reverse reads均为`0`，输出仍为唯一完整rank16；profile只验证真实图、边界与资源，
+  两步内部functional数值不作科学选择。gpu02物理4/6随后释放，总EMBER物理卡回到旧训练使用的4张。
+- 该单点不运行controls、不进入mixed-K、fully-random或validation。旧73-task训练继续到预注册macro1210，以相邻checkpoint判断其
+  实际未限幅/global-clip parameterization是过渡还是稳定退化；它不再承担停止整个函数类的资格。修正版验证后及时merge/push，
+  并从clean detached authority fresh运行同一73-task/coarse/K1/component-init matched实验。等待期间只删除了一个无
+  invocation、无shard且已被完整retry1取代的80KiB旧full-macro110 prepare root；formal evidence未删除。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

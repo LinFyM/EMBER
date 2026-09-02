@@ -2119,4 +2119,30 @@ successful-member effect loss均值依次为carrier `.914596`、G1 `.238841`、W
 少量功能等价分量，但macro610的大参数norm没有形成过强的正确功能效应；主要容量位于低敏感或错误方向，不能靠事后缩放恢复G1。
 
 macro610不冻结checkpoint、不运行negative controls，也不准入mixed-K、fully-random或validation。训练继续到预注册macro1210，使用相邻
-closed-loop判断该失败是否稳定或进一步加剧；只有该结果完成后才裁决当前positive-only Event-to-Factor共享函数类。
+closed-loop判断该失败是否稳定或进一步加剧。
+
+## 108. macro610暴露缺失的完整scale边界与方向梯度预算
+
+专家澄清稿§7.5规定每target只使用fit-only task-equal全局scale reference、网络预测bounded relative gains，§9.4又明确要求
+“每target effective-update RMS cap”。首版Composer只实现了逐rank的`s_ref * tanh(gain)`；四个rank合成后没有完整矩阵边界。
+对macro610五套held adapters只读重算表明，`94/190`个task-target的mobile `B@A` RMS超过各自`s_ref`，最大比值`2.2433`，
+其中90个是18层q targets、另4个是action-in。作为参照，fit-only shared rank template的38个target均不超过`1 x s_ref`，正式G1
+held5也只有`5/190`个轻微超过。
+
+零梯度事后把每target全部四个mobile ranks共同乘以`min(1, s_ref/RMS(B@A))`，small-core方向、carrier12和配对状态均保持不变。
+诊断root为
+`runs/analysis/pi05_ecp_policy_response_writer_scale73_coarse_m610_sref_effective_cap_b8ad986_gpu02p46_20260903/`；其中
+`cap_report.json`和`materialized/manifest.json::posthoc_diagnostic`明确登记不用于训练或checkpoint选择。strict250完整结果为
+`33/250`、breadth`1/5`，Long/Goal/Object/Spatial0/Spatial9=`0/0/0/33/0`。相对原macro610，retained/gained/lost为
+`20/13/6`、net `+7`、paired exact `p=.167068`；局部恢复Spatial0的8条净成功，但丢掉Object唯一成功，未恢复跨suite方向。
+
+另对原训练前804条metrics分解梯度：global clip触发`.878109`，scale head与其余方向norm中位为`2.59920/.583903`；在相同
+clip norm `1.0`下分组时，scale/方向预计触发率为`.822139/.038557`，方向有效倍率中位恢复`2.653265 x`。因此下一fresh matched
+parameterization保持Writer、coarse、K1、73个gradient tasks、rank、loss、LR与seed不变，只补两个同一scale--direction接口修正：
+
+1. 完整per-target mobile `B@A` RMS固定不超过`1 x s_ref`；该倍率是对专家全局reference加cap要求的直接实现解释，并由上述
+   fit-only/G1分布支持；
+2. `scale_head`与其余全部Writer参数各自沿用原clip norm `1.0`，不改objective或task权重。
+
+旧未限幅/global-clip运行继续到预注册macro1210，只提供其实际parameterization的相邻证据；无论结果如何，它都不能替代上述
+修正版fresh训练，也不能单独停止整个positive-only Event-to-Factor Writer函数类。

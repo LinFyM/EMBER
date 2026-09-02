@@ -41,6 +41,39 @@ class _NativeVideoCandidates:
     chunks: tuple[_NativeBankChunk, ...]
 
 
+def _effective_update_mean_square(
+    a: torch.Tensor, b: torch.Tensor
+) -> torch.Tensor:
+    if a.ndim != 2 or b.ndim != 2 or a.shape[0] != b.shape[0]:
+        raise ValueError("native factor shapes changed")
+    a32 = a.float()
+    b32 = b.float()
+    a_gram = a32 @ a32.transpose(0, 1)
+    b_gram = b32 @ b32.transpose(0, 1)
+    squared_frobenius = (a_gram * b_gram).sum()
+    return (squared_frobenius / float(a.shape[1] * b.shape[1])).clamp_min(0.0)
+
+
+def _effective_update_rms(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Return matrix RMS of ``b.T @ a`` without materializing the matrix."""
+
+    return _effective_update_mean_square(a, b).sqrt()
+
+
+def _effective_update_cap_factor(
+    a: torch.Tensor,
+    b: torch.Tensor,
+    cap: torch.Tensor,
+) -> torch.Tensor:
+    """Bound the complete target update, not each rank component separately."""
+
+    mean_square = _effective_update_mean_square(a, b)
+    denominator = mean_square.clamp_min(
+        torch.finfo(mean_square.dtype).tiny
+    ).sqrt()
+    return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
+
+
 class RankBankContextBlock(torch.nn.Module):
     """One copyable event read, bank read, rank attention, and gated MLP."""
 
@@ -435,8 +468,15 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             scale = s_ref[target].to(query) * torch.tanh(
                 self.scale_head(query).squeeze(-1)
             )
-            a_values.append(rms_normalize(a, epsilon=1e-6))
-            b_values.append(rms_normalize(b, epsilon=1e-6) * scale[:, None])
+            a = rms_normalize(a, epsilon=1e-6)
+            b = rms_normalize(b, epsilon=1e-6) * scale[:, None]
+            cap_factor = _effective_update_cap_factor(
+                a, b, s_ref[target]
+            )
+            b = b * cap_factor.to(b)
+            scale = scale * cap_factor.to(scale)
+            a_values.append(a)
+            b_values.append(b)
             scales.append(scale)
         return NativeFactorResidual(
             a=tuple(a_values),

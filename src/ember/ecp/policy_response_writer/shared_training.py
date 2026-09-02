@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import statistics
 import time
 from typing import Any, Mapping, Sequence
@@ -199,6 +200,38 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
     return result
 
 
+def _clip_scale_and_direction_gradients(
+    *,
+    parameters: Sequence[torch.nn.Parameter],
+    scale_parameters: Sequence[torch.nn.Parameter],
+    max_norm: float,
+) -> torch.Tensor:
+    """Clip scale and direction separately while reporting their joint norm."""
+
+    scale_parameters = tuple(scale_parameters)
+    parameter_ids = {id(parameter) for parameter in parameters}
+    scale_ids = {id(parameter) for parameter in scale_parameters}
+    direction_parameters = tuple(
+        parameter for parameter in parameters if id(parameter) not in scale_ids
+    )
+    if (
+        not direction_parameters
+        or not scale_parameters
+        or len(scale_ids) != len(scale_parameters)
+        or not scale_ids <= parameter_ids
+        or not math.isfinite(max_norm)
+        or max_norm <= 0.0
+    ):
+        raise ValueError("shared Writer gradient group ownership changed")
+    direction_norm = torch.nn.utils.clip_grad_norm_(
+        direction_parameters, max_norm
+    )
+    scale_norm = torch.nn.utils.clip_grad_norm_(scale_parameters, max_norm)
+    return torch.stack(
+        (direction_norm.float(), scale_norm.float())
+    ).square().sum().sqrt()
+
+
 def resume_cursor(
     runtime: PolicyResponseRuntime,
     *,
@@ -310,9 +343,12 @@ def _optimizer_step(
         raise RuntimeError("shared Writer crossed a frozen authority")
     _sum_gradients(runtime, parameters)
     gradient_groups = _gradient_groups(runtime)
-    gradient_norm = torch.nn.utils.clip_grad_norm_(
-        parameters,
-        float(runtime.config["optimization"]["shared"]["gradient_clip_norm"]),
+    gradient_norm = _clip_scale_and_direction_gradients(
+        parameters=parameters,
+        scale_parameters=tuple(runtime.writer.composer.scale_head.parameters()),
+        max_norm=float(
+            runtime.config["optimization"]["shared"]["gradient_clip_norm"]
+        ),
     )
     if not bool(torch.isfinite(gradient_norm)) or float(gradient_norm) <= 0:
         raise RuntimeError("shared Writer gradient norm is invalid")

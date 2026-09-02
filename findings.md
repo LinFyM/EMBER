@@ -66,6 +66,19 @@ residual并没有形成过强的正确policy effect，而是把容量消耗在�
 不是允许事后scale sweep的依据。该privileged read-only诊断不参与模型选择，raw evidence见
 `runs/analysis/pi05_ecp_policy_response_writer_scale73_m610_g1_effect_alignment_5df9406_gpu02p46_20260903/`。
 
+继续按专家原文复核实现后，发现首版只对每个rank使用`s_ref * tanh(gain)`，没有实现专家明确列出的“每target
+effective-update RMS cap”。四个rank对齐后仍可绕过逐rank有界：macro610 held5的`94/190`个task-target完整mobile `B@A`
+RMS超过各自fit19、task-equal全局`s_ref`，最大`2.2433 x`；fit-only shared rank template没有超过，正式G1 held5也只有
+`5/190`个轻微超过。固定把完整mobile update压回`1 x s_ref`的零梯度事后诊断为`33/250`、breadth`1/5`，逐task
+Long/Goal/Object/Spatial0/Spatial9=`0/0/0/33/0`。相对未限幅macro610 retained/gained/lost=`20/13/6`、净增7、paired
+exact `p=.1671`：Spatial0恢复8条，但Object的唯一成功丢失，其余四task没有打开。因此幅度边界能局部减少破坏，却不能把错误功能
+方向变成跨suite正确方向；该诊断不选择checkpoint，也不替代fresh训练。
+
+同一未限幅训练前804步还显示global clip触发率`.8781`，scale-head norm中位`2.5992`、其余方向norm中位`.5839`；若两组沿用
+同一`1.0`边界独立裁剪，方向侧只有`.0386`的step需要裁剪，方向更新倍率中位可恢复`2.6533 x`。所以下一matched fresh运行必须
+同时补齐完整target RMS固定边界，并把scale head与其余Frame/Event/Composer/Process参数分组裁剪。这是专家明确边界加上由实际梯度
+轨迹指定的优化所有权修正，不是事后scale sweep；旧macro1210仍完成相邻裁决，但不能再被解释为已经充分检验修正版函数类。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

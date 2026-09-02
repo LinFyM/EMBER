@@ -12,6 +12,10 @@ from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
     PolicyResponseEventToFactorWriter,
 )
+from ember.ecp.policy_response_writer.composer import (
+    _effective_update_cap_factor,
+    _effective_update_rms,
+)
 from ember.ecp.policy_response_writer.shared import (
     _video_splits,
     balanced_task_owners,
@@ -21,6 +25,9 @@ from ember.ecp.policy_response_writer.shared import (
     role_balanced_task_owners,
     shared_task_group,
     training_video_demos,
+)
+from ember.ecp.policy_response_writer.shared_training import (
+    _clip_scale_and_direction_gradients,
 )
 from ember.ecp.policy_response_writer.training import (
     _functional_panel_config,
@@ -158,6 +165,14 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
         )
         assert any(torch.count_nonzero(value) > 0 for value in initialized.a)
         assert all(torch.count_nonzero(value) == 0 for value in initialized.b)
+        model.composer.scale_head.bias.fill_(10.0)
+        bounded = model.composer(
+            videos, processes, s_ref=torch.full((4,), 0.2)
+        )
+        assert all(
+            _effective_update_rms(a, b) <= 0.2 + 2e-6
+            for a, b in zip(bounded.a, bounded.b, strict=True)
+        )
         zero = tuple(
             replace(
                 process,
@@ -187,6 +202,58 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
     ):
         torch.testing.assert_close(left, right, atol=2e-4, rtol=2e-4)
         torch.testing.assert_close(left, permuted, atol=2e-4, rtol=2e-4)
+
+
+def test_complete_target_effective_update_is_capped_by_s_ref() -> None:
+    generator = torch.Generator().manual_seed(23)
+    a = torch.randn(4, 7, generator=generator, requires_grad=True)
+    b = torch.randn(4, 11, generator=generator, requires_grad=True)
+    cap = torch.tensor(0.2)
+    uncapped = _effective_update_rms(a, b)
+    torch.testing.assert_close(
+        uncapped,
+        (b.transpose(0, 1) @ a).square().mean().sqrt(),
+    )
+    factor = _effective_update_cap_factor(a, b, cap)
+    capped = _effective_update_rms(a, b * factor)
+
+    assert uncapped > cap
+    torch.testing.assert_close(capped, cap, atol=2e-7, rtol=2e-6)
+    assert 0 < factor < 1
+    capped.backward()
+    assert a.grad is not None and torch.isfinite(a.grad).all()
+    assert b.grad is not None and torch.isfinite(b.grad).all()
+
+    small_b = b.detach() * 1e-4
+    torch.testing.assert_close(
+        _effective_update_cap_factor(a.detach(), small_b, cap),
+        torch.tensor(1.0),
+        atol=0,
+        rtol=0,
+    )
+
+    zero_b = torch.zeros_like(b.detach(), requires_grad=True)
+    zero_factor = _effective_update_cap_factor(a.detach(), zero_b, cap)
+    torch.testing.assert_close(zero_factor, torch.tensor(1.0), atol=0, rtol=0)
+    (zero_b * zero_factor).sum().backward()
+    assert zero_b.grad is not None and torch.isfinite(zero_b.grad).all()
+
+
+def test_shared_scale_and_direction_gradients_have_independent_clip_budgets() -> None:
+    direction = torch.nn.Parameter(torch.zeros(2))
+    scale = torch.nn.Parameter(torch.zeros(2))
+    direction.grad = torch.tensor([3.0, 4.0])
+    scale.grad = torch.tensor([6.0, 8.0])
+
+    combined = _clip_scale_and_direction_gradients(
+        parameters=(direction, scale),
+        scale_parameters=(scale,),
+        max_norm=1.0,
+    )
+
+    torch.testing.assert_close(combined, torch.sqrt(torch.tensor(125.0)))
+    torch.testing.assert_close(direction.grad.norm(), torch.tensor(1.0))
+    torch.testing.assert_close(scale.grad.norm(), torch.tensor(1.0))
 
 
 def test_shared_schedule_ownership_and_positive_only_objective() -> None:

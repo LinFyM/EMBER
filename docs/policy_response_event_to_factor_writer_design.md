@@ -188,7 +188,28 @@ native output grouping固定为：
 
 实现使用一个ragged native-group operator和family masks，不复制四条compiler。
 
-### 6.4 视频必要性参数化
+### 6.4 幅度与固定边界
+
+每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`；网络只预测
+`tanh`有界的相对rank gains，不使用task-specific scale表。四个rank合成后的完整mobile update为
+
+\[
+\Delta W_j=B_j^\top A_j.
+\]
+
+在factor输出边界统一施加
+
+\[
+\gamma_j=\min\left(1,\frac{s_{ref,j}}{\operatorname{RMS}(\Delta W_j)}\right),
+\qquad B_j\leftarrow\gamma_j B_j.
+\]
+
+该边界约束完整rank4更新，而不是分别约束四个可能相互对齐的rank；它不读取held outcome，不是loss，也不增加SVD、projection或
+transport。后续small-core canonicalization保持同一有效更新不变。专家明确规定了每target effective-update RMS cap，但没有给出
+额外倍率；首版采用`1 x s_ref`，因为fit-only shared rank template的最大比值为`.846`，通过G1的held5中`185/190`个
+task-target不超过该值，而未设完整边界的shared macro610已有`94/190`个超过、最大`2.243`。
+
+### 6.5 视频必要性参数化
 
 两条signed logits共享common base b，只有bias-free D路径产生branch-specific offset：
 
@@ -252,6 +273,13 @@ task-specific增量，也不要求generated LoRA接近carrier。
 随训练漂移。无量纲后的`L_process`系数固定为`1.0`，`lambda_pres`固定为`.05`，不做weight/LR小扫。
 
 G2已有positive temporal heads只允许作为component-init短暂辅助，并在functional优化稳定后退火到零；它们不进入最终Writer forward。
+
+### 8.4 scale与方向的优化预算
+
+shared训练保持同一optimizer、LR与loss权重，但将`scale_head`和其余全部Writer参数分别按既有norm `1.0`裁剪。该分组不改变
+objective或task权重；它只防止幅度梯度占用同一个global clip后持续缩小Frame、Event和Composer方向更新。未分组的73-task
+macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其余方向norm中位`.5839`；若独立使用同一边界，方向侧仅
+`.0386`的step需要裁剪，方向更新倍率中位可恢复`2.6533 x`。
 
 ## 9. 首轮实现与证据顺序
 
@@ -344,7 +372,8 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 - 新active source按Frozen Capture、Video Process、Factor Composer、Training Runtime四项责任组织；避免继续增长现有超大runtime文件。
 - 首个真实profile按LoRA/s、最长视频稳定性、GPU利用率和峰值显存选择frame/target microbatch。
 - 每次GPU launch前同时live检查gpu01与gpu02，使用1至6张真正提高吞吐的A40，可在不干扰他人的前提下安全共驻。
-- formal训练来自clean pushed detached worktree；等待训练时完成已确认的cache、评测准备和workspace清理。
+- formal训练来自clean pushed detached worktree；等待训练时优先完成cache、分析、评测准备和下一科学节点，只有没有实质性推进工作时
+  才做可随时中断的增量workspace清理，结果一到立即返回科学推进。
 
 ## 13. Authority
 

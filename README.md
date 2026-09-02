@@ -14,15 +14,18 @@ realizer均由Git保存，不再作为可执行fallback。
 - G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
 - P0/P1证明current-bank operator与exact signed replay具有强task-local容量；随后旧G3的
   `summary -> family-scalar gate -> shared event-additive anchor`在充分校准后仍不能同时保留correct并压低wrong，已经正式停止；
-- 当前唯一active路线是Program-Conditioned Native-Bank Tangent Transport（PNBTT）：Program只产生低维query，真实bank candidate
-  产生key并继续作为唯一native value，通过current-bank whitening与antithetic signed transport形成rank4 residual；
+- 最近一次获准路线Program-Conditioned Native-Bank Tangent Transport（PNBTT）已完成E1裁决：Program只产生低维query，真实bank candidate
+  产生key并继续作为唯一native value，通过current-bank whitening与antithetic signed transport形成rank4 residual；修正necessity margin后
+  wrong、margin、all-pairs与near-bound均通过，但task1/93 correct/held在macro70/110稳定不足，因此总体相邻一致`non_pass`；
+- 当前没有active implementation route。E1未通过，所以按专家预注册顺序不启动E2、次选B或whole-Writer joint，也不以续训和
+  LR/seed/width/rank/scale/chart扫描替代接口裁决；该停止不外推为Natural Program、G2、native X/Y、signed pooling、rank4或整个ECP失败；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-全仓库orientation、G1、原G2动态Gate及旧G3全链已完成。当前依照2026-09-02全局专家复核执行PNBTT E0--E4；不恢复任何
-退役Writer/realizer路线，也不增加behavior-Gram、factor reconstruction或其它非专家Gate。
+全仓库orientation、G1、原G2动态Gate、旧G3全链及2026-09-02专家PNBTT路线的E0/E1都已完成。E1没有取得后续资格，当前停在真实
+route/authority阻塞；不恢复任何退役Writer/realizer路线，也不增加behavior-Gram、factor reconstruction或其它非专家Gate。
 
 ## 阅读顺序
 
@@ -38,7 +41,7 @@ realizer均由Git保存，不再作为可执行fallback。
 10. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`：2026-08-31第六次专家回复原文；
 11. `docs/expert_review_20260901_program_through_bank_bottleneck.md`：2026-09-01第七次专家回复原文；
 12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
-13. `docs/program_conditioned_native_bank_tangent_transport_design.md`：owner批准的当前唯一active架构与E0--E4合同；
+13. `docs/program_conditioned_native_bank_tangent_transport_design.md`：owner批准并已完成E1裁决的PNBTT架构与E0--E4条件合同；
 14. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录

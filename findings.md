@@ -5,20 +5,22 @@
 `docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`、
 `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`与
 `docs/expert_review_20260901_program_through_bank_bottleneck.md`、
-`docs/expert_review_20260902_global_route_reassessment.md`，精确分数、提交和历史脉络见`docs/research_history.md`；当前唯一active
-架构合同见`docs/program_conditioned_native_bank_tangent_transport_design.md`。本文件是结论索引，不替代原文。
+`docs/expert_review_20260902_global_route_reassessment.md`，精确分数、提交和历史脉络见`docs/research_history.md`；最近一次PNBTT
+架构及其已裁决合同见`docs/program_conditioned_native_bank_tangent_transport_design.md`。本文件是结论索引，不替代原文。
 
 ## 科学结论
 
-### 0. 当前唯一active路线是PNBTT
+### 0. PNBTT已在E1稳定non-pass，当前没有active实现路线
 
-2026-09-02全局复核确认：现有证据只停止`summary -> family-scalar gate -> shared event-additive anchor`具体函数类，不否定
-Natural Program、Stage0、真实X/Y、signed pooling、rank4或整个ECP。owner已采纳专家主选A：Program只产生低维query，当前真实bank
-candidate同时决定key-space geometry和native value方向，以可微whitening后的唯一antithetic signed measure形成rank4 residual。
+2026-09-02全局复核确认：先前证据只停止`summary -> family-scalar gate -> shared event-additive anchor`具体函数类，不否定
+Natural Program、Stage0、真实X/Y、signed pooling、rank4或整个ECP。owner随后采纳专家主选A：Program只产生低维query，当前真实bank
+candidate同时决定key-space geometry和native value方向，以可微whitening后的唯一antithetic signed measure形成rank4 residual。该PNBTT路线
+已经完成E0、single/family chart、两次扩容诊断、唯一full-rank16 oracle和最终gate-aligned necessity E1；最后macro70/110仍稳定
+`non_pass`，且没有新的`m`、chart或rank触发。
 
 代码核验补充两点：旧`A_free`实际与candidate anchor一起受同一gate门控，且只在arms/banks/videos间共享；旧S1的主query来自fixed
-orthogonal task token，但仍使用真实G2 canonical event assignment。因此S1不能裁决完整G2 Program作为query的充分性，PNBTT E2是当前
-真正缺失的资格。
+orthogonal task token，但仍使用真实G2 canonical event assignment。因此S1不能裁决完整G2 Program作为query的充分性；然而PNBTT E1
+free-query capacity没有通过，E2本身也没有启动资格。次选B与whole-Writer joint的前置条件同样未发生，当前没有active implementation route。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 
@@ -79,8 +81,8 @@ members；只有short-continuation verified member-state pairs可作训练target
 候选才额外索引abs/adj/init/goal type，再形成rank4 outer products。G1则允许直接优化task-local selection logits/weights，只作为
 native-bank容量upper bound；共享Program-query到candidate-key的映射由G3单独学习和验证。
 
-这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。它是否具有足够容量尚未被实验验证，当前唯一
-合理下一步是fold0 held5 task-local free-code strict250，而不是先训练fresh Program或shared compiler。
+这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。后续G1已证明task-local free-code容量，G2已证明
+Natural Program包含动态证据；尚未解决的是共享Program--bank功能映射，最新PNBTT E1也没有取得进入真实Program E2的资格。
 
 ### 8. rank12 carrier + mobile rank4是当前有证据的首版选择，不是封死结论
 
@@ -101,9 +103,9 @@ first/final/difference summary。
 
 ### 10. staged Gate是因果诊断，最终必须联合训练
 
-当前执行顺序固定为：authority -> native-factor free-code capacity -> Natural Program -> frozen-Program shared compiler -> all-Writer
-joint training -> conditional structured outer credit -> fresh final。每门失败只定位对应接口；不能跳过free-code，用joint training掩盖
-参数基底无效，也不能在没有视频闭环增量时启动outer credit。
+2026-09-02专家序列固定为：PNBTT E0 -> free-query E1 -> frozen Natural Program E2 -> shared E3 -> matched whole-Writer E4。
+每门失败只定位对应接口；不能跳过E1，用joint training掩盖transport容量不足，也不能在没有视频闭环增量时启动outer credit。
+当前停止在E1稳定non-pass，后续门均未获准。
 
 只有Natural Program、capacity、shared compiler、两fold joint、verified natural on-policy evidence、outer、fresh validation和完整
 controls都完成后仍系统失败，才足以判定现有数据/zero-interaction static-LoRA合同存在根本问题。
@@ -2111,3 +2113,29 @@ formal `metrics.jsonl`，发现三个config都使用`normalized_necessity_margin
 
 当前唯一修订从family-key rank4 v2机械派生：`normalized_necessity_margin .10 -> .50`，其余chart、`carrier12+task4`、LR、seed、数据、
 loss权重、Gate、checkpoint cadence和Panel-B口径不变，必须fresh训练。这是已存在loss与formal成功条件的直接对齐，不是width/rank/LR/seed扫描或新架构。
+
+### 128. Gate-aligned necessity解决specificity但不恢复PNBTT E1 absolute correct capacity
+
+唯一`.50`修订已从clean detached `2050de9e7583955fa0c62eaeb375eb5b3847500a`完成110步formal训练及macro70/110相邻Panel-B。
+训练root为`runs/outputs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_s110_e65c6388_gpu01p12_20260902/`；两枚checkpoint、raw
+`metrics.jsonl`、run contracts、completion、五臂各16次评测与qualification均完整。`active_necessity_fraction`在step1--10为`.95`、
+11--70为`.3083`、71--110为`.05`；末步task1/93 free-query梯度为`.1701/.1801`、shared-key梯度为`.04281`。因此专家§7.2的
+necessity objective已真实训练，并在train Panel-A separation满足后自然关闭，不再存在旧`.10` hinge过早关闭的解释。
+
+macro70 task1 correct fit0/fit1/held为`.585596/.592489/.541733`、wrong为`-.176695/-.153551`；task93 correct为
+`.707213/.715694/.676823`、wrong为`-.055836/.018941`。macro110 task1 correct为`.607645/.609189/.561628`、wrong为
+`-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为`-.086657/.006107`。两task在两checkpoint均通过
+wrong、`.50` fit-margin、all-pairs与near-bound，只失败correct fit各自`.85`和held `.80`；总体与逐task结论均相邻一致`non_pass`。
+70到110的correct/held改善只有约`.003--.022`，所以不以续训解释或挽救。
+
+同一step110上的train-only tangent spectrum位于
+`runs/analysis/pi05_ecp_pnbtt_e1_gate_aligned_tangent_spectrum_m128_step110_2050de9e_gpu01p12_20260902/`：task1/93各16个
+Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，共380个target-side spectra，未使用held、Panel-B、validation或test。
+最大末端10%谱能量为`1.3664e-5`，与旧family-key v2的`1.3675e-5`没有实质变化；q/v input correct-preserve-wrong中位为
+`.5584/.4806`，correct--wrong operator cosine仍为`.9580/.9577`。action-out adj/goal operator cosine为`.7039/.6365`，也没有
+出现新的correct可达方向。因此`.50`修订证明specificity目标可以被当前图满足，却没有打开absolute correct capacity；专家§5.10规定的
+`m`、chart与rank扩容触发均未出现。
+
+E1没有通过，故不进入E2；“E1通过但真实frozen Program E2失败”的次选B条件没有发生，whole-Writer joint也没有上游资格。
+当前没有active implementation route。这一负结果只淘汰已实际检验的PNBTT E1 free-query real-bank transport函数类，不裁决Natural Program、
+G2、native X/Y、signed pooling、rank4、整个ECP或zero-interaction目标。

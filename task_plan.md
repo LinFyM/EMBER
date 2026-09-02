@@ -11,12 +11,12 @@ correct `>145/400`。
 owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地
 推进E0--E4与matched whole-Writer joint adjudication，直到满足最终合同或出现经充分尝试仍无法继续的真实阻塞。
 
-PNBTT E0、key-chart修订与唯一full-rank16 oracle均已完成；full-rank16未相对rank4呈现专家要求的“明显更优”，因此rank扩展仍正式停止。
-但对三个E1 formal `metrics.jsonl`的后续审计发现：训练中`normalized_necessity_margin=.10`，而专家明确的E1 formal Gate为`.50`；
-`active_necessity_fraction`在约第10步后长期为0，即大部分训练没有对正式所需correct--wrong separation传递necessity梯度。
-专家§6明确说E1失败后应修改bank-tangent parameterization，§7.2又把wrong-video necessity列为三项最小loss之一；因此先前的
-“无active route”裁决过早。当前active design恢复为同一PNBTT family-key rank4图，唯一修订是将训练necessity margin与`.50` formal Gate对齐；
-不改chart、rank、LR、seed、数据、Gate或评测口径，从fresh重跑E1。
+PNBTT E0、single/family key-chart、两次train-only tangent spectrum、唯一full-rank16 oracle及最后一次gate-aligned necessity E1均已完成。
+最后一轮只将`normalized_necessity_margin`从`.10`对齐为正式Gate的`.50`，其余图、rank、数据、LR、seed、loss权重与评测口径不变；
+macro70/110总体和逐task均相邻一致`non_pass`。它把wrong压到`-.177--.019`并使margin、all-pairs、near-bound全部通过，但task1/93的
+correct/held仍只有约`.542--.722`，没有达到`.85/.80`。同checkpoint的train-only tangent spectrum没有出现`m`截谱、family chart新方向
+或rank重开信号。按专家§6、§5.10与§8，E2、次选B和whole-Writer joint的前置条件均未满足；当前没有获准的active implementation route，
+也不以续训、LR/seed/width/rank/scale/chart扫描替代接口裁决。active goal仍保留在真实route/authority阻塞处。
 
 ## 当前科学停止点
 
@@ -38,9 +38,15 @@ PNBTT E0、key-chart修订与唯一full-rank16 oracle均已完成；full-rank16�
   `.960297/.941644/.948351`，但wrong为`.634156/.711548`；task93 wrong为`-.006466/-.021862`，但correct仅
   `.586174/.595686/.449605`。这一任务依赖的容量--特异性反转在70到110保持，没有呈现一致广泛的明显改善，
   所以按专家§5.10停止rank扩展，不进入E2。
-- 三个E1 formal的necessity hinge都使用`.10`训练margin，却用`.50`作正式裁决；首版在step2后、family-key与full-rank16在约step10后
-  `active_necessity_fraction`持续为0。这是比进一步chart发散更早的训练目标错配，也意味着旧non-pass不能证明专家规定的necessity objective已被充分执行。
-- 当前唯一active修订是gate-aligned necessity E1；full-rank16的负rank裁决仍有效，所以回到`carrier12+task4`，不重开rank扩展。
+- 三个旧E1 formal的`.10` necessity hinge与`.50` Gate错配已由最后一次fresh gate-aligned E1纠正；该轮前10步
+  `active_necessity_fraction=.95`、11--70为`.3083`、71--110为`.05`，证明正式necessity objective已真实行使而非接线失效。
+- gate-aligned macro70/110仍相邻一致`non_pass`。macro110 task1 correct fit0/fit1/held为
+  `.607645/.609189/.561628`、wrong为`-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为
+  `-.086657/.006107`。两task都只失败correct/held，70到110改善很小，不追加训练。
+- gate-aligned step110 tangent spectrum相对旧family-key v2基本不变，最大末端10%谱能量为`1.3664e-5`，没有`m`截断；q/v input
+  correct--wrong operator cosine仍约`.9580/.9577`，没有形成新的correct可达方向。因此专家规定的chart、`m`与rank扩容触发均未出现。
+- 当前没有active实现路线。这个停止只覆盖已实际检验的PNBTT E1 free-query real-bank transport函数类，不裁决Natural Program、G2、
+  native X/Y、signed pooling、rank4或整个ECP。
 
 ## 当前执行顺序
 
@@ -60,12 +66,12 @@ PNBTT E0、key-chart修订与唯一full-rank16 oracle均已完成；full-rank16�
    correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
 10. [x] 完成专家允许的唯一同构PNBTT task-local full-rank16 oracle；macro70/110相邻一致`non_pass`，稳定呈现task1高correct/
     高wrong与task93低wrong/低correct的反转，未相对rank4明显更优，因此不重开carrier/task rank分配；
-10a. [ ] fresh运行同一family-key rank4 E1，唯一改动为`normalized_necessity_margin .10 -> .50`；两步真实profile已确认necessity梯度在
-     formal margin未满足时持续active，当前立即启动macro70/110并在checkpoint出现后并行相邻Panel-B；
-11. [ ] gate-aligned E1通过后立即进入E2真实frozen G2 Natural Program到bank transport；
-12. [ ] E2通过后才能进入E3；只有E1容量通过而E2真实Program系统失败才触发次选B，当前未触发；
-13. [ ] E4 matched component-init与fully-random whole-Writer joint只在上游Gate满足后运行，当前未获准；
-14. [ ] 只有matched两臂都无法形成稳定闭环增量时，才进入ECP/zero-interaction根本停止讨论。
+10a. [x] fresh完成同一family-key rank4 gate-aligned E1；macro70/110均稳定`non_pass`，wrong/margin通过而correct/held失败；随后
+     train-only tangent spectrum确认没有新的`m`、chart或rank扩容触发；
+11. [x] E1未通过，因此按专家预注册顺序不启动E2真实frozen G2 Natural Program到bank transport；
+12. [x] “E1通过但E2真实Program系统失败”的次选B触发条件未发生；
+13. [x] E4 matched component-init与fully-random whole-Writer joint的上游Gate未满足，因此不启动；
+14. [ ] goal停在真实route/authority阻塞；只有owner提供与专家边界一致的新裁决，或专家原文中发现尚未执行且满足触发条件的分支，才恢复实现与实验。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
 额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。

@@ -1971,3 +1971,33 @@ whole-Writer D的A路线前置Gate也未满足。因此PNBTT不再是active impl
 因此第101节中full-rank16不重开rank分配的裁决仍有效，但“已授权E1序列耗尽”与“需要新专家authority”被本节后续证据取代。新的唯一
 active config为`configs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_v1.json`；它保持family-key rank4、LR、seed、数据、loss权重、Gate和评测口径不变，
 只将`normalized_necessity_margin`对齐为`.50`，从fresh重跑E1。
+
+## 103. Gate-aligned PNBTT E1稳定non-pass并耗尽现有专家分支
+
+唯一gate-aligned实现authority为`e65c63888033639c58d29f285aed6cd8331c07e8`，formal从只增加launch记录的clean detached
+`2050de9e7583955fa0c62eaeb375eb5b3847500a`运行，root为
+`runs/outputs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_s110_e65c6388_gpu01p12_20260902/`。task1/93在gpu01物理1/2完成110步；
+macro70在物理3/4与训练并行评测，macro110在训练结束后完成。两个checkpoint、五臂各16次Panel-B、raw metrics、run contracts、
+completion、logs与相邻qualification均完整，所有最终launcher exit为0。macro70初次错误的NUMA0/p3--4 evaluator在加载模型、建立输出root或
+产生科学结果前被formal NUMA guard拒绝；改用NUMA1后fresh成功，不污染证据。
+
+macro70 task1 correct fit0/fit1/held为`.585596/.592489/.541733`、wrong为`-.176695/-.153551`；task93 correct为
+`.707213/.715694/.676823`、wrong为`-.055836/.018941`。macro110 task1 correct为`.607645/.609189/.561628`、wrong为
+`-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为`-.086657/.006107`。两checkpoint的task1/93均通过wrong、
+`.50` fit-margin、all-pairs与near-bound，只失败correct/held；overall与per-task conclusion consistent及training complete均为true。
+70到110改善很小，结果不是训练未完成。
+
+训练中`active_necessity_fraction`在step1--10为`.95`、11--70为`.3083`、71--110为`.05`；末步task1/93 free-query梯度为
+`.1701/.1801`、shared-key梯度为`.04281`，preservation平均激活率`.9909`。这证明第102节发现的`.10` hinge错配已被充分修正；
+`.50` objective先强力压低wrong，随后在train Panel-A separation达标时自然关闭，但没有恢复absolute correct capacity。
+
+后续train-only spectrum root为
+`runs/analysis/pi05_ecp_pnbtt_e1_gate_aligned_tangent_spectrum_m128_step110_2050de9e_gpu01p12_20260902/`。它包含task1/93各16个
+Panel-A visits、三条gradient arms与380个target-side spectra，held/Panel-B/validation/test均未使用；耗时`382.57s`。最大末端10%谱能量
+`1.3664e-5`与旧v2的`1.3675e-5`等价，q/v input correct--wrong operator cosine仍约`.9580/.9577`，没有`m`截谱、family chart新方向或
+rank扩容信号。
+
+因此第102节恢复的唯一修订也已稳定`non_pass`。专家规定E1通过后才进入E2；次选B只在E1通过而真实frozen Program E2系统失败时触发；
+whole-Writer joint同样要求上游A路线取得资格。三者均未满足，当前没有active implementation route，不运行E2、B、joint、续训或
+LR/seed/width/rank/scale/chart扫描。该停止只覆盖已实际检验的PNBTT E1 transport函数类，不裁决Natural Program、G2、native X/Y、
+signed pooling、rank4、整个ECP或zero-interaction目标。

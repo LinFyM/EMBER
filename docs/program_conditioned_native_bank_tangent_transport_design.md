@@ -1,10 +1,10 @@
 # Program-Conditioned Native-Bank Tangent Transport
 
-状态：**active design; gate-aligned necessity remediation**
+状态：**adjudicated design; E1 stable non-pass; no active implementation route**
 owner裁决日期：2026-09-02
 方法authority：`docs/expert_review_20260902_global_route_reassessment.md`第5--8节。
 
-本文只把专家原文收敛为当前实现合同。若本文与专家原文发生方法冲突，以owner最新表达和专家原文为准；具体
+本文把专家原文收敛为已执行的PNBTT实现与裁决合同。若本文与专家原文发生方法冲突，以owner最新表达和专家原文为准；具体
 dimension、数值solver、cache shard和microbatch属于实现选择，但不得改变数据、信息墙、梯度或Gate口径。
 
 ## 1. 目标与停止边界
@@ -172,10 +172,18 @@ fit0/fit1/held为`.960297/.941644/.948351`，但wrong为`.634156/.711548`；task
 - single-chart从step2后、family-key与full-rank16从约step10后，`active_necessity_fraction`长期为0；
 - 因而后续大部分functional训练并未在formal separation不足时继续提供专家§7.2规定的wrong-video necessity梯度。
 
-旧formal non-pass仍准确裁决它们实际训练的`.10` hinge参数化，full-rank16的负rank比较也仍有效；但它们不足以宣告专家规定的
-necessity objective已被充分行使。当前唯一active修订是从fresh重跑相同family-key `carrier12+task4` PNBTT，将
-`normalized_necessity_margin` 从`.10`对齐到`.50`。chart、rank、LR、seed、数据、loss类型、Gate、checkpoint cadence与Panel-B口径全部不变。
-这是修正已存在的三项最小loss与formal Gate的直接错配，不是超参扫或新架构。该fresh E1通过则立即进入E2；失败则再按最早接口证据裁决。
+旧formal non-pass仍准确裁决它们实际训练的`.10` hinge参数化，full-rank16的负rank比较也仍有效。随后已从fresh重跑相同family-key
+`carrier12+task4` PNBTT，只把`normalized_necessity_margin`从`.10`对齐到`.50`；chart、rank、LR、seed、数据、loss类型、Gate、
+checkpoint cadence与Panel-B口径全部不变。
+
+该gate-aligned E1在macro70/110总体与逐task均相邻一致`non_pass`。macro110 task1 correct fit0/fit1/held为
+`.607645/.609189/.561628`、wrong为`-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为
+`-.086657/.006107`。两task均通过wrong、`.50` fit-margin、all-pairs与near-bound，只失败correct/held；70到110改善很小。
+训练中`.50` necessity真实激活并在Panel-A separation达标后自然关闭，末步query/key梯度仍非零。同checkpoint train-only tangent spectrum
+没有`m`截断、family chart新方向或rank重开信号。
+
+因此PNBTT没有取得E2资格；次选B与whole-Writer joint的前置条件也未满足。本文保留为已裁决设计与复核依据，不再表示active路线；
+不得从仍存在的实现/config自行恢复E2、B、joint、续训或LR/seed/width/rank/scale/chart扫描。
 
 ### E2：真实frozen Natural Program到bank transport
 

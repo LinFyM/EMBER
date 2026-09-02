@@ -257,4 +257,10 @@
 - 专家规定E1通过后才进入E2；次选B要求E1通过而真实frozen Program E2失败；whole-Writer joint也要求上游A路线Gate成立。
   这些条件均未发生。当前没有active implementation route；停止只覆盖已实际检验的PNBTT E1 transport函数类，不外推为Natural Program、
   G2、native X/Y、signed pooling、rank4、ECP或zero-interaction根本失败。
+- 对专家原文§5.10、E1--E4及次选B做了第二次逐条件路线审计，并逐层复核当前query/key、Cholesky whitening、联合measure、antithetic
+  real-value replay、固定type normalization、rank4物化与三项loss。没有发现工程合同偏离，也没有尚未执行且满足触发条件的专家分支：
+  `m`未截谱、family chart已执行、full-rank16未明显优于rank4，E2/B/joint仍分别被E1前置条件阻断。
+- workspace cleanup发现canonical joint runner仍默认指向已裁决的`.10` family-key config。该陈旧默认已删除，`--config`现在必须显式提供，
+  从而保留sealed configs与复现实验能力但不会误把旧路线当作active；没有修改任何scientific config、模型或formal artifact。PNBTT与joint
+  定向测试`30 passed`，CLI help及missing-config fail-fast均通过。
 - `HANDOFF.md`已消费并删除；长期信息全部由authority、已裁决PNBTT design、本文件与Git保存。

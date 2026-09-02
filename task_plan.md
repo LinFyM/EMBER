@@ -71,7 +71,8 @@ correct/held仍只有约`.542--.722`，没有达到`.85/.80`。同checkpoint的t
 11. [x] E1未通过，因此按专家预注册顺序不启动E2真实frozen G2 Natural Program到bank transport；
 12. [x] “E1通过但E2真实Program系统失败”的次选B触发条件未发生；
 13. [x] E4 matched component-init与fully-random whole-Writer joint的上游Gate未满足，因此不启动；
-14. [ ] goal停在真实route/authority阻塞；只有owner提供与专家边界一致的新裁决，或专家原文中发现尚未执行且满足触发条件的分支，才恢复实现与实验。
+14. [ ] goal停在真实route/authority阻塞；第二次逐条复核专家§5.10、E1--E4、次选B及当前实现后，仍未发现尚未执行且满足触发条件的分支。
+    只有owner提供与专家边界一致的新裁决或外部authority变化，才恢复实现与实验。
 
 实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
 额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。

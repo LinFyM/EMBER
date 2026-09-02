@@ -120,7 +120,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_pnbtt_e1_family_key_v2.json",
+        required=True,
+        help="Explicit retained control or currently authorized experiment config.",
     )
     parser.add_argument(
         "--base-config",

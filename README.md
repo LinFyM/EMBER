@@ -26,9 +26,10 @@ active fallback。
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-新active design的Frozen Capture、Video Process、Native Factor Composer、唯一rank16物化与task-local functional runtime已经在唯一
-实现worktree接通；真实PI0.5 smoke及task1/task93两步profile通过。下一步从clean pushed detached authority运行正式task-local
-Composer正控，随后立即进入12-task K1 full/coarse matched shared实验，不恢复任何退役Writer/realizer路线。
+新active design的Frozen Capture、Video Process、Native Factor Composer、唯一rank16物化及task-local/shared functional runtime已经在
+唯一实现路径接通；真实PI0.5 smoke、task1/task93正式Composer正控及单/双卡shared profile均通过。task1与task93的step70/110
+Panel-B fit和same-task held-video全部优于carrier，下一项科学实验是12-task K1 component-init full/coarse matched shared formal；不恢复
+任何退役Writer/realizer路线。
 
 ## 阅读顺序
 

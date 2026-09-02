@@ -9,6 +9,12 @@ from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
     PolicyResponseEventToFactorWriter,
 )
+from ember.ecp.policy_response_writer.shared import (
+    balanced_task_owners,
+    causal_cutoff,
+    functional_objective,
+    shared_task_group,
+)
 
 
 def _owners() -> tuple[TargetOwner, ...]:
@@ -168,3 +174,44 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
     ):
         torch.testing.assert_close(left, right, atol=2e-4, rtol=2e-4)
         torch.testing.assert_close(left, permuted, atol=2e-4, rtol=2e-4)
+
+
+def test_shared_schedule_ownership_and_positive_only_objective() -> None:
+    meta = (1, 8, 9, 32, 52)
+    target = (72, 73, 75, 93, 94)
+    groups = [shared_task_group(meta, target, step) for step in range(5)]
+    assert all(len(group) == 6 for group in groups)
+    assert all(len(set(group[:3])) == len(set(group[3:])) == 3 for group in groups)
+    assert {
+        task: sum(task in group for group in groups) for task in (*meta, *target)
+    } == {task: 3 for task in (*meta, *target)}
+
+    owners = balanced_task_owners(
+        {task: 100 + index for index, task in enumerate((*meta, *target, 2, 74))},
+        6,
+    )
+    assert sorted(task for row in owners for task in row) == sorted(
+        (*meta, *target, 2, 74)
+    )
+    assert max(map(len, owners)) == 2
+
+    protected = functional_objective(
+        generated_loss=0.12,
+        carrier_loss=0.10,
+        normalizer=0.10,
+        task_weight=1 / 6,
+        preservation_weight=0.05,
+        preservation_epsilon=0.0,
+    )
+    improving = functional_objective(
+        generated_loss=0.08,
+        carrier_loss=0.10,
+        normalizer=0.10,
+        task_weight=1 / 6,
+        preservation_weight=0.05,
+        preservation_epsilon=0.0,
+    )
+    assert protected["preservation_active"] is True
+    assert improving["preservation_active"] is False
+    assert protected["gradient_mass"] > improving["gradient_mass"]
+    assert causal_cutoff(20, 8, optimizer_step=100, task=93, demo=2) in range(8, 20)

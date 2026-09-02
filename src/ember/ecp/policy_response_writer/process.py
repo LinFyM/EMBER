@@ -575,7 +575,11 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
             process = self(prefix, representation=representation, causal=True)
             prediction = self.predict_future_delta(process)
             target = teacher[future] - teacher[current]
-            losses.append(F.mse_loss(prediction.float(), target.float()))
+            losses.append(
+                F.smooth_l1_loss(
+                    prediction.float(), target.float(), beta=1.0, reduction="mean"
+                )
+            )
         if not losses:
             raise ValueError("causal policy-response loss has no prefixes")
         return torch.stack(losses).mean()

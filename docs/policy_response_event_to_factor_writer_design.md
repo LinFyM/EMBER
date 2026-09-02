@@ -247,6 +247,10 @@ functional loss。generated LoRA必须实际安装到frozen policy；不拟合te
 在carrier/source已有正功能的训练states上使用轻量单侧preservation bound，防止mobile residual无故破坏已有能力。它不能压制真实
 task-specific增量，也不要求generated LoRA接近carrier。
 
+三项loss在首个optimizer step前固定无量纲化：每task的`L_func`与`L_pres`使用该task冻结Panel-A carrier loss的RMS；`L_process`
+使用同步后的初始Writer在两条fit视频固定prefix上的平均causal loss。formal run将这些数值一次性冻结到`normalizers.json`，resume复用而不
+随训练漂移。无量纲后的`L_process`系数固定为`1.0`，`lambda_pres`固定为`.05`，不做weight/LR小扫。
+
 G2已有positive temporal heads只允许作为component-init短暂辅助，并在functional优化稳定后退火到零；它们不进入最终Writer forward。
 
 ## 9. 首轮实现与证据顺序
@@ -322,13 +326,18 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 
 - 新Writer保持一个canonical训练/评测入口；合法差异放入同一配置或窄strategy边界，不复制runner。
 - active source ownership固定为：`capture.py`只拥有冻结PI0.5/native taps；`process.py`只拥有Frame/Event表示与causal target；
-  `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`、`tasklocal.py`及
-  `tasklocal_contract.py`分别拥有共享runtime基础、task-local正控循环与formal evidence合同。唯一CLI是
-  `scripts/train_ecp_policy_response_writer.py`。
+  `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
+  唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared.py`拥有task schedule、evidence cache与shared
+  orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；`shared_evaluation.py`只拥有零梯度Panel-B评估；
+  `shared_contract.py`只拥有formal authority与resume合同。唯一CLI仍是`scripts/train_ecp_policy_response_writer.py`，这些文件不是平行
+  Writer或版本化fallback。
 - 复用observer hooks、native X/Y capture、events、chunked replay、materializer、J2 data/functional infrastructure与evaluator。
 - PNBTT、EBSRI、旧G3与Natural Program完整实现只保留为历史复现和kernel来源，不得作为active fallback。
 - 当前不删除这些tracked历史实现；待新Writer完成matched shared裁决并冻结论文方法后，才审计删除无独占复现价值且已由Git/formal
   artifacts覆盖的旧可执行入口。此前它们不能被新runtime导入为备选Writer路径。
+- shared运行面拆分为schedule/cache、optimizer、只读评估和authority四个owner，是因为多卡训练、Panel-B信息墙与exact-resume各自已有
+  独立生命周期；模型数学图仍只有Process与Composer两个可复制模块。该拆分避免把约千行distributed/evaluation代码重新堆进一个
+  runtime，也不增加部署模块或数学变换。
 - 新active source按Frozen Capture、Video Process、Factor Composer、Training Runtime四项责任组织；避免继续增长现有超大runtime文件。
 - 首个真实profile按LoRA/s、最长视频稳定性、GPU利用率和峰值显存选择frame/target microbatch。
 - 每次GPU launch前同时live检查gpu01与gpu02，使用1至6张真正提高吞吐的A40，可在不干扰他人的前提下安全共驻。

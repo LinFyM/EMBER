@@ -22,7 +22,7 @@
 - 新Composer沿用G1已证明的非对称启动：native A方向在初始化存在，`tanh(scale_head)`令有效B与mobile update严格为零；真实功能梯度
   第一步只打开scale，第二步再进入Frame/Event/Composer，避免随机新Writer在训练前破坏carrier。相同projected native keys在context
   read与signed pooling间复用，task-local阶段缓存冻结Process输出，不改变任何科学变量。
-- 相关定向测试为`23 passed`；完整`tests/ecp`排除既有失败后为`140 passed`，唯一未通过项
+- 相关定向测试为`23 passed`；完整`tests/ecp`排除既有失败后为`141 passed`，唯一未通过项
   `test_shared_compiler_mapping.py::test_mapping_credit_is_set_valued_family_balanced_and_scale_stopped`在未修改的canonical main上同样失败，
   是退役SharedCompiler测试与当前`TangentTransportResult`字段不一致的既有问题，不由本实现引入。
 - task1真实smoke保存在disposable
@@ -31,8 +31,21 @@
   process梯度到达Frame/Event/predictor，76 tensors、rank12+4到唯一rank16全部通过，峰值allocated约`30.59GB`。
 - task1/task93两步task-local profile只作工程证据。step1均只有scale-head梯度，step2 input/output branches与task query均有非零梯度；
   task93三个correct Panel-B视频两步后均自发略优于carrier。去重后task93 step耗时由`34.80/34.15s`降至`28.47/26.24s`，
-  allocated峰值由`39.63GB`降至`32.89GB`、reserved由`47.30GB`降至`40.22GB`。下一动作是提交、合并并推送该实现，从clean
+  allocated峰值由`39.63GB`降至`32.89GB`、reserved由`47.30GB`降至`40.22GB`。该实现随后已提交、合并并推送，并从clean
   detached authority并行运行task1/task93的110步formal正控及step70/110只读Panel-B。
+- 上述两条正式正控现已完整结束。task1 step70/110的Panel-B fit recovery为`.260876/.276421`、held-video为
+  `.207341/.244598`；task93 fit为`.337207/.346604`、held-video为`.300885/.280724`。两task、两checkpoint的全部fit/held视频均
+  优于carrier，确认新Composer不是零容量接口；task93 held后段轻微回落，不把单点峰值当结论。
+- shared K1运行面已在同一Writer与唯一CLI内接通：每步固定3 meta + 3 target、task/role等权；每task固定一个CPU evidence-cache owner；
+  functional使用正确视频跨episode Panel-A exact LoRA-leaf VJP，process使用strict prefix-only frozen target，preservation只作同一正样本
+  单侧hinge；task-held、same-task held与Panel-B均零梯度。单卡两步profile和双卡单步profile均通过，后者覆盖一个rank有task、一个rank
+  显式零梯度仍完成deferred NCCL/all-reduce/gather。结构审查已从单个851行shared driver拆为orchestration、optimizer、只读评估与
+  authority四个owner，当前无hard architecture violation。
+- 专家规定的process Huber loss与无量纲权重`1.0`已在最终代码上完成额外真实单卡一步profile：task1冻结process normalizer为
+  `.0558371`，首步normalized process loss为`1.17047`；Frame/Event/Predictor/Composer梯度范数分别为
+  `1.23987/.991191/2.50437/3.34321`，峰值allocated/reserved仍为`26.64/35.52GB`。该profile只验证最终目标图与资源，不作方法选择。
+- 当前下一动作是完成shared实现的全量回归、集成并推送clean main，随后从新detached authority尽快并行启动12-task K1
+  component-init full/coarse matched formal；不增加新的科学门槛。
 - Policy-Response Writer task-local formal launch contract：scientific implementation为clean pushed `66df1974`，formal从包含本条合同的
   最新clean pushed detached `main`运行；唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`，复用其中固定source checkpoint、
   Stage0/native observer、carrier12、s_ref、J2 Panel A/B、mapping fit/held split与数据

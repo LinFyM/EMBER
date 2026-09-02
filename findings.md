@@ -33,6 +33,12 @@ checkpoint冻结后评测。
 full/coarse对照只裁决前端表示而不夸大为Action Expert evidence整体裁决。完整合同见
 `docs/policy_response_event_to_factor_writer_design.md`。
 
+task1/task93的正式Composer-only正控已从clean detached authority完成。task1 step70/110的Panel-B fit recovery为
+`.260876/.276421`、held-video为`.207341/.244598`；task93 fit为`.337207/.346604`、held-video为
+`.300885/.280724`。两task、两个相邻checkpoint、每个checkpoint的两条fit与一条held视频全部优于carrier。因此去掉PNBTT solve后，
+新current-bank Composer仍能从真实X/Y与event-conditioned query恢复跨视频功能；它尚不证明shared mapping或closed-loop成功，但已经
+排除“Composer本身接近零容量”这一最早失败解释。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

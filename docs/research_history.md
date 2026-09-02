@@ -2032,3 +2032,26 @@ Event-to-Factor Writer：
 owner于2026-09-02确认整体设计、要求建立持续goal并立即推进，强调尽快获得真实Writer闭环性能信号，但不得作弊或用随意改动替代有依据
 的接口修正。系统goal已建立；active计划从最新clean pushed main创建唯一实现worktree，先完成真实forward/gradient/materialization与
 task-local Composer正控，随后立即运行12-task full/coarse matched GPU实验并尽早进入held5 correct-only closed loop。
+
+## 105. Policy-Response Writer真实图与Composer正控通过
+
+首个实现提交为`66df197495d730a026c02883cbede9042f461a98`，正式正控从包含launch合同的clean detached
+`a7d84d78523ad1d5e5afb2823c5872b7ae020281`运行。真实smoke一次捕获task1的51个stride-5 frames、19 layers、50 horizons、2 probes及
+38-target native X/Y；初始mobile update严格为零，打开scale后functional梯度到达Frame、Event与Composer，prefix-only frozen-target
+process梯度到达Frame/Event/predictor，76个LoRA tensors物化为唯一rank16。
+
+task-local Composer-only正式正控均使用两条fit视频交替接受Panel-A correct-only梯度，第三条same-task held视频与全部Panel-B零梯度；
+每个step70/110 checkpoint分别在三条视频上完成16次Panel-B。结果为：
+
+- task1 root `runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task1_full_s110_66df1974_gpu02p5_20260902/`：step70/110 fit
+  recovery `.260876/.276421`，held-video `.207341/.244598`；
+- task93 root `runs/outputs/pi05_ecp_policy_response_writer_tasklocal_task93_full_s110_66df1974_gpu01p2_20260902/`：step70/110 fit
+  recovery `.337207/.346604`，held-video `.300885/.280724`。
+
+两task、两个相邻checkpoint、每个checkpoint的两条fit与一条held视频全部优于carrier。该结果证明去掉PNBTT solve/transport后，新的
+event-conditioned current-bank Composer仍能从真实native X/Y学得跨视频功能，不证明shared mapping或closed-loop目标已经成功。
+
+shared positive-only运行面随后接通固定3 meta + 3 target/task-equal循环、稳定evidence-cache ownership、deferred NCCL、exact LoRA-leaf
+VJP、prefix-only process loss、单侧preservation、step70/110 checkpoints与零梯度Panel-B评估。单卡两步和双卡单步profile均通过；双卡
+profile明确覆盖一个rank执行真实task、另一个rank以显式零梯度参加all-reduce的拓扑，没有deadlock或参数分叉。profile只作工程证据，
+不能用于方法选择。下一项科学实验仍是同配置、同参数量、同数据与训练预算的12-task K1 component-init full/coarse matched formal。

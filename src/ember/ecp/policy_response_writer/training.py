@@ -37,6 +37,7 @@ from ember.pi05_eval_contract import (
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import (
     DistributedContext,
+    barrier,
     read_json,
     write_json_atomic,
 )
@@ -141,6 +142,34 @@ def _validate_launch_authority(args: argparse.Namespace) -> None:
         )
 
 
+def _initialize_writer(
+    writer: PolicyResponseEventToFactorWriter,
+    stage0: torch.nn.Module,
+    kind: str,
+) -> dict[str, object]:
+    if kind == "component":
+        return writer.initialize_from_stage0(stage0)
+    if kind == "random":
+        return {
+            "kind": "fully_random_same_topology",
+            "reused": [],
+            "fresh": ["process", "causal_predictor", "composer"],
+        }
+    raise ValueError("unknown Policy-Response Writer initialization")
+
+
+def _runtime_task_ids(
+    args: argparse.Namespace, selected_ids: tuple[int, ...]
+) -> tuple[int, ...]:
+    if args.phase in {"smoke", "task-local"}:
+        if args.task is None:
+            raise ValueError(f"{args.phase} requires one task")
+        return (int(args.task),)
+    if args.mode == "profile" and args.task is not None:
+        return (int(args.task),)
+    return selected_ids
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> PolicyResponseRuntime:
@@ -192,15 +221,11 @@ def prepare_runtime(
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
-    initialization = writer.initialize_from_stage0(stage0)
+    initialization = _initialize_writer(writer, stage0, args.initialization)
     tasks = _tasks(base, args.data_root, args.asset_root)
     task_by_id = {task.authority_id: task for task in tasks}
     selected_ids = _selected_task_ids(config)
-    runtime_ids = (
-        (int(args.task),)
-        if args.phase in {"smoke", "task-local"}
-        else selected_ids
-    )
+    runtime_ids = _runtime_task_ids(args, selected_ids)
     if not set(runtime_ids) <= set(selected_ids):
         raise ValueError("Policy-Response Writer task escaped its registered split")
     selected_tasks = tuple(task_by_id[value] for value in runtime_ids)
@@ -396,6 +421,7 @@ def _writer_chain_backward(
     *,
     video: FrozenPolicyResponseVideo,
     leaf_gradients: Mapping[str, torch.Tensor],
+    weight: float = 1.0,
 ) -> int:
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output = runtime.writer(
@@ -410,7 +436,7 @@ def _writer_chain_backward(
             rank16_contract=runtime.ranks.contract,
             canonicalize=False,
         )
-        surrogate = writer_chain_rule_surrogate(state, leaf_gradients)
+        surrogate = writer_chain_rule_surrogate(state, leaf_gradients) * float(weight)
     surrogate.backward()
     return len(state)
 
@@ -585,22 +611,27 @@ def run(args: argparse.Namespace) -> None:
             result = run_task_local(runtime)
             filename = "result.json"
         else:
-            raise ValueError("shared training is not connected yet")
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        write_json_atomic(args.output_dir / filename, result)
-        if args.mode == "formal":
-            write_json_atomic(
-                args.output_dir / "completion.json",
-                {
-                    "schema_version": result["schema_version"],
-                    "status": result.get("status", "complete"),
-                    "phase": result["phase"],
-                    "task": result.get("task"),
-                    "optimizer_steps": result.get("optimizer_steps"),
-                    "result": filename,
-                },
-            )
-        print(result, flush=True)
+            from ember.ecp.policy_response_writer.shared import run_shared
+
+            result = run_shared(runtime)
+            filename = "result.json"
+        if context.is_main:
+            args.output_dir.mkdir(parents=True, exist_ok=True)
+            write_json_atomic(args.output_dir / filename, result)
+            if args.mode == "formal":
+                write_json_atomic(
+                    args.output_dir / "completion.json",
+                    {
+                        "schema_version": result["schema_version"],
+                        "status": result.get("status", "complete"),
+                        "phase": result["phase"],
+                        "task": result.get("task"),
+                        "optimizer_steps": result.get("optimizer_steps"),
+                        "result": filename,
+                    },
+                )
+            print(result, flush=True)
+        barrier(context)
     finally:
         if runtime is not None:
             runtime.close()
@@ -615,9 +646,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--phase", choices=("smoke", "task-local", "shared"), required=True)
-    parser.add_argument("--task", type=int, required=True)
+    parser.add_argument("--task", type=int)
     parser.add_argument("--video-demo", type=int)
     parser.add_argument("--representation", choices=("full", "coarse"), default="full")
+    parser.add_argument(
+        "--initialization", choices=("component", "random"), default="component"
+    )
     parser.add_argument("--mode", choices=("profile", "formal"), default="profile")
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--resume", type=Path)

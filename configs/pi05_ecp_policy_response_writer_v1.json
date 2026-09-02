@@ -78,9 +78,14 @@
       "weight_decay": 0.01,
       "gradient_clip_norm": 1.0,
       "global_tasks_per_update": 6,
+      "functional_rows": 16,
+      "profile_functional_rows": 2,
       "functional_microbatch": 2,
-      "process_weight": 0.1,
-      "preservation_weight": 0.05
+      "process_weight": 1.0,
+      "preservation_weight": 0.05,
+      "preservation_epsilon": 0.0,
+      "profile_updates": 2,
+      "evaluation_visits": 16
     }
   },
   "decision": {

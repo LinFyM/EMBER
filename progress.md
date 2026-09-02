@@ -4,32 +4,19 @@
 
 ## 当前快照
 
-- canonical集成目标为`main`。锁定科学提交为`a185fe223d1ef77635d83696c3e164a48520edbf`；第八次全局专家原文已逐字归档并在
-  `3101232204265f379ad2282ecf9a1a9ee30bad8c`推送。
-- owner已在2026-09-02正式采纳专家主选A并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地推进到
-  最终合同或真实阻塞。这一goal仍保持active；PNBTT已推进到专家规定的E1资格边界，并在修正necessity loss/Gate错配后稳定`non_pass`。
-- `docs/program_conditioned_native_bank_tangent_transport_design.md`保留为已审定、已裁决的PNBTT设计记录；当前没有active implementation route。
-  E1没有通过，所以E2、次选B和whole-Writer joint均不具备专家规定的启动资格。旧`summary -> family-scalar gate -> shared event-additive anchor`
-  仍不是active实现。
-- PNBTT实现与E0已在clean pushed `2664e0d3705da3cdfb4bde2e7633317e0b102b4a`完成。首个single-key-chart E1在
-  macro70/110相邻checkpoint均为`non_pass`。step110 task1 correct fit0/fit1/held为`.641984/.660311/.622909`、wrong为
-  `.122637/.186146`；task93 correct为`.713247/.737497/.685649`、wrong为`.006121/.269427`。all-pairs、near-bound与
-  信息墙通过，主要缺口是correct/held和`.50` margin；70到110的改善仅`.013--.037`，已形成稳定裁决。
-- 专家§5.10要求的train-only tangent spectrum诊断已在`8306a4cb43ee612671955354fbe0c508de996344`完成：task1/93各16个
-  Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，未读取held或Panel-B。`m=128`对应每个operator的1024列，
-  99%谱能量rank与末端10%能量均表明没有有效谱被key width截断；q/v各side的功能梯度保留率和跨family差异则支持专家规定的
-  family-shared nonlinear trunk + target-specific低秩key projection。该结构修订的fresh E1已从clean detached `75db5f84`
-  完成，macro70/110相邻一致`non_pass`。同一step110的v2 train-only spectrum也已完成：key width仍未截谱，family chart只分离了
-  部分output-side correct/wrong几何，没有恢复q/v correct功能梯度可达性。专家允许的单次同构task-local full-rank16 oracle也已
-  完成：macro70/110总体与逐task均相邻一致`non_pass`，任务1恢复correct却无法压低wrong，任务93压低wrong却无法
-  恢复correct。该反转在70到110稳定，没有相对rank4形成“明显更优”，因此不重开rank分配。
-- 三个E1 run的config均用`normalized_necessity_margin=.10`，而正式Gate要求`.50`。single-chart在step2后、family-key与full-rank16在约step10后
-  `active_necessity_fraction=0`；因此旧non-pass只裁决实际`.10` hinge参数化。该错配已由唯一gate-aligned fresh E1纠正：110步完整完成，
-  macro70/110总体与逐task均相邻一致`non_pass`。macro110 task1 correct fit0/fit1/held为`.607645/.609189/.561628`、wrong为
-  `-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为`-.086657/.006107`。wrong、margin、all-pairs和near-bound
-  全部通过，只有correct/held失败；70到110增益很小，故不是训练未完成。
-- gate-aligned step110的同一train-only tangent spectrum也已完成。`m=128`未截断有效谱，q/v input correct--wrong operator cosine仍约
-  `.9580/.9577`，family/output几何相对旧v2没有形成新的correct可达方向；专家§5.10的`m`、chart与rank扩容触发均未出现。
+- canonical集成目标为`main`。最新专家补充意见已逐字归档并推送至
+  `7f5fefe134f7ebba2d09b906186eb5c140cccce9`；归档没有修改科学代码或实验配置。
+- owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
+  active，不设置token或阶段工期预算。
+- 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
+  layer x horizon x probe原生响应、G2 ordered events、当前视频真实X/Y、G1 signed pooling、rank4和唯一rank16物化；主要learned
+  模块收敛为可复制的Video Process Encoder与Native Factor Composer。
+- 最后审查已把四项修正写入合同：causal process auxiliary严格prefix-only；预测target冻结；task1/task93 Composer正控先确认
+  G1 bank容量；full/coarse对照只裁决前端表示。
+- PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
+  EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
+- 当前主worktree为clean canonical main且尚无新GPU任务。下一动作是推送authority/design更新，从该clean main创建唯一
+  `codex/policy-response-writer`实现worktree，完成复用/ownership审计后开始接通真实图。
 
 ## 最新科学结论
 
@@ -42,7 +29,7 @@
   same-task/K1/K4均通过。
 - P0/P1、R5等正控证明真实native bank、current-bank operator和task-local功能方向具有容量；它们不证明shared mapping。
 
-### 当前G3最早接口
+### 已裁决G3/PNBTT最早接口
 
 - Program-through-bank topology-matched free-summary S0双task正式通过：task1 correct/held约`.974--.989`、wrong约`-.565`；
   task93 correct/held约`.917--.947`、wrong约`-.342--.394`。
@@ -65,10 +52,10 @@
 - 正证据是task16 transport在task1可恢复高correct，在task93可产生强specificity；gate-aligned rank4也能同时把两个wrong arm压到很低。
   负证据是这些性质不能在两个任务上同时恢复E1要求的absolute correct/held；full-rank16没有相对rank4呈现一致、广泛、明显更优，
   gate-aligned spectrum也没有扩容触发。因此不做中间rank或LR/seed/width/scale/chart小扫。
-- 当前最早缺口是PNBTT E1 free-query real-bank transport函数类的absolute correct capacity。它不裁决冻结的Natural Program、G2、native X/Y、
-  signed pooling、rank4或整个ECP；但在现有专家authority下没有下一条可启动路线。
+- 该已裁决路线的最早缺口是PNBTT E1 free-query real-bank transport函数类的absolute correct capacity。它不裁决冻结的Natural
+  Program、G2、native X/Y、signed pooling、rank4或整个ECP。
 
-完整历史及每个旧架构的结果在`docs/research_history.md`；长期跨轮结论在`findings.md`；八份专家原文均位于`docs/`。
+完整历史及每个旧架构的结果在`docs/research_history.md`；长期跨轮结论在`findings.md`；全部专家原文均位于`docs/`。
 
 ## 已裁决的PNBTT实现
 
@@ -153,10 +140,10 @@
   `docs/research_history.md`。后续profile只作可删除工程证据，不与formal roots混存。
 - 未删除或移动dataset、models、formal runs、checkpoints、raw rows、aggregate、source policy、task experts、condition caches或
   ownership不清资产。
-- tracked科学代码、测试和历史configs暂不在新裁决前退役，避免提前删除可能需要审计或复用的实现；`main`是canonical source，当前没有active计算路线，
-  旧结果或仍存在的config不得自行恢复为路线。
+- tracked旧科学代码、测试和历史configs在新实现复用/退休审计前保留；`main`是canonical source，旧结果或仍存在的config不得自行
+  恢复为路线。
 
-## 当前执行状态
+## 已裁决PNBTT执行细节
 
 - 第八次专家原文、代码/config/authority冲突和formal evidence已完成逐项复核；未发现推翻主路线判断的结果错误。
 - PNBTT canonical compiler已接通：Natural Program只供query，real bank同时供key/value；包含可微batched key whitening、joint-K等video
@@ -254,9 +241,9 @@
   `1.3664e-5`，与旧v2的`1.3675e-5`等价；q/v input correct-preserve-wrong中位为`.5584/.4806`、operator cosine为
   `.9580/.9577`，action-out adj/goal operator cosine为`.7039/.6365`，均未形成新的correct可达方向。故不触发增大`m`、继续key chart
   或重开rank分配。
-- 专家规定E1通过后才进入E2；次选B要求E1通过而真实frozen Program E2失败；whole-Writer joint也要求上游A路线Gate成立。
-  这些条件均未发生。当前没有active implementation route；停止只覆盖已实际检验的PNBTT E1 transport函数类，不外推为Natural Program、
-  G2、native X/Y、signed pooling、rank4、ECP或zero-interaction根本失败。
+- 当时专家规定E1通过后才进入E2；次选B要求E1通过而真实frozen Program E2失败；whole-Writer joint也要求上游A路线Gate成立。
+  这些条件均未发生，所以该PNBTT authority在当时没有后续active route。停止只覆盖已实际检验的PNBTT E1 transport函数类，不外推为
+  Natural Program、G2、native X/Y、signed pooling、rank4、ECP或zero-interaction根本失败。
 - 对专家原文§5.10、E1--E4及次选B做了第二次逐条件路线审计，并逐层复核当前query/key、Cholesky whitening、联合measure、antithetic
   real-value replay、固定type normalization、rank4物化与三项loss。没有发现工程合同偏离，也没有尚未执行且满足触发条件的专家分支：
   `m`未截谱、family chart已执行、full-rank16未明显优于rank4，E2/B/joint仍分别被E1前置条件阻断。

@@ -1,26 +1,37 @@
 # EMBER findings
 
-只记录跨session仍影响决策的结论。八次专家原文见`docs/expert_review_20260824_native_factor.md`、
+只记录跨session仍影响决策的结论。专家原文见`docs/expert_review_20260824_native_factor.md`、
 `docs/expert_review_20260826_bank_conditioned_native_factor.md`、`docs/expert_review_20260828_g3_functional_sketch.md`与
 `docs/expert_review_20260829_joint_program_primal.md`、`docs/expert_review_20260830_program_bank_interaction.md`、
 `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`与
 `docs/expert_review_20260901_program_through_bank_bottleneck.md`、
-`docs/expert_review_20260902_global_route_reassessment.md`，精确分数、提交和历史脉络见`docs/research_history.md`；最近一次PNBTT
-架构及其已裁决合同见`docs/program_conditioned_native_bank_tangent_transport_design.md`。本文件是结论索引，不替代原文。
+`docs/expert_review_20260902_global_route_reassessment.md`、
+`docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
+`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。精确分数、提交和历史脉络见
+`docs/research_history.md`；当前active合同见`docs/policy_response_event_to_factor_writer_design.md`。本文件是结论索引，
+不替代原文。
 
 ## 科学结论
 
-### 0. PNBTT已在E1稳定non-pass，当前没有active实现路线
+### 0. 当前active方向是Policy-Response Event-to-Factor Writer
 
-2026-09-02全局复核确认：先前证据只停止`summary -> family-scalar gate -> shared event-additive anchor`具体函数类，不否定
-Natural Program、Stage0、真实X/Y、signed pooling、rank4或整个ECP。owner随后采纳专家主选A：Program只产生低维query，当前真实bank
-candidate同时决定key-space geometry和native value方向，以可微whitening后的唯一antithetic signed measure形成rank4 residual。该PNBTT路线
-已经完成E0、single/family chart、两次扩容诊断、唯一full-rank16 oracle和最终gate-aligned necessity E1；最后macro70/110仍稳定
-`non_pass`，且没有新的`m`、chart或rank触发。
+PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
+macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、
+chart或rank扩容触发。因此PNBTT及旧`summary -> family-scalar gate -> shared event-additive anchor`均已裁决，不是active fallback。
 
-代码核验补充两点：旧`A_free`实际与candidate anchor一起受同一gate门控，且只在arms/banks/videos间共享；旧S1的主query来自fixed
-orthogonal task token，但仍使用真实G2 canonical event assignment。因此S1不能裁决完整G2 Program作为query的充分性；然而PNBTT E1
-free-query capacity没有通过，E2本身也没有启动资格。次选B与whole-Writer joint的前置条件同样未发生，当前没有active implementation route。
+2026-09-02完整历史专家复核与补充澄清提出Policy-Response Event-to-Factor Writer，owner完成最后审查后正式确认并建立持续goal。
+新路线保留冻结PI0.5的layer x horizon x probe policy-response、G2 boundary-anchored ordered events、当前视频真实X/Y、G1
+native-group signed pooling、rank4与唯一rank16物化；取消固定Natural Program到summary、covariance、whitening、transport、
+anchor和family scalar gate的连续接口。
+
+主要learned模块只有Policy-Response Video Process Encoder与Current-Video Native Factor Composer。language与静态context只ground
+或调制query，当前视频真实bank是mobile factor的唯一原始vector value来源；首版没有task-expert dictionary或free learned residual。
+训练只使用正确视频的cross-episode functional、严格prefix-only positive process prediction和轻量preservation，所有负controls在
+checkpoint冻结后评测。
+
+最后审查同时固定四项实现合同：causal process目标不得泄露future；预测target必须冻结；task1/task93 Composer正控先确认G1容量仍在；
+full/coarse对照只裁决前端表示而不夸大为Action Expert evidence整体裁决。完整合同见
+`docs/policy_response_event_to_factor_writer_design.md`。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 
@@ -71,18 +82,19 @@ mappings不足，不能靠joint training或更多同task episodes掩盖。
 没有真实Program标签；同时训练policy encoder、video encoder和realizer仍允许latent任意旋转。现有95-task/118-member evidence更适合
 直接监督generated policy function，而不是再训练一个未经验证的privileged Program teacher。
 
-canonical只保留video Program encoder`q_V`。一个logical trajectory只能由一个global successful member解释，不能按event混合
-members；只有short-continuation verified member-state pairs可作训练target。
+当前canonical只保留部署可见的Policy-Response Video Process Encoder。task experts只提供cross-episode action/flow或policy-response
+functional credit，不生成deployment latent、factor dictionary或task route。一个logical trajectory只能由一个global successful
+member解释，不能按event混合members。
 
 ### 7. Native-factor compiler直接针对最早失效接口
 
-新主线用同一视频在冻结PI0.5各目标层产生的真实native inputs`X_j`和outputs/differences`Y_j`作为task-specific参数基底。Program
-在最终shared compiler中学习content-derived signed selection与target scale：输入`X`候选只索引video/frame/probe/horizon，输出`Y`
-候选才额外索引abs/adj/init/goal type，再形成rank4 outer products。G1则允许直接优化task-local selection logits/weights，只作为
-native-bank容量upper bound；共享Program-query到candidate-key的映射由G3单独学习和验证。
+新主线用同一视频在冻结PI0.5各目标层产生的真实native inputs`X_j`和outputs/differences`Y_j`作为task-specific参数基底。
+ordered event innovations与current-bank context共同产生content-derived signed selection：输入`X`候选索引video/frame/probe/horizon，
+输出`Y`候选额外索引abs/adj/init/goal type，再形成rank4 outer products。G1 task-local free logits仍只作为native-bank容量
+upper bound，不进入deployment。
 
-这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。后续G1已证明task-local free-code容量，G2已证明
-Natural Program包含动态证据；尚未解决的是共享Program--bank功能映射，最新PNBTT E1也没有取得进入真实Program E2的资格。
+这既不从128维直接吐出2048维参数，也不要求held方向存在于fit-task PCA/span中。G1已证明task-local free-code容量，G2已证明
+ordered policy-response events包含动态证据；当前新问题是端到端shared Event-to-Factor mapping能否自然学习功能与视频特异性。
 
 ### 8. rank12 carrier + mobile rank4是当前有证据的首版选择，不是封死结论
 
@@ -93,27 +105,25 @@ shared carrier为43/250；mobile-rank4解析投影在三个member arms为110/120
 这不恢复fixed-A或raw-factor短solver。只有native bank可表达、rank4 free-code已收敛、response分析证明rank ceiling且同构full-rank16
 oracle显著通过，才重开task full-rank16并按结果调整carrier/task rank；总输出仍是唯一rank16 adapter。
 
-### 9. Program结构已经明确
+### 9. G2 Program结构转为初始化与机制证据
 
-唯一schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`、
-`sigma[8,38,128]`。38个owner固定对应18 q、18 v、action-in/out；`E=8`是最大容量，presence和frame-to-slot assignment动态学习。
+G2通过的`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
+`sigma[8,38,128]`继续证明38-owner、最多8个events、soft presence、boundary order与per-video编码可行，但不再是下游唯一硬schema。
 
-每条视频独立保序编码，K-set只在soft monotonic event alignment后聚合。language与scene必须owner-specific，不能退回全局均值或
-first/final/difference summary。
+新Writer保留owner-aligned event tokens、soft temporal assignment和occupancy；每条视频独立保序，K-set保持无序，并以共有context C与
+event-relative innovation D取代多级fixed Program code。language与scene仍必须owner/task-grounded，不能退回全局frame mean。
 
-### 10. staged Gate是因果诊断，最终必须联合训练
+### 10. 最小正控服务于定位，Final必须联合训练
 
-2026-09-02专家序列固定为：PNBTT E0 -> free-query E1 -> frozen Natural Program E2 -> shared E3 -> matched whole-Writer E4。
-每门失败只定位对应接口；不能跳过E1，用joint training掩盖transport容量不足，也不能在没有视频闭环增量时启动outer credit。
-当前停止在E1稳定non-pass，后续门均未获准。
+新路线先用最小真实smoke和task1/task93 task-local Composer正控确认图、bank capacity与唯一LoRA，再立即运行12-task
+full/coarse matched shared实验并尽早进入held5 correct-only closed loop。这些检查负责解释失败，不构造冗长的人为资格体系。
 
-只有Natural Program、capacity、shared compiler、两fold joint、verified natural on-policy evidence、outer、fresh validation和完整
-controls都完成后仍系统失败，才足以判定现有数据/zero-interaction static-LoRA合同存在根本问题。
+Final默认直接联合优化learned compact projection、Frame、Event与Composer，并matched比较component-init和同拓扑fully-random fresh
+候选。只有新证据表明某个接口需要单独预热时，才保留有明确退出条件的staged warmup。最终取舍以single-checkpoint closed loop、
+same-task鲁棒性与冻结后因果controls为准，不以loss数量、内部representation或分段形式本身为目标。
 
-owner进一步提醒：G1--G3的冻结与分段训练只服务于逐接口可证伪，不应被机械复制为最终模型的训练范式。组件Gate通过后，G4/Final
-默认应从已验证机制出发直接联合优化完整Writer，并优先采用能支撑闭环因果问题的最小loss集合；只有新证据表明联合训练不稳定或某个
-接口需要单独预热时，才保留有明确退出条件的staged warmup。最终取舍继续以single-checkpoint closed loop为准，而不是以loss数量或
-分段形式本身为目标。
+只有task-local support、shared正功能、matched前端、K、component/random joint、合理规模训练、fresh validation和完整controls都完成后
+仍系统失败，才足以把结论上推到现有数据或zero-interaction static-LoRA合同。
 
 ### 11. Action Meta是后期matched control
 
@@ -2137,5 +2147,6 @@ Panel-A visits、correct fit0/fit1与wrong fit0三条gradient arms，共380个ta
 `m`、chart与rank扩容触发均未出现。
 
 E1没有通过，故不进入E2；“E1通过但真实frozen Program E2失败”的次选B条件没有发生，whole-Writer joint也没有上游资格。
-当前没有active implementation route。这一负结果只淘汰已实际检验的PNBTT E1 free-query real-bank transport函数类，不裁决Natural Program、
-G2、native X/Y、signed pooling、rank4、整个ECP或zero-interaction目标。
+在该次专家authority下当时没有后续active implementation route。这一负结果只淘汰已实际检验的PNBTT E1 free-query real-bank
+transport函数类，不裁决Natural Program、G2、native X/Y、signed pooling、rank4、整个ECP或zero-interaction目标。后续完整历史复核
+与owner新裁决已建立Policy-Response Event-to-Factor Writer active route，见本文件第0节。

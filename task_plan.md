@@ -2,85 +2,83 @@
 
 更新时间：2026-09-02。
 
-## 当前目标与状态
+## 当前goal
 
-EMBER最终目标仍是：从exact language与一条或多条same-task、action-hidden、ordered teacher videos，在rollout前一次性生成唯一一套
-38-target rank16 LoRA，并在固定validation8取得稳定、具备breadth、Goal/Long贡献、same-task鲁棒性和视频因果性的strict paired
-correct `>145/400`。
+从最新clean pushed main实现、训练并科学裁决可扩展的Policy-Response Event-to-Factor Writer：以冻结PI0.5的
+layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用可重复的Frame、Event与
+Factor-Composer blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional与positive process监督，
+持续推进component-init、fully-random Final joint及规模化训练，直到validation8 strict paired correct稳定严格大于145/400并满足
+breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因果controls，或者在完成必要正控、matched对照和有信息量的规模化
+实验后，获得足以停止当前函数类或EMBER总体路线的可复核证据。
 
-owner已正式采纳2026-09-02全局专家复核的主选A，并建立active goal：以PNBTT替换已停止的Program--bank接口，效率优先地
-推进E0--E4与matched whole-Writer joint adjudication，直到满足最终合同或出现经充分尝试仍无法继续的真实阻塞。
+系统goal已于2026-09-02正式建立并保持active，不设置token或阶段工期预算。
 
-PNBTT E0、single/family key-chart、两次train-only tangent spectrum、唯一full-rank16 oracle及最后一次gate-aligned necessity E1均已完成。
-最后一轮只将`normalized_necessity_margin`从`.10`对齐为正式Gate的`.50`，其余图、rank、数据、LR、seed、loss权重与评测口径不变；
-macro70/110总体和逐task均相邻一致`non_pass`。它把wrong压到`-.177--.019`并使margin、all-pairs、near-bound全部通过，但task1/93的
-correct/held仍只有约`.542--.722`，没有达到`.85/.80`。同checkpoint的train-only tangent spectrum没有出现`m`截谱、family chart新方向
-或rank重开信号。按专家§6、§5.10与§8，E2、次选B和whole-Writer joint的前置条件均未满足；当前没有获准的active implementation route，
-也不以续训、LR/seed/width/rank/scale/chart扫描替代接口裁决。active goal仍保留在真实route/authority阻塞处。
+## 当前active design
 
-## 当前科学停止点
+唯一active design为：
 
-- G1 native-factor free-code已正式通过：held5 strict250为`114/250`，breadth5/5、Goal2、Long1；真实native X/Y、signed pooling、
-  rank4 residual与唯一rank12+4 rank16存在强task-local闭环容量。
-- G2 boundary-anchored Natural Program已正式通过：held full相对endpoints改善`22.2047%`，probe`38/40`，median active events`4`，
-  same-task、K1 identity与K4 permutation invariance均通过。
-- G3长期未通过共享Program--bank映射。完整逐架构证据见`docs/research_history.md`第21--96节。
-- 第七次专家的Program-through-bank链已完整执行：scope-matched free-summary S0通过；real Program-through-bank S1在task1/93的
-  correct/held上正式non-pass，因此按预注册条件未启动shared S2。
-- 其失败分支bank-conditioned primal恢复了correct容量，但原query、calibrated Q_free、base-LR A_free和充分校准A_free均不能同时
-  保持correct并压低wrong。最终task93 correct fit0/fit1/held为`.853296/.858892/.818467`，wrong为`.611592/.668511`，
-  wrong与margin正式non-pass。
-- 当前只停止`summary -> family-scalar gate -> shared event-additive anchor`这一具体参数化；不外推为Program schema、Stage0、
-  native X/Y、signed pooling、rank4或整个ECP失败。
-- PNBTT family-key v2也已在macro70/110相邻一致`non_pass`：它显著压低wrong，但correct/held容量仍不足。该结果只停止当前
-  family-shared nonlinear key chart + target-specific rank16 key residual + rank4 transport，不裁决Natural Program或整个PNBTT。
-- 唯一full-rank16 oracle也在macro70/110稳定`non_pass`。macro110上task1 correct fit0/fit1/held为
-  `.960297/.941644/.948351`，但wrong为`.634156/.711548`；task93 wrong为`-.006466/-.021862`，但correct仅
-  `.586174/.595686/.449605`。这一任务依赖的容量--特异性反转在70到110保持，没有呈现一致广泛的明显改善，
-  所以按专家§5.10停止rank扩展，不进入E2。
-- 三个旧E1 formal的`.10` necessity hinge与`.50` Gate错配已由最后一次fresh gate-aligned E1纠正；该轮前10步
-  `active_necessity_fraction=.95`、11--70为`.3083`、71--110为`.05`，证明正式necessity objective已真实行使而非接线失效。
-- gate-aligned macro70/110仍相邻一致`non_pass`。macro110 task1 correct fit0/fit1/held为
-  `.607645/.609189/.561628`、wrong为`-.171164/-.149315`；task93 correct为`.710657/.721565/.686395`、wrong为
-  `-.086657/.006107`。两task都只失败correct/held，70到110改善很小，不追加训练。
-- gate-aligned step110 tangent spectrum相对旧family-key v2基本不变，最大末端10%谱能量为`1.3664e-5`，没有`m`截断；q/v input
-  correct--wrong operator cosine仍约`.9580/.9577`，没有形成新的correct可达方向。因此专家规定的chart、`m`与rank扩容触发均未出现。
-- 当前没有active实现路线。这个停止只覆盖已实际检验的PNBTT E1 free-query real-bank transport函数类，不裁决Natural Program、G2、
-  native X/Y、signed pooling、rank4或整个ECP。
+- docs/policy_response_event_to_factor_writer_design.md
+
+专家原始依据为：
+
+- docs/expert_review_20260902_full_history_policy_native_meta_writer.md
+- docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md
+
+PNBTT及此前Program--bank实现均已裁决，不是active fallback。
+
+## 已确认的科学基线
+
+- validation8 source为48/400，task-local rank16 oracle为250/400，输出合同本身有容量。
+- held5 stable carrier为43/250。
+- G1真实native X/Y、signed pooling与rank4 free-code正式通过：114/250、breadth5/5、Goal2、Long1。
+- G2 boundary-anchored ordered Natural Program正式通过：full相对endpoints改善22.2047%，probe38/40、median active
+  events 4、same-task/K1/K4通过。
+- G3及后续多类Program--bank mapping长期没有学得稳定shared功能映射。
+- Program-through-bank、bank-conditioned primal与PNBTT共同证明：旧summary/gate/anchor或whitening/transport函数类不能稳定同时
+  保持correct capacity与bank specificity。
+- full-rank16 PNBTT在task1与task93呈稳定相反行为，没有证明rank4是当前主要瓶颈。
+- 以上负证据不淘汰Stage0原生观测、ordered events、真实native X/Y、signed pooling、rank4或整个ECP。
+
+## 最后设计审查修正
+
+以下四项已并入active design，必须在首个真实图中成立：
+
+1. causal process prediction使用严格prefix-only auxiliary view，不能读取future frames、current-to-final relation或future event
+   assignment；
+2. process target来自冻结raw evidence或固定teacher projection，可训练compact projection不能同时充当可漂移target；
+3. task1/task93的task-local Composer正控与最小smoke一起完成，用于确认去掉PNBTT solve后仍保留G1 bank容量；
+4. full-response与coarse-response两臂都读取完整dynamic X/Y bank，因此对照只裁决前端event representation的增量。
 
 ## 当前执行顺序
 
-1. [x] 逐字归档第八次专家原文并核对其引用的代码、配置、提交和formal artifacts；
-2. [x] owner确认主选A/PNBTT并建立持续推进goal；
-3. [x] 登记active authority，建立唯一`codex/pnbtt`实现worktree；
-4. [x] 实现PNBTT唯一运行面：Program query、real-bank key、differentiable key whitening、joint-K signed real-value transport与rank4
-   materialization；退役旧base/gate/anchor在deployment主路径中的所有权；
-5. [x] E0最小真实smoke：专家十项hard tests、chunked replay、finite forward/gradient、38-target rank4与唯一rank16真实policy load；
-6. [x] 首个single-key-chart E1 task1/93已在macro70/110得到相邻一致`non_pass`：all-pairs、near-bound、信息墙及大部分wrong
-   约束成立，但correct/held与`.50` margin稳定不足；
-7. [x] 按专家§5.10在task1/93、Panel-A三条gradient arms和step110上完成`T=Cov(v,k)`功能梯度投影谱：`m=128`
-   没有截断有效谱，但q/v各side的功能梯度保留率与correct/wrong operator几何显示单一线性key坐标不足；
-8. [x] 保持`m=128`、residual rank4及全部E1数据/loss/Gate不变，完成family-shared nonlinear trunk + target-specific rank16
-   low-rank key projection的fresh E1；macro70/110均为`non_pass`，wrong明显改善但correct/held稳定不足；
-9. [x] 在v2 macro110上复跑同一train-only tangent spectrum：`m=128`仍未截断有效谱，family chart只在部分output side降低
-   correct--wrong operator重合，没有恢复q/v correct功能梯度可达性；停止继续修改key chart或增加`m`；
-10. [x] 完成专家允许的唯一同构PNBTT task-local full-rank16 oracle；macro70/110相邻一致`non_pass`，稳定呈现task1高correct/
-    高wrong与task93低wrong/低correct的反转，未相对rank4明显更优，因此不重开carrier/task rank分配；
-10a. [x] fresh完成同一family-key rank4 gate-aligned E1；macro70/110均稳定`non_pass`，wrong/margin通过而correct/held失败；随后
-     train-only tangent spectrum确认没有新的`m`、chart或rank扩容触发；
-11. [x] E1未通过，因此按专家预注册顺序不启动E2真实frozen G2 Natural Program到bank transport；
-12. [x] “E1通过但E2真实Program系统失败”的次选B触发条件未发生；
-13. [x] E4 matched component-init与fully-random whole-Writer joint的上游Gate未满足，因此不启动；
-14. [ ] goal停在真实route/authority阻塞；第二次逐条复核专家§5.10、E1--E4、次选B及当前实现后，仍未发现尚未执行且满足触发条件的分支。
-    只有owner提供与专家边界一致的新裁决或外部authority变化，才恢复实现与实验。
+1. [x] 逐字归档并核验完整历史专家意见与补充澄清；
+2. [x] owner确认Policy-Response Event-to-Factor Writer主案；
+3. [x] 建立持续推进goal；
+4. [x] 登记active design并校正owner requirements、concept、findings、task plan与progress；
+5. [ ] 从最新clean pushed main建立唯一codex/policy-response-writer分支和worktree；
+6. [ ] 盘点并复用observer、events、native X/Y、chunked replay、materializer、J2 data/functional runtime与evaluator，确定唯一
+   runtime owner及旧路径退休触发；
+7. [ ] 实现Frozen Capture接口、Frame Policy-Response Blocks、Ordered Event Blocks、Current-Video Native Factor Composer与
+   positive-only objectives；
+8. [ ] 完成最小真实forward/gradient/materialization smoke及task1/task93 task-local Composer正控；
+9. [ ] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
+10. [ ] 在相邻checkpoint出现有意义correct功能信号后尽快运行held5 correct-only strict250，不用冗长内部阈值阻塞闭环；
+11. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
+    reversed controls；controls不回流训练；
+12. [ ] 根据最早失效接口作有依据修正：Composer、representation、functional credit、task组合覆盖或positive-only可辨识性；
+13. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
+14. [ ] 扩大到train24与经审计non-held meta tasks，运行validation8相邻single-checkpoint strict paired400；
+15. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+16. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
-实现参数`m/lambda/epsilon/theta`、projection分解、solver、cache shard、microbatch和GPU数量由吞吐与train-side机制证据选择，不升级为
-额外科学Gate。明确失败不得靠seed/LR/width小扫或无限续训挽救；有新机制证据时也不受人为版本数或修正次数限制。
+## 推进与决策原则
 
-## 继续推进时仍有效的边界
-
-- validation/test不产生梯度；shuffled/reversed只在最终selected checkpoint冻结后测试；
-- source、信息墙、唯一rank16与Action Meta默认关闭的合同保持；
-- G1--G3只是机制验证，不是Final强制课程；Final必须保留component-init与fully-random Writer两个matched fresh候选；
-- non-pass先定位最早接口，不用内部loss、cosine、reconstruction或无意义超参小扫代替closed-loop；
-- GPU、吞吐、并行、Git、formal worktree与storage要求以`docs/current_owner_requirements.md`和`AGENTS.md`为准。
+- 效率优先：实现接通后立即获取真实GPU与closed-loop证据，文档、通用重构和冗余测试不能延迟科学结果。
+- 缜密修正：每次架构改变必须对应已定位的最早接口，不以随手改结构、LR/seed/width/rank/scale小扫替代分析。
+- 不作弊：只用正确视频训练；validation/test无梯度；负controls只在checkpoint冻结后评测。
+- 一次non-pass只淘汰实际检验的组合，不因局部失败推翻全部正证据。
+- 明确坏结果不无限续训；有新的机制证据时也不受人为版本次数限制。
+- closed-loop absolute性能优先，内部loss、factor cosine、attention和representation指标只负责定位。
+- Final必须包含component-init与fully-random同拓扑fresh候选。
+- GPU launch前同时live检查gpu01/gpu02；有1至6张有效A40就使用，不等待凑卡，可安全共驻但不干扰他人。
+- 长训练期间并行完成cache、评测准备和已确认workspace清理。

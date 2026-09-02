@@ -56,28 +56,30 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 ## 4. 当前方法方向
 
-经过2026-09-02全局专家复核与owner正式裁决，当前唯一active方向是ECP Native-Factor Compiler中的
-**Program-Conditioned Native-Bank Tangent Transport（PNBTT）**。完整方法合同见
-`docs/program_conditioned_native_bank_tangent_transport_design.md`；专家原文见
-`docs/expert_review_20260902_global_route_reassessment.md`。它不是GOMQ、PECS、历史v24或旧G3的改名。其核心是：
+经过2026-09-02完整历史复核、专家补充澄清与owner最终确认，当前唯一active方向是
+**Policy-Response Event-to-Factor Writer**。完整方法合同见
+`docs/policy_response_event_to_factor_writer_design.md`；专家原文见
+`docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
+`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。其核心是：
 
-1. 保留冻结PI0.5原生language、patch和Action Expert内部时序结构形成的owner-specific、ordered Natural Program；
-2. Program只能产生低维query；当前真实X/Y candidate产生低维key，最终value始终是原始真实native candidate；
-3. B0只流式建立当前bank的key-space mean/covariance/whitening，B1在同一bank上执行唯一antithetic exact signed selection；
-   不再产生base primal，也不再使用`base + bounded correction`、family scalar gate、shared/free native anchor或summary token；
-4. 每条视频独立保序编码，跨视频以固定等质量`1/K`形成一个联合candidate measure；不得学习video reliability、平均raw
-   features或先生成多套LoRA再平均；
-5. 首版继续把唯一native-bank rank4 residual与frozen rank12 carrier严格拼成一套38-target rank16；rank分配只由同构容量证据重开；
-6. privileged policy/effect evidence只作set-valued functional critic，不产生神经`q_pi`或部署latent；
-7. E1 free-query transport与E2真实frozen Natural Program资格通过后，立即进入shared/whole-Writer训练；Final必须matched比较
-   component-init与同拓扑fully-random fresh候选。
+1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，保留Action Expert
+   layer、50-horizon、probe与38-target owner响应；
+2. learned Policy-Response Video Process Encoder沿teacher-frame time形成task-grounded、boundary-anchored ordered events；
+   teacher-frame time、action horizon、flow time、layer depth与probe轴不得混淆；
+3. learned Current-Video Native Factor Composer以38x4 target-rank queries读取events与当前视频真实X/Y bank，通过一个
+   ragged native-group signed-attention operator直接pool raw factors；
+4. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
+   residual；
+5. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
+6. 主要learned模块由可重复attention/MLP blocks扩展，不再使用冻结Natural Program到summary、covariance、whitening、transport、
+   anchor或family scalar gate的连续专用坐标链；
+7. 训练只使用正确视频的cross-episode functional、严格causal的positive policy-response prediction及轻量preservation；
+   Final matched比较component-init与同拓扑fully-random fresh候选。
 
-当前旧G3的`summary -> family-scalar gate -> shared event-additive anchor`函数类正式退役；旧sealed configs和代码只作历史复现与
-选择性kernel复用，不构成active fallback。若E1通过而E2在排除bank chart/优化问题后系统性失败，按专家条件转入直接由language与
-ordered native-bank tokens产生signed measure的B路线；只有matched whole-Writer两臂都不能产生稳定闭环增量，才讨论根本停止。
-
-唯一Program schema为`P_lang[38,128]`、`P_scene[38,128]`、`P_process[8,38,128]`、`rho[8]`、`tau[8,2]`和
-`sigma[8,38,128]`。最大`E=8`固定，slot激活数量与视频段落分配动态学习；跨视频只在保序event alignment后聚合。
+G2已经通过的Natural Program仍是ordered event、初始化与机制证据，但其固定
+`P_lang/P_scene/P_process/rho/tau/sigma` tuple不再是deployment下游的唯一硬瓶颈。PNBTT、旧
+`summary -> family-scalar gate -> shared event-additive anchor`、EBSRI与其它已裁决G3实现只作历史复现和kernel复用，不构成
+active fallback。
 
 首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做matched controls；Stage 0和compiler冻结，只有出现明确
 净收益且不损害breadth/retention才加入并永久冻结，否则保持关闭。

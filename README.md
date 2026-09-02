@@ -3,9 +3,10 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-当前方法为ECP Native-Factor Compiler。活动树只保留source/task-expert基础设施、严格评测、ECP Stage 0以及最终Writer会复用的
-数据/functional组件。历史Writer、neural q_pi、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务和fixed-effect/fit-span
-realizer均由Git保存，不再作为可执行fallback。
+当前active方法为Policy-Response Event-to-Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered events、真实native
+X/Y、signed pooling、rank4与唯一LoRA物化，并用可重复的Video Process Encoder和Native Factor Composer替换未通过的固定
+Program--bank编译链。历史Writer、neural q_pi、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为
+active fallback。
 
 ## 当前状态
 
@@ -14,18 +15,19 @@ realizer均由Git保存，不再作为可执行fallback。
 - G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
 - P0/P1证明current-bank operator与exact signed replay具有强task-local容量；随后旧G3的
   `summary -> family-scalar gate -> shared event-additive anchor`在充分校准后仍不能同时保留correct并压低wrong，已经正式停止；
-- 最近一次获准路线Program-Conditioned Native-Bank Tangent Transport（PNBTT）已完成E1裁决：Program只产生低维query，真实bank candidate
-  产生key并继续作为唯一native value，通过current-bank whitening与antithetic signed transport形成rank4 residual；修正necessity margin后
-  wrong、margin、all-pairs与near-bound均通过，但task1/93 correct/held在macro70/110稳定不足，因此总体相邻一致`non_pass`；
-- 当前没有active implementation route。E1未通过，所以按专家预注册顺序不启动E2、次选B或whole-Writer joint，也不以续训和
-  LR/seed/width/rank/scale/chart扫描替代接口裁决；该停止不外推为Natural Program、G2、native X/Y、signed pooling、rank4或整个ECP失败；
+- PNBTT完成single/family chart、两次spectrum、full-rank16与gate-aligned E1后稳定`non_pass`；它能压低wrong但不能同时恢复
+  task1/93 correct/held，现只作历史证据；
+- 2026-09-02完整历史复核后，owner确认新的Policy-Response Event-to-Factor Writer并建立active goal：冻结PI0.5逐帧捕获
+  layer x horizon x probe response，沿视频时间形成ordered events，再由events在当前视频真实X/Y bank中直接执行signed selection；
+- 训练只使用正确视频的cross-episode functional、strictly causal positive process prediction和轻量preservation；所有负controls在
+  selected checkpoint冻结后评测；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-全仓库orientation、G1、原G2动态Gate、旧G3全链及2026-09-02专家PNBTT路线的E0/E1都已完成。E1没有取得后续资格，当前停在真实
-route/authority阻塞；不恢复任何退役Writer/realizer路线，也不增加behavior-Gram、factor reconstruction或其它非专家Gate。
+新active design已经登记；下一步从最新clean pushed main建立唯一实现worktree，接通真实forward/gradient/materialization与task-local
+Composer正控后立即进入GPU shared实验，不恢复任何退役Writer/realizer路线。
 
 ## 阅读顺序
 
@@ -41,8 +43,11 @@ route/authority阻塞；不恢复任何退役Writer/realizer路线，也不增�
 10. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`：2026-08-31第六次专家回复原文；
 11. `docs/expert_review_20260901_program_through_bank_bottleneck.md`：2026-09-01第七次专家回复原文；
 12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
-13. `docs/program_conditioned_native_bank_tangent_transport_design.md`：owner批准并已完成E1裁决的PNBTT架构与E0--E4条件合同；
-14. `docs/research_history.md`：影响当前决策的历史证据。
+13. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`：完整EMBER历史复核原文；
+14. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`：最新架构澄清原文；
+15. `docs/policy_response_event_to_factor_writer_design.md`：当前active design；
+16. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
+17. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

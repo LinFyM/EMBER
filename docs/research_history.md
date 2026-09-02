@@ -2001,3 +2001,34 @@ rank扩容信号。
 whole-Writer joint同样要求上游A路线取得资格。三者均未满足，当前没有active implementation route，不运行E2、B、joint、续训或
 LR/seed/width/rank/scale/chart扫描。该停止只覆盖已实际检验的PNBTT E1 transport函数类，不裁决Natural Program、G2、native X/Y、
 signed pooling、rank4、整个ECP或zero-interaction目标。
+
+## 104. 完整历史复核与Policy-Response Event-to-Factor Writer启动
+
+PNBTT E1耗尽后，owner要求从最早EMBER到当前ECP重新复核全部路线，并重点判断：如何吸收ECP已证明有效的原生证据，同时把Writer改成
+可通过复制标准block扩展、而非连续堆叠专用数学坐标的架构。完整专家原文逐字归档为：
+
+- `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`；
+- `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。
+
+专家补充意见撤回上一版的negative-control训练与task-expert factor dictionary主张，并将新主案收敛为Policy-Response
+Event-to-Factor Writer：
+
+1. 冻结PI0.5逐帧捕获image/language、19层Action Expert boundaries、50 horizons、正负probe、flow velocity与38-target真实X/Y；
+2. learned Video Process Encoder沿teacher-frame time形成task-grounded、boundary-anchored ordered events；
+3. learned Factor Composer以38x4 queries读取events与当前视频bank，通过一个ragged native-group signed-attention operator直接pool
+   raw X/Y；
+4. rank4 factors只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一rank16；
+5. 训练只使用正确视频的cross-episode functional、positive causal policy-response prediction与轻量preservation；所有负controls在
+   selected checkpoint冻结后评测。
+
+该路线吸收G1 native-factor容量、G2 ordered dynamics、P0/P1 current-bank operator、chunked replay、functional runtime与materializer，
+同时退役固定Natural Program到summary、covariance、whitening、transport、anchor和family scalar gate的硬接口。G2 Program仍作初始化与
+机制证据，不再是deployment唯一schema。
+
+主任务最后复核发现并修正四个未定义点：process auxiliary必须strictly prefix-only；预测target必须冻结以避免learned target collapse；
+新Composer先在task1/task93做task-local正控；full/coarse matched对照只裁决前端表示，因为两臂都保留完整dynamic X/Y bank。这些修正
+进入`docs/policy_response_event_to_factor_writer_design.md`。
+
+owner于2026-09-02确认整体设计、要求建立持续goal并立即推进，强调尽快获得真实Writer闭环性能信号，但不得作弊或用随意改动替代有依据
+的接口修正。系统goal已建立；active计划从最新clean pushed main创建唯一实现worktree，先完成真实forward/gradient/materialization与
+task-local Composer正控，随后立即运行12-task full/coarse matched GPU实验并尽早进入held5 correct-only closed loop。

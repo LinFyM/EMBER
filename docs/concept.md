@@ -22,61 +22,65 @@ matching推进为动作chunk。教学视频则是一串跨时间的静态帧，�
 训练task数量有限还会造成欠识别：language、video和task identity可能高度相关，模型即使完全忽略过程也能降低训练loss。因此
 方法必须靠task-disjoint评测、视频controls、多个独立策略lineages和真实closed-loop结果证明因果路径。
 
-## ECP假设
+## 当前假设：Policy-Response Event-to-Factor Writer
 
-当前方法称为ECP Native-Factor Compiler。核心假设是：教学视频中的可迁移知识可以表示为一个有序、event-conditioned、与
-Action Expert target对齐的Program；同一condition在冻结PI0.5各目标层中产生的原生input/output activations提供task-specific
-参数基底，Program只学习选择、组合与缩放这些向量。
+ECP两周的正证据已经分别证明：
+
+1. 教学视频在冻结PI0.5内部产生可利用的Action Expert policy-response dynamics；
+2. 当前视频的真实target-native X/Y与exact signed pooling具有强task-local rank4闭环容量。
+
+尚未解决的是如何学得可泛化的Program--bank功能映射。旧固定Natural Program到summary、solver、transport、anchor和gate的连续接口
+长期不能同时保持correct容量与bank specificity。当前方法因此保留通过验证的原生证据与factor几何，但取消固定Program tuple作为唯一
+deployment瓶颈，改用两个可复制扩展的learned模块。
 
 ```text
-exact language + ordered action-hidden videos
-              -> Pass A: q_V(owner-specific Program)
-              -> Program queries read the real native bank
-              -> Pass B0: scope-matched target/rank/event/type bank responses
-              -> Program + current-bank content jointly form the primal direction
-              -> Pass B1: current-bank dual and exact signed candidate pooling
-              -> one exact signed measure over real X/Y
-              -> rank4 task residual + frozen rank12 carrier
-              -> one complete rank16 LoRA
+exact language + K ordered action-hidden videos
+              -> frozen per-frame PI0.5 evidence capture
+                    layer x horizon x probe x owner response
+                    current-video true native X/Y banks
+              -> learned Policy-Response Video Process Encoder
+                    task-grounded frame relations
+                    boundary-anchored ordered events
+                    static context C + process innovation D
+              -> learned Current-Video Native Factor Composer
+                    38 targets x 4 mobile-rank queries
+                    whole-bank context + exact signed X/Y pooling
+              -> rank4 video residual + frozen rank12 carrier
+              -> one complete 38-target rank16 LoRA
               -> frozen PI0.5 closed loop
-
-training only: successful policies + verified occupancies/actions/effects/reward
-              -> nonparametric set-valued functional critic
-              -> supervise generated policy response, never produce Program
 ```
 
-canonical不再包含神经`q_pi`或privileged Program teacher。privileged evidence仍重要，但只在训练时以global-member set loss和
-functional/effect critic约束最终生成的policy，不进入deployment forward，也不要求video预测不可观察的recovery信息。
+主要learned模块内部只使用可重复attention/MLP blocks。三个不可复制的固定边界是PI0.5原生证据捕获、视频单调顺序与LoRA
+materialization；不再为每轮问题增加新的latent坐标。
 
-## Program候选结构
+## PI0.5时序与ordered events
 
-每个视频帧使用原生PI0.5 prefix和一组固定Gaussian action probes。flow时刻`t=1`表示denoising的噪声端点：输入仍是50个
-按未来horizon排列的noise tokens；它们的中间hidden是当前language/image条件下的时间索引policy response，不是已经预测好的
-50步动作，也不包含teacher action。
+每个视频帧使用原生PI0.5 image-language prefix和固定antithetic action probes。flow时刻`s=1`是denoising噪声端点；50个
+horizon positions表示当前静态观测下的future-action policy response field，不是teacher未来50帧或teacher actions。
 
-当前Stage 0候选保留38个LoRA target owners、50个horizon位置和各层hidden，再将帧序列分段为最多`E=8`个有序event slots。
-`E=8`是固定最大容量；每个任务实际激活多少slot、哪个视频段落写入哪个slot均由模型学习。跨视频聚合只在event对齐后进行。
+teacher-video frame time、Action Expert horizon、flow time、layer depth和probe是五个不同轴。新Writer在第一次task/relation-conditioned
+attention前保留19个layer boundaries、50 horizons、正负probe、layer state、residual increment与flow velocity；禁止用`t+h`把
+不同frames映射到共享机器人绝对时钟。
 
-当前候选Program为：
+frame-level表示沿真实teacher-video time形成adjacent、short-window、initial-relative与goal-relative relations，再被编码为最多
+`E=8`个boundary-anchored ordered events。每条视频独立保序；多视频保持为无序集合，不先平均为一个Program。
 
-```text
-P_lang    [38, 128]
-P_scene   [38, 128]
-P_process [8, 38, 128]
-rho       [8]            # event presence
-tau       [8, 2]         # event center and duration
-sigma     [8, 38, 128]   # cross-video uncertainty
-```
+G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断和历史机制证据，但不再是下游唯一固定schema。当前event
+表示保留owner-aligned event token、soft temporal assignment与occupancy，并分解为共有context C和event-relative innovation D。
 
-这是专家复核后固定的schema。Pass B另外读取每个q/v/action-in/action-out目标的真实input/output以及output的adjacent、init、goal
-differences；这些量不是Program字段，也不在内存中整段物化。稳定结构原则是Program只能以query等方式读取当前真实bank，不能用
-absolute code绕过bank直接决定LoRA；Program与current-bank content必须共同形成方向，再由当前bank上的唯一signed measure对真实X/Y做
-exact pooling并产生rank4 outer products。内部两阶段读取仍属于rollout前一次Writer调用。2026-09-01的Program-through-bank实验链已经
-停止一种具体实现：高相似summary经family-scalar gate调制共享event-additive anchor不能提供足够wrong-bank功能分离。2026-09-02
-owner采纳全局专家主选A，当前active realization为PNBTT：Program只形成低维query，真实candidate形成低维key且自身继续作为唯一native
-value；B0只建立current-bank key covariance/whitening，B1用同一bank上的antithetic signed measure直接pool真实X/Y。这样wrong bank会
-改变矩阵值transport，而不是只改变一个scalar或公共anchor幅度。完整合同见
-`docs/program_conditioned_native_bank_tangent_transport_design.md`。
+## Current-video native factor path
+
+每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
+output differences。38x4 target-rank queries先读取ordered events和whole-bank低维context，再输出两组signed logits，对raw X/Y
+做exact pooling。
+
+language和静态context只负责grounding、query或FiLM调制，不能作为factor value或独立输出mobile residual。首版不使用task-expert
+dictionary、held retrieval或free learned residual。q按8个native query-head groups、action-in按32个native-width blocks处理；这来自
+G1的实际输出空间反证，不是四条不同compiler。
+
+rank4 factors只做一次small-core canonicalization，再与frozen rank12 carrier拼成唯一rank16。PNBTT、EBSRI、Program-through-bank及
+旧G3实现保留为历史和kernel来源，不构成active fallback。完整合同见
+`docs/policy_response_event_to_factor_writer_design.md`。
 
 ## 训练原则
 

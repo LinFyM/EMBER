@@ -58,6 +58,14 @@ task在完整1210步中获得约与原110步实验相同的更新曝光，同时
 credit向held task外推时的幅度与功能错位。它不单独裁决完整1210-step函数类；预注册macro1210仍需完成相邻closed-loop，期间不运行
 mixed-K、fully-random、validation或负controls。
 
+同一macro610的封存48-state PI0.5 policy-effect诊断进一步排除了“只需把全局scale调小”。五task successful-member effect loss均值
+为carrier/G1/Writer=`.914596/.238841/1.023186`，Writer只在`1/5` task略优于carrier；G1为零mobile的Spatial0上Writer反而无谓移动。
+四个G1非零mobile task中，Writer与G1的member-scale-whitened owner/flow/action联合方向cosine仅`.05044--.30470`、中位
+`.14753`，联合effect norm为G1的`.4563--.7444`。所以接近零的参数update cosine确实低估了少量功能同向分量，但Writer的大参数
+residual并没有形成过强的正确policy effect，而是把容量消耗在低敏感或错误方向；这是shared functional credit/方向泛化失配证据，
+不是允许事后scale sweep的依据。该privileged read-only诊断不参与模型选择，raw evidence见
+`runs/analysis/pi05_ecp_policy_response_writer_scale73_m610_g1_effect_alignment_5df9406_gpu02p46_20260903/`。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

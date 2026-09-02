@@ -2109,5 +2109,14 @@ macro610 mobile4整体函数范数为carrier12的`1.81--2.15`倍；旧macro70/11
 完全塌成同一向量。当前定位因此是shared train functional credit向held task外推时的幅度/功能错位，而不是残差没训练、单层数值错误或
 纯task-collapse。
 
+为避免把低参数cosine误判成必然功能正交，随后在封存G1 effect bank的48个固定observation/noise anchors上，对carrier、G1正式
+adapter和macro610 Writer adapter重新执行相同PI0.5 10-step denoising，比较owner/flow/action response；这是零梯度、使用privileged
+reference的post-hoc定位，不参与checkpoint选择。raw root为
+`runs/analysis/pi05_ecp_policy_response_writer_scale73_m610_g1_effect_alignment_5df9406_gpu02p46_20260903/`。五task
+successful-member effect loss均值依次为carrier `.914596`、G1 `.238841`、Writer `1.023186`；Writer只在Spatial9上相对carrier
+略降，另外四task均恶化，平均净恶化`.108590`。四个G1非零mobile task上，Writer相对G1的member-scale-whitened联合功能方向cosine
+范围`.050440--.304702`、中位`.147526`，联合effect norm ratio为`.456257--.744368`、中位`.663001`。因此参数余弦近零确实漏掉
+少量功能等价分量，但macro610的大参数norm没有形成过强的正确功能效应；主要容量位于低敏感或错误方向，不能靠事后缩放恢复G1。
+
 macro610不冻结checkpoint、不运行negative controls，也不准入mixed-K、fully-random或validation。训练继续到预注册macro1210，使用相邻
 closed-loop判断该失败是否稳定或进一步加剧；只有该结果完成后才裁决当前positive-only Event-to-Factor共享函数类。

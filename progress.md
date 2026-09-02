@@ -102,6 +102,13 @@
   macro70同样为`22/4/21`，因此是显著净退化。materialized mobile4整体函数范数已从旧macro70/110约为carrier12的
   `.49--.66`倍增至macro610的`1.81--2.15`倍；38 targets普遍放大而非单target爆炸。训练functional benefit仍持续上升，故当前最早
   警报是train functional proxy与held closed-loop脱节并伴随shared residual外推过强，而不是Writer没动或评测故障。
+- 随后的48-state固定observation/noise只读功能诊断直接重算carrier、G1与macro610的PI0.5 owner/flow/action response，raw evidence在
+  `runs/analysis/pi05_ecp_policy_response_writer_scale73_m610_g1_effect_alignment_5df9406_gpu02p46_20260903/`。五task
+  successful-member effect loss均值为carrier/G1/Writer=`.914596/.238841/1.023186`，Writer只在`1/5` task略优于carrier、平均反而
+  恶化`.108590`。四个G1非零mobile task上，Writer相对G1的member-scale-whitened功能方向cosine仅
+  `.05044--.30470`、中位`.14753`，功能响应norm却只有G1的`.4563--.7444`。因此参数残差虽过大，真正policy effect并非“正确方向
+  过强”，而是主要落在低效或错误功能方向；事后缩放只会趋近carrier，不能补出G1效应。该诊断零梯度、使用封存G1 privileged
+  effect reference，只作non-pass定位，不参与checkpoint选择。
 - 该单点不运行controls、不进入mixed-K、fully-random或validation。73-task训练继续到预注册macro1210，以相邻checkpoint判断当前
   non-pass是中途过渡还是稳定/加剧；随后才按closed-loop证据决定继续或停止当前positive-only Event-to-Factor共享函数类。等待期间只删除了
   一个无invocation、无shard且已被完整retry1取代的80KiB旧full-macro110 prepare root；formal evidence未删除。当前保留训练与评测两个

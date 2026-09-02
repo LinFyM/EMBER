@@ -72,6 +72,8 @@ def _policy_response_provenance(
     condition = manifest.get("condition", {})
     checkpoint = manifest.get("writer_checkpoint", {})
     representation = str(condition.get("representation", ""))
+    writer_macro = int(checkpoint.get("macro", -1))
+    writer_checkpoint = Path(str(checkpoint.get("path", "")))
     return all(
         (
             arm
@@ -92,7 +94,8 @@ def _policy_response_provenance(
             condition.get("outcome_dependence") is False,
             condition.get("gradient_use") is False,
             isinstance(checkpoint.get("path"), str),
-            int(checkpoint.get("macro", -1)) in {70, 110},
+            writer_macro > 0,
+            writer_checkpoint.name == f"macro_{writer_macro:08d}",
         )
     )
 

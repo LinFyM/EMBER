@@ -323,8 +323,8 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         "schema_version": "ember_ecp_policy_response_writer_materialized_adapter_v1",
         "condition": "correct_k1",
         "representation": "full",
-        "writer_macro": 70,
-        "writer_checkpoint": "macro_00000070",
+        "writer_macro": 610,
+        "writer_checkpoint": "macro_00000610",
         "authority_id": 71,
         "global_task_id": 0,
         "suite": "libero_spatial",
@@ -343,7 +343,7 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         "language": "exact language",
         "condition": "correct_k1",
         "representation": "full",
-        "writer_macro": 70,
+        "writer_macro": 610,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest_bytes": checkpoint_manifest_path.stat().st_size,
         "adapter_path": str(adapter_path),
@@ -374,7 +374,7 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
             "mode": "formal",
             "representation": "full",
         },
-        "writer_checkpoint": {"path": "macro_00000070", "macro": 70},
+        "writer_checkpoint": {"path": "macro_00000610", "macro": 610},
         "condition": {
             "name": "correct_k1",
             "representation": "full",
@@ -404,9 +404,21 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         evaluation_role="development_train",
         require_formal=True,
     )
-    assert adapter["writer_checkpoint"]["macro"] == 70
+    assert adapter["writer_checkpoint"]["macro"] == 610
 
-    checkpoint_manifest["writer_macro"] = 110
+    bank["writer_checkpoint"]["macro"] = 1210
+    bank_path.write_text(json.dumps(bank), encoding="utf-8")
+    with pytest.raises(Pi05EvaluationError, match="manifest changed"):
+        inspect_static_task_lora_bank(
+            manifest_path=bank_path,
+            source=source,
+            task_keys=(("libero_spatial", 0),),
+            evaluation_role="development_train",
+            require_formal=True,
+        )
+    bank["writer_checkpoint"]["macro"] = 610
+
+    checkpoint_manifest["writer_macro"] = 1210
     checkpoint_manifest_path.write_text(
         json.dumps(checkpoint_manifest), encoding="utf-8"
     )

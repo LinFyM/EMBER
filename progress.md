@@ -85,6 +85,11 @@
   固定`NCCL_P2P_DISABLE=1`、world-size4与每rank GPU-local NUMA绑定；exact resume只允许同commit、同物理卡、world size、config、输入与
   output root。exact process command为：
   `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-scale-formal-1a11115b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_scale_73task_k1_component_coarse_s1210_1a11115b_gpu01p2456_20260903 --phase shared --representation coarse --initialization component --mode formal`。
+- 上述scale formal已于2026-09-03 00:27 CST从clean pushed detached `df7a7f5a`启动，tmux session为
+  `ember_prw_scale73_coarse`。run contract精确锁定同一commit、world-size4、物理2/4/5/6、73个gradient tasks、K1及positive-only
+  信息墙；四rank冻结cache完成后首个optimizer step在00:34结束。step10完成时最近5步平均`28.92s`，Frame/Event/Predictor/Composer
+  梯度均finite nonzero，最大CUDA reserved为`40.883GiB`，gpu01 available host memory仍为`122612895744 bytes`。当前训练继续；
+  macro610 ETA只作运行调度估计，不作科学证据。已完成旧12-task formal的clean detached worktree已删除，commit与全部formal outputs保留。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

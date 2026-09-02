@@ -185,8 +185,9 @@ def role_balanced_task_owners(
         raise ValueError("shared Writer role-balanced ownership changed")
     rows: list[list[int]] = [[] for _ in range(world_size)]
     total_loads = [0] * world_size
-    if world_size == 1:
-        role_ranks = ((0,), (0,))
+    if world_size < 6:
+        shared_ranks = tuple(range(world_size))
+        role_ranks = (shared_ranks, shared_ranks)
     else:
         middle = (world_size + 1) // 2
         role_ranks = (tuple(range(middle)), tuple(range(middle, world_size)))

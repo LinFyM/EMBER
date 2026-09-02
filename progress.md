@@ -52,7 +52,9 @@
   一次，物化五套独立且完整的38-target rank16 adapters，并交给既有`evaluate_pi05.py` static task-LoRA运行面做correct-only
   strict250。配置固定为`configs/pi05_ecp_policy_response_writer_held5_eval_v1.json`；deployment runtime不实例化functional action/state
   dataset或processor，不读取held action/reward，不生成wrong、shuffle、reverse、no-video或language-only条件，也不复制Evaluator。
-  该路径目前只完成代码与authority接线，尚未产生或宣称held5结果。
+  clean pushed `main@e7631247`上的单卡真实runtime smoke确认authority IDs `71/76/81/86/91`精确对应global
+  `0/9/18/25/36`，language tokens同集合、Panel数为0、query dataset/processor均为`None`；冻结资源峰前常驻约
+  `9.38GB allocated / 19.23GB reserved`。该路径尚未物化checkpoint或产生/宣称held5结果。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

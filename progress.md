@@ -45,16 +45,28 @@
   `.0558371`，首步normalized process loss为`1.17047`；Frame/Event/Predictor/Composer梯度范数分别为
   `1.23987/.991191/2.50437/3.34321`，峰值allocated/reserved仍为`26.64/35.52GB`。该profile只验证最终目标图与资源，不作方法选择。
 - shared实现及最终Huber目标图已经完成回归并提交为`0c5c7e99`；launch合同随clean pushed
-  `main@1290673a0b51158c0a4f1fc02ff0f32a729996e0`冻结。12-task K1 component-init full/coarse两条matched formal已分别在
-  gpu01物理2与gpu02物理5并行运行，进程、梯度、显存与step输出健康；早期functional benefit仍在正负噪声尺度交替，不提前作科学
-  结论，正式裁决等待step70/110及零梯度Panel-B。
+  `main@1290673a0b51158c0a4f1fc02ff0f32a729996e0`冻结。12-task K1 component-init full/coarse两条matched formal及四个held5
+  correct-only strict250均已完整结束、零错误。full step70/110的Panel-B gradient fit/held benefit为
+  `.000542/.000199`与`.001032/.000586`，true-task-held两点均为负；对应closed-loop为`33/31`。coarse为
+  `.000684/.000596`与`.000828/.000715`，true-task-held仍均为负；closed-loop为`43/41`。四个checkpoint的Goal/Long均为0。
+  coarse逐task按Long/Goal/Object/Spatial0/Spatial9为`0/0/2/40/1`与`0/0/4/34/3`，相对carrier分别保留`37/43`与
+  `35/43`；full只有`29/43`与`25/43`。因此full没有证明复杂19层response前端的增量，coarse更稳定但仍只达到carrier，四臂均
+  为科学non-pass。
 - 等待训练期间已在唯一Writer CLI内接通`materialize` phase：冻结shared checkpoint后，用held5每task固定correct demo5各调用Writer
   一次，物化五套独立且完整的38-target rank16 adapters，并交给既有`evaluate_pi05.py` static task-LoRA运行面做correct-only
   strict250。配置固定为`configs/pi05_ecp_policy_response_writer_held5_eval_v1.json`；deployment runtime不实例化functional action/state
   dataset或processor，不读取held action/reward，不生成wrong、shuffle、reverse、no-video或language-only条件，也不复制Evaluator。
   clean pushed `main@e7631247`上的单卡真实runtime smoke确认authority IDs `71/76/81/86/91`精确对应global
   `0/9/18/25/36`，language tokens同集合、Panel数为0、query dataset/processor均为`None`；冻结资源峰前常驻约
-  `9.38GB allocated / 19.23GB reserved`。该路径尚未物化checkpoint或产生/宣称held5结果。
+  `9.38GB allocated / 19.23GB reserved`。该路径随后已物化四个checkpoint并完成上述1000条正式rollout；没有为失败checkpoint运行
+  wrong、shuffle、reverse、no-video或language-only controls。
+- 首个有依据修正不改模型、functional/process目标、rank或scale：选择较简单的coarse与K1，把梯度映射从5 meta + 5 target扩大为
+  55个经审计meta与18个target-fit，task2/74仍作true-task-held，另外15个meta held和5个target held不产生梯度。每task只缓存两条
+  outcome-independent fit正确视频，最后一条正确视频作held；6卡时按role与cache owner平衡，绝大多数update同时使用6个真实任务。
+  配置为`configs/pi05_ecp_policy_response_writer_scale_v1.json`，10 warmup + 1200 effective updates，保存macro610/1210；macro610
+  一出现即可在训练继续时并行做held5 correct250，不新增人为内部门。单卡两步真实profile已解析两套completed Panel roots中的75个
+  task authority，完成真实capture、functional反传、process反传和唯一rank16物化；step2 Frame/Event/Predictor/Composer梯度均非零，
+  峰值allocated/reserved为`27.55/38.17GB`。profile当时为资源上界读取4 fit + 1 held视频；正式首轮已缩为2 fit，profile不作方法选择。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

@@ -20,11 +20,21 @@ from typing import Any, Mapping, Sequence
 import torch
 import torch.distributed as dist
 
-from ember.ecp.bank_conditioning.mapping import load_mapping_split
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.shared_contract import (
     build_shared_run_contract,
     seal_or_validate_shared_run_contract,
+)
+from ember.ecp.policy_response_writer.shared_schedule import (
+    VideoSplit,
+    _evaluation_ids,
+    _split_ids,
+    _video_splits,
+    balanced_task_owners,
+    owner_balanced_task_group,
+    role_balanced_task_owners,
+    shared_task_group,
+    training_video_demos,
 )
 from ember.ecp.policy_response_writer.training import (
     PolicyResponseRuntime,
@@ -44,38 +54,6 @@ class SharedEvidenceCache:
     capture_records: list[dict[str, Any]]
     functional_normalizers: dict[int, float]
     process_normalizers: dict[int, float]
-
-
-def shared_task_group(
-    meta: Sequence[int], target: Sequence[int], optimizer_step: int
-) -> tuple[int, ...]:
-    """Cycle three of five tasks per role with equal task frequency."""
-
-    left = tuple(map(int, meta))
-    right = tuple(map(int, target))
-    if len(left) != 5 or len(right) != 5 or optimizer_step < 0:
-        raise ValueError("shared Writer task-role schedule changed")
-    offset = optimizer_step % 5
-    return (
-        *(left[(offset + index) % 5] for index in range(3)),
-        *(right[(offset + index) % 5] for index in range(3)),
-    )
-
-
-def balanced_task_owners(
-    costs: Mapping[int, int], world_size: int
-) -> tuple[tuple[int, ...], ...]:
-    """Give every task one stable evidence-cache owner."""
-
-    if not costs or not 1 <= world_size <= 6 or min(map(int, costs.values())) <= 0:
-        raise ValueError("shared Writer task ownership changed")
-    rows: list[list[int]] = [[] for _ in range(world_size)]
-    loads = [0] * world_size
-    for task, cost in sorted(costs.items(), key=lambda item: (-item[1], item[0])):
-        rank = min(range(world_size), key=lambda value: (loads[value], value))
-        rows[rank].append(int(task))
-        loads[rank] += int(cost)
-    return tuple(tuple(sorted(row)) for row in rows)
 
 
 def causal_cutoff(
@@ -126,75 +104,6 @@ def functional_objective(
         "preservation_active": active,
         "gradient_mass": gradient_mass,
     }
-
-
-def _split_ids(runtime: PolicyResponseRuntime) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
-    split = runtime.config["task_split"]
-    meta = tuple(map(int, split["gradient_meta"]))
-    target = tuple(map(int, split["gradient_target"]))
-    held = tuple(
-        map(
-            int,
-            (
-                *split["true_task_held_meta"],
-                *split["true_task_held_target"],
-            ),
-        )
-    )
-    if len(meta) != 5 or len(target) != 5 or len(held) != 2:
-        raise ValueError("shared Writer registered task split changed")
-    return meta, target, held
-
-
-def _video_splits(
-    runtime: PolicyResponseRuntime, task_ids: Sequence[int]
-) -> tuple[dict[int, tuple[tuple[int, int], int]], dict[int, int]]:
-    split = load_mapping_split(runtime.base, asset_root=runtime.args.asset_root)
-    result: dict[int, tuple[tuple[int, int], int]] = {}
-    costs: dict[int, int] = {}
-    for task in map(int, task_ids):
-        fit = split.fit_by_task.get(task, ())
-        held = split.video_held_by_task.get(task, ())
-        if fit:
-            uses_gradient_mapping = True
-            if len(fit) < 2 or len(held) != 1:
-                raise ValueError(f"shared Writer video split changed for task {task}")
-            selected = (fit[0], fit[1])
-            held_condition = held[0]
-        else:
-            uses_gradient_mapping = False
-            task_held = tuple(
-                sorted(
-                    (
-                        value
-                        for value in split.task_held
-                        if int(value.authority_id) == task
-                    ),
-                    key=lambda value: int(value.video_demo),
-                )
-            )
-            if len(task_held) < 3:
-                raise ValueError(
-                    f"shared Writer true task-held videos changed for task {task}"
-                )
-            selected = (task_held[0], task_held[1])
-            held_condition = task_held[2]
-        if task not in runtime.panels or any(
-            value.role != runtime.panels[task].role
-            for value in (*selected, held_condition)
-        ):
-            raise ValueError(f"shared Writer video role changed for task {task}")
-        fit_demos = tuple(int(value.video_demo) for value in selected)
-        held_demo = int(held_condition.video_demo)
-        if uses_gradient_mapping and not {*fit_demos, held_demo} <= set(
-            runtime.panels[task].program_video_demos
-        ):
-            raise ValueError("shared Writer video escaped its sealed panel")
-        result[task] = ((fit_demos[0], fit_demos[1]), held_demo)
-        costs[task] = sum(
-            int(value.sampled_frames) for value in (*selected, held_condition)
-        )
-    return result, costs
 
 
 def _initialize_collectives(runtime: PolicyResponseRuntime) -> None:
@@ -299,7 +208,7 @@ def _prepare_training_cache(
     runtime: PolicyResponseRuntime,
     *,
     owned_tasks: Sequence[int],
-    video_splits: Mapping[int, tuple[tuple[int, int], int]],
+    video_splits: Mapping[int, VideoSplit],
 ) -> SharedEvidenceCache:
     cache = SharedEvidenceCache({}, [], {}, {})
     event_slots = int(runtime.config["model"]["event_slots"])
@@ -337,12 +246,12 @@ def _prepare_training_cache(
 
 def _materialized_state(
     runtime: PolicyResponseRuntime,
-    video: FrozenPolicyResponseVideo,
+    videos: Sequence[FrozenPolicyResponseVideo],
     *,
     canonicalize: bool,
 ) -> dict[str, torch.Tensor]:
     output = runtime.writer(
-        (video,),
+        tuple(videos),
         s_ref=runtime.ranks.s_ref,
         representation=runtime.args.representation,
     )
@@ -431,15 +340,26 @@ def _validate_shared_run(runtime: PolicyResponseRuntime, cell: Mapping[str, Any]
     if not 1 <= runtime.context.world_size <= 6:
         raise ValueError("shared Writer supports one through six local GPUs")
     if runtime.args.mode == "formal" and runtime.args.task is not None:
-        raise ValueError("formal shared Writer must use the registered 12-task split")
+        raise ValueError("formal shared Writer must use its registered task split")
     if runtime.args.mode == "profile" and runtime.args.task is None:
         raise ValueError("shared Writer profile requires one registered task")
+    cardinalities = tuple(
+        map(
+            int,
+            runtime.config["data"].get(
+                "training_K", (runtime.config["data"]["initial_K"],)
+            ),
+        )
+    )
     if (
         int(cell["global_tasks_per_update"]) != 6
         or int(runtime.config["data"]["initial_K"]) != 1
+        or tuple(sorted(set(cardinalities))) != cardinalities
+        or not cardinalities
+        or not set(cardinalities) <= set(runtime.config["data"]["supported_K"])
         or bool(runtime.config["information_wall"]["wrong_training_loss"])
     ):
-        raise ValueError("shared Writer positive-only K1 contract changed")
+        raise ValueError("shared Writer positive-only training contract changed")
 
 
 def _build_result(
@@ -510,7 +430,16 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         else (*meta, *target, *held)
     )
     video_splits, costs = _video_splits(runtime, task_ids)
-    task_owners = balanced_task_owners(costs, runtime.context.world_size)
+    if runtime.args.mode == "profile":
+        task_owners = balanced_task_owners(costs, runtime.context.world_size)
+    else:
+        task_owners = role_balanced_task_owners(
+            costs,
+            meta=meta,
+            target=target,
+            held=held,
+            world_size=runtime.context.world_size,
+        )
     parameters, optimizer, scheduler = _optimizer(runtime)
     total = int(cell["warmup_updates"]) + int(cell["effective_updates"])
     stop = int(
@@ -586,7 +515,13 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         runtime,
         cache,
         task_owners=task_owners,
-        video_splits=video_splits,
+        video_splits=(
+            video_splits
+            if runtime.args.mode == "profile"
+            else {
+                task: video_splits[task] for task in _evaluation_ids(runtime)
+            }
+        ),
     )
     capture_records = sorted(
         _gather_flat(runtime, cache.capture_records),

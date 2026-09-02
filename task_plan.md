@@ -64,12 +64,15 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 9. [x] 从clean pushed detached authority正式运行task1/task93 task-local Composer正控并评估step70/110；两task、两checkpoint的
    fit与held-video均自发优于carrier，确认Composer保留可泛化current-bank功能容量；
 10. [x] live检查gpu01/gpu02、storage quota与真实吞吐，立即运行component-init 12-task K1 full/coarse matched实验；
-11. [ ] 在相邻checkpoint出现有意义correct功能信号后尽快运行held5 correct-only strict250，不用冗长内部阈值阻塞闭环；
+11. [x] 已对12-task full/coarse的step70/110全部运行held5 correct-only strict250；coarse为`43/41`，full为`33/31`，
+    四个checkpoint均未超过carrier，且Goal/Long全部为0；
 12. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
     reversed controls；controls不回流训练；
-13. [ ] 根据最早失效接口作有依据修正：Composer、representation、functional credit、task组合覆盖或positive-only可辨识性；
+13. [x] 首轮最早接口定位为10-task shared映射的task-disjoint方向与组合覆盖不足；full前端没有提供增量且更破坏carrier，故首个
+    有依据修正固定为coarse、K1并把自然梯度映射扩大到55 meta + 18 target，其余模型与loss不变；
 14. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
-15. [ ] 扩大到train24与经审计non-held meta tasks，运行validation8相邻single-checkpoint strict paired400；
+15. [ ] 完成55 meta + 18 target的scale component-init训练，在macro610训练继续运行时先做held5 correct250，并在macro1210相邻裁决；
+    shared信号成立后再进入validation8相邻single-checkpoint strict paired400；
 16. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 17. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 

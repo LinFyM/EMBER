@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import torch
@@ -11,14 +13,20 @@ from ember.ecp.policy_response_writer import (
     PolicyResponseEventToFactorWriter,
 )
 from ember.ecp.policy_response_writer.shared import (
+    _video_splits,
     balanced_task_owners,
     causal_cutoff,
     functional_objective,
+    owner_balanced_task_group,
+    role_balanced_task_owners,
     shared_task_group,
+    training_video_demos,
 )
 from ember.ecp.policy_response_writer.training import (
+    _functional_panel_config,
     _functional_runtime_inputs,
     _runtime_tasks_and_panels,
+    _selected_task_ids,
 )
 
 
@@ -220,6 +228,140 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert improving["preservation_active"] is False
     assert protected["gradient_mass"] > improving["gradient_mass"]
     assert causal_cutoff(20, 8, optimizer_step=100, task=93, demo=2) in range(8, 20)
+
+
+def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
+    meta = tuple(range(1, 56))
+    target = tuple(range(72, 90))
+    groups = [
+        shared_task_group(meta, target, step, tasks_per_role=3, seed=19)
+        for step in range(330)
+    ]
+    assert all(len(group) == 6 for group in groups)
+    assert len({sum(task in group for group in groups) for task in meta}) == 1
+    assert len({sum(task in group for group in groups) for task in target}) == 1
+
+    tasks = (*meta, *target, 100, 101)
+    owners = role_balanced_task_owners(
+        {task: 100 + task % 17 for task in tasks},
+        meta=meta,
+        target=target,
+        held=(100, 101),
+        world_size=6,
+    )
+    owner_by_task = {
+        task: rank for rank, row in enumerate(owners) for task in row
+    }
+    owner_groups = [
+        owner_balanced_task_group(
+            meta,
+            target,
+            step,
+            task_owners=owners,
+            tasks_per_role=3,
+            seed=19,
+        )
+        for step in range(330)
+    ]
+    active_owner_counts = [
+        len({owner_by_task[task] for task in group}) for group in owner_groups
+    ]
+    assert min(active_owner_counts) == 5
+    assert sum(value == 6 for value in active_owner_counts) >= 0.96 * len(
+        active_owner_counts
+    )
+    assert len(
+        {sum(task in group for group in owner_groups) for task in meta}
+    ) <= 2
+    assert len(
+        {sum(task in group for group in owner_groups) for task in target}
+    ) <= 2
+
+    four = [
+        training_video_demos(
+            (3, 7, 11, 13),
+            optimizer_step=step,
+            task=8,
+            cardinalities=(1, 2, 4),
+            seed=23,
+        )
+        for step in range(12)
+    ]
+    two = [
+        training_video_demos(
+            (3, 7),
+            optimizer_step=step,
+            task=8,
+            cardinalities=(1, 2, 4),
+            seed=23,
+        )
+        for step in range(8)
+    ]
+    assert {len(value) for value in four} == {1, 2, 4}
+    assert {len(value) for value in two} == {1, 2}
+    assert all(len(value) == len(set(value)) for value in (*four, *two))
+
+
+def test_scalable_panel_roots_and_video_split_are_outcome_independent(
+    tmp_path: Path,
+) -> None:
+    selected = (1, 72, 2, 74)
+    roots = []
+    for index, tasks in enumerate(((1, 72), (2, 74))):
+        root = tmp_path / f"source_{index}"
+        shard = root / "shard_0"
+        shard.mkdir(parents=True)
+        (root / "completion.json").write_text(
+            json.dumps({"status": "complete"}), encoding="utf-8"
+        )
+        for task in tasks:
+            (shard / f"task_{task:03d}.json").write_text("{}", encoding="utf-8")
+        roots.append(
+            {
+                "root": str(root),
+                "completion": "completion.json",
+                "task_count": len(tasks),
+            }
+        )
+    config = {
+        "authorities": {"functional_panel_sources": roots},
+        "task_split": {
+            "gradient_meta": [1],
+            "gradient_target": [72],
+            "true_task_held_meta": [2],
+            "true_task_held_target": [74],
+        },
+    }
+    resolved = _functional_panel_config(config, asset_root=tmp_path)
+    assert _selected_task_ids(config) == selected
+    assert set(resolved["authorities"]["functional_panel_records"]) == {
+        "1",
+        "2",
+        "72",
+        "74",
+    }
+
+    panels = {
+        task: SimpleNamespace(program_video_demos=(1, 3, 5, 7, 9))
+        for task in selected
+    }
+    runtime = SimpleNamespace(
+        config={
+            "data": {
+                "video_split": {
+                    "source": "functional_panel_program_video_demos",
+                    "fit_pool_max": 4,
+                    "held_selection": "last_sorted",
+                    "selection_uses_outcomes": False,
+                }
+            }
+        },
+        panels=panels,
+        video_store=SimpleNamespace(frame_counts=lambda task, demo: (20, demo + 10)),
+    )
+    splits, costs = _video_splits(runtime, selected)
+    assert splits == {task: ((1, 3, 5, 7), 9) for task in selected}
+    assert costs == {task: 75 for task in selected}
 
 
 def test_deployment_runtime_has_no_functional_data_path() -> None:

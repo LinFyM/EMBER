@@ -56,25 +56,29 @@ def load_held5_evaluation_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     condition = config.get("condition", {})
     wall = config.get("information_wall", {})
+    candidates = tuple(map(int, config.get("checkpoint_candidates", ())))
+    demos = tuple(map(int, condition.get("video_demos", ())))
     if (
         config.get("schema_version") != HELD5_EVALUATION_SCHEMA
         or config.get("status") != "active_correct_only_held5_materialization"
-        or config.get("training_config")
-        != "configs/pi05_ecp_policy_response_writer_v1.json"
+        or not str(config.get("training_config", "")).startswith("configs/")
         or config.get("task_subset")
         != "configs/pi05_train24_fold0_held5_eval_v1.json"
         or config.get("target_held_global_ids") != [0, 9, 18, 25, 36]
-        or config.get("checkpoint_candidates") != [70, 110]
-        or condition
-        != {
-            "name": "correct_k1",
-            "video_demos": [5],
-            "K": 1,
-            "selection": "fixed_first_member_of_existing_correct_5_6_7_8_panel",
-            "outcome_dependence": False,
-            "gradient_use": False,
-            "checkpoint_selection_use": True,
-        }
+        or not candidates
+        or tuple(sorted(set(candidates))) != candidates
+        or min(candidates) <= 0
+        or condition.get("name") != f"correct_k{len(demos)}"
+        or not demos
+        or len(demos) > 4
+        or len(demos) != len(set(demos))
+        or int(condition.get("K", -1)) != len(demos)
+        or condition.get("selection")
+        != "fixed_first_member_of_existing_correct_5_6_7_8_panel"
+        or condition.get("outcome_dependence") is not False
+        or condition.get("gradient_use") is not False
+        or condition.get("checkpoint_selection_use") is not True
+        or not isinstance(config.get("require_training_completion", True), bool)
         or wall
         != {
             "validation_or_test_use": False,
@@ -91,18 +95,22 @@ def load_held5_evaluation_config(path: Path) -> dict[str, Any]:
 
 
 def _shared_contract_matches(
-    args: argparse.Namespace, contract: Mapping[str, Any]
+    args: argparse.Namespace,
+    contract: Mapping[str, Any],
+    evaluation: Mapping[str, Any],
 ) -> bool:
     config = contract.get("config", {})
+    candidates = tuple(map(int, evaluation["checkpoint_candidates"]))
+    topology = tuple(contract.get("world_topology", ()))
     return all(
         (
             contract.get("schema_version") == SHARED_RUN_SCHEMA,
             contract.get("stage") == SHARED_STAGE,
             contract.get("mode") == "formal",
             contract.get("representation") in {"full", "coarse"},
-            contract.get("initialization_request") == "component",
-            int(contract.get("stop_step", -1)) == 110,
-            len(contract.get("world_topology", ())) == 1,
+            contract.get("initialization_request") in {"component", "random"},
+            int(contract.get("stop_step", -1)) >= max(candidates),
+            1 <= len(topology) <= 6,
             Path(str(config.get("path", ""))).name == args.config.name,
             int(config.get("bytes", -1)) == args.config.stat().st_size,
         )
@@ -129,12 +137,14 @@ def _checkpoint_manifest_matches(
     )
 
 
-def _completion_matches(completion: Mapping[str, Any]) -> bool:
+def _completion_matches(
+    completion: Mapping[str, Any], *, expected_stop: int
+) -> bool:
     return all(
         (
             completion.get("status") == "complete",
             completion.get("phase") == "shared",
-            int(completion.get("optimizer_steps", -1)) == 110,
+            int(completion.get("optimizer_steps", -1)) == expected_stop,
         )
     )
 
@@ -148,15 +158,21 @@ def _load_writer_checkpoint(
     macro = checkpoint_macro(checkpoint)
     contract = read_json(run_root / "run_contract.json")
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
-    completion = read_json(run_root / "completion.json")
+    completion_path = run_root / "completion.json"
+    completion = read_json(completion_path) if completion_path.is_file() else None
     world_size = len(contract.get("world_topology", ()))
+    expected_stop = int(contract.get("stop_step", -1))
+    completion_required = bool(evaluation.get("require_training_completion", True))
+    completion_valid = completion is not None and _completion_matches(
+        completion, expected_stop=expected_stop
+    )
     if not all(
         (
             checkpoint.parent.parent == run_root,
             macro in set(map(int, evaluation["checkpoint_candidates"])),
-            _shared_contract_matches(args, contract),
+            _shared_contract_matches(args, contract, evaluation),
             _checkpoint_manifest_matches(manifest, macro=macro, world_size=world_size),
-            _completion_matches(completion),
+            completion_valid if completion_required or completion is not None else True,
             (checkpoint / "ecp.safetensors").is_file(),
         )
     ):

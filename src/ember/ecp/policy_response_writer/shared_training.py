@@ -16,10 +16,14 @@ from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
     _gather_flat,
     _materialized_state,
-    _split_ids,
     causal_cutoff,
     functional_objective,
-    shared_task_group,
+)
+from ember.ecp.policy_response_writer.shared_schedule import (
+    VideoSplit,
+    _split_ids,
+    owner_balanced_task_group,
+    training_video_demos,
 )
 from ember.ecp.policy_response_writer.training import (
     PolicyResponseRuntime,
@@ -40,13 +44,29 @@ def _run_training_task(
     cache: SharedEvidenceCache,
     *,
     task: int,
-    fit: tuple[int, int],
+    fit: Sequence[int],
     optimizer_step: int,
     task_count: int,
 ) -> dict[str, Any]:
     cell = runtime.config["optimization"]["shared"]
-    demo = fit[optimizer_step % len(fit)]
-    video = cache.videos[(task, demo)].to(runtime.context.device)
+    cardinalities = tuple(
+        map(
+            int,
+            runtime.config["data"].get(
+                "training_K", (runtime.config["data"]["initial_K"],)
+            ),
+        )
+    )
+    demos = training_video_demos(
+        fit,
+        optimizer_step=optimizer_step,
+        task=task,
+        cardinalities=cardinalities,
+        seed=int(runtime.config["optimization"]["seed"]),
+    )
+    videos = tuple(
+        cache.videos[(task, demo)].to(runtime.context.device) for demo in demos
+    )
     visit_index = optimizer_step % len(runtime.panels[task].panel_a)
     rows = int(
         cell["functional_rows"]
@@ -62,7 +82,7 @@ def _run_training_task(
     )
     tick = time.monotonic()
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        leaf_state = _materialized_state(runtime, video, canonicalize=False)
+        leaf_state = _materialized_state(runtime, videos, canonicalize=False)
     functional_loss, details, leaf_gradients = functional_lora_loss_gradient(
         runtime.policy,
         leaf_state,
@@ -87,24 +107,29 @@ def _run_training_task(
     )
     del leaf_state
     with torch.autocast("cuda", dtype=torch.bfloat16):
-        generated_state = _materialized_state(runtime, video, canonicalize=False)
+        generated_state = _materialized_state(runtime, videos, canonicalize=False)
         surrogate = writer_chain_rule_surrogate(
             generated_state, leaf_gradients
         ) * float(objective["gradient_mass"])
     surrogate.backward()
     del generated_state, leaf_gradients, surrogate
 
-    cutoff = causal_cutoff(
-        video.frame_count,
-        int(runtime.config["model"]["event_slots"]),
-        optimizer_step=optimizer_step,
-        task=task,
-        demo=demo,
+    cutoffs = tuple(
+        (
+            causal_cutoff(
+                video.frame_count,
+                int(runtime.config["model"]["event_slots"]),
+                optimizer_step=optimizer_step,
+                task=task,
+                demo=demo,
+            ),
+        )
+        for video, demo in zip(videos, demos, strict=True)
     )
     with torch.autocast("cuda", dtype=torch.bfloat16):
         process_loss = runtime.writer.causal_prediction_loss(
-            (video,),
-            cutoffs=((cutoff,),),
+            videos,
+            cutoffs=cutoffs,
             representation=runtime.args.representation,
         )
         weighted_process = (
@@ -117,7 +142,9 @@ def _run_training_task(
     row = {
         "task": task,
         "role": runtime.panels[task].role,
-        "video_demo": demo,
+        "video_demo": demos[0] if len(demos) == 1 else None,
+        "video_demos": list(demos),
+        "K": len(demos),
         "panel": "a",
         "panel_visit": visit_index,
         "functional_rows": rows,
@@ -129,11 +156,11 @@ def _run_training_task(
         "process_loss": float(process_loss.detach()),
         "process_normalized": float(process_loss.detach())
         / cache.process_normalizers[task],
-        "causal_cutoff": cutoff,
+        "causal_cutoffs": [row[0] for row in cutoffs],
         "task_weight": 1.0 / task_count,
         "task_seconds": time.monotonic() - tick,
     }
-    del video, batch, process_loss, weighted_process
+    del videos, batch, process_loss, weighted_process
     return row
 
 
@@ -253,7 +280,7 @@ def _optimizer_step(
     optimizer: torch.optim.AdamW,
     scheduler: torch.optim.lr_scheduler.LambdaLR,
     task_owners: Sequence[Sequence[int]],
-    video_splits: Mapping[int, tuple[tuple[int, int], int]],
+    video_splits: Mapping[int, VideoSplit],
     group: Sequence[int],
     zero_step: int,
 ) -> dict[str, Any]:
@@ -329,7 +356,7 @@ def train(
     optimizer: torch.optim.AdamW,
     scheduler: torch.optim.lr_scheduler.LambdaLR,
     task_owners: Sequence[Sequence[int]],
-    video_splits: Mapping[int, tuple[tuple[int, int], int]],
+    video_splits: Mapping[int, VideoSplit],
     start_step: int,
     stop: int,
     metrics_rows: int,
@@ -343,7 +370,17 @@ def train(
     peaks = {"allocated": 0, "reserved": 0}
     started = time.monotonic()
     for zero_step in range(start_step, stop):
-        group = profile_tasks or shared_task_group(meta, target, zero_step)
+        global_tasks = int(
+            runtime.config["optimization"]["shared"]["global_tasks_per_update"]
+        )
+        group = profile_tasks or owner_balanced_task_group(
+            meta,
+            target,
+            zero_step,
+            task_owners=task_owners,
+            tasks_per_role=global_tasks // 2,
+            seed=int(runtime.config["optimization"]["seed"]),
+        )
         row = _optimizer_step(
             runtime,
             cache,

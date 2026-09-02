@@ -39,6 +39,17 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 新current-bank Composer仍能从真实X/Y与event-conditioned query恢复跨视频功能；它尚不证明shared mapping或closed-loop成功，但已经
 排除“Composer本身接近零容量”这一最早失败解释。
 
+12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
+`43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
+`29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，
+但task2/74两个true-task-held在两表征、两checkpoint均为负。因此门槛高低不是当前non-pass的原因：当前Writer连稳定超过carrier与
+跨suite breadth都没有做到。正控仍保留Composer/current-bank容量；负证据精确定位在10-task shared、task-disjoint方向泛化与自然组合
+覆盖，而不是否定native X/Y、signed pooling或rank4。
+
+下一单变量修正固定coarse、K1、模型和正样本loss，只把共享映射扩大到55 meta + 18 target-fit；task2/74继续零梯度held。这使每个meta
+task在完整1210步中获得约与原110步实验相同的更新曝光，同时增加自然mapping多样性。若该规模仍不能把held5稳定带过carrier，便是对
+当前positive-only Event-to-Factor共享函数类更强的停止证据，不能再用full前端或LR/seed小扫解释。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

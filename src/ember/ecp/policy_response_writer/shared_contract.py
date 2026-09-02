@@ -22,16 +22,47 @@ def build_shared_run_contract(
     parameters: Sequence[torch.nn.Parameter],
     topology: Sequence[Mapping[str, Any]],
     task_owners: Sequence[Sequence[int]],
-    video_splits: Mapping[int, tuple[tuple[int, int], int]],
+    video_splits: Mapping[int, tuple[tuple[int, ...], int]],
 ) -> dict[str, Any]:
     base_path = (
         runtime.args.asset_root
         / str(runtime.config["authorities"]["base_g3_config"])
     ).resolve()
-    panel_path = (
-        runtime.args.asset_root
-        / str(runtime.config["authorities"]["functional_panel_config"])
-    ).resolve()
+    authorities = runtime.config["authorities"]
+    panel_config = authorities.get("functional_panel_config")
+    panel_sources = tuple(authorities.get("functional_panel_sources", ()))
+    if panel_config is not None:
+        panel_path = (runtime.args.asset_root / str(panel_config)).resolve()
+        panel_authority: dict[str, Any] = {
+            "kind": "config",
+            "path": str(panel_path),
+            "bytes": panel_path.stat().st_size,
+        }
+    else:
+        panel_authority = {
+            "kind": "completed_roots",
+            "sources": [
+                {
+                    **dict(source),
+                    "root": str(
+                        (runtime.args.asset_root / str(source["root"])).resolve()
+                    ),
+                    "completion_bytes": (
+                        runtime.args.asset_root
+                        / str(source["root"])
+                        / str(source["completion"])
+                    ).resolve().stat().st_size,
+                }
+                for source in panel_sources
+            ],
+            "records": {
+                str(task): {
+                    "path": str(panel.path),
+                    "bytes": panel.path.stat().st_size,
+                }
+                for task, panel in sorted(runtime.panels.items())
+            },
+        }
     split = {
         str(task): {"fit": list(fit), "held": held}
         for task, (fit, held) in sorted(video_splits.items())
@@ -46,10 +77,7 @@ def build_shared_run_contract(
             "bytes": runtime.args.config.stat().st_size,
         },
         "base_config": {"path": str(base_path), "bytes": base_path.stat().st_size},
-        "functional_panel_config": {
-            "path": str(panel_path),
-            "bytes": panel_path.stat().st_size,
-        },
+        "functional_panel_authority": panel_authority,
         "source_checkpoint": str(
             authority_path(
                 runtime.base, "source_checkpoint", asset_root=runtime.args.asset_root
@@ -73,6 +101,7 @@ def build_shared_run_contract(
         "initialization": runtime.initialization,
         "stop_step": stop,
         "model": dict(runtime.config["model"]),
+        "data": dict(runtime.config["data"]),
         "optimization": dict(runtime.config["optimization"]["shared"]),
         "loss_normalization": {
             "functional": "per_task_frozen_panel_a_carrier_rms",

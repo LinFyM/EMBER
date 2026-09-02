@@ -23,6 +23,10 @@ from ember.ecp.policy_response_writer.capture import (
     merge_policy_response_chunks,
 )
 from ember.ecp.policy_response_writer.model import PolicyResponseEventToFactorWriter
+from ember.ecp.policy_response_writer.shared_schedule import (
+    _functional_panel_config,
+    _selected_task_ids,
+)
 from ember.ecp.shared_compiler_assets import (
     authority_path,
     load_shared_compiler_config,
@@ -93,6 +97,9 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     model = config.get("model", {})
     data = config.get("data", {})
+    training_k = tuple(
+        map(int, data.get("training_K", (data.get("initial_K", -1),)))
+    )
     if not all(
         (
             config.get("schema_version") == SCHEMA,
@@ -103,30 +110,15 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("representation_arms") == ["full", "coarse"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
+            bool(training_k),
+            tuple(sorted(set(training_k))) == training_k,
+            set(training_k) <= {1, 2, 4},
             config.get("information_wall", {}).get("action_meta_installed") is False,
             config.get("information_wall", {}).get("wrong_training_loss") is False,
         )
     ):
         raise ValueError("invalid Policy-Response Writer config")
     return config
-
-
-def _selected_task_ids(config: Mapping[str, Any]) -> tuple[int, ...]:
-    split = config["task_split"]
-    values = tuple(
-        map(
-            int,
-            (
-                *split["gradient_meta"],
-                *split["gradient_target"],
-                *split["true_task_held_meta"],
-                *split["true_task_held_target"],
-            ),
-        )
-    )
-    if len(values) != len(set(values)) or len(values) != 12:
-        raise ValueError("Policy-Response Writer task split changed")
-    return values
 
 
 def _validate_launch_authority(args: argparse.Namespace) -> None:
@@ -200,12 +192,7 @@ def _runtime_tasks_and_panels(
     runtime_ids = _runtime_task_ids(args, selected_ids)
     if not set(runtime_ids) <= set(selected_ids):
         raise ValueError("Policy-Response Writer task escaped its registered split")
-    panel_config = read_json(
-        (
-            args.asset_root
-            / str(config["authorities"]["functional_panel_config"])
-        ).resolve()
-    )
+    panel_config = _functional_panel_config(config, asset_root=args.asset_root)
     panels = _load_panels(panel_config, asset_root=args.asset_root)
     if not set(runtime_ids) <= set(panels):
         raise ValueError("Policy-Response Writer functional panels changed")

@@ -12,6 +12,7 @@ from safetensors.torch import load_file
 
 from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
+    VideoSplit,
     _capture_missing,
     _gather_flat,
     _materialized_state,
@@ -49,12 +50,13 @@ def _reference_losses(
     if (
         result.get("status") != "complete"
         or int(result.get("task", -1)) != task
-        or set(values) != set(map(int, demos))
         or result.get("held_backward_calls") != 0
         or result.get("panel_b_backward_calls") != 0
         or any(not math.isfinite(value) for value in values.values())
     ):
         raise ValueError("shared Writer task-local reference changed")
+    if set(values) != set(map(int, demos)):
+        return {}, None
     return values, str(path)
 
 
@@ -108,7 +110,7 @@ def _evaluate_video(
             cutoffs=((cutoff,),),
             representation=runtime.args.representation,
         )
-        state = _materialized_state(runtime, video, canonicalize=True)
+        state = _materialized_state(runtime, (video,), canonicalize=True)
     rows = []
     for visit_index in range(visits):
         batch, panel = functional_panel_batch(
@@ -176,7 +178,7 @@ def _evaluate_task(
     cache: SharedEvidenceCache,
     *,
     task: int,
-    split: tuple[tuple[int, int], int],
+    split: VideoSplit,
     visits: int,
 ) -> dict[str, Any]:
     fit, held = split
@@ -251,9 +253,13 @@ def evaluate_checkpoints(
     cache: SharedEvidenceCache,
     *,
     task_owners: Sequence[Sequence[int]],
-    video_splits: Mapping[int, tuple[tuple[int, int], int]],
+    video_splits: Mapping[int, VideoSplit],
 ) -> tuple[dict[str, Any], float]:
-    local_tasks = tuple(map(int, task_owners[runtime.context.rank]))
+    local_tasks = tuple(
+        task
+        for task in map(int, task_owners[runtime.context.rank])
+        if task in video_splits
+    )
     for task in local_tasks:
         fit, held = video_splits[task]
         _capture_missing(runtime, cache, task=task, demos=(*fit, held))

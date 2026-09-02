@@ -327,8 +327,9 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 - 新Writer保持一个canonical训练/评测入口；合法差异放入同一配置或窄strategy边界，不复制runner。
 - active source ownership固定为：`capture.py`只拥有冻结PI0.5/native taps；`process.py`只拥有Frame/Event表示与causal target；
   `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
-  唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared.py`拥有task schedule、evidence cache与shared
-  orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；`shared_evaluation.py`只拥有零梯度Panel-B评估；
+  唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared_schedule.py`拥有可扩展task/video/cache-owner
+  调度；`shared.py`拥有evidence cache与shared orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；
+  `shared_evaluation.py`只拥有零梯度Panel-B评估；
   `shared_contract.py`只拥有formal authority与resume合同；`materialization.py`只把冻结shared checkpoint与固定正确视频物化成
   每task唯一完整rank16 adapter。唯一Writer CLI仍是`scripts/train_ecp_policy_response_writer.py`；closed-loop继续复用通用
   `scripts/evaluate_pi05.py`及其static task-LoRA bank、dynamic queue与paired rollout，不复制Evaluator。这些文件不是平行Writer、

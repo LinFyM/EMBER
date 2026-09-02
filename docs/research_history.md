@@ -2055,3 +2055,29 @@ shared positive-only运行面随后接通固定3 meta + 3 target/task-equal循�
 VJP、prefix-only process loss、单侧preservation、step70/110 checkpoints与零梯度Panel-B评估。单卡两步和双卡单步profile均通过；双卡
 profile明确覆盖一个rank执行真实task、另一个rank以显式零梯度参加all-reduce的拓扑，没有deadlock或参数分叉。profile只作工程证据，
 不能用于方法选择。下一项科学实验仍是同配置、同参数量、同数据与训练预算的12-task K1 component-init full/coarse matched formal。
+
+## 106. 12-task matched前端裁决与自然mapping扩规模
+
+12-task K1 component-init full/coarse均完成110步、macro70/110零梯度Panel-B和held5 correct-only strict250。full的gradient-task
+fit/held benefit在macro70为`.00054184/.00019916`、macro110为`.00103244/.00058589`；coarse分别为
+`.00068417/.00059560`与`.00082845/.00071538`。两臂的task2/74 true-task-held在两个checkpoint全部为负，说明小幅train-task
+functional改善没有转成task-disjoint映射。
+
+closed-loop结果为：
+
+| 表征/checkpoint | strict250 | Long/Goal/Object/Spatial0/Spatial9 | carrier retention |
+|---|---:|---:|---:|
+| full 70 | 33 | 0/0/1/32/0 | 29/43 |
+| full 110 | 31 | 0/0/1/25/5 | 25/43 |
+| coarse 70 | 43 | 0/0/2/40/1 | 37/43 |
+| coarse 110 | 41 | 0/0/4/34/3 | 35/43 |
+
+全部1000 rows与launcher完整、错误为0；四点均不超过carrier43，breadth最多3/5且Goal/Long全0。full没有证明19层x50 horizon
+response表示相对coarse final-layer horizon mean的增量，且carrier破坏更强；因此后续首选coarse。这不裁决两臂共同使用的完整current-video
+dynamic X/Y bank。
+
+task-local Composer强、10-task shared弱且true-task-held为负，最早接口是task-disjoint shared mapping与自然factorial coverage。下一实验
+保持coarse、K1、Writer、rank12+4、functional/process/preservation和学习率不变，只把gradient mappings扩大到55个审计meta与18个
+target-fit；task2/74仍为true-task-held。每task选择最前两条outcome-independent正确视频作fit、最后一条作held，10 warmup + 1200
+effective updates，macro610在训练继续时先做held5 correct250，macro1210作相邻裁决。这个scale实验检验mapping diversity，而不是恢复
+full前端或进行超参数小扫。

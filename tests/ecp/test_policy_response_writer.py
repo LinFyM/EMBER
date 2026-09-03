@@ -36,6 +36,7 @@ from ember.ecp.policy_response_writer.shared import (
 )
 from ember.ecp.policy_response_writer.shared_schedule import (
     counted_task_group,
+    scheduled_task_costs,
     task_group_counts,
 )
 from ember.ecp.policy_response_writer.shared_training import (
@@ -794,6 +795,42 @@ def test_execution_assignment_is_exact_and_does_not_change_the_task_group() -> N
     )
     assert sorted(task for row in large_assignment for task in row) == list(large)
     assert max(len(row) for row in large_assignment) <= 5
+
+
+def test_scheduled_cost_accounts_for_frozen_policy_rows_and_full_video_frames() -> None:
+    runtime = SimpleNamespace(
+        args=SimpleNamespace(mode="formal"),
+        config={
+            "optimization": {
+                "seed": 23,
+                "shared": {
+                    "functional_rows": 16,
+                    "profile_functional_rows": 2,
+                },
+            },
+            "data": {"initial_K": 1},
+        },
+        video_store=SimpleNamespace(
+            frame_counts=lambda task, demo: (100, 20 + task + demo)
+        ),
+    )
+    splits = {1: ((3, 7), 9), 8: ((2, 5), 11)}
+
+    costs = scheduled_task_costs(runtime, splits, (1, 8), optimizer_step=0)
+    selected = {
+        task: training_video_demos(
+            splits[task][0],
+            optimizer_step=0,
+            task=task,
+            cardinalities=(1,),
+            seed=23,
+        )[0]
+        for task in (1, 8)
+    }
+
+    assert costs == {
+        task: 4 * 16 + 20 + task + selected[task] for task in (1, 8)
+    }
 
 
 def test_selective_replication_reaches_unconstrained_tail_without_full_copy() -> None:

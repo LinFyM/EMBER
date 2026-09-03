@@ -2629,3 +2629,12 @@ clean detached `682f7ecf`在gpu02物理0/1并行完成task1/task93 formal。task
 `.173162/.163290`、`.241859/.258089`；task93为`.346355/.332496`、`.382004/.364330`，四个checkpoint各自两条fit与一条
 held视频全部strict benefit为正。两run均100条metrics、exit0、completion完整，禁止backward计数为0且输出唯一rank16。
 该结果保留task-local容量；73-task shared 100/200同时运行，其closed-loop才裁决跨task映射。
+
+## 132. typed-boundary macro100 held5闭环
+
+clean detached `682f7ecf`的shared macro100为五个held5 task分别从固定correct K1视频一次物化唯一76-tensor rank16 LoRA；
+`runs/outputs/pi05_ecp_policy_response_writer_typed_boundary_m100_held5_correct_k1_strict250_682f7ecf_gpu02p01_r3_20260904/`
+已完成22/22 shards与250/250 rows，结果`39/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/3/33/3`、breadth`3/5`。
+相对stable carrier43为`32 retained/7 gained/11 lost`，相对前一rank-balanced m200=45为`30/9/15`；task/state/env/policy
+seed及policy-noise共同前缀逐条配对。该点保留基本闭环能力但没有超过carrier，不能授权Final或negative controls；macro200
+相邻strict250与同run两checkpoint Panel-B继续按预注册合同裁决。

@@ -136,7 +136,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     方差平衡rank/owner/family/common/language，relative rank-gain head按family分行，保持完整bank、loss、rank、cap、数据和
     positive-only合同不变；实现、30项测试、config互斥预检及真实task1 forward/gradient/76-tensor rank16 materialization smoke
     已通过。task1/task93的50/100正控现已自然完成，四个checkpoint的三条fit/held视频全部优于carrier；73-task shared
-    100/200短资格正从clean `682f7ecf`运行。不做手工幅度、额外loss或LR/seed/rank/scale扫；
+    100/200短资格从clean `682f7ecf`完成训练。m100 held5 strict250为`39/250`、逐task`0/0/3/33/3`、breadth`3/5`；
+    相对carrier43为`32 retained/7 gained/11 lost`，故m100不是通过性结果。macro200 strict250与两checkpoint Panel-B正在按
+    原合同运行；在相邻证据齐全前不做手工幅度、额外loss或LR/seed/rank/scale扫；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

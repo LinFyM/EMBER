@@ -2449,3 +2449,16 @@ wrong-video与Panel-B backward计数均为0，source policy保持冻结，输出
 相对前一rank-balanced macro110，typed task93在少10步下仍由`.357007/.322264`提高到`.382004/.364330`；task1 fit recovery由
 `.328291`降到`.241859`，但held由`.228193`升到`.258089`，没有形成跨视频退化。因此typed source/family ownership没有破坏
 task-local函数容量，并在两个正控上保持或改善held-video映射；该证据只定位容量与优化可达性，不能替代73-task shared闭环裁决。
+
+### 135. typed-boundary m100保留闭环breadth但没有超过carrier
+
+macro100 held5 correct-only strict250已自然完成，结果为`39/250`，Long/Goal/Object/Spatial0/Spatial9=
+`0/0/3/33/3`、breadth`3/5`。相对stable carrier `43/250`，它保留32个成功、新增7个、丢失11个，churn为18；其中
+Object为`3 retained/0 gained/1 lost`，Spatial0为`29/4/9`，Spatial9为`0/3/1`。相对前一rank-balanced m200
+`45/250`则为`30 retained/9 gained/15 lost`。250个task/state/env/policy seed逐条一致；由于成功时间不同而长度可不同的
+policy-noise序列，其共同前缀也全部一致，因此差异是paired closed-loop行为而非调度或随机数漂移。
+
+该结果排除“typed ownership会像错误尺度修正一样摧毁全部策略能力”，但也不支持把训练Panel-A benefit增长直接解释为
+task-disjoint性能增益。Object只净丢1，Goal/Long仍与carrier同为0，主要净退化来自Spatial0的4 gained/9 lost；所以m100更像
+在旧成功集附近产生中等churn、收益不足以覆盖破坏，而不是全局方向失效。macro200与两checkpoint零梯度Panel-B已经按原计划继续，
+在它们完成前不以m100单点修改loss、幅度、rank、LR或seed。

@@ -72,7 +72,13 @@
   每task一次，held action/state/reward、wrong与negative controls读取均为0。2026-09-04 03:49 CST在gpu02物理`0/1`启动
   6-worker、每task50初态的correct-only strict250，root为
   `runs/outputs/pi05_ecp_policy_response_writer_typed_boundary_m100_held5_correct_k1_strict250_682f7ecf_gpu02p01_r3_20260904/`；
-  queue采用long-first动态调度，结果不回流正在运行的macro200训练。
+  queue采用long-first动态调度，结果不回流正在运行的macro200训练。该评测已自然完成并exit0，22/22 shards、250 rows与
+  run summary完整：总分`39/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/3/33/3`、breadth`3/5`。相对stable carrier
+  `43/250`为`32 retained/7 gained/11 lost`、churn`18`；相对前一rank-balanced m200 `45/250`为
+  `30/9/15`。所有250个task/state/env/policy seed严格配对，按episode实际长度截断的policy-noise序列共同前缀也逐条一致。
+  所以m100改变了真实闭环行为并保留基本breadth，但净低于carrier与前一m200，不是通过性结果。shared训练随后完整保存
+  macro200；live检查gpu01/gpu02后，gpu01四卡继续零梯度Panel-B，gpu02物理`0/1`仅与他人约`0.15--0.19GB`、0% util进程
+  安全共驻，并于04:18 CST启动macro200的同合同物化与strict250，未超过6张EMBER GPU。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

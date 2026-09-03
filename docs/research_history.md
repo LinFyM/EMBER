@@ -2186,3 +2186,28 @@ corrected matched formal随后从clean pushed detached `aed7b5244cce91df440d0d4a
 10:27 CST启动，使用gpu01物理2/4/5/6、world-size4、同一73-task/coarse/K1/component-init/schedule与positive-only loss；相对旧arm只
 增加完整per-target mobile `B@A` RMS cap、scale/direction独立gradient clip和static-repeat动态必要性修复。前两个optimizer step已完成，
 全部模块梯度finite nonzero且资源稳定。旧formal detached worktree随后删除，commit与全部formal evidence保留。
+
+## 111. owner锁定full-only与corrected full task-local容量
+
+owner于2026-09-03明确否决coarse/final-layer horizon mean作为active路线：Action Expert的50个relative horizon positions必须完整保留到
+task/relation-conditioned learned read，旧coarse实现与结果只作历史审计。收到边界后，当时运行的corrected coarse 73-task shared与
+task1/task93 task-local分别在step121/47/29主动中止；均未完成预注册checkpoint评估，不形成新的科学裁决。active config、CLI、
+materialization与static adapter provenance随后只接受full，horizon-mean forward被删除；当前formal checkpoint生命周期结束前仅保留一个
+不参与forward的旧embedding以维持RNG/state-dict兼容。
+
+同一三项接口修正随后以full fresh运行。task1与task93正控分别从clean pushed detached
+`3a342b6ca2d2d88dddc380e4ae943fd28d00bba9`在gpu02物理4/6完成110步、macro70/110与每checkpoint三条正确视频的零梯度Panel-B：
+
+| task/checkpoint | fit recovery | held-video recovery | all videos above carrier |
+|---|---:|---:|---:|
+| task1 macro70 | `.207146` | `.169391` | yes |
+| task1 macro110 | `.223986` | `.157630` | yes |
+| task93 macro70 | `.417139` | `.409146` | yes |
+| task93 macro110 | `.425338` | `.418759` | yes |
+
+task1 root为
+`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task1_full_s110_7d435ea3_v1_gpu02p4_20260903/`，task93 root为
+`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_full_s110_7d435ea3_v1_gpu02p6_20260903/`；两者result/completion与
+launcher exit0完整，held/Panel-B backward为0，source policy冻结且输出仍为唯一完整rank16。相对旧full，task1 recovery有所减弱，
+task93 held则从`.300885/.280724`提高到`.409146/.418759`。因此三项修正不是对所有任务统一缩小update，full task-local跨视频容量仍然
+明确；最早未解决接口继续是shared task-disjoint mapping，而不是允许回退coarse。

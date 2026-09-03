@@ -2515,4 +2515,14 @@ optimizer step，因此不是科学non-pass。
 提交`89ca865d`把task-local run schema升为v2，并直接记录`runtime.panels[task]`实际resolved record的task、path与bytes；它同时兼容
 旧单config和当前multi-source roots，而且比记录间接配置入口更准确。该修复不改变Writer forward、训练数据、loss、optimizer、步数或
 任何信息墙，新增回归测试后27项Writer测试全部通过，factorial配置中task-local正控、reference、全部optimization字段和两个panel
-sources也已完整解析。下一次fresh启动从包含本记录的最新clean pushed detached main运行；先确认首条有效run contract，再并行第二条。
+sources也已完整解析。
+
+2026-09-04 00:19/00:21 CST，两条fresh正控从当时最新clean pushed detached `ef00f446`依次启动。launch前同时live检查两节点：
+gpu01物理0/1/5/6为同一shared formal；gpu02物理0/1分别仅`209/162MiB`、util 0%，各有同一他人gqma约`186/148MiB`
+低占用进程。先让task1生成有效v2 contract，再复查物理1仍为`162MiB/0%`后启动task93，因此总EMBER物理卡恰为6且未触碰其它
+高负载卡。gpu02 available host memory约`341505284KiB`；`/data1` quota为`877711568/1073741824` blocks，两条同构小run的预计
+增长远低于余量。task1 root为
+`runs/outputs/pi05_ecp_policy_response_writer_rank_balance_tasklocal_task1_full_s110_ef00f446_gpu02p0_20260904/`，task93 root为
+`runs/outputs/pi05_ecp_policy_response_writer_rank_balance_tasklocal_task93_full_s110_ef00f446_gpu02p1_20260904/`。两份contract均锁定
+v2 schema、commit、full、component-init、110 steps、实际task panel、Action Meta false与single-process topology；两task都已进入真实
+optimizer且input/output/relation/scale/task-query梯度全部finite nonzero。当前只等待macro70/110 Panel-B，不用启动期loss选模型。

@@ -162,6 +162,12 @@
   且launch前必须不存在；固定`NCCL_P2P_DISABLE=1`、world-size4和GPU-local NUMA。exact resume只允许同运行commit、同物理卡、world
   size、config、输入与output root。exact process command为：
   `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-corrected-formal-<launch-commit> && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_corrected_73task_k1_component_coarse_s1210_7d435ea3_gpu01p2456_20260903 --phase shared --representation coarse --initialization component --mode formal`。
+- corrected formal已于2026-09-03 10:27 CST从clean pushed detached
+  `aed7b5244cce91df440d0d4a453b1e3b1be8a346`启动，tmux session为`ember_prw_corrected_scale73`；实际run contract锁定该commit、
+  origin/main authority、world-size4、物理2/4/5/6、73-task owner、三项修正与positive-only信息墙。前两个optimizer step已完成，
+  step耗时为`35.84/20.75s`；Frame/Event/Process Predictor/Composer/scale梯度均finite nonzero，最大allocated/reserved为
+  `28955342848/40542142464 bytes`，没有OOM、non-finite或其它任务干扰。旧`df7a7f5a` formal已经完整结束且无进程引用，其detached
+  worktree已删除；commit、checkpoint、raw metrics、result与全部materialized/evaluation evidence均保留。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

@@ -2414,3 +2414,20 @@ gradient tasks、task2/74 true-task-held零梯度、每update 9 meta + 3 target�
 effective、optimizer200/400 checkpoints、positive-only loss与唯一rank16。训练不读取wrong、shuffle、reverse或validation/test
 outcomes。若m200形成时gpu02仍有两张安全卡，将在总EMBER卡数不超过6的边界内并行运行m200 held5 correct-only strict250；这只
 提前获取已预登记checkpoint的闭环结果，不改训练、checkpoint选择或m400自然完成。
+
+## 122. Panel-B任务均衡与microbatch实测
+
+factorial profile的73-task base ownership为每rank 18/19/19/19 tasks，但12个预登记Panel-B tasks在其中实际落成
+`2/4/5/1`；functional evaluation每task都有3条视频 x 16 visits x 16 rows，因此该布局会让两checkpoint持续等待5-task rank。
+提交`e74b653961e6d7bf088348f88d95eeba95b74921`把Panel-B执行ownership与training cache owner解耦：只用每task三条视频的
+sampled-frame总数，加每视频固定`4 * functional_rows * evaluation_visits`输入成本，再调用既有deterministic LPT。当前12-task/
+4-rank合同稳定为`3/3/3/3`；task集合、视频、rows、visits、模型和数值均不变，result新增明确的
+`evaluation_task_ownership` provenance。Writer定向测试`23 passed`。该优化晚于正在运行的`5534cb14` frozen formal，不会中途
+改变它。
+
+为判断是否还应增大evaluation policy microbatch，gpu02物理0/1并行运行同task93、两步相同profile图；训练仍因rows2实际使用
+microbatch2，只有随后三条视频各一次16-row Panel-B分别使用2与8。microbatch2 root为
+`runs/outputs/pi05_ecp_policy_response_writer_panelb_mb2_task93_profile2_e74b6539_gpu02p0_20260903/`，evaluation为
+`11.6923s`；microbatch8 root为
+`runs/outputs/pi05_ecp_policy_response_writer_panelb_mb8_task93_profile2_e74b6539_gpu02p1_20260903/`，为`11.5774s`，只快
+`.98%`。两者exit0；因收益远小于运行波动且更大batch只增加峰值风险，正式保留microbatch2，不继续扫16。

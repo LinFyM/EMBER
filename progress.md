@@ -102,6 +102,15 @@
   gradient tasks、task2/74零梯度、rows16、10 warmup + 390 effective、optimizer200/400 checkpoints；没有wrong/shuffle/reverse
   读取或loss。训练达到m200后若gpu02仍有两张安全卡，将在不超过总6卡且不影响训练的前提下并行物化和运行m200 held5
   correct-only strict250，以更早获得阶段科学结果；m400仍由同一fresh run自然完成。
+- 性能线在formal冻结后继续独立推进。73-task的training-cache ownership会让12个Panel-B任务落成每rank `2/4/5/1`，因此
+  `e74b653961e6d7bf088348f88d95eeba95b74921`新增outcome-independent evaluation cost：每task三条完整视频的frame数加固定
+  `4 * functional_rows * visits`成本，再用既有LPT均衡；本轮结构稳定得到`3/3/3/3`，且result显式记录
+  `evaluation_task_ownership`。23项Writer测试通过。该提交晚于当前frozen formal，不改变其训练或结果，只服务后续运行。
+- gpu02物理0/1在总EMBER卡数恰为6时并行完成task93 Panel-B microbatch2/8真实profile，roots分别为
+  `runs/outputs/pi05_ecp_policy_response_writer_panelb_mb2_task93_profile2_e74b6539_gpu02p0_20260903/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_panelb_mb8_task93_profile2_e74b6539_gpu02p1_20260903/`。三条视频各一次16-row
+  functional evaluation分别用`11.692/11.577s`，microbatch8只快`.98%`；不值得增加峰值风险，故保留2且不继续盲测16。
+  两profile均exit0，使用的两张卡原有约148--186MiB、0% util进程未受干扰。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

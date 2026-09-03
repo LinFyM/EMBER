@@ -124,6 +124,11 @@ relation scorer随后用等价收缩避免物化`innovation x native-key x hidde
 Evaluator的`3 replicas x 8 envs`在50-row paired screen达到rollout-only约`.07056 rows/s`；`4x8` OOM，`2x16`降至
 `.06567 rows/s`且平均SM从约`89.3%`降到`75.7%`，所以当前单卡最优保留`3x8`，不以更大的env batch冒充提速。
 
+Panel-B的剩余尾部来自沿用training cache owner，而非functional kernel：73-task ownership下12个诊断task为每rank
+`2/4/5/1`，会让两枚checkpoint都等待5-task rank。后续实现以三条视频frame数加固定functional rows x visits作纯输入成本，
+用既有LPT得到`3/3/3/3`，不改变task、视频、rows、visits或数值。task93真实对照中microbatch2/8 evaluation为
+`11.692/11.577s`，只有约1%差异，说明继续提高batch不是有效方向；保留microbatch2，把优化集中在任务级并行。
+
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
 `29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，

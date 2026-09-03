@@ -23,6 +23,7 @@ from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.process import (
     GatedMLP,
     PolicyResponseProcessOutput,
+    parameter_free_process_norm,
 )
 
 
@@ -507,15 +508,11 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         for process in processes:
             occupancy = process.occupancy / process.occupancy.sum().clamp_min(1e-6)
             meta = torch.stack((occupancy, process.presence), -1)
+            innovation = parameter_free_process_norm(process.innovations[:, target])
+            common = parameter_free_process_norm(process.common[target])
             rows.append(
                 self.event_projection(
-                    torch.cat(
-                        (
-                            process.events[:, target],
-                            process.innovations[:, target],
-                        ),
-                        -1,
-                    )
+                    torch.cat((common.expand_as(innovation), innovation), -1)
                 )
                 + self.occupancy_projection(meta)
             )
@@ -642,7 +639,9 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         relation_scale = (1.0 + torch.tanh(self.relation_embedding.weight)).to(
             event_innovations
         )
-        projected_innovation = self.innovation_key(event_innovations)
+        projected_innovation = self.innovation_key(
+            parameter_free_process_norm(event_innovations)
+        )
         key_feature = torch.tanh(keys)
         branch_queries = torch.stack((positive_query, negative_query), dim=0)
         trailing_mass_axes = (1,) * (keys.ndim - 2)

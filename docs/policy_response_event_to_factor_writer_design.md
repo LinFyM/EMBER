@@ -150,13 +150,14 @@ typed-boundary资格进一步证明，仅在Composer query入口保留source所�
 `.04--.06`，而`C`约`5`。因此下一fresh在所有直接消费Process common/innovation的边界使用同一个无参数合同。令
 
 \[
-\mathcal N(x)=\operatorname{LN}_0(x),\qquad
+\mathcal N(x)=\operatorname{LN}_0(x)\frac{\operatorname{Var}(x)}{\operatorname{Var}(x)+10^{-5}},\qquad
 M_{k,e,j}=W_M[\mathcal N(C_{k,j}),\mathcal N(D_{k,e,j})],
 \]
 
 其中event memory读取`M`，signed dynamic scorer读取`\mathcal N(D)`，causal predictor的prefix state见8.2。`C,D`与原来的
-`E=C+D,D`信息等价，但不再重复注入大尺度`C`；`LN_0`没有affine或新参数，且`LN_0(0)=0`，所以static-repeat的exact-zero
-innovation仍不能产生mobile update。该修正不改变event assignment、完整50-horizon bank、X/Y、signed pooling、rank或LoRA幅度规则。
+`E=C+D,D`信息等价，但不再重复注入大尺度`C`。方差可靠度项与LayerNorm使用同一个固定epsilon：真实`D`的RMS约`.04--.06`
+时系数约`.994--.997`，而static-repeat约`7e-8`的浮点残差被平滑压回零；它没有affine、新参数或硬阈值，避免普通LayerNorm反而
+放大roundoff。该修正不改变event assignment、完整50-horizon bank、X/Y、signed pooling、rank或LoRA幅度规则。
 
 ## 6. Module 2：Current-Video Native Factor Composer
 

@@ -26,6 +26,7 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_cap_factor,
     _effective_update_rms,
 )
+from ember.ecp.policy_response_writer.process import parameter_free_process_norm
 from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
     _remove_shared_video_cache,
@@ -283,7 +284,9 @@ def test_event_measure_logits_match_explicit_event_relation_candidates() -> None
     for relation in range(4):
         for event in range(3):
             innovation = (
-                composer.innovation_key(event_innovations[event])
+                composer.innovation_key(
+                    parameter_free_process_norm(event_innovations[event])
+                )
                 * relation_scale[relation]
             )
             feature = innovation * key_feature
@@ -581,10 +584,6 @@ def test_fused_video_pooling_matches_chunked_outputs_and_gradients() -> None:
 
 
 def test_static_repeated_video_cannot_open_mobile_lora() -> None:
-    # The invariant is about a repeated video's dynamic content, not about
-    # whichever global RNG state earlier tests happened to leave behind.
-    # Keep the randomly initialized projections fixed so the small accepted
-    # floating-point residue has a stable, meaningful bound.
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
         model = _model().eval()
@@ -596,6 +595,7 @@ def test_static_repeated_video_cannot_open_mobile_lora() -> None:
 
     assert process.innovations.float().square().mean().sqrt() < 1e-6
     assert process.frame_innovation.float().square().mean().sqrt() < 1e-6
+    assert parameter_free_process_norm(process.innovations).abs().max() < 1e-10
     assert all(
         _effective_update_rms(a, b) < 1e-4
         for a, b in zip(output.a, output.b, strict=True)

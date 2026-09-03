@@ -16,6 +16,15 @@ if TYPE_CHECKING:
     from ember.ecp.stage0 import ECPStage0Model
 
 
+def parameter_free_process_norm(value: torch.Tensor) -> torch.Tensor:
+    """Keep a process source visible while suppressing roundoff-only residue."""
+
+    eps = 1e-5
+    variance = value.float().var(dim=-1, unbiased=False, keepdim=True)
+    reliability = (variance / (variance + eps)).to(value)
+    return F.layer_norm(value, (value.shape[-1],), eps=eps) * reliability
+
+
 @dataclass(frozen=True)
 class PolicyResponseProcessOutput:
     """Per-video ordered events and the sole common/innovation decomposition."""
@@ -566,7 +575,10 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         )
 
     def predict_future_delta(self, process: PolicyResponseProcessOutput) -> torch.Tensor:
-        state = process.common + process.frame_innovation[-1]
+        state = (
+            parameter_free_process_norm(process.common)
+            + parameter_free_process_norm(process.frame_innovation[-1])
+        ) / math.sqrt(2.0)
         query = (
             state[:, None, None]
             + self.prediction_probe.weight[None, :, None]

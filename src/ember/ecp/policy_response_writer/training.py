@@ -112,6 +112,8 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
             model.get("composer_relative_gain_readout")
             == "query_conditioned_family_owned_rank_rows_without_task_table_or_anchor_gate",
+            model.get("process_consumer_boundary")
+            == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],

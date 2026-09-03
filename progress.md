@@ -63,7 +63,11 @@
   NCCL、`NCCL_P2P_DISABLE=1`及rank-local NUMA；三者均为component-init、K1、full 50-horizon、positive-only、唯一rank16。
   launch前gpu01四卡完全空闲；gpu02两卡各有他人约`0.15--0.19GB`、0% util的轻量常驻进程，已测峰值仍留约12GB余量。
   `/data1`为`775964240/1073741824` blocks，约105GB共享cache与小型checkpoint/metrics不越过独立quota。两条task-local
-  已越过首步；第二步起input/output/relation/task-query方向梯度均finite nonzero，说明非对称scale启动后真实credit已打开。
+  已自然完成且exit0：task1 macro50/100的fit/held recovery为`.1732/.1633`与`.2419/.2581`，task93为
+  `.3464/.3325`与`.3820/.3643`；四点各自三条fit/held视频均自发优于carrier，held、wrong与Panel-B backward均为0，输出保持
+  唯一rank16。task93以少10步同时高于前一rank-balanced macro110的`.3570/.3223`；task1 fit较前一`.3283`低，但held高于
+  前一`.2282`。因此typed ownership保留了task-local容量并改善held-video保持，尚不构成shared跨task性能结论。shared已完成
+  98GiB/146-video单份mmap cache并进入稳定训练，前20步平均`17.17s`，与前一实现`16.82s`近似，四rank wall对齐。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

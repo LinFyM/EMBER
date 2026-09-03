@@ -2622,3 +2622,10 @@ bank reader或部署输入，旧checkpoint明确不兼容并必须fresh。
 到达Frame/Event/Composer/relation，causal process梯度到达Frame/Event/predictor；初始A非零/B严格零，打开scale后生成38-target、
 76-tensor唯一rank16，峰值allocated/reserved为`27.35/33.98GB`。首个shared资格采用optimizer100/200而非400步，m200仍与前一
 资格保持约33次/task的matched总暴露；task-local 50/100与其并行，只作容量定位而不阻塞shared结果。
+
+## 131. typed-boundary task-local 50/100正控
+
+clean detached `682f7ecf`在gpu02物理0/1并行完成task1/task93 formal。task1 macro50/100 fit/held recovery为
+`.173162/.163290`、`.241859/.258089`；task93为`.346355/.332496`、`.382004/.364330`，四个checkpoint各自两条fit与一条
+held视频全部strict benefit为正。两run均100条metrics、exit0、completion完整，禁止backward计数为0且输出唯一rank16。
+该结果保留task-local容量；73-task shared 100/200同时运行，其closed-loop才裁决跨task映射。

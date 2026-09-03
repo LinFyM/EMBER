@@ -135,8 +135,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     language、family淹没owner的第二层typed-source坍缩已由冻结反事实复现。下一fresh只修Composer边界所有权：分别pre-norm并
     方差平衡rank/owner/family/common/language，relative rank-gain head按family分行，保持完整bank、loss、rank、cap、数据和
     positive-only合同不变；实现、30项测试、config互斥预检及真实task1 forward/gradient/76-tensor rank16 materialization smoke
-    已通过。当前封存clean authority后立即并行启动task1/task93的50/100正控和73-task shared 100/200短资格；不做手工幅度、
-    额外loss或LR/seed/rank/scale扫；
+    已通过。task1/task93的50/100正控现已自然完成，四个checkpoint的三条fit/held视频全部优于carrier；73-task shared
+    100/200短资格正从clean `682f7ecf`运行。不做手工幅度、额外loss或LR/seed/rank/scale扫；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

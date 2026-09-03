@@ -2438,3 +2438,14 @@ assignment、static-repeat、chunked pooling、cap、K与cache合同。新loader
 分别为`.002836/.002472/.200869/.0000533`，process梯度Frame/Event/predictor为`.06422/.06859/.15932`。物化为76 tensors、
 唯一rank16，峰值CUDA allocated/reserved为`27,347,375,104/33,982,251,008 bytes`。因此新图具备进入fresh短资格的实现证据，
 但尚无任何shared性能结论。
+
+### 134. typed-boundary task-local正控保留容量并改善held-video保持
+
+clean detached `682f7ecf`上的task1/task93 formal均fresh完成optimizer100，macro50/100相邻checkpoint、result、completion与
+100条metrics完整且exit0。task1两点fit/held recovery为`.173162/.163290`与`.241859/.258089`；task93为
+`.346355/.332496`与`.382004/.364330`。每个checkpoint的两条fit视频和一条held视频均严格优于carrier。两条run的held-video、
+wrong-video与Panel-B backward计数均为0，source policy保持冻结，输出均为唯一38-target rank16。
+
+相对前一rank-balanced macro110，typed task93在少10步下仍由`.357007/.322264`提高到`.382004/.364330`；task1 fit recovery由
+`.328291`降到`.241859`，但held由`.228193`升到`.258089`，没有形成跨视频退化。因此typed source/family ownership没有破坏
+task-local函数容量，并在两个正控上保持或改善held-video映射；该证据只定位容量与优化可达性，不能替代73-task shared闭环裁决。

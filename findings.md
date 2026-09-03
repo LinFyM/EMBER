@@ -58,6 +58,24 @@ owner因此要求改为先12-task x 110-step、macro70/110 held5 strict250资格
 不删除50-step horizon、native X/Y、cross-episode functional、positive process或唯一rank16输出。只有该短实验真实超过carrier/旧full闭环基线才支持
 恢复73-task长训练；否则应修正shared接口而不续训、不回退coarse。
 
+该corrected full短资格现已完成。macro70/110 held5 correct-only均为`35/250`，breadth由`3/5`降到`2/5`，Goal/Long在两点均为0；
+两点相对carrier的retained/gained/lost分别为`32/3/11`与`31/4/12`，且总分稳定低于carrier `43/250`。训练侧10个gradient tasks仍有小幅正
+functional benefit，两个true-task-held则没有形成稳定正增量。这排除“门槛本身过高”：当前输出尚未达到更低的carrier保留和跨suite
+breadth要求，也不支持对同一参数化增加步数、任务规模、mixed-K或fully-random。
+
+最早可复现接口缺口不是PI0.5 response、native support或task-local容量，而是Process到Composer的显式关系绑定。专家合同要求
+Composer同时读取`D(e,j)`、`alpha(e,t,m)`和relation type；实现却只使用已经跨四类relation混合的
+`frame_innovation(t,j)`，`assignment`字段从产出后没有任何consumer。零梯度target task74与gradient task72/73/75已经共享
+“pick up black bowl -> plate”的verb、object和goal，只改变初始scene relation，当前仍不能迁移，因此不能把失败仅归因于任务数少。
+下一matched修正只让event innovation与soft assignment以显式relation轴参与signed candidate logits；raw X/Y仍是唯一vector value，
+static `D=0`仍严格给出zero mobile，50-horizon、rank12+4、positive-only目标与唯一rank16均不变。
+
+工程吞吐侧已经把同一4卡、10-step full资格schedule从`34.394s/step`降至`4.054s/step`，为`8.48x`提速。收益来自
+outcome-independent选择性CPU cache复制与每步cost-balanced task placement、exact dense/bounded-streaming bank attention、保留全部
+frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-group batched reduction；不是coarse、horizon mean、抽样或
+改变task权重。最终四卡有效task计算占总device wall约`78.0%`，剩余主要由最长单task决定，ZeRO-1/2不会改善只有约347万可训练参数的
+该尾部。该运行时允许未来实验显式配置任意meta/target计数和总task batch，当前`3+3`不再被误固化为长期合同。
+
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
 `29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，

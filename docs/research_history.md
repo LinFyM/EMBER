@@ -2230,3 +2230,63 @@ frame/probe/horizon/bank-type key集合；实现用与dense MHA等价的chunked 
 process backward及唯一76-tensor rank16 materialization；峰值allocated/reserved为`42.42/47.14GB`，无OOM/NaN。单卡两步shared
 profile分别使用87/79帧视频，用时`33.29/28.54s`，Frame/Event/Process/Composer梯度均finite nonzero。该profile只证明完整horizon
 实现可训练；下一科学证据必须来自该提交合并推送后的fresh 73-task formal和held5 closed-loop。
+
+## 113. 完整horizon 12-task短资格的稳定non-pass
+
+owner拒绝在架构尚无闭环增量时直接付出约10小时73-task训练后，原73-task full-horizon fresh run于optimizer25/effective15安全停止，
+未形成checkpoint或科学裁决。相同clean detached `e7278f1b22176b53025166dc5015a4463b819ecd`随后运行5 meta + 5 target梯度任务、
+task2/74 true-task-held、K1、component-init、10 warmup + 100 effective updates。正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_k1_component_s110_e7278f1b_gpu01p2456_20260903/`；110步自然完成，
+train/total wall为`4212.19/4875.42s`，macro70/110 checkpoints、optimizer/rank state、Panel-B、contracts与completion均完整。
+
+macro70的gradient fit/held benefit均值为`.000891/.000924`、`8/10` task全部视频优于carrier；true-task-held fit/held为
+`-.000535/.000153`、`0/2`全视频优于。macro110 gradient为`.001283/.000949`、仍为`8/10`；true-task-held为
+`-.000131/-.000135`、仍为`0/2`。因此Writer能在有梯度任务上形成小幅功能改进，却没有得到task-disjoint共享映射。
+
+两个checkpoint均用held5每task固定correct demo5一次物化唯一完整38-target rank16，并各完成250条严格配对closed-loop：
+
+- macro70 materialization：
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_m70_held5_correct_k1_materialized_e7278f1b_gpu02p4_20260903/`；
+  strict root：
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_m70_held5_correct_k1_strict250_e7278f1b_gpu02p4_r3_20260903/`；
+  `35/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/1/32/2`，breadth`3/5`，相对carrier retained/gained/lost=`32/3/11`。
+- macro110 materialization：
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_m110_held5_correct_k1_materialized_e7278f1b_gpu01p2_20260903/`；
+  strict root：
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_m110_held5_correct_k1_strict250_e7278f1b_gpu01p2_r3_20260903/`；
+  `35/250`，逐task=`0/0/0/33/2`，breadth`2/5`，相对carrier=`31/4/12`。
+
+两点总分相同、Goal/Long均为0且稳定低于carrier `43/250`。所以失败不是正式`>145/400`门槛太高，而是当前方法连较低的carrier保持与
+跨suite breadth也未达到；不追加同构训练、不恢复73-task规模、不进入mixed-K/random Final，也不为失败checkpoint运行negative controls。
+该结果只停止当时“relation已混合的frame innovation -> shared signed candidate logits”参数化，不否定task-local Composer、full
+policy-response、ordered events、native X/Y、signed pooling或rank4。
+
+## 114. full Writer训练吞吐的8.48倍优化
+
+同一4卡、10-step、旧12-task资格schedule的逐层profile固定科学task group、权重、K1、functional rows和完整50-horizon。原始
+streaming实现为`34.394s/step`；只加入有限期schedule上的outcome-independent CPU evidence cache选择性复制与动态task placement后为
+`26.306s`。再将完整bank context在显存允许时改为dense exact SDPA、超限时以bounded fused blocks执行同一online softmax，并融合
+整视频frame与output groups的exact signed pooling后为`8.699s`。最终将frame construction提高到整视频、streaming block设为128K tokens、
+functional microbatch按可用rows提升到4，10步平均/中位/最小/最大为`4.054/4.175/3.436/4.872s`，相对原始实现提速`8.48x`。
+
+最终4卡累计task计算占总device wall约`78.0%`；最长task单步约`4.54s`，其余rank在典型首步约`3.69--4.13s`，剩余尾部主要来自
+task不可切分而非固定cache owner。实时dmon显示计算段各卡经常达到`78--100%` SM，最长视频卡显存峰值约`44.24GB allocated / 46.97GB
+reserved`。所有dense/streaming、chunk/fused、output-group与K2 unequal-video输出/梯度等价测试通过；没有平均、抽样或删除任何
+frame/probe/horizon/bank-type/raw X/Y。执行器只改变已选task的设备位置，每task仍执行一次；meta/target比例和每step task数由实验配置
+决定，不固定`3+3`或6。ZeRO-1/2不对约347万可训练Writer参数和task-level尾部对症；当前不引入FSDP或Writer/Policy流水线复杂度。
+
+## 115. Process--Composer显式event-relation绑定缺口
+
+在上述相邻non-pass后逐字段对照专家澄清稿§5.3--5.4与实现：`PolicyResponseProcessOutput`确实产出
+`assignment=alpha(e,t,m)`，但Composer没有任何`.assignment`读取；它只收到四类relation按单一概率混合后生成的
+`frame_innovation(t,j)`。因此relation type虽然参与Process内部压缩，却未作为显式轴到达最终native candidate scorer，违背专家列出的
+Composer输入合同。
+
+该缺口不能仅解释为12-task组合覆盖不足。零梯度target authority task74为“pick up the black bowl on the ramekin and place it on the
+plate”；三个有梯度target tasks 72/73/75使用同一verb、object和goal，仅把初始关系改为table center、top drawer或stove。task74仍无
+稳定功能增量，正好符合“初始scene relation在进入signed scorer前被混合”的失效模式。
+
+下一matched correction已登记为：直接用既有`D(e,j)`与`alpha(e,t,m)`形成显式frame x relation innovation，让relation type经一个共享
+learned projection/FiLM调制后参与正负candidate logits；raw X/Y仍是唯一vector value，四relation等base mass，最终exact pooling覆盖完整
+frame x relation x probe x 50-horizon x bank-type。relation只调制bias-free D路径，故`D=0`仍严格zero mobile。除此之外不改loss、task
+split、rank、scale、carrier、materializer或部署输入；真实smoke后立即以同一短资格和held5相邻closed-loop裁决。

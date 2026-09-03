@@ -4,13 +4,29 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；当前最新scientific code tip为
-  `89833c235dea8df069418642e13400587dede385`，合并推送后作为下一轮formal冻结authority。最新专家补充意见已逐字归档。
+- canonical集成目标为clean pushed `main`；最近一轮完整科学结果冻结在
+  `e7278f1b22176b53025166dc5015a4463b819ecd`，下一轮relation-binding修正只会从最新clean pushed main另建唯一实现分支与
+  formal detached authority。最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
   layer x horizon x probe原生响应、G2 ordered events、当前视频真实X/Y、G1 signed pooling、rank4和唯一rank16物化；主要learned
   模块收敛为可复制的Video Process Encoder与Native Factor Composer。
+- 完整horizon 12-task短资格已从clean detached `e7278f1b22176b53025166dc5015a4463b819ecd`自然完成110步。macro70/110的
+  10个gradient task fit/held benefit均为正，且均有`8/10` task全部视频优于carrier；但两个零梯度true-task-held在两点都没有
+  全视频优于carrier，macro110 fit/held benefit均值为`-.000131/-.000135`。对应held5 correct-only strict250相邻结果均为
+  `35/250`：macro70逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/1/32/2`、breadth`3/5`，macro110为
+  `0/0/0/33/2`、breadth`2/5`。两点稳定低于carrier `43/250`且Goal/Long均为0，因此这是当前shared parameterization的正式
+  non-pass；不追加训练、不恢复73-task长跑，也不对失败checkpoint运行negative controls。
+- 该non-pass后对照专家输入合同与实际数据流，确认Process产出的`assignment=alpha(e,t,m)`从未被Composer读取，四类relation在
+  signed candidate scoring前已混为一个`frame_innovation(t,j)`。这不是单纯数据覆盖不足：零梯度target task74与已训练
+  task72/73/75具有相同“black bowl -> plate”动作/对象/goal，只改变初始scene relation，仍未迁移。下一唯一科学改动是让
+  event innovation与soft assignment以显式relation轴进入exact signed pooling；不改loss、rank、scale、full horizon或部署合同。
+- full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
+  `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
+  归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占
+  总device wall约`78.0%`；剩余主要是最长task不可切分尾部。所有优化完整保留50 horizon与exact online softmax，不改变task
+  group、权重、K或optimizer cadence；新sampler也不再把当次`3 meta + 3 target`误当owner固定要求。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

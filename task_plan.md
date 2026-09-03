@@ -79,16 +79,21 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     实际未限幅/global-clip/static-slot parameterization的相邻裁决；
 16. [x] 完成per-target `B@A` RMS cap、独立gradient clipping与dynamic-value合同实现和真实smoke；原corrected coarse shared/task-local
     在owner更新方法边界后分别于step121/47/29主动中止，不形成checkpoint裁决，也不再续跑；
-17. [ ] 只用full裁决corrected shared。task1/task93 task-local已完成且保持跨视频容量；首个shared在审计发现
+17. [x] 只用full裁决corrected shared。task1/task93 task-local已完成且保持跨视频容量；首个shared在审计发现
     Composer辅助bank context仍提前平均horizon后于macro前主动停止。现已改为对完整frame/probe/horizon/bank-type
     tokens做exact chunked learned attention并通过最长视频真实profile。owner于2026-09-03要求架构未证明前不付出10小时扩展成本，
     因此73-task x 1210-step fresh运行在optimizer25/effective15主动停止，不形成科学裁决。先在同一clean pushed commit上
-    运行12-task x 110-step四卡资格实验，并在macro70/110做held5 correct-only strict250；只有相对carrier/旧full出现真实闭环
-    增量才恢复73-task规模。若task-local仍强而shared弱，依据horizon attention利用率、process预测与task-disjoint泛化证据修正
-    可复制Frame/Composer接口，不回退到均值、coarse或等价压缩；
-18. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-19. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-20. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    运行12-task x 110-step四卡资格实验并完成macro70/110 held5 correct-only strict250；两点均为`35/250`，breadth分别`3/5`与
+    `2/5`，Goal/Long均为0，稳定低于carrier `43/250`，所以不恢复旧参数化73-task长跑、不运行其负controls；
+18. [ ] 修正Process到Composer最早失效接口：让既有event innovation与soft assignment以显式relation轴进入signed candidate
+    scoring，保持full 50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变。先完成真实forward/gradient/
+    materialization与static-repeat smoke，再立即运行同一12-task短资格和相邻held5 correct-only strict250；
+19. [x] 完成可复用吞吐基础：选择性CPU evidence cache复制、outcome-independent动态task放置、dense/streaming exact bank
+    attention融合、整视频signed pooling与output-group归约。四卡10-step full profile由`34.39s/step`降至`4.05s/step`，提速
+    `8.48x`，且task batch与meta/target比例继续由实验配置决定；
+20. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+21. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+22. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

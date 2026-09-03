@@ -175,14 +175,30 @@ transport、anchor或family scalar gate。
 
 ### 6.3 signed native pooling
 
-对target j、mobile rank r和candidate n，A侧与B侧分别预测两组softmax logits。输出为：
+2026-09-03首个corrected full 12-task shared相邻closed-loop稳定为`35/250`，而task-local Composer继续有容量。逐层核对发现
+Process虽然产出并声明传递`alpha(k,e,t,m)`，Composer实际只读取四类relation已经混合后的单个`frame_innovation(k,t,j)`；
+`assignment`与relation type从未进入bank candidate scoring。这与专家明确要求Composer读取event assignment和relation type不一致，
+也会让“同一动作、对象和goal，只改变初始scene relation”的task-disjoint组合在进入signed pooling前失去显式绑定。
+
+下一matched实现因此只修正这一处最早接口。对每个frame、relation和owner直接从既有event输出构造：
 
 \[
-a_{jr}=\sum_n (w^{A,+}_{jrn}-w^{A,-}_{jrn})X_{jn},
+I_{ktmj}=\sum_e \alpha_{ketm}D_{kej}.
+\]
+
+relation type通过一个共享learned projection/FiLM进入该innovation；每个raw native candidate在logit语义上保留relation轴，
+但其X/Y value不复制成新的向量来源。四类relation共同按固定`1/4` base mass归一，最终仍由exact online softmax对全部
+frame x relation x probe x horizon x bank-type candidates归约。该改动不增加Program、summary、solve、anchor或新loss，
+不平均或抽样50-horizon，也不改变rank、carrier、materializer或部署输入。
+
+对target j、mobile rank r、relation m和native candidate n，A侧与B侧分别预测两组softmax logits。输出为：
+
+\[
+a_{jr}=\sum_{m,n}(w^{A,+}_{jrmn}-w^{A,-}_{jrmn})X_{jn},
 \]
 
 \[
-b_{jrg}=\sum_n (w^{B,+}_{jrgn}-w^{B,-}_{jrgn})Y_{jng}.
+b_{jrg}=\sum_{m,n}(w^{B,+}_{jrgmn}-w^{B,-}_{jrgmn})Y_{jng}.
 \]
 
 signed pooling的正负softmax branches与输入antithetic probes是不同轴；每个softmax branch都可以读取两个probe产生的candidates。
@@ -226,8 +242,9 @@ task-target不超过该值，而未设完整边界的shared macro610已有`94/19
 \]
 
 当全部event innovations为零时，delta+与delta-都严格为零，两组权重相同，mobile residual为零。language、C和bank context可以决定
-关注什么，但不能在没有D时独立产生mobile update。static-repeat只作这一结构不变量的无梯度实现检查，不进入训练、loss或checkpoint
-选择。
+关注什么，但不能在没有D时独立产生mobile update。relation embedding只能调制由D与alpha共同形成的innovation，不能添加独立
+branch bias，因此显式relation轴也不能成为static旁路。static-repeat只作这一结构不变量的无梯度实现检查，不进入训练、loss或
+checkpoint选择。
 
 这只是排除最直接language-only旁路，不保证正确视频自然优于wrong或shuffled。最终因果性仍由冻结后的closed-loop controls裁决。
 

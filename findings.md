@@ -112,6 +112,11 @@ frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-
 改变task权重。最终四卡有效task计算占总device wall约`78.0%`，剩余主要由最长单task决定，ZeRO-1/2不会改善只有约347万可训练参数的
 该尾部。该运行时允许未来实验显式配置任意meta/target计数和总task batch，当前`3+3`不再被误固化为长期合同。
 
+扩大到73 gradient tasks、12 tasks/update的真实profile进一步确认动态放置可扩展：四卡两步都精确分为每卡3 tasks，step为
+`10.597/9.260s`（profile rows2），各rank预测cost最大/最小比分别仅`1.218/1.159`；第二步所有learned模块梯度finite nonzero。
+105GB唯一frozen evidence加8GiB上限时，planner只购买3.11GB确有收益的replicas，不把“预算”误当必须占满。故当前正式短跑的主要
+代价是rows16 functional VJP而非多卡长期失衡；按既有rows2/rows16实测推算400步约2--2.5小时，满足先短资格再扩规模的效率边界。
+
 relation scorer随后用等价收缩避免物化`innovation x native-key x hidden-width`，同卡task93 rows2从`7.43/6.40s`降至
 `4.78/4.10s`，约快`36%`。formal rows16把functional microbatch从2增至4只再快约`.8%`却把reserved推到约`46.76GB`，
 故保留microbatch2；单图CPU saved-tensor offload虽把显存约从`39.6GB`降到`21.8GB`，step却恶化到`24.79/16.41s`，也不保留。

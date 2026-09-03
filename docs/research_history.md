@@ -2378,3 +2378,23 @@ positive-only objectives、真实native X/Y、signed pooling与唯一rank16不�
 optimizer step200/400对应post-warmup effective190/390，每task分别获得`32--34/65--67`次暴露；400点对齐旧12-task短资格的约
 66次/task。故新节点按实际数据暴露量产生，而不是把历史J2的70/110当成理论门槛。正式训练前先用六卡、12-task/update做两步真实
 profile；若资源与图稳定，再启动预计小时级而非十小时级的短资格，并在200/400两点直接运行Panel-B与held5 correct-only strict250。
+
+## 120. factorial Writer四卡执行profile
+
+2026-09-03 20:39 CST从clean pushed detached `248d3efa56236986eaa28d8124abbb6f6e74157c`在gpu01物理0/1/5/6启动
+73-task、12 tasks/update、full K1 event-measure两步profile。launch前四卡显存为0且util为0；gpu01物理2/3/4由他人约98%利用，
+gpu02虽有四张近空闲卡，但其它卡已有4.7--31GB占用，不能安全容纳full最长样本峰值，因此没有跨节点拼碎片或干扰他人。
+`/data1` quota blocks为`774956448/1073741824KiB`，limit `1084227584KiB`。正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_profile2_248d3efa_gpu01p0156_cache8g_20260903/`。
+
+两步optimizer wall为`10.5972/9.2597s`，每步12 tasks都由cost-balanced placement分成每rank 3 tasks。第一步四rank预测cost为
+`123/101/113/114`，第二步为`113/118/131/122`；第二步Frame、Event、Process prediction、Composer、relation与scale梯度均finite
+nonzero。峰值allocated/reserved为`27368414208/36937138176 bytes`。146个唯一fit-video frozen evidence合计
+`105020606660 bytes`；8GiB replica预算仅选择task61与task85的3个确有收益副本，额外`3111731600 bytes`，两步预测总cost由
+272降至254，理想为234。两步训练wall为`19.97s`，从cache/normalizer准备开始的total为`150.20s`；进程冷启动另有约4分钟冻结
+model/data加载，后续同节点运行可复用OS页缓存。
+
+该profile故意使用2 functional rows，只证明73-task cache、12-task调度、完整50-horizon图、反向和资源安全，不能冒充formal
+rows16吞吐。结合此前同实现rows2与rows16的真实差值，四卡正式400步保守预计约2--2.5小时，仍远低于已否决的十小时级探索。
+因此无工程阻塞，下一步是保持同一科学配置从clean pushed detached authority启动400步资格，并在optimizer200/400进行预登记
+Panel-B及随后held5 correct-only strict250。

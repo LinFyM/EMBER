@@ -82,7 +82,16 @@
   event-measure、positive-only与唯一rank16不变，只扩大到全部73个eligible gradient tasks。每update的`9 meta + 3 target`
   按55:18池大小近似task等权，只是本实验配置而非owner或未来固定比例；总batch为12也不是长期合同。optimizer step200/400
   分别对应post-warmup effective190/390，并使每task获得约`32--34/65--67`次暴露；400点对齐旧12-task 3-of-5 x 110步的
-  约66次/task，因此检查点来自暴露量而不是沿用J2的70/110历史编号。下一步先六卡两步真实profile，再决定正式短跑命令与时长。
+  约66次/task，因此检查点来自暴露量而不是沿用J2的70/110历史编号。当前可用单节点四卡profile结果与正式短跑合同见下一项。
+- 73-task/12-task-per-update两步真实profile已从clean detached `248d3efa`在gpu01物理`0,1,5,6`完成，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_profile2_248d3efa_gpu01p0156_cache8g_20260903/`。
+  当时gpu01其余2/3/4由他人约98%利用、gpu02没有额外两张能安全容纳full峰值的卡，故不跨节点拼卡或干扰他人。两步
+  profile rows2 wall为`10.597/9.260s`，每步四rank均恰好3 tasks；第一步预测cost为`123/101/113/114`，第二步为
+  `113/118/131/122`。第二步Frame/Event/Process/Composer/relation梯度均finite nonzero；峰值allocated/reserved为
+  `27.37/36.94GB`。73 tasks的146个唯一fit videos冻结evidence约`105.02GB`；8GiB预算只选择实际有收益的3个replicas、
+  额外`3.11GB`，没有为耗尽预算盲目复制。训练两步`19.97s`，cache/normalizer准备加训练为`150.20s`；此外约4分钟是
+  冻结模型与数据冷加载，正式运行紧接同节点可复用页缓存。该profile使用rows2只证明执行图与调度，正式rows16预计约
+  2--2.5小时/400步而非十小时；下一步立即从clean pushed detached authority正式启动。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

@@ -68,6 +68,11 @@
   唯一rank16。task93以少10步同时高于前一rank-balanced macro110的`.3570/.3223`；task1 fit较前一`.3283`低，但held高于
   前一`.2282`。因此typed ownership保留了task-local容量并改善held-video保持，尚不构成shared跨task性能结论。shared已完成
   98GiB/146-video单份mmap cache并进入稳定训练，前20步平均`17.17s`，与前一实现`16.82s`近似，四rank wall对齐。
+- shared macro100已完整保存并在训练不停顿时物化held5 correct K1：五个task各生成一套76-tensor完整rank16，Writer调用恰为
+  每task一次，held action/state/reward、wrong与negative controls读取均为0。2026-09-04 03:49 CST在gpu02物理`0/1`启动
+  6-worker、每task50初态的correct-only strict250，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_typed_boundary_m100_held5_correct_k1_strict250_682f7ecf_gpu02p01_r3_20260904/`；
+  queue采用long-first动态调度，结果不回流正在运行的macro200训练。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

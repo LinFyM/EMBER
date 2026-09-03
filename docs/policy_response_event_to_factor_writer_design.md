@@ -372,7 +372,12 @@ S_{k,t,j}=\frac{\mathcal N(C_{k,j})+\mathcal N(I_{k,t,j})}{\sqrt 2},
 因此下一matched fresh恢复专家原合同：先从所有合法prefix endpoints中确定性均匀采样`t`，再从该prefix剩余future offsets中
 确定性均匀采样`delta>0`；采样只依赖optimizer step、task与video demo，不读取outcome。predictor只额外接收delta的标准无参数
 sinusoidal interval encoding，不读取future frame、路径中间帧或future event assignment。target继续使用现有固定teacher projection，
-loss权重与固定normalizer合同不变；不平均50-step Action Expert horizon，也不改变主Writer deployment forward。
+prediction与target同时除以`sqrt(delta)`后计算loss，以抵消实测近似random-walk的跨interval方差增长；该已知delta缩放可逆，不改变
+方向、owner、probe或horizon信息。loss权重与固定normalizer合同不变；不平均50-step Action Expert horizon，也不改变主Writer
+deployment forward。
+
+该matched变更由`38d51bab`实现；31项定向测试和task1真实full-horizon delta8 smoke通过，且主functional loss、梯度与输出
+和前代smoke保持逐项一致。它只修复causal auxiliary的interval监督合同，不借机改变deployment函数类。
 
 固定teacher的矩阵rowspace只有约`12.4--12.5%`落在ResponseTokenizer projection可见子空间，但事后把teacher对齐到该子空间只让
 delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮不同时更换teacher；若

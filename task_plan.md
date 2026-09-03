@@ -153,9 +153,10 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 24. [ ] 修正首版实现偏离专家原合同的causal interval：此前错误固定`future_offset=1`，而专家要求随机选择prefix `t`与合法
     `delta>0`。冻结m100的六个gradient task多尺度诊断显示，完整38-owner、50-horizon、2-probe target的within-video最优尺度
     MSE解释量从delta1的`.0094`单调升至delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也由约`.0093`升到约`.0752`；
-    所以adjacent高频目标是已证实的最早监督错配。下一fresh只改为outcome-independent的随机合法`(t,delta)`及parameter-free
-    interval encoding，保持固定teacher、loss权重、Process/Composer主图、完整bank、rank与数据不变。先完成配置互斥、定向测试和
-    真实smoke，随后直接运行同规模optimizer50/100短资格；
+    所以adjacent高频目标是已证实的最早监督错配。下一fresh只改为outcome-independent的随机合法`(t,delta)`、parameter-free
+    interval encoding及可逆的`sqrt(delta)`方差标准化，避免长interval仅因target方差增长而取得更大loss权重；保持固定teacher、
+    Process/Composer主图、完整bank、rank与数据不变。实现已在`38d51bab`完成，31项定向测试及task1真实full-horizon delta8 smoke
+    均通过；下一步直接运行同规模optimizer50/100短资格；
 25. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 26. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 27. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

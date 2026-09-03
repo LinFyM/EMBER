@@ -2679,4 +2679,6 @@ Long/Goal/Object/Spatial0/Spatial9分别`0/0/2/38/0`与`0/0/5/29/1`，Goal/Long�
 `future_offset=1`。同一m100的六task正样本multi-gap probe保持完整38x50x2输出，within-video最优尺度MSE解释量从delta1的
 `.0094`升到delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也从约`.0093`升到约`.0752`。将teacher投到input projection
 可见子空间只有次要增益，故下一matched fresh先只恢复random legal delta与parameter-free interval conditioning，固定teacher及
-Process/Composer主图不变。formal roots、全部diagnostic文件与更细数值见`findings.md`第138节。
+Process/Composer主图不变。不同delta的target RMS近似按`sqrt(delta)`增长，loss对prediction与target作同一可逆
+`sqrt(delta)`标准化，避免无关的interval权重漂移。`38d51bab`完成该实现，31项定向测试和task1真实full-horizon delta8 smoke
+通过，主functional图保持逐项一致。formal roots、全部diagnostic文件与更细数值见`findings.md`第138节。

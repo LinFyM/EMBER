@@ -22,8 +22,12 @@
   同一checkpoint的正样本多尺度反事实随后给出明确方向：保持38 owners、50 horizons与2 probes不变，within-video线性probe的
   最优尺度MSE解释量从delta1的`.0094`升至delta2/4/8的`.1382/.3268/.4718`；跨task双向均值从约`.0093`升至
   `.0173/.0416/.0752`。因此下一fresh只恢复专家原本的随机合法prefix/future interval，并以parameter-free encoding告知
-  predictor相对delta；固定teacher、loss权重、Process/Composer主图、bank、rank、数据与closed-loop合同全部不变。该改动先走
-  配置互斥、定向测试和一个真实smoke，然后立即复用optimizer50/100短资格。以下条目保留此前执行与审计时间线，不覆盖本条当前状态。
+  predictor相对delta；prediction与target同步除以`sqrt(delta)`，抵消实测target RMS近似按`sqrt(delta)`增长而造成的无关loss
+  权重漂移。固定teacher、Process/Composer主图、bank、rank、数据与closed-loop合同全部不变。实现提交`38d51bab`已通过31项
+  定向测试和task1真实full-horizon delta8 smoke：functional/process loss为`.150360/.142832`，Frame/Event/Composer functional
+  gradient均非零，Frame/Event/Predictor process gradient均非零，38 targets、50-step horizon、rank4 materialization与唯一rank16
+  输出保持完整；主functional loss、梯度及输出与前代smoke逐项一致。现在立即复用optimizer50/100短资格。以下条目保留此前执行与
+  审计时间线，不覆盖本条当前状态。
 
 - canonical集成目标为clean pushed `main`。上一轮full event-measure
   73-gradient-task资格已完成训练、m200/m400 Panel-B、物化与两次held5 correct-only strict250：闭环仅`30/32`，breadth

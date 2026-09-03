@@ -2541,5 +2541,12 @@ teacher的within-video held-cutoff最优解释量随delta1/2/4/8由`.0094/.1382/
 专家澄清原文明确要求每条正确视频随机选择`t`与`delta>0`；当前实现却始终把`future_offset`默认为1，normalizer、shared训练和
 Panel-B全部沿用该固定值。这不是专家架构本身已被充分否定，而是首版实现遗漏了其关键时间采样合同。下一fresh只修成确定性可复现、
 outcome-independent的随机合法`(t,delta)`，并用parameter-free relative-interval encoding条件化同一个predictor；暂不同时更换
-teacher，因为其独立收益较小。Process/Composer主forward、完整native bank、full 50-horizon、signed pooling、rank4、唯一rank16、
-positive-only functional/preservation与所有数据权重保持不变。
+teacher，因为其独立收益较小。实测target RMS从delta1的`.3035`到delta8的`.9069`，近似按`sqrt(delta)`增长；因此prediction与
+target同时除以`sqrt(delta)`后计算loss，避免长interval仅因方差更大而取得额外权重。该缩放给定delta可逆，不平均或删除任何轴。
+Process/Composer主forward、完整native bank、full 50-horizon、signed pooling、rank4、唯一rank16、positive-only
+functional/preservation与所有数据权重保持不变。
+
+该matched修复由`38d51bab`实现。31项定向测试通过；task1真实full-horizon delta8 smoke的functional/process loss为
+`.150360/.142832`，functional Frame/Event/Composer梯度为`.002898/.002652/.187827`，process Frame/Event/Predictor梯度为
+`.016753/.013139/.045459`，完整生成76 tensors、38 targets并物化mobile rank4/complete rank16。主deployment forward未改变，
+因此functional loss、梯度和输出与前代smoke相同；只有causal auxiliary恢复了原先遗漏的interval合同。

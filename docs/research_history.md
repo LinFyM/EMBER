@@ -2398,3 +2398,19 @@ model/data加载，后续同节点运行可复用OS页缓存。
 rows16吞吐。结合此前同实现rows2与rows16的真实差值，四卡正式400步保守预计约2--2.5小时，仍远低于已否决的十小时级探索。
 因此无工程阻塞，下一步是保持同一科学配置从clean pushed detached authority启动400步资格，并在optimizer200/400进行预登记
 Panel-B及随后held5 correct-only strict250。
+
+## 121. factorial Writer正式短资格启动
+
+2026-09-03 20:49 CST，full K1 event-measure component-init扩展资格从clean pushed detached
+`5534cb140b90ac20e9143dd20a7ed8e11c539f19`在gpu01物理0/1/5/6、world-size4 fresh启动。tmux为
+`ember_prw_factorial_s400`，formal root为
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_s400_5534cb14_gpu01p0156_cache8g_20260903/`。
+launch前同步检查gpu01与gpu02：所选四卡均0MiB、0% util；gpu01物理2/3/4由他人98--100%使用，gpu02除四张近空闲卡外没有
+另外两张能安全容纳full最长样本，故不跨节点拼卡或干扰他人。gpu01 available host memory约`269.2GB`；`/data1` quota blocks为
+`774957644/1073741824KiB`、limit `1084227584KiB`，输出root不存在，预计新增远低于余量。
+
+正式命令固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA、8GiB outcome-independent frozen-evidence replica预算、55 meta + 18 target
+gradient tasks、task2/74 true-task-held零梯度、每update 9 meta + 3 target、functional rows16/microbatch2、10 warmup + 390
+effective、optimizer200/400 checkpoints、positive-only loss与唯一rank16。训练不读取wrong、shuffle、reverse或validation/test
+outcomes。若m200形成时gpu02仍有两张安全卡，将在总EMBER卡数不超过6的边界内并行运行m200 held5 correct-only strict250；这只
+提前获取已预登记checkpoint的闭环结果，不改训练、checkpoint选择或m400自然完成。

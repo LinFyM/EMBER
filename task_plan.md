@@ -107,7 +107,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `push` procedure没有任何Writer-gradient peer，是明确覆盖缺口。故数据并非完全欠识别，允许最小full扩展映射，但审计本身
     不证明video-dependent最优adapter已经可学；
 21. [ ] 已用当前单节点全部4张安全空闲卡完成73-task、每update 12 tasks的完整event-measure两步真实profile；两步四rank均为
-    每卡3 tasks且完整梯度finite nonzero，正式短资格没有工程阻塞。现运行一次有信息量的full K1 component-init扩展短资格：
+    每卡3 tasks且完整梯度finite nonzero，正式短资格没有工程阻塞。现已从clean pushed detached authority启动一次有信息量的
+    full K1 component-init扩展短资格：
     55 meta + 18 target tasks近似task等权，每步显式`9 meta + 3 target`仅属于该配置；optimizer
     step200/400分别给每task约`32--34/65--67`次暴露，后者对齐上一12-task实验每task约66次，而非沿用70/110历史数字。
     两点直接取Panel-B与held5 correct-only strict250，不以十小时长跑起步；

@@ -92,6 +92,16 @@
   额外`3.11GB`，没有为耗尽预算盲目复制。训练两步`19.97s`，cache/normalizer准备加训练为`150.20s`；此外约4分钟是
   冻结模型与数据冷加载，正式运行紧接同节点可复用页缓存。该profile使用rows2只证明执行图与调度，正式rows16预计约
   2--2.5小时/400步而非十小时；下一步立即从clean pushed detached authority正式启动。
+- factorial full K1 component-init正式短资格已于2026-09-03 20:49 CST从clean pushed detached
+  `5534cb140b90ac20e9143dd20a7ed8e11c539f19`在gpu01物理`0,1,5,6`、world-size4启动，tmux为
+  `ember_prw_factorial_s400`，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_s400_5534cb14_gpu01p0156_cache8g_20260903/`。
+  launch前两节点同步live检查仍确认所选四卡为0MiB/0% util；gpu01物理2/3/4为他人98--100%任务，gpu02其它卡没有安全
+  full峰值余量，故未跨节点凑6。`/data1` quota blocks为`774957644/1073741824KiB`、limit `1084227584KiB`；root fresh，
+  预计新增远低于剩余额度。命令固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA、8GiB只读cache replica预算、55 meta + 18 target
+  gradient tasks、task2/74零梯度、rows16、10 warmup + 390 effective、optimizer200/400 checkpoints；没有wrong/shuffle/reverse
+  读取或loss。训练达到m200后若gpu02仍有两张安全卡，将在不超过总6卡且不影响训练的前提下并行物化和运行m200 held5
+  correct-only strict250，以更早获得阶段科学结果；m400仍由同一fresh run自然完成。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

@@ -78,7 +78,7 @@ def _policy_response_provenance(
         (
             arm
             == f"{POLICY_RESPONSE_WRITER_ARM_PREFIX}{representation}_correct_k1",
-            representation in {"full", "coarse"},
+            representation == "full",
             _is_commit(manifest.get("training_commit")),
             _is_commit(manifest.get("materialization_commit")),
             isinstance(contract, Mapping),

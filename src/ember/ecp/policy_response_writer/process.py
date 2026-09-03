@@ -154,6 +154,8 @@ class ResponseTokenizer(torch.nn.Module):
         self.layer_embedding = torch.nn.Embedding(19, width)
         self.horizon_embedding = torch.nn.Embedding(ACTION_HORIZON, width)
         self.channel_embedding = torch.nn.Embedding(8, width)
+        # Keep the legacy parameter solely to preserve full-run RNG/state-dict
+        # compatibility.  No active forward path reads it.
         self.coarse_embedding = torch.nn.Embedding(2, width)
         self.norm = torch.nn.LayerNorm(width)
         family_order = tuple(TargetFamily)
@@ -204,16 +206,8 @@ class ResponseTokenizer(torch.nn.Module):
         states = video.layer_states
         if states.ndim != 5 or states.shape[1:4] != (2, 19, ACTION_HORIZON):
             raise ValueError("policy-response raw layer topology changed")
-        if representation == "coarse":
-            final = self.state_projection(states[:, :, -1].mean(2))
-            even, odd = self._even_odd(final)
-            tokens = torch.stack((even, odd), dim=1)[:, None]
-            tokens = tokens.expand(-1, len(self.owners), -1, -1)
-            tokens = tokens + self._owner_bias()[None, :, None]
-            tokens = tokens + self.coarse_embedding.weight[None, None]
-            return self.norm(tokens)
         if representation != "full":
-            raise ValueError("unknown policy-response representation arm")
+            raise ValueError("full policy-response is the only active representation")
 
         residuals = states[:, :, 1:] - states[:, :, :-1]
         state = self.state_projection(states.index_select(2, self.state_layers))

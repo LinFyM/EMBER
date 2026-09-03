@@ -5,6 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
@@ -151,6 +152,12 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
     assert not any(
         name.startswith("teacher_") for name, _ in model.named_parameters()
     )
+
+
+def test_retired_coarse_representation_is_rejected() -> None:
+    model = _model()
+    with pytest.raises(ValueError, match="only active representation"):
+        model.process(_video(9), representation="coarse")
 
 
 def test_causal_prefix_cannot_read_mutated_future_frames() -> None:

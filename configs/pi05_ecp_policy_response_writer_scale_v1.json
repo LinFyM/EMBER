@@ -51,7 +51,7 @@
     "dynamic_value_contract": "slot_shared_frame_relation_value_makes_static_repeat_mobile_zero_up_to_fp_roundoff",
     "capture_frame_chunk": 2,
     "pooling_frame_chunk": 4,
-    "representation_arms": ["full", "coarse"],
+    "representation_arms": ["full"],
     "effective_update_boundary": "per_target_complete_mobile_BA_rms_at_most_fit19_task_equal_s_ref",
     "materialization": "one_small_core_canonicalization_then_rank12_plus_rank4",
     "initialization": "qualified_stage0_components_plus_fresh_repeat_blocks_and_composer"

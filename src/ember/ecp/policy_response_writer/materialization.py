@@ -107,7 +107,7 @@ def _shared_contract_matches(
             contract.get("schema_version") == SHARED_RUN_SCHEMA,
             contract.get("stage") == SHARED_STAGE,
             contract.get("mode") == "formal",
-            contract.get("representation") in {"full", "coarse"},
+            contract.get("representation") == "full",
             contract.get("initialization_request") in {"component", "random"},
             int(contract.get("stop_step", -1)) >= max(candidates),
             1 <= len(topology) <= 6,

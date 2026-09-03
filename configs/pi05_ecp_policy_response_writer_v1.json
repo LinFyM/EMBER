@@ -28,7 +28,7 @@
     "composer_blocks": 2,
     "capture_frame_chunk": 2,
     "pooling_frame_chunk": 4,
-    "representation_arms": ["full", "coarse"],
+    "representation_arms": ["full"],
     "materialization": "one_small_core_canonicalization_then_rank12_plus_rank4",
     "initialization": "qualified_stage0_components_plus_fresh_repeat_blocks_and_composer"
   },

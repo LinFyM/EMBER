@@ -25,6 +25,10 @@
   `runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_full_s110_7d435ea3_v1_gpu02p6_20260903/`。launch前双节点live
   检查确认所选gpu01四卡全空闲，gpu02两卡只有低util既有进程；`/data1` quota为
   `774455720/1073741824KiB`、limit `1084227584KiB`，三个root均为fresh。
+- 唯一`codex/policy-response-full-only`实现worktree已从最新clean pushed main建立：两个active Writer config只声明`full`，训练CLI、
+  shared checkpoint物化与static adapter provenance均拒绝coarse，`ResponseTokenizer`删除horizon-mean forward。仅保留不参与任何forward的
+  旧`coarse_embedding`参数以维持当前full formal的RNG/state-dict兼容，待本轮checkpoint生命周期结束后再删除；定向Writer与static
+  adapter测试为`16 passed`。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

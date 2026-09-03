@@ -107,7 +107,7 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("event_slots") == 8,
-            model.get("representation_arms") == ["full", "coarse"],
+            model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
             bool(training_k),
@@ -714,7 +714,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--task", type=int)
     parser.add_argument("--video-demo", type=int)
-    parser.add_argument("--representation", choices=("full", "coarse"), default="full")
+    parser.add_argument("--representation", choices=("full",), default="full")
     parser.add_argument(
         "--initialization", choices=("component", "random"), default="component"
     )

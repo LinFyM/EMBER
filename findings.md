@@ -40,10 +40,11 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 新current-bank Composer仍能从真实X/Y与event-conditioned query恢复跨视频功能；它尚不证明shared mapping或closed-loop成功，但已经
 排除“Composer本身接近零容量”这一最早失败解释。
 
-加入完整per-target update cap、独立gradient clipping与dynamic-value修正后，full task1正控仍在macro70/110的三条正确视频上全部
-自发优于carrier。fit recovery为`.207146/.223986`，未训练held-video为`.169391/.157630`，Panel-B backward为0。相对旧full
-`.260876/.276421`与`.207341/.244598`有所减弱，且held后段回落，但没有被修正压成零容量。这进一步支持后续只解决full的shared
-task-disjoint映射；不能以coarse绕开完整horizon。
+加入完整per-target update cap、独立gradient clipping与dynamic-value修正后，full task1/task93正控仍在macro70/110的全部正确视频上
+自发优于carrier。task1 fit recovery为`.207146/.223986`，未训练held-video为`.169391/.157630`；task93为
+`.417139/.425338`与`.409146/.418759`，Panel-B backward均为0。相对旧full，task1有所减弱且held后段回落，但task93 held从
+`.300885/.280724`显著提高。修正不是简单把所有任务幅度压小，也没有把full压成零容量；两任务共同把最早未解决接口收窄为full的
+shared task-disjoint映射，不能以coarse绕开完整horizon。
 
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留

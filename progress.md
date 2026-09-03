@@ -33,6 +33,11 @@
   recovery为`.207146`、未训练held video24为`.169391`，macro110为`.223986/.157630`；两个checkpoint的三条视频全部自发优于
   carrier，Panel-B backward为0，source policy冻结且输出仍为唯一完整rank16。相对旧full正控幅度有所减弱、held后段回落，但明确保留
   full task-local跨视频功能容量；task93与73-task shared继续运行，不以task1单点裁决shared或closed loop。
+- corrected full task93正控也已自然完成，result/completion与launcher exit0完整。macro70 fit/held recovery为
+  `.417139/.409146`，macro110为`.425338/.418759`；两个checkpoint的全部三条视频均优于carrier，held/Panel-B backward为0，
+  source policy冻结且仍为唯一rank16。相对旧full task93的`.337207/.300885`与`.346604/.280724`明显提高；结合task1，修正并非
+  对所有任务统一缩小update，而是在完整horizon路径上保留并改善部分current-bank有效方向。两条task-local进程已结束并释放gpu02
+  物理4/6；73-task full shared继续运行，当前不以不匹配world topology的额外arm填卡。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

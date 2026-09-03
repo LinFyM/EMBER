@@ -53,6 +53,11 @@ frame/probe/horizon/bank-type keys，并用exact chunked online softmax和activa
 近似压缩。87帧最长训练视频的真实smoke与两步shared profile均通过，说明完整horizon合同在单张A40上可训练。后续full shared裁决必须
 从这一fresh实现开始。
 
+完整horizon的真实step profile约为29--33秒；73-task x 1210-step在架构尚无closed-loop增量证据时会过早消耗约10小时。
+owner因此要求改为先12-task x 110-step、macro70/110 held5 strict250资格实验；这只缩小gradient-task覆盖与训练步数，
+不删除50-step horizon、native X/Y、cross-episode functional、positive process或唯一rank16输出。只有该短实验真实超过carrier/旧full闭环基线才支持
+恢复73-task长训练；否则应修正shared接口而不续训、不回退coarse。
+
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
 `29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，

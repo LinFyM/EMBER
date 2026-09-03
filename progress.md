@@ -56,6 +56,16 @@
   固定K1、component-init、10 warmup + 1200 effective、macro610/1210、positive-only loss、`NCCL_P2P_DISABLE=1`及完整horizon
   implementation。exact command为：
   `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-full-horizon-formal-e7278f1b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_full_horizon_73task_k1_component_s1210_e7278f1b_gpu01p2456_20260903 --phase shared --representation full --initialization component --mode formal`。
+  owner指出架构尚未用闭环证据证明，不应直接付出约10小时的扩展训练；因此该运行在optimizer25/effective15安全停止，四个worker
+  全部退出且gpu01物理2/4/5/6回落到`7/6/7/6MiB`。运行未到macro，只作owner-directed early interruption记录，不作科学结论。
+- 同一full-horizon实现改为先做12-task x 110-step短资格实验：2026-09-03 13:50 CST从同一clean detached `e7278f1b`
+  在gpu01物理2/4/5/6、world-size4 fresh启动，tmux为`ember_prw_full_horizon_12task`，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_12task_k1_component_s110_e7278f1b_gpu01p2456_20260903/`。该设置保持完整50-step
+  horizon、native X/Y、positive-only loss、component-init与唯一rank16不变，只把gradient/panel范围缩至已有可直接对比基线的
+  5 meta + 5 target + 2 true-held，并把更新缩至10 warmup + 100 effective、macro70/110。launch前双节点live检查确认所选四卡全空；
+  gpu02无另一组四张能安全容纳最长视频`42.42GB allocated`的卡，不跨节点拼碎片。`/data1` quota blocks为
+  `774541080/1073741824KiB`、limit `1084227584KiB`，root为fresh。旧合同的直接可比结果为full macro70/110
+  `33/31`、carrier `43/250`；本macro70一出立即物化并运行held5 correct-only strict250，只有真实闭环增量才恢复73-task长跑。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

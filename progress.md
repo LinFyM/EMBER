@@ -4,10 +4,11 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main@959d046f87df5ce8c72a886bc164eb447ff8cf1e`；最近一轮完整科学结果是
-  `33ee1330`的relation-summed 12-task macro70/110训练、Panel-B与held5 strict250，它已正式non-pass。下一matched
-  event-assignment base-measure修正已集成并推送；其clean detached短资格正在运行。性能线同时在独立
-  `codex/policy-response-writer-throughput-2`工作树继续，二者不重叠写入。最新专家补充意见已逐字归档。
+- canonical集成目标为clean pushed `main@058509f49db8ac2b651d5098c50bc2c6e23bd884`；最近一轮完整科学结果是
+  `a049f61e`的event-assignment base-measure 12-task macro70/110训练、Panel-B与held5 strict250。两点闭环为
+  `40/42`，breadth均`3/5`且Goal/Long均为0，已完成该matched接口的稳定non-pass。当前没有运行中的EMBER
+  训练或评测；下一科学节点先按专家失败映射审计自然task的factorial coverage，再用审计结果决定
+  full event-measure的最小有信息扩展映射，不盲目恢复73-task长跑或继续堆叠接口。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -44,8 +45,13 @@
   train/evaluation/total为`1109.73/576.16/1725.81s`。macro70的10个gradient task fit/held benefit为
   `.001329/.001114`、recovery为`.11773/.08567`、`9/10` task全部视频优于carrier；macro110分别为
   `.001617/.001701`、`.13651/.13193`与`9/10`。但两个零梯度true-task-held在两点均为`0/2`：macro70 fit/held benefit
-  `-.001575/-.001798`，macro110为`-.002420/-.001998`。因此event-resolved measure增强了已训练task内的functional方向，尚未解决
-  task-disjoint泛化；held5 macro70已物化并运行correct-only strict250，macro110物化/评测并行准备中，闭环未返回前不作最终裁决。
+  `-.001575/-.001798`，macro110为`-.002420/-.001998`。held5 correct-only strict250也已全部完成：macro70为
+  `40/250`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/2/36/2`；macro110为`42/250`，逐task
+  `0/0/2/37/3`；breadth均为`3/5`。两点间retained/gained/lost=`33/9/7`、Jaccard `.67347`、paired exact
+  `p=.80362`；macro110相对carrier `43/250`为`35/7/8`、`p=1.0`。因此event-resolved measure增强了已训练task内
+  的functional方向，但没有解决task-disjoint泛化、carrier保持或Goal/Long breadth；不追加同构训练、mixed-K、
+  fully-random或negative controls。`70/110`仅表示10步warmup后的effective `60/100`历史可比取点，不是理论推导的
+  最优训练时长。
 - full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
   `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
   归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占

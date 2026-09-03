@@ -2310,3 +2310,48 @@ allocated/reserved为`40178697216/47244640256 bytes`；Frame/Event/Composer与pr
 显式assignment置换定向测试通过。随后task93两步task-local profile的稳态step为`8.6865/8.7940s`，最大allocated/reserved为
 `34309713920/46785363968 bytes`，第二步input/output branch与task query梯度均已打开；两步后的fit/held内部诊断不作科学裁决。
 该证据只准入同一12-task短资格，shared功能与closed-loop结果仍未知。
+
+## 117. relation-summed与event-measure两次matched shared裁决
+
+relation-summed版本从clean detached `33ee1330` 完成12-task K1 component-init、110步训练与macro70/110全部
+Panel-B。两点gradient task fit/held benefit为`.000995/.001146`与`.001305/.001007`，task2/74 true-held均为负。
+held5 correct-only strict250为`42/34`，breadth均`3/5`、Goal/Long均为0，macro70到110为`16 lost/8 gained`。因此
+`I(t,m,j)=sum_e alpha(e,t,m)D(e,j)`这一“先求event期望、后非线性score”接口正式non-pass。
+
+后续matched版本从clean detached `a049f61e17ad9e5eae55b67b8de7be4aa686bfc9` 运行：以`log alpha(e,t,m)`作为
+event x relation candidate base measure，用未求和`D(e,j)`生成bias-free动态logit；其他数据、K1、full 50-horizon、
+positive-only loss、carrier12 + mobile4与唯一rank16输出均不变。formal训练root为
+`runs/outputs/pi05_ecp_policy_response_writer_event_measure_12task_k1_component_s110_a049f61e_gpu01p0156_cache8g_20260903/`；
+110步、两枚checkpoint、Panel-B、optimizer/rank state、contracts和completion均完整，train/evaluation/total wall为
+`1109.73/576.16/1725.81s`。
+
+macro70的gradient fit/held benefit为`.001329/.001114`、recovery `.11773195/.08567050`、`9/10`任务全视频优于carrier；
+macro110为`.001617/.001701`、`.13651004/.13192627`与`9/10`。task2/74 true-held在macro70为
+`-.001575/-.001798`，macro110为`-.002420/-.001998`，两点都是`0/2`任务全视频优于carrier。
+
+macro70物化root为
+`runs/outputs/pi05_ecp_policy_response_writer_event_measure_m70_held5_correct_k1_materialized_a049f61e_gpu02p6_20260903/`，
+strict250 root为
+`runs/outputs/pi05_ecp_policy_response_writer_event_measure_m70_held5_correct_k1_strict250_a049f61e_gpu02p46_r3_20260903/`；结果
+`40/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/2/36/2`，breadth`3/5`。macro110对应物化root为
+`runs/outputs/pi05_ecp_policy_response_writer_event_measure_m110_held5_correct_k1_materialized_a049f61e_gpu01p0_20260903/`，
+strict250 root为
+`runs/outputs/pi05_ecp_policy_response_writer_event_measure_m110_held5_correct_k1_strict250_a049f61e_gpu01p0156_r3_20260903/`；结果
+`42/250`，逐task=`0/0/2/37/3`，breadth`3/5`。两点间retained/gained/lost=`33/9/7`、Jaccard `.673469`、
+paired exact `p=.803619`；macro110相对carrier43为`35/7/8`、Jaccard `.700000`、`p=1.0`。两次评测的18个worker均
+exit0，各自250条paired rows和launcher completion完整。
+
+这两枚历史可比checkpoint的名称来自J2的记账：optimizer 1--10为warmup，global 70/110分别是post-warmup
+effective 60/100；它们不是架构推导的最优步数。event-measure在已训练task上的functional收益从70到110继续小幅上升，
+而true-held恶化、闭环几乎不变且Goal/Long始终为0，因此失败不用“刚好停早了”解释。该结果停止当前event-measure
+matched接口的同构续训、mixed-K、fully-random和negative controls；它不否定task-local Composer、full policy-response、ordered
+events、native X/Y、signed pooling或rank4。专家失败映射将下一问题定位为task-disjoint shared mapping/credit/
+identifiability与自然task组合覆盖，应先做factorial coverage audit再决定最小扩展映射，不盲目恢复73-task长跑。
+
+## 118. event-measure训练与评测运行时证据
+
+同一event-measure formal显式给出`8GiB`只读cache replica预算后，110步训练wall均值/中位/p95为
+`10.056/10.044/10.643s`，相对漏传预算的前6步可丢弃基线`13.624s`快`26.2%`；rank load `max/mean`
+从`1.619`降到`1.216`，gpu01物理0/1/5/6训练稳定段平均SM为`88.2/88.5/89.4/90.2%`。m110 strict250以
+4 GPU x 3 replicas x 8 envs在`1040.52s`内完成250条，rollout execution window `815.24s`；满载显存段四卡平均SM约
+`90.1--94.1%`。该执行证据与科学non-pass分开：运行面已可复用，不因当前架构负结果回退exact/full优化。

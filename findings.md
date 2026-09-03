@@ -87,6 +87,17 @@ candidate measure，没有暗含额外`1/E`或`1/4`。最长task93、formal rows
 `22--25%`，但仍稳定装入单张A40。第二步functional梯度已到达Frame、Event、Process、Composer及relation参数，Panel-B无反向，
 38-target唯一rank16不变。因此工程图已有资格进入fresh短实验，性能代价不构成延迟科学结果的理由。
 
+该fresh event-measure短资格已完成。macro70/110的gradient task Panel-B fit/held benefit为
+`.001329/.001114`与`.001617/.001701`，recovery为`.1177/.0857`与`.1365/.1319`；但task2/74两个
+true-task-held在两点都为负且`0/2`全视频改善。held5 correct-only strict250为`40/42`，逐task分别
+`0/0/2/36/2`与`0/0/2/37/3`，breadth均`3/5`、Goal/Long均为0。macro70到110仅`9 gained/7 lost`，
+paired exact `p=.80362`；m110相对carrier43为`7/8`、`p=1.0`。这说明event assignment作为candidate measure
+确实更利于拟合有梯度task，但没有产生task-disjoint共享映射或跨suite闭环优势；该matched接口稳定non-pass。
+不以续训、mixed-K、random init或negative controls挽救。下一层有证据的问题是专家指定的shared mapping/credit/
+identifiability；应先审计自然tasks是否真的形成verb、object、scene relation、process和goal的交叉组合，再裁决最小扩展
+训练，不再凭直觉连续堆叠数学接口。`70/110`仅是J2的10步warmup + effective `60/100`历史对齐，不是科学
+门槛或最优停止步数。
+
 工程吞吐侧已经把同一4卡、10-step full资格schedule从`34.394s/step`降至`4.054s/step`，为`8.48x`提速。收益来自
 outcome-independent选择性CPU cache复制与每步cost-balanced task placement、exact dense/bounded-streaming bank attention、保留全部
 frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-group batched reduction；不是coarse、horizon mean、抽样或

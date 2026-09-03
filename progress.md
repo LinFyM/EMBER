@@ -5,7 +5,7 @@
 ## 当前快照
 
 - canonical集成目标为clean pushed `main`；当前最新clean pushed代码tip为
-  `66826f86495f31e77a3b866b526e8d8fcf421de5`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
+  `7d435ea3a6c78141a21fea60baeac6d321a174b3`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -139,6 +139,29 @@
   finite nonzero，峰值allocated/reserved分别为`23.47/34.81GB`与`33.30/41.56GB`。source policy、native observer与
   task-local参数全部冻结，wrong/held/Panel-B backward与shuffle/reverse reads均为0，输出仍是唯一完整rank16。
   旧macro1210因不含该修正，只作旧parameterization相邻证据，不能替代fresh corrected formal。
+- 旧scale formal已自然完成到macro1210，`completion.json/result.json`完整，1210 optimizer steps总耗时`35173.12s`，
+  train/evaluation分别为`34855.78/170.97s`；Panel-B、true-task-held、same-task-held、wrong和shuffle/reverse backward/read均为0。
+  macro610到1210的10个gradient task fit/held benefit从`.000700/.000107`增至`.001419/.000761`，但仍仅`6/10`
+  task全部视频优于carrier；两个true-task-held task的fit/held均值从`-.003674/-.003763`进一步变为
+  `-.003806/-.004313`，二者仍为`0/2`全部视频优于carrier。因此旧参数化的训练proxy继续改善却没有跨task泛化恢复。
+  macro1210的held5 correct-only strict250已从唯一完整38-target rank16物化结果启动，gpu02物理4/6上四worker正在运行；该结果只
+  裁决旧参数化，不用于判断下面修正版。
+- corrected 73-task component-init matched formal launch contract：scientific implementation固定为clean pushed
+  `7d435ea3a6c78141a21fea60baeac6d321a174b3`，formal从包含本条合同的最新clean pushed detached `main`运行。与旧
+  `df7a7f5a` arm相比只修正三项已证实的合同偏差：完整per-target mobile `B@A` RMS压在fit19 task-equal `s_ref`内、
+  `scale_head`与其余Writer各自按norm `1.0`裁剪、真实frame position只路由emission/transition/QK且静态重复帧不能从slot
+  identity制造dynamic value。固定同一`configs/pi05_ecp_policy_response_writer_scale_v1.json`、73个gradient tasks、coarse、K1、
+  component-init、10 warmup + 1200 effective updates、macro610/1210、source/Stage0/carrier12/native bank、rank4 residual与唯一rank16、
+  data/split/两条fit视频、functional/process/preservation loss、LR/seed/schedule及role/task权重；不引入wrong、shuffle、reverse或
+  held gradient。2026-09-03 10:25 CST同时live检查两节点：gpu01物理2/4/5/6均无compute process，分别为
+  `15/15/98/15MiB`、util全`0%`；gpu02物理4/6正运行本项目strict250，其他卡要么为他人高显存任务、要么无额外吞吐价值，故训练选
+  gpu01物理2/4/5/6，评测占gpu02物理4/6，EMBER总占用正好6张。gpu01 available host memory为`253864224KiB`；旧同构formal
+  实际仅`89412KiB`，`/data1` quota blocks为`774454692/1073741824`、limit `1084227584KiB`，fresh root保守新增小于`2GB`。
+  输出root固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_corrected_73task_k1_component_coarse_s1210_7d435ea3_gpu01p2456_20260903/`
+  且launch前必须不存在；固定`NCCL_P2P_DISABLE=1`、world-size4和GPU-local NUMA。exact resume只允许同运行commit、同物理卡、world
+  size、config、输入与output root。exact process command为：
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-corrected-formal-<launch-commit> && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_corrected_73task_k1_component_coarse_s1210_7d435ea3_gpu01p2456_20260903 --phase shared --representation coarse --initialization component --mode formal`。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

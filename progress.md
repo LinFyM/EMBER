@@ -20,9 +20,33 @@
   降到`813/1062s`。shared m200现已完成唯一rank16物化与held5 correct-only strict250：`45/250`，逐task
   Long/Goal/Object/Spatial0/Spatial9=`0/0/4/38/3`、breadth`3/5`。相对旧raw-query m200的`30/250`为
   `23 retained/22 gained/7 lost`、paired exact `p=.00813`，确认修正具有真实闭环因果收益；但相对carrier `43/250`
-  仅为`33/12/10`、`p=.83181`，Goal/Long仍为0，因此尚未通过shared路线。m400训练继续自然完成；gpu02物理0/1在
-  m200评测释放后正并行运行Object18与Long36的correct-only rank/attention几何诊断，用于区分残余family bottleneck与
-  task-disjoint组合迁移失败。
+  仅为`33/12/10`、`p=.83181`，Goal/Long仍为0，因此尚未通过shared路线。m400训练已自然完成且两枚checkpoint完整；
+  correct-only strict250反而降到`35/250`，逐task为`0/0/1/33/1`、breadth`3/5`，相对m200为
+  `30 retained/5 gained/15 lost`、paired exact `p=.04139`。Panel-B的10个gradient tasks held benefit均值虽由
+  `.000429`升到`.000526`，两个零梯度true-task-held却由`-.000438`恶化到`-.002605`、全视频通过数由`1/2`降到`0/2`。
+  因而已排除“只差更多训练”：当前Writer在继续改善见过task的离线functional时，task-disjoint映射与闭环同时退化。m200冻结、
+  correct-only的Object18/Goal25/Long36诊断均已完成：query从初始约`.83`到第二Composer block仍保留约`.47--.56`的
+  rank centered/mean RMS，q/v参与秩中位约`1.08--1.51/1.13--1.49`，说明最早rank坍缩确已修复；但action-out参与秩仍仅
+  `1.00--1.04`，其平均绝对scale约`1.13--1.22e-5`，比q约`3.69--3.71e-4`小约30倍，且cap恒为1。随后在六个
+  gradient-authorized正确Panel-A任务上做冻结VJP、零optimizer更新诊断：action-out scale-head梯度范数均值约`.0921`，与q的
+  `.1024`同量级，4/6任务局部希望沿当前方向放大，但跨task聚合/逐task范数和仅`.247`，且共享scale head的q--v、q--action-in
+  梯度cosine为`-.733/-.879`。m400同构VJP进一步显示action-out已有`5/6`任务希望缩小当前方向，但它的实际幅度仍随共享head
+  增长；四family聚合梯度之和只保留各family范数和的`.480`，独立family readout的一阶下降信号平方和为共享head的`2.00x`。
+  另外，m400跨Object/Goal/Long的matching target/rank query cosine仍为`.99925--.99952`：Process common范数约`70--74`，
+  language约`11.35`，而`owner_bias`内部又是约`1`范数的owner被约`11.7`范数的family淹没；同family q/v owner bias的平均
+  cosine为`.9925/.9932`。冻结、零梯度的typed-source反事实把四family最终跨task centered/mean RMS由
+  `.0178/.0224/.0188/.0224`提高到`.0301/.0351/.0350/.0377`；单纯把source追加到event memory没有同等作用。
+  owner与family也独立pre-norm后，q/v的18个target在两个标准block后的区分比又从`.0371/.0459`提高到
+  `.1835/.2049`，三条Object/Goal/Long视频一致复现。
+  因此下一fresh修正不再只看action-out幅度，而统一处理Composer边界的typed ownership：独立pre-norm并方差平衡
+  rank/owner/family/common/language，末端relative rank gain按family拥有参数；不改bank reader、loss、rank、scale上限或数据。
+- 400步训练的模型计算与Panel-B已经完成，但原进程在删除NFS上的105GB mmap cache时先unlink仍被其它rank映射的文件，产生
+  `.nfs*`句柄并使rank0 `rmtree`报`ENOTEMPTY`，其余rank随后在barrier超时；故原root没有伪造`result/completion`。
+  两checkpoint的Panel-B已从clean detached `3e589695`以零梯度、零optimizer、零wrong reads独立恢复到
+  `runs/analysis/pi05_ecp_policy_response_writer_rank_balance_s400_panelb_recovery_3e589695_gpu01p0156_20260904.json`。
+  cleanup现改为所有rank先清空mmap tensor并`gc.collect`、barrier后再由rank0删除，回归测试同时验证映射已释放和双barrier顺序；
+  29项Writer测试通过，删除失败也会同步转成明确错误而不再留下其它rank超时。该故障只影响收尾文件，不改变m200/m400
+  checkpoint或任何科学结论。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

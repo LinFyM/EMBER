@@ -9,6 +9,7 @@ gradient in this module.
 
 from __future__ import annotations
 
+import gc
 import math
 import os
 import shutil
@@ -423,6 +424,39 @@ def _shared_video_cache(
     return SharedPolicyResponseVideoCache(root, authority=authority)
 
 
+def _remove_shared_video_cache(
+    runtime: PolicyResponseRuntime,
+    cache: SharedEvidenceCache,
+    shared_video_cache: SharedPolicyResponseVideoCache,
+) -> None:
+    """Release every rank's mmap tensors before rank zero removes the cache."""
+
+    # The cache root can live on NFS. Unlinking a safetensors file while another
+    # rank still maps it creates an ephemeral .nfs handle, so rmtree can fail
+    # with ENOTEMPTY and strand the remaining ranks at the following barrier.
+    cache.videos.clear()
+    gc.collect()
+    barrier(runtime.context)
+    removal_error = None
+    if runtime.context.is_main:
+        try:
+            shutil.rmtree(shared_video_cache.root)
+        except OSError as error:
+            removal_error = f"{type(error).__name__}: {error}"
+    errors = [removal_error]
+    if runtime.context.world_size > 1:
+        dist.broadcast_object_list(
+            errors,
+            src=0,
+            device=runtime.context.device,
+        )
+    if errors[0] is not None:
+        raise RuntimeError(
+            f"shared policy-response cache cleanup failed: {errors[0]}"
+        )
+    barrier(runtime.context)
+
+
 def _validate_shared_run(
     runtime: PolicyResponseRuntime, cell: Mapping[str, Any]
 ) -> None:
@@ -802,9 +836,6 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         started=started,
     )
     if shared_video_cache is not None:
-        barrier(runtime.context)
-        if runtime.context.is_main:
-            shutil.rmtree(shared_video_cache.root)
-        barrier(runtime.context)
+        _remove_shared_video_cache(runtime, cache, shared_video_cache)
     runtime.writer.train()
     return result

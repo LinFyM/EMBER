@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import weakref
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ import pytest
 import torch
 
 import ember.ecp.policy_response_writer.composer as composer_module
+import ember.ecp.policy_response_writer.shared as shared_module
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
     G1_RESIDUAL_RANK,
@@ -25,6 +27,8 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_rms,
 )
 from ember.ecp.policy_response_writer.shared import (
+    SharedEvidenceCache,
+    _remove_shared_video_cache,
     _video_splits,
     balanced_task_owners,
     causal_cutoff,
@@ -949,6 +953,72 @@ def test_shared_video_cache_round_trips_full_policy_response_once(
         strict=True,
     ):
         torch.testing.assert_close(observed, expected)
+
+
+def test_shared_video_cache_cleanup_releases_mmaps_before_remove(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = SharedPolicyResponseVideoCache(
+        tmp_path / "task_scoped_shared_cache",
+        authority={"run": "cleanup-unit"},
+    )
+    loaded = store.get_or_build(
+        task=8,
+        demo=3,
+        builder=lambda: (_video(102), {"task_id": 8, "video_demo": 3}),
+    )
+    cache = SharedEvidenceCache(
+        videos={(8, 3): loaded.video},
+        capture_records=[],
+        functional_normalizers={},
+        process_normalizers={},
+    )
+    mapped_tensor = weakref.ref(loaded.video.patch_states)
+    del loaded
+    barriers = []
+    original_rmtree = shared_module.shutil.rmtree
+
+    def checked_rmtree(path: Path) -> None:
+        assert not cache.videos
+        assert mapped_tensor() is None
+        original_rmtree(path)
+
+    monkeypatch.setattr(
+        shared_module, "barrier", lambda context: barriers.append(context)
+    )
+    monkeypatch.setattr(shared_module.shutil, "rmtree", checked_rmtree)
+    context = SimpleNamespace(is_main=True, world_size=1)
+
+    _remove_shared_video_cache(SimpleNamespace(context=context), cache, store)
+
+    assert barriers == [context, context]
+    assert not store.root.exists()
+
+
+def test_shared_video_cache_cleanup_reports_remove_failure_without_second_barrier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = SharedPolicyResponseVideoCache(
+        tmp_path / "failed_shared_cache_cleanup",
+        authority={"run": "cleanup-failure-unit"},
+    )
+    cache = SharedEvidenceCache({}, [], {}, {})
+    barriers = []
+    context = SimpleNamespace(is_main=True, world_size=1)
+
+    monkeypatch.setattr(
+        shared_module, "barrier", lambda observed: barriers.append(observed)
+    )
+
+    def failed_rmtree(path: Path) -> None:
+        raise OSError(f"cannot remove {path.name}")
+
+    monkeypatch.setattr(shared_module.shutil, "rmtree", failed_rmtree)
+
+    with pytest.raises(RuntimeError, match="shared policy-response cache cleanup failed"):
+        _remove_shared_video_cache(SimpleNamespace(context=context), cache, store)
+
+    assert barriers == [context]
 
 
 def test_panel_b_ownership_balances_complete_outcome_independent_work() -> None:

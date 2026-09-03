@@ -2352,3 +2352,72 @@ E1没有通过，故不进入E2；“E1通过但真实frozen Program E2失败”
 在该次专家authority下当时没有后续active implementation route。这一负结果只淘汰已实际检验的PNBTT E1 free-query real-bank
 transport函数类，不裁决Natural Program、G2、native X/Y、signed pooling、rank4、整个ECP或zero-interaction目标。后续完整历史复核
 与owner新裁决已建立Policy-Response Event-to-Factor Writer active route，见本文件第0节。
+
+### 129. rank balance打开q/v容量，剩余最早瓶颈收敛到共享末端family readout的梯度所有权
+
+在fresh rank-balanced shared m200上，对held Object18、Goal25、Long36各用固定correct demo5做冻结activation诊断；全部保持full
+50-horizon、真实native X/Y，不读取negative、action、reward或outcome，也不产生梯度或参与checkpoint选择。三任务从初始query到
+第二Composer block的rank centered/mean RMS分别稳定在约`.83 -> .47--.56`，q/v有效参与秩中位分别为
+`1.078/1.126`、`1.510/1.486`、`1.258/1.220`。input/output posterior、raw A/B与动态branch均随rank变化，说明此前
+Process common淹没rank token的最早坍缩已经真实修复，而非只在单一task18反事实中成立。
+
+残余不对称集中在action-out：三任务参与秩只有`1.010/1.001/1.036`，平均绝对scale为
+`1.225e-5/1.187e-5/1.129e-5`，而q、v、action-in分别约`3.69e-4`、`1.68e-4`、`2.99e-4`；所有target的
+cap factor均为1，故不是materialization cap截断。G1成功非零task-local adapter的action-out mobile norm约`.091--.120`、参与秩
+约`2.16`，当前held只有约`.006--.008`与近rank1。Process本身也未统一坍缩：Object18、Goal25、Long36的innovation norm均值为
+`.589/.380/.328`，最大event occupancy比例为`.518/.424/.672`，presence>=.5的event数为`5/7/4`。Long的动态创新偏弱可作
+次级线索；Goal甚至最分散，因此Goal闭环为0不能简单归因于没有事件或rank query。
+
+为区分“action-out没有functional credit”与“共享head无法同时吸收credit”，又在m200冻结checkpoint上选择optimizer200 schedule中的
+六个gradient-authorized正确Panel-A任务做真实PI05 LoRA leaf-gradient与scale-head VJP；不做optimizer更新，不读取negative或held
+outcome，也不用于checkpoint选择。action-out scale-head梯度范数均值为`.09209`，接近q的`.10237`，尽管其当前B mobile norm仅
+约`.0002`；六任务中4个的`dL/d mobile multiplier`为负，即沿当前action-out方向放大可局部降低正确样本loss。它并非断图或没有
+policy credit。相反，action-out跨task聚合梯度范数/逐task范数和仅`.247`，q/v/action-in也只有`.501/.334/.315`；同一共享
+129维scale head上的q--v、q--action-in聚合梯度cosine为`-.733/-.879`，q--action-out为`-.170`。因此当前最强解释是：一个共享
+末端scale/readout同时服务四种native topology，产生family间优化冲突，action-out内部又存在task条件相消，最终把有用梯度压成近零
+增益。该证据支持等待m400验证后优先检验family-local、标准可复制的factor readout，而不支持人工放大action-out、添加family loss、
+增加rank/width或扫LR/seed/scale；posterior和raw方向已工作，也不支持同时重写上游bank reader。
+
+### 130. m400把“训练不够”改判为见过task拟合增强、task-disjoint与闭环同步退化
+
+fresh rank-balanced shared run完整走到optimizer400并保留m200/m400两枚checkpoint。m400 held5 correct-only strict250为
+`35/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/1/33/1`、breadth`3/5`；相对m200的`45/250`为
+`30 retained/5 gained/15 lost`、Jaccard`.6000`、paired exact `p=.0413895`，形成显著相邻退化。相对旧raw-query
+m400的`32/250`仅`12 gained/9 lost`、`p=.663624`，相对carrier43为`6 gained/14 lost`、`p=.115318`；继续训练没有把
+rank-balance的m200局部收益发展成新shared路线，Goal/Long仍为0。
+
+原进程已先完成两checkpoint的Panel-B计算，但在收尾删除NFS mmap cache时失败，故不把缺少`result/completion`的训练root伪称完整。
+从clean detached `3e589695`对原checkpoint作只读零梯度恢复后，m200/m400的10个gradient tasks fit benefit均值为
+`.000697/.000830`、held为`.000429/.000526`，均有`7/10` task三视频全正；但两个true-task-held的fit由
+`-.000603`恶化到`-.001300`、held由`-.000438`恶化到`-.002605`，全视频通过数由`1/2`降到`0/2`。训练Panel-A最近50步的
+平均benefit已经从最初50步约`-0.000002`单调升到`.002031`且正样本比例由`.520`升到`.852`。因此这不是图没接通、整体优化失败
+或步数不足，而是共享函数越来越适配见过task，却没有形成task-disjoint组合泛化；离线functional改善也没有转成闭环收益。
+
+### 131. 最早残余错误是Composer两端的typed ownership坍缩，而非单一action-out欠幅度
+
+m400的六个gradient-authorized correct-only VJP显示，action-out沿当前mobile方向的径向导数已有`5/6`为正，即正确functional
+本身希望缩小该方向；但其幅度仍从m200约`1.13--1.22e-5`增长到m400约`1.59--1.75e-5`。原因是同一scale head的family
+梯度互相抵消：q/v/action-in/action-out聚合范数为`.16591/.08043/.01159/.42685`，总共享梯度仅`.32860`，为family范数和
+的`.47987`；family聚合平方范数和则为共享平方范数的`2.0034x`。所以简单续训甚至会沿其它family主导的共享更新继续放大有害
+action-out，family-local readout是参数所有权修正，不是人工设幅。
+
+更早一层，Object18、Goal25、Long36的matching target/rank final query平均cosine在q/v/action-in/action-out分别为
+`.999524/.999249/.999470/.999249`，跨task centered/mean RMS仅`.01783/.02237/.01880/.02241`，m200几乎相同，证明
+task source从一开始便近乎不变。m400 Process common范数约`70--74`而language约`11.35`；`owner_bias`内部的owner约`0.99`、
+family约`11.66`，使同family q/v targets的owner-bias平均cosine达到`.99247/.99318`。若只把owner/common/language各自无参
+LayerNorm后按方差合成，冻结模型四family跨task centered/mean RMS即升至`.03009/.03515/.03503/.03767`；把sources追加进
+event memory则只有`.01675/.03184/.01960/.02464`，不是等价修复。直接把owner与family也分别归一时，q/v结构source的平均
+pair cosine由`.99247/.99318`降到`.49034/.49631`。这些不使用outcome的反事实共同表明：rank轴修复后，task与target identity
+仍在相加前因量纲不一致被淹没。完整走过两个已Bank Context Blocks后，q/v的18个targets在当前模型内平均cosine仍为
+`.99857/.99779`、centered/mean RMS仅`.03713/.04595`；将owner/family也独立pre-norm的冻结反事实把最终cosine降到
+`.96581/.95746`、RMS提高到`.18353/.20492`，在Object18、Goal25、Long36三条视频上近乎逐位复现。standard blocks会保留
+约七成输入区分，却无法事后重建在seed处已经丢失的条件差异。下一修正应统一保留typed source与typed family readout，不能只拆head、
+人工放大action-out、增加loss或改bank。
+
+### 132. NFS mmap cache必须先在所有rank释放映射再删除
+
+400步原进程的唯一工程失败发生在科学计算完成之后：rank0直接`rmtree`仍被各rank的`cache.videos`持有的safetensors mmap；NFS把
+open-but-unlinked文件改名为`.nfs*`，导致`ENOTEMPTY`，随后其余rank在第二个NCCL barrier超时。修复顺序固定为各rank先
+`cache.videos.clear()`与`gc.collect()`，第一次barrier确认全部释放，rank0删除，再第二次barrier。回归测试以weakref确认删除回调
+发生时映射tensor已回收，并验证两次barrier；删除异常也会广播到所有rank，避免再次留下NCCL timeout。29项Writer测试通过。该修复
+不改变capture、Writer、训练、checkpoint或评测数值。

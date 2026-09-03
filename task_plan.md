@@ -127,8 +127,14 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `.3570/.3223`，四点全部视频优于carrier并满足信息墙，确认修正后的task-local容量。全线继续使用full 50-horizon、
     positive-only、唯一rank16及node-local单份mmap。shared m200 held5 strict250已为`45/250`、逐task
     `0/0/4/38/3`、breadth`3/5`；相对旧m200的`22 gained/7 lost`具有显著改善（`p=.00813`），但相对carrier43仅
-    `12 gained/10 lost`（`p=.83181`），Goal/Long仍为0。当前继续完成m400相邻点，并以correct-only Object/Long
-    rank/attention几何定位剩余最早接口；
+    `12 gained/10 lost`（`p=.83181`），Goal/Long仍为0。Object18/Goal25/Long36的correct-only几何已确认q/v的rank
+    区分恢复，而action-out仍约rank1、scale比q小约30倍且不是cap所致。六个gradient-authorized正确任务的冻结VJP进一步显示
+    action-out并不缺policy梯度，但共享scale head存在强跨family冲突及跨task相消。m400 strict250已降到`35/250`，相对m200
+    `5 gained/15 lost`、`p=.04139`；10个gradient tasks的held functional略升，两个true-task-held却从`1/2`降到`0/2`且均值
+    恶化到`-.002605`，正式排除续训解释。m400跨Object/Goal/Long matching query cosine仍约`.9993--.9995`；common淹没
+    language、family淹没owner的第二层typed-source坍缩已由冻结反事实复现。下一fresh只修Composer边界所有权：分别pre-norm并
+    方差平衡rank/owner/family/common/language，relative rank-gain head按family分行，保持完整bank、loss、rank、cap、数据和
+    positive-only合同不变；先做真实forward/gradient/materialization及短资格，不做手工幅度或LR/seed/rank/scale扫；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

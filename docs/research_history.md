@@ -2562,3 +2562,51 @@ Spatial9由1到3，Goal/Long仍均为0。因此m200是部分shared信号，不�
 factor。m200评测释放gpu02物理0/1后，在launch前同时live检查gpu01/gpu02；前者仍为本shared四卡，后者两卡仅有
 `209/162MiB`低占用且util 0%。随后并行启动Object18与Long36的正确视频activation诊断，训练继续到m400，不读取wrong、
 shuffle或reverse。
+
+## 126. m200正确样本几何与functional VJP把残余瓶颈定位到共享family readout
+
+rank-balanced m200的三条冻结activation证据位于
+`runs/analysis/pi05_ecp_policy_response_writer_rank_balance_m200_rank_geometry_task18_3e589695_20260904.json`、对应
+`task25`与`task36`文件；分别覆盖held Object、Goal、Long的固定correct demo5。三者均为diagnostic-only、零梯度、零checkpoint
+selection且不读取negative。初始rank centered/mean RMS约`.83`，到第二Composer block仍约`.47--.56`；q/v参与秩中位为
+`1.08--1.51/1.13--1.49`，确认parameter-free balance已经打开rank与bank read。action-out则仍仅`1.00--1.04`，平均绝对scale约
+`1.13--1.22e-5`，比q约`3.69--3.71e-4`小约30倍；cap factor恒为1。Object/Goal/Long的Process innovation均值为
+`.589/.380/.328`，最大occupancy比例为`.518/.424/.672`，说明Long动态偏弱但三者都没有统一事件坍缩。
+
+六个gradient-authorized正确Panel-A任务的冻结functional归因保存在
+`runs/analysis/pi05_ecp_policy_response_writer_rank_balance_m200_positive_family_credit_a_3e589695_20260904.json`与对应`_b_`文件。
+它使用真实PI05 functional LoRA leaf gradient，把每个family的VJP链回同一个scale head，但optimizer更新为0、negative reads为0且不
+参与checkpoint选择。action-out scale-head梯度范数均值`.09209`，与q的`.10237`同量级；4/6任务沿当前action-out mobile方向的
+径向导数为负。但action-out聚合梯度/各task梯度范数和仅`.247`，q/v/action-in也仅`.501/.334/.315`，共享head上q--v和
+q--action-in聚合梯度cosine为`-.733/-.879`。因此action-out弱不是缺functional credit、断图或cap，而是首先指向跨family共享
+末端readout的梯度所有权冲突与跨task相消。m400闭环与同构几何仍是相邻裁决；若稳定复现，再只检验family-local可复制readout，
+不以额外loss、人工幅度或超参扫描替代。
+
+## 128. rank-balanced m400显著退化并把最早失败收敛到typed Composer边界
+
+同一fresh `3e589695` shared run完整保存m200/m400 checkpoint。m400 held5 correct-only strict250为`35/250`，逐task
+Long/Goal/Object/Spatial0/Spatial9=`0/0/1/33/1`、breadth`3/5`；相对m200的`45/250`为
+`30 retained/5 gained/15 lost`、paired exact `p=.0413895`。10个gradient tasks的Panel-B held benefit由
+`.000429`升至`.000526`，但两个true-task-held由`-.000438`恶化到`-.002605`、全视频通过数由`1/2`降为`0/2`。
+训练Panel-A正benefit比例持续升至最后50步的`.852`，故该相邻结果排除了“尚未训够”：见过task的functional拟合增强时，真正
+task-disjoint和闭环反而同步退化。
+
+m400 Object18/Goal25/Long36冻结activation显示matching target/rank query cosine仍为`.99925--.99952`。Process common范数
+约`70--74`而language约`11.35`；Composer owner约`0.99`又被family约`11.66`淹没，同family q/v owner-bias cosine达
+`.99247/.99318`。无梯度的per-source normalization反事实把四family跨task centered/mean RMS由
+`.01783/.02237/.01880/.02241`提高到`.03009/.03515/.03503/.03767`；单纯追加memory没有同等效果。
+显示owner/family独立pre-norm可把两个block后q/v跨target centered/mean RMS由`.03713/.04595`提高到
+`.18353/.20492`，Object/Goal/Long一致复现。m400六任务VJP同时
+显示四family独立聚合平方范数和为当前共享scale-head梯度平方范数的`2.0034x`，action-out在`5/6`任务已要求缩小当前方向却仍随
+共享head增长。因此下一fresh修正统一定义为Composer typed-boundary ownership：输入分别保留rank/owner/family/common/language，
+输出relative rank gains按family拥有参数；它不改变full bank、真实X/Y、signed pooling、rank4、cap、positive-only loss或唯一rank16。
+
+## 129. m400收尾失败是NFS mmap生命周期错误，checkpoint与独立Panel-B证据完整
+
+原训练进程完成optimizer400、两枚checkpoint和两checkpoint Panel-B后，在rank0删除105GB共享safetensors cache时触发NFS
+open-file `.nfs*`语义，`rmtree`报`ENOTEMPTY`，其它rank随后在barrier超时。因此原root保留checkpoint/metrics但不伪造
+`result.json`或`completion.json`。clean detached `3e589695`上的只读恢复文件为
+`runs/analysis/pi05_ecp_policy_response_writer_rank_balance_s400_panelb_recovery_3e589695_gpu01p0156_20260904.json`，明确记录
+零gradient、零optimizer update、零wrong reads以及两checkpoint完整Panel-B。工程修复要求所有rank先清空mmap tensors并GC、
+barrier后再由rank0删除，最后再barrier；删除异常同步到全部rank而不再遗留barrier timeout。新增回归后Writer 29项测试通过。
+该故障不改变任何训练或科学结果。

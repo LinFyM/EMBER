@@ -79,6 +79,12 @@
   所以m100改变了真实闭环行为并保留基本breadth，但净低于carrier与前一m200，不是通过性结果。shared训练随后完整保存
   macro200；live检查gpu01/gpu02后，gpu01四卡继续零梯度Panel-B，gpu02物理`0/1`仅与他人约`0.15--0.19GB`、0% util进程
   安全共驻，并于04:18 CST启动macro200的同合同物化与strict250，未超过6张EMBER GPU。
+- typed-boundary shared run已自然exit0：200条metrics、macro100/200 checkpoint、`result.json`与`completion.json`完整，训练/
+  Panel-B/总wall为`3348.04/448.99/4072.12s`；98GiB mmap cache在所有rank释放映射后已成功删除，验证NFS cleanup修复。
+  Panel-B从m100到m200时，10个gradient tasks的fit/held benefit均值由`.0001963/-.0000465`改善到
+  `.0005009/.0002095`，全视频为正由`4/10`到`5/10`；但两个true-task-held的fit/held仍为
+  `-.0006155/-.0008589`与`-.0008069/-.0007323`，全视频为正从`1/2`降到`0/2`。所有held、wrong与Panel-B backward
+  均为0。该证据说明typed ownership改善见过task的shared functional拟合，却尚未解决task-disjoint映射；macro200闭环正在运行。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

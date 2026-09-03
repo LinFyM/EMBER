@@ -2462,3 +2462,17 @@ policy-noise序列，其共同前缀也全部一致，因此差异是paired clos
 task-disjoint性能增益。Object只净丢1，Goal/Long仍与carrier同为0，主要净退化来自Spatial0的4 gained/9 lost；所以m100更像
 在旧成功集附近产生中等churn、收益不足以覆盖破坏，而不是全局方向失效。macro200与两checkpoint零梯度Panel-B已经按原计划继续，
 在它们完成前不以m100单点修改loss、幅度、rank、LR或seed。
+
+### 136. typed ownership改善seen functional，但true-task-held仍未泛化
+
+同一shared run的两checkpoint Panel-B已随训练自然完成。m100的10个gradient tasks fit/held benefit均值为
+`.000196276/-.000046469`，`4/10` task三条视频全部优于carrier；m200改善为`.000500946/.000209472`与`5/10`。
+但两个零梯度true-task-held在m100的fit/held均值为`-.000615505/-.000858905`，m200为
+`-.000806899/-.000732310`，全视频为正由`1/2`降为`0/2`。具体看，meta-held task2从m100的fit/held
+`+.0004504/+.0000727`翻为m200的`-.0002846/-.0002519`；target-held task74始终为负，虽由
+`-.0016814/-.0017905`收窄到`-.0013292/-.0012127`。Panel-B、true-task-held与wrong backward计数均为0。
+
+因此独立typed source和family readout确实提高了已见任务的functional学习，却没有把收益稳定迁移到新的task组合；这与m100
+闭环低于carrier方向一致。当前最早的已证实数值ownership错误已经被修复，不能再把剩余失败简单归因于source被量纲淹没；下一层
+应由m200闭环以及冻结canonical-query、family credit和task-disjoint分解共同判断，是标准Composer仍把条件压成seen-task shortcut，
+还是cross-episode functional目标本身与闭环成功的局部梯度错配。此时继续追加同构步数、手工放大family或扫超参都没有证据基础。

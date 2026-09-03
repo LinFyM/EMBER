@@ -2638,3 +2638,12 @@ clean detached `682f7ecf`的shared macro100为五个held5 task分别从固定cor
 相对stable carrier43为`32 retained/7 gained/11 lost`，相对前一rank-balanced m200=45为`30/9/15`；task/state/env/policy
 seed及policy-noise共同前缀逐条配对。该点保留基本闭环能力但没有超过carrier，不能授权Final或negative controls；macro200
 相邻strict250与同run两checkpoint Panel-B继续按预注册合同裁决。
+
+## 133. typed-boundary shared训练与Panel-B完成
+
+shared run自然完成200步，训练/Panel-B/总wall为`3348.04/448.99/4072.12s`，两枚checkpoint、200条metrics、result与
+completion完整；峰值allocated/reserved约`39.99/46.75GB`。所有rank先释放safetensors mmap后，98GiB临时cache正常删除，
+没有复现旧NFS `.nfs*`收尾故障。m100/m200的10个gradient tasks fit/held benefit由
+`.0001963/-.0000465`升到`.0005009/.0002095`；两个true-task-held则分别为
+`-.0006155/-.0008589`与`-.0008069/-.0007323`，全视频为正由`1/2`降为`0/2`。这保留了seen-task学习证据，
+但没有证明task-disjoint shared映射；macro200 held5 strict250继续裁决真实闭环。

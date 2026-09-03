@@ -95,7 +95,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     dense/streaming exact bank attention、整视频signed pooling与output-group归约，四卡10-step由`34.39s/step`降至`4.05s/step`
     （`8.48x`）；relation scorer等价收缩又使task93快约`36%`。microbatch4、CPU activation offload和gradient packing经实测
     收益不足或明显变慢而淘汰；Evaluator当前保留实测更快的`3 replicas x 8 envs`。选择性8GiB cache复制已把当前event-measure
-    前两步压到约10秒；`4 * functional_rows + sampled_frames`新cost模型在旧110步真实回放预计再省`2.30%`，待当前run交叉复核。
+    完整110步均值为`10.06s`且四卡稳定段平均SM约`88--90%`；`4 * functional_rows + sampled_frames`新cost模型在旧110步
+    真实回放预计再省`2.30%`，已通过22项测试、集成并推送，且不改变当前frozen run的逐步分配。
     继续以真实phase timing、峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程
     完美才获取阶段科学结果；task batch与meta/target比例始终由实验配置决定；
 20. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；

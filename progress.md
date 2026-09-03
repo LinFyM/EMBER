@@ -4,7 +4,7 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main@a049f61e17ad9e5eae55b67b8de7be4aa686bfc9`；最近一轮完整科学结果是
+- canonical集成目标为clean pushed `main@959d046f87df5ce8c72a886bc164eb447ff8cf1e`；最近一轮完整科学结果是
   `33ee1330`的relation-summed 12-task macro70/110训练、Panel-B与held5 strict250，它已正式non-pass。下一matched
   event-assignment base-measure修正已集成并推送；其clean detached短资格正在运行。性能线同时在独立
   `codex/policy-response-writer-throughput-2`工作树继续，二者不重叠写入。最新专家补充意见已逐字归档。
@@ -52,7 +52,12 @@
 - 旧动态放置把一条functional policy row与一帧full bank等价计价，低估了冻结policy VJP。对relation-summed 110步逐步回放显示，
   用`4 * functional_rows + sampled_full_bank_frames`作纯执行成本后，相对真实最优makespan的平均比值由`1.0365`降到`1.0135`，
   p95由`1.0868`降到`1.0420`，44步改善、0步变差；预计总wall约再降`2.30%`。对应实现不假定每步6 task或固定meta/target比例，
-  定向测试`3 passed`；待当前fresh run积累足够event-measure实测后复核并集成，不中断当前科学短跑。
+  完整Writer定向测试`22 passed`，已集成并推送；当前event-measure 110步在既定replica eligibility下新旧模型给出相同分配，因此不影响
+  正在运行的frozen authority，主要改善未来不同task batch、role比例、K与cache拓扑。
+- 当前event-measure完整110步的训练wall均值/中位/p95为`10.056/10.044/10.643s`，对比遗漏replica预算的前6步基线均值
+  `13.624s`快`26.2%`；真实rank load的`max/mean`由`1.619`降到`1.216`，平均最长--最短gap由`8.01s`降到`4.19s`。
+  gpu01物理`0/1/5/6`稳定训练段平均SM为`88.2/88.5/89.4/90.2%`，活跃采样比例均超过`99.6%`。剩余gap主要是task93等单task
+  不可切分下界，不是某些rank长期空闲。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

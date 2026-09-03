@@ -2211,3 +2211,22 @@ task1 root为
 launcher exit0完整，held/Panel-B backward为0，source policy冻结且输出仍为唯一完整rank16。相对旧full，task1 recovery有所减弱，
 task93 held则从`.300885/.280724`提高到`.409146/.418759`。因此三项修正不是对所有任务统一缩小update，full task-local跨视频容量仍然
 明确；最早未解决接口继续是shared task-disjoint mapping，而不是允许回退coarse。
+
+## 112. full native-bank horizon合同修复
+
+在corrected full 73-task shared运行期间继续逐层核对owner新边界，发现Process的full response前端虽然保留每owner的
+`50 horizon x 8 channel` tokens，Composer的辅助bank context仍在input/output keys上调用`.mean(2)`，该维正是Action Expert
+horizon。最终signed pooling仍逐horizon处理真实native values，但rank query的bank read已提前丢失horizon，因此不满足active design
+“native bank不得为方便提前平均probe或horizon”的合同。对应formal root
+`runs/outputs/pi05_ecp_policy_response_writer_corrected_73task_k1_component_full_s1210_7d435ea3_gpu01p2456_20260903/`在optimizer
+step156/effective146主动停止；没有macro checkpoint，不能作为full函数类的科学裁决。
+
+修复提交`89833c235dea8df069418642e13400587dede385`删除两处horizon mean。现有process-conditioned rank query直接读取完整
+frame/probe/horizon/bank-type key集合；实现用与dense MHA等价的chunked online-softmax累计分子、分母和最大值，并在反向重算attention
+激活，避免百万token的连续副本。每个frame chunk内的output groups只做保持group/probe/horizon/type各轴的向量化projection，不做
+均值、抽样或近似。dense/streaming等价、完整token计数、梯度、static-repeat与既有Writer/static-adapter定向测试共`18 passed`。
+
+真实task93 smoke覆盖最长fit demo3的87个stride-5 frames、19 layers、2 probes、50 horizons、38-target native X/Y、functional与
+process backward及唯一76-tensor rank16 materialization；峰值allocated/reserved为`42.42/47.14GB`，无OOM/NaN。单卡两步shared
+profile分别使用87/79帧视频，用时`33.29/28.54s`，Frame/Event/Process/Composer梯度均finite nonzero。该profile只证明完整horizon
+实现可训练；下一科学证据必须来自该提交合并推送后的fresh 73-task formal和held5 closed-loop。

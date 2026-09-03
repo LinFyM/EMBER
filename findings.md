@@ -46,6 +46,13 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 `.300885/.280724`显著提高。修正不是简单把所有任务幅度压小，也没有把full压成零容量；两任务共同把最早未解决接口收窄为full的
 shared task-disjoint映射，不能以coarse绕开完整horizon。
 
+进一步审计发现，首个所谓full shared实现只在Policy-Response Process中保留了完整`50 x 8` tokens；Composer给rank query的辅助
+native-bank memory仍对horizon做`.mean(2)`，即使最终signed pooling继续逐horizon读取，也不满足“native bank不得提前平均probe或
+horizon”的active合同。该运行在macro前主动停止，不能解释为full科学non-pass。修正后rank query以现有learned cross-attention完整读取
+frame/probe/horizon/bank-type keys，并用exact chunked online softmax和activation recomputation控制显存；它不是新增summary、抽样或
+近似压缩。87帧最长训练视频的真实smoke与两步shared profile均通过，说明完整horizon合同在单张A40上可训练。后续full shared裁决必须
+从这一fresh实现开始。
+
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
 `29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，

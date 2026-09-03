@@ -4,8 +4,8 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；当前最新clean pushed scientific code tip为
-  `854b45bbf883a64b40d5c05505cd16dd654a9703`，后续提交只持久化本轮formal结果。最新专家补充意见已逐字归档。
+- canonical集成目标为clean pushed `main`；当前最新scientific code tip为
+  `89833c235dea8df069418642e13400587dede385`，合并推送后作为下一轮formal冻结authority。最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -37,7 +37,15 @@
   `.417139/.409146`，macro110为`.425338/.418759`；两个checkpoint的全部三条视频均优于carrier，held/Panel-B backward为0，
   source policy冻结且仍为唯一rank16。相对旧full task93的`.337207/.300885`与`.346604/.280724`明显提高；结合task1，修正并非
   对所有任务统一缩小update，而是在完整horizon路径上保留并改善部分current-bank有效方向。两条task-local进程已结束并释放gpu02
-  物理4/6；73-task full shared继续运行，当前不以不匹配world topology的额外arm填卡。
+  物理4/6；当前不以不匹配world topology的额外arm填卡。
+- 对full路径继续逐层审计时发现，Process前端虽完整保留`50 x 8` response tokens，但Composer的辅助native-bank context仍通过
+  `.mean(2)`提前平均了50-step horizon；最终signed pooling虽逐candidate保留horizon，该context read仍违反owner与active design的
+  full-only合同。因此当时的73-task full formal在optimizer step156/effective146主动中止，未到macro610且不形成科学裁决。修复删除
+  两处horizon mean，让process-conditioned rank query对完整frame/probe/horizon/bank-type keys做数学等价的chunked online-softmax
+  cross-attention；output groups只作保持全部轴的向量化kernel融合，activation checkpoint避免百万token连续副本。定向Writer/static
+  adapter测试为`18 passed`。task93最长fit demo3含87个采样帧，真实smoke的38-target forward、functional/process backward与唯一
+  rank16物化全部通过，峰值allocated/reserved为`42.42/47.14GB`；两步shared profile为`33.29/28.54s`，全部梯度finite nonzero。
+  下一步从该clean pushed commit fresh重启同一73-task/K1/component-init full formal。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

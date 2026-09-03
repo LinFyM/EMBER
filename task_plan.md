@@ -79,8 +79,10 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     实际未限幅/global-clip/static-slot parameterization的相邻裁决；
 16. [x] 完成per-target `B@A` RMS cap、独立gradient clipping与dynamic-value合同实现和真实smoke；原corrected coarse shared/task-local
     在owner更新方法边界后分别于step121/47/29主动中止，不形成checkpoint裁决，也不再续跑；
-17. [ ] 只用full重新运行corrected 73-task/K1/component-init shared及task1/task93 task-local容量诊断。先裁决修正后的完整
-    horizon路径；若task-local仍强而shared弱，再依据horizon attention利用率、process预测与task-disjoint泛化证据修正可复制
+17. [ ] 只用full重新运行corrected 73-task/K1/component-init shared及task1/task93 task-local容量诊断。task-local已完成且保持
+    跨视频容量；首个shared在审计发现Composer辅助bank context仍提前平均horizon后于macro前主动停止。现已改为对完整
+    frame/probe/horizon/bank-type tokens做exact chunked learned attention并通过最长视频真实profile，下一步从clean pushed commit
+    fresh重启shared。若task-local仍强而shared弱，再依据horizon attention利用率、process预测与task-disjoint泛化证据修正可复制
     Frame/Composer接口，不回退到均值、coarse或等价压缩；
 18. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 19. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；

@@ -146,6 +146,18 @@ D_{k,e,j}=E_{k,e,j}-C_{k,j}.
 C表示task、scene与共有过程context；D表示event-relative process innovation。多视频在Module 1后仍保持为无序集合，不先平均为单个
 Program。每条视频的candidate base mass按1/K正规化，避免长视频或更多frames改变video权重。
 
+typed-boundary资格进一步证明，仅在Composer query入口保留source所有权还不够：`D`虽有task-specific内容，其RMS约
+`.04--.06`，而`C`约`5`。因此下一fresh在所有直接消费Process common/innovation的边界使用同一个无参数合同。令
+
+\[
+\mathcal N(x)=\operatorname{LN}_0(x),\qquad
+M_{k,e,j}=W_M[\mathcal N(C_{k,j}),\mathcal N(D_{k,e,j})],
+\]
+
+其中event memory读取`M`，signed dynamic scorer读取`\mathcal N(D)`，causal predictor的prefix state见8.2。`C,D`与原来的
+`E=C+D,D`信息等价，但不再重复注入大尺度`C`；`LN_0`没有affine或新参数，且`LN_0(0)=0`，所以static-repeat的exact-zero
+innovation仍不能产生mobile update。该修正不改变event assignment、完整50-horizon bank、X/Y、signed pooling、rank或LoRA幅度规则。
+
 ## 6. Module 2：Current-Video Native Factor Composer
 
 ### 6.1 输入与查询
@@ -339,6 +351,12 @@ functional loss。generated LoRA必须实际安装到frozen policy；不拟合te
 
 从截至frame t的prefix-only表示预测冻结PI0.5在未来frame t+delta的policy-response变化。合同为：
 
+\[
+S_{k,t,j}=\frac{\mathcal N(C_{k,j})+\mathcal N(I_{k,t,j})}{\sqrt 2},
+\]
+
+其中`I_{k,t,j}`是只由不晚于`t`的frames形成的prefix innovation。固定系数只保持两条source的方差，不学习或人工规定预测幅度。
+
 - target使用冻结raw evidence或固定teacher projection；
 - predictor侧的learned projection不能同时充当可漂移target；
 - causal auxiliary forward不得读取t之后的frames、current-to-final relation、future event assignment或target interval；
@@ -406,9 +424,11 @@ task权重、K、optimizer cadence或完整50-horizon内容，formal resume冻�
 checkpoint依据correct-only表现、task breadth与相邻稳定性选定。选定并冻结后才一次性运行same-task-other、wrong、no-video、
 language-only、first+final、shuffled与reversed controls；这些结果不回流训练或loss设计。
 
-typed-boundary首个fresh资格使用圆整的optimizer100/200 checkpoints；在当前每步12个task的配置下，73个gradient tasks各约获得
-16与33次暴露。它与旧m200具有matched总暴露量，同时把未证明架构的最长首跑限制在约一小时训练，而不是沿用历史70/110或再次先跑
-400步。task-local正控同步缩短为optimizer50/100且只作容量诊断，不是阻塞shared闭环的人为Gate。
+typed-boundary首个fresh资格已经完整结束。task-local task1/task93的50/100四点均在fit/held视频上优于carrier，证明容量保留；
+shared m100/m200 held5 strict250却为`39/32`，m200显著低于carrier43，且seen functional继续改善时true-task-held与闭环退化。
+归因进一步发现Process `D`保留task-specific内容，但raw consumer接口让`C`在causal prediction与Composer内重复淹没`D`；冻结
+`C/D`分源归一反事实显著打开query与dynamic branch。故下一资格只替换该consumer boundary，保持teacher、loss、数据、task权重和
+其余模型不变，fresh运行optimizer50/100。50点在训练继续时尽快物化评测，100点提供相邻稳定性；首跑最长约半小时训练，不先扩展。
 
 ## 10. 后续扩展与Final
 

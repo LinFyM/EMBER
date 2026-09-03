@@ -4,6 +4,19 @@
 
 ## 当前快照
 
+- 当前最前沿已经从typed-boundary的入口/末端所有权推进到Process consumer边界。clean detached `682f7ecf`的73-task
+  shared run、两checkpoint Panel-B、m100/m200物化与held5 correct-only strict250均完整结束：m100/m200为`39/32`，m200逐task
+  Long/Goal/Object/Spatial0/Spatial9=`0/0/2/28/2`、breadth`3/5`；相对carrier43为
+  `28 retained/4 gained/15 lost`、paired exact `p=.01921`，正式non-pass。family-owned head已让四family梯度支持严格正交，
+  但matching target/rank跨task query仍约`.9984` cosine。冻结归因显示Process event innovation `D`并未丢失task-specific
+  内容，跨task cosine仅约`-.02--.18`、centered/mean约`1.1`；真正问题是`D`的RMS约`.04--.06`，而common `C`约`5`，当前
+  causal predictor直接读取`C+D_last`，Composer又读取冗余的`[E=C+D,D]`并以raw `D`产生dynamic logits，使同一量纲失配在
+  prediction与factor两条消费边界重复出现。shared m100/m200、六个gradient-authorized任务及task-local task1的causal predictor
+  都不如零预测；因此不是门槛太高、没训练够或task-local容量不足。零梯度冻结反事实只将`C/D`分别无affine LayerNorm，就把两个
+  Composer blocks后的跨task区分比由`.03172`提高到`.07324`，dynamic branch TV提高约一个数量级以上。下一fresh只做这一处
+  common--innovation typed boundary，不同时更换teacher/loss；先完成代码、定向测试和真实full smoke，随后跑optimizer50/100
+  的73-task短资格并立即做相邻闭环。以下条目保留此前执行与审计时间线，不覆盖本条当前状态。
+
 - canonical集成目标为clean pushed `main`。上一轮full event-measure
   73-gradient-task资格已完成训练、m200/m400 Panel-B、物化与两次held5 correct-only strict250：闭环仅`30/32`，breadth
   `2/5`与`3/5`且Goal/Long均为0，m400仍显著低于carrier43。根因审计进一步定位到Composer最早query融合处：约`67`范数的

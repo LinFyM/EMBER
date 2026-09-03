@@ -117,7 +117,7 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `.000740/.000316`升到`.001023/.000547`，两个true-task-held均值仍为负；held5 strict250仅`30/32`，breadth`2/5`与
     `3/5`，Goal/Long均为0。m200到m400为`20 retained/12 gained/10 lost`，相对carrier43的m400仍为
     `27/5/16`，故数据扩大和训练加倍没有解决shared闭环；
-22. [ ] 已把最早失效接口定位为Composer query seed的数值rank坍缩：raw相加时约`67`范数的Process common压过约`1`范数的
+22. [x] 已把最早失效接口定位为Composer query seed的数值rank坍缩：raw相加时约`67`范数的Process common压过约`1`范数的
     rank token，m200/m400的实际mobile update均接近rank1。只对rank context与shared task context分别做无参数LayerNorm后相加，
     冻结m200反事实恢复rank query与部分有效factor谱；不新增loss、正交约束、solve或网络分支。修正已通过定向测试、真实
     forward/gradient/materialization smoke并合并推送。当前从clean detached `3e589695`运行73-task fresh m200/m400 shared资格；
@@ -135,15 +135,21 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     language、family淹没owner的第二层typed-source坍缩已由冻结反事实复现。下一fresh只修Composer边界所有权：分别pre-norm并
     方差平衡rank/owner/family/common/language，relative rank-gain head按family分行，保持完整bank、loss、rank、cap、数据和
     positive-only合同不变；实现、30项测试、config互斥预检及真实task1 forward/gradient/76-tensor rank16 materialization smoke
-    已通过。task1/task93的50/100正控现已自然完成，四个checkpoint的三条fit/held视频全部优于carrier；73-task shared
-    100/200短资格从clean `682f7ecf`完成训练。m100 held5 strict250为`39/250`、逐task`0/0/3/33/3`、breadth`3/5`；
-    相对carrier43为`32 retained/7 gained/11 lost`，故m100不是通过性结果。macro200 strict250与两checkpoint Panel-B正在按
-    原合同运行；Panel-B已显示gradient tasks held benefit由`-.0000465`改善到`+.0002095`，但两个true-task-held在两点
-    均值仍为负且全视频通过从`1/2`降为`0/2`。在macro200闭环与针对性归因齐全前不做手工幅度、额外loss或
-    LR/seed/rank/scale扫；
-23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    已通过。task1/task93的50/100正控自然完成，四个checkpoint的三条fit/held视频全部优于carrier；73-task shared 100/200
+    短资格也从clean `682f7ecf`完整结束。m100/m200 held5 strict250为`39/32`，后者相对carrier43为
+    `28 retained/4 gained/15 lost`、`p=.01921`，Goal/Long仍为0。与此同时gradient tasks held Panel-B由
+    `-.0000465`改善到`+.0002095`，两个true-task-held却始终为负并从`1/2`全视频通过降为`0/2`，正式判定该
+    typed-boundary参数化non-pass。family-local readout已经消除跨family梯度争抢，但跨task query仍约`.9984` cosine；后续
+    归因确认Process的`D`本身保留task-specific动态，而当前predictor的`C+D_last`及Composer的`[E=C+D,D]`和raw `D`
+    scorer在消费边界重复让约百倍更大的`C`淹没`D`。causal predictor在shared、gradient-authorized乃至task-local强正控上均不如
+    零预测，故失败不是训练不足，也不是task-local容量不足；
+23. [ ] 只修common--innovation typed consumer boundary：以无affine `LN0`分别规范`C`与`D`，causal state使用
+    `(LN0(C)+LN0(D_last))/sqrt(2)`，event memory使用信息等价但不冗余的`[LN0(C),LN0(D_e)]`，signed dynamic scorer读取
+    `LN0(D_e)`；不新增模块、loss、teacher、task table、scale规则或coarse路径。完成定向测试与真实full forward/gradient/
+    materialization smoke后，立即运行fresh 73-task optimizer50/100短资格并做相邻held5 correct-only strict250；
+24. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+25. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+26. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

@@ -2476,3 +2476,35 @@ task-disjoint性能增益。Object只净丢1，Goal/Long仍与carrier同为0，�
 闭环低于carrier方向一致。当前最早的已证实数值ownership错误已经被修复，不能再把剩余失败简单归因于source被量纲淹没；下一层
 应由m200闭环以及冻结canonical-query、family credit和task-disjoint分解共同判断，是标准Composer仍把条件压成seen-task shortcut，
 还是cross-episode functional目标本身与闭环成功的局部梯度错配。此时继续追加同构步数、手工放大family或扫超参都没有证据基础。
+
+### 137. typed-boundary相邻闭环退化，并把根因推进到common--innovation接口
+
+macro200 held5 correct-only strict250已完整自然结束，结果为`32/250`，Long/Goal/Object/Spatial0/Spatial9=
+`0/0/2/28/2`、breadth`3/5`。相对macro100为`28 retained/4 gained/11 lost`、paired exact `p=.118469`；相对stable
+carrier `43/250`为`28/4/15`、`p=.019211`；相对前一rank-balanced m200 `45/250`为`24/8/21`、`p=.024120`。
+所以多100步在继续改善seen-task Panel-B的同时，使真实task-disjoint闭环显著低于carrier；当前typed-boundary参数化正式non-pass，
+不能以门槛过高或训练不足解释，也没有资格运行negative controls。
+
+冻结m100/m200的Object18、Goal25、Long36 canonical几何显示，rank轴仍有约`.61 -> .45--.47`的block后区分，但matching
+target/rank跨task median cosine从`.998249`进一步升到`.998406`。family-owned scale readout把不同family的梯度支持确实变成严格
+正交；六个正确Panel-A任务内，q/v/action-in/action-out的跨task聚合范数比分别为`.293/.672/.288/.723`，说明旧跨family争抢已被
+消除，但q等family内部的两两梯度仍大量相反。修复family所有权没有生成缺失的task条件。
+
+最早失效接口不是Process完全没有动态：三个held正确视频的event innovation跨task median cosine只有约`-.02--.18`，centered/mean
+RMS约`1.1`，即`D`确实携带task-specific内容；但其RMS仅约`.04--.06`，Process common约`5`。当前causal predictor直接读取
+`C + frame_innovation`，Composer event memory又把`E=C+D`与`D`按原尺度拼接，最终branch也将原尺度`D`送入dynamic logits。
+因此同一个约百倍量纲差在prediction与factor两条消费边界上重复淹没视频动态。
+
+真实预测证据与该定位一致。shared m100/m200在三个task-disjoint正确视频上的平均causal loss为`.058356/.058293`，直接预测零为
+`.058017`；相对零预测的MSE改善为`-4.57%/-4.97%`，prediction--target cosine约`.0047/-.0068`。六个gradient-authorized
+正确视频在m200同样只有`.067436`对零预测`.067417`、MSE改善`-1.22%`，36个cutoff仅`11`个优于零；各prefix Process state的
+时间cosine约`.99986--.99995`，而真实相邻future-response变化接近正交。甚至已有强functional recovery的task-local task1 m100，
+六个cutoff的causal loss仍为`.053805`对零预测`.034210`，全部更差。这证明task-local闭环容量不是causal objective学成的结果，
+当前process监督实际没有完成专家赋予的时序职责。
+
+零梯度、零outcome的冻结反事实只在三处对`C`与`D`分别做无affine LayerNorm：prediction state保持两源，event memory用完整等价的
+`[LN0(C), LN0(D_e)]`代替冗余的`[E_e,D_e]`，signed branch用`LN0(D_e)`；static exact-zero仍为zero。m200两个Bank blocks后的
+跨task query cosine由`.998406`降至`.991995`，centered/mean由`.03172`升至`.07324`；各family input dynamic-logit量从
+约`.007--.021`升至`.24--.43`，branch TV从`.004--.019`升至`.138--.411`。该反事实不证明闭环性能，却证明现有标准blocks在
+获得数值可见的`D`后能传递task条件。所以下一fresh只统一修复这一common--innovation typed boundary，不新增网络、loss、人工
+negative、rank/scale规则或coarse路径；随后用短optimizer50/100 shared相邻闭环直接裁决。

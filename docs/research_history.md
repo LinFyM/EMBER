@@ -2646,4 +2646,23 @@ completion完整；峰值allocated/reserved约`39.99/46.75GB`。所有rank先释
 没有复现旧NFS `.nfs*`收尾故障。m100/m200的10个gradient tasks fit/held benefit由
 `.0001963/-.0000465`升到`.0005009/.0002095`；两个true-task-held则分别为
 `-.0006155/-.0008589`与`-.0008069/-.0007323`，全视频为正由`1/2`降为`0/2`。这保留了seen-task学习证据，
-但没有证明task-disjoint shared映射；macro200 held5 strict250继续裁决真实闭环。
+但没有证明task-disjoint shared映射；macro200 held5 strict250的最终裁决见下一节。
+
+## 134. typed-boundary相邻non-pass与common--innovation消费边界定位
+
+macro200 held5 correct-only strict250最终为`32/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/2/28/2`、breadth`3/5`；
+相对m100为`28 retained/4 gained/11 lost`，相对carrier43为`28/4/15`、paired exact `p=.01921`。所以typed source与
+family-owned readout没有形成task-disjoint闭环优势，且不能以更多训练解释：m100到m200时gradient tasks的held functional改善，
+true-task-held仍全部为负，闭环从39降到32。
+
+六个正确Panel-A任务的VJP确认四个family-owned scale rows梯度支持严格正交，旧跨family冲突已被消除；Object18、Goal25、Long36
+的冻结几何却显示matching target/rank跨task query仍约`.9984` cosine。继续向前定位发现，Process innovation `D`跨task并不相似
+（median cosine约`-.02--.18`、centered/mean约`1.1`），但RMS仅`.04--.06`，common `C`约`5`。现有predictor直接使用
+`C+D_last`，Composer event memory拼接`[E=C+D,D]`，dynamic branch也读取raw `D`，使同一约百倍量纲差在两个consumer边界重复
+淹没动态。
+
+causal预测在task-disjoint m100/m200、六个gradient-authorized任务及已有强functional recovery的task-local task1上都不如直接预测
+零，证明该辅助目标尚未学得专家要求的时序职责。冻结、零梯度反事实只把`C/D`分别做无affine LayerNorm，并用信息等价的
+`[LN0(C),LN0(D)]`替换`[E,D]`、让signed branch读取`LN0(D)`，就把两个Composer blocks后的跨task centered/mean由
+`.03172`提高到`.07324`，dynamic branch TV由`.004--.019`提高到`.138--.411`。下一fresh因此只修这一处typed consumer
+boundary；不同时修改teacher、loss、rank、scale、bank、数据或正样本合同，并用optimizer50/100短资格作真实闭环裁决。

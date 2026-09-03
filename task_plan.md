@@ -89,14 +89,15 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `42/34`、breadth均`3/5`且Goal/Long为0，两个true-task-held继续为负，因此该“先跨event求和、后非线性score”的具体接口
     non-pass。当前只把soft `alpha(e,t,m)`改为event x relation候选的base measure，以未求和`D(e,j)`产生动态logit；full
     50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变。显式枚举等价测试与最长task93 formal-rows16真实profile
-    已通过，单步`8.93/8.20s`且峰值reserved `46.43GB`；从clean pushed detached commit运行短资格。70/110只作历史可比节点，
-    不是不可调整的理论步数，首段成本按真实profile与早期有效信号控制；
+    已通过，单步`8.93/8.20s`且峰值reserved `46.43GB`；clean pushed detached短资格现已在四卡运行，前两步为
+    `10.56/10.14s`。70/110只作历史可比节点，不是不可调整的理论步数，首段成本按真实profile与早期有效信号控制；
 19. [ ] 吞吐线继续并行推进：第一阶段已完成选择性CPU evidence cache复制、outcome-independent动态task放置、
     dense/streaming exact bank attention、整视频signed pooling与output-group归约，四卡10-step由`34.39s/step`降至`4.05s/step`
     （`8.48x`）；relation scorer等价收缩又使task93快约`36%`。microbatch4、CPU activation offload和gradient packing经实测
-    收益不足或明显变慢而淘汰；Evaluator当前保留实测更快的`3 replicas x 8 envs`。继续以真实phase timing、峰值显存、rank idle
-    tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程完美才获取阶段科学结果；task batch与
-    meta/target比例始终由实验配置决定；
+    收益不足或明显变慢而淘汰；Evaluator当前保留实测更快的`3 replicas x 8 envs`。选择性8GiB cache复制已把当前event-measure
+    前两步压到约10秒；`4 * functional_rows + sampled_frames`新cost模型在旧110步真实回放预计再省`2.30%`，待当前run交叉复核。
+    继续以真实phase timing、峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程
+    完美才获取阶段科学结果；task batch与meta/target比例始终由实验配置决定；
 20. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 21. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 22. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

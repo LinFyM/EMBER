@@ -4,9 +4,9 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main@6cb3e486b9f5701b9b0fab164ae5f45c6aa8283b`；最近一轮完整科学结果是
-  `33ee1330`的relation-summed 12-task macro70/110训练、Panel-B与held5 strict250。它已正式non-pass。下一matched
-  event-assignment base-measure修正正在独立`codex/policy-response-writer-event-measure`实现分支接通；性能线同时在独立
+- canonical集成目标为clean pushed `main@a049f61e17ad9e5eae55b67b8de7be4aa686bfc9`；最近一轮完整科学结果是
+  `33ee1330`的relation-summed 12-task macro70/110训练、Panel-B与held5 strict250，它已正式non-pass。下一matched
+  event-assignment base-measure修正已集成并推送；其clean detached短资格正在运行。性能线同时在独立
   `codex/policy-response-writer-throughput-2`工作树继续，二者不重叠写入。最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
@@ -30,8 +30,16 @@
   event x relation候选：`log alpha(e,t,m)`直接进入base log-mass，未求和`D(e,j)`产生bias-free动态logit；其余科学变量不变。
   该实现的显式enumeration输出/梯度等价、归一base measure、assignment消费、static-repeat及融合pooling测试已通过。真实task93
   formal-rows16两步profile为`8.934/8.205s`，最大allocated/reserved为`39944498688/46433042432 bytes`；第二步Frame、Event、
-  Process、Composer与relation参数梯度均finite nonzero，Panel-B零反向、输出仍为唯一rank16。下一步完成clean merge/push后从detached
-  authority启动短资格。
+  Process、Composer与relation参数梯度均finite nonzero，Panel-B零反向、输出仍为唯一rank16。
+- event-measure 12-task短资格已于2026-09-03 19:08 CST从clean pushed detached
+  `a049f61e17ad9e5eae55b67b8de7be4aa686bfc9`在gpu01物理`0,1,5,6`、world-size4 fresh启动，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_event_measure_12task_k1_component_s110_a049f61e_gpu01p0156_cache8g_20260903/`。
+  它保持K1、component-init、full 50-horizon、12-task正样本合同、110步与macro70/110不变，显式提供`8GiB`只读evidence-cache
+  replica预算。execution plan只依据冻结cache大小、预定task/video schedule与计算量，未使用outcome；预测总成本由owner-only的
+  `14047`降到`10131`，理想无所有权限制为`10098`，尾部从`157`降到理想`104`。前两步真实wall为`10.556/10.137s`，而同一实现
+  漏传replica预算的已中止基线首步为`13.637s`；后者只运行6步、无checkpoint，保存在
+  `runs/outputs/pi05_ecp_policy_response_writer_event_measure_12task_k1_component_s110_a049f61e_gpu01p0156_budget0_interrupted_m6_20260903/`
+  作执行诊断，不形成科学结论。
 - full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
   `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
   归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占
@@ -41,6 +49,10 @@
   `.8%`且reserved升到约`46.76GB`，CPU saved-tensor offload显存减半却让step慢到`24.79/16.41s`，梯度all-reduce打包收益
   小于`.04%`，三者均不保留。Evaluator `3 replicas x 8 envs`的50-row rollout-only为`.07056 rows/s`；`4x8` OOM，
   `2x16`只有`.06567 rows/s`且SM利用率更低，因此继续保留`3x8`。
+- 旧动态放置把一条functional policy row与一帧full bank等价计价，低估了冻结policy VJP。对relation-summed 110步逐步回放显示，
+  用`4 * functional_rows + sampled_full_bank_frames`作纯执行成本后，相对真实最优makespan的平均比值由`1.0365`降到`1.0135`，
+  p95由`1.0868`降到`1.0420`，44步改善、0步变差；预计总wall约再降`2.30%`。对应实现不假定每步6 task或固定meta/target比例，
+  定向测试`3 passed`；待当前fresh run积累足够event-measure实测后复核并集成，不中断当前科学短跑。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

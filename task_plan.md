@@ -101,12 +101,18 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     真实回放预计再省`2.30%`，已通过22项测试、集成并推送，且不改变当前frozen run的逐步分配。
     继续以真实phase timing、峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程
     完美才获取阶段科学结果；task batch与meta/target比例始终由实验配置决定；
-20. [ ] 依据专家的task-disjoint失败映射，先完成train24 + 审计non-held meta tasks的factorial coverage审计，区分
-    “可见components的新组合”与数据本身欠识别；若存在有效交叉组合，用最小有信息的full event-measure扩展映射直接取
-    早期Panel-B与held5闭环，不先付出10小时长跑；
-21. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-22. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-23. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+20. [x] 已按专家的task-disjoint失败映射完成train24 + 审计non-held meta tasks的factorial coverage审计。73个gradient tasks中，
+    7组同语言跨场景组合有5组包含至少两个gradient tasks、4组形成gradient-to-held桥；三类人工protocol contrast分别有
+    `5/9/5`组train pair与`3/7/3`组held桥。task2、task74及held Spatial/Object/Long均有可见component重组依据；held Goal的
+    `push` procedure没有任何Writer-gradient peer，是明确覆盖缺口。故数据并非完全欠识别，允许最小full扩展映射，但审计本身
+    不证明video-dependent最优adapter已经可学；
+21. [ ] 先用六卡真实profile验证73-task、每update 12 tasks的完整event-measure运行面，再运行一次有信息量的full K1
+    component-init扩展短资格：55 meta + 18 target tasks近似task等权，每步显式`9 meta + 3 target`仅属于该配置；optimizer
+    step200/400分别给每task约`32--34/65--67`次暴露，后者对齐上一12-task实验每task约66次，而非沿用70/110历史数字。
+    两点直接取Panel-B与held5 correct-only strict250，不以十小时长跑起步；
+22. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+23. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+24. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

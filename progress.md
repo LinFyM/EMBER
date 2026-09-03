@@ -4,11 +4,11 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main@058509f49db8ac2b651d5098c50bc2c6e23bd884`；最近一轮完整科学结果是
+- canonical集成目标为clean pushed `main`；最近一轮完整科学结果是
   `a049f61e`的event-assignment base-measure 12-task macro70/110训练、Panel-B与held5 strict250。两点闭环为
-  `40/42`，breadth均`3/5`且Goal/Long均为0，已完成该matched接口的稳定non-pass。当前没有运行中的EMBER
-  训练或评测；下一科学节点先按专家失败映射审计自然task的factorial coverage，再用审计结果决定
-  full event-measure的最小有信息扩展映射，不盲目恢复73-task长跑或继续堆叠接口。
+  `40/42`，breadth均`3/5`且Goal/Long均为0，已完成该matched接口的稳定non-pass。专家要求的自然task factorial
+  coverage审计也已从clean pushed `0b9450f94409a366b5b0fb700ddbd92e058652a0`完成；当前没有运行中的EMBER训练或评测。
+  下一科学节点是先profile、再执行完整event-measure的73-gradient-task短资格，不盲目恢复旧1210-step长跑或继续堆叠接口。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -70,6 +70,19 @@
   `13.624s`快`26.2%`；真实rank load的`max/mean`由`1.619`降到`1.216`，平均最长--最短gap由`8.01s`降到`4.19s`。
   gpu01物理`0/1/5/6`稳定训练段平均SM为`88.2/88.5/89.4/90.2%`，活跃采样比例均超过`99.6%`。剩余gap主要是task93等单task
   不可切分下界，不是某些rank长期空闲。
+- factorial coverage正式root为
+  `runs/analysis/pi05_ecp_policy_response_writer_factorial_coverage_v1_20260903/`，读取范围仅限固定split、language、metadata与
+  人工审计protocol groups，未读取视频、action/state/reward、模型输出或评测结果。55个meta-fit与18个target-fit全部作为
+  gradient tasks，task2/74继续true-task-held。7组同语言跨场景组合中5组有train pair、4组有held桥；
+  same-language/same-procedure/order-relation三类contrast分别有`5/9/5`组train pair及`3/7/3`组held桥。task2有同语言peer23，
+  task74有同verb/object/goal而scene relation不同的72/73/75；held Spatial/Object/Long也都有component重组来源。唯一明确缺口是
+  held Goal task25的`push` procedure没有Writer-gradient peer。因此数据足以让扩大mapping成为可识别实验，但metadata不证明
+  video-dependent最优adapter必然可学。
+- 新资格配置为`configs/pi05_ecp_policy_response_writer_factorial_v1.json`：保持full 50-horizon、K1、component-init、
+  event-measure、positive-only与唯一rank16不变，只扩大到全部73个eligible gradient tasks。每update的`9 meta + 3 target`
+  按55:18池大小近似task等权，只是本实验配置而非owner或未来固定比例；总batch为12也不是长期合同。optimizer step200/400
+  分别对应post-warmup effective190/390，并使每task获得约`32--34/65--67`次暴露；400点对齐旧12-task 3-of-5 x 110步的
+  约66次/task，因此检查点来自暴露量而不是沿用J2的70/110历史编号。下一步先六卡两步真实profile，再决定正式短跑命令与时长。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

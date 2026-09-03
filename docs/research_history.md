@@ -2355,3 +2355,26 @@ identifiability与自然task组合覆盖，应先做factorial coverage audit再�
 从`1.619`降到`1.216`，gpu01物理0/1/5/6训练稳定段平均SM为`88.2/88.5/89.4/90.2%`。m110 strict250以
 4 GPU x 3 replicas x 8 envs在`1040.52s`内完成250条，rollout execution window `815.24s`；满载显存段四卡平均SM约
 `90.1--94.1%`。该执行证据与科学non-pass分开：运行面已可复用，不因当前架构负结果回退exact/full优化。
+
+## 119. 自然task factorial coverage与扩展短资格合同
+
+在event-measure 12-task相邻non-pass后，先按专家失败映射做只读factorial coverage审计，而非直接恢复73-task长跑或继续修改网络。
+脚本与配置由clean pushed `0b9450f94409a366b5b0fb700ddbd92e058652a0`固定，正式root为
+`runs/analysis/pi05_ecp_policy_response_writer_factorial_coverage_v1_20260903/`。审计只读取固定split、language、task metadata与
+`libero90_nonheld_meta_v1`人工登记的process contrast groups；不读取视频pixels、actions、states、reward、model outputs或
+evaluation outcomes。仓库状态在报告中为clean。
+
+95-task authority由71个审计non-held meta与24个target-train tasks组成。新实验使用其中全部55个meta-fit与18个target-fit产生梯度，
+task2与task74仍为零梯度true-task-held。7组同语言跨场景组合覆盖17 tasks，其中5组至少有两个gradient tasks、4组形成
+gradient-to-held bridge。人工protocol的same-language/same-procedure/order-or-relation三类contrast分别有`5/9/5`组train pair与
+`3/7/3`组held bridge。task2有exact-language peer23；task74有同“black bowl -> plate”verb/object/goal而初始scene relation不同的
+72/73/75；held5 Spatial、Object与Long也都有自然component重组依据。唯一明确缺口是held Goal task25的`push plate`procedure没有任何
+Writer-gradient task以`push`开头。
+
+因此该数据并非完全欠识别，足以运行一次扩大task-disjoint mapping的有信息量正样本实验；但metadata本身不证明video-dependent最优
+adapter已经可学，Goal闭环失败也不能与覆盖缺口混为一谈。新配置保持full 50-horizon、K1、component-init、event-measure、
+positive-only objectives、真实native X/Y、signed pooling与唯一rank16不变，只扩大gradient-task覆盖。每update显式采样
+`9 meta + 3 target`，因为`9/55`与`3/18`使73个tasks近似等权；这只是当前配置，不固定未来role比例或batch size。
+optimizer step200/400对应post-warmup effective190/390，每task分别获得`32--34/65--67`次暴露；400点对齐旧12-task短资格的约
+66次/task。故新节点按实际数据暴露量产生，而不是把历史J2的70/110当成理论门槛。正式训练前先用六卡、12-task/update做两步真实
+profile；若资源与图稳定，再启动预计小时级而非十小时级的短资格，并在200/400两点直接运行Panel-B与held5 correct-only strict250。

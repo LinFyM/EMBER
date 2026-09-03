@@ -98,6 +98,14 @@ identifiability；应先审计自然tasks是否真的形成verb、object、scene
 训练，不再凭直觉连续堆叠数学接口。`70/110`仅是J2的10步warmup + effective `60/100`历史对齐，不是科学
 门槛或最优停止步数。
 
+该factorial coverage审计现已完成。全部55个eligible meta-fit与18个target-fit形成7组同语言跨场景组合，其中5组含至少
+两个gradient tasks、4组连接gradient与held；人工登记的same-language、same-procedure与order/relation三类contrast分别有
+`5/9/5`组train pair及`3/7/3`组held bridge。task2、task74及held Spatial/Object/Long均存在可见component重组来源；held Goal的
+`push` procedure则没有任何Writer-gradient peer。故扩大mapping不是盲目加数据：现有自然tasks提供足以检验task-disjoint组合泛化的
+正样本因子结构，但不能凭metadata断言video-dependent最优adapter可识别，Goal结果还必须结合已知覆盖缺口解释。下一full K1
+event-measure资格只改变gradient-task覆盖；`9 meta + 3 target`按55:18池规模近似task等权，optimizer step200/400给每task约
+`32--34/65--67`次暴露。后一点对齐旧短资格约66次/task，明确替代无理论含义的70/110编号习惯。
+
 工程吞吐侧已经把同一4卡、10-step full资格schedule从`34.394s/step`降至`4.054s/step`，为`8.48x`提速。收益来自
 outcome-independent选择性CPU cache复制与每步cost-balanced task placement、exact dense/bounded-streaming bank attention、保留全部
 frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-group batched reduction；不是coarse、horizon mean、抽样或

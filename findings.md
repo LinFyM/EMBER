@@ -29,8 +29,9 @@ anchor和family scalar gate的连续接口。
 训练只使用正确视频的cross-episode functional、严格prefix-only positive process prediction和轻量preservation，所有负controls在
 checkpoint冻结后评测。
 
-最后审查同时固定四项实现合同：causal process目标不得泄露future；预测target必须冻结；task1/task93 Composer正控先确认G1容量仍在；
-full/coarse对照只裁决前端表示而不夸大为Action Expert evidence整体裁决。完整合同见
+最后审查同时固定三项实现合同：causal process目标不得泄露future；预测target必须冻结；task1/task93 Composer正控先确认G1容量仍在。
+owner于2026-09-03进一步明确full是唯一active representation：50-step horizon必须完整保留到task/relation-conditioned learned
+read，coarse/final-layer horizon mean与等价无条件平滑只作历史证据，不得继续训练、选择或部署。完整合同见
 `docs/policy_response_event_to_factor_writer_design.md`。
 
 task1/task93的正式Composer-only正控已从clean detached authority完成。task1 step70/110的Panel-B fit recovery为
@@ -39,6 +40,11 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 新current-bank Composer仍能从真实X/Y与event-conditioned query恢复跨视频功能；它尚不证明shared mapping或closed-loop成功，但已经
 排除“Composer本身接近零容量”这一最早失败解释。
 
+加入完整per-target update cap、独立gradient clipping与dynamic-value修正后，full task1正控仍在macro70/110的三条正确视频上全部
+自发优于carrier。fit recovery为`.207146/.223986`，未训练held-video为`.169391/.157630`，Panel-B backward为0。相对旧full
+`.260876/.276421`与`.207341/.244598`有所减弱，且held后段回落，但没有被修正压成零容量。这进一步支持后续只解决full的shared
+task-disjoint映射；不能以coarse绕开完整horizon。
+
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留
 `29/43`与`25/43`；full复杂response前端没有带来功能增量，反而更破坏carrier。Panel-B在10个gradient tasks上虽有小幅正benefit，
@@ -46,9 +52,9 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 跨suite breadth都没有做到。正控仍保留Composer/current-bank容量；负证据精确定位在10-task shared、task-disjoint方向泛化与自然组合
 覆盖，而不是否定native X/Y、signed pooling或rank4。
 
-下一单变量修正固定coarse、K1、模型和正样本loss，只把共享映射扩大到55 meta + 18 target-fit；task2/74继续零梯度held。这使每个meta
-task在完整1210步中获得约与原110步实验相同的更新曝光，同时增加自然mapping多样性。若该规模仍不能把held5稳定带过carrier，便是对
-当前positive-only Event-to-Factor共享函数类更强的停止证据，不能再用full前端或LR/seed小扫解释。
+随后曾固定coarse、K1、模型和正样本loss，只把共享映射扩大到55 meta + 18 target-fit；task2/74继续零梯度held。该历史实验增加了
+自然mapping多样性，但不能把held5带过carrier；owner现已明确该coarse选择本身不再是可接受的active方法，后续只保留其方向与规模
+失配证据，不续跑或用其选择模型。
 
 该scale实验的macro610 held5 strict250已完成，为`26/250`，逐task Long/Goal/Object/Spatial0/Spatial9为`0/0/1/25/0`、breadth
 `2/5`。相对carrier43是retained/gained/lost=`22/4/21`，paired exact p约`.00091`；相对旧coarse macro70同样净丢失17。

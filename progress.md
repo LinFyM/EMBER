@@ -29,6 +29,10 @@
   shared checkpoint物化与static adapter provenance均拒绝coarse，`ResponseTokenizer`删除horizon-mean forward。仅保留不参与任何forward的
   旧`coarse_embedding`参数以维持当前full formal的RNG/state-dict兼容，待本轮checkpoint生命周期结束后再删除；定向Writer与static
   adapter测试为`16 passed`。
+- corrected full task1正控已自然完成110步与macro70/110正式Panel-B；result/completion与launcher exit0完整。macro70的两条fit平均
+  recovery为`.207146`、未训练held video24为`.169391`，macro110为`.223986/.157630`；两个checkpoint的三条视频全部自发优于
+  carrier，Panel-B backward为0，source policy冻结且输出仍为唯一完整rank16。相对旧full正控幅度有所减弱、held后段回落，但明确保留
+  full task-local跨视频功能容量；task93与73-task shared继续运行，不以task1单点裁决shared或closed loop。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

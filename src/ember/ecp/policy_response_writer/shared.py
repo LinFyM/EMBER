@@ -32,6 +32,7 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     _video_splits,
     balanced_task_owners,
     configured_task_group,
+    evaluation_task_costs,
     owner_balanced_task_group,
     role_balanced_task_owners,
     scheduled_task_costs,
@@ -483,6 +484,7 @@ def _build_result(
     start_step: int,
     total: int,
     task_owners: Sequence[Sequence[int]],
+    evaluation_task_owners: Sequence[Sequence[int]],
     execution_plan: Mapping[str, Any],
     normalizers: Mapping[str, Mapping[int, float]],
     training: Mapping[str, Any],
@@ -505,6 +507,9 @@ def _build_result(
         "resume_start_step": start_step,
         "configured_total_steps": total,
         "task_ownership": [list(value) for value in task_owners],
+        "evaluation_task_ownership": [
+            list(value) for value in evaluation_task_owners
+        ],
         "execution_plan": dict(execution_plan),
         "normalizers": normalizers,
         "curve": training["curve"],
@@ -650,18 +655,24 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         evaluate_checkpoints,
     )
 
+    evaluation_task_owners = task_owners
+    evaluation_splits = video_splits
+    if runtime.args.mode == "formal":
+        evaluation_splits = {
+            task: video_splits[task] for task in _evaluation_ids(runtime)
+        }
+        evaluation_task_owners = balanced_task_owners(
+            evaluation_task_costs(runtime, evaluation_splits),
+            runtime.context.world_size,
+        )
     if runtime.args.mode == "profile" and runtime.args.task is None:
         evaluations, evaluation_seconds = {}, 0.0
     else:
         evaluations, evaluation_seconds = evaluate_checkpoints(
             runtime,
             cache,
-            task_owners=task_owners,
-            video_splits=(
-                video_splits
-                if runtime.args.mode == "profile"
-                else {task: video_splits[task] for task in _evaluation_ids(runtime)}
-            ),
+            task_owners=evaluation_task_owners,
+            video_splits=evaluation_splits,
         )
     capture_records = sorted(
         _gather_flat(runtime, cache.capture_records),
@@ -673,6 +684,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         start_step=start_step,
         total=total,
         task_owners=task_owners,
+        evaluation_task_owners=evaluation_task_owners,
         execution_plan=execution_plan,
         normalizers=normalizers,
         training=training,

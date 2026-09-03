@@ -36,6 +36,7 @@ from ember.ecp.policy_response_writer.shared import (
 )
 from ember.ecp.policy_response_writer.shared_schedule import (
     counted_task_group,
+    evaluation_task_costs,
     scheduled_task_costs,
     task_group_counts,
 )
@@ -855,6 +856,28 @@ def test_selective_replication_reaches_unconstrained_tail_without_full_copy() ->
     assert 0 < plan["extra_cache_bytes"] < sum(3 * (100 + task) for task in steps[0])
     execution = plan["execution_ownership"]
     assert sorted({task for row in execution for task in row}) == sorted(steps[0])
+
+
+def test_panel_b_ownership_balances_complete_outcome_independent_work() -> None:
+    tasks = tuple(range(12))
+    splits = {task: ((0, 1), 2) for task in tasks}
+    runtime = SimpleNamespace(
+        config={
+            "optimization": {
+                "shared": {"functional_rows": 16, "evaluation_visits": 16}
+            }
+        },
+        video_store=SimpleNamespace(
+            frame_counts=lambda task, demo: (0, 10 + task + demo)
+        ),
+    )
+
+    costs = evaluation_task_costs(runtime, splits)
+    owners = balanced_task_owners(costs, world_size=4)
+
+    assert costs[0] == 3 * 4 * 16 * 16 + 10 + 11 + 12
+    assert sorted(task for row in owners for task in row) == list(tasks)
+    assert [len(row) for row in owners] == [3, 3, 3, 3]
 
 
 def test_selective_replication_scales_to_full_meta_task_inventory() -> None:

@@ -467,6 +467,29 @@ def scheduled_task_costs(
     return result
 
 
+def evaluation_task_costs(
+    runtime: Any, video_splits: Mapping[int, VideoSplit]
+) -> dict[int, int]:
+    """Estimate complete Panel-B work without using model outcomes."""
+
+    cell = runtime.config["optimization"]["shared"]
+    functional_cost = (
+        FUNCTIONAL_ROW_FRAME_EQUIVALENT
+        * int(cell["functional_rows"])
+        * int(cell["evaluation_visits"])
+    )
+    if functional_cost <= 0 or not video_splits:
+        raise ValueError("shared Writer evaluation cost changed")
+    result = {}
+    for task, (fit, held) in video_splits.items():
+        demos = (*map(int, fit), int(held))
+        result[int(task)] = len(demos) * functional_cost + sum(
+            int(runtime.video_store.frame_counts(int(task), demo)[1])
+            for demo in demos
+        )
+    return result
+
+
 def _split_ids(
     runtime: Any,
 ) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:

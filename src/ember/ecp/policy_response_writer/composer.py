@@ -589,29 +589,26 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         relation_scale = (1.0 + torch.tanh(self.relation_embedding.weight)).to(
             relation_innovation
         )
+        projected_innovation = (
+            self.innovation_key(relation_innovation)
+            * relation_scale[None, :, :]
+        )
         key_feature = torch.tanh(keys)
+        branch_queries = torch.stack((positive_query, negative_query), dim=0)
         marginal = None
         for relation in range(PROCESS_RELATION_COUNT):
-            innovation = (
-                self.innovation_key(relation_innovation[:, relation])
-                * relation_scale[relation]
+            innovation = projected_innovation[:, relation]
+            # Contract the tiny branch x rank x frame query with native keys.
+            # This is the same elementwise product and sum as materializing
+            # innovation * key_feature for every native token, but avoids the
+            # dominant frame x native-token x hidden-width intermediate.
+            dynamic_queries = (
+                branch_queries[:, :, None, :] * innovation[None, None, :, :]
             )
-            while innovation.ndim < keys.ndim:
-                innovation = innovation.unsqueeze(1)
-            branch_feature = innovation * key_feature
-            positive = torch.einsum(
-                "rd,...d->r...", positive_query, branch_feature
-            ) / math.sqrt(self.width)
-            negative = torch.einsum(
-                "rd,...d->r...", negative_query, branch_feature
-            ) / math.sqrt(self.width)
-            logits = torch.stack(
-                (
-                    common + positive + relation_mass,
-                    common + negative + relation_mass,
-                ),
-                dim=1,
-            ).float()
+            dynamic = torch.einsum(
+                "brfd,f...d->brf...", dynamic_queries, key_feature
+            ).movedim(0, 1) / math.sqrt(self.width)
+            logits = (common[:, None] + dynamic + relation_mass).float()
             marginal = logits if marginal is None else torch.logaddexp(marginal, logits)
         if marginal is None:
             raise RuntimeError("native composer relation marginal is empty")

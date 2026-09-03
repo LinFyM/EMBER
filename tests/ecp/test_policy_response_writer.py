@@ -195,6 +195,63 @@ def test_composer_consumes_explicit_event_relation_assignment() -> None:
     assert max(differences) > 1e-6
 
 
+def test_factored_relation_logits_match_explicit_native_width_product() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(7)
+        model = _model().eval()
+    composer = model.composer
+    query = torch.randn(4, 16, requires_grad=True)
+    keys = torch.randn(3, 2, 5, 16, requires_grad=True)
+    relation_innovation = torch.randn(3, 4, 16, requires_grad=True)
+
+    actual = composer._branch_logits(
+        query,
+        keys,
+        relation_innovation,
+        log_base_mass=-math.log(30),
+        output=False,
+    )
+    common_query = composer.common_query(query)
+    positive_query = composer.input_positive_query(query)
+    negative_query = composer.input_negative_query(query)
+    common = torch.einsum("rd,...d->r...", common_query, keys) / math.sqrt(16)
+    relation_scale = 1.0 + torch.tanh(composer.relation_embedding.weight)
+    key_feature = torch.tanh(keys)
+    explicit = []
+    for relation in range(4):
+        innovation = (
+            composer.innovation_key(relation_innovation[:, relation])
+            * relation_scale[relation]
+        )[:, None, None]
+        feature = innovation * key_feature
+        positive = torch.einsum(
+            "rd,...d->r...", positive_query, feature
+        ) / math.sqrt(16)
+        negative = torch.einsum(
+            "rd,...d->r...", negative_query, feature
+        ) / math.sqrt(16)
+        explicit.append(
+            torch.stack((common + positive, common + negative), dim=1)
+            - math.log(120)
+        )
+    expected = torch.logsumexp(torch.stack(explicit), dim=0)
+
+    torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-5)
+    differentiated = (
+        query,
+        keys,
+        relation_innovation,
+        composer.innovation_key.weight,
+        composer.relation_embedding.weight,
+    )
+    actual_gradients = torch.autograd.grad(
+        actual.square().sum(), differentiated, retain_graph=True
+    )
+    expected_gradients = torch.autograd.grad(expected.square().sum(), differentiated)
+    for left, right in zip(actual_gradients, expected_gradients, strict=True):
+        torch.testing.assert_close(left, right, atol=3e-6, rtol=3e-5)
+
+
 def test_retired_coarse_representation_is_rejected() -> None:
     model = _model()
     with pytest.raises(ValueError, match="only active representation"):

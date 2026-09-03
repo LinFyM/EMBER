@@ -40,6 +40,12 @@
   漏传replica预算的已中止基线首步为`13.637s`；后者只运行6步、无checkpoint，保存在
   `runs/outputs/pi05_ecp_policy_response_writer_event_measure_12task_k1_component_s110_a049f61e_gpu01p0156_budget0_interrupted_m6_20260903/`
   作执行诊断，不形成科学结论。
+- 该event-measure训练与两checkpoint Panel-B现已自然完成，optimizer110、completion/result、两枚checkpoint及110条metrics完整；
+  train/evaluation/total为`1109.73/576.16/1725.81s`。macro70的10个gradient task fit/held benefit为
+  `.001329/.001114`、recovery为`.11773/.08567`、`9/10` task全部视频优于carrier；macro110分别为
+  `.001617/.001701`、`.13651/.13193`与`9/10`。但两个零梯度true-task-held在两点均为`0/2`：macro70 fit/held benefit
+  `-.001575/-.001798`，macro110为`-.002420/-.001998`。因此event-resolved measure增强了已训练task内的functional方向，尚未解决
+  task-disjoint泛化；held5 macro70已物化并运行correct-only strict250，macro110物化/评测并行准备中，闭环未返回前不作最终裁决。
 - full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
   `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
   归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占

@@ -89,8 +89,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `42/34`、breadth均`3/5`且Goal/Long为0，两个true-task-held继续为负，因此该“先跨event求和、后非线性score”的具体接口
     non-pass。当前只把soft `alpha(e,t,m)`改为event x relation候选的base measure，以未求和`D(e,j)`产生动态logit；full
     50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变。显式枚举等价测试与最长task93 formal-rows16真实profile
-    已通过，单步`8.93/8.20s`且峰值reserved `46.43GB`；clean pushed detached短资格现已在四卡运行，前两步为
-    `10.56/10.14s`。70/110只作历史可比节点，不是不可调整的理论步数，首段成本按真实profile与早期有效信号控制；
+    已通过，单步`8.93/8.20s`且峰值reserved `46.43GB`；clean pushed detached短资格的110步及两点Panel-B已完成。
+    gradient task的m110 fit/held recovery为`.1365/.1319`，但true-task-held仍`0/2`且为负；m70/m110 held5 correct-only
+    strict250正在并行获取。70/110只作历史可比节点，不是不可调整的理论步数；
 19. [ ] 吞吐线继续并行推进：第一阶段已完成选择性CPU evidence cache复制、outcome-independent动态task放置、
     dense/streaming exact bank attention、整视频signed pooling与output-group归约，四卡10-step由`34.39s/step`降至`4.05s/step`
     （`8.48x`）；relation scorer等价收缩又使task93快约`36%`。microbatch4、CPU activation offload和gradient packing经实测

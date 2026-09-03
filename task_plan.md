@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-03。
+更新时间：2026-09-04。
 
 ## 当前goal
 
@@ -111,15 +111,20 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `5/9/5`组train pair与`3/7/3`组held桥。task2、task74及held Spatial/Object/Long均有可见component重组依据；held Goal的
     `push` procedure没有任何Writer-gradient peer，是明确覆盖缺口。故数据并非完全欠识别，允许最小full扩展映射，但审计本身
     不证明video-dependent最优adapter已经可学；
-21. [ ] 已用当前单节点全部4张安全空闲卡完成73-task、每update 12 tasks的完整event-measure两步真实profile；两步四rank均为
-    每卡3 tasks且完整梯度finite nonzero，正式短资格没有工程阻塞。现已从clean pushed detached authority启动一次有信息量的
-    full K1 component-init扩展短资格：
-    55 meta + 18 target tasks近似task等权，每步显式`9 meta + 3 target`仅属于该配置；optimizer
-    step200/400分别给每task约`32--34/65--67`次暴露，后者对齐上一12-task实验每task约66次，而非沿用70/110历史数字。
-    两点直接取Panel-B与held5 correct-only strict250，不以十小时长跑起步；
-22. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-23. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-24. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+21. [x] 已用当前单节点全部4张安全空闲卡完成73-task、每update 12 tasks的完整event-measure两步真实profile，并从clean pushed
+    detached authority完成full K1 component-init扩展资格。55 meta + 18 target近似task等权，每步显式`9 meta + 3 target`
+    只属于该配置；optimizer step200/400各task约`32--34/65--67`次暴露。m200/m400 Panel-B的gradient fit/held benefit虽由
+    `.000740/.000316`升到`.001023/.000547`，两个true-task-held均值仍为负；held5 strict250仅`30/32`，breadth`2/5`与
+    `3/5`，Goal/Long均为0。m200到m400为`20 retained/12 gained/10 lost`，相对carrier43的m400仍为
+    `27/5/16`，故数据扩大和训练加倍没有解决shared闭环；
+22. [ ] 已把最早失效接口定位为Composer query seed的数值rank坍缩：raw相加时约`67`范数的Process common压过约`1`范数的
+    rank token，m200/m400的实际mobile update均接近rank1。只对rank context与shared task context分别做无参数LayerNorm后相加，
+    冻结m200反事实恢复rank query与部分有效factor谱；不新增loss、正交约束、solve或网络分支。修正已通过定向测试、真实
+    forward/gradient/materialization smoke并合并推送。当前从clean detached `3e589695`并行运行73-task fresh m200/m400
+    shared资格和task1/task93 task-local正控；shared继续使用full 50-horizon、positive-only、唯一rank16及node-local单份mmap；
+23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

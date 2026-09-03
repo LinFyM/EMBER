@@ -1,14 +1,16 @@
 # EMBER progress
 
-更新时间：2026-09-03。
+更新时间：2026-09-04。
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；最近一轮完整科学结果是
-  `a049f61e`的event-assignment base-measure 12-task macro70/110训练、Panel-B与held5 strict250。两点闭环为
-  `40/42`，breadth均`3/5`且Goal/Long均为0，已完成该matched接口的稳定non-pass。专家要求的自然task factorial
-  coverage审计也已从clean pushed `0b9450f94409a366b5b0fb700ddbd92e058652a0`完成；当前没有运行中的EMBER训练或评测。
-  下一科学节点是先profile、再执行完整event-measure的73-gradient-task短资格，不盲目恢复旧1210-step长跑或继续堆叠接口。
+- canonical集成目标为clean pushed `main@3e589695779be4a78d5f5bde6059e39e178bd146`。上一轮full event-measure
+  73-gradient-task资格已完成训练、m200/m400 Panel-B、物化与两次held5 correct-only strict250：闭环仅`30/32`，breadth
+  `2/5`与`3/5`且Goal/Long均为0，m400仍显著低于carrier43。根因审计进一步定位到Composer最早query融合处：约`67`范数的
+  Process common淹没约`1`范数的rank token，使名义rank4在m200/m400都退化为近rank1；冻结反事实表明分别归一rank/shared
+  context可恢复rank区分与部分有效factor谱。该最小修正已集成推送。当前gpu01物理`0,1,5,6`正从clean detached authority运行
+  fresh 73-task m200/m400 shared资格，gpu02物理`0,1`并行运行task1/task93 task-local正控，总EMBER卡数为6。shared已完成
+  105.02GB单份mmap cache和NUMA审计并进入optimizer，首批step约`17--18s`、四rank负载近乎相同；当前没有读取negative controls。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

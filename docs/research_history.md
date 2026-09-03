@@ -2455,3 +2455,55 @@ shared相对当前8GiB路径平均快`4.05%`、最坏step快`24.39%`，实际ran
 首次105GB capture/build与private冷启动同量级；cache-hit profile的`total_seconds`不用于该比较。最终实现修复短profile只覆盖部分
 task时的planner inventory，并把原数值等价测试的随机输入纳入forked fixed RNG；Writer定向套件`25 passed`。因此后续fresh同节点
 多卡Writer训练采用shared mmap；已冻结的`5534cb14` formal不改变cache、world topology或执行分配。
+
+## 124. 73-task factorial资格完成但名义rank4实际坍缩为近rank1
+
+`5534cb140b90ac20e9143dd20a7ed8e11c539f19`的full K1 component-init formal自然完成400 optimizer steps、macro200/400、
+两点Panel-B和两次held5 correct-only strict250。训练root为
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_s400_5534cb14_gpu01p0156_cache8g_20260903/`；
+train/evaluation/total wall为`9000.24/757.08/9894.15s`，completion、result、两枚checkpoint、400条metrics与全部rank状态完整。
+
+macro200/400的gradient task Panel-B fit/held benefit为`.00074035/.00031607`与`.00102278/.00054707`，recovery为
+`.09587/.06039`与`.15516/.13105`，两点各有`7/10`任务的全部视频优于carrier；但task2/74 true-task-held均值分别为
+`-.00233354/-.00173280`与`-.00232097/-.00208995`，两点仅`1/2`任务全部视频为正。m200物化与strict250 roots为
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_m200_held5_correct_k1_materialized_5534cb14_985265ae_gpu02p0_20260903/`与
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_m200_held5_correct_k1_strict250_5534cb14_985265ae_gpu02p01_r3_20260903/`；
+结果`30/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/3/27/0`、breadth`2/5`。m400对应roots为
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_m400_held5_correct_k1_materialized_5534cb14_985265ae_gpu02p1_20260903/`与
+`runs/outputs/pi05_ecp_policy_response_writer_factorial_m400_held5_correct_k1_strict250_5534cb14_985265ae_gpu02p01_r3_20260903/`；
+结果`32/250`，逐task=`0/0/1/30/1`、breadth`3/5`。m200到m400为`20 retained/12 gained/10 lost`、Jaccard `.476190`、
+paired exact `p=.831812`；m400相对carrier43为`27/5/16`、Jaccard `.5625`、`p=.026604`。因此扩大task覆盖和把每task exposure
+近似加倍都没有恢复carrier或Goal/Long，不能再归因于m200停早；functional proxy继续改善却未迁移到task-disjoint闭环。
+
+冻结activation诊断位于
+`runs/analysis/pi05_ecp_policy_response_writer_factorial_m200_rank_collapse_task18_5534cb14_985265ae_20260903.json`与对应m400文件。
+task18的Process common约`67`范数，owner/language约`11`，四个rank query仅约`1`；直接相加后m200/m400各target从初始query到第二个
+Composer block的rank centered/mean RMS均约`1.1%`，末端pairwise cosine分别为BF16记录的`1.0`与约`.99983`。m200的
+q/v/action-in/action-out有效update participation rank为`1.0006/1.0008/1.0013/1.0062`，m400为
+`1.0001/1.0011/1.0006/1.0011`。额外200步没有修复名义rank4的实际近rank1坍缩，最早失效接口是rank/shared query seed的
+数值尺度，而不是rank4理论容量或末端幅度。
+
+## 125. parameter-free rank/shared query balance进入fresh因果裁决
+
+m200冻结反事实
+`runs/analysis/pi05_ecp_policy_response_writer_factorial_m200_rank_collapse_task18_normalized_add_5534cb14_985265ae_20260903.json`
+分别对rank context和shared task context作LayerNorm后再相加。它把初始rank centered/mean RMS恢复到`.83--.84`、第二个block后保留
+`.60--.65`；q/v/action-in participation rank恢复到`1.364/1.077/1.190`，rank posterior TV从约`.01--.02`增到约`.12--.18`。
+action-out仍只有`1.010`，所以这只是授权fresh训练的因果证据，不是结果替代。
+
+提交`3e589695779be4a78d5f5bde6059e39e178bd146`在Composer唯一query seed处实现同一parameter-free balance：rank context与
+owner+language+Process common shared context各自LayerNorm后相加。没有新增参数、block、loss、正交/熵/rank regularizer、solve或
+第二adapter；full 50-horizon、真实X/Y、event-measure、signed pooling、per-target cap、positive-only目标和唯一rank16不变。
+26项Writer测试、真实task1 forward/functional/process gradient/materialization smoke与task1/task93两步shared profile均通过。
+
+2026-09-03 23:52 CST从clean pushed detached `3e589695`在gpu01物理0/1/5/6启动fresh 73-task、400-step shared资格，root为
+`runs/outputs/pi05_ecp_policy_response_writer_rank_balance_73task_k1_component_s400_3e589695_gpu01p0156_sharedmmap_20260903/`。
+第一次launcher在任何output/cache/scientific step产生前因错误地把整个torchrun父进程固定到NUMA0，使物理5/6无法取得本地CPU集合而
+被仓库guard拒绝；撤掉外层绑定后，各rank由现有runtime分别正确绑定为GPU0/1 -> NUMA0、GPU5/6 -> NUMA1，未绕过检查或改科学代码。
+正式run contract确认commit clean且等于origin/main、world4、full/positive-only、无Action Meta、无negative reads。105020606660-byte
+node-local单份mmap cache已完成；最初三个optimizer steps约`17--18s`，每步四rank wall完全对齐，相比旧formal末段约`23s/step`
+符合预期提速。
+
+旧m400评测释放gpu02物理0/1后，同一clean detached authority于2026-09-04 00:01 CST并行启动task1/task93的110-step task-local
+正控；两卡仅与他人约`0.2GB`、0% util进程安全共驻，连同gpu01 shared共使用6张EMBER物理卡。两条正控与shared的结果均待完成，
+不根据启动期内部数值作模型选择。

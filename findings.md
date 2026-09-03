@@ -198,6 +198,30 @@ carrier43则为`26/4/17`、净丢13、`p=.00720`。同时mobile/carrier聚合函
 `1.71--2.44 x`。因此训练加倍没有打开Goal/Long或稳定恢复carrier，反而强化了“train proxy改善、held方向/闭环脱节”的负证据；
 这只停止旧未限幅、global-clip且允许slot静态旁路的参数化，fresh corrected formal已经从clean detached authority运行。
 
+full event-measure扩大到全部73个gradient tasks的matched资格也已完整结束。m200/m400的gradient task Panel-B fit/held benefit为
+`.000740/.000316`与`.001023/.000547`，recovery从`.09587/.06039`升至`.15516/.13105`；但两个true-task-held的fit/held
+均值分别为`-.002334/-.001733`与`-.002321/-.002090`。对应held5 correct-only strict250只有`30/32`，逐task从
+`0/0/3/27/0`变为`0/0/1/30/1`，breadth`2/5 -> 3/5`且Goal/Long始终为0。m200到m400仅
+`20 retained/12 gained/10 lost`、Jaccard `.47619`、paired exact `p=.83181`；m400相对carrier43为
+`27/5/16`、`p=.02660`。因此73-task factorial覆盖和两倍task exposure都没有解决shared closed loop，不能再用“数据太少”或
+“m200停早”解释该参数化；同时Panel-B继续改善说明训练确实在优化其functional surrogate，而非进程、checkpoint或梯度失效。
+
+继续从最早数值接口审计发现，Composer把四个约`1`范数的rank queries直接加到约`67`范数的Process common以及约`11`范数的
+owner/language context。以held Object task18为例，m200从query seed到第二个Composer block的rank centered/mean RMS一直只有约
+`1.1%`，pairwise cosine按BF16记录为`1.0`；m400仍约`1.1%`且末端cosine中位`.99983`。m200的q/v/action-in/action-out
+有效update participation rank中位/值仅`1.0006/1.0008/1.0013/1.0062`，m400为
+`1.0001/1.0011/1.0006/1.0011`。所以名义mobile rank4在最早query融合处已数值退化为近rank1，额外200步没有自发修复；
+这比继续归因于rank4理论上限、训练长度或末端scale更早。
+
+冻结m200权重的无梯度反事实只把rank context和shared task context分别作parameter-free LayerNorm后相加：初始rank
+centered/mean RMS立即恢复到约`.83--.84`，第二个block后仍为`.60--.65`；q/v/action-in participation rank恢复到
+`1.364/1.077/1.190`，rank posterior TV从约`.01--.02`升到约`.12--.18`。该反事实没有完全恢复所有family，尤其action-out仍约
+`1.010`，所以它只授权一次fresh因果实验，不冒充闭环成功。active修正正是这一语义边界：rank与shared context各自无参数归一化后
+相加，不增加网络、loss、正交/熵/rank强制、solve或第二adapter；full 50-horizon、event-measure、真实X/Y、signed pooling、
+positive-only训练和唯一rank16均不变。定向测试与真实forward/gradient/materialization smoke已通过，并从clean pushed
+`3e589695`启动fresh 73-task m200/m400 shared资格及task1/task93正控。首批shared step约`17--18s`且四rank负载近乎相同；这只证明
+修正图和shared-mmap执行面稳定，科学判断等待相邻closed-loop。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

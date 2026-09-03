@@ -2290,3 +2290,23 @@ plate”；三个有梯度target tasks 72/73/75使用同一verb、object和goal�
 learned projection/FiLM调制后参与正负candidate logits；raw X/Y仍是唯一vector value，四relation等base mass，最终exact pooling覆盖完整
 frame x relation x probe x 50-horizon x bank-type。relation只调制bias-free D路径，故`D=0`仍严格zero mobile。除此之外不改loss、task
 split、rank、scale、carrier、materializer或部署输入；真实smoke后立即以同一短资格和held5相邻closed-loop裁决。
+
+## 116. 显式event-relation scorer接通及最长视频工程准入
+
+从clean pushed `main@ca623dbfe6aab9ca2a021d8d0456570a8cebc7be`建立唯一
+`codex/policy-response-writer-relation-binding`实现分支。Composer现在直接读取`assignment=alpha(e,t,m)`，与既有
+`D(e,j)`形成`I(t,m,j)=sum_e alpha(e,t,m)D(e,j)`；四个relation各占`1/4`固定base mass，relation embedding只乘性调制
+bias-free动态路径。raw X/Y、完整frame x probe x 50-horizon x bank-type candidates、rank12 carrier + rank4 mobile、唯一38-target
+rank16 materialization及positive-only目标均未改变。新embedding在forked RNG作用域初始化，已用独立同seed进程确认全部旧Composer
+参数初始化逐tensor完全不变。
+
+最初同时展开relation x native-token x hidden-width的实现，在gpu01物理1、task93 fit demo3的Writer chain-rule backward出现工程OOM；
+当时卡上仅余约36MiB，不形成科学non-pass。实现随后保持同一数学分布，逐relation计算logits并用`logaddexp`做精确log-space
+marginal，同时在梯度路径重算scorer激活；没有平均、抽样或删除relation、frame、probe、horizon与native value。
+
+修正后的真实smoke覆盖task93 demo3的429 raw / 87 stride-5 frames、38 targets、完整50-horizon、functional leaf gradient、两次
+Writer chain-rule backward、causal process backward及76 tensors唯一rank16 materialization，自然exit0。最大CUDA
+allocated/reserved为`40178697216/47244640256 bytes`；Frame/Event/Composer与process prediction对应梯度均finite，static-repeat和
+显式assignment置换定向测试通过。随后task93两步task-local profile的稳态step为`8.6865/8.7940s`，最大allocated/reserved为
+`34309713920/46785363968 bytes`，第二步input/output branch与task query梯度均已打开；两步后的fit/held内部诊断不作科学裁决。
+该证据只准入同一12-task短资格，shared功能与closed-loop结果仍未知。

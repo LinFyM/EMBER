@@ -70,6 +70,11 @@ Composer同时读取`D(e,j)`、`alpha(e,t,m)`和relation type；实现却只使�
 下一matched修正只让event innovation与soft assignment以显式relation轴参与signed candidate logits；raw X/Y仍是唯一vector value，
 static `D=0`仍严格给出zero mobile，50-horizon、rank12+4、positive-only目标与唯一rank16均不变。
 
+该修正已经在真实最长task93路径接通。四类relation不是先求均值，而是各以`1/4` base mass产生logits后用顺序`logaddexp`做精确
+边缘化；relation identity只能乘性调制由`alpha`和`D`形成的动态innovation，不能制造static branch bias。一次性展开四倍
+relation激活会在A40反向中OOM，逐relation精确归约加activation recomputation后，87帧完整50-horizon smoke和两步task-local训练均
+稳定完成。它只证明新接口可训练；是否解决task-disjoint shared映射必须由同一12-task macro70/110及held5 closed-loop裁决。
+
 工程吞吐侧已经把同一4卡、10-step full资格schedule从`34.394s/step`降至`4.054s/step`，为`8.48x`提速。收益来自
 outcome-independent选择性CPU cache复制与每步cost-balanced task placement、exact dense/bounded-streaming bank attention、保留全部
 frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-group batched reduction；不是coarse、horizon mean、抽样或

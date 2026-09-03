@@ -28,6 +28,7 @@ from ember.ecp.policy_response_writer.process import (
 
 DENSE_BANK_ATTENTION_TOKEN_LIMIT = 192 * 1024
 STREAMING_BANK_BLOCK_TOKEN_LIMIT = 128 * 1024
+PROCESS_RELATION_COUNT = 4
 
 
 @dataclass(frozen=True)
@@ -374,6 +375,12 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
         torch.nn.init.zeros_(self.scale_head.weight)
         torch.nn.init.zeros_(self.scale_head.bias)
+        # The relation path is the sole new parameter in the matched arm.
+        # Fork CPU RNG so adding it does not perturb any established Composer
+        # parameter initialized under the same formal seed.
+        with torch.random.fork_rng(devices=[]):
+            self.relation_embedding = torch.nn.Embedding(PROCESS_RELATION_COUNT, width)
+            torch.nn.init.normal_(self.relation_embedding.weight, std=width**-0.5)
 
     def _owner_bias(self, target: int) -> torch.Tensor:
         return self.owner_embedding[target] + self.family_embedding(
@@ -435,6 +442,21 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 len(self.owners),
             ):
                 raise ValueError("native composer process/video frames changed")
+            if (
+                process.assignment.ndim != 3
+                or process.assignment.shape[1:]
+                != (video.frame_count, PROCESS_RELATION_COUNT)
+                or process.innovations.shape[:2]
+                != (process.assignment.shape[0], len(self.owners))
+            ):
+                raise ValueError("native composer event-relation assignment changed")
+            # Preserve the explicit relation axis promised by the Process ->
+            # Composer contract. Summing this axis recovers the old frame
+            # innovation, but doing so before candidate scoring erased which
+            # scene transition supported each dynamic direction.
+            relation_innovation = torch.einsum(
+                "etm,ejd->tmjd", process.assignment, process.innovations
+            )
             positions = self._position(video)
             boundary = NativeOutputBankState(final=video.final_outputs[target])
             chunks = []
@@ -462,7 +484,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                         input_keys=input_key,
                         output_values=grouped,
                         output_keys=output_key,
-                        innovation=process.frame_innovation[start:stop, target],
+                        innovation=relation_innovation[start:stop, :, target],
                     )
                 )
             if boundary.next_frame != video.frame_count:
@@ -524,7 +546,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         query: torch.Tensor,
         keys: torch.Tensor,
-        frame_innovation: torch.Tensor,
+        relation_innovation: torch.Tensor,
         *,
         log_base_mass: float,
         output: bool,
@@ -548,19 +570,97 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         common = torch.einsum("rd,...d->r...", common_query, keys) / math.sqrt(
             self.width
         )
-        innovation = self.innovation_key(frame_innovation)
-        while innovation.ndim < keys.ndim:
-            innovation = innovation.unsqueeze(1)
-        branch_feature = innovation * torch.tanh(keys)
-        positive = torch.einsum(
-            "rd,...d->r...", positive_query, branch_feature
-        ) / math.sqrt(self.width)
-        negative = torch.einsum(
-            "rd,...d->r...", negative_query, branch_feature
-        ) / math.sqrt(self.width)
-        return torch.stack(
-            (common + positive + log_base_mass, common + negative + log_base_mass),
-            dim=1,
+        if (
+            relation_innovation.ndim != 3
+            or relation_innovation.shape[:2] != (keys.shape[0], PROCESS_RELATION_COUNT)
+            or relation_innovation.shape[-1] != self.width
+        ):
+            raise ValueError("native composer relation innovation changed")
+        # Relation identity may modulate dynamic evidence but cannot create a
+        # branch-specific bias of its own. Therefore D == 0 still gives
+        # identical positive/negative distributions and zero mobile value,
+        # while functional credit now reaches alpha(e,t,m).
+        # Raw X/Y do not have a relation axis. This marginalization is exactly
+        # equivalent to repeating each raw candidate four times with 1/4 base
+        # mass, then pooling the shared value. Score one relation at a time so
+        # the relation x native-token x hidden-width intermediate is never
+        # materialized fourfold; logaddexp preserves the same exact marginal.
+        relation_mass = log_base_mass - math.log(PROCESS_RELATION_COUNT)
+        relation_scale = (1.0 + torch.tanh(self.relation_embedding.weight)).to(
+            relation_innovation
+        )
+        key_feature = torch.tanh(keys)
+        marginal = None
+        for relation in range(PROCESS_RELATION_COUNT):
+            innovation = (
+                self.innovation_key(relation_innovation[:, relation])
+                * relation_scale[relation]
+            )
+            while innovation.ndim < keys.ndim:
+                innovation = innovation.unsqueeze(1)
+            branch_feature = innovation * key_feature
+            positive = torch.einsum(
+                "rd,...d->r...", positive_query, branch_feature
+            ) / math.sqrt(self.width)
+            negative = torch.einsum(
+                "rd,...d->r...", negative_query, branch_feature
+            ) / math.sqrt(self.width)
+            logits = torch.stack(
+                (
+                    common + positive + relation_mass,
+                    common + negative + relation_mass,
+                ),
+                dim=1,
+            ).float()
+            marginal = logits if marginal is None else torch.logaddexp(marginal, logits)
+        if marginal is None:
+            raise RuntimeError("native composer relation marginal is empty")
+        return marginal
+
+    def _checkpointed_branch_logits(
+        self,
+        query: torch.Tensor,
+        keys: torch.Tensor,
+        relation_innovation: torch.Tensor,
+        projected_queries: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        *,
+        log_base_mass: float,
+        output: bool,
+    ) -> torch.Tensor:
+        if not torch.is_grad_enabled():
+            return self._branch_logits(
+                query,
+                keys,
+                relation_innovation,
+                log_base_mass=log_base_mass,
+                output=output,
+                projected_queries=projected_queries,
+            )
+
+        def score(
+            local_query: torch.Tensor,
+            local_keys: torch.Tensor,
+            local_innovation: torch.Tensor,
+            common_query: torch.Tensor,
+            positive_query: torch.Tensor,
+            negative_query: torch.Tensor,
+        ) -> torch.Tensor:
+            return self._branch_logits(
+                local_query,
+                local_keys,
+                local_innovation,
+                log_base_mass=log_base_mass,
+                output=output,
+                projected_queries=(common_query, positive_query, negative_query),
+            )
+
+        return checkpoint(
+            score,
+            query,
+            keys,
+            relation_innovation,
+            *projected_queries,
+            use_reentrant=False,
         )
 
     def _pool_target(
@@ -614,13 +714,13 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 tuple(chunk.input_values for chunk in video.chunks), dim=0
             )
             input_accumulator.add(
-                self._branch_logits(
+                self._checkpointed_branch_logits(
                     query,
                     input_keys,
                     innovation,
+                    input_queries,
                     log_base_mass=input_mass,
                     output=False,
-                    projected_queries=input_queries,
                 ),
                 input_values,
             )
@@ -631,13 +731,13 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 tuple(chunk.output_values for chunk in video.chunks), dim=1
             )
             output_accumulator.add(
-                self._branch_logits(
+                self._checkpointed_branch_logits(
                     query,
                     output_keys.movedim(0, 1),
                     innovation,
+                    output_queries,
                     log_base_mass=output_mass,
                     output=True,
-                    projected_queries=output_queries,
                 ),
                 output_values,
             )

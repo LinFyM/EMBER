@@ -223,6 +223,7 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
             "process.prediction_head",
         ),
         "composer": ("composer",),
+        "composer_relation": ("composer.relation_embedding",),
         "composer_scale": ("composer.scale_head",),
     }
     result = {}

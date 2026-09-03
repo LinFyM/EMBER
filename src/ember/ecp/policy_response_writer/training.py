@@ -105,6 +105,9 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("event_slots") == 8,
+            model.get("relation_types") == 4,
+            model.get("composer_relation_binding")
+            == "event_assignment_resolved_signed_candidate_logits",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
@@ -416,6 +419,7 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
         "frame": "process.frame_blocks",
         "event": "process.events",
         "composer": "composer",
+        "composer_relation": "composer.relation_embedding",
         "process_prediction": "process.prediction",
     }
     output = {}

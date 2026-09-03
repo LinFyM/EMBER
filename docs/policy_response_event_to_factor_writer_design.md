@@ -180,7 +180,7 @@ Process虽然产出并声明传递`alpha(k,e,t,m)`，Composer实际只读取四�
 `assignment`与relation type从未进入bank candidate scoring。这与专家明确要求Composer读取event assignment和relation type不一致，
 也会让“同一动作、对象和goal，只改变初始scene relation”的task-disjoint组合在进入signed pooling前失去显式绑定。
 
-下一matched实现因此只修正这一处最早接口。对每个frame、relation和owner直接从既有event输出构造：
+当前matched实现因此只修正这一处最早接口。对每个frame、relation和owner直接从既有event输出构造：
 
 \[
 I_{ktmj}=\sum_e \alpha_{ketm}D_{kej}.
@@ -190,6 +190,10 @@ relation type通过一个共享learned projection/FiLM进入该innovation；每�
 但其X/Y value不复制成新的向量来源。四类relation共同按固定`1/4` base mass归一，最终仍由exact online softmax对全部
 frame x relation x probe x horizon x bank-type candidates归约。该改动不增加Program、summary、solve、anchor或新loss，
 不平均或抽样50-horizon，也不改变rank、carrier、materializer或部署输入。
+
+实现逐relation计算同一组raw candidate logits，再用`logaddexp`做精确log-space marginal，避免同时物化四倍
+relation x native-token x hidden-width激活；有梯度路径重算scorer激活。该执行形式与一次性四relation展开是同一个数学分布，
+不是relation、frame或horizon的平均、抽样或近似。
 
 对target j、mobile rank r、relation m和native candidate n，A侧与B侧分别预测两组softmax logits。输出为：
 

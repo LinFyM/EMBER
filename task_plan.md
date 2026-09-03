@@ -85,12 +85,13 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     因此73-task x 1210-step fresh运行在optimizer25/effective15主动停止，不形成科学裁决。先在同一clean pushed commit上
     运行12-task x 110-step四卡资格实验并完成macro70/110 held5 correct-only strict250；两点均为`35/250`，breadth分别`3/5`与
     `2/5`，Goal/Long均为0，稳定低于carrier `43/250`，所以不恢复旧参数化73-task长跑、不运行其负controls；
-18. [ ] 修正Process到Composer最早失效接口：让既有event innovation与soft assignment以显式relation轴进入signed candidate
-    scoring，保持full 50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变。先完成真实forward/gradient/
-    materialization与static-repeat smoke，再立即运行同一12-task短资格和相邻held5 correct-only strict250；
-19. [x] 完成可复用吞吐基础：选择性CPU evidence cache复制、outcome-independent动态task放置、dense/streaming exact bank
-    attention融合、整视频signed pooling与output-group归约。四卡10-step full profile由`34.39s/step`降至`4.05s/step`，提速
-    `8.48x`，且task batch与meta/target比例继续由实验配置决定；
+18. [ ] 修正Process到Composer最早失效接口：显式relation-resolved scoring、static-repeat与最长视频真实
+    forward/gradient/materialization smoke已经通过，保持full 50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变；
+    下一步立即运行同一12-task短资格和相邻held5 correct-only strict250；
+19. [ ] 吞吐线继续并行推进：第一阶段已完成选择性CPU evidence cache复制、outcome-independent动态task放置、
+    dense/streaming exact bank attention、整视频signed pooling与output-group归约，四卡10-step由`34.39s/step`降至`4.05s/step`
+    （`8.48x`）；继续以relation版真实phase timing、峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，
+    但不得等待性能工程完美才获取阶段科学结果；task batch与meta/target比例始终由实验配置决定；
 20. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 21. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 22. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

@@ -5,8 +5,9 @@
 ## 当前快照
 
 - canonical集成目标为clean pushed `main`；最近一轮完整科学结果冻结在
-  `e7278f1b22176b53025166dc5015a4463b819ecd`，下一轮relation-binding修正只会从最新clean pushed main另建唯一实现分支与
-  formal detached authority。最新专家补充意见已逐字归档。
+  `e7278f1b22176b53025166dc5015a4463b819ecd`。显式relation-binding修正已在从最新clean pushed main建立的唯一
+  `codex/policy-response-writer-relation-binding`实现分支接通，验证后将合入main并从新pushed commit建立formal detached authority。
+  最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -22,6 +23,13 @@
   signed candidate scoring前已混为一个`frame_innovation(t,j)`。这不是单纯数据覆盖不足：零梯度target task74与已训练
   task72/73/75具有相同“black bowl -> plate”动作/对象/goal，只改变初始scene relation，仍未迁移。下一唯一科学改动是让
   event innovation与soft assignment以显式relation轴进入exact signed pooling；不改loss、rank、scale、full horizon或部署合同。
+- 该matched修正现已真实接通：`I[t,m,j]=sum_e alpha[e,t,m]D[e,j]`以显式relation轴进入正负candidate logits，四relation各用
+  `1/4` base mass并通过顺序`logaddexp`精确边缘化；relation embedding只乘性调制bias-free D路径，raw X/Y仍是唯一value。
+  首次一次性四relation展开在最长task93 chain-rule backward触发工程OOM；改为相同数学分布的逐relation归约并对scorer做activation
+  recomputation后，87帧、完整50-horizon的真实smoke自然完成：38 targets、76 tensors、唯一rank16、functional/process backward均通过，
+  最大allocated/reserved为`40178697216/47244640256 bytes`。task93两步task-local profile为`8.687/8.794s`，最大
+  allocated/reserved为`34309713920/46785363968 bytes`；第二步input/output branches与task query梯度均已打开。下一科学动作是从
+  clean pushed detached commit立即运行同一12-task短资格并在macro70/110做held5 correct-only strict250。
 - full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
   `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
   归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占

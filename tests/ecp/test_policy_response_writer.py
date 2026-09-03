@@ -195,19 +195,24 @@ def test_composer_consumes_explicit_event_relation_assignment() -> None:
     assert max(differences) > 1e-6
 
 
-def test_factored_relation_logits_match_explicit_native_width_product() -> None:
+def test_event_measure_logits_match_explicit_event_relation_candidates() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(7)
         model = _model().eval()
     composer = model.composer
     query = torch.randn(4, 16, requires_grad=True)
     keys = torch.randn(3, 2, 5, 16, requires_grad=True)
-    relation_innovation = torch.randn(3, 4, 16, requires_grad=True)
+    event_assignment = torch.rand(3, 3, 4) + 0.1
+    event_assignment = (
+        event_assignment / event_assignment.sum((0, 2), keepdim=True)
+    ).requires_grad_(True)
+    event_innovations = torch.randn(3, 16, requires_grad=True)
 
     actual = composer._branch_logits(
         query,
         keys,
-        relation_innovation,
+        event_assignment,
+        event_innovations,
         log_base_mass=-math.log(30),
         output=False,
     )
@@ -219,28 +224,48 @@ def test_factored_relation_logits_match_explicit_native_width_product() -> None:
     key_feature = torch.tanh(keys)
     explicit = []
     for relation in range(4):
-        innovation = (
-            composer.innovation_key(relation_innovation[:, relation])
-            * relation_scale[relation]
-        )[:, None, None]
-        feature = innovation * key_feature
-        positive = torch.einsum(
-            "rd,...d->r...", positive_query, feature
-        ) / math.sqrt(16)
-        negative = torch.einsum(
-            "rd,...d->r...", negative_query, feature
-        ) / math.sqrt(16)
-        explicit.append(
-            torch.stack((common + positive, common + negative), dim=1)
-            - math.log(120)
-        )
+        for event in range(3):
+            innovation = (
+                composer.innovation_key(event_innovations[event])
+                * relation_scale[relation]
+            )
+            feature = innovation * key_feature
+            positive = torch.einsum(
+                "rd,...d->r...", positive_query, feature
+            ) / math.sqrt(16)
+            negative = torch.einsum(
+                "rd,...d->r...", negative_query, feature
+            ) / math.sqrt(16)
+            log_assignment = event_assignment[event, :, relation].log()[
+                None, :, None, None
+            ]
+            explicit.append(
+                torch.stack((common + positive, common + negative), dim=1)
+                + log_assignment[:, None]
+                - math.log(30)
+            )
     expected = torch.logsumexp(torch.stack(explicit), dim=0)
 
     torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-5)
+    zero_dynamic = composer._branch_logits(
+        query,
+        keys,
+        event_assignment,
+        torch.zeros_like(event_innovations),
+        log_base_mass=-math.log(30),
+        output=False,
+    )
+    torch.testing.assert_close(
+        zero_dynamic,
+        torch.stack((common, common), dim=1) - math.log(30),
+        atol=2e-6,
+        rtol=2e-5,
+    )
     differentiated = (
         query,
         keys,
-        relation_innovation,
+        event_assignment,
+        event_innovations,
         composer.innovation_key.weight,
         composer.relation_embedding.weight,
     )
@@ -449,7 +474,8 @@ def test_fused_video_pooling_matches_chunked_outputs_and_gradients() -> None:
                     model.composer._branch_logits(
                         query,
                         chunk.input_keys,
-                        chunk.innovation,
+                        chunk.assignment,
+                        video.innovations,
                         log_base_mass=input_mass,
                         output=False,
                     ),
@@ -460,7 +486,8 @@ def test_fused_video_pooling_matches_chunked_outputs_and_gradients() -> None:
                         model.composer._branch_logits(
                             query,
                             chunk.output_keys[group],
-                            chunk.innovation,
+                            chunk.assignment,
+                            video.innovations,
                             log_base_mass=output_mass,
                             output=True,
                         ),

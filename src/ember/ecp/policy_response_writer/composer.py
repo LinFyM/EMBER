@@ -39,12 +39,13 @@ class _NativeBankChunk:
     input_keys: torch.Tensor
     output_values: torch.Tensor
     output_keys: torch.Tensor
-    innovation: torch.Tensor
+    assignment: torch.Tensor
 
 
 @dataclass(frozen=True)
 class _NativeVideoCandidates:
     frame_count: int
+    innovations: torch.Tensor
     chunks: tuple[_NativeBankChunk, ...]
 
 
@@ -450,13 +451,6 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 != (process.assignment.shape[0], len(self.owners))
             ):
                 raise ValueError("native composer event-relation assignment changed")
-            # Preserve the explicit relation axis promised by the Process ->
-            # Composer contract. Summing this axis recovers the old frame
-            # innovation, but doing so before candidate scoring erased which
-            # scene transition supported each dynamic direction.
-            relation_innovation = torch.einsum(
-                "etm,ejd->tmjd", process.assignment, process.innovations
-            )
             positions = self._position(video)
             boundary = NativeOutputBankState(final=video.final_outputs[target])
             chunks = []
@@ -484,7 +478,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                         input_keys=input_key,
                         output_values=grouped,
                         output_keys=output_key,
-                        innovation=relation_innovation[start:stop, :, target],
+                        assignment=process.assignment[:, start:stop],
                     )
                 )
             if boundary.next_frame != video.frame_count:
@@ -492,6 +486,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             candidates.append(
                 _NativeVideoCandidates(
                     frame_count=video.frame_count,
+                    innovations=process.innovations[:, target],
                     chunks=tuple(chunks),
                 )
             )
@@ -546,7 +541,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         query: torch.Tensor,
         keys: torch.Tensor,
-        relation_innovation: torch.Tensor,
+        event_assignment: torch.Tensor,
+        event_innovations: torch.Tensor,
         *,
         log_base_mass: float,
         output: bool,
@@ -571,45 +567,60 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             self.width
         )
         if (
-            relation_innovation.ndim != 3
-            or relation_innovation.shape[:2] != (keys.shape[0], PROCESS_RELATION_COUNT)
-            or relation_innovation.shape[-1] != self.width
+            event_assignment.ndim != 3
+            or event_assignment.shape[1:]
+            != (keys.shape[0], PROCESS_RELATION_COUNT)
+            or event_innovations.shape
+            != (event_assignment.shape[0], self.width)
         ):
-            raise ValueError("native composer relation innovation changed")
-        # Relation identity may modulate dynamic evidence but cannot create a
-        # branch-specific bias of its own. Therefore D == 0 still gives
-        # identical positive/negative distributions and zero mobile value,
-        # while functional credit now reaches alpha(e,t,m).
-        # Raw X/Y do not have a relation axis. This marginalization is exactly
-        # equivalent to repeating each raw candidate four times with 1/4 base
-        # mass, then pooling the shared value. Score one relation at a time so
-        # the relation x native-token x hidden-width intermediate is never
-        # materialized fourfold; logaddexp preserves the same exact marginal.
-        relation_mass = log_base_mass - math.log(PROCESS_RELATION_COUNT)
+            raise ValueError("native composer event candidate measure changed")
+        # The soft event/relation assignment is part of the fixed candidate
+        # measure rather than being multiplied into D and summed before the
+        # nonlinear score. Raw X/Y are only repeated logically as candidate
+        # values. Relation identity can modulate the bias-free D path but can
+        # never create branch-specific evidence when D == 0.
         relation_scale = (1.0 + torch.tanh(self.relation_embedding.weight)).to(
-            relation_innovation
+            event_innovations
         )
-        projected_innovation = (
-            self.innovation_key(relation_innovation)
-            * relation_scale[None, :, :]
-        )
+        projected_innovation = self.innovation_key(event_innovations)
         key_feature = torch.tanh(keys)
         branch_queries = torch.stack((positive_query, negative_query), dim=0)
+        trailing_mass_axes = (1,) * (keys.ndim - 2)
         marginal = None
         for relation in range(PROCESS_RELATION_COUNT):
-            innovation = projected_innovation[:, relation]
-            # Contract the tiny branch x rank x frame query with native keys.
-            # This is the same elementwise product and sum as materializing
-            # innovation * key_feature for every native token, but avoids the
-            # dominant frame x native-token x hidden-width intermediate.
             dynamic_queries = (
-                branch_queries[:, :, None, :] * innovation[None, None, :, :]
+                branch_queries[:, :, None, :]
+                * projected_innovation[None, None]
+                * relation_scale[relation][None, None, None]
             )
             dynamic = torch.einsum(
-                "brfd,f...d->brf...", dynamic_queries, key_feature
-            ).movedim(0, 1) / math.sqrt(self.width)
-            logits = (common[:, None] + dynamic + relation_mass).float()
-            marginal = logits if marginal is None else torch.logaddexp(marginal, logits)
+                "bred,f...d->rbef...", dynamic_queries, key_feature
+            ) / math.sqrt(self.width)
+            log_assignment = (
+                event_assignment[:, :, relation]
+                .float()
+                .clamp_min(torch.finfo(torch.float32).tiny)
+                .log()
+                .reshape(
+                    1,
+                    1,
+                    event_assignment.shape[0],
+                    keys.shape[0],
+                    *trailing_mass_axes,
+                )
+            )
+            logits = (
+                common[:, None, None].float()
+                + dynamic.float()
+                + log_assignment
+                + log_base_mass
+            )
+            relation_marginal = torch.logsumexp(logits, dim=2)
+            marginal = (
+                relation_marginal
+                if marginal is None
+                else torch.logaddexp(marginal, relation_marginal)
+            )
         if marginal is None:
             raise RuntimeError("native composer relation marginal is empty")
         return marginal
@@ -618,7 +629,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         query: torch.Tensor,
         keys: torch.Tensor,
-        relation_innovation: torch.Tensor,
+        event_assignment: torch.Tensor,
+        event_innovations: torch.Tensor,
         projected_queries: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
         *,
         log_base_mass: float,
@@ -628,7 +640,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             return self._branch_logits(
                 query,
                 keys,
-                relation_innovation,
+                event_assignment,
+                event_innovations,
                 log_base_mass=log_base_mass,
                 output=output,
                 projected_queries=projected_queries,
@@ -637,7 +650,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         def score(
             local_query: torch.Tensor,
             local_keys: torch.Tensor,
-            local_innovation: torch.Tensor,
+            local_assignment: torch.Tensor,
+            local_innovations: torch.Tensor,
             common_query: torch.Tensor,
             positive_query: torch.Tensor,
             negative_query: torch.Tensor,
@@ -645,7 +659,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             return self._branch_logits(
                 local_query,
                 local_keys,
-                local_innovation,
+                local_assignment,
+                local_innovations,
                 log_base_mass=log_base_mass,
                 output=output,
                 projected_queries=(common_query, positive_query, negative_query),
@@ -655,7 +670,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             score,
             query,
             keys,
-            relation_innovation,
+            event_assignment,
+            event_innovations,
             *projected_queries,
             use_reentrant=False,
         )
@@ -701,8 +717,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             # tensors are resident, concatenate only their ordered frame axis
             # so each bank group uses one query projection and reduction. No
             # frame, probe, horizon, bank-type, or native-value axis is pooled.
-            innovation = torch.cat(
-                tuple(chunk.innovation for chunk in video.chunks), dim=0
+            assignment = torch.cat(
+                tuple(chunk.assignment for chunk in video.chunks), dim=1
             )
             input_keys = torch.cat(
                 tuple(chunk.input_keys for chunk in video.chunks), dim=0
@@ -714,7 +730,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 self._checkpointed_branch_logits(
                     query,
                     input_keys,
-                    innovation,
+                    assignment,
+                    video.innovations,
                     input_queries,
                     log_base_mass=input_mass,
                     output=False,
@@ -731,7 +748,8 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 self._checkpointed_branch_logits(
                     query,
                     output_keys.movedim(0, 1),
-                    innovation,
+                    assignment,
+                    video.innovations,
                     output_queries,
                     log_base_mass=output_mass,
                     output=True,

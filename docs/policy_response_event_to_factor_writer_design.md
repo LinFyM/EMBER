@@ -180,29 +180,41 @@ Process虽然产出并声明传递`alpha(k,e,t,m)`，Composer实际只读取四�
 `assignment`与relation type从未进入bank candidate scoring。这与专家明确要求Composer读取event assignment和relation type不一致，
 也会让“同一动作、对象和goal，只改变初始scene relation”的task-disjoint组合在进入signed pooling前失去显式绑定。
 
-当前matched实现因此只修正这一处最早接口。对每个frame、relation和owner直接从既有event输出构造：
+首个matched修正曾先构造`I(k,t,m,j)=sum_e alpha(k,e,t,m)D(k,e,j)`，再对relation候选做非线性打分。该版本虽然恢复了
+relation轴，却仍在打分前消掉event轴；12-task macro70/110的held5 correct-only结果为`42/34`，breadth均为`3/5`、
+Goal/Long均为0，并且两个true-task-held在macro110继续为负，因此该具体“先求event期望、后打分”接口正式non-pass。
+
+当前matched实现只修正这个仍然最早的接口：把soft assignment本身作为候选base measure，而不是先乘入D并求和。对video k、
+event e、frame t、relation m、target j、mobile rank r和raw native candidate n，动态logit为：
 
 \[
-I_{ktmj}=\sum_e \alpha_{ketm}D_{kej}.
+\ell^{\pm}_{kretmjn}
+=b_{krjtn}+q^{\pm}_{krj}\cdot
+\left(W_DD_{kej}\odot s_m\odot \tanh K_{jtn}\right),
 \]
 
-relation type通过一个共享learned projection/FiLM进入该innovation；每个raw native candidate在logit语义上保留relation轴，
-但其X/Y value不复制成新的向量来源。四类relation共同按固定`1/4` base mass归一，最终仍由exact online softmax对全部
-frame x relation x probe x horizon x bank-type candidates归约。该改动不增加Program、summary、solve、anchor或新loss，
-不平均或抽样50-horizon，也不改变rank、carrier、materializer或部署输入。
-
-实现逐relation计算同一组raw candidate logits，再用`logaddexp`做精确log-space marginal，避免同时物化四倍
-relation x native-token x hidden-width激活；有梯度路径重算scorer激活。该执行形式与一次性四relation展开是同一个数学分布，
-不是relation、frame或horizon的平均、抽样或近似。
-
-对target j、mobile rank r、relation m和native candidate n，A侧与B侧分别预测两组softmax logits。输出为：
+对应的固定base mass为：
 
 \[
-a_{jr}=\sum_{m,n}(w^{A,+}_{jrmn}-w^{A,-}_{jrmn})X_{jn},
+\log \mu_{ketmn}=\log \alpha_{ketm}-\log K-\log T_k-\log P-\log H
+\]
+
+（output bank另含其真实bank-type基数）。`alpha`已经在每个frame对event x relation归一，因此不再额外除以event数或固定
+`1/4` relation质量。raw X/Y只在逻辑上作为event x relation候选重复，仍是唯一vector value来源；relation type只能乘性调制
+bias-free D路径。该改动不增加Program、summary、solve、anchor或新loss，不平均或抽样50-horizon，也不改变rank、carrier、
+materializer或部署输入。
+
+实现按relation顺序计算并对event做`logsumexp`，再用`logaddexp`合并relations；有梯度路径重算scorer激活。它与显式展开全部
+event x relation x raw native candidates严格等价，只避免同时驻留大激活，不是event、relation、frame或horizon的平均、抽样或近似。
+
+对target j、mobile rank r和扩展候选`c=(k,e,t,m,n)`，A侧与B侧分别预测两组softmax logits。输出为：
+
+\[
+a_{jr}=\sum_c(w^{A,+}_{jrc}-w^{A,-}_{jrc})X_{jn(c)},
 \]
 
 \[
-b_{jrg}=\sum_{m,n}(w^{B,+}_{jrgmn}-w^{B,-}_{jrgmn})Y_{jng}.
+b_{jrg}=\sum_c(w^{B,+}_{jrgc}-w^{B,-}_{jrgc})Y_{jn(c)g}.
 \]
 
 signed pooling的正负softmax branches与输入antithetic probes是不同轴；每个softmax branch都可以读取两个probe产生的candidates。
@@ -339,8 +351,10 @@ shared representation或数据问题。
 full-response：owner对应layer input与residual、38 owners、50 horizons、2 probes、probe noise和flow velocity，且完整horizon证据
 保留到task/relation-conditioned attention。旧coarse matched arm已经完成历史定位，此后不得重启或用于模型选择。
 
-首轮使用component initialization、10 warmup加100 effective updates，并保存相邻节点。训练图有效且出现有意义correct功能信号后，
-立即运行held5 correct-only strict250，不以一长串内部小数阈值阻塞闭环。
+首轮历史协议使用component initialization、10 warmup加100 effective updates；effective 60/100对应global macro70/110，目的只是
+与J2/R系列直接比较，不是由架构推导出的最优训练时长。新接口先按真实profile与早期功能轨迹采用可续跑的短段，出现有意义correct
+功能信号后立即运行held5 correct-only strict250；有希望才补齐70/110历史可比节点，不以一长串内部小数阈值阻塞闭环，也不在
+架构未证明时先付出长训练。
 
 首轮12-task资格实验采用每步3 meta加3 target只是该次配置，不是Writer或owner的固定要求。后续运行可按证据只使用其中一类、采用
 任意显式比例并改变每步task数。科学sampler先确定task group与权重；多卡执行器随后按视频帧数与functional rows的

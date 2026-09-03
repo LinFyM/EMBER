@@ -85,13 +85,18 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     因此73-task x 1210-step fresh运行在optimizer25/effective15主动停止，不形成科学裁决。先在同一clean pushed commit上
     运行12-task x 110-step四卡资格实验并完成macro70/110 held5 correct-only strict250；两点均为`35/250`，breadth分别`3/5`与
     `2/5`，Goal/Long均为0，稳定低于carrier `43/250`，所以不恢复旧参数化73-task长跑、不运行其负controls；
-18. [ ] 修正Process到Composer最早失效接口：显式relation-resolved scoring、static-repeat与最长视频真实
-    forward/gradient/materialization smoke已经通过，保持full 50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变；
-    下一步立即运行同一12-task短资格和相邻held5 correct-only strict250；
+18. [ ] 修正Process到Composer最早失效接口：首个relation-summed scoring已完成12-task相邻裁决，held5 macro70/110为
+    `42/34`、breadth均`3/5`且Goal/Long为0，两个true-task-held继续为负，因此该“先跨event求和、后非线性score”的具体接口
+    non-pass。当前只把soft `alpha(e,t,m)`改为event x relation候选的base measure，以未求和`D(e,j)`产生动态logit；full
+    50-horizon、真实X/Y、positive-only loss、rank12+4和唯一rank16不变。显式枚举等价测试与最长task93 formal-rows16真实profile
+    已通过，单步`8.93/8.20s`且峰值reserved `46.43GB`；从clean pushed detached commit运行短资格。70/110只作历史可比节点，
+    不是不可调整的理论步数，首段成本按真实profile与早期有效信号控制；
 19. [ ] 吞吐线继续并行推进：第一阶段已完成选择性CPU evidence cache复制、outcome-independent动态task放置、
     dense/streaming exact bank attention、整视频signed pooling与output-group归约，四卡10-step由`34.39s/step`降至`4.05s/step`
-    （`8.48x`）；继续以relation版真实phase timing、峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，
-    但不得等待性能工程完美才获取阶段科学结果；task batch与meta/target比例始终由实验配置决定；
+    （`8.48x`）；relation scorer等价收缩又使task93快约`36%`。microbatch4、CPU activation offload和gradient packing经实测
+    收益不足或明显变慢而淘汰；Evaluator当前保留实测更快的`3 replicas x 8 envs`。继续以真实phase timing、峰值显存、rank idle
+    tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程完美才获取阶段科学结果；task batch与
+    meta/target比例始终由实验配置决定；
 20. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 21. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 22. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

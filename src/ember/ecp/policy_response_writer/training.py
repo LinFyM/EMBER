@@ -107,7 +107,7 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("event_slots") == 8,
             model.get("relation_types") == 4,
             model.get("composer_relation_binding")
-            == "event_assignment_resolved_signed_candidate_logits",
+            == "soft_event_assignment_base_measure_signed_candidate_logits",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],

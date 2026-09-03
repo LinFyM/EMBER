@@ -70,16 +70,35 @@ Composer同时读取`D(e,j)`、`alpha(e,t,m)`和relation type；实现却只使�
 下一matched修正只让event innovation与soft assignment以显式relation轴参与signed candidate logits；raw X/Y仍是唯一vector value，
 static `D=0`仍严格给出zero mobile，50-horizon、rank12+4、positive-only目标与唯一rank16均不变。
 
-该修正已经在真实最长task93路径接通。四类relation不是先求均值，而是各以`1/4` base mass产生logits后用顺序`logaddexp`做精确
-边缘化；relation identity只能乘性调制由`alpha`和`D`形成的动态innovation，不能制造static branch bias。一次性展开四倍
-relation激活会在A40反向中OOM，逐relation精确归约加activation recomputation后，87帧完整50-horizon smoke和两步task-local训练均
-稳定完成。它只证明新接口可训练；是否解决task-disjoint shared映射必须由同一12-task macro70/110及held5 closed-loop裁决。
+首个relation-summed修正已经完成12-task macro70/110与held5 correct-only strict250。Panel-B在macro70的gradient fit/held
+benefit为`.000995/.001146`，但两个true-task-held fit/held为`-.000703/-.000968`；macro110的gradient fit/held为
+`.001305/.001007`，true-task-held进一步降为`-.001736/-.003015`。闭环从macro70的`42/250`降到macro110的`34/250`，
+breadth均为`3/5`且Goal/Long始终为0；两点都不高于carrier `43/250`，相邻还发生`16 lost/8 gained`。因此该版本正式non-pass，
+不追加训练、扩大数据、mixed-K或negative controls。
+
+该负结果只淘汰`I(t,m,j)=sum_e alpha(e,t,m)D(e,j)`后再非线性打分的接口。它虽然恢复relation轴，仍在score前消掉event轴，
+也没有把专家规定的soft assignment放进base candidate measure。下一matched修正把候选展开为event x relation，以
+`log alpha(e,t,m)`作为base log-mass，直接用未求和的`D(e,j)`产生bias-free动态logit，再精确边缘化event与relation；raw X/Y
+仍是唯一vector value，`D=0`仍返回zero mobile，完整50-horizon、rank12+4、positive-only目标与唯一rank16均不变。
+
+该event-measure实现已通过显式event x relation枚举的输出与梯度等价测试；归一`alpha`且`D=0`时正负logit严格退回同一原始
+candidate measure，没有暗含额外`1/E`或`1/4`。最长task93、formal rows16、microbatch2的两步真实profile为
+`8.934/8.205s`，最大allocated/reserved为`39.94/46.43GB`；相对relation-summed的`7.292/6.544s`增加约
+`22--25%`，但仍稳定装入单张A40。第二步functional梯度已到达Frame、Event、Process、Composer及relation参数，Panel-B无反向，
+38-target唯一rank16不变。因此工程图已有资格进入fresh短实验，性能代价不构成延迟科学结果的理由。
 
 工程吞吐侧已经把同一4卡、10-step full资格schedule从`34.394s/step`降至`4.054s/step`，为`8.48x`提速。收益来自
 outcome-independent选择性CPU cache复制与每步cost-balanced task placement、exact dense/bounded-streaming bank attention、保留全部
 frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-group batched reduction；不是coarse、horizon mean、抽样或
 改变task权重。最终四卡有效task计算占总device wall约`78.0%`，剩余主要由最长单task决定，ZeRO-1/2不会改善只有约347万可训练参数的
 该尾部。该运行时允许未来实验显式配置任意meta/target计数和总task batch，当前`3+3`不再被误固化为长期合同。
+
+relation scorer随后用等价收缩避免物化`innovation x native-key x hidden-width`，同卡task93 rows2从`7.43/6.40s`降至
+`4.78/4.10s`，约快`36%`。formal rows16把functional microbatch从2增至4只再快约`.8%`却把reserved推到约`46.76GB`，
+故保留microbatch2；单图CPU saved-tensor offload虽把显存约从`39.6GB`降到`21.8GB`，step却恶化到`24.79/16.41s`，也不保留。
+真实两卡梯度all-reduce从200次打包成一次只能节约约`5.9ms`，不足step的`.04%`，因此ZeRO/通信聚合都不是当前首要瓶颈。
+Evaluator的`3 replicas x 8 envs`在50-row paired screen达到rollout-only约`.07056 rows/s`；`4x8` OOM，`2x16`降至
+`.06567 rows/s`且平均SM从约`89.3%`降到`75.7%`，所以当前单卡最优保留`3x8`，不以更大的env batch冒充提速。
 
 12-task shared component-init的full/coarse matched实验及四个held5 strict250已经完成。full step70/110为`33/31`，coarse为
 `43/41`；四点均不高于carrier43，breadth最多3/5且Goal/Long全部为0。coarse相对carrier保留`37/43`与`35/43`，full仅保留

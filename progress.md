@@ -4,10 +4,10 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；最近一轮完整科学结果冻结在
-  `e7278f1b22176b53025166dc5015a4463b819ecd`。显式relation-binding修正已在从最新clean pushed main建立的唯一
-  `codex/policy-response-writer-relation-binding`实现分支接通，验证后将合入main并从新pushed commit建立formal detached authority。
-  最新专家补充意见已逐字归档。
+- canonical集成目标为clean pushed `main@6cb3e486b9f5701b9b0fab164ae5f45c6aa8283b`；最近一轮完整科学结果是
+  `33ee1330`的relation-summed 12-task macro70/110训练、Panel-B与held5 strict250。它已正式non-pass。下一matched
+  event-assignment base-measure修正正在独立`codex/policy-response-writer-event-measure`实现分支接通；性能线同时在独立
+  `codex/policy-response-writer-throughput-2`工作树继续，二者不重叠写入。最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -21,20 +21,26 @@
   non-pass；不追加训练、不恢复73-task长跑，也不对失败checkpoint运行negative controls。
 - 该non-pass后对照专家输入合同与实际数据流，确认Process产出的`assignment=alpha(e,t,m)`从未被Composer读取，四类relation在
   signed candidate scoring前已混为一个`frame_innovation(t,j)`。这不是单纯数据覆盖不足：零梯度target task74与已训练
-  task72/73/75具有相同“black bowl -> plate”动作/对象/goal，只改变初始scene relation，仍未迁移。下一唯一科学改动是让
-  event innovation与soft assignment以显式relation轴进入exact signed pooling；不改loss、rank、scale、full horizon或部署合同。
-- 该matched修正现已真实接通：`I[t,m,j]=sum_e alpha[e,t,m]D[e,j]`以显式relation轴进入正负candidate logits，四relation各用
-  `1/4` base mass并通过顺序`logaddexp`精确边缘化；relation embedding只乘性调制bias-free D路径，raw X/Y仍是唯一value。
-  首次一次性四relation展开在最长task93 chain-rule backward触发工程OOM；改为相同数学分布的逐relation归约并对scorer做activation
-  recomputation后，87帧、完整50-horizon的真实smoke自然完成：38 targets、76 tensors、唯一rank16、functional/process backward均通过，
-  最大allocated/reserved为`40178697216/47244640256 bytes`。task93两步task-local profile为`8.687/8.794s`，最大
-  allocated/reserved为`34309713920/46785363968 bytes`；第二步input/output branches与task query梯度均已打开。下一科学动作是从
-  clean pushed detached commit立即运行同一12-task短资格并在macro70/110做held5 correct-only strict250。
+  task72/73/75具有相同“black bowl -> plate”动作/对象/goal，只改变初始scene relation，仍未迁移。当时的matched改动先让
+  event innovation与soft assignment以显式relation轴进入exact signed pooling；它的完整non-pass及后续event-measure修正见下一项。
+- 首个matched relation-summed修正`I[t,m,j]=sum_e alpha[e,t,m]D[e,j]`已完成全部裁决。macro70/110 Panel-B gradient
+  fit/held benefit分别为`.000995/.001146`与`.001305/.001007`，但两个true-task-held在两点都为负；held5 correct-only
+  strict250为`42/34`，breadth均`3/5`且Goal/Long为0，macro70到110为`16 lost/8 gained`。因此不追加训练或controls。
+  复核专家§7.1后确认该版本仍在非线性score前消掉event轴，soft assignment也没有成为base candidate measure。下一唯一科学修正是
+  event x relation候选：`log alpha(e,t,m)`直接进入base log-mass，未求和`D(e,j)`产生bias-free动态logit；其余科学变量不变。
+  该实现的显式enumeration输出/梯度等价、归一base measure、assignment消费、static-repeat及融合pooling测试已通过。真实task93
+  formal-rows16两步profile为`8.934/8.205s`，最大allocated/reserved为`39944498688/46433042432 bytes`；第二步Frame、Event、
+  Process、Composer与relation参数梯度均finite nonzero，Panel-B零反向、输出仍为唯一rank16。下一步完成clean merge/push后从detached
+  authority启动短资格。
 - full训练吞吐优化已完成可复现实测：同一4卡、10-step、6-task旧资格schedule的基线为`34.394s/step`；选择性CPU cache复制后为
   `26.306s`，融合完整bank attention与pooling后为`8.699s`，最终加入bounded streaming blocks、整视频frame融合、output-group
   归约与functional microbatch 4后为`4.054s/step`，总提速`8.48x`。最终10步最小/最大为`3.436/4.872s`，四卡有效task计算占
   总device wall约`78.0%`；剩余主要是最长task不可切分尾部。所有优化完整保留50 horizon与exact online softmax，不改变task
   group、权重、K或optimizer cadence；新sampler也不再把当次`3 meta + 3 target`误当owner固定要求。
+- 进一步exact scorer contraction把同卡task93 rows2从`7.43/6.40s`降到`4.78/4.10s`，约快`36%`。microbatch4仅再快
+  `.8%`且reserved升到约`46.76GB`，CPU saved-tensor offload显存减半却让step慢到`24.79/16.41s`，梯度all-reduce打包收益
+  小于`.04%`，三者均不保留。Evaluator `3 replicas x 8 envs`的50-row rollout-only为`.07056 rows/s`；`4x8` OOM，
+  `2x16`只有`.06567 rows/s`且SM利用率更低，因此继续保留`3x8`。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

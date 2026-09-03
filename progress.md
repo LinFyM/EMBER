@@ -175,15 +175,18 @@
   `main`并行运行task1/task93，各自single-process、component-init、coarse、10 warmup + 100 effective updates、macro70/110、
   16 functional rows与每checkpoint 16次零梯度Panel-B；两task沿用sealed correct fit/held视频、task-local reference、source、Stage0、
   carrier12、native X/Y、rank4 residual及唯一rank16，唯一目的为确认动态必要性与完整`s_ref`边界后的实际coarse函数类仍有task-local
-  容量，不作为shared checkpoint门槛。active scale config补回既有`task_local_positive_control=[1,93]`，该字段不参与正在冻结运行的
-  shared arm，也不改变任何loss、数据或超参数。2026-09-03 11:00 CST同时live检查两节点：gpu01物理2/4/5/6由主训练占用；gpu02
-  物理4为`5186MiB/2%`且仅有`982+982+3173MiB`低占用进程，物理6为`4749MiB/0%`且仅有`4584+148MiB`低占用进程，均有约
-  `40GiB`余量并已由同路径真实profile验证可安全共驻；gpu02 available host memory为`245593816KiB`。`/data1` quota blocks为
-  `774456800/1073741824`、limit `1084227584KiB`，两个约45MB同构formal保守合计小于`1GB`，目标roots均不存在。task1用物理4，
-  root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task1_coarse_s110_7d435ea3_gpu02p4_20260903/`；task93用物理6，
-  root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_coarse_s110_7d435ea3_gpu02p6_20260903/`。两者固定
-  `NCCL_P2P_DISABLE=1`、`PYTHONDONTWRITEBYTECODE=1`与独立GPU-local NUMA；exact resume只允许同运行commit、node/GPU、config、输入和
-  single-process topology。launch前必须再次同时live检查两节点，若共驻余量漂移则改用其它安全卡而不干扰他人。
+  容量，不作为shared checkpoint门槛。首次尝试从`2d3a0627`误用只服务73-task shared的scale config；task1/task93均在run contract、
+  output root和optimizer step产生前以同一`KeyError: functional_panel_config`退出，只有外部launcher log/exit code，不构成科学状态。
+  scale config的临时task-local allowlist随即删除，不为诊断扩展并行配置路径；fresh retry改用此前正式正控的canonical
+  `configs/pi05_ecp_policy_response_writer_v1.json`，其task-local模型宽度、初始化、优化、视频与reference合同不变，当前代码仍强制执行
+  dynamic value与完整`s_ref`边界。2026-09-03 11:00 CST同时live检查两节点：gpu01物理2/4/5/6由主训练占用；gpu02物理4为
+  `5186MiB/2%`且仅有`982+982+3173MiB`低占用进程，物理6为`4749MiB/0%`且仅有`4584+148MiB`低占用进程，均有约`40GiB`
+  余量并已由同路径真实profile验证可安全共驻；gpu02 available host memory为`245593816KiB`。`/data1` quota blocks为
+  `774456800/1073741824`、limit `1084227584KiB`，两个约45MB同构formal保守合计小于`1GB`。task1 fresh retry用物理4，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task1_coarse_s110_7d435ea3_v1_gpu02p4_retry1_20260903/`；task93用物理6，
+  root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_coarse_s110_7d435ea3_v1_gpu02p6_retry1_20260903/`；两root均
+  不存在。两者固定`NCCL_P2P_DISABLE=1`、`PYTHONDONTWRITEBYTECODE=1`与独立GPU-local NUMA；exact resume只允许同运行commit、
+  node/GPU、config、输入和single-process topology。launch前必须再次同时live检查两节点，若共驻余量漂移则改用其它安全卡而不干扰他人。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

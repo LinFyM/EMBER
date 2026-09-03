@@ -227,6 +227,14 @@ macro70 fit/held recovery为`.2224/.1153`与`.3047/.3115`，macro110为`.3283/.2
 在两点均自发优于carrier，禁止路径backward全为0。相较前版，task1 macro110更高而task93略低，说明修正保留并可改善task-local
 函数容量，却不是对所有task单调增益。shared稳定step约`15--17s`且四rank wall几乎完全对齐；跨task科学判断仍等待相邻closed-loop。
 
+fresh shared m200的held5 correct-only strict250现为`45/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/4/38/3`、
+breadth`3/5`。相对旧raw-query m200的`30/250`为`23 retained/22 gained/7 lost`、paired exact `p=.00813`，相对旧m400
+`32/250`也为`26/19/6`、`p=.01463`；因此rank/shared分源归一化确实修复了真实闭环缺陷，不能把它归为内部指标装饰。
+但相对carrier `43/250`只有`33 retained/12 gained/10 lost`、`p=.83181`，Spatial0与carrier同为38且存在`8 gained/8 lost`，
+Goal/Long仍为0，故m200只证明部分shared能力恢复，不证明task-disjoint Writer通过。冻结物化adapter的只读小核分析还显示，
+q/v的实际参与秩已明显脱离旧版近1状态，而action-out仍接近rank1且有效更新幅度远低于G1成功正控；该线索必须由当前
+Object/Long activation诊断和m400相邻闭环共同确认，不能单独触发架构改动。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

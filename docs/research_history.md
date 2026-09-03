@@ -2539,3 +2539,26 @@ task-checkpoint组合的两条fit和第三条zero-gradient held视频全部自�
 跨视频功能恢复得到实质改善。更重要的是它不回答task-disjoint shared映射是否成立，后者只由当前fresh m200/m400闭环裁决。
 工程上，task1训练/总wall从`1815.64/2016.31s`降至`629.36/812.76s`，task93从`2853.88/3076.06s`降至
 `876.82/1061.80s`；20秒采样中shared四卡平均SM为`81.5/83.6/83.9/82.2%`，task-local两卡为`83.6/89.0%`。
+
+## 127. rank-balanced shared m200显著修复旧版但尚未超过carrier
+
+fresh `3e589695` shared训练在继续前往m400时，并行从m200为held5每task固定correct demo5物化一次唯一完整rank16。物化root为
+`runs/outputs/pi05_ecp_policy_response_writer_rank_balance_m200_held5_correct_k1_materialized_3e589695_gpu02p0_20260904/`；
+manifest确认full、K1、outcome-independent、无Action Meta、validation/test action/reward/state reads为0，且每condition只有一次
+Writer调用。correct-only strict250 root为
+`runs/outputs/pi05_ecp_policy_response_writer_rank_balance_m200_held5_correct_k1_strict250_3e589695_gpu02p01_r3_20260904/`；
+22/22 shards、250/250 rows与6/6 persistent workers完整，结果`45/250`，Long/Goal/Object/Spatial0/Spatial9=
+`0/0/4/38/3`、breadth`3/5`。
+
+相对旧raw-query m200的`30/250`，新m200为`23 retained/22 gained/7 lost`、Jaccard `.442308`、paired exact
+`p=.008130`；相对旧m400的`32/250`为`26/19/6`、Jaccard `.509804`、`p=.014633`。这证明parameter-free
+rank/shared query balance产生了显著真实闭环恢复，而非只改善内部几何。相对stable carrier `43/250`则只有
+`33 retained/12 gained/10 lost`、Jaccard `.600000`、`p=.831812`：Spatial0同为38但内部`8 gained/8 lost`，Object同为4，
+Spatial9由1到3，Goal/Long仍均为0。因此m200是部分shared信号，不是路线通过，也不授权负controls或Final扩展。
+
+只读对已物化A/B做small-core谱分析时，旧m200四family参与秩中位均约1；新m200的q/v/action-in/action-out中位约
+`1.164/1.218/1.050/1.006`，说明q/v rank容量已经真实打开，但action-out仍近rank1。其action-out mobile update范数仅约
+`.006--.008`，而G1四个非零成功正控约`.091--.120`且参与秩约`2.16`；这只是定位线索，因为functional等价方向不必复现G1
+factor。m200评测释放gpu02物理0/1后，在launch前同时live检查gpu01/gpu02；前者仍为本shared四卡，后者两卡仅有
+`209/162MiB`低占用且util 0%。随后并行启动Object18与Long36的正确视频activation诊断，训练继续到m400，不读取wrong、
+shuffle或reverse。

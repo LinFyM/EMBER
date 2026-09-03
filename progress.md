@@ -17,7 +17,12 @@
   物理`0/1`完成正控：macro70 fit/held recovery分别为`.2224/.1153`与`.3047/.3115`，macro110为
   `.3283/.2282`与`.3570/.3223`，四个checkpoint的三条视频均自发优于carrier；禁止路径backward全为0。相较前版，task1
   macro110改善而task93略降，所以修正确认保留并可改善task-local容量，但不是跨task统一增益。总wall由旧版约`2016/3076s`
-  降到`813/1062s`。当前只等待shared m200/m400相邻closed loop裁决。
+  降到`813/1062s`。shared m200现已完成唯一rank16物化与held5 correct-only strict250：`45/250`，逐task
+  Long/Goal/Object/Spatial0/Spatial9=`0/0/4/38/3`、breadth`3/5`。相对旧raw-query m200的`30/250`为
+  `23 retained/22 gained/7 lost`、paired exact `p=.00813`，确认修正具有真实闭环因果收益；但相对carrier `43/250`
+  仅为`33/12/10`、`p=.83181`，Goal/Long仍为0，因此尚未通过shared路线。m400训练继续自然完成；gpu02物理0/1在
+  m200评测释放后正并行运行Object18与Long36的correct-only rank/attention几何诊断，用于区分残余family bottleneck与
+  task-disjoint组合迁移失败。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

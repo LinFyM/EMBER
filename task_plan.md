@@ -125,7 +125,10 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     task-local v2合同直接封存resolved task panel并通过27项Writer测试和配置全字段预检。两条正控已从clean detached
     `ef00f446`完成；macro70/110的task1 fit/held为`.2224/.1153`、`.3283/.2282`，task93为`.3047/.3115`、
     `.3570/.3223`，四点全部视频优于carrier并满足信息墙，确认修正后的task-local容量。全线继续使用full 50-horizon、
-    positive-only、唯一rank16及node-local单份mmap，当前等待shared m200/m400；
+    positive-only、唯一rank16及node-local单份mmap。shared m200 held5 strict250已为`45/250`、逐task
+    `0/0/4/38/3`、breadth`3/5`；相对旧m200的`22 gained/7 lost`具有显著改善（`p=.00813`），但相对carrier43仅
+    `12 gained/10 lost`（`p=.83181`），Goal/Long仍为0。当前继续完成m400相邻点，并以correct-only Object/Long
+    rank/attention几何定位剩余最早接口；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

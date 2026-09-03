@@ -4,8 +4,8 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；当前最新clean pushed代码tip为
-  `7d435ea3a6c78141a21fea60baeac6d321a174b3`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
+- canonical集成目标为clean pushed `main`；当前最新clean pushed scientific code tip为
+  `854b45bbf883a64b40d5c05505cd16dd654a9703`，后续提交只持久化本轮formal结果。最新专家补充意见已逐字归档。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

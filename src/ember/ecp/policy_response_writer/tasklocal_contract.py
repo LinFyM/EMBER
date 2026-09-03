@@ -17,6 +17,21 @@ from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
+def _resolved_functional_panel_authority(
+    runtime: PolicyResponseRuntime, task: int
+) -> dict[str, Any]:
+    panel = runtime.panels[task]
+    if panel.task_id != task:
+        raise ValueError("task-local functional panel task changed")
+    path = panel.path.resolve()
+    return {
+        "kind": "resolved_task_record",
+        "task": task,
+        "path": str(path),
+        "bytes": path.stat().st_size,
+    }
+
+
 def build_tasklocal_run_contract(
     runtime: PolicyResponseRuntime,
     *,
@@ -33,10 +48,6 @@ def build_tasklocal_run_contract(
         runtime.args.asset_root
         / str(runtime.config["authorities"]["base_g3_config"])
     ).resolve()
-    panel_path = (
-        runtime.args.asset_root
-        / str(runtime.config["authorities"]["functional_panel_config"])
-    ).resolve()
     return {
         "schema_version": schema,
         "stage": stage,
@@ -47,10 +58,9 @@ def build_tasklocal_run_contract(
             "bytes": runtime.args.config.stat().st_size,
         },
         "base_config": {"path": str(base_path), "bytes": base_path.stat().st_size},
-        "functional_panel_config": {
-            "path": str(panel_path),
-            "bytes": panel_path.stat().st_size,
-        },
+        "functional_panel_authority": _resolved_functional_panel_authority(
+            runtime, task
+        ),
         "source_checkpoint": str(
             authority_path(
                 runtime.base,

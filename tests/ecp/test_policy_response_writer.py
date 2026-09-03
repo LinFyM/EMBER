@@ -52,6 +52,9 @@ from ember.ecp.policy_response_writer.shared_execution import (
 from ember.ecp.policy_response_writer.shared_video_cache import (
     SharedPolicyResponseVideoCache,
 )
+from ember.ecp.policy_response_writer.tasklocal_contract import (
+    _resolved_functional_panel_authority,
+)
 from ember.ecp.policy_response_writer.training import (
     _functional_panel_config,
     _functional_runtime_inputs,
@@ -1106,6 +1109,24 @@ def test_scalable_panel_roots_and_video_split_are_outcome_independent(
     assert costs == {task: 75 for task in selected}
     _, training_costs = _video_splits(runtime, selected, gradient_tasks=(1, 72))
     assert training_costs == {1: 56, 72: 56, 2: 75, 74: 75}
+
+
+def test_tasklocal_contract_records_resolved_multi_source_panel(tmp_path: Path) -> None:
+    panel_path = tmp_path / "task_001.json"
+    panel_path.write_text("{}", encoding="utf-8")
+    runtime = SimpleNamespace(
+        config={"authorities": {"functional_panel_sources": []}},
+        panels={
+            1: SimpleNamespace(task_id=1, path=panel_path),
+        },
+    )
+
+    assert _resolved_functional_panel_authority(runtime, 1) == {
+        "kind": "resolved_task_record",
+        "task": 1,
+        "path": str(panel_path.resolve()),
+        "bytes": 2,
+    }
 
 
 def test_deployment_runtime_has_no_functional_data_path() -> None:

@@ -31,10 +31,16 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     _split_ids,
     _video_splits,
     balanced_task_owners,
+    configured_task_group,
     owner_balanced_task_group,
     role_balanced_task_owners,
+    scheduled_task_costs,
     shared_task_group,
+    task_group_counts,
     training_video_demos,
+)
+from ember.ecp.policy_response_writer.shared_execution import (
+    selective_replication_plan,
 )
 from ember.ecp.policy_response_writer.training import (
     PolicyResponseRuntime,
@@ -95,9 +101,9 @@ def functional_objective(
         raise ValueError("shared Writer functional objective changed")
     excess = generated_loss - carrier_loss - preservation_epsilon
     active = excess > 0
-    gradient_mass = task_weight * (
-        1.0 + (preservation_weight if active else 0.0)
-    ) / normalizer
+    gradient_mass = (
+        task_weight * (1.0 + (preservation_weight if active else 0.0)) / normalizer
+    )
     return {
         "functional_normalized": generated_loss / normalizer,
         "preservation_normalized": max(0.0, excess) / normalizer,
@@ -329,20 +335,18 @@ def _seal_normalizers(
     ):
         raise ValueError("shared Writer frozen normalizer authority changed")
     owned = set(cache.functional_normalizers)
-    cache.functional_normalizers = {
-        task: stored["functional"][task] for task in owned
-    }
+    cache.functional_normalizers = {task: stored["functional"][task] for task in owned}
     cache.process_normalizers = {task: stored["process"][task] for task in owned}
     return stored
 
 
-def _validate_shared_run(runtime: PolicyResponseRuntime, cell: Mapping[str, Any]) -> None:
+def _validate_shared_run(
+    runtime: PolicyResponseRuntime, cell: Mapping[str, Any]
+) -> None:
     if not 1 <= runtime.context.world_size <= 6:
         raise ValueError("shared Writer supports one through six local GPUs")
     if runtime.args.mode == "formal" and runtime.args.task is not None:
         raise ValueError("formal shared Writer must use its registered task split")
-    if runtime.args.mode == "profile" and runtime.args.task is None:
-        raise ValueError("shared Writer profile requires one registered task")
     cardinalities = tuple(
         map(
             int,
@@ -351,15 +355,125 @@ def _validate_shared_run(runtime: PolicyResponseRuntime, cell: Mapping[str, Any]
             ),
         )
     )
+    meta, target, _ = _split_ids(runtime)
+    task_group_counts(cell, meta=meta, target=target)
+    replication_budget = float(runtime.args.cache_replication_budget_gib)
     if (
-        int(cell["global_tasks_per_update"]) != 6
-        or int(runtime.config["data"]["initial_K"]) != 1
+        int(runtime.config["data"]["initial_K"]) != 1
         or tuple(sorted(set(cardinalities))) != cardinalities
         or not cardinalities
         or not set(cardinalities) <= set(runtime.config["data"]["supported_K"])
         or bool(runtime.config["information_wall"]["wrong_training_loss"])
+        or not math.isfinite(replication_budget)
+        or replication_budget < 0
     ):
         raise ValueError("shared Writer positive-only training contract changed")
+
+
+def _base_cache_bytes_by_task(
+    records: Sequence[Mapping[str, Any]], expected_tasks: set[int]
+) -> dict[int, int]:
+    result = {task: 0 for task in expected_tasks}
+    for row in records:
+        task = int(row["task_id"])
+        if task not in result:
+            raise RuntimeError("shared Writer base cache escaped gradient tasks")
+        result[task] += int(row["tensor_bytes"])
+    if any(value <= 0 for value in result.values()):
+        raise RuntimeError("shared Writer base cache lost a gradient task")
+    return result
+
+
+def _json_execution_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": "ember_policy_response_writer_execution_plan_v2",
+        "strategy": "finite_schedule_selective_cache_replication_cost_balanced_assignment",
+        "replica_search": str(plan["replica_search"]),
+        "execution_ownership": [
+            list(map(int, row)) for row in plan["execution_ownership"]
+        ],
+        "replicas": [list(map(int, row)) for row in plan["replicas"]],
+        "extra_cache_bytes": int(plan["extra_cache_bytes"]),
+        "budget_bytes": int(plan["budget_bytes"]),
+        "base_total_cost": int(plan["base_total_cost"]),
+        "base_tail_cost": int(plan["base_tail_cost"]),
+        "predicted_total_cost": int(plan["predicted_total_cost"]),
+        "predicted_tail_cost": int(plan["predicted_tail_cost"]),
+        "ideal_total_cost": int(plan["ideal_total_cost"]),
+        "ideal_tail_cost": int(plan["ideal_tail_cost"]),
+        "unique_step_signatures": int(plan["unique_step_signatures"]),
+        "planned_steps": int(plan["planned_steps"]),
+        "selection_uses_outcomes": False,
+        "changes_task_group_or_weight": False,
+    }
+
+
+def _seal_execution_plan(
+    runtime: PolicyResponseRuntime, plan: Mapping[str, Any]
+) -> dict[str, Any]:
+    canonical = _json_execution_plan(plan)
+    if runtime.args.mode != "formal":
+        return canonical
+    path = runtime.args.output_dir / "execution_plan.json"
+    if runtime.context.is_main and runtime.args.resume is None:
+        write_json_atomic(path, canonical)
+    barrier(runtime.context)
+    stored = read_json(path)
+    if stored != canonical:
+        raise ValueError("shared Writer frozen execution plan changed")
+    return stored
+
+
+def _build_execution_plan(
+    runtime: PolicyResponseRuntime,
+    *,
+    task_owners: Sequence[Sequence[int]],
+    video_splits: Mapping[int, VideoSplit],
+    cache_bytes: Mapping[int, int],
+    stop: int,
+) -> dict[str, Any]:
+    if runtime.args.mode == "profile" and runtime.args.task is not None:
+        groups = ((int(runtime.args.task),),) * stop
+    else:
+        groups = tuple(
+            configured_task_group(runtime, step, task_owners=task_owners)
+            for step in range(stop)
+        )
+    costs = tuple(
+        scheduled_task_costs(
+            runtime,
+            video_splits,
+            group,
+            optimizer_step=step,
+        )
+        for step, group in enumerate(groups)
+    )
+    budget = int(float(runtime.args.cache_replication_budget_gib) * (2**30))
+    return _seal_execution_plan(
+        runtime,
+        selective_replication_plan(
+            costs,
+            base_task_owners=task_owners,
+            cache_bytes=cache_bytes,
+            extra_budget_bytes=budget,
+        ),
+    )
+
+
+def _install_execution_caches(
+    runtime: PolicyResponseRuntime,
+    cache: SharedEvidenceCache,
+    *,
+    execution_owners: Sequence[Sequence[int]],
+    video_splits: Mapping[int, VideoSplit],
+    normalizers: Mapping[str, Mapping[int, float]],
+) -> None:
+    for task in map(int, execution_owners[runtime.context.rank]):
+        fit, _ = video_splits[task]
+        _capture_missing(runtime, cache, task=task, demos=fit)
+        cache.functional_normalizers[task] = float(normalizers["functional"][task])
+        cache.process_normalizers[task] = float(normalizers["process"][task])
+    barrier(runtime.context)
 
 
 def _build_result(
@@ -369,6 +483,7 @@ def _build_result(
     start_step: int,
     total: int,
     task_owners: Sequence[Sequence[int]],
+    execution_plan: Mapping[str, Any],
     normalizers: Mapping[str, Mapping[int, float]],
     training: Mapping[str, Any],
     evaluations: Mapping[str, Any],
@@ -377,7 +492,7 @@ def _build_result(
     parameters: Sequence[torch.nn.Parameter],
     started: float,
 ) -> dict[str, Any]:
-    latest = sorted(evaluations)[-1]
+    latest = sorted(evaluations)[-1] if evaluations else None
     return {
         "schema_version": SHARED_RUN_SCHEMA,
         "status": "complete",
@@ -390,12 +505,13 @@ def _build_result(
         "resume_start_step": start_step,
         "configured_total_steps": total,
         "task_ownership": [list(value) for value in task_owners],
+        "execution_plan": dict(execution_plan),
         "normalizers": normalizers,
         "curve": training["curve"],
         "metrics_rows": training["metrics_rows"],
         "train_seconds": training["train_seconds"],
         "evaluations": evaluations,
-        "evaluation": evaluations[latest],
+        "evaluation": evaluations[latest] if latest is not None else None,
         "evaluation_seconds": evaluation_seconds,
         "capture": list(capture_records),
         "frozen_evidence_cache": "ephemeral_cpu_frozen_policy_response",
@@ -421,6 +537,7 @@ def _build_result(
 
 def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     meta, target, held = _split_ids(runtime)
+    gradient_tasks = set((*meta, *target))
     cell = runtime.config["optimization"]["shared"]
     _validate_shared_run(runtime, cell)
     _initialize_collectives(runtime)
@@ -429,10 +546,16 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         if runtime.args.mode == "profile" and runtime.args.task is not None
         else (*meta, *target, *held)
     )
-    video_splits, costs = _video_splits(runtime, task_ids)
-    if runtime.args.mode == "profile":
+    video_splits, costs = _video_splits(
+        runtime, task_ids, gradient_tasks=gradient_tasks
+    )
+    if (runtime.args.mode == "profile" and runtime.args.task is not None) or cell.get(
+        "tasks_per_update_by_role"
+    ) is not None:
         task_owners = balanced_task_owners(costs, runtime.context.world_size)
     else:
+        # Preserve the current qualification run's owner-coupled 3+3 sequence.
+        # New explicit samplers are owner-independent and use global cost balance.
         task_owners = role_balanced_task_owners(
             costs,
             meta=meta,
@@ -460,11 +583,8 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     )
     seal_or_validate_shared_run_contract(runtime, contract)
     started = time.monotonic()
-    gradient_tasks = set((*meta, *target))
     owned_gradient = tuple(
-        task
-        for task in task_owners[runtime.context.rank]
-        if task in gradient_tasks
+        task for task in task_owners[runtime.context.rank] if task in gradient_tasks
     )
     cache = _prepare_training_cache(
         runtime,
@@ -478,6 +598,24 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     expected_gradient = set(task_ids).intersection(gradient_tasks)
     normalizers = _seal_normalizers(
         runtime, cache, observed_normalizers, expected_gradient
+    )
+    base_capture_records = _gather_flat(runtime, cache.capture_records)
+    execution_plan = _build_execution_plan(
+        runtime,
+        task_owners=task_owners,
+        video_splits=video_splits,
+        cache_bytes=_base_cache_bytes_by_task(base_capture_records, expected_gradient),
+        stop=stop,
+    )
+    execution_owners = tuple(
+        tuple(map(int, row)) for row in execution_plan["execution_ownership"]
+    )
+    _install_execution_caches(
+        runtime,
+        cache,
+        execution_owners=execution_owners,
+        video_splits=video_splits,
+        normalizers=normalizers,
     )
     from ember.ecp.policy_response_writer.shared_training import (
         resume_cursor,
@@ -501,6 +639,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         optimizer=optimizer,
         scheduler=scheduler,
         task_owners=task_owners,
+        execution_owners=execution_owners,
         video_splits=video_splits,
         start_step=start_step,
         stop=stop,
@@ -511,18 +650,19 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         evaluate_checkpoints,
     )
 
-    evaluations, evaluation_seconds = evaluate_checkpoints(
-        runtime,
-        cache,
-        task_owners=task_owners,
-        video_splits=(
-            video_splits
-            if runtime.args.mode == "profile"
-            else {
-                task: video_splits[task] for task in _evaluation_ids(runtime)
-            }
-        ),
-    )
+    if runtime.args.mode == "profile" and runtime.args.task is None:
+        evaluations, evaluation_seconds = {}, 0.0
+    else:
+        evaluations, evaluation_seconds = evaluate_checkpoints(
+            runtime,
+            cache,
+            task_owners=task_owners,
+            video_splits=(
+                video_splits
+                if runtime.args.mode == "profile"
+                else {task: video_splits[task] for task in _evaluation_ids(runtime)}
+            ),
+        )
     capture_records = sorted(
         _gather_flat(runtime, cache.capture_records),
         key=lambda value: (value["task_id"], value["video_demo"]),
@@ -533,6 +673,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         start_step=start_step,
         total=total,
         task_owners=task_owners,
+        execution_plan=execution_plan,
         normalizers=normalizers,
         training=training,
         evaluations=evaluations,

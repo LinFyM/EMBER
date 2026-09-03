@@ -97,9 +97,7 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     model = config.get("model", {})
     data = config.get("data", {})
-    training_k = tuple(
-        map(int, data.get("training_K", (data.get("initial_K", -1),)))
-    )
+    training_k = tuple(map(int, data.get("training_K", (data.get("initial_K", -1),))))
     if not all(
         (
             config.get("schema_version") == SCHEMA,
@@ -178,8 +176,7 @@ def _runtime_tasks_and_panels(
                 (
                     task
                     for task in tasks
-                    if task.role == "target_held"
-                    and task.domain_task_id in expected
+                    if task.role == "target_held" and task.domain_task_id in expected
                 ),
                 key=lambda task: task.domain_task_id,
             )
@@ -233,7 +230,9 @@ def prepare_runtime(
 ) -> PolicyResponseRuntime:
     config = load_policy_response_config(args.config)
     _validate_launch_authority(args)
-    base_path = (args.asset_root / str(config["authorities"]["base_g3_config"])).resolve()
+    base_path = (
+        args.asset_root / str(config["authorities"]["base_g3_config"])
+    ).resolve()
     base = load_shared_compiler_config(base_path)
     seed_everything(int(config["optimization"]["seed"]), context)
     source_config = load_source_config(
@@ -242,9 +241,11 @@ def prepare_runtime(
     source_checkpoint = authority_path(
         base, "source_checkpoint", asset_root=args.asset_root
     )
-    policy = load_policy(
-        source_checkpoint / "policy", source_config, context.device
-    ).requires_grad_(False).eval()
+    policy = (
+        load_policy(source_checkpoint / "policy", source_config, context.device)
+        .requires_grad_(False)
+        .eval()
+    )
     ranks = load_shared_rank_assets(
         base,
         asset_root=args.asset_root,
@@ -458,13 +459,19 @@ def _validate_smoke_graph(
             not math.isfinite(float(functional)),
             not math.isfinite(float(process_loss.detach())),
             min(required) <= 0,
-            any(parameter.grad is not None for parameter in runtime.policy.parameters()),
-            any(parameter.grad is not None for parameter in runtime.stage0.parameters()),
+            any(
+                parameter.grad is not None for parameter in runtime.policy.parameters()
+            ),
+            any(
+                parameter.grad is not None for parameter in runtime.stage0.parameters()
+            ),
             generated_tensors != 76,
         )
     )
     if invalid:
-        raise RuntimeError("Policy-Response Writer real smoke did not connect the graph")
+        raise RuntimeError(
+            "Policy-Response Writer real smoke did not connect the graph"
+        )
 
 
 def _writer_chain_backward(
@@ -500,9 +507,11 @@ def _open_zero_scale(runtime: PolicyResponseRuntime) -> float:
     gradients = tuple(value.grad for value in parameters)
     if any(value is None for value in gradients):
         raise RuntimeError("zero-initialized scale head did not receive credit")
-    norm = torch.stack(
-        tuple(value.detach().float().square().sum() for value in gradients)
-    ).sum().sqrt()
+    norm = (
+        torch.stack(tuple(value.detach().float().square().sum() for value in gradients))
+        .sum()
+        .sqrt()
+    )
     if not bool(torch.isfinite(norm)) or float(norm) <= 0:
         raise RuntimeError("zero-initialized scale-head gradient is invalid")
     with torch.no_grad():
@@ -543,7 +552,9 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         leaf_output = runtime.writer(
-            (video,), s_ref=runtime.ranks.s_ref, representation=runtime.args.representation
+            (video,),
+            s_ref=runtime.ranks.s_ref,
+            representation=runtime.args.representation,
         )
         leaf_state = runtime.writer.materialize(
             leaf_output,
@@ -720,6 +731,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--mode", choices=("profile", "formal"), default="profile")
     parser.add_argument("--stop-after-step", type=int)
+    parser.add_argument(
+        "--cache-replication-budget-gib",
+        type=float,
+        default=0.0,
+        help=(
+            "maximum additional host memory for outcome-independent frozen "
+            "evidence replicas used by shared task scheduling"
+        ),
+    )
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--evaluation-config", type=Path)
     parser.add_argument("--writer-run", type=Path)

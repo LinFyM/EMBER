@@ -25,8 +25,7 @@ def build_shared_run_contract(
     video_splits: Mapping[int, tuple[tuple[int, ...], int]],
 ) -> dict[str, Any]:
     base_path = (
-        runtime.args.asset_root
-        / str(runtime.config["authorities"]["base_g3_config"])
+        runtime.args.asset_root / str(runtime.config["authorities"]["base_g3_config"])
     ).resolve()
     authorities = runtime.config["authorities"]
     panel_config = authorities.get("functional_panel_config")
@@ -51,7 +50,10 @@ def build_shared_run_contract(
                         runtime.args.asset_root
                         / str(source["root"])
                         / str(source["completion"])
-                    ).resolve().stat().st_size,
+                    )
+                    .resolve()
+                    .stat()
+                    .st_size,
                 }
                 for source in panel_sources
             ],
@@ -103,6 +105,17 @@ def build_shared_run_contract(
         "model": dict(runtime.config["model"]),
         "data": dict(runtime.config["data"]),
         "optimization": dict(runtime.config["optimization"]["shared"]),
+        "execution": {
+            "cache_replication_budget_gib": float(
+                runtime.args.cache_replication_budget_gib
+            ),
+            "plan": "execution_plan.json",
+            "task_assignment": (
+                "exact_minimum_predicted_makespan_for_small_batches_"
+                "deterministic_lpt_move_swap_for_large_batches"
+            ),
+            "selection_uses_outcomes": False,
+        },
         "loss_normalization": {
             "functional": "per_task_frozen_panel_a_carrier_rms",
             "process": "per_task_initial_two_fit_prefix_mean",

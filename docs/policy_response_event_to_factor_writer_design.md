@@ -321,6 +321,11 @@ full-response：owner对应layer input与residual、38 owners、50 horizons、2 
 首轮使用component initialization、10 warmup加100 effective updates，并保存相邻节点。训练图有效且出现有意义correct功能信号后，
 立即运行held5 correct-only strict250，不以一长串内部小数阈值阻塞闭环。
 
+首轮12-task资格实验采用每步3 meta加3 target只是该次配置，不是Writer或owner的固定要求。后续运行可按证据只使用其中一类、采用
+任意显式比例并改变每步task数。科学sampler先确定task group与权重；多卡执行器随后按视频帧数与functional rows的
+outcome-independent成本，在已有frozen evidence cache副本上最小化最长rank耗时。选择性cache复制和动态设备放置不得增删task、改变
+task权重、K、optimizer cadence或完整50-horizon内容，formal resume冻结其执行计划。
+
 checkpoint依据correct-only表现、task breadth与相邻稳定性选定。选定并冻结后才一次性运行same-task-other、wrong、no-video、
 language-only、first+final、shuffled与reversed controls；这些结果不回流训练或loss设计。
 
@@ -360,8 +365,9 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 - 新Writer保持一个canonical训练/评测入口；合法差异放入同一配置或窄strategy边界，不复制runner。
 - active source ownership固定为：`capture.py`只拥有冻结PI0.5/native taps；`process.py`只拥有Frame/Event表示与causal target；
   `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
-  唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared_schedule.py`拥有可扩展task/video/cache-owner
-  调度；`shared.py`拥有evidence cache与shared orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；
+  唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared_schedule.py`拥有可扩展task/video采样；
+  `shared_execution.py`只拥有outcome-independent cache复制与task-to-rank放置；`shared.py`拥有evidence cache与shared
+  orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；
   `shared_evaluation.py`只拥有零梯度Panel-B评估；
   `shared_contract.py`只拥有formal authority与resume合同；`materialization.py`只把冻结shared checkpoint与固定正确视频物化成
   每task唯一完整rank16 adapter。唯一Writer CLI仍是`scripts/train_ecp_policy_response_writer.py`；closed-loop继续复用通用

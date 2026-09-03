@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
+from ember.pi05_eval.recovery import worker_command_matches
 from ember.pi05_eval_queue import publish_json_exclusive
 
 
@@ -90,3 +91,33 @@ def test_launcher_attempt_summary_counts_shards_across_resume(tmp_path: Path) ->
     assert summary["active_wall_seconds"] == 14.0
     assert summary["completed_before_final_attempt"] == 5
     assert [row["completed_shards"] for row in summary["attempts"]] == [5, 31]
+
+
+def test_worker_detection_uses_exact_argv_tokens(tmp_path: Path) -> None:
+    output = tmp_path / "evaluation"
+    worker = b"\0".join(
+        (
+            b"python",
+            b"/repo/scripts/evaluate_pi05.py",
+            b"worker",
+            b"--output-dir",
+            str(output.resolve()).encode(),
+            b"--worker-id",
+            b"4-r0",
+            b"",
+        )
+    )
+    wrapper = b"\0".join(
+        (
+            b"bash",
+            b"-c",
+            (b"pgrep evaluate_pi05.py worker " + str(output.resolve()).encode()),
+            b"",
+        )
+    )
+    launcher = worker.replace(b"\0worker\0", b"\0start\0")
+
+    assert worker_command_matches(worker, output)
+    assert not worker_command_matches(wrapper, output)
+    assert not worker_command_matches(launcher, output)
+    assert not worker_command_matches(worker, tmp_path / "another")

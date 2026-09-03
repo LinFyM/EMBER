@@ -28,7 +28,8 @@ def _selected_task_ids(config: Mapping[str, Any]) -> tuple[int, ...]:
     )
     values = tuple(task for group in groups for task in group)
     if (
-        not all(groups)
+        not any(groups[:2])
+        or not any(groups[2:])
         or len(values) != len(set(values))
         or min(values, default=-1) < 0
     ):
@@ -112,11 +113,81 @@ def shared_task_group(
         random.Random(int(seed) + salt).shuffle(ordered)
         offset = (optimizer_step * tasks_per_role) % len(ordered)
         return tuple(
-            ordered[(offset + index) % len(ordered)]
-            for index in range(tasks_per_role)
+            ordered[(offset + index) % len(ordered)] for index in range(tasks_per_role)
         )
 
     return (*selected(left, 104729), *selected(right, 130363))
+
+
+def task_group_counts(
+    cell: Mapping[str, Any],
+    *,
+    meta: Sequence[int],
+    target: Sequence[int],
+) -> tuple[int, int]:
+    """Resolve experiment-configured role counts without imposing owner policy."""
+
+    total = int(cell["global_tasks_per_update"])
+    configured = cell.get("tasks_per_update_by_role")
+    if configured is None:
+        if total <= 0 or total % 2:
+            raise ValueError(
+                "shared Writer unequal role sampling needs tasks_per_update_by_role"
+            )
+        counts = (total // 2, total // 2)
+    else:
+        if set(configured) != {"meta", "target"}:
+            raise ValueError("shared Writer task sampling roles changed")
+        counts = (int(configured["meta"]), int(configured["target"]))
+    if (
+        total <= 0
+        or min(counts) < 0
+        or sum(counts) != total
+        or counts[0] > len(tuple(meta))
+        or counts[1] > len(tuple(target))
+        or not any(counts)
+    ):
+        raise ValueError("shared Writer task sampling counts changed")
+    return counts
+
+
+def counted_task_group(
+    groups: Sequence[Sequence[int]],
+    counts: Sequence[int],
+    optimizer_step: int,
+    *,
+    seed: int,
+) -> tuple[int, ...]:
+    """Cycle any configured task groups with independent counts and equal exposure."""
+
+    normalized = tuple(tuple(map(int, group)) for group in groups)
+    requested = tuple(map(int, counts))
+    all_tasks = tuple(task for group in normalized for task in group)
+    if (
+        optimizer_step < 0
+        or len(normalized) != len(requested)
+        or not normalized
+        or len(all_tasks) != len(set(all_tasks))
+        or any(
+            count < 0 or count > len(group)
+            for group, count in zip(normalized, requested, strict=True)
+        )
+        or not any(requested)
+    ):
+        raise ValueError("shared Writer counted task schedule changed")
+    selected: list[int] = []
+    for group_index, (group, count) in enumerate(
+        zip(normalized, requested, strict=True)
+    ):
+        if count == 0:
+            continue
+        ordered = list(group)
+        random.Random(int(seed) + 104729 + group_index * 25609).shuffle(ordered)
+        offset = (optimizer_step * count) % len(ordered)
+        selected.extend(
+            ordered[(offset + index) % len(ordered)] for index in range(count)
+        )
+    return tuple(selected)
 
 
 def training_video_demos(
@@ -143,9 +214,7 @@ def training_video_demos(
     ):
         raise ValueError("shared Writer K-video schedule changed")
     cardinality = allowed[(optimizer_step + int(task) + int(seed)) % len(allowed)]
-    offset = (
-        optimizer_step * max(allowed) + int(task) + int(seed)
-    ) % len(pool)
+    offset = (optimizer_step * max(allowed) + int(task) + int(seed)) % len(pool)
     return tuple(pool[(offset + index) % len(pool)] for index in range(cardinality))
 
 
@@ -187,7 +256,8 @@ def role_balanced_task_owners(
         raise ValueError("shared Writer role-balanced ownership changed")
     rows: list[list[int]] = [[] for _ in range(world_size)]
     total_loads = [0] * world_size
-    if world_size < 6:
+    active_role_count = sum(bool(role) for role in roles)
+    if world_size < 6 or active_role_count < 2:
         shared_ranks = tuple(range(world_size))
         role_ranks = (shared_ranks, shared_ranks)
     else:
@@ -204,11 +274,7 @@ def role_balanced_task_owners(
         role_counts = {rank: 0 for rank in eligible}
         for task in sorted(role, key=lambda value: (-int(costs[value]), value)):
             rank = min(
-                (
-                    value
-                    for value in eligible
-                    if role_counts[value] < capacities[value]
-                ),
+                (value for value in eligible if role_counts[value] < capacities[value]),
                 key=lambda value: (
                     role_loads[value],
                     role_counts[value],
@@ -235,15 +301,8 @@ def _owner_spreading_phase_offsets(
 ) -> tuple[int, int]:
     """Choose fixed role phases that reduce per-step cache-owner stragglers."""
 
-    owner_by_task = {
-        task: rank for rank, row in enumerate(owners) for task in row
-    }
-    period = lcm(
-        *(
-            len(order) // gcd(len(order), tasks_per_role)
-            for order in orders
-        )
-    )
+    owner_by_task = {task: rank for rank, row in enumerate(owners) for task in row}
+    period = lcm(*(len(order) // gcd(len(order), tasks_per_role) for order in orders))
     best_score: tuple[int, int, int, int, int] | None = None
     best_phases = (0, 0)
     for left_phase in range(len(orders[0])):
@@ -253,9 +312,7 @@ def _owner_spreading_phase_offsets(
             squared_load = 0
             for step in range(period):
                 loads = [0] * len(owners)
-                for order, phase in zip(
-                    orders, (left_phase, right_phase), strict=True
-                ):
+                for order, phase in zip(orders, (left_phase, right_phase), strict=True):
                     offset = step * tasks_per_role + phase
                     for index in range(tasks_per_role):
                         task = order[(offset + index) % len(order)]
@@ -288,9 +345,7 @@ def owner_balanced_task_group(
     """Select role-balanced tasks while spreading each update over cache owners."""
 
     owners = tuple(tuple(map(int, row)) for row in task_owners)
-    owner_by_task = {
-        task: rank for rank, row in enumerate(owners) for task in row
-    }
+    owner_by_task = {task: rank for rank, row in enumerate(owners) for task in row}
     roles = (tuple(map(int, meta)), tuple(map(int, target)))
     if (
         optimizer_step < 0
@@ -332,15 +387,84 @@ def owner_balanced_task_group(
     for ordered, phase in zip(role_orders, phases, strict=True):
         offset = (optimizer_step * tasks_per_role + phase) % len(ordered)
         selected.extend(
-            ordered[(offset + index) % len(ordered)]
-            for index in range(tasks_per_role)
+            ordered[(offset + index) % len(ordered)] for index in range(tasks_per_role)
         )
     if len(selected) != len(set(selected)):
         raise RuntimeError("shared Writer owner-balanced task group repeated a task")
     return tuple(selected)
 
 
-def _split_ids(runtime: Any) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+def configured_task_group(
+    runtime: Any,
+    optimizer_step: int,
+    *,
+    task_owners: Sequence[Sequence[int]],
+) -> tuple[int, ...]:
+    """Apply the experiment sampler; cache placement never sets its ratio or size."""
+
+    meta, target, _ = _split_ids(runtime)
+    cell = runtime.config["optimization"]["shared"]
+    counts = task_group_counts(cell, meta=meta, target=target)
+    if cell.get("tasks_per_update_by_role") is None:
+        # Preserve the established active experiment's exact task sequence.
+        return owner_balanced_task_group(
+            meta,
+            target,
+            optimizer_step,
+            task_owners=task_owners,
+            tasks_per_role=counts[0],
+            seed=int(runtime.config["optimization"]["seed"]),
+        )
+    return counted_task_group(
+        (meta, target),
+        counts,
+        optimizer_step,
+        seed=int(runtime.config["optimization"]["seed"]),
+    )
+
+
+def scheduled_task_costs(
+    runtime: Any,
+    video_splits: Mapping[int, VideoSplit],
+    group: Sequence[int],
+    *,
+    optimizer_step: int,
+) -> dict[int, int]:
+    """Predict task wall cost from authorized rows and selected video frames."""
+
+    cell = runtime.config["optimization"]["shared"]
+    rows = int(
+        cell["functional_rows"]
+        if runtime.args.mode == "formal"
+        else cell["profile_functional_rows"]
+    )
+    cardinalities = tuple(
+        map(
+            int,
+            runtime.config["data"].get(
+                "training_K", (runtime.config["data"]["initial_K"],)
+            ),
+        )
+    )
+    result = {}
+    for task in map(int, group):
+        fit = video_splits[task][0]
+        demos = training_video_demos(
+            fit,
+            optimizer_step=optimizer_step,
+            task=task,
+            cardinalities=cardinalities,
+            seed=int(runtime.config["optimization"]["seed"]),
+        )
+        result[task] = rows + sum(
+            int(runtime.video_store.frame_counts(task, demo)[1]) for demo in demos
+        )
+    return result
+
+
+def _split_ids(
+    runtime: Any,
+) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
     split = runtime.config["task_split"]
     meta = tuple(map(int, split["gradient_meta"]))
     target = tuple(map(int, split["gradient_target"]))
@@ -354,8 +478,7 @@ def _split_ids(runtime: Any) -> tuple[tuple[int, ...], tuple[int, ...], tuple[in
         )
     )
     if (
-        not meta
-        or not target
+        not (*meta, *target)
         or not held
         or len(set((*meta, *target, *held))) != len(meta) + len(target) + len(held)
     ):
@@ -389,13 +512,16 @@ def _evaluation_ids(runtime: Any) -> tuple[int, ...]:
 
 
 def _video_splits(
-    runtime: Any, task_ids: Sequence[int]
+    runtime: Any,
+    task_ids: Sequence[int],
+    *,
+    gradient_tasks: Sequence[int] | None = None,
 ) -> tuple[dict[int, VideoSplit], dict[int, int]]:
+    gradient = set(map(int, gradient_tasks)) if gradient_tasks is not None else None
     video_cell = runtime.config["data"].get("video_split")
     if video_cell is not None:
         if (
-            video_cell.get("source")
-            != "functional_panel_program_video_demos"
+            video_cell.get("source") != "functional_panel_program_video_demos"
             or int(video_cell.get("fit_pool_max", -1)) not in {2, 3, 4}
             or video_cell.get("held_selection") != "last_sorted"
             or video_cell.get("selection_uses_outcomes") is not False
@@ -415,9 +541,11 @@ def _video_splits(
             if held in fit:
                 raise ValueError("shared Writer scalable video split overlapped")
             result[task] = (fit, held)
+            cost_demos = (
+                fit if gradient is not None and task in gradient else (*fit, held)
+            )
             costs[task] = sum(
-                runtime.video_store.frame_counts(task, demo)[1]
-                for demo in (*fit, held)
+                runtime.video_store.frame_counts(task, demo)[1] for demo in cost_demos
             )
         return result, costs
 
@@ -463,7 +591,10 @@ def _video_splits(
         ):
             raise ValueError("shared Writer video escaped its sealed panel")
         result[task] = (fit_demos, held_demo)
-        costs[task] = sum(
-            int(value.sampled_frames) for value in (*selected, held_condition)
+        cost_conditions = (
+            selected
+            if gradient is not None and task in gradient
+            else (*selected, held_condition)
         )
+        costs[task] = sum(int(value.sampled_frames) for value in cost_conditions)
     return result, costs

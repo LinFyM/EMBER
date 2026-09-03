@@ -37,19 +37,35 @@ TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
 }
 
 
+def worker_command_matches(command: bytes, output_dir: Path) -> bool:
+    """Recognize an evaluator worker by argv tokens, not shell substrings."""
+
+    arguments = tuple(value for value in command.split(b"\0") if value)
+    expected_output = str(output_dir.resolve()).encode()
+    for index, value in enumerate(arguments[:-1]):
+        if Path(value.decode(errors="ignore")).name != "evaluate_pi05.py":
+            continue
+        if arguments[index + 1] != b"worker":
+            return False
+        try:
+            output_index = arguments.index(b"--output-dir", index + 2)
+        except ValueError:
+            return False
+        return (
+            output_index + 1 < len(arguments)
+            and arguments[output_index + 1] == expected_output
+        )
+    return False
+
+
 def active_worker_pids(output_dir: Path) -> list[int]:
-    needle = str(output_dir.resolve()).encode()
     active = []
     for path in Path("/proc").glob("[0-9]*/cmdline"):
         try:
             command = path.read_bytes()
         except OSError:
             continue
-        if (
-            b"evaluate_pi05.py" in command
-            and b"worker" in command
-            and needle in command
-        ):
+        if worker_command_matches(command, output_dir):
             active.append(int(path.parent.name))
     return sorted(active)
 

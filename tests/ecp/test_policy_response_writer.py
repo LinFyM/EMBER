@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,8 +9,13 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+import ember.ecp.policy_response_writer.composer as composer_module
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
-from ember.ecp.native_factors import native_output_group_count
+from ember.ecp.native_factors import (
+    G1_RESIDUAL_RANK,
+    OnlineSoftmaxAccumulator,
+    native_output_group_count,
+)
 from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
     PolicyResponseEventToFactorWriter,
@@ -28,8 +34,17 @@ from ember.ecp.policy_response_writer.shared import (
     shared_task_group,
     training_video_demos,
 )
+from ember.ecp.policy_response_writer.shared_schedule import (
+    counted_task_group,
+    task_group_counts,
+)
 from ember.ecp.policy_response_writer.shared_training import (
     _clip_scale_and_direction_gradients,
+)
+from ember.ecp.policy_response_writer.shared_execution import (
+    assignment_makespan,
+    cost_balanced_task_assignment,
+    selective_replication_plan,
 )
 from ember.ecp.policy_response_writer.training import (
     _functional_panel_config,
@@ -150,9 +165,7 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
     assert torch.count_nonzero(
         model.process.events.frame_position_projection.weight.grad
     )
-    assert not any(
-        name.startswith("teacher_") for name, _ in model.named_parameters()
-    )
+    assert not any(name.startswith("teacher_") for name, _ in model.named_parameters())
 
 
 def test_retired_coarse_representation_is_rejected() -> None:
@@ -167,11 +180,15 @@ def test_causal_prefix_cannot_read_mutated_future_frames() -> None:
     stop = 5
     changed = replace(
         video,
-        patch_states=torch.cat((video.patch_states[:stop], video.patch_states[stop:] + 50)),
+        patch_states=torch.cat(
+            (video.patch_states[:stop], video.patch_states[stop:] + 50)
+        ),
         language_states=torch.cat(
             (video.language_states[:stop], video.language_states[stop:] - 40)
         ),
-        layer_states=torch.cat((video.layer_states[:stop], video.layer_states[stop:] * 3)),
+        layer_states=torch.cat(
+            (video.layer_states[:stop], video.layer_states[stop:] * 3)
+        ),
         flow_velocity=torch.cat(
             (video.flow_velocity[:stop], video.flow_velocity[stop:] - 25)
         ),
@@ -181,7 +198,9 @@ def test_causal_prefix_cannot_read_mutated_future_frames() -> None:
         right = model.process(changed.frame_slice(stop), causal=True)
 
     torch.testing.assert_close(left.events, right.events, rtol=0, atol=0)
-    torch.testing.assert_close(left.frame_innovation, right.frame_innovation, rtol=0, atol=0)
+    torch.testing.assert_close(
+        left.frame_innovation, right.frame_innovation, rtol=0, atol=0
+    )
 
 
 def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
@@ -189,15 +208,11 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
     videos = (_video(17), _video(19, frames=7))
     with torch.no_grad():
         processes = tuple(model.process(video) for video in videos)
-        initialized = model.composer(
-            videos, processes, s_ref=torch.full((4,), 0.2)
-        )
+        initialized = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert any(torch.count_nonzero(value) > 0 for value in initialized.a)
         assert all(torch.count_nonzero(value) == 0 for value in initialized.b)
         model.composer.scale_head.bias.fill_(10.0)
-        bounded = model.composer(
-            videos, processes, s_ref=torch.full((4,), 0.2)
-        )
+        bounded = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert all(
             _effective_update_rms(a, b) <= 0.2 + 2e-6
             for a, b in zip(bounded.a, bounded.b, strict=True)
@@ -256,7 +271,7 @@ def test_composer_bank_memory_retains_every_action_horizon() -> None:
         assert all(chunk.shape[1:] == (model.composer.width,) for chunk in memory)
 
 
-def test_streaming_bank_attention_matches_dense_attention() -> None:
+def test_streaming_bank_attention_matches_dense_attention(monkeypatch) -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(41)
         generator = torch.Generator().manual_seed(41)
@@ -267,6 +282,7 @@ def test_streaming_bank_attention_matches_dense_attention() -> None:
             torch.randn(11, 16, generator=generator),
             torch.randn(5, 16, generator=generator),
         )
+        monkeypatch.setattr(composer_module, "STREAMING_BANK_BLOCK_TOKEN_LIMIT", 12)
         with torch.no_grad():
             streamed = block._streaming_bank_attention(query, memory)
             dense = torch.cat(tuple(block.bank_norm(chunk) for chunk in memory))[None]
@@ -275,8 +291,131 @@ def test_streaming_bank_attention_matches_dense_attention() -> None:
         torch.testing.assert_close(streamed, expected, atol=2e-6, rtol=2e-5)
 
 
+def test_fused_bank_attention_matches_streaming_outputs_and_gradients() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(43)
+        generator = torch.Generator().manual_seed(43)
+        dense_block = _model().composer.blocks[0].eval()
+        streaming_block = _model().composer.blocks[0].eval()
+        streaming_block.load_state_dict(dense_block.state_dict())
+        dense_query = torch.randn(1, 4, 16, generator=generator, requires_grad=True)
+        dense_memory = tuple(
+            torch.randn(size, 16, generator=generator, requires_grad=True)
+            for size in (7, 11, 5)
+        )
+        streaming_query = dense_query.detach().clone().requires_grad_(True)
+        streaming_memory = tuple(
+            value.detach().clone().requires_grad_(True) for value in dense_memory
+        )
+
+        dense = dense_block._dense_bank_attention(dense_query, dense_memory)
+        streamed = streaming_block._streaming_bank_attention(
+            streaming_query, streaming_memory
+        )
+        dense.square().sum().backward()
+        streamed.square().sum().backward()
+
+        torch.testing.assert_close(dense, streamed, atol=2e-6, rtol=2e-5)
+        torch.testing.assert_close(
+            dense_query.grad, streaming_query.grad, atol=3e-6, rtol=3e-5
+        )
+        for left, right in zip(dense_memory, streaming_memory, strict=True):
+            torch.testing.assert_close(left.grad, right.grad, atol=3e-6, rtol=3e-5)
+        for left, right in zip(
+            dense_block.parameters(), streaming_block.parameters(), strict=True
+        ):
+            torch.testing.assert_close(left.grad, right.grad, atol=3e-6, rtol=3e-5)
+
+
+def test_fused_video_pooling_matches_chunked_outputs_and_gradients() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(47)
+        model = _model().eval()
+        videos = (_video(47, frames=7), _video(53, frames=5))
+        processes = tuple(model.process(video) for video in videos)
+        bank, candidates = model.composer._bank_candidates(0, videos, processes)
+        query = model.composer._query_target(0, processes, bank)
+        fused = model.composer._pool_target(0, query, candidates)
+
+        owner = model.composer.owners[0]
+        groups = native_output_group_count(owner)
+        group_width = owner.out_features // groups
+        input_accumulator = OnlineSoftmaxAccumulator(
+            ranks=G1_RESIDUAL_RANK,
+            width=owner.in_features,
+            device=query.device,
+        )
+        output_accumulators = tuple(
+            OnlineSoftmaxAccumulator(
+                ranks=G1_RESIDUAL_RANK,
+                width=group_width,
+                device=query.device,
+            )
+            for _ in range(groups)
+        )
+        for video in candidates:
+            input_mass = -math.log(video.frame_count * 2 * ACTION_HORIZON)
+            output_mass = -math.log(video.frame_count * 2 * ACTION_HORIZON * 4)
+            for chunk in video.chunks:
+                input_accumulator.add(
+                    model.composer._branch_logits(
+                        query,
+                        chunk.input_keys,
+                        chunk.innovation,
+                        log_base_mass=input_mass,
+                        output=False,
+                    ),
+                    chunk.input_values,
+                )
+                for group, accumulator in enumerate(output_accumulators):
+                    accumulator.add(
+                        model.composer._branch_logits(
+                            query,
+                            chunk.output_keys[group],
+                            chunk.innovation,
+                            log_base_mass=output_mass,
+                            output=True,
+                        ),
+                        chunk.output_values[group],
+                    )
+        reference = (
+            input_accumulator.signed_mean(),
+            torch.cat(
+                tuple(value.signed_mean() for value in output_accumulators), dim=-1
+            ),
+        )
+
+        for left, right in zip(fused, reference, strict=True):
+            torch.testing.assert_close(left, right, atol=3e-6, rtol=3e-5)
+        parameters = (
+            query,
+            model.composer.common_query.weight,
+            model.composer.innovation_key.weight,
+            model.composer.input_positive_query.weight,
+            model.composer.input_negative_query.weight,
+            model.composer.output_positive_query.weight,
+            model.composer.output_negative_query.weight,
+        )
+        fused_gradients = torch.autograd.grad(
+            sum(value.square().sum() for value in fused),
+            parameters,
+            retain_graph=True,
+        )
+        reference_gradients = torch.autograd.grad(
+            sum(value.square().sum() for value in reference), parameters
+        )
+        for left, right in zip(fused_gradients, reference_gradients, strict=True):
+            torch.testing.assert_close(left, right, atol=2e-5, rtol=2e-4)
+
+
 def test_static_repeated_video_cannot_open_mobile_lora() -> None:
-    model = _model().eval()
+    # The invariant is about a repeated video's dynamic content, not about
+    # whichever global RNG state earlier tests happened to leave behind.
+    # Keep the randomly initialized projections fixed so the small accepted
+    # floating-point residue has a stable, meaningful bound.
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(0)
+        model = _model().eval()
     video = _static_repeated_video(29)
     with torch.no_grad():
         process = model.process(video)
@@ -403,9 +542,7 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
         held=(100, 101),
         world_size=6,
     )
-    owner_by_task = {
-        task: rank for rank, row in enumerate(owners) for task in row
-    }
+    owner_by_task = {task: rank for rank, row in enumerate(owners) for task in row}
     owner_groups = [
         owner_balanced_task_group(
             meta,
@@ -424,12 +561,8 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
     assert sum(value == 6 for value in active_owner_counts) >= 0.96 * len(
         active_owner_counts
     )
-    assert len(
-        {sum(task in group for group in owner_groups) for task in meta}
-    ) <= 2
-    assert len(
-        {sum(task in group for group in owner_groups) for task in target}
-    ) <= 2
+    assert len({sum(task in group for group in owner_groups) for task in meta}) <= 2
+    assert len({sum(task in group for group in owner_groups) for task in target}) <= 2
 
     three_owners = role_balanced_task_owners(
         {task: 100 + task % 17 for task in tasks},
@@ -517,6 +650,136 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
     assert all(len(value) == len(set(value)) for value in (*four, *two))
 
 
+def test_execution_assignment_is_exact_and_does_not_change_the_task_group() -> None:
+    group = (1, 8, 9, 72, 73, 93)
+    costs = {1: 20, 8: 9, 9: 11, 72: 12, 73: 14, 93: 30}
+    eligibility = {
+        1: (0,),
+        8: (0, 2),
+        9: (1,),
+        72: (1, 3),
+        73: (2,),
+        93: (3,),
+    }
+    assignment = cost_balanced_task_assignment(group, costs, eligibility, world_size=4)
+
+    assert sorted(task for row in assignment for task in row) == sorted(group)
+    assert sum(len(row) for row in assignment) == len(group)
+    assert assignment_makespan(assignment, costs) == 30
+    assert assignment == cost_balanced_task_assignment(
+        group, costs, eligibility, world_size=4
+    )
+
+    large = tuple(range(24))
+    large_assignment = cost_balanced_task_assignment(
+        large,
+        {task: 1 + task % 7 for task in large},
+        {task: tuple(range(6)) for task in large},
+        world_size=6,
+    )
+    assert sorted(task for row in large_assignment for task in row) == list(large)
+    assert max(len(row) for row in large_assignment) <= 5
+
+
+def test_selective_replication_reaches_unconstrained_tail_without_full_copy() -> None:
+    # Task 777 is registered and cached but absent from this short finite profile.
+    owners = ((1, 93, 777), (8, 9), (72,), (73,))
+    steps = (
+        {1: 20, 8: 9, 9: 11, 72: 12, 73: 14, 93: 30},
+        {1: 20, 8: 9, 9: 11, 72: 12, 73: 14, 93: 30},
+    )
+    plan = selective_replication_plan(
+        steps,
+        base_task_owners=owners,
+        cache_bytes={
+            **{task: 100 + task for task in steps[0]},
+            777: 877,
+        },
+        extra_budget_bytes=10_000,
+    )
+
+    assert plan["predicted_total_cost"] == plan["ideal_total_cost"]
+    assert plan["predicted_tail_cost"] == plan["ideal_tail_cost"] == 30
+    assert 0 < plan["extra_cache_bytes"] < sum(3 * (100 + task) for task in steps[0])
+    execution = plan["execution_ownership"]
+    assert sorted({task for row in execution for task in row}) == sorted(steps[0])
+
+
+def test_selective_replication_scales_to_full_meta_task_inventory() -> None:
+    tasks = tuple(range(71))
+    owners = tuple(
+        tuple(task for task in tasks if task % 6 == rank) for rank in range(6)
+    )
+    steps = []
+    for step in range(100):
+        owner = step % 6
+        pool = owners[owner]
+        start = (step // 6) % len(pool)
+        group = tuple(pool[(start + offset) % len(pool)] for offset in range(6))
+        steps.append({task: 5 + (task * 7 + step) % 23 for task in group})
+
+    plan = selective_replication_plan(
+        steps,
+        base_task_owners=owners,
+        cache_bytes={task: 1024 for task in tasks},
+        extra_budget_bytes=8 * 1024,
+    )
+
+    assert 0 < len(plan["replicas"]) <= 8
+    assert plan["extra_cache_bytes"] <= 8 * 1024
+    assert plan["predicted_total_cost"] < plan["base_total_cost"]
+    assert plan["predicted_total_cost"] >= plan["ideal_total_cost"]
+    assert plan["replica_search"] == ("direct_move_gain_per_byte_then_exact_objective")
+    assert sorted(
+        {task for row in plan["execution_ownership"] for task in row}
+    ) == list(tasks)
+
+
+def test_task_batch_size_and_role_ratio_are_experiment_config_not_runtime_policy() -> (
+    None
+):
+    cell = {
+        "global_tasks_per_update": 4,
+        "tasks_per_update_by_role": {"meta": 1, "target": 3},
+    }
+    counts = task_group_counts(cell, meta=(1, 8), target=(72, 73, 75, 93))
+    groups = tuple(
+        counted_task_group(((1, 8), (72, 73, 75, 93)), counts, step, seed=19)
+        for step in range(8)
+    )
+
+    assert counts == (1, 3)
+    assert all(len(group) == 4 for group in groups)
+    assert all(len(set(group[:1])) == 1 for group in groups)
+    assert all(len(set(group[1:])) == 3 for group in groups)
+    assert {sum(task in group for group in groups) for task in (1, 8)} == {4}
+    assert {sum(task in group for group in groups) for task in (72, 73, 75, 93)} == {6}
+
+    target_only = task_group_counts(
+        {
+            "global_tasks_per_update": 2,
+            "tasks_per_update_by_role": {"meta": 0, "target": 2},
+        },
+        meta=(),
+        target=(72, 73, 75),
+    )
+    assert target_only == (0, 2)
+    assert counted_task_group(((), (72, 73, 75)), target_only, 0, seed=3) == (
+        73,
+        75,
+    )
+    assert _selected_task_ids(
+        {
+            "task_split": {
+                "gradient_meta": [],
+                "gradient_target": [72, 73, 75],
+                "true_task_held_meta": [],
+                "true_task_held_target": [74],
+            }
+        }
+    ) == (72, 73, 75, 74)
+
+
 def test_scalable_panel_roots_and_video_split_are_outcome_independent(
     tmp_path: Path,
 ) -> None:
@@ -557,8 +820,7 @@ def test_scalable_panel_roots_and_video_split_are_outcome_independent(
     }
 
     panels = {
-        task: SimpleNamespace(program_video_demos=(1, 3, 5, 7, 9))
-        for task in selected
+        task: SimpleNamespace(program_video_demos=(1, 3, 5, 7, 9)) for task in selected
     }
     runtime = SimpleNamespace(
         config={
@@ -577,6 +839,8 @@ def test_scalable_panel_roots_and_video_split_are_outcome_independent(
     splits, costs = _video_splits(runtime, selected)
     assert splits == {task: ((1, 3, 5, 7), 9) for task in selected}
     assert costs == {task: 75 for task in selected}
+    _, training_costs = _video_splits(runtime, selected, gradient_tasks=(1, 72))
+    assert training_costs == {1: 56, 72: 56, 2: 75, 74: 75}
 
 
 def test_deployment_runtime_has_no_functional_data_path() -> None:

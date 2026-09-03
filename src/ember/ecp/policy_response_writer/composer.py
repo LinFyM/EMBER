@@ -26,6 +26,10 @@ from ember.ecp.policy_response_writer.process import (
 )
 
 
+DENSE_BANK_ATTENTION_TOKEN_LIMIT = 192 * 1024
+STREAMING_BANK_BLOCK_TOKEN_LIMIT = 128 * 1024
+
+
 @dataclass(frozen=True)
 class _NativeBankChunk:
     """Projected keys and raw values shared by context read and signed pooling."""
@@ -43,9 +47,56 @@ class _NativeVideoCandidates:
     chunks: tuple[_NativeBankChunk, ...]
 
 
-def _effective_update_mean_square(
-    a: torch.Tensor, b: torch.Tensor
-) -> torch.Tensor:
+class _GroupedOnlineSoftmaxAccumulator:
+    """Exact signed-pooling statistics with an independent group axis."""
+
+    def __init__(
+        self, *, groups: int, ranks: int, width: int, device: torch.device
+    ) -> None:
+        self.maximum = torch.full(
+            (groups, ranks, 2), -torch.inf, dtype=torch.float32, device=device
+        )
+        self.normalizer = torch.zeros(
+            groups, ranks, 2, dtype=torch.float32, device=device
+        )
+        self.weighted_sum = torch.zeros(
+            groups, ranks, 2, width, dtype=torch.float32, device=device
+        )
+
+    def add(self, logits: torch.Tensor, values: torch.Tensor) -> None:
+        # logits is [rank, branch, frame, group, ...]; values keeps group
+        # first so every native output group has its own exact normalization.
+        if logits.ndim < 5 or values.ndim != logits.ndim - 1:
+            raise ValueError("grouped signed-pooling ranks changed")
+        grouped_logits = logits.movedim(3, 0)
+        if (
+            grouped_logits.shape[:3] != self.maximum.shape
+            or values.shape[0] != self.maximum.shape[0]
+            or grouped_logits.shape[3:] != values.shape[1:-1]
+        ):
+            raise ValueError("grouped logits and native values do not align")
+        flat_logits = grouped_logits.float().flatten(3)
+        flat_values = values.float().flatten(1, -2)
+        chunk_maximum = flat_logits.amax(-1)
+        maximum = torch.maximum(self.maximum, chunk_maximum)
+        old_scale = torch.exp(self.maximum - maximum)
+        weights = torch.exp(flat_logits - maximum[..., None])
+        self.weighted_sum = self.weighted_sum * old_scale[..., None] + torch.einsum(
+            "grbn,gnd->grbd", weights, flat_values
+        )
+        self.normalizer = self.normalizer * old_scale + weights.sum(-1)
+        self.maximum = maximum
+
+    def signed_mean(self) -> torch.Tensor:
+        if torch.any(self.normalizer <= 0):
+            raise ValueError("grouped signed pooling received no candidates")
+        means = self.weighted_sum / self.normalizer[..., None]
+        # Restore [rank, group * native-width], matching the deployed target.
+        signed = means[:, :, 0] - means[:, :, 1]
+        return signed.permute(1, 0, 2).flatten(1)
+
+
+def _effective_update_mean_square(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     if a.ndim != 2 or b.ndim != 2 or a.shape[0] != b.shape[0]:
         raise ValueError("native factor shapes changed")
     a32 = a.float()
@@ -70,9 +121,7 @@ def _effective_update_cap_factor(
     """Bound the complete target update, not each rank component separately."""
 
     mean_square = _effective_update_mean_square(a, b)
-    denominator = mean_square.clamp_min(
-        torch.finfo(mean_square.dtype).tiny
-    ).sqrt()
+    denominator = mean_square.clamp_min(torch.finfo(mean_square.dtype).tiny).sqrt()
     return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
 
 
@@ -110,13 +159,13 @@ class RankBankContextBlock(torch.nn.Module):
         bank = tuple(bank_memory)
         if torch.is_grad_enabled() and any(chunk.requires_grad for chunk in bank):
             attended = checkpoint(
-                self._streaming_bank_attention,
+                self._exact_bank_attention,
                 q,
                 bank,
                 use_reentrant=False,
             )
         else:
-            attended = self._streaming_bank_attention(q, bank)
+            attended = self._exact_bank_attention(q, bank)
         value = value + attended[0]
         normalized = self.rank_norm(value)[None]
         attended, _ = self.rank_attention(
@@ -124,12 +173,62 @@ class RankBankContextBlock(torch.nn.Module):
         )
         return self.mlp(value + attended[0])
 
+    def _exact_bank_attention(
+        self,
+        query: torch.Tensor,
+        memory: Sequence[torch.Tensor],
+    ) -> torch.Tensor:
+        """Use one fused full-bank read when its transient memory is bounded."""
+
+        token_count = sum(int(chunk.shape[0]) for chunk in memory)
+        if token_count <= DENSE_BANK_ATTENTION_TOKEN_LIMIT:
+            return self._dense_bank_attention(query, memory)
+        return self._streaming_bank_attention(query, memory)
+
+    def _dense_bank_attention(
+        self,
+        query: torch.Tensor,
+        memory: Sequence[torch.Tensor],
+    ) -> torch.Tensor:
+        """Exact SDPA over the concatenated ordered bank, with no axis pooling."""
+
+        if query.ndim != 3 or query.shape[0] != 1 or not memory:
+            raise ValueError("dense native-bank attention inputs changed")
+        width = query.shape[-1]
+        if any(chunk.ndim != 2 or chunk.shape[-1] != width for chunk in memory):
+            raise ValueError("dense native-bank memory changed")
+        heads = self.bank_attention.num_heads
+        head_width = width // heads
+        weight = self.bank_attention.in_proj_weight
+        bias = self.bank_attention.in_proj_bias
+        q_bias = None if bias is None else bias[:width]
+        k_bias = None if bias is None else bias[width : 2 * width]
+        v_bias = None if bias is None else bias[2 * width :]
+        projected_query = F.linear(query[0], weight[:width], q_bias)
+        bank = self.bank_norm(torch.cat(tuple(memory), dim=0))
+        key = F.linear(bank, weight[width : 2 * width], k_bias)
+        value = F.linear(bank, weight[2 * width :], v_bias)
+        projected_query = projected_query.reshape(-1, heads, head_width).permute(
+            1, 0, 2
+        )
+        key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
+        value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
+        attended = F.scaled_dot_product_attention(
+            projected_query[None],
+            key[None],
+            value[None],
+            dropout_p=0.0,
+            is_causal=False,
+        )[0]
+        attended = attended.permute(1, 0, 2).reshape(1, query.shape[1], width)
+        return self.bank_attention.out_proj(attended)
+
     def _streaming_bank_attention(
         self,
         query: torch.Tensor,
         memory: Sequence[torch.Tensor],
     ) -> torch.Tensor:
-        """Exact cross-attention over full bank tokens without concatenation."""
+        """Exact cross-attention over full bank tokens in bounded fused blocks."""
 
         if query.ndim != 3 or query.shape[0] != 1 or not memory:
             raise ValueError("streaming native-bank attention inputs changed")
@@ -148,18 +247,39 @@ class RankBankContextBlock(torch.nn.Module):
         maximum = None
         denominator = None
         numerator = None
+        # The capture boundary deliberately emits small frame chunks.  They
+        # are useful while native X/Y are being constructed, but replaying
+        # every one as a separate LayerNorm/projection/reduction leaves long
+        # videos launch-bound.  Coalesce adjacent chunks only for this exact
+        # online-softmax reduction.  Token order and every frame/probe/horizon/
+        # bank-type value remain present; the bound controls transient memory.
+        blocks = []
+        pending = []
+        pending_tokens = 0
         for chunk in memory:
             if chunk.ndim != 2 or chunk.shape[-1] != width:
                 raise ValueError("streaming native-bank memory changed")
+            chunk_tokens = int(chunk.shape[0])
+            if pending and (
+                pending_tokens + chunk_tokens > STREAMING_BANK_BLOCK_TOKEN_LIMIT
+            ):
+                blocks.append(torch.cat(tuple(pending), dim=0))
+                pending = []
+                pending_tokens = 0
+            pending.append(chunk)
+            pending_tokens += chunk_tokens
+        if pending:
+            blocks.append(torch.cat(tuple(pending), dim=0))
+
+        for chunk in blocks:
             chunk = self.bank_norm(chunk)
             key = F.linear(chunk, weight[width : 2 * width], k_bias)
             value = F.linear(chunk, weight[2 * width :], v_bias)
             key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
             value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
-            score = (
-                torch.einsum("hqd,hnd->hqn", projected_query, key).float()
-                / math.sqrt(head_width)
-            )
+            score = torch.einsum(
+                "hqd,hnd->hqn", projected_query, key
+            ).float() / math.sqrt(head_width)
             local_maximum = score.amax(-1)
             if maximum is None:
                 maximum = local_maximum
@@ -203,10 +323,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             raise ValueError("native composer block topology changed")
         input_widths = sorted({owner.in_features for owner in owners})
         output_widths = sorted(
-            {
-                owner.out_features // native_output_group_count(owner)
-                for owner in owners
-            }
+            {owner.out_features // native_output_group_count(owner) for owner in owners}
         )
         self.input_projection = torch.nn.ModuleDict(
             {
@@ -221,9 +338,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             }
         )
         maximum_groups = max(native_output_group_count(owner) for owner in owners)
-        self.rank_queries = torch.nn.Parameter(
-            torch.empty(G1_RESIDUAL_RANK, width)
-        )
+        self.rank_queries = torch.nn.Parameter(torch.empty(G1_RESIDUAL_RANK, width))
         self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
         self.probe_embedding = torch.nn.Embedding(2, width)
@@ -245,9 +360,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self.scale_head = torch.nn.Linear(width, 1)
         self.output_norm = torch.nn.LayerNorm(width)
         self.task_query = (
-            torch.nn.Parameter(
-                torch.zeros(len(owners), G1_RESIDUAL_RANK, width)
-            )
+            torch.nn.Parameter(torch.zeros(len(owners), G1_RESIDUAL_RANK, width))
             if task_local
             else None
         )
@@ -300,7 +413,9 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         key = key + self.probe_embedding.weight[None, None, :, None, None]
         key = key + self.horizon_embedding.weight[None, None, None, :, None]
         key = key + self.bank_type_embedding.weight[1:][None, None, None, None]
-        key = key + self.group_embedding.weight[: values.shape[0], None, None, None, None]
+        key = (
+            key + self.group_embedding.weight[: values.shape[0], None, None, None, None]
+        )
         return self.output_norm(key + positions[None, :, None, None, None])
 
     def _bank_candidates(
@@ -327,9 +442,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 stop = min(start + self.pooling_frame_chunk, video.frame_count)
                 local_position = positions[start:stop]
                 input_values = video.native_inputs[target][start:stop]
-                input_key = self._input_keys(
-                    target, input_values, local_position
-                )
+                input_key = self._input_keys(target, input_values, local_position)
                 # Keep every relative Action Expert horizon available to the
                 # process-conditioned bank read.  Averaging this axis here
                 # would erase the same 50-step response structure that the
@@ -415,25 +528,35 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         *,
         log_base_mass: float,
         output: bool,
+        projected_queries: (
+            tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None
+        ) = None,
     ) -> torch.Tensor:
-        common = torch.einsum(
-            "rd,...d->r...", self.common_query(query), keys
-        ) / math.sqrt(self.width)
+        if projected_queries is None:
+            positive_head = (
+                self.output_positive_query if output else self.input_positive_query
+            )
+            negative_head = (
+                self.output_negative_query if output else self.input_negative_query
+            )
+            projected_queries = (
+                self.common_query(query),
+                positive_head(query),
+                negative_head(query),
+            )
+        common_query, positive_query, negative_query = projected_queries
+        common = torch.einsum("rd,...d->r...", common_query, keys) / math.sqrt(
+            self.width
+        )
         innovation = self.innovation_key(frame_innovation)
         while innovation.ndim < keys.ndim:
             innovation = innovation.unsqueeze(1)
         branch_feature = innovation * torch.tanh(keys)
-        positive_head = (
-            self.output_positive_query if output else self.input_positive_query
-        )
-        negative_head = (
-            self.output_negative_query if output else self.input_negative_query
-        )
         positive = torch.einsum(
-            "rd,...d->r...", positive_head(query), branch_feature
+            "rd,...d->r...", positive_query, branch_feature
         ) / math.sqrt(self.width)
         negative = torch.einsum(
-            "rd,...d->r...", negative_head(query), branch_feature
+            "rd,...d->r...", negative_query, branch_feature
         ) / math.sqrt(self.width)
         return torch.stack(
             (common + positive + log_base_mass, common + negative + log_base_mass),
@@ -454,47 +577,71 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             width=owner.in_features,
             device=query.device,
         )
-        output_accumulators = tuple(
-            OnlineSoftmaxAccumulator(
-                ranks=G1_RESIDUAL_RANK,
-                width=group_width,
-                device=query.device,
-            )
-            for _ in range(groups)
+        output_accumulator = _GroupedOnlineSoftmaxAccumulator(
+            groups=groups,
+            ranks=G1_RESIDUAL_RANK,
+            width=group_width,
+            device=query.device,
+        )
+        common_query = self.common_query(query)
+        input_queries = (
+            common_query,
+            self.input_positive_query(query),
+            self.input_negative_query(query),
+        )
+        output_queries = (
+            common_query,
+            self.output_positive_query(query),
+            self.output_negative_query(query),
         )
         video_count = len(videos)
         for video in videos:
-            input_mass = -math.log(
-                video_count * video.frame_count * 2 * ACTION_HORIZON
-            )
+            input_mass = -math.log(video_count * video.frame_count * 2 * ACTION_HORIZON)
             output_mass = -math.log(
                 video_count * video.frame_count * 2 * ACTION_HORIZON * 4
             )
-            for chunk in video.chunks:
-                input_accumulator.add(
-                    self._branch_logits(
-                        query,
-                        chunk.input_keys,
-                        chunk.innovation,
-                        log_base_mass=input_mass,
-                        output=False,
-                    ),
-                    chunk.input_values,
-                )
-                for group, accumulator in enumerate(output_accumulators):
-                    accumulator.add(
-                        self._branch_logits(
-                            query,
-                            chunk.output_keys[group],
-                            chunk.innovation,
-                            log_base_mass=output_mass,
-                            output=True,
-                        ),
-                        chunk.output_values[group],
-                    )
-        return input_accumulator.signed_mean(), torch.cat(
-            tuple(value.signed_mean() for value in output_accumulators), dim=-1
-        )
+            # Native boundary construction remains chunked. Once its projected
+            # tensors are resident, concatenate only their ordered frame axis
+            # so each bank group uses one query projection and reduction. No
+            # frame, probe, horizon, bank-type, or native-value axis is pooled.
+            innovation = torch.cat(
+                tuple(chunk.innovation for chunk in video.chunks), dim=0
+            )
+            input_keys = torch.cat(
+                tuple(chunk.input_keys for chunk in video.chunks), dim=0
+            )
+            input_values = torch.cat(
+                tuple(chunk.input_values for chunk in video.chunks), dim=0
+            )
+            input_accumulator.add(
+                self._branch_logits(
+                    query,
+                    input_keys,
+                    innovation,
+                    log_base_mass=input_mass,
+                    output=False,
+                    projected_queries=input_queries,
+                ),
+                input_values,
+            )
+            output_keys = torch.cat(
+                tuple(chunk.output_keys for chunk in video.chunks), dim=1
+            )
+            output_values = torch.cat(
+                tuple(chunk.output_values for chunk in video.chunks), dim=1
+            )
+            output_accumulator.add(
+                self._branch_logits(
+                    query,
+                    output_keys.movedim(0, 1),
+                    innovation,
+                    log_base_mass=output_mass,
+                    output=True,
+                    projected_queries=output_queries,
+                ),
+                output_values,
+            )
+        return input_accumulator.signed_mean(), output_accumulator.signed_mean()
 
     def forward(
         self,
@@ -515,9 +662,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         b_values = []
         scales = []
         for target in range(len(self.owners)):
-            bank_memory, candidates = self._bank_candidates(
-                target, values, programs
-            )
+            bank_memory, candidates = self._bank_candidates(target, values, programs)
             query = self._query_target(target, programs, bank_memory)
             a, b = self._pool_target(target, query, candidates)
             # Match the G1-proven asymmetric optimization geometry: native A/B
@@ -529,9 +674,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             )
             a = rms_normalize(a, epsilon=1e-6)
             b = rms_normalize(b, epsilon=1e-6) * scale[:, None]
-            cap_factor = _effective_update_cap_factor(
-                a, b, s_ref[target]
-            )
+            cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
             b = b * cap_factor.to(b)
             scale = scale * cap_factor.to(scale)
             a_values.append(a)

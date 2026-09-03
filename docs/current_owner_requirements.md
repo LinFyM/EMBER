@@ -135,6 +135,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   owner指令继承，并在每次launch前用live身份、进程、显存与utilization重新裁决。节点暂时离线或重启不代表长期禁用。
 - 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
+- `meta`/`target`是否同时参与、两者采样比例以及每个optimizer step包含多少task均由具体实验的数据与采样设计决定；owner没有规定
+  固定`3+3`、固定6-task batch或必须同时包含两类。执行优化必须接受任意已配置task group，只改变其设备放置和流水，不得反向把
+  当前资格实验的采样选择固化为长期科学合同。
 - 训练、functional forward、推理和closed-loop评测的吞吐优化都同时约束卡数与每卡有效利用率：即使只用单卡，也应按真实LoRA/s、
   samples/s、step wall time、计算段SM/UTL、memory UTL与显存峰值调整microbatch、frame chunk、任务分片和数据供给。不能用空tensor、
   dummy进程或单纯占满显存冒充利用率；若SM已持续饱和，未占满

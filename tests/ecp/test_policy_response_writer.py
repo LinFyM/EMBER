@@ -32,7 +32,7 @@ from ember.ecp.policy_response_writer.shared import (
     _remove_shared_video_cache,
     _video_splits,
     balanced_task_owners,
-    causal_cutoff,
+    causal_pair,
     functional_objective,
     owner_balanced_task_group,
     role_balanced_task_owners,
@@ -65,6 +65,7 @@ from ember.ecp.policy_response_writer.training import (
     _functional_runtime_inputs,
     _runtime_tasks_and_panels,
     _selected_task_ids,
+    load_policy_response_config,
 )
 
 
@@ -157,7 +158,7 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
         (4, 3),
     )
     process_loss = model.causal_prediction_loss(
-        (video,), cutoffs=((5,),), future_offset=1
+        (video,), cutoffs=((5,),), future_offsets=(1,)
     )
     factor_loss = sum(
         value.square().mean() for value in output.residual.a + output.residual.b
@@ -182,6 +183,13 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
     )
     assert torch.count_nonzero(model.composer.relation_embedding.weight.grad)
     assert not any(name.startswith("teacher_") for name, _ in model.named_parameters())
+
+    with torch.no_grad():
+        process = model.process(video.frame_slice(5), causal=True)
+        adjacent = model.process.predict_future_delta(process, future_offset=1)
+        later = model.process.predict_future_delta(process, future_offset=2)
+    assert adjacent.shape == later.shape == (2, 4, ACTION_HORIZON, 32)
+    assert not torch.equal(adjacent, later)
 
 
 def test_composer_consumes_explicit_event_relation_assignment() -> None:
@@ -692,7 +700,29 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert protected["preservation_active"] is True
     assert improving["preservation_active"] is False
     assert protected["gradient_mass"] > improving["gradient_mass"]
-    assert causal_cutoff(20, 8, optimizer_step=100, task=93, demo=2) in range(8, 20)
+    pairs = [
+        causal_pair(20, 8, optimizer_step=step, task=93, demo=2)
+        for step in range(200)
+    ]
+    assert pairs == [
+        causal_pair(20, 8, optimizer_step=step, task=93, demo=2)
+        for step in range(200)
+    ]
+    assert all(8 <= cutoff < 20 and 1 <= offset <= 20 - cutoff for cutoff, offset in pairs)
+    assert len({cutoff for cutoff, _ in pairs}) == 12
+    assert len({offset for _, offset in pairs}) >= 8
+
+
+def test_random_delta_config_is_explicit_and_predecessor_is_rejected() -> None:
+    root = Path(__file__).resolve().parents[2]
+    current = load_policy_response_config(
+        root / "configs/pi05_ecp_policy_response_writer_random_delta_v1.json"
+    )
+    assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
+    with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
+        load_policy_response_config(
+            root / "configs/pi05_ecp_policy_response_writer_typed_process_boundary_v1.json"
+        )
 
 
 def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:

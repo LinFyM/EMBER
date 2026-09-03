@@ -86,22 +86,25 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         videos: Sequence[FrozenPolicyResponseVideo],
         *,
         cutoffs: Sequence[Sequence[int]],
-        future_offset: int = 1,
+        future_offsets: Sequence[int],
         representation: str = "full",
     ) -> torch.Tensor:
         values = tuple(videos)
         selected = tuple(tuple(map(int, row)) for row in cutoffs)
-        if len(values) != len(selected) or not values:
+        offsets = tuple(map(int, future_offsets))
+        if len(values) != len(selected) or len(values) != len(offsets) or not values:
             raise ValueError("policy-response causal video set changed")
         return torch.stack(
             tuple(
                 self.process.causal_prediction_loss(
                     video,
                     cutoffs=rows,
-                    future_offset=future_offset,
+                    future_offset=offset,
                     representation=representation,
                 )
-                for video, rows in zip(values, selected, strict=True)
+                for video, rows, offset in zip(
+                    values, selected, offsets, strict=True
+                )
             )
         ).mean()
 

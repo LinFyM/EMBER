@@ -574,15 +574,48 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
             + noise @ self.teacher_noise
         )
 
-    def predict_future_delta(self, process: PolicyResponseProcessOutput) -> torch.Tensor:
+    @staticmethod
+    def _future_offset_encoding(
+        future_offset: int,
+        width: int,
+        *,
+        device: torch.device,
+        dtype: torch.dtype,
+    ) -> torch.Tensor:
+        """Standard fixed encoding for the scheduled future interval only."""
+
+        if future_offset <= 0 or width <= 0:
+            raise ValueError("causal future interval changed")
+        half = (width + 1) // 2
+        frequency = torch.exp(
+            -math.log(10_000.0)
+            * torch.arange(half, device=device, dtype=torch.float32)
+            / max(half - 1, 1)
+        )
+        phase = float(future_offset) * frequency
+        return torch.cat((phase.sin(), phase.cos()))[:width].to(dtype=dtype)
+
+    def predict_future_delta(
+        self,
+        process: PolicyResponseProcessOutput,
+        *,
+        future_offset: int,
+    ) -> torch.Tensor:
         state = (
             parameter_free_process_norm(process.common)
             + parameter_free_process_norm(process.frame_innovation[-1])
         ) / math.sqrt(2.0)
+        interval = self._future_offset_encoding(
+            future_offset,
+            self.width,
+            device=state.device,
+            dtype=state.dtype,
+        )
         query = (
             state[:, None, None]
             + self.prediction_probe.weight[None, :, None]
             + self.prediction_horizon.weight[None, None]
+            + interval[None, None, None]
         )
         return self.prediction_head(query).permute(1, 0, 2, 3)
 
@@ -591,7 +624,7 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         video: FrozenPolicyResponseVideo,
         *,
         cutoffs: Sequence[int],
-        future_offset: int = 1,
+        future_offset: int,
         representation: str = "full",
     ) -> torch.Tensor:
         """Predict frozen future-response changes from strictly sliced prefixes."""
@@ -605,11 +638,17 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
                 raise ValueError("causal policy-response cutoff changed")
             prefix = video.frame_slice(stop)
             process = self(prefix, representation=representation, causal=True)
-            prediction = self.predict_future_delta(process)
+            prediction = self.predict_future_delta(
+                process, future_offset=future_offset
+            )
             target = teacher[future] - teacher[current]
+            interval_scale = math.sqrt(future_offset)
             losses.append(
                 F.smooth_l1_loss(
-                    prediction.float(), target.float(), beta=1.0, reduction="mean"
+                    prediction.float() / interval_scale,
+                    target.float() / interval_scale,
+                    beta=1.0,
+                    reduction="mean",
                 )
             )
         if not losses:

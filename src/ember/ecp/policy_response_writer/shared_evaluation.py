@@ -16,7 +16,7 @@ from ember.ecp.policy_response_writer.shared import (
     _capture_missing,
     _gather_flat,
     _materialized_state,
-    causal_cutoff,
+    causal_pair,
 )
 from ember.ecp.policy_response_writer.shared_contract import reference_result_path
 from ember.ecp.policy_response_writer.training import (
@@ -97,7 +97,7 @@ def _evaluate_video(
 ) -> dict[str, Any]:
     video = cache.videos[(task, demo)].to(runtime.context.device)
     runtime.writer.eval()
-    cutoff = causal_cutoff(
+    cutoff, future_offset = causal_pair(
         video.frame_count,
         int(runtime.config["model"]["event_slots"]),
         optimizer_step=0,
@@ -108,6 +108,7 @@ def _evaluate_video(
         process_loss = runtime.writer.causal_prediction_loss(
             (video,),
             cutoffs=((cutoff,),),
+            future_offsets=(future_offset,),
             representation=runtime.args.representation,
         )
         state = _materialized_state(runtime, (video,), canonicalize=True)
@@ -157,6 +158,7 @@ def _evaluate_video(
         "functional_recovery": recovery,
         "process_loss": process_value,
         "causal_cutoff": cutoff,
+        "causal_future_offset": future_offset,
     }
 
 

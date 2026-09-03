@@ -12,6 +12,7 @@ from __future__ import annotations
 import gc
 import math
 import os
+import random
 import shutil
 import socket
 import statistics
@@ -72,15 +73,23 @@ class SharedEvidenceCache:
     process_normalizers: dict[int, float]
 
 
-def causal_cutoff(
+def causal_pair(
     frame_count: int, event_slots: int, *, optimizer_step: int, task: int, demo: int
-) -> int:
-    """Choose one valid, deterministic prefix and cover all positions over time."""
+) -> tuple[int, int]:
+    """Uniformly sample a reproducible legal prefix and positive future offset."""
 
     span = int(frame_count) - int(event_slots)
     if span <= 0:
         raise ValueError("shared Writer video is too short for causal prediction")
-    return int(event_slots) + (int(optimizer_step) + int(task) + int(demo)) % span
+    seed = (
+        (int(optimizer_step) + 1) * 1_000_003
+        + (int(task) + 1) * 10_000_019
+        + (int(demo) + 1) * 100_000_007
+    )
+    generator = random.Random(seed)
+    cutoff = generator.randrange(int(event_slots), int(frame_count))
+    future_offset = generator.randrange(1, int(frame_count) - cutoff + 1)
+    return cutoff, future_offset
 
 
 def functional_objective(
@@ -273,7 +282,7 @@ def _prepare_training_cache(
         losses = []
         for demo in fit:
             video = cache.videos[(task, demo)].to(runtime.context.device)
-            cutoff = causal_cutoff(
+            cutoff, future_offset = causal_pair(
                 video.frame_count,
                 event_slots,
                 optimizer_step=0,
@@ -284,6 +293,7 @@ def _prepare_training_cache(
                 loss = runtime.writer.causal_prediction_loss(
                     (video,),
                     cutoffs=((cutoff,),),
+                    future_offsets=(future_offset,),
                     representation=runtime.args.representation,
                 )
             losses.append(float(loss))

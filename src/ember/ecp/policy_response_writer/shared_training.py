@@ -17,7 +17,7 @@ from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
     _gather_flat,
     _materialized_state,
-    causal_cutoff,
+    causal_pair,
     functional_objective,
 )
 from ember.ecp.policy_response_writer.shared_schedule import (
@@ -143,23 +143,24 @@ def _run_training_task(
     del generated_state, leaf_gradients, surrogate
     finish_phase("writer_chain_backward", phase_tick)
 
-    cutoffs = tuple(
-        (
-            causal_cutoff(
-                video.frame_count,
-                int(runtime.config["model"]["event_slots"]),
-                optimizer_step=optimizer_step,
-                task=task,
-                demo=demo,
-            ),
+    causal_pairs = tuple(
+        causal_pair(
+            video.frame_count,
+            int(runtime.config["model"]["event_slots"]),
+            optimizer_step=optimizer_step,
+            task=task,
+            demo=demo,
         )
         for video, demo in zip(videos, demos, strict=True)
     )
+    cutoffs = tuple((cutoff,) for cutoff, _ in causal_pairs)
+    future_offsets = tuple(offset for _, offset in causal_pairs)
     phase_tick = start_phase()
     with torch.autocast("cuda", dtype=torch.bfloat16):
         process_loss = runtime.writer.causal_prediction_loss(
             videos,
             cutoffs=cutoffs,
+            future_offsets=future_offsets,
             representation=runtime.args.representation,
         )
         weighted_process = (
@@ -189,6 +190,7 @@ def _run_training_task(
         "process_normalized": float(process_loss.detach())
         / cache.process_normalizers[task],
         "causal_cutoffs": [row[0] for row in cutoffs],
+        "causal_future_offsets": list(future_offsets),
         "task_weight": 1.0 / task_count,
         "task_seconds": time.monotonic() - tick,
         **({"phase_seconds": phase_seconds} if profile_timing else {}),

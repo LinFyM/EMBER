@@ -114,6 +114,8 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             == "query_conditioned_family_owned_rank_rows_without_task_table_or_anchor_gate",
             model.get("process_consumer_boundary")
             == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
+            model.get("causal_process_interval")
+            == "deterministic_uniform_prefix_then_uniform_positive_future_offset_sqrt_delta_standardized_with_parameter_free_encoding",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
@@ -618,12 +620,13 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         int(runtime.config["model"]["event_slots"]),
         min(video.frame_count - 1, video.frame_count // 2),
     )
+    future_offset = min(8, video.frame_count - cutoff)
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
     with torch.autocast("cuda", dtype=torch.bfloat16):
         process_loss = runtime.writer.causal_prediction_loss(
             (video,),
             cutoffs=((cutoff,),),
-            future_offset=1,
+            future_offsets=(future_offset,),
             representation=runtime.args.representation,
         )
     process_loss.backward()
@@ -645,6 +648,7 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         "frozen_evidence_tensor_bytes": video.tensor_bytes,
         "functional_loss": float(functional),
         "process_loss": float(process_loss.detach()),
+        "causal_future_offset": future_offset,
         "functional_gradient_norms": functional_gradients,
         "zero_init_functional_gradient_norms": zero_init_gradients,
         "scale_opening_gradient_norm": scale_opening_gradient,

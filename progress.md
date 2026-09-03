@@ -46,6 +46,16 @@
   adapter测试为`18 passed`。task93最长fit demo3含87个采样帧，真实smoke的38-target forward、functional/process backward与唯一
   rank16物化全部通过，峰值allocated/reserved为`42.42/47.14GB`；两步shared profile为`33.29/28.54s`，全部梯度finite nonzero。
   下一步从该clean pushed commit fresh重启同一73-task/K1/component-init full formal。
+- full-horizon 73-task formal已于2026-09-03 13:29 CST从clean pushed detached
+  `e7278f1b22176b53025166dc5015a4463b819ecd`在gpu01物理2/4/5/6、world-size4 fresh启动；tmux为
+  `ember_prw_full_horizon_scale73`，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_full_horizon_73task_k1_component_s1210_e7278f1b_gpu01p2456_20260903/`。
+  launch前四卡分别为`15/15/98/15MiB`且util全0，gpu01 available host memory约`238.1GiB`；gpu02没有能容纳最长视频约
+  `42.42GB allocated`且更合适的四卡集合，故不与已有4--31GB进程冒险共驻。`/data1` quota blocks为
+  `774540872/1073741824KiB`、limit `1084227584KiB`，root为fresh且参考旧run保守新增小于`2GB`。模型、数据、carrier、config均存在；
+  固定K1、component-init、10 warmup + 1200 effective、macro610/1210、positive-only loss、`NCCL_P2P_DISABLE=1`及完整horizon
+  implementation。exact command为：
+  `cd /data1/user/ymdai/projects/EMBER-worktrees/policy-response-writer-full-horizon-formal-e7278f1b && NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=2,4,5,6 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=4 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_scale_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_full_horizon_73task_k1_component_s1210_e7278f1b_gpu01p2456_20260903 --phase shared --representation full --initialization component --mode formal`。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

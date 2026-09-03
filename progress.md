@@ -47,7 +47,8 @@
   cleanup现改为所有rank先清空mmap tensor并`gc.collect`、barrier后再由rank0删除，回归测试同时验证映射已释放和双barrier顺序；
   29项Writer测试通过，删除失败也会同步转成明确错误而不再留下其它rank超时。该故障只影响收尾文件，不改变m200/m400
   checkpoint或任何科学结论。
-- 唯一实现分支`codex/policy-response-writer-typed-boundary`已把上述根因收敛为两个同属Composer边界所有权的改动：入口对
+- typed-boundary修正已以clean pushed `main@682f7ecfcc233d486d7a4ce41e776562f2e6890e`封存；实现分支已删除。它把上述
+  根因收敛为两个同属Composer边界所有权的改动：入口对
   rank、owner、family、Process common与language逐source做parameter-free pre-norm并按残差组保持方差；末端把同一个
   `Linear(width,1)`改为`Linear(width,4)`，每个target只选择其native family row产生query-conditioned relative rank gain。
   它没有task表、anchor或第二Writer，仍只能缩放当前视频真实X/Y signed pooling所得方向。30项Writer测试和新旧config互斥预检
@@ -55,6 +56,14 @@
   到达Frame/Event/Composer/relation，causal梯度到达Frame/Event/predictor，峰值allocated/reserved为`27.35/33.98GB`。
   新资格配置使用圆整的task-local 50/100与shared 100/200 checkpoints；shared m200与前一m200保持约33次/task的matched暴露，
   不在架构未证明时再次先付出400步。
+- 2026-09-04 03:08--03:09 CST从同一clean detached `682f7ecf`并行启动三条fresh formal：gpu01物理`0,1,5,6`、
+  world-size4运行73-task shared optimizer100/200，root为
+  `runs/outputs/pi05_ecp_policy_response_writer_typed_boundary_73task_k1_component_s200_682f7ecf_gpu01p0156_sharedmmap_20260904/`；
+  gpu02物理`0/1`分别运行task1/task93的task-local optimizer50/100。shared使用node-local单份mmap、零额外replica、deferred
+  NCCL、`NCCL_P2P_DISABLE=1`及rank-local NUMA；三者均为component-init、K1、full 50-horizon、positive-only、唯一rank16。
+  launch前gpu01四卡完全空闲；gpu02两卡各有他人约`0.15--0.19GB`、0% util的轻量常驻进程，已测峰值仍留约12GB余量。
+  `/data1`为`775964240/1073741824` blocks，约105GB共享cache与小型checkpoint/metrics不越过独立quota。两条task-local
+  已越过首步；第二步起input/output/relation/task-query方向梯度均finite nonzero，说明非对称scale启动后真实credit已打开。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

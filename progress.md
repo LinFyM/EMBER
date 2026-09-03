@@ -11,8 +11,20 @@
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
   layer x horizon x probe原生响应、G2 ordered events、当前视频真实X/Y、G1 signed pooling、rank4和唯一rank16物化；主要learned
   模块收敛为可复制的Video Process Encoder与Native Factor Composer。
-- 最后审查已把四项修正写入合同：causal process auxiliary严格prefix-only；预测target冻结；task1/task93 Composer正控先确认
-  G1 bank容量；full/coarse对照只裁决前端表示。
+- 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
+  2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
+  coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。
+- 收到该边界后，已立即停止正在运行的corrected coarse任务：73-task shared停在step121，task1/task93 task-local分别停在
+  step47/29；三者均未完成预注册checkpoint评估，不形成科学裁决，保留小型root只记录主动中止。远端精确训练进程确认消失，gpu01
+  物理2/4/5/6回落到`15/15/98/15MiB`，gpu02物理4/6回落到既有低占用`6020/4751MiB`。
+- corrected full合同随即从同一clean pushed detached authority fresh启动：73-task/K1/component-init shared使用gpu01物理2/4/5/6、
+  world-size4，task1/task93 full task-local分别安全共驻gpu02物理4/6，总EMBER物理卡为6。三条命令都显式锁定
+  `--representation full`；输出root分别为
+  `runs/outputs/pi05_ecp_policy_response_writer_corrected_73task_k1_component_full_s1210_7d435ea3_gpu01p2456_20260903/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task1_full_s110_7d435ea3_v1_gpu02p4_20260903/`和
+  `runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_full_s110_7d435ea3_v1_gpu02p6_20260903/`。launch前双节点live
+  检查确认所选gpu01四卡全空闲，gpu02两卡只有低util既有进程；`/data1` quota为
+  `774455720/1073741824KiB`、limit `1084227584KiB`，三个root均为fresh。
 - PNBTT E1及其single/family chart、两次spectrum、full-rank16和gate-aligned necessity均已完成并稳定`non_pass`。PNBTT、
   EBSRI、Program-through-bank和旧summary/gate/anchor均不是active fallback，历史证据与formal artifacts继续保留。
 - 已从clean pushed `main@194b91b2ae34efcb042a6c838973ba5d57ceda55`建立唯一

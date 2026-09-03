@@ -47,7 +47,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
    assignment；
 2. process target来自冻结raw evidence或固定teacher projection，可训练compact projection不能同时充当可漂移target；
 3. task1/task93的task-local Composer正控与最小smoke一起完成，用于确认去掉PNBTT solve后仍保留G1 bank容量；
-4. full-response与coarse-response两臂都读取完整dynamic X/Y bank，因此对照只裁决前端event representation的增量。
+4. owner于2026-09-03明确否决coarse/final-layer horizon mean作为active路线；50-step horizon必须完整保留到
+   task/relation-conditioned learned read。旧full/coarse对照只保留为历史诊断，不能授权继续coarse。
 
 ## 当前执行顺序
 
@@ -68,22 +69,22 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     四个checkpoint均未超过carrier，且Goal/Long全部为0；
 12. [ ] correct-only选定并冻结checkpoint后一次性运行same-task-other、wrong、no-video、language-only、first+final、shuffled与
     reversed controls；controls不回流训练；
-13. [x] 首轮最早接口定位为10-task shared映射的task-disjoint方向与组合覆盖不足；full前端没有提供增量且更破坏carrier，故首个
-    有依据修正固定为coarse、K1并把自然梯度映射扩大到55 meta + 18 target，其余模型与loss不变；
-14. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
+13. [x] 首轮定位到10-task shared映射的task-disjoint方向与组合覆盖不足；当时曾以coarse、K1扩大到55 meta + 18 target，
+    但后续证据表明该参数化仍不能恢复方向或闭环性能，且owner现已明确禁止以horizon mean规避full问题；
+14. [x] 原coarse shared信号后的扩展节点未执行，并已由owner的full-only边界及下面的新full执行节点取代；
 15. [x] 完成55 meta + 18 target的旧scale component-init训练。macro610 held5 correct250为`26/250`、breadth`2/5`，相对carrier
     retained/gained/lost=`22/4/21`，为显著non-pass；只读policy-effect对照又显示Writer仅`1/5` task优于carrier、四个非零G1
     task的功能方向cosine中位仅`.14753`。完整`s_ref`事后限幅为`33/250`、breadth`1/5`，只局部恢复Spatial0，确认缩放不能补出
     缺失方向。macro1210为`30/250`、breadth`3/5`、Goal/Long仍为0；相对macro610高churn净增4但相对carrier仍净丢13，完成对其
     实际未限幅/global-clip/static-slot parameterization的相邻裁决；
-16. [ ] 对同一73-task/coarse/K1/component-init图做fresh接口修正：完整per-target mobile `B@A` RMS不超过fit-only `s_ref`，
-    `scale_head`与其余Writer参数按同一原有norm独立裁剪；observed relative frame position只路由Event segmentation/QK、不进入value，
-    slot不能在static-repeat上伪造D。真实两步gradient profile已通过；随后从clean pushed detached authority以最多6张有效A40立即
-    formal已从clean pushed detached authority在gpu01物理2/4/5/6启动；并行task1/task93 corrected coarse task-local容量正控只作
-    诊断、不阻塞shared训练。只有修正版shared信号成立后才进入mixed-K、fully-random及validation8相邻
-    single-checkpoint strict paired400；
-17. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-18. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+16. [x] 完成per-target `B@A` RMS cap、独立gradient clipping与dynamic-value合同实现和真实smoke；原corrected coarse shared/task-local
+    在owner更新方法边界后分别于step121/47/29主动中止，不形成checkpoint裁决，也不再续跑；
+17. [ ] 只用full重新运行corrected 73-task/K1/component-init shared及task1/task93 task-local容量诊断。先裁决修正后的完整
+    horizon路径；若task-local仍强而shared弱，再依据horizon attention利用率、process预测与task-disjoint泛化证据修正可复制
+    Frame/Composer接口，不回退到均值、coarse或等价压缩；
+18. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+19. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+20. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

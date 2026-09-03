@@ -116,6 +116,9 @@ exact language query先读取当前frame patches，形成task-grounded视觉cont
 
 输出F(k,t,m,j)，其中m为四种relations。50-horizon只允许在这次task/relation-conditioned读取后压缩。
 
+owner于2026-09-03进一步锁定：full policy-response是唯一active representation。final-layer horizon mean、coarse response或
+任何等价的无条件horizon平滑均不得用于后续训练、选择、初始化或部署；既有实现与结果只保留为历史消融证据。
+
 ### 5.3 Ordered Event Blocks
 
 每条视频独立把F编码为最多8个ordered event slots：
@@ -309,17 +312,11 @@ macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其
 smoke一起完成，不作为文档门槛。若G1 free logits仍强而新Composer task-local接近零，最早失败接口就是Composer，不应直接解释为
 shared representation或数据问题。
 
-### 9.3 首个shared matched实验
+### 9.3 shared实验
 
-复用J2的10个gradient tasks、两个true task-held tasks、cross-episode Panel A/B和两条fit加一条same-task held video。首轮K=1，
-比较：
-
-- full-response：19 layers、residuals、38 owners、50 horizons、2 probes、flow velocity；
-- coarse-response：同一Composer、同一dynamic X/Y bank、相同参数量，只让process query读取task-grounded patches与final-layer
-  horizon mean。
-
-该对照只裁决完整policy-response event representation相对coarse representation的增量；因为两臂都读取完整dynamic bank，不能把
-结果夸大为Action Expert native evidence整体有无价值。
+复用J2的gradient/true-task-held划分、cross-episode Panel A/B和两条fit加一条same-task held video。唯一active输入为
+full-response：owner对应layer input与residual、38 owners、50 horizons、2 probes、probe noise和flow velocity，且完整horizon证据
+保留到task/relation-conditioned attention。旧coarse matched arm已经完成历史定位，此后不得重启或用于模型选择。
 
 首轮使用component initialization、10 warmup加100 effective updates，并保存相邻节点。训练图有效且出现有意义correct功能信号后，
 立即运行held5 correct-only strict250，不以一长串内部小数阈值阻塞闭环。
@@ -348,7 +345,8 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 - task-local Composer强而shared低：shared mapping、task组合覆盖或positive-only可辨识性失败，bank support未失败。
 - train高、same-task held低：video-specific overfit。
 - gradient tasks高、true task-held低：task-disjoint组合泛化失败。
-- full-response与coarse相同：完整前端没有证明增量，应简化前端；不自动否定两臂共享的dynamic bank。
+- full的task-local容量强而shared task-held弱：检查relation-conditioned horizon attention的内容/位置利用、process-to-Composer
+  credit与task-disjoint组合泛化；修正必须继续保留全部50-step horizon，不能以均值或coarse规避。
 - correct高但冻结wrong也高：positive distribution未形成bank/task specificity，不能用wrong loss修补。
 - correct高但shuffle/reverse更好：时序语义错误，不能将control改成训练标签。
 - 相邻checkpoint持续换手：不能用单点峰值宣称成功。

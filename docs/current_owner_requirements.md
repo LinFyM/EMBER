@@ -27,6 +27,9 @@ task-local适配。冻结policy加载这
   rank ceiling造成，且同构full-rank16 oracle显著通过，则按证据重新分配task/carrier rank；不能因历史惯性或便利随意改变。
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
+- Action Expert的50个relative horizon positions必须完整保留到task/relation-conditioned learned read；不得用final-layer
+  horizon mean、coarse response或任何等价的无条件平滑替代主路径。既有coarse代码、checkpoint与结果只作历史审计，不得再用于
+  active训练、模型选择、初始化或部署。
 - 每个condition只生成一套LoRA；不得挑video、融合checkpoint、部署第二adapter或并行expert。
 - Writer只在rollout前运行一次；一次调用内部可有固定的read-only native-bank统计与重放子阶段；zero-interaction分数不混入
   生成后的task-local RL。
@@ -62,8 +65,9 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。其核心是：
 
-1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，保留Action Expert
-   layer、50-horizon、probe与38-target owner响应；
+1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，完整保留Action Expert
+   layer、50-horizon、probe与38-target owner响应；50-horizon只能在task/relation-conditioned attention后learned compression，
+   full是唯一active representation；
 2. learned Policy-Response Video Process Encoder沿teacher-frame time形成task-grounded、boundary-anchored ordered events；
    teacher-frame time、action horizon、flow time、layer depth与probe轴不得混淆；
 3. learned Current-Video Native Factor Composer以38x4 target-rank queries读取events与当前视频真实X/Y bank，通过一个

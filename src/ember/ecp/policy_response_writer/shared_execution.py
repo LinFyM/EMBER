@@ -410,6 +410,7 @@ def selective_replication_plan(
         for rank in range(world_size)
     )
     return {
+        "strategy": "finite_schedule_selective_cache_replication_cost_balanced_assignment",
         "execution_ownership": rows,
         "replicas": tuple(replicas),
         "extra_cache_bytes": used,
@@ -427,4 +428,55 @@ def selective_replication_plan(
             if exact_candidate_search
             else "direct_move_gain_per_byte_then_exact_objective"
         ),
+    }
+
+
+def shared_mmap_execution_plan(
+    step_costs: Sequence[Mapping[int, int]],
+    *,
+    cache_bytes: Mapping[int, int],
+    world_size: int,
+) -> dict[str, object]:
+    """Plan exact scheduling when every rank maps the same physical cache."""
+
+    normalized_steps: Counter[StepCosts] = Counter(
+        tuple(sorted((int(task), int(cost)) for task, cost in row.items()))
+        for row in step_costs
+    )
+    active_tasks = set(task for row in normalized_steps for task, _ in row)
+    supplied_sizes = {int(task): int(value) for task, value in cache_bytes.items()}
+    sizes = {
+        task: supplied_sizes[task]
+        for task in active_tasks
+        if task in supplied_sizes
+    }
+    if (
+        not normalized_steps
+        or not 1 <= int(world_size) <= 6
+        or set(sizes) != active_tasks
+        or min(sizes.values(), default=0) <= 0
+        or any(cost <= 0 for row in normalized_steps for _, cost in row)
+    ):
+        raise ValueError("shared Writer mmap execution plan changed")
+    execution = {
+        task: tuple(range(int(world_size))) for task in sorted(active_tasks)
+    }
+    objective = _execution_objective(normalized_steps, execution, int(world_size))
+    rows = tuple(tuple(sorted(active_tasks)) for _ in range(int(world_size)))
+    return {
+        "strategy": "node_local_single_copy_mmap_cost_balanced_assignment",
+        "execution_ownership": rows,
+        "replicas": (),
+        "extra_cache_bytes": 0,
+        "shared_cache_bytes": sum(sizes.values()),
+        "budget_bytes": 0,
+        "base_total_cost": objective[0],
+        "base_tail_cost": objective[1],
+        "predicted_total_cost": objective[0],
+        "predicted_tail_cost": objective[1],
+        "ideal_total_cost": objective[0],
+        "ideal_tail_cost": objective[1],
+        "unique_step_signatures": len(normalized_steps),
+        "planned_steps": sum(normalized_steps.values()),
+        "replica_search": "not_applicable_shared_mmap",
     }

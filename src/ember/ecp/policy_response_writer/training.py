@@ -744,6 +744,14 @@ def build_parser() -> argparse.ArgumentParser:
             "evidence replicas used by shared task scheduling"
         ),
     )
+    parser.add_argument(
+        "--shared-evidence-cache-root",
+        type=Path,
+        help=(
+            "task-scoped node-local safetensors mmap root that lets every "
+            "same-node rank access one physical copy of frozen video evidence"
+        ),
+    )
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--evaluation-config", type=Path)
     parser.add_argument("--writer-run", type=Path)
@@ -754,7 +762,13 @@ def build_parser() -> argparse.ArgumentParser:
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in ("config", "asset_root", "data_root", "output_dir"):
         setattr(args, name, getattr(args, name).resolve())
-    for name in ("resume", "evaluation_config", "writer_run", "writer_checkpoint"):
+    for name in (
+        "resume",
+        "evaluation_config",
+        "writer_run",
+        "writer_checkpoint",
+        "shared_evidence_cache_root",
+    ):
         value = getattr(args, name)
         if value is not None:
             setattr(args, name, value.resolve())

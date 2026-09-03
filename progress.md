@@ -111,6 +111,18 @@
   `runs/outputs/pi05_ecp_policy_response_writer_panelb_mb8_task93_profile2_e74b6539_gpu02p1_20260903/`。三条视频各一次16-row
   functional evaluation分别用`11.692/11.577s`，microbatch8只快`.98%`；不值得增加峰值风险，故保留2且不继续盲测16。
   两profile均exit0，使用的两张卡原有约148--186MiB、0% util进程未受干扰。
+- node-local单份safetensors mmap cache已实现并完成严格匹配实测。它只保存deployment-visible、action-hidden frozen video
+  evidence，每个task/video一份原子文件；各local rank mmap同一物理页，因此全部task都可动态放置而不按rank复制105.02GB。
+  shared、private 0GiB和private 8GiB三条两卡profile均来自同一clean detached candidate `a2e40700`，使用完全相同7-step、
+  84-task/video/Panel/RNG/weight schedule，roots分别为
+  `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_profile7_sharedmmap_a2e40700_gpu02p01_20260903/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_profile7_private_a2e40700_gpu02p01_20260903/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_profile7_private8g_a2e40700_gpu02p01_20260903/`。
+  train wall为`124.870/150.039/130.139s`，即shared为`17.811s/step`，相对当前8GiB方案平均快`4.05%`且最坏step快`24.4%`；
+  rank实际load gap从`3.122s`降到`.338s`，峰值allocated/reserved仍约`39.98/46.96GB`。当前四卡formal rows16前126步的逐task
+  timing反事实重排给出`23.441 -> 17.955s`，计入实测mmap开销后约`18.4s`，预计长期收益约`21%`。缓存成功后自动删除；首次
+  105GB capture/build与private冷启动处于同一量级，不能用复用cache的`total_seconds`冒充端到端提速。完整Writer测试固定输入RNG后
+  `25 passed`。后续fresh同节点多卡训练以shared mmap为canonical；当前`5534cb14` frozen formal不中途改拓扑。
 - 最后审查已把causal process auxiliary严格prefix-only、预测target冻结及task1/task93 Composer容量正控写入合同。owner于
   2026-09-03进一步明确：full是唯一active representation，50-step horizon必须完整保留到task/relation-conditioned learned read；
   coarse/final-layer horizon mean及等价无条件平滑均不得继续用于训练、选择、初始化或部署。

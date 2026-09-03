@@ -117,6 +117,14 @@ frame/probe/horizon/bank-type的kernel融合、整视频signed pooling和output-
 105GB唯一frozen evidence加8GiB上限时，planner只购买3.11GB确有收益的replicas，不把“预算”误当必须占满。故当前正式短跑的主要
 代价是rows16 functional VJP而非多卡长期失衡；按既有rows2/rows16实测推算400步约2--2.5小时，满足先短资格再扩规模的效率边界。
 
+private CPU tensor ownership仍会约束task placement，增加复制预算只能局部缓解。node-local单份safetensors mmap让所有local ranks
+读取相同物理页并对每步task做全局cost balance；它不改变tensor、task、权重、K、loss或50-step horizon。完全相同commit、两卡、
+7-step、84-task execution的private 0GiB、private 8GiB与shared mmap均值分别为`21.3745/18.5403/17.8110s`；shared相对当前
+8GiB平均快`4.05%`，最坏step由`26.2068s`降至`19.8142s`，实际rank load `max/mean`由`1.0897`降至`1.0096`、平均gap由
+`3.122s`降至`.338s`，峰值显存不增加。当前四卡formal rows16的126步实测task-time回放则把平均wall从`23.441s`估到
+`17.955s`；计入两卡实测约3%的mmap单task开销后约为`18.4s`，即仍有约`21%`收益。故后续同节点多卡训练选择shared mmap为
+canonical cache布局；ZeRO-1/2、冻结policy全参数all-gather或Writer/Policy流水线在此证据下都不是更早的瓶颈。
+
 relation scorer随后用等价收缩避免物化`innovation x native-key x hidden-width`，同卡task93 rows2从`7.43/6.40s`降至
 `4.78/4.10s`，约快`36%`。formal rows16把functional microbatch从2增至4只再快约`.8%`却把reserved推到约`46.76GB`，
 故保留microbatch2；单图CPU saved-tensor offload虽把显存约从`39.6GB`降到`21.8GB`，step却恶化到`24.79/16.41s`，也不保留。

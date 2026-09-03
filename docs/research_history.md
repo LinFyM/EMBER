@@ -2431,3 +2431,27 @@ microbatch2，只有随后三条视频各一次16-row Panel-B分别使用2与8�
 `11.6923s`；microbatch8 root为
 `runs/outputs/pi05_ecp_policy_response_writer_panelb_mb8_task93_profile2_e74b6539_gpu02p1_20260903/`，为`11.5774s`，只快
 `.98%`。两者exit0；因收益远小于运行波动且更大batch只增加峰值风险，正式保留microbatch2，不继续扫16。
+
+## 123. node-local单份frozen evidence mmap
+
+73-task frozen policy-response evidence的146条fit videos合计`105020606660 bytes`。rank-private cache即使只保存一份总数据，也会把
+每个task固定在持有它的rank；8GiB选择性复制只能为少数task购买额外eligibility。新执行面把每个task/video原子保存为一份
+safetensors文件，同节点所有torchrun ranks mmap同一物理页，于是每步可在全部ranks间做exact cost-balanced assignment。它完整保留
+原tensor、frame/probe/50-horizon/bank-type、task group、权重、K1、functional/process loss与唯一rank16；cache不是checkpoint或
+scientific evidence，成功后自动清理。
+
+同一clean detached candidate `a2e40700762e8f8ff7e7ed5aea29ce6c8b1cc972`在gpu02物理0/1完成三条7-step matched profile；三者的
+84个task、video demo、Panel visit、functional RNG、causal cutoff与weight逐项相同：
+
+| cache布局 | train wall | mean step | max step | mean rank load gap | peak allocated/reserved |
+|---|---:|---:|---:|---:|---:|
+| private，0GiB replicas | `150.039s` | `21.3745s` | `28.9829s` | `8.678s` | `39.976/46.787GB` |
+| private，8GiB replicas | `130.139s` | `18.5403s` | `26.2068s` | `3.122s` | `39.976/46.785GB` |
+| shared mmap，0 physical replicas | `124.870s` | `17.8110s` | `19.8142s` | `.338s` | `39.975/46.964GB` |
+
+shared相对当前8GiB路径平均快`4.05%`、最坏step快`24.39%`，实际rank load `max/mean`从`1.0897`降至`1.0096`；相对0GiB
+平均快`16.78%`。短两卡实验低估了四卡长schedule收益：对正在运行的rows16 formal optimizer20起126步，以每task真实耗时重做
+全eligibility assignment，平均wall从`23.441s`估为`17.955s`；再计入两卡观测的约3% mmap单task开销约为`18.4s`，仍约快`21%`。
+首次105GB capture/build与private冷启动同量级；cache-hit profile的`total_seconds`不用于该比较。最终实现修复短profile只覆盖部分
+task时的planner inventory，并把原数值等价测试的随机输入纳入forked fixed RNG；Writer定向套件`25 passed`。因此后续fresh同节点
+多卡Writer训练采用shared mmap；已冻结的`5534cb14` formal不改变cache、world topology或执行分配。

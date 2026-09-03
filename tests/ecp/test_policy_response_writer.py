@@ -47,6 +47,10 @@ from ember.ecp.policy_response_writer.shared_execution import (
     assignment_makespan,
     cost_balanced_task_assignment,
     selective_replication_plan,
+    shared_mmap_execution_plan,
+)
+from ember.ecp.policy_response_writer.shared_video_cache import (
+    SharedPolicyResponseVideoCache,
 )
 from ember.ecp.policy_response_writer.training import (
     _functional_panel_config,
@@ -201,14 +205,14 @@ def test_event_measure_logits_match_explicit_event_relation_candidates() -> None
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(7)
         model = _model().eval()
+        query = torch.randn(4, 16, requires_grad=True)
+        keys = torch.randn(3, 2, 5, 16, requires_grad=True)
+        event_assignment = torch.rand(3, 3, 4) + 0.1
+        event_assignment = (
+            event_assignment / event_assignment.sum((0, 2), keepdim=True)
+        ).requires_grad_(True)
+        event_innovations = torch.randn(3, 16, requires_grad=True)
     composer = model.composer
-    query = torch.randn(4, 16, requires_grad=True)
-    keys = torch.randn(3, 2, 5, 16, requires_grad=True)
-    event_assignment = torch.rand(3, 3, 4) + 0.1
-    event_assignment = (
-        event_assignment / event_assignment.sum((0, 2), keepdim=True)
-    ).requires_grad_(True)
-    event_innovations = torch.randn(3, 16, requires_grad=True)
 
     actual = composer._branch_logits(
         query,
@@ -856,6 +860,70 @@ def test_selective_replication_reaches_unconstrained_tail_without_full_copy() ->
     assert 0 < plan["extra_cache_bytes"] < sum(3 * (100 + task) for task in steps[0])
     execution = plan["execution_ownership"]
     assert sorted({task for row in execution for task in row}) == sorted(steps[0])
+
+
+def test_shared_mmap_plan_makes_every_task_eligible_without_replica_bytes() -> None:
+    steps = (
+        {1: 20, 8: 9, 72: 12, 93: 30},
+        {1: 17, 9: 11, 73: 14, 93: 30},
+    )
+    tasks = {task for step in steps for task in step}
+    plan = shared_mmap_execution_plan(
+        steps,
+        cache_bytes={**{task: 100 + task for task in tasks}, 777: 877},
+        world_size=4,
+    )
+
+    assert plan["strategy"] == "node_local_single_copy_mmap_cost_balanced_assignment"
+    assert plan["extra_cache_bytes"] == 0
+    assert plan["shared_cache_bytes"] == sum(100 + task for task in tasks)
+    assert plan["predicted_total_cost"] == plan["ideal_total_cost"]
+    assert plan["predicted_tail_cost"] == plan["ideal_tail_cost"] == 30
+    assert plan["execution_ownership"] == tuple(tuple(sorted(tasks)) for _ in range(4))
+
+
+def test_shared_video_cache_round_trips_full_policy_response_once(
+    tmp_path: Path,
+) -> None:
+    store = SharedPolicyResponseVideoCache(
+        tmp_path / "task_scoped_shared_cache",
+        authority={"run": "unit"},
+    )
+    source = _video(101)
+    calls = 0
+
+    def builder():
+        nonlocal calls
+        calls += 1
+        return source, {"task_id": 8, "video_demo": 3}
+
+    built = store.get_or_build(task=8, demo=3, builder=builder)
+    loaded = store.get_or_build(task=8, demo=3, builder=builder)
+
+    assert calls == 1
+    assert built.hit is False and loaded.hit is True
+    assert built.file_bytes == loaded.file_bytes > source.tensor_bytes
+    assert built.capture == loaded.capture == {"task_id": 8, "video_demo": 3}
+    for name in (
+        "patch_states",
+        "language_states",
+        "language_mask",
+        "layer_states",
+        "flow_velocity",
+        "suffix_noise",
+        "frame_positions",
+    ):
+        torch.testing.assert_close(getattr(loaded.video, name), getattr(source, name))
+    for observed, expected in zip(
+        (
+            *loaded.video.native_inputs,
+            *loaded.video.native_outputs,
+            *loaded.video.final_outputs,
+        ),
+        (*source.native_inputs, *source.native_outputs, *source.final_outputs),
+        strict=True,
+    ):
+        torch.testing.assert_close(observed, expected)
 
 
 def test_panel_b_ownership_balances_complete_outcome_independent_work() -> None:

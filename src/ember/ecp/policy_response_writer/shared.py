@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 import socket
 import statistics
 import time
@@ -41,12 +42,19 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     training_video_demos,
 )
 from ember.ecp.policy_response_writer.shared_execution import (
+    shared_mmap_execution_plan,
     selective_replication_plan,
 )
+from ember.ecp.policy_response_writer.shared_video_cache import (
+    SharedPolicyResponseVideoCache,
+)
 from ember.ecp.policy_response_writer.training import (
+    REPO_ROOT,
     PolicyResponseRuntime,
     capture_video,
 )
+from ember.ecp.shared_compiler_assets import authority_path
+from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 
@@ -190,16 +198,46 @@ def _capture_missing(
     *,
     task: int,
     demos: Sequence[int],
+    shared_video_cache: SharedPolicyResponseVideoCache | None = None,
+    record_capture: bool = True,
 ) -> None:
     for demo in map(int, demos):
         key = (int(task), demo)
         if key in cache.videos:
             continue
-        evidence, record = capture_video(runtime, task_id=task, video_demo=demo)
-        frozen = evidence.to("cpu")
-        cache.videos[key] = frozen
-        cache.capture_records.append({**record, "tensor_bytes": frozen.tensor_bytes})
-        del evidence
+        if shared_video_cache is None:
+            evidence, record = capture_video(runtime, task_id=task, video_demo=demo)
+            frozen = evidence.to("cpu")
+            record = {**record, "tensor_bytes": frozen.tensor_bytes}
+            cache.videos[key] = frozen
+            if record_capture:
+                cache.capture_records.append(record)
+            del evidence
+        else:
+
+            def builder() -> tuple[FrozenPolicyResponseVideo, Mapping[str, Any]]:
+                evidence, record = capture_video(
+                    runtime, task_id=task, video_demo=demo
+                )
+                frozen = evidence.to("cpu")
+                return frozen, {**record, "tensor_bytes": frozen.tensor_bytes}
+
+            result = shared_video_cache.get_or_build(
+                task=task,
+                demo=demo,
+                builder=builder,
+            )
+            cache.videos[key] = result.video
+            if record_capture:
+                cache.capture_records.append(
+                    {
+                        **result.capture,
+                        "shared_mmap_cache_hit": result.hit,
+                        "shared_mmap_file_bytes": result.file_bytes,
+                        "shared_mmap_build_seconds": result.build_seconds,
+                        "shared_mmap_load_seconds": result.load_seconds,
+                    }
+                )
         torch.cuda.empty_cache()
 
 
@@ -216,13 +254,20 @@ def _prepare_training_cache(
     *,
     owned_tasks: Sequence[int],
     video_splits: Mapping[int, VideoSplit],
+    shared_video_cache: SharedPolicyResponseVideoCache | None = None,
 ) -> SharedEvidenceCache:
     cache = SharedEvidenceCache({}, [], {}, {})
     event_slots = int(runtime.config["model"]["event_slots"])
     runtime.writer.eval()
     for task in map(int, owned_tasks):
         fit, _ = video_splits[task]
-        _capture_missing(runtime, cache, task=task, demos=fit)
+        _capture_missing(
+            runtime,
+            cache,
+            task=task,
+            demos=fit,
+            shared_video_cache=shared_video_cache,
+        )
         cache.functional_normalizers[task] = _functional_normalizer(runtime, task)
         losses = []
         for demo in fit:
@@ -341,6 +386,43 @@ def _seal_normalizers(
     return stored
 
 
+def _shared_video_cache(
+    runtime: PolicyResponseRuntime,
+) -> SharedPolicyResponseVideoCache | None:
+    root = runtime.args.shared_evidence_cache_root
+    if root is None:
+        return None
+    authority = {
+        "run_root": str(runtime.args.output_dir),
+        "git": git_state(REPO_ROOT),
+        "config": {
+            "path": str(runtime.args.config),
+            "bytes": runtime.args.config.stat().st_size,
+        },
+        "source_checkpoint": str(
+            authority_path(
+                runtime.base,
+                "source_checkpoint",
+                asset_root=runtime.args.asset_root,
+            )
+        ),
+        "native_observer_checkpoint": str(
+            authority_path(
+                runtime.base,
+                "native_observer_checkpoint",
+                asset_root=runtime.args.asset_root,
+            )
+        ),
+        "representation": runtime.args.representation,
+        "frame_stride": int(runtime.config["data"]["frame_stride"]),
+        "owner_shapes": [
+            [owner.family.value, owner.in_features, owner.out_features]
+            for owner in runtime.owners
+        ],
+    }
+    return SharedPolicyResponseVideoCache(root, authority=authority)
+
+
 def _validate_shared_run(
     runtime: PolicyResponseRuntime, cell: Mapping[str, Any]
 ) -> None:
@@ -367,6 +449,10 @@ def _validate_shared_run(
         or bool(runtime.config["information_wall"]["wrong_training_loss"])
         or not math.isfinite(replication_budget)
         or replication_budget < 0
+        or (
+            runtime.args.shared_evidence_cache_root is not None
+            and replication_budget != 0.0
+        )
     ):
         raise ValueError("shared Writer positive-only training contract changed")
 
@@ -387,14 +473,15 @@ def _base_cache_bytes_by_task(
 
 def _json_execution_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": "ember_policy_response_writer_execution_plan_v2",
-        "strategy": "finite_schedule_selective_cache_replication_cost_balanced_assignment",
+        "schema_version": "ember_policy_response_writer_execution_plan_v3",
+        "strategy": str(plan["strategy"]),
         "replica_search": str(plan["replica_search"]),
         "execution_ownership": [
             list(map(int, row)) for row in plan["execution_ownership"]
         ],
         "replicas": [list(map(int, row)) for row in plan["replicas"]],
         "extra_cache_bytes": int(plan["extra_cache_bytes"]),
+        "shared_cache_bytes": int(plan.get("shared_cache_bytes", 0)),
         "budget_bytes": int(plan["budget_bytes"]),
         "base_total_cost": int(plan["base_total_cost"]),
         "base_tail_cost": int(plan["base_tail_cost"]),
@@ -449,6 +536,15 @@ def _build_execution_plan(
         )
         for step, group in enumerate(groups)
     )
+    if runtime.args.shared_evidence_cache_root is not None:
+        return _seal_execution_plan(
+            runtime,
+            shared_mmap_execution_plan(
+                costs,
+                cache_bytes=cache_bytes,
+                world_size=runtime.context.world_size,
+            ),
+        )
     budget = int(float(runtime.args.cache_replication_budget_gib) * (2**30))
     return _seal_execution_plan(
         runtime,
@@ -468,10 +564,18 @@ def _install_execution_caches(
     execution_owners: Sequence[Sequence[int]],
     video_splits: Mapping[int, VideoSplit],
     normalizers: Mapping[str, Mapping[int, float]],
+    shared_video_cache: SharedPolicyResponseVideoCache | None = None,
 ) -> None:
     for task in map(int, execution_owners[runtime.context.rank]):
         fit, _ = video_splits[task]
-        _capture_missing(runtime, cache, task=task, demos=fit)
+        _capture_missing(
+            runtime,
+            cache,
+            task=task,
+            demos=fit,
+            shared_video_cache=shared_video_cache,
+            record_capture=False,
+        )
         cache.functional_normalizers[task] = float(normalizers["functional"][task])
         cache.process_normalizers[task] = float(normalizers["process"][task])
     barrier(runtime.context)
@@ -587,6 +691,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         video_splits=video_splits,
     )
     seal_or_validate_shared_run_contract(runtime, contract)
+    shared_video_cache = _shared_video_cache(runtime)
     started = time.monotonic()
     owned_gradient = tuple(
         task for task in task_owners[runtime.context.rank] if task in gradient_tasks
@@ -595,6 +700,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         runtime,
         owned_tasks=owned_gradient,
         video_splits=video_splits,
+        shared_video_cache=shared_video_cache,
     )
     observed_normalizers = {
         "functional": _gather_mapping(runtime, cache.functional_normalizers),
@@ -621,6 +727,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         execution_owners=execution_owners,
         video_splits=video_splits,
         normalizers=normalizers,
+        shared_video_cache=shared_video_cache,
     )
     from ember.ecp.policy_response_writer.shared_training import (
         resume_cursor,
@@ -694,5 +801,10 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         parameters=parameters,
         started=started,
     )
+    if shared_video_cache is not None:
+        barrier(runtime.context)
+        if runtime.context.is_main:
+            shutil.rmtree(shared_video_cache.root)
+        barrier(runtime.context)
     runtime.writer.train()
     return result

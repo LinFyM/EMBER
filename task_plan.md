@@ -100,9 +100,12 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     完整110步均值为`10.06s`且四卡稳定段平均SM约`88--90%`；`4 * functional_rows + sampled_frames`新cost模型在旧110步
     真实回放预计再省`2.30%`，已通过22项测试、集成并推送，且不改变当前frozen run的逐步分配。
     73-task profile又确认两步均为每卡3 tasks；Panel-B后续已从training-cache ownership解耦，按完整视频与functional工作量把
-    本轮预期`2/4/5/1`任务布局改为`3/3/3/3`。microbatch2/8实测只差约1%，保留2。继续以真实phase timing、峰值显存、rank
-    idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程完美才获取阶段科学结果；task batch与
-    meta/target比例始终由实验配置决定；
+    本轮预期`2/4/5/1`任务布局改为`3/3/3/3`。microbatch2/8实测只差约1%，保留2。node-local单份safetensors mmap又使
+    每个local rank无需物理复制即可读取全部105.02GB frozen evidence；同commit、同两卡7-step schedule相对0GiB/8GiB
+    private cache由`21.37/18.54s`降到`17.81s/step`，相对当前8GiB方案平均快`4.05%`、最坏step快`24.4%`，rank实际工作
+    gap由`3.12s`降到`.34s`。当前四卡rows16的126步真实task timing反事实估计约可再省`21--23%`。继续以真实phase timing、
+    峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程完美才获取阶段科学结果；
+    task batch与meta/target比例始终由实验配置决定；
 20. [x] 已按专家的task-disjoint失败映射完成train24 + 审计non-held meta tasks的factorial coverage审计。73个gradient tasks中，
     7组同语言跨场景组合有5组包含至少两个gradient tasks、4组形成gradient-to-held桥；三类人工protocol contrast分别有
     `5/9/5`组train pair与`3/7/3`组held桥。task2、task74及held Spatial/Object/Long均有可见component重组依据；held Goal的

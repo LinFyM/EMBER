@@ -109,6 +109,16 @@ def build_shared_run_contract(
             "cache_replication_budget_gib": float(
                 runtime.args.cache_replication_budget_gib
             ),
+            "shared_evidence_cache_root": (
+                str(runtime.args.shared_evidence_cache_root)
+                if runtime.args.shared_evidence_cache_root is not None
+                else None
+            ),
+            "frozen_evidence_storage": (
+                "node_local_single_copy_safetensors_mmap"
+                if runtime.args.shared_evidence_cache_root is not None
+                else "rank_private_cpu_with_selective_replication"
+            ),
             "plan": "execution_plan.json",
             "task_assignment": (
                 "exact_minimum_predicted_makespan_for_small_batches_"

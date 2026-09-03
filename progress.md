@@ -187,6 +187,13 @@
   root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_coarse_s110_7d435ea3_v1_gpu02p6_retry1_20260903/`；两root均
   不存在。两者固定`NCCL_P2P_DISABLE=1`、`PYTHONDONTWRITEBYTECODE=1`与独立GPU-local NUMA；exact resume只允许同运行commit、
   node/GPU、config、输入和single-process topology。launch前必须再次同时live检查两节点，若共驻余量漂移则改用其它安全卡而不干扰他人。
+- task-local fresh retry已于2026-09-03 11:11 CST从clean pushed detached
+  `3a342b6ca2d2d88dddc380e4ae943fd28d00bba9`启动，sessions为`ember_prw_corrected_tl1_r1`与
+  `ember_prw_corrected_tl93_r1`；launch瞬间gpu02物理4/6状态仍为`5186MiB/3%`与`4749MiB/0%`，总EMBER物理卡为6。
+  两条run contract均完整锁定该commit、canonical task-local config、coarse、task1/93、single-process与110 steps。两条均已完成真实
+  optimizer step；task1 step3的input/output/scale/task-query梯度为`.005468/.000698/.081094/.000058`，task93按非对称初始化首步仅
+  scale梯度`.046751`，均finite。当前峰值allocated/reserved为task1 `23204407808/30383538176 bytes`、task93
+  `30760676864/37891342336 bytes`，没有OOM或对其它进程的可见干扰。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

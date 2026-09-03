@@ -120,8 +120,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 22. [ ] 已把最早失效接口定位为Composer query seed的数值rank坍缩：raw相加时约`67`范数的Process common压过约`1`范数的
     rank token，m200/m400的实际mobile update均接近rank1。只对rank context与shared task context分别做无参数LayerNorm后相加，
     冻结m200反事实恢复rank query与部分有效factor谱；不新增loss、正交约束、solve或网络分支。修正已通过定向测试、真实
-    forward/gradient/materialization smoke并合并推送。当前从clean detached `3e589695`并行运行73-task fresh m200/m400
-    shared资格和task1/task93 task-local正控；shared继续使用full 50-horizon、positive-only、唯一rank16及node-local单份mmap；
+    forward/gradient/materialization smoke并合并推送。当前从clean detached `3e589695`运行73-task fresh m200/m400 shared资格，
+    并从只补齐task-local正控声明的clean detached `8bdd9595`并行运行task1/task93；shared继续使用full 50-horizon、positive-only、
+    唯一rank16及node-local单份mmap；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

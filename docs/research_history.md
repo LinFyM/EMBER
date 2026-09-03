@@ -2504,6 +2504,9 @@ owner+language+Process common shared context各自LayerNorm后相加。没有新
 node-local单份mmap cache已完成；最初三个optimizer steps约`17--18s`，每步四rank wall完全对齐，相比旧formal末段约`23s/step`
 符合预期提速。
 
-旧m400评测释放gpu02物理0/1后，同一clean detached authority于2026-09-04 00:01 CST并行启动task1/task93的110-step task-local
-正控；两卡仅与他人约`0.2GB`、0% util进程安全共驻，连同gpu01 shared共使用6张EMBER物理卡。两条正控与shared的结果均待完成，
+旧m400评测释放gpu02物理0/1后，第一次task1/task93 launcher复用了只定义shared pool的factorial配置，两个进程在生成run contract、
+checkpoint或optimizer step前由`task_local_positive_control`缺失而退出；这不是科学结果。提交
+`8bdd9595e94cb9f7893b6192f05a98a85551159e`只在同一active factorial配置中补齐`[1,93]`正控声明，config loader与26项Writer测试通过，
+模型、数据、loss和shared run均不变。2026-09-04 00:09 CST从该clean pushed detached authority重新并行启动两条110-step正控；
+gpu02物理0/1仅与他人约`0.2GB`、0% util进程安全共驻，连同gpu01 shared共使用6张EMBER物理卡。两条正控与shared的结果均待完成，
 不根据启动期内部数值作模型选择。

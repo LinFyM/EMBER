@@ -9,7 +9,8 @@
   `2/5`与`3/5`且Goal/Long均为0，m400仍显著低于carrier43。根因审计进一步定位到Composer最早query融合处：约`67`范数的
   Process common淹没约`1`范数的rank token，使名义rank4在m200/m400都退化为近rank1；冻结反事实表明分别归一rank/shared
   context可恢复rank区分与部分有效factor谱。该最小修正已集成推送。当前gpu01物理`0,1,5,6`正从clean detached authority运行
-  fresh 73-task m200/m400 shared资格，gpu02物理`0,1`并行运行task1/task93 task-local正控，总EMBER卡数为6。shared已完成
+  fresh 73-task m200/m400 shared资格；factorial配置补齐task-local正控声明后，gpu02物理`0,1`从clean detached `8bdd9595`
+  并行运行task1/task93，总EMBER卡数为6。shared已完成
   105.02GB单份mmap cache和NUMA审计并进入optimizer，首批step约`17--18s`、四rank负载近乎相同；当前没有读取negative controls。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。

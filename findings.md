@@ -219,8 +219,9 @@ centered/mean RMS立即恢复到约`.83--.84`，第二个block后仍为`.60--.65
 `1.010`，所以它只授权一次fresh因果实验，不冒充闭环成功。active修正正是这一语义边界：rank与shared context各自无参数归一化后
 相加，不增加网络、loss、正交/熵/rank强制、solve或第二adapter；full 50-horizon、event-measure、真实X/Y、signed pooling、
 positive-only训练和唯一rank16均不变。定向测试与真实forward/gradient/materialization smoke已通过，并从clean pushed
-`3e589695`启动fresh 73-task m200/m400 shared资格及task1/task93正控。首批shared step约`17--18s`且四rank负载近乎相同；这只证明
-修正图和shared-mmap执行面稳定，科学判断等待相邻closed-loop。
+`3e589695`启动fresh 73-task m200/m400 shared资格。task-local runtime还要求配置显式声明正控任务；factorial配置补齐
+`[1,93]`后从clean pushed `8bdd9595`另行启动两条正控，不改变模型或训练目标。首批shared step约`17--18s`且四rank负载近乎相同；
+这只证明修正图和shared-mmap执行面稳定，科学判断等待相邻closed-loop。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 

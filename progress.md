@@ -13,8 +13,11 @@
   wall几乎完全对齐，当前没有读取negative controls。task1/task93正控的前两次启动都在run contract、checkpoint、capture和
   optimizer step前退出：先后暴露factorial配置缺少正控声明，以及task-local合同仍假设旧单一panel config。前者由`8bdd9595`
   补齐，后者由`89ca865d`把实际resolved task panel封存进v2合同；模型、数据、loss与训练步数均未改变，27项Writer测试及
-  task-local配置全字段预检通过。两条失败启动不构成科学状态。task1/task93现已从clean pushed detached `ef00f446`在gpu02
-  物理`0/1`重新启动并生成有效v2 run contract，且都已进入真实optimizer；总EMBER卡数为6。
+  task-local配置全字段预检通过。两条失败启动不构成科学状态。task1/task93从clean pushed detached `ef00f446`在gpu02
+  物理`0/1`完成正控：macro70 fit/held recovery分别为`.2224/.1153`与`.3047/.3115`，macro110为
+  `.3283/.2282`与`.3570/.3223`，四个checkpoint的三条视频均自发优于carrier；禁止路径backward全为0。相较前版，task1
+  macro110改善而task93略降，所以修正确认保留并可改善task-local容量，但不是跨task统一增益。总wall由旧版约`2016/3076s`
+  降到`813/1062s`。当前只等待shared m200/m400相邻closed loop裁决。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

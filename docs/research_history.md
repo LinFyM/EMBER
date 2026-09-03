@@ -2526,3 +2526,16 @@ gpu01物理0/1/5/6为同一shared formal；gpu02物理0/1分别仅`209/162MiB`�
 `runs/outputs/pi05_ecp_policy_response_writer_rank_balance_tasklocal_task93_full_s110_ef00f446_gpu02p1_20260904/`。两份contract均锁定
 v2 schema、commit、full、component-init、110 steps、实际task panel、Action Meta false与single-process topology；两task都已进入真实
 optimizer且input/output/relation/scale/task-query梯度全部finite nonzero。当前只等待macro70/110 Panel-B，不用启动期loss选模型。
+
+## 126. rank-balanced task-local正控保留容量并显著提速
+
+两条`ef00f446`正控均自然完成110步及macro70/macro110的三视频、16-visit Panel-B复评。task1在macro70的fit/held recovery为
+`.222388/.115343`，macro110为`.328291/.228193`；task93分别为`.304725/.311541`与`.357007/.322264`。四个
+task-checkpoint组合的两条fit和第三条zero-gradient held视频全部自发优于carrier。两份result均确认held、Panel-B、wrong backward
+为0，source policy与Process可训练参数为0，Action Meta未安装，输出为唯一完整rank16。
+
+相较同数据/目标的前一corrected task-local，task1 macro110由`.223986/.157630`提高，task93则由`.425338/.418759`下降；
+因此parameter-free balance不是对所有task的单调数值增益，但已排除“恢复rank identity会破坏Composer容量”，并显示至少一个task的
+跨视频功能恢复得到实质改善。更重要的是它不回答task-disjoint shared映射是否成立，后者只由当前fresh m200/m400闭环裁决。
+工程上，task1训练/总wall从`1815.64/2016.31s`降至`629.36/812.76s`，task93从`2853.88/3076.06s`降至
+`876.82/1061.80s`；20秒采样中shared四卡平均SM为`81.5/83.6/83.9/82.2%`，task-local两卡为`83.6/89.0%`。

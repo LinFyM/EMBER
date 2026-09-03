@@ -222,9 +222,10 @@ positive-only训练和唯一rank16均不变。定向测试与真实forward/gradi
 `3e589695`启动fresh 73-task m200/m400 shared资格。task-local runtime还要求配置显式声明正控任务；factorial配置补齐
 `[1,93]`后首次重启又在step 0前暴露formal contract仍只接受旧`functional_panel_config`，而实际runtime和factorial配置使用可扩展的
 `functional_panel_sources`。`89ca865d`将task-local schema升为v2并封存该task实际resolved panel record，模型、数据、loss和训练目标
-均不变；27项Writer测试与完整task-local配置读取预检通过。两条正控从clean pushed detached `ef00f446`生成各自实际panel的有效
-v2 contract并进入optimizer；shared稳定step约`15--17s`且四rank wall几乎完全对齐。这些只证明修正图和执行面稳定，科学判断仍
-等待task-local macro70/110及shared相邻closed-loop。
+均不变；27项Writer测试与完整task-local配置读取预检通过。两条正控从clean pushed detached `ef00f446`完成：task1/task93
+macro70 fit/held recovery为`.2224/.1153`与`.3047/.3115`，macro110为`.3283/.2282`与`.3570/.3223`，所有fit/held视频
+在两点均自发优于carrier，禁止路径backward全为0。相较前版，task1 macro110更高而task93略低，说明修正保留并可改善task-local
+函数容量，却不是对所有task单调增益。shared稳定step约`15--17s`且四rank wall几乎完全对齐；跨task科学判断仍等待相邻closed-loop。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 

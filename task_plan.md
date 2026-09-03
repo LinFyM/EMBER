@@ -123,8 +123,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     forward/gradient/materialization smoke并合并推送。当前从clean detached `3e589695`运行73-task fresh m200/m400 shared资格；
     task1/task93的两次启动在任何optimizer step前依次暴露缺少正控声明及旧单panel合同假设，均不构成科学结果。`89ca865d`已让
     task-local v2合同直接封存resolved task panel并通过27项Writer测试和配置全字段预检。两条正控已从clean detached
-    `ef00f446`在gpu02物理`0/1`生成有效合同并进入真实optimizer；全线继续使用full 50-horizon、positive-only、唯一rank16及
-    node-local单份mmap；
+    `ef00f446`完成；macro70/110的task1 fit/held为`.2224/.1153`、`.3283/.2282`，task93为`.3047/.3115`、
+    `.3570/.3223`，四点全部视频优于carrier并满足信息墙，确认修正后的task-local容量。全线继续使用full 50-horizon、
+    positive-only、唯一rank16及node-local单份mmap，当前等待shared m200/m400；
 23. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 24. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 25. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

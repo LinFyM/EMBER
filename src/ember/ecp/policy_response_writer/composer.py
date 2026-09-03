@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import torch
+import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.native_factors import (
@@ -30,8 +32,8 @@ class _NativeBankChunk:
 
     input_values: torch.Tensor
     input_keys: torch.Tensor
-    output_values: tuple[torch.Tensor, ...]
-    output_keys: tuple[torch.Tensor, ...]
+    output_values: torch.Tensor
+    output_keys: torch.Tensor
     innovation: torch.Tensor
 
 
@@ -98,21 +100,86 @@ class RankBankContextBlock(torch.nn.Module):
         self,
         query: torch.Tensor,
         event_memory: torch.Tensor,
-        bank_memory: torch.Tensor,
+        bank_memory: Sequence[torch.Tensor],
     ) -> torch.Tensor:
         q = self.query_norm(query)[None]
         event = self.event_norm(event_memory)[None]
         attended, _ = self.event_attention(q, event, event, need_weights=False)
         value = query + attended[0]
         q = self.query_norm(value)[None]
-        bank = self.bank_norm(bank_memory)[None]
-        attended, _ = self.bank_attention(q, bank, bank, need_weights=False)
+        bank = tuple(bank_memory)
+        if torch.is_grad_enabled() and any(chunk.requires_grad for chunk in bank):
+            attended = checkpoint(
+                self._streaming_bank_attention,
+                q,
+                bank,
+                use_reentrant=False,
+            )
+        else:
+            attended = self._streaming_bank_attention(q, bank)
         value = value + attended[0]
         normalized = self.rank_norm(value)[None]
         attended, _ = self.rank_attention(
             normalized, normalized, normalized, need_weights=False
         )
         return self.mlp(value + attended[0])
+
+    def _streaming_bank_attention(
+        self,
+        query: torch.Tensor,
+        memory: Sequence[torch.Tensor],
+    ) -> torch.Tensor:
+        """Exact cross-attention over full bank tokens without concatenation."""
+
+        if query.ndim != 3 or query.shape[0] != 1 or not memory:
+            raise ValueError("streaming native-bank attention inputs changed")
+        width = query.shape[-1]
+        heads = self.bank_attention.num_heads
+        head_width = width // heads
+        weight = self.bank_attention.in_proj_weight
+        bias = self.bank_attention.in_proj_bias
+        q_bias = None if bias is None else bias[:width]
+        k_bias = None if bias is None else bias[width : 2 * width]
+        v_bias = None if bias is None else bias[2 * width :]
+        projected_query = F.linear(query[0], weight[:width], q_bias)
+        projected_query = projected_query.reshape(-1, heads, head_width).permute(
+            1, 0, 2
+        )
+        maximum = None
+        denominator = None
+        numerator = None
+        for chunk in memory:
+            if chunk.ndim != 2 or chunk.shape[-1] != width:
+                raise ValueError("streaming native-bank memory changed")
+            chunk = self.bank_norm(chunk)
+            key = F.linear(chunk, weight[width : 2 * width], k_bias)
+            value = F.linear(chunk, weight[2 * width :], v_bias)
+            key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
+            value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
+            score = (
+                torch.einsum("hqd,hnd->hqn", projected_query, key).float()
+                / math.sqrt(head_width)
+            )
+            local_maximum = score.amax(-1)
+            if maximum is None:
+                maximum = local_maximum
+                mass = torch.exp(score - maximum[..., None])
+                denominator = mass.sum(-1)
+                numerator = torch.einsum("hqn,hnd->hqd", mass, value.float())
+                continue
+            updated_maximum = torch.maximum(maximum, local_maximum)
+            previous_scale = torch.exp(maximum - updated_maximum)
+            mass = torch.exp(score - updated_maximum[..., None])
+            denominator = denominator * previous_scale + mass.sum(-1)
+            numerator = numerator * previous_scale[..., None] + torch.einsum(
+                "hqn,hnd->hqd", mass, value.float()
+            )
+            maximum = updated_maximum
+        if denominator is None or numerator is None:
+            raise ValueError("streaming native-bank attention received no tokens")
+        attended = (numerator / denominator[..., None]).permute(1, 0, 2)
+        attended = attended.reshape(1, query.shape[1], width).to(query.dtype)
+        return self.bank_attention.out_proj(attended)
 
 
 class CurrentVideoNativeFactorComposer(torch.nn.Module):
@@ -220,28 +287,28 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         key = key + self.bank_type_embedding.weight[0]
         return self.output_norm(key + positions[:, None, None])
 
-    def _output_group_keys(
+    def _output_keys(
         self,
         target: int,
-        group: int,
         values: torch.Tensor,
         positions: torch.Tensor,
     ) -> torch.Tensor:
+        # values is [group, frame, probe, horizon, bank_type, native_width].
         width = values.shape[-1]
         key = self.output_projection[str(width)](rms_normalize(values))
         key = key + self._owner_bias(target)
-        key = key + self.probe_embedding.weight[None, :, None, None]
-        key = key + self.horizon_embedding.weight[None, None, :, None]
-        key = key + self.bank_type_embedding.weight[1:][None, None, None]
-        key = key + self.group_embedding.weight[group]
-        return self.output_norm(key + positions[:, None, None, None])
+        key = key + self.probe_embedding.weight[None, None, :, None, None]
+        key = key + self.horizon_embedding.weight[None, None, None, :, None]
+        key = key + self.bank_type_embedding.weight[1:][None, None, None, None]
+        key = key + self.group_embedding.weight[: values.shape[0], None, None, None, None]
+        return self.output_norm(key + positions[None, :, None, None, None])
 
     def _bank_candidates(
         self,
         target: int,
         videos: Sequence[FrozenPolicyResponseVideo],
         processes: Sequence[PolicyResponseProcessOutput],
-    ) -> tuple[torch.Tensor, tuple[_NativeVideoCandidates, ...]]:
+    ) -> tuple[tuple[torch.Tensor, ...], tuple[_NativeVideoCandidates, ...]]:
         tokens = []
         candidates = []
         owner = self.owners[target]
@@ -263,28 +330,25 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 input_key = self._input_keys(
                     target, input_values, local_position
                 )
-                tokens.append(input_key.mean(2).reshape(-1, self.width))
+                # Keep every relative Action Expert horizon available to the
+                # process-conditioned bank read.  Averaging this axis here
+                # would erase the same 50-step response structure that the
+                # full Process path is required to preserve.
+                tokens.append(input_key.reshape(-1, self.width))
                 output = boundary.build(
                     video.native_outputs[target][start:stop], start_frame=start
                 )
                 grouped = output.reshape(
                     *output.shape[:-1], groups, group_width
                 ).movedim(-2, 0)
-                group_values = []
-                group_keys = []
-                for group, values in enumerate(grouped):
-                    key = self._output_group_keys(
-                        target, group, values, local_position
-                    )
-                    tokens.append(key.mean(2).reshape(-1, self.width))
-                    group_values.append(values)
-                    group_keys.append(key)
+                output_key = self._output_keys(target, grouped, local_position)
+                tokens.append(output_key.reshape(-1, self.width))
                 chunks.append(
                     _NativeBankChunk(
                         input_values=input_values,
                         input_keys=input_key,
-                        output_values=tuple(group_values),
-                        output_keys=tuple(group_keys),
+                        output_values=grouped,
+                        output_keys=output_key,
                         innovation=process.frame_innovation[start:stop, target],
                     )
                 )
@@ -298,7 +362,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             )
         if not tokens:
             raise ValueError("native composer received no bank context")
-        return torch.cat(tokens), tuple(candidates)
+        return tuple(tokens), tuple(candidates)
 
     def _event_tokens(
         self,
@@ -417,21 +481,16 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                     ),
                     chunk.input_values,
                 )
-                for values, keys, accumulator in zip(
-                    chunk.output_values,
-                    chunk.output_keys,
-                    output_accumulators,
-                    strict=True,
-                ):
+                for group, accumulator in enumerate(output_accumulators):
                     accumulator.add(
                         self._branch_logits(
                             query,
-                            keys,
+                            chunk.output_keys[group],
                             chunk.innovation,
                             log_base_mass=output_mass,
                             output=True,
                         ),
-                        values,
+                        chunk.output_values[group],
                     )
         return input_accumulator.signed_mean(), torch.cat(
             tuple(value.signed_mean() for value in output_accumulators), dim=-1

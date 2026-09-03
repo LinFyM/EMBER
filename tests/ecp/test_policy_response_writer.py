@@ -8,7 +8,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
+from ember.ecp.native_factors import native_output_group_count
 from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
     PolicyResponseEventToFactorWriter,
@@ -236,6 +237,42 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
         permuted = permuted_b.transpose(0, 1) @ permuted_a
         torch.testing.assert_close(left, right, atol=2e-4, rtol=2e-4)
         torch.testing.assert_close(left, permuted, atol=2e-4, rtol=2e-4)
+
+
+def test_composer_bank_memory_retains_every_action_horizon() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(37)
+        model = _model().eval()
+        videos = (_video(23), _video(29, frames=7))
+        with torch.no_grad():
+            processes = tuple(model.process(video) for video in videos)
+            memory, _ = model.composer._bank_candidates(0, videos, processes)
+
+        groups = native_output_group_count(_owners()[0])
+        tokens_per_frame = 2 * ACTION_HORIZON * (1 + 4 * groups)
+        assert sum(chunk.shape[0] for chunk in memory) == (
+            sum(video.frame_count for video in videos) * tokens_per_frame
+        )
+        assert all(chunk.shape[1:] == (model.composer.width,) for chunk in memory)
+
+
+def test_streaming_bank_attention_matches_dense_attention() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(41)
+        generator = torch.Generator().manual_seed(41)
+        block = _model().composer.blocks[0].eval()
+        query = torch.randn(1, 4, 16, generator=generator)
+        memory = (
+            torch.randn(7, 16, generator=generator),
+            torch.randn(11, 16, generator=generator),
+            torch.randn(5, 16, generator=generator),
+        )
+        with torch.no_grad():
+            streamed = block._streaming_bank_attention(query, memory)
+            dense = torch.cat(tuple(block.bank_norm(chunk) for chunk in memory))[None]
+            expected, _ = block.bank_attention(query, dense, dense, need_weights=False)
+
+        torch.testing.assert_close(streamed, expected, atol=2e-6, rtol=2e-5)
 
 
 def test_static_repeated_video_cannot_open_mobile_lora() -> None:

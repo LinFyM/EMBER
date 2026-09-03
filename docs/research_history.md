@@ -2666,3 +2666,17 @@ causal预测在task-disjoint m100/m200、六个gradient-authorized任务及已�
 `[LN0(C),LN0(D)]`替换`[E,D]`、让signed branch读取`LN0(D)`，就把两个Composer blocks后的跨task centered/mean由
 `.03172`提高到`.07324`，dynamic branch TV由`.004--.019`提高到`.138--.411`。下一fresh因此只修这一处typed consumer
 boundary；不同时修改teacher、loss、rank、scale、bank、数据或正样本合同，并用optimizer50/100短资格作真实闭环裁决。
+
+## 135. Process consumer-boundary闭环non-pass与random-delta恢复
+
+clean pushed `f33f2955`把Process common/innovation分源规范化接入causal predictor、Composer event memory与signed dynamic
+scorer，未改变主架构其它变量。73-task fresh optimizer50/100 formal完整结束；held5 correct-only strict250为`40/35`，逐task
+Long/Goal/Object/Spatial0/Spatial9分别`0/0/2/38/0`与`0/0/5/29/1`，Goal/Long仍为0。gradient fit/held functional随训练改善，
+两个true-task-held却进一步变负；所以该consumer修正本身正式non-pass，不以续训或负控挽救。
+
+冻结诊断确认新边界确实放大了动态并改变了真实LoRA，但causal auxiliary在gradient与held任务上都没有学会预测，且对共享Frame/Event
+施加约`1.6--2.8x`、与functional近正交的梯度。进一步审计发现首版把专家明确要求的随机`t,delta>0`实现成了固定
+`future_offset=1`。同一m100的六task正样本multi-gap probe保持完整38x50x2输出，within-video最优尺度MSE解释量从delta1的
+`.0094`升到delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也从约`.0093`升到约`.0752`。将teacher投到input projection
+可见子空间只有次要增益，故下一matched fresh先只恢复random legal delta与parameter-free interval conditioning，固定teacher及
+Process/Composer主图不变。formal roots、全部diagnostic文件与更细数值见`findings.md`第138节。

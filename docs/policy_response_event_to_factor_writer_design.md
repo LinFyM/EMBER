@@ -360,11 +360,23 @@ S_{k,t,j}=\frac{\mathcal N(C_{k,j})+\mathcal N(I_{k,t,j})}{\sqrt 2},
 
 - target使用冻结raw evidence或固定teacher projection；
 - predictor侧的learned projection不能同时充当可漂移target；
-- causal auxiliary forward不得读取t之后的frames、current-to-final relation、future event assignment或target interval；
+- causal auxiliary forward不得读取t之后的frame content、current-to-final relation、future event assignment或中间target interval；
 - 预测保留38 owners、50 horizons和2 probes；
 - 不读取teacher actions，不制造wrong、shuffle或reverse样本。
 
 主Writer在部署时可以读取完整视频；prefix-only约束只属于该causal auxiliary view。
+
+首版实现曾把上述`delta>0`静默固定成`future_offset=1`。`f33f2955`的consumer-boundary资格与后续multi-gap诊断已经证明，固定相邻
+目标主要是高频、弱可预测变化：在同一m100 Process state上，保持完整38x50x2 target时，within-video held-cutoff的最优尺度MSE
+解释量从delta1的`.0094`升到delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也从约`.0093`升到约`.0752`。
+因此下一matched fresh恢复专家原合同：先从所有合法prefix endpoints中确定性均匀采样`t`，再从该prefix剩余future offsets中
+确定性均匀采样`delta>0`；采样只依赖optimizer step、task与video demo，不读取outcome。predictor只额外接收delta的标准无参数
+sinusoidal interval encoding，不读取future frame、路径中间帧或future event assignment。target继续使用现有固定teacher projection，
+loss权重与固定normalizer合同不变；不平均50-step Action Expert horizon，也不改变主Writer deployment forward。
+
+固定teacher的矩阵rowspace只有约`12.4--12.5%`落在ResponseTokenizer projection可见子空间，但事后把teacher对齐到该子空间只让
+delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮不同时更换teacher；若
+random-delta使process prediction成立而shared闭环仍失败，再单独裁决teacher或Process-to-Composer credit，而不是把两者混在同一run。
 
 ### 8.3 Preservation
 
@@ -427,9 +439,10 @@ language-only、first+final、shuffled与reversed controls；这些结果不回�
 
 typed-boundary首个fresh资格已经完整结束。task-local task1/task93的50/100四点均在fit/held视频上优于carrier，证明容量保留；
 shared m100/m200 held5 strict250却为`39/32`，m200显著低于carrier43，且seen functional继续改善时true-task-held与闭环退化。
-归因进一步发现Process `D`保留task-specific内容，但raw consumer接口让`C`在causal prediction与Composer内重复淹没`D`；冻结
-`C/D`分源归一反事实显著打开query与dynamic branch。故下一资格只替换该consumer boundary，保持teacher、loss、数据、task权重和
-其余模型不变，fresh运行optimizer50/100。50点在训练继续时尽快物化评测，100点提供相邻稳定性；首跑最长约半小时训练，不先扩展。
+其后只替换`C/D` consumer boundary的clean `f33f2955` fresh资格也已完整结束：m50/m100 held5仅`40/35`，逐task为
+`0/0/2/38/0`与`0/0/5/29/1`，Goal/Long仍为0；gradient fit/held functional继续改善时两个true-task-held更负，故不续训或运行
+negative controls。当前唯一下一资格是本节登记的random legal delta恢复，仍用optimizer50/100；50点在训练继续时尽快物化评测，
+100点提供相邻稳定性，架构未证明前不先扩展成长跑。
 
 ## 10. 后续扩展与Final
 

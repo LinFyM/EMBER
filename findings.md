@@ -2508,3 +2508,38 @@ RMS约`1.1`，即`D`确实携带task-specific内容；但其RMS仅约`.04--.06`�
 约`.007--.021`升至`.24--.43`，branch TV从`.004--.019`升至`.138--.411`。该反事实不证明闭环性能，却证明现有标准blocks在
 获得数值可见的`D`后能传递task条件。所以下一fresh只统一修复这一common--innovation typed boundary，不新增网络、loss、人工
 negative、rank/scale规则或coarse路径；随后用短optimizer50/100 shared相邻闭环直接裁决。
+
+### 138. consumer-boundary non-pass暴露固定相邻因果目标偏离专家原合同
+
+提交`f33f29556aab33e399e84c3f0f892fa84c32c7bc`只在三个Process consumer处实现上一节的matched修正；30项Writer测试、配置
+互斥和真实task1 full forward/gradient/76-tensor rank16 materialization smoke通过。clean detached formal root为
+`runs/outputs/pi05_ecp_policy_response_writer_typed_process_boundary_73task_k1_component_s100_f33f2955_gpu01p0156_sharedmmap_20260904/`，
+100步、两枚checkpoint、Panel-B、result与completion均完整；训练/Panel-B/总wall为`1713.68/450.11/2449.41s`，均值
+`17.07s/step`，峰值allocated/reserved为`39.99/46.75GB`。m50/m100的gradient fit/held benefit为
+`.000285/.000181`与`.000495/.000336`，但两个true-task-held均值分别为`-.000081/-.000432`与
+`-.000630/-.000983`，即seen functional继续拟合而task-disjoint进一步恶化。
+
+两点held5 correct-only strict250分别为`40/250`与`35/250`。m50逐task Long/Goal/Object/Spatial0/Spatial9=
+`0/0/2/38/0`、breadth`2/5`；m100为`0/0/5/29/1`、breadth`3/5`。m50到m100为
+`28 retained/7 gained/12 lost`、paired exact `p=.35928`；m100相对carrier43为`30/5/13`、`p=.09625`。
+两个checkpoint均无Goal/Long，故consumer-boundary正式non-pass，不续训、不运行wrong/shuffle/reverse等negative controls。
+
+后续正确视频、零optimizer诊断把失败进一步拆开。新的Process state已不再静态：held三task的prefix state temporal cosine约
+`.825--.987`，跨taskfinal query cosine也由旧typed m200的`.998406`降到`.992760`；实际物化adapter跨task并不相同。
+但m100在六个gradient-authorized任务的36个cutoff上，trained predictor仅`5/36`优于零，平均smooth-L1为`.068904`而零为
+`.067417`；Process辅助与functional在共享Frame/Event参数上的聚合gradient cosine仅约`-.029--+.017`，辅助梯度范数却为
+functional的`1.59--2.80x`。signed-weight诊断又显示rank坍缩已经出现在selection weights：Goal25 input/output rank cosine为
+`.519/.744`，最终mobile有效参与秩中位仅`1.032`，明显低于G1 task-local成功factor约`1.50--1.66`。
+
+教师矩阵rowspace审计发现state/residual固定随机teacher只有`12.4--12.5%`能量位于128维ResponseTokenizer projection可见子空间，
+但把teacher事后对齐到该子空间并未让固定delta1成为充分目标：跨task最优全局缩放后的MSE解释量仍只有约`1--2%`。真正更强的
+定位来自同一m100、六个gradient task、只读正确视频的multi-gap probe：完整保留38 owners、50 horizons和2 probes时，aligned
+teacher的within-video held-cutoff最优解释量随delta1/2/4/8由`.0094/.1382/.3268/.4718`单调上升，cross-task双向均值由约
+`.0093/.0173/.0416/.0752`上升；原固定随机teacher也呈同一单调趋势。说明允许prefix state预测中期过程变化是可行信号，最嘈杂的
+固定相邻变化才是主要监督错配。
+
+专家澄清原文明确要求每条正确视频随机选择`t`与`delta>0`；当前实现却始终把`future_offset`默认为1，normalizer、shared训练和
+Panel-B全部沿用该固定值。这不是专家架构本身已被充分否定，而是首版实现遗漏了其关键时间采样合同。下一fresh只修成确定性可复现、
+outcome-independent的随机合法`(t,delta)`，并用parameter-free relative-interval encoding条件化同一个predictor；暂不同时更换
+teacher，因为其独立收益较小。Process/Composer主forward、完整native bank、full 50-horizon、signed pooling、rank4、唯一rank16、
+positive-only functional/preservation与所有数据权重保持不变。

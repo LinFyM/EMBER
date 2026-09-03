@@ -143,13 +143,22 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     归因确认Process的`D`本身保留task-specific动态，而当前predictor的`C+D_last`及Composer的`[E=C+D,D]`和raw `D`
     scorer在消费边界重复让约百倍更大的`C`淹没`D`。causal predictor在shared、gradient-authorized乃至task-local强正控上均不如
     零预测，故失败不是训练不足，也不是task-local容量不足；
-23. [ ] 只修common--innovation typed consumer boundary：以无affine `LN0`分别规范`C`与`D`，causal state使用
+23. [x] 只修common--innovation typed consumer boundary：以无affine、带连续可靠度的`LN0`分别规范`C`与`D`，causal state使用
     `(LN0(C)+LN0(D_last))/sqrt(2)`，event memory使用信息等价但不冗余的`[LN0(C),LN0(D_e)]`，signed dynamic scorer读取
-    `LN0(D_e)`；不新增模块、loss、teacher、task table、scale规则或coarse路径。完成定向测试与真实full forward/gradient/
-    materialization smoke后，立即运行fresh 73-task optimizer50/100短资格并做相邻held5 correct-only strict250；
-24. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-25. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-26. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    `LN0(D_e)`；没有新增模块、loss、teacher、task table、scale规则或coarse路径。30项Writer测试、真实full forward/gradient/
+    materialization smoke通过，clean `f33f2955`的73-task optimizer50/100 fresh资格与两点held5 correct-only strict250完整结束。
+    m50/m100仅为`40/35`，逐task分别`0/0/2/38/0`与`0/0/5/29/1`，breadth`2/5`与`3/5`，Goal/Long均为0；两点间
+    `28 retained/7 gained/12 lost`。gradient fit/held functional虽继续改善，两个true-task-held却由负变得更负，故该
+    consumer-boundary参数化正式non-pass，不追加训练或negative controls；
+24. [ ] 修正首版实现偏离专家原合同的causal interval：此前错误固定`future_offset=1`，而专家要求随机选择prefix `t`与合法
+    `delta>0`。冻结m100的六个gradient task多尺度诊断显示，完整38-owner、50-horizon、2-probe target的within-video最优尺度
+    MSE解释量从delta1的`.0094`单调升至delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也由约`.0093`升到约`.0752`；
+    所以adjacent高频目标是已证实的最早监督错配。下一fresh只改为outcome-independent的随机合法`(t,delta)`及parameter-free
+    interval encoding，保持固定teacher、loss权重、Process/Composer主图、完整bank、rank与数据不变。先完成配置互斥、定向测试和
+    真实smoke，随后直接运行同规模optimizer50/100短资格；
+25. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+26. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+27. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

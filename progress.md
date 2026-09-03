@@ -4,18 +4,26 @@
 
 ## 当前快照
 
-- 当前最前沿已经从typed-boundary的入口/末端所有权推进到Process consumer边界。clean detached `682f7ecf`的73-task
-  shared run、两checkpoint Panel-B、m100/m200物化与held5 correct-only strict250均完整结束：m100/m200为`39/32`，m200逐task
-  Long/Goal/Object/Spatial0/Spatial9=`0/0/2/28/2`、breadth`3/5`；相对carrier43为
-  `28 retained/4 gained/15 lost`、paired exact `p=.01921`，正式non-pass。family-owned head已让四family梯度支持严格正交，
-  但matching target/rank跨task query仍约`.9984` cosine。冻结归因显示Process event innovation `D`并未丢失task-specific
-  内容，跨task cosine仅约`-.02--.18`、centered/mean约`1.1`；真正问题是`D`的RMS约`.04--.06`，而common `C`约`5`，当前
-  causal predictor直接读取`C+D_last`，Composer又读取冗余的`[E=C+D,D]`并以raw `D`产生dynamic logits，使同一量纲失配在
-  prediction与factor两条消费边界重复出现。shared m100/m200、六个gradient-authorized任务及task-local task1的causal predictor
-  都不如零预测；因此不是门槛太高、没训练够或task-local容量不足。零梯度冻结反事实只将`C/D`分别无affine LayerNorm，就把两个
-  Composer blocks后的跨task区分比由`.03172`提高到`.07324`，dynamic branch TV提高约一个数量级以上。下一fresh只做这一处
-  common--innovation typed boundary，不同时更换teacher/loss；先完成代码、定向测试和真实full smoke，随后跑optimizer50/100
-  的73-task短资格并立即做相邻闭环。以下条目保留此前执行与审计时间线，不覆盖本条当前状态。
+- 当前最前沿已经完成Process common--innovation consumer-boundary的真实裁决。clean detached `f33f2955`保持完整50-horizon、
+  真实native X/Y、positive-only与唯一rank16，73-task shared optimizer50/100、两点Panel-B、物化和held5 correct-only strict250
+  均完整结束；m50/m100仅为`40/35`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/2/38/0`与`0/0/5/29/1`，breadth
+  `2/5`与`3/5`，Goal/Long仍为0。两点间`28 retained/7 gained/12 lost`；m100相对carrier43也只有`30 retained/5 gained/13 lost`。
+  gradient tasks的fit/held functional benefit由`.000285/.000181`升到`.000495/.000336`，两个true-task-held却从
+  `-.000081/-.000432`恶化到`-.000630/-.000983`。因此这不是门槛太高或只差续训，consumer-boundary参数化正式non-pass，
+  不运行negative controls。
+
+  深入定位发现两个独立事实。第一，修正已让Process state的时间cosine从旧约`.9999`降到`.825--.987`并把跨task final query
+  cosine降到`.99276`，所以动态确实进入主图；但最终mobile factor的有效参与秩中位仍只有`1.032`，rank坍缩已存在于signed
+  selection weights而非物化之后。第二且更早，当前`L_process`实现把专家要求的随机`(t,delta>0)`错误收缩成固定相邻
+  `future_offset=1`。六个gradient task的m100因果预测在36个cutoff上仅`5/36`优于零，process与functional共享梯度范数比约
+  `1.6--2.8`而cosine接近0；固定teacher约`87.5%`矩阵能量虽落在ResponseTokenizer rowspace之外，但把teacher事后对齐只把
+  单步跨task最优解释量提高到约`1--2%`，不足以单独修复。
+
+  同一checkpoint的正样本多尺度反事实随后给出明确方向：保持38 owners、50 horizons与2 probes不变，within-video线性probe的
+  最优尺度MSE解释量从delta1的`.0094`升至delta2/4/8的`.1382/.3268/.4718`；跨task双向均值从约`.0093`升至
+  `.0173/.0416/.0752`。因此下一fresh只恢复专家原本的随机合法prefix/future interval，并以parameter-free encoding告知
+  predictor相对delta；固定teacher、loss权重、Process/Composer主图、bank、rank、数据与closed-loop合同全部不变。该改动先走
+  配置互斥、定向测试和一个真实smoke，然后立即复用optimizer50/100短资格。以下条目保留此前执行与审计时间线，不覆盖本条当前状态。
 
 - canonical集成目标为clean pushed `main`。上一轮full event-measure
   73-gradient-task资格已完成训练、m200/m400 Panel-B、物化与两次held5 correct-only strict250：闭环仅`30/32`，breadth

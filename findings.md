@@ -2421,3 +2421,20 @@ open-but-unlinked文件改名为`.nfs*`，导致`ENOTEMPTY`，随后其余rank�
 `cache.videos.clear()`与`gc.collect()`，第一次barrier确认全部释放，rank0删除，再第二次barrier。回归测试以weakref确认删除回调
 发生时映射tensor已回收，并验证两次barrier；删除异常也会广播到所有rank，避免再次留下NCCL timeout。29项Writer测试通过。该修复
 不改变capture、Writer、训练、checkpoint或评测数值。
+
+### 133. typed-boundary实现只恢复source与family参数所有权，真实full smoke已接通
+
+实现没有新增模块或并行路径。Composer seed先对rank context做无affine LayerNorm；owner与family各自LayerNorm后以`1/sqrt(2)`
+组成结构残差，再与分别LayerNorm的Process common、exact-language以`1/sqrt(3)`组成condition残差。系数只保持残差方差，既不依
+task也不决定LoRA幅度。末端`scale_head`从一个共享输出row改为四个family-owned rows；每个target/rank的完整bank-conditioned query
+只读取本family row，仍经`tanh * s_ref`与完整BA cap。它不能产生A/B方向，没有task-specific参数，不是退役的
+summary-to-family-gate-to-shared-anchor。
+
+30项Writer测试验证独立放大任一source不改变其它type或rank差、未选择family row的scale参数梯度严格为0，以及既有full-horizon、
+assignment、static-repeat、chunked pooling、cap、K与cache合同。新loader只接受
+`configs/pi05_ecp_policy_response_writer_typed_boundary_v1.json`声明的新图，旧factorial config不能静默驱动不匹配代码；新held5
+配置只注册optimizer100/200。真实task1 correct demo5 smoke完整捕获`51`帧、`38` owners、两个probe与全部50 horizons，capture为
+`1,123,458,980 bytes`；初始A非零/B严格零，scale opening gradient`.200755`，打开后functional梯度Frame/Event/Composer/relation
+分别为`.002836/.002472/.200869/.0000533`，process梯度Frame/Event/predictor为`.06422/.06859/.15932`。物化为76 tensors、
+唯一rank16，峰值CUDA allocated/reserved为`27,347,375,104/33,982,251,008 bytes`。因此新图具备进入fresh短资格的实现证据，
+但尚无任何shared性能结论。

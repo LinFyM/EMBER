@@ -47,6 +47,14 @@
   cleanup现改为所有rank先清空mmap tensor并`gc.collect`、barrier后再由rank0删除，回归测试同时验证映射已释放和双barrier顺序；
   29项Writer测试通过，删除失败也会同步转成明确错误而不再留下其它rank超时。该故障只影响收尾文件，不改变m200/m400
   checkpoint或任何科学结论。
+- 唯一实现分支`codex/policy-response-writer-typed-boundary`已把上述根因收敛为两个同属Composer边界所有权的改动：入口对
+  rank、owner、family、Process common与language逐source做parameter-free pre-norm并按残差组保持方差；末端把同一个
+  `Linear(width,1)`改为`Linear(width,4)`，每个target只选择其native family row产生query-conditioned relative rank gain。
+  它没有task表、anchor或第二Writer，仍只能缩放当前视频真实X/Y signed pooling所得方向。30项Writer测试和新旧config互斥预检
+  通过。gpu01物理0上的真实task1 smoke已完整消费51帧、38 targets与full 50-horizon，生成76 tensors/唯一rank16；functional梯度
+  到达Frame/Event/Composer/relation，causal梯度到达Frame/Event/predictor，峰值allocated/reserved为`27.35/33.98GB`。
+  新资格配置使用圆整的task-local 50/100与shared 100/200 checkpoints；shared m200与前一m200保持约33次/task的matched暴露，
+  不在架构未证明时再次先付出400步。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

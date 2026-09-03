@@ -213,10 +213,16 @@ def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> No
         torch.manual_seed(6)
         composer = _model().composer
         rank = composer.rank_queries.detach().clone()
-        shared = torch.randn(composer.width)
+        sources = tuple(torch.randn(composer.width) for _ in range(4))
 
-    ordinary = composer._balanced_query_seed(rank, shared)
-    enlarged = composer._balanced_query_seed(rank, shared * 10_000.0)
+    ordinary = composer._balanced_query_seed(rank, *sources)
+    enlarged = composer._balanced_query_seed(
+        rank,
+        sources[0] * 10_000.0,
+        sources[1] * 500.0,
+        sources[2] * 300.0,
+        sources[3] * 200.0,
+    )
     expected_rank_difference = torch.nn.functional.layer_norm(
         rank, (composer.width,)
     )[0] - torch.nn.functional.layer_norm(rank, (composer.width,))[1]
@@ -228,6 +234,22 @@ def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> No
         atol=1e-6,
         rtol=1e-6,
     )
+
+
+def test_composer_relative_gain_gradient_is_owned_by_selected_family() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(17)
+        composer = _model().composer
+        query = torch.randn(G1_RESIDUAL_RANK, composer.width)
+
+    composer._scale_logits(2, query).sum().backward()
+
+    selected = int(composer.family_ids[2])
+    assert torch.count_nonzero(composer.scale_head.weight.grad[selected])
+    assert torch.count_nonzero(composer.scale_head.bias.grad[selected])
+    other = torch.arange(len(TargetFamily)) != selected
+    assert not torch.count_nonzero(composer.scale_head.weight.grad[other])
+    assert not torch.count_nonzero(composer.scale_head.bias.grad[other])
 
 
 def test_event_measure_logits_match_explicit_event_relation_candidates() -> None:

@@ -2610,3 +2610,15 @@ open-file `.nfs*`语义，`rmtree`报`ENOTEMPTY`，其它rank随后在barrier超
 零gradient、零optimizer update、零wrong reads以及两checkpoint完整Panel-B。工程修复要求所有rank先清空mmap tensors并GC、
 barrier后再由rank0删除，最后再barrier；删除异常同步到全部rank而不再遗留barrier timeout。新增回归后Writer 29项测试通过。
 该故障不改变任何训练或科学结果。
+
+## 130. typed-boundary ownership实现与真实smoke
+
+从clean pushed main `2d1fa6e6`建立唯一`codex/policy-response-writer-typed-boundary`工作树。实现只改现有Composer：对
+rank/owner/family/common/language各自做parameter-free pre-norm并以固定方差系数组合；把共享relative-gain row改为四个
+family-owned rows，每target仍以完整bank-conditioned query选择本family row。没有新Writer、task table、anchor、loss、rank、cap、
+bank reader或部署输入，旧checkpoint明确不兼容并必须fresh。
+
+30项Writer测试与新旧config互斥预检通过。gpu01物理0的task1 correct demo5真实smoke消费51帧full policy-response，functional梯度
+到达Frame/Event/Composer/relation，causal process梯度到达Frame/Event/predictor；初始A非零/B严格零，打开scale后生成38-target、
+76-tensor唯一rank16，峰值allocated/reserved为`27.35/33.98GB`。首个shared资格采用optimizer100/200而非400步，m200仍与前一
+资格保持约33次/task的matched总暴露；task-local 50/100与其并行，只作容量定位而不阻塞shared结果。

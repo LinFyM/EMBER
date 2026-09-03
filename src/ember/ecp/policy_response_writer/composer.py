@@ -359,7 +359,11 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self.input_negative_query = torch.nn.Linear(width, width, bias=False)
         self.output_positive_query = torch.nn.Linear(width, width, bias=False)
         self.output_negative_query = torch.nn.Linear(width, width, bias=False)
-        self.scale_head = torch.nn.Linear(width, 1)
+        # Each native topology owns its relative rank-gain row.  The selected
+        # row still reads the full target/rank query and can only scale the
+        # current bank's signed X/Y direction; this is not a task table or an
+        # old-style family gate over a shared anchor.
+        self.scale_head = torch.nn.Linear(width, len(TargetFamily))
         self.output_norm = torch.nn.LayerNorm(width)
         self.task_query = (
             torch.nn.Parameter(torch.zeros(len(owners), G1_RESIDUAL_RANK, width))
@@ -520,24 +524,51 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
     def _balanced_query_seed(
         self,
         rank_context: torch.Tensor,
-        shared_context: torch.Tensor,
+        owner_context: torch.Tensor,
+        family_context: torch.Tensor,
+        common_context: torch.Tensor,
+        language_context: torch.Tensor,
     ) -> torch.Tensor:
-        """Keep rank identity and shared task context on comparable scales."""
+        """Compose typed query sources without allowing scale to erase a type."""
 
         if rank_context.shape != (
             G1_RESIDUAL_RANK,
             self.width,
-        ) or shared_context.shape != (self.width,):
+        ) or any(
+            value.shape != (self.width,)
+            for value in (
+                owner_context,
+                family_context,
+                common_context,
+                language_context,
+            )
+        ):
             raise ValueError("native composer query seed changed")
-        # Process common states can legitimately have a much larger raw norm
-        # than one learned rank token.  Adding them directly makes all four
-        # target-rank queries numerically identical before the first standard
-        # block.  Normalize the two semantic sources independently so scale
-        # cannot erase the rank axis; no extra solve, head, loss, or parameter
-        # is introduced.
-        return F.layer_norm(
-            rank_context, (self.width,)
-        ) + F.layer_norm(shared_context, (self.width,))
+        # The component initialization legitimately imports these sources at
+        # different raw scales: Process common is much larger than language,
+        # and the Stage-0 family embedding is much larger than its owner token.
+        # Pre-normalize each semantic source, combine owner/family as one
+        # structural residual, then preserve the previous unit-variance
+        # rank-plus-condition boundary.  This is parameter-free standard
+        # pre-norm composition, not an extra decoder or objective.
+        structural = (
+            F.layer_norm(owner_context, (self.width,))
+            + F.layer_norm(family_context, (self.width,))
+        ) / math.sqrt(2.0)
+        condition = (
+            structural
+            + F.layer_norm(common_context, (self.width,))
+            + F.layer_norm(language_context, (self.width,))
+        ) / math.sqrt(3.0)
+        return F.layer_norm(rank_context, (self.width,)) + condition
+
+    def _scale_logits(self, target: int, query: torch.Tensor) -> torch.Tensor:
+        """Select the target family's independently owned relative-gain row."""
+
+        logits = self.scale_head(query)
+        if logits.shape != (G1_RESIDUAL_RANK, len(TargetFamily)):
+            raise ValueError("native composer family gain readout changed")
+        return logits[:, self.family_ids[target]]
 
     def _query_target(
         self,
@@ -556,7 +587,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             rank_context = rank_context + self.task_query[target]
         query = self._balanced_query_seed(
             rank_context,
-            self._owner_bias(target) + common + language,
+            self.owner_embedding[target],
+            self.family_embedding(self.family_ids[target]),
+            common,
+            language,
         )
         event_memory = self._event_tokens(target, processes)
         for block in self.blocks:
@@ -811,7 +845,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             # is exactly zero.  Step 1 opens the scale head and step 2 delivers
             # functional credit to the full current-bank/process path.
             scale = s_ref[target].to(query) * torch.tanh(
-                self.scale_head(query).squeeze(-1)
+                self._scale_logits(target, query)
             )
             a = rms_normalize(a, epsilon=1e-6)
             b = rms_normalize(b, epsilon=1e-6) * scale[:, None]

@@ -109,7 +109,9 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("composer_relation_binding")
             == "soft_event_assignment_base_measure_signed_candidate_logits",
             model.get("composer_query_seed")
-            == "separate_parameter_free_layer_norm_rank_and_shared_context",
+            == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
+            model.get("composer_relative_gain_readout")
+            == "query_conditioned_family_owned_rank_rows_without_task_table_or_anchor_gate",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],

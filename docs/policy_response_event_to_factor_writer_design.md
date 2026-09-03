@@ -159,22 +159,35 @@ Composer读取：
 
 首版使用38 targets x 4 mobile ranks，共152个target-rank queries。固定rank12 carrier不需要query。
 
-target-rank identity与共享task context必须在进入首个Bank Context Block前保持独立数值所有权。当前canonical seed为
+target-rank identity、target结构身份与共享task context必须在进入首个Bank Context Block前保持独立数值所有权。定义
 
 \[
-q^{(0)}_{jr}=\operatorname{LN}_0(q_r+q^{local}_{jr})+
-\operatorname{LN}_0(o_j+C_j+L_j),
+s_j=\frac{\operatorname{LN}_0(o_j)+\operatorname{LN}_0(f_{\phi(j)})}{\sqrt 2},
 \]
 
-其中`LN_0`是无可训练affine的parameter-free LayerNorm，shared模式没有`q_local`。分源归一化只防止合法但大范数的
-Process common state在数值上抹掉四个rank identity；它不要求输出rank正交、非零或等权，也不增加rank loss、entropy Gate、
-solve、transport或新参数。若正确视频证据只需要一个rank，后续attention与signed pooling仍可自发产生低秩结果。
+\[
+c_j=\frac{s_j+\operatorname{LN}_0(C_j)+\operatorname{LN}_0(L_j)}{\sqrt 3},
+\qquad
+q^{(0)}_{jr}=\operatorname{LN}_0(q_r+q^{local}_{jr})+c_j.
+\]
+
+其中`o_j`与`f_phi(j)`分别是owner与family结构source，`C_j`与`L_j`分别是Process common与exact-language source；`LN_0`
+是无可训练affine的parameter-free LayerNorm，shared模式没有`q_local`。`sqrt(2)`与`sqrt(3)`只保持各残差组的初始化方差，
+不学习或人为指定任一task/family的输出幅度。分源pre-norm只防止合法但大范数的source在相加前抹掉其它type；它不要求输出rank
+正交、非零或等权，也不增加rank loss、entropy Gate、solve、transport或新参数。若正确视频证据只需要一个rank，后续attention
+与signed pooling仍可自发产生低秩结果。
 
 这一接口来自直接失败定位，而不是结构偏好：73-task旧实现把范数约`1`的rank token直接加到范数约`67--69`的Process common
 state上，m200与m400进入Composer的rank相对差异都只有约`1.1%`，经过两个block后仍未恢复；物化的q、v、action-in与
 action-out mobile update中位参与秩均约为`1.00`。同一冻结m200权重的分源归一化反事实把block后rank差异恢复到约`63%`，
 并把rank-conditioned signed posterior明显拉开。该修正保持完整frame x probe x 50-horizon x bank-type read和所有
 positive-only训练合同不变；最终资格仍只由fresh训练后的closed-loop决定。
+
+m400进一步暴露同一类、但不等同于rank轴的typed-source问题：Process common范数约`70--74`而language约`11.35`；Stage0复用的
+owner约`0.99`又被family约`11.66`淹没。三条Object/Goal/Long correct视频上，matching target/rank跨task cosine仍为
+`.99925--.99952`，同family q/v的18个target在两个block后区分比仅`.03713/.04595`。冻结反事实把owner/family/common/language
+分别pre-norm后，跨task区分比提高约`1.6--1.9x`，q/v跨target区分比提高到`.18353/.20492`，且三个task近乎逐位复现。
+因此当前公式是对同一个边界所有权错误的完整修复，不是为了追内部指标追加一串特征变换。
 
 ### 6.2 可扩展block
 
@@ -247,8 +260,20 @@ native output grouping固定为：
 
 ### 6.4 幅度与固定边界
 
-每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`；网络只预测
-`tanh`有界的相对rank gains，不使用task-specific scale表。四个rank合成后的完整mobile update为
+每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`。relative rank gain由
+当前target-rank query经过其native family独立拥有的线性row产生：
+
+\[
+g_{jr}=s_{ref,j}\tanh(w_{\phi(j)}^\top q_{jr}+b_{\phi(j)}).
+\]
+
+四个family row共享相同输入语义和初始化规则，但参数梯度互不串写；不存在task-specific scale表。该head只能缩放已经由当前视频
+真实X/Y signed pooling产生的rank方向，不能独立写出方向或adapter，因此不同于已停止的
+`summary -> family-scalar gate -> shared event-additive anchor`：旧gate是视频到共享anchor的唯一瓶颈，这里的family ownership只是
+不同native topology的末端输出投影。m400 correct-only VJP显示四family独立聚合梯度平方范数和为共享head的`2.0034x`，且
+action-out在`5/6`任务希望缩小当前方向时仍被其它family共享更新带着增长，故该拆分来自直接优化证据而非人工设幅。
+
+四个rank合成后的完整mobile update为
 
 \[
 \Delta W_j=B_j^\top A_j.
@@ -380,6 +405,10 @@ task权重、K、optimizer cadence或完整50-horizon内容，formal resume冻�
 
 checkpoint依据correct-only表现、task breadth与相邻稳定性选定。选定并冻结后才一次性运行same-task-other、wrong、no-video、
 language-only、first+final、shuffled与reversed controls；这些结果不回流训练或loss设计。
+
+typed-boundary首个fresh资格使用圆整的optimizer100/200 checkpoints；在当前每步12个task的配置下，73个gradient tasks各约获得
+16与33次暴露。它与旧m200具有matched总暴露量，同时把未证明架构的最长首跑限制在约一小时训练，而不是沿用历史70/110或再次先跑
+400步。task-local正控同步缩短为optimizer50/100且只作容量诊断，不是阻塞shared闭环的人为Gate。
 
 ## 10. 后续扩展与Final
 

@@ -75,6 +75,23 @@ def _video(seed: int, *, frames: int = 6) -> FrozenPolicyResponseVideo:
     )
 
 
+def _static_repeated_video(seed: int, *, frames: int = 8) -> FrozenPolicyResponseVideo:
+    video = _video(seed, frames=frames)
+    repeat = lambda value: value[:1].expand_as(value).clone()
+    outputs = tuple(repeat(value) for value in video.native_outputs)
+    return replace(
+        video,
+        patch_states=repeat(video.patch_states),
+        language_states=repeat(video.language_states),
+        language_mask=repeat(video.language_mask),
+        layer_states=repeat(video.layer_states),
+        flow_velocity=repeat(video.flow_velocity),
+        native_inputs=tuple(repeat(value) for value in video.native_inputs),
+        native_outputs=outputs,
+        final_outputs=tuple(value[-1] for value in outputs),
+    )
+
+
 def _model(*, task_local: bool = False) -> PolicyResponseEventToFactorWriter:
     return PolicyResponseEventToFactorWriter(
         _owners(),
@@ -120,6 +137,7 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
         model.process.patch_projection.weight,
         model.process.frame_blocks[0].response_attention.in_proj_weight,
         model.process.events.blocks[0].event_attention.in_proj_weight,
+        model.process.events.frame_position_projection.weight,
         model.process.prediction_head[-1].weight,
         model.composer.common_query.weight,
         model.composer.input_positive_query.weight,
@@ -127,6 +145,9 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
     )
     assert all(parameter.grad is not None for parameter in parameters)
     assert all(torch.isfinite(parameter.grad).all() for parameter in parameters)
+    assert torch.count_nonzero(
+        model.process.events.frame_position_projection.weight.grad
+    )
     assert not any(
         name.startswith("teacher_") for name, _ in model.named_parameters()
     )
@@ -194,14 +215,36 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
             s_ref=torch.full((4,), 0.2),
         )
 
-    for left, right, permuted in zip(
-        chunked.a + chunked.b,
-        whole.a + whole.b,
-        reversed_order.a + reversed_order.b,
+    for left_a, left_b, right_a, right_b, permuted_a, permuted_b in zip(
+        chunked.a,
+        chunked.b,
+        whole.a,
+        whole.b,
+        reversed_order.a,
+        reversed_order.b,
         strict=True,
     ):
+        left = left_b.transpose(0, 1) @ left_a
+        right = right_b.transpose(0, 1) @ right_a
+        permuted = permuted_b.transpose(0, 1) @ permuted_a
         torch.testing.assert_close(left, right, atol=2e-4, rtol=2e-4)
         torch.testing.assert_close(left, permuted, atol=2e-4, rtol=2e-4)
+
+
+def test_static_repeated_video_cannot_open_mobile_lora() -> None:
+    model = _model().eval()
+    video = _static_repeated_video(29)
+    with torch.no_grad():
+        process = model.process(video)
+        model.composer.scale_head.bias.fill_(10.0)
+        output = model.composer((video,), (process,), s_ref=torch.full((4,), 0.2))
+
+    assert process.innovations.float().square().mean().sqrt() < 1e-6
+    assert process.frame_innovation.float().square().mean().sqrt() < 1e-6
+    assert all(
+        _effective_update_rms(a, b) < 1e-4
+        for a, b in zip(output.a, output.b, strict=True)
+    )
 
 
 def test_complete_target_effective_update_is_capped_by_s_ref() -> None:

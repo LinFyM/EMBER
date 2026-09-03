@@ -298,12 +298,17 @@ class EventBlock(torch.nn.Module):
         )
         self.mlp = GatedMLP(width)
 
-    def forward(self, events: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, events: torch.Tensor, position_keys: torch.Tensor
+    ) -> torch.Tensor:
         event_count, owners, width = events.shape
+        if position_keys.shape != (event_count, width):
+            raise ValueError("ordered-event position keys changed")
         event_rows = events.permute(1, 0, 2)
         normalized = self.event_norm(event_rows)
+        positioned = normalized + position_keys[None]
         attended, _ = self.event_attention(
-            normalized, normalized, normalized, need_weights=False
+            positioned, positioned, normalized, need_weights=False
         )
         value = (event_rows + attended).permute(1, 0, 2)
         normalized = self.owner_norm(value)
@@ -332,12 +337,11 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         self.owner_pool = torch.nn.Linear(width, 1, bias=False)
         self.transition = torch.nn.Linear(width, event_slots)
         self.duration_bias = torch.nn.Parameter(torch.zeros(event_slots))
-        self.event_positions = torch.nn.Parameter(torch.empty(event_slots, width))
+        self.frame_position_projection = torch.nn.Linear(2, width, bias=False)
         self.blocks = torch.nn.ModuleList(
             EventBlock(width, heads) for _ in range(block_depth)
         )
         torch.nn.init.normal_(self.slot_queries, std=width**-0.5)
-        torch.nn.init.normal_(self.event_positions, std=width**-0.5)
 
     def _posterior(self, emission: torch.Tensor, boundary: torch.Tensor) -> torch.Tensor:
         frames, slots = emission.shape
@@ -369,14 +373,23 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         return (alpha + beta).softmax(-1)
 
     def forward(
-        self, relations: torch.Tensor, confidence: torch.Tensor
+        self,
+        relations: torch.Tensor,
+        confidence: torch.Tensor,
+        frame_positions: torch.Tensor,
     ) -> PolicyResponseProcessOutput:
         frames, relation_count, owners, width = relations.shape
+        if frame_positions.shape != (frames,):
+            raise ValueError("ordered-event frame positions changed")
+        positions = frame_positions.to(relations).clamp(0.0, 1.0)
+        position_keys = self.frame_position_projection(
+            torch.stack((positions, positions.square()), dim=-1)
+        )
         owner_logits = self.owner_pool(torch.tanh(relations)).squeeze(-1)
         owner_weights = owner_logits.softmax(-1)
         tokens = torch.einsum("tmj,tmjd->tmd", owner_weights, relations)
         candidate_logits = torch.einsum(
-            "tmd,ed->tem", tokens, self.slot_queries
+            "tmd,ed->tem", tokens + position_keys[:, None], self.slot_queries
         ) / math.sqrt(width)
         candidate_logits = candidate_logits + confidence[:, None]
         emission = torch.logsumexp(candidate_logits, dim=-1) - math.log(
@@ -384,25 +397,38 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         )
         frame_summary = torch.einsum(
             "tm,tmd->td", confidence.softmax(-1), tokens
-        )
+        ) + position_keys
         posterior = self._posterior(emission, self.transition(frame_summary))
-        relation_probability = candidate_logits.softmax(-1)
-        assignment = posterior.transpose(0, 1)[:, :, None] * relation_probability.permute(
-            1, 0, 2
+        # Slot identity and position may decide *where* an event occurs, but
+        # they must not manufacture event value.  A frame-local relation read
+        # therefore stays shared across slots; otherwise a repeated static
+        # frame can become a full mobile LoRA through slot-specific relation
+        # mixtures alone.
+        relation_probability = confidence.softmax(-1)
+        assignment = (
+            posterior.transpose(0, 1)[:, :, None]
+            * relation_probability[None]
         )
         occupancy = assignment.sum((1, 2))
-        events = torch.einsum(
-            "etm,tmjd->ejd", assignment, relations
+        frame_values = torch.einsum(
+            "tm,tmjd->tjd", relation_probability, relations
+        )
+        frame_common = frame_values.mean(0)
+        # The centered form is algebraically the same weighted event mean, but
+        # keeps an exactly repeated frame exactly common instead of exposing
+        # reduction-rounding residue as process innovation.
+        events = frame_common[None] + torch.einsum(
+            "te,tjd->ejd", posterior, frame_values - frame_common[None]
         ) / occupancy.clamp_min(1e-6)[:, None, None]
-        events = events + self.event_positions[:, None]
+        event_position_keys = torch.einsum(
+            "te,td->ed", posterior, position_keys
+        ) / occupancy.clamp_min(1e-6)[:, None]
         for block in self.blocks:
-            events = block(events)
+            events = block(events, event_position_keys)
         weights = occupancy / occupancy.sum().clamp_min(1e-6)
         common = torch.einsum("e,ejd->jd", weights, events)
         innovations = events - common[None]
-        frame_innovation = torch.einsum(
-            "etm,ejd->tjd", assignment, innovations
-        )
+        frame_innovation = torch.einsum("te,ejd->tjd", posterior, innovations)
         presence = -torch.expm1(
             -(occupancy / max(frames, 1)) / self.presence_threshold_fraction
         )
@@ -510,7 +536,7 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         response = self.response(video, representation=representation)
         for block in self.frame_blocks:
             relations = block(relations, response)
-        result = self.events(relations, confidence)
+        result = self.events(relations, confidence, video.frame_positions)
         return PolicyResponseProcessOutput(
             events=result.events,
             common=result.common,

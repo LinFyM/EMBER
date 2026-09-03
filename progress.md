@@ -4,8 +4,8 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main`；当前最新科学/evaluator代码tip为
-  `6ddceff5f30f02282d75c95a0ba9bae8d20a5652`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
+- canonical集成目标为clean pushed `main`；当前最新clean pushed代码tip为
+  `66826f86495f31e77a3b866b526e8d8fcf421de5`。最新专家补充意见已逐字归档；归档没有修改科学代码或实验配置。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5
@@ -129,6 +129,16 @@
   实际未限幅/global-clip parameterization是过渡还是稳定退化；它不再承担停止整个函数类的资格。修正版验证后及时merge/push，
   并从clean detached authority fresh运行同一73-task/coarse/K1/component-init matched实验。等待期间只删除了一个无
   invocation、无shard且已被完整retry1取代的80KiB旧full-macro110 prepare root；formal evidence未删除。
+- fresh启动前对照专家动态必要性合同发现，首版Event未使用真实`frame_positions`，却把可学习slot
+  position直接混入value，并用slot-specific logits选择relation value。完全重复的静态8帧因此仍产生
+  event/frame innovation RMS `.19244/.13996`，scale打开后4个构造target全部打满`.20` cap，是可复现的
+  架构合同违反。当前唯一`codex/policy-response-writer-dynamic-necessity` worktree正把position限于emission/
+  transition/QK路由、使relation value在slot间共享并做frame-common中心化聚合。CPU结构检查已降至
+  `7.23e-8/6.17e-8`，合成mobile RMS最大`4.50e-5`；focused tests当前`10 passed`。task1/task93两步真实shared
+  profile均已`exit 0`：步耗时分别为`17.42/18.18s`与`40.28/30.95s`，Frame/Event/Process/Composer梯度均
+  finite nonzero，峰值allocated/reserved分别为`23.47/34.81GB`与`33.30/41.56GB`。source policy、native observer与
+  task-local参数全部冻结，wrong/held/Panel-B backward与shuffle/reverse reads均为0，输出仍是唯一完整rank16。
+  旧macro1210因不含该修正，只作旧parameterization相邻证据，不能替代fresh corrected formal。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

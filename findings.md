@@ -79,6 +79,20 @@ exact `p=.1671`：Spatial0恢复8条，但Object的唯一成功丢失，其余�
 同时补齐完整target RMS固定边界，并把scale head与其余Frame/Event/Composer/Process参数分组裁剪。这是专家明确边界加上由实际梯度
 轨迹指定的优化所有权修正，不是事后scale sweep；旧macro1210仍完成相邻裁决，但不能再被解释为已经充分检验修正版函数类。
 
+同一fresh启动前审计还发现了更直接的动态必要性合同偏差。首版Ordered Event没有使用真实
+`video.frame_positions`，却把可学习slot position直接加入event value，并用slot-specific logits选择relation
+value。因此完全重复的static frames/policy-response/native evidence仍能凭slot索引制造event/frame
+innovation RMS `.19244/.13996`，打开scale后4个构造target的mobile RMS全部打满`.20` cap。这是
+专家§5.3与§7.2所禁止的language/static旁路，是可复现架构违约而非科学non-pass。
+
+有界修正保留原Frame/Event/Composer拓扑：observed relative position只进入event emission、transition和attention
+Q/K，不进入value；slot query只路由posterior，frame-local relation value在slot间共享；event value先围绕
+`frame_common`中心化再聚合。修正后同一构造检查的event/frame innovation RMS降为
+`7.23e-8/6.17e-8`，4个target mobile RMS为`4.50e-5/1.54e-5/2.19e-6/9.56e-6`，即在浮点舍入内
+有效返回carrier。该static-repeat检查不进入loss或选点；真实动态是否学得shared mapping仍只由fresh
+training和closed-loop裁决。旧macro610/1210同时缺少这项动态必要性、完整`s_ref`边界和独立方向梯度
+预算，所以只能裁决其实际旧parameterization，不能替代fresh corrected formal。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

@@ -2146,3 +2146,20 @@ parameterization保持Writer、coarse、K1、73个gradient tasks、rank、loss�
 
 旧未限幅/global-clip运行继续到预注册macro1210，只提供其实际parameterization的相邻证据；无论结果如何，它都不能替代上述
 修正版fresh训练，也不能单独停止整个positive-only Event-to-Factor Writer函数类。
+
+## 109. Ordered Event的static-repeat合同修复
+
+在scale/gradient-boundary修正后、fresh 73-task启动前，逐项对照专家澄清稿§5.3和§7.2发现首版
+Ordered Event存在一个硬合同偏差：真实`frame_positions`未进入event encoder，可学习slot position却直接
+进入event value，且slot-specific candidate logits同时选择relation value。CPU零梯度构造检查证明，完全重复的
+static frames/policy-response/native evidence仍产生`.19244/.13996`的event/frame innovation RMS，并可在scale
+打开后让4个构造target全部达到`.20` mobile RMS cap。
+
+修正不改变模块边界或loss：observed relative position只路由emission/transition/attention QK，relation value在
+slot间共享，并围绕frame-common中心化聚合。同一构造检查降至`7.23e-8/6.17e-8`的
+event/frame innovation RMS，4个合成target mobile RMS最大`4.50e-5`，在浮点舍入范围内有效只返回carrier。
+修正后task1/task93真实shared两步profile均自然完成，步耗时为`17.42/18.18s`与`40.28/30.95s`；
+Frame/Event/Process/Composer梯度均finite nonzero，峰值allocated/reserved为`23.47/34.81GB`与
+`33.30/41.56GB`，信息墙计数全部正确。这两条profile只验证真实图与资源，不使用两步内部数值做方法选择。
+旧macro610/1210因同时缺少这项动态必要性、完整`s_ref`边界与独立方向梯度预算，只保留为旧实现的
+正式证据；fresh matched才能裁决修正后的active Writer。

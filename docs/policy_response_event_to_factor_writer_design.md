@@ -127,6 +127,11 @@ exact language query先读取当前frame patches，形成task-grounded视觉cont
 单调stay/forward、首尾boundary anchor、relative frame positions和mask属于硬结构；旧Natural Program的固定tuple、canonical code与
 下游decoder不是硬接口。
 
+relative frame position可以进入event emission、transition以及Event Block attention的Q/K，决定“事件在哪里”；它不能作为value直接
+加进E，否则slot编号本身会在静态重复帧上伪造动态。slot query同样只路由单调posterior；用于聚合event value的四类relation权重在同一
+frame内计算并对slot共享。这样完全相同的frame-policy-response重复成视频时，各slot得到同一content value，event centering后的D只剩
+浮点舍入量；真实内容变化仍通过frame relations、posterior与可复制Event Blocks进入D。
+
 每个视频与owner只做一次event centering：
 
 \[
@@ -218,7 +223,8 @@ task-target不超过该值，而未设完整边界的shared macro610已有`94/19
 \]
 
 当全部event innovations为零时，delta+与delta-都严格为零，两组权重相同，mobile residual为零。language、C和bank context可以决定
-关注什么，但不能在没有D时独立产生mobile update。
+关注什么，但不能在没有D时独立产生mobile update。static-repeat只作这一结构不变量的无梯度实现检查，不进入训练、loss或checkpoint
+选择。
 
 这只是排除最直接language-only旁路，不保证正确视频自然优于wrong或shuffled。最终因果性仍由冻结后的closed-loop controls裁决。
 
@@ -291,6 +297,7 @@ macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其
 - no state/proprio/action进入Writer；
 - L_func梯度到达Frame、Event与Composer；
 - L_process使用冻结target且无未来泄露；
+- relative frame positions只路由Event segmentation/QK，不进入event value；static-repeat只返回carrier；
 - K1和K4、video permutation invariance；
 - chunked与one-chunk有效BA一致；
 - 38 targets、76 tensors及唯一rank16被policy真实消费；

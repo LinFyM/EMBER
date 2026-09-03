@@ -144,8 +144,11 @@
   macro610到1210的10个gradient task fit/held benefit从`.000700/.000107`增至`.001419/.000761`，但仍仅`6/10`
   task全部视频优于carrier；两个true-task-held task的fit/held均值从`-.003674/-.003763`进一步变为
   `-.003806/-.004313`，二者仍为`0/2`全部视频优于carrier。因此旧参数化的训练proxy继续改善却没有跨task泛化恢复。
-  macro1210的held5 correct-only strict250已从唯一完整38-target rank16物化结果启动，gpu02物理4/6上四worker正在运行；该结果只
-  裁决旧参数化，不用于判断下面修正版。
+  macro1210的held5 correct-only strict250已从唯一完整38-target rank16物化结果完成：`30/250`、breadth`3/5`，逐task
+  Long/Goal/Object/Spatial0/Spatial9=`0/0/2/27/1`，四worker return code全0。相对macro610 retained/gained/lost为
+  `18/12/8`、Jaccard `.47368`、paired exact `p=.50344`；相对carrier43为`26/4/17`、净丢13、`p=.00720`，相对旧coarse
+  macro70同样净丢13。旧端点虽从macro610净增4，却没有相邻稳定性、Goal/Long或carrier恢复；该结果只裁决旧参数化，不用于判断
+  下面修正版。macro1210五个held adapter的mobile/carrier聚合函数范数为`1.71--2.44 x`，继续高于macro610的`1.58--1.97 x`。
 - corrected 73-task component-init matched formal launch contract：scientific implementation固定为clean pushed
   `7d435ea3a6c78141a21fea60baeac6d321a174b3`，formal从包含本条合同的最新clean pushed detached `main`运行。与旧
   `df7a7f5a` arm相比只修正三项已证实的合同偏差：完整per-target mobile `B@A` RMS压在fit19 task-equal `s_ref`内、
@@ -168,6 +171,19 @@
   step耗时为`35.84/20.75s`；Frame/Event/Process Predictor/Composer/scale梯度均finite nonzero，最大allocated/reserved为
   `28955342848/40542142464 bytes`，没有OOM、non-finite或其它任务干扰。旧`df7a7f5a` formal已经完整结束且无进程引用，其detached
   worktree已删除；commit、checkpoint、raw metrics、result与全部materialized/evaluation evidence均保留。
+- corrected task-local capacity formal launch contract：在主shared formal继续期间，从包含本条合同的最新clean pushed detached
+  `main`并行运行task1/task93，各自single-process、component-init、coarse、10 warmup + 100 effective updates、macro70/110、
+  16 functional rows与每checkpoint 16次零梯度Panel-B；两task沿用sealed correct fit/held视频、task-local reference、source、Stage0、
+  carrier12、native X/Y、rank4 residual及唯一rank16，唯一目的为确认动态必要性与完整`s_ref`边界后的实际coarse函数类仍有task-local
+  容量，不作为shared checkpoint门槛。active scale config补回既有`task_local_positive_control=[1,93]`，该字段不参与正在冻结运行的
+  shared arm，也不改变任何loss、数据或超参数。2026-09-03 11:00 CST同时live检查两节点：gpu01物理2/4/5/6由主训练占用；gpu02
+  物理4为`5186MiB/2%`且仅有`982+982+3173MiB`低占用进程，物理6为`4749MiB/0%`且仅有`4584+148MiB`低占用进程，均有约
+  `40GiB`余量并已由同路径真实profile验证可安全共驻；gpu02 available host memory为`245593816KiB`。`/data1` quota blocks为
+  `774456800/1073741824`、limit `1084227584KiB`，两个约45MB同构formal保守合计小于`1GB`，目标roots均不存在。task1用物理4，
+  root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task1_coarse_s110_7d435ea3_gpu02p4_20260903/`；task93用物理6，
+  root为`runs/outputs/pi05_ecp_policy_response_writer_corrected_tasklocal_task93_coarse_s110_7d435ea3_gpu02p6_20260903/`。两者固定
+  `NCCL_P2P_DISABLE=1`、`PYTHONDONTWRITEBYTECODE=1`与独立GPU-local NUMA；exact resume只允许同运行commit、node/GPU、config、输入和
+  single-process topology。launch前必须再次同时live检查两节点，若共驻余量漂移则改用其它安全卡而不干扰他人。
 - Policy-Response Writer shared matched formal launch contract：scientific implementation为`0c5c7e99`，formal从包含本条合同的
   最新clean pushed detached `main`运行；两臂共用唯一配置`configs/pi05_ecp_policy_response_writer_v1.json`、固定source、Stage0、
   carrier12、s_ref、J2 Panel A/B、mapping split与数据`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`。gradient tasks固定为

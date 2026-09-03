@@ -93,6 +93,13 @@ Q/K，不进入value；slot query只路由posterior，frame-local relation value
 training和closed-loop裁决。旧macro610/1210同时缺少这项动态必要性、完整`s_ref`边界和独立方向梯度
 预算，所以只能裁决其实际旧parameterization，不能替代fresh corrected formal。
 
+旧73-task参数化现已自然完成到macro1210。相对macro610，其10个gradient task的fit/held functional benefit继续提高，但两个
+true-task-held task仍整体为负；held5 strict250为`30/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/2/27/1`、breadth`3/5`。
+相邻macro610到1210 retained/gained/lost=`18/12/8`、Jaccard `.47368`、paired exact `p=.50344`，只是高churn下净增4；相对
+carrier43则为`26/4/17`、净丢13、`p=.00720`。同时mobile/carrier聚合函数范数从macro610的`1.58--1.97 x`继续升到
+`1.71--2.44 x`。因此训练加倍没有打开Goal/Long或稳定恢复carrier，反而强化了“train proxy改善、held方向/闭环脱节”的负证据；
+这只停止旧未限幅、global-clip且允许slot静态旁路的参数化，fresh corrected formal已经从clean detached authority运行。
+
 ### 1. 输出形式可行，amortized Writer仍未解决
 
 validation8 task-local rank16 oracle为250/400，四suite均有收益；source只有48/400。因此“冻结PI0.5、只给Action Expert安装唯一

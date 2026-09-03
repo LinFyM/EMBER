@@ -2163,3 +2163,26 @@ Frame/Event/Process/Composer梯度均finite nonzero，峰值allocated/reserved�
 `33.30/41.56GB`，信息墙计数全部正确。这两条profile只验证真实图与资源，不使用两步内部数值做方法选择。
 旧macro610/1210因同时缺少这项动态必要性、完整`s_ref`边界与独立方向梯度预算，只保留为旧实现的
 正式证据；fresh matched才能裁决修正后的active Writer。
+
+## 110. 旧scale macro1210终点与corrected matched启动
+
+旧73-task scale formal从clean detached `df7a7f5a837192027ea4d9e8f566d0d2459e26df`自然完成1210 optimizer steps，
+总/train/evaluation耗时为`35173.12/34855.78/170.97s`。macro610到1210的10个gradient task fit/held benefit均值从
+`.000700/.000107`增至`.001419/.000761`，但全部视频优于carrier仍只有`6/10`；两个true-task-held task的fit/held均值从
+`-.003674/-.003763`变为`-.003806/-.004313`，仍为`0/2`全部视频优于carrier。训练、Panel-B与物化均未读取wrong、shuffle、
+reverse、held action/reward/state或validation/test信息。
+
+macro1210使用每个held task固定correct demo5各调用Writer一次，物化唯一完整38-target rank16；materialized root为
+`runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m1210_held5_correct_k1_materialized_df7a7f5a_gpu02p4_20260903/`。
+gpu02物理4/6上四worker完成20个cost-balanced shards和250个严格配对rows，return code全0；结果root为
+`runs/outputs/pi05_ecp_policy_response_writer_scale73_coarse_m1210_held5_correct_k1_strict250_6ddceff5_gpu02p46_r2_20260903/`。
+总分`30/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/2/27/1`，breadth`3/5`。相对macro610 retained/gained/lost为
+`18/12/8`、Jaccard `.473684`、paired exact `p=.503445`；相对carrier43为`26/4/17`、净丢13、Jaccard `.553191`、
+`p=.007197`；相对旧coarse macro70同样净丢13、`p=.010622`。五套adapter的mobile/carrier聚合函数范数为
+`1.7148/2.1191/2.0846/2.4009/2.4364 x`，高于macro610的`1.5812/1.8516/1.8771/1.9648/1.9679 x`。
+故延长训练只带来不稳定的小幅回升，没有恢复carrier或Goal/Long breadth。
+
+corrected matched formal随后从clean pushed detached `aed7b5244cce91df440d0d4a453b1e3b1be8a346`于2026-09-03
+10:27 CST启动，使用gpu01物理2/4/5/6、world-size4、同一73-task/coarse/K1/component-init/schedule与positive-only loss；相对旧arm只
+增加完整per-target mobile `B@A` RMS cap、scale/direction独立gradient clip和static-repeat动态必要性修复。前两个optimizer step已完成，
+全部模块梯度finite nonzero且资源稳定。旧formal detached worktree随后删除，commit与全部formal evidence保留。

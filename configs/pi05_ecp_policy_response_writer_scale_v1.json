@@ -30,6 +30,7 @@
     ],
     "true_task_held_meta": [2],
     "true_task_held_target": [74],
+    "task_local_positive_control": [1, 93],
     "panel_b_gradient_meta": [1, 8, 9, 32, 52],
     "panel_b_gradient_target": [72, 73, 75, 93, 94],
     "selection_uses_outcomes": false,

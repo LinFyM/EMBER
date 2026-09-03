@@ -71,14 +71,16 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 13. [x] 首轮最早接口定位为10-task shared映射的task-disjoint方向与组合覆盖不足；full前端没有提供增量且更破坏carrier，故首个
     有依据修正固定为coarse、K1并把自然梯度映射扩大到55 meta + 18 target，其余模型与loss不变；
 14. [ ] shared信号成立后混合K属于1、2、4，完成component-init与fully-random fresh matched Final joint；
-15. [ ] 完成55 meta + 18 target的scale component-init训练。macro610 held5 correct250已完成为`26/250`、breadth`2/5`，相对carrier
+15. [x] 完成55 meta + 18 target的旧scale component-init训练。macro610 held5 correct250为`26/250`、breadth`2/5`，相对carrier
     retained/gained/lost=`22/4/21`，为显著non-pass；只读policy-effect对照又显示Writer仅`1/5` task优于carrier、四个非零G1
     task的功能方向cosine中位仅`.14753`。完整`s_ref`事后限幅为`33/250`、breadth`1/5`，只局部恢复Spatial0，确认缩放不能补出
-    缺失方向。旧训练继续到预注册macro1210，只裁决其实际未限幅/global-clip parameterization；
+    缺失方向。macro1210为`30/250`、breadth`3/5`、Goal/Long仍为0；相对macro610高churn净增4但相对carrier仍净丢13，完成对其
+    实际未限幅/global-clip/static-slot parameterization的相邻裁决；
 16. [ ] 对同一73-task/coarse/K1/component-init图做fresh接口修正：完整per-target mobile `B@A` RMS不超过fit-only `s_ref`，
     `scale_head`与其余Writer参数按同一原有norm独立裁剪；observed relative frame position只路由Event segmentation/QK、不进入value，
     slot不能在static-repeat上伪造D。真实两步gradient profile已通过；随后从clean pushed detached authority以最多6张有效A40立即
-    启动formal。只有修正版shared信号成立后才进入mixed-K、fully-random及validation8相邻
+    formal已从clean pushed detached authority在gpu01物理2/4/5/6启动；并行task1/task93 corrected coarse task-local容量正控只作
+    诊断、不阻塞shared训练。只有修正版shared信号成立后才进入mixed-K、fully-random及validation8相邻
     single-checkpoint strict paired400；
 17. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 18. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

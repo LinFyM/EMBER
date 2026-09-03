@@ -4,14 +4,16 @@
 
 ## 当前快照
 
-- canonical集成目标为clean pushed `main@3e589695779be4a78d5f5bde6059e39e178bd146`。上一轮full event-measure
+- canonical集成目标为clean pushed `main`。上一轮full event-measure
   73-gradient-task资格已完成训练、m200/m400 Panel-B、物化与两次held5 correct-only strict250：闭环仅`30/32`，breadth
   `2/5`与`3/5`且Goal/Long均为0，m400仍显著低于carrier43。根因审计进一步定位到Composer最早query融合处：约`67`范数的
   Process common淹没约`1`范数的rank token，使名义rank4在m200/m400都退化为近rank1；冻结反事实表明分别归一rank/shared
-  context可恢复rank区分与部分有效factor谱。该最小修正已集成推送。当前gpu01物理`0,1,5,6`正从clean detached authority运行
-  fresh 73-task m200/m400 shared资格；factorial配置补齐task-local正控声明后，gpu02物理`0,1`从clean detached `8bdd9595`
-  并行运行task1/task93，总EMBER卡数为6。shared已完成
-  105.02GB单份mmap cache和NUMA审计并进入optimizer，首批step约`17--18s`、四rank负载近乎相同；当前没有读取negative controls。
+  context可恢复rank区分与部分有效factor谱。该最小修正已集成推送。当前gpu01物理`0,1,5,6`正从clean detached `3e589695`
+  运行fresh 73-task m200/m400 shared资格；已完成105.02GB单份mmap cache和NUMA审计，稳定step约`15--17s`且四rank
+  wall几乎完全对齐，当前没有读取negative controls。task1/task93正控的前两次启动都在run contract、checkpoint、capture和
+  optimizer step前退出：先后暴露factorial配置缺少正控声明，以及task-local合同仍假设旧单一panel config。前者由`8bdd9595`
+  补齐，后者由`89ca865d`把实际resolved task panel封存进v2合同；模型、数据、loss与训练步数均未改变，27项Writer测试及
+  task-local配置全字段预检通过。两条失败启动不构成科学状态，正控将从包含本记录的最新clean pushed detached main重新启动。
 - owner于2026-09-02完成最后审查，正式确认Policy-Response Event-to-Factor Writer并要求立即推进。系统goal已重新建立并保持
   active，不设置token或阶段工期预算。
 - 当前唯一active design为`docs/policy_response_event_to_factor_writer_design.md`。它保留PI0.5

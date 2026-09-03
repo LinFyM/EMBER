@@ -2507,6 +2507,12 @@ node-local单份mmap cache已完成；最初三个optimizer steps约`17--18s`，
 旧m400评测释放gpu02物理0/1后，第一次task1/task93 launcher复用了只定义shared pool的factorial配置，两个进程在生成run contract、
 checkpoint或optimizer step前由`task_local_positive_control`缺失而退出；这不是科学结果。提交
 `8bdd9595e94cb9f7893b6192f05a98a85551159e`只在同一active factorial配置中补齐`[1,93]`正控声明，config loader与26项Writer测试通过，
-模型、数据、loss和shared run均不变。2026-09-04 00:09 CST从该clean pushed detached authority重新并行启动两条110-step正控；
-gpu02物理0/1仅与他人约`0.2GB`、0% util进程安全共驻，连同gpu01 shared共使用6张EMBER物理卡。两条正控与shared的结果均待完成，
-不根据启动期内部数值作模型选择。
+模型、数据、loss和shared run均不变。2026-09-04 00:09 CST从该clean pushed detached authority重启后，两条任务又在相同的step 0前
+以`KeyError: functional_panel_config`退出：task-local formal contract仍把旧单一panel config路径硬编码为provenance，而实际runtime
+已正确从两个completed roots解析task-specific panel records。两次失败均未生成output root、run contract、checkpoint、capture或
+optimizer step，因此不是科学non-pass。
+
+提交`89ca865d`把task-local run schema升为v2，并直接记录`runtime.panels[task]`实际resolved record的task、path与bytes；它同时兼容
+旧单config和当前multi-source roots，而且比记录间接配置入口更准确。该修复不改变Writer forward、训练数据、loss、optimizer、步数或
+任何信息墙，新增回归测试后27项Writer测试全部通过，factorial配置中task-local正控、reference、全部optimization字段和两个panel
+sources也已完整解析。下一次fresh启动从包含本记录的最新clean pushed detached main运行；先确认首条有效run contract，再并行第二条。

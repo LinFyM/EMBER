@@ -220,8 +220,10 @@ centered/mean RMS立即恢复到约`.83--.84`，第二个block后仍为`.60--.65
 相加，不增加网络、loss、正交/熵/rank强制、solve或第二adapter；full 50-horizon、event-measure、真实X/Y、signed pooling、
 positive-only训练和唯一rank16均不变。定向测试与真实forward/gradient/materialization smoke已通过，并从clean pushed
 `3e589695`启动fresh 73-task m200/m400 shared资格。task-local runtime还要求配置显式声明正控任务；factorial配置补齐
-`[1,93]`后从clean pushed `8bdd9595`另行启动两条正控，不改变模型或训练目标。首批shared step约`17--18s`且四rank负载近乎相同；
-这只证明修正图和shared-mmap执行面稳定，科学判断等待相邻closed-loop。
+`[1,93]`后首次重启又在step 0前暴露formal contract仍只接受旧`functional_panel_config`，而实际runtime和factorial配置使用可扩展的
+`functional_panel_sources`。`89ca865d`将task-local schema升为v2并封存该task实际resolved panel record，模型、数据、loss和训练目标
+均不变；27项Writer测试与完整task-local配置读取预检通过。shared稳定step约`15--17s`且四rank wall几乎完全对齐；这些只证明
+修正图和执行面稳定，科学判断仍等待task-local正控与相邻closed-loop。
 
 ### 1. 输出形式可行，amortized Writer仍未解决
 

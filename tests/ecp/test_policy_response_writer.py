@@ -201,6 +201,28 @@ def test_composer_consumes_explicit_event_relation_assignment() -> None:
     assert max(differences) > 1e-6
 
 
+def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> None:
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(6)
+        composer = _model().composer
+        rank = composer.rank_queries.detach().clone()
+        shared = torch.randn(composer.width)
+
+    ordinary = composer._balanced_query_seed(rank, shared)
+    enlarged = composer._balanced_query_seed(rank, shared * 10_000.0)
+    expected_rank_difference = torch.nn.functional.layer_norm(
+        rank, (composer.width,)
+    )[0] - torch.nn.functional.layer_norm(rank, (composer.width,))[1]
+
+    torch.testing.assert_close(ordinary, enlarged, atol=2e-5, rtol=2e-5)
+    torch.testing.assert_close(
+        ordinary[0] - ordinary[1],
+        expected_rank_difference,
+        atol=1e-6,
+        rtol=1e-6,
+    )
+
+
 def test_event_measure_logits_match_explicit_event_relation_candidates() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(7)

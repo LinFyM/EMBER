@@ -517,6 +517,28 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             )
         return torch.cat(rows)
 
+    def _balanced_query_seed(
+        self,
+        rank_context: torch.Tensor,
+        shared_context: torch.Tensor,
+    ) -> torch.Tensor:
+        """Keep rank identity and shared task context on comparable scales."""
+
+        if rank_context.shape != (
+            G1_RESIDUAL_RANK,
+            self.width,
+        ) or shared_context.shape != (self.width,):
+            raise ValueError("native composer query seed changed")
+        # Process common states can legitimately have a much larger raw norm
+        # than one learned rank token.  Adding them directly makes all four
+        # target-rank queries numerically identical before the first standard
+        # block.  Normalize the two semantic sources independently so scale
+        # cannot erase the rank axis; no extra solve, head, loss, or parameter
+        # is introduced.
+        return F.layer_norm(
+            rank_context, (self.width,)
+        ) + F.layer_norm(shared_context, (self.width,))
+
     def _query_target(
         self,
         target: int,
@@ -529,9 +551,13 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         language = torch.stack(
             tuple(process.owner_language[target] for process in processes)
         ).mean(0)
-        query = self.rank_queries + self._owner_bias(target) + common + language
+        rank_context = self.rank_queries
         if self.task_query is not None:
-            query = query + self.task_query[target]
+            rank_context = rank_context + self.task_query[target]
+        query = self._balanced_query_seed(
+            rank_context,
+            self._owner_bias(target) + common + language,
+        )
         event_memory = self._event_tokens(target, processes)
         for block in self.blocks:
             query = block(query, event_memory, bank_memory)

@@ -159,6 +159,23 @@ Composer读取：
 
 首版使用38 targets x 4 mobile ranks，共152个target-rank queries。固定rank12 carrier不需要query。
 
+target-rank identity与共享task context必须在进入首个Bank Context Block前保持独立数值所有权。当前canonical seed为
+
+\[
+q^{(0)}_{jr}=\operatorname{LN}_0(q_r+q^{local}_{jr})+
+\operatorname{LN}_0(o_j+C_j+L_j),
+\]
+
+其中`LN_0`是无可训练affine的parameter-free LayerNorm，shared模式没有`q_local`。分源归一化只防止合法但大范数的
+Process common state在数值上抹掉四个rank identity；它不要求输出rank正交、非零或等权，也不增加rank loss、entropy Gate、
+solve、transport或新参数。若正确视频证据只需要一个rank，后续attention与signed pooling仍可自发产生低秩结果。
+
+这一接口来自直接失败定位，而不是结构偏好：73-task旧实现把范数约`1`的rank token直接加到范数约`67--69`的Process common
+state上，m200与m400进入Composer的rank相对差异都只有约`1.1%`，经过两个block后仍未恢复；物化的q、v、action-in与
+action-out mobile update中位参与秩均约为`1.00`。同一冻结m200权重的分源归一化反事实把block后rank差异恢复到约`63%`，
+并把rank-conditioned signed posterior明显拉开。该修正保持完整frame x probe x 50-horizon x bank-type read和所有
+positive-only训练合同不变；最终资格仍只由fresh训练后的closed-loop决定。
+
 ### 6.2 可扩展block
 
 每个Bank Context Block包含：

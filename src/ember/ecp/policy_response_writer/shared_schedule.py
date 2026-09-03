@@ -14,6 +14,11 @@ from ember.pi05_source_checkpoint import read_json
 
 VideoSplit = tuple[tuple[int, ...], int]
 
+# One frozen-policy functional row costs about four sampled full-bank frames on
+# the current A40 runtime.  This is an outcome-independent placement unit only:
+# it never changes the sampled tasks, their weights, or optimizer cadence.
+FUNCTIONAL_ROW_FRAME_EQUIVALENT = 4
+
 
 def _selected_task_ids(config: Mapping[str, Any]) -> tuple[int, ...]:
     split = config["task_split"]
@@ -456,7 +461,7 @@ def scheduled_task_costs(
             cardinalities=cardinalities,
             seed=int(runtime.config["optimization"]["seed"]),
         )
-        result[task] = rows + sum(
+        result[task] = FUNCTIONAL_ROW_FRAME_EQUIVALENT * rows + sum(
             int(runtime.video_store.frame_counts(task, demo)[1]) for demo in demos
         )
     return result

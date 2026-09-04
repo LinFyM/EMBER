@@ -2741,3 +2741,8 @@ Frame/Event/Composer-direction/group-gain梯度达到`.056881/.053071/.098988/.2
 task1两步shared optimizer profile随后以`3.686/3.497s`自然完成；Composer总/gain梯度为
 `6.398/6.116`与`3.123/2.732`，非gain方向约`1.879/1.512`，峰值reserved `38.50GB`。profile rows2 loss不与完整carrier
 混作科学比较；该证据只补齐optimizer和资源运行面。
+
+gpu01出现6张真正空闲A40后，同一`aebd9d74`又完成73-task world6 rows2 profile。两步均为每rank 2 tasks，wall
+`6.361/6.695s`、预测cost范围`73--78/78--86`，峰值allocated/reserved `27.36/37.04GB`；direction与gain梯度均非零。
+相对既有73-task world4 rows2均值约快`34.2%`，因此下一optimizer50/100短资格使用world6；它仍是执行拓扑选择，不改变task batch、
+权重或科学方法。

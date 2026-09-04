@@ -2694,3 +2694,9 @@ Frame/Event/Predictor，76 tensors、mobile rank4加carrier rank12形成唯一ra
 `27.36/38.50GB`；Composer总梯度`6.398/3.123`中gain head为`6.116/2.732`，按平方差得到非gain方向约`1.879/1.512`。
 optimizer、gain/direction独立clip、process-only参数组与Panel-B零反向均正常。profile只用2 functional rows，而记录的carrier是
 完整panel统计，两者loss差值不可作科学结论；formal仍使用匹配的16 rows。
+
+同一提交的73-task world6 rows2 profile进一步自然完成。gpu01物理`0,2,3,4,5,6`上两步都为每rank 2个真实task，wall为
+`6.361/6.695s`，预测cost最大/最小仅`78/73`与`86/78`；峰值allocated/reserved为`27.36/37.04GB`。首两步Composer
+direction/gain梯度分别为`.4478/1.7117`与`.3196/1.8523`，不是只有gain在更新。相对已有73-task world4 rows2均值
+`9.929s`，world6均值`6.528s`快约`34.2%`；该比较不是逐参数matched，但新增group head只有约2.5万参数，且实际2-task/rank
+临界路径与低显存峰值支持使用6卡。完整97.81GiB shared mmap成功后已删除，wrong/held/Panel-B backward与shuffle/reverse读取均为0。

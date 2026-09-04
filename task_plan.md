@@ -105,7 +105,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     private cache由`21.37/18.54s`降到`17.81s/step`，相对当前8GiB方案平均快`4.05%`、最坏step快`24.4%`，rank实际工作
     gap由`3.12s`降到`.34s`。当前四卡rows16的126步真实task timing反事实估计约可再省`21--23%`。继续以真实phase timing、
     峰值显存、rank idle tail与Evaluator LoRA/s定位剩余瓶颈，彻底优化可复用执行层，但不得等待性能工程完美才获取阶段科学结果；
-    task batch与meta/target比例始终由实验配置决定；
+    task batch与meta/target比例始终由实验配置决定。最新73-task rows2 world6两步为`6.36/6.70s`、每rank恰好2 tasks，较已有world4
+    均值快约`34.2%`且峰值reserved仅`37.04GB`，故本轮空闲6卡确有吞吐收益；
 20. [x] 已按专家的task-disjoint失败映射完成train24 + 审计non-held meta tasks的factorial coverage审计。73个gradient tasks中，
     7组同语言跨场景组合有5组包含至少两个gradient tasks、4组形成gradient-to-held桥；三类人工protocol contrast分别有
     `5/9/5`组train pair与`3/7/3`组held桥。task2、task74及held Spatial/Object/Long均有可见component重组依据；held Goal的
@@ -171,11 +172,11 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `38/36`、breadth均`3/5`且Goal/Long为0，gradient Panel-B略正但两个true-task-held明显为负，故该matched实例non-pass；
 27. [ ] 修正Composer gain/credit边界：当前实现遗漏专家明确要求的ragged native-group gain，并以严格零gain造成首步方向信用饥饿。
     m100四任务free rank gain的fit/held恢复约`.122--.166/.093--.147`，group gain提高到`.146--.244/.126--.202`；m100方向又比
-    component-init平均`.213/.179`对`.178/.135`略好，说明不应推倒Process。当前isolated worktree只恢复195个target-native group
+    component-init平均`.213/.179`对`.178/.135`略好，说明不应推倒Process。该修正只恢复195个target-native group
     rows，并复用G1的`0.1`初始logit；Process、loss、LR、task比例、full bank、rank和数据不变。47项定向测试及task1真实full smoke
     已通过；首个functional backward的Frame/Event/Composer-direction/group-gain梯度为`.0569/.0531/.0990/.2214`，76 tensors与唯一
-    rank16完整。两步shared optimizer profile也以`3.69/3.50s`通过，非gain Composer方向梯度约`1.88/1.51`；下一步从clean pushed
-    detached authority运行optimizer50/100短资格；若仍non-pass且direction继续
+    rank16完整。两步shared optimizer profile也以`3.69/3.50s`通过，非gain Composer方向梯度约`1.88/1.51`；实现已由
+    `aebd9d74`集成推送，world6吞吐profile通过，下一步从clean pushed detached authority运行optimizer50/100短资格；若仍non-pass且direction继续
     落后于gain，下一变量才是冻结Process的Composer functional阶段；
 28. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 29. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；

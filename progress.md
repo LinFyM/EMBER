@@ -19,18 +19,39 @@
   原因是严格零gain让首步只有gain得到功能信用、后续direction梯度继续被小gain衰减；而G1既有free oracle实际从logit `0.1`
   启动。family ablation又显示action-out在5/5任务为正、q只有2/5为正，排除统一family幅度修补。
 
-- 当前唯一实现worktree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-group-gain-credit`，分支
-  `codex/prw-group-gain-credit`，base为clean pushed `db354581`。实现只把family-rank gain恢复为195-row target-native ragged
+- group-gain credit修正已由`aebd9d74`集成并推送到canonical main，临时实现分支/worktree与已结束的causal formal worktree均已
+  清理。实现只把family-rank gain恢复为195-row target-native ragged
   group gain，并以G1已有`0.1` logit小幅启动，使第一次functional backward同时到达gain与direction；完整target BA cap、
   zero-innovation零mobile、Process、teacher、loss、LR、task比例、full 50-horizon、真实X/Y、rank12+4与数据不变。新config为
   `configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json`及对应held5 config；47项Writer/native定向测试通过。gpu01物理0
   的真实task1 demo5 smoke完整消费51帧、2 probes、全部50 horizons和38 targets，初始A/B均非零；functional loss为`.152187`，
   第一次反向的Frame/Event/Composer-direction/group-gain梯度为`.056881/.053071/.098988/.221375`，相对旧零启动的Frame/Event约
   提高20倍。process loss`.163691`且Frame/Event/Predictor梯度`.065089/.058663/.202458`；76 tensors、唯一rank16与峰值
-  allocated/reserved `27.35/33.99GB`均通过。下一步只需两步shared optimizer profile，随后从clean pushed detached authority
-  运行optimizer50/100短资格。该两步profile也已自然exit0：step为`3.686/3.497s`，peak allocated/reserved为
+  allocated/reserved `27.35/33.99GB`均通过。task1单卡两步profile也已自然exit0：step为`3.686/3.497s`，peak allocated/reserved为
   `27.36/38.50GB`；Composer总/gain梯度在step1为`6.398/6.116`、step2为`3.123/2.732`，对应非gain方向约
   `1.879/1.512`，确认optimizer、独立clip与方向更新均真实接通。profile rows2与完整carrier统计口径不同，loss不作科学选择。
+
+- gpu01恰有6张真正空闲A40后，`aebd9d74`又完成73-task、12 tasks/update、shared-mmap、rows2的world6两步profile；root为
+  `.codex/tmp/policy_response_group_gain_credit_world6_profile2_aebd9d74_gpu01p023456_20260904/`。两步均严格为每rank 2个真实task，
+  step为`6.361/6.695s`，预测cost范围`73--78/78--86`，峰值allocated/reserved为`27.36/37.04GB`；方向梯度为
+  `.4478/.3196`，gain梯度为`1.7117/1.8523`。相对既有同73-task rows2 world4的`10.597/9.260s`均值快约`34.2%`；虽非逐参数
+  matched，但新增gain仅约2.5万参数，且2-task/rank的真实临界路径和低all-reduce代价直接支持world6。完整294份、`97.81GiB`
+  action-hidden mmap在成功后已删除，信息墙计数均为0。
+
+- Group-gain-credit formal launch contract：scientific implementation为`aebd9d74`，formal authority为包含本合同的下一clean
+  pushed main。配置固定`configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json`，保持73个gradient tasks、当前实验的
+  `9 meta + 3 target`、K1、component-init、correct-only cross-episode functional、positive causal process、preservation、
+  full 50-horizon、真实native X/Y、rank12+4与唯一rank16。该比例和12-task batch只为与前代作单变量匹配，不是owner或未来固定
+  要求。唯一科学变化是195-row ragged target-native group gain与G1既有`0.1`初始logit；Process、teacher、loss权重、LR、数据和
+  materialization均不变。运行100 optimizer steps并保存50/100；输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`，
+  临时mmap为`.codex/tmp/prw_group_gain_credit_73task_cache_aebd9d74_gpu01_20260904/`。2026-09-04 14:12 live检查确认gpu01物理
+  `0,2,3,4,5,6`均为`0MiB/0%`，物理1的他人任务约`1.8GB/60%`保持不动；gpu02卡均有他人常驻或重载任务。因此使用gpu01上述
+  6卡、world-size6、`NCCL_P2P_DISABLE=1`与GPU-local NUMA。训练使用6卡期间不并发评测；自然完成后m50/m100可各用3卡并行做
+  held5 correct-only strict250，总EMBER卡数仍为6。只允许相同authority/config/world topology exact resume，任何fresh root不覆盖。
+
+  同次`/data1` user quota为`776813584/1084227584 KiB`，limit headroom约`293.17GiB`；实测mmap峰值`97.81GiB`，retained
+  checkpoint/metrics预计低于`1GiB`，安全低于独立quota。目标output/cache root在launch前必须再次确认不存在。
 
 - causal-prefix event filter已由`f6b58aac`接通并推送。实现只在`causal=True`时返回从真实首帧anchor开始的monotone forward
   posterior；完整/deployment视频仍逐行复用原hard first/final前向--后向posterior，参数与state dict均未改变。41项Writer与

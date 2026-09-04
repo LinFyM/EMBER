@@ -3033,3 +3033,20 @@ frame动态与event压缩分开、再晚期融合的两条路径都不是充分�
 同frame native bank、沿真实frame time建模并做rank/side交互；最终一次frame centering后以两侧bias-free two-branch head直接对raw
 X/Y做exact signed pooling。该责任替换同时保留G1/G2、Frame-Bank局部正证据和ECP信息墙，且把learned主图缩到两种block。task3/77
 已被本轮消费，下一架构在读取结果前按同一规则固定task4/78为fresh held。
+
+## 153. Native-Temporal运行面更短且真实functional图完整
+
+`78a0ca6a`实现新的唯一运行面：Frame Encoder不再产生Temporal/Event outputs，exact language直接保留在每frame native prefix
+memory；Composer从Frame states显式展开X/Y side，在重复`NativeTemporalFactorBlock`中依次做side-matched same-frame bank read、真实
+frame-time attention与rank/side attention，最后一次frame centering后由两个bias-free two-branch heads直接signed-pool raw X/Y。
+旧event readout、global Composer seed、base/contrast四head和兼容alias全部删除。包含新config/tests在内总变更为485 insertions、631
+deletions；process.py从约500行缩到344行，active learned模块只有两种block。
+
+25项CPU Writer/native测试验证full-50、order sensitivity、K2 permutation invariance、chunk equivalence、static-repeat零mobile、完整
+candidate axes、X/Y side-bank read、target cap、dynamic task scheduling及positive-only合同。clean detached真实task93 smoke又完整消费79个
+sampled frames、2 probes、50 horizons与38 targets；functional loss`.0314728`，Frame/NativeTemporal/Signed-X/Signed-Y梯度
+`.004072/.003138/.002713/.001884`，生成76 tensors与唯一rank16，峰值allocated/reserved约`32.02/35.57 GiB`。
+
+同authority的task93 2-step Composer-only profile自然完成，step为`3.679/3.464s`，NativeTemporal、X head、Y head和task-local query
+两步均有梯度；峰值allocated/reserved约`29.54/38.22 GiB`。该结果只证明工程图、容量路径与成本可接受，不把两步正负functional
+波动当科学结论。它直接解封task1/task93并行25/50-step正控；预计单run训练约3分钟，不启动十小时级扩展。

@@ -92,9 +92,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     fresh held task3为正、task77为负，两点均仅`1/2`。它有微弱seen-task学习但无稳定task-disjoint映射，不运行held5或续训；
 17. [x] 冻结correct-only VJP与路径消融定位最早接口：整体梯度并非普遍冲突，冲突集中在event消费与signed-X head；frame-only/
     event-only又无法同时覆盖task1和task93。裁决整体替换`Temporal -> Event -> late bank fusion -> shared X/Y state`，不追加数学补丁；
-18. [ ] 实现唯一Native-Temporal Axial运行面：删除旧Temporal/Event/FrameBank runtime，以显式X/Y side、同frame side-bank read、
-    ordered frame-time attention及rank/side attention组成同构block；保留full-50、raw X/Y、positive-only与唯一rank16；
-19. [ ] 完成CPU定向检查和最小真实full forward/VJP/materialization smoke后，并行运行task1/task93 25/50-step Composer正控；
+18. [x] 实现并集成唯一Native-Temporal Axial运行面：删除旧Temporal/Event/FrameBank runtime，以显式X/Y side、同frame side-bank read、
+    ordered frame-time attention及rank/side attention组成同构block；25项定向检查通过，代码净缩短且无兼容fallback；
+19. [ ] clean detached真实task93 full forward/VJP/materialization smoke及2-step profile已通过，下一步并行运行task1/task93
+    25/50-step Composer正控；
 20. [ ] 正控成立后以同12 gradient tasks和预先固定fresh held task4/78运行50-step shared资格；出现task-disjoint正信号才运行held5，
     再决定mixed-K、fully-random Final和扩展训练；
 21. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。

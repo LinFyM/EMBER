@@ -20,6 +20,26 @@
   task1/task93冻结路径消融中，frame-only只对task1微正，event-only对task1为负且对task93也只有不稳定微量贡献。因此最早失效点是
   “独立event压缩后晚期接bank、X/Y到末端才共享分叉”的接口；下一实现是整体责任替换，而非增加event权重或输出校准。
 
+- Native-Temporal实现`78a0ca6a`已集成并推送到`main`。active runtime删除独立Temporal/Event classes、event readout、Composer二次
+  query seed和四个base/contrast heads，新增显式X/Y side的单一`NativeTemporalFactorBlock`；source + tests净删除约146行，learned图
+  仅保留Frame与NativeTemporalFactor两种block。25项Writer/native定向测试和py_compile通过，旧Frame-Bank config被新loader拒绝，
+  没有兼容alias或并行fallback。
+
+- clean detached `78a0ca6a`在gpu02物理0完成task93真实profile smoke：79 sampled frames、2 probes、完整50 horizons、38 targets；
+  Frame/NativeTemporal/Signed-X/Signed-Y functional梯度分别为`.00407/.00314/.00271/.00188`，冻结墙通过，生成76 tensors与唯一rank16。
+  峰值allocated/reserved约`32.02/35.57 GiB`。随后2-step Composer-only真实profile为`3.679/3.464s`，train/eval/total
+  `7.21/6.99/35.01s`，两步NativeTemporal和X/Y heads梯度均非零；峰值allocated/reserved约`29.54/38.22 GiB`。因此50-step
+  task-local资格预计训练约3分钟、含加载评测约5分钟，不存在架构未证明前的长跑成本问题。
+
+- Native-Temporal task-local formal launch contract：科学实现固定`78a0ca6a`，formal authority为包含本合同的下一clean pushed main；
+  配置固定`configs/pi05_ecp_policy_response_writer_native_temporal_12gradient_2held_v1.json`。task1/task93各自K1、component initialization、
+  冻结Frame Encoder且只训练Native-Temporal Composer、warmup5+effective45、optimizer25/50 checkpoints、每步8 correct cross-episode
+  functional rows、fit视频训练与Panel-B/held视频只读；不读取wrong/shuffle/reverse，不产生held或Panel-B梯度。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_tasklocal_task1_full_s50_78a0ca6a_gpu02p2_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_tasklocal_task93_full_s50_78a0ca6a_gpu02p0_20260905/`，launch前均不存在。
+  `/data1` live quota为`778392860/1084227584 KiB`、limit余量约`291.67 GiB`，两run复用canonical assets且保守新增小于1GiB。
+  gpu02物理0的最长实测峰值reserved约`38.22 GiB`；正式launch前仍同时刷新gpu01/gpu02并只选余量安全的卡，不干扰他人进程。
+
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，

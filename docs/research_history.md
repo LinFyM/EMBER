@@ -2869,3 +2869,13 @@ pairwise mean为`-.0578`，task93相对其它task和为`-.663`，signed-Y则为�
 PI0.5 response编码后，以显式X/Y factor-side states在同一可复制NativeTemporalFactorBlock内完成same-frame native read、真实frame-time
 attention与rank/side协调，再直接signed-pool raw X/Y。learned图收敛为Frame与NativeTemporalFactor两种block；没有恢复summary、solve、
 normalization、gain、temperature或calibration链。正式与诊断roots及完整数值见`findings.md`第152节。
+
+## 148. Native-Temporal实现与真实smoke
+
+`78a0ca6a`把active Writer收敛为Frame Policy-Response和NativeTemporalFactor两种可复制block，显式X/Y side从进入factor trunk起分别
+读取native bank，再沿真实frame time与rank/side建模；旧Temporal/Event bottleneck、Composer二次seed及base/contrast链从runtime删除。
+实现总计485 insertions、631 deletions且无兼容fallback。25项定向测试通过。
+
+clean detached task93 full smoke消费79 sampled frames、2 probes、完整50 horizons与38 targets，Frame、NativeTemporal及X/Y heads均有
+functional梯度，生成唯一76-tensor rank16；峰值reserved约`35.57 GiB`。2-step Composer-only profile为`3.68/3.46s`，峰值reserved
+`38.22 GiB`，解封短task-local正控。完整数值与launch contract见`findings.md`第153节及`progress.md`。

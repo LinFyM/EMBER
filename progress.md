@@ -28,6 +28,15 @@
   若factor规模/functional恢复明确成长，再立即做73-task shared 25/50短资格；若仍极弱，先围绕最早factor读出/信用接口深入定位，
   不添加数学补丁、不直接支付长跑成本。
 
+- Axial task72 formal launch contract：科学实现为`3cc4dbfc`，authority为包含本合同的下一clean pushed main；配置固定
+  `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component initialization、task-local Composer-only、
+  warmup5+effective45、optimizer25/50 checkpoints、每次8 functional rows，输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_axial_factor_tasklocal_task72_full_s50_3cc4dbfc_gpu01p3_20260905/`，launch前不存在且不覆盖。
+  2026-09-05 launch前`/data1` quota为`777765776/1084227584 KiB`，limit headroom约`292.3 GiB`；本run复用canonical assets，
+  仅产生小checkpoint/metrics，峰值远低于余量。gpu01/gpu02同时live检查后，gpu01物理3与6均为约1MiB、0% util；选择已实测
+  峰值reserved约18.9GiB的物理3单卡，不占用或干扰其它进程。固定命令为
+  `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=3 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_axial_factor_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_axial_factor_tasklocal_task72_full_s50_3cc4dbfc_gpu01p3_20260905 --phase task-local --task 72 --representation full --initialization component --mode formal`。
+
 ## 2026-09-04及以前进度账本
 
 - Set-relative shared已完整裁决为non-pass，但authority72正控证明同一函数类的functional信用可以转化为闭环行为。clean detached

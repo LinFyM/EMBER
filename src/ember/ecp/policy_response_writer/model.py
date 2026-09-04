@@ -1,4 +1,4 @@
-"""Canonical Policy-Response Event-to-Factor Writer graph."""
+"""Canonical native-temporal Policy-Response Writer graph."""
 
 from __future__ import annotations
 
@@ -14,10 +14,10 @@ from ember.ecp.native_materialization import (
     residual_lora_state,
 )
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
-from ember.ecp.policy_response_writer.composer import CurrentVideoNativeFactorComposer
+from ember.ecp.policy_response_writer.composer import NativeTemporalFactorComposer
 from ember.ecp.policy_response_writer.process import (
-    PolicyResponseProcessEncoder,
-    PolicyResponseProcessOutput,
+    PolicyResponseFrameEncoder,
+    PolicyResponseFrameOutput,
 )
 from ember.lora import LoRAContract
 
@@ -25,11 +25,11 @@ from ember.lora import LoRAContract
 @dataclass(frozen=True)
 class PolicyResponseWriterOutput:
     residual: NativeFactorResidual
-    processes: tuple[PolicyResponseProcessOutput, ...]
+    frames: tuple[PolicyResponseFrameOutput, ...]
 
 
-class PolicyResponseEventToFactorWriter(torch.nn.Module):
-    """One process encoder and one native composer, scaled by repeated blocks."""
+class PolicyResponseNativeTemporalWriter(torch.nn.Module):
+    """One frame encoder and one native-temporal factor composer."""
 
     def __init__(
         self,
@@ -38,33 +38,27 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         prefix_width: int = 2048,
         expert_width: int = 1024,
         width: int = 128,
-        event_slots: int = 8,
         heads: int = 4,
         frame_blocks: int = 2,
-        temporal_blocks: int = 2,
-        event_blocks: int = 1,
-        composer_blocks: int = 2,
+        factor_blocks: int = 2,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
-        self.process = PolicyResponseProcessEncoder(
+        self.process = PolicyResponseFrameEncoder(
             owners,
             prefix_width=prefix_width,
             expert_width=expert_width,
             width=width,
-            event_slots=event_slots,
             heads=heads,
             frame_blocks=frame_blocks,
-            temporal_blocks=temporal_blocks,
-            event_blocks=event_blocks,
         )
-        self.composer = CurrentVideoNativeFactorComposer(
+        self.composer = NativeTemporalFactorComposer(
             owners,
             width=width,
             heads=heads,
-            block_depth=composer_blocks,
+            block_depth=factor_blocks,
             pooling_frame_chunk=pooling_frame_chunk,
             task_local=task_local,
         )
@@ -77,11 +71,11 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         representation: str = "full",
     ) -> PolicyResponseWriterOutput:
         values = tuple(videos)
-        processes = tuple(
+        frames = tuple(
             self.process(video, representation=representation) for video in values
         )
-        residual = self.composer(values, processes, s_ref=s_ref)
-        return PolicyResponseWriterOutput(residual=residual, processes=processes)
+        residual = self.composer(values, frames, s_ref=s_ref)
+        return PolicyResponseWriterOutput(residual=residual, frames=frames)
 
     @staticmethod
     def materialize(

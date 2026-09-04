@@ -1,15 +1,14 @@
-"""Axial policy-response video encoder.
+"""Per-frame encoder for the native-temporal Policy-Response Writer.
 
-The encoder has one job: turn the frozen PI0.5 response field of each ordered
-video into content-carrying event tokens. Capacity scales by repeating the same
-frame, temporal, and event blocks. Frame position is used only in attention
-queries and keys, so a repeated static frame cannot manufacture an event value
-from position alone.
+The encoder preserves every frozen PI0.5 policy-response horizon and lets a
+small set of target-rank states read it with repeatable transformer blocks.
+Video-time modeling belongs to the downstream native-factor blocks, where it
+can interact with the current video's real X/Y bank instead of passing through
+an independent event bottleneck.
 """
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Sequence
 
@@ -25,53 +24,25 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PolicyResponseProcessOutput:
-    """One independently encoded video with every semantic axis explicit."""
+class PolicyResponseFrameOutput:
+    """One independently encoded video with real frames still explicit."""
 
-    events: torch.Tensor
     frame_tokens: torch.Tensor
-    frame_innovations: torch.Tensor
-    owner_language: torch.Tensor
 
 
 class GatedMLP(torch.nn.Module):
     """A standard pre-norm gated residual MLP."""
 
-    def __init__(self, width: int, expansion: int = 4, *, bias: bool = True) -> None:
+    def __init__(self, width: int, expansion: int = 4) -> None:
         super().__init__()
         hidden = width * expansion
-        # Do not normalize the centered dynamic path: LayerNorm would amplify
-        # harmless floating-point residue from a repeated static sequence.
-        self.norm = torch.nn.LayerNorm(width) if bias else torch.nn.Identity()
-        self.input = torch.nn.Linear(width, 2 * hidden, bias=bias)
-        self.output = torch.nn.Linear(hidden, width, bias=bias)
+        self.norm = torch.nn.LayerNorm(width)
+        self.input = torch.nn.Linear(width, 2 * hidden)
+        self.output = torch.nn.Linear(hidden, width)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         left, gate = self.input(self.norm(value)).chunk(2, dim=-1)
         return value + self.output(left * F.gelu(gate))
-
-
-class OwnerLanguageReader(torch.nn.Module):
-    """Let structural target queries read the exact contextualized language."""
-
-    def __init__(self, owners: int, width: int) -> None:
-        super().__init__()
-        self.queries = torch.nn.Parameter(torch.empty(owners, width))
-        self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
-        self.output = torch.nn.Linear(2 * width, width)
-        self.norm = torch.nn.LayerNorm(width)
-        torch.nn.init.normal_(self.queries, std=width**-0.5)
-
-    def forward(self, tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        if tokens.ndim != 2 or mask.shape != tokens.shape[:1] or not torch.any(mask):
-            raise ValueError("policy-response language token contract changed")
-        logits = torch.einsum(
-            "jd,ld->jl", self.queries, self.key(tokens)
-        ) / math.sqrt(tokens.shape[-1])
-        logits = logits.masked_fill(~mask[None], torch.finfo(logits.dtype).min)
-        attended = torch.einsum("jl,ld->jd", logits.softmax(-1), self.value(tokens))
-        return self.norm(self.output(torch.cat((self.queries, attended), dim=-1)))
 
 
 class PrefixTokenizer(torch.nn.Module):
@@ -86,7 +57,7 @@ class PrefixTokenizer(torch.nn.Module):
 
     def forward(
         self, video: FrozenPolicyResponseVideo
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         patches = self.patch_projection(video.patch_states)
         language = self.language_projection(video.language_states)
         mask = video.language_mask
@@ -97,9 +68,15 @@ class PrefixTokenizer(torch.nn.Module):
             or patches.shape[0] != language.shape[0]
         ):
             raise ValueError("policy-response prefix topology changed")
-        patches = patches + self.type_embedding.weight[0]
-        language = language + self.type_embedding.weight[1]
-        memory = self.norm(torch.cat((patches, language), dim=1))
+        memory = self.norm(
+            torch.cat(
+                (
+                    patches + self.type_embedding.weight[0],
+                    language + self.type_embedding.weight[1],
+                ),
+                dim=1,
+            )
+        )
         valid = torch.cat(
             (
                 torch.ones(
@@ -109,11 +86,9 @@ class PrefixTokenizer(torch.nn.Module):
             ),
             dim=1,
         )
-        weights = mask.to(language.dtype)
-        language_summary = (language * weights[:, :, None]).sum(0) / weights.sum(
-            0
-        ).clamp_min(1)[:, None]
-        return memory, valid, language_summary, mask.any(0)
+        if not torch.all(valid.any(1)):
+            raise ValueError("policy-response prefix has an empty frame")
+        return memory, valid
 
 
 class ResponseTokenizer(torch.nn.Module):
@@ -204,7 +179,7 @@ class ResponseTokenizer(torch.nn.Module):
 
 
 class FramePolicyResponseBlock(torch.nn.Module):
-    """One copyable prefix read, full-response read, axial attention, and MLP."""
+    """One copyable native-prefix, full-response, target-rank block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
@@ -239,10 +214,9 @@ class FramePolicyResponseBlock(torch.nn.Module):
         ):
             raise ValueError("frame policy-response block axes changed")
         rows = value.reshape(frames, targets * ranks, width)
-        query = self.query_norm(rows)
         memory = self.prefix_norm(prefix)
         attended, _ = self.prefix_attention(
-            query,
+            self.query_norm(rows),
             memory,
             memory,
             key_padding_mask=~prefix_valid,
@@ -266,132 +240,8 @@ class FramePolicyResponseBlock(torch.nn.Module):
         return self.mlp(rows + attended).reshape(frames, targets, ranks, width)
 
 
-class TemporalPolicyResponseBlock(torch.nn.Module):
-    """Self-attend within each target-rank sequence; position enters Q/K only."""
-
-    def __init__(self, width: int, heads: int) -> None:
-        super().__init__()
-        self.norm = torch.nn.LayerNorm(width)
-        self.attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.position = torch.nn.Linear(2, width, bias=False)
-        self.mlp = GatedMLP(width)
-
-    def forward(self, value: torch.Tensor, frame_positions: torch.Tensor) -> torch.Tensor:
-        frames, targets, ranks, width = value.shape
-        if frame_positions.shape != (frames,):
-            raise ValueError("temporal frame positions changed")
-        rows = value.permute(1, 2, 0, 3).reshape(targets * ranks, frames, width)
-        normalized = self.norm(rows)
-        positions = frame_positions.to(value).clamp(0.0, 1.0)
-        position = self.position(
-            torch.stack((positions, positions.square()), dim=-1)
-        )
-        query_key = normalized + position[None]
-        attended, _ = self.attention(
-            query_key, query_key, normalized, need_weights=False
-        )
-        rows = self.mlp(rows + attended)
-        return rows.reshape(targets, ranks, frames, width).permute(2, 0, 1, 3)
-
-
-class OrderedEventBlock(torch.nn.Module):
-    """One content-preserving event-axis attention and bias-free MLP."""
-
-    def __init__(self, width: int, heads: int) -> None:
-        super().__init__()
-        self.norm = torch.nn.Identity()
-        self.attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, bias=False, batch_first=True
-        )
-        self.position = torch.nn.Linear(2, width, bias=False)
-        self.mlp = GatedMLP(width, bias=False)
-
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
-        _, events, _ = value.shape
-        positions = torch.linspace(
-            0.0, 1.0, events, device=value.device, dtype=value.dtype
-        )
-        position = self.position(
-            torch.stack((positions, positions.square()), dim=-1)
-        )
-        normalized = self.norm(value)
-        query_key = normalized + position[None]
-        attended, _ = self.attention(
-            query_key, query_key, normalized, need_weights=False
-        )
-        return self.mlp(value + attended)
-
-
-class OrderedEventReadout(torch.nn.Module):
-    """Compress centered frame content with simple first/last anchors."""
-
-    def __init__(
-        self, *, width: int, event_slots: int, heads: int, block_depth: int
-    ) -> None:
-        super().__init__()
-        if event_slots < 2 or block_depth <= 0:
-            raise ValueError("ordered event topology changed")
-        self.event_slots = event_slots
-        self.interior_queries = torch.nn.Parameter(
-            torch.empty(max(event_slots - 2, 0), width)
-        )
-        self.query_context = torch.nn.Linear(width, width, bias=False)
-        self.memory_norm = torch.nn.Identity()
-        self.position = torch.nn.Linear(2, width, bias=False)
-        self.read = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, bias=False, batch_first=True
-        )
-        self.blocks = torch.nn.ModuleList(
-            OrderedEventBlock(width, heads) for _ in range(block_depth)
-        )
-        torch.nn.init.normal_(self.interior_queries, std=width**-0.5)
-
-    def forward(
-        self,
-        innovations: torch.Tensor,
-        frame_positions: torch.Tensor,
-        query_context: torch.Tensor,
-    ) -> torch.Tensor:
-        frames, targets, ranks, width = innovations.shape
-        if (
-            frame_positions.shape != (frames,)
-            or query_context.shape != (targets, ranks, width)
-        ):
-            raise ValueError("ordered event inputs changed")
-        rows = innovations.permute(1, 2, 0, 3).reshape(
-            targets * ranks, frames, width
-        )
-        normalized = self.memory_norm(rows)
-        positions = frame_positions.to(innovations).clamp(0.0, 1.0)
-        position = self.position(
-            torch.stack((positions, positions.square()), dim=-1)
-        )
-        pieces = [rows[:, :1]]
-        if self.interior_queries.shape[0]:
-            context = self.query_context(query_context).reshape(
-                targets * ranks, 1, width
-            )
-            query = self.interior_queries[None] + context
-            interior, _ = self.read(
-                query,
-                normalized + position[None],
-                normalized,
-                need_weights=False,
-            )
-            pieces.append(interior)
-        pieces.append(rows[:, -1:])
-        events = torch.cat(tuple(pieces), dim=1)
-        for block in self.blocks:
-            events = block(events)
-        return events.reshape(targets, ranks, self.event_slots, width).permute(
-            2, 0, 1, 3
-        )
-
-
-class PolicyResponseProcessEncoder(torch.nn.Module):
-    """Frozen response -> axial frame tokens -> ordered dynamic event tokens."""
+class PolicyResponseFrameEncoder(torch.nn.Module):
+    """Frozen PI0.5 response -> per-frame target-rank states."""
 
     def __init__(
         self,
@@ -400,24 +250,15 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         prefix_width: int = 2048,
         expert_width: int = 1024,
         width: int = 128,
-        event_slots: int = 8,
         heads: int = 4,
         frame_blocks: int = 2,
-        temporal_blocks: int = 2,
-        event_blocks: int = 1,
     ) -> None:
         super().__init__()
-        if (
-            not owners
-            or width % heads
-            or min(frame_blocks, temporal_blocks, event_blocks) <= 0
-        ):
-            raise ValueError("axial policy-response topology changed")
+        if not owners or width % heads or frame_blocks <= 0:
+            raise ValueError("frame policy-response topology changed")
         self.owners = tuple(owners)
         self.width = width
-        self.event_slots = event_slots
         self.prefix = PrefixTokenizer(prefix_width, width)
-        self.language_reader = OwnerLanguageReader(len(owners), width)
         self.response = ResponseTokenizer(
             owners, expert_width=expert_width, width=width
         )
@@ -426,10 +267,6 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         )
         self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
-        self.seed = torch.nn.Sequential(
-            torch.nn.Linear(4 * width, width),
-            torch.nn.LayerNorm(width),
-        )
         family_order = tuple(TargetFamily)
         self.register_buffer(
             "family_ids",
@@ -439,57 +276,30 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         self.frame_blocks = torch.nn.ModuleList(
             FramePolicyResponseBlock(width, heads) for _ in range(frame_blocks)
         )
-        self.temporal_blocks = torch.nn.ModuleList(
-            TemporalPolicyResponseBlock(width, heads)
-            for _ in range(temporal_blocks)
-        )
-        self.events = OrderedEventReadout(
-            width=width,
-            event_slots=event_slots,
-            heads=heads,
-            block_depth=event_blocks,
-        )
         torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
 
-    def _query_seed(self, owner_language: torch.Tensor) -> torch.Tensor:
-        targets = len(self.owners)
-        ranks = G1_RESIDUAL_RANK
-        if owner_language.shape != (targets, self.width):
-            raise ValueError("policy-response owner language changed")
-        rank = self.rank_embedding[None].expand(targets, -1, -1)
-        owner = self.owner_embedding[:, None].expand(-1, ranks, -1)
-        family = self.family_embedding(self.family_ids)[:, None].expand(
-            -1, ranks, -1
+    def _seed(self) -> torch.Tensor:
+        return (
+            self.rank_embedding[None]
+            + self.owner_embedding[:, None]
+            + self.family_embedding(self.family_ids)[:, None]
         )
-        language = owner_language[:, None].expand(-1, ranks, -1)
-        return self.seed(torch.cat((rank, owner, family, language), dim=-1))
 
     def forward(
         self,
         video: FrozenPolicyResponseVideo,
         *,
         representation: str = "full",
-    ) -> PolicyResponseProcessOutput:
+    ) -> PolicyResponseFrameOutput:
         if representation != "full":
             raise ValueError("full policy-response is the only active representation")
-        prefix, prefix_valid, language, language_mask = self.prefix(video)
-        owner_language = self.language_reader(language, language_mask)
-        seed = self._query_seed(owner_language)
+        prefix, prefix_valid = self.prefix(video)
         response = self.response(video)
-        frame = seed[None].expand(video.frame_count, -1, -1, -1)
+        frame = self._seed()[None].expand(video.frame_count, -1, -1, -1)
         for block in self.frame_blocks:
             frame = block(frame, prefix, prefix_valid, response)
-        for block in self.temporal_blocks:
-            frame = block(frame, video.frame_positions)
-        innovations = frame - frame.mean(0, keepdim=True)
-        events = self.events(innovations, video.frame_positions, seed)
-        return PolicyResponseProcessOutput(
-            events=events,
-            frame_tokens=frame,
-            frame_innovations=innovations,
-            owner_language=owner_language,
-        )
+        return PolicyResponseFrameOutput(frame_tokens=frame)
 
     @torch.no_grad()
     def initialize_from_stage0(self, stage0: "ECPStage0Model") -> dict[str, object]:
@@ -528,8 +338,7 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
             ],
             "fresh": [
                 "frame_repeat_blocks",
-                "temporal_repeat_blocks",
-                "content_event_readout",
-                "native_factor_composer",
+                "native_temporal_factor_blocks",
+                "factor_side_signed_heads",
             ],
         }

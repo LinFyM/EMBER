@@ -181,20 +181,17 @@ def _sum_gradients(
 
 def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
     prefixes = {
-        "prefix": ("process.prefix", "process.language_reader", "process.seed"),
+        "prefix": (
+            "process.prefix",
+            "process.rank_embedding",
+            "process.owner_embedding",
+            "process.family_embedding",
+        ),
         "response": ("process.response",),
         "frame": ("process.frame_blocks",),
-        "temporal": ("process.temporal_blocks",),
-        "event": ("process.events",),
-        "composer_context": ("composer.blocks", "composer.query_seed"),
-        "signed_input": (
-            "composer.input_base_query",
-            "composer.input_contrast_query",
-        ),
-        "signed_output": (
-            "composer.output_base_query",
-            "composer.output_contrast_query",
-        ),
+        "native_temporal": ("composer.blocks",),
+        "signed_input": ("composer.input_signed_query",),
+        "signed_output": ("composer.output_signed_query",),
         "composer": ("composer",),
     }
     result = {}

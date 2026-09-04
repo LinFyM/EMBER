@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train or smoke the active Policy-Response Event-to-Factor Writer."""
+"""Train or smoke the active native-temporal Policy-Response Writer."""
 
 from ember.ecp.policy_response_writer.training import build_parser, finalize_args, run
 

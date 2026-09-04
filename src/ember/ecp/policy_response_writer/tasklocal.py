@@ -15,7 +15,7 @@ from ember.ecp.bank_conditioning.mapping import load_mapping_split
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.model import PolicyResponseWriterOutput
-from ember.ecp.policy_response_writer.process import PolicyResponseProcessOutput
+from ember.ecp.policy_response_writer.process import PolicyResponseFrameOutput
 from ember.ecp.policy_response_writer.tasklocal_contract import (
     build_tasklocal_result,
     build_tasklocal_run_contract,
@@ -94,12 +94,12 @@ def _cache_evidence(
     videos: tuple[int, ...],
 ) -> tuple[
     dict[int, FrozenPolicyResponseVideo],
-    dict[int, PolicyResponseProcessOutput],
+    dict[int, PolicyResponseFrameOutput],
     list[dict[str, Any]],
     float,
 ]:
     cache: dict[int, FrozenPolicyResponseVideo] = {}
-    process_cache: dict[int, PolicyResponseProcessOutput] = {}
+    process_cache: dict[int, PolicyResponseFrameOutput] = {}
     records = []
     started = time.monotonic()
     for demo in videos:
@@ -121,7 +121,7 @@ def _cache_evidence(
 def _materialized_state(
     runtime: PolicyResponseRuntime,
     video: FrozenPolicyResponseVideo,
-    process: PolicyResponseProcessOutput,
+    process: PolicyResponseFrameOutput,
     *,
     canonicalize: bool,
 ) -> dict[str, torch.Tensor]:
@@ -132,7 +132,7 @@ def _materialized_state(
     )
     output = PolicyResponseWriterOutput(
         residual=residual,
-        processes=(process,),
+        frames=(process,),
     )
     return runtime.writer.materialize(
         output,
@@ -173,7 +173,7 @@ def _functional_backward(
     runtime: PolicyResponseRuntime,
     *,
     video: FrozenPolicyResponseVideo,
-    process: PolicyResponseProcessOutput,
+    process: PolicyResponseFrameOutput,
     batch: Mapping[str, Any],
     seed: int,
 ) -> tuple[float, int, int]:
@@ -259,15 +259,9 @@ def _optimizer(
 
 def _composer_gradient_norms(runtime: PolicyResponseRuntime) -> dict[str, float]:
     groups = {
-        "input_signed_attention": (
-            "input_base_query",
-            "input_contrast_query",
-        ),
-        "output_signed_attention": (
-            "output_base_query",
-            "output_contrast_query",
-        ),
-        "context_blocks": ("blocks", "query_seed"),
+        "input_signed_attention": ("input_signed_query",),
+        "output_signed_attention": ("output_signed_query",),
+        "native_temporal_blocks": ("blocks",),
         "task_query": ("task_query",),
     }
     result = {}
@@ -287,7 +281,7 @@ def _evaluate_video(
     task: int,
     demo: int,
     evidence: FrozenPolicyResponseVideo,
-    process: PolicyResponseProcessOutput,
+    process: PolicyResponseFrameOutput,
     reference_loss: float,
     visits: int,
 ) -> dict[str, Any]:
@@ -346,7 +340,7 @@ def _evaluation(
     fit_demos: tuple[int, int],
     held_demo: int,
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseProcessOutput],
+    process_cache: Mapping[int, PolicyResponseFrameOutput],
     reference_losses: Mapping[int, float],
 ) -> tuple[dict[str, Any], float]:
     started = time.monotonic()
@@ -393,7 +387,7 @@ def _checkpoint_evaluations(
     fit_demos: tuple[int, int],
     held_demo: int,
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseProcessOutput],
+    process_cache: Mapping[int, PolicyResponseFrameOutput],
     reference_losses: Mapping[int, float],
 ) -> tuple[dict[str, dict[str, Any]], float]:
     rows = {}
@@ -431,7 +425,7 @@ def _train(
     task: int,
     fit_demos: tuple[int, int],
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseProcessOutput],
+    process_cache: Mapping[int, PolicyResponseFrameOutput],
     parameters: tuple[torch.nn.Parameter, ...],
     optimizer: torch.optim.AdamW,
     scheduler: torch.optim.lr_scheduler.LambdaLR,

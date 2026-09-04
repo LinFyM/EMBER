@@ -22,7 +22,7 @@ from ember.ecp.policy_response_writer.capture import (
     capture_policy_response_chunk,
     merge_policy_response_chunks,
 )
-from ember.ecp.policy_response_writer.model import PolicyResponseEventToFactorWriter
+from ember.ecp.policy_response_writer.model import PolicyResponseNativeTemporalWriter
 from ember.ecp.policy_response_writer.shared_schedule import (
     _functional_panel_config,
     _selected_task_ids,
@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_frame_bank_v1"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_frame_bank_run_v1"
+SCHEMA = "ember_ecp_policy_response_writer_native_temporal_v1"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_native_temporal_run_v1"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -76,7 +76,7 @@ class PolicyResponseRuntime:
     context: DistributedContext
     policy: torch.nn.Module
     stage0: torch.nn.Module
-    writer: PolicyResponseEventToFactorWriter
+    writer: PolicyResponseNativeTemporalWriter
     ranks: Any
     rank4_contract: Any
     owners: tuple[Any, ...]
@@ -125,22 +125,19 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_frame_bank_policy_response_native_factor_writer",
+            == "active_native_temporal_policy_response_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
-            model.get("event_slots") == 8,
             model.get("architecture")
-            == "repeatable_frame_temporal_event_and_frame_bank_factor_blocks",
+            == "repeatable_frame_and_native_temporal_factor_blocks",
             model.get("factor_readout")
-            == "frame_bank_conditioned_base_plus_minus_dynamic_signed_raw_native_XY",
+            == "factor_side_two_branch_signed_raw_native_XY",
             model.get("dynamic_value_contract")
-            == "centered_dynamic_values_make_static_repeat_complete_mobile_zero",
+            == "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
             int(model.get("frame_blocks", 0)) > 0,
-            int(model.get("temporal_blocks", 0)) > 0,
-            int(model.get("event_blocks", 0)) > 0,
-            int(model.get("composer_blocks", 0)) > 0,
+            int(model.get("factor_blocks", 0)) > 0,
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
@@ -173,7 +170,7 @@ def _validate_launch_authority(args: argparse.Namespace) -> None:
 
 
 def _initialize_writer(
-    writer: PolicyResponseEventToFactorWriter,
+    writer: PolicyResponseNativeTemporalWriter,
     stage0: torch.nn.Module,
     kind: str,
 ) -> dict[str, object]:
@@ -306,17 +303,14 @@ def prepare_runtime(
     )
     prepare_frozen_writer_policy(policy, ranks.contract)
     model = config["model"]
-    writer = PolicyResponseEventToFactorWriter(
+    writer = PolicyResponseNativeTemporalWriter(
         owners,
         prefix_width=int(model["prefix_width"]),
         expert_width=int(model["expert_width"]),
         width=int(model["width"]),
-        event_slots=int(model["event_slots"]),
         heads=int(model["attention_heads"]),
         frame_blocks=int(model["frame_blocks"]),
-        temporal_blocks=int(model["temporal_blocks"]),
-        event_blocks=int(model["event_blocks"]),
-        composer_blocks=int(model["composer_blocks"]),
+        factor_blocks=int(model["factor_blocks"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
@@ -453,20 +447,17 @@ def functional_panel_batch(
 
 def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
     groups = {
-        "prefix": ("process.prefix", "process.language_reader", "process.seed"),
+        "prefix": (
+            "process.prefix",
+            "process.rank_embedding",
+            "process.owner_embedding",
+            "process.family_embedding",
+        ),
         "response": ("process.response",),
         "frame": ("process.frame_blocks",),
-        "temporal": ("process.temporal_blocks",),
-        "event": ("process.events",),
-        "composer_context": ("composer.blocks", "composer.query_seed"),
-        "signed_input": (
-            "composer.input_base_query",
-            "composer.input_contrast_query",
-        ),
-        "signed_output": (
-            "composer.output_base_query",
-            "composer.output_contrast_query",
-        ),
+        "native_temporal": ("composer.blocks",),
+        "signed_input": ("composer.input_signed_query",),
+        "signed_output": ("composer.output_signed_query",),
         "composer": ("composer",),
     }
     output = {}
@@ -500,9 +491,7 @@ def _validate_smoke_graph(
         for name in (
             "response",
             "frame",
-            "temporal",
-            "event",
-            "composer_context",
+            "native_temporal",
             "signed_input",
             "signed_output",
         )

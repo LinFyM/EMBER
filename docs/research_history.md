@@ -2800,3 +2800,16 @@ set-relative task-local容量。不续训该控制。
 
 同authority的两步whole-Writer shared profile在task72上以`1.81/1.50s`完成，约3.74M Writer参数全部可训，所有learned模块均有
 functional梯度，冻结policy/observer无梯度。它解封73-task joint 25/50-step短资格，尚不构成shared性能证据。
+
+## 143. Axial短shared与frame-local Composer缺口
+
+Axial 73-task whole-Writer 25/50-step formal完成，但总计只有300次task exposure；m25/m50 gradient fit/held与两个true-task-held均
+non-pass，未进入held5。随后task1/72/93相同50-update whole-Writer对照呈弱正、正、负三种行为；旧shared correct-only几何则证明
+events仍有task差异，输出B却被训练到更共同的方向。task93 Composer-only formal m50 held benefit/recovery仅
+`+.000600/.04547`，远低于free primal与历史frame-local Composer。
+
+选择性Git复核定位到旧强实现以candidate所属frame的innovation参与signed score，而当前Axial把一个global dynamic query广播到
+全部frame。active图因此以可重复`FrameAlignedFactorBlock`整体替换RankBank职责：rank读events、frame按真实相对位置读本视频events，
+frame-specific dynamic直接对完整raw X/Y做一次exact signed pooling；首次完整bank预读被删除。该变化保持full-50、positive-only、
+rank4、真实native X/Y及唯一rank16，不增加loss、solve、normalization、gain或校准链。25项CPU合同与task93真实full smoke通过，
+正式task-local/shared裁决待后续记录。

@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-import ember.ecp.policy_response_writer.composer as composer_module
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.native_factors import G1_RESIDUAL_RANK, native_output_group_count
 from ember.ecp.policy_response_writer import (
@@ -15,7 +14,7 @@ from ember.ecp.policy_response_writer import (
     PolicyResponseEventToFactorWriter,
 )
 from ember.ecp.policy_response_writer.composer import (
-    RankBankContextBlock,
+    FrameAlignedFactorBlock,
     _effective_update_cap_factor,
     _effective_update_rms,
 )
@@ -197,7 +196,7 @@ def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
         model((video,), s_ref=torch.full((4,), 0.2), representation="coarse")
 
 
-def test_static_repeated_video_cannot_open_the_dynamic_output_factor() -> None:
+def test_static_repeated_video_cannot_open_either_dynamic_factor() -> None:
     model = _model().eval()
     with torch.no_grad():
         output = model(
@@ -206,6 +205,7 @@ def test_static_repeated_video_cannot_open_the_dynamic_output_factor() -> None:
         )
     assert output.processes[0].frame_innovations.abs().max() < 1e-5
     assert output.processes[0].events.abs().max() < 1e-5
+    assert max(value.abs().max() for value in output.residual.a) < 1e-5
     assert max(value.abs().max() for value in output.residual.b) < 1e-5
 
 
@@ -244,64 +244,46 @@ def test_video_set_is_permutation_invariant_and_chunking_is_exact() -> None:
         torch.testing.assert_close(chunked, expected, rtol=2e-5, atol=2e-6)
 
 
-def test_native_bank_memory_keeps_every_candidate_axis() -> None:
+def test_native_bank_keeps_every_candidate_axis_without_a_preliminary_read() -> None:
     model = _model().eval()
     video = _video(37, frames=5)
     with torch.no_grad():
-        process = model.process(video)
         for target, owner in enumerate(_owners()):
-            memory, candidates = model.composer._bank_candidates(
-                target, (video,), (process,)
-            )
+            candidates = model.composer._bank_candidates(target, (video,))
             groups = native_output_group_count(owner)
             expected = video.frame_count * 2 * ACTION_HORIZON * (1 + groups * 4)
-            assert sum(chunk.shape[0] for chunk in memory[0]) == expected
-            assert all(chunk.shape[1] == model.composer.width for chunk in memory[0])
+            observed = sum(
+                chunk.input_keys.numel() // model.composer.width
+                + chunk.output_keys.numel() // model.composer.width
+                for chunk in candidates[0].chunks
+            )
+            assert observed == expected
             assert sum(row.frame_count for row in candidates) == video.frame_count
 
 
-def test_streaming_native_attention_matches_dense_values_and_gradients(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_factor_block_preserves_zero_dynamic_path_and_frame_alignment() -> None:
     torch.manual_seed(41)
-    block = RankBankContextBlock(16, 4).double().eval()
-    dense_query = torch.randn(1, 4, 16, dtype=torch.double, requires_grad=True)
-    dense_memory = torch.randn(23, 16, dtype=torch.double, requires_grad=True)
-    dense = block._dense_bank_attention(dense_query, dense_memory)
-    dense.square().sum().backward()
-    expected_query_grad = dense_query.grad.detach().clone()
-    expected_memory_grad = dense_memory.grad.detach().clone()
+    block = FrameAlignedFactorBlock(16, 4).double().eval()
+    query = torch.randn(4, 16, dtype=torch.double)
+    positions = (torch.linspace(0.0, 1.0, 5, dtype=torch.double),)
+    zero_event = (torch.zeros(4, 3, 16, dtype=torch.double),)
+    zero_frame = (torch.zeros(5, 4, 16, dtype=torch.double),)
+    with torch.no_grad():
+        _, zero_aligned = block(query, zero_event, zero_frame, positions)
+    torch.testing.assert_close(zero_aligned[0], zero_frame[0], atol=0.0, rtol=0.0)
 
-    stream_query = dense_query.detach().clone().requires_grad_(True)
-    stream_memory = dense_memory.detach().clone().requires_grad_(True)
-    monkeypatch.setattr(composer_module, "STREAMING_BANK_BLOCK_TOKEN_LIMIT", 5)
-    streamed = block._streaming_bank_attention(stream_query, (stream_memory,))
-    streamed.square().sum().backward()
-    torch.testing.assert_close(streamed, dense.detach(), rtol=3e-5, atol=3e-8)
+    event = (torch.randn(4, 3, 16, dtype=torch.double),)
+    frame = torch.randn(5, 4, 16, dtype=torch.double)
+    changed = frame.clone()
+    changed[2] += 1.0
+    with torch.no_grad():
+        _, original = block(query, event, (frame,), positions)
+        _, mutated = block(query, event, (changed,), positions)
     torch.testing.assert_close(
-        stream_query.grad, expected_query_grad, rtol=5e-5, atol=5e-8
+        original[0][torch.tensor([0, 1, 3, 4])],
+        mutated[0][torch.tensor([0, 1, 3, 4])],
     )
-    torch.testing.assert_close(
-        stream_memory.grad, expected_memory_grad, rtol=5e-5, atol=5e-8
-    )
-
-    split_query = dense_query.detach().clone().requires_grad_(True)
-    split_left = dense_memory.detach()[:9].clone().requires_grad_(True)
-    split_right = dense_memory.detach()[9:].clone().requires_grad_(True)
-    split = block._streaming_bank_attention(
-        split_query, (split_left, split_right)
-    )
-    split.square().sum().backward()
-    torch.testing.assert_close(split, dense.detach(), rtol=3e-5, atol=3e-8)
-    torch.testing.assert_close(
-        split_query.grad, expected_query_grad, rtol=5e-5, atol=5e-8
-    )
-    torch.testing.assert_close(
-        torch.cat((split_left.grad, split_right.grad)),
-        expected_memory_grad,
-        rtol=5e-5,
-        atol=5e-8,
-    )
+    assert not torch.allclose(original[0][2], mutated[0][2])
 
 
 def test_complete_target_update_is_capped_once() -> None:

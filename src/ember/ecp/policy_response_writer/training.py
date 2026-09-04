@@ -62,7 +62,7 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_axial_v1"
+SCHEMA = "ember_ecp_policy_response_writer_frame_aligned_v1"
 RUN_SCHEMA = "ember_ecp_policy_response_writer_axial_run_v1"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
@@ -124,16 +124,17 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
     if not all(
         (
             config.get("schema_version") == SCHEMA,
-            config.get("status") == "active_axial_policy_response_native_factor_writer",
+            config.get("status")
+            == "active_frame_aligned_policy_response_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("event_slots") == 8,
             model.get("architecture")
-            == "repeatable_frame_temporal_event_and_rank_bank_attention_blocks",
+            == "repeatable_frame_temporal_event_and_frame_aligned_factor_blocks",
             model.get("factor_readout")
-            == "direct_base_plus_minus_event_contrast_signed_raw_native_XY",
+            == "frame_aligned_base_plus_minus_dynamic_signed_raw_native_XY",
             model.get("dynamic_value_contract")
-            == "centered_content_events_make_static_repeat_output_factor_zero",
+            == "centered_dynamic_values_make_static_repeat_complete_mobile_zero",
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
             int(model.get("frame_blocks", 0)) > 0,

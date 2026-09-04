@@ -39,9 +39,9 @@ repeat Nt x TemporalPolicyResponseBlock over real frame time
         |
 one content centering + ordered event readout + repeat Ne x OrderedEventBlock
         |
-repeat Nc x RankBankContextBlock reading events and the complete current-video bank
+repeat Nc x FrameAlignedFactorBlock aligning events to real teacher frames
         |
-base +/- dynamic-contrast logits -> exact signed pooling of raw X/Y
+per-frame base +/- dynamic logits -> one exact signed pooling of full raw X/Y
         |
 one target-level BA cap -> rank12 + rank4 -> unique 38-target rank16 LoRA
 ```
@@ -67,17 +67,22 @@ target-rank tokens做self-attention和MLP。antithetic probe以even/odd坐标表
 使用同构event attention/MLP blocks。该设计吸收G2“有序动态与边界有信息”的正证据，但不继续使用固定
 `P_lang/P_scene/P_process/rho/tau/sigma` schema、HMM、relation marginal或手工event assignment。
 
-### 4.4 RankBankContextBlock
+### 4.4 FrameAlignedFactorBlock
 
-每个target的四个rank queries在同一个可重复block中读取动态events、完整当前视频native-bank tokens、其它rank，再经过MLP。
-多视频的event/bank分别读取后等权集合聚合；不同帧数不会让长视频仅因token更多获得更高先验质量。bank attention通过dense或
-chunked online-softmax执行同一个精确算子，chunk只改变内存布局。
+每个target的四个rank queries先以标准cross-attention读取动态events，再沿rank轴self-attention。随后每条视频的每个真实frame
+以自身`frame_innovation + rank query + relative frame position`为query，只读取本视频有序event tokens；event slot position只进入
+Q/K，dynamic event本身是value。这是一个可重复的Transformer block：加深时只复制同构block，不新增坐标或规则。
+
+该逐帧read将event语义重新对齐到产生native X/Y的真实frame，恢复专家原合同中的soft temporal assignment。静态重复视频的
+frame innovation与event value都为零；所有dynamic value projection与MLP均无bias，因此language、owner或位置不能凭空制造动态。
+多视频先独立执行frame-event alignment，最后在signed pooling的集合归约中等权聚合，保持视频置换不变。
 
 ### 4.5 Direct native factor readout
 
-最终query直接产生X侧和Y侧的`base +/- contrast` logits，并对raw native values做G1同类exact signed pooling。X侧建立rank输入
-方向；Y侧contrast只读取累计动态event delta，因此静态重复视频时正负Y分布相同、B和完整mobile update为零。不存在独立gain网络、
-factor normalization、family scalar或事后方向修正。
+最终rank query产生静态base logits；每个frame对齐后的dynamic state分别产生该frame的X侧与Y侧contrast logits，再对完整
+frame x probe x 50-horizon x bank-type raw native values做一次G1同类exact signed pooling。没有在此之前对bank做第二次attention，
+也不把全视频压成一个dynamic query广播回所有frame。静态重复视频时两侧正负分布都相同，A、B和完整mobile update均为零。
+不存在独立gain网络、factor normalization、family scalar或事后方向修正。
 
 唯一post-pooling操作是既有per-target `B@A` RMS cap；small-core canonicalization只用于把rank4稳定物化并与rank12 carrier合并，
 不改变功能矩阵。
@@ -98,7 +103,7 @@ factor normalization、family scalar或事后方向修正。
 
 ## 6. 简洁性与生命周期规则
 
-首版固定为`2 Frame + 2 Temporal + 1 Event + 2 Composer` blocks、宽度128。这里的数字只是短资格配置，不是owner永久要求。
+首版固定为`2 Frame + 2 Temporal + 1 Event + 2 Frame-Aligned Factor` blocks、宽度128。这里的数字只是短资格配置，不是owner永久要求。
 
 - 扩容只允许优先增加width、heads或复制现有block；不能为一个负结果追加新的专用摘要、解析solve、归一化链、校准器或gate。
 - 如果某一接口被复核为最早失效点，下一版本应删除并替换该责任模块；不得保留旧模块再在其前后补偿。
@@ -114,8 +119,8 @@ attention；Frame/Temporal/Event/Composer主体为fresh。Final必须同时保�
 首轮按成本递增：
 
 1. 真实full-50 forward/functional VJP/materialization smoke，确认所有learned模块有非零梯度、冻结policy零梯度、唯一rank16；
-2. task72短task-local Composer容量控制，检查当前bank/readout没有断图；它不单独裁决shared end-to-end trunk；
-3. 73-task shared 25/50-step资格，观察gradient tasks与真正leave-task-out tasks的fit/held functional方向；
+2. task1/task93短task-local Composer容量控制，检查相反难度任务上的frame-aligned readout容量；它不单独裁决shared end-to-end trunk；
+3. 通过正控后使用最小task-disjoint shared资格，观察gradient tasks与真正leave-task-out tasks的fit/held functional方向；
 4. 只有出现task-disjoint正信号才运行held5 correct-only strict250；明显坏结果不靠长跑挽救；
 5. 共享信号成立后再覆盖mixed-K、fully-random Final与更长训练，并进入validation8 strict paired400；
 6. 只在correct-only选定并冻结checkpoint后运行same-task-other、wrong、no-video、language-only、first/final、shuffled/reversed controls。

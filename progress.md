@@ -5,9 +5,11 @@
 ## 当前快照
 
 - 唯一active design现为`docs/axial_policy_response_native_factor_writer_design.md`。owner授权有证据的实质重构，同时明确禁止重新演化为
-  连续数学变换。新图已整体删除旧relation/HMM/C-D/normalization/marginal/gain串联与causal auxiliary，只保留
-  `Frame attention -> Temporal attention -> ordered event read -> RankBank attention -> direct signed raw X/Y pooling`；容量仅靠复制
-  同构attention/MLP blocks扩展。full 50-horizon、真实native X/Y、positive-only、rank12+4、唯一rank16与信息墙不变。
+  连续数学变换。最新主干为
+  `Frame attention -> Temporal attention -> ordered events -> FrameAlignedFactorBlock -> direct signed raw X/Y pooling`；每个真实frame
+  用本帧innovation和相对位置读取本视频events，再直接给该frame的完整native candidates产生contrast。旧Composer的完整bank预读与
+  全局dynamic广播已删除，容量只靠复制同构attention/MLP blocks扩展。full 50-horizon、真实native X/Y、positive-only、rank12+4、
+  唯一rank16与信息墙不变。
 
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
@@ -24,9 +26,35 @@
   held video43的benefit分别为`+.0002928/+.0001267/+.00008453`，三条均同向，但恢复仅`.02118/.00971/.00609`，只证明短图已
   接通，尚不构成容量或shared性能结论。
 
-- 下一动作是从clean pushed detached authority完成73-task whole-Writer 25/50-step shared短资格。它直接检验可训练
-  Temporal/Event trunk能否补足Composer-only上限；若task-disjoint功能信号成立，再做correct-only闭环。若仍失败，围绕最早失效
-  attention接口做反事实定位并替换责任模块，不添加数学补丁、不直接支付长跑成本。
+- 73-task whole-Writer 25/50-step formal已结束：300次总task exposure使55个meta task各仅约2--3次、18个target各约8--9次；
+  m25/m50 gradient fit/held benefit均约`-1e-4`，true-task-held non-pass，按资格规则没有运行held5。该短跑排除“极少暴露即可学会”，
+  但没有以低暴露结果否定可扩展图。
+
+- 进一步的正确视频反事实把最早失效点定位到旧Composer。相同50次whole-Writer更新下，task72三条fit/held benefit约
+  `+.0010--.0012`，task1仅`+.0001--.0003`，task93为`-.0013--.0015`。旧shared m25/m50的event仍保持task差异，但训练后B侧
+  跨task cosine明显升高；A侧初始化时已约`.90`同向，最终task差异主要由B决定。去掉Composer的首次bank-context读取仅小幅降低
+  同质化，证明主因不是重复bank read本身。
+
+- clean `04b22550`上的task93 Composer-only 25/50-step正控最终三条fit/held视频均为正，但m50 held benefit仅`+.000600`、recovery
+  `.04547`，相对free primal约`.01320` benefit只实现很小一部分，也远低于历史frame-local Composer约`.28--.30` held recovery。
+  历史代码与专家合同共同指出：旧强实现把每个candidate chunk绑定到同frame innovation；当前Axial实现却以一个global dynamic
+  query给全部frame打分，丢失了event/native candidate的frame-local对应。
+
+- 隔离分支`codex/frame-aligned-factor-decoder`已用单一`FrameAlignedFactorBlock`整体替换该职责，并净删约103行Composer代码：
+  rank query读取events，每个frame按自身位置读取本视频events，frame dynamic同时驱动X/Y signed contrast；完整bank只在最终exact
+  pooling读取一次。25项Writer/native CPU测试全部通过。gpu02物理2上的task93真实smoke消费79 sampled frames、2 probes、完整50
+  horizons与38 targets；全部learned模块梯度有限非零，生成76 tensors和唯一rank16，峰值allocated/reserved约`30.20/34.43GB`。
+
+- 下一动作是固定clean pushed authority，并行完成task1/task93 25/50-step Composer-only正控。两task都恢复后才进入覆盖充分的短
+  task-disjoint shared资格；若仍相反，继续定位FrameAligned readout的共享Jacobian，不叠加专用数学补丁或直接延长训练。
+
+- Frame-Aligned task-local launch contract：科学变量仅为上述Composer职责替换；配置仍使用
+  `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，task1/task93各自K1、component initialization、Composer-only、
+  warmup5+effective45、optimizer25/50 checkpoints、每次8 functional rows、正确cross-episode fit与只读held video。两run从包含本合同
+  的clean pushed commit建立detached worktree，输出分别固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_tasklocal_task{1,93}_full_s50_<commit>_<nodegpu>_20260905/`且launch前不存在；
+  不覆盖旧run、不读取wrong/shuffle/reverse、不产生held梯度。复用canonical assets，预计每run仅小checkpoint/metrics；launch前
+  重新核验`/data1`独立quota和两节点GPU live状态，最多并行占两张具有最长task峰值余量的卡。
 
 - Axial task72 formal launch contract：科学实现为`3cc4dbfc`，authority为包含本合同的下一clean pushed main；配置固定
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component initialization、task-local Composer-only、

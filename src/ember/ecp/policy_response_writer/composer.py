@@ -1,10 +1,10 @@
-"""Direct event-conditioned native-factor composition.
+"""Frame-aligned event-conditioned native-factor composition.
 
-The composer deliberately has no relation marginal, analytic transport,
-factor normalization, or separate gain network. A short stack of identical
-blocks reads dynamic event tokens and the complete current-video native bank.
-Two signed-attention heads then pool raw X and Y values directly into rank-four
-factors. The only post-pooling operation is the established target update cap.
+A short stack of identical learned blocks aligns ordered policy-response events
+back to their real teacher frames. The resulting frame states score the complete
+current-video native bank once, through exact signed pooling of untouched X/Y
+values. There is no preliminary bank read or chain of analytic transforms; the
+only post-pooling operation is the established target update cap.
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import torch
-import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
@@ -30,10 +29,6 @@ from ember.ecp.policy_response_writer.process import (
     GatedMLP,
     PolicyResponseProcessOutput,
 )
-
-
-DENSE_BANK_ATTENTION_TOKEN_LIMIT = 192 * 1024
-STREAMING_BANK_BLOCK_TOKEN_LIMIT = 128 * 1024
 
 
 @dataclass(frozen=True)
@@ -129,212 +124,105 @@ def _effective_update_cap_factor(
     return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
 
 
-class RankBankContextBlock(torch.nn.Module):
-    """One repeatable event read, native-bank read, rank attention, and MLP."""
+class FrameAlignedFactorBlock(torch.nn.Module):
+    """One repeatable event, rank, and frame-alignment Transformer block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
         self.query_norm = torch.nn.LayerNorm(width)
-        # Dynamic values must remain exactly zero for a static repeated video.
-        self.event_norm = torch.nn.Identity()
         self.event_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, bias=False, batch_first=True
-        )
-        self.bank_norm = torch.nn.LayerNorm(width)
-        self.bank_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, bias=False, batch_first=True
         )
         self.rank_norm = torch.nn.LayerNorm(width)
         self.rank_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, batch_first=True
         )
-        self.mlp = GatedMLP(width)
+        self.query_mlp = GatedMLP(width)
+        self.temporal_position = torch.nn.Linear(2, width, bias=False)
+        # Values on the dynamic path are bias-free. A static repeated video
+        # therefore cannot manufacture a non-zero factor contrast from position
+        # or from the static language/owner query.
+        self.frame_event_attention = torch.nn.MultiheadAttention(
+            width, heads, dropout=0.0, bias=False, batch_first=True
+        )
+        self.frame_mlp = GatedMLP(width, bias=False)
+
+    def _position(self, value: torch.Tensor) -> torch.Tensor:
+        position = value.clamp(0.0, 1.0)
+        return self.temporal_position(
+            torch.stack((position, position.square()), dim=-1)
+        )
 
     def forward(
         self,
         query: torch.Tensor,
-        event_memory: torch.Tensor,
-        bank_memory: Sequence[Sequence[torch.Tensor]],
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        video_events: Sequence[torch.Tensor],
+        frame_states: Sequence[torch.Tensor],
+        frame_positions: Sequence[torch.Tensor],
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        events = tuple(video_events)
+        frames = tuple(frame_states)
+        positions = tuple(frame_positions)
+        if query.ndim != 2:
+            raise ValueError("frame-aligned factor query axes changed")
+        ranks, width = query.shape
         if (
-            query.ndim != 2
-            or event_memory.ndim != 3
-            or event_memory.shape[0] != query.shape[0]
-            or event_memory.shape[-1] != query.shape[-1]
-            or not bank_memory
-        ):
-            raise ValueError("rank-bank context axes changed")
-        event_query = self.query_norm(query)[:, None]
-        event = self.event_norm(event_memory)
-        attended, _ = self.event_attention(
-            event_query, event, event, need_weights=False
-        )
-        event_delta = attended[:, 0]
-        value = query + event_delta
-
-        bank_query = self.query_norm(value)[None]
-        bank = tuple(tuple(chunks) for chunks in bank_memory)
-        flat_bank = tuple(chunk for chunks in bank for chunk in chunks)
-        if not flat_bank:
-            raise ValueError("native-bank attention received no chunks")
-        if torch.is_grad_enabled() and any(
-            chunk.requires_grad for chunk in flat_bank
-        ):
-            chunk_counts = tuple(len(chunks) for chunks in bank)
-
-            def read(
-                local_query: torch.Tensor, *local_bank: torch.Tensor
-            ) -> torch.Tensor:
-                offset = 0
-                videos = []
-                for count in chunk_counts:
-                    videos.append(local_bank[offset : offset + count])
-                    offset += count
-                return self._exact_bank_attention(local_query, videos)
-
-            attended = checkpoint(
-                read, bank_query, *flat_bank, use_reentrant=False
+            not events
+            or len(events) != len(frames)
+            or len(events) != len(positions)
+            or any(
+                event.ndim != 3
+                or event.shape[0] != ranks
+                or event.shape[-1] != width
+                or not event.shape[1]
+                for event in events
             )
-        else:
-            attended = self._exact_bank_attention(bank_query, bank)
-        value = value + attended[0]
+            or any(
+                frame.ndim != 3
+                or frame.shape[1:] != (ranks, width)
+                or position.shape != frame.shape[:1]
+                for frame, position in zip(frames, positions, strict=True)
+            )
+        ):
+            raise ValueError("frame-aligned factor block axes changed")
 
+        event_memory = torch.cat(events, dim=1)
+        event_query = self.query_norm(query)[:, None]
+        attended, _ = self.event_attention(
+            event_query, event_memory, event_memory, need_weights=False
+        )
+        value = query + attended[:, 0]
         normalized = self.rank_norm(value)[None]
         attended, _ = self.rank_attention(
             normalized, normalized, normalized, need_weights=False
         )
-        return self.mlp(value + attended[0]), event_delta
+        value = self.query_mlp(value + attended[0])
 
-    def _exact_bank_attention(
-        self,
-        query: torch.Tensor,
-        memory: Sequence[Sequence[torch.Tensor]],
-    ) -> torch.Tensor:
-        """Read each video bank exactly, then aggregate the video set equally."""
-
-        reads = tuple(self._single_bank_attention(query, value) for value in memory)
-        if not reads:
-            raise ValueError("native-bank attention received no videos")
-        return torch.stack(reads).mean(0)
-
-    def _single_bank_attention(
-        self, query: torch.Tensor, memory: Sequence[torch.Tensor]
-    ) -> torch.Tensor:
-        chunks = tuple(memory)
-        if not chunks:
-            raise ValueError("native-bank attention received an empty video")
-        if len(chunks) == 1 and chunks[0].shape[0] <= DENSE_BANK_ATTENTION_TOKEN_LIMIT:
-            return self._dense_bank_attention(query, chunks[0])
-        return self._streaming_bank_attention(query, chunks)
-
-    def _dense_bank_attention(
-        self, query: torch.Tensor, memory: torch.Tensor
-    ) -> torch.Tensor:
-        """Exact fused SDPA over every token in one video's native bank."""
-
-        if (
-            query.ndim != 3
-            or query.shape[0] != 1
-            or memory.ndim != 2
-            or memory.shape[-1] != query.shape[-1]
-            or not memory.shape[0]
+        aligned = []
+        for frame, event, position in zip(
+            frames, events, positions, strict=True
         ):
-            raise ValueError("dense native-bank attention inputs changed")
-        width = query.shape[-1]
-        heads = self.bank_attention.num_heads
-        head_width = width // heads
-        weight = self.bank_attention.in_proj_weight
-        bias = self.bank_attention.in_proj_bias
-        q_bias = None if bias is None else bias[:width]
-        k_bias = None if bias is None else bias[width : 2 * width]
-        v_bias = None if bias is None else bias[2 * width :]
-        projected_query = F.linear(query[0], weight[:width], q_bias)
-        normalized = self.bank_norm(memory)
-        key = F.linear(normalized, weight[width : 2 * width], k_bias)
-        value = F.linear(normalized, weight[2 * width :], v_bias)
-        projected_query = projected_query.reshape(-1, heads, head_width).permute(
-            1, 0, 2
-        )
-        key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
-        value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
-        attended = F.scaled_dot_product_attention(
-            projected_query[None],
-            key[None],
-            value[None],
-            dropout_p=0.0,
-            is_causal=False,
-        )[0]
-        attended = attended.permute(1, 0, 2).reshape(1, query.shape[1], width)
-        return self.bank_attention.out_proj(attended)
-
-    def _streaming_bank_attention(
-        self, query: torch.Tensor, memory: Sequence[torch.Tensor]
-    ) -> torch.Tensor:
-        """The same attention reduced exactly in bounded token blocks."""
-
-        if (
-            query.ndim != 3
-            or query.shape[0] != 1
-            or not memory
-            or any(
-                chunk.ndim != 2
-                or chunk.shape[-1] != query.shape[-1]
-                or not chunk.shape[0]
-                for chunk in memory
+            frame_rows = frame.permute(1, 0, 2)
+            frame_query = (
+                frame_rows
+                + value[:, None]
+                + self._position(position.to(frame))
             )
-        ):
-            raise ValueError("streaming native-bank attention inputs changed")
-        width = query.shape[-1]
-        heads = self.bank_attention.num_heads
-        head_width = width // heads
-        weight = self.bank_attention.in_proj_weight
-        bias = self.bank_attention.in_proj_bias
-        q_bias = None if bias is None else bias[:width]
-        k_bias = None if bias is None else bias[width : 2 * width]
-        v_bias = None if bias is None else bias[2 * width :]
-        projected_query = F.linear(query[0], weight[:width], q_bias)
-        projected_query = projected_query.reshape(-1, heads, head_width).permute(
-            1, 0, 2
-        )
-        maximum = None
-        denominator = None
-        numerator = None
-        for source in memory:
-            for start in range(
-                0, source.shape[0], STREAMING_BANK_BLOCK_TOKEN_LIMIT
-            ):
-                chunk = self.bank_norm(
-                    source[start : start + STREAMING_BANK_BLOCK_TOKEN_LIMIT]
-                )
-                key = F.linear(chunk, weight[width : 2 * width], k_bias)
-                value = F.linear(chunk, weight[2 * width :], v_bias)
-                key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
-                value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
-                score = torch.einsum(
-                    "hqd,hnd->hqn", projected_query, key
-                ).float() / math.sqrt(head_width)
-                local_maximum = score.amax(-1)
-                if maximum is None:
-                    maximum = local_maximum
-                    mass = torch.exp(score - maximum[..., None])
-                    denominator = mass.sum(-1)
-                    numerator = torch.einsum(
-                        "hqn,hnd->hqd", mass, value.float()
-                    )
-                    continue
-                updated_maximum = torch.maximum(maximum, local_maximum)
-                previous_scale = torch.exp(maximum - updated_maximum)
-                mass = torch.exp(score - updated_maximum[..., None])
-                denominator = denominator * previous_scale + mass.sum(-1)
-                numerator = numerator * previous_scale[..., None] + torch.einsum(
-                    "hqn,hnd->hqd", mass, value.float()
-                )
-                maximum = updated_maximum
-        if denominator is None or numerator is None:
-            raise ValueError("streaming native-bank attention received no tokens")
-        attended = (numerator / denominator[..., None]).permute(1, 0, 2)
-        attended = attended.reshape(1, query.shape[1], width).to(query.dtype)
-        return self.bank_attention.out_proj(attended)
+            event_position = torch.linspace(
+                0.0,
+                1.0,
+                event.shape[1],
+                device=event.device,
+                dtype=event.dtype,
+            )
+            event_key = event + self._position(event_position)[None]
+            attended, _ = self.frame_event_attention(
+                frame_query, event_key, event, need_weights=False
+            )
+            aligned.append(
+                self.frame_mlp(frame + attended.permute(1, 0, 2))
+            )
+        return value, tuple(aligned)
 
 
 class CurrentVideoNativeFactorComposer(torch.nn.Module):
@@ -392,7 +280,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             torch.nn.LayerNorm(width),
         )
         self.blocks = torch.nn.ModuleList(
-            RankBankContextBlock(width, heads) for _ in range(block_depth)
+            FrameAlignedFactorBlock(width, heads) for _ in range(block_depth)
         )
         self.input_base_query = torch.nn.Linear(width, width, bias=False)
         self.input_contrast_query = torch.nn.Linear(width, width, bias=False)
@@ -461,30 +349,15 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         target: int,
         videos: Sequence[FrozenPolicyResponseVideo],
-        processes: Sequence[PolicyResponseProcessOutput],
-    ) -> tuple[
-        tuple[tuple[torch.Tensor, ...], ...],
-        tuple[_NativeVideoCandidates, ...],
-    ]:
-        memories = []
+    ) -> tuple[_NativeVideoCandidates, ...]:
         candidates = []
         owner = self.owners[target]
         groups = native_output_group_count(owner)
         group_width = owner.out_features // groups
-        for video, process in zip(videos, processes, strict=True):
-            if (
-                process.frame_tokens.shape[:3]
-                != (video.frame_count, len(self.owners), G1_RESIDUAL_RANK)
-                or process.events.ndim != 4
-                or process.events.shape[1:3]
-                != (len(self.owners), G1_RESIDUAL_RANK)
-                or process.events.shape[-1] != self.width
-            ):
-                raise ValueError("native composer process/video axes changed")
+        for video in videos:
             positions = self._position(video)
             boundary = NativeOutputBankState(final=video.final_outputs[target])
             chunks = []
-            memory_chunks = []
             for start in range(0, video.frame_count, self.pooling_frame_chunk):
                 stop = min(start + self.pooling_frame_chunk, video.frame_count)
                 local_position = positions[start:stop]
@@ -497,19 +370,6 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                     *output.shape[:-1], groups, group_width
                 ).movedim(-2, 0)
                 output_keys = self._output_keys(target, grouped, local_position)
-                input_shape = input_keys.shape
-                output_shape = output_keys.shape
-                input_count = input_keys.numel() // self.width
-                memory_chunk = torch.cat(
-                    (
-                        input_keys.reshape(-1, self.width),
-                        output_keys.reshape(-1, self.width),
-                    ),
-                    dim=0,
-                )
-                input_keys = memory_chunk[:input_count].reshape(input_shape)
-                output_keys = memory_chunk[input_count:].reshape(output_shape)
-                memory_chunks.append(memory_chunk)
                 chunks.append(
                     _NativeBankChunk(
                         input_values=input_values,
@@ -520,22 +380,21 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 )
             if boundary.next_frame != video.frame_count:
                 raise ValueError("native composer bank stream ended early")
-            memories.append(tuple(memory_chunks))
             candidates.append(
                 _NativeVideoCandidates(
                     frame_count=video.frame_count,
                     chunks=tuple(chunks),
                 )
             )
-        if not memories:
+        if not candidates:
             raise ValueError("native composer received no current-video bank")
-        return tuple(memories), tuple(candidates)
+        return tuple(candidates)
 
-    def _event_tokens(
+    def _video_events(
         self,
         target: int,
         processes: Sequence[PolicyResponseProcessOutput],
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, ...]:
         rows = []
         for process in processes:
             event = process.events[:, target]
@@ -545,14 +404,29 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             ):
                 raise ValueError("native composer event tokens changed")
             rows.append(event.permute(1, 0, 2))
-        return torch.cat(tuple(rows), dim=1)
+        return tuple(rows)
 
-    def _query_target(
+    def _decode_target(
         self,
         target: int,
+        videos: Sequence[FrozenPolicyResponseVideo],
         processes: Sequence[PolicyResponseProcessOutput],
-        bank_memory: Sequence[Sequence[torch.Tensor]],
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        if len(videos) != len(processes):
+            raise ValueError("native composer video/process count changed")
+        for video, process in zip(videos, processes, strict=True):
+            if (
+                process.frame_tokens.shape[:3]
+                != (video.frame_count, len(self.owners), G1_RESIDUAL_RANK)
+                or process.frame_innovations.shape
+                != (
+                    video.frame_count,
+                    len(self.owners),
+                    G1_RESIDUAL_RANK,
+                    self.width,
+                )
+            ):
+                raise ValueError("native composer process/video axes changed")
         language = torch.stack(
             tuple(process.owner_language[target] for process in processes)
         ).mean(0)
@@ -564,12 +438,14 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         family = self.family_embedding(self.family_ids[target]).expand(ranks, -1)
         language = language.expand(ranks, -1)
         query = self.query_seed(torch.cat((rank, owner, family, language), dim=-1))
-        event_memory = self._event_tokens(target, processes)
-        dynamic = torch.zeros_like(query)
+        events = self._video_events(target, processes)
+        frame_states = tuple(
+            process.frame_innovations[:, target] for process in processes
+        )
+        positions = tuple(video.frame_positions for video in videos)
         for block in self.blocks:
-            query, event_delta = block(query, event_memory, bank_memory)
-            dynamic = dynamic + event_delta
-        return query, dynamic
+            query, frame_states = block(query, events, frame_states, positions)
+        return query, frame_states
 
     def _branch_logits(
         self,
@@ -579,11 +455,19 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         *,
         log_base_mass: float,
     ) -> torch.Tensor:
-        if keys.shape[-1] != self.width or base_query.shape != contrast_query.shape:
+        if (
+            keys.ndim < 2
+            or keys.shape[-1] != self.width
+            or base_query.shape != (G1_RESIDUAL_RANK, self.width)
+            or contrast_query.shape
+            != (keys.shape[0], G1_RESIDUAL_RANK, self.width)
+        ):
             raise ValueError("signed native-attention axes changed")
         scale = math.sqrt(self.width)
-        base = torch.einsum("rd,...d->r...", base_query, keys) / scale
-        contrast = torch.einsum("rd,...d->r...", contrast_query, keys) / scale
+        base = torch.einsum("rd,f...d->rf...", base_query, keys) / scale
+        contrast = (
+            torch.einsum("frd,f...d->rf...", contrast_query, keys) / scale
+        )
         return (
             torch.stack((base + contrast, base - contrast), dim=1).float()
             + log_base_mass
@@ -625,7 +509,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         target: int,
         query: torch.Tensor,
-        dynamic: torch.Tensor,
+        frame_states: Sequence[torch.Tensor],
         videos: Sequence[_NativeVideoCandidates],
     ) -> tuple[torch.Tensor, torch.Tensor]:
         owner = self.owners[target]
@@ -643,23 +527,34 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             device=query.device,
         )
         input_base = self.input_base_query(query)
-        input_contrast = self.input_contrast_query(query)
         output_base = self.output_base_query(query)
-        output_contrast = self.output_contrast_query(dynamic)
         video_count = len(videos)
-        for video in videos:
+        if len(frame_states) != video_count:
+            raise ValueError("native composer frame-state set changed")
+        for video, frame_state in zip(videos, frame_states, strict=True):
+            if frame_state.shape != (
+                video.frame_count,
+                G1_RESIDUAL_RANK,
+                self.width,
+            ):
+                raise ValueError("native composer aligned frame state changed")
+            input_contrast = self.input_contrast_query(frame_state)
+            output_contrast = self.output_contrast_query(frame_state)
             input_mass = -math.log(
                 video_count * video.frame_count * 2 * ACTION_HORIZON
             )
             output_mass = -math.log(
                 video_count * video.frame_count * 2 * ACTION_HORIZON * 4
             )
+            frame_offset = 0
             for chunk in video.chunks:
+                frame_count = chunk.input_values.shape[0]
+                frame_slice = slice(frame_offset, frame_offset + frame_count)
                 input_accumulator.add(
                     self._checkpointed_branch_logits(
                         chunk.input_keys,
                         input_base,
-                        input_contrast,
+                        input_contrast[frame_slice],
                         log_base_mass=input_mass,
                     ),
                     chunk.input_values,
@@ -668,11 +563,14 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                     self._checkpointed_branch_logits(
                         chunk.output_keys.movedim(0, 1),
                         output_base,
-                        output_contrast,
+                        output_contrast[frame_slice],
                         log_base_mass=output_mass,
                     ),
                     chunk.output_values,
                 )
+                frame_offset += frame_count
+            if frame_offset != video.frame_count:
+                raise ValueError("native composer aligned frame stream ended early")
         return input_accumulator.signed_mean(), output_accumulator.signed_mean()
 
     def forward(
@@ -694,9 +592,9 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         b_values = []
         scales = []
         for target in range(len(self.owners)):
-            bank_memory, candidates = self._bank_candidates(target, values, programs)
-            query, dynamic = self._query_target(target, programs, bank_memory)
-            a, b = self._pool_target(target, query, dynamic, candidates)
+            query, frame_states = self._decode_target(target, values, programs)
+            candidates = self._bank_candidates(target, values)
+            a, b = self._pool_target(target, query, frame_states, candidates)
             cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
             b = b * cap_factor.to(b)
             rank_scale = (

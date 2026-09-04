@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_policy_response_writer_axial_v1",
-  "status": "active_axial_policy_response_native_factor_writer",
+  "schema_version": "ember_ecp_policy_response_writer_frame_aligned_v1",
+  "status": "active_frame_aligned_policy_response_native_factor_writer",
   "authorities": {
     "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
     "functional_panel_sources": [
@@ -45,15 +45,15 @@
     "expert_width": 1024,
     "width": 128,
     "event_slots": 8,
-    "architecture": "repeatable_frame_temporal_event_and_rank_bank_attention_blocks",
-    "factor_readout": "direct_base_plus_minus_event_contrast_signed_raw_native_XY",
+    "architecture": "repeatable_frame_temporal_event_and_frame_aligned_factor_blocks",
+    "factor_readout": "frame_aligned_base_plus_minus_dynamic_signed_raw_native_XY",
     "attention_heads": 4,
     "frame_blocks": 2,
     "temporal_blocks": 2,
     "event_blocks": 1,
     "composer_blocks": 2,
     "ordered_event_position_contract": "observed_relative_position_enters_attention_qk_never_dynamic_value",
-    "dynamic_value_contract": "centered_content_events_make_static_repeat_output_factor_zero",
+    "dynamic_value_contract": "centered_dynamic_values_make_static_repeat_complete_mobile_zero",
     "capture_frame_chunk": 2,
     "pooling_frame_chunk": 128,
     "representation_arms": ["full"],

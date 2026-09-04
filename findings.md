@@ -2886,3 +2886,31 @@ end-to-end约3.74M learned trunk。随后task72两步whole-Writer shared profile
 `1.81/1.50s`且峰值reserved约`17.86 GiB`。下一最小实验直接运行73-task joint 25/50步，观察真正leave-task-out方向；不增加
 gain、normalization或辅助loss。如果完整trunk仍不能使true-task-held转正，才进一步定位event表示或direct factor readout的最早
 共享Jacobian缺陷。
+
+## 148. Axial短shared失败的最早接口是frame-local动态被全局广播
+
+73-task Axial whole-Writer formal在clean authority上完成25/50 optimizer steps，但每步6 task只形成300次总task exposure：55个
+meta task各约2--3次，18个target各约8--9次。m25/m50的10个gradient任务fit/held benefit都约为`-1e-4`，两个true-task-held
+也未通过，所以没有运行held5。该结果足以排除“极少暴露即可学会”，但不能把数据覆盖不足的50步实例当成完整规模shared裁决。
+
+相同50次更新的三个task-local whole-Writer诊断给出明显异质性：task72三条fit/held benefit约`+.0010--.0012`，task1仅
+`+.0001--.0003`，task93则为`-.0013--.0015`。旧shared checkpoint的12-task correct-only几何显示Process event并未同质化；
+event跨task cosine约`.52`。相反，B侧跨task cosine随训练明显上升，并主导最终`B@A`跨task同质化；A侧slot-aligned cosine从初始化
+就约`.90`。m25到m50时events几乎不变，而residual继续旋转并缩小，进一步把责任推到event-to-factor readout。把首次完整bank-context
+读取冻结为零只让B/BA同质化小幅下降，update norm基本不变，故重复bank read不是充分根因。
+
+clean `04b22550`上的task93 Composer-only 25/50-step正式正控最终三条视频均优于carrier，但m50 fit recovery仅`.07548`，held
+benefit/recovery仅`+.00059999/.04547`。同task free primal benefit约`.01320`，历史frame-local Composer在step70/110的held recovery
+约`.3009/.2807`。代码差异揭示了最小、可复核的结构缺口：历史强Composer用每个candidate chunk对应frame的innovation参与signed
+score；当前Axial Composer将所有events压成一个global dynamic query，再对每个frame/probe/horizon/bank-type候选广播同一query。
+这与专家要求把frame/event assignment metadata传到Composer不一致，也解释了“events仍不同、输出却趋同”。
+
+下一实现没有给旧链路加补丁，而是整体替换该职责。`FrameAlignedFactorBlock`让rank queries读取有序events，再让每个真实frame以
+`frame innovation + rank query + relative position`读取本视频events；对齐后的frame state直接生成该frame X/Y的
+`base +/- dynamic` logits。完整bank不再预读，只在最终exact signed pooling中读取一次。dynamic values、attention及MLP均bias-free，
+静态重复视频的A、B与完整mobile严格归零。Composer由713行降至610行，容量扩展只复制同构block。
+
+25项Writer/native合同测试通过，包括full-only、K2置换不变、frame chunk等价、frame-local影响范围及静态完整mobile为零。task93
+真实full-50 smoke消费79 sampled frames、2 probes、38 targets；functional梯度到达Prefix/Response/Frame/Temporal/Event/
+Composer/Signed-X/Signed-Y，冻结policy零梯度，输出76 tensors和唯一rank16。该smoke只证明新图接通；task1/task93的25/50-step
+clean task-local对照才回答功能容量是否恢复。

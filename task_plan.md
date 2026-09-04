@@ -43,7 +43,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含可复制的Frame、Temporal、Event和RankBank attention/MLP blocks，随后直接对raw X/Y做signed pooling；
+3. 新主图只含可复制的Frame、Temporal、Event和Frame-Aligned Factor attention/MLP blocks，随后直接对raw X/Y做signed pooling；
 4. causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由PI0.5 response与真实
    teacher-frame temporal blocks承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
@@ -57,12 +57,22 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 4. [x] task72 5-step task-local profile自然结束，三条视频均微弱高于carrier，约`2.4--2.6s/step`；
 5. [x] 从clean pushed detached authority完成task72正式25/50-step Composer容量控制：两点三条视频平均均优于carrier，m25
    fit/held recovery约`.094/.086`，m50约`.077/.062`；证明direct readout可学但局部上限偏弱，且后半回落；
-6. [ ] 已完成whole-Writer两步真实shared profile，约`1.5--1.8s/step`且所有模块梯度非零。首次73-task world3运行完成98GiB
-   cache后因最长task约29.16GB峰值超过一张共驻卡约24GB余量，在checkpoint前主动停止；这不是科学结果。立即复用cache在
-   足够显存的gpu01物理0上以相同样本、权重和optimizer cadence完成25/50-step短资格，裁决可训练Temporal/Event trunk是否补足
-   Composer-only上限；
-7. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
-8. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+6. [x] 73-task whole-Writer 25/50-step formal完成；每步6 task但总训练仅300次task exposure，55个meta task各约2--3次、18个target
+   各约8--9次。m25/m50 gradient fit/held benefit都约为`-1e-4`，true-task-held non-pass，未解封held5。它只淘汰该低暴露实例，
+   不把结果误解释成完整规模shared裁决；
+7. [x] 相同50次更新的task-local whole-Writer反事实显示task72三条fit/held约`+.0010--.0012`，task1约`+.0001--.0003`，task93
+   约`-.0013--.0015`，说明同一图的学习能力强烈依赖任务。correct-only几何进一步定位：events跨task仍不同，但训练把B/完整residual
+   推向共同分量；A本来就高度共享，最终差异主要由B决定；
+8. [x] task93 Composer-only 25/50-step正控虽三条视频最终全部为正，m50 held benefit仅`+.000600`、functional recovery`.0455`，
+   远弱于同task free primal约`.0132` benefit和历史frame-local Composer约`.28--.30` held recovery。结合历史实现，最早缺失接口是
+   当前单一global dynamic query被广播到所有frame，丢掉event与native candidate的frame-local对应；
+9. [x] 以一个更短的`FrameAlignedFactorBlock`整体替换旧RankBank职责：rank读取events，每个真实frame再按相对位置读取本视频events，
+   frame-specific dynamic直接产生X/Y signed contrast；删除完整bank预读。没有新增loss、gain、solve、normalization或校准链。
+   25项CPU合同测试及task93真实full-50 forward/VJP/76-tensor rank16 smoke通过；
+10. [ ] 从clean pushed detached authority并行完成task1/task93 25/50-step Composer正控。若两者均显著恢复，再以短而覆盖充分的
+    task-disjoint shared配置推进；若仍呈相反行为，先分析frame-aligned readout的共享Jacobian，不以堆层或长跑掩盖；
+11. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
+12. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 
 ## 历史执行账本
 

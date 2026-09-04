@@ -285,6 +285,40 @@ def test_shared_optimizer_gives_only_causal_readout_the_measured_lr_ratio() -> N
     assert scheduler.get_last_lr()[1] / scheduler.get_last_lr()[0] == 20.0
 
 
+def test_composer_functional_stage_freezes_process_and_owns_only_composer() -> None:
+    model = _model()
+    frozen_policy = torch.nn.Linear(2, 2).requires_grad_(False)
+    frozen_stage0 = torch.nn.Linear(2, 2).requires_grad_(False)
+    runtime = SimpleNamespace(
+        writer=model,
+        policy=frozen_policy,
+        stage0=frozen_stage0,
+        config={
+            "optimization": {
+                "shared": {
+                    "training_stage": "composer_functional_process_frozen",
+                    "learning_rate": 1e-4,
+                    "decay_learning_rate": 1e-6,
+                    "process_prediction_lr_multiplier": 20.0,
+                    "betas": [0.9, 0.95],
+                    "weight_decay": 0.01,
+                    "warmup_updates": 10,
+                    "effective_updates": 90,
+                }
+            }
+        },
+    )
+
+    parameters, optimizer, scheduler = _optimizer(runtime)
+
+    assert tuple(parameters) == tuple(model.composer.parameters())
+    assert all(not value.requires_grad for value in model.process.parameters())
+    assert all(value.requires_grad for value in model.composer.parameters())
+    assert model.process.training is False
+    assert model.composer.training is True
+    assert len(optimizer.param_groups) == len(scheduler.get_last_lr()) == 1
+
+
 def test_composer_consumes_explicit_event_relation_assignment() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(5)
@@ -875,6 +909,15 @@ def test_group_gain_credit_config_is_explicit_and_predecessor_is_rejected() -> N
     assert current["model"]["composer_gain_initialization"].startswith(
         "g1_nonzero_relative_logit_0.1"
     )
+    staged = load_policy_response_config(
+        root
+        / "configs/pi05_ecp_policy_response_writer_composer_functional_v1.json"
+    )
+    assert (
+        staged["optimization"]["shared"]["training_stage"]
+        == "composer_functional_process_frozen"
+    )
+    assert staged["optimization"]["shared"]["process_weight"] == 0.0
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
             root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"

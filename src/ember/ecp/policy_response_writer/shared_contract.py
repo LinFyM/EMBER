@@ -7,7 +7,12 @@ from typing import Any, Mapping, Sequence
 
 import torch
 
-from ember.ecp.policy_response_writer.training import REPO_ROOT, PolicyResponseRuntime
+from ember.ecp.policy_response_writer.training import (
+    COMPOSER_FUNCTIONAL_STAGE,
+    REPO_ROOT,
+    PolicyResponseRuntime,
+    shared_training_stage,
+)
 from ember.ecp.shared_compiler_assets import authority_path
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
@@ -101,6 +106,7 @@ def build_shared_run_contract(
         "representation": runtime.args.representation,
         "initialization_request": runtime.args.initialization,
         "initialization": runtime.initialization,
+        "training_stage": shared_training_stage(runtime),
         "stop_step": stop,
         "model": dict(runtime.config["model"]),
         "data": dict(runtime.config["data"]),
@@ -133,6 +139,8 @@ def build_shared_run_contract(
             ),
             "preservation": "same_as_functional",
             "resume_authority": "normalizers.json",
+            "process_objective_active": shared_training_stage(runtime)
+            != COMPOSER_FUNCTIONAL_STAGE,
         },
         "task_split": dict(runtime.config["task_split"]),
         "video_splits": split,

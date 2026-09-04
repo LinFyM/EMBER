@@ -12,6 +12,7 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.policy_response_writer.shared import (
+    COMPOSER_FUNCTIONAL_STAGE,
     SHARED_RUN_SCHEMA,
     SHARED_STAGE,
     SharedEvidenceCache,
@@ -19,6 +20,7 @@ from ember.ecp.policy_response_writer.shared import (
     _materialized_state,
     causal_pair,
     functional_objective,
+    shared_training_stage,
 )
 from ember.ecp.policy_response_writer.shared_schedule import (
     VideoSplit,
@@ -54,6 +56,7 @@ def _run_training_task(
     task_count: int,
 ) -> dict[str, Any]:
     cell = runtime.config["optimization"]["shared"]
+    training_stage = shared_training_stage(runtime)
     profile_timing = runtime.args.mode == "profile"
     phase_seconds: dict[str, float] = {}
 
@@ -143,34 +146,46 @@ def _run_training_task(
     del generated_state, leaf_gradients, surrogate
     finish_phase("writer_chain_backward", phase_tick)
 
-    causal_pairs = tuple(
-        causal_pair(
-            video.frame_count,
-            int(runtime.config["model"]["event_slots"]),
-            optimizer_step=optimizer_step,
-            task=task,
-            demo=demo,
+    process_objective_active = training_stage != COMPOSER_FUNCTIONAL_STAGE
+    if process_objective_active:
+        causal_pairs = tuple(
+            causal_pair(
+                video.frame_count,
+                int(runtime.config["model"]["event_slots"]),
+                optimizer_step=optimizer_step,
+                task=task,
+                demo=demo,
+            )
+            for video, demo in zip(videos, demos, strict=True)
         )
-        for video, demo in zip(videos, demos, strict=True)
-    )
-    cutoffs = tuple((cutoff,) for cutoff, _ in causal_pairs)
-    future_offsets = tuple(offset for _, offset in causal_pairs)
-    phase_tick = start_phase()
-    with torch.autocast("cuda", dtype=torch.bfloat16):
-        process_loss = runtime.writer.causal_prediction_loss(
-            videos,
-            cutoffs=cutoffs,
-            future_offsets=future_offsets,
-            representation=runtime.args.representation,
-        )
-        weighted_process = (
-            process_loss.float()
-            / cache.process_normalizers[task]
-            * float(cell["process_weight"])
-            / task_count
-        )
-    weighted_process.backward()
-    finish_phase("causal_process_backward", phase_tick)
+        cutoffs = tuple((cutoff,) for cutoff, _ in causal_pairs)
+        future_offsets = tuple(offset for _, offset in causal_pairs)
+        phase_tick = start_phase()
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            process_loss = runtime.writer.causal_prediction_loss(
+                videos,
+                cutoffs=cutoffs,
+                future_offsets=future_offsets,
+                representation=runtime.args.representation,
+            )
+            weighted_process = (
+                process_loss.float()
+                / cache.process_normalizers[task]
+                * float(cell["process_weight"])
+                / task_count
+            )
+        weighted_process.backward()
+        finish_phase("causal_process_backward", phase_tick)
+        process_loss_value = float(process_loss.detach())
+        process_normalized = process_loss_value / cache.process_normalizers[task]
+        del process_loss, weighted_process
+    else:
+        cutoffs = ()
+        future_offsets = ()
+        process_loss_value = 0.0
+        process_normalized = 0.0
+        if profile_timing:
+            phase_seconds["causal_process_backward"] = 0.0
     row = {
         "task": task,
         "role": runtime.panels[task].role,
@@ -186,16 +201,17 @@ def _run_training_task(
         "functional_loss": float(functional_loss),
         "benefit_over_carrier": float(panel.flow_loss) - float(functional_loss),
         **objective,
-        "process_loss": float(process_loss.detach()),
-        "process_normalized": float(process_loss.detach())
-        / cache.process_normalizers[task],
+        "training_stage": training_stage,
+        "process_objective_active": process_objective_active,
+        "process_loss": process_loss_value,
+        "process_normalized": process_normalized,
         "causal_cutoffs": [row[0] for row in cutoffs],
         "causal_future_offsets": list(future_offsets),
         "task_weight": 1.0 / task_count,
         "task_seconds": time.monotonic() - tick,
         **({"phase_seconds": phase_seconds} if profile_timing else {}),
     }
-    del videos, batch, process_loss, weighted_process
+    del videos, batch
     return row
 
 
@@ -325,6 +341,10 @@ def _step_row(
     scheduler: torch.optim.lr_scheduler.LambdaLR,
     performance: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    learning_rates = scheduler.get_last_lr()
+    process_objective_active = all(
+        bool(value["process_objective_active"]) for value in records
+    )
     return {
         "optimizer_step": optimizer_step,
         "effective_optimizer_step": max(
@@ -333,6 +353,8 @@ def _step_row(
             - int(runtime.config["optimization"]["shared"]["warmup_updates"]),
         ),
         "task_group": list(group),
+        "training_stage": shared_training_stage(runtime),
+        "process_objective_active": process_objective_active,
         "records": list(records),
         "mean_functional_loss": statistics.fmean(
             float(value["functional_loss"]) for value in records
@@ -348,8 +370,10 @@ def _step_row(
         ),
         "gradient_norm_before_clip": float(gradient_norm),
         "gradient_groups": dict(gradient_groups),
-        "next_lr": scheduler.get_last_lr()[0],
-        "next_process_prediction_lr": scheduler.get_last_lr()[1],
+        "next_lr": learning_rates[0],
+        "next_process_prediction_lr": (
+            learning_rates[1] if process_objective_active else 0.0
+        ),
         "step_seconds": max(float(value["seconds"]) for value in performance),
         "rank_performance": sorted(performance, key=lambda value: value["rank"]),
     }
@@ -404,6 +428,11 @@ def _optimizer_step(
         value.grad is not None for value in runtime.stage0.parameters()
     ):
         raise RuntimeError("shared Writer crossed a frozen authority")
+    if (
+        shared_training_stage(runtime) == COMPOSER_FUNCTIONAL_STAGE
+        and any(value.grad is not None for value in runtime.writer.process.parameters())
+    ):
+        raise RuntimeError("shared Writer Composer stage updated frozen Process")
     _sum_gradients(runtime, parameters)
     gradient_groups = _gradient_groups(runtime)
     gradient_norm = _clip_scale_and_direction_gradients(

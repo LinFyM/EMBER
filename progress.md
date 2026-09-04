@@ -4,6 +4,15 @@
 
 ## 当前快照
 
+- 冻结Process的Composer-functional阶段已经完成窄实现与真实两步profile，尚未产生正式科学结果。唯一训练入口现在显式记录
+  `composer_functional_process_frozen`：component initialization后Process全部`requires_grad=False`且保持eval，只由同一Composer接收
+  correct cross-episode functional与preservation梯度，causal auxiliary不再做无效计算；联合阶段的历史默认行为不变。新配置为
+  `configs/pi05_ecp_policy_response_writer_composer_functional_v1.json`，53项Writer/native-factor/PI0.5 LoRA测试通过。gpu01物理0上的
+  task1、K1、full-50-horizon两步shared profile自然exit0；Process Frame/Event/Predictor梯度逐步严格为0，Composer direction/scale
+  梯度分别为`1.367/4.732`与`1.790/4.423`，step为`3.476/3.355s`，峰值allocated/reserved为`23.89/32.14GB`，完整functional
+  policy VJP与rank16 LoRA消费接通。profile的rows2与两步Panel-B微小变化只作工程证据，不作性能选择；下一步从clean pushed detached
+  authority运行同数据同权重的optimizer50/100短资格并做两点held5 correct-only strict250。
+
 - Group-gain-credit的正式科学裁决已经完成。clean detached authority为`a0797488`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；
   100条metrics、macro50/100、Panel-B、completion、物化与两点held5 correct-only strict250均完整。m50/m100分别为`37/250`与

@@ -184,7 +184,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 28. [ ] 执行冻结Process的Composer-functional阶段：从同一component initialization fresh开始，保持完全相同deployment Writer、
     full 50-horizon、真实native X/Y、ragged group gain、rank12+4、73-task数据与task权重，只冻结Process并仅以correct cross-episode
     functional加preservation更新Composer。首轮仍用可续跑optimizer50/100和两点held5 correct-only strict250，直接区分联合
-    Process辅助/漂移干扰与Composer共享函数类不足；不引入新网络、task table、coarse、negative loss或第二Writer；
+    Process辅助/漂移干扰与Composer共享函数类不足；不引入新网络、task table、coarse、negative loss或第二Writer。窄实现、53项测试及
+    task1两步真实full shared profile已通过；Process梯度严格为0、Composer direction/scale均非零，当前只剩clean pushed detached
+    optimizer50/100及两点闭环裁决；
 29. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 30. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 31. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

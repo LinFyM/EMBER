@@ -1,10 +1,11 @@
 """Shared positive-only training for the Policy-Response Writer.
 
 Each optimizer update is role-balanced across correct videos only.  Frozen
-policy LoRA-leaf VJPs provide exact functional credit, while a prefix-only
-future-response objective trains the same Frame/Event variables.  No held,
-wrong, shuffled, reversed, no-video, or language-only condition receives a
-gradient in this module.
+policy LoRA-leaf VJPs provide exact functional credit.  A configured stage may
+also train Frame/Event variables through the prefix-only future-response
+objective, or keep the initialized Process frozen while fitting the Composer.
+No held, wrong, shuffled, reversed, no-video, or language-only condition
+receives a gradient in this module.
 """
 
 from __future__ import annotations
@@ -52,9 +53,13 @@ from ember.ecp.policy_response_writer.shared_video_cache import (
     SharedPolicyResponseVideoCache,
 )
 from ember.ecp.policy_response_writer.training import (
+    COMPOSER_FUNCTIONAL_STAGE,
+    JOINT_PROCESS_COMPOSER_STAGE,
     REPO_ROOT,
     PolicyResponseRuntime,
     capture_video,
+    set_shared_training_mode,
+    shared_training_stage,
 )
 from ember.ecp.shared_compiler_assets import authority_path
 from ember.pi05_eval_contract import git_state
@@ -173,8 +178,18 @@ def _optimizer(
     torch.optim.AdamW,
     torch.optim.lr_scheduler.LambdaLR,
 ]:
-    runtime.writer.requires_grad_(True).train()
-    named_parameters = tuple(runtime.writer.named_parameters())
+    stage = shared_training_stage(runtime)
+    runtime.writer.requires_grad_(False)
+    if stage == JOINT_PROCESS_COMPOSER_STAGE:
+        runtime.writer.requires_grad_(True)
+    else:
+        runtime.writer.composer.requires_grad_(True)
+    set_shared_training_mode(runtime)
+    named_parameters = tuple(
+        (name, value)
+        for name, value in runtime.writer.named_parameters()
+        if value.requires_grad
+    )
     parameters = tuple(value for _, value in named_parameters)
     prediction_parameters = tuple(
         value
@@ -188,14 +203,19 @@ def _optimizer(
     cell = runtime.config["optimization"]["shared"]
     learning_rate = float(cell["learning_rate"])
     prediction_multiplier = float(cell["process_prediction_lr_multiplier"])
-    optimizer = torch.optim.AdamW(
-        (
+    parameter_groups: tuple[dict[str, Any], ...]
+    if stage == JOINT_PROCESS_COMPOSER_STAGE:
+        parameter_groups = (
             {"params": remaining_parameters},
             {
                 "params": prediction_parameters,
                 "lr": learning_rate * prediction_multiplier,
             },
-        ),
+        )
+    else:
+        parameter_groups = ({"params": remaining_parameters},)
+    optimizer = torch.optim.AdamW(
+        parameter_groups,
         lr=learning_rate,
         betas=tuple(cell["betas"]),
         weight_decay=float(cell["weight_decay"]),
@@ -213,16 +233,28 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
-        or not prediction_parameters
         or not remaining_parameters
-        or len(prediction_ids) != len(prediction_parameters)
-        or not math.isfinite(prediction_multiplier)
-        or prediction_multiplier <= 1.0
         or runtime.writer.composer.task_query is not None
         or any(value.requires_grad for value in runtime.policy.parameters())
         or any(value.requires_grad for value in runtime.stage0.parameters())
     ):
         raise RuntimeError("shared Writer parameter ownership changed")
+    if stage == JOINT_PROCESS_COMPOSER_STAGE:
+        if (
+            not prediction_parameters
+            or len(prediction_ids) != len(prediction_parameters)
+            or not math.isfinite(prediction_multiplier)
+            or prediction_multiplier <= 1.0
+        ):
+            raise RuntimeError("shared Writer joint parameter ownership changed")
+    elif (
+        prediction_parameters
+        or any(value.requires_grad for value in runtime.writer.process.parameters())
+        or not all(
+            value.requires_grad for value in runtime.writer.composer.parameters()
+        )
+    ):
+        raise RuntimeError("shared Writer Composer-stage ownership changed")
     return parameters, optimizer, scheduler
 
 
@@ -371,7 +403,7 @@ def _prepare_training_cache(
             raise RuntimeError("shared Writer process normalizer changed")
         cache.process_normalizers[task] = normalizer
         torch.cuda.empty_cache()
-    runtime.writer.train()
+    set_shared_training_mode(runtime)
     return cache
 
 
@@ -553,6 +585,8 @@ def _validate_shared_run(
     meta, target, _ = _split_ids(runtime)
     task_group_counts(cell, meta=meta, target=target)
     replication_budget = float(runtime.args.cache_replication_budget_gib)
+    stage = shared_training_stage(runtime)
+    process_weight = float(cell["process_weight"])
     if (
         int(runtime.config["data"]["initial_K"]) != 1
         or tuple(sorted(set(cardinalities))) != cardinalities
@@ -564,6 +598,14 @@ def _validate_shared_run(
         or (
             runtime.args.shared_evidence_cache_root is not None
             and replication_budget != 0.0
+        )
+        or (
+            stage == JOINT_PROCESS_COMPOSER_STAGE
+            and (not math.isfinite(process_weight) or process_weight <= 0.0)
+        )
+        or (
+            stage == COMPOSER_FUNCTIONAL_STAGE
+            and process_weight != 0.0
         )
     ):
         raise ValueError("shared Writer positive-only training contract changed")
@@ -719,6 +761,7 @@ def _build_result(
         "representation": runtime.args.representation,
         "initialization_request": runtime.args.initialization,
         "initialization": runtime.initialization,
+        "training_stage": shared_training_stage(runtime),
         "optimizer_steps": stop,
         "resume_start_step": start_step,
         "configured_total_steps": total,
@@ -915,5 +958,5 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     )
     if shared_video_cache is not None:
         _remove_shared_video_cache(runtime, cache, shared_video_cache)
-    runtime.writer.train()
+    set_shared_training_mode(runtime)
     return result

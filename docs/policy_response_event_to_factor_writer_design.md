@@ -525,6 +525,13 @@ full 50-horizon、真实native X/Y、signed pooling、ragged group gain、rank12
 Composer；若gradient tasks仍正而true-held与闭环仍低，下一根因才是Composer自身的shared dynamic gain/readout函数类，而不是
 继续续训或修改Process。
 
+该阶段的窄实现与真实工程profile已经完成。新配置显式封存`composer_functional_process_frozen`，优化器只拥有Composer的
+`1,141,187`个参数，Process保持eval且所有梯度为0；旧joint配置继续使用原两参数组语义。53项Writer/native-factor/PI0.5 LoRA
+测试通过。gpu01物理0上的task1、K1、full-50-horizon两步shared profile中，Composer direction/scale梯度分别为
+`1.367/4.732`与`1.790/4.423`，step为`3.476/3.355s`，峰值allocated/reserved为`23.89/32.14GB`，真实functional VJP、Writer
+重算与完整rank16 policy消费全部接通；rows2及两步Panel-B变化不构成科学性能证据。下一步直接进入clean pushed detached
+optimizer50/100资格与相邻held5 correct-only strict250。
+
 ## 10. 后续扩展与Final
 
 首轮shared信号成立后：

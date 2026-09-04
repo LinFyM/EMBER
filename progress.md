@@ -48,13 +48,16 @@
 - 下一动作是固定clean pushed authority，并行完成task1/task93 25/50-step Composer-only正控。两task都恢复后才进入覆盖充分的短
   task-disjoint shared资格；若仍相反，继续定位FrameAligned readout的共享Jacobian，不叠加专用数学补丁或直接延长训练。
 
-- Frame-Aligned task-local launch contract：科学变量仅为上述Composer职责替换；配置仍使用
+- Frame-Aligned task-local launch contract：科学实现固定为`e2f38c2a`，formal authority为包含本合同的下一clean pushed main；
+  科学变量仅为上述Composer职责替换；配置仍使用
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，task1/task93各自K1、component initialization、Composer-only、
   warmup5+effective45、optimizer25/50 checkpoints、每次8 functional rows、正确cross-episode fit与只读held video。两run从包含本合同
   的clean pushed commit建立detached worktree，输出分别固定为
-  `runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_tasklocal_task{1,93}_full_s50_<commit>_<nodegpu>_20260905/`且launch前不存在；
-  不覆盖旧run、不读取wrong/shuffle/reverse、不产生held梯度。复用canonical assets，预计每run仅小checkpoint/metrics；launch前
-  重新核验`/data1`独立quota和两节点GPU live状态，最多并行占两张具有最长task峰值余量的卡。
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_tasklocal_task1_full_s50_e2f38c2a_gpu01p0_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_tasklocal_task93_full_s50_e2f38c2a_gpu02p2_20260905/`且launch前不存在；
+  不覆盖旧run、不读取wrong/shuffle/reverse、不产生held梯度。复用canonical assets，预计每run仅小checkpoint/metrics。
+  2026-09-05 launch准备时`/data1` quota为`777973108/1084227584 KiB`，limit headroom约`292.1 GiB`。两节点live检查中gpu01物理0
+  约`1.29GB/0%`、gpu02物理2约`.16--.43GB/0%`，均有task93实测峰值所需余量；正式launch前再次刷新，最多并行占这两张卡。
 
 - Axial task72 formal launch contract：科学实现为`3cc4dbfc`，authority为包含本合同的下一clean pushed main；配置固定
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component initialization、task-local Composer-only、

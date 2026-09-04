@@ -85,6 +85,16 @@
   gradient task均精确获得25次暴露。这个whole-Writer实验直接判断可训练Process与FrameBank能否共同形成task-disjoint方向，不靠延长
   task-local训练或增加专用数学补丁。
 
+- Frame-Bank 12-gradient + 2-held shared launch contract：科学配置固定为`83109a33`，formal authority为包含本合同的下一clean pushed
+  `main`。K1、component initialization、whole-Writer correct-only functional、12个gradient tasks、fresh zero-gradient held task3/77、
+  每步该配置的3 meta + 3 target、每task 8 rows、warmup5+effective45及m25/m50均锁定；不读取negative controls，不运行held5。
+  输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_bank_12gradient_2held_k1_component_s50_83109a33_gpu02p0123_sharedmmap_20260905/`，
+  单份node-local mmap固定为`.codex/tmp/prw_frame_bank_14task_cache_83109a33_gpu02_20260905/`，两者launch前均不存在。预计cache约
+  `20--25 GiB`、formal输出远小于1 GiB；`/data1` quota为`778303288/1084227584 KiB`，limit余量约`291.8 GiB`。
+  双节点live检查后gpu02物理0/1/2/3仅约`209/162/162/162 MiB`且0% util，选择同一NUMA0的world4动态cost调度；四卡都有最长
+  task93正式峰值`29.46 GiB`以上的余量，总EMBER占卡4张。launch前再次同时刷新gpu01/gpu02，固定`NCCL_P2P_DISABLE=1`。
+
 - Frame-Aligned task-local launch contract：科学实现固定为`e2f38c2a`，formal authority为包含本合同的下一clean pushed main；
   科学变量仅为上述Composer职责替换；配置仍使用
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，task1/task93各自K1、component initialization、Composer-only、

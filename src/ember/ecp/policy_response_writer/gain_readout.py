@@ -1,4 +1,4 @@
-"""Shared current-factor-conditioned relative group-gain readout."""
+"""Shared set-relative current-factor group-gain readout."""
 
 from __future__ import annotations
 
@@ -11,13 +11,48 @@ from ember.ecp.native_factors import G1_RESIDUAL_RANK, native_output_group_count
 from ember.ecp.policy_response_writer.process import GatedMLP
 
 
-class FactorConditionedGroupGainReadout(torch.nn.Module):
-    """Apply one copyable utility rule to every native output group.
+class FactorGainContextBlock(torch.nn.Module):
+    """Let one target's rank/group factors establish a relative coordinate."""
+
+    def __init__(self, width: int, heads: int) -> None:
+        super().__init__()
+        if width <= 0 or heads <= 0 or width % heads:
+            raise ValueError("factor-gain context topology changed")
+        self.attention_norm = torch.nn.LayerNorm(width)
+        self.attention = torch.nn.MultiheadAttention(
+            width,
+            heads,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.mlp = GatedMLP(width)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        if value.ndim != 3 or value.shape[-1] != self.attention.embed_dim:
+            raise ValueError("factor-gain context tokens changed")
+        ranks, groups, width = value.shape
+        token = value.reshape(1, ranks * groups, width)
+        normalized = self.attention_norm(token)
+        attended, _ = self.attention(
+            normalized,
+            normalized,
+            normalized,
+            need_weights=False,
+        )
+        token = self.mlp(token + attended)
+        return token.reshape(ranks, groups, width)
+
+
+class SetRelativeFactorGainReadout(torch.nn.Module):
+    """Apply one copyable relative utility rule within every target factor set.
 
     The readout has no target- or group-owned output rows.  Target, rank, and
     video identity arrive through the contextual query and the current signed
-    native factors; group identity is a shared positional embedding.  Adding a
-    target or another layer therefore adds tokens, not private readout weights.
+    native factors; group identity is a shared semantic embedding.  The
+    rank-by-group tokens of one target interact before the shared scalar
+    projection, so gains can depend on their relative geometry without mixing
+    different targets.  Adding a target or another layer therefore adds tokens,
+    not private readout weights.
     """
 
     def __init__(
@@ -25,12 +60,19 @@ class FactorConditionedGroupGainReadout(torch.nn.Module):
         owners: Sequence[TargetOwner],
         *,
         width: int,
+        heads: int,
         block_depth: int = 1,
     ) -> None:
         super().__init__()
         values = tuple(owners)
-        if not values or width <= 0 or block_depth <= 0:
-            raise ValueError("factor-conditioned group-gain topology changed")
+        if (
+            not values
+            or width <= 0
+            or heads <= 0
+            or width % heads
+            or block_depth <= 0
+        ):
+            raise ValueError("set-relative factor-gain topology changed")
         input_widths = sorted({owner.in_features for owner in values})
         output_widths = sorted(
             {
@@ -55,7 +97,7 @@ class FactorConditionedGroupGainReadout(torch.nn.Module):
         self.group_embedding = torch.nn.Embedding(maximum_groups, width)
         self.fusion = torch.nn.Linear(4 * width, width)
         self.blocks = torch.nn.ModuleList(
-            GatedMLP(width) for _ in range(block_depth)
+            FactorGainContextBlock(width, heads) for _ in range(block_depth)
         )
         self.output_norm = torch.nn.LayerNorm(width)
         self.output = torch.nn.Linear(width, 1)

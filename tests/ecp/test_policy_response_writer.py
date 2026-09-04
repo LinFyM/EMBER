@@ -372,7 +372,7 @@ def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> No
     )
 
 
-def test_composer_relative_gain_uses_one_shared_current_factor_readout() -> None:
+def test_composer_relative_gain_uses_one_shared_within_target_set_readout() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(17)
         composer = _model().composer
@@ -391,6 +391,7 @@ def test_composer_relative_gain_uses_one_shared_current_factor_readout() -> None
 
     readout = composer.gain_readout
     assert readout.output.out_features == 1
+    assert readout.blocks[0].attention.num_heads == 4
     assert torch.count_nonzero(readout.output.weight.grad)
     assert torch.count_nonzero(readout.output.bias.grad)
 
@@ -402,7 +403,23 @@ def test_composer_relative_gain_uses_one_shared_current_factor_readout() -> None
         changed = composer._gain_logits(2, query, input_factor, changed_factor)
         original = composer._gain_logits(2, query, input_factor, output_factor)
     assert torch.max(torch.abs(changed[:, 0] - original[:, 0])) > 1e-4
-    torch.testing.assert_close(changed[:, 1:], original[:, 1:], atol=0, rtol=0)
+    assert torch.max(torch.abs(changed[:, 1:] - original[:, 1:])) > 1e-6
+
+    single_group_owner = composer.owners[1]
+    single_group_input = torch.randn(
+        G1_RESIDUAL_RANK, single_group_owner.in_features
+    )
+    single_group_output = torch.randn(
+        G1_RESIDUAL_RANK, single_group_owner.out_features
+    )
+    changed_rank = single_group_output.clone()
+    changed_rank[0].mul_(-2.0)
+    with torch.no_grad():
+        original = composer._gain_logits(
+            1, query, single_group_input, single_group_output
+        )
+        changed = composer._gain_logits(1, query, single_group_input, changed_rank)
+    assert torch.max(torch.abs(changed[1:] - original[1:])) > 1e-6
 
 
 def test_event_measure_logits_match_explicit_event_relation_candidates() -> None:
@@ -898,11 +915,11 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert len({offset for _, offset in pairs}) >= 8
 
 
-def test_factor_conditioned_gain_config_and_predecessor_rejection() -> None:
+def test_factor_set_relative_gain_config_and_predecessor_rejection() -> None:
     root = Path(__file__).resolve().parents[2]
     current = load_policy_response_config(
         root
-        / "configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json"
+        / "configs/pi05_ecp_policy_response_writer_factor_set_relative_gain_v1.json"
     )
     assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
     assert (
@@ -915,7 +932,7 @@ def test_factor_conditioned_gain_config_and_predecessor_rejection() -> None:
     )
     assert current["optimization"]["shared"]["process_prediction_lr_multiplier"] == 20.0
     assert current["model"]["composer_relative_gain_readout"].startswith(
-        "shared_factor_conditioned_ragged_group_tokens"
+        "shared_within_target_set_relative_factor_gain_tokens"
     )
     assert current["model"]["composer_gain_blocks"] == 1
     assert current["model"]["composer_gain_initialization"].startswith(
@@ -925,6 +942,11 @@ def test_factor_conditioned_gain_config_and_predecessor_rejection() -> None:
         "composer_functional_process_frozen"
     )
     assert current["optimization"]["shared"]["process_weight"] == 0.0
+    with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
+        load_policy_response_config(
+            root
+            / "configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json"
+        )
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
             root

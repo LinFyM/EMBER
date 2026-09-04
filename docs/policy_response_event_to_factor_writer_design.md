@@ -287,27 +287,36 @@ z_{jrg}=[q_{jr},E_X(a_{jr}),E_Y(b_{jrg}),e_g],
 \]
 
 \[
-h^{(0)}_{jrg}=W_z z_{jrg},\qquad
-h^{(l+1)}_{jrg}=\operatorname{GatedMLP}_l(h^{(l)}_{jrg}),
+h^{(0)}_{j}=\operatorname{reshape}_{r,g}\{W_z z_{jrg}\},
 \]
 
 \[
-g_{jrg}=s_{ref,j}\tanh(w^\top\operatorname{LN}(h_{jrg})+b).
+u^{(l)}_j=h^{(l)}_j+
+\operatorname{MHA}_l(\operatorname{LN}(h^{(l)}_j)),\qquad
+h^{(l+1)}_j=\operatorname{GatedMLP}_l(u^{(l)}_j),
 \]
 
-`E_X`只按1024/2048等真实input width共享，`E_Y`只按32/256 native block width共享；同一个fusion、可复制GatedMLP blocks和
-唯一scalar output应用于所有target、rank与ragged groups。target/layer扩展因此增加token而不是新增私有输出row。`q_jr`仍携带
-target、rank、exact language与完整Policy-Response时序context，`a/b`则把当前视频实际选出的signed native factor直接交给幅度
-决策。该readout只能缩放同一个当前视频X/Y已经产生的B子向量，不能独立写出方向或adapter，也没有task-specific scale表、anchor、
-第二Writer或负样本输入。
+\[
+g_{jrg}=s_{ref,j}\tanh(w^\top\operatorname{LN}(h^{(L)}_{jrg})+b).
+\]
+
+`E_X`只按1024/2048等真实input width共享，`E_Y`只按32/256 native block width共享；同一个fusion、可复制的标准
+self-attention + GatedMLP blocks和唯一scalar output应用于所有target。attention scope严格限制为一个target内部的
+`4 ranks × ragged groups`，不做跨target通信；q/action-in可比较rank与group的相对组合，v/action-out至少可比较四个rank。
+target/layer扩展因此增加token而不是新增私有输出row。`q_jr`仍携带target、rank、exact language与完整Policy-Response时序
+context，`a/b`则把当前视频实际选出的signed native factor直接交给幅度决策。该readout只能缩放同一个当前视频X/Y已经产生的
+B子向量，不能独立写出方向或adapter，也没有task-specific scale表、anchor、第二Writer或负样本输入。
 
 这一变更来自冻结Process后的直接反证。前一195-row query-only实现从fresh component initialization只训练Composer，optimizer
 50/100的held5 correct-only strict250为`39/43`，后一点仅与carrier持平，Goal/Long仍为0；gradient tasks的Panel-B继续改善，
 true-held task74继续为负，故联合Process干扰不是充分解释。跨task最终mobile update已经高度task-specific，但raw group gain
 cosine仍为`.99973`、task-specific fraction仅约`.013`。更直接地，在同一m100方向上task2与task74所需的exact group-logit下降
 方向总体cosine为`-.585`，v/action-out分别为`-.521/-.623`，而实际gain cosine为`.9991`；task74只调现有rank/group gain的
-10% logit-norm局部可用下降约`.00193`，远大于当前方向的`-.000094`。因此最早缺口是query-only readout没有把当前group factor
-交给共享utility rule，而不是signed bank没有候选方向、cap普遍截断或训练未移动。
+10% logit-norm局部可用下降约`.00193`，远大于当前方向的`-.000094`。首个pointwise factor-conditioned版本虽然读取了这些
+token，却在m50/m100只得到`40/44`，后一点相对carrier43为`35 retained/9 gained/8 lost`且Goal/Long仍为0；actual gain仍跨task
+近一致。六个bridge task又显示，task74与task73所需logit变化cosine为`+.590`，同一pointwise readout的参数梯度却为`-.418`，
+说明问题已从“factor不可见”推进到“独立token Jacobian不能表达可迁移的相对协调”。因此当前最早缺口是readout缺少同target
+rank/group集合的相对坐标，而不是signed bank没有候选方向、cap普遍截断、Process漂移或训练未移动。
 
 首版误把专家§7.5的`rank/group gains`缩成每family一个rank gain。causal-filter m100冻结方向上的正确视频task-local反事实显示，
 自由rank gain在task1/72/75/93的fit/held恢复只有`.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；恢复真实group gain后

@@ -2759,3 +2759,15 @@ task2/task74的actual gain cosine为`.9991`，exact per-group descent方向cosin
 局部下降空间。由此下一fresh不修改Process、signed candidate direction或loss，而以共享factor-conditioned ragged group token
 readout替换target-owned输出rows：每个token显式读取当前query与signed X/Y factor，同一可复制GatedMLP和scalar head应用于全部
 target/rank/group。实现与科学裁决继续见active design、`findings.md`第144节及后续提交。
+
+## 140. Factor-conditioned pointwise readout non-pass并推进到set-relative factor协调
+
+clean detached `ef066789`的73-task factor-conditioned formal完成optimizer50/100、Panel-B与两点held5 strict250。闭环为
+`40/44`，m100相对carrier43仅净增1且Goal/Long仍为0；seen-task functional继续提高时两个true-task-held均值更负。
+与此同时，task1/task93 task-local m50/m100的fit/held recovery均约`.36--.53`且所有fit/held视频为正，证明该函数类有local容量与
+跨视频保持，失败在共享映射。
+
+六task correct-only参数信用诊断进一步显示，task74/task73所需gain-logit变化cosine为`+.590`，pointwise readout全参数梯度却为
+`-.418`，而实际gain跨task cosine仍约`.994--.998`。下一fresh因此只在当前factor token之后加入同target
+`rank x ragged-group`标准self-attention + GatedMLP块，使gain可读取相对组合；不跨target，不改Process、signed bank direction、
+loss、full-50、rank、cap、data或初始化。实现、61项测试与两步真实GPU smoke已通过；正式结果见后续记录。

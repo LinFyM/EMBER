@@ -148,7 +148,12 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("composer_query_seed")
             == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
             model.get("composer_relative_gain_readout")
-            == "shared_factor_conditioned_ragged_group_tokens_without_target_owned_output_rows",
+            == (
+                "shared_within_target_set_relative_factor_gain_tokens_"
+                "without_target_owned_output_rows"
+            ),
+            model.get("composer_gain_attention_scope")
+            == "within_target_rank_by_ragged_group_only",
             model.get("composer_gain_initialization")
             == "g1_nonzero_relative_logit_0.1_for_first_step_direction_credit",
             model.get("composer_gain_blocks") == 1,

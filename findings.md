@@ -2788,3 +2788,41 @@ Process Frame/Event/Predictor梯度全为0，Composer direction为`1.9554/1.6898
 - `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m100_group_logit_credit_tasks2_74_a9baa7a4_gpu01p6_20260904.json`；
 - `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_task_disjoint_group_geometry_tasks2_72_74_75_a9baa7a4_gpu01p0_20260904.json`及m100对应文件；
 - `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_family_finite_ablation_tasks2_74_a9baa7a4_gpu01p0_20260904.json`及m100对应文件。
+
+### 145. Pointwise factor conditioning保留local容量，但共享Jacobian需要set-relative协调
+
+clean detached `ef066789`的73-task、K1、component-init、Process-frozen formal完整完成100 optimizer steps、m50/m100 Panel-B、
+两点物化与held5 correct-only strict250。m50/m100闭环为`40/44`，逐task Long/Goal/Object/Spatial0/Spatial9从
+`0/0/5/32/3`变为`0/0/3/38/3`，breadth均`3/5`；相邻为`36 retained/8 gained/4 lost`、Jaccard `.75`、paired exact
+`p=.38770`。m100相对carrier43为`35/9/8`、`p=1.0`，相对query-only m100=43为`36/8/7`、`p=1.0`。所以多1个总成功既不稳定、
+也没有Goal/Long或跨suite增量，不能授权续训、negative controls或Final。
+
+训练侧却继续拟合见过任务。m50/m100 gradient-task fit/held benefit为`+.0002776/+.0002540`与
+`+.0004119/+.0003330`，7/10 tasks全部视频优于carrier；两个true-task-held则为`-.0002656/-.0002991`与
+`-.0003156/-.0004059`，仍只有1/2全部视频为正。m50/m100 Composer direction移动`.755%/.869%`、gain conditioner移动
+`2.017%/2.371%`、scalar output移动`1.230%/1.503%`，Process严格为0；最终factor task-specific fraction约`.59--.77`，
+raw gain task-specific fraction却多为`.04--.07`且跨task cosine约`.994--.998`。这排除了断图、Process漂移、cap饱和和训练未开始。
+
+六个correct-only bridge task的leaf与parameter credit给出更直接的函数类反证。task74与最近的task73所需exact logit下降方向
+cosine为`+.58960`，但pointwise readout全参数梯度cosine为`-.41789`、conditioner为`-.35648`；task74与task72/75的所需方向为
+`-.06369/-.29649`，全参数梯度却为`-.71475/-.22508`。也就是说当前独立token Jacobian会把可共享的功能信用翻成冲突更新，
+并非只是“任务本来要求相反”。task2与task74的局部证据还显示，target35 v需要rank间正负混合，而当前四个gain全部为正；
+只沿当前gain logits的10%最陡下降已有约`.00216`可用下降，足以覆盖其当前伤害。
+
+相同pointwise函数类的task-local正控则强通过。task1 m50/m100 fit/held recovery为`.38809/.40671`与
+`.53175/.43913`，task93为`.38514/.35507`与`.44011/.37024`；两task、两checkpoint的两条fit和一条held视频全部优于
+carrier。故真实native X/Y、signed direction、rank4、gain范围及同task跨视频泛化均有容量，失败明确位于多任务共享utility rule。
+
+下一单变量据此不是加另一条数学链，而是把同一target的`rank x ragged-group` factor tokens放入一个标准pre-norm
+self-attention + GatedMLP重复块，再用同一scalar head读出；不跨target，不改任何token来源、direction、Process、loss、task/data、
+full-50、rank、cap或初始化。61项相关CPU测试通过；task1真实两步profile的Composer direction为`2.722/1.466`，conditioner从
+step1的0到step2的`.0007293`，Process全零，wall `3.499/3.282s`、峰值`23.88/24.12GB`，唯一76-tensor rank16被真实policy VJP
+消费。这只解封fresh matched formal，不预先证明set-relative shared mapping有效。
+
+关键artifact：
+
+- `runs/outputs/pi05_ecp_policy_response_writer_factor_conditioned_gain_73task_k1_component_s100_3de3fcb9_gpu02p123_sharedmmap_20260904/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_factor_conditioned_gain_m{50,100}_held5_correct_k1_*_20260904/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_factor_conditioned_gain_tasklocal_task{1,93}_full_s100_ef066789_gpu01p0_20260904/`；
+- `runs/analysis/pi05_ecp_policy_response_writer_factor_conditioned_gain_m50_m100_checkpoint_movement_ef066789_gpu01p0_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_factor_conditioned_gain_m100_parameter_credit_bridge6_ef066789_gpu02p4_20260904.json`。

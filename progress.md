@@ -4,17 +4,25 @@
 
 ## 当前快照
 
-- 当前正在实现下一单变量`shared factor-conditioned group gain readout`。前一query-only的195-row head被一个共享token函数替换：
-  每个rank/group显式读取contextual target-rank query、当前signed X、当前signed Y group与共享group embedding，再经过同一个
-  可复制GatedMLP及唯一scalar output。新增target或PI0.5层只增加token，不新增target-owned输出row；full 50-horizon、Process、
-  signed pooling、rank12+4、cap、positive-only objective与信息墙均不变。新配置为
-  `configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json`。隔离分支上的56项Writer/native-factor/LoRA测试已通过，
-  task1真实full-50两步GPU smoke也已自然exit0：Process梯度全为0，Composer direction为`1.955/1.690`；gain scalar output为
-  `4.2377/3.2538`，conditioner在零output-weight初始化的step1按预期为0、step2变为有限非零`.001244`。两步为
-  `3.492/3.340s`，峰值allocated/reserved为`23.88/24.11GB`，functional VJP、独立clip、Panel-B零反向与唯一rank16均接通。
-  下一步立即形成clean pushed authority并启动同规模optimizer50/100资格。
+- 当前正在实现下一单变量`within-target set-relative factor gain readout`。它保留每个rank/group的contextual query、normalized
+  signed X、signed Y group与shared group embedding，但不再让token各自独立通过pointwise MLP；同一target的`rank x ragged-group`
+  tokens先经过一个标准pre-norm self-attention + GatedMLP block，再由唯一shared scalar output产生gain。attention不跨target，
+  新增target/层仍只增加token；full 50-horizon、Process冻结、signed direction、rank12+4、cap、数据、task权重、positive-only loss
+  与信息墙均不变。配置为`configs/pi05_ecp_policy_response_writer_factor_set_relative_gain_v1.json`，旧pointwise config由loader明确拒绝。
+  隔离分支`codex/prw-factor-set-relative`的61项相关CPU测试通过；task1真实51-frame、2-probe、full-50两步GPU smoke自然exit0，
+  Process梯度严格为0，Composer direction为`2.722/1.466`，set conditioner在零output-weight的step1为0、step2为`.0007293`，
+  wall为`3.499/3.282s`，峰值allocated/reserved为`23.88/24.12GB`，唯一38-target、76-tensor rank16被policy functional VJP消费。
+  下一步封存本轮根因、形成clean pushed authority，并在同规模optimizer50/100 shared训练期间并行完成本函数类task-local正控。
 
-- Factor-conditioned gain formal launch contract：scientific implementation固定为clean pushed `3de3fcb9`，formal authority为包含
+- 前一pointwise factor-conditioned gain formal已完整裁决为non-pass。clean detached `ef066789`的73-task m50/m100 held5
+  correct-only strict250为`40/44`，逐task由Long/Goal/Object/Spatial0/Spatial9=`0/0/5/32/3`变为`0/0/3/38/3`；m100相对
+  carrier43仅`35 retained/9 gained/8 lost`、paired exact `p=1.0`，且Goal/Long仍为0。gradient-task fit/held benefit从
+  `+.000278/+.000254`升到`+.000412/+.000333`，两个true-task-held却从`-.000266/-.000299`恶化到
+  `-.000316/-.000406`，因此不续训或运行negative controls。相同函数类的task1 task-local m50/m100 fit/held recovery为
+  `.388/.407`与`.532/.439`，task93为`.385/.355`与`.440/.370`；四点全部fit/held视频都优于carrier，明确保留local容量与
+  同task跨视频泛化。
+
+- 已完成的Factor-conditioned gain formal launch contract：scientific implementation固定为clean pushed `3de3fcb9`，formal authority为包含
   本合同的下一clean pushed main。配置固定
   `configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json`，仍为73 gradient tasks、当前matched的
   `9 meta + 3 target`、K1、component initialization、冻结Process、correct cross-episode functional、preservation、full 50-horizon、

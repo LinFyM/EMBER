@@ -21,7 +21,7 @@ from ember.ecp.native_factors import (
 )
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.gain_readout import (
-    FactorConditionedGroupGainReadout,
+    SetRelativeFactorGainReadout,
 )
 from ember.ecp.policy_response_writer.process import (
     GatedMLP,
@@ -367,9 +367,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self.input_negative_query = torch.nn.Linear(width, width, bias=False)
         self.output_positive_query = torch.nn.Linear(width, width, bias=False)
         self.output_negative_query = torch.nn.Linear(width, width, bias=False)
-        self.gain_readout = FactorConditionedGroupGainReadout(
+        self.gain_readout = SetRelativeFactorGainReadout(
             owners,
             width=width,
+            heads=heads,
             block_depth=gain_block_depth,
         )
         self.output_norm = torch.nn.LayerNorm(width)

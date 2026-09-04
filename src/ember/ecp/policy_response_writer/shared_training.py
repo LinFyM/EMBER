@@ -236,6 +236,18 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
             if name.startswith(names) and parameter.grad is not None
         ]
         result[label] = float(torch.stack(squares).sum().sqrt()) if squares else 0.0
+    direction_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in runtime.writer.named_parameters()
+        if name.startswith("composer.")
+        and not name.startswith("composer.scale_head.")
+        and parameter.grad is not None
+    ]
+    result["composer_direction"] = (
+        float(torch.stack(direction_squares).sum().sqrt())
+        if direction_squares
+        else 0.0
+    )
     return result
 
 

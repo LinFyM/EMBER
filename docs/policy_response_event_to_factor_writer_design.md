@@ -278,18 +278,29 @@ native output grouping固定为：
 
 ### 6.4 幅度与固定边界
 
-每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`。relative rank gain由
-当前target-rank query经过其native family独立拥有的线性row产生：
+每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`。relative gain由
+当前target-rank query经过其真实native output group独立拥有的线性row产生：
 
 \[
-g_{jr}=s_{ref,j}\tanh(w_{\phi(j)}^\top q_{jr}+b_{\phi(j)}).
+g_{jrg}=s_{ref,j}\tanh(w_{jg}^\top q_{jr}+b_{jg}).
 \]
 
-四个family row共享相同输入语义和初始化规则，但参数梯度互不串写；不存在task-specific scale表。该head只能缩放已经由当前视频
-真实X/Y signed pooling产生的rank方向，不能独立写出方向或adapter，因此不同于已停止的
-`summary -> family-scalar gate -> shared event-additive anchor`：旧gate是视频到共享anchor的唯一瓶颈，这里的family ownership只是
-不同native topology的末端输出投影。m400 correct-only VJP显示四family独立聚合梯度平方范数和为共享head的`2.0034x`，且
-action-out在`5/6`任务希望缩小当前方向时仍被其它family共享更新带着增长，故该拆分来自直接优化证据而非人工设幅。
+这里的`g`严格对应q的8个256D head groups、v的1个256D group、action-in的32个32D blocks与action-out的1个32D group，合计
+195个target-native rows；它不是padding后的新轴。各row共享相同query语义，但参数梯度互不串写；不存在task-specific scale表。
+该head只能缩放已经由当前视频真实X/Y signed pooling产生的B子向量，不能独立写出方向或adapter，因此不同于已停止的
+`summary -> family-scalar gate -> shared event-additive anchor`：旧gate是视频到共享anchor的唯一瓶颈，这里只是当前视频方向之后
+的ragged native输出投影。
+
+首版误把专家§7.5的`rank/group gains`缩成每family一个rank gain。causal-filter m100冻结方向上的正确视频task-local反事实显示，
+自由rank gain在task1/72/75/93的fit/held恢复只有`.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；恢复真实group gain后
+分别升至`.244/.198`、`.222/.189`、`.146/.126`、`.240/.202`，全部第三条视频仍优于carrier。因此group ownership是已证实的
+函数接口遗漏；它带来约`1.2--2.1x`恢复，但仍远低于G1，不能单独解释为最终修复。
+
+gain logit初始化固定为`0.1`，直接复用G1 `TaskLocalNativeFactorOracle`的已存在选择，不做数值扫描。首版严格零初始化导致第一次
+functional backward只有gain head有梯度，随后direction梯度又始终乘以很小的gain；causal-filter 100步中Composer总梯度几乎由
+gain head占据，Composer方向权重相对移动只有低千分量级。非零小幅启动仍受完整target BA cap与preservation保护，并且当event
+innovation为零时positive/negative weights仍完全相同，mobile residual仍为零；它只让正确视频functional credit从第一步到达
+Frame/Event/Composer direction。
 
 四个rank合成后的完整mobile update为
 
@@ -439,6 +450,11 @@ objective或task权重；它只防止幅度梯度占用同一个global clip后�
 macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其余方向norm中位`.5839`；若独立使用同一边界，方向侧仅
 `.0386`的step需要裁剪，方向更新倍率中位可恢复`2.6533 x`。
 
+causal-filter的后续对照进一步说明不能把现有方向全部丢弃：在同一四任务free-group-gain反事实中，component-init方向的100步
+fit/held平均恢复为`.178/.135`，shared m100方向为`.213/.179`，说明联合训练已经学到小幅可泛化方向；但增量不足以越过当前
+函数瓶颈。所以下一fresh先在同一个optimizer与全模块图中恢复group ownership和首步方向信用，不先冻结Process、不改loss、LR、
+task比例或训练时长。只有该边界仍non-pass且方向学习继续落后于gain，才依据新证据进入Process/Composer分阶段训练。
+
 ## 9. 首轮实现与证据顺序
 
 ### 9.1 最小真实smoke
@@ -450,6 +466,7 @@ macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其
 - L_func梯度到达Frame、Event与Composer；
 - L_process使用冻结target且无未来泄露；
 - relative frame positions只路由Event segmentation/QK，不进入event value；static-repeat只返回carrier；
+- 初始small nonzero gain下第一次L_func backward同时到达Composer direction与ragged group-gain rows；
 - K1和K4、video permutation invariance；
 - chunked与one-chunk有效BA一致；
 - 38 targets、76 tensors及唯一rank16被policy真实消费；
@@ -486,8 +503,13 @@ shared m100/m200 held5 strict250却为`39/32`，m200显著低于carrier43，且s
 `0/0/2/38/0`与`0/0/5/29/1`，Goal/Long仍为0；gradient fit/held functional继续改善时两个true-task-held更负，故不续训或运行
 negative controls。random legal delta资格随后在m50/m100均为`41/250`且Goal/Long为0，机制诊断确认预测状态有信息、预测头有容量，
 但正式训练的随机normalizer和累计readout更新量不足以学成目标。process objective conditioning随后让prediction真实改善，却在
-macro50/100都只有`37/250`。当前唯一下一资格是上述causal-prefix forward-filter修正，仍用optimizer50/100；50点在训练继续时
-尽快物化评测，100点提供相邻稳定性，架构未证明前不先扩展成长跑。
+macro50/100都只有`37/250`。causal-prefix forward-filter资格也已完成：m50/m100 strict250为`38/36`，breadth均`3/5`且Goal/Long
+仍为0；gradient-task Panel-B略正而两个true-task-held均明显为负，故filter语义修正本身non-pass，不续训也不运行negative controls。
+
+这次non-pass后的正样本诊断将最早剩余接口推进到Composer gain/credit边界。free rank/group gain与component-init/m100方向对照见
+§6.4和§8.4；family finite ablation又显示action-out在5/5任务为正，而q只在部分任务为正，说明不是一个family scalar可统一解决。
+下一资格仅恢复ragged target-native group gain与G1非零小幅启动，仍用optimizer50/100；50点在训练继续时尽快物化，100点作相邻
+裁决。架构未证明前不扩成长跑。
 
 ## 10. 后续扩展与Final
 

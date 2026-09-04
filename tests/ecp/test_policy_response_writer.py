@@ -338,18 +338,25 @@ def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> No
     )
 
 
-def test_composer_relative_gain_gradient_is_owned_by_selected_family() -> None:
+def test_composer_relative_gain_gradient_is_owned_by_selected_native_groups() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(17)
         composer = _model().composer
         query = torch.randn(G1_RESIDUAL_RANK, composer.width)
 
-    composer._scale_logits(2, query).sum().backward()
+    logits = composer._scale_logits(2, query)
+    assert logits.shape == (
+        G1_RESIDUAL_RANK,
+        native_output_group_count(composer.owners[2]),
+    )
+    torch.testing.assert_close(logits, torch.full_like(logits, 0.1))
+    logits.sum().backward()
 
-    selected = int(composer.family_ids[2])
+    selected = composer.scale_group_slices[2]
     assert torch.count_nonzero(composer.scale_head.weight.grad[selected])
     assert torch.count_nonzero(composer.scale_head.bias.grad[selected])
-    other = torch.arange(len(TargetFamily)) != selected
+    other = torch.ones(composer.scale_head.out_features, dtype=torch.bool)
+    other[selected] = False
     assert not torch.count_nonzero(composer.scale_head.weight.grad[other])
     assert not torch.count_nonzero(composer.scale_head.bias.grad[other])
 
@@ -523,7 +530,7 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
         processes = tuple(model.process(video) for video in videos)
         initialized = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert any(torch.count_nonzero(value) > 0 for value in initialized.a)
-        assert all(torch.count_nonzero(value) == 0 for value in initialized.b)
+        assert all(torch.count_nonzero(value) > 0 for value in initialized.b)
         model.composer.scale_head.bias.fill_(10.0)
         bounded = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert all(
@@ -847,10 +854,10 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert len({offset for _, offset in pairs}) >= 8
 
 
-def test_process_conditioned_config_is_explicit_and_predecessor_is_rejected() -> None:
+def test_group_gain_credit_config_is_explicit_and_predecessor_is_rejected() -> None:
     root = Path(__file__).resolve().parents[2]
     current = load_policy_response_config(
-        root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"
+        root / "configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json"
     )
     assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
     assert (
@@ -862,9 +869,15 @@ def test_process_conditioned_config_is_explicit_and_predecessor_is_rejected() ->
         == 8
     )
     assert current["optimization"]["shared"]["process_prediction_lr_multiplier"] == 20.0
+    assert "target_native_ragged_group" in current["model"][
+        "composer_relative_gain_readout"
+    ]
+    assert current["model"]["composer_gain_initialization"].startswith(
+        "g1_nonzero_relative_logit_0.1"
+    )
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
-            root / "configs/pi05_ecp_policy_response_writer_random_delta_v1.json"
+            root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"
         )
 
 

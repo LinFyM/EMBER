@@ -2632,3 +2632,65 @@ loss为`.150360/.163691`；functional Frame/Event/Composer梯度为`.002898/.002
 `.065089/.058663/.202458`。输出仍为38 targets、76 tensors、mobile rank4与complete rank16，allocated/reserved峰值约
 `27.35/33.98GB`。functional loss与修正前同一初始化smoke的`.150360`相同，构成full deployment图未漂移的直接证据；该值本身不作
 性能结论。下一步只用fresh optimizer50/100闭环裁决filter是否让已学得的Process时序转化为shared Writer增益。
+
+### 142. Causal filter修正真实但non-pass，剩余瓶颈是Composer gain与方向信用
+
+clean detached `db354581a2cd71a236814de093336bcffe02fbf4`上的causal-filter formal已完整自然结束。训练root为
+`runs/outputs/pi05_ecp_policy_response_writer_causal_filter_73task_k1_component_s100_f6b58aac_gpu01p0156_sharedmmap_20260904/`；
+100条metrics、macro50/100、Panel-B、result与completion均完整，训练/Panel-B/总wall为`1744.80/461.38/2550.88s`，峰值
+allocated/reserved约`39.99/46.75GB`。source policy和observer trainable均为0，held/wrong/Panel-B backward与shuffle/reverse
+读取均为0，Action Meta关闭，输出始终为一套38-target rank16 LoRA。
+
+m50/m100 held5 correct-only strict250分别为`38/250`与`36/250`；逐task Long/Goal/Object/Spatial0/Spatial9为
+`0/0/2/33/3`与`0/0/3/31/2`，breadth均`3/5`且Goal/Long为0。相邻为`25 retained/11 gained/13 lost`、Jaccard`.5102`、
+paired exact `p=.8388`。filter修正没有把已学得的causal prediction转化为闭环性能，因此该实例正式non-pass，不追加同构训练或
+negative controls。m100的10个gradient tasks fit/held benefit均值仍为`+.000341/+.000353`，但两个true-task-held为
+`-.002125/-.001937`，说明seen functional与task-disjoint泛化继续分裂。
+
+这次结果不是filter代码无效。m50/m100的causal assignment与完整视频同帧重合已为约`.774/.743`，不再是旧hard-final的`.083/.137`；
+m100 predictor在六任务fit/held/all上的Smooth-L1相对zero改善`5.58%/4.39%/5.19%`。最早失败接口已经从Process监督推进到
+Composer。正确视频VJP显示target侧Process梯度仍为functional的`3.21x`左右，且多子模块方向轻微为负；meta--target functional方向
+也相反。训练前10步target functional微正，26步以后target均值转负，而meta持续转正，说明共享映射没有形成一致的task条件方向。
+
+进一步的冻结正样本诊断排除了三个简单解释。第一，active-pool、full target cap与branch scorer都非dead；family finite ablation在
+task72/73/74/75/77上得到q `2/5`为正、v接近零、action-out `5/5`为正，证明不同target/group需要条件化幅度，不能用一个family scalar
+统一放大或缩小。第二，只训练task-local `[38,4]` rank gains时，task1/72/75/93的100步fit/held恢复仅为
+`.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；改为真实ragged target/rank/group gains后升至
+`.244/.198`、`.222/.189`、`.146/.126`、`.240/.202`，全部第三条正确视频仍优于carrier。专家明确要求的group gain确实被当前
+family-rank head遗漏，但其约`1.2--2.1x`改善仍不足以单独恢复G1容量。
+
+第三，在完全相同的free-group-gain训练下，component-init方向四任务100步fit/held均值为`.178/.135`，causal m100方向为
+`.213/.179`；除task75 held轻微回落外，trained方向总体更好。因此不能把Process/Composer学习描述成完全随机或全部有害，也不应
+立即推倒上游。问题是方向学习太弱：formal 100步Composer梯度范数几乎由scale head占据，scale以外Composer参数相对移动仅低
+千分量级。实现把gain严格初始化为零，第一次functional backward只打开gain，此后Frame/Event/signed-direction梯度又一直乘以微小
+gain；而G1 `TaskLocalNativeFactorOracle`的scale logits实际从`0.1`启动，并非零。这是一个与group ownership同属末端credit边界的
+直接实现偏差。
+
+下一fresh因此只修该边界：用一个ragged target-native group linear readout产生195个真实group rows，按每target实际group slice
+读取；bias固定从G1已有的`0.1`开始，使第一次正确视频functional backward同时到达gain和direction。group gains只乘当前视频
+signed pooled B子向量，event innovation为零时positive/negative分支仍相消；完整target BA仍受同一个`s_ref` cap，且不引入task
+table、free residual、额外loss、coarse路径或第二Writer。Process、teacher、functional/process/preservation权重、LR、task比例、
+full 50-horizon、真实X/Y、rank12+4与数据均保持不变。若该短资格仍non-pass且方向学习仍落后于gain，才有证据把下一变量推进到
+Process冻结后的Composer functional阶段，而不提前把分阶段训练与本轮修正混在一起。
+
+关键诊断artifact：
+
+- `runs/analysis/pi05_ecp_policy_response_writer_causal_filter_m50_m100_predictor_fit_held6_db354581_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_causal_filter_m100_functional_process_role_gradient_alignment_10task_db354581_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_causal_filter_m100_family_finite_ablation_tasks72_74_db354581_20260904.json`及对应
+  `tasks75_77`文件；
+- `runs/analysis/pi05_ecp_policy_response_writer_causal_filter_m100_task{1,72,75,93}_free_rank_gain_oracle_s100_db354581_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_causal_filter_m100_task{1,72,75,93}_free_group_gain_oracle_s100_db354581_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_component_init_task{1,72,75,93}_free_group_gain_oracle_s100_db354581_20260904.json`。
+
+实现后的真实task1 demo5 full-horizon smoke进一步直接验证了credit假设。51个stride5 frames、19 layers、2 probes、50 horizons、
+38 native X/Y targets全部进入同一forward；初始A/B均非零，functional loss为`.152187`。第一次且唯一一次functional chain-rule
+backward已经给Frame/Event/Composer-direction/group-gain `.056881/.053071/.098988/.221375`的finite梯度；旧零启动同一输入的
+Frame/Event仅约`.002898/.002652`，方向信用提高约20倍而无需新loss或更高LR。process loss仍为`.163691`并只更新
+Frame/Event/Predictor，76 tensors、mobile rank4加carrier rank12形成唯一rank16；峰值allocated/reserved为`27.35/33.99GB`。
+该smoke只证明预期图和数值机制成立，不作性能结论。
+
+同一实现的task1两步shared optimizer profile自然exit0。step1/2为`3.686/3.497s`，峰值allocated/reserved为
+`27.36/38.50GB`；Composer总梯度`6.398/3.123`中gain head为`6.116/2.732`，按平方差得到非gain方向约`1.879/1.512`。
+optimizer、gain/direction独立clip、process-only参数组与Panel-B零反向均正常。profile只用2 functional rows，而记录的carrier是
+完整panel统计，两者loss差值不可作科学结论；formal仍使用匹配的16 rows。

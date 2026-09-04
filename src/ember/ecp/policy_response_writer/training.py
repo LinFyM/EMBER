@@ -111,7 +111,9 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("composer_query_seed")
             == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
             model.get("composer_relative_gain_readout")
-            == "query_conditioned_family_owned_rank_rows_without_task_table_or_anchor_gate",
+            == "query_conditioned_target_native_ragged_group_rows_without_task_table_or_anchor_gate",
+            model.get("composer_gain_initialization")
+            == "g1_nonzero_relative_logit_0.1_for_first_step_direction_credit",
             model.get("process_consumer_boundary")
             == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
             model.get("causal_process_interval")
@@ -452,6 +454,26 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
             if name.startswith(prefix) and parameter.grad is not None
         ]
         output[label] = float(torch.stack(squares).sum().sqrt()) if squares else 0.0
+    direction_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in module.named_parameters()
+        if name.startswith("composer.")
+        and not name.startswith("composer.scale_head.")
+        and parameter.grad is not None
+    ]
+    scale_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in module.named_parameters()
+        if name.startswith("composer.scale_head.") and parameter.grad is not None
+    ]
+    output["composer_direction"] = (
+        float(torch.stack(direction_squares).sum().sqrt())
+        if direction_squares
+        else 0.0
+    )
+    output["composer_scale"] = (
+        float(torch.stack(scale_squares).sum().sqrt()) if scale_squares else 0.0
+    )
     return output
 
 
@@ -476,6 +498,8 @@ def _validate_smoke_graph(
         functional_gradients["frame"],
         functional_gradients["event"],
         functional_gradients["composer"],
+        functional_gradients["composer_direction"],
+        functional_gradients["composer_scale"],
         process_gradients["frame"],
         process_gradients["event"],
         process_gradients["process_prediction"],
@@ -525,34 +549,13 @@ def _writer_chain_backward(
     return len(state)
 
 
-def _open_zero_scale(runtime: PolicyResponseRuntime) -> float:
-    parameters = (
-        runtime.writer.composer.scale_head.weight,
-        runtime.writer.composer.scale_head.bias,
-    )
-    gradients = tuple(value.grad for value in parameters)
-    if any(value is None for value in gradients):
-        raise RuntimeError("zero-initialized scale head did not receive credit")
-    norm = (
-        torch.stack(tuple(value.detach().float().square().sum() for value in gradients))
-        .sum()
-        .sqrt()
-    )
-    if not bool(torch.isfinite(norm)) or float(norm) <= 0:
-        raise RuntimeError("zero-initialized scale-head gradient is invalid")
-    with torch.no_grad():
-        for parameter, gradient in zip(parameters, gradients, strict=True):
-            parameter.add_(gradient, alpha=-1e-3 / float(norm))
-    return float(norm)
-
-
-def _asymmetric_initialization(output: Any) -> dict[str, bool]:
+def _initial_factor_state(output: Any) -> dict[str, bool]:
     return {
         "input_factor_nonzero": any(
             torch.count_nonzero(value).item() > 0 for value in output.residual.a
         ),
-        "output_factor_exact_zero": all(
-            torch.count_nonzero(value).item() == 0 for value in output.residual.b
+        "output_factor_nonzero": any(
+            torch.count_nonzero(value).item() > 0 for value in output.residual.b
         ),
     }
 
@@ -589,7 +592,7 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
             rank16_contract=runtime.ranks.contract,
             canonicalize=False,
         )
-    asymmetric_initialization = _asymmetric_initialization(leaf_output)
+    initial_factor_state = _initial_factor_state(leaf_output)
     phase_memory["writer_leaf_forward"] = _cuda_peak(runtime)
     batch, visit = functional_panel_batch(
         runtime,
@@ -619,15 +622,7 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     generated_tensors = _writer_chain_backward(
         runtime, video=video, leaf_gradients=leaf_gradients
     )
-    phase_memory["zero_init_chain_rule_backward"] = _cuda_peak(runtime)
-    zero_init_gradients = _gradient_norms(runtime.writer)
-    scale_opening_gradient = _open_zero_scale(runtime)
-    runtime.writer.zero_grad(set_to_none=True)
-    torch.cuda.reset_peak_memory_stats(runtime.context.device)
-    generated_tensors = _writer_chain_backward(
-        runtime, video=video, leaf_gradients=leaf_gradients
-    )
-    phase_memory["opened_chain_rule_backward"] = _cuda_peak(runtime)
+    phase_memory["initial_chain_rule_backward"] = _cuda_peak(runtime)
     functional_gradients = _gradient_norms(runtime.writer)
     runtime.writer.zero_grad(set_to_none=True)
     cutoff = max(
@@ -664,9 +659,7 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         "process_loss": float(process_loss.detach()),
         "causal_future_offset": future_offset,
         "functional_gradient_norms": functional_gradients,
-        "zero_init_functional_gradient_norms": zero_init_gradients,
-        "scale_opening_gradient_norm": scale_opening_gradient,
-        "asymmetric_initialization": asymmetric_initialization,
+        "initial_factor_state": initial_factor_state,
         "process_gradient_norms": process_gradients,
         "generated_tensors": generated_tensors,
         "targets": len(runtime.owners),

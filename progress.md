@@ -4,6 +4,34 @@
 
 ## 当前快照
 
+- causal-filter 73-task fresh资格已经完整裁决为non-pass。clean detached authority为`db354581`，formal root为
+  `runs/outputs/pi05_ecp_policy_response_writer_causal_filter_73task_k1_component_s100_f6b58aac_gpu01p0156_sharedmmap_20260904/`；
+  optimizer50/100、Panel-B、result/completion和两点held5 correct-only strict250均完整。m50/m100为`38/36`，逐task
+  Long/Goal/Object/Spatial0/Spatial9=`0/0/2/33/3`与`0/0/3/31/2`，breadth均`3/5`且Goal/Long为0；相邻
+  `25 retained/11 gained/13 lost`。m100 gradient fit/held benefit为`+.000341/+.000353`，两个true-task-held为
+  `-.002125/-.001937`。filter已使event坐标与完整视频明显对齐、predictor仍比zero改善约`5.19%`，但没有转化成shared闭环，
+  因此不续训或运行negative controls。
+
+- non-pass后的正样本根因诊断已经完成。task1/72/75/93冻结m100方向、只训练rank gain时，100步fit/held恢复为
+  `.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；恢复专家明确要求的ragged output-group gains后为
+  `.244/.198`、`.222/.189`、`.146/.126`、`.240/.202`。相同group-gain下component-init方向四任务均值为
+  `.178/.135`，m100方向为`.213/.179`，证明shared训练学到小幅方向但远不充分。formal Composer梯度几乎由gain head占据，
+  原因是严格零gain让首步只有gain得到功能信用、后续direction梯度继续被小gain衰减；而G1既有free oracle实际从logit `0.1`
+  启动。family ablation又显示action-out在5/5任务为正、q只有2/5为正，排除统一family幅度修补。
+
+- 当前唯一实现worktree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-group-gain-credit`，分支
+  `codex/prw-group-gain-credit`，base为clean pushed `db354581`。实现只把family-rank gain恢复为195-row target-native ragged
+  group gain，并以G1已有`0.1` logit小幅启动，使第一次functional backward同时到达gain与direction；完整target BA cap、
+  zero-innovation零mobile、Process、teacher、loss、LR、task比例、full 50-horizon、真实X/Y、rank12+4与数据不变。新config为
+  `configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json`及对应held5 config；47项Writer/native定向测试通过。gpu01物理0
+  的真实task1 demo5 smoke完整消费51帧、2 probes、全部50 horizons和38 targets，初始A/B均非零；functional loss为`.152187`，
+  第一次反向的Frame/Event/Composer-direction/group-gain梯度为`.056881/.053071/.098988/.221375`，相对旧零启动的Frame/Event约
+  提高20倍。process loss`.163691`且Frame/Event/Predictor梯度`.065089/.058663/.202458`；76 tensors、唯一rank16与峰值
+  allocated/reserved `27.35/33.99GB`均通过。下一步只需两步shared optimizer profile，随后从clean pushed detached authority
+  运行optimizer50/100短资格。该两步profile也已自然exit0：step为`3.686/3.497s`，peak allocated/reserved为
+  `27.36/38.50GB`；Composer总/gain梯度在step1为`6.398/6.116`、step2为`3.123/2.732`，对应非gain方向约
+  `1.879/1.512`，确认optimizer、独立clip与方向更新均真实接通。profile rows2与完整carrier统计口径不同，loss不作科学选择。
+
 - causal-prefix event filter已由`f6b58aac`接通并推送。实现只在`causal=True`时返回从真实首帧anchor开始的monotone forward
   posterior；完整/deployment视频仍逐行复用原hard first/final前向--后向posterior，参数与state dict均未改变。41项Writer与
   materialization相邻测试通过。gpu01物理0上的task1 demo5真实smoke完整消费51帧、2 probes、全部50 horizons和38 targets，

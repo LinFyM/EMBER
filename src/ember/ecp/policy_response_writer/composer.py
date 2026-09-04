@@ -340,7 +340,19 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 for value in output_widths
             }
         )
-        maximum_groups = max(native_output_group_count(owner) for owner in owners)
+        output_group_counts = tuple(
+            native_output_group_count(owner) for owner in owners
+        )
+        maximum_groups = max(output_group_counts)
+        output_group_offsets = [0]
+        for count in output_group_counts:
+            output_group_offsets.append(output_group_offsets[-1] + count)
+        self.scale_group_slices = tuple(
+            slice(start, stop)
+            for start, stop in zip(
+                output_group_offsets[:-1], output_group_offsets[1:], strict=True
+            )
+        )
         self.rank_queries = torch.nn.Parameter(torch.empty(G1_RESIDUAL_RANK, width))
         self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
@@ -360,11 +372,11 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self.input_negative_query = torch.nn.Linear(width, width, bias=False)
         self.output_positive_query = torch.nn.Linear(width, width, bias=False)
         self.output_negative_query = torch.nn.Linear(width, width, bias=False)
-        # Each native topology owns its relative rank-gain row.  The selected
+        # Each real target-native output group owns one relative-gain row.  A
         # row still reads the full target/rank query and can only scale the
-        # current bank's signed X/Y direction; this is not a task table or an
-        # old-style family gate over a shared anchor.
-        self.scale_head = torch.nn.Linear(width, len(TargetFamily))
+        # corresponding current-bank signed Y group; it is neither a task
+        # table nor an old-style family gate over a shared anchor.
+        self.scale_head = torch.nn.Linear(width, output_group_offsets[-1])
         self.output_norm = torch.nn.LayerNorm(width)
         self.task_query = (
             torch.nn.Parameter(torch.zeros(len(owners), G1_RESIDUAL_RANK, width))
@@ -380,10 +392,12 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         torch.nn.init.normal_(self.rank_queries, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
         torch.nn.init.zeros_(self.scale_head.weight)
-        torch.nn.init.zeros_(self.scale_head.bias)
-        # The relation path is the sole new parameter in the matched arm.
-        # Fork CPU RNG so adding it does not perturb any established Composer
-        # parameter initialized under the same formal seed.
+        # G1's native-factor oracle starts relative scale logits at 0.1.  Keep
+        # that small nonzero opening so the first functional backward reaches
+        # candidate-direction parameters instead of training only this head.
+        torch.nn.init.constant_(self.scale_head.bias, 0.1)
+        # Fork CPU RNG so relation initialization does not perturb the
+        # established Composer parameters under the same formal seed.
         with torch.random.fork_rng(devices=[]):
             self.relation_embedding = torch.nn.Embedding(PROCESS_RELATION_COUNT, width)
             torch.nn.init.normal_(self.relation_embedding.weight, std=width**-0.5)
@@ -560,12 +574,16 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         return F.layer_norm(rank_context, (self.width,)) + condition
 
     def _scale_logits(self, target: int, query: torch.Tensor) -> torch.Tensor:
-        """Select the target family's independently owned relative-gain row."""
+        """Select the target's independently owned ragged native-group rows."""
 
         logits = self.scale_head(query)
-        if logits.shape != (G1_RESIDUAL_RANK, len(TargetFamily)):
-            raise ValueError("native composer family gain readout changed")
-        return logits[:, self.family_ids[target]]
+        if logits.shape != (G1_RESIDUAL_RANK, self.scale_head.out_features):
+            raise ValueError("native composer group-gain readout changed")
+        selected = logits[:, self.scale_group_slices[target]]
+        expected = native_output_group_count(self.owners[target])
+        if selected.shape != (G1_RESIDUAL_RANK, expected):
+            raise ValueError("native composer ragged group ownership changed")
+        return selected
 
     def _query_target(
         self,
@@ -839,18 +857,29 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             bank_memory, candidates = self._bank_candidates(target, values, programs)
             query = self._query_target(target, programs, bank_memory)
             a, b = self._pool_target(target, query, candidates)
-            # Match the G1-proven asymmetric optimization geometry: native A/B
-            # directions exist at initialization, while the effective B scale
-            # is exactly zero.  Step 1 opens the scale head and step 2 delivers
-            # functional credit to the full current-bank/process path.
-            scale = s_ref[target].to(query) * torch.tanh(
+            # Preserve the G1 native-group geometry and its small nonzero
+            # scale-logit opening.  Every real output group can change sign or
+            # magnitude independently, while the complete target BA remains
+            # under the same single effective-update cap.
+            group_scale = s_ref[target].to(query) * torch.tanh(
                 self._scale_logits(target, query)
             )
             a = rms_normalize(a, epsilon=1e-6)
-            b = rms_normalize(b, epsilon=1e-6) * scale[:, None]
+            b = rms_normalize(b, epsilon=1e-6)
+            groups = native_output_group_count(self.owners[target])
+            b = (
+                b.reshape(G1_RESIDUAL_RANK, groups, b.shape[-1] // groups)
+                * group_scale[..., None]
+            ).reshape_as(b)
             cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
             b = b * cap_factor.to(b)
-            scale = scale * cap_factor.to(scale)
+            # NativeFactorResidual retains its established [target, rank]
+            # diagnostic field.  The actual signed ragged gains are already
+            # applied to B; report their RMS magnitude after the target cap.
+            scale = (
+                group_scale.square().mean(-1).sqrt()
+                * cap_factor.to(group_scale)
+            )
             a_values.append(a)
             b_values.append(b)
             scales.append(scale)

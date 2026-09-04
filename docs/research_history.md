@@ -2713,3 +2713,31 @@ state置零反而比zero差`2.36%`，完整状态在`100/108` pair上优于zero-
 anchors完全未改。下一matched实现因此只区分“真实完整视频终点”和“辅助训练的人工截断点”：前者保持hard final，后者不施加假终点。
 该结论不淘汰Policy-Response Process、positive causal objective、ordered events、Composer、full 50-horizon、native X/Y、signed
 pooling、rank4或整个ECP，只淘汰当前对causal prefix错误复用full-video final anchor的推断语义。
+
+## 138. Causal filter闭环non-pass与Composer group-credit定位
+
+`f6b58aac`的causal-prefix filter在clean detached `db354581`完成73-task optimizer50/100 formal。filter把m50/m100人工prefix与完整
+视频同帧event assignment重合恢复到约`.774/.743`，m100 predictor相对zero的fit/held/all Smooth-L1改善为
+`5.58%/4.39%/5.19%`，所以实现与正时序监督均真实工作；但held5 correct-only strict250只有`38/36`，breadth均`3/5`且
+Goal/Long为0。10个gradient tasks m100 fit/held benefit为`+.000341/+.000353`，两个true-task-held却为
+`-.002125/-.001937`。该matched实例正式non-pass，不续训或运行negative controls。
+
+冻结正确视频诊断把最早剩余接口推进到Composer gain/credit。task1/72/75/93只优化rank gain时，100步fit/held恢复为
+`.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；恢复专家原文规定的ragged target-native output-group gains后为
+`.244/.198`、`.222/.189`、`.146/.126`、`.240/.202`。group自由度是现实现遗漏，但仍非充分修复。相同group-gain对照下，
+component-init方向四任务均值`.178/.135`，causal m100为`.213/.179`，说明训练方向有小幅正学习，不支持推倒Process/Composer。
+
+当前零gain启动却让第一次functional backward只能更新gain，后续方向梯度始终被小gain衰减；100步Composer梯度几乎都在gain head，
+其它Composer参数只移动低千分量级。G1 free native oracle的既有实现实际以scale logit `0.1`启动。下一matched函数类因此恢复一个
+195-row ragged target-native group readout，并以同一`0.1`小幅非零logit让首步functional credit到达direction；完整target BA cap、
+static-repeat/no-innovation零mobile、positive-only loss、full 50-horizon、Process、bank、rank、数据、LR与task采样均不变。只有该
+边界仍non-pass且方向继续落后，才进入Process/Composer分阶段优化。完整数值与artifact见`findings.md`第142节。
+
+隔离实现的47项Writer/native测试及task1真实full-horizon smoke随后通过。初始非零gain使第一次functional backward的
+Frame/Event/Composer-direction/group-gain梯度达到`.056881/.053071/.098988/.221375`，而旧零启动同一输入的Frame/Event约为
+`.002898/.002652`；完整50 horizon、38 targets、76 tensors、唯一rank16、冻结policy/observer与约`33.99GB`reserved峰值均保持。
+这只验证方向信用恢复，不提前宣称科学性能。
+
+task1两步shared optimizer profile随后以`3.686/3.497s`自然完成；Composer总/gain梯度为
+`6.398/6.116`与`3.123/2.732`，非gain方向约`1.879/1.512`，峰值reserved `38.50GB`。profile rows2 loss不与完整carrier
+混作科学比较；该证据只补齐optimizer和资源运行面。

@@ -411,6 +411,11 @@ process prediction成立而闭环仍失败，下一定位才转向Process-to-Com
 prefix坐标压过功能credit。冻结反事实改用first-anchored forward filter后重合升到`.692`，故下一matched fresh只修这一posterior
 语义；完整视频首尾anchor、teacher、loss权重、head优化与主deployment图全部不变。
 
+该matched修正已由`f6b58aac`实现：`causal=False`完整保留原前向--后向posterior，只有`causal=True`在同一Event Encoder内直接读取
+forward-filter posterior；没有新增网络、参数、并行实现或兼容fallback。41项定向及materialization相邻测试通过。task1 demo5真实
+smoke继续得到与前代完全相同的functional loss `.150360`，并保留Frame/Event/Composer功能梯度、Frame/Event/Predictor过程梯度、
+完整50 horizon、38 targets、76 tensors与唯一rank16。实现图已有资格进入同规模optimizer50/100 fresh裁决。
+
 固定teacher的矩阵rowspace只有约`12.4--12.5%`落在ResponseTokenizer projection可见子空间，但事后把teacher对齐到该子空间只让
 delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮仍不同时更换teacher。
 

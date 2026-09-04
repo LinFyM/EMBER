@@ -2619,3 +2619,16 @@ m50/m100同帧assignment重合度分别由`.082712/.136962`升到`.678178/.69201
 旧预测头在未训练过的filter坐标上m100 loss由`.061689`暂升至`.062896`不构成反证。下一fresh只修这一推断语义：causal auxiliary的
 人工prefix不是完整视频，不施加hard final anchor；deployment/full-video posterior、fixed teacher、loss权重、Frame/Composer、
 完整50-horizon、native X/Y、rank与数据全部保持不变。
+
+### 141. Causal-prefix filter已以单一路径接通并通过真实full-horizon smoke
+
+提交`f6b58aac`只给现有Event Encoder的posterior增加明确`causal`语义：完整视频继续运行原hard first/final前向--后向算法；人工
+prefix直接返回从首帧anchor开始、只依赖已观察帧的forward filtering。参数、state dict、Event Block、Process consumer、Composer、
+teacher、loss、task sampling、完整native bank和物化均未变化。测试锁定full首尾one-hot、causal末帧不被强制为final slot及任意prefix
+与长序列过滤结果逐元素一致；Writer和物化相邻共`41 passed`。
+
+gpu01物理0的task1 correct demo5真实profile消费`251` raw/`51` sampled frames与`1,123,458,980` bytes冻结证据。functional/process
+loss为`.150360/.163691`；functional Frame/Event/Composer梯度为`.002898/.002652/.187827`，process Frame/Event/Predictor为
+`.065089/.058663/.202458`。输出仍为38 targets、76 tensors、mobile rank4与complete rank16，allocated/reserved峰值约
+`27.35/33.98GB`。functional loss与修正前同一初始化smoke的`.150360`相同，构成full deployment图未漂移的直接证据；该值本身不作
+性能结论。下一步只用fresh optimizer50/100闭环裁决filter是否让已学得的Process时序转化为shared Writer增益。

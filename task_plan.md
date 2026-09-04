@@ -165,9 +165,9 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     process prediction相对zero改善`6.49%`，zero-state反而更差，说明辅助职责已学成却没有到达deployment Composer；
 26. [ ] 修正已定位的causal event坐标错位：完整视频继续使用G2 hard first/final anchors；人工截取的严格causal prefix只使用
     首锚定monotone forward filter，不再把每个cutoff强制映射为slot7。当前m100 hard-prefix与full同帧assignment重合仅`.137`，
-    filter反事实为`.692`；同时target Process梯度为functional的`3.73x`且Event方向cosine `-.204`。下一fresh只改posterior推断，
-    保持所有loss、teacher、prediction优化、Composer、完整50-horizon/native bank、rank、数据与task权重不变，先做真实smoke并立即运行
-    optimizer50/100短资格；
+    filter反事实为`.692`；同时target Process梯度为functional的`3.73x`且Event方向cosine `-.204`。`f6b58aac`已只改posterior推断，
+    41项定向/物化测试和task1真实51-frame、full-50-horizon forward/gradient/唯一rank16 smoke通过；所有loss、teacher、prediction优化、
+    Composer、完整native bank、rank、数据与task权重保持不变。下一步从clean pushed detached authority立即运行optimizer50/100短资格；
 27. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 28. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 29. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

@@ -4,6 +4,29 @@
 
 ## 当前快照
 
+- causal-prefix event filter已由`f6b58aac`接通并推送。实现只在`causal=True`时返回从真实首帧anchor开始的monotone forward
+  posterior；完整/deployment视频仍逐行复用原hard first/final前向--后向posterior，参数与state dict均未改变。41项Writer与
+  materialization相邻测试通过。gpu01物理0上的task1 demo5真实smoke完整消费51帧、2 probes、全部50 horizons和38 targets，
+  functional/process loss为`.150360/.163691`；functional梯度到达Frame/Event/Composer
+  `.002898/.002652/.187827`，process梯度到达Frame/Event/Predictor`.065089/.058663/.202458`，生成76 tensors与唯一rank16，
+  峰值allocated/reserved约`27.35/33.98GB`。与前代相同的functional loss直接确认full deployment forward未漂移。
+
+- Causal-event-filter formal launch contract：scientific implementation为`f6b58aac`，formal authority为包含本合同的下一clean
+  pushed main。继续使用`configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json`、73个gradient tasks、每update
+  `9 meta + 3 target`、K1、component-init、correct-only cross-episode functional、positive causal process、preservation、
+  full 50-horizon、真实native X/Y、rank12+4及唯一rank16。这里保留task采样比例只为与上一run作单变量匹配，不将其固定为后续要求。
+  唯一科学变化是人工prefix不再hard-final；teacher、loss权重、prediction优化、Frame/Composer和完整视频posterior均不变。运行100
+  optimizer steps并保存50/100；输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_causal_filter_73task_k1_component_s100_f6b58aac_gpu01p0156_sharedmmap_20260904/`，
+  临时单份mmap为`.codex/tmp/prw_causal_filter_73task_cache_f6b58aac_gpu01_20260904/`。若launch时live状态仍允许，使用gpu01物理
+  `0,1,5,6`、world-size4、`NCCL_P2P_DISABLE=1`与既有NUMA映射；状态漂移则只换安全设备、不改科学合同。macro50出现后可在EMBER
+  总卡数不超过6时并行held5 correct-only strict250；macro100随后同合同评测。只允许相同authority/config/world topology exact
+  resume，任何fresh root不得覆盖。
+
+  2026-09-04存储预检：`/data1` user blocks为`776687164/1084227584 KiB`，limit headroom约`293.29GiB`；上一同构run的146份
+  gradient-fit mmap实测`97.81GiB`、retained run仅`.08GiB`，本轮含日志/checkpoint预计峰值新增低于`100GiB`，明显低于独立quota
+  余量。目标output与cache root在launch前必须再次确认不存在。
+
 - process-conditioned optimizer50/100资格与两点held5闭环已经全部自然完成。clean detached authority为`f20a5299`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_process_conditioned_73task_k1_component_s100_df1e8c6e_gpu01p0156_sharedmmap_20260904/`；
   100条metrics、两枚checkpoint、Panel-B、result/completion与信息墙完整，训练/总wall为`1702.73/2467.33s`。m50/m100

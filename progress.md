@@ -27,6 +27,22 @@
   task1 normalizer`.075211`、学习率严格`20x`、全部梯度组非零，step约`3.67/3.48s`。下一步从clean pushed detached authority
   运行同规模optimizer50/100短资格；若process prediction成立而闭环仍失败，才转向Process-to-Composer credit或task-disjoint mapping。
 
+- Process-objective-conditioning formal launch contract：scientific implementation为`df1e8c6e`，formal authority为包含本合同的
+  下一clean pushed main。配置固定`configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json`，保持73 gradient tasks、
+  每update显式`9 meta + 3 target`、K1、component-init、correct-only cross-episode functional、positive random-delta process、
+  preservation、full 50-horizon、真实native X/Y、rank12+4及唯一rank16；唯一变化是direct standardized predictor、每fit视频8个
+  target-only normalizer pairs与prediction-only `20x` LR。运行100 optimizer steps并保存50/100；输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_process_conditioned_73task_k1_component_s100_df1e8c6e_gpu01p0156_sharedmmap_20260904/`，
+  node-local单份mmap固定为`.codex/tmp/prw_process_conditioned_73task_cache_df1e8c6e_gpu01_20260904/`。计划使用gpu01物理
+  `0,1,5,6`、world-size4、`NCCL_P2P_DISABLE=1`及既有NUMA映射；launch前必须再次同时live检查gpu01/gpu02，若状态漂移则按同一
+  科学合同更换安全卡。只允许相同commit/config/world topology exact resume；任何失败fresh root不覆盖。macro50出现后，在总EMBER
+  占卡不超过6的前提下可用gpu02两卡并行held5 correct-only strict250；训练结束后macro100可使用至多4卡评测。checkpoint选择与
+  negative controls仍按correct-only闭环、breadth与相邻稳定性决定。
+
+  2026-09-04启动前存储检查：`/data1` user blocks为`776537756/1084227584 KiB`，limit headroom约`293.44GiB`；共享filesystem
+  尚余`84TiB`。上一同构formal retained output仅`83MiB`，本轮临时mmap预计约`105GiB`、checkpoint与日志小于`1GiB`，峰值明显低于
+  独立quota余量；目标output与cache root均确认不存在。
+
 - 当前最前沿已经完成Process common--innovation consumer-boundary的真实裁决。clean detached `f33f2955`保持完整50-horizon、
   真实native X/Y、positive-only与唯一rank16，73-task shared optimizer50/100、两点Panel-B、物化和held5 correct-only strict250
   均完整结束；m50/m100仅为`40/35`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/2/38/0`与`0/0/5/29/1`，breadth

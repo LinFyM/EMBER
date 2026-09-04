@@ -2682,3 +2682,16 @@ Long/Goal/Object/Spatial0/Spatial9分别`0/0/2/38/0`与`0/0/5/29/1`，Goal/Long�
 Process/Composer主图不变。不同delta的target RMS近似按`sqrt(delta)`增长，loss对prediction与target作同一可逆
 `sqrt(delta)`标准化，避免无关的interval权重漂移。`38d51bab`完成该实现，31项定向测试和task1真实full-horizon delta8 smoke
 通过，主functional图保持逐项一致。formal roots、全部diagnostic文件与更细数值见`findings.md`第138节。
+
+## 136. random-delta闭环持平，但机制诊断定位到process objective优化失真
+
+clean detached `eec024f8`的73-task random-delta optimizer50/100正式资格完整结束；两个held5 correct-only strict250均为
+`41/250`、breadth`3/5`，Long/Goal仍为0。它比前代m100恢复6分，但没有超过carrier43且相邻换手16行，所以不运行negative
+controls。Panel-B同样只显示seen-task微弱改善、两个true-task-held持续为负。
+
+冻结m100的correct-only诊断显示正式predictor相对zero只改善约`.35%`，但同一状态上的head-only容量在直接预测标准化target时，
+100步已对未见同task video解释`.144`、250步解释`.217`；delta4/8状态线性probe的同视频解释量为`.278/.410`。因此状态和head
+不是零容量，正式优化没有学成。根因包括loss外`sqrt(delta)`对长间隔prediction梯度的衰减，以及每task两随机pair normalizer把
+73-task有效权重数降到约`37.2`。下一fresh把head输出定义成标准化delta，以每fit视频8个target-only pair稳定normalizer，并按累计
+步长容量证据给纯辅助readout `20x`学习率；实现提交为`df1e8c6e`，固定teacher、主Writer、loss权重、full 50-horizon/native bank/rank/data均不变。
+34项测试、task1真实full smoke和两步shared profile通过，精确证据见`findings.md`第139节。

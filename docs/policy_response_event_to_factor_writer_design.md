@@ -379,6 +379,26 @@ deployment forward。
 该matched变更由`38d51bab`实现；31项定向测试和task1真实full-horizon delta8 smoke通过，且主functional loss、梯度与输出
 和前代smoke保持逐项一致。它只修复causal auxiliary的interval监督合同，不借机改变deployment函数类。
 
+clean detached random-delta formal已经完成optimizer50/100与两点held5 correct-only strict250；闭环均为`41/250`，逐task均为
+Long/Goal/Object/Spatial0/Spatial9=`0/0/4/33/4`、breadth`3/5`。它相对前代m100的`35/250`有恢复，但仍低于carrier
+`43/250`，两个相邻checkpoint换手`8 gained/8 lost`，且Goal/Long仍为0，因此该训练实例稳定non-pass，不运行negative controls。
+更早的机制检查表明，它并没有真正完成本节赋予的时序职责：m100预测头对多任务正确视频只比零预测改善约`.35%`，delta1仍劣于
+零预测；m50到m100预测头权重只移动约`.1%`。
+
+冻结同一m100 Process state后的两个正样本诊断进一步区分了容量与优化。只训练已有预测头时，直接预测标准化target在100步的
+train/同视频未见pair/同task未见video MSE解释量为`.540/.302/.144`，250步为`.833/.389/.217`，证明现有状态与readout并非零容量；
+多间隔线性probe也在delta4/8上给出同视频`.278/.410`与跨task约`.043/.074`的方向信息。正式训练没有得到这些信号的两个直接原因是：
+
+1. 网络先输出原尺度prediction、再在loss外除以`sqrt(delta)`，使长间隔的prediction反向梯度额外衰减；
+2. 每task normalizer只用两条fit视频各一个随机pair，73 task的inverse-weight有效数仅约`37.2`，top5偶然占约`24.2%`；实际
+   16--17条训练pair形成的稳定代理则约为`64`个有效task。
+
+提交`df1e8c6e`的matched修正因此让predictor直接输出`Delta Z / sqrt(delta)`，target仍是同一个可逆标准化冻结量；每task normalizer改为两条fit
+视频各8个确定性随机pair上的zero-predictor target Huber均值，不再读取可训练Writer状态。辅助readout的独立学习率固定为主Writer的
+`20x`：100步余弦调度的累计步长由容量实验换算为约100个`1e-3`常学习率head-only更新，不是LR sweep；Frame/Event/Composer仍使用
+原学习率。固定teacher、主deployment forward、functional/process权重、数据、完整50-horizon与所有factor合同不变。若这次让
+process prediction成立而闭环仍失败，下一定位才转向Process-to-Composer credit或task-disjoint mapping，而不是继续改预测优化。
+
 固定teacher的矩阵rowspace只有约`12.4--12.5%`落在ResponseTokenizer projection可见子空间，但事后把teacher对齐到该子空间只让
 delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮不同时更换teacher；若
 random-delta使process prediction成立而shared闭环仍失败，再单独裁决teacher或Process-to-Composer credit，而不是把两者混在同一run。
@@ -389,8 +409,10 @@ random-delta使process prediction成立而shared闭环仍失败，再单独裁�
 task-specific增量，也不要求generated LoRA接近carrier。
 
 三项loss在首个optimizer step前固定无量纲化：每task的`L_func`与`L_pres`使用该task冻结Panel-A carrier loss的RMS；`L_process`
-使用同步后的初始Writer在两条fit视频固定prefix上的平均causal loss。formal run将这些数值一次性冻结到`normalizers.json`，resume复用而不
-随训练漂移。无量纲后的`L_process`系数固定为`1.0`，`lambda_pres`固定为`.05`，不做weight/LR小扫。
+使用两条fit视频各8个确定性随机合法pair的冻结标准化target相对zero predictor的Huber均值。它不运行Process forward，也不依赖
+Writer初始化或可训练prediction。formal run将这些数值一次性冻结到`normalizers.json`，resume复用而不随训练漂移。无量纲后的
+`L_process`系数固定为`1.0`，`lambda_pres`固定为`.05`；只有纯辅助prediction probe/horizon/head使用上述有容量实测依据的`20x`
+参数组学习率，主Writer学习率与调度不变。
 
 G2已有positive temporal heads只允许作为component-init短暂辅助，并在functional优化稳定后退火到零；它们不进入最终Writer forward。
 
@@ -446,8 +468,9 @@ typed-boundary首个fresh资格已经完整结束。task-local task1/task93的50
 shared m100/m200 held5 strict250却为`39/32`，m200显著低于carrier43，且seen functional继续改善时true-task-held与闭环退化。
 其后只替换`C/D` consumer boundary的clean `f33f2955` fresh资格也已完整结束：m50/m100 held5仅`40/35`，逐task为
 `0/0/2/38/0`与`0/0/5/29/1`，Goal/Long仍为0；gradient fit/held functional继续改善时两个true-task-held更负，故不续训或运行
-negative controls。当前唯一下一资格是本节登记的random legal delta恢复，仍用optimizer50/100；50点在训练继续时尽快物化评测，
-100点提供相邻稳定性，架构未证明前不先扩展成长跑。
+negative controls。random legal delta资格随后在m50/m100均为`41/250`且Goal/Long为0，机制诊断确认预测状态有信息、预测头有容量，
+但正式训练的随机normalizer和累计readout更新量不足以学成目标。当前唯一下一资格是本节登记的process objective conditioning，仍用
+optimizer50/100；50点在训练继续时尽快物化评测，100点提供相邻稳定性，架构未证明前不先扩展成长跑。
 
 ## 10. 后续扩展与Final
 

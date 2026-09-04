@@ -2550,3 +2550,39 @@ functional/preservation与所有数据权重保持不变。
 `.150360/.142832`，functional Frame/Event/Composer梯度为`.002898/.002652/.187827`，process Frame/Event/Predictor梯度为
 `.016753/.013139/.045459`，完整生成76 tensors、38 targets并物化mobile rank4/complete rank16。主deployment forward未改变，
 因此functional loss、梯度和输出与前代smoke相同；只有causal auxiliary恢复了原先遗漏的interval合同。
+
+### 139. random-delta稳定non-pass来自未学成的辅助优化，而非状态或head零容量
+
+clean detached `eec024f8a4f3bfea387b93adb0d85b1d82af109d`的73-task random-delta formal root为
+`runs/outputs/pi05_ecp_policy_response_writer_random_delta_73task_k1_component_s100_eec024f8_gpu01p0156_sharedmmap_20260904/`；
+100步、m50/m100、Panel-B、result和completion全部完整。m50/m100 held5 correct-only strict250均为`41/250`，逐task均为
+Long/Goal/Object/Spatial0/Spatial9=`0/0/4/33/4`、breadth`3/5`；两点间`33 retained/8 gained/8 lost`。m100相对前代
+f33f2955 m100有`12 gained/6 lost`，但相对carrier43仍为`33/8/10`、paired exact `p=.814529`。Goal/Long为0且相邻高换手，
+因此该实例正式non-pass，不运行negative controls。
+
+训练内process loss不能证明学成：m100在六个gradient task的固定正确视频多pair上，标准化Smooth-L1仅由zero的`.0666030`降到
+`.0663666`，MSE改善均值仍为负，delta1尤其为`.050443`对zero`.048314`。m50到m100的prediction head/frame/event权重相对移动
+仅约`.10%/.31%/.33%`；process与functional在共享Process上的聚合梯度范数比`.894`、cosine`-.0216`，不是缺梯度，而是高方差、
+近正交监督没有在短调度内形成可读映射。
+
+两个新的correct-only disposable诊断排除了状态和head零容量。冻结m100 Process state，只训练原prediction probe/horizon/head，
+当前“raw output再除sqrt(delta)”在100步的train/同视频未见pair/同task未见video MSE解释量为`.468/.206/.099`；直接输出
+标准化target则为`.540/.302/.144`，250步进一步到`.833/.389/.217`。另一个六task多间隔线性probe对固定teacher的delta1/2/4/8
+同视频解释量为负、`.038/.278/.410`，最优scale方向量为`.014/.156/.356/.466`；cross-task双向最优scale均值约
+`.011/.019/.043/.074`。aligned teacher略高但不是数量级变化，因此当前不更换teacher。
+
+正式normalizer提供了独立的可复现缺陷：它只用两条fit视频各一个随机pair，数值min/max为`.00767/.251`，CV`.544`；inverse
+weight的top1/top5占`10.94%/24.20%`，有效task数仅`37.23/73`。task12与88的实际平均normalized process分别达`4.89/3.90`，
+log normalizer与平均normalized loss相关约`-.795`。按每task实际16--17条训练pair的mean/RMS重估，有效task数约`64.1/64.3`，
+说明随机两pair没有实现专家要求的task-equal无量纲化。
+
+`df1e8c6e`的下一matched修正只处理这一优化条件：prediction head直接输出冻结target除`sqrt(delta)`后的量，避免loss外除法继续缩小长delta反向
+梯度；normalizer改为两条fit视频各8个确定性合法pair上的target-only zero-predictor Huber均值，完全不读取可训练Writer状态；
+prediction probe/horizon/head使用主Writer `20x`学习率，使100步余弦累计步长与head-only 100步`1e-3`容量证据等价。主干仍为
+`1e-4`，loss权重、固定teacher、Process/Composer deployment图、完整50-horizon、native X/Y、rank和数据全部不变。
+
+该实现已通过34项Writer测试。task1 demo5真实smoke完整生成38 targets、76 tensors与唯一rank16，functional/process loss为
+`.150360/.161288`；functional Frame/Event/Composer梯度为`.002898/.002652/.187827`，process Frame/Event/Predictor为
+`.065754/.057292/.192145`，峰值allocated/reserved约`27.35/33.98GB`。两步真实shared profile的target-only normalizer为
+`.075211`，主干/辅助readout LR严格保持`20x`，step为`3.67/3.48s`且全部梯度组finite。工程图已有资格进入fresh optimizer50/100
+短实验；若process prediction学成而闭环仍不增益，才把最早失败接口推进到Process-to-Composer credit或task-disjoint mapping。

@@ -4,6 +4,29 @@
 
 ## 当前快照
 
+- random legal-delta fresh资格已经从clean detached `eec024f8`完整结束。73-task optimizer50/100的held5 correct-only strict250
+  均为`41/250`，逐task Long/Goal/Object/Spatial0/Spatial9均为`0/0/4/33/4`、breadth`3/5`；相邻为
+  `33 retained/8 gained/8 lost`。m100相对前代consumer-boundary m100的`35/250`有`12 gained/6 lost`，但相对carrier43仍为
+  `33/8/10`且Goal/Long为0，所以该实例稳定non-pass，不运行negative controls。gradient-task Panel-B fit/held由
+  m50的`-.000010/+.000089`到m100的`+.000223/+.000202`，两个true-task-held在m50/m100均为负，后者为
+  `-.000531/-.000872`；seen functional改善没有形成task-disjoint增益。
+
+  机制诊断说明这不是random delta方向本身已失败，而是正式优化仍未学成它。m100实际predictor相对zero的总体MSE改善仅约`.35%`，
+  delta1仍明显劣于zero；预测头m50到m100参数只移动约`.1%`。但冻结同一Process state、只训练同一readout时，直接预测标准化
+  target在100步的train/同视频未见pair/同task未见video解释量为`.540/.302/.144`，250步为`.833/.389/.217`。多间隔
+  state probe在delta4/8同视频解释量为`.278/.410`，跨task方向信息约`.043/.074`；因此Frame/Event state与head都有非零容量。
+  当前正式normalizer却只由每fit视频一个随机pair估计，73 task的inverse-weight有效数仅`37.23`、top5占`24.20%`，个别task平均
+  normalized process达到`4.89`；按实际16--17条pair估计则有效task约`64`。同时loss外除`sqrt(delta)`会衰减长间隔的prediction
+  梯度，而原100步余弦schedule对head的累计步长只相当于容量诊断约5步。
+
+  `df1e8c6e`的唯一matched修正已经接通：predictor直接输出标准化delta；normalizer用每fit视频8个确定性pair的冻结target-only Huber；纯辅助
+  prediction参数组使用主Writer `20x`学习率，使累计步长与head-only 100步容量证据对齐。固定teacher、Frame/Event/Composer、
+  主deployment forward、loss权重、完整50-horizon/native X/Y/rank4/唯一rank16均不变。34项Writer测试通过；task1真实smoke的
+  functional/process loss为`.150360/.161288`，对应functional Frame/Event/Composer梯度`.002898/.002652/.187827`，process
+  Frame/Event/Predictor梯度`.065754/.057292/.192145`，峰值allocated/reserved约`27.35/33.98GB`。两步shared profile又确认
+  task1 normalizer`.075211`、学习率严格`20x`、全部梯度组非零，step约`3.67/3.48s`。下一步从clean pushed detached authority
+  运行同规模optimizer50/100短资格；若process prediction成立而闭环仍失败，才转向Process-to-Composer credit或task-disjoint mapping。
+
 - 当前最前沿已经完成Process common--innovation consumer-boundary的真实裁决。clean detached `f33f2955`保持完整50-horizon、
   真实native X/Y、positive-only与唯一rank16，73-task shared optimizer50/100、两点Panel-B、物化和held5 correct-only strict250
   均完整结束；m50/m100仅为`40/35`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/2/38/0`与`0/0/5/29/1`，breadth

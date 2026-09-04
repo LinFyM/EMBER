@@ -150,16 +150,21 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     m50/m100仅为`40/35`，逐task分别`0/0/2/38/0`与`0/0/5/29/1`，breadth`2/5`与`3/5`，Goal/Long均为0；两点间
     `28 retained/7 gained/12 lost`。gradient fit/held functional虽继续改善，两个true-task-held却由负变得更负，故该
     consumer-boundary参数化正式non-pass，不追加训练或negative controls；
-24. [ ] 修正首版实现偏离专家原合同的causal interval：此前错误固定`future_offset=1`，而专家要求随机选择prefix `t`与合法
+24. [x] 修正首版实现偏离专家原合同的causal interval：此前错误固定`future_offset=1`，而专家要求随机选择prefix `t`与合法
     `delta>0`。冻结m100的六个gradient task多尺度诊断显示，完整38-owner、50-horizon、2-probe target的within-video最优尺度
     MSE解释量从delta1的`.0094`单调升至delta2/4/8的`.1382/.3268/.4718`，跨task双向均值也由约`.0093`升到约`.0752`；
     所以adjacent高频目标是已证实的最早监督错配。下一fresh只改为outcome-independent的随机合法`(t,delta)`、parameter-free
     interval encoding及可逆的`sqrt(delta)`方差标准化，避免长interval仅因target方差增长而取得更大loss权重；保持固定teacher、
     Process/Composer主图、完整bank、rank与数据不变。实现已在`38d51bab`完成，31项定向测试及task1真实full-horizon delta8 smoke
-    均通过；下一步直接运行同规模optimizer50/100短资格；
-25. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-26. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-27. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    均通过。该formal m50/m100 held5均为`41/250`、breadth`3/5`且Goal/Long为0，故不运行negative controls；
+25. [ ] 修正random-delta实际没有学成的优化根因：m100预测相对zero仅改善约`.35%`，但冻结状态只训练同一head可在100/250步对
+    未见同task视频达到`.144/.217` MSE解释量，delta4/8状态probe也保留`.278/.410`同视频信息。`df1e8c6e`只让head直接输出
+    标准化delta、把两随机pair normalizer改为每fit视频8个target-only pair，并按累计步长实测给纯辅助readout `20x`学习率；
+    Frame/Event/Composer、teacher、loss权重、full bank和数据不变。34项测试、task1真实smoke及两步shared profile已通过；从clean
+    pushed detached authority直接运行optimizer50/100短资格；
+26. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+27. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+28. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

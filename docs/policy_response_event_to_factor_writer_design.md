@@ -596,6 +596,12 @@ full 50-horizon、signed candidate direction、rank、cap、数据、task权重�
 - correct高但shuffle/reverse更好：时序语义错误，不能将control改成训练标签。
 - 相邻checkpoint持续换手：不能用单点峰值宣称成功。
 
+当前set-relative实例已经给出这一分叉的直接证据：authority72 task-local m100在严格配对50初态上由carrier `34/50`提高到
+`40/50`，并与历史task expert `38/50`处于同一量级；而相同函数类的shared m100在held5只有`44/250`且target-role held功能
+`0/4`明确为正。因此下一次fresh资格只把run-specific sampling从`9 meta + 3 target`改为`6 + 6`，保持总task数与所有模型、
+数据、loss和full-50合同不变。该实验只裁决75%/25%的角色总质量是否压制目标域，并不规定未来必须包含meta或target、固定比例，
+也不规定每step必须12个task；若它失败，不再以比例小扫替代共享条件表示或可辨识性分析。
+
 一次non-pass只淘汰实际检验的组合。当前函数类只有在task-local支持、shared正功能、matched前端、K、component/random joint及合理规模
 训练均获得充分证据后仍系统失败，才停止；EMBER总体停止需要进一步证明zero-interaction static-LoRA合同或数据可辨识性本身构成根本
 限制。

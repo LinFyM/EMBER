@@ -201,13 +201,15 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `rank x ragged-group` self-attention + GatedMLP标准重复块，不跨target，不改loss、初始化、Process、direction、data或训练规模；
     61项测试和真实full-50两步smoke均通过；clean detached `3686baec`的matched m50/m100 held5为`37/44`，m100与pointwise同为
     `44/250`且Goal/Long仍为0，10-task held-video功能诊断又只有3/10明确为正，故该参数化non-pass；
-31. [ ] 当前先裁决functional-to-closed-loop接口本身：m100同一forward的legacy与valid-action-only功能benefit在六task上符号
-    全部一致，task74剔除padding后反而更差，故padding不是shared non-pass根因、不修改loss。现把历史task expert `38/50`、J2 held
-    功能benefit约`.01086`的authority72加入task-local正控，训练相同100步后在同一50初态成对比较Writer与carrier；只有task-local
-    能形成闭环增量，才继续把主要根因归于shared task-disjoint mapping；
-32. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-33. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-34. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+31. [x] 裁决functional-to-closed-loop接口本身：legacy与valid-action-only功能benefit在六task上符号一致，padding不是shared失败根因；
+    authority72 task-local m50/m100在同一50初态由carrier `34/50`提高至`35/50`与`40/50`，m100为`30 retained / 10 gained /
+    4 lost`且达到task expert `38/50`量级。functional信用可转化成真实闭环变化，当前主因收窄为shared task-disjoint mapping；
+32. [ ] 运行唯一matched角色权重诊断：在模型、73-task集合、每步12 task、full-50、K1、loss、LR及100步不变时，把`9 meta +
+    3 target`改为`6 + 6`，裁决原75%/25%角色总质量是否压制目标域；若target-held功能与闭环仍不改善，不再扫比例，而转向共享
+    条件表示、task-disjoint可辨识性或positive-only共享信用；
+33. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+34. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+35. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

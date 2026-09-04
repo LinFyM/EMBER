@@ -4,14 +4,20 @@
 
 ## 当前快照
 
-- Set-relative shared已完整裁决为non-pass。clean detached `3686baec`的m50/m100 held5 correct-only strict250为
-  `37/44`，m100与前一pointwise m100同为`44/250`，breadth均仅`3/5`且Goal/Long为0；不续训、不运行negative controls。
-  m100在10个未参与当前checkpoint选择的correct held-video task上只有3个明确功能正增量，4个target task为`0/4`，task74
-  的q/v/action-in/action-out及full有限幅效应又全部为负，说明同task未见视频上的shared条件映射仍不可靠。task93 task-local
-  m100在相同50个初态上仅由carrier `0/50`升到`1/50`；但该任务历史task expert也只有约`3--5/50`，不能据此裁决
-  functional-to-closed-loop接口。下一步改用authority72的Spatial简单任务作正控：其历史task expert为`38/50`，J2 task-local
-  Panel-B 16/16 visits均优于carrier、held benefit约`.01086`。它将直接区分“当前functional目标本身不对应闭环行为”和
-  “task-local可转化但shared task-disjoint mapping失败”。
+- Set-relative shared已完整裁决为non-pass，但authority72正控证明同一函数类的functional信用可以转化为闭环行为。clean detached
+  `3686baec`的shared m50/m100 held5 correct-only strict250为`37/44`，m100与前一pointwise m100同为`44/250`、breadth仅`3/5`
+  且Goal/Long为0；10-task correct held-video功能诊断只有3/10明确为正，四个target task为`0/4`。相反，task72 task-local
+  optimizer50/100的fit recovery为`.31231/.35311`、held recovery为`.28411/.32669`，三条视频全优于carrier；同一50初态上
+  carrier/m50/m100为`34/35/40`，m100相对carrier为`30 retained / 10 gained / 4 lost`（exact `p=.179565`），并达到历史
+  task expert `38/50`的同一行为量级。50/50 env seed与共同policy-noise prefix已逐项一致，成功episode提前终止导致完整noise
+  序列长度不同，不是pairing错误。因此当前没有证据支持“Evaluator完全失真”或“functional-to-LoRA-to-behavior链路根本断裂”；
+  最早缺口收窄为shared task-conditioned/task-disjoint mapping及其训练信用。
+
+- 下一fresh只改变run-specific角色聚合：保持73个gradient tasks、每步总12 task、模型、数据、full-50、K1、loss、LR、100步与
+  m50/m100完全不变，把`9 meta + 3 target`改为`6 meta + 6 target`。这将target角色总权重由25%提高到50%，同时保持role内
+  task等权，用短跑检验原采样是否让55个meta task压过18个目标域task；它不是固定meta/target比例、固定每步task数或最终训练
+  规则。若matched role-equal仍不能改善target held功能与closed-loop，就不继续比例微调，而把根因上移到共享条件表示、
+  task-disjoint可辨识性或positive-only共享信用设计。
 
 - 同时发现当前cross-episode functional batch虽在原始dataset中生成`action_is_pad`，processor却未把它传给已有的
   `pi05_mean_flow_loss(..., action_is_pad=...)`路径；因此episode尾部重复最后动作的padding参与了损失。73个gradient task的

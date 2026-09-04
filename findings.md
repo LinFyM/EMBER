@@ -41,10 +41,17 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 排除“Composer本身接近零容量”这一最早失败解释。
 
 后续closed-loop审计表明，task93并不是裁决functional-to-behavior接口的合适单点：当前set-relative task-local m100仅把同一
-50初态从carrier `0/50`提高到`1/50`，但历史task expert在该Long任务也只有约`3--5/50`。authority72的Spatial任务更有判别力：
-同一冻结policy的task expert为`38/50`，旧J2 task-local在未见视频Panel-B的16/16 visits均优于carrier、平均benefit约`.01086`。
-因此当前先在同一Writer函数类上运行task72 task-local与carrier paired50；它能区分functional监督本身是否能产生闭环行为，避免把
-极难任务的地板效应误判成模型接口缺陷。
+50初态从carrier `0/50`提高到`1/50`，但历史task expert在该Long任务也只有约`3--5/50`。更有判别力的authority72 Spatial正控中，
+同一Writer optimizer50/100的fit recovery为`.31231/.35311`、held recovery为`.28411/.32669`，三条视频均优于carrier；同一50初态
+的carrier/m50/m100为`34/35/40`，m100相对carrier为`30 retained / 10 gained / 4 lost`（exact `p=.179565`），并达到历史task
+expert `38/50`的同一行为量级。全部env seed与共同policy-noise prefix一致；成功episode提前终止造成的序列长度差不是pairing错误。
+所以functional目标能够产生真实闭环变化，Evaluator也能辨别该变化；结果尚非shared成功或统计决定性增益，但已把最早主因从
+“functional-to-behavior链路根本无效”收窄到shared task-conditioned/task-disjoint mapping及训练信用。
+
+当前shared采样每步`9 meta + 3 target`虽近似73个task逐task等权，却让两种训练角色的总质量为75%/25%；10-task held诊断又显示
+target为`0/4`明确正增量，而task72证明目标域局部信用可转化。下一个matched短实验只改为`6 meta + 6 target`，保持每步总task数、
+模型、full-50、数据、loss、LR和100步不变，以检验meta总体信用是否压过target域。该比例仅是单变量诊断，不是固定训练合同；若仍
+失败，就停止比例微调并直接检查共享条件表示、task-disjoint可辨识性或positive-only共享信用。
 
 functional query中约18%的action positions是episode结束后的重复padding。虽然该比例与多条shared训练曲线的内部benefit相关，
 对set-relative m100六个task用完全相同随机性的legacy/valid-only成对forward后，六个benefit符号全部保持，且失败最重的task74从

@@ -645,7 +645,9 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
                 "gpu_uuid": f"GPU-{gpu}",
                 "gpu_name": "NVIDIA A40",
                 "replica": 0,
-                "numa_node": 0 if gpu < 4 else 1,
+                # Physical indices do not imply an even NUMA split; gpu01 is
+                # a seven-device host whose GPU3 is attached to node 1.
+                "numa_node": 0 if gpu < 3 else 1,
                 "cpu_affinity": [gpu],
                 "model_load_seconds": 3.0,
                 "contract_reference": contract["contract_reference"],

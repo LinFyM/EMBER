@@ -65,13 +65,17 @@ def _worker_lifecycle(
     finished = by_event["finished"]
     gpu_text, replica_text = worker_id.split("-r", 1)
     physical_gpu = int(gpu_text)
-    expected_numa = 0 if physical_gpu < 4 else 1
+    numa_node = ready.get("numa_node")
     if (
         int(ready.get("physical_gpu", -1)) != physical_gpu
         or int(ready.get("replica", -1)) != int(replica_text)
         or not ready.get("gpu_uuid")
         or not ready.get("gpu_name")
-        or ready.get("numa_node") != expected_numa
+        # The worker resolves NUMA from the visible CUDA device's PCI address.
+        # Do not infer host topology from a physical-GPU index: gpu01 has seven
+        # devices split 0--2 / 3--6, whereas the old check assumed 0--3 / 4--7.
+        or not isinstance(numa_node, int)
+        or numa_node < 0
         or not ready.get("cpu_affinity")
         or not float(process["unix"]) <= float(ready["unix"]) <= float(finished["unix"])
     ):
@@ -83,7 +87,7 @@ def _worker_lifecycle(
         "gpu_uuid": ready["gpu_uuid"],
         "gpu_name": ready["gpu_name"],
         "replica": int(ready["replica"]),
-        "numa_node": int(ready["numa_node"]),
+        "numa_node": numa_node,
         "cpu_affinity": ready["cpu_affinity"],
         "process_started_unix": float(process["unix"]),
         "ready_unix": float(ready["unix"]),

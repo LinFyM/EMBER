@@ -337,6 +337,7 @@ def _step_row(
         "gradient_norm_before_clip": float(gradient_norm),
         "gradient_groups": dict(gradient_groups),
         "next_lr": scheduler.get_last_lr()[0],
+        "next_process_prediction_lr": scheduler.get_last_lr()[1],
         "step_seconds": max(float(value["seconds"]) for value in performance),
         "rank_performance": sorted(performance, key=lambda value: value["rank"]),
     }

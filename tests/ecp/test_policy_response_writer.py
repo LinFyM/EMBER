@@ -29,7 +29,9 @@ from ember.ecp.policy_response_writer.composer import (
 from ember.ecp.policy_response_writer.process import parameter_free_process_norm
 from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
+    _optimizer,
     _remove_shared_video_cache,
+    _target_only_process_normalizer,
     _video_splits,
     balanced_task_owners,
     causal_pair,
@@ -190,6 +192,94 @@ def test_full_writer_has_functional_gradients_and_frozen_causal_target() -> None
         later = model.process.predict_future_delta(process, future_offset=2)
     assert adjacent.shape == later.shape == (2, 4, ACTION_HORIZON, 32)
     assert not torch.equal(adjacent, later)
+
+
+def test_causal_predictor_directly_outputs_sqrt_delta_standardized_target() -> None:
+    model = _model().eval()
+    video = _video(17, frames=10)
+    cutoff = 6
+    future_offset = 3
+    with torch.no_grad():
+        process = model.process(video.frame_slice(cutoff), causal=True)
+        prediction = model.process.predict_future_delta(
+            process, future_offset=future_offset
+        )
+        teacher = model.process.fixed_teacher_response(video)
+        target = model.process.standardized_teacher_delta(
+            teacher,
+            cutoff=cutoff,
+            future_offset=future_offset,
+        )
+        observed = model.process.causal_prediction_loss(
+            video,
+            cutoffs=(cutoff,),
+            future_offset=future_offset,
+        )
+    expected = torch.nn.functional.smooth_l1_loss(
+        prediction.float(), target.float(), beta=1.0
+    )
+    torch.testing.assert_close(observed, expected)
+    torch.testing.assert_close(
+        target * math.sqrt(future_offset),
+        teacher[cutoff - 1 + future_offset] - teacher[cutoff - 1],
+    )
+
+
+def test_target_only_process_normalizer_ignores_prediction_state() -> None:
+    model = _model().eval()
+    runtime = SimpleNamespace(writer=model)
+    video = _video(23, frames=12)
+    first = _target_only_process_normalizer(
+        runtime,
+        video,
+        task=8,
+        demo=3,
+        pair_count=8,
+    )
+    with torch.no_grad():
+        for parameter in (
+            *model.process.prediction_probe.parameters(),
+            *model.process.prediction_horizon.parameters(),
+            *model.process.prediction_head.parameters(),
+        ):
+            parameter.fill_(100.0)
+    second = _target_only_process_normalizer(
+        runtime,
+        video,
+        task=8,
+        demo=3,
+        pair_count=8,
+    )
+    assert first == second > 0.0
+
+
+def test_shared_optimizer_gives_only_causal_readout_the_measured_lr_ratio() -> None:
+    model = _model()
+    frozen_policy = torch.nn.Linear(2, 2).requires_grad_(False)
+    frozen_stage0 = torch.nn.Linear(2, 2).requires_grad_(False)
+    runtime = SimpleNamespace(
+        writer=model,
+        policy=frozen_policy,
+        stage0=frozen_stage0,
+        config={
+            "optimization": {
+                "shared": {
+                    "learning_rate": 1e-4,
+                    "decay_learning_rate": 1e-6,
+                    "process_prediction_lr_multiplier": 20.0,
+                    "betas": [0.9, 0.95],
+                    "weight_decay": 0.01,
+                    "warmup_updates": 10,
+                    "effective_updates": 90,
+                }
+            }
+        },
+    )
+    parameters, optimizer, scheduler = _optimizer(runtime)
+    assert len(parameters) == len(tuple(model.parameters()))
+    assert len(optimizer.param_groups) == 2
+    assert optimizer.param_groups[1]["lr"] / optimizer.param_groups[0]["lr"] == 20.0
+    assert scheduler.get_last_lr()[1] / scheduler.get_last_lr()[0] == 20.0
 
 
 def test_composer_consumes_explicit_event_relation_assignment() -> None:
@@ -713,15 +803,20 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert len({offset for _, offset in pairs}) >= 8
 
 
-def test_random_delta_config_is_explicit_and_predecessor_is_rejected() -> None:
+def test_process_conditioned_config_is_explicit_and_predecessor_is_rejected() -> None:
     root = Path(__file__).resolve().parents[2]
     current = load_policy_response_config(
-        root / "configs/pi05_ecp_policy_response_writer_random_delta_v1.json"
+        root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"
     )
     assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
+    assert (
+        current["optimization"]["shared"]["process_normalizer_pairs_per_fit_video"]
+        == 8
+    )
+    assert current["optimization"]["shared"]["process_prediction_lr_multiplier"] == 20.0
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
-            root / "configs/pi05_ecp_policy_response_writer_typed_process_boundary_v1.json"
+            root / "configs/pi05_ecp_policy_response_writer_random_delta_v1.json"
         )
 
 

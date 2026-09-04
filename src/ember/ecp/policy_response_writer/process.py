@@ -601,6 +601,8 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         *,
         future_offset: int,
     ) -> torch.Tensor:
+        """Predict the future-response delta already standardized by sqrt(delta)."""
+
         state = (
             parameter_free_process_norm(process.common)
             + parameter_free_process_norm(process.frame_innovation[-1])
@@ -618,6 +620,23 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
             + interval[None, None, None]
         )
         return self.prediction_head(query).permute(1, 0, 2, 3)
+
+    @staticmethod
+    def standardized_teacher_delta(
+        teacher: torch.Tensor,
+        *,
+        cutoff: int,
+        future_offset: int,
+    ) -> torch.Tensor:
+        """Return a fixed target with interval variance removed, not information."""
+
+        stop = int(cutoff)
+        offset = int(future_offset)
+        current = stop - 1
+        future = current + offset
+        if stop <= 0 or offset <= 0 or future >= teacher.shape[0]:
+            raise ValueError("causal policy-response target interval changed")
+        return (teacher[future] - teacher[current]) / math.sqrt(offset)
 
     def causal_prediction_loss(
         self,
@@ -641,12 +660,15 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
             prediction = self.predict_future_delta(
                 process, future_offset=future_offset
             )
-            target = teacher[future] - teacher[current]
-            interval_scale = math.sqrt(future_offset)
+            target = self.standardized_teacher_delta(
+                teacher,
+                cutoff=stop,
+                future_offset=future_offset,
+            )
             losses.append(
                 F.smooth_l1_loss(
-                    prediction.float() / interval_scale,
-                    target.float() / interval_scale,
+                    prediction.float(),
+                    target.float(),
                     beta=1.0,
                     reduction="mean",
                 )

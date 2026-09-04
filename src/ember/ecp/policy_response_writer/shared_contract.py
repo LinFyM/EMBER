@@ -128,7 +128,9 @@ def build_shared_run_contract(
         },
         "loss_normalization": {
             "functional": "per_task_frozen_panel_a_carrier_rms",
-            "process": "per_task_initial_two_fit_prefix_mean",
+            "process": str(
+                runtime.config["optimization"]["shared"]["process_normalizer"]
+            ),
             "preservation": "same_as_functional",
             "resume_authority": "normalizers.json",
         },

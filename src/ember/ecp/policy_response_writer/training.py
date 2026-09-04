@@ -115,13 +115,25 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("process_consumer_boundary")
             == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
             model.get("causal_process_interval")
-            == "deterministic_uniform_prefix_then_uniform_positive_future_offset_sqrt_delta_standardized_with_parameter_free_encoding",
+            == "deterministic_uniform_prefix_then_uniform_positive_future_offset_direct_sqrt_delta_standardized_target_with_parameter_free_encoding",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
             bool(training_k),
             tuple(sorted(set(training_k))) == training_k,
             set(training_k) <= {1, 2, 4},
+            config.get("optimization", {})
+            .get("shared", {})
+            .get("process_normalizer")
+            == "target_only_deterministic_8_pairs_per_fit_video",
+            config.get("optimization", {})
+            .get("shared", {})
+            .get("process_normalizer_pairs_per_fit_video")
+            == 8,
+            config.get("optimization", {})
+            .get("shared", {})
+            .get("process_prediction_lr_multiplier")
+            == 20.0,
             config.get("information_wall", {}).get("action_meta_installed") is False,
             config.get("information_wall", {}).get("wrong_training_loss") is False,
         )

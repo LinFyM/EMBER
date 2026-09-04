@@ -22,6 +22,7 @@ from typing import Any, Mapping, Sequence
 
 import torch
 import torch.distributed as dist
+import torch.nn.functional as F
 
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.shared_contract import (
@@ -173,11 +174,29 @@ def _optimizer(
     torch.optim.lr_scheduler.LambdaLR,
 ]:
     runtime.writer.requires_grad_(True).train()
-    parameters = tuple(runtime.writer.parameters())
+    named_parameters = tuple(runtime.writer.named_parameters())
+    parameters = tuple(value for _, value in named_parameters)
+    prediction_parameters = tuple(
+        value
+        for name, value in named_parameters
+        if name.startswith("process.prediction_")
+    )
+    prediction_ids = {id(value) for value in prediction_parameters}
+    remaining_parameters = tuple(
+        value for value in parameters if id(value) not in prediction_ids
+    )
     cell = runtime.config["optimization"]["shared"]
+    learning_rate = float(cell["learning_rate"])
+    prediction_multiplier = float(cell["process_prediction_lr_multiplier"])
     optimizer = torch.optim.AdamW(
-        parameters,
-        lr=float(cell["learning_rate"]),
+        (
+            {"params": remaining_parameters},
+            {
+                "params": prediction_parameters,
+                "lr": learning_rate * prediction_multiplier,
+            },
+        ),
+        lr=learning_rate,
         betas=tuple(cell["betas"]),
         weight_decay=float(cell["weight_decay"]),
     )
@@ -194,12 +213,63 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
+        or not prediction_parameters
+        or not remaining_parameters
+        or len(prediction_ids) != len(prediction_parameters)
+        or not math.isfinite(prediction_multiplier)
+        or prediction_multiplier <= 1.0
         or runtime.writer.composer.task_query is not None
         or any(value.requires_grad for value in runtime.policy.parameters())
         or any(value.requires_grad for value in runtime.stage0.parameters())
     ):
         raise RuntimeError("shared Writer parameter ownership changed")
     return parameters, optimizer, scheduler
+
+
+@torch.no_grad()
+def _target_only_process_normalizer(
+    runtime: PolicyResponseRuntime,
+    video: FrozenPolicyResponseVideo,
+    *,
+    task: int,
+    demo: int,
+    pair_count: int,
+) -> float:
+    """Estimate task scale from several fixed targets, independent of Writer state."""
+
+    if pair_count <= 0:
+        raise ValueError("process normalizer pair count changed")
+    process = runtime.writer.process
+    teacher = process.fixed_teacher_response(video).detach()
+    losses = []
+    for pair_index in range(pair_count):
+        cutoff, future_offset = causal_pair(
+            video.frame_count,
+            process.event_slots,
+            optimizer_step=pair_index,
+            task=task,
+            demo=demo,
+        )
+        target = process.standardized_teacher_delta(
+            teacher,
+            cutoff=cutoff,
+            future_offset=future_offset,
+        )
+        losses.append(
+            float(
+                F.smooth_l1_loss(
+                    torch.zeros_like(target),
+                    target,
+                    beta=1.0,
+                    reduction="mean",
+                )
+            )
+        )
+    del teacher
+    result = statistics.fmean(losses)
+    if not math.isfinite(result) or result <= 1e-8:
+        raise RuntimeError("shared Writer target-only process normalizer changed")
+    return result
 
 
 def _capture_missing(
@@ -267,7 +337,11 @@ def _prepare_training_cache(
     shared_video_cache: SharedPolicyResponseVideoCache | None = None,
 ) -> SharedEvidenceCache:
     cache = SharedEvidenceCache({}, [], {}, {})
-    event_slots = int(runtime.config["model"]["event_slots"])
+    pair_count = int(
+        runtime.config["optimization"]["shared"][
+            "process_normalizer_pairs_per_fit_video"
+        ]
+    )
     runtime.writer.eval()
     for task in map(int, owned_tasks):
         fit, _ = video_splits[task]
@@ -282,21 +356,15 @@ def _prepare_training_cache(
         losses = []
         for demo in fit:
             video = cache.videos[(task, demo)].to(runtime.context.device)
-            cutoff, future_offset = causal_pair(
-                video.frame_count,
-                event_slots,
-                optimizer_step=0,
-                task=task,
-                demo=demo,
-            )
-            with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-                loss = runtime.writer.causal_prediction_loss(
-                    (video,),
-                    cutoffs=((cutoff,),),
-                    future_offsets=(future_offset,),
-                    representation=runtime.args.representation,
+            losses.append(
+                _target_only_process_normalizer(
+                    runtime,
+                    video,
+                    task=task,
+                    demo=demo,
+                    pair_count=pair_count,
                 )
-            losses.append(float(loss))
+            )
             del video
         normalizer = statistics.fmean(losses)
         if not math.isfinite(normalizer) or normalizer <= 1e-8:

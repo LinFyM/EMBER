@@ -154,7 +154,7 @@ class RankBankContextBlock(torch.nn.Module):
         self,
         query: torch.Tensor,
         event_memory: torch.Tensor,
-        bank_memory: Sequence[torch.Tensor],
+        bank_memory: Sequence[Sequence[torch.Tensor]],
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if (
             query.ndim != 2
@@ -173,15 +173,28 @@ class RankBankContextBlock(torch.nn.Module):
         value = query + event_delta
 
         bank_query = self.query_norm(value)[None]
-        bank = tuple(bank_memory)
-        if torch.is_grad_enabled() and any(chunk.requires_grad for chunk in bank):
+        bank = tuple(tuple(chunks) for chunks in bank_memory)
+        flat_bank = tuple(chunk for chunks in bank for chunk in chunks)
+        if not flat_bank:
+            raise ValueError("native-bank attention received no chunks")
+        if torch.is_grad_enabled() and any(
+            chunk.requires_grad for chunk in flat_bank
+        ):
+            chunk_counts = tuple(len(chunks) for chunks in bank)
 
             def read(
                 local_query: torch.Tensor, *local_bank: torch.Tensor
             ) -> torch.Tensor:
-                return self._exact_bank_attention(local_query, local_bank)
+                offset = 0
+                videos = []
+                for count in chunk_counts:
+                    videos.append(local_bank[offset : offset + count])
+                    offset += count
+                return self._exact_bank_attention(local_query, videos)
 
-            attended = checkpoint(read, bank_query, *bank, use_reentrant=False)
+            attended = checkpoint(
+                read, bank_query, *flat_bank, use_reentrant=False
+            )
         else:
             attended = self._exact_bank_attention(bank_query, bank)
         value = value + attended[0]
@@ -195,7 +208,7 @@ class RankBankContextBlock(torch.nn.Module):
     def _exact_bank_attention(
         self,
         query: torch.Tensor,
-        memory: Sequence[torch.Tensor],
+        memory: Sequence[Sequence[torch.Tensor]],
     ) -> torch.Tensor:
         """Read each video bank exactly, then aggregate the video set equally."""
 
@@ -205,11 +218,14 @@ class RankBankContextBlock(torch.nn.Module):
         return torch.stack(reads).mean(0)
 
     def _single_bank_attention(
-        self, query: torch.Tensor, memory: torch.Tensor
+        self, query: torch.Tensor, memory: Sequence[torch.Tensor]
     ) -> torch.Tensor:
-        if memory.shape[0] <= DENSE_BANK_ATTENTION_TOKEN_LIMIT:
-            return self._dense_bank_attention(query, memory)
-        return self._streaming_bank_attention(query, memory)
+        chunks = tuple(memory)
+        if not chunks:
+            raise ValueError("native-bank attention received an empty video")
+        if len(chunks) == 1 and chunks[0].shape[0] <= DENSE_BANK_ATTENTION_TOKEN_LIMIT:
+            return self._dense_bank_attention(query, chunks[0])
+        return self._streaming_bank_attention(query, chunks)
 
     def _dense_bank_attention(
         self, query: torch.Tensor, memory: torch.Tensor
@@ -252,16 +268,20 @@ class RankBankContextBlock(torch.nn.Module):
         return self.bank_attention.out_proj(attended)
 
     def _streaming_bank_attention(
-        self, query: torch.Tensor, memory: torch.Tensor
+        self, query: torch.Tensor, memory: Sequence[torch.Tensor]
     ) -> torch.Tensor:
         """The same attention reduced exactly in bounded token blocks."""
 
         if (
             query.ndim != 3
             or query.shape[0] != 1
-            or memory.ndim != 2
-            or memory.shape[-1] != query.shape[-1]
-            or not memory.shape[0]
+            or not memory
+            or any(
+                chunk.ndim != 2
+                or chunk.shape[-1] != query.shape[-1]
+                or not chunk.shape[0]
+                for chunk in memory
+            )
         ):
             raise ValueError("streaming native-bank attention inputs changed")
         width = query.shape[-1]
@@ -279,32 +299,37 @@ class RankBankContextBlock(torch.nn.Module):
         maximum = None
         denominator = None
         numerator = None
-        for start in range(0, memory.shape[0], STREAMING_BANK_BLOCK_TOKEN_LIMIT):
-            chunk = self.bank_norm(
-                memory[start : start + STREAMING_BANK_BLOCK_TOKEN_LIMIT]
-            )
-            key = F.linear(chunk, weight[width : 2 * width], k_bias)
-            value = F.linear(chunk, weight[2 * width :], v_bias)
-            key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
-            value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
-            score = torch.einsum(
-                "hqd,hnd->hqn", projected_query, key
-            ).float() / math.sqrt(head_width)
-            local_maximum = score.amax(-1)
-            if maximum is None:
-                maximum = local_maximum
-                mass = torch.exp(score - maximum[..., None])
-                denominator = mass.sum(-1)
-                numerator = torch.einsum("hqn,hnd->hqd", mass, value.float())
-                continue
-            updated_maximum = torch.maximum(maximum, local_maximum)
-            previous_scale = torch.exp(maximum - updated_maximum)
-            mass = torch.exp(score - updated_maximum[..., None])
-            denominator = denominator * previous_scale + mass.sum(-1)
-            numerator = numerator * previous_scale[..., None] + torch.einsum(
-                "hqn,hnd->hqd", mass, value.float()
-            )
-            maximum = updated_maximum
+        for source in memory:
+            for start in range(
+                0, source.shape[0], STREAMING_BANK_BLOCK_TOKEN_LIMIT
+            ):
+                chunk = self.bank_norm(
+                    source[start : start + STREAMING_BANK_BLOCK_TOKEN_LIMIT]
+                )
+                key = F.linear(chunk, weight[width : 2 * width], k_bias)
+                value = F.linear(chunk, weight[2 * width :], v_bias)
+                key = key.reshape(-1, heads, head_width).permute(1, 0, 2)
+                value = value.reshape(-1, heads, head_width).permute(1, 0, 2)
+                score = torch.einsum(
+                    "hqd,hnd->hqn", projected_query, key
+                ).float() / math.sqrt(head_width)
+                local_maximum = score.amax(-1)
+                if maximum is None:
+                    maximum = local_maximum
+                    mass = torch.exp(score - maximum[..., None])
+                    denominator = mass.sum(-1)
+                    numerator = torch.einsum(
+                        "hqn,hnd->hqd", mass, value.float()
+                    )
+                    continue
+                updated_maximum = torch.maximum(maximum, local_maximum)
+                previous_scale = torch.exp(maximum - updated_maximum)
+                mass = torch.exp(score - updated_maximum[..., None])
+                denominator = denominator * previous_scale + mass.sum(-1)
+                numerator = numerator * previous_scale[..., None] + torch.einsum(
+                    "hqn,hnd->hqd", mass, value.float()
+                )
+                maximum = updated_maximum
         if denominator is None or numerator is None:
             raise ValueError("streaming native-bank attention received no tokens")
         attended = (numerator / denominator[..., None]).permute(1, 0, 2)
@@ -437,7 +462,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         target: int,
         videos: Sequence[FrozenPolicyResponseVideo],
         processes: Sequence[PolicyResponseProcessOutput],
-    ) -> tuple[tuple[torch.Tensor, ...], tuple[_NativeVideoCandidates, ...]]:
+    ) -> tuple[
+        tuple[tuple[torch.Tensor, ...], ...],
+        tuple[_NativeVideoCandidates, ...],
+    ]:
         memories = []
         candidates = []
         owner = self.owners[target]
@@ -456,7 +484,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             positions = self._position(video)
             boundary = NativeOutputBankState(final=video.final_outputs[target])
             chunks = []
-            memory = []
+            memory_chunks = []
             for start in range(0, video.frame_count, self.pooling_frame_chunk):
                 stop = min(start + self.pooling_frame_chunk, video.frame_count)
                 local_position = positions[start:stop]
@@ -469,12 +497,19 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                     *output.shape[:-1], groups, group_width
                 ).movedim(-2, 0)
                 output_keys = self._output_keys(target, grouped, local_position)
-                memory.extend(
+                input_shape = input_keys.shape
+                output_shape = output_keys.shape
+                input_count = input_keys.numel() // self.width
+                memory_chunk = torch.cat(
                     (
                         input_keys.reshape(-1, self.width),
                         output_keys.reshape(-1, self.width),
-                    )
+                    ),
+                    dim=0,
                 )
+                input_keys = memory_chunk[:input_count].reshape(input_shape)
+                output_keys = memory_chunk[input_count:].reshape(output_shape)
+                memory_chunks.append(memory_chunk)
                 chunks.append(
                     _NativeBankChunk(
                         input_values=input_values,
@@ -485,7 +520,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 )
             if boundary.next_frame != video.frame_count:
                 raise ValueError("native composer bank stream ended early")
-            memories.append(torch.cat(tuple(memory), dim=0))
+            memories.append(tuple(memory_chunks))
             candidates.append(
                 _NativeVideoCandidates(
                     frame_count=video.frame_count,
@@ -516,7 +551,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self,
         target: int,
         processes: Sequence[PolicyResponseProcessOutput],
-        bank_memory: Sequence[torch.Tensor],
+        bank_memory: Sequence[Sequence[torch.Tensor]],
     ) -> tuple[torch.Tensor, torch.Tensor]:
         language = torch.stack(
             tuple(process.owner_language[target] for process in processes)
@@ -619,36 +654,25 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             output_mass = -math.log(
                 video_count * video.frame_count * 2 * ACTION_HORIZON * 4
             )
-            input_keys = torch.cat(
-                tuple(chunk.input_keys for chunk in video.chunks), dim=0
-            )
-            input_values = torch.cat(
-                tuple(chunk.input_values for chunk in video.chunks), dim=0
-            )
-            input_accumulator.add(
-                self._checkpointed_branch_logits(
-                    input_keys,
-                    input_base,
-                    input_contrast,
-                    log_base_mass=input_mass,
-                ),
-                input_values,
-            )
-            output_keys = torch.cat(
-                tuple(chunk.output_keys for chunk in video.chunks), dim=1
-            )
-            output_values = torch.cat(
-                tuple(chunk.output_values for chunk in video.chunks), dim=1
-            )
-            output_accumulator.add(
-                self._checkpointed_branch_logits(
-                    output_keys.movedim(0, 1),
-                    output_base,
-                    output_contrast,
-                    log_base_mass=output_mass,
-                ),
-                output_values,
-            )
+            for chunk in video.chunks:
+                input_accumulator.add(
+                    self._checkpointed_branch_logits(
+                        chunk.input_keys,
+                        input_base,
+                        input_contrast,
+                        log_base_mass=input_mass,
+                    ),
+                    chunk.input_values,
+                )
+                output_accumulator.add(
+                    self._checkpointed_branch_logits(
+                        chunk.output_keys.movedim(0, 1),
+                        output_base,
+                        output_contrast,
+                        log_base_mass=output_mass,
+                    ),
+                    chunk.output_values,
+                )
         return input_accumulator.signed_mean(), output_accumulator.signed_mean()
 
     def forward(

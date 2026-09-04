@@ -255,7 +255,8 @@ def test_native_bank_memory_keeps_every_candidate_axis() -> None:
             )
             groups = native_output_group_count(owner)
             expected = video.frame_count * 2 * ACTION_HORIZON * (1 + groups * 4)
-            assert memory[0].shape == (expected, model.composer.width)
+            assert sum(chunk.shape[0] for chunk in memory[0]) == expected
+            assert all(chunk.shape[1] == model.composer.width for chunk in memory[0])
             assert sum(row.frame_count for row in candidates) == video.frame_count
 
 
@@ -274,7 +275,7 @@ def test_streaming_native_attention_matches_dense_values_and_gradients(
     stream_query = dense_query.detach().clone().requires_grad_(True)
     stream_memory = dense_memory.detach().clone().requires_grad_(True)
     monkeypatch.setattr(composer_module, "STREAMING_BANK_BLOCK_TOKEN_LIMIT", 5)
-    streamed = block._streaming_bank_attention(stream_query, stream_memory)
+    streamed = block._streaming_bank_attention(stream_query, (stream_memory,))
     streamed.square().sum().backward()
     torch.testing.assert_close(streamed, dense.detach(), rtol=3e-5, atol=3e-8)
     torch.testing.assert_close(
@@ -282,6 +283,24 @@ def test_streaming_native_attention_matches_dense_values_and_gradients(
     )
     torch.testing.assert_close(
         stream_memory.grad, expected_memory_grad, rtol=5e-5, atol=5e-8
+    )
+
+    split_query = dense_query.detach().clone().requires_grad_(True)
+    split_left = dense_memory.detach()[:9].clone().requires_grad_(True)
+    split_right = dense_memory.detach()[9:].clone().requires_grad_(True)
+    split = block._streaming_bank_attention(
+        split_query, (split_left, split_right)
+    )
+    split.square().sum().backward()
+    torch.testing.assert_close(split, dense.detach(), rtol=3e-5, atol=3e-8)
+    torch.testing.assert_close(
+        split_query.grad, expected_query_grad, rtol=5e-5, atol=5e-8
+    )
+    torch.testing.assert_close(
+        torch.cat((split_left.grad, split_right.grad)),
+        expected_memory_grad,
+        rtol=5e-5,
+        atol=5e-8,
     )
 
 

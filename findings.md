@@ -2586,3 +2586,36 @@ prediction probe/horizon/head使用主Writer `20x`学习率，使100步余弦累
 `.065754/.057292/.192145`，峰值allocated/reserved约`27.35/33.98GB`。两步真实shared profile的target-only normalizer为
 `.075211`，主干/辅助readout LR严格保持`20x`，step为`3.67/3.48s`且全部梯度组finite。工程图已有资格进入fresh optimizer50/100
 短实验；若process prediction学成而闭环仍不增益，才把最早失败接口推进到Process-to-Composer credit或task-disjoint mapping。
+
+### 140. Process优化已学得视频时序，但人工prefix终点把辅助坐标与部署event错位
+
+clean detached `f20a5299512a006d0c21dd03ef165fc6e4f094d4`的process-conditioned formal root为
+`runs/outputs/pi05_ecp_policy_response_writer_process_conditioned_73task_k1_component_s100_df1e8c6e_gpu01p0156_sharedmmap_20260904/`。
+100个optimizer steps、macro50/100、Panel-B、result与completion均完整且exit0；训练/总wall为`1702.73/2467.33s`，四rank
+稳定段wall对齐。信息墙确认source/observer trainable为0，held、true-task-held、wrong与Panel-B backward均为0，shuffle/reverse
+读取为0，Action Meta关闭，输出仍是一套完整38-target rank16 LoRA。
+
+两点held5 correct-only strict250都为`37/250`。m50逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/3/31/3`，m100为
+`0/0/3/32/2`，breadth均`3/5`且Goal/Long均为0；两点间`31 retained/6 gained/6 lost`。m100相对carrier43为
+`32 retained/5 gained/11 lost`，相对random-delta m100=41为`27/10/14`。因此更稳定的normalizer和更充分的prediction-head
+优化没有带来闭环收益，该训练实例正式non-pass，不追加训练或运行negative controls。
+
+但新的正确视频、零optimizer诊断证明Process时序职责已经开始学成，而非head走无视频捷径。六个gradient-authorized任务、两条fit加
+一条same-task-held视频、每视频六个合法pair上，m100标准化Smooth-L1由zero的`.065969`降到`.061689`，改善`6.49%`；held视频由
+`.064702`降到`.060897`。把Process common与frame innovation同时置零后反而为`.067523`，差于zero约`2.36%`；完整状态在
+`100/108`个pair上优于该zero-state预测。由此排除“probe/horizon/interval embedding独立背出平均delta”作为主因。
+
+真正的首个错位来自causal prefix复用了完整视频的hard-final posterior：每个任意cutoff的当前帧都被强制赋给slot7，m100的
+`108/108`个pair无一例外；同一帧在完整视频posterior中只有`15/108`仍以slot7为argmax，assignment重合度均值仅`.136962`，在视频
+前75%位置几乎为零。于是辅助目标训练的是“任意截断点都是最终事件”，Composer部署时消费的却是“只有真实视频末帧是最终事件”。
+这解释了为什么prediction可改善而完整视频functional没有获益。
+
+同一m100上的correct-only梯度诊断与该接口错位一致：target任务聚合Process梯度在全部共享Process参数上为functional的`3.73x`、
+cosine `-.0572`，只看Event参数为`3.16x`、cosine `-.2037`；meta侧分别为`1.89x`与`.0108`，Process的meta--target方向又为
+`-.3965`。辅助项不是断图或太弱，而是在错误event坐标上经常压过真正functional credit。
+
+最后的只读反事实只把prefix posterior改为从首帧anchor开始的标准monotone forward filtering，不改任何权重、预测头或完整视频forward。
+m50/m100同帧assignment重合度分别由`.082712/.136962`升到`.678178/.692016`；真实完整视频仍保留G2已验证的首尾anchors。
+旧预测头在未训练过的filter坐标上m100 loss由`.061689`暂升至`.062896`不构成反证。下一fresh只修这一推断语义：causal auxiliary的
+人工prefix不是完整视频，不施加hard final anchor；deployment/full-video posterior、fixed teacher、loss权重、Frame/Composer、
+完整50-horizon、native X/Y、rank与数据全部保持不变。

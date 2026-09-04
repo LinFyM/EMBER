@@ -130,6 +130,11 @@ owner于2026-09-03进一步锁定：full policy-response是唯一active represen
 单调stay/forward、首尾boundary anchor、relative frame positions和mask属于硬结构；旧Natural Program的固定tuple、canonical code与
 下游decoder不是硬接口。
 
+首尾anchor只属于一条真实完整视频：deployment/full-video posterior继续硬锚真实第一帧与真实最后帧。causal prediction训练使用的
+`video[:t]`只是人工观察prefix，不是另一条在`t`处自然结束的视频；其posterior从第一帧anchor开始做标准monotone forward filtering，
+不把当前cutoff硬锚为最终slot。这样不读取未来frame、future assignment或current-to-final relation，同时让prefix slot与完整视频
+slot保持同一过程语义。把每个cutoff都硬当最终帧会系统性把当前状态别名成slot7，不能算作G2 boundary anchor的合法复用。
+
 relative frame position可以进入event emission、transition以及Event Block attention的Q/K，决定“事件在哪里”；它不能作为value直接
 加进E，否则slot编号本身会在静态重复帧上伪造动态。slot query同样只路由单调posterior；用于聚合event value的四类relation权重在同一
 frame内计算并对slot共享。这样完全相同的frame-policy-response重复成视频时，各slot得到同一content value，event centering后的D只剩
@@ -399,9 +404,15 @@ train/同视频未见pair/同task未见video MSE解释量为`.540/.302/.144`，2
 原学习率。固定teacher、主deployment forward、functional/process权重、数据、完整50-horizon与所有factor合同不变。若这次让
 process prediction成立而闭环仍失败，下一定位才转向Process-to-Composer credit或task-disjoint mapping，而不是继续改预测优化。
 
+该process-conditioned fresh已完成。m50/m100 held5均为`37/250`且Goal/Long为0，但m100在六task、fit+held共108个正确pair上的
+标准化prediction Smooth-L1比zero改善`6.49%`；zero-state prediction反而比zero更差，说明视频Process state真实承担了预测。
+同时发现causal prefix仍复用full-video hard-final posterior：任意cutoff当前帧`108/108`都成为slot7，同一帧在完整视频只有
+`15/108`如此，assignment重合仅`.137`。target侧Process梯度为functional的`3.73x`，Event子集方向cosine为`-.204`，足以让错误
+prefix坐标压过功能credit。冻结反事实改用first-anchored forward filter后重合升到`.692`，故下一matched fresh只修这一posterior
+语义；完整视频首尾anchor、teacher、loss权重、head优化与主deployment图全部不变。
+
 固定teacher的矩阵rowspace只有约`12.4--12.5%`落在ResponseTokenizer projection可见子空间，但事后把teacher对齐到该子空间只让
-delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮不同时更换teacher；若
-random-delta使process prediction成立而shared闭环仍失败，再单独裁决teacher或Process-to-Composer credit，而不是把两者混在同一run。
+delta1跨task解释量达到约`1--2%`，没有单独形成足够修复证据。为保持一次只改变一个主要因果变量，本轮仍不同时更换teacher。
 
 ### 8.3 Preservation
 
@@ -469,8 +480,9 @@ shared m100/m200 held5 strict250却为`39/32`，m200显著低于carrier43，且s
 其后只替换`C/D` consumer boundary的clean `f33f2955` fresh资格也已完整结束：m50/m100 held5仅`40/35`，逐task为
 `0/0/2/38/0`与`0/0/5/29/1`，Goal/Long仍为0；gradient fit/held functional继续改善时两个true-task-held更负，故不续训或运行
 negative controls。random legal delta资格随后在m50/m100均为`41/250`且Goal/Long为0，机制诊断确认预测状态有信息、预测头有容量，
-但正式训练的随机normalizer和累计readout更新量不足以学成目标。当前唯一下一资格是本节登记的process objective conditioning，仍用
-optimizer50/100；50点在训练继续时尽快物化评测，100点提供相邻稳定性，架构未证明前不先扩展成长跑。
+但正式训练的随机normalizer和累计readout更新量不足以学成目标。process objective conditioning随后让prediction真实改善，却在
+macro50/100都只有`37/250`。当前唯一下一资格是上述causal-prefix forward-filter修正，仍用optimizer50/100；50点在训练继续时
+尽快物化评测，100点提供相邻稳定性，架构未证明前不先扩展成长跑。
 
 ## 10. 后续扩展与Final
 

@@ -157,14 +157,20 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     interval encoding及可逆的`sqrt(delta)`方差标准化，避免长interval仅因target方差增长而取得更大loss权重；保持固定teacher、
     Process/Composer主图、完整bank、rank与数据不变。实现已在`38d51bab`完成，31项定向测试及task1真实full-horizon delta8 smoke
     均通过。该formal m50/m100 held5均为`41/250`、breadth`3/5`且Goal/Long为0，故不运行negative controls；
-25. [ ] 修正random-delta实际没有学成的优化根因：m100预测相对zero仅改善约`.35%`，但冻结状态只训练同一head可在100/250步对
+25. [x] 修正random-delta实际没有学成的优化根因：m100预测相对zero仅改善约`.35%`，但冻结状态只训练同一head可在100/250步对
     未见同task视频达到`.144/.217` MSE解释量，delta4/8状态probe也保留`.278/.410`同视频信息。`df1e8c6e`只让head直接输出
     标准化delta、把两随机pair normalizer改为每fit视频8个target-only pair，并按累计步长实测给纯辅助readout `20x`学习率；
-    Frame/Event/Composer、teacher、loss权重、full bank和数据不变。34项测试、task1真实smoke及两步shared profile已通过；从clean
-    pushed detached authority直接运行optimizer50/100短资格；
-26. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-27. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-28. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    Frame/Event/Composer、teacher、loss权重、full bank和数据不变。34项测试、task1真实smoke及两步shared profile通过；clean
+    `f20a5299`的73-task optimizer50/100 formal与两点闭环完整结束。m50/m100均仅`37/250`、Goal/Long为0；但m100多pair
+    process prediction相对zero改善`6.49%`，zero-state反而更差，说明辅助职责已学成却没有到达deployment Composer；
+26. [ ] 修正已定位的causal event坐标错位：完整视频继续使用G2 hard first/final anchors；人工截取的严格causal prefix只使用
+    首锚定monotone forward filter，不再把每个cutoff强制映射为slot7。当前m100 hard-prefix与full同帧assignment重合仅`.137`，
+    filter反事实为`.692`；同时target Process梯度为functional的`3.73x`且Event方向cosine `-.204`。下一fresh只改posterior推断，
+    保持所有loss、teacher、prediction优化、Composer、完整50-horizon/native bank、rank、数据与task权重不变，先做真实smoke并立即运行
+    optimizer50/100短资格；
+27. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+28. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+29. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

@@ -4,6 +4,21 @@
 
 ## 当前快照
 
+- process-conditioned optimizer50/100资格与两点held5闭环已经全部自然完成。clean detached authority为`f20a5299`，formal root为
+  `runs/outputs/pi05_ecp_policy_response_writer_process_conditioned_73task_k1_component_s100_df1e8c6e_gpu01p0156_sharedmmap_20260904/`；
+  100条metrics、两枚checkpoint、Panel-B、result/completion与信息墙完整，训练/总wall为`1702.73/2467.33s`。m50/m100
+  correct-only strict250均为`37/250`，逐task分别`0/0/3/31/3`与`0/0/3/32/2`，breadth均`3/5`且Goal/Long为0；相邻
+  `31 retained/6 gained/6 lost`。m100相对carrier43为`32/5/11`，所以优化修复没有转化成闭环增益，当前实例正式non-pass。
+
+  深入诊断同时排除了“process没学到”和“预测头绕过视频”。m100在六task、fit+held共108个正确视频pair上的标准化Smooth-L1由
+  zero `.065969`降到`.061689`，改善`6.49%`；zero-state predictor反而为`.067523`，完整状态在`100/108` pair上更好。
+  但causal prefix把每个任意cutoff当前帧都硬锚到最终slot7，同一帧在完整视频中只有`15/108`仍属slot7，assignment平均重合仅
+  `.136962`。target聚合Process梯度为functional的`3.73x`且cosine `-.0572`；Event子集为`3.16x`与`-.2037`。
+  无权重反事实把prefix改为首锚定的monotone forward filter后，m100同帧assignment重合升到`.692016`，同时完整视频首尾anchor
+  完全不变。下一唯一matched修正因此是：完整/deployment视频继续hard first+final；严格causal auxiliary的人工prefix只做forward
+  filtering，不把cutoff伪装成真实视频终点。fixed teacher、loss权重、prediction优化、Frame/Composer、full 50-horizon、真实
+  native X/Y、rank12+4、数据与task比例均不变。诊断细节见`findings.md`第140节；以下条目保留此前执行时间线。
+
 - random legal-delta fresh资格已经从clean detached `eec024f8`完整结束。73-task optimizer50/100的held5 correct-only strict250
   均为`41/250`，逐task Long/Goal/Object/Spatial0/Spatial9均为`0/0/4/33/4`、breadth`3/5`；相邻为
   `33 retained/8 gained/8 lost`。m100相对前代consumer-boundary m100的`35/250`有`12 gained/6 lost`，但相对carrier43仍为
@@ -24,10 +39,10 @@
   主deployment forward、loss权重、完整50-horizon/native X/Y/rank4/唯一rank16均不变。34项Writer测试通过；task1真实smoke的
   functional/process loss为`.150360/.161288`，对应functional Frame/Event/Composer梯度`.002898/.002652/.187827`，process
   Frame/Event/Predictor梯度`.065754/.057292/.192145`，峰值allocated/reserved约`27.35/33.98GB`。两步shared profile又确认
-  task1 normalizer`.075211`、学习率严格`20x`、全部梯度组非零，step约`3.67/3.48s`。下一步从clean pushed detached authority
-  运行同规模optimizer50/100短资格；若process prediction成立而闭环仍失败，才转向Process-to-Composer credit或task-disjoint mapping。
+  task1 normalizer`.075211`、学习率严格`20x`、全部梯度组非零，step约`3.67/3.48s`。该同规模optimizer50/100资格随后已从
+  clean pushed detached authority完成；process prediction成立而闭环失败，并进一步定位到本节首条的causal event坐标错位。
 
-- Process-objective-conditioning formal launch contract：scientific implementation为`df1e8c6e`，formal authority为包含本合同的
+- 已执行的Process-objective-conditioning formal launch contract：scientific implementation为`df1e8c6e`，formal authority为包含本合同的
   下一clean pushed main。配置固定`configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json`，保持73 gradient tasks、
   每update显式`9 meta + 3 target`、K1、component-init、correct-only cross-episode functional、positive random-delta process、
   preservation、full 50-horizon、真实native X/Y、rank12+4及唯一rank16；唯一变化是direct standardized predictor、每fit视频8个

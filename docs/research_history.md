@@ -2695,3 +2695,21 @@ controls。Panel-B同样只显示seen-task微弱改善、两个true-task-held持
 73-task有效权重数降到约`37.2`。下一fresh把head输出定义成标准化delta，以每fit视频8个target-only pair稳定normalizer，并按累计
 步长容量证据给纯辅助readout `20x`学习率；实现提交为`df1e8c6e`，固定teacher、主Writer、loss权重、full 50-horizon/native bank/rank/data均不变。
 34项测试、task1真实full smoke和两步shared profile通过，精确证据见`findings.md`第139节。
+
+## 137. Process优化修复后仍为37/250，根因推进到causal prefix的event坐标
+
+clean detached `f20a5299`的process-conditioned 73-task formal完成optimizer50/100、两点Panel-B、物化及held5 correct-only
+strict250。m50/m100均为`37/250`，逐task分别`0/0/3/31/3`与`0/0/3/32/2`，breadth均`3/5`且Goal/Long为0；相邻为
+`31 retained/6 gained/6 lost`。m100相对carrier43为`32/5/11`。所以更稳定的target-only normalizer与充分移动的prediction head
+没有产生闭环增益，不支持继续同构训练或negative controls。
+
+正确视频只读诊断却证明时序预测已经学到非零视频信号：m100在108个fit/held pair上的标准化Smooth-L1比zero改善`6.49%`，把Process
+state置零反而比zero差`2.36%`，完整状态在`100/108` pair上优于zero-state。失败不是prediction capacity或无视频捷径。代码与张量
+联合审计发现，每个严格causal prefix仍调用完整视频的hard-final posterior，导致任意cutoff当前帧`108/108`都被强制映射到slot7；
+同一帧在full video只有`15/108`属于slot7，assignment重合仅`.136962`。target侧Process梯度又是functional的`3.73x`、cosine
+`-.0572`，Event子集为`3.16x`与`-.2037`，说明错误坐标的辅助更新足以覆盖真实功能credit。
+
+冻结权重反事实仅把prefix改成first-anchored monotone forward filtering，同帧assignment重合即升至`.692016`；完整视频的G2首尾
+anchors完全未改。下一matched实现因此只区分“真实完整视频终点”和“辅助训练的人工截断点”：前者保持hard final，后者不施加假终点。
+该结论不淘汰Policy-Response Process、positive causal objective、ordered events、Composer、full 50-horizon、native X/Y、signed
+pooling、rank4或整个ECP，只淘汰当前对causal prefix错误复用full-video final anchor的推断语义。

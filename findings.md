@@ -40,6 +40,16 @@ task1/task93的正式Composer-only正控已从clean detached authority完成。t
 新current-bank Composer仍能从真实X/Y与event-conditioned query恢复跨视频功能；它尚不证明shared mapping或closed-loop成功，但已经
 排除“Composer本身接近零容量”这一最早失败解释。
 
+后续closed-loop审计表明，task93并不是裁决functional-to-behavior接口的合适单点：当前set-relative task-local m100仅把同一
+50初态从carrier `0/50`提高到`1/50`，但历史task expert在该Long任务也只有约`3--5/50`。authority72的Spatial任务更有判别力：
+同一冻结policy的task expert为`38/50`，旧J2 task-local在未见视频Panel-B的16/16 visits均优于carrier、平均benefit约`.01086`。
+因此当前先在同一Writer函数类上运行task72 task-local与carrier paired50；它能区分functional监督本身是否能产生闭环行为，避免把
+极难任务的地板效应误判成模型接口缺陷。
+
+functional query中约18%的action positions是episode结束后的重复padding。虽然该比例与多条shared训练曲线的内部benefit相关，
+对set-relative m100六个task用完全相同随机性的legacy/valid-only成对forward后，六个benefit符号全部保持，且失败最重的task74从
+`-.002431`变为`-.002814`。所以padding影响proxy数值但不解释当前正负极性或shared失败；在没有行为证据前不据此改loss。
+
 加入完整per-target update cap、独立gradient clipping与dynamic-value修正后，full task1/task93正控仍在macro70/110的全部正确视频上
 自发优于carrier。task1 fit recovery为`.207146/.223986`，未训练held-video为`.169391/.157630`；task93为
 `.417139/.425338`与`.409146/.418759`，Panel-B backward均为0。相对旧full，task1有所减弱且held后段回落，但task93 held从

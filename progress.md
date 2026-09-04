@@ -16,9 +16,19 @@
 - 同时发现当前cross-episode functional batch虽在原始dataset中生成`action_is_pad`，processor却未把它传给已有的
   `pi05_mean_flow_loss(..., action_is_pad=...)`路径；因此episode尾部重复最后动作的padding参与了损失。73个gradient task的
   Panel A/B平均padding约`17.61%/18.46%`，约`35.35%/36.81%`的query row含padding，且六条历史shared Writer曲线中
-  padding比例与功能benefit的rank correlation均为正。该相关性可能被任务难度/episode长度混淆，尚不构成训练修正依据；当前正用
-  同一m100 LoRA、相同correct held视频、query、noise和flow time同时比较legacy全位置与valid-action-only损失。这里只排除不存在的
-  episode尾部动作，不平均、抽样或删除任何真实native/action horizon。
+  padding比例与功能benefit的rank correlation均为正。对m100的task2/53/72/74/78/93使用同一LoRA、correct held视频、query、noise
+  和flow time直接比较后，legacy benefit为`+.001050/+.001062/+.000806/-.002431/-.000645/-.000377`，valid-action-only为
+  `+.001181/+.001093/+.000703/-.002814/-.000708/-.000358`：六个符号全部不变，task74剔除padding后反而更差。因此padding会改变
+  数值但不是当前shared失败根因，不修改训练loss。诊断保存在
+  `runs/analysis/pi05_ecp_policy_response_writer_factor_set_relative_gain_m100_masked_functional_tasks2_53_72_74_78_93_3686baec_gpu02p3_20260904.json`。
+
+- Task72 functional-to-closed-loop formal launch contract：科学配置变更固定为`60fca3a5`，只把已有reference与Panel均完整的
+  authority72加入`task_local_positive_control`；模型、full 50-horizon、correct cross-episode functional、两fit/一held视频、
+  component initialization、rank12+4、唯一rank16、optimizer与100-step cadence均不变。formal authority为包含本合同的下一
+  clean pushed main，单卡从gpu01/gpu02 launch前live状态中选择，不占用超过1张EMBER卡。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_tasklocal_task72_full_s100_60fca3a5_gpu01p3_20260904/`；完成后
+  使用held correct video在同一50个environment states上比较Writer与精确carrier。2026-09-04 launch前`/data1` quota为
+  `777549876/1084227584 KiB`，约余`292.5 GiB`；同构task-local与物化实测仅约`57/10 MiB`，不创建dataset/model副本。
 
 - 当前正在实现下一单变量`within-target set-relative factor gain readout`。它保留每个rank/group的contextual query、normalized
   signed X、signed Y group与shared group embedding，但不再让token各自独立通过pointwise MLP；同一target的`rank x ragged-group`

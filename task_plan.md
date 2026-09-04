@@ -201,10 +201,10 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     `rank x ragged-group` self-attention + GatedMLP标准重复块，不跨target，不改loss、初始化、Process、direction、data或训练规模；
     61项测试和真实full-50两步smoke均通过；clean detached `3686baec`的matched m50/m100 held5为`37/44`，m100与pointwise同为
     `44/250`且Goal/Long仍为0，10-task held-video功能诊断又只有3/10明确为正，故该参数化non-pass；
-31. [ ] 当前先裁决functional-to-closed-loop接口本身：对m100在同一forward中成对比较legacy含padding与valid-action-only功能
-    benefit；并把历史task expert `38/50`、J2 held功能benefit约`.01086`的authority72加入task-local正控，训练相同100步后在
-    同一50初态成对比较Writer与carrier。只有前者显示padding实质改变方向，才修改功能loss；只有task-local能形成闭环增量，才继续
-    把主要根因归于shared task-disjoint mapping；
+31. [ ] 当前先裁决functional-to-closed-loop接口本身：m100同一forward的legacy与valid-action-only功能benefit在六task上符号
+    全部一致，task74剔除padding后反而更差，故padding不是shared non-pass根因、不修改loss。现把历史task expert `38/50`、J2 held
+    功能benefit约`.01086`的authority72加入task-local正控，训练相同100步后在同一50初态成对比较Writer与carrier；只有task-local
+    能形成闭环增量，才继续把主要根因归于shared task-disjoint mapping；
 32. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 33. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 34. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

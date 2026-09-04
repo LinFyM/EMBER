@@ -32,6 +32,11 @@
   `strg01` live quota为`777081864/1084227584 KiB`，limit headroom约`292.92GiB`；同构single-copy cache实测约`97.81GiB`、formal
   output小于`1GiB`，峰值安全低于/data1独立quota，不复制dataset或model。
 
+  该formal已于2026-09-04 17:56 CST从clean detached `ef066789`实际启动，tmux为`ember_prw_fcg_s100`。启动前再次同时live
+  检查gpu01/gpu02并复查quota、authority与不存在的output/cache/exit roots；gpu02物理`1,2,3`状态仍为约`.16GB/0%`，故按合同
+  使用world-size3、`NCCL_P2P_DISABLE=1`与GPU-local NUMA。torchrun父进程和3个rank均已建立，当前处于一次性model/cache冷启动；
+  不触碰gpu02其它卡上的他人进程。m50完整checkpoint出现后，最多再使用gpu01物理`0,3,6`做并行物化/strict250，总EMBER卡数不超过6。
+
 - 冻结Process的Composer-functional正式资格已经完整裁决为non-pass。scientific implementation为`45b63c97`、clean detached
   authority为`a9baa7a4`，训练root为
   `runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`。

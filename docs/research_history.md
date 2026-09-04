@@ -2813,3 +2813,13 @@ events仍有task差异，输出B却被训练到更共同的方向。task93 Compo
 frame-specific dynamic直接对完整raw X/Y做一次exact signed pooling；首次完整bank预读被删除。该变化保持full-50、positive-only、
 rank4、真实native X/Y及唯一rank16，不增加loss、solve、normalization、gain或校准链。25项CPU合同与task93真实full smoke通过，
 正式task-local/shared裁决待后续记录。
+
+## 144. Frame-aligned task-local与输出几何裁决
+
+clean detached `7b42cdf6`的task1/task93 Frame-Aligned Composer-only正式控制完成25/50步，两任务相邻checkpoint的三条正确
+fit/held视频均优于carrier；m50 fit/held recovery分别为`.0761/.0958`与`.0868/.0793`。task93 held相对前一global-broadcast
+实现提高约74%，但绝对恢复仍仅约8%，所以只证明frame-local修正有效而非Composer容量已充分。
+
+同checkpoint的correct-only响应曲线进一步裁决两条旧式输出修正。统一contrast放大在task93的2倍有益、4倍灾难性，在task1则fit从
+1倍起即不再改善，故不存在跨task固定温度。逐rank单位化A/B并施加统一`s_ref`步长在两任务上都很快转负，证明低幅方向不能被无差别
+放大。active路线因此不恢复normalization/gain链，而以10 gradient + 2 true-held、100-step的短shared资格直接检验完整可复制主干。

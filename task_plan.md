@@ -69,10 +69,16 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 9. [x] 以一个更短的`FrameAlignedFactorBlock`整体替换旧RankBank职责：rank读取events，每个真实frame再按相对位置读取本视频events，
    frame-specific dynamic直接产生X/Y signed contrast；删除完整bank预读。没有新增loss、gain、solve、normalization或校准链。
    25项CPU合同测试及task93真实full-50 forward/VJP/76-tensor rank16 smoke通过；
-10. [ ] 从clean pushed detached authority并行完成task1/task93 25/50-step Composer正控。若两者均显著恢复，再以短而覆盖充分的
-    task-disjoint shared配置推进；若仍呈相反行为，先分析frame-aligned readout的共享Jacobian，不以堆层或长跑掩盖；
-11. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
-12. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+10. [x] 从clean pushed detached authority完成task1/task93 25/50-step Composer正控。m50 fit/held recovery分别为
+    `.0761/.0958`与`.0868/.0793`，两个任务、两相邻点的三条正确视频均高于carrier；frame-local修正使task93 held相对旧实现
+    提高约74%，但绝对容量仍远低于free primal；
+11. [x] correct-only输出几何反事实排除补丁式修正：统一contrast温度在task1/task93上的最优区间不一致，4倍已饱和并退化；将所有
+    pooled A/B单位化会把低幅噪声强行放大，两任务均迅速转负。因此不恢复`normalize -> gain -> cap`链，也不设固定温度；
+12. [ ] 使用`configs/pi05_ecp_policy_response_writer_frame_aligned_12task_v1.json`运行100-step最小task-disjoint shared资格。
+    10个gradient tasks在m50/m100各获得严格30/60次暴露，两个true-task-held始终零梯度；每步`3 meta + 3 target`只是本配置的
+    成本/覆盖选择，不是owner或架构固定比例；
+13. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
+14. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 
 ## 历史执行账本
 

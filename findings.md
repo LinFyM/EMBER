@@ -2914,3 +2914,29 @@ score；当前Axial Composer将所有events压成一个global dynamic query，�
 真实full-50 smoke消费79 sampled frames、2 probes、38 targets；functional梯度到达Prefix/Response/Frame/Temporal/Event/
 Composer/Signed-X/Signed-Y，冻结policy零梯度，输出76 tensors和唯一rank16。该smoke只证明新图接通；task1/task93的25/50-step
 clean task-local对照才回答功能容量是否恢复。
+
+## 149. Frame alignment恢复部分容量，但幅度补丁与单位化都不是解
+
+clean detached `7b42cdf6`上的task1/task93 Composer-only 25/50-step正式正控均完整结束。task1的m25/m50 fit/held recovery为
+`.05315/.06782`与`.07614/.09579`；task93为`.08916/.06781`与`.08679/.07927`。四个checkpoint中两条fit与一条
+same-task held正确视频全部高于carrier。相对旧global-broadcast Composer在task93 m50的held recovery `.04547`，frame-local
+对齐提高约74%，证明缺失对应关系是真实接口；但两任务仍只恢复free-primal的约8--10%，不能称为高容量正控。
+
+随后在m50 checkpoint上做零梯度、correct-only、同Panel-B/RNG的单变量响应曲线。只把X/Y contrast logits统一乘常数时，task93
+从1倍的fit/held `.08679/.07927`提高到2倍`.13735/.13158`，4倍却跌至`-.36131/-.30601`；task1从1倍
+`.07614/.09579`到2倍`.06708/.11154`，4倍`.01389/.10231`。最佳尺度不跨task一致，且高尺度使大量target触及BA cap，
+故固定温度或全局gain不是共享解。
+
+更关键的方向--幅度解耦正控把同一raw signed A/B逐rank单位化，再统一使用fit-only `s_ref`步长。task1在步长
+`.025/.05/.10/.20`的fit/held recovery依次为`.00062/.01317`、`-.02420/.01192`、`-.13420/-.03656`、
+`-.65788/-.32956`；task93为`.02306/.01856`、`.03132/.02347`、`-.00612/-.02205`、
+`-.30613/-.34914`。强制等幅会放大当前低幅不可靠方向，显著差于原raw readout。因此当前幅度差异包含有用置信度，不能恢复历史
+`normalize + learned gain + cap`链来掩盖方向不足。
+
+这组证据支持保持当前简洁主图：可复制Frame/Temporal/Event/FrameAlignedFactor blocks后直接raw signed pooling，只保留最终安全cap。
+下一最小裁决应让完整Writer在覆盖充分的10个gradient task上端到端学习，并用task2/task74零梯度判断组合泛化；不再做scale、gain、
+normalization或步数小扫。诊断artifact分别为
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task1_contrast_response_m50_7b42cdf6_gpu02p1_20260905/`、
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_contrast_response_m50_7b42cdf6_gpu02p2_20260905/`、
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task1_unit_factor_response_m50_7b42cdf6_gpu02p0_20260905/`与
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_unit_factor_response_m50_7b42cdf6_gpu02p2_20260905/`。

@@ -1103,3 +1103,21 @@
   从而保留sealed configs与复现实验能力但不会误把旧路线当作active；没有修改任何scientific config、模型或formal artifact。PNBTT与joint
   定向测试`30 passed`，CLI help及missing-config fail-fast均通过。
 - `HANDOFF.md`已消费并删除；长期信息全部由authority、已裁决PNBTT design、本文件与Git保存。
+
+## 2026-09-05 Frame-Aligned正控与下一shared资格
+
+- clean detached `7b42cdf6`已完成task1/task93 Composer-only formal。m50 fit/held recovery为
+  `.076140/.095793`与`.086793/.079274`，两任务m25/m50的全部fit/held正确视频均高于carrier；task93 held较旧global-broadcast
+  `.04547`改善约74%，但距离free-primal仍远。
+- 四个零梯度correct-only诊断root已完成：
+  `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task1_contrast_response_m50_7b42cdf6_gpu02p1_20260905/`、
+  `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_contrast_response_m50_7b42cdf6_gpu02p2_20260905/`、
+  `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task1_unit_factor_response_m50_7b42cdf6_gpu02p0_20260905/`、
+  `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_unit_factor_response_m50_7b42cdf6_gpu02p2_20260905/`。scale=1逐值复现
+  正式评测；固定contrast与强制单位化均被排除，未读取wrong/shuffle/validation/test、未产生梯度或checkpoint选择。
+- 下一formal使用`configs/pi05_ecp_policy_response_writer_frame_aligned_12task_v1.json`：gradient meta
+  `[1,8,9,32,52]`、gradient target `[72,73,75,93,94]`、true-held meta/target `[2]/[74]`；100 optimizer steps、
+  m50/m100、每步6 tasks且本配置为3+3。机械schedule审计确认每个gradient task在m50/m100恰有30/60次暴露，per-task cursor覆盖
+  两条fit视频与Panel-A visits；这不是owner规定的固定batch或角色比例。
+- 该shared只训练correct cross-episode functional，full 50-horizon、真实native X/Y、frame stride5、rank12+4和唯一rank16不变；
+  true-held与Panel-B零梯度。只有task-disjoint正信号才解封held5，不以内部loss或人为门槛代替闭环。

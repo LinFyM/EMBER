@@ -12,7 +12,21 @@
   隔离分支`codex/prw-factor-set-relative`的61项相关CPU测试通过；task1真实51-frame、2-probe、full-50两步GPU smoke自然exit0，
   Process梯度严格为0，Composer direction为`2.722/1.466`，set conditioner在零output-weight的step1为0、step2为`.0007293`，
   wall为`3.499/3.282s`，峰值allocated/reserved为`23.88/24.12GB`，唯一38-target、76-tensor rank16被policy functional VJP消费。
-  下一步封存本轮根因、形成clean pushed authority，并在同规模optimizer50/100 shared训练期间并行完成本函数类task-local正控。
+  科学实现已固定为`534303cf`；下一步形成clean pushed authority，并在同规模optimizer50/100 shared训练期间并行完成本函数类
+  task-local正控。
+
+- Set-relative formal launch contract：科学实现固定为`534303cf`，formal authority为包含本合同的下一clean pushed main；训练配置固定
+  `configs/pi05_ecp_policy_response_writer_factor_set_relative_gain_v1.json`。shared保持与pointwise前驱相同的73个gradient tasks、当前
+  run-specific `9 meta + 3 target`等权近似、K1、component initialization、Process冻结、correct cross-episode functional、轻
+  preservation、full 50-horizon、100 optimizer steps及m50/m100 checkpoints，唯一科学变量为pointwise token MLP改为同target
+  `rank x ragged-group` self-attention + GatedMLP。gpu02使用同一NUMA0的物理`0,1,3`、world3、`NCCL_P2P_DISABLE=1`与shared mmap；
+  gpu01物理`3/6`分别并行运行task1/task93相同100-step task-local正控，总EMBER占卡5张。启动前两节点均已live核验：所选卡空闲，
+  无EMBER残留；`/data1` quota已用`777298356 KiB / 1073741824 KiB`，约余`283 GiB`，预计shared临时cache约`98 GB`、checkpoint与
+  task-local增量远小于余量。shared输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_73task_k1_component_s100_534303cf_gpu02p013_sharedmmap_20260904/`，
+  cache固定`.codex/tmp/prw_factor_set_relative_gain_73task_cache_534303cf_gpu02_20260904/`；task-local输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_tasklocal_task{1,93}_full_s100_534303cf_gpu01p{3,6}_20260904/`。
+  只在原生checkpoint节点做correct-only功能/held与held5闭环；不运行wrong/shuffle/reverse、不读取held action/reward、不续训坏曲线。
 
 - 前一pointwise factor-conditioned gain formal已完整裁决为non-pass。clean detached `ef066789`的73-task m50/m100 held5
   correct-only strict250为`40/44`，逐task由Long/Goal/Object/Spatial0/Spatial9=`0/0/5/32/3`变为`0/0/3/38/3`；m100相对

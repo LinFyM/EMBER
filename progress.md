@@ -63,6 +63,16 @@
   严格等价地把frame chunk从8增至128后，相同task93第一步由`8.02s`降至`3.95s`，峰值reserved约`28.55 GiB`。
   下一动作是固定并集成实现后，并行运行task1/task93 25/50-step Composer-only正控；局部容量成立后才以fresh held tasks做短shared资格。
 
+- Frame-Bank task-local launch contract：科学实现固定为`1323f8ed`，formal authority为包含本合同的下一clean pushed `main`；配置固定
+  `configs/pi05_ecp_policy_response_writer_frame_bank_v1.json`。task1/task93各自K1、component initialization、Composer-only、
+  warmup5+effective45、optimizer25/50相邻checkpoint、8 functional rows、正确cross-episode fit与只读held video；不读取wrong、
+  shuffle或reverse，不产生held梯度。两条run从同一clean pushed detached worktree在gpu02物理0/2并行运行，输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_bank_tasklocal_task1_full_s50_1323f8ed_gpu02p0_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_frame_bank_tasklocal_task93_full_s50_1323f8ed_gpu02p2_20260905/`，launch前均不存在。
+  2026-09-05准备时`/data1` quota为`778200976/1084227584 KiB`，limit余量约`291.9 GiB`；两run复用canonical assets且只新增小型
+  checkpoints/metrics。双节点live检查时gpu02物理0/2仅约`209/162 MiB`、0% util，实测最长task93峰值reserved约`28.55 GiB`，
+  均有安全余量；launch前再次同时刷新gpu01/gpu02，不等待凑卡、不干扰其它进程。
+
 - Frame-Aligned task-local launch contract：科学实现固定为`e2f38c2a`，formal authority为包含本合同的下一clean pushed main；
   科学变量仅为上述Composer职责替换；配置仍使用
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，task1/task93各自K1、component initialization、Composer-only、

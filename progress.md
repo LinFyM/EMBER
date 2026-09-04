@@ -14,8 +14,8 @@
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，
   没有解决shared Program--bank utility映射，因此不再扫meta/target比例或修补旧gain链。
 
-- Axial实现位于隔离分支`codex/prw-axial-factor`。当前diff相对main净为约`821 insertions / 3018 deletions`；独立gain module已删除。
-  25项Writer/native tests、py_compile和diff check通过。synthetic覆盖full-only、order sensitivity、K2视频置换不变、chunk等价、
+- Axial实现已由`3cc4dbfc`集成进clean pushed `main`；相对前代净删除约`1.8k`行，独立gain module已删除。25项
+  Writer/native tests、py_compile和diff check通过。synthetic覆盖full-only、order sensitivity、K2视频置换不变、chunk等价、
   dense/streaming value+gradient等价及静态重复视频mobile近零。
 
 - gpu01物理3的真实task72 smoke完整消费22 sampled frames、2 probes、50 horizons、38 targets与真实native X/Y；functional loss
@@ -24,9 +24,9 @@
   held video43的benefit分别为`+.0002928/+.0001267/+.00008453`，三条均同向，但恢复仅`.02118/.00971/.00609`，只证明短图已
   接通，尚不构成容量或shared性能结论。
 
-- 下一动作是完成active design登记并合并推送；随后从clean pushed detached commit做task72 25/50-step正式Composer容量控制。
-  若factor规模/functional恢复明确成长，再立即做73-task shared 25/50短资格；若仍极弱，先围绕最早factor读出/信用接口深入定位，
-  不添加数学补丁、不直接支付长跑成本。
+- 下一动作是从clean pushed detached authority完成73-task whole-Writer 25/50-step shared短资格。它直接检验可训练
+  Temporal/Event trunk能否补足Composer-only上限；若task-disjoint功能信号成立，再做correct-only闭环。若仍失败，围绕最早失效
+  attention接口做反事实定位并替换责任模块，不添加数学补丁、不直接支付长跑成本。
 
 - Axial task72 formal launch contract：科学实现为`3cc4dbfc`，authority为包含本合同的下一clean pushed main；配置固定
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component initialization、task-local Composer-only、
@@ -48,16 +48,22 @@
   Prefix/Response/Frame/Temporal/Event/ComposerContext/Signed-X/Signed-Y梯度全部有限非零，冻结policy/observer零梯度，峰值reserved
   约`17.86 GiB`。该profile只验证端到端训练和资源路径，不用两行rows2结果作科学选择。
 
-- Axial 73-task shared短资格launch contract：配置固定`configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component
-  initialization、joint correct-only functional、warmup5+effective45、optimizer25/50 checkpoints、每步6 tasks与`3 meta + 3 target`
-  仅为本实验设置，不是owner或架构常量；每task 8 functional rows，Panel-B只读。输出固定
-  `runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p036_sharedmmap_20260905/`，共享cache固定
-  `.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905/`，launch前均不存在。`/data1` limit headroom约`292.3 GiB`，
-  预计single-copy cache约`98 GiB`、formal output远小于1GiB。当前gpu01物理0约1.3GiB/低util，物理3/6被同一外部低util任务
-  各占约21.8GiB；本图实测峰值reserved约17.9GiB，三卡均有安全显存余量，使用world3、GPU-local NUMA与
-  `NCCL_P2P_DISABLE=1`，不触碰其它进程。launch前仍再次同时刷新gpu01/gpu02；若状态恶化则只改执行设备，不改科学合同。
-  固定训练命令为
-  `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,3,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=3 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_axial_factor_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p036_sharedmmap_20260905 --phase shared --representation full --initialization component --mode formal --shared-evidence-cache-root /data1/user/ymdai/projects/EMBER/.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905`。
+- Axial 73-task shared短资格的首次world3执行从clean detached `eaa26fe0`启动；146份共享evidence cache已完整生成，约`98 GiB`。
+  step1为`7.837s`，但step2在其它rank等待时长期没有完成。独占gpu01物理0复现最长task92后确认：51 sampled frames的整步仅
+  `2.412s`，但whole-Writer训练峰值allocated/reserved为`25.62/29.16GB`；world3所用物理6因他人低util进程约占`22GB`，实际
+  余量只有约`24GB`。因此失败是执行调度错误地用短task72约`18GB`峰值估计所有任务，而非full算子慢或科学non-pass。该run在
+  checkpoint前主动终止；60KB不完整root和旧cache authority已可恢复地移至
+  `.codex/tmp/aborted_prw_axial_world3_memory_pressure_20260905/`，98GiB safetensors保留复用，没有删除正式证据或触碰他人进程。
+
+- 修正后的Axial 73-task shared短资格launch contract：科学实现仍为`3cc4dbfc`，formal authority为包含本合同的下一clean pushed
+  `main`。配置、73个gradient tasks、K1、component initialization、joint correct-only functional、warmup5+effective45、
+  optimizer25/50 checkpoints、每步6 tasks与本run的`3 meta + 3 target`、每task 8 functional rows及只读Panel-B全部不变；这些batch
+  设置不是owner或架构常量。唯一执行变化是在具有足够最长样本峰值余量的gpu01物理0上world-size1串行执行六个task，避免不安全
+  共驻和collective等待；单卡不会改变task权重、optimizer cadence或样本序列。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p0_sharedmmap_20260905/`，复用cache
+  `.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905/`。launch前再次同时live检查gpu01/gpu02、quota、authority、
+  output不存在及cache的146份safetensors。固定命令为
+  `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_axial_factor_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p0_sharedmmap_20260905 --phase shared --representation full --initialization component --mode formal --shared-evidence-cache-root /data1/user/ymdai/projects/EMBER/.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905`。
 
 ## 2026-09-04及以前进度账本
 

@@ -20,6 +20,9 @@ from ember.ecp.native_factors import (
     rms_normalize,
 )
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
+from ember.ecp.policy_response_writer.gain_readout import (
+    FactorConditionedGroupGainReadout,
+)
 from ember.ecp.policy_response_writer.process import (
     GatedMLP,
     PolicyResponseProcessOutput,
@@ -315,6 +318,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         width: int = 128,
         heads: int = 4,
         block_depth: int = 2,
+        gain_block_depth: int = 1,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
@@ -344,15 +348,6 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             native_output_group_count(owner) for owner in owners
         )
         maximum_groups = max(output_group_counts)
-        output_group_offsets = [0]
-        for count in output_group_counts:
-            output_group_offsets.append(output_group_offsets[-1] + count)
-        self.scale_group_slices = tuple(
-            slice(start, stop)
-            for start, stop in zip(
-                output_group_offsets[:-1], output_group_offsets[1:], strict=True
-            )
-        )
         self.rank_queries = torch.nn.Parameter(torch.empty(G1_RESIDUAL_RANK, width))
         self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
@@ -372,11 +367,11 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         self.input_negative_query = torch.nn.Linear(width, width, bias=False)
         self.output_positive_query = torch.nn.Linear(width, width, bias=False)
         self.output_negative_query = torch.nn.Linear(width, width, bias=False)
-        # Each real target-native output group owns one relative-gain row.  A
-        # row still reads the full target/rank query and can only scale the
-        # corresponding current-bank signed Y group; it is neither a task
-        # table nor an old-style family gate over a shared anchor.
-        self.scale_head = torch.nn.Linear(width, output_group_offsets[-1])
+        self.gain_readout = FactorConditionedGroupGainReadout(
+            owners,
+            width=width,
+            block_depth=gain_block_depth,
+        )
         self.output_norm = torch.nn.LayerNorm(width)
         self.task_query = (
             torch.nn.Parameter(torch.zeros(len(owners), G1_RESIDUAL_RANK, width))
@@ -391,11 +386,6 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         )
         torch.nn.init.normal_(self.rank_queries, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
-        torch.nn.init.zeros_(self.scale_head.weight)
-        # G1's native-factor oracle starts relative scale logits at 0.1.  Keep
-        # that small nonzero opening so the first functional backward reaches
-        # candidate-direction parameters instead of training only this head.
-        torch.nn.init.constant_(self.scale_head.bias, 0.1)
         # Fork CPU RNG so relation initialization does not perturb the
         # established Composer parameters under the same formal seed.
         with torch.random.fork_rng(devices=[]):
@@ -573,17 +563,21 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         ) / math.sqrt(3.0)
         return F.layer_norm(rank_context, (self.width,)) + condition
 
-    def _scale_logits(self, target: int, query: torch.Tensor) -> torch.Tensor:
-        """Select the target's independently owned ragged native-group rows."""
+    def _gain_logits(
+        self,
+        target: int,
+        query: torch.Tensor,
+        input_factor: torch.Tensor,
+        output_factor: torch.Tensor,
+    ) -> torch.Tensor:
+        """Predict ragged gains by applying one rule to current factor tokens."""
 
-        logits = self.scale_head(query)
-        if logits.shape != (G1_RESIDUAL_RANK, self.scale_head.out_features):
-            raise ValueError("native composer group-gain readout changed")
-        selected = logits[:, self.scale_group_slices[target]]
-        expected = native_output_group_count(self.owners[target])
-        if selected.shape != (G1_RESIDUAL_RANK, expected):
-            raise ValueError("native composer ragged group ownership changed")
-        return selected
+        return self.gain_readout(
+            query,
+            input_factor,
+            output_factor,
+            groups=native_output_group_count(self.owners[target]),
+        )
 
     def _query_target(
         self,
@@ -857,16 +851,15 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             bank_memory, candidates = self._bank_candidates(target, values, programs)
             query = self._query_target(target, programs, bank_memory)
             a, b = self._pool_target(target, query, candidates)
-            # Preserve the G1 native-group geometry and its small nonzero
-            # scale-logit opening.  Every real output group can change sign or
-            # magnitude independently, while the complete target BA remains
-            # under the same single effective-update cap.
-            group_scale = s_ref[target].to(query) * torch.tanh(
-                self._scale_logits(target, query)
-            )
             a = rms_normalize(a, epsilon=1e-6)
             b = rms_normalize(b, epsilon=1e-6)
             groups = native_output_group_count(self.owners[target])
+            # The same learned utility rule now reads each current signed X/Y
+            # factor token.  It can make task-specific rank/group decisions
+            # without target-owned output rows or an auxiliary adapter path.
+            group_scale = s_ref[target].to(query) * torch.tanh(
+                self._gain_logits(target, query, a, b)
+            )
             b = (
                 b.reshape(G1_RESIDUAL_RANK, groups, b.shape[-1] // groups)
                 * group_scale[..., None]

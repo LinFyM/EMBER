@@ -242,7 +242,8 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
         ),
         "composer": ("composer",),
         "composer_relation": ("composer.relation_embedding",),
-        "composer_scale": ("composer.scale_head",),
+        "composer_gain": ("composer.gain_readout",),
+        "composer_gain_output": ("composer.gain_readout.output",),
     }
     result = {}
     for label, names in prefixes.items():
@@ -256,7 +257,7 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
         parameter.grad.detach().float().square().sum()
         for name, parameter in runtime.writer.named_parameters()
         if name.startswith("composer.")
-        and not name.startswith("composer.scale_head.")
+        and not name.startswith("composer.gain_readout.")
         and parameter.grad is not None
     ]
     result["composer_direction"] = (
@@ -264,36 +265,48 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
         if direction_squares
         else 0.0
     )
+    conditioner_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in runtime.writer.named_parameters()
+        if name.startswith("composer.gain_readout.")
+        and not name.startswith("composer.gain_readout.output.")
+        and parameter.grad is not None
+    ]
+    result["composer_gain_conditioner"] = (
+        float(torch.stack(conditioner_squares).sum().sqrt())
+        if conditioner_squares
+        else 0.0
+    )
     return result
 
 
-def _clip_scale_and_direction_gradients(
+def _clip_gain_and_direction_gradients(
     *,
     parameters: Sequence[torch.nn.Parameter],
-    scale_parameters: Sequence[torch.nn.Parameter],
+    gain_parameters: Sequence[torch.nn.Parameter],
     max_norm: float,
 ) -> torch.Tensor:
-    """Clip scale and direction separately while reporting their joint norm."""
+    """Clip gain readout and factor direction with independent budgets."""
 
-    scale_parameters = tuple(scale_parameters)
+    gain_parameters = tuple(gain_parameters)
     parameter_ids = {id(parameter) for parameter in parameters}
-    scale_ids = {id(parameter) for parameter in scale_parameters}
+    gain_ids = {id(parameter) for parameter in gain_parameters}
     direction_parameters = tuple(
-        parameter for parameter in parameters if id(parameter) not in scale_ids
+        parameter for parameter in parameters if id(parameter) not in gain_ids
     )
     if (
         not direction_parameters
-        or not scale_parameters
-        or len(scale_ids) != len(scale_parameters)
-        or not scale_ids <= parameter_ids
+        or not gain_parameters
+        or len(gain_ids) != len(gain_parameters)
+        or not gain_ids <= parameter_ids
         or not math.isfinite(max_norm)
         or max_norm <= 0.0
     ):
         raise ValueError("shared Writer gradient group ownership changed")
     direction_norm = torch.nn.utils.clip_grad_norm_(direction_parameters, max_norm)
-    scale_norm = torch.nn.utils.clip_grad_norm_(scale_parameters, max_norm)
+    gain_norm = torch.nn.utils.clip_grad_norm_(gain_parameters, max_norm)
     return (
-        torch.stack((direction_norm.float(), scale_norm.float())).square().sum().sqrt()
+        torch.stack((direction_norm.float(), gain_norm.float())).square().sum().sqrt()
     )
 
 
@@ -435,9 +448,9 @@ def _optimizer_step(
         raise RuntimeError("shared Writer Composer stage updated frozen Process")
     _sum_gradients(runtime, parameters)
     gradient_groups = _gradient_groups(runtime)
-    gradient_norm = _clip_scale_and_direction_gradients(
+    gradient_norm = _clip_gain_and_direction_gradients(
         parameters=parameters,
-        scale_parameters=tuple(runtime.writer.composer.scale_head.parameters()),
+        gain_parameters=tuple(runtime.writer.composer.gain_readout.parameters()),
         max_norm=float(runtime.config["optimization"]["shared"]["gradient_clip_norm"]),
     )
     if not bool(torch.isfinite(gradient_norm)) or float(gradient_norm) <= 0:

@@ -51,7 +51,7 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     task_group_counts,
 )
 from ember.ecp.policy_response_writer.shared_training import (
-    _clip_scale_and_direction_gradients,
+    _clip_gain_and_direction_gradients,
 )
 from ember.ecp.policy_response_writer.shared_execution import (
     assignment_makespan,
@@ -327,7 +327,7 @@ def test_composer_consumes_explicit_event_relation_assignment() -> None:
     with torch.no_grad():
         process = model.process(video)
         permuted = replace(process, assignment=process.assignment.roll(1, dims=-1))
-        model.composer.scale_head.bias.fill_(10.0)
+        model.composer.gain_readout.output.bias.fill_(10.0)
         original = model.composer((video,), (process,), s_ref=torch.full((4,), 0.2))
         changed = model.composer((video,), (permuted,), s_ref=torch.full((4,), 0.2))
 
@@ -372,27 +372,37 @@ def test_composer_query_seed_cannot_erase_rank_identity_by_context_scale() -> No
     )
 
 
-def test_composer_relative_gain_gradient_is_owned_by_selected_native_groups() -> None:
+def test_composer_relative_gain_uses_one_shared_current_factor_readout() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(17)
         composer = _model().composer
         query = torch.randn(G1_RESIDUAL_RANK, composer.width)
+        owner = composer.owners[2]
+        input_factor = torch.randn(G1_RESIDUAL_RANK, owner.in_features)
+        output_factor = torch.randn(G1_RESIDUAL_RANK, owner.out_features)
 
-    logits = composer._scale_logits(2, query)
+    logits = composer._gain_logits(2, query, input_factor, output_factor)
     assert logits.shape == (
         G1_RESIDUAL_RANK,
-        native_output_group_count(composer.owners[2]),
+        native_output_group_count(owner),
     )
     torch.testing.assert_close(logits, torch.full_like(logits, 0.1))
     logits.sum().backward()
 
-    selected = composer.scale_group_slices[2]
-    assert torch.count_nonzero(composer.scale_head.weight.grad[selected])
-    assert torch.count_nonzero(composer.scale_head.bias.grad[selected])
-    other = torch.ones(composer.scale_head.out_features, dtype=torch.bool)
-    other[selected] = False
-    assert not torch.count_nonzero(composer.scale_head.weight.grad[other])
-    assert not torch.count_nonzero(composer.scale_head.bias.grad[other])
+    readout = composer.gain_readout
+    assert readout.output.out_features == 1
+    assert torch.count_nonzero(readout.output.weight.grad)
+    assert torch.count_nonzero(readout.output.bias.grad)
+
+    with torch.no_grad():
+        readout.output.weight.normal_()
+        changed_factor = output_factor.clone()
+        group_width = owner.out_features // native_output_group_count(owner)
+        changed_factor[:, :group_width].mul_(-2.0)
+        changed = composer._gain_logits(2, query, input_factor, changed_factor)
+        original = composer._gain_logits(2, query, input_factor, output_factor)
+    assert torch.max(torch.abs(changed[:, 0] - original[:, 0])) > 1e-4
+    torch.testing.assert_close(changed[:, 1:], original[:, 1:], atol=0, rtol=0)
 
 
 def test_event_measure_logits_match_explicit_event_relation_candidates() -> None:
@@ -565,7 +575,7 @@ def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
         initialized = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert any(torch.count_nonzero(value) > 0 for value in initialized.a)
         assert all(torch.count_nonzero(value) > 0 for value in initialized.b)
-        model.composer.scale_head.bias.fill_(10.0)
+        model.composer.gain_readout.output.bias.fill_(10.0)
         bounded = model.composer(videos, processes, s_ref=torch.full((4,), 0.2))
         assert all(
             _effective_update_rms(a, b) <= 0.2 + 2e-6
@@ -773,7 +783,7 @@ def test_static_repeated_video_cannot_open_mobile_lora() -> None:
     video = _static_repeated_video(29)
     with torch.no_grad():
         process = model.process(video)
-        model.composer.scale_head.bias.fill_(10.0)
+        model.composer.gain_readout.output.bias.fill_(10.0)
         output = model.composer((video,), (process,), s_ref=torch.full((4,), 0.2))
 
     assert process.innovations.float().square().mean().sqrt() < 1e-6
@@ -820,21 +830,21 @@ def test_complete_target_effective_update_is_capped_by_s_ref() -> None:
     assert zero_b.grad is not None and torch.isfinite(zero_b.grad).all()
 
 
-def test_shared_scale_and_direction_gradients_have_independent_clip_budgets() -> None:
+def test_shared_gain_and_direction_gradients_have_independent_clip_budgets() -> None:
     direction = torch.nn.Parameter(torch.zeros(2))
-    scale = torch.nn.Parameter(torch.zeros(2))
+    gain = torch.nn.Parameter(torch.zeros(2))
     direction.grad = torch.tensor([3.0, 4.0])
-    scale.grad = torch.tensor([6.0, 8.0])
+    gain.grad = torch.tensor([6.0, 8.0])
 
-    combined = _clip_scale_and_direction_gradients(
-        parameters=(direction, scale),
-        scale_parameters=(scale,),
+    combined = _clip_gain_and_direction_gradients(
+        parameters=(direction, gain),
+        gain_parameters=(gain,),
         max_norm=1.0,
     )
 
     torch.testing.assert_close(combined, torch.sqrt(torch.tensor(125.0)))
     torch.testing.assert_close(direction.grad.norm(), torch.tensor(1.0))
-    torch.testing.assert_close(scale.grad.norm(), torch.tensor(1.0))
+    torch.testing.assert_close(gain.grad.norm(), torch.tensor(1.0))
 
 
 def test_shared_schedule_ownership_and_positive_only_objective() -> None:
@@ -888,10 +898,11 @@ def test_shared_schedule_ownership_and_positive_only_objective() -> None:
     assert len({offset for _, offset in pairs}) >= 8
 
 
-def test_group_gain_credit_config_is_explicit_and_predecessor_is_rejected() -> None:
+def test_factor_conditioned_gain_config_and_predecessor_rejection() -> None:
     root = Path(__file__).resolve().parents[2]
     current = load_policy_response_config(
-        root / "configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json"
+        root
+        / "configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json"
     )
     assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
     assert (
@@ -903,21 +914,22 @@ def test_group_gain_credit_config_is_explicit_and_predecessor_is_rejected() -> N
         == 8
     )
     assert current["optimization"]["shared"]["process_prediction_lr_multiplier"] == 20.0
-    assert "target_native_ragged_group" in current["model"][
-        "composer_relative_gain_readout"
-    ]
+    assert current["model"]["composer_relative_gain_readout"].startswith(
+        "shared_factor_conditioned_ragged_group_tokens"
+    )
+    assert current["model"]["composer_gain_blocks"] == 1
     assert current["model"]["composer_gain_initialization"].startswith(
         "g1_nonzero_relative_logit_0.1"
     )
-    staged = load_policy_response_config(
-        root
-        / "configs/pi05_ecp_policy_response_writer_composer_functional_v1.json"
+    assert current["optimization"]["shared"]["training_stage"] == (
+        "composer_functional_process_frozen"
     )
-    assert (
-        staged["optimization"]["shared"]["training_stage"]
-        == "composer_functional_process_frozen"
-    )
-    assert staged["optimization"]["shared"]["process_weight"] == 0.0
+    assert current["optimization"]["shared"]["process_weight"] == 0.0
+    with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
+        load_policy_response_config(
+            root
+            / "configs/pi05_ecp_policy_response_writer_composer_functional_v1.json"
+        )
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
             root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"

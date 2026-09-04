@@ -278,25 +278,45 @@ native output grouping固定为：
 
 ### 6.4 幅度与固定边界
 
-每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`。relative gain由
-当前target-rank query经过其真实native output group独立拥有的线性row产生：
+每个target只使用一个由fit19、task-equal expert-minus-carrier effective-update RMS得到的冻结全局`s_ref`。每个rank/group仍有
+独立relative gain，但当前函数不再让195个target-native groups各自拥有一个只读whole-target query的输出row。对signed pooling
+得到并按最终物化口径规范化的当前因子`a_jr`与`b_jrg`，使用只按真实native width共享的输入/输出encoder构造token：
 
 \[
-g_{jrg}=s_{ref,j}\tanh(w_{jg}^\top q_{jr}+b_{jg}).
+z_{jrg}=[q_{jr},E_X(a_{jr}),E_Y(b_{jrg}),e_g],
 \]
 
-这里的`g`严格对应q的8个256D head groups、v的1个256D group、action-in的32个32D blocks与action-out的1个32D group，合计
-195个target-native rows；它不是padding后的新轴。各row共享相同query语义，但参数梯度互不串写；不存在task-specific scale表。
-该head只能缩放已经由当前视频真实X/Y signed pooling产生的B子向量，不能独立写出方向或adapter，因此不同于已停止的
-`summary -> family-scalar gate -> shared event-additive anchor`：旧gate是视频到共享anchor的唯一瓶颈，这里只是当前视频方向之后
-的ragged native输出投影。
+\[
+h^{(0)}_{jrg}=W_z z_{jrg},\qquad
+h^{(l+1)}_{jrg}=\operatorname{GatedMLP}_l(h^{(l)}_{jrg}),
+\]
+
+\[
+g_{jrg}=s_{ref,j}\tanh(w^\top\operatorname{LN}(h_{jrg})+b).
+\]
+
+`E_X`只按1024/2048等真实input width共享，`E_Y`只按32/256 native block width共享；同一个fusion、可复制GatedMLP blocks和
+唯一scalar output应用于所有target、rank与ragged groups。target/layer扩展因此增加token而不是新增私有输出row。`q_jr`仍携带
+target、rank、exact language与完整Policy-Response时序context，`a/b`则把当前视频实际选出的signed native factor直接交给幅度
+决策。该readout只能缩放同一个当前视频X/Y已经产生的B子向量，不能独立写出方向或adapter，也没有task-specific scale表、anchor、
+第二Writer或负样本输入。
+
+这一变更来自冻结Process后的直接反证。前一195-row query-only实现从fresh component initialization只训练Composer，optimizer
+50/100的held5 correct-only strict250为`39/43`，后一点仅与carrier持平，Goal/Long仍为0；gradient tasks的Panel-B继续改善，
+true-held task74继续为负，故联合Process干扰不是充分解释。跨task最终mobile update已经高度task-specific，但raw group gain
+cosine仍为`.99973`、task-specific fraction仅约`.013`。更直接地，在同一m100方向上task2与task74所需的exact group-logit下降
+方向总体cosine为`-.585`，v/action-out分别为`-.521/-.623`，而实际gain cosine为`.9991`；task74只调现有rank/group gain的
+10% logit-norm局部可用下降约`.00193`，远大于当前方向的`-.000094`。因此最早缺口是query-only readout没有把当前group factor
+交给共享utility rule，而不是signed bank没有候选方向、cap普遍截断或训练未移动。
 
 首版误把专家§7.5的`rank/group gains`缩成每family一个rank gain。causal-filter m100冻结方向上的正确视频task-local反事实显示，
 自由rank gain在task1/72/75/93的fit/held恢复只有`.151/.093`、`.166/.147`、`.122/.116`、`.150/.099`；恢复真实group gain后
 分别升至`.244/.198`、`.222/.189`、`.146/.126`、`.240/.202`，全部第三条视频仍优于carrier。因此group ownership是已证实的
 函数接口遗漏；它带来约`1.2--2.1x`恢复，但仍远低于G1，不能单独解释为最终修复。
 
-gain logit初始化固定为`0.1`，直接复用G1 `TaskLocalNativeFactorOracle`的已存在选择，不做数值扫描。首版严格零初始化导致第一次
+gain scalar output初始化固定为`w=0,b=0.1`，直接复用G1 `TaskLocalNativeFactorOracle`的已存在选择，不做数值扫描。这样初始
+所有group仍严格为同一小幅logit；第一次functional backward给共享output weight条件化信用，同时非零gain让梯度到达signed
+direction，第二步后native factor encoders与GatedMLP开始共同学习。首版严格零初始化曾导致第一次
 functional backward只有gain head有梯度，随后direction梯度又始终乘以很小的gain；causal-filter 100步中Composer总梯度几乎由
 gain head占据，Composer方向权重相对移动只有低千分量级。非零小幅启动仍受完整target BA cap与preservation保护，并且当event
 innovation为零时positive/negative weights仍完全相同，mobile residual仍为零；它只让正确视频functional credit从第一步到达
@@ -443,9 +463,9 @@ Writer初始化或可训练prediction。formal run将这些数值一次性冻结
 
 G2已有positive temporal heads只允许作为component-init短暂辅助，并在functional优化稳定后退火到零；它们不进入最终Writer forward。
 
-### 8.4 scale与方向的优化预算
+### 8.4 gain与方向的优化预算
 
-shared训练保持同一optimizer、LR与loss权重，但将`scale_head`和其余全部Writer参数分别按既有norm `1.0`裁剪。该分组不改变
+shared训练保持同一optimizer、LR与loss权重，但将完整`gain_readout`和其余全部Writer参数分别按既有norm `1.0`裁剪。该分组不改变
 objective或task权重；它只防止幅度梯度占用同一个global clip后持续缩小Frame、Event和Composer方向更新。未分组的73-task
 macro610轨迹中global clip触发率为`.8781`，scale norm中位`2.5992`而其余方向norm中位`.5839`；若独立使用同一边界，方向侧仅
 `.0386`的step需要裁剪，方向更新倍率中位可恢复`2.6533 x`。
@@ -525,12 +545,20 @@ full 50-horizon、真实native X/Y、signed pooling、ragged group gain、rank12
 Composer；若gradient tasks仍正而true-held与闭环仍低，下一根因才是Composer自身的shared dynamic gain/readout函数类，而不是
 继续续训或修改Process。
 
-该阶段的窄实现与真实工程profile已经完成。新配置显式封存`composer_functional_process_frozen`，优化器只拥有Composer的
+该阶段的窄实现、真实工程profile与科学裁决均已完成。配置显式封存`composer_functional_process_frozen`，优化器只拥有Composer的
 `1,141,187`个参数，Process保持eval且所有梯度为0；旧joint配置继续使用原两参数组语义。53项Writer/native-factor/PI0.5 LoRA
 测试通过。gpu01物理0上的task1、K1、full-50-horizon两步shared profile中，Composer direction/scale梯度分别为
 `1.367/4.732`与`1.790/4.423`，step为`3.476/3.355s`，峰值allocated/reserved为`23.89/32.14GB`，真实functional VJP、Writer
-重算与完整rank16 policy消费全部接通；rows2及两步Panel-B变化不构成科学性能证据。下一步直接进入clean pushed detached
-optimizer50/100资格与相邻held5 correct-only strict250。
+重算与完整rank16 policy消费全部接通。clean detached optimizer50/100的held5 correct-only strict250为`39/43`，breadth均
+`3/5`且Goal/Long为0；m100相对carrier恰为`36 retained/7 gained/7 lost`，不是性能增益。训练后段seen-task functional benefit
+继续升高且约79%记录为正，true-held task74却继续恶化；Process冻结与Composer真实移动均已确认，所以该阶段正式non-pass，
+不续训或运行negative controls。
+
+随后correct-only诊断显示最终adapter方向并未坍缩：四个task的mobile update跨task cosine低而task-specific fraction约
+`.85--.87`；相反，195个query-only gains的跨task cosine约`.9997`。task2/task74的exact gain-gradient强烈相反且仅调gain存在
+足够局部下降空间，故下一fresh只用§6.4的共享factor-conditioned group token readout替换195-row head。Process继续冻结、
+full 50-horizon、signed candidate direction、rank、cap、数据、task权重、positive-only objective与optimizer50/100全部保持，
+直接裁决“当前factor可见的共享utility rule”能否把task-specific方向转化成task-disjoint闭环功能。
 
 ## 10. 后续扩展与Final
 
@@ -567,7 +595,8 @@ optimizer50/100资格与相邻held5 correct-only strict250。
 
 - 新Writer保持一个canonical训练/评测入口；合法差异放入同一配置或窄strategy边界，不复制runner。
 - active source ownership固定为：`capture.py`只拥有冻结PI0.5/native taps；`process.py`只拥有Frame/Event表示与causal target；
-  `composer.py`只拥有current-bank signed factor生成；`model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
+  `composer.py`只拥有current-bank signed factor生成；`gain_readout.py`只拥有所有target/rank/group共享的current-factor utility block；
+  `model.py`只拥有组合与唯一rank16物化；`training.py`拥有共同asset/data runtime与
   唯一CLI dispatch；`tasklocal.py`/`tasklocal_contract.py`拥有task-local正控；`shared_schedule.py`拥有可扩展task/video采样；
   `shared_execution.py`只拥有outcome-independent cache复制与task-to-rank放置；`shared.py`拥有evidence cache与shared
   orchestration；`shared_training.py`只拥有多卡positive-only optimizer steps；

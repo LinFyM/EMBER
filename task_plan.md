@@ -181,15 +181,22 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     恶化；Process innovation并未坍缩，但实际group scale跨task cosine达`.99941`，action-out更新仅约G1成功解的`.016--.020`，
     task74的q-only有限幅效应为负而v/action-out为正。共享Process上process与functional总梯度cosine为`-.114`、Event为`-.291`，
     前者范数约为后者`1.49x`；该实例不是没训练够或断图，正式non-pass；
-28. [ ] 执行冻结Process的Composer-functional阶段：从同一component initialization fresh开始，保持完全相同deployment Writer、
+28. [x] 执行冻结Process的Composer-functional阶段：从同一component initialization fresh开始，保持完全相同deployment Writer、
     full 50-horizon、真实native X/Y、ragged group gain、rank12+4、73-task数据与task权重，只冻结Process并仅以correct cross-episode
     functional加preservation更新Composer。首轮仍用可续跑optimizer50/100和两点held5 correct-only strict250，直接区分联合
     Process辅助/漂移干扰与Composer共享函数类不足；不引入新网络、task table、coarse、negative loss或第二Writer。窄实现、53项测试及
-    task1两步真实full shared profile已通过；Process梯度严格为0、Composer direction/scale均非零，当前只剩clean pushed detached
-    optimizer50/100及两点闭环裁决；
-29. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-30. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-31. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    task1两步真实full shared profile已通过；正式optimizer50/100及两点闭环也已完成，held5为`39/43`，breadth均`3/5`且Goal/Long
+    为0。m100仅与carrier持平；seen functional继续改善而true-held task74为负，故Process干扰不是充分解释，该实例non-pass；
+29. [ ] 修正Composer共享dynamic gain/readout函数类：exact group-logit VJP显示task2/task74真正所需下降方向cosine为`-.585`，但
+    query-only raw gains cosine为`.9991`；同时最终mobile directions已有task-specific内容，task74仅调rank/group gain存在约
+    `.00193`局部下降空间。下一fresh把195个target-owned query-only rows替换为共享factor-conditioned group tokens，每个token
+    读取当前query、signed X、signed Y-group与group identity，经同一个可复制GatedMLP和scalar output预测bounded gain。保持冻结
+    Process、full-50、bank/direction、rank/cap、数据/权重、positive-only loss和optimizer50/100不变；当前56项CPU合同测试通过，
+    task1真实两步GPU smoke也已exit0：step1只有scalar output接收gain信用且direction非零，step2 conditioner梯度有限非零；
+    Process全零、唯一rank16与full-50合同完整。当前进入clean pushed detached formal；
+30. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+31. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+32. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

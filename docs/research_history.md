@@ -2746,3 +2746,16 @@ gpu01出现6张真正空闲A40后，同一`aebd9d74`又完成73-task world6 rows
 `6.361/6.695s`、预测cost范围`73--78/78--86`，峰值allocated/reserved `27.36/37.04GB`；direction与gain梯度均非零。
 相对既有73-task world4 rows2均值约快`34.2%`，因此下一optimizer50/100短资格使用world6；它仍是执行拓扑选择，不改变task batch、
 权重或科学方法。
+
+## 139. Composer-functional持平carrier并定位factor-conditioned gain readout
+
+`45b63c97`实现的冻结Process阶段从clean detached `a9baa7a4`完成73-task、K1、component-init、optimizer50/100正式训练与两点
+held5 correct-only strict250。m50/m100为`39/43`，breadth均`3/5`且Goal/Long为0；m100恰与stable carrier持平，success set
+仍有`7 gained/7 lost`，不构成性能提升。Process全程零梯度；Composer direction/gain真实移动且seen functional继续改善，故该结果
+淘汰“联合causal auxiliary或Process漂移是当前唯一瓶颈”，不支持续训或negative controls。
+
+冻结正确视频几何显示最终mobile directions仍高度task-specific，query-only的195个raw gains却在不同task间几乎相同。m100上
+task2/task74的actual gain cosine为`.9991`，exact per-group descent方向cosine为`-.5846`；只调当前gain存在足以覆盖task74负增量的
+局部下降空间。由此下一fresh不修改Process、signed candidate direction或loss，而以共享factor-conditioned ragged group token
+readout替换target-owned输出rows：每个token显式读取当前query与signed X/Y factor，同一可复制GatedMLP和scalar head应用于全部
+target/rank/group。实现与科学裁决继续见active design、`findings.md`第144节及后续提交。

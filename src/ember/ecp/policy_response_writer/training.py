@@ -148,9 +148,10 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("composer_query_seed")
             == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
             model.get("composer_relative_gain_readout")
-            == "query_conditioned_target_native_ragged_group_rows_without_task_table_or_anchor_gate",
+            == "shared_factor_conditioned_ragged_group_tokens_without_target_owned_output_rows",
             model.get("composer_gain_initialization")
             == "g1_nonzero_relative_logit_0.1_for_first_step_direction_credit",
+            model.get("composer_gain_blocks") == 1,
             model.get("process_consumer_boundary")
             == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
             model.get("causal_process_interval")
@@ -334,6 +335,7 @@ def prepare_runtime(
         frame_blocks=int(model["frame_blocks"]),
         event_blocks=int(model["event_blocks"]),
         composer_blocks=int(model["composer_blocks"]),
+        composer_gain_blocks=int(model["composer_gain_blocks"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
@@ -488,21 +490,42 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
         parameter.grad.detach().float().square().sum()
         for name, parameter in module.named_parameters()
         if name.startswith("composer.")
-        and not name.startswith("composer.scale_head.")
+        and not name.startswith("composer.gain_readout.")
         and parameter.grad is not None
     ]
-    scale_squares = [
+    gain_squares = [
         parameter.grad.detach().float().square().sum()
         for name, parameter in module.named_parameters()
-        if name.startswith("composer.scale_head.") and parameter.grad is not None
+        if name.startswith("composer.gain_readout.") and parameter.grad is not None
     ]
     output["composer_direction"] = (
         float(torch.stack(direction_squares).sum().sqrt())
         if direction_squares
         else 0.0
     )
-    output["composer_scale"] = (
-        float(torch.stack(scale_squares).sum().sqrt()) if scale_squares else 0.0
+    output["composer_gain"] = (
+        float(torch.stack(gain_squares).sum().sqrt()) if gain_squares else 0.0
+    )
+    output_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in module.named_parameters()
+        if name.startswith("composer.gain_readout.output.")
+        and parameter.grad is not None
+    ]
+    conditioner_squares = [
+        parameter.grad.detach().float().square().sum()
+        for name, parameter in module.named_parameters()
+        if name.startswith("composer.gain_readout.")
+        and not name.startswith("composer.gain_readout.output.")
+        and parameter.grad is not None
+    ]
+    output["composer_gain_output"] = (
+        float(torch.stack(output_squares).sum().sqrt()) if output_squares else 0.0
+    )
+    output["composer_gain_conditioner"] = (
+        float(torch.stack(conditioner_squares).sum().sqrt())
+        if conditioner_squares
+        else 0.0
     )
     return output
 
@@ -528,7 +551,7 @@ def _validate_smoke_graph(
     required = [
         functional_gradients["composer"],
         functional_gradients["composer_direction"],
-        functional_gradients["composer_scale"],
+        functional_gradients["composer_gain"],
     ]
     if stage == JOINT_PROCESS_COMPOSER_STAGE:
         required.extend(

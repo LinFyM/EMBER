@@ -4,36 +4,34 @@
 
 ## 当前快照
 
-- 冻结Process的Composer-functional阶段已经完成窄实现与真实两步profile，尚未产生正式科学结果。唯一训练入口现在显式记录
-  `composer_functional_process_frozen`：component initialization后Process全部`requires_grad=False`且保持eval，只由同一Composer接收
-  correct cross-episode functional与preservation梯度，causal auxiliary不再做无效计算；联合阶段的历史默认行为不变。新配置为
-  `configs/pi05_ecp_policy_response_writer_composer_functional_v1.json`，53项Writer/native-factor/PI0.5 LoRA测试通过。gpu01物理0上的
-  task1、K1、full-50-horizon两步shared profile自然exit0；Process Frame/Event/Predictor梯度逐步严格为0，Composer direction/scale
-  梯度分别为`1.367/4.732`与`1.790/4.423`，step为`3.476/3.355s`，峰值allocated/reserved为`23.89/32.14GB`，完整functional
-  policy VJP与rank16 LoRA消费接通。profile的rows2与两步Panel-B微小变化只作工程证据，不作性能选择；下一步从clean pushed detached
-  authority运行同数据同权重的optimizer50/100短资格并做两点held5 correct-only strict250。
+- 当前正在实现下一单变量`shared factor-conditioned group gain readout`。前一query-only的195-row head被一个共享token函数替换：
+  每个rank/group显式读取contextual target-rank query、当前signed X、当前signed Y group与共享group embedding，再经过同一个
+  可复制GatedMLP及唯一scalar output。新增target或PI0.5层只增加token，不新增target-owned输出row；full 50-horizon、Process、
+  signed pooling、rank12+4、cap、positive-only objective与信息墙均不变。新配置为
+  `configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json`。隔离分支上的56项Writer/native-factor/LoRA测试已通过，
+  task1真实full-50两步GPU smoke也已自然exit0：Process梯度全为0，Composer direction为`1.955/1.690`；gain scalar output为
+  `4.2377/3.2538`，conditioner在零output-weight初始化的step1按预期为0、step2变为有限非零`.001244`。两步为
+  `3.492/3.340s`，峰值allocated/reserved为`23.88/24.11GB`，functional VJP、独立clip、Panel-B零反向与唯一rank16均接通。
+  下一步立即形成clean pushed authority并启动同规模optimizer50/100资格。
 
-- Composer-functional formal launch contract：scientific implementation为`45b63c97`，formal authority为包含本合同的下一
-  clean pushed main。配置固定`configs/pi05_ecp_policy_response_writer_composer_functional_v1.json`，保持73个gradient tasks、当前
-  matched实验选择的`9 meta + 3 target`、K1、component initialization、correct-only cross-episode functional、preservation、
-  full 50-horizon、真实native X/Y、ragged group gain、rank12+4与唯一rank16。相对上一run的唯一科学变量是从fresh component
-  initialization冻结Process、只更新现有Composer并不计算causal auxiliary；deployment forward、模型结构、数据、task权重、LR与
-  checkpoint cadence均不变。运行100 optimizer steps并保存50/100；输出固定为
-  `runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`，
-  临时单份mmap为`.codex/tmp/prw_composer_functional_73task_cache_45b63c97_gpu01_20260904/`。训练自然完成后使用两组各3卡并行物化和
-  held5 correct-only strict250；不续训或运行negative controls，直到两点closed-loop完成裁决。
+- 冻结Process的Composer-functional正式资格已经完整裁决为non-pass。scientific implementation为`45b63c97`、clean detached
+  authority为`a9baa7a4`，训练root为
+  `runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`。
+  100条metrics、macro50/100、Panel-B、completion、两点物化与held5 correct-only strict250均完整；m50/m100为`39/43`，逐task
+  Long/Goal/Object/Spatial0/Spatial9=`0/0/3/35/1`与`0/0/4/37/2`，breadth均`3/5`且Goal/Long为0。m100只是与carrier43持平，
+  相对carrier为`36 retained/7 gained/7 lost`；m50到m100为`33/10/6`。因此冻结Process恢复了上一joint m100=35的一部分，
+  但没有形成新性能，且不续训或运行negative controls。
 
-  2026-09-04 16:06 CST同时live检查：gpu01物理`0,2,3,4,5,6`均为`0MiB/0%`，物理1的他人任务约`1.8GB/53%`保持不动；gpu02
-  物理0--3新增约`24.3GB`他人任务，5/7重载，其余也有他人进程，不适合本轮。故使用gpu01上述6卡、world-size6、
-  `NCCL_P2P_DISABLE=1`与GPU-local NUMA，不触碰物理1。`/data1` user blocks为`776963860/1084227584 KiB`，limit headroom约
-  `293.0GiB`；上一同构shared mmap实测`97.81GiB`、retained formal output约`82.9MiB`，本轮峰值明显低于独立quota，目标
-  output/cache/exit root均确认不存在。launch前仍再做一次两节点live状态刷新；状态漂移只换安全设备，不改科学合同。
-
-  该formal已于2026-09-04 16:08 CST从上述detached authority实际启动，tmux为
-  `ember_prw_composer_functional_s100`；启动前再次同时刷新两节点，gpu01物理5出现他人约`.84GB/34%`轻任务但仍有`44.6GB`
-  余量，其余五张目标卡为空闲，按已验证峰值安全共驻且不触碰对方进程。torchrun父进程与6个rank均已建立，当前处于一次性
-  model/cache冷启动。对应held5物化配置为
-  `configs/pi05_ecp_policy_response_writer_composer_functional_held5_eval_v1.json`；训练自然完成后立即以两组各3卡并行评测m50/m100。
+- Composer-functional的根因诊断排除了“没训练够、全局方向坍缩、cap普遍截断”。seen functional最后25步平均benefit约
+  `+.000889`且约79%为正；m50/m100的Composer direction相对初始化移动`.719%/.825%`，gain head移动`9.29%/10.88%`，Process
+  严格为0。四个held/bridge task的最终mobile update task-specific fraction约`.85--.87`，但raw group gain跨task cosine
+  `.99972/.99973`、task-specific fraction仅约`.013`。task2/task74的exact group-logit下降方向总体cosine为`-.5846`，
+  `v/action-out`为`-.5208/-.6231`，而实际gain总体cosine为`.9991`。task74在固定当前directions下仅以10% logit-norm调整gain的
+  局部可用下降约`.001932`，远大于当前first-order benefit `-.0000935`；这直接支持先更换readout输入/参数共享方式，而不是修改
+  signed candidate生成器或扩大训练。关键诊断为
+  `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_m100_checkpoint_movement_a9baa7a4_gpu01p3_20260904.json`、
+  `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m100_group_logit_credit_tasks2_74_a9baa7a4_gpu01p6_20260904.json`及
+  对应m50/m100 geometry、family finite-ablation文件。
 
 - Group-gain-credit的正式科学裁决已经完成。clean detached authority为`a0797488`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；

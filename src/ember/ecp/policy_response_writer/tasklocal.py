@@ -262,7 +262,7 @@ def _composer_gradient_norms(runtime: PolicyResponseRuntime) -> dict[str, float]
         "input_branches": ("input_positive_query", "input_negative_query"),
         "output_branches": ("output_positive_query", "output_negative_query"),
         "relation_binding": ("relation_embedding",),
-        "scale_head": ("scale_head",),
+        "gain_readout": ("gain_readout",),
         "task_query": ("task_query",),
     }
     result = {}

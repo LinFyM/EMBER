@@ -2742,3 +2742,49 @@ rank12+4、唯一rank16与Panel合同。若该阶段恢复true-held/闭环，再
 同次评测还暴露并修复一个纯执行层问题：m50已经产生250/250 raw rows且全部worker exit0，但aggregator硬编码假定GPU0--3属于
 NUMA0，拒绝了gpu01上真实位于NUMA1的GPU3。`6ab0c518`改为校验worker实际报告的非负NUMA节点，14项evaluator测试通过，并从原始
 rows无重跑恢复`37/250`。该问题不改变任何rollout或科学结论。
+
+### 144. 冻结Process只能恢复到carrier，exact gain VJP定位query-only readout
+
+clean detached `a9baa7a4`的Composer-functional formal从component initialization开始保持Process全程eval且严格零梯度，只用
+correct cross-episode functional与preservation训练同一Composer。训练root为
+`runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`；
+macro50/100的held5 correct-only strict250为`39/43`，逐task Long/Goal/Object/Spatial0/Spatial9分别为`0/0/3/35/1`与
+`0/0/4/37/2`，breadth均`3/5`且Goal/Long为0。m100相对carrier43为`36 retained/7 gained/7 lost`、paired exact `p=1.0`；
+它不同于carrier但没有净增益。相对前一joint group-gain m100=35虽恢复8分，仍不满足最基本的carrier保留或跨suite要求。
+
+训练动态排除了简单续训解释。seen-task functional最后25步平均benefit约`+.000889`且约79%记录为正；m50/m100的Composer
+direction相对初始化移动`.719%/.825%`，旧gain head移动`9.29%/10.88%`，Process精确为0。m50到m100各held task的mobile
+update方向cosine约`.907--.964`且幅度继续增长，所以训练在放大稳定方向，而不是尚未开始移动。完整target cap大部分为1，最低仅
+少数target降到约`.777`，也不存在普遍截断。
+
+四个task-disjoint/bridge任务的几何揭示了最早失效接口。最终mobile update的跨task cosine低、task-specific fraction约
+`.85--.87`，说明signed X/Y方向已经携带task差异；然而195个raw group gains在m50/m100的跨task cosine为`.99972/.99973`，
+task-specific fraction只有`.0134/.0131`。family finite ablation进一步显示同一近静态比例对task2与task74的作用相反：m100
+task2的q/v/full benefit为`+.000738/+.000164/+.000896`，task74为`-.002797/+.000931/-.002148`，不能用family-wide幅度修补。
+
+最直接的synthetic gain-leaf VJP在同一m100 direction上把每个真实target/rank/group logit当作局部叶子，只读正确held视频和已封存
+functional gradient，不更新参数、不读negative或outcome。task2与task74的实际raw gain总体cosine为`.999115`，但负loss-gradient
+总体cosine为`-.584609`，其中q/v/action-in/action-out为`.37591/-.52077/.06937/-.62309`。以当前logit norm的10%沿各自最陡
+下降调整，task2/task74可用一阶下降分别约`.000415/.001932`；后者远大于当前mobile first-order benefit `-.0000935`。因此
+current-bank方向中存在可利用的group组合，query-only readout却没有表达出task-specific utility；这比“方向整体错误”或“训练不足”
+更早、更直接。
+
+下一matched函数类据此只替换这一接口。每个rank/group token读取contextual query、当前normalized signed X、当前normalized signed
+Y-group及共享group embedding；只按真实native width共享encoder，随后通过同一个可复制GatedMLP与唯一scalar output产生bounded
+gain。它没有target/group-owned output rows，新增layer只增加token；不增加loss、task table、anchor、adapter、coarse路径或手工
+幅度。初始scalar仍为G1的`w=0,b=.1`，完整BA cap及zero-innovation零mobile不变。Process继续冻结，使首轮fresh能单独裁决这一
+readout函数类；若它仍无法把task-disjoint gain梯度映射到held闭环，再检查signed candidate direction的可共享生成，而不是继续
+围绕静态幅度调参。
+
+隔离实现的56项Writer/native-factor/LoRA测试全部通过。task1、K1、51-frame、2-probe、full-50真实两步shared profile自然exit0；
+Process Frame/Event/Predictor梯度全为0，Composer direction为`1.9554/1.6898`。零output-weight初始化下gain scalar output梯度为
+`4.2377/3.2538`，conditioner在step1严格为0、一次optimizer update后的step2成为有限非零`.001244`，直接证明共享token函数从
+第二步开始获得条件化信用，而非只训练全局bias。两步wall为`3.492/3.340s`，最大allocated/reserved为`23.88/24.11GB`，没有
+相对旧head产生吞吐或显存退化；Panel-B backward、wrong/held梯度与shuffle/reverse读取仍为0，输出为唯一76-tensor rank16。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_m100_checkpoint_movement_a9baa7a4_gpu01p3_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m100_group_logit_credit_tasks2_74_a9baa7a4_gpu01p6_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_task_disjoint_group_geometry_tasks2_72_74_75_a9baa7a4_gpu01p0_20260904.json`及m100对应文件；
+- `runs/analysis/pi05_ecp_policy_response_writer_composer_functional_m50_family_finite_ablation_tasks2_74_a9baa7a4_gpu01p0_20260904.json`及m100对应文件。

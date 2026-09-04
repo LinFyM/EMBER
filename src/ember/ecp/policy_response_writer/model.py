@@ -43,6 +43,7 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         frame_blocks: int = 2,
         event_blocks: int = 2,
         composer_blocks: int = 2,
+        composer_gain_blocks: int = 1,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
@@ -63,6 +64,7 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
             width=width,
             heads=heads,
             block_depth=composer_blocks,
+            gain_block_depth=composer_gain_blocks,
             pooling_frame_chunk=pooling_frame_chunk,
             task_local=task_local,
         )

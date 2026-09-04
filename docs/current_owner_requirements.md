@@ -60,8 +60,9 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 ## 4. 当前方法方向
 
 经过2026-09-02完整历史复核、专家补充澄清与owner最终确认，当前唯一active方向是
-**Policy-Response Event-to-Factor Writer**。完整方法合同见
-`docs/policy_response_event_to_factor_writer_design.md`；专家原文见
+**Axial Policy-Response Native Factor Writer**。完整方法合同见
+`docs/axial_policy_response_native_factor_writer_design.md`；直接前身与专家原文见
+`docs/policy_response_event_to_factor_writer_design.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。其核心是：
 
@@ -77,7 +78,7 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 5. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
 6. 主要learned模块由可重复attention/MLP blocks扩展，不再使用冻结Natural Program到summary、covariance、whitening、transport、
    anchor或family scalar gate的连续专用坐标链；
-7. 训练只使用正确视频的cross-episode functional、严格causal的positive policy-response prediction及轻量preservation；
+7. 当前首版训练只使用正确视频的cross-episode functional，让correct video相对错误/乱序视频的优势自然产生；
    Final matched比较component-init与同拓扑fully-random fresh候选。
 
 owner于2026-09-04进一步明确：只要有可复核证据并经过深入分析，可以实质重构Writer；但结构自由度不能再次演化为连续数学补丁。

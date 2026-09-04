@@ -8,7 +8,7 @@
 `docs/expert_review_20260902_global_route_reassessment.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。精确分数、提交和历史脉络见
-`docs/research_history.md`；当前active合同见`docs/policy_response_event_to_factor_writer_design.md`。本文件是结论索引，
+`docs/research_history.md`；当前active合同见`docs/axial_policy_response_native_factor_writer_design.md`。本文件是结论索引，
 不替代原文。
 
 ## 科学结论
@@ -2849,3 +2849,28 @@ step1的0到step2的`.0007293`，Process全零，wall `3.499/3.282s`、峰值`23
 - `runs/outputs/pi05_ecp_policy_response_writer_factor_conditioned_gain_tasklocal_task{1,93}_full_s100_ef066789_gpu01p0_20260904/`；
 - `runs/analysis/pi05_ecp_policy_response_writer_factor_conditioned_gain_m50_m100_checkpoint_movement_ef066789_gpu01p0_20260904.json`；
 - `runs/analysis/pi05_ecp_policy_response_writer_factor_conditioned_gain_m100_parameter_credit_bridge6_ef066789_gpu02p4_20260904.json`。
+
+## 146. Role-equal未解决shared映射，active图整体收敛为Axial Writer
+
+73-task role-equal/cursor联合修复完整结束。m50/m100 held5 correct-only strict250为`39/45`；m100逐task
+Long/Goal/Object/Spatial0/Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit由
+`+.0001670/+.00009662`提高到`+.00034273/+.00015433`，但两个true-task-held均值分别为
+`-.00074236/-.00074894`与`-.00097034/-.00062664`。更均衡的role质量和完整video/visit覆盖带来有限变化，没有解决
+task-disjoint泛化；不再扫固定比例、步数或旧gain变体。
+
+结合此前set-relative shared `37/44`、pointwise `40/44`、query-only `39/43`及多条Goal/Long为0的稳定结果，反复失败的共同部分
+不是native bank、rank4、functional链或Evaluator，而是`relation/HMM -> C/D -> normalization -> marginal -> gain`组成的shared
+utility接口。owner明确允许有证据的实质重构，并要求结构可复制、优雅、不得继续叠数学补丁。active设计因此整体删除该链与causal
+auxiliary，改为Axial Policy-Response Native Factor Writer：可重复Frame/Temporal/Event/RankBank attention/MLP blocks直接产生
+signed raw-X/Y pooling logits。手工算子只保留axis/mask、可逆probe换基、一次content centering、exact chunk reduction、G1 signed
+pooling、最终target cap与唯一rank16物化。
+
+隔离实现相对前身约`821 insertions / 3018 deletions`，独立gain module已删除。25项Writer/native定向测试通过，覆盖full-only、
+order sensitivity、K2视频置换不变、chunk与dense/streaming value-gradient等价、静态重复mobile近零。真实task72 smoke完整消费
+22 sampled frames、2 probes、50 horizons、38 targets和native X/Y；functional loss`.0667395`，Prefix/Response/Frame/Temporal/
+Event/Composer/Signed-X/Signed-Y梯度均非零，生成76 tensors和唯一rank16，峰值allocated/reserved约`15.34/19.50 GiB`。
+
+同一dirty profile上的task72 5-step Composer-only控制在fit videos 3/8与held video43的benefit为
+`+.0002928/+.0001267/+.00008453`，三条同向但functional recovery仅`.02118/.00971/.00609`。这说明新bank/readout没有断图，
+尚不足以证明容量或shared映射；下一步从clean pushed detached authority运行25/50-step正式控制。若恢复持续增长再进shared短资格；
+若仍很弱，先定位factor magnitude或credit的最早接口，并以替换模块而非叠加变换解决。

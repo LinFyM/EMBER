@@ -2771,3 +2771,22 @@ clean detached `ef066789`的73-task factor-conditioned formal完成optimizer50/1
 `-.418`，而实际gain跨task cosine仍约`.994--.998`。下一fresh因此只在当前factor token之后加入同target
 `rank x ragged-group`标准self-attention + GatedMLP块，使gain可读取相对组合；不跨target，不改Process、signed bank direction、
 loss、full-50、rank、cap、data或初始化。实现、61项测试与两步真实GPU smoke已通过；正式结果见后续记录。
+
+## 141. Role-equal终局与Axial Writer架构重置
+
+role-equal formal root
+`runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_role_equal_73task_k1_component_s100_28b4eb05_gpu02p013_sharedmmap_20260904/`
+完成100 optimizer steps并删除临时mmap cache。m50/m100 held5 correct-only strict250为`39/45`；m100逐task
+Long/Goal/Object/Spatial0/Spatial9=`0/0/2/41/2`、breadth`3/5`，仍无Goal/Long。m100 evaluation root为
+`runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_role_equal_m100_held5_correct_k1_strict250_73380ec8_gpu01p036_r3_20260904/`，
+250 rows全部完成。Panel-B虽在gradient tasks上小幅改善，两个true-task-held仍总体为负。因此role weight与cursor覆盖联合修复未解决
+shared task-disjoint mapping，不再续训、跑negative controls或扫描比例。
+
+2026-09-05 owner基于两个月历史与ECP两周的累积non-pass，授权在EMBER科学边界内实质重构，同时要求新架构必须优雅、可按复制层扩展，
+不能再形成连续数学变换。新的active合同为`docs/axial_policy_response_native_factor_writer_design.md`。实现整体删除旧relation/HMM、
+C/D、factor normalization、event/relation marginal、独立gain和causal auxiliary；主图只保留Frame、Temporal、Event、RankBank
+attention/MLP blocks与direct signed raw-X/Y pooling。原生full-50、真实X/Y、rank12+4、unique rank16、positive-only与信息墙不变。
+
+开发分支上的25项Writer/native tests通过。task72真实full-50 smoke确认全部learned模块有functional gradient、冻结policy无梯度、
+76 tensors与完整rank16；5-step task-local profile三条fit/held视频均微弱高于carrier，但幅度尚小。该证据只解封clean detached
+25/50-step task72容量控制，尚未形成shared或closed-loop结论。

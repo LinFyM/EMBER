@@ -1,8 +1,34 @@
 # EMBER progress
 
-更新时间：2026-09-04。
+更新时间：2026-09-05。
 
 ## 当前快照
+
+- 唯一active design现为`docs/axial_policy_response_native_factor_writer_design.md`。owner授权有证据的实质重构，同时明确禁止重新演化为
+  连续数学变换。新图已整体删除旧relation/HMM/C-D/normalization/marginal/gain串联与causal auxiliary，只保留
+  `Frame attention -> Temporal attention -> ordered event read -> RankBank attention -> direct signed raw X/Y pooling`；容量仅靠复制
+  同构attention/MLP blocks扩展。full 50-horizon、真实native X/Y、positive-only、rank12+4、唯一rank16与信息墙不变。
+
+- role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
+  Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
+  `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，
+  没有解决shared Program--bank utility映射，因此不再扫meta/target比例或修补旧gain链。
+
+- Axial实现位于隔离分支`codex/prw-axial-factor`。当前diff相对main净为约`821 insertions / 3018 deletions`；独立gain module已删除。
+  25项Writer/native tests、py_compile和diff check通过。synthetic覆盖full-only、order sensitivity、K2视频置换不变、chunk等价、
+  dense/streaming value+gradient等价及静态重复视频mobile近零。
+
+- gpu01物理3的真实task72 smoke完整消费22 sampled frames、2 probes、50 horizons、38 targets与真实native X/Y；functional loss
+  `.0667395`，Prefix/Response/Frame/Temporal/Event/Composer/Signed X/Signed Y梯度均非零，冻结policy零梯度，生成76 tensors和唯一
+  rank16。峰值allocated/reserved约`15.34/19.50 GiB`。随后5-step task-local profile约`2.4--2.6s/step`；fit videos 3/8和
+  held video43的benefit分别为`+.0002928/+.0001267/+.00008453`，三条均同向，但恢复仅`.02118/.00971/.00609`，只证明短图已
+  接通，尚不构成容量或shared性能结论。
+
+- 下一动作是完成active design登记并合并推送；随后从clean pushed detached commit做task72 25/50-step正式Composer容量控制。
+  若factor规模/functional恢复明确成长，再立即做73-task shared 25/50短资格；若仍极弱，先围绕最早factor读出/信用接口深入定位，
+  不添加数学补丁、不直接支付长跑成本。
+
+## 2026-09-04及以前进度账本
 
 - Set-relative shared已完整裁决为non-pass，但authority72正控证明同一函数类的functional信用可以转化为闭环行为。clean detached
   `3686baec`的shared m50/m100 held5 correct-only strict250为`37/44`，m100与前一pointwise m100同为`44/250`、breadth仅`3/5`

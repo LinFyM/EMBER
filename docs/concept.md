@@ -58,29 +58,31 @@ materialization；不再为每轮问题增加新的latent坐标。
 每个视频帧使用原生PI0.5 image-language prefix和固定antithetic action probes。flow时刻`s=1`是denoising噪声端点；50个
 horizon positions表示当前静态观测下的future-action policy response field，不是teacher未来50帧或teacher actions。
 
-teacher-video frame time、Action Expert horizon、flow time、layer depth和probe是五个不同轴。新Writer在第一次task/relation-conditioned
-attention前保留19个layer boundaries、50 horizons、正负probe、layer state、residual increment与flow velocity；禁止用`t+h`把
-不同frames映射到共享机器人绝对时钟。
+teacher-video frame time、Action Expert horizon、flow time、layer depth和probe是五个不同轴。新Writer在learned attention前保留
+19个layer boundaries、50 horizons、正负probe、layer state、residual increment与flow velocity；禁止用`t+h`把不同frames映射到
+共享机器人绝对时钟，也禁止horizon mean或抽样。
 
-frame-level表示沿真实teacher-video time形成adjacent、short-window、initial-relative与goal-relative relations，再被编码为最多
-`E=8`个boundary-anchored ordered events。每条视频独立保序；多视频保持为无序集合，不先平均为一个Program。
+owner-matched target-rank queries先在每个frame读取native prefix与完整`2 x 50` policy response，再由同构Temporal blocks沿真实
+teacher-video time建模。时序trunk只做一次content centering，首尾content与learned interior reads形成最多`E=8`个ordered events。
+位置只进入attention Q/K，不作为动态value；静态重复视频不能仅靠位置产生mobile update。每条视频独立保序，多视频只在集合阶段
+置换不变聚合。
 
-G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断和历史机制证据，但不再是下游唯一固定schema。当前event
-表示保留owner-aligned event token、soft temporal assignment与occupancy，并分解为共有context C和event-relative innovation D。
+G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断和历史机制证据，但不再是下游唯一固定schema。active图不再
+构造HMM、relation marginal、occupancy、C/D分解或其它连续解析链。
 
 ## Current-video native factor path
 
 每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
-output differences。38x4 target-rank queries先读取ordered events和whole-bank低维context，再输出两组signed logits，对raw X/Y
-做exact pooling。
+output differences。38x4 target-rank queries用同构RankBank blocks直接读取ordered events和完整当前视频bank，再产生
+`base +/- dynamic contrast` logits，对raw X/Y做exact signed pooling。
 
-language和静态context只负责grounding、query或FiLM调制，不能作为factor value或独立输出mobile residual。首版不使用task-expert
-dictionary、held retrieval或free learned residual。q按8个native query-head groups、action-in按32个native-width blocks处理；这来自
-G1的实际输出空间反证，不是四条不同compiler。
+language和静态context只负责grounding query，不能作为factor value或独立输出mobile residual。首版不使用task-expert dictionary、
+held retrieval、free learned residual或独立gain网络。q按8个native query-head groups、action-in按32个native-width blocks处理；
+这来自真实output tensor布局，不是四条不同compiler。
 
 rank4 factors只做一次small-core canonicalization，再与frozen rank12 carrier拼成唯一rank16。PNBTT、EBSRI、Program-through-bank及
 旧G3实现保留为历史和kernel来源，不构成active fallback。完整合同见
-`docs/policy_response_event_to_factor_writer_design.md`。
+`docs/axial_policy_response_native_factor_writer_design.md`。
 
 ## 训练原则
 
@@ -90,7 +92,8 @@ rank4 factors只做一次small-core canonicalization，再与frozen rank12 carri
 - task-local free-code已经证明native factor bank与pooling有容量；P0/P1进一步证明full-inverse primitive能跨video保留共享primal，
   但wrong-bank反事实证明它会消除bank specificity。Program-through-bank的scope-matched free-summary正控通过，真实Program read却未保留
   correct/held；随后bank-conditioned-primal恢复correct，但原query、free query和充分行使的full-native free anchor都无法同时压低wrong。
-  后继若获授权必须直接修复Program与当前bank共同决定功能方向的接口，不能继续用scalar gate、anchor步长或普通超参修补同一函数类。
+  当前Axial Writer已整体替换反复失败的shared utility接口；后继负结果必须定位并替换责任模块，不能继续用scalar gate、anchor步长、
+  normalization或普通超参修补同一函数类。
 - staged gates用于定位接口，不是Final必须重演的训练课程。Final既保留从已验证组件初始化的fresh joint run，也保留整套Writer
   完全随机初始化并直接端到端fresh训练的正式选项，由同一closed-loop合同选择。
 - shuffled/reversed只在最终selected checkpoint已选定并冻结后评测时序特异性，不进入训练、loss、

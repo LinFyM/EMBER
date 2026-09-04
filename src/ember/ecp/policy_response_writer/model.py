@@ -41,9 +41,9 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         event_slots: int = 8,
         heads: int = 4,
         frame_blocks: int = 2,
-        event_blocks: int = 2,
+        temporal_blocks: int = 2,
+        event_blocks: int = 1,
         composer_blocks: int = 2,
-        composer_gain_blocks: int = 1,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
@@ -57,6 +57,7 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
             event_slots=event_slots,
             heads=heads,
             frame_blocks=frame_blocks,
+            temporal_blocks=temporal_blocks,
             event_blocks=event_blocks,
         )
         self.composer = CurrentVideoNativeFactorComposer(
@@ -64,7 +65,6 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
             width=width,
             heads=heads,
             block_depth=composer_blocks,
-            gain_block_depth=composer_gain_blocks,
             pooling_frame_chunk=pooling_frame_chunk,
             task_local=task_local,
         )
@@ -82,33 +82,6 @@ class PolicyResponseEventToFactorWriter(torch.nn.Module):
         )
         residual = self.composer(values, processes, s_ref=s_ref)
         return PolicyResponseWriterOutput(residual=residual, processes=processes)
-
-    def causal_prediction_loss(
-        self,
-        videos: Sequence[FrozenPolicyResponseVideo],
-        *,
-        cutoffs: Sequence[Sequence[int]],
-        future_offsets: Sequence[int],
-        representation: str = "full",
-    ) -> torch.Tensor:
-        values = tuple(videos)
-        selected = tuple(tuple(map(int, row)) for row in cutoffs)
-        offsets = tuple(map(int, future_offsets))
-        if len(values) != len(selected) or len(values) != len(offsets) or not values:
-            raise ValueError("policy-response causal video set changed")
-        return torch.stack(
-            tuple(
-                self.process.causal_prediction_loss(
-                    video,
-                    cutoffs=rows,
-                    future_offset=offset,
-                    representation=representation,
-                )
-                for video, rows, offset in zip(
-                    values, selected, offsets, strict=True
-                )
-            )
-        ).mean()
 
     @staticmethod
     def materialize(

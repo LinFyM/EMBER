@@ -1,11 +1,9 @@
 """Shared positive-only training for the Policy-Response Writer.
 
-Each optimizer update is role-balanced across correct videos only.  Frozen
-policy LoRA-leaf VJPs provide exact functional credit.  A configured stage may
-also train Frame/Event variables through the prefix-only future-response
-objective, or keep the initialized Process frozen while fitting the Composer.
-No held, wrong, shuffled, reversed, no-video, or language-only condition
-receives a gradient in this module.
+Each optimizer update uses correct videos only. Frozen-policy LoRA-leaf VJPs
+provide exact functional credit to the complete Writer. No auxiliary process
+loss and no held, wrong, shuffled, reversed, no-video, or language-only
+condition receives a gradient in this module.
 """
 
 from __future__ import annotations
@@ -13,7 +11,6 @@ from __future__ import annotations
 import gc
 import math
 import os
-import random
 import shutil
 import socket
 import statistics
@@ -23,7 +20,6 @@ from typing import Any, Mapping, Sequence
 
 import torch
 import torch.distributed as dist
-import torch.nn.functional as F
 
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.shared_contract import (
@@ -38,13 +34,9 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     balanced_task_owners,
     configured_task_group,
     evaluation_task_costs,
-    owner_balanced_task_group,
-    role_balanced_task_owners,
     scheduled_task_costs,
-    shared_task_group,
     task_group_counts,
     task_occurrence_schedule,
-    training_video_demos,
 )
 from ember.ecp.policy_response_writer.shared_execution import (
     shared_mmap_execution_plan,
@@ -54,8 +46,6 @@ from ember.ecp.policy_response_writer.shared_video_cache import (
     SharedPolicyResponseVideoCache,
 )
 from ember.ecp.policy_response_writer.training import (
-    COMPOSER_FUNCTIONAL_STAGE,
-    JOINT_PROCESS_COMPOSER_STAGE,
     REPO_ROOT,
     PolicyResponseRuntime,
     capture_video,
@@ -77,64 +67,26 @@ class SharedEvidenceCache:
     videos: dict[tuple[int, int], FrozenPolicyResponseVideo]
     capture_records: list[dict[str, Any]]
     functional_normalizers: dict[int, float]
-    process_normalizers: dict[int, float]
-
-
-def causal_pair(
-    frame_count: int, event_slots: int, *, optimizer_step: int, task: int, demo: int
-) -> tuple[int, int]:
-    """Uniformly sample a reproducible legal prefix and positive future offset."""
-
-    span = int(frame_count) - int(event_slots)
-    if span <= 0:
-        raise ValueError("shared Writer video is too short for causal prediction")
-    seed = (
-        (int(optimizer_step) + 1) * 1_000_003
-        + (int(task) + 1) * 10_000_019
-        + (int(demo) + 1) * 100_000_007
-    )
-    generator = random.Random(seed)
-    cutoff = generator.randrange(int(event_slots), int(frame_count))
-    future_offset = generator.randrange(1, int(frame_count) - cutoff + 1)
-    return cutoff, future_offset
 
 
 def functional_objective(
     *,
     generated_loss: float,
-    carrier_loss: float,
     normalizer: float,
     task_weight: float,
-    preservation_weight: float,
-    preservation_epsilon: float,
-) -> dict[str, float | bool]:
-    """Return the scalar VJP mass for functional plus one-sided preservation."""
+) -> dict[str, float]:
+    """Return direct positive functional credit with task-scale normalization."""
 
-    values = (
-        generated_loss,
-        carrier_loss,
-        normalizer,
-        task_weight,
-        preservation_weight,
-        preservation_epsilon,
-    )
+    values = (generated_loss, normalizer, task_weight)
     if (
         not all(math.isfinite(float(value)) for value in values)
         or normalizer <= 0
         or task_weight <= 0
-        or min(preservation_weight, preservation_epsilon) < 0
     ):
         raise ValueError("shared Writer functional objective changed")
-    excess = generated_loss - carrier_loss - preservation_epsilon
-    active = excess > 0
-    gradient_mass = (
-        task_weight * (1.0 + (preservation_weight if active else 0.0)) / normalizer
-    )
     return {
         "functional_normalized": generated_loss / normalizer,
-        "preservation_normalized": max(0.0, excess) / normalizer,
-        "preservation_active": active,
-        "gradient_mass": gradient_mass,
+        "gradient_mass": task_weight / normalizer,
     }
 
 
@@ -179,44 +131,15 @@ def _optimizer(
     torch.optim.AdamW,
     torch.optim.lr_scheduler.LambdaLR,
 ]:
-    stage = shared_training_stage(runtime)
-    runtime.writer.requires_grad_(False)
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        runtime.writer.requires_grad_(True)
-    else:
-        runtime.writer.composer.requires_grad_(True)
+    runtime.writer.requires_grad_(True)
     set_shared_training_mode(runtime)
-    named_parameters = tuple(
-        (name, value)
-        for name, value in runtime.writer.named_parameters()
-        if value.requires_grad
-    )
-    parameters = tuple(value for _, value in named_parameters)
-    prediction_parameters = tuple(
-        value
-        for name, value in named_parameters
-        if name.startswith("process.prediction_")
-    )
-    prediction_ids = {id(value) for value in prediction_parameters}
-    remaining_parameters = tuple(
-        value for value in parameters if id(value) not in prediction_ids
+    parameters = tuple(
+        value for value in runtime.writer.parameters() if value.requires_grad
     )
     cell = runtime.config["optimization"]["shared"]
     learning_rate = float(cell["learning_rate"])
-    prediction_multiplier = float(cell["process_prediction_lr_multiplier"])
-    parameter_groups: tuple[dict[str, Any], ...]
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        parameter_groups = (
-            {"params": remaining_parameters},
-            {
-                "params": prediction_parameters,
-                "lr": learning_rate * prediction_multiplier,
-            },
-        )
-    else:
-        parameter_groups = ({"params": remaining_parameters},)
     optimizer = torch.optim.AdamW(
-        parameter_groups,
+        parameters,
         lr=learning_rate,
         betas=tuple(cell["betas"]),
         weight_decay=float(cell["weight_decay"]),
@@ -234,75 +157,13 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
-        or not remaining_parameters
         or runtime.writer.composer.task_query is not None
+        or not all(value.requires_grad for value in runtime.writer.parameters())
         or any(value.requires_grad for value in runtime.policy.parameters())
         or any(value.requires_grad for value in runtime.stage0.parameters())
     ):
         raise RuntimeError("shared Writer parameter ownership changed")
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        if (
-            not prediction_parameters
-            or len(prediction_ids) != len(prediction_parameters)
-            or not math.isfinite(prediction_multiplier)
-            or prediction_multiplier <= 1.0
-        ):
-            raise RuntimeError("shared Writer joint parameter ownership changed")
-    elif (
-        prediction_parameters
-        or any(value.requires_grad for value in runtime.writer.process.parameters())
-        or not all(
-            value.requires_grad for value in runtime.writer.composer.parameters()
-        )
-    ):
-        raise RuntimeError("shared Writer Composer-stage ownership changed")
     return parameters, optimizer, scheduler
-
-
-@torch.no_grad()
-def _target_only_process_normalizer(
-    runtime: PolicyResponseRuntime,
-    video: FrozenPolicyResponseVideo,
-    *,
-    task: int,
-    demo: int,
-    pair_count: int,
-) -> float:
-    """Estimate task scale from several fixed targets, independent of Writer state."""
-
-    if pair_count <= 0:
-        raise ValueError("process normalizer pair count changed")
-    process = runtime.writer.process
-    teacher = process.fixed_teacher_response(video).detach()
-    losses = []
-    for pair_index in range(pair_count):
-        cutoff, future_offset = causal_pair(
-            video.frame_count,
-            process.event_slots,
-            optimizer_step=pair_index,
-            task=task,
-            demo=demo,
-        )
-        target = process.standardized_teacher_delta(
-            teacher,
-            cutoff=cutoff,
-            future_offset=future_offset,
-        )
-        losses.append(
-            float(
-                F.smooth_l1_loss(
-                    torch.zeros_like(target),
-                    target,
-                    beta=1.0,
-                    reduction="mean",
-                )
-            )
-        )
-    del teacher
-    result = statistics.fmean(losses)
-    if not math.isfinite(result) or result <= 1e-8:
-        raise RuntimeError("shared Writer target-only process normalizer changed")
-    return result
 
 
 def _capture_missing(
@@ -369,12 +230,7 @@ def _prepare_training_cache(
     video_splits: Mapping[int, VideoSplit],
     shared_video_cache: SharedPolicyResponseVideoCache | None = None,
 ) -> SharedEvidenceCache:
-    cache = SharedEvidenceCache({}, [], {}, {})
-    pair_count = int(
-        runtime.config["optimization"]["shared"][
-            "process_normalizer_pairs_per_fit_video"
-        ]
-    )
+    cache = SharedEvidenceCache({}, [], {})
     runtime.writer.eval()
     for task in map(int, owned_tasks):
         fit, _ = video_splits[task]
@@ -386,23 +242,6 @@ def _prepare_training_cache(
             shared_video_cache=shared_video_cache,
         )
         cache.functional_normalizers[task] = _functional_normalizer(runtime, task)
-        losses = []
-        for demo in fit:
-            video = cache.videos[(task, demo)].to(runtime.context.device)
-            losses.append(
-                _target_only_process_normalizer(
-                    runtime,
-                    video,
-                    task=task,
-                    demo=demo,
-                    pair_count=pair_count,
-                )
-            )
-            del video
-        normalizer = statistics.fmean(losses)
-        if not math.isfinite(normalizer) or normalizer <= 1e-8:
-            raise RuntimeError("shared Writer process normalizer changed")
-        cache.process_normalizers[task] = normalizer
         torch.cuda.empty_cache()
     set_shared_training_mode(runtime)
     return cache
@@ -469,7 +308,7 @@ def _seal_normalizers(
         for axis, rows in normalizers.items()
     }
     if (
-        set(canonical) != {"functional", "process"}
+        set(canonical) != {"functional"}
         or any(set(rows) != expected_tasks for rows in canonical.values())
         or any(
             not math.isfinite(value) or value <= 0
@@ -488,13 +327,12 @@ def _seal_normalizers(
         axis: {int(task): float(value) for task, value in rows.items()}
         for axis, rows in read_json(path).items()
     }
-    if set(stored) != {"functional", "process"} or any(
+    if set(stored) != {"functional"} or any(
         set(rows) != expected_tasks for rows in stored.values()
     ):
         raise ValueError("shared Writer frozen normalizer authority changed")
     owned = set(cache.functional_normalizers)
     cache.functional_normalizers = {task: stored["functional"][task] for task in owned}
-    cache.process_normalizers = {task: stored["process"][task] for task in owned}
     return stored
 
 
@@ -586,8 +424,6 @@ def _validate_shared_run(
     meta, target, _ = _split_ids(runtime)
     task_group_counts(cell, meta=meta, target=target)
     replication_budget = float(runtime.args.cache_replication_budget_gib)
-    stage = shared_training_stage(runtime)
-    process_weight = float(cell["process_weight"])
     if (
         int(runtime.config["data"]["initial_K"]) != 1
         or tuple(sorted(set(cardinalities))) != cardinalities
@@ -599,14 +435,6 @@ def _validate_shared_run(
         or (
             runtime.args.shared_evidence_cache_root is not None
             and replication_budget != 0.0
-        )
-        or (
-            stage == JOINT_PROCESS_COMPOSER_STAGE
-            and (not math.isfinite(process_weight) or process_weight <= 0.0)
-        )
-        or (
-            stage == COMPOSER_FUNCTIONAL_STAGE
-            and process_weight != 0.0
         )
     ):
         raise ValueError("shared Writer positive-only training contract changed")
@@ -733,7 +561,6 @@ def _install_execution_caches(
             record_capture=False,
         )
         cache.functional_normalizers[task] = float(normalizers["functional"][task])
-        cache.process_normalizers[task] = float(normalizers["process"][task])
     barrier(runtime.context)
 
 
@@ -815,20 +642,7 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     video_splits, costs = _video_splits(
         runtime, task_ids, gradient_tasks=gradient_tasks
     )
-    if (runtime.args.mode == "profile" and runtime.args.task is not None) or cell.get(
-        "tasks_per_update_by_role"
-    ) is not None:
-        task_owners = balanced_task_owners(costs, runtime.context.world_size)
-    else:
-        # Preserve the current qualification run's owner-coupled 3+3 sequence.
-        # New explicit samplers are owner-independent and use global cost balance.
-        task_owners = role_balanced_task_owners(
-            costs,
-            meta=meta,
-            target=target,
-            held=held,
-            world_size=runtime.context.world_size,
-        )
+    task_owners = balanced_task_owners(costs, runtime.context.world_size)
     parameters, optimizer, scheduler = _optimizer(runtime)
     total = int(cell["warmup_updates"]) + int(cell["effective_updates"])
     stop = int(
@@ -861,7 +675,6 @@ def run_shared(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     )
     observed_normalizers = {
         "functional": _gather_mapping(runtime, cache.functional_normalizers),
-        "process": _gather_mapping(runtime, cache.process_normalizers),
     }
     expected_gradient = set(task_ids).intersection(gradient_tasks)
     normalizers = _seal_normalizers(

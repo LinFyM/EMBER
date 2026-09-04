@@ -1,12 +1,12 @@
 # EMBER task plan
 
-更新时间：2026-09-04。
+更新时间：2026-09-05。
 
 ## 当前goal
 
 从最新clean pushed main实现、训练并科学裁决可扩展的Policy-Response Event-to-Factor Writer：以冻结PI0.5的
 layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用可重复的Frame、Event与
-Factor-Composer blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional与positive process监督，
+Factor-Composer blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
 持续推进component-init、fully-random Final joint及规模化训练，直到validation8 strict paired correct稳定严格大于145/400并满足
 breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因果controls，或者在完成必要正控、matched对照和有信息量的规模化
 实验后，获得足以停止当前函数类或EMBER总体路线的可复核证据。
@@ -17,14 +17,14 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 唯一active design为：
 
-- docs/policy_response_event_to_factor_writer_design.md
+- docs/axial_policy_response_native_factor_writer_design.md
 
 专家原始依据为：
 
 - docs/expert_review_20260902_full_history_policy_native_meta_writer.md
 - docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md
 
-PNBTT及此前Program--bank实现均已裁决，不是active fallback。
+原Policy-Response Event-to-Factor Writer、PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 
 ## 已确认的科学基线
 
@@ -39,18 +39,28 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 - full-rank16 PNBTT在task1与task93呈稳定相反行为，没有证明rank4是当前主要瓶颈。
 - 以上负证据不淘汰Stage0原生观测、ordered events、真实native X/Y、signed pooling、rank4或整个ECP。
 
-## 最后设计审查修正
+## 当前设计审查结论
 
-以下四项已并入active design，必须在首个真实图中成立：
+1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
+2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
+3. 新主图只含可复制的Frame、Temporal、Event和RankBank attention/MLP blocks，随后直接对raw X/Y做signed pooling；
+4. causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由PI0.5 response与真实
+   teacher-frame temporal blocks承担；
+5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
+6. task-local控制、shared资格与正式closed-loop各自回答不同问题，不能用内部loss或人为阈值代替最终行为。
 
-1. causal process prediction使用严格prefix-only auxiliary view，不能读取future frames、current-to-final relation或future event
-   assignment；
-2. process target来自冻结raw evidence或固定teacher projection，可训练compact projection不能同时充当可漂移target；
-3. task1/task93的task-local Composer正控与最小smoke一起完成，用于确认去掉PNBTT solve后仍保留G1 bank容量；
-4. owner于2026-09-03明确否决coarse/final-layer horizon mean作为active路线；50-step horizon必须完整保留到
-   task/relation-conditioned learned read。旧full/coarse对照只保留为历史诊断，不能授权继续coarse。
+## 2026-09-05当前执行
 
-## 当前执行顺序
+1. [x] role-equal/cursor联合修复完成：m50/m100 held5为`39/45`，breadth均仅3且Goal/Long为0，未形成决定性shared增益；
+2. [x] 以Axial Writer整体替换旧Process/Composer/gain链，删除独立gain runtime与causal objective；
+3. [x] 25项Writer/native定向测试及真实task72 full-50 forward/VJP/materialization smoke通过；
+4. [x] task72 5-step task-local profile自然结束，三条视频均微弱高于carrier，约`2.4--2.6s/step`；
+5. [ ] 从clean pushed detached authority运行task72正式25/50-step Composer容量控制并分析factor scale与信用；
+6. [ ] 若容量控制成立，立即运行73-task shared 25/50-step短资格；若不成立，先定位最早失效接口，不做长跑；
+7. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
+8. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+
+## 历史执行账本
 
 1. [x] 逐字归档并核验完整历史专家意见与补充澄清；
 2. [x] owner确认Policy-Response Event-to-Factor Writer主案；

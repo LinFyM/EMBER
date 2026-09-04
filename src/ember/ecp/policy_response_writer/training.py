@@ -62,11 +62,10 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_v1"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_run_v1"
+SCHEMA = "ember_ecp_policy_response_writer_axial_v1"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_axial_run_v1"
 REPO_ROOT = Path(__file__).resolve().parents[4]
-JOINT_PROCESS_COMPOSER_STAGE = "joint_process_composer"
-COMPOSER_FUNCTIONAL_STAGE = "composer_functional_process_frozen"
+JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
 
 @dataclass
@@ -96,24 +95,22 @@ class PolicyResponseRuntime:
 
 
 def shared_training_stage(runtime: PolicyResponseRuntime) -> str:
-    """Resolve the one configured optimizer ownership stage."""
+    """Resolve the single active end-to-end Writer training stage."""
 
     stage = str(
         runtime.config["optimization"]["shared"].get(
-            "training_stage", JOINT_PROCESS_COMPOSER_STAGE
+            "training_stage", JOINT_FUNCTIONAL_STAGE
         )
     )
-    if stage not in {JOINT_PROCESS_COMPOSER_STAGE, COMPOSER_FUNCTIONAL_STAGE}:
+    if stage != JOINT_FUNCTIONAL_STAGE:
         raise ValueError("shared Writer training stage changed")
     return stage
 
 
 def set_shared_training_mode(runtime: PolicyResponseRuntime) -> None:
-    """Keep a frozen Process deterministic while training the same Composer."""
+    """Train the complete Writer while all frozen evidence producers stay fixed."""
 
     runtime.writer.train()
-    if shared_training_stage(runtime) == COMPOSER_FUNCTIONAL_STAGE:
-        runtime.writer.process.eval()
 
 
 def load_policy_response_config(path: Path) -> dict[str, Any]:
@@ -122,58 +119,36 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
     data = config.get("data", {})
     optimization = config.get("optimization", {})
     shared = optimization.get("shared", {})
-    training_stage = shared.get("training_stage", JOINT_PROCESS_COMPOSER_STAGE)
-    process_weight = float(shared.get("process_weight", float("nan")))
-    stage_contract = (
-        training_stage == JOINT_PROCESS_COMPOSER_STAGE
-        and math.isfinite(process_weight)
-        and process_weight > 0.0
-    ) or (
-        training_stage == COMPOSER_FUNCTIONAL_STAGE
-        and process_weight == 0.0
-        and optimization.get("objective")
-        == "composer_functional_stage_correct_cross_episode_plus_light_preservation"
-    )
+    training_stage = shared.get("training_stage", JOINT_FUNCTIONAL_STAGE)
     training_k = tuple(map(int, data.get("training_K", (data.get("initial_K", -1),))))
     if not all(
         (
             config.get("schema_version") == SCHEMA,
-            config.get("status") == "active_policy_response_event_to_factor_writer",
+            config.get("status") == "active_axial_policy_response_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("event_slots") == 8,
-            model.get("relation_types") == 4,
-            model.get("composer_relation_binding")
-            == "soft_event_assignment_base_measure_signed_candidate_logits",
-            model.get("composer_query_seed")
-            == "parameter_free_pre_norm_rank_plus_variance_balanced_owner_family_common_language",
-            model.get("composer_relative_gain_readout")
-            == (
-                "shared_within_target_set_relative_factor_gain_tokens_"
-                "without_target_owned_output_rows"
-            ),
-            model.get("composer_gain_attention_scope")
-            == "within_target_rank_by_ragged_group_only",
-            model.get("composer_gain_initialization")
-            == "g1_nonzero_relative_logit_0.1_for_first_step_direction_credit",
-            model.get("composer_gain_blocks") == 1,
-            model.get("process_consumer_boundary")
-            == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
-            model.get("causal_process_interval")
-            == "deterministic_uniform_prefix_then_uniform_positive_future_offset_direct_sqrt_delta_standardized_target_with_parameter_free_encoding",
-            model.get("causal_event_posterior")
-            == "full_video_hard_first_final_and_prefix_first_anchored_forward_filter",
+            model.get("architecture")
+            == "repeatable_frame_temporal_event_and_rank_bank_attention_blocks",
+            model.get("factor_readout")
+            == "direct_base_plus_minus_event_contrast_signed_raw_native_XY",
+            model.get("dynamic_value_contract")
+            == "centered_content_events_make_static_repeat_output_factor_zero",
+            model.get("post_pooling")
+            == "single_target_update_cap_then_small_core_canonicalization",
+            int(model.get("frame_blocks", 0)) > 0,
+            int(model.get("temporal_blocks", 0)) > 0,
+            int(model.get("event_blocks", 0)) > 0,
+            int(model.get("composer_blocks", 0)) > 0,
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
             bool(training_k),
             tuple(sorted(set(training_k))) == training_k,
             set(training_k) <= {1, 2, 4},
-            stage_contract,
-            shared.get("process_normalizer")
-            == "target_only_deterministic_8_pairs_per_fit_video",
-            shared.get("process_normalizer_pairs_per_fit_video") == 8,
-            shared.get("process_prediction_lr_multiplier") == 20.0,
+            training_stage == JOINT_FUNCTIONAL_STAGE,
+            optimization.get("objective")
+            == "correct_cross_episode_functional_positive_only",
             config.get("information_wall", {}).get("action_meta_installed") is False,
             config.get("information_wall", {}).get("wrong_training_loss") is False,
         )
@@ -207,7 +182,7 @@ def _initialize_writer(
         return {
             "kind": "fully_random_same_topology",
             "reused": [],
-            "fresh": ["process", "causal_predictor", "composer"],
+            "fresh": ["process", "composer"],
         }
     raise ValueError("unknown Policy-Response Writer initialization")
 
@@ -338,9 +313,9 @@ def prepare_runtime(
         event_slots=int(model["event_slots"]),
         heads=int(model["attention_heads"]),
         frame_blocks=int(model["frame_blocks"]),
+        temporal_blocks=int(model["temporal_blocks"]),
         event_blocks=int(model["event_blocks"]),
         composer_blocks=int(model["composer_blocks"]),
-        composer_gain_blocks=int(model["composer_gain_blocks"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
@@ -477,61 +452,30 @@ def functional_panel_batch(
 
 def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
     groups = {
-        "frame": "process.frame_blocks",
-        "event": "process.events",
-        "composer": "composer",
-        "composer_relation": "composer.relation_embedding",
-        "process_prediction": "process.prediction",
+        "prefix": ("process.prefix", "process.language_reader", "process.seed"),
+        "response": ("process.response",),
+        "frame": ("process.frame_blocks",),
+        "temporal": ("process.temporal_blocks",),
+        "event": ("process.events",),
+        "composer_context": ("composer.blocks", "composer.query_seed"),
+        "signed_input": (
+            "composer.input_base_query",
+            "composer.input_contrast_query",
+        ),
+        "signed_output": (
+            "composer.output_base_query",
+            "composer.output_contrast_query",
+        ),
+        "composer": ("composer",),
     }
     output = {}
-    for label, prefix in groups.items():
+    for label, prefixes in groups.items():
         squares = [
             parameter.grad.detach().float().square().sum()
             for name, parameter in module.named_parameters()
-            if name.startswith(prefix) and parameter.grad is not None
+            if name.startswith(prefixes) and parameter.grad is not None
         ]
         output[label] = float(torch.stack(squares).sum().sqrt()) if squares else 0.0
-    direction_squares = [
-        parameter.grad.detach().float().square().sum()
-        for name, parameter in module.named_parameters()
-        if name.startswith("composer.")
-        and not name.startswith("composer.gain_readout.")
-        and parameter.grad is not None
-    ]
-    gain_squares = [
-        parameter.grad.detach().float().square().sum()
-        for name, parameter in module.named_parameters()
-        if name.startswith("composer.gain_readout.") and parameter.grad is not None
-    ]
-    output["composer_direction"] = (
-        float(torch.stack(direction_squares).sum().sqrt())
-        if direction_squares
-        else 0.0
-    )
-    output["composer_gain"] = (
-        float(torch.stack(gain_squares).sum().sqrt()) if gain_squares else 0.0
-    )
-    output_squares = [
-        parameter.grad.detach().float().square().sum()
-        for name, parameter in module.named_parameters()
-        if name.startswith("composer.gain_readout.output.")
-        and parameter.grad is not None
-    ]
-    conditioner_squares = [
-        parameter.grad.detach().float().square().sum()
-        for name, parameter in module.named_parameters()
-        if name.startswith("composer.gain_readout.")
-        and not name.startswith("composer.gain_readout.output.")
-        and parameter.grad is not None
-    ]
-    output["composer_gain_output"] = (
-        float(torch.stack(output_squares).sum().sqrt()) if output_squares else 0.0
-    )
-    output["composer_gain_conditioner"] = (
-        float(torch.stack(conditioner_squares).sum().sqrt())
-        if conditioner_squares
-        else 0.0
-    )
     return output
 
 
@@ -547,52 +491,25 @@ def _validate_smoke_graph(
     runtime: PolicyResponseRuntime,
     *,
     functional: torch.Tensor,
-    process_loss: torch.Tensor | None,
     functional_gradients: Mapping[str, float],
-    process_gradients: Mapping[str, float],
     generated_tensors: int,
 ) -> None:
-    stage = shared_training_stage(runtime)
     required = [
-        functional_gradients["composer"],
-        functional_gradients["composer_direction"],
-        functional_gradients["composer_gain"],
+        functional_gradients[name]
+        for name in (
+            "response",
+            "frame",
+            "temporal",
+            "event",
+            "composer_context",
+            "signed_input",
+            "signed_output",
+        )
     ]
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        required.extend(
-            (
-                functional_gradients["frame"],
-                functional_gradients["event"],
-                process_gradients["frame"],
-                process_gradients["event"],
-                process_gradients["process_prediction"],
-            )
-        )
-    frozen_process_changed = stage == COMPOSER_FUNCTIONAL_STAGE and (
-        runtime.writer.process.training
-        or any(value.requires_grad for value in runtime.writer.process.parameters())
-        or any(
-            value != 0.0
-            for value in (
-                functional_gradients["frame"],
-                functional_gradients["event"],
-                process_gradients["frame"],
-                process_gradients["event"],
-                process_gradients["process_prediction"],
-            )
-        )
-    )
-    process_contract_changed = (
-        stage == JOINT_PROCESS_COMPOSER_STAGE and process_loss is None
-    ) or (stage == COMPOSER_FUNCTIONAL_STAGE and process_loss is not None)
     invalid = any(
         (
             not math.isfinite(float(functional)),
-            process_loss is not None
-            and not math.isfinite(float(process_loss.detach())),
             min(required) <= 0,
-            frozen_process_changed,
-            process_contract_changed,
             any(
                 parameter.grad is not None for parameter in runtime.policy.parameters()
             ),
@@ -657,11 +574,7 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     video, capture = capture_video(runtime, task_id=task_id, video_demo=demo)
     phase_memory = {"capture": _cuda_peak(runtime)}
     stage = shared_training_stage(runtime)
-    runtime.writer.requires_grad_(False)
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        runtime.writer.requires_grad_(True)
-    else:
-        runtime.writer.composer.requires_grad_(True)
+    runtime.writer.requires_grad_(True)
     set_shared_training_mode(runtime)
     # The frozen policy only needs the generated LoRA values.  Keeping the
     # Writer graph alive during its much larger functional forward needlessly
@@ -714,35 +627,10 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     )
     phase_memory["initial_chain_rule_backward"] = _cuda_peak(runtime)
     functional_gradients = _gradient_norms(runtime.writer)
-    runtime.writer.zero_grad(set_to_none=True)
-    if stage == JOINT_PROCESS_COMPOSER_STAGE:
-        cutoff = max(
-            int(runtime.config["model"]["event_slots"]),
-            min(video.frame_count - 1, video.frame_count // 2),
-        )
-        future_offset = min(8, video.frame_count - cutoff)
-        torch.cuda.reset_peak_memory_stats(runtime.context.device)
-        with torch.autocast("cuda", dtype=torch.bfloat16):
-            process_loss = runtime.writer.causal_prediction_loss(
-                (video,),
-                cutoffs=((cutoff,),),
-                future_offsets=(future_offset,),
-                representation=runtime.args.representation,
-            )
-        process_loss.backward()
-        phase_memory["causal_process_backward"] = _cuda_peak(runtime)
-        process_gradients = _gradient_norms(runtime.writer)
-    else:
-        cutoff = None
-        future_offset = None
-        process_loss = None
-        process_gradients = _gradient_norms(runtime.writer)
     _validate_smoke_graph(
         runtime,
         functional=functional,
-        process_loss=process_loss,
         functional_gradients=functional_gradients,
-        process_gradients=process_gradients,
         generated_tensors=generated_tensors,
     )
     return {
@@ -750,17 +638,12 @@ def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         "phase": "smoke",
         "representation": runtime.args.representation,
         "training_stage": stage,
-        "process_objective_active": stage == JOINT_PROCESS_COMPOSER_STAGE,
+        "objective": "correct_cross_episode_functional_positive_only",
         "capture": capture,
         "frozen_evidence_tensor_bytes": video.tensor_bytes,
         "functional_loss": float(functional),
-        "process_loss": (
-            float(process_loss.detach()) if process_loss is not None else None
-        ),
-        "causal_future_offset": future_offset,
         "functional_gradient_norms": functional_gradients,
         "initial_factor_state": initial_factor_state,
-        "process_gradient_norms": process_gradients,
         "generated_tensors": generated_tensors,
         "targets": len(runtime.owners),
         "mobile_rank": runtime.rank4_contract.rank,

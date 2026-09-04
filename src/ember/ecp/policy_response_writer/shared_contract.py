@@ -8,7 +8,6 @@ from typing import Any, Mapping, Sequence
 import torch
 
 from ember.ecp.policy_response_writer.training import (
-    COMPOSER_FUNCTIONAL_STAGE,
     REPO_ROOT,
     PolicyResponseRuntime,
     shared_training_stage,
@@ -134,13 +133,8 @@ def build_shared_run_contract(
         },
         "loss_normalization": {
             "functional": "per_task_frozen_panel_a_carrier_rms",
-            "process": str(
-                runtime.config["optimization"]["shared"]["process_normalizer"]
-            ),
-            "preservation": "same_as_functional",
             "resume_authority": "normalizers.json",
-            "process_objective_active": shared_training_stage(runtime)
-            != COMPOSER_FUNCTIONAL_STAGE,
+            "auxiliary_process_objective": False,
         },
         "task_split": dict(runtime.config["task_split"]),
         "video_splits": split,

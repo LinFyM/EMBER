@@ -259,10 +259,15 @@ def _optimizer(
 
 def _composer_gradient_norms(runtime: PolicyResponseRuntime) -> dict[str, float]:
     groups = {
-        "input_branches": ("input_positive_query", "input_negative_query"),
-        "output_branches": ("output_positive_query", "output_negative_query"),
-        "relation_binding": ("relation_embedding",),
-        "gain_readout": ("gain_readout",),
+        "input_signed_attention": (
+            "input_base_query",
+            "input_contrast_query",
+        ),
+        "output_signed_attention": (
+            "output_base_query",
+            "output_contrast_query",
+        ),
+        "context_blocks": ("blocks", "query_seed"),
         "task_query": ("task_query",),
     }
     result = {}

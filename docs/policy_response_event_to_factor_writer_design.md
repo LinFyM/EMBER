@@ -1,8 +1,11 @@
 # Policy-Response Event-to-Factor Writer
 
-状态：active design  
+状态：historical predecessor；2026-09-05由`docs/axial_policy_response_native_factor_writer_design.md`取代
 owner确认：2026-09-02  
 科学基线：main@7f5fefe134f7ebba2d09b906186eb5c140cccce9
+
+本文件封存最初Policy-Response Event-to-Factor设计及其后续matched修改，供历史复核。set-relative与role-equal实例均未学得稳定
+shared task-disjoint映射；其中连续relation、assignment、normalization和独立gain路径不再是active runtime，也不得作为fallback恢复。
 
 ## 1. 目标与裁决范围
 

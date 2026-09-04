@@ -3,10 +3,10 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-当前active方法为Policy-Response Event-to-Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered events、真实native
-X/Y、signed pooling、rank4与唯一LoRA物化，并用可重复的Video Process Encoder和Native Factor Composer替换未通过的固定
-Program--bank编译链。历史Writer、neural q_pi、ECP Stage 1 v1--v24、MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为
-active fallback。
+当前active方法为Axial Policy-Response Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
+dynamics、真实native X/Y、signed pooling、rank4与唯一LoRA物化；主图只使用可重复的Frame、Temporal、Event与RankBank
+attention/MLP blocks，再直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
+MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。
 
 ## 当前状态
 
@@ -19,17 +19,15 @@ active fallback。
   task1/93 correct/held，现只作历史证据；
 - 2026-09-02完整历史复核后，owner确认新的Policy-Response Event-to-Factor Writer并建立active goal：冻结PI0.5逐帧捕获
   layer x horizon x probe response，沿视频时间形成ordered events，再由events在当前视频真实X/Y bank中直接执行signed selection；
-- 训练只使用正确视频的cross-episode functional、strictly causal positive process prediction和轻量preservation；所有负controls在
-  selected checkpoint冻结后评测；
+- 训练只使用正确视频的cross-episode functional；所有负controls在selected checkpoint冻结后评测；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
 - 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-新active design的Frozen Capture、Video Process、Native Factor Composer、唯一rank16物化及task-local/shared functional runtime已经在
-唯一实现路径接通；真实PI0.5 smoke、task1/task93正式Composer正控及单/双卡shared profile均通过。task1与task93的step70/110
-Panel-B fit和same-task held-video全部优于carrier，下一项科学实验是12-task K1 component-init full/coarse matched shared formal；不恢复
-任何退役Writer/realizer路线。
+新active design已在唯一实现路径接通。真实task72 full-50 smoke的Frame/Temporal/Event/Composer/signed heads均收到functional
+梯度并物化唯一rank16；5-step task-local三条视频均微弱高于carrier。下一项是clean pushed detached authority上的25/50-step
+task72容量控制，随后立即进入73-task shared短资格；不恢复coarse或任何退役Writer/realizer路线。
 
 ## 阅读顺序
 
@@ -47,9 +45,10 @@ Panel-B fit和same-task held-video全部优于carrier，下一项科学实验是
 12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
 13. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`：完整EMBER历史复核原文；
 14. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`：最新架构澄清原文；
-15. `docs/policy_response_event_to_factor_writer_design.md`：当前active design；
-16. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
-17. `docs/research_history.md`：影响当前决策的历史证据。
+15. `docs/axial_policy_response_native_factor_writer_design.md`：当前active design；
+16. `docs/policy_response_event_to_factor_writer_design.md`：已裁决的直接前身；
+17. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
+18. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

@@ -2823,3 +2823,25 @@ fit/held视频均优于carrier；m50 fit/held recovery分别为`.0761/.0958`与`
 同checkpoint的correct-only响应曲线进一步裁决两条旧式输出修正。统一contrast放大在task93的2倍有益、4倍灾难性，在task1则fit从
 1倍起即不再改善，故不存在跨task固定温度。逐rank单位化A/B并施加统一`s_ref`步长在两任务上都很快转负，证明低幅方向不能被无差别
 放大。active路线因此不恢复normalization/gain链，而以10 gradient + 2 true-held、100-step的短shared资格直接检验完整可复制主干。
+
+## 145. Frame-Aligned 12-task non-pass与Frame-Bank替换
+
+clean detached `da1657ef`完成10 gradient + 2 zero-gradient held、K1、whole-Writer 100-step资格。m50/m100 gradient
+fit/held benefit为`+.000475/+.000383`与`+.000561/+.000477`，两个true-task-held两点均为负且`0/2`全视频通过，故没有运行
+held5、负controls或续训。正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_12task_k1_component_s100_da1657ef_gpu02p012_sharedmmap_20260905/`。
+
+两轮post-run correct-only几何见`findings.md`第150节。核心证据是Process events并未坍缩，而global Composer query跨task约
+`.996` cosine；task74生成update与相邻72/73/75过度同向，甚至在改善这些邻近task时增加自身真实functional loss。两层event read
+仅为强global residual的约`.28--.45%`。因此实际淘汰的是“global structural query读取events后广播到所有frame，再由bank末端线性
+打分”的函数类，不是full horizon、PI0.5时序、native X/Y、signed pooling或rank4。
+
+后继active实现用单一可复制`FrameBankFactorBlock`整体替换该职责：每个真实frame的rank state先读取同frame完整native X/Y bank，
+再读取ordered events、做rank attention和bias-free MLP，末端仍只做raw-value signed pooling与target cap。逐视频bank read在frame轴
+中心化以结构性保持static-repeat零mobile；没有增加gain、normalization、whitening、solver、temperature或calibration链。它不同于
+历史whole-video `RankBankContextBlock`的global bank summary/broadcast。由于定位诊断在formal non-pass后读取了task2/74的授权
+Panel-B gradient，后继shared资格必须选择新的unseen held tasks。
+
+新实现的task93真实full-50 smoke保持79 sampled frames、2 probes、38 targets、76 tensors与唯一rank16，全部Writer阶段梯度有限非零、
+冻结policy零梯度。exact frame chunk从8增至128使相同第一步由`8.02s`降至`3.95s`，峰值reserved约`28.55 GiB`；这只是完整候选集的
+等价执行分块，不改变科学图或full-only边界。

@@ -1,10 +1,10 @@
-"""Frame-aligned event-conditioned native-factor composition.
+"""Frame-local bank-conditioned native-factor composition.
 
-A short stack of identical learned blocks aligns ordered policy-response events
-back to their real teacher frames. The resulting frame states score the complete
-current-video native bank once, through exact signed pooling of untouched X/Y
-values. There is no preliminary bank read or chain of analytic transforms; the
-only post-pooling operation is the established target update cap.
+Each copyable block lets every real-frame rank token read that frame's complete
+native X/Y bank, then the video's ordered policy-response events. The resulting
+dynamic frame states score the same untouched X/Y values once through exact
+signed pooling. There is no global bank summary or analytic transform chain;
+the only post-pooling operation is the established target update cap.
 """
 
 from __future__ import annotations
@@ -33,12 +33,13 @@ from ember.ecp.policy_response_writer.process import (
 
 @dataclass(frozen=True)
 class _NativeBankChunk:
-    """Projected keys and untouched native values for one frame chunk."""
+    """Position-free bank tokens and untouched native values for a frame chunk."""
 
     input_values: torch.Tensor
-    input_keys: torch.Tensor
     output_values: torch.Tensor
-    output_keys: torch.Tensor
+    context_tokens: torch.Tensor
+    input_candidate_count: int
+    frame_positions: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -124,28 +125,28 @@ def _effective_update_cap_factor(
     return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
 
 
-class FrameAlignedFactorBlock(torch.nn.Module):
-    """One repeatable event, rank, and frame-alignment Transformer block."""
+class FrameBankFactorBlock(torch.nn.Module):
+    """One repeatable frame-bank, ordered-event, rank, and MLP block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
-        self.query_norm = torch.nn.LayerNorm(width)
+        self.bank_query_norm = torch.nn.LayerNorm(width)
+        self.bank_memory_norm = torch.nn.LayerNorm(width)
+        self.bank_attention = torch.nn.MultiheadAttention(
+            width, heads, dropout=0.0, bias=False, batch_first=True
+        )
+        self.event_query_norm = torch.nn.LayerNorm(width)
+        self.temporal_position = torch.nn.Linear(2, width, bias=False)
         self.event_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, bias=False, batch_first=True
         )
-        self.rank_norm = torch.nn.LayerNorm(width)
         self.rank_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.query_mlp = GatedMLP(width)
-        self.temporal_position = torch.nn.Linear(2, width, bias=False)
-        # Values on the dynamic path are bias-free. A static repeated video
-        # therefore cannot manufacture a non-zero factor contrast from position
-        # or from the static language/owner query.
-        self.frame_event_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, bias=False, batch_first=True
         )
-        self.frame_mlp = GatedMLP(width, bias=False)
+        # Every value projection on the dynamic path is bias-free. Structural
+        # and positional content enters queries/keys only, so zero dynamic
+        # evidence remains zero through an arbitrarily deep stack.
+        self.mlp = GatedMLP(width, bias=False)
 
     def _position(self, value: torch.Tensor) -> torch.Tensor:
         position = value.clamp(0.0, 1.0)
@@ -153,23 +154,45 @@ class FrameAlignedFactorBlock(torch.nn.Module):
             torch.stack((position, position.square()), dim=-1)
         )
 
+    def _bank_read(
+        self, query: torch.Tensor, memory: torch.Tensor
+    ) -> torch.Tensor:
+        normalized_memory = self.bank_memory_norm(memory)
+        attended, _ = self.bank_attention(
+            self.bank_query_norm(query),
+            normalized_memory,
+            normalized_memory,
+            need_weights=False,
+        )
+        return attended
+
+    def _checkpointed_bank_read(
+        self, query: torch.Tensor, memory: torch.Tensor
+    ) -> torch.Tensor:
+        if not torch.is_grad_enabled():
+            return self._bank_read(query, memory)
+        return checkpoint(self._bank_read, query, memory, use_reentrant=False)
+
     def forward(
         self,
-        query: torch.Tensor,
+        structural_query: torch.Tensor,
         video_events: Sequence[torch.Tensor],
         frame_states: Sequence[torch.Tensor],
         frame_positions: Sequence[torch.Tensor],
-    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        bank_chunks: Sequence[Sequence[torch.Tensor]],
+    ) -> tuple[torch.Tensor, ...]:
         events = tuple(video_events)
         frames = tuple(frame_states)
         positions = tuple(frame_positions)
-        if query.ndim != 2:
-            raise ValueError("frame-aligned factor query axes changed")
-        ranks, width = query.shape
+        banks = tuple(tuple(chunks) for chunks in bank_chunks)
+        if structural_query.ndim != 2:
+            raise ValueError("frame-bank structural query axes changed")
+        ranks, width = structural_query.shape
         if (
             not events
             or len(events) != len(frames)
             or len(events) != len(positions)
+            or len(events) != len(banks)
             or any(
                 event.ndim != 3
                 or event.shape[0] != ranks
@@ -181,33 +204,44 @@ class FrameAlignedFactorBlock(torch.nn.Module):
                 frame.ndim != 3
                 or frame.shape[1:] != (ranks, width)
                 or position.shape != frame.shape[:1]
-                for frame, position in zip(frames, positions, strict=True)
+                or not chunks
+                or any(
+                    chunk.ndim != 3
+                    or chunk.shape[-1] != width
+                    or not chunk.shape[0]
+                    or not chunk.shape[1]
+                    for chunk in chunks
+                )
+                or sum(chunk.shape[0] for chunk in chunks) != frame.shape[0]
+                for frame, position, chunks in zip(
+                    frames, positions, banks, strict=True
+                )
             )
         ):
-            raise ValueError("frame-aligned factor block axes changed")
+            raise ValueError("frame-bank factor block axes changed")
 
-        event_memory = torch.cat(events, dim=1)
-        event_query = self.query_norm(query)[:, None]
-        attended, _ = self.event_attention(
-            event_query, event_memory, event_memory, need_weights=False
-        )
-        value = query + attended[:, 0]
-        normalized = self.rank_norm(value)[None]
-        attended, _ = self.rank_attention(
-            normalized, normalized, normalized, need_weights=False
-        )
-        value = self.query_mlp(value + attended[0])
-
-        aligned = []
-        for frame, event, position in zip(
-            frames, events, positions, strict=True
+        output = []
+        for frame, event, position, chunks in zip(
+            frames, events, positions, banks, strict=True
         ):
-            frame_rows = frame.permute(1, 0, 2)
-            frame_query = (
-                frame_rows
-                + value[:, None]
-                + self._position(position.to(frame))
+            reads = []
+            offset = 0
+            for memory in chunks:
+                count = memory.shape[0]
+                query = frame[offset : offset + count] + structural_query[None]
+                reads.append(self._checkpointed_bank_read(query, memory))
+                offset += count
+            bank_read = torch.cat(tuple(reads), dim=0)
+            # A bank property that is constant through the video is not motion.
+            # Centering within each independently encoded video makes this a
+            # structural invariant rather than a learned anti-static loss.
+            value = frame + bank_read - bank_read.mean(0, keepdim=True)
+
+            frame_rows = value.permute(1, 0, 2)
+            frame_query = self.event_query_norm(
+                frame_rows + structural_query[:, None]
             )
+            frame_query = frame_query + self._position(position.to(frame))[None]
             event_position = torch.linspace(
                 0.0,
                 1.0,
@@ -216,13 +250,17 @@ class FrameAlignedFactorBlock(torch.nn.Module):
                 dtype=event.dtype,
             )
             event_key = event + self._position(event_position)[None]
-            attended, _ = self.frame_event_attention(
+            attended, _ = self.event_attention(
                 frame_query, event_key, event, need_weights=False
             )
-            aligned.append(
-                self.frame_mlp(frame + attended.permute(1, 0, 2))
+            value = value + attended.permute(1, 0, 2)
+
+            rank_query_key = value + structural_query[None]
+            attended, _ = self.rank_attention(
+                rank_query_key, rank_query_key, value, need_weights=False
             )
-        return value, tuple(aligned)
+            output.append(self.mlp(value + attended))
+        return tuple(output)
 
 
 class CurrentVideoNativeFactorComposer(torch.nn.Module):
@@ -280,7 +318,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             torch.nn.LayerNorm(width),
         )
         self.blocks = torch.nn.ModuleList(
-            FrameAlignedFactorBlock(width, heads) for _ in range(block_depth)
+            FrameBankFactorBlock(width, heads) for _ in range(block_depth)
         )
         self.input_base_query = torch.nn.Linear(width, width, bias=False)
         self.input_contrast_query = torch.nn.Linear(width, width, bias=False)
@@ -312,11 +350,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             raise ValueError("native composer frame positions changed")
         return self.position_projection(torch.stack((position, position.square()), -1))
 
-    def _input_keys(
+    def _input_context(
         self,
         target: int,
         values: torch.Tensor,
-        positions: torch.Tensor,
     ) -> torch.Tensor:
         owner = self.owners[target]
         key = self.input_projection[str(owner.in_features)](values)
@@ -324,13 +361,12 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         key = key + self.probe_embedding.weight[None, :, None]
         key = key + self.horizon_embedding.weight[None, None]
         key = key + self.bank_type_embedding.weight[0]
-        return self.native_key_norm(key + positions[:, None, None])
+        return key
 
-    def _output_keys(
+    def _output_context(
         self,
         target: int,
         values: torch.Tensor,
-        positions: torch.Tensor,
     ) -> torch.Tensor:
         # values: [group, frame, probe, horizon, bank_type, native_width]
         key = self.output_projection[str(values.shape[-1])](values)
@@ -341,9 +377,30 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         key = key + self.group_embedding.weight[
             : values.shape[0], None, None, None, None
         ]
-        return self.native_key_norm(
-            key + positions[None, :, None, None, None]
+        return key
+
+    def _pooling_keys(
+        self, chunk: _NativeBankChunk
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        frames = chunk.input_values.shape[0]
+        input_context = chunk.context_tokens[
+            :, : chunk.input_candidate_count
+        ].reshape(*chunk.input_values.shape[:-1], self.width)
+        output_context = chunk.context_tokens[
+            :, chunk.input_candidate_count :
+        ].reshape(
+            frames,
+            chunk.output_values.shape[0],
+            *chunk.output_values.shape[2:-1],
+            self.width,
+        ).movedim(1, 0)
+        input_keys = self.native_key_norm(
+            input_context + chunk.frame_positions[:, None, None]
         )
+        output_keys = self.native_key_norm(
+            output_context + chunk.frame_positions[None, :, None, None, None]
+        )
+        return input_keys, output_keys
 
     def _bank_candidates(
         self,
@@ -362,20 +419,29 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 stop = min(start + self.pooling_frame_chunk, video.frame_count)
                 local_position = positions[start:stop]
                 input_values = video.native_inputs[target][start:stop]
-                input_keys = self._input_keys(target, input_values, local_position)
+                input_context = self._input_context(target, input_values)
                 output = boundary.build(
                     video.native_outputs[target][start:stop], start_frame=start
                 )
                 grouped = output.reshape(
                     *output.shape[:-1], groups, group_width
                 ).movedim(-2, 0)
-                output_keys = self._output_keys(target, grouped, local_position)
+                output_context = self._output_context(target, grouped)
+                input_count = input_context[0].numel() // self.width
+                context_tokens = torch.cat(
+                    (
+                        input_context.flatten(1, -2),
+                        output_context.movedim(0, 1).flatten(1, -2),
+                    ),
+                    dim=1,
+                )
                 chunks.append(
                     _NativeBankChunk(
                         input_values=input_values,
-                        input_keys=input_keys,
                         output_values=grouped,
-                        output_keys=output_keys,
+                        context_tokens=context_tokens,
+                        input_candidate_count=input_count,
+                        frame_positions=local_position,
                     )
                 )
             if boundary.next_frame != video.frame_count:
@@ -411,8 +477,9 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         target: int,
         videos: Sequence[FrozenPolicyResponseVideo],
         processes: Sequence[PolicyResponseProcessOutput],
+        candidates: Sequence[_NativeVideoCandidates],
     ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
-        if len(videos) != len(processes):
+        if len(videos) != len(processes) or len(videos) != len(candidates):
             raise ValueError("native composer video/process count changed")
         for video, process in zip(videos, processes, strict=True):
             if (
@@ -443,8 +510,14 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             process.frame_innovations[:, target] for process in processes
         )
         positions = tuple(video.frame_positions for video in videos)
+        bank_chunks = tuple(
+            tuple(chunk.context_tokens for chunk in video.chunks)
+            for video in candidates
+        )
         for block in self.blocks:
-            query, frame_states = block(query, events, frame_states, positions)
+            frame_states = block(
+                query, events, frame_states, positions, bank_chunks
+            )
         return query, frame_states
 
     def _branch_logits(
@@ -550,9 +623,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
             for chunk in video.chunks:
                 frame_count = chunk.input_values.shape[0]
                 frame_slice = slice(frame_offset, frame_offset + frame_count)
+                input_keys, output_keys = self._pooling_keys(chunk)
                 input_accumulator.add(
                     self._checkpointed_branch_logits(
-                        chunk.input_keys,
+                        input_keys,
                         input_base,
                         input_contrast[frame_slice],
                         log_base_mass=input_mass,
@@ -561,7 +635,7 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
                 )
                 output_accumulator.add(
                     self._checkpointed_branch_logits(
-                        chunk.output_keys.movedim(0, 1),
+                        output_keys.movedim(0, 1),
                         output_base,
                         output_contrast[frame_slice],
                         log_base_mass=output_mass,
@@ -592,8 +666,10 @@ class CurrentVideoNativeFactorComposer(torch.nn.Module):
         b_values = []
         scales = []
         for target in range(len(self.owners)):
-            query, frame_states = self._decode_target(target, values, programs)
             candidates = self._bank_candidates(target, values)
+            query, frame_states = self._decode_target(
+                target, values, programs, candidates
+            )
             a, b = self._pool_target(target, query, frame_states, candidates)
             cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
             b = b * cap_factor.to(b)

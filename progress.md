@@ -6,10 +6,10 @@
 
 - 唯一active design现为`docs/axial_policy_response_native_factor_writer_design.md`。owner授权有证据的实质重构，同时明确禁止重新演化为
   连续数学变换。最新主干为
-  `Frame attention -> Temporal attention -> ordered events -> FrameAlignedFactorBlock -> direct signed raw X/Y pooling`；每个真实frame
-  用本帧innovation和相对位置读取本视频events，再直接给该frame的完整native candidates产生contrast。旧Composer的完整bank预读与
-  全局dynamic广播已删除，容量只靠复制同构attention/MLP blocks扩展。full 50-horizon、真实native X/Y、positive-only、rank12+4、
-  唯一rank16与信息墙不变。
+  `Frame attention -> Temporal attention -> ordered events -> repeated FrameBankFactorBlock -> direct signed raw X/Y pooling`；每个真实frame
+  的rank state先读取同frame完整native X/Y bank，再读取本视频ordered events并做rank attention/MLP。旧global query residual被整体
+  删除，容量只靠复制同构block扩展；不增加gain、normalization、solver或calibration链。full 50-horizon、真实native X/Y、
+  positive-only、rank12+4、唯一rank16与信息墙不变。
 
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
@@ -45,8 +45,23 @@
   pooling读取一次。25项Writer/native CPU测试全部通过。gpu02物理2上的task93真实smoke消费79 sampled frames、2 probes、完整50
   horizons与38 targets；全部learned模块梯度有限非零，生成76 tensors和唯一rank16，峰值allocated/reserved约`30.20/34.43GB`。
 
-- 下一动作是固定clean pushed authority，并行完成task1/task93 25/50-step Composer-only正控。两task都恢复后才进入覆盖充分的短
-  task-disjoint shared资格；若仍相反，继续定位FrameAligned readout的共享Jacobian，不叠加专用数学补丁或直接延长训练。
+- clean detached `da1657ef`的Frame-Aligned 12-task shared已完成100步。m50/m100 gradient fit/held benefit为
+  `+.000475/+.000383`与`+.000561/+.000477`，全视频为正仅`6/10`与`7/10`；两个true-task-held两点均`0/2`且fit/held聚合约
+  `-.0025/-.0037`与`-.0025/-.0033`。m50到m100结论稳定，故没有运行held5、负controls或续训。训练`581.76s`、评测
+  `294.37s`，三卡动态调度下step均值约`5.79s`、峰值allocated/reserved约`30.01/30.17GiB`。
+
+- non-pass后的两轮零优化correct-only几何把最早失效接口锁定到Composer：Process event pairwise cosine median约`.552`、
+  task-specific fraction median约`.590`，而global query cosine median约`.996`、task-specific仅约`.055`；两层event read norm只有
+  输入残差的`.28--.45%`。task74 update与72/73/75 cosine为`.740/.540/.380`，真实functional gradient却仅
+  `.144/.076/-.244`；task74当前update的一阶benefit为`-.000698`，并同时改善三个邻近task，证明是bank-relative方向误路由，
+  不是幅度、训练不足或上游时序坍缩。由于post-hoc诊断读取了task2/74的授权Panel-B gradient，它们不再作为下一设计的unseen held。
+
+- 隔离分支`codex/frame-bank-factor-decoder`已用单一`FrameBankFactorBlock`替换失效职责；同一逐帧bank token既供block标准
+  attention又供末端raw-value pooling，position不进入bank memory，逐视频frame centering保证静态repeat不能打开mobile。
+  14项当前Writer合同测试与task93真实full-50 forward/VJP/materialization smoke均通过；79 sampled frames、2 probes、38 targets、
+  76 tensors与唯一rank16全部保留，Prefix/Response/Frame/Temporal/Event/Composer-bank/Signed-X/Signed-Y梯度均有限非零。
+  严格等价地把frame chunk从8增至128后，相同task93第一步由`8.02s`降至`3.95s`，峰值reserved约`28.55 GiB`。
+  下一动作是固定并集成实现后，并行运行task1/task93 25/50-step Composer-only正控；局部容量成立后才以fresh held tasks做短shared资格。
 
 - Frame-Aligned task-local launch contract：科学实现固定为`e2f38c2a`，formal authority为包含本合同的下一clean pushed main；
   科学变量仅为上述Composer职责替换；配置仍使用

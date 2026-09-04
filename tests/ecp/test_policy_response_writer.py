@@ -14,7 +14,7 @@ from ember.ecp.policy_response_writer import (
     PolicyResponseEventToFactorWriter,
 )
 from ember.ecp.policy_response_writer.composer import (
-    FrameAlignedFactorBlock,
+    FrameBankFactorBlock,
     _effective_update_cap_factor,
     _effective_update_rms,
 )
@@ -167,6 +167,7 @@ def test_axial_writer_preserves_shapes_and_one_functional_gradient_path() -> Non
         "process.temporal_blocks",
         "process.events",
         "composer.blocks",
+        "composer.blocks.0.bank_attention",
         "composer.input_contrast_query",
         "composer.output_contrast_query",
     ):
@@ -244,7 +245,7 @@ def test_video_set_is_permutation_invariant_and_chunking_is_exact() -> None:
         torch.testing.assert_close(chunked, expected, rtol=2e-5, atol=2e-6)
 
 
-def test_native_bank_keeps_every_candidate_axis_without_a_preliminary_read() -> None:
+def test_native_bank_keeps_every_candidate_axis_for_frame_local_read() -> None:
     model = _model().eval()
     video = _video(37, frames=5)
     with torch.no_grad():
@@ -253,37 +254,41 @@ def test_native_bank_keeps_every_candidate_axis_without_a_preliminary_read() -> 
             groups = native_output_group_count(owner)
             expected = video.frame_count * 2 * ACTION_HORIZON * (1 + groups * 4)
             observed = sum(
-                chunk.input_keys.numel() // model.composer.width
-                + chunk.output_keys.numel() // model.composer.width
+                chunk.context_tokens.numel() // model.composer.width
                 for chunk in candidates[0].chunks
             )
             assert observed == expected
             assert sum(row.frame_count for row in candidates) == video.frame_count
 
 
-def test_factor_block_preserves_zero_dynamic_path_and_frame_alignment() -> None:
+def test_frame_bank_block_preserves_zero_dynamic_path_and_reads_local_bank() -> None:
     torch.manual_seed(41)
-    block = FrameAlignedFactorBlock(16, 4).double().eval()
+    block = FrameBankFactorBlock(16, 4).double().eval()
     query = torch.randn(4, 16, dtype=torch.double)
     positions = (torch.linspace(0.0, 1.0, 5, dtype=torch.double),)
     zero_event = (torch.zeros(4, 3, 16, dtype=torch.double),)
     zero_frame = (torch.zeros(5, 4, 16, dtype=torch.double),)
+    repeated_bank = torch.randn(1, 12, 16, dtype=torch.double).expand(
+        5, -1, -1
+    ).clone()
     with torch.no_grad():
-        _, zero_aligned = block(query, zero_event, zero_frame, positions)
-    torch.testing.assert_close(zero_aligned[0], zero_frame[0], atol=0.0, rtol=0.0)
+        zero_aligned = block(
+            query, zero_event, zero_frame, positions, ((repeated_bank,),)
+        )
+    torch.testing.assert_close(zero_aligned[0], zero_frame[0], atol=1e-12, rtol=0.0)
 
     event = (torch.randn(4, 3, 16, dtype=torch.double),)
     frame = torch.randn(5, 4, 16, dtype=torch.double)
-    changed = frame.clone()
-    changed[2] += 1.0
+    bank = torch.randn(5, 12, 16, dtype=torch.double)
+    changed = bank.clone()
+    changed[2] = 3.0 * changed[2].flip(0)
     with torch.no_grad():
-        _, original = block(query, event, (frame,), positions)
-        _, mutated = block(query, event, (changed,), positions)
-    torch.testing.assert_close(
-        original[0][torch.tensor([0, 1, 3, 4])],
-        mutated[0][torch.tensor([0, 1, 3, 4])],
+        original = block(query, event, (frame,), positions, ((bank,),))
+        mutated = block(query, event, (frame,), positions, ((changed,),))
+    assert not torch.allclose(original[0], mutated[0])
+    assert not torch.allclose(
+        original[0][2], mutated[0][2]
     )
-    assert not torch.allclose(original[0][2], mutated[0][2])
 
 
 def test_complete_target_update_is_capped_once() -> None:
@@ -382,9 +387,9 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_axial_config_is_canonical_and_old_serial_config_is_rejected() -> None:
+def test_frame_bank_config_is_canonical_and_old_serial_config_is_rejected() -> None:
     current = load_policy_response_config(
-        REPO_ROOT / "configs/pi05_ecp_policy_response_writer_axial_factor_v1.json"
+        REPO_ROOT / "configs/pi05_ecp_policy_response_writer_frame_bank_v1.json"
     )
     assert current["model"]["temporal_blocks"] == 2
     assert current["model"]["representation_arms"] == ["full"]

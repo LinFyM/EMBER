@@ -71,8 +71,8 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
    full是唯一active representation；
 2. learned Policy-Response Video Process Encoder沿teacher-frame time形成task-grounded、boundary-anchored ordered events；
    teacher-frame time、action horizon、flow time、layer depth与probe轴不得混淆；
-3. learned Current-Video Native Factor Composer以38x4 target-rank queries读取events与当前视频真实X/Y bank，通过一个
-   ragged native-group signed-attention operator直接pool raw factors；
+3. learned Current-Video Native Factor Composer让38x4逐帧target-rank states在同一个可复制block中先读取该frame的完整真实X/Y
+   bank，再读取ordered events并沿rank交互；随后通过一个ragged native-group signed-attention operator直接pool raw factors；
 4. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
    residual；
 5. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；

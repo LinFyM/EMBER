@@ -39,12 +39,11 @@ exact language + K ordered action-hidden videos
                     layer x horizon x probe x owner response
                     current-video true native X/Y banks
               -> learned Policy-Response Video Process Encoder
-                    task-grounded frame relations
-                    boundary-anchored ordered events
-                    static context C + process innovation D
+                    frame-local full policy-response states
+                    real-time process innovations + ordered events
               -> learned Current-Video Native Factor Composer
-                    38 targets x 4 mobile-rank queries
-                    whole-bank context + exact signed X/Y pooling
+                    repeated same-frame bank -> ordered-event -> rank blocks
+                    38 targets x 4 mobile ranks + exact signed raw X/Y pooling
               -> rank4 video residual + frozen rank12 carrier
               -> one complete 38-target rank16 LoRA
               -> frozen PI0.5 closed loop
@@ -73,8 +72,9 @@ G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断�
 ## Current-video native factor path
 
 每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
-output differences。38x4 target-rank queries用同构RankBank blocks直接读取ordered events和完整当前视频bank，再产生
-`base +/- dynamic contrast` logits，对raw X/Y做exact signed pooling。
+output differences。38x4逐帧target-rank states在同构FrameBank blocks中先读取同一真实frame的完整bank，再读取本视频ordered
+events并沿rank交互；block输出产生`base +/- dynamic contrast` logits，对raw X/Y做exact signed pooling。bank read按视频在frame轴
+中心化，静态重复视频不能由language、owner或位置凭空产生mobile update。
 
 language和静态context只负责grounding query，不能作为factor value或独立输出mobile residual。首版不使用task-expert dictionary、
 held retrieval、free learned residual或独立gain网络。q按8个native query-head groups、action-in按32个native-width blocks处理；

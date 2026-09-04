@@ -2940,3 +2940,47 @@ normalization或步数小扫。诊断artifact分别为
 `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_contrast_response_m50_7b42cdf6_gpu02p2_20260905/`、
 `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task1_unit_factor_response_m50_7b42cdf6_gpu02p0_20260905/`与
 `runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_task93_unit_factor_response_m50_7b42cdf6_gpu02p2_20260905/`。
+
+## 150. Frame-Aligned shared non-pass定位到bank-relative方向形成
+
+clean detached `da1657ef`的12-task、K1、component-init、whole-Writer正式资格完成100 optimizer steps与m50/m100零梯度
+Panel-B。m50 gradient fit/held benefit为`+.00047496/+.00038286`、全视频为正`6/10`；m100为
+`+.00056107/+.00047656`、`7/10`。两个true-task-held在两点均为`0/2`全视频为正，fit/held聚合分别为
+`-.00252235/-.00367351`与`-.00245476/-.00332527`。m50到m100稳定且全部learned模块持续收到梯度，因此这是该参数化的
+task-disjoint non-pass，不是内部门槛过高、断图或训练不足；没有运行held5、negative controls或续训。
+
+正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_frame_aligned_12task_k1_component_s100_da1657ef_gpu02p012_sharedmmap_20260905/`。
+训练/评测/总耗时为`581.76/294.37/943.38s`；动态task assignment下step均值约`5.79s`、峰值allocated/reserved约
+`30.01/30.17GiB`。执行层主负载不均已解决；后续可独立提高无梯度evaluation microbatch并把Panel-B改成动态cost queue，但它不影响
+本轮科学裁决。
+
+第一轮只读几何
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_shared_geometry_m100_da1657ef_gpu02p0_20260905/result.json`
+显示Process events的跨task cosine mean/median为`.536/.552`、task-specific fraction median约`.590`，说明PI0.5 response与有序
+视频时序没有坍缩。global Composer query却为`.995/.996`、task-specific约`.055`；最终mobile update虽已降到`.278/.293`
+并具`.864` task-specific fraction，仍远比真实functional gradients的`.042/.030`和`.966`共同。故失败不是“所有输出完全一样”，
+而是相似task被映射得远比真实所需方向更相似。
+
+在formal non-pass已冻结后，第二轮诊断
+`runs/analysis/pi05_ecp_policy_response_writer_frame_aligned_post_nonpass_block_geometry_m100_da1657ef_gpu02p0_20260905/result.json`
+只为定位而读取了授权non-validation/test task2/74的Panel-B gradient，未优化参数或接触环境。task74生成update与task72/73/75的
+cosine为`.740/.540/.380`，真实loss gradients却为`.144/.076/-.244`；当前task74 update使自身loss一阶增加`.000698`，同时改善
+三个邻近task。两层Composer event read/input norm仅约`.28--.45%`，input-output cosine约`.91/.94`，global static residual压过了
+真正不同的event read。task74 update norm`1.238`处于正常范围，排除单纯幅度不足。
+
+最早缺口因此是Program/current-bank联合方向形成：旧Frame-Aligned block只让global structural query读events，再把同一强残差加给
+所有frame，native bank直到最终signed score才出现。下一实现整体删除该职责，使用唯一可复制`FrameBankFactorBlock`：每个real-frame
+rank state先读取同frame完整native X/Y tokens，再读取ordered events、做rank attention与bias-free MLP；每条视频的bank read沿真实
+frame time中心化，静态repeat结构性为零；末端仍只对未经替换的raw X/Y做一次signed pooling和target cap。它不是恢复旧whole-video
+`RankBankContextBlock`：旧块把整视频bank压成global query并广播，而新块保留frame--event--candidate对应。没有新增gain、
+normalization、whitening、solver、temperature或calibration链。
+
+由于上述post-hoc诊断已经读取task2/74 gradient，它们从此不能再作为新架构的unseen task-held证据；下一shared资格必须在训练前从
+其余授权任务中outcome-independently登记fresh held tasks。该限制不影响它们作为已完成Frame-Aligned实例的历史held结论。
+
+实现后的真实task93 smoke完整消费79个stride-5 sampled frames、2 probes、50 horizons、38 targets及native X/Y，functional loss为
+`.0320185`；Prefix/Response/Frame/Temporal/Event/Composer-bank/Signed-X/Signed-Y梯度均有限非零，冻结policy保持零梯度，并生成
+76个tensor及唯一完整rank16。严格等价的执行profile把`pooling_frame_chunk`从8增至32/128，相同第一步由`8.024s`降至
+`4.473/3.954s`；chunk128峰值allocated/reserved为`27.24/28.55 GiB`，因此active配置采用128。该调整只改变exact chunk执行边界，
+不平均、不抽样也不删除任一frame、probe、50-horizon或bank-type candidate。

@@ -43,7 +43,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含可复制的Frame、Temporal、Event和Frame-Aligned Factor attention/MLP blocks，随后直接对raw X/Y做signed pooling；
+3. 新主图只含可复制的Frame、Temporal、Event和Frame-Bank Factor attention/MLP blocks，随后直接对raw X/Y做signed pooling；
 4. causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由PI0.5 response与真实
    teacher-frame temporal blocks承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
@@ -74,11 +74,20 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     提高约74%，但绝对容量仍远低于free primal；
 11. [x] correct-only输出几何反事实排除补丁式修正：统一contrast温度在task1/task93上的最优区间不一致，4倍已饱和并退化；将所有
     pooled A/B单位化会把低幅噪声强行放大，两任务均迅速转负。因此不恢复`normalize -> gain -> cap`链，也不设固定温度；
-12. [ ] 使用`configs/pi05_ecp_policy_response_writer_frame_aligned_12task_v1.json`运行100-step最小task-disjoint shared资格。
-    10个gradient tasks在m50/m100各获得严格30/60次暴露，两个true-task-held始终零梯度；每步`3 meta + 3 target`只是本配置的
-    成本/覆盖选择，不是owner或架构固定比例；
-13. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
-14. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+12. [x] `configs/pi05_ecp_policy_response_writer_frame_aligned_12task_v1.json`的100-step task-disjoint shared资格完整结束。
+    m50/m100 gradient fit/held benefit仅为`+.000475/+.000383`与`+.000561/+.000477`，两个true-task-held两点均`0/2`
+    全视频为正且聚合为负；不进入held5或续训。每步`3 meta + 3 target`只是本配置的成本/覆盖选择，不是owner或架构固定比例；
+13. [x] non-pass后从正确视频做零优化几何定位：Process events保持明显task-specific，完整mobile update也未坍缩；但global Composer
+    query跨task median cosine约`.996`，每层event read只有输入残差的`.28--.45%`。task74生成update与72/73过度同向并增加自身
+    functional loss，而真实functional gradients要求弱相关乃至相反方向。最早缺口是当前bank没有参与逐帧非线性方向形成；
+14. [x] 以唯一可复制`FrameBankFactorBlock`整体替换旧Frame-Aligned职责：每个frame-rank先读取同frame完整native bank，再读取
+    ordered events并做rank attention/MLP；逐视频中心化保证静态零mobile，末端仍只做一次raw X/Y signed pooling和安全cap。
+    不增加gain、normalization、solver、calibration或并行fallback。14项合同测试与task93真实full-50 smoke通过；严格等价的
+    frame chunk从8增至128后，相同第一步由`8.02s`降至`3.95s`，峰值reserved仅约`28.55 GiB`；
+15. [ ] 从clean pushed detached authority在task1/task93做25/50-step Composer-only正控；只有局部容量成立才用新的、未被
+    post-hoc gradient读取的held tasks运行短task-disjoint shared资格；
+16. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
+17. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 
 ## 历史执行账本
 

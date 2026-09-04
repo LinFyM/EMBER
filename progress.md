@@ -4,6 +4,22 @@
 
 ## 当前快照
 
+- Set-relative shared已完整裁决为non-pass。clean detached `3686baec`的m50/m100 held5 correct-only strict250为
+  `37/44`，m100与前一pointwise m100同为`44/250`，breadth均仅`3/5`且Goal/Long为0；不续训、不运行negative controls。
+  m100在10个未参与当前checkpoint选择的correct held-video task上只有3个明确功能正增量，4个target task为`0/4`，task74
+  的q/v/action-in/action-out及full有限幅效应又全部为负，说明同task未见视频上的shared条件映射仍不可靠。task93 task-local
+  m100在相同50个初态上仅由carrier `0/50`升到`1/50`；但该任务历史task expert也只有约`3--5/50`，不能据此裁决
+  functional-to-closed-loop接口。下一步改用authority72的Spatial简单任务作正控：其历史task expert为`38/50`，J2 task-local
+  Panel-B 16/16 visits均优于carrier、held benefit约`.01086`。它将直接区分“当前functional目标本身不对应闭环行为”和
+  “task-local可转化但shared task-disjoint mapping失败”。
+
+- 同时发现当前cross-episode functional batch虽在原始dataset中生成`action_is_pad`，processor却未把它传给已有的
+  `pi05_mean_flow_loss(..., action_is_pad=...)`路径；因此episode尾部重复最后动作的padding参与了损失。73个gradient task的
+  Panel A/B平均padding约`17.61%/18.46%`，约`35.35%/36.81%`的query row含padding，且六条历史shared Writer曲线中
+  padding比例与功能benefit的rank correlation均为正。该相关性可能被任务难度/episode长度混淆，尚不构成训练修正依据；当前正用
+  同一m100 LoRA、相同correct held视频、query、noise和flow time同时比较legacy全位置与valid-action-only损失。这里只排除不存在的
+  episode尾部动作，不平均、抽样或删除任何真实native/action horizon。
+
 - 当前正在实现下一单变量`within-target set-relative factor gain readout`。它保留每个rank/group的contextual query、normalized
   signed X、signed Y group与shared group embedding，但不再让token各自独立通过pointwise MLP；同一target的`rank x ragged-group`
   tokens先经过一个标准pre-norm self-attention + GatedMLP block，再由唯一shared scalar output产生gain。attention不跨target，

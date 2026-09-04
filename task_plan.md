@@ -196,14 +196,18 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     Process全零、唯一rank16与full-50合同完整。clean detached formal m50/m100 held5为`40/44`，m100相对carrier仅净增1且Goal/Long
     仍为0；seen functional上升时true-task-held继续为负。task1/task93本地正控四点fit/held recovery约`.36--.53`且全部视频为正，
     故该pointwise共享参数化non-pass，问题不是local容量、跨视频保持或训练不足；
-30. [ ] 修正同target factor集合的相对协调：六task bridge诊断显示task74/task73所需logit变化cosine为`+.590`，pointwise
+30. [x] 修正并裁决同target factor集合的相对协调：六task bridge诊断显示task74/task73所需logit变化cosine为`+.590`，pointwise
     readout的全参数梯度却为`-.418`，而actual gains仍约`.994--.998`同向。当前只把独立GatedMLP换成同target
     `rank x ragged-group` self-attention + GatedMLP标准重复块，不跨target，不改loss、初始化、Process、direction、data或训练规模；
-    61项测试和真实full-50两步smoke已通过，下一步从clean pushed detached authority运行matched optimizer50/100 shared及并行
-    task-local正控；
-31. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-32. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-33. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    61项测试和真实full-50两步smoke均通过；clean detached `3686baec`的matched m50/m100 held5为`37/44`，m100与pointwise同为
+    `44/250`且Goal/Long仍为0，10-task held-video功能诊断又只有3/10明确为正，故该参数化non-pass；
+31. [ ] 当前先裁决functional-to-closed-loop接口本身：对m100在同一forward中成对比较legacy含padding与valid-action-only功能
+    benefit；并把历史task expert `38/50`、J2 held功能benefit约`.01086`的authority72加入task-local正控，训练相同100步后在
+    同一50初态成对比较Writer与carrier。只有前者显示padding实质改变方向，才修改功能loss；只有task-local能形成闭环增量，才继续
+    把主要根因归于shared task-disjoint mapping；
+32. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+33. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+34. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

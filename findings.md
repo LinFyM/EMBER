@@ -3002,3 +3002,34 @@ clean detached `471592f4`在gpu02物理0/2并行完成task1/task93各50步Compos
 在查看任何新架构对应结果前，按每个role取最小eligible未读ID的固定规则选择task3/77为fresh zero-gradient held；task2/74加入原10个
 gradient tasks，形成6 meta + 6 target。50步每个gradient task精确25次暴露，m25/m50读取Panel-B但不反传。该实验若仍不能在训练task
 自身及held task形成稳定正方向，责任将落在整个learned Process--FrameBank接口，而不是继续往输出端叠数学变换。
+
+## 152. Frame-Bank shared non-pass与Native-Temporal接口裁决
+
+clean detached `07804433`的12-gradient + 2-held whole-Writer资格完整运行50 optimizer steps。m25/m50的gradient-task
+fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频高于carrier的task由`6/12`增至`8/12`；fresh
+zero-gradient held始终只有`1/2`，task3在两点为正，task77在两点为负。m50 held aggregate只有`+.0000135`，task93/94等已训练
+Long tasks仍未形成稳定正方向。因此该图有微弱学习但没有可靠task-disjoint映射，按预注册规则不运行held5、negative controls或续训。
+正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_frame_bank_12gradient_2held_k1_component_s50_83109a33_gpu02p0123_sharedmmap_20260905/`；
+train/eval/total为`262.29/293.95/631.46s`，peak reserved约`34.42 GiB`，所有held、Panel-B、wrong与shuffle/reverse backward/read计数
+符合零泄漏合同。
+
+non-pass冻结后，三个checkpoint上的六task correct-only functional VJP只用于定位且不更新参数。m50整体Writer梯度pairwise cosine
+mean为`.05557`、负比例`.40`，所以失败不能简化成所有task对共享参数普遍互斥。冲突集中在被串联的接口：event readout的mean仅
+`.01402`、负比例`.533`，task93/94相对其它task梯度和为`-.0796/-.0547`；两层Composer event子路径mean为`.0168/.0131`且
+负比例均`.60`。最尖锐的是signed-input/X head，pairwise mean为`-.05783`，task93相对其它task和为`-.66264`，而signed-output/Y
+head mean为`+.08754`、task93为`+.35444`。这说明X/Y到末端才从同一frame state线性分叉过晚，而不是整个可复制trunk都不可共享。
+对应roots为
+`runs/analysis/pi05_ecp_policy_response_writer_frame_bank_gradient_geometry_{init,m25,m50}_tasks1_2_72_74_93_94_07804433_gpu02p{0,1,2}_20260905/`。
+
+冻结m50的task1/task93因果路径消融同样只读正确视频。task1 full fit/held仅`+.0000010/+.0000064`，保留frame而置零events为
+`+.0000211/+.0000252`，只保留events为`-.0000026/-.0000104`；task93 full为`-.0000647/+.0000130`，frame-only为
+`-.0001003/-.0000588`，event-only为`+.0000087/-.0000126`。event路径并非绝对无信息——它对Long task有极小独特贡献——但把
+frame动态与event压缩分开、再晚期融合的两条路径都不是充分函数。证据支持把native-bank read与ordered frame-time attention合并进
+同一个可复制block，而不是删除时序、恢复global summary或继续添加event权重。
+
+新的active设计因此整体删除独立Temporal/Event bottleneck、Composer二次query seed和末端base/contrast链。逐帧Frame blocks仍完整
+读取PI0.5 prefix与2-probe x 50-horizon response；随后显式X/Y factor-side states在重复的NativeTemporalFactorBlock中分别读取
+同frame native bank、沿真实frame time建模并做rank/side交互；最终一次frame centering后以两侧bias-free two-branch head直接对raw
+X/Y做exact signed pooling。该责任替换同时保留G1/G2、Frame-Bank局部正证据和ECP信息墙，且把learned主图缩到两种block。task3/77
+已被本轮消费，下一架构在读取结果前按同一规则固定task4/78为fresh held。

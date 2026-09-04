@@ -72,13 +72,14 @@ G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断�
 ## Current-video native factor path
 
 每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
-output differences。38x4逐帧target-rank states在同构FrameBank blocks中先读取同一真实frame的完整bank，再读取本视频ordered
-events并沿rank交互；block输出产生`base +/- dynamic contrast` logits，对raw X/Y做exact signed pooling。bank read按视频在frame轴
-中心化，静态重复视频不能由language、owner或位置凭空产生mobile update。
+output differences。逐帧Policy-Response blocks先读取冻结PI0.5的native prefix与完整2-probe、50-horizon响应；随后显式X/Y
+factor-side states在同构Native-Temporal Factor blocks中读取同frame对应bank，并沿真实teacher-frame time以及rank/side轴交互。
+最终centered逐帧states直接产生two-branch logits，对raw X/Y做exact signed pooling。时序不再先压成独立event瓶颈，静态重复视频也
+不能由language、owner或位置凭空产生mobile update。
 
 language和静态context只负责grounding query，不能作为factor value或独立输出mobile residual。首版不使用task-expert dictionary、
-held retrieval、free learned residual或独立gain网络。q按8个native query-head groups、action-in按32个native-width blocks处理；
-这来自真实output tensor布局，不是四条不同compiler。
+held retrieval、free learned residual、独立event/gain网络或末端base/contrast变换链。q按8个native query-head groups、action-in按
+32个native-width blocks处理；这来自真实output tensor布局，不是四条不同compiler。
 
 rank4 factors只做一次small-core canonicalization，再与frozen rank12 carrier拼成唯一rank16。PNBTT、EBSRI、Program-through-bank及
 旧G3实现保留为历史和kernel来源，不构成active fallback。完整合同见
@@ -92,7 +93,7 @@ rank4 factors只做一次small-core canonicalization，再与frozen rank12 carri
 - task-local free-code已经证明native factor bank与pooling有容量；P0/P1进一步证明full-inverse primitive能跨video保留共享primal，
   但wrong-bank反事实证明它会消除bank specificity。Program-through-bank的scope-matched free-summary正控通过，真实Program read却未保留
   correct/held；随后bank-conditioned-primal恢复correct，但原query、free query和充分行使的full-native free anchor都无法同时压低wrong。
-  当前Axial Writer已整体替换反复失败的shared utility接口；后继负结果必须定位并替换责任模块，不能继续用scalar gate、anchor步长、
+  当前Native-Temporal Axial Writer已整体替换反复失败的shared utility接口；后继负结果必须定位并替换责任模块，不能继续用scalar gate、anchor步长、
   normalization或普通超参修补同一函数类。
 - staged gates用于定位接口，不是Final必须重演的训练课程。Final既保留从已验证组件初始化的fresh joint run，也保留整套Writer
   完全随机初始化并直接端到端fresh训练的正式选项，由同一closed-loop合同选择。

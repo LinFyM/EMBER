@@ -4,12 +4,21 @@
 
 ## 当前快照
 
-- 唯一active design现为`docs/axial_policy_response_native_factor_writer_design.md`。owner授权有证据的实质重构，同时明确禁止重新演化为
-  连续数学变换。最新主干为
-  `Frame attention -> Temporal attention -> ordered events -> repeated FrameBankFactorBlock -> direct signed raw X/Y pooling`；每个真实frame
-  的rank state先读取同frame完整native X/Y bank，再读取本视频ordered events并做rank attention/MLP。旧global query residual被整体
-  删除，容量只靠复制同构block扩展；不增加gain、normalization、solver或calibration链。full 50-horizon、真实native X/Y、
-  positive-only、rank12+4、唯一rank16与信息墙不变。
+- 唯一active design为`docs/axial_policy_response_native_factor_writer_design.md`，当前具体架构已收敛为Native-Temporal Axial Writer。
+  learned图只有`repeat FramePolicyResponseBlock -> explicit X/Y side -> repeat NativeTemporalFactorBlock -> direct signed raw X/Y pooling`：
+  NativeTemporalFactorBlock在同一职责内完成same-frame side-matched bank read、真实teacher-frame time attention与rank/side attention。
+  独立Temporal/Event瓶颈、Composer二次query seed及末端base/contrast链整体删除；扩容只复制两种标准block，不增加gain、normalization、
+  solver或calibration。full 50-horizon、真实native X/Y、positive-only、rank12+4、唯一rank16与信息墙不变。
+
+- clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
+  fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、
+  task77持续为负，两点都只有`1/2`，故没有运行held5、negative controls或续训。train/eval/total为`262.29/293.95/631.46s`，
+  peak reserved约`34.42 GiB`，信息墙计数全部为零。
+
+- non-pass后的correct-only VJP显示m50六task整体梯度pairwise mean `.05557`、负比例`.40`，不是普遍共享冲突；event readout只有
+  `.01402`且task93/94对其它task和为负，signed-X head mean `-.05783`、task93对其它和`-.66264`，signed-Y则为`+.08754`。
+  task1/task93冻结路径消融中，frame-only只对task1微正，event-only对task1为负且对task93也只有不稳定微量贡献。因此最早失效点是
+  “独立event压缩后晚期接bank、X/Y到末端才共享分叉”的接口；下一实现是整体责任替换，而非增加event权重或输出校准。
 
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为

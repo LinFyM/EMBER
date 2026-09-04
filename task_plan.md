@@ -4,9 +4,9 @@
 
 ## 当前goal
 
-从最新clean pushed main实现、训练并科学裁决可扩展的Policy-Response Event-to-Factor Writer：以冻结PI0.5的
-layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用可重复的Frame、Event与
-Factor-Composer blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
+从最新clean pushed main实现、训练并科学裁决可扩展的Policy-Response Native-Temporal Factor Writer：以冻结PI0.5的
+layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用可重复的Frame与
+Native-Temporal Factor blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
 持续推进component-init、fully-random Final joint及规模化训练，直到validation8 strict paired correct稳定严格大于145/400并满足
 breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因果controls，或者在完成必要正控、matched对照和有信息量的规模化
 实验后，获得足以停止当前函数类或EMBER总体路线的可复核证据。
@@ -43,9 +43,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含可复制的Frame、Temporal、Event和Frame-Bank Factor attention/MLP blocks，随后直接对raw X/Y做signed pooling；
-4. causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由PI0.5 response与真实
-   teacher-frame temporal blocks承担；
+3. 新主图只含可复制的Frame Policy-Response与Native-Temporal Factor两种attention/MLP block；显式X/Y side在同一block内先读
+   同frame native bank、再沿真实frame time及rank/side交互，随后直接对raw X/Y做signed pooling；
+4. 独立event bottleneck与causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由完整
+   PI0.5 response与Native-Temporal block承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
 6. task-local控制、shared资格与正式closed-loop各自回答不同问题，不能用内部loss或人为阈值代替最终行为。
 
@@ -87,10 +88,16 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 15. [x] clean detached `471592f4`的task1/task93 25/50-step Composer-only正控完成。task1 m25/m50 fit/held recovery为
     `.0540/.0526`、`.0841/.0702`，task93为`.0446/.0425`、`.1378/.1360`，四点均三条正确视频聚合为正。task93改善但两任务仍只
     恢复free primal约`5--14%`，所以bank-local方向有效而局部容量不足；
-16. [ ] 运行50-step whole-Writer短shared资格。预先按ID规则固定fresh held task3/77；task2/74转入gradient后共12个gradient tasks，
-    每个在m50前精确暴露25次，m25/m50只读Panel-B。该实验直接裁决可训练Process能否补足Composer-only冻结上游的限制；
-17. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
-18. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+16. [x] clean detached `07804433`完成50-step Frame-Bank whole-Writer shared资格。m25/m50 gradient全视频为正为`6/12`与`8/12`；
+    fresh held task3为正、task77为负，两点均仅`1/2`。它有微弱seen-task学习但无稳定task-disjoint映射，不运行held5或续训；
+17. [x] 冻结correct-only VJP与路径消融定位最早接口：整体梯度并非普遍冲突，冲突集中在event消费与signed-X head；frame-only/
+    event-only又无法同时覆盖task1和task93。裁决整体替换`Temporal -> Event -> late bank fusion -> shared X/Y state`，不追加数学补丁；
+18. [ ] 实现唯一Native-Temporal Axial运行面：删除旧Temporal/Event/FrameBank runtime，以显式X/Y side、同frame side-bank read、
+    ordered frame-time attention及rank/side attention组成同构block；保留full-50、raw X/Y、positive-only与唯一rank16；
+19. [ ] 完成CPU定向检查和最小真实full forward/VJP/materialization smoke后，并行运行task1/task93 25/50-step Composer正控；
+20. [ ] 正控成立后以同12 gradient tasks和预先固定fresh held task4/78运行50-step shared资格；出现task-disjoint正信号才运行held5，
+    再决定mixed-K、fully-random Final和扩展训练；
+21. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 
 ## 历史执行账本
 

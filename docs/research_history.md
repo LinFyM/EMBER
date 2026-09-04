@@ -2856,3 +2856,16 @@ Composer-only容量不充分，不以续训、统一gain或校准链挽救。
 下一50-step whole-Writer shared在查看结果前固定task3/77为fresh zero-gradient held，选择规则为post-hoc暴露task2/74后每个role的
 最小eligible未读ID；task2/74转入gradient，与原10 tasks形成6 meta + 6 target。每个gradient task在50步内精确暴露25次，m25/m50
 只读Panel-B。该资格只检验可训练Process与FrameBank的task-disjoint共同适配；出现正信号前不运行held5或negative controls。
+
+## 147. Frame-Bank shared终局与Native-Temporal Axial替换
+
+clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer资格完成50步。m25/m50 gradient-task fit/held benefit由
+`+.000157/+.000117`升至`+.000240/+.000200`，全视频为正由`6/12`升至`8/12`；fresh held task3为正、task77为负，两点均只有
+`1/2`通过。该实例有微弱seen-task学习但没有稳定task-disjoint映射，未运行held5或negative controls。
+
+冻结正确视频VJP排除普遍梯度灾难：m50六task整体pairwise cosine mean为`.0556`，而冲突集中在event readout及signed-X head；后者
+pairwise mean为`-.0578`，task93相对其它task和为`-.663`，signed-Y则为正。task1/task93路径消融又显示frame-only和event-only没有
+任何一条跨两类任务充分。active设计据此整体删除`Temporal -> Event -> late FrameBank -> shared X/Y state`接口，改为逐帧完整
+PI0.5 response编码后，以显式X/Y factor-side states在同一可复制NativeTemporalFactorBlock内完成same-frame native read、真实frame-time
+attention与rank/side协调，再直接signed-pool raw X/Y。learned图收敛为Frame与NativeTemporalFactor两种block；没有恢复summary、solve、
+normalization、gain、temperature或calibration链。正式与诊断roots及完整数值见`findings.md`第152节。

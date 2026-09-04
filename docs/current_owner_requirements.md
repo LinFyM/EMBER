@@ -60,7 +60,7 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 ## 4. 当前方法方向
 
 经过2026-09-02完整历史复核、专家补充澄清与owner最终确认，当前唯一active方向是
-**Axial Policy-Response Native Factor Writer**。完整方法合同见
+**Native-Temporal Axial Policy-Response Writer**。完整方法合同见
 `docs/axial_policy_response_native_factor_writer_design.md`；直接前身与专家原文见
 `docs/policy_response_event_to_factor_writer_design.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
@@ -69,15 +69,16 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，完整保留Action Expert
    layer、50-horizon、probe与38-target owner响应；50-horizon只能在task/relation-conditioned attention后learned compression，
    full是唯一active representation；
-2. learned Policy-Response Video Process Encoder沿teacher-frame time形成task-grounded、boundary-anchored ordered events；
+2. learned Frame Policy-Response blocks逐帧读取native prefix与完整owner-matched response；随后显式区分X/Y factor side，在同一个
+   可复制Native-Temporal Factor block中先读取同frame side-matched真实bank，再沿teacher-frame time与rank/side轴做attention；
    teacher-frame time、action horizon、flow time、layer depth与probe轴不得混淆；
-3. learned Current-Video Native Factor Composer让38x4逐帧target-rank states在同一个可复制block中先读取该frame的完整真实X/Y
-   bank，再读取ordered events并沿rank交互；随后通过一个ragged native-group signed-attention operator直接pool raw factors；
+3. 不再把视频先压成独立ordered-event瓶颈，也不在末端才从同一共享state线性分叉X/Y；最终factor-side states直接通过ragged
+   native-group two-branch signed attention pool未经替换的raw X/Y；
 4. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
    residual；
 5. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
-6. 主要learned模块由可重复attention/MLP blocks扩展，不再使用冻结Natural Program到summary、covariance、whitening、transport、
-   anchor或family scalar gate的连续专用坐标链；
+6. active learned图只有Frame Policy-Response与Native-Temporal Factor两种可重复attention/MLP block，扩展主要复制同构block；
+   不再使用冻结Natural Program到summary、covariance、whitening、transport、anchor或family scalar gate的连续专用坐标链；
 7. 当前首版训练只使用正确视频的cross-episode functional，让correct video相对错误/乱序视频的优势自然产生；
    Final matched比较component-init与同拓扑fully-random fresh候选。
 

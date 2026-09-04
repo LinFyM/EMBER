@@ -195,21 +195,38 @@ def counted_task_group(
     return tuple(selected)
 
 
+def task_occurrence_schedule(
+    groups: Sequence[Sequence[int]],
+) -> tuple[dict[int, int], ...]:
+    """Give every scheduled task its own zero-based deterministic data cursor."""
+
+    counts: dict[int, int] = {}
+    result = []
+    for group in groups:
+        normalized = tuple(map(int, group))
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("shared Writer task group repeated a task")
+        result.append({task: counts.get(task, 0) for task in normalized})
+        for task in normalized:
+            counts[task] = counts.get(task, 0) + 1
+    return tuple(result)
+
+
 def training_video_demos(
     fit: Sequence[int],
     *,
-    optimizer_step: int,
+    task_occurrence: int,
     task: int,
     cardinalities: Sequence[int],
     seed: int,
 ) -> tuple[int, ...]:
-    """Choose one deterministic K-set while retaining all supported K in training."""
+    """Choose a deterministic K-set from this task's own update cursor."""
 
     pool = tuple(map(int, fit))
     requested = tuple(map(int, cardinalities))
     allowed = tuple(value for value in requested if value <= len(pool))
     if (
-        optimizer_step < 0
+        task_occurrence < 0
         or not pool
         or len(pool) != len(set(pool))
         or not requested
@@ -218,8 +235,8 @@ def training_video_demos(
         or not allowed
     ):
         raise ValueError("shared Writer K-video schedule changed")
-    cardinality = allowed[(optimizer_step + int(task) + int(seed)) % len(allowed)]
-    offset = (optimizer_step * max(allowed) + int(task) + int(seed)) % len(pool)
+    cardinality = allowed[(task_occurrence + int(task) + int(seed)) % len(allowed)]
+    offset = (task_occurrence * max(allowed) + int(task) + int(seed)) % len(pool)
     return tuple(pool[(offset + index) % len(pool)] for index in range(cardinality))
 
 
@@ -433,7 +450,7 @@ def scheduled_task_costs(
     video_splits: Mapping[int, VideoSplit],
     group: Sequence[int],
     *,
-    optimizer_step: int,
+    task_occurrences: Mapping[int, int],
 ) -> dict[int, int]:
     """Predict task wall cost from authorized rows and selected video frames."""
 
@@ -451,12 +468,14 @@ def scheduled_task_costs(
             ),
         )
     )
+    if set(map(int, group)) != set(map(int, task_occurrences)):
+        raise ValueError("shared Writer task occurrence map changed")
     result = {}
     for task in map(int, group):
         fit = video_splits[task][0]
         demos = training_video_demos(
             fit,
-            optimizer_step=optimizer_step,
+            task_occurrence=int(task_occurrences[task]),
             task=task,
             cardinalities=cardinalities,
             seed=int(runtime.config["optimization"]["seed"]),

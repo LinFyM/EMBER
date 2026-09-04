@@ -204,9 +204,10 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 31. [x] 裁决functional-to-closed-loop接口本身：legacy与valid-action-only功能benefit在六task上符号一致，padding不是shared失败根因；
     authority72 task-local m50/m100在同一50初态由carrier `34/50`提高至`35/50`与`40/50`，m100为`30 retained / 10 gained /
     4 lost`且达到task expert `38/50`量级。functional信用可转化成真实闭环变化，当前主因收窄为shared task-disjoint mapping；
-32. [ ] 运行唯一matched角色权重诊断：在模型、73-task集合、每步12 task、full-50、K1、loss、LR及100步不变时，把`9 meta +
-    3 target`改为`6 + 6`，裁决原75%/25%角色总质量是否压制目标域；若target-held功能与闭环仍不改善，不再扫比例，而转向共享
-    条件表示、task-disjoint可辨识性或positive-only共享信用；
+32. [ ] 完成当前`6 meta + 6 target`联合采样修复并裁决m50/m100：它同时把target角色质量从25%提高到50%，并把旧global-step
+    周期别名造成的每task 1/2 fit video、8/16 Panel visits恢复为2/2、16/16。通用实现改用per-task occurrence cursor并已通过
+    回归；若联合修复仍不改善target-held功能与闭环，不再扫比例。若明显改善，再按必要性决定是否用旧`9 + 3`权重做一次
+    cursor-only fresh归因，而不是把联合收益误称为纯role-weight效果；
 33. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 34. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 35. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

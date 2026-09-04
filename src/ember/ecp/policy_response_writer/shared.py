@@ -43,6 +43,7 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     scheduled_task_costs,
     shared_task_group,
     task_group_counts,
+    task_occurrence_schedule,
     training_video_demos,
 )
 from ember.ecp.policy_response_writer.shared_execution import (
@@ -681,14 +682,15 @@ def _build_execution_plan(
             configured_task_group(runtime, step, task_owners=task_owners)
             for step in range(stop)
         )
+    occurrences = task_occurrence_schedule(groups)
     costs = tuple(
         scheduled_task_costs(
             runtime,
             video_splits,
             group,
-            optimizer_step=step,
+            task_occurrences=occurrence_indices,
         )
-        for step, group in enumerate(groups)
+        for group, occurrence_indices in zip(groups, occurrences, strict=True)
     )
     if runtime.args.shared_evidence_cache_root is not None:
         return _seal_execution_plan(

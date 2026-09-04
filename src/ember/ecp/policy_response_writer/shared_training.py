@@ -27,6 +27,7 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     _split_ids,
     configured_task_group,
     scheduled_task_costs,
+    task_occurrence_schedule,
     training_video_demos,
 )
 from ember.ecp.policy_response_writer.shared_execution import (
@@ -52,7 +53,7 @@ def _run_training_task(
     *,
     task: int,
     fit: Sequence[int],
-    optimizer_step: int,
+    task_occurrence: int,
     task_count: int,
 ) -> dict[str, Any]:
     cell = runtime.config["optimization"]["shared"]
@@ -83,7 +84,7 @@ def _run_training_task(
     )
     demos = training_video_demos(
         fit,
-        optimizer_step=optimizer_step,
+        task_occurrence=task_occurrence,
         task=task,
         cardinalities=cardinalities,
         seed=int(runtime.config["optimization"]["seed"]),
@@ -91,7 +92,7 @@ def _run_training_task(
     videos = tuple(
         cache.videos[(task, demo)].to(runtime.context.device) for demo in demos
     )
-    visit_index = optimizer_step % len(runtime.panels[task].panel_a)
+    visit_index = task_occurrence % len(runtime.panels[task].panel_a)
     rows = int(
         cell["functional_rows"]
         if runtime.args.mode == "formal"
@@ -152,7 +153,7 @@ def _run_training_task(
             causal_pair(
                 video.frame_count,
                 int(runtime.config["model"]["event_slots"]),
-                optimizer_step=optimizer_step,
+                optimizer_step=task_occurrence,
                 task=task,
                 demo=demo,
             )
@@ -188,6 +189,7 @@ def _run_training_task(
             phase_seconds["causal_process_backward"] = 0.0
     row = {
         "task": task,
+        "task_occurrence": task_occurrence,
         "role": runtime.panels[task].role,
         "video_demo": demos[0] if len(demos) == 1 else None,
         "video_demos": list(demos),
@@ -402,6 +404,7 @@ def _optimizer_step(
     execution_owners: Sequence[Sequence[int]],
     video_splits: Mapping[int, VideoSplit],
     group: Sequence[int],
+    task_occurrences: Mapping[int, int],
     task_costs: Mapping[int, int],
     zero_step: int,
 ) -> dict[str, Any]:
@@ -432,7 +435,7 @@ def _optimizer_step(
             cache,
             task=task,
             fit=video_splits[task][0],
-            optimizer_step=zero_step,
+            task_occurrence=int(task_occurrences[task]),
             task_count=len(group),
         )
         for task in local_tasks
@@ -511,6 +514,12 @@ def train(
     )
     if profile_tasks and not set(profile_tasks) <= set((*meta, *target)):
         raise ValueError("shared profile task is not a gradient task")
+    groups = tuple(
+        profile_tasks
+        or configured_task_group(runtime, step, task_owners=task_owners)
+        for step in range(stop)
+    )
+    occurrences = task_occurrence_schedule(groups)
     curve = []
     peaks = {"allocated": 0, "reserved": 0}
     started = time.monotonic()
@@ -518,18 +527,15 @@ def train(
         global_tasks = int(
             runtime.config["optimization"]["shared"]["global_tasks_per_update"]
         )
-        group = profile_tasks or configured_task_group(
-            runtime,
-            zero_step,
-            task_owners=task_owners,
-        )
+        group = groups[zero_step]
         if len(group) != (1 if profile_tasks else global_tasks):
             raise RuntimeError("shared Writer configured task count changed")
+        occurrence_indices = occurrences[zero_step]
         task_costs = scheduled_task_costs(
             runtime,
             video_splits,
             group,
-            optimizer_step=zero_step,
+            task_occurrences=occurrence_indices,
         )
         row = _optimizer_step(
             runtime,
@@ -540,6 +546,7 @@ def train(
             execution_owners=execution_owners,
             video_splits=video_splits,
             group=group,
+            task_occurrences=occurrence_indices,
             task_costs=task_costs,
             zero_step=zero_step,
         )

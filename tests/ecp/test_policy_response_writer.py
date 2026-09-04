@@ -49,6 +49,7 @@ from ember.ecp.policy_response_writer.shared_schedule import (
     evaluation_task_costs,
     scheduled_task_costs,
     task_group_counts,
+    task_occurrence_schedule,
 )
 from ember.ecp.policy_response_writer.shared_training import (
     _clip_gain_and_direction_gradients,
@@ -1063,7 +1064,7 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
     four = [
         training_video_demos(
             (3, 7, 11, 13),
-            optimizer_step=step,
+            task_occurrence=step,
             task=8,
             cardinalities=(1, 2, 4),
             seed=23,
@@ -1073,7 +1074,7 @@ def test_scaled_schedule_and_mixed_k_cover_registered_choices() -> None:
     two = [
         training_video_demos(
             (3, 7),
-            optimizer_step=step,
+            task_occurrence=step,
             task=8,
             cardinalities=(1, 2, 4),
             seed=23,
@@ -1135,11 +1136,14 @@ def test_scheduled_cost_accounts_for_frozen_policy_rows_and_full_video_frames() 
     )
     splits = {1: ((3, 7), 9), 8: ((2, 5), 11)}
 
-    costs = scheduled_task_costs(runtime, splits, (1, 8), optimizer_step=0)
+    occurrences = {1: 0, 8: 0}
+    costs = scheduled_task_costs(
+        runtime, splits, (1, 8), task_occurrences=occurrences
+    )
     selected = {
         task: training_video_demos(
             splits[task][0],
-            optimizer_step=0,
+            task_occurrence=occurrences[task],
             task=task,
             cardinalities=(1,),
             seed=23,
@@ -1401,6 +1405,51 @@ def test_task_batch_size_and_role_ratio_are_experiment_config_not_runtime_policy
             }
         }
     ) == (72, 73, 75, 74)
+
+
+def test_task_local_data_cursor_does_not_alias_with_role_schedule_period() -> None:
+    meta = tuple(range(1, 56))
+    target = tuple(range(72, 90))
+    aliased_visits = {task: set() for task in target}
+    aliased_demos = {task: set() for task in target}
+    target_visits = {task: set() for task in target}
+    target_demos = {task: set() for task in target}
+    groups = tuple(
+        counted_task_group((meta, target), (9, 3), step, seed=19)
+        for step in range(100)
+    )
+    occurrences = task_occurrence_schedule(groups)
+
+    for step, (group, occurrence_indices) in enumerate(
+        zip(groups, occurrences, strict=True)
+    ):
+        for task in group:
+            occurrence = occurrence_indices[task]
+            if task in target_visits:
+                aliased_visits[task].add(step % 16)
+                aliased_demos[task].update(
+                    training_video_demos(
+                        (3, 8),
+                        task_occurrence=step,
+                        task=task,
+                        cardinalities=(1,),
+                        seed=23,
+                    )
+                )
+                target_visits[task].add(occurrence % 16)
+                target_demos[task].update(
+                    training_video_demos(
+                        (3, 8),
+                        task_occurrence=occurrence,
+                        task=task,
+                        cardinalities=(1,),
+                        seed=23,
+                    )
+                )
+    assert {len(aliased_visits[task]) for task in target} == {8}
+    assert {len(aliased_demos[task]) for task in target} == {1}
+    assert {len(target_visits[task]) for task in target} == {16}
+    assert all(target_demos[task] == {3, 8} for task in target)
 
 
 def test_scalable_panel_roots_and_video_split_are_outcome_independent(

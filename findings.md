@@ -49,9 +49,15 @@ expert `38/50`的同一行为量级。全部env seed与共同policy-noise prefix
 “functional-to-behavior链路根本无效”收窄到shared task-conditioned/task-disjoint mapping及训练信用。
 
 当前shared采样每步`9 meta + 3 target`虽近似73个task逐task等权，却让两种训练角色的总质量为75%/25%；10-task held诊断又显示
-target为`0/4`明确正增量，而task72证明目标域局部信用可转化。下一个matched短实验只改为`6 meta + 6 target`，保持每步总task数、
-模型、full-50、数据、loss、LR和100步不变，以检验meta总体信用是否压过target域。该比例仅是单变量诊断，不是固定训练合同；若仍
-失败，就停止比例微调并直接检查共享条件表示、task-disjoint可辨识性或positive-only共享信用。
+target为`0/4`明确正增量，而task72证明目标域局部信用可转化。最初因此把下一短实验登记为只改`6 meta + 6 target`的role-weight
+诊断。launch后更深的逐task审计发现原sampler还有确定性周期别名：18个target每步取3个使每task每6步出现，而video选择与Panel visit
+都直接使用global step；`gcd(6,2)=2`、`gcd(6,16)=2`导致100步内全部18个target各自只见一条fit video和固定奇/偶侧8个visits。
+task-local正控每步都更新，因此不受该缺陷影响。这与“task-local强、shared target held弱”的现象方向完全一致。
+
+正在运行的`6 + 6`使target每3步出现，既把角色质量改为50%/50%，也恰好恢复2/2 videos与16/16 visits，所以它是有信息量的联合
+修复、不是纯role-weight单变量。通用源代码修正改用per-task occurrence cursor驱动video、Panel visit和causal pair，并从确定性历史
+schedule重建resume cursor；相同旧`9 + 3`权重下，target的16--17次exposure现可覆盖2/2 videos与16/16 visits。后续解释必须区分
+联合run与cursor-only因果；若更强的`6 + 6`仍失败，无需再扫比例，直接检查共享条件表示、task-disjoint可辨识性或positive-only信用。
 
 functional query中约18%的action positions是episode结束后的重复padding。虽然该比例与多条shared训练曲线的内部benefit相关，
 对set-relative m100六个task用完全相同随机性的legacy/valid-only成对forward后，六个benefit符号全部保持，且失败最重的task74从

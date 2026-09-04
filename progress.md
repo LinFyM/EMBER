@@ -13,11 +13,12 @@
   序列长度不同，不是pairing错误。因此当前没有证据支持“Evaluator完全失真”或“functional-to-LoRA-to-behavior链路根本断裂”；
   最早缺口收窄为shared task-conditioned/task-disjoint mapping及其训练信用。
 
-- 下一fresh只改变run-specific角色聚合：保持73个gradient tasks、每步总12 task、模型、数据、full-50、K1、loss、LR、100步与
-  m50/m100完全不变，把`9 meta + 3 target`改为`6 meta + 6 target`。这将target角色总权重由25%提高到50%，同时保持role内
-  task等权，用短跑检验原采样是否让55个meta task压过18个目标域task；它不是固定meta/target比例、固定每步task数或最终训练
-  规则。若matched role-equal仍不能改善target held功能与closed-loop，就不继续比例微调，而把根因上移到共享条件表示、
-  task-disjoint可辨识性或positive-only共享信用设计。
+- 当前frozen role-equal短跑保持73个gradient tasks、每步总12 task、模型、数据、full-50、K1、loss、LR、100步与m50/m100不变，
+  把`9 meta + 3 target`改为`6 meta + 6 target`。launch后的逐task sampler审计发现，它不只是把target角色总权重由25%提高到
+  50%：旧18-task target组每步取3个，使每task严格每6步出现；global-step驱动的2-video与16-visit游标因此发生周期别名，100步内
+  每个target只见一条fit video和8/16个Panel-A visits。改为6个后每task每3步出现，恰好恢复两条video与16/16 visits。因此该run
+  重新解释为“target训练质量/覆盖联合修复”，不能把可能收益只归因于role weight。它仍不是固定meta/target比例、固定每步task数
+  或最终规则；若该更强联合修复仍失败，就不再扫比例。
 
 - Role-equal formal launch contract：科学配置与task72证据固定为`28b4eb05`，formal authority为包含本合同的下一clean pushed main；
   配置固定`configs/pi05_ecp_policy_response_writer_factor_set_relative_gain_role_equal_v1.json`，数据仍为canonical filtered source、
@@ -29,6 +30,15 @@
   两节点live检查后gpu02物理`0,1,3`仅约`.21/.16/.16 GiB`且0% util，选择同一NUMA0的world3、
   `NCCL_P2P_DISABLE=1`与shared mmap；gpu01虽也有三张候选，但不跨节点拼卡。正式启动前再次同时刷新两节点；总EMBER占卡先为3，
   m50评测与训练重叠时至多6，不触碰其它用户进程。只在m50/m100运行correct held功能与held5 strict250，不运行negative controls。
+
+- 已在独立`codex/prw-task-cursor`修正最早责任点：video、Panel visit与causal pair不再读global optimizer step，而读该task自己的
+  occurrence cursor；resume从确定性task schedule重建cursor，execution cost plan与实际选中video使用同一cursor。这样任意task数、
+  meta/target比例与world size都不会因公因数而永久漏掉某条fit video或一半Panel。旧`9 + 3`的精确复现是target每task仅1/2 video、
+  8/16 visits；修复后在相同100步、相同16--17次target exposure下为2/2与16/16。最终改动相关5项测试通过；全量重跑在17项
+  已通过时因与正式训练争用CPU而主动停止，不把非必要测试置于科学吞吐之上。当前frozen run不改代码，结果到达后再决定是否需要
+  同权重的fresh cursor-only裁决。gpu01物理3上的task72真实full-50两步profile也自然exit0：记录的task occurrence为`0/1`、
+  fit video为`3/8`、Panel visit为`0/1`，step为`2.668/2.407s`，峰值reserved约`16.73GB`；functional VJP、Writer重算、
+  Composer有限梯度与唯一rank16路径均接通。
 
 - 同时发现当前cross-episode functional batch虽在原始dataset中生成`action_is_pad`，processor却未把它传给已有的
   `pi05_mean_flow_loss(..., action_is_pad=...)`路径；因此episode尾部重复最后动作的padding参与了损失。73个gradient task的

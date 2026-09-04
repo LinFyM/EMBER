@@ -38,8 +38,8 @@
   matched，但新增gain仅约2.5万参数，且2-task/rank的真实临界路径和低all-reduce代价直接支持world6。完整294份、`97.81GiB`
   action-hidden mmap在成功后已删除，信息墙计数均为0。
 
-- Group-gain-credit formal launch contract：scientific implementation为`aebd9d74`，formal authority为包含本合同的下一clean
-  pushed main。配置固定`configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json`，保持73个gradient tasks、当前实验的
+- Group-gain-credit formal launch contract：scientific implementation为`aebd9d74`，formal authority为clean pushed
+  `a0797488`。配置固定`configs/pi05_ecp_policy_response_writer_group_gain_credit_v1.json`，保持73个gradient tasks、当前实验的
   `9 meta + 3 target`、K1、component-init、correct-only cross-episode functional、positive causal process、preservation、
   full 50-horizon、真实native X/Y、rank12+4与唯一rank16。该比例和12-task batch只为与前代作单变量匹配，不是owner或未来固定
   要求。唯一科学变化是195-row ragged target-native group gain与G1既有`0.1`初始logit；Process、teacher、loss权重、LR、数据和
@@ -52,6 +52,10 @@
 
   同次`/data1` user quota为`776813584/1084227584 KiB`，limit headroom约`293.17GiB`；实测mmap峰值`97.81GiB`，retained
   checkpoint/metrics预计低于`1GiB`，安全低于独立quota。目标output/cache root在launch前必须再次确认不存在。
+
+  该formal已于2026-09-04 14:23 CST从上述detached authority实际启动，tmux为`ember_prw_group_gain_s100`；启动前再次同时live
+  检查两节点、确认目标root/cache/exit均不存在，6个rank均已建立且未触碰gpu01物理1的他人进程。当前处于一次性model/cache冷启动；
+  不把低利用率初始化阶段或rows2 profile loss当作科学结果。
 
 - causal-prefix event filter已由`f6b58aac`接通并推送。实现只在`causal=True`时返回从真实首帧anchor开始的monotone forward
   posterior；完整/deployment视频仍逐行复用原hard first/final前向--后向posterior，参数与state dict均未改变。41项Writer与

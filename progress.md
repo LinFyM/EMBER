@@ -14,6 +14,24 @@
   `3.492/3.340s`，峰值allocated/reserved为`23.88/24.11GB`，functional VJP、独立clip、Panel-B零反向与唯一rank16均接通。
   下一步立即形成clean pushed authority并启动同规模optimizer50/100资格。
 
+- Factor-conditioned gain formal launch contract：scientific implementation固定为clean pushed `3de3fcb9`，formal authority为包含
+  本合同的下一clean pushed main。配置固定
+  `configs/pi05_ecp_policy_response_writer_factor_conditioned_gain_v1.json`，仍为73 gradient tasks、当前matched的
+  `9 meta + 3 target`、K1、component initialization、冻结Process、correct cross-episode functional、preservation、full 50-horizon、
+  真实native X/Y、rank12+4、完整target cap与唯一rank16。相对上一Composer-functional run的唯一科学变量是把195个
+  target-owned query-only rows替换为共享current-factor-conditioned group token readout；signed candidate direction、LR、task权重、
+  data、Panel与checkpoint cadence均不变。运行100 optimizer steps并保存50/100；m50 checkpoint完整后即可在另一节点开始物化/评测，
+  与m50到m100训练重叠但总EMBER占卡不超过6，训练自然完成后补m100并作相邻closed-loop裁决。
+
+  输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_factor_conditioned_gain_73task_k1_component_s100_3de3fcb9_gpu02p123_sharedmmap_20260904/`，
+  临时单份mmap为`.codex/tmp/prw_factor_conditioned_gain_73task_cache_3de3fcb9_gpu02_20260904/`，两者已确认不存在。2026-09-04
+  17:49 CST两节点live检查时，gpu02物理`1,2,3`均仅有约`.16GB/0%`host公共进程，适合world-size3；物理0/5/7高显存或重载，
+  4/6已有约`5.75/4.75GB`他人进程，而前一正式run最长task reserved可到约`43.1GB`，故不冒险共驻。gpu01物理`0,3,6`可留给
+  m50并行物化/rollout，其余为他人高负载任务。launch前仍同时刷新两节点；若上述三张训练卡漂移则只换同节点安全卡并先更新合同。
+  `strg01` live quota为`777081864/1084227584 KiB`，limit headroom约`292.92GiB`；同构single-copy cache实测约`97.81GiB`、formal
+  output小于`1GiB`，峰值安全低于/data1独立quota，不复制dataset或model。
+
 - 冻结Process的Composer-functional正式资格已经完整裁决为non-pass。scientific implementation为`45b63c97`、clean detached
   authority为`a9baa7a4`，训练root为
   `runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`。

@@ -94,9 +94,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     event-only又无法同时覆盖task1和task93。裁决整体替换`Temporal -> Event -> late bank fusion -> shared X/Y state`，不追加数学补丁；
 18. [x] 实现并集成唯一Native-Temporal Axial运行面：删除旧Temporal/Event/FrameBank runtime，以显式X/Y side、同frame side-bank read、
     ordered frame-time attention及rank/side attention组成同构block；25项定向检查通过，代码净缩短且无兼容fallback；
-19. [ ] clean detached真实task93 full forward/VJP/materialization smoke及2-step profile已通过，下一步并行运行task1/task93
-    25/50-step Composer正控；
-20. [ ] 正控成立后以同12 gradient tasks和预先固定fresh held task4/78运行50-step shared资格；出现task-disjoint正信号才运行held5，
+19. [x] clean detached真实task93 full forward/VJP/materialization smoke及2-step profile通过；task1/task93 25/50-step Composer正控
+    也已完成。task1由m25微负转为m50 fit/held `+.0320/+.0169`且三条视频为正；task93两点稳定约`.122--.126`且三条视频均为正。
+    该结果证明新接口可学，但不把task1弱恢复或内部恢复率变成额外性能门槛；
+20. [ ] 以同12 gradient tasks和预先固定fresh held task4/78运行50-step shared资格；出现task-disjoint正信号才运行held5，
     再决定mixed-K、fully-random Final和扩展训练；
 21. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 

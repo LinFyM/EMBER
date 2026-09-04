@@ -2879,3 +2879,14 @@ normalization、gain、temperature或calibration链。正式与诊断roots及完
 clean detached task93 full smoke消费79 sampled frames、2 probes、完整50 horizons与38 targets，Frame、NativeTemporal及X/Y heads均有
 functional梯度，生成唯一76-tensor rank16；峰值reserved约`35.57 GiB`。2-step Composer-only profile为`3.68/3.46s`，峰值reserved
 `38.22 GiB`，解封短task-local正控。完整数值与launch contract见`findings.md`第153节及`progress.md`。
+
+## 149. Native-Temporal task-local容量控制
+
+clean detached `934bd82c`完成task1/task93各50步Composer-only正式控制。task1在m25 fit/held recovery为
+`-.0063/-.0193`，到m50转为`+.0320/+.0169`且两条fit和一条held正确视频全部为正；task93在m25/m50稳定为约
+`.122--.126`且所有视频为正。相对Frame-Bank，task1学习更慢、task93接近但未更高，所以结果只证明新接口有跨视频容量，不证明
+task-local全面优势。
+
+由于该架构变化针对的是shared X/Y冲突，下一最小裁决仍是预注册12-gradient + fresh held4/78的50-step whole-Writer资格；不延长
+task-local，不扫LR/seed，也不补回gain、temperature、normalization或其它专用数学链。完整roots、数值与信息墙审计见
+`findings.md`第154节。

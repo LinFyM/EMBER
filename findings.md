@@ -3050,3 +3050,22 @@ sampled frames、2 probes、50 horizons与38 targets；functional loss`.0314728`
 同authority的task93 2-step Composer-only profile自然完成，step为`3.679/3.464s`，NativeTemporal、X head、Y head和task-local query
 两步均有梯度；峰值allocated/reserved约`29.54/38.22 GiB`。该结果只证明工程图、容量路径与成本可接受，不把两步正负functional
 波动当科学结论。它直接解封task1/task93并行25/50-step正控；预计单run训练约3分钟，不启动十小时级扩展。
+
+## 154. Native-Temporal正控证明Long容量，但普通任务学习较慢
+
+clean detached `934bd82c`上的task1/task93 Composer-only 25/50-step formal均完整结束。task1 m25的fit/held recovery为
+`-.00633/-.01934`，m50为`+.03197/+.01693`；m50两条fit benefit为`+.0002989/+.0001778`，独立held为`+.0001256`，三条正确
+视频均自发优于carrier。task93在m25/m50的fit/held recovery为`+.12288/+.12213`与`+.12536/+.12624`，四个读数相邻稳定，所有
+fit/held视频均为正。正式roots为
+`runs/outputs/pi05_ecp_policy_response_writer_native_temporal_tasklocal_task1_full_s50_78a0ca6a_gpu02p2_20260905/`与
+`runs/outputs/pi05_ecp_policy_response_writer_native_temporal_tasklocal_task93_full_s50_78a0ca6a_gpu02p0_20260905/`。
+
+这不是“新图全面提高task-local容量”的证据：task1 m50明显低于Frame-Bank的`.08408/.07016`且m25尚为负，task93也只是接近而未
+超过Frame-Bank的`.13780/.13596`。正证据更具体：显式X/Y side与完整frame-time trunk在最难Long正控上能快速、跨视频、相邻稳定地
+恢复约12.5% free-primal，在普通task1到m50也能学成一致正方向；它们不是断图或零容量接口。新结构真正要检验的因果假设是X/Y早分叉
+能否减少shared梯度冲突，因此下一最短信息量实验仍是预注册的12-gradient + fresh held4/78 whole-Writer shared，而不是延长task-local、
+扫LR/seed或补回base/gain/temperature/normalization链。
+
+两run的train/evaluation/total分别为`145.75/82.02/238.37s`与`172.96/81.54/275.25s`，峰值allocated/reserved约
+`20.93/21.34 GiB`与`29.48/30.19 GiB`。两者source policy trainable参数为0，wrong、held及Panel-B backward calls均为0，且各自只
+产生一套完整38-target rank16。该成本允许直接运行约十分钟量级shared短资格，不需要为内部正控再设置额外人为Gate。

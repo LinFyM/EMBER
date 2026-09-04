@@ -40,6 +40,25 @@
   `/data1` live quota为`778392860/1084227584 KiB`、limit余量约`291.67 GiB`，两run复用canonical assets且保守新增小于1GiB。
   gpu02物理0的最长实测峰值reserved约`38.22 GiB`；正式launch前仍同时刷新gpu01/gpu02并只选余量安全的卡，不干扰他人进程。
 
+- 上述两条Native-Temporal task-local formal均已从clean detached `934bd82c`自然完成并exit0。task1在m25的fit/held recovery为
+  `-.00633/-.01934`，到m50转为`+.03197/+.01693`，两条fit与一条held视频均高于carrier；task93在m25/m50的fit/held为
+  `+.12288/+.12213`与`+.12536/+.12624`，两个相邻点三条视频全部为正。task1显示该图对普通任务学习较慢且m50容量弱于
+  Frame-Bank，task93则相邻稳定并接近Frame-Bank的`.13780/.13596`；因此不能宣称task-local容量全面提高，但已经直接证明显式X/Y
+  side与NativeTemporal blocks不是零容量接口。两run的train/eval/total分别为`145.75/82.02/238.37s`与
+  `172.96/81.54/275.25s`，峰值reserved约`21.34/30.19 GiB`；source policy、wrong、held及Panel-B backward计数均为0，输出均为
+  唯一完整rank16。
+
+- Native-Temporal 12-gradient + 2-held shared formal launch contract：科学实现保持`78a0ca6a`，formal authority为包含本合同的下一
+  clean pushed main；配置仍为`configs/pi05_ecp_policy_response_writer_native_temporal_12gradient_2held_v1.json`。gradient meta
+  固定`[1,2,8,9,32,52]`、gradient target固定`[72,73,74,75,93,94]`，在读取本架构结果前已固定的fresh zero-gradient held为
+  task4/78。K1、component initialization、whole Writer、warmup5+effective45、optimizer25/50 checkpoints、每步本配置选择
+  `3 meta + 3 target`，使每个gradient task到m50恰有25次暴露；Panel-B、same-task held与true-task-held均只读，wrong、shuffle、
+  reverse均不读取且不反传。使用node-local single-copy safetensors mmap、动态cost-balanced task assignment、
+  `NCCL_P2P_DISABLE=1`与单节点4卡；输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_12gradient_2held_k1_component_s50_78a0ca6a_gpu02p0123_sharedmmap_20260905/`，
+  cache固定为`.codex/tmp/prw_native_temporal_14task_cache_78a0ca6a_gpu02_20260905/`，launch前二者均必须不存在。该短资格直接检验
+  显式factor-side是否改善shared task-disjoint映射；不以task1内部恢复率另设人为准入线，也不在本轮追加输出补丁。
+
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，

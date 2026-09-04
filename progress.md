@@ -29,6 +29,12 @@
   `293.0GiB`；上一同构shared mmap实测`97.81GiB`、retained formal output约`82.9MiB`，本轮峰值明显低于独立quota，目标
   output/cache/exit root均确认不存在。launch前仍再做一次两节点live状态刷新；状态漂移只换安全设备，不改科学合同。
 
+  该formal已于2026-09-04 16:08 CST从上述detached authority实际启动，tmux为
+  `ember_prw_composer_functional_s100`；启动前再次同时刷新两节点，gpu01物理5出现他人约`.84GB/34%`轻任务但仍有`44.6GB`
+  余量，其余五张目标卡为空闲，按已验证峰值安全共驻且不触碰对方进程。torchrun父进程与6个rank均已建立，当前处于一次性
+  model/cache冷启动。对应held5物化配置为
+  `configs/pi05_ecp_policy_response_writer_composer_functional_held5_eval_v1.json`；训练自然完成后立即以两组各3卡并行评测m50/m100。
+
 - Group-gain-credit的正式科学裁决已经完成。clean detached authority为`a0797488`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；
   100条metrics、macro50/100、Panel-B、completion、物化与两点held5 correct-only strict250均完整。m50/m100分别为`37/250`与

@@ -2874,3 +2874,15 @@ Event/Composer/Signed-X/Signed-Y梯度均非零，生成76 tensors和唯一rank1
 `+.0002928/+.0001267/+.00008453`，三条同向但functional recovery仅`.02118/.00971/.00609`。这说明新bank/readout没有断图，
 尚不足以证明容量或shared映射；下一步从clean pushed detached authority运行25/50-step正式控制。若恢复持续增长再进shared短资格；
 若仍很弱，先定位factor magnitude或credit的最早接口，并以替换模块而非叠加变换解决。
+
+## 147. Axial Composer有弱正容量，下一裁决必须训练完整时序主干
+
+clean detached `89d912b7`上的task72 Composer-only formal完成macro25/50。m25 fit/held recovery为`.09362/.08602`，m50为
+`.07660/.06156`；两个相邻点的三条fit/held视频平均全部优于carrier，但m50较m25回落，且明显弱于旧set-relative task72的
+`.31--.35/.28--.33`。这排除direct signed readout完全断图，但不支持靠延长同构Composer-only训练获得高容量。
+
+该控制在初始化后缓存并冻结全新的Frame/Temporal/Event Process，只训练Composer约1.13M参数；因此它不能裁决active设计的
+end-to-end约3.74M learned trunk。随后task72两步whole-Writer shared profile确认全部模块收到有限functional梯度，step仅
+`1.81/1.50s`且峰值reserved约`17.86 GiB`。下一最小实验直接运行73-task joint 25/50步，观察真正leave-task-out方向；不增加
+gain、normalization或辅助loss。如果完整trunk仍不能使true-task-held转正，才进一步定位event表示或direct factor readout的最早
+共享Jacobian缺陷。

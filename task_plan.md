@@ -55,8 +55,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 2. [x] 以Axial Writer整体替换旧Process/Composer/gain链，删除独立gain runtime与causal objective；
 3. [x] 25项Writer/native定向测试及真实task72 full-50 forward/VJP/materialization smoke通过；
 4. [x] task72 5-step task-local profile自然结束，三条视频均微弱高于carrier，约`2.4--2.6s/step`；
-5. [ ] 从clean pushed detached authority运行task72正式25/50-step Composer容量控制并分析factor scale与信用；
-6. [ ] 若容量控制成立，立即运行73-task shared 25/50-step短资格；若不成立，先定位最早失效接口，不做长跑；
+5. [x] 从clean pushed detached authority完成task72正式25/50-step Composer容量控制：两点三条视频平均均优于carrier，m25
+   fit/held recovery约`.094/.086`，m50约`.077/.062`；证明direct readout可学但局部上限偏弱，且后半回落；
+6. [ ] 已完成whole-Writer两步真实shared profile，约`1.5--1.8s/step`且所有模块梯度非零；立即运行73-task shared 25/50-step
+   短资格，直接裁决可训练Temporal/Event trunk是否补足Composer-only上限；
 7. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
 8. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 

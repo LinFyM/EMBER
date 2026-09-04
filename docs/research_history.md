@@ -2790,3 +2790,13 @@ attention/MLP blocks与direct signed raw-X/Y pooling。原生full-50、真实X/Y
 开发分支上的25项Writer/native tests通过。task72真实full-50 smoke确认全部learned模块有functional gradient、冻结policy无梯度、
 76 tensors与完整rank16；5-step task-local profile三条fit/held视频均微弱高于carrier，但幅度尚小。该证据只解封clean detached
 25/50-step task72容量控制，尚未形成shared或closed-loop结论。
+
+## 142. Axial task72短容量控制
+
+clean detached `89d912b7`完成task72、full-K1、component-init、Composer-only 50-step formal，root为
+`runs/outputs/pi05_ecp_policy_response_writer_axial_factor_tasklocal_task72_full_s50_3cc4dbfc_gpu01p0_20260905/`。macro25 fit/held
+functional recovery为`.09362/.08602`，macro50为`.07660/.06156`；两点三条视频平均均优于carrier，但后半回落且低于历史
+set-relative task-local容量。不续训该控制。
+
+同authority的两步whole-Writer shared profile在task72上以`1.81/1.50s`完成，约3.74M Writer参数全部可训，所有learned模块均有
+functional梯度，冻结policy/observer无梯度。它解封73-task joint 25/50-step短资格，尚不构成shared性能证据。

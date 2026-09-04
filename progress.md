@@ -38,6 +38,27 @@
   因此按live state改选物理0；它约1.3GiB、1% util且无计算进程，余量明显更安全。固定命令为
   `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_axial_factor_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_axial_factor_tasklocal_task72_full_s50_3cc4dbfc_gpu01p0_20260905 --phase task-local --task 72 --representation full --initialization component --mode formal`。
 
+- 上述task72 formal已在clean detached `89d912b7`自然完成。macro25的fit/held recovery为`.09362/.08602`，fit videos3/8与
+  held43 benefit均约`+.00125--.00132`；macro50为`.07660/.06156`，三条仍全部为正但弱于m25。训练50步`127.6s`、总计
+  `214.6s`，峰值allocated/reserved约`15.60/17.56 GiB`。相邻点证明direct readout不是断图，但后半回落且明显弱于旧task72
+  set-relative约`.3`恢复；不靠延长Composer-only训练挽救。由于该控制冻结全新的Temporal/Event Process，下一项直接训练完整
+  Writer，以区分“Composer函数类上限”与“冻结随机时序表示限制”。
+
+- clean detached whole-Writer task72两步shared profile已自然完成：训练全部`3,735,168` Writer参数，step约`1.81/1.50s`；
+  Prefix/Response/Frame/Temporal/Event/ComposerContext/Signed-X/Signed-Y梯度全部有限非零，冻结policy/observer零梯度，峰值reserved
+  约`17.86 GiB`。该profile只验证端到端训练和资源路径，不用两行rows2结果作科学选择。
+
+- Axial 73-task shared短资格launch contract：配置固定`configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，K1、component
+  initialization、joint correct-only functional、warmup5+effective45、optimizer25/50 checkpoints、每步6 tasks与`3 meta + 3 target`
+  仅为本实验设置，不是owner或架构常量；每task 8 functional rows，Panel-B只读。输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p036_sharedmmap_20260905/`，共享cache固定
+  `.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905/`，launch前均不存在。`/data1` limit headroom约`292.3 GiB`，
+  预计single-copy cache约`98 GiB`、formal output远小于1GiB。当前gpu01物理0约1.3GiB/低util，物理3/6被同一外部低util任务
+  各占约21.8GiB；本图实测峰值reserved约17.9GiB，三卡均有安全显存余量，使用world3、GPU-local NUMA与
+  `NCCL_P2P_DISABLE=1`，不触碰其它进程。launch前仍再次同时刷新gpu01/gpu02；若状态恶化则只改执行设备，不改科学合同。
+  固定训练命令为
+  `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,3,6 PYTHONPATH=src /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc_per_node=3 scripts/train_ecp_policy_response_writer.py --config configs/pi05_ecp_policy_response_writer_axial_factor_v1.json --asset-root /data1/user/ymdai/projects/EMBER --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_ecp_policy_response_writer_axial_factor_73task_k1_component_s50_3cc4dbfc_gpu01p036_sharedmmap_20260905 --phase shared --representation full --initialization component --mode formal --shared-evidence-cache-root /data1/user/ymdai/projects/EMBER/.codex/tmp/prw_axial_factor_73task_cache_3cc4dbfc_gpu01_20260905`。
+
 ## 2026-09-04及以前进度账本
 
 - Set-relative shared已完整裁决为non-pass，但authority72正控证明同一函数类的functional信用可以转化为闭环行为。clean detached

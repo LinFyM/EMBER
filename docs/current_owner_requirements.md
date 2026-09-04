@@ -80,6 +80,11 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 7. 训练只使用正确视频的cross-episode functional、严格causal的positive policy-response prediction及轻量preservation；
    Final matched比较component-init与同拓扑fully-random fresh候选。
 
+owner于2026-09-04进一步明确：只要有可复核证据并经过深入分析，可以实质重构Writer；但结构自由度不能再次演化为连续数学补丁。
+若同一接口反复non-pass，应替换其责任模块，而不是继续在前后叠加summary、solve、recenter、whitening、transport、gate或等价专用
+变换。新主干应保持少数职责清楚的learned模块，深度和规模主要通过复制同构attention/MLP block扩展；手工运算只保留信息墙、
+轴/mask、必要的数值归一化、完整候选归约和唯一LoRA物化等明确科学边界。
+
 G2已经通过的Natural Program仍是ordered event、初始化与机制证据，但其固定
 `P_lang/P_scene/P_process/rho/tau/sigma` tuple不再是deployment下游的唯一硬瓶颈。PNBTT、旧
 `summary -> family-scalar gate -> shared event-additive anchor`、EBSRI与其它已裁决G3实现只作历史复现和kernel复用，不构成

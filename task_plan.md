@@ -216,6 +216,8 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
 
 - 效率优先：实现接通后立即获取真实GPU与closed-loop证据，文档、通用重构和冗余测试不能延迟科学结果。
 - 缜密修正：每次架构改变必须对应已定位的最早接口，不以随手改结构、LR/seed/width/rank/scale小扫替代分析。
+- 结构优雅：有证据时允许实质重构，但不把non-pass修成连续数学变换链；同一接口反复失败时优先整体替换责任模块。learned主干以少数
+  职责清楚、可复制扩展的attention/MLP blocks为主，手工运算只承担不可避免的科学边界。
 - 不作弊：只用正确视频训练；validation/test无梯度；负controls只在checkpoint冻结后评测。
 - 一次non-pass只淘汰实际检验的组合，不因局部失败推翻全部正证据。
 - 明确坏结果不无限续训；有新的机制证据时也不受人为版本次数限制。

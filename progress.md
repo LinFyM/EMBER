@@ -13,6 +13,22 @@
   policy VJP与rank16 LoRA消费接通。profile的rows2与两步Panel-B微小变化只作工程证据，不作性能选择；下一步从clean pushed detached
   authority运行同数据同权重的optimizer50/100短资格并做两点held5 correct-only strict250。
 
+- Composer-functional formal launch contract：scientific implementation为`45b63c97`，formal authority为包含本合同的下一
+  clean pushed main。配置固定`configs/pi05_ecp_policy_response_writer_composer_functional_v1.json`，保持73个gradient tasks、当前
+  matched实验选择的`9 meta + 3 target`、K1、component initialization、correct-only cross-episode functional、preservation、
+  full 50-horizon、真实native X/Y、ragged group gain、rank12+4与唯一rank16。相对上一run的唯一科学变量是从fresh component
+  initialization冻结Process、只更新现有Composer并不计算causal auxiliary；deployment forward、模型结构、数据、task权重、LR与
+  checkpoint cadence均不变。运行100 optimizer steps并保存50/100；输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_composer_functional_73task_k1_component_s100_45b63c97_gpu01p023456_sharedmmap_20260904/`，
+  临时单份mmap为`.codex/tmp/prw_composer_functional_73task_cache_45b63c97_gpu01_20260904/`。训练自然完成后使用两组各3卡并行物化和
+  held5 correct-only strict250；不续训或运行negative controls，直到两点closed-loop完成裁决。
+
+  2026-09-04 16:06 CST同时live检查：gpu01物理`0,2,3,4,5,6`均为`0MiB/0%`，物理1的他人任务约`1.8GB/53%`保持不动；gpu02
+  物理0--3新增约`24.3GB`他人任务，5/7重载，其余也有他人进程，不适合本轮。故使用gpu01上述6卡、world-size6、
+  `NCCL_P2P_DISABLE=1`与GPU-local NUMA，不触碰物理1。`/data1` user blocks为`776963860/1084227584 KiB`，limit headroom约
+  `293.0GiB`；上一同构shared mmap实测`97.81GiB`、retained formal output约`82.9MiB`，本轮峰值明显低于独立quota，目标
+  output/cache/exit root均确认不存在。launch前仍再做一次两节点live状态刷新；状态漂移只换安全设备，不改科学合同。
+
 - Group-gain-credit的正式科学裁决已经完成。clean detached authority为`a0797488`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；
   100条metrics、macro50/100、Panel-B、completion、物化与两点held5 correct-only strict250均完整。m50/m100分别为`37/250`与

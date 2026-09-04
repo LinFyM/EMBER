@@ -2845,3 +2845,14 @@ Panel-B gradient，后继shared资格必须选择新的unseen held tasks。
 新实现的task93真实full-50 smoke保持79 sampled frames、2 probes、38 targets、76 tensors与唯一rank16，全部Writer阶段梯度有限非零、
 冻结policy零梯度。exact frame chunk从8增至128使相同第一步由`8.02s`降至`3.95s`，峰值reserved约`28.55 GiB`；这只是完整候选集的
 等价执行分块，不改变科学图或full-only边界。
+
+## 146. Frame-Bank task-local部分改善与fresh-held shared预注册
+
+clean detached `471592f4`完成task1/task93各50步Composer-only formal。task1 m25/m50 fit/held recovery为
+`.0540/.0526`与`.0841/.0702`；task93为`.0446/.0425`与`.1378/.1360`，两任务两相邻点的三条正确视频聚合均为正。相对
+Frame-Aligned，task93 m50明确改善而task1混合；两任务绝对恢复仍仅约`5--14%`。因此同frame bank read是有效增量，但冻结Process的
+Composer-only容量不充分，不以续训、统一gain或校准链挽救。
+
+下一50-step whole-Writer shared在查看结果前固定task3/77为fresh zero-gradient held，选择规则为post-hoc暴露task2/74后每个role的
+最小eligible未读ID；task2/74转入gradient，与原10 tasks形成6 meta + 6 target。每个gradient task在50步内精确暴露25次，m25/m50
+只读Panel-B。该资格只检验可训练Process与FrameBank的task-disjoint共同适配；出现正信号前不运行held5或negative controls。

@@ -84,10 +84,13 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     ordered events并做rank attention/MLP；逐视频中心化保证静态零mobile，末端仍只做一次raw X/Y signed pooling和安全cap。
     不增加gain、normalization、solver、calibration或并行fallback。14项合同测试与task93真实full-50 smoke通过；严格等价的
     frame chunk从8增至128后，相同第一步由`8.02s`降至`3.95s`，峰值reserved仅约`28.55 GiB`；
-15. [ ] 从clean pushed detached authority在task1/task93做25/50-step Composer-only正控；只有局部容量成立才用新的、未被
-    post-hoc gradient读取的held tasks运行短task-disjoint shared资格；
-16. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
-17. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+15. [x] clean detached `471592f4`的task1/task93 25/50-step Composer-only正控完成。task1 m25/m50 fit/held recovery为
+    `.0540/.0526`、`.0841/.0702`，task93为`.0446/.0425`、`.1378/.1360`，四点均三条正确视频聚合为正。task93改善但两任务仍只
+    恢复free primal约`5--14%`，所以bank-local方向有效而局部容量不足；
+16. [ ] 运行50-step whole-Writer短shared资格。预先按ID规则固定fresh held task3/77；task2/74转入gradient后共12个gradient tasks，
+    每个在m50前精确暴露25次，m25/m50只读Panel-B。该实验直接裁决可训练Process能否补足Composer-only冻结上游的限制；
+17. [ ] shared出现task-disjoint正信号后才运行held5 correct-only；随后再决定mixed-K、fully-random Final和训练规模；
+18. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
 
 ## 历史执行账本
 

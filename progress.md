@@ -73,6 +73,18 @@
   checkpoints/metrics。双节点live检查时gpu02物理0/2仅约`209/162 MiB`、0% util，实测最长task93峰值reserved约`28.55 GiB`，
   均有安全余量；launch前再次同时刷新gpu01/gpu02，不等待凑卡、不干扰其它进程。
 
+- 上述Frame-Bank task1/task93 formal已从clean detached `471592f4`并行自然完成。task1 m25/m50 fit/held recovery为
+  `.05404/.05262`与`.08408/.07016`；task93为`.04461/.04253`与`.13780/.13596`，两任务、两相邻点的三条正确视频聚合均优于
+  carrier。相对Frame-Aligned，task93 m50明显改善，task1则fit略升、held下降；整体仍只恢复free primal约`5--14%`，所以
+  same-frame bank参与方向形成是有效增量，但Composer-only容量仍不充分。task1/task93 train/eval/total分别约
+  `145.39/83.03/239.34s`与`184.18/79.07/283.91s`，峰值reserved约`20.92/29.46 GiB`。
+
+- 下一短shared资格不再把task2/74伪装为unseen held：在读取任何新架构task3/77结果前，按“每个role取post-hoc暴露后最小eligible
+  未读ID”的outcome-independent规则固定task3/77为zero-gradient held；task2/74移入gradient，与原10 tasks组成6 meta + 6 target。
+  `configs/pi05_ecp_policy_response_writer_frame_bank_12gradient_2held_v1.json`只运行50步、m25/m50，每步3+3只是该配置选择；12个
+  gradient task均精确获得25次暴露。这个whole-Writer实验直接判断可训练Process与FrameBank能否共同形成task-disjoint方向，不靠延长
+  task-local训练或增加专用数学补丁。
+
 - Frame-Aligned task-local launch contract：科学实现固定为`e2f38c2a`，formal authority为包含本合同的下一clean pushed main；
   科学变量仅为上述Composer职责替换；配置仍使用
   `configs/pi05_ecp_policy_response_writer_axial_factor_v1.json`，task1/task93各自K1、component initialization、Composer-only、

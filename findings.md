@@ -2984,3 +2984,21 @@ normalization、whitening、solver、temperature或calibration链。
 76个tensor及唯一完整rank16。严格等价的执行profile把`pooling_frame_chunk`从8增至32/128，相同第一步由`8.024s`降至
 `4.473/3.954s`；chunk128峰值allocated/reserved为`27.24/28.55 GiB`，因此active配置采用128。该调整只改变exact chunk执行边界，
 不平均、不抽样也不删除任一frame、probe、50-horizon或bank-type candidate。
+
+## 151. Frame-Bank恢复task93部分容量，但Composer-only仍不是充分解
+
+clean detached `471592f4`在gpu02物理0/2并行完成task1/task93各50步Composer-only formal。task1 m25/m50的fit/held recovery为
+`.05404/.05262`与`.08408/.07016`；task93为`.04461/.04253`与`.13780/.13596`。两任务、两相邻checkpoint的两条fit与一条held
+正确视频在聚合层面都优于carrier，且Panel-B、held、wrong backward calls均为零。正式roots为
+`runs/outputs/pi05_ecp_policy_response_writer_frame_bank_tasklocal_task1_full_s50_1323f8ed_gpu02p0_20260905/`与
+`runs/outputs/pi05_ecp_policy_response_writer_frame_bank_tasklocal_task93_full_s50_1323f8ed_gpu02p2_20260905/`。
+
+相对Frame-Aligned m50，task93 fit/held从`.08679/.07927`提高到`.13780/.13596`，而task1从`.07614/.09579`变为
+`.08408/.07016`。因此让同frame native bank参与非线性方向形成确有任务相关增量，却没有跨任务恢复高容量；绝对值仍只覆盖free-primal
+约`5--14%`。这排除“FrameBank完全无用”，也不支持靠继续延长Composer-only、统一放大或追加校准链宣称解决。
+
+本正控冻结了整个Frame/Temporal/Event Process，只训练Composer与task-local query，因此它尚未检验标准可复制trunk与FrameBank的
+共同适配。下一最小直接裁决是50-step whole-Writer shared，而非再做局部步数/LR小扫。由于此前post-hoc诊断已读取task2/74 gradient，
+在查看任何新架构对应结果前，按每个role取最小eligible未读ID的固定规则选择task3/77为fresh zero-gradient held；task2/74加入原10个
+gradient tasks，形成6 meta + 6 target。50步每个gradient task精确25次暴露，m25/m50读取Panel-B但不反传。该实验若仍不能在训练task
+自身及held task形成稳定正方向，责任将落在整个learned Process--FrameBank接口，而不是继续往输出端叠数学变换。

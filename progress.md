@@ -19,6 +19,17 @@
   规则。若matched role-equal仍不能改善target held功能与closed-loop，就不继续比例微调，而把根因上移到共享条件表示、
   task-disjoint可辨识性或positive-only共享信用设计。
 
+- Role-equal formal launch contract：科学配置与task72证据固定为`28b4eb05`，formal authority为包含本合同的下一clean pushed main；
+  配置固定`configs/pi05_ecp_policy_response_writer_factor_set_relative_gain_role_equal_v1.json`，数据仍为canonical filtered source、
+  73个gradient tasks与原Panel，输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_factor_set_relative_gain_role_equal_73task_k1_component_s100_28b4eb05_gpu02p013_sharedmmap_20260904/`，
+  单份临时mmap固定`.codex/tmp/prw_factor_set_relative_gain_role_equal_73task_cache_28b4eb05_gpu02_20260904/`；两者launch前均不存在。
+  预计同构100步约55分钟（其中训练约38分钟），m50完成即可与后半训练并行物化/评测。2026-09-04 launch前`/data1` quota为
+  `777636444/1084227584 KiB`，limit headroom约`292.4 GiB`，预计cache约`98 GiB`、formal output约`0.1 GiB`，峰值安全。
+  两节点live检查后gpu02物理`0,1,3`仅约`.21/.16/.16 GiB`且0% util，选择同一NUMA0的world3、
+  `NCCL_P2P_DISABLE=1`与shared mmap；gpu01虽也有三张候选，但不跨节点拼卡。正式启动前再次同时刷新两节点；总EMBER占卡先为3，
+  m50评测与训练重叠时至多6，不触碰其它用户进程。只在m50/m100运行correct held功能与held5 strict250，不运行negative controls。
+
 - 同时发现当前cross-episode functional batch虽在原始dataset中生成`action_is_pad`，processor却未把它传给已有的
   `pi05_mean_flow_loss(..., action_is_pad=...)`路径；因此episode尾部重复最后动作的padding参与了损失。73个gradient task的
   Panel A/B平均padding约`17.61%/18.46%`，约`35.35%/36.81%`的query row含padding，且六条历史shared Writer曲线中

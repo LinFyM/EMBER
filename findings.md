@@ -2700,3 +2700,45 @@ optimizer、gain/direction独立clip、process-only参数组与Panel-B零反向�
 direction/gain梯度分别为`.4478/1.7117`与`.3196/1.8523`，不是只有gain在更新。相对已有73-task world4 rows2均值
 `9.929s`，world6均值`6.528s`快约`34.2%`；该比较不是逐参数matched，但新增group head只有约2.5万参数，且实际2-task/rank
 临界路径与低显存峰值支持使用6卡。完整97.81GiB shared mmap成功后已删除，wrong/held/Panel-B backward与shuffle/reverse读取均为0。
+
+### 143. Ragged group ownership与首步方向信用已修复，但共享gain仍退化为task-invariant平均解
+
+clean detached `a0797488`的group-gain-credit formal已经完整结束。训练root为
+`runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；
+100条metrics、macro50/100、Panel-B、result/completion、两次materialization与两点held5 correct-only strict250均完整。m50/m100
+为`37/35`，逐task Long/Goal/Object/Spatial0/Spatial9为`0/0/5/29/3`和`0/0/3/30/2`，breadth均`3/5`且Goal/Long为0；
+相邻`28 retained/7 gained/9 lost`，两点都低于carrier `43`。gradient task的fit/held仍由m50的`+.000282/+.000359`
+升到m100的`+.000508/+.000472`，但true-held aggregate为`-.000111/-.000378`与`-.000885/-.000797`；task2改善而task74
+从`-.001095`恶化到`-.002365`。所以这不是门槛过高，而是同一训练目标的seen功能与task-disjoint闭环继续分裂；不续训或运行
+negative controls。
+
+四项correct-only、零optimizer诊断共同定位根因。第一，task2/74的Process common cosine约`.985`，但innovation cosine为
+`.686`、mobile update cosine为`.258`，说明video dynamics和current-bank输出没有整体坍缩；Event assignment与Composer query
+仍分别高达`.99644/.99143`。第二，真正应用到LoRA的group-scale ratio跨task cosine为`.99941`，task-specific fraction仅
+`.018`，195-row ownership虽然消除了跨target写冲突，却仍学成几乎静态的跨task平均幅度。第三，task74 m100有限幅消融中
+q-only为`-.0023788`，v-only、action-out-only为`+.0000742/+.0000345`；其action-out loss-gradient norm为`.2182`，约为q的
+`7.95x`，实际update norm却只有`.00195`，约为q的`1/647`，并仅占`s_ref` `.01365`。与G1成功task-local解相比，当前q/v/
+action-in幅度约为`.83--.93/.45--.57/.24--.33`，action-out仅`.016--.020`。这解释了为什么恢复group轴仍不能产生Goal/Long。
+
+第四，当前m100在六个授权任务上的process/functional共享Process总梯度cosine为`-.1141`，Event子集为`-.2913`，process范数
+分别为functional的`1.4867x/1.8003x`；旧random-delta checkpoint对应仅为`-.0216/-.0515`与`.8935x/1.0254x`。参数移动又显示
+m50/m100的Process相对初始化已移动`2.79%/3.03%`，Composer direction为`.677%/.758%`，scale为`8.17%/9.43%`；主要变化在
+m50前已经发生，m100新增有限而闭环更差。故“没训练够”“gain没更新”“Process完全静态”均被排除。最早未决变量是联合训练中
+Process辅助/漂移是否让Composer只能拟合平均gain，而非立即宣判native bank或rank4不足。
+
+下一单变量采用同一deployment函数类的Composer-functional阶段：从component initialization fresh冻结Process，只更新Composer，
+训练只保留correct cross-episode functional与preservation；不计算对冻结参数无作用的causal auxiliary。它不新增网络、task table、
+coarse表示、negative loss、第二adapter或新数学坐标，且保持73-task采样、full 50-horizon、真实native X/Y、ragged group gain、
+rank12+4、唯一rank16与Panel合同。若该阶段恢复true-held/闭环，再依据相邻证据决定如何joint解冻；若仍为seen正、task-disjoint负，
+才修改Composer的共享动态gain readout。
+
+关键artifact：
+
+- `runs/analysis/pi05_ecp_policy_response_writer_group_gain_credit_m50_task_disjoint_geometry_tasks2_74_a0797488_gpu01p2_20260904.json`及m100对应文件；
+- `runs/analysis/pi05_ecp_policy_response_writer_group_gain_credit_m50_family_finite_ablation_tasks2_74_a0797488_gpu01p0_20260904.json`及m100对应文件；
+- `runs/analysis/pi05_ecp_policy_response_writer_group_gain_credit_m100_functional_process_gradient_alignment_6task_a0797488_gpu01p5_20260904.json`；
+- `runs/analysis/pi05_ecp_policy_response_writer_group_gain_credit_m50_m100_checkpoint_movement_a0797488_gpu01p3_20260904.json`。
+
+同次评测还暴露并修复一个纯执行层问题：m50已经产生250/250 raw rows且全部worker exit0，但aggregator硬编码假定GPU0--3属于
+NUMA0，拒绝了gpu01上真实位于NUMA1的GPU3。`6ab0c518`改为校验worker实际报告的非负NUMA节点，14项evaluator测试通过，并从原始
+rows无重跑恢复`37/250`。该问题不改变任何rollout或科学结论。

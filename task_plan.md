@@ -170,17 +170,24 @@ PNBTT及此前Program--bank实现均已裁决，不是active fallback。
     41项定向/物化测试和task1真实51-frame、full-50-horizon forward/gradient/唯一rank16 smoke通过；所有loss、teacher、prediction优化、
     Composer、完整native bank、rank、数据与task权重保持不变。clean `db354581`的optimizer50/100与两点闭环完整结束；held5为
     `38/36`、breadth均`3/5`且Goal/Long为0，gradient Panel-B略正但两个true-task-held明显为负，故该matched实例non-pass；
-27. [ ] 修正Composer gain/credit边界：当前实现遗漏专家明确要求的ragged native-group gain，并以严格零gain造成首步方向信用饥饿。
+27. [x] 修正并裁决Composer gain/credit边界：当前实现遗漏专家明确要求的ragged native-group gain，并以严格零gain造成首步方向信用饥饿。
     m100四任务free rank gain的fit/held恢复约`.122--.166/.093--.147`，group gain提高到`.146--.244/.126--.202`；m100方向又比
     component-init平均`.213/.179`对`.178/.135`略好，说明不应推倒Process。该修正只恢复195个target-native group
     rows，并复用G1的`0.1`初始logit；Process、loss、LR、task比例、full bank、rank和数据不变。47项定向测试及task1真实full smoke
     已通过；首个functional backward的Frame/Event/Composer-direction/group-gain梯度为`.0569/.0531/.0990/.2214`，76 tensors与唯一
     rank16完整。两步shared optimizer profile也以`3.69/3.50s`通过，非gain Composer方向梯度约`1.88/1.51`；实现已由
-    `aebd9d74`集成推送，world6吞吐profile通过，下一步从clean pushed detached authority运行optimizer50/100短资格；若仍non-pass且direction继续
-    落后于gain，下一变量才是冻结Process的Composer functional阶段；
-28. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
-29. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
-30. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
+    `aebd9d74`集成推送，world6吞吐profile通过。clean `a0797488`的73-task optimizer50/100及两点held5 correct-only
+    strict250已完整结束：`37/35`，breadth均`3/5`，Goal/Long均为0，且低于carrier `43`。gradient task持续改善而task74随训练
+    恶化；Process innovation并未坍缩，但实际group scale跨task cosine达`.99941`，action-out更新仅约G1成功解的`.016--.020`，
+    task74的q-only有限幅效应为负而v/action-out为正。共享Process上process与functional总梯度cosine为`-.114`、Event为`-.291`，
+    前者范数约为后者`1.49x`；该实例不是没训练够或断图，正式non-pass；
+28. [ ] 执行冻结Process的Composer-functional阶段：从同一component initialization fresh开始，保持完全相同deployment Writer、
+    full 50-horizon、真实native X/Y、ragged group gain、rank12+4、73-task数据与task权重，只冻结Process并仅以correct cross-episode
+    functional加preservation更新Composer。首轮仍用可续跑optimizer50/100和两点held5 correct-only strict250，直接区分联合
+    Process辅助/漂移干扰与Composer共享函数类不足；不引入新网络、task table、coarse、negative loss或第二Writer；
+29. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
+30. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
+31. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。
 
 ## 推进与决策原则
 

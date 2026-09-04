@@ -4,6 +4,30 @@
 
 ## 当前快照
 
+- Group-gain-credit的正式科学裁决已经完成。clean detached authority为`a0797488`，formal root为
+  `runs/outputs/pi05_ecp_policy_response_writer_group_gain_credit_73task_k1_component_s100_aebd9d74_gpu01p023456_sharedmmap_20260904/`；
+  100条metrics、macro50/100、Panel-B、completion、物化与两点held5 correct-only strict250均完整。m50/m100分别为`37/250`与
+  `35/250`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/5/29/3`与`0/0/3/30/2`，breadth均`3/5`，都低于carrier
+  `43/250`且Goal/Long为0；相邻为`28 retained/7 gained/9 lost`。因此不续训、不运行negative controls。
+
+- non-pass后的correct-only诊断把根因进一步收窄。m50/m100的gradient-task fit/held功能增量仍为正，但true-held聚合为负；task2
+  随训练改善，task74由`-.001095`恶化到`-.002365`。task2/74的Process innovation cosine为`.706/.686`，mobile update cosine
+  由`.493`降到`.258`，说明上游动态和bank方向没有整体坍缩；然而Event assignment、Composer query和group-scale ratio在m100
+  的跨task cosine分别为`.99644/.99143/.99941`，实际gain几乎是task-invariant平均解。有限幅家族消融显示task74 m100的
+  q-only为`-.002379`，v-only/action-out-only为`+.000074/+.000034`，但action-out有效更新仅为其`s_ref`的`.01365`，并且仅约
+  G1成功task-local更新幅度的`.016--.020`。当前训练的process与functional共享Process梯度总和cosine为`-.1141`、Event为
+  `-.2913`，process范数分别为functional的`1.49x/1.80x`；相对旧random-delta checkpoint冲突明显增强。参数移动又确认m50前
+  已完成主要学习，m100的Process/Composer/scale相对初始化移动为`3.03%/.77%/9.43%`，不是断图或单纯训练不足。
+
+- 下一单变量是active design已预留的Composer-functional阶段，而不是增加数学链：从component initialization fresh冻结Process，
+  只更新同一Composer，并只使用correct cross-episode functional与preservation。模型前向、full 50 horizon、native X/Y、
+  group gain、rank、数据与task权重不变。该短实验先回答联合Process辅助/漂移是否压坏共享Composer；若仍在gradient tasks正而
+  true-held/闭环低，则才有证据修改Composer的动态gain readout函数类。
+
+- held5 m50 evaluator曾在250/250 rows和全部worker exit0后因硬编码`GPU 0--3 -> NUMA0`拒绝聚合；gpu01真实拓扑为0--2在
+  node0、3--6在node1。`6ab0c518`已改为校验worker报告的非负NUMA节点而不猜GPU编号，14项evaluator测试通过；原始rows已无重跑
+  恢复为`37/250`。这是执行层缺陷，不改变科学non-pass。
+
 - causal-filter 73-task fresh资格已经完整裁决为non-pass。clean detached authority为`db354581`，formal root为
   `runs/outputs/pi05_ecp_policy_response_writer_causal_filter_73task_k1_component_s100_f6b58aac_gpu01p0156_sharedmmap_20260904/`；
   optimizer50/100、Panel-B、result/completion和两点held5 correct-only strict250均完整。m50/m100为`38/36`，逐task

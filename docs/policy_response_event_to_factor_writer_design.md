@@ -511,6 +511,20 @@ macro50/100都只有`37/250`。causal-prefix forward-filter资格也已完成：
 下一资格仅恢复ragged target-native group gain与G1非零小幅启动，仍用optimizer50/100；50点在训练继续时尽快物化，100点作相邻
 裁决。架构未证明前不扩成长跑。
 
+该group-gain-credit资格现已完整结束。macro50/100的held5 correct-only strict250为`37/35`，breadth均`3/5`、Goal/Long均为0，
+低于carrier `43`；gradient tasks功能增量继续上升，true-held task74却随训练恶化。冻结正样本诊断表明Process innovation与最终
+mobile direction仍有明显task差异，但group-scale跨task cosine达`.99941`，action-out只获得G1成功task-local幅度约
+`.016--.020`；task74的q-only有限幅效应为负，v与action-out为正。与此同时，共享Process上的process/functional聚合梯度总和
+cosine为`-.114`，Event子集为`-.291`，process范数约为functional的`1.49--1.80x`。checkpoint movement确认主模块已经移动且
+m50后增量有限，因此不能以断图或训练不足解释。
+
+下一资格进入本文已预留的分阶段优化，但不增加部署模块或专用坐标：从相同component initialization fresh开始冻结整个Process，
+只让现有Composer接受correct cross-episode functional与preservation梯度；冻结Process后不计算对参数无作用的causal auxiliary。
+full 50-horizon、真实native X/Y、signed pooling、ragged group gain、rank12+4、73-task数据、task权重、Panel与materialization
+均保持不变，首轮仍保存optimizer50/100并做相邻held5 correct-only strict250。这一单变量直接检验Process辅助/联合漂移是否压坏
+Composer；若gradient tasks仍正而true-held与闭环仍低，下一根因才是Composer自身的shared dynamic gain/readout函数类，而不是
+继续续训或修改Process。
+
 ## 10. 后续扩展与Final
 
 首轮shared信号成立后：

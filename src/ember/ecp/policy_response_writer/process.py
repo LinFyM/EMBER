@@ -322,7 +322,7 @@ class EventBlock(torch.nn.Module):
 
 
 class BoundaryAnchoredEventEncoder(torch.nn.Module):
-    """Monotone stay/advance segmentation with hard first and final anchors."""
+    """Monotone segmentation with a real-video final anchor, never a fake one."""
 
     def __init__(
         self,
@@ -346,7 +346,13 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         )
         torch.nn.init.normal_(self.slot_queries, std=width**-0.5)
 
-    def _posterior(self, emission: torch.Tensor, boundary: torch.Tensor) -> torch.Tensor:
+    def _posterior(
+        self,
+        emission: torch.Tensor,
+        boundary: torch.Tensor,
+        *,
+        causal: bool = False,
+    ) -> torch.Tensor:
         frames, slots = emission.shape
         if slots != self.event_slots or frames < slots:
             raise ValueError("ordered events require at least one frame per slot")
@@ -362,6 +368,11 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
             alpha[time] = emission[time] + torch.logaddexp(
                 from_stay, from_advance
             )
+        # An artificial observation prefix has no observed final boundary.
+        # Filtering keeps every frame in the same first-anchored process
+        # coordinates without pretending that its cutoff is the last event.
+        if causal:
+            return alpha.softmax(-1)
         beta = emission.new_full((frames, slots), negative)
         beta[-1, -1] = 0.0
         for time in range(frames - 2, -1, -1):
@@ -380,6 +391,8 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         relations: torch.Tensor,
         confidence: torch.Tensor,
         frame_positions: torch.Tensor,
+        *,
+        causal: bool = False,
     ) -> PolicyResponseProcessOutput:
         frames, relation_count, owners, width = relations.shape
         if frame_positions.shape != (frames,):
@@ -401,7 +414,11 @@ class BoundaryAnchoredEventEncoder(torch.nn.Module):
         frame_summary = torch.einsum(
             "tm,tmd->td", confidence.softmax(-1), tokens
         ) + position_keys
-        posterior = self._posterior(emission, self.transition(frame_summary))
+        posterior = self._posterior(
+            emission,
+            self.transition(frame_summary),
+            causal=causal,
+        )
         # Slot identity and position may decide *where* an event occurs, but
         # they must not manufacture event value.  A frame-local relation read
         # therefore stays shared across slots; otherwise a repeated static
@@ -539,7 +556,12 @@ class PolicyResponseProcessEncoder(torch.nn.Module):
         response = self.response(video, representation=representation)
         for block in self.frame_blocks:
             relations = block(relations, response)
-        result = self.events(relations, confidence, video.frame_positions)
+        result = self.events(
+            relations,
+            confidence,
+            video.frame_positions,
+            causal=causal,
+        )
         return PolicyResponseProcessOutput(
             events=result.events,
             common=result.common,

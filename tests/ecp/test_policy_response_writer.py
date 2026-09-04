@@ -26,7 +26,10 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_cap_factor,
     _effective_update_rms,
 )
-from ember.ecp.policy_response_writer.process import parameter_free_process_norm
+from ember.ecp.policy_response_writer.process import (
+    BoundaryAnchoredEventEncoder,
+    parameter_free_process_norm,
+)
 from ember.ecp.policy_response_writer.shared import (
     SharedEvidenceCache,
     _optimizer,
@@ -470,6 +473,47 @@ def test_causal_prefix_cannot_read_mutated_future_frames() -> None:
     )
 
 
+def test_event_posterior_anchors_only_a_real_full_video_final_frame() -> None:
+    encoder = BoundaryAnchoredEventEncoder(
+        width=8,
+        event_slots=4,
+        heads=2,
+        block_depth=1,
+    )
+    emission = torch.zeros(7, 4)
+    boundary = torch.zeros_like(emission)
+
+    full = encoder._posterior(emission, boundary)
+    causal = encoder._posterior(emission, boundary, causal=True)
+
+    torch.testing.assert_close(full[0], torch.tensor([1.0, 0.0, 0.0, 0.0]))
+    torch.testing.assert_close(full[-1], torch.tensor([0.0, 0.0, 0.0, 1.0]))
+    torch.testing.assert_close(causal[0], full[0])
+    assert 0.0 < causal[-1, -1] < 1.0
+    assert torch.count_nonzero(causal[-1]) > 1
+
+
+def test_causal_event_filter_is_prefix_consistent() -> None:
+    encoder = BoundaryAnchoredEventEncoder(
+        width=8,
+        event_slots=4,
+        heads=2,
+        block_depth=1,
+    )
+    generator = torch.Generator().manual_seed(20260904)
+    emission = torch.randn(11, 4, generator=generator)
+    boundary = torch.randn(11, 4, generator=generator)
+
+    complete = encoder._posterior(emission, boundary, causal=True)
+    for stop in (4, 7, 10):
+        prefix = encoder._posterior(
+            emission[:stop],
+            boundary[:stop],
+            causal=True,
+        )
+        torch.testing.assert_close(prefix, complete[:stop], rtol=0, atol=0)
+
+
 def test_composer_zero_innovation_chunking_and_video_order_contracts() -> None:
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
@@ -809,6 +853,10 @@ def test_process_conditioned_config_is_explicit_and_predecessor_is_rejected() ->
         root / "configs/pi05_ecp_policy_response_writer_process_conditioned_v1.json"
     )
     assert "sqrt_delta_standardized" in current["model"]["causal_process_interval"]
+    assert (
+        current["model"]["causal_event_posterior"]
+        == "full_video_hard_first_final_and_prefix_first_anchored_forward_filter"
+    )
     assert (
         current["optimization"]["shared"]["process_normalizer_pairs_per_fit_video"]
         == 8

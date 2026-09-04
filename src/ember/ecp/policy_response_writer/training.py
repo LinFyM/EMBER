@@ -116,6 +116,8 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             == "parameter_free_pre_norm_common_and_innovation_at_prediction_memory_and_signed_score",
             model.get("causal_process_interval")
             == "deterministic_uniform_prefix_then_uniform_positive_future_offset_direct_sqrt_delta_standardized_target_with_parameter_free_encoding",
+            model.get("causal_event_posterior")
+            == "full_video_hard_first_final_and_prefix_first_anchored_forward_filter",
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],

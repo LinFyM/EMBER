@@ -13,7 +13,35 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 05:25 CST）
+## 最新节点与P/Q formal启动合同（2026-09-06 05:53 CST）
+
+- 两update真实profile exit0，8个task executions的video/query/noise/权重与原fresh-query审计逐行匹配、normalizers相同；
+  完整38-target rank16、source/observer/task-local trainable均0、各主要梯度组有效。最长87帧通过，更新5.82/5.18秒，
+  allocated峰值30.75GiB、reserved31.94GiB；单份8.03GB capture退出后已移除。此证据只用于运行合同，不宣称科学资格。
+- formal从本合同所在的下一clean pushed commit的detached tree
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-joint-process-20260906`启动，config
+  `configs/pi05_ecp_prw_shared4_joint_process_v1.json`，`--phase shared --mode formal --representation full --initialization component`
+  `--stop-after-step 64`；fresh optimizer/scheduler，warmup5+effective59，8/32/64完整checkpoint与Panel-B，原两fit A2直接参照。
+- gpu01物理3/4/5、NUMA1、world3，NCCL_P2P_DISABLE=1；启动前再次live核对两节点。/data1最新quota使用721266764KiB，
+  独立额度1073741824KiB，项目656GiB、shared84TiB空余；本阶段新增峰值<20GiB，复用资产，单份mmap退出清除。
+  exact resume只允许原commit/config/world/物理GPU顺序/root，不恢复旧架构optimizer。
+- root为`runs/outputs/pi05_ecp_prw_shared4_joint_process_s64_{commit}_gpu01p345_20260906/`，analysis为
+  `runs/analysis/pi05_ecp_prw_samegraph_joint_process_20260906/`；精确launch位于`.codex/tmp/prw_joint_launch/`并随formal evidence保存。
+  32/64 first-fit/held各strict150：32物化用0，held用0/2、fit用6；训练释放后64物化用3，held用3/4/5、fit用0/2，合计至多六卡。
+  checkpoint生成且live资源允许后立即执行，保持原状态/RNG/video与eager batch官方合同；不以本轮train-side分数选择最终模型。
+
+## 前一执行节点（2026-09-06 05:49 CST）
+
+- P/Q主干已实现：完整response一次投影，4个同构共同过程/整策略block，跨视频learned set read，最后frame-aligned native readout；
+  旧target-local block从active树退役，未新增source文件。Writer参数4,417,920，相对两fit A2的2,970,368增加48.73%；这是整体方法比较，
+  不把参数量或fresh异构初始化差异解释为Q反馈的独立效果。
+- 18项CPU检查通过，包括全19层/50horizon、跨target梯度、静态重复Value约束、原A2/B1、native ownership、集合与chunking，以及
+  validation角色隔离；source diff检查通过，五个现有source/test合计净减293行。数据、优化、normalizer相关authority与两fit配置匹配。
+- 两update真实profile已在gpu01物理3/4/5、NUMA1启动，输出`.codex/tmp/prw_joint_profile/`，覆盖原两fit与最长87帧；尚未据此声明
+  吞吐、峰值或科学能力。两节点已live核对，/data1 quota使用721266660KiB、额度1073741824KiB，项目实际656GiB，新增峰值预算<20GiB。
+  正式train/eval launcher正在准备，须profile资源/梯度通过后从下一clean pushed detached commit启动。
+
+## 前一执行节点（2026-09-06 05:25 CST）
 
 - 四视频全部formal train/functional/materialize/eval均exit0，完整四个strict150为32fit41/held38、64fit41/held39；六历史参照+四新结果
   10/10收齐。相邻fit R/G/L35/6/6、held32/7/6，64跨视频33/6/8；Goal held只保留2/4、Long fit的两个1互不相同。详见历史§169。

@@ -1,4 +1,4 @@
-"""Tokenize frozen PI0.5 evidence without creating a learned video code."""
+"""Full native evidence and repeated joint process-policy attention blocks."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Sequence
 import torch
 import torch.nn.functional as F
 
-from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
+from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 
 if TYPE_CHECKING:
@@ -74,52 +74,23 @@ class PrefixTokenizer(torch.nn.Module):
 
 
 class ResponseTokenizer(torch.nn.Module):
-    """Keep the full probe x horizon x response-channel field until attention."""
+    """Project every layer/horizon once, before task-conditioned process reads."""
 
     def __init__(
         self,
-        owners: Sequence[TargetOwner],
         *,
         expert_width: int,
         width: int,
     ) -> None:
         super().__init__()
-        self.owners = tuple(owners)
         self.state_projection = torch.nn.Linear(expert_width, width, bias=False)
         self.residual_projection = torch.nn.Linear(expert_width, width, bias=False)
         self.noise_projection = torch.nn.Linear(32, width, bias=False)
         self.velocity_projection = torch.nn.Linear(32, width, bias=False)
-        self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
-        self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
         self.layer_embedding = torch.nn.Embedding(19, width)
         self.horizon_embedding = torch.nn.Embedding(ACTION_HORIZON, width)
         self.channel_embedding = torch.nn.Embedding(8, width)
         self.norm = torch.nn.LayerNorm(width)
-        family_order = tuple(TargetFamily)
-        self.register_buffer(
-            "family_ids",
-            torch.tensor([family_order.index(owner.family) for owner in owners]),
-            persistent=False,
-        )
-        state_layers = []
-        residual_layers = []
-        for owner in owners:
-            if owner.layer is not None:
-                state_layers.append(owner.layer)
-                residual_layers.append(owner.layer)
-            elif owner.family is TargetFamily.ACTION_IN:
-                state_layers.append(0)
-                residual_layers.append(0)
-            else:
-                state_layers.append(18)
-                residual_layers.append(17)
-        self.register_buffer(
-            "state_layers", torch.tensor(state_layers), persistent=False
-        )
-        self.register_buffer(
-            "residual_layers", torch.tensor(residual_layers), persistent=False
-        )
-        torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
 
     @staticmethod
     def _even_odd(value: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -133,31 +104,91 @@ class ResponseTokenizer(torch.nn.Module):
         states = video.layer_states
         if states.ndim != 5 or states.shape[1:4] != (2, 19, ACTION_HORIZON):
             raise ValueError("policy-response raw layer topology changed")
-        residuals = states[:, :, 1:] - states[:, :, :-1]
-        state = self.state_projection(states.index_select(2, self.state_layers))
-        residual = self.residual_projection(
-            residuals.index_select(2, self.residual_layers)
-        )
         frames = states.shape[0]
-        noise = self.noise_projection(video.suffix_noise)[None, :, None].expand(
-            frames, -1, len(self.owners), -1, -1
+        fields = (
+            self.state_projection(states),
+            self.residual_projection(states[:, :, 1:] - states[:, :, :-1]),
+            self.noise_projection(video.suffix_noise)[None].expand(frames, -1, -1, -1),
+            self.velocity_projection(video.flow_velocity),
         )
-        velocity = self.velocity_projection(video.flow_velocity)[:, :, None].expand(
-            -1, -1, len(self.owners), -1, -1
+        tokens = []
+        for field, value in enumerate(fields):
+            for probe, channel in enumerate(self._even_odd(value)):
+                channel = channel + self.horizon_embedding.weight
+                channel = channel + self.channel_embedding.weight[2 * field + probe]
+                if channel.ndim == 4:
+                    channel = channel + self.layer_embedding.weight[
+                        :channel.shape[1]
+                    ][None, :, None]
+                    channel = channel.flatten(1, 2)
+                tokens.append(channel)
+        return self.norm(torch.cat(tokens, dim=1))
+
+
+class JointProcessPolicyBlock(torch.nn.Module):
+    """One joint block: policy feedback, grounded process read, time, whole policy."""
+
+    def __init__(self, width: int, heads: int) -> None:
+        super().__init__()
+        self.process_norm = torch.nn.LayerNorm(width)
+        self.policy_norm = torch.nn.LayerNorm(width)
+        self.evidence_norm = torch.nn.LayerNorm(width)
+        self.policy_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.feedback_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.temporal_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.process_read = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.policy_mixing = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.temporal_position = torch.nn.Linear(2, width, bias=False)
+        self.process_mlp = GatedMLP(width)
+        self.policy_mlp = GatedMLP(width)
+
+    def _grounded_read(
+        self, process: torch.Tensor, patches: torch.Tensor,
+        language: torch.Tensor, language_valid: torch.Tensor, response: torch.Tensor,
+    ) -> torch.Tensor:
+        # Language conditions patch queries before the first full-response compression.
+        for memory, valid in ((language, language_valid), (patches, None), (response, None)):
+            memory = self.evidence_norm(memory)
+            read, _ = self.policy_attention(
+                self.process_norm(process), memory, memory,
+                key_padding_mask=None if valid is None else ~valid, need_weights=False,
+            )
+            process = process + read
+        return process
+
+    def forward(
+        self, process: torch.Tensor, policy: torch.Tensor, positions: torch.Tensor,
+        patches: torch.Tensor, language: torch.Tensor,
+        language_valid: torch.Tensor, response: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        frames, work_tokens, width = process.shape
+        if (
+            positions.shape != (frames,) or policy.ndim != 2 or policy.shape[-1] != width
+            or any(x.ndim != 3 or x.shape[0] != frames or x.shape[-1] != width
+                   for x in (patches, language, response))
+            or language_valid.shape != language.shape[:2]
+        ):
+            raise ValueError("joint process-policy evidence axes changed")
+        policy_memory = self.policy_norm(policy)[None]
+        feedback, _ = self.feedback_attention(
+            self.process_norm(process).reshape(1, frames * work_tokens, width),
+            policy_memory, policy_memory, need_weights=False,
         )
-        channels = []
-        for value in (state, residual, noise, velocity):
-            channels.extend(self._even_odd(value))
-        tokens = torch.stack(channels, dim=3)
-        owner = (
-            self.owner_embedding
-            + self.family_embedding(self.family_ids)
-            + self.layer_embedding(self.state_layers)
+        process = self._grounded_read(
+            process + feedback.reshape_as(process), patches, language, language_valid, response
         )
-        tokens = tokens + owner[None, :, None, None]
-        tokens = tokens + self.horizon_embedding.weight[None, None, :, None]
-        tokens = tokens + self.channel_embedding.weight[None, None, None]
-        return self.norm(tokens.flatten(2, 3))
+        temporal = self.process_norm(process).transpose(0, 1)
+        position = self.temporal_position(torch.stack((positions, positions.square()), -1))
+        read, _ = self.temporal_attention(
+            temporal + position[None], temporal + position[None], temporal, need_weights=False
+        )
+        process = self.process_mlp(process + read.transpose(0, 1))
+        memory = self.process_norm(process).reshape(1, frames * work_tokens, width)
+        read, _ = self.process_read(self.policy_norm(policy)[None], memory, memory, need_weights=False)
+        policy = policy + read[0]
+        query = self.policy_norm(policy)[None]
+        read, _ = self.policy_mixing(query, query, query, need_weights=False)
+        return process, self.policy_mlp(policy + read[0])
 
 
 class PolicyResponseEvidenceEncoder(torch.nn.Module):
@@ -178,7 +209,7 @@ class PolicyResponseEvidenceEncoder(torch.nn.Module):
         self.width = width
         self.prefix = PrefixTokenizer(prefix_width, width)
         self.response = ResponseTokenizer(
-            owners, expert_width=expert_width, width=width
+            expert_width=expert_width, width=width
         )
 
     def forward(
@@ -195,7 +226,7 @@ class PolicyResponseEvidenceEncoder(torch.nn.Module):
             patches.shape[0] != video.frame_count
             or language.shape[0] != video.frame_count
             or language_valid.shape != language.shape[:2]
-            or response.shape[:2] != (video.frame_count, len(self.owners))
+            or response.shape[:2] != (video.frame_count, 78 * ACTION_HORIZON)
         ):
             raise ValueError("policy-response evidence axes changed")
         return PolicyResponseEvidence(
@@ -217,15 +248,13 @@ class PolicyResponseEvidenceEncoder(torch.nn.Module):
         self.response.residual_projection.weight.copy_(source.delta_projection.weight)
         self.response.noise_projection.weight.copy_(source.noise_projection.weight)
         self.response.velocity_projection.weight.copy_(source.velocity_projection.weight)
-        self.response.family_embedding.weight.copy_(source.family_embedding.weight)
         self.response.layer_embedding.weight[:18].copy_(source.layer_embedding.weight)
         binding = stage0.encoder.binding
-        self.response.owner_embedding.copy_(binding.owner_embedding)
         self.response.horizon_embedding.weight.copy_(binding.horizon_embedding)
         return {
             "reused": [
                 "prefix_projections",
                 "response_channel_projections",
-                "owner_family_layer_horizon_embeddings",
+                "layer_horizon_embeddings",
             ],
         }

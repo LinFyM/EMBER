@@ -1,4 +1,4 @@
-"""Canonical unified Policy-Native Factor Writer graph."""
+"""Canonical joint process-policy Writer with frame-aligned native factors."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ class PolicyResponseWriterOutput:
 
 
 class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
-    """Tokenizers plus one repeated parallel-read factor-latent block family."""
+    """Full evidence, joint process-policy blocks, and one native factor readout."""
 
     def __init__(
         self,
@@ -38,6 +38,7 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
         width: int = 128,
         heads: int = 4,
         blocks: int = 4,
+        process_tokens: int = 8,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
@@ -54,6 +55,7 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
             width=width,
             heads=heads,
             block_depth=blocks,
+            process_tokens=process_tokens,
             pooling_frame_chunk=pooling_frame_chunk,
             task_local=task_local,
         )
@@ -98,7 +100,8 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
             "kind": "g2_native_projection_initialization",
             "reused": [*evidence["reused"], *factor["reused"]],
             "fresh": [
-                "parallel_policy_native_factor_blocks",
+                "joint_process_policy_blocks_and_set_read",
+                "process_conditioned_native_frame_read",
                 "factor_side_signed_heads",
             ],
         }

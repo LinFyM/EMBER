@@ -15,8 +15,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：同图、query覆盖、非对称A和视频池2→4对照均完成；四视频没有闭环增量，结果sealed。
-- 下一项为有界的共同过程P—整策略Q主干比较，直接参照较好的两fit A2模型，保持4tasks/K1/64updates/8rows及读出/rank/loss；
-  先明确模块因果作用和GPU布局，再做最小真实profile与原32/64四条件strict150，不宣称已识别根因。
+- 当前有界的共同过程P—整策略Q主干已实现、18项CPU和真实两步profile通过；直接参照较好的两fit A2模型，保持
+  4tasks/K1/64updates/8rows及读出/rank/loss，正按`progress.md`正式合同启动原32/64四条件strict150，不宣称已识别根因。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
 ## 推进顺序

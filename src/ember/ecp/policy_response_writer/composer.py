@@ -1,4 +1,4 @@
-"""Unified frozen-policy-evidence to native-factor Writer blocks."""
+"""Joint process-policy states and frame-aligned native factor readout."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from ember.ecp.native_factors import (
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.process import (
     GatedMLP,
+    JointProcessPolicyBlock,
     PolicyResponseEvidence,
 )
 
@@ -127,261 +128,44 @@ def _effective_update_cap_factor(
     return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
 
 
-class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
-    """One copyable source-separated evidence, time, rank-side transformer block."""
+class NativeFrameFactorRead(torch.nn.Module):
+    """Use process-conditioned frame queries to read their own native X/Y bank."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
-        self.evidence_query_norm = torch.nn.LayerNorm(width)
-        self.policy_memory_norm = torch.nn.LayerNorm(width)
-        self.native_memory_norm = torch.nn.LayerNorm(width)
-        self.policy_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.native_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.temporal_norm = torch.nn.LayerNorm(width)
-        self.temporal_position = torch.nn.Linear(2, width, bias=False)
-        self.temporal_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.factor_norm = torch.nn.LayerNorm(width)
-        self.factor_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
+        self.query_norm = torch.nn.LayerNorm(width)
+        self.memory_norm = torch.nn.LayerNorm(width)
+        self.native_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
         self.mlp = GatedMLP(width)
 
-    def _position(self, value: torch.Tensor) -> torch.Tensor:
-        position = value.clamp(0.0, 1.0)
-        return self.temporal_position(
-            torch.stack((position, position.square()), dim=-1)
-        )
-
-    def _evidence_read(
-        self,
-        query: torch.Tensor,
-        patches: torch.Tensor,
-        language: torch.Tensor,
-        language_valid: torch.Tensor,
-        response: torch.Tensor,
-        input_bank: torch.Tensor,
-        output_bank: torch.Tensor,
+    def forward(
+        self, query: torch.Tensor, input_bank: torch.Tensor, output_bank: torch.Tensor,
     ) -> torch.Tensor:
         frames, ranks, sides, width = query.shape
-        if (
-            sides != 2
-            or patches.ndim != 3
-            or patches.shape[0] != frames
-            or language.ndim != 3
-            or language.shape[0] != frames
-            or language_valid.shape != language.shape[:2]
-            or not patches.shape[1]
-            or response.ndim != 3
-            or response.shape[0] != frames
-            or input_bank.ndim != 3
-            or output_bank.ndim != 3
-            or input_bank.shape[0] != frames
-            or output_bank.shape[0] != frames
-            or any(
-                value.shape[-1] != width
-                for value in (
-                    patches,
-                    language,
-                    response,
-                    input_bank,
-                    output_bank,
-                )
-            )
+        if sides != 2 or any(
+            value.ndim != 3 or value.shape[0] != frames or value.shape[-1] != width
+            or value.shape[1] == 0 for value in (input_bank, output_bank)
         ):
-            raise ValueError("unified policy-native evidence axes changed")
-        bank_tokens = max(input_bank.shape[1], output_bank.shape[1])
-        input_memory = F.pad(
-            input_bank, (0, 0, 0, bank_tokens - input_bank.shape[1])
-        )
-        output_memory = F.pad(
-            output_bank, (0, 0, 0, bank_tokens - output_bank.shape[1])
-        )
-        bank = torch.stack((input_memory, output_memory), dim=1)
-        bank_valid = torch.arange(bank_tokens, device=query.device)[
-            None, None
-        ] < torch.tensor(
+            raise ValueError("native frame read axes changed")
+        count = max(input_bank.shape[1], output_bank.shape[1])
+        bank = torch.stack((F.pad(input_bank, (0, 0, 0, count-input_bank.shape[1])),
+                            F.pad(output_bank, (0, 0, 0, count-output_bank.shape[1]))), 1)
+        valid = torch.arange(count, device=query.device)[None, None] < torch.tensor(
             (input_bank.shape[1], output_bank.shape[1]), device=query.device
         )[None, :, None]
-        bank_valid = bank_valid.expand(frames, -1, -1)
-
-        native_memory = bank.reshape(frames * 2, bank_tokens, width)
-        native_valid = bank_valid.reshape(frames * 2, bank_tokens)
+        memory = self.memory_norm(bank.reshape(frames * 2, count, width))
         rows = query.permute(0, 2, 1, 3).reshape(frames * 2, ranks, width)
-        normalized_query = self.evidence_query_norm(rows)
-        native_memory = self.native_memory_norm(native_memory)
-
-        def policy_read(
-            memory: torch.Tensor, valid: torch.Tensor | None = None
-        ) -> torch.Tensor:
-            memory = memory[:, None].expand(-1, 2, -1, -1).reshape(
-                frames * 2, -1, width
-            )
-            if valid is not None:
-                valid = valid[:, None].expand(-1, 2, -1).reshape(frames * 2, -1)
-            normalized_memory = self.policy_memory_norm(memory)
-            attended, _ = self.policy_attention(
-                normalized_query,
-                normalized_memory,
-                normalized_memory,
-                key_padding_mask=None if valid is None else ~valid,
-                need_weights=False,
-            )
-            return attended
-
-        policy_readout = (
-            policy_read(patches)
-            + policy_read(language, language_valid)
-            + policy_read(response)
-        )
-        native_read, _ = self.native_attention(
-            normalized_query,
-            native_memory,
-            native_memory,
-            key_padding_mask=~native_valid,
+        read, _ = self.native_attention(
+            self.query_norm(rows), memory, memory,
+            key_padding_mask=~valid.expand(frames, -1, -1).reshape(frames * 2, count),
             need_weights=False,
         )
-        return (policy_readout + native_read).reshape(
-            frames, 2, ranks, width
-        ).permute(0, 2, 1, 3)
-
-    def _checkpointed_evidence_read(
-        self,
-        query: torch.Tensor,
-        patches: torch.Tensor,
-        language: torch.Tensor,
-        language_valid: torch.Tensor,
-        response: torch.Tensor,
-        input_bank: torch.Tensor,
-        output_bank: torch.Tensor,
-    ) -> torch.Tensor:
-        if not torch.is_grad_enabled():
-            return self._evidence_read(
-                query,
-                patches,
-                language,
-                language_valid,
-                response,
-                input_bank,
-                output_bank,
-            )
-        return checkpoint(
-            self._evidence_read,
-            query,
-            patches,
-            language,
-            language_valid,
-            response,
-            input_bank,
-            output_bank,
-            use_reentrant=False,
-        )
-
-    def forward(
-        self,
-        frame_states: Sequence[torch.Tensor],
-        frame_positions: Sequence[torch.Tensor],
-        evidence: Sequence[PolicyResponseEvidence],
-        input_bank_chunks: Sequence[Sequence[torch.Tensor]],
-        output_bank_chunks: Sequence[Sequence[torch.Tensor]],
-    ) -> tuple[torch.Tensor, ...]:
-        frames = tuple(frame_states)
-        positions = tuple(frame_positions)
-        memories = tuple(evidence)
-        input_banks = tuple(tuple(chunks) for chunks in input_bank_chunks)
-        output_banks = tuple(tuple(chunks) for chunks in output_bank_chunks)
-        if (
-            not frames
-            or len(frames) != len(positions)
-            or len(frames) != len(memories)
-            or len(frames) != len(input_banks)
-            or len(frames) != len(output_banks)
-        ):
-            raise ValueError("unified factor video set changed")
-
-        output = []
-        for frame, position, tokens, input_chunks, output_chunks in zip(
-            frames, positions, memories, input_banks, output_banks, strict=True
-        ):
-            if frame.ndim != 4 or frame.shape[2] != 2:
-                raise ValueError("unified factor-side axes changed")
-            frame_count, ranks, _, width = frame.shape
-            if (
-                position.shape != (frame_count,)
-                or tokens.patches.shape[0] != frame_count
-                or tokens.language.shape[0] != frame_count
-                or tokens.language_valid.shape != tokens.language.shape[:2]
-                or tokens.response.shape[0] != frame_count
-                or not input_chunks
-                or len(input_chunks) != len(output_chunks)
-                or any(
-                    left.ndim != 3
-                    or right.ndim != 3
-                    or left.shape[0] != right.shape[0]
-                    or left.shape[-1] != width
-                    or right.shape[-1] != width
-                    or not left.shape[0]
-                    or not left.shape[1]
-                    or not right.shape[1]
-                    for left, right in zip(
-                        input_chunks, output_chunks, strict=True
-                    )
-                )
-                or sum(chunk.shape[0] for chunk in input_chunks) != frame_count
-            ):
-                raise ValueError("unified evidence or bank axes changed")
-
-            reads = []
-            offset = 0
-            for input_memory, output_memory in zip(
-                input_chunks, output_chunks, strict=True
-            ):
-                count = input_memory.shape[0]
-                local = frame[offset : offset + count]
-                reads.append(
-                    self._checkpointed_evidence_read(
-                        local,
-                        tokens.patches[offset : offset + count],
-                        tokens.language[offset : offset + count],
-                        tokens.language_valid[offset : offset + count],
-                        tokens.response[offset : offset + count],
-                        input_memory,
-                        output_memory,
-                    )
-                )
-                offset += count
-            value = frame + torch.cat(tuple(reads), dim=0)
-
-            temporal = value.permute(1, 2, 0, 3).reshape(
-                ranks * 2, frame_count, width
-            )
-            normalized = self.temporal_norm(temporal)
-            query_key = normalized + self._position(position.to(frame))[None]
-            attended, _ = self.temporal_attention(
-                query_key, query_key, normalized, need_weights=False
-            )
-            value = (temporal + attended).reshape(
-                ranks, 2, frame_count, width
-            ).permute(2, 0, 1, 3)
-
-            factors = value.reshape(frame_count, ranks * 2, width)
-            normalized = self.factor_norm(factors)
-            attended, _ = self.factor_attention(
-                normalized, normalized, normalized, need_weights=False
-            )
-            output.append(
-                self.mlp(factors + attended).reshape(frame_count, ranks, 2, width)
-            )
-        return tuple(output)
+        value = (rows + read).reshape(frames, 2, ranks, width).permute(0, 2, 1, 3)
+        return self.mlp(value)
 
 
 class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
-    """Generate rank-four X/Y with one repeated factor-latent block type."""
+    """Coordinate a whole policy, then write one complete native-factor residual."""
 
     def __init__(
         self,
@@ -390,6 +174,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         width: int = 128,
         heads: int = 4,
         block_depth: int = 2,
+        process_tokens: int = 8,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
     ) -> None:
@@ -400,7 +185,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         if (
             not owners
             or width % heads
-            or block_depth <= 0
+            or block_depth <= 0 or process_tokens <= 0
             or pooling_frame_chunk <= 0
         ):
             raise ValueError("unified policy-native factor topology changed")
@@ -434,12 +219,20 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         self.position_projection = torch.nn.Linear(2, width, bias=False)
         self.native_key_norm = torch.nn.LayerNorm(width)
         self.blocks = torch.nn.ModuleList(
-            UnifiedPolicyNativeFactorBlock(width, heads)
+            JointProcessPolicyBlock(width, heads)
             for _ in range(block_depth)
         )
+        self.process_seed = torch.nn.Parameter(torch.empty(process_tokens, width))
+        self.set_query_norm = torch.nn.LayerNorm(width)
+        self.set_memory_norm = torch.nn.LayerNorm(width)
+        self.set_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.frame_query_norm = torch.nn.LayerNorm(width)
+        self.frame_memory_norm = torch.nn.LayerNorm(width)
+        self.frame_attention = torch.nn.MultiheadAttention(width, heads, batch_first=True)
+        self.native_read = NativeFrameFactorRead(width, heads)
         # B shares its context query, so zero innovation closes the complete
         # update. A uses distinct context queries over the current native bank.
-        self.input_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
+        self.input_signed_query = torch.nn.Linear(width, 4 * width, bias=False)
         self.output_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.task_query = (
             torch.nn.Parameter(
@@ -457,13 +250,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.factor_side_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
-        # Preserve the established asymmetric initialization and later RNG draws.
-        with torch.random.fork_rng(devices=[]):
-            expanded = torch.nn.Linear(width, 4 * width, bias=False)
-        with torch.no_grad():
-            expanded.weight[:width].copy_(self.input_signed_query.weight[:width])
-            expanded.weight[2 * width:].copy_(self.input_signed_query.weight[width:])
-        self.input_signed_query = expanded
+        torch.nn.init.normal_(self.process_seed, std=width**-0.5)
 
     def _owner_bias(self, target: int) -> torch.Tensor:
         return self.owner_embedding[target] + self.family_embedding(
@@ -557,72 +344,63 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             raise ValueError("unified factor received no current-video bank")
         return tuple(candidates)
 
-    def _decode_target(
-        self,
-        target: int,
-        videos: Sequence[FrozenPolicyResponseVideo],
+    def _joint_frame_queries(
+        self, videos: Sequence[FrozenPolicyResponseVideo],
         evidence: Sequence[PolicyResponseEvidence],
+    ) -> tuple[torch.Tensor, ...]:
+        seed = torch.stack([self._seed(target) for target in range(len(self.owners))])
+        if self.task_query is not None:
+            seed = seed + self.task_query
+        seed = seed.flatten(0, 2)
+        processes, policies = [], []
+        for video, memory in zip(videos, evidence, strict=True):
+            process = self.process_seed[None].expand(video.frame_count, -1, -1)
+            policy = seed
+            inputs = (video.frame_positions.to(process), memory.patches, memory.language,
+                      memory.language_valid, memory.response)
+            for block in self.blocks:
+                if torch.is_grad_enabled():
+                    process, policy = checkpoint(block, process, policy, *inputs, use_reentrant=False)
+                else:
+                    process, policy = block(process, policy, *inputs)
+            processes.append(process)
+            policies.append(policy)
+        # Every video contributes the same number of learned policy states.
+        memory = self.set_memory_norm(torch.cat(policies, dim=0))[None]
+        shared, _ = self.set_attention(self.set_query_norm(seed)[None], memory, memory, need_weights=False)
+        shared = seed + shared[0]
+        output = []
+        for process in processes:
+            memory = self.frame_memory_norm(process)
+            query = self.frame_query_norm(shared)[None].expand(process.shape[0], -1, -1)
+            frame, _ = self.frame_attention(query, memory, memory, need_weights=False)
+            output.append((shared[None] + frame).reshape(
+                process.shape[0], len(self.owners), G1_RESIDUAL_RANK, 2, self.width
+            ))
+        return tuple(output)
+
+    def _decode_target(
+        self, target: int, frame_queries: Sequence[torch.Tensor],
         candidates: Sequence[_NativeVideoCandidates],
     ) -> tuple[_FactorVideoState, ...]:
-        if len(videos) != len(evidence) or len(videos) != len(candidates):
-            raise ValueError("unified factor video/evidence count changed")
-        states = []
-        selected_evidence = []
-        for video, tokens in zip(videos, evidence, strict=True):
-            if (
-                tokens.patches.shape[0] != video.frame_count
-                or tokens.language.shape[0] != video.frame_count
-                or tokens.language_valid.shape != tokens.language.shape[:2]
-                or tokens.response.shape[:2]
-                != (video.frame_count, len(self.owners))
-                or tokens.response.shape[-1] != self.width
-            ):
-                raise ValueError("unified factor evidence axes changed")
-            state = self._seed(target)[None].expand(
-                video.frame_count, -1, -1, -1
-            )
-            if self.task_query is not None:
-                state = state + self.task_query[target][None]
-            states.append(state)
-            selected_evidence.append(
-                PolicyResponseEvidence(
-                    patches=tokens.patches,
-                    language=tokens.language,
-                    language_valid=tokens.language_valid,
-                    response=tokens.response[:, target],
-                )
-            )
-
-        positions = tuple(video.frame_positions for video in videos)
-        input_chunks = tuple(
-            tuple(chunk.input_tokens.flatten(1, -2) for chunk in video.chunks)
-            for video in candidates
-        )
-        output_chunks = tuple(
-            tuple(
-                chunk.output_tokens.movedim(0, 1).flatten(1, -2)
-                for chunk in video.chunks
-            )
-            for video in candidates
-        )
-        values = tuple(states)
-        for block in self.blocks:
-            values = block(
-                values,
-                positions,
-                selected_evidence,
-                input_chunks,
-                output_chunks,
-            )
         output = []
-        for value in values:
+        for queries, video in zip(frame_queries, candidates, strict=True):
+            reads, offset = [], 0
+            for chunk in video.chunks:
+                count = chunk.input_values.shape[0]
+                inputs = (queries[offset:offset+count, target],
+                          chunk.input_tokens.flatten(1, -2),
+                          chunk.output_tokens.movedim(0, 1).flatten(1, -2))
+                if torch.is_grad_enabled():
+                    reads.append(checkpoint(self.native_read, *inputs, use_reentrant=False))
+                else:
+                    reads.append(self.native_read(*inputs))
+                offset += count
+            if offset != video.frame_count:
+                raise ValueError("native frame read ended before the full video")
+            value = torch.cat(reads, dim=0)
             context = value.mean(0)
-            output.append(
-                _FactorVideoState(
-                    context=context,
-                    innovation=value - context[None],
-                )
-            )
+            output.append(_FactorVideoState(context=context, innovation=value-context[None]))
         return tuple(output)
 
     def _branch_logits(
@@ -781,13 +559,14 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             or s_ref.shape != (len(self.owners),)
         ):
             raise ValueError("unified factor video set or scale authority changed")
+        frame_queries = self._joint_frame_queries(values, memories)
         a_values = []
         b_values = []
         scales = []
         for target in range(len(self.owners)):
             candidates = self._bank_candidates(target, values)
             frame_states = self._decode_target(
-                target, values, memories, candidates
+                target, frame_queries, candidates
             )
             a, b = self._pool_target(target, frame_states, candidates)
             cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
@@ -827,6 +606,6 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         return {
             "reused": [
                 "owner_family_horizon_embeddings",
-                "first_parallel_policy_evidence_attention",
+                "first_grounded_full_response_attention",
             ]
         }

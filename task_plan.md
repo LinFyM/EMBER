@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-05。
+更新时间：2026-09-06。
 
 ## 当前目标与启动授权
 
@@ -15,7 +15,7 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：锁定同图、whole-Writer、无专属task query的少任务clone/shared对照；复用已核验的shared runtime并核对任务/资产/采样。
-- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run已启动。
+- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run已完成，正在完成预注册配对闭环。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
 ## 推进顺序

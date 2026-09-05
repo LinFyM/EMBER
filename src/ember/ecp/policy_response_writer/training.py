@@ -749,10 +749,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--evaluation-config", type=Path)
     parser.add_argument("--writer-run", type=Path)
     parser.add_argument("--writer-checkpoint", type=Path)
+    parser.add_argument(
+        "--additional-materialization", nargs=3, action="append", default=[],
+        metavar=("EVAL_CONFIG", "CHECKPOINT", "OUTPUT"),
+        help="another registered condition from the same run and task set",
+    )
     return parser
 
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
+    if args.additional_materialization and args.phase != "materialize":
+        raise ValueError("additional materialization requires phase materialize")
     for name in ("config", "asset_root", "data_root", "output_dir"):
         setattr(args, name, getattr(args, name).resolve())
     for name in (

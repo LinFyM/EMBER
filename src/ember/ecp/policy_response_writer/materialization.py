@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -24,7 +25,7 @@ from ember.ecp.stage0_training import stage0_source_authority
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_source_setup import initialize_distributed
+from ember.pi05_source_setup import initialize_distributed, seed_everything
 from ember.static_task_lora import (
     STATIC_TASK_LORA_MANIFEST_SCHEMA,
     policy_response_video_demos,
@@ -275,6 +276,7 @@ def _freeze_and_inspect(runtime: PolicyResponseRuntime) -> dict[str, Any]:
 
 def prepare_materialization_runtime(
     args: argparse.Namespace,
+    resident: PolicyResponseRuntime | None = None,
 ) -> WriterMaterializationRuntime:
     if any(
         value is None
@@ -297,17 +299,27 @@ def prepare_materialization_runtime(
     args.mode = "formal"
     args.stop_after_step = None
     args.resume = None
-    context = initialize_distributed(require_numa=True, defer_process_group=True)
+    context = (
+        resident.context if resident is not None else
+        initialize_distributed(require_numa=True, defer_process_group=True)
+    )
     if context.world_size != 1:
         raise ValueError("Policy-Response Writer materialization requires one GPU")
-    runtime = prepare_runtime(
-        args,
-        context,
-        deployment_global_ids=tuple(
-            map(int, evaluation["target_global_ids"])
-        ),
-    )
+    if resident is not None:
+        for field in ("config", "asset_root", "data_root", "writer_run"):
+            if getattr(resident.args, field) != getattr(args, field):
+                raise ValueError(f"resident materialization changed {field}")
+        runtime = resident
+        runtime.args = args
+        seed_everything(int(runtime.config["optimization"]["seed"]), context)
+    else:
+        runtime = prepare_runtime(
+            args, context,
+            deployment_global_ids=tuple(map(int, evaluation["target_global_ids"])),
+        )
     tasks = _evaluation_tasks(runtime, evaluation)
+    if set(runtime.language_tokens) != {task.authority_id for task in tasks}:
+        raise ValueError("resident materialization changed its task set")
     if evaluation["condition"].get("checkpoint_selection_use") is False:
         gradient = set(shared_contract["task_split"]["gradient_target"])
         for task in tasks:
@@ -542,8 +554,10 @@ def _seal_bank(
     partial_root.rename(final_root)
 
 
-def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, Any]:
-    prepared = prepare_materialization_runtime(args)
+def _materialize_prepared_bank(
+    prepared: WriterMaterializationRuntime,
+) -> dict[str, Any]:
+    args = prepared.runtime.args
     final_root = args.output_dir
     partial_root = final_root.parent / f".{final_root.name}.partial-{os.getpid()}"
     if final_root.exists() or partial_root.exists():
@@ -552,23 +566,18 @@ def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, An
     condition = prepared.evaluation["condition"]
     records: list[dict[str, Any]] = []
     captures: list[dict[str, Any]] = []
-    try:
-        with torch.inference_mode():
-            for task in prepared.tasks:
-                demos = policy_response_video_demos(condition, task.domain_task_id)
-                record, task_captures = _materialize_task(
-                    prepared,
-                    task=task,
-                    demos=demos,
-                    partial_root=partial_root,
-                    final_root=final_root,
-                )
-                records.append(record)
-                captures.extend(task_captures)
-    finally:
-        prepared.close()
-        if dist.is_available() and dist.is_initialized():
-            dist.destroy_process_group()
+    with torch.inference_mode():
+        for task in prepared.tasks:
+            demos = policy_response_video_demos(condition, task.domain_task_id)
+            record, task_captures = _materialize_task(
+                prepared,
+                task=task,
+                demos=demos,
+                partial_root=partial_root,
+                final_root=final_root,
+            )
+            records.append(record)
+            captures.extend(task_captures)
     lora_path = authority_path(
         prepared.runtime.base, "lora_contract", asset_root=args.asset_root
     )
@@ -584,3 +593,39 @@ def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, An
         writer_macro=prepared.writer_macro,
     )
     return payload
+
+
+def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, Any]:
+    """Seal registered conditions while loading the frozen runtime only once."""
+    jobs = [args]
+    for evaluation, checkpoint, output in getattr(args, "additional_materialization", ()):
+        jobs.append(argparse.Namespace(**{
+            **vars(args), "evaluation_config": Path(evaluation).resolve(),
+            "writer_checkpoint": Path(checkpoint).resolve(),
+            "output_dir": Path(output).resolve(),
+        }))
+    if len({job.output_dir for job in jobs}) != len(jobs):
+        raise ValueError("duplicate materialization output in batch")
+    if any(job.output_dir.exists() for job in jobs):
+        raise ValueError("materialization output already exists")
+    resident = None
+    first_payload = None
+    try:
+        for job in jobs:
+            started = time.monotonic()
+            prepared = prepare_materialization_runtime(job, resident)
+            resident = prepared.runtime
+            ready = time.monotonic()
+            payload = _materialize_prepared_bank(prepared)
+            if first_payload is None:
+                first_payload = payload
+            print({"event": "materialization_sealed", "output": str(job.output_dir),
+                   "runtime_prepare_seconds": ready - started,
+                   "materialize_seconds": time.monotonic() - ready,
+                   "tasks": len(payload["tasks"])}, flush=True)
+    finally:
+        if resident is not None:
+            resident.close()
+        if dist.is_available() and dist.is_initialized():
+            dist.destroy_process_group()
+    return first_payload

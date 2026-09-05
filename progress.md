@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-05。
+更新时间：2026-09-06。
 
 ## 当前快照
 
@@ -12,21 +12,26 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 00:15 CST）
+## 最新节点（2026-09-06 00:40 CST）
 
-- 五组正式run均完成64/64、8/32/64 checkpoints、Panel-B与completion，全部exit0；共享mmap已由runtime释放。
-  汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`。四task在clone/shared两组的32/64
-  fit/held平均benefit均为正；当前优先完成预注册闭环，不据此宣布视频因果或task-disjoint能力，也不立即替换架构。
-- eval authority为clean pushed detached `b89ee997`，worktree=`/data1/user/ymdai/projects/EMBER-worktrees/prw-samegraph-eval-20260906`。
-  clone72/83 m32 held-video已物化且exit0；clone72/83 strict50与source strict150已调度到gpu01物理2/0/3，各3个persistent workers；
-  clone93 m32 held-video在物理4物化。现阶段没有GPU02上的EMBER新任务。
-- 首次source prepare遗漏`EMBER_LIBERO_ASSETS_ROOT`，补齐后start preflight发现还需`EMBER_STORAGE_ROOT`；两次均在rollout前失败，
-  原日志/exit保留于`.codex/tmp/prw_samegraph_launch/`。本次统一使用canonical simulator assets
-  `data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6`及`EMBER_STORAGE_ROOT=/data1/user/ymdai`，
-  从已prepared的root继续start，未修改科学条件或重写结果。
-- baseline承载器将直接引用既有canonical `shared_prior.safetensors`与`projection_shared.json`，在同一个static LoRA evaluator读取；
-  不调用Writer、不复制adapter、不伪装为某Writer checkpoint。当前真实carrier CPU加载/76-tensor rank16/三task metadata检查通过，
-  6项static-bank合同测试通过；发布冻结代码后执行同一strict150配对。
+- 五组同图正式训练均完成64/64、8/32/64 checkpoints、Panel-B与completion，全部exit0。
+  functional汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`；四task在clone/shared
+  两组32/64的fit/held平均benefit均为正。当前继续预注册闭环，不据内部收益宣布视频因果或task-disjoint能力。
+- 已完成strict结果：source为32/150，Spatial2/Goal20/Long38=`32/0/0`；clone72 m32 held为41/50，clone83 m32 held为6/50。
+  后两者尚须同状态carrier和shared参照；本面板只作train-side定位，不作为validation selector。原始行与完整配对汇总位于同analysis root的
+  `closed_loop_comparison.json`，未完成时明确标记partial。共18个预注册eval：12 clone条件、4 shared条件、source/carrier各一。
+- 评测沿用clean pushed detached `b89ee997`与支持原carrier静态bank的`54312cf1`；所有worker保持同一预处理与RNG。
+  source已释放物理3，clone72 m64 held/clone93 m32与m64 held/shared4 m32 held/carrier分别在gpu01物理2/6/0/5/4运行；
+  已完成launch的精确script/log/exit已复制到各输出`launch/`。gpu02没有EMBER新任务。
+- 初期source launcher遗漏assets/storage环境变量，均在rollout前失败；已补齐canonical路径并从prepared root继续start成功。
+  原尝试日志保留；这是执行环境遗漏，未改变科学条件。carrier直接引用既有canonical adapter，零Writer调用，不复制或重训。
+- 实测native捕获每视频约1.9--6.0秒，而每condition重复加载冻结policy/observer耗费数分钟。现在同一物化器增加可重复的
+  `--additional-materialization EVAL_CONFIG CHECKPOINT OUTPUT`，复用同run、同task集合的驻留冻结模型；各条件仍独立校验原run/checkpoint/
+  fit或held split、重设原seed、完整捕获和一次Writer、单独seal。无新runner、无模型或loss变化。后续用真实剩余条件测加载与物化时间。
+  源码净增长约53行、无新文件；632行物化文件与90行准备函数保持同一资产/信息墙职责，架构检查只有review信号、无新增hard。
+  training仅增加声明式CLI与非物化phase拒绝，未改变训练语义。7项相关CPU合同、8个预注册配置、CLI phase与重复输出保护检查通过；真实batch计时待下一节点登记。
+- 本次`strg01`独立/data1 quota为720506924/1073741824 KiB（hard1084227584），分析root36MiB，shared filesystem84TiB可用；
+  剩余物化/1500总rollout仍在原<25GiB新增预算内，无数据或模型复制。
 
 ## 当前执行与吞吐（2026-09-06 00:03 CST）
 

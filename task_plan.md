@@ -109,11 +109,14 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 21. [x] 冻结预注册m25 single checkpoint，以held5固定correct K1各调用一次Writer并完成strict250。结果`39/250`，Long/Goal/
     Object/Spatial0/Spatial9为`0/0/3/35/1`、breadth`3/5`；相对carrier43为`37 retained / 2 gained / 6 lost`。早期
     task-disjoint functional正信号没有迁移成闭环优势；
-22. [ ] 保持完全相同的两种可复制block、full-50、correct-only目标与width/rank，从fresh把gradient task覆盖扩到73个，并以
-    optimizer100/200两个整步节点作一小时内短裁决。这个实验只改变任务多样性；若fresh held仍随训练反向，则判定当前shared函数类
-    存在结构缺陷，按归因替换完整职责模块而不增加数学修正链；
-23. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
-24. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
+22. [x] 保持完全相同的两种可复制block、full-50、correct-only目标与width/rank，从fresh把gradient task覆盖扩到73个，并完成
+    optimizer100/200短裁决。m100/m200见过的12个Panel-B任务fit/held benefit由`+.000277/+.000297`升至
+    `+.000435/+.000393`，全视频为正由`8/12`升至`9/12`；但fresh held task6/79两点均为`0/2`，held benefit均值由
+    `-.000382`恶化到`-.000680`。因此任务多样性不是主要缺口，不再以更多步数、LR/seed或数学校准挽救该函数类；
+23. [ ] 对预注册m100/m200各完成held5 correct-only strict250。若仍无闭环净增，结合两点结果做一次correct-only因果定位，只替换一个
+    明确职责模块或训练职责，不增加数学修正链；
+24. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
+25. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

@@ -115,6 +115,27 @@
   总EMBER占卡6张，不触碰物理5/7或gpu01任务；固定launcher为
   `.codex/tmp/launch_prw_native_temporal_73task_s200_78a0ca6a_gpu02p012346_20260905.sh`。预计一小时内得到两点Panel-B，科学图无变化。
 
+- 上述73-task formal已从clean detached `7b89da92`自然完成并exit0。200/200 metrics、macro100/200两枚完整checkpoint、
+  `result.json`与`completion.json`齐全；train/eval/total为`1264.68/232.67/1725.42s`，step均值约`6.30s`，peak
+  allocated/reserved约`34.26/34.80 GiB`，105GB shared mmap cache已在成功收尾后自动删除。m100/m200的12个见过Panel-B任务
+  fit/held benefit为`+.00027657/+.00029709`与`+.00043504/+.00039299`，全视频高于carrier为`8/12`与`9/12`；
+  fresh zero-gradient task6/79两点都为`0/2`，fit/held聚合由`-.00064467/-.00038182`恶化到
+  `-.00082644/-.00068045`。source policy、Native Observer、Action Meta、same-task held、true-held与Panel-B均为零梯度，
+  wrong/shuffle/reverse读取为零，输出合同为唯一rank16。该结果否定“12-task数据量过小是主要解释”，但按预注册仍须用两点
+  correct-only闭环直接裁决。
+
+- m100/m200 held5 correct-only strict250 launch contract：固定使用上述两枚single checkpoint、active held5 config、global task
+  `0/9/18/25/36`、每task correct demo5、K1、一次Writer调用及唯一38-target rank16；不做checkpoint union，不读取wrong、
+  shuffle、reverse或validation/test outcome。物化/评测分别固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m100_held5_correct_k1_materialized_78a0ca6a_gpu02p0_20260905/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m100_held5_correct_k1_strict250_78a0ca6a_gpu02p012_r3_20260905/`以及
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m200_held5_correct_k1_materialized_78a0ca6a_gpu02p3_20260905/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m200_held5_correct_k1_strict250_78a0ca6a_gpu02p346_r3_20260905/`；launch前均不存在。
+  2026-09-05同时live检查两节点：gpu01仅物理0/6空闲、其余多卡高负载；gpu02物理0--3仅`162--209MiB/0%`，物理4/6约
+  `5.75/4.75GiB`且`2%/0%`，因此m100使用`0,1,2`、m200使用`3,4,6`并发，最多6张EMBER卡，不触碰物理5/7或他人任务。
+  `/data1` quota为`778281120/1084227584 KiB`，limit余量约`291.8GiB`，新增远小于1GiB。唯一参数化launcher为
+  `.codex/tmp/launch_prw_native_temporal_held5_checkpoint_7b89da92.sh`，避免为两个checkpoint复制运行面。
+
 - 等待闭环时完成一次verified workspace cleanup：逐一确认11个旧formal detached worktree均clean且gpu01/gpu02/mgt无进程引用后，
   只移除其checkout登记；Git提交、formal artifacts、checkpoint和当前Native-Temporal worktree均保留。现在现场只有canonical main
   与当前formal detached worktree。

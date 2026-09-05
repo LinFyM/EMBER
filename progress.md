@@ -13,7 +13,20 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 04:45 CST）
+## 最新节点（2026-09-06 05:03 CST）
+
+- 四视频训练及预注册Panel-B全部exit0：训练747.69秒、功能评估393.50秒；64updates和全部256条task executions的query/video/noise/权重
+  与冻结审计匹配，每条四fit视频恰16 exposures。约14.99GiB临时mmap已自动移除，三checkpoint与launch/profile证据保留。
+- 64-step task1/72/83/93 held benefit为`+.000015/+.001585/+.001330/+.001127`；较两视频非对称的Goal/Long增加、Spatial略降，
+  meta task1仍近零，诊断tasks6/79仍负。原两fit匹配均值与新四fit均值分别保存在four-video analysis的`functional_comparison.json`，
+  不以混合functional证据选择模型。
+- 32-step held strict150正在0/2、fit正在6运行；64-step held/fit驻留物化已在训练释放的GPU3启动，均来自13339ac1。两节点live核对
+  通过，当前使用四张物理卡；64 held的3/4/5与fit的0/2 launcher已准备，待bank sealed和对应设备释放后启动。
+- 最终validation8入口的只读审计发现当前Writer materializer仅接受train-side/held5 scope，task loader也只建立71+train24 authority；
+  后续需在既有owner中增加image/language-only validation deployment路径，再登记正式selector。当前未读取validation数值或启动其评测，
+  这项机械工程缺口不解释当前train-side科学结果。
+
+## 前一执行节点（2026-09-06 04:45 CST）
 
 - 四视频formal已从clean pushed detached `13339ac1`在gpu01物理3/4/5启动；实际contract确认A2、四fit池、K1与world3/NUMA1，
   当前21步、约11--12秒/update。run为`runs/outputs/pi05_ecp_prw_shared4_four_videos_s64_13339ac1_gpu01p345_20260906/`；

@@ -15,7 +15,7 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：同图、query覆盖和非对称A对照均完成。A2闭环略高但相邻仍不稳，暂作为唯一工作参数化；只增加正确fit视频池2→4的
-  K1同预算对照已登记，配置与采样检查通过，正在做真实profile。
+  K1同预算对照已完成训练/功能评估，已进入32/64四个strict150闭环评测阶段。
 - P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run及完整预注册配对闭环均已完成。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 

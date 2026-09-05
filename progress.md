@@ -12,7 +12,17 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 02:02 CST）
+## 最新节点（2026-09-06 02:15 CST）
+
+- 正式训练已到57/64，8/32 checkpoint已sealed，每步约12秒；两种32-step视频条件均已驻留物化完成、exit0。首次加载114.11秒，
+  后续0.163秒，完整三task Writer分别13.75/12.83秒。fit视频为global2/20/38的3/5/2，held为49/49/48，均来自原注册条件。
+- 32 held strict150已在gpu01物理0/2启动（每卡3 persistent workers），32 fit strict150在物理3启动；训练继续物理4/5/6，合计六卡。
+  两eval的精确launcher为`.codex/tmp/prw_fresh_queries_launch/eval32_{held,fit}.sh`，所有work来自同一078a2e68 frozen authority。
+  live检查确认0/2/3无其它compute process；0原1260MiB静态占用仍有足够峰值余量，gpu02已同时核对且未使用。尚无新closed-loop aggregate。
+- 64-step两个条件在checkpoint和资源就绪后继续同一矩阵；不因某个先返回结果增减条件。新的功能与行为汇总脚本都只引用上一轮raw基线，
+  保存在新analysis root，状态仍partial；真实功能结论等待固定Panel-B evaluation，闭环结论等待四个完整strict150。
+
+## 前一执行节点（2026-09-06 02:02 CST）
 
 - 正式shared4 query覆盖对照已从clean pushed detached `078a2e68`启动，gpu01物理4/5/6、NUMA1、三rank；精确run root为
   `runs/outputs/pi05_ecp_prw_shared4_fresh_queries_s64_078a2e68_gpu01p456_20260906/`。launcher位于`.codex/tmp/prw_fresh_queries_launch/train.sh`，

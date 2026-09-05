@@ -13,7 +13,14 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 07:02 CST）
+## 最新节点（2026-09-06 07:24 CST）
+
+- formal已到10/64，完整146视频cache已就绪，单步约77–79秒，尚无预注册checkpoint或闭环结果。运行合同核对通过，继续原4d57f816。
+- source/carrier的真实CPU-only `prepare`均exit0，固定8tasks/400states已sealed；对应launcher改用`start`，GPU workers尚未启动。
+  candidate selector的实际集合算术、严格145边界、Long/breadth和相邻churn边界通过合成检查，无科学结果参与。
+- joint-process与four-video旧frozen worktrees确认clean且两节点无进程cwd引用后移除，全部formal artifacts与Git保留；当前只保留meta73 tree。
+
+## 前一执行节点（2026-09-06 07:02 CST）
 
 - A2 meta73已从clean pushed detached `4d57f816`启动，gpu01物理0/2/3/4/5/6，root为
   `runs/outputs/pi05_ecp_prw_meta73_equal_exposure_s64_4d57f816_gpu01p023456_20260906/`；精确命令见

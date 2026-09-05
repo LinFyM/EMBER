@@ -4,12 +4,37 @@
 
 ## 当前快照
 
-- 2026-09-05 owner最新澄清：仍在事前对齐，不能直接开始执行。后续自主接管的原则已讨论，但不是当下启动授权。当前没有active
-  design/config/run或goal；不继续实现、实验或launch准备。先前只读runtime/资产检查已结束，没有启动GPU训练或评测。
+- 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
+  暂停状态。当前进入首项实验准备，尚未启动新GPU训练或评测。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
-  `docs/joint_process_policy_writer_design.md`改为讨论草案，P/Q与clone/shared实验均待完成对齐；旧v4继续sealed。
+  `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
+  P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
-  当前只继续向owner解释架构和讨论判断，等待其明确结束对齐并启动。
+  常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
+
+## 首轮同图 clone/shared 启动合同（2026-09-05 23:42 CST）
+
+- 配置为`configs/pi05_ecp_prw_samegraph_{clone1,clone72,clone83,clone93,shared4}_v1.json`；输入与局部行为面板固定在
+  `configs/pi05_ecp_prw_samegraph_panel_v1.json`。同一v4拓扑、component-init、seed20260905、whole Writer、无task query，
+  所有组运行`--phase shared --mode formal --representation full --initialization component --stop-after-step 64`。
+  每task每update一次曝光、8 action rows、lr1e-4/decay1e-6、warmup5+effective59；checkpoint为8/32/64。
+  shared每次task1/72/83/93等权各1/4，clones各1；每task视频、Panel-A visit和policy RNG序列已核对64次完全匹配。
+- 视频fit/held：task1=`5,6 / 39`，72=`3,8 / 49`，83=`5,7 / 49`，93=`2,3 / 48`。
+  task6/79保留零梯度复用诊断；不是fresh selector。首轮32/64局部闭环固定Spatial2、Goal20、Long38各50状态，分别第一fit视频与
+  held视频，对照source/carrier，严格复用canonical evaluator配对及执行合同。meta1先看functional，不把该train侧面板作为最终selector。
+- 唯一执行修正是共享评估器从写死2个checkpoint改为核对配置中的完整名单；没有模型/损失/训练图改变。4项相关CPU合同通过，
+  配置、视频split、全部64次task occurrence及video/row schedule直接核验通过。
+- 最长task93真实profile2步自然exit0：79/87 sampled frames，full50、38 targets、8 rows/microbatch2，约11.95/12.25秒每update，
+  max allocated35.76/reserved36.58 GiB；冻结模块零可训练参数，whole Writer2,953,984参数，task query0。
+  该profile只作执行证据，不作科学资格。输出`.codex/tmp/prw_samegraph_profile_task93_20260905/`。
+- 计划GPU分配：gpu01物理0/2/3/4分别clone1/72/83/93，NUMA0/0/1/1；shared使用5/6、NUMA1/1两rank，
+  `NCCL_P2P_DISABLE=1`、rank-local NUMA与deferred NCCL。两个节点合计六卡；每次实际启动前刷新双方GPU。
+- `/data1` strg01 quota核对719920236 KiB已用、1073741824 KiB quota、1084227584 KiB limit，软额度约337 GiB余量；
+  项目实际655 GiB，shared filesystem约84 TiB可用。五run checkpoint+共享mmap+局部物化/rollout总新增保守<25 GiB；
+  单卡clone使用进程内CPU缓存，shared仅一份临时mmap，复用全部canonical source/data/model。
+- 正式运行从包含本合同的下一clean pushed commit的detached worktree启动，run roots使用
+  `runs/outputs/pi05_ecp_prw_samegraph_{arm}_s64_{commit}_gpu01p{devices}_20260905/`；精确命令、NUMA wrapper、log、exit及
+  `run_contract.json`保存在各run。fresh optimizer/scheduler；exact resume锁原commit/config/world-size/physical顺序/NUMA与output。
 
 ## 前次交接快照（历史记录）
 

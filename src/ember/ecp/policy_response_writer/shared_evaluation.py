@@ -250,8 +250,13 @@ def evaluate_checkpoints(
     barrier(runtime.context)
     if runtime.args.mode == "formal":
         checkpoints = sorted((runtime.args.output_dir / "checkpoints").glob("macro_*"))
-        if len(checkpoints) != 2:
-            raise RuntimeError("shared Writer adjacent checkpoints changed")
+        cell = runtime.config["optimization"]["shared"]
+        expected = sorted(
+            f"macro_{int(cell['warmup_updates']) + int(step):08d}"
+            for step in cell["checkpoint_effective_updates"]
+        )
+        if not expected or [path.name for path in checkpoints] != expected:
+            raise RuntimeError("shared Writer configured checkpoints changed")
         models = tuple((path.name, path / "ecp.safetensors") for path in checkpoints)
         visits = int(runtime.config["optimization"]["shared"]["evaluation_visits"])
     else:

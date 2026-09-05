@@ -31,8 +31,8 @@ Action Expert的原生动作时序知识应是视频过程理解的核心。Gemm
 早期v5.2/v6已证明一条端到端视频到LoRA路径能够产生真实闭环能力，后续缺少稳定积累；G1证明部分native-factor容量，G2证明
 ordered response有可学习动态信息。局部接口的正证据不等于整套共享Writer通过，后期弱模型也不能抹掉早期能力。
 
-最新owner认可讨论的候选是共同过程状态P与整策略状态Q反复交互，并从当前视频的native X/Y联合写出LoRA。讨论草案见
-`docs/joint_process_policy_writer_design.md`；当前仍在事前对齐、没有active design，以`progress.md`为准。旧Unified v4保持sealed，
+最新owner认可的候选是共同过程状态P与整策略状态Q反复交互，并从当前视频的native X/Y联合写出LoRA。active design见
+`docs/joint_process_policy_writer_design.md`；owner已完成对齐并要求持续自主推进，当前阶段以`progress.md`为准。旧Unified v4保持sealed，
 专家建议先复用实际部署图做whole-Writer且无task query的少任务clone/shared对照；该实验尚未启动，P/Q也不是已证明的修复。
 
 ## 数据流与模块职责

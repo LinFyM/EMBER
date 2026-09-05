@@ -1,7 +1,7 @@
 # EMBER：共享学习定位与 Joint Process–Policy Writer
 
-状态：2026-09-05事前对齐讨论草案，不是active design。owner明确要求先完成对齐，当前不启动实现、实验或launch准备。
-下文同图学习对照及P/Q主干均为候选建议，不是执行授权或已验证结论。旧Unified v4及其正式结果保持sealed。
+状态：2026-09-05 23:24 CST owner完成对齐、要求建立goal并持续自主推进；本文件现为active design。当前先执行同图学习对照，
+P/Q主干与非对称读出是依证据实施的候选，不是已验证结论。旧Unified v4及其正式结果保持sealed。
 
 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。原文按owner提供的附件保存，不改写其观点；
 它的建议、证据限制与下列实施裁决须分开解释。长期目标与边界以`docs/current_owner_requirements.md`及`AGENTS.md`为准。
@@ -11,9 +11,9 @@
 最终目标仍是exact language + action-hidden ordered videos，一次Writer调用生成唯一完整38-target rank16 LoRA，冻结source
 闭环执行；validation8 correct严格>145/400且通过相邻稳定、breadth/suite、same-task鲁棒性及最终视频因果资格。
 
-以下是完成对齐、明确启动后的拟定接管范围：在现有科学、数据、存储、Git与GPU边界内自主做实验、深入分析、相关修复和有依据的模块重构。两个节点合计不超过6张
+已获准的接管范围：在现有科学、数据、存储、Git与GPU边界内自主做实验、深入分析、相关修复和有依据的模块重构。两个节点合计不超过6张
 物理GPU；单job在一个节点。外部联系、改变目标/信息墙、新增数据或资源权限、以及证据无法裁决且显著改变投入方向的路线歧义，
-仍须携具体证据与推荐选择回到owner。不得把普通负结果或例行实现变成新的审批节点；不自行创建goal。
+仍须携具体证据与推荐选择回到owner。不得把普通负结果或例行实现变成新的审批节点；本次goal由owner明确请求建立。
 
 性能低于或接近baseline只证明该条件下没有有效增量，不自动识别根因。对每个实质修改，先列出竞争解释、已有反证、最近历史等价
 尝试及本次改变的主要变量。必要时多做分析实验；不能凭attention mass、rank、cosine、梯度非零或loss下降就宣布解决问题。
@@ -32,8 +32,9 @@ exposure。旧正控不能单独证明部署图的单任务学习，更不能把
 
 ### 首轮实验合同
 
-- 拟选task1、task72、task93，以及一个现有allowlist内、具有可用专家与闭环参照的Goal任务；准备阶段核对实际任务身份、
-  程序覆盖与资产，launch前封存最终名单。task93不能单独承担functional→behavior判断。
+- 首轮锁定task1、72、83、93；task83是Goal20“打开中层抽屉”，用于补充程序类型且有已存在的29/50专家参照，
+  不依据本轮结果选任务。精确语言、视频和首轮闭环名单见`configs/pi05_ecp_prw_samegraph_panel_v1.json`。
+  首轮局部closed-loop为Spatial2、Goal20、Long38；meta task1先读functional。task93不能单独承担functional→behavior判断。
 - K1；每task两条不同fit videos及至少一条same-task held video。视频与action query跨episode，Panel-B和held视频零梯度。
 - 两组相同模型拓扑、component初始化、初始化seed、可训练模块、输出rank/cap、loss reduction、normalizer、每task视频/row序列。
   whole Writer训练、source/capture/carrier冻结、无task query、无Action Meta。未声称继承完整G2动态功能。

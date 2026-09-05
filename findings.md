@@ -3254,3 +3254,17 @@ active v4只改这一个标准职责：每个Unified block复用同一套policy 
 独立softmax，三个读出与原side-native read直接求和。没有新增参数、模块类型、stage、source权重、gate、summary、calibration、
 regularizer或negative loss；扩展规模仍只复制同一种block。它保留full 50 horizon、两个probe、真实ordered frames、raw native X/Y、
 signed pooling、rank12+4和唯一rank16。首轮只做25/50 task-local与73-task短资格，在出现shared信号前不投入长跑。
+
+## 165. evidence-only闭环反事实确认trained factor block在损伤carrier能力
+
+为把functional swap定位落实到真实闭环，在m200 checkpoint上只保留trained evidence projection，完整factor Writer恢复为同seed
+component initialization；不做任何优化、checkpoint选择或负视频读取。五个held5 task各调用一次Writer并物化唯一rank16，随后严格配对
+250条correct K1 rollout自然完成且所有worker exit0。结果为`39/250`，Long/Goal/Object/Spatial0/Spatial9分别是`0/0/3/35/1`。
+
+成功集合相对stable carrier43为`36 retained / 3 gained / 7 lost`、Jaccard `.7826`；相对完整m200的31为
+`19 retained / 20 gained / 12 lost`、Jaccard `.3725`。其中Spatial0从m200的22恢复到35、接近carrier38，Spatial9从m200的5回到
+carrier的1；这不是随机创造另一组成功，而是大体恢复carrier原有行为。paired discordance的双侧exact binomial对m200为`p=.2153`、
+对carrier为`p=.3438`，所以该250-row诊断不宣称统计上的新方法胜出；它与functional swaps共同支持更窄的因果判断：trained shared
+factor block是主要破坏源，而learned evidence并非主要负源。与此同时39仍低于carrier43、breadth仍`3/5`且Goal/Long为0，故“只冻结或
+删除block”不是候选Writer，也不能替代v4的fresh shared裁决。后继只能修正统一block内部的task-grounded标准读取或整体替换其职责，
+不能沿旧图追加校正链。

@@ -25,6 +25,13 @@
   `-.0002371/-.0000809`；逐子层替换又没有找到三个task共同的单一坏算子。成功task-local task1/93的factor有效rank也降到约1，
   因而不能用rank regularization、冻结evidence或单层补丁解释失败。最早缺口是整个shared block没有形成可转移的task grounding。
 
+- 闭环责任反事实已自然完成且exit0：从m200只保留trained evidence projection，把完整factor Writer恢复为component initial，零优化
+  物化五个唯一rank16后，held5 correct-only strict250为`39/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/3/35/1`。相对carrier43
+  为`36 retained / 3 gained / 7 lost`、Jaccard `.7826`；相对完整m200的31为`19 / 20 / 12`、Jaccard `.3725`。因此去掉trained
+  factor Writer确实恢复了大量carrier-aligned成功，但trained evidence + initial Writer仍没有超过carrier、没有增加breadth或Goal/Long；
+  该结果定位shared block的破坏性，不构成旧架构候选或v4性能证据。formal analysis root为
+  `runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_strict250_d557dffc_gpu02p46_20260905/`。
+
 - information-flow审计确认旧policy read仍大量消费response，但language与256 patch、400 owner-response共用一个softmax时，多数层的
   language质量只有约`2.2%`，接近token-count占比；task-local依赖自由task query绕过了这一缺口。active v4只拆开这三个policy source
   的softmax并复用同一MHA参数，再与原side-native read相加，不新增网络、参数、loss或数学阶段。当前分支17项CPU合同全部通过，包含

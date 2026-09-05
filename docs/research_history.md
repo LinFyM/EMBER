@@ -3010,3 +3010,13 @@ v4 active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v4.jso
 信号前不扩长训练。clean `da964fad`上的task93真实full smoke已消费79 sampled frames、2 probes、50 horizons和38 targets；
 patch/language/response/policy/native/Unified/X/Y各路径梯度均非零，冻结policy/observer零梯度，生成唯一76-tensor rank16，峰值
 allocated/reserved为`36.15/36.91 GiB`。fresh formal结果将在后续条目追加。
+
+## 160. common-base evidence-only闭环职责反事实
+
+零优化地把m200的trained evidence projection与component-initial factor Writer组合后，五个held5 task均物化为唯一rank16并完成
+correct-only strict250，结果`39/250`，逐task Long/Goal/Object/Spatial0/Spatial9为`0/0/3/35/1`。相对carrier43的
+retained/gained/lost为`36/3/7`，相对完整m200的31为`19/20/12`。该反事实主要恢复carrier-aligned Spatial0能力并撤销m200在
+Spatial9上的非稳定换位，支持trained repeated factor block是shared损伤源；但它仍低于carrier、breadth仅`3/5`且Goal/Long为0，
+所以只删除或冻结block不是active方法。materialized与rollout roots分别为
+`runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_materialized_d557dffc_gpu01p0_20260905/`和
+`runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_strict250_d557dffc_gpu02p46_20260905/`。

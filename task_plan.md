@@ -147,7 +147,8 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     `35/250`与`31/250`，逐task为`0/0/3/29/3`与`0/0/4/22/5`，breadth均`3/5`、Goal/Long均0，稳定低于carrier43且随训练退化；
 33. [x] 零优化职责诊断排除rank坍缩与evidence projection：成功task-local解同样接近rank1；m200 learned evidence在true-held
     task6/79均给出正增量，反而重复factor blocks在seen task1为正、在task6/79为负。block子层替换没有找到单一坏算子，说明整个
-    shared block学成seen-task expert；
+    shared block学成seen-task expert；进一步只保留trained evidence、恢复initial factor Writer的held5 strict250为`39/250`，相对
+    carrier43保留/新增/丢失`36/3/7`，相对完整m200的31为`19/20/12`。它确认block破坏性但仍未超过carrier或恢复Goal/Long；
 34. [x] 信息流审计定位task grounding稀释：15--24个language token与256 patch、400 response竞争同一policy softmax，language多数层
     仅约2.2%质量。active v4只把language、patch、response改为同权重、独立softmax的标准parallel reads；没有新参数、阶段、gate、
     calibrator或数学链，CPU合同与schema互斥检查已通过；

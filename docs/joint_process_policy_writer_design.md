@@ -123,6 +123,12 @@ Long为`.0367/.0147`、`.0472`。各自只有7/4/8个target被cap，初始化更
 真实Goal/Spatial吞吐约提高2.9倍；仍沿用原逐env noise与全部50步推理，接受合同允许的正常BF16 batch差异。此执行变化与科学A侧干预
 分别登记，所有分数注明actual evaluator commit；不以浮点低位一致为由保留低效逐env路径。进一步torch.compile不混入本轮首批评测。
 
+批处理数值差异可能影响小幅行为增量的归因。因此，在非对称闭环结果收齐前补充同执行方式参照：复用fresh-query symmetric的64-step
+first-fit/held两套已sealed LoRA banks，以`387f6d0b`的eager batch入口各重放strict150。状态、逐env RNG、视频与所有预处理仍匹配，
+不重新训练或物化，不选择新视频。原serial结果保留作历史；A侧64-step干预的直接比较使用这两个batched参照，执行差异单独报告。
+32/64非对称相邻稳定仍使用同一batch入口。若判断依赖32-step横向差异，再补对应参照；不把历史serial与batch之间的细小增量当成
+纯A侧因果效应。补充参照仅属既有train-side panel，不消费validation/test或视频负controls。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

@@ -12,7 +12,19 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:39 CST）
+## 最新节点（2026-09-06 03:44 CST）
+
+- 32 checkpoint已完整生成，GPU0正在驻留物化held与first-fit两条件；训练继续3/4/5。物化与后续eager batch eval authority为
+  clean pushed detached `387f6d0b`，tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-asymmetric-eval-20260906`；只新增同task静态
+  LoRA batch入口，Writer模型/训练配置与`02a85314`一致。两节点live核对通过，GPU0仅有1260MiB无PID静态占用、峰值余量充足。
+- 32 held计划使用0/2两GPU，32 fit使用6一GPU，各3 persistent workers与8env/worker；精确launcher已准备在
+  `.codex/tmp/prw_asymmetric_launch/`，物化完成并再次live检查后启动，届时与训练合计六卡。
+- 单denoise-step dynamic compile三case全部exit0：Goal8为10.54 obs/s、首次79.8秒；切到Spatial7为10.27 obs/s、首次0.685秒；
+  回到Goal1为5.96 obs/s、首次35.4秒。各正确task adapter与相同观察/noise下输出finite，RMSE约.0016--.0020。
+  由于当前完整batch8额外收益约10%且首次/特殊batch有编译成本，本轮首批科学比较采用eager batching。完整batch与两种compiler探测
+  的script/log/result/exit均保留到query-coverage analysis的`inference_profile/`；没有新增编译backend配置或全局环境修改。
+
+## 前一执行节点（2026-09-06 03:39 CST）
 
 - 非对称A正式训练已从clean pushed detached `02a85314`在gpu01物理3/4/5启动；run为
   `runs/outputs/pi05_ecp_prw_shared4_asymmetric_s64_02a85314_gpu01p345_20260906/`，launcher为`.codex/tmp/prw_asymmetric_launch/train.sh`。

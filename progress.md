@@ -150,6 +150,20 @@
   validation/test或reward。gpu02物理0--3 launch前仅`162--209MiB/0%`，四task各占一卡；`/data1` quota为
   `778335648/1084227584 KiB`。该诊断只决定冻结/替换哪个完整职责，不会向当前图追加变换。
 
+- 四task职责诊断均在约`323--344s`内自然exit0。held benefit的`initial / trained Process only / trained Composer only / full`在
+  m100为：task1 `-.000015 / +.000138 / -.000021 / +.000195`，task6 `+.000022 / -.000219 / +.000012 / -.000306`，
+  task79 `+.000097 / -.000149 / -.000108 / -.000458`，task93 `-.000038 / -.000535 / -.000117 / -.000646`；m200保持同一
+  责任模式，分别为task1 `-.000015 / +.000117 / -.000007 / +.000264`，task6 `+.000022 / -.000277 / +.000002 /
+  -.000697`，task79 `+.000097 / -.000226 / -.000208 / -.000661`，task93 `-.000038 / -.000291 / -.000165 /
+  -.000416`。fit视频结论一致。full臂与原formal在正常BF16跨卡归约差异内复现相同符号与排序，carrier逐值相同；四root均明确
+  optimizer/rollout/negative/validation/test reads为0。
+
+- 诊断不支持把问题缩成“只冻结Process”：Process确实是主要task-specific正负源，但Composer checkpoint单独在四task均没有形成
+  可复用正增量，joint interaction又只在task1为正、在task6/79为负。结合历史Process-frozen Composer-functional只持平carrier的
+  证据，下一变量是整体删除Process--Composer learned-coordinate handoff。新图使用一种重复的Unified Policy-Native Factor block，
+  让显式frame x target x rank x X/Y latent在每层直接读取frozen prefix、full policy response与same-frame native bank，再做time及
+  rank/side axial attention；末端科学边界不变。不新增summary/gate/normalization/transport/calibration链。
+
 - 等待闭环时完成一次verified workspace cleanup：逐一确认11个旧formal detached worktree均clean且gpu01/gpu02/mgt无进程引用后，
   只移除其checkout登记；Git提交、formal artifacts、checkpoint和当前Native-Temporal worktree均保留。现在现场只有canonical main
   与当前formal detached worktree。

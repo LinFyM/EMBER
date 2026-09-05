@@ -113,11 +113,16 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     optimizer100/200短裁决。m100/m200见过的12个Panel-B任务fit/held benefit由`+.000277/+.000297`升至
     `+.000435/+.000393`，全视频为正由`8/12`升至`9/12`；但fresh held task6/79两点均为`0/2`，held benefit均值由
     `-.000382`恶化到`-.000680`。因此任务多样性不是主要缺口，不再以更多步数、LR/seed或数学校准挽救该函数类；
-23. [ ] 预注册m100/m200 held5 correct-only strict250已完成，分别为`42/250`与`35/250`，breadth均为`3/5`且Goal/Long为0；
-    当前正以两个gradient task和两个true-held task做Process/Composer整模块替换的correct-only因果定位。根据结果只替换一个明确
-    职责模块或训练职责，不增加数学修正链；
-24. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
-25. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
+23. [x] 预注册m100/m200 held5 correct-only strict250分别为`42/250`与`35/250`，breadth均`3/5`且Goal/Long为0；整模块
+    checkpoint swap进一步显示Process只在task1产生正收益、在task6/79/93产生主要伤害，Composer单独在四task都没有学得稳定正映射，
+    二者joint interaction又按task放大正负。停止当前Process--Composer learned-coordinate handoff，不以冻结或数学补丁掩盖；
+24. [ ] 以一个可复制Unified Policy-Native Factor block整体替换该handoff：显式frame x target x rank x X/Y token在每层直接读取
+    frozen prefix、完整PI0.5 response与same-frame side-matched native bank，再做标准time及rank/side axial attention；末端只保留一次
+    centering、raw signed pooling、target cap和唯一rank16，删除独立Process/Composer中间坐标；
+25. [ ] 完成定向合同、真实full-50 forward/gradient/materialization及task1/task93短容量正控后，立即运行全75个授权non-held
+    source tasks的component-init m50/m100 shared短资格，并对两点并发完成held5 correct-only strict250；
+26. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
+27. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

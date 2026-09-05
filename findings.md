@@ -3122,3 +3122,26 @@ carrier为`43/250`。m100相对carrier为`36 retained / 6 gained / 7 lost`，m20
 证据仍为正；实际失败的是当前Process--NativeTemporal共享映射及其whole-Writer训练职责。下一步只用正确视频做Process/Composer整模块
 checkpoint swap，区分Process漂移、Composer损伤或分布式共同适配；随后冻结或整体替换被定位职责，不追加归一化、增益、校准、求解器
 或其它数学变换链。
+
+## 158. 整模块反事实定位到Process--Composer learned-coordinate handoff
+
+在同一initial graph中分别移入m100/m200的完整Process、完整Composer或二者全部，并对task1/6/79/93的两条fit与一条held正确视频
+重放固定8-visit Panel-B。诊断零优化、零rollout、零negative/validation/test读取；full臂复现formal方向。held benefit如下：
+
+| task | 角色 | macro | initial | Process only | Composer only | full |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | gradient | 100 / 200 | `-.000015` | `+.000138 / +.000117` | `-.000021 / -.000007` | `+.000195 / +.000264` |
+| 6 | true-held | 100 / 200 | `+.000022` | `-.000219 / -.000277` | `+.000012 / +.000002` | `-.000306 / -.000697` |
+| 79 | true-held | 100 / 200 | `+.000097` | `-.000149 / -.000226` | `-.000108 / -.000208` | `-.000458 / -.000661` |
+| 93 | gradient | 100 / 200 | `-.000038` | `-.000535 / -.000291` | `-.000117 / -.000165` | `-.000646 / -.000416` |
+
+Process是唯一在task1产生正学习信号的模块，却在另外三task产生主要伤害；Composer单独没有在这四task形成稳定正映射。更关键的是
+`full - Process - Composer + initial`交互项在task1为正，在task6/79为负，表明两个串联learned coordinates形成task-specific
+共适配，而不是一个可跨task复用的前端和后端。fit视频呈相同模式。由此不能靠冻结Process宣称解决：那会同时移除唯一可见正源，且
+历史Process-frozen Composer-functional已只持平carrier。
+
+下一结构变量因此是删除该中间坐标，而非追加修正器。显式`frame x target x rank x factor-side` latent从第一层开始，在同一种可重复
+block内直接读取typed same-frame memory：原生image-language prefix、完整PI0.5 Action Expert response与side-matched native-bank
+candidates；随后只做标准frame-time和rank/side axial attention及MLP。所有深度都复制这一block，最终仍只有一次frame centering、
+raw X/Y signed pooling、target cap与rank12+4唯一rank16。它保留v5/v6类neural trunk的可扩展性，也保留ECP的原生时序与native-value
+信息墙，但没有早期Writer的无约束video latent、ECP旧Program/summary/solver链或当前Process--Composer handoff。

@@ -2923,3 +2923,15 @@ clean detached `7b89da92`的73-gradient-task formal自然完成optimizer100/200�
 
 该结果淘汰“只需增加task diversity和继续训练当前函数类”，不外推否定ECP已通过机制。后续只做一次Process/Composer整模块替换的
 correct-only职责诊断，再根据证据冻结或整体替换一个职责；结构扩展仍只能复制少数同构attention/MLP block，不恢复连续数学修正链。
+
+## 153. Native-Temporal模块替换诊断与统一factor-latent路线
+
+clean detached `7b89da92`上的task1/6/79/93 correct-only模块替换诊断全部exit0。分别将m100/m200的trained Process或trained
+Composer移入同一initial graph后，Process only只在task1有正收益，在task6/79/93均有主要负贡献；Composer only四task都没有形成
+稳定正增量；二者interaction在task1为正、task6/79为负。fit与held视频模式一致，full臂复现formal方向，且无优化、rollout、negative、
+validation/test读取。
+
+该证据把最早失效接口定位为Process--Composer learned-coordinate handoff及其task-specific共适配，而非单一末端head或Process漂移。
+下一active替换将二者收敛为一种可复制Unified Policy-Native Factor block：factor-side frame tokens每层直接读frozen prefix、full
+policy response和same-frame native bank，再做标准time/rank-side axial attention；raw signed pooling与唯一rank16边界不变。它不增加
+专用数学变换链，历史相似点与关键差异见`findings.md`第158节。

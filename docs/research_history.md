@@ -17,9 +17,17 @@
 
 ## 2. 早期Writer家族
 
-2026-07至2026-08先后尝试了action-memory、belief、LOOM、CVADR、LMMPC/LPCP、layer-matched memory、reward credit、
-gradient/open-memory query等多种Writer。共同问题是：训练loss或内部结构可以变化，但closed-loop提升低、churn高、Video
-controls弱，且Goal/Long长期为0。
+2026-07至2026-08先后尝试了action-memory、belief、Action-Forecast v5.2/v6、LOOM、CVADR、LMMPC/LPCP、layer-matched memory、
+reward credit与gradient/open-memory query等多种Writer。早期强图确有闭环与Goal/Long贡献，不能用后期弱结果概括整段历史。
+历史账本`ac233fa0:docs/research_history.md`第2节/3.1--3.9节记录了主要早期路线；五臂依次correct/same-task-other/wrong/shuffled/reversed：
+
+- v5.2 old为`132/138/74/82/83`，task-complete为`120/109/107/111/124`；
+- v6 old为`121/122/111/84/47`，v6-fast task-complete为`143/135/125/128/129`；
+- v6-fast后续step450/500/550/600为`131/130/132/126`，说明能力未稳定累积；
+- LPCP K4为`143/400`、breadth7；不同teacher schedule的143不得伪造paired比较。
+
+这些版本的优点不能拼成一个checkpoint；配方、视频条件敏感性与相邻训练更新造成的能力变化须分开。完整原设计可从
+`3a6f801d:docs/action_forecast_writer_v5_2_design.md`及`...v6_design.md`恢复。
 
 后期最有代表性的自然视频裁决为correct/language-only/video-only/first+final约`41/39/40/39`，Goal和Long均为0；单向outer
 credit还从41降到39。完整视频没有形成超越language、video-only或端点信息的必要增量。这淘汰了当时具体Writer，不等于淘汰
@@ -34,8 +42,12 @@ GOMQ是独立历史机制，不是ECP阶段、Program schema或后续实现依�
 - 历史rank32 correct为151/400；same-task-other 139、wrong 131、shuffled 127、reversed 115；
 - 按统一rank16合同重建后的strict correct为136/400。
 
-rank32结果说明更强adapter可以达到目标附近，controls说明存在一定视频特异性；rank16下降说明其能力部分依赖容量。GOMQ不能
-证明ECP，也不应像每个历史架构一样被重复重跑。关键提交：`f2f9290`、`ac233fa`、`3075b3c`。
+GOMQ cycle2/3/4为`151/135/131`，相邻churn42、34；单点跨过数值线但没有通过相邻稳定性。controls说明存在一定视频特异性。
+原物化为`A32=[A0;A0], B32=[B0,deltaB]`，实数代数下等于`(B0+deltaB)A0`，有效rank本来≤16。重新物化后的136及
+`123 retained/13 gained/28 lost`是真实结果，但不能解释为已证明有效rank容量损失。
+原始依据为`ac233fa0:docs/gomq_rank16_archival_card_20260824.md`与
+`3075b3c7:docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`。这更正旧摘要的容量解释，不授权dtype/rank/seed
+挽救或恢复旧run；GOMQ不证明ECP，也不能否认其真实正增量。
 
 ## 4. 专家第二轮后的functional路线
 
@@ -3060,3 +3072,15 @@ pooling、rank4 task-local容量和source separation的局部正证据。formal 
 
 2026-09-05 owner随后要求停止推进、全面清理并交由他人接手。仓库因此取消active goal/design/run；继任者必须重新取得owner授权后才可
 建立新路线，且架构仍须保持少数职责清楚、可复制扩展的attention/MLP模块，不能把non-pass修成数学变换链。
+
+## 164. 2026-09-05整体历史复核与重新授权
+
+owner提供的新专家原文完整保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，报告审查基准为
+`00b2e77798c3af47d4efa5bab9d5e75041c9ed31`。报告明确区分直接核验、仓库记载、本地提供事实与设计推断；未逐条复算全部历史。
+复核保留v5.2/v6、G1/G2的正证据，强调能力漂移之外仍有absolute、breadth、视频必要性缺口，修正GOMQ rank容量解释，并区分
+PNBTT free-query E1 non-pass与未进入的真实Program E2。
+
+owner随后认可P/Q共同过程—整策略交互方向，并重新授权在硬约束内自主整体推进、深入分析及证据支持的实现，两个节点合计最多6卡。
+特别要求低于/接近baseline时不能随意找原因命名根因并最小修补；必要时做更多分析实验。active design登记为
+`docs/joint_process_policy_writer_design.md`，首项为同部署图、whole-Writer、无专属task query的少任务clone/shared对照。
+P/Q与非对称动态因子均是有条件候选，不是本次已验证结果；本条记录时尚未启动新GPU实验。旧v4与其formal evidence保持sealed。

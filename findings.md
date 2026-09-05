@@ -7,13 +7,31 @@
 `docs/expert_review_20260901_program_through_bank_bottleneck.md`、
 `docs/expert_review_20260902_global_route_reassessment.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
-`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。精确分数、提交和历史脉络见
-`docs/research_history.md`；最新已裁决并sealed的设计见`docs/unified_policy_native_factor_writer_design.md`。当前没有active合同。
+`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`以及
+`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。精确分数、提交和历史脉络见
+`docs/research_history.md`；最新已裁决并sealed的设计见`docs/unified_policy_native_factor_writer_design.md`。
+owner已重新授权自主推进；active合同为`docs/joint_process_policy_writer_design.md`，即时状态见`progress.md`。
 本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
 ## 科学结论
 
-### 0. 当前无active方向；最新v4已sealed
+### 0. 2026-09-05复核边界与同图学习证据缺口
+
+新专家意见与本地复核共同支持：早期v5.2/v6有真实闭环能力，任务能力漂移是主要障碍之一，但不同版本的absolute、视频差距和breadth
+不能合并成一个不存在的强checkpoint。历史摘要也不能用后期Goal/Long为0覆盖早期已有贡献。对v5.2/v6、稳定化、LPCP/SEOD/GOMQ
+及后续接口路线的分析须追溯原design、配方、实际结果和修正意见；工程未运行、局部non-pass与整图失败应分开。
+
+最新task-local正控的额外task query和冻结evidence不等同于shared部署图。v4每task仅约8–9 exposures，短资格说明当前实例未获
+行为增量，但没有排除函数类可学习性。首项新证据应来自同图、whole-Writer、无query的clone/shared对照及新视频/闭环；独立clones
+总容量更大，两组差异也不能直接命名为梯度冲突。P/Q交互、双侧零因子的局部二阶效应都是待检验假设，不是已知性能根因。
+
+GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物化结果不证明有效rank容量损失，见research_history第3节
+及原始archival card。PNBTT最后实际停在free-query E1，并未完成真实Program进入后的E2共享裁决，不能由其non-pass否定G2动态信息。
+
+owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
+是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
+
+### 历史v4终局（sealed）
 
 73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；整模块替换随后定位并删除了
 Process--Composer learned-coordinate handoff。Unified图改由显式factor latent在每一层直接读取冻结PI0.5证据和same-frame native X/Y，
@@ -25,8 +43,8 @@ learned主干只有一种可复制block。parallel-read v2与common-base v3先�
 方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
 
 v4最终m25/m50 held5为`45/40`，carrier为`43`；两点breadth均`3/5`且Goal/Long为0，m25的小幅净增没有被m50保持。
-因此v4短资格non-pass，owner随后要求停止、清理并交接；当前没有active goal、design、配置或run。下列流水叙述中的执行状态均按其
-原始历史时点理解，不能自行恢复。
+因此v4短资格non-pass，owner当时要求停止、清理并交接；随后在新专家意见后重新授权。旧v4仍sealed，下列流水叙述中的执行状态均按其
+原始历史时点理解，不能自行恢复旧run。
 
 PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
 macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、

@@ -2,14 +2,33 @@
 
 更新时间：2026-09-05。
 
-## 当前交接状态
+## 当前目标与授权
 
-2026-09-05 owner终止当前自主推进并要求清理后交由他人接手。系统当前没有active goal，仓库也没有获准继续执行的架构、训练配置或
-实验。最新完成的Unified Policy-Native Factor Writer v4是已裁决的候选，不是active路线：其m25/m50 held5 correct-only
-strict250分别为`45/250`与`40/250`，相对carrier `43/250`没有相邻稳定增量，breadth均为`3/5`且Goal/Long为0。
+2026-09-05 owner在新一轮专家复核与事前对齐后重新授权自主整体推进。目标仍是一次视频到唯一LoRA的zero-interaction能力，
+validation8 strict paired correct严格>145/400，并满足相邻稳定、breadth/suite、same-task鲁棒性和最终视频因果资格。
 
-继任者应从本计划、`findings.md`、`progress.md`和`docs/research_history.md`恢复事实，再根据owner的新授权建立goal与active design；
-不得把本计划中尚未执行的候选步骤自动恢复成任务。
+在既有硬约束内自主实验、深入分析与有依据的实现；两个节点合计最多6张物理GPU。普通non-pass不能随意命名根因并最小修补，也不需
+逐次询问owner。只有改变目标/信息墙、新增数据或资源权限、无法用证据裁决的重大路线歧义，以及外部联系回到owner。
+未请求创建goal，因此不创建goal工具状态。
+
+## Active design与当前阶段
+
+- Active design：`docs/joint_process_policy_writer_design.md`。
+- 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
+- 当前阶段：准备同部署图、whole-Writer、无专属task query的少任务clone/shared学习对照；先核对任务/资产与既有runtime。
+- P/Q共同过程—整策略主干是有条件的首选候选；用第一项对照和必要分析决定是否实施，不把设计合理性当作性能证据。
+- 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验；可以用同一现有部署图启动预登记的fresh学习诊断。
+
+## 推进计划
+
+1. [x] 保存专家原文、owner接管边界与证据责任，建立一个active design。
+2. [ ] 复用shared runtime，锁定少任务名单、训练/held视频、action rows、per-task exposure、局部闭环及source/carrier参照。
+3. [ ] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
+4. [ ] 联合分析fit、新视频、实际闭环与任务更新；存在竞争解释时补充能区分它们的分析实验，再决定下一项主要干预。
+5. [ ] 依据证据保留现有能力或实施P/Q/读出责任模块；同拓扑比较、控制主要变量，避免并行数学补丁和无限小扫。
+6. [ ] 有共享行为证据后扩任务与真实K训练，及时进入预注册validation8 paired400、相邻稳定和最终冻结controls。
+
+下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 
 ## 最新已裁决design
 
@@ -43,7 +62,7 @@ strict250分别为`45/250`与`40/250`，相对carrier `43/250`没有相邻稳定
 - full-rank16 PNBTT在task1与task93呈稳定相反行为，没有证明rank4是当前主要瓶颈。
 - 以上负证据不淘汰Stage0原生观测、ordered events、真实native X/Y、signed pooling、rank4或整个ECP。
 
-## 当前设计审查结论
+## 历史v4设计审查结论（sealed）
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
@@ -56,7 +75,7 @@ strict250分别为`45/250`与`40/250`，相对carrier `43/250`没有相邻稳定
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
 6. task-local控制、shared资格与正式closed-loop各自回答不同问题，不能用内部loss或人为阈值代替最终行为。
 
-## 2026-09-05当前执行
+## 2026-09-05先前执行记录（sealed）
 
 1. [x] role-equal/cursor联合修复完成：m50/m100 held5为`39/45`，breadth均仅3且Goal/Long为0，未形成决定性shared增益；
 2. [x] 以Axial Writer整体替换旧Process/Composer/gain链，删除独立gain runtime与causal objective；

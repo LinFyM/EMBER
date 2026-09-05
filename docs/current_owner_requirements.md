@@ -59,17 +59,14 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 ## 4. 方法方向与架构边界
 
-经过2026-09-02完整历史复核、专家补充澄清及随后一系列真实裁决，最新完成的候选是
-**Unified Policy-Native Factor Writer**。其方法合同见
-`docs/unified_policy_native_factor_writer_design.md`；直接前身与专家原文见
-`docs/axial_policy_response_native_factor_writer_design.md`、
-`docs/policy_response_event_to_factor_writer_design.md`、
-`docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
-`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。2026-09-05的m25/m50 held5为`45/40`，相对
-carrier43没有相邻稳定增量且Goal/Long均为0，因此该候选已sealed，当前没有active方法。v4的显式factor latent、具体attention布局、
-common/innovation readout和rank12+4分配都是已测试候选，不再升级为长期方法要求。继任路线仍须遵守以下稳定边界：
+主方向是充分利用冻结PI0.5 Action Expert的原生动作时序知识形成视频过程理解，并与整套LoRA生成共同学习。
+Gemma提供逐帧图文语义；其特征不被假定跨帧恒定，Action Expert逐帧响应也不自动构成视频理解或正确动作真值。
+过程状态与整策略queries交互是owner认可的候选方向，具体token、attention布局、factor readout和rank12+4分配由证据裁决。
+当前执行阶段与active design只在`task_plan.md`/`progress.md`登记；专家原文见
+`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。历史v5.2/v6、G1/G2与后续结果均须保留其正证据和适用边界，
+不得把局部non-pass外推为整条路线无效，也不得把保留模块职责宣称为已经保留行为。继任路线须遵守：
 
-1. 冻结PI0.5内部Action Expert信息是已有动态证据来源；若继续使用，teacher-frame time、50-step action horizon、flow time、layer depth
+1. 冻结PI0.5内部Action Expert信息是视频理解的核心动态证据来源；teacher-frame time、50-step action horizon、flow time、layer depth
    与probe必须作为不同轴处理。full 50-step horizon是唯一获准表示，不得恢复coarse、horizon mean或等价抹平；
 2. G1已证明真实native X/Y、signed pooling和rank4 task-local容量，G2已证明ordered PI0.5 response包含视频动态；这些是应吸收的正证据，
    但不是强迫后继复制v4具体token、head或rank分配的架构公理；
@@ -90,8 +87,10 @@ G2已经通过的Natural Program仍是ordered event、初始化与机制证据�
 `summary -> family-scalar gate -> shared event-additive anchor`、EBSRI与其它已裁决G3实现只作历史复现和kernel复用，不构成
 active fallback。
 
-首版不启用Action Meta-LoRA。只有base Writer已有明确闭环增量后才做matched controls；Stage 0和compiler冻结，只有出现明确
-净收益且不损害breadth/retention才加入并永久冻结，否则保持关闭。
+首轮Action Meta-LoRA关闭，优先解决如何读取Action Expert响应。observer侧共享适配是有限可选项：若在可学习的同一Writer/读出下
+出现可定位的教学输入域不足，可按matched证据审视，不把“必须先有base Writer闭环收益”当成不可讨论的科学公理。
+启用时须明确observer坐标与执行source/raw native bank的关系、训练/冻结阶段及cache有效性；不得默认它能解决跨视角或跨具身泛化。
+执行端若使用Meta，必须计入唯一完整LoRA的rank预算；不得另挂第二adapter。
 
 shuffled/reversed不进入训练、loss、checkpoint选择、G1--G5 Gate或架构修正依据。它们只在最终selected
 checkpoint已选定并冻结后作为严格配对的时序特异性测试；正确视频应稳定优于打乱与倒序输入。full video
@@ -112,6 +111,10 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 ## 6. 推进方式
 
 - 先理解因果链和最早失效接口，再实现；不得用连续版本号替代思考。
+- 性能低于或接近baseline时，不得随意找一个可疑现象命名为根因并立即修补。必须认真审视整体图、历史等价尝试与竞争解释；必要时
+  自主开展更多分析实验。只有直接工程合同证据或能区分竞争解释的实际干预支持时，才在相应范围使用“根因”结论。
+- 每个主要修改须说明最近旧尝试、旧证据实际排除什么、本次改变的因果变量、预期分支与行为代价。attention、rank、cosine、梯度或
+  loss变化只作定位；不能为解释得更清楚而默认接受更弱闭环。负结果不自动授权无证据小修，也不要求每轮回到owner。
 - G2、G3、G4及后续阶段出现显著non-pass时，先冻结该轮结果与controls，区分工程合同错误和真实科学失败，再用可证伪的
   read-only消融、decodability、gradient或closed-loop probe定位最早失效接口。只有新的机制证据支持时才修改对应接口；不得把
   盲目迭代架构、微调超参或内部loss下降包装成根因分析。
@@ -131,7 +134,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 - subagent只在存在可独立、并行且能显著缩短关键路径的实现、审计或评测工作时使用；不为形式并行，也不让多代理协调反而拖慢主结果。
 - 遇到困难先回看专家原始意见与修正，检查执行是否偏移，再决定是否实验或咨询。
 - 专家意见是设计约束与启发：不能为了速度随意丢弃，也不能不经理解机械照搬。
-- 只有性能显著跃升、路线存在实质歧义或需要新增权限时，在关键节点暂停和owner讨论；不频繁汇报。
+- 在既有科学与资源合同内，实验设计、分析、实施、相关修复、吞吐优化和证据支持的模块重构由接管者自主连续推进，无需逐项询问。
+  只有改变目标或信息墙、引入新数据或资源权限，以及证据无法裁决且显著改变投入方向的路线歧义，才带具体结果与推荐选择回到owner。
+  性能跃升继续完成必要相邻验证并报告，不因单点好坏中断授权流程。外部联系仍按第8节取得当次明确授权。
 
 ## 7. GPU、仓库与文档
 

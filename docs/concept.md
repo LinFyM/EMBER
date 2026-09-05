@@ -61,10 +61,10 @@ teacher-video frame time、Action Expert horizon、flow time、layer depth和pro
 19个layer boundaries、50 horizons、正负probe、layer state、residual increment与flow velocity；禁止用`t+h`把不同frames映射到
 共享机器人绝对时钟，也禁止horizon mean或抽样。
 
-owner-matched target-rank queries先在每个frame读取native prefix与完整`2 x 50` policy response，再由同构Temporal blocks沿真实
-teacher-video time建模。时序trunk只做一次content centering，首尾content与learned interior reads形成最多`E=8`个ordered events。
-位置只进入attention Q/K，不作为动态value；静态重复视频不能仅靠位置产生mobile update。每条视频独立保序，多视频只在集合阶段
-置换不变聚合。
+owner-matched target-rank-side queries在每个frame用两个并行cross-attention分别读取native prefix + 完整`2 x 50` policy response与
+side-matched真实native bank；两个来源各自softmax并直接相加，然后同一种factor block沿真实teacher-video time与rank/side轴建模。
+最终只做一次content centering；位置只进入attention Q/K，不作为动态value，静态重复视频不能仅靠位置产生mobile update。每条视频
+独立保序，多视频只在集合阶段置换不变聚合。
 
 G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断和历史机制证据，但不再是下游唯一固定schema。active图不再
 构造HMM、relation marginal、occupancy、C/D分解或其它连续解析链。
@@ -73,8 +73,8 @@ G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断�
 
 每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
 output differences。输入端只把冻结PI0.5的native prefix、完整2-probe x 50-horizon response与真实bank投影为typed memory；显式
-`frame x target x rank x X/Y-side` factor latent在每个同构Unified Policy-Native Factor block内直接读取同frame evidence，并沿真实
-teacher-frame time以及rank/side轴交互。最终centered逐帧states直接产生two-branch logits，对raw X/Y做exact signed pooling。时序不再
+`frame x target x rank x X/Y-side` factor latent在每个同构Unified Policy-Native Factor block内以同一query并行读取policy evidence和
+side-native bank，两者独立softmax后相加，并沿真实teacher-frame time以及rank/side轴交互。最终centered逐帧states直接产生two-branch logits，对raw X/Y做exact signed pooling。时序不再
 先压成独立Process/event坐标再由Composer解释，静态重复视频也不能由language、owner或位置凭空产生mobile update。
 
 language和静态context只负责grounding query，不能作为factor value或独立输出mobile residual。首版不使用task-expert dictionary、

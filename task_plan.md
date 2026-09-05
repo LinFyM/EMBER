@@ -21,7 +21,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 唯一active training config为：
 
-- configs/pi05_ecp_policy_response_writer_unified_factor_v1.json
+- configs/pi05_ecp_policy_response_writer_unified_factor_v2.json
 
 已完成的Native-Temporal及其12-gradient资格配置均标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
 
@@ -49,8 +49,9 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层直接读取同frame
-   prefix、完整PI0.5 response与side-matched native bank，再沿真实frame time及rank/side交互，随后直接对raw X/Y做signed pooling；
+3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层以同一query并行读取
+   同frame prefix + 完整PI0.5 response与side-matched native bank，两个来源独立softmax后直接相加，再沿真实frame time及rank/side
+   交互，随后直接对raw X/Y做signed pooling；
 4. 独立Process坐标、event bottleneck、Composer解释边界与causal process auxiliary均删除，整个Writer只接受correct cross-episode
    functional梯度；时序信息仍由完整PI0.5 response与统一block承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
@@ -120,11 +121,18 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     frozen prefix、完整PI0.5 response与same-frame side-matched native bank，再做标准time及rank/side axial attention；末端只保留一次
     centering、raw signed pooling、target cap和唯一rank16，删除独立Process/Composer中间坐标。19项定向CPU回归及最长task93真实full-50
     forward/gradient/materialization smoke已通过；
-25. [ ] 完成task1/task93 optimizer25/50短容量正控后，立即以与前代matched的55 meta + 18 target共73个gradient tasks运行
+25. [x] combined-softmax首版task1/task93 optimizer25/50控制完成。task93在m25/m50的fit/held recovery为
+    `.0249/.0264`与`.0973/.0687`且三视频均为正；task1四点为`-.0070/-.0023`与`-.0040/+.0052`且没有全视频通过。
+    attention-mass诊断显示X bank只约占`8--14%`，而Y侧Q/action-in bank因token数可占约`70--96%`；首版把语义来源放进同一softmax，
+    概率质量被实现定义的cardinality支配，配置已sealed；
+26. [x] 在同一可复制block内完成parallel policy/native reads：同一query分别对policy evidence和side-native bank做独立softmax，读出直接
+    相加；不加gate、手工权重或token-count校正。15项CPU合同和task93真实full smoke通过，policy/native read均收到非零functional梯度；
+27. [ ] 从clean pushed detached authority重跑matched task1/task93 optimizer25/50；接口成立后立即以与前代matched的55 meta + 18
+    target共73个gradient tasks运行
     component-init optimizer100/200 shared短资格，并对两点并发完成held5 correct-only strict250；task6/79只作已消费诊断，不再伪装
     fresh selector；
-26. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-27. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+28. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+29. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

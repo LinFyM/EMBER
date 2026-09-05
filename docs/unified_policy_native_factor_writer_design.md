@@ -9,9 +9,12 @@
 Native-Temporal Axial Writer已经证明完整PI0.5 response、真实native X/Y和signed factor readout能形成task-local增量，
 但73-task shared训练在seen functional继续改善时仍让unseen task和held5闭环恶化。整模块替换诊断进一步显示：learned Process
 只在task1产生正增量、在task6/79/93产生主要负增量；learned Composer单独也没有跨task形成稳定正映射；两者联合后继续按task
-放大正负。当前最早失效接口因此是Process输出的learned坐标再由Composer解释，而不是full horizon、native bank、rank4或训练步数。
+放大正负。最早失效接口因此是Process输出的learned坐标再由Composer解释，而不是full horizon、native bank、rank4或训练步数。
 
-本设计只改变这一接口：不再先生成一个独立视频表示再交给另一个网络翻译，而让最终factor latent在每一层直接读取同一份冻结证据。
+本设计只改变这一接口：不再先生成一个独立视频表示再交给另一个网络翻译，而让最终factor latent在每一层直接读取冻结证据。首版
+把policy evidence和native bank放入同一个softmax，task1/task93容量控制与attention-mass诊断又发现其概率质量受token cardinality支配：
+X bank长期只有约8--14%，而Y侧Q/action-in bank可占约70--96%。active修订因此在同一block内使用两个并行cross-attention；这是
+evidence layout修复，不增加新的阶段或手工校正器。
 
 ## 2. 一句话结构
 
@@ -72,13 +75,14 @@ mean、horizon sampling或其它等价抹平。
 
 每个`UnifiedPolicyNativeFactorBlock`重复完全相同的四个标准子层：
 
-1. **同frame evidence attention**：每个X/Y factor token直接读取该frame的prefix、对应target的完整PI0.5 response，以及本side的
-   完整native bank；X只读native input bank，Y只读native output bank，共享prefix/response；
+1. **同frame并行evidence read**：同一个X/Y factor query并行执行两次标准cross-attention；policy read只看该frame的全部prefix和
+   对应target完整PI0.5 response，native read只看本side完整bank（X只读native input，Y只读native output）。两个来源各自softmax，
+   读出直接相加后进入同一个residual state；没有串行handoff、gate、标量权重或token-count修正；
 2. **teacher-time attention**：同一target/rank/side沿真实frame顺序交互，相对frame位置只进入attention query/key；
 3. **rank/side attention**：同一frame内四个rank与X/Y side协调，使低秩两侧联合决定更新而非独立漂移；
 4. **标准GatedMLP**：提供逐token非线性容量。
 
-所有子层都是pre-norm residual attention/MLP。当前首版width 128、4 heads、4个block；4不是理论常数，只是与前代2 Frame + 2
+所有子层都是pre-norm residual attention/MLP。当前width 128、4 heads、4个block；4不是理论常数，只是与前代2 Frame + 2
 NativeTemporal block保持近似深度的首个matched点。未来扩大模型只改变width、heads或复制block，不创造新的模块类型。
 
 ## 7. 唯一readout
@@ -117,9 +121,11 @@ NativeTemporal block保持近似深度的首个matched点。未来扩大模型�
 
 ## 10. 训练与裁决
 
-首轮使用component initialization、K1、correct cross-episode functional positive-only。为保持单一因果变量，shared split、task采样、rows、
-optimizer100/200和functional panels与刚完成的73-gradient Native-Temporal run完全matched；task6/79已被消费，只作为zero-gradient重复诊断，
-不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是配置选择，不是架构约束。
+首轮使用component initialization、K1、correct cross-episode functional positive-only。首版combined-softmax task-local控制已完成并封存；
+active parallel-read修订保持block depth、数据、loss、初始化、rank和readout不变，先重跑相同task1/task93 25/50控制。其后为保持单一
+因果变量，shared split、task采样、rows、optimizer100/200和functional panels与刚完成的73-gradient Native-Temporal run matched；
+task6/79已被消费，只作为zero-gradient重复诊断，不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是配置选择，
+不是架构约束。
 
 执行顺序：
 

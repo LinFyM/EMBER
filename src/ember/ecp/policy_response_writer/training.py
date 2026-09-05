@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v1"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v1"
+SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v2"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v2"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -125,11 +125,15 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_unified_policy_native_factor_writer",
+            == "active_parallel_policy_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("architecture")
-            == "repeatable_unified_policy_native_factor_blocks",
+            == "repeatable_parallel_policy_native_factor_blocks",
+            model.get("evidence_read")
+            == "same_query_parallel_policy_and_side_native_cross_attention_then_sum",
+            model.get("source_normalization")
+            == "independent_policy_and_native_softmax_no_cardinality_competition",
             model.get("factor_readout")
             == "factor_side_two_branch_signed_raw_native_XY",
             model.get("dynamic_value_contract")
@@ -447,6 +451,8 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
     groups = {
         "prefix": ("evidence.prefix",),
         "response": ("evidence.response",),
+        "policy_read": ("factor_writer.blocks.0.policy_attention",),
+        "native_read": ("factor_writer.blocks.0.native_attention",),
         "unified": ("factor_writer.blocks",),
         "signed_input": ("factor_writer.input_signed_query",),
         "signed_output": ("factor_writer.output_signed_query",),
@@ -482,6 +488,8 @@ def _validate_smoke_graph(
         functional_gradients[name]
         for name in (
             "response",
+            "policy_read",
+            "native_read",
             "unified",
             "signed_input",
             "signed_output",

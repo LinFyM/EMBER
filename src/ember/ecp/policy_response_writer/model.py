@@ -27,7 +27,7 @@ class PolicyResponseWriterOutput:
 
 
 class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
-    """Input tokenizers plus one repeated factor-latent block family."""
+    """Tokenizers plus one repeated parallel-read factor-latent block family."""
 
     def __init__(
         self,
@@ -98,7 +98,7 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
             "kind": "g2_native_projection_initialization",
             "reused": [*evidence["reused"], *factor["reused"]],
             "fresh": [
-                "unified_policy_native_factor_blocks",
+                "parallel_policy_native_factor_blocks",
                 "factor_side_signed_heads",
             ],
         }

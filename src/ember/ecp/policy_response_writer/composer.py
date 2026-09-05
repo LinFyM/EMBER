@@ -120,13 +120,17 @@ def _effective_update_cap_factor(
 
 
 class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
-    """One copyable evidence-read, frame-time, rank-side transformer block."""
+    """One copyable parallel evidence-read, time, rank-side transformer block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
         self.evidence_query_norm = torch.nn.LayerNorm(width)
-        self.evidence_memory_norm = torch.nn.LayerNorm(width)
-        self.evidence_attention = torch.nn.MultiheadAttention(
+        self.policy_memory_norm = torch.nn.LayerNorm(width)
+        self.native_memory_norm = torch.nn.LayerNorm(width)
+        self.policy_attention = torch.nn.MultiheadAttention(
+            width, heads, dropout=0.0, batch_first=True
+        )
+        self.native_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, batch_first=True
         )
         self.temporal_norm = torch.nn.LayerNorm(width)
@@ -187,8 +191,8 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
         )[None, :, None]
         bank_valid = bank_valid.expand(frames, -1, -1)
 
-        shared = torch.cat((prefix, response), dim=1)
-        shared_valid = torch.cat(
+        policy_memory = torch.cat((prefix, response), dim=1)
+        policy_valid = torch.cat(
             (
                 prefix_valid,
                 torch.ones(
@@ -197,22 +201,35 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
             ),
             dim=1,
         )
-        memory = torch.cat(
-            (shared[:, None].expand(-1, 2, -1, -1), bank), dim=2
-        ).reshape(frames * 2, -1, width)
-        valid = torch.cat(
-            (shared_valid[:, None].expand(-1, 2, -1), bank_valid), dim=2
-        ).reshape(frames * 2, -1)
+        policy_memory = policy_memory[:, None].expand(-1, 2, -1, -1).reshape(
+            frames * 2, -1, width
+        )
+        policy_valid = policy_valid[:, None].expand(-1, 2, -1).reshape(
+            frames * 2, -1
+        )
+        native_memory = bank.reshape(frames * 2, bank_tokens, width)
+        native_valid = bank_valid.reshape(frames * 2, bank_tokens)
         rows = query.permute(0, 2, 1, 3).reshape(frames * 2, ranks, width)
-        memory = self.evidence_memory_norm(memory)
-        attended, _ = self.evidence_attention(
-            self.evidence_query_norm(rows),
-            memory,
-            memory,
-            key_padding_mask=~valid,
+        normalized_query = self.evidence_query_norm(rows)
+        policy_memory = self.policy_memory_norm(policy_memory)
+        native_memory = self.native_memory_norm(native_memory)
+        policy_read, _ = self.policy_attention(
+            normalized_query,
+            policy_memory,
+            policy_memory,
+            key_padding_mask=~policy_valid,
             need_weights=False,
         )
-        return attended.reshape(frames, 2, ranks, width).permute(0, 2, 1, 3)
+        native_read, _ = self.native_attention(
+            normalized_query,
+            native_memory,
+            native_memory,
+            key_padding_mask=~native_valid,
+            need_weights=False,
+        )
+        return (policy_read + native_read).reshape(
+            frames, 2, ranks, width
+        ).permute(0, 2, 1, 3)
 
     def _checkpointed_evidence_read(
         self,
@@ -720,14 +737,14 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
 
     @torch.no_grad()
     def initialize_from_stage0(self, stage0: torch.nn.Module) -> dict[str, object]:
-        """Reuse G2 structural embeddings and one native response attention."""
+        """Reuse G2 structural embeddings and the first policy-evidence read."""
 
         binding = stage0.encoder.binding
         projector = stage0.encoder.observer.projector
         self.owner_embedding.copy_(binding.owner_embedding)
         self.family_embedding.weight.copy_(projector.family_embedding.weight)
         self.horizon_embedding.weight.copy_(binding.horizon_embedding)
-        first = self.blocks[0].evidence_attention
+        first = self.blocks[0].policy_attention
         width = self.width
         first.in_proj_weight[:width].copy_(binding.event_query.weight)
         first.in_proj_weight[width : 2 * width].copy_(binding.policy_key.weight)
@@ -740,6 +757,6 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         return {
             "reused": [
                 "owner_family_horizon_embeddings",
-                "first_unified_evidence_attention",
+                "first_parallel_policy_evidence_attention",
             ]
         }

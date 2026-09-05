@@ -38,7 +38,7 @@ from ember.writer.functional import (
 
 
 TASKLOCAL_STAGE = "policy_response_writer_tasklocal_unified_factor"
-TASKLOCAL_RUN_SCHEMA = "ember_policy_response_writer_tasklocal_run_v3"
+TASKLOCAL_RUN_SCHEMA = "ember_policy_response_writer_tasklocal_run_v4"
 
 
 def _video_split(

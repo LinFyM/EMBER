@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_policy_response_writer_held5_eval_v1",
-  "status": "sealed_with_combined_softmax_training_config",
-  "training_config": "configs/pi05_ecp_policy_response_writer_unified_factor_v1.json",
+  "schema_version": "ember_ecp_policy_response_writer_held5_eval_v2",
+  "status": "active_correct_only_held5_materialization",
+  "training_config": "configs/pi05_ecp_policy_response_writer_unified_factor_v2.json",
   "task_subset": "configs/pi05_train24_fold0_held5_eval_v1.json",
   "target_held_global_ids": [0, 9, 18, 25, 36],
   "checkpoint_candidates": [100, 200],

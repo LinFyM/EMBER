@@ -3167,3 +3167,21 @@ targets；prefix/response/unified blocks/signed-X/signed-Y梯度分别为`.00489
 随后task93两步task-local profile为`10.999/11.769s`，统一块、X/Y heads与task query均有梯度，峰值约`37.35/42.85 GiB`；
 两步后fit/held微负不作科学解释。该组证据不构成task-local或shared性能声明；下一证据仍是task1/task93 optimizer25/50容量控制及
 matched 73-task短shared。
+
+## 160. combined evidence softmax由token cardinality主导，改为block内并行source read
+
+clean detached `06f3b465`完成combined-softmax Unified Writer的task1/task93 25/50-step task-local控制。task1在m25/m50的fit/held
+recovery为`-.007016/-.002323`与`-.003950/+.005152`，两点均没有三条正确视频全为正；task93为
+`+.024906/+.026362`与`+.097318/+.068702`，两点三视频均为正。图并非零容量，但相比Native-Temporal的task1 m50
+`.0320/.0169`与task93约`.125/.126`没有改善，且参数更多、单步更慢，故不能把它直接扩大到shared。
+
+在不优化、不读取负视频或validation/test的条件下，对initial与m50的真实attention质量分解发现：每frame policy prefix/response有
+456/400 tokens，X bank固定100 tokens；Y bank因真实owner tensor布局分别为400、3200或12800 tokens。共享softmax中X bank仅占约
+`8--14%`，而Q/action-in的Y bank约占`70--96%`。task1训练还普遍降低native质量，task93只在后层局部增加。这说明首版把两个语义
+来源放进同一归一化后，概率分配主要受实现定义的候选数量控制；X路径被饿死，部分Y路径则淹没policy evidence。
+
+active修订没有增加新阶段或数学补丁，而是在同一个可复制block内让同一factor query并行执行policy-evidence与side-native-bank两次
+标准cross-attention，各自softmax后直接相加；time、rank/side、MLP、final centering、raw signed pooling、cap和rank16均不变。
+15项CPU回归包含“native tokens整体复制不改变读出”的新合同。task93真实full smoke消费79 frames、2 probes、50 horizons与38 targets；
+policy/native reads的functional梯度分别为`.002554/.003015`，统一主干及X/Y heads均非零，冻结墙成立，输出76 tensors与唯一rank16，
+峰值reserved约`41.63 GiB`。这建立了干净的工程修复，但科学裁决仍必须来自matched task1/task93 25/50控制。

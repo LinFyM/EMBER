@@ -2947,3 +2947,14 @@ bank，再做标准teacher-time及rank/side attention。末端仍是一次center
 开发分支的19项CPU回归通过。task93真实full smoke完整消费79 sampled frames、2 probes、50 horizons和38 targets；所有入口、统一块及
 X/Y signed heads均收到functional梯度，冻结policy/observer零梯度，生成76 tensors和唯一rank16。峰值allocated/reserved约
 `35.94/42.58 GiB`。这只建立工程可行性；正式task-local与shared科学结果登记在后续条目。
+
+## 155. Unified首版容量控制、source竞争诊断与parallel-read修订
+
+clean detached `06f3b465`的combined-softmax Unified Writer完成task1/task93 optimizer25/50控制。task1两点没有在全部fit/held视频上
+形成正增量；task93两点为正但m50 recovery仅约`9.7%/6.9%`，低于前代Native-Temporal。correct-only attention诊断随即发现
+policy、X bank与不同owner的Y bank token数相差可达两个数量级，共享softmax使X bank只占约`8--14%`，Q/action-in Y bank则可占
+约`70--96%`。因此首版实际淘汰的是“异质来源共享一次softmax”的evidence layout，不是统一factor latent或完整native bank。
+
+后继只在同一种block内改为同query的parallel policy/native cross-attention，各自softmax后直接相加；不加gate、手工measure修正、
+校准或新模块阶段。15项CPU合同与task93真实full forward/VJP/materialization smoke通过，两个source read均有非零functional梯度，
+完整50 horizon、真实X/Y、positive-only、rank12+4与唯一rank16保持不变。matched task-local与shared结果登记在后续条目。

@@ -3,9 +3,9 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-当前active方法为Axial Policy-Response Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
-dynamics、真实native X/Y、signed pooling、rank4与唯一LoRA物化；主图只使用可重复的Frame、Temporal、Event与RankBank
-attention/MLP blocks，再直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
+当前active方法为Unified Policy-Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
+dynamics、真实native X/Y、signed pooling、rank4与唯一LoRA物化；主图只有一种可复制factor block，每层以同一query并行cross-attend
+policy evidence和side-native bank，再沿teacher time与rank/side交互并直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
 MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。
 
 ## 当前状态
@@ -25,9 +25,10 @@ MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallbac
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-新active design已在唯一实现路径接通。真实task72 full-50 smoke的Frame/Temporal/Event/Composer/signed heads均收到functional
-梯度并物化唯一rank16；5-step task-local三条视频均微弱高于carrier。下一项是clean pushed detached authority上的25/50-step
-task72容量控制，随后立即进入73-task shared短资格；不恢复coarse或任何退役Writer/realizer路线。
+新active design已在唯一实现路径接通。combined-softmax首版真实full-50 smoke通过，但task1/task93 25/50控制与attention-mass诊断
+发现不同来源的token cardinality会支配概率质量。当前修订只把block内的policy/native读取改为两个独立softmax的并行标准
+cross-attention，不增加阶段、gate或手工校正。下一项是相同task1/task93短控制，随后才进入73-task shared资格；不恢复coarse或
+任何退役Writer/realizer路线。
 
 ## 阅读顺序
 

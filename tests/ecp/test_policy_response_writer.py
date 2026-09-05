@@ -19,6 +19,9 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_cap_factor,
     _effective_update_rms,
 )
+from ember.ecp.policy_response_writer.materialization import (
+    load_held5_evaluation_config,
+)
 from ember.ecp.policy_response_writer.shared import _optimizer, functional_objective
 from ember.ecp.policy_response_writer.shared_execution import (
     assignment_makespan,
@@ -161,13 +164,41 @@ def test_axial_writer_preserves_shapes_and_one_functional_gradient_path() -> Non
     for prefix in (
         "evidence.response",
         "factor_writer.blocks",
-        "factor_writer.blocks.0.evidence_attention",
+        "factor_writer.blocks.0.policy_attention",
+        "factor_writer.blocks.0.native_attention",
         "factor_writer.blocks.0.temporal_attention",
         "factor_writer.blocks.0.factor_attention",
         "factor_writer.input_signed_query",
         "factor_writer.output_signed_query",
     ):
         assert _group_gradient(model, prefix) > 0.0
+
+
+def test_parallel_native_read_is_invariant_to_duplicate_bank_cardinality() -> None:
+    torch.manual_seed(7)
+    block = UnifiedPolicyNativeFactorBlock(width=16, heads=4).eval()
+    query = torch.randn(3, G1_RESIDUAL_RANK, 2, 16)
+    prefix = torch.randn(3, 5, 16)
+    prefix_valid = torch.tensor(
+        [[True, True, True, False, False]] * 3, dtype=torch.bool
+    )
+    response = torch.randn(3, 7, 16)
+    input_bank = torch.randn(3, 2, 16)
+    output_bank = torch.randn(3, 5, 16)
+
+    original = block._evidence_read(
+        query, prefix, prefix_valid, response, input_bank, output_bank
+    )
+    duplicated = block._evidence_read(
+        query,
+        prefix,
+        prefix_valid,
+        response,
+        input_bank.repeat_interleave(2, dim=1),
+        output_bank.repeat_interleave(2, dim=1),
+    )
+
+    torch.testing.assert_close(original, duplicated, rtol=1e-5, atol=1e-6)
 
 
 def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
@@ -390,17 +421,31 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_unified_factor_config_is_canonical_and_native_temporal_is_rejected() -> None:
+def test_parallel_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_v1.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_v2.json"
     )
     assert current["model"]["blocks"] == 4
     assert current["model"]["representation_arms"] == ["full"]
     assert current["optimization"]["objective"].endswith("positive_only")
     assert "event_slots" not in current["model"]
-    with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
-        load_policy_response_config(
+    for obsolete in (
+        "pi05_ecp_policy_response_writer_unified_factor_v1.json",
+        "pi05_ecp_policy_response_writer_native_temporal_v1.json",
+    ):
+        with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
+            load_policy_response_config(REPO_ROOT / "configs" / obsolete)
+
+    evaluation = load_held5_evaluation_config(
+        REPO_ROOT
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v2.json"
+    )
+    assert evaluation["training_config"].endswith("unified_factor_v2.json")
+    with pytest.raises(
+        ValueError, match="unsupported Policy-Response Writer held5 evaluation config"
+    ):
+        load_held5_evaluation_config(
             REPO_ROOT
-            / "configs/pi05_ecp_policy_response_writer_native_temporal_v1.json"
+            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v1.json"
         )

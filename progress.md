@@ -4,32 +4,29 @@
 
 ## 当前快照
 
-- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构已收敛为Unified Policy-Native Factor Writer。
-  输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层直接读取同frame prefix、完整PI0.5 response和
-  side-matched native bank，再做teacher-frame time及rank/side attention。learned主干只有一种可按深度复制的
-  `UnifiedPolicyNativeFactorBlock`，末端只做一次centering、direct signed raw-X/Y pooling、target cap和唯一rank16。独立Process坐标、
-  Composer解释边界及所有summary/gain/solver/calibration链均不存在；full 50-horizon、positive-only与信息墙不变。
+- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是parallel-read Unified Policy-Native Factor Writer。
+  输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层用同一query并行读取同frame prefix + 完整PI0.5
+  response与side-matched native bank，两个来源各自softmax后直接相加，再做teacher-frame time及rank/side attention。learned主干
+  仍只有一种可按深度复制的`UnifiedPolicyNativeFactorBlock`；末端只做一次centering、direct signed raw-X/Y pooling、target cap和
+  唯一rank16。没有独立Process/Composer坐标、source gate、token-count校正或summary/gain/solver/calibration链；full 50-horizon、
+  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v2.json`，combined-softmax v1已sealed。
 
-- 实现当前位于`codex/unified-factor-latent-writer`隔离worktree。旧Process/Composer classes及兼容fallback已从active source删除，
-  Native-Temporal active config已sealed；19项定向CPU回归通过。gpu02物理0上的最长task93真实smoke自然exit0：79 sampled frames、
-  2 probes、完整50 horizons、38 targets；prefix/response/unified blocks/signed-X/signed-Y functional梯度分别为
-  `.004893/.003914/.003718/.001982/.000883`，冻结policy/observer无梯度，生成76 tensors和唯一rank16。峰值
-  allocated/reserved约`35.94/42.58 GiB`。随后task93两步task-local profile自然完成，step为`10.999/11.769s`，统一块、X/Y head
-  与task query均有梯度，峰值allocated/reserved约`37.35/42.85 GiB`，50-step单run预计约十分钟；两步正负波动不作科学解释。
-  这些结果只证明工程图、最长视频资源与optimizer路径完整，正式容量/性能裁决仍在推进。
+- combined-softmax v1的task1/task93正式25/50-step控制均从clean detached `06f3b465`完成。task1 m25/m50 fit/held recovery为
+  `-.007016/-.002323`与`-.003950/+.005152`，两个checkpoint均没有三条视频全为正；task93为
+  `+.024906/+.026362`与`+.097318/+.068702`，两点三条视频均为正。相对前代Native-Temporal，v1参数更多、速度更慢且两task容量
+  都没有改善，因而没有直接进入73-task shared。
 
-- Unified task-local正式launch contract：科学实现为clean pushed `b1c04cda`，配置固定
-  `configs/pi05_ecp_policy_response_writer_unified_factor_v1.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
-  各自fresh、K1、component initialization；冻结evidence tokenizers，只训练同一Unified Factor Writer及task-local query；warmup5 +
-  effective45，optimizer25/50两枚checkpoint，每步8条correct cross-episode functional rows，fit为各自两条固定视频并用第三条
-  same-task held视频只读评估。两run都完整执行50步，不把内部恢复率设成继续门槛，也不读取wrong/shuffle/reverse、validation/test或
-  reward。输出固定为
-  `runs/outputs/pi05_ecp_policy_response_writer_unified_factor_tasklocal_task1_full_s50_b1c04cda_gpu01p3_20260905/`与
-  `runs/outputs/pi05_ecp_policy_response_writer_unified_factor_tasklocal_task93_full_s50_b1c04cda_gpu01p6_20260905/`，launch前均不存在。
-  2026-09-05同时live检查两节点：gpu01物理3/6均仅`1 MiB/0%`且无compute process，分配给task1/task93；其余gpu01高负载卡及
-  gpu02他人任务均不触碰。`/data1` quota为`778329660/1084227584 KiB`，limit余量约`291.7 GiB`，两run复用canonical assets且新增
-  保守小于1 GiB。命令均为detached authority下`NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=<3|6> PYTHONPATH=src ...
-  scripts/train_ecp_policy_response_writer.py --phase task-local --representation full --initialization component --mode formal`。
+- correct-only、零优化attention-mass诊断进一步定位了首版根因：每frame prefix/response分别为456/400 tokens，X bank为100，Y bank
+  则随target为400、3200或12800；在同一softmax中，X bank只获得约`8--14%`质量，而Q/action-in的Y bank约占`70--96%`。
+  task1训练还普遍降低bank质量，task93仅在后层局部恢复。因此失败不是统一latent断图，而是实现定义的token cardinality让语义来源
+  竞争同一归一化。
+
+- parallel-read v2当前位于`codex/parallel-policy-native-read`隔离worktree，只在同一block内以独立policy/native cross-attention替换
+  combined softmax，其余block、depth、full bank、loss、rank与readout完全不变。15项定向CPU回归通过，包含native tokens成倍复制不改变
+  读出的合同。gpu01物理3上的task93真实full smoke自然exit0：79 sampled frames、2 probes、完整50 horizons、38 targets；
+  policy/native read梯度分别为`.002554/.003015`，prefix/response/unified/signed-X/signed-Y分别为
+  `.008025/.006184/.008155/.001529/.005662`，冻结policy/observer无梯度，生成76 tensors和唯一rank16；峰值
+  allocated/reserved约`37.47/41.63 GiB`。下一步是clean pushed detached authority上的matched task1/task93 25/50控制。
 
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、

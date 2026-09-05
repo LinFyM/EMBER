@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_policy_response_writer_unified_factor_v1",
-  "status": "sealed_combined_softmax_source_competition_nonpass",
+  "schema_version": "ember_ecp_policy_response_writer_unified_factor_v2",
+  "status": "active_parallel_policy_native_factor_writer",
   "authorities": {
     "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
     "functional_panel_sources": [
@@ -16,7 +16,11 @@
       }
     ],
     "task_local_reference_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829",
-    "factorial_coverage_audit": "runs/analysis/pi05_ecp_policy_response_writer_native_temporal_factorial_coverage_v1_20260905/completion.json"
+    "factorial_coverage_audit": "runs/analysis/pi05_ecp_policy_response_writer_native_temporal_factorial_coverage_v1_20260905/completion.json",
+    "combined_softmax_diagnostic": [
+      "runs/analysis/pi05_ecp_policy_response_writer_unified_factor_attention_mass_task1_m50_b1c04cda_gpu01p3_20260905.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_unified_factor_attention_mass_task93_m50_b1c04cda_gpu01p6_20260905.json"
+    ]
   },
   "task_split": {
     "gradient_meta": [
@@ -36,7 +40,7 @@
     "panel_b_gradient_target": [72, 73, 74, 75, 93, 94],
     "selection_uses_outcomes": false,
     "held_selection_rule": "matched_reused_diagnostic_tasks6_and79_not_checkpoint_selection",
-    "sampling_policy": "experiment_configured_9_meta_3_target_approximates_equal_exposure_across_55_meta_18_target"
+    "sampling_policy": "config_local_9_meta_3_target_equalizes_expected_exposure_for_this_73_task_run_only"
   },
   "model": {
     "target_owners": 38,
@@ -45,17 +49,19 @@
     "prefix_width": 2048,
     "expert_width": 1024,
     "width": 128,
-    "architecture": "repeatable_unified_policy_native_factor_blocks",
+    "architecture": "repeatable_parallel_policy_native_factor_blocks",
     "factor_readout": "factor_side_two_branch_signed_raw_native_XY",
     "attention_heads": 4,
     "blocks": 4,
+    "evidence_read": "same_query_parallel_policy_and_side_native_cross_attention_then_sum",
+    "source_normalization": "independent_policy_and_native_softmax_no_cardinality_competition",
     "teacher_frame_position_contract": "relative_position_enters_attention_qk_and_pooling_keys_never_raw_native_value",
     "dynamic_value_contract": "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
     "capture_frame_chunk": 2,
     "pooling_frame_chunk": 128,
     "representation_arms": ["full"],
     "post_pooling": "single_target_update_cap_then_small_core_canonicalization",
-    "initialization": "g2_native_projection_component_init_or_fully_random_same_topology"
+    "initialization": "g2_policy_attention_and_native_projection_component_init_or_fully_random_same_topology"
   },
   "data": {
     "frame_stride": 5,
@@ -78,7 +84,8 @@
     "required": [
       "real_full_19_layer_50_horizon_2_probe_policy_response",
       "real_38_target_native_XY",
-      "functional_gradient_through_evidence_unified_blocks_and_factor_side_signed_heads",
+      "separate_nonzero_functional_gradient_through_policy_and_native_parallel_reads",
+      "functional_gradient_through_factor_side_signed_heads",
       "unique_76_tensor_rank16_materialization"
     ]
   },
@@ -119,7 +126,7 @@
     }
   },
   "decision": {
-    "task_local_capacity": "task1_and_task93_unified_factor_25_and50_step_controls",
+    "task_local_capacity": "task1_and_task93_parallel_read_25_and50_step_matched_controls",
     "shared_qualification": "matched_seventy_three_gradient_tasks_optimizer100_and200",
     "internal_held_use": "tasks6_and79_are_reused_diagnostics_not_checkpoint_selection",
     "first_closed_loop": "materialize_and_run_held5_correct_only_strict250_at_optimizer100_and200",

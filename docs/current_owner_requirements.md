@@ -57,39 +57,32 @@ G1--G3的冻结/分段只为逐接口验证，不是Final的强制训练课程�
 held5只是train24内部的leave-task-out机制门，用于在不消费validation设计信号的前提下快速检查共享映射。正式开发选择必须回到
 固定validation8；方法确定后才按合同从fresh使用32 source tasks训练并评测test8。
 
-## 4. 当前方法方向
+## 4. 方法方向与架构边界
 
-经过2026-09-02完整历史复核、专家补充澄清及随后一系列真实裁决，当前唯一active方向是
-**Unified Policy-Native Factor Writer**。完整方法合同见
+经过2026-09-02完整历史复核、专家补充澄清及随后一系列真实裁决，最新完成的候选是
+**Unified Policy-Native Factor Writer**。其方法合同见
 `docs/unified_policy_native_factor_writer_design.md`；直接前身与专家原文见
 `docs/axial_policy_response_native_factor_writer_design.md`、
 `docs/policy_response_event_to_factor_writer_design.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
-`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。其核心是：
+`docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。2026-09-05的m25/m50 held5为`45/40`，相对
+carrier43没有相邻稳定增量且Goal/Long均为0，因此该候选已sealed，当前没有active方法。v4的显式factor latent、具体attention布局、
+common/innovation readout和rank12+4分配都是已测试候选，不再升级为长期方法要求。继任路线仍须遵守以下稳定边界：
 
-1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，完整保留Action Expert
-   layer、50-horizon、probe与38-target owner响应；50-horizon只能在task/relation-conditioned attention后learned compression，
-   full是唯一active representation；
-2. 输入端只做投影、类型/位置embedding与mask，不生成独立learned video code；显式
-   `frame x target x rank x X/Y-side` factor latent从第一层起存在；
-3. learned主干只有一种可复制`UnifiedPolicyNativeFactorBlock`。每层factor latent用同一query和同一套policy-attention权重分别读取
-   exact language、同frame image patches与完整owner-matched PI0.5 response，三者各自softmax；side-matched真实bank另作独立标准
-   attention，四个读出直接相加，再做teacher-frame time及rank/side attention和标准MLP；teacher-frame time、action horizon、
-   flow time、layer depth与probe轴不得混淆；
-4. 不再把视频先压成独立Process/ordered-event坐标再交给Composer解释，也不在末端才从同一共享state线性分叉X/Y；最终
-   factor-side states直接通过ragged native-group two-branch signed attention pool未经替换的raw X/Y；
-5. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
-   residual；
-6. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
-7. active learned图只有一种可重复attention/MLP block，扩展主要复制同构block或统一改变width/heads；
-   不再使用冻结Natural Program到summary、covariance、whitening、transport、anchor或family scalar gate的连续专用坐标链；
-8. 当前首版训练只使用正确视频的cross-episode functional，让correct video相对错误/乱序视频的优势自然产生；
-   Final matched比较component-init与同拓扑fully-random fresh候选。
+1. 冻结PI0.5内部Action Expert信息是已有动态证据来源；若继续使用，teacher-frame time、50-step action horizon、flow time、layer depth
+   与probe必须作为不同轴处理。full 50-step horizon是唯一获准表示，不得恢复coarse、horizon mean或等价抹平；
+2. G1已证明真实native X/Y、signed pooling和rank4 task-local容量，G2已证明ordered PI0.5 response包含视频动态；这些是应吸收的正证据，
+   但不是强迫后继复制v4具体token、head或rank分配的架构公理；
+3. language与静态context不能独立写出有效mobile residual，video dynamic evidence必须是必要Value路径；
+4. correct相对wrong、shuffle和reverse的优势应从正确视频监督自发产生；negative controls不进入训练loss或架构修正；
+5. learned主干必须由少数职责清楚、可复制扩展的标准attention/MLP类模块组成。扩大模型应主要复制同构层或统一改变width/heads，
+   不得恢复Natural Program到summary、covariance、whitening、transport、anchor、family scalar gate或其它连续专用数学链；
+6. Final候选仍须考虑同拓扑fully-random fresh端到端训练，并由closed-loop而非内部loss选择。
 
 owner于2026-09-04及2026-09-05进一步明确：只要有可复核证据并经过深入分析，可以实质重构Writer；但结构自由度不能再次演化为
 连续数学补丁，整体结构必须优雅并能通过复制同一种层扩展。
 若同一接口反复non-pass，应替换其责任模块，而不是继续在前后叠加summary、solve、recenter、whitening、transport、gate或等价专用
-变换。新主干应保持少数职责清楚的learned模块，当前收敛为单一同构attention/MLP block；手工运算只保留信息墙、
+变换。后继主干应保持少数职责清楚的learned模块并优先采用同构attention/MLP block；手工运算只保留信息墙、
 轴/mask、必要的数值归一化、完整候选归约和唯一LoRA物化等明确科学边界。
 
 G2已经通过的Natural Program仍是ordered event、初始化与机制证据，但其固定

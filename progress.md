@@ -4,14 +4,21 @@
 
 ## 当前快照
 
-- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是source-separated common-base Unified Policy-Native
-  Factor Writer。输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层用同一query与同一policy-attention
+- 当前没有active goal、active design、active配置或运行中的实验。owner于2026-09-05在v4 held5结果完成后要求停止推进、全面清理并交由
+  他人接手。`docs/unified_policy_native_factor_writer_design.md`与
+  `configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`是最新已裁决设计及配置，均为sealed而非自动续跑入口。
+  本文件后续较早条目中的“active/当前/下一步”只表示对应历史时点，不能覆盖本条交接状态。
+  较早条目中的`.codex/tmp`路径只是当时的临时launcher/log位置，交接清理后不保证继续存在；科学证据以对应formal root、Git和
+  `docs/research_history.md`为准。
+
+- 最新已裁决架构是source-separated common-base Unified Policy-Native Factor Writer。输入端只做token projection；显式
+  `frame x target x rank x X/Y-side` latent在每一层用同一query与同一policy-attention
   权重分别读取exact language、同frame image patches和完整PI0.5 response，三者各自softmax；side-matched native bank另作独立
   standard attention，四个读出直接相加，再做teacher-frame time及rank/side attention。learned主干
   仍只有一种可按深度复制的`UnifiedPolicyNativeFactorBlock`；末端同一个head把frame-common context作为两signed分支共享的bank定位
   query、把frame-relative innovation作为两分支偏移，再做direct signed raw-X/Y pooling、target cap和
   唯一rank16。没有独立Process/Composer坐标、source gate、token-count校正或summary/gain/solver/calibration链；full 50-horizon、
-  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`；v1/v2/v3均已sealed。
+  positive-only与信息墙不变。v1/v2/v3及v4均已sealed。
 
 - common-base v3的73-task formal已自然完成200/200并exit0；m100/m200 held5 correct-only strict250为`35/250`与`31/250`，逐task
   Long/Goal/Object/Spatial0/Spatial9为`0/0/3/29/3`与`0/0/4/22/5`，breadth均`3/5`、Goal/Long均0。相对carrier43，m100为
@@ -33,12 +40,12 @@
   `runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_strict250_d557dffc_gpu02p46_20260905/`。
 
 - information-flow审计确认旧policy read仍大量消费response，但language与256 patch、400 owner-response共用一个softmax时，多数层的
-  language质量只有约`2.2%`，接近token-count占比；task-local依赖自由task query绕过了这一缺口。active v4只拆开这三个policy source
+  language质量只有约`2.2%`，接近token-count占比；task-local依赖自由task query绕过了这一缺口。当时的v4只拆开这三个policy source
   的softmax并复用同一MHA参数，再与原side-native read相加，不新增网络、参数、loss或数学阶段。当前分支17项CPU合同全部通过，包含
   source-cardinality不变性与旧v3 config fail-closed。clean `da964fad`上的task93真实full smoke已自然exit0：完整消费79 sampled
   frames、2 probes、50 horizons与38 targets；patch/language/response/policy-read/native-read/unified/signed-X/signed-Y梯度分别为
   `.03624/.03405/.02191/.01390/.00575/.02862/.02099/.01095`，冻结policy/observer零梯度，生成76 tensors和唯一rank16；峰值
-  allocated/reserved为`36.15/36.91 GiB`。下一步不追加结构，直接进入25/50短科学资格。
+  allocated/reserved为`36.15/36.91 GiB`。当时下一步是不追加结构，直接进入25/50短科学资格；该资格现已完成并non-pass。
 
 - source-separated v4 task-local formal launch contract：科学实现固定为clean `da964fad`，配置固定为7,495-byte
   `configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`；formal authority为包含本合同的下一clean pushed main。task1/task93
@@ -98,6 +105,18 @@
   不存在。`/data1` quota为`779170288/1084227584 KiB`，约290.9GiB limit余量，新增物化与两份250-row结果保守小于2GiB。
   evaluator保持cost-balanced dynamic queue与每GPU 3 replicas；正式裁决直接对carrier43及v3/v2相邻点报告逐task、breadth、
   retained/gained/lost、churn和配对成功集合，不以微小functional信号替代行为。
+
+- v4 held5两条formal pipeline均自然完成并exit0。m25为`45/250`，逐task Long/Goal/Object/Spatial0/Spatial9=
+  `0/0/4/37/4`、breadth`3/5`；相对carrier43为`41 retained / 4 gained / 2 lost`、churn6、Jaccard`.87234`、
+  paired exact `p=.6875`。m50为`40/250`，逐task=`0/0/3/34/3`、breadth`3/5`；相对carrier为
+  `37 / 3 / 6`、churn9、Jaccard`.80435`、`p=.5078125`。m25到m50为`38 retained / 2 gained / 7 lost`、
+  churn9、Jaccard`.80851`、`p=.1796875`。两点Goal/Long均0，早期+2净增没有相邻稳定性，故预登记v4短资格non-pass；
+  不解封续训、mixed-K、fully-random Final、validation8或negative controls。
+
+- 该non-pass不是工程断路或输出坍缩：m25到m50五task mobile范数增长约`1.21--2.05x`，同task方向cosine约
+  `.433--.930`；跨task mobile cosine仍低，全部Writer参数组均有finite movement。内部true-held functional保持微弱正向而闭环回落，
+  把最早未解问题留在shared task-disjoint mapping及correct functional到held closed-loop的信用对齐。它不撤销G1/G2、真实native
+  X/Y、完整50-horizon、signed pooling、rank4 task-local容量或v4分源改善证据，也不支持增加手工gain、calibration或数学变换链。
 
 - parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
   `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由
@@ -1384,6 +1403,14 @@
 
 ## 仓库与workspace整理
 
+- 2026-09-05 Git收口：另一任务完成的v4结果封存与交接文档统一提交到`main`，保留待继任者消费的`HANDOFF.md`。
+  本地与远端只保留`main`分支和一个canonical worktree；旧G3未合并提交`2295f481`由已推送的归档标签
+  `archive/g3-vector-interaction`保留，原远程分支删除。下列旧分支保留记录只描述当时状态。
+- 2026-09-05最终交接清理确认：只剩canonical worktree，无local `codex/*` branch或EMBER进程；`.codex/tmp`、pytest/Python cache
+  均为空。删除唯一一份退役的2026-08-31 G3 frozen-condition cache
+  `runs/caches/pi05_ecp_program_bank_candidate_interaction_v1_90pair_200a778_20260831/`，释放`61030186361` bytes；它不含checkpoint、
+  program output或deployment input，90份可重建safetensors的manifest、重建launcher与provenance仍由formal analysis/log保留。
+  `runs/logs`以及formal output/analysis roots作为科研证据保留。
 - 交接前58个累积worktree已清理；首个E1、family-key E1、三次spectrum、full-rank16及gate-aligned formal结束后对应detached evidence worktree均已删除。
   PNBTT首轮结论完整快进至远程`main`后，已合并的`codex/pnbtt`实现worktree与本地/远程分支均已清理。目标函数错配审计后，已从最新clean pushed
   `main@9afca0bb`建立的`codex/pnbtt-gate-aligned-necessity`也已合并并清理；最后formal固定在detached `2050de9e`完成后，该worktree同样删除。
@@ -1400,8 +1427,8 @@
   未提交内容不可恢复。
 - `.codex/tmp`中约`5.1GB`旧smoke/profile/script/cross-language临时cache已删除；其中影响决策的结论均已进入`findings.md`或
   `docs/research_history.md`。后续profile只作可删除工程证据，不与formal roots混存。
-- 未删除或移动dataset、models、formal runs、checkpoints、raw rows、aggregate、source policy、task experts、condition caches或
-  ownership不清资产。
+- 未删除或移动dataset、models、formal runs、checkpoints、raw rows、aggregate、source policy、task experts或ownership不清资产；
+  仅删除了上文已经逐项证明可重建且不含formal状态的退役condition cache。
 - tracked旧科学代码、测试和历史configs在新实现复用/退休审计前保留；`main`是canonical source，旧结果或仍存在的config不得自行
   恢复为路线。
 

@@ -2,28 +2,26 @@
 
 更新时间：2026-09-05。
 
-## 当前goal
+## 当前交接状态
 
-从最新clean pushed main实现、训练并科学裁决可扩展的Unified Policy-Native Factor Writer：以冻结PI0.5的
-layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用一种可重复的统一factor block
-一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
-持续推进component-init、fully-random Final joint及规模化训练，直到validation8 strict paired correct稳定严格大于145/400并满足
-breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因果controls，或者在完成必要正控、matched对照和有信息量的规模化
-实验后，获得足以停止当前函数类或EMBER总体路线的可复核证据。
+2026-09-05 owner终止当前自主推进并要求清理后交由他人接手。系统当前没有active goal，仓库也没有获准继续执行的架构、训练配置或
+实验。最新完成的Unified Policy-Native Factor Writer v4是已裁决的候选，不是active路线：其m25/m50 held5 correct-only
+strict250分别为`45/250`与`40/250`，相对carrier `43/250`没有相邻稳定增量，breadth均为`3/5`且Goal/Long为0。
 
-系统goal已于2026-09-02正式建立并保持active，不设置token或阶段工期预算。
+继任者应从本计划、`findings.md`、`progress.md`和`docs/research_history.md`恢复事实，再根据owner的新授权建立goal与active design；
+不得把本计划中尚未执行的候选步骤自动恢复成任务。
 
-## 当前active design
+## 最新已裁决design
 
-唯一active design为：
+最新设计合同为：
 
 - docs/unified_policy_native_factor_writer_design.md
 
-唯一active training config为：
+最新配置为：
 
 - configs/pi05_ecp_policy_response_writer_unified_factor_v4.json
 
-已完成的Native-Temporal及其12-gradient资格配置均标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
+二者均已sealed。Native-Temporal、v1--v3及更早配置同样只由对应Git authority和formal artifact复现，不是active入口。
 
 专家原始依据为：
 
@@ -150,7 +148,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     shared block学成seen-task expert；进一步只保留trained evidence、恢复initial factor Writer的held5 strict250为`39/250`，相对
     carrier43保留/新增/丢失`36/3/7`，相对完整m200的31为`19/20/12`。它确认block破坏性但仍未超过carrier或恢复Goal/Long；
 34. [x] 信息流审计定位task grounding稀释：15--24个language token与256 patch、400 response竞争同一policy softmax，language多数层
-    仅约2.2%质量。active v4只把language、patch、response改为同权重、独立softmax的标准parallel reads；没有新参数、阶段、gate、
+    仅约2.2%质量。当时的v4只把language、patch、response改为同权重、独立softmax的标准parallel reads；没有新参数、阶段、gate、
     calibrator或数学链，CPU合同与schema互斥检查已通过；
 35. [x] clean `da964fad`完成task93真实full forward/VJP/materialization smoke；79 frames、2 probes、50 horizons、38 targets全部消费，
     patch/language/response/native与统一block梯度均非零，生成唯一76-tensor rank16，峰值reserved `36.91 GiB`；
@@ -158,10 +156,15 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     近零到m50 `.0431/.0490`并三视频为正。证明图有容量但task1弱于v3，不把该内部差异设成人为停止门；
 37. [x] 从clean pushed authority完成73-task optimizer25/50短资格；gradient全视频正向由`5/12`升到`7/12`，task6/79在两个相邻
     checkpoint均为`2/2`全视频正向，首次形成稳定true-held shared信号，但绝对增量仍小；
-38. [ ] 并发物化m25/m50并各运行held5 correct-only strict250，以真实闭环比较carrier43及历史相邻点；不续训、不改结构、
-    不用内部指标替代行为；
-39. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-40. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+38. [x] 并发物化m25/m50并各完成held5 correct-only strict250。m25/m50为`45/40`，逐task
+    Long/Goal/Object/Spatial0/Spatial9=`0/0/4/37/4`与`0/0/3/34/3`；相对carrier43分别为
+    `41 retained / 4 gained / 2 lost`与`37 / 3 / 6`，m25到m50为`38 / 2 / 7`。两点breadth均`3/5`，没有Goal/Long，
+    因而当前v4短资格non-pass；
+39. [ ] 未解封：只有继任者在新owner授权下提出新的、可复核的shared闭环证据后，才可进入扩展训练、mixed-K、同拓扑
+    fully-random Final和validation8 strict paired400；当前结果不允许直接续训v4；
+40. [ ] 未解封：只有correct-only选定并冻结single checkpoint后才运行negative/causal controls；
+41. [x] owner要求停止推进、全面清理并交接；取消active goal/design/run，封存v4结果，清除临时目录、Python/pytest cache、已完成
+    detached worktree与61,030,186,361-byte可重建退役G3 condition cache，并建立消费后删除的临时`HANDOFF.md`。
 
 ## 历史执行账本
 

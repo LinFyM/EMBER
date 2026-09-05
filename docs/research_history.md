@@ -3038,3 +3038,25 @@ clean detached `2e3a9612`上的fresh component-init运行完成optimizer25/50。
 `1989.10s`，训练约`26.11s/step`，三rank负载尾差已降到约1秒量级，峰值reserved `39.32GB`。formal root为
 `runs/outputs/pi05_ecp_policy_response_writer_source_separated_73task_k1_component_s50_f02f9148_gpu01p036_sharedmmap_20260905/`。
 该相邻稳定task-disjoint正信号只解封m25/m50各一次held5 correct-only strict250；在闭环结果前不扩长训练、不增加结构。
+
+## 163. source-separated v4 held5终局与项目交接
+
+从同一shared run的m25/m50各自为held5固定correct K1视频物化唯一完整rank16，两个strict paired250均自然完成、所有worker与
+launcher exit0。m25为`45/250`，逐task Long/Goal/Object/Spatial0/Spatial9=`0/0/4/37/4`；相对carrier43为
+`41 retained / 4 gained / 2 lost`、Jaccard`.87234`、paired exact `p=.6875`。m50为`40/250`，逐task
+`0/0/3/34/3`；相对carrier为`37 / 3 / 6`、Jaccard`.80435`、`p=.5078125`。m25到m50为
+`38 retained / 2 gained / 7 lost`、Jaccard`.80851`、`p=.1796875`。两点breadth均`3/5`，Goal/Long均为0，故m25的
+微小净增没有相邻稳定性，v4短资格正式non-pass，不进入续训、mixed-K、fully-random Final、validation8或negative controls。
+
+几何审计显示五task mobile不是同向坍缩，m25到m50范数增长约`1.21--2.05x`且全部Writer参数组有finite movement；因此这是有效
+科学non-pass而非运行故障。该结果只淘汰当前v4 shared参数化，保留G1/G2、完整50-horizon policy response、真实native X/Y、signed
+pooling、rank4 task-local容量和source separation的局部正证据。formal roots为：
+
+- `runs/outputs/pi05_ecp_policy_response_writer_source_separated_73task_k1_component_s50_f02f9148_gpu01p036_sharedmmap_20260905/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_materialized_f02f9148_gpu01p3_20260905/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_strict250_f02f9148_gpu01p036_20260905/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_materialized_f02f9148_gpu02p2_20260905/`；
+- `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_strict250_f02f9148_gpu02p236_20260905/`。
+
+2026-09-05 owner随后要求停止推进、全面清理并交由他人接手。仓库因此取消active goal/design/run；继任者必须重新取得owner授权后才可
+建立新路线，且架构仍须保持少数职责清楚、可复制扩展的attention/MLP模块，不能把non-pass修成数学变换链。

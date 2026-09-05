@@ -1,8 +1,7 @@
 # Unified Policy-Native Factor Writer
 
-状态：2026-09-05 active design。该文档取代
-`docs/axial_policy_response_native_factor_writer_design.md`作为唯一active架构合同；旧文档、旧配置和Git快照只保留历史证据，
-不构成fallback。
+状态：2026-09-05 sealed after held5 non-pass。该文档记录最新已裁决架构，不是active执行合同；旧文档、旧配置和Git快照只保留
+历史证据，不构成fallback。继任者必须在新的owner授权下登记active design后才能继续实验。
 
 ## 1. 要回答的问题
 
@@ -19,7 +18,7 @@ task-local正控，但73-task shared的held5在optimizer100/200只有`35/31`，�
 进一步的whole-module和block-sublayer替换诊断排除了几个诱人的误判：learned evidence projection在两个true-held task上都是正增量；
 近rank1也不是根因，因为成功的task-local解同样收敛到近rank1。共同失败集中在重复factor block学成seen-task expert，而不是某一个
 temporal、factor、MLP或signed子层单独损坏。信息流审计同时发现，当前policy read把约15--24个language token、256个patch token和
-400个response token放进同一个softmax，language多数层只得到约2.2%的概率质量，接近纯token-count占比。active v4因此只修正这一个
+400个response token放进同一个softmax，language多数层只得到约2.2%的概率质量，接近纯token-count占比。当时的v4因此只修正这一个
 task-grounding接口：同一个标准policy cross-attention分别读取language、patch和完整response，各自softmax后与side-native read相加。
 它不增加参数、阶段、module type、gate或手工校正器。
 
@@ -134,7 +133,7 @@ whitening、transport、reconstruction solver或post-hoc calibration。
 
 首轮使用component initialization、K1、correct cross-episode functional positive-only。combined-softmax v1、innovation-only
 parallel-read v2和common-base v3均已完成并封存。v3的task1/task93 optimizer25/50正控证明完整图有容量，但73-task shared与两个相邻
-held5闭环共同否定了现有task grounding。active v4保持evidence、native bank、block depth、readout、loss、rank和训练任务不变，只把
+held5闭环共同否定了现有task grounding。v4保持evidence、native bank、block depth、readout、loss、rank和训练任务不变，只把
 language、patch、response从一个policy softmax拆成同权重的三个独立标准attention调用。task6/79已被消费，只作为zero-gradient重复诊断，
 不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是本次短实验的配置选择，不是架构约束。
 
@@ -150,6 +149,11 @@ language、patch、response从一个policy softmax拆成同权重的三个独立
 
 内部functional或task-local recovery不设成人为性能门。明确负结果也不靠延长训练、seed/LR小扫或末端数学补丁挽救；应定位统一block中
 最早失效的标准职责，优先修正evidence layout、attention ownership、优化目标或数据识别性。任何后继结构仍必须维持少数标准可复制模块。
+
+实际裁决：v4 m25/m50 held5 correct-only strict250为`45/250`与`40/250`，相对carrier `43/250`没有相邻稳定增量；两点breadth
+均为`3/5`，Goal/Long均为0。m25到m50为`38 retained / 2 gained / 7 lost`。因此本设计没有解封扩训、mixed-K、fully-random
+Final、validation8或negative controls，并于owner要求交接时封存。该non-pass不撤销完整50-horizon、真实native X/Y、signed
+pooling、rank4 task-local容量或标准可复制block原则。
 
 最终正式目标不变：validation8 strict paired correct稳定严格大于145/400，并有相邻checkpoint、低churn、高breadth、四suite非零、
 Goal/Long、same-task鲁棒性及冻结后视频因果controls共同支持。

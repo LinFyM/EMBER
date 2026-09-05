@@ -3,11 +3,12 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-当前active方法为Unified Policy-Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
+最新已裁决方法为Unified Policy-Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
 dynamics、真实native X/Y、signed pooling、rank4与唯一LoRA物化；主图只有一种可复制factor block，每层以同一query并行cross-attend
 exact language、image patches、完整policy response和side-native bank；四个source各自softmax后直接相加，再沿teacher time与
 rank/side交互并直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
-MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。
+MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。该v4候选的held5相邻点没有形成稳定增量，现已sealed；
+当前没有active goal、active design、训练或评测任务，仓库处于交接状态。
 
 ## 当前状态
 
@@ -18,7 +19,7 @@ MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallbac
   `summary -> family-scalar gate -> shared event-additive anchor`在充分校准后仍不能同时保留correct并压低wrong，已经正式停止；
 - PNBTT完成single/family chart、两次spectrum、full-rank16与gate-aligned E1后稳定`non_pass`；它能压低wrong但不能同时恢复
   task1/93 correct/held，现只作历史证据；
-- 2026-09-02完整历史复核后，owner确认新的Policy-Response Event-to-Factor Writer并建立active goal：冻结PI0.5逐帧捕获
+- 2026-09-02完整历史复核后，owner确认Policy-Response Event-to-Factor Writer路线：冻结PI0.5逐帧捕获
   layer x horizon x probe response，沿视频时间形成ordered events，再由events在当前视频真实X/Y bank中直接执行signed selection；
 - 训练只使用正确视频的cross-episode functional；所有负controls在selected checkpoint冻结后评测；
 - 旧privileged q_pi/realizer和人工process路线已正式关闭；
@@ -28,9 +29,9 @@ MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallbac
 
 Unified common-base v3的matched task1/task93 25/50控制通过，但73-task shared的m100/m200 held5只有`35/31`，低于carrier43并随
 训练退化。职责替换显示learned evidence可跨task给出正增量，失败集中在重复factor blocks；信息流又定位到exact language在与256 patch、
-400 response共享softmax时多数层仅约2.2%质量。active v4只让同一套policy-attention权重分别读取language、patch、response，各自
-softmax后与side-native read相加，不增加参数、stage、gate或手工校正。下一项是clean pushed真实full smoke及25/50短资格；不恢复
-coarse或任何退役Writer/realizer路线。
+400 response共享softmax时多数层仅约2.2%质量。v4只让同一套policy-attention权重分别读取language、patch、response，各自
+softmax后与side-native read相加，不增加参数、stage、gate或手工校正。其73-task m25/m50 held5为`45/40`，carrier为43；两点
+breadth均`3/5`且Goal/Long为0，m25的小幅净增没有被m50保持。因此v4短资格non-pass，不直接续训或进入mixed-K/Final。
 
 ## 阅读顺序
 
@@ -48,7 +49,7 @@ coarse或任何退役Writer/realizer路线。
 12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
 13. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`：完整EMBER历史复核原文；
 14. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`：最新架构澄清原文；
-15. `docs/unified_policy_native_factor_writer_design.md`：当前active design；
+15. `docs/unified_policy_native_factor_writer_design.md`：最新已裁决并sealed的design；
 16. `docs/axial_policy_response_native_factor_writer_design.md`：已裁决的直接前身；
 17. `docs/policy_response_event_to_factor_writer_design.md`：已裁决的早期直接前身；
 18. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
@@ -65,7 +66,7 @@ src/ember/reward/        训练期privileged rollout/occupancy工具
 src/ember/source_sft/    source SFT训练、checkpoint与validation
 src/ember/writer/        跨路线复用的数据、functional与Meta-LoRA工具
 scripts/                 canonical训练、封存与评测入口
-tests/                   当前活动面的定向测试
+tests/                   canonical与历史可复用运行面的定向测试
 ```
 
 `data/`、`models/`、`runs/`和`.venv/`是ignored本地资产，不提交远端。现成LIBERO数据、tokenizer、唯一formal checkpoints和结果
@@ -93,4 +94,5 @@ scripts/evaluate_ecp_stage0.py
 scripts/evaluate_pi05.py
 ```
 
-正式GPU运行前必须读取项目合同，检查两个GPU节点与对应storage quota，并从clean pushed commit的frozen worktree启动。
+正式GPU运行前必须由新owner/goal登记active design，读取项目合同，检查两个GPU节点与对应storage quota，并从clean pushed commit的
+frozen worktree启动。跨session接手时先读根目录临时`HANDOFF.md`，消费后删除；长期事实仍以正式账本为准。

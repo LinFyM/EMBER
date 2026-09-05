@@ -8,27 +8,31 @@
 `docs/expert_review_20260902_global_route_reassessment.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。精确分数、提交和历史脉络见
-`docs/research_history.md`；当前active合同见`docs/unified_policy_native_factor_writer_design.md`。本文件是结论索引，
-不替代原文。
+`docs/research_history.md`；最新已裁决并sealed的设计见`docs/unified_policy_native_factor_writer_design.md`。当前没有active合同。
+本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
 ## 科学结论
 
-### 0. 当前active方向是source-separated common-base Unified Policy-Native Factor Writer
+### 0. 当前无active方向；最新v4已sealed
 
 73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；整模块替换随后定位并删除了
 Process--Composer learned-coordinate handoff。Unified图改由显式factor latent在每一层直接读取冻结PI0.5证据和same-frame native X/Y，
 learned主干只有一种可复制block。parallel-read v2与common-base v3先后修复native/source ownership和末端bank定位，task-local容量持续
 改善，但v3 shared的m100/m200 held5仍只有`35/31`，低于carrier43且随训练退化。最新职责替换证明learned evidence在true-held task上
 有正增量，失败集中在重复block的task grounding；其policy read中exact language与256 patch、400 response共用softmax时多数层只获约
-2.2%质量。active v4因此复用同一套policy attention分别读取language、patch、完整response，各自softmax后与side-native read相加；
+2.2%质量。当时的v4因此复用同一套policy attention分别读取language、patch、完整response，各自softmax后与side-native read相加；
 没有新增参数、stage、gate、校正器或数学变换链。末端仍只有common-base signed raw pooling、target cap和唯一rank16。以下内容保留该
 方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
+
+v4最终m25/m50 held5为`45/40`，carrier为`43`；两点breadth均`3/5`且Goal/Long为0，m25的小幅净增没有被m50保持。
+因此v4短资格non-pass，owner随后要求停止、清理并交接；当前没有active goal、design、配置或run。下列流水叙述中的执行状态均按其
+原始历史时点理解，不能自行恢复。
 
 PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
 macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、
 chart或rank扩容触发。因此PNBTT及旧`summary -> family-scalar gate -> shared event-additive anchor`均已裁决，不是active fallback。
 
-2026-09-02完整历史专家复核与补充澄清提出Policy-Response Event-to-Factor Writer，owner完成最后审查后正式确认并建立持续goal。
+2026-09-02完整历史专家复核与补充澄清提出Policy-Response Event-to-Factor Writer，owner当时完成最后审查并建立持续goal；该goal现已取消。
 新路线保留冻结PI0.5的layer x horizon x probe policy-response、G2 boundary-anchored ordered events、当前视频真实X/Y、G1
 native-group signed pooling、rank4与唯一rank16物化；取消固定Natural Program到summary、covariance、whitening、transport、
 anchor和family scalar gate的连续接口。
@@ -3295,3 +3299,21 @@ grounding，而不是只有task-local拟合收益。
 再保持同一简洁block扩展数据/步数并比较fully-random Final；若仍不超过carrier或缺少breadth，则优先分析标准block的职责和
 functional-to-behavior信用，并整体替换失效职责。无论结果如何，都不添加source gate、summary、whitening、transport、校准器或
 其它串联数学补丁；full50、真实native X/Y、signed pooling与唯一rank16保持不变。
+
+## 168. v4分源改善没有形成相邻稳定的held5闭环增量
+
+预登记的m25/m50均从同一clean shared run物化，每个held5 task固定correct K1视频、一次Writer调用、唯一完整rank16，并各完成
+strict paired250。m25为`45/250`，Long/Goal/Object/Spatial0/Spatial9=`0/0/4/37/4`；相对stable carrier43为
+`41 retained / 4 gained / 2 lost`、Jaccard`.87234`、paired exact `p=.6875`。m50为`40/250`，逐task
+`0/0/3/34/3`；相对carrier为`37 / 3 / 6`、Jaccard`.80435`、`p=.5078125`。m25到m50只有
+`38 retained / 2 gained / 7 lost`，Jaccard`.80851`、`p=.1796875`。两点breadth都只有`3/5`，Goal和Long始终为0。
+
+因此m25的净`+2`只是六个paired states中的小幅重排，没有breadth或困难suite贡献，也没有被相邻m50保持；它不能解封扩长训练、
+mixed-K、fully-random Final、validation8或因果controls。另一方面，输出几何排除了“没训练/全坍缩”：m25到m50五task mobile范数
+增长`1.21--2.05x`，同task方向cosine`.433--.930`，跨task方向仍明显不同，全部Writer参数组均有finite movement。当前证据精确淘汰
+的是这一个source-separated common-base v4 shared短资格，而不是G1/G2、完整PI0.5 response、真实native X/Y、signed pooling、
+rank4 task-local容量或“标准可复制block”原则。
+
+最早未解接口仍是task-disjoint shared mapping与correct functional到held closed-loop的信用对齐。若继任者继续EMBER，应先以一个能
+区分这两层责任的直接因果实验重新建立active design；任何结构修改都应整体替换失效职责，并保持少数可复制attention/MLP层，不能在
+v4前后增加source gate、summary、whitening、transport、手工幅度或calibration链。

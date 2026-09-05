@@ -3,14 +3,16 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-最新已裁决方法为Unified Policy-Native Factor Writer。它保留ECP已通过的PI0.5原生policy-response、ordered video
-dynamics、真实native X/Y、signed pooling、rank4与唯一LoRA物化；主图只有一种可复制factor block，每层以同一query并行cross-attend
+最新已裁决方法为Unified Policy-Native Factor Writer。它使用PI0.5原生policy-response、有序视频输入、真实native X/Y、
+signed pooling、rank4与唯一LoRA物化；主图只有一种可复制factor block，每层以同一query并行cross-attend
 exact language、image patches、完整policy response和side-native bank；四个source各自softmax后直接相加，再沿teacher time与
 rank/side交互并直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
-MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。该v4候选的held5相邻点没有形成稳定增量，现已sealed；
-当前没有active goal、active design、训练或评测任务，仓库处于交接状态。
+MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。该v4候选的held5相邻点没有形成稳定增量，现已sealed。
+后继研究依据`docs/joint_process_policy_writer_design.md`推进；owner授权、当前目标、运行与下一步只以`task_plan.md`和`progress.md`
+的当前记录为准，不从历史design中的“active”恢复执行。
+G1/G2提供局部容量与动态证据，不代表后继Writer已经继承完整动态能力或闭环行为。
 
-## 当前状态
+## 科学合同与历史基础
 
 - source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
 - task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
@@ -39,21 +41,9 @@ breadth均`3/5`且Goal/Long为0，m25的小幅净增没有被m50保持。因此v
 2. `docs/current_owner_requirements.md`：owner稳定目标与约束；
 3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
 4. `docs/concept.md`：科学问题与ECP假设；
-5. `docs/expert_review_20260824_native_factor.md`：2026-08-24专家回复原文；
-6. `docs/expert_review_20260826_bank_conditioned_native_factor.md`：2026-08-26第二次专家回复原文；
-7. `docs/expert_review_20260828_g3_functional_sketch.md`：2026-08-28第三次专家回复原文；
-8. `docs/expert_review_20260829_joint_program_primal.md`：2026-08-29第四次专家回复原文；
-9. `docs/expert_review_20260830_program_bank_interaction.md`：2026-08-30第五次专家回复原文；
-10. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`：2026-08-31第六次专家回复原文；
-11. `docs/expert_review_20260901_program_through_bank_bottleneck.md`：2026-09-01第七次专家回复原文；
-12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
-13. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`：完整EMBER历史复核原文；
-14. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`：最新架构澄清原文；
-15. `docs/unified_policy_native_factor_writer_design.md`：最新已裁决并sealed的design；
-16. `docs/axial_policy_response_native_factor_writer_design.md`：已裁决的直接前身；
-17. `docs/policy_response_event_to_factor_writer_design.md`：已裁决的早期直接前身；
-18. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
-19. `docs/research_history.md`：影响当前决策的历史证据。
+5. `progress.md`明确登记的active design：按任务读取涉及的接口和实验合同；
+6. `docs/expert_review_20260905_full_history_joint_process_policy_writer.md`：最新完整历史复核原文；
+7. `docs/research_history.md`：历史设计、专家意见、修正与formal evidence索引，按当前问题展开相关论证。
 
 ## 目录
 
@@ -94,5 +84,5 @@ scripts/evaluate_ecp_stage0.py
 scripts/evaluate_pi05.py
 ```
 
-正式GPU运行前必须由新owner/goal登记active design，读取项目合同，检查两个GPU节点与对应storage quota，并从clean pushed commit的
-frozen worktree启动。跨session接手时先读根目录临时`HANDOFF.md`，消费后删除；长期事实仍以正式账本为准。
+正式GPU运行遵守`progress.md`所登记的active合同与`AGENTS.md`：检查两个GPU节点与对应storage quota，从clean pushed commit的
+frozen worktree启动。跨session接手先核对当前owner要求与项目状态；只有存在真实交接材料时才消费临时handoff，长期事实以正式账本为准。

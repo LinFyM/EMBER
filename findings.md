@@ -31,6 +31,18 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
+### 2026-09-06首轮同图学习对照：四任务shared可学习，行为结论待定
+
+从clean `6624127b` fresh component-init出发，whole-Writer且无task query的四个clone与shared4全部完成8/32/64节点。
+每task的两fit视频、8-row Panel-A序列、policy RNG和曝光量匹配；32/64时每个clone和shared4的四task fit/held视频平均benefit均为正。
+64时task1/72/83/93的clone held为`+.000706/+.001339/+.000435/+.003055`，shared held为
+`+.000158/+.001348/+.000551/+.002044`。shared的Spatial接近clone、Goal held略高，meta1与Long较弱；并非所有任务都显著劣于clone。
+
+这反驳“当前部署图在同任务条件下普遍不能学习”以及“small shared必然无功能增量”的过强说法，支持认真考虑此前正控错配与低曝光。
+它没有区分全部优化/容量解释，不能直接归因为梯度冲突，也没有证明新task迁移或video必要性。独立clones总参数容量更大；32/64的
+预注册Spatial2/Goal20/Long38、first-fit/held闭环与source/carrier参照仍须读取后才能判断优先扩训练还是修改模块。
+精确汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`，各原始result/run contracts保留。
+
 ### 历史v4终局（sealed）
 
 73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；整模块替换随后定位并删除了

@@ -12,6 +12,22 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
+## 最新节点（2026-09-06 00:15 CST）
+
+- 五组正式run均完成64/64、8/32/64 checkpoints、Panel-B与completion，全部exit0；共享mmap已由runtime释放。
+  汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`。四task在clone/shared两组的32/64
+  fit/held平均benefit均为正；当前优先完成预注册闭环，不据此宣布视频因果或task-disjoint能力，也不立即替换架构。
+- eval authority为clean pushed detached `b89ee997`，worktree=`/data1/user/ymdai/projects/EMBER-worktrees/prw-samegraph-eval-20260906`。
+  clone72/83 m32 held-video已物化且exit0；clone72/83 strict50与source strict150已调度到gpu01物理2/0/3，各3个persistent workers；
+  clone93 m32 held-video在物理4物化。现阶段没有GPU02上的EMBER新任务。
+- 首次source prepare遗漏`EMBER_LIBERO_ASSETS_ROOT`，补齐后start preflight发现还需`EMBER_STORAGE_ROOT`；两次均在rollout前失败，
+  原日志/exit保留于`.codex/tmp/prw_samegraph_launch/`。本次统一使用canonical simulator assets
+  `data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6`及`EMBER_STORAGE_ROOT=/data1/user/ymdai`，
+  从已prepared的root继续start，未修改科学条件或重写结果。
+- baseline承载器将直接引用既有canonical `shared_prior.safetensors`与`projection_shared.json`，在同一个static LoRA evaluator读取；
+  不调用Writer、不复制adapter、不伪装为某Writer checkpoint。当前真实carrier CPU加载/76-tensor rank16/三task metadata检查通过，
+  6项static-bank合同测试通过；发布冻结代码后执行同一strict150配对。
+
 ## 当前执行与吞吐（2026-09-06 00:03 CST）
 
 - 五组正式训练均成功进入同图shared runtime：clone1/72/83/93使用gpu01物理0/2/3/4，shared4使用5/6。

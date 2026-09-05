@@ -3084,3 +3084,17 @@ owner认可P/Q共同过程—整策略交互的候选方向，并商定后续自
 特别要求低于/接近baseline时不能随意找原因命名根因并最小修补；必要时做更多分析实验。owner随后明确当前仍处事前对齐，不能
 直接开始执行，因此`docs/joint_process_policy_writer_design.md`是讨论草案而非active design。
 同图whole-Writer无query的clone/shared对照、P/Q与非对称动态因子均属候选，未启动新GPU实验。旧v4与formal evidence保持sealed。
+
+
+## 165. 2026-09-05/06授权恢复与首轮同图clone/shared功能证据
+
+owner在23:24 CST明确完成对齐并要求建立goal持续自主推进，因而激活`docs/joint_process_policy_writer_design.md`；这项新授权取代
+第164节所述的事前对齐状态。首轮保持v4部署图、whole Writer、无task query，task1/72/83/93独立clones与shared4匹配每task8/32/64
+exposures，5组均从clean pushed detached `6624127b` fresh完成且exit0。每task两fit视频、same-task held视频及跨episode action panels
+固定；没有val/test、wrong/shuffle/reverse梯度。32/64两个节点，各组各task fit/held平均benefit均为正。
+
+64时clone/shared的held benefit：task1=`+.000706/+.000158`，72=`+.001339/+.001348`，83=`+.000435/+.000551`，
+93=`+.003055/+.002044`。因此small shared并非普遍不能学；这些数值不能直接识别梯度冲突、说明新task迁移或替代行为证据。
+局部行为事前锁定Spatial2、Goal20、Long38的32/64、第一fit视频和held视频，各50状态，paired source/carrier；当时正在执行。
+formal roots为`runs/outputs/pi05_ecp_prw_samegraph_{clone1,clone72,clone83,clone93,shared4}_s64_6624127b_gpu01p{0,2,3,4,56}_20260905/`，
+功能汇总为`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`。

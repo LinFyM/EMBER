@@ -38,6 +38,25 @@ POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA = (
     "ember_ecp_policy_response_writer_materialized_adapter_v1"
 )
 POLICY_RESPONSE_WRITER_ARM_PREFIX = "ecp_policy_response_writer_"
+FIXED_CARRIER_ARM = "frozen_stable_carrier"
+
+
+def _fixed_carrier_provenance(manifest: Mapping[str, Any]) -> bool:
+    authority = manifest.get("carrier_authority", {})
+    projection_path = Path(str(authority.get("projection_manifest", "")))
+    adapter_path = Path(str(authority.get("path", "")))
+    if not projection_path.is_file() or not adapter_path.is_file():
+        return False
+    projection = read_json(projection_path)
+    return all((
+        projection.get("projection_kind") == "stable_shared_prior_baseline",
+        projection.get("shared_prior_adapter") == {
+            "path": str(adapter_path), "bytes": adapter_path.stat().st_size,
+        },
+        manifest.get("training_commit") == projection.get("repository", {}).get("commit"),
+        authority.get("bytes") == adapter_path.stat().st_size,
+        manifest.get("information_wall", {}).get("total_writer_invocations") == 0,
+    ))
 
 
 def _source_matches(declared: Mapping[str, Any], observed: Mapping[str, Any]) -> bool:
@@ -158,6 +177,8 @@ def _language_provenance(manifest: Mapping[str, Any]) -> bool:
 
 
 def _manifest_provenance_valid(manifest: Mapping[str, Any], arm: str) -> bool:
+    if arm == FIXED_CARRIER_ARM:
+        return _fixed_carrier_provenance(manifest)
     if arm == "ecp_native_factor_g1_free_code":
         return _g1_provenance(manifest)
     if arm.startswith(POLICY_RESPONSE_WRITER_ARM_PREFIX):
@@ -288,6 +309,12 @@ def _checkpoint_authority_matches(
     key: tuple[str, int],
     manifest: Mapping[str, Any],
 ) -> bool:
+    if arm == FIXED_CARRIER_ARM:
+        return (
+            checkpoint.get("schema_version") == "ember_frozen_stable_carrier_adapter_v1"
+            and checkpoint.get("carrier_authority") == manifest.get("carrier_authority")
+            and checkpoint.get("single_complete_rank16") is True
+        )
     return any(
         (
             _g1_checkpoint_matches(arm, checkpoint, row),
@@ -313,7 +340,10 @@ def _inspect_static_task_row(
     checkpoint_manifest = checkpoint / "manifest.json"
     valid = all(
         (
-            adapter_path == checkpoint / "adapter.safetensors",
+            adapter_path == (
+                Path(str(manifest["carrier_authority"]["path"])).resolve()
+                if arm == FIXED_CARRIER_ARM else checkpoint / "adapter.safetensors"
+            ),
             checkpoint_manifest.is_file(),
             checkpoint_manifest.stat().st_size
             == int(row.get("checkpoint_manifest_bytes", -1)),

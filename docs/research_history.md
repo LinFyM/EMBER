@@ -3007,4 +3007,6 @@ temporal/factor/MLP/signed子层能独立解释全部任务。成功task-local�
 模块类型、gate、source权重、summary、regularizer或末端校正；full 50 horizon、真实X/Y、signed pooling、rank12+4和唯一rank16不变。
 
 v4 active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`；首轮shared只登记optimizer25/50短资格，在证明shared
-信号前不扩长训练。工程与科学结果将在clean pushed authority的真实full smoke和fresh formal完成后追加。
+信号前不扩长训练。clean `da964fad`上的task93真实full smoke已消费79 sampled frames、2 probes、50 horizons和38 targets；
+patch/language/response/policy/native/Unified/X/Y各路径梯度均非零，冻结policy/observer零梯度，生成唯一76-tensor rank16，峰值
+allocated/reserved为`36.15/36.91 GiB`。fresh formal结果将在后续条目追加。

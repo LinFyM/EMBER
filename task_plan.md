@@ -151,9 +151,11 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 34. [x] 信息流审计定位task grounding稀释：15--24个language token与256 patch、400 response竞争同一policy softmax，language多数层
     仅约2.2%质量。active v4只把language、patch、response改为同权重、独立softmax的标准parallel reads；没有新参数、阶段、gate、
     calibrator或数学链，CPU合同与schema互斥检查已通过；
-35. [ ] 完成v4真实full forward/VJP/materialization smoke，再做task1/task93 optimizer25/50正控及73-task optimizer25/50短资格；
-36. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-37. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+35. [x] clean `da964fad`完成task93真实full forward/VJP/materialization smoke；79 frames、2 probes、50 horizons、38 targets全部消费，
+    patch/language/response/native与统一block梯度均非零，生成唯一76-tensor rank16，峰值reserved `36.91 GiB`；
+36. [ ] 从clean pushed authority完成task1/task93 optimizer25/50正控及73-task optimizer25/50短资格；
+37. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+38. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

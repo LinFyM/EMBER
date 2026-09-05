@@ -28,7 +28,10 @@
 - information-flow审计确认旧policy read仍大量消费response，但language与256 patch、400 owner-response共用一个softmax时，多数层的
   language质量只有约`2.2%`，接近token-count占比；task-local依赖自由task query绕过了这一缺口。active v4只拆开这三个policy source
   的softmax并复用同一MHA参数，再与原side-native read相加，不新增网络、参数、loss或数学阶段。当前分支17项CPU合同全部通过，包含
-  source-cardinality不变性与旧v3 config fail-closed；真实full GPU smoke将在clean pushed commit后立即执行。
+  source-cardinality不变性与旧v3 config fail-closed。clean `da964fad`上的task93真实full smoke已自然exit0：完整消费79 sampled
+  frames、2 probes、50 horizons与38 targets；patch/language/response/policy-read/native-read/unified/signed-X/signed-Y梯度分别为
+  `.03624/.03405/.02191/.01390/.00575/.02862/.02099/.01095`，冻结policy/observer零梯度，生成76 tensors和唯一rank16；峰值
+  allocated/reserved为`36.15/36.91 GiB`。下一步不追加结构，直接进入25/50短科学资格。
 
 - parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
   `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由

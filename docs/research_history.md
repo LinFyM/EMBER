@@ -3029,3 +3029,12 @@ clean pushed `f02f9148`上的task1/task93均完成fresh optimizer25/50。task93 
 冻结policy/evidence、held与wrong零梯度及唯一rank16。物理3首次被误绑NUMA0并在output创建前fail-fast；corrected fresh `r2`绑定
 NUMA1自然完成，没有覆盖或resume无效状态。该结果证明v4图仍有task-local容量但影响依task而异；正式迁移判断进入73-task
 optimizer25/50短shared，不据此增加source gate、混合标量或其它专用链。
+
+## 162. source-separated v4 73-task短shared资格
+
+clean detached `2e3a9612`上的fresh component-init运行完成optimizer25/50。m25/m50的12个gradient任务全视频正向为`5/12`与
+`7/12`，fit/held benefit均值由`-0.000001/+0.000002`变为`+0.000029/+0.000045`；零梯度true-held task6/79在两点均为
+`2/2`全视频正向，汇总fit/held benefit为`+0.000100/+0.000141`与`+0.000108/+0.000136`。运行50步总耗时
+`1989.10s`，训练约`26.11s/step`，三rank负载尾差已降到约1秒量级，峰值reserved `39.32GB`。formal root为
+`runs/outputs/pi05_ecp_policy_response_writer_source_separated_73task_k1_component_s50_f02f9148_gpu01p036_sharedmmap_20260905/`。
+该相邻稳定task-disjoint正信号只解封m25/m50各一次held5 correct-only strict250；在闭环结果前不扩长训练、不增加结构。

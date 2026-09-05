@@ -76,6 +76,29 @@
   小于2 GiB output。固定`NCCL_P2P_DISABLE=1`、dynamic cost-balanced assignment和single-copy safetensors mmap；exact resume锁相同
   pushed commit、config、world-size3、visible顺序、rank-local NUMA和cache/output roots。
 
+- source-separated v4 73-task shared已从clean detached `2e3a9612`自然完成50/50并exit0。m25/m50的12个gradient诊断任务
+  全视频高于carrier由`5/12`升到`7/12`，fit/held benefit由`-0.000001/+0.000002`升到
+  `+0.000029/+0.000045`；两个完全不反传的true-held task6/79在两个相邻checkpoint均为`2/2`全视频正向。m25两task
+  fit/held benefit均值为`+0.000100/+0.000141`，m50为`+0.000108/+0.000136`；task6的m25/m50 held为
+  `+0.000020/+0.000009`，task79为`+0.000261/+0.000263`。这是相对v3首次出现的相邻稳定task-disjoint正信号，但幅度很小，
+  尚不证明闭环收益。训练/Panel-B/总耗时为`1305.66/384.84/1989.10s`，约`26.11s/step`；三rank早期平均工作量差
+  约`1.21s`、最大`3.89s`，峰值allocated/reserved为`38.41/39.32GB`。cache已自动删除，checkpoint、raw metrics、
+  completion和launch bundle均完整；冻结policy/observer、Action Meta 0、held/wrong backward 0及唯一rank16合同全部满足。
+
+- v4首次held5 closed-loop launch contract：只比较预登记的m25/m50 single checkpoints，不续训、不改结构或loss。两个checkpoint
+  分别用held5固定correct K1、每task一次Writer调用物化唯一rank16，再各运行strict paired250；只读train24 held5，不读
+  validation/test、wrong/shuffle/reverse或reward。2026-09-05 19:02 CST同时live检查两节点：gpu01物理0/3/6为
+  `1260/1/2 MiB`且util 0，gpu02物理2/3为`162/162 MiB`且util 0，物理6有他人`4749 MiB`、util 0的轻量进程；按既有
+  evaluator峰值余量可安全共驻且不触碰该进程。m25在gpu01物理3/NUMA1物化后用`0,3,6`动态评测，m50在gpu02物理2/NUMA0
+  物化后用`2,3,6`动态评测，两条pipeline并发且EMBER总占6卡。formal roots固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_materialized_f02f9148_gpu01p3_20260905/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_strict250_f02f9148_gpu01p036_20260905/`、
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_materialized_f02f9148_gpu02p2_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_strict250_f02f9148_gpu02p236_20260905/`；launch时均须
+  不存在。`/data1` quota为`779170288/1084227584 KiB`，约290.9GiB limit余量，新增物化与两份250-row结果保守小于2GiB。
+  evaluator保持cost-balanced dynamic queue与每GPU 3 replicas；正式裁决直接对carrier43及v3/v2相邻点报告逐task、breadth、
+  retained/gained/lost、churn和配对成功集合，不以微小functional信号替代行为。
+
 - parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
   `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由
   `-.000319/-.000310`恶化到`-.000691/-.000649`。对应held5 strict250为`40/250`与`38/250`，逐suite分别

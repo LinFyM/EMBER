@@ -3281,3 +3281,17 @@ language、patch和response的使用，在task93改善、在task1降低局部拟
 shared grounding；两任务m50均明确为正，足以排除工程断路。下一步保持结构、loss、数据和超参不变，直接运行73-task 25/50短资格。
 只有shared结果才能判断分源是否把capacity换成transfer；若仍失败，应分析标准attention职责或训练识别性，并整体替换失效职责，而不是
 针对两任务差异增加数学变换链。
+
+## 167. language分源v4首次产生相邻稳定的true-held shared正信号
+
+73-task fresh shared在optimizer25/50自然完成。12个见过的gradient诊断任务全视频正向由`5/12`增到`7/12`，m50的fit/held
+benefit均值为`+0.000029/+0.000045`；更关键的是，完全零梯度的task6/79在两个相邻checkpoint均为`2/2`全视频正向。
+两task汇总fit/held benefit在m25为`+0.000100/+0.000141`、m50为`+0.000108/+0.000136`。相对v3的相邻`0/2`且随训练
+恶化，这是首次稳定方向翻转，说明把language、patch和完整PI0.5 response拆成独立标准attention读取确实改善了task-disjoint
+grounding，而不是只有task-local拟合收益。
+
+该证据仍然弱：task6的held benefit只有`2.0e-5 -> 0.9e-5`，总体functional recovery也只有千分之几，不能推断rollout一定改善，
+更不能据此扩长训练。最有信息量且最低成本的下一步是按预登记相邻m25/m50各做一次held5 correct-only strict250。若行为提升成立，
+再保持同一简洁block扩展数据/步数并比较fully-random Final；若仍不超过carrier或缺少breadth，则优先分析标准block的职责和
+functional-to-behavior信用，并整体替换失效职责。无论结果如何，都不添加source gate、summary、whitening、transport、校准器或
+其它串联数学补丁；full50、真实native X/Y、signed pooling与唯一rank16保持不变。

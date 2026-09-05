@@ -29,6 +29,17 @@
   `.002008/.002443`，unified/signed-X/signed-Y为`.006853/.003875/.002644`，冻结policy/observer无梯度，生成76 tensors和唯一
   rank16；峰值allocated/reserved约`33.79/35.84 GiB`。下一步是clean pushed detached authority上的task1/task93 optimizer25/50。
 
+- common-base v3 task-local formal launch contract：科学实现固定为clean pushed `7d6f2d3a`，配置固定
+  `configs/pi05_ecp_policy_response_writer_unified_factor_v3.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
+  各自fresh、K1、component initialization；warmup5 + effective45、optimizer25/50 checkpoints、每步8条correct cross-episode
+  functional rows，两条fit视频产生梯度、第三条same-task held视频只读；不读取wrong/shuffle/reverse、validation/test或reward。
+  task93使用gpu01物理0/NUMA0，task1使用gpu02物理6/NUMA1；launch检查时前者无compute process、后者仅有约4.75 GiB低util他人进程，
+  两者相对对应实测峰值均有充分余量且不触碰他人进程。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_common_base_tasklocal_task93_full_s50_7d6f2d3a_gpu01p0_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_common_base_tasklocal_task1_full_s50_7d6f2d3a_gpu02p6_20260905/`，launch前均不存在。
+  `/data1` quota为`778716248/1084227584 KiB`，limit余量约`291.4 GiB`，两run复用canonical assets且合计新增保守小于1 GiB。
+  单进程固定`NCCL_P2P_DISABLE=1`与GPU-local NUMA；只允许同commit、同节点/物理卡、config、task与topology exact resume。
+
 - combined-softmax v1的task1/task93正式25/50-step控制均从clean detached `06f3b465`完成。task1 m25/m50 fit/held recovery为
   `-.007016/-.002323`与`-.003950/+.005152`，两个checkpoint均没有三条视频全为正；task93为
   `+.024906/+.026362`与`+.097318/+.068702`，两点三条视频均为正。相对前代Native-Temporal，v1参数更多、速度更慢且两task容量

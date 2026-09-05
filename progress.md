@@ -5,14 +5,23 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4实现、采样核对与真实四task profile完成，准备冻结提交后正式运行。
+  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4已从clean pushed detached `078a2e68`正式运行，gpu01物理4/5/6三rank。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点与query覆盖对照启动合同（2026-09-06 02:00 CST）
+## 最新节点（2026-09-06 02:02 CST）
+
+- 正式shared4 query覆盖对照已从clean pushed detached `078a2e68`启动，gpu01物理4/5/6、NUMA1、三rank；精确run root为
+  `runs/outputs/pi05_ecp_prw_shared4_fresh_queries_s64_078a2e68_gpu01p456_20260906/`。launcher位于`.codex/tmp/prw_fresh_queries_launch/train.sh`，
+  输出/commit/log/exit集中在同目录`run.json`；完成后自动将launch、CPU采样审计与真实profile证据保留到formal root。
+- 32-step fit/held驻留物化launcher已准备，checkpoint sealed后立即与剩余训练并行；所有新工作合计最多6卡。物化/评测仍从同一新frozen
+  worktree运行。两个节点live检查已通过，选定4/5/6无其它process；最新/data1用量720598052 KiB，原预算不变。
+- 旧d35e66bf batch worktree经clean与进程引用核对后已移除，其18个完整eval和checkpoint evidence仍保留，历史可按pushed commit重建。
+
+## query覆盖对照启动合同（2026-09-06 02:00 CST）
 
 - 三rank真实profile已完整exit0，四tasks每步等权各1/4，2次更新为12.629/12.588秒。rank实际任务为`[1] / [83,72] / [93]`，
   Long单task约11--12秒，与两短task合计接近，增加第四卡无法明显降低当前主要计算下界。最大allocated35.76/reserved36.58 GiB；

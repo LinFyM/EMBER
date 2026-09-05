@@ -59,6 +59,32 @@
   cache固定为`.codex/tmp/prw_native_temporal_14task_cache_78a0ca6a_gpu02_20260905/`，launch前二者均必须不存在。该短资格直接检验
   显式factor-side是否改善shared task-disjoint映射；不以task1内部恢复率另设人为准入线，也不在本轮追加输出补丁。
 
+- 上述Native-Temporal shared formal已从clean detached `53131aae`自然完成并exit0。m25/m50 gradient-task全视频为正为`7/12`
+  与`8/12`，fit/held benefit由`+.00013531/+.00008523`增至`+.00030324/+.00018066`；但fresh zero-gradient held task4/78在
+  m25均为正，到m50均转负。task4三视频平均benefit由`+.00023626`降至`+.00002188`，task78由`+.00005355`降至
+  `-.00005258`；task74训练视频改善而held视频恶化到`-.00070093`。train/eval/total为`270.16/294.03/629.32s`，peak
+  reserved约`34.79 GiB`；source policy、true-held、same-task-held、Panel-B及wrong backward均为0，输出为唯一完整rank16。
+
+- 冻结m25/m50后的correct-only诊断已先校正为与formal完全相同的canonical rank4和每visit完整16 Panel-B rows；task4单点复算与
+  formal loss精确吻合。task4/78的m25->m50真实mean loss分别增加`+.00021437/+.00010613`。Simpson路径积分显示伤害分散：task4
+  最大项为Process tokenization`+.00009075`，两层Frame合计`+.00003895`，两层Native MLP合计`+.00003029`，signed-output
+  `+.00001424`；task78同样在Process、Frame、bank tokenization、Native MLP与两侧head上广泛同向。task74路径高度非线性且大项
+  相消：bank tokenization、bank read与signed-input有益，而Frame、Native MLP、Process tokenization与signed-output抵消。
+  六task梯度几何的整体pairwise mean为`-.00588`、负比例`.667`。结论是12-task后半共享更新整体过拟合/冲突，不是单一head故障；
+  不据此追加末端数学补丁，先做m25闭环并以同图扩大task覆盖。
+
+- Native-Temporal m25 held5 correct-only launch contract：checkpoint固定为上述shared run的`macro_00000025`，只因预注册Panel-B
+  task-disjoint证据在任何held5 rollout前选择；不使用checkpoint union或m50结果融合。held5固定global task `0/9/18/25/36`、每task
+  correct demo5、K1、一次Writer调用、唯一38-target rank16；不读取wrong、shuffle、reverse、validation/test action/reward/state。
+  scientific implementation仍为`78a0ca6a`，formal authority为包含本合同和active held5 config的下一clean pushed main。物化与
+  strict250 roots固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m25_held5_correct_k1_materialized_78a0ca6a_gpu02p0_20260905/`和
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_m25_held5_correct_k1_strict250_78a0ca6a_gpu02p012_r3_20260905/`，
+  launch前均不存在。2026-09-05 live同时检查两节点后，gpu02物理0/1/2仅约`209/162/162 MiB`、0% util，只有同一共享gqma
+  约`148--186 MiB`低占用，选择三卡materialize后`3 replicas/GPU`动态Evaluator；总EMBER占卡3张。`/data1` quota为
+  `778540680/1084227584 KiB`，limit余量约`291.5 GiB`，本次复用canonical assets且新增远小于1GiB。固定launcher为
+  `.codex/tmp/launch_prw_native_temporal_m25_held5_78a0ca6a_gpu02p012_20260905.sh`；launch前还会刷新两节点且不干扰他人进程。
+
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，

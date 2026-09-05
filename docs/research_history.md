@@ -2890,3 +2890,15 @@ task-local全面优势。
 由于该架构变化针对的是shared X/Y冲突，下一最小裁决仍是预注册12-gradient + fresh held4/78的50-step whole-Writer资格；不延长
 task-local，不扫LR/seed，也不补回gain、temperature、normalization或其它专用数学链。完整roots、数值与信息墙审计见
 `findings.md`第154节。
+
+## 150. Native-Temporal shared先泛化后漂移
+
+clean detached `53131aae`完成12-gradient + fresh-held4/78的50-step whole-Writer formal。m25/m50的gradient fit/held benefit由
+`+.0001353/+.0000852`升至`+.0003032/+.0001807`，全视频为正由`7/12`升至`8/12`；但true-held task4/78从m25的`2/2`
+同时转为m50的`0/2`。task74也出现fit改善而held视频显著恶化。训练只用correct cross-episode functional，所有held、Panel-B、wrong
+backward与shuffle/reverse reads均为零。
+
+使用与formal一致的canonical rank4和完整16-row Panel-B做m25->m50路径积分后，task4/78退化被定位为跨Process、Frame、bank
+tokenization、NativeTemporal MLP与signed heads的分布式共享漂移；task74则由bank相关路径帮助、Frame/MLP/signed-output抵消且高度
+非线性。故没有证据支持给末端添加数学补丁。m25已在任何held5 rollout前由task-disjoint正信号选定，下一证据是其held5 correct-only
+strict250；随后保持同一简洁图，用73-task optimizer100/200 fresh短跑单独检验任务多样性。完整数值和artifact见`findings.md`第155节。

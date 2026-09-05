@@ -3069,3 +3069,26 @@ fit/held视频均为正。正式roots为
 两run的train/evaluation/total分别为`145.75/82.02/238.37s`与`172.96/81.54/275.25s`，峰值allocated/reserved约
 `20.93/21.34 GiB`与`29.48/30.19 GiB`。两者source policy trainable参数为0，wrong、held及Panel-B backward calls均为0，且各自只
 产生一套完整38-target rank16。该成本允许直接运行约十分钟量级shared短资格，不需要为内部正控再设置额外人为Gate。
+
+## 155. Native-Temporal早期跨任务信号随后被分布式共享漂移覆盖
+
+clean detached `53131aae`的12-gradient + fresh-held4/78 whole-Writer formal完整完成50步。m25/m50 gradient tasks全视频高于carrier
+由`7/12`升至`8/12`，fit/held benefit由`+.00013531/+.00008523`升至`+.00030324/+.00018066`；见过任务总体仍在学习。真正未见的
+task4/78却从m25的`2/2`全视频为正同时转为m50的`0/2`：task4三视频平均benefit从`+.00023626`降至`+.00002188`，task78从
+`+.00005355`降至`-.00005258`。gradient task74也把fit均值从`-.00011730`推到`+.00009264`，但独立held视频由`-.00016430`
+恶化为`-.00070093`。正式root为
+`runs/outputs/pi05_ecp_policy_response_writer_native_temporal_12gradient_2held_k1_component_s50_78a0ca6a_gpu02p0123_sharedmmap_20260905/`；
+train/eval/total为`270.16/294.03/629.32s`，peak reserved约`34.79 GiB`，所有信息墙计数为零。
+
+冻结checkpoint后的六task correct-only梯度几何比Frame-Bank更冲突：pairwise mean `-.00588`、负比例`.667`。但精确checkpoint路径
+积分否定了“只修一个head”的解释。诊断使用与formal一致的canonical rank4、每visit完整16 Panel-B rows、两条fit加一条held视频、
+8 visits及alpha `0/.5/1`；task4单点复算与formal loss精确一致。task4/78的m25->m50 mean loss实际增加
+`+.00021437/+.00010613`，有害贡献同时来自Process tokenization、两个Frame blocks、bank tokenization、NativeTemporal MLP和
+signed heads。task4最大单项Process tokenization约占可积分伤害的46%；task78的Process与Frame合计约占57%，并不存在唯一末端责任点。
+task74则呈大幅相消：bank tokenization、两层bank read和signed-input沿checkpoint方向有益，Frame、Native MLP、Process tokenization
+与signed-output有害；中点先改善、终点再退化，Simpson closure也较差，说明它是非线性共享折衷而非一个常数校准问题。
+
+因此当前负证据淘汰的是“小型12-task上继续沿同一共享方向训练即可稳定泛化”，不是两种block、full horizon、native X/Y或signed
+pooling。架构简洁性在这里是实际决策约束：不添加gain、temperature、normalization、whitening或head后校正。m25在读取任何held5
+rollout前已由两个fresh task全视频正信号选定，下一步直接运行single-checkpoint held5 correct-only strict250；随后保持同一图，fresh
+扩到73 gradient tasks并以optimizer100/200短跑只检验task diversity。若fresh held仍随训练反向，才以证据替换完整职责模块。

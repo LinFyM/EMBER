@@ -97,9 +97,16 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 19. [x] clean detached真实task93 full forward/VJP/materialization smoke及2-step profile通过；task1/task93 25/50-step Composer正控
     也已完成。task1由m25微负转为m50 fit/held `+.0320/+.0169`且三条视频为正；task93两点稳定约`.122--.126`且三条视频均为正。
     该结果证明新接口可学，但不把task1弱恢复或内部恢复率变成额外性能门槛；
-20. [ ] 以同12 gradient tasks和预先固定fresh held task4/78运行50-step shared资格；出现task-disjoint正信号才运行held5，
-    再决定mixed-K、fully-random Final和扩展训练；
-21. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls，最终回到validation8 strict paired400。
+20. [x] 以同12 gradient tasks和预先固定fresh held task4/78完成50-step shared资格。m25的两个true-task-held均跨全部视频为正，
+    m50却同时转负；gradient tasks由`7/12`升至`8/12`且平均fit/held继续改善。精确m25->m50路径积分显示held退化分散在
+    Process、Frame、bank tokenization、NativeTemporal MLP和signed heads，不能归结为单个末端head或靠补丁修复；
+21. [ ] 冻结预注册m25 single checkpoint，以held5固定correct K1各调用一次Writer并完成strict250，直接判断早期task-disjoint
+    functional正信号是否迁移到闭环行为；
+22. [ ] 保持完全相同的两种可复制block、full-50、correct-only目标与width/rank，从fresh把gradient task覆盖扩到73个，并以
+    optimizer100/200两个整步节点作一小时内短裁决。这个实验只改变任务多样性；若fresh held仍随训练反向，则判定当前shared函数类
+    存在结构缺陷，按归因替换完整职责模块而不增加数学修正链；
+23. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
+24. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 
@@ -255,10 +262,9 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 31. [x] 裁决functional-to-closed-loop接口本身：legacy与valid-action-only功能benefit在六task上符号一致，padding不是shared失败根因；
     authority72 task-local m50/m100在同一50初态由carrier `34/50`提高至`35/50`与`40/50`，m100为`30 retained / 10 gained /
     4 lost`且达到task expert `38/50`量级。functional信用可转化成真实闭环变化，当前主因收窄为shared task-disjoint mapping；
-32. [ ] 完成当前`6 meta + 6 target`联合采样修复并裁决m50/m100：它同时把target角色质量从25%提高到50%，并把旧global-step
+32. [x] 完成当前`6 meta + 6 target`联合采样修复并裁决m50/m100：它同时把target角色质量从25%提高到50%，并把旧global-step
     周期别名造成的每task 1/2 fit video、8/16 Panel visits恢复为2/2、16/16。通用实现改用per-task occurrence cursor并已通过
-    回归；若联合修复仍不改善target-held功能与闭环，不再扫比例。若明显改善，再按必要性决定是否用旧`9 + 3`权重做一次
-    cursor-only fresh归因，而不是把联合收益误称为纯role-weight效果；
+    回归；最终m50/m100 held5为`39/45`、breadth均仅3且Goal/Long为0，两个true-task-held均为负，因此没有再扫比例；
 33. [ ] full shared信号成立后进入mixed-K、fully-random fresh Final joint和validation8相邻single-checkpoint strict paired400；
 34. [ ] selected checkpoint冻结后补齐最终因果controls；只有base Writer稳定且剩余错误集中在action detail时才评估Action Meta；
 35. [ ] 达到最终合同，或在完整信息量证据下形成当前函数类乃至EMBER总体停止裁决。

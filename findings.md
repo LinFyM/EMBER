@@ -3268,3 +3268,16 @@ carrier的1；这不是随机创造另一组成功，而是大体恢复carrier�
 factor block是主要破坏源，而learned evidence并非主要负源。与此同时39仍低于carrier43、breadth仍`3/5`且Goal/Long为0，故“只冻结或
 删除block”不是候选Writer，也不能替代v4的fresh shared裁决。后继只能修正统一block内部的task-grounded标准读取或整体替换其职责，
 不能沿旧图追加校正链。
+
+## 166. language分源v4保留局部容量但呈task-dependent增减
+
+clean pushed `f02f9148`的task1/task93 fresh task-local均完成optimizer25/50。task93 m25/m50的fit/held recovery为
+`.155260/.147577`与`.218747/.218805`，两点三条视频全部高于carrier；m50相对v3的`.206582/.184789`进一步提高，说明language
+分源没有切断完整response/native路径，并能在该任务加强grounding。task1 m25只有`.010424/.009039`且一条fit聚合为`-5.6e-6`；
+m50转为`.043085/.048998`且三条视频均正，但低于v3的`.078978/.081318`。因此同一修改不是单调容量增益：它重分配了共享MHA对
+language、patch和response的使用，在task93改善、在task1降低局部拟合效率。
+
+这不支持为task1加source gate或手工混合系数。task-local有自由task query，回答的是“图能否学习”，而v4的目标变量是无task query的
+shared grounding；两任务m50均明确为正，足以排除工程断路。下一步保持结构、loss、数据和超参不变，直接运行73-task 25/50短资格。
+只有shared结果才能判断分源是否把capacity换成transfer；若仍失败，应分析标准attention职责或训练识别性，并整体替换失效职责，而不是
+针对两任务差异增加数学变换链。

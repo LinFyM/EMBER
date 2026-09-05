@@ -3020,3 +3020,12 @@ Spatial9上的非稳定换位，支持trained repeated factor block是shared损�
 所以只删除或冻结block不是active方法。materialized与rollout roots分别为
 `runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_materialized_d557dffc_gpu01p0_20260905/`和
 `runs/analysis/pi05_ecp_policy_response_writer_common_base_m200_evidence_only_held5_correct_k1_strict250_d557dffc_gpu02p46_20260905/`。
+
+## 161. source-separated v4 task-local正控
+
+clean pushed `f02f9148`上的task1/task93均完成fresh optimizer25/50。task93 m25/m50 fit/held recovery为
+`.155260/.147577`与`.218747/.218805`，两点三条正确视频全部优于carrier，且m50高于v3。task1 m25为
+`.010424/.009039`并有一条fit近零微负，m50为`.043085/.048998`且三条均正，但弱于v3。两run均保持full50、positive-only、
+冻结policy/evidence、held与wrong零梯度及唯一rank16。物理3首次被误绑NUMA0并在output创建前fail-fast；corrected fresh `r2`绑定
+NUMA1自然完成，没有覆盖或resume无效状态。该结果证明v4图仍有task-local容量但影响依task而异；正式迁移判断进入73-task
+optimizer25/50短shared，不据此增加source gate、混合标量或其它专用链。

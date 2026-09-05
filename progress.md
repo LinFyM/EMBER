@@ -45,15 +45,36 @@
   各自fresh K1 component-init，冻结source policy、Native Observer与evidence tokenizer，只训练同一Unified Factor Writer及正控专用
   task query；warmup5 + effective45、optimizer25/50 checkpoints、每步8条correct cross-episode functional rows，两条fit视频反传、
   第三条same-task held视频只读。wrong/shuffle/reverse、validation/test、reward与Panel-B均不产生梯度，内部恢复率不设置成人为续跑门槛。
-  2026-09-05合同检查时gpu01物理0/3分别约`1.27 GiB/1 MiB`且util均0，二者无compute process；task93固定物理0、task1固定物理3，
-  均属NUMA0并相对v4最长smoke `36.91 GiB`留有余量。同期gpu02物理4/6正在执行本项目diagnostic rollout，故不挤占；总EMBER卡数
+  2026-09-05合同检查时gpu01物理0/3分别约`1.27 GiB/1 MiB`且util均0，二者无compute process；task93固定物理0/NUMA0、task1固定
+  物理3/NUMA1，并相对v4最长smoke `36.91 GiB`留有余量。同期gpu02物理4/6正在执行本项目diagnostic rollout，故不挤占；总EMBER卡数
   不超过4。输出固定为
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_tasklocal_task93_full_s50_da964fad_gpu01p0_20260905/`与
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_tasklocal_task1_full_s50_da964fad_gpu01p3_20260905/`，launch前均不存在；
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_tasklocal_task93_full_s50_da964fad_gpu01p0_20260905/`与task1 corrected fresh
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_tasklocal_task1_full_s50_da964fad_gpu01p3_r2_20260905/`；
   logs固定`.codex/tmp/prw_source_separated_task93_tasklocal_da964fad_gpu01p0.log`与
-  `.codex/tmp/prw_source_separated_task1_tasklocal_da964fad_gpu01p3.log`。`strg01` live `/data1` quota为
+  `.codex/tmp/prw_source_separated_task1_tasklocal_da964fad_gpu01p3_r2.log`；首次NUMA fail-fast另保留原无`r2`日志。`strg01` live `/data1` quota为
   `778990080/1084227584 KiB`，limit余量约291.1 GiB，两run复用canonical assets且合计保守小于1 GiB。单进程使用
   `NCCL_P2P_DISABLE=1`、GPU-local NUMA与fresh output；只允许同commit、同config、task、节点/物理卡和topology exact resume。
+
+- v4 task-local formal已完成并exit0。task93 m25/m50 fit/held recovery为`.155260/.147577`与`.218747/.218805`，两个checkpoint
+  三条correct视频全部自发优于carrier；m50高于v3的`.206582/.184789`。task1 m25为`.010424/.009039`且一条fit仅
+  `-5.6e-6`，m50转为`.043085/.048998`且三条视频全部为正；它保留容量但弱于v3的`.078978/.081318`。两run均完成50/50、
+  保存25/50 checkpoints、冻结policy/evidence encoder且held/Panel-B/wrong backward均为0，输出唯一rank16。task1首次launch把物理3
+  误绑NUMA0，formal在创建output前fail-fast；失败日志保留，corrected `r2`以NUMA1 fresh运行，未覆盖任何状态。该混合结果只支持立即
+  运行73-task 25/50短资格，不支持长跑或新增结构。
+
+- source-separated v4 73-task shared formal launch contract：从包含本合同的下一clean pushed main，以相同7,495-byte v4 config、fresh
+  component initialization和optimizer/scheduler运行；K1、full-50、correct cross-episode functional positive-only，55 meta + 18 target
+  产生梯度，task6/79只作zero-gradient held诊断。本配置每update采样`9 meta + 3 target`共12 task且各占`1/12`，仅为当前短实验的
+  覆盖/成本选择，不是架构或owner固定要求；只运行warmup5 + effective45并保存optimizer25/50，不预先扩长。live preflight时gpu01
+  物理0/3/6分别为`1260/1/2 MiB`、util均0；以visible `0,3,6`运行3-rank DDP，rank0绑定物理0/NUMA0，rank1/2绑定物理3/6/NUMA1，
+  rank-local wrapper已用3进程真实affinity probe验证为node0的`0-27,56-83`与node1的`28-55,84-111`各56 CPUs。选择这三张空闲卡避免gpu02物理4/6的他人显存，
+  且相对实测v4峰值均有余量。fresh output/cache为
+  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_73task_k1_component_s50_f02f9148_gpu01p036_sharedmmap_20260905/`与
+  `.codex/tmp/prw_source_separated_v4_75task_cache_f02f9148_gpu01_20260905/`；log/exit为
+  `.codex/tmp/prw_source_separated_v4_73task_s50_f02f9148_gpu01p036.{log,exit}`。上一matched raw cache实测
+  `118247162700` bytes，本轮fresh重建；`strg01` live `/data1` quota为`779098484/1084227584 KiB`，约291.0 GiB limit余量足够cache与
+  小于2 GiB output。固定`NCCL_P2P_DISABLE=1`、dynamic cost-balanced assignment和single-copy safetensors mmap；exact resume锁相同
+  pushed commit、config、world-size3、visible顺序、rank-local NUMA和cache/output roots。
 
 - parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
   `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由

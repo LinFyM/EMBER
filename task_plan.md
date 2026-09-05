@@ -154,9 +154,11 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     calibrator或数学链，CPU合同与schema互斥检查已通过；
 35. [x] clean `da964fad`完成task93真实full forward/VJP/materialization smoke；79 frames、2 probes、50 horizons、38 targets全部消费，
     patch/language/response/native与统一block梯度均非零，生成唯一76-tensor rank16，峰值reserved `36.91 GiB`；
-36. [ ] 从clean pushed authority完成task1/task93 optimizer25/50正控及73-task optimizer25/50短资格；
-37. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-38. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+36. [x] 从clean pushed authority完成task1/task93 optimizer25/50正控；task93两点稳定通过且m50 fit/held为`.2187/.2188`，task1由m25
+    近零到m50 `.0431/.0490`并三视频为正。证明图有容量但task1弱于v3，不把该内部差异设成人为停止门；
+37. [ ] 从clean pushed authority完成73-task optimizer25/50短资格并以gradient/true-held Panel-B决定是否值得首次closed-loop；
+38. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+39. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

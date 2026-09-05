@@ -21,12 +21,25 @@
   task1训练还普遍降低bank质量，task93仅在后层局部恢复。因此失败不是统一latent断图，而是实现定义的token cardinality让语义来源
   竞争同一归一化。
 
-- parallel-read v2当前位于`codex/parallel-policy-native-read`隔离worktree，只在同一block内以独立policy/native cross-attention替换
+- parallel-read v2已由`831d9d6c`集成并推送到`main`，只在同一block内以独立policy/native cross-attention替换
   combined softmax，其余block、depth、full bank、loss、rank与readout完全不变。15项定向CPU回归通过，包含native tokens成倍复制不改变
   读出的合同。gpu01物理3上的task93真实full smoke自然exit0：79 sampled frames、2 probes、完整50 horizons、38 targets；
   policy/native read梯度分别为`.002554/.003015`，prefix/response/unified/signed-X/signed-Y分别为
   `.008025/.006184/.008155/.001529/.005662`，冻结policy/observer无梯度，生成76 tensors和唯一rank16；峰值
   allocated/reserved约`37.47/41.63 GiB`。下一步是clean pushed detached authority上的matched task1/task93 25/50控制。
+
+- parallel-read v2 task-local formal launch contract：科学实现固定为clean pushed `831d9d6c`，配置固定
+  `configs/pi05_ecp_policy_response_writer_unified_factor_v2.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
+  各自fresh、K1、component initialization；冻结policy、Native Observer和evidence tokenizers，只训练同一parallel-read Factor Writer与
+  task-local query；warmup5 + effective45、optimizer25/50 checkpoints、每步8条correct cross-episode functional rows。两条fit视频
+  产生梯度，第三条same-task held视频只读；不读取wrong/shuffle/reverse、validation/test或reward，也不把内部恢复率设置为续跑门槛。
+  输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_parallel_read_tasklocal_task1_full_s50_831d9d6c_gpu01p3_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_parallel_read_tasklocal_task93_full_s50_831d9d6c_gpu01p6_20260905/`，launch前必须不存在。
+  最近live候选为gpu01物理3/6，但正式launch前仍同时刷新gpu01/gpu02；`/data1` quota为
+  `778441340/1084227584 KiB`，limit余量约`291.6 GiB`，两run复用canonical assets且合计新增保守小于1 GiB。命令为detached authority下
+  `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=<3|6> PYTHONPATH=src ... scripts/train_ecp_policy_response_writer.py --phase task-local
+  --representation full --initialization component --mode formal`。
 
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、

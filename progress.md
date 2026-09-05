@@ -12,7 +12,15 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:44 CST）
+## 最新节点（2026-09-06 03:49 CST）
+
+- 32-step两条件物化均exit0，首次runtime114.60秒、驻留第二次0.147秒，三task物化14.17/12.80秒。完整rank16 banks已sealed。
+  held strict150已在gpu01物理0/2、fit strict150已在6启动；训练继续3/4/5，总共六卡。两组均来自387f6d0b的eager batch运行面，
+  两节点实时检查及精确launcher保存在`.codex/tmp/prw_asymmetric_launch/`。64-step两条件在checkpoint/训练设备释放后继续同一矩阵。
+- 已完成且不再被进程使用的078 query-coverage frozen worktree经clean/引用检查后移除；只保留当前02a训练和387评测两个frozen trees。
+  原训练checkpoint、raw rows、functional/配对汇总、readout与完整性能probe evidence全部保留，可按pushed commit重建历史运行面。
+
+## 前一执行节点（2026-09-06 03:44 CST）
 
 - 32 checkpoint已完整生成，GPU0正在驻留物化held与first-fit两条件；训练继续3/4/5。物化与后续eager batch eval authority为
   clean pushed detached `387f6d0b`，tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-asymmetric-eval-20260906`；只新增同task静态

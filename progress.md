@@ -54,6 +54,23 @@
   计数均为0，输出均为唯一rank16。该matched结果支持共同context确实承担bank定位，而非只靠innovation学习通用近rank1方向；它是
   task-local接口正证据，不冒充shared或闭环收益。下一步直接进入matched 73-task optimizer100/200 shared与两点held5。
 
+- common-base v3 73-task shared formal launch contract：科学代码固定为`7d6f2d3a`，active training config固定为clean pushed
+  `main@f214fefa`中的`configs/pi05_ecp_policy_response_writer_unified_factor_v3.json`（6,869 bytes），formal authority为包含本合同的
+  下一clean pushed main。实验从fresh optimizer/scheduler与component initialization训练whole Writer；K1、full-50、correct
+  cross-episode functional positive-only、55 meta + 18 target、该配置每update `9 meta + 3 target`、rows8、optimizer100/200
+  checkpoints保持与v2 matched。task6/79只作已消费zero-gradient诊断；same-task held、Panel-B与true-held均不反传，不读取
+  wrong/shuffle/reverse、validation/test outcome或reward。每update任务数及meta/target比例仅为本次matched配置，不是架构或owner固定要求。
+  输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_common_base_73task_k1_component_s200_f214fefa_gpu02p46_sharedmmap_20260905/`，single-copy
+  mmap cache固定`.codex/tmp/prw_common_base_75task_cache_f214fefa_gpu02_20260905/`，stdout/stderr固定
+  `.codex/tmp/prw_common_base_73task_s200_f214fefa_gpu02p46.log`；三者launch前均不存在，formal output root不由日志提前创建。
+  2026-09-05 launch前live检查中，gpu02物理4/6分别约`5.75/4.75 GiB`、`2%/0%`，均为低util他人进程；相对最长task93
+  v3实测`36.23 GiB`峰值仍留约`4--5 GiB`，不触碰其它任务。两卡同属NUMA1，使用world2 dynamic cost queue、rank-local NUMA、
+  deferred NCCL及`NCCL_P2P_DISABLE=1`。同一时点gpu01物理0空闲，保留给m100封存后的并行物化/评测，不跨节点拼训练卡。
+  gpu02 available host RAM约266 GiB；`/data1` quota为`778834860/1073741824 KiB`，quota余量约281.2 GiB；约105 GiB cache加
+  保守小于2 GiB formal输出安全，cache在训练/物化消费后删除。若他人显存动态增长触发OOM，只按同commit/topology exact resume，
+  不降低full horizon或改变科学合同。
+
 - combined-softmax v1的task1/task93正式25/50-step控制均从clean detached `06f3b465`完成。task1 m25/m50 fit/held recovery为
   `-.007016/-.002323`与`-.003950/+.005152`，两个checkpoint均没有三条视频全为正；task93为
   `+.024906/+.026362`与`+.097318/+.068702`，两点三条视频均为正。相对前代Native-Temporal，v1参数更多、速度更慢且两task容量

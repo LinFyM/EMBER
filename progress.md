@@ -12,7 +12,23 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 04:32 CST）
+## 四视频 formal启动合同（2026-09-06 04:37 CST）
+
+- 四update真实profile exit0，16个task executions覆盖全部四fit视频并与预注册query/video/noise逐行匹配；2,970,368 Writer参数，
+  source/observer/task-local参数均0，完整38-target rank16。各step11.64--12.35秒，最长87帧/新增66帧均通过；峰值allocated35.77GiB、
+  reserved36.61GiB。单份capture tensor约14.99GiB，临时mmap已自动移除。profile只作资源和真实梯度证据。
+- 正式训练从本合同所在的下一clean pushed commit的detached tree
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-four-video-20260906`启动，config为
+  `configs/pi05_ecp_prw_samegraph_shared4_four_videos_v1.json`；`--phase shared --mode formal --representation full --initialization component`
+  `--stop-after-step 64`，fresh optimizer/scheduler，warmup5+effective59、checkpoint8/32/64，query/video/Panel-B与四条件strict150见active design。
+- 计划gpu01物理3/4/5、NUMA1、world3、NCCL_P2P_DISABLE=1；启动前再次live核对两节点与/data1 quota。exact resume仅限原commit/config/
+  world/物理GPU顺序/root；不恢复两视频run的optimizer。run root计划为
+  `runs/outputs/pi05_ecp_prw_shared4_four_videos_s64_{commit}_gpu01p345_20260906/`，analysis为
+  `runs/analysis/pi05_ecp_prw_samegraph_four_video_20260906/`；新增峰值<25GiB，复用全部大资产，单份mmap退出清除。
+- 32/64 first-fit/held各strict150继续在checkpoint生成后与训练并行，使用同eager batch入口、固定状态/RNG与原视频；原非对称四结果
+  为直接参照。functional须另报原两fit视频匹配平均，不与新四fit平均混淆。精确launcher/log/exit、profile与采样审计保留至formal root。
+
+## 前一执行节点（2026-09-06 04:32 CST）
 
 - 非对称四条件与两个同batch参照全部exit0，900新行已完整汇总。对称64 fit/held41/44，非对称32为43/41、64为44/45；
   64非对称逐Spatial/Goal/Long为fit40/4/0、held38/6/1。相邻fit churn13、held18；64跨视频R/G/L=39/6/5、Jaccard.78，

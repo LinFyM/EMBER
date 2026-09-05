@@ -217,6 +217,46 @@ active只保留A2；原attention block归入process、shape校验独立，计算
 永远停留四任务的工程门。已有55meta+18target的allowlist和原两fit元数据仍可用；正式任务/预算、profile、validation8视频与数值选择
 合同必须在后继launch前登记。这是剩余条件的检验，不是已知数据修复；fully-random与真实K仍保留为正式候选责任。
 
+### A2充分共享映射与validation8预注册（2026-09-06）
+
+当前实验为`configs/pi05_ecp_prw_meta73_equal_exposure_v1.json`。沿用审计过的55 meta+18 target明确allowlist，
+task6/79继续零梯度诊断；固定validation/test及其语义重复项不进入梯度。旧Native-Temporal、parallel-read、common-base的
+73-task 100/200结果已失败，本实验不抹去它们，也不复活旧v4的50-step run。此前A2四task有有限净行为增量，但缺少Object
+梯度且没有检验充分共享映射；新实验只检验当前图在这一剩余条件下能否迁移，不把数据不足认作根因。
+
+每次optimizer update包含全部73 tasks，各权重严格1/73，64 updates使每task恰64 exposures、每条原fit视频32次。
+与A2四task保持模型、component初始化、seed20260905、warmup5+effective59、AdamW/LR、8 cross-episode action rows、
+fresh Panel-A sampling、normalizer和两fit K1不变；总4672 task executions。新增任务会改变global gradient mean及batch大小，
+因此这是共享映射扩展干预，不能单独归因于数据数量或梯度冲突。保留32/48/64三个完整checkpoint；Panel-B只作定位，
+覆盖meta1/2/8/9/32/52、target72/77/83/93/94和诊断6/79。只声称K1；fully-random同拓扑fresh联合训练仍为Final候选责任。
+
+训练64步自然完成后，对三个checkpoint各运行两组correct K1 validation8 strict400，禁止先按functional筛选。
+两组在每个task的50条成功demo中，使用`random.Random(20260906+104729*global_task_id).sample(range(50),2)`
+无放回事前抽取；global IDs 1/3/11/13/23/26/31/32对应primary/other为42/39、12/23、39/36、15/4、16/6、45/26、45/34、6/1。
+配置为`pi05_ecp_prw_meta73_validation_{correct,other_correct}_v1.json`。两组都是正式qualification arms；不是最后才打开的
+negative controls。每组全部400个状态与env/policy RNG严格配对，official preprocessing、50 init states/task、成功即停止和
+suite horizon不变，使用现有eager batch evaluator、long-first动态队列与persistent workers。
+同一提交和400状态另测frozen source与stable carrier作可比参照，各一次；carrier无视频、零Writer调用，直接引用已冻结的唯一rank16。
+这两组不参与checkpoint选择，也不从validation形成任何梯度。
+
+事前数值资格定义如下，不在看到结果后放宽：
+
+- 相邻pair只能是32→48或48→64；pair内两checkpoint的两正确视频panel均严格>145/400。
+- 四个panel均至少6/8 tasks各有≥5成功，四suite各≥5，Goal与Long各≥15成功。
+- 每一video panel内，相邻总分绝对差≤20，churn=(gained+lost)≤40/400，retained/max(前后成功数)≥.85、Jaccard≥.75。
+- 每一checkpoint的跨视频总分差≤20，retained/max(两组成功数)≥.85、Jaccard≥.75；按suite/task另报全部R/G/L，不能由总分掩盖损伤。
+- 存在合格pair才有候选：在合格pair所含checkpoint中最大化两视频较低分，依次以两视频均分、较晚step破同分。
+  不使用checkpoint union、平均LoRA或挑视频。方法候选仍须完成fully-random同图比较，再冻结唯一selected checkpoint并补完整
+  wrong/no-video/language/first-final/shuffled/reversed因果controls；负controls不反馈本轮选择或架构。
+
+若未通过，按全部single-checkpoint闭环与相邻成功集合定位，保留实际正证据；不自动续训、扫LR/seed/rank、增同task视频或回到P/Q。
+若接近门槛且趋势有信息，新的实验须提出能区分竞争解释的具体干预。任一结果均不消费test8。
+
+资源：先用真实73-task完整group做两update profile，覆盖146条fit视频/4736 stride5帧和最长87帧；不缩rows或frames。
+拟用gpu01空闲物理0/2/3/4/5/6，按GPU-local NUMA，deferred NCCL且NCCL_P2P_DISABLE=1；具体launch以live两节点快照为准。
+单份node-local共享mmap预计约104GB，含Panel-B新增视频、checkpoint与评测的/data1新增峰值预算<150GiB；复用资产并自动移除临时cache。
+实际profile外推总训练/评测时间后登记一次formal launch合同，来自clean pushed detached worktree，exact resume锁原topology。
+
 ## 3. 已封存P/Q候选：模块与因果作用
 
 ```text

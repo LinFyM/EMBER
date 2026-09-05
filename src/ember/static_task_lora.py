@@ -60,7 +60,8 @@ def _evaluation_role_valid(
         return declared == role
     return all((
         role == declared == "validation",
-        str(manifest.get("arm", "")).startswith(POLICY_RESPONSE_WRITER_ARM_PREFIX),
+        str(manifest.get("arm", "")).startswith(POLICY_RESPONSE_WRITER_ARM_PREFIX)
+        or manifest.get("arm") == FIXED_CARRIER_ARM,
         set(requested) == set(validation_task_keys()),
         len(requested) == 8,
     ))

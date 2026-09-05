@@ -41,7 +41,8 @@ def test_static_validation_role_requires_fixed_eight_tasks_and_explicit_scope() 
     assert not _evaluation_role_valid(bank, "validation", keys[:-1])
     assert not _evaluation_role_valid(bank, "validation", (*keys[:-1], ("libero_10", 3)))
     assert not _evaluation_role_valid({"arm": bank["arm"]}, "validation", keys)
-    assert not _evaluation_role_valid({**bank, "arm": "frozen_stable_carrier"}, "validation", keys)
+    assert _evaluation_role_valid({**bank, "arm": "frozen_stable_carrier"}, "validation", keys)
+    assert not _evaluation_role_valid({**bank, "arm": "unregistered_adapter"}, "validation", keys)
 
 
 def test_static_adapter_batches_same_task_without_reordering_episode_noise() -> None:

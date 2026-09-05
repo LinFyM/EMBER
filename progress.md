@@ -13,7 +13,35 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 06:38 CST）
+## A2 meta73 formal启动合同（2026-09-06）
+
+- 两update完整group profile已exit0：146实际task executions，84.94/85.15秒/update，allocated/reserved峰值35.78/36.59GiB，
+  最长87帧通过、2,970,368 Writer参数；source/observer/task-local参数与held/Panel-B backward全部0，完整38-target rank16。
+  原四任务实际video/query/noise与A2匹配，73个normalizer一致；97.59GiB临时cache已移除。profile仅作执行/梯度证据。
+- formal从下一clean pushed commit的detached tree`/data1/user/ymdai/projects/EMBER-worktrees/prw-meta73-20260906`启动，
+  `configs/pi05_ecp_prw_meta73_equal_exposure_v1.json`、shared/formal/full/component、64updates、32/48/64 checkpoint；
+  fresh optimizer/scheduler。预计训练约91分钟，加cache与Panel-B约100分钟；随后六组strict400及source/carrier各strict400约1.5小时，
+  实际队列/任务成功早停会改变评测耗时。不是小任务数的吞吐失衡，也不把耗时作为科学资格。
+- 两节点再次live核对，选择gpu01物理0/2/3/4/5/6，world6，NUMA0/0/1/1/1/1，NCCL_P2P_DISABLE=1与deferred NCCL。
+  /data1 quota721499868KiB/1073741824KiB，项目656GiB、shared84TiB可用、主机可用RAM440GiB；新增峰值<150GiB，复用全部大资产。
+  exact resume锁本run的commit/config/root/world/物理GPU顺序；不得从profile或旧架构恢复optimizer。
+- run为`runs/outputs/pi05_ecp_prw_meta73_equal_exposure_s64_{commit}_gpu01p023456_20260906/`；analysis为
+  `runs/analysis/pi05_ecp_prw_meta73_equal_exposure_20260906/`；精确launcher/log/exit在`.codex/tmp/prw_meta73_launch/`并随formal保存。
+  训练完全结束才物化validation；各checkpoint两video驻留复用，评测使用同一frozen authority，总并发最多六物理卡。
+- 仅扩展现有static-bank validation scope接受已验证的frozen carrier，仍锁固定8tasks、explicit validation与唯一canonical adapter；
+  8项CPU检查和真实carrier资产只读检查通过，Test、缺task与role重标均拒绝。A2工作配置的旧status元数据同步到恢复后的loader。
+  无Writer算法修改或新增source；73-task元数据/采样和两validation配置直接解析通过。数值选择合同已登记，不用内部loss筛选。
+
+## 前一执行节点（2026-09-06 06:48 CST）
+
+- A2充分共享映射实验已登记：55meta+18target，每update全73tasks等权，64updates共4672 executions；保持两fit/K1、8rows、
+  模型和optimizer cadence不变。旧73-task不同主干non-pass仍有效，本次不宣称数据数量是根因。
+- 三配置已生成，32/48/64两组正确视频各strict400及数值selector已在active design预注册；视频由固定seed无放回抽取，
+  未读取validation action/reward或结果。准备真实完整group两update profile，拟使用gpu01物理0/2/3/4/5/6，新增峰值<150GiB。
+- 两节点live显示上述设备有余量，gpu01可用主机RAM440GiB；/data1 quota当前721498928KiB/1073741824KiB。
+  新formal尚未launch，需真实profile与clean pushed frozen commit。
+
+## 前一执行节点（2026-09-06 06:38 CST）
 
 - P/Q七个train/materialize/eval launcher全部exit0，四个strict150为32fit38/held37、64fit41/held39；原A2为43/41、44/45。
   完整600新rows、六参照、逐task/suite/breadth与所有pair共10/10收齐。相邻heldR/G/L34/5/3、fit32/9/6；64跨视频32/7/9，

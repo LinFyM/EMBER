@@ -29,12 +29,81 @@
   },
   "task_split": {
     "gradient_meta": [
-      1
+      1,
+      2,
+      3,
+      4,
+      7,
+      8,
+      9,
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      23,
+      24,
+      26,
+      27,
+      28,
+      29,
+      31,
+      32,
+      33,
+      34,
+      36,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      44,
+      46,
+      47,
+      48,
+      49,
+      51,
+      52,
+      53,
+      54,
+      56,
+      57,
+      58,
+      59,
+      61,
+      62,
+      63,
+      64,
+      66,
+      67,
+      68,
+      69
     ],
     "gradient_target": [
       72,
+      73,
+      74,
+      75,
+      77,
+      78,
+      80,
+      82,
       83,
-      93
+      84,
+      85,
+      87,
+      88,
+      89,
+      90,
+      92,
+      93,
+      94
     ],
     "true_task_held_meta": [
       6
@@ -44,16 +113,23 @@
     ],
     "task_local_positive_control": [],
     "panel_b_gradient_meta": [
-      1
+      1,
+      2,
+      8,
+      9,
+      32,
+      52
     ],
     "panel_b_gradient_target": [
       72,
+      77,
       83,
-      93
+      93,
+      94
     ],
     "selection_uses_outcomes": false,
     "held_selection_rule": "matched_reused_diagnostic_tasks6_and79_not_checkpoint_selection",
-    "sampling_policy": "all_registered_gradient_tasks_once_per_update_equal_task_weight_no_task_query"
+    "sampling_policy": "all_55_meta_and_18_target_once_per_optimizer_update_each_task_weight_1_over_73"
   },
   "model": {
     "target_owners": 38,
@@ -140,8 +216,8 @@
       "warmup_updates": 5,
       "effective_updates": 59,
       "checkpoint_effective_updates": [
-        3,
         27,
+        43,
         59
       ],
       "learning_rate": 0.0001,
@@ -152,10 +228,10 @@
       ],
       "weight_decay": 0.01,
       "gradient_clip_norm": 1.0,
-      "global_tasks_per_update": 4,
+      "global_tasks_per_update": 73,
       "tasks_per_update_by_role": {
-        "meta": 1,
-        "target": 3
+        "meta": 55,
+        "target": 18
       },
       "functional_rows": 8,
       "profile_functional_rows": 8,
@@ -167,11 +243,11 @@
   },
   "decision": {
     "task_local_capacity": "single_task_shared_runtime_whole_writer_no_task_query",
-    "shared_qualification": "matched_clone_shared4_at_optimizer8_32_64_train_side_learning_diagnostic",
+    "shared_qualification": "fresh_A2_73_task_64_equal_exposures_validation8_at_optimizer32_48_64",
     "internal_held_use": "tasks6_and79_are_reused_diagnostics_not_checkpoint_selection",
-    "first_closed_loop": "fixed_train_side_spatial2_goal20_long38_at_32_and64_with_fit_and_new_correct_video",
+    "first_closed_loop": "validation8_two_preregistered_correct_video_panels_each_strict400_after_training_completion",
     "formal_target": "validation8_strict_paired_correct_strictly_greater_than_145_of_400",
-    "checkpoint_selection": "no_final_checkpoint_selection_in_this_train_side_diagnostic",
+    "checkpoint_selection": "preregistered_adjacent_32_48_or_48_64_both_correct_video_panels_no_surrogate_selection",
     "post_selection_controls": [
       "same_task_other",
       "cross_suite_wrong",
@@ -208,16 +284,21 @@
   },
   "experiment": {
     "design": "docs/joint_process_policy_writer_design.md",
-    "arm": "shared4_asymmetric",
-    "formal_selector": false,
+    "arm": "meta73_equal_exposure",
+    "formal_selector": true,
     "per_task_exposures": [
-      8,
       32,
+      48,
       64
     ],
-    "matched_reference": "configs/pi05_ecp_prw_samegraph_shared4_fresh_queries_v1.json",
-    "major_variable": "independent_signed_input_context_queries_with_unchanged_dynamic_output_factor",
-    "shared_backbone_initialization_optimizer_video_query_noise_and_normalizer_matched": true,
-    "additional_parameters": 16384
+    "matched_reference": "configs/pi05_ecp_prw_samegraph_shared4_asymmetric_v1.json",
+    "major_variable": "independent_gradient_mappings_four_to_seventy_three_at_fixed_per_task_exposure_and_optimizer_cadence",
+    "same_model_initialization_optimizer_video_and_query_policy": true,
+    "causal_limits": "changes_global_gradient_mean_and_batch_size_with_mapping_count_not_a_pure_data_count_or_learning_rate_effect",
+    "initialization_arm": "component",
+    "fully_random_same_topology_remains_required_final_candidate": true,
+    "claimed_K": [
+      1
+    ]
   }
 }

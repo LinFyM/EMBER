@@ -30,8 +30,9 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 5. [x] matched检验非对称A职责：64 fit/held44/45相对同执行参照41/44，暂保留A2并退役双臂runtime；不宣称稳定或已识别根因。
 6. [x] 完成正确视频池2→4对照：41/38与41/39，没有行为增量；停止扩大同task视频数和无依据续训。
 7. [x] matched比较共同P/Q与两fit A2：四组闭环均更弱，封存本实例并恢复A2；参数、初始化和约2.30倍训练加速单列。
-8. [ ] 依据已有同图可学习与有限shared净增量，审视充分曝光的独立meta-task训练；注册资源/选择合同后进入validation8 paired400。
-   不宣称四任务稳定性已经通过，也不把扩大任务当作已知修复；真实K和同拓扑fully-random仍须后续正式比较，最终冻结后补完整controls。
+8. [ ] A2的55meta+18target全task等权group、64曝光已预注册；固定32/48/64及两组无放回正确视频各validation8 paired400，
+   数值相邻/breadth/四suite/GoalLong/跨视频标准见active design。先完成真实73-task profile，再立即启动formal。
+   不宣称四任务稳定性已经通过，也不把扩大任务当作已知修复；当前仅声称K1，同拓扑fully-random保留Final比较，冻结后补controls。
 
 下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 

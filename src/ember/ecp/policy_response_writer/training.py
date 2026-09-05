@@ -220,7 +220,8 @@ def _runtime_tasks_and_panels(
                 (
                     task
                     for task in tasks
-                    if task.role in {"target_fit", "target_held"} and task.domain_task_id in expected
+                    if task.role in {"target_fit", "target_held", "target_validation"}
+                    and task.domain_task_id in expected
                 ),
                 key=lambda task: task.domain_task_id,
             )
@@ -271,7 +272,12 @@ def prepare_runtime(
     context: DistributedContext,
     *,
     deployment_global_ids: tuple[int, ...] | None = None,
+    deployment_tasks: tuple[Any, ...] | None = None,
 ) -> PolicyResponseRuntime:
+    if deployment_tasks is not None and (
+        deployment_global_ids is None or args.phase != "materialize"
+    ):
+        raise ValueError("deployment task metadata cannot enter Writer training")
     config = load_policy_response_config(args.config)
     _validate_launch_authority(args)
     base_path = (
@@ -322,7 +328,9 @@ def prepare_runtime(
         task_local=args.phase == "task-local",
     ).to(context.device)
     initialization = _initialize_writer(writer, stage0, args.initialization)
-    tasks = _tasks(base, args.data_root, args.asset_root)
+    tasks = deployment_tasks if deployment_tasks is not None else _tasks(
+        base, args.data_root, args.asset_root
+    )
     task_by_id = {task.authority_id: task for task in tasks}
     selected_tasks, panels = _runtime_tasks_and_panels(
         args,

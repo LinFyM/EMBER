@@ -24,10 +24,24 @@ from ember.static_task_lora import (
     STATIC_TASK_LORA_KIND,
     STATIC_TASK_LORA_MANIFEST_SCHEMA,
     inspect_static_task_lora_bank,
+    _evaluation_role_valid,
+    validation_task_keys,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_static_validation_role_requires_fixed_eight_tasks_and_explicit_scope() -> None:
+    keys = validation_task_keys()
+    bank = {"evaluation_role": "validation", "arm": "ecp_policy_response_writer_full_correct_k1"}
+    assert _evaluation_role_valid(bank, "validation", keys)
+    assert not _evaluation_role_valid(bank, "test", keys)
+    assert not _evaluation_role_valid(bank, "development_train", keys)
+    assert not _evaluation_role_valid(bank, "validation", keys[:-1])
+    assert not _evaluation_role_valid(bank, "validation", (*keys[:-1], ("libero_10", 3)))
+    assert not _evaluation_role_valid({"arm": bank["arm"]}, "validation", keys)
+    assert not _evaluation_role_valid({**bank, "arm": "frozen_stable_carrier"}, "validation", keys)
 
 
 def test_static_adapter_batches_same_task_without_reordering_episode_noise() -> None:

@@ -1,4 +1,4 @@
-"""Freeze one shared Writer checkpoint into registered train-side task LoRAs."""
+"""Freeze one shared Writer checkpoint into registered evaluation task LoRAs."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ import torch.distributed as dist
 from safetensors.torch import load_file, save_file
 
 from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
+from ember.ecp.natural_program_data import NaturalProgramTask
 from ember.ecp.policy_response_writer.shared import SHARED_RUN_SCHEMA, SHARED_STAGE
 from ember.ecp.policy_response_writer.training import (
     PolicyResponseRuntime,
@@ -23,18 +24,20 @@ from ember.ecp.policy_response_writer.training import (
 from ember.ecp.shared_compiler_assets import authority_path
 from ember.ecp.stage0_training import stage0_source_authority
 from ember.lora import validate_lora_state
-from ember.pi05_eval_contract import git_state
+from ember.pi05_eval_contract import SUITE_ORDER, git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 from ember.static_task_lora import (
     STATIC_TASK_LORA_MANIFEST_SCHEMA,
     policy_response_video_demos,
+    validation_task_keys,
 )
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 HELD5_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_held5_eval_v4"
+VALIDATION_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_validation_eval_v1"
 MATERIALIZED_ADAPTER_SCHEMA = (
     "ember_ecp_policy_response_writer_materialized_adapter_v1"
 )
@@ -58,6 +61,20 @@ class WriterMaterializationRuntime:
 
 def _evaluation_scope_valid(config: Mapping[str, Any]) -> bool:
     condition = config.get("condition", {})
+    if config.get("schema_version") == VALIDATION_EVALUATION_SCHEMA:
+        return all((
+            config.get("status") == "active_correct_only_validation_materialization",
+            config.get("evaluation_role") == "validation",
+            config.get("task_subset") is None,
+            config.get("target_global_ids") == [
+                SUITE_ORDER.index(suite) * 10 + task for suite, task in validation_task_keys()
+            ],
+            config.get("require_training_completion", True) is True,
+            condition.get("selection") == "predeclared_fixed_validation8_correct_video",
+            condition.get("checkpoint_selection_use") is True,
+            "video_demos_by_global_task" in condition,
+            "video_demos" not in condition,
+        ))
     if config.get("schema_version") == HELD5_EVALUATION_SCHEMA:
         return all((
             config.get("status") == "active_correct_only_held5_materialization",
@@ -78,10 +95,24 @@ def _evaluation_scope_valid(config: Mapping[str, Any]) -> bool:
     ))
 
 
+def _evaluation_information_wall(validation: bool) -> dict[str, Any]:
+    return {
+        "validation_or_test_use": validation,
+        **({"test_use": False} if validation else {}),
+        "held_action_or_reward_reads": 0,
+        "shuffled_or_reversed_use": False,
+        "wrong_video_use": False,
+        "language_only_use": False,
+        "writer_invocations_per_task_condition": 1,
+        "single_complete_rank16": True,
+    }
+
+
 def load_writer_evaluation_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     condition = config.get("condition", {})
     wall = config.get("information_wall", {})
+    validation = config.get("schema_version") == VALIDATION_EVALUATION_SCHEMA
     candidates = tuple(map(int, config.get("checkpoint_candidates", ())))
     target_ids = tuple(map(int, config.get(
         "target_global_ids", config.get("target_held_global_ids", ())
@@ -105,18 +136,51 @@ def load_writer_evaluation_config(path: Path) -> dict[str, Any]:
         or condition.get("outcome_dependence") is not False
         or condition.get("gradient_use") is not False
         or not isinstance(config.get("require_training_completion", True), bool)
-        or wall != {
-            "validation_or_test_use": False,
-            "held_action_or_reward_reads": 0,
-            "shuffled_or_reversed_use": False,
-            "wrong_video_use": False,
-            "language_only_use": False,
-            "writer_invocations_per_task_condition": 1,
-            "single_complete_rank16": True,
-        }
+        or wall != _evaluation_information_wall(validation)
     ):
         raise ValueError("unsupported Policy-Response Writer evaluation config")
-    return {**config, "target_global_ids": list(target_ids)}
+    return {**config, "target_global_ids": list(target_ids),
+            "evaluation_role": "validation" if validation else "development_train"}
+
+
+def _validation_deployment_tasks(
+    args: argparse.Namespace, evaluation: Mapping[str, Any],
+) -> tuple[NaturalProgramTask, ...] | None:
+    if evaluation["evaluation_role"] != "validation":
+        return None
+    config = read_json(args.config)
+    base = read_json(args.asset_root / config["authorities"]["base_g3_config"])
+    manifest = read_json(authority_path(base, "target_manifest", asset_root=args.asset_root))
+    records = sorted(
+        (row for row in manifest["tasks"] if row["split_role"] == "validation"),
+        key=lambda row: int(row["global_task_id"]),
+    )
+    if (
+        [int(row["global_task_id"]) for row in records] != evaluation["target_global_ids"]
+        or {(int(row["global_task_id"]), str(row["suite"]), int(row["task_id"]))
+            for row in records} != {
+                (SUITE_ORDER.index(suite) * 10 + task, suite, task)
+                for suite, task in validation_task_keys()
+            } or len(records) != 8
+    ):
+        raise ValueError("Writer deployment escaped fixed validation8")
+    # Negative lookup keys cannot collide with training authorities; the Writer sees no IDs.
+    tasks = tuple(
+        NaturalProgramTask(
+            authority_id=-1-int(row["global_task_id"]),
+            domain="target_validation8", domain_task_id=int(row["global_task_id"]),
+            role="target_validation", suite=str(row["suite"]),
+            language=str(row["language"]), task_name=str(row["task_name"]),
+            problem_folder=str(row["problem_folder"]), bddl_file=str(row["bddl"]["filename"]),
+            path=args.data_root / str(row["hdf5"]["relative_path"]),
+            expected_bytes=int(row["hdf5"]["bytes"]),
+            episode_lengths=tuple(map(int, row["demonstrations"]["episode_lengths"])),
+        ) for row in records
+    )
+    if any(not task.path.is_file() or task.path.stat().st_size != task.expected_bytes
+           or len(task.episode_lengths) != 50 for task in tasks):
+        raise ValueError("Writer validation video authority changed")
+    return tasks
 
 
 def _shared_contract_matches(
@@ -218,7 +282,8 @@ def _evaluation_tasks(
             (
                 task
                 for task in runtime.task_by_id.values()
-                if task.role in {"target_fit", "target_held"} and task.domain_task_id in set(expected)
+                if task.role in {"target_fit", "target_held", "target_validation"}
+                and task.domain_task_id in set(expected)
             ),
             key=lambda task: task.domain_task_id,
         )
@@ -236,7 +301,7 @@ def _target_keys(runtime: PolicyResponseRuntime) -> dict[int, tuple[str, int]]:
     return {
         int(row["global_task_id"]): (str(row["suite"]), int(row["task_id"]))
         for row in manifest["tasks"]
-        if row["split_role"] == "train"
+        if row["split_role"] in {"train", "validation"}
     }
 
 
@@ -291,6 +356,7 @@ def prepare_materialization_runtime(
     if args.config != (REPO_ROOT / evaluation["training_config"]).resolve():
         raise ValueError("Policy-Response Writer materializer training config changed")
     macro, shared_contract = _load_writer_checkpoint(args, evaluation)
+    deployment_tasks = _validation_deployment_tasks(args, evaluation)
     args.phase = "materialize"
     args.task = None
     args.video_demo = None
@@ -316,6 +382,7 @@ def prepare_materialization_runtime(
         runtime = prepare_runtime(
             args, context,
             deployment_global_ids=tuple(map(int, evaluation["target_global_ids"])),
+            deployment_tasks=deployment_tasks,
         )
     tasks = _evaluation_tasks(runtime, evaluation)
     if set(runtime.language_tokens) != {task.authority_id for task in tasks}:
@@ -494,6 +561,7 @@ def _bank_payload(
     return {
         "schema_version": STATIC_TASK_LORA_MANIFEST_SCHEMA,
         "status": "sealed",
+        "evaluation_role": prepared.evaluation["evaluation_role"],
         "arm": f"ecp_policy_response_writer_{representation}_correct_k1",
         "source": prepared.source,
         "lora_contract": {"path": str(lora_path), "bytes": lora_path.stat().st_size},

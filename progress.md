@@ -13,7 +13,21 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 05:03 CST）
+## 最新节点（2026-09-06 05:14 CST）
+
+- 32-step held strict150已exit0，38/150=Spatial34/Goal4/Long0；相同两视频参照为41/150，当前不能确认视频池扩大有益。
+  64-step两bank均sealed，首次runtime114.95秒、驻留第二次0.15秒，三task生成13.58/12.55秒；held在3/4/5、fit在0/2运行，
+  32 fit继续6，仍六卡。全部scientific runs继续使用原13339ac1，不受下述独立入口扩展影响。
+- 最终validation8的K1正确视频物化支持已补到现有materialization/training/static-bank三owner，复用完整capture、Writer与evaluator，
+  没有新runner或训练模式。新schema必须精确匹配固定8tasks、显式validation scope、完整训练结束和zero-gradient/zero-held-action
+  信息墙；Test关闭，deployment task metadata不能进入训练。原train-side manifests默认role兼容保留，新的bank显式记录evaluation_role。
+- 11项相关CPU检查通过，包括无action/state/reward字段的微型视频文件真实读取、训练入口拒绝deployment metadata、固定8tasks与
+  static bank角色隔离；实际8task manifest/路径元数据检查通过，未打开真实validation HDF5数值、Writer forward或rollout。正式
+  selector/视频schedule/相邻稳定数值条件尚未登记，不因此提前选模型。入口全链GPU验证随正式预注册阶段进行。
+- 结构检查仅review、无新增hard：三个现有source净增101行，materialization699、training796、static588；无新source。
+  新职责留在已有资产/部署和static-bank owner，训练文件只增加受控metadata注入，不改模型或训练梯度；两个既有测试文件净增92行。
+
+## 前一执行节点（2026-09-06 05:03 CST）
 
 - 四视频训练及预注册Panel-B全部exit0：训练747.69秒、功能评估393.50秒；64updates和全部256条task executions的query/video/noise/权重
   与冻结审计匹配，每条四fit视频恰16 exposures。约14.99GiB临时mmap已自动移除，三checkpoint与launch/profile证据保留。

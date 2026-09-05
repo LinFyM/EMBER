@@ -41,6 +41,31 @@ POLICY_RESPONSE_WRITER_ARM_PREFIX = "ecp_policy_response_writer_"
 FIXED_CARRIER_ARM = "frozen_stable_carrier"
 
 
+def validation_task_keys() -> tuple[tuple[str, int], ...]:
+    protocol = read_json(
+        Path(__file__).resolve().parents[2] / "configs/libero_24_8_8_v1/protocol.json"
+    )
+    return tuple(
+        (suite, int(task))
+        for suite, split in protocol["split"]["suites"].items()
+        for task in split["validation"]
+    )
+
+
+def _evaluation_role_valid(
+    manifest: Mapping[str, Any], role: str, requested: Sequence[tuple[str, int]],
+) -> bool:
+    declared = manifest.get("evaluation_role", "development_train")
+    if role == "development_train":
+        return declared == role
+    return all((
+        role == declared == "validation",
+        str(manifest.get("arm", "")).startswith(POLICY_RESPONSE_WRITER_ARM_PREFIX),
+        set(requested) == set(validation_task_keys()),
+        len(requested) == 8,
+    ))
+
+
 def _fixed_carrier_provenance(manifest: Mapping[str, Any]) -> bool:
     authority = manifest.get("carrier_authority", {})
     projection_path = Path(str(authority.get("projection_manifest", "")))
@@ -389,7 +414,7 @@ def inspect_static_task_lora_bank(
     valid = (
         manifest.get("schema_version") == STATIC_TASK_LORA_MANIFEST_SCHEMA
         and (not require_formal or manifest.get("status") == "sealed")
-        and evaluation_role == "development_train"
+        and _evaluation_role_valid(manifest, evaluation_role, requested)
         and len(requested) == len(set(requested)) == len(rows) == len(records)
         and set(requested) == set(records)
         and manifest.get("single_complete_rank16") is True

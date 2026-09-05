@@ -20,6 +20,8 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_rms,
 )
 from ember.ecp.policy_response_writer.materialization import (
+    VALIDATION_EVALUATION_SCHEMA,
+    _validation_deployment_tasks,
     load_writer_evaluation_config,
 )
 from ember.ecp.policy_response_writer.shared import _optimizer, functional_objective
@@ -527,3 +529,79 @@ def test_asymmetric_factor_config_is_canonical_and_old_configs_are_rejected() ->
             REPO_ROOT
             / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
         )
+
+
+def test_validation_materialization_config_keeps_test_and_gradients_closed(tmp_path: Path) -> None:
+    import copy
+    import json
+    from ember.pi05_eval_contract import SUITE_ORDER
+    from ember.static_task_lora import validation_task_keys
+
+    config = json.loads((REPO_ROOT / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_held_video_eval_v1.json").read_text())
+    config.update(schema_version=VALIDATION_EVALUATION_SCHEMA,
+                  status="active_correct_only_validation_materialization",
+                  evaluation_role="validation", task_subset=None, require_training_completion=True,
+                  target_global_ids=[SUITE_ORDER.index(suite) * 10 + task
+                                     for suite, task in validation_task_keys()])
+    config["condition"].update(selection="predeclared_fixed_validation8_correct_video",
+                               checkpoint_selection_use=True,
+                               video_demos_by_global_task={str(task): [0] for task in config["target_global_ids"]})
+    config["information_wall"].update(validation_or_test_use=True, test_use=False)
+    path = tmp_path / "eval.json"
+    path.write_text(json.dumps(config))
+    assert load_writer_evaluation_config(path)["evaluation_role"] == "validation"
+    for group, key, value in (
+        (None, "evaluation_role", "test"),
+        (None, "target_global_ids", [2, 20, 38]),
+        (None, "require_training_completion", False),
+        ("condition", "gradient_use", True),
+        ("condition", "outcome_dependence", True),
+        ("information_wall", "test_use", True),
+        ("information_wall", "held_action_or_reward_reads", 1),
+    ):
+        changed = copy.deepcopy(config)
+        (changed if group is None else changed[group])[key] = value
+        path.write_text(json.dumps(changed))
+        with pytest.raises(ValueError, match="unsupported Policy-Response Writer"):
+            load_writer_evaluation_config(path)
+
+
+def test_validation_deployment_uses_video_only_metadata_and_cannot_enter_training(tmp_path: Path) -> None:
+    import json
+    import h5py
+    import numpy as np
+    from ember.ecp.policy_response_writer.training import prepare_runtime, _functional_runtime_inputs
+    from ember.pi05_eval_contract import SUITE_ORDER
+    from ember.static_task_lora import validation_task_keys
+    from ember.writer.data import RawTeacherVideoStore
+
+    video = tmp_path / "video.h5"
+    with h5py.File(video, "w") as handle:
+        handle.create_dataset("data/demo_0/obs/agentview_rgb", data=np.zeros((2, 8, 8, 3), dtype=np.uint8))
+    records = [{"global_task_id": SUITE_ORDER.index(suite) * 10 + task,
+                "suite": suite, "task_id": task, "split_role": "validation",
+                "language": f"exact {suite} {task}", "task_name": "fixture",
+                "problem_folder": suite, "bddl": {"filename": "fixture.bddl"},
+                "hdf5": {"relative_path": video.name, "bytes": video.stat().st_size},
+                "demonstrations": {"episode_lengths": [2] * 50}}
+               for suite, task in validation_task_keys()]
+    (tmp_path / "target.json").write_text(json.dumps({"tasks": records}))
+    (tmp_path / "base.json").write_text(json.dumps({"authorities": {"target_manifest": "target.json"}}))
+    config_path = tmp_path / "train.json"
+    config_path.write_text(json.dumps({"authorities": {"base_g3_config": "base.json"}}))
+    args = SimpleNamespace(config=config_path, asset_root=tmp_path, data_root=tmp_path, phase="shared")
+    evaluation = {"evaluation_role": "validation", "target_global_ids": [r["global_task_id"] for r in records]}
+    tasks = _validation_deployment_tasks(args, evaluation)
+    assert len(tasks) == 8 and all(task.role == "target_validation" for task in tasks)
+    store = RawTeacherVideoStore(tuple(task.writer_authority() for task in tasks), frame_stride=5)
+    try:
+        assert store.load(tasks[0].authority_id, 0).raw_frame_count == 2
+    finally:
+        store.close()
+    assert _functional_runtime_inputs(authorities=(), source_config={}, base={}, args=None,
+                                      context=None, enabled=False) == (None, None)
+    with pytest.raises(ValueError, match="cannot enter Writer training"):
+        prepare_runtime(args, None, deployment_global_ids=tuple(evaluation["target_global_ids"]),
+                        deployment_tasks=tasks)
+    with pytest.raises(ValueError, match="fixed validation8"):
+        _validation_deployment_tasks(args, {**evaluation, "target_global_ids": evaluation["target_global_ids"][:-1]})

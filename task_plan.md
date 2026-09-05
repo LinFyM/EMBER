@@ -14,7 +14,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
-- 当前阶段：同图与query覆盖两轮已完成；实际读出诊断支持检验非对称A context，现做同4tasks/64updates的matched实现与真实profile。
+- 当前阶段：同图与query覆盖两轮已完成；同4tasks/64updates的非对称A context训练及Panel-B已完成，正在收齐32/64 fit/held闭环与
+  两个同eager batch执行参照。功能结果混合，等待真实行为裁决。
 - P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run及完整预注册配对闭环均已完成。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 

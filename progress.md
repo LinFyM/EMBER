@@ -12,7 +12,17 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:53 CST）
+## 最新节点（2026-09-06 03:59 CST）
+
+- 非对称训练与Panel-B均exit0：训练781.62秒、功能评估239.25秒；共有normalizers和全部256条task executions的query/video/noise/权重
+  与fresh-query审计一致，8.03GB临时mmap已自动清除，三checkpoint与launch/profile evidence保留。
+- 功能结果混合：64-step的task1/72/83/93 held benefit依次为`-.000437/+.001764/+.000817/+.000652`；相比对称fresh-query，
+  Goal约翻倍，但meta task1转负，Long没有改善。task6/79诊断仍负；32时也没有普遍正收益，因此不能据此确认A侧干预有效。
+- 64两bank已sealed并exit0，首次runtime116.18秒、驻留第二次0.093秒，物化分别14.09/13.88秒。64 held在gpu01物理3启动；
+  对称64同执行参照分别在4/5运行，32 held在0/2、fit在6，总计六卡。64 fit的0/2 launcher已准备，待32 held自然完成后live核对启动。
+  32 held的首个完整Long50为0成功，其余未完成；最终判断等四条件及两个同执行参照收齐。
+
+## 前一执行节点（2026-09-06 03:53 CST）
 
 - 非对称64-step训练更新完成，预注册Panel-B仍在运行；32 fit/held闭环已进入真实执行，三个评测GPU均100%利用率。
 - 为分开小幅科学增量与BF16批处理差异，已登记补跑fresh-query symmetric64的first-fit/held各strict150，直接复用原sealed banks、

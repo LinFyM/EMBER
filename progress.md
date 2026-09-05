@@ -6,12 +6,20 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频与共同P/Q均无闭环增量并sealed，当前恢复较好的两fit A2，重新审视独立meta-task覆盖，详见最新节点和active design。
+  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal现已启动，详见最新节点和active design。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
+
+## 最新节点（2026-09-06 07:02 CST）
+
+- A2 meta73已从clean pushed detached `4d57f816`启动，gpu01物理0/2/3/4/5/6，root为
+  `runs/outputs/pi05_ecp_prw_meta73_equal_exposure_s64_4d57f816_gpu01p023456_20260906/`；精确命令见
+  `.codex/tmp/prw_meta73_launch/train.sh`。初始化/缓存准备正在进行，尚无新checkpoint或科学结论。
+- 三组驻留物化与六个candidate strict400、source/carrier两个strict400共12个launcher已经备好；训练完全结束、bank sealed且
+  相应设备live可用后启动。全部继续使用同一4d57f816，六卡上限不变，validation只读image/language并由闭环结果裁决。
 
 ## A2 meta73 formal启动合同（2026-09-06）
 

@@ -12,7 +12,19 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 02:29 CST）
+## 最新节点（2026-09-06 02:40 CST）
+
+- 首个新closed-loop完成：m32 held为39/150，Spatial/Goal/Long=`38/1/0`；旧shared4同条件40、carrier38。相对carrier为
+  33 retained/6 gained/5 lost，churn11/150、Jaccard.750；相对旧shared4为36/3/4、churn7、Jaccard.837。尚不能据单条件裁决干预。
+- 64 fit原计划接0/2，但gpu02及gpu01物理2此时出现其它用户的新作业。一次外层检查与启动衔接未正确拦截，evaluator自身admission
+  检查在任何worker启动前拒绝该次启动（exit1、0 rollout）；尝试停止时launcher已自然退出，没有终止其它用户进程。
+  原prepared root及完整失败log保留，不作科学non-pass。后续launch只在单独读取并确认live检查通过后执行。
+- 已重新live检查两节点，并用gpu01物理0单卡3workers fresh启动同一m64 fit条件，root为
+  `runs/analysis/pi05_ecp_prw_samegraph_query_coverage_20260906/fresh_queries_m64_first_fit_video_strict150_r2/`，launcher为
+  `.codex/tmp/prw_fresh_queries_launch/eval64_fit_r2.sh`。checkpoint/video/50states/RNG/执行合同完全相同；summary仅把该明确runtime重试映射
+  回m64 fit条件，原失败root没有results不会计入。当前32 fit在3、64 held在4/5/6、64 fit在0，共5张物理GPU；物理2留给其它用户。
+
+## 前一执行节点（2026-09-06 02:29 CST）
 
 - 64-step fit/held两个条件已完成驻留物化，exit0。held strict150已在gpu01物理4/5/6启动，每卡3 persistent workers；
   32 held继续0/2，32 fit继续3，合计六卡。64 fit的两卡launcher已准备，待下一组设备释放后立即运行。

@@ -1,6 +1,6 @@
 # Native-Temporal Axial Policy-Response Writer
 
-状态：active design
+状态：sealed direct predecessor；当前active见`docs/unified_policy_native_factor_writer_design.md`
 owner边界：2026-09-04至2026-09-05
 前身裁决：Frame-Bank实例证明同frame native read有局部增量，但显式Event瓶颈与晚期X/Y共享状态没有学得稳定shared task-disjoint映射
 

@@ -2935,3 +2935,15 @@ validation/test读取。
 下一active替换将二者收敛为一种可复制Unified Policy-Native Factor block：factor-side frame tokens每层直接读frozen prefix、full
 policy response和same-frame native bank，再做标准time/rank-side axial attention；raw signed pooling与唯一rank16边界不变。它不增加
 专用数学变换链，历史相似点与关键差异见`findings.md`第158节。
+
+## 154. Unified Policy-Native Factor Writer实现与真实smoke
+
+2026-09-05 owner再次把架构优雅与层复制能力确认为硬约束。新active合同为
+`docs/unified_policy_native_factor_writer_design.md`：独立Process learned coordinate与Composer解释边界整体删除，显式
+frame/target/rank/X-Y factor latent在连续4个同构block中每层直接读取frozen prefix、full PI0.5 response和same-frame native
+bank，再做标准teacher-time及rank/side attention。末端仍是一次centering、raw native signed pooling、target cap与唯一rank16；
+没有summary、gain、normalization、solver、transport或calibration路径。
+
+开发分支的19项CPU回归通过。task93真实full smoke完整消费79 sampled frames、2 probes、50 horizons和38 targets；所有入口、统一块及
+X/Y signed heads均收到functional梯度，冻结policy/observer零梯度，生成76 tensors和唯一rank16。峰值allocated/reserved约
+`35.94/42.58 GiB`。这只建立工程可行性；正式task-local与shared科学结果登记在后续条目。

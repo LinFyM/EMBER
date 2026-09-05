@@ -100,10 +100,10 @@ def build_tasklocal_run_contract(
                 for name, value in runtime.writer.named_parameters()
                 if value.requires_grad
             ],
-            "process_trainable_parameter_count": 0,
+            "evidence_encoder_trainable_parameter_count": 0,
             "source_policy_trainable_parameter_count": 0,
             "action_meta_installed": False,
-            "frozen_process_cache": True,
+            "frozen_evidence_token_cache": True,
         },
         "world_topology": [
             {
@@ -128,27 +128,27 @@ def seal_or_validate_tasklocal_run_contract(
     output = runtime.args.output_dir
     if runtime.args.resume is None:
         if output.exists() and any(output.iterdir()):
-            raise ValueError("fresh task-local Composer output root is not empty")
+            raise ValueError("fresh task-local unified output root is not empty")
         output.mkdir(parents=True, exist_ok=True)
         if runtime.args.mode == "formal":
             write_json_atomic(output / "run_contract.json", contract)
         return
     if runtime.args.mode != "formal":
-        raise ValueError("task-local Composer resume is formal-only")
+        raise ValueError("task-local unified resume is formal-only")
     if runtime.args.resume.parent.parent.resolve() != output:
-        raise ValueError("task-local Composer resume escaped its output root")
+        raise ValueError("task-local unified resume escaped its output root")
     existing = read_json(output / "run_contract.json")
     current_git = contract.get("git", {})
     original_git = existing.get("git", {})
     if current_git.get("commit") != original_git.get("commit"):
-        raise ValueError("task-local Composer code commit changed on resume")
+        raise ValueError("task-local unified code commit changed on resume")
     # origin/main may advance while this frozen commit keeps running.  The
     # formal launcher already proves the current checkout is clean, detached,
     # and still contained by the authority; preserve the launch-time Git
     # snapshot when comparing every other exact-resume field.
     normalized = {**contract, "git": original_git}
     if existing != normalized:
-        raise ValueError("task-local Composer run contract changed on resume")
+        raise ValueError("task-local unified run contract changed on resume")
 
 
 def build_tasklocal_result(
@@ -189,15 +189,15 @@ def build_tasklocal_result(
         "evaluation_by_checkpoint": evaluations,
         "capture": capture_records,
         "capture_seconds": capture_seconds,
-        "frozen_evidence_cache": "ephemeral_cpu_evidence_plus_gpu_process",
+        "frozen_evidence_cache": "ephemeral_cpu_raw_plus_gpu_evidence_tokens",
         "frozen_evidence_tensor_bytes": sum(
             value.tensor_bytes for value in cache.values()
         ),
         "task_local_reference": str(reference_path),
         "initialization": runtime.initialization,
         "trainable_parameter_count": sum(value.numel() for value in parameters),
-        "task_query_parameter_count": runtime.writer.composer.task_query.numel(),
-        "process_trainable_parameter_count": 0,
+        "task_query_parameter_count": runtime.writer.factor_writer.task_query.numel(),
+        "evidence_encoder_trainable_parameter_count": 0,
         "source_policy_trainable_parameter_count": 0,
         "action_meta_installed": False,
         "wrong_video_backward_calls": 0,

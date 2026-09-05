@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_ecp_policy_response_writer_native_temporal_v1",
-  "status": "sealed_completed_native_temporal_policy_response_writer",
+  "schema_version": "ember_ecp_policy_response_writer_unified_factor_v1",
+  "status": "active_unified_policy_native_factor_writer",
   "authorities": {
     "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
     "functional_panel_sources": [
@@ -35,7 +35,7 @@
     "panel_b_gradient_meta": [1, 2, 8, 9, 32, 52],
     "panel_b_gradient_target": [72, 73, 74, 75, 93, 94],
     "selection_uses_outcomes": false,
-    "held_selection_rule": "smallest_eligible_unread_id_in_each_role_after_task4_and_task78_native_temporal_held_exposure",
+    "held_selection_rule": "matched_reused_diagnostic_tasks6_and79_not_checkpoint_selection",
     "sampling_policy": "experiment_configured_9_meta_3_target_approximates_equal_exposure_across_55_meta_18_target"
   },
   "model": {
@@ -45,11 +45,10 @@
     "prefix_width": 2048,
     "expert_width": 1024,
     "width": 128,
-    "architecture": "repeatable_frame_and_native_temporal_factor_blocks",
+    "architecture": "repeatable_unified_policy_native_factor_blocks",
     "factor_readout": "factor_side_two_branch_signed_raw_native_XY",
     "attention_heads": 4,
-    "frame_blocks": 2,
-    "factor_blocks": 2,
+    "blocks": 4,
     "teacher_frame_position_contract": "relative_position_enters_attention_qk_and_pooling_keys_never_raw_native_value",
     "dynamic_value_contract": "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
     "capture_frame_chunk": 2,
@@ -79,7 +78,7 @@
     "required": [
       "real_full_19_layer_50_horizon_2_probe_policy_response",
       "real_38_target_native_XY",
-      "functional_gradient_through_frame_native_temporal_and_factor_side_signed_heads",
+      "functional_gradient_through_evidence_unified_blocks_and_factor_side_signed_heads",
       "unique_76_tensor_rank16_materialization"
     ]
   },
@@ -120,9 +119,9 @@
     }
   },
   "decision": {
-    "task_local_capacity": "completed_task1_and_task93_native_temporal_25_and_50_step_controls",
-    "shared_qualification": "seventy_three_gradient_tasks_plus_fresh_held_tasks6_and79_at_optimizer100_and200",
-    "checkpoint_derivation": "optimizer100_and200_give_about16_to17_and32_to34_exposures_per_gradient_task",
+    "task_local_capacity": "task1_and_task93_unified_factor_25_and50_step_controls",
+    "shared_qualification": "matched_seventy_three_gradient_tasks_optimizer100_and200",
+    "internal_held_use": "tasks6_and79_are_reused_diagnostics_not_checkpoint_selection",
     "first_closed_loop": "materialize_and_run_held5_correct_only_strict250_at_optimizer100_and200",
     "formal_target": "validation8_strict_paired_correct_strictly_greater_than_145_of_400",
     "checkpoint_selection": "correct_only_closed_loop_breadth_and_adjacent_stability",

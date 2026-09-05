@@ -4,11 +4,19 @@
 
 ## 当前快照
 
-- 唯一active design为`docs/axial_policy_response_native_factor_writer_design.md`，当前具体架构已收敛为Native-Temporal Axial Writer。
-  learned图只有`repeat FramePolicyResponseBlock -> explicit X/Y side -> repeat NativeTemporalFactorBlock -> direct signed raw X/Y pooling`：
-  NativeTemporalFactorBlock在同一职责内完成same-frame side-matched bank read、真实teacher-frame time attention与rank/side attention。
-  独立Temporal/Event瓶颈、Composer二次query seed及末端base/contrast链整体删除；扩容只复制两种标准block，不增加gain、normalization、
-  solver或calibration。full 50-horizon、真实native X/Y、positive-only、rank12+4、唯一rank16与信息墙不变。
+- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构已收敛为Unified Policy-Native Factor Writer。
+  输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层直接读取同frame prefix、完整PI0.5 response和
+  side-matched native bank，再做teacher-frame time及rank/side attention。learned主干只有一种可按深度复制的
+  `UnifiedPolicyNativeFactorBlock`，末端只做一次centering、direct signed raw-X/Y pooling、target cap和唯一rank16。独立Process坐标、
+  Composer解释边界及所有summary/gain/solver/calibration链均不存在；full 50-horizon、positive-only与信息墙不变。
+
+- 实现当前位于`codex/unified-factor-latent-writer`隔离worktree。旧Process/Composer classes及兼容fallback已从active source删除，
+  Native-Temporal active config已sealed；19项定向CPU回归通过。gpu02物理0上的最长task93真实smoke自然exit0：79 sampled frames、
+  2 probes、完整50 horizons、38 targets；prefix/response/unified blocks/signed-X/signed-Y functional梯度分别为
+  `.004893/.003914/.003718/.001982/.000883`，冻结policy/observer无梯度，生成76 tensors和唯一rank16。峰值
+  allocated/reserved约`35.94/42.58 GiB`。随后task93两步task-local profile自然完成，step为`10.999/11.769s`，统一块、X/Y head
+  与task query均有梯度，峰值allocated/reserved约`37.35/42.85 GiB`，50-step单run预计约十分钟；两步正负波动不作科学解释。
+  这些结果只证明工程图、最长视频资源与optimizer路径完整，正式容量/性能裁决仍在推进。
 
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、

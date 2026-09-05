@@ -8,12 +8,18 @@
 `docs/expert_review_20260902_global_route_reassessment.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。精确分数、提交和历史脉络见
-`docs/research_history.md`；当前active合同见`docs/axial_policy_response_native_factor_writer_design.md`。本文件是结论索引，
+`docs/research_history.md`；当前active合同见`docs/unified_policy_native_factor_writer_design.md`。本文件是结论索引，
 不替代原文。
 
 ## 科学结论
 
-### 0. 当前active方向是Policy-Response Event-to-Factor Writer
+### 0. 当前active方向是Unified Policy-Native Factor Writer
+
+73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；m100/m200 held5只有`42/35`，均未超过carrier43。
+随后整模块替换诊断把最早失效接口定位为Process--Composer learned-coordinate handoff：Process与Composer各自及joint interaction按task
+产生相反贡献，冻结任一端都不是充分解。当前图因此取消独立learned Process坐标与Composer解释边界，以显式factor latent在每一层直接
+读取冻结prefix、完整PI0.5 response和same-frame native X/Y。learned主干只有一种可复制block；末端只保留一次centering、raw signed
+pooling、target cap和唯一rank16。以下内容保留该方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
 
 PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
 macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、
@@ -3145,3 +3151,19 @@ block内直接读取typed same-frame memory：原生image-language prefix、完�
 candidates；随后只做标准frame-time和rank/side axial attention及MLP。所有深度都复制这一block，最终仍只有一次frame centering、
 raw X/Y signed pooling、target cap与rank12+4唯一rank16。它保留v5/v6类neural trunk的可扩展性，也保留ECP的原生时序与native-value
 信息墙，但没有早期Writer的无约束video latent、ECP旧Program/summary/solver链或当前Process--Composer handoff。
+
+## 159. 统一factor latent以单一可复制block落实且真实full图接通
+
+新实现不再产出learned Frame/Process output。入口只把prefix、完整owner-matched response和native bank投影为typed memory；显式
+`frame x target x rank4 x X/Y-side` latent由结构embedding初始化，连续4个同构`UnifiedPolicyNativeFactorBlock`均直接执行同frame
+evidence attention、真实teacher-time attention、rank/side attention与标准GatedMLP。最后一次frame centering后直接signed-pool
+未经替换的raw X/Y，再做target安全cap与rank12+4物化。旧Process/Composer classes与兼容fallback已删除，Native-Temporal配置sealed；
+扩容只需复制同一block或统一改变width/heads，不恢复summary、gate、normalization、solver或calibration链。
+
+19项CPU回归覆盖full-only、完整candidate轴、真实frame order、K2置换不变、chunk等价、static-repeat零mobile、动态task assignment、
+positive-only config及唯一LoRA路径。task93真实smoke在gpu02物理0自然exit0，完整消费79 sampled frames、2 probes、50 horizons与38
+targets；prefix/response/unified blocks/signed-X/signed-Y梯度分别为`.004893/.003914/.003718/.001982/.000883`，冻结policy/observer
+无梯度，输出76 tensors和唯一rank16。峰值allocated/reserved约`35.94/42.58 GiB`。这证明统一图在最长视频上可微且能完整物化，
+随后task93两步task-local profile为`10.999/11.769s`，统一块、X/Y heads与task query均有梯度，峰值约`37.35/42.85 GiB`；
+两步后fit/held微负不作科学解释。该组证据不构成task-local或shared性能声明；下一证据仍是task1/task93 optimizer25/50容量控制及
+matched 73-task短shared。

@@ -45,10 +45,11 @@ task72容量控制，随后立即进入73-task shared短资格；不恢复coarse
 12. `docs/expert_review_20260902_global_route_reassessment.md`：2026-09-02全局路线复核原文；
 13. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`：完整EMBER历史复核原文；
 14. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`：最新架构澄清原文；
-15. `docs/axial_policy_response_native_factor_writer_design.md`：当前active design；
-16. `docs/policy_response_event_to_factor_writer_design.md`：已裁决的直接前身；
-17. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
-18. `docs/research_history.md`：影响当前决策的历史证据。
+15. `docs/unified_policy_native_factor_writer_design.md`：当前active design；
+16. `docs/axial_policy_response_native_factor_writer_design.md`：已裁决的直接前身；
+17. `docs/policy_response_event_to_factor_writer_design.md`：已裁决的早期直接前身；
+18. `docs/program_conditioned_native_bank_tangent_transport_design.md`：已裁决PNBTT历史合同；
+19. `docs/research_history.md`：影响当前决策的历史证据。
 
 ## 目录
 

@@ -1,11 +1,4 @@
-"""Per-frame encoder for the native-temporal Policy-Response Writer.
-
-The encoder preserves every frozen PI0.5 policy-response horizon and lets a
-small set of target-rank states read it with repeatable transformer blocks.
-Video-time modeling belongs to the downstream native-factor blocks, where it
-can interact with the current video's real X/Y bank instead of passing through
-an independent event bottleneck.
-"""
+"""Tokenize frozen PI0.5 evidence without creating a learned video code."""
 
 from __future__ import annotations
 
@@ -16,7 +9,6 @@ import torch
 import torch.nn.functional as F
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
-from ember.ecp.native_factors import G1_RESIDUAL_RANK
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 
 if TYPE_CHECKING:
@@ -24,10 +16,12 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PolicyResponseFrameOutput:
-    """One independently encoded video with real frames still explicit."""
+class PolicyResponseEvidence:
+    """Unpooled, frame-aligned frozen evidence tokens for one video."""
 
-    frame_tokens: torch.Tensor
+    prefix: torch.Tensor
+    prefix_valid: torch.Tensor
+    response: torch.Tensor
 
 
 class GatedMLP(torch.nn.Module):
@@ -178,70 +172,8 @@ class ResponseTokenizer(torch.nn.Module):
         return self.norm(tokens.flatten(2, 3))
 
 
-class FramePolicyResponseBlock(torch.nn.Module):
-    """One copyable native-prefix, full-response, target-rank block."""
-
-    def __init__(self, width: int, heads: int) -> None:
-        super().__init__()
-        self.query_norm = torch.nn.LayerNorm(width)
-        self.prefix_norm = torch.nn.LayerNorm(width)
-        self.prefix_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.response_norm = torch.nn.LayerNorm(width)
-        self.response_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.factor_norm = torch.nn.LayerNorm(width)
-        self.factor_attention = torch.nn.MultiheadAttention(
-            width, heads, dropout=0.0, batch_first=True
-        )
-        self.mlp = GatedMLP(width)
-
-    def forward(
-        self,
-        value: torch.Tensor,
-        prefix: torch.Tensor,
-        prefix_valid: torch.Tensor,
-        response: torch.Tensor,
-    ) -> torch.Tensor:
-        frames, targets, ranks, width = value.shape
-        if (
-            prefix.shape[0] != frames
-            or prefix_valid.shape != prefix.shape[:2]
-            or response.shape[:2] != (frames, targets)
-            or response.shape[-1] != width
-        ):
-            raise ValueError("frame policy-response block axes changed")
-        rows = value.reshape(frames, targets * ranks, width)
-        memory = self.prefix_norm(prefix)
-        attended, _ = self.prefix_attention(
-            self.query_norm(rows),
-            memory,
-            memory,
-            key_padding_mask=~prefix_valid,
-            need_weights=False,
-        )
-        rows = rows + attended
-
-        query = self.query_norm(rows).reshape(frames * targets, ranks, width)
-        memory = self.response_norm(response).reshape(
-            frames * targets, response.shape[2], width
-        )
-        attended, _ = self.response_attention(
-            query, memory, memory, need_weights=False
-        )
-        rows = rows + attended.reshape(frames, targets * ranks, width)
-
-        normalized = self.factor_norm(rows)
-        attended, _ = self.factor_attention(
-            normalized, normalized, normalized, need_weights=False
-        )
-        return self.mlp(rows + attended).reshape(frames, targets, ranks, width)
-
-
-class PolicyResponseFrameEncoder(torch.nn.Module):
-    """Frozen PI0.5 response -> per-frame target-rank states."""
+class PolicyResponseEvidenceEncoder(torch.nn.Module):
+    """Project exact prefix and full response while retaining every axis."""
 
     def __init__(
         self,
@@ -250,40 +182,15 @@ class PolicyResponseFrameEncoder(torch.nn.Module):
         prefix_width: int = 2048,
         expert_width: int = 1024,
         width: int = 128,
-        heads: int = 4,
-        frame_blocks: int = 2,
     ) -> None:
         super().__init__()
-        if not owners or width % heads or frame_blocks <= 0:
-            raise ValueError("frame policy-response topology changed")
+        if not owners or width <= 0:
+            raise ValueError("policy-response evidence topology changed")
         self.owners = tuple(owners)
         self.width = width
         self.prefix = PrefixTokenizer(prefix_width, width)
         self.response = ResponseTokenizer(
             owners, expert_width=expert_width, width=width
-        )
-        self.rank_embedding = torch.nn.Parameter(
-            torch.empty(G1_RESIDUAL_RANK, width)
-        )
-        self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
-        self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
-        family_order = tuple(TargetFamily)
-        self.register_buffer(
-            "family_ids",
-            torch.tensor([family_order.index(owner.family) for owner in owners]),
-            persistent=False,
-        )
-        self.frame_blocks = torch.nn.ModuleList(
-            FramePolicyResponseBlock(width, heads) for _ in range(frame_blocks)
-        )
-        torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
-        torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
-
-    def _seed(self) -> torch.Tensor:
-        return (
-            self.rank_embedding[None]
-            + self.owner_embedding[:, None]
-            + self.family_embedding(self.family_ids)[:, None]
         )
 
     def forward(
@@ -291,15 +198,22 @@ class PolicyResponseFrameEncoder(torch.nn.Module):
         video: FrozenPolicyResponseVideo,
         *,
         representation: str = "full",
-    ) -> PolicyResponseFrameOutput:
+    ) -> PolicyResponseEvidence:
         if representation != "full":
             raise ValueError("full policy-response is the only active representation")
         prefix, prefix_valid = self.prefix(video)
         response = self.response(video)
-        frame = self._seed()[None].expand(video.frame_count, -1, -1, -1)
-        for block in self.frame_blocks:
-            frame = block(frame, prefix, prefix_valid, response)
-        return PolicyResponseFrameOutput(frame_tokens=frame)
+        if (
+            prefix.shape[0] != video.frame_count
+            or prefix_valid.shape != prefix.shape[:2]
+            or response.shape[:2] != (video.frame_count, len(self.owners))
+        ):
+            raise ValueError("policy-response evidence axes changed")
+        return PolicyResponseEvidence(
+            prefix=prefix,
+            prefix_valid=prefix_valid,
+            response=response,
+        )
 
     @torch.no_grad()
     def initialize_from_stage0(self, stage0: "ECPStage0Model") -> dict[str, object]:
@@ -314,31 +228,14 @@ class PolicyResponseFrameEncoder(torch.nn.Module):
         self.response.noise_projection.weight.copy_(source.noise_projection.weight)
         self.response.velocity_projection.weight.copy_(source.velocity_projection.weight)
         self.response.family_embedding.weight.copy_(source.family_embedding.weight)
-        self.family_embedding.weight.copy_(source.family_embedding.weight)
         self.response.layer_embedding.weight[:18].copy_(source.layer_embedding.weight)
         binding = stage0.encoder.binding
         self.response.owner_embedding.copy_(binding.owner_embedding)
         self.response.horizon_embedding.weight.copy_(binding.horizon_embedding)
-        self.owner_embedding.copy_(binding.owner_embedding)
-        first = self.frame_blocks[0].response_attention
-        width = self.width
-        first.in_proj_weight[:width].copy_(binding.event_query.weight)
-        first.in_proj_weight[width : 2 * width].copy_(binding.policy_key.weight)
-        first.in_proj_weight[2 * width :].copy_(binding.policy_value.weight)
-        first.in_proj_bias.zero_()
-        first.out_proj.weight.copy_(torch.eye(width, device=first.out_proj.weight.device))
-        first.out_proj.bias.zero_()
         return {
-            "kind": "g2_native_projection_initialization",
             "reused": [
                 "prefix_projections",
                 "response_channel_projections",
                 "owner_family_layer_horizon_embeddings",
-                "first_full_horizon_response_attention",
-            ],
-            "fresh": [
-                "frame_repeat_blocks",
-                "native_temporal_factor_blocks",
-                "factor_side_signed_heads",
             ],
         }

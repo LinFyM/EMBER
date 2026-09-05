@@ -72,18 +72,19 @@ G2已通过的`P_lang/P_scene/P_process/rho/tau/sigma`仍是初始化、诊断�
 ## Current-video native factor path
 
 每个q/v/action-in/action-out target继续读取当前视频产生的真实input X、absolute output Y以及adjacent、initial和goal-relative
-output differences。逐帧Policy-Response blocks先读取冻结PI0.5的native prefix与完整2-probe、50-horizon响应；随后显式X/Y
-factor-side states在同构Native-Temporal Factor blocks中读取同frame对应bank，并沿真实teacher-frame time以及rank/side轴交互。
-最终centered逐帧states直接产生two-branch logits，对raw X/Y做exact signed pooling。时序不再先压成独立event瓶颈，静态重复视频也
-不能由language、owner或位置凭空产生mobile update。
+output differences。输入端只把冻结PI0.5的native prefix、完整2-probe x 50-horizon response与真实bank投影为typed memory；显式
+`frame x target x rank x X/Y-side` factor latent在每个同构Unified Policy-Native Factor block内直接读取同frame evidence，并沿真实
+teacher-frame time以及rank/side轴交互。最终centered逐帧states直接产生two-branch logits，对raw X/Y做exact signed pooling。时序不再
+先压成独立Process/event坐标再由Composer解释，静态重复视频也不能由language、owner或位置凭空产生mobile update。
 
 language和静态context只负责grounding query，不能作为factor value或独立输出mobile residual。首版不使用task-expert dictionary、
-held retrieval、free learned residual、独立event/gain网络或末端base/contrast变换链。q按8个native query-head groups、action-in按
-32个native-width blocks处理；这来自真实output tensor布局，不是四条不同compiler。
+held retrieval、free learned residual、独立Process/event/gain网络或末端base/contrast变换链。q按8个native query-head groups、
+action-in按32个native-width blocks处理；这来自真实output tensor布局，不是四条不同compiler。learned主干只有一种可复制block，
+扩展深度不引入新的数学阶段。
 
 rank4 factors只做一次small-core canonicalization，再与frozen rank12 carrier拼成唯一rank16。PNBTT、EBSRI、Program-through-bank及
 旧G3实现保留为历史和kernel来源，不构成active fallback。完整合同见
-`docs/axial_policy_response_native_factor_writer_design.md`。
+`docs/unified_policy_native_factor_writer_design.md`。
 
 ## 训练原则
 

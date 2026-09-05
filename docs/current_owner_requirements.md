@@ -59,9 +59,10 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 
 ## 4. 当前方法方向
 
-经过2026-09-02完整历史复核、专家补充澄清与owner最终确认，当前唯一active方向是
-**Native-Temporal Axial Policy-Response Writer**。完整方法合同见
-`docs/axial_policy_response_native_factor_writer_design.md`；直接前身与专家原文见
+经过2026-09-02完整历史复核、专家补充澄清及随后一系列真实裁决，当前唯一active方向是
+**Unified Policy-Native Factor Writer**。完整方法合同见
+`docs/unified_policy_native_factor_writer_design.md`；直接前身与专家原文见
+`docs/axial_policy_response_native_factor_writer_design.md`、
 `docs/policy_response_event_to_factor_writer_design.md`、
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`。其核心是：
@@ -69,22 +70,25 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
 1. 每个teacher frame在无state/proprio条件下通过冻结PI0.5原生image-language prefix和固定正负probe，完整保留Action Expert
    layer、50-horizon、probe与38-target owner响应；50-horizon只能在task/relation-conditioned attention后learned compression，
    full是唯一active representation；
-2. learned Frame Policy-Response blocks逐帧读取native prefix与完整owner-matched response；随后显式区分X/Y factor side，在同一个
-   可复制Native-Temporal Factor block中先读取同frame side-matched真实bank，再沿teacher-frame time与rank/side轴做attention；
-   teacher-frame time、action horizon、flow time、layer depth与probe轴不得混淆；
-3. 不再把视频先压成独立ordered-event瓶颈，也不在末端才从同一共享state线性分叉X/Y；最终factor-side states直接通过ragged
-   native-group two-branch signed attention pool未经替换的raw X/Y；
-4. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
+2. 输入端只做投影、类型/位置embedding与mask，不生成独立learned video code；显式
+   `frame x target x rank x X/Y-side` factor latent从第一层起存在；
+3. learned主干只有一种可复制`UnifiedPolicyNativeFactorBlock`。每层factor latent直接读取同frame native prefix、完整
+   owner-matched PI0.5 response与side-matched真实bank，再做teacher-frame time及rank/side attention和标准MLP；teacher-frame
+   time、action horizon、flow time、layer depth与probe轴不得混淆；
+4. 不再把视频先压成独立Process/ordered-event坐标再交给Composer解释，也不在末端才从同一共享state线性分叉X/Y；最终
+   factor-side states直接通过ragged native-group two-branch signed attention pool未经替换的raw X/Y；
+5. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned
    residual；
-5. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
-6. active learned图只有Frame Policy-Response与Native-Temporal Factor两种可重复attention/MLP block，扩展主要复制同构block；
+6. rank4 mobile residual只做一次small-core canonicalization并与frozen rank12 carrier拼成唯一38-target rank16 LoRA；
+7. active learned图只有一种可重复attention/MLP block，扩展主要复制同构block或统一改变width/heads；
    不再使用冻结Natural Program到summary、covariance、whitening、transport、anchor或family scalar gate的连续专用坐标链；
-7. 当前首版训练只使用正确视频的cross-episode functional，让correct video相对错误/乱序视频的优势自然产生；
+8. 当前首版训练只使用正确视频的cross-episode functional，让correct video相对错误/乱序视频的优势自然产生；
    Final matched比较component-init与同拓扑fully-random fresh候选。
 
-owner于2026-09-04进一步明确：只要有可复核证据并经过深入分析，可以实质重构Writer；但结构自由度不能再次演化为连续数学补丁。
+owner于2026-09-04及2026-09-05进一步明确：只要有可复核证据并经过深入分析，可以实质重构Writer；但结构自由度不能再次演化为
+连续数学补丁，整体结构必须优雅并能通过复制同一种层扩展。
 若同一接口反复non-pass，应替换其责任模块，而不是继续在前后叠加summary、solve、recenter、whitening、transport、gate或等价专用
-变换。新主干应保持少数职责清楚的learned模块，深度和规模主要通过复制同构attention/MLP block扩展；手工运算只保留信息墙、
+变换。新主干应保持少数职责清楚的learned模块，当前收敛为单一同构attention/MLP block；手工运算只保留信息墙、
 轴/mask、必要的数值归一化、完整候选归约和唯一LoRA物化等明确科学边界。
 
 G2已经通过的Natural Program仍是ordered event、初始化与机制证据，但其固定

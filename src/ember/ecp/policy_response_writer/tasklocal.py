@@ -1,4 +1,4 @@
-"""Task-local functional qualification for the current-bank Composer."""
+"""Task-local functional qualification for the unified factor Writer."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from ember.ecp.bank_conditioning.mapping import load_mapping_split
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.model import PolicyResponseWriterOutput
-from ember.ecp.policy_response_writer.process import PolicyResponseFrameOutput
+from ember.ecp.policy_response_writer.process import PolicyResponseEvidence
 from ember.ecp.policy_response_writer.tasklocal_contract import (
     build_tasklocal_result,
     build_tasklocal_run_contract,
@@ -37,8 +37,8 @@ from ember.writer.functional import (
 )
 
 
-TASKLOCAL_STAGE = "policy_response_writer_tasklocal_composer"
-TASKLOCAL_RUN_SCHEMA = "ember_policy_response_writer_tasklocal_run_v2"
+TASKLOCAL_STAGE = "policy_response_writer_tasklocal_unified_factor"
+TASKLOCAL_RUN_SCHEMA = "ember_policy_response_writer_tasklocal_run_v3"
 
 
 def _video_split(
@@ -94,46 +94,43 @@ def _cache_evidence(
     videos: tuple[int, ...],
 ) -> tuple[
     dict[int, FrozenPolicyResponseVideo],
-    dict[int, PolicyResponseFrameOutput],
+    dict[int, PolicyResponseEvidence],
     list[dict[str, Any]],
     float,
 ]:
     cache: dict[int, FrozenPolicyResponseVideo] = {}
-    process_cache: dict[int, PolicyResponseFrameOutput] = {}
+    evidence_cache: dict[int, PolicyResponseEvidence] = {}
     records = []
     started = time.monotonic()
     for demo in videos:
         evidence, capture = capture_video(runtime, task_id=task, video_demo=demo)
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-            process = runtime.writer.process(
+            tokens = runtime.writer.evidence(
                 evidence,
                 representation=runtime.args.representation,
             )
         frozen = evidence.to("cpu")
         records.append({**capture, "tensor_bytes": frozen.tensor_bytes})
         cache[demo] = frozen
-        process_cache[demo] = process
-        del evidence, process
+        evidence_cache[demo] = tokens
+        del evidence, tokens
         torch.cuda.empty_cache()
-    return cache, process_cache, records, time.monotonic() - started
+    return cache, evidence_cache, records, time.monotonic() - started
 
 
 def _materialized_state(
     runtime: PolicyResponseRuntime,
     video: FrozenPolicyResponseVideo,
-    process: PolicyResponseFrameOutput,
+    evidence: PolicyResponseEvidence,
     *,
     canonicalize: bool,
 ) -> dict[str, torch.Tensor]:
-    residual = runtime.writer.composer(
+    residual = runtime.writer.factor_writer(
         (video,),
-        (process,),
+        (evidence,),
         s_ref=runtime.ranks.s_ref,
     )
-    output = PolicyResponseWriterOutput(
-        residual=residual,
-        frames=(process,),
-    )
+    output = PolicyResponseWriterOutput(residual=residual)
     return runtime.writer.materialize(
         output,
         carrier_state=runtime.ranks.carrier_rank12,
@@ -173,7 +170,7 @@ def _functional_backward(
     runtime: PolicyResponseRuntime,
     *,
     video: FrozenPolicyResponseVideo,
-    process: PolicyResponseFrameOutput,
+    evidence: PolicyResponseEvidence,
     batch: Mapping[str, Any],
     seed: int,
 ) -> tuple[float, int, int]:
@@ -182,7 +179,7 @@ def _functional_backward(
     # graph.  This is the exact first-order chain rule used throughout EMBER.
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         leaf_state = _materialized_state(
-            runtime, video, process, canonicalize=False
+            runtime, video, evidence, canonicalize=False
         )
     value, details, leaf_gradients = functional_lora_loss_gradient(
         runtime.policy,
@@ -203,7 +200,7 @@ def _functional_backward(
     del leaf_state
     with torch.autocast("cuda", dtype=torch.bfloat16):
         generated_state = _materialized_state(
-            runtime, video, process, canonicalize=False
+            runtime, video, evidence, canonicalize=False
         )
         surrogate = writer_chain_rule_surrogate(generated_state, leaf_gradients)
     surrogate.backward()
@@ -223,10 +220,12 @@ def _optimizer(
     torch.optim.lr_scheduler.LambdaLR,
 ]:
     runtime.writer.requires_grad_(False)
-    runtime.writer.process.eval()
-    runtime.writer.composer.requires_grad_(True).train()
+    runtime.writer.evidence.eval()
+    runtime.writer.factor_writer.requires_grad_(True).train()
     parameters = tuple(
-        value for value in runtime.writer.composer.parameters() if value.requires_grad
+        value
+        for value in runtime.writer.factor_writer.parameters()
+        if value.requires_grad
     )
     cell = runtime.config["optimization"]["task_local"]
     optimizer = torch.optim.AdamW(
@@ -248,27 +247,27 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
-        or runtime.writer.composer.task_query is None
-        or any(parameter.requires_grad for parameter in runtime.writer.process.parameters())
+        or runtime.writer.factor_writer.task_query is None
+        or any(parameter.requires_grad for parameter in runtime.writer.evidence.parameters())
         or any(parameter.requires_grad for parameter in runtime.policy.parameters())
         or any(parameter.requires_grad for parameter in runtime.stage0.parameters())
     ):
-        raise RuntimeError("task-local Composer parameter ownership changed")
+        raise RuntimeError("task-local unified Writer parameter ownership changed")
     return parameters, optimizer, scheduler
 
 
-def _composer_gradient_norms(runtime: PolicyResponseRuntime) -> dict[str, float]:
+def _factor_writer_gradient_norms(runtime: PolicyResponseRuntime) -> dict[str, float]:
     groups = {
         "input_signed_attention": ("input_signed_query",),
         "output_signed_attention": ("output_signed_query",),
-        "native_temporal_blocks": ("blocks",),
+        "unified_blocks": ("blocks",),
         "task_query": ("task_query",),
     }
     result = {}
     for label, prefixes in groups.items():
         squares = [
             parameter.grad.detach().float().square().sum()
-            for name, parameter in runtime.writer.composer.named_parameters()
+            for name, parameter in runtime.writer.factor_writer.named_parameters()
             if name.startswith(prefixes) and parameter.grad is not None
         ]
         result[label] = float(torch.stack(squares).sum().sqrt()) if squares else 0.0
@@ -280,16 +279,16 @@ def _evaluate_video(
     *,
     task: int,
     demo: int,
-    evidence: FrozenPolicyResponseVideo,
-    process: PolicyResponseFrameOutput,
+    video_evidence: FrozenPolicyResponseVideo,
+    tokens: PolicyResponseEvidence,
     reference_loss: float,
     visits: int,
 ) -> dict[str, Any]:
-    video = evidence.to(runtime.context.device)
+    video = video_evidence.to(runtime.context.device)
     runtime.writer.eval()
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         state = _materialized_state(
-            runtime, video, process, canonicalize=True
+            runtime, video, tokens, canonicalize=True
         )
     del video
     rows = []
@@ -340,7 +339,7 @@ def _evaluation(
     fit_demos: tuple[int, int],
     held_demo: int,
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseFrameOutput],
+    evidence_cache: Mapping[int, PolicyResponseEvidence],
     reference_losses: Mapping[int, float],
 ) -> tuple[dict[str, Any], float]:
     started = time.monotonic()
@@ -354,8 +353,8 @@ def _evaluation(
             runtime,
             task=task,
             demo=demo,
-            evidence=cache[demo],
-            process=process_cache[demo],
+            video_evidence=cache[demo],
+            tokens=evidence_cache[demo],
             reference_loss=float(reference_losses[demo]),
             visits=visits,
         )
@@ -387,7 +386,7 @@ def _checkpoint_evaluations(
     fit_demos: tuple[int, int],
     held_demo: int,
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseFrameOutput],
+    evidence_cache: Mapping[int, PolicyResponseEvidence],
     reference_losses: Mapping[int, float],
 ) -> tuple[dict[str, dict[str, Any]], float]:
     rows = {}
@@ -396,7 +395,7 @@ def _checkpoint_evaluations(
         (runtime.args.output_dir / "checkpoints").glob("macro_*")
     )
     if len(checkpoints) != 2:
-        raise RuntimeError("task-local Composer adjacent checkpoints changed")
+        raise RuntimeError("task-local unified Writer adjacent checkpoints changed")
     for checkpoint in checkpoints:
         runtime.writer.load_state_dict(
             load_file(
@@ -411,7 +410,7 @@ def _checkpoint_evaluations(
             fit_demos=fit_demos,
             held_demo=held_demo,
             cache=cache,
-            process_cache=process_cache,
+            evidence_cache=evidence_cache,
             reference_losses=reference_losses,
         )
         rows[checkpoint.name] = evaluation
@@ -425,7 +424,7 @@ def _train(
     task: int,
     fit_demos: tuple[int, int],
     cache: Mapping[int, FrozenPolicyResponseVideo],
-    process_cache: Mapping[int, PolicyResponseFrameOutput],
+    evidence_cache: Mapping[int, PolicyResponseEvidence],
     parameters: tuple[torch.nn.Parameter, ...],
     optimizer: torch.optim.AdamW,
     scheduler: torch.optim.lr_scheduler.LambdaLR,
@@ -445,7 +444,7 @@ def _train(
         demo = fit_demos[(step - 1) % len(fit_demos)]
         visit_index = (step - 1) % len(runtime.panels[task].panel_a)
         video = cache[demo].to(runtime.context.device)
-        process = process_cache[demo]
+        evidence = evidence_cache[demo]
         batch, panel = functional_panel_batch(
             runtime,
             task_id=task,
@@ -458,25 +457,25 @@ def _train(
         functional_loss, allocated, reserved = _functional_backward(
             runtime,
             video=video,
-            process=process,
+            evidence=evidence,
             batch=batch,
             seed=panel.policy_rng_seed,
         )
-        gradient_groups = _composer_gradient_norms(runtime)
+        gradient_groups = _factor_writer_gradient_norms(runtime)
         gradients = tuple(
             parameter.grad for parameter in parameters if parameter.grad is not None
         )
         if (
             not gradients
             or not all(bool(torch.isfinite(value).all()) for value in gradients)
-            or runtime.writer.composer.task_query.grad is None
+            or runtime.writer.factor_writer.task_query.grad is None
         ):
-            raise RuntimeError("task-local Composer gradient is invalid")
+            raise RuntimeError("task-local unified Writer gradient is invalid")
         gradient_norm = torch.nn.utils.clip_grad_norm_(
             parameters, float(cell["gradient_clip_norm"])
         )
         if not bool(torch.isfinite(gradient_norm)):
-            raise RuntimeError("task-local Composer gradient norm is non-finite")
+            raise RuntimeError("task-local unified Writer gradient norm is non-finite")
         optimizer.step()
         scheduler.step()
         peak_allocated = max(peak_allocated, allocated)
@@ -550,19 +549,19 @@ def _resume_cursor(
         cursor_key="optimizer_step",
     )
     if not 0 <= start_step <= stop:
-        raise ValueError("task-local Composer resume cursor changed")
+        raise ValueError("task-local unified resume cursor changed")
     return start_step, metrics_rows
 
 
 def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
     if runtime.context.world_size != 1:
-        raise ValueError("task-local Composer qualification is one process per GPU")
+        raise ValueError("task-local unified qualification is one process per GPU")
     task = int(runtime.args.task)
     allowed = tuple(
         map(int, runtime.config["task_split"]["task_local_positive_control"])
     )
     if task not in allowed:
-        raise ValueError("task-local Composer task is outside the positive control")
+        raise ValueError("task-local unified task is outside the positive control")
     cell = runtime.config["optimization"]["task_local"]
     total = int(cell["warmup_updates"]) + int(cell["effective_updates"])
     stop = int(
@@ -573,7 +572,7 @@ def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         not 0 < stop <= total
         or (runtime.args.mode == "formal" and stop != total)
     ):
-        raise ValueError("task-local Composer stop step changed")
+        raise ValueError("task-local unified stop step changed")
 
     started = time.monotonic()
     fit_demos, held_demo = _video_split(runtime, task)
@@ -600,7 +599,7 @@ def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         scheduler=scheduler,
         stop=stop,
     )
-    cache, process_cache, capture_records, capture_seconds = _cache_evidence(
+    cache, evidence_cache, capture_records, capture_seconds = _cache_evidence(
         runtime, task=task, videos=all_demos
     )
     checkpoint_steps = {
@@ -612,7 +611,7 @@ def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
         task=task,
         fit_demos=fit_demos,
         cache=cache,
-        process_cache=process_cache,
+        evidence_cache=evidence_cache,
         parameters=parameters,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -628,7 +627,7 @@ def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
             fit_demos=fit_demos,
             held_demo=held_demo,
             cache=cache,
-            process_cache=process_cache,
+            evidence_cache=evidence_cache,
             reference_losses=references,
         )
         evaluation = evaluations[f"macro_{stop:08d}"]
@@ -639,7 +638,7 @@ def run_task_local(runtime: PolicyResponseRuntime) -> dict[str, Any]:
             fit_demos=fit_demos,
             held_demo=held_demo,
             cache=cache,
-            process_cache=process_cache,
+            evidence_cache=evidence_cache,
             reference_losses=references,
         )
         evaluations = {"current": evaluation}

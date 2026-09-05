@@ -4,9 +4,9 @@
 
 ## 当前goal
 
-从最新clean pushed main实现、训练并科学裁决可扩展的Policy-Response Native-Temporal Factor Writer：以冻结PI0.5的
-layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用可重复的Frame与
-Native-Temporal Factor blocks一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
+从最新clean pushed main实现、训练并科学裁决可扩展的Unified Policy-Native Factor Writer：以冻结PI0.5的
+layer x horizon x probe policy-response和当前正确视频产生的真实native X/Y为视频价值路径，用一种可重复的统一factor block
+一次生成唯一38-target rank16 LoRA；仅依靠正确视频的cross-episode functional监督，
 持续推进component-init、fully-random Final joint及规模化训练，直到validation8 strict paired correct稳定严格大于145/400并满足
 breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因果controls，或者在完成必要正控、matched对照和有信息量的规模化
 实验后，获得足以停止当前函数类或EMBER总体路线的可复核证据。
@@ -17,13 +17,13 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 唯一active design为：
 
-- docs/axial_policy_response_native_factor_writer_design.md
+- docs/unified_policy_native_factor_writer_design.md
 
 唯一active training config为：
 
-- configs/pi05_ecp_policy_response_writer_native_temporal_v1.json
+- configs/pi05_ecp_policy_response_writer_unified_factor_v1.json
 
-已完成的12-gradient资格配置已标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
+已完成的Native-Temporal及其12-gradient资格配置均标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
 
 专家原始依据为：
 
@@ -49,10 +49,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含可复制的Frame Policy-Response与Native-Temporal Factor两种attention/MLP block；显式X/Y side在同一block内先读
-   同frame native bank、再沿真实frame time及rank/side交互，随后直接对raw X/Y做signed pooling；
-4. 独立event bottleneck与causal process auxiliary被删除，整个Writer只接受correct cross-episode functional梯度；时序信息仍由完整
-   PI0.5 response与Native-Temporal block承担；
+3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层直接读取同frame
+   prefix、完整PI0.5 response与side-matched native bank，再沿真实frame time及rank/side交互，随后直接对raw X/Y做signed pooling；
+4. 独立Process坐标、event bottleneck、Composer解释边界与causal process auxiliary均删除，整个Writer只接受correct cross-episode
+   functional梯度；时序信息仍由完整PI0.5 response与统一block承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
 6. task-local控制、shared资格与正式closed-loop各自回答不同问题，不能用内部loss或人为阈值代替最终行为。
 
@@ -116,13 +116,15 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 23. [x] 预注册m100/m200 held5 correct-only strict250分别为`42/250`与`35/250`，breadth均`3/5`且Goal/Long为0；整模块
     checkpoint swap进一步显示Process只在task1产生正收益、在task6/79/93产生主要伤害，Composer单独在四task都没有学得稳定正映射，
     二者joint interaction又按task放大正负。停止当前Process--Composer learned-coordinate handoff，不以冻结或数学补丁掩盖；
-24. [ ] 以一个可复制Unified Policy-Native Factor block整体替换该handoff：显式frame x target x rank x X/Y token在每层直接读取
+24. [x] 以一个可复制Unified Policy-Native Factor block整体替换该handoff：显式frame x target x rank x X/Y token在每层直接读取
     frozen prefix、完整PI0.5 response与same-frame side-matched native bank，再做标准time及rank/side axial attention；末端只保留一次
-    centering、raw signed pooling、target cap和唯一rank16，删除独立Process/Composer中间坐标；
-25. [ ] 完成定向合同、真实full-50 forward/gradient/materialization及task1/task93短容量正控后，立即运行全75个授权non-held
-    source tasks的component-init m50/m100 shared短资格，并对两点并发完成held5 correct-only strict250；
-26. [ ] shared信号与held5闭环成立后进入mixed-K、fully-random Final和validation8 strict paired400；
-27. [ ] 只有correct-only冻结checkpoint后才运行negative/causal controls。
+    centering、raw signed pooling、target cap和唯一rank16，删除独立Process/Composer中间坐标。19项定向CPU回归及最长task93真实full-50
+    forward/gradient/materialization smoke已通过；
+25. [ ] 完成task1/task93 optimizer25/50短容量正控后，立即以与前代matched的55 meta + 18 target共73个gradient tasks运行
+    component-init optimizer100/200 shared短资格，并对两点并发完成held5 correct-only strict250；task6/79只作已消费诊断，不再伪装
+    fresh selector；
+26. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+27. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

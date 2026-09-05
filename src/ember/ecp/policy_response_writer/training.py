@@ -22,7 +22,7 @@ from ember.ecp.policy_response_writer.capture import (
     capture_policy_response_chunk,
     merge_policy_response_chunks,
 )
-from ember.ecp.policy_response_writer.model import PolicyResponseNativeTemporalWriter
+from ember.ecp.policy_response_writer.model import UnifiedPolicyNativeFactorWriter
 from ember.ecp.policy_response_writer.shared_schedule import (
     _functional_panel_config,
     _selected_task_ids,
@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_native_temporal_v1"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_native_temporal_run_v1"
+SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v1"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v1"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -76,7 +76,7 @@ class PolicyResponseRuntime:
     context: DistributedContext
     policy: torch.nn.Module
     stage0: torch.nn.Module
-    writer: PolicyResponseNativeTemporalWriter
+    writer: UnifiedPolicyNativeFactorWriter
     ranks: Any
     rank4_contract: Any
     owners: tuple[Any, ...]
@@ -125,19 +125,18 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_native_temporal_policy_response_writer",
+            == "active_unified_policy_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("architecture")
-            == "repeatable_frame_and_native_temporal_factor_blocks",
+            == "repeatable_unified_policy_native_factor_blocks",
             model.get("factor_readout")
             == "factor_side_two_branch_signed_raw_native_XY",
             model.get("dynamic_value_contract")
             == "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
-            int(model.get("frame_blocks", 0)) > 0,
-            int(model.get("factor_blocks", 0)) > 0,
+            int(model.get("blocks", 0)) > 0,
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
@@ -170,7 +169,7 @@ def _validate_launch_authority(args: argparse.Namespace) -> None:
 
 
 def _initialize_writer(
-    writer: PolicyResponseNativeTemporalWriter,
+    writer: UnifiedPolicyNativeFactorWriter,
     stage0: torch.nn.Module,
     kind: str,
 ) -> dict[str, object]:
@@ -180,7 +179,7 @@ def _initialize_writer(
         return {
             "kind": "fully_random_same_topology",
             "reused": [],
-            "fresh": ["process", "composer"],
+            "fresh": ["evidence", "factor_writer"],
         }
     raise ValueError("unknown Policy-Response Writer initialization")
 
@@ -303,14 +302,13 @@ def prepare_runtime(
     )
     prepare_frozen_writer_policy(policy, ranks.contract)
     model = config["model"]
-    writer = PolicyResponseNativeTemporalWriter(
+    writer = UnifiedPolicyNativeFactorWriter(
         owners,
         prefix_width=int(model["prefix_width"]),
         expert_width=int(model["expert_width"]),
         width=int(model["width"]),
         heads=int(model["attention_heads"]),
-        frame_blocks=int(model["frame_blocks"]),
-        factor_blocks=int(model["factor_blocks"]),
+        blocks=int(model["blocks"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
@@ -447,18 +445,12 @@ def functional_panel_batch(
 
 def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
     groups = {
-        "prefix": (
-            "process.prefix",
-            "process.rank_embedding",
-            "process.owner_embedding",
-            "process.family_embedding",
-        ),
-        "response": ("process.response",),
-        "frame": ("process.frame_blocks",),
-        "native_temporal": ("composer.blocks",),
-        "signed_input": ("composer.input_signed_query",),
-        "signed_output": ("composer.output_signed_query",),
-        "composer": ("composer",),
+        "prefix": ("evidence.prefix",),
+        "response": ("evidence.response",),
+        "unified": ("factor_writer.blocks",),
+        "signed_input": ("factor_writer.input_signed_query",),
+        "signed_output": ("factor_writer.output_signed_query",),
+        "factor_writer": ("factor_writer",),
     }
     output = {}
     for label, prefixes in groups.items():
@@ -490,8 +482,7 @@ def _validate_smoke_graph(
         functional_gradients[name]
         for name in (
             "response",
-            "frame",
-            "native_temporal",
+            "unified",
             "signed_input",
             "signed_output",
         )

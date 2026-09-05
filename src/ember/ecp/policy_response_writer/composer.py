@@ -1,11 +1,4 @@
-"""Native-bank-conditioned temporal composition of rank-four LoRA factors.
-
-Each repeatable block gives explicit X/Y factor-side states access to the same
-frame's complete native bank, then models the ordered teacher-frame sequence.
-The final states score the untouched X/Y values directly through exact signed
-pooling.  No event summary, global video code, gain, or calibration path sits
-between the frozen PI0.5 evidence and the factors.
-"""
+"""Unified frozen-policy-evidence to native-factor Writer blocks."""
 
 from __future__ import annotations
 
@@ -14,6 +7,7 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import torch
+import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
@@ -27,7 +21,7 @@ from ember.ecp.native_factors import (
 from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.ecp.policy_response_writer.process import (
     GatedMLP,
-    PolicyResponseFrameOutput,
+    PolicyResponseEvidence,
 )
 
 
@@ -125,14 +119,14 @@ def _effective_update_cap_factor(
     return torch.clamp(cap.to(mean_square) / denominator, max=1.0)
 
 
-class NativeTemporalFactorBlock(torch.nn.Module):
-    """One copyable side-native read, frame-time, rank-side transformer block."""
+class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
+    """One copyable evidence-read, frame-time, rank-side transformer block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
-        self.bank_query_norm = torch.nn.LayerNorm(width)
-        self.bank_memory_norm = torch.nn.LayerNorm(width)
-        self.bank_attention = torch.nn.MultiheadAttention(
+        self.evidence_query_norm = torch.nn.LayerNorm(width)
+        self.evidence_memory_norm = torch.nn.LayerNorm(width)
+        self.evidence_attention = torch.nn.MultiheadAttention(
             width, heads, dropout=0.0, batch_first=True
         )
         self.temporal_norm = torch.nn.LayerNorm(width)
@@ -152,48 +146,137 @@ class NativeTemporalFactorBlock(torch.nn.Module):
             torch.stack((position, position.square()), dim=-1)
         )
 
-    def _bank_read(self, query: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
-        memory = self.bank_memory_norm(memory)
-        attended, _ = self.bank_attention(
-            self.bank_query_norm(query), memory, memory, need_weights=False
+    def _evidence_read(
+        self,
+        query: torch.Tensor,
+        prefix: torch.Tensor,
+        prefix_valid: torch.Tensor,
+        response: torch.Tensor,
+        input_bank: torch.Tensor,
+        output_bank: torch.Tensor,
+    ) -> torch.Tensor:
+        frames, ranks, sides, width = query.shape
+        if (
+            sides != 2
+            or prefix.shape[0] != frames
+            or prefix_valid.shape != prefix.shape[:2]
+            or response.ndim != 3
+            or response.shape[0] != frames
+            or input_bank.ndim != 3
+            or output_bank.ndim != 3
+            or input_bank.shape[0] != frames
+            or output_bank.shape[0] != frames
+            or any(
+                value.shape[-1] != width
+                for value in (prefix, response, input_bank, output_bank)
+            )
+        ):
+            raise ValueError("unified policy-native evidence axes changed")
+        bank_tokens = max(input_bank.shape[1], output_bank.shape[1])
+        input_memory = F.pad(
+            input_bank, (0, 0, 0, bank_tokens - input_bank.shape[1])
         )
-        return attended
+        output_memory = F.pad(
+            output_bank, (0, 0, 0, bank_tokens - output_bank.shape[1])
+        )
+        bank = torch.stack((input_memory, output_memory), dim=1)
+        bank_valid = torch.arange(bank_tokens, device=query.device)[
+            None, None
+        ] < torch.tensor(
+            (input_bank.shape[1], output_bank.shape[1]), device=query.device
+        )[None, :, None]
+        bank_valid = bank_valid.expand(frames, -1, -1)
 
-    def _checkpointed_bank_read(
-        self, query: torch.Tensor, memory: torch.Tensor
+        shared = torch.cat((prefix, response), dim=1)
+        shared_valid = torch.cat(
+            (
+                prefix_valid,
+                torch.ones(
+                    response.shape[:2], dtype=torch.bool, device=response.device
+                ),
+            ),
+            dim=1,
+        )
+        memory = torch.cat(
+            (shared[:, None].expand(-1, 2, -1, -1), bank), dim=2
+        ).reshape(frames * 2, -1, width)
+        valid = torch.cat(
+            (shared_valid[:, None].expand(-1, 2, -1), bank_valid), dim=2
+        ).reshape(frames * 2, -1)
+        rows = query.permute(0, 2, 1, 3).reshape(frames * 2, ranks, width)
+        memory = self.evidence_memory_norm(memory)
+        attended, _ = self.evidence_attention(
+            self.evidence_query_norm(rows),
+            memory,
+            memory,
+            key_padding_mask=~valid,
+            need_weights=False,
+        )
+        return attended.reshape(frames, 2, ranks, width).permute(0, 2, 1, 3)
+
+    def _checkpointed_evidence_read(
+        self,
+        query: torch.Tensor,
+        prefix: torch.Tensor,
+        prefix_valid: torch.Tensor,
+        response: torch.Tensor,
+        input_bank: torch.Tensor,
+        output_bank: torch.Tensor,
     ) -> torch.Tensor:
         if not torch.is_grad_enabled():
-            return self._bank_read(query, memory)
-        return checkpoint(self._bank_read, query, memory, use_reentrant=False)
+            return self._evidence_read(
+                query,
+                prefix,
+                prefix_valid,
+                response,
+                input_bank,
+                output_bank,
+            )
+        return checkpoint(
+            self._evidence_read,
+            query,
+            prefix,
+            prefix_valid,
+            response,
+            input_bank,
+            output_bank,
+            use_reentrant=False,
+        )
 
     def forward(
         self,
         frame_states: Sequence[torch.Tensor],
         frame_positions: Sequence[torch.Tensor],
+        evidence: Sequence[PolicyResponseEvidence],
         input_bank_chunks: Sequence[Sequence[torch.Tensor]],
         output_bank_chunks: Sequence[Sequence[torch.Tensor]],
     ) -> tuple[torch.Tensor, ...]:
         frames = tuple(frame_states)
         positions = tuple(frame_positions)
+        memories = tuple(evidence)
         input_banks = tuple(tuple(chunks) for chunks in input_bank_chunks)
         output_banks = tuple(tuple(chunks) for chunks in output_bank_chunks)
         if (
             not frames
             or len(frames) != len(positions)
+            or len(frames) != len(memories)
             or len(frames) != len(input_banks)
             or len(frames) != len(output_banks)
         ):
-            raise ValueError("native-temporal video set changed")
+            raise ValueError("unified factor video set changed")
 
         output = []
-        for frame, position, input_chunks, output_chunks in zip(
-            frames, positions, input_banks, output_banks, strict=True
+        for frame, position, tokens, input_chunks, output_chunks in zip(
+            frames, positions, memories, input_banks, output_banks, strict=True
         ):
             if frame.ndim != 4 or frame.shape[2] != 2:
-                raise ValueError("native-temporal factor-side axes changed")
+                raise ValueError("unified factor-side axes changed")
             frame_count, ranks, _, width = frame.shape
             if (
                 position.shape != (frame_count,)
+                or tokens.prefix.shape[0] != frame_count
+                or tokens.prefix_valid.shape != tokens.prefix.shape[:2]
+                or tokens.response.shape[0] != frame_count
                 or not input_chunks
                 or len(input_chunks) != len(output_chunks)
                 or any(
@@ -211,7 +294,7 @@ class NativeTemporalFactorBlock(torch.nn.Module):
                 )
                 or sum(chunk.shape[0] for chunk in input_chunks) != frame_count
             ):
-                raise ValueError("native-temporal bank axes changed")
+                raise ValueError("unified evidence or bank axes changed")
 
             reads = []
             offset = 0
@@ -220,13 +303,16 @@ class NativeTemporalFactorBlock(torch.nn.Module):
             ):
                 count = input_memory.shape[0]
                 local = frame[offset : offset + count]
-                x_read = self._checkpointed_bank_read(
-                    local[:, :, 0], input_memory
+                reads.append(
+                    self._checkpointed_evidence_read(
+                        local,
+                        tokens.prefix[offset : offset + count],
+                        tokens.prefix_valid[offset : offset + count],
+                        tokens.response[offset : offset + count],
+                        input_memory,
+                        output_memory,
+                    )
                 )
-                y_read = self._checkpointed_bank_read(
-                    local[:, :, 1], output_memory
-                )
-                reads.append(torch.stack((x_read, y_read), dim=2))
                 offset += count
             value = frame + torch.cat(tuple(reads), dim=0)
 
@@ -253,8 +339,8 @@ class NativeTemporalFactorBlock(torch.nn.Module):
         return tuple(output)
 
 
-class NativeTemporalFactorComposer(torch.nn.Module):
-    """Map frame responses and current-video native banks to rank-four X/Y."""
+class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
+    """Generate rank-four X/Y with one repeated factor-latent block type."""
 
     def __init__(
         self,
@@ -276,7 +362,7 @@ class NativeTemporalFactorComposer(torch.nn.Module):
             or block_depth <= 0
             or pooling_frame_chunk <= 0
         ):
-            raise ValueError("native-temporal composer topology changed")
+            raise ValueError("unified policy-native factor topology changed")
         input_widths = sorted({owner.in_features for owner in owners})
         output_widths = sorted(
             {owner.out_features // native_output_group_count(owner) for owner in owners}
@@ -294,6 +380,9 @@ class NativeTemporalFactorComposer(torch.nn.Module):
             }
         )
         maximum_groups = max(native_output_group_count(owner) for owner in owners)
+        self.rank_embedding = torch.nn.Parameter(
+            torch.empty(G1_RESIDUAL_RANK, width)
+        )
         self.factor_side_embedding = torch.nn.Parameter(torch.empty(2, width))
         self.owner_embedding = torch.nn.Parameter(torch.empty(len(owners), width))
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
@@ -304,7 +393,8 @@ class NativeTemporalFactorComposer(torch.nn.Module):
         self.position_projection = torch.nn.Linear(2, width, bias=False)
         self.native_key_norm = torch.nn.LayerNorm(width)
         self.blocks = torch.nn.ModuleList(
-            NativeTemporalFactorBlock(width, heads) for _ in range(block_depth)
+            UnifiedPolicyNativeFactorBlock(width, heads)
+            for _ in range(block_depth)
         )
         self.input_signed_query = torch.nn.Linear(width, 2 * width, bias=False)
         self.output_signed_query = torch.nn.Linear(width, 2 * width, bias=False)
@@ -321,6 +411,7 @@ class NativeTemporalFactorComposer(torch.nn.Module):
             torch.tensor([family_order.index(owner.family) for owner in owners]),
             persistent=False,
         )
+        torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.factor_side_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
 
@@ -329,10 +420,17 @@ class NativeTemporalFactorComposer(torch.nn.Module):
             self.family_ids[target]
         )
 
+    def _seed(self, target: int) -> torch.Tensor:
+        return (
+            self.rank_embedding[:, None]
+            + self.factor_side_embedding[None]
+            + self._owner_bias(target)
+        )
+
     def _position(self, video: FrozenPolicyResponseVideo) -> torch.Tensor:
         position = video.frame_positions.float()
         if position.shape != (video.frame_count,):
-            raise ValueError("native composer frame positions changed")
+            raise ValueError("unified factor frame positions changed")
         return self.position_projection(torch.stack((position, position.square()), -1))
 
     def _input_context(self, target: int, values: torch.Tensor) -> torch.Tensor:
@@ -398,7 +496,7 @@ class NativeTemporalFactorComposer(torch.nn.Module):
                     )
                 )
             if boundary.next_frame != video.frame_count:
-                raise ValueError("native composer bank stream ended early")
+                raise ValueError("unified factor bank stream ended early")
             candidates.append(
                 _NativeVideoCandidates(
                     frame_count=video.frame_count,
@@ -406,34 +504,42 @@ class NativeTemporalFactorComposer(torch.nn.Module):
                 )
             )
         if not candidates:
-            raise ValueError("native composer received no current-video bank")
+            raise ValueError("unified factor received no current-video bank")
         return tuple(candidates)
 
     def _decode_target(
         self,
         target: int,
         videos: Sequence[FrozenPolicyResponseVideo],
-        frames: Sequence[PolicyResponseFrameOutput],
+        evidence: Sequence[PolicyResponseEvidence],
         candidates: Sequence[_NativeVideoCandidates],
     ) -> tuple[torch.Tensor, ...]:
-        if len(videos) != len(frames) or len(videos) != len(candidates):
-            raise ValueError("native composer video/frame count changed")
+        if len(videos) != len(evidence) or len(videos) != len(candidates):
+            raise ValueError("unified factor video/evidence count changed")
         states = []
-        for video, encoded in zip(videos, frames, strict=True):
-            if encoded.frame_tokens.shape != (
-                video.frame_count,
-                len(self.owners),
-                G1_RESIDUAL_RANK,
-                self.width,
+        selected_evidence = []
+        for video, tokens in zip(videos, evidence, strict=True):
+            if (
+                tokens.prefix.shape[0] != video.frame_count
+                or tokens.prefix_valid.shape != tokens.prefix.shape[:2]
+                or tokens.response.shape[:2]
+                != (video.frame_count, len(self.owners))
+                or tokens.response.shape[-1] != self.width
             ):
-                raise ValueError("native composer encoded-frame axes changed")
-            state = (
-                encoded.frame_tokens[:, target, :, None]
-                + self.factor_side_embedding[None, None]
+                raise ValueError("unified factor evidence axes changed")
+            state = self._seed(target)[None].expand(
+                video.frame_count, -1, -1, -1
             )
             if self.task_query is not None:
                 state = state + self.task_query[target][None]
             states.append(state)
+            selected_evidence.append(
+                PolicyResponseEvidence(
+                    prefix=tokens.prefix,
+                    prefix_valid=tokens.prefix_valid,
+                    response=tokens.response[:, target],
+                )
+            )
 
         positions = tuple(video.frame_positions for video in videos)
         input_chunks = tuple(
@@ -449,7 +555,13 @@ class NativeTemporalFactorComposer(torch.nn.Module):
         )
         values = tuple(states)
         for block in self.blocks:
-            values = block(values, positions, input_chunks, output_chunks)
+            values = block(
+                values,
+                positions,
+                selected_evidence,
+                input_chunks,
+                output_chunks,
+            )
         return tuple(value - value.mean(0, keepdim=True) for value in values)
 
     def _branch_logits(
@@ -520,7 +632,7 @@ class NativeTemporalFactorComposer(torch.nn.Module):
         )
         video_count = len(videos)
         if len(frame_states) != video_count:
-            raise ValueError("native composer frame-state set changed")
+            raise ValueError("unified factor frame-state set changed")
         for video, frame_state in zip(videos, frame_states, strict=True):
             if frame_state.shape != (
                 video.frame_count,
@@ -528,7 +640,7 @@ class NativeTemporalFactorComposer(torch.nn.Module):
                 2,
                 self.width,
             ):
-                raise ValueError("native composer factor-side frame state changed")
+                raise ValueError("unified factor-side frame state changed")
             input_queries = self._signed_queries(
                 self.input_signed_query, frame_state[:, :, 0]
             )
@@ -564,31 +676,31 @@ class NativeTemporalFactorComposer(torch.nn.Module):
                 )
                 frame_offset += frame_count
             if frame_offset != video.frame_count:
-                raise ValueError("native composer aligned frame stream ended early")
+                raise ValueError("unified aligned frame stream ended early")
         return input_accumulator.signed_mean(), output_accumulator.signed_mean()
 
     def forward(
         self,
         videos: Sequence[FrozenPolicyResponseVideo],
-        frames: Sequence[PolicyResponseFrameOutput],
+        evidence: Sequence[PolicyResponseEvidence],
         *,
         s_ref: torch.Tensor,
     ) -> NativeFactorResidual:
         values = tuple(videos)
-        encoded = tuple(frames)
+        memories = tuple(evidence)
         if (
             not values
-            or len(values) != len(encoded)
+            or len(values) != len(memories)
             or s_ref.shape != (len(self.owners),)
         ):
-            raise ValueError("native composer video set or scale authority changed")
+            raise ValueError("unified factor video set or scale authority changed")
         a_values = []
         b_values = []
         scales = []
         for target in range(len(self.owners)):
             candidates = self._bank_candidates(target, values)
             frame_states = self._decode_target(
-                target, values, encoded, candidates
+                target, values, memories, candidates
             )
             a, b = self._pool_target(target, frame_states, candidates)
             cap_factor = _effective_update_cap_factor(a, b, s_ref[target])
@@ -605,3 +717,29 @@ class NativeTemporalFactorComposer(torch.nn.Module):
             b=tuple(b_values),
             scales=torch.stack(scales),
         )
+
+    @torch.no_grad()
+    def initialize_from_stage0(self, stage0: torch.nn.Module) -> dict[str, object]:
+        """Reuse G2 structural embeddings and one native response attention."""
+
+        binding = stage0.encoder.binding
+        projector = stage0.encoder.observer.projector
+        self.owner_embedding.copy_(binding.owner_embedding)
+        self.family_embedding.weight.copy_(projector.family_embedding.weight)
+        self.horizon_embedding.weight.copy_(binding.horizon_embedding)
+        first = self.blocks[0].evidence_attention
+        width = self.width
+        first.in_proj_weight[:width].copy_(binding.event_query.weight)
+        first.in_proj_weight[width : 2 * width].copy_(binding.policy_key.weight)
+        first.in_proj_weight[2 * width :].copy_(binding.policy_value.weight)
+        first.in_proj_bias.zero_()
+        first.out_proj.weight.copy_(
+            torch.eye(width, device=first.out_proj.weight.device)
+        )
+        first.out_proj.bias.zero_()
+        return {
+            "reused": [
+                "owner_family_horizon_embeddings",
+                "first_unified_evidence_attention",
+            ]
+        }

@@ -157,7 +157,7 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
-        or runtime.writer.composer.task_query is not None
+        or runtime.writer.factor_writer.task_query is not None
         or not all(value.requires_grad for value in runtime.writer.parameters())
         or any(value.requires_grad for value in runtime.policy.parameters())
         or any(value.requires_grad for value in runtime.stage0.parameters())

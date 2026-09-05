@@ -11,10 +11,11 @@ from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
 from ember.ecp.native_factors import G1_RESIDUAL_RANK, native_output_group_count
 from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
-    PolicyResponseNativeTemporalWriter,
+    PolicyResponseEvidence,
+    UnifiedPolicyNativeFactorWriter,
 )
 from ember.ecp.policy_response_writer.composer import (
-    NativeTemporalFactorBlock,
+    UnifiedPolicyNativeFactorBlock,
     _effective_update_cap_factor,
     _effective_update_rms,
 )
@@ -111,15 +112,14 @@ def _reverse_video(video: FrozenPolicyResponseVideo) -> FrozenPolicyResponseVide
     )
 
 
-def _model(*, task_local: bool = False) -> PolicyResponseNativeTemporalWriter:
-    return PolicyResponseNativeTemporalWriter(
+def _model(*, task_local: bool = False) -> UnifiedPolicyNativeFactorWriter:
+    return UnifiedPolicyNativeFactorWriter(
         _owners(),
         prefix_width=10,
         expert_width=12,
         width=16,
         heads=4,
-        frame_blocks=1,
-        factor_blocks=1,
+        blocks=2,
         pooling_frame_chunk=2,
         task_local=task_local,
     )
@@ -159,14 +159,13 @@ def test_axial_writer_preserves_shapes_and_one_functional_gradient_path() -> Non
 
     _residual_loss(output).backward()
     for prefix in (
-        "process.response",
-        "process.frame_blocks",
-        "composer.blocks",
-        "composer.blocks.0.bank_attention",
-        "composer.blocks.0.temporal_attention",
-        "composer.blocks.0.factor_attention",
-        "composer.input_signed_query",
-        "composer.output_signed_query",
+        "evidence.response",
+        "factor_writer.blocks",
+        "factor_writer.blocks.0.evidence_attention",
+        "factor_writer.blocks.0.temporal_attention",
+        "factor_writer.blocks.0.factor_attention",
+        "factor_writer.input_signed_query",
+        "factor_writer.output_signed_query",
     ):
         assert _group_gradient(model, prefix) > 0.0
 
@@ -174,7 +173,7 @@ def test_axial_writer_preserves_shapes_and_one_functional_gradient_path() -> Non
 def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
     model = _model()
     video = _video(11)
-    response = model.process.response(video)
+    response = model.evidence.response(video)
     assert response.shape == (
         video.frame_count,
         len(_owners()),
@@ -184,7 +183,7 @@ def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
 
     changed = video.layer_states.clone()
     changed[:, :, :, 17] += 3.0
-    mutated = model.process.response(replace(video, layer_states=changed))
+    mutated = model.evidence.response(replace(video, layer_states=changed))
     assert not torch.equal(
         response[:, :, 17 * 8 : 18 * 8],
         mutated[:, :, 17 * 8 : 18 * 8],
@@ -201,10 +200,6 @@ def test_static_repeated_video_cannot_open_either_dynamic_factor() -> None:
             (_static_repeated_video(19),),
             s_ref=torch.full((4,), 0.2),
         )
-    frame = output.frames[0].frame_tokens
-    torch.testing.assert_close(
-        frame, frame[:1].expand_as(frame), atol=1e-5, rtol=0.0
-    )
     assert max(value.abs().max() for value in output.residual.a) < 1e-5
     assert max(value.abs().max() for value in output.residual.b) < 1e-5
 
@@ -231,7 +226,7 @@ def test_video_set_is_permutation_invariant_and_chunking_is_exact() -> None:
     with torch.no_grad():
         original = model((left, right), s_ref=torch.full((4,), 0.2)).residual
         permuted = model((right, left), s_ref=torch.full((4,), 0.2)).residual
-        model.composer.pooling_frame_chunk = 3
+        model.factor_writer.pooling_frame_chunk = 3
         rechunked = model((left, right), s_ref=torch.full((4,), 0.2)).residual
     for expected, observed, chunked in zip(
         (*original.a, *original.b),
@@ -248,37 +243,50 @@ def test_native_bank_keeps_every_candidate_axis_for_frame_local_read() -> None:
     video = _video(37, frames=5)
     with torch.no_grad():
         for target, owner in enumerate(_owners()):
-            candidates = model.composer._bank_candidates(target, (video,))
+            candidates = model.factor_writer._bank_candidates(target, (video,))
             groups = native_output_group_count(owner)
             expected = video.frame_count * 2 * ACTION_HORIZON * (1 + groups * 4)
             observed = sum(
                 (chunk.input_tokens.numel() + chunk.output_tokens.numel())
-                // model.composer.width
+                // model.factor_writer.width
                 for chunk in candidates[0].chunks
             )
             assert observed == expected
             assert sum(row.frame_count for row in candidates) == video.frame_count
 
 
-def test_native_temporal_block_reads_side_banks_and_real_frame_order() -> None:
+def test_unified_block_reads_policy_native_evidence_and_real_frame_order() -> None:
     torch.manual_seed(41)
-    block = NativeTemporalFactorBlock(16, 4).double().eval()
+    block = UnifiedPolicyNativeFactorBlock(16, 4).double().eval()
     positions = (torch.linspace(0.0, 1.0, 5, dtype=torch.double),)
     frame = torch.randn(5, 4, 2, 16, dtype=torch.double)
+    prefix = torch.randn(5, 6, 16, dtype=torch.double)
+    response = torch.randn(5, 9, 16, dtype=torch.double)
+    evidence = PolicyResponseEvidence(
+        prefix=prefix,
+        prefix_valid=torch.ones(5, 6, dtype=torch.bool),
+        response=response,
+    )
     input_bank = torch.randn(5, 12, 16, dtype=torch.double)
     output_bank = torch.randn(5, 20, 16, dtype=torch.double)
     changed_input = input_bank.clone()
     changed_input[2] = 3.0 * changed_input[2].flip(0)
     with torch.no_grad():
         original = block(
-            (frame,), positions, ((input_bank,),), ((output_bank,),)
+            (frame,), positions, (evidence,), ((input_bank,),), ((output_bank,),)
         )
         mutated = block(
-            (frame,), positions, ((changed_input,),), ((output_bank,),)
+            (frame,), positions, (evidence,), ((changed_input,),), ((output_bank,),)
+        )
+        reversed_evidence = PolicyResponseEvidence(
+            prefix=prefix.flip(0),
+            prefix_valid=evidence.prefix_valid.flip(0),
+            response=response.flip(0),
         )
         reversed_order = block(
             (frame.flip(0),),
             positions,
+            (reversed_evidence,),
             ((input_bank.flip(0),),),
             ((output_bank.flip(0),),),
         )[0].flip(0)
@@ -382,17 +390,17 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_native_temporal_config_is_canonical_and_frame_bank_is_rejected() -> None:
+def test_unified_factor_config_is_canonical_and_native_temporal_is_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_native_temporal_v1.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_v1.json"
     )
-    assert current["model"]["factor_blocks"] == 2
+    assert current["model"]["blocks"] == 4
     assert current["model"]["representation_arms"] == ["full"]
     assert current["optimization"]["objective"].endswith("positive_only")
     assert "event_slots" not in current["model"]
     with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
         load_policy_response_config(
             REPO_ROOT
-            / "configs/pi05_ecp_policy_response_writer_frame_bank_v1.json"
+            / "configs/pi05_ecp_policy_response_writer_native_temporal_v1.json"
         )

@@ -3073,14 +3073,14 @@ pooling、rank4 task-local容量和source separation的局部正证据。formal 
 2026-09-05 owner随后要求停止推进、全面清理并交由他人接手。仓库因此取消active goal/design/run；继任者必须重新取得owner授权后才可
 建立新路线，且架构仍须保持少数职责清楚、可复制扩展的attention/MLP模块，不能把non-pass修成数学变换链。
 
-## 164. 2026-09-05整体历史复核与重新授权
+## 164. 2026-09-05整体历史复核与事前对齐
 
 owner提供的新专家原文完整保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，报告审查基准为
 `00b2e77798c3af47d4efa5bab9d5e75041c9ed31`。报告明确区分直接核验、仓库记载、本地提供事实与设计推断；未逐条复算全部历史。
 复核保留v5.2/v6、G1/G2的正证据，强调能力漂移之外仍有absolute、breadth、视频必要性缺口，修正GOMQ rank容量解释，并区分
 PNBTT free-query E1 non-pass与未进入的真实Program E2。
 
-owner随后认可P/Q共同过程—整策略交互方向，并重新授权在硬约束内自主整体推进、深入分析及证据支持的实现，两个节点合计最多6卡。
-特别要求低于/接近baseline时不能随意找原因命名根因并最小修补；必要时做更多分析实验。active design登记为
-`docs/joint_process_policy_writer_design.md`，首项为同部署图、whole-Writer、无专属task query的少任务clone/shared对照。
-P/Q与非对称动态因子均是有条件候选，不是本次已验证结果；本条记录时尚未启动新GPU实验。旧v4与其formal evidence保持sealed。
+owner认可P/Q共同过程—整策略交互的候选方向，并商定后续自主接管原则：硬约束内深入分析、证据支持实现，两个节点合计最多6卡。
+特别要求低于/接近baseline时不能随意找原因命名根因并最小修补；必要时做更多分析实验。owner随后明确当前仍处事前对齐，不能
+直接开始执行，因此`docs/joint_process_policy_writer_design.md`是讨论草案而非active design。
+同图whole-Writer无query的clone/shared对照、P/Q与非对称动态因子均属候选，未启动新GPU实验。旧v4与formal evidence保持sealed。

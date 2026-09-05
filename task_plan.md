@@ -2,26 +2,25 @@
 
 更新时间：2026-09-05。
 
-## 当前目标与授权
+## 当前事前对齐状态
 
-2026-09-05 owner在新一轮专家复核与事前对齐后重新授权自主整体推进。目标仍是一次视频到唯一LoRA的zero-interaction能力，
+2026-09-05 owner明确澄清：当前仍在事前对齐，尚未开始自主执行。已讨论后续接管原则，不等于当下启动授权。目标仍是一次视频到唯一LoRA的zero-interaction能力，
 validation8 strict paired correct严格>145/400，并满足相邻稳定、breadth/suite、same-task鲁棒性和最终视频因果资格。
 
-在既有硬约束内自主实验、深入分析与有依据的实现；两个节点合计最多6张物理GPU。普通non-pass不能随意命名根因并最小修补，也不需
-逐次询问owner。只有改变目标/信息墙、新增数据或资源权限、无法用证据裁决的重大路线歧义，以及外部联系回到owner。
-未请求创建goal，因此不创建goal工具状态。
+完成对齐并明确启动后的拟定边界为：在既有硬约束内自主实验、深入分析与有依据的实现，两个节点合计最多6张物理GPU；普通non-pass
+不能随意命名根因并最小修补。重大科学/权限取舍与外部联系回到owner。当前不启动实验、实现或launch准备，不创建goal工具状态。
 
-## Active design与当前阶段
+## 讨论草案与当前阶段
 
-- Active design：`docs/joint_process_policy_writer_design.md`。
+- 当前没有active design；讨论草案：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
-- 当前阶段：准备同部署图、whole-Writer、无专属task query的少任务clone/shared学习对照；先核对任务/资产与既有runtime。
-- P/Q共同过程—整策略主干是有条件的首选候选；用第一项对照和必要分析决定是否实施，不把设计合理性当作性能证据。
-- 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验；可以用同一现有部署图启动预登记的fresh学习诊断。
+- 当前阶段：与owner讲清P/Q架构、实验建议及研究判断；对照实验尚未启动，先前的runtime/资产只读检查已停止。
+- P/Q共同过程—整策略主干及clone/shared对照都是讨论候选，不构成实施或launch授权。
+- 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
-## 推进计划
+## 候选推进顺序（待完成事前对齐）
 
-1. [x] 保存专家原文、owner接管边界与证据责任，建立一个active design。
+1. [x] 保存专家原文、后续接管原则与讨论草案；撤回误登记的active状态。
 2. [ ] 复用shared runtime，锁定少任务名单、训练/held视频、action rows、per-task exposure、局部闭环及source/carrier参照。
 3. [ ] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
 4. [ ] 联合分析fit、新视频、实际闭环与任务更新；存在竞争解释时补充能区分它们的分析实验，再决定下一项主要干预。

@@ -10,7 +10,7 @@
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`以及
 `docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。精确分数、提交和历史脉络见
 `docs/research_history.md`；最新已裁决并sealed的设计见`docs/unified_policy_native_factor_writer_design.md`。
-owner已重新授权自主推进；active合同为`docs/joint_process_policy_writer_design.md`，即时状态见`progress.md`。
+当前仍在事前对齐、没有active合同；`docs/joint_process_policy_writer_design.md`是讨论草案，即时状态见`progress.md`。
 本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
 ## 科学结论

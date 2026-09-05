@@ -4,14 +4,14 @@
 
 ## 当前快照
 
-- 2026-09-05 owner在新专家复核后重新授权自主整体推进：遵守全部科学/数据/资源合同，两个节点合计最多6张GPU；常规实验、深入分析、
-  相关修复及证据支持的模块重构无需再问。性能不佳不能随意归根因并立即修补；必要时做更多有区分力的分析实验。
-- 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。active design为
-  `docs/joint_process_policy_writer_design.md`，当前准备同图、whole-Writer、无task query的少任务clone/shared对照。
-  P/Q主干是有条件首选候选；尚未实施或证明其性能。当前还没有新GPU run，不创建未被请求的goal工具状态。
-- 先核对既有runtime、训练资产、任务身份和采样/评测可比性；配置确定后按正式合同启动fresh诊断。旧v4已sealed，不续跑旧checkpoint。
+- 2026-09-05 owner最新澄清：仍在事前对齐，不能直接开始执行。后续自主接管的原则已讨论，但不是当下启动授权。当前没有active
+  design/config/run或goal；不继续实现、实验或launch准备。先前只读runtime/资产检查已结束，没有启动GPU训练或评测。
+- 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
+  `docs/joint_process_policy_writer_design.md`改为讨论草案，P/Q与clone/shared实验均待完成对齐；旧v4继续sealed。
+- 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
+  当前只继续向owner解释架构和讨论判断，等待其明确结束对齐并启动。
 
-## 前次交接快照（已被上述重新授权取代）
+## 前次交接快照（历史记录）
 
 - 当前没有active goal、active design、active配置或运行中的实验。owner于2026-09-05在v4 held5结果完成后要求停止推进、全面清理并交由
   他人接手。`docs/unified_policy_native_factor_writer_design.md`与

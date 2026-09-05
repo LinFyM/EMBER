@@ -1,7 +1,7 @@
 # EMBER：共享学习定位与 Joint Process–Policy Writer
 
-状态：2026-09-05 owner重新授权自主推进。当前执行阶段是同部署图的少任务学习对照；P/Q主干是有条件实施的首选候选，
-不是已经得到行为验证的结论。旧Unified v4及其正式结果保持sealed，新对照从fresh参数/优化状态启动，不续跑旧实验。
+状态：2026-09-05事前对齐讨论草案，不是active design。owner明确要求先完成对齐，当前不启动实现、实验或launch准备。
+下文同图学习对照及P/Q主干均为候选建议，不是执行授权或已验证结论。旧Unified v4及其正式结果保持sealed。
 
 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。原文按owner提供的附件保存，不改写其观点；
 它的建议、证据限制与下列实施裁决须分开解释。长期目标与边界以`docs/current_owner_requirements.md`及`AGENTS.md`为准。
@@ -11,7 +11,7 @@
 最终目标仍是exact language + action-hidden ordered videos，一次Writer调用生成唯一完整38-target rank16 LoRA，冻结source
 闭环执行；validation8 correct严格>145/400且通过相邻稳定、breadth/suite、same-task鲁棒性及最终视频因果资格。
 
-owner授权在现有科学、数据、存储、Git与GPU边界内自主做实验、深入分析、相关修复和有依据的模块重构。两个节点合计不超过6张
+以下是完成对齐、明确启动后的拟定接管范围：在现有科学、数据、存储、Git与GPU边界内自主做实验、深入分析、相关修复和有依据的模块重构。两个节点合计不超过6张
 物理GPU；单job在一个节点。外部联系、改变目标/信息墙、新增数据或资源权限、以及证据无法裁决且显著改变投入方向的路线歧义，
 仍须携具体证据与推荐选择回到owner。不得把普通负结果或例行实现变成新的审批节点；不自行创建goal。
 

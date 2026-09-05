@@ -12,14 +12,16 @@ Native-Temporal Axial Writer已经证明完整PI0.5 response、真实native X/Y�
 放大正负。最早失效接口因此是Process输出的learned坐标再由Composer解释，而不是full horizon、native bank、rank4或训练步数。
 
 本设计只改变这一接口：不再先生成一个独立视频表示再交给另一个网络翻译，而让最终factor latent在每一层直接读取冻结证据。首版
-把policy evidence和native bank放入同一个softmax，task1/task93容量控制与attention-mass诊断又发现其概率质量受token cardinality支配：
-X bank长期只有约8--14%，而Y侧Q/action-in bank可占约70--96%。active修订因此在同一block内使用两个并行cross-attention；这是
-evidence layout修复，不增加新的阶段或手工校正器。
+把policy evidence和native bank放入同一个softmax，task1/task93容量控制与attention-mass诊断发现其概率质量受token cardinality支配；
+第二版因此把policy与side-native拆成并行cross-attention。第三版恢复`base(context,current-bank)+delta(dynamic)`共同定位，并取得明确
+task-local正控，但73-task shared的held5在optimizer100/200只有`35/31`，低于carrier43，且Goal/Long均为0。
 
-parallel-read修订的task-local容量成立，但73-task optimizer100/200的held5仅为`40/38`，均低于carrier43且Goal/Long为0。物化几何
-显示mobile逐渐集中为近rank1通用方向。代码复核发现最终readout先删除frame-common context，再只让innovation产生native查询；这使
-language、owner、family和rank无法直接决定当前bank中的读取位置，也偏离专家澄清中明确的`base(context,current-bank)+delta(dynamic)`。
-active修订仅恢复这一遗漏，不改变统一主干。
+进一步的whole-module和block-sublayer替换诊断排除了几个诱人的误判：learned evidence projection在两个true-held task上都是正增量；
+近rank1也不是根因，因为成功的task-local解同样收敛到近rank1。共同失败集中在重复factor block学成seen-task expert，而不是某一个
+temporal、factor、MLP或signed子层单独损坏。信息流审计同时发现，当前policy read把约15--24个language token、256个patch token和
+400个response token放进同一个softmax，language多数层只得到约2.2%的概率质量，接近纯token-count占比。active v4因此只修正这一个
+task-grounding接口：同一个标准policy cross-attention分别读取language、patch和完整response，各自softmax后与side-native read相加。
+它不增加参数、阶段、module type、gate或手工校正器。
 
 ## 2. 一句话结构
 
@@ -80,9 +82,10 @@ mean、horizon sampling或其它等价抹平。
 
 每个`UnifiedPolicyNativeFactorBlock`重复完全相同的四个标准子层：
 
-1. **同frame并行evidence read**：同一个X/Y factor query并行执行两次标准cross-attention；policy read只看该frame的全部prefix和
-   对应target完整PI0.5 response，native read只看本side完整bank（X只读native input，Y只读native output）。两个来源各自softmax，
-   读出直接相加后进入同一个residual state；没有串行handoff、gate、标量权重或token-count修正；
+1. **同frame并行evidence read**：同一个X/Y factor query用同一套policy-attention权重分别读取该frame的exact-language token、全部
+   image patch和对应target完整PI0.5 response；三者各自softmax。另一个标准cross-attention只看本side完整native bank（X只读native
+   input，Y只读native output）。四个读出直接相加后进入同一个residual state；没有串行handoff、gate、标量权重、token-count修正或
+   新增参数；
 2. **teacher-time attention**：同一target/rank/side沿真实frame顺序交互，相对frame位置只进入attention query/key；
 3. **rank/side attention**：同一frame内四个rank与X/Y side协调，使低秩两侧联合决定更新而非独立漂移；
 4. **标准GatedMLP**：提供逐token非线性容量。
@@ -115,39 +118,35 @@ whitening、transport、reconstruction solver或post-hoc calibration。
 - Frame-Aligned与Frame-Bank：candidate所属frame必须在方向形成前参与，故每层都做same-frame native read，而不是把global query广播到
   全视频；
 - Native-Temporal：X/Y必须从factor trunk入口显式分侧，并同时建模真实teacher time和rank/side；
-- task-local与shared负证据：局部可学不代表shared映射成立；因此首个shared实验保持数据、loss、初始化和训练规模matched，只裁决新接口。
+- task-local与shared负证据：局部可学不代表shared映射成立；learned evidence本身可以跨task泛化，真正需要修复的是共享block如何从
+  exact language建立task-grounded读取，而不是冻结上游或添加末端数学补丁。
 
 ## 9. 明确没有重复的旧路线
 
 - 不同于v5/v6类多网络Writer：没有自由video latent、独立decoder网络或仅凭language/static feature生成LoRA；最终latent每层都受当前
   视频的PI0.5 response与native bank约束；
-- 不同于G3 Program路线：没有固定Program tuple、event summary、relation marginal、C/D或Program-to-bank solver；
+- 不同于G3 Program路线：没有固定Program tuple、event summary、relation marginal或Program-to-bank solver；
 - 不同于PNBTT：没有covariance、whitening、transport和anchor链；
 - 不同于旧Axial/FrameBank/NativeTemporal：没有Process先学坐标、Composer再解释坐标的边界；factor latent直接消费冻结证据；
 - 不同于手工margin路线：wrong、shuffled、reversed或no-video不进入训练loss，正确视频优势必须由正确视频functional监督自发产生。
 
 ## 10. 训练与裁决
 
-首轮使用component initialization、K1、correct cross-episode functional positive-only。combined-softmax v1与innovation-only
-parallel-read v2均已完成并封存；active common-base v3保持block depth、数据、loss、初始化、rank和所有上游读取不变完成了相同
-task1/task93 25/50控制。两任务两相邻点的fit与未反传same-task held视频均高于carrier，且fit/held recovery全面超过matched v2，
-因此共同context定位获得task-local支持。下一步为保持单一因果变量，shared split、task采样、rows、optimizer100/200和functional panels
-继续与刚完成的73-gradient parallel-read v2 matched；
-task6/79已被消费，只作为zero-gradient重复诊断，不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是配置选择，
-不是架构约束。
+首轮使用component initialization、K1、correct cross-episode functional positive-only。combined-softmax v1、innovation-only
+parallel-read v2和common-base v3均已完成并封存。v3的task1/task93 optimizer25/50正控证明完整图有容量，但73-task shared与两个相邻
+held5闭环共同否定了现有task grounding。active v4保持evidence、native bank、block depth、readout、loss、rank和训练任务不变，只把
+language、patch、response从一个policy softmax拆成同权重的三个独立标准attention调用。task6/79已被消费，只作为zero-gradient重复诊断，
+不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是本次短实验的配置选择，不是架构约束。
 
 执行顺序：
 
 1. synthetic合同与真实最长视频full forward/VJP/materialization smoke；
 2. task1/task93各自optimizer25/50 task-local容量控制；
-3. fresh 73-gradient whole-Writer optimizer100/200；
-4. 两个single checkpoint分别完成held5 correct-only strict250；
-5. 只有出现可信shared闭环增量后，才扩到mixed-K、fully-random Final和validation8 paired400；
+3. fresh 73-gradient whole-Writer只先跑optimizer25/50短资格，不在架构尚未显示shared信号前投入长跑；
+4. 只有内部held functional与相邻学习轨迹支持继续时，才物化single checkpoint并做held5 correct-only strict250；
+5. 只有出现可信shared闭环增量后，才扩训练长度、mixed-K、fully-random Final和validation8 paired400；
 6. checkpoint由correct-only闭环、breadth和相邻稳定性选择并冻结后，才运行same-task、wrong、no-video、first+final、shuffled、reversed
    因果controls。
-
-m100 checkpoint一旦由formal trainer完整封存并写出manifest，即可在独立GPU上并行物化和评测，不需要等待m200训练结束；评测仍只读取
-该single checkpoint，且不回流训练、采样或checkpoint内容。这只是调度重叠，不改变科学条件。
 
 内部functional或task-local recovery不设成人为性能门。明确负结果也不靠延长训练、seed/LR小扫或末端数学补丁挽救；应定位统一block中
 最早失效的标准职责，优先修正evidence layout、attention ownership、优化目标或数据识别性。任何后继结构仍必须维持少数标准可复制模块。

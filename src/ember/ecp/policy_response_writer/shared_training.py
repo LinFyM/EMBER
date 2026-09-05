@@ -182,6 +182,8 @@ def _sum_gradients(
 def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
     prefixes = {
         "prefix": ("evidence.prefix",),
+        "patch": ("evidence.prefix.patch_projection",),
+        "language": ("evidence.prefix.language_projection",),
         "response": ("evidence.response",),
         "unified": ("factor_writer.blocks",),
         "signed_input": ("factor_writer.input_signed_query",),

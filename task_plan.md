@@ -21,7 +21,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 唯一active training config为：
 
-- configs/pi05_ecp_policy_response_writer_unified_factor_v3.json
+- configs/pi05_ecp_policy_response_writer_unified_factor_v4.json
 
 已完成的Native-Temporal及其12-gradient资格配置均标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
 
@@ -49,10 +49,10 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 1. full 50-step horizon、真实native X/Y、signed pooling、rank4 mobile与唯一rank16继续保留；coarse及等价平滑永久不是active方案；
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
-3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层以同一query并行读取
-   同frame prefix + 完整PI0.5 response与side-matched native bank，两个来源独立softmax后直接相加，再沿真实frame time及rank/side
-   交互；最终同一个signed-query head以frame-common context定位当前bank，以frame-relative innovation产生正负偏移，随后直接对raw X/Y
-   做signed pooling；
+3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层以同一query和同一套
+   policy-attention权重分别读取exact language、同frame image patches与完整PI0.5 response，三者各自softmax；side-matched native
+   bank另作独立标准attention，四个读出直接相加，再沿真实frame time及rank/side交互；最终同一个signed-query head以frame-common
+   context定位当前bank，以frame-relative innovation产生正负偏移，随后直接对raw X/Y做signed pooling；
 4. 独立Process坐标、event bottleneck、Composer解释边界与causal process auxiliary均删除，整个Writer只接受correct cross-episode
    functional梯度；时序信息仍由完整PI0.5 response与统一block承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
@@ -143,9 +143,17 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 31. [x] 从fresh完成task1/task93 optimizer25/50正控；两任务两相邻点的fit与未反传same-task held视频均自发高于carrier，且相对
     innovation-only v2全面改善。task1 m25/m50 fit/held recovery为`.0258/.0357`与`.0790/.0813`，task93为
     `.1568/.1371`与`.2066/.1848`；
-32. [ ] 立即运行matched 73-task optimizer100/200与两个single-checkpoint held5 correct-only strict250；
-33. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-34. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+32. [x] common-base v3的73-task optimizer100/200及两个single-checkpoint held5 correct-only strict250均完整结束；m100/m200为
+    `35/250`与`31/250`，逐task为`0/0/3/29/3`与`0/0/4/22/5`，breadth均`3/5`、Goal/Long均0，稳定低于carrier43且随训练退化；
+33. [x] 零优化职责诊断排除rank坍缩与evidence projection：成功task-local解同样接近rank1；m200 learned evidence在true-held
+    task6/79均给出正增量，反而重复factor blocks在seen task1为正、在task6/79为负。block子层替换没有找到单一坏算子，说明整个
+    shared block学成seen-task expert；
+34. [x] 信息流审计定位task grounding稀释：15--24个language token与256 patch、400 response竞争同一policy softmax，language多数层
+    仅约2.2%质量。active v4只把language、patch、response改为同权重、独立softmax的标准parallel reads；没有新参数、阶段、gate、
+    calibrator或数学链，CPU合同与schema互斥检查已通过；
+35. [ ] 完成v4真实full forward/VJP/materialization smoke，再做task1/task93 optimizer25/50正控及73-task optimizer25/50短资格；
+36. [ ] shared信号与held5闭环成立后进入扩展训练、mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+37. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

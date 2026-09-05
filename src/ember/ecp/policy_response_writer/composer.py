@@ -128,7 +128,7 @@ def _effective_update_cap_factor(
 
 
 class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
-    """One copyable parallel evidence-read, time, rank-side transformer block."""
+    """One copyable source-separated evidence, time, rank-side transformer block."""
 
     def __init__(self, width: int, heads: int) -> None:
         super().__init__()
@@ -161,8 +161,9 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
     def _evidence_read(
         self,
         query: torch.Tensor,
-        prefix: torch.Tensor,
-        prefix_valid: torch.Tensor,
+        patches: torch.Tensor,
+        language: torch.Tensor,
+        language_valid: torch.Tensor,
         response: torch.Tensor,
         input_bank: torch.Tensor,
         output_bank: torch.Tensor,
@@ -170,8 +171,12 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
         frames, ranks, sides, width = query.shape
         if (
             sides != 2
-            or prefix.shape[0] != frames
-            or prefix_valid.shape != prefix.shape[:2]
+            or patches.ndim != 3
+            or patches.shape[0] != frames
+            or language.ndim != 3
+            or language.shape[0] != frames
+            or language_valid.shape != language.shape[:2]
+            or not patches.shape[1]
             or response.ndim != 3
             or response.shape[0] != frames
             or input_bank.ndim != 3
@@ -180,7 +185,13 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
             or output_bank.shape[0] != frames
             or any(
                 value.shape[-1] != width
-                for value in (prefix, response, input_bank, output_bank)
+                for value in (
+                    patches,
+                    language,
+                    response,
+                    input_bank,
+                    output_bank,
+                )
             )
         ):
             raise ValueError("unified policy-native evidence axes changed")
@@ -199,34 +210,34 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
         )[None, :, None]
         bank_valid = bank_valid.expand(frames, -1, -1)
 
-        policy_memory = torch.cat((prefix, response), dim=1)
-        policy_valid = torch.cat(
-            (
-                prefix_valid,
-                torch.ones(
-                    response.shape[:2], dtype=torch.bool, device=response.device
-                ),
-            ),
-            dim=1,
-        )
-        policy_memory = policy_memory[:, None].expand(-1, 2, -1, -1).reshape(
-            frames * 2, -1, width
-        )
-        policy_valid = policy_valid[:, None].expand(-1, 2, -1).reshape(
-            frames * 2, -1
-        )
         native_memory = bank.reshape(frames * 2, bank_tokens, width)
         native_valid = bank_valid.reshape(frames * 2, bank_tokens)
         rows = query.permute(0, 2, 1, 3).reshape(frames * 2, ranks, width)
         normalized_query = self.evidence_query_norm(rows)
-        policy_memory = self.policy_memory_norm(policy_memory)
         native_memory = self.native_memory_norm(native_memory)
-        policy_read, _ = self.policy_attention(
-            normalized_query,
-            policy_memory,
-            policy_memory,
-            key_padding_mask=~policy_valid,
-            need_weights=False,
+
+        def policy_read(
+            memory: torch.Tensor, valid: torch.Tensor | None = None
+        ) -> torch.Tensor:
+            memory = memory[:, None].expand(-1, 2, -1, -1).reshape(
+                frames * 2, -1, width
+            )
+            if valid is not None:
+                valid = valid[:, None].expand(-1, 2, -1).reshape(frames * 2, -1)
+            normalized_memory = self.policy_memory_norm(memory)
+            attended, _ = self.policy_attention(
+                normalized_query,
+                normalized_memory,
+                normalized_memory,
+                key_padding_mask=None if valid is None else ~valid,
+                need_weights=False,
+            )
+            return attended
+
+        policy_readout = (
+            policy_read(patches)
+            + policy_read(language, language_valid)
+            + policy_read(response)
         )
         native_read, _ = self.native_attention(
             normalized_query,
@@ -235,15 +246,16 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
             key_padding_mask=~native_valid,
             need_weights=False,
         )
-        return (policy_read + native_read).reshape(
+        return (policy_readout + native_read).reshape(
             frames, 2, ranks, width
         ).permute(0, 2, 1, 3)
 
     def _checkpointed_evidence_read(
         self,
         query: torch.Tensor,
-        prefix: torch.Tensor,
-        prefix_valid: torch.Tensor,
+        patches: torch.Tensor,
+        language: torch.Tensor,
+        language_valid: torch.Tensor,
         response: torch.Tensor,
         input_bank: torch.Tensor,
         output_bank: torch.Tensor,
@@ -251,8 +263,9 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
         if not torch.is_grad_enabled():
             return self._evidence_read(
                 query,
-                prefix,
-                prefix_valid,
+                patches,
+                language,
+                language_valid,
                 response,
                 input_bank,
                 output_bank,
@@ -260,8 +273,9 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
         return checkpoint(
             self._evidence_read,
             query,
-            prefix,
-            prefix_valid,
+            patches,
+            language,
+            language_valid,
             response,
             input_bank,
             output_bank,
@@ -299,8 +313,9 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
             frame_count, ranks, _, width = frame.shape
             if (
                 position.shape != (frame_count,)
-                or tokens.prefix.shape[0] != frame_count
-                or tokens.prefix_valid.shape != tokens.prefix.shape[:2]
+                or tokens.patches.shape[0] != frame_count
+                or tokens.language.shape[0] != frame_count
+                or tokens.language_valid.shape != tokens.language.shape[:2]
                 or tokens.response.shape[0] != frame_count
                 or not input_chunks
                 or len(input_chunks) != len(output_chunks)
@@ -331,8 +346,9 @@ class UnifiedPolicyNativeFactorBlock(torch.nn.Module):
                 reads.append(
                     self._checkpointed_evidence_read(
                         local,
-                        tokens.prefix[offset : offset + count],
-                        tokens.prefix_valid[offset : offset + count],
+                        tokens.patches[offset : offset + count],
+                        tokens.language[offset : offset + count],
+                        tokens.language_valid[offset : offset + count],
                         tokens.response[offset : offset + count],
                         input_memory,
                         output_memory,
@@ -549,8 +565,9 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         selected_evidence = []
         for video, tokens in zip(videos, evidence, strict=True):
             if (
-                tokens.prefix.shape[0] != video.frame_count
-                or tokens.prefix_valid.shape != tokens.prefix.shape[:2]
+                tokens.patches.shape[0] != video.frame_count
+                or tokens.language.shape[0] != video.frame_count
+                or tokens.language_valid.shape != tokens.language.shape[:2]
                 or tokens.response.shape[:2]
                 != (video.frame_count, len(self.owners))
                 or tokens.response.shape[-1] != self.width
@@ -564,8 +581,9 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             states.append(state)
             selected_evidence.append(
                 PolicyResponseEvidence(
-                    prefix=tokens.prefix,
-                    prefix_valid=tokens.prefix_valid,
+                    patches=tokens.patches,
+                    language=tokens.language,
+                    language_valid=tokens.language_valid,
                     response=tokens.response[:, target],
                 )
             )

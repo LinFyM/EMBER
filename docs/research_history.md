@@ -2986,3 +2986,25 @@ clean detached `2774cac6`的task1/task93 common-base task-local formal均自然�
 carrier，并全面优于matched innovation-only v2。冻结墙与held/Panel-B/wrong backward计数均为0，两个run均物化唯一rank16。
 该结果确立common-base readout的task-local正证据，但不提前宣称shared或closed-loop成立；下一正式证据为相同73-task、optimizer100/200
 shared及两点held5 correct-only strict250。
+
+## 158. common-base v3 shared终局与职责定位
+
+73-task common-base v3 formal自然完成optimizer100/200；task-local已证明的容量没有迁移到task-disjoint闭环。m100/m200 held5
+correct-only strict250为`35/250`与`31/250`，逐task Long/Goal/Object/Spatial0/Spatial9为`0/0/3/29/3`与
+`0/0/4/22/5`，breadth均`3/5`且Goal/Long均0。相对carrier43，m100保留/新增/丢失为`30/5/13`，m200为`23/8/20`；
+m100到m200为`22/9/13`。相邻点同向退化，故不追加训练。
+
+后续correct-only、zero-optimization诊断在task1/6/79上依次替换evidence、factor Writer、structure、blocks、signed heads及block
+子层。learned evidence在两个true-held task6/79均为正增量，whole repeated blocks则在seen task1为正、在task6/79为负；没有一个
+temporal/factor/MLP/signed子层能独立解释全部任务。成功task-local解也收敛到近rank1，排除rank collapse作为充分根因。formal root、
+诊断roots与精确数字见`progress.md`当前快照及`findings.md`第163节。
+
+## 159. language--patch--response source separation
+
+信息流审计发现v3同一个policy softmax内约15--24个language token与256 patch、400 response竞争，多数层language质量约`2.2%`，
+近似token-count占比；shared图又没有task ID或task query，故task grounding成为最早可解释缺口。v4只在每个同构Unified block内部
+复用同一套policy cross-attention参数，分别读取language、patch和完整response，各自softmax后与side-native read相加。没有新增参数、
+模块类型、gate、source权重、summary、regularizer或末端校正；full 50 horizon、真实X/Y、signed pooling、rank12+4和唯一rank16不变。
+
+v4 active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`；首轮shared只登记optimizer25/50短资格，在证明shared
+信号前不扩长训练。工程与科学结果将在clean pushed authority的真实full smoke和fresh formal完成后追加。

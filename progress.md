@@ -4,13 +4,31 @@
 
 ## 当前快照
 
-- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是common-base parallel-read Unified Policy-Native Factor Writer。
-  输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层用同一query并行读取同frame prefix + 完整PI0.5
-  response与side-matched native bank，两个来源各自softmax后直接相加，再做teacher-frame time及rank/side attention。learned主干
+- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是source-separated common-base Unified Policy-Native
+  Factor Writer。输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层用同一query与同一policy-attention
+  权重分别读取exact language、同frame image patches和完整PI0.5 response，三者各自softmax；side-matched native bank另作独立
+  standard attention，四个读出直接相加，再做teacher-frame time及rank/side attention。learned主干
   仍只有一种可按深度复制的`UnifiedPolicyNativeFactorBlock`；末端同一个head把frame-common context作为两signed分支共享的bank定位
   query、把frame-relative innovation作为两分支偏移，再做direct signed raw-X/Y pooling、target cap和
   唯一rank16。没有独立Process/Composer坐标、source gate、token-count校正或summary/gain/solver/calibration链；full 50-horizon、
-  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v3.json`；v1/v2均已sealed。
+  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v4.json`；v1/v2/v3均已sealed。
+
+- common-base v3的73-task formal已自然完成200/200并exit0；m100/m200 held5 correct-only strict250为`35/250`与`31/250`，逐task
+  Long/Goal/Object/Spatial0/Spatial9为`0/0/3/29/3`与`0/0/4/22/5`，breadth均`3/5`、Goal/Long均0。相对carrier43，m100为
+  `30 retained / 5 gained / 13 lost`，m200为`23 / 8 / 20`；m100到m200为`22 / 9 / 13`，所以这是相邻稳定non-pass而不是门槛过高。
+  formal root为
+  `runs/outputs/pi05_ecp_policy_response_writer_common_base_73task_k1_component_s200_f214fefa_gpu02p46_sharedmmap_20260905/`。
+
+- non-pass后的correct-only责任诊断显示：m200 learned evidence projection在true-held task6/79的held benefit分别给出
+  `+.0000363/+.0000336`，而learned factor Writer分别给出`-.0000889/-.0002809`；seen task1则两者均为正，full为
+  `+.0003345`。进一步把factor Writer拆成structure、blocks、signed heads后，重复blocks在task1为`+.0002331`，在task6/79为
+  `-.0002371/-.0000809`；逐子层替换又没有找到三个task共同的单一坏算子。成功task-local task1/93的factor有效rank也降到约1，
+  因而不能用rank regularization、冻结evidence或单层补丁解释失败。最早缺口是整个shared block没有形成可转移的task grounding。
+
+- information-flow审计确认旧policy read仍大量消费response，但language与256 patch、400 owner-response共用一个softmax时，多数层的
+  language质量只有约`2.2%`，接近token-count占比；task-local依赖自由task query绕过了这一缺口。active v4只拆开这三个policy source
+  的softmax并复用同一MHA参数，再与原side-native read相加，不新增网络、参数、loss或数学阶段。当前分支17项CPU合同全部通过，包含
+  source-cardinality不变性与旧v3 config fail-closed；真实full GPU smoke将在clean pushed commit后立即执行。
 
 - parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
   `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由

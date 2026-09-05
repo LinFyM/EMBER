@@ -178,27 +178,72 @@ def test_parallel_native_read_is_invariant_to_duplicate_bank_cardinality() -> No
     torch.manual_seed(7)
     block = UnifiedPolicyNativeFactorBlock(width=16, heads=4).eval()
     query = torch.randn(3, G1_RESIDUAL_RANK, 2, 16)
-    prefix = torch.randn(3, 5, 16)
-    prefix_valid = torch.tensor(
-        [[True, True, True, False, False]] * 3, dtype=torch.bool
+    patches = torch.randn(3, 4, 16)
+    language = torch.randn(3, 3, 16)
+    language_valid = torch.tensor(
+        [[True, True, False]] * 3, dtype=torch.bool
     )
     response = torch.randn(3, 7, 16)
     input_bank = torch.randn(3, 2, 16)
     output_bank = torch.randn(3, 5, 16)
 
     original = block._evidence_read(
-        query, prefix, prefix_valid, response, input_bank, output_bank
+        query,
+        patches,
+        language,
+        language_valid,
+        response,
+        input_bank,
+        output_bank,
     )
     duplicated = block._evidence_read(
         query,
-        prefix,
-        prefix_valid,
+        patches,
+        language,
+        language_valid,
         response,
         input_bank.repeat_interleave(2, dim=1),
         output_bank.repeat_interleave(2, dim=1),
     )
 
     torch.testing.assert_close(original, duplicated, rtol=1e-5, atol=1e-6)
+
+
+def test_policy_sources_have_independent_attention_cardinality() -> None:
+    torch.manual_seed(11)
+    block = UnifiedPolicyNativeFactorBlock(width=16, heads=4).eval()
+    query = torch.randn(3, G1_RESIDUAL_RANK, 2, 16)
+    patches = torch.randn(3, 4, 16)
+    language = torch.randn(3, 3, 16)
+    language_valid = torch.tensor(
+        [[True, True, False]] * 3, dtype=torch.bool
+    )
+    response = torch.randn(3, 7, 16)
+    input_bank = torch.randn(3, 2, 16)
+    output_bank = torch.randn(3, 5, 16)
+
+    original = block._evidence_read(
+        query,
+        patches,
+        language,
+        language_valid,
+        response,
+        input_bank,
+        output_bank,
+    )
+    duplicated_patches = block._evidence_read(
+        query,
+        patches.repeat_interleave(2, dim=1),
+        language,
+        language_valid,
+        response,
+        input_bank,
+        output_bank,
+    )
+
+    torch.testing.assert_close(
+        original, duplicated_patches, rtol=1e-5, atol=1e-6
+    )
 
 
 def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
@@ -312,11 +357,13 @@ def test_unified_block_reads_policy_native_evidence_and_real_frame_order() -> No
     block = UnifiedPolicyNativeFactorBlock(16, 4).double().eval()
     positions = (torch.linspace(0.0, 1.0, 5, dtype=torch.double),)
     frame = torch.randn(5, 4, 2, 16, dtype=torch.double)
-    prefix = torch.randn(5, 6, 16, dtype=torch.double)
+    patches = torch.randn(5, 4, 16, dtype=torch.double)
+    language = torch.randn(5, 2, 16, dtype=torch.double)
     response = torch.randn(5, 9, 16, dtype=torch.double)
     evidence = PolicyResponseEvidence(
-        prefix=prefix,
-        prefix_valid=torch.ones(5, 6, dtype=torch.bool),
+        patches=patches,
+        language=language,
+        language_valid=torch.ones(5, 2, dtype=torch.bool),
         response=response,
     )
     input_bank = torch.randn(5, 12, 16, dtype=torch.double)
@@ -331,8 +378,9 @@ def test_unified_block_reads_policy_native_evidence_and_real_frame_order() -> No
             (frame,), positions, (evidence,), ((changed_input,),), ((output_bank,),)
         )
         reversed_evidence = PolicyResponseEvidence(
-            prefix=prefix.flip(0),
-            prefix_valid=evidence.prefix_valid.flip(0),
+            patches=patches.flip(0),
+            language=language.flip(0),
+            language_valid=evidence.language_valid.flip(0),
             response=response.flip(0),
         )
         reversed_order = block(
@@ -445,7 +493,7 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
 def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_v3.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_v4.json"
     )
     assert current["model"]["blocks"] == 4
     assert current["model"]["representation_arms"] == ["full"]
@@ -455,6 +503,7 @@ def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -
     for obsolete in (
         "pi05_ecp_policy_response_writer_unified_factor_v1.json",
         "pi05_ecp_policy_response_writer_unified_factor_v2.json",
+        "pi05_ecp_policy_response_writer_unified_factor_v3.json",
         "pi05_ecp_policy_response_writer_native_temporal_v1.json",
     ):
         with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
@@ -462,14 +511,14 @@ def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -
 
     evaluation = load_held5_evaluation_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v4.json"
     )
-    assert evaluation["training_config"].endswith("unified_factor_v3.json")
+    assert evaluation["training_config"].endswith("unified_factor_v4.json")
     assert evaluation["require_training_completion"] is False
     with pytest.raises(
         ValueError, match="unsupported Policy-Response Writer held5 evaluation config"
     ):
         load_held5_evaluation_config(
             REPO_ROOT
-            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v2.json"
+            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
         )

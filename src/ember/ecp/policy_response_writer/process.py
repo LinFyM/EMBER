@@ -17,10 +17,11 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class PolicyResponseEvidence:
-    """Unpooled, frame-aligned frozen evidence tokens for one video."""
+    """Unpooled, source-separated, frame-aligned evidence for one video."""
 
-    prefix: torch.Tensor
-    prefix_valid: torch.Tensor
+    patches: torch.Tensor
+    language: torch.Tensor
+    language_valid: torch.Tensor
     response: torch.Tensor
 
 
@@ -51,38 +52,25 @@ class PrefixTokenizer(torch.nn.Module):
 
     def forward(
         self, video: FrozenPolicyResponseVideo
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        patches = self.patch_projection(video.patch_states)
-        language = self.language_projection(video.language_states)
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        patches = self.norm(
+            self.patch_projection(video.patch_states) + self.type_embedding.weight[0]
+        )
+        language = self.norm(
+            self.language_projection(video.language_states)
+            + self.type_embedding.weight[1]
+        )
         mask = video.language_mask
         if (
             patches.ndim != 3
             or language.ndim != 3
             or mask.shape != language.shape[:2]
             or patches.shape[0] != language.shape[0]
+            or not patches.shape[1]
+            or not torch.all(mask.any(1))
         ):
             raise ValueError("policy-response prefix topology changed")
-        memory = self.norm(
-            torch.cat(
-                (
-                    patches + self.type_embedding.weight[0],
-                    language + self.type_embedding.weight[1],
-                ),
-                dim=1,
-            )
-        )
-        valid = torch.cat(
-            (
-                torch.ones(
-                    patches.shape[:2], dtype=torch.bool, device=patches.device
-                ),
-                mask,
-            ),
-            dim=1,
-        )
-        if not torch.all(valid.any(1)):
-            raise ValueError("policy-response prefix has an empty frame")
-        return memory, valid
+        return patches, language, mask
 
 
 class ResponseTokenizer(torch.nn.Module):
@@ -201,17 +189,19 @@ class PolicyResponseEvidenceEncoder(torch.nn.Module):
     ) -> PolicyResponseEvidence:
         if representation != "full":
             raise ValueError("full policy-response is the only active representation")
-        prefix, prefix_valid = self.prefix(video)
+        patches, language, language_valid = self.prefix(video)
         response = self.response(video)
         if (
-            prefix.shape[0] != video.frame_count
-            or prefix_valid.shape != prefix.shape[:2]
+            patches.shape[0] != video.frame_count
+            or language.shape[0] != video.frame_count
+            or language_valid.shape != language.shape[:2]
             or response.shape[:2] != (video.frame_count, len(self.owners))
         ):
             raise ValueError("policy-response evidence axes changed")
         return PolicyResponseEvidence(
-            prefix=prefix,
-            prefix_valid=prefix_valid,
+            patches=patches,
+            language=language,
+            language_valid=language_valid,
             response=response,
         )
 

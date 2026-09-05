@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v3"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v3"
+SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v4"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v4"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -131,9 +131,9 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("architecture")
             == "repeatable_parallel_policy_native_factor_blocks",
             model.get("evidence_read")
-            == "same_query_parallel_policy_and_side_native_cross_attention_then_sum",
+            == "same_query_parallel_language_patch_response_and_side_native_cross_attention_then_sum",
             model.get("source_normalization")
-            == "independent_policy_and_native_softmax_no_cardinality_competition",
+            == "independent_language_patch_response_and_native_softmax_no_cardinality_competition",
             model.get("factor_readout")
             == "common_context_base_plus_bias_free_frame_innovation_signed_raw_native_XY",
             model.get("signed_query")
@@ -452,6 +452,8 @@ def functional_panel_batch(
 def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
     groups = {
         "prefix": ("evidence.prefix",),
+        "patch": ("evidence.prefix.patch_projection",),
+        "language": ("evidence.prefix.language_projection",),
         "response": ("evidence.response",),
         "policy_read": ("factor_writer.blocks.0.policy_attention",),
         "native_read": ("factor_writer.blocks.0.native_attention",),

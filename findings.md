@@ -13,14 +13,16 @@
 
 ## 科学结论
 
-### 0. 当前active方向是common-base Unified Policy-Native Factor Writer
+### 0. 当前active方向是source-separated common-base Unified Policy-Native Factor Writer
 
-73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；m100/m200 held5只有`42/35`，均未超过carrier43。
-随后整模块替换诊断把最早失效接口定位为Process--Composer learned-coordinate handoff：Process与Composer各自及joint interaction按task
-产生相反贡献，冻结任一端都不是充分解。当前图因此取消独立learned Process坐标与Composer解释边界，以显式factor latent在每一层直接
-读取冻结prefix、完整PI0.5 response和same-frame native X/Y。learned主干只有一种可复制block；parallel-read v2 shared/held5 non-pass后，
-末端不再丢弃frame-common context，而在同一个signed-query head内用共享base定位当前bank、用frame-relative innovation形成正负差；随后仍
-只有raw signed pooling、target cap和唯一rank16。以下内容保留该方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
+73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；整模块替换随后定位并删除了
+Process--Composer learned-coordinate handoff。Unified图改由显式factor latent在每一层直接读取冻结PI0.5证据和same-frame native X/Y，
+learned主干只有一种可复制block。parallel-read v2与common-base v3先后修复native/source ownership和末端bank定位，task-local容量持续
+改善，但v3 shared的m100/m200 held5仍只有`35/31`，低于carrier43且随训练退化。最新职责替换证明learned evidence在true-held task上
+有正增量，失败集中在重复block的task grounding；其policy read中exact language与256 patch、400 response共用softmax时多数层只获约
+2.2%质量。active v4因此复用同一套policy attention分别读取language、patch、完整response，各自softmax后与side-native read相加；
+没有新增参数、stage、gate、校正器或数学变换链。末端仍只有common-base signed raw pooling、target cap和唯一rank16。以下内容保留该
+方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
 
 PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
 macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、
@@ -3225,3 +3227,30 @@ clean detached `2774cac6`上的matched task-local v3随后完整通过。task1 m
 装饰性数学项：在不改变统一主干、loss、数据、rank或full bank的matched条件下，它恢复了两个难度差异明显任务的局部容量。该证据仍不
 证明shared映射；下一步保持结构不变直接运行73-task short shared。任何后续失败都必须在shared识别性或统一block/readout职责中定位，
 不能把这次正结果当作继续串接专用变换的许可。
+
+## 163. common-base恢复task-local容量但shared闭环相邻退化
+
+common-base v3的73-task formal自然完成200/200。m100/m200 held5 correct-only strict250分别为`35/250`与`31/250`，逐task
+Long/Goal/Object/Spatial0/Spatial9为`0/0/3/29/3`与`0/0/4/22/5`，breadth均为`3/5`、Goal/Long均0。相对stable carrier43，
+m100为`30 retained / 5 gained / 13 lost`，m200为`23 / 8 / 20`；相邻m100到m200为`22 / 9 / 13`。因此共同base解决的是真实
+task-local bank定位职责，却没有解决shared task-disjoint映射；更多训练还沿稳定方向损伤闭环。正式`>145/400`门槛不是当前失败原因，
+因为该图连held5 carrier与跨suite breadth都没有超过。
+
+零优化信息流与职责替换进一步排除了三条错误修正路线。第一，factor effective rank并非根因：shared initial/m100/m200的均值约
+`2.17/1.34/1.21`，但功能正向的task-local task1也由`2.16`降到`1.10/1.04`，task93由`2.06`降到`1.12/1.21`。第二，不应冻结
+learned evidence：m200只移入evidence时，true-held task6/79 held benefit为`+.0000363/+.0000336`；只移入factor Writer则为
+`-.0000889/-.0002809`。第三，没有一个可单独替换的坏子层：whole repeated blocks在seen task1为`+.0002331`、在task6/79为
+`-.0002371/-.0000809`，而policy read、native read、temporal、factor与MLP的单组替换在不同held task上符号不一致。最小充分结论是
+整个重复block学成seen-task expert，不能靠rank loss、冻结前端或再接一个校正器修复。
+
+## 164. exact language在policy softmax中被token数量稀释
+
+shared block没有task ID或task query；它必须从exact language与视频内容建立task grounding。真实attention审计却显示，15--24个
+language token与256个patch token、400个owner-matched response token共用一个policy softmax时，language多数层只获得约`2.2%`
+质量，基本等于token-count占比；只有m200 block2局部升到约7%。task-local正控拥有自由per-target task query，因此可以在语言读取很弱时
+仍学成，这解释了“local强、shared反向”而不需要否定完整PI0.5时序或native X/Y。
+
+active v4只改这一个标准职责：每个Unified block复用同一套policy cross-attention参数，分别对language、patch和完整response执行
+独立softmax，三个读出与原side-native read直接求和。没有新增参数、模块类型、stage、source权重、gate、summary、calibration、
+regularizer或negative loss；扩展规模仍只复制同一种block。它保留full 50 horizon、两个probe、真实ordered frames、raw native X/Y、
+signed pooling、rank12+4和唯一rank16。首轮只做25/50 task-local与73-task短资格，在出现shared信号前不投入长跑。

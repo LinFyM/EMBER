@@ -72,9 +72,10 @@ held5只是train24内部的leave-task-out机制门，用于在不消费validatio
    full是唯一active representation；
 2. 输入端只做投影、类型/位置embedding与mask，不生成独立learned video code；显式
    `frame x target x rank x X/Y-side` factor latent从第一层起存在；
-3. learned主干只有一种可复制`UnifiedPolicyNativeFactorBlock`。每层factor latent用同一query并行读取同frame native prefix + 完整
-   owner-matched PI0.5 response以及side-matched真实bank；两个来源各自softmax后直接相加，再做teacher-frame time及rank/side attention和标准MLP；teacher-frame
-   time、action horizon、flow time、layer depth与probe轴不得混淆；
+3. learned主干只有一种可复制`UnifiedPolicyNativeFactorBlock`。每层factor latent用同一query和同一套policy-attention权重分别读取
+   exact language、同frame image patches与完整owner-matched PI0.5 response，三者各自softmax；side-matched真实bank另作独立标准
+   attention，四个读出直接相加，再做teacher-frame time及rank/side attention和标准MLP；teacher-frame time、action horizon、
+   flow time、layer depth与probe轴不得混淆；
 4. 不再把视频先压成独立Process/ordered-event坐标再交给Composer解释，也不在末端才从同一共享state线性分叉X/Y；最终
    factor-side states直接通过ragged native-group two-branch signed attention pool未经替换的raw X/Y；
 5. language与静态context只ground或调制query，不能独立产生mobile residual；首版不使用task-expert dictionary或free learned

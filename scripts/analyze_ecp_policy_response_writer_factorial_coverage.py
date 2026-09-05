@@ -400,7 +400,7 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
             "expanded_mapping_experiment_is_identifiable_enough_to_run": True,
             "known_coverage_gap": "held5 Goal push procedure",
             "next_experiment": (
-                "full K1 event-measure Writer on all 55 meta-fit and 18 "
+                "configured full K1 Writer on all 55 meta-fit and 18 "
                 "target-fit tasks with near task-equal 9/3 sampling"
             ),
         },

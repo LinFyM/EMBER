@@ -1,0 +1,24 @@
+{
+  "schema_version": "ember_pi05_task_subset_selection_v1",
+  "purpose": "Preregistered same-graph train-side clone/shared behavior diagnostic; never final selection.",
+  "role": "development_train",
+  "mode": "formal",
+  "state_count": 50,
+  "task_ordinals": [
+    12
+  ],
+  "global_task_ids": [
+    20
+  ],
+  "tasks": [
+    {
+      "global_task_id": 20,
+      "suite": "libero_goal",
+      "task_id": 0
+    }
+  ],
+  "selection_rule": "predeclared task72 Spatial2, task83 Goal20, task93 Long38 by procedure coverage and existing assets",
+  "outcome_dependence": false,
+  "validation_use": false,
+  "test_use": false
+}

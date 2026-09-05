@@ -1,4 +1,4 @@
-"""Freeze one shared Policy-Response Writer checkpoint into held5 task LoRAs."""
+"""Freeze one shared Writer checkpoint into registered train-side task LoRAs."""
 
 from __future__ import annotations
 
@@ -25,7 +25,10 @@ from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed
-from ember.static_task_lora import STATIC_TASK_LORA_MANIFEST_SCHEMA
+from ember.static_task_lora import (
+    STATIC_TASK_LORA_MANIFEST_SCHEMA,
+    policy_response_video_demos,
+)
 from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
@@ -42,7 +45,7 @@ class WriterMaterializationRuntime:
     evaluation: dict[str, Any]
     shared_contract: dict[str, Any]
     writer_macro: int
-    held: tuple[Any, ...]
+    tasks: tuple[Any, ...]
     target_keys: dict[int, tuple[str, int]]
     source: dict[str, Any]
     state: dict[str, Any]
@@ -52,35 +55,56 @@ class WriterMaterializationRuntime:
         self.runtime.close()
 
 
-def load_held5_evaluation_config(path: Path) -> dict[str, Any]:
+def _evaluation_scope_valid(config: Mapping[str, Any]) -> bool:
+    condition = config.get("condition", {})
+    if config.get("schema_version") == HELD5_EVALUATION_SCHEMA:
+        return all((
+            config.get("status") == "active_correct_only_held5_materialization",
+            config.get("task_subset") == "configs/pi05_train24_fold0_held5_eval_v1.json",
+            config.get("target_held_global_ids") == [0, 9, 18, 25, 36],
+            condition.get("video_demos") == [5],
+            "video_demos_by_global_task" not in condition,
+            condition.get("selection") == "fixed_first_member_of_existing_correct_5_6_7_8_panel",
+            condition.get("checkpoint_selection_use") is True,
+        ))
+    return all((
+        config.get("schema_version") == "ember_ecp_policy_response_writer_train_diagnostic_eval_v1",
+        config.get("status") == "active_correct_only_train_diagnostic_materialization",
+        condition.get("selection") == "registered_train_side_first_fit_or_held_video",
+        condition.get("video_role") in {"first_fit_video", "held_video"},
+        "video_demos" not in condition,
+        condition.get("checkpoint_selection_use") is False,
+    ))
+
+
+def load_writer_evaluation_config(path: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     condition = config.get("condition", {})
     wall = config.get("information_wall", {})
     candidates = tuple(map(int, config.get("checkpoint_candidates", ())))
-    demos = tuple(map(int, condition.get("video_demos", ())))
+    target_ids = tuple(map(int, config.get(
+        "target_global_ids", config.get("target_held_global_ids", ())
+    )))
+    by_task = condition.get("video_demos_by_global_task")
+    demos = tuple(policy_response_video_demos(condition, task) for task in target_ids)
     if (
-        config.get("schema_version") != HELD5_EVALUATION_SCHEMA
-        or config.get("status") != "active_correct_only_held5_materialization"
+        not _evaluation_scope_valid(config)
         or not str(config.get("training_config", "")).startswith("configs/")
-        or config.get("task_subset")
-        != "configs/pi05_train24_fold0_held5_eval_v1.json"
-        or config.get("target_held_global_ids") != [0, 9, 18, 25, 36]
-        or not candidates
-        or tuple(sorted(set(candidates))) != candidates
+        or not target_ids or tuple(sorted(set(target_ids))) != target_ids
+        or min(target_ids) < 0 or max(target_ids) >= 40
+        or (
+            "target_held_global_ids" in config
+            and tuple(config["target_held_global_ids"]) != target_ids
+        )
+        or (by_task is not None and set(by_task) != set(map(str, target_ids)))
+        or not candidates or tuple(sorted(set(candidates))) != candidates
         or min(candidates) <= 0
-        or condition.get("name") != f"correct_k{len(demos)}"
-        or not demos
-        or len(demos) > 4
-        or len(demos) != len(set(demos))
-        or int(condition.get("K", -1)) != len(demos)
-        or condition.get("selection")
-        != "fixed_first_member_of_existing_correct_5_6_7_8_panel"
+        or condition.get("name") != "correct_k1" or condition.get("K") != 1
+        or any(len(row) != 1 or not 0 <= row[0] < 50 for row in demos)
         or condition.get("outcome_dependence") is not False
         or condition.get("gradient_use") is not False
-        or condition.get("checkpoint_selection_use") is not True
         or not isinstance(config.get("require_training_completion", True), bool)
-        or wall
-        != {
+        or wall != {
             "validation_or_test_use": False,
             "held_action_or_reward_reads": 0,
             "shuffled_or_reversed_use": False,
@@ -90,8 +114,8 @@ def load_held5_evaluation_config(path: Path) -> dict[str, Any]:
             "single_complete_rank16": True,
         }
     ):
-        raise ValueError("unsupported Policy-Response Writer held5 evaluation config")
-    return config
+        raise ValueError("unsupported Policy-Response Writer evaluation config")
+    return {**config, "target_global_ids": list(target_ids)}
 
 
 def _shared_contract_matches(
@@ -184,22 +208,22 @@ def _load_writer_checkpoint(
     return macro, contract
 
 
-def _held_tasks(
+def _evaluation_tasks(
     runtime: PolicyResponseRuntime, evaluation: Mapping[str, Any]
 ) -> tuple[Any, ...]:
-    expected = tuple(map(int, evaluation["target_held_global_ids"]))
+    expected = tuple(map(int, evaluation["target_global_ids"]))
     tasks = tuple(
         sorted(
             (
                 task
                 for task in runtime.task_by_id.values()
-                if task.role == "target_held" and task.domain_task_id in set(expected)
+                if task.role in {"target_fit", "target_held"} and task.domain_task_id in set(expected)
             ),
             key=lambda task: task.domain_task_id,
         )
     )
-    if len(tasks) != 5 or tuple(task.domain_task_id for task in tasks) != expected:
-        raise ValueError("Policy-Response Writer held5 task authority changed")
+    if tuple(task.domain_task_id for task in tasks) != expected:
+        raise ValueError("Policy-Response Writer evaluation task authority changed")
     return tasks
 
 
@@ -261,7 +285,7 @@ def prepare_materialization_runtime(
         )
     ):
         raise ValueError("Policy-Response Writer materialization assets are required")
-    evaluation = load_held5_evaluation_config(args.evaluation_config)
+    evaluation = load_writer_evaluation_config(args.evaluation_config)
     if args.config != (REPO_ROOT / evaluation["training_config"]).resolve():
         raise ValueError("Policy-Response Writer materializer training config changed")
     macro, shared_contract = _load_writer_checkpoint(args, evaluation)
@@ -280,10 +304,23 @@ def prepare_materialization_runtime(
         args,
         context,
         deployment_global_ids=tuple(
-            map(int, evaluation["target_held_global_ids"])
+            map(int, evaluation["target_global_ids"])
         ),
     )
-    held = _held_tasks(runtime, evaluation)
+    tasks = _evaluation_tasks(runtime, evaluation)
+    if evaluation["condition"].get("checkpoint_selection_use") is False:
+        gradient = set(shared_contract["task_split"]["gradient_target"])
+        for task in tasks:
+            split = shared_contract["video_splits"].get(str(task.authority_id), {})
+            role = evaluation["condition"]["video_role"]
+            expected_demo = (
+                split.get("fit", [None])[0]
+                if role == "first_fit_video" else split.get("held")
+            )
+            if task.authority_id not in gradient or policy_response_video_demos(
+                evaluation["condition"], task.domain_task_id
+            ) != (expected_demo,):
+                raise ValueError("train diagnostic escaped its registered task/video split")
     source_checkpoint = authority_path(
         runtime.base, "source_checkpoint", asset_root=args.asset_root
     )
@@ -309,7 +346,7 @@ def prepare_materialization_runtime(
         evaluation=evaluation,
         shared_contract=shared_contract,
         writer_macro=macro,
-        held=held,
+        tasks=tasks,
         target_keys=_target_keys(runtime),
         source=source,
         state=git_state(REPO_ROOT),
@@ -512,12 +549,13 @@ def materialize_writer_evaluation_bank(args: argparse.Namespace) -> dict[str, An
     if final_root.exists() or partial_root.exists():
         raise ValueError("Policy-Response Writer materialization output already exists")
     partial_root.mkdir(parents=True)
-    demos = tuple(map(int, prepared.evaluation["condition"]["video_demos"]))
+    condition = prepared.evaluation["condition"]
     records: list[dict[str, Any]] = []
     captures: list[dict[str, Any]] = []
     try:
         with torch.inference_mode():
-            for task in prepared.held:
+            for task in prepared.tasks:
+                demos = policy_response_video_demos(condition, task.domain_task_id)
                 record, task_captures = _materialize_task(
                     prepared,
                     task=task,

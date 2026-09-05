@@ -147,6 +147,9 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   owner指令继承，并在每次launch前用live身份、进程、显存与utilization重新裁决。节点暂时离线或重启不代表长期禁用。
 - 正式训练实现不得把world size固定为2；在保持全局task group、role权重、optimizer cadence和科学口径不变的前提下，按launch时
   实际可用卡数在1--6张之间弹性分片。exact-resume仍锁定该run启动时的world topology。
+- 新架构的算法实现从设计时就必须考虑GPU效率：优先批量张量运算、高效attention与显式数据布局，减少Python逐项循环、
+  CPU--GPU往返和无必要的重复大算子；训练与推理均用真实长视频测吞吐、利用率和显存峰值，不能等功能写完后才补性能。
+  优化不得改变信息墙、完整视频/50-horizon、梯度语义与任务权重；正常BF16/TF32和reduction低位差异按既定合同接受。
 - `meta`/`target`是否同时参与、两者采样比例以及每个optimizer step包含多少task均由具体实验的数据与采样设计决定；owner没有规定
   固定`3+3`、固定6-task batch或必须同时包含两类。执行优化必须接受任意已配置task group，只改变其设备放置和流水，不得反向把
   当前资格实验的采样选择固化为长期科学合同。

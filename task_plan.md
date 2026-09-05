@@ -15,14 +15,14 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：锁定同图、whole-Writer、无专属task query的少任务clone/shared对照；复用已核验的shared runtime并核对任务/资产/采样。
-- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；当前没有新GPU run。
+- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run已启动。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
 ## 推进顺序
 
 1. [x] 保存专家原文，完成对齐；依据owner最新明确要求建立goal并登记active design。
 2. [x] 复用shared runtime，锁定少任务名单、训练/held视频、action rows、per-task exposure、局部闭环及source/carrier参照。
-3. [ ] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
+3. [x] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
 4. [ ] 联合分析fit、新视频、实际闭环与任务更新；存在竞争解释时补充能区分它们的分析实验，再决定下一项主要干预。
 5. [ ] 依据证据保留现有能力或实施P/Q/读出责任模块；同拓扑比较、控制主要变量，避免并行数学补丁和无限小扫。
 6. [ ] 有共享行为证据后扩任务与真实K训练，及时进入预注册validation8 paired400、相邻稳定和最终冻结controls。

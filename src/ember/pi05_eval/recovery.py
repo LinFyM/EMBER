@@ -34,6 +34,7 @@ TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "successful_on_policy_occupancy",
     "train24_fold0_held5",
     "train24_fold0_profile1",
+    "registered_train_subset",
 }
 
 

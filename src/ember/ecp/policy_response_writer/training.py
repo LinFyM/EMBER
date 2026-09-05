@@ -217,7 +217,7 @@ def _runtime_tasks_and_panels(
                 (
                     task
                     for task in tasks
-                    if task.role == "target_held" and task.domain_task_id in expected
+                    if task.role in {"target_fit", "target_held"} and task.domain_task_id in expected
                 ),
                 key=lambda task: task.domain_task_id,
             )

@@ -24,6 +24,7 @@ from ember.pi05_eval.occupancy_selection import (
     successful_expert_occupancy_tasks,
 )
 from ember.pi05_eval_contract import (
+    SUITE_ORDER,
     build_run_contract,
     inspect_installed_target_tasks,
     inspect_source_checkpoint,
@@ -119,6 +120,30 @@ def _inspect_adapter(
     )
 
 
+def _registered_subset_valid(
+    manifest: Mapping[str, Any], args: Any, tasks: Sequence[Any],
+    declared: tuple[tuple[Any, ...], ...], ordinals: tuple[int, ...],
+) -> bool:
+    registered = {
+        (ordinal, SUITE_ORDER.index(task.suite) * 10 + int(task.task_id),
+         str(task.suite), int(task.task_id))
+        for ordinal, task in enumerate(tasks)
+    }
+    return not (
+        manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
+        or manifest.get("role") != args.role
+        or manifest.get("mode") != args.mode
+        or int(manifest.get("state_count", -1)) != args.state_count
+        or manifest.get("outcome_dependence") is not False
+        or not declared or len(declared) != len(set(declared))
+        or tuple(sorted(set(ordinals))) != ordinals
+        or not set(declared) <= registered
+        or manifest.get("global_task_ids") != [row[1] for row in declared]
+        or manifest.get("validation_use") is not False
+        or manifest.get("test_use") is not False
+    )
+
+
 def _task_subset_tasks(
     args: Any,
     tasks: Sequence[Any],
@@ -151,16 +176,10 @@ def _task_subset_tasks(
     panel = (
         "train24_fold0_held5"
         if declared == TRAIN24_FOLD0_HELD
-        else "train24_fold0_profile1" if declared == TRAIN24_FOLD0_PROFILE else None
+        else "train24_fold0_profile1" if declared == TRAIN24_FOLD0_PROFILE
+        else "registered_train_subset"
     )
-    if (
-        manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
-        or manifest.get("role") != args.role
-        or manifest.get("mode") != args.mode
-        or int(manifest.get("state_count", -1)) != args.state_count
-        or manifest.get("outcome_dependence") is not False
-        or panel is None
-    ):
+    if not _registered_subset_valid(manifest, args, tasks, declared, ordinals):
         raise Pi05EvaluationError("formal task subset selection changed")
     by_key = {(str(task.suite), int(task.task_id)): task for task in tasks}
     keys = tuple((row[2], row[3]) for row in declared)

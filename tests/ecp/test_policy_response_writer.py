@@ -20,7 +20,7 @@ from ember.ecp.policy_response_writer.composer import (
     _effective_update_rms,
 )
 from ember.ecp.policy_response_writer.materialization import (
-    load_held5_evaluation_config,
+    load_writer_evaluation_config,
 )
 from ember.ecp.policy_response_writer.shared import _optimizer, functional_objective
 from ember.ecp.policy_response_writer.shared_execution import (
@@ -509,16 +509,16 @@ def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -
         with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
             load_policy_response_config(REPO_ROOT / "configs" / obsolete)
 
-    evaluation = load_held5_evaluation_config(
+    evaluation = load_writer_evaluation_config(
         REPO_ROOT
         / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v4.json"
     )
     assert evaluation["training_config"].endswith("unified_factor_v4.json")
     assert evaluation["require_training_completion"] is False
     with pytest.raises(
-        ValueError, match="unsupported Policy-Response Writer held5 evaluation config"
+        ValueError, match="unsupported Policy-Response Writer evaluation config"
     ):
-        load_held5_evaluation_config(
+        load_writer_evaluation_config(
             REPO_ROOT
             / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
         )

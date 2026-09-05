@@ -5,12 +5,28 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。当前进入首项实验准备，尚未启动新GPU训练或评测。
+  暂停状态。同图clone/shared五组已从clean pushed detached `6624127b`启动，正在读取三曝光节点与准备预注册局部闭环。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
+
+## 当前执行与吞吐（2026-09-06 00:03 CST）
+
+- 五组正式训练均成功进入同图shared runtime：clone1/72/83/93使用gpu01物理0/2/3/4，shared4使用5/6。
+  运行根目录与精确launch记录对应`6624127b`；canonical训练worktree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-samegraph-20260905`。
+- clone72/83已完成64步、8/32/64 checkpoints及Panel-B，均exit0；task72 m32/m64 fit/held benefit为
+  `+.001292/+.001381`与`+.001279/+.001339`，task83为`+.000786/+.000234`与`+.000891/+.000435`。
+  两任务两个后期节点三条视频均优于carrier；这是train-side functional学习证据，还没有本轮closed-loop结果。
+- 实际训练短任务约5--7秒/update、task93约12秒、双卡shared约17秒/四task update；采用真实8-row、full50、最长87帧。
+  owner补充强调训练、推理及后续算法实现都要充分利用GPU、节约实验时间，已纳入稳定要求。后续模块设计同时考虑batch张量、
+  高效attention、数据布局、传输/重复大算子，按真实吞吐与长视频峰值裁决执行方案。
+- 为执行已预注册的Spatial2/Goal20/Long38 first-fit/held闭环，复用现有物化器与evaluator，放开历史held5/demo5常量为显式配置，
+  并校验task归属、训练run中fit/held视频、checkpoint与条件的对应关系。无新训练器、无模型或loss更改；固定val/test依旧排除。
+  8个条件配置、4个train24子面板和7项相关CPU合同已通过。源改动集中于现有物化、条件与任务选择/恢复边界；无新增源文件。
+  架构自查保留124行的现有声明式manifest测试fixture（新增真实video字段、两种配置参数化），它主要是测试数据，拆碎会降低一致性；
+  此为局部规模例外，不增加并行执行路径。其余增长阈值已通过合并到既有职责与抽出任务归属校验消解。
 
 ## 首轮同图 clone/shared 启动合同（2026-09-05 23:42 CST）
 

@@ -310,8 +310,11 @@ def test_g3_static_bank_accepts_only_matching_materialized_condition(
         )
 
 
+@pytest.mark.parametrize("video_condition", [
+    {"video_demos": [5]}, {"video_demos_by_global_task": {"0": [5]}},
+])
 def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
-    tmp_path: Path,
+    tmp_path: Path, video_condition: dict,
 ) -> None:
     lora_path = ROOT / "configs/pi05_lora_v1.json"
     lora = load_pi05_lora_contract(lora_path)
@@ -325,6 +328,7 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         "representation": "full",
         "writer_macro": 610,
         "writer_checkpoint": "macro_00000610",
+        "video_demos": [5],
         "authority_id": 71,
         "global_task_id": 0,
         "suite": "libero_spatial",
@@ -378,7 +382,7 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         "condition": {
             "name": "correct_k1",
             "representation": "full",
-            "video_demos": [5],
+            **video_condition,
             "K": 1,
             "outcome_dependence": False,
             "gradient_use": False,
@@ -418,7 +422,7 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         )
     bank["writer_checkpoint"]["macro"] = 610
 
-    checkpoint_manifest["writer_macro"] = 1210
+    checkpoint_manifest["video_demos"] = [6]
     checkpoint_manifest_path.write_text(
         json.dumps(checkpoint_manifest), encoding="utf-8"
     )

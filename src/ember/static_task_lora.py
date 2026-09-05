@@ -65,6 +65,18 @@ def _g1_provenance(manifest: Mapping[str, Any]) -> bool:
     )
 
 
+def policy_response_video_demos(
+    condition: Mapping[str, Any], global_task_id: int
+) -> tuple[int, ...]:
+    by_task = condition.get("video_demos_by_global_task")
+    values = (
+        condition.get("video_demos", ())
+        if by_task is None
+        else by_task.get(str(global_task_id), ())
+    )
+    return tuple(map(int, values))
+
+
 def _policy_response_provenance(
     manifest: Mapping[str, Any], arm: str
 ) -> bool:
@@ -89,7 +101,13 @@ def _policy_response_provenance(
             contract.get("mode") == "formal",
             contract.get("representation") == representation,
             condition.get("name") == "correct_k1",
-            condition.get("video_demos") == [5],
+            all(
+                len(demos) == 1 and 0 <= demos[0] < 50
+                for demos in (
+                    policy_response_video_demos(condition, int(row["global_task_id"]))
+                    for row in manifest.get("tasks", ())
+                )
+            ),
             int(condition.get("K", -1)) == 1,
             condition.get("outcome_dependence") is False,
             condition.get("gradient_use") is False,
@@ -238,6 +256,10 @@ def _policy_response_checkpoint_matches(
             int(checkpoint.get("task_id", -1)) == key[1],
             int(checkpoint.get("writer_macro", -1))
             == int(row.get("writer_macro", -2)),
+            tuple(checkpoint.get("video_demos", ()))
+            == policy_response_video_demos(
+                manifest.get("condition", {}), int(row.get("global_task_id", -1))
+            ),
             checkpoint.get("single_complete_rank16") is True,
         )
     )

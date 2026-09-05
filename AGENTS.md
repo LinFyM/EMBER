@@ -14,30 +14,22 @@
 旧design、日志、checkpoint和Git快照中的“当前”“下一步”“active”只表示当时时点，不能恢复执行或覆盖上级
 authority。owner主要使用语音输入；明显同音词、术语识别和断句错误应结合EMBER上下文主动纠正。
 
-## 2. Mandatory reading
+## 2. Task-scoped reading
 
-修改代码、配置、数据、模型或实验状态，或启动GPU工作前，主任务完整阅读到EOF：
+先理解当前目标、授权和状态，再按任务读取相关材料；不把全部历史全文重读作为每次工作的前置流程。
 
-1. `docs/current_owner_requirements.md`
-2. `task_plan.md`
-3. `findings.md`
-4. `progress.md`
-5. `docs/concept.md`
-6. `docs/research_history.md`
-7. `docs/expert_review_20260824_native_factor.md`
-8. `docs/expert_review_20260826_bank_conditioned_native_factor.md`
-9. `docs/expert_review_20260828_g3_functional_sketch.md`
-10. `docs/expert_review_20260829_joint_program_primal.md`
-11. `docs/expert_review_20260830_program_bank_interaction.md`
-12. `docs/expert_review_20260831_event_conditioned_bank_set_relative_interaction.md`
-13. `docs/expert_review_20260901_program_through_bank_bottleneck.md`
-14. `docs/expert_review_20260902_global_route_reassessment.md`
-15. `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`
-16. `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`
-17. 当前active design，仅当`progress.md`明确登记时读取；不得在本文件硬编码会随实验裁决变化的design路径。
+- 新任务先读`docs/current_owner_requirements.md`，以及`task_plan.md`和`progress.md`的当前目标、快照与授权状态；
+  区分当前记录与文件内的历史执行段落。没有active design时，不从旧设计或未完成清单自行恢复实验。
+- 修改科研代码、数据、模型、实验配置或开展设计判断时，读取`docs/concept.md`、相关`findings.md`结论，以及
+  `progress.md`明确登记的active design中涉及的接口、数据、训练和裁决合同。必要时扩展到完整设计，不能断章取义。
+- 涉及架构取舍、负结果解释或历史路线时，先查`docs/research_history.md`，沿其索引读取相关专家评审、修正意见、
+  Git快照与formal evidence；读完整的相关论证和适用条件，保留已确认的边界，不必重读无关评审。
+- 窄范围修复只补读相关实现、调用方与验证合同。纯文档、技能或工具配置维护读取当前目标和相关规则即可；
+  不因此检查GPU、重跑实验或加载全部科研历史。
+- 本任务已经读过且未变化的材料直接复用。跨上下文窗口恢复时，先核对最新owner消息与当前状态，再按缺失信息检索；
+  只有依赖实时GPU、进程、存储或Git状态的操作才刷新对应证据。
 
-旧架构先查`research_history`；只有需要精确公式、实现或命令时，才从该文档登记的Git
-快照和formal artifact选择性读取。不得把重复阅读几十份退役设计当成推进前置步骤。
+GPU launch与formal train/eval仍须满足下文完整科学、资源、checkpoint、Git和评测合同。按需阅读不降低这些执行要求。
 
 ## 3. Repository role
 

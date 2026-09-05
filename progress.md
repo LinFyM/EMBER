@@ -12,7 +12,14 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 02:23 CST）
+## 最新节点（2026-09-06 02:29 CST）
+
+- 64-step fit/held两个条件已完成驻留物化，exit0。held strict150已在gpu01物理4/5/6启动，每卡3 persistent workers；
+  32 held继续0/2，32 fit继续3，合计六卡。64 fit的两卡launcher已准备，待下一组设备释放后立即运行。
+- 32 held的Long部分6个shards已完成，Goal/Spatial仍推进；32 fit尚在Long部分。三组均只沿用预注册correct-video条件、50固定状态
+  与原环境/策略RNG，未形成可用于本轮裁决的完整四组aggregate。所有物化与训练launch记录已保留，完整训练/功能结果见上条。
+
+## 前一执行节点（2026-09-06 02:23 CST）
 
 - query覆盖shared4正式run已完成64/64与所有8/32/64 Panel-B评估，completion与launcher均exit0；实际training775.71秒、
   Panel-B240.08秒，64次更新无clip。完整256个task executions的pairs/video/noise与预先审计逐occurrence匹配，实际覆盖仍为

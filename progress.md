@@ -6,14 +6,22 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频结果sealed，当前准备以较好的两fit A2为参照检验共同过程P—整策略Q主干，详见最新节点和active design。
+  四视频结果sealed，当前以较好的两fit A2为参照运行共同过程P—整策略Q主干比较，详见最新节点和active design。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点与P/Q formal启动合同（2026-09-06 05:53 CST）
+## 最新节点（2026-09-06 05:54 CST）
+
+- P/Q formal已从clean pushed detached `93540ff1`启动，gpu01物理3/4/5、NUMA1、world3，run为
+  `runs/outputs/pi05_ecp_prw_shared4_joint_process_s64_93540ff1_gpu01p345_20260906/`，launcher
+  `.codex/tmp/prw_joint_launch/train.sh`。最新两节点snapshot和quota已保存；18项CPU、实际profile与采样审计支持启动。
+- 32/64驻留物化与四个strict150 launcher已准备，仍使用同一frozen authority；checkpoint生成、设备可用且live核对后立即运行。
+  analysis已收齐source/carrier和A2四个直接参照，共6/10；新闭环与functional尚无结果，不作科学裁决。
+
+## P/Q formal启动合同（2026-09-06 05:53 CST）
 
 - 两update真实profile exit0，8个task executions的video/query/noise/权重与原fresh-query审计逐行匹配、normalizers相同；
   完整38-target rank16、source/observer/task-local trainable均0、各主要梯度组有效。最长87帧通过，更新5.82/5.18秒，

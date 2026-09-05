@@ -58,7 +58,7 @@
     "teacher_frame_position_contract": "relative_position_enters_attention_qk_and_pooling_keys_never_raw_native_value",
     "dynamic_value_contract": "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
     "capture_frame_chunk": 2,
-    "pooling_frame_chunk": 128,
+    "pooling_frame_chunk": 64,
     "representation_arms": ["full"],
     "post_pooling": "single_target_update_cap_then_small_core_canonicalization",
     "initialization": "g2_policy_attention_and_native_projection_component_init_or_fully_random_same_topology"

@@ -26,7 +26,7 @@
   读出的合同。gpu01物理3上的task93真实full smoke自然exit0：79 sampled frames、2 probes、完整50 horizons、38 targets；
   policy/native read梯度分别为`.002554/.003015`，prefix/response/unified/signed-X/signed-Y分别为
   `.008025/.006184/.008155/.001529/.005662`，冻结policy/observer无梯度，生成76 tensors和唯一rank16；峰值
-  allocated/reserved约`37.47/41.63 GiB`。下一步是clean pushed detached authority上的matched task1/task93 25/50控制。
+  allocated/reserved约`34.90/38.77 GiB`。下一步是clean pushed detached authority上的matched task1/task93 25/50控制。
 
 - parallel-read v2 task-local formal launch contract：科学实现固定为clean pushed `831d9d6c`，配置固定
   `configs/pi05_ecp_policy_response_writer_unified_factor_v2.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
@@ -45,9 +45,15 @@
   `.021949/.023451`与`.059224/.064798`；task93为`.114529/.106962`与`.161922/.153538`。两个任务、两个相邻checkpoint的
   两条fit与一条held正确视频全部高于carrier；相对combined-softmax v1，task1由两点不通过变为两点通过，task93 m50由
   `.097318/.068702`提高到`.161922/.153538`，且高于前代Native-Temporal约`.125/.126`。task1/task93 train/eval/total分别为
-  `345.13/85.65/441.88s`与`517.19/89.57/627.12s`；峰值reserved为`27.92/45.12 GiB`。冻结policy/evidence、held/Panel-B/wrong
+  `345.13/85.65/441.88s`与`517.19/89.57/627.12s`；峰值reserved为`26.00/42.01 GiB`。冻结policy/evidence、held/Panel-B/wrong
   backward计数均为0，输出均为唯一rank16。这证明parallel source ownership修复了task-local接口，但尚不构成shared或闭环结论。
   shared前只做保持逐元素语义等价的frame-chunk内存/吞吐profile，随后立即进入73-task optimizer100/200短资格。
+
+- task93前两步exact frame-chunk profile使用相同初始化、视频、functional rows与full candidate轴。chunk128基线为
+  `10.06/10.56s`、峰值reserved `42.01 GiB`；chunk64为`10.92/11.42s`、`36.22 GiB`；chunk32为
+  `11.85/11.91s`、`33.57 GiB`。分支级activation checkpoint在chunk128下只降到`41.94 GiB`且更慢，已完整丢弃，不进入runtime。
+  选择chunk64作为唯一active执行点：约8%单task开销换取`5.79 GiB`最长视频余量，使gpu02物理4/6可与各自约5.6/4.6 GiB低util
+  进程安全共驻并使用6卡；所有frames、50 horizons、native candidates、softmax与输出保持不变，CPU chunk-equivalence合同通过。
 
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、

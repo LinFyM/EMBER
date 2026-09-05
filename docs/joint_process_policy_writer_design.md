@@ -119,6 +119,10 @@ Long为`.0367/.0147`、`.0472`。各自只有7/4/8个target被cap，初始化更
 实现只在现有factor generator中以`input_context_branches=1/2`表达当前两臂，无新trainer/module或独立运行路径。主agent负责本次对照后
 依据裁决保留唯一选定参数化；另一臂由frozen Git/config/results保存，不长期积累配置分支。
 
+该阶段同时完成已授权的执行优化：static task adapter原未接入evaluator的batch接口，实际对各env逐条forward。补齐同task批处理后，
+真实Goal/Spatial吞吐约提高2.9倍；仍沿用原逐env noise与全部50步推理，接受合同允许的正常BF16 batch差异。此执行变化与科学A侧干预
+分别登记，所有分数注明actual evaluator commit；不以浮点低位一致为由保留低效逐env路径。进一步torch.compile不混入本轮首批评测。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

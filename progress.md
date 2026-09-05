@@ -12,6 +12,21 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
+## 最新节点（2026-09-06 03:39 CST）
+
+- 非对称A正式训练已从clean pushed detached `02a85314`在gpu01物理3/4/5启动；run为
+  `runs/outputs/pi05_ecp_prw_shared4_asymmetric_s64_02a85314_gpu01p345_20260906/`，launcher为`.codex/tmp/prw_asymmetric_launch/train.sh`。
+  实际contract已确认A context branches2、common动态B、原采样与world3，8-step checkpoint已生成，训练约12秒/update。
+  本次/data1 quota720889376KiB，预估<15GiB峰值不变；32出现后继续与训练并行物化和闭环。
+- static adapter已补齐evaluator现有batch prediction接口，只允许同task完整LoRA的env集合，逐env noise/order保持；混task、空或
+  noise数量不符会拒绝。既有7项static-bank/信息墙检查通过。真实Goal/Spatial8观察，在同TF32、同adapter/输入/noise下，
+  serial为3.28/3.27 observations/s，batch8为9.59/9.55（约2.9倍），完整50步outputs finite；RMSE分别.00481/.00534，
+  对应serial output RMS.556/.492。这个量级与正常BF16 batch/reduction差异相符，不做逐元素一致要求。
+- 新batch接口复用唯一evaluator协议，无新runner；两现有文件净增46行，架构检查仅既有review、无hard。本轮后续评测采用batch入口，
+  在结果中另行记录执行commit；训练、checkpoint、noise/状态及scientific preprocessing不变，不把执行效率修复称为科学方法收益。
+- 只编译单个denoise step的动态batch探测正在物理6继续，script/log/JSON位于`.codex/tmp/profile_static_batch*`；Goal8→Spatial7→Goal1
+  都使用各自正确task adapter和观察，检验变batch与adapter切换。无formal backend改变；本次科学评测先使用已验证的eager batching。
+
 ## 非对称A formal启动合同（2026-09-06 03:32 CST）
 
 - 三rank真实profile已exit0，2,970,368 Writer参数、source/observer/task-local均0，原38-target rank16与信息墙通过；实际8个task

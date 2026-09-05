@@ -517,6 +517,24 @@ class FrozenStaticTaskLoRAAdapter:
         copy_task_lora_state_(self.policy, self._state(prepared.key), self.lora)
         self._installed = prepared.key
 
+    def predict_action_chunk(
+        self,
+        prepared: Sequence[PreparedStaticTaskLoRA],
+        batch: Mapping[str, torch.Tensor],
+        *,
+        noise: torch.Tensor,
+        num_steps: int,
+    ) -> torch.Tensor:
+        """Batch environments sharing one task's immutable complete LoRA."""
+        if (
+            not prepared
+            or len(prepared) != noise.shape[0]
+            or any(item.key != prepared[0].key for item in prepared)
+        ):
+            raise Pi05EvaluationError("static task-LoRA batch must share one task")
+        self.install(prepared[0])
+        return self.policy.predict_action_chunk(batch, noise=noise, num_steps=num_steps)
+
 
 def validate_static_task_lora_episode(
     adapter: Mapping[str, Any],

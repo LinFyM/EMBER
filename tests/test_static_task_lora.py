@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -17,6 +18,8 @@ from ember.lora import identity_lora_state
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.static_task_lora import (
+    FrozenStaticTaskLoRAAdapter,
+    PreparedStaticTaskLoRA,
     STATIC_TASK_LORA_EPISODE_SCHEMA,
     STATIC_TASK_LORA_KIND,
     STATIC_TASK_LORA_MANIFEST_SCHEMA,
@@ -25,6 +28,31 @@ from ember.static_task_lora import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_static_adapter_batches_same_task_without_reordering_episode_noise() -> None:
+    calls = []
+    installed = []
+
+    def predict(batch, *, noise, num_steps):
+        calls.append((batch, noise, num_steps))
+        return noise + batch["observation.state"][:, None, :]
+
+    adapter = object.__new__(FrozenStaticTaskLoRAAdapter)
+    adapter.policy = SimpleNamespace(predict_action_chunk=predict)
+    adapter.install = installed.append
+    prepared = [PreparedStaticTaskLoRA(("libero_goal", 0), {"init_state_id": i}) for i in range(8)]
+    noise = torch.arange(8 * 50 * 7).reshape(8, 50, 7).float()
+    batch = {"observation.state": torch.arange(8)[:, None].expand(8, 7).float()}
+    actions = adapter.predict_action_chunk(prepared, batch, noise=noise, num_steps=10)
+    assert len(calls) == 1 and calls[0][1] is noise and calls[0][2] == 10
+    assert installed == [prepared[0]]
+    torch.testing.assert_close(actions, noise + batch["observation.state"][:, None, :])
+    mixed = [*prepared[:-1], PreparedStaticTaskLoRA(("libero_spatial", 2), {})]
+    for invalid in (mixed, prepared[:-1], []):
+        with pytest.raises(Pi05EvaluationError, match="share one task"):
+            adapter.predict_action_chunk(invalid, batch, noise=noise, num_steps=10)
+    assert len(calls) == 1
 
 
 def test_static_task_lora_manifest_and_episode_evidence_are_exact(

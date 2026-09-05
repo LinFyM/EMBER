@@ -13,7 +13,16 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 05:54 CST）
+## 最新节点（2026-09-06 06:07 CST）
+
+- P/Q训练与预注册Panel-B全部exit0，分别339.88秒与229.33秒；64updates、256个task executions与原query/video/noise/权重及
+  normalizers匹配，每条原fit视频32 exposures。8.03GB临时cache已移除，三个checkpoint和launch/profile evidence保留。
+- 64-step task1/72/83/93 held benefit为`-.000256/-.000237/+.000008/+.000145`，相对两fit A2多数更弱；32也没有普遍正收益。
+  这是当前P/Q实例的功能负证据，尚不据此淘汰整个P/Q函数类或命名根因；方法裁决等待四个实际闭环结果。
+- 32两bank均sealed并exit0，首次runtime115.36秒、驻留复用0.16秒、生成12.94/11.08秒；held strict150在gpu01物理0/2、fit在6
+  已进入执行。64两bank驻留物化已在训练释放的3启动，后续held3/4/5、fit0/2的launcher继续待对应设备释放后执行，合计最多六卡。
+
+## 前一执行节点（2026-09-06 05:54 CST）
 
 - P/Q formal已从clean pushed detached `93540ff1`启动，gpu01物理3/4/5、NUMA1、world3，run为
   `runs/outputs/pi05_ecp_prw_shared4_joint_process_s64_93540ff1_gpu01p345_20260906/`，launcher

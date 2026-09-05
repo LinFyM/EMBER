@@ -12,7 +12,20 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 00:40 CST）
+## 最新节点（2026-09-06 00:50 CST）
+
+- 驻留物化已从clean pushed detached `d35e66bf`完成shared4剩余三个条件、clone83剩余三个条件和clone93两fit条件，均exit0。
+  首次runtime准备115--116秒，后续0.11--0.24秒；shared三task每条件完整物化12.6--13.6秒、Goal约3秒、Long约7.4秒。
+  后续条件仍重新完整capture与一次Writer，独立checkpoint/video metadata已按预注册配置核对。当前14/16条件已物化，只余clone72两fit条件。
+  时间证据见同analysis root的`materialization_timing.json`；复用仅消除重复加载，没有合并条件、截断输入或缓存最终LoRA。
+- 当前5/18个strict eval已完成：source32/150；clone72 m32/m64 held为41/39，配对38 retained/1 gained/3 lost、churn4/50、Jaccard.9048；
+  clone83 m32 held6/50；clone93 m32 held1/50。carrier以及shared多条件仍运行，不提前据此作路线裁决。
+- 正在gpu01：clone93 m64 held(0)、clone83 m64 held(2)、shared4 m64 held(3)、carrier150(4)、shared4 m32 held(5)、
+  shared4 m32 fit(6)。下一释放卡优先shared4 m64 fit，其余clones fit已ready后连续调度；两个节点合计不超过6卡。
+- 额外分析只复用本轮原result：shared的零梯度task6/79在32/64 held functional仍负，因而不宣称task迁移；normalizer完全匹配，
+  clone有少量clip、shared无clip。两者容量/聚合/AdamW语义仍不同，不能径直归因梯度冲突，详见findings和对应JSON。
+
+## 前一执行节点（2026-09-06 00:40 CST）
 
 - 五组同图正式训练均完成64/64、8/32/64 checkpoints、Panel-B与completion，全部exit0。
   functional汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`；四task在clone/shared

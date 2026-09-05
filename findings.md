@@ -43,6 +43,16 @@ owner要求在低于/接近baseline时认真比较竞争解释，必要时自主
 预注册Spatial2/Goal20/Long38、first-fit/held闭环与source/carrier参照仍须读取后才能判断优先扩训练还是修改模块。
 精确汇总见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`，各原始result/run contracts保留。
 
+同一轮已预注册、以前消费过的零梯度task6/79诊断仍为负：shared32/64的held benefit分别为
+`-.000183/-.000221`与`-.002780/-.002818`。task6是打开下层抽屉，task79是番茄酱入篮；它们不能标为fresh selector。
+训练任务的同视频与新视频拟合没有自然转化为这两个新task的功能迁移；四任务覆盖与共享规则表达仍是竞争解释，不能由此单独证明P/Q必需。
+
+原run的per-task frozen normalizer在clone/shared完全相同：task1/72/83/93分别`.074582/.116827/.114634/.096518`。
+64次更新中clone1/72/83/93发生clip的次数为8/4/10/4，shared为0；shared按四task等权聚合后再作一次AdamW更新，
+不能把matching exposure误说为完全相同的optimizer更新或直接据差异命名梯度冲突。原始8-row training benefit继续不用于paired结论。
+相关汇总为同root的`reused_task_held_diagnostic.json`与`optimization_comparison.json`。
+
+
 ### 历史v4终局（sealed）
 
 73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；整模块替换随后定位并删除了

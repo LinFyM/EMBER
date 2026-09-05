@@ -3098,3 +3098,21 @@ exposures，5组均从clean pushed detached `6624127b` fresh完成且exit0。每
 局部行为事前锁定Spatial2、Goal20、Long38的32/64、第一fit视频和held视频，各50状态，paired source/carrier；当时正在执行。
 formal roots为`runs/outputs/pi05_ecp_prw_samegraph_{clone1,clone72,clone83,clone93,shared4}_s64_6624127b_gpu01p{0,2,3,4,56}_20260905/`，
 功能汇总为`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/functional_comparison.json`。
+
+
+## 166. 2026-09-06同图clone/shared闭环完成与下一项查询覆盖对照
+
+首轮18个预注册eval共1500 rows全部自然完成、worker与launcher exit0，代码authority为`b89ee997`、`54312cf1`及仅复用物化驻留runtime的
+`d35e66bf`，训练仍为`6624127b`。shared4 fit32/64为39/44，held32/64为40/41，carrier38、source32（均本地train侧150状态）。
+shared fit逐Spatial/Goal/Long为34/5/0→35/8/1，held为36/4/0→36/4/1；相对carrier新增8--12同时丢失6--7，不能只按净分宣称稳定积累。
+独立clone72 fit40/38、held41/39，clone83 fit6/8、held6/6，clone93 fit0/3、held1/1（各50状态）；clones不合并成部署模型。
+shared64 fit→held的Goal仅保留2/8，Long成功不重合；两个复用零梯度诊断task6/79 functional仍负。
+
+原artifact root为`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/`，其comparison、完整paired JSON、raw rows、各run contract与
+launch records共同支持上述结论。物化同run多条件复用冻结模型将115--116秒重复准备降至0.11--0.24秒，完整视频/50-horizon/一次Writer不变。
+静态LoRA四worker运行约40--41GiB且无OOM；Goal完整50 rollout约11.1--11.2分钟，与三worker约11.6分钟接近。单policy真实观测推理batch8/16/32
+为7.83/8.18/8.31 observations/s，增大batch收益约6%，并未证明还存在数量级的batch瓶颈。
+
+本轮为公平匹配使用固定Panel-A序列；审计实际监督只有8个episode、115--126个unique episode/frame，16个RNG组循环4次，fit视频与固定visit
+还存在循环关联。下一项只检验原Panel-A episode池fresh query采样，保持部署图、4 tasks、64 updates、8 action rows、视频、noise与normalizer。
+它是覆盖假说的对照，不是修复已确认工程错误，不触及validation/test或视频负controls。

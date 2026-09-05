@@ -5,14 +5,46 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared五组已从clean pushed detached `6624127b`启动，正在读取三曝光节点与准备预注册局部闭环。
+  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；当前准备只改变action-query覆盖的shared4对照，尚未启动新训练。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 00:50 CST）
+## 最新节点（2026-09-06 01:35 CST）
+
+- 首轮18/18个预注册eval、1500 paired rows全部自然完成，所有worker与launcher exit0。最终shared4 fit32/64=`39/44`，held32/64=`40/41`，
+  carrier=`38`，source=`32`（各150状态）；逐task、suite、breadth、paired sets和相邻重合全部写入
+  `runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/comparison.md`与`closed_loop_comparison.json`，历史第166节登记。
+  Goal clone64 fit最终为8/50；其余分数见下方快照及完整表。全部materialization/eval的精确script/log/exit已保存在formal roots。
+- 实测四worker Goal50约666.8--672.6秒，三worker同task约693.6--698.7秒；视频不同，暂不严格归因速度差。
+  四worker显存约40--41GiB、无OOM。额外一次性推理profile复用真实train-side观测，batch8/16/32为7.83/8.18/8.31 observations/s，
+  所有50-step outputs finite；batch增大收益约6%。profile只测吞吐，不参与模型选择，完整脚本/日志/JSON保存在同root `inference_profile/`。
+- 当前所有GPU工作已完成，未启动后继训练。已清理不再被进程使用且clean的训练6624127b、carrier54312cf1与旧evalb89ee997三个detached
+  worktrees；仅d35e66bf batch frozen tree暂留作最近复现。checkpoint、source/data、raw rows与formal evidence均保留。
+- 下一项已在active design登记：同4tasks、component-init、64 updates、8rows、原视频/16组policy noise/normalizer/optimizer，
+  仅从原Panel-A全部16个授权action episodes重新均匀采样每次8个episode/frame。原方案每task512次row使用只有8episodes、115--126个
+  unique states，且两fit视频关联不同固定row子集；这提供可检验的覆盖假说，尚不是已确认原因。不同时扩task、K、训练时长或换P/Q。
+  下一步实现既有shared runtime中的最窄采样变化，检查Panel-A/Panel-B/video信息墙与可重现occurrence，然后真实profile、冻结提交、启动。
+
+## 前一执行节点（2026-09-06 01:10 CST）
+
+- 9/18个预注册strict eval已完成。source32/150，carrier38/150，逐Spatial2/Goal20/Long38分别`32/0/0`、`34/4/0`。
+  全部clone的held条件已完成：m32=`41/6/1`，m64=`39/6/1`；这是三个独立诊断模型，不是一个48/46分的部署模型。
+  Spatial相邻38 retained/1 gained/3 lost、Jaccard.9048；Goal为5/1/1、.7143；Long两个1/50成功状态不同、重合0。
+- shared4 m32 held为40/150（36/4/0），相对carrier32 retained/8 gained/6 lost、churn14/150、Jaccard.6957。
+  Spatial为30/6/4，Goal为2/2/2；故当前只有小净增，不能据此宣布稳定积累或直接扩大训练。其余shared条件与全部fit视频仍继续。
+- 16/16条件已物化。clone72最后两个fit条件在同一个驻留runtime完成，首次115秒、后续0.135秒、实际物化2.7/2.3秒，exit0。
+  当前gpu01：shared4 m64 fit(0)、clone93 m32 fit(2)、shared4 m64 held(3)、clone93 m64 fit(4)、clone83 m32 fit(5)、
+  shared4 m32 fit(6)。还未启动的评测为clone72两fit、clone83 m64 fit；全部adapter已ready。
+- clone83 m32 fit使用evaluator现有`--replicas-per-gpu 4`，每卡仍8 environments/worker；其余已启动条件为3 workers。
+  已观测静态LoRA每worker约10--10.3 GiB，预计4 workers约41 GiB、低于A40可用45 GiB；本轮实测吞吐与峰值，未改变模型/视频/状态/RNG
+  或scientific preprocessing。该执行选择在该fit条件结果产生前作出，只用于增加同卡有效并行，不能按结果选择runtime。
+- 五训练run及carrier相关eval均已完成并保留完整证据，清理了clean且无进程使用的task-owned训练`6624127b`和carrier`54312cf1`
+  detached worktrees。相应历史launch可按已pushed commit重建；checkpoint、raw rows、contracts、logs均未删除。
+
+## 前一执行节点（2026-09-06 00:50 CST）
 
 - 驻留物化已从clean pushed detached `d35e66bf`完成shared4剩余三个条件、clone83剩余三个条件和clone93两fit条件，均exit0。
   首次runtime准备115--116秒，后续0.11--0.24秒；shared三task每条件完整物化12.6--13.6秒、Goal约3秒、Long约7.4秒。

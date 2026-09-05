@@ -61,6 +61,26 @@ exposure。旧正控不能单独证明部署图的单任务学习，更不能把
 继续训练须有有意义的功能或行为学习趋势及相称成本；绝对值长期接近baseline且成功集合不积累时，不能只靠内部下降续跑。
 反过来，短预算没有通过也不自动否定整个函数类。必要的对照或额外分析依据竞争解释决定，不预设修正轮数。
 
+### 首轮裁决与第二项：固定面板覆盖对照（2026-09-06）
+
+首轮完整18条件表见`runs/analysis/pi05_ecp_prw_samegraph_local_b89ee997_20260906/comparison.md`。shared4 fit39→44、held40→41，carrier38；
+发生实际学习，但增益与保留仍弱，Goal同视频到新视频的成功集合保留低，零梯度task6/79仍负。clones并非所有任务都强，因此不能把shared差异
+直接归因梯度冲突或由此宣布P/Q必需。更广task覆盖、条件化表示/读出、有限action-query覆盖和离线目标到闭环的偏差仍是竞争解释。
+
+审计首轮每task512次row使用只覆盖8个action episodes与115--126个不同episode/frame；每fit视频约60--64个不同rows，交集2--7。
+固定16组policy RNG和visit循环还让两fit视频关联不同固定row子集。当前先用最直接的matched对照检验这一有限监督实例：
+
+- 只训练一套shared4，task1/72/83/93、component-init、seed20260905、whole Writer、原64 updates/8 rows与32/64闭环保持不变。
+- 每task occurrence从其原Panel-A全部16个授权action episodes中无放回抽8个episode，再各均匀抽一个真实frame；outcome-independent随机源
+  只由固定seed、task与occurrence确定。原Panel-B、teacher videos与same-task held视频的episodes继续排除于梯度。
+- video schedule与functional policy-noise seed逐occurrence沿用首轮，frozen functional normalizer复用原完整Panel-A定义，optimizer/lr/clip不变。
+  因而本次主要变量是action observation/query覆盖及它与视频的固定循环关联；不同时增加task、更新数、K、视频数或改变模型/读出。
+- checkpoints8/32/64照旧；原Panel-A继续提供episode池、normalizer与noise visit，Panel-B仍只读相同前8 visits作functional诊断。
+  局部closed-loop仍为32/64、first-fit/held各strict150，
+  复用首轮source/carrier配对基线。固定validation/test仍不消费，wrong/shuffle/reverse仍不执行。
+- 本对照不选择最终checkpoint。若相邻、跨视频有可保留的实际行为增量，优先保留该能力并再审任务覆盖；若没有，不靠同设置延长训练，
+  结合clone边界进一步检查当前native读出的可达性、监督到行为的差距或P/Q责任结构。负结果只排除本次小预算覆盖干预的收益。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

@@ -31,7 +31,7 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
-### 2026-09-06首轮同图学习对照：四任务shared可学习，行为结论待定
+### 2026-09-06首轮同图学习对照：能学习，但共享行为净积累弱
 
 从clean `6624127b` fresh component-init出发，whole-Writer且无task query的四个clone与shared4全部完成8/32/64节点。
 每task的两fit视频、8-row Panel-A序列、policy RNG和曝光量匹配；32/64时每个clone和shared4的四task fit/held视频平均benefit均为正。
@@ -51,6 +51,19 @@ owner要求在低于/接近baseline时认真比较竞争解释，必要时自主
 64次更新中clone1/72/83/93发生clip的次数为8/4/10/4，shared为0；shared按四task等权聚合后再作一次AdamW更新，
 不能把matching exposure误说为完全相同的optimizer更新或直接据差异命名梯度冲突。原始8-row training benefit继续不用于paired结论。
 相关汇总为同root的`reused_task_held_diagnostic.json`与`optimization_comparison.json`。
+
+18/18个预注册strict eval、1500 rows最终全部完成。共享fit为39→44/150，held为40→41/150，carrier38/150、source32/150。
+shared逐Spatial/Goal/Long在m32 fit/held为34/5/0与36/4/0，在m64为35/8/1与36/4/1。相对carrier，四条件分别
+R/G/L=31/8/7、32/8/6、32/12/6、32/9/6；相邻fit为36/8/3，held为34/7/6。m64 fit→held保留36/44，但Goal仅保留2/8、Long0/1，
+故总分接近掩盖部分任务的视频不稳。独立clones的Spatial fit40→38、held41→39；Goal fit6→8、held6→6；Long fit0→3、held1→1。
+Long held两点成功状态不重合。此结果支持当前同图有学习能力，尚不支持大规模扩训；也不足以单独判定P/Q、梯度冲突或输出参数化是根因。
+
+覆盖审计发现每task虽有512次row使用，实际仅8个action episodes、115--126个不同episode/frame与16个policy RNG seeds。
+两fit视频因固定visit循环而分别关联约60--64个不同action rows，交集仅2--7；这是首轮匹配面板的已知有限监督实例。
+因此下一项先控制检验原Panel-A授权episode池中的fresh action-query采样，保持4task/64updates/8rows、原视频序列、policy-noise序列、
+normalizer、模型与optimizer；不把有限覆盖直接命名为性能原因，也不同时扩task或替换主干。完整行为表与配对见同root的
+`comparison.md`/`closed_loop_comparison.json`，覆盖计数见`training_query_coverage.json`。
+
 
 
 ### 历史v4终局（sealed）

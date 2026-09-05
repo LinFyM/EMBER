@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v2"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v2"
+SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v3"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v3"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -125,7 +125,7 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_parallel_policy_native_factor_writer",
+            == "active_common_base_policy_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("architecture")
@@ -135,9 +135,11 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("source_normalization")
             == "independent_policy_and_native_softmax_no_cardinality_competition",
             model.get("factor_readout")
-            == "factor_side_two_branch_signed_raw_native_XY",
+            == "common_context_base_plus_bias_free_frame_innovation_signed_raw_native_XY",
+            model.get("signed_query")
+            == "one_common_bank_localizer_plus_two_dynamic_offsets_per_factor_side",
             model.get("dynamic_value_contract")
-            == "one_final_frame_centering_makes_static_repeat_complete_mobile_zero",
+            == "common_query_is_shared_across_signed_branches_and_zero_frame_innovation_makes_complete_mobile_zero",
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
             int(model.get("blocks", 0)) > 0,

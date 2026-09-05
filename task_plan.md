@@ -21,7 +21,7 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 唯一active training config为：
 
-- configs/pi05_ecp_policy_response_writer_unified_factor_v2.json
+- configs/pi05_ecp_policy_response_writer_unified_factor_v3.json
 
 已完成的Native-Temporal及其12-gradient资格配置均标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
 
@@ -51,7 +51,8 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 2. 旧`grounded relations -> HMM/events -> C/D -> normalization -> relation marginal -> factor gain`连续路径整体退休；
 3. 新主图只含一种可复制Unified Policy-Native Factor attention/MLP block；显式X/Y factor latent在每一层以同一query并行读取
    同frame prefix + 完整PI0.5 response与side-matched native bank，两个来源独立softmax后直接相加，再沿真实frame time及rank/side
-   交互，随后直接对raw X/Y做signed pooling；
+   交互；最终同一个signed-query head以frame-common context定位当前bank，以frame-relative innovation产生正负偏移，随后直接对raw X/Y
+   做signed pooling；
 4. 独立Process坐标、event bottleneck、Composer解释边界与causal process auxiliary均删除，整个Writer只接受correct cross-episode
    functional梯度；时序信息仍由完整PI0.5 response与统一block承担；
 5. 若新接口失败，删除并替换责任模块，不在其前后堆叠summary、solve、recenter、whitening、transport、calibration或gate；
@@ -129,12 +130,19 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     相加；不加gate、手工权重或token-count校正。15项CPU合同和task93真实full smoke通过，policy/native read均收到非零functional梯度；
 27. [x] 从clean pushed detached authority完成matched task1/task93 optimizer25/50。两个任务、两个相邻checkpoint的三条正确视频全部高于
     carrier；m50 fit/held recovery分别为task1 `.0592/.0648`、task93 `.1619/.1535`，相对combined-softmax与前代接口均有改善；
-28. [ ] 严格等价chunk64已把最长视频峰值从`42.01`降至`36.22 GiB`并保留较高吞吐；立即以与前代matched的55 meta + 18
-    target共73个gradient tasks运行
-    component-init optimizer100/200 shared短资格，并对两点并发完成held5 correct-only strict250；task6/79只作已消费诊断，不再伪装
-    fresh selector；
-29. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-30. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+28. [x] 严格等价chunk64把最长视频峰值从`42.01`降至`36.22 GiB`；随后55 meta + 18 target的component-init
+    optimizer100/200 shared短资格与两点held5 correct-only strict250均完整结束。m100/m200 held5只有`40/38`、breadth均`3/5`、
+    Goal/Long为0，低于carrier43；gradient任务虽由`5/12`升至`8/12`全视频为正，fresh held task6/79始终`0/2`且恶化，故该版
+    parallel-read shared函数类正式non-pass；
+29. [x] correct-only物化几何与代码路径联合定位：nominal rank4 mobile的有效参与rank约`1.01--1.02`并随训练下降，m100到m200主要沿
+    相似方向放大；旧readout在frame centering后只让innovation直接决定最终native查询，丢掉了共同context中的language、owner、family
+    与rank定位。该缺口与专家明确的`base(context,current-bank)+dynamic innovation`合同一致，不是追加校准的理由；
+30. [x] 在同一个最终signed-query head中实现common-base修订：每视频保留`C=mean_t z_t`与`D_t=z_t-C`，令
+    `q+/-=b(C)+delta+/-(D_t)`；共同base在两分支完全相同，因此`D=0`仍严格零mobile。16项CPU合同及最长task93真实full
+    forward/gradient/materialization smoke通过；不新增阶段、gate、normalization、温度或辅助loss；
+31. [ ] 从fresh完成task1/task93 optimizer25/50正控，随后立即运行matched 73-task optimizer100/200与held5 correct-only strict250；
+32. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+33. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

@@ -42,6 +42,14 @@ class _NativeVideoCandidates:
     chunks: tuple[_NativeBankChunk, ...]
 
 
+@dataclass(frozen=True)
+class _FactorVideoState:
+    """Static bank-localizing context and frame-relative dynamic innovation."""
+
+    context: torch.Tensor
+    innovation: torch.Tensor
+
+
 class _GroupedOnlineSoftmaxAccumulator:
     """Exact signed pooling with an independent native-output group axis."""
 
@@ -413,8 +421,12 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             UnifiedPolicyNativeFactorBlock(width, heads)
             for _ in range(block_depth)
         )
-        self.input_signed_query = torch.nn.Linear(width, 2 * width, bias=False)
-        self.output_signed_query = torch.nn.Linear(width, 2 * width, bias=False)
+        # Each head emits one branch-shared bank-localizing query from the
+        # frame-common context plus two bias-free offsets from frame-relative
+        # innovation.  The common query cannot open a mobile residual alone:
+        # with zero innovation both signed branches remain exactly identical.
+        self.input_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
+        self.output_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.task_query = (
             torch.nn.Parameter(
                 torch.zeros(len(owners), G1_RESIDUAL_RANK, 2, width)
@@ -530,7 +542,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         videos: Sequence[FrozenPolicyResponseVideo],
         evidence: Sequence[PolicyResponseEvidence],
         candidates: Sequence[_NativeVideoCandidates],
-    ) -> tuple[torch.Tensor, ...]:
+    ) -> tuple[_FactorVideoState, ...]:
         if len(videos) != len(evidence) or len(videos) != len(candidates):
             raise ValueError("unified factor video/evidence count changed")
         states = []
@@ -579,7 +591,16 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
                 input_chunks,
                 output_chunks,
             )
-        return tuple(value - value.mean(0, keepdim=True) for value in values)
+        output = []
+        for value in values:
+            context = value.mean(0)
+            output.append(
+                _FactorVideoState(
+                    context=context,
+                    innovation=value - context[None],
+                )
+            )
+        return tuple(output)
 
     def _branch_logits(
         self,
@@ -619,23 +640,37 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         return checkpoint(score, keys, queries, use_reentrant=False)
 
     def _signed_queries(
-        self, projection: torch.nn.Linear, state: torch.Tensor
+        self,
+        projection: torch.nn.Linear,
+        context: torch.Tensor,
+        innovation: torch.Tensor,
     ) -> torch.Tensor:
-        frames = state.shape[0]
-        return projection(state).reshape(
-            frames, G1_RESIDUAL_RANK, 2, self.width
+        if (
+            projection.in_features != self.width
+            or projection.out_features != 3 * self.width
+            or context.shape != (G1_RESIDUAL_RANK, self.width)
+            or innovation.ndim != 3
+            or innovation.shape[1:] != (G1_RESIDUAL_RANK, self.width)
+        ):
+            raise ValueError("common-base signed query axes changed")
+        base = F.linear(context, projection.weight[: self.width])
+        offsets = F.linear(
+            innovation, projection.weight[self.width :]
+        ).reshape(
+            innovation.shape[0], G1_RESIDUAL_RANK, 2, self.width
         )
+        return base[None, :, None] + offsets
 
     def _pool_target(
         self,
         target: int,
-        frame_states: Sequence[torch.Tensor],
+        frame_states: Sequence[_FactorVideoState],
         videos: Sequence[_NativeVideoCandidates],
     ) -> tuple[torch.Tensor, torch.Tensor]:
         owner = self.owners[target]
         groups = native_output_group_count(owner)
         group_width = owner.out_features // groups
-        device = frame_states[0].device
+        device = frame_states[0].innovation.device
         input_accumulator = OnlineSoftmaxAccumulator(
             ranks=G1_RESIDUAL_RANK,
             width=owner.in_features,
@@ -651,18 +686,27 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         if len(frame_states) != video_count:
             raise ValueError("unified factor frame-state set changed")
         for video, frame_state in zip(videos, frame_states, strict=True):
-            if frame_state.shape != (
-                video.frame_count,
-                G1_RESIDUAL_RANK,
-                2,
-                self.width,
+            if (
+                frame_state.context.shape
+                != (G1_RESIDUAL_RANK, 2, self.width)
+                or frame_state.innovation.shape
+                != (
+                    video.frame_count,
+                    G1_RESIDUAL_RANK,
+                    2,
+                    self.width,
+                )
             ):
                 raise ValueError("unified factor-side frame state changed")
             input_queries = self._signed_queries(
-                self.input_signed_query, frame_state[:, :, 0]
+                self.input_signed_query,
+                frame_state.context[:, 0],
+                frame_state.innovation[:, :, 0],
             )
             output_queries = self._signed_queries(
-                self.output_signed_query, frame_state[:, :, 1]
+                self.output_signed_query,
+                frame_state.context[:, 1],
+                frame_state.innovation[:, :, 1],
             )
             input_mass = -math.log(
                 video_count * video.frame_count * 2 * ACTION_HORIZON

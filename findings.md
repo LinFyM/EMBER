@@ -13,13 +13,14 @@
 
 ## 科学结论
 
-### 0. 当前active方向是Unified Policy-Native Factor Writer
+### 0. 当前active方向是common-base Unified Policy-Native Factor Writer
 
 73-task Native-Temporal训练在seen functional改善时让unseen task与held5继续恶化；m100/m200 held5只有`42/35`，均未超过carrier43。
 随后整模块替换诊断把最早失效接口定位为Process--Composer learned-coordinate handoff：Process与Composer各自及joint interaction按task
 产生相反贡献，冻结任一端都不是充分解。当前图因此取消独立learned Process坐标与Composer解释边界，以显式factor latent在每一层直接
-读取冻结prefix、完整PI0.5 response和same-frame native X/Y。learned主干只有一种可复制block；末端只保留一次centering、raw signed
-pooling、target cap和唯一rank16。以下内容保留该方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
+读取冻结prefix、完整PI0.5 response和same-frame native X/Y。learned主干只有一种可复制block；parallel-read v2 shared/held5 non-pass后，
+末端不再丢弃frame-common context，而在同一个signed-query head内用共享base定位当前bank、用frame-relative innovation形成正负差；随后仍
+只有raw signed pooling、target cap和唯一rank16。以下内容保留该方向从专家原案到当前接口的证据演进，不恢复其中已裁决的旧active状态。
 
 PNBTT已完成E0、single/family chart、两次train-only tangent spectrum、唯一full-rank16 oracle和最终gate-aligned necessity E1；
 macro70/110均稳定`non_pass`。它能显著压低wrong，却不能在task1/task93上同时保持absolute correct/held；没有新的key width、
@@ -3197,3 +3198,22 @@ m50从`.097318/.068702`提高到`.161922/.153538`；task93也超过Native-Tempor
 cross-attention，没有source gate、固定配比、measure correction或新loss；两任务都获益，因而不是针对单task的补丁。它仍只是
 task-local容量证据，绝对恢复尤其task1仍小，不能外推shared。下一步保持此图，先以exact frame chunk降低task93 `45.12 GiB`峰值，
 随即运行73-task短shared并以task-disjoint functional和held5 correct-only闭环裁决。
+
+## 162. parallel-read shared non-pass定位到final query丢失共同bank上下文
+
+clean detached `40ce2f9e`上的73-task parallel-read v2完整训练到optimizer200。m100/m200的gradient fit/held benefit从
+`+.00011120/+.00005822`升到`+.00030214/+.00018388`，全视频为正由`5/12`升到`8/12`；但zero-gradient task6/79始终`0/2`，
+fit/held均值由`-.00031907/-.00030992`恶化到`-.00069085/-.00064902`。两枚single checkpoint的held5 correct-only strict250
+分别为`40/250`与`38/250`，breadth均`3/5`且Goal/Long为0，均低于carrier43；更多训练不是解。
+
+五个held task的物化mobile在m100的norm-weighted有效参与rank仅约`1.012--1.023`，m200进一步降到`1.007--1.014`；同task
+m100到m200的方向cosine约`.806--.857`而norm增长`1.47--1.74x`，说明训练主要放大相似的近rank1方向。代码中的最早可解释接口是
+最终readout：统一block的输出本含共同context `C`以及frame innovation `D`，旧实现却在signed query前直接丢弃`C`，使language、
+owner、family和rank无法直接定位当前native bank。专家澄清§7.2原本明确要求`ell+/-=b(C,current-bank)+delta+/-(D)`，共同base不破坏
+动态必要性，因为`D=0`时两分支仍完全相等。
+
+active v3因此只改同一个最终linear head：每side计算`q+/-=b(C)+delta+/-(D_t)`，随后沿用原exact raw-X/Y signed pooling。它没有新增
+阶段、gate、normalization、whitening、temperature、calibration或辅助loss；参数只增加约3.3万，扩深仍只复制同一种Unified block。
+16项CPU合同及最长task93真实full smoke均已通过；真实图中policy/native read、Unified blocks与X/Y heads均有非零functional梯度，
+输出为唯一76-tensor rank16，峰值reserved约`35.84 GiB`。下一裁决从fresh完成task1/task93 25/50控制及matched 73-task短shared。
+若该干净接口仍失败，替换readout责任，不在其前后继续堆补丁。

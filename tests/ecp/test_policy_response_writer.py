@@ -235,6 +235,27 @@ def test_static_repeated_video_cannot_open_either_dynamic_factor() -> None:
     assert max(value.abs().max() for value in output.residual.b) < 1e-5
 
 
+def test_signed_query_uses_common_context_and_dynamic_branch_offsets() -> None:
+    generator = _model().factor_writer
+    context = torch.randn(G1_RESIDUAL_RANK, generator.width)
+    zero = torch.zeros(5, G1_RESIDUAL_RANK, generator.width)
+
+    shared = generator._signed_queries(
+        generator.input_signed_query,
+        context,
+        zero,
+    )
+    torch.testing.assert_close(shared[:, :, 0], shared[:, :, 1])
+    assert not torch.equal(shared[:, 0], shared[:, 1])
+
+    dynamic = generator._signed_queries(
+        generator.input_signed_query,
+        context,
+        torch.randn_like(zero),
+    )
+    assert not torch.equal(dynamic[:, :, 0], dynamic[:, :, 1])
+
+
 def test_order_changes_native_temporal_factors() -> None:
     model = _model().eval()
     video = _video(23, frames=7)
@@ -421,17 +442,19 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_parallel_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
+def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_v2.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_v3.json"
     )
     assert current["model"]["blocks"] == 4
     assert current["model"]["representation_arms"] == ["full"]
+    assert current["model"]["signed_query"].startswith("one_common_bank_localizer")
     assert current["optimization"]["objective"].endswith("positive_only")
     assert "event_slots" not in current["model"]
     for obsolete in (
         "pi05_ecp_policy_response_writer_unified_factor_v1.json",
+        "pi05_ecp_policy_response_writer_unified_factor_v2.json",
         "pi05_ecp_policy_response_writer_native_temporal_v1.json",
     ):
         with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
@@ -439,13 +462,13 @@ def test_parallel_factor_config_is_canonical_and_old_configs_are_rejected() -> N
 
     evaluation = load_held5_evaluation_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v2.json"
+        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
     )
-    assert evaluation["training_config"].endswith("unified_factor_v2.json")
+    assert evaluation["training_config"].endswith("unified_factor_v3.json")
     with pytest.raises(
         ValueError, match="unsupported Policy-Response Writer held5 evaluation config"
     ):
         load_held5_evaluation_config(
             REPO_ROOT
-            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v1.json"
+            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v2.json"
         )

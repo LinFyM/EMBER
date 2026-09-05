@@ -4,12 +4,30 @@
 
 ## 当前快照
 
-- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是parallel-read Unified Policy-Native Factor Writer。
+- 唯一active design为`docs/unified_policy_native_factor_writer_design.md`，当前架构是common-base parallel-read Unified Policy-Native Factor Writer。
   输入端只做token projection；显式`frame x target x rank x X/Y-side` latent在每一层用同一query并行读取同frame prefix + 完整PI0.5
   response与side-matched native bank，两个来源各自softmax后直接相加，再做teacher-frame time及rank/side attention。learned主干
-  仍只有一种可按深度复制的`UnifiedPolicyNativeFactorBlock`；末端只做一次centering、direct signed raw-X/Y pooling、target cap和
+  仍只有一种可按深度复制的`UnifiedPolicyNativeFactorBlock`；末端同一个head把frame-common context作为两signed分支共享的bank定位
+  query、把frame-relative innovation作为两分支偏移，再做direct signed raw-X/Y pooling、target cap和
   唯一rank16。没有独立Process/Composer坐标、source gate、token-count校正或summary/gain/solver/calibration链；full 50-horizon、
-  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v2.json`，combined-softmax v1已sealed。
+  positive-only与信息墙不变。唯一active配置为`configs/pi05_ecp_policy_response_writer_unified_factor_v3.json`；v1/v2均已sealed。
+
+- parallel-read v2的73-task shared formal已自然完成200/200 optimizer steps并exit0；m100/m200的12个gradient Panel-B任务全视频为正
+  `5/12 -> 8/12`，fit/held benefit由`+.000111/+.000058`升到`+.000302/+.000184`，但task6/79两点均为`0/2`且均值由
+  `-.000319/-.000310`恶化到`-.000691/-.000649`。对应held5 strict250为`40/250`与`38/250`，逐suite分别
+  `0/0/3/35/2`与`0/0/2/34/2`，breadth均`3/5`、Goal/Long均0，稳定低于carrier43。训练、两次物化与两次评测均完整，信息墙计数为0。
+
+- non-pass后的correct-only物化几何显示五个held task的nominal rank4 mobile有效参与rank在m100约`1.012--1.023`，m200降至
+  `1.007--1.014`；同task m100到m200方向cosine约`.806--.857`而norm放大`1.47--1.74x`，top3 targets承载约`77--88%`能量。
+  代码复核确认旧末端先删除`C=mean_t z_t`，再只以`D_t=z_t-C`形成native query，因而共同context中的language、owner、family和rank
+  无法直接决定“去当前bank哪里读”。active v3只在同一个线性signed-query head恢复专家原式`b(C)+delta(D)`；base在正负分支共享，
+  所以静态视频仍严格零mobile。没有增加模块阶段、loss、gate、归一化、温度或校准链。
+
+- common-base v3实现已完成：X/Y各自原有signed-query linear由`2d -> 3d`，一次输出共享base与两个bias-free innovation offsets，
+  Writer仅增加32,768个参数；没有新增模块类型或并行fallback。16项CPU合同与config/schema互斥检查通过。gpu01物理0上的task93
+  profile smoke自然exit0，完整消费79 sampled frames、2 probes、50 horizons与38 targets；policy/native read梯度为
+  `.002008/.002443`，unified/signed-X/signed-Y为`.006853/.003875/.002644`，冻结policy/observer无梯度，生成76 tensors和唯一
+  rank16；峰值allocated/reserved约`33.79/35.84 GiB`。下一步是clean pushed detached authority上的task1/task93 optimizer25/50。
 
 - combined-softmax v1的task1/task93正式25/50-step控制均从clean detached `06f3b465`完成。task1 m25/m50 fit/held recovery为
   `-.007016/-.002323`与`-.003950/+.005152`，两个checkpoint均没有三条视频全为正；task93为

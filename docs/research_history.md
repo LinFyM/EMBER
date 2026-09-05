@@ -2965,3 +2965,18 @@ clean detached `810f32d3`完成task1/task93 optimizer25/50。task1的fit/held re
 `.0592/.0648`；task93由`.1145/.1070`增至`.1619/.1535`，两任务两相邻点的全部fit/held视频均高于carrier。相对首版
 combined softmax，task1由non-pass转为pass，task93亦显著提高；冻结墙、positive-only与唯一rank16合同完整。由此parallel policy/native
 source ownership获得task-local支持，但shared task-disjoint映射与闭环性能仍未证明，下一证据为73-task optimizer100/200短资格。
+
+## 157. parallel-read shared终局与common-base readout修订
+
+clean detached `40ce2f9e`的73-task v2自然完成optimizer100/200；gradient Panel-B随训练改善，但zero-gradient task6/79两点均为
+`0/2`并继续恶化。m100/m200 held5 correct-only strict250分别为`40/250`与`38/250`，breadth均`3/5`，Goal/Long均0，低于
+carrier43。物化几何显示nominal rank4 mobile的有效参与rank约`1.01--1.02`且后期进一步下降，m100到m200主要沿相似方向放大。
+
+代码复核定位到final signed query在frame centering后只读取innovation，直接丢弃了共同context中的language、owner、family和rank bank
+定位信息。下一fresh v3只在同一个linear head实现专家§7.2的`q+/-=b(C)+delta+/-(D)`：base为两分支共享，故静态`D=0`仍严格
+zero mobile；full50、真实native X/Y、parallel source reads、同构Unified blocks、positive-only与唯一rank16均不变。该修订不增加新的
+learned阶段或数学变换链。
+
+实现仅把X/Y原signed-query projection由`2d`扩成`3d`，增加32,768个参数。16项CPU合同与task93真实full profile smoke通过；后者消费
+79 sampled frames、2 probes、50 horizons和38 targets，policy/native read及X/Y heads均有非零functional梯度，生成唯一76-tensor
+rank16，峰值reserved约`35.84 GiB`。科学裁决仍由fresh task1/task93 25/50及matched 73-task shared/held5承担。

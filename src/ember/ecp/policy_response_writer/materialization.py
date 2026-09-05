@@ -30,7 +30,7 @@ from ember.writer.meta_lora import MetaLoRAProjection, MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-HELD5_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_held5_eval_v2"
+HELD5_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_held5_eval_v3"
 MATERIALIZED_ADAPTER_SCHEMA = (
     "ember_ecp_policy_response_writer_materialized_adapter_v1"
 )

@@ -16,6 +16,11 @@ Native-Temporal Axial Writer已经证明完整PI0.5 response、真实native X/Y�
 X bank长期只有约8--14%，而Y侧Q/action-in bank可占约70--96%。active修订因此在同一block内使用两个并行cross-attention；这是
 evidence layout修复，不增加新的阶段或手工校正器。
 
+parallel-read修订的task-local容量成立，但73-task optimizer100/200的held5仅为`40/38`，均低于carrier43且Goal/Long为0。物化几何
+显示mobile逐渐集中为近rank1通用方向。代码复核发现最终readout先删除frame-common context，再只让innovation产生native查询；这使
+language、owner、family和rank无法直接决定当前bank中的读取位置，也偏离专家澄清中明确的`base(context,current-bank)+delta(dynamic)`。
+active修订仅恢复这一遗漏，不改变统一主干。
+
 ## 2. 一句话结构
 
 ```text
@@ -87,14 +92,16 @@ NativeTemporal block保持近似深度的首个matched点。未来扩大模型�
 
 ## 7. 唯一readout
 
-最后只保留三个有明确科学职责的固定操作：
+末端只保留三项职责：
 
-1. 每条视频沿frame做一次中心化，使静态重复视频结构性地产生零mobile value；
-2. X/Y factor states分别对完整raw native X/Y候选做two-branch exact online-softmax，正负分支之差直接形成rank4 A/B；
+1. 每条视频把最终factor state分为共同context `C=mean_t z_t`与frame-relative innovation `D_t=z_t-C`；
+2. X/Y各用一个linear signed-query head形成`q+/-_t=b(C)+delta+/-(D_t)`，再对完整raw native X/Y候选做two-branch exact
+   online-softmax，正负分支之差直接形成rank4 A/B；共同base在两分支完全相同，故`D=0`时两branch查询和pooling严格相同，完整mobile为0；
 3. 对每个target的完整`B @ A`只做一次`s_ref`安全cap，再做small-core canonicalization并与冻结rank12 carrier拼接。
 
-中心化、exact streaming reduction、cap和canonicalization不是额外learned阶段：它们分别实现视频动态必要性、完整候选归约、已知安全幅度
-边界和唯一LoRA物化。不得在它们前后加入gain、temperature、whitening、transport、reconstruction solver或post-hoc calibration。
+`C/D`不是新的representation网络或串联阶段，只是同一个最终state的均值与残差两种视图；linear head直接消费二者。exact streaming
+reduction、cap和canonicalization分别实现完整候选归约、已知安全幅度边界和唯一LoRA物化。不得在它们前后加入gain、temperature、
+whitening、transport、reconstruction solver或post-hoc calibration。
 
 多条视频时，每条视频独立编码；只在最终候选measure中以等video、等frame base mass作置换不变集合聚合。不得平均frames、raw features
 或最终LoRA。
@@ -121,9 +128,10 @@ NativeTemporal block保持近似深度的首个matched点。未来扩大模型�
 
 ## 10. 训练与裁决
 
-首轮使用component initialization、K1、correct cross-episode functional positive-only。首版combined-softmax task-local控制已完成并封存；
-active parallel-read修订保持block depth、数据、loss、初始化、rank和readout不变，先重跑相同task1/task93 25/50控制。其后为保持单一
-因果变量，shared split、task采样、rows、optimizer100/200和functional panels与刚完成的73-gradient Native-Temporal run matched；
+首轮使用component initialization、K1、correct cross-episode functional positive-only。combined-softmax v1与innovation-only
+parallel-read v2均已完成并封存；active common-base v3保持block depth、数据、loss、初始化、rank和所有上游读取不变，先重跑相同
+task1/task93 25/50控制。其后为保持单一因果变量，shared split、task采样、rows、optimizer100/200和functional panels与刚完成的
+73-gradient parallel-read v2 matched；
 task6/79已被消费，只作为zero-gradient重复诊断，不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是配置选择，
 不是架构约束。
 

@@ -19,6 +19,12 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 
 - docs/axial_policy_response_native_factor_writer_design.md
 
+唯一active training config为：
+
+- configs/pi05_ecp_policy_response_writer_native_temporal_v1.json
+
+已完成的12-gradient资格配置已标记sealed，只由对应Git authority和formal artifact复现，不再作为active入口。
+
 专家原始依据为：
 
 - docs/expert_review_20260902_full_history_policy_native_meta_writer.md

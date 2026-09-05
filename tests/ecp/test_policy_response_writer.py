@@ -385,7 +385,7 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
 def test_native_temporal_config_is_canonical_and_frame_bank_is_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_native_temporal_12gradient_2held_v1.json"
+        / "configs/pi05_ecp_policy_response_writer_native_temporal_v1.json"
     )
     assert current["model"]["factor_blocks"] == 2
     assert current["model"]["representation_arms"] == ["full"]

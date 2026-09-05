@@ -85,6 +85,14 @@
   `778540680/1084227584 KiB`，limit余量约`291.5 GiB`，本次复用canonical assets且新增远小于1GiB。固定launcher为
   `.codex/tmp/launch_prw_native_temporal_m25_held5_78a0ca6a_gpu02p012_20260905.sh`；launch前还会刷新两节点且不干扰他人进程。
 
+- 下一scale科学合同已冻结为`configs/pi05_ecp_policy_response_writer_native_temporal_v1.json`，原12-gradient配置标记sealed。模型、
+  initialization、width128、2 Frame + 2 NativeTemporal blocks、K1、full-50、raw native X/Y、positive-only functional、rank12+4、
+  cap和唯一rank16完全不变；唯一主要因果变量是gradient task从12扩到73。gradient meta为55个、target为18个，fresh zero-gradient
+  held按事先规则固定task6/79；Panel-B仍评估同一组6 meta + 6 target并加两个fresh held，便于与本轮直接比较。每step `9 meta +
+  3 target`只是在55:18规模下近似task等暴露的本配置选择，不是架构或owner固定比例；optimizer100/200时每task分别恰有`16--17`
+  与`32--34`次暴露。warmup5+effective195、rows8、K1下预计为一小时内短跑，不扩到十小时；两个checkpoint都将直接做correct-only
+  held5 strict250。若fresh held和闭环仍随训练反向，则不再用更多步数、LR/seed或数学校准挽救这一函数类。
+
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，

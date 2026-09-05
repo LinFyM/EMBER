@@ -3156,3 +3156,23 @@ Goal held functional从.000400升至.000817，实际held仍6/50；task1 held转�
 下一对照暂保留闭环略高、64跨视频重合较好的A2，作为局部工作参数化而非最终方法选择；对称A由Git/config/artifacts保留，不再提供
 canonical runtime开关。下一主要变量仅将原correct fit视频池2→4，K仍1、task/预算/query/noise/normalizer/模型不变。原面板的
 7/12/13/12条program视频与两action panels隔离，前四条可直接使用，原held不变；可用性审计不证明功能歧义。详情与结果分支见active design。
+
+## 169. 2026-09-06四视频覆盖对照完成，未改善闭环
+
+clean pushed `13339ac1`完成相同A2/B1、4tasks/K1/64updates/8rows的正确fit视频池2→4对照。训练747.69秒、扩展Panel-B393.50秒，
+全部256个task executions的query/noise/task-weight与原两视频参照匹配，每条fit视频16 exposures。三checkpoint、exact launch/profile、
+functional与8条配对评测结果保留；本轮600个新rows和六个旧参照完整汇总于
+`runs/analysis/pi05_ecp_prw_samegraph_four_video_20260906/{comparison.md,closed_loop_comparison.json,functional_comparison.json}`。
+
+四视频32 fit/held=`41/38`，64=`41/39`；逐Spatial/Goal/Long为32fit35/5/1、held34/4/0，64fit35/5/1、held35/4/0。
+相同两视频参照为43/41、44/45。64两→四的fit R/G/L=37/4/7、held34/5/11；四视频相邻fit35/6/6、held32/7/6，
+churn12/13、Jaccard.745/.711。64跨视频33/6/8、Jaccard.702，低于原两视频.780。Goal held相邻仅保留2/4；Long fit两个1/50
+互不相同，held两点均0。分数不升不等于没有变化：没有稳定新增能力，不能以略低churn当作成功。
+
+64 held Goal/Long功能收益升至.001330/.001127，但行为Goal从6降到4、Long从1降到0；匹配原两fit均值为.001090/.000792，
+低于原.001258/.000888。meta task1仍近零，重复诊断6/79为负。只限制这一固定预算的视频覆盖干预；不宣称更多视频普遍有害，
+也不把功能/行为分离自动归因于occupancy。
+
+本轮sealed，不继续增视频或直接延长，下一方法比较回到闭环较高的两fit数据条件。旧有expert occupancy、learner panels和fixed-occupancy
+审计已按`ac233fa0:docs/research_history.md`§3.7/3.15/3.39复核：成功expert/state覆盖并非未尝试变量，旧F2也不支持单纯occupancy漂移。
+这些旧图的结论不能直接否定本图的occupancy解释，但不足以把它宣布为当前根因。

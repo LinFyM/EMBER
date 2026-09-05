@@ -160,6 +160,47 @@ episode隔离的视频，当前仅两条进入训练。元数据已逐文件核�
 视频数或无新依据续训，而以已排查的读出、动作查询和视频覆盖边界重审过程表示及离线目标到行为的缺口。P/Q、occupancy和新增task
 仍是有条件候选，不能仅凭本地非通过就宣布其中一个必然正确。
 
+### 四视频裁决与P/Q matched主干比较（2026-09-06）
+
+四视频32 fit/held=`41/38`、64=`41/39`，原两视频A2为43/41、44/45。64两→四的fit/held R/G/L为37/4/7和34/5/11；
+四视频相邻fit35/6/6、held32/7/6，64跨视频33/6/8。Goal held只保留2/4，Long fit两点1/50不重合、held均0；没有稳定增量。
+完整600新rows、原两fit与新增四fit的分开functional口径、所有配对和launch evidence保留在four-video analysis，历史§169。
+本轮sealed，不增加同task视频数或直接延长它；后续比较回到闭环较高的原两fit数据条件。
+
+当前证据没有证明shared必然弱于clone，也没有识别梯度冲突或occupancy根因。固定query覆盖、非对称A与视频覆盖均只给出有限或负的
+行为结果；当前代码又明确把response按owner选层，并把全部learned blocks置于target循环内，因而没有共同过程状态或跨target反馈。
+P/Q是对这个职责分配的有界方法比较，不是声称更多attention必然有益。最近历史LMMPC的全slot/axial交互不成功，旧Process–Composer
+还有冻结坐标handoff问题；本次检验的是共同过程/整策略联合梯度、反馈后的原生证据重访和最后frame/native对应这一整体主干。
+不能把更多参数或初始化差异单独归为反馈的因果优势。旧SEOD、F2 fixed-occupancy与Stage1 learner-panel事实已按历史索引复核，
+不把expert occupancy重新命名为尚未尝试的突破。
+
+本次实现与实验合同：
+
+- 唯一主要变量为learned主干。直接参照02a85314训练、387f6d0b评测的A2两视频四结果；task1/72/83/93、原两fit/held视频、K1、
+  64updates/8rows、fresh Panel-A query/noise、等task权重、normalizer、Panel-B、rank12+4、A2/B1 signed pooling、cap与loss不变。
+  读出和训练目标不再附加新变换。component-init仍只继承可对应的G2 projection/attention/结构embedding；新结构fresh，不能exact-resume，
+  新learned状态/层随机初始化造成的权重差异与参数量单列，不能声称所有异构参数逐元素匹配。
+- `d=128, heads=4, blocks=4, M=8`作为本次固定实现，不做width/layer sweep。响应tokenizer一次投影完整19 boundary states、18个
+  相邻layer residual、两个antithetic probe的noise/velocity，保留全部50 horizon和独立layer/channel身份；移除按38 owners重复投影及
+  从第一层即owner-local的语义切分。even/odd两通道是双probe的可逆组合，不平均horizon或teacher frames。
+- 每条视频独立保留P[frame,M,d]与Q[target,rank,side,d]。同一种重复block中，P先读上一层Q反馈，再用exact language条件化patch read、
+  继而读取同frame完整response；三个来源各自softmax。P按work-token沿真实teacher time attention/MLP；Q读取全部P、在38target/rank/
+  side间attention/MLP。下一block重新读取原始projected evidence，所有learned模块共同接受真实policy functional梯度。
+- teacher-time位置只进入temporal attention的Q/K，Value不加时间位置；同一work-token在静态重复视频中的Value相同，因此不能只由位置
+  伪造frame innovation。不同work-tokens的交互由共同Q读/反馈承担，不把时间轴与50-step action horizon混为一轴。
+- 跨视频阶段以共同query对各视频learned Q做置换不变set attention，不输入video index、不拼接视频时间轴。随后共同Q按真实frame读取
+  该视频P，一次生成全部target的frame queries；最后各target在当前frame的side-matched native X/Y上attention/MLP，保留已验证的
+  bank-local非线性方向形成。learned frame factor states仍按每video拆成context/innovation，原A2/B1 signed head和全候选联合pooling
+  只生成唯一完整LoRA。不得平均raw frames/features/最终LoRA。首轮只声称K1，K2/K4需以后真实训练和资源验证。
+- GPU实现从开始即按frame批量处理prefix/response和共同P/Q；38个target只在最后native bank ownership/维度不同处保留分块循环。
+  小P/Q常驻，完整native bank分块重放，使用need_weights=False的attention与既有checkpoint/VJP机制；不截断长视频或horizon换吞吐。
+  必须真实profile最长87帧、报告Writer forward/backward、完整训练update时间与峰值，不能从token数估算宣布加速。
+- 复用现有process/composer/model/training owner：process承接unpooled tokenizer与共同block，composer只留native bank/frame readout与
+  orchestration，退役旧target-local block，不保留并行默认fallback。保留原pushed Git/checkpoints/raw rows作为精确参照。
+- 正式仍保存8/32/64和完整resume状态；32/64 × first-fit/held各strict150，状态/RNG/video/官方执行匹配。新参数、时间与初始化复用范围
+  单列。若只有内部loss/attention/梯度改善而闭环更弱，不能以机制解释选择它，应恢复较好的基线并重新判断剩余接口；不追加scale/cap/
+  rank/seed小扫。若广泛且可保留行为改善，才扩task/真实K并比较fully-random，及时进入已补工程入口的validation8预注册资格。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

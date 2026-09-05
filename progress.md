@@ -5,15 +5,27 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared、action-query覆盖和非对称A三轮对照均已完成；当前只增加正确fit视频池2→4的matched训练运行于
-  clean pushed detached `13339ac1`，数据与下一步详见最新节点和active design。
+  暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
+  四视频结果sealed，当前准备以较好的两fit A2为参照检验共同过程P—整策略Q主干，详见最新节点和active design。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 05:14 CST）
+## 最新节点（2026-09-06 05:25 CST）
+
+- 四视频全部formal train/functional/materialize/eval均exit0，完整四个strict150为32fit41/held38、64fit41/held39；六历史参照+四新结果
+  10/10收齐。相邻fit R/G/L35/6/6、held32/7/6，64跨视频33/6/8；Goal held只保留2/4、Long fit的两个1互不相同。详见历史§169。
+- 视频覆盖干预没有闭环收益，停止增视频或无依据续训；下一主干比较回到原两fit视频，与较高的A2两视频44/45直接比较。模型有限学习、
+  task泛化缺失、过程读取/整策略协调和functional到行为仍是竞争解释；没有宣布梯度冲突、视频不足或occupancy为根因。
+- 源码确认当前response按target选择同owner层、learned blocks在target循环内独立执行，没有跨target过程/策略反馈路径；这只说明待检验
+  的结构职责。结合已完成对照和专家建议，准备将这一target-local learned主干替换为P/Q重复block；保留native readout、12+4、loss和
+  原两fit数据/64-step预算，参数量与吞吐单列。若闭环更弱则恢复较好的参照，不以内部解释接受行为损失。
+- validation8机械入口已在`b424e180`提交并推送；11项CPU检查和真实8task只读元数据通过，真实validation GPU链及selector仍未启动。
+  13339ac1 frozen tree暂留作这一阶段精确参照，四视频全部formal evidence与launch记录保留，临时capture cache已释放。
+
+## 前一执行节点（2026-09-06 05:14 CST）
 
 - 32-step held strict150已exit0，38/150=Spatial34/Goal4/Long0；相同两视频参照为41/150，当前不能确认视频池扩大有益。
   64-step两bank均sealed，首次runtime114.95秒、驻留第二次0.15秒，三task生成13.58/12.55秒；held在3/4/5、fit在0/2运行，

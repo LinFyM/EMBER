@@ -140,9 +140,12 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 30. [x] 在同一个最终signed-query head中实现common-base修订：每视频保留`C=mean_t z_t`与`D_t=z_t-C`，令
     `q+/-=b(C)+delta+/-(D_t)`；共同base在两分支完全相同，因此`D=0`仍严格零mobile。16项CPU合同及最长task93真实full
     forward/gradient/materialization smoke通过；不新增阶段、gate、normalization、温度或辅助loss；
-31. [ ] 从fresh完成task1/task93 optimizer25/50正控，随后立即运行matched 73-task optimizer100/200与held5 correct-only strict250；
-32. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-33. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+31. [x] 从fresh完成task1/task93 optimizer25/50正控；两任务两相邻点的fit与未反传same-task held视频均自发高于carrier，且相对
+    innovation-only v2全面改善。task1 m25/m50 fit/held recovery为`.0258/.0357`与`.0790/.0813`，task93为
+    `.1568/.1371`与`.2066/.1848`；
+32. [ ] 立即运行matched 73-task optimizer100/200与两个single-checkpoint held5 correct-only strict250；
+33. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+34. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

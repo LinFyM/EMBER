@@ -2980,3 +2980,9 @@ learned阶段或数学变换链。
 实现仅把X/Y原signed-query projection由`2d`扩成`3d`，增加32,768个参数。16项CPU合同与task93真实full profile smoke通过；后者消费
 79 sampled frames、2 probes、50 horizons和38 targets，policy/native read及X/Y heads均有非零functional梯度，生成唯一76-tensor
 rank16，峰值reserved约`35.84 GiB`。科学裁决仍由fresh task1/task93 25/50及matched 73-task shared/held5承担。
+
+clean detached `2774cac6`的task1/task93 common-base task-local formal均自然完成50/50并exit0。task1 m25/m50 fit/held recovery为
+`.025794/.035692`与`.078978/.081318`，task93为`.156805/.137100`与`.206582/.184789`；两任务、两相邻点的三条正确视频均高于
+carrier，并全面优于matched innovation-only v2。冻结墙与held/Panel-B/wrong backward计数均为0，两个run均物化唯一rank16。
+该结果确立common-base readout的task-local正证据，但不提前宣称shared或closed-loop成立；下一正式证据为相同73-task、optimizer100/200
+shared及两点held5 correct-only strict250。

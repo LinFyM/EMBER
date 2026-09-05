@@ -465,6 +465,7 @@ def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -
         / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
     )
     assert evaluation["training_config"].endswith("unified_factor_v3.json")
+    assert evaluation["require_training_completion"] is False
     with pytest.raises(
         ValueError, match="unsupported Policy-Response Writer held5 evaluation config"
     ):

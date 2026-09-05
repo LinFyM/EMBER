@@ -129,9 +129,10 @@ whitening、transport、reconstruction solver或post-hoc calibration。
 ## 10. 训练与裁决
 
 首轮使用component initialization、K1、correct cross-episode functional positive-only。combined-softmax v1与innovation-only
-parallel-read v2均已完成并封存；active common-base v3保持block depth、数据、loss、初始化、rank和所有上游读取不变，先重跑相同
-task1/task93 25/50控制。其后为保持单一因果变量，shared split、task采样、rows、optimizer100/200和functional panels与刚完成的
-73-gradient parallel-read v2 matched；
+parallel-read v2均已完成并封存；active common-base v3保持block depth、数据、loss、初始化、rank和所有上游读取不变完成了相同
+task1/task93 25/50控制。两任务两相邻点的fit与未反传same-task held视频均高于carrier，且fit/held recovery全面超过matched v2，
+因此共同context定位获得task-local支持。下一步为保持单一因果变量，shared split、task采样、rows、optimizer100/200和functional panels
+继续与刚完成的73-gradient parallel-read v2 matched；
 task6/79已被消费，只作为zero-gradient重复诊断，不再伪装成fresh checkpoint selector。每step任务数与meta/target比例只是配置选择，
 不是架构约束。
 
@@ -144,6 +145,9 @@ task6/79已被消费，只作为zero-gradient重复诊断，不再伪装成fresh
 5. 只有出现可信shared闭环增量后，才扩到mixed-K、fully-random Final和validation8 paired400；
 6. checkpoint由correct-only闭环、breadth和相邻稳定性选择并冻结后，才运行same-task、wrong、no-video、first+final、shuffled、reversed
    因果controls。
+
+m100 checkpoint一旦由formal trainer完整封存并写出manifest，即可在独立GPU上并行物化和评测，不需要等待m200训练结束；评测仍只读取
+该single checkpoint，且不回流训练、采样或checkpoint内容。这只是调度重叠，不改变科学条件。
 
 内部functional或task-local recovery不设成人为性能门。明确负结果也不靠延长训练、seed/LR小扫或末端数学补丁挽救；应定位统一block中
 最早失效的标准职责，优先修正evidence layout、attention ownership、优化目标或数据识别性。任何后继结构仍必须维持少数标准可复制模块。

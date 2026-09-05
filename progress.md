@@ -27,7 +27,7 @@
   Writer仅增加32,768个参数；没有新增模块类型或并行fallback。16项CPU合同与config/schema互斥检查通过。gpu01物理0上的task93
   profile smoke自然exit0，完整消费79 sampled frames、2 probes、50 horizons与38 targets；policy/native read梯度为
   `.002008/.002443`，unified/signed-X/signed-Y为`.006853/.003875/.002644`，冻结policy/observer无梯度，生成76 tensors和唯一
-  rank16；峰值allocated/reserved约`33.79/35.84 GiB`。下一步是clean pushed detached authority上的task1/task93 optimizer25/50。
+  rank16；峰值allocated/reserved约`33.79/35.84 GiB`。
 
 - common-base v3 task-local formal launch contract：科学实现固定为clean pushed `7d6f2d3a`，配置固定
   `configs/pi05_ecp_policy_response_writer_unified_factor_v3.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
@@ -45,6 +45,14 @@
 - 首次两条launch在optimizer step0前按合同fail-fast：launcher为写日志提前创建了原无`r2`后缀的output root，runtime因fresh root非空
   拒绝封存run contract。两个无效root都只有一份1,044-byte traceback log，没有run contract、metrics、checkpoint或科学结果；原样保留
   审计且绝不resume/overwrite。修正只改变日志位置和fresh output名，不改变代码、config、GPU、数据或科学合同。
+
+- corrected common-base v3 task-local formal均自然完成50/50并exit0。task1的m25/m50 fit/held recovery为
+  `.025794/.035692`与`.078978/.081318`，相对matched v2的`.021949/.023451`与`.059224/.064798`在两点全面改善；task93为
+  `.156805/.137100`与`.206582/.184789`，也全面高于v2的`.114529/.106962`与`.161922/.153538`。两任务、两相邻checkpoint、
+  两条fit与一条未反传same-task held正确视频全部自发高于carrier。task1与task93 train/eval/total分别为
+  `324.96/85.43/421.44s`与`554.31/90.52/665.85s`，峰值reserved约`26.00/36.23 GiB`；冻结墙与held/Panel-B/wrong backward
+  计数均为0，输出均为唯一rank16。该matched结果支持共同context确实承担bank定位，而非只靠innovation学习通用近rank1方向；它是
+  task-local接口正证据，不冒充shared或闭环收益。下一步直接进入matched 73-task optimizer100/200 shared与两点held5。
 
 - combined-softmax v1的task1/task93正式25/50-step控制均从clean detached `06f3b465`完成。task1 m25/m50 fit/held recovery为
   `-.007016/-.002323`与`-.003950/+.005152`，两个checkpoint均没有三条视频全为正；task93为

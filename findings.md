@@ -3217,3 +3217,11 @@ active v3因此只改同一个最终linear head：每side计算`q+/-=b(C)+delta+
 16项CPU合同及最长task93真实full smoke均已通过；真实图中policy/native read、Unified blocks与X/Y heads均有非零functional梯度，
 输出为唯一76-tensor rank16，峰值reserved约`35.84 GiB`。下一裁决从fresh完成task1/task93 25/50控制及matched 73-task短shared。
 若该干净接口仍失败，替换readout责任，不在其前后继续堆补丁。
+
+clean detached `2774cac6`上的matched task-local v3随后完整通过。task1 m25/m50 fit/held recovery为
+`.025794/.035692`与`.078978/.081318`，四项均高于v2的`.021949/.023451`与`.059224/.064798`；task93为
+`.156805/.137100`与`.206582/.184789`，也全面高于v2的`.114529/.106962`与`.161922/.153538`。两个任务、两个相邻点的两条fit和
+一条未反传same-task held视频全部自发优于carrier，且没有wrong/shuffle/reverse、validation/test或reward梯度。共同base因此不是
+装饰性数学项：在不改变统一主干、loss、数据、rank或full bank的matched条件下，它恢复了两个难度差异明显任务的局部容量。该证据仍不
+证明shared映射；下一步保持结构不变直接运行73-task short shared。任何后续失败都必须在shared识别性或统一block/readout职责中定位，
+不能把这次正结果当作继续串接专用变换的许可。

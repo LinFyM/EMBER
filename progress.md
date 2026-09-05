@@ -18,6 +18,19 @@
   与task query均有梯度，峰值allocated/reserved约`37.35/42.85 GiB`，50-step单run预计约十分钟；两步正负波动不作科学解释。
   这些结果只证明工程图、最长视频资源与optimizer路径完整，正式容量/性能裁决仍在推进。
 
+- Unified task-local正式launch contract：科学实现为clean pushed `b1c04cda`，配置固定
+  `configs/pi05_ecp_policy_response_writer_unified_factor_v1.json`，formal authority为包含本合同的下一clean pushed main。task1/task93
+  各自fresh、K1、component initialization；冻结evidence tokenizers，只训练同一Unified Factor Writer及task-local query；warmup5 +
+  effective45，optimizer25/50两枚checkpoint，每步8条correct cross-episode functional rows，fit为各自两条固定视频并用第三条
+  same-task held视频只读评估。两run都完整执行50步，不把内部恢复率设成继续门槛，也不读取wrong/shuffle/reverse、validation/test或
+  reward。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_unified_factor_tasklocal_task1_full_s50_b1c04cda_gpu01p3_20260905/`与
+  `runs/outputs/pi05_ecp_policy_response_writer_unified_factor_tasklocal_task93_full_s50_b1c04cda_gpu01p6_20260905/`，launch前均不存在。
+  2026-09-05同时live检查两节点：gpu01物理3/6均仅`1 MiB/0%`且无compute process，分配给task1/task93；其余gpu01高负载卡及
+  gpu02他人任务均不触碰。`/data1` quota为`778329660/1084227584 KiB`，limit余量约`291.7 GiB`，两run复用canonical assets且新增
+  保守小于1 GiB。命令均为detached authority下`NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=<3|6> PYTHONPATH=src ...
+  scripts/train_ecp_policy_response_writer.py --phase task-local --representation full --initialization component --mode formal`。
+
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、
   task77持续为负，两点都只有`1/2`，故没有运行held5、negative controls或续训。train/eval/total为`262.29/293.95/631.46s`，

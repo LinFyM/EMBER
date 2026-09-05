@@ -15,7 +15,7 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：首轮同图clone/shared完整18条件已裁决；下一项固定4task/64updates/8rows，仅检验fresh Panel-A action-query覆盖。
-- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run已完成，正在完成预注册配对闭环。
+- P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run及完整预注册配对闭环均已完成。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
 ## 推进顺序

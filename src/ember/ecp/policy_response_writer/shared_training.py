@@ -6,6 +6,7 @@ import statistics
 import time
 from typing import Any, Mapping, Sequence
 
+import numpy as np
 import torch
 import torch.distributed as dist
 
@@ -42,6 +43,38 @@ from ember.writer.functional import (
     functional_lora_loss_gradient,
     writer_chain_rule_surrogate,
 )
+
+
+def _training_query_batch(
+    runtime: PolicyResponseRuntime, *, task: int, occurrence: int, rows: int
+) -> tuple[dict[str, Any], Any, tuple[tuple[int, int], ...]]:
+    """Sample only Panel-A rows; retain the original visit's policy noise seed."""
+    protocol = runtime.config["optimization"]["shared"].get(
+        "query_sampling", "fixed_panel_a_visit"
+    )
+    pairs = None
+    if protocol == "uniform_panel_a_episode_frame":
+        pool = sorted({
+            demo for visit in runtime.panels[task].panel_a for demo in visit.action_demos
+        })
+        if runtime.query_dataset is None or not 0 < rows <= len(pool):
+            raise ValueError("fresh training queries need an authorized episode pool")
+        rng = np.random.default_rng(
+            np.random.SeedSequence([int(runtime.config["optimization"]["seed"]), task, occurrence])
+        )
+        episodes = runtime.query_dataset.task_episode_rows[task]
+        pairs = tuple(
+            (int(demo), int(rng.integers(len(episodes[int(demo)]))))
+            for demo in rng.choice(pool, size=rows, replace=False)
+        )
+    batch, panel = functional_panel_batch(
+        runtime, task_id=task, panel_name="a", visit_index=occurrence,
+        rows=rows, query_pairs=pairs,
+    )
+    actual = pairs if pairs is not None else tuple(zip(
+        panel.action_demos[:rows], panel.action_frames[:rows], strict=True
+    ))
+    return batch, panel, actual
 
 
 def _run_training_task(
@@ -95,12 +128,8 @@ def _run_training_task(
         if runtime.args.mode == "formal"
         else cell["profile_functional_rows"]
     )
-    batch, panel = functional_panel_batch(
-        runtime,
-        task_id=task,
-        panel_name="a",
-        visit_index=visit_index,
-        rows=rows,
+    batch, panel, query_pairs = _training_query_batch(
+        runtime, task=task, occurrence=task_occurrence, rows=rows,
     )
     functional_microbatch = min(int(cell["functional_microbatch"]), rows)
     finish_phase("input_transfer_and_batch", input_tick)
@@ -153,9 +182,10 @@ def _run_training_task(
         "functional_rows": rows,
         "functional_microbatch": functional_microbatch,
         "functional_policy_rng_seed": int(panel.policy_rng_seed),
-        "carrier_loss": float(panel.flow_loss),
+        "query_sampling": cell.get("query_sampling", "fixed_panel_a_visit"),
+        "action_query_pairs": [list(pair) for pair in query_pairs],
+        "carrier_reference_panel_loss": float(panel.flow_loss),
         "functional_loss": float(functional_loss),
-        "benefit_over_carrier": float(panel.flow_loss) - float(functional_loss),
         **objective,
         "training_stage": training_stage,
         "objective": "correct_cross_episode_functional_positive_only",
@@ -259,9 +289,6 @@ def _step_row(
         "records": list(records),
         "mean_functional_loss": statistics.fmean(
             float(value["functional_loss"]) for value in records
-        ),
-        "mean_benefit_over_carrier": statistics.fmean(
-            float(value["benefit_over_carrier"]) for value in records
         ),
         "gradient_norm_before_clip": float(gradient_norm),
         "gradient_groups": dict(gradient_groups),

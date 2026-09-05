@@ -33,7 +33,7 @@ ordered response有可学习动态信息。局部接口的正证据不等于整�
 
 最新owner认可的候选是共同过程状态P与整策略状态Q反复交互，并从当前视频的native X/Y联合写出LoRA。active design见
 `docs/joint_process_policy_writer_design.md`；owner已完成对齐并要求持续自主推进，当前阶段以`progress.md`为准。旧Unified v4保持sealed，
-专家建议先复用实际部署图做whole-Writer且无task query的少任务clone/shared对照；该实验尚未启动，P/Q也不是已证明的修复。
+专家建议先复用实际部署图做whole-Writer且无task query的少任务clone/shared对照；P/Q不是由历史non-pass自动推出的已证明修复。
 
 ## 数据流与模块职责
 

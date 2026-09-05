@@ -5,14 +5,49 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；当前准备只改变action-query覆盖的shared4对照，尚未启动新训练。
+  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4实现、采样核对与真实四task profile完成，准备冻结提交后正式运行。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 01:35 CST）
+## 最新节点与query覆盖对照启动合同（2026-09-06 02:00 CST）
+
+- 三rank真实profile已完整exit0，四tasks每步等权各1/4，2次更新为12.629/12.588秒。rank实际任务为`[1] / [83,72] / [93]`，
+  Long单task约11--12秒，与两短task合计接近，增加第四卡无法明显降低当前主要计算下界。最大allocated35.76/reserved36.58 GiB；
+  Writer2,953,984 trainable、source/observer/task-local参数均0、Panel-B/held/wrong/shuffle/reverse backward均0。
+  本次采样实际pairs与预先审计序列吻合，profile不参与科学比较；原始result、metrics和log保存在`.codex/tmp/prw_fresh_queries_profile*`。
+- 正式authority为包含本合同的下一clean pushed main，detached worktree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-query-coverage-20260906`。
+  复用相同source step1000、stage0 macro10、frozen rank12 carrier、normalization、tokenizer与dataset；配置为
+  `configs/pi05_ecp_prw_samegraph_shared4_fresh_queries_v1.json`，`--phase shared --mode formal --representation full --initialization component
+  --stop-after-step 64`，fresh optimizer/scheduler、K1、8rows/microbatch2、warmup5+effective59、checkpoints8/32/64。
+- 计划gpu01物理4/5/6、world-size3、均NUMA1，固定`NCCL_P2P_DISABLE=1`、OMP/MKL4和既有deferred NCCL，launch前再次live核对双方节点。
+  使用单份共享mmap，profile实测8.03GB native evidence；训练结束自动删除临时cache。新run+缓存+物化+四次strict150峰值仍<15GiB，
+  独立/data1预算见前条。exact resume只允许相同commit/config/world topology/physical顺序与run root，不覆盖旧run或借旧optimizer续训。
+- run root为`runs/outputs/pi05_ecp_prw_shared4_fresh_queries_s64_{commit}_gpu01p456_20260906/`；完整命令/NUMA wrapper/log/exit、
+  audit与profile在run的`launch/`保留。新的闭环分析根为`runs/analysis/pi05_ecp_prw_samegraph_query_coverage_20260906/`。
+  四个新eval为32/64 × first-fit/held，各Spatial2/Goal20/Long38 strict150；只引用上一轮source32/carrier38与四shared4条件的raw rows，
+  不重跑基线、不新增validation/test消费、不以此train-side面板选最终checkpoint。原视频/RNG配对、所有50 horizon与执行合同保持不变。
+
+## 前一执行节点（2026-09-06 01:55 CST）
+
+- 新配置`configs/pi05_ecp_prw_samegraph_shared4_fresh_queries_v1.json`只改变原Panel-A授权episode/frame抽样；两份32/64 fit/held
+  eval配置沿用原task子集、固定状态与视频。既有shared trainer中增加一个采样helper，原batch装配器限制覆盖只用于Panel-A且episode不重复、
+  frame有效；原panel loader继续拒绝Panel-A/B/video episode交叠。sampling RNG只取config seed/task/occurrence，policy RNG仍取原visit。
+- 对真实dataset index直接核对4tasks全部64 occurrences：每task覆盖16 episodes与473/455/459/499 unique rows，原为8episodes与
+  123/115/122/126；normalizer完全相同，video/noise序列未改变，任意occurrence可复现。错误Panel-B/video episode与Panel-B override均被拒绝。
+  记录见`.codex/tmp/fresh_query_schedule_audit.json`及同目录`check_fresh_queries.py`；formal启动时保留到run证据。
+- 4项既有config、optimizer、task权重与positive-only目标CPU检查通过，架构检查只有review、无hard。两现有源文件净增39行，无新源文件；
+  787行runtime仅增加query override的信息墙，sampling归属shared training；单一训练器以显式实验变量承载两采样条件。
+  训练日志现在记录真实query pairs，并把原16-row carrier loss明确标为reference panel loss；移除与本次8-row generated loss不配对的
+  伪benefit字段。真正paired benefit仍仅来自未改变的Panel-B评估，不为新随机rows额外执行carrier forward。
+- gpu01物理4/5/6（全NUMA1）已启动2-update、四task/full50/8rows的三rank profile；最长87 sampled frames，沿用单份mmap缓存与
+  `NCCL_P2P_DISABLE=1`。profile只作输入/梯度/吞吐/峰值验证，不作科学分数。gpu02已同时live检查，未使用；gpu01物理1的他人任务保持原状。
+- 本次`strg01`独立/data1 quota为720589628/1073741824 KiB（hard1084227584），约336.8 GiB软额度余量；shared filesystem84TiB可用。
+  上轮5个训练run各103MiB、完整分析131MiB；本次profile/单份mmap/新run/checkpoints/四个strict150总新增保守<15GiB，复用全部大资产。
+
+## 前一执行节点（2026-09-06 01:35 CST）
 
 - 首轮18/18个预注册eval、1500 paired rows全部自然完成，所有worker与launcher exit0。最终shared4 fit32/64=`39/44`，held32/64=`40/41`，
   carrier=`38`，source=`32`（各150状态）；逐task、suite、breadth、paired sets和相邻重合全部写入

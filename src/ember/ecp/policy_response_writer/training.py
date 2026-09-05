@@ -150,6 +150,8 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             tuple(sorted(set(training_k))) == training_k,
             set(training_k) <= {1, 2, 4},
             training_stage == JOINT_FUNCTIONAL_STAGE,
+            shared.get("query_sampling", "fixed_panel_a_visit")
+            in {"fixed_panel_a_visit", "uniform_panel_a_episode_frame"},
             optimization.get("objective")
             == "correct_cross_episode_functional_positive_only",
             config.get("information_wall", {}).get("action_meta_installed") is False,
@@ -424,6 +426,7 @@ def functional_panel_batch(
     panel_name: str,
     visit_index: int,
     rows: int | None = None,
+    query_pairs: tuple[tuple[int, int], ...] | None = None,
 ) -> tuple[dict[str, Any], Any]:
     if runtime.query_dataset is None or runtime.query_processor is None:
         raise ValueError("Policy-Response Writer deployment has no functional data")
@@ -436,9 +439,18 @@ def functional_panel_batch(
     selected = []
     episode_rows = runtime.query_dataset.task_episode_rows[task_id]
     frame_index = runtime.query_dataset.frame_index
-    for demo, frame in zip(
-        visit.action_demos[:count], visit.action_frames[:count], strict=True
-    ):
+    pairs = tuple(zip(visit.action_demos[:count], visit.action_frames[:count], strict=True))
+    if query_pairs is not None:
+        pool = {demo for value in panel.panel_a for demo in value.action_demos}
+        if (
+            panel_name != "a" or len(query_pairs) != count
+            or len({demo for demo, _ in query_pairs}) != count
+            or any(demo not in pool or not 0 <= frame < len(episode_rows[demo])
+                   for demo, frame in query_pairs)
+        ):
+            raise ValueError("training queries escaped the authorized Panel-A episodes")
+        pairs = query_pairs
+    for demo, frame in pairs:
         index = int(episode_rows[demo][frame])
         if frame_index[index] != (task_id, demo, frame):
             raise ValueError("Policy-Response Writer panel row pairing changed")

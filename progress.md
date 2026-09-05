@@ -55,6 +55,20 @@
   选择chunk64作为唯一active执行点：约8%单task开销换取`5.79 GiB`最长视频余量，使gpu02物理4/6可与各自约5.6/4.6 GiB低util
   进程安全共驻并使用6卡；所有frames、50 horizons、native candidates、softmax与输出保持不变，CPU chunk-equivalence合同通过。
 
+- parallel-read 73-task shared formal launch contract：科学实现固定`831d9d6c`，exact chunk64执行配置固定于clean pushed
+  `38329b92`，formal authority为包含本合同的下一clean pushed main；配置为
+  `configs/pi05_ecp_policy_response_writer_unified_factor_v2.json`。从fresh optimizer/scheduler和component initialization训练whole Writer；
+  K1、full-50、correct cross-episode functional positive-only、55 meta + 18 target、每step本配置`9 meta + 3 target`、rows8、
+  optimizer100/200 checkpoints均固定。task6/79只作已消费zero-gradient诊断；Panel-B、same-task held与true-held均不反传，且不读取
+  wrong/shuffle/reverse、validation/test outcome。输出固定
+  `runs/outputs/pi05_ecp_policy_response_writer_parallel_read_73task_k1_component_s200_38329b92_gpu02p012346_sharedmmap_20260905/`，
+  single-copy mmap cache固定`.codex/tmp/prw_parallel_read_75task_cache_38329b92_gpu02_20260905/`，launch前均不存在。缓存沿用此前同一
+  95-task authority实测约105 GiB，formal输出保守小于2 GiB；`/data1` quota为`778547352/1084227584 KiB`，limit余量约291.5 GiB；
+  gpu02 available host RAM约322 GiB，峰值增长安全。正式launch前同时刷新gpu01/gpu02，计划在gpu02物理`0,1,2,3,4,6`使用world6
+  dynamic cost queue、rank-local NUMA、`NCCL_P2P_DISABLE=1`、0 GiB private replication和node-local single-copy mmap；物理4/6只有
+  约5.6/4.6 GiB低util他人进程，chunk64最长实测36.22 GiB仍留约3--4 GiB余量，不触碰物理5/7。预计约1--1.5小时得到两点Panel-B，
+  随后立即并发物化和运行两点held5 correct-only strict250。
+
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、
   task77持续为负，两点都只有`1/2`，故没有运行held5、negative controls或续训。train/eval/total为`262.29/293.95/631.46s`，

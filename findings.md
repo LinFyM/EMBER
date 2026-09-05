@@ -31,6 +31,22 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
+### 2026-09-06非对称A：有小幅闭环增量，未解决稳定积累
+
+四个非对称条件与两个同eager batch参照全部exit0，共900新配对行。64时对称fit/held为41/44，非对称44/45；
+分别R/G/L=36/8/5与36/9/8。非对称32→64为fit43→44、held41→45，churn13/18；Goal fit只保留1/5，Long fit2→0。
+64跨视频保留39/44，Jaccard.78高于对称.70，但32仅.647，不能把64的改善解释为稳定相邻能力。Goal64功能held收益约翻倍，
+行为held却同为6/50；meta task1功能转负。实际近零推导有适用区间，但本次干预没有证明它是整体瓶颈。
+
+按闭环优先，下一对照暂沿用两个视频条件分数略高、64跨视频重合较好的非对称A，保留全部负证据；这不是最终方法或checkpoint选择。
+对称A的runtime开关退出canonical，历史由02a之前的pushed Git、配置与formal结果保留。下一主要变量只增加同task正确视频池2→4，
+K1/4tasks/64updates/8rows及原query/noise/normalizer/参数化均不变，不因为提出P/Q就跳过这一现成数据覆盖解释。
+
+原面板中task1/72/83/93有7/12/13/12条与两action panels隔离的视频，前四条可以直接使用，最长仍为93的87帧；
+这只证明候选视频可用与隔离，不证明视频功能歧义。完整比较与metadata见`runs/analysis/pi05_ecp_prw_samegraph_asymmetric_20260906/`。
+相同对称64 first-fit bank单卡strict150从serial34.09分钟降至batch23.46分钟，端到端1.45倍；独立policy-forward约2.9倍。
+同bank serial→batch fit41→41但churn6，held45→44且churn9；新A因果比较因此使用同batch参照，不把正常BF16变化混成模型收益。
+
 ### 2026-09-06实际读出工作区间与非对称A对照
 
 对三task、已注册fit/held正确视频，在component初始化、32/64执行18个只读完整forward，不修改输入、不读actions或reward。

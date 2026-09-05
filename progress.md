@@ -12,7 +12,21 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:59 CST）
+## 最新节点（2026-09-06 04:32 CST）
+
+- 非对称四条件与两个同batch参照全部exit0，900新行已完整汇总。对称64 fit/held41/44，非对称32为43/41、64为44/45；
+  64非对称逐Spatial/Goal/Long为fit40/4/0、held38/6/1。相邻fit churn13、held18；64跨视频R/G/L=39/6/5、Jaccard.78，
+  但Goal fit相邻只保留1/5、Long2→0。完整表和所有配对保留在asymmetric analysis；没有最终资格或根因结论。
+- 下一单变量已登记：以闭环略高的非对称A为工作起点，fit视频池2→4、K1/4tasks/64updates/8rows及其它合同不变。
+  原held/first-fit不变；全部256个query/policy-noise与normalizer已逐occurrence核对匹配，四条fit视频各16 exposures。
+  三个新配置为`pi05_ecp_prw_samegraph_shared4_four_videos*_v1.json`，正式launch等待当前真实profile。
+- runtime只保留A2/B1，删除临时对称A构造开关和接受分支，原A2初始化及RNG不变；三个现有源文件净减8行，无新source。
+  composer835→832、training791→788，既有大文件未增长；7项有针对性的shape/gradient/static wall/signed-query/set/config检查通过。
+- 四update真实profile已在gpu01物理3/4/5、NUMA1启动，恰覆盖每个task的四条视频；输出`.codex/tmp/prw_four_video_profile*`。
+  两节点已live核对，原评测全部释放。/data1 quota721100456KiB，独立额度1073741824KiB，项目实际656GiB、shared84TiB空余；
+  本阶段新增峰值预算<25GiB（单份约16GiB共享cache及run/eval），profile cache释放后才formal训练，复用全部大资产。
+
+## 前一执行节点（2026-09-06 03:59 CST）
 
 - 非对称训练与Panel-B均exit0：训练781.62秒、功能评估239.25秒；共有normalizers和全部256条task executions的query/video/noise/权重
   与fresh-query审计一致，8.03GB临时mmap已自动清除，三checkpoint与launch/profile evidence保留。

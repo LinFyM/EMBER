@@ -129,6 +129,37 @@ first-fit/held两套已sealed LoRA banks，以`387f6d0b`的eager batch入口各�
 32/64非对称相邻稳定仍使用同一batch入口。若判断依赖32-step横向差异，再补对应参照；不把历史serial与batch之间的细小增量当成
 纯A侧因果效应。补充参照仅属既有train-side panel，不消费validation/test或视频负controls。
 
+### 非对称A完整裁决与正确视频覆盖对照（2026-09-06）
+
+四个非对称strict150及两个同eager batch参照全部完成，900新行、10个历史参照的完整分析见
+`runs/analysis/pi05_ecp_prw_samegraph_asymmetric_20260906/comparison.md`。64时对称fit/held为41/44，非对称为44/45；
+非对称相对参照的R/G/L分别36/8/5与36/9/8，增益较小，held的1个净增伴随17 churn。非对称32→64的fit43→44、held41→45，
+churn13/18；Goal fit只保留1/5，Long fit2→0。64跨视频R/G/L为39/6/5，Jaccard.78高于对称.70，但32跨视频只有.647。
+因此没有形成稳定的整体能力，不能把实际近零诊断或Goal功能收益翻倍当作已识别根因。
+
+下一对照以闭环略高、64跨视频重合较好的非对称A为起点；这是局部工作参数化的选择，不是已证明机制优势或最终checkpoint选择。
+不因meta task1的功能指标转负而接受闭环较低方案，也不掩盖其负证据。主agent移除对称A的runtime选择分支；其checkpoint、配置与
+行数据由原pushed Git和formal artifacts保存，新的canonical初始化严格沿用02a85314的已测A2初始化与后续RNG。
+
+当前最直接尚未检验的变量是同task正确视频覆盖，而不是新任务数。原面板为task1/72/83/93分别提供7/12/13/12条与Panel-A/B
+episode隔离的视频，当前仅两条进入训练。元数据已逐文件核验并保留为`available_correct_video_coverage.json`，但它不证明功能歧义。
+新的单变量对照采用：
+
+- 相同四tasks、whole Writer、非对称A/B、component-init/seed、rank12+4、完整50 horizon与全部读出/normalizer/loss/AdamW/clip。
+- `fit_pool_max:2→4`，仍K1、64updates/8 action rows，每task每条fit视频恰16次；不增加更新数、动作行总数或改变task权重。
+  task1为[5,6,16,20]，72为[3,8,14,25]，83为[5,7,13,15]，93为[2,3,5,8]；原held39/49/49/48不变。
+  采样仍由task occurrence驱动，query pairs与policy noise不依赖视频池大小，逐occurrence与上一轮匹配。
+- 额外两fit视频均来自原`program_video_demos`且与原Panel-A/B actions隔离；不制作数据、不读取新task梯度或改held身份。
+  既有诊断tasks6/79的fit池也按同配置扩展，但仍零梯度、held视频不变，不把额外诊断fit均值与旧两视频均值混作直接比较。
+- checkpoints8/32/64与Panel-B visits不变。functional同时报告四fit平均与原两fit平均；first-fit/held的32/64各strict150保持同一
+  状态/video/RNG/387同等eager batch执行，以刚完成的非对称两视频四条件作直接参照。新分数仍不选最终模型。
+- longest仍为task93 demo3的87个stride5帧；task1新增demo20为66帧。启动前复用已有真实profile并补当前4-video调度的真实检查，
+  存储需覆盖更大的单份共享cache。训练和评测仍来自clean pushed detached authority，不延续旧optimizer。
+
+若同预算增加正确视频覆盖能同时改善跨视频和相邻行为，保留该能力后再审任务/过程覆盖与真实K训练；若没有，就不继续增加同task
+视频数或无新依据续训，而以已排查的读出、动作查询和视频覆盖边界重审过程表示及离线目标到行为的缺口。P/Q、occupancy和新增task
+仍是有条件候选，不能仅凭本地非通过就宣布其中一个必然正确。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

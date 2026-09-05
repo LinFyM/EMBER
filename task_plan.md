@@ -14,8 +14,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
-- 当前阶段：同图与query覆盖两轮已完成；同4tasks/64updates的非对称A context训练及Panel-B已完成，正在收齐32/64 fit/held闭环与
-  两个同eager batch执行参照。功能结果混合，等待真实行为裁决。
+- 当前阶段：同图、query覆盖和非对称A对照均完成。A2闭环略高但相邻仍不稳，暂作为唯一工作参数化；只增加正确fit视频池2→4的
+  K1同预算对照已登记，配置与采样检查通过，正在做真实profile。
 - P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run及完整预注册配对闭环均已完成。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
@@ -27,8 +27,9 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 4. [x] 联合分析fit、新视频、实际闭环与任务更新；首轮显示小共享行为增量和有限query覆盖。
    同图fresh Panel-A query对照也已完成：fit41→41、held39→45，Goal/Long跨视频仍弱。先用只读实际correct-video诊断核对双侧零因子假设，
    不提前扩task、继续64步或同时替换读出与主干。实际18-forward诊断已完成，下一项只改变A侧context正负query职责。
-5. [ ] 依据证据保留现有能力或实施P/Q/读出责任模块；同拓扑比较、控制主要变量，避免并行数学补丁和无限小扫。
-6. [ ] 有共享行为证据后扩任务与真实K训练，及时进入预注册validation8 paired400、相邻稳定和最终冻结controls。
+5. [x] matched检验非对称A职责：64 fit/held44/45相对同执行参照41/44，暂保留A2并退役双臂runtime；不宣称稳定或已识别根因。
+6. [ ] 完成正确视频池2→4、K1/4tasks/64updates的覆盖对照，检验跨视频和相邻行为；无增益时不继续扩大同task视频数或盲目续训。
+7. [ ] 依据实际共享行为与覆盖证据扩任务/真实K或重新审视P/Q及监督到行为接口，及时进入预注册validation8 paired400、相邻稳定和最终冻结controls。
 
 下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 

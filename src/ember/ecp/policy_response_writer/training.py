@@ -125,7 +125,7 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_common_base_policy_native_factor_writer",
+            == "active_asymmetric_policy_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("architecture")
@@ -134,15 +134,13 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             == "same_query_parallel_language_patch_response_and_side_native_cross_attention_then_sum",
             model.get("source_normalization")
             == "independent_language_patch_response_and_native_softmax_no_cardinality_competition",
-            (model.get("input_context_branches", 1), model.get("factor_readout"),
-             model.get("signed_query"), model.get("dynamic_value_contract")) in (
-                (1, "common_context_base_plus_bias_free_frame_innovation_signed_raw_native_XY",
-                 "one_common_bank_localizer_plus_two_dynamic_offsets_per_factor_side",
-                 "common_query_is_shared_across_signed_branches_and_zero_frame_innovation_makes_complete_mobile_zero"),
-                (2, "independent_input_context_shared_output_context_plus_frame_innovation_signed_raw_native_XY",
-                 "two_input_bank_localizers_one_shared_output_localizer_plus_dynamic_offsets",
-                 "zero_frame_innovation_makes_output_factor_and_complete_mobile_zero"),
-            ),
+            model.get("input_context_branches") == 2,
+            model.get("factor_readout")
+            == "independent_input_context_shared_output_context_plus_frame_innovation_signed_raw_native_XY",
+            model.get("signed_query")
+            == "two_input_bank_localizers_one_shared_output_localizer_plus_dynamic_offsets",
+            model.get("dynamic_value_contract")
+            == "zero_frame_innovation_makes_output_factor_and_complete_mobile_zero",
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
             int(model.get("blocks", 0)) > 0,
@@ -322,7 +320,6 @@ def prepare_runtime(
         blocks=int(model["blocks"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
-        input_context_branches=int(model.get("input_context_branches", 1)),
     ).to(context.device)
     initialization = _initialize_writer(writer, stage0, args.initialization)
     tasks = _tasks(base, args.data_root, args.asset_root)

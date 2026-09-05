@@ -392,7 +392,6 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         block_depth: int = 2,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
-        input_context_branches: int = 1,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -403,7 +402,6 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             or width % heads
             or block_depth <= 0
             or pooling_frame_chunk <= 0
-            or input_context_branches not in (1, 2)
         ):
             raise ValueError("unified policy-native factor topology changed")
         input_widths = sorted({owner.in_features for owner in owners})
@@ -439,8 +437,8 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             UnifiedPolicyNativeFactorBlock(width, heads)
             for _ in range(block_depth)
         )
-        # B always uses a shared context query, so zero innovation closes the
-        # complete update. The matched A arm may use distinct context queries.
+        # B shares its context query, so zero innovation closes the complete
+        # update. A uses distinct context queries over the current native bank.
         self.input_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.output_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.task_query = (
@@ -459,14 +457,13 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.factor_side_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
-        if input_context_branches == 2:
-            # Preserve every shared initialization draw in the matched arm.
-            with torch.random.fork_rng(devices=[]):
-                expanded = torch.nn.Linear(width, 4 * width, bias=False)
-            with torch.no_grad():
-                expanded.weight[:width].copy_(self.input_signed_query.weight[:width])
-                expanded.weight[2 * width:].copy_(self.input_signed_query.weight[width:])
-            self.input_signed_query = expanded
+        # Preserve the established asymmetric initialization and later RNG draws.
+        with torch.random.fork_rng(devices=[]):
+            expanded = torch.nn.Linear(width, 4 * width, bias=False)
+        with torch.no_grad():
+            expanded.weight[:width].copy_(self.input_signed_query.weight[:width])
+            expanded.weight[2 * width:].copy_(self.input_signed_query.weight[width:])
+        self.input_signed_query = expanded
 
     def _owner_bias(self, target: int) -> torch.Tensor:
         return self.owner_embedding[target] + self.family_embedding(

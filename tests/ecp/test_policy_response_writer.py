@@ -115,7 +115,7 @@ def _reverse_video(video: FrozenPolicyResponseVideo) -> FrozenPolicyResponseVide
     )
 
 
-def _model(*, task_local: bool = False, input_context_branches: int = 1) -> UnifiedPolicyNativeFactorWriter:
+def _model(*, task_local: bool = False) -> UnifiedPolicyNativeFactorWriter:
     return UnifiedPolicyNativeFactorWriter(
         _owners(),
         prefix_width=10,
@@ -125,7 +125,6 @@ def _model(*, task_local: bool = False, input_context_branches: int = 1) -> Unif
         blocks=2,
         pooling_frame_chunk=2,
         task_local=task_local,
-        input_context_branches=input_context_branches,
     )
 
 
@@ -270,26 +269,27 @@ def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
         model((video,), s_ref=torch.full((4,), 0.2), representation="coarse")
 
 
-@pytest.mark.parametrize("input_context_branches", [1, 2])
-def test_static_repeated_video_cannot_open_mobile_update(input_context_branches: int) -> None:
-    model = _model(input_context_branches=input_context_branches).eval()
+def test_static_repeated_video_cannot_open_mobile_update() -> None:
+    model = _model().eval()
     with torch.no_grad():
         output = model(
             (_static_repeated_video(19),),
             s_ref=torch.full((4,), 0.2),
         )
     a_max = max(value.abs().max() for value in output.residual.a)
-    assert (a_max < 1e-5) if input_context_branches == 1 else (a_max > 1e-5)
+    assert a_max > 1e-5
     assert max(value.abs().max() for value in output.residual.b) < 1e-5
 
 
-def test_signed_query_uses_common_context_and_dynamic_branch_offsets() -> None:
+def test_signed_query_has_independent_input_and_shared_output_context() -> None:
     generator = _model().factor_writer
     context = torch.randn(G1_RESIDUAL_RANK, generator.width)
     zero = torch.zeros(5, G1_RESIDUAL_RANK, generator.width)
 
+    independent = generator._signed_queries(generator.input_signed_query, context, zero)
+    assert not torch.equal(independent[:, :, 0], independent[:, :, 1])
     shared = generator._signed_queries(
-        generator.input_signed_query,
+        generator.output_signed_query,
         context,
         zero,
     )
@@ -493,20 +493,22 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
+def test_asymmetric_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
     current = load_policy_response_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_v4.json"
+        / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_v1.json"
     )
     assert current["model"]["blocks"] == 4
     assert current["model"]["representation_arms"] == ["full"]
-    assert current["model"]["signed_query"].startswith("one_common_bank_localizer")
+    assert current["model"]["signed_query"].startswith("two_input_bank_localizers")
     assert current["optimization"]["objective"].endswith("positive_only")
     assert "event_slots" not in current["model"]
     for obsolete in (
         "pi05_ecp_policy_response_writer_unified_factor_v1.json",
         "pi05_ecp_policy_response_writer_unified_factor_v2.json",
         "pi05_ecp_policy_response_writer_unified_factor_v3.json",
+        "pi05_ecp_policy_response_writer_unified_factor_v4.json",
+        "pi05_ecp_prw_samegraph_shared4_fresh_queries_v1.json",
         "pi05_ecp_policy_response_writer_native_temporal_v1.json",
     ):
         with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
@@ -514,9 +516,9 @@ def test_common_base_factor_config_is_canonical_and_old_configs_are_rejected() -
 
     evaluation = load_writer_evaluation_config(
         REPO_ROOT
-        / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v4.json"
+        / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_held_video_eval_v1.json"
     )
-    assert evaluation["training_config"].endswith("unified_factor_v4.json")
+    assert evaluation["training_config"].endswith("shared4_four_videos_v1.json")
     assert evaluation["require_training_completion"] is False
     with pytest.raises(
         ValueError, match="unsupported Policy-Response Writer evaluation config"

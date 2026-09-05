@@ -3135,3 +3135,24 @@ held相邻38/7/1、.8261；64时fit→held为36/9/5、.7200，Goal只保留3/7�
 m64 fit首次启动因他人GPU新占用而在任何rollout前被admission拒绝；原失败root保留且不计科学结果。其单GPU `_r2`正常完成，
 期间拟议的四卡 `_r3`在真正launch前取消，没有重跑或丢弃已完成rows。精确launch/log/exit保留在各root；该资源事件不是scientific non-pass。
 它是覆盖假说的对照，不是修复已确认工程错误，不触及validation/test或视频负controls。
+
+## 168. 2026-09-06非对称A读出对照与同执行参照完成
+
+训练从clean pushed `02a85314`出发，保留原4tasks/K1/64updates/8rows/fresh Panel-A queries与全部共有初始化，只将A的context正负
+query独立，多16,384参数；训练781.62秒、Panel-B239.25秒，全部256个task executions与原query/noise审计匹配。完整run为
+`runs/outputs/pi05_ecp_prw_shared4_asymmetric_s64_02a85314_gpu01p345_20260906/`，checkpoint、launch/profile与normalizers保留。
+
+32/64 fit/held的四个strict150均由`387f6d0b`的eager batch入口完成，并补原fresh-query symmetric64两banks的相同执行参照；900新行
+及10个旧参照统一汇总于`runs/analysis/pi05_ecp_prw_samegraph_asymmetric_20260906/`。对称64为fit41/held44；非对称32为43/41，64为
+44/45。非对称64逐Spatial/Goal/Long为fit40/4/0、held38/6/1；相对对称R/G/L为36/8/5、36/9/8，相邻fit为37/7/6、held34/11/7。
+64跨视频保留39/44、churn11、Jaccard.78，高于对称.70；但32为.647，Goal fit相邻仅保留1/5，Long2→0，仍未形成稳定整体能力。
+Goal held functional从.000400升至.000817，实际held仍6/50；task1 held转为-.000437，task6/79诊断仍负。因此近零机制诊断不等于
+已识别行为根因，内部梯度/functional不能替代闭环。
+
+相同symmetric64 LoRA从serial到batch：fit41→41且churn6，held45→44且churn9；A侧比较以上述同batch结果为主。相同first-fit
+单GPU/3workers/strict150从34.09降至23.46分钟，端到端1.45倍、耗时降低31.2%；独立真实policy-forward约2.9倍。所有inputs、RNG
+和正式预处理不变，未新增编译backend或全局环境修改。full-sample与单denoise-step compile探索仅作性能证据。
+
+下一对照暂保留闭环略高、64跨视频重合较好的A2，作为局部工作参数化而非最终方法选择；对称A由Git/config/artifacts保留，不再提供
+canonical runtime开关。下一主要变量仅将原correct fit视频池2→4，K仍1、task/预算/query/noise/normalizer/模型不变。原面板的
+7/12/13/12条program视频与两action panels隔离，前四条可直接使用，原held不变；可用性审计不证明功能歧义。详情与结果分支见active design。

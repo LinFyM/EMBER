@@ -3092,3 +3092,19 @@ task74则呈大幅相消：bank tokenization、两层bank read和signed-input沿
 pooling。架构简洁性在这里是实际决策约束：不添加gain、temperature、normalization、whitening或head后校正。m25在读取任何held5
 rollout前已由两个fresh task全视频正信号选定，下一步直接运行single-checkpoint held5 correct-only strict250；随后保持同一图，fresh
 扩到73 gradient tasks并以optimizer100/200短跑只检验task diversity。若fresh held仍随训练反向，才以证据替换完整职责模块。
+
+## 156. early functional正信号没有转化为held5闭环净增
+
+在任何held5 rollout前，m25已经由fresh task4/78的`2/2`全视频正functional证据选定；随后五个held5 task各用固定correct demo5、
+K1调用Writer一次并物化唯一完整rank16。strict250自然完成`39/250`，Long/Goal/Object/Spatial0/Spatial9为`0/0/3/35/1`、
+breadth`3/5`。相对stable carrier `43/250`，它保留37个成功、新增2个、丢失6个，Jaccard `.82222`、paired exact `p=.28906`。
+Evaluator使用完全相同task/state/env/policy RNG common prefix；因成功提前终止而长度不同的noise lists在共同前缀上严格一致。
+
+这一结果同时排除两种过度解释。第一，当前问题不是正式`>145/400`门槛太高：方法连较低的held5 carrier也没有超过，且Goal/Long仍为
+0。第二，m25并非完全随机破坏policy：37/43 carrier成功被保留、总churn仅8，说明它更像接近carrier的小幅错误重排。结合task4/78
+内部functional为正，最直接的结论是task-disjoint surrogate改善幅度太小或方向没有跨越闭环决策边界，而不是Evaluator失效。
+
+因此仍执行一次受控task-diversity裁决：同一Native-Temporal图从fresh把gradient tasks由12扩至全部73，optimizer100/200分别给每task
+约16--17/32--34次暴露，并对两点都直接运行correct-only held5。模型width/depth、初始化、loss、K、full horizon、native X/Y、rank和
+readout完全不变。若这一步仍呈seen functional改善、fresh held/closed-loop不增，就足以否定“小任务集过拟合是主要解释”，随后只允许
+替换完整learned责任模块或改变干净的训练职责，不允许追加数学变换链。

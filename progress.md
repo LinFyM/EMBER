@@ -93,6 +93,32 @@
   与`32--34`次暴露。warmup5+effective195、rows8、K1下预计为一小时内短跑，不扩到十小时；两个checkpoint都将直接做correct-only
   held5 strict250。若fresh held和闭环仍随训练反向，则不再用更多步数、LR/seed或数学校准挽救这一函数类。
 
+- m25 single-checkpoint held5 correct-only strict250已自然完成并exit0：总分`39/250`，Long/Goal/Object/Spatial0/Spatial9为
+  `0/0/3/35/1`，breadth`3/5`。相对stable carrier `43/250`为`37 retained / 2 gained / 6 lost`、Jaccard `.82222`、paired
+  exact `p=.28906`。这说明early task4/78 functional正信号没有迁移为闭环净增；同时它保留37个carrier成功、churn仅8，故也不是
+  完全失控的随机adapter。物化manifest确认五task各一次Writer调用、每task唯一完整rank16、held action/reward/state与validation/test
+  reads均为0；Evaluator 29/29 shards、250/250 rows、9/9 workers完整，三卡active wall `1235.66s`。正式roots即上一合同登记的
+  materialized与strict250路径。
+
+- Native-Temporal 73-task optimizer100/200 formal launch contract：科学实现仍为`78a0ca6a`，配置固定
+  `configs/pi05_ecp_policy_response_writer_native_temporal_v1.json`，formal authority为包含本合同的下一clean pushed main；fresh
+  optimizer/scheduler、component initialization、whole Writer、K1、rows8、full-50、correct-only functional、55 meta + 18 target、
+  每step本配置`9 + 3`及fresh zero-gradient held6/79均锁定。coverage audit来自clean `541f2a5f`，确认95-task authority、73
+  gradient tasks、optimizer100/200时每task`16--17/32--34`次暴露且存在factorial signal；不读取wrong/shuffle/reverse，不产生
+  Panel-B、same-task-held或true-held梯度。输出固定为
+  `runs/outputs/pi05_ecp_policy_response_writer_native_temporal_73task_k1_component_s200_78a0ca6a_gpu02p012346_sharedmmap_20260905/`，
+  single-copy cache固定为`.codex/tmp/prw_native_temporal_75task_cache_78a0ca6a_gpu02_20260905/`，launch前均不存在。此前同数据面
+  world6 cache约`97.8--105 GiB`，本轮保守峰值小于110GiB；`/data1` quota为`778214672/1084227584 KiB`、limit余量约
+  `291.8 GiB`，gpu02 available host RAM约`314.8 GiB`，余量充足。双节点live检查后选择gpu02物理`0,1,2,3,4,6`：前四张仅
+  `162--209 MiB/0%`，物理4/6约`5.75/4.75 GiB`且连续观测`2%/0%`，均有同图shared实测peak reserved `34.79 GiB`所需余量；
+  使用world6动态cost queue、rank-local NUMA、`NCCL_P2P_DISABLE=1`、0GiB private replication及node-local single-copy mmap。
+  总EMBER占卡6张，不触碰物理5/7或gpu01任务；固定launcher为
+  `.codex/tmp/launch_prw_native_temporal_73task_s200_78a0ca6a_gpu02p012346_20260905.sh`。预计一小时内得到两点Panel-B，科学图无变化。
+
+- 等待闭环时完成一次verified workspace cleanup：逐一确认11个旧formal detached worktree均clean且gpu01/gpu02/mgt无进程引用后，
+  只移除其checkout登记；Git提交、formal artifacts、checkpoint和当前Native-Temporal worktree均保留。现在现场只有canonical main
+  与当前formal detached worktree。
+
 - role-equal formal已完整结束且non-pass。m50/m100 held5 correct-only strict250为`39/45`；m100逐task Long/Goal/Object/Spatial0/
   Spatial9=`0/0/2/41/2`、breadth`3/5`，仍没有Goal/Long。m50/m100 gradient-task fit/held benefit为
   `+.0001670/+.00009662`与`+.00034273/+.00015433`，但两个true-task-held均值仍为负。覆盖修复和target质量提高有小幅作用，

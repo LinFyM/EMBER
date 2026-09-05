@@ -106,8 +106,9 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
 20. [x] 以同12 gradient tasks和预先固定fresh held task4/78完成50-step shared资格。m25的两个true-task-held均跨全部视频为正，
     m50却同时转负；gradient tasks由`7/12`升至`8/12`且平均fit/held继续改善。精确m25->m50路径积分显示held退化分散在
     Process、Frame、bank tokenization、NativeTemporal MLP和signed heads，不能归结为单个末端head或靠补丁修复；
-21. [ ] 冻结预注册m25 single checkpoint，以held5固定correct K1各调用一次Writer并完成strict250，直接判断早期task-disjoint
-    functional正信号是否迁移到闭环行为；
+21. [x] 冻结预注册m25 single checkpoint，以held5固定correct K1各调用一次Writer并完成strict250。结果`39/250`，Long/Goal/
+    Object/Spatial0/Spatial9为`0/0/3/35/1`、breadth`3/5`；相对carrier43为`37 retained / 2 gained / 6 lost`。早期
+    task-disjoint functional正信号没有迁移成闭环优势；
 22. [ ] 保持完全相同的两种可复制block、full-50、correct-only目标与width/rank，从fresh把gradient task覆盖扩到73个，并以
     optimizer100/200两个整步节点作一小时内短裁决。这个实验只改变任务多样性；若fresh held仍随训练反向，则判定当前shared函数类
     存在结构缺陷，按归因替换完整职责模块而不增加数学修正链；

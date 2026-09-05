@@ -2902,3 +2902,14 @@ backward与shuffle/reverse reads均为零。
 tokenization、NativeTemporal MLP与signed heads的分布式共享漂移；task74则由bank相关路径帮助、Frame/MLP/signed-output抵消且高度
 非线性。故没有证据支持给末端添加数学补丁。m25已在任何held5 rollout前由task-disjoint正信号选定，下一证据是其held5 correct-only
 strict250；随后保持同一简洁图，用73-task optimizer100/200 fresh短跑单独检验任务多样性。完整数值和artifact见`findings.md`第155节。
+
+## 151. Native-Temporal m25 held5仍低于carrier
+
+预注册m25 single checkpoint为held5五task各用固定correct K1视频一次生成唯一完整rank16；strict250为`39/250`，逐task Long/Goal/
+Object/Spatial0/Spatial9=`0/0/3/35/1`、breadth`3/5`。相对stable carrier43为`37 retained / 2 gained / 6 lost`，Jaccard
+`.8222`、paired exact `p=.2891`。29/29 shards和250/250 rows完整，信息墙无泄漏。它基本保留carrier但没有产生净增，证明m25的
+task4/78 functional正信号尚不足以跨越闭环决策边界。
+
+下一轮只改变task diversity：同一2 Frame + 2 NativeTemporal、width128、full-K1、correct-only图从fresh覆盖55 meta + 18 target，
+optimizer100/200分别给每task约16--17/32--34次暴露，fresh held固定为6/79并对两个checkpoint都运行held5。该一小时内短裁决若仍失败，
+不再用长跑或数学补丁解释。完整合同与roots见`progress.md`，科学解释见`findings.md`第156节。

@@ -40,6 +40,7 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
         blocks: int = 4,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
+        input_context_branches: int = 1,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -56,6 +57,7 @@ class UnifiedPolicyNativeFactorWriter(torch.nn.Module):
             block_depth=blocks,
             pooling_frame_chunk=pooling_frame_chunk,
             task_local=task_local,
+            input_context_branches=input_context_branches,
         )
 
     def forward(

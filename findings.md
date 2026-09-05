@@ -31,6 +31,17 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
+### 2026-09-06实际读出工作区间与非对称A对照
+
+对三task、已注册fit/held正确视频，在component初始化、32/64执行18个只读完整forward，不修改输入、不读actions或reward。
+64 held中，A/B signed差相对两支均值RMS的38-target中位数为Spatial`.0319/.0087`、Goal`.0097/.0071`、Long`.0367/.0147`，
+raw BA/cap为`.0298/.00634/.0472`，实际被cap的target分别7/4/8。初始化更小；主要不是全部target都被cap压住。
+这是专家双侧近零局部解释的适用证据，不是性能根因或“增大更新一定更好”的证明。
+
+因此下一matched arm只把A侧context的正负query独立，B仍需dynamic差才能开启唯一mobile，其他主干、4tasks、fresh queries、64updates、
+8rows、原video/noise/normalizer/optimizer保持不变。多16,384参数且共有初始化匹配，最后仍以相邻/跨视频真实闭环判断价值。
+诊断原始值与明确midpoint median汇总保留在query-coverage analysis的`actual_readout_probe/`，完整合同见active design。
+
 ### 2026-09-06固定查询覆盖对照：局部行为改善，跨视频仍弱
 
 在同图shared4/component-init/K1/64updates/8rows、原视频和policy-noise schedule、normalizer与optimizer下，仅把原Panel-A固定rows

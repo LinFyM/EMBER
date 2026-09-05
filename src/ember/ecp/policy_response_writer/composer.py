@@ -392,6 +392,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         block_depth: int = 2,
         pooling_frame_chunk: int = 4,
         task_local: bool = False,
+        input_context_branches: int = 1,
     ) -> None:
         super().__init__()
         self.owners = tuple(owners)
@@ -402,6 +403,7 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             or width % heads
             or block_depth <= 0
             or pooling_frame_chunk <= 0
+            or input_context_branches not in (1, 2)
         ):
             raise ValueError("unified policy-native factor topology changed")
         input_widths = sorted({owner.in_features for owner in owners})
@@ -437,10 +439,8 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
             UnifiedPolicyNativeFactorBlock(width, heads)
             for _ in range(block_depth)
         )
-        # Each head emits one branch-shared bank-localizing query from the
-        # frame-common context plus two bias-free offsets from frame-relative
-        # innovation.  The common query cannot open a mobile residual alone:
-        # with zero innovation both signed branches remain exactly identical.
+        # B always uses a shared context query, so zero innovation closes the
+        # complete update. The matched A arm may use distinct context queries.
         self.input_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.output_signed_query = torch.nn.Linear(width, 3 * width, bias=False)
         self.task_query = (
@@ -459,6 +459,14 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
         torch.nn.init.normal_(self.rank_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.factor_side_embedding, std=width**-0.5)
         torch.nn.init.normal_(self.owner_embedding, std=width**-0.5)
+        if input_context_branches == 2:
+            # Preserve every shared initialization draw in the matched arm.
+            with torch.random.fork_rng(devices=[]):
+                expanded = torch.nn.Linear(width, 4 * width, bias=False)
+            with torch.no_grad():
+                expanded.weight[:width].copy_(self.input_signed_query.weight[:width])
+                expanded.weight[2 * width:].copy_(self.input_signed_query.weight[width:])
+            self.input_signed_query = expanded
 
     def _owner_bias(self, target: int) -> torch.Tensor:
         return self.owner_embedding[target] + self.family_embedding(
@@ -665,19 +673,22 @@ class UnifiedPolicyNativeFactorGenerator(torch.nn.Module):
     ) -> torch.Tensor:
         if (
             projection.in_features != self.width
-            or projection.out_features != 3 * self.width
+            or projection.out_features not in (3 * self.width, 4 * self.width)
             or context.shape != (G1_RESIDUAL_RANK, self.width)
             or innovation.ndim != 3
             or innovation.shape[1:] != (G1_RESIDUAL_RANK, self.width)
         ):
             raise ValueError("common-base signed query axes changed")
-        base = F.linear(context, projection.weight[: self.width])
+        base_width = projection.out_features - 2 * self.width
+        base = F.linear(context, projection.weight[:base_width]).reshape(
+            G1_RESIDUAL_RANK, base_width // self.width, self.width
+        )
         offsets = F.linear(
-            innovation, projection.weight[self.width :]
+            innovation, projection.weight[base_width:]
         ).reshape(
             innovation.shape[0], G1_RESIDUAL_RANK, 2, self.width
         )
-        return base[None, :, None] + offsets
+        return base[None] + offsets
 
     def _pool_target(
         self,

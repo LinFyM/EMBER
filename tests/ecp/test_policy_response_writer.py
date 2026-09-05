@@ -115,7 +115,7 @@ def _reverse_video(video: FrozenPolicyResponseVideo) -> FrozenPolicyResponseVide
     )
 
 
-def _model(*, task_local: bool = False) -> UnifiedPolicyNativeFactorWriter:
+def _model(*, task_local: bool = False, input_context_branches: int = 1) -> UnifiedPolicyNativeFactorWriter:
     return UnifiedPolicyNativeFactorWriter(
         _owners(),
         prefix_width=10,
@@ -125,6 +125,7 @@ def _model(*, task_local: bool = False) -> UnifiedPolicyNativeFactorWriter:
         blocks=2,
         pooling_frame_chunk=2,
         task_local=task_local,
+        input_context_branches=input_context_branches,
     )
 
 
@@ -269,14 +270,16 @@ def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
         model((video,), s_ref=torch.full((4,), 0.2), representation="coarse")
 
 
-def test_static_repeated_video_cannot_open_either_dynamic_factor() -> None:
-    model = _model().eval()
+@pytest.mark.parametrize("input_context_branches", [1, 2])
+def test_static_repeated_video_cannot_open_mobile_update(input_context_branches: int) -> None:
+    model = _model(input_context_branches=input_context_branches).eval()
     with torch.no_grad():
         output = model(
             (_static_repeated_video(19),),
             s_ref=torch.full((4,), 0.2),
         )
-    assert max(value.abs().max() for value in output.residual.a) < 1e-5
+    a_max = max(value.abs().max() for value in output.residual.a)
+    assert (a_max < 1e-5) if input_context_branches == 1 else (a_max > 1e-5)
     assert max(value.abs().max() for value in output.residual.b) < 1e-5
 
 

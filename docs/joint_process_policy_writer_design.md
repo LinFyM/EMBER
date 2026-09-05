@@ -93,6 +93,32 @@ exposure。旧正控不能单独证明部署图的单任务学习，更不能把
 如果实际运行远离近零区域，就不把局部二阶推导当作当前non-pass的依据；如果两侧差确实接近零且相应功能影响受限，只支持开展
 同主干/预算的非对称读出对照，仍须由新视频及真实闭环验证。任务覆盖、过程条件化与监督到行为偏差仍是竞争解释。
 
+### 实际读出定位与matched非对称A对照（2026-09-06）
+
+只读18个完整forward已完成：3 tasks × first-fit/held × 初始化/32/64。64-step held在38 targets上的常规中位数为：
+Spatial A/B signed差相对各自两支均值RMS为`.0319/.0087`、raw BA/cap为`.0298`；Goal为`.0097/.0071`、`.00634`；
+Long为`.0367/.0147`、`.0472`。各自只有7/4/8个target被cap，初始化更小。完整值见query-coverage analysis下的
+`actual_readout_probe/{result.json,summary.json,summary.md}`。这支持双侧接近零的局部解释有实际适用区间，尚未识别闭环性能根因。
+
+下一项只检验专家§5.6的A侧context职责，采用与fresh-query shared4匹配的单一共享训练：
+
+- 相同task1/72/83/93、K1两fit视频、64 updates、8 action rows、原fresh Panel-A query/noise/video序列、normalizer与AdamW/clip。
+- 相同38-target、whole Writer、component-init、4个target-local blocks、native grouping、full50与rank12+4/cap/一次物化。
+- A侧head由`[C,D+,D-]`变为`[C+,C-,D+,D-]`，context的两支独立，当前视频raw X仍是唯一A Value；B保持原shared-base+dynamic offsets。
+  这是对共同context与innovation的联合signed read，并非在pool后人为添加第二套factor或固定global-A。
+- 保留旧A正支context和两个dynamic投影的初始数值；新负支context独立标准初始化，并隔离其RNG抽样，使所有共同参数和后续随机序列匹配。
+  仅增加16,384参数（约0.55%），fresh optimizer/scheduler，不跨shape恢复旧checkpoint。
+- 静态innovation为零时B仍严格零，因此完整mobile为零；允许A非零。CPU既有静态墙测试覆盖两条件，真实四task/long-video profile
+  检查full50 functional VJP、所有学习模块和唯一rank16物化；不以synthetic static测试充当视频因果分数。
+- checkpoints8/32/64与Panel-B保持原口径；32/64 × first-fit/held仍各strict150，复用已完成的fresh-query、carrier/source原paired rows。
+  新analysis单独建根；不消费validation/test或negative controls，不以此train-side面板选择最终checkpoint。
+
+若同预算改善绝对行为且保留跨视频/相邻成功，优先保留该读出再审共享规则与任务覆盖；若只有factor、梯度或functional变好而行为不提高，
+则否定该干预在本条件下的行为价值，不能据此再扩大scale或cap。P/Q与occupancy仍按各自实际证据分支，不同时改变。
+
+实现只在现有factor generator中以`input_context_branches=1/2`表达当前两臂，无新trainer/module或独立运行路径。主agent负责本次对照后
+依据裁决保留唯一选定参数化；另一臂由frozen Git/config/results保存，不长期积累配置分支。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

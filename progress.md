@@ -12,7 +12,41 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:19 CST）
+## 非对称A formal启动合同（2026-09-06 03:32 CST）
+
+- 三rank真实profile已exit0，2,970,368 Writer参数、source/observer/task-local均0，原38-target rank16与信息墙通过；实际8个task
+  executions的query/video/noise逐行与原fresh-query审计一致。峰值allocated35.77/reserved36.58GiB，无OOM/non-finite。
+  同预算训练与Panel-B预计约17分钟，加首次资产准备；profile只作工程证据，不作方法选择。
+- 正式训练使用包含本合同与实现的下一clean pushed main，detached worktree计划为
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-asymmetric-20260906`；config为`configs/pi05_ecp_prw_samegraph_shared4_asymmetric_v1.json`，
+  `--phase shared --mode formal --representation full --initialization component --stop-after-step 64`，fresh optimizer/scheduler、
+  warmup5+effective59，8/32/64 checkpoints、4tasks等权，完整输入/采样/Panel-B及四条件strict150见active design。
+- 计划gpu01物理3/4/5、NUMA1、world3、NCCL_P2P_DISABLE=1、单份共享mmap；launch前再次live核对双方节点与quota。
+  exact resume仅限同commit/config/world/物理卡顺序/root，旧head-shape checkpoint不兼容，不加载旧optimizer。
+  run root为`runs/outputs/pi05_ecp_prw_shared4_asymmetric_s64_{commit}_gpu01p345_20260906/`；精确命令/log/exit保留到run的launch。
+  本阶段新增峰值<15GiB、结果另存`runs/analysis/pi05_ecp_prw_samegraph_asymmetric_20260906/`，大资产全部复用。
+- 工程优化另发现：目前static-task adapter没有实现evaluator既有的batched prediction接口，因此实际闭环对每个env单独forward。
+  已有batch8吞吐probe不能直接代表该运行路径；下一步补齐同task静态LoRA的批处理并用真实推理验证，独立记录执行改变。
+  full sample_actions compile在变batch时超过15分钟总时限（batch8结果有效、batch4未完成），不能据此直接部署整图编译。
+
+## 前一执行节点（2026-09-06 03:28 CST）
+
+- 真实correct-video读出诊断18/18完成，零action/reward/梯度/修改视频。64 held的A/B signed相对branch RMS中位数：
+  Spatial `.0319/.0087`、Goal `.0097/.0071`、Long `.0367/.0147`，raw BA/cap中位`.0298/.00634/.0472`，仅7/4/8个target触cap。
+  这与近零双侧因子的局部解释相符，但不是行为根因；完整值与汇总保留在`actual_readout_probe/`，汇总明确用常规midpoint median。
+- 下一单变量对照已在active design登记：A侧使用独立正/负context query，B侧仍由dynamic差关闭静态mobile，其他主干、4tasks、
+  fresh query、64updates/8rows、视频/噪声/normalizer、rank与loss保持匹配。仅增加16,384参数，新增head采样隔离CPU RNG，
+  旧A base/dynamic初始值保留；两个eval配置继续32/64 fit/held strict150。CPU配置、匹配初始化和7项既有定向测试通过。
+- 三rank真实profile已在gpu01物理3/4/5启动（均NUMA1、两节点live检查通过）；log为`.codex/tmp/prw_asymmetric_profile.log`，
+  profile只验证真实功能梯度、吞吐和峰值。独立compile仍在6，总计四卡。最新/data1 quota720880912KiB，约336GiB余量，
+  新训练单份mmap+run/四eval仍保守<15GiB，复用原source/data/normalization，shared filesystem84TiB可用。
+- 架构检查：三个现有源文件与一个既有测试改动，无新source；composer由824增至835行，为本次A head增加与统一signed-query形状的
+  11行净增。采用skill允许的窄范围cohesive exception：改变仍归同一个读出owner，当前抽离整个bank/readout反而扩大无关重构；
+  不增长原高复杂度block forward，不创建第二训练器，比较结束由主agent移除未选定head分支。training保持800行以内。
+- compile batch8已得到有效结果：eager9.60→compiled13.67 observations/s（约+42.4%），首次编译359.7秒，output RMSE约.00398、
+  eager RMS.645。batch4仍编译中；没有把探测结果混入已完成科学分数，尚未改正式evaluator backend。
+
+## 前一执行节点（2026-09-06 03:19 CST）
 
 - query覆盖四个strict150全部exit0，完整新600行及6个复用参照汇总为10/10。最终fit32/64=`41/41`，held32/64=`39/45`；
   fit逐Spatial/Goal/Long为`36/5/0→34/7/0`，held为`38/1/0→37/5/3`。fit相邻37 retained/4 gained/4 lost，held为38/7/1，

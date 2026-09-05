@@ -2913,3 +2913,13 @@ task4/78 functional正信号尚不足以跨越闭环决策边界。
 下一轮只改变task diversity：同一2 Frame + 2 NativeTemporal、width128、full-K1、correct-only图从fresh覆盖55 meta + 18 target，
 optimizer100/200分别给每task约16--17/32--34次暴露，fresh held固定为6/79并对两个checkpoint都运行held5。该一小时内短裁决若仍失败，
 不再用长跑或数学补丁解释。完整合同与roots见`progress.md`，科学解释见`findings.md`第156节。
+
+## 152. Native-Temporal 73-task扩展裁决
+
+clean detached `7b89da92`的73-gradient-task formal自然完成optimizer100/200；见过任务functional继续改善，但fresh held task6/79
+两点均为`0/2`且随训练恶化。两枚single checkpoint随后各自完成held5 correct-only strict250：m100为`42/250`，m200为
+`35/250`，breadth均`3/5`且Goal/Long为0；相对stable carrier43分别为`36 retained / 6 gained / 7 lost`和
+`28 / 7 / 15`。两run均250/250 rows、29/29 shards、9/9 workers、全部exit0。
+
+该结果淘汰“只需增加task diversity和继续训练当前函数类”，不外推否定ECP已通过机制。后续只做一次Process/Composer整模块替换的
+correct-only职责诊断，再根据证据冻结或整体替换一个职责；结构扩展仍只能复制少数同构attention/MLP block，不恢复连续数学修正链。

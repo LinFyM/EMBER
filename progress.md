@@ -136,6 +136,20 @@
   `/data1` quota为`778281120/1084227584 KiB`，limit余量约`291.8GiB`，新增远小于1GiB。唯一参数化launcher为
   `.codex/tmp/launch_prw_native_temporal_held5_checkpoint_7b89da92.sh`，避免为两个checkpoint复制运行面。
 
+- 上述m100/m200 strict250均已自然完成并exit0。m100为`42/250`，Long/Goal/Object/Spatial0/Spatial9为
+  `0/0/4/35/3`、breadth`3/5`；相对carrier43为`36 retained / 6 gained / 7 lost`、Jaccard`.73469`、paired exact
+  `p=1.0`。m200为`35/250`，逐task为`0/0/4/29/2`、breadth`3/5`；相对carrier为`28 retained / 7 gained / 15 lost`、
+  Jaccard`.56`、paired exact`p=.13380`。m100到m200自身为`33 retained / 2 gained / 9 lost`、Jaccard`.75`、paired exact
+  `p=.06543`，训练后期呈明确方向性退化。两run均为29/29 shards、250/250 rows、9/9 workers且所有worker exit0；active wall
+  分别`1409.06/1392.87s`。这与seen functional继续改善、fresh held继续恶化一致，故task diversity不是主要缺口，也不再续训或
+  扫LR/seed/数学校准。
+
+- 下一correct-only职责诊断已于2026-09-05 09:40 CST从同一clean detached `7b89da92`启动。对gradient task1/93与已消费为
+  zero-gradient true-held诊断的task6/79，逐一比较initial、m100/m200 full、仅移入trained Process及仅移入trained Composer；每个
+  状态只读取两条fit正确视频和一条same-task held正确视频的固定8-visit Panel-B，不训练、不rollout、不读取wrong/shuffle/reverse、
+  validation/test或reward。gpu02物理0--3 launch前仅`162--209MiB/0%`，四task各占一卡；`/data1` quota为
+  `778335648/1084227584 KiB`。该诊断只决定冻结/替换哪个完整职责，不会向当前图追加变换。
+
 - 等待闭环时完成一次verified workspace cleanup：逐一确认11个旧formal detached worktree均clean且gpu01/gpu02/mgt无进程引用后，
   只移除其checkout登记；Git提交、formal artifacts、checkpoint和当前Native-Temporal worktree均保留。现在现场只有canonical main
   与当前formal detached worktree。

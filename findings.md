@@ -3108,3 +3108,17 @@ Evaluator使用完全相同task/state/env/policy RNG common prefix；因成功�
 约16--17/32--34次暴露，并对两点都直接运行correct-only held5。模型width/depth、初始化、loss、K、full horizon、native X/Y、rank和
 readout完全不变。若这一步仍呈seen functional改善、fresh held/closed-loop不增，就足以否定“小任务集过拟合是主要解释”，随后只允许
 替换完整learned责任模块或改变干净的训练职责，不允许追加数学变换链。
+
+## 157. 扩到73个gradient task仍未形成闭环增益
+
+同一Native-Temporal图从fresh扩到55 meta + 18 target后，m100/m200见过的12个Panel-B任务fit/held benefit由
+`+.00027657/+.00029709`升至`+.00043504/+.00039299`，但真正未见task6/79的held benefit均值由`-.00038182`继续恶化到
+`-.00068045`。对应held5 correct-only strict250分别只有`42/250`与`35/250`，breadth都为`3/5`，Goal/Long始终为0；stable
+carrier为`43/250`。m100相对carrier为`36 retained / 6 gained / 7 lost`，m200为`28 / 7 / 15`；m100到m200又是
+`33 retained / 2 gained / 9 lost`，说明更多训练在提升seen functional的同时持续损伤task-disjoint闭环行为。
+
+这组结果排除了“原12-task覆盖太小是主要原因”，也再次说明问题不是正式`>145/400`门槛过高：当前函数类连低得多的carrier都没有
+稳定超过。它没有否定full PI0.5时序响应、真实native X/Y、signed pooling、rank4或正确视频价值路径，因为task-local与部分seen-task
+证据仍为正；实际失败的是当前Process--NativeTemporal共享映射及其whole-Writer训练职责。下一步只用正确视频做Process/Composer整模块
+checkpoint swap，区分Process漂移、Composer损伤或分布式共同适配；随后冻结或整体替换被定位职责，不追加归一化、增益、校准、求解器
+或其它数学变换链。

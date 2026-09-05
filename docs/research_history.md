@@ -2958,3 +2958,10 @@ policy、X bank与不同owner的Y bank token数相差可达两个数量级，共
 后继只在同一种block内改为同query的parallel policy/native cross-attention，各自softmax后直接相加；不加gate、手工measure修正、
 校准或新模块阶段。15项CPU合同与task93真实full forward/VJP/materialization smoke通过，两个source read均有非零functional梯度，
 完整50 horizon、真实X/Y、positive-only、rank12+4与唯一rank16保持不变。matched task-local与shared结果登记在后续条目。
+
+## 156. parallel-read task-local正控通过
+
+clean detached `810f32d3`完成task1/task93 optimizer25/50。task1的fit/held recovery由m25 `.0219/.0235`增至m50
+`.0592/.0648`；task93由`.1145/.1070`增至`.1619/.1535`，两任务两相邻点的全部fit/held视频均高于carrier。相对首版
+combined softmax，task1由non-pass转为pass，task93亦显著提高；冻结墙、positive-only与唯一rank16合同完整。由此parallel policy/native
+source ownership获得task-local支持，但shared task-disjoint映射与闭环性能仍未证明，下一证据为73-task optimizer100/200短资格。

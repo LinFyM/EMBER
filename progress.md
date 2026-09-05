@@ -41,6 +41,14 @@
   `NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=<3|6> PYTHONPATH=src ... scripts/train_ecp_policy_response_writer.py --phase task-local
   --representation full --initialization component --mode formal`。
 
+- 上述两条parallel-read v2 formal均从clean detached `810f32d3`自然完成并exit0。task1 m25/m50 fit/held recovery为
+  `.021949/.023451`与`.059224/.064798`；task93为`.114529/.106962`与`.161922/.153538`。两个任务、两个相邻checkpoint的
+  两条fit与一条held正确视频全部高于carrier；相对combined-softmax v1，task1由两点不通过变为两点通过，task93 m50由
+  `.097318/.068702`提高到`.161922/.153538`，且高于前代Native-Temporal约`.125/.126`。task1/task93 train/eval/total分别为
+  `345.13/85.65/441.88s`与`517.19/89.57/627.12s`；峰值reserved为`27.92/45.12 GiB`。冻结policy/evidence、held/Panel-B/wrong
+  backward计数均为0，输出均为唯一rank16。这证明parallel source ownership修复了task-local接口，但尚不构成shared或闭环结论。
+  shared前只做保持逐元素语义等价的frame-chunk内存/吞吐profile，随后立即进入73-task optimizer100/200短资格。
+
 - clean detached `07804433`的Frame-Bank 12-gradient + 2-held whole-Writer 50-step资格已完整结束。m25/m50 gradient-task
   fit/held benefit为`+.0001573/+.0001166`与`+.0002399/+.0001997`，全视频为正由`6/12`升至`8/12`；fresh held task3持续为正、
   task77持续为负，两点都只有`1/2`，故没有运行held5、negative controls或续训。train/eval/total为`262.29/293.95/631.46s`，

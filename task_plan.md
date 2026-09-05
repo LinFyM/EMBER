@@ -127,12 +127,13 @@ breadth、四suite非零、Goal/Long、same-task鲁棒性及冻结后视频因�
     概率质量被实现定义的cardinality支配，配置已sealed；
 26. [x] 在同一可复制block内完成parallel policy/native reads：同一query分别对policy evidence和side-native bank做独立softmax，读出直接
     相加；不加gate、手工权重或token-count校正。15项CPU合同和task93真实full smoke通过，policy/native read均收到非零functional梯度；
-27. [ ] 从clean pushed detached authority重跑matched task1/task93 optimizer25/50；接口成立后立即以与前代matched的55 meta + 18
-    target共73个gradient tasks运行
+27. [x] 从clean pushed detached authority完成matched task1/task93 optimizer25/50。两个任务、两个相邻checkpoint的三条正确视频全部高于
+    carrier；m50 fit/held recovery分别为task1 `.0592/.0648`、task93 `.1619/.1535`，相对combined-softmax与前代接口均有改善；
+28. [ ] 用严格等价frame chunk压低最长视频`45.12 GiB`峰值后，立即以与前代matched的55 meta + 18 target共73个gradient tasks运行
     component-init optimizer100/200 shared短资格，并对两点并发完成held5 correct-only strict250；task6/79只作已消费诊断，不再伪装
     fresh selector；
-28. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
-29. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
+29. [ ] shared信号与held5闭环成立后进入mixed-K、同拓扑fully-random Final和validation8 strict paired400；
+30. [ ] 只有correct-only选定并冻结single checkpoint后才运行negative/causal controls。
 
 ## 历史执行账本
 

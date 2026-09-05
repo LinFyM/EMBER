@@ -3185,3 +3185,15 @@ active修订没有增加新阶段或数学补丁，而是在同一个可复制bl
 15项CPU回归包含“native tokens整体复制不改变读出”的新合同。task93真实full smoke消费79 frames、2 probes、50 horizons与38 targets；
 policy/native reads的functional梯度分别为`.002554/.003015`，统一主干及X/Y heads均非零，冻结墙成立，输出76 tensors与唯一rank16，
 峰值reserved约`41.63 GiB`。这建立了干净的工程修复，但科学裁决仍必须来自matched task1/task93 25/50控制。
+
+## 161. parallel source ownership同时修复task1并提高task93容量
+
+clean detached `810f32d3`上的task1/task93 parallel-read v2 25/50-step控制均自然完成。task1 m25/m50 fit/held recovery为
+`.021949/.023451`与`.059224/.064798`；task93为`.114529/.106962`与`.161922/.153538`。四个task-checkpoint组合的两条
+fit和一条same-task held正确视频全部高于carrier。相比combined-softmax v1，task1从相邻两点均不能全视频通过变为稳定通过，task93
+m50从`.097318/.068702`提高到`.161922/.153538`；task93也超过Native-Temporal约`.125/.126`，task1 held超过其`.0169`。
+
+这组matched结果支持此前根因：问题确实在异质来源竞争同一softmax，而非需要更多串联变换。修复只使用同query的两个并行标准
+cross-attention，没有source gate、固定配比、measure correction或新loss；两任务都获益，因而不是针对单task的补丁。它仍只是
+task-local容量证据，绝对恢复尤其task1仍小，不能外推shared。下一步保持此图，先以exact frame chunk降低task93 `45.12 GiB`峰值，
+随即运行73-task短shared并以task-disjoint functional和held5 correct-only闭环裁决。

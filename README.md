@@ -25,10 +25,10 @@ MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallbac
   Goal/Long贡献、same-task鲁棒性和视频因果controls；
 - Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
 
-新active design已在唯一实现路径接通。combined-softmax首版真实full-50 smoke通过，但task1/task93 25/50控制与attention-mass诊断
-发现不同来源的token cardinality会支配概率质量。当前修订只把block内的policy/native读取改为两个独立softmax的并行标准
-cross-attention，不增加阶段、gate或手工校正。下一项是相同task1/task93短控制，随后才进入73-task shared资格；不恢复coarse或
-任何退役Writer/realizer路线。
+新active design已在唯一实现路径接通。combined-softmax首版因不同来源的token cardinality支配概率质量而封存；当前修订只把block内
+policy/native读取改为两个独立softmax的并行标准cross-attention，不增加阶段、gate或手工校正。matched task1/task93 25/50控制的
+两个相邻点均在全部fit/held正确视频上优于carrier，并同时改善首版结果。下一项是严格等价的frame-chunk执行优化及73-task shared
+optimizer100/200短资格；不恢复coarse或任何退役Writer/realizer路线。
 
 ## 阅读顺序
 

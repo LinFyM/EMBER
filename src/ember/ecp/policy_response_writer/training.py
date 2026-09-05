@@ -62,8 +62,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_joint_process_v1"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_joint_process_run_v1"
+SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v4"
+RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v4"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -125,13 +125,13 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
         (
             config.get("schema_version") == SCHEMA,
             config.get("status")
-            == "active_joint_process_policy_writer",
+            == "active_asymmetric_policy_native_factor_writer",
             model.get("target_owners") == 38,
             model.get("residual_rank") == 4,
             model.get("architecture")
-            == "repeatable_joint_process_policy_blocks",
+            == "repeatable_parallel_policy_native_factor_blocks",
             model.get("evidence_read")
-            == "language_grounded_full_response_process_with_whole_policy_feedback",
+            == "same_query_parallel_language_patch_response_and_side_native_cross_attention_then_sum",
             model.get("source_normalization")
             == "independent_language_patch_response_and_native_softmax_no_cardinality_competition",
             model.get("input_context_branches") == 2,
@@ -144,7 +144,6 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
             model.get("post_pooling")
             == "single_target_update_cap_then_small_core_canonicalization",
             int(model.get("blocks", 0)) > 0,
-            int(model.get("process_tokens_per_frame", 0)) > 0,
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
             data.get("supported_K") == [1, 2, 4],
@@ -325,7 +324,6 @@ def prepare_runtime(
         width=int(model["width"]),
         heads=int(model["attention_heads"]),
         blocks=int(model["blocks"]),
-        process_tokens=int(model["process_tokens_per_frame"]),
         pooling_frame_chunk=int(model["pooling_frame_chunk"]),
         task_local=args.phase == "task-local",
     ).to(context.device)
@@ -479,9 +477,7 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
         "language": ("evidence.prefix.language_projection",),
         "response": ("evidence.response",),
         "policy_read": ("factor_writer.blocks.0.policy_attention",),
-        "native_read": ("factor_writer.native_read",),
-        "policy_feedback": ("factor_writer.blocks.0.feedback_attention",),
-        "whole_policy": ("factor_writer.blocks.0.policy_mixing",),
+        "native_read": ("factor_writer.blocks.0.native_attention",),
         "unified": ("factor_writer.blocks",),
         "signed_input": ("factor_writer.input_signed_query",),
         "signed_output": ("factor_writer.output_signed_query",),

@@ -3176,3 +3176,30 @@ churn12/13、Jaccard.745/.711。64跨视频33/6/8、Jaccard.702，低于原两�
 本轮sealed，不继续增视频或直接延长，下一方法比较回到闭环较高的两fit数据条件。旧有expert occupancy、learner panels和fixed-occupancy
 审计已按`ac233fa0:docs/research_history.md`§3.7/3.15/3.39复核：成功expert/state覆盖并非未尝试变量，旧F2也不支持单纯occupancy漂移。
 这些旧图的结论不能直接否定本图的occupancy解释，但不足以把它宣布为当前根因。
+
+## 170. 2026-09-06共同过程P—整策略Q主干对照完成，恢复A2工作参照
+
+clean pushed detached `93540ff1`在原两fit、4tasks/K1/64updates/8rows、Panel-A query/noise、normalizers、A2/B1读出和optimizer下，
+用4层共同P/Q主干替换target-local blocks。完整19 boundary/18 residual、双probe与50-horizon先由task-grounded P读取，再由整策略Q
+读/反馈，最终保持frame/native对应和唯一12+4。参数4,417,920对2,970,368（+48.73%），异构新权重fresh；不能把结果独归于Q反馈。
+真实两步profile通过，最长87帧、allocated30.75GiB/reserved31.94GiB。正式训练339.88秒、Panel-B229.33秒，全部exit0，256个
+task executions与原采样审计匹配，各条fit视频32 exposures，8.03GB临时cache自然释放。train run为
+`runs/outputs/pi05_ecp_prw_shared4_joint_process_s64_93540ff1_gpu01p345_20260906/`。
+
+四个strict150全部完成：32fit38/held37、64fit41/held39，原A2为43/41、44/45；逐Spatial/Goal/Long为32fit34/3/1、held31/6/0，
+64fit33/6/2、held35/4/0。四组都低于直接参照，64 A2→P/Q的fit R/G/L为34/7/10、held33/6/12。
+P/Q相邻fit32/9/6、churn15、Jaccard.681；held34/5/3、churn8、Jaccard.810。后者更稳定但分数更低，Goal6→4，Long均0。
+fit Long两个节点成功不重合，64跨视频R/G/L32/7/9、Jaccard.667，低于A2的.780。不能用更快训练或局部稳定选择较弱闭环。
+
+64 held的task1/72/83/93 benefit为`-.000256/-.000237/+.000008/+.000145`；t1虽比A2少负，但仍未获得正收益，Spatial/Goal/Long
+明显弱于A2。相同训练query/noise对照显示前8步P/Q loss略低，后半四task均更高，最后16步差为+.000603/+.002685/+.001189/+.000727。
+因此“仅新视频泛化失败”解释不充分；容量、优化、初始化和过程/读出职责仍未被独立识别。不宣布梯度冲突或occupancy为根因，
+也不把这一个4.4M/4block/M8实例的non-pass外推为所有P/Q函数类失败。
+
+本轮sealed，恢复闭环较好的两fit A2为工作参照。P/Q runtime、三个实验配置与专属测试退出active树，完整代码由93540ff1保留；
+恢复既有attention block时只将其归入process owner并分离原shape校验，保持算法、参数树与初始化，composer降到581行、process500行，
+training796行，无新增source文件，19项现有CPU检查通过。完整报告、600新rows、六参照、功能/优化/配对和launch records保留在
+`runs/analysis/pi05_ecp_prw_samegraph_joint_process_20260906/`。
+
+此外只读复核了已有73-task allowlist：55meta+18target、146条原fit视频、4736个stride5并保留末帧的采样帧，最长87。
+这是独立meta映射可用性与后续资源依据，不是已证明扩大任务能修复当前模型，也未由这份元数据审计自动启动后继训练。

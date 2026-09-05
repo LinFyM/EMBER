@@ -3,11 +3,12 @@
 EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
 Expert的一套完整LoRA，使policy零交互完成任务。
 
-最新已裁决方法为Unified Policy-Native Factor Writer。它使用PI0.5原生policy-response、有序视频输入、真实native X/Y、
+当前工作主干为带非对称A读出的Unified Policy-Native Factor Writer。它使用PI0.5原生policy-response、有序视频输入、真实native X/Y、
 signed pooling、rank4与唯一LoRA物化；主图只有一种可复制factor block，每层以同一query并行cross-attend
 exact language、image patches、完整policy response和side-native bank；四个source各自softmax后直接相加，再沿teacher time与
 rank/side交互并直接pool raw X/Y。历史Writer、neural q_pi、旧Policy-Response relation/gain链、ECP Stage 1 v1--v24、
-MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。该v4候选的held5相邻点没有形成稳定增量，现已sealed。
+MDCO/PECS、人工process任务及已裁决G3/PNBTT实现不作为active fallback。原v4短训练实例和后继P/Q对照均已sealed；当前只保留
+行为较好的A2工作路径，尚未获得最终科学资格。
 后继研究依据`docs/joint_process_policy_writer_design.md`推进；owner授权、当前目标、运行与下一步只以`task_plan.md`和`progress.md`
 的当前记录为准，不从历史design中的“active”恢复执行。
 G1/G2提供局部容量与动态证据，不代表后继Writer已经继承完整动态能力或闭环行为。

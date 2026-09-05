@@ -201,7 +201,23 @@ P/Q是对这个职责分配的有界方法比较，不是声称更多attention�
   单列。若只有内部loss/attention/梯度改善而闭环更弱，不能以机制解释选择它，应恢复较好的基线并重新判断剩余接口；不追加scale/cap/
   rank/seed小扫。若广泛且可保留行为改善，才扩task/真实K并比较fully-random，及时进入已补工程入口的validation8预注册资格。
 
-## 3. 有条件的P/Q主干：模块与因果作用
+### P/Q最终裁决与后续范围（2026-09-06）
+
+本实例已完成并sealed：32fit/held38/37、64为41/39，四组均低于两fit A2的43/41、44/45。P/Q相邻held更稳定但低分，Goal下降、Long0；
+fit Long成功相邻不重合，64跨视频Jaccard.667低于A2的.780。训练339.88秒相对781.62秒约2.30倍加速，不抵消行为损失。
+实际训练query/noise配对也显示后半四task loss均高于A2；不能只归为新视频泛化，也未识别优化、容量或Q反馈的单独责任。完整证据见
+research_history§170与`runs/analysis/pi05_ecp_prw_samegraph_joint_process_20260906/`。
+
+按上述预注册分支恢复A2工作主干，不继续本实例、增rank/scale或做seed小扫。P/Q原代码/配置由93540ff1及formal artifacts保存，
+active只保留A2；原attention block归入process、shape校验独立，计算与参数树/初始化保持。以下P/Q模块描述是该已检验候选的设计论证，
+不是当前默认路径或继续它的授权。
+
+首轮同图已证明有限shared可学习与净行为收益，但新task/跨视频稳定仍未成立。此前73-task v4只有约8次或更少per-task exposure，
+不能充当充分meta-training的裁决；本轮四任务又没有Object梯度。后续优先重新审视独立meta映射及足量曝光，而不将局部稳定作为
+永远停留四任务的工程门。已有55meta+18target的allowlist和原两fit元数据仍可用；正式任务/预算、profile、validation8视频与数值选择
+合同必须在后继launch前登记。这是剩余条件的检验，不是已知数据修复；fully-random与真实K仍保留为正式候选责任。
+
+## 3. 已封存P/Q候选：模块与因果作用
 
 ```text
 exact language + K internally ordered videos

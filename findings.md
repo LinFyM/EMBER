@@ -9,7 +9,7 @@
 `docs/expert_review_20260902_full_history_policy_native_meta_writer.md`与
 `docs/expert_review_20260902_policy_response_event_to_factor_writer_clarification.md`以及
 `docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。精确分数、提交和历史脉络见
-`docs/research_history.md`；最新已裁决并sealed的设计见`docs/unified_policy_native_factor_writer_design.md`。
+`docs/research_history.md`；历史v4设计见`docs/unified_policy_native_factor_writer_design.md`，本轮P/Q裁决见当前design和下文最新结论。
 owner已完成事前对齐并明确要求goal自主推进；active合同为`docs/joint_process_policy_writer_design.md`，即时状态见`progress.md`。
 本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
@@ -30,6 +30,16 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
+
+### 2026-09-06共同P/Q实例未改善行为，恢复较好的A2
+
+同两fit、4tasks、64updates的P/Q32 fit/held38/37、64为41/39，四组均低于A2的43/41、44/45。P/Q held相邻Jaccard.810、churn8
+更稳定，但Goal6→4、Long均0；fit Long成功相邻不重合，64跨视频Jaccard.667低于A2的.780。不能以约2.30倍训练加速或稳定低分代替
+闭环收益。当前这一主干实例sealed并从active树退役，A2恢复为工作参照；这不是最终方法或validation checkpoint选择。
+
+真实同query/noise训练对照也显示后半四任务loss均更高，功能弱点不只发生于新视频。参数+48.73%、异构初始化和完整主干职责共同改变，
+故不能独立识别Q反馈、优化或容量的因果责任；也不宣称P/Q普遍不可学、梯度冲突或occupancy是根因。历史§170和joint-process analysis
+保存完整对照。旧73-task v4只有低per-task exposure的边界仍有效；已有73独立映射的元数据可用不等于本次已检验充分meta-training。
 
 ### 2026-09-06正确视频池2→4：完整对照未改善行为
 

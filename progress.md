@@ -6,14 +6,25 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频结果sealed，当前以较好的两fit A2为参照运行共同过程P—整策略Q主干比较，详见最新节点和active design。
+  四视频与共同P/Q均无闭环增量并sealed，当前恢复较好的两fit A2，重新审视独立meta-task覆盖，详见最新节点和active design。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 06:07 CST）
+## 最新节点（2026-09-06 06:38 CST）
+
+- P/Q七个train/materialize/eval launcher全部exit0，四个strict150为32fit38/held37、64fit41/held39；原A2为43/41、44/45。
+  完整600新rows、六参照、逐task/suite/breadth与所有pair共10/10收齐。相邻heldR/G/L34/5/3、fit32/9/6；64跨视频32/7/9，
+  fit Long相邻成功不重合且新视频为0。已按预注册原则封存并恢复A2，详情历史§170与joint-process analysis的comparison.md。
+- 恢复原参数化/初始化和学习算法，只将原attention block移入现有process owner并分离原shape检查；P/Q源路径和三个配置退役。
+  composer581/process500/training796行，无新增source，19项CPU检查通过，结构检查review但无hard；原计算/采样/物化及validation
+  机械入口继续保留。551插入/240删除含代码归属移动和测试恢复，相对P/Q净增311；相对原A2只有必要的shape helper组织变化。
+- 已有73-task allowlist只读元数据仍有效：55meta+18target，含四suite，原两fit共146视频、4736采样帧、最长87。下一步审视并登记
+  充分独立meta映射训练及validation8选择合同；尚未启动新formal训练，不把覆盖可用性宣称为能力或根因。
+
+## 前一执行节点（2026-09-06 06:07 CST）
 
 - P/Q训练与预注册Panel-B全部exit0，分别339.88秒与229.33秒；64updates、256个task executions与原query/video/noise/权重及
   normalizers匹配，每条原fit视频32 exposures。8.03GB临时cache已移除，三个checkpoint和launch/profile evidence保留。

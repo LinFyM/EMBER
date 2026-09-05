@@ -5,14 +5,26 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4已从clean pushed detached `078a2e68`正式运行，gpu01物理4/5/6三rank。
+  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4已从clean pushed detached `078a2e68`完成训练与Panel-B评估，正在完成四个配对闭环条件。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 02:15 CST）
+## 最新节点（2026-09-06 02:23 CST）
+
+- query覆盖shared4正式run已完成64/64与所有8/32/64 Panel-B评估，completion与launcher均exit0；实际training775.71秒、
+  Panel-B240.08秒，64次更新无clip。完整256个task executions的pairs/video/noise与预先审计逐occurrence匹配，实际覆盖仍为
+  16episodes/task、473/455/459/499 unique rows。launch、CPU审计、profile证据已自动保留到formal root，8.03GB临时mmap已删除。
+- 配对功能结果并非普遍改善。32/64 held benefit分别为：task1 `+.000138/+.000266`，Spatial72 `+.001121/+.001496`，
+  Goal83 `+.000250/+.000400`，Long93 `-.000022/+.000730`；64时四task全部fit/held视频为正，但Goal/Long的held收益低于旧固定查询。
+  留出task6/79两点仍负；完整表、相对旧shared4差值和真实覆盖计数写入新analysis的`functional_comparison.json`与
+  `actual_training_query_coverage.json`。这仍只是功能证据，不提前代替四条件闭环。
+- 64-step fit/held驻留物化已在释放的gpu01物理4启动；32 held继续物理0/2、32 fit继续物理3。双方节点已live复核，4/5/6已无训练process。
+  64 held准备使用三张释放卡4/5/6，提高150状态吞吐；64 fit在下一组设备释放后启动。矩阵与科学预算不变，任何时点总物理卡不超过六。
+
+## 前一执行节点（2026-09-06 02:15 CST）
 
 - 正式训练已到57/64，8/32 checkpoint已sealed，每步约12秒；两种32-step视频条件均已驻留物化完成、exit0。首次加载114.11秒，
   后续0.163秒，完整三task Writer分别13.75/12.83秒。fit视频为global2/20/38的3/5/2，held为49/49/48，均来自原注册条件。

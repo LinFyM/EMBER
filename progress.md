@@ -12,7 +12,21 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 02:40 CST）
+## 最新节点（2026-09-06 03:10 CST）
+
+- 三个新strict150已完整exit0：m32 fit/held=`41/39`，m64 held=`45`。各Spatial/Goal/Long分别`36/5/0`、`38/1/0`、`37/5/3`。
+  held32→64为38 retained/7 gained/1 lost，churn8/150、Jaccard.826；旧固定查询held40→41的相邻churn为13/150。
+  新查询有更好的相邻行为积累迹象，但本轮还差m64 fit，尚不作路线或最终checkpoint选择。
+- m64 fit仍是GPU0的原`_r2`单卡执行，已完成7/11 shards，3 claimed、1 pending。其间曾计划使用新释放的4/5/6与0四卡重启；
+  在实际重启前4/5已被其它用户占用，因此该计划取消，`_r3`从未启动。一次SIGINT请求没有使原nohup run退出，随后保持原评测继续，
+  没有force terminate任何process，也没有丢弃完成的rollout。相关计划取消原因记录在r2的`execution_interruption.json`，不是模型non-pass。
+- 在空闲GPU6进行独立、有15分钟时限的torch.compile吞吐探测，正式评测代码与配置未变。首次探测引用已移除旧worktree中的normalization，
+  在加载前拒绝；已改为当前078a2e68的同task正式资产。随后编译遇到缺少`/usr/include/python3.12/Python.h`，尚无有效加速结论。
+  当前venv为系统CPython3.12.3；现有`/data0/soft/anaconda3/include/python3.12/Python.h`存在，待核对是否可作临时编译依赖。
+  正式evaluator启用TF32，而最初独立probe未对齐此设置；后续仅在对齐环境/TF32并获得有效实测后考虑保留任何推理修改。
+  probe脚本、日志与临时cache均在`.codex/tmp/`；本次/data1 quota720761444 KiB、约336GiB余量，编译缓存保守预算<10GiB。
+
+## 前一执行节点（2026-09-06 02:40 CST）
 
 - 首个新closed-loop完成：m32 held为39/150，Spatial/Goal/Long=`38/1/0`；旧shared4同条件40、carrier38。相对carrier为
   33 retained/6 gained/5 lost，churn11/150、Jaccard.750；相对旧shared4为36/3/4、churn7、Jaccard.837。尚不能据单条件裁决干预。

@@ -31,7 +31,7 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
-### 2026-09-06固定查询覆盖对照：功能收益没有普遍提高，闭环待裁决
+### 2026-09-06固定查询覆盖对照：局部行为改善，跨视频仍弱
 
 在同图shared4/component-init/K1/64updates/8rows、原视频和policy-noise schedule、normalizer与optimizer下，仅把原Panel-A固定rows
 替换为16个原授权episodes中的均匀无放回episode及随机frame。实际每task覆盖从8episodes、115--126 states扩大到16episodes、
@@ -40,8 +40,13 @@ owner要求在低于/接近baseline时认真比较竞争解释，必要时自主
 
 m64 held功能收益从旧shared4到本次分别为：task1 `.000158→.000266`，Spatial72 `.001348→.001496`，
 Goal83 `.000551→.000400`，Long93 `.002043→.000730`；m32 Long held仍略负。m64四个gradient tasks仍跨全部fit/held视频为正，
-但查询覆盖增加没有普遍加强Panel-B功能迁移。复用留出task6/79两点仍负，不能宣称跨task泛化。四个strict150尚未完成，当前不作
-路线裁决；这些结果最多限制本次有限预算覆盖干预的解释，不能据此否定更广的状态覆盖或整个函数类。详见同root的功能与覆盖JSON。
+但查询覆盖增加没有普遍加强Panel-B功能迁移。复用留出task6/79两点仍负，不能宣称跨task泛化。
+
+四个strict150完整结果为fit41→41、held39→45，旧fixed-query分别39→44、40→41，carrier38。新held相邻38 retained/7 gained/1 lost，
+fit相邻37/4/4，churn均8；不过64时Goal fit→held只保留3/7，Long仅held为3/50，fit仍0。因而本次支持有限覆盖干预有局部收益，
+尚未形成稳定跨视频行为积累；不能用45单点证明扩大训练已具备依据，也不能由混合结果否定更广状态覆盖或整个函数类。
+当前先检查实际正确视频下的signed pooling/双侧因子工作区间，以限定专家近零局部推导的适用性；不把这些内部量变成性能selector。
+完整表及所有配对参照见同root的`comparison.md`、`closed_loop_comparison.json`，原functional与覆盖JSON保留。
 
 ### 2026-09-06首轮同图学习对照：能学习，但共享行为净积累弱
 

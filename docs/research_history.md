@@ -3115,4 +3115,23 @@ launch records共同支持上述结论。物化同run多条件复用冻结模型
 
 本轮为公平匹配使用固定Panel-A序列；审计实际监督只有8个episode、115--126个unique episode/frame，16个RNG组循环4次，fit视频与固定visit
 还存在循环关联。下一项只检验原Panel-A episode池fresh query采样，保持部署图、4 tasks、64 updates、8 action rows、视频、noise与normalizer。
+
+## 167. 2026-09-06原Panel-A query覆盖对照完成
+
+同图shared4的唯一科学变化为每次从原Panel-A全部16个授权episodes无放回抽8个episode、各抽一个真实frame。64次task暴露、
+8 rows、video/noise schedule、normalizer、component初始化与optimizer保持匹配；实际覆盖由8episodes/115--126 rows增为
+16episodes/455--499 rows。正式训练及评估来自clean pushed detached `078a2e68`，run为
+`runs/outputs/pi05_ecp_prw_shared4_fresh_queries_s64_078a2e68_gpu01p456_20260906/`，training775.71秒、Panel-B240.08秒，全部exit0。
+
+四个新strict150均自然完成：fit32/64为41/41，held32/64为39/45，source32、carrier38（后两者及旧shared四条件复用原paired rows）。
+fit逐Spatial2/Goal20/Long38为36/5/0→34/7/0，held为38/1/0→37/5/3。新fit相邻37 retained/4 gained/4 lost、Jaccard.8222，
+held相邻38/7/1、.8261；64时fit→held为36/9/5、.7200，Goal只保留3/7，Long在fit仍0。相较旧shared fit39→44、held40→41，
+这是混合的局部改善，不能以45单点证明稳定跨视频能力。
+
+64时Goal/Long held功能收益反而低于旧shared，复用零梯度task6/79仍负；没有查询覆盖的普遍迁移证据，也没有跨task资格。
+本轮只限制该固定预算覆盖干预，不淘汰更广状态覆盖或整个函数类。完整600个新rows、六个既有参照、逐task/suite与所有paired sets见
+`runs/analysis/pi05_ecp_prw_samegraph_query_coverage_20260906/{comparison.md,closed_loop_comparison.json,functional_comparison.json}`。
+
+m64 fit首次启动因他人GPU新占用而在任何rollout前被admission拒绝；原失败root保留且不计科学结果。其单GPU `_r2`正常完成，
+期间拟议的四卡 `_r3`在真正launch前取消，没有重跑或丢弃已完成rows。精确launch/log/exit保留在各root；该资源事件不是scientific non-pass。
 它是覆盖假说的对照，不是修复已确认工程错误，不触及validation/test或视频负controls。

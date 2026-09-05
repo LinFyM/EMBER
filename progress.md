@@ -5,14 +5,29 @@
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
-  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4已从clean pushed detached `078a2e68`完成训练与Panel-B评估，正在完成四个配对闭环条件。
+  暂停状态。同图clone/shared五组训练和18条件闭环均已完成；只改变action-query覆盖的shared4从clean pushed detached `078a2e68`完成训练、Panel-B及全部四个配对闭环条件。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 03:10 CST）
+## 最新节点（2026-09-06 03:19 CST）
+
+- query覆盖四个strict150全部exit0，完整新600行及6个复用参照汇总为10/10。最终fit32/64=`41/41`，held32/64=`39/45`；
+  fit逐Spatial/Goal/Long为`36/5/0→34/7/0`，held为`38/1/0→37/5/3`。fit相邻37 retained/4 gained/4 lost，held为38/7/1，
+  两者churn均8/150。但64时fit→held的Goal只保留3/7、Long仅held出现3次；不能把45单点解读为稳定跨视频能力。
+  完整结果见新analysis的`comparison.md`和`closed_loop_comparison.json`，历史第167节登记。没有扩大task或继续64步训练。
+- m64 fit原`_r2`已自然完成并释放GPU0，确切launcher与exit已保留；其曾取消的重调度计划记录已补充最终完成状态。所有科学评测均已结束。
+- 下一项为真实correct-video读出工作区间的只读诊断：相同三tasks、first-fit/held视频，在component初始化与32/64 checkpoint下，
+  记录当前context/innovation、两signed branch均值与差、raw BA相对原cap及cap因子。只读取实际未修改的视频/native输入，不改变动态信号、
+  不做negative controls、不读actions/rewards、不产生梯度或选择checkpoint。目的只在判断专家局部双零因子解释是否适用于实际工作区间，
+  不以norm/梯度替代闭环。临时script为`.codex/tmp/probe_actual_readout.py`，结果保留在新analysis的`actual_readout_probe/`。
+  两节点已live核对，probe在空闲gpu01物理4/NUMA1启动，复用现有模型与内存capture，新增结果<1MiB。
+- 独立compile probe已通过命令级`CPATH`使用现有3.12 headers，并对齐正式TF32；eager batch8实测9.60 observations/s，
+  编译仍进行中，尚无compiled吞吐结论。该probe在物理6；当前总共只用两卡，没有改变正式evaluator设置。
+
+## 前一执行节点（2026-09-06 03:10 CST）
 
 - 三个新strict150已完整exit0：m32 fit/held=`41/39`，m64 held=`45`。各Spatial/Goal/Long分别`36/5/0`、`38/1/0`、`37/5/3`。
   held32→64为38 retained/7 gained/1 lost，churn8/150、Jaccard.826；旧固定查询held40→41的相邻churn为13/150。

@@ -81,6 +81,18 @@ exposure。旧正控不能单独证明部署图的单任务学习，更不能把
 - 本对照不选择最终checkpoint。若相邻、跨视频有可保留的实际行为增量，优先保留该能力并再审任务覆盖；若没有，不靠同设置延长训练，
   结合clone边界进一步检查当前native读出的可达性、监督到行为的差距或P/Q责任结构。负结果只排除本次小预算覆盖干预的收益。
 
+### 覆盖对照裁决与下一项只读定位（2026-09-06）
+
+四个完整strict150给出fit41→41、held39→45，carrier38；held相邻有7 gained/1 lost，但fit有4 gained/4 lost。
+64时Goal跨视频只保留3/7，Long只有held出现3次，两个复用task-held功能点仍负。因此有限query覆盖解释只得到局部支持，
+不能据此宣布已经稳定保留跨视频能力，也不能把混合结果解释为整个状态覆盖假说失败。
+
+当前不增加task/训练剂量，先限定专家§4.2双侧动态零因子的解释范围：在现有三task、已注册first-fit/held正确视频、component初始化及
+32/64 checkpoint下，只读记录真实context/innovation、signed两支均值与差、raw BA/cap与实际cap factor。使用未改变的完整真实视频，
+不做动态缩放、wrong/shuffle/reverse/no-video，不读取actions/reward，不产生梯度。这个诊断不会选择checkpoint或以norm评价行为。
+如果实际运行远离近零区域，就不把局部二阶推导当作当前non-pass的依据；如果两侧差确实接近零且相应功能影响受限，只支持开展
+同主干/预算的非对称读出对照，仍须由新视频及真实闭环验证。任务覆盖、过程条件化与监督到行为偏差仍是竞争解释。
+
 ## 3. 有条件的P/Q主干：模块与因果作用
 
 ```text

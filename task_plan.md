@@ -14,7 +14,7 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 
 - Active design：`docs/joint_process_policy_writer_design.md`。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
-- 当前阶段：首轮同图clone/shared完整18条件已裁决；下一项固定4task/64updates/8rows，仅检验fresh Panel-A action-query覆盖。
+- 当前阶段：首轮同图clone/shared18条件和fresh Panel-A query四条件均已完成；后者收益混合，继续真实正确视频上的读出工作区间诊断。
 - P/Q共同过程—整策略主干是有条件首选候选，是否实施由对照与必要分析决定；首轮五组正式run及完整预注册配对闭环均已完成。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
@@ -24,7 +24,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 2. [x] 复用shared runtime，锁定少任务名单、训练/held视频、action rows、per-task exposure、局部闭环及source/carrier参照。
 3. [x] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
 4. [x] 联合分析fit、新视频、实际闭环与任务更新；首轮显示小共享行为增量和有限query覆盖。
-   下一项实施同图fresh Panel-A query对照，保持原任务/视频/噪声/normalizer/预算；按相邻和跨视频闭环裁决。
+   同图fresh Panel-A query对照也已完成：fit41→41、held39→45，Goal/Long跨视频仍弱。先用只读实际correct-video诊断核对双侧零因子假设，
+   不提前扩task、继续64步或同时替换读出与主干。
 5. [ ] 依据证据保留现有能力或实施P/Q/读出责任模块；同拓扑比较、控制主要变量，避免并行数学补丁和无限小扫。
 6. [ ] 有共享行为证据后扩任务与真实K训练，及时进入预注册validation8 paired400、相邻稳定和最终冻结controls。
 

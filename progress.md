@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 15:13 CST。
+更新时间：2026-09-06 15:28 CST。
 
 ## 当前状态与授权
 
@@ -38,7 +38,12 @@
   原13task诊断全部保留，7meta及target79在此run零梯度，均为复用诊断、不称fresh selector。模型、数据接口、source及训练代码不变。
 - 真实CPU config/eval loader、空meta组和完整128步采样检查通过；2304task executions、每target128exposures，primary/other视频ordinal一致。
   复用相同graph下最长87帧/micro8的实测34.67GiB峰值和全部18targets实际timing；五卡估计train12–22分钟，另计启动/capture/Panel-B约10分钟。
-  正式尚未启动，准备新clean pushed frozen tree及live资源合同。目标是区分混合objective取舍，未宣称根因；不做比例扫描或加入剩余6target。
+  已于15:28左右从clean pushed detached351feb48启动，gpu01物理0/2/3/4/5/6、world6、NUMA0/0/1/1/1/1；
+  p2 peer任务在preflight前自然结束，实际六rank task-work估计均约4.01秒，source/code不变。launcher PID3518744，当前source加载。
+  Run为`runs/outputs/pi05_ecp_prw_complete_target18_s128_351feb48_gpu01p023456_20260906`，analysis为
+  `runs/analysis/pi05_ecp_prw_complete_target18_20260906`；精确命令`.codex/tmp/prw_complete_target18/train.sh`，contract/preflight/audit均保存在analysis/launch。
+  /data1 quota722611784KiB/1073741824KiB，outputs529GiB、analysis17GiB，shared84TiB可用；缓存含诊断12.24GiB、新增峰值<16GiB。
+  六卡预计train10–18分钟，另计启动/capture/诊断8–12分钟；actual topology锁world6 exact resume。目标是区分objective取舍，不扫描比例或加入剩余6target。
 - 原始参照仍为配对历史source47/SFT109/A2m64 79；旧Writer143因teacher schedule不同只作count参照。未来强候选仍需同图random、
   预登记strict400相邻/跨视频资格、冻结后视频因果controls和最终32/8合同。
 

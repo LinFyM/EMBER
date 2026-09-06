@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-06 15:13 CST。
+更新时间：2026-09-06 15:28 CST。
 
 ## 当前目标与启动授权
 
@@ -25,7 +25,7 @@ owner最新明确同意实际开始，要求重新建立goal，终点为最终�
 3. [x] 最小真实图与最长样本验证、四任务短学习及四组配对闭环完成，64为64/62，明显超过旧P/Q与A2。
 4. [x] 同完整图73任务128updates及四点Panel-B已完成，完整采样审计通过；meta与target学习差异仍需闭环裁决。
 5. [x] 四组完整screen80为15/19/19/19，后半能力窄且停滞；本mixed实例不扩strict400，完整证据保留。
-6. [ ] 同图同18target移除meta objective的边界对照已登记且CPU配置检查通过；128步/四点screen合同保持，下一步正式启动。
+6. [ ] 同图同18target移除meta objective的128步对照已从351feb48六卡正式启动；四点primary bank/screen launcher就绪，当前source加载。
 7. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
 8. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
 

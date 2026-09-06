@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 16:51 CST。
+更新时间：2026-09-06 17:11 CST。
 
 ## 当前目标与授权
 
@@ -51,5 +51,16 @@
   恢复主要在Spatial与Goal，Long仍弱，且低于short4的64/62。历史§176保留完整边界。
 - /data1最近live quota722850436KiB/1073741824KiB soft，shared84TiB available；全部本轮物化/验证/诊断新增峰值<8GiB。
   精确runtime合同、两节点GPU证据、quota、launch命令与日志保存在analysis/launch和各run launch目录。
-- main已集成并推送。351feb48训练/screen frozen tree、041aff55历史mixed tree保留inactive，9998f204诊断tree也已inactive；旧A2 random不恢复。
+- main已集成并推送。351feb48训练/screen frozen tree、041aff55历史mixed tree保留inactive，9998f204诊断tree当前复用于下述只读轨迹诊断；旧A2 random不恢复。
 - 下一步定位实际动作阶段失败，再确定训练或数据干预；继续参考专家原文§6/§8及历史SEOD/GOMQ/guard边界，不以functional或一次screen波动推翻全图。
+
+## 动作阶段定位
+
+- 固定terminal128 held视频、原三train tasks与states0/1/2的18条轨迹已完成，两launcher exit0；复用frozen9998f204 canonical rollout，
+  batch3仅作illustration，不改strict150/80、不选择checkpoint。两arm均3/9，双相机与BDDL阶段证据在analysis下`behavior_replay/`。
+- target18 Long三条均曾放好一个壶，但均未完成第二个，包含碰倒/放置后丢失与后续抓取失败；Goal有错误抽屉与接触失败，Spatial也有放置失败。
+  不能统一归因为时序或occupancy。历史直接rank16专家task93仅1–5/50；实际1024训练queries有530位于恰一壶已放置阶段，后半阶段并未漏采。
+- 当前仅运行同Long任务的teacher-state continuation：原Panel-A demos12/7/38，固定one-placed-released/later-contact两阶段，两terminal arms共12条，
+  不训练、不选择、不读negative/Test。恢复原demo XML/state，zero settling避免破坏抓持，额外完整520 horizon作为明确的接续机会，不冒充官方初始化。
+  gpu01p2/NUMA0 meta73 PID3817477、p3/NUMA1 target18 PID3817826，总2卡；preflight为724831152KiB/1073741824soft、shared84TiB，额外峰值<2GiB。
+  具体states、labels、命令和边界在analysis下`teacher_state_continuation/registration.json`；driver复用原source，两个checkpoint不变。

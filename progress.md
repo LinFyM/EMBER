@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:10 CST。
+更新时间：2026-09-06 19:15 CST。
 
 ## 当前目标与授权
 
@@ -53,7 +53,9 @@
 - Quota使用726502144KiB/1073741824soft，shared84TiB，预计新增峰值<16GiB。精确命令、资源与配置合同在
   `runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/launch/`；新run为
   `pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
-- 已刷新两节点live资源，四个primary validation banks在gpu01p2/NUMA0物化，launcher4123394；固定terminal128训练诊断
-  在gpu01p3/NUMA1另一次驻留，launcher4123742。本任务当前只用这两卡；两项完成后接闭环评测。
-  四点screen80只分配后续strict400投入；固定task75/77 held48/48 states0–9共20新rows只定位训练侧学习。
-  评测采用dynamic long-first persistent workers，启动前两节点live准入、总量<=6；全部negative/Test仍未启用，没有selected checkpoint。
+- 四个primary validation banks及固定terminal128训练诊断bank均已完成，两个物化launcher自然exit0；同任务集合的四点复用一次驻留。
+- 五个闭环动态队列已启动，总量6GPU：screen32=gpu01p0/NUMA0/launcher4131662，screen64=gpu02p0,1/NUMA0/945211，
+  screen96=gpu01p2/NUMA0/4135740，screen128=gpu01p5/NUMA1/4136091，训练20=gpu01p3/NUMA1/4130949。
+  每GPU三个persistent workers，按long-first动态分配；两节点live显存/util/process准入和完整命令/PID见analysis/launch。
+- 四点screen80只分配后续strict400投入；固定task75/77 held48/48 states0–9共20新rows只定位训练侧学习。
+  等待完整结果后执行已准备的training_behavior与closed_loop配对汇总；全部negative/Test仍未启用，没有selected checkpoint。

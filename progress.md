@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 17:50 CST。
+更新时间：2026-09-06 17:56 CST。
 
 ## 当前目标与授权
 
@@ -79,6 +79,11 @@
   直接专家111/180只作不同预算训练侧容量参考。完整数据在analysis下training_breadth_comparison.*，历史§178/findings§176封存。
 - Object受监督任务仍5/40，Spatial15/40，故不能只归因于新task迁移或缺少6个train24；Long增量主要来自双杯与book，弱task93不能代表整个suite。
 - 已登记task75（Spatial7）和77（Object2）分别学习的whole-Writer clones，均128updates/1024queries、component、原两fit视频、完整同图，
-  固定terminal128原held48视频十状态，与target18原rows配对；每clone1GPU、共2GPU，预计新增峰值<4GiB。当前仅配置/合同准备，尚未启动。
+  固定terminal128原held48视频十状态，与target18原rows配对；每clone1GPU、共2GPU，预计新增峰值<4GiB。
+  两run从clean pushed detached6efdd2e0启动：gpu01p2/NUMA0 task75 PID3943159，p3/NUMA1 task77 PID3943509；world各1，当前加载runtime。
   只保留各clone与已读target79的Panel-B诊断；无专属task query，不冻结evidence，不部署clone集合或选择最终checkpoint。
   克隆若恢复行为只定位共享学习代价，不能直接命名容量或梯度冲突；若未恢复则回到该任务图/数据/优化可学习性，不盲目续训。
+- 两节点live GPU/process与GPU-local NUMA已核验；quota726494916KiB/1073741824soft、shared84TiB，原analysis3.5GiB/reference run232MiB。
+  精确合同、GPU证据、命令、配置核对位于`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/launch/`；临时launchers在`.codex/tmp/prw_complete_single_task/`。
+  Runtime实际config/panel/video/128步cursor与RNG匹配，两个真实subset loader通过；evaluator outcome-informed训练诊断边界8tests通过。
+  Source训练图未变，仅修正上述评测metadata支持；实际1024query配对在训练完成后核对。

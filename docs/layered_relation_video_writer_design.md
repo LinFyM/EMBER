@@ -1,6 +1,7 @@
-# 因果分层视频 Writer：科学动机、推导与实现设计
+# 分层局部关系视频 Writer：科学动机、推导与实现设计
 
-设计记录日期：2026-09-06。本文整理本次 owner 已讨论、修正并接受的架构，以及为实现它所需的首版参数化。
+设计更新日期：2026-09-07。本文记录 owner 已对齐并要求交接的新候选，以及为实现它所需的首版参数化。
+本次更新将过程模块收口为双向局部帧对关系、对应内容与位移模式联合解释、逐帧聚合和同型 block 堆叠。
 它是新 session 的完整设计依据，不是训练启动记录，也不宣称本图已实现、已验证或已经通过任何科学资格。
 当前工作授权和是否存在 active design 只由 owner 最新指令及 [progress.md](../progress.md) 决定。
 
@@ -41,10 +42,10 @@ validation8 的 single-checkpoint strict paired correct 严格 `>145/400`，同�
 | 层次 | 内容 | 对后续工作的含义 |
 |---|---|---|
 | Owner 科学原则 | 动态视频必须是必要 Value 证据；完整单套 LoRA；零部署交互；真实闭环优先 | 不能由更低 loss 或更清楚的数学图替换 |
-| Owner 已对齐结构 | frozen vision/Gemma；读取侧 Action Expert shared Meta-LoRA；单 fixed probe；保留 T/J/H 到跨帧消费；late-query/past-only；共同 Q 读取视频集合；坐标条件化 A/B | 首版沿此图实现，不恢复被覆盖的旧分支 |
-| 推导支持的性质 | softmax 的熵优化形式；局部时间因果性；集合置换不变；VJP 链式梯度；普通末投影的固定 span | 证明范围仅限各自数学条件，不证明科学效果 |
+| Owner 已对齐结构 | frozen vision/Gemma；读取侧 Action Expert shared Meta-LoRA；单 fixed probe；保留 T/J/H 到跨帧消费；窗口内独立50×50帧对关系、两端读取、关系MLP后逐帧聚合与可堆叠更新；共同 Q 读取视频集合；坐标条件化 A/B | 首版沿此图实现，不恢复被覆盖的旧分支 |
+| 推导支持的性质 | softmax 的熵优化形式；关系行与相对位移分布的可恢复性；有限双侧上下文；集合置换不变；VJP 链式梯度；普通末投影的固定 span | 证明范围仅限各自数学条件，不证明科学效果 |
 | 首版实现默认 | rank4 Meta、d256/8heads、4 个 w4 temporal blocks、2 个 compiler blocks、p64 坐标 MLP、K1/2/4 | 可执行起点；batch、chunk、kernel 等需真实 profile |
-| 未验证命题 | Meta 能否改善教学输入域；分层因果过程是否可学；输出方向自由度是否改善共享学习；多 K 是否增益；能否稳定超过145 | 必须由后续真实实验回答 |
+| 未验证命题 | Meta 能否改善教学输入域；分层局部对应及过程是否可学；输出方向自由度是否改善共享学习；多 K 是否增益；能否稳定超过145 | 必须由后续真实实验回答 |
 
 18 个 Action Expert post-layer states 表示计算深度，50 个 horizon positions 表示相对动作时间。二者都不是人工定义的
 “接近、抓取、搬运、放下”标签。这样的语义可作为理解目标的例子，不能直接给 layer/horizon/rank slot 指派固定阶段。
@@ -74,11 +75,14 @@ one public fixed ξ0[50,32], flow_time=1
           ▼
 Rk[t,j,h,1024], j=18 image-conditioned post-layer boundaries, h=50
           ▼
-shared-across-layer causal temporal blocks
-current (t,j,h) queries only past (u<t,j,g), all g=1..50
+shared-across-layer stackable local relation blocks
+one 50x50 score per unordered frame pair within radius w=4
+separate row-normalized reads for both endpoints
+matched content + relative correspondence pattern + signed time gap
+pair-message MLP -> per-frame neighbor attention -> residual + FFN
           ▼
 task-conditioned learned H read after temporal consumption
-Ek[t,j,256]; each token has finite past context, layer identity retained
+Ek[t,j,256]; each token has finite two-sided context, layer identity retained
           ▼
 {Ek} as a set; no cross-video time concatenation
 shared Q[38,16,256]: cross-attention + whole-policy self-attention + MLP ×2
@@ -164,133 +168,211 @@ task-conditioned read 中 \(q(\ell,j)\) 的首版具体参数化为：直接取 
 masked learned read 得到 \(\lambda_\ell\)，再以共享线性映射和 layer identity 形成查询。它只细化原有的 language-only
 依赖，不是新增科学模块；token embeddings 不是独立运行 Gemma 得到的 contextual language hidden states。
 不因此再做缺 prefix 的 Gemma forward，也不声称它优于其它合法语言表示。\(\lambda_\ell\) 可用于 H-read/Q 的查询与路由，
-视频记忆的 Value 仍来自 R/过程。它不依赖全视频汇总、未来帧或视频总长度。
+视频记忆的 Value 仍来自 R/过程。这个 language-only 查询不读取图像或视频总长度；过程 Value 则可使用窗口内前后两侧的教学帧。
 
-## 5. 从单帧动作响应推导有向视频过程
+## 5. 从帧对软对应推导可堆叠的局部过程
 
-### 5.1 比较对象必须允许跨 horizon 软匹配
+### 5.1 内容对应与过程推进是两种相关证据
 
-两帧图像描述同一执行过程的不同位置。当前帧的 horizon h 不必对应上一帧相同 h，也不能设一个固定 `t+h` 时钟：teacher
-帧率、速度和不同场景响应并不构成这样严格的物理等式。因此当前 `(t,j,h)` 应能查询过去同计算深度 j 的全部 horizon g。
-同时，过程的方向固定为较早信息流向较晚信息；当前帧可解释过去，过去的 E 不应因后来 Q 反馈而被改写。
+owner的核心直觉是：执行进度推进时，同一段尚待完成的内容可能在新观察下移到更靠前的relative horizon位置。例如新帧位置1
+对应旧帧位置4，位置2对应旧帧位置5，关系矩阵会出现偏离主对角线的带。允许这种对应随内容和帧间隔变化，不能人为规定
+整体平移、单位矩阵、严格单调性或物理等式`t+h`。停顿、重新规划、多峰和局部没有可靠对应都可能存在。
 
-先用跨 j 共享的输入映射与 layer identity 表示原生响应：
+这里输入的是单probe下的Action Expert hidden responses，不是已经正确生成的未来动作。共享probe本身也可能形成共同位置
+结构；漂亮的对角线或偏移不能证明模型理解了运动。horizon仍是相对动作位置，j仍是计算层，不能给它们预设子任务标签。
+
+过程模块需同时消费两类信息：匹配到的内容，以及匹配位置的变化。只在对齐后计算内容差，会在完美匹配时消去后一类证据。
+因此每个帧对先形成独立关系消息，再由两端各自聚合；不要先把所有邻居的frames/horizons混成一个读出。
+
+### 5.2 同层、共享投影、带帧间隔条件的50×50关系
+
+跨 j 共享的输入映射形成：
 
 \[
 U^{(0)}_{t,j,h}=W_{\rm in}R_{t,j,h}+e_j\in\mathbb R^d.
 \]
 
-\(W_{\rm in}\) 的降维是 learned compression，不保证无损。H 从此至 temporal blocks 结束始终完整存在。layer embedding
-标明同一共享运算当前处理哪个计算深度；不建立18套独立 temporal models。
-
-### 5.2 从软匹配优化得到 attention
-
-对第 b 个 block、每个 `(t,j,h)`，允许的历史集合为
+下文省略同一个原生层 j 和单个head下标 a。每层归一化沿feature维；不同head可以有各自参数。同型block之间参数独立，
+每个block内跨t、j和视频共享主运算。H从输入至所有关系blocks结束保持50。
 
 \[
-\mathcal N^-_w(t)=\{u:\max(1,t-w)\le u<t\}.
+\mathcal N_w(t)=\{u:1\le u\le T,\ 0<|u-t|\le w\},\qquad
+x^{(b)}_{t,h}=\operatorname{LN}(U^{(b)}_{t,j,h}).
 \]
 
-单个 attention head 令 \(d_h=d/n_{\rm heads}\)，并计算
+对每个无序帧对，只按“较晚帧t为行、较早帧u为列”建立一次score；此时t>u、\(\Delta=\tau_t-\tau_u>0\)：
 
 \[
-q_{t,j,h}=W_Q\operatorname{LN}(U^{(b)}_{t,j,h}),\quad
-k_{u,j,g}=W_K\operatorname{LN}(U^{(b)}_{u,j,g}),\quad
-v_{u,j,g}=W_V\operatorname{LN}(U^{(b)}_{u,j,g}),
+C^{(b)}_{t,u}[h,g]
+=\frac{F_b(x^{(b)}_{t,h})^\top F_b(x^{(b)}_{u,g})}{\sqrt{d_h}}
++b_b(\Delta,g-h),\qquad C^{(b)}_{u,t}=(C^{(b)}_{t,u})^\top.
+\]
+
+F在两端共用，首版采用共享线性投影；每head的\(d_h=d/n_{\rm heads}\)。内容关联与二维相对偏置共同决定软对应。
+b必须能表达帧间隔与horizon位移的交互：若仅写成\(b_T(\Delta)+b_H(g-h)\)，固定帧对中的\(b_T\)是整行常数，
+会被逐行softmax抵消。联合表或联合MLP是可执行参数化，具体形式在运行配置冻结；不能凭间隔指定平移量。
+
+\(\tau\)使用该视频的真实原帧序号/已知时间戳，不是total-length归一化进度。stride5下相邻间隔通常规则，若canonical sampler
+保留末帧，则使用实际尾间隔。反向score直接转置整张表，包括偏置；若实现为有符号统一函数，须满足
+\(b_b(-\Delta,-\delta)=b_b(\Delta,\delta)\)，与只计算chronological pair的定义相同。
+self-pair不进入邻居集合，当前状态经残差保留，不需要生成自对齐矩阵或单位矩阵标签。
+
+### 5.3 一张关系表、两个条件读取
+
+对一个接收位置，在H个候选位置上采用熵正则simplex读取：
+
+\[
+\max_{\alpha\ge0,\ \sum_g\alpha_g=1}
+\sum_g\alpha_g C[h,g]-\eta\sum_g\alpha_g\log\alpha_g.
+\]
+
+内点驻点满足 \(C[h,g]-\eta(1+\log\alpha_g)+\lambda=0\)，因此
+
+\[
+A_{t\leftarrow u}=\operatorname{softmax}_{\rm row}(C_{t,u}/\eta),\qquad
+A_{u\leftarrow t}=\operatorname{softmax}_{\rm row}(C_{t,u}^{\top}/\eta).
+\]
+
+首版\(\eta=1\)。二者可看作同一关联表的两个条件读取，通常不互为转置或逆矩阵。先转置score再归一化，不能把已归一化的A
+直接转置作为另一端。每个帧对内部独立归一化，不能恢复在全部`(u,g)`上的联合softmax。
+
+A是模型的读取权重，不是经过校准的真实对应概率；softmax不会证明某个真实对应存在。多对一、多峰与相对位置不变都是允许的，
+不用Sinkhorn、硬argmax、伪alignment标签或人为斜对角loss代替功能学习。
+
+### 5.4 对应内容与相对位置分布
+
+对接收端\((t,h)\)，先读取邻帧内容：
+
+\[
+m_{t\leftarrow u,h}=\sum_g A_{t\leftarrow u}[h,g]\,V_b(x_{u,g}).
+\]
+
+把同一行权重改写到相对位置\(\delta=g-h\)：
+
+\[
+\rho_{t\leftarrow u,h}(\delta)=
+\begin{cases}
+A_{t\leftarrow u}[h,h+\delta],&1\le h+\delta\le H,\\
+0,&\text{其它},
+\end{cases}
+\quad \delta=-(H-1),\ldots,H-1.
+\]
+
+H50时每head的rho有99个位置，只有对应合法g的50项可能非零。这只是索引重排：给定h和rho可以恢复A的该行，尚未丢失
+对应模式。它不是额外的监督、teacher action、几何测量或第二次视频读取。
+
+若局部存在理想匹配\(V_b(x_{t,h})=V_b(x_{u,h+s})\)、\(A[h,g]=\mathbf1[g=h+s]\)，对合法h有
+
+\[
+V_b(x_{t,h})-m_{t\leftarrow u,h}=0,\qquad
+\rho_{t\leftarrow u,h}(\delta)=\mathbf1[\delta=s].
+\]
+
+对齐后的内容差为零，位置推进证据仍存在。因此不把内容差单独定义为完整动态。rho也不直接等于机器人真实速度或世界状态差。
+
+### 5.5 一个共享MLP解释每个帧对
+
+概念上直接输入当前状态、匹配内容、对应模式和带符号的时间间隔：
+
+\[
+\psi_{t\leftarrow u,h}
+=\phi_b\!\left[x_{t,h},\ m_{t\leftarrow u,h},
+\rho_{t\leftarrow u,h},\ \operatorname{enc}(\tau_t-\tau_u)\right]\in\mathbb R^d.
+\]
+
+多head版本的m拼接为d维，rho按head拼接为`heads*(2H-1)`维；当前状态只输入一次。phi为一个共享两层GELU MLP，
+第一层hidden首版取d，输出d；时间编码可采用带固定单位的signed gap或共享编码，其参数化在首个配置记录。
+phi可以比较当前与匹配内容、识别对应模式并取舍消息，不要求先手工构造唯一的差分D或额外gate链。
+
+这一输入有直接的代数实现。对MLP第一层，令\(e_{a,\delta}=W_{\rho,a}[:,\delta]\)，则
+
+\[
+W_{\rho,a}\rho_a=\sum_g A^a[h,g]\,e_{a,g-h}.
+\]
+
+整个第一层可写为
+
+\[
+z=W_xx+W_mm+\sum_{a,g}A^a[h,g]e_{a,g-h}
++W_\tau\operatorname{enc}(\tau_t-\tau_u)+b_1,\qquad
+\psi=W_2\operatorname{GELU}(z)+b_2.
+\]
+
+因此可以直接读取可学习的相对位置向量，不必先物化99维rho，更不需要另设“位移摘要网络”。内容和对应模式由各自权重进入
+同一MLP后融合；不预先将原始m与一个位置向量直接相加，并假定两者无损可分。phi输出仍是learned compression，不能声称
+整张对应矩阵被无损保存。
+
+相对关系进入attention输出与已有relation-aware attention一致；本图按帧对形成消息、再逐帧聚合，是当前任务的参数化选择。
+[Shaw等，Self-Attention with Relative Position Representations](https://aclanthology.org/N18-2074.pdf)不证明本Writer的性能。
+
+### 5.6 每帧聚合自己的最多8条关系消息
+
+对固定\((t,j,h)\)，先得到所有\(\psi_{t\leftarrow u,h}\)，再使用小范围多head attention：
+
+\[
+\beta_{t,u,h}=\operatorname{softmax}_{u\in\mathcal N_w(t)}
+\left(\frac{q_b(x_{t,h})^\top k_b(\psi_{t\leftarrow u,h})}{\sqrt{d_h}}\right),
 \]
 
 \[
-s_{tjh,ujg}=\frac{q_{t,j,h}^{\top}k_{u,j,g}}{\sqrt{d_h}}
-  +b_T(\tau_t-\tau_u)+b_H(h-g).
-\]
-
-\(b_T\) 表达实际已知时间间隔，\(b_H\) 表达 native relative-horizon 位移，分别学习；二者不合并成一个人造时钟。
-当 stride5 下相邻采样间隔规则时可以用离散表；若 canonical sampler 保留末帧造成不足5的末间隔，仍保留真实原帧时间戳，
-不能为了实现方便伪称间隔一致。是否保留末帧沿 canonical sampling contract 实现并登记，不能按结果变化。
-
-要求匹配权重非负、总和1，并避免强行作离散 argmax，得到熵正则 simplex 问题：
-
-\[
-\max_{\alpha\ge0,\sum\alpha=1}
-\sum_{u,g}\alpha_{u,g}s_{u,g}
--\lambda\sum_{u,g}\alpha_{u,g}\log\alpha_{u,g}.
-\]
-
-对约束引入乘子 \(\eta\)，在内点上求导：
-
-\[
-s_{u,g}-\lambda(1+\log\alpha_{u,g})+\eta=0
-\quad\Rightarrow\quad
-\alpha_{u,g}=\frac{\exp(s_{u,g}/\lambda)}{\sum_{u',g'}\exp(s_{u',g'}/\lambda)}.
-\]
-
-首版 \(\lambda=1\)，就是在所有合法 `(u,g)` 上联合 softmax。这解释了所选 read 的数学形式；它不证明注意力已经找到
-真实物理对应、语义事件或严格单调 alignment。soft matching 允许 h 与 g 对齐，也允许跨 g 重组。
-
-### 5.3 用“当前减去匹配的过去”表达变化
-
-历史读出与变化量为
-
-\[
-m^{(b)}_{t,j,h}=\sum_{u\in\mathcal N^-_w(t),g}\alpha^{(b)}_{tjh,ujg}\,v^{(b)}_{u,j,g},
-\qquad D^{(b)}_{t,j,h}=v^{(b)}_{t,j,h}-m^{(b)}_{t,j,h}.
-\]
-
-方向是当前减过去。跨帧关系匹配由 attention 学习，变化在同一 Value 坐标中相减。多 head 各自计算后拼接为 d 维 D，
-再更新
-
-\[
-U^{(b+1)}_{t,j,h}=U^{(b)}_{t,j,h}
-+\operatorname{MLP}_b\big[\operatorname{LN}(U^{(b)}_{t,j,h}),D^{(b)}_{t,j,h}\big].
-\]
-
-MLP 同时保留当前状态与变化。给定当前 Value 和 D，历史匹配量 m 可恢复，因此不默认再拼接一个冗余 m 分支。
-第一帧没有过去，规定 \(D_{1,j,h}=0\)，保留其真实初始场景；不能拿零向量当过去场景制造一个虚构事件。
-空历史不能调用全 masked softmax 后任由 NaN 进入图。
-
-同一 block 内所有更新都读上一 block 的 U，不能让 Python 循环中刚算出的当前状态被相邻节点再次消费。
-不同 block 用同型、独立参数；每个 block 内跨 j 共享所有主运算权重，并保留 j 身份。跨帧只匹配同 j，避免把层间变换
-和 teacher 过程变化混为一件事；下游 Q 仍可联合读不同层。
-
-### 5.4 能证明的时间边界
-
-由归纳法，\(U^{(0)}_t\) 只依赖 \(I_t,\ell\)。若 \(U^{(b)}_t\) 只依赖 \(I_{\le t},\ell\)，下一 block 只读当前及过去
-\(U^{(b)}\)，则也只依赖这些输入。因此
-
-\[
-U^{(B_T)}_t=f_{\phi,\mu}(I_{\max(1,t-B_Tw):t},\ell),
-\qquad E_{t,j}\text{ 不依赖未来帧}.
-\]
-
-首版 \(B_T=4,w=4\)，最大历史为16个采样间隔，规则 stride5 时约80个原始帧间隔。这是有限的局部因果上下文，不能称为
-每个 E token 已读懂全部长视频。整段证据在最终 Q 读取所有 E 时才共同参与生成。
-
-因果性针对 teacher 时间。native Action Expert 在自身 H 轴上的注意力保持原生算法，不能为了“causal”误改它。
-LayerNorm 只沿 feature 维做；early E 的时间位置使用已有时间戳/原帧序号，不能用 `linspace(0,1,T)`、全视频均值、
-总长度归一化或包含未来帧的语言 summary。处理完整视频后 Q 可做全局读取，但不能反馈回早期 U/E。
-
-### 5.5 跨帧消费以后再压缩 H
-
-每个 `(t,j)` 的 query 来自 exact language 与层身份：
-
-\[
-q^{\rm read}_{\ell,j}=W_\ell\lambda_\ell+e^{\rm read}_j,
+\widetilde U_{t,h}=U^{(b)}_{t,h}
++W_O\operatorname{Concat}_{a}
+\left[\sum_u\beta^a_{t,u,h}\,v^a_b(\psi_{t\leftarrow u,h})\right],
 \quad
-\beta_{t,j,h}=\operatorname{softmax}_{h}
+U^{(b+1)}_{t,h}=\widetilde U_{t,h}
++\operatorname{FFN}_b(\operatorname{LN}\widetilde U_{t,h}).
+\]
+
+公式省略j；FFN首版hidden为4d。帧对MLP与邻居聚合承担不同职责：前者解释一项关系，后者决定这些关系如何共同更新当前位置。
+一般\(\sum_u\beta_u\phi(z_u)\ne\phi(\sum_u\beta_u z_u)\)，所以不能先平均邻居特征再调用phi，也不能把两次归一化当作旧联合
+attention的同义改写。若没有中间非线性且恰当选择邻居权重，两级softmax可退化为flat softmax；两级归一化本身不是表达优势证明。
+
+所有消息仍保留h，直到所有blocks完成。phi与更新路径能够表达零/抑制性更新，残差保留当前状态，但是否学会忽略无效配对
+须由真实证据判断，不能用attention峰度当置信度。T=1时邻居更新规定为0；首尾仅使用实际邻居，空邻居不调用全masked softmax。
+当前状态仍可经过FFN，无须用假邻帧制造事件。
+
+### 5.7 堆叠、方向和可证明的上下文边界
+
+每个block内所有帧只读取上一block的U，再同时更新；不能读取Python遍历中刚更新的邻居。同型block之间参数独立，每层重新
+建立C/A并解释关系。高层U仍锚定(t,j,h)，但已含局部上下文，高层矩阵不能自动称为原始未来动作的物理对齐。
+
+归纳可得，在固定采样位置与局部mask下：
+
+\[
+U^{(B_T)}_{t,j,h}
+=f_{\phi,\mu}(I_{\max(1,t-B_Tw):\min(T,t+B_Tw)},\ell).
+\]
+
+首版\(B_T=4,w=4\)，上下文最多前后各16个采样间隔，规则stride5时各约80个原始帧间隔。每个E是有限双侧上下文的表示，
+整段远距离证据仍由最终Q共同读取；不能把局部E称为完整长任务程序。
+
+Writer在rollout前获得完整视频，早期U/E可以依赖附近的后续教学帧。带符号的时间间隔、关系两端和相对位置模式保留时间方向；
+不再要求teacher-time past-only mask，也不保留“追加任何未来帧都不得改变早期E”的旧测试。局部性仍要求窗口之外的图像
+不能影响该层输出，且不得通过全视频汇总、总长度归一化或Q反馈偷偷扩大局部上下文。原生H轴attention保持source原生语义。
+
+此图具有局部窗口和参数共享，属于局部关系attention/message passing。输入相关的对应与非线性消息提供明确归纳偏置，
+没有一般定理证明它优于同预算的标准Transformer或任意直接attention。数学一致性、可堆叠性与真实行为优势分别判断。
+
+### 5.8 跨帧消费以后再压缩H
+
+\[
+q^{\rm read}_{\ell,j}=W_\ell\lambda_\ell+e^{\rm read}_j,\qquad
+\gamma_{t,j,h}=\operatorname{softmax}_{h}
 \left(\frac{(q^{\rm read}_{\ell,j})^\top W_K^{\rm read}
 \operatorname{LN}(U^{(B_T)}_{t,j,h})}{\sqrt{d_h}}\right),
 \]
 
 \[
-E_{t,j}=\sum_{h=1}^{50}\beta_{t,j,h}\,W_V^{\rm read}
-\operatorname{LN}(U^{(B_T)}_{t,j,h})\in\mathbb R^d.
+E_{t,j}=W_O^{\rm read}\operatorname{Concat}_{a}
+\left[\sum_h\gamma^a_{t,j,h}W_{V,a}^{\rm read}
+\operatorname{LN}(U^{(B_T)}_{t,j,h})\right]\in\mathbb R^d.
 \]
 
-公式省略多 head 拼接/输出映射。\(W_V^{\rm read}\) 是普通 learned Value projection，\(\beta\) 选择 horizon 位置，
-投影重组特征通道；它不叫特殊“事件算子”。一条视频保留 \(E_V=\{E_{t,j}\}\) 的 `[T,18,d]` 分层记忆，不再压成一个
-全视频平均向量。这是 task-conditioned learned read，保留完整 H 到有向跨帧消费之后，但仍不声称 E 无损保留 R 或 X/Y。
-显式设置 D、attention 和视频 Value 只提供可学习的过程路径；模型仍可能忽略 D，或主要依靠语言/静态场景。结构完整不能
-充当“动态证据已经必要”的证明，最终须回到冻结后的功能与闭环 controls。
+公式省略标准head索引细节；每条视频保留`[T,18,d]`，不再压成一个全视频平均向量。language决定读取哪些过程内容；
+跨帧消费之前不做H mean。相对模式经内容条件化的A进入消息Value，不能用位置编码替代真实视频证据。
+
+H-read是learned compression，不保证E无损保留R、rho或原始X/Y。Q的语言残差也可能成为静态捷径；图中存在动态Value路径
+不等于视频已成为必要条件。是否利用对应、能否共享迁移和最终闭环的视频必要性都需后续实验，不能由内部attention图替代。
 
 ## 6. 多视频为什么有用，数学结论在哪里停止
 
@@ -513,7 +595,10 @@ observations 上的 X/Y。首版因此不加 X/Y bank、不限制因子 span，�
 | observer Meta | Action Expert18层 q/k/v/o，rank4 | 读取侧共享可训练；推理编译内固定 |
 | native R | `[T_k,18,50,1024]` | 18个 post-layer states，完整50H |
 | process U | d256，8heads，head-dim32 | 首版容量默认 |
-| temporal blocks | 4 blocks，过去 w4，跨 j 共享，blocks 间独立 | 最大历史16采样间隔 |
+| relation blocks | 4 blocks，双侧半径w4，每帧最多8个邻居；跨j共享，blocks间独立 | 前后各最多16采样间隔 |
+| pair correspondence | 每无序帧对/同j/head一个50×50 C，共享F、联合时间/位移偏置；两端分别softmax，eta1 | 不在全部邻居H上联合归一化 |
+| pair message | 当前d、匹配内容d、各head的99维相对对应模式、signed gap → shared GELU MLP，hidden d/output d | rho的第一层投影可等价为相对位置Value读取 |
+| frame update | 每h对最多8条消息做multihead attention，residual+FFN；FFN hidden4d | 一个block内读旧U、同步生成新U |
 | H read | `(t,j)` learned task-conditioned multihead read | H 跨帧消费后才压缩 |
 | memory E | `[T_k,18,256]`，Q阶段只读 | 分层且局部，不是无损全局语义 |
 | policy Q | `[38,16,256]`，608 paired A/B slots | 2个 cross/self/MLP compiler blocks |
@@ -618,7 +703,7 @@ one optimizer/scheduler step
 若 task weight 已在 policy VJP 中计入，Writer surrogate 不得重复乘；整个链只应用一次预登记权重。
 R 的 frame chunks 独立于其它 teacher frames 的 native forward，所以 observer replay 可逐 chunk 累加
 \(J_{R_c,\mu}^{\top}G_{R_c}\)。跨帧 attention 的梯度已经体现在 \(G_R\)，不能把 temporal block 按帧独立 backward
-或截断历史来冒充同一算法。
+或截断跨帧依赖来冒充同一算法。
 
 精确性要求 initial forward、policy VJP、Writer replay、observer replay 使用同一参数版本、样本、mask、RNG和数值合同。
 期间不能更新 \(\mu/\phi\)、改变视频、随机换 probe、重抽 dropout 或更新 running statistics。本文的“exact”指链式梯度
@@ -635,33 +720,42 @@ R 的 frame chunks 独立于其它 teacher frames 的 native forward，所以 ob
 prefix cache 也不能缓存依赖 \(\mu\) 的 Action Expert 输出。Q 的多次 E read 与 inference 内的 fixed read-only replay
 仍属于一次 Writer 调用，不引入环境交互。
 
-### 10.3 局部 attention 的批量布局
+### 10.3 帧对关系与消息的批量布局
 
-把 `(condition, video, j)` 放入 batch/group 维；h 保持完整50；按 T 长度分桶减少 padding。对一个时间 query block，
-K/V 只提取过去 w 个采样帧的50H，逻辑 score 形状约为 `[batch,J,heads,T,50,w*50]`，无需建立
-`[T*J*H,T*J*H]` 的全局巨大 dense mask。允许批量窗口 gather/unfold，但须实际测量复制和反向成本。
+按真实视频长度分桶，把condition/video/j/head放入适当batch/group维；保持H50。每视频只枚举一次无序局部边
+\(\mathcal E_w=\{(t,u):0<t-u\le w\}\)，不沿frame、horizon或channel写逐项Python主循环。
+令 \(E_w(T)=\sum_{\delta=1}^{w}\max(T-\delta,0)\)；T>w时为\(wT-w(w+1)/2\)。
 
-每个 local block 的有效 attention pairs 为
+对一批实际帧对，逻辑C为`[edge_batch,J,heads,H,H]`。shared F可对全部U先投影一次，随后batch gather得到两端，
+一次GEMM形成C；时间/位移偏置按实际gap查表或批量计算。两个endpoint分别归一化C和转置，分别读取邻端内容与相对对应模式，
+然后产生`[directed_edge,J,H,d]`消息，按receiver组装最多8个邻居的attention，更新完整U。padding边不产生消息。
+
+rho不必成为长期张量：其`99→relation_hidden`首层权重可重排为共享的`e[head,delta,hidden]`，
+按\(g-h\)索引并与A收缩。只共享位置表，不复制到每个edge/j；也不物化
+`[edge,J,heads,H,H,hidden]`的逐位置消息。block/edge chunk与activation checkpoint用于约束峰值，
+但chunk内外必须维持完整跨帧反向依赖。
+
+唯一score的数量为\(JH^2E_w(T)\) / head / block；两端各有一套条件归一化和读出。
+令\(d_\phi\)为关系MLP首层hidden（默认d），主项包括
 
 \[
-JH^2\sum_{t=1}^{T}\min(w,t-1),
+O(JE_wH^2d)
+\quad\text{（score与内容读取）},
+\qquad
+O(JE_wn_{\rm heads}H^2d_\phi)
+\quad\text{（直接相对模式投影的一种实现）},
 \]
 
-主项复杂度 \(O(TJwH^2d)\)，projection/MLP 为 \(O(TJHd^2)\)。j 独立 batching 保持线性 J，不产生跨层的 \(J^2\)
-配对。保持局部窗口不意味着应逐 token Python 循环。
+以及pair-message MLP、neighbor attention与frame FFN的projection成本。j仅作为batch维，保持线性J。
+这些项只描述候选张量算法，不等于实际GPU时间；位置模式投影和每邻居的MLP可能改变主要瓶颈，不能沿用旧单向图的step成本。
 
-优先将真实窗口 batches 交给 SDPA。PyTorch 2.11 的 SDPA 会依据输入选择可用实现，CUDA 上可能使用 fused kernels；
-mask、layout、head shape 和设备限制会影响实际 backend，不能写“用了 SDPA 就一定 FlashAttention”。布尔 mask 语义也需
-与使用的 API 对齐。[PyTorch 2.11 SDPA 文档](https://docs.pytorch.org/docs/2.11/generated/torch.nn.functional.scaled_dot_product_attention.html)
+首版可用batched GEMM、row softmax和收缩直接实现完整公式，再按真实profile优化融合与重算。标准SDPA只返回加权Value读出，
+不会自动提供本图需要的两端对应模式；不能把过程模块整体换成一次`T×(wH)`的SDPA并宣称同义。
+下游标准Q/H-read/neighbor attention仍可按其实际mask/layout选择高效attention实现。自定义融合是同一数学图的工程优化，
+不另建一套科学fallback；kernel名称本身不证明吞吐收益。
 
-FlexAttention 的 block mask/score modifier 可表达窗口与 \(b_T,b_H\)，作为真实 profile 后的同语义实现候选。该接口在
-2.11 中仍为 prototype；首帧无历史时不能开启“每行至少有一个合法 key”的保证。A40 不因文档出现 TMA 就获得 Hopper+
-特性；不为一个可选 kernel 建立第二套科学模型路径。
-[PyTorch 2.11 FlexAttention 文档](https://docs.pytorch.org/docs/2.11/nn.attention.flex_attention.html)
-
-activation checkpoint 优先明确 `use_reentrant=False`，用于需要 `autograd.grad`/VJP 与冻结输入、内部可学参数的路径。
-重放必须保留相同函数、参数和随机状态；checkpoint wrapper 本身不修复 detach。
-[PyTorch 2.11 checkpoint 文档](https://docs.pytorch.org/docs/2.11/checkpoint.html)
+staged VJP需要对R leaf和可学参数求导；activation checkpoint应与这种autograd使用方式相容，
+例如明确使用非reentrant路径。重放仍须保持同一函数、参数与随机状态，checkpoint wrapper不能修复detach或改变任务权重。
 
 ### 10.4 坐标 MLP 与 LoRA 应用
 
@@ -683,10 +777,11 @@ delta，也不必反复把每套 LoRA copy 进物理 PEFT adapter。物理 ident
 | R `[87,18,50,1024]` | 152.93MiB | 单 probe、18个已读图 states，未计反向图 |
 | 一份 U `[87,18,50,256]` | 38.23MiB | 一层 states，未计 q/k/v/MLP/grad |
 | E `[87,18,256]` | 0.765MiB | H-read 后分层 memory |
-| local w4 pairs | 15.21M / head / block | `18*2500*(4*87−10)` |
+| unique local w4 score entries | 15.21M / head / block | 338个无序帧对；每个C只建立一次 |
+| directed conditional correspondence entries | 30.42M / head / block | C与其转置各自归一化/读出；不要求同时常驻 |
 | full same-j T×H dense pairs | 340.605M / head / block | 仅是数学比较，不是本图执行方案 |
 
-局部 attention 对数减少不等于整步获得同倍率提速。单 probe 减少 observer probe 工作与 raw-state 存储，也不等于整体
+唯一局部score减少不等于整步获得同倍率提速；两个方向的内容/对应模式读出、pair MLP和邻居聚合均须计入。单 probe 减少 observer probe 工作与 raw-state 存储，也不等于整体
 训练成本减半；frozen prefix、compiler、policy VJP 与 replay 成本仍在。K 增大使视频读取/过程成本约随总帧数增加，
 最终只写一次 LoRA；实际瓶颈须按阶段测量。
 
@@ -721,7 +816,7 @@ temporal/compiler/decoder/policy-VJP/replay 时间、GPU利用率与峰值显存
 | 旧训练编排的经验 | 基线 `src/ember/ecp/policy_response_writer/shared_training.py` | 学习其 policy VJP→Writer replay，不继承 frozen-R cache、旧 runtime 或旧schema |
 | 旧 capture 的反例 | 基线 `src/ember/ecp/policy_response_writer/capture.py` | `@no_grad`、detach、双probe和多额外通道属于旧图，不能原样充当Meta-on observer |
 
-新实现的责任面应保持少数清楚模块：原生读取适配与训练重放、分层因果过程与集合 compiler、坐标 decoder、训练/评测入口。
+新实现的责任面应保持少数清楚模块：原生读取适配与训练重放、分层局部关系过程与集合 compiler、坐标 decoder、训练/评测入口。
 具体文件归属在实现时基于清理后的现有 owner 决定，不要求为了这个列表创建一整套新目录。保留一个 canonical active
 Writer，退役 P/Q、固定 Natural Program、raw-bank compiler 和 old stage launchers 由 Git/正式证据恢复。
 
@@ -769,8 +864,11 @@ active design、旧未完成清单或工具中仍 active 的 goal 恢复执行�
 
 针对具体风险做有限验证：
 
-- 将未来尾部替换/追加，在冻结模型、相同已读 prefix 下比较早期 U/E；其变化不得来自总长度、mask或Q反馈。最终 Q/LoRA
-  可随新增未来证据变化。这个工程因果性检查不使用 shuffled/reversed 视频做科学选择。
+- 验证每个帧对两端的row normalization、转置方向与signed gap；检查rho与A行的索引恢复，以及显式rho首层投影和相对位置读取
+  的代数等价。多head/边界/padding不应混合不同j或video，也不把已softmax的A直接转置当另一端。
+- 在固定采样位置的小真实condition上核对局部依赖：第b层输出不受半径bw外的图像内容影响，窗口内前后帧均允许参与；同一block
+  读取旧U并同步更新。不要沿用“早期E不能读取任何未来帧”的旧测试，也不把每个输入扰动都应产生非零变化当模型合同。
+  这些是工程语义核对，不以shuffled/reversed视频参与科学选择。
 - K1/2/4真实不同视频，交换视频排列应保持生成输出的集合语义；不要求逐元素低位一致，不做LoRA均值基线来替代合同。
 - 用小真实 condition 对照完整 autograd 与 staged VJP 的关键梯度/一个实际更新，验证链式语义与权重；这是有明确重放合同的
   限定验证，不是对全模型/全数据集逐 tensor 扫描。
@@ -786,7 +884,7 @@ active design、旧未完成清单或工具中仍 active 的 goal 恢复执行�
 明确区分“可学但目前共享不足”“同task新视频失败”“未见task迁移失败”“functional与闭环分离”。不能因同一接口non-pass
 就同时扫rank/seed/scale/LR/dtype、扩大所有模块或恢复旧冻结课程。需先用能区分竞争解释的最小证据定位接口。
 
-新图同时改变多个已对齐职责，首次整体结果只能检验这个组合。若要论证坐标decoder、Meta或因果过程的单项效果，需要后续
+新图同时改变多个已对齐职责，首次整体结果只能检验这个组合。若要论证坐标decoder、Meta或局部关系过程的单项效果，需要后续
 matched 干预；ordinary FactorHeads是合理的输出参数化对照，但其参数/成本差异须报告。不能为了做“所有消融”延迟关键
 closed-loop节点，也不能把此文列出的每个候选都自动排进一次全面扫描。
 
@@ -814,7 +912,7 @@ evaluator用cost-balanced dynamic queue、long-first、persistent workers。方�
 
 | 观测 | 可支持的定位 | 下一步边界 |
 |---|---|---|
-| permanent Meta零梯度、错误mask、future leak、cache参数版本错、task权重错 | 可重复的工程合同违反 | 在原图职责内修复并重做受影响检查，不把故障结果作科学non-pass |
+| permanent Meta零梯度、错误mask、越过声明局部范围的依赖、cache参数版本错、task权重错 | 可重复的工程合同违反 | 在原图职责内修复并重做受影响检查，不把故障结果作科学non-pass |
 | 单task也缺少实际功能/行为 | 当前整个条件→LoRA组合未建立足够能力 | 检查最早可证伪接口和正确执行参照；不先宣称迁移问题 |
 | clone强、shared弱 | 共享训练/表示/容量/优化有代价 | 用matched数据与有限干预区分，不能凭gradient cosine命名唯一根因 |
 | train行为可学，同task新video下降 | 视频nuisance或过程证据消费有缺口 | 核对实际不同视频、条件覆盖与记忆消费；不复制更多同一视频凑K |
@@ -829,10 +927,10 @@ evaluator用cost-balanced dynamic queue、long-first、persistent workers。方�
 
 1. 在清理后的代码 owner 下确定新图的单一入口与checkpoint schema；确认 prefix helper 和迁移后 schedule 的实际公开接口。
 2. task/video/action episode roles、额外meta allowlist、K频率、每task查询量、optimizer与normalizer口径；pool要真实支持K4。
-3. 公共probe seed、time-bias的具体离散化/参数化、canonical末帧采样记录，以及新鲜随机初始化的完整参数规范。
+3. 公共probe seed、联合time/horizon bias及signed-gap编码的具体参数化、canonical末帧采样记录，以及新鲜随机初始化的完整参数规范。
 4. 真实最长K1/K4下的batch/chunk/checkpoint/kernel选择及其测得峰值/吞吐；不能沿用旧Meta-off成本外推正式run。
 5. 第一批能区分学习接口的训练侧任务、预登记行为节点、何时进入strict400和相邻qualification。不能预写新图分数或根因。
 
-本文已经给出结构上完整的首版：一个读取侧Meta、一个单视频因果分层过程主干、一个多视频共同compiler、一个完整A/B
+本文已经给出结构上完整的首版：一个读取侧Meta、一个单视频分层局部关系过程主干、一个多视频共同compiler、一个完整A/B
 坐标decoder。后续 session 应先理解这条链和历史边界，再根据 owner 的明确启动指令推进；本交接文档本身不启动实现、训练、
 评测、外部专家联系或任何旧运行续接。

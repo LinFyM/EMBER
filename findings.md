@@ -2,7 +2,7 @@
 
 这里只保留会改变下一轮决策的结论与开放问题，不再复制逐轮实验年表。证据、数值和旧原文入口集中在
 [research_history.md](docs/research_history.md)；已对齐候选的完整推导在
-[causal_layered_video_writer_design.md](docs/causal_layered_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
+[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
 
 ## 1. 先分清三个问题
 
@@ -16,7 +16,11 @@
 
 完整50-horizon、各层状态、native prefix和有效梯度是必要工程边界；它们不自动构成视频过程理解。
 早期把原生响应压缩后做泛化时序attention，或晚期让参数queries读取全部证据，都不足以证明动作序列先验已被有效利用。
-新候选因此在H压缩前进行同层、后帧读取过去的跨horizon处理，并区分T/H/J；其效果仍需检验。
+新候选在H压缩前进行同层、双向局部帧对的跨horizon处理，并区分T/H/J；其效果仍需检验。
+
+9月7日推导明确：对齐后内容差为零，不代表过程未推进；对应位置本身也可提供证据。相对位移分布rho只是A行的索引重排，
+同一关系MLP应在逐帧聚合前消费内容与对应模式。固定probe造成的共同结构或漂亮斜带，都不足以证明物理动作对应。
+这是一项建模依据，尚无新架构学习/闭环结果。离线双向读取不违反rollout前一次编译；有限上下文与视频因果必要性分别验证。
 
 G2证明有序response包含功能动态；固定DP/event schema不是后继必须保留的形式。
 [原生容量与动态](docs/research_history.md#native-capacity)。
@@ -83,7 +87,7 @@ PNBTT停在free-query E1，真实Program E2未运行，不能借此否定G2。
 ## 10. 下一轮需要回答的科学问题
 
 1. 单probe+Action Meta能否为新图产生可学的教学响应，且真实视频变化进入过程Value？
-2. 分层因果过程和集合编译能否让同task的新视频保留功能，而不依赖静态目标识别？
+2. 分层局部对应/过程和集合编译能否让同task的新视频保留功能，而不依赖静态目标识别？
 3. 坐标MLP能否在共享训练中得到有用的完整A/B；改进来自何处，是否付出旧能力损失？
 4. 真正K1/2/4训练与更广视频支持是否带来性能/coverage增益，而非仅降低参数方差？
 5. 在完整目标支持和合理训练量下，能否达到single-checkpoint >145/400，并通过稳定性、困难suite和最终因果controls？

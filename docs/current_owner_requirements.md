@@ -25,7 +25,8 @@
   捕获full horizon、存在梯度、attention或模块名称，都不能单独证明这一科学机制已经兑现。
 - teacher-video time、relative action horizon、flow time、layer depth分别处理；horizon不是事件标签，计算深度不是任务阶段。
   frame stride固定5，完整50-horizon在有实际任务条件与跨帧消费的learned read之前保留，不能恢复coarse或horizon mean。
-- 教学过程按时间向前理解：后帧读取前帧，早期表示不依赖未来图像或由全视频长度产生的位置编码。最终参数生成可以读取整段已编码视频。
+- 教学视频在rollout前完整可用，过程表示允许读取前后教学帧；必须保留视频内部顺序和时间方向。局部范围与聚合方式由登记设计定义，
+  不把在线past-only限制自动当作必要条件。离线双向读取与最终视频因果必要性是不同问题，后者仍由冻结后的controls裁决。
 - 每条视频独立保序编码；只在集合阶段置换不变地合并证据。不得平均frames、raw features或最终LoRAs，不挑最好video。
   声称dynamic K就必须真实训练对应cardinalities，不能重复同一条视频凑K。one-shot/few-shot设定由真实能力决定，不故意削弱强方案。
 - 观察侧Meta-LoRA应有明确输入域与学习职责，必须保留其真实梯度以及cache有效性。已对齐设计采用Action Expert共享Meta适配，

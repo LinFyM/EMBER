@@ -2,7 +2,7 @@
 
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
 immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
-[progress.md](../progress.md)，新候选见 [设计记录](causal_layered_video_writer_design.md)。
+[progress.md](../progress.md)，新候选见 [设计记录](layered_relation_video_writer_design.md)。
 
 本次整理前的完整账本是 `fcdb6e43706c5fcedf10eaa5d2d459602b263016:docs/research_history.md`，含旧§1--181（有两个旧§126）；
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
@@ -19,7 +19,7 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 | 8月26--9月2日 G3 / primal / EBSRI / PNBTT | 一些task-local operator/replay通过 | 多轮shared或specificity/capacity冲突未解 | 不再沿固定接口堆专用数学链；负结果只限实际函数类 |
 | 9月2--5日 full-response / Axial / Unified | full-horizon合同修复，真实加速，若干task-local正控 | shared闭环弱或训练后漂移 | 完整输入、梯度和标准模块不等于机制兑现 |
 | 9月5--6日 P/Q、完整输出、覆盖与clone对照 | 完整输出改善训练侧Goal；单task clone明显更强 | 共享与迁移仍弱，容量/优化/数据未被单独定位 | 不能继续围绕猜测小扫，也不能把全部差距归到某一个模块 |
-| 9月6日晚重新推导 | 从科学动机推到单probe、分层因果过程、集合编译、坐标生成 | 新图尚无实现和性能证据 | 按已对齐图获得真实证据，进入实现前不必重复完整专家复审 |
+| 9月6—7日重新推导 | 单probe、分层局部帧对关系、集合编译、坐标生成；9月7日明确双向读取与对应模式消费 | 新图尚无实现和性能证据 | 按最新数学定义获得真实证据，进入实现前不必重复完整专家复审 |
 
 <a id="baseline"></a>
 ## 1. 基线、口径和不能混用的数字
@@ -252,12 +252,16 @@ root：`runs/outputs/pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02
 旧run现已封存；补评估并非新session的默认第一步，须由新架构的实际诊断需求决定且遵守新授权。
 
 <a id="design-alignment"></a>
-## 7. 9月6日晚从科学动机重新推导
+## 7. 9月6—7日从科学动机到分层局部关系
 
 owner要求在正式推进前充分讨论，并以另一段“从π0.5静态图像信息走向视频过程”的对话为共同基础。核心动机是无兼容action标签的
 教学与跨身体技能迁移；owner明确不能只因为full-horizon已捕获、梯度已接通就宣称兑现了科学精神。
 
-讨论按以下顺序收敛，完整公式与所有适用边界在 [新设计记录](causal_layered_video_writer_design.md)：
+### 7.1 9月6日初稿
+
+以下是9月6日的历史推导顺序。其中past-only及内容差分的定义已被下一小节覆盖，不能恢复为当前实施合同。
+初稿原文保留在Git `12d9689c:docs/causal_layered_video_writer_design.md`；最新完整公式在
+[新设计记录](layered_relation_video_writer_design.md)：
 
 1. 保留exact language与原生Gemma图文prefix；Action Expert共享Meta适配观察侧，vision/Gemma冻结。
 2. 将video时间T与relative action horizon H分开，在H压缩前真正进行跨帧处理；不把H位置命名为物体/阶段。
@@ -272,6 +276,26 @@ owner要求在正式推进前充分讨论，并以另一段“从π0.5静态图�
 
 这些决定形成了一个已对齐、可实现、可证伪的新候选，尚无性能证明；width、层数、窗口与MLP宽度只是首版默认。
 owner安排新session接手，当前session负责完整记录和仓库清理。正式推进仍须新session理解仓库后获得owner明确同意。
+
+### 7.2 9月7日帧对关系重推与再次交接
+
+owner明确希望在局部窗口内先建立每个帧对的50×50关系，随后每帧聚合自己的证据，不预先把整个关系规定为某一方向的query。
+确认半径4时前后两侧最多8个邻居均可使用，同型模块应当可以堆叠；视频在rollout前完整可用，早期表示读取后续教学帧是合法的。
+
+随后owner进一步明确：新帧较靠前的horizon可能对应旧帧较靠后的horizon，关系矩阵可能呈现偏移带，但应由内容与时间间隔学习，
+不做人为平移或单位矩阵监督。重新推导据此收口：
+
+1. 每个无序帧对建立一次共享F的score；联合bias依赖帧间隔与horizon位移，避免独立gap常数被帧对内softmax抵消。
+2. 两端分别归一化C与其转置，不能转置已归一化的A；signed gap与接收端相对位置保留方向。
+3. 对应内容m与相对位移分布rho一同进入关系MLP。完美对齐可使内容差为零，rho仍保留对应位置的推进证据。
+   rho只是A行的索引重排，其MLP第一层等价为相对位置向量的加权读取，无需独立位移摘要网络。
+4. 每个关系先经过非线性解释，再由每帧对自己的邻居消息做attention、residual和FFN；所有horizon一直保留到最终H-read。
+5. 每层只读旧U并同步更新，blocks间重新计算关系；上下文是前后各Bw，替换旧的past-only及未来帧不变性检查。
+6. 单probe/观察Meta、集合Q、完整坐标A/B与真实functional链式梯度继续保留。对应的物理意义、视频必要性和闭环收益都未被公式证明。
+
+owner在完整重推后要求更新仓库并重新给出新session prompt。当前图具备明确可实施的候选定义，尚未实现或产生新实验结果；
+新session仍先充分理解并报告计划，得到owner明确同意后才能正式推进。旧初稿通过Git保留，active tree只保留最新设计。
+这一修正记录的是设计判断，不是新的性能或根因结论。
 
 <a id="throughput"></a>
 ## 8. 应当复用的工程经验与实际加速范围

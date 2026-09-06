@@ -3496,3 +3496,16 @@ owner已授权直接完整LoRA主线；复用已完成实验和资产，按行�
 拆出rank或去carrier的独立因果效果。Spatial比A2降低、Long跨视频不一致、相邻success-set尚未稳定，task6/79功能迁移仍负。
 因此保留当前完整图，在已有更广meta allowlist和预登记128exposure预算中检验任务迁移与能力积累；不把64步non-pass当函数类失败，
 也不根据loss或一个弱上界Long任务单独引入occupancy。历史§173保留完整逐task/suite/RGL及计算成本。
+
+
+## 173. 完整图扩大meta任务后出现目标域取舍，仍不能用稳定弱分数裁决成功
+
+同完整生成图在73任务128updates上的validation固定screen80为15/19/19/19；后半18/19成功集中Object1和Goal6，相邻仅少量换手。
+相对旧A2同prefix17只净增2，低于SFT24，因此不机械展开strict400。四任务正收益没有随扩大数据自然转化为广泛held能力；
+但screen也不能冒充正式400分数、完整稳定资格或视频因果裁决。
+
+meta13task诊断中的6个gradient meta及meta6为正，target72/93/94仍较弱；原四任务相同query的后半loss也较短四任务更高。
+这支持检验混合训练的目标取舍，尚不能命名梯度冲突、数据比例、occupancy或共享容量为唯一根因。保留整图和target采样，移除meta
+objective的边界对照可给出不同预测，不需要立即换架构或增加loss链。历史§141的role-equal已non-pass；当前只是在有新完整输出
+学习证据的结构下进行一次有条件重试，不能据此合理化比例扫描。原13task诊断继续复用，不称fresh selector。
+完整事实与证据见`docs/research_history.md`§174。

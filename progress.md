@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 14:59 CST。
+更新时间：2026-09-06 15:13 CST。
 
 ## 当前状态与授权
 
@@ -26,18 +26,21 @@
 - 同query的33–64步原四task loss均高于短四任务（task1/72/83/93差+.000328/+.008831/+.011236/+.008192）；
   expanded task mean与128-step decay耦合，不把效果拆作单一因果结论。完整诊断见当前analysis的functional_comparison.json。
 
-## 当前验证评测
+## 验证结果与下一对照
 
-- 四套primary验证bank全部sealed，物化launcher exit0；首次source准备113.99秒，驻留复用.14–.21秒，每套8task生成约22秒。
-- 四个checkpoint的固定8task×10states screen80已并行启动，均使用同一041aff55、同一primary视频及state/env/policy RNG合同。
-  32在gpu01p4，64在gpu01p5，96在gpu02p1/2，128在gpu01p3/6；每卡3个persistent workers，单job单节点，总量6物理GPU。
-  NUMA分别1/1/0/1。gpu02两卡启动前各162MiB、既有process148MiB且0%util；gpu01四卡空闲，不干扰其它任务。
-- launcher PID分别3403145/3405746/3643550/3406242。精确脚本与参数见`.codex/tmp/prw_complete_meta73/screen{32,64,96,128}.sh`、各log首行
-  及analysis/launch的live preflight；全部已生成正确80-state合同，workers正在初始化，尚无完整screen结果。
-- 四组screen只分配下一步投入，不选最终checkpoint，不线性外推400。若有广泛、有保留的能力且接近强参照，先做一次strict400；
-  有希望再补预登记相邻及另一正视频，不能机械扩成多套弱400。Wrong/no-video/language/端点/shuffle/reverse及Test仍未使用。
-- 配对历史参照：相同80-state前缀source9、SFT24、A2m64为17；full400为47/109/79。SFT合同与当前state8/action7/replan5、
-  normalization和RNG已核对，109为原始轨迹复用；旧Writer143因teacher schedule不同只作count参照，不伪造配对比较。
+- 四套primary bank及四组screen80全部完成，所有launcher/worker exit0。32/64/96/128为15/19/19/19；
+  Spatial/Object/Goal/Long为0/7/8/0、1/10/8/0、0/9/9/1、1/9/9/0。后三点18/19成功集中Object1/Goal6，能力覆盖仍窄。
+- 相邻R/G/L为15/4/0、17/2/2、17/2/2；后两pair Jaccard.810、churn4。128对A2为16/3/1，对SFT为13/6/11。
+  同prefix SFT24、A2m64 17。未形成支持扩大评测投入的广泛能力，因此不启动strict400、不续同一混合run；没有final selector或negative/Test使用。
+  这只是预登记的screen投入决定，不冒充400-row资格裁决。完整报告与decision.json已保存，历史§174/findings§173登记。
+- 下一active arm已在同一design登记：`configs/pi05_ecp_prw_complete_target18_v1.json`，保留相同完整Writer和相同18target，
+  移除55meta functional objectives。每步18targets等权1/18、128updates/18432action rows；per-target query/video/normalizer/LR完全匹配。
+  原13task诊断全部保留，7meta及target79在此run零梯度，均为复用诊断、不称fresh selector。模型、数据接口、source及训练代码不变。
+- 真实CPU config/eval loader、空meta组和完整128步采样检查通过；2304task executions、每target128exposures，primary/other视频ordinal一致。
+  复用相同graph下最长87帧/micro8的实测34.67GiB峰值和全部18targets实际timing；五卡估计train12–22分钟，另计启动/capture/Panel-B约10分钟。
+  正式尚未启动，准备新clean pushed frozen tree及live资源合同。目标是区分混合objective取舍，未宣称根因；不做比例扫描或加入剩余6target。
+- 原始参照仍为配对历史source47/SFT109/A2m64 79；旧Writer143因teacher schedule不同只作count参照。未来强候选仍需同图random、
+  预登记strict400相邻/跨视频资格、冻结后视频因果controls和最终32/8合同。
 
 ## 证据与资源
 

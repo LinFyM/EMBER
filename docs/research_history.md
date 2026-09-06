@@ -3263,3 +3263,27 @@ Goal相邻分别保留19/21和17/22并新增12/10，但Spatial旧成功丢失5/6
 
 Run为`runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/`；全部raw rows、comparison、functional与schedule审计为
 `runs/analysis/pi05_ecp_prw_complete_shared4_20260906/`。后继保留同图，按当前design注册73任务128exposures，完整输出得到行为支持后再扩训练。
+
+
+## 174. 完整输出meta73在固定screen中停于狭窄能力（2026-09-06）
+
+Clean pushed detached041aff55完整完成73任务128updates、32/64/96/128 checkpoints、13task四点Panel-B及四组validation8 screen80。
+Train2929.82秒、诊断397.98秒，runtime3484.74秒；全部launcher/worker exit0，实际9344task executions/74752action rows、每条fit视频64 exposures。
+与原四任务256项、旧A2 meta73 4672项重叠的query/video/policy RNG一致，normalizer与微批梯度权重核对通过；五卡peak reserved34.67GiB。
+Source/observer冻结，所有held/Panel-B backward0，38-target完整rank16无carrier。运行root为
+`runs/outputs/pi05_ecp_prw_complete_meta73_s128_041aff55_gpu01p03456_20260906/`。
+
+四点正确视频固定screen80为15/19/19/19；逐Spatial/Object/Goal/Long为0/7/8/0、1/10/8/0、0/9/9/1、1/9/9/0。
+32仅Object1/Goal6两个任务非零；后三点都只有第三个任务偶发一次，18/19成功长期集中Object1/Goal6。SFT同80state前缀24、A2m64为17。
+32→64 R/G/L=15/4/0；64→96和96→128均17/2/2、churn4、Jaccard.810。128相对A2为16/3/1，相对SFT为13/6/11。
+因此有有限新增和局部保持，却没有广泛能力；不扩strict400、不续同一混合run，也不从screen选择最终checkpoint。
+这只是预登记的投入判定，不能把80条结果冒充正式400分数或完整因果/稳定资格。negative controls与Test未使用。
+
+功能面板四点all-fit-and-held-positive为8/8/9/9。128时6个gradient meta及诊断meta6均正，而target77/83 held benefit为
++.002669/+.004505，72约-.000077，93/94为-.002393/-.004300，诊断target79为-.001222。同query的33–64步原四任务loss均比短四任务更高，
+差为task1/72/83/93 +.000328/+.008831/+.011236/+.008192。Meta学习增强并不等于目标域学习与迁移已解决；未证明梯度冲突、occupancy或容量是唯一根因。
+
+全部320新rows、per-task/suite/RGL、functional与actual schedule、物化及launch证据保留在
+`runs/analysis/pi05_ecp_prw_complete_meta73_20260906/`；canonical报告comparison.md，投入决定decision.json。
+后继保留相同完整输出图，预登记移除meta objective而保持相同18target与曝光的边界对照。历史§141的role-equal已失败，
+本次是新完整输出图上的有条件重试，不能把加权称为未尝试的新思路，也不启动比例扫描。

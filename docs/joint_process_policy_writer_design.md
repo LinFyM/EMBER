@@ -125,3 +125,31 @@ Checkpoint固定32/64/96/128，相邻pair固定(32,64)/(64,96)/(96,128)。先完
 `...validation_other_correct_v1.json`。已有87-frame最长视频位于原四任务且已完成真实gradient/profile；额外full73四卡两步profile已exit0，micro2每步34.27/32.73秒，146video缓存25.43GiB；micro8的单task最长样本验证也exit0。
 按实时可用1–6卡启动，四卡训练预估60–75分钟，另计capture/初始化/Panel-B约10–15分钟；实际时间以formal记录为准。
 预计新增磁盘峰值<36GiB，正式从clean pushed detached tree运行，exact resume锁实际world topology。
+
+
+## Registered target18 objective counterfactual (2026-09-06)
+
+Meta73的128updates与四组screen80全部完成，结果15/19/19/19，后三点18/19成功集中在Object1/Goal6；没有支持扩strict400的广泛能力。
+训练侧6个meta诊断持续改善，而target72/93/94较弱，且原四任务同query loss高于短四任务。它们指向值得区分的任务目标混合取舍，
+不是已确认的梯度冲突或数据比例根因。原mixed run保留，不续训；下一对照继续使用完全相同完整LoRA Writer。
+
+唯一主要干预为移除55个meta任务的functional objectives。保留原18个target IDs、原两条fit视频、原Panel-A跨episode query规则、
+K1/micro8、source/normalizer、component initialization、fresh optimizer、LR和128-step schedule。每步18targets各权重1/18，
+共2304task executions/18432action rows，每target128exposures/1024queries；checkpoint及相邻pair仍32/64/96/128和(32,64)/(64,96)/(96,128)。
+这同时改变target在总梯度中的贡献和共享梯度统计；不能单独归因为梯度抵消、梯度量级、数据多样性或表示容量。
+不添加剩余6个train targets，避免把objective混合与task覆盖两项变化混在一起；没有新增任务、视频或held梯度。
+
+诊断继续使用原13task及全部原video/Panel-B visits。原6个gradient meta和meta6在此run均零梯度，并明确是被历史读取过的诊断，
+不称fresh task-held selector；target79仍零梯度。配置把7个meta登记为本run的held组，只改变梯度角色，不改变诊断样本。
+
+解释边界：target训练与新视频功能/闭环恢复，才支持混合目标在当前图上造成了重要取舍；若target功能恢复而未见target仍弱，
+则目标域学习与task transfer必须分开，不把它包装为完整修复。若target学习也未改善，不能靠继续扫描角色比例维持该解释。
+历史§141 role-equal在旧factor-set-relative-gain图中失败，当前是完整输出重构后的边界反事实，不是未尝试的新思路。
+
+仍先做相同四点primary validation screen80，只分配投入；有实际强趋势后才一次strict400，再补相邻/另一正视频。
+最终数值资格、same-topology random候选、冻结后因果controls和32/8最终合同完全不变。此对照不是初始化或架构消融。
+
+配置为`configs/pi05_ecp_prw_complete_target18_v1.json`及对应两validation正视频配置。复用刚完成meta73的同图、同18targets、
+最长87-frame与micro8真实执行证据，CPU核对空meta组与全18target schedule；没有新张量轴、算子、最长输入或更高显存要求。
+五卡预计train约12–22分钟，另计启动/capture及相同13task诊断约10分钟；实际以新run记录为准。新增峰值<16GiB，
+正式从新clean pushed detached tree运行，exact resume锁实际launch topology。配置与元数据以外的src/scripts/tests保持不变。

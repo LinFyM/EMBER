@@ -416,3 +416,33 @@ Owner在交接基线9ea20340之后明确授权：完整理解后立即实现、�
 完整raw rows、same-RNG/环境/source-normalizer合同与RGL：runs/analysis/layered_relation_writer_20260907/下的short4_source_screen40、
 s16_correct_screen40、s16_same_task_other_screen40及s16_correct_vs_source.json、s16_other_vs_source.json、s16_cross_video.json。正式训练root为runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907。
 原生frame批量16的真实最长K4另测joint16.88s、peak34.65GiB，无optimizer更新；它是布局成本证据，不是新的学习结果。
+
+
+## 14. 原始坐标初始化short4完成与最早输出接口线索（2026-09-07）
+
+原8d934408 fresh joint run已完成96步，384conditions/6144queries，每task1536queries、K1/2/4各32条件。
+16→48→96完整exact-resume均通过；实际更新总1288.78秒，平均13.42秒/step，含三次加载总1639.82秒。
+每task训练视频覆盖16/16，独立query episode-frame数为1230/1248/1269/1310；不能把这些episode曝光算作更多meta-task mappings。
+
+| 固定节点 | queries/task | correct/40 | other/40 | correct相对source R/G/L | other相对source R/G/L | 跨视频Jaccard |
+|---|---:|---:|---:|---|---|---:|
+| source | 0 | 4 | — | — | — | — |
+| 16 | 256 | 4 | 6 | 4/0/0 | 4/2/0 | 2/3 |
+| 48 | 768 | 6 | 5 | 4/2/0 | 4/1/0 | 5/6 |
+| 96 | 1536 | 4 | 4 | 3/1/1 | 3/1/1 | 1/3 |
+
+所有K1点的breadth均2/4、Object/Goal均0；Spatial/Long依次为16c2/2、16o4/2、48c3/3、48o3/2、96c2/2、96o3/1。
+相邻48→96 correct RGL4/0/2，other3/1/2；96跨视频RGL2/2/2、churn4/40。
+96步追加K4correct事先登记，仅使用全部held46–49，得到6/40（Spatial3、Long3，其它0），对source RGL3/3/1；
+对同点K1 RGL2/4/2、churn6/40、Jaccard1/4。K变化是明确的视频集合干预，不能冒充相同video schedule；任务/状态/RNG经共同source比较核对。
+这些是训练侧诊断，无validation/Test资格或最终选点意义；原配置未形成稳定广泛增益，不继续无依据长训。
+
+无更新固定query面板在96步的correct功能benefit约[1.59e-4,1.26e-4,3.48e-4,-3.18e-5]，不能替代行为。
+在两个授权训练任务7/35、expert0q/0v/action_out三代表target上，B的native-channel常量方向能量>99.995%，
+真实flow梯度在该方向仅约0.003%–2.23%；code RMS1.10–1.16，而坐标RMS0.02、rank间code差约0.0116。
+这定位到输出接口的一项可检验学习条件问题，不能唯一归因旧共享缺口，不能否定仍未被充分检验的关系图或视频过程。
+由此启动880bde5e的单变量fresh短对照：native A/B坐标改独立标准正态，其它科学与曝光合同不变；初始source flow loss与原run同为0.1250352208。
+新初始化能否有效仍待同一闭环判据，不把方向或梯度变大当作性能通过。
+
+所有原始rows/completion/RGL/launch、short4_exposure_cost.json、functional_s*.json、decoder_gradient_s96.json/.safetensors保留于
+runs/analysis/layered_relation_writer_20260907；原formal run及三个完整checkpoint路径见§13。K4补充为s96_k4_correct_screen40、s96_k4_vs_source.json、s96_k4_vs_k1.json。

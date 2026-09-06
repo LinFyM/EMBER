@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **唯一新图已实现并通过真实机制验证；第16步训练侧闭环未见广泛改善**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **唯一新图已实现并通过真实机制验证；原96步短学习未见稳定广泛改善；单变量初始化fresh对照已启动**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -24,37 +24,42 @@
 
 ## 当前formal运行
 
-- Clean pushed commit：8d934408；detached frozen workspace：.codex/worktrees/layered-frozen-8d934408。
-- Run：runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907；gpu01 physical2/3/5、world3，deferred NCCL与NUMA。
-- tmux：gpu01 / ember-layered-short4-s16；第16步已自然完成，train_s16.exit=0、总339.39秒、64conditions/1024queries，完整checkpoint约171MiB。日志train_s16.log、退出码train_s16.exit；
-  exact命令、环境、live资源及预算保存在runs/analysis/layered_relation_writer_20260907/launch_short4.json与launch_short4_s16.sh。
-- 物化/评测入口已集成并推送d5b8119e；最新全CPU171 passed/18.50s。执行frozen worktree为.codex/worktrees/layered-eval-d5b8119e。
-- 第16步correct/other各4套完整LoRA物化exit0，通过真实manifest/episode inspector；correct demos为7:48,12:49,20:48,35:46，
-  other为7:49,12:47,20:47,35:47，均由seed20260907的固定held池无放回抽样，未使用结果选择。
-- 第16步三组screen40已完成：source用p2、correct/other用p3/p5；每GPU3 persistent workers，各自cost-balanced队列。
-  结果根为runs/analysis/layered_relation_writer_20260907/{short4_source_screen40,s16_correct_screen40,s16_same_task_other_screen40}。
-  第16步闭环三组均exit0：source4/40、correct4/40、other6/40；correct/source RGL4/0/0，other/source4/2/0；breadth均2/4，Goal/Object0。exact命令/资源/退出码在同analysis root。
-- 第16步只有256queries/task；按事前96步短学习合同继续到48（768queries/task），保持原run参数、optimizer/scheduler、sampler与world3；gpu01 tmux ember-layered-short4-s48已自然完成exit0，日志train_s48.log。
-  该续段545.03秒，累计192conditions/3072queries；各task K1/2/4均16次。macro_00000048完整状态已保存；两组同一held视频物化均exit0；fixed screen40在gpu01p0进行（3workers，correct/other顺序），
-  同时原world3 physical235 exact-resume至预登记96步，tmux ember-layered-short4-s96已exit0、日志train_s96.log；该续段755.39秒，累计384conditions/6144queries、每task各K32次。这是完成既定短预算，不扩大长训。
-  原生frame_chunk16的exploratory K4 joint16.88s（observer forward1.36/VJP3.13）及peak allocated34.65GiB，表明批量布局可加快约34.5%；
-  该profile用step16权重，早期chunk4 profile用smoke权重，不能将loss差当batch收益或科学改进。下次fresh扩大训练采用已测布局。
-- 第48步correct screen40已完成exit0：6/40、Spatial3/10 Object0/10 Goal0/10 Long3/10，breadth2/4；相对source及16步RGL4/2/0，churn2/40，Jaccard2/3。
-  48步other也已exit0：5/40，Spatial3/10 Long2/10，其它0；对source RGL4/1/0，对16步other RGL5/0/1，cross-video RGL5/0/1、Jaccard5/6。
-  两组均breadth2/4；只有局部增益，未证明广泛或随训练稳定增强的基础行为。96步K1 correct/other已在p3/p5评测，K4物化p0、输出梯度诊断p2。
-  比较原件为同analysis root下s48_*_vs_source.json、s48_*_vs_s16.json及s48_cross_video.json。
-- 第16步后登记冻结训练侧functional诊断：action42–45各8query/task，与训练queries及held videos互斥；无梯度、固定noise/time、16/48/96重复同面板，不能选点。
-  第16步source减correct loss在四task为+8.90e-5/+2.86e-5/+5.11e-5/-1.87e-5；整体变化很小，不能当行为改善。
-  第48步correct benefit为+7.73e-5/+7.05e-5/+8.45e-5/-1.03e-5，仍很小；fixed-query跨步差异不代替行为。
-  原件functional_panel_registration.json、functional_s16.json、functional_s48.json位于同analysis root。
-- 在读取96步闭环分数前追加K4 correct screen40，仅用全部held46–49，固定同40初始化；诊断真实训练cardinality的行为，不能选最终模型，
-  不做K4other（当前held池只有4）。登记s96_k4_registration.json。
-- 输出端事后定位：16/48步task7/35的expert0q/0v/action_out三代表target，B的native-channel常量分量能量占99.98%以上；
-  这是可能的坐标decoder学习条件问题，不能独立证明闭环根因。96步固定训练query将计算LoRA leaf真实梯度、不更新参数、不选点；
-  登记decoder_gradient_registration.json，保留原完整图与所有历史结果，原96步同样高度常量化；真实gradient常量分量仅0.003%–2.23%，code RMS1.10–1.16对坐标0.02。
-  已准备唯一canonical初始化修正：native A/B坐标改标准正态，保留零readout与identity、其它图/seed/训练/曝光不变。新对照必须fresh，尚未launch；
-  不将此梯度/几何定位当作闭环因果证明。定义与接受边界在active design§8.4及canonical配置evidence.intervention。
-- 已合并task worktree及codex/layered-writer分支清理；两个仍供formal训练/评测使用的detached frozen worktrees保留。
+- 当前active short4对照：runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907。
+  Clean pushed frozen commit880bde5e，workspace .codex/worktrees/layered-coordinate-880bde5e；gpu01 physical2/3/5、world3，
+  tmux ember-layered-coordinate-control，train.log/train.exit。已launch并观察到第10步，数值与真实Meta梯度正常；初始source flow loss与原run同为0.1250352208。
+- 唯一科学改动是native A/B坐标由std0.02初始化改为标准正态；原图、参数量、public A0、零readout、Meta、seed、
+  optimizer/schedule、任务/视频/query采样、曝光、frame_chunk4和world3不变。175 CPU tests/17.04s通过。
+- Fresh联合训练96updates、checkpoints16/48/96；每task1536queries，真实K1/2/4各32组。
+  固定四训练任务global7/12/20/35、states0–9，held46–49无放回correct/other K1；96步补K4correct全4视频。
+  这些均为训练侧学习/初始化诊断，不选择最终checkpoint，不使用validation/Test或负视频controls。
+- 新对照的命令、环境、资源、预算与裁决在runs/analysis/layered_relation_writer_20260907/coordinate_init_control/launch.json及launch_train.sh。
+  Launch前两节点live复核；data1独立quota使用488688112KiB/soft1073741824，原run653MiB、analysis6.9MiB，
+  新增峰值预算<1GiB，共享free84TiB，复用全部大资产；初期合计<5GiB预算仍满足。baseline K4已完成并释放p0，后续新对照16步物化/评测可用该卡；正式launch前重新live核验。
+
+## 原始初始化short4：训练与全部短面板已完成
+
+- 原formal run：runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907，frozen train8d934408、eval d5b8119e。
+  完成96steps、384conditions/6144queries，16→48→96两次完整exact-resume通过，所有checkpoint保留。
+  三段含加载时间339.39/545.03/755.39秒；实际更新总1288.78秒、平均13.42秒/step。
+  各task覆盖全部16条训练视频，K4各32个不同集合；独立query episode-frame数1230/1248/1269/1310。
+- 固定screen40结果：source4；16步correct/other4/6，48步6/5，96步4/4。所有点breadth2/4，Object/Goal均0。
+  suite顺序Spatial/Object/Goal/Long：source2/0/0/2；16c2/0/0/2、16o4/0/0/2；48c3/0/0/3、48o3/0/0/2；96c2/0/0/2、96o3/0/0/1。
+- 对source，16c RGL4/0/0、16o4/2/0；48c4/2/0、48o4/1/0；96c/o均3/1/1。
+  相邻16→48：correct4/2/0、other5/0/1；48→96：correct4/0/2、other3/1/2。
+  同点跨视频Jaccard16:2/3、48:5/6、96:1/3；96跨视频RGL2/2/2、churn4/40。
+  原K1短学习没有形成稳定且广泛的行为改善，停止原配置无依据续训。
+- 原96步K4correct已exit0，6/40（Spatial3/Long3，其它0），对source RGL3/3/1；对同点K1 RGL2/4/2、churn6/40、Jaccard1/4。
+  只用全部held46–49，固定同40初始化，不做K4other（held池只有4）。
+  该项在读96闭环分数前登记，不用于最终模型选择。
+- 原fixed functional panel均已完成，无参数梯度/更新，action42–45各8query/task，固定noise/time，不能选点。
+  correct benefit（source loss减candidate）16步[8.90e-5,2.86e-5,5.11e-5,-1.87e-5]，
+  48步[7.73e-5,7.05e-5,8.45e-5,-1.03e-5]，96步[1.59e-4,1.26e-4,3.48e-4,-3.18e-5]；功能小变化不能代替闭环。
+- 事后冻结输出梯度诊断（仅授权训练task7/35、无参数更新）：expert0q/0v/action_out的96步B常量能量>99.995%，
+  真实policy梯度常量分量约0.003%–2.23%，code RMS1.10–1.16而native坐标约0.02；rank间code差约0.0116。
+  这支持坐标初始化条件假设，不唯一归因共享学习缺口，也不证明新初始化有效；active design§8.4定义单变量fresh检验。
+- 完整原件均在runs/analysis/layered_relation_writer_20260907：各s16/s48/s96_*_screen40 raw rows、*_vs_source、*_vs_s16/s48、
+  cross_video比较、short4_exposure_cost.json、functional_s*.json、decoder_gradient_s96.json/.safetensors及各registration/launch/log/exit。
+  同state/env/policy RNG、source与normalizer合同经比较CLI确认；未运行validation/Test或最终因果controls。
 
 ## 当前实现与验证（2026-09-07）
 

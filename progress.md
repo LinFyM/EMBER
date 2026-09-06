@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出单变量的CPU及真实GPU机制检查通过，fresh96步正式对照已启动。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出fresh96步训练完成、曝光匹配；16correct为7/40，剩余配对面板执行中。
 
 ## 当前授权与方法状态
 
@@ -24,7 +24,7 @@
 
 ## 当前执行节点
 
-两种初始化的训练/物化/闭环及冻结diagnostic均已完成；当前active GPU作业为末读出共享对照训练。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
+两种初始化的训练/物化/闭环及冻结diagnostic均已完成；当前active GPU作业为末读出对照物化与闭环。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
 96K4为8/40；所有breadth2/4，Object/Goal均0。48→96 correct RGL5/1/0、other6/0/2；96跨视频5/1/1、Jaccard5/7。
 完整事实及边界见research_history§15。保留局部Long正证据，不恢复原配置无依据续训，不将其宣称为广泛共享能力。
 下一单变量fresh对照已在target_rank_readout_control/registration.json登记：只将末读出[p]改为[target,rank,p]，+77,696参数；
@@ -36,10 +36,11 @@ full/staged loss同0.1256087869，Meta0qB/rho0/decoderB余弦0.999993/0.999998/1
 worktree .codex/worktrees/layered-readout-6ae406ea，gpu01physical2/3/5、world3、tmux ember-layered-readout-control。
 launch前两节点live检查，所用三卡均无计算进程；data1 quota489371696KiB/soft1073741824，已有两run各653MiB、analysis15MiB，
 新增峰值<1GiB，共享free84TiB，全部大资产复用。精确命令/环境/采样/预算见target_rank_readout_control/launch.json及launch_train.sh。
-16/48checkpoint已保存，训练已超过62步，初始source loss与原两轮完全一致（0.125035220757）；峰值allocated34.305/reserved38.109GiB。
-16步correct/other两组物化已完成exit0，当前gpu01p0运行16correct固定40闭环，已完成部分分片；尚无完整新面板分数。
-16other bank已就绪；48/96两组K1及96K4剩余5banks待96checkpoint完成后resident批量物化。
-所有七组固定评测脚本与compare_panels.py已准备；训练完释放235后并行补齐，不改变配对或按loss选择节点。
+96步训练完成、train.exit0，三个checkpoint保留；384条件/6144queries的task权重、K/视频、query episode/frame与policy RNG完全匹配坐标对照。
+每task1536queries，K1/2/4各32；实际更新1263.39秒、含加载1384.12秒，峰值allocated34.323/reserved38.109GiB。exposure_cost.json保存完整曝光/成本。
+16correct闭环完成exit0：7/40（Spatial2/Long5，Object/Goal0），breadth2/4；对source及坐标16correct均RGL3/4/1、churn5/40、Jaccard3/8。
+16other闭环正在gpu01p0执行；48/96两组K1及96K4剩余5banks正在p2 resident物化。p3/5已从训练释放，物化完成后用于闭环。
+这是早期Long局部正证据，不能据此宣称广泛共享、稳定或视频因果；后续节点按预登记补齐。
 
 ## 已完成的初始化formal对照
 

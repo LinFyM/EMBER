@@ -492,3 +492,8 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
   Meta0qB/rho0/decoderB的余弦0.999993/0.999998/1.0。这不构成科学行为结论。
 - formal fresh run layered_relation_short4_target_rank_6ae406ea_gpu01p235_20260907从clean pushed detached6ae406ea启动，
   gpu01physical2/3/5，完整合同在该analysis目录launch.json。结果待16/48/96双视频K1及96K4固定配对40裁决；未用validation/Test或负视频controls。
+
+- 本对照96步训练已完成exit0，完整384条件/6144queries与坐标对照的采样/权重/随机数一致，K1/2/4各32条件/task；
+  实际更新1263.39秒、总1384.12秒、peak allocated34.323/reserved38.109GiB，新增读出参数未带来明显吞吐代价。
+- 最先完成的16correct为7/40（Spatial2/Object0/Goal0/Long5），对source4及坐标16correct4均RGL3/4/1、Jaccard3/8。
+  只作为Long早期信号；16other及48/96/K4结果执行中，尚无完整相邻/跨视频结论。

@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:03 CST。
+更新时间：2026-09-06 19:10 CST。
 
 ## 当前目标与授权
 
@@ -46,12 +46,14 @@
 - CPU真实config/loader通过，从clean pushed f3717836 detached tree运行；frozen tree为
   `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-target18-random-20260906`。
 - 2026-09-06 18:48:55 CST启动gpu02p0–5、world6，NUMA0/0/0/0/1/1，launcher806281、torchrun806302。
-  0–3/5原有<=210MiB低负载，p4原有5754MiB/2%，peer作业不动。本任务当前只用这6张卡。
+  0–3/5原有<=210MiB低负载，p4原有5754MiB/2%，peer作业不动。该训练六卡已全部释放。
   训练128updates已完成，34.613GiB peak reserved；实际2304task executions/18432queries/video/policy RNG/权重与component逐项匹配。
-  当前正进行预登记零梯度Panel-B；尚无random闭环结果。
+  训练及Panel-B均自然exit0：614.19/404.46秒，另计启动。完整audit通过，held/Panel-B backward0、source/observer/tasklocal参数0。
+  Random后段五个target功能诊断有4项正收益，component为5项；多数数值接近，内部loss不裁决闭环或初始化根因。
 - Quota使用726502144KiB/1073741824soft，shared84TiB，预计新增峰值<16GiB。精确命令、资源与配置合同在
   `runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/launch/`；新run为
   `pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
-- 下一步训练/诊断自然完成后，一次驻留物化四个primary validation banks及固定terminal128训练诊断bank。
+- 已刷新两节点live资源，四个primary validation banks在gpu01p2/NUMA0物化，launcher4123394；固定terminal128训练诊断
+  在gpu01p3/NUMA1另一次驻留，launcher4123742。本任务当前只用这两卡；两项完成后接闭环评测。
   四点screen80只分配后续strict400投入；固定task75/77 held48/48 states0–9共20新rows只定位训练侧学习。
   评测采用dynamic long-first persistent workers，启动前两节点live准入、总量<=6；全部negative/Test仍未启用，没有selected checkpoint。

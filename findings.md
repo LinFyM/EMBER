@@ -3471,3 +3471,11 @@ Primary两个相邻success sets达到预注册retention/Jaccard数字，other则
 
 停止该component run的直接续训，保留实际正负证据和当前A2运行图；同拓扑fully-random是原已约定、尚未检验的初始化候选。
 它只检验同预算下跳过G2组件继承的影响，不是已经证明的修复，也不改变既有数据、信息墙、完整horizon或最终视频因果要求。
+
+## 171. 完整生成方向与真正能力参照（2026-09-06）
+
+train24共享SFT历史109/400是无需教学视频的合法跨任务基线，不能因它使用train24 actions而排除；EMBER训练也获准使用这些actions。
+正式相对比较需对齐评测合同；当前source47/carrier72只适合作机制参照，约80的Writer尚未接近SFT109和旧Writer143。
+旧143支持任务相关视觉读取、语义/过程共同表示与整套LoRA联合生成的职责；不能把历史不同checkpoint的优点拼成一个完美方法。
+P/Q交互、native-only因子读出和carrier12+mobile4是可分别审视的假设。G1局部容量不证明共享映射优势；解除限制也不自动保证学习成功。
+owner已授权直接完整LoRA主线；复用已完成实验和资产，按行为与信息价值投入，不机械补弱随机/多checkpoint完整评测。

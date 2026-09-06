@@ -3229,3 +3229,15 @@ Long尤其未稳定：32跨视频只保留2/9，48两视频各4个成功却完�
 `runs/analysis/pi05_ecp_prw_meta73_equal_exposure_20260906/`；canonical报告为comparison.md，裁决为decision.json。
 本轮sealed，wrong/no-video/language/first-final/shuffled/reversed最终controls未运行，Test8未使用。
 后续仅登记owner原已要求保留的同拓扑fully-random初始化比较，不据此添加新模块、恢复P/Q或命名尚未识别的根因。
+
+## 172. Owner重对齐完整LoRA主线与SFT参照（2026-09-06）
+
+owner指出weak A2仅比carrier多几个成功不值得直接扩多套strict400或执行大规模随机初始化比较，并要求回到早期143实际能力。
+只读原始合同确认train24共享rank128 SFT step400 validation8为109/400，step425为107/400；训练24任务与validation8不相交，
+部署不读teacher video、无held adaptation。结果根为`runs/outputs/pi05_source_sft_rank128_mixed_val8x50_step0400_96d307d_r6_20260728/`。
+该历史评测与当前7维/执行合同存在差异，不能直接声称strict paired比较；但它是合法的train24监督基线，不是held task oracle。
+
+旧A2 random在48/64后被agent中断，32/48 checkpoint保留，无完整训练completion或闭环结果；不把它报为随机初始化科学non-pass。
+owner讨论并接受后继规划后，于12:12左右明确重新设goal、自主执行直到最终科学目标。新方向复用现有P/Q、数据与执行条件，
+联合生成38-target完整LoRA，无独立carrier，首选rank16；native输入重要，但raw X/Y signed span不再是输出硬约束。
+这是一项耦合的输出职责重构而非已确认根因或单组件因果结论；旧P/Q本实例的负结果与早期Writer正证据均继续保留。

@@ -16,8 +16,8 @@ matching推进为动作chunk。教学视频则是一串跨时间的静态帧，�
 
 1. 从帧级PI0.5表示中提取与动作过程相关、而非只识别物体或task模板的动态证据；
 2. 从可变长度、可变`K`的视频中学习保留过程信息、可支持整套策略修改的工作表示；
-3. 让这个结构直接从PI0.5各LoRA目标的原生input/output空间选择低秩因子，而不是从低维latent凭空生成高维参数或把held更新
-   投影回fit-task固定span。
+3. 让共同表示联合生成Action Expert完整LoRA，在共享训练后仍能迁移到新任务；native evidence用于理解与条件化，
+   不再强制将输出限制为raw X/Y的signed span，也不得把held更新投影回fit-task字典。
 
 训练task数量有限还会造成欠识别：language、video和task identity可能高度相关，模型即使完全忽略过程也能降低训练loss。因此
 方法必须靠task-disjoint评测、视频controls、多个独立策略lineages和真实closed-loop结果证明因果路径。
@@ -31,9 +31,8 @@ Action Expert的原生动作时序知识应是视频过程理解的核心。Gemm
 早期v5.2/v6已证明一条端到端视频到LoRA路径能够产生真实闭环能力，后续缺少稳定积累；G1证明部分native-factor容量，G2证明
 ordered response有可学习动态信息。局部接口的正证据不等于整套共享Writer通过，后期弱模型也不能抹掉早期能力。
 
-最新owner认可的候选是共同过程状态P与整策略状态Q反复交互，并从当前视频的native X/Y联合写出LoRA。active design见
-`docs/joint_process_policy_writer_design.md`；owner已完成对齐并要求持续自主推进，当前阶段以`progress.md`为准。旧Unified v4保持sealed，
-专家建议先复用实际部署图做whole-Writer且无task query的少任务clone/shared对照；P/Q不是由历史non-pass自动推出的已证明修复。
+最新owner授权复用共同过程状态P与整策略状态Q，直接联合生成38-target完整LoRA，无独立carrier。首选rank16，rank8由实际成本和行为证据决定。
+active design见`docs/joint_process_policy_writer_design.md`，状态以`progress.md`为准。旧A2/P/Q实例的负证据保留，新的输出重构尚待实际检验。
 
 ## 数据流与模块职责
 
@@ -44,8 +43,8 @@ exact language + K internally ordered action-hidden videos
        <-> whole-policy states Q[target, rank, X/Y side, width]
        repeated attention/MLP; re-read full native evidence
   -> permutation-invariant learned set read
-  -> frame-conditioned signed pooling of current-video native X/Y
-  -> complete38-target factors, target cap, one rank16 materialization
+  -> family-shared learned factor heads
+  -> complete38-target A/B, one rank16 materialization
   -> frozen execution policy; no further Writer call
 ```
 
@@ -60,8 +59,8 @@ teacher-video time、relative action horizon、flow time、layer depth、probe�
 完整50 horizon及两个固定antithetic probes的原生响应，直到task-conditioned learned read才压缩；禁止horizon mean、coarse或
 等价无条件平滑。s=1是噪声端点，响应不是教师未来50帧或已经去噪的正确动作；不能设`t+h`统一时钟或把网络深度当任务阶段。
 
-语言、静态context与结构身份可以条件化读取，动态视频证据必须进入必要Value路径。位置只影响路由，不能由位置/帧数在静态重复
-视频上伪造mobile更新。当前视频真实X/Y为因子提供native坐标；q-head和action-in output grouping的G1正证据继续保留。
+语言与结构身份条件化读取，真实视频语义和有序过程共同参与完整生成。位置用于时间路由，不能由位置/帧数冒充动态证据。
+完整LoRA不继承mobile-only静态零输出约束；视频动态的必要条件增量由最终冻结controls证明。G1的native局部容量正证据继续保留。
 每条视频独立保序，集合阶段置换不变；不平均raw frames/features或最终LoRAs、不挑video、不拼视频时间、不重复凑K。
 
 教学视频路径没有teacher actions、state/proprio、reward、terminal、task ID、filename或pose。执行policy按官方合同使用自身当前
@@ -69,9 +68,8 @@ teacher-video time、relative action horizon、flow time、layer depth、probe�
 
 ## 输出与训练
 
-唯一部署输出为完整38-target rank16 LoRA。首轮用frozen rank12 carrier + mobile rank4隔离变量，但12+4不是永久最优结论。
-非对称A-context/B-dynamic读出只有在学习证据支持时matched检验；不能把静态零更新同时令A/B近零的局部二阶推导当既定根因。
-释放完整rank16同样须有实际可达性/功能/行为依据，禁止另加adapter或部署12+16。
+唯一部署输出由Writer联合生成38-target全部A/B，首选rank16，无独立carrier或第二adapter。native responses是重要证据，
+最终读出采用learned heads；非零A/零B初始化后全部可训练。解除signed/native输出限制是候选假设，不是已确认的性能根因。
 
 最初使用正确视频生成LoRA、同task跨episode action query的真实flow loss。训练task名单、权重、normalizer、video/row occurrence与
 optimizer cadence必须明确。clone/shared对照使用相同图、初始化和可训练模块；clone仅是能力诊断，不能部署或冒充共享泛化。
@@ -82,6 +80,7 @@ observer输入域不足再作有限matched审视；基础权重冻结，读取�
 
 ## 裁决与未知
 
+train24 SFT历史109/400与旧Writer143/400是实质能力参照；正式比较须对齐合同，不能只超过弱source/carrier。
 最终标准仍是validation8 single-checkpoint strict paired correct严格>145/400，并由相邻稳定、低churn、breadth、四suite与
 Goal/Long贡献、same-task新视频鲁棒性和最终视频因果controls共同证明。局部loss/rank/cosine改善不能替代闭环，union不能部署。
 fixed validation/test不产生梯度；shuffled/reversed只在selected checkpoint冻结后检验，不用于训练、选择、内部Gate或架构修正。

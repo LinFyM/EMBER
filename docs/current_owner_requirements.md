@@ -22,9 +22,9 @@ task-local适配。冻结policy加载这
 ## 2. 不可改变的部署合同
 
 - 输入：exact language + `K`条action-hidden ordered videos。
-- 输出：唯一一套完整rank16 LoRA。首版canonical采用有解析容量证据的frozen rank12 carrier + native-factor mobile rank4 residual，
-  但这不是不可改变的架构公理，也不代表专家证明了12+4全局最优。若native bank可表达、rank4 free-code已经收敛、剩余误差由
-  rank ceiling造成，且同构full-rank16 oracle显著通过，则按证据重新分配task/carrier rank；不能因历史惯性或便利随意改变。
+- 输出：唯一一套覆盖38个目标的完整task-conditioned LoRA，由Writer联合生成全部A/B，不部署独立carrier。
+  首选rank16；rank8仅在真实运行成本与学习/闭环证据支持时采用，不做无依据rank小扫。native responses是重要输入证据，
+  最终因子不再必须限制为raw X/Y signed pooling；完整生成不能机械继承mobile-only的静态零输出约束。
 - source PI0.5完全冻结；默认只修改Action Expert，不让Writer改变Gemma权重。
 - 每条视频独立保序编码，跨视频只做置换不变聚合；不得平均frames、raw features或最终LoRA。
 - Action Expert的50个relative horizon positions必须完整保留到task/relation-conditioned learned read；不得用final-layer
@@ -70,7 +70,8 @@ Gemma提供逐帧图文语义；其特征不被假定跨帧恒定，Action Exper
    与probe必须作为不同轴处理。full 50-step horizon是唯一获准表示，不得恢复coarse、horizon mean或等价抹平；
 2. G1已证明真实native X/Y、signed pooling和rank4 task-local容量，G2已证明ordered PI0.5 response包含视频动态；这些是应吸收的正证据，
    但不是强迫后继复制v4具体token、head或rank分配的架构公理；
-3. language与静态context不能独立写出有效mobile residual，video dynamic evidence必须是必要Value路径；
+3. language负责目标约束与证据查询，真实视频的语义和动态过程共同参与完整LoRA生成；视频动态必须具有必要条件增量，
+   不能用人为静态零输出代替最终因果证明；
 4. correct相对wrong、shuffle和reverse的优势应从正确视频监督自发产生；negative controls不进入训练loss或架构修正；
 5. learned主干必须由少数职责清楚、可复制扩展的标准attention/MLP类模块组成。扩大模型应主要复制同构层或统一改变width/heads，
    不得恢复Natural Program到summary、covariance、whitening、transport、anchor、family scalar gate或其它连续专用数学链；
@@ -98,7 +99,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
 
 ## 5. 成功标准
 
-- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`。
+- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`。train24 SFT历史109/400与旧Writer143/400是实质能力参照；
+  必须超过普通SFT的跨任务能力，正式比较前补齐必要的同口径评测，不能只超过弱source/carrier就声称有效。
 - 该分数必须由相邻single checkpoints、低churn、高breadth、四个suite均非零、Goal/Long真实贡献、same-task
   不同视频鲁棒性和视频因果controls共同证明，不能用偶然峰值通过。
 - full video必须有必要条件增量，并在多数任务上形成收益；same-task其它视频应保持高retention。
@@ -162,7 +164,8 @@ checkpoint已选定并冻结后作为严格配对的时序特异性测试；正�
   资格实验仍需几十分钟或数小时，且瓶颈来自每condition重复的大算子，就应先判定吞吐资格non-pass并修正执行结构，不能靠堆更多GPU、
   缩减必要评测或要求owner接受原始吞吐来掩盖。
 - 在新架构还没有用真实closed-loop证据显示超过已知carrier/直接可比基线之前，不得默认启动约10小时的大规模训练。
-  应先在不改变核心函数类、必要时序信息和闭环口径的前提下，缩小任务数据和更新数做最短有信息量资格实验；只有架构有效后才恢复扩展成本。
+  应复用现有任务与资产做有信息量的短学习和行为检查，再按能力趋势投入主训练。固定小面板只服务投入判断，不能选最终checkpoint；
+  接近强基线/目标的实际趋势出现后，先做一次strict400确认能力，再投入相邻与跨视频完整验证，不能机械展开多套弱评测。
 - EMBER并发总量不超过6张物理卡；只要总量未达上限、增加设备确实提高吞吐且实时余量安全，就应使用合适的空闲卡。可与低显存、
   低util进程安全共驻，但不得抢占、kill或reset。
 - 调度应优先使用满足峰值余量的真正空闲卡；只有空闲卡不合适或并行布局确有收益时才与他人低显存、低util进程共驻，不能在有等价空闲卡

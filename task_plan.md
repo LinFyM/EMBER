@@ -1,42 +1,33 @@
 # EMBER task plan
 
-更新时间：2026-09-06。
+更新时间：2026-09-06 12:14 CST。
 
 ## 当前目标与启动授权
 
-2026-09-05 23:24 CST owner完成事前对齐，明确表示“没啥问题了”，要求设置goal并持续自主推进；goal已建立且active。目标仍是一次视频到唯一LoRA的zero-interaction能力，
-validation8 strict paired correct严格>145/400，并满足相邻稳定、breadth/suite、same-task鲁棒性和最终视频因果资格。
-
-在既有硬约束内自主实验、深入分析与有依据的实现，两个节点合计最多6张物理GPU；普通non-pass不能随意命名根因并最小修补。
-重大科学/权限取舍与外部联系回到owner。需要owner决定时明确说明，同时继续可独立工作；真正不能推进时按goal工具合同标记blocked。
+owner最新明确同意实际开始，要求重新建立goal，终点为最终目标完成；权限内的问题由agent自主解决并连续推进。
+新的unbudgeted goal已建立。本授权取代今天上午的讨论暂停；不恢复此前弱A2的待执行清单。
+最终为validation8 strict paired single-checkpoint correct >145/400，加相邻稳定、跨视频、breadth/四suite/Goal/Long与冻结后视频因果资格；
+方法冻结后按32/8合同fresh最终训练和test。train24 SFT历史109与旧Writer143是实质参照。
 
 ## Active design与当前阶段
 
-- Active design：`docs/joint_process_policy_writer_design.md`。
-- 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
-- 当前阶段：同图、query覆盖、非对称A、视频池2→4和共同P/Q主干比较全部完成；四视频与P/Q均没有闭环增量，结果sealed。
-- 已恢复较好的两fit A2主干；73-task全task等权、64曝光formal从4d57f816 frozen worktree完成，实际采样/信息墙检查通过。
-  32/48/64的两组正确视频strict400全部完成：80/78、81/81、79/75，未通过资格，完整证据已sealed。
-- 同拓扑fully-random候选已按owner原有要求预注册并于10:09 CST从7f6b1611启动六卡训练；只跳过组件继承。
-  不继续P/Q的rank/scale/seed小扫或无依据续训。
-- 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
+- Active design：`docs/joint_process_policy_writer_design.md`，当前为完整LoRA共同过程—策略生成。
+- 复用93540ff1的P/Q及完整native-response读取；由learned heads联合生成38-target全部A/B，首选rank16，无独立carrier。
+- 初期保持现有监督、数据、权重与主要P/Q配置；输出重构的耦合变化不能伪称某个单组件的因果优势。
+- 先实现并做最小真实forward/gradient/materialization/吞吐验证；现有四任务作短学习对照，73-task承接有行为反馈的主训练。
+- 小面板判断投入，最终选择只用预登记strict400；接近强基线/目标后先一次完整评测，再展开相邻和同任务另一视频。
+- 原A2 component已sealed，random只完成至48且此前被中断，未完成/未恢复；已有checkpoint保留，不自动续跑或执行原六套400。
 
 ## 推进顺序
 
-1. [x] 保存专家原文，完成对齐；依据owner最新明确要求建立goal并登记active design。
-2. [x] 复用shared runtime，锁定少任务名单、训练/held视频、action rows、per-task exposure、局部闭环及source/carrier参照。
-3. [x] 完成必要配置/最小实现、比例相称的验证与真实吞吐检查，启动同图clone/shared对照。
-4. [x] 联合分析fit、新视频、实际闭环与任务更新；首轮显示小共享行为增量和有限query覆盖。
-   同图fresh Panel-A query对照也已完成：fit41→41、held39→45，Goal/Long跨视频仍弱。先用只读实际correct-video诊断核对双侧零因子假设，
-   不提前扩task、继续64步或同时替换读出与主干。实际18-forward诊断已完成，下一项只改变A侧context正负query职责。
-5. [x] matched检验非对称A职责：64 fit/held44/45相对同执行参照41/44，暂保留A2并退役双臂runtime；不宣称稳定或已识别根因。
-6. [x] 完成正确视频池2→4对照：41/38与41/39，没有行为增量；停止扩大同task视频数和无依据续训。
-7. [x] matched比较共同P/Q与两fit A2：四组闭环均更弱，封存本实例并恢复A2；参数、初始化和约2.30倍训练加速单列。
-8. [x] A2的55meta+18target全task等权group、64曝光及32/48/64两正确视频validation8 paired400全部完成，source/carrier参照也已收齐。
-   80/78、81/81、79/75相对carrier72只有有限净增，数值资格、breadth/Long及跨视频稳定性未通过；历史§171、findings§170和formal报告已sealed。
-   不宣称任务数量是根因，不直接续训或恢复P/Q；当前仅声称K1，继续已约定初始化比较，最终冻结后才补controls。
-9. [ ] 完成同拓扑整套Writer fully-random fresh联合候选：相同73-task/64-update合同、32/48/64两组正确视频strict400，
-   source/carrier复用同执行原始rows；比较变量只为初始化。已从7f6b1611启动，等待64步/Panel-B及后续closed-loop；不把继承先验认作根因。
+1. [x] 重建goal并同步最新授权、能力参照和完整输出方向。
+2. [ ] 在独立实现worktree复用P/Q，替换唯一输出接口、同步训练与物化合同并退役旧默认路径。
+3. [ ] 最小真实图验证和最长样本吞吐；现有四任务上的短学习/闭环对照。
+4. [ ] 现有73任务主训练，分别记录optimizer updates、task exposure、video/query覆盖和三种泛化。
+5. [ ] 根据早期固定小面板与学习轨迹决定下一段投入；出现有希望候选时一次strict400核实能力。
+6. [ ] 按实际失败接口开展有区分力的干预；必要时研究成功保持/可信learner occupancy，承认历史等价尝试。
+7. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
+8. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
 
 下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 

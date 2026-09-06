@@ -2,6 +2,22 @@
 
 更新时间：2026-09-06。
 
+## 当前快照（2026-09-06 12:14 CST）
+
+- owner明确结束讨论暂停，要求实际执行、重新设goal并自主推进至最终目标；新goal已建立且active。
+- 唯一主线改为复用P/Q与完整50-horizon evidence、直接联合生成全部38-target完整LoRA，首选rank16，无独立carrier；
+  active design仍为`docs/joint_process_policy_writer_design.md`，其内容已按最新对齐更新。
+- 当前在实现阶段：同步source/runtime/materialization合同；先短学习与实际行为，再按有信息量的结果逐步投入主训练和完整评测。
+- 纠正上午运行状态：旧A2 random在11:16完成checkpoint48后被agent中断，退出1；没有result/completion与随机候选闭环结果。
+  原拓扑设备随后被他人使用，因此没有resume。32/48 checkpoint及既有证据保留；该旧待执行清单不再自动推进。
+- 重新确认普通train24 SFT历史109/400、旧Writer143/400为能力参照；109为train24→validation8、无held适配，不能错误排除为held oracle。
+  当前新评测尚未与其同口径配对，后续正式比较前补齐必要缺口。
+- 本节点未启动新GPU任务。当前实现与历史frozen worktree隔离；资源只在实际launch前刷新。
+
+## 以下为历史执行记录
+
+以下“当前”“下一步”和运行状态只表示对应时点，不能覆盖上面的最新授权和状态。
+
 ## 当前快照
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的

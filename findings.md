@@ -3521,3 +3521,8 @@ validation screen80却为17/17/20/16。64/96的breadth确有5/6tasks，Long在64
 必须区分目标任务本身是否学回真实行为和新task迁移是否成功；为此在读screen结果前登记固定terminal128、原Spatial2/Goal20/Long38的
 两run fit/held配对诊断，结果未到前不把功能/验证差异立即归因为occupancy或覆盖。原18并非全部train24；与SFT的支持差异保持显式，
 但缺6项metadata本身也不是已证明的性能根因。见历史§175及本轮analysis。
+
+
+上述固定terminal128诊断已完成：meta73 fit/held32/36，target18均53；Spatial与Goal实际恢复，但Long0/1且低于短四任务64/62。
+因此“仅剩未见task迁移问题”的说法仍过强。target18跨视频45 retained/8 gained/8 lost、Jaccard.738，任务级得失必须继续保留；
+完整结果见历史§176及local_behavior_comparison。SFT实际每task9600queries与本轮1024的预算差异已核验，但与rank、任务支持及episode池差异耦合，尚非根因结论。

@@ -3309,3 +3309,20 @@ Clean pushed detached351feb48完成同18target、128updates、K1/micro8的object
 全部320新rows、paired sets、训练审计与功能报告在`runs/analysis/pi05_ecp_prw_complete_target18_20260906/`，validation报告为
 `comparison.md`/`closed_loop_comparison.json`/`decision.json`。在读取本轮screen结果前已从9998f204登记两run固定terminal128的原三训练task
 fit/held strict150，共600新rows，用以分开目标任务真实行为恢复与未见任务迁移；这是仍在执行的诊断，不预写结果或恢复旧待办。
+
+
+## 176. 两run固定terminal128的目标任务行为对照完成（2026-09-06）
+
+事前于9998f204登记的600个train-side rows完整结束，四组launcher/workers均exit0。原3task/50states、两正视频及source/RNG配对，
+meta73 fit/held为32/36，Spatial/Goal/Long分别27/5/0与27/6/3；target18 fit/held均53，分别39/14/0与37/15/1。
+因此移除meta objectives确实恢复了部分受监督任务的真实行为，收益主要在Spatial与Goal，不能只用内部functional描述此结果。
+但Long仍弱，新held Long丢掉meta73原3个成功、另得1个；并未完成全面目标学习，更未解决validation泛化。
+
+meta73→target18的fit R/G/L为27/26/5、held26/27/10，churn31/37、Jaccard.466/.413；target18跨视频为45/8/8，
+Jaccard.738，meta73跨视频27/9/5、.659。相同预算两run的干预仍是objective组成及梯度统计，不能从这些集合变化唯一断定梯度冲突。
+旧short4 m64为64/62，任务数与预算不同；其Goal31/27高于本轮14/15，所以本轮只称部分恢复，不把余下差距全部归为unseen-task transfer。
+
+四组active wall为meta73-fit1439.89秒、held1449.51秒，target18-fit1374.38秒、held576.52秒（后者3GPU，其余各1GPU）。
+冻结eval authority9998f204只增加配置/文档，训练图与checkpoint未改变；全部banks、raw rows、per-task/suite与success IDs在
+`runs/analysis/pi05_ecp_prw_complete_target18_20260906/`，canonical结果为`local_behavior_comparison.md`/`.json`，完整600rows不并入validation分数。
+后续先定位实际动作阶段的失败；不因预算、覆盖或初始化的可疑差异直接恢复长训或重构。

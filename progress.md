@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 16:35 CST。
+更新时间：2026-09-06 16:51 CST。
 
 ## 当前目标与授权
 
@@ -27,16 +27,16 @@
   96的6-task breadth含4个singleton；四点均低于同prefix SFT24，没有稳定累积。目前不扩strict400、不续同run、不扫role比例；
   这只是评测投入决定，不是400-row资格裁决。未使用negative/Test，历史§175/findings§174登记。
 
-## 正在进行的训练任务行为诊断
+## 训练任务行为诊断已完成
 
 - 在读取上述screen结果前，已登记两run固定terminal128、原Spatial2/Goal20/Long38（global[2,20,38]）的fit/held strict150。
   原first-fit demos[3,5,2]、held[49,49,48]及50states固定，共四套single-checkpoint/600新rows；不用于最终checkpoint选择。
-  目的是区分受监督任务行为是否恢复与未见task迁移；结果未到前不宣布occupancy、覆盖或初始化为根因。
+  目的是区分受监督任务行为是否恢复与未见task迁移；这些结果仍不能唯一断定occupancy、覆盖或初始化为根因。
 - Clean pushed detached9998f204247c0b3d4bd33762e18e895318d0f991，工作目录
   `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-training-diagnostic-20260906`；只增加4个eval配置和文档，训练配置/source/scripts/tests不变。
   4个真实eval loader通过，四套3-task LoRA banks都已生成/exit0；复用每run驻留runtime，不重新训练或更新任何checkpoint。
-- 四组评测均已启动：meta73-fit gpu02p4/NUMA1（PID1117）、meta73-held gpu02p6/NUMA1（PID1604）、
-  target18-fit gpu01p0/NUMA0（PID3708470）、target18-held gpu02p0/1/3/NUMA0（PID69214）；每GPU3workers，共6张实际工作卡。
+- 四组评测均已完成/launcher和workers exit0：meta73-fit gpu02p4/NUMA1（PID1117）、meta73-held gpu02p6/NUMA1（PID1604）、
+  target18-fit gpu01p0/NUMA0（PID3708470）、target18-held gpu02p0/1/3/NUMA0（PID69214）；每GPU3workers，执行期最多6张实际工作卡，现已全部自然退出。
   使用live显存/util/process准入，保留低负载peer，不做抢占。launchers在`.codex/tmp/prw_complete_training_diagnostic/`。
 - 原18与SFT全部train24的支持差异已在`target_training_support.json`记录。进一步核验SFT历史400步实际230400queries、每task9600、
   50episodes、rank128；当前每task1024、16个Panel-A episodes、rank16。闭环可配对，训练剂量/支持/容量/优化未匹配，不能由差异直接推出根因。
@@ -46,8 +46,10 @@
 
 - Canonical analysis：`runs/analysis/pi05_ecp_prw_complete_target18_20260906`。`comparison.md`/`closed_loop_comparison.json`为完整validation screen；
   `decision.json`为投入决定；`functional_comparison.*`、`actual_training_schedule.json`为训练侧证据；
-  `local_behavior_comparison.*`为本轮600-row诊断，当前仍partial，不能引用为完成结果。
+  `local_behavior_comparison.*`为本轮完整600-row诊断：meta73 fit/held32/36，target18均53；逐Spatial/Goal/Long为
+  27/5/0、27/6/3、39/14/0、37/15/1。两run fit R/G/L27/26/5、held26/27/10；target18跨视频45/8/8、Jaccard.738。
+  恢复主要在Spatial与Goal，Long仍弱，且低于short4的64/62。历史§176保留完整边界。
 - /data1最近live quota722850436KiB/1073741824KiB soft，shared84TiB available；全部本轮物化/验证/诊断新增峰值<8GiB。
   精确runtime合同、两节点GPU证据、quota、launch命令与日志保存在analysis/launch和各run launch目录。
-- main已集成并推送。351feb48训练/screen frozen tree、041aff55历史mixed tree保留inactive，9998f204为active诊断tree；旧A2 random不恢复。
-- 下一方法决定等待上述训练任务配对行为；继续参考专家原文§6/§8及历史SEOD/GOMQ/guard边界，不以functional或一次screen波动推翻全图。
+- main已集成并推送。351feb48训练/screen frozen tree、041aff55历史mixed tree保留inactive，9998f204诊断tree也已inactive；旧A2 random不恢复。
+- 下一步定位实际动作阶段失败，再确定训练或数据干预；继续参考专家原文§6/§8及历史SEOD/GOMQ/guard边界，不以functional或一次screen波动推翻全图。

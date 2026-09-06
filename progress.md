@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 15:28 CST。
+更新时间：2026-09-06 15:36 CST。
 
 ## 当前状态与授权
 
@@ -37,13 +37,14 @@
   移除55meta functional objectives。每步18targets等权1/18、128updates/18432action rows；per-target query/video/normalizer/LR完全匹配。
   原13task诊断全部保留，7meta及target79在此run零梯度，均为复用诊断、不称fresh selector。模型、数据接口、source及训练代码不变。
 - 真实CPU config/eval loader、空meta组和完整128步采样检查通过；2304task executions、每target128exposures，primary/other视频ordinal一致。
-  复用相同graph下最长87帧/micro8的实测34.67GiB峰值和全部18targets实际timing；五卡估计train12–22分钟，另计启动/capture/Panel-B约10分钟。
+  复用相同graph下最长87帧/micro8的实测34.67GiB峰值和全部18targets实际timing；六卡实测每步约4.27秒；完整启动/capture/Panel-B成本另计。
   已于15:28左右从clean pushed detached351feb48启动，gpu01物理0/2/3/4/5/6、world6、NUMA0/0/1/1/1/1；
-  p2 peer任务在preflight前自然结束，实际六rank task-work估计均约4.01秒，source/code不变。launcher PID3518744，当前source加载。
+  p2 peer任务在preflight前自然结束，实际六rank task-work估计均约4.01秒，source/code不变。launcher PID3518744，已正常运行至62updates、macro32保存，实际34.61GiB peak reserved。
   Run为`runs/outputs/pi05_ecp_prw_complete_target18_s128_351feb48_gpu01p023456_20260906`，analysis为
   `runs/analysis/pi05_ecp_prw_complete_target18_20260906`；精确命令`.codex/tmp/prw_complete_target18/train.sh`，contract/preflight/audit均保存在analysis/launch。
   /data1 quota722611784KiB/1073741824KiB，outputs529GiB、analysis17GiB，shared84TiB可用；缓存含诊断12.24GiB、新增峰值<16GiB。
-  六卡预计train10–18分钟，另计启动/capture/诊断8–12分钟；actual topology锁world6 exact resume。目标是区分objective取舍，不扫描比例或加入剩余6target。
+  前62步采样审计pass，所有目标task的query/video/RNG与上一轮匹配，原normalizer一致；actual topology锁world6 exact resume。
+  目标是区分objective取舍，不扫描比例或加入剩余6target。只读train24支持审计保存在target_training_support.json，明确SFT使用全部24targets的支持差异。
 - 原始参照仍为配对历史source47/SFT109/A2m64 79；旧Writer143因teacher schedule不同只作count参照。未来强候选仍需同图random、
   预登记strict400相邻/跨视频资格、冻结后视频因果controls和最终32/8合同。
 
@@ -54,6 +55,6 @@
   `summarize.py`按完整raw rows输出per-task/suite/RGL/churn/Jaccard及预登记strict400资格；synthetic边界检查已通过。
 - 本阶段live /data1 quota为722600384KiB /1073741824KiB soft，shared84TiB available，整个物化/评测新增峰值<8GiB。
 - 等待期间已回收旧A2 random的97.5857GiB可重算cache并移除clean inactive的7f6b1611/b2bb03ce工作目录；其Git、checkpoint及formal证据保留。
-  当前只有main和041aff55 active frozen tree。旧A2 random仅保存中断证据，不恢复。
+  当前保留main、041aff55 inactive frozen tree和351feb48 active frozen tree。旧A2 random仅保存中断证据，不恢复。
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`；下一判断须区分训练学习、新视频、未见task与
   真实成功遗忘/occupancy问题。旧路线通过`docs/research_history.md`、`findings.md`和Git查证，不从旧待办恢复。

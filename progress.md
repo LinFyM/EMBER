@@ -2,24 +2,25 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 12:49 CST）
+## 当前快照（2026-09-06 13:14 CST）
 
-- owner已授权重建goal并自主推进至最终目标；完整38-target LoRA主线持续active，最新要求强调遇到问题复核专家原文、深入分析，
-  不因一次non-pass放弃；允许峰值余量充足且低负载的GPU安全共驻。
-- 新接口实现完成：共同P/Q、完整50-horizon、learned全部rank16 A/B、无独立carrier；移除不再消费的逐target X/Y捕获与
-  task-local专属运行面。canonical训练和物化入口复用，旧A2由Git和formal结果保存。源码净减少约1900行，无新增源码模块。
-- 三卡真实profile已exit0：最终组件初始化含匹配G2投影、owner/family和首层attention；4,750,208参数、第二步whole-Writer
-  evidence/PQ梯度非零，每步4tasks/32action rows约4.00–4.05秒。8视频共364stride5帧、最长87帧，缓存1.95GiB，峰值
-  allocated15.55GiB/reserved15.62GiB。此前单卡smoke验证76tensor和真实更新后全图梯度；该smoke早于最后兼容初始化补齐。
-- 验证为Writer12项与静态bank10项定向测试通过，配置loader、compileall、diff检查通过。结构检查净-1918行、零新增源码文件；
-  唯一新增size提示是现有bank测试增加完整输出schema后137行，其中大部分为声明式fixture，保留一份fixture的参数化避免复制。
-  其余大文件/长函数为缩减或复用的既有编排责任，没有新增平行runner。
-- 新输出不是已验证的闭环方法。四任务64步正式短学习已从clean pushed detached `b2bb03ce9ce92c31e26b795ce9d78a156ab1138c`
-  启动，gpu02物理2/3/5、world3、NUMA0/0/1、deferred NCCL。随后32/64各fit/held视频train-side strict150；
-  对照原P/Q及A2相同task/state/video，不做最终checkpoint选择。formal launcher记录精确环境、资源和缓存生命周期。
-- 旧A2 random在上午checkpoint48后被中断，退出1且无completion/闭环；唯一32/48 checkpoint保留，不恢复旧清单。
-- 重新确认普通train24 SFT历史109/400、旧Writer143/400为能力参照；109为train24→validation8，无held适配。
-  后续正式比较前补齐同口径评测缺口。Test与负视频controls继续未使用。
+- 最终科学goal持续active。完整LoRA实现已合入并推送main；formal训练/物化/当前eval来自clean pushed detached b2bb03ce。
+  实现worktree/branch已在完整集成后清理，唯一运行图为共同P/Q→learned38-target完整rank16 A/B，无独立carrier。
+- 四任务64步训练及全部零梯度Panel-B完成，launcher exit0；训练215.50秒、诊断216.91秒，total462.77秒，4,750,208参数，
+  peak allocated15.55GiB/reserved15.62GiB；6tasks诊断缓存共3.87GiB，已由runtime正常回收。
+- 实际256task executions/2048action rows与原P/Q的video/query/policy RNG/task weights/LR/normalizers逐记录匹配。
+  33–64步四个任务平均functional均低于原P/Q；64新视频相对carrier功能收益task1/72/83/93为.002762/.004097/.009561/.004403。
+  task6/79仍为-.003464/-.028010，只证明训练侧映射改善，不能证明task transfer或闭环资格。
+- 32/64×fit/held四套完整LoRA物化exit0并sealed；四组strict150在gpu02物理2/3/5和gpu01物理0运行，每卡3persistent workers。
+  Long50先完成：32 fit/held0/0，64为0/4；Spatial/Goal未完成，不从这一弱上界task单独裁决接口。尚无最终checkpoint选择。
+- 已复核专家原文§6、§8：区分新action episode、新teacher video和held task；64次exposure是短程预算，不等于收敛。
+  成功保留/learner occupancy须由真实行为分离支持，并先承认guards/SEOD/GOMQ等历史条件，不作loss-driven补丁。
+- SFT历史109/400与当前source400的task/state/language/env/policy RNG已配对，实际policy合同均state8/action7、replan5；
+  normalizer在Git未变。原AGENTS“7维state/action”为文档错误，已按官方OpenPI及冻结source/data/processor纠正，无运行改变。
+  审计见analysis的`sft_historical_compatibility.json`；109属于历史复用，不冒充新后端重跑。
+- 定向验证为Writer12项+静态bank10项通过；真实最终初始化profile两步exit0，whole-Writer梯度已接通。源码净-1918行、零新增源码文件；
+  唯一增长size提示为现有声明式bank测试增加新schema后的137行，保留参数化fixture避免复制，既有大编排器未新增平行runner。
+- 旧A2 random在checkpoint48后被中断，无completion/闭环，唯一32/48 checkpoint保留，不恢复旧清单。Test/negative controls仍未使用。
 
 ## 完整LoRA四任务正式启动合同（2026-09-06 12:48 CST）
 
@@ -29,7 +30,7 @@
   microbatch2、K1/两fit视频轮转，合计256task exposures与2048action rows；checkpoint8/32/64。exact resume锁world3及原拓扑。
 - Run：`runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906`；analysis：
   `runs/analysis/pi05_ecp_prw_complete_shared4_20260906`，精确命令/环境/资源见其`launch/contract.json`、`preflight.json`。
-  启动入口`.codex/tmp/prw_complete_launch/train.sh`，launcher PID3065514；profile两步exit0，正式训练进入模型加载。
+  启动入口`.codex/tmp/prw_complete_launch/train.sh`，launcher PID3065514；现训练和Panel-B exit0，后续eval运行。
 - 启动前两节点live检查，三张选中卡均约148MiB既有process/0%util、RAM311GiBavailable；/data1使用824289928KiB、
   soft1073741824KiB，shared84TiBavailable，新cache/checkpoints/analysis预计峰值<8GiB。profile cache已由runtime正常回收。
 - 预登记32/64 × first-fit/held四组3task×50states；不使用validation/Test/negative controls，不选最终checkpoint。

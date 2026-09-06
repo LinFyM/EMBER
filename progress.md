@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 17:19 CST。
+更新时间：2026-09-06 17:33 CST。
 
 ## 当前目标与授权
 
@@ -66,4 +66,7 @@
   具体states、labels、命令和边界在analysis下`teacher_state_continuation/registration.json`；driver复用原source，两个checkpoint不变。
   两arms第一阶段均0/3，后段接触均2/3；初始predicates匹配labels，两个launcher exit0、wall261.13/256.99秒，GPU自然释放。
 - 已登记剩余15个训练targets的terminal128 held-video screen10，并复用原3tasks的10-state prefixes，组成两组完整18-task/180-row训练breadth。
-  不训练、不选择、不改validation，当前准备物化；三配置与active design登记，完整探针见历史§177。
+  不训练、不选择、不改validation；两套15-task bank已完成且exit0，各runtime prepare114秒、物化41秒。
+  新frozen detached1be11184，当前meta73 screen在gpu01p0/2/3（launcher允许NUMA0,1，workers按GPU绑定0/0/1）PID3862038，
+  target18 screen在gpu02p4/5 NUMA1 PID506029；各每卡3workers，总5卡。实时低负载peer保留，精确preflight与命令在analysis/launch。
+  quota726340528KiB/1073741824soft、shared84TiB，现analysis3.4GiB、新增峰值<2GiB；三配置与active design登记，完整探针见历史§177。

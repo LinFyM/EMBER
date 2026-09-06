@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出共享方式单变量已实现，182 CPU tests通过，真实GPU机制验证待执行。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出单变量的CPU及真实GPU机制检查通过，fresh96步正式对照已启动。
 
 ## 当前授权与方法状态
 
@@ -24,12 +24,19 @@
 
 ## 当前执行节点
 
-两种初始化的训练/物化/闭环及冻结diagnostic均已完成，无active GPU作业。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
+两种初始化的训练/物化/闭环及冻结diagnostic均已完成；当前active GPU作业为末读出共享对照训练。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
 96K4为8/40；所有breadth2/4，Object/Goal均0。48→96 correct RGL5/1/0、other6/0/2；96跨视频5/1/1、Jaccard5/7。
 完整事实及边界见research_history§15。保留局部Long正证据，不恢复原配置无依据续训，不将其宣称为广泛共享能力。
 下一单变量fresh对照已在target_rank_readout_control/registration.json登记：只将末读出[p]改为[target,rank,p]，+77,696参数；
 坐标std1、完整图/Meta、identity、数据/K/queries/优化器/96步节点与world3均保持。canonical源码及模型合同已更新；182 CPU tests/17.08s通过，包括单target/rank更新隔离、完整identity和分块VJP。
-Writer总14,190,240、Meta626,688；下一步真实GPU检查后从clean pushed frozen commit启动同预算对照。
+Writer总14,190,240、Meta626,688；真实GPU机制检查exit0，Meta在identity后A/B梯度均可达，source无梯度。
+full/staged loss同0.1256087869，Meta0qB/rho0/decoderB余弦0.999993/0.999998/1.0；这是工程机制证据。
+
+当前formal run：runs/outputs/layered_relation_short4_target_rank_6ae406ea_gpu01p235_20260907；clean pushed frozen6ae406ea，
+worktree .codex/worktrees/layered-readout-6ae406ea，gpu01physical2/3/5、world3、tmux ember-layered-readout-control。
+launch前两节点live检查，所用三卡均无计算进程；data1 quota489371696KiB/soft1073741824，已有两run各653MiB、analysis15MiB，
+新增峰值<1GiB，共享free84TiB，全部大资产复用。精确命令/环境/采样/预算见target_rank_readout_control/launch.json及launch_train.sh。
+16/48/96双视频K1和96K4共七组固定配对面板已准备，未生成新分数。当前等待加载/更新及16步checkpoint。
 
 ## 已完成的初始化formal对照
 

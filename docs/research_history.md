@@ -481,3 +481,14 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
 据此保留坐标初始化局部正证据和其它已验证图，预登记一个离散fresh对照：仅将全局共享的A/B末读出[p64]改为
 按输出target/rank各自学习[38,16,64]，不引入task-specific参数或旁路。预计增加77,696参数，科学曝光及短闭环口径完全匹配。
 注册在runs/analysis/layered_relation_writer_20260907/target_rank_readout_control/registration.json；此处只是实验决定，尚无该改动结果。
+
+## 16. 末读出target/rank共享约束的受控检验（2026-09-07，执行中）
+
+- 接续§15保留坐标初始化的局部Long正证据。只将全局[p]末读出改为[target,rank,p]，新增77,696参数；其它图、std1坐标、
+  identity、随机初始化抽样、种子/数据/优化器/96步曝光与world3保持。不是rank/scale/LR扫描，也不据局部Jacobian宣称唯一根因。
+- 实现前registration在runs/analysis/layered_relation_writer_20260907/target_rank_readout_control/registration.json；
+  canonical实现6ae406ea，182 CPU tests/17.08s通过，包含单输出target/rank更新隔离。
+- 新真实GPU机制检查完成exit0：identity后Meta B、随后A梯度可达，source无梯度；full/staged loss同0.1256087869，
+  Meta0qB/rho0/decoderB的余弦0.999993/0.999998/1.0。这不构成科学行为结论。
+- formal fresh run layered_relation_short4_target_rank_6ae406ea_gpu01p235_20260907从clean pushed detached6ae406ea启动，
+  gpu01physical2/3/5，完整合同在该analysis目录launch.json。结果待16/48/96双视频K1及96K4固定配对40裁决；未用validation/Test或负视频controls。

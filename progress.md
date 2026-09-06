@@ -35,7 +35,8 @@
   结果根为runs/analysis/layered_relation_writer_20260907/{short4_source_screen40,s16_correct_screen40,s16_same_task_other_screen40}。
   第16步闭环三组均exit0：source4/40、correct4/40、other6/40；correct/source RGL4/0/0，other/source4/2/0；breadth均2/4，Goal/Object0。exact命令/资源/退出码在同analysis root。
 - 第16步只有256queries/task；按事前96步短学习合同继续到48（768queries/task），保持原run参数、optimizer/scheduler、sampler与world3；gpu01 tmux ember-layered-short4-s48已自然完成exit0，日志train_s48.log。
-  该续段545.03秒，累计192conditions/3072queries；各task K1/2/4均16次。macro_00000048完整状态已保存；两组同一held视频正在物化，随后固定screen40。
+  该续段545.03秒，累计192conditions/3072queries；各task K1/2/4均16次。macro_00000048完整状态已保存；两组同一held视频物化均exit0；fixed screen40在gpu01p0进行（3workers，correct/other顺序），
+  同时原world3 physical235 exact-resume至预登记96步，tmux ember-layered-short4-s96、日志train_s96.log；这是完成既定短预算，不扩大长训。
   原生frame_chunk16的exploratory K4 joint16.88s（observer forward1.36/VJP3.13）及peak allocated34.65GiB，表明批量布局可加快约34.5%；
   该profile用step16权重，早期chunk4 profile用smoke权重，不能将loss差当batch收益或科学改进。下次fresh扩大训练采用已测布局。
 - 第16步后登记冻结训练侧functional诊断：action42–45各8query/task，与训练queries及held videos互斥；无梯度、固定noise/time、16/48/96重复同面板，不能选点。

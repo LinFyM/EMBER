@@ -6,15 +6,28 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；meta73 component已有六组完整闭环，64步两组继续执行。
-  owner要求保留的同拓扑fully-random候选已预注册并完成配置核对，尚未启动。
+  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；meta73 component全部3200rows已完成并sealed，未通过资格。
+  同拓扑fully-random候选已从7f6b1611启动，正在六卡训练；科学goal继续active。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 09:53 CST）
+## 最新节点（2026-09-06 10:19 CST）
+
+- component最终32/48/64两视频为80/78、81/81、79/75，source47、carrier72，八组strict400全部完成且launcher/worker exit0。
+  两个相邻pair均non-pass，无selected checkpoint；完整报告、逐task/suite/RGL与decision.json已封存，历史§171、findings§170记录证据边界。
+  Primary相邻集合相对稳定但能力低，other与跨视频集合未稳定，Long新增成功反复换手；不直接续训该run或命名未经识别的根因。
+- fully-random formal已于10:09 CST从clean pushed detached7f6b1611启动，gpu01物理0/2/3/4/5/6、world6、NUMA0/0/1/1/1/1。
+  实际run_contract确认formal/random、reused=[]、2,970,368 Writer参数、task-local参数0与stop64；已到2/64，最近82.31秒、梯度norm.2234。
+  仍使用同一A2图、73任务、两fit/K1及原优化/采样合同，尚无随机候选的闭环结果。
+- 启动前两节点live及/data1 quota已刷新：721879956KiB/1073741824KiB，gpu01可用RAM436GiB，shared84TiB可用，新增峰值<150GiB。
+  所有component GPU进程自然结束后才启动；actual preflight保存在新analysis的launch/formal_preflight.json及新run完成时的launch记录。
+- 随机候选十个launcher、两基线原始rows复用和汇总入口已经就绪；64步训练/Panel-B全部结束后再物化并运行六组strict400。
+  精确命令与路径见下方启动合同。Test8及最终负视频controls继续未使用，不从训练loss选择checkpoint。
+
+## 前一执行节点（2026-09-06 09:53 CST）
 
 - 已完成source47、carrier72、32primary/other80/78、48primary/other81/81，均为完整single-checkpoint strict400、launcher/worker exit0。
   32primary相对carrier R/G/L=62/18/10，other64/14/8；32跨视频67/11/13、Jaccard.736，Long仅保留第一组9次成功中的2次。
@@ -28,7 +41,7 @@
   same topology、73tasks、64exposures、seed/video/query/optimizer/normalizer不变。现有真实配置loader和元数据检查通过，未读取held actions/rewards。
   复用已通过的相同图真实profile，预计训练及诊断约93分钟、六组闭环60–70分钟；等待当前两组完成，再live核对资源及启动新frozen run。
 
-## 同拓扑fully-random formal启动合同（2026-09-06，尚未启动）
+## 同拓扑fully-random formal启动合同（2026-09-06，10:09已启动）
 
 - frozen authority为clean pushed detached `7f6b1611278184d0ee844e332d390a61b45ff8b6`，worktree为
   `/data1/user/ymdai/projects/EMBER-worktrees/prw-meta73-random-20260906`；与component的4d57f816在src/scripts/tests无diff。
@@ -38,7 +51,7 @@
   `NCCL_P2P_DISABLE=1`。实际设备须在当前8组component eval全部exit0后live核对，exact resume锁定实际launch topology。
 - 精确命令见`.codex/tmp/prw_meta73_random_launch/train.sh`，十个train/materialize/eval launcher均通过shell语法及初始化/评测scope检查。
   run为`runs/outputs/pi05_ecp_prw_meta73_random_init_s64_7f6b1611_gpu01p023456_20260906/`；analysis为
-  `runs/analysis/pi05_ecp_prw_meta73_random_init_20260906/`。当前只准备小配置与分析入口，没有启动训练或创建大cache。
+  `runs/analysis/pi05_ecp_prw_meta73_random_init_20260906/`。上述命令已启动，actual初始化与资源记录见最新节点。
 - 训练64步及Panel-B全部完成后，32/48/64各一次驻留物化两视频；六个strict400同时各用一张GPU、每卡三个persistent workers，
   source47/carrier72通过直接引用canonical原始结果复用。随机候选的汇总入口已读入两个参照并检查其400-state配对，未产生新候选结果。
 - 复用component完整73-task profile和实际formal吞吐，预计训练及诊断约93分钟、六组闭环60–70分钟。

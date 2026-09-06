@@ -3454,3 +3454,20 @@ functional更好而闭环更弱。共同P/Q实例在原两fit条件下为38/37�
 
 完整输入/初始化差异、训练与闭环raw rows、逐task/suite和paired success sets见`docs/research_history.md`§165–170及其中的formal
 artifact索引。不同执行版本只在已有同batch参照内作paired判断；上述小面板不与validation8或旧143作直接配对。
+
+## 170. A2在73任务上充分曝光后只有有限held增量，弱breadth与新成功不稳定仍未解决
+
+相同A2图、两fit/K1、64次每task曝光的73-task component训练完成，实际4672次task executions及原四task query/noise核对通过。
+固定validation8两视频的32/48/64 strict400为80/78、81/81、79/75，同执行source47、carrier72。相对carrier净增3–9是实际正证据，
+但所有候选仅2–3个task各≥5成功，Spatial0–4、Long3–9；没有任何panel达到整体资格，不能靠稳定较弱分数宣布完成。
+
+Primary两个相邻success sets达到预注册retention/Jaccard数字，other则为.802/.691和.778/.677而未通过；
+三个checkpoint的跨视频Jaccard为.736/.742/.711。Long32换视频只保留2/9，48两视频各4次成功完全不重合，64other再次丢掉前一节点
+全部4个Long成功。这既不是全图完全不会学，也不是只需保住一个强checkpoint：困难suite的新行为仍缺少可重复、可保留的支持。
+
+训练侧扩大任务使meta1新视频功能从负转正，却减弱原72/83/93收益，两个复用诊断任务仍未普遍成立；相同原四任务后半训练loss也更高。
+这是共享优化与迁移取舍的证据，不能直接命名梯度冲突、rank或observer为根因。本轮没有旧四task在同一validation8视频下的400-row
+反事实，所以也不能把对carrier的净增单独归因于更多meta tasks。完整依据见research_history§171及其formal artifact索引。
+
+停止该component run的直接续训，保留实际正负证据和当前A2运行图；同拓扑fully-random是原已约定、尚未检验的初始化候选。
+它只检验同预算下跳过G2组件继承的影响，不是已经证明的修复，也不改变既有数据、信息墙、完整horizon或最终视频因果要求。

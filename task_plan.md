@@ -16,8 +16,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：同图、query覆盖、非对称A、视频池2→4和共同P/Q主干比较全部完成；四视频与P/Q均没有闭环增量，结果sealed。
 - 已恢复较好的两fit A2主干；73-task全task等权、64曝光formal从4d57f816 frozen worktree完成，实际采样/信息墙检查通过。
-  32/48/64的两组正确视频LoRA已全部sealed，32/48已得80/78、81/81；64两组正在执行，完整证据仍需收齐。
-- 同拓扑fully-random候选已按owner原有要求预注册，三配置核对通过；只跳过组件继承，待当前评测结束及资源核对后启动。
+  32/48/64的两组正确视频strict400全部完成：80/78、81/81、79/75，未通过资格，完整证据已sealed。
+- 同拓扑fully-random候选已按owner原有要求预注册并于10:09 CST从7f6b1611启动六卡训练；只跳过组件继承。
   不继续P/Q的rank/scale/seed小扫或无依据续训。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
@@ -32,11 +32,11 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 5. [x] matched检验非对称A职责：64 fit/held44/45相对同执行参照41/44，暂保留A2并退役双臂runtime；不宣称稳定或已识别根因。
 6. [x] 完成正确视频池2→4对照：41/38与41/39，没有行为增量；停止扩大同task视频数和无依据续训。
 7. [x] matched比较共同P/Q与两fit A2：四组闭环均更弱，封存本实例并恢复A2；参数、初始化和约2.30倍训练加速单列。
-8. [ ] A2的55meta+18target全task等权group、64曝光已预注册；固定32/48/64及两组无放回正确视频各validation8 paired400，
-   数值相邻/breadth/四suite/GoalLong/跨视频标准见active design。真实73-task profile、formal和六套物化均已完成，正在评测，等待闭环裁决。
-   不宣称四任务稳定性已经通过，也不把扩大任务当作已知修复；当前仅声称K1，同拓扑fully-random保留Final比较，冻结后补controls。
+8. [x] A2的55meta+18target全task等权group、64曝光及32/48/64两正确视频validation8 paired400全部完成，source/carrier参照也已收齐。
+   80/78、81/81、79/75相对carrier72只有有限净增，数值资格、breadth/Long及跨视频稳定性未通过；历史§171、findings§170和formal报告已sealed。
+   不宣称任务数量是根因，不直接续训或恢复P/Q；当前仅声称K1，继续已约定初始化比较，最终冻结后才补controls。
 9. [ ] 完成同拓扑整套Writer fully-random fresh联合候选：相同73-task/64-update合同、32/48/64两组正确视频strict400，
-   source/carrier复用同执行原始rows；比较变量只为初始化。已有组件路径的不合格不能替代这项明确要求的比较，也不把继承先验认作根因。
+   source/carrier复用同执行原始rows；比较变量只为初始化。已从7f6b1611启动，等待64步/Panel-B及后续closed-loop；不把继承先验认作根因。
 
 下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 

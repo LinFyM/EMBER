@@ -3203,3 +3203,29 @@ training796行，无新增source文件，19项现有CPU检查通过。完整报�
 
 此外只读复核了已有73-task allowlist：55meta+18target、146条原fit视频、4736个stride5并保留末帧的采样帧，最长87。
 这是独立meta映射可用性与后续资源依据，不是已证明扩大任务能修复当前模型，也未由这份元数据审计自动启动后继训练。
+
+## 171. 2026-09-06 A2 meta73充分曝光完成，有限增量未通过validation8资格
+
+从clean pushed detached `4d57f816`出发，A2两fit/K1的每次update覆盖55meta+18target、各权重1/73，64updates共4672个task
+executions、每条fit视频32 exposures。模型、component初始化、seed、8rows、Panel-A query/noise及normalizers按预注册保持；
+实际采样核对通过。训练4937.28秒、13task三checkpoint Panel-B346.04秒，全部exit0；约98GiB单份临时cache自然释放。
+run为`runs/outputs/pi05_ecp_prw_meta73_equal_exposure_s64_4d57f816_gpu01p023456_20260906/`。
+
+三checkpoint各两组事前无放回正确视频、固定validation8/400states；加source/carrier参照共3200rows全部完成，所有launcher/worker
+exit0。逐Spatial/Object/Goal/Long为：source47=`0/5/41/1`、carrier72=`0/34/36/2`；32primary80=`1/36/34/9`、other78=`1/35/37/5`；
+48primary81=`0/39/38/4`、other81=`4/37/36/4`；64primary79=`2/38/36/3`、other75=`0/37/34/4`。所有候选仅2–3/8 tasks各≥5成功，
+没有任何panel满足>145、breadth与Long要求；两个相邻pair均non-pass，没有selected checkpoint。
+
+Primary32→48的R/G/L=70/11/10、Jaccard.769，48→64=72/7/9、.818，达到其集合稳定性数字，但绝对分数仍弱。
+Other相邻为65/16/13、.691与63/12/18、.677；跨视频32/48/64为67/11/13、69/12/12、64/11/15，Jaccard.736/.742/.711。
+Long尤其未稳定：32跨视频只保留2/9，48两视频各4个成功却完全不重合，64other又丢掉48other全部4个Long成功。
+相对carrier的净增为3–9，既有新增也有损失；32primary的62 retained/18 gained/10 lost为有限正证据，不能包装为稳定共享迁移。
+
+64的13task功能面板有9项全视频正向；meta1 held从四task参照-.000437到+.000370，但72/83/93均弱于参照、诊断79仍为-.002014。
+相同原四task query/noise的最后16步loss也全部更高。因此扩大映射改变了训练与泛化取舍，没有支持直接续训或宣称数据不足是根因。
+本轮未对旧四task checkpoint补同一validation8视频的strict400反事实，不能把相对carrier的净增单独归因于增加任务数量。
+
+完整raw rows、per-task/per-suite/RGL、数值selector、训练采样及功能证据保留在
+`runs/analysis/pi05_ecp_prw_meta73_equal_exposure_20260906/`；canonical报告为comparison.md，裁决为decision.json。
+本轮sealed，wrong/no-video/language/first-final/shuffled/reversed最终controls未运行，Test8未使用。
+后续仅登记owner原已要求保留的同拓扑fully-random初始化比较，不据此添加新模块、恢复P/Q或命名尚未识别的根因。

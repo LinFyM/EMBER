@@ -2,7 +2,7 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 13:46 CST）
+## 当前快照（2026-09-06 13:58 CST）
 
 - 最终科学goal持续active。完整LoRA四任务32 fit/held为50/54、64为64/62（各150），旧P/Q38/37、41/39，A2 43/41、44/45。
   四组新600 rows及全部train/materialize/eval launcher均exit0。主要收益为Goal21/22→31/27；Spatial64为33/31，比A2均少7，Long0/4。
@@ -17,10 +17,14 @@
 - 主训练已从clean pushed detached041aff55启动，gpu01物理0/3/4/5/6、world5、NUMA0/1/1/1/1；第五张peer job在preflight前自然结束。
   精确命令见`.codex/tmp/prw_complete_meta73/train.sh`，launcher PID3147740；run为`runs/outputs/pi05_ecp_prw_complete_meta73_s128_041aff55_gpu01p03456_20260906`，
   analysis为`runs/analysis/pi05_ecp_prw_complete_meta73_20260906`，其`launch/contract.json`、`preflight.json`及profile证据已保存。
-  五卡预计train48–62分钟，另计初始化/capture/Panel-B8–15分钟；world5 exact resume锁此拓扑。当前进入source加载。
+  五卡实际前8步平均24.72秒，584 task executions/4672 action rows，peak reserved34.67GiB；计算时五卡util均100%。
+  所有重叠query/video/policy RNG和冻结normalizer与四任务/旧A2 reference一致，跨episode与1/73权重通过；world5 exact resume锁此拓扑。
+  实际启动13:48 CST，预计剩余train约49分钟，之后另计Panel-B；四个primary物化/screen80 launcher及配对统计已备好。
   /data1启动前使用824532892KiB/1073741824KiB，shared84TiB可用，主阶段新增磁盘峰值<36GiB；两个profile缓存已正常回收。
 - SFT历史109与当前source400逐条task/state/language/env/policy RNG配对，实际合同都是state8/action7/replan5，normalizer在Git未变。
   旧AGENTS“7维state/action”为文档错误，已按官方及冻结runtime纠正，无运行变更；109为历史复用，不冒充新后端重跑。相同80-state前缀SFT24、source9。
+- 等待期间确认两节点无旧run进程/mmap引用，回收中断A2 random的97.5857GiB临时cache（manifest明确非checkpoint/非formal evidence），
+  并移除clean inactive的7f6b1611与b2bb03ce detached trees；Git、checkpoint及formal结果保留，当前仅041aff55 frozen tree活动。
 - 唯一运行图为完整38-target LoRA，无carrier；source源码与b2bb03ce相同，后续只有配置/文档变更。此前Writer12+static bank10测试、真实梯度/
   物化/两种microbatch/full73 profile均已通过。旧A2 random中断现场保留，不恢复；Test及negative controls仍未使用。
 

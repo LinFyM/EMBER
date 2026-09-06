@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，原short4全部短面板已完成；native坐标初始化对照96步训练已结束，双视频/K4闭环进行中。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出共享方式的单变量fresh对照已登记，待实现验证。
 
 ## 当前授权与方法状态
 
@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **唯一新图已实现并通过真实机制验证；原96步短学习未见稳定广泛改善；单变量初始化fresh对照已启动**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **唯一新图已实现并通过真实机制验证；坐标初始化对照有局部Long收益、尚无Object/Goal；下一末读出共享对照已登记**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -22,7 +22,15 @@
 - 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
   当前formal short4按预登记16/48/96节点推进；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
-## 当前formal运行
+## 当前执行节点
+
+两种初始化的训练/物化/闭环及冻结diagnostic均已完成，无active GPU作业。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
+96K4为8/40；所有breadth2/4，Object/Goal均0。48→96 correct RGL5/1/0、other6/0/2；96跨视频5/1/1、Jaccard5/7。
+完整事实及边界见research_history§15。保留局部Long正证据，不恢复原配置无依据续训，不将其宣称为广泛共享能力。
+下一单变量fresh对照已在target_rank_readout_control/registration.json登记：只将末读出[p]改为[target,rank,p]，预计+77,696参数；
+坐标std1、完整图/Meta、identity、数据/K/queries/优化器/96步节点与world3均保持。尚未修改该源码或launch；接下来直接实现、验证并执行。
+
+## 已完成的初始化formal对照
 
 - 当前active short4对照：runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907。
   Clean pushed frozen commit880bde5e，workspace .codex/worktrees/layered-coordinate-880bde5e；gpu01 physical2/3/5、world3，
@@ -39,7 +47,7 @@
   新增峰值预算<1GiB，共享free84TiB，复用全部大资产；初期合计<5GiB预算仍满足。baseline K4已完成并释放p0，后续新对照16步物化/评测可用该卡；正式launch前重新live核验。
 - 16步correct已完成exit0：4/40，Spatial2/Long2/Object0/Goal0，breadth2/4；对source及原16步correct均RGL3/1/1、churn2/40。
   新结果与原run分目录保留在coordinate_init_control/。剩余六组物化已用resident batch完成exit0；eval frozen fa0b7b43。
-  16other在p2、48correct在p3、48other在p5运行，p0运行固定functional三点面板；当前合计4卡。96双臂/K4随后接续，launch前均重查两节点。
+  七组闭环、固定functional三点面板与96步冻结梯度诊断均已完成exit0，曾使用gpu01p0/2/3/5，现已释放。完整新增比较见历史§15。
 - 批量物化入口在隔离worktree实现并集成：同一次source加载复用runtime，各请求严格重载完整Writer/Meta/probe，独立输出既有manifest。
   不改变单条件compiler、采样、模型或评测；原单次入口保留。这只优化准备成本，未宣称科学收益。
 - 三个既有诊断target（task7/35的expert0q/0v/action_out）显示：96步native通道常量能量由原>99.995%降至70.7%–85.5%，
@@ -156,6 +164,6 @@
 
 ## 下一步
 
-完成单变量native-coordinate初始化对照96步及16/48/96的固定双视频闭环与functional面板，补96步K4correct；逐点比较原run/source与相邻行为。
+落实并验证已登记的末读出共享单变量改动，fresh重跑同短预算和闭环口径；原初始化对照全部完成且不再恢复。
 通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。

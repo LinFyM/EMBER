@@ -446,3 +446,38 @@ s16_correct_screen40、s16_same_task_other_screen40及s16_correct_vs_source.json
 
 所有原始rows/completion/RGL/launch、short4_exposure_cost.json、functional_s*.json、decoder_gradient_s96.json/.safetensors保留于
 runs/analysis/layered_relation_writer_20260907；原formal run及三个完整checkpoint路径见§13。K4补充为s96_k4_correct_screen40、s96_k4_vs_source.json、s96_k4_vs_k1.json。
+
+## 15. Native坐标初始化对照的局部收益与边界（2026-09-07）
+
+880bde5e单变量fresh run完成96updates，384条件/6144queries；任务权重、K/视频集合、action episode/frame和policy RNG逐项匹配§14。
+更新总1257.37秒，单段含加载1376.95秒，exit0；Writer/Meta均直接联合训练。三个完整checkpoint及七组物化保留。
+
+| 节点 | correct/40 | other/40 | correct对source R/G/L | other对source R/G/L | 跨视频Jaccard |
+|---|---:|---:|---|---|---:|
+| 16 | 4 | 4 | 3/1/1 | 3/1/1 | 3/5 |
+| 48 | 5 | 8 | 2/3/2 | 3/5/1 | 5/8 |
+| 96 | 6 | 6 | 2/4/2 | 3/3/1 | 5/7 |
+
+各点breadth2/4、Object/Goal均0。Spatial/Long依次为16c2/2、16o2/2、48c2/3、48o3/5、96c2/4、96o3/3。
+48→96 correct保留5、新增1、丢失0、Jaccard5/6；other保留6、新增0、丢失2、Jaccard3/4。
+96K4correct为8/40（Spatial3/Long5），对source RGL3/5/1，对原初始化96K4的6/40为4/4/2；
+对本次96K1为5/3/1、churn4/40、Jaccard5/9。不能把不同节点/视频臂拼成一个更高分模型。
+
+固定query面板三点均完成，query/noise/time与§14一致、source loss完全相同。96步correct benefit为
+[0.0019035,0.0040148,0.0109558,0.0010109]，other也均正。新初始化改善了功能学习并带来局部Long收益，
+但未解决广泛行为及两组视频的稳定保持；未进行validation/Test或最终controls，不构成正式qualification。
+
+同两训练任务三代表target的96步冻结诊断表明：native通道常量能量降至70.7%–85.5%，rank常量能量仍>99.995%；
+真实B梯度的rank常量能量仅2.56%–30.06%。共享末读出同时汇合不同target/rank的梯度：三个代表target中，
+action_out读出梯度norm约0.135–0.316，expert0q约0.000556–0.000974、0v约0.000056–0.000345。
+这支持参数共享方式的竞争解释，不是全38target的完整梯度归因。单target局部Jacobian中解除rank共享也并非处处改善方向，
+故仍须以受控学习/闭环裁决，不能由几何推定根因或疗效。
+
+原件在runs/analysis/layered_relation_writer_20260907/coordinate_init_control/：七个*_screen40的raw rows/完整completion、
+各*_vs_source/baseline/adjacent/correct比较、exposure_cost.json、functional_s*.json及functional_comparison.json、
+decoder_gradient_s96.json/.safetensors、readout_tangent_diagnosis.json。正式run为
+runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907，eval/批量物化冻结fa0b7b43。
+
+据此保留坐标初始化局部正证据和其它已验证图，预登记一个离散fresh对照：仅将全局共享的A/B末读出[p64]改为
+按输出target/rank各自学习[38,16,64]，不引入task-specific参数或旁路。预计增加77,696参数，科学曝光及短闭环口径完全匹配。
+注册在runs/analysis/layered_relation_writer_20260907/target_rank_readout_control/registration.json；此处只是实验决定，尚无该改动结果。

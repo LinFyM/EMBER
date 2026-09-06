@@ -16,7 +16,7 @@ from ember.lora import LORA_B_SUFFIX, LoRATarget, identity_lora_state
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.recovery import _reinspect_adapter
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.writer import evaluation
+from ember.writer import evaluation, materialization
 from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenLayeredWriterAdapter, episode_evidence,
                                      inspect_layered_writer_bank, validate_task_scope)
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, adapter_metadata,
@@ -234,3 +234,120 @@ def test_batched_execution_applies_independent_row_adapters_and_restores_identit
     with pytest.raises(Pi05EvaluationError, match="batch"):
         runtime.predict_action_chunk(prepared[:1], {"input": x}, noise=noise, num_steps=10)
     runtime.close()
+
+
+@pytest.fixture
+def resident_materialization(tmp_path, monkeypatch):
+    from ember.writer import learning_data, runtime
+
+    class State(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.writer = torch.nn.Linear(1, 1, bias=False)
+            self.meta = torch.nn.Linear(1, 1, bias=False)
+            self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator().manual_seed(1729)))
+            self.loads = 0
+
+        def load_state_dict(self, state, strict=True):
+            assert strict is True
+            self.loads += 1
+            return super().load_state_dict(state, strict=strict)
+
+    state = State()
+    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), source=SOURCE,
+        lora=load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"), observer=SimpleNamespace(probe=state.probe))
+    source = tmp_path / "teacher.hdf5"
+    source.write_bytes(b"CPU orchestration fixture")
+    task = SimpleNamespace(suite="libero_spatial", suite_task_id=0,
+                           authority=SimpleNamespace(path=source, language="exact task language"))
+    runs, requests, builds = {}, [], []
+    for step, value, arm in ((16, 1., "correct"), (48, 2., "same_task_other")):
+        checkpoint = tmp_path / f"run/checkpoints/macro_{step:08d}"
+        checkpoint.mkdir(parents=True)
+        tensors = {name: tensor.detach().clone() for name, tensor in state.state_dict().items()}
+        tensors["writer.weight"].fill_(value)
+        tensors["meta.weight"].fill_(value * 10)
+        save_file(tensors, str(checkpoint / "ecp.safetensors"))
+        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
+            "config": {"model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
+        requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
+            "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
+            "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
+    monkeypatch.setattr(materialization, "git_state", lambda _root: GIT)
+    monkeypatch.setattr(materialization, "inspect_joint_checkpoint", lambda path: (runs[path], {"path": str(path)}))
+    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_args, **_kwargs: {0: task})
+    monkeypatch.setattr(evaluation, "validate_task_scope", lambda *_args: None)
+    monkeypatch.setattr(materialization, "RawTeacherVideoStore", lambda *_args, **_kwargs: SimpleNamespace(close=lambda: None))
+
+    def build(asset_root, config, device):
+        builds.append((asset_root, config, device))
+        return instance
+
+    def compile_condition(current, _store, _task, demos, _output, _checkpoint):
+        assert current is instance and current.observer.probe is current.state.probe
+        return {"condition_id": condition_id(0, demos), "teacher_videos": [{"sampled_frame_count": 1}],
+                "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight)}
+
+    monkeypatch.setattr(runtime, "build_joint_runtime", build)
+    monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
+    return requests, runs, builds, state
+
+
+def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(resident_materialization, tmp_path):
+    requests, _, builds, state = resident_materialization
+    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
+    assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12}
+    assert state.loads == 2
+    for index, path in enumerate(paths):
+        manifest = json.loads(path.read_text())
+        assert manifest["schema_version"] == BANK_SCHEMA
+        assert manifest["writer_checkpoint"]["path"] == requests[index]["checkpoint"]
+        assert manifest["arm"] == requests[index]["arm"]
+        assert manifest["conditions"][0]["writer_value"] == index + 1
+        assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
+        assert manifest["information_wall"]["total_writer_invocations"] == 1
+        assert len(manifest["tasks"][0]["episodes"]) == 10
+    materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
+        output=tmp_path / "single", selection=_selection(mode="fixed_per_task"), device=torch.device("cpu"))
+    assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
+
+
+@pytest.mark.parametrize("field", ["source", "model_config", "observer"])
+def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_materialization, field):
+    requests, runs, builds, _ = resident_materialization
+    changed = runs[Path(requests[1]["checkpoint"])]
+    if field == "observer":
+        changed["config"][field]["probe_seed"] += 1
+    else:
+        changed[field]["different_contract"] = True
+    with pytest.raises(ValueError, match="identical source, model, and observer"):
+        materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
+    assert not builds and not any(Path(request["output"]).exists() for request in requests)
+
+
+def test_resident_batch_rejects_output_collision_and_per_request_asset_roots(resident_materialization):
+    requests, _, builds, _ = resident_materialization
+    with pytest.raises(ValueError, match="distinct new directories"):
+        materialization.materialize_requests(asset_root=ROOT, requests=[requests[0], requests[0]], device=torch.device("cpu"))
+    with pytest.raises(ValueError, match="asset root and device"):
+        materialization.materialize_requests(asset_root=ROOT, requests=[requests[0] | {"asset_root": "/different"}], device=torch.device("cpu"))
+    assert not builds
+
+
+def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, monkeypatch, capsys):
+    requests = [{"checkpoint": "/checkpoint", "output": "/output", "role": "development_train", "task_ids": [0], "k": 1}]
+    path = tmp_path / "requests.json"
+    path.write_text(json.dumps(requests))
+    calls = []
+    monkeypatch.setattr(materialization, "materialize_requests", lambda **kwargs: calls.append(kwargs) or [Path("/output/manifest.json")])
+    monkeypatch.setattr(torch, "set_num_threads", lambda _threads: None)
+    argv = ["materialize_layered_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT), "--device", "cpu"]
+    monkeypatch.setattr("sys.argv", argv)
+    materialization.main()
+    assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu")}]
+    assert "/output/manifest.json" in capsys.readouterr().out
+    for option in (("--arm", "same_task_other"), ("--seed", "7")):
+        monkeypatch.setattr("sys.argv", [*argv, *option])
+        with pytest.raises(SystemExit) as error:
+            materialization.main()
+        assert error.value.code == 2 and len(calls) == 1

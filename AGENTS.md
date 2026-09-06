@@ -112,7 +112,7 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 
 ## 8. Evaluation contract
 
-- official preprocessing：render256/model224、双相机180度rotate、7维state/action、10 flow steps、执行前5 actions后
+- official preprocessing：render256/model224、双相机180度rotate、8维state（position3 + axis-angle3 + gripper qpos2）/7维action、10 flow steps、执行前5 actions后
   replan、dummy settling10、成功即终止、suite horizon 220/280/300/520。
 - zero-interaction rollout从正确task的teacher videos无放回采样，不挑最好video。
 - correct/same-task-other/cross-suite-wrong/shuffled/reversed/no-video严格配对task、state、env/policy RNG和video

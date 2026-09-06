@@ -3483,7 +3483,8 @@ Primary两个相邻success sets达到预注册retention/Jaccard数字，other则
 ## 171. 完整生成方向与真正能力参照（2026-09-06）
 
 train24共享SFT历史109/400是无需教学视频的合法跨任务基线，不能因它使用train24 actions而排除；EMBER训练也获准使用这些actions。
-正式相对比较需对齐评测合同；当前source47/carrier72只适合作机制参照，约80的Writer尚未接近SFT109和旧Writer143。
+后续metadata审计确认SFT与当前state8/action7、replan5和400条state/env/policy RNG相配；原7维差异推断是文档误读。
+最终强候选比较仍透明区分历史复用与新后端评测。当前source47/carrier72只适合作机制参照，约80的Writer尚未接近SFT109和旧Writer143。
 旧143支持任务相关视觉读取、语义/过程共同表示与整套LoRA联合生成的职责；不能把历史不同checkpoint的优点拼成一个完美方法。
 P/Q交互、native-only因子读出和carrier12+mobile4是可分别审视的假设。G1局部容量不证明共享映射优势；解除限制也不自动保证学习成功。
 owner已授权直接完整LoRA主线；复用已完成实验和资产，按行为与信息价值投入，不机械补弱随机/多checkpoint完整评测。

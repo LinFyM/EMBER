@@ -3235,7 +3235,10 @@ Long尤其未稳定：32跨视频只保留2/9，48两视频各4个成功却完�
 owner指出weak A2仅比carrier多几个成功不值得直接扩多套strict400或执行大规模随机初始化比较，并要求回到早期143实际能力。
 只读原始合同确认train24共享rank128 SFT step400 validation8为109/400，step425为107/400；训练24任务与validation8不相交，
 部署不读teacher video、无held adaptation。结果根为`runs/outputs/pi05_source_sft_rank128_mixed_val8x50_step0400_96d307d_r6_20260728/`。
-该历史评测与当前7维/执行合同存在差异，不能直接声称strict paired比较；但它是合法的train24监督基线，不是held task oracle。
+后续只读复核纠正本节点最初的维度差异判断：SFT与当前实际运行均state8/action7、replan5，policy与RNG合同相同；
+400条task/state/language/env seed及policy-noise prefix也严格配对，source normalization在96d307d至当前Git未变。
+`AGENTS.md`原“7维state/action”为文字错误，已与官方OpenPI及冻结source/data/processor对齐；没有改变任何运行设置。
+SFT109可保留为已配对的历史能力参照，仍不冒充新后端重跑。审计见完整输出analysis的`sft_historical_compatibility.json`。
 
 旧A2 random在48/64后被agent中断，32/48 checkpoint保留，无完整训练completion或闭环结果；不把它报为随机初始化科学non-pass。
 owner讨论并接受后继规划后，于12:12左右明确重新设goal、自主执行直到最终科学目标。新方向复用现有P/Q、数据与执行条件，

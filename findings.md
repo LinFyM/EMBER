@@ -20,7 +20,7 @@
 
 9月7日推导明确：对齐后内容差为零，不代表过程未推进；对应位置本身也可提供证据。相对位移分布rho只是A行的索引重排，
 同一关系MLP应在逐帧聚合前消费内容与对应模式。固定probe造成的共同结构或漂亮斜带，都不足以证明物理动作对应。
-这是一项建模依据，尚无新架构学习/闭环结果。离线双向读取不违反rollout前一次编译；有限上下文与视频因果必要性分别验证。
+这是一项建模依据；首轮短学习16步的训练侧闭环尚未见广泛改善，不能将其当作方法通过。离线双向读取不违反rollout前一次编译；有限上下文与视频因果必要性分别验证。
 
 G2证明有序response包含功能动态；固定DP/event schema不是后继必须保留的形式。
 [原生容量与动态](docs/research_history.md#native-capacity)。
@@ -81,7 +81,7 @@ PNBTT停在free-query E1，真实Program E2未运行，不能借此否定G2。
 [准确吞吐范围](docs/research_history.md#throughput)。
 
 新Meta-on图不能复用跨step frozen R cache。可保留的是冻结prefix、同step临时R、policy VJP、Writer replay与observer chunk replay的
-链式法则。清理后已有query-microbatch VJP和通用replay基础；新R梯度、Meta重放与跨condition batch尚未实现或profile。
+链式法则。清理后已有query-microbatch VJP和通用replay基础；新图R-leaf与Meta重放已真实验证，最长K4已profile；跨condition batch尚未实现。
 只按实际最长K1/K4和真实queries测成本，不宣称设计图已经具有历史倍数加速。
 
 ## 10. 下一轮需要回答的科学问题

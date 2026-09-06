@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，接管授权已更新，唯一新图已集成，真实Meta/VJP与成本验证进行中。
+更新时间：2026-09-07 CST，新图真实Meta/VJP与最长K成本已验证，formal short4已完成48步，两组闭环比较进行中。
 
 ## 当前授权与方法状态
 
@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **唯一新图已实现并进入真实工程验证；尚无新闭环性能证据**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **唯一新图已实现并通过真实机制验证；第16步训练侧闭环未见广泛改善**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -20,7 +20,7 @@
 - 接手Git实测：main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与本地origin/main一致。
   指定当前文档、相关9月5日完整专家原文、旧账本§1–3/9–20/164–165/172–181及相关分析原件已读；代码和canonical资产已核对。HANDOFF已消费并删除，长期内容留在正式文档。
 - 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
-  当前仅运行exploratory GPU机制/profile，未启动formal训练；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
+  当前formal short4按预登记16/48/96节点推进；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
 ## 当前formal运行
 
@@ -34,14 +34,18 @@
 - 第16步三组screen40已完成：source用p2、correct/other用p3/p5；每GPU3 persistent workers，各自cost-balanced队列。
   结果根为runs/analysis/layered_relation_writer_20260907/{short4_source_screen40,s16_correct_screen40,s16_same_task_other_screen40}。
   第16步闭环三组均exit0：source4/40、correct4/40、other6/40；correct/source RGL4/0/0，other/source4/2/0；breadth均2/4，Goal/Object0。exact命令/资源/退出码在同analysis root。
-- 第16步只有256queries/task；按事前96步短学习合同继续到48（768queries/task），保持原run参数、optimizer/scheduler、sampler与world3；已启动gpu01 tmux ember-layered-short4-s48，日志train_s48.log。
+- 第16步只有256queries/task；按事前96步短学习合同继续到48（768queries/task），保持原run参数、optimizer/scheduler、sampler与world3；gpu01 tmux ember-layered-short4-s48已自然完成exit0，日志train_s48.log。
+  该续段545.03秒，累计192conditions/3072queries；各task K1/2/4均16次。macro_00000048完整状态已保存；两组同一held视频正在物化，随后固定screen40。
   原生frame_chunk16的exploratory K4 joint16.88s（observer forward1.36/VJP3.13）及peak allocated34.65GiB，表明批量布局可加快约34.5%；
   该profile用step16权重，早期chunk4 profile用smoke权重，不能将loss差当batch收益或科学改进。下次fresh扩大训练采用已测布局。
+- 第16步后登记冻结训练侧functional诊断：action42–45各8query/task，与训练queries及held videos互斥；无梯度、固定noise/time、16/48/96重复同面板，不能选点。
+  第16步source减correct loss在四task为+8.90e-5/+2.86e-5/+5.11e-5/-1.87e-5；整体变化很小，不能当行为改善。
+  原件functional_panel_registration.json、functional_s16.json位于同analysis root。
 - 已合并task worktree及codex/layered-writer分支清理；两个仍供formal训练/评测使用的detached frozen worktrees保留。
 
 ## 当前实现与验证（2026-09-07）
 
-- 授权记录已提交推送70b194ec；纯Writer实现4fa19c3a已集成main。当前新增训练/读取/数据代码及相关窄修复尚在验证，未冒充formal authority。
+- 授权记录已提交推送70b194ec；纯Writer实现4fa19c3a已集成main。训练/读取/数据于8d934408集成，物化评测于d5b8119e集成；各自formal运行使用对应clean pushed frozen authority。
 - 唯一实现owner：writer/relation.py负责局部帧对和同步邻居更新；layered.py负责语言/H-read/集合compiler；coordinate.py负责完整坐标A/B；
   native.py负责原生Meta读取与R-leaf/observer VJP；learning_data.py负责固定split与跨episode采样；runtime.py负责加载和有界冻结prefix缓存；
   training.py及薄CLI负责全局任务权重、调度、checkpoint/resume；materialization/evaluation负责逐episode条件物化及已有队列接线。没有恢复旧Writer/fallback。
@@ -124,6 +128,6 @@
 
 ## 下一步
 
-完成真实Meta/VJP与最长K成本检查，修复实际工程失败；登记短学习曝光、行为节点和正式launch合同，提交推送clean代码后从detached frozen
-worktree启动。物化与评测入口并行完成后，及时读取短学习闭环与同task新视频；据证据扩train24与strict400。
+读取第48步correct/other固定screen40和无梯度functional面板，与source及第16步严格配对比较；再按短学习96步合同与实际趋势继续或定位最早接口。
+通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。

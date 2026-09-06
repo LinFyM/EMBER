@@ -161,7 +161,7 @@ def _task_subset_tasks(
         return tuple(tasks), None
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or (str(args.mode), int(args.state_count)) not in {("screen", 10), ("formal", 50)}
+        or (str(args.mode), int(args.state_count)) not in {("screen", 5), ("screen", 10), ("formal", 50)}
         or args.role != "development_train"
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):

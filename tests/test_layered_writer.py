@@ -187,6 +187,27 @@ def _functional_tensor_loss(generated, contract, inputs, targets):
     return torch.stack(losses).mean()
 
 
+def test_initial_readout_update_is_local_to_one_target_and_rank() -> None:
+    config, contract = _config(), _contract()
+    writer = LayeredRelationWriter(contract, config)
+    codes = torch.randn(len(contract.targets), contract.rank, config.width)
+    optimizer = torch.optim.SGD(writer.decoder.parameters(), lr=0.1)
+    initial = writer.decoder(codes)
+    # The second target shares a native-shape group with the first. A scalar
+    # loss on one B column must not update another rank or another target.
+    key = "right" + LORA_B_SUFFIX
+    loss = F.mse_loss(initial[key][:, 1], torch.ones(contract.targets[1].out_features))
+    loss.backward()
+    optimizer.step()
+    updated = writer.decoder(codes)
+    assert F.mse_loss(updated[key][:, 1], torch.ones(contract.targets[1].out_features)) < loss
+    for name, value in initial.items():
+        if name == key:
+            torch.testing.assert_close(updated[name][:, 0], value[:, 0], rtol=0, atol=0)
+        else:
+            torch.testing.assert_close(updated[name], value, rtol=0, atol=0)
+
+
 @pytest.mark.parametrize("checkpointed", [False, True])
 def test_identity_start_then_functional_update_reaches_upstream(checkpointed: bool) -> None:
     config, contract = _config(activation_checkpoint=checkpointed), _contract()

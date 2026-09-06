@@ -542,21 +542,21 @@ a=P_A f_A(c),\qquad b=P_B f_B(c),
 
 ### 8.3 将 code 与 native coordinate 联合非线性化
 
-首版对每个真实输入坐标 i、输出坐标 o 使用共享 scalar MLP：
+当前受控版本对每个真实输入坐标 i、输出坐标 o 使用坐标条件 MLP，末读出按 target/rank 独立：
 
 \[
-\delta a_{mri}=u_A^\top\operatorname{GELU}(U_Ac_{mr}+e^A_{mi}),
+\delta a_{mri}=(u^A_{mr})^\top\operatorname{GELU}(U_Ac_{mr}+e^A_{mi}),
 \qquad
-b_{mro}=u_B^\top\operatorname{GELU}(U_Bc_{mr}+e^B_{mo}),
+b_{mro}=(u^B_{mr})^\top\operatorname{GELU}(U_Bc_{mr}+e^B_{mo}),
 \]
 
 \[
 A_{mri}=A^0_{mri}+\delta a_{mri},\qquad B_{mor}=b_{mro}.
 \]
 
-\(U_A,U_B\in\mathbb R^{p\times d}\)，\(u_A,u_B\in\mathbb R^p\)，\(e^A_{mi},e^B_{mo}\in\mathbb R^p\)，首版
-\(p=64\)。A侧一套、B侧一套 shared scalar MLP 跨 targets/ranks/coordinates 复用；target/native-channel identity
-由 e 提供，固定跨 tasks 学习。相同 \(c_{mr}\) 生成 paired A/B，native coordinate 不作为 task 路由。
+\(U_A,U_B\in\mathbb R^{p\times d}\)，\(u^A_{mr},u^B_{mr}\in\mathbb R^p\)，\(e^A_{mi},e^B_{mo}\in\mathbb R^p\)，
+\(p=64\)。A/B各自的code投影跨targets/ranks共享，native坐标跨rank共享；末读出在每个target/rank独立，
+全部参数仍跨tasks学习。m/r只标识输出坐标，不能成为task路由。相同 \(c_{mr}\) 生成paired A/B。
 
 联合非线性在坐标相关平移之后发生，因此可随 c 改变输出方向，不再强制形如固定 p 维末投影的 col-space。
 一个直接使用本图激活的例子是 \(a(c)=[\operatorname{GELU}(c),\operatorname{GELU}(c-1)]\)：c=0 时第一坐标为0、
@@ -575,10 +575,26 @@ scalar readout 等正常方式实现 identity 起点，随后完整 A/B 都可�
 B的native-channel常量分量占99.995%以上，而真实policy功能梯度在该方向仅占约0.003%–2.23%。
 这支持输出端初始化条件不佳的竞争解释，不证明它是弱闭环的唯一原因，也不否定关系图、动态视频信息或坐标MLP的表达能力。
 
-下一受控fresh对照只将 A/B native 坐标向量改为独立标准正态，使不同坐标进入GELU的不同斜率区域。
+已完成的受控fresh对照只将 A/B native 坐标向量改为独立标准正态，使不同坐标进入GELU的不同斜率区域。
 不改变原生A0、零scalar readouts、rank/width/图、Meta、seed、监督、optimizer/schedule或曝光；初始执行仍严格identity。
 这是一个固定的初始化干预，不扫scale、不增加gain/gate/旁路，也不从旧checkpoint继续。原std0.02结果和代码由frozen commit/run保留。
 判据仍为同一短面板的绝对闭环、breadth、相邻与跨视频success集合；几何改善不足以接受该修改。当前参数量和形状均不变。
+
+### 8.4.1 末读出共享方式的受控修正（2026-09-07）
+
+标准正态坐标对照在96步K1 correct/other均6/40、K4为8/40；原初始化对应4/4/6。局部Long和冻结功能loss有改善，
+但Object/Goal仍0，不能视为广泛共享能力。两个训练任务的三个代表target中，B的native常量能量降至70.7%–85.5%，
+rank常量能量仍>99.995%；真实功能梯度的rank常量分量为2.56%–30.06%。代表target的局部Jacobian投影解除rank共享后
+5/6方向改善，Long action_out反而下降；它没有覆盖38-target总梯度或Adam更新，不能证明唯一根因。
+
+首版全局共享的u_A/u_B各为[p]。本轮只改为[target,rank,p]，保留联合GELU、std1 native坐标和全部上游图。
+这解除不同输出槽必须通过同一末读出更新的约束，增加77,696参数；Writer总14,190,240、Meta仍626,688。
+末读出仍零初始化，public A0与初始identity不变；零张量扩展不消耗RNG，其它初始化随机抽样保持。
+不新增按task的参数、rank/width/gain扫描、旁路或第二adapter。张量形状改变，必须fresh全图联合训练。
+
+训练/采样/权重/96步schedule、world3、frame_chunk4及16/48/96双视频K1和96K4配对40诊断均沿用初始化对照。
+实现与结果前登记见target_rank_readout_control/registration.json，比较绝对行为、breadth及相邻/跨视频success集合；
+不能凭几何或loss接纳该修改。全局共享读出的代码、配置和结果由旧frozen commits/runs保存，active source只保留本条路径。
 
 ### 8.5 为什么首版不需要 raw X/Y bank
 

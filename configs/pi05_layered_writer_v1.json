@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_layered_relation_writer_config_v1",
-  "status": "preregistered_short4_native_coordinate_initialization_control",
+  "status": "preregistered_short4_target_rank_readout_control",
   "design": "docs/layered_relation_video_writer_design.md",
   "data": {
     "seed": 7,
@@ -82,7 +82,9 @@
     "include_last_frame": true,
     "extra_meta_tasks": []
   },
-  "model": {},
+  "model": {
+    "coordinate_readout": "target_rank"
+  },
   "observer": {
     "meta_rank": 4,
     "probe_seed": 1729,
@@ -117,7 +119,7 @@
       48,
       96
     ],
-    "initial_use": "fresh controlled initialization study after original short4 near-constant native output and misaligned real LoRA gradients",
+    "initial_use": "fresh controlled readout-sharing study after coordinate initialization improved native variation and local Long behavior but left near-constant rank outputs",
     "final_checkpoint_selection": false,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -168,10 +170,11 @@
     },
     "qualification_registration": "train24 strict400 arms/adjacency thresholds will be registered before first qualification score",
     "intervention": {
-      "changed": "native A/B coordinate embeddings start from independent standard normal instead of std0.02",
-      "fixed": "same architecture, parameter count, seed, public A0, zero scalar readouts, optimizer/schedule, data sampler, exposure, K support, frame chunks and behavior pairing",
-      "baseline_run": "runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907",
-      "scope": "tests output initialization conditioning; does not declare entire relation graph failed or guarantee video causality",
+      "changed": "globally tied A/B scalar readouts [p] become independent [target,rank,p] readouts; +77696 trainable parameters",
+      "fixed": "unit-normal native coordinate initialization, all other initial random draws, graph, Meta, public A0, zero scalar readouts, seed, optimizer/schedule, data sampler, exposure, K support, frame chunks and behavior pairing",
+      "baseline_run": "runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907",
+      "registration": "runs/analysis/layered_relation_writer_20260907/target_rank_readout_control/registration.json",
+      "scope": "tests one output parameter-sharing constraint; no unique historical root-cause or video-causality claim",
       "fresh": true
     }
   }

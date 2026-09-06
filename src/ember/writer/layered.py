@@ -28,6 +28,7 @@ class LayeredWriterConfig:
     radius: int = 4
     compiler_blocks: int = 2
     coordinate_width: int = 64
+    coordinate_readout: str = "target_rank"
     edge_chunk: int = 16
     coordinate_chunk: int = 256
     activation_checkpoint: bool = True
@@ -39,6 +40,8 @@ class LayeredWriterConfig:
             raise ValueError("Writer dimensions must be positive and width divisible by heads")
         if min(self.blocks, self.radius) < 0 or self.compiler_blocks <= 0:
             raise ValueError("invalid relation radius/block or compiler block count")
+        if self.coordinate_readout != "target_rank":
+            raise ValueError("canonical coordinate readout must be target_rank; incompatible models require fresh training")
 
 
 class _Attention(nn.Module):

@@ -1,4 +1,4 @@
-"""Shared coordinate-conditioned scalar A/B decoder for a complete LoRA."""
+"""Coordinate-conditioned A/B decoder with independent target/rank readouts."""
 
 from __future__ import annotations
 
@@ -41,8 +41,9 @@ class CoordinateLoRADecoder(nn.Module):
         self.activation_checkpoint = activation_checkpoint
         self.a_code = nn.Linear(width, coordinate_width, bias=False)
         self.b_code = nn.Linear(width, coordinate_width, bias=False)
-        self.a_readout = nn.Parameter(torch.zeros(coordinate_width))
-        self.b_readout = nn.Parameter(torch.zeros(coordinate_width))
+        readout_shape = (len(contract.targets), contract.rank, coordinate_width)
+        self.a_readout = nn.Parameter(torch.zeros(readout_shape))
+        self.b_readout = nn.Parameter(torch.zeros(readout_shape))
         grouped: dict[tuple[int, int], list[int]] = {}
         for index, target in enumerate(contract.targets):
             grouped.setdefault((target.in_features, target.out_features), []).append(index)
@@ -55,7 +56,7 @@ class CoordinateLoRADecoder(nn.Module):
     @staticmethod
     def _tile(code: Tensor, coordinates: Tensor, readout: Tensor) -> Tensor:
         hidden = F.gelu(code.unsqueeze(-2) + coordinates.unsqueeze(-3))
-        return hidden @ readout
+        return torch.einsum("grnp,grp->grn", hidden, readout)
 
     def _decode(self, code: Tensor, coordinates: Tensor, readout: Tensor) -> Tensor:
         tiles = []
@@ -73,8 +74,10 @@ class CoordinateLoRADecoder(nn.Module):
         a_code, b_code = self.a_code(codes), self.b_code(codes)
         generated = {}
         for group in self.groups:
-            a = group.identity_a + self._decode(a_code[group.indices], group.a_coordinates, self.a_readout)
-            b = self._decode(b_code[group.indices], group.b_coordinates, self.b_readout).transpose(-1, -2)
+            a = group.identity_a + self._decode(
+                a_code[group.indices], group.a_coordinates, self.a_readout[group.indices])
+            b = self._decode(
+                b_code[group.indices], group.b_coordinates, self.b_readout[group.indices]).transpose(-1, -2)
             for index, name in enumerate(group.names):
                 generated[name + LORA_A_SUFFIX] = a[index]
                 generated[name + LORA_B_SUFFIX] = b[index]

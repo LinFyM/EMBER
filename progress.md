@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:51 CST。
+更新时间：2026-09-06 19:03 CST。
 
 ## 当前目标与授权
 
@@ -37,20 +37,21 @@
 - 只读核验old v6实际step50/400每task1000/8000queries，历史106/143；其完整train24、50episode/video池、width256、可训练observer与优化均不同，
   因此不能把当前差距简单归为训练量。原件引用在historical_v6_recipe_context.json，不恢复旧coarse/native读法。
 
-## 当前下一步
+## 当前运行：同图 fully-random target18
 
-- 已登记同两个task、原held48视频和states0–9，读取原shared18全部早期已存checkpoints32/64/96；每point20rows，共60新rows。
-  128复用已完成breadth中的20行，只为区分一直欠拟合与曾学会后丢失，不训练、不挑checkpoint、不读negative/validation/Test。
-- 两个真实config/subset loaders通过，已推送并冻结0b28a3ff；新tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-shared-trajectory-20260906`。
-  三点banks已完成且launcher exit0；三个20-row动态队列在gpu01p0/2/3完成，所有launcher与9个workers自然exit0；当前没有本任务运行中的GPU作业。
-  最新quota726981760KiB/1073741824soft、shared84TiB；新analysis11MiB、两clone各229MiB，本次新增峰值<1GiB纳入原4GiB预算，source/assets不复制。
-  新launch仍按两节点live GPU/memory/process准入，总量<=6，每job单节点、GPU-local NUMA与dynamic persistent evaluator。
-
-- 原shared18四点结果为2/3/4/3（各20），Spatial2/3/2/2、Object0/0/2/1；相邻R/G/L1/2/1、1/3/2、2/1/2，churn3/5/3。
-  没有接近独立clones14/20的强阶段，主要是尚未建立足够能力；小范围结论不外推全18task没有遗忘。历史§180/findings§178封存。
-- 已登记同完整图fully-random target18候选，只跳过G2组件参数复制，保留原18task/两fit视频/128updates/每task1024queries及AdamW/LR。
-  四点primary validation screen80负责分配投入，另做固定terminal128同两训练task的20-row诊断；全局选择仍须原strict400合同。
-  CPU真实config/loader对照通过；已从clean pushed f3717836 detached tree启动gpu02p0–5、world6，NUMA0/0/0/0/1/1，launcher806281。
-  0–3/5现有<=210MiB低负载，p4现有5754MiB/2%，预计叠加峰值保留约4GiB余量，peer作业不动。本任务当前只用这6卡。
-  quota使用726502144KiB/1073741824soft，shared84TiB；预计新增峰值<16GiB。精确命令、资源与配置合同在random analysis的launch目录。
-  新run为`pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`，目前启动加载；训练后先核对实际2304task/18432queries再物化评测。
+- 原shared18四点训练侧行为已封存：32/64/96/128为2/3/4/3（各20），Spatial2/3/2/2、Object0/0/2/1；
+  相邻R/G/L1/2/1、1/3/2、2/1/2，churn3/5/3。没有接近clones14/20的强阶段；历史§180/findings§178保留边界。
+- 当前候选只跳过G2参数复制，保留完整图、4750208个Writer参数、原18tasks/两fit视频/128updates/每task1024queries及AdamW/LR。
+  Source与observer冻结，全部训练模块随机初始化，公开非零A模板/零B身份起点保留；不会恢复旧A2 random。
+- CPU真实config/loader通过，从clean pushed f3717836 detached tree运行；frozen tree为
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-target18-random-20260906`。
+- 2026-09-06 18:48:55 CST启动gpu02p0–5、world6，NUMA0/0/0/0/1/1，launcher806281、torchrun806302。
+  0–3/5原有<=210MiB低负载，p4原有5754MiB/2%，peer作业不动。本任务当前只用这6张卡。
+  训练128updates已完成，34.613GiB peak reserved；实际2304task executions/18432queries/video/policy RNG/权重与component逐项匹配。
+  当前正进行预登记零梯度Panel-B；尚无random闭环结果。
+- Quota使用726502144KiB/1073741824soft，shared84TiB，预计新增峰值<16GiB。精确命令、资源与配置合同在
+  `runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/launch/`；新run为
+  `pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
+- 下一步训练/诊断自然完成后，一次驻留物化四个primary validation banks及固定terminal128训练诊断bank。
+  四点screen80只分配后续strict400投入；固定task75/77 held48/48 states0–9共20新rows只定位训练侧学习。
+  评测采用dynamic long-first persistent workers，启动前两节点live准入、总量<=6；全部negative/Test仍未启用，没有selected checkpoint。

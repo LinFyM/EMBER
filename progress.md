@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:43 CST。
+更新时间：2026-09-06 18:51 CST。
 
 ## 当前目标与授权
 
@@ -50,4 +50,7 @@
   没有接近独立clones14/20的强阶段，主要是尚未建立足够能力；小范围结论不外推全18task没有遗忘。历史§180/findings§178封存。
 - 已登记同完整图fully-random target18候选，只跳过G2组件参数复制，保留原18task/两fit视频/128updates/每task1024queries及AdamW/LR。
   四点primary validation screen80负责分配投入，另做固定terminal128同两训练task的20-row诊断；全局选择仍须原strict400合同。
-  配置已准备，当前尚未启动；下一步完成CPU合同对照、clean pushed frozen来源与两节点live GPU/独立quota，按实际可用卡启动。
+  CPU真实config/loader对照通过；已从clean pushed f3717836 detached tree启动gpu02p0–5、world6，NUMA0/0/0/0/1/1，launcher806281。
+  0–3/5现有<=210MiB低负载，p4现有5754MiB/2%，预计叠加峰值保留约4GiB余量，peer作业不动。本任务当前只用这6卡。
+  quota使用726502144KiB/1073741824soft，shared84TiB；预计新增峰值<16GiB。精确命令、资源与配置合同在random analysis的launch目录。
+  新run为`pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`，目前启动加载；训练后先核对实际2304task/18432queries再物化评测。

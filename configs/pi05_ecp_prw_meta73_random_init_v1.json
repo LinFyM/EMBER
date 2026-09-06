@@ -1,0 +1,304 @@
+{
+  "schema_version": "ember_ecp_policy_response_writer_unified_factor_v4",
+  "status": "active_asymmetric_policy_native_factor_writer",
+  "authorities": {
+    "base_g3_config": "configs/pi05_ecp_shared_compiler_g3_v5.json",
+    "functional_panel_sources": [
+      {
+        "root": "runs/analysis/pi05_ecp_g3_behavior_primal_t0c_256row_8target_5781694_gpu01p012345_20260829",
+        "completion": "completion.json",
+        "task_count": 40
+      },
+      {
+        "root": "runs/analysis/pi05_ecp_g2_behavior_sufficiency_t0_missing55_5781694_gpu01p012345_20260829",
+        "completion": "launch_complete.json",
+        "task_count": 55
+      }
+    ],
+    "task_local_reference_root": "runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829",
+    "factorial_coverage_audit": "runs/analysis/pi05_ecp_policy_response_writer_native_temporal_factorial_coverage_v1_20260905/completion.json",
+    "common_base_shared_nonpass": "runs/outputs/pi05_ecp_policy_response_writer_common_base_73task_k1_component_s200_f214fefa_gpu02p46_sharedmmap_20260905/completion.json",
+    "block_responsibility_audits": [
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_module_swap_m100_m200_task1_d557dffc_gpu01p0_20260905/result.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_module_swap_m100_m200_task6_d557dffc_gpu02p4_20260905/result.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_module_swap_m100_m200_task79_d557dffc_gpu02p6_20260905/result.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_block_granular_m200_task1_d557dffc_gpu01p3_20260905/result.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_block_granular_m200_task6_d557dffc_gpu02p4_20260905/result.json",
+      "runs/analysis/pi05_ecp_policy_response_writer_common_base_block_granular_m200_task79_d557dffc_gpu02p6_20260905/result.json"
+    ]
+  },
+  "task_split": {
+    "gradient_meta": [
+      1,
+      2,
+      3,
+      4,
+      7,
+      8,
+      9,
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      23,
+      24,
+      26,
+      27,
+      28,
+      29,
+      31,
+      32,
+      33,
+      34,
+      36,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      44,
+      46,
+      47,
+      48,
+      49,
+      51,
+      52,
+      53,
+      54,
+      56,
+      57,
+      58,
+      59,
+      61,
+      62,
+      63,
+      64,
+      66,
+      67,
+      68,
+      69
+    ],
+    "gradient_target": [
+      72,
+      73,
+      74,
+      75,
+      77,
+      78,
+      80,
+      82,
+      83,
+      84,
+      85,
+      87,
+      88,
+      89,
+      90,
+      92,
+      93,
+      94
+    ],
+    "true_task_held_meta": [
+      6
+    ],
+    "true_task_held_target": [
+      79
+    ],
+    "task_local_positive_control": [],
+    "panel_b_gradient_meta": [
+      1,
+      2,
+      8,
+      9,
+      32,
+      52
+    ],
+    "panel_b_gradient_target": [
+      72,
+      77,
+      83,
+      93,
+      94
+    ],
+    "selection_uses_outcomes": false,
+    "held_selection_rule": "matched_reused_diagnostic_tasks6_and79_not_checkpoint_selection",
+    "sampling_policy": "all_55_meta_and_18_target_once_per_optimizer_update_each_task_weight_1_over_73"
+  },
+  "model": {
+    "target_owners": 38,
+    "residual_rank": 4,
+    "complete_rank": 16,
+    "prefix_width": 2048,
+    "expert_width": 1024,
+    "width": 128,
+    "architecture": "repeatable_parallel_policy_native_factor_blocks",
+    "factor_readout": "independent_input_context_shared_output_context_plus_frame_innovation_signed_raw_native_XY",
+    "signed_query": "two_input_bank_localizers_one_shared_output_localizer_plus_dynamic_offsets",
+    "attention_heads": 4,
+    "blocks": 4,
+    "evidence_read": "same_query_parallel_language_patch_response_and_side_native_cross_attention_then_sum",
+    "source_normalization": "independent_language_patch_response_and_native_softmax_no_cardinality_competition",
+    "teacher_frame_position_contract": "relative_position_enters_attention_qk_and_pooling_keys_never_raw_native_value",
+    "dynamic_value_contract": "zero_frame_innovation_makes_output_factor_and_complete_mobile_zero",
+    "capture_frame_chunk": 2,
+    "pooling_frame_chunk": 64,
+    "representation_arms": [
+      "full"
+    ],
+    "post_pooling": "single_target_update_cap_then_small_core_canonicalization",
+    "initialization": "g2_policy_attention_and_native_projection_component_init_or_fully_random_same_topology",
+    "input_context_branches": 2
+  },
+  "data": {
+    "frame_stride": 5,
+    "supported_K": [
+      1,
+      2,
+      4
+    ],
+    "initial_K": 1,
+    "training_K": [
+      1
+    ],
+    "video_split": {
+      "source": "functional_panel_program_video_demos",
+      "fit_pool_max": 2,
+      "held_selection": "last_sorted",
+      "selection_uses_outcomes": false
+    },
+    "video_action_cross_episode": true,
+    "videos_encoded_independently": true,
+    "video_set_aggregation": "permutation_invariant_equal_video_and_frame_base_mass"
+  },
+  "smoke": {
+    "functional_rows": 2,
+    "functional_microbatch": 1,
+    "required": [
+      "real_full_19_layer_50_horizon_2_probe_policy_response",
+      "real_38_target_native_XY",
+      "separate_nonzero_functional_gradient_through_language_patch_response_and_side_native_reads",
+      "functional_gradient_through_factor_side_signed_heads",
+      "unique_76_tensor_rank16_materialization"
+    ]
+  },
+  "optimization": {
+    "seed": 20260905,
+    "objective": "correct_cross_episode_functional_positive_only",
+    "task_local": {
+      "warmup_updates": 5,
+      "effective_updates": 45,
+      "checkpoint_effective_updates": [
+        20,
+        45
+      ],
+      "learning_rate": 0.0003,
+      "decay_learning_rate": 3e-06,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "weight_decay": 0.01,
+      "gradient_clip_norm": 1.0,
+      "functional_rows": 8,
+      "functional_microbatch": 2,
+      "profile_updates": 2,
+      "evaluation_visits": 8
+    },
+    "shared": {
+      "training_stage": "joint_functional_positive_only",
+      "warmup_updates": 5,
+      "effective_updates": 59,
+      "checkpoint_effective_updates": [
+        27,
+        43,
+        59
+      ],
+      "learning_rate": 0.0001,
+      "decay_learning_rate": 1e-06,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "weight_decay": 0.01,
+      "gradient_clip_norm": 1.0,
+      "global_tasks_per_update": 73,
+      "tasks_per_update_by_role": {
+        "meta": 55,
+        "target": 18
+      },
+      "functional_rows": 8,
+      "profile_functional_rows": 8,
+      "functional_microbatch": 2,
+      "profile_updates": 2,
+      "evaluation_visits": 8,
+      "query_sampling": "uniform_panel_a_episode_frame"
+    }
+  },
+  "decision": {
+    "task_local_capacity": "single_task_shared_runtime_whole_writer_no_task_query",
+    "shared_qualification": "fresh_A2_73_task_64_equal_exposures_validation8_at_optimizer32_48_64",
+    "internal_held_use": "tasks6_and79_are_reused_diagnostics_not_checkpoint_selection",
+    "first_closed_loop": "validation8_two_preregistered_correct_video_panels_each_strict400_after_training_completion",
+    "formal_target": "validation8_strict_paired_correct_strictly_greater_than_145_of_400",
+    "checkpoint_selection": "preregistered_adjacent_32_48_or_48_64_both_correct_video_panels_no_surrogate_selection",
+    "post_selection_controls": [
+      "same_task_other",
+      "cross_suite_wrong",
+      "no_video",
+      "language_only",
+      "first_final",
+      "shuffled",
+      "reversed"
+    ]
+  },
+  "information_wall": {
+    "deployment_inputs": [
+      "exact language",
+      "same-task action-hidden internally ordered videos"
+    ],
+    "training_only": [
+      "authorized non-held cross-episode action panels"
+    ],
+    "forbidden_deployment": [
+      "teacher action",
+      "state or proprio",
+      "reward",
+      "terminal",
+      "task ID",
+      "filename",
+      "object pose",
+      "policy outcome",
+      "task expert dictionary"
+    ],
+    "action_meta_installed": false,
+    "wrong_training_loss": false,
+    "shuffled_or_reversed_training": false,
+    "second_adapter_deployed": false
+  },
+  "experiment": {
+    "design": "docs/joint_process_policy_writer_design.md",
+    "arm": "meta73_fully_random_same_topology",
+    "formal_selector": true,
+    "per_task_exposures": [
+      32,
+      48,
+      64
+    ],
+    "matched_reference": "configs/pi05_ecp_prw_meta73_equal_exposure_v1.json",
+    "major_variable": "skip_all_g2_component_parameter_reuse_in_the_entire_same_topology_writer",
+    "same_model_data_optimizer_seed_video_and_query_policy": true,
+    "initialization_arm": "random",
+    "component_parameter_reuse": false,
+    "causal_limits": "compares_initialization_at_the_same_finite_training_budget_not_all_random_initialization_schedules_or_model_capacity",
+    "claimed_K": [
+      1
+    ]
+  }
+}

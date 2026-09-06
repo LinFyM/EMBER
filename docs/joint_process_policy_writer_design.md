@@ -257,6 +257,33 @@ suite horizon不变，使用现有eager batch evaluator、long-first动态队列
 单份node-local共享mmap预计约104GB，含Panel-B新增视频、checkpoint与评测的/data1新增峰值预算<150GiB；复用资产并自动移除临时cache。
 实际profile外推总训练/评测时间后登记一次formal launch合同，来自clean pushed detached worktree，exact resume锁原topology。
 
+### A2同拓扑完全随机初始化候选
+
+owner要求Final保留整套Writer fully-random fresh联合训练；此前各同图、A2、四视频、P/Q及meta73运行均为component-init，
+不能替代这项比较。meta73 component的32两视频80/78、48两视频81/81，相对carrier72只有有限增量，且不满足本轮相邻资格；
+64两视频仍完整执行以保存后期趋势。下一候选只改变初始化，不把组件继承命名为已确认的根因，不增加新读出或解码器。
+
+配置为`pi05_ecp_prw_meta73_random_init_v1.json`，使用现有`--initialization random`入口：整个2,970,368参数Writer从同seed
+constructor状态出发，完全跳过G2的prefix/response projections、owner/family/layer/horizon embeddings及首个evidence attention复用。
+source、frozen observer、normalization与rank12 carrier仍冻结；whole Writer直接联合训练，无专属task query或分段冻结课程。
+完整部署图、两fit/K1、55meta+18target、全73等权group、每task64 exposures、8 cross-episode rows、Panel-A fresh query、
+seed20260905、warmup5+effective59及全部optimizer设置与component相同。它比较的是同一有限预算下的初始化条件，不是seed小扫，
+也不能由random的负结果宣称所有随机初始化训练预算均不可行。
+
+32/48/64全部完整checkpoint及原13task Panel-B保留；不从loss选点。两validation配置为
+`pi05_ecp_prw_meta73_random_validation_{correct,other_correct}_v1.json`，除了training config引用外与component完全相同：
+固定同一8tasks、同一两视频、同一400 states/env/policy RNG、official preprocessing及一次唯一rank16物化。
+三checkpoint × 两正确视频各strict400；复用本轮已完成的同执行source47/carrier72原始400 rows，无需再跑两个固定参照。
+数值资格、相邻pair、跨视频稳定性及candidate排序完全沿用上一节；初始化比较只使用各自完整single checkpoints，不能融合两run。
+当前component没有合格pair；random如通过仍须冻结唯一selected checkpoint并完成原定视频因果controls，Test8继续保留。
+若random更弱，则保留较强工作参照及两者负证据，按竞争解释分析，不自动延长、扫seed/LR/rank或恢复P/Q。
+
+本候选没有source算法或张量拓扑变化，复用4d57f816已通过的完整73-task、最长87帧、8rows真实profile与运行吞吐依据。
+新增三配置及CLI初始化元数据做直接CPU解析、全字段差异和采样合同核对；新run启动后检查实际initialization记录reused为空。
+预计训练及Panel-B约93分钟，后续六组strict400约60–70分钟；实际时间受可用设备和闭环早停影响。
+GPU选择在当前评测结束后live核对两节点，单job单节点、总量≤6；fresh optimizer/scheduler、单份约98GiB临时cache，
+新增峰值<150GiB，启动前重新核对/data1独立quota。精确启动合同与状态写入progress；配置、命令及formal均来自clean pushed frozen tree。
+
 ## 3. 已封存P/Q候选：模块与因果作用
 
 ```text

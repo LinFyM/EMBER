@@ -6,14 +6,29 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal及六套LoRA物化已完成，正在validation8评测。
+  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；meta73 component已有六组完整闭环，64步两组继续执行。
+  owner要求保留的同拓扑fully-random候选已预注册并完成配置核对，尚未启动。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 09:02 CST）
+## 最新节点（2026-09-06 09:53 CST）
+
+- 已完成source47、carrier72、32primary/other80/78、48primary/other81/81，均为完整single-checkpoint strict400、launcher/worker exit0。
+  32primary相对carrier R/G/L=62/18/10，other64/14/8；32跨视频67/11/13、Jaccard.736，Long仅保留第一组9次成功中的2次。
+  other32→48为65/16/13、Jaccard.691，Long保留1、新增3、丢失4。有限净增尚未成为稳定跨视频或困难suite能力。
+- 两个预注册相邻pair均包含48节点，48两组81已经使本轮绝对分数资格无法通过；64仍完整收齐以保存趋势与success-set证据。
+  64other已在gpu01物理4/5/6、64primary在0/2/3接续启动，合计六卡；后者由每个worker自行绑定对应GPU NUMA。
+  现有formal evaluator封存整组worker配置，不支持逐卡加入；当前三卡两组安排用于缩短整体尾部，未修改评测运行面。
+- source/carrier与所有completed candidate的配对统计已更新到analysis的comparison.md/closed_loop_comparison.json，当前6/8完成。
+  所有启动preflight、命令、PID和退出证据保留；新64结果不用于重新定义本轮门槛。
+- `pi05_ecp_prw_meta73_random_init_v1.json`及两validation配置已生成，active design登记唯一变化为跳过G2全部Writer组件继承；
+  same topology、73tasks、64exposures、seed/video/query/optimizer/normalizer不变。现有真实配置loader和元数据检查通过，未读取held actions/rewards。
+  复用已通过的相同图真实profile，预计训练及诊断约93分钟、六组闭环60–70分钟；等待当前两组完成，再live核对资源及启动新frozen run。
+
+## 前一执行节点（2026-09-06 09:02 CST）
 
 - 32/48/64 × primary/other六套bank全部sealed，每套固定8tasks、完整38-target rank16；三个materializer launcher均exit0。
   首次runtime准备115.7–118.0秒，驻留第二组复用0.11–0.14秒，实际每组生成32.8–35.3秒。

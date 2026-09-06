@@ -16,7 +16,9 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 - 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`，按owner附件原文保存。
 - 当前阶段：同图、query覆盖、非对称A、视频池2→4和共同P/Q主干比较全部完成；四视频与P/Q均没有闭环增量，结果sealed。
 - 已恢复较好的两fit A2主干；73-task全task等权、64曝光formal从4d57f816 frozen worktree完成，实际采样/信息墙检查通过。
-  32/48/64的两组正确视频LoRA已全部sealed，正在执行预注册validation8；不继续P/Q的rank/scale/seed小扫或无依据续训。
+  32/48/64的两组正确视频LoRA已全部sealed，32/48已得80/78、81/81；64两组正在执行，完整证据仍需收齐。
+- 同拓扑fully-random候选已按owner原有要求预注册，三配置核对通过；只跳过组件继承，待当前评测结束及资源核对后启动。
+  不继续P/Q的rank/scale/seed小扫或无依据续训。
 - 旧Unified v4及其m25/m50 `45/40`结果保持sealed，不续跑旧实验。
 
 ## 推进顺序
@@ -33,6 +35,8 @@ validation8 strict paired correct严格>145/400，并满足相邻稳定、breadt
 8. [ ] A2的55meta+18target全task等权group、64曝光已预注册；固定32/48/64及两组无放回正确视频各validation8 paired400，
    数值相邻/breadth/四suite/GoalLong/跨视频标准见active design。真实73-task profile、formal和六套物化均已完成，正在评测，等待闭环裁决。
    不宣称四任务稳定性已经通过，也不把扩大任务当作已知修复；当前仅声称K1，同拓扑fully-random保留Final比较，冻结后补controls。
+9. [ ] 完成同拓扑整套Writer fully-random fresh联合候选：相同73-task/64-update合同、32/48/64两组正确视频strict400，
+   source/carrier复用同执行原始rows；比较变量只为初始化。已有组件路径的不合格不能替代这项明确要求的比较，也不把继承先验认作根因。
 
 下文保留的是先前已完成的研究事实。其“当前/下一步/active”只属于历史时点，不恢复旧配置或未执行分支。
 

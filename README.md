@@ -20,12 +20,13 @@ single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、br
 
 ## 代码与运行入口
 
-活动树保留共同基础设施，旧P/Q、Natural Program、bank compiler与Stage 0专用执行面已退役；目前没有新Writer训练入口。
+活动树保留共同基础设施，旧P/Q、Natural Program、bank compiler与Stage 0专用执行面已退役；新图入口为scripts/train_layered_writer.py，正在真实机制与成本验证。
 旧实现与原始专家意见可由 `fcdb6e43706c5fcedf10eaa5d2d459602b263016` 恢复，具体索引见历史§9。
 
 | 责任 | 当前代码 | 使用边界 |
 |---|---|---|
-| 原生图文prefix、KV、Action Expert层捕获 | `src/ember/ecp/policy_effects.py`、`observer.py` | 可复用读取能力；新Meta-on observer与分块梯度重放待实现 |
+| 新图过程/集合/坐标生成 | `src/ember/writer/relation.py`、`layered.py`、`coordinate.py` | 完整H消费后压缩，一次生成全部A/B |
+| 原生图文prefix、KV、Action Expert层捕获 | `src/ember/ecp/policy_effects.py`、`observer.py` | 由`writer/native.py`接入Meta与R-leaf/observer分块VJP，真实验证进行中 |
 | Meta-LoRA与执行LoRA | `src/ember/writer/meta_lora.py`、`src/ember/pi05_lora.py`、`batched_lora.py` | 观察Meta与执行adapter作用域分离，最终执行只装一套完整LoRA |
 | functional query VJP与Writer重放 | `src/ember/writer/functional.py`、`replay.py` | 已有同condition query microbatch VJP；未实现跨condition批量VJP或新Meta重放 |
 | 数据、视频、任务采样与GPU placement | `src/ember/writer/data.py`、`functional_data.py`、`task_schedule.py`、`task_execution.py` | 复用读取/调度，正式allowlist、真实K1/2/4和episode角色须为新run明确登记 |
@@ -41,12 +42,13 @@ scripts/seal_pi05_source_corpus.py
 scripts/seal_pi05_target_data.py
 scripts/train_source_sft.py
 scripts/train_task_experts.py
+scripts/train_layered_writer.py
 scripts/evaluate_source_sft_validation_loss.py
 scripts/evaluate_pi05.py
 ```
 
-`scripts/bootstrap_env.sh`与`scripts/zig-cxx`保留既有环境/编译职责，不为交接重复安装环境。新架构的过程模块、集合compiler、坐标decoder、
-观察Meta梯度编排和唯一训练/物化入口须在后续实现；不把现有helper的通过测试当作新模型通过。
+`scripts/bootstrap_env.sh`与`scripts/zig-cxx`保留既有环境/编译职责，不为交接重复安装环境。新架构的过程模块、集合compiler、坐标decoder与
+观察Meta梯度编排已接线，唯一物化/评测入口正在集成；不把工程测试当作新模型科学通过。
 
 ## 资产与证据入口
 

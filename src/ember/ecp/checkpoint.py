@@ -44,6 +44,7 @@ def save_ecp_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     run_contract_schema: str,
     metrics_rows: int,
+    sampler_state: Mapping[str, Any] | None = None,
 ) -> Path:
     checkpoints = output_dir / "checkpoints"
     partial = checkpoints / f".macro_{macro:08d}.partial"
@@ -82,6 +83,8 @@ def save_ecp_checkpoint(
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
                 "metrics_rows": metrics_rows,
+                "sampler_state": dict(sampler_state) if sampler_state is not None else None,
+                "scaler": None,  # BF16 does not use FP16 gradient scaling.
             },
             partial / "trainer_state.pt",
         )
@@ -119,6 +122,7 @@ def load_ecp_checkpoint(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     run_contract_schema: str,
+    expected_sampler_state: Mapping[str, Any] | None = None,
 ) -> tuple[int, int]:
     macro = checkpoint_macro(checkpoint)
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
@@ -161,6 +165,7 @@ def load_ecp_checkpoint(
         or int(rank_state.get("world_size", -1)) != context.world_size
         or int(trainer.get("next_macro", -1)) != macro
         or int(rank_state.get("next_macro", -1)) != macro
+        or (expected_sampler_state is not None and trainer.get("sampler_state") != dict(expected_sampler_state))
     ):
         raise ValueError("ECP checkpoint cursor changed")
     optimizer.load_state_dict(trainer["optimizer"])

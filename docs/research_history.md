@@ -396,3 +396,12 @@ Owner在交接基线9ea20340之后明确授权：完整理解后立即实现、�
 
 接手时main干净，HEAD为9ea2034037e5c70b514198a70910aac5c2fb18f5；临时HANDOFF消费后删除，入口改指正式账本。
 长期goal按完整稳定性、因果controls与最终32/8评测定义，尚未获得新架构实现或性能证据。当前进度以progress为准。
+
+## 12. 新图首轮真实机制与成本（2026-09-07）
+
+唯一layered关系/集合/坐标Writer已实现，Writer14,112,544参数、读取Meta626,688。真实两帧初始化启动后，Meta B及A先后获得
+实际flow loss梯度；source无梯度。限定抽查的full/staged VJP loss相同，三个接口梯度cosine均>0.99998，正常BF16误差下链式语义成立。
+完整105帧K1及406帧K4含真实16queries的联合前反传为8.27/25.78秒，prefix另3.60/13.37秒；K4峰值allocated34.75GiB。
+首轮CUDA BF16消息scatter dtype错误在第一个功能更新前修复；不作科学non-pass。以上均为exploratory机制/profile，不证明闭环。
+原始脚本、日志、JSONL和设备快照在runs/analysis/layered_relation_writer_20260907/mechanism/。据此预登记short4 fresh联合训练与
+16/48/96行为节点，含有实质专家容量Long35；实际launch、完成和分数另由progress及formal证据登记。

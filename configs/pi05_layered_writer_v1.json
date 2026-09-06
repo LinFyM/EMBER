@@ -1,0 +1,160 @@
+{
+  "schema_version": "ember_layered_relation_writer_config_v1",
+  "status": "preregistered_short4_fresh_joint",
+  "design": "docs/layered_relation_video_writer_design.md",
+  "data": {
+    "seed": 7,
+    "task_ids": [
+      7,
+      12,
+      20,
+      35
+    ],
+    "tasks_per_update": 4,
+    "total_steps": 96,
+    "queries_per_task": 16,
+    "cardinalities": [
+      1,
+      2,
+      4
+    ],
+    "video_demos": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "action_demos": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+    ],
+    "diagnostic_action_demos": [
+      42,
+      43,
+      44,
+      45
+    ],
+    "held_video_demos": [
+      46,
+      47,
+      48,
+      49
+    ],
+    "task_weight": "equal task mean per update; equal occurrence over complete cycle",
+    "query_sampling": "uniform action episode, then uniform frame, independently sampled with replacement",
+    "frame_stride": 5,
+    "include_last_frame": true,
+    "extra_meta_tasks": []
+  },
+  "model": {},
+  "observer": {
+    "meta_rank": 4,
+    "probe_seed": 1729,
+    "probe_distribution": "torch.randn CPU float32 [50,32], same public tensor for every task/frame",
+    "flow_time": 1,
+    "frame_chunk": 4
+  },
+  "optimization": {
+    "seed": 7,
+    "lr": 0.0001,
+    "min_lr": 1e-05,
+    "warmup_steps": 4,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.01,
+    "grad_clip": 1.0,
+    "precision": "bfloat16 autocast with float32 trainable parameters",
+    "loss": "positive_only_true_policy_mean_flow",
+    "normalizer": 1.0,
+    "fresh_joint_writer_and_meta": true
+  },
+  "runtime": {
+    "policy_microbatch": 8,
+    "prefix_cache_bytes": 2147483648
+  },
+  "evidence": {
+    "checkpoint_steps": [
+      16,
+      48,
+      96
+    ],
+    "initial_use": "real mechanism and longest K1/K4 profile passed; train-side short4 learning with fixed checkpoints16/48/96",
+    "final_checkpoint_selection": false,
+    "shuffled_reversed_use": false,
+    "test_use": false,
+    "short_tasks_rationale": "Spatial7/Object2 reveal prior shared gap; Goal20 permits known output gains; Long35 expert40/50 supplies meaningful capacity reference",
+    "training_closed_loop": {
+      "global_tasks": [
+        7,
+        12,
+        20,
+        35
+      ],
+      "checkpoints": [
+        16,
+        48,
+        96
+      ],
+      "init_state_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "conditions": [
+        "correct",
+        "same_task_other"
+      ],
+      "K": 1,
+      "teacher_policy": "fixed_per_task, uniform without replacement from held_video46-49, disjoint correct/other; seed20260907; no outcome selection",
+      "purpose": "diagnose basic behavior and same-task new-video learning; no final checkpoint selection",
+      "source_reference": "same state, env/policy RNG; privileged experts count/paired only when original keys verified"
+    },
+    "qualification_registration": "train24 strict400 arms/adjacency thresholds will be registered before first qualification score"
+  }
+}

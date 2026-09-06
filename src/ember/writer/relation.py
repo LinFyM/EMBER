@@ -128,7 +128,8 @@ class LocalRelationBlock(nn.Module):
                                  right * (2 * self.radius) + self.radius + slot))
         indices = torch.cat(destinations)
         shape = (length * 2 * self.radius, layers, horizon, width)
-        packed = x.new_zeros(shape).index_copy(0, indices, torch.cat(messages))
+        values = torch.cat(messages)
+        packed = values.new_zeros(shape).index_copy(0, indices, values)
         mask = torch.zeros(length * 2 * self.radius, dtype=torch.bool, device=x.device)
         mask[indices] = True
         return packed.unflatten(0, (length, 2 * self.radius)), mask.view(length, -1)

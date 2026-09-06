@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，接管授权已更新，理解与实现准备进行中。
+更新时间：2026-09-07 CST，接管授权已更新，唯一新图已集成，真实Meta/VJP与成本验证进行中。
 
 ## 当前授权与方法状态
 
@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **已对齐并授权实施；新图尚未实现或获得性能证据**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **唯一新图已实现并进入真实工程验证；尚无新闭环性能证据**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -18,9 +18,41 @@
   相邻稳定/低churn/高breadth/四suite及GoalLong/同task视频鲁棒性；选点冻结后完成因果controls，方法冻结后32/8 fresh最终训练与Test。
   实现完成、训练结束、单点高分均不代表goal完成；未自设token预算、总工期或总尝试数。
 - 接手Git实测：main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与本地origin/main一致。
-  指定当前文档已完整阅读，正在展开相关原始评审、历史修正、代码和canonical资产。HANDOFF已消费并删除，长期内容留在正式文档。
+  指定当前文档、相关9月5日完整专家原文、旧账本§1–3/9–20/164–165/172–181及相关分析原件已读；代码和canonical资产已核对。HANDOFF已消费并删除，长期内容留在正式文档。
 - 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
-  当前未launch新GPU工作；历史GPU/quota快照不构成实时准入，launch及大增长前重新核验。
+  当前仅运行exploratory GPU机制/profile，未启动formal训练；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
+
+## 当前实现与验证（2026-09-07）
+
+- 授权记录已提交推送70b194ec；纯Writer实现4fa19c3a已集成main。当前新增训练/读取/数据代码及相关窄修复尚在验证，未冒充formal authority。
+- 唯一实现owner：writer/relation.py负责局部帧对和同步邻居更新；layered.py负责语言/H-read/集合compiler；coordinate.py负责完整坐标A/B；
+  native.py负责原生Meta读取与R-leaf/observer VJP；learning_data.py负责固定split与跨episode采样；runtime.py负责加载和有界冻结prefix缓存；
+  training.py及薄CLI负责全局任务权重、调度、checkpoint/resume。没有恢复旧Writer/fallback。
+- 这是退役后从空缺重建部署图及必要训练面，源代码预计增长约1.4k行；各模块职责独立，主文件均小于400行，复用现有LoRA、functional、
+  source、checkpoint与队列。现有checkpoint函数的局部增长仅添加sampler状态，trainer.run作为单一生命周期编排保留，避免机械拆分。
+- 首版Writer14,112,544参数，读取Meta626,688参数；两者直接fresh联合训练，source0 trainable。配置入口configs/pi05_layered_writer_v1.json。
+- 训练侧短面板global7/12/20/35覆盖Spatial/Object/Goal/Long；Long35历史专家40/50（完整原件已核）。
+  新采样定义video0–15、action16–41、diagnostic action42–45、held video46–49，互斥；每task真实K1/2/4轮换、独立无放回抽K组，
+  query按episode再frame分层抽样。4task×3visits真实数据读取已验证，源normalizer冻结，梯度normalizer明确为1（未继承旧carrier task reweight）。
+- 新跑全CPU suite153 passed/20.06s；后续checkpoint/sampler与相关检查26 passed/14.85s。纯CPU通过不代表真实功能或行为通过。
+- gpu01p3（GPU-e59426ed-ed41-cb75-2190-f50841cff288）实际两帧native smoke：[2,18,50,1024]、finite、requires_grad；真实最长train视频为
+  global38/demo36，raw517、stride5含尾帧105。此smoke只验证读取接口，未给出Meta functional梯度结论。
+- 完整GPU首轮在第一次功能更新前暴露BF16消息与FP32 scatter buffer dtype不匹配，已以消息dtype分配修复；重跑已通过真实功能VJP与最长K1/K4。
+  临时记录：.codex/tmp/layered/joint_mechanism_retry.log、joint_mechanism.jsonl；任务包含identity启动后的真实Meta梯度、full/staged VJP限定比较、
+  最长真实K1/K4（38的36/41/28/35；query另取0–15）及真实16条action queries。只作工程机制/profile，不能选择checkpoint或声称科学收益。
+- 实测strg01：data1约465.4GiB、data0约54.8GiB，分别soft1T/hard约1.01T；du workspace约434GiB，data1其它约32GiB，data0约55GiB。
+  共享空间data1约84TiB、data0约1.9TiB；初期新增预算<5GiB（完整模型/optimizer checkpoints和小证据），复用全部大资产。
+  prefix只做每rank2GiB有界CPU缓存，临时R每step失效。launch前已同时核验两节点，未干扰其它用户作业。
+- 真实functional检查：identity第0步Meta A/B均0，第1步B非零，第2步A/B均非零；source无梯度。
+  full/staged loss同为0.1337032914；抽查Meta0q-B/rho0/decoderB的cosine为0.9999877/0.9999966/1.0，相对误差0.00502/0.00260/0。
+  这是BF16链式语义验证，不是训练能力结论。采样只使用授权train任务与跨episode真实action queries。
+- 最长profile：K1[105frames] prefix3.60s、joint8.27s、peak allocated34.23GiB；K4[105,102,102,97] prefix13.37s、joint25.78s、
+  peak allocated34.75GiB/reserved36.10GiB。K4分项observer3.83、Writer1.80、policyVJP2.26、WriterVJP8.18、observerVJP9.70秒。
+  完整原件保留runs/analysis/layered_relation_writer_20260907/mechanism/，明示exploratory，不选模型。
+- 四任务formal短学习预登记96updates，每task1536真实queries、K1/2/4各32条件，global4task等权；16/48/96固定checkpoint。
+  各节点global7/12/20/35×states0–9×correct/other两组K1 held视频，seed20260907，固定每task无放回分组；仅判断基础行为/新视频泛化，
+  不能选择最终checkpoint。未见基础行为则诊断最早接口，不默认长训；后续完整train24的strict400/邻接口径在读分数前另登记。
+- Subagent在隔离worktree完成纯图后，当前独立负责物化与原有评测队列接线；主agent负责GPU机制、训练及科学决策。
 
 ## 已封存的最近科学结果
 
@@ -75,6 +107,6 @@
 
 ## 下一步
 
-完成相关历史原件、保留工程基础与canonical资产的理解，简要报告数据流、证据边界、实现缺口与近期安排后直接实施。
-按 [task_plan.md](task_plan.md) 连续推进唯一新图、真实Meta/VJP/多K机制检查、最长真实视频成本测量、跨suite短学习与闭环，
-再依据证据进入train24共享训练与strict400。例行检查、阶段汇报或一次实验结束不构成停止理由。
+完成真实Meta/VJP与最长K成本检查，修复实际工程失败；登记短学习曝光、行为节点和正式launch合同，提交推送clean代码后从detached frozen
+worktree启动。物化与评测入口并行完成后，及时读取短学习闭环与同task新视频；据证据扩train24与strict400。
+按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。

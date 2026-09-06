@@ -41,6 +41,7 @@ def reconcile_metrics(
     expected_rows: int,
     *,
     cursor_key: str = "optimizer_step",
+    packet_label: str = "",
 ) -> int:
     if not path.exists():
         if optimizer_step:
@@ -53,7 +54,8 @@ def reconcile_metrics(
     if len(retained) != expected_rows:
         raise Pi05SourceTrainingError("metrics row count differs from checkpoint cursor")
     if orphaned:
-        packet = path.parent / "failure_packets" / f"orphaned_after_step_{optimizer_step:08d}.jsonl"
+        prefix = f"{packet_label}_" if packet_label else ""
+        packet = path.parent / "failure_packets" / f"{prefix}orphaned_after_step_{optimizer_step:08d}.jsonl"
         packet.parent.mkdir(parents=True, exist_ok=True)
         packet.write_text(
             "".join(json.dumps(row, sort_keys=True) + "\n" for row in orphaned),

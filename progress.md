@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，原short4全部短面板已完成；native坐标初始化单变量fresh对照训练与16步闭环正在运行。
+更新时间：2026-09-07 CST，原short4全部短面板已完成；native坐标初始化对照96步训练已结束，双视频/K4闭环进行中。
 
 ## 当前授权与方法状态
 
@@ -26,7 +26,9 @@
 
 - 当前active short4对照：runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907。
   Clean pushed frozen commit880bde5e，workspace .codex/worktrees/layered-coordinate-880bde5e；gpu01 physical2/3/5、world3，
-  tmux ember-layered-coordinate-control，train.log/train.exit。已观察到第54步，数值与真实Meta梯度正常；初始source flow loss与原run同为0.1250352208。
+  tmux ember-layered-coordinate-control已自然结束，train.exit=0；96步数值与真实Meta梯度正常，三个checkpoint完整保留。
+  初始source flow loss与原run同为0.1250352208；384条件的task权重、K/视频集合、query episode/frame及policy RNG逐项匹配原run。
+  更新总1257.37秒、单段总1376.95秒；原run含两次resume加载，不能把总时差全部解释为方法吞吐改善。完整曝光/成本见coordinate_init_control/exposure_cost.json。
 - 唯一科学改动是native A/B坐标由std0.02初始化改为标准正态；原图、参数量、public A0、零readout、Meta、seed、
   optimizer/schedule、任务/视频/query采样、曝光、frame_chunk4和world3不变。175 CPU tests/17.04s通过。
 - Fresh联合训练96updates、checkpoints16/48/96；每task1536queries，真实K1/2/4各32组。
@@ -35,10 +37,14 @@
 - 新对照的命令、环境、资源、预算与裁决在runs/analysis/layered_relation_writer_20260907/coordinate_init_control/launch.json及launch_train.sh。
   Launch前两节点live复核；data1独立quota使用488688112KiB/soft1073741824，原run653MiB、analysis6.9MiB，
   新增峰值预算<1GiB，共享free84TiB，复用全部大资产；初期合计<5GiB预算仍满足。baseline K4已完成并释放p0，后续新对照16步物化/评测可用该卡；正式launch前重新live核验。
-- 16步correct已物化，固定screen40正在gpu01p0运行（3 persistent workers），对照训练仍使用p2/3/5，EMBER合计4张物理卡。
-  新结果与原run分目录保留在coordinate_init_control/；不会覆盖原始证据。剩余16other、48/96双臂及96K4请求已准备。
+- 16步correct已完成exit0：4/40，Spatial2/Long2/Object0/Goal0，breadth2/4；对source及原16步correct均RGL3/1/1、churn2/40。
+  新结果与原run分目录保留在coordinate_init_control/。剩余六组物化已用resident batch完成exit0；eval frozen fa0b7b43。
+  16other在p2、48correct在p3、48other在p5运行，p0运行固定functional三点面板；当前合计4卡。96双臂/K4随后接续，launch前均重查两节点。
 - 批量物化入口在隔离worktree实现并集成：同一次source加载复用runtime，各请求严格重载完整Writer/Meta/probe，独立输出既有manifest。
   不改变单条件compiler、采样、模型或评测；原单次入口保留。这只优化准备成本，未宣称科学收益。
+- 三个既有诊断target（task7/35的expert0q/0v/action_out）显示：96步native通道常量能量由原>99.995%降至70.7%–85.5%，
+  rank常量能量仍>99.995%。原已冻结功能梯度中rank常量分量仅2.64%–21.40%。这保留readout共享/槽区分的候选解释，
+  不凭几何选点或立即叠改；先完成本单变量的真实行为裁决。原件coordinate_contrast_s16/s96.json及original_gradient_rank_contrast.json。
 
 ## 原始初始化short4：训练与全部短面板已完成
 

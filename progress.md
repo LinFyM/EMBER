@@ -2,7 +2,7 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 13:42 CST）
+## 当前快照（2026-09-06 13:46 CST）
 
 - 最终科学goal持续active。完整LoRA四任务32 fit/held为50/54、64为64/62（各150），旧P/Q38/37、41/39，A2 43/41、44/45。
   四组新600 rows及全部train/materialize/eval launcher均exit0。主要收益为Goal21/22→31/27；Spatial64为33/31，比A2均少7，Long0/4。
@@ -14,8 +14,11 @@
 - Full73四卡profile exit0：micro2每步34.27/32.73秒，146video缓存25.43GiB，最长87帧已覆盖。额外最长样本micro8 profile exit0，
   peak allocated/reserved34.36/34.67GiB，VJP1.20秒（micro2约1.35），相同首步query/noise的loss仅差4.05e-5。
   主训练采用实测micro8，保持8query/task和权重；预估四卡train60–75分钟，另计初始化/capture/Panel-B10–15分钟，实际以formal记录为准。
-- 当前准备新clean pushed frozen launch。上一profile用gpu01物理0/3/4/5四张当时空闲卡、NUMA0/1/1/1；实际formal前刷新两节点，不占卡等待。
-  /data1最近使用824523516KiB/1073741824KiB，shared84TiB可用，主阶段新增磁盘峰值<36GiB；两个profile缓存已正常回收。
+- 主训练已从clean pushed detached041aff55启动，gpu01物理0/3/4/5/6、world5、NUMA0/1/1/1/1；第五张peer job在preflight前自然结束。
+  精确命令见`.codex/tmp/prw_complete_meta73/train.sh`，launcher PID3147740；run为`runs/outputs/pi05_ecp_prw_complete_meta73_s128_041aff55_gpu01p03456_20260906`，
+  analysis为`runs/analysis/pi05_ecp_prw_complete_meta73_20260906`，其`launch/contract.json`、`preflight.json`及profile证据已保存。
+  五卡预计train48–62分钟，另计初始化/capture/Panel-B8–15分钟；world5 exact resume锁此拓扑。当前进入source加载。
+  /data1启动前使用824532892KiB/1073741824KiB，shared84TiB可用，主阶段新增磁盘峰值<36GiB；两个profile缓存已正常回收。
 - SFT历史109与当前source400逐条task/state/language/env/policy RNG配对，实际合同都是state8/action7/replan5，normalizer在Git未变。
   旧AGENTS“7维state/action”为文档错误，已按官方及冻结runtime纠正，无运行变更；109为历史复用，不冒充新后端重跑。相同80-state前缀SFT24、source9。
 - 唯一运行图为完整38-target LoRA，无carrier；source源码与b2bb03ce相同，后续只有配置/文档变更。此前Writer12+static bank10测试、真实梯度/

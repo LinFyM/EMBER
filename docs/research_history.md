@@ -528,3 +528,9 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
 非零任务为Spatial0/2/4/5分别2/1/2/1、Goal1/2/8分别5/1/4，其他17任务0。
 完整结果在`train24_shared/source_train120/`，配对证据在`source_train120_integrated_reference.json`；
 只用于当前192/576训练侧correct诊断，不替代validation400、旧short40或其它视频/初始化口径。
+
+首段192步已完成exit0：768条件/12288queries，每task32条件/512queries，K1/2/4各10或11次，任务等权及episode角色验证通过。
+22tasks覆盖全部16条训练视频，task15/34各15条。更新3221.41秒、段总3347.23秒，3.814queries/s；
+rank0 allocator峰值allocated34.326/reserved38.201GiB，未登记为全rank历史峰值。
+`train24_shared/exposure_cost.json`与`completion_to192.json`保留实际曝光、成本及独立分段耗时；
+checkpoint为train24 run的`macro_00000192`，尚未产生validation分数或选点资格。

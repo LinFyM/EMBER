@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，train24四卡首段192步已启动并产生真实更新。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，train24首段192步完成，三组物化已启动，尚无validation分数。
 
 ## 当前授权与方法状态
 
@@ -23,6 +23,14 @@
   三轮short4的全部预登记节点已完成；train24五个节点已在launch前登记；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
 ## 当前执行节点
+
+当前train24首段192步完成exit0：768条件/12288queries，每task32条件/512queries，真实K1/2/4各10或11次；
+全部task权重.25与video/query跨episode角色核对通过。22个task覆盖16条训练视频，task15/34各15条；
+实际更新3221.41秒、含加载3347.23秒，3.814queries/s；rank0 allocator峰值34.326/38.201GiB（不冒充全rank峰值）。
+完整checkpoint及completion_to192/曝光成本已保留，后续exact-resume仍锁原world4和完整672步schedule。
+当前三组物化（validation correct/other与train120correct）从frozen evaluator97a8a24a启动，gpu01physical0/2/3；
+launch前两节点live核验三卡空闲0MiB/process0，quota490060680KiB，预计新增物化3.2GiB，处于32GiB阶段预算内。
+命令与现场见train24_shared/materialization_s192_launch.json；物化后先完成192双视频strict400和train120再决定续训。
 
 当前train24协议已登记：保持当前图、fresh Writer+Meta，固定24训练tasks，每update4tasks×16queries，真实K1/2/4；
 warmup24/full cosine672，首段停192。节点192/384/576/624/672的双视频K1 strict400与相邻资格见设计§13.3.1及

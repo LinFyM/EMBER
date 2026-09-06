@@ -51,6 +51,25 @@ scripts/evaluate_pi05.py
 `scripts/bootstrap_env.sh`与`scripts/zig-cxx`保留既有环境/编译职责，不为交接重复安装环境。新架构的过程模块、集合compiler、坐标decoder与
 观察Meta梯度编排已接线，唯一物化/评测入口已集成；不把工程测试当作新模型科学通过。
 
+多checkpoint/arm物化可在同一进程复用source policy，使用原入口的`--requests-json /absolute/requests.json`，
+同时指定公共`--asset-root`与`--device`。JSON为请求列表，例如：
+
+```json
+[
+  {"checkpoint": "/run/checkpoints/macro_00000048", "output": "/output/correct48",
+   "role": "development_train", "task_ids": [7, 12, 20, 35], "k": 1, "arm": "correct",
+   "selection_mode": "fixed_per_task", "video_pool": [46, 47, 48, 49], "state_count": 10, "seed": 20260907},
+  {"checkpoint": "/run/checkpoints/macro_00000096", "output": "/output/other96",
+   "role": "development_train", "task_ids": [7, 12, 20, 35], "k": 1, "arm": "same_task_other",
+   "selection_mode": "fixed_per_task", "video_pool": [46, 47, 48, 49], "state_count": 10, "seed": 20260907}
+]
+```
+
+每项沿用单次参数，`fixed_videos`可直接提供按global task ID索引的JSON对象；路径按当前工作目录解析，建议使用绝对路径。
+一批共用asset root/device及其LoRA/tokenizer/normalization，source、model和observer合同必须相同；不兼容会在加载policy前拒绝。
+每项严格加载完整Writer/Meta/probe checkpoint，独立生成原格式manifest；不跨请求缓存R、prefix或生成LoRA。
+输出目录必须互不重复且尚不存在；旧单次CLI保持可用。正式执行仍要求clean pushed detached worktree与实时GPU/存储准入。
+
 ## 资产与证据入口
 
 Canonical workspace为 `/data1/user/ymdai/projects/EMBER`；`data/`、`models/`、`runs/`、`.venv/`均为本地ignored资产，不提交远端。

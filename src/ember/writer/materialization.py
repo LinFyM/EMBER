@@ -166,18 +166,15 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
             "adapter": file_record(path), "writer_invocations": 1, "single_complete_rank16": True}
 
 
-def materialize(
+def _materialize(
     *, asset_root: Path, checkpoint: Path, output: Path,
     selection: Mapping[str, Any], device: torch.device,
+    runtime: Any, run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
+    repository: Mapping[str, Any],
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
-    from ember.writer.runtime import build_joint_runtime
     from ember.writer.evaluation import validate_task_scope
 
-    repository = git_state(REPO_ROOT)
-    if not frozen_authority(repository):
-        raise ValueError("materialization requires a clean pushed detached checkout")
-    run, checkpoint_record = inspect_joint_checkpoint(checkpoint)
     role = "train" if selection["evaluation_role"] == "development_train" else "validation"
     tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role)
     rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
@@ -185,9 +182,6 @@ def materialize(
              "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
             for task, value in tasks.items()]
     validate_task_scope(rows, selection["evaluation_role"], asset_root)
-    # Preserve the checkpoint's explicit defaults even if later defaults evolve.
-    runtime_config = {**run["config"], "model": run["model_config"]}
-    runtime = build_joint_runtime(asset_root, runtime_config, device)
     if not source_matches(runtime.source, run["source"]):
         raise ValueError("joint runtime uses a different frozen source checkpoint")
     runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
@@ -230,6 +224,56 @@ def materialize(
     return path
 
 
+def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
+    from ember.writer.runtime import build_joint_runtime
+
+    repository = git_state(REPO_ROOT)
+    if not frozen_authority(repository):
+        raise ValueError("materialization requires a clean pushed detached checkout")
+    if not requests:
+        raise ValueError("materialization batch must contain at least one request")
+    outputs = [Path(request["output"]).resolve() for request in requests]
+    if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
+        raise ValueError("materialization outputs must be distinct new directories")
+    inspected = [inspect_joint_checkpoint(Path(request["checkpoint"])) for request in requests]
+    first = inspected[0][0]
+    expected = (first["source"], first["model_config"], first["config"]["observer"])
+    for run, _ in inspected:
+        if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
+            raise ValueError("resident batch requires identical source, model, and observer contracts")
+    # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
+    # prefix, generated LoRA, or checkpoint state is cached across requests.
+    runtime = build_joint_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
+    return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run,
+                         checkpoint_record=record, repository=repository, **request)
+            for request, (run, record) in zip(requests, inspected, strict=True)]
+
+
+def materialize(*, asset_root: Path, checkpoint: Path, output: Path,
+                selection: Mapping[str, Any], device: torch.device) -> Path:
+    return _materialize_batch(asset_root=asset_root, device=device,
+        requests=[{"checkpoint": checkpoint, "output": output, "selection": selection}])[0]
+
+
+def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
+    """Compile a JSON request list with one resident, compatible runtime."""
+    if not isinstance(requests, (list, tuple)):
+        raise ValueError("batch requests must be a JSON list")
+    fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
+              "video_pool", "state_count", "seed", "fixed_videos"}
+    normalized = []
+    for request in requests:
+        if not isinstance(request, Mapping) or set(request) - fields:
+            raise ValueError("unknown request fields; asset root and device belong to the whole batch")
+        selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
+            arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
+            seed=request.get("seed", 7), init_state_ids=tuple(range(request.get("state_count", 50))),
+            video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
+        normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
+                           "output": Path(request["output"]).resolve(), "selection": selection})
+    return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device)
+
+
 def _integers(value: str) -> tuple[int, ...]:
     return tuple(int(part) for part in value.split(","))
 
@@ -237,20 +281,32 @@ def _integers(value: str) -> tuple[int, ...]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
-    parser.add_argument("--checkpoint", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--role", choices=("development_train", "validation"), required=True)
-    parser.add_argument("--task-ids", type=_integers, required=True)
-    parser.add_argument("--k", type=int, choices=(1, 2, 4), required=True)
-    parser.add_argument("--arm", choices=("correct", "same_task_other"), default="correct")
-    parser.add_argument("--selection-mode", choices=("fixed_per_task", "per_init_ordinal"), default="per_init_ordinal")
-    parser.add_argument("--video-pool", type=_integers, default=tuple(range(50)))
+    parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and device.")
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--role", choices=("development_train", "validation"))
+    parser.add_argument("--task-ids", type=_integers)
+    parser.add_argument("--k", type=int, choices=(1, 2, 4))
+    parser.add_argument("--arm", choices=("correct", "same_task_other"))
+    parser.add_argument("--selection-mode", choices=("fixed_per_task", "per_init_ordinal"))
+    parser.add_argument("--video-pool", type=_integers)
     parser.add_argument("--fixed-videos-json", type=Path)
-    parser.add_argument("--state-count", type=int, choices=(10, 50), default=50)
-    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--state-count", type=int, choices=(10, 50))
+    parser.add_argument("--seed", type=int)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--cpu-threads", type=int, default=4)
     args = parser.parse_args()
+    required = ("checkpoint", "output", "role", "task_ids", "k")
+    if args.requests_json is None and any(getattr(args, key) is None for key in required):
+        parser.error("single request requires --checkpoint, --output, --role, --task-ids and --k")
+    selection_flags = (*required, "arm", "selection_mode", "video_pool", "fixed_videos_json", "state_count", "seed")
+    if args.requests_json is not None and any(getattr(args, key) != parser.get_default(key) for key in selection_flags):
+        parser.error("--requests-json cannot be combined with single-request selection flags")
+    defaults = {"arm": "correct", "selection_mode": "per_init_ordinal", "video_pool": tuple(range(50)),
+                "state_count": 50, "seed": 7}
+    for key, value in defaults.items():
+        if getattr(args, key) is None:
+            setattr(args, key, value)
     torch.set_num_threads(args.cpu_threads)
     if torch.device(args.device).type == "cuda":
         from ember.writer.topology import bind_current_process_to_cuda_numa
@@ -259,6 +315,11 @@ def main() -> None:
         if not bind_current_process_to_cuda_numa(torch.cuda.current_device()):
             raise ValueError("materialization requires GPU-local NUMA placement")
         torch.backends.cuda.matmul.allow_tf32 = True
+    if args.requests_json is not None:
+        for path in materialize_requests(asset_root=args.asset_root.resolve(), device=torch.device(args.device),
+                                         requests=json.loads(args.requests_json.read_text())):
+            print(path, flush=True)
+        return
     selection = selection_contract(role=args.role, task_ids=args.task_ids, cardinality=args.k,
         arm=args.arm, mode=args.selection_mode, seed=args.seed, init_state_ids=tuple(range(args.state_count)),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)

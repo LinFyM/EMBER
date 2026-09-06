@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:25 CST。
+更新时间：2026-09-06 18:33 CST。
 
 ## 当前目标与授权
 
@@ -42,6 +42,7 @@
 - 已登记同两个task、原held48视频和states0–9，读取原shared18全部早期已存checkpoints32/64/96；每point20rows，共60新rows。
   128复用已完成breadth中的20行，只为区分一直欠拟合与曾学会后丢失，不训练、不挑checkpoint、不读negative/validation/Test。
 - 两个真实config/subset loaders通过，已推送并冻结0b28a3ff；新tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-shared-trajectory-20260906`。
-  三点banks正在gpu01p2/NUMA0单驻留runtime中生成，launcher PID4016997；完成后再按live状态执行三个独立动态队列。
+  三点banks已完成且launcher exit0；三个20-row动态队列在gpu01p0/NUMA0、p2/NUMA0、p3/NUMA1执行，
+  steps32/64/96 launcher PID4029330/4029685/4030037，各3workers已进入rollout，总3GPU。
   最新quota726981760KiB/1073741824soft、shared84TiB；新analysis11MiB、两clone各229MiB，本次新增峰值<1GiB纳入原4GiB预算，source/assets不复制。
   新launch仍按两节点live GPU/memory/process准入，总量<=6，每job单节点、GPU-local NUMA与dynamic persistent evaluator。

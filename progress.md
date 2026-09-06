@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:07 CST。
+更新时间：2026-09-06 18:10 CST。
 
 ## 当前目标与授权
 
@@ -89,5 +89,6 @@
   Source训练图未变，仅修正上述评测metadata支持；每个clone的实际128task executions/1024queries均已与target18逐项匹配，held/Panel-B backward0、4750208可训练Writer参数、source/observer冻结。
 - Clone75/77 train177.21/177.99秒，Panel-B257.20/254.85秒，peak reserved34.38/34.40GiB。
   terminal128 held functional benefit为+.01913/+.01181；task77原shared18为+.00477，功能差异不替代闭环。
-  两个terminal held48 LoRA正在gpu01p2/NUMA0和p3/NUMA1物化，launcher PID3974158/3974507；两节点live资源已重新核对，仍共2卡。
-  完整实际采样与功能曲线为新analysis下training_comparison.json；下一步运行固定20个新闭环rows。
+  两个terminal held48 LoRA已物化、launcher exit0；固定十状态评测已在gpu01p2/NUMA0和p3/NUMA1启动，PID3983759/3984110，
+  每卡3个persistent workers，总2卡；两节点live资源已重新核对。
+  完整实际采样与功能曲线为新analysis下training_comparison.json；等待固定20个新闭环rows完成，按预登记脚本与target18配对。

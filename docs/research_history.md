@@ -387,3 +387,12 @@ joint_process_policy_writer_design（均为docs下的.md）。后者已被本次
 两个缺上游Writer checkpoint的小smoke缓存保留，不能证明可重建；两个约44GiB的正式训练root及全部独特occupancy/teacher-state
 诊断证据也保留。所有旧已完成且HEAD已集成main的detached工作树移除，历史代码仍可从其commit重建。
 清理完成量、验证与Git交付状态在 [progress.md](../progress.md)，本文不重复动态现场。
+
+## 11. 2026-09-07持续科研执行授权
+
+Owner在交接基线9ea20340之后明确授权：完整理解后立即实现、验证、训练、评测、诊断及证据支持的修正；此前等待批准的
+交接状态被覆盖。当前Writer与读取侧Meta采用fresh optimizer/scheduler直接端到端联合训练，不实施G1--G3冻结课程，
+也不为历史候选措辞额外创建阶段初始化路线。合法LoRA初始化保持。旧评审、历史结果和当时暂停记录继续作为历史事实保留。
+
+接手时main干净，HEAD为9ea2034037e5c70b514198a70910aac5c2fb18f5；临时HANDOFF消费后删除，入口改指正式账本。
+长期goal按完整稳定性、因果controls与最终32/8评测定义，尚未获得新架构实现或性能证据。当前进度以progress为准。

@@ -1,20 +1,26 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，局部关系设计收口与再次交接。
+更新时间：2026-09-07 CST，接管授权已更新，理解与实现准备进行中。
 
 ## 当前授权与方法状态
 
-- Owner已完成局部关系模块的数学重推对齐，并明确要求更新仓库、重新提供新session启动prompt。当前授权为文档/设计/交接同步、
-  必要文档核对与Git交付，不包括新架构实现、新的科学训练/评测或旧运行恢复。
-- 已登记设计：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，状态为
-  **已对齐、具备进入实施计划的完整候选定义；尚未实现/验证，未授权科研执行**。旧past-only过程定义已退出当前实施合同。
-- 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；窗口内每个帧对一个50×50关系，
-  两端分别softmax；关系MLP消费对应内容、相对位移分布及signed gap；每帧最多8邻居聚合，同型block堆叠，H-read得到E；
-  置换不变多视频compiler、坐标条件MLP生成唯一38-target完整rank16 LoRA。具体默认与待冻结配置见设计§9/14。
-- 新session先充分理解仓库和历史，报告完整数据流、实施/验证与行为裁决计划；得到owner明确同意后才自主推进。
-  本session只提供可复制prompt，不自动创建或启动另一个session。
-- 未选出selected checkpoint，未达成最终科学目标。旧goal或未完成清单不覆盖当前授权，也不自动恢复width256评测或旧训练。
-- 前次交接只读核验时两节点没有EMBER训练/评测进程。那是当时快照；本次纯文档更新未刷新GPU/进程状态，实际launch前须重新准入。
+- Owner于9月7日明确授权：充分理解仓库后，连续自主开展实现、验证、训练、评测、诊断及证据支持的修正；
+  进度说明不是审批节点。此前“未授权科研执行”“先报告再等待同意”等交接限制已被覆盖，跨上下文不得据此误停。
+- 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
+  只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
+- 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
+  **已对齐并授权实施；新图尚未实现或获得性能证据**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
+- 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
+  两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
+  置换不变多视频compiler、坐标MLP生成唯一38-target完整rank16 LoRA。首版真实K1/2/4。
+- 环境长期goal已创建：实现并以学习/闭环推进稳定视频条件迁移，满足validation8 strict paired single-checkpoint >145/400、
+  相邻稳定/低churn/高breadth/四suite及GoalLong/同task视频鲁棒性；选点冻结后完成因果controls，方法冻结后32/8 fresh最终训练与Test。
+  实现完成、训练结束、单点高分均不代表goal完成；未自设token预算、总工期或总尝试数。
+- 接手Git实测：main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与本地origin/main一致。
+  指定当前文档已完整阅读，正在展开相关原始评审、历史修正、代码和canonical资产。HANDOFF已消费并删除，长期内容留在正式文档。
+- 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
+  当前未launch新GPU工作；历史GPU/quota快照不构成实时准入，launch及大增长前重新核验。
 
 ## 已封存的最近科学结果
 
@@ -69,6 +75,6 @@
 
 ## 下一步
 
-新session按 [README](README.md) 和临时 [HANDOFF](HANDOFF.md) 进入，完整理解当前设计、历史关键教训、可复用代码和待实现差距，
-先报告具体实施/GPU算法、数据/采样、验证与闭环裁决计划，等待owner明确启动指令。获准后依 [task_plan.md](task_plan.md) 连续推进，
-遇到问题用历史与区分性诊断定位最早失效接口，不以loss、局部参数几何或重复小扫代替最终性能；消费HANDOFF后删除它并更新临时入口。
+完成相关历史原件、保留工程基础与canonical资产的理解，简要报告数据流、证据边界、实现缺口与近期安排后直接实施。
+按 [task_plan.md](task_plan.md) 连续推进唯一新图、真实Meta/VJP/多K机制检查、最长真实视频成本测量、跨suite短学习与闭环，
+再依据证据进入train24共享训练与strict400。例行检查、阶段汇报或一次实验结束不构成停止理由。

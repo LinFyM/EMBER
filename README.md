@@ -6,7 +6,8 @@ single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、br
 
 当前候选是**分层局部关系视频到完整LoRA Writer**：冻结图文prefix → 单probe Action Expert共享观察Meta-LoRA → 保留18层×50-horizon
 的窗口内帧对软对应 → 两端的内容/相对对应模式消息 → 逐帧聚合与同型block堆叠 → 多视频集合共同读取 → 原生坐标条件MLP生成全部38-target A/B。
-9月7日数学设计已收口并更新交接，尚未实现或取得新性能证据。新session先理解并报告计划，经owner明确同意后才启动正式推进。
+9月7日数学设计已收口；owner随后明确授权接管者理解后连续实现、验证、训练、评测和证据支持的修正。
+当前主线为Writer与读取侧Meta fresh端到端联合训练；尚无新架构性能证据。
 准确授权见 [progress.md](progress.md)。
 
 ## 接手阅读
@@ -15,7 +16,7 @@ single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、br
 2. [当前计划](task_plan.md)、[当前状态](progress.md)、[持久发现](findings.md)：区分待研究问题、已完成证据和执行授权。
 3. [科学动机](docs/concept.md) 与 [完整新设计](docs/layered_relation_video_writer_design.md)：理解完整推导、shape、梯度算法、实现边界。
 4. [分层历史](docs/research_history.md)：先读全局脉络，再按当前问题展开原评审、旧账本和formal evidence；不默认恢复旧实验。
-5. 下方代码地图及设计§11。真实跨session交接可从 [HANDOFF.md](HANDOFF.md) 进入，消费后删除该临时文件。
+5. 下方代码地图及设计§11。临时HANDOFF已消费；持续授权、实施状态和下一步以正式账本为准。
 
 ## 代码与运行入口
 

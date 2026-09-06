@@ -605,7 +605,7 @@ observations 上的 X/Y。首版因此不加 X/Y bank、不限制因子 span，�
 | set prior | 每视频基础质量相同，score `−log(T_k*18)` | valid token计数，不含 padding |
 | coordinate decoder | shared scalar A/B MLP，GELU，p64 | code/native coordinate联合非线性 |
 | generated LoRA | 38 targets，rank16，alpha16/scale1，无 dropout 的现有物化合同 | 76个 A/B tensors，一套部署 |
-| 初始化 | 公共非零 A0，deltaA/B零；其余按标准随机初始化 | 完整 fresh 候选必须保留 |
+| 初始化 | 公共非零 A0，deltaA/B零；其余按标准随机初始化；Meta采用合法LoRA初始化 | 当前主线直接fresh端到端联合训练 |
 | dynamic K | 首版真实训练 K∈{1,2,4}，不同正确视频无放回 | 不重复一条视频凑K，不由可变shape冒充训练覆盖 |
 
 当前38-target topology：
@@ -655,8 +655,10 @@ query/noise/time sampling、normalizer、每 task 权重与 optimizer cadence �
 诊断，不能做 held route 或部署专家集合。模型冻结、无选择、预登记的 sealed held post-hoc 诊断按仓库合同处理；
 validation/test actions/reward 始终不产生梯度。
 
-第一版保留整套随机初始化后的直接端到端 fresh 训练候选。通过旧接口 Gate 的 component 参数若拓扑/职责相容，可作为
-有明确边界的候选初始化；不能用 component-only 结果代替 fresh 候选，也不能对 incompatible 架构做伪 exact-resume。
+当前主线将 Writer 与读取侧 Meta 从头初始化，使用 fresh optimizer/scheduler，直接端到端联合训练，source 基础权重始终冻结。
+不实施 G1--G3 分阶段冻结课程，也不为旧措辞额外建立 component 初始化候选。第8节的公共非零 A0、零 deltaA/B 与 Meta
+合法 LoRA 初始化保持；fresh 不要求每个张量随机非零。短学习、扩大覆盖与闭环是实验推进节点，不是分段冻结。
+不兼容架构必须 fresh；同一 run exact-resume 仍锁原 world topology 和完整状态。
 
 ## 10. GPU 算法：保留完整梯度而不保留三套大图
 
@@ -853,8 +855,8 @@ Meta-off图有多个耦合差异。不能将历史差距简单归因训练步数
 
 ## 13. 验证顺序、证据用途与失败分支
 
-本节定义恢复工作后应回答的问题，不构成当前实验授权。具体 task/step/arms/预算在实现与真实 profile 后登记，不能从旧
-active design、旧未完成清单或工具中仍 active 的 goal 恢复执行。
+本节定义执行时应回答的问题；owner已于9月7日明确授权理解后连续科研执行，当前记录见progress。
+具体 task/step/arms/预算在实现与真实 profile 后登记；不从旧运行清单恢复无关实验。
 
 ### 13.1 首先检查真实工程合同
 
@@ -932,5 +934,5 @@ evaluator用cost-balanced dynamic queue、long-first、persistent workers。方�
 5. 第一批能区分学习接口的训练侧任务、预登记行为节点、何时进入strict400和相邻qualification。不能预写新图分数或根因。
 
 本文已经给出结构上完整的首版：一个读取侧Meta、一个单视频分层局部关系过程主干、一个多视频共同compiler、一个完整A/B
-坐标decoder。后续 session 应先理解这条链和历史边界，再根据 owner 的明确启动指令推进；本交接文档本身不启动实现、训练、
-评测、外部专家联系或任何旧运行续接。
+坐标decoder。接续 session 应理解这条链和历史边界，再按progress已登记的持续科研执行授权推进；无需再次批准实施计划。
+本设计不授权外部专家联系或无依据的旧运行续接。

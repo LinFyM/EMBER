@@ -99,9 +99,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 多卡可按K、帧数和历史cost平衡负载，但不得改变task权重。
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
 - incompatible架构必须fresh；exact-resume锁原world size/topology。
-- G1--G3的分段冻结只用于机制验证，不构成Final必须照搬的训练课程。Final允许把通过Gate的组件作为初始化，也必须保留
-  整套Writer完全随机初始化后直接端到端fresh联合训练的正式候选；两者都使用fresh optimizer/scheduler并由同一closed-loop
-  合同裁决，不得用内部loss替代。
+- Writer与读取侧Meta采用fresh初始化、fresh optimizer/scheduler，直接端到端联合训练，source基础权重始终冻结。
+  G1--G3分段冻结属于历史机制验证，不构成当前训练课程，也不要求额外建立阶段初始化候选。
+  基础LoRA使用设计规定的合法identity初始化；fresh不要求每个张量随机非零。学习与闭环节点由真实证据裁决。
 - 机制smoke只证明图接通。到有信息量的预注册节点后及时做strict paired400；loss不能代替闭环。
 - 好结果应训练到足以判断相邻稳定性；明确坏结果不得靠无限续训或rank/scale/seed/LR/dtype小扫挽救。
 - 每轮必须报告per-task、per-suite、breadth、retained/gained/lost、churn及相邻success-set重合，并定位最早失效接口。

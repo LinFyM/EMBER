@@ -92,4 +92,4 @@ PNBTT停在free-query E1，真实Program E2未运行，不能借此否定G2。
 4. 真正K1/2/4训练与更广视频支持是否带来性能/coverage增益，而非仅降低参数方差？
 5. 在完整目标支持和合理训练量下，能否达到single-checkpoint >145/400，并通过稳定性、困难suite和最终因果controls？
 
-这些问题不授权任意扫描。按 [task_plan.md](task_plan.md) 在获准后推进，先用有信息量的实际证据区分分支。
+这些问题不授权任意扫描。按 [task_plan.md](task_plan.md) 和已登记的持续执行授权推进，先用有信息量的实际证据区分分支。

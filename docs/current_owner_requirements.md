@@ -48,7 +48,9 @@
   保留allowlist/provenance；更多同task视频不等于更多独立meta-task映射。不得制造人工process数据或新仿真任务来绕开当前问题。
 - validation/test不得产生梯度。shuffled/reversed仅在selected checkpoint选定并冻结后测试，不进入训练、loss、Gate、checkpoint选择或架构修改。
   no-video/language、static端点、wrong-video等资格或诊断使用时须事先明确用途，不能悄悄把最终controls变成架构搜索信号。
-- 主训练必须保留同拓扑fully-random fresh端到端候选；G1--G3的阶段冻结只服务机制验证，不构成Final强制课程。
+- 当前主线为Writer与读取侧Meta从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
+  G1--G3的阶段冻结属于历史机制验证，不实施为当前课程，也不为旧措辞额外建立阶段初始化与随机初始化两套候选。
+  LoRA采用合法identity初始化；从头初始化不要求每个张量都随机非零。短学习、扩大覆盖与闭环是实验节点，不是冻结阶段。
 - 先用有信息量的短学习与闭环证据判断投入。未证明基础行为前不默认启动约10小时长训练；接近强基线或目标后及时做strict400，
   好趋势继续训练到足以判断相邻稳定，明确坏结果不靠无限续训或无依据的seed/LR/rank/scale/width小扫挽救。
 - 每轮记录per-task、per-suite、breadth、retained/gained/lost、churn、相邻success-set重合和实际样本曝光；训练步数本身不足以比较配方。
@@ -59,8 +61,8 @@
 
 ## 4. 授权与自主协作
 
-- 事前讨论自主接管不等于立即启动。owner仍在对齐、暂停或安排交接时，按明确授权做相应工作；新session须先理解当前状态，
-  得到owner明确同意后才能正式推进。旧goal、旧active design或未勾选清单不能覆盖当前暂停。
+- 以owner最新授权为准，跨session先理解当前状态并读取progress中的持续授权。已有明确科研执行授权时，理解与进度说明后
+  立即推进，不重复请求实施计划批准。只有owner明确暂停或撤回时才停止相应工作；旧交接限制不覆盖新授权。
 - 获准接管后，在既有目标、信息墙与资源合同内，实验设计、实现、分析、相关修复、吞吐优化和证据支持的模块重构由接管者连续完成，
   无需逐项询问。不因一个侧面问题、单点好坏或常规技术检查停止已授权流程。
 - 改变科学目标或信息墙、引入未授权数据/资源、无法裁决且显著改变投入方向的路线歧义、删除所有权不明或唯一资产时，

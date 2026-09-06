@@ -3534,3 +3534,13 @@ validation screen80却为17/17/20/16。64/96的breadth确有5/6tasks，Long在64
 在实际监督中有大量采样；两run从成功示范中“一壶放好/已松手”的状态均0/3，而从后段接触状态均2/3，不能把全部失败归因于前半
 learner状态偏移，也不能因后半接续可成功就称整段行为成立。该任务的独立rank16专家本身仅1–5/50，适合作困难阶段观察，不能单独
 代表整个Writer学习能力。需要覆盖完整已训练任务集合后，再区分共享拟合、任务支持和跨任务迁移；具体边界与证据见历史§177。
+
+
+## 176. 目标域恢复具有任务差异，未见任务迁移并非唯一剩余瓶颈
+
+完整18个gradient targets在固定terminal128 held-video十状态面板上，meta73→target18从42/180升至55/180、非零breadth9→13；
+但Object仍5/40，Spatial仅14→15/40。Long2→10主要由双杯和book贡献，证明此前task93不是整个Long可学习性的代表。
+同面板独立专家111/180、Object29/40与Spatial31/40是不同预算的容量参照。当前任务本身也未普遍学好，不能仅通过加入缺6个train24
+任务或改称新任务泛化来解释。下一项同图单任务学习对照只定位共享代价，不能预先命名梯度冲突、容量、初始化或训练量为根因。
+历史早期强v6同样使用family-shared factor heads（width256），因此当前共享输出头的存在本身不构成架构错误或必然瓶颈证据。
+具体结果见research_history§178及training_breadth_comparison；旧v6结构依据为`3a6f801d:src/ember/writer/model.py`和对应v6 design§9。

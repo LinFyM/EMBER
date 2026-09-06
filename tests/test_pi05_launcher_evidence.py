@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
 from ember.pi05_eval.recovery import worker_command_matches
@@ -121,3 +124,45 @@ def test_worker_detection_uses_exact_argv_tokens(tmp_path: Path) -> None:
     assert not worker_command_matches(wrapper, output)
     assert not worker_command_matches(launcher, output)
     assert not worker_command_matches(worker, tmp_path / "another")
+
+
+@pytest.mark.parametrize("informed,scope,selection,role,accepted", [
+    (False, None, False, "development_train", True),
+    (True, "training_task_fitting_diagnostic", False, "development_train", True),
+    (True, None, False, "development_train", False),
+    (True, "training_task_fitting_diagnostic", True, "development_train", False),
+    (True, "training_task_fitting_diagnostic", False, "validation", False),
+    (True, "training_task_fitting_diagnostic", False, "test", False),
+])
+def test_outcome_informed_subset_is_explicit_training_diagnostic(
+    tmp_path: Path, informed: bool, scope: str | None,
+    selection: bool, role: str, accepted: bool,
+) -> None:
+    from ember.pi05_assets import Pi05EvaluationError
+    from ember.pi05_eval.preparation import _task_subset_tasks
+
+    path = tmp_path / "subset.json"
+    path.write_text(json.dumps({
+        "schema_version": "ember_pi05_task_subset_selection_v1",
+        "role": role, "mode": "screen", "state_count": 10,
+        "task_ordinals": [0], "global_task_ids": [7],
+        "tasks": [{"global_task_id": 7, "suite": "libero_spatial", "task_id": 7}],
+        "outcome_dependence": informed, "selection_scope": scope,
+        "checkpoint_selection_use": selection, "validation_use": False, "test_use": False,
+    }))
+    args = SimpleNamespace(
+        task_subset_selection=path, role=role, mode="screen", state_count=10,
+    )
+    tasks = (SimpleNamespace(suite="libero_spatial", task_id=7),)
+    if not accepted:
+        with pytest.raises(Pi05EvaluationError):
+            _task_subset_tasks(args, tasks, adapter_kind="static_task_lora")
+        return
+    selected, recorded = _task_subset_tasks(args, tasks, adapter_kind="static_task_lora")
+    assert selected == tasks
+    assert recorded["outcome_dependence"] is informed
+    if informed:
+        assert recorded["selection_scope"] == scope
+        assert recorded["checkpoint_selection_use"] is False
+    else:
+        assert "selection_scope" not in recorded

@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 17:33 CST。
+更新时间：2026-09-06 17:50 CST。
 
 ## 当前目标与授权
 
@@ -67,6 +67,18 @@
   两arms第一阶段均0/3，后段接触均2/3；初始predicates匹配labels，两个launcher exit0、wall261.13/256.99秒，GPU自然释放。
 - 已登记剩余15个训练targets的terminal128 held-video screen10，并复用原3tasks的10-state prefixes，组成两组完整18-task/180-row训练breadth。
   不训练、不选择、不改validation；两套15-task bank已完成且exit0，各runtime prepare114秒、物化41秒。
-  新frozen detached1be11184，当前meta73 screen在gpu01p0/2/3（launcher允许NUMA0,1，workers按GPU绑定0/0/1）PID3862038，
-  target18 screen在gpu02p4/5 NUMA1 PID506029；各每卡3workers，总5卡。实时低负载peer保留，精确preflight与命令在analysis/launch。
+  新frozen detached1be11184，meta73 screen使用gpu01p0/2/3（launcher允许NUMA0,1，workers按GPU绑定0/0/1）PID3862038，
+  target18 screen在gpu02p4/5 NUMA1 PID506029；各每卡3workers，总5卡，现均自然退出且launcher/workers exit0。精确preflight与命令在analysis/launch。
   quota726340528KiB/1073741824soft、shared84TiB，现analysis3.4GiB、新增峰值<2GiB；三配置与active design登记，完整探针见历史§177。
+
+
+## 完整训练breadth与下一定位
+
+- 两套新150 rows全部完成，合并原三task各30行后，meta73为42/180、breadth9/18；target18为55/180、breadth13/18。
+  按Spatial/Object/Goal/Long为14/5/21/2与15/5/25/10，分母40/40/50/50；R/G/L32/23/10、churn33、Jaccard.4923。
+  直接专家111/180只作不同预算训练侧容量参考。完整数据在analysis下training_breadth_comparison.*，历史§178/findings§176封存。
+- Object受监督任务仍5/40，Spatial15/40，故不能只归因于新task迁移或缺少6个train24；Long增量主要来自双杯与book，弱task93不能代表整个suite。
+- 已登记task75（Spatial7）和77（Object2）分别学习的whole-Writer clones，均128updates/1024queries、component、原两fit视频、完整同图，
+  固定terminal128原held48视频十状态，与target18原rows配对；每clone1GPU、共2GPU，预计新增峰值<4GiB。当前仅配置/合同准备，尚未启动。
+  只保留各clone与已读target79的Panel-B诊断；无专属task query，不冻结evidence，不部署clone集合或选择最终checkpoint。
+  克隆若恢复行为只定位共享学习代价，不能直接命名容量或梯度冲突；若未恢复则回到该任务图/数据/优化可学习性，不盲目续训。

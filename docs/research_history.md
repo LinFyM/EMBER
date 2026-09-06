@@ -3352,3 +3352,21 @@ Goal83未成功且contact272、成功状态100。因此不是后半过程根本�
 完整source driver、registration、run reference、18+12 raw rows、RGB/action captures、contact sheets、query coverage与资源证据分别在
 `runs/analysis/pi05_ecp_prw_complete_target18_20260906/behavior_replay/`及`teacher_state_continuation/`。两批各2GPU，新增峰值各<2GiB；
 后续需补齐其余已训练任务的小面板，避免仅从三个任务或弱上界Long任务外推整个训练可学习性。
+
+
+## 178. 完整18任务训练breadth确认部分恢复，但受监督Object/Spatial仍弱（2026-09-06）
+
+Frozen1be11184的两组剩余15task screen150全部完成，launcher及15个workers均exit0，queue全部complete。复用原3task相同terminal128、
+held视频的十状态prefix后，每arm为完整18task/180rows；300新rows与60复用rows不混入validation，不选checkpoint。
+Meta73为42/180、非零breadth9/18，target18为55/180、breadth13/18；按Spatial/Object/Goal/Long分别14/5/21/2与15/5/25/10，
+各suite分母40/40/50/50。Meta73→target18 retained32/gained23/lost10，churn33、Jaccard.4923；整体恢复真实但不均匀。
+
+Target18逐global任务：2:7、4:1、5:5、7:2、12:1、14:3、16:1、19:0、20:2、21:10、22:4、28:9、29:0、34:3、35:7、37:0、38:0、39:0，
+均为/10。Long提升主要来自双杯34与book35，不能由此前弱Long38代表整个suite；Object四个受监督任务仍合计5/40，不能只归因未见任务迁移。
+同状态/RNG核对通过的历史独立rank16 step2000专家为111/180、breadth16/18，suite31/29/34/17；expert→target18为45/10/66，
+churn76、Jaccard.3719。专家使用独立task参数和不同预算，只是训练侧容量参照，不是Writer或合法部署字典。
+
+Canonical `runs/analysis/pi05_ecp_prw_complete_target18_20260906/training_breadth_comparison.json`及`.md`保存完整per-task/suite与paired keys；
+视频按原登记固定；`summarize_training_breadth.py`核验全部rows、任务角色、state/env/policy RNG、completion及launcher退出状态。未读negative/Test或产生梯度。
+下一定位选已有强专家且当前较弱的Spatial7/task75和Object2/task77，按同图同数据的单任务whole-Writer clone检验共享学习代价；
+选择基于已读training行为，必须明说，不称独立held资格。既有完整四任务未包含Object，不能代替task77的同图可学习性正控。

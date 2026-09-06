@@ -129,12 +129,18 @@ def _registered_subset_valid(
          str(task.suite), int(task.task_id))
         for ordinal, task in enumerate(tasks)
     }
+    fitting_diagnostic = (
+        args.role == "development_train"
+        and manifest.get("outcome_dependence") is True
+        and manifest.get("selection_scope") == "training_task_fitting_diagnostic"
+        and manifest.get("checkpoint_selection_use") is False
+    )
     return not (
         manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
         or manifest.get("role") != args.role
         or manifest.get("mode") != args.mode
         or int(manifest.get("state_count", -1)) != args.state_count
-        or manifest.get("outcome_dependence") is not False
+        or (manifest.get("outcome_dependence") is not False and not fitting_diagnostic)
         or not declared or len(declared) != len(set(declared))
         or tuple(sorted(set(ordinals))) != ordinals
         or not set(declared) <= registered
@@ -193,7 +199,11 @@ def _task_subset_tasks(
         "task_ordinals": [row[0] for row in declared],
         "global_task_ids": [row[1] for row in declared],
         "diagnostic_subset": panel,
-        "outcome_dependence": False,
+        "outcome_dependence": manifest["outcome_dependence"],
+        **({
+            "selection_scope": manifest["selection_scope"],
+            "checkpoint_selection_use": False,
+        } if manifest["outcome_dependence"] else {}),
         "validation_use": False,
         "test_use": False,
     }

@@ -185,3 +185,26 @@ Target18完成后，五个gradient targets的fit与新视频功能收益在64/96
 
 配置为`pi05_ecp_prw_complete_training_breadth_subset_v1.json`及两`pi05_ecp_prw_complete_{meta73,target18}_m128_training_breadth_eval_v1.json`。
 复用canonical materializer与dynamic evaluator、原完整图及两run；额外峰值<2GiB，formal artifact执行从clean pushed detached source，GPU按live余量。
+
+
+## Registered matched single-task fitting diagnostic (2026-09-06)
+
+完整训练breadth已封存：target18为55/180、Object5/40、Spatial15/40，同面板独立专家为111/180、29/40、31/40。目标任务本身仍有明显
+学习缺口，不能仅以任务迁移或缺少6个训练任务解释。按专家原文§8的同图分别学/共同学原则，固定选择Spatial7/task75与Object2/task77，
+其target18 held各2/10与1/10，而独立专家各10/10与8/10；选择是基于已读训练侧缺口，不称outcome-independent或held selector。
+此前complete short4没有Object任务，已有正证据不能替代这两项的whole-Writer独立学习对照。
+
+每task一个独立clone，仅作训练侧诊断：复用完全相同完整38-target rank16、P/Q、全部可训练模块与component初始化，不添加task query，
+不冻结evidence。每个clone128updates、8fresh跨episode queries/update、原两fit视频（75为1/2；77为7/10），每视频64exposures；
+与target18的per-task occurrence、query、policy RNG、normalizer及AdamW/LR schedule逐项匹配。唯一主要干预是全18task均值变为单task目标；
+它改变共享梯度统计，不能独立区分容量、干扰与优化。Checkpoint仍32/64/96/128，但闭环固定terminal128，不从内部loss选点。
+复用target79作为已读取的零梯度内部诊断；validation/test完全不使用。Panel-B仍无梯度；诊断范围只保留各clone与79以减少无关计算。
+
+先对两个clone的原held视频48、原states0–9运行20新rows，与已完成target18各十行严格配对，只作定位和投入判断。若有明显独立学习
+增量，可补相同task/video完整50states确认；若没有，则不能继续把全局共享冲突当作充分解释，也不能把128步等价于函数类收敛。
+不部署clone集合，不将task ID或独立专家变成Writer输入；不读取negative/Test，不改最终strict400/同图random/因果controls合同。
+
+配置为`pi05_ecp_prw_complete_single_task{75,77}_v1.json`、相应subset及held eval。复用已验证同图与原输入，单GPU分别训练两个clone、
+总量2GPU可并发；不需要NCCL通信，每进程按实际GPU本地NUMA绑定。预计每clone启动/训练/诊断合计约6–10分钟，新增峰值合计<4GiB。
+CPU核对真实config/panels/video split及128步采样后，从clean pushed detached提交运行。训练图/source/scripts不变；evaluator仅扩展显式
+training_task_fitting_diagnostic登记，允许如实保留outcome-informed任务选择且禁止checkpoint selection，validation/test边界不变；有针对性回归验证。

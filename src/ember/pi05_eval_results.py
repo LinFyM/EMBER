@@ -22,6 +22,57 @@ from ember.pi05_evaluation import task_lookup, validate_shard_result
 AGGREGATE_SCHEMA = "ember_pi05_target_eval_results_v2"
 
 
+def paired_success_comparison(reference: Mapping[str, Any], candidate: Mapping[str, Any]) -> dict[str, Any]:
+    """Compare complete paired rows; parameter geometry never enters selection."""
+
+    def indexed(panel):
+        rows = panel["rows"]
+        lookup = {(r["suite"], int(r["task_id"]), int(r["init_state_id"])): r for r in rows}
+        if len(lookup) != len(rows) or not rows:
+            raise Pi05EvaluationError("paired comparison contains duplicate or empty rows")
+        return lookup
+
+    left, right = indexed(reference), indexed(candidate)
+    if left.keys() != right.keys():
+        raise Pi05EvaluationError("paired comparison requires the same complete task/state rows")
+    for key in left:
+        a, b = left[key], right[key]
+        if any(a[field] != b[field] for field in ("language", "env_seed", "policy_seed_root", "split_role")):
+            raise Pi05EvaluationError("paired comparison changed task/state/language/RNG authority")
+        length = min(len(a["policy_noise_seeds"]), len(b["policy_noise_seeds"]))
+        if length == 0 or a["policy_noise_seeds"][:length] != b["policy_noise_seeds"][:length]:
+            raise Pi05EvaluationError("paired comparison changed the policy-noise common prefix")
+        av, bv = a.get("layered_writer_lora"), b.get("layered_writer_lora")
+        if av and bv:
+            fields = ("video_ordinal", "selection_seed", "selection_mode", "K", "paired_correct_demos", "paired_other_demos")
+            if any(av[field] != bv[field] for field in fields):
+                raise Pi05EvaluationError("paired Writer comparison changed the video ordinal or schedule")
+
+    def counts(keys):
+        before = {k for k in keys if left[k]["success"]}
+        after = {k for k in keys if right[k]["success"]}
+        retained, gained, lost = before & after, after - before, before - after
+        union = before | after
+        return {
+            "rows": len(keys), "reference_successes": len(before), "candidate_successes": len(after),
+            "retained": len(retained), "gained": len(gained), "lost": len(lost),
+            "churn_count": len(gained) + len(lost), "churn_fraction": (len(gained) + len(lost)) / len(keys),
+            "success_set_jaccard": len(retained) / len(union) if union else None,
+            "retained_keys": sorted(retained), "gained_keys": sorted(gained), "lost_keys": sorted(lost),
+        }
+
+    tasks = sorted({key[:2] for key in left})
+    per_task = [{"suite": suite, "task_id": task, **counts([k for k in left if k[:2] == (suite, task)])}
+                for suite, task in tasks]
+    return {
+        **counts(list(left)), "per_task": per_task,
+        "per_suite": [{"suite": suite, **counts([k for k in left if k[0] == suite])}
+                      for suite in sorted({k[0] for k in left})],
+        "reference_breadth": sum(row["reference_successes"] > 0 for row in per_task),
+        "candidate_breadth": sum(row["candidate_successes"] > 0 for row in per_task),
+    }
+
+
 def _expected_worker_ids(contract: Mapping[str, Any]) -> tuple[str, ...]:
     replicas = int(contract["parallel"]["replicas_per_gpu"])
     physical_gpu_ids = contract["parallel"].get(

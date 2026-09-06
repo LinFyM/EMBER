@@ -43,12 +43,13 @@ scripts/seal_pi05_target_data.py
 scripts/train_source_sft.py
 scripts/train_task_experts.py
 scripts/train_layered_writer.py
+scripts/materialize_layered_writer.py
 scripts/evaluate_source_sft_validation_loss.py
 scripts/evaluate_pi05.py
 ```
 
 `scripts/bootstrap_env.sh`与`scripts/zig-cxx`保留既有环境/编译职责，不为交接重复安装环境。新架构的过程模块、集合compiler、坐标decoder与
-观察Meta梯度编排已接线，唯一物化/评测入口正在集成；不把工程测试当作新模型科学通过。
+观察Meta梯度编排已接线，唯一物化/评测入口已集成；不把工程测试当作新模型科学通过。
 
 ## 资产与证据入口
 

@@ -26,17 +26,23 @@
 
 - Clean pushed commit：8d934408；detached frozen workspace：.codex/worktrees/layered-frozen-8d934408。
 - Run：runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907；gpu01 physical2/3/5、world3，deferred NCCL与NUMA。
-- tmux：gpu01 / ember-layered-short4-s16；当前已启动到预登记stop16。日志train_s16.log、退出码train_s16.exit；
+- tmux：gpu01 / ember-layered-short4-s16；第16步已自然完成，train_s16.exit=0、总339.39秒、64conditions/1024queries，完整checkpoint约171MiB。日志train_s16.log、退出码train_s16.exit；
   exact命令、环境、live资源及预算保存在runs/analysis/layered_relation_writer_20260907/launch_short4.json与launch_short4_s16.sh。
-- 全CPU最新157 passed/20.01s。训练能力、短面板闭环和validation资格均未宣称通过；读取16步结果后依合同继续48/96及必要诊断。
+- 物化/评测入口已集成并推送d5b8119e；最新全CPU171 passed/18.50s。执行frozen worktree为.codex/worktrees/layered-eval-d5b8119e。
+- 第16步correct/other各4套完整LoRA物化exit0，通过真实manifest/episode inspector；correct demos为7:48,12:49,20:48,35:46，
+  other为7:49,12:47,20:47,35:47，均由seed20260907的固定held池无放回抽样，未使用结果选择。
+- 当前gpu01p2运行source基线screen40，p3/p5分别运行第16步correct/other screen40；每GPU3 persistent workers，各自cost-balanced队列。
+  结果根为runs/analysis/layered_relation_writer_20260907/{short4_source_screen40,s16_correct_screen40,s16_same_task_other_screen40}。
+  两组行为尚未完成，未宣称训练能力或validation资格。exact命令/资源/退出码在同analysis root。
+- 已合并task worktree及codex/layered-writer分支清理；两个仍供formal训练/评测使用的detached frozen worktrees保留。
 
 ## 当前实现与验证（2026-09-07）
 
 - 授权记录已提交推送70b194ec；纯Writer实现4fa19c3a已集成main。当前新增训练/读取/数据代码及相关窄修复尚在验证，未冒充formal authority。
 - 唯一实现owner：writer/relation.py负责局部帧对和同步邻居更新；layered.py负责语言/H-read/集合compiler；coordinate.py负责完整坐标A/B；
   native.py负责原生Meta读取与R-leaf/observer VJP；learning_data.py负责固定split与跨episode采样；runtime.py负责加载和有界冻结prefix缓存；
-  training.py及薄CLI负责全局任务权重、调度、checkpoint/resume。没有恢复旧Writer/fallback。
-- 这是退役后从空缺重建部署图及必要训练面，源代码预计增长约1.4k行；各模块职责独立，主文件均小于400行，复用现有LoRA、functional、
+  training.py及薄CLI负责全局任务权重、调度、checkpoint/resume；materialization/evaluation负责逐episode条件物化及已有队列接线。没有恢复旧Writer/fallback。
+- 这是退役后从空缺重建部署图及必要训练面，训练加物化/评测源代码增长约2k行；各模块职责独立，主文件均小于400行，复用现有LoRA、functional、
   source、checkpoint与队列。现有checkpoint函数的局部增长仅添加sampler状态，trainer.run作为单一生命周期编排保留，避免机械拆分。
 - 首版Writer14,112,544参数，读取Meta626,688参数；两者直接fresh联合训练，source0 trainable。配置入口configs/pi05_layered_writer_v1.json。
 - 训练侧短面板global7/12/20/35覆盖Spatial/Object/Goal/Long；Long35历史专家40/50（完整原件已核）。
@@ -60,7 +66,7 @@
 - 四任务formal短学习预登记96updates，每task1536真实queries、K1/2/4各32条件，global4task等权；16/48/96固定checkpoint。
   各节点global7/12/20/35×states0–9×correct/other两组K1 held视频，seed20260907，固定每task无放回分组；仅判断基础行为/新视频泛化，
   不能选择最终checkpoint。未见基础行为则诊断最早接口，不默认长训；后续完整train24的strict400/邻接口径在读分数前另登记。
-- Subagent在隔离worktree完成纯图后，当前独立负责物化与原有评测队列接线；主agent负责GPU机制、训练及科学决策。
+- Subagent在隔离worktree完成纯图后，已交付物化与原有评测队列接线，验证后已集成；主agent负责GPU机制、训练及科学决策。
 
 ## 已封存的最近科学结果
 

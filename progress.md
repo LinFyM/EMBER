@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:20 CST。
+更新时间：2026-09-06 18:25 CST。
 
 ## 当前目标与授权
 
@@ -29,7 +29,7 @@
   原两fit视频分别1/2与7/10，每video64exposures；两run的实际128task executions/1024queries/video/policy RNG/normalizer与target18匹配。
   只改变单task目标相对18task均值的共享梯度统计，不能独立命名容量/梯度冲突/优化根因。
 - gpu01p2/NUMA0与p3/NUMA1各world1。Train177.21/177.99秒、Panel-B257.20/254.85秒，另计启动加载；peak reserved34.38/34.40GiB。
-  source/observer参数0，全部held/Panel-B backward0。训练与物化、两个评测launcher及workers均自然exit0，当前没有本任务运行中的GPU作业。
+  source/observer参数0，全部held/Panel-B backward0。训练与物化、两个评测launcher及workers均自然exit0。
 - 固定terminal128、原held48视频及states0–9：task75为6/10，对shared18的2/10 R/G/L2/4/0；task77为8/10，对1/10 R/G/L1/7/0。
   合计14/20对3/20，原3个成功全部保留。任务是基于已读训练侧缺口选择，明确非独立held、非checkpoint选择，不能部署clone集合。
 - Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison.*与behavior_comparison.*含实际样本、
@@ -41,6 +41,7 @@
 
 - 已登记同两个task、原held48视频和states0–9，读取原shared18全部早期已存checkpoints32/64/96；每point20rows，共60新rows。
   128复用已完成breadth中的20行，只为区分一直欠拟合与曾学会后丢失，不训练、不挑checkpoint、不读negative/validation/Test。
-- 两个配置`pi05_ecp_prw_complete_shared_trajectory_{subset,held_eval}_v1.json`已准备，尚未启动；先核对真实loader、推送并冻结，再物化和评测。
-  原quota726494916KiB/1073741824soft、shared84TiB已核验；此前新增预算<4GiB，本次新增峰值<1GiB纳入该预算，source/assets不复制。
+- 两个真实config/subset loaders通过，已推送并冻结0b28a3ff；新tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-shared-trajectory-20260906`。
+  三点banks正在gpu01p2/NUMA0单驻留runtime中生成，launcher PID4016997；完成后再按live状态执行三个独立动态队列。
+  最新quota726981760KiB/1073741824soft、shared84TiB；新analysis11MiB、两clone各229MiB，本次新增峰值<1GiB纳入原4GiB预算，source/assets不复制。
   新launch仍按两节点live GPU/memory/process准入，总量<=6，每job单节点、GPU-local NUMA与dynamic persistent evaluator。

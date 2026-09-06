@@ -47,7 +47,9 @@
   Train552.64秒、Panel-B390.73秒、runtime996.40秒（另计启动加载），临时cache已自动清理；全部held/Panel-B backward0。
   五个gradient target在32/64/96/128的全fit+held正收益为2/5、5/5、5/5、5/5；128 held benefit为72+.001732、77+.004774、
   83+.007476、93+.004031、94+.022396，均高于meta73；target79+.000962，七个meta诊断仍负。内部loss不代替行为判断。
-  四套primary bank已在gpu01p0开始生成（PID3651736），随后按live资源运行四个预登记screen80。
+  四套primary bank生成完毕/exit0；32/64/96/128 screen80分别在gpu02p0、gpu02p1、gpu02p4/6、gpu01p0运行。
+  在读取这些screen结果前登记两run固定terminal128的train-side fit/held strict150（原Spatial2/Goal20/Long38）；
+  共600 rows，用于分开目标任务行为恢复与未见任务迁移，不选checkpoint、不新增梯度。四个真实eval config loader均通过。
   目标是区分objective取舍，不扫描比例或加入剩余6target。只读train24支持审计保存在target_training_support.json，明确SFT使用全部24targets的支持差异。
 - 原始参照仍为配对历史source47/SFT109/A2m64 79；旧Writer143因teacher schedule不同只作count参照。未来强候选仍需同图random、
   预登记strict400相邻/跨视频资格、冻结后视频因果controls和最终32/8合同。

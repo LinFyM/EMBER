@@ -153,3 +153,20 @@ K1/micro8、source/normalizer、component initialization、fresh optimizer、LR�
 最长87-frame与micro8真实执行证据，CPU核对空meta组与全18target schedule；没有新张量轴、算子、最长输入或更高显存要求。
 五卡预计train约12–22分钟，另计启动/capture及相同13task诊断约10分钟；实际以新run记录为准。新增峰值<16GiB，
 正式从新clean pushed detached tree运行，exact resume锁实际launch topology。配置与元数据以外的src/scripts/tests保持不变。
+
+
+## Matched terminal training-task behavior diagnostic (2026-09-06)
+
+Target18完成后，五个gradient targets的fit与新视频功能收益在64/96/128均为正，128均高于meta73；meta7诊断则全部变负。
+这确认内部功能学习的目标取舍，但尚未确认目标任务自身的行为是否恢复。为把监督任务学习与未见任务迁移分开，
+在读取本轮validation screen结果前登记两条已完成run的固定terminal128闭环对照；不以validation或functional最优点挑选checkpoint。
+
+复用原Spatial2、Goal20、Long38，global IDs[2,20,38]、authority[72,83,93]及原50个states；两run分别用原first-fit视频[3,5,2]
+和原同task held视频[49,49,48]，共四套single-checkpoint strict150/600新rows。部署图、source、task/state/env及policy RNG配对，
+唯一因果干预仍是meta73→target18的objective组成与梯度统计；world5/6低位差异按原数值政策接受。旧short4 m64只作不同任务数/预算的参照。
+
+若两正视频下的训练任务行为恢复而validation仍窄，才把当前瓶颈进一步限定为task transfer/覆盖；若只有functional改善，
+下一分析聚焦离线功能与真实行为的分离，不能立即断定occupancy。仍保留原§6/§8及SEOD/GOMQ等历史边界。
+不从这些train-side panels选择最终checkpoint，不读取负视频或Test，不改变任何训练配置、权重或checkpoint；本诊断只生成完整LoRA和评测。
+相同graph/inputs已真实验证，无新增profile；额外磁盘峰值<1GiB，沿用已核验quota预算，实际GPU按launch时两节点live证据安排。
+配置为`pi05_ecp_prw_complete_{meta73,target18}_m128_train_{fit,held}_eval_v1.json`，复用原train-side task subset与canonical evaluator。

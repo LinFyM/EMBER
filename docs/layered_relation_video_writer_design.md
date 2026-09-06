@@ -578,7 +578,7 @@ B的native-channel常量分量占99.995%以上，而真实policy功能梯度在�
 已完成的受控fresh对照只将 A/B native 坐标向量改为独立标准正态，使不同坐标进入GELU的不同斜率区域。
 不改变原生A0、零scalar readouts、rank/width/图、Meta、seed、监督、optimizer/schedule或曝光；初始执行仍严格identity。
 这是一个固定的初始化干预，不扫scale、不增加gain/gate/旁路，也不从旧checkpoint继续。原std0.02结果和代码由frozen commit/run保留。
-判据仍为同一短面板的绝对闭环、breadth、相邻与跨视频success集合；几何改善不足以接受该修改。当前参数量和形状均不变。
+判据仍为同一短面板的绝对闭环、breadth、相邻与跨视频success集合；几何改善不足以接受该修改。该初始化对照的参数量和形状均不变。
 
 ### 8.4.1 末读出共享方式的受控修正（2026-09-07）
 

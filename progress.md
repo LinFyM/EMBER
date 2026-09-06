@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出fresh96步训练完成、曝光匹配；16correct为7/40，剩余配对面板执行中。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，进入train24预登记。
 
 ## 当前授权与方法状态
 
@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **唯一新图已实现并通过真实机制验证；坐标初始化对照有局部Long收益、尚无Object/Goal；下一末读出共享对照已登记**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **当前图通过真实机制检查，末读出对照已获得跨视频一致的short4基础行为，下一步fresh train24共享与迁移**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -20,11 +20,11 @@
 - 接手Git实测：main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与本地origin/main一致。
   指定当前文档、相关9月5日完整专家原文、旧账本§1–3/9–20/164–165/172–181及相关分析原件已读；代码和canonical资产已核对。HANDOFF已消费并删除，长期内容留在正式文档。
 - 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
-  当前formal short4按预登记16/48/96节点推进；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
+  三轮short4的全部预登记节点已完成；下一train24节点在launch前登记；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
 ## 当前执行节点
 
-两种初始化的训练/物化/闭环及冻结diagnostic均已完成；当前active GPU作业为末读出对照物化与闭环。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
+两种初始化的训练/物化/闭环及冻结diagnostic均已完成；全部自有GPU作业已自然结束；下一阶段为当前图的fresh train24共享训练，尚未launch。初始化对照16/48/96的correct为4/5/6、other为4/8/6，
 96K4为8/40；所有breadth2/4，Object/Goal均0。48→96 correct RGL5/1/0、other6/0/2；96跨视频5/1/1、Jaccard5/7。
 完整事实及边界见research_history§15。保留局部Long正证据，不恢复原配置无依据续训，不将其宣称为广泛共享能力。
 下一单变量fresh对照已在target_rank_readout_control/registration.json登记：只将末读出[p]改为[target,rank,p]，+77,696参数；
@@ -39,8 +39,14 @@ launch前两节点live检查，所用三卡均无计算进程；data1 quota48937
 96步训练完成、train.exit0，三个checkpoint保留；384条件/6144queries的task权重、K/视频、query episode/frame与policy RNG完全匹配坐标对照。
 每task1536queries，K1/2/4各32；实际更新1263.39秒、含加载1384.12秒，峰值allocated34.323/reserved38.109GiB。exposure_cost.json保存完整曝光/成本。
 16correct闭环完成exit0：7/40（Spatial2/Long5，Object/Goal0），breadth2/4；对source及坐标16correct均RGL3/4/1、churn5/40、Jaccard3/8。
-16other闭环正在gpu01p0执行；48/96两组K1及96K4剩余5banks正在p2 resident物化。p3/5已从训练释放，物化完成后用于闭环。
-这是早期Long局部正证据，不能据此宣称广泛共享、稳定或视频因果；后续节点按预登记补齐。
+全部七组物化/闭环均exit0：16correct/other7/10、48为6/8、96为11/11，96K4correct10；完整比较见target_rank_readout_control/panel_summary.json及*_vs_*。
+96K1两arm同为Spatial3/Object2/Goal0/Long6，success集合完全一致（RGL11/0/0，Jaccard1）；对source均RGL4/7/0。
+48→96 correct RGL5/6/1、other6/5/2，churn均7/40；仍有明显相邻变动，未满足正式稳定性。K4相对K1 RGL9/1/2，Jaccard.75。
+同预算比坐标对照96K1从6/6到11/11、breadth2到3；保留基础学习正证据，Goal仍0，未证明未见task迁移或video必要性。
+代表target的rank常量能量从>99.995%降至1.55%–6.55%，native常量却升至91.2%–99.3%；几何并非单向变好，不据此追加decoder修补。
+下一步保持当前图和fresh联合训练，扩展固定train24，以K1为初始qualification setting，真实K1/2/4训练保持；预算和strict400节点登记后launch。
+历史source strict400（47/400）policy/environment/RNG/source checkpoint已与当前合同核对；旧normalizer路径随worktree退役失效，
+比较工具现只在clean recorded commit与原bytes匹配时从同一Git配置恢复，并报告provenance。5 targeted tests及真实400行比较通过；未改写原始formal artifacts。
 
 ## 已完成的初始化formal对照
 

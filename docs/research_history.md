@@ -482,7 +482,7 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
 按输出target/rank各自学习[38,16,64]，不引入task-specific参数或旁路。预计增加77,696参数，科学曝光及短闭环口径完全匹配。
 注册在runs/analysis/layered_relation_writer_20260907/target_rank_readout_control/registration.json；此处只是实验决定，尚无该改动结果。
 
-## 16. 末读出target/rank共享约束的受控检验（2026-09-07，执行中）
+## 16. 末读出target/rank共享约束的受控检验（2026-09-07，已完成）
 
 - 接续§15保留坐标初始化的局部Long正证据。只将全局[p]末读出改为[target,rank,p]，新增77,696参数；其它图、std1坐标、
   identity、随机初始化抽样、种子/数据/优化器/96步曝光与world3保持。不是rank/scale/LR扫描，也不据局部Jacobian宣称唯一根因。
@@ -497,3 +497,22 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
   实际更新1263.39秒、总1384.12秒、peak allocated34.323/reserved38.109GiB，新增读出参数未带来明显吞吐代价。
 - 最先完成的16correct为7/40（Spatial2/Object0/Goal0/Long5），对source4及坐标16correct4均RGL3/4/1、Jaccard3/8。
   只作为Long早期信号；16other及48/96/K4结果执行中，尚无完整相邻/跨视频结论。
+
+全部七组固定40面板已完成exit0：
+
+| 节点 | correct | same-task-other | correct S/O/G/L | other S/O/G/L |
+|---|---:|---:|---|---|
+| 16 | 7 | 10 | 2/0/0/5 | 4/0/0/6 |
+| 48 | 6 | 8 | 1/1/0/4 | 1/1/0/6 |
+| 96 | 11 | 11 | 3/2/0/6 | 3/2/0/6 |
+| 96 K4 | 10 | 未设（held池仅4） | 2/2/0/6 | — |
+
+- 两视频16/48/96的Jaccard为.70/.75/1.0；96为完全同一11个成功。对source，16c RGL3/4/1、16o4/6/0、48c2/4/2、48o3/5/1、96c/o4/7/0。
+- 16→48 c/o RGL4/2/3、5/3/5；48→96为5/6/1、6/5/2，后者churn均7/40、Jaccard5/12和6/13。相邻仍存在明显变化。
+- 96c/o对坐标对照6→11均RGL4/7/2；K4对坐标K4为8→10、RGL4/6/4；本run K1→K4为11→10、RGL9/1/2、Jaccard.75。
+  所有普通比较经过完整source/RNG/env/normalizer及video schedule检查；K变更分别与同一source核对后比较success keys，未放宽常规配对器。
+- 同一两训练任务/三个target的冻结既有LoRA输出诊断：rank常量能量从>99.995%降至1.55%–6.55%，native常量能量反升到91.2%–99.3%。
+  行为提高与几何指标并非整体同向。此结果支持保留末读出干预进行共享学习，不支持宣称唯一根因或继续无依据坐标/rank/scale扫描。
+- **裁决：** 96K1两视频11/40且集合完全一致、breadth3/4，提供进入完整train24学习的基础；尚无Goal、未见task迁移、正式相邻稳定或video必要性证据。
+  下一阶段保持当前图、完全fresh Writer/Meta及optimizer，将固定train24引入共享训练，先用K1 qualification并继续真实K1/2/4训练。
+  未选择最终checkpoint，未运行validation/Test或最终负视频controls。所有raw rows、aggregate、exposure/cost和比较见target_rank_readout_control/。

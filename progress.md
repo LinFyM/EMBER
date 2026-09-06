@@ -1,10 +1,10 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:40 CST。
+更新时间：2026-09-06 19:50 CST。
 
 ## 当前目标与授权
 
-- 最终科学goal持续active；owner授权权限内自主推进。Active design为`docs/joint_process_policy_writer_design.md`。
+- Owner最新要求暂停后续自主推进，先讨论，待owner明确说继续后才能恢复。已启动的width256训练允许自然结束；不自动启动后续评测、新实验或代码改动，也不继续轮询。最终科学goal未完成，active design保留为`docs/joint_process_policy_writer_design.md`；goal的active状态不能覆盖本次暂停。
 - 最终资格仍为validation8 strict single-checkpoint >145/400及预登记相邻/跨视频稳定、breadth、四suite与Goal/Long贡献；
   同图fully-random候选和冻结后视频因果controls仍待完成。方法冻结后才做32/8 fresh及Test，没有selected checkpoint。
 - Canonical为共同P/Q完整38-target rank16、4750208 Writer参数、source/observer冻结，无独立carrier或部署expert字典。

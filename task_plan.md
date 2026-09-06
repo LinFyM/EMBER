@@ -1,11 +1,11 @@
 # EMBER task plan
 
-更新时间：2026-09-06 19:33 CST。
+更新时间：2026-09-06 19:50 CST。
 
 ## 当前目标与启动授权
 
-owner最新明确同意实际开始，要求重新建立goal，终点为最终目标完成；权限内的问题由agent自主解决并连续推进。
-新的unbudgeted goal已建立。本授权取代今天上午的讨论暂停；不恢复此前弱A2的待执行清单。
+Owner最新明确要求先讨论、暂停后续推进，待owner说继续后恢复。已启动的width256训练可自然结束，之后不自动评测、新实验、改代码或继续轮询。
+此前建立的unbudgeted最终科学goal尚未完成，但不构成越过本次暂停的授权；已完成证据和active design保留，不恢复历史待执行清单。
 最终为validation8 strict paired single-checkpoint correct >145/400，加相邻稳定、跨视频、breadth/四suite/Goal/Long与冻结后视频因果资格；
 方法冻结后按32/8合同fresh最终训练和test。train24 SFT历史109与旧Writer143是实质参照。
 

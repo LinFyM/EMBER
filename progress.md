@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 15:36 CST。
+更新时间：2026-09-06 16:06 CST。
 
 ## 当前状态与授权
 
@@ -39,11 +39,15 @@
 - 真实CPU config/eval loader、空meta组和完整128步采样检查通过；2304task executions、每target128exposures，primary/other视频ordinal一致。
   复用相同graph下最长87帧/micro8的实测34.67GiB峰值和全部18targets实际timing；六卡实测每步约4.27秒；完整启动/capture/Panel-B成本另计。
   已于15:28左右从clean pushed detached351feb48启动，gpu01物理0/2/3/4/5/6、world6、NUMA0/0/1/1/1/1；
-  p2 peer任务在preflight前自然结束，实际六rank task-work估计均约4.01秒，source/code不变。launcher PID3518744，已正常运行至62updates、macro32保存，实际34.61GiB peak reserved。
+  p2 peer任务在preflight前自然结束，实际六rank task-work估计均约4.01秒，source/code不变。launcher PID3518744，128updates及四点Panel-B已全部结束，launcher exit0，实际34.61GiB peak reserved。
   Run为`runs/outputs/pi05_ecp_prw_complete_target18_s128_351feb48_gpu01p023456_20260906`，analysis为
   `runs/analysis/pi05_ecp_prw_complete_target18_20260906`；精确命令`.codex/tmp/prw_complete_target18/train.sh`，contract/preflight/audit均保存在analysis/launch。
   /data1 quota722611784KiB/1073741824KiB，outputs529GiB、analysis17GiB，shared84TiB可用；缓存含诊断12.24GiB、新增峰值<16GiB。
-  前62步采样审计pass，所有目标task的query/video/RNG与上一轮匹配，原normalizer一致；actual topology锁world6 exact resume。
+  全2304项采样审计pass，所有目标task的query/video/RNG与上一轮匹配，两fit视频各64exposures，原normalizer一致；actual topology锁world6 exact resume。
+  Train552.64秒、Panel-B390.73秒、runtime996.40秒（另计启动加载），临时cache已自动清理；全部held/Panel-B backward0。
+  五个gradient target在32/64/96/128的全fit+held正收益为2/5、5/5、5/5、5/5；128 held benefit为72+.001732、77+.004774、
+  83+.007476、93+.004031、94+.022396，均高于meta73；target79+.000962，七个meta诊断仍负。内部loss不代替行为判断。
+  四套primary bank已在gpu01p0开始生成（PID3651736），随后按live资源运行四个预登记screen80。
   目标是区分objective取舍，不扫描比例或加入剩余6target。只读train24支持审计保存在target_training_support.json，明确SFT使用全部24targets的支持差异。
 - 原始参照仍为配对历史source47/SFT109/A2m64 79；旧Writer143因teacher schedule不同只作count参照。未来强候选仍需同图random、
   预登记strict400相邻/跨视频资格、冻结后视频因果controls和最终32/8合同。

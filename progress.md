@@ -2,17 +2,23 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 12:14 CST）
+## 当前快照（2026-09-06 12:47 CST）
 
-- owner明确结束讨论暂停，要求实际执行、重新设goal并自主推进至最终目标；新goal已建立且active。
-- 唯一主线改为复用P/Q与完整50-horizon evidence、直接联合生成全部38-target完整LoRA，首选rank16，无独立carrier；
-  active design仍为`docs/joint_process_policy_writer_design.md`，其内容已按最新对齐更新。
-- 当前在实现阶段：同步source/runtime/materialization合同；先短学习与实际行为，再按有信息量的结果逐步投入主训练和完整评测。
-- 纠正上午运行状态：旧A2 random在11:16完成checkpoint48后被agent中断，退出1；没有result/completion与随机候选闭环结果。
-  原拓扑设备随后被他人使用，因此没有resume。32/48 checkpoint及既有证据保留；该旧待执行清单不再自动推进。
-- 重新确认普通train24 SFT历史109/400、旧Writer143/400为能力参照；109为train24→validation8、无held适配，不能错误排除为held oracle。
-  当前新评测尚未与其同口径配对，后续正式比较前补齐必要缺口。
-- 本节点未启动新GPU任务。当前实现与历史frozen worktree隔离；资源只在实际launch前刷新。
+- owner已授权重建goal并自主推进至最终目标；完整38-target LoRA主线持续active，最新要求强调遇到问题复核专家原文、深入分析，
+  不因一次non-pass放弃；允许峰值余量充足且低负载的GPU安全共驻。
+- 新接口实现完成：共同P/Q、完整50-horizon、learned全部rank16 A/B、无独立carrier；移除不再消费的逐target X/Y捕获与
+  task-local专属运行面。canonical训练和物化入口复用，旧A2由Git和formal结果保存。源码净减少约1900行，无新增源码模块。
+- 三卡真实profile已exit0：最终组件初始化含匹配G2投影、owner/family和首层attention；4,750,208参数、第二步whole-Writer
+  evidence/PQ梯度非零，每步4tasks/32action rows约4.00–4.05秒。8视频共364stride5帧、最长87帧，缓存1.95GiB，峰值
+  allocated15.55GiB/reserved15.62GiB。此前单卡smoke验证76tensor和真实更新后全图梯度；该smoke早于最后兼容初始化补齐。
+- 验证为Writer12项与静态bank10项定向测试通过，配置loader、compileall、diff检查通过。结构检查净-1918行、零新增源码文件；
+  唯一新增size提示是现有bank测试增加完整输出schema后137行，其中大部分为声明式fixture，保留一份fixture的参数化避免复制。
+  其余大文件/长函数为缩减或复用的既有编排责任，没有新增平行runner。
+- 新输出不是已验证的闭环方法。当前准备clean pushed frozen四任务64步正式短学习、32/64各fit/held视频train-side strict150；
+  对照原P/Q及A2相同task/state/video，不做最终checkpoint选择。formal launcher记录精确环境、资源和缓存生命周期。
+- 旧A2 random在上午checkpoint48后被中断，退出1且无completion/闭环；唯一32/48 checkpoint保留，不恢复旧清单。
+- 重新确认普通train24 SFT历史109/400、旧Writer143/400为能力参照；109为train24→validation8，无held适配。
+  后续正式比较前补齐同口径评测缺口。Test与负视频controls继续未使用。
 
 ## 以下为历史执行记录
 

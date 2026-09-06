@@ -69,7 +69,7 @@ def _functional_value(
     value, details = functional_lora_loss_value(
         runtime.policy,
         state,
-        runtime.ranks.contract,
+        runtime.lora_contract,
         batch=batch,
         policy_rng_seed=seed,
         policy_rng_device=runtime.context.device,
@@ -97,7 +97,7 @@ def _evaluate_video(
     video = cache.videos[(task, demo)].to(runtime.context.device)
     runtime.writer.eval()
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        state = _materialized_state(runtime, (video,), canonicalize=True)
+        state = _materialized_state(runtime, (video,))
     rows = []
     for visit_index in range(visits):
         batch, panel = functional_panel_batch(

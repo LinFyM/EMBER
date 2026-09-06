@@ -96,11 +96,8 @@ def build_shared_run_contract(
                 asset_root=runtime.args.asset_root,
             )
         ),
-        "stable_carrier": str(
-            authority_path(
-                runtime.base, "stable_carrier", asset_root=runtime.args.asset_root
-            )
-        ),
+        "carrier_installed": False,
+        "generated_rank": runtime.lora_contract.rank,
         "data_root": str(runtime.args.data_root),
         "representation": runtime.args.representation,
         "initialization_request": runtime.args.initialization,
@@ -132,7 +129,7 @@ def build_shared_run_contract(
             "selection_uses_outcomes": False,
         },
         "loss_normalization": {
-            "functional": "per_task_frozen_panel_a_carrier_rms",
+            "functional": "reused_frozen_panel_a_reference_rms_loss_scale_only",
             "resume_authority": "normalizers.json",
             "auxiliary_process_objective": False,
         },

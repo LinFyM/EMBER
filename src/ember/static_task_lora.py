@@ -37,6 +37,9 @@ G3_LANGUAGE_ADAPTER_SCHEMA = "ember_ecp_g3_language_only_adapter_v1"
 POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA = (
     "ember_ecp_policy_response_writer_materialized_adapter_v1"
 )
+COMPLETE_POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA = (
+    "ember_ecp_complete_policy_response_writer_materialized_adapter_v1"
+)
 POLICY_RESPONSE_WRITER_ARM_PREFIX = "ecp_policy_response_writer_"
 FIXED_CARRIER_ARM = "frozen_stable_carrier"
 
@@ -139,10 +142,10 @@ def _policy_response_provenance(
             _is_commit(manifest.get("training_commit")),
             _is_commit(manifest.get("materialization_commit")),
             isinstance(contract, Mapping),
-            contract.get("schema_version")
-            == "ember_policy_response_writer_shared_run_v1",
-            contract.get("stage")
-            == "policy_response_writer_shared_positive_only",
+            (contract.get("schema_version"), contract.get("stage")) in {
+                ("ember_policy_response_writer_shared_run_v1", "policy_response_writer_shared_positive_only"),
+                ("ember_complete_policy_response_writer_shared_run_v1", "complete_policy_response_writer_shared_positive_only"),
+            },
             contract.get("mode") == "formal",
             contract.get("representation") == representation,
             condition.get("name") == "correct_k1",
@@ -279,6 +282,23 @@ def _language_checkpoint_matches(
     )
 
 
+def _complete_writer_bank(manifest: Mapping[str, Any]) -> bool:
+    return manifest.get("shared_run_contract", {}).get("schema_version") == (
+        "ember_complete_policy_response_writer_shared_run_v1"
+    )
+
+
+def _rank_partition_valid(manifest: Mapping[str, Any]) -> bool:
+    if _complete_writer_bank(manifest):
+        contract = manifest["shared_run_contract"]
+        return (
+            manifest.get("rank_partition") == {"task": [0, 16]}
+            and contract.get("carrier_installed") is False
+            and contract.get("generated_rank") == 16
+        )
+    return manifest.get("rank_partition") == {"carrier": [0, 12], "task": [12, 16]}
+
+
 def _policy_response_checkpoint_matches(
     arm: str,
     checkpoint: Mapping[str, Any],
@@ -289,7 +309,10 @@ def _policy_response_checkpoint_matches(
     return all(
         (
             arm.startswith(POLICY_RESPONSE_WRITER_ARM_PREFIX),
-            checkpoint.get("schema_version") == POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA,
+            checkpoint.get("schema_version") == (
+                COMPLETE_POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA if _complete_writer_bank(manifest)
+                else POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA
+            ),
             checkpoint.get("condition") == "correct_k1",
             checkpoint.get("representation")
             == manifest.get("condition", {}).get("representation"),
@@ -419,7 +442,7 @@ def inspect_static_task_lora_bank(
         and len(requested) == len(set(requested)) == len(rows) == len(records)
         and set(requested) == set(records)
         and manifest.get("single_complete_rank16") is True
-        and manifest.get("rank_partition") == {"carrier": [0, 12], "task": [12, 16]}
+        and _rank_partition_valid(manifest)
         and information_wall.get("action_meta_installed") is False
         and information_wall.get("second_adapter_deployed") is False
         and information_wall.get("teacher_video_runtime_reads") == 0

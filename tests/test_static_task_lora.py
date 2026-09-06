@@ -356,8 +356,9 @@ def test_g3_static_bank_accepts_only_matching_materialized_condition(
 @pytest.mark.parametrize("video_condition", [
     {"video_demos": [5]}, {"video_demos_by_global_task": {"0": [5]}},
 ])
+@pytest.mark.parametrize("complete_output", [False, True])
 def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
-    tmp_path: Path, video_condition: dict,
+    tmp_path: Path, video_condition: dict, complete_output: bool,
 ) -> None:
     lora_path = ROOT / "configs/pi05_lora_v1.json"
     lora = load_pi05_lora_contract(lora_path)
@@ -443,6 +444,19 @@ def test_policy_response_writer_bank_requires_matching_k1_checkpoint(
         },
     }
     bank_path = tmp_path / "bank.json"
+    if complete_output:
+        bank["rank_partition"] = {"task": [0, 16]}
+        bank["shared_run_contract"].update({
+            "schema_version": "ember_complete_policy_response_writer_shared_run_v1",
+            "stage": "complete_policy_response_writer_shared_positive_only",
+            "carrier_installed": False,
+            "generated_rank": 16,
+        })
+        checkpoint_manifest["schema_version"] = (
+            "ember_ecp_complete_policy_response_writer_materialized_adapter_v1"
+        )
+        checkpoint_manifest_path.write_text(json.dumps(checkpoint_manifest), encoding="utf-8")
+        row["checkpoint_manifest_bytes"] = checkpoint_manifest_path.stat().st_size
     bank_path.write_text(json.dumps(bank), encoding="utf-8")
     adapter = inspect_static_task_lora_bank(
         manifest_path=bank_path,

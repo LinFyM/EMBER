@@ -58,8 +58,8 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 
 
-SHARED_STAGE = "policy_response_writer_shared_positive_only"
-SHARED_RUN_SCHEMA = "ember_policy_response_writer_shared_run_v1"
+SHARED_STAGE = "complete_policy_response_writer_shared_positive_only"
+SHARED_RUN_SCHEMA = "ember_complete_policy_response_writer_shared_run_v1"
 
 
 @dataclass
@@ -157,7 +157,6 @@ def _optimizer(
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
     if (
         not parameters
-        or runtime.writer.factor_writer.task_query is not None
         or not all(value.requires_grad for value in runtime.writer.parameters())
         or any(value.requires_grad for value in runtime.policy.parameters())
         or any(value.requires_grad for value in runtime.stage0.parameters())
@@ -250,20 +249,14 @@ def _prepare_training_cache(
 def _materialized_state(
     runtime: PolicyResponseRuntime,
     videos: Sequence[FrozenPolicyResponseVideo],
-    *,
-    canonicalize: bool,
 ) -> dict[str, torch.Tensor]:
     output = runtime.writer(
         tuple(videos),
-        s_ref=runtime.ranks.s_ref,
         representation=runtime.args.representation,
     )
     return runtime.writer.materialize(
         output,
-        carrier_state=runtime.ranks.carrier_rank12,
-        rank4_contract=runtime.rank4_contract,
-        rank16_contract=runtime.ranks.contract,
-        canonicalize=canonicalize,
+        contract=runtime.lora_contract,
     )
 
 

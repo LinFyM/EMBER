@@ -13,6 +13,14 @@
 owner已完成事前对齐并明确要求goal自主推进；active合同为`docs/joint_process_policy_writer_design.md`，即时状态见`progress.md`。
 本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
+## 当前完整输出重构的证据边界（2026-09-06）
+
+owner授权复用P/Q与完整native evidence，直接共同生成全部38-target A/B、首选rank16且无独立carrier。该耦合输出重构尚未得到
+闭环资格；历史P/Q有限输出实例的non-pass不覆盖本方案，也不能把新接口的图接通和吞吐当成能力改善。
+真实三卡profile使用最终组件初始化，第二步已出现图文、response及P/Q梯度，最长87个stride5帧视频纳入训练；每步四任务约4秒，
+4,750,208参数，峰值显存allocated15.55GiB/reserved15.62GiB。全部source/observer冻结，未使用held梯度或negative controls。
+后续四任务32/64 train-side闭环与既有matched结果比较；最终选择仍只认预登记strict400与相邻/跨视频资格。
+
 ## 科学结论
 
 ### 0. 2026-09-05复核边界与同图学习证据缺口
@@ -31,7 +39,7 @@ GOMQ原`A32=[A0;A0], B32=[B0,deltaB]`的有效rank本来≤16；151→136的物�
 owner要求在低于/接近baseline时认真比较竞争解释，必要时自主做更多分析实验，不随意把可疑现象当根因并小修。保留行为与净积累
 是主线；局部指标和结构合理性不足以证明重构值得。下面是各历史时点的记录，不能自动恢复旧路线或沿用超出证据范围的根因表述。
 
-### 2026-09-06共同P/Q实例未改善行为，恢复较好的A2
+### 历史：2026-09-06有限输出P/Q实例未改善行为，当时恢复A2
 
 同两fit、4tasks、64updates的P/Q32 fit/held38/37、64为41/39，四组均低于A2的43/41、44/45。P/Q held相邻Jaccard.810、churn8
 更稳定，但Goal6→4、Long均0；fit Long成功相邻不重合，64跨视频Jaccard.667低于A2的.780。不能以约2.30倍训练加速或稳定低分代替

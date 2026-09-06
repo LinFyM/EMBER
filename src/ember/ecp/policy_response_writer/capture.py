@@ -1,4 +1,4 @@
-"""One-pass frozen PI0.5 response and native-bank capture.
+"""One-pass frozen PI0.5 full-response capture.
 
 The capture keeps teacher-frame time, Action Expert depth/horizon, and the
 antithetic probe axis separate.  It never receives robot state or actions.
@@ -16,8 +16,6 @@ from ember.ecp.contracts import ACTION_HORIZON, TargetOwner
 from ember.ecp.native_factors import (
     G1_PROBE_COUNT,
     NativeFactorError,
-    NativeTargetCapture,
-    NativeTargetChunk,
 )
 from ember.ecp.observer import ActionLayerStateCapture
 from ember.ecp.policy_effects import ExecutionPolicyPrefix
@@ -34,7 +32,6 @@ class FrozenPolicyResponseChunk:
     layer_states: torch.Tensor
     flow_velocity: torch.Tensor
     suffix_noise: torch.Tensor
-    native: NativeTargetChunk
 
     @property
     def frame_count(self) -> int:
@@ -50,9 +47,6 @@ class FrozenPolicyResponseVideo:
     layer_states: torch.Tensor
     flow_velocity: torch.Tensor
     suffix_noise: torch.Tensor
-    native_inputs: tuple[torch.Tensor, ...]
-    native_outputs: tuple[torch.Tensor, ...]
-    final_outputs: tuple[torch.Tensor, ...]
     frame_positions: torch.Tensor
 
     @property
@@ -71,9 +65,6 @@ class FrozenPolicyResponseVideo:
             self.flow_velocity,
             self.suffix_noise,
             self.frame_positions,
-            *self.native_inputs,
-            *self.native_outputs,
-            *self.final_outputs,
         )
         return sum(value.numel() * value.element_size() for value in tensors)
 
@@ -82,7 +73,6 @@ class FrozenPolicyResponseVideo:
 
         if not 0 < stop <= self.frame_count:
             raise ValueError("policy-response causal prefix is outside the video")
-        outputs = tuple(value[:stop] for value in self.native_outputs)
         return replace(
             self,
             patch_states=self.patch_states[:stop],
@@ -90,9 +80,6 @@ class FrozenPolicyResponseVideo:
             language_mask=self.language_mask[:stop],
             layer_states=self.layer_states[:stop],
             flow_velocity=self.flow_velocity[:stop],
-            native_inputs=tuple(value[:stop] for value in self.native_inputs),
-            native_outputs=outputs,
-            final_outputs=tuple(value[-1] for value in outputs),
             frame_positions=self.frame_positions[:stop],
         )
 
@@ -106,9 +93,6 @@ class FrozenPolicyResponseVideo:
             layer_states=tensor(self.layer_states),
             flow_velocity=tensor(self.flow_velocity),
             suffix_noise=tensor(self.suffix_noise),
-            native_inputs=tuple(tensor(value) for value in self.native_inputs),
-            native_outputs=tuple(tensor(value) for value in self.native_outputs),
-            final_outputs=tuple(tensor(value) for value in self.final_outputs),
             frame_positions=tensor(self.frame_positions),
         )
 
@@ -131,7 +115,7 @@ def capture_policy_response_chunk(
     start_frame: int,
     image_tokens: int = 256,
 ) -> FrozenPolicyResponseChunk:
-    """Capture prefix states, raw Action states, velocity, and X/Y in one forward."""
+    """Capture prefix states, every Action boundary, and velocity in one forward."""
 
     from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
@@ -160,12 +144,9 @@ def capture_policy_response_chunk(
     target_dtype = expert.layers[0].self_attn.q_proj.weight.dtype
 
     with (
-        NativeTargetCapture(policy, owners) as native_capture,
         ActionLayerStateCapture(expert, detach=True) as layer_capture,
         _capture_autocast(prefix.embeddings.device),
     ):
-        # action_in_proj is one of the 38 native targets, so embed_suffix must
-        # execute inside the same scoped target capture as q/v and action_out.
         suffix, suffix_padding, suffix_attention, adarms = core.embed_suffix(
             probes, flow_time
         )
@@ -189,11 +170,6 @@ def capture_policy_response_chunk(
             adarms_cond=[None, adarms],
         )
         flow_velocity = core.action_out_proj(suffix_hidden)
-        native = native_capture.chunk(
-            start_frame=start_frame,
-            frame_count=frames,
-            probe_count=G1_PROBE_COUNT,
-        )
         layer_states = layer_capture.stacked()
 
     if layer_states.shape[1:3] != (19, ACTION_HORIZON):
@@ -204,7 +180,7 @@ def capture_policy_response_chunk(
     )
     # Prefix tokens cannot attend the suffix under the native mask.  Averaging
     # only removes duplicate numerical copies; the probe axis is retained on
-    # every Action-side response and native X/Y tensor.
+    # every Action-side response.
     frozen_prefix = prefix_hidden.float().mean(1).to(prefix_hidden.dtype)
     language_mask = prefix.padding[:, image_tokens:].detach()
     return FrozenPolicyResponseChunk(
@@ -225,7 +201,6 @@ def capture_policy_response_chunk(
             frames, G1_PROBE_COUNT, ACTION_HORIZON, 32
         ),
         suffix_noise=torch.stack((fixed_probe, -fixed_probe), dim=0).detach(),
-        native=native,
     )
 
 
@@ -240,14 +215,10 @@ def merge_policy_response_chunks(
     if not values:
         raise ValueError("policy-response video has no chunks")
     next_frame = 0
-    owner_count = len(values[0].native.inputs)
     for chunk in values:
         if (
             chunk.start_frame != next_frame
-            or chunk.native.start_frame != next_frame
             or chunk.frame_count <= 0
-            or len(chunk.native.inputs) != owner_count
-            or len(chunk.native.outputs) != owner_count
             or not torch.equal(chunk.suffix_noise, values[0].suffix_noise)
         ):
             raise ValueError("policy-response chunks changed ordering or ownership")
@@ -263,14 +234,6 @@ def merge_policy_response_chunks(
         )
     if frame_positions.shape != (frames,):
         raise ValueError("policy-response frame positions changed")
-    inputs = tuple(
-        torch.cat(tuple(chunk.native.inputs[target] for chunk in values))
-        for target in range(owner_count)
-    )
-    outputs = tuple(
-        torch.cat(tuple(chunk.native.outputs[target] for chunk in values))
-        for target in range(owner_count)
-    )
     return FrozenPolicyResponseVideo(
         patch_states=torch.cat(tuple(chunk.patch_states for chunk in values)),
         language_states=torch.cat(tuple(chunk.language_states for chunk in values)),
@@ -278,8 +241,5 @@ def merge_policy_response_chunks(
         layer_states=torch.cat(tuple(chunk.layer_states for chunk in values)),
         flow_velocity=torch.cat(tuple(chunk.flow_velocity for chunk in values)),
         suffix_noise=values[0].suffix_noise,
-        native_inputs=inputs,
-        native_outputs=outputs,
-        final_outputs=tuple(value[-1] for value in outputs),
         frame_positions=frame_positions,
     )

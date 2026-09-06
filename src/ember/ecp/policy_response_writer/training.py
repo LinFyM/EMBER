@@ -22,7 +22,7 @@ from ember.ecp.policy_response_writer.capture import (
     capture_policy_response_chunk,
     merge_policy_response_chunks,
 )
-from ember.ecp.policy_response_writer.model import UnifiedPolicyNativeFactorWriter
+from ember.ecp.policy_response_writer.model import CompletePolicyResponseWriter
 from ember.ecp.policy_response_writer.shared_schedule import (
     _functional_panel_config,
     _selected_task_ids,
@@ -30,10 +30,9 @@ from ember.ecp.policy_response_writer.shared_schedule import (
 from ember.ecp.shared_compiler_assets import (
     authority_path,
     load_shared_compiler_config,
-    load_shared_rank_assets,
 )
 from ember.ecp.stage0_training import load_stage0_config, tokenize_stage0_languages
-from ember.pi05_lora import derive_pi05_lora_rank
+from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
@@ -62,8 +61,8 @@ from ember.writer.functional import (
 )
 
 
-SCHEMA = "ember_ecp_policy_response_writer_unified_factor_v4"
-RUN_SCHEMA = "ember_ecp_policy_response_writer_unified_factor_run_v4"
+SCHEMA = "ember_ecp_complete_policy_response_writer_v1"
+RUN_SCHEMA = "ember_ecp_complete_policy_response_writer_run_v1"
 REPO_ROOT = Path(__file__).resolve().parents[4]
 JOINT_FUNCTIONAL_STAGE = "joint_functional_positive_only"
 
@@ -76,9 +75,8 @@ class PolicyResponseRuntime:
     context: DistributedContext
     policy: torch.nn.Module
     stage0: torch.nn.Module
-    writer: UnifiedPolicyNativeFactorWriter
-    ranks: Any
-    rank4_contract: Any
+    writer: CompletePolicyResponseWriter
+    lora_contract: Any
     owners: tuple[Any, ...]
     task_by_id: dict[int, Any]
     panels: dict[int, Any]
@@ -124,25 +122,14 @@ def load_policy_response_config(path: Path) -> dict[str, Any]:
     if not all(
         (
             config.get("schema_version") == SCHEMA,
-            config.get("status")
-            == "active_asymmetric_policy_native_factor_writer",
+            config.get("status") == "active_complete_policy_response_writer",
             model.get("target_owners") == 38,
-            model.get("residual_rank") == 4,
-            model.get("architecture")
-            == "repeatable_parallel_policy_native_factor_blocks",
-            model.get("evidence_read")
-            == "same_query_parallel_language_patch_response_and_side_native_cross_attention_then_sum",
-            model.get("source_normalization")
-            == "independent_language_patch_response_and_native_softmax_no_cardinality_competition",
-            model.get("input_context_branches") == 2,
-            model.get("factor_readout")
-            == "independent_input_context_shared_output_context_plus_frame_innovation_signed_raw_native_XY",
-            model.get("signed_query")
-            == "two_input_bank_localizers_one_shared_output_localizer_plus_dynamic_offsets",
-            model.get("dynamic_value_contract")
-            == "zero_frame_innovation_makes_output_factor_and_complete_mobile_zero",
-            model.get("post_pooling")
-            == "single_target_update_cap_then_small_core_canonicalization",
+            model.get("complete_rank") == 16,
+            model.get("architecture") == "joint_process_policy_complete_lora",
+            model.get("factor_readout") == "family_shared_learned_complete_AB",
+            model.get("carrier_installed") is False,
+            model.get("evidence_read") == "language_grounded_patch_then_full_response_joint_PQ",
+            model.get("post_readout") == "direct_complete_factors_no_cap_or_canonicalization",
             int(model.get("blocks", 0)) > 0,
             model.get("representation_arms") == ["full"],
             data.get("frame_stride") == 5,
@@ -178,7 +165,7 @@ def _validate_launch_authority(args: argparse.Namespace) -> None:
 
 
 def _initialize_writer(
-    writer: UnifiedPolicyNativeFactorWriter,
+    writer: CompletePolicyResponseWriter,
     stage0: torch.nn.Module,
     kind: str,
 ) -> dict[str, object]:
@@ -196,7 +183,7 @@ def _initialize_writer(
 def _runtime_task_ids(
     args: argparse.Namespace, selected_ids: tuple[int, ...]
 ) -> tuple[int, ...]:
-    if args.phase in {"smoke", "task-local"}:
+    if args.phase == "smoke":
         if args.task is None:
             raise ValueError(f"{args.phase} requires one task")
         return (int(args.task),)
@@ -296,14 +283,12 @@ def prepare_runtime(
         .requires_grad_(False)
         .eval()
     )
-    ranks = load_shared_rank_assets(
-        base,
-        asset_root=args.asset_root,
-        held_global_ids=set(map(int, base["fold"]["target_held_task_ids"])),
-        device=context.device,
+    lora_contract = load_pi05_lora_contract(
+        authority_path(base, "lora_contract", asset_root=args.asset_root)
     )
-    owners = build_target_owners(ranks.contract)
-    rank4_contract = derive_pi05_lora_rank(ranks.contract, rank=4)
+    if lora_contract.rank != int(config["model"]["complete_rank"]):
+        raise ValueError("Writer rank differs from the execution LoRA contract")
+    owners = build_target_owners(lora_contract)
     stage0 = load_frozen_native_observer(
         stage0_config=load_stage0_config(
             authority_path(base, "stage0_config", asset_root=args.asset_root)
@@ -315,17 +300,18 @@ def prepare_runtime(
         device=context.device,
         max_frames_per_call=int(config["model"]["capture_frame_chunk"]),
     )
-    prepare_frozen_writer_policy(policy, ranks.contract)
+    prepare_frozen_writer_policy(policy, lora_contract)
     model = config["model"]
-    writer = UnifiedPolicyNativeFactorWriter(
+    writer = CompletePolicyResponseWriter(
         owners,
         prefix_width=int(model["prefix_width"]),
         expert_width=int(model["expert_width"]),
         width=int(model["width"]),
         heads=int(model["attention_heads"]),
         blocks=int(model["blocks"]),
-        pooling_frame_chunk=int(model["pooling_frame_chunk"]),
-        task_local=args.phase == "task-local",
+        rank=int(model["complete_rank"]),
+        process_tokens=int(model["process_tokens"]),
+        identity_seed=int(model["identity_seed"]),
     ).to(context.device)
     initialization = _initialize_writer(writer, stage0, args.initialization)
     tasks = deployment_tasks if deployment_tasks is not None else _tasks(
@@ -366,8 +352,7 @@ def prepare_runtime(
         policy=policy,
         stage0=stage0,
         writer=writer,
-        ranks=ranks,
-        rank4_contract=rank4_contract,
+        lora_contract=lora_contract,
         owners=owners,
         task_by_id=task_by_id,
         panels=panels,
@@ -477,10 +462,9 @@ def _gradient_norms(module: torch.nn.Module) -> dict[str, float]:
         "language": ("evidence.prefix.language_projection",),
         "response": ("evidence.response",),
         "policy_read": ("factor_writer.blocks.0.policy_attention",),
-        "native_read": ("factor_writer.blocks.0.native_attention",),
+        "process_read": ("factor_writer.blocks.0.process_read",),
         "unified": ("factor_writer.blocks",),
-        "signed_input": ("factor_writer.input_signed_query",),
-        "signed_output": ("factor_writer.output_signed_query",),
+        "factor_heads": ("factor_writer.factor_heads",),
         "factor_writer": ("factor_writer",),
     }
     output = {}
@@ -514,10 +498,9 @@ def _validate_smoke_graph(
         for name in (
             "response",
             "policy_read",
-            "native_read",
+            "process_read",
             "unified",
-            "signed_input",
-            "signed_output",
+            "factor_heads",
         )
     ]
     invalid = any(
@@ -549,15 +532,11 @@ def _writer_chain_backward(
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output = runtime.writer(
             (video,),
-            s_ref=runtime.ranks.s_ref,
             representation=runtime.args.representation,
         )
         state = runtime.writer.materialize(
             output,
-            carrier_state=runtime.ranks.carrier_rank12,
-            rank4_contract=runtime.rank4_contract,
-            rank16_contract=runtime.ranks.contract,
-            canonicalize=False,
+            contract=runtime.lora_contract,
         )
         surrogate = writer_chain_rule_surrogate(state, leaf_gradients) * float(weight)
     surrogate.backward()
@@ -567,109 +546,96 @@ def _writer_chain_backward(
 def _initial_factor_state(output: Any) -> dict[str, bool]:
     return {
         "input_factor_nonzero": any(
-            torch.count_nonzero(value).item() > 0 for value in output.residual.a
+            torch.count_nonzero(value).item() > 0 for value in output.factors.a
         ),
         "output_factor_nonzero": any(
-            torch.count_nonzero(value).item() > 0 for value in output.residual.b
+            torch.count_nonzero(value).item() > 0 for value in output.factors.b
         ),
     }
 
 
-def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
-    if runtime.context.world_size != 1:
-        raise ValueError("Policy-Response Writer smoke is single-GPU")
-    task_id = int(runtime.args.task)
-    demo = (
-        int(runtime.args.video_demo)
-        if runtime.args.video_demo is not None
-        else int(runtime.panels[task_id].program_video_demos[0])
-    )
-    torch.cuda.reset_peak_memory_stats(runtime.context.device)
-    video, capture = capture_video(runtime, task_id=task_id, video_demo=demo)
-    phase_memory = {"capture": _cuda_peak(runtime)}
-    stage = shared_training_stage(runtime)
-    runtime.writer.requires_grad_(True)
-    set_shared_training_mode(runtime)
-    # The frozen policy only needs the generated LoRA values.  Keeping the
-    # Writer graph alive during its much larger functional forward needlessly
-    # overlaps two graphs.  Recompute the deterministic Writer once after the
-    # detached leaf gradient is known, which preserves the exact first-order
-    # chain rule while materially lowering peak memory.
+def _smoke_functional_pass(
+    runtime: PolicyResponseRuntime, video: FrozenPolicyResponseVideo,
+    batch: Mapping[str, Any], visit: Any,
+) -> tuple[torch.Tensor, dict[str, float], int, dict[str, dict[str, int]]]:
+    """One real functional gradient, without overlapping policy/Writer graphs."""
+
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        leaf_output = runtime.writer(
-            (video,),
-            s_ref=runtime.ranks.s_ref,
-            representation=runtime.args.representation,
-        )
         leaf_state = runtime.writer.materialize(
-            leaf_output,
-            carrier_state=runtime.ranks.carrier_rank12,
-            rank4_contract=runtime.rank4_contract,
-            rank16_contract=runtime.ranks.contract,
-            canonicalize=False,
+            runtime.writer((video,), representation=runtime.args.representation),
+            contract=runtime.lora_contract,
         )
-    initial_factor_state = _initial_factor_state(leaf_output)
-    phase_memory["writer_leaf_forward"] = _cuda_peak(runtime)
-    batch, visit = functional_panel_batch(
-        runtime,
-        task_id=task_id,
-        panel_name="a",
-        visit_index=0,
-        rows=int(runtime.config["smoke"]["functional_rows"]),
-    )
+    memory = {"writer_leaf_forward": _cuda_peak(runtime)}
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
-    functional, details, leaf_gradients = functional_lora_loss_gradient(
-        runtime.policy,
-        leaf_state,
-        runtime.ranks.contract,
-        batch=batch,
-        policy_rng_seed=visit.policy_rng_seed,
+    functional, details, gradients = functional_lora_loss_gradient(
+        runtime.policy, leaf_state, runtime.lora_contract,
+        batch=batch, policy_rng_seed=visit.policy_rng_seed,
         policy_rng_device=runtime.context.device,
         flow_time_sampling_scheme=LATIN_BETA_TIME_SAMPLING_SCHEME,
         flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
         policy_microbatch_size=int(runtime.config["smoke"]["functional_microbatch"]),
         collect_policy_details=False,
     )
-    phase_memory["functional_policy_gradient"] = _cuda_peak(runtime)
     if details:
-        raise RuntimeError("Policy-Response Writer smoke collected policy diagnostics")
-    del leaf_output, leaf_state
+        raise RuntimeError("Writer smoke collected policy diagnostics")
+    memory["functional_policy_gradient"] = _cuda_peak(runtime)
+    del leaf_state
     torch.cuda.reset_peak_memory_stats(runtime.context.device)
-    generated_tensors = _writer_chain_backward(
-        runtime, video=video, leaf_gradients=leaf_gradients
+    tensors = _writer_chain_backward(runtime, video=video, leaf_gradients=gradients)
+    memory["writer_chain_backward"] = _cuda_peak(runtime)
+    return functional, _gradient_norms(runtime.writer), tensors, memory
+
+
+def run_smoke(runtime: PolicyResponseRuntime) -> dict[str, Any]:
+    if runtime.context.world_size != 1:
+        raise ValueError("Policy-Response Writer smoke is single-GPU")
+    task_id = int(runtime.args.task)
+    demo = int(runtime.args.video_demo) if runtime.args.video_demo is not None else int(
+        runtime.panels[task_id].program_video_demos[0]
     )
-    phase_memory["initial_chain_rule_backward"] = _cuda_peak(runtime)
-    functional_gradients = _gradient_norms(runtime.writer)
+    torch.cuda.reset_peak_memory_stats(runtime.context.device)
+    video, capture = capture_video(runtime, task_id=task_id, video_demo=demo)
+    phase_memory = {"capture": _cuda_peak(runtime)}
+    runtime.writer.requires_grad_(True)
+    set_shared_training_mode(runtime)
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        initial = _initial_factor_state(runtime.writer((video,)))
+    if not initial["input_factor_nonzero"] or initial["output_factor_nonzero"]:
+        raise RuntimeError("complete Writer lost nonzero-A/zero-B identity initialization")
+    batch, visit = functional_panel_batch(
+        runtime, task_id=task_id, panel_name="a", visit_index=0,
+        rows=int(runtime.config["smoke"]["functional_rows"]),
+    )
+    functional0, gradients0, tensors, memory0 = _smoke_functional_pass(runtime, video, batch, visit)
+    if not math.isfinite(float(functional0)) or gradients0["factor_heads"] <= 0:
+        raise RuntimeError("complete Writer identity head has no real functional gradient")
+    # A zero B head initially blocks upstream gradients by construction. One real
+    # update opens that ordinary LoRA path; verify the complete graph thereafter.
+    optimizer = torch.optim.AdamW(runtime.writer.parameters(), lr=1e-4)
+    torch.nn.utils.clip_grad_norm_(runtime.writer.parameters(), 1.0, error_if_nonfinite=True)
+    optimizer.step()
+    optimizer.zero_grad(set_to_none=True)
+    functional, gradients, tensors, memory = _smoke_functional_pass(runtime, video, batch, visit)
     _validate_smoke_graph(
-        runtime,
-        functional=functional,
-        functional_gradients=functional_gradients,
-        generated_tensors=generated_tensors,
+        runtime, functional=functional, functional_gradients=gradients, generated_tensors=tensors
     )
+    phase_memory.update({f"identity_{key}": value for key, value in memory0.items()})
+    phase_memory.update(memory)
     return {
-        "schema_version": RUN_SCHEMA,
-        "phase": "smoke",
+        "schema_version": RUN_SCHEMA, "phase": "smoke",
         "representation": runtime.args.representation,
-        "training_stage": stage,
+        "training_stage": shared_training_stage(runtime),
         "objective": "correct_cross_episode_functional_positive_only",
-        "capture": capture,
-        "frozen_evidence_tensor_bytes": video.tensor_bytes,
-        "functional_loss": float(functional),
-        "functional_gradient_norms": functional_gradients,
-        "initial_factor_state": initial_factor_state,
-        "generated_tensors": generated_tensors,
-        "targets": len(runtime.owners),
-        "mobile_rank": runtime.rank4_contract.rank,
-        "complete_rank": runtime.ranks.contract.rank,
-        "initialization": runtime.initialization,
-        "phase_cuda_memory": phase_memory,
-        "max_phase_cuda_allocated_bytes": max(
-            row["allocated_bytes"] for row in phase_memory.values()
-        ),
-        "max_phase_cuda_reserved_bytes": max(
-            row["reserved_bytes"] for row in phase_memory.values()
-        ),
+        "capture": capture, "frozen_evidence_tensor_bytes": video.tensor_bytes,
+        "identity_functional_loss": float(functional0), "functional_loss": float(functional),
+        "identity_gradient_norms": gradients0, "functional_gradient_norms": gradients,
+        "initial_factor_state": initial, "smoke_optimizer_updates": 1,
+        "generated_tensors": tensors, "targets": len(runtime.owners),
+        "complete_rank": runtime.lora_contract.rank, "carrier_installed": False,
+        "initialization": runtime.initialization, "phase_cuda_memory": phase_memory,
+        "max_phase_cuda_allocated_bytes": max(row["allocated_bytes"] for row in phase_memory.values()),
+        "max_phase_cuda_reserved_bytes": max(row["reserved_bytes"] for row in phase_memory.values()),
     }
 
 
@@ -696,11 +662,6 @@ def run(args: argparse.Namespace) -> None:
         if args.phase == "smoke":
             result = run_smoke(runtime)
             filename = "smoke.json"
-        elif args.phase == "task-local":
-            from ember.ecp.policy_response_writer.tasklocal import run_task_local
-
-            result = run_task_local(runtime)
-            filename = "result.json"
         else:
             from ember.ecp.policy_response_writer.shared import run_shared
 
@@ -738,7 +699,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--phase",
-        choices=("smoke", "task-local", "shared", "materialize"),
+        choices=("smoke", "shared", "materialize"),
         required=True,
     )
     parser.add_argument("--task", type=int)

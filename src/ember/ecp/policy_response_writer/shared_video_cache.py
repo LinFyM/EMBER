@@ -25,7 +25,7 @@ from ember.ecp.policy_response_writer.capture import FrozenPolicyResponseVideo
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
-SHARED_VIDEO_CACHE_SCHEMA = "ember_policy_response_writer_shared_video_cache_v1"
+SHARED_VIDEO_CACHE_SCHEMA = "ember_complete_policy_response_writer_shared_video_cache_v2"
 _VIDEO_FIELDS = (
     "patch_states",
     "language_states",
@@ -55,41 +55,13 @@ def _video_tensors(video: FrozenPolicyResponseVideo) -> dict[str, torch.Tensor]:
     tensors = {
         name: _cpu_contiguous(getattr(video, name)) for name in _VIDEO_FIELDS
     }
-    for index, value in enumerate(video.native_inputs):
-        tensors[f"native_inputs.{index:03d}"] = _cpu_contiguous(value)
-    for index, value in enumerate(video.native_outputs):
-        tensors[f"native_outputs.{index:03d}"] = _cpu_contiguous(value)
-    for index, value in enumerate(video.final_outputs):
-        # final_outputs are views into native_outputs in live capture.  Seal a
-        # tiny independent boundary tensor because safetensors rejects shared
-        # storage aliases.
-        tensors[f"final_outputs.{index:03d}"] = _cpu_contiguous(value).clone()
     return tensors
 
 
-def _decode_video(
-    tensors: Mapping[str, torch.Tensor], *, target_count: int
-) -> FrozenPolicyResponseVideo:
-    expected = {
-        *_VIDEO_FIELDS,
-        *(f"native_inputs.{index:03d}" for index in range(target_count)),
-        *(f"native_outputs.{index:03d}" for index in range(target_count)),
-        *(f"final_outputs.{index:03d}" for index in range(target_count)),
-    }
-    if set(tensors) != expected:
+def _decode_video(tensors: Mapping[str, torch.Tensor]) -> FrozenPolicyResponseVideo:
+    if set(tensors) != set(_VIDEO_FIELDS):
         raise ValueError("shared policy-response video tensor inventory changed")
-    video = FrozenPolicyResponseVideo(
-        **{name: tensors[name] for name in _VIDEO_FIELDS},
-        native_inputs=tuple(
-            tensors[f"native_inputs.{index:03d}"] for index in range(target_count)
-        ),
-        native_outputs=tuple(
-            tensors[f"native_outputs.{index:03d}"] for index in range(target_count)
-        ),
-        final_outputs=tuple(
-            tensors[f"final_outputs.{index:03d}"] for index in range(target_count)
-        ),
-    )
+    video = FrozenPolicyResponseVideo(**{name: tensors[name] for name in _VIDEO_FIELDS})
     if video.frame_count <= 0:
         raise ValueError("shared policy-response video lost its frame axis")
     return video
@@ -155,7 +127,6 @@ class SharedPolicyResponseVideoCache:
             "schema_version": SHARED_VIDEO_CACHE_SCHEMA,
             "task": str(task),
             "demo": str(demo),
-            "target_count": str(len(video.native_inputs)),
             "tensor_bytes": str(video.tensor_bytes),
             "capture_json": json.dumps(
                 dict(capture), sort_keys=True, separators=(",", ":")
@@ -175,13 +146,10 @@ class SharedPolicyResponseVideoCache:
         if (
             int(metadata.get("task", -1)) != task
             or int(metadata.get("demo", -1)) != demo
-            or int(metadata.get("target_count", 0)) <= 0
         ):
             raise ValueError("shared policy-response cache pairing changed")
         tensors = load_file(str(path), device="cpu", backend="mmap")
-        video = _decode_video(
-            tensors, target_count=int(metadata["target_count"])
-        )
+        video = _decode_video(tensors)
         if video.tensor_bytes != int(metadata.get("tensor_bytes", -1)):
             raise ValueError("shared policy-response cache tensor bytes changed")
         capture = json.loads(metadata["capture_json"])

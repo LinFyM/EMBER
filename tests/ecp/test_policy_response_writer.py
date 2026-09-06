@@ -8,22 +8,16 @@ import pytest
 import torch
 
 from ember.ecp.contracts import ACTION_HORIZON, TargetFamily, TargetOwner
-from ember.ecp.native_factors import G1_RESIDUAL_RANK, native_output_group_count
 from ember.ecp.policy_response_writer import (
     FrozenPolicyResponseVideo,
     PolicyResponseEvidence,
-    UnifiedPolicyNativeFactorWriter,
-)
-from ember.ecp.policy_response_writer.composer import (
-    _effective_update_cap_factor,
-    _effective_update_rms,
+    CompletePolicyResponseWriter,
 )
 from ember.ecp.policy_response_writer.materialization import (
     VALIDATION_EVALUATION_SCHEMA,
     _validation_deployment_tasks,
     load_writer_evaluation_config,
 )
-from ember.ecp.policy_response_writer.process import UnifiedPolicyNativeFactorBlock
 from ember.ecp.policy_response_writer.shared import _optimizer, functional_objective
 from ember.ecp.policy_response_writer.shared_execution import (
     assignment_makespan,
@@ -52,13 +46,6 @@ def _owners() -> tuple[TargetOwner, ...]:
 
 def _video(seed: int, *, frames: int = 6) -> FrozenPolicyResponseVideo:
     generator = torch.Generator().manual_seed(seed)
-    owners = _owners()
-    outputs = tuple(
-        torch.randn(
-            frames, 2, ACTION_HORIZON, owner.out_features, generator=generator
-        )
-        for owner in owners
-    )
     return FrozenPolicyResponseVideo(
         patch_states=torch.randn(frames, 5, 10, generator=generator),
         language_states=torch.randn(frames, 3, 10, generator=generator),
@@ -70,69 +57,15 @@ def _video(seed: int, *, frames: int = 6) -> FrozenPolicyResponseVideo:
             frames, 2, ACTION_HORIZON, 32, generator=generator
         ),
         suffix_noise=torch.randn(2, ACTION_HORIZON, 32, generator=generator),
-        native_inputs=tuple(
-            torch.randn(
-                frames, 2, ACTION_HORIZON, owner.in_features, generator=generator
-            )
-            for owner in owners
-        ),
-        native_outputs=outputs,
-        final_outputs=tuple(value[-1] for value in outputs),
         frame_positions=torch.linspace(0.0, 1.0, frames),
     )
 
 
-def _repeat_frames(value: torch.Tensor) -> torch.Tensor:
-    return value[:1].expand_as(value).clone()
-
-
-def _static_repeated_video(seed: int, *, frames: int = 6) -> FrozenPolicyResponseVideo:
-    video = _video(seed, frames=frames)
-    outputs = tuple(_repeat_frames(value) for value in video.native_outputs)
-    return replace(
-        video,
-        patch_states=_repeat_frames(video.patch_states),
-        language_states=_repeat_frames(video.language_states),
-        language_mask=_repeat_frames(video.language_mask),
-        layer_states=_repeat_frames(video.layer_states),
-        flow_velocity=_repeat_frames(video.flow_velocity),
-        native_inputs=tuple(_repeat_frames(value) for value in video.native_inputs),
-        native_outputs=outputs,
-        final_outputs=tuple(value[-1] for value in outputs),
+def _model() -> CompletePolicyResponseWriter:
+    return CompletePolicyResponseWriter(
+        _owners(), prefix_width=10, expert_width=12, rank=16,
+        width=16, heads=4, blocks=2, process_tokens=3,
     )
-
-
-def _reverse_video(video: FrozenPolicyResponseVideo) -> FrozenPolicyResponseVideo:
-    outputs = tuple(value.flip(0) for value in video.native_outputs)
-    return replace(
-        video,
-        patch_states=video.patch_states.flip(0),
-        language_states=video.language_states.flip(0),
-        language_mask=video.language_mask.flip(0),
-        layer_states=video.layer_states.flip(0),
-        flow_velocity=video.flow_velocity.flip(0),
-        native_inputs=tuple(value.flip(0) for value in video.native_inputs),
-        native_outputs=outputs,
-        final_outputs=tuple(value[-1] for value in outputs),
-    )
-
-
-def _model(*, task_local: bool = False) -> UnifiedPolicyNativeFactorWriter:
-    return UnifiedPolicyNativeFactorWriter(
-        _owners(),
-        prefix_width=10,
-        expert_width=12,
-        width=16,
-        heads=4,
-        blocks=2,
-        pooling_frame_chunk=2,
-        task_local=task_local,
-    )
-
-
-def _residual_loss(model_output: object) -> torch.Tensor:
-    residual = model_output.residual
-    return sum(value.square().mean() for value in (*residual.a, *residual.b))
 
 
 def _group_gradient(model: torch.nn.Module, prefix: str) -> float:
@@ -144,268 +77,75 @@ def _group_gradient(model: torch.nn.Module, prefix: str) -> float:
     return float(torch.stack(rows).sum().sqrt()) if rows else 0.0
 
 
-def test_axial_writer_preserves_shapes_and_one_functional_gradient_path() -> None:
-    model = _model()
-    output = model((_video(7),), s_ref=torch.full((4,), 0.2))
-
-    assert tuple(value.shape for value in output.residual.a) == (
-        (4, 6),
-        (4, 7),
-        (4, 2),
-        (4, 5),
-    )
-    assert tuple(value.shape for value in output.residual.b) == (
-        (4, 16),
-        (4, 8),
-        (4, 8),
-        (4, 3),
-    )
-    assert output.residual.scales.shape == (4, G1_RESIDUAL_RANK)
-
-    _residual_loss(output).backward()
-    for prefix in (
-        "evidence.response",
-        "factor_writer.blocks",
-        "factor_writer.blocks.0.policy_attention",
-        "factor_writer.blocks.0.native_attention",
-        "factor_writer.blocks.0.temporal_attention",
-        "factor_writer.blocks.0.factor_attention",
-        "factor_writer.input_signed_query",
-        "factor_writer.output_signed_query",
-    ):
-        assert _group_gradient(model, prefix) > 0.0
-
-
-def test_parallel_native_read_is_invariant_to_duplicate_bank_cardinality() -> None:
+def test_complete_factors_start_at_identity_and_functional_training_opens_the_graph() -> None:
     torch.manual_seed(7)
-    block = UnifiedPolicyNativeFactorBlock(width=16, heads=4).eval()
-    query = torch.randn(3, G1_RESIDUAL_RANK, 2, 16)
-    patches = torch.randn(3, 4, 16)
-    language = torch.randn(3, 3, 16)
-    language_valid = torch.tensor(
-        [[True, True, False]] * 3, dtype=torch.bool
-    )
-    response = torch.randn(3, 7, 16)
-    input_bank = torch.randn(3, 2, 16)
-    output_bank = torch.randn(3, 5, 16)
-
-    original = block._evidence_read(
-        query,
-        patches,
-        language,
-        language_valid,
-        response,
-        input_bank,
-        output_bank,
-    )
-    duplicated = block._evidence_read(
-        query,
-        patches,
-        language,
-        language_valid,
-        response,
-        input_bank.repeat_interleave(2, dim=1),
-        output_bank.repeat_interleave(2, dim=1),
-    )
-
-    torch.testing.assert_close(original, duplicated, rtol=1e-5, atol=1e-6)
-
-
-def test_policy_sources_have_independent_attention_cardinality() -> None:
-    torch.manual_seed(11)
-    block = UnifiedPolicyNativeFactorBlock(width=16, heads=4).eval()
-    query = torch.randn(3, G1_RESIDUAL_RANK, 2, 16)
-    patches = torch.randn(3, 4, 16)
-    language = torch.randn(3, 3, 16)
-    language_valid = torch.tensor(
-        [[True, True, False]] * 3, dtype=torch.bool
-    )
-    response = torch.randn(3, 7, 16)
-    input_bank = torch.randn(3, 2, 16)
-    output_bank = torch.randn(3, 5, 16)
-
-    original = block._evidence_read(
-        query,
-        patches,
-        language,
-        language_valid,
-        response,
-        input_bank,
-        output_bank,
-    )
-    duplicated_patches = block._evidence_read(
-        query,
-        patches.repeat_interleave(2, dim=1),
-        language,
-        language_valid,
-        response,
-        input_bank,
-        output_bank,
-    )
-
-    torch.testing.assert_close(
-        original, duplicated_patches, rtol=1e-5, atol=1e-6
-    )
-
-
-def test_full_horizon_is_explicit_and_coarse_is_rejected() -> None:
     model = _model()
-    video = _video(11)
-    response = model.evidence.response(video)
-    assert response.shape == (
-        video.frame_count,
-        len(_owners()),
-        ACTION_HORIZON * 8,
-        16,
-    )
+    video = _video(7, frames=3)
+    output = model((video,)).factors
+    assert tuple(value.shape for value in output.a) == ((16, 6), (16, 7), (16, 2), (16, 5))
+    assert tuple(value.shape for value in output.b) == ((16, 16), (16, 8), (16, 8), (16, 3))
+    assert all(torch.count_nonzero(value) == 0 for value in output.b)
+    assert all(torch.count_nonzero(value) > 0 for value in output.a)
+    targets = tuple(torch.randn(owner.out_features, owner.in_features) for owner in _owners())
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.02)
+    for iteration in range(2):
+        optimizer.zero_grad(set_to_none=True)
+        factors = model((video,)).factors
+        loss = sum((b.T @ a - target).square().mean()
+                   for a, b, target in zip(factors.a, factors.b, targets, strict=True))
+        loss.backward()
+        assert _group_gradient(model, "factor_writer.factor_heads") > 0
+        if iteration == 1:
+            for prefix in ("evidence.response", "evidence.prefix", "factor_writer.blocks"):
+                assert _group_gradient(model, prefix) > 0
+        optimizer.step()
+    updated = model((video,)).factors
+    assert all(torch.count_nonzero(value) > 0 for value in updated.b)
 
+
+def test_full_horizon_remains_explicit_before_the_learned_read() -> None:
+    model = _model()
+    video = _video(11, frames=3)
+    response = model.evidence.response(video)
+    assert response.shape == (video.frame_count, 78 * ACTION_HORIZON, 16)
     changed = video.layer_states.clone()
     changed[:, :, :, 17] += 3.0
     mutated = model.evidence.response(replace(video, layer_states=changed))
-    assert not torch.equal(
-        response[:, :, 17 * 8 : 18 * 8],
-        mutated[:, :, 17 * 8 : 18 * 8],
-    )
-    assert torch.equal(response[:, :, : 17 * 8], mutated[:, :, : 17 * 8])
+    mask = torch.arange(response.shape[1]) % ACTION_HORIZON == 17
+    assert not torch.equal(response[:, mask], mutated[:, mask])
+    torch.testing.assert_close(response[:, ~mask], mutated[:, ~mask])
     with pytest.raises(ValueError, match="full policy-response"):
-        model((video,), s_ref=torch.full((4,), 0.2), representation="coarse")
+        model((video,), representation="coarse")
 
 
-def test_static_repeated_video_cannot_open_mobile_update() -> None:
+def test_learned_video_set_read_is_permutation_invariant() -> None:
     model = _model().eval()
+    # Open the heads so this assertion cannot pass merely because fresh B is zero.
+    for head in model.factor_writer.factor_heads.values():
+        torch.nn.init.normal_(head.a_head[-1].weight, std=0.03)
+        torch.nn.init.normal_(head.b_head[-1].weight, std=0.03)
+    left, right = _video(29, frames=3), _video(31, frames=4)
     with torch.no_grad():
-        output = model(
-            (_static_repeated_video(19),),
-            s_ref=torch.full((4,), 0.2),
-        )
-    a_max = max(value.abs().max() for value in output.residual.a)
-    assert a_max > 1e-5
-    assert max(value.abs().max() for value in output.residual.b) < 1e-5
-
-
-def test_signed_query_has_independent_input_and_shared_output_context() -> None:
-    generator = _model().factor_writer
-    context = torch.randn(G1_RESIDUAL_RANK, generator.width)
-    zero = torch.zeros(5, G1_RESIDUAL_RANK, generator.width)
-
-    independent = generator._signed_queries(generator.input_signed_query, context, zero)
-    assert not torch.equal(independent[:, :, 0], independent[:, :, 1])
-    shared = generator._signed_queries(
-        generator.output_signed_query,
-        context,
-        zero,
-    )
-    torch.testing.assert_close(shared[:, :, 0], shared[:, :, 1])
-    assert not torch.equal(shared[:, 0], shared[:, 1])
-
-    dynamic = generator._signed_queries(
-        generator.input_signed_query,
-        context,
-        torch.randn_like(zero),
-    )
-    assert not torch.equal(dynamic[:, :, 0], dynamic[:, :, 1])
-
-
-def test_order_changes_native_temporal_factors() -> None:
-    model = _model().eval()
-    video = _video(23, frames=7)
-    with torch.no_grad():
-        forward = model((video,), s_ref=torch.full((4,), 0.2))
-        reverse = model((_reverse_video(video),), s_ref=torch.full((4,), 0.2))
-    assert any(
-        not torch.allclose(left, right)
-        for left, right in zip(
-            (*forward.residual.a, *forward.residual.b),
-            (*reverse.residual.a, *reverse.residual.b),
-            strict=True,
-        )
-    )
-
-
-def test_video_set_is_permutation_invariant_and_chunking_is_exact() -> None:
-    model = _model().eval()
-    left, right = _video(29), _video(31, frames=7)
-    with torch.no_grad():
-        original = model((left, right), s_ref=torch.full((4,), 0.2)).residual
-        permuted = model((right, left), s_ref=torch.full((4,), 0.2)).residual
-        model.factor_writer.pooling_frame_chunk = 3
-        rechunked = model((left, right), s_ref=torch.full((4,), 0.2)).residual
-    for expected, observed, chunked in zip(
-        (*original.a, *original.b),
-        (*permuted.a, *permuted.b),
-        (*rechunked.a, *rechunked.b),
-        strict=True,
-    ):
+        original = model((left, right)).factors
+        permuted = model((right, left)).factors
+    for expected, observed in zip((*original.a, *original.b), (*permuted.a, *permuted.b), strict=True):
         torch.testing.assert_close(observed, expected, rtol=2e-5, atol=2e-6)
-        torch.testing.assert_close(chunked, expected, rtol=2e-5, atol=2e-6)
 
 
-def test_native_bank_keeps_every_candidate_axis_for_frame_local_read() -> None:
-    model = _model().eval()
-    video = _video(37, frames=5)
-    with torch.no_grad():
-        for target, owner in enumerate(_owners()):
-            candidates = model.factor_writer._bank_candidates(target, (video,))
-            groups = native_output_group_count(owner)
-            expected = video.frame_count * 2 * ACTION_HORIZON * (1 + groups * 4)
-            observed = sum(
-                (chunk.input_tokens.numel() + chunk.output_tokens.numel())
-                // model.factor_writer.width
-                for chunk in candidates[0].chunks
-            )
-            assert observed == expected
-            assert sum(row.frame_count for row in candidates) == video.frame_count
-
-
-def test_unified_block_reads_policy_native_evidence_and_real_frame_order() -> None:
-    torch.manual_seed(41)
-    block = UnifiedPolicyNativeFactorBlock(16, 4).double().eval()
-    positions = (torch.linspace(0.0, 1.0, 5, dtype=torch.double),)
-    frame = torch.randn(5, 4, 2, 16, dtype=torch.double)
-    patches = torch.randn(5, 4, 16, dtype=torch.double)
-    language = torch.randn(5, 2, 16, dtype=torch.double)
-    response = torch.randn(5, 9, 16, dtype=torch.double)
-    evidence = PolicyResponseEvidence(
-        patches=patches,
-        language=language,
-        language_valid=torch.ones(5, 2, dtype=torch.bool),
-        response=response,
-    )
-    input_bank = torch.randn(5, 12, 16, dtype=torch.double)
-    output_bank = torch.randn(5, 20, 16, dtype=torch.double)
-    changed_input = input_bank.clone()
-    changed_input[2] = 3.0 * changed_input[2].flip(0)
-    with torch.no_grad():
-        original = block(
-            (frame,), positions, (evidence,), ((input_bank,),), ((output_bank,),)
-        )
-        mutated = block(
-            (frame,), positions, (evidence,), ((changed_input,),), ((output_bank,),)
-        )
-        reversed_evidence = PolicyResponseEvidence(
-            patches=patches.flip(0),
-            language=language.flip(0),
-            language_valid=evidence.language_valid.flip(0),
-            response=response.flip(0),
-        )
-        reversed_order = block(
-            (frame.flip(0),),
-            positions,
-            (reversed_evidence,),
-            ((input_bank.flip(0),),),
-            ((output_bank.flip(0),),),
-        )[0].flip(0)
-    assert not torch.allclose(original[0], mutated[0])
-    assert not torch.allclose(original[0], reversed_order)
-
-
-def test_complete_target_update_is_capped_once() -> None:
-    generator = torch.Generator().manual_seed(43)
-    a = torch.randn(4, 13, generator=generator)
-    b = torch.randn(4, 17, generator=generator)
-    cap = torch.tensor(0.07)
-    factor = _effective_update_cap_factor(a, b, cap)
-    assert _effective_update_rms(a, b * factor) <= cap + 1e-6
+def test_full_response_cache_roundtrip_has_no_unused_target_banks(tmp_path: Path) -> None:
+    from ember.ecp.policy_response_writer.shared_video_cache import SharedPolicyResponseVideoCache
+    video = _video(41, frames=3)
+    cache = SharedPolicyResponseVideoCache(tmp_path / "video_cache", authority={"run": "test"})
+    calls = []
+    def build():
+        calls.append(1)
+        return video, {"sampled_frames": video.frame_count}
+    first = cache.get_or_build(task=1, demo=2, builder=build)
+    second = cache.get_or_build(task=1, demo=2, builder=build)
+    assert calls == [1] and not first.hit and second.hit
+    assert not hasattr(second.video, "native_inputs")
+    torch.testing.assert_close(second.video.layer_states, video.layer_states)
+    assert second.video.tensor_bytes == video.tensor_bytes
 
 
 def test_shared_optimizer_owns_the_whole_writer_in_one_group() -> None:
@@ -495,40 +235,17 @@ def test_dynamic_cost_assignment_reduces_tail_without_changing_tasks() -> None:
     assert assignment_makespan(assignment, costs) <= 25
 
 
-def test_asymmetric_factor_config_is_canonical_and_old_configs_are_rejected() -> None:
-    current = load_policy_response_config(
-        REPO_ROOT
-        / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_v1.json"
-    )
-    assert current["model"]["blocks"] == 4
-    assert current["model"]["representation_arms"] == ["full"]
-    assert current["model"]["signed_query"].startswith("two_input_bank_localizers")
-    assert current["optimization"]["objective"].endswith("positive_only")
-    assert "event_slots" not in current["model"]
-    for obsolete in (
-        "pi05_ecp_policy_response_writer_unified_factor_v1.json",
-        "pi05_ecp_policy_response_writer_unified_factor_v2.json",
-        "pi05_ecp_policy_response_writer_unified_factor_v3.json",
-        "pi05_ecp_policy_response_writer_unified_factor_v4.json",
-        "pi05_ecp_prw_samegraph_shared4_fresh_queries_v1.json",
-        "pi05_ecp_policy_response_writer_native_temporal_v1.json",
-    ):
-        with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
-            load_policy_response_config(REPO_ROOT / "configs" / obsolete)
-
+def test_complete_config_is_canonical_and_residual_config_is_rejected() -> None:
+    current = load_policy_response_config(REPO_ROOT / "configs/pi05_ecp_prw_complete_shared4_v1.json")
+    assert current["model"]["complete_rank"] == 16
+    assert current["model"]["carrier_installed"] is False
+    assert "residual_rank" not in current["model"]
+    with pytest.raises(ValueError, match="invalid Policy-Response Writer config"):
+        load_policy_response_config(REPO_ROOT / "configs/pi05_ecp_prw_meta73_equal_exposure_v1.json")
     evaluation = load_writer_evaluation_config(
-        REPO_ROOT
-        / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_held_video_eval_v1.json"
+        REPO_ROOT / "configs/pi05_ecp_prw_complete_shared4_held_video_eval_v1.json"
     )
-    assert evaluation["training_config"].endswith("shared4_four_videos_v1.json")
-    assert evaluation["require_training_completion"] is False
-    with pytest.raises(
-        ValueError, match="unsupported Policy-Response Writer evaluation config"
-    ):
-        load_writer_evaluation_config(
-            REPO_ROOT
-            / "configs/pi05_ecp_policy_response_writer_unified_factor_held5_eval_v3.json"
-        )
+    assert evaluation["training_config"].endswith("prw_complete_shared4_v1.json")
 
 
 def test_validation_materialization_config_keeps_test_and_gradients_closed(tmp_path: Path) -> None:
@@ -537,7 +254,7 @@ def test_validation_materialization_config_keeps_test_and_gradients_closed(tmp_p
     from ember.pi05_eval_contract import SUITE_ORDER
     from ember.static_task_lora import validation_task_keys
 
-    config = json.loads((REPO_ROOT / "configs/pi05_ecp_prw_samegraph_shared4_four_videos_held_video_eval_v1.json").read_text())
+    config = json.loads((REPO_ROOT / "configs/pi05_ecp_prw_complete_shared4_held_video_eval_v1.json").read_text())
     config.update(schema_version=VALIDATION_EVALUATION_SCHEMA,
                   status="active_correct_only_validation_materialization",
                   evaluation_role="validation", task_subset=None, require_training_completion=True,

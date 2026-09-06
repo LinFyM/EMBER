@@ -39,7 +39,7 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 HELD5_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_held5_eval_v4"
 VALIDATION_EVALUATION_SCHEMA = "ember_ecp_policy_response_writer_validation_eval_v1"
 MATERIALIZED_ADAPTER_SCHEMA = (
-    "ember_ecp_policy_response_writer_materialized_adapter_v1"
+    "ember_ecp_complete_policy_response_writer_materialized_adapter_v1"
 )
 
 
@@ -478,17 +478,13 @@ def _capture_and_materialize(
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output = runtime.writer(
             tuple(videos),
-            s_ref=runtime.ranks.s_ref,
             representation=runtime.args.representation,
         )
         complete = runtime.writer.materialize(
             output,
-            carrier_state=runtime.ranks.carrier_rank12,
-            rank4_contract=runtime.rank4_contract,
-            rank16_contract=runtime.ranks.contract,
-            canonicalize=True,
+            contract=runtime.lora_contract,
         )
-    validate_lora_state(complete, runtime.ranks.contract)
+    validate_lora_state(complete, runtime.lora_contract)
     return complete, captures
 
 
@@ -532,7 +528,7 @@ def _materialize_task(
             "language": task.language,
             "video_demos": list(demos),
             "capture": captures,
-            "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+            "rank_partition": {"task": [0, 16]},
             "single_complete_rank16": True,
             "files": {"adapter.safetensors": adapter_path.stat().st_size},
         },
@@ -565,7 +561,7 @@ def _bank_payload(
         "arm": f"ecp_policy_response_writer_{representation}_correct_k1",
         "source": prepared.source,
         "lora_contract": {"path": str(lora_path), "bytes": lora_path.stat().st_size},
-        "rank_partition": {"carrier": [0, 12], "task": [12, 16]},
+        "rank_partition": {"task": [0, 16]},
         "single_complete_rank16": True,
         "training_commit": str(prepared.shared_contract["git"]["commit"]),
         "materialization_commit": str(prepared.state["commit"]),

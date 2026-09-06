@@ -136,13 +136,13 @@ def _run_training_task(
     tick = time.monotonic()
     phase_tick = start_phase()
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        leaf_state = _materialized_state(runtime, videos, canonicalize=False)
+        leaf_state = _materialized_state(runtime, videos)
     finish_phase("writer_leaf_forward", phase_tick)
     phase_tick = start_phase()
     functional_loss, details, leaf_gradients = functional_lora_loss_gradient(
         runtime.policy,
         leaf_state,
-        runtime.ranks.contract,
+        runtime.lora_contract,
         batch=batch,
         policy_rng_seed=panel.policy_rng_seed,
         policy_rng_device=runtime.context.device,
@@ -162,7 +162,7 @@ def _run_training_task(
     del leaf_state
     phase_tick = start_phase()
     with torch.autocast("cuda", dtype=torch.bfloat16):
-        generated_state = _materialized_state(runtime, videos, canonicalize=False)
+        generated_state = _materialized_state(runtime, videos)
         surrogate = writer_chain_rule_surrogate(
             generated_state, leaf_gradients
         ) * float(objective["gradient_mass"])
@@ -216,8 +216,7 @@ def _gradient_groups(runtime: PolicyResponseRuntime) -> dict[str, float]:
         "language": ("evidence.prefix.language_projection",),
         "response": ("evidence.response",),
         "unified": ("factor_writer.blocks",),
-        "signed_input": ("factor_writer.input_signed_query",),
-        "signed_output": ("factor_writer.output_signed_query",),
+        "factor_heads": ("factor_writer.factor_heads",),
         "factor_writer": ("factor_writer",),
     }
     result = {}

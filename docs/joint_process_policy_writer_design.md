@@ -14,7 +14,7 @@ strict paired结论。当前source47/carrier72只作既有机制参考，不能�
 最近实现93540ff1有共同P/Q、完整50-horizon读取，但最终仍为carrier12+signed-native mobile4。其短四任务结果没有超过A2，
 不支持已证明P/Q机制优势，也不否定所有完整生成方案。旧143整图包含任务grounding、语义/过程与全策略compiler及自由factor heads。
 当前首先改变完整输出职责：移除独立carrier、raw-X/Y-only因子span和mobile-only静态零输出限制，用共享learned heads写全部A/B。
-这是耦合的输出接口重构，不能将任何改善单独归因于rank、去carrier或head自由度。首轮不同时修改observer、监督、任务权重或扩大主干。
+这是耦合的输出接口重构，不能将任何改善单独归因于rank、去carrier或head自由度。首轮不同时修改observer、监督、任务权重或扩大主干。输出不再消费的逐target X/Y bank捕获与缓存移除，完整响应轴不变。
 
 正证据仍保留：native response有可学习动态，G1存在局部native容量，旧Writer存在真实闭环能力。它们不等于共享生成已经解决。
 
@@ -50,7 +50,7 @@ heads；`model.py`拥有唯一Writer调用和完整LoRA映射。现有training/s
 完整LoRA不能强制继承mobile-only静态零约束；全视频与静态/语言的必要增量最终由冻结controls证明，不由代数零构造冒充。
 
 输出A/B遵守真实target维度，family-shared heads批量处理同形targets。采用非零A、零B的标准函数identity起点，随后全部因子可训练；
-source始终冻结。新增头与P/Q联合接受functional梯度；只复用语义/shape匹配的G2投影初始化，不声称继承旧143参数或完整行为。
+source始终冻结。新增头与P/Q联合接受functional梯度；只复用语义/shape匹配的G2投影、公共owner/family与首层读取attention初始化，不声称继承旧143参数或完整行为。
 不添加target cap、SVD、norm、gate等无新证据的输出数学链；保留shape/finite及实际LoRA安装检查。新增架构必须fresh optimizer/schema。
 
 ## Training and staged allocation

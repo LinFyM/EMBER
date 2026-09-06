@@ -213,7 +213,8 @@ training_task_fitting_diagnostic登记，允许如实保留outcome-informed任�
 ## Registered shared18 learning trajectory on the same two tasks (2026-09-06)
 
 前述两个whole-Writer clones已完成，固定terminal128 held-video screen合计14/20，对原shared18的3/20保留3、新增11、丢失0。
-同图、同每task数据的单独学习成立，下一未知是shared18一直没学起还是曾经学会后丢失；两者需要不同训练干预，不能由terminal或loss判断。
+同图、同每task数据的单独学习成立，但clone可能学到近似固定LoRA，不证明跨task条件表示或视频必要性。下一未知是shared18一直没学起
+还是曾经学会后丢失；两者需要不同训练干预，不能由terminal或loss判断。
 
 不新增训练或改权重，只读取原target18 run的全部早期已存checkpoints32/64/96。每点对相同Spatial7/Object2、held demos48/48和原states0–9
 做20-row screen，共60新rows，128复用已完成breadth中的20行；不选择最好checkpoint，不部署clone字典，不消费validation/Test或negative。

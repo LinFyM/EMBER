@@ -3387,7 +3387,8 @@ retained2/gained4/lost0；Object2/task77为8/10，原shared18为1/10，retained1
 
 相同图与相同每task监督量能够形成真实新视频行为，当前18task训练存在明显共同学习代价。它尚不能唯一定位梯度冲突、容量、初始化或
 优化，也不能说明这两个任务在共同训练中从未学会；需要读取原shared18全部早期固定checkpoints，区分一直欠拟合与曾学会后丢失。
-两个独立clone仅用于诊断，不能将其组成部署字典。当前全局资格与random/视频因果/32+8最终目标未改变。
+两个独立clone仅用于诊断，可能学到近似固定LoRA，不能证明跨task条件表示或视频必要性，也不能将其组成部署字典。
+当前全局资格与random/视频因果/32+8最终目标未改变。
 
 完整run为`runs/outputs/pi05_ecp_prw_complete_single_task{75,77}_s128_6efdd2e0_gpu01p{2,3}_20260906/`，四个checkpoint和恢复状态保留。
 Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison和behavior_comparison包含实际采样、

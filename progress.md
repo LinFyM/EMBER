@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:33 CST。
+更新时间：2026-09-06 19:40 CST。
 
 ## 当前目标与授权
 
@@ -55,6 +55,9 @@
 - 最长task93两步成本profile已在原clean pushed f3717836运行，79/87frames、8queries/micro8，train3.347秒、Panel-B4.537秒，peak34.811GiB；
   source/observer/tasklocal参数0、完整38-target rank16，全部进程自然exit0。该profile只证明运行条件，不作为能力证据。
   记录位于`.codex/tmp/prw_complete_width256/`，CPU实际构造参数计数与真实config loader通过；源码未改。
-- 当前没有运行中的GPU作业；本正式训练尚未启动。下一步核对四个真实configs，clean pushed detached冻结新登记，刷新两节点GPU及独立quota后启动。
-  最新profile前quota726921972KiB/1073741824soft，shared84TiB；正式新增峰值预计<18GiB，launch前重核。
+- 四个真实config loaders及最小差异核验通过，已从clean pushed detached14bc7605启动正式训练：gpu02p0,1,2,3,5,6、world6，
+  NUMA0/0/0/0/1/1，launcher1042741；2026-09-06 19:40 CST启动。两个节点live准入通过，p6现有4749MiB/0%留有充分峰值余量，peer作业不动。
+  当前只运行此六卡训练。run为`pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906`，
+  冻结tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-width256-20260906`；analysis/launch保存精确命令、profile、配置和资源证据。
+  新quota726924336KiB/1073741824soft，shared84TiB，新增峰值预算<18GiB；原run232MiB、random analysis172MiB、已结束profile76KiB。
   全部negative/Test仍未启用，没有selected checkpoint；最终科学goal持续active。

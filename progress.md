@@ -31,9 +31,12 @@
 - 物化/评测入口已集成并推送d5b8119e；最新全CPU171 passed/18.50s。执行frozen worktree为.codex/worktrees/layered-eval-d5b8119e。
 - 第16步correct/other各4套完整LoRA物化exit0，通过真实manifest/episode inspector；correct demos为7:48,12:49,20:48,35:46，
   other为7:49,12:47,20:47,35:47，均由seed20260907的固定held池无放回抽样，未使用结果选择。
-- 当前gpu01p2运行source基线screen40，p3/p5分别运行第16步correct/other screen40；每GPU3 persistent workers，各自cost-balanced队列。
+- 第16步三组screen40已完成：source用p2、correct/other用p3/p5；每GPU3 persistent workers，各自cost-balanced队列。
   结果根为runs/analysis/layered_relation_writer_20260907/{short4_source_screen40,s16_correct_screen40,s16_same_task_other_screen40}。
-  两组行为尚未完成，未宣称训练能力或validation资格。exact命令/资源/退出码在同analysis root。
+  第16步闭环三组均exit0：source4/40、correct4/40、other6/40；correct/source RGL4/0/0，other/source4/2/0；breadth均2/4，Goal/Object0。exact命令/资源/退出码在同analysis root。
+- 第16步只有256queries/task；按事前96步短学习合同继续到48（768queries/task），保持原run参数、optimizer/scheduler、sampler与world3；已启动gpu01 tmux ember-layered-short4-s48，日志train_s48.log。
+  原生frame_chunk16的exploratory K4 joint16.88s（observer forward1.36/VJP3.13）及peak allocated34.65GiB，表明批量布局可加快约34.5%；
+  该profile用step16权重，早期chunk4 profile用smoke权重，不能将loss差当batch收益或科学改进。下次fresh扩大训练采用已测布局。
 - 已合并task worktree及codex/layered-writer分支清理；两个仍供formal训练/评测使用的detached frozen worktrees保留。
 
 ## 当前实现与验证（2026-09-07）

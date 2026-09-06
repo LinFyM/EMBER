@@ -405,3 +405,14 @@ Owner在交接基线9ea20340之后明确授权：完整理解后立即实现、�
 首轮CUDA BF16消息scatter dtype错误在第一个功能更新前修复；不作科学non-pass。以上均为exploratory机制/profile，不证明闭环。
 原始脚本、日志、JSONL和设备快照在runs/analysis/layered_relation_writer_20260907/mechanism/。据此预登记short4 fresh联合训练与
 16/48/96行为节点，含有实质专家容量Long35；实际launch、完成和分数另由progress及formal证据登记。
+
+## 13. Fresh joint short4的第16步行为节点（2026-09-07）
+
+从clean pushed detached8d934408，world3完成16updates、每task256queries与真实K1/2/4，全部恢复状态保存、exit0。固定global7/12/20/35
+的states0–9与两组held K1视频，d5b8119e物化及三组动态队列全部exit0。Source/correct/other分别4/4/6（各40）；按Spatial/Object/Goal/Long
+分别2/0/0/2、2/0/0/2、4/0/0/2。Correct保留source4，无新增/丢失；other保留4、新增Spatial2、丢失0，跨视频Jaccard2/3。
+每组breadth2/4，未证明广泛基础能力，更不是validation资格。该剂量不足以否定共享图，按预登记短学习继续48/96，不扩长训。
+
+完整raw rows、same-RNG/环境/source-normalizer合同与RGL：runs/analysis/layered_relation_writer_20260907/下的short4_source_screen40、
+s16_correct_screen40、s16_same_task_other_screen40及s16_correct_vs_source.json、s16_other_vs_source.json、s16_cross_video.json。正式训练root为runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907。
+原生frame批量16的真实最长K4另测joint16.88s、peak34.65GiB，无optimizer更新；它是布局成本证据，不是新的学习结果。

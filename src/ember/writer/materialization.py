@@ -185,7 +185,9 @@ def materialize(
              "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
             for task, value in tasks.items()]
     validate_task_scope(rows, selection["evaluation_role"], asset_root)
-    runtime = build_joint_runtime(asset_root, run["config"], device)
+    # Preserve the checkpoint's explicit defaults even if later defaults evolve.
+    runtime_config = {**run["config"], "model": run["model_config"]}
+    runtime = build_joint_runtime(asset_root, runtime_config, device)
     if not source_matches(runtime.source, run["source"]):
         raise ValueError("joint runtime uses a different frozen source checkpoint")
     runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
@@ -250,6 +252,13 @@ def main() -> None:
     parser.add_argument("--cpu-threads", type=int, default=4)
     args = parser.parse_args()
     torch.set_num_threads(args.cpu_threads)
+    if torch.device(args.device).type == "cuda":
+        from ember.writer.topology import bind_current_process_to_cuda_numa
+
+        torch.cuda.set_device(torch.device(args.device))
+        if not bind_current_process_to_cuda_numa(torch.cuda.current_device()):
+            raise ValueError("materialization requires GPU-local NUMA placement")
+        torch.backends.cuda.matmul.allow_tf32 = True
     selection = selection_contract(role=args.role, task_ids=args.task_ids, cardinality=args.k,
         arm=args.arm, mode=args.selection_mode, seed=args.seed, init_state_ids=tuple(range(args.state_count)),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)

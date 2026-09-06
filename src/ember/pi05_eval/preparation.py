@@ -293,6 +293,7 @@ def _prepared_payload(
         args.mode == "screen"
         and adapter_kind is None
         and not source_sft_requested
+        and getattr(args, "task_subset_selection", None) is None
         and args.role
         not in {
             "all_targets",

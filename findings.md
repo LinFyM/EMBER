@@ -3555,3 +3555,11 @@ learner状态偏移，也不能因后半接续可成功就称整段行为成立�
 下一步先读原shared18的32/64/96及已有128行为曲线，区分尚未学起与学会后丢失；不直接加入success replay或扩大heads。
 旧v6实际50/400节点为每task1000/8000queries、历史106/143；参数、observer、任务/episode/video支持与优化也不同，预算差异不是根因。
 完整证据见research_history§179及single_task analysis；old v6原件引用保存在historical_v6_recipe_context.json。
+
+
+## 178. 当前两个训练任务的缺口主要是能力尚未建立，初始化仍是未检验变量
+
+共享18的32/64/96/128在同Spatial7/Object2面板仅2/3/4/3（各20），而相同每task数据的clones128为14/20。没有发现一个接近独立学习
+能力、随后才崩溃的阶段；少量成功仍换手，不能由此否定全18task的遗忘问题。对这两个任务，优先定位共同条件学习而非假定已有强能力待保。
+同图component初始化只继承G2部分投影/owner/family及首层读取，并不等于继承完整G2机制或行为；same-topology fully-random尚未在当前
+完整生成图上检验。该已约定候选可检验初始化影响，但不能单独识别表示、容量与优化，也不证明视频必要性。依据见历史§180。

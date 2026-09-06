@@ -3394,3 +3394,17 @@ retained2/gained4/lost0；Object2/task77为8/10，原shared18为1/10，retained1
 Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison和behavior_comparison包含实际采样、
 功能曲线、全部20新rows、source引用和paired IDs。附带只读old v6账本核验：step50/400实际每task1000/8000queries，对应历史106/143，
 且使用完整train24、50episode/video pool、width256及可训练observer Meta；不能把当前差距简单归因预算，也不恢复被禁止的旧coarse读法。
+
+
+## 180. 两个弱训练任务的共同学习曲线未出现强阶段后崩溃（2026-09-06）
+
+Frozen0b28a3ff复用原target18 run，固定同Spatial7/Object2、原held48/48和十状态prefix读取全部早期32/64/96，60个新rows全部完成，
+launcher与9个workers均exit0。128复用已完成breadth20行，没有新梯度、negative/validation/Test使用或checkpoint选择。
+32/64/96/128分别2/3/4/3（各20），逐Spatial为2/3/2/2、Object为0/0/2/1；明显低于独立clones128的6+8=14/20。
+相邻R/G/L为1/2/1、1/3/2、2/1/2，churn3/5/3、Jaccard.250/.167/.400；Spatial state6持续保留，其他少量成功换手。
+
+在这两个已选择的训练任务上，没有观测到接近独立学习能力的强阶段后回落；主要缺口是共同训练尚未建立足够行为，不能仅靠保持早期
+成功解释14对3的差距。该结论不外推整个18task都没有遗忘，也不排除条件表示、共享容量或优化的竞争解释。
+Canonical为single_task analysis下`shared_trajectory_comparison.json`及`.md`，含全部points、相邻与对clones的paired sets；
+三套bank复用单个GPU runtime，随后gpu01p0/2/3各3workers执行三个动态队列，总3卡，全部自然释放。
+下一候选落实已约定的同拓扑fully-random初始化比较，保持原18task数据/预算/优化器；不把它预先称作根因修复，不恢复旧A2 random。

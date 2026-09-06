@@ -225,3 +225,27 @@ churn与Jaccard，并和固定clones128比较。全部早期点均弱才进一�
 配置为`pi05_ecp_prw_complete_shared_trajectory_{subset,held_eval}_v1.json`。源训练与Writer图不变，复用canonical materializer/evaluator；
 额外峰值<1GiB，沿用本轮已核验4GiB资源预算。一次物化runtime生成三点banks，再用实际空闲GPU执行三个独立队列；总量<=6、每job单节点，
 启动前两节点live准入，formal artifacts来自新clean pushed detached提交。无需新GPU profile或模型测试，验证两个真实config/subset loaders即可。
+
+
+## Registered same-topology fully-random target18 candidate (2026-09-06)
+
+同图单任务学习task75/77已达6/10、8/10，共享18对应完整32/64/96/128曲线仅2/3/4/3（各20）。这两个任务上没有强阶段后崩溃，
+共同条件学习仍是主要缺口。当前完整图已有局部真实行为正证据，因此落实owner及专家已要求保留的same-topology fully-random端到端候选。
+这检验部分G2组件继承对联合学习的影响，不预先宣称G2初始化是根因，也不恢复此前被中断的旧A2 random或更改主干结构。
+
+唯一主要改变是跳过Writer的G2 component参数复制，使用现有`--initialization random`的标准随机初始化；全部4750208个可训练Writer参数
+端到端学习，公开A模板/B零的functional identity起点保留。冻结source/observer和原完整38-target rank16图不变，没有独立carrier或task query。
+原18targets、7meta+target79零梯度诊断、K1、两fit videos、Panel-A跨episode query、frozen normalizers、sampling seed、micro8、AdamW/LR及
+128updates全部与component target18一致。每步18task各1/18，共2304task executions/18432queries；每task1024queries、每fit video64exposures。
+这是初始化比较，不是seed/LR/rank扫描；实际query/video/RNG按原日志核对。128是匹配预算，不是充分收敛声明。
+
+保存32/64/96/128，沿用相邻pairs与原两个validation正视频ordinals。先读取四个primary validation screen80，只分配后续投入；有广泛且
+可保留的能力并接近同prefix SFT24时，再按原合同扩single-checkpoint strict400、相邻与same-task-other，不以screen选最终模型。
+另外固定terminal128、同task75/77 held48/48和原十状态，做20-row training fitting诊断，与component完整曲线和已完成clones比较；它不参与
+全局checkpoint选择。若随机初始化改善目标拟合及held能力，保留其实际适用范围；若同样弱，则初始化不能单独解释当前共同学习缺口。
+全部negative与Test墙、唯一LoRA、最终稳定/breadth/视频因果及32+8合同不变。
+
+配置为`pi05_ecp_prw_complete_target18_random_v1.json`、对应两validation正视频与training diagnostic eval配置。源码与算子/张量轴不变，
+复用已验证最长87-frame/micro8和原target18的34.61GiB峰值证据；只核对实际config/schedule及启动后的finite/正确参数角色，不重复GPU profile。
+按两节点live状态选择一个节点的1–6张可用/可共驻卡，锁实际world/topology，保持NCCL_P2P_DISABLE=1、GPU-local NUMA和deferred NCCL。
+按原6卡实测预估训练约10–15分钟、加载/capture/Panel-B另约10分钟，另计按信息分配的评测；新增磁盘峰值<16GiB，launch前重新核验独立quota。

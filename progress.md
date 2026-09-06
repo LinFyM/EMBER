@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:33 CST。
+更新时间：2026-09-06 18:43 CST。
 
 ## 当前目标与授权
 
@@ -42,7 +42,12 @@
 - 已登记同两个task、原held48视频和states0–9，读取原shared18全部早期已存checkpoints32/64/96；每point20rows，共60新rows。
   128复用已完成breadth中的20行，只为区分一直欠拟合与曾学会后丢失，不训练、不挑checkpoint、不读negative/validation/Test。
 - 两个真实config/subset loaders通过，已推送并冻结0b28a3ff；新tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-shared-trajectory-20260906`。
-  三点banks已完成且launcher exit0；三个20-row动态队列在gpu01p0/NUMA0、p2/NUMA0、p3/NUMA1执行，
-  steps32/64/96 launcher PID4029330/4029685/4030037，各3workers已进入rollout，总3GPU。
+  三点banks已完成且launcher exit0；三个20-row动态队列在gpu01p0/2/3完成，所有launcher与9个workers自然exit0；当前没有本任务运行中的GPU作业。
   最新quota726981760KiB/1073741824soft、shared84TiB；新analysis11MiB、两clone各229MiB，本次新增峰值<1GiB纳入原4GiB预算，source/assets不复制。
   新launch仍按两节点live GPU/memory/process准入，总量<=6，每job单节点、GPU-local NUMA与dynamic persistent evaluator。
+
+- 原shared18四点结果为2/3/4/3（各20），Spatial2/3/2/2、Object0/0/2/1；相邻R/G/L1/2/1、1/3/2、2/1/2，churn3/5/3。
+  没有接近独立clones14/20的强阶段，主要是尚未建立足够能力；小范围结论不外推全18task没有遗忘。历史§180/findings§178封存。
+- 已登记同完整图fully-random target18候选，只跳过G2组件参数复制，保留原18task/两fit视频/128updates/每task1024queries及AdamW/LR。
+  四点primary validation screen80负责分配投入，另做固定terminal128同两训练task的20-row诊断；全局选择仍须原strict400合同。
+  配置已准备，当前尚未启动；下一步完成CPU合同对照、clean pushed frozen来源与两节点live GPU/独立quota，按实际可用卡启动。

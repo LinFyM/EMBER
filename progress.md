@@ -4,9 +4,11 @@
 
 ## 当前授权与方法状态
 
+- 9月7日owner重新打开过程模块讨论，暂不交给新session执行。当前重新推导逐帧对50×50关系矩阵、保留历史帧身份与后续聚合；
+  owner已确认带状方块可视化符合意图，但聚合方式尚未确定。旧设计第5节的跨历史帧联合softmax不再视为已确认的实施合同。
 - Owner于9月6日晚完成新架构讨论，要求本session记录完整设计、全面整理仓库并准备新session接手。
   本次授权包括相关代码整理、只读核验、必要验证、Git集成与推送；不包括新架构实现或新的科学训练/评测。
-- 已登记active design：[causal_layered_video_writer_design.md](docs/causal_layered_video_writer_design.md)，状态为**设计已对齐，尚未实现/验证，等待新session理解后取得owner启动指令**。
+- 已登记设计：[causal_layered_video_writer_design.md](docs/causal_layered_video_writer_design.md)，状态为**过程模块重新讨论中，尚未实现/验证，未授权科研执行**。
 - 当前候选：frozen图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50-horizon因果局部过程、置换不变多视频compiler、
   原生坐标条件MLP生成唯一38-target完整rank16 LoRA。初版默认与待落实细节在设计§9/14。
 - 未选出selected checkpoint，未达成最终科学目标。旧工具goal或旧未完成实验不覆盖当前授权，也不自动恢复width256评测或旧训练。
@@ -35,7 +37,7 @@
   `src/scripts/tests/configs`文件共476→123（src195→69、scripts42→8、tests42→24、configs197→22）。
 - 整理通用functional重放、panel读取、task/K调度与成本分配；source/data/expert/evaluation/normalization/LoRA基础保留。
   `configs/pi05_writer_data_v1.json`集中可复用来源，历史角色不是新实验授权。新图仍无可运行训练入口。
-- AGENTS新增可并行工作应主动委派、隔离写入及主agent集成责任；本次由设计记录、代码整理、存储审计三个subagents并行完成各自范围。
+- 本次由设计记录、代码整理、存储审计三个subagents并行完成各自范围；通用委派规则随后按owner纠正统一维护在用户级AGENTS，删除项目内重复要求。
 - 删除222组可重建派生缓存，共82,122个payload文件、245,347,917,824 allocated bytes（228.50 GiB）；
   保留所有cache/entry JSON、生成配方、run contracts、metrics、raw rows、正常化参数和唯一checkpoints。
   缺上游Writer的两个小smoke缓存、两个各约44GiB正式run root及独特轨迹证据保留。
@@ -55,6 +57,6 @@
 
 ## 下一步
 
-新session先按 [README](README.md) 的阅读顺序充分理解，报告完整数据流、历史关键教训、当前代码能力与待实现差距、
+先继续与owner对齐逐帧对关系及后续聚合，尚不启动新session推进。后续接手时按 [README](README.md) 的阅读顺序充分理解，报告完整数据流、历史关键教训、当前代码能力与待实现差距、
 执行/验证/行为裁决计划；等待owner明确同意。获准后依 [task_plan.md](task_plan.md) 连续推进，实现到真实行为证据，
 遇到问题用历史与区分性诊断找根因，不以loss、局部参数几何或重复小扫代替最终性能推进。

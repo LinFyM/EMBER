@@ -3434,3 +3434,23 @@ rank4 task-local容量或“标准可复制block”原则。
 最早未解接口仍是task-disjoint shared mapping与correct functional到held closed-loop的信用对齐。若继任者继续EMBER，应先以一个能
 区分这两层责任的直接因果实验重新建立active design；任何结构修改都应整体替换失效职责，并保持少数可复制attention/MLP层，不能在
 v4前后增加source gate、summary、whitening、transport、手工幅度或calibration链。
+
+## 169. 同部署图shared可以学习，但局部行为增量没有成为稳定的跨视频能力
+
+2026-09-05/06的whole-Writer、无task query、相同每task exposure对照，消除了此前task-local额外query与冻结关系的正控错配。
+task1/72/83/93的clone和shared在32/64两个节点的fit及新视频functional benefit均正；shared严格150状态从32fit39/held40到
+64fit44/held41，高于同条件carrier38。因此不能再把当前小共享图描述为普遍学不动，或仅由局部/共享差距命名梯度冲突。
+但64时Goal换视频只保留2/8成功，Long成功不重合；两个复用零梯度诊断任务6/79仍负。这个正控证明的是少任务共同学习能力，
+不证明task-disjoint迁移或完整科学资格。
+
+后续matched干预进一步限定了剩余解释。原Panel-A fresh query把覆盖从115–126扩到455–499个独立episode/frame，64held升到45，
+但fit为41且Goal/Long仍弱。非对称A-context/B-dynamic在相同batch执行下64fit/held为44/45，对称参照41/44；64跨视频Jaccard
+从.70到.78，但32仅.647，Goal/Long没有稳定积累。A2可作为局部工作参照，不能由一阶通道或梯度改善反推行为根因。
+
+保持64次task exposure而将fit视频2→4后，32fit/held为41/38、64为41/39，均未超过两fit A2的43/41、44/45；64held Goal/Long
+functional更好而闭环更弱。共同P/Q实例在原两fit条件下为38/37、41/39，四组闭环同样更低，后半训练四任务functional loss也更高。
+因此这两次干预都没有实现行为继承；不能用更多视频、更清楚的共同过程职责或约2.30倍训练加速选择它们，也不能把失败单独归于
+新视频泛化、occupancy或整个P/Q函数类。四视频及该P/Q实例均sealed，较强A2已恢复，下一判断须保留这些负证据。
+
+完整输入/初始化差异、训练与闭环raw rows、逐task/suite和paired success sets见`docs/research_history.md`§165–170及其中的formal
+artifact索引。不同执行版本只在已有同batch参照内作paired判断；上述小面板不与validation8或旧143作直接配对。

@@ -6,14 +6,26 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal现已启动，详见最新节点和active design。
+  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal已完成，正在物化与validation8评测。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 07:55 CST）
+## 最新节点（2026-09-06 08:39 CST）
+
+- A2 meta73的64updates与三个checkpoint Panel-B全部完成，train launcher exit0；训练4937.28秒、诊断346.04秒，
+  runtime总5545.72秒。实际4672个task executions核对通过：每task64次、原每条fit视频32次、权重1/73；原四任务query/video/noise匹配。
+- 32/48/64完整checkpoint保留，约98GiB共享临时cache已自然释放，formal root约110MiB。功能面板13tasks全视频正向为8/9/9；
+  64时meta1新视频benefit从四任务参照的-.000437改善到+.000370，但72/83/93均弱于参照，复用诊断79仍为-.002014。
+  这些是训练侧定位证据，六组validation资格评测全部保留，不从functional选择checkpoint。
+- 两节点live及quota核对后，三组驻留物化已在gpu01物理0/2/3启动；已sealed的source strict400在4/5、carrier strict400在6启动。
+  合计六物理卡、代码继续使用clean pushed detached4d57f816；/data1当前721606552KiB/1073741824KiB，后续新增峰值<12GiB。
+  source/carrier与六组candidate全部完成后按active design的数值selector统一裁决，当前尚无完整闭环结果。
+- `findings.md`§169已汇总同图共同学习、query覆盖、A2、四视频及P/Q的实际证据边界，避免把局部失败重新命名为未经识别的根因。
+
+## 前一执行节点（2026-09-06 07:55 CST）
 
 - formal已到35/64，单步约76–79秒；32-step checkpoint的Writer、trainer state和六rank states均已完整保存，
   `checkpoint_manifest.json`及八个文件通过现有物化合同检查。继续原4d57f816的48/64节点，尚无闭环结果。

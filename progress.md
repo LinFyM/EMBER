@@ -2,7 +2,7 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 12:47 CST）
+## 当前快照（2026-09-06 12:49 CST）
 
 - owner已授权重建goal并自主推进至最终目标；完整38-target LoRA主线持续active，最新要求强调遇到问题复核专家原文、深入分析，
   不因一次non-pass放弃；允许峰值余量充足且低负载的GPU安全共驻。
@@ -14,11 +14,26 @@
 - 验证为Writer12项与静态bank10项定向测试通过，配置loader、compileall、diff检查通过。结构检查净-1918行、零新增源码文件；
   唯一新增size提示是现有bank测试增加完整输出schema后137行，其中大部分为声明式fixture，保留一份fixture的参数化避免复制。
   其余大文件/长函数为缩减或复用的既有编排责任，没有新增平行runner。
-- 新输出不是已验证的闭环方法。当前准备clean pushed frozen四任务64步正式短学习、32/64各fit/held视频train-side strict150；
+- 新输出不是已验证的闭环方法。四任务64步正式短学习已从clean pushed detached `b2bb03ce9ce92c31e26b795ce9d78a156ab1138c`
+  启动，gpu02物理2/3/5、world3、NUMA0/0/1、deferred NCCL。随后32/64各fit/held视频train-side strict150；
   对照原P/Q及A2相同task/state/video，不做最终checkpoint选择。formal launcher记录精确环境、资源和缓存生命周期。
 - 旧A2 random在上午checkpoint48后被中断，退出1且无completion/闭环；唯一32/48 checkpoint保留，不恢复旧清单。
 - 重新确认普通train24 SFT历史109/400、旧Writer143/400为能力参照；109为train24→validation8，无held适配。
   后续正式比较前补齐同口径评测缺口。Test与负视频controls继续未使用。
+
+## 完整LoRA四任务正式启动合同（2026-09-06 12:48 CST）
+
+- Frozen tree：`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-lora-formal-20260906`，主分支已推送相同b2bb03ce。
+  新schema、全部Writer fresh optimizer/scheduler，匹配G2投影/owner/family/首层attention组件初始化；部署无carrier。
+- Config：`configs/pi05_ecp_prw_complete_shared4_v1.json`；64updates，每步四任务等权、各8fresh cross-episode rows，
+  microbatch2、K1/两fit视频轮转，合计256task exposures与2048action rows；checkpoint8/32/64。exact resume锁world3及原拓扑。
+- Run：`runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906`；analysis：
+  `runs/analysis/pi05_ecp_prw_complete_shared4_20260906`，精确命令/环境/资源见其`launch/contract.json`、`preflight.json`。
+  启动入口`.codex/tmp/prw_complete_launch/train.sh`，launcher PID3065514；profile两步exit0，正式训练进入模型加载。
+- 启动前两节点live检查，三张选中卡均约148MiB既有process/0%util、RAM311GiBavailable；/data1使用824289928KiB、
+  soft1073741824KiB，shared84TiBavailable，新cache/checkpoints/analysis预计峰值<8GiB。profile cache已由runtime正常回收。
+- 预登记32/64 × first-fit/held四组3task×50states；不使用validation/Test/negative controls，不选最终checkpoint。
+  原P/Q和A2 raw rows复用作配对比较。当前materialize/eval脚本已就绪，实际启动前再核对设备；没有预约或dummy占卡。
 
 ## 以下为历史执行记录
 

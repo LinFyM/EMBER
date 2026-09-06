@@ -22,6 +22,14 @@
 - 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
   当前仅运行exploratory GPU机制/profile，未启动formal训练；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
+## 当前formal运行
+
+- Clean pushed commit：8d934408；detached frozen workspace：.codex/worktrees/layered-frozen-8d934408。
+- Run：runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907；gpu01 physical2/3/5、world3，deferred NCCL与NUMA。
+- tmux：gpu01 / ember-layered-short4-s16；当前已启动到预登记stop16。日志train_s16.log、退出码train_s16.exit；
+  exact命令、环境、live资源及预算保存在runs/analysis/layered_relation_writer_20260907/launch_short4.json与launch_short4_s16.sh。
+- 全CPU最新157 passed/20.01s。训练能力、短面板闭环和validation资格均未宣称通过；读取16步结果后依合同继续48/96及必要诊断。
+
 ## 当前实现与验证（2026-09-07）
 
 - 授权记录已提交推送70b194ec；纯Writer实现4fa19c3a已集成main。当前新增训练/读取/数据代码及相关窄修复尚在验证，未冒充formal authority。

@@ -1,41 +1,51 @@
 # EMBER progress
 
-更新时间：2026-09-06。
+更新时间：2026-09-06 14:59 CST。
 
-## 当前快照（2026-09-06 14:20 CST）
+## 当前状态与授权
 
-- 最终科学goal持续active。完整LoRA四任务32 fit/held为50/54、64为64/62（各150），旧P/Q38/37、41/39，A2 43/41、44/45。
-  四组新600 rows及全部train/materialize/eval launcher均exit0。主要收益为Goal21/22→31/27；Spatial64为33/31，比A2均少7，Long0/4。
-- 新32→64 R/G/L为fit43/21/7、held43/19/11，Jaccard.606/.589；64跨视频51/11/13、J.680。不是最终稳定资格，不能按loss或净分声称完成。
-  task6/79功能迁移仍负；真实训练侧收益支持继续同图、更广任务和更充分训练。完整comparison及历史§173已封存。
-- 当前主候选：完全相同Writer、55meta+18target、fresh component/optimizer、128updates，每步73任务各8fresh action-query、
-  K1/两fit视频、权重1/73及原normalizer；checkpoint32/64/96/128，74752总action rows。延长decay horizon，明确不是纯task-count消融。
-  先用固定primary screen80分配评测投入，有希望再逐步做strict400相邻/跨视频。Final同图random候选仍保留。
-- Full73四卡profile exit0：micro2每步34.27/32.73秒，146video缓存25.43GiB，最长87帧已覆盖。额外最长样本micro8 profile exit0，
-  peak allocated/reserved34.36/34.67GiB，VJP1.20秒（micro2约1.35），相同首步query/noise的loss仅差4.05e-5。
-  主训练采用实测micro8，保持8query/task和权重；预估四卡train60–75分钟，另计初始化/capture/Panel-B10–15分钟，实际以formal记录为准。
-- 主训练已从clean pushed detached041aff55启动，gpu01物理0/3/4/5/6、world5、NUMA0/1/1/1/1；第五张peer job在preflight前自然结束。
-  精确命令见`.codex/tmp/prw_complete_meta73/train.sh`，launcher PID3147740；run为`runs/outputs/pi05_ecp_prw_complete_meta73_s128_041aff55_gpu01p03456_20260906`，
-  analysis为`runs/analysis/pi05_ecp_prw_complete_meta73_20260906`，其`launch/contract.json`、`preflight.json`及profile证据已保存。
-  当前65/128，32/64 checkpoint已完整保存；最近10步均值22.66秒，peak reserved34.67GiB。
-  实际4745 task executions/37960 action rows；四任务256项及旧A2 4672项重叠query/video/policy RNG与normalizer一致，
-  跨episode与1/73权重通过，除以既有functional normalizer后的每task梯度系数为.069735–.279459；world5 exact resume锁此拓扑。
-  实际启动13:48 CST，预计剩余train约24分钟，之后另计Panel-B；四个primary物化/screen80 launcher及配对统计已备好。
-  同query的33–64步原四task loss均高于短四任务（task1/72/83/93差+.000328/+.008831/+.011236/+.008192）；
-  扩任务均值与延长decay耦合，尚须新视频及validation闭环判断，不据此更改训练或宣称根因。
-  /data1启动前使用824532892KiB/1073741824KiB，shared84TiB可用，主阶段新增磁盘峰值<36GiB；两个profile缓存已正常回收。
-- SFT历史109与当前source400逐条task/state/language/env/policy RNG配对，实际合同都是state8/action7/replan5，normalizer在Git未变。
-  旧AGENTS“7维state/action”为文档错误，已按官方及冻结runtime纠正，无运行变更；109为历史复用，不冒充新后端重跑。相同80-state前缀SFT24、source9。
-- 等待期间确认两节点无旧run进程/mmap引用，回收中断A2 random的97.5857GiB临时cache（manifest明确非checkpoint/非formal evidence），
-  并移除clean inactive的7f6b1611与b2bb03ce detached trees；Git、checkpoint及formal结果保留，当前仅041aff55 frozen tree活动。
-- 唯一运行图为完整38-target LoRA，无carrier；source源码与b2bb03ce相同，后续只有配置/文档变更。此前Writer12+static bank10测试、真实梯度/
-  物化/两种microbatch/full73 profile均已通过。旧A2 random checkpoint与日志保留，不恢复；Test及negative controls仍未使用。
+- 最终科学goal持续active；权限内持续自主推进。Active design为`docs/joint_process_policy_writer_design.md`。
+  最终资格仍为validation8 strict single-checkpoint >145/400及预登记相邻/跨视频稳定、breadth、四suite与Goal/Long贡献；
+  同图random候选和冻结后视频因果controls仍待完成，方法冻结后才做32/8 fresh及Test。没有selected checkpoint。
+- 完整LoRA四任务短学习已sealed：32 fit/held50/54、64为64/62（各150），超过旧P/Q及A2；主要收益在Goal，Spatial有损失，Long未稳定。
+  正证据支持进入本轮主训练，不等于最终能力或因果资格。原始比较见`docs/research_history.md`§173及四任务analysis。
 
-## 历史与证据入口
+## 本轮训练与诊断已完成
 
-- 当前active design为`docs/joint_process_policy_writer_design.md`，原始专家意见为
-  `docs/expert_review_20260905_full_history_joint_process_policy_writer.md`；后续判断按相关原文及实际触发条件。
-- `docs/research_history.md`§170–173保留P/Q短对照、A2 meta73、owner完整输出重对齐及四任务新结果。
-- 更早设计、运行记录和旧执行清单已从本即时状态页移除，由`docs/research_history.md`索引、`findings.md`及Git历史保存，不能自动恢复。
-- 本轮formal精确命令、资源合同与预飞证据以当前analysis的`launch/`和运行root为准；四任务全部证据在
-  `runs/analysis/pi05_ecp_prw_complete_shared4_20260906/`。
+- Frozen clean pushed detached `041aff5519fa25cf9190bc9cd74da65d3c72af79`，工作目录
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-meta73-20260906`；完整38-target rank16、4,750,208 Writer参数、无carrier。
+- 55meta+18target等权1/73，每步各8fresh跨episode action-query；K1/两fit视频、原normalizer，fresh component/AdamW，128updates。
+  32/64/96/128 checkpoint及全部恢复状态保存，train launcher exit0；实际9344task executions/74752action rows，每fit视频64 exposures。
+- 完整采样审计pass：与短四任务256项、旧A2 meta73 4672项重叠query/video/policy RNG匹配，原normalizers一致；
+  正常micro8低位差异不改变任务权重。除以normalizer后的每task梯度系数.069735–.279459，明细已保存。
+- 五卡gpu01物理0/3/4/5/6、world5、NUMA0/1/1/1/1，exact resume锁此拓扑。训练2929.82秒、Panel-B397.98秒，
+  runtime总3484.74秒（另有启动/环境加载）；peak reserved34.67GiB，临时native cache已自然回收。所有held/Panel-B backward为0。
+- 13task功能面板在32/64/96/128分别8/8/9/9项全部fit+held视频高于历史carrier。128时6个gradient meta与诊断meta6均为正；
+  target77/83新视频benefit为+.002669/+.004505，72约-.000077，93/94为-.002393/-.004300，诊断target79为-.001222。
+  meta与target学习差异明确，不能据此给出闭环分数或确定根因。carrier仅作历史loss参照，不参与部署。
+- 同query的33–64步原四task loss均高于短四任务（task1/72/83/93差+.000328/+.008831/+.011236/+.008192）；
+  expanded task mean与128-step decay耦合，不把效果拆作单一因果结论。完整诊断见当前analysis的functional_comparison.json。
+
+## 当前验证评测
+
+- 四套primary验证bank全部sealed，物化launcher exit0；首次source准备113.99秒，驻留复用.14–.21秒，每套8task生成约22秒。
+- 四个checkpoint的固定8task×10states screen80已并行启动，均使用同一041aff55、同一primary视频及state/env/policy RNG合同。
+  32在gpu01p4，64在gpu01p5，96在gpu02p1/2，128在gpu01p3/6；每卡3个persistent workers，单job单节点，总量6物理GPU。
+  NUMA分别1/1/0/1。gpu02两卡启动前各162MiB、既有process148MiB且0%util；gpu01四卡空闲，不干扰其它任务。
+- launcher PID分别3403145/3405746/3643550/3406242。精确脚本与参数见`.codex/tmp/prw_complete_meta73/screen{32,64,96,128}.sh`、各log首行
+  及analysis/launch的live preflight；全部已生成正确80-state合同，workers正在初始化，尚无完整screen结果。
+- 四组screen只分配下一步投入，不选最终checkpoint，不线性外推400。若有广泛、有保留的能力且接近强参照，先做一次strict400；
+  有希望再补预登记相邻及另一正视频，不能机械扩成多套弱400。Wrong/no-video/language/端点/shuffle/reverse及Test仍未使用。
+- 配对历史参照：相同80-state前缀source9、SFT24、A2m64为17；full400为47/109/79。SFT合同与当前state8/action7/replan5、
+  normalization和RNG已核对，109为原始轨迹复用；旧Writer143因teacher schedule不同只作count参照，不伪造配对比较。
+
+## 证据与资源
+
+- Run：`runs/outputs/pi05_ecp_prw_complete_meta73_s128_041aff55_gpu01p03456_20260906`（约239MiB）。
+- 当前analysis：`runs/analysis/pi05_ecp_prw_complete_meta73_20260906`；含launch、四套bank、四组screen、完整schedule与功能报告，
+  `summarize.py`按完整raw rows输出per-task/suite/RGL/churn/Jaccard及预登记strict400资格；synthetic边界检查已通过。
+- 本阶段live /data1 quota为722600384KiB /1073741824KiB soft，shared84TiB available，整个物化/评测新增峰值<8GiB。
+- 等待期间已回收旧A2 random的97.5857GiB可重算cache并移除clean inactive的7f6b1611/b2bb03ce工作目录；其Git、checkpoint及formal证据保留。
+  当前只有main和041aff55 active frozen tree。旧A2 random仅保存中断证据，不恢复。
+- 专家原文：`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`；下一判断须区分训练学习、新视频、未见task与
+  真实成功遗忘/occupancy问题。旧路线通过`docs/research_history.md`、`findings.md`和Git查证，不从旧待办恢复。

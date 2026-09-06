@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，新图真实Meta/VJP与最长K成本已验证，formal short4已完成96步，48/96步闭环比较与输出端诊断进行中。
+更新时间：2026-09-07 CST，原short4全部短面板已完成；native坐标初始化单变量fresh对照训练与16步闭环正在运行。
 
 ## 当前授权与方法状态
 
@@ -26,7 +26,7 @@
 
 - 当前active short4对照：runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907。
   Clean pushed frozen commit880bde5e，workspace .codex/worktrees/layered-coordinate-880bde5e；gpu01 physical2/3/5、world3，
-  tmux ember-layered-coordinate-control，train.log/train.exit。已launch并观察到第10步，数值与真实Meta梯度正常；初始source flow loss与原run同为0.1250352208。
+  tmux ember-layered-coordinate-control，train.log/train.exit。已观察到第54步，数值与真实Meta梯度正常；初始source flow loss与原run同为0.1250352208。
 - 唯一科学改动是native A/B坐标由std0.02初始化改为标准正态；原图、参数量、public A0、零readout、Meta、seed、
   optimizer/schedule、任务/视频/query采样、曝光、frame_chunk4和world3不变。175 CPU tests/17.04s通过。
 - Fresh联合训练96updates、checkpoints16/48/96；每task1536queries，真实K1/2/4各32组。
@@ -35,6 +35,10 @@
 - 新对照的命令、环境、资源、预算与裁决在runs/analysis/layered_relation_writer_20260907/coordinate_init_control/launch.json及launch_train.sh。
   Launch前两节点live复核；data1独立quota使用488688112KiB/soft1073741824，原run653MiB、analysis6.9MiB，
   新增峰值预算<1GiB，共享free84TiB，复用全部大资产；初期合计<5GiB预算仍满足。baseline K4已完成并释放p0，后续新对照16步物化/评测可用该卡；正式launch前重新live核验。
+- 16步correct已物化，固定screen40正在gpu01p0运行（3 persistent workers），对照训练仍使用p2/3/5，EMBER合计4张物理卡。
+  新结果与原run分目录保留在coordinate_init_control/；不会覆盖原始证据。剩余16other、48/96双臂及96K4请求已准备。
+- 批量物化入口在隔离worktree实现并集成：同一次source加载复用runtime，各请求严格重载完整Writer/Meta/probe，独立输出既有manifest。
+  不改变单条件compiler、采样、模型或评测；原单次入口保留。这只优化准备成本，未宣称科学收益。
 
 ## 原始初始化short4：训练与全部短面板已完成
 
@@ -146,6 +150,6 @@
 
 ## 下一步
 
-完成原96步K1correct/other、K4correct与固定functional面板，汇总三点成本/曝光/闭环；核验已准备的单变量native-coordinate初始化对照后，按同短预算fresh检验。
+完成单变量native-coordinate初始化对照96步及16/48/96的固定双视频闭环与functional面板，补96步K4correct；逐点比较原run/source与相邻行为。
 通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。

@@ -249,3 +249,31 @@ churn与Jaccard，并和固定clones128比较。全部早期点均弱才进一�
 复用已验证最长87-frame/micro8和原target18的34.61GiB峰值证据；只核对实际config/schedule及启动后的finite/正确参数角色，不重复GPU profile。
 按两节点live状态选择一个节点的1–6张可用/可共驻卡，锁实际world/topology，保持NCCL_P2P_DISABLE=1、GPU-local NUMA和deferred NCCL。
 按原6卡实测预估训练约10–15分钟、加载/capture/Panel-B另约10分钟，另计按信息分配的评测；新增磁盘峰值<16GiB，launch前重新核验独立quota。
+
+
+## Registered uniform-width complete Writer capacity comparison (2026-09-06)
+
+同图单任务75/77固定128为14/20，共享18的component为3/20、random为4/20；component早期完整曲线2/3/4/3没有强阶段后崩溃。
+两初始化的validation screen均在16–20/80附近，random96的breadth6到128缩为3。共同能力尚未建立，初始化不能单独解释，任务支持也不是
+唯一缺口。下一项在已验证少任务学习的完整图上检验统一容量扩展；没有证据支持把任一输出头、attention或归一化直接命名为根因。
+
+唯一主要结构变量是width128→256，attention_heads4→8保持head dimension32，4个同构P/Q blocks、每帧8个process tokens、38-target
+rank16和factor readout全部不变。标准全随机初始化保留source身份起点A模板/B零；全部15660800个Writer参数端到端训练，约为原4750208
+的3.297倍，冻结source/observer保持。它共同扩大表示与family heads，不能把变化拆成某一局部机制的独立因果优势。历史强v6也使用width256，
+仅为有经验依据的规模参照；其不同observer、horizon读取与数据配方不被恢复，也不是当前宽度不足的因果证据。
+
+固定原18tasks、原两fit videos/K1、128updates/每task1024queries、Panel-A、frozen normalizers、seed、AdamW/LR/cosine/warmup/clip。
+完整实际2304task executions/18432queries及每视频64exposures与width128 random核对。训练预算是匹配曝光，不是收敛声明；额外参数、真实耗时
+与显存单列。数据与deployment信息墙、一次生成唯一完整LoRA、source冻结、无task query/carrier或专家字典均不变。
+
+保存32/64/96/128并先读取原primary validation四组screen80，报告相邻per-task/suite/breadth/RGL/churn/重合；固定terminal128的原task75/77
+held48/48 states0–9共20rows只判断训练侧共同学习缺口，显式继承outcome-informed fitting/nonselector标记。明显超过当前弱区间、接近或超过
+同prefix SFT且新增能力有广泛与相邻保持证据时，及时做一次strict400，再按原qualification合同扩相邻/另正确视频；screen不选最终模型。
+若只改善两个训练任务而未改善validation，结论限于拟合容量并回到规则迁移/支持问题；若两者都弱，当前统一加宽没有给出足够恢复证据，
+继续扩大同一轴需要新的机制依据。全部negative/Test与冻结后视频因果、最终32/8 fresh合同保持。
+
+配置为`pi05_ecp_prw_complete_target18_width256_v1.json`及对应两validation正视频和training diagnostic eval。
+源码与模块所有权不变；CPU参数/真实config loader及当前f3717836上的最长task93两步profile（79/87-frame、8queries/micro8）通过，
+train3.347秒、Panel-B4.537秒、peak reserved34.811GiB、全部15660800 Writer参数参与既定端到端图；profile不构成科学能力结果。
+预计六卡训练约12–16分钟、加载/capture/Panel-B另约10分钟，新增峰值<18GiB；formal前刷新独立quota及两节点live状态，按实际可用卡数1–6
+固定单节点world/topology，GPU-local NUMA、NCCL_P2P_DISABLE=1和deferred NCCL保持。当前只完成成本profile，尚未启动本正式训练。

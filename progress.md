@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:15 CST。
+更新时间：2026-09-06 19:33 CST。
 
 ## 当前目标与授权
 
@@ -37,25 +37,24 @@
 - 只读核验old v6实际step50/400每task1000/8000queries，历史106/143；其完整train24、50episode/video池、width256、可训练observer与优化均不同，
   因此不能把当前差距简单归为训练量。原件引用在historical_v6_recipe_context.json，不恢复旧coarse/native读法。
 
-## 当前运行：同图 fully-random target18
+## 已完成：同图 fully-random target18
 
-- 原shared18四点训练侧行为已封存：32/64/96/128为2/3/4/3（各20），Spatial2/3/2/2、Object0/0/2/1；
-  相邻R/G/L1/2/1、1/3/2、2/1/2，churn3/5/3。没有接近clones14/20的强阶段；历史§180/findings§178保留边界。
-- 当前候选只跳过G2参数复制，保留完整图、4750208个Writer参数、原18tasks/两fit视频/128updates/每task1024queries及AdamW/LR。
-  Source与observer冻结，全部训练模块随机初始化，公开非零A模板/零B身份起点保留；不会恢复旧A2 random。
-- CPU真实config/loader通过，从clean pushed f3717836 detached tree运行；frozen tree为
-  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-target18-random-20260906`。
-- 2026-09-06 18:48:55 CST启动gpu02p0–5、world6，NUMA0/0/0/0/1/1，launcher806281、torchrun806302。
-  0–3/5原有<=210MiB低负载，p4原有5754MiB/2%，peer作业不动。该训练六卡已全部释放。
-  训练128updates已完成，34.613GiB peak reserved；实际2304task executions/18432queries/video/policy RNG/权重与component逐项匹配。
-  训练及Panel-B均自然exit0：614.19/404.46秒，另计启动。完整audit通过，held/Panel-B backward0、source/observer/tasklocal参数0。
-  Random后段五个target功能诊断有4项正收益，component为5项；多数数值接近，内部loss不裁决闭环或初始化根因。
-- Quota使用726502144KiB/1073741824soft，shared84TiB，预计新增峰值<16GiB。精确命令、资源与配置合同在
-  `runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/launch/`；新run为
-  `pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
-- 四个primary validation banks及固定terminal128训练诊断bank均已完成，两个物化launcher自然exit0；同任务集合的四点复用一次驻留。
-- 五个闭环动态队列已启动，总量6GPU：screen32=gpu01p0/NUMA0/launcher4131662，screen64=gpu02p0,1/NUMA0/945211，
-  screen96=gpu01p2/NUMA0/4135740，screen128=gpu01p5/NUMA1/4136091，训练20=gpu01p3/NUMA1/4130949。
-  每GPU三个persistent workers，按long-first动态分配；两节点live显存/util/process准入和完整命令/PID见analysis/launch。
-- 四点screen80只分配后续strict400投入；固定task75/77 held48/48 states0–9共20新rows只定位训练侧学习。
-  等待完整结果后执行已准备的training_behavior与closed_loop配对汇总；全部negative/Test仍未启用，没有selected checkpoint。
+- Clean pushed detached f3717836，run为`pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
+  全部4750208 Writer参数随机初始化、原18tasks/两fit视频/128updates/每task1024queries；实际2304task executions/18432queries及
+  video/policy RNG/normalizer/权重/LR完整匹配component。Train614.19秒、Panel-B404.46秒、peak34.613GiB；所有进程自然exit0。
+- Validation32/64/96/128 screen80为16/16/17/19，breadth2/3/6/3；suite Spatial/Object/Goal/Long为0/9/7/0、0/9/7/0、1/7/8/1、2/9/8/0。
+  相邻R/G/L14/2/2、14/3/2、14/5/3，churn4/5/8，Jaccard.7778/.7368/.6364。仍低于同prefix SFT24，96的breadth/Long新增未保留，不扩strict400。
+- 固定训练task75/77 held48/48、states0–9为2/10与2/10，共4/20；component128为3/20，R/G/L2/2/1；独立clones14/20。
+  两种初始化都没有消除共同学习缺口。完整分析与launch在`runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/`；历史§181/findings§179封存。
+
+## 当前下一步：统一宽度容量对照
+
+- 已登记现有图width128→256、heads4→8保持head dimension32，4个同构P/Q blocks及其余图结构不变；全部15660800 Writer参数随机初始化。
+  与width128 random保持原18tasks/两fit视频/128updates/每task1024queries及完整优化器/采样合同，检验这个预算下的共同学习容量。
+  预登记四点validation screen80和固定terminal128同两训练task20rows；是否扩strict400由广泛且相邻保留的真实行为决定，screen不选模型。
+- 最长task93两步成本profile已在原clean pushed f3717836运行，79/87frames、8queries/micro8，train3.347秒、Panel-B4.537秒，peak34.811GiB；
+  source/observer/tasklocal参数0、完整38-target rank16，全部进程自然exit0。该profile只证明运行条件，不作为能力证据。
+  记录位于`.codex/tmp/prw_complete_width256/`，CPU实际构造参数计数与真实config loader通过；源码未改。
+- 当前没有运行中的GPU作业；本正式训练尚未启动。下一步核对四个真实configs，clean pushed detached冻结新登记，刷新两节点GPU及独立quota后启动。
+  最新profile前quota726921972KiB/1073741824soft，shared84TiB；正式新增峰值预计<18GiB，launch前重核。
+  全部negative/Test仍未启用，没有selected checkpoint；最终科学goal持续active。

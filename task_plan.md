@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-06 18:43 CST。
+更新时间：2026-09-06 19:33 CST。
 
 ## 当前目标与启动授权
 
@@ -30,9 +30,10 @@ owner最新明确同意实际开始，要求重新建立goal，终点为最终�
 8. [x] 动作阶段、teacher-state接续和完整18task训练breadth完成；目标恢复不均，Object与Spatial受监督任务仍有明显缺口。
 9. [x] 同图同数据task75/77 clones完成：固定128 held视频6/10与8/10，对shared18的2/10与1/10保留3、新增11、丢失0。
 10. [x] 原shared18四点行为2/3/4/3（各20），未出现接近clones14/20的强阶段；已封存，不能把主要缺口仅归为遗忘。
-11. [ ] 同图fully-random target18候选：保持全部数据/预算/优化器，检验G2部分组件继承对共同条件学习的影响。
-12. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
-13. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
+11. [x] 同图fully-random target18完成：validation16/16/17/19，固定训练两task4/20；初始化未消除共同学习缺口。
+12. [ ] 统一width256/heads8容量对照：保持18task/128updates/随机初始化/数据优化器，检验共享拟合与held行为恢复。
+13. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
+14. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
 
 ## 判断原则与历史入口
 

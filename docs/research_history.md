@@ -3408,3 +3408,35 @@ launcher与9个workers均exit0。128复用已完成breadth20行，没有新梯�
 Canonical为single_task analysis下`shared_trajectory_comparison.json`及`.md`，含全部points、相邻与对clones的paired sets；
 三套bank复用单个GPU runtime，随后gpu01p0/2/3各3workers执行三个动态队列，总3卡，全部自然释放。
 下一候选落实已约定的同拓扑fully-random初始化比较，保持原18task数据/预算/优化器；不把它预先称作根因修复，不恢复旧A2 random。
+
+
+## 181. 同图 fully-random target18 完成：初始化没有消除共同学习缺口
+
+从clean pushed detached `f3717836`，在gpu02p0–5/NUMA0,0,0,0,1,1以标准随机初始化训练全部4750208个Writer参数，
+只跳过G2组件参数复制；公开非零A模板/零B身份起点、完整38-target rank16、source/observer冻结、原18tasks和优化均保持。
+128updates的2304task executions/18432queries、video、policy RNG、normalizer、权重、LR及每fit视频64exposures与component精确匹配。
+Train614.19秒、Panel-B404.46秒、runtime1074.88秒（另计启动），peak reserved34.613GiB。训练、物化及全部评测launcher/workers自然exit0；
+held/Panel-B backward0、source/observer/tasklocal trainable0。后段五target功能诊断四项为正，数值多数接近component，不能用loss裁决初始化。
+
+预登记validation8四点primary screen80完成，以下suite依次Spatial/Object/Goal/Long：
+
+| checkpoint | correct/80 | breadth/8 | suites | 相邻R/G/L | churn | Jaccard |
+|---|---:|---:|---|---|---:|---:|
+| 32 | 16 | 2 | 0/9/7/0 | — | — | — |
+| 64 | 16 | 3 | 0/9/7/0 | 14/2/2 | 4 | .7778 |
+| 96 | 17 | 6 | 1/7/8/1 | 14/3/2 | 5 | .7368 |
+| 128 | 19 | 3 | 2/9/8/0 | 14/5/3 | 8 | .6364 |
+
+按Spatial1/3、Object1/3、Goal3/6、Long1/2的逐task分数，32为0/0/9/0/0/7/0/0，64为0/0/8/1/0/7/0/0，
+96为1/0/6/1/1/7/1/0，128为2/0/9/0/0/8/0/0。相同checkpoint的component→random R/G/L依次15/1/2、12/4/5、14/3/6、15/4/1。
+同prefix SFT为24/80；随机终点虽比component终点16多3次成功，仍以Object1/Goal6集中，96的小幅breadth扩展未保持。不扩strict400或续同run。
+
+固定terminal128、原task75/77 held48/48与states0–9的训练诊断为Spatial7=2/10、Object2=2/10，共4/20；component128为3/20，
+component→random保留2、新增2、丢失1、churn3、Jaccard.4，success set恰与component96相同。独立clones为14/20，random仅保留其中4、丢10。
+该两task面板是明确outcome-informed training fitting诊断，不能代表全部18tasks、不能选择最终checkpoint，也不证明clone使用视频。
+
+两种初始化在这个匹配预算下都未建立足够共同能力，G2部分继承不能单独解释当前缺口；不将此结论扩大为所有初始化或完整函数类失败。
+三个分析脚本的真实配对/采样核验通过，所有raw rows、banks、completion、launch和完整per-task/RGL集合保存在
+`runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/`。训练run为
+`runs/outputs/pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906/`。
+没有selected checkpoint，negative/Test未启用。

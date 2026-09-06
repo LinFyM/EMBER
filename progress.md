@@ -36,7 +36,10 @@ full/staged loss同0.1256087869，Meta0qB/rho0/decoderB余弦0.999993/0.999998/1
 worktree .codex/worktrees/layered-readout-6ae406ea，gpu01physical2/3/5、world3、tmux ember-layered-readout-control。
 launch前两节点live检查，所用三卡均无计算进程；data1 quota489371696KiB/soft1073741824，已有两run各653MiB、analysis15MiB，
 新增峰值<1GiB，共享free84TiB，全部大资产复用。精确命令/环境/采样/预算见target_rank_readout_control/launch.json及launch_train.sh。
-16/48/96双视频K1和96K4共七组固定配对面板已准备，未生成新分数。当前等待加载/更新及16步checkpoint。
+16/48checkpoint已保存，训练已超过62步，初始source loss与原两轮完全一致（0.125035220757）；峰值allocated34.305/reserved38.109GiB。
+16步correct/other两组物化已完成exit0，当前gpu01p0运行16correct固定40闭环，已完成部分分片；尚无完整新面板分数。
+16other bank已就绪；48/96两组K1及96K4剩余5banks待96checkpoint完成后resident批量物化。
+所有七组固定评测脚本与compare_panels.py已准备；训练完释放235后并行补齐，不改变配对或按loss选择节点。
 
 ## 已完成的初始化formal对照
 

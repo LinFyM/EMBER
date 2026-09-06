@@ -516,3 +516,15 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
 - **裁决：** 96K1两视频11/40且集合完全一致、breadth3/4，提供进入完整train24学习的基础；尚无Goal、未见task迁移、正式相邻稳定或video必要性证据。
   下一阶段保持当前图、完全fresh Writer/Meta及optimizer，将固定train24引入共享训练，先用K1 qualification并继续真实K1/2/4训练。
   未选择最终checkpoint，未运行validation/Test或最终负视频controls。所有raw rows、aggregate、exposure/cost和比较见target_rank_readout_control/。
+
+## 17. train24共享阶段预登记与训练侧参照（2026-09-07）
+
+当前图从fresh Writer+Meta扩展到固定train24，训练frozen e4ca5998，672步完整schedule、首段停192；
+完整节点和资格口径在active design§13.3.1与`runs/analysis/layered_relation_writer_20260907/train24_shared/registration.json`。
+尚无当前图的validation闭环结果，不能把short4基础行为解释为迁移达标。
+
+新source训练侧参照使用固定train24×states0–4，共120行；frozen evaluator97a8a24a，单GPU3persistent workers，
+36分片全部完成exit0，耗时1234.63秒。结果16/120，Spatial6/Object0/Goal10/Long0，breadth7/24；
+非零任务为Spatial0/2/4/5分别2/1/2/1、Goal1/2/8分别5/1/4，其他17任务0。
+完整结果在`train24_shared/source_train120/`，配对证据在`source_train120_integrated_reference.json`；
+只用于当前192/576训练侧correct诊断，不替代validation400、旧short40或其它视频/初始化口径。

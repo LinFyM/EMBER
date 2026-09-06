@@ -938,6 +938,25 @@ dummy settling10、成功即终止、suite horizon220/280/300/520。各臂严格
 evaluator用cost-balanced dynamic queue、long-first、persistent workers。方法冻结后才按32 source/8 test合同fresh训练并
 进行最终test；不能提前消费Test修正设计。
 
+### 13.3.1 当前train24预登记（2026-09-07）
+
+short4末读出对照获得96步correct/other均11/40、success集合一致的基础行为后，保持当前图，
+Writer与Meta全部fresh扩展固定train24；不从short4 checkpoint初始化。每update4个task、每task16个跨episode queries，
+保持真实K1/2/4与原视频角色；warmup24、完整cosine672步。192/384/576/624/672对应每task32/64/96/104/112次，
+每task512/1024/1536/1664/1792 queries。首次只运行至192，在strict400节点读结果后决定exact-resume。
+
+qualification采用K1、固定validation8×states0–49，逐ordinal从全部50条action-hidden视频随机抽样，seed20260907；
+correct与same-task-other在每个ordinal使用互斥视频。上述五点预登记，后两点只在正向/近目标趋势需相邻证据时执行。
+至少两个连续登记checkpoint都须correct>145、breadth≥7/8、四suite非零且Goal/Long各≥10；相邻correct下降≤10、
+churn≤20/400、success Jaccard≥.85。支持稳定性的两点各自other相对correct下降≤10、churn≤40/400、Jaccard≥.80。
+按eligible single checkpoint的correct、other、较晚步数依次选择；不能使用union或内部loss选择。
+这些数值在首个qualification分数前将owner定性要求操作化，不把它们追溯写为owner原话。
+
+192/576另做train24×states0–4、held视频46–49的paired120 correct诊断并配对source，仅定位训练行为与未见task接口。
+完整采样、续训判断、资源预算及controls边界在
+`runs/analysis/layered_relation_writer_20260907/train24_shared/registration.json`；配置入口仍为唯一canonical配置。
+负视频controls保持到selected checkpoint冻结之后，Test保持到方法冻结后的32/8 fresh实验。
+
 ### 13.4 科学 non-pass 与工程故障的不同下一步
 
 | 观测 | 可支持的定位 | 下一步边界 |

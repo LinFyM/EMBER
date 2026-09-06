@@ -3544,3 +3544,13 @@ learner状态偏移，也不能因后半接续可成功就称整段行为成立�
 任务或改称新任务泛化来解释。下一项同图单任务学习对照只定位共享代价，不能预先命名梯度冲突、容量、初始化或训练量为根因。
 历史早期强v6同样使用family-shared factor heads（width256），因此当前共享输出头的存在本身不构成架构错误或必然瓶颈证据。
 具体结果见research_history§178及training_breadth_comparison；旧v6结构依据为`3a6f801d:src/ember/writer/model.py`和对应v6 design§9。
+
+
+## 177. Whole-Writer单独学习能恢复两个弱训练任务，需再分欠拟合与遗忘
+
+同图同初始化同128次曝光、1024条实际query逐项匹配的独立学习，将Spatial7从shared18的2/10提升至6/10，Object2从1/10提升至8/10，
+旧3个成功全部保留。此结果来自固定terminal128原held视频，证明当前共同学习付出了真实行为代价，不能再仅以task75/77输入完全不可学
+解释。但两项训练侧选择不代表全18task或最终held泛化，且无法独立识别容量、干扰与优化。
+下一步先读原shared18的32/64/96及已有128行为曲线，区分尚未学起与学会后丢失；不直接加入success replay或扩大heads。
+旧v6实际50/400节点为每task1000/8000queries、历史106/143；参数、observer、任务/episode/video支持与优化也不同，预算差异不是根因。
+完整证据见research_history§179及single_task analysis；old v6原件引用保存在historical_v6_recipe_context.json。

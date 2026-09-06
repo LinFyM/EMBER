@@ -1,94 +1,46 @@
 # EMBER progress
 
-更新时间：2026-09-06 18:10 CST。
+更新时间：2026-09-06 18:20 CST。
 
 ## 当前目标与授权
 
-- 最终科学goal持续active；权限内持续自主推进。Active design为`docs/joint_process_policy_writer_design.md`。
-  最终资格仍为validation8 strict single-checkpoint >145/400及预登记相邻/跨视频稳定、breadth、四suite与Goal/Long贡献；
-  同图random候选和冻结后视频因果controls仍待完成，方法冻结后才做32/8 fresh及Test。没有selected checkpoint。
-- 完整LoRA四任务短学习32 fit/held50/54、64为64/62（各150）已sealed，主要改善Goal；meta73四点validation screen15/19/19/19亦已sealed。
-  历史§173/174保留完整边界，弱混合run不续训。本轮继续同图，检查目标学习与迁移的区别。
+- 最终科学goal持续active；owner授权权限内自主推进。Active design为`docs/joint_process_policy_writer_design.md`。
+- 最终资格仍为validation8 strict single-checkpoint >145/400及预登记相邻/跨视频稳定、breadth、四suite与Goal/Long贡献；
+  同图fully-random候选和冻结后视频因果controls仍待完成。方法冻结后才做32/8 fresh及Test，没有selected checkpoint。
+- Canonical为共同P/Q完整38-target rank16、4750208 Writer参数、source/observer冻结，无独立carrier或部署expert字典。
+  最新评测改动仅允许显式outcome-informed training fitting登记，保留真实metadata，禁止其checkpoint选择用途；8项针对性回归已通过。
 
-## Target18对照已完成
+## 已封存的主要证据
 
-- Frozen clean pushed detached351feb48684c019130d5d5d1b44c900abbaeddb9，world6、gpu01物理0/2/3/4/5/6、NUMA0/0/1/1/1/1。
-  完整38-target rank16、4,750,208 Writer参数、无carrier、source/observer冻结；fresh component/AdamW。
-- 仅移除55meta objectives，保留原18target IDs、K1/两fit视频、micro8、source/normalizer、128-step LR与全部per-target query/video/RNG。
-  128updates、2304task executions、18432action rows，两个fit视频各64exposures；全部2304项与meta73匹配，短四任务192项重叠目标记录匹配。
-- Train552.64秒、Panel-B390.73秒、runtime996.40秒（另计启动加载），peak reserved34.61GiB；run232MiB，临时cache自然回收。
-  四枚checkpoint及全恢复状态保留，所有held/Panel-B backward0，launcher exit0。Run为
-  `runs/outputs/pi05_ecp_prw_complete_target18_s128_351feb48_gpu01p023456_20260906`。
-- 五个受监督target在32/64/96/128的全fit+held正功能收益为2/5、5/5、5/5、5/5。128 held benefit为72+.001732、77+.004774、
-  83+.007476、93+.004031、94+.022396，均高于meta73；target79+.000962，七个meta诊断全负。内部功能收益不替代行为判断。
-- 四套primary bank及四组screen80全部完成，所有launcher/worker exit0。32/64/96/128为17/17/20/16；逐Spatial/Object/Goal/Long为
-  0/10/7/0、0/7/6/4、1/10/8/1、0/9/7/0，nonzero-task breadth2/5/6/3。64新增Long4次，后续只保留1次再全部丢失。
-- 相邻R/G/L为11/6/6、14/6/3、16/0/4，churn12/9/4，Jaccard.478/.609/.800；final相对meta73为14/2/5，相对SFT为12/4/12。
-  96的6-task breadth含4个singleton；四点均低于同prefix SFT24，没有稳定累积。目前不扩strict400、不续同run、不扫role比例；
-  这只是评测投入决定，不是400-row资格裁决。未使用negative/Test，历史§175/findings§174登记。
+- complete short4 m64 fit/held64/62（各150）主要改善Goal；mixed meta73 m32/64/96/128 validation screens15/19/19/19，未扩strict400。
+- 相同18targets/128步的target-only对照实际采样匹配，validation17/17/20/16；Long新增未保留，没有充分支持扩strict400或续同run。
+  原三task fit/held行为由meta73的32/36恢复为53/53，恢复仍不全面。历史§173–176与target18 analysis保留全部边界。
+- 原18task terminal128 held-video training breadth完成：meta73为42/180、breadth9/18，target18为55/180、breadth13/18；
+  按Spatial/Object/Goal/Long14/5/21/2与15/5/25/10，分母40/40/50/50；R/G/L32/23/10，churn33、Jaccard.4923。
+  同prefix独立专家111/180，仅为不同预算训练容量参考。Object仍5/40，说明未见task迁移不是唯一缺口。
+- 动作轨迹与teacher-state接续显示接触/抓取/最终放置等异质失败，不能统一归因occupancy。Long93专家本身弱且后半阶段并未漏采，
+  故该任务不能代表所有Long学习。历史§177/178与`runs/analysis/pi05_ecp_prw_complete_target18_20260906/`保留完整证据。
 
-## 训练任务行为诊断已完成
+## 同图单任务学习对照已完成
 
-- 在读取上述screen结果前，已登记两run固定terminal128、原Spatial2/Goal20/Long38（global[2,20,38]）的fit/held strict150。
-  原first-fit demos[3,5,2]、held[49,49,48]及50states固定，共四套single-checkpoint/600新rows；不用于最终checkpoint选择。
-  目的是区分受监督任务行为是否恢复与未见task迁移；这些结果仍不能唯一断定occupancy、覆盖或初始化为根因。
-- Clean pushed detached9998f204247c0b3d4bd33762e18e895318d0f991，工作目录
-  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-training-diagnostic-20260906`；只增加4个eval配置和文档，训练配置/source/scripts/tests不变。
-  4个真实eval loader通过，四套3-task LoRA banks都已生成/exit0；复用每run驻留runtime，不重新训练或更新任何checkpoint。
-- 四组评测均已完成/launcher和workers exit0：meta73-fit gpu02p4/NUMA1（PID1117）、meta73-held gpu02p6/NUMA1（PID1604）、
-  target18-fit gpu01p0/NUMA0（PID3708470）、target18-held gpu02p0/1/3/NUMA0（PID69214）；每GPU3workers，执行期最多6张实际工作卡，现已全部自然退出。
-  使用live显存/util/process准入，保留低负载peer，不做抢占。launchers在`.codex/tmp/prw_complete_training_diagnostic/`。
-- 原18与SFT全部train24的支持差异已在`target_training_support.json`记录。进一步核验SFT历史400步实际230400queries、每task9600、
-  50episodes、rank128；当前每task1024、16个Panel-A episodes、rank16。闭环可配对，训练剂量/支持/容量/优化未匹配，不能由差异直接推出根因。
-  完整事实见`sft_training_recipe_context.json`，不据此擅自长续训。原source47/SFT109/A2m64 79为配对参照，旧Writer143只作count参照。
+- Clean pushed detached6efdd2e031dfd42484fa89ca5e472a36a1e9a96a，frozen tree为
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-single-task-20260906`。
+- task75（Spatial7）和77（Object2）各一个whole-Writer clone，不添加task query或冻结evidence；component、128updates、每步8queries、
+  原两fit视频分别1/2与7/10，每video64exposures；两run的实际128task executions/1024queries/video/policy RNG/normalizer与target18匹配。
+  只改变单task目标相对18task均值的共享梯度统计，不能独立命名容量/梯度冲突/优化根因。
+- gpu01p2/NUMA0与p3/NUMA1各world1。Train177.21/177.99秒、Panel-B257.20/254.85秒，另计启动加载；peak reserved34.38/34.40GiB。
+  source/observer参数0，全部held/Panel-B backward0。训练与物化、两个评测launcher及workers均自然exit0，当前没有本任务运行中的GPU作业。
+- 固定terminal128、原held48视频及states0–9：task75为6/10，对shared18的2/10 R/G/L2/4/0；task77为8/10，对1/10 R/G/L1/7/0。
+  合计14/20对3/20，原3个成功全部保留。任务是基于已读训练侧缺口选择，明确非独立held、非checkpoint选择，不能部署clone集合。
+- Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison.*与behavior_comparison.*含实际样本、
+  功能曲线、20个新raw rows、paired IDs和source引用，精确launch/资源合同在launch目录；历史§179/findings§177已封存。
+- 只读核验old v6实际step50/400每task1000/8000queries，历史106/143；其完整train24、50episode/video池、width256、可训练observer与优化均不同，
+  因此不能把当前差距简单归为训练量。原件引用在historical_v6_recipe_context.json，不恢复旧coarse/native读法。
 
-## 当前证据与资源
+## 当前下一步
 
-- Canonical analysis：`runs/analysis/pi05_ecp_prw_complete_target18_20260906`。`comparison.md`/`closed_loop_comparison.json`为完整validation screen；
-  `decision.json`为投入决定；`functional_comparison.*`、`actual_training_schedule.json`为训练侧证据；
-  `local_behavior_comparison.*`为本轮完整600-row诊断：meta73 fit/held32/36，target18均53；逐Spatial/Goal/Long为
-  27/5/0、27/6/3、39/14/0、37/15/1。两run fit R/G/L27/26/5、held26/27/10；target18跨视频45/8/8、Jaccard.738。
-  恢复主要在Spatial与Goal，Long仍弱，且低于short4的64/62。历史§176保留完整边界。
-- /data1最近live quota722850436KiB/1073741824KiB soft，shared84TiB available；全部本轮物化/验证/诊断新增峰值<8GiB。
-  精确runtime合同、两节点GPU证据、quota、launch命令与日志保存在analysis/launch和各run launch目录。
-- main已集成并推送。351feb48训练/screen frozen tree、041aff55历史mixed tree保留inactive，9998f204诊断tree当前复用于下述只读轨迹诊断；旧A2 random不恢复。
-- 下一步定位实际动作阶段失败，再确定训练或数据干预；继续参考专家原文§6/§8及历史SEOD/GOMQ/guard边界，不以functional或一次screen波动推翻全图。
-
-## 动作阶段定位
-
-- 固定terminal128 held视频、原三train tasks与states0/1/2的18条轨迹已完成，两launcher exit0；复用frozen9998f204 canonical rollout，
-  batch3仅作illustration，不改strict150/80、不选择checkpoint。两arm均3/9，双相机与BDDL阶段证据在analysis下`behavior_replay/`。
-- target18 Long三条均曾放好一个壶，但均未完成第二个，包含碰倒/放置后丢失与后续抓取失败；Goal有错误抽屉与接触失败，Spatial也有放置失败。
-  不能统一归因为时序或occupancy。历史直接rank16专家task93仅1–5/50；实际1024训练queries有530位于恰一壶已放置阶段，后半阶段并未漏采。
-- 同Long任务的teacher-state continuation已完成：原Panel-A demos12/7/38，固定one-placed-released/later-contact两阶段，两terminal arms共12条，
-  不训练、不选择、不读negative/Test。恢复原demo XML/state，zero settling避免破坏抓持，额外完整520 horizon作为明确的接续机会，不冒充官方初始化。
-  gpu01p2/NUMA0 meta73 PID3817477、p3/NUMA1 target18 PID3817826，总2卡；preflight为724831152KiB/1073741824soft、shared84TiB，额外峰值<2GiB。
-  具体states、labels、命令和边界在analysis下`teacher_state_continuation/registration.json`；driver复用原source，两个checkpoint不变。
-  两arms第一阶段均0/3，后段接触均2/3；初始predicates匹配labels，两个launcher exit0、wall261.13/256.99秒，GPU自然释放。
-- 已登记剩余15个训练targets的terminal128 held-video screen10，并复用原3tasks的10-state prefixes，组成两组完整18-task/180-row训练breadth。
-  不训练、不选择、不改validation；两套15-task bank已完成且exit0，各runtime prepare114秒、物化41秒。
-  新frozen detached1be11184，meta73 screen使用gpu01p0/2/3（launcher允许NUMA0,1，workers按GPU绑定0/0/1）PID3862038，
-  target18 screen在gpu02p4/5 NUMA1 PID506029；各每卡3workers，总5卡，现均自然退出且launcher/workers exit0。精确preflight与命令在analysis/launch。
-  quota726340528KiB/1073741824soft、shared84TiB，现analysis3.4GiB、新增峰值<2GiB；三配置与active design登记，完整探针见历史§177。
-
-
-## 完整训练breadth与下一定位
-
-- 两套新150 rows全部完成，合并原三task各30行后，meta73为42/180、breadth9/18；target18为55/180、breadth13/18。
-  按Spatial/Object/Goal/Long为14/5/21/2与15/5/25/10，分母40/40/50/50；R/G/L32/23/10、churn33、Jaccard.4923。
-  直接专家111/180只作不同预算训练侧容量参考。完整数据在analysis下training_breadth_comparison.*，历史§178/findings§176封存。
-- Object受监督任务仍5/40，Spatial15/40，故不能只归因于新task迁移或缺少6个train24；Long增量主要来自双杯与book，弱task93不能代表整个suite。
-- 已登记task75（Spatial7）和77（Object2）分别学习的whole-Writer clones，均128updates/1024queries、component、原两fit视频、完整同图，
-  固定terminal128原held48视频十状态，与target18原rows配对；每clone1GPU、共2GPU，预计新增峰值<4GiB。
-  两run从clean pushed detached6efdd2e0启动：gpu01p2/NUMA0 task75 PID3943159，p3/NUMA1 task77 PID3943509；world各1，两run已完成并自然exit0。
-  只保留各clone与已读target79的Panel-B诊断；无专属task query，不冻结evidence，不部署clone集合或选择最终checkpoint。
-  克隆若恢复行为只定位共享学习代价，不能直接命名容量或梯度冲突；若未恢复则回到该任务图/数据/优化可学习性，不盲目续训。
-- 两节点live GPU/process与GPU-local NUMA已核验；quota726494916KiB/1073741824soft、shared84TiB，原analysis3.5GiB/reference run232MiB。
-  精确合同、GPU证据、命令、配置核对位于`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/launch/`；临时launchers在`.codex/tmp/prw_complete_single_task/`。
-  Runtime实际config/panel/video/128步cursor与RNG匹配，两个真实subset loader通过；evaluator outcome-informed训练诊断边界8tests通过。
-  Source训练图未变，仅修正上述评测metadata支持；每个clone的实际128task executions/1024queries均已与target18逐项匹配，held/Panel-B backward0、4750208可训练Writer参数、source/observer冻结。
-- Clone75/77 train177.21/177.99秒，Panel-B257.20/254.85秒，peak reserved34.38/34.40GiB。
-  terminal128 held functional benefit为+.01913/+.01181；task77原shared18为+.00477，功能差异不替代闭环。
-  两个terminal held48 LoRA已物化、launcher exit0；固定十状态评测已在gpu01p2/NUMA0和p3/NUMA1启动，PID3983759/3984110，
-  每卡3个persistent workers，总2卡；两节点live资源已重新核对。
-  完整实际采样与功能曲线为新analysis下training_comparison.json；等待固定20个新闭环rows完成，按预登记脚本与target18配对。
+- 已登记同两个task、原held48视频和states0–9，读取原shared18全部早期已存checkpoints32/64/96；每point20rows，共60新rows。
+  128复用已完成breadth中的20行，只为区分一直欠拟合与曾学会后丢失，不训练、不挑checkpoint、不读negative/validation/Test。
+- 两个配置`pi05_ecp_prw_complete_shared_trajectory_{subset,held_eval}_v1.json`已准备，尚未启动；先核对真实loader、推送并冻结，再物化和评测。
+  原quota726494916KiB/1073741824soft、shared84TiB已核验；此前新增预算<4GiB，本次新增峰值<1GiB纳入该预算，source/assets不复制。
+  新launch仍按两节点live GPU/memory/process准入，总量<=6，每job单节点、GPU-local NUMA与dynamic persistent evaluator。

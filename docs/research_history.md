@@ -3370,3 +3370,26 @@ Canonical `runs/analysis/pi05_ecp_prw_complete_target18_20260906/training_breadt
 视频按原登记固定；`summarize_training_breadth.py`核验全部rows、任务角色、state/env/policy RNG、completion及launcher退出状态。未读negative/Test或产生梯度。
 下一定位选已有强专家且当前较弱的Spatial7/task75和Object2/task77，按同图同数据的单任务whole-Writer clone检验共享学习代价；
 选择基于已读training行为，必须明说，不称独立held资格。既有完整四任务未包含Object，不能代替task77的同图可学习性正控。
+
+
+## 179. 同图单任务学习恢复Spatial与Object，确认当前共同学习有明显代价（2026-09-06）
+
+Clean pushed detached6efdd2e0完成task75/77两个whole-Writer clone；与target18同完整38-target rank16、4750208可训练Writer参数、
+component初始化、128updates、原两fit视频、AdamW/LR、query/video/policy RNG和normalizer。每clone实际128task executions/1024queries
+逐项配对通过，source/observer冻结，task-local query参数0，held/Panel-B backward0。只改变单task目标相对18task均值的共享梯度统计。
+gpu01p2/NUMA0与p3/NUMA1各world1；两个launcher自然exit0，train177.21/177.99秒、Panel-B257.20/254.85秒，另计启动加载。
+Peak reserved34.38/34.40GiB。Terminal held functional benefit为+.01913/+.01181；task77原shared18为+.00477。
+
+固定terminal128、原held视频48、原states0–9的两组screen均完整结束/launcher与workers exit0；Spatial7/task75为6/10，原shared18为2/10，
+retained2/gained4/lost0；Object2/task77为8/10，原shared18为1/10，retained1/gained7/lost0。合计14/20对3/20，R/G/L3/11/0、churn11，
+独立专家同prefix为10/10和8/10，仍只作不同预算容量参照。任务是按训练侧缺口选择，非独立held或最终checkpoint选择；eval metadata如实
+保存outcome-informed training fitting范围，限定development_train及checkpoint_selection_use=false，相关8tests和实际两个subset loader通过。
+
+相同图与相同每task监督量能够形成真实新视频行为，当前18task训练存在明显共同学习代价。它尚不能唯一定位梯度冲突、容量、初始化或
+优化，也不能说明这两个任务在共同训练中从未学会；需要读取原shared18全部早期固定checkpoints，区分一直欠拟合与曾学会后丢失。
+两个独立clone仅用于诊断，不能将其组成部署字典。当前全局资格与random/视频因果/32+8最终目标未改变。
+
+完整run为`runs/outputs/pi05_ecp_prw_complete_single_task{75,77}_s128_6efdd2e0_gpu01p{2,3}_20260906/`，四个checkpoint和恢复状态保留。
+Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison和behavior_comparison包含实际采样、
+功能曲线、全部20新rows、source引用和paired IDs。附带只读old v6账本核验：step50/400实际每task1000/8000queries，对应历史106/143，
+且使用完整train24、50episode/video pool、width256及可训练observer Meta；不能把当前差距简单归因预算，也不恢复被禁止的旧coarse读法。

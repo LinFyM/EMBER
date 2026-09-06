@@ -1,0 +1,33 @@
+{
+  "schema_version": "ember_pi05_task_subset_selection_v1",
+  "purpose": "Fixed complete shared18 training trajectory on two fitting-diagnostic tasks; no checkpoint selection",
+  "role": "development_train",
+  "mode": "screen",
+  "state_count": 10,
+  "task_ordinals": [
+    4,
+    6
+  ],
+  "global_task_ids": [
+    7,
+    12
+  ],
+  "tasks": [
+    {
+      "global_task_id": 7,
+      "suite": "libero_spatial",
+      "task_id": 7
+    },
+    {
+      "global_task_id": 12,
+      "suite": "libero_object",
+      "task_id": 2
+    }
+  ],
+  "selection_rule": "Same outcome-informed train tasks75/77 as the completed clone diagnostic; fixed original held videos and states0-9",
+  "outcome_dependence": true,
+  "validation_use": false,
+  "test_use": false,
+  "selection_scope": "training_task_fitting_diagnostic",
+  "checkpoint_selection_use": false
+}

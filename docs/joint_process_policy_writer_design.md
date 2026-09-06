@@ -208,3 +208,19 @@ Target18完成后，五个gradient targets的fit与新视频功能收益在64/96
 总量2GPU可并发；不需要NCCL通信，每进程按实际GPU本地NUMA绑定。预计每clone启动/训练/诊断合计约6–10分钟，新增峰值合计<4GiB。
 CPU核对真实config/panels/video split及128步采样后，从clean pushed detached提交运行。训练图/source/scripts不变；evaluator仅扩展显式
 training_task_fitting_diagnostic登记，允许如实保留outcome-informed任务选择且禁止checkpoint selection，validation/test边界不变；有针对性回归验证。
+
+
+## Registered shared18 learning trajectory on the same two tasks (2026-09-06)
+
+前述两个whole-Writer clones已完成，固定terminal128 held-video screen合计14/20，对原shared18的3/20保留3、新增11、丢失0。
+同图、同每task数据的单独学习成立，下一未知是shared18一直没学起还是曾经学会后丢失；两者需要不同训练干预，不能由terminal或loss判断。
+
+不新增训练或改权重，只读取原target18 run的全部早期已存checkpoints32/64/96。每点对相同Spatial7/Object2、held demos48/48和原states0–9
+做20-row screen，共60新rows，128复用已完成breadth中的20行；不选择最好checkpoint，不部署clone字典，不消费validation/Test或negative。
+任务选择仍是显式outcome-informed training fitting diagnostic，fixed state/video选择不依赖新结果。逐task及合并报告每点success、相邻R/G/L、
+churn与Jaccard，并和固定clones128比较。全部早期点均弱才进一步限定欠拟合；若存在可重复获得后丢失的行为，则保留具体集合证据后研究保持。
+小面板只用于定位与投入；单点小差异不够命名根因，仍不允许依据它修改全局strict400选择合同。
+
+配置为`pi05_ecp_prw_complete_shared_trajectory_{subset,held_eval}_v1.json`。源训练与Writer图不变，复用canonical materializer/evaluator；
+额外峰值<1GiB，沿用本轮已核验4GiB资源预算。一次物化runtime生成三点banks，再用实际空闲GPU执行三个独立队列；总量<=6、每job单节点，
+启动前两节点live准入，formal artifacts来自新clean pushed detached提交。无需新GPU profile或模型测试，验证两个真实config/subset loaders即可。

@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-06 17:11 CST。
+更新时间：2026-09-06 17:19 CST。
 
 ## 当前目标与授权
 
@@ -60,7 +60,10 @@
   batch3仅作illustration，不改strict150/80、不选择checkpoint。两arm均3/9，双相机与BDDL阶段证据在analysis下`behavior_replay/`。
 - target18 Long三条均曾放好一个壶，但均未完成第二个，包含碰倒/放置后丢失与后续抓取失败；Goal有错误抽屉与接触失败，Spatial也有放置失败。
   不能统一归因为时序或occupancy。历史直接rank16专家task93仅1–5/50；实际1024训练queries有530位于恰一壶已放置阶段，后半阶段并未漏采。
-- 当前仅运行同Long任务的teacher-state continuation：原Panel-A demos12/7/38，固定one-placed-released/later-contact两阶段，两terminal arms共12条，
+- 同Long任务的teacher-state continuation已完成：原Panel-A demos12/7/38，固定one-placed-released/later-contact两阶段，两terminal arms共12条，
   不训练、不选择、不读negative/Test。恢复原demo XML/state，zero settling避免破坏抓持，额外完整520 horizon作为明确的接续机会，不冒充官方初始化。
   gpu01p2/NUMA0 meta73 PID3817477、p3/NUMA1 target18 PID3817826，总2卡；preflight为724831152KiB/1073741824soft、shared84TiB，额外峰值<2GiB。
   具体states、labels、命令和边界在analysis下`teacher_state_continuation/registration.json`；driver复用原source，两个checkpoint不变。
+  两arms第一阶段均0/3，后段接触均2/3；初始predicates匹配labels，两个launcher exit0、wall261.13/256.99秒，GPU自然释放。
+- 已登记剩余15个训练targets的terminal128 held-video screen10，并复用原3tasks的10-state prefixes，组成两组完整18-task/180-row训练breadth。
+  不训练、不选择、不改validation，当前准备物化；三配置与active design登记，完整探针见历史§177。

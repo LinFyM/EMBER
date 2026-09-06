@@ -1,6 +1,6 @@
 # EMBER task plan
 
-更新时间：2026-09-06 16:51 CST。
+更新时间：2026-09-06 17:19 CST。
 
 ## 当前目标与启动授权
 
@@ -27,7 +27,7 @@ owner最新明确同意实际开始，要求重新建立goal，终点为最终�
 5. [x] 四组完整screen80为15/19/19/19，后半能力窄且停滞；本mixed实例不扩strict400，完整证据保留。
 6. [x] 同图同18target的128步对照、功能诊断和四组screen完成，validation17/17/20/16；目标功能改善却未稳定保留未见行为。
 7. [x] 两run固定128、原三train tasks的fit/held strict150完成；meta73为32/36、target18为53/53，部分行为恢复，Long仍弱。
-8. [ ] 定位真实动作阶段的失败，区分训练拟合、同task行为与新task迁移；再注册有证据支持的下一干预。
+8. [ ] 动作阶段与teacher-state接续诊断已完成；补齐原18个训练任务的terminal128行为breadth，区分训练拟合与新task迁移，再注册下一干预。
 9. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
 10. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
 

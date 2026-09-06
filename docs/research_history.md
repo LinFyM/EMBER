@@ -3326,3 +3326,29 @@ Jaccard.738，meta73跨视频27/9/5、.659。相同预算两run的干预仍是ob
 冻结eval authority9998f204只增加配置/文档，训练图与checkpoint未改变；全部banks、raw rows、per-task/suite与success IDs在
 `runs/analysis/pi05_ecp_prw_complete_target18_20260906/`，canonical结果为`local_behavior_comparison.md`/`.json`，完整600rows不并入validation分数。
 后续先定位实际动作阶段的失败；不因预算、覆盖或初始化的可疑差异直接恢复长训或重构。
+
+
+## 177. 训练轨迹与示范中间状态接续定位（2026-09-06）
+
+在两run固定terminal128 held视频上，预先固定原三train tasks与states0/1/2，共18个exploratory rollouts；复用frozen9998f204原policy、
+preprocessing、RNG与rollout库，额外保存双相机及BDDL goal transitions。两launcher exit0，meta73/target18均3/9，逐Spatial/Goal/Long为
+3/0/0和2/1/0；batch3不改原strict150/80结果，也不构成资格或checkpoint选择。Policy-noise prefixes与原row一致。
+
+Long38的target18三条都曾完成一壶放置，states0/2保持、state1后续丢失；states0/2随后转向另一壶但没有完成第二次放置。meta73仅state0
+放好一壶，另外两条在接近/抓取循环中失败。Goal有错误抽屉与接触失败，Spatial target18 state0则在运送后最终放置失败。
+这些异质失败不能统一命名为时序表示丢失或occupancy。原task93直接rank16专家250/500/1000/1500/2000仅2/2/3/1/5成功（各50），
+专家原文也明确说它不能单独承担functional→behavior裁决；Long35的同2000专家40/50、Long39则0/50，需保留任务难度差异。
+
+复用G2已有training-only labels审计actual1024queries，Long93恰一壶放置阶段有530、两壶均放好阶段35，各32步窗口均覆盖后半段；
+Goal83未成功且contact272、成功状态100。因此不是后半过程根本未采到，但粗粒度覆盖不证明精度或恢复状态充分。
+
+进一步固定原Long93 Panel-A demos12/7/38，使用第一段连续10帧“一壶已放好/无接触”的起点obs173/185/188，以及至少20帧后第一段
+连续10帧接触起点271/286/293，共两arms×两阶段×三demo=12个接续rollouts。恢复原demo XML和states[obs+1]，zero settling避免
+破坏中间抓持，给予完整520 horizon；这是明确改变初始状态的诊断机会，不冒充官方未见初始化。原held视频48和checkpoint128不变。
+两arms在第一阶段均0/3，后段接触阶段均2/3，demo38仍失败；初始BDDL predicates全部核对原labels、两launcher exit0，wall261.13/256.99秒。
+它说明部分后段放置在良好接触状态下可执行，而第一壶之后的接近/抓取仍是困难；即使在示范分布起点也会失败，不能把全部问题归为
+前半段learner状态偏移。没有gradients、negative/Test或训练数据替换；失败动作不成为正监督。
+
+完整source driver、registration、run reference、18+12 raw rows、RGB/action captures、contact sheets、query coverage与资源证据分别在
+`runs/analysis/pi05_ecp_prw_complete_target18_20260906/behavior_replay/`及`teacher_state_continuation/`。两批各2GPU，新增峰值各<2GiB；
+后续需补齐其余已训练任务的小面板，避免仅从三个任务或弱上界Long任务外推整个训练可学习性。

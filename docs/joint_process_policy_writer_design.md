@@ -170,3 +170,18 @@ Target18完成后，五个gradient targets的fit与新视频功能收益在64/96
 不从这些train-side panels选择最终checkpoint，不读取负视频或Test，不改变任何训练配置、权重或checkpoint；本诊断只生成完整LoRA和评测。
 相同graph/inputs已真实验证，无新增profile；额外磁盘峰值<1GiB，沿用已核验quota预算，实际GPU按launch时两节点live证据安排。
 配置为`pi05_ecp_prw_complete_{meta73,target18}_m128_train_{fit,held}_eval_v1.json`，复用原train-side task subset与canonical evaluator。
+
+
+## Registered terminal training breadth completion (2026-09-06)
+
+原三任务的严格行为与阶段诊断已完成，但Long38直接专家仅1–5/50，不能单独代表整套共享Writer。为区分当前目标学习是否广泛，
+固定两run terminal128和原同task held视频，将剩余15个gradient target全部纳入每task原states0–9的screen，不按当前性能选择或剔除任务。
+新增global[4,5,7,12,14,16,19,21,22,28,29,34,35,37,39]，两arms共300新rows；原global[2,20,38]复用已完成strict150各自前10state，
+分别组成18tasks/180rows。原3和新增15必须同step、视频ordinal、source与task/state/env/policy RNG；逐task、suite、breadth和paired R/G/L。
+
+原15 task的held demos由既有program-video split固定，无任何新视频选择；所有18 tasks都在两run授权gradient集合，且本轮不产生梯度。
+这组training breadth仅用于区分已经学习的任务行为与未见任务迁移，既不选择最终checkpoint，也不改变原validation投入裁决。
+保留直接rank16 task experts作不同训练预算的容量参照；不把其分数当Writer性能，不读取Test或negative controls。
+
+配置为`pi05_ecp_prw_complete_training_breadth_subset_v1.json`及两`pi05_ecp_prw_complete_{meta73,target18}_m128_training_breadth_eval_v1.json`。
+复用canonical materializer与dynamic evaluator、原完整图及两run；额外峰值<2GiB，formal artifact执行从clean pushed detached source，GPU按live余量。

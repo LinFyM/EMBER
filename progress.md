@@ -6,14 +6,26 @@
 
 - 2026-09-05 23:24 CST owner明确结束事前对齐并要求设置goal持续自主推进；goal已建立且active。本条新授权取代此前“仍在对齐”的
   暂停状态。同图clone/shared、action-query覆盖、非对称A与正确fit视频池2→4对照均完成；
-  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal已完成，正在物化与validation8评测。
+  四视频与共同P/Q均无闭环增量并sealed，已恢复较好的两fit A2；充分曝光的73-task formal及六套LoRA物化已完成，正在validation8评测。
 - 专家附件已原文保存为`docs/expert_review_20260905_full_history_joint_process_policy_writer.md`。
   `docs/joint_process_policy_writer_design.md`现登记为active design，首项同部署图、whole-Writer、无task query的clone/shared对照；
   P/Q主干及非对称读出依证据决定，旧v4结果继续sealed，不续跑旧checkpoint。
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 08:39 CST）
+## 最新节点（2026-09-06 09:02 CST）
+
+- 32/48/64 × primary/other六套bank全部sealed，每套固定8tasks、完整38-target rank16；三个materializer launcher均exit0。
+  首次runtime准备115.7–118.0秒，驻留第二组复用0.11–0.14秒，实际每组生成32.8–35.3秒。
+- 两节点live确认设备释放后，32primary strict400已在gpu01物理0/2、32other在3启动；source4/5与carrier6继续运行，合计六物理卡。
+  当前已返回source216、carrier51、32primary150、32other51条rows，均未构成完整面板。48/64尚未启动闭环，bank与launcher已就绪；
+  将直接复用释放的设备，完整六候选加两参照共3200rows的科学合同不变。
+- 额外的训练侧matched分析核对原四task的实际query/noise/video相同；73-task最后16步loss均高于四task参照，差为
+  task1/72/83/93 `+.000217/+.001637/+.000980/+.000249`。它与新视频Panel-B的变化方向不完全相同，不能以内部代理选择模型。
+  记录为analysis下`matched_four_task_training_loss.json`；不把固定visit的carrier reference loss误作fresh query同条件基线。
+- 本阶段preflight、PID、实际run catalog与启动记录已保留在analysis的`launch/`，各launcher完成时继续保留自身命令/log/exit。
+
+## 前一执行节点（2026-09-06 08:39 CST）
 
 - A2 meta73的64updates与三个checkpoint Panel-B全部完成，train launcher exit0；训练4937.28秒、诊断346.04秒，
   runtime总5545.72秒。实际4672个task executions核对通过：每task64次、原每条fit视频32次、权重1/73；原四任务query/video/noise匹配。

@@ -28,6 +28,23 @@
   same topology、73tasks、64exposures、seed/video/query/optimizer/normalizer不变。现有真实配置loader和元数据检查通过，未读取held actions/rewards。
   复用已通过的相同图真实profile，预计训练及诊断约93分钟、六组闭环60–70分钟；等待当前两组完成，再live核对资源及启动新frozen run。
 
+## 同拓扑fully-random formal启动合同（2026-09-06，尚未启动）
+
+- frozen authority为clean pushed detached `7f6b1611278184d0ee844e332d390a61b45ff8b6`，worktree为
+  `/data1/user/ymdai/projects/EMBER-worktrees/prw-meta73-random-20260906`；与component的4d57f816在src/scripts/tests无diff。
+  只增加初始化候选元数据和两eval training-config引用；真实CPU loader、73task/4672-exposure及固定两validation视频合同检查通过。
+- 使用`configs/pi05_ecp_prw_meta73_random_init_v1.json`，shared/formal/full、`--initialization random --stop-after-step 64`，
+  whole Writer fresh、fresh optimizer/scheduler；拟用gpu01物理0/2/3/4/5/6/world6、NUMA0/0/1/1/1/1、deferred NCCL与
+  `NCCL_P2P_DISABLE=1`。实际设备须在当前8组component eval全部exit0后live核对，exact resume锁定实际launch topology。
+- 精确命令见`.codex/tmp/prw_meta73_random_launch/train.sh`，十个train/materialize/eval launcher均通过shell语法及初始化/评测scope检查。
+  run为`runs/outputs/pi05_ecp_prw_meta73_random_init_s64_7f6b1611_gpu01p023456_20260906/`；analysis为
+  `runs/analysis/pi05_ecp_prw_meta73_random_init_20260906/`。当前只准备小配置与分析入口，没有启动训练或创建大cache。
+- 训练64步及Panel-B全部完成后，32/48/64各一次驻留物化两视频；六个strict400同时各用一张GPU、每卡三个persistent workers，
+  source47/carrier72通过直接引用canonical原始结果复用。随机候选的汇总入口已读入两个参照并检查其400-state配对，未产生新候选结果。
+- 复用component完整73-task profile和实际formal吞吐，预计训练及诊断约93分钟、六组闭环60–70分钟。
+  /data1当前quota使用721867476KiB/1073741824KiB，shared84TiB可用；component run110MiB、analysis255MiB、原tree7.8MiB，
+  旧98GiB cache已释放。新run新增峰值<150GiB，资源live snapshot在启动时刷新并与命令、配置检查一同保存；不复制大模型或dataset。
+
 ## 前一执行节点（2026-09-06 09:02 CST）
 
 - 32/48/64 × primary/other六套bank全部sealed，每套固定8tasks、完整38-target rank16；三个materializer launcher均exit0。

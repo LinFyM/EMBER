@@ -2,25 +2,24 @@
 
 更新时间：2026-09-06。
 
-## 当前快照（2026-09-06 13:14 CST）
+## 当前快照（2026-09-06 13:42 CST）
 
-- 最终科学goal持续active。完整LoRA实现已合入并推送main；formal训练/物化/当前eval来自clean pushed detached b2bb03ce。
-  实现worktree/branch已在完整集成后清理，唯一运行图为共同P/Q→learned38-target完整rank16 A/B，无独立carrier。
-- 四任务64步训练及全部零梯度Panel-B完成，launcher exit0；训练215.50秒、诊断216.91秒，total462.77秒，4,750,208参数，
-  peak allocated15.55GiB/reserved15.62GiB；6tasks诊断缓存共3.87GiB，已由runtime正常回收。
-- 实际256task executions/2048action rows与原P/Q的video/query/policy RNG/task weights/LR/normalizers逐记录匹配。
-  33–64步四个任务平均functional均低于原P/Q；64新视频相对carrier功能收益task1/72/83/93为.002762/.004097/.009561/.004403。
-  task6/79仍为-.003464/-.028010，只证明训练侧映射改善，不能证明task transfer或闭环资格。
-- 32/64×fit/held四套完整LoRA物化exit0并sealed；四组strict150在gpu02物理2/3/5和gpu01物理0运行，每卡3persistent workers。
-  Long50先完成：32 fit/held0/0，64为0/4；Spatial/Goal未完成，不从这一弱上界task单独裁决接口。尚无最终checkpoint选择。
-- 已复核专家原文§6、§8：区分新action episode、新teacher video和held task；64次exposure是短程预算，不等于收敛。
-  成功保留/learner occupancy须由真实行为分离支持，并先承认guards/SEOD/GOMQ等历史条件，不作loss-driven补丁。
-- SFT历史109/400与当前source400的task/state/language/env/policy RNG已配对，实际policy合同均state8/action7、replan5；
-  normalizer在Git未变。原AGENTS“7维state/action”为文档错误，已按官方OpenPI及冻结source/data/processor纠正，无运行改变。
-  审计见analysis的`sft_historical_compatibility.json`；109属于历史复用，不冒充新后端重跑。
-- 定向验证为Writer12项+静态bank10项通过；真实最终初始化profile两步exit0，whole-Writer梯度已接通。源码净-1918行、零新增源码文件；
-  唯一增长size提示为现有声明式bank测试增加新schema后的137行，保留参数化fixture避免复制，既有大编排器未新增平行runner。
-- 旧A2 random在checkpoint48后被中断，无completion/闭环，唯一32/48 checkpoint保留，不恢复旧清单。Test/negative controls仍未使用。
+- 最终科学goal持续active。完整LoRA四任务32 fit/held为50/54、64为64/62（各150），旧P/Q38/37、41/39，A2 43/41、44/45。
+  四组新600 rows及全部train/materialize/eval launcher均exit0。主要收益为Goal21/22→31/27；Spatial64为33/31，比A2均少7，Long0/4。
+- 新32→64 R/G/L为fit43/21/7、held43/19/11，Jaccard.606/.589；64跨视频51/11/13、J.680。不是最终稳定资格，不能按loss或净分声称完成。
+  task6/79功能迁移仍负；真实训练侧收益支持继续同图、更广任务和更充分训练。完整comparison及历史§173已封存。
+- 下一主候选已登记：完全相同Writer、55meta+18target、fresh component/optimizer、128updates，每步73任务各8fresh action-query、
+  K1/两fit视频、权重1/73及原normalizer；checkpoint32/64/96/128，74752总action rows。延长decay horizon，明确不是纯task-count消融。
+  先用固定primary screen80分配评测投入，有希望再逐步做strict400相邻/跨视频。Final同图random候选仍保留。
+- Full73四卡profile exit0：micro2每步34.27/32.73秒，146video缓存25.43GiB，最长87帧已覆盖。额外最长样本micro8 profile exit0，
+  peak allocated/reserved34.36/34.67GiB，VJP1.20秒（micro2约1.35），相同首步query/noise的loss仅差4.05e-5。
+  主训练采用实测micro8，保持8query/task和权重；预估四卡train60–75分钟，另计初始化/capture/Panel-B10–15分钟，实际以formal记录为准。
+- 当前准备新clean pushed frozen launch。上一profile用gpu01物理0/3/4/5四张当时空闲卡、NUMA0/1/1/1；实际formal前刷新两节点，不占卡等待。
+  /data1最近使用824523516KiB/1073741824KiB，shared84TiB可用，主阶段新增磁盘峰值<36GiB；两个profile缓存已正常回收。
+- SFT历史109与当前source400逐条task/state/language/env/policy RNG配对，实际合同都是state8/action7/replan5，normalizer在Git未变。
+  旧AGENTS“7维state/action”为文档错误，已按官方及冻结runtime纠正，无运行变更；109为历史复用，不冒充新后端重跑。相同80-state前缀SFT24、source9。
+- 唯一运行图为完整38-target LoRA，无carrier；source源码与b2bb03ce相同，后续只有配置/文档变更。此前Writer12+static bank10测试、真实梯度/
+  物化/两种microbatch/full73 profile均已通过。旧A2 random中断现场保留，不恢复；Test及negative controls仍未使用。
 
 ## 完整LoRA四任务正式启动合同（2026-09-06 12:48 CST）
 

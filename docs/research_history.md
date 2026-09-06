@@ -3244,3 +3244,22 @@ SFT109可保留为已配对的历史能力参照，仍不冒充新后端重跑�
 owner讨论并接受后继规划后，于12:12左右明确重新设goal、自主执行直到最终科学目标。新方向复用现有P/Q、数据与执行条件，
 联合生成38-target完整LoRA，无独立carrier，首选rank16；native输入重要，但raw X/Y signed span不再是输出硬约束。
 这是一项耦合的输出职责重构而非已确认根因或单组件因果结论；旧P/Q本实例的负结果与早期Writer正证据均继续保留。
+
+
+## 173. 完整LoRA输出的四任务短学习获得行为增益（2026-09-06）
+
+Training/materialization/eval authority为clean pushed detached b2bb03ce，train和materialize均exit0；四组新strict150全部exit0、600行完整。
+新32 fit/held为50/54，64为64/62；同数据、query/video/RNG/weights/LR/normalizers的旧P/Q为38/37、41/39，A2为43/41、44/45。
+新Spatial/Goal/Long分别32fit29/21/0、32held32/22/0、64fit33/31/0、64held31/27/4。64相对旧P/Q R/G/L为fit31/33/10、held28/34/11；
+相对A2为32/32/12、33/29/12。Goal是主要收益；Spatial64比A2两视频均少7次，Long只在新视频有4次成功，不能掩盖未解决的边界。
+
+新32→64 R/G/L为fit43/21/7、held43/19/11，churn28/30、Jaccard.606/.589；跨视频32为47/7/3、J.825，64为51/11/13、J.680。
+Goal相邻分别保留19/21和17/22并新增12/10，但Spatial旧成功丢失5/6。结果支持完整输出耦合重构的训练侧收益，不是稳定资格、task transfer、
+时序必要性或单独rank/carrier/head效果。未使用validation/Test/negative controls。
+
+实际256task executions/2048action rows完全匹配原P/Q记录；后半四任务功能loss均降低。64新视频功能收益task1/72/83/93为
+.002762/.004097/.009561/.004403，task6/79为-.003464/-.028010而未获迁移。参数4,750,208（旧P/Q4,417,920）；三卡train/Panel-B
+为215.50/216.91秒，peak allocated/reserved15.55/15.62GiB，source/observer冻结。不同host/co-residency不支持把耗时比全归因于结构。
+
+Run为`runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/`；全部raw rows、comparison、functional与schedule审计为
+`runs/analysis/pi05_ecp_prw_complete_shared4_20260906/`。后继保留同图，按当前design注册73任务128exposures，完整输出得到行为支持后再扩训练。

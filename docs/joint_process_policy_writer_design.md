@@ -101,3 +101,27 @@ long-first evaluator。保持全部视频/horizon、正确梯度与task权重；
 
 每次launch live检查两节点、独立quota和共享容量，总量最多6GPU、单job单节点，NCCL/NUMA按repo合同。formal来自clean pushed detached
 frozen tree，精确resume锁原world topology。只做与变化匹配的直接验证；文档/清理在GPU等待阶段完成，不阻塞科学结果。
+
+## Registered complete-output main scale-up (2026-09-06)
+
+四任务complete输出32 fit/held为50/54、64为64/62（各150），超过旧有限输出P/Q的38/37、41/39与A2的43/41、44/45。
+Goal32→64为21/22→31/27；训练侧学习和新视频有实质行为收益，但Spatial64低于A2，Long仅held视频4/50，当前仍非稳定最终方法。
+训练后半段四任务loss均低于原P/Q，task6/79迁移诊断仍负。完整证据为`runs/analysis/pi05_ecp_prw_complete_shared4_20260906/`。
+
+因此下一候选复用完全相同Writer，fresh component initialization/optimizer，在既有55meta+18target allowlist上联合训练128updates；
+每步73任务各8fresh跨episode action-query、等权1/73及原冻结normalizer，K1、每任务两fit视频，合计9344task exposures/74752action rows。
+AdamW、LR端点1e-4→1e-6、warmup5、clip1、weight decay与原query/video/RNG规则不变，decay horizon扩至128。
+每任务8个query改用实测可行的microbatch8一次计算：最长87-frame profile峰值reserved34.67GiB，VJP约1.20秒（micro2约1.35秒）；
+相同初始query/noise的loss差约4.05e-5，属于已接受BF16/batch低位差异，不改变task权重或数据。
+这是训练规模扩大而非纯task-count消融；不把expanded task mean和更长learning schedule的效果拆作单一因果结论。
+128是看到32→64仍有实质增益后的下一预登记预算，不是收敛声明；同拓扑fully-random Final候选继续保留。
+
+Checkpoint固定32/64/96/128，相邻pair固定(32,64)/(64,96)/(96,128)。先完成每point primary正确视频的validation8 screen80，
+只分配后续投入，不以screen选择最终checkpoint或线性外推400分数。若同一任务/套件集合有广泛、有保留的能力并接近历史SFT在相同
+80-state前缀上的表现，先完成一组strict400检验规模；有希望再补预登记相邻和另一正视频。最终资格仍完全使用上面的strict400合同。
+原有两个positive video ordinals及no-selection negative wall不变；没有新增held gradients或Test使用。
+
+主配置为`configs/pi05_ecp_prw_complete_meta73_v1.json`，两positive物化配置为对应`...validation_correct_v1.json`与
+`...validation_other_correct_v1.json`。已有87-frame最长视频位于原四任务且已完成真实gradient/profile；额外full73四卡两步profile已exit0，micro2每步34.27/32.73秒，146video缓存25.43GiB；micro8的单task最长样本验证也exit0。
+按实时可用1–6卡启动，四卡训练预估60–75分钟，另计capture/初始化/Panel-B约10–15分钟；实际时间以formal记录为准。
+预计新增磁盘峰值<36GiB，正式从clean pushed detached tree运行，exact resume锁实际world topology。

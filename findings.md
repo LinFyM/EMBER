@@ -13,13 +13,13 @@
 owner已完成事前对齐并明确要求goal自主推进；active合同为`docs/joint_process_policy_writer_design.md`，即时状态见`progress.md`。
 本文件是结论索引，不替代原文；较早段落中的“active”“正在运行”“下一步”只表示对应历史时点。
 
-## 当前完整输出重构的证据边界（2026-09-06）
+## 当前完整输出结论（2026-09-06）
 
-owner授权复用P/Q与完整native evidence，直接共同生成全部38-target A/B、首选rank16且无独立carrier。该耦合输出重构尚未得到
-闭环资格；历史P/Q有限输出实例的non-pass不覆盖本方案，也不能把新接口的图接通和吞吐当成能力改善。
-真实三卡profile使用最终组件初始化，第二步已出现图文、response及P/Q梯度，最长87个stride5帧视频纳入训练；每步四任务约4秒，
-4,750,208参数，峰值显存allocated15.55GiB/reserved15.62GiB。全部source/observer冻结，未使用held梯度或negative controls。
-后续四任务32/64 train-side闭环与既有matched结果比较；最终选择仍只认预登记strict400与相邻/跨视频资格。
+共同P/Q直接生成全部rank16 A/B、无独立carrier，在四任务短学习的32/64两点、两正确视频均超过旧P/Q及A2：50/54与64/62，
+原P/Q38/37与41/39。主要收益是Goal21/22→31/27，新的完整输出职责有实质闭环正证据，不能再只以graph/gradient合理性讨论。
+边界是Spatial64较A2两视频均少7次，Long只有64held4/50；相邻Jaccard.606/.589、64跨视频.680，尚未达到稳定积累或泛化资格。
+训练侧新视频功能明显改善，task6/79仍负；下一检验转向共享规则/任务覆盖与更充分训练，不恢复旧弱A2、不用negative controls修结构。
+完整证据见历史§173及complete_shared4 analysis。实际128×73下一预算在active design登记，64不等于已收敛；Final仍保留同图随机候选。
 
 ## 科学结论
 
@@ -3488,3 +3488,11 @@ train24共享SFT历史109/400是无需教学视频的合法跨任务基线，不
 旧143支持任务相关视觉读取、语义/过程共同表示与整套LoRA联合生成的职责；不能把历史不同checkpoint的优点拼成一个完美方法。
 P/Q交互、native-only因子读出和carrier12+mobile4是可分别审视的假设。G1局部容量不证明共享映射优势；解除限制也不自动保证学习成功。
 owner已授权直接完整LoRA主线；复用已完成实验和资产，按行为与信息价值投入，不机械补弱随机/多checkpoint完整评测。
+
+
+## 172. 完整生成使训练侧行为明显改善，跨任务与稳定性仍待检验
+
+完整输出四组strict150均改善，64为64/62，较旧P/Q均多23；主增量为Goal，两正确视频与相邻点都有收益。该耦合重构有效，不能据此
+拆出rank或去carrier的独立因果效果。Spatial比A2降低、Long跨视频不一致、相邻success-set尚未稳定，task6/79功能迁移仍负。
+因此保留当前完整图，在已有更广meta allowlist和预登记128exposure预算中检验任务迁移与能力积累；不把64步non-pass当函数类失败，
+也不根据loss或一个弱上界Long任务单独引入occupancy。历史§173保留完整逐task/suite/RGL及计算成本。

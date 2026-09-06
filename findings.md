@@ -3509,3 +3509,15 @@ meta13task诊断中的6个gradient meta及meta6为正，target72/93/94仍较弱�
 objective的边界对照可给出不同预测，不需要立即换架构或增加loss链。历史§141的role-equal已non-pass；当前只是在有新完整输出
 学习证据的结构下进行一次有条件重试，不能据此合理化比例扫描。原13task诊断继续复用，不称fresh selector。
 完整事实与证据见`docs/research_history.md`§174。
+
+
+## 174. 更好的目标功能学习没有自动稳定保留未见任务能力
+
+同图同18target、相同128步per-target数据与optimizer，移除meta objectives后，五个target在后3个节点均有跨视频正功能收益，
+128均高于meta73，7个meta诊断全负；这支持存在目标取舍，不能仅凭loss给出共享冲突根因或闭环修复。
+validation screen80却为17/17/20/16。64/96的breadth确有5/6tasks，Long在64新增4次，但相邻只保留1次、最终全丢；
+96→128没有新增而丢4次，不能把20单点或较低churn包装为能力积累。该对照没有支持目前扩大strict400资格投入。
+
+必须区分目标任务本身是否学回真实行为和新task迁移是否成功；为此在读screen结果前登记固定terminal128、原Spatial2/Goal20/Long38的
+两run fit/held配对诊断，结果未到前不把功能/验证差异立即归因为occupancy或覆盖。原18并非全部train24；与SFT的支持差异保持显式，
+但缺6项metadata本身也不是已证明的性能根因。见历史§175及本轮analysis。

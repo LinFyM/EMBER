@@ -3287,3 +3287,25 @@ Source/observer冻结，所有held/Panel-B backward0，38-target完整rank16无c
 `runs/analysis/pi05_ecp_prw_complete_meta73_20260906/`；canonical报告comparison.md，投入决定decision.json。
 后继保留相同完整输出图，预登记移除meta objective而保持相同18target与曝光的边界对照。历史§141的role-equal已失败，
 本次是新完整输出图上的有条件重试，不能把加权称为未尝试的新思路，也不启动比例扫描。
+
+
+## 175. 移除meta监督恢复目标功能，但验证行为仍不稳定（2026-09-06）
+
+Clean pushed detached351feb48完成同18target、128updates、K1/micro8的objective组成对照；graph、source、component初始化、optimizer/LR、
+原video/query/noise/normalizer不变。Train552.64秒、Panel-B390.73秒、runtime996.40秒（另计启动）；2304task executions/18432action rows，
+每fit视频64exposures，与meta73全部2304项和短四任务192项目标task记录匹配。Peak reserved34.61GiB，临时cache自然回收，全部held/Panel-B backward0。
+完整run为`runs/outputs/pi05_ecp_prw_complete_target18_s128_351feb48_gpu01p023456_20260906/`，四checkpoints及全部恢复状态保留。
+
+五个受监督target在32/64/96/128的全fit+held正功能收益为2/5、5/5、5/5、5/5。128 held benefit为72+.001732、77+.004774、
+83+.007476、93+.004031、94+.022396；均高于meta73，target79也为+.000962，七个meta诊断则全负。最后32步17/18targets训练loss低于meta73。
+这是目标学习与meta监督的实测取舍，不能单独证明梯度冲突、容量或功能→闭环恢复。SFT使用完整train24而本对照保留18的支持差异已显式审计。
+
+四组validation8 screen80完整结束、全部launcher/worker exit0，分数32/64/96/128为17/17/20/16；Spatial/Object/Goal/Long分别
+0/10/7/0、0/7/6/4、1/10/8/1、0/9/7/0；nonzero-task breadth为2/5/6/3。64有Long4次真实新增，但64→96只保留1/4，96→128丢失最后1次。
+相邻R/G/L为11/6/6、14/6/3、16/0/4，churn12/9/4，Jaccard.478/.609/.800。96的6-task breadth包含4个singleton成功，未稳定累积。
+相对同step meta73的R/G/L为14/3/1、12/5/7、16/4/3、14/2/5；final对SFT为12/4/12。四点均低于同prefix SFT24，未据此扩strict400；
+这是评测投入决定，不是400-row资格裁决或最终checkpoint选择。没有negative/Test使用，也不继续扫描role比例或续同run。
+
+全部320新rows、paired sets、训练审计与功能报告在`runs/analysis/pi05_ecp_prw_complete_target18_20260906/`，validation报告为
+`comparison.md`/`closed_loop_comparison.json`/`decision.json`。在读取本轮screen结果前已从9998f204登记两run固定terminal128的原三训练task
+fit/held strict150，共600新rows，用以分开目标任务真实行为恢复与未见任务迁移；这是仍在执行的诊断，不预写结果或恢复旧待办。

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_layered_relation_writer_config_v1",
-  "status": "preregistered_short4_fresh_joint",
+  "status": "preregistered_short4_native_coordinate_initialization_control",
   "design": "docs/layered_relation_video_writer_design.md",
   "data": {
     "seed": 7,
@@ -117,7 +117,7 @@
       48,
       96
     ],
-    "initial_use": "real mechanism and longest K1/K4 profile passed; train-side short4 learning with fixed checkpoints16/48/96",
+    "initial_use": "fresh controlled initialization study after original short4 near-constant native output and misaligned real LoRA gradients",
     "final_checkpoint_selection": false,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -153,8 +153,26 @@
       "K": 1,
       "teacher_policy": "fixed_per_task, uniform without replacement from held_video46-49, disjoint correct/other; seed20260907; no outcome selection",
       "purpose": "diagnose basic behavior and same-task new-video learning; no final checkpoint selection",
-      "source_reference": "same state, env/policy RNG; privileged experts count/paired only when original keys verified"
+      "source_reference": "same state, env/policy RNG; privileged experts count/paired only when original keys verified",
+      "supplementary_K4": {
+        "checkpoint": 96,
+        "arm": "correct",
+        "video_pool": [
+          46,
+          47,
+          48,
+          49
+        ],
+        "purpose": "same paired40 cardinality diagnostic as original run; not checkpoint selection"
+      }
     },
-    "qualification_registration": "train24 strict400 arms/adjacency thresholds will be registered before first qualification score"
+    "qualification_registration": "train24 strict400 arms/adjacency thresholds will be registered before first qualification score",
+    "intervention": {
+      "changed": "native A/B coordinate embeddings start from independent standard normal instead of std0.02",
+      "fixed": "same architecture, parameter count, seed, public A0, zero scalar readouts, optimizer/schedule, data sampler, exposure, K support, frame chunks and behavior pairing",
+      "baseline_run": "runs/outputs/layered_relation_short4_joint_8d934408_gpu01p235_20260907",
+      "scope": "tests output initialization conditioning; does not declare entire relation graph failed or guarantee video causality",
+      "fresh": true
+    }
   }
 }

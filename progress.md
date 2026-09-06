@@ -40,15 +40,20 @@
   原生frame_chunk16的exploratory K4 joint16.88s（observer forward1.36/VJP3.13）及peak allocated34.65GiB，表明批量布局可加快约34.5%；
   该profile用step16权重，早期chunk4 profile用smoke权重，不能将loss差当batch收益或科学改进。下次fresh扩大训练采用已测布局。
 - 第48步correct screen40已完成exit0：6/40、Spatial3/10 Object0/10 Goal0/10 Long3/10，breadth2/4；相对source及16步RGL4/2/0，churn2/40，Jaccard2/3。
-  small training diagnostic只有局部增益，未证明广泛基础行为；other在gpu01p0继续，96步两组物化用p3/p5、functional48用p2。比较原件s48_correct_vs_source.json、s48_correct_vs_s16.json。
+  48步other也已exit0：5/40，Spatial3/10 Long2/10，其它0；对source RGL4/1/0，对16步other RGL5/0/1，cross-video RGL5/0/1、Jaccard5/6。
+  两组均breadth2/4；只有局部增益，未证明广泛或随训练稳定增强的基础行为。96步K1 correct/other已在p3/p5评测，K4物化p0、输出梯度诊断p2。
+  比较原件为同analysis root下s48_*_vs_source.json、s48_*_vs_s16.json及s48_cross_video.json。
 - 第16步后登记冻结训练侧functional诊断：action42–45各8query/task，与训练queries及held videos互斥；无梯度、固定noise/time、16/48/96重复同面板，不能选点。
   第16步source减correct loss在四task为+8.90e-5/+2.86e-5/+5.11e-5/-1.87e-5；整体变化很小，不能当行为改善。
-  原件functional_panel_registration.json、functional_s16.json位于同analysis root。
+  第48步correct benefit为+7.73e-5/+7.05e-5/+8.45e-5/-1.03e-5，仍很小；fixed-query跨步差异不代替行为。
+  原件functional_panel_registration.json、functional_s16.json、functional_s48.json位于同analysis root。
 - 在读取96步闭环分数前追加K4 correct screen40，仅用全部held46–49，固定同40初始化；诊断真实训练cardinality的行为，不能选最终模型，
   不做K4other（当前held池只有4）。登记s96_k4_registration.json。
 - 输出端事后定位：16/48步task7/35的expert0q/0v/action_out三代表target，B的native-channel常量分量能量占99.98%以上；
   这是可能的坐标decoder学习条件问题，不能独立证明闭环根因。96步固定训练query将计算LoRA leaf真实梯度、不更新参数、不选点；
-  登记decoder_gradient_registration.json，保留原完整图与所有历史结果，未据此更改方法。
+  登记decoder_gradient_registration.json，保留原完整图与所有历史结果，原96步同样高度常量化；真实gradient常量分量仅0.003%–2.23%，code RMS1.10–1.16对坐标0.02。
+  已准备唯一canonical初始化修正：native A/B坐标改标准正态，保留零readout与identity、其它图/seed/训练/曝光不变。新对照必须fresh，尚未launch；
+  不将此梯度/几何定位当作闭环因果证明。定义与接受边界在active design§8.4及canonical配置evidence.intervention。
 - 已合并task worktree及codex/layered-writer分支清理；两个仍供formal训练/评测使用的detached frozen worktrees保留。
 
 ## 当前实现与验证（2026-09-07）
@@ -136,6 +141,6 @@
 
 ## 下一步
 
-读取第48步correct/other固定screen40和无梯度functional面板，与source及第16步严格配对比较；再按短学习96步合同与实际趋势继续或定位最早接口。
+完成原96步K1correct/other、K4correct与固定functional面板，汇总三点成本/曝光/闭环；核验已准备的单变量native-coordinate初始化对照后，按同短预算fresh检验。
 通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。

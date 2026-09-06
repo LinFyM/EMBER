@@ -21,8 +21,11 @@ class _CoordinateGroup(nn.Module):
         self.register_buffer("identity_a", torch.stack([identity[name + LORA_A_SUFFIX] for name in self.names]))
         self.a_coordinates = nn.Parameter(torch.empty(len(targets), targets[0].in_features, width))
         self.b_coordinates = nn.Parameter(torch.empty(len(targets), targets[0].out_features, width))
-        nn.init.normal_(self.a_coordinates, std=0.02)
-        nn.init.normal_(self.b_coordinates, std=0.02)
+        # These are additive GELU coordinates, not token embeddings followed by
+        # LayerNorm. Unit-scale offsets expose distinct native-channel slopes;
+        # zero scalar readouts still give the exact public identity LoRA.
+        nn.init.normal_(self.a_coordinates)
+        nn.init.normal_(self.b_coordinates)
 
 
 class CoordinateLoRADecoder(nn.Module):

@@ -34,6 +34,11 @@ G1证明某些native X/Y signed pooling具有局部容量，也通过投影干�
 普通family head的固定末投影确实限制生成方向，但早期FactorHeads也有强行为；不能把这个几何事实直接称作新近低分根因。
 坐标条件MLP是明确的候选解除方式，没有通用性能保证。
 
+新图首轮std0.02 native坐标初始化下，16/48步训练侧闭环仅4/6与6/5（各40，source4），未形成广泛能力。
+96步两个训练任务的三个代表target中B近乎native-channel常量，但真实policy梯度绝大部分不在该方向；
+code RMS约1.1、坐标0.02。这支持检查坐标初始化的学习条件，不证明共同学习缺口已被唯一归因。
+当前仅以标准正态native坐标、其它科学变量不变的fresh短对照检验；几何改善不能替代行为。
+
 ## 4. 参数稳定性不能代替成功集合稳定性
 
 极高BA cosine、较低same-task参数方差、更高名义rank与实际success churn并不等价。正式结论同时看绝对成功、R/G/L、breadth、

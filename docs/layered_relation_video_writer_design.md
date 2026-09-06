@@ -568,7 +568,19 @@ scalar readout 等正常方式实现 identity 起点，随后完整 A/B 都可�
 由于 B 初始为0，A 侧及更上游第一步可出现预期零梯度；Meta-LoRA 的零 B 初始化也有类似阶段。验证时须区分这种已知
 初始化代数与永久 detach，不能要求所有参数在第一个 identity step 同时非零。
 
-### 8.4 为什么首版不需要 raw X/Y bank
+### 8.4 坐标初始化的受控修正（2026-09-07）
+
+首轮实现将 native 坐标向量按 token embedding 的 std0.02 初始化，但这里的坐标会直接与 code 相加后进入 GELU，
+前面没有坐标 LayerNorm。原图96步的两个训练任务、三个代表target中，code RMS约1.10–1.16、坐标RMS约0.02；
+B的native-channel常量分量占99.995%以上，而真实policy功能梯度在该方向仅占约0.003%–2.23%。
+这支持输出端初始化条件不佳的竞争解释，不证明它是弱闭环的唯一原因，也不否定关系图、动态视频信息或坐标MLP的表达能力。
+
+下一受控fresh对照只将 A/B native 坐标向量改为独立标准正态，使不同坐标进入GELU的不同斜率区域。
+不改变原生A0、零scalar readouts、rank/width/图、Meta、seed、监督、optimizer/schedule或曝光；初始执行仍严格identity。
+这是一个固定的初始化干预，不扫scale、不增加gain/gate/旁路，也不从旧checkpoint继续。原std0.02结果和代码由frozen commit/run保留。
+判据仍为同一短面板的绝对闭环、breadth、相邻与跨视频success集合；几何改善不足以接受该修改。当前参数量和形状均不变。
+
+### 8.5 为什么首版不需要 raw X/Y bank
 
 设真实执行 loss 对 target 输出的梯度为 \(g=\partial\mathcal L/\partial y\)，忽略固定 scale 或将其吸收，则
 

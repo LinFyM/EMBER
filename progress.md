@@ -14,20 +14,21 @@
 - 后续接管原则保留：两个节点合计最多6卡、遵守科学/信息墙；性能不佳须认真分析竞争解释，不能随意命名根因并立即修补。
   常规分析与实验自主推进，维护本文件方便owner查看；需要owner决定时提出具体问题，继续不受影响工作，真正受阻才标记blocked。
 
-## 最新节点（2026-09-06 10:36 CST）
+## 最新节点（2026-09-06 10:57 CST）
 
 - component最终32/48/64两视频为80/78、81/81、79/75，source47、carrier72，八组strict400全部完成且launcher/worker exit0。
   两个相邻pair均non-pass，无selected checkpoint；完整报告、逐task/suite/RGL与decision.json已封存，历史§171、findings§170记录证据边界。
   Primary相邻集合相对稳定但能力低，other与跨视频集合未稳定，Long新增成功反复换手；不直接续训该run或命名未经识别的根因。
 - fully-random formal已于10:09 CST从clean pushed detached7f6b1611启动，gpu01物理0/2/3/4/5/6、world6、NUMA0/0/1/1/1/1。
-  实际run_contract确认formal/random、reused=[]、2,970,368 Writer参数、task-local参数0与stop64；已到16/64，最近76.26秒、梯度norm.10815。
+  实际run_contract确认formal/random、reused=[]、2,970,368 Writer参数、task-local参数0与stop64；已到32/64，最近76.40秒、梯度norm.13346。
+  首个checkpoint清单的step32/world6、Writer/trainer/六rank共八个文件及其声明大小核对通过；训练继续到64后统一执行Panel-B。
   仍使用同一A2图、73任务、两fit/K1及原优化/采样合同，尚无随机候选的闭环结果。
 - 启动前两节点live及/data1 quota已刷新：721879956KiB/1073741824KiB，gpu01可用RAM436GiB，shared84TiB可用，新增峰值<150GiB。
   所有component GPU进程自然结束后才启动；actual preflight保存在新analysis的launch/formal_preflight.json及新run完成时的launch记录。
 - 随机候选十个launcher、两基线原始rows复用和汇总入口已经就绪；64步训练/Panel-B全部结束后再物化并运行六组strict400。
   精确命令与路径见下方启动合同。Test8及最终负视频controls继续未使用，不从训练loss选择checkpoint。
 - 前10步实际730次task executions与component的query、video、policy RNG、task权重及LR逐记录匹配，所有loss有限；
-  73项冻结normalizers也一致。证据为新analysis的launch/early_actual_schedule.json；完整64步审计与同初始化功能对照入口已准备。
+  73项冻结normalizers也一致。证据为新analysis的launch/early_actual_schedule.json；完整64步审计与两种初始化功能对照入口已准备。
   闭环汇总增加相同步数、同正视频ordinal的component→random R/G/L比较，数值资格selector保持原注册口径。
 - component旧detached worktree已在确认clean且两节点没有工作目录引用后移除；Git commit、formal checkpoints和全部结果保留。
   当前random训练使用独立7f6b1611 frozen worktree，main文档更新不影响运行。

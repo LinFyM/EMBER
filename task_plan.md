@@ -1,46 +1,48 @@
 # EMBER task plan
 
-更新时间：2026-09-06 19:50 CST。
+## 当前目标与授权
 
-## 当前目标与启动授权
+Owner已完成新架构讨论。本session负责完整设计记录、文档/代码/存储整理、验证、main交付和新session接手材料。
+新架构实现及科学训练/评测尚未启动；新session先理解仓库、报告完整认识与执行计划，得到owner明确同意后再自主推进。
+旧goal、旧design或历史未完成清单不构成启动授权。当前记录见 [progress.md](progress.md)。
 
-Owner最新明确要求先讨论、暂停后续推进，待owner说继续后恢复。已启动的width256训练可自然结束，之后不自动评测、新实验、改代码或继续轮询。
-此前建立的unbudgeted最终科学goal尚未完成，但不构成越过本次暂停的授权；已完成证据和active design保留，不恢复历史待执行清单。
-最终为validation8 strict paired single-checkpoint correct >145/400，加相邻稳定、跨视频、breadth/四suite/Goal/Long与冻结后视频因果资格；
-方法冻结后按32/8合同fresh最终训练和test。train24 SFT历史109与旧Writer143是实质参照。
+已登记设计：[因果分层视频到完整LoRA Writer](docs/causal_layered_video_writer_design.md)，状态为已对齐、尚未实现。
+最终目标仍是validation8 strict paired single-checkpoint correct严格 >145/400，并满足相邻稳定、低churn、高breadth、四suite非零、
+Goal/Long贡献、same-task另一组正确视频鲁棒性，以及selected checkpoint冻结后的必要性/时序因果controls；方法冻结后按32/8合同fresh最终训练与Test。
 
-## Active design与当前阶段
+## 本次交接交付
 
-- Active design：`docs/joint_process_policy_writer_design.md`，当前为完整LoRA共同过程—策略生成。
-- 复用93540ff1的P/Q及完整native-response读取；由learned heads联合生成38-target全部A/B，首选rank16，无独立carrier。
-- 初期保持现有监督、数据、权重与主要P/Q配置；输出重构的耦合变化不能伪称某个单组件的因果优势。
-- 先实现并做最小真实forward/gradient/materialization/吞吐验证；现有四任务作短学习对照，73-task承接有行为反馈的主训练。
-- 小面板判断投入，最终选择只用预登记strict400；接近强基线/目标后先一次完整评测，再展开相邻和同任务另一视频。
-- 原A2 component已sealed，random只完成至48且此前被中断，未完成/未恢复；已有checkpoint保留，不自动续跑或执行原六套400。
+1. [x] 完整记录科学精神、推导、T/H/J因果职责、单probe、观察Meta、多视频、坐标decoder与GPU梯度算法。
+2. [x] 按所有权与重建依赖清理大派生缓存，保留唯一checkpoint、数据、正式结果和不可重建小缓存。
+3. [x] 退役旧专用代码/脚本/配置，整合必要公共运行基础；更新长期要求、分层历史与文档入口。
+4. [x] 主工作区验证、清理完成工作树与临时材料，可复制启动prompt已写入HANDOFF；交接文档随本次main提交交付。
 
-## 推进顺序
+## Owner同意后的执行路线
 
-1. [x] 重建goal并同步最新授权、能力参照和完整输出方向。
-2. [x] 在独立实现worktree复用P/Q，替换唯一输出接口、同步训练与物化合同并退役旧默认路径。
-3. [x] 最小真实图与最长样本验证、四任务短学习及四组配对闭环完成，64为64/62，明显超过旧P/Q与A2。
-4. [x] 同完整图73任务128updates及四点Panel-B已完成，完整采样审计通过；meta与target学习差异仍需闭环裁决。
-5. [x] 四组完整screen80为15/19/19/19，后半能力窄且停滞；本mixed实例不扩strict400，完整证据保留。
-6. [x] 同图同18target的128步对照、功能诊断和四组screen完成，validation17/17/20/16；目标功能改善却未稳定保留未见行为。
-7. [x] 两run固定128、原三train tasks的fit/held strict150完成；meta73为32/36、target18为53/53，部分行为恢复，Long仍弱。
-8. [x] 动作阶段、teacher-state接续和完整18task训练breadth完成；目标恢复不均，Object与Spatial受监督任务仍有明显缺口。
-9. [x] 同图同数据task75/77 clones完成：固定128 held视频6/10与8/10，对shared18的2/10与1/10保留3、新增11、丢失0。
-10. [x] 原shared18四点行为2/3/4/3（各20），未出现接近clones14/20的强阶段；已封存，不能把主要缺口仅归为遗忘。
-11. [x] 同图fully-random target18完成：validation16/16/17/19，固定训练两task4/20；初始化未消除共同学习缺口。
-12. [ ] 统一width256/heads8容量对照：保持18task/128updates/随机初始化/数据优化器，检验共享拟合与held行为恢复。
-13. [ ] 完成强候选的同口径SFT比较、相邻与跨视频strict400及同图fresh候选裁决；冻结selected后补完整视频因果controls。
-14. [ ] 方法冻结后完成规定32/8 fresh训练与最终test，交付完整科学证据。
+下列是后续计划，不是当前启动指令。预算与具体节点根据实现和真实profile登记，不预先虚构速度、分数、根因或固定总尝试数。
 
-## 判断原则与历史入口
+1. **确认共同理解与实施合同。** 读完当前authority、完整设计和分层历史，检查相关现有代码与canonical资产。
+   解释每个模块如何服务科学问题、哪些是已知事实/归纳偏置/默认/待检验假设；给出文件归属、数据/采样、验证与行为节点计划。
+   新session在此获得owner明确启动指令后，连续完成以下已授权工作，不为每个常规步骤重复确认。
+2. **实现唯一canonical新图。** 保留真实prefix、18层×50-horizon，单probe只读Action Expert Meta；实现同层因果过程、learned horizon read、
+   多视频共同compiler与原生坐标A/B decoder。复用现有LoRA和functional基础，完成Meta-on R-leaf VJP/observer分块重放与新checkpoint schema。
+   incompatible架构fresh；首版不追加raw X/Y bank、双probe或无独立职责旁路。
+3. **验证真实机制与执行成本。** 检查信息墙、因果mask/未来追加不影响早期E、真实K1/2/4集合语义、观察与执行作用域、实际功能梯度、
+   staged VJP权重与缓存有效期。用最长真实视频及query batch选择布局/attention/chunk，保留H和Meta梯度；CPU smoke不能代替这些GPU机制证据。
+4. **尽快判断能否学习与形成行为。** 用具代表性的训练侧任务覆盖各suite和有实质容量上界的Long；真实跨episode视频/query训练，
+   在登记节点检查训练行为、同task新视频及共享学习代价。比较实际曝光、task权重、预算和R/G/L；既不只报loss，也不直接先跑约10小时长训练。
+5. **推进共享训练与未见task迁移。** 新合同明确完整train24；有科学理由使用额外non-held meta时保留精确allowlist与分层权重。
+   如声称dynamic K，训练必须覆盖真实不同视频的K1/2/4。保留同拓扑fully-random fresh端到端候选；组件初始化只是另一候选。
+   定位最早失败接口，按历史已排除的解释和新证据选择实质修正；不无依据小扫或恢复退役fallback。
+6. **用strict400裁决强候选。** 有接近强基线的广泛行为后及时做预登记single-checkpoint400；正式选择只看qualification arms与相邻稳定。
+   报告per-task/suite、breadth、R/G/L、churn与success-set overlap，完成同task另一组正确视频。80-row screen不选最终模型。
+7. **冻结后完成因果证据与最终评测。** selected checkpoint冻结后运行登记的视频必要性controls；shuffled/reversed最后测试且不得反哺架构或选择。
+   方法冻结后按规定32 source/8 test从fresh训练并进行最终Test；整套证据共同判断是否达成最终目标。
 
-- 一次non-pass只淘汰实际检验的组合；先对照专家原文和已定位接口，不能用任意seed/LR/rank小扫替代分析。
-- closed-loop能力决定方法和投入；内部功能loss只负责区分训练学习、同task新视频与未见task迁移。
-- 明确坏结果不无限续训；有希望的变化继续相邻验证，不把固定更新预算称为充分训练或收敛。
-- 同图component-init与fully-random fresh保留为Final候选；negative controls只在selected checkpoint冻结后使用。
-- 训练等待期间优先准备下一科学节点，只在没有相关实质工作时整理可中断的workspace任务。
-- 当前执行证据见`progress.md`，跨轮结论见`findings.md`，旧路线和专家/实验索引见`docs/research_history.md`；
-  旧已完成清单及过时待办由Git保存，不在当前计划中重新激活。
+## 失败与继续的依据
+
+- 明确工程合同错误：修复实际根因并重做受影响验证；不把故障当科学non-pass。
+- 有效科学non-pass：只否定实际检验组合。区分单task学习、共享代价、同task视频变化、未见task迁移和functional/闭环分离。
+- 有希望的结果：继续到足以判断相邻稳定性；明确坏结果停止无信息续训，先用有限干预区分竞争解释。
+- 查阅 [findings.md](findings.md) 和 [research_history.md](docs/research_history.md) 后选择诊断；不用一次gradient cosine或局部问题命名整个系统根因。
+- 真正可并行的实现、审计或分析由主agent主动委派，隔离写入；主agent负责科学决策、集成、验证与main推送。

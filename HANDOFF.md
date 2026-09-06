@@ -1,64 +1,31 @@
 # EMBER cross-session handoff
 
-本文件只提供接手入口与现场快照；长期科学事实已经写入`task_plan.md`、`findings.md`、`progress.md`和
-`docs/research_history.md`。新owner完整消费后应删除本文件。
+本文件是新session的临时入口，完整消费后删除。长期事实与要求已进入正式文档，本文件不独占研究结论、设计决定或计划。
 
-## 现场
+## 接手状态
 
-- canonical workspace：`/data1/user/ymdai/projects/EMBER`；接手时先确认`HEAD == origin/main == remote main`。
-- 本次收口所基于的最后科学提交为`24819ed5daacdeb03c1b71b7baef00b9314de4b8`；交接文档与清理另由其后的main提交记录。
-- 当前没有active goal、active design、active配置、训练、评测、GPU任务或EMBER进程。
-- 清理完成后只保留canonical worktree，`.codex/tmp`为空。
-- 本地与远端只保留`main`分支。旧G3独占实现`2295f481dcd284e4bae92afeaf2cf5c4b2d3e5c2`由归档标签
-  `archive/g3-vector-interaction`保留，原`codex/g3-vector-interaction`分支已删除；`findings.md`与
-  `docs/research_history.md`中的旧分支名称是历史定位，不代表active路线。
+Canonical workspace：`/data1/user/ymdai/projects/EMBER`。先检查main、工作区diff及远端状态，保留后来出现的无关改动。
+当前设计与授权以 [progress.md](progress.md) 为准；按 [README](README.md) 进入完整文档和代码地图。
 
-## 科学停止点
+9月6日晚owner已接受新架构，要求先完成记录、仓库清理，再由新session接手；新session必须先理解并报告计划，
+得到owner明确同意后才能实施/运行新架构。旧goal、旧design、width256的未做闭环和历史待办均不授权自动续跑。
 
-最新已裁决设计是sealed的Unified Policy-Native Factor Writer v4：
+关键交接事实：新设计已完整记录但尚未实现；旧专用Writer执行面已退出活动树，通用读取/LoRA/数据/VJP/评测基础保留；
+旧原件由Git `fcdb6e43706c5fcedf10eaa5d2d459602b263016`与formal artifacts保存。228.50GiB可重建缓存已退役，
+原checkpoint、raw rows和生成provenance保留，精确名单见progress引用的清理记录。先用已整理历史，按具体问题展开原件。
 
-- shared m25/m50内部true-held functional均有微弱正信号；
-- held5 strict paired correct分别为`45/250`与`40/250`，stable carrier为`43/250`；
-- 逐task Long/Goal/Object/Spatial0/Spatial9分别为`0/0/4/37/4`与`0/0/3/34/3`；
-- breadth均`3/5`，Goal/Long均0；m25到m50为`38 retained / 2 gained / 7 lost`。
+## 可复制的启动prompt
 
-因此v4短资格non-pass：m25的净`+2`没有相邻稳定性或困难suite贡献，不允许直接续训、mixed-K、fully-random Final、validation8或
-negative controls。输出并未坍缩、全部参数组确实移动，所以这是科学non-pass而非工程故障。
+```text
+请接手 /data1/user/ymdai/projects/EMBER。第一阶段先充分理解仓库，暂不实现新架构，不启动训练、评测或恢复旧实验。
 
-仍有效的正证据包括G1真实native X/Y、signed pooling与rank4 task-local容量，G2完整PI0.5 response中的ordered video dynamics，
-task-local Writer容量，以及v4将language/patch/response分源读取后改善task grounding的内部信号。负结果只淘汰实际测试的shared
-参数化，不否定整个ECP或EMBER。
+请完整阅读 AGENTS.md、docs/current_owner_requirements.md、README.md、task_plan.md、progress.md、findings.md、docs/concept.md 和 docs/causal_layered_video_writer_design.md；读完 docs/research_history.md 的分层历史，再按当前问题查其索引中的原始评审、后续修正、Git快照和formal evidence。检查相关现有代码、canonical数据/模型来源和Git状态，不重新扫描全部历史运行，不重复复制资产。
 
-## Formal evidence roots
+向我说明：原始科学目标；新架构完整数据流及每个模块的因果职责；从历史到当前设计的推导、关键正负证据与边界；当前可复用代码和待实现差距；具体实施、GPU算法、数据/采样、验证和闭环裁决计划。明确区分事实、候选假设和未验证能力。然后等待我明确同意开始。
 
-- shared训练：
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_73task_k1_component_s50_f02f9148_gpu01p036_sharedmmap_20260905/`
-- m25物化：
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_materialized_f02f9148_gpu01p3_20260905/`
-- m25 strict250：
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m25_held5_correct_k1_strict250_f02f9148_gpu01p036_20260905/`
-- m50物化：
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_materialized_f02f9148_gpu02p2_20260905/`
-- m50 strict250：
-  `runs/outputs/pi05_ecp_policy_response_writer_source_separated_m50_held5_correct_k1_strict250_f02f9148_gpu02p236_20260905/`
+得到同意后，按已记录计划自主推进新架构及最终性能目标，不逐项重复确认。主动派发真正能并行省时的subagents，隔离写入并由主agent集成验证。先实现唯一canonical路径，核实真实Meta梯度、因果时序、完整horizon、多视频集合与重放语义，按真实最长样本优化吞吐，尽快用有信息量的学习和闭环证据判断投入。
 
-以上roots的completion、raw rows、run contract和launch bundle完整；不得作为普通缓存删除。更早证据从
-`docs/research_history.md`选择性定位，不要重新遍历全部退役代码。
+遇到问题先区分工程错误、科学non-pass与证据不足，定位最早失效接口；结合历史用能区分竞争解释的有限干预解决根本问题。有新证据时允许实质重构，不靠无依据小扫、无限续训、恢复旧fallback或层层补丁原地打转。不要用内部loss和几何指标代替闭环性能，也不要把局部失败扩展为整条科学路线失败。
 
-## 接手边界
-
-1. 严格按`AGENTS.md`的task-scoped reading读取相关authority到EOF；当前没有active design，不能自动恢复旧文档中的“next”。
-2. 新工作必须由owner重新授权、建立goal并在`progress.md`登记active design后开始。
-3. full 50-step horizon是硬边界，绝不恢复coarse、horizon mean或等价抹平。
-4. 架构必须优雅、职责清楚并可通过复制少数标准attention/MLP层扩展；不得用gate、summary、whitening、transport、手工增益或
-   calibration等数学补丁链挽救non-pass。
-5. correct相对wrong/乱序的优势应自然产生；negative controls不进入训练loss，selected checkpoint冻结后才评测。
-6. 最终唯一目标仍是validation8 strict paired correct稳定`>145/400`，并满足breadth、四suite、Goal/Long、same-task及视频因果合同。
-7. 真正launch前同时live检查gpu01/gpu02和对应quota；至多使用单节点6张真正提高吞吐的A40，可安全共驻但不得干扰他人。
-
-## 清理说明
-
-tracked历史代码、配置、专家原文与formal artifacts被有意保留用于审计和复用；它们不是active fallback。此次删除了`.codex/tmp`、
-pytest/Python cache、已完成detached worktree，以及唯一一份61,030,186,361-byte的退役G3 frozen-condition cache；该cache的重建命令与
-provenance仍在2026-08-31的launcher/analysis中。`runs/logs`和formal/analysis roots作为唯一科研证据保留，避免在没有继任设计的情况下
-破坏可复核历史。
+最终以validation8 strict paired single-checkpoint correct >145/400及相邻/跨视频稳定、低churn、高breadth、四suite非零和Goal/Long贡献共同裁决。遵守信息墙、固定split、真正的K覆盖、fully-random fresh候选、冻结后视频因果controls和最终32/8 fresh/test合同。shuffled/reversed不得反哺训练、选点或架构。遵守实时GPU/独立quota与main交付合同，持续更新正式账本；不要因旧goal仍active就自行启动。理解完成后删除临时HANDOFF.md，并更新README中相应临时入口。
+```

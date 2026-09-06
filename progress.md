@@ -1,63 +1,60 @@
 # EMBER progress
 
-更新时间：2026-09-06 19:50 CST。
+更新时间：2026-09-07 CST，交接整理收口。
 
-## 当前目标与授权
+## 当前授权与方法状态
 
-- Owner最新要求暂停后续自主推进，先讨论，待owner明确说继续后才能恢复。已启动的width256训练允许自然结束；不自动启动后续评测、新实验或代码改动，也不继续轮询。最终科学goal未完成，active design保留为`docs/joint_process_policy_writer_design.md`；goal的active状态不能覆盖本次暂停。
-- 最终资格仍为validation8 strict single-checkpoint >145/400及预登记相邻/跨视频稳定、breadth、四suite与Goal/Long贡献；
-  同图fully-random候选和冻结后视频因果controls仍待完成。方法冻结后才做32/8 fresh及Test，没有selected checkpoint。
-- Canonical为共同P/Q完整38-target rank16、4750208 Writer参数、source/observer冻结，无独立carrier或部署expert字典。
-  最新评测改动仅允许显式outcome-informed training fitting登记，保留真实metadata，禁止其checkpoint选择用途；8项针对性回归已通过。
+- Owner于9月6日晚完成新架构讨论，要求本session记录完整设计、全面整理仓库并准备新session接手。
+  本次授权包括相关代码整理、只读核验、必要验证、Git集成与推送；不包括新架构实现或新的科学训练/评测。
+- 已登记active design：[causal_layered_video_writer_design.md](docs/causal_layered_video_writer_design.md)，状态为**设计已对齐，尚未实现/验证，等待新session理解后取得owner启动指令**。
+- 当前候选：frozen图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50-horizon因果局部过程、置换不变多视频compiler、
+  原生坐标条件MLP生成唯一38-target完整rank16 LoRA。初版默认与待落实细节在设计§9/14。
+- 未选出selected checkpoint，未达成最终科学目标。旧工具goal或旧未完成实验不覆盖当前授权，也不自动恢复width256评测或旧训练。
+- 交接只读核验时两节点没有EMBER训练/评测进程。所有旧实验封存；正式推进必须依后续owner指令和当时资源状态。
 
-## 已封存的主要证据
+## 已封存的最近科学结果
 
-- complete short4 m64 fit/held64/62（各150）主要改善Goal；mixed meta73 m32/64/96/128 validation screens15/19/19/19，未扩strict400。
-- 相同18targets/128步的target-only对照实际采样匹配，validation17/17/20/16；Long新增未保留，没有充分支持扩strict400或续同run。
-  原三task fit/held行为由meta73的32/36恢复为53/53，恢复仍不全面。历史§173–176与target18 analysis保留全部边界。
-- 原18task terminal128 held-video training breadth完成：meta73为42/180、breadth9/18，target18为55/180、breadth13/18；
-  按Spatial/Object/Goal/Long14/5/21/2与15/5/25/10，分母40/40/50/50；R/G/L32/23/10，churn33、Jaccard.4923。
-  同prefix独立专家111/180，仅为不同预算训练容量参考。Object仍5/40，说明未见task迁移不是唯一缺口。
-- 动作轨迹与teacher-state接续显示接触/抓取/最终放置等异质失败，不能统一归因occupancy。Long93专家本身弱且后半阶段并未漏采，
-  故该任务不能代表所有Long学习。历史§177/178与`runs/analysis/pi05_ecp_prw_complete_target18_20260906/`保留完整证据。
+- 旧complete P/Q short4 m64 fit/held为64/62（各150）；mixed meta73四点validation screen80为15/19/19/19。
+- 相同18target对照四点screen为17/17/20/16；terminal128训练侧held视频breadth为55/180、13/18tasks，对meta73的42/180、9/18。
+  Object仅5/40；Goal/Long改善仍不足以证明共享与迁移问题解决。
+- 相同预算task75/77 whole-Writer clones为14/20，对shared18的3/20；shared相邻四点为2/3/4/3。
+  说明共享训练存在代价，但不能单凭该差距确定容量、梯度冲突或优化根因。
+- 同图fully-random target18四点screen为16/16/17/19；固定训练两task4/20，未消除共同学习缺口。
+- width256原run已自然结束：128updates、15,660,800参数、train.exit=0；训练732.48秒，functional Panel-B498.24秒，总计1283.05秒。
+  32/64/96/128 checkpoint均保留；暂停后未启动物化或闭环评测，**没有width256闭环分数**。
 
-## 同图单任务学习对照已完成
+完整原件、样本/预算口径与边界在 [历史§6](docs/research_history.md#recent-learning)；跨轮解释在 [findings.md](findings.md)。
+上述都是旧图结果，新候选不继承其性能结论。
 
-- Clean pushed detached6efdd2e031dfd42484fa89ca5e472a36a1e9a96a，frozen tree为
-  `/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-single-task-20260906`。
-- task75（Spatial7）和77（Object2）各一个whole-Writer clone，不添加task query或冻结evidence；component、128updates、每步8queries、
-  原两fit视频分别1/2与7/10，每video64exposures；两run的实际128task executions/1024queries/video/policy RNG/normalizer与target18匹配。
-  只改变单task目标相对18task均值的共享梯度统计，不能独立命名容量/梯度冲突/优化根因。
-- gpu01p2/NUMA0与p3/NUMA1各world1。Train177.21/177.99秒、Panel-B257.20/254.85秒，另计启动加载；peak reserved34.38/34.40GiB。
-  source/observer参数0，全部held/Panel-B backward0。训练与物化、两个评测launcher及workers均自然exit0。
-- 固定terminal128、原held48视频及states0–9：task75为6/10，对shared18的2/10 R/G/L2/4/0；task77为8/10，对1/10 R/G/L1/7/0。
-  合计14/20对3/20，原3个成功全部保留。任务是基于已读训练侧缺口选择，明确非独立held、非checkpoint选择，不能部署clone集合。
-- Canonical analysis为`runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`，training_comparison.*与behavior_comparison.*含实际样本、
-  功能曲线、20个新raw rows、paired IDs和source引用，精确launch/资源合同在launch目录；历史§179/findings§177已封存。
-- 只读核验old v6实际step50/400每task1000/8000queries，历史106/143；其完整train24、50episode/video池、width256、可训练observer与优化均不同，
-  因此不能把当前差距简单归为训练量。原件引用在historical_v6_recipe_context.json，不恢复旧coarse/native读法。
+## 本次交接整理
 
-## 已完成：同图 fully-random target18
+- 新设计记录涵盖科学动机、完整数学与因果推导、张量shape、多视频、单probe选择、X/Y与坐标decoder、GPU staged VJP/cache与现有代码迁移。
+- 重写concept、长期要求、分层history、findings、README与当前账本；原6份旧设计、11份专家原文和181节完整旧账本保留在Git
+  `fcdb6e43706c5fcedf10eaa5d2d459602b263016`，历史§9可按问题定位原件。
+- 退役旧P/Q、bank conditioning、Natural Program、joint primal、G1/G3与Stage 0专用训练面及专用配置/测试；
+  `src/scripts/tests/configs`文件共476→123（src195→69、scripts42→8、tests42→24、configs197→22）。
+- 整理通用functional重放、panel读取、task/K调度与成本分配；source/data/expert/evaluation/normalization/LoRA基础保留。
+  `configs/pi05_writer_data_v1.json`集中可复用来源，历史角色不是新实验授权。新图仍无可运行训练入口。
+- AGENTS新增可并行工作应主动委派、隔离写入及主agent集成责任；本次由设计记录、代码整理、存储审计三个subagents并行完成各自范围。
+- 删除222组可重建派生缓存，共82,122个payload文件、245,347,917,824 allocated bytes（228.50 GiB）；
+  保留所有cache/entry JSON、生成配方、run contracts、metrics、raw rows、正常化参数和唯一checkpoints。
+  缺上游Writer的两个小smoke缓存、两个各约44GiB正式run root及独特轨迹证据保留。
+- strg01清理后quota复查：data1 488,035,348 KiB（465.43 GiB），soft1,073,741,824 KiB、hard1,084,227,584 KiB；
+  清理前727,683,088 KiB。data0 57,471,972 KiB，使用独立quota。此为当时快照，下次大增长前须现场复查。
+- 精确删除范围、保留例外、重建依赖、width256完成核验与工作树清理记录位于
+  `runs/analysis/ember_handoff_cleanup_20260906/storage_cleanup.json`。
 
-- Clean pushed detached f3717836，run为`pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906`。
-  全部4750208 Writer参数随机初始化、原18tasks/两fit视频/128updates/每task1024queries；实际2304task executions/18432queries及
-  video/policy RNG/normalizer/权重/LR完整匹配component。Train614.19秒、Panel-B404.46秒、peak34.613GiB；所有进程自然exit0。
-- Validation32/64/96/128 screen80为16/16/17/19，breadth2/3/6/3；suite Spatial/Object/Goal/Long为0/9/7/0、0/9/7/0、1/7/8/1、2/9/8/0。
-  相邻R/G/L14/2/2、14/3/2、14/5/3，churn4/5/8，Jaccard.7778/.7368/.6364。仍低于同prefix SFT24，96的breadth/Long新增未保留，不扩strict400。
-- 固定训练task75/77 held48/48、states0–9为2/10与2/10，共4/20；component128为3/20，R/G/L2/2/1；独立clones14/20。
-  两种初始化都没有消除共同学习缺口。完整分析与launch在`runs/analysis/pi05_ecp_prw_complete_target18_random_20260906/`；历史§181/findings§179封存。
+## 验证与交付
 
-## 当前下一步：统一宽度容量对照
+- 在集成后的主工作区新跑 `PYTHONPATH=src .venv/bin/python -m pytest -q`：139 passed，20.75秒。
+- 6个保留Python CLI的`--help`全部exit0；当前Python源码语法、22个JSON配置与两份shell脚本语法检查通过。
+- 当前Markdown本地文件链接无缺失，17份退出活动树的设计/评审原件仍可由冻结Git读取；`git diff --check`通过。
+- 10个已完成工作树已移除；两个写入subagent的交付范围与main集成内容一致，task分支已删除。临时启动/诊断副本与Python/pytest缓存清理完成。
+- 代码整理与设计记录已合入main；本文及其余文档随交接提交推送。最终提交与remote一致性以Git实际状态为准。
+- 验证覆盖当前保留的工程基础；新架构GPU forward、Meta梯度、profile和闭环尚未运行，不能据此宣称新方法有效。
 
-- 已登记现有图width128→256、heads4→8保持head dimension32，4个同构P/Q blocks及其余图结构不变；全部15660800 Writer参数随机初始化。
-  与width128 random保持原18tasks/两fit视频/128updates/每task1024queries及完整优化器/采样合同，检验这个预算下的共同学习容量。
-  预登记四点validation screen80和固定terminal128同两训练task20rows；是否扩strict400由广泛且相邻保留的真实行为决定，screen不选模型。
-- 最长task93两步成本profile已在原clean pushed f3717836运行，79/87frames、8queries/micro8，train3.347秒、Panel-B4.537秒，peak34.811GiB；
-  source/observer/tasklocal参数0、完整38-target rank16，全部进程自然exit0。该profile只证明运行条件，不作为能力证据。
-  记录位于`.codex/tmp/prw_complete_width256/`，CPU实际构造参数计数与真实config loader通过；源码未改。
-- 四个真实config loaders及最小差异核验通过，已从clean pushed detached14bc7605启动正式训练：gpu02p0,1,2,3,5,6、world6，
-  NUMA0/0/0/0/1/1，launcher1042741；2026-09-06 19:40 CST启动。两个节点live准入通过，p6现有4749MiB/0%留有充分峰值余量，peer作业不动。
-  当前只运行此六卡训练。run为`pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906`，
-  冻结tree为`/data1/user/ymdai/projects/EMBER-worktrees/prw-complete-width256-20260906`；analysis/launch保存精确命令、profile、配置和资源证据。
-  新quota726924336KiB/1073741824soft，shared84TiB，新增峰值预算<18GiB；原run232MiB、random analysis172MiB、已结束profile76KiB。
-  全部negative/Test仍未启用，没有selected checkpoint；最终科学goal持续active。
+## 下一步
+
+新session先按 [README](README.md) 的阅读顺序充分理解，报告完整数据流、历史关键教训、当前代码能力与待实现差距、
+执行/验证/行为裁决计划；等待owner明确同意。获准后依 [task_plan.md](task_plan.md) 连续推进，实现到真实行为证据，
+遇到问题用历史与区分性诊断找根因，不以loss、局部参数几何或重复小扫代替最终性能推进。

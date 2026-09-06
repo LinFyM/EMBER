@@ -1,90 +1,61 @@
 # EMBER concept
 
-## 问题定义
+## 从观察到自己的策略
 
-人看过一段没有动作标注的教学视频，通常会先理解目标，再把视频中的条件、过程和结果迁移到自己的身体与当前场景。EMBER
-研究PI0.5能否做同一件事：只看task language和`K`条action-hidden正确视频，在rollout前把观察到的知识编译成Action
-Expert的一套LoRA，随后零交互完成任务。
+EMBER的出发点是：正确教学视频通常没有与接收者兼容的action labels，示范者甚至可能具有不同身体。人仍能从视频理解
+“关注什么、在什么条件下做什么、过程如何推进”，再把这个知识应用到自己的动作能力上。
 
-这不是视频检索、task-ID分类、行为克隆或运行时视频条件策略。部署时没有teacher action、state、reward和第二个expert；
-Writer只运行一次，输出的参数必须直接成为闭环策略的一部分。
+本项目探索一种参数化实现：以冻结的π0.5-LIBERO source policy作为具身先验，用共享Writer把exact task language与一条或多条
+正确教学视频，在rollout前一次性编译为完整task-conditioned LoRA。执行时policy只根据自己的观测闭环行动；Teacher视频不再输入，
+没有目标task上的试错或优化。LIBERO是当前检验平台，跨人类/跨具身泛化仍是动机，不能由该平台结果自动宣称实现。
 
-## 为什么问题困难
+## 三个必须接上的职责
 
-原生PI0.5中，Gemma处理当前language和静态图像prefix，Action Expert把50个未来horizon位置上的noise tokens通过flow
-matching推进为动作chunk。教学视频则是一串跨时间的静态帧，而且没有teacher actions。EMBER必须同时解决三个接口：
+1. **让已有动作知识帮助理解画面。** 冻结vision/Gemma产生每帧原生图文prefix，读取侧Action Expert共享Meta-LoRA适配无proprio的
+   教学输入。保留各层和完整50-horizon条件响应；一次flow端点前向提供响应结构，不是已经生成完的正确动作轨迹。
+2. **从连续画面形成有方向的过程证据。** 在每个计算层内，让后帧按内容和相对时间读取过去的horizon位置，保留当前内容和变化，
+   再做有任务条件的horizon读取。视频时间、action horizon与计算深度各有不同含义。
+3. **把过程编译成可闭环使用的参数。** 每条视频独立编码，集合阶段联合理解证据，用共同的整策略queries协调整套LoRA，最后
+   在明确的原生目标/通道坐标上生成全部A/B。参数在rollout中固定，行为阶段由执行policy当前观测触发，不能用teacher视频时钟驱动。
 
-1. 从帧级PI0.5表示中提取与动作过程相关、而非只识别物体或task模板的动态证据；
-2. 从可变长度、可变`K`的视频中学习保留过程信息、可支持整套策略修改的工作表示；
-3. 让共同表示联合生成Action Expert完整LoRA，在共享训练后仍能迁移到新任务；native evidence用于理解与条件化，
-   不再强制将输出限制为raw X/Y的signed span，也不得把held更新投影回fit-task字典。
+这三个职责是否实际实现，必须由可复核干预和闭环证据判断。Full horizon、梯度接通或模块名本身没有完成证明。
 
-训练task数量有限还会造成欠识别：language、video和task identity可能高度相关，模型即使完全忽略过程也能降低训练loss。因此
-方法必须靠task-disjoint评测、视频controls、多个独立策略lineages和真实closed-loop结果证明因果路径。
-
-## 方法方向与当前证据
-
-Action Expert的原生动作时序知识应是视频过程理解的核心。Gemma逐帧提供图文语义，Action Expert提供当前视觉条件下的动作生成
-响应；这两类证据都不自动构成整段视频理解。source在目标任务上可能失败，其响应不是正确动作真值。学习方向来自授权non-held
-任务上的真实actions、privileged专家或训练期行为信号，不能偷渡到deployment输入。
-
-早期v5.2/v6已证明一条端到端视频到LoRA路径能够产生真实闭环能力，后续缺少稳定积累；G1证明部分native-factor容量，G2证明
-ordered response有可学习动态信息。局部接口的正证据不等于整套共享Writer通过，后期弱模型也不能抹掉早期能力。
-
-最新owner授权复用共同过程状态P与整策略状态Q，直接联合生成38-target完整LoRA，无独立carrier。首选rank16，rank8由实际成本和行为证据决定。
-active design见`docs/joint_process_policy_writer_design.md`，状态以`progress.md`为准。旧A2/P/Q实例的负证据保留，新的输出重构尚待实际检验。
-
-## 数据流与模块职责
+## 当前对齐的候选数据流
 
 ```text
-exact language + K internally ordered action-hidden videos
-  -> frozen per-frame PI0.5 image/language/action-response capture
-  -> per-video learned process states P[frame, work-token, width]
-       <-> whole-policy states Q[target, rank, X/Y side, width]
-       repeated attention/MLP; re-read full native evidence
-  -> permutation-invariant learned set read
-  -> family-shared learned factor heads
-  -> complete38-target A/B, one rank16 materialization
-  -> frozen execution policy; no further Writer call
+exact language + K条action-hidden有序videos
+    → 每帧 frozen vision/Gemma native prefix
+    → Action Expert + shared observer Meta-LoRA
+      单个固定public Gaussian probe，flow_time=1
+    → R[k,t,j,h]：18个已读图层状态 × 完整50 action horizon
+    → 同层 late→past 的因果局部attention/变化MLP
+    → 每(t,j)有任务条件的horizon read → E[k,t,j]
+    → 置换不变的视频集合读取 + 全局整策略queries
+    → 原生坐标条件MLP → 唯一38-target完整rank16 LoRA
+    → 冻结source policy在自身新初始化中闭环执行
 ```
 
-P由语言条件化图像读取形成对象/关系grounding，再读取完整原生响应并沿teacher time交换信息。Q负责协调整套参数修改，读取P，
-并反馈到下一层过程读取。两者联合接受真实policy功能梯度，不使用独立冻结的固定Program tuple作为唯一中间瓶颈。
-所有learned主干保持少数职责清楚、可复制扩展的attention/MLP模块；不再叠加summary、covariance solve、whitening、transport、
-anchor或family gate的连续坐标链。Q跨target交流是候选机制，不能由存在attention就宣称解决多任务共存。
+完整推导、shape、可执行默认、GPU梯度算法与已有代码地图见
+[causal_layered_video_writer_design.md](causal_layered_video_writer_design.md)。设计已完成讨论，实际实现与科学执行授权见
+[progress.md](../progress.md)。这张图尚没有新的性能证据，不继承旧Writer的分数。
 
-## 时间轴、信息墙与动态证据
+- 单probe是当前最小方案；额外probe只有独立用途与实际收益时再考虑。
+- Gemma语义经原生prefix进入Action Expert；不假定R或压缩E无损保留全部语义，也不无依据再叠一条R→Z读取。
+- H保持relative action time，J保持计算层身份。Late→past只约束教学时间，原生action horizon注意力保持π0.5语义。
+- 观察侧Meta参数跨任务共享，单次编译内固定；执行侧只装生成的一套LoRA。观察侧激活不等于实际执行状态下的X/Y。
+- 不额外强制读取完整raw X/Y bank，不限制最终因子处于其signed span。真实policy功能梯度提供原生参数坐标的学习信号。
+- 多视频带来互补证据和削弱独立干扰的机会；相关误差、不同有效策略与学习不足会限制收益，不能保证K增大后每次性能都提升。
+- 局部过程模块的历史感受野有限；整段远距离联合推理由最终全局queries承担，不能把每个局部E说成完整任务程序。
 
-teacher-video time、relative action horizon、flow time、layer depth、probe是不同轴。每个视频帧保留19个layer boundaries、
-完整50 horizon及两个固定antithetic probes的原生响应，直到task-conditioned learned read才压缩；禁止horizon mean、coarse或
-等价无条件平滑。s=1是噪声端点，响应不是教师未来50帧或已经去噪的正确动作；不能设`t+h`统一时钟或把网络深度当任务阶段。
+## 已有证据能支持什么
 
-语言与结构身份条件化读取，真实视频语义和有序过程共同参与完整生成。位置用于时间路由，不能由位置/帧数冒充动态证据。
-完整LoRA不继承mobile-only静态零输出约束；视频动态的必要条件增量由最终冻结controls证明。G1的native局部容量正证据继续保留。
-每条视频独立保序，集合阶段置换不变；不平均raw frames/features或最终LoRAs、不挑video、不拼视频时间、不重复凑K。
+早期v5.2/v6的端到端视频到LoRA路径达到过真实闭环能力，其中v6 strict correct为143/400，但后续相邻结果下降。
+Task-local rank16专家250/400说明执行LoRA存在容量；G1说明特定native-factor表示存在局部可达性；G2说明完整有序响应具有动态信息。
+最近完整输出重构带来过训练侧Goal收益，同图单task学习也优于18task共享实例；这些都没有解决稳定共享迁移。
 
-教学视频路径没有teacher actions、state/proprio、reward、terminal、task ID、filename或pose。执行policy按官方合同使用自身当前
-观测/state。Writer只在rollout前运行一次，该调用内部允许固定只读重放同组视频/native evidence；闭环中无task-local优化或第二adapter。
+新候选吸收上述证据，同时修正“保留原生响应就等于用好动作时序先验”的推理跳跃。其主要未解问题仍是：过程表示是否足够，
+共享优化是否能把它变成有用的参数，以及从多个任务学到的映射是否能迁移到未见任务。
 
-## 输出与训练
-
-唯一部署输出由Writer联合生成38-target全部A/B，首选rank16，无独立carrier或第二adapter。native responses是重要证据，
-最终读出采用learned heads；非零A/零B初始化后全部可训练。解除signed/native输出限制是候选假设，不是已确认的性能根因。
-
-最初使用正确视频生成LoRA、同task跨episode action query的真实flow loss。训练task名单、权重、normalizer、video/row occurrence与
-optimizer cadence必须明确。clone/shared对照使用相同图、初始化和可训练模块；clone仅是能力诊断，不能部署或冒充共享泛化。
-有共享行为信号后才按实际缺口研究成功行为保持、learner访问状态或reward；先回查SEOD/GOMQ/guard的等价尝试。
-
-Final保留同拓扑component-init和fully-random fresh端到端候选，不强制重演G1--G3冻结课程。Action Meta首轮关闭，若证据指向
-observer输入域不足再作有限matched审视；基础权重冻结，读取侧适配与执行native bank坐标必须明确，缓存不得跨learned observer更新失效。
-
-## 裁决与未知
-
-train24 SFT历史109/400与旧Writer143/400是实质能力参照；正式比较须对齐合同，不能只超过弱source/carrier。
-最终标准仍是validation8 single-checkpoint strict paired correct严格>145/400，并由相邻稳定、低churn、breadth、四suite与
-Goal/Long贡献、same-task新视频鲁棒性和最终视频因果controls共同证明。局部loss/rank/cosine改善不能替代闭环，union不能部署。
-fixed validation/test不产生梯度；shuffled/reversed只在selected checkpoint冻结后检验，不用于训练、选择、内部Gate或架构修正。
-
-仍未知的是：当前部署图的基础可学习性与共享困难分别有多大，哪种过程—策略映射能稳定积累行为，以及现有授权数据能否识别强
-视频过程必要性。授权train侧的过程/组合与功能歧义审计不能由元数据数量代替；即使取得高总分，视频无必要性也不构成EMBER完成。
-低于/接近baseline时应比较竞争解释，必要时多做有区分力的分析实验；不把一个可疑现象命名为根因后随手修补。
+唯一正式性能目标是validation8 strict paired correct严格 >145/400，并满足相邻与跨视频稳定性、低churn、高breadth、四suite非零、
+Goal/Long贡献和冻结后视频因果controls。详细边界见 [current_owner_requirements.md](current_owner_requirements.md)，
+历史脉络和证据入口见 [research_history.md](research_history.md)。

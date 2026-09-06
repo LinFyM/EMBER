@@ -1,87 +1,73 @@
 # EMBER
 
-EMBER研究如何把目标task的exact language和一条或多条action-hidden教学视频，在rollout前一次性编译成冻结PI0.5 Action
-Expert的一套完整LoRA，使policy零交互完成任务。
+EMBER研究能否把exact task language和一条或多条action-hidden教学视频，在rollout前一次性编译为冻结π0.5 source policy的
+一套完整task-conditioned LoRA，使policy从未见初始化闭环完成任务。唯一正式性能目标为validation8 strict paired
+single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、breadth、四suite与Goal/Long贡献及最终视频因果controls。
 
-当前工作主干为Joint Process–Policy Complete LoRA Writer：冻结PI0.5提供图文prefix与完整layer/probe/50-horizon响应，
-每条视频经共同P/Q的标准attention/MLP模块形成过程和整策略状态，再由置换不变集合读取与共享factor heads直接写出全部38-target
-rank16 A/B。没有独立carrier，也不把输出限制在raw X/Y signed span。旧A2、mobile4 P/Q和更早路线由Git及formal evidence保存，
-不作为active fallback。新接口已通过真实功能梯度与吞吐验证，尚未证明闭环能力。
-后继研究依据`docs/joint_process_policy_writer_design.md`推进；owner授权、当前目标、运行与下一步只以`task_plan.md`和`progress.md`
-的当前记录为准，不从历史design中的“active”恢复执行。
-G1/G2提供局部容量与动态证据，不代表后继Writer已经继承完整动态能力或闭环行为。
+当前候选是**因果分层视频到完整LoRA Writer**：冻结图文prefix → 单probe Action Expert共享观察Meta-LoRA → 保留18层×50-horizon
+的单向视频过程 → 多视频集合共同读取 → 原生坐标条件MLP生成全部38-target A/B。完整设计已记录，尚未实现或验证。
+当前只完成交接与仓库整理；新session先理解并报告计划，经owner明确同意后才启动正式推进。准确授权见 [progress.md](progress.md)。
 
-## 科学合同与历史基础
+## 接手阅读
 
-- source、固定24/8/8 split、task experts、rank16 LoRA与评测合同已建立；
-- task-local rank16 oracle为250/400，证明Action Expert LoRA有闭环容量；
-- G1真实38-target native banks与task-local signed pooling Gate已经通过；G2 boundary-anchored Natural Program Gate已经通过；
-- P0/P1证明current-bank operator与exact signed replay具有强task-local容量；随后旧G3的
-  `summary -> family-scalar gate -> shared event-additive anchor`在充分校准后仍不能同时保留correct并压低wrong，已经正式停止；
-- PNBTT完成single/family chart、两次spectrum、full-rank16与gate-aligned E1后稳定`non_pass`；它能压低wrong但不能同时恢复
-  task1/93 correct/held，现只作历史证据；
-- 2026-09-02完整历史复核后，owner确认Policy-Response Event-to-Factor Writer路线：冻结PI0.5逐帧捕获
-  layer x horizon x probe response，沿视频时间形成ordered events，再由events在当前视频真实X/Y bank中直接执行signed selection；
-- 训练只使用正确视频的cross-episode functional；所有负controls在selected checkpoint冻结后评测；
-- 旧privileged q_pi/realizer和人工process路线已正式关闭；
-- 唯一正式性能目标线是validation8 strict paired correct严格`>145/400`，并同时要求稳定性、breadth、四suite非零、
-  Goal/Long贡献、same-task鲁棒性和视频因果controls；
-- Final保留从已验证组件初始化和整套Writer完全随机初始化后端到端fresh联合训练两类候选；G1--G3不是Final强制课程。
+1. [AGENTS.md](AGENTS.md) 与 [长期要求](docs/current_owner_requirements.md)：目标、方法边界、数据/评测/资源合同和协作方式。
+2. [当前计划](task_plan.md)、[当前状态](progress.md)、[持久发现](findings.md)：区分待研究问题、已完成证据和执行授权。
+3. [科学动机](docs/concept.md) 与 [完整新设计](docs/causal_layered_video_writer_design.md)：理解完整推导、shape、梯度算法、实现边界。
+4. [分层历史](docs/research_history.md)：先读全局脉络，再按当前问题展开原评审、旧账本和formal evidence；不默认恢复旧实验。
+5. 下方代码地图及设计§11。真实跨session交接可从 [HANDOFF.md](HANDOFF.md) 进入，消费后删除该临时文件。
 
-Unified common-base v3的matched task1/task93 25/50控制通过，但73-task shared的m100/m200 held5只有`35/31`，低于carrier43并随
-训练退化。职责替换显示learned evidence可跨task给出正增量，失败集中在重复factor blocks；信息流又定位到exact language在与256 patch、
-400 response共享softmax时多数层仅约2.2%质量。v4只让同一套policy-attention权重分别读取language、patch、response，各自
-softmax后与side-native read相加，不增加参数、stage、gate或手工校正。其73-task m25/m50 held5为`45/40`，carrier为43；两点
-breadth均`3/5`且Goal/Long为0，m25的小幅净增没有被m50保持。因此v4短资格non-pass，不直接续训或进入mixed-K/Final。
+## 代码与运行入口
 
-## 阅读顺序
+活动树保留共同基础设施，旧P/Q、Natural Program、bank compiler与Stage 0专用执行面已退役；目前没有新Writer训练入口。
+旧实现与原始专家意见可由 `fcdb6e43706c5fcedf10eaa5d2d459602b263016` 恢复，具体索引见历史§9。
 
-1. `AGENTS.md`：仓库总合同；
-2. `docs/current_owner_requirements.md`：owner稳定目标与约束；
-3. `task_plan.md`、`findings.md`、`progress.md`：当前计划、结论和进度；
-4. `docs/concept.md`：科学问题与ECP假设；
-5. `progress.md`明确登记的active design：按任务读取涉及的接口和实验合同；
-6. `docs/expert_review_20260905_full_history_joint_process_policy_writer.md`：最新完整历史复核原文；
-7. `docs/research_history.md`：历史设计、专家意见、修正与formal evidence索引，按当前问题展开相关论证。
+| 责任 | 当前代码 | 使用边界 |
+|---|---|---|
+| 原生图文prefix、KV、Action Expert层捕获 | `src/ember/ecp/policy_effects.py`、`observer.py` | 可复用读取能力；新Meta-on observer与分块梯度重放待实现 |
+| Meta-LoRA与执行LoRA | `src/ember/writer/meta_lora.py`、`src/ember/pi05_lora.py`、`batched_lora.py` | 观察Meta与执行adapter作用域分离，最终执行只装一套完整LoRA |
+| functional query VJP与Writer重放 | `src/ember/writer/functional.py`、`replay.py` | 已有同condition query microbatch VJP；未实现跨condition批量VJP或新Meta重放 |
+| 数据、视频、任务采样与GPU placement | `src/ember/writer/data.py`、`functional_data.py`、`task_schedule.py`、`task_execution.py` | 复用读取/调度，正式allowlist、真实K1/2/4和episode角色须为新run明确登记 |
+| checkpoint、NUMA与分布式 | `src/ember/ecp/checkpoint.py`、`src/ember/writer/topology.py`、`src/ember/pi05_source_setup.py` | 新架构fresh/new schema；exact-resume锁world topology |
+| source与task-local专家 | `src/ember/source_sft/`、`src/ember/expert_manifold/` | 保留source来源和训练侧容量参照；不能部署held字典 |
+| 官方闭环评测 | `src/ember/pi05_eval/`、`pi05_evaluation.py`、`pi05_eval_contract.py`、`static_task_lora.py` | 动态队列/long-first/persistent workers；旧静态adapter格式只用于证据读取 |
+| 训练侧行为诊断 | `src/ember/reward/` | 保留已有rollout/occupancy工具；不授权held reward梯度或生成LoRA后的task-local RL |
 
-## 目录
+当前Python入口均可使用 `--help`：
 
 ```text
-configs/                 固定split、source、LoRA、task-expert和Stage 0合同
-src/ember/ecp/           ECP Stage 0候选表示
-src/ember/expert_manifold/ task expert训练与静态评测
-src/ember/pi05_eval/     动态队列、恢复、聚合和评测合同
-src/ember/reward/        训练期privileged rollout/occupancy工具
-src/ember/source_sft/    source SFT训练、checkpoint与validation
-src/ember/writer/        跨路线复用的数据、functional与Meta-LoRA工具
-scripts/                 canonical训练、封存与评测入口
-tests/                   canonical与历史可复用运行面的定向测试
-```
-
-`data/`、`models/`、`runs/`和`.venv/`是ignored本地资产，不提交远端。现成LIBERO数据、tokenizer、唯一formal checkpoints和结果
-应复用；人工process路线和约11.6GB可重建主要产物已删除，recovery Gate A残留作为历史formal evidence保留。
-
-## 本地验证
-
-仓库使用Python 3.12和本地`.venv`：
-
-```bash
-PYTHONPATH=src .venv/bin/python -m compileall -q src scripts tests
-PYTHONPATH=src .venv/bin/python -m pytest -q
-```
-
-主要入口：
-
-```text
+scripts/seal_pi05_source_corpus.py
+scripts/seal_pi05_target_data.py
 scripts/train_source_sft.py
 scripts/train_task_experts.py
-scripts/train_ecp_stage0.py
-scripts/train_ecp_stage0_action_meta.py
-scripts/train_ecp_policy_response_writer.py
 scripts/evaluate_source_sft_validation_loss.py
-scripts/evaluate_ecp_stage0.py
 scripts/evaluate_pi05.py
 ```
 
-正式GPU运行遵守`progress.md`所登记的active合同与`AGENTS.md`：检查两个GPU节点与对应storage quota，从clean pushed commit的
-frozen worktree启动。跨session接手先核对当前owner要求与项目状态；只有存在真实交接材料时才消费临时handoff，长期事实以正式账本为准。
+`scripts/bootstrap_env.sh`与`scripts/zig-cxx`保留既有环境/编译职责，不为交接重复安装环境。新架构的过程模块、集合compiler、坐标decoder、
+观察Meta梯度编排和唯一训练/物化入口须在后续实现；不把现有helper的通过测试当作新模型通过。
+
+## 资产与证据入口
+
+Canonical workspace为 `/data1/user/ymdai/projects/EMBER`；`data/`、`models/`、`runs/`、`.venv/`均为本地ignored资产，不提交远端。
+复用现有资产，不新建重复模型、数据或环境。
+
+- `configs/libero_24_8_8_v1/protocol.json`：固定24/8/8 development split。
+- `configs/pi05_source_corpus_v1/`：LIBERO-90去重审计、71-task source、冻结normalizer；`libero90_nonheld_meta_v1/protocol.json`约束额外meta来源。
+- `configs/pi05_writer_data_v1.json`：当前source checkpoint、tokenizer、数据和既有functional panels的统一来源索引。
+  其中历史73/18角色与episode分配只是provenance，**不是新run训练合同或allowlist授权**。
+- `configs/pi05_lora_v1.json`、`pi05_target_evaluation_v1.json`：LoRA目标与官方rollout配置；首版rank16按新设计登记。
+- `configs/pi05_task_expert_lineages_v1.json`：已存在专家的来源与角色；专家容量不能代替共享Writer能力。
+- `runs/analysis/`与`runs/outputs/`：原始分析、run contract、completion、metrics、raw rows与checkpoint；先从历史索引找对应root。
+- `runs/analysis/ember_handoff_cleanup_20260906/storage_cleanup.json`：本次已退役派生缓存的精确范围、重建依赖与保留例外。
+  历史cache manifest描述当时生成状态，部分tensor payload已释放，重新使用须按原配方重建。
+
+## 本地验证与正式执行
+
+仓库使用Python 3.12与现有`.venv`。共享代码变动后可运行：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest -q
+```
+
+只修改文档时检查相应diff即可。正式GPU train/eval须在已授权合同下，从clean pushed commit的detached frozen worktree启动，
+launch前现场检查两个GPU节点与strg01对应独立quota；单节点至多6张真正提高吞吐的GPU，保持任务权重与正常BF16/TF32语义。

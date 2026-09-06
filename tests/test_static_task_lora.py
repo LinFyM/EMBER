@@ -8,11 +8,6 @@ import pytest
 import torch
 from safetensors.torch import save_file
 
-from ember.ecp.g1_evaluation import (
-    _shared_scientific_contract,
-    _single_training_authority,
-    _task_record,
-)
 from ember.eval_adapters import validate_episode_adapter_fields
 from ember.lora import identity_lora_state
 from ember.pi05_assets import Pi05EvaluationError
@@ -207,10 +202,6 @@ def test_static_task_lora_manifest_and_episode_evidence_are_exact(
         "init_state_id": 7,
     }
     assert adapter["kind"] == STATIC_TASK_LORA_KIND
-    published_row, commit, shared = _task_record(run_root=run_root, step=5, lora=lora)
-    assert published_row == row
-    assert commit == "a" * 40
-    assert shared["video_contract"] == {"videos_per_task": 1}
     assert validate_episode_adapter_fields(
         adapter,
         {"static_task_lora": evidence},
@@ -225,31 +216,6 @@ def test_static_task_lora_manifest_and_episode_evidence_are_exact(
         task_id=0,
         init_state_id=7,
     )
-
-
-def test_g1_evaluation_bank_rejects_mixed_commit_or_mechanism() -> None:
-    base = {
-        "schema_version": "ember_ecp_native_factor_g1_task_run_v1",
-        "mode": "formal",
-        "content_hash_policy": "disabled_by_owner",
-        "authorities": {"source": "same"},
-        "video_contract": {"videos_per_task": 1},
-        "functional_query": {"demo_indices": [1, 2]},
-        "native_factor": {"residual_rank": 4},
-        "optimization": {"selection_lr": 0.02},
-        "information_wall": {"action_meta_installed": False},
-    }
-    changed = dict(base)
-    changed["native_factor"] = {"residual_rank": 8}
-    shared = _shared_scientific_contract(base)
-    changed_shared = _shared_scientific_contract(changed)
-    row: dict[str, object] = {}
-    with pytest.raises(ValueError, match="training commits"):
-        _single_training_authority(((row, "a" * 40, shared), (row, "b" * 40, shared)))
-    with pytest.raises(ValueError, match="scientific run contracts"):
-        _single_training_authority(
-            ((row, "a" * 40, shared), (row, "a" * 40, changed_shared))
-        )
 
 
 def test_g3_static_bank_accepts_only_matching_materialized_condition(

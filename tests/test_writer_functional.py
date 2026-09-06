@@ -5,9 +5,6 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from ember.ecp.joint_program_primal.pnbtt_policy_distance import (
-    paired_policy_velocity_distance_gradient,
-)
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -29,6 +26,7 @@ from ember.writer.functional import (
     writer_chain_rule_surrogate,
 )
 from ember.writer.errors import WriterModelError
+from ember.writer.replay import functional_writer_backward, sum_writer_gradients
 
 
 class _FlowModel(torch.nn.Module):
@@ -430,63 +428,51 @@ def test_pi05_loss_only_masks_action_chunk_tail() -> None:
     assert torch.allclose(loss, expected)
 
 
-def test_pnbtt_policy_distance_pairs_rng_caches_carrier_and_only_grads_generated() -> None:
+def test_writer_replay_matches_weighted_direct_gradient_with_policy_microbatches() -> None:
     from lerobot.utils.constants import (
-        ACTION,
-        OBS_LANGUAGE_ATTENTION_MASK,
-        OBS_LANGUAGE_TOKENS,
+        ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS,
     )
 
+    torch.manual_seed(7)
     policy = _TinyPi05Policy()
     contract = _tiny_pi05_contract()
-    carrier = prepare_frozen_writer_policy(policy, contract)
-    generated = {name: value.detach().clone() for name, value in carrier.items()}
-    generated[next(name for name in generated if ".lora_B." in name)].fill_(0.03)
+    writer = _writer(prepare_frozen_writer_policy(policy, contract))
+    with torch.no_grad():
+        writer.scale.fill_(0.02)
+    language, video, offsets = torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9])
     batch = {
         "image": torch.randn(20, 3, 4, 4),
         ACTION: torch.randn(20, 2, 3),
         OBS_LANGUAGE_TOKENS: torch.ones(20, 4, dtype=torch.long),
         OBS_LANGUAGE_ATTENTION_MASK: torch.ones(20, 4, dtype=torch.bool),
     }
-    common = {
-        "batch": batch,
-        "policy_rng_seed": 303,
-        "policy_rng_device": torch.device("cpu"),
-        "flow_time_sampling_scheme": LATIN_BETA_TIME_SAMPLING_SCHEME,
-        "flow_noise_sampling_scheme": ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
-        "policy_microbatch_size": 4,
-    }
-    distance, gradients, cached = paired_policy_velocity_distance_gradient(
-        policy, generated, carrier, contract, **common
-    )
-    draws = tuple(policy.model.flow_draws)
-    assert distance > 0
-    assert cached.shape == (20, 2, 3)
-    assert len(draws) == 10
-    assert all(
-        torch.equal(draws[index][axis], draws[index + 1][axis])
-        for index in range(0, len(draws), 2)
-        for axis in (0, 1)
-    )
-    assert any(bool(torch.count_nonzero(value)) for value in gradients.values())
-    assert all(bool(torch.isfinite(value).all()) for value in gradients.values())
-
-    policy.model.flow_draws.clear()
-    replayed, replayed_gradients, replayed_cache = (
-        paired_policy_velocity_distance_gradient(
-            policy,
-            generated,
-            carrier,
-            contract,
-            cached_carrier_velocity=cached,
-            **common,
+    with (
+        scoped_policy_randomness(303, "cpu"),
+        scoped_policy_flow_time_sampling(policy, LATIN_BETA_TIME_SAMPLING_SCHEME),
+        scoped_policy_flow_noise_sampling(policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME),
+    ):
+        direct_loss, _ = functional_lora_call(
+            policy, writer(language, video, offsets), contract, batch,
         )
+    expected = torch.autograd.grad(direct_loss * 0.25 / 2.0, writer.scale)[0]
+    grad_modes = []
+
+    def materialize():
+        grad_modes.append(torch.is_grad_enabled())
+        return writer(language, video, offsets)
+
+    value, objective = functional_writer_backward(
+        materialize, policy, contract, batch=batch, normalizer=2.0, task_weight=0.25,
+        policy_rng_seed=303, policy_rng_device="cpu", policy_microbatch_size=4,
+        flow_time_sampling_scheme=LATIN_BETA_TIME_SAMPLING_SCHEME,
+        flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     )
-    assert replayed == pytest.approx(distance, rel=1e-7, abs=1e-9)
-    assert replayed_cache.data_ptr() == cached.data_ptr()
-    assert len(policy.model.flow_draws) == 5
-    for name in gradients:
-        torch.testing.assert_close(replayed_gradients[name], gradients[name])
+    sum_writer_gradients(tuple(writer.parameters()), world_size=1)
+    assert grad_modes == [False, True]
+    assert objective["gradient_mass"] == 0.125
+    torch.testing.assert_close(value, direct_loss.detach())
+    torch.testing.assert_close(writer.scale.grad, expected)
+    assert all(parameter.grad is None for parameter in policy.parameters())
 
 
 @pytest.mark.parametrize("policy_microbatch_size", (16, 10))

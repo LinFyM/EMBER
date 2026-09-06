@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_video_expert_manifold_v1.json"
 META_CONFIG = ROOT / "configs/pi05_nonheld_meta_expert_bank_v1.json"
 VALIDATION_CONFIG = ROOT / "configs/pi05_validation_expert_diagnostic_v1.json"
-PARTICLE_CONFIG = ROOT / "configs/pi05_ecp_stage1a_particle_experts_v1.json"
+PARTICLE_CONFIG = ROOT / "configs/pi05_task_expert_lineages_v1.json"
 
 
 def test_retained_expert_authorities_are_disjoint_and_complete() -> None:

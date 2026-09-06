@@ -78,7 +78,8 @@ def _reinspect_adapter(
     model: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     tasks = tuple(
-        argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]))
+        argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]),
+                           init_state_ids=row.get("init_state_ids"))
         for row in contract["tasks"]
     )
     require_formal = contract["mode"] != "smoke"
@@ -115,7 +116,7 @@ def _reinspect_adapter(
                 diagnostic_subset=str(subset),
             )
         return inspected
-    if adapter.get("kind") == "static_task_lora_bank":
+    if adapter.get("kind") in {"static_task_lora_bank", "layered_writer_lora_bank"}:
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,

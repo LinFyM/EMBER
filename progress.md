@@ -22,6 +22,21 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
+## 当前运行：完整联合profile配置修复（非formal）
+
+已从clean pushed ba556b98的detached `.codex/worktrees/horizon-profile-ba556b98`启动两次尝试迭代的完整联合profile，
+gpu02 physical0/1/3/6、world4，每task一张卡；NUMA-local、deferred NCCL、NCCL_P2P_DISABLE=1。
+现场四卡util0，p0/1/3仅小context，p6既有约4.6GiB；FM microbatch4的预计自身峰值约32GiB，有足够总余量，实际峰值由本次测量。
+启动前再次核验两节点和strg01：data1使用496995528KiB/soft1073741824KiB，shared84TiB；本次新增峰值预算8GiB，
+计入一个完整checkpoint和临时写入，复用全部模型/data/env。不是formal学习，不参与科学选点。
+精确命令、完整现场证据和退出码路径：`runs/analysis/horizon_relation_writer_20260908/joint_profile/{launch.sh,launch.json,run.log,run.exit}`。
+输出：`runs/outputs/horizon_joint_profile_ba556b98_gpu02p0136_20260908`，tmux `ember-horizon-joint-profile`。
+profile每轮额外测当前参数版本的trust子集KL，定位已观察到的跨batch数值底噪；formal不默认重复该forward。
+完成后核对实际episode/RL信用、FM曝光、全局SUM、候选接受/拒绝、checkpoint恢复与墙钟，再登记正式节点。
+首launch exit1，发生在环境初始化前：未设EMBER_LIBERO_ASSETS_ROOT而查找不存在的package默认assets；没有采集或更新。
+已修WriterRollouts显式使用asset_root/data/simulation/ember_assets，并CPU实际检查全部train24/初态0–31通过。
+下一步提交推送修复、从新frozen commit重新profile；保留本次failure log和run contract，不恢复其不存在的checkpoint。
+
 ## 2026-09-08 单卡真实机制结果与联合profile准备
 
 真实机制已完成exit0，成功源代码7da77fb1；证据`runs/analysis/horizon_relation_writer_20260908/mechanism/summary.json`。

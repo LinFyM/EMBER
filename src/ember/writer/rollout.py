@@ -60,7 +60,10 @@ class WriterRollouts:
         physical = int(devices[context.local_rank]) if devices[0] else context.local_rank
         # EGL enumerates physical GPUs independently of CUDA's visible remap.
         # Configure before importing LIBERO/robosuite through benchmark setup.
-        os.environ.update(MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID=str(physical))
+        os.environ.update(
+            MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID=str(physical),
+            EMBER_LIBERO_ASSETS_ROOT=str(asset_root / "data/simulation/ember_assets"),
+        )
         authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
         targets, paths = inspect_installed_target_tasks(
             authorities, role="development_train", state_count=32,

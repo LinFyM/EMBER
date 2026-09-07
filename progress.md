@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，train24首段192步完成，三组物化已封存，correct strict400与train120闭环运行中。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，192步correct strict400为69/400、train120为22/120；same-task-other strict400五卡运行中。
 
 ## 当前授权与方法状态
 
@@ -30,12 +30,17 @@
 完整checkpoint及completion_to192/曝光成本已保留，后续exact-resume仍锁原world4和完整672步schedule。
 三组物化（validation correct/other与train120correct）从frozen evaluator97a8a24a完成exit0，255/259/68套唯一完整LoRA，
 分别覆盖400/400/120行；含SSH启动的近似墙钟613/629/260秒。约3.00GB生成文件，仍在预算内。
-当前correct strict400运行于gpu01physical0/2/3/5，train120诊断运行于physical1，各GPU3个persistent workers；
-same-task-other bank已封存，待上述评测释放资源后启动。两次eval launch均live检查两节点，未共占其它用户忙卡。
+192correct strict400与train120均完成exit0并通过真实配对比较：
+correct69/400（Spatial3/Object29/Goal37/Long0），breadth5/8；对source47为RGL34/35/13、churn48/400、J34/82。
+train120为22/120（Spatial11/Object1/Goal10/Long0），breadth8/24；对source16为RGL11/11/5、churn16/120、J11/27。
+correct增益主要来自未见Object1（global11）5→29；Goal6从41→36，Long仍0。仅有局部改善，未满足目标或相邻资格。
+实际eval墙钟correct四卡1063.75秒、train120单卡1316.09秒；完整per-task/RGL与source合同见train24_shared/panel_summary.json及各*_vs_source.json。
+当前same-task-other strict400运行于gpu01physical0/1/2/3/5、15个persistent workers、60分片；
+launch前两节点live检查五卡均0MiB/process0，未共占其它用户忙卡。
 物化曾使用gpu01physical0/2/3；
 launch前两节点live核验三卡空闲0MiB/process0，quota490060680KiB，预计新增物化3.2GiB，处于32GiB阶段预算内。
 命令与现场见train24_shared/materialization_s192_launch.json、eval_s192_correct_launch.json及eval_s192_train120_launch.json；
-192双视频strict400和train120全部结束后再决定续训，尚无validation分数。
+192双视频strict400和train120全部结束后再决定续训；目前尚无跨视频或相邻checkpoint稳定性结论。
 
 当前train24协议已登记：保持当前图、fresh Writer+Meta，固定24训练tasks，每update4tasks×16queries，真实K1/2/4；
 warmup24/full cosine672，首段停192。节点192/384/576/624/672的双视频K1 strict400与相邻资格见设计§13.3.1及

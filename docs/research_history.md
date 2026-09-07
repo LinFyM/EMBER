@@ -534,3 +534,14 @@ runs/outputs/layered_relation_short4_coordinate_init_880bde5e_gpu01p235_20260907
 rank0 allocator峰值allocated34.326/reserved38.201GiB，未登记为全rank历史峰值。
 `train24_shared/exposure_cost.json`与`completion_to192.json`保留实际曝光、成本及独立分段耗时；
 checkpoint为train24 run的`macro_00000192`，尚未产生validation分数或选点资格。
+
+192步训练侧correct诊断完成exit0：22/120，Spatial11/Object1/Goal10/Long0，breadth8/24；对source16为RGL11/11/5、
+churn16/120、J11/27，单GPU3workers耗时1316.09秒。训练侧改善有限，未获得Long行为；不据此唯一归因为容量或共享冲突。
+
+192步首个validation correct strict400完成exit0并与历史source47通过完整policy/environment/RNG/normalization配对：
+69/400，Spatial3/Object29/Goal37/Long0，breadth5/8，RGL34/35/13、churn48/400、J34/82，四GPU12workers耗时1063.75秒。
+per-task（每task50行，source→candidate）：Spatial1:0→2、Spatial3:0→1；Object1:5→29、Object3:0→0；
+Goal3:0→1、Goal6:41→36；Long1:1→0、Long2:0→0。
+这保留未见Object任务的局部性能增益，但未达到>145/400、breadth、四suite和Goal/Long资格，也尚无相邻稳定性。
+完整证据在`train24_shared/s192_correct_strict400/`、`s192_train120_screen120/`及`*_vs_source.json`；
+same-task-other仍运行中，未开展负视频controls或Test。

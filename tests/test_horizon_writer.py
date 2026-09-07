@@ -97,6 +97,9 @@ def test_null_mass_relative_distribution_and_true_gap_features():
         block.null[-1].weight.zero_()
         block.null[-1].bias.fill_(30)
     assert block.correspondence(current, late, early, gaps).sum(-1).max() < 1e-10
+    _, matched, relative, mass = block.form_query(current, early, torch.zeros_like(pi), gaps,
+                                                  torch.randn(4, 12), torch.randn(12))
+    assert matched.count_nonzero() == relative.count_nonzero() == mass.count_nonzero() == 0
 
 
 def test_four_groups_three_writebacks_and_future_independence():

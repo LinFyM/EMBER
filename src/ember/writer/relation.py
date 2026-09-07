@@ -39,7 +39,7 @@ class LocalRelationBlock(nn.Module):
         nn.init.zeros_(self.bias[-1].weight)
         nn.init.zeros_(self.bias[-1].bias)
         self.null = nn.Sequential(nn.Linear(width + 1, width), nn.GELU(), nn.Linear(width, heads))
-        self.matched = nn.Linear(width, width)
+        self.matched = nn.Linear(width, width, bias=False)
         self.relative_read = nn.Linear(heads * (2 * horizon - 1), width, bias=False)
         self.query_input = feed_forward(width, 6 * width + heads + 1)
         self.horizon_query = RotaryBlock(width, heads, causal=False)

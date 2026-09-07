@@ -11,6 +11,7 @@
     "source_paths_are_git_history": true
   },
   "authorities": {
+    "libero_assets": "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6",
     "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",

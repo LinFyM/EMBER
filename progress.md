@@ -13,7 +13,7 @@
   validation/test零梯度；shuffled/reversed仅selected冻结后的最终controls，不用于架构或checkpoint选择。
 - 当前阶段：全面阅读与审计已完成，新canonical图/联合训练/物化/评测已接通，正在真实机制与成本验证。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
   两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论已由主agent整合，独立实现已集成到main。
-  尚无新架构checkpoint、GPU机制结果或科学分数。
+  真实GPU机制已通过；尚无新架构正式checkpoint或科学分数。
 - 接管Git基线main `4f1686ab`，已fetch并确认与origin/main一致，初始干净。
   7个历史detached工作树与dirty `codex/native-factor-readout`草稿保留；草稿不整支集成。
 - 旧train24 run永久止于384，correct69→67、other72→64、熟悉/held训练视频21/18；不恢复672 schedule。
@@ -34,8 +34,15 @@ gpu02 physical0/1/3/6、world4，每task一张卡；NUMA-local、deferred NCCL�
 profile每轮额外测当前参数版本的trust子集KL，定位已观察到的跨batch数值底噪；formal不默认重复该forward。
 完成后核对实际episode/RL信用、FM曝光、全局SUM、候选接受/拒绝、checkpoint恢复与墙钟，再登记正式节点。
 首launch exit1，发生在环境初始化前：未设EMBER_LIBERO_ASSETS_ROOT而查找不存在的package默认assets；没有采集或更新。
-已修WriterRollouts显式使用asset_root/data/simulation/ember_assets，并CPU实际检查全部train24/初态0–31通过。
-下一步提交推送修复、从新frozen commit重新profile；保留本次failure log和run contract，不恢复其不存在的checkpoint。
+首修仅验证了train24/初态0–31元数据，未验证场景；第二次launch在真实env.switch发现asset父目录不含scenes。
+已将准确固定revision路径登记到pi05_writer_data_v1的authorities.libero_assets，WriterRollouts读取该入口，
+首轮四task（34/25/15/2，各suite一个）已实际创建四env、reset初态并10步settling，RGB256×256，exit0。
+证据joint_profile/assets_environment.log；两次失败launch均没有产生rollout分数或参数更新。
+修复已推送d956956d，从新clean detached `.codex/worktrees/horizon-profile-d956956d` 重启同完整profile。
+新输出 `runs/outputs/horizon_joint_profile_d956956d_gpu02p0136_20260908`，精确launch/现场/log在上述analysis的
+`retry_d956956d/`；保留首launch failure log和run contract。重启时四卡util0，data1 used497100244KiB。
+独立gpu02 physical4正进行source train24×初态32–36的J0/JΣ paired120，先J0后JΣ，
+冻结ba556b98、2 persistent replicas；登记和命令在 `runs/analysis/horizon_relation_writer_20260908/source_train120/`。
 
 ## 2026-09-08 单卡真实机制结果与联合profile准备
 

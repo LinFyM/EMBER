@@ -14,6 +14,7 @@ import torch
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval_contract import inspect_installed_target_tasks, load_evaluation_authorities
 from ember.pi05_processing import libero_policy_input
+from ember.pi05_source_checkpoint import read_json
 from ember.writer.flow import flow_actions
 from ember.writer.native import autocast
 from ember.writer.rl_math import DecisionReservoir, exploration_covariance
@@ -58,11 +59,12 @@ class WriterRollouts:
         self.runtime, self.config = runtime, config
         devices = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
         physical = int(devices[context.local_rank]) if devices[0] else context.local_rank
+        reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
         # EGL enumerates physical GPUs independently of CUDA's visible remap.
         # Configure before importing LIBERO/robosuite through benchmark setup.
         os.environ.update(
             MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID=str(physical),
-            EMBER_LIBERO_ASSETS_ROOT=str(asset_root / "data/simulation/ember_assets"),
+            EMBER_LIBERO_ASSETS_ROOT=str(asset_root / reuse["libero_assets"]),
         )
         authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
         targets, paths = inspect_installed_target_tasks(

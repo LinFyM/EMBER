@@ -1,5 +1,8 @@
 # EMBER findings
 
+当前方法见[正式设计](docs/horizon_relation_video_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
+以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15记录本次方法收口。
+
 这里只保留会改变下一轮决策的结论与开放问题，不再复制逐轮实验年表。证据、数值和旧原文入口集中在
 [research_history.md](docs/research_history.md)；已对齐候选的完整推导在
 [layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
@@ -89,7 +92,7 @@ PNBTT停在free-query E1，真实Program E2未运行，不能借此否定G2。
 链式法则。清理后已有query-microbatch VJP和通用replay基础；新图R-leaf与Meta重放已真实验证，最长K4已profile；跨condition batch尚未实现。
 只按实际最长K1/K4和真实queries测成本，不宣称设计图已经具有历史倍数加速。
 
-## 10. 下一轮需要回答的科学问题
+## 10. 旧分层图形成时需要回答的科学问题（历史）
 
 1. 单probe+Action Meta能否为新图产生可学的教学响应，且真实视频变化进入过程Value？
 2. 分层局部对应/过程和集合编译能否让同task的新视频保留功能，而不依赖静态目标识别？
@@ -138,3 +141,19 @@ train24 held-video paired120为22，对source16，RGL11/11/5，Long仍0。该面
 当前缺口已在训练任务与熟悉视频出现，新视频代价不是充分解释，编码器/解码器/共同优化仍需区分。
 本run已止于384。不能再用source47的局部增益或较好输出几何开脱相对SFT109/107的性能失败；
 下一离散输出参数化对照保留上游完整图与target/rank独立性，代价与效果由实测报告，未预认定解码器是唯一根因。
+
+## 15. 完整H查询、有序窗口与单向长程的最终选择（2026-09-08）
+
+Owner与专家多轮讨论后收口：直接读取最终post-norm、action_out_proj前50个hidden；无18层保留或多层融合。
+当前帧只读过去4个实际采样位置，帧对软对应后沿完整H联合形成50个视觉query，分别核实两端Z，再按历史u短GRU更新。
+新H-query增加的是不同新匹配行之间到视觉query的直接依赖，不能由“原生AE已有H交互”自动替代，也不能据此预告控制能力。
+重叠的[u,t]证据不是相接动作段；GRU给显式有序条件化，不保证去重或贝叶斯更新。
+
+四组局部—长程交替保留完整U，临时H-read后全局时间信息按当前h状态非线性回写，前三组回写、第四组直接送compiler。
+Owner最终选择过去单向long，覆盖专家原文的双向；每组t表示仅依赖视频前缀，完整H内部仍可双向。
+单Key attention的softmax恒1，不能冒充逐H内容条件回写；当前选择的MLP融合U_h和P_t具有相应交互通路。
+
+首版FM辅助共享Writer RL使用真实action-Gaussian探索和同版本单次联合更新。监督/强化同一步是训练选择，
+不由Writer/Meta端到端自动推出；LOO全同结果组没有RL信用，J_Sigma改善也不能替代正式J0。
+新图尚未实现、没有新训练或闭环证据；下一步是实现与有效实验，不继续悬置已定计算含义。
+原文、Owner覆盖与源码缺口见[讨论索引](docs/review_materials/20260908/README.md)和正式设计。

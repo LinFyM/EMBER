@@ -1,38 +1,53 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST。Owner最新要求先补齐现存证据并与专家讨论清楚；科研实现、训练与评测暂停。
+更新时间：2026-09-08 CST。专家讨论与 Owner 最终选择已收口，当前完成新 session 的科研接续准备。
 
 ## 当前授权与方法状态
 
-- Owner最新明确要求：不能收到专家的一轮分析就开工；先补充专家缺少的现存证据，再像此前共同推导一样，
-  从已有证据逐步推导架构与训练，并吸取历史成功和失败的经验。**当前暂停科研代码修改、训练和评测**。
-- 本轮授权为已有材料整理、公开证据补充和讨论准备；不联系外部专家。暂停覆盖此前持续自主科研执行的相关范围，
-  下文旧计划、历史goal及专家建议均不能恢复执行。
-- 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  当前图已实现、通过真实机制检查并完成train24的192/384节点，但未通过科学资格；原run止于384。
-  现有训练合同为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
-  source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
-- 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
-  两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
-  置换不变多视频compiler、坐标MLP生成唯一38-target完整rank16 LoRA。首版真实K1/2/4。
-- 原接管任务记录过长期goal；当前暂停不代表科学目标完成，也不由本材料任务更改goal状态。科学目标仍为validation8 strict paired single-checkpoint >145/400、
-  相邻稳定/低churn/高breadth/四suite及GoalLong/同task视频鲁棒性；选点冻结后完成因果controls，方法冻结后32/8 fresh最终训练与Test。
-  实现完成、训练结束、单点高分均不代表goal完成；未自设token预算、总工期或总尝试数。
-- 暂停前接手记录：当时main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与当时origin/main一致。
-  指定当前文档、相关9月5日完整专家原文、旧账本§1–3/9–20/164–165/172–181及相关分析原件已读；代码和canonical资产已核对。HANDOFF已消费并删除，长期内容留在正式文档。
-- 未选出selected checkpoint，未达成最终科学目标。旧P/Q width256已有训练与checkpoint、尚无闭环；不补评。
-  native-heads未合并草稿保留，不集成、不训练。三轮short4已完成；train24止于384，不执行余下节点。
-  历史GPU/quota快照不构成实时准入；当前材料整理不需要GPU。
+- Owner 最新要求：“后续交给一个新session去推进……把新session启动前的所有工作都做好，然后给我一个启动prompt”。
+  本 session 执行方法登记、原文保存、状态对齐和 Git 交付；**不在本 session 实现科研代码或启动训练/评测**。
+  新 session 接到 Owner 的启动 prompt 后，按已定设计连续完成实现、验证和科学推进，无需再次请求整体架构审批。
+  Owner补充四点：先全面阅读仓库；完整阅读并忠实实现新架构、不打折扣；正式实验并据结果迭代到性能达标；
+  **新session创建覆盖整个过程的goal**，遵守合同并实质解决难点。未指定token预算，不擅自添加。
+- **唯一 active design：**[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
+  **已定、尚未实现：**末层 post-norm PreActionOut；过去四帧 soft correspondence；完整 H-query；两端 Z 核实；
+  按历史 u 从早到晚短 GRU；四组局部—**过去单向长程**交替，前三组逐 H 非线性回写；集合 compiler 和 native D 完整 A/B。
+  长程四组都只读 past+self；H-query 可在完整50个h内双向交互。不要从专家原文恢复双向长程或18层输入。
+- 首版训练采用 fresh Writer/Meta、固定 source，FM 辅助真实 Writer RL；同版本采集/求梯度、一次联合更新。
+  具体 Sigma、LOO baseline、Q/M、10-step replay、trust/拒绝/RNG/checkpoint合同全部见 active design §7。
+  FM+RL 是可试的训练选择，不把固定系数说成 Owner 的永久规定。
+- **当前源码仍是旧 layered Writer。**最新 handoff 准备前代码基线 e868de525fda0a20c597dee2c7bffe5717f5e2fd；
+  旧 `configs/pi05_layered_writer_v1.json`、训练/物化 CLI 不是新方案可直接运行的配置。新图无 checkpoint、无学习或闭环分数。
+- 旧 train24 run 永久止于384：correct69→67、other72→64；熟悉/held训练视频21/18（各120）。未通过资格，未选selected checkpoint。
+  旧 P/Q width256 尚无闭环，不自动补评；旧 native-head draft 不整支集成、不单独开旧上游对照，不恢复旧672 schedule。
+- 当前科学目标仍为validation8 strict paired single-checkpoint correct>145/400，并满足相邻稳定/低churn/high breadth/
+  四suite及GoalLong/同task视频鲁棒性；冻结后完成视频因果controls，方法冻结后32/8 fresh与Test。准备工作不代表科学完成。
+- 本session不创建新Codex task或启动科研goal，不联系外部专家。新session按Owner本次要求创建并推进科研goal；
+  不自行设置token预算或自动化。历史goal/暂停与旧文件中的“下一步”不覆盖这次新session交接安排。
 
-## 当前材料与讨论
+## 交接入口与实测范围
 
-[9月7日独立审查补充包](docs/review_materials/20260907/README.md)收录现有合同、metrics、exposures、checkpoint元数据、
-诊断与逐条rollout结果；原始科学代码参考ec02710b169b3dc624b6dfca998a4ad9bdc8dd14，历史run使用各自冻结版本。
-公共副本仅作必要字段移除、路径规范化和分片；不复制模型/数据/视频，不生成新实验或新checkpoint选择。
-第一轮专家意见保留为待核验材料，第二轮prompt要求先纠正证据口径，再连续推导架构和训练，最后交付讨论稿。
-width256闭环、checkpoint张量及当前失败轨迹的新录像仍不在包内；不能由缺失信息补写因果结论。
+1. [HANDOFF.md](HANDOFF.md)是临时接续入口；长期目标、方法、计划、证据已在正式文件，消费后可删除该入口。
+2. [task_plan.md](task_plan.md)给出实现→真实机制/成本→结果前登记→共享学习/闭环的执行顺序。
+3. [原文与 Owner 裁决](docs/review_materials/20260908/README.md)保存四份完整回复；其中最后专家稿的双向长程被 Owner 的单向决定覆盖。
+   上一份完整 FM/RL 原文用于补齐最新稿引用的训练细节，不恢复其旧架构。
+4. [research_history.md](docs/research_history.md)索引历史事实；[20260907补证据包](docs/review_materials/20260907/README.md)仍保留95面板/24,100行现存结果。
+5. 本次仅核对 Git/worktree、代码接口及关键资产存在性；未跑科学测试、未启动GPU、未刷新两节点GPU状态或strg01配额。
+   旧 GPU/quota/吞吐快照不作为新run准入，真实现场由接班者在相应操作前检查。
+
+## 接班前代码与工作树快照
+
+准备时 main 干净、与本地origin/main一致；交接文档随后在main提交并推送，最终精确提交以Git为准。
+共有主workspace、7个历史detached工作树与一个dirty native-factor-readout草稿工作树；未删除或重置它们。
+草稿分支 `codex/native-factor-readout` 基于ec02710b，相对准备前main无独有提交、落后1提交；未提交变化为
+删除coordinate.py、修改layered.py/其测试、新增native_factor.py，仍使用旧上游。其所有权与内容须保留，不能当新实现直接合并。
+
+source模型、tokenizer、manifest对应40目标/71source HDF5、LIBERO BDDL/init及仿真assets在本地存在；精确入口见README与design §9。
+这些只做存在性核对，没有复制大资产、读取held action产生梯度或做全树完整性扫描。
 
 ## 暂停前执行记录（以下“当前/下一步”只表示当时时点）
+
+下文关于旧双向图、旧未来帧不变性检查及旧待执行对照的表述均是历史合同，不能覆盖本页当前状态和新设计的过去单向选择。
 
 held-video train120已完成exit0：18/120（Spatial10/Object1/Goal7/Long0），breadth7/24；对source16为RGL11/7/5、
 churn12/120、J11/23。seen21→held18为RGL14/4/7、churn11/120、J14/25；held192→384为22→18、11/7/11、churn18/120。

@@ -1,66 +1,57 @@
 # EMBER concept
 
-## 从观察到自己的策略
+## 从教学过程到自己的策略
 
-EMBER的出发点是：正确教学视频通常没有与接收者兼容的action labels，示范者甚至可能具有不同身体。人仍能从视频理解
-“关注什么、在什么条件下做什么、过程如何推进”，再把这个知识应用到自己的动作能力上。
+EMBER探索：从一条或多条action-hidden正确教学视频理解任务条件和操作变化，结合exact language，
+在rollout前一次性编译成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从自己的新初始化闭环执行。
+语言确定目标与关注对象，视频动态必须贡献必要信息；执行行为由机器人当前观测触发。跨具身是科学动机，LIBERO结果不自动证明跨具身泛化。
 
-本项目探索一种参数化实现：以冻结的π0.5-LIBERO source policy作为具身先验，用共享Writer把exact task language与一条或多条
-正确教学视频，在rollout前一次性编译为完整task-conditioned LoRA。执行时policy只根据自己的观测闭环行动；Teacher视频不再输入，
-没有目标task上的试错或优化。LIBERO是当前检验平台，跨人类/跨具身泛化仍是动机，不能由该平台结果自动宣称实现。
-
-## 三个必须接上的职责
-
-1. **让已有动作知识帮助理解画面。** 冻结vision/Gemma产生每帧原生图文prefix，读取侧Action Expert共享Meta-LoRA适配无proprio的
-   教学输入。保留各层和完整50-horizon条件响应；一次flow端点前向提供响应结构，不是已经生成完的正确动作轨迹。
-2. **从连续画面形成有方向的过程证据。** 在每个计算层内，按内容、帧间隔与horizon位移建立窗口内帧对关系，两端分别读取。
-   每个关系MLP同时解释对应内容和对应位置模式，再由每帧聚合自己的邻居消息并逐层更新，最后做任务条件化horizon读取。
-   视频时间、action horizon与计算深度各有不同含义；对齐后的内容差为零，也可能发生了对应位置的推进。
-3. **把过程编译成可闭环使用的参数。** 每条视频独立编码，集合阶段联合理解证据，用共同的整策略queries协调整套LoRA，最后
-   在明确的原生目标/通道坐标上生成全部A/B。参数在rollout中固定，行为阶段由执行policy当前观测触发，不能用teacher视频时钟驱动。
-
-这三个职责是否实际实现，必须由可复核干预和闭环证据判断。Full horizon、梯度接通或模块名本身没有完成证明。
-
-## 当前对齐的候选数据流
+## 当前选定的数据流
 
 ```text
-exact language + K条action-hidden有序videos
-    → 每帧 frozen vision/Gemma native prefix
-    → Action Expert + shared observer Meta-LoRA
-      单个固定public Gaussian probe，flow_time=1
-    → R[k,t,j,h]：18个已读图层状态 × 完整50 action horizon
-    → 同层局部帧对50×50关系，两端分别softmax
-    → 对应内容 + 相对位置模式 + signed gap → 关系MLP
-    → 每帧最多8邻居的attention聚合，residual/FFN，同型block堆叠
-    → 每(t,j)有任务条件的horizon read → E[k,t,j]
-    → 置换不变的视频集合读取 + 全局整策略queries
-    → 原生坐标条件MLP → 唯一38-target完整rank16 LoRA
-    → 冻结source policy在自身新初始化中闭环执行
+exact language + K条独立有序视频
+  → frozen vision/Gemma真实prefix：逐帧最终Z与KV
+  → 单固定probe、flow_time=1、Action Expert + shared observer Meta
+  → action_out_proj实际输入：最后50个post-norm hidden tokens
+  → 四组：过去4帧对应 → 沿完整H联合形成query → 两端Z视觉核实
+           → 按历史u从早到晚短GRU → 完整H状态
+           → 临时H-read → 单向长程时间组织
+           → 前三组逐H条件化回写；第四组直接送出
+  → 多视频集合compiler，608个paired target/rank queries
+  → native因子读出 → 唯一38-target完整rank16 A/B
+  → 冻结source依据自身观测闭环执行
 ```
 
-完整推导、shape、可执行默认、GPU梯度算法与已有代码地图见
-[layered_relation_video_writer_design.md](layered_relation_video_writer_design.md)。设计已完成讨论，实际实现与科学执行授权见
-[progress.md](../progress.md)。这张图尚没有新的性能证据，不继承旧Writer的分数。
+完整数学、张量、训练与迁移合同见 [正式设计](horizon_relation_video_writer_design.md)，
+原文与Owner裁决见 [讨论索引](review_materials/20260908/README.md)，实施状态见 [progress](../progress.md)。
+图已定稿，尚未实现或取得新性能证据。现有代码是待替换的旧分层实现。
 
-- 单probe是当前最小方案；额外probe只有独立用途与实际收益时再考虑。
-- Gemma语义经原生prefix进入Action Expert；不假定R或压缩E无损保留全部语义，也不无依据再叠一条R→Z读取。
-- H保持relative action time，J保持计算层身份；原生action horizon注意力保持π0.5语义。视频在rollout前完整可用，
-  允许双向局部读取，以signed gap和对应模式保留先后关系；不强制单位矩阵、固定平移或把斜对角形状当成动作理解证据。
-- 观察侧Meta参数跨任务共享，单次编译内固定；执行侧只装生成的一套LoRA。观察侧激活不等于实际执行状态下的X/Y。
-- 不额外强制读取完整raw X/Y bank，不限制最终因子处于其signed span。真实policy功能梯度提供原生参数坐标的学习信号。
-- 多视频带来互补证据和削弱独立干扰的机会；相关误差、不同有效策略与学习不足会限制收益，不能保证K增大后每次性能都提升。
-- 局部过程模块的双侧感受野有限；radius4堆叠4层最多前后各16个采样间隔。整段远距离证据由最终全局queries共同读取，
-  不能把每个局部E说成完整任务程序；不得用全视频汇总或Q反馈暗中扩大局部上下文。
+## 三类有序关系与因果职责
 
-## 已有证据能支持什么
+1. **Horizon h：动作计算的相对位置。** 末层50个hidden仍不是已经采样完成的正确未来轨迹。
+   软对应首先提出跨起点的候选关系；新形成的匹配内容、位移分布和不匹配模式再沿完整H联合处理，产生50个视觉query。
+   H-query的作用是让一处视觉查询能参考其它位置的新对应模式；不把匹配斜带或hidden差直接解释成真实过程/速度。
+2. **邻帧 u：以当前t为共同终点的历史证据。** 每条 `[u,t]` 关系先读取过去与当前的原生Z核实，再按u从早到晚进入短GRU。
+   区间有重叠，递推解释证据之间的支持、冗余或修正；它不是动作积分，也不自动消除重复计数。
+3. **视频 t：完整任务过程。** 每组临时H-read形成时间tokens，长程层只读当前及过去；前三组通过当前h状态条件化回写，
+   让更长的过去上下文帮助下一轮局部对应和原始视觉读取。完整U始终保留到需要的最后读取，不用复制压缩token恢复H。
 
-早期v5.2/v6的端到端视频到LoRA路径达到过真实闭环能力，其中v6 strict correct为143/400，但后续相邻结果下降。
-Task-local rank16专家250/400说明执行LoRA存在容量；G1说明特定native-factor表示存在局部可达性；G2说明完整有序响应具有动态信息。
-最近完整输出重构带来过训练侧Goal收益，同图单task学习也优于18task共享实例；这些都没有解决稳定共享迁移。
+Owner最终选择**过去局部＋过去单向长程**；每组U_t只依赖原视频前缀。H-query允许同一帧完整H双向交互，不能混用两种mask。
+专家原文曾建议双向长程，其未来证据反馈的论证不属于当前方法。计算前缀性质不能证明视频对最终行为有必要作用。
 
-新候选吸收上述证据，同时修正“保留原生响应就等于用好动作时序先验”的推理跳跃。其主要未解问题仍是：过程表示是否足够，
-共享优化是否能把它变成有用的参数，以及从多个任务学到的映射是否能迁移到未见任务。
+## 共同解释与完整参数生成
 
-唯一正式性能目标是validation8 strict paired correct严格 >145/400，并满足相邻与跨视频稳定性、低churn、高breadth、四suite非零、
-Goal/Long贡献和冻结后视频因果controls。详细边界见 [current_owner_requirements.md](current_owner_requirements.md)，
-历史脉络和证据入口见 [research_history.md](research_history.md)。
+每条video先独立保序编码，只有集合阶段置换不变地共同读取。不混淆video内部时间和video集合次序，不平均frames、raw features或最终LoRA。
+Compiler的target/rank身份决定输出位置，输入不必保留18个网络层才能生成38个目标。末层未保留的信息也不能由compiler凭空恢复。
+Native D按target/rank/side独立、跨任务共享，允许更直接的因子学习通道；它仍有共享干扰和固定读出空间，不能被视为性能保证。
+参数在rollout中固定，作用于随机器人观测变化的激活，因此可以形成状态条件化行为；不能按教师视频时钟播放动作。
+
+## 学习与裁决
+
+Writer与观察Meta fresh、端到端学习，source基础冻结。首版采用FM辅助Writer RL：FM从同task另一episode提供动作监督，
+RL从当前生成policy的真实训练rollout提供成功信用。两者在同一参数版本求梯度后更新一次，旧轨迹不跨版本继续用于普通score梯度。
+监督目标与闭环成功不是等价目标；全失败组的RL信用可能为0，探索策略收益也不自动保留到正式执行。
+
+早期强Writer、task专家与G1/G2提供不同层次的正证据；后续shared/clone差距及384的失败说明共享行为仍未解决。
+新图没有继承它们的分数，也没有由数学依赖证明操作理解。历史与适用边界见 [research_history](research_history.md)。
+唯一正式性能线是validation8 single-checkpoint strict paired correct>145/400，并满足相邻、跨视频、breadth、四suite、Goal/Long及最终视频因果要求。

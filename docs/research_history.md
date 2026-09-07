@@ -2,7 +2,7 @@
 
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
 immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
-[progress.md](../progress.md)，新候选见 [设计记录](layered_relation_video_writer_design.md)。
+[progress.md](../progress.md)，当前方法见 [设计记录](horizon_relation_video_writer_design.md)。
 
 本次整理前的完整账本是 `fcdb6e43706c5fcedf10eaa5d2d459602b263016:docs/research_history.md`，含旧§1--181（有两个旧§126）；
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
@@ -610,3 +610,27 @@ Owner要求先与专家讨论清楚，不能把一轮分析直接转化为实施
 [第一轮专家意见](review_materials/20260907/expert_review_round1.md)作为待核验论证保留；[第二轮prompt](review_materials/20260907/ROUND2_PROMPT.md)
 要求先依据原件修正证据等级，再从需求、信息条件和合法监督逐步推导架构与训练，区分数学性质、假设、归纳偏置与待验证能力，
 并用历史成功和失败约束选择。讨论稿及最小验证建议不自动构成执行授权。
+
+## 20. 专家连续推导、Owner裁决与新session交接（2026-09-07—08）
+
+在§19补充原件后，Owner继续要求从证据、信息依赖和实际控制学习推导完整方法。四份后续完整回复保存在
+[20260908讨论索引](review_materials/20260908/README.md)，包含第二轮事实修订、过程条件化视觉回读、完整FM/RL协议与最终交替架构。
+原文不被改写成最终裁决，也不把专家每一轮建议都作为待实施路线。
+
+最终保留末层PreActionOut而非18层轴；过去4帧软对应后，用一层完整H-query让新关系模式共同影响视觉查询；
+每帧对核实两端Z，再按历史u排序短GRU。四组临时H-read/长程/前三组逐H回写，最后集合compiler与完整native D。
+专家最后原文推荐双向长程；Owner明确选择单向后，正式设计四组全部改为past+self，H-query沿H双向不受影响。
+这一变化只选择了视频表示的可见范围，不声称由前缀因果mask证明视频对行为的必要性。
+
+训练选择为fresh Writer/Meta的FM辅助共享Writer RL，同版本采集和求梯度后一次更新，Gaussian动作探索、LOO baseline、
+Q/M decision子采样、实际10步flow反传和有限候选KL检查。旧GOMQ的成功expert occupancy蒸馏不能当作这条新信用路径已通过。
+
+[正式设计](horizon_relation_video_writer_design.md)登记了完整输入/shape/公式/初始化/梯度/数据/采样/恢复/验证/迁移合同；
+旧18层设计正文由Git e868de525fda0a20c597dee2c7bffe5717f5e2fd追溯，活动路径仅保留历史入口。
+代码仍是旧layered实现，384永久停止，未选selected checkpoint。未补width256闭环、未整支合并native-head草稿。
+
+Owner要求后续由新session推进，本session完成启动前准备、关键资产存在性和代码接口核对及Git交付；无新增科研代码、训练、
+rollout、模型选择、GPU准入或配额证据。新session按正式设计落实实现、真实机制/成本与预登记学习，不能恢复旧暂停前清单。
+
+Owner随后明确接班prompt须要求全面理解整个仓库、完整忠实实现最终架构、正式实验与结果驱动迭代，并在新session创建覆盖全程的goal。
+这项goal授权属于接班科研任务，不把本session的交接文档工作扩为立即启动实验；没有指定token预算。

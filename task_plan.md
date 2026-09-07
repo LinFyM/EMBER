@@ -1,61 +1,54 @@
 # EMBER task plan
 
-## 当前目标与授权
+## 当前目标与协作安排
 
-Owner于2026-09-07最新明确要求先与专家把证据、架构和训练推导讨论清楚，再决定开工。
-**科研实现、训练与评测暂停**；此前自主科研执行授权在这一范围内被最新要求覆盖。
-本轮只整理并上传已有证据、校准历史事实、准备第二轮讨论，不向外部专家发送消息。
-准确状态见 [progress.md](progress.md)，讨论材料见 [审查补充包](docs/review_materials/20260907/README.md)。
+2026-09-08 Owner决定将后续科研推进交给新session，并要求本session完成启动前准备。方法讨论已收口；
+本session只完成正式设计、原文与最终裁决、代码/资产入口、状态和Git交付，不实现科研代码或启动GPU作业。
+新session收到Owner启动prompt后，承接实现、验证、训练评测和交付，不需要再做一轮整体专家审查或重复请求已授权步骤。
+Owner进一步明确：接班者先全面阅读仓库、完整理解并忠实实现新架构，正式实验后据结果迭代，创建覆盖整个过程的goal推进到达标。
 
-已登记设计仍为 [分层局部关系视频到完整LoRA Writer](docs/layered_relation_video_writer_design.md)，当前run止于384。
-该设计是已实现候选的记录，不代表可以恢复执行。Writer与读取侧Meta fresh联合训练的现有合同未被改写；
-任何新路线须在讨论后登记。旧P/Q width256补评和未合并native-heads草稿均只是候选，不自动启动或集成。
+唯一 active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
+末层完整H → 过去4帧对应 → 完整H-query → 两端Z核实 → 历史u有序GRU → 四组单向长程交替/前三回写
+→ 集合compiler → 完整native A/B；fresh Writer/Meta、FM辅助真实Writer RL、同版本单次联合更新。
+**长程四组全部past+self，H-query沿H双向；专家原文中的双向长程已被Owner覆盖。**
 
-原接管任务记录过长期goal；这一历史记录不覆盖当前暂停。科学完成标准为validation8 strict paired single-checkpoint correct严格 >145/400，并满足相邻稳定、低churn、
-高breadth、四suite非零及Goal/Long贡献、same-task另一组正确视频鲁棒性；selected checkpoint冻结后完成必要因果controls，
-方法冻结后按32/8合同fresh最终训练与Test，交付可复核代码与正式证据。实现或一次高分不算完成。
-不自行设token预算、总工期或固定尝试数；停止无信息重复，依据新机制证据推进。
+当前源码还是旧layered图，新方案尚无checkpoint或行为证据。旧train24永久止于384，旧P/Q width256不补评，
+未合并native-factor-readout只作待审视草稿，不整支集成或恢复旧对照。详情见[progress](progress.md)。
 
-## 当前阶段：补齐现存证据，讨论架构与训练推导
+## 接续执行计划
 
-1. 整理当前train24与读出对照、早期强Writer、SFT、多视频/LPCP/GOMQ及P/Q共享/clone/宽度对照的现存合同、metrics、曝光和raw rows。
-   公共副本去除非科学现场信息，保留原始记录索引；标注缺失与未完成面板，不生成新的实验结果。
-2. 请专家先根据原件修正第一轮的事实口径和证据等级，再从需求、信息条件、合法监督逐步推导表示、模块职责、参数生成与联合训练。
-   每一步区分数学性质、假设、归纳偏置、实现选择和待验证能力；同时面对历史成功与失败。
-3. 形成可讨论的优先路线、竞争解释和最小区分性验证计划，先与Owner讨论，再登记是否实施。
-   不把专家建议、数学自洽或材料上传直接转换为实验授权。
+1. **准备与方法登记（本session完成）。** 对齐Owner要求、concept、完整设计、专家原文和裁决、历史索引与临时HANDOFF；
+   检查已有代码和关键资产，提交推送main。只做文档对应的验证，不执行新训练或用旧GPU快照占位。
+2. **创建goal、全面理解并实现唯一canonical路径（新session首项）。** 按Owner要求建立覆盖正式实验、迭代和性能达标的goal，不填token预算。
+   系统阅读整个仓库的源码/测试/脚本/配置/文档及历史和原始证据，完整阅读最终架构，不能只看摘要就动手。
+   从最新main开始；按并发/结构风险需要隔离。
+   在既有owner内落实post-norm PreActionOut与最终Z、过去对应/完整H-query/GRU、四组因果long和回写、native heads，
+   同步训练/物化/配置/checkpoint schema。复用真实FM/VJP/evaluator，新增明确的Gaussian动作探索与10步可微重放。
+   首个正式实现不允许静默省略、缩水或偷换关键模块/训练合同；逐步替换旧可执行路径和对应测试，完成后及时集成push。
+   不先起平行fallback或仅合并旧native-head草稿。后续凭真实结果改进，不能用表面补丁掩盖未解决的问题。
+3. **真实机制与成本。** 按design §8.1验证必要依赖与信息墙、权重、采样版本和梯度；用最长真实K1/K4、FM与rollout/replay测吞吐和峰值。
+   功能检查与学习节点不是冻结课程。所有GPU/大输出操作前执行相应live两节点与独立quota检查，旧资源预算不继承。
+4. **结果前冻结首个run合同并开始有效学习。** 使用design §7的数据、采样、优化与RL默认；profile后确定实际batch/chunk/topology、
+   命令/output root/新schema、首段checkpoint与strict400节点、继续/止损规则。首段以24个接受更新及训练侧Sigma/0配对诊断为起点；
+   不默认长跑，不把旧672 schedule或旧48/96节点原样搬来。具体资源与成本依赖现场，接班者自主落实，不形成新的人工审批门。
+5. **共享学习、迁移与稳定性。** 分开判断训练task、同task新视频、未见task及噪声去除后的行为。
+   有信息量且出现广泛能力时及时strict400；每个关键点报告task/suite/breadth/RGL/churn/相邻及跨视频重合与真实曝光。
+   好趋势继续到足以判定相邻稳定；明确non-pass及时定位最早接口，禁止无依据rank/seed/LR/scale/dtype小扫或无限续训。
+6. **正式选择与最终交付。** 只按预登记single-checkpoint qualification与相邻稳定选点；selected冻结后做必要视频controls，
+   shuffled/reversed最后测试且不反哺设计；方法冻结后按32/8合同fresh训练与Test，交付可复核代码和formal evidence。
 
-## 暂停前执行计划快照（历史记录，不构成待执行清单）
+## Done when
 
-1. **理解（已完成）。** 指定当前文档已完整阅读、Git已核对；相关原始专家评审、修正、Git快照与正式证据已核对，
-   核对现有代码职责和资产。完成科学目标/数据流/历史教训/实现缺口的简要说明后立即继续；临时HANDOFF已消费删除。
-2. **实现唯一canonical新图（已完成并通过真实验证）。** 原生prefix与18×50单probe读取Meta；独立双向局部帧对关系、rho/内容MLP、同步更新，
-   learned H-read、多视频共同compiler与坐标A/B；复用LoRA/functional基础，补R-leaf VJP及observer分块重放、完整checkpoint/resume。
-   具体bias/probe/采样和文件owner按完整设计落实。只在真正独立且节省总时间时使用最少subagents并隔离写入。
-3. **真实机制与成本（已完成首轮）。** 信息墙、方向/两端归一化/rho等价性、同步更新及有限双侧上下文、真实K1/2/4置换不变、
-   Meta作用域及真实功能梯度、staged VJP权重与缓存有效期。最长真实K1/K4加真实action queries测阶段成本/峰值/吞吐。
-4. **短学习与行为（本轮已完成）。** 预登记跨Spatial/Object/Goal及有实质专家容量Long的训练侧任务、跨episode角色、曝光和行为节点。
-   原初始化96步K1为4/4、K4为6；坐标对照为6/6、K4为8，对source4，仍无Object/Goal。保留局部Long正证据与完整图，只检验末读出按输出target/rank分别学习；同曝光fresh、无额外旁路。
-   末读出对照96K1双视频均11/40、success集合一致、breadth3/4；K4为10。具备推进完整共享学习的基础，Goal仍0、相邻churn未稳。
-   小面板用于投入判断，不选择最终模型；保持当前图，不继续按几何小扫。
-5. **完整train24共享与迁移（当前run384止损，冻结训练诊断待完成）。** 当前图全部fresh，672步完整schedule，首段192；
-   192/384/576/624/672双视频K1 strict400，后两点按正向/近目标趋势决定；192/576 train120/source诊断。
-   资格数值及采样固定见设计§13.3.1与train24_shared/registration.json。真实不同视频K1/2/4，任务权重独立于K/长度/卡数；额外non-held meta有必要时先审计allowlist、
-   provenance及权重。检查训练行为、same-task新视频、未见task三层接口，依据历史和新证据做最小区分性干预。
-   384correct未扩展总分或breadth，Goal回落而Long首次4；已追加预登记同120初始化的已见/held正确视频诊断，
-   固定384、不产生梯度或参与模型选择；熟悉视频21/120、Long0，当前配置已确定止于384，不执行剩余节点。
-   held诊断已完成18/120、Long0；针对已训练任务上的行为缺口，准备直接native因子线性heads，保留上游与target/rank独立性。
-   新旧参数/子空间不同，按matched短学习和闭环先裁决，不预告根因或长跑；基础SFT约108也是必须正视的性能参照。
-6. **strict400与稳定性。** 在有信息量且预登记的single-checkpoint节点及时评测，强候选继续相邻点，报告per-task/suite、breadth、
-   retained/gained/lost、churn、success-set overlap、实际曝光和成本；完成same-task另一组正确视频。80-row screen/union/融合不选模型。
-7. **冻结与最终证据。** qualification arms和相邻口径事先登记；selected checkpoint选定冻结后做必要视频controls，
-   shuffled/reversed最后测试且不进入训练、loss、Gate、checkpoint选择或架构修正。方法冻结后32/8 fresh最终训练与Test。
+唯一正式性能线是validation8 strict paired correct>145/400，同时达到design §8.3与AGENTS的相邻稳定、低churn、
+高breadth、四suite非零、Goal/Long贡献、same-task视频鲁棒性及最终因果要求。实现完成、loss下降、训练结束或单次高分都不算完成。
+新session按Owner要求设置并持续推进goal，不自行设置token预算、总工期或总尝试数；只有真实权限/资源/信息边界才回到Owner。
 
-## 决策和交付边界
+## 需要刷新与无需重开的事项
 
-- 工程合同错误修复后重做受影响验证；科学non-pass只否定实际检验组合；证据不足不补写结论。
-- clone/shared差距不能唯一命名容量或梯度冲突，functional/参数几何不代替闭环；好趋势判断相邻稳定，坏结果不靠小扫续命。
-- 每次launch live检查两GPU节点，EMBER同时≤6张物理卡、同节点1--6张；大增长核验strg01独立quota、实际用量与峰值预算。
-- formal train/eval从clean pushed commit的detached frozen worktree启动。隔离实现验证后集成main、推送、清理已合并task worktrees。
-- 持续更新正式账本和历史；保留正式证据、唯一checkpoint、原始数据及所有权不明资产。非必要整理不阻塞可运行科学节点。
-- 不联系外部专家。只有改变科学目标/信息墙、未授权资源数据、不可安全裁决的重大投入分歧或越权破坏性操作才需要owner决定。
+- **需要现场刷新：** Git/concurrent work、两节点GPU/process、strg01各filesystem quota、真实个人用量、实际吞吐与新run预算。
+- **实施时自主确定：** cohesive源码owner、统一新schema/入口配置、profile后的执行batch、首次结果前的科学节点与续训规则。
+- **无需重开：** 末层而非18层、多K独立保序、过去4帧、完整H-query、短GRU、四组过去单向long及逐H回写、完整native输出。
+- **不能恢复：** 384后的旧schedule、旧P/Q width256补评、旧分层native-head-only对照、专家原文双向long、teacher信息墙例外。
+
+正式train/eval须来自clean pushed commit的detached frozen worktree；canonical代码集成main并push。
+只保留一套当前实现，历史通过Git、sealed artifacts和research_history追溯；不覆盖dirty草稿或删除唯一资产。

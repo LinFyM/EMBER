@@ -25,15 +25,17 @@
   捕获full horizon、存在梯度、attention或模块名称，都不能单独证明这一科学机制已经兑现。
 - teacher-video time、relative action horizon、flow time、layer depth分别处理；horizon不是事件标签，计算深度不是任务阶段。
   frame stride固定5，完整50-horizon在有实际任务条件与跨帧消费的learned read之前保留，不能恢复coarse或horizon mean。
-- 教学视频在rollout前完整可用，过程表示允许读取前后教学帧；必须保留视频内部顺序和时间方向。局部范围与聚合方式由登记设计定义，
-  不把在线past-only限制自动当作必要条件。离线双向读取与最终视频因果必要性是不同问题，后者仍由冻结后的controls裁决。
+- 教学视频在rollout前完整可用，必须保留视频内部顺序和时间方向；具体可见范围由Owner选择和登记设计定义。
+  当前选定方法使用过去四帧局部读取及过去单向长程，所有组和回写遵守视频前缀依赖；完整H内部仍可双向交互。
+  不因完整视频可用或专家原文推荐而恢复双向长程。计算上的前缀因果性与视频对行为的必要性不同，后者由冻结后的controls裁决。
 - 每条视频独立保序编码；只在集合阶段置换不变地合并证据。不得平均frames、raw features或最终LoRAs，不挑最好video。
   声称dynamic K就必须真实训练对应cardinalities，不能重复同一条视频凑K。one-shot/few-shot设定由真实能力决定，不故意削弱强方案。
 - 观察侧Meta-LoRA应有明确输入域与学习职责，必须保留其真实梯度以及cache有效性。已对齐设计采用Action Expert共享Meta适配，
   vision/Gemma保持冻结；其具体rank、投影集合、probe和readout以登记设计为准，不把历史默认当作永久规定。
 - 显式读X/Y与把因子限制在X/Y的span是两个独立选择。G1证明过局部native-factor容量，不强迫后继复刻signed pooling；
   原生状态或压缩的过程表示也不自动等同于原始算子X/Y。观察侧与执行侧激活坐标必须区分。
-- 保持少数职责清楚、可重复扩展的标准attention/MLP模块。不要沿用无用途的双probe、重复读取或旁路，也不要连续叠加summary、
+- 保持少数职责清楚、可重复扩展的标准attention/MLP及短序列递推模块；有序GRU不是跨rollout记忆。
+  不把保留18层响应当作必要原则，当前选定接口直接读取最终动作投影前的完整H。不要沿用无用途的双probe、重复读取或旁路，也不要连续叠加summary、
   covariance、whitening、transport、anchor、gate或校准链。保留与删除都需要说明当前用途和行为代价。
 - owner只评论局部时，保留已对齐且未被否定的部分；不把局部疑问当作推翻整图的指令。先说明完整数据流水线，再讨论局部模块。
 - 数学推导从需求、少量符号和直观例子逐步展开；区分推导结论、归纳偏置、实现默认和待检验假设。结构合理不等于性能得到保证。
@@ -51,6 +53,9 @@
 - 当前主线为Writer与读取侧Meta从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
   G1--G3的阶段冻结属于历史机制验证，不实施为当前课程，也不为旧措辞额外建立阶段初始化与随机初始化两套候选。
   LoRA采用合法identity初始化；从头初始化不要求每个张量都随机非零。短学习、扩大覆盖与闭环是实验节点，不是冻结阶段。
+- Writer/Meta联合训练与FM/RL同一步联合更新是两种不同选择。当前采用可试的FM辅助Writer RL协议；
+  同版本采集与求梯度后一次更新，旧轨迹不跨更新继续用于普通score梯度。固定混合系数不是Owner的永久要求，
+  训练期共享Writer RL也不等于生成LoRA后的task-local RL。
 - 先用有信息量的短学习与闭环证据判断投入。未证明基础行为前不默认启动约10小时长训练；接近强基线或目标后及时做strict400，
   好趋势继续训练到足以判断相邻稳定，明确坏结果不靠无限续训或无依据的seed/LR/rank/scale/width小扫挽救。
 - 每轮记录per-task、per-suite、breadth、retained/gained/lost、churn、相邻success-set重合和实际样本曝光；训练步数本身不足以比较配方。
@@ -92,6 +97,7 @@
 ## 6. 沟通和交接
 
 - 默认实用中文，先直接回答具体问题，再给证据和边界。owner主要语音输入，应主动修正明显同音词、断句和术语识别错误。
+- 已对齐的部署adapter/信息墙边界不在每次解释中反复强调；涉及变更、违规或用户疑问时再明确说明。
 - 讨论像共同推导：不把回答写成教科书岔路，不反复使用“不是……而是……”式对立话术，不把未接受的建议说成owner要求。
 - 持久文档职责固定：concept讲科学精神，设计文档讲推导与方法，findings讲跨轮结论，research_history讲分层历史与证据，
   task_plan讲下一阶段，progress讲授权与现场；AGENTS只写稳定合同。

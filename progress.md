@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，train24的192步双视频strict400为69/72，384为67/64，均未资格通过；已暂停schedule续训，冻结384训练视频熟悉度诊断正在物化。
+更新时间：2026-09-07 CST，train24的192步双视频strict400为69/72，384为67/64，当前配置已止于384、不续576；熟悉视频训练诊断21/120，held-video诊断评测中。
 
 ## 当前授权与方法状态
 
@@ -24,13 +24,21 @@
 
 ## 当前执行节点
 
+Owner指出当前性能连基础SFT约108都未达到；历史SFT两个相邻点为109/107，当前67/64应按性能失败处理，
+相对source47的局部增益不足以支持继续本配置。执行裁决：本train24 run止于384，不执行576/624/672；长期目标继续。
+熟悉视频train120已完成exit0并通过完整source配对：21/120（Spatial10/Object3/Goal8/Long0），breadth11/24，
+对source16为RGL10/11/6、churn17/120、J10/27。缺口已出现在训练任务与熟悉视频，不能仅归因为未见task迁移。
+seen/held两组LoRA物化均exit0，分别107/68条件、约552/351MB、325.36/256.92秒（含启动，近似）。
+当前仅held-video train120在gpu01physical0/2/3/5评测，frozen97a8a24a、12workers；启动前两节点live核验四卡空闲，
+quota496858640KiB，现场与命令见eval_s384_train120_held_video_launch.json。完成后做接口区分性实验，不再无依据续训或几何小扫。
+
 384 other已完成exit0，64/400（Spatial4/Object31/Goal26/Long3），breadth6/8；对source47为RGL28/36/19、
 churn55/400、J28/83；对192other72为RGL47/17/25、churn42/400、J47/89。
 384跨视频correct67→other64为RGL52/12/15、churn27/400、J52/79=.658228；完整两arm均未达资格，decision_after384.json已封存。
 两组eval实际墙钟1111.27/1072.95秒，均12workers。当前没有训练作业或validation评测作业。
-冻结384 seen/held训练视频诊断已在gpu01physical0/2并行物化；两节点live核验所用卡空闲0MiB/process0，
+冻结384 seen/held训练视频诊断在gpu01physical0/2并行物化已完成；两节点live核验所用卡空闲0MiB/process0，
 quota495972916KiB、run5.7GiB、analysis29MiB，预计额外峰值1.1GiB仍在原32GiB预算内。
-两组各120行、107/68个唯一条件；命令与现场在materialization_s384_novelty_launch.json，尚无诊断分数。
+两组各120行、107/68个唯一条件；命令与现场在materialization_s384_novelty_launch.json，seen21已完成，held待完成。
 
 384 correct strict400已完成exit0并通过完整配对：67/400（Spatial3/Object33/Goal27/Long4），breadth5/8；
 对source47为RGL30/37/17、churn54/400、J30/84；192→384为RGL46/21/23、churn44/400、J46/90=.511111。
@@ -40,7 +48,7 @@ p1被其它任务使用，未等待第五卡；quota495966384KiB，命令/现场
 在任何384训练侧诊断分数出现前，已登记train24同120初始化的seen-video0–15与held-video46–49两组正确视频诊断，
 固定checkpoint384/K1/seed20260907，不更新参数，不作模型选择。已见组全部视频出现于训练，89/120行也曾作为K1条件。
 登记及准备命令在video_novelty_diagnostic_registration.json；other已完成，现已live核验资源并执行两组诊断，
-依此区分已训练task/视频、新视频与新task接口，之后再决定576是否有信息量。未选selected checkpoint。
+依此区分已训练task/视频、新视频与新task接口，再做实质、可区分的修正；当前run已决定止于384。未选selected checkpoint。
 
 384步exact-resume已完成exit0，完整checkpoint与completion_to384保留；累计1536条件/24576queries，
 每task64条件/1024queries，实际K、任务权重、视频/query跨episode及连续step/cursor检查通过。

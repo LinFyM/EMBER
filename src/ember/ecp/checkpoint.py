@@ -45,6 +45,7 @@ def save_ecp_checkpoint(
     run_contract_schema: str,
     metrics_rows: int,
     sampler_state: Mapping[str, Any] | None = None,
+    training_state: Mapping[str, Any] | None = None,
 ) -> Path:
     checkpoints = output_dir / "checkpoints"
     partial = checkpoints / f".macro_{macro:08d}.partial"
@@ -84,6 +85,7 @@ def save_ecp_checkpoint(
                 "scheduler": scheduler.state_dict(),
                 "metrics_rows": metrics_rows,
                 "sampler_state": dict(sampler_state) if sampler_state is not None else None,
+                "training_state": dict(training_state) if training_state is not None else None,
                 "scaler": None,  # BF16 does not use FP16 gradient scaling.
             },
             partial / "trainer_state.pt",
@@ -123,6 +125,7 @@ def load_ecp_checkpoint(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     run_contract_schema: str,
     expected_sampler_state: Mapping[str, Any] | None = None,
+    restored_state: dict[str, Any] | None = None,
 ) -> tuple[int, int]:
     macro = checkpoint_macro(checkpoint)
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
@@ -171,4 +174,6 @@ def load_ecp_checkpoint(
     optimizer.load_state_dict(trainer["optimizer"])
     scheduler.load_state_dict(trainer["scheduler"])
     restore_rng(rank_state["rng"], context)
+    if restored_state is not None:
+        restored_state.update(sampler_state=trainer.get("sampler_state"), training_state=trainer.get("training_state"))
     return macro, int(trainer["metrics_rows"])

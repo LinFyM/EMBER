@@ -56,6 +56,14 @@ def prepare_prefix_kv_cache(
 ) -> Any:
     """Cache the frozen official image/language prefix independently of Action Meta."""
 
+    return prepare_prefix_features_and_cache(policy, prefix)[1]
+
+
+def prepare_prefix_features_and_cache(
+    policy: torch.nn.Module, prefix: ExecutionPolicyPrefix,
+) -> tuple[torch.Tensor, Any]:
+    """Return final normalized Gemma evidence and KV from the same real forward."""
+
     from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
     core = policy.model
@@ -67,11 +75,14 @@ def prepare_prefix_kv_cache(
     bridge = core.paligemma_with_expert
     bridge.paligemma.model.language_model.config._attn_implementation = "eager"
     with torch.no_grad(), _autocast(prefix.embeddings.device):
-        _, cache = bridge.forward(
+        outputs, cache = bridge.forward(
             attention_mask=mask,
             position_ids=positions,
             past_key_values=None,
             inputs_embeds=[prefix.embeddings, None],
             use_cache=True,
         )
-    return cache
+    features = outputs[0]
+    if features.shape[:2] != prefix.padding.shape:
+        raise ValueError("native prefix evidence and KV positions differ")
+    return features.detach(), cache

@@ -3,7 +3,6 @@ from pathlib import Path
 import torch
 
 from ember.ecp.contracts import TargetFamily, build_target_owners
-from ember.ecp.observer import ActionLayerStateCapture
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.meta_lora import MetaLoRAStack
 
@@ -45,7 +44,7 @@ class _ExpertLayer(torch.nn.Module):
         return value + 0.01 * self.self_attn["o_proj"](attention)
 
 
-def test_native_capture_retains_all_horizons_and_optional_action_meta_gradients() -> None:
+def test_reading_meta_all_layers_receive_gradients_and_remove_scoped_hooks() -> None:
     torch.manual_seed(3)
     expert = torch.nn.Module()
     expert.layers = torch.nn.ModuleList([_ExpertLayer() for _ in range(18)])
@@ -53,14 +52,11 @@ def test_native_capture_retains_all_horizons_and_optional_action_meta_gradients(
     expert.requires_grad_(False)
     meta = MetaLoRAStack(expert.layers, rank=4)
     value = torch.randn(2, 50, 4)
-    with meta.installed(expert), ActionLayerStateCapture(expert, detach=False) as capture:
+    with meta.installed(expert):
         for layer in expert.layers:
             value = layer(value)
-        expert.norm(value)
-        boundaries = capture.stacked()
-    assert boundaries.shape == (2, 19, 50, 4)
-    torch.testing.assert_close(boundaries[:, -1], value)
-    boundaries[:, 1:].square().mean().backward()
+        normalized = expert.norm(value)
+    (normalized * torch.randn_like(normalized)).sum().backward()
     assert all(parameter.grad is None for parameter in expert.parameters())
     assert all(adapter.b.grad is not None and bool(adapter.b.grad.abs().sum() > 0)
                for adapter in meta.adapters.values())

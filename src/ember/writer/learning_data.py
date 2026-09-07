@@ -17,7 +17,6 @@ from torch.utils.data import default_collate
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
-from ember.writer.task_schedule import counted_task_group, task_occurrence_schedule
 
 
 @dataclass(frozen=True)
@@ -56,7 +55,7 @@ def load_learning_tasks(
 
 
 class JointTrainingData:
-    """Stateless task occurrences and hierarchical cross-episode queries."""
+    """Independent persisted sampling streams; rejected updates consume draws."""
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any]) -> None:
         self.config = dict(config)
@@ -76,17 +75,36 @@ class JointTrainingData:
         self.videos = RawTeacherVideoStore(authorities, frame_stride=5)
         self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool, action_chunk_size=50)
         self.query_rows = self.queries.task_episode_rows
-        self.groups = tuple(counted_task_group(
-            (tuple(self.tasks),), (int(config["tasks_per_update"]),), step, seed=self.seed,
-        ) for step in range(int(config["total_steps"])))
-        self.occurrences = task_occurrence_schedule(self.groups)
+        root = random.Random(self.seed)
+        self.streams = {name: random.Random(root.getrandbits(63)) for name in (
+            "task", "K", "video", "query", "initial_state", "environment", "flow", "exploration", "reservoir", "trust",
+        )}
+        self.suites = {suite: tuple(task for task in self.tasks if self.tasks[task].suite == suite)
+                       for suite in sorted({task.suite for task in self.tasks.values()})}
+        if len(self.suites) != 4 or int(config["tasks_per_update"]) != 4:
+            raise ValueError("joint updates require one task from each of four suites")
+        self.next_step = 0
+        self.counts = {task: 0 for task in self.tasks}
 
-    def video_demos(self, task: int, occurrence: int, *, cardinality: int | None = None) -> tuple[int, ...]:
-        k = (1, 2, 4)[(occurrence + task) % 3] if cardinality is None else cardinality
-        if k not in (1, 2, 4):
-            raise ValueError("unsupported training cardinality")
-        rng = random.Random(self.seed + 1000003 * task + 7919 * occurrence)
-        return tuple(rng.sample(self.video_pool, k))
+    def next_iteration(self) -> tuple[dict[str, Any], ...]:
+        draws = []
+        for tasks in self.suites.values():
+            task = self.streams["task"].choice(tasks)
+            k = self.streams["K"].choice((1, 2, 4))
+            demos = tuple(self.streams["video"].sample(self.video_pool, k))
+            draws.append({
+                "task": task, "occurrence": self.counts[task], "video_demos": demos,
+                "query_seed": self.streams["query"].getrandbits(63),
+                "episodes": tuple({
+                    "initial_state": self.streams["initial_state"].randrange(32),
+                    **{name: self.streams[name].getrandbits(31) for name in
+                       ("environment", "flow", "exploration", "reservoir", "trust")},
+                } for _ in range(4)),
+                "frames": sum(self.videos.frame_counts(task, demo)[1] for demo in demos),
+            })
+            self.counts[task] += 1
+        self.next_step += 1
+        return tuple(draws)
 
     def load_videos(self, task: int, demos: Sequence[int]):
         if len(set(demos)) != len(demos):
@@ -97,10 +115,10 @@ class JointTrainingData:
             tuple(torch.from_numpy(video.frame_indices) for video in videos),
         )
 
-    def action_batch(self, task: int, occurrence: int, demos: Sequence[int]):
+    def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int):
         if set(demos) & set(self.action_pool):
             raise ValueError("teaching video and action query episodes overlap")
-        rng = random.Random(self.seed + 32452843 * task + 49999 * occurrence)
+        rng = random.Random(query_seed)
         rows = []
         for _ in range(int(self.config["queries_per_task"])):
             episode = rng.choice(self.action_pool)
@@ -116,18 +134,19 @@ class JointTrainingData:
             "policy_rng_seed": seed,
         }
 
-    def step_costs(self, step: int) -> dict[int, int]:
-        return {
-            task: sum(self.videos.frame_counts(task, demo)[1] for demo in self.video_demos(task, self.occurrences[step][task]))
-            for task in self.groups[step]
-        }
+    def sampler_state(self) -> dict[str, Any]:
+        return {"next_step": self.next_step, "task_occurrences": dict(self.counts), "seed": self.seed,
+                "streams": {name: rng.getstate() for name, rng in self.streams.items()}}
 
-    def sampler_state(self, next_step: int) -> dict[str, Any]:
-        counts = {task: 0 for task in self.tasks}
-        for group in self.groups[:next_step]:
-            for task in group:
-                counts[task] += 1
-        return {"next_step": next_step, "task_occurrences": counts, "seed": self.seed}
+    def restore_sampler(self, state: Mapping[str, Any]) -> None:
+        if state["seed"] != self.seed or set(state["streams"]) != set(self.streams):
+            raise ValueError("sampling stream contract changed")
+        self.next_step = int(state["next_step"])
+        self.counts = {int(task): int(count) for task, count in state["task_occurrences"].items()}
+        if set(self.counts) != set(self.tasks) or sum(self.counts.values()) != self.next_step * 4:
+            raise ValueError("sampler exposure cursor changed")
+        for name, rng in self.streams.items():
+            rng.setstate(state["streams"][name])
 
     def close(self) -> None:
         self.videos.close()

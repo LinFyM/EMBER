@@ -1,4 +1,4 @@
-"""Canonical model and bounded frozen-prefix lifetime for the layered Writer."""
+"""Canonical model and bounded frozen-prefix lifetime for the Horizon Writer."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ class JointRuntime:
 
 
 def build_joint_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> JointRuntime:
-    from ember.writer.layered import LayeredRelationWriter, LayeredWriterConfig
+    from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
     reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
@@ -56,7 +56,7 @@ def build_joint_runtime(asset_root: Path, config: Mapping[str, Any], device: tor
     policy.model.gradient_checkpointing_disable()
     expert = policy.model.paligemma_with_expert.gemma_expert.model
     state = JointWriterState(
-        LayeredRelationWriter(lora, LayeredWriterConfig(**config["model"])),
+        HorizonRelationWriter(lora, HorizonWriterConfig(**config["model"])),
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
     ).to(device)

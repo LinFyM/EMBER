@@ -4,14 +4,14 @@
 
 2026-09-08 Owner已发出接管启动指令：全面理解仓库，完整实现当前设计，开展正式实验，依据真实结果持续迭代直到性能和科学要求达标。
 全程goal已创建且active，无token预算、总工期或总尝试次数。前次只做交接准备的session限制已结束。
-当前阶段为全面阅读/证据审计与实现准备；既定边界内无需再次请求实施、训练或方法修订批准。
+全面阅读与证据审计已完成；当前阶段为新canonical实现集成和真实机制/成本验证准备；既定边界内无需再次请求实施、训练或方法修订批准。
 
 唯一 active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
 末层完整H → 过去4帧对应 → 完整H-query → 两端Z核实 → 历史u有序GRU → 四组单向长程交替/前三回写
 → 集合compiler → 完整native A/B；fresh Writer/Meta、FM辅助真实Writer RL、同版本单次联合更新。
 **长程四组全部past+self，H-query沿H双向；专家原文中的双向长程已被Owner覆盖。**
 
-当前源码还是旧layered图，新方案尚无checkpoint或行为证据。旧train24永久止于384，旧P/Q width256不补评，
+完整Horizon过程图、native D、物化/评测已集成；同版本FM/RL训练接口与runner正在集成，新方案尚无正式checkpoint或行为证据。旧train24永久止于384，旧P/Q width256不补评，
 未合并native-factor-readout只作待审视草稿，不整支集成或恢复旧对照。详情见[progress](progress.md)。
 
 ## 接续执行计划

@@ -93,12 +93,12 @@ def sum_writer_gradients(
 
     A task's weight is determined before device assignment. No extra world-size
     division is applied. All ranks must pass parameters in the same order.
+    The caller checks the resulting global norm for finiteness after every rank
+    has completed the collectives; local early raises can deadlock peer ranks.
     """
 
     for parameter in parameters:
         if parameter.grad is None:
             parameter.grad = torch.zeros_like(parameter)
-        elif not bool(torch.isfinite(parameter.grad).all()):
-            raise RuntimeError("shared Writer produced a non-finite gradient")
         if world_size > 1:
             dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)

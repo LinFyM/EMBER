@@ -7,6 +7,7 @@ import os
 import socket
 import sys
 import time
+import traceback
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -47,9 +48,27 @@ def _config(path: Path) -> dict[str, Any]:
         or config["data"].get("include_last_frame") is not True
         or int(config["data"]["queries_per_task"]) != 64
         or int(config["observer"]["flow_time"]) != 1
+        or int(config["observer"]["meta_rank"]) != 4
+        or int(config["observer"]["probe_seed"]) != 1729
         or config["optimization"]["loss"] != "fm_plus_extended_action_writer_rl_same_version"
     ):
         raise ValueError("horizon joint Writer scientific contract changed")
+    expected_rl = {
+        "episodes_per_condition": 4, "initial_state_ids": list(range(32)),
+        "decisions_per_episode": 16, "trust_decisions_per_episode": 4,
+        "coefficient": 0.1, "flow_steps": 10, "executed_actions": 5,
+        "noise": {"rho": 0.8, "std": [0.05] * 6 + [0.1]}, "max_task_kl": 0.02,
+    }
+    if config["rl"] != expected_rl:
+        raise ValueError("configured RL protocol differs from the implemented first-run contract")
+    for key, expected in (("video_demos", range(16)), ("action_demos", range(16, 42)),
+                          ("diagnostic_action_demos", range(42, 46)), ("held_video_demos", range(46, 50))):
+        if config["data"][key] != list(expected):
+            raise ValueError(f"registered episode roles changed: {key}")
+    if len(config["data"]["task_ids"]) != 24:
+        raise ValueError("first-run gradients require all fixed train24 tasks")
+    if any(int(value) <= 0 for value in config["runtime"].values()):
+        raise ValueError("runtime batches and cache budget must be positive")
     HorizonWriterConfig(**config["model"])
     return config
 
@@ -153,8 +172,8 @@ def _trust_scores(engine, evidence, context, tasks):
     local, error = {}, None
     try:
         local = {task: float(engine.trust_score(saved)) for task, saved in evidence}
-    except Exception as exc:
-        error = f"{type(exc).__name__}: {exc}"
+    except Exception:
+        error = traceback.format_exc()
     packets = _gather((local, error), context)
     if any(failure for _, failure in packets):
         raise RuntimeError(f"candidate evaluation failed on a rank: {[failure for _, failure in packets if failure]}")
@@ -176,8 +195,8 @@ def _attempt_update(engine, runtime, data, context, config, optimizer, scheduler
     rows, evidence, error = [], [], None
     try:
         rows, evidence = _execute_step(engine, data, context, config, draws, attempted)
-    except Exception as exc:
-        error = f"{type(exc).__name__}: {exc}"
+    except Exception:
+        error = traceback.format_exc()
     failures = [value for value in _gather(error, context) if value]
     if failures:
         raise RuntimeError(f"joint backward failed on a rank: {failures}")

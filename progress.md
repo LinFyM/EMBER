@@ -11,23 +11,52 @@
   四组past+self长程及前三组逐H回写、集合compiler、完整native A/B。H-query沿完整H双向。
 - fresh Writer/Meta与fresh optimizer；首版FM辅助共享Writer RL、同版本采样/求梯度后一次更新，完整design §7适用。
   validation/test零梯度；shuffled/reversed仅selected冻结后的最终controls，不用于架构或checkpoint选择。
-- 当前阶段：全面阅读和实现迁移准备。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
-  两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论经主agent整合后落地唯一canonical实现。
+- 当前阶段：全面阅读与审计已完成，新canonical图/联合训练/物化/评测已接通，正在真实机制与成本验证。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
+  两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论已由主agent整合，独立实现已集成到main。
   尚无新架构checkpoint、GPU机制结果或科学分数。
 - 接管Git基线main `4f1686ab`，已fetch并确认与origin/main一致，初始干净。
   7个历史detached工作树与dirty `codex/native-factor-readout`草稿保留；草稿不整支集成。
 - 旧train24 run永久止于384，correct69→67、other72→64、熟悉/held训练视频21/18；不恢复672 schedule。
   旧P/Q width256无闭环，不自动补评。source47与另面板48分开，SFT109/107为明确行为参照。
-- 源模型、tokenizer、data/env复用README canonical入口。当前尚未执行新的GPU/大输出操作；相关操作前现场刷新两节点与strg01独立quota。
+- 源模型、tokenizer、data/env复用README canonical入口。单卡真实机制检查正在准备/执行；大资产复用，现场两节点与独立quota证据见下。
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
+
+## 2026-09-08 新图接通与真实验证（进行中）
+
+已集成完整Horizon过程图、native D、最终R/Z读取、真实四episode采集、十步可微flow、Gaussian信用和trust候选，
+同版本FM/RL合并AB cotangent后一次Writer/Meta重放；独立采样、runner/config、checkpoint和Sigma/0评测也已集成。
+旧layered/coordinate、旧FM-only入口与旧18层边界capture已退役，历史工作树/证据保留。
+主树全量CPU检查262项通过，覆盖过程依赖、解析flow VJP、Gaussian/Q/M/LOO、候选回滚、拒绝曝光、checkpoint恢复与评测配对。
+这是工程合同证据，不是闭环科学通过；尚无新正式checkpoint或行为分数。
+
+结构自审：新职责分为完整过程图、native因子、十步执行、环境采集、信用/trust、同版本联合调度；复用现有FM、
+LoRA、checkpoint和evaluator。源码净增长超过1000行来自原来缺失的真实RL与过程模块，不保留旧平行训练路径。
+`joint.py`的单condition更新保持一个清楚的同版本生命周期；共享大evaluator只增加必要接线，探索计算归独立owner，
+没有复制大forward或按token执行。尺寸/复杂度review信号由上述职责界面承接，无新增超过800行的实质计算owner。
+
+2026-09-08现场存储：strg01 data1使用497206440KiB、data0使用57652716KiB，各soft1073741824KiB，
+hard1084227584KiB；shared分别84TiB与1.9TiB。du workspace443GiB、其余data1个人32GiB、data0个人55GiB。
+机制/profile只写小日志（峰值<1GiB），不存大中间tensor；首段完整checkpoint暂估4–5GiB，
+相邻checkpoint加物化/评测暂估新增峰值32GiB以内，正式launch前按实测和实际节点重算。
+GPU02 physical1（GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4）现场162MiB/util0，仅其它用户148MiB context，
+NUMA0；按共驻合同用于单卡机制验证，准确命令和结果归`runs/analysis/horizon_relation_writer_20260908/mechanism/`。
+这是现场调度选择，不是reservation；正式launch前再次核验所有将用设备。
 
 ## 当前执行记录
 
 - 全程goal已启用。当前完整设计为首版起点；保留证据支持的具体方法修订自主权，修改前查最近等价历史并更新合同。
-- 已消费HANDOFF；长期要求、方法、计划、证据均在正式文档，该临时入口将随本次状态更新移除。
+- 已消费HANDOFF；长期要求、方法、计划、证据均在正式文档，该临时入口已随状态提交92a2673f移除并push。
 - 初始architecture guard基线无改动（+0/-0）；新架构将替换旧layered/coordinate行为，复用现有source、FM、LoRA及评测基础。
-- 下一项：完成阅读审计汇总，落实读取/过程图和FM+RL/物化/checkpoint整体迁移；真实机制与成本通过后冻结首段实验合同。
+- 只读审计覆盖全部当前src/tests/scripts/configs与项目文档；大型manifest按程序核对结构/任务/episode/frame及文件字节，不逐字展开重复元数据。
+  历史index全部843导出、511原件存在，95面板24100行的成功数/suite/breadth与本地原件outcome向量完全一致；这是复核，不是新评测。
+  source/tokenizer/71source与40target HDF5存在且匹配manifest；没有新hash或held trajectory梯度读取。
+- 纯过程图在`codex/horizon-graph`独立worktree；物化/评测迁移在`codex/horizon-evaluation`独立worktree；主agent在main负责native/runtime/FM+RL/数据/训练与集成。
+  两worktree都基于92a2673f，写范围不重叠；使用using-git-worktrees隔离，验证后由main统一集成push。
+- 关键实现风险：旧capture取final norm输入，必须换action_out_proj实际输入；冻结prefix新增最终Z，静态语言读取补位置；
+  RL必须是显式action Gaussian、4独立episode、LOO和Q/M、完整10步可微重放，同版本单次更新与trust拒绝不倒退sampler/RNG。
+  旧reward antithetic/成功expert occupancy与旧cycle/cosine均不作为新训练路径。
+- 下一项：真实source的R/Z、完整flow VJP、最长K1/K4、真实联合更新及环境检查；按实测成本登记strict400节点并冻结首段合同。
 
 ## 暂停前执行记录（以下“当前/下一步”只表示当时时点）
 

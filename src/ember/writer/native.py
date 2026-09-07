@@ -9,16 +9,14 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
-import time
 from typing import Any, Sequence
 
 import torch
 
-from ember.ecp.observer import ActionLayerStateCapture
 from ember.ecp.policy_effects import (
     ExecutionPolicyPrefix,
     prepare_execution_policy_prefix,
-    prepare_prefix_kv_cache,
+    prepare_prefix_features_and_cache,
 )
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.meta_lora import MetaLoRAStack
@@ -34,10 +32,14 @@ class FrozenPrefixChunk:
 
     padding: torch.Tensor
     layers: tuple[tuple[torch.Tensor, torch.Tensor, Any], ...]
+    visual_tokens: torch.Tensor
+    visual_mask: torch.Tensor
 
     @property
     def tensor_bytes(self) -> int:
-        return self.padding.numel() * self.padding.element_size() + sum(
+        return sum(value.numel() * value.element_size() for value in (
+            self.padding, self.visual_tokens, self.visual_mask,
+        )) + sum(
             value.numel() * value.element_size()
             for keys, values, _ in self.layers for value in (keys, values)
         )
@@ -82,7 +84,8 @@ class NativeVideoObserver:
             raise ValueError("native observer requires all 18 Action Expert layers")
 
     @torch.no_grad()
-    def prefix(self, frames: torch.Tensor, tokens: torch.Tensor, mask: torch.Tensor) -> FrozenPrefixChunk:
+    def prefix(self, frames: torch.Tensor, tokens: torch.Tensor, mask: torch.Tensor,
+               task_span: torch.Tensor) -> FrozenPrefixChunk:
         from lerobot.utils.constants import OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
 
         if frames.ndim != 4 or frames.shape[1] != 3 or frames.shape[0] <= 0:
@@ -95,15 +98,20 @@ class NativeVideoObserver:
             OBS_LANGUAGE_ATTENTION_MASK: mask.expand(len(frames), -1),
         }
         prefix = prepare_execution_policy_prefix(self.policy, batch)
+        evidence_mask = prefix.padding.clone()
+        evidence_mask[:, -tokens.shape[1]:] = task_span.expand(len(frames), -1)
         # Remove only columns masked for every frame. Valid-token positions and
         # native causal semantics stay unchanged, without missing-camera work
         # in the language/Action Expert attention stacks.
         keep = prefix.padding.any(dim=0)
         prefix = ExecutionPolicyPrefix(prefix.embeddings[:, keep], prefix.padding[:, keep])
-        cache = prepare_prefix_kv_cache(self.policy, prefix)
+        features, cache = prepare_prefix_features_and_cache(self.policy, prefix)
+        evidence_mask = evidence_mask[:, keep]
+        evidence_keep = evidence_mask.any(dim=0)
         return FrozenPrefixChunk(
             prefix.padding.cpu(),
             tuple((keys.detach().cpu(), values.detach().cpu(), window) for keys, values, window in cache),
+            features[:, evidence_keep].cpu(), evidence_mask[:, evidence_keep].cpu(),
         )
 
     @torch.no_grad()
@@ -121,7 +129,7 @@ class NativeVideoObserver:
             if indices.shape != (len(video),) or len(video) == 0 or not bool((indices[1:] > indices[:-1]).all()):
                 raise ValueError("native video positions must preserve real frame order")
             videos.append(tuple(
-                self.prefix(video[start:start + self.frame_chunk], tokens, mask)
+                self.prefix(video[start:start + self.frame_chunk], tokens, mask, task_span)
                 for start in range(0, len(video), self.frame_chunk)
             ))
             positions.append(indices.to(self.device))
@@ -131,13 +139,30 @@ class NativeVideoObserver:
         padding, cache = chunk.on_device(self.device)
         noise = self.probe.expand(len(padding), -1, -1)
         time = torch.ones(len(padding), device=self.device)
-        with self.meta.installed(self.expert), ActionLayerStateCapture(self.expert, detach=False) as capture:
-            with autocast(self.device):
+        captured = []
+        def capture_input(module, args):
+            captured.append(args[0])
+        handle = self.policy.model.action_out_proj.register_forward_pre_hook(capture_input)
+        try:
+            with self.meta.installed(self.expert), autocast(self.device):
                 self.policy.model.denoise_step(padding, cache, noise, time)
-                responses = capture.stacked()[:, 1:]
-        if responses.shape[1:] != (18, 50, 1024):
-            raise ValueError("native observer lost post-layer or complete horizon states")
+        finally:
+            handle.remove()
+        if len(captured) != 1:
+            raise ValueError("native observer requires exactly one real action output projection")
+        responses = captured[0]
+        if responses.shape[1:] != (50, 1024) or responses.dtype != torch.float32:
+            raise ValueError("native observer lost final normalized FP32 complete horizon states")
         return responses
+
+    def writer_arguments(self, condition: NativeCondition) -> tuple:
+        """Transfer immutable per-frame evidence once for all same-condition replays."""
+        tokens = tuple(torch.cat([chunk.visual_tokens for chunk in video]).to(self.device)
+                       for video in condition.videos)
+        masks = tuple(torch.cat([chunk.visual_mask for chunk in video]).to(self.device)
+                      for video in condition.videos)
+        return (condition.frame_indices, condition.language_embeddings,
+                condition.language_mask, tokens, masks)
 
     @torch.no_grad()
     def responses(self, condition: NativeCondition) -> tuple[torch.Tensor, ...]:
@@ -157,57 +182,3 @@ class NativeVideoObserver:
                 cursor = stop
             if cursor != len(gradient):
                 raise ValueError("observer VJP omitted frames")
-
-
-def joint_functional_backward(
-    writer: torch.nn.Module, observer: NativeVideoObserver, condition: NativeCondition,
-    *, policy: torch.nn.Module, contract: Any, batch: dict[str, Any],
-    task_weight: float, policy_rng_seed: int, policy_microbatch_size: int,
-) -> dict[str, float]:
-    """One task's positive flow VJP, Writer/R-leaf VJP, and native Meta VJP."""
-
-    from ember.writer.functional import (
-        INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
-        INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
-        functional_lora_loss_gradient,
-        writer_chain_rule_surrogate,
-    )
-
-    if not 0 < task_weight <= 1:
-        raise ValueError("joint functional objective requires explicit global task mass")
-    timing = {}
-    def boundary(label, started):
-        if observer.device.type == "cuda":
-            torch.cuda.synchronize(observer.device)
-        timing[label] = time.perf_counter() - started
-        return time.perf_counter()
-    tick = time.perf_counter()
-    responses = observer.responses(condition)
-    tick = boundary("observer_forward_seconds", tick)
-    inputs = (condition.frame_indices, condition.language_embeddings, condition.language_mask)
-    with torch.no_grad(), autocast(observer.device):
-        state = writer(responses, *inputs)
-    tick = boundary("writer_forward_seconds", tick)
-    with autocast(observer.device):
-        loss, _, gradients = functional_lora_loss_gradient(
-            policy, state, contract, batch=batch, policy_rng_seed=policy_rng_seed,
-            policy_rng_device=observer.device,
-            flow_time_sampling_scheme=INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
-            flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
-            policy_microbatch_size=policy_microbatch_size, collect_policy_details=False,
-        )
-    tick = boundary("policy_vjp_seconds", tick)
-    del state
-    leaves = tuple(value.detach().requires_grad_(True) for value in responses)
-    with autocast(observer.device):
-        replay = writer(leaves, *inputs)
-        surrogate = writer_chain_rule_surrogate(replay, gradients) * task_weight
-    surrogate.backward()
-    tick = boundary("writer_vjp_seconds", tick)
-    cotangents = tuple(value.grad for value in leaves)
-    if any(value is None for value in cotangents):
-        raise RuntimeError("Writer detached a native R leaf")
-    del replay, surrogate, gradients, leaves, responses
-    observer.backward(condition, cotangents)
-    boundary("observer_vjp_seconds", tick)
-    return {"flow_loss": float(loss), "task_weight": task_weight, "normalizer": 1.0, **timing}

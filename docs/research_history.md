@@ -26,7 +26,7 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 
 | 证据 | 结果 | 适用范围 |
 |---|---:|---|
-| 历史frozen source | 48/400 | 对应历史validation8配对；另一teacher schedule下曾47/400，不混为同一组rows |
+| 历史frozen source | 48/400 | 对应历史validation8面板；另一独立实测面板为47/400，不混为同一组rows |
 | validation8 task-local rank16 experts | 250/400，suite 73/78/58/41 | privileged容量上界，不能成为held任务字典或部署第二adapter |
 | train24 rank128 source SFT | step400 109/400，step425 107/400 | 不读取teacher video的跨任务参照；不是rank16 Writer同参数量对照 |
 | train24内部fold0 held5 source / carrier | 21/250 / 43/250 | 机制面板；不与validation400或后来train-side150面板混算 |
@@ -639,3 +639,25 @@ Owner又强调不能重犯已知架构/性能问题，必须正视source和SFT�
 本次从20260907补证据包的三组各400行outcome重新计数，确认为source47、SFT step400为109、step425为107；没有新rollout。
 source48属于另一历史面板。接续设计§1.1规定在有信息量的可比正式节点判断基线差距，不能以内部指标或仅高于弱source开脱，
 也不能把低分直接命名为唯一根因；已有证据或新实验指向必要改变时，更新正式合同并完整实现，不局限于小补丁。
+
+
+## 21. 2026-09-08接管与既有证据复核
+
+Owner启动全程科研goal，无token预算、总工期或总尝试次数，授权完整实现、真实验证、正式实验与证据驱动迭代至最终达标。
+接管基线4f1686ab；授权/goal与已消费HANDOFF的状态整理于92a2673f提交推送。旧384永久停止，尚无新架构分数。
+系统阅读当前源码、测试、脚本、配置与文档，完整阅读20260908四篇专家原文及Owner最终裁决。程序连接index的843个导出，
+核对511份本地原件存在，重算95个rollout面板24100行的success/suite/breadth并与原始outcome向量核对一致。
+
+source47原件为`runs/analysis/pi05_ecp_prw_meta73_equal_exposure_20260906/source_strict400/results.json`；
+source48原件为`runs/outputs/pi05_source_base_validation8x50_raw_b649ba5_r3_20260722/results.json`。
+48→47的R/G/L为45/2/3，五条success不同；400行task/state/language/env/policy RNG共同前缀及policy字段对应。
+因此不是仅少一次成功，也不能归因teacher schedule（source没有teacher输入）；后台/批量/数值原因本次没有独立定位。
+SFT400/425对应109/107，各400组上述配对字段再次核对匹配source47；保持历史normalization兼容性记录的边界，不冒充新后端评测。
+
+新图最接近的历史约束是：v5.2/v6具备直接视觉/语言与动作响应及自由FactorHeads，143后下降；GOMQ从强carrier继承且成功expert occupancy信用，
+151未保持；P/Q/Unified交互未解决shared学习；旧末读出target/rank干预局部改善，但train24 67/64及熟悉21/120仍不足。
+新首版新增过程条件的逐H两端Z核实、历史u递推和长程回写，再接直接native因子通道及真实当前policy Gaussian成功信用；
+这些新增依赖不证明视频必要性或能力保持，必须由预登记行为节点和最终controls裁决。
+
+旧native-factor草稿只替换18层上游末端，默认factor width64且缺正式GELU；不能整支集成。旧P/Q width256无闭环仍保留该事实。
+当前canonical数据/source/tokenizer关键资产核对存在并匹配manifest字节；没有加载大checkpoint、复制数据或刷新GPU/quota。

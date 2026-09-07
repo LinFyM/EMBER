@@ -1,11 +1,11 @@
 # EMBER findings
 
 当前方法见[正式设计](docs/horizon_relation_video_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
-以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15记录本次方法收口。
+以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15–16记录本次方法收口与接续裁决要求。
 
 这里只保留会改变下一轮决策的结论与开放问题，不再复制逐轮实验年表。证据、数值和旧原文入口集中在
 [research_history.md](docs/research_history.md)；已对齐候选的完整推导在
-[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
+[horizon_relation_video_writer_design.md](docs/horizon_relation_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
 
 ## 1. 先分清三个问题
 
@@ -17,7 +17,7 @@
 
 ## 2. 原生信息要有实际消费者
 
-完整50-horizon、各层状态、native prefix和有效梯度是必要工程边界；它们不自动构成视频过程理解。
+当时分层图保留完整50-horizon、各层状态、native prefix和有效梯度；这些工程条件不自动构成视频过程理解，也不证明后继必须保留层轴。
 早期把原生响应压缩后做泛化时序attention，或晚期让参数queries读取全部证据，都不足以证明动作序列先验已被有效利用。
 新候选在H压缩前进行同层、双向局部帧对的跨horizon处理，并区分T/H/J；其效果仍需检验。
 
@@ -157,3 +157,16 @@ Owner最终选择过去单向long，覆盖专家原文的双向；每组t表示�
 不由Writer/Meta端到端自动推出；LOO全同结果组没有RL信用，J_Sigma改善也不能替代正式J0。
 新图尚未实现、没有新训练或闭环证据；下一步是实现与有效实验，不继续悬置已定计算含义。
 原文、Owner覆盖与源码缺口见[讨论索引](docs/review_materials/20260908/README.md)和正式设计。
+
+## 16. 基线差距不能降格为小调参问题，具体方法可据证据实质调整（2026-09-08）
+
+本次复算已存导出400行面板：source47/400，rank128 train24 SFT step400/425为109/107；没有新环境评测。
+另历史source48是另一面板。原件及比较边界见research_history基线；SFT不是同参数量对照，但其行为能力不能被忽略。
+旧图67/64虽超source47却低于SFT109/107，不能以source局部增益、几何更漂亮或loss更低继续解释为基本成功。
+
+Owner要求接班者在有信息量的可比正式节点，若不及或仅略超这些基线，按严重能力缺口重新定位实质机制；
+不能把它当作只需小修小补，也不能反复把足够学习的判断推迟。低分本身不唯一指认某个decoder、梯度冲突或数据根因。
+改动前检查最近等价旧实验，明确本次新增了什么信息、监督或算子，以及怎样区分竞争解释，避免重复专用补丁链和无依据扫参。
+
+核心思想保持，但具体读取/关系/时序/回写/读出/训练与工程机制可以在硬合同内自主修订或重构，并记录证据和更新正式设计。
+完整忠实实施禁止静默缩水，不意味着机械坚持已知错误配置；新session获充分证据驱动自由度，不限于表面补丁或逐项请求批准。

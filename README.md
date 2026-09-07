@@ -8,6 +8,11 @@ correct **>145/400**，并满足相邻/跨视频稳定、breadth、四suite、Go
 → 四组过去单向长程交替/前三组逐H回写 → 集合compiler → 完整native A/B**。首版采用FM辅助共享Writer RL。
 **方法已定、尚未实现或取得新分数。**本次交接准备不启动科研作业；后续由Owner指定的新session创建全程goal，全面阅读仓库、完整实现并开展正式实验，依据结果持续迭代推进到达标。
 
+现存正式参照为source47/400、train24 rank128 SFT相邻109/107；它们是历史结果，不是新模型重跑。
+有信息量学习后仍不及或仅略超这些参照应当认真定位实质能力缺口，不能靠小调参和内部指标解释。
+Owner授权在核心思想与硬合同内依据证据修改具体方法，必要时重构；当前设计是完整起点，不是永久冻结的模块清单。
+具体口径与权限见[正式设计§1.1](docs/horizon_relation_video_writer_design.md#11-基线压力历史教训与后续自主权)。
+
 ## 接手阅读
 
 1. [AGENTS.md](AGENTS.md)、[长期要求](docs/current_owner_requirements.md)、[当前状态](progress.md)与[计划](task_plan.md)。

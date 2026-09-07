@@ -9,6 +9,9 @@
   新 session 接到 Owner 的启动 prompt 后，按已定设计连续完成实现、验证和科学推进，无需再次请求整体架构审批。
   Owner补充四点：先全面阅读仓库；完整阅读并忠实实现新架构、不打折扣；正式实验并据结果迭代到性能达标；
   **新session创建覆盖整个过程的goal**，遵守合同并实质解决难点。未指定token预算，不擅自添加。
+  Owner最新补充：先吸取历史反复出现的架构/性能问题；source47/400与SFT109/107是明确行为参照，
+  有信息量学习后仍不及或仅略超这些参照应视为严重能力缺口，不能靠小修小补自我解释。
+  保持总体架构思想与硬合同，接班者获充分证据驱动的科学自主权，可以实质修改模块、训练或工程机制并同步正式设计，不限于小补丁。
 - **唯一 active design：**[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
   **已定、尚未实现：**末层 post-norm PreActionOut；过去四帧 soft correspondence；完整 H-query；两端 Z 核实；
   按历史 u 从早到晚短 GRU；四组局部—**过去单向长程**交替，前三组逐 H 非线性回写；集合 compiler 和 native D 完整 A/B。

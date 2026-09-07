@@ -42,7 +42,7 @@ def paired_success_comparison(reference: Mapping[str, Any], candidate: Mapping[s
         length = min(len(a["policy_noise_seeds"]), len(b["policy_noise_seeds"]))
         if length == 0 or a["policy_noise_seeds"][:length] != b["policy_noise_seeds"][:length]:
             raise Pi05EvaluationError("paired comparison changed the policy-noise common prefix")
-        av, bv = a.get("layered_writer_lora"), b.get("layered_writer_lora")
+        av, bv = a.get("horizon_writer_lora"), b.get("horizon_writer_lora")
         if av and bv:
             fields = ("video_ordinal", "selection_seed", "selection_mode", "K", "paired_correct_demos", "paired_other_demos")
             if any(av[field] != bv[field] for field in fields):

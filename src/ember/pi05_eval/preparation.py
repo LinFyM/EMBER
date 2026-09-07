@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import uuid
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -82,6 +83,29 @@ def parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
     return indices
 
 
+def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
+    values = getattr(args, "init_state_ids", None)
+    if values is None:
+        return None
+    states = tuple(values)
+    if (args.role != "development_train" or args.mode != "screen"
+            or states != tuple(range(32, 37)) or args.state_count != len(states)
+            or getattr(args, "occupancy_capture_selection", None) is not None):
+        raise Pi05EvaluationError(
+            "explicit init states require development_train screen states32..36 and state-count5"
+        )
+    return states
+
+
+def _select_init_states(args: Any, tasks: Sequence[Any]) -> tuple[Any, ...]:
+    states = _explicit_diagnostic_states(args)
+    if states is None:
+        return tuple(tasks)
+    if any(task.installed_init_state_count <= max(states) for task in tasks):
+        raise Pi05EvaluationError("installed task does not contain the diagnostic init states")
+    return tuple(replace(task, init_state_ids=states) for task in tasks)
+
+
 def _inspect_adapter(
     args: Any,
     *,
@@ -135,11 +159,16 @@ def _registered_subset_valid(
         and manifest.get("selection_scope") == "training_task_fitting_diagnostic"
         and manifest.get("checkpoint_selection_use") is False
     )
+    explicit_states = _explicit_diagnostic_states(args)
+    expected_states = explicit_states if explicit_states is not None else tuple(range(args.state_count))
+    declared_states = manifest.get("init_state_ids", None)
     return not (
         manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
         or manifest.get("role") != args.role
         or manifest.get("mode") != args.mode
         or int(manifest.get("state_count", -1)) != args.state_count
+        or (explicit_states is not None and declared_states is None)
+        or (declared_states is not None and declared_states != list(expected_states))
         or (manifest.get("outcome_dependence") is not False and not fitting_diagnostic)
         or not declared or len(declared) != len(set(declared))
         or tuple(sorted(set(ordinals))) != ordinals
@@ -192,6 +221,7 @@ def _task_subset_tasks(
     if len(by_key) != len(tasks) or any(key not in by_key for key in keys):
         raise Pi05EvaluationError("task subset is outside development-train")
     selected = tuple(by_key[key] for key in keys)
+    explicit_states = _explicit_diagnostic_states(args)
     return selected, {
         "schema_version": TASK_SUBSET_SELECTION_SCHEMA,
         "selection_path": str(path),
@@ -200,6 +230,7 @@ def _task_subset_tasks(
         "global_task_ids": [row[1] for row in declared],
         "diagnostic_subset": panel,
         "outcome_dependence": manifest["outcome_dependence"],
+        **({"init_state_ids": list(explicit_states)} if explicit_states is not None else {}),
         **({
             "selection_scope": manifest["selection_scope"],
             "checkpoint_selection_use": False,
@@ -286,6 +317,7 @@ def _prepared_payload(
     source_sft_requested: bool,
 ) -> tuple[dict[str, Any], tuple[Any, ...], dict[str, Any]]:
     authorities = load_evaluation_authorities(args.config, repo_root)
+    _explicit_diagnostic_states(args)
     formal_count = int(authorities.config["environment"]["fixed_init_state_count"])
     if args.mode == "formal" and args.state_count != formal_count:
         raise Pi05EvaluationError("formal PI05 evaluation requires all fixed states")
@@ -309,6 +341,7 @@ def _prepared_payload(
         state_count=args.state_count,
         libero_config_dir=staging / "libero_config",
     )
+    installed_tasks = _select_init_states(args, installed_tasks)
     subset_tasks, task_subset = _task_subset_tasks(
         args, installed_tasks, adapter_kind=adapter_kind
     )

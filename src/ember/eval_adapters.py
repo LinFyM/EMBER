@@ -11,7 +11,7 @@ from ember.pi05_assets import Pi05EvaluationError
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 STATIC_TASK_LORA_KIND = "static_task_lora_bank"
-LAYERED_WRITER_KIND = "layered_writer_lora_bank"
+HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -117,10 +117,10 @@ def inspect_static_task_lora_adapter(
     from ember.writer.materialization import BANK_SCHEMA
 
     manifest = read_json(manifest_path)
-    if manifest.get("kind") == LAYERED_WRITER_KIND or manifest.get("schema_version") == BANK_SCHEMA:
-        from ember.writer.evaluation import inspect_layered_writer_bank
+    if manifest.get("kind") == HORIZON_WRITER_KIND or manifest.get("schema_version") == BANK_SCHEMA:
+        from ember.writer.evaluation import inspect_horizon_writer_bank
 
-        return inspect_layered_writer_bank(
+        return inspect_horizon_writer_bank(
             manifest_path=manifest_path, source=source,
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             task_init_state_ids={(task.suite, int(task.task_id)): task.init_state_ids
@@ -195,10 +195,10 @@ def load_evaluation_adapter(
         from ember.static_task_lora import FrozenStaticTaskLoRAAdapter
 
         return FrozenStaticTaskLoRAAdapter(**common)
-    if adapter.get("kind") == LAYERED_WRITER_KIND:
-        from ember.writer.evaluation import FrozenLayeredWriterAdapter
+    if adapter.get("kind") == HORIZON_WRITER_KIND:
+        from ember.writer.evaluation import FrozenHorizonWriterAdapter
 
-        return FrozenLayeredWriterAdapter(**common)
+        return FrozenHorizonWriterAdapter(**common)
     raise Pi05EvaluationError("unsupported evaluation adapter kind")
 
 
@@ -206,8 +206,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
-        if contract.get("adapter", {}).get("kind") == LAYERED_WRITER_KIND:
-            return {"layered_writer_lora": dict(prepared.evidence)}
+        if contract.get("adapter", {}).get("kind") == HORIZON_WRITER_KIND:
+            return {"horizon_writer_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == STATIC_TASK_LORA_KIND:
             return {"static_task_lora": dict(prepared.evidence)}
         return {"task_expert": dict(prepared.evidence)}
@@ -225,14 +225,14 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    if adapter is not None and adapter.get("kind") == LAYERED_WRITER_KIND:
-        from ember.writer.evaluation import validate_layered_writer_episode
+    if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
+        from ember.writer.evaluation import validate_horizon_writer_episode
 
         return (row.get("task_expert") is None and row.get("static_task_lora") is None
-                and row.get("policy_adapter_sha256") is None and validate_layered_writer_episode(
-                    adapter, row.get("layered_writer_lora"), suite=suite,
+                and row.get("policy_adapter_sha256") is None and validate_horizon_writer_episode(
+                    adapter, row.get("horizon_writer_lora"), suite=suite,
                     task_id=task_id, init_state_id=init_state_id))
-    if row.get("layered_writer_lora") is not None:
+    if row.get("horizon_writer_lora") is not None:
         return False
     if adapter is None:
         return (

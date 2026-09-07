@@ -41,6 +41,32 @@ def test_unpaired_evidence_is_rejected(change):
         paired_success_comparison(before, after)
 
 
+@pytest.mark.parametrize("field", ["video_ordinal", "selection_seed", "selection_mode", "K",
+                                   "paired_correct_demos", "paired_other_demos"])
+def test_horizon_pairing_rejects_changed_video_authority(field):
+    before, after = panels()
+    evidence = {"video_ordinal": 32, "selection_seed": 20260907, "selection_mode": "per_init_ordinal",
+                "K": 1, "paired_correct_demos": [4], "paired_other_demos": [17]}
+    for panel in (before, after):
+        for row in panel["rows"]:
+            row["horizon_writer_lora"] = dict(evidence)
+    assert paired_success_comparison(before, after)["retained"] == 1
+    after["rows"][0]["horizon_writer_lora"][field] = "changed"
+    with pytest.raises(Pi05EvaluationError, match="video ordinal or schedule"):
+        paired_success_comparison(before, after)
+
+
+@pytest.mark.parametrize("baseline", [None, "policy_adapter_sha256", "static_task_lora", "task_expert"])
+def test_horizon_rows_can_be_compared_with_historical_baselines(baseline):
+    before, after = panels()
+    for row in before["rows"]:
+        if baseline is not None:
+            row[baseline] = "historical evidence"
+    for row in after["rows"]:
+        row["horizon_writer_lora"] = {"video_ordinal": row["init_state_id"]}
+    assert paired_success_comparison(before, after)["churn_count"] == 2
+
+
 def test_removed_worktree_normalizer_is_read_from_recorded_commit(tmp_path, monkeypatch):
     relative = "configs/pi05_source_corpus_v1/source_normalization.json"
     repo = tmp_path / "repo"

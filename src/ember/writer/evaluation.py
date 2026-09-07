@@ -22,13 +22,13 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metada
     selection_contract, source_matches)
 
 
-EVALUATION_SCHEMA = "ember_layered_writer_eval_adapter_v1"
-EPISODE_SCHEMA = "ember_layered_writer_episode_v1"
+EVALUATION_SCHEMA = "ember_horizon_writer_eval_adapter_v1"
+EPISODE_SCHEMA = "ember_horizon_writer_episode_v1"
 
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path) -> None:
     if role not in {"development_train", "validation"}:
-        raise ValueError("layered Writer evaluation excludes Test and non-target tasks")
+        raise ValueError("horizon Writer evaluation excludes Test and non-target tasks")
     protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
     manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
     canonical = {int(row["global_task_id"]): row for row in manifest["tasks"]}
@@ -120,17 +120,18 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or manifest.get("single_complete_rank16") is not True
             or not frozen_authority(manifest["materialization_git"])
             or not source_matches(manifest["source"], source)):
-        raise ValueError("layered Writer bank scope/source/commit changed")
+        raise ValueError("horizon Writer bank scope/source/commit changed")
     validate_task_scope(rows, role, Path(manifest["asset_root"]))
     for row in rows:
         if row["episodes"] != planned_episodes(selection, row["global_task_id"]):
             raise ValueError("episode video ordinal or deterministic pairing changed")
-        requested = (task_init_state_ids or {}).get((row["suite"], row["task_id"]), ())
-        if not set(requested) <= set(selection["init_state_ids"]):
-            raise ValueError("bank does not cover the evaluator's fixed init states")
+        if task_init_state_ids is not None:
+            requested = tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
+            if requested != tuple(selection["init_state_ids"]):
+                raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
-def inspect_layered_writer_bank(
+def inspect_horizon_writer_bank(
     *, manifest_path: Path, source: Mapping[str, Any], task_keys: Sequence[tuple[str, int]],
     evaluation_role: str, require_formal: bool,
     task_init_state_ids: Mapping[tuple[str, int], Sequence[int]] | None = None,
@@ -156,7 +157,7 @@ def inspect_layered_writer_bank(
                     "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
                     "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
         if any(wall.get(key) != value for key, value in required.items()):
-            raise ValueError("layered Writer information wall changed")
+            raise ValueError("horizon Writer information wall changed")
         _inspect_conditions(manifest, path.parent, lora)
         return {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
     except (KeyError, TypeError, ValueError, OSError) as error:
@@ -173,7 +174,7 @@ def episode_evidence(adapter: Mapping[str, Any], task: Mapping[str, Any], episod
             "source_checkpoint": adapter["source"]["checkpoint"], "global_task_id": task["global_task_id"]}
 
 
-def validate_layered_writer_episode(adapter, evidence, *, suite: str, task_id: int, init_state_id: int) -> bool:
+def validate_horizon_writer_episode(adapter, evidence, *, suite: str, task_id: int, init_state_id: int) -> bool:
     if not isinstance(evidence, Mapping):
         return False
     for task in adapter.get("tasks", ()):
@@ -185,12 +186,12 @@ def validate_layered_writer_episode(adapter, evidence, *, suite: str, task_id: i
 
 
 @dataclass(frozen=True)
-class PreparedLayeredLoRA:
+class PreparedHorizonLoRA:
     key: str
     evidence: dict[str, Any]
 
 
-class FrozenLayeredWriterAdapter:
+class FrozenHorizonWriterAdapter:
     """Execution only: no observer, video, Meta, or learned Writer is loaded."""
 
     def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal) -> None:
@@ -200,7 +201,7 @@ class FrozenLayeredWriterAdapter:
         if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
                 or not source_matches(adapter["source"], source) or set(self.records) != set(task_keys)
                 or adapter.get("single_complete_rank16") is not True):
-            raise Pi05EvaluationError("layered Writer runtime bank changed")
+            raise Pi05EvaluationError("horizon Writer runtime bank changed")
         self.adapter, self.policy = adapter, policy
         self.conditions = {row["condition_id"]: row for row in adapter["conditions"]}
         self.lora = load_pi05_lora_contract(Path(adapter["lora_contract"]["path"]))
@@ -228,16 +229,16 @@ class FrozenLayeredWriterAdapter:
             self._states.popitem(last=False)
         return state
 
-    def prepare_episode(self, *, suite: str, task_id: int, init_state_id: int) -> PreparedLayeredLoRA:
+    def prepare_episode(self, *, suite: str, task_id: int, init_state_id: int) -> PreparedHorizonLoRA:
         task = self.records.get((str(suite), int(task_id)))
         if task is not None:
             for episode in task["episodes"]:
                 if episode["init_state_id"] == init_state_id:
-                    return PreparedLayeredLoRA(episode["condition_id"], episode_evidence(self.adapter, task, episode))
+                    return PreparedHorizonLoRA(episode["condition_id"], episode_evidence(self.adapter, task, episode))
         raise Pi05EvaluationError("rollout task/init state is absent from the paired Writer bank")
 
     @torch.no_grad()
-    def install(self, prepared: PreparedLayeredLoRA) -> None:
+    def install(self, prepared: PreparedHorizonLoRA) -> None:
         if prepared.key != self._installed:
             copy_task_lora_state_(self.policy, self._state(prepared.key), self.lora)
             self._installed = prepared.key

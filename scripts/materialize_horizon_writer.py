@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize paired episode conditions with the canonical layered Writer."""
+"""Materialize paired episode conditions with the canonical horizon Writer."""
 
 from ember.writer.materialization import main
 

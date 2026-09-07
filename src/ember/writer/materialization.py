@@ -18,11 +18,13 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.data import RawTeacherVideoStore
 
 
-RUN_SCHEMA = "ember_layered_relation_writer_joint_run_v1"
-STAGE = "layered_relation_writer_fresh_joint"
-BANK_SCHEMA = "ember_layered_writer_lora_bank_v1"
-BANK_KIND = "layered_writer_lora_bank"
-ADAPTER_SCHEMA = "ember_layered_writer_materialized_adapter_v1"
+RUN_SCHEMA = "ember_horizon_relation_writer_joint_run_v1"
+STAGE = "horizon_relation_writer_fresh_fm_rl_joint"
+BANK_SCHEMA = "ember_horizon_writer_lora_bank_v1"
+BANK_KIND = "horizon_writer_lora_bank"
+ADAPTER_SCHEMA = "ember_horizon_writer_materialized_adapter_v1"
+TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 37))
+DEFAULT_SELECTION_SEED = 20260907
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -89,10 +91,28 @@ def selection_contract(
     fixed = _fixed_video_selection(fixed_videos, mode=mode, tasks=tasks, cardinality=cardinality, pool=pool)
     if role == "validation" and mode != "per_init_ordinal":
         raise ValueError("validation banks use per-init-state random video sets; fixed sets are train diagnostics")
+    if role == "validation" and states != tuple(range(len(states))):
+        raise ValueError("validation init states must retain the canonical zero-based prefix")
     return {"evaluation_role": role, "task_ids": list(tasks), "K": cardinality, "arm": arm,
             "mode": mode, "seed": seed, "init_state_ids": list(states), "video_pool": sorted(pool),
             "fixed_videos": fixed, "outcome_dependence": False, "gradient_use": False,
             "without_replacement": True, "video_ordinal_rule": "init_state_id" if mode == "per_init_ordinal" else "fixed_zero"}
+
+
+def request_init_state_ids(
+    *, role: str, init_state_ids: Sequence[int] | None = None, state_count: int | None = None,
+) -> tuple[int, ...]:
+    """Resolve the existing count API or the registered train diagnostic panel."""
+    if init_state_ids is None:
+        count = 50 if state_count is None else state_count
+        if count not in (10, 50):
+            raise ValueError("count-only Writer requests require 10 or 50 initial states")
+        return tuple(range(count))
+    states = tuple(init_state_ids)
+    if (role != "development_train" or states != TRAIN_DIAGNOSTIC_INIT_STATE_IDS
+            or state_count not in (None, len(states))):
+        raise ValueError("explicit Writer init states require development_train states32..36 and count5")
+    return states
 
 
 def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -128,7 +148,12 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "checkpoint_state": "strict entire Writer+Meta+public probe", "frame_stride": 5,
             "include_last_frame": True, "camera": "agentview_rotated_180", "execution_rank": 16,
-            "native_response_shape": [18, 50, 1024], "generated_tensor_count": 76}
+            "native_response_shape": [50, 1024], "generated_tensor_count": 76,
+            "native_response_source": "action_out_proj_input_after_final_normalization",
+            "visual_token_source": "actual_final_prefix_image_tokens",
+            "visual_token_gradient": "detached_native_tokens_trainable_projection",
+            "frame_attention": "four_past_plus_self_causal",
+            "macro_cursor": "attempted_complete_iterations"}
 
 
 def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str, str]:
@@ -147,8 +172,8 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
         tuple(torch.from_numpy(video.frame_indices) for video in videos), task.authority.language,
     )
     with torch.no_grad(), autocast(runtime.observer.device):
-        generated = runtime.state.writer(runtime.observer.responses(condition), condition.frame_indices,
-                                         condition.language_embeddings, condition.language_mask)
+        generated = runtime.state.writer(runtime.observer.responses(condition),
+                                         *runtime.observer.writer_arguments(condition))
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)
@@ -260,14 +285,15 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
     if not isinstance(requests, (list, tuple)):
         raise ValueError("batch requests must be a JSON list")
     fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
-              "video_pool", "state_count", "seed", "fixed_videos"}
+              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos"}
     normalized = []
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
             raise ValueError("unknown request fields; asset root and device belong to the whole batch")
         selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
             arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
-            seed=request.get("seed", 7), init_state_ids=tuple(range(request.get("state_count", 50))),
+            seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=request_init_state_ids(
+                role=request["role"], init_state_ids=request.get("init_state_ids"), state_count=request.get("state_count")),
             video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection})
@@ -291,7 +317,9 @@ def main() -> None:
     parser.add_argument("--selection-mode", choices=("fixed_per_task", "per_init_ordinal"))
     parser.add_argument("--video-pool", type=_integers)
     parser.add_argument("--fixed-videos-json", type=Path)
-    parser.add_argument("--state-count", type=int, choices=(10, 50))
+    parser.add_argument("--state-count", type=int, choices=(5, 10, 50))
+    parser.add_argument("--init-state-ids", type=_integers,
+                        help="Explicit train diagnostic panel: 32,33,34,35,36.")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--cpu-threads", type=int, default=4)
@@ -299,11 +327,11 @@ def main() -> None:
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):
         parser.error("single request requires --checkpoint, --output, --role, --task-ids and --k")
-    selection_flags = (*required, "arm", "selection_mode", "video_pool", "fixed_videos_json", "state_count", "seed")
+    selection_flags = (*required, "arm", "selection_mode", "video_pool", "fixed_videos_json", "state_count", "init_state_ids", "seed")
     if args.requests_json is not None and any(getattr(args, key) != parser.get_default(key) for key in selection_flags):
         parser.error("--requests-json cannot be combined with single-request selection flags")
     defaults = {"arm": "correct", "selection_mode": "per_init_ordinal", "video_pool": tuple(range(50)),
-                "state_count": 50, "seed": 7}
+                "seed": DEFAULT_SELECTION_SEED}
     for key, value in defaults.items():
         if getattr(args, key) is None:
             setattr(args, key, value)
@@ -321,7 +349,8 @@ def main() -> None:
             print(path, flush=True)
         return
     selection = selection_contract(role=args.role, task_ids=args.task_ids, cardinality=args.k,
-        arm=args.arm, mode=args.selection_mode, seed=args.seed, init_state_ids=tuple(range(args.state_count)),
+        arm=args.arm, mode=args.selection_mode, seed=args.seed,
+        init_state_ids=request_init_state_ids(role=args.role, init_state_ids=args.init_state_ids, state_count=args.state_count),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)
     print(materialize(asset_root=args.asset_root.resolve(), checkpoint=args.checkpoint.resolve(),
                       output=args.output, selection=selection, device=torch.device(args.device)), flush=True)

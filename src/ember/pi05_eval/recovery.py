@@ -116,7 +116,7 @@ def _reinspect_adapter(
                 diagnostic_subset=str(subset),
             )
         return inspected
-    if adapter.get("kind") in {"static_task_lora_bank", "layered_writer_lora_bank"}:
+    if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank"}:
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,

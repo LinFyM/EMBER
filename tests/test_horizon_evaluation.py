@@ -17,8 +17,8 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.recovery import _reinspect_adapter
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization
-from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenLayeredWriterAdapter, episode_evidence,
-                                     inspect_layered_writer_bank, validate_task_scope)
+from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenHorizonWriterAdapter, episode_evidence,
+                                     inspect_horizon_writer_bank, validate_task_scope)
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, adapter_metadata,
     condition_id, file_record, inspect_joint_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
@@ -50,7 +50,7 @@ def _task_rows(ids, selection):
 
 
 @pytest.fixture
-def bank(tmp_path):
+def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
@@ -63,7 +63,7 @@ def bank(tmp_path):
     (checkpoint / "checkpoint_manifest.json").write_text(json.dumps({"schema_version": "ember_ecp_checkpoint_v1",
         "stage": STAGE, "run_contract_schema": RUN_SCHEMA, "next_macro": 16, "world_size": 1, "files": files}))
     _, authority = inspect_joint_checkpoint(checkpoint)
-    selection = _selection()
+    selection = _selection(**getattr(request, "param", {}))
     rows, target = _task_rows([0], selection)
     native = next(row for row in target["tasks"] if row["global_task_id"] == 0)
     output = tmp_path / "bank"
@@ -100,7 +100,7 @@ def bank(tmp_path):
 
 
 def _inspect(path):
-    return inspect_layered_writer_bank(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
+    return inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
         evaluation_role="development_train", require_formal=True, task_init_state_ids={("libero_spatial", 0): (0, 1)})
 
 
@@ -155,7 +155,7 @@ def test_inspection_dispatch_recovery_and_exact_episode_evidence(bank):
     assert validate_episode_adapter_fields(adapter, fields, suite="libero_spatial", task_id=0, init_state_id=0)
     assert not validate_episode_adapter_fields(adapter, fields, suite="libero_spatial", task_id=0, init_state_id=1)
     bad = copy.deepcopy(fields)
-    bad["layered_writer_lora"]["teacher_demo_indices"] = [49]
+    bad["horizon_writer_lora"]["teacher_demo_indices"] = [49]
     assert not validate_episode_adapter_fields(adapter, bad, suite="libero_spatial", task_id=0, init_state_id=0)
     assert not validate_episode_adapter_fields(None, fields, suite="libero_spatial", task_id=0, init_state_id=0)
 
@@ -181,7 +181,7 @@ def test_modified_pairing_or_provenance_is_rejected(bank, change):
 def test_missing_init_states_are_rejected_before_workers_start(bank):
     path, _ = bank
     with pytest.raises(Pi05EvaluationError, match="fixed init states"):
-        inspect_layered_writer_bank(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
+        inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
             evaluation_role="development_train", require_formal=True,
             task_init_state_ids={("libero_spatial", 0): tuple(range(50))})
 
@@ -220,9 +220,9 @@ def test_batched_execution_applies_independent_row_adapters_and_restores_identit
     monkeypatch.setattr(evaluation, "load_pi05_lora_contract", lambda _path: contract)
     monkeypatch.setattr(evaluation, "_inspect_adapter_file", lambda *_args: None)
     monkeypatch.setattr(evaluation, "load_file", lambda path, **_kwargs: states[int(path)])
-    runtime = FrozenLayeredWriterAdapter(policy=policy, source=SOURCE, evaluation_adapter=adapter,
+    runtime = FrozenHorizonWriterAdapter(policy=policy, source=SOURCE, evaluation_adapter=adapter,
         task_keys=(("libero_spatial", 0),), device=torch.device("cpu"), require_formal=True)
-    prepared = [evaluation.PreparedLayeredLoRA(str(i), {}) for i in range(2)]
+    prepared = [evaluation.PreparedHorizonLoRA(str(i), {}) for i in range(2)]
     x, noise = torch.randn(2, 3), torch.randn(2, 4)
     expected = torch.stack([torch.nn.functional.linear(x[i], base_weight) +
         torch.nn.functional.linear(torch.nn.functional.linear(x[i], states[i]["linear.lora_A.default.weight"]),
@@ -341,7 +341,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
     calls = []
     monkeypatch.setattr(materialization, "materialize_requests", lambda **kwargs: calls.append(kwargs) or [Path("/output/manifest.json")])
     monkeypatch.setattr(torch, "set_num_threads", lambda _threads: None)
-    argv = ["materialize_layered_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT), "--device", "cpu"]
+    argv = ["materialize_horizon_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT), "--device", "cpu"]
     monkeypatch.setattr("sys.argv", argv)
     materialization.main()
     assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu")}]
@@ -351,3 +351,156 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         with pytest.raises(SystemExit) as error:
             materialization.main()
         assert error.value.code == 2 and len(calls) == 1
+
+
+def test_method_metadata_describes_final_native_and_visual_tokens():
+    method = method_metadata({"model_config": {}, "config": {"observer": {}}})
+    assert method["native_response_shape"] == [50, 1024]
+    assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
+    assert method["visual_token_source"] == "actual_final_prefix_image_tokens"
+    assert method["frame_attention"] == "four_past_plus_self_causal"
+    assert method["macro_cursor"] == "attempted_complete_iterations"
+
+
+def test_old_joint_checkpoint_cannot_be_materialized_as_horizon(bank):
+    _, manifest = bank
+    checkpoint = Path(manifest["writer_checkpoint"]["path"])
+    run_path = checkpoint.parent.parent / "run_contract.json"
+    run = json.loads(run_path.read_text())
+    run["schema_version"] = "ember_layered_relation_writer_joint_run_v1"
+    run_path.write_text(json.dumps(run))
+    with pytest.raises(ValueError, match="formal fresh-joint"):
+        inspect_joint_checkpoint(checkpoint)
+
+
+@pytest.mark.parametrize("bank", [{"init_state_ids": tuple(range(32, 37))}], indirect=True)
+def test_train_diagnostic_bank_requires_exact_evaluator_state_subset(bank):
+    path, _ = bank
+    arguments = dict(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
+                     evaluation_role="development_train", require_formal=True)
+    adapter = inspect_horizon_writer_bank(**arguments,
+        task_init_state_ids={("libero_spatial", 0): tuple(range(32, 37))})
+    assert [row["init_state_id"] for row in adapter["tasks"][0]["episodes"]] == list(range(32, 37))
+    for states in (tuple(range(5)), tuple(range(32, 36)), tuple(range(50))):
+        with pytest.raises(Pi05EvaluationError, match="same exact fixed init states"):
+            inspect_horizon_writer_bank(**arguments, task_init_state_ids={("libero_spatial", 0): states})
+
+
+def test_explicit_train_diagnostic_request_and_count_compatibility(resident_materialization):
+    requests, _, _, _ = resident_materialization
+    request = requests[0] | {"init_state_ids": list(range(32, 37)), "state_count": 5}
+    paths = materialization.materialize_requests(asset_root=ROOT, requests=[request], device=torch.device("cpu"))
+    selected = json.loads(paths[0].read_text())["selection"]
+    assert selected["init_state_ids"] == list(range(32, 37))
+    assert materialization.request_init_state_ids(role="validation") == tuple(range(50))
+    assert materialization.request_init_state_ids(role="validation", state_count=10) == tuple(range(10))
+
+
+@pytest.mark.parametrize("overrides", [
+    {"role": "validation"}, {"state_count": 10}, {"init_state_ids": [0, 1, 2, 3, 4]},
+    {"init_state_ids": [32, 33, 34, 35, 35]}, {"init_state_ids": [36, 35, 34, 33, 32]},
+])
+def test_explicit_train_diagnostic_request_rejects_wrong_scope(overrides):
+    values = {"role": "development_train", "init_state_ids": list(range(32, 37)), "state_count": 5}
+    with pytest.raises(ValueError, match="development_train states32..36 and count5"):
+        materialization.request_init_state_ids(**(values | overrides))
+
+
+def test_validation_selection_rejects_offsets_even_for_direct_api():
+    with pytest.raises(ValueError, match="canonical zero-based prefix"):
+        _selection(role="validation", init_state_ids=(32, 33, 34, 35, 36))
+
+
+def test_single_cli_preserves_explicit_init_state_ids(monkeypatch):
+    calls = []
+    monkeypatch.setattr(materialization, "materialize", lambda **kwargs: calls.append(kwargs) or Path("/manifest.json"))
+    monkeypatch.setattr(torch, "set_num_threads", lambda _: None)
+    monkeypatch.setattr("sys.argv", ["materialize_horizon_writer.py", "--checkpoint", "/checkpoint",
+        "--output", "/output", "--role", "development_train", "--task-ids", "0", "--k", "1",
+        "--device", "cpu", "--state-count", "5", "--init-state-ids", "32,33,34,35,36"])
+    materialization.main()
+    assert calls[0]["selection"]["init_state_ids"] == list(range(32, 37))
+    assert calls[0]["selection"]["seed"] == 20260907
+
+
+def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path, monkeypatch):
+    import numpy as np
+
+    lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"),
+                   targets=(LoRATarget("linear", 3, 4),), rank=2, alpha=2)
+    arguments = tuple(object() for _ in range(5))
+    response = object()
+    calls = []
+
+    def writer(*values):
+        calls.append(values)
+        return identity_lora_state(lora)
+
+    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: "condition",
+        responses=lambda condition: response, writer_arguments=lambda condition: arguments)
+    runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora)
+    task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),
+        episode_lengths=(6,), suite="libero_spatial", suite_task_id=0)
+    video = SimpleNamespace(frames=np.zeros((2, 3, 4, 4), dtype=np.uint8),
+        frame_indices=np.array([0, 5]), raw_frame_count=6)
+    record = materialization._compile_condition(runtime, SimpleNamespace(load=lambda *args: video),
+        task, (0,), tmp_path, {"path": "/checkpoint", "macro": 16})
+    assert calls == [(response, *arguments)]
+    assert record["writer_invocations"] == 1
+
+
+def _diagnostic_args(**overrides):
+    return SimpleNamespace(**({"role": "development_train", "mode": "screen", "state_count": 5,
+        "init_state_ids": tuple(range(32, 37)), "occupancy_capture_selection": None} | overrides))
+
+
+def test_evaluator_diagnostic_scope_state_subset_and_queue_are_exact(tmp_path):
+    from ember.pi05_eval.preparation import _select_init_states, _task_subset_tasks, shards_from_contract
+    from ember.pi05_eval_contract import TargetTaskContract
+
+    task = TargetTaskContract("libero_spatial", 0, "train", "task", "folder", "task.bddl", 1,
+                              "states", 1, 50, 220, tuple(range(5)))
+    selected = _select_init_states(_diagnostic_args(), (task,))
+    assert selected[0].init_state_ids == tuple(range(32, 37))
+    assert task.init_state_ids == tuple(range(5))
+    shards = shards_from_contract({"tasks": [{"suite": task.suite, "task_id": 0,
+        "horizon": 220, "init_state_ids": selected[0].init_state_ids}],
+        "parallel": {"envs_per_replica": 8, "shard_target_cost": 4160,
+                     "physical_gpu_count": 1, "replicas_per_gpu": 1}})
+    assert sorted(state for shard in shards for state in shard.init_state_ids) == list(range(32, 37))
+    path = tmp_path / "subset.json"
+    manifest = {"schema_version": "ember_pi05_task_subset_selection_v1", "role": "development_train",
+        "mode": "screen", "state_count": 5, "init_state_ids": list(range(32, 37)),
+        "task_ordinals": [0], "global_task_ids": [0],
+        "tasks": [{"global_task_id": 0, "suite": "libero_spatial", "task_id": 0}],
+        "outcome_dependence": False, "validation_use": False, "test_use": False}
+    path.write_text(json.dumps(manifest))
+    args = _diagnostic_args(task_subset_selection=path)
+    subset, record = _task_subset_tasks(args, selected, adapter_kind="static_task_lora")
+    assert subset == selected and record["init_state_ids"] == list(range(32, 37))
+    for ids in (None, list(range(5)), list(range(32, 36))):
+        path.write_text(json.dumps(manifest | {"init_state_ids": ids}))
+        with pytest.raises(Pi05EvaluationError, match="subset selection changed"):
+            _task_subset_tasks(args, selected, adapter_kind="static_task_lora")
+
+
+@pytest.mark.parametrize("change", [{"role": "validation"}, {"role": "test"}, {"mode": "formal"},
+    {"state_count": 50}, {"init_state_ids": tuple(range(5))}, {"occupancy_capture_selection": Path("x")}])
+def test_evaluator_explicit_offsets_reject_other_roles_counts_and_modes(change):
+    from ember.pi05_eval.preparation import _explicit_diagnostic_states
+
+    with pytest.raises(Pi05EvaluationError, match="development_train screen"):
+        _explicit_diagnostic_states(_diagnostic_args(**change))
+
+
+def test_evaluator_cli_accepts_diagnostic_ids_and_retains_count_argument():
+    import argparse
+    from scripts.evaluate_pi05 import _add_prepare_arguments
+
+    parser = argparse.ArgumentParser()
+    _add_prepare_arguments(parser)
+    args = parser.parse_args(["--source-run", "/source", "--checkpoint", "/checkpoint",
+        "--tokenizer-path", "/tokenizer", "--output-dir", "/output", "--role", "development_train",
+        "--mode", "screen", "--replicas-per-gpu", "1", "--state-count", "5",
+        "--init-state-ids", "32,33,34,35,36"])
+    assert args.init_state_ids == tuple(range(32, 37)) and args.state_count == 5

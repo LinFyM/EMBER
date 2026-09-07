@@ -583,3 +583,17 @@ seen0–15与held46–49，分别107/68个唯一条件覆盖120行。已见组12
 然后在不修改raw rows、不放宽canonical视频schedule检查的前提下报告预登记的video-familiarity干预。
 这只区分已训练task/视频、新视频与新task的行为缺口，不做最终选择、梯度或因果controls；Test未打开。
 原件`video_novelty_diagnostic_registration.json`与`materialization_s384_novelty_launch.json`；此处尚无诊断分数。
+
+冻结诊断随后全部完成exit0：seen21/120（Spatial10/Object3/Goal8/Long0），breadth11/24；
+held18/120（10/1/7/0），breadth7/24。对同source16分别RGL10/11/6、11/7/5，churn17/12，J10/27与11/23。
+seen→held为RGL14/4/7、churn11/120、J14/25；held192→384为22→18、RGL11/7/11、churn18/120、J11/29。
+两组完整task/state/source/normalization/env/policy RNG共同前缀及预登记视频角色均验证，raw rows未修改；
+两eval墙钟495.01/503.80秒，物化107/68条件为325.36/256.92秒、约552/351MB。
+
+Owner指出当前分数远低于基础SFT约108（历史相邻109/107），执行裁决当前run永久止于384，不再运行576/624/672。
+熟悉训练视频也未建立广泛行为，Long均0，不能仅归因为新视频或未见task迁移；也未唯一定位某个模块。
+同两个训练task/三个代表target的已有输出中，native常量能量约64.8%–95.4%，较short4部分改善而行为仍弱，
+继续美化坐标几何没有裁决依据。下一步是保留读取/关系/compiler与target/rank独立性，检验直接native线性因子输出的
+离散参数化对照；增加参数量与固定投影子空间都是须报告的取舍，不能预告性能或把本诊断称为唯一decoder根因。
+原件`video_novelty_diagnostic_results.json`、`s384_train120_*_vs_source.json`、`s384_train120_held_video_vs_s192.json`、
+`decoder_output_representatives_s384.json`与更新后的`decision_after384.json`。

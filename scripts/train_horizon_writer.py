@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the canonical fresh joint layered relation Writer."""
+"""Train the canonical fresh horizon Writer with same-version FM+RL."""
 
 from ember.writer.training import main
 

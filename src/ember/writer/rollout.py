@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -55,6 +56,11 @@ def decision_batch(records, device):
 class WriterRollouts:
     def __init__(self, runtime, data, asset_root: Path, output: Path, context, config) -> None:
         self.runtime, self.config = runtime, config
+        devices = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
+        physical = int(devices[context.local_rank]) if devices[0] else context.local_rank
+        # EGL enumerates physical GPUs independently of CUDA's visible remap.
+        # Configure before importing LIBERO/robosuite through benchmark setup.
+        os.environ.update(MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID=str(physical))
         authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
         targets, paths = inspect_installed_target_tasks(
             authorities, role="development_train", state_count=32,
@@ -67,9 +73,6 @@ class WriterRollouts:
             "parallel": {"envs_per_replica": 4},
         }
         self.environment = pool_contract["environment"]
-        import os
-        devices = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
-        physical = int(devices[context.local_rank]) if devices[0] else context.local_rank
         self.pool = PersistentTaskEnvironmentPool(pool_contract, physical_gpu_id=physical)
         self.cholesky = torch.linalg.cholesky(exploration_covariance(device="cpu"))
 

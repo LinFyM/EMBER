@@ -141,10 +141,10 @@
     "fresh_joint_writer_and_meta": true
   },
   "runtime": {
-    "policy_microbatch": 8,
+    "policy_microbatch": 4,
     "prefix_cache_bytes": 2147483648,
     "rollout_microbatch": 4,
-    "rl_microbatch": 2,
+    "rl_microbatch": 4,
     "trust_microbatch": 4
   },
   "evidence": {

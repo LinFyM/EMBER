@@ -187,7 +187,7 @@ def _trust_scores(engine, evidence, context, tasks):
     return scores
 
 
-def _attempt_update(engine, runtime, data, context, config, optimizer, scheduler, attempted):
+def _attempt_update(engine, runtime, data, context, config, optimizer, scheduler, attempted, *, profile=False):
     from ember.writer.rl_math import adamw_trust_step
 
     draws = data.next_iteration()  # Consumed even if every candidate is rejected.
@@ -206,6 +206,10 @@ def _attempt_update(engine, runtime, data, context, config, optimizer, scheduler
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters())}
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
+    if profile:
+        tick = time.perf_counter()
+        norms["current_version_task_kl"] = _trust_scores(engine, evidence, context, [d["task"] for d in draws])
+        norms["current_version_trust_seconds"] = time.perf_counter() - tick
     result = adamw_trust_step(optimizer, lambda: _trust_scores(engine, evidence, context, [d["task"] for d in draws]),
                               max_task_kl=float(config["rl"]["max_task_kl"]))
     if result.accepted:
@@ -287,7 +291,8 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
     attempted, accepted, metrics_rows = cursors
     while accepted < stop_accepted and (args.stop_after_step is None or attempted < args.stop_after_step):
         tick = time.perf_counter()
-        rows, result, norms = _attempt_update(engine, runtime, data, context, config, optimizer, scheduler, attempted + 1)
+        rows, result, norms = _attempt_update(engine, runtime, data, context, config, optimizer, scheduler,
+                                             attempted + 1, profile=args.mode == "profile")
         attempted += 1
         accepted += int(result.accepted)
         torch.cuda.synchronize(context.device)

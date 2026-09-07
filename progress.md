@@ -22,6 +22,21 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
+## 2026-09-08 单卡真实机制结果与联合profile准备
+
+真实机制已完成exit0，成功源代码7da77fb1；证据`runs/analysis/horizon_relation_writer_20260908/mechanism/summary.json`。
+R为真实action_out_proj输入同一对象、FP32[2,50,1024]，同一次prefix产出最终Z[2,270,2048]和18层KV。
+同batch2/4的完整10步flow分别与canonical推理一致；真实FM小步后A/B、过程和Meta梯度均非零，source无梯度。
+最长合法pool为task38：K1 demo0共93帧，K4 demos0/1/3/6为93/89/87/85帧；64FM queries整段VJP含prefix
+耗时19.38/47.68秒，峰值35.40/35.72GiB。该数值不含rollout、Adam moments和trust，不能用作formal iteration成本。
+初次scratch统计后缀错误已修复并保留失败记录；没有source缺陷、截视频或正式学习证据。
+
+flow VJP batch4为1.451s/11.24GiB，batch2为1.488s/10.70GiB，采用RL microbatch4以提高实际吞吐。
+FM microbatch8已接近单卡峰值，加Adam/NCCL及其它用户context后余量不足；联合profile先用FM microbatch4、
+其余完整图不变，测是否支持四task四卡并行与实际吞吐。不是降低FM query64或以最低显存为目标。
+跨batch2→4的identity动作KL实测0.028335，须用实际收集/候选重放的检查子集判断数值底噪和误拒绝；
+不为逐元素一致强制batch1/扩dtype或放宽科学阈值。尚未开始formal训练或得到新闭环分数。
+
 ## 2026-09-08 新图接通与真实验证（进行中）
 
 已集成完整Horizon过程图、native D、最终R/Z读取、真实四episode采集、十步可微flow、Gaussian信用和trust候选，

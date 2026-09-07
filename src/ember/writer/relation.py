@@ -1,154 +1,136 @@
-"""Synchronous, same-layer local relations over a single ordered video."""
-
+"""Past-edge correspondence, complete H queries, visual verification and short GRU."""
 from __future__ import annotations
 
 import math
 
 import torch
 from torch import Tensor, nn
-from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-
-def directional_correspondence(scores: Tensor) -> tuple[Tensor, Tensor]:
-    """Normalize a chronological score and its transpose independently."""
-    return scores.softmax(-1), scores.transpose(-1, -2).softmax(-1)
+from ember.writer.attention import Attention, RotaryBlock, feed_forward
 
 
 def relative_correspondence(attention: Tensor) -> Tensor:
-    """Reindex [..., head, h, g] to [..., head, h, delta + H - 1]."""
+    """Reindex [..., head, h, g] to [..., head, h, g-h+H-1], retaining mass."""
     horizon = attention.shape[-1]
     h = torch.arange(horizon, device=attention.device)
-    offsets = h[None, :] - h[:, None] + horizon - 1
-    offsets = offsets.expand(*attention.shape[:-2], horizon, horizon)
-    rho = attention.new_zeros(*attention.shape[:-1], 2 * horizon - 1)
-    return rho.scatter(-1, offsets, attention)
+    offsets = (h[None, :] - h[:, None] + horizon - 1).expand_as(attention)
+    return attention.new_zeros(*attention.shape[:-1], 2 * horizon - 1).scatter(-1, offsets, attention)
 
 
-class PairMessage(nn.Module):
-    """One GELU MLP jointly consumes x, matched content, rho, and signed gap."""
-
-    def __init__(self, width: int, heads: int, horizon: int) -> None:
-        super().__init__()
-        self.current = nn.Linear(width, width)
-        self.matched = nn.Linear(width, width, bias=False)
-        self.gap = nn.Linear(1, width, bias=False)
-        self.relative = nn.Parameter(torch.empty(heads, 2 * horizon - 1, width))
-        nn.init.normal_(self.relative, std=(heads * (2 * horizon - 1)) ** -0.5)
-        self.output = nn.Linear(width, width)
-
-    def relative_read(self, attention: Tensor) -> Tensor:
-        # This bounded rho tensor avoids broadcasting a [H,H,width] table over
-        # every edge/layer. Its linear read is exactly sum_g A[h,g] e[g-h].
-        rho = relative_correspondence(attention).transpose(-3, -2).flatten(-2)
-        weight = self.relative.flatten(0, 1).transpose(0, 1)
-        return F.linear(rho, weight)
-
-    def forward(self, current: Tensor, matched: Tensor, attention: Tensor, gap: Tensor) -> Tensor:
-        hidden = self.current(current) + self.matched(matched)
-        hidden = hidden + self.relative_read(attention)
-        hidden = hidden + self.gap(gap[:, None, None, None] / 5)
-        return self.output(F.gelu(hidden))
+def past_edges(length: int, radius: int, device: torch.device) -> tuple[Tensor, Tensor, Tensor]:
+    """Chronological slots per current frame; no synthetic neighbors."""
+    current = torch.arange(length, device=device)[:, None].expand(-1, radius)
+    slot = torch.arange(radius, device=device)[None, :].expand(length, -1)
+    past = (current - radius).clamp_min(0) + slot
+    valid = past < current
+    return current[valid], past[valid], slot[valid]
 
 
 class LocalRelationBlock(nn.Module):
-    """Shared across native layers; all edges read the same previous U."""
-
-    def __init__(
-        self, width: int, heads: int, horizon: int, radius: int,
-        edge_chunk: int, activation_checkpoint: bool,
-    ) -> None:
+    def __init__(self, width: int, heads: int, horizon: int, radius: int, edge_chunk: int,
+                 activation_checkpoint: bool, visual_width: int) -> None:
         super().__init__()
         self.width, self.heads, self.horizon = width, heads, horizon
-        self.radius, self.edge_chunk = radius, edge_chunk
-        self.activation_checkpoint = activation_checkpoint
+        self.radius, self.edge_chunk, self.activation_checkpoint = radius, edge_chunk, activation_checkpoint
         self.norm = nn.LayerNorm(width)
-        self.content = nn.Linear(width, width, bias=False)
-        self.value = nn.Linear(width, width, bias=False)
-        self.bias = nn.Sequential(nn.Linear(2, width // heads), nn.GELU(),
-                                  nn.Linear(width // heads, heads))
-        self.message = PairMessage(width, heads, horizon)
-        self.neighbor_query = nn.Linear(width, width)
-        self.neighbor_key = nn.Linear(width, width)
-        self.neighbor_value = nn.Linear(width, width)
+        self.content, self.value = (nn.Linear(width, width, bias=False) for _ in range(2))
+        self.bias = nn.Sequential(nn.Linear(2, width // heads), nn.GELU(), nn.Linear(width // heads, heads))
+        nn.init.zeros_(self.bias[-1].weight)
+        nn.init.zeros_(self.bias[-1].bias)
+        self.null = nn.Sequential(nn.Linear(width + 1, width), nn.GELU(), nn.Linear(width, heads))
+        self.matched = nn.Linear(width, width)
+        self.relative_read = nn.Linear(heads * (2 * horizon - 1), width, bias=False)
+        self.query_input = feed_forward(width, 6 * width + heads + 1)
+        self.horizon_query = RotaryBlock(width, heads, causal=False)
+        self.visual_read = Attention(width, heads, visual_width)
+        self.visual_roles = nn.Parameter(torch.randn(2, width) * 0.02)
+        self.message = feed_forward(width, 7 * width + heads + 1)
+        self.message_norm, self.initial_norm = nn.LayerNorm(width), nn.LayerNorm(width)
+        self.time_input = nn.Sequential(nn.Linear(3, width), nn.GELU(), nn.Linear(width, width))
+        self.initial = nn.Linear(width, width)
+        self.gru = nn.GRUCell(width, width)
         self.neighbor_output = nn.Linear(width, width, bias=False)
-        self.ffn_norm = nn.LayerNorm(width)
-        self.ffn = nn.Sequential(nn.Linear(width, 4 * width), nn.GELU(),
-                                 nn.Linear(4 * width, width))
-        positions = torch.arange(horizon)
-        self.register_buffer("offsets", positions[None, :] - positions[:, None], persistent=False)
+        self.ffn_norm, self.ffn = nn.LayerNorm(width), feed_forward(width)
+        h = torch.arange(horizon)
+        self.register_buffer("offsets", h[None, :] - h[:, None], persistent=False)
+        self.register_buffer("h_positions", h, persistent=False)
 
     def _heads(self, value: Tensor) -> Tensor:
         return value.unflatten(-1, (self.heads, self.width // self.heads)).transpose(-3, -2)
 
-    def chronological_score(self, late: Tensor, early: Tensor, gap: Tensor) -> Tensor:
-        """Inputs are preprojected [..., heads, H, head_width] features."""
-        score = late @ early.transpose(-1, -2) / math.sqrt(self.width // self.heads)
+    def correspondence(self, current: Tensor, late: Tensor, early: Tensor, gap: Tensor) -> Tensor:
+        gap = gap.to(current.dtype)
+        scores = late @ early.transpose(-1, -2) / math.sqrt(self.width // self.heads)
         shape = (len(gap), self.horizon, self.horizon)
         joint = torch.stack((gap[:, None, None].expand(shape) / 5,
-                             self.offsets.to(gap).expand(shape) / self.horizon), dim=-1)
-        bias = self.bias(joint).permute(0, 3, 1, 2).unsqueeze(1)
-        return score + bias
+                             (self.offsets.to(gap) - gap[:, None, None]) / self.horizon), -1)
+        scores = scores + self.bias(joint).permute(0, 3, 1, 2)
+        null_input = torch.cat((current, (gap[:, None, None] / 5).expand(-1, self.horizon, 1)), -1)
+        null = self.null(null_input).transpose(-1, -2).unsqueeze(-1)
+        return torch.cat((scores, null), -1).softmax(-1)[..., :-1]
 
-    def _pair_messages(
-        self, x: Tensor, content: Tensor, value: Tensor,
-        late: Tensor, early: Tensor, gap: Tensor,
-    ) -> tuple[Tensor, Tensor]:
-        score = self.chronological_score(content[late], content[early], gap)
-        to_late, to_early = directional_correspondence(score)
-        late_read = (to_late @ value[early]).transpose(-3, -2).flatten(-2)
-        early_read = (to_early @ value[late]).transpose(-3, -2).flatten(-2)
-        return (self.message(x[late], late_read, to_late, gap),
-                self.message(x[early], early_read, to_early, -gap))
+    def form_query(self, current: Tensor, past_value: Tensor, attention: Tensor,
+                   gap: Tensor, horizon_embedding: Tensor, language: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        gap = gap.to(current.dtype)
+        matched = self.matched((attention @ past_value).transpose(-3, -2).flatten(-2))
+        relative = self.relative_read(relative_correspondence(attention).transpose(-3, -2).flatten(-2))
+        mass = attention.sum(-1).transpose(-1, -2)
+        fields = (current, matched, current - matched, relative, mass,
+                  horizon_embedding.expand_as(current), language.expand_as(current),
+                  (gap[:, None, None] / 5).expand(-1, self.horizon, 1))
+        query = self.horizon_query(self.query_input(torch.cat(fields, -1)), self.h_positions)
+        return query, matched, relative, mass
 
-    def _edges(self, length: int, device: torch.device) -> tuple[Tensor, Tensor, Tensor]:
-        distance = torch.arange(1, min(self.radius, length - 1) + 1, device=device)
-        late = torch.arange(length, device=device)[:, None].expand(-1, len(distance))
-        early = late - distance
-        valid = early >= 0
-        return late[valid], early[valid], distance.expand_as(late)[valid]
+    def _pair_messages(self, states: Tensor, normalized: Tensor, content: Tensor, values: Tensor,
+                       visual_key: Tensor, visual_value: Tensor, visual_mask: Tensor,
+                       current: Tensor, past: Tensor, gap: Tensor,
+                       horizon_embedding: Tensor, language: Tensor) -> Tensor:
+        attention = self.correspondence(normalized[current], content[current], content[past], gap)
+        query, matched, relative, mass = self.form_query(
+            states[current], values[past], attention, gap, horizon_embedding, language)
+        z_past = self.visual_read.read_projected(query + self.visual_roles[0], visual_key[past],
+                                               visual_value[past], visual_mask[past, None, None, :])
+        z_now = self.visual_read.read_projected(query + self.visual_roles[1], visual_key[current],
+                                              visual_value[current], visual_mask[current, None, None, :])
+        gap = gap.to(states.dtype)
+        fields = (query, states[current], matched, relative, mass,
+                  (gap[:, None, None] / 5).expand(-1, self.horizon, 1), z_past, z_now, z_now - z_past)
+        return self.message(torch.cat(fields, -1))
 
-    def _messages(self, x: Tensor, frame_indices: Tensor) -> tuple[Tensor, Tensor]:
-        length, layers, horizon, width = x.shape
-        late, early, distance = self._edges(length, x.device)
-        content, value = self._heads(self.content(x)), self._heads(self.value(x))
-        messages, destinations = [], []
-        for start in range(0, len(late), self.edge_chunk):
-            end = start + self.edge_chunk
-            left, right = late[start:end], early[start:end]
-            gap = (frame_indices[left] - frame_indices[right]).to(x.dtype)
-            arguments = (x, content, value, left, right, gap)
+    def aggregate(self, states: Tensor, times: Tensor, messages: Tensor,
+                  current: Tensor, past: Tensor, slots: Tensor) -> Tensor:
+        """Only the <=4 neighbor slots recur; all real (t,h) cells are batched."""
+        initial = self.initial(self.initial_norm(states)).tanh()
+        hidden = initial
+        for slot in range(min(self.radius, len(states) - 1)):
+            selected = slots == slot
+            targets, sources = current[selected], past[selected]
+            gap = (times[targets] - times[sources]) / 5
+            previous_gap = (times[sources] - times[sources - 1]) / 5 if slot else torch.zeros_like(gap)
+            gamma = torch.stack((gap, previous_gap, torch.full_like(gap, float(slot > 0))), -1)
+            inputs = self.message_norm(messages[selected]) + self.time_input(gamma.to(states.dtype))[:, None, :]
+            updated = self.gru(inputs.flatten(0, 1), hidden[targets].flatten(0, 1)).reshape(-1, self.horizon, self.width)
+            hidden = hidden.index_copy(0, targets, updated)
+        updated = states + self.neighbor_output(hidden - initial)
+        return updated + self.ffn(self.ffn_norm(updated))
+
+    def forward(self, states: Tensor, times: Tensor, language: Tensor,
+                visual_tokens: Tensor, visual_mask: Tensor, horizon_embedding: Tensor) -> Tensor:
+        normalized = self.norm(states)
+        content, values = self._heads(self.content(normalized)), self._heads(self.value(states))
+        current, past, slots = past_edges(len(states), self.radius, states.device)
+        if not len(current):
+            return states + self.ffn(self.ffn_norm(states))
+        # These projections occur once per frame/group, outside the edge loop.
+        key, value = self.visual_read.project_memory(visual_tokens, visual_tokens)
+        chunks = []
+        for start in range(0, len(current), self.edge_chunk):
+            late, early = current[start:start + self.edge_chunk], past[start:start + self.edge_chunk]
+            args = (states, normalized, content, values, key, value, visual_mask, late, early,
+                    times[late] - times[early], horizon_embedding, language)
             if self.activation_checkpoint and torch.is_grad_enabled():
-                outputs = checkpoint(self._pair_messages, *arguments, use_reentrant=False)
+                chunks.append(checkpoint(self._pair_messages, *args, use_reentrant=False))
             else:
-                outputs = self._pair_messages(*arguments)
-            messages.extend(outputs)
-            slot = distance[start:end] - 1
-            destinations.extend((left * (2 * self.radius) + slot,
-                                 right * (2 * self.radius) + self.radius + slot))
-        indices = torch.cat(destinations)
-        shape = (length * 2 * self.radius, layers, horizon, width)
-        values = torch.cat(messages)
-        packed = values.new_zeros(shape).index_copy(0, indices, values)
-        mask = torch.zeros(length * 2 * self.radius, dtype=torch.bool, device=x.device)
-        mask[indices] = True
-        return packed.unflatten(0, (length, 2 * self.radius)), mask.view(length, -1)
-
-    def _neighbor_update(self, x: Tensor, messages: Tensor, mask: Tensor) -> Tensor:
-        # [T, neighbor, J, H, d] -> [T, J, H, head, neighbor, head_width].
-        keys = self.neighbor_key(messages).unflatten(-1, (self.heads, self.width // self.heads))
-        values = self.neighbor_value(messages).unflatten(-1, (self.heads, self.width // self.heads))
-        keys, values = keys.permute(0, 2, 3, 4, 1, 5), values.permute(0, 2, 3, 4, 1, 5)
-        query = self.neighbor_query(x).unflatten(-1, (self.heads, self.width // self.heads))
-        update = F.scaled_dot_product_attention(
-            query.unsqueeze(-2), keys, values, attn_mask=mask[:, None, None, None, None, :],
-        ).squeeze(-2).flatten(-2)
-        return self.neighbor_output(update)
-
-    def forward(self, states: Tensor, frame_indices: Tensor) -> Tensor:
-        x = self.norm(states)
-        if len(states) > 1 and self.radius > 0:
-            messages, mask = self._messages(x, frame_indices)
-            states = states + self._neighbor_update(x, messages, mask)
-        # For T=1 there is no attention call and the neighbor update is exactly 0.
-        return states + self.ffn(self.ffn_norm(states))
+                chunks.append(self._pair_messages(*args))
+        return self.aggregate(states, times, torch.cat(chunks), current, past, slots)

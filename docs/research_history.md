@@ -19,7 +19,7 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 | 8月26--9月2日 G3 / primal / EBSRI / PNBTT | 一些task-local operator/replay通过 | 多轮shared或specificity/capacity冲突未解 | 不再沿固定接口堆专用数学链；负结果只限实际函数类 |
 | 9月2--5日 full-response / Axial / Unified | full-horizon合同修复，真实加速，若干task-local正控 | shared闭环弱或训练后漂移 | 完整输入、梯度和标准模块不等于机制兑现 |
 | 9月5--6日 P/Q、完整输出、覆盖与clone对照 | 完整输出改善训练侧Goal；单task clone明显更强 | 共享与迁移仍弱，容量/优化/数据未被单独定位 | 不能继续围绕猜测小扫，也不能把全部差距归到某一个模块 |
-| 9月6—7日重新推导 | 单probe、分层局部帧对关系、集合编译、坐标生成；9月7日明确双向读取与对应模式消费 | 新图尚无实现和性能证据 | 按最新数学定义获得真实证据，进入实现前不必重复完整专家复审 |
+| 9月6—7日重新推导与验证 | 分层局部关系图已实现；真实机制、short4读出对照及train24相邻节点完成 | train24 correct69→67、other72→64，熟悉/held训练视频21/18，未通过科学资格 | 当前run止于384；Owner随后要求先补齐已有证据，与专家讨论清楚再决定实施 |
 
 <a id="baseline"></a>
 ## 1. 基线、口径和不能混用的数字
@@ -597,3 +597,16 @@ Owner指出当前分数远低于基础SFT约108（历史相邻109/107），执�
 离散参数化对照；增加参数量与固定投影子空间都是须报告的取舍，不能预告性能或把本诊断称为唯一decoder根因。
 原件`video_novelty_diagnostic_results.json`、`s384_train120_*_vs_source.json`、`s384_train120_held_video_vs_s192.json`、
 `decoder_output_representatives_s384.json`与更新后的`decision_after384.json`。
+
+## 19. 独立审查补证据与第二轮推导讨论（2026-09-07）
+
+Owner要求先与专家讨论清楚，不能把一轮分析直接转化为实施。此前native线性因子读出提案及专家提出的旧P/Q width256补评均停留在讨论候选；
+科研实现、训练与评测暂停，最新授权以progress为准。现存width256训练和checkpoint不等于已有闭环证据。
+
+[审查补充包](review_materials/20260907/README.md)提供当前图、两次读出修正、train24、早期v5.2/v6、SFT、多视频/LPCP/GOMQ和P/Q对照的
+现有合同、metrics、exposures、checkpoint元数据、诊断与raw rows公共副本；保留源路径索引并标注转换、缺口和未完成面板。
+本次仅整理既有证据，没有新增训练、rollout、模型选择或因果结论。
+
+[第一轮专家意见](review_materials/20260907/expert_review_round1.md)作为待核验论证保留；[第二轮prompt](review_materials/20260907/ROUND2_PROMPT.md)
+要求先依据原件修正证据等级，再从需求、信息条件和合法监督逐步推导架构与训练，区分数学性质、假设、归纳偏置与待验证能力，
+并用历史成功和失败约束选择。讨论稿及最小验证建议不自动构成执行授权。

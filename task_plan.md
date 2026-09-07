@@ -2,18 +2,30 @@
 
 ## 当前目标与授权
 
-Owner于2026-09-07明确授权接管者充分理解后连续自主科研执行，覆盖实现、验证、训练、评测、诊断及证据支持的修正。
-旧交接中的未授权/等待同意已失效；进度说明不等待回复。持续授权及当前现场见 [progress.md](progress.md)。
-已登记active design：[分层局部关系视频到完整LoRA Writer](docs/layered_relation_video_writer_design.md)。
-当前训练主线为Writer和读取侧Meta fresh端到端联合训练，fresh optimizer/scheduler；基础source冻结，LoRA采用合法identity初始化。
-不实施G1--G3分阶段冻结课程，不额外建立阶段初始化候选，不恢复旧width256或无关旧运行。
+Owner于2026-09-07最新明确要求先与专家把证据、架构和训练推导讨论清楚，再决定开工。
+**科研实现、训练与评测暂停**；此前自主科研执行授权在这一范围内被最新要求覆盖。
+本轮只整理并上传已有证据、校准历史事实、准备第二轮讨论，不向外部专家发送消息。
+准确状态见 [progress.md](progress.md)，讨论材料见 [审查补充包](docs/review_materials/20260907/README.md)。
 
-环境长期goal已创建。完成标准为validation8 strict paired single-checkpoint correct严格 >145/400，并满足相邻稳定、低churn、
+已登记设计仍为 [分层局部关系视频到完整LoRA Writer](docs/layered_relation_video_writer_design.md)，当前run止于384。
+该设计是已实现候选的记录，不代表可以恢复执行。Writer与读取侧Meta fresh联合训练的现有合同未被改写；
+任何新路线须在讨论后登记。旧P/Q width256补评和未合并native-heads草稿均只是候选，不自动启动或集成。
+
+原接管任务记录过长期goal；这一历史记录不覆盖当前暂停。科学完成标准为validation8 strict paired single-checkpoint correct严格 >145/400，并满足相邻稳定、低churn、
 高breadth、四suite非零及Goal/Long贡献、same-task另一组正确视频鲁棒性；selected checkpoint冻结后完成必要因果controls，
 方法冻结后按32/8合同fresh最终训练与Test，交付可复核代码与正式证据。实现或一次高分不算完成。
 不自行设token预算、总工期或固定尝试数；停止无信息重复，依据新机制证据推进。
 
-## 当前阶段：当前run止于384，准备native因子读出实质对照
+## 当前阶段：补齐现存证据，讨论架构与训练推导
+
+1. 整理当前train24与读出对照、早期强Writer、SFT、多视频/LPCP/GOMQ及P/Q共享/clone/宽度对照的现存合同、metrics、曝光和raw rows。
+   公共副本去除非科学现场信息，保留原始记录索引；标注缺失与未完成面板，不生成新的实验结果。
+2. 请专家先根据原件修正第一轮的事实口径和证据等级，再从需求、信息条件、合法监督逐步推导表示、模块职责、参数生成与联合训练。
+   每一步区分数学性质、假设、归纳偏置、实现选择和待验证能力；同时面对历史成功与失败。
+3. 形成可讨论的优先路线、竞争解释和最小区分性验证计划，先与Owner讨论，再登记是否实施。
+   不把专家建议、数学自洽或材料上传直接转换为实验授权。
+
+## 暂停前执行计划快照（历史记录，不构成待执行清单）
 
 1. **理解（已完成）。** 指定当前文档已完整阅读、Git已核对；相关原始专家评审、修正、Git快照与正式证据已核对，
    核对现有代码职责和资产。完成科学目标/数据流/历史教训/实现缺口的简要说明后立即继续；临时HANDOFF已消费删除。

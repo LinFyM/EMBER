@@ -6,9 +6,9 @@ single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、br
 
 当前候选是**分层局部关系视频到完整LoRA Writer**：冻结图文prefix → 单probe Action Expert共享观察Meta-LoRA → 保留18层×50-horizon
 的窗口内帧对软对应 → 两端的内容/相对对应模式消息 → 逐帧聚合与同型block堆叠 → 多视频集合共同读取 → 原生坐标条件MLP生成全部38-target A/B。
-9月7日数学设计已收口；owner随后明确授权接管者理解后连续实现、验证、训练、评测和证据支持的修正。
-当前主线为Writer与读取侧Meta fresh端到端联合训练；尚无新架构性能证据。
-准确授权见 [progress.md](progress.md)。
+9月7日该图已实现并完成真实机制检查与短学习；train24在192/384的correct为69/67，same-task-other为72/64，未通过科学资格，run止于384。
+Owner最新要求先补充证据并与专家讨论清楚架构和训练推导，**当前科研实现、训练与评测暂停**。
+准确授权见 [progress.md](progress.md)，现存实验原件的公共副本与第二轮讨论prompt见 [审查补充材料](docs/review_materials/20260907/README.md)。
 
 ## 接手阅读
 
@@ -20,15 +20,15 @@ single-checkpoint correct **>145/400**，同时满足相邻/跨视频稳定、br
 
 ## 代码与运行入口
 
-活动树保留共同基础设施，旧P/Q、Natural Program、bank compiler与Stage 0专用执行面已退役；新图入口为scripts/train_layered_writer.py，正在真实机制与成本验证。
+活动树保留共同基础设施，旧P/Q、Natural Program、bank compiler与Stage 0专用执行面已退役；当前图入口为scripts/train_layered_writer.py，已完成首轮真实机制与成本验证。
 旧实现与原始专家意见可由 `fcdb6e43706c5fcedf10eaa5d2d459602b263016` 恢复，具体索引见历史§9。
 
 | 责任 | 当前代码 | 使用边界 |
 |---|---|---|
 | 新图过程/集合/坐标生成 | `src/ember/writer/relation.py`、`layered.py`、`coordinate.py` | 完整H消费后压缩，一次生成全部A/B |
-| 原生图文prefix、KV、Action Expert层捕获 | `src/ember/ecp/policy_effects.py`、`observer.py` | 由`writer/native.py`接入Meta与R-leaf/observer分块VJP，真实验证进行中 |
+| 原生图文prefix、KV、Action Expert层捕获 | `src/ember/ecp/policy_effects.py`、`observer.py` | 由`writer/native.py`接入Meta与R-leaf/observer分块VJP，已完成真实机制验证 |
 | Meta-LoRA与执行LoRA | `src/ember/writer/meta_lora.py`、`src/ember/pi05_lora.py`、`batched_lora.py` | 观察Meta与执行adapter作用域分离，最终执行只装一套完整LoRA |
-| functional query VJP与Writer重放 | `src/ember/writer/functional.py`、`replay.py` | 已有同condition query microbatch VJP；未实现跨condition批量VJP或新Meta重放 |
+| functional query VJP与Writer重放 | `src/ember/writer/functional.py`、`replay.py` | 同condition query microbatch VJP、R-leaf及observer分块重放已实现；不宣称跨condition批量VJP |
 | 数据、视频、任务采样与GPU placement | `src/ember/writer/data.py`、`functional_data.py`、`task_schedule.py`、`task_execution.py` | 复用读取/调度，正式allowlist、真实K1/2/4和episode角色须为新run明确登记 |
 | checkpoint、NUMA与分布式 | `src/ember/ecp/checkpoint.py`、`src/ember/writer/topology.py`、`src/ember/pi05_source_setup.py` | 新架构fresh/new schema；exact-resume锁world topology |
 | source与task-local专家 | `src/ember/source_sft/`、`src/ember/expert_manifold/` | 保留source来源和训练侧容量参照；不能部署held字典 |

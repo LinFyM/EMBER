@@ -1,28 +1,38 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，train24止于384，双视频67/64；熟悉/held训练视频诊断21/18，全部作业完成。准备保持上游图的native线性因子读出对照。
+更新时间：2026-09-07 CST。Owner最新要求先补齐现存证据并与专家讨论清楚；科研实现、训练与评测暂停。
 
 ## 当前授权与方法状态
 
-- Owner于9月7日明确授权：充分理解仓库后，连续自主开展实现、验证、训练、评测、诊断及证据支持的修正；
-  进度说明不是审批节点。此前“未授权科研执行”“先报告再等待同意”等交接限制已被覆盖，跨上下文不得据此误停。
-- 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
-  只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
+- Owner最新明确要求：不能收到专家的一轮分析就开工；先补充专家缺少的现存证据，再像此前共同推导一样，
+  从已有证据逐步推导架构与训练，并吸取历史成功和失败的经验。**当前暂停科研代码修改、训练和评测**。
+- 本轮授权为已有材料整理、公开证据补充和讨论准备；不联系外部专家。暂停覆盖此前持续自主科研执行的相关范围，
+  下文旧计划、历史goal及专家建议均不能恢复执行。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **当前图通过真实机制检查，末读出对照已获得跨视频一致的short4基础行为，当前进入train24共享与迁移闭环裁决**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  当前图已实现、通过真实机制检查并完成train24的192/384节点，但未通过科学资格；原run止于384。
+  现有训练合同为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
   置换不变多视频compiler、坐标MLP生成唯一38-target完整rank16 LoRA。首版真实K1/2/4。
-- 环境长期goal已创建：实现并以学习/闭环推进稳定视频条件迁移，满足validation8 strict paired single-checkpoint >145/400、
+- 原接管任务记录过长期goal；当前暂停不代表科学目标完成，也不由本材料任务更改goal状态。科学目标仍为validation8 strict paired single-checkpoint >145/400、
   相邻稳定/低churn/高breadth/四suite及GoalLong/同task视频鲁棒性；选点冻结后完成因果controls，方法冻结后32/8 fresh最终训练与Test。
   实现完成、训练结束、单点高分均不代表goal完成；未自设token预算、总工期或总尝试数。
-- 接手Git实测：main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与本地origin/main一致。
+- 暂停前接手记录：当时main干净且为交接基线9ea2034037e5c70b514198a70910aac5c2fb18f5，与当时origin/main一致。
   指定当前文档、相关9月5日完整专家原文、旧账本§1–3/9–20/164–165/172–181及相关分析原件已读；代码和canonical资产已核对。HANDOFF已消费并删除，长期内容留在正式文档。
-- 未选出selected checkpoint，未达成最终科学目标。不自动恢复旧width256闭环或其它旧待办。
-  三轮short4的全部预登记节点已完成；train24五个节点已在launch前登记；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
+- 未选出selected checkpoint，未达成最终科学目标。旧P/Q width256已有训练与checkpoint、尚无闭环；不补评。
+  native-heads未合并草稿保留，不集成、不训练。三轮short4已完成；train24止于384，不执行余下节点。
+  历史GPU/quota快照不构成实时准入；当前材料整理不需要GPU。
 
-## 当前执行节点
+## 当前材料与讨论
+
+[9月7日独立审查补充包](docs/review_materials/20260907/README.md)收录现有合同、metrics、exposures、checkpoint元数据、
+诊断与逐条rollout结果；原始科学代码参考ec02710b169b3dc624b6dfca998a4ad9bdc8dd14，历史run使用各自冻结版本。
+公共副本仅作必要字段移除、路径规范化和分片；不复制模型/数据/视频，不生成新实验或新checkpoint选择。
+第一轮专家意见保留为待核验材料，第二轮prompt要求先纠正证据口径，再连续推导架构和训练，最后交付讨论稿。
+width256闭环、checkpoint张量及当前失败轨迹的新录像仍不在包内；不能由缺失信息补写因果结论。
+
+## 暂停前执行记录（以下“当前/下一步”只表示当时时点）
 
 held-video train120已完成exit0：18/120（Spatial10/Object1/Goal7/Long0），breadth7/24；对source16为RGL11/7/5、
 churn12/120、J11/23。seen21→held18为RGL14/4/7、churn11/120、J14/25；held192→384为22→18、11/7/11、churn18/120。

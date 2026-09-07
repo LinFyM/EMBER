@@ -1,0 +1,1 @@
+{"reference":"s96_correct","candidate":"s96_k4_correct","pairing":"each verified against common identical source","rows":40,"reference_successes":11,"candidate_successes":10,"retained":9,"gained":1,"lost":2,"churn_fraction":0.075,"success_set_jaccard":0.75}

@@ -1,0 +1,6 @@
+{"target":"task35.model.action_out_proj","shape":[32,16],"gradient_rank_constant_fraction":0.08391857892274857}
+{"target":"task35.model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj","shape":[2048,16],"gradient_rank_constant_fraction":0.11761479824781418}
+{"target":"task35.model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj","shape":[256,16],"gradient_rank_constant_fraction":0.2140394002199173}
+{"target":"task7.model.action_out_proj","shape":[32,16],"gradient_rank_constant_fraction":0.11370638012886047}
+{"target":"task7.model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj","shape":[2048,16],"gradient_rank_constant_fraction":0.11909426748752594}
+{"target":"task7.model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj","shape":[256,16],"gradient_rank_constant_fraction":0.026425423100590706}

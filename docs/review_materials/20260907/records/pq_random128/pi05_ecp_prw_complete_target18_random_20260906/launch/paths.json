@@ -1,0 +1,1 @@
+{"commit":"f37178369baf374de98f48c61a59c1f9bf6adc03","worktree":"<REPO_ROOT>-worktrees/prw-complete-target18-random-20260906","run":"<REPO_ROOT>/runs/outputs/pi05_ecp_prw_complete_target18_random_s128_f3717836_gpu02p012345_20260906","analysis":"<REPO_ROOT>/runs/analysis/pi05_ecp_prw_complete_target18_random_20260906","gpus":[0,1,2,3,4,5],"numa":[0,0,0,0,1,1]}

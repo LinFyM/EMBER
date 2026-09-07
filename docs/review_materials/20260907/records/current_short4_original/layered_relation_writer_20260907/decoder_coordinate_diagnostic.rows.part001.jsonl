@@ -1,0 +1,12 @@
+{"step":16,"task":7,"target":"model.action_out_proj.lora_B.default.weight","row_constant_fraction":0.9999401451195112,"rms":0.0015059392899274826}
+{"step":16,"task":7,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.lora_B.default.weight","row_constant_fraction":0.9999369656312221,"rms":0.001495468313805759}
+{"step":16,"task":7,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.lora_B.default.weight","row_constant_fraction":0.9999332394689072,"rms":0.0014958666870370507}
+{"step":16,"task":35,"target":"model.action_out_proj.lora_B.default.weight","row_constant_fraction":0.9999333987024208,"rms":0.0014839135110378265}
+{"step":16,"task":35,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.lora_B.default.weight","row_constant_fraction":0.9999297551436507,"rms":0.001471552881412208}
+{"step":16,"task":35,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.lora_B.default.weight","row_constant_fraction":0.999925032686797,"rms":0.0014726079534739256}
+{"step":48,"task":7,"target":"model.action_out_proj.lora_B.default.weight","row_constant_fraction":0.9998442149145533,"rms":0.001376664498820901}
+{"step":48,"task":7,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.lora_B.default.weight","row_constant_fraction":0.9998304894216478,"rms":0.0013825445203110576}
+{"step":48,"task":7,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.lora_B.default.weight","row_constant_fraction":0.9998403884124902,"rms":0.001368155819363892}
+{"step":48,"task":35,"target":"model.action_out_proj.lora_B.default.weight","row_constant_fraction":0.9998218172568075,"rms":0.0012787821469828486}
+{"step":48,"task":35,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.lora_B.default.weight","row_constant_fraction":0.9997983436368321,"rms":0.001281942124478519}
+{"step":48,"task":35,"target":"model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.lora_B.default.weight","row_constant_fraction":0.9998115182448647,"rms":0.0012697549536824226}

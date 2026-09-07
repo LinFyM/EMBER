@@ -1,0 +1,1 @@
+{"scope":"frozen training task diagnostic; never checkpoint selection","gradients":false,"checkpoint":16,"queries_per_task":32,"resident_source_reuse":true,"review_export_rows":["functional_s16.rows.part001.jsonl"]}

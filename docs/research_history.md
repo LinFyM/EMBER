@@ -553,3 +553,33 @@ same-task-other随后完成exit0，72/400，Spatial4/Object31/Goal37/Long0，bre
 每task512queries仍早于short4同task1536曝光，按原预登记协议exact-resume至384（每task1024queries），
 模型、优化器、完整schedule、数据、K和world4不变。384双视频strict400用于判断扩展与相邻行为，不凭内部loss选择。
 完整原件`decision_after192.json`及`launch_resume384.json`；并未把曝光不足或共享冲突宣布为唯一根因。
+
+## 18. train24相邻384节点：局部Long出现，Goal损失与成功集合不稳定（2026-09-07）
+
+按同一frozenE4、world4和完整672 schedule exact-resume至384，训练完成exit0。累计1536条件/24576queries，
+每task64条件/1024queries，24tasks各16训练视频全部覆盖；K、任务权重及跨episode角色验证通过。
+累计更新6385.93秒，本段含加载3292.72秒；完整checkpoint、分段completion与曝光成本保留。
+两组LoRA物化255/259条件完成exit0，分别约1.32/1.34GB、576.28/597.26秒（含启动，近似）。
+
+两组400行均完成exit0，实际source、环境、normalization、RNG与视频schedule配对通过；每task50行：
+
+| 面板 | 总分 | Spatial1/3 | Object1/3 | Goal3/6 | Long1/2 | breadth |
+|---|---:|---|---|---|---|---:|
+| 384 correct | 67 | 1/2 | 33/0 | 0/27 | 4/0 | 5/8 |
+| 384 other | 64 | 3/1 | 31/0 | 0/26 | 2/1 | 6/8 |
+
+对source47，correct RGL30/37/17、churn54/400、J30/84；other28/36/19、churn55/400、J28/83。
+192→384 correct从69到67，RGL46/21/23、churn44/400、J46/90=.511111；other从72到64，47/17/25、
+churn42/400、J47/89=.528090。384跨视频67→64，RGL52/12/15、churn27/400、J52/79=.658228。
+两面板均使用gpu01四GPU×3persistent workers，墙钟1111.27/1072.95秒；所有raw rows、aggregate、completion与比较保留。
+
+Object1局部增益仍在，Long出现少量成功，但Goal6在两个arm均回落，未扩大总分、correct breadth或稳定性。
+该checkpoint未满足absolute/breadth/Long/相邻/跨视频资格，未选selected checkpoint；这不是工程错误或整条图无效的证明。
+完整裁决在`train24_shared/decision_after384.json`；不继续以“还没跑完schedule”解释续训。
+
+在任何384训练诊断分数出现前，已登记冻结384 train24×相同states0–4、K1、seed20260907的两组正确视频：
+seen0–15与held46–49，分别107/68个唯一条件覆盖120行。已见组120行视频均曾训练，89行也曾作为精确K1条件，
+31行视频曾在K2/K4出现；因此不能将整个已见面板称为逐条件训练拟合测量。两组独立与同一source120做完整配对，
+然后在不修改raw rows、不放宽canonical视频schedule检查的前提下报告预登记的video-familiarity干预。
+这只区分已训练task/视频、新视频与新task的行为缺口，不做最终选择、梯度或因果controls；Test未打开。
+原件`video_novelty_diagnostic_registration.json`与`materialization_s384_novelty_launch.json`；此处尚无诊断分数。

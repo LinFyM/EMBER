@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，short4各轮已完成；train24的192步双视频strict400为69/72；384训练与双视频LoRA已完成，correct67/400，other评测中；已预登记冻结384训练视频熟悉度诊断。
+更新时间：2026-09-07 CST，train24的192步双视频strict400为69/72，384为67/64，均未资格通过；已暂停schedule续训，冻结384训练视频熟悉度诊断正在物化。
 
 ## 当前授权与方法状态
 
@@ -24,15 +24,23 @@
 
 ## 当前执行节点
 
+384 other已完成exit0，64/400（Spatial4/Object31/Goal26/Long3），breadth6/8；对source47为RGL28/36/19、
+churn55/400、J28/83；对192other72为RGL47/17/25、churn42/400、J47/89。
+384跨视频correct67→other64为RGL52/12/15、churn27/400、J52/79=.658228；完整两arm均未达资格，decision_after384.json已封存。
+两组eval实际墙钟1111.27/1072.95秒，均12workers。当前没有训练作业或validation评测作业。
+冻结384 seen/held训练视频诊断已在gpu01physical0/2并行物化；两节点live核验所用卡空闲0MiB/process0，
+quota495972916KiB、run5.7GiB、analysis29MiB，预计额外峰值1.1GiB仍在原32GiB预算内。
+两组各120行、107/68个唯一条件；命令与现场在materialization_s384_novelty_launch.json，尚无诊断分数。
+
 384 correct strict400已完成exit0并通过完整配对：67/400（Spatial3/Object33/Goal27/Long4），breadth5/8；
 对source47为RGL30/37/17、churn54/400、J30/84；192→384为RGL46/21/23、churn44/400、J46/90=.511111。
 Object1保留局部改善，Long1首次4/50；Goal6从36降至27，Goal3由1降至0。尚无广泛、稳定迁移，未满足qualification。
-same-task-other已从frozen97a8a24a、gpu01physical0/2/3/5启动，3replicas/card；两节点现场显示四卡空闲，
+same-task-other从frozen97a8a24a、gpu01physical0/2/3/5启动并已完成，3replicas/card；两节点现场显示四卡空闲，
 p1被其它任务使用，未等待第五卡；quota495966384KiB，命令/现场见eval_s384_same_task_other_launch.json。
 在任何384训练侧诊断分数出现前，已登记train24同120初始化的seen-video0–15与held-video46–49两组正确视频诊断，
 固定checkpoint384/K1/seed20260907，不更新参数，不作模型选择。已见组全部视频出现于训练，89/120行也曾作为K1条件。
-登记及准备命令在video_novelty_diagnostic_registration.json；先完成other，再live核验资源并执行两组诊断，
-依此区分已训练task/视频、新视频与新task接口，之后再决定576是否有信息量。未启动诊断GPU作业，未选selected checkpoint。
+登记及准备命令在video_novelty_diagnostic_registration.json；other已完成，现已live核验资源并执行两组诊断，
+依此区分已训练task/视频、新视频与新task接口，之后再决定576是否有信息量。未选selected checkpoint。
 
 384步exact-resume已完成exit0，完整checkpoint与completion_to384保留；累计1536条件/24576queries，
 每task64条件/1024queries，实际K、任务权重、视频/query跨episode及连续step/cursor检查通过。
@@ -41,7 +49,7 @@ p1被其它任务使用，未等待第五卡；quota495966384KiB，命令/现场
 255/259套文件分别1,316,582,728/1,337,237,521bytes，含启动的近似墙钟576.28/597.26秒。
 两节点live检查所用GPU均0MiB/process0；data1 quota493190120KiB、run3.0GiB、analysis16MiB、sharedfree84TiB，
 预计新增2.7GiB，仍在32GiB阶段峰值预算内；现场与命令见materialization_s384_launch.json。
-384 correct已完成；当前other评测与后续冻结训练视频诊断尚待完成，无selected checkpoint。
+384双qualification已完成；当前冻结训练视频诊断尚待完成，无selected checkpoint。
 
 当前train24首段192步完成exit0：768条件/12288queries，每task32条件/512queries，真实K1/2/4各10或11次；
 全部task权重.25与video/query跨episode角色核对通过。22个task覆盖16条训练视频，task15/34各15条；

@@ -123,3 +123,13 @@ Spatial3/4、Goal37/37、Long0/0，breadth5/8；两视频success Jaccard60/81=.7
 train24 held-video paired120为22，对source16，RGL11/11/5，Long仍0。该面板不能单独区分训练拟合与新视频泛化缺口。
 这既不是整条图失败，也不足以宣称广泛迁移或视频必要性。按原节点续训至384并获得相邻strict400，
 检验是否出现更广行为与稳定趋势；保持科学non-pass的边界，不转入输出几何小扫。证据见research_history§17及train24_shared/。
+
+## 14. 增加到每task1024queries未带来广泛稳定扩展（2026-09-07）
+
+同run exact-resume至384后，strict400 correct/other为67/64（192为69/72）；Object33/31、Long4/3，
+但Goal降至27/26，Spatial3/4，breadth5/6。两组都保留Object局部增益并出现稀疏Long成功，总分未提升。
+相邻correct RGL46/21/23、churn44/400、J46/90；other47/17/25、churn42/400、J47/89。
+同点跨视频52/12/15、churn27/400、J52/79=.658228，仍非稳定且广泛的迁移。未发现工程合同违反，不把non-pass解释为代码故障。
+已暂停按schedule继续训练，先做冻结384、相同train120初始化的已训练视频与held视频诊断，区分更早的行为接口缺口。
+该诊断不选checkpoint、不产生梯度，不以此声称视频必要性；不能仅用已有held-video训练面板断定唯一泛化根因。
+完整配对、成本和下一步依据见research_history§18与train24_shared/decision_after384.json。

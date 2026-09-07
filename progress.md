@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，192步双视频strict400为69/72，train120为22/120；已按原合同启动exact-resume至384。
+更新时间：2026-09-07 CST，short4各轮已完成；train24的192步双视频strict400为69/72，train120为22/120；384步exact-resume已完成exit0，双视频LoRA正在物化，下一步双strict400。
 
 ## 当前授权与方法状态
 
@@ -9,7 +9,7 @@
 - 持续授权覆盖现有科学目标、信息墙、数据、资源与Git合同内的常规决策；不联系外部专家。
   只有改变科学目标/信息墙、未授权数据资源、不可自行裁决的重大投入分歧或越权破坏性操作才需owner决定。
 - 已登记active design：[layered_relation_video_writer_design.md](docs/layered_relation_video_writer_design.md)，
-  **当前图通过真实机制检查，末读出对照已获得跨视频一致的short4基础行为，下一步fresh train24共享与迁移**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
+  **当前图通过真实机制检查，末读出对照已获得跨视频一致的short4基础行为，当前进入train24共享与迁移闭环裁决**。唯一主线为Writer与读取侧Meta fresh端到端联合训练、fresh optimizer/scheduler，
   source基础权重冻结；不实施G1--G3冻结课程，不额外建立阶段初始化候选。LoRA合法identity初始化保持。
 - 当前候选：冻结图文prefix、单固定probe、Action Expert共享观察Meta、18层×完整50H；局部帧对独立50×50关系，
   两端分别softmax；关系MLP消费内容、rho和signed gap；同步邻居聚合、4个radius4 blocks、H-read；
@@ -23,6 +23,14 @@
   三轮short4的全部预登记节点已完成；train24五个节点已在launch前登记；历史GPU/quota快照不构成实时准入，后续launch及大增长前重新核验。
 
 ## 当前执行节点
+
+384步exact-resume已完成exit0，完整checkpoint与completion_to384保留；累计1536条件/24576queries，
+每task64条件/1024queries，实际K、任务权重、视频/query跨episode及连续step/cursor检查通过。
+累计实际更新6385.93秒，本段含加载3292.72秒；exposure_cost.json保留192与384的分段和累计成本。
+384 correct/other两组LoRA已从clean pushed frozen evaluator97a8a24a启动物化，分别使用gpu01physical0/2。
+两节点live检查所用GPU均0MiB/process0；data1 quota493190120KiB、run3.0GiB、analysis16MiB、sharedfree84TiB，
+预计新增2.7GiB，仍在32GiB阶段峰值预算内；现场与命令见materialization_s384_launch.json。
+当前没有384闭环分数；完成两组strict400及相邻比较后才决定是否继续576，无selected checkpoint。
 
 当前train24首段192步完成exit0：768条件/12288queries，每task32条件/512queries，真实K1/2/4各10或11次；
 全部task权重.25与video/query跨episode角色核对通过。22个task覆盖16条训练视频，task15/34各15条；
@@ -38,10 +46,10 @@ correct增益主要来自未见Object1（global11）5→29；Goal6从41→36，L
 same-task-other strict400已完成exit0，72/400（Spatial4/Object31/Goal37/Long0），breadth5/8；
 对source为RGL35/37/12、churn49/400；对correct为RGL60/12/9、churn21/400、J60/81=.740741，未达到跨视频J≥.80。
 五GPU15workers耗时928.99秒；两组总分接近，不等于成功集合稳定或视频必要性成立。
-当前已从macro_00000192 exact-resume至384，frozenE4、gpu01physical0/2/3/5、world4与完整672步schedule不变；
+本段从macro_00000192 exact-resume至384已完成，frozenE4、gpu01physical0/2/3/5、world4与完整672步schedule不变；
 命令launch_train_to384.sh，日志train_to384.log/exit，tmux ember-layered-train24。两节点live核验四卡均空闲0MiB/process0；
 quota493189140KiB，当前run3.0GiB/analysis16MiB/sharedfree84TiB，仍在32GiB新增峰值预算内。
-续训依据：两组正确视频均有相对source重复的Object局部增益，目前每task512queries；按已登记节点增加至1024queries，
+续训依据：两组正确视频均有相对source重复的Object局部增益，当时每task512queries；按已登记节点增加至1024queries，
 观察增益扩展与相邻稳定性。仍未满足absolute/breadth/Long/跨视频资格；不唯一归因为曝光不足或共享冲突。
 完整裁决与launch在decision_after192.json、launch_resume384.json。
 物化曾使用gpu01physical0/2/3；

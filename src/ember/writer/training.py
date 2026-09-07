@@ -69,6 +69,9 @@ def _config(path: Path) -> dict[str, Any]:
         raise ValueError("first-run gradients require all fixed train24 tasks")
     if any(int(value) <= 0 for value in config["runtime"].values()):
         raise ValueError("runtime batches and cache budget must be positive")
+    collected_batch = min(4, int(config["runtime"]["rollout_microbatch"]))
+    if any(int(config["runtime"][key]) < collected_batch for key in ("rl_microbatch", "trust_microbatch")):
+        raise ValueError("replay capacity must support the collected numerical batch shape")
     HorizonWriterConfig(**config["model"])
     return config
 

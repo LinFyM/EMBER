@@ -286,7 +286,7 @@
       "registration_status": "freeze informative strict400 nodes after real profile and before first formal learning results"
     }
   },
-  "update_version": "same_version_fm_rl_single_adamw_direction_v1",
+  "update_version": "same_version_fm_rl_collected_batch_replay_v2",
   "rl": {
     "episodes_per_condition": 4,
     "initial_state_ids": [

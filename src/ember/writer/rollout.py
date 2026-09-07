@@ -54,6 +54,25 @@ def decision_batch(records, device):
     }, torch.cat([record["noise"] for record in records]).to(device)
 
 
+def recorded_flow_batches(records, *, max_batch_size: int = 4):
+    """Replay each real decision at its collected numerical batch shape.
+
+    Padding reuses selected observations; returned positions cover real rows
+    only, so callers discard padded means or supply zero padded cotangents.
+    """
+    groups: dict[int, list[int]] = {}
+    for index, record in enumerate(records):
+        size = int(record["flow_batch_size"])
+        if not 1 <= size <= max_batch_size:
+            raise ValueError("collected flow batch exceeds replay capacity")
+        groups.setdefault(size, []).append(index)
+    for size, indices in groups.items():
+        for start in range(0, len(indices), size):
+            positions = indices[start:start + size]
+            padded = [positions[index % len(positions)] for index in range(size)]
+            yield [records[index] for index in padded], positions
+
+
 class WriterRollouts:
     def __init__(self, runtime, data, asset_root: Path, output: Path, context, config) -> None:
         self.runtime, self.config = runtime, config
@@ -117,7 +136,10 @@ class WriterRollouts:
             means = []
             microbatch = int(self.config["runtime"]["rollout_microbatch"])
             for start in range(0, len(records), microbatch):
-                batch, noise = decision_batch(records[start:start + microbatch], self.runtime.observer.device)
+                chunk = records[start:start + microbatch]
+                for record in chunk:
+                    record["flow_batch_size"] = len(chunk)
+                batch, noise = decision_batch(chunk, self.runtime.observer.device)
                 with autocast(self.runtime.observer.device):
                     actions = flow_actions(self.runtime.policy, state, self.runtime.lora, batch, noise)
                 means.append(actions[:, :5, :7].flatten(1).float().cpu())

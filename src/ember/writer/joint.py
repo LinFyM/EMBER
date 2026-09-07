@@ -15,7 +15,7 @@ from ember.writer.functional import (
 )
 from ember.writer.native import NativeCondition, autocast
 from ember.writer.rl_math import exploration_covariance, loo_advantages, rl_mean_cotangent, task_trust_kl
-from ember.writer.rollout import WriterRollouts, decision_batch
+from ember.writer.rollout import WriterRollouts, decision_batch, recorded_flow_batches
 
 
 @dataclass
@@ -90,12 +90,13 @@ class JointUpdateEngine:
         if records:
             all_cotangents = torch.cat(cotangents)
             microbatch = int(self.config["runtime"]["rl_microbatch"])
-            for begin in range(0, len(records), microbatch):
-                stop = begin + microbatch
-                batch, noise = decision_batch(records[begin:stop], self.device)
+            for chunk, positions in recorded_flow_batches(records, max_batch_size=microbatch):
+                batch, noise = decision_batch(chunk, self.device)
+                credit = all_cotangents.new_zeros(len(chunk), 35)
+                credit[:len(positions)] = all_cotangents[positions]
                 with autocast(self.device):
                     part = flow_mean_lora_gradient(
-                        runtime.policy, state, runtime.lora, batch, noise, all_cotangents[begin:stop],
+                        runtime.policy, state, runtime.lora, batch, noise, credit,
                     )
                 for name, value in part.items():
                     rl_gradients[name].add_(value)
@@ -137,14 +138,13 @@ class JointUpdateEngine:
         with autocast(self.device):
             state = runtime.state.writer(responses, *runtime.observer.writer_arguments(evidence.condition))
         del responses
-        means = []
+        means = torch.empty(len(evidence.records), 35, device=self.device)
         microbatch = int(self.config["runtime"]["trust_microbatch"])
-        for start in range(0, len(evidence.records), microbatch):
-            batch, noise = decision_batch(evidence.records[start:start + microbatch], self.device)
+        for chunk, positions in recorded_flow_batches(evidence.records, max_batch_size=microbatch):
+            batch, noise = decision_batch(chunk, self.device)
             with autocast(self.device):
                 output = flow_actions(runtime.policy, state, runtime.lora, batch, noise)
-            means.append(output[:, :5, :7].flatten(1).float())
-        means = torch.cat(means)
+            means[positions] = output[:len(positions), :5, :7].flatten(1).float()
         old_means = torch.stack([record["old_mean"] for record in evidence.records]).to(self.device)
         return task_trust_kl(
             means, old_means, [evidence.task] * len(means), evidence.episode_ids, precision=self.precision,

@@ -6,9 +6,9 @@ from types import SimpleNamespace
 import torch
 from torch import nn
 
-from ember.writer.joint import JointUpdateEngine
+from ember.writer.joint import JointUpdateEngine, TrustEvidence
 from ember.writer.rl_math import DecisionReservoir
-from ember.writer.rollout import EpisodeTrace, _EnvironmentRNG
+from ember.writer.rollout import EpisodeTrace, _EnvironmentRNG, recorded_flow_batches
 
 
 def test_joint_credit_weights_once_and_replays_writer_and_meta_once(monkeypatch):
@@ -43,12 +43,13 @@ def test_joint_credit_weights_once_and_replays_writer_and_meta_once(monkeypatch)
     for index, count in enumerate((20, 10, 5, 3)):
         reservoir = DecisionReservoir(random.Random(index))
         for _ in range(count):
-            reservoir.add({"old_mean": torch.full((35,), 12.0), "z": torch.full((35,), 12.2)})
+            reservoir.add({"old_mean": torch.full((35,), 12.0), "z": torch.full((35,), 12.2),
+                           "flow_batch_size": index + 1})
         episodes.append(EpisodeTrace({"trust": index}, reservoir, index == 0, count * 5))
     engine = object.__new__(JointUpdateEngine)
     engine.device, engine.precision = torch.device("cpu"), torch.eye(35)
     engine.cache = SimpleNamespace(condition=lambda *args: None)
-    engine.config = {"runtime": {"policy_microbatch": 8, "rl_microbatch": 2}}
+    engine.config = {"runtime": {"policy_microbatch": 8, "rl_microbatch": 4}}
     engine.runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), policy=None, lora=None,
                                      processor=SimpleNamespace(training_batch=lambda batch: batch))
     engine.data = SimpleNamespace(action_batch=lambda *args, **kwargs: ({}, {
@@ -78,6 +79,29 @@ def test_joint_credit_weights_once_and_replays_writer_and_meta_once(monkeypatch)
     assert writer.calls == 2 and observer.backward_calls == 1
     assert metric["rl_mixed_group"] and metric["rl_successes"] == 1
     assert len(evidence.records) == 15  # Three episodes >=4 decisions; one has only three.
+
+
+def test_trust_replays_collected_batch_shape_without_weighting_padding(monkeypatch):
+    sizes = [4, 1, 3, 2, 4, 3, 2]
+    records = [{"flow_batch_size": size, "observation": {"x": torch.zeros(1, 1)},
+                "noise": torch.full((1, 50, 32), float(index)),
+                "old_mean": torch.full((35,), float(index + size))}
+               for index, size in enumerate(sizes)]
+    batches = list(recorded_flow_batches(records))
+    assert sorted(position for _, positions in batches for position in positions) == list(range(7))
+    assert all(len(chunk) == record["flow_batch_size"] for chunk, _ in batches for record in chunk)
+    engine = object.__new__(JointUpdateEngine)
+    engine.device, engine.precision = torch.device("cpu"), torch.eye(35)
+    engine.config = {"runtime": {"trust_microbatch": 4}}
+    engine.runtime = SimpleNamespace(
+        observer=SimpleNamespace(responses=lambda condition: (), writer_arguments=lambda condition: ()),
+        state=SimpleNamespace(writer=lambda *args: {}), policy=None, lora=None,
+    )
+    # Numerical shape is deliberately observable, as in the real BF16 failure.
+    monkeypatch.setattr("ember.writer.joint.flow_actions", lambda policy, state, contract, batch, noise:
+                        noise + len(noise))
+    evidence = TrustEvidence(21, None, records, [0, 1, 2, 3, 0, 1, 2])
+    assert engine.trust_score(evidence) == 0.0
 
 
 def test_environment_rng_is_independent_of_lane_interleaving():

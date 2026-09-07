@@ -4,21 +4,21 @@
 
 2026-09-08 Owner已发出接管启动指令：全面理解仓库，完整实现当前设计，开展正式实验，依据真实结果持续迭代直到性能和科学要求达标。
 全程goal已创建且active，无token预算、总工期或总尝试次数。前次只做交接准备的session限制已结束。
-全面阅读与证据审计已完成；当前阶段为新canonical实现集成和真实机制/成本验证准备；既定边界内无需再次请求实施、训练或方法修订批准。
+全面阅读与证据审计已完成；当前阶段为完整联合profile的batch重放数值修复与接受更新验证；既定边界内无需再次请求实施、训练或方法修订批准。
 
 唯一 active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
 末层完整H → 过去4帧对应 → 完整H-query → 两端Z核实 → 历史u有序GRU → 四组单向长程交替/前三回写
 → 集合compiler → 完整native A/B；fresh Writer/Meta、FM辅助真实Writer RL、同版本单次联合更新。
 **长程四组全部past+self，H-query沿H双向；专家原文中的双向长程已被Owner覆盖。**
 
-完整Horizon过程图、native D、物化/评测已集成；同版本FM/RL训练接口与runner正在集成，新方案尚无正式checkpoint或行为证据。旧train24永久止于384，旧P/Q width256不补评，
+完整Horizon过程图、native D、物化/评测已集成；同版本FM/RL训练接口与runner已集成、真实采集及完整checkpoint已验证；首profile因数值batch自比较超阈值而0/2接受，最小修复已由真实重放验证，新方案尚无正式checkpoint或qualification行为证据。旧train24永久止于384，旧P/Q width256不补评，
 未合并native-factor-readout只作待审视草稿，不整支集成或恢复旧对照。详情见[progress](progress.md)。
 
 ## 接续执行计划
 
 1. **准备与方法登记（前次完成）。** 对齐Owner要求、concept、完整设计、专家原文和裁决、历史索引与临时HANDOFF；
    检查已有代码和关键资产，提交推送main。只做文档对应的验证，不执行新训练或用旧GPU快照占位。
-2. **创建goal、全面理解并实现唯一canonical路径（进行中）。** 按Owner要求建立覆盖正式实验、迭代和性能达标的goal，不填token预算。
+2. **创建goal、全面理解并实现唯一canonical路径（已完成首版）。** 按Owner要求建立覆盖正式实验、迭代和性能达标的goal，不填token预算。
    系统阅读整个仓库的源码/测试/脚本/配置/文档及历史和原始证据，完整阅读最终架构，不能只看摘要就动手。
    从最新main开始；按并发/结构风险需要隔离。
    在既有owner内落实post-norm PreActionOut与最终Z、过去对应/完整H-query/GRU、四组因果long和回写、native heads，

@@ -22,27 +22,53 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 当前运行：完整联合profile配置修复（非formal）
+## 当前阶段：联合profile揭示batch重放数值缺陷，修复验证中
 
-已从clean pushed ba556b98的detached `.codex/worktrees/horizon-profile-ba556b98`启动两次尝试迭代的完整联合profile，
-gpu02 physical0/1/3/6、world4，每task一张卡；NUMA-local、deferred NCCL、NCCL_P2P_DISABLE=1。
-现场四卡util0，p0/1/3仅小context，p6既有约4.6GiB；FM microbatch4的预计自身峰值约32GiB，有足够总余量，实际峰值由本次测量。
-启动前再次核验两节点和strg01：data1使用496995528KiB/soft1073741824KiB，shared84TiB；本次新增峰值预算8GiB，
-计入一个完整checkpoint和临时写入，复用全部模型/data/env。不是formal学习，不参与科学选点。
-精确命令、完整现场证据和退出码路径：`runs/analysis/horizon_relation_writer_20260908/joint_profile/{launch.sh,launch.json,run.log,run.exit}`。
-输出：`runs/outputs/horizon_joint_profile_ba556b98_gpu02p0136_20260908`，tmux `ember-horizon-joint-profile`。
+从clean pushed `9c5a1c2b` 的detached `.codex/worktrees/horizon-profile-9c5a1c2b` 已完成两次尝试迭代的完整联合profile，exit0；
+gpu02 physical0/1/3/6、world4，每task一张卡，NUMA-local、deferred NCCL、NCCL_P2P_DISABLE=1。
+现场四卡util0，p0/1/3仅小context，p6既有约4.6GiB；FM microbatch4，完整图与64 queries不变。
+启动前再次核验两节点和strg01：data1使用497104064KiB/soft1073741824KiB，shared84TiB；新增峰值预算8GiB，
+计入一个完整checkpoint和临时写入；另有source基线预算1GiB。复用全部模型/data/env。profile不参与科学选点。
+精确命令、完整现场证据和日志：`runs/analysis/horizon_relation_writer_20260908/joint_profile/retry_9c5a1c2b/`。
+输出：`runs/outputs/horizon_joint_profile_9c5a1c2b_gpu02p0136_20260908`，tmux `ember-horizon-joint-profile`。
 profile每轮额外测当前参数版本的trust子集KL，定位已观察到的跨batch数值底噪；formal不默认重复该forward。
 完成后核对实际episode/RL信用、FM曝光、全局SUM、候选接受/拒绝、checkpoint恢复与墙钟，再登记正式节点。
-首launch exit1，发生在环境初始化前：未设EMBER_LIBERO_ASSETS_ROOT而查找不存在的package默认assets；没有采集或更新。
-首修仅验证了train24/初态0–31元数据，未验证场景；第二次launch在真实env.switch发现asset父目录不含scenes。
-已将准确固定revision路径登记到pi05_writer_data_v1的authorities.libero_assets，WriterRollouts读取该入口，
-首轮四task（34/25/15/2，各suite一个）已实际创建四env、reset初态并10步settling，RGB256×256，exit0。
-证据joint_profile/assets_environment.log；两次失败launch均没有产生rollout分数或参数更新。
-修复已推送d956956d，从新clean detached `.codex/worktrees/horizon-profile-d956956d` 重启同完整profile。
-新输出 `runs/outputs/horizon_joint_profile_d956956d_gpu02p0136_20260908`，精确launch/现场/log在上述analysis的
-`retry_d956956d/`；保留首launch failure log和run contract。重启时四卡util0，data1 used497100244KiB。
+
+前两launch均未采集或更新：ba556b98缺资产环境变量；d956956d只设缓存父目录，真实env创建时缺scenes。
+两次failure log/run contract均保留；已把准确固定revision路径登记到数据authority，首轮四task
+（34/25/15/2，各suite一个）已实际创建四env、reset初态并10步settling，RGB256×256，exit0。
+证据`joint_profile/assets_environment.log`；不能把前次仅元数据检查称为环境检查通过。
+本task创建的已退出d956956d clean worktree移除，代码由Git和failure合同保留；其它历史worktree未动。
+
 独立gpu02 physical4正进行source train24×初态32–36的J0/JΣ paired120，先J0后JΣ，
 冻结ba556b98、2 persistent replicas；登记和命令在 `runs/analysis/horizon_relation_writer_20260908/source_train120/`。
+错误父目录的0-row失败保留，修正固定revision后重新prepare；living-room/study真实reset/step另验证通过。
+
+采样节点规划（非学习结果）见`joint_profile/exposure_node_planning.json`：假设所有attempt接受，
+24次只覆盖23/24 tasks、6144 queries，48次覆盖24 tasks、12288 queries（每task4–16个conditions），
+96次24576 queries（每task8–25个conditions）。真实曝光以exposures为准，拒绝也推进采样。
+24节点仅作早期获取诊断，不能当作已充分学习所有task；strict400节点待本profile后、formal开始前冻结。
+
+## 2026-09-08 完整联合profile结果与最小数值修复
+
+9c5a1c2b profile两轮分别150.73/149.88秒；含模型加载/保存总456.06秒。8条件/512FM queries/32真实episodes，
+2个mixed reward groups，各有真实非零RL credit；接受0/2。峰值allocated22.94GiB，reserved约30.3GiB。
+完整macro_00000002为1.378GiB，Writer/Meta/4rank RNG、sampler next_step2、attempted2/accepted0、optimizer空moments、
+warmup未前进、metrics_rows8均与全拒绝状态相符。真实非空moments恢复和接受后Meta学习尚待验证。
+
+current-version trust KL：task2=.01265，task5=.01472，task21=.07968，其它五个task均0。
+非零恰好发生在提前成功、采集active batch从4缩小的tasks；task21四episode全成功、RL梯度为0仍超0.02，
+证明至少存在采集/重放数值batch接口缺陷，不能靠无期限重试或放宽阈值进入formal。
+静态复核两侧均no-grad/BF16/同flow functional substitution，未发现独立dtype或B=0分支；实际底层数值由诊断裁决。
+
+最小修复正在main验证：每decision记录原flow_batch_size；RL VJP与trust按该size重放，尾组复用真实记录补齐，
+补齐项zero cotangent且不进KL/episode/task权重。保持采集m_old、Sigma、0.02、完整10步flow与候选自己的Meta读取。
+update_version改为same_version_fm_rl_collected_batch_replay_v2；不将旧profile作为此版本正式训练或exact-resume证据。
+22项相关CPU检查通过（包含batch数值oracle和完整信用权重）。gpu02p1真实task21复现exit0：
+四episode均成功，步数128/118/194/140与原profile一致。64保存decision含原batch4/3/2/1共54/4/1/5条；
+原size重放KL0，改变记录排列及补齐行后仍0，统一batch4则.02439。该统计使用全部64保存decision，
+不能与原profile随机选16的.07968直接视为同一子集。接下来从推送frozen版本重跑完整联合profile，
+路径joint_profile/trust_replay.{log,json}；启动前双节点和data1 quota498549752KiB复核，预计小于0.3GiB临时观测，仍在8GiB预算内。
 
 ## 2026-09-08 单卡真实机制结果与联合profile准备
 

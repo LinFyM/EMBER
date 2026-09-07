@@ -661,3 +661,20 @@ SFT400/425对应109/107，各400组上述配对字段再次核对匹配source47�
 
 旧native-factor草稿只替换18层上游末端，默认factor width64且缺正式GELU；不能整支集成。旧P/Q width256无闭环仍保留该事实。
 当前canonical数据/source/tokenizer关键资产核对存在并匹配manifest字节；没有加载大checkpoint、复制数据或刷新GPU/quota。
+
+## 22. 2026-09-08完整Horizon首版与真实联合profile
+
+新canonical图、最终R/Z、native A/B、真实Gaussian Writer RL、同版本FM/RL联合更新、物化/evaluator/checkpoint已集成。
+单卡真实机制证明末层post-norm接口、同prefix最终Z、完整10flow VJP与学习后Meta梯度；最长合法K1/K4整段可运行。
+这是机制/工程证据，不是科学通过。原件：`runs/analysis/horizon_relation_writer_20260908/mechanism/`。
+
+9c5a1c2b四卡完整profile两轮exit0，8条件/512FM queries/32episodes、两轮各一个mixed reward group，
+两轮150.73/149.88秒、含加载保存456.06秒，allocated峰值22.94GiB；0/2更新接受，完整checkpoint1.378GiB。
+前两次仅assets路径失败，零rollout/零更新；准确revision经四suite真实env reset/settling修复。
+完整profile日志、环境和数值诊断：`runs/analysis/horizon_relation_writer_20260908/joint_profile/`。
+
+同参数trust KL非零恰好在提前成功后活动batch缩小的task2/5/21，分别.01265/.01472/.07968，另外五task均0。
+task21全成功且RL梯度0仍超0.02，因此不是信用或参数更新导致其自比较差异。真实复现四episode的成功和步数一致，
+64保存decision覆盖batch1/2/3/4；按原size重放及重排行顺序均KL0，强制batch4为.02439。
+原profile随机子集16与诊断全64不同，.07968/.02439不作为同口径前后值。修复只记录原batch尺寸并按其重放，
+尾组以真实记录补齐、零cotangent/零计分；保持原m_old、Sigma、threshold、候选Meta和完整图。尚无修复后正式学习结论。

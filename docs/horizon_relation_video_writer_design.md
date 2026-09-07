@@ -1,7 +1,7 @@
 # 过去定向完整 Horizon Writer：正式接续设计
 
 日期：2026-09-08。本文是当前唯一 active design，登记与实施状态见 [progress.md](../progress.md)。
-**设计已收口，源码尚未按本设计实现，新 run 尚未启动。**现有 main 的 layered Writer 是退役候选的可复用工程基础。
+**完整首版已实现，正在真实联合profile与数值合同验证，尚未开始formal训练。**旧layered运行面已退役；当前状态以progress.md为准。
 
 权威顺序为 Owner 最新决定、[长期要求](current_owner_requirements.md)、[AGENTS](../AGENTS.md)、正式状态与本文。
 [专家原文及 Owner 裁决](review_materials/20260908/README.md)保存完整推导来历。
@@ -358,6 +358,11 @@ K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}
 每episode从已均匀保存的decision中再均匀取至多4个；各candidate复用同一检查子集。按episode/task平均，
 本批task最大均值≤0.02方可接受；单位是完整35维动作块。候选用自己的Meta重新生成R和LoRA，不能复用旧R。
 只做候选前向，不在候选点对旧轨迹重复普通score梯度。这个检查不是off-policy修正，也不是成功单调保证。
+
+2026-09-08真实profile发现提前成功后的活动batch缩小会污染重放：同参数task21的KL为0.07968，超过0.02；
+始终batch4的五个task均为0。因此每decision额外记录采集flow的实际batch尺寸，RL VJP与trust按原尺寸分组重放。
+尾组用已选真实记录补齐，补齐项梯度为0且不进入KL/episode/task权重；不重算或替换采集m_old，不扣底噪，
+不扩dtype或固定batch1，Sigma与0.02阈值不变。候选仍用自己的Meta完整重读R。该修复由同参数自比较和完整联合profile验证。
 
 接受缩放步时提交本次moments并统一缩放实际参数步；全部拒绝则参数、moments、optimizer step和warmup计数不前进。
 **已消费的sampler/RNG和尝试迭代计数仍前进**，下一次重新采样，不能恢复同一随机流而无限重播同一拒绝批次。

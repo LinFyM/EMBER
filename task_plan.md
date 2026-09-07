@@ -13,7 +13,7 @@ Owner于2026-09-07明确授权接管者充分理解后连续自主科研执行�
 方法冻结后按32/8合同fresh最终训练与Test，交付可复核代码与正式证据。实现或一次高分不算完成。
 不自行设token预算、总工期或固定尝试数；停止无信息重复，依据新机制证据推进。
 
-## 当前阶段：384训练已完成，准备双视频strict400
+## 当前阶段：384correct为67，完成other与冻结训练视频诊断
 
 1. **理解（已完成）。** 指定当前文档已完整阅读、Git已核对；相关原始专家评审、修正、Git快照与正式证据已核对，
    核对现有代码职责和资产。完成科学目标/数据流/历史教训/实现缺口的简要说明后立即继续；临时HANDOFF已消费删除。
@@ -26,10 +26,12 @@ Owner于2026-09-07明确授权接管者充分理解后连续自主科研执行�
    原初始化96步K1为4/4、K4为6；坐标对照为6/6、K4为8，对source4，仍无Object/Goal。保留局部Long正证据与完整图，只检验末读出按输出target/rank分别学习；同曝光fresh、无额外旁路。
    末读出对照96K1双视频均11/40、success集合一致、breadth3/4；K4为10。具备推进完整共享学习的基础，Goal仍0、相邻churn未稳。
    小面板用于投入判断，不选择最终模型；保持当前图，不继续按几何小扫。
-5. **完整train24共享与迁移（384训练已完成，等待双strict400裁决）。** 当前图全部fresh，672步完整schedule，首段192；
+5. **完整train24共享与迁移（384correct67，other与冻结训练诊断待裁决）。** 当前图全部fresh，672步完整schedule，首段192；
    192/384/576/624/672双视频K1 strict400，后两点按正向/近目标趋势决定；192/576 train120/source诊断。
    资格数值及采样固定见设计§13.3.1与train24_shared/registration.json。真实不同视频K1/2/4，任务权重独立于K/长度/卡数；额外non-held meta有必要时先审计allowlist、
    provenance及权重。检查训练行为、same-task新视频、未见task三层接口，依据历史和新证据做最小区分性干预。
+   384correct未扩展总分或breadth，Goal回落而Long首次4；已追加预登记同120初始化的已见/held正确视频诊断，
+   固定384、不产生梯度或参与模型选择；完成双qualification与此诊断后才决定576，避免只凭曝光不足解释续训。
 6. **strict400与稳定性。** 在有信息量且预登记的single-checkpoint节点及时评测，强候选继续相邻点，报告per-task/suite、breadth、
    retained/gained/lost、churn、success-set overlap、实际曝光和成本；完成same-task另一组正确视频。80-row screen/union/融合不选模型。
 7. **冻结与最终证据。** qualification arms和相邻口径事先登记；selected checkpoint选定冻结后做必要视频controls，

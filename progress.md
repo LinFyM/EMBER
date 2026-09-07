@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，short4各轮已完成；train24的192步双视频strict400为69/72，train120为22/120；384步exact-resume已完成exit0，双视频LoRA正在物化，下一步双strict400。
+更新时间：2026-09-07 CST，short4各轮已完成；train24的192步双视频strict400为69/72；384训练与双视频LoRA已完成，correct67/400，other评测中；已预登记冻结384训练视频熟悉度诊断。
 
 ## 当前授权与方法状态
 
@@ -24,13 +24,24 @@
 
 ## 当前执行节点
 
+384 correct strict400已完成exit0并通过完整配对：67/400（Spatial3/Object33/Goal27/Long4），breadth5/8；
+对source47为RGL30/37/17、churn54/400、J30/84；192→384为RGL46/21/23、churn44/400、J46/90=.511111。
+Object1保留局部改善，Long1首次4/50；Goal6从36降至27，Goal3由1降至0。尚无广泛、稳定迁移，未满足qualification。
+same-task-other已从frozen97a8a24a、gpu01physical0/2/3/5启动，3replicas/card；两节点现场显示四卡空闲，
+p1被其它任务使用，未等待第五卡；quota495966384KiB，命令/现场见eval_s384_same_task_other_launch.json。
+在任何384训练侧诊断分数出现前，已登记train24同120初始化的seen-video0–15与held-video46–49两组正确视频诊断，
+固定checkpoint384/K1/seed20260907，不更新参数，不作模型选择。已见组全部视频出现于训练，89/120行也曾作为K1条件。
+登记及准备命令在video_novelty_diagnostic_registration.json；先完成other，再live核验资源并执行两组诊断，
+依此区分已训练task/视频、新视频与新task接口，之后再决定576是否有信息量。未启动诊断GPU作业，未选selected checkpoint。
+
 384步exact-resume已完成exit0，完整checkpoint与completion_to384保留；累计1536条件/24576queries，
 每task64条件/1024queries，实际K、任务权重、视频/query跨episode及连续step/cursor检查通过。
 累计实际更新6385.93秒，本段含加载3292.72秒；exposure_cost.json保留192与384的分段和累计成本。
-384 correct/other两组LoRA已从clean pushed frozen evaluator97a8a24a启动物化，分别使用gpu01physical0/2。
+384 correct/other两组LoRA已从clean pushed frozen evaluator97a8a24a完成物化exit0，分别使用gpu01physical0/2；
+255/259套文件分别1,316,582,728/1,337,237,521bytes，含启动的近似墙钟576.28/597.26秒。
 两节点live检查所用GPU均0MiB/process0；data1 quota493190120KiB、run3.0GiB、analysis16MiB、sharedfree84TiB，
 预计新增2.7GiB，仍在32GiB阶段峰值预算内；现场与命令见materialization_s384_launch.json。
-当前没有384闭环分数；完成两组strict400及相邻比较后才决定是否继续576，无selected checkpoint。
+384 correct已完成；当前other评测与后续冻结训练视频诊断尚待完成，无selected checkpoint。
 
 当前train24首段192步完成exit0：768条件/12288queries，每task32条件/512queries，真实K1/2/4各10或11次；
 全部task权重.25与video/query跨episode角色核对通过。22个task覆盖16条训练视频，task15/34各15条；

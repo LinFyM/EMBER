@@ -957,6 +957,15 @@ churn≤20/400、success Jaccard≥.85。支持稳定性的两点各自other相�
 `runs/analysis/layered_relation_writer_20260907/train24_shared/registration.json`；配置入口仍为唯一canonical配置。
 负视频controls保持到selected checkpoint冻结之后，Test保持到方法冻结后的32/8 fresh实验。
 
+384 correct为67/400、相邻69→67且churn44/400后，在读取任何384训练侧诊断分数前登记一次冻结模型的
+video-familiarity诊断：train24×相同states0–4、K1、seed20260907，分别从已训练视频0–15和held46–49
+逐ordinal抽取正确视频。两组各120行独立与同一source120做完整配对，再比较共同参照上的成功集合；
+视频身份按此干预有意改变，不放宽canonical qualification的严格视频schedule检查。
+已见组120行视频均在训练中出现，其中89行也曾作为K1条件；另外31行曾在K2/K4中出现，不能宣称全部是精确训练条件。
+这只区分已训练task/视频、新视频与新task的行为缺口，不用于checkpoint选择或视频因果必要性结论；无梯度、负视频或Test。
+具体登记见`train24_shared/video_novelty_diagnostic_registration.json`；双384 qualification及该诊断完成后再决定576，
+不能仅因完整schedule尚未跑完而续训。
+
 ### 13.4 科学 non-pass 与工程故障的不同下一步
 
 | 观测 | 可支持的定位 | 下一步边界 |

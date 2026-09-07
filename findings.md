@@ -114,3 +114,12 @@ short4 96步K1从6/6到11/11，两正确视频success集合完全相同，并首
 代表target的rank趋同解除，但native常量能量反而上升；真实闭环变好不能归约为几何指标变漂亮。相邻48→96仍有7/40churn。
 这支持保留当前参数共享方式扩大到fresh train24，不能证明视频因果、未见task迁移或最终稳定性；不追加没有行为证据的decoder小修。
 完整受控证据与适用边界见research_history§16、target_rank_readout_control/registration.json、panel_summary.json和readout_output_contrast.json。
+
+## 13. 首个train24节点保留Object增益，尚未形成广泛稳定迁移（2026-09-07）
+
+当前完整图fresh训练192步、每task512queries后，strict400 correct/other为69/72，对冻结source47；
+两组分别保留34/35、新增35/37、丢失13/12，增益主要是未见Object1的5→29/31。
+Spatial3/4、Goal37/37、Long0/0，breadth5/8；两视频success Jaccard60/81=.740741，不满足登记的.80。
+train24 held-video paired120为22，对source16，RGL11/11/5，Long仍0。该面板不能单独区分训练拟合与新视频泛化缺口。
+这既不是整条图失败，也不足以宣称广泛迁移或视频必要性。按原节点续训至384并获得相邻strict400，
+检验是否出现更广行为与稳定趋势；保持科学non-pass的边界，不转入输出几何小扫。证据见research_history§17及train24_shared/。

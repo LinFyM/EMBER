@@ -1,6 +1,6 @@
 # EMBER progress
 
-更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，192步correct strict400为69/400、train120为22/120；same-task-other strict400五卡运行中。
+更新时间：2026-09-07 CST，两种初始化short4全部训练/双视频/K4面板已完成；末读出short4训练及全部七组闭环已完成；96K1双视频11/40且success集合一致，192步双视频strict400为69/72，train120为22/120；已按原合同启动exact-resume至384。
 
 ## 当前授权与方法状态
 
@@ -35,12 +35,19 @@ correct69/400（Spatial3/Object29/Goal37/Long0），breadth5/8；对source47为R
 train120为22/120（Spatial11/Object1/Goal10/Long0），breadth8/24；对source16为RGL11/11/5、churn16/120、J11/27。
 correct增益主要来自未见Object1（global11）5→29；Goal6从41→36，Long仍0。仅有局部改善，未满足目标或相邻资格。
 实际eval墙钟correct四卡1063.75秒、train120单卡1316.09秒；完整per-task/RGL与source合同见train24_shared/panel_summary.json及各*_vs_source.json。
-当前same-task-other strict400运行于gpu01physical0/1/2/3/5、15个persistent workers、60分片；
-launch前两节点live检查五卡均0MiB/process0，未共占其它用户忙卡。
+same-task-other strict400已完成exit0，72/400（Spatial4/Object31/Goal37/Long0），breadth5/8；
+对source为RGL35/37/12、churn49/400；对correct为RGL60/12/9、churn21/400、J60/81=.740741，未达到跨视频J≥.80。
+五GPU15workers耗时928.99秒；两组总分接近，不等于成功集合稳定或视频必要性成立。
+当前已从macro_00000192 exact-resume至384，frozenE4、gpu01physical0/2/3/5、world4与完整672步schedule不变；
+命令launch_train_to384.sh，日志train_to384.log/exit，tmux ember-layered-train24。两节点live核验四卡均空闲0MiB/process0；
+quota493189140KiB，当前run3.0GiB/analysis16MiB/sharedfree84TiB，仍在32GiB新增峰值预算内。
+续训依据：两组正确视频均有相对source重复的Object局部增益，目前每task512queries；按已登记节点增加至1024queries，
+观察增益扩展与相邻稳定性。仍未满足absolute/breadth/Long/跨视频资格；不唯一归因为曝光不足或共享冲突。
+完整裁决与launch在decision_after192.json、launch_resume384.json。
 物化曾使用gpu01physical0/2/3；
 launch前两节点live核验三卡空闲0MiB/process0，quota490060680KiB，预计新增物化3.2GiB，处于32GiB阶段预算内。
 命令与现场见train24_shared/materialization_s192_launch.json、eval_s192_correct_launch.json及eval_s192_train120_launch.json；
-192双视频strict400和train120全部结束后再决定续训；目前尚无跨视频或相邻checkpoint稳定性结论。
+192双视频strict400和train120均已结束并裁决续训；下一384双视频strict400将形成首组相邻证据。
 
 当前train24协议已登记：保持当前图、fresh Writer+Meta，固定24训练tasks，每update4tasks×16queries，真实K1/2/4；
 warmup24/full cosine672，首段停192。节点192/384/576/624/672的双视频K1 strict400与相邻资格见设计§13.3.1及

@@ -544,4 +544,12 @@ per-task（每task50行，source→candidate）：Spatial1:0→2、Spatial3:0→
 Goal3:0→1、Goal6:41→36；Long1:1→0、Long2:0→0。
 这保留未见Object任务的局部性能增益，但未达到>145/400、breadth、四suite和Goal/Long资格，也尚无相邻稳定性。
 完整证据在`train24_shared/s192_correct_strict400/`、`s192_train120_screen120/`及`*_vs_source.json`；
-same-task-other仍运行中，未开展负视频controls或Test。
+same-task-other随后完成exit0，72/400，Spatial4/Object31/Goal37/Long0，breadth5/8；
+对source47为RGL35/37/12、churn49/400、J35/84。对同点correct为RGL60/12/9、churn21/400、J60/81=.740741；
+未达到登记的跨视频J≥.80。per-taskother为Spatial1/3:3/1、Object1/3:31/0、Goal3/6:1/36、Long1/2:0/0。
+五GPU15workers耗时928.99秒；未开展负视频controls或Test。
+
+192裁决：两组正确视频均有相对source的重复Object增益，保留局部正证据；absolute、breadth、Long及跨视频均未达资格。
+每task512queries仍早于short4同task1536曝光，按原预登记协议exact-resume至384（每task1024queries），
+模型、优化器、完整schedule、数据、K和world4不变。384双视频strict400用于判断扩展与相邻行为，不凭内部loss选择。
+完整原件`decision_after192.json`及`launch_resume384.json`；并未把曝光不足或共享冲突宣布为唯一根因。

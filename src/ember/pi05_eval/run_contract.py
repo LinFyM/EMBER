@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.exploration import build_exploration_contract, validate_exploration_contract
 from ember.pi05_eval_contract import (
     RUNTIME_OMP_THREADS,
     RUNTIME_REPLICA_PROFILES,
@@ -112,6 +113,7 @@ def build_run_contract(
     command: Sequence[str],
     adapter: Mapping[str, Any] | None = None,
     physical_gpu_ids: Sequence[int] | None = None,
+    exploration_sigma: bool = False,
 ) -> dict[str, Any]:
     git = _validate_build_request(
         authorities,
@@ -184,6 +186,8 @@ def build_run_contract(
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
+    contract["diagnostic_exploration"] = build_exploration_contract(contract, enabled=exploration_sigma)
+    validate_exploration_contract(contract)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"
     return contract
 
@@ -199,6 +203,7 @@ def load_run_contract(path: Path) -> dict[str, Any]:
         or Path(str(contract.get("output_dir", ""))).resolve() != path.resolve().parent
     ):
         raise Pi05EvaluationError("PI05 evaluation run contract changed")
+    validate_exploration_contract(contract)
     return contract
 
 

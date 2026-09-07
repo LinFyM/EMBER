@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 
 from ember.pi05_eval_results import AGGREGATE_SCHEMA, paired_success_comparison
+from ember.pi05_eval.exploration import validate_exploration_comparison
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
@@ -31,7 +32,7 @@ def normalization_evidence(contract: dict) -> tuple[dict, dict]:
     return json.loads(raw), {"path": str(path), "source": "recorded_clean_git", "git_blob": f"{commit}:{relative}"}
 
 
-def compare(reference: Path, candidate: Path) -> dict:
+def compare(reference: Path, candidate: Path, *, allow_exploration_pair: bool = False) -> dict:
     panels, contracts = [], []
     for root in (reference, candidate):
         panel = read_json(root / "results.json")
@@ -44,6 +45,7 @@ def compare(reference: Path, candidate: Path) -> dict:
             raise ValueError("paired panel lacks successful complete evaluator evidence")
         panels.append(panel)
         contracts.append(contract)
+    validate_exploration_comparison(*contracts, allow_exploration_pair=allow_exploration_pair)
     for field in ("policy", "environment", "rng"):
         if contracts[0][field] != contracts[1][field]:
             raise ValueError(f"paired rollout contract changed: {field}")
@@ -54,8 +56,10 @@ def compare(reference: Path, candidate: Path) -> dict:
         raise ValueError("paired rollout uses different source normalization")
     return {"reference": str(reference.resolve()), "candidate": str(candidate.resolve()),
             "reference_arm": panels[0]["arm"], "candidate_arm": panels[1]["arm"],
+            "comparison_kind": "paired_training_J0_J_Sigma" if allow_exploration_pair else "strict_policy_comparison",
+            "exploration_conditions": [contract.get("diagnostic_exploration") for contract in contracts],
             "normalization_evidence": [item[1] for item in normalizers],
-            "comparison": paired_success_comparison(*panels)}
+            "comparison": paired_success_comparison(*panels, allow_exploration_pair=allow_exploration_pair)}
 
 
 if __name__ == "__main__":
@@ -63,5 +67,8 @@ if __name__ == "__main__":
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-exploration-pair", action="store_true",
+                        help="Compare declared training J0/J_Sigma conditions with the same adapter and teacher videos.")
     args = parser.parse_args()
-    write_json_atomic(args.output, compare(args.reference, args.candidate))
+    write_json_atomic(args.output, compare(args.reference, args.candidate,
+                                         allow_exploration_pair=args.allow_exploration_pair))

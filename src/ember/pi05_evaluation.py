@@ -22,6 +22,10 @@ from ember.eval_adapters import (
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
+from ember.pi05_eval.exploration import (
+    add_exploration_noise, episode_exploration_fields,
+    validate_episode_exploration, validate_exploration_contract,
+)
 from ember.pi05_eval_queue import (
     EvaluationClaim,
     EvaluationShard,
@@ -254,6 +258,7 @@ def _plan_action_chunks(
                 noise=noise,
                 num_steps=int(contract["policy"]["num_inference_steps"]),
             )
+            chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
             actions = postprocess(chunks).detach().cpu().numpy()
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
@@ -286,6 +291,7 @@ def rollout_shard(
     postprocess: Any,
     task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
+    validate_exploration_contract(contract)
     if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
@@ -352,6 +358,7 @@ def rollout_shard(
                 "wall_seconds": finished - float(slot["started"]),
                 "finished_at": finished - worker_started,
             }
+            row.update(episode_exploration_fields(contract, slot))
             if "stage_predicate_states" in slot:
                 row["stage_predicates"] = {
                     "schema_version": "ember_pi05_stage_predicate_episode_v1",
@@ -522,6 +529,7 @@ def _validate_episode_row(
         and int(row.get("env_seed", -1)) == root_seed
         and int(row.get("policy_seed_root", -1)) == root_seed
         and seeds == expected_seeds
+        and validate_episode_exploration(contract, row, replans=len(expected_seeds))
         and adapter_valid
         and stage_valid
     )

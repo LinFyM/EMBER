@@ -75,6 +75,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--state-count", type=int, required=True)
     parser.add_argument("--init-state-ids", type=lambda value: tuple(int(part) for part in value.split(",")),
                         help="Explicit development-train diagnostic states: 32,33,34,35,36.")
+    parser.add_argument("--exploration-sigma", action="store_true",
+                        help="Enable fixed normalized-action exploration for the training diagnostic only.")
     parser.add_argument(
         "--replicas-per-gpu",
         type=int,

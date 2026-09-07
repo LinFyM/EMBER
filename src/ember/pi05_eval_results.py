@@ -9,6 +9,7 @@ from typing import Any, Mapping, Sequence
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract
 from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
+from ember.pi05_eval.exploration import validate_exploration_row_pair
 from ember.pi05_eval_queue import (
     EvaluationShard,
     completed_jobs,
@@ -22,7 +23,8 @@ from ember.pi05_evaluation import task_lookup, validate_shard_result
 AGGREGATE_SCHEMA = "ember_pi05_target_eval_results_v2"
 
 
-def paired_success_comparison(reference: Mapping[str, Any], candidate: Mapping[str, Any]) -> dict[str, Any]:
+def paired_success_comparison(reference: Mapping[str, Any], candidate: Mapping[str, Any],
+                              *, allow_exploration_pair: bool = False) -> dict[str, Any]:
     """Compare complete paired rows; parameter geometry never enters selection."""
 
     def indexed(panel):
@@ -42,6 +44,7 @@ def paired_success_comparison(reference: Mapping[str, Any], candidate: Mapping[s
         length = min(len(a["policy_noise_seeds"]), len(b["policy_noise_seeds"]))
         if length == 0 or a["policy_noise_seeds"][:length] != b["policy_noise_seeds"][:length]:
             raise Pi05EvaluationError("paired comparison changed the policy-noise common prefix")
+        validate_exploration_row_pair(a, b, allow_exploration_pair=allow_exploration_pair)
         av, bv = a.get("horizon_writer_lora"), b.get("horizon_writer_lora")
         if av and bv:
             fields = ("video_ordinal", "selection_seed", "selection_mode", "K", "paired_correct_demos", "paired_other_demos")

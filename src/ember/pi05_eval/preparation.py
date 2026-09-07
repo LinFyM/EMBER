@@ -86,6 +86,8 @@ def parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
 def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
     values = getattr(args, "init_state_ids", None)
     if values is None:
+        if getattr(args, "exploration_sigma", False):
+            raise Pi05EvaluationError("exploration Sigma requires explicit development-train states32..36")
         return None
     states = tuple(values)
     if (args.role != "development_train" or args.mode != "screen"
@@ -397,6 +399,7 @@ def _prepared_payload(
         physical_gpu_ids=parse_gpu_indices(args.gpu_indices),
         command=command,
         adapter=adapter,
+        exploration_sigma=bool(getattr(args, "exploration_sigma", False)),
     )
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates

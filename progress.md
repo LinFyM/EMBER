@@ -1,52 +1,33 @@
 # EMBER progress
 
-更新时间：2026-09-08 CST。专家讨论与 Owner 最终选择已收口，当前完成新 session 的科研接续准备。
+更新时间：2026-09-08 CST。Owner已明确启动接管与持续科研执行，覆盖实现、真实验证、正式实验、证据驱动迭代和最终达标。
 
 ## 当前授权与方法状态
 
-- Owner 最新要求：“后续交给一个新session去推进……把新session启动前的所有工作都做好，然后给我一个启动prompt”。
-  本 session 执行方法登记、原文保存、状态对齐和 Git 交付；**不在本 session 实现科研代码或启动训练/评测**。
-  新 session 接到 Owner 的启动 prompt 后，按已定设计连续完成实现、验证和科学推进，无需再次请求整体架构审批。
-  Owner补充四点：先全面阅读仓库；完整阅读并忠实实现新架构、不打折扣；正式实验并据结果迭代到性能达标；
-  **新session创建覆盖整个过程的goal**，遵守合同并实质解决难点。未指定token预算，不擅自添加。
-  Owner最新补充：先吸取历史反复出现的架构/性能问题；source47/400与SFT109/107是明确行为参照，
-  有信息量学习后仍不及或仅略超这些参照应视为严重能力缺口，不能靠小修小补自我解释。
-  保持总体架构思想与硬合同，接班者获充分证据驱动的科学自主权，可以实质修改模块、训练或工程机制并同步正式设计，不限于小补丁。
-- **唯一 active design：**[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
-  **已定、尚未实现：**末层 post-norm PreActionOut；过去四帧 soft correspondence；完整 H-query；两端 Z 核实；
-  按历史 u 从早到晚短 GRU；四组局部—**过去单向长程**交替，前三组逐 H 非线性回写；集合 compiler 和 native D 完整 A/B。
-  长程四组都只读 past+self；H-query 可在完整50个h内双向交互。不要从专家原文恢复双向长程或18层输入。
-- 首版训练采用 fresh Writer/Meta、固定 source，FM 辅助真实 Writer RL；同版本采集/求梯度、一次联合更新。
-  具体 Sigma、LOO baseline、Q/M、10-step replay、trust/拒绝/RNG/checkpoint合同全部见 active design §7。
-  FM+RL 是可试的训练选择，不把固定系数说成 Owner 的永久规定。
-- **当前源码仍是旧 layered Writer。**最新 handoff 准备前代码基线 e868de525fda0a20c597dee2c7bffe5717f5e2fd；
-  旧 `configs/pi05_layered_writer_v1.json`、训练/物化 CLI 不是新方案可直接运行的配置。新图无 checkpoint、无学习或闭环分数。
-- 旧 train24 run 永久止于384：correct69→67、other72→64；熟悉/held训练视频21/18（各120）。未通过资格，未选selected checkpoint。
-  旧 P/Q width256 尚无闭环，不自动补评；旧 native-head draft 不整支集成、不单独开旧上游对照，不恢复旧672 schedule。
-- 当前科学目标仍为validation8 strict paired single-checkpoint correct>145/400，并满足相邻稳定/低churn/high breadth/
-  四suite及GoalLong/同task视频鲁棒性；冻结后完成视频因果controls，方法冻结后32/8 fresh与Test。准备工作不代表科学完成。
-- 本session不创建新Codex task或启动科研goal，不联系外部专家。新session按Owner本次要求创建并推进科研goal；
-  不自行设置token预算或自动化。历史goal/暂停与旧文件中的“下一步”不覆盖这次新session交接安排。
+- 本次Owner启动指令覆盖前次交接session的只读/不启动限制。已创建全程goal，无token预算、总工期或总尝试次数；
+  实现、smoke、loss或单次峰值都不构成goal完成。合同内科学与工程工作连续自主推进。
+- 唯一active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
+  完整首版：末层post-norm PreActionOut与最终Z、过去四帧对应、完整H-query、两端核实、历史u有序GRU、
+  四组past+self长程及前三组逐H回写、集合compiler、完整native A/B。H-query沿完整H双向。
+- fresh Writer/Meta与fresh optimizer；首版FM辅助共享Writer RL、同版本采样/求梯度后一次更新，完整design §7适用。
+  validation/test零梯度；shuffled/reversed仅selected冻结后的最终controls，不用于架构或checkpoint选择。
+- 当前阶段：全面阅读和实现迁移准备。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
+  两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论经主agent整合后落地唯一canonical实现。
+  尚无新架构checkpoint、GPU机制结果或科学分数。
+- 接管Git基线main `4f1686ab`，已fetch并确认与origin/main一致，初始干净。
+  7个历史detached工作树与dirty `codex/native-factor-readout`草稿保留；草稿不整支集成。
+- 旧train24 run永久止于384，correct69→67、other72→64、熟悉/held训练视频21/18；不恢复672 schedule。
+  旧P/Q width256无闭环，不自动补评。source47与另面板48分开，SFT109/107为明确行为参照。
+- 源模型、tokenizer、data/env复用README canonical入口。当前尚未执行新的GPU/大输出操作；相关操作前现场刷新两节点与strg01独立quota。
+- 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
+  breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 交接入口与实测范围
+## 当前执行记录
 
-1. [HANDOFF.md](HANDOFF.md)是临时接续入口；长期目标、方法、计划、证据已在正式文件，消费后可删除该入口。
-2. [task_plan.md](task_plan.md)给出实现→真实机制/成本→结果前登记→共享学习/闭环的执行顺序。
-3. [原文与 Owner 裁决](docs/review_materials/20260908/README.md)保存四份完整回复；其中最后专家稿的双向长程被 Owner 的单向决定覆盖。
-   上一份完整 FM/RL 原文用于补齐最新稿引用的训练细节，不恢复其旧架构。
-4. [research_history.md](docs/research_history.md)索引历史事实；[20260907补证据包](docs/review_materials/20260907/README.md)仍保留95面板/24,100行现存结果。
-5. 本次仅核对 Git/worktree、代码接口及关键资产存在性；未跑科学测试、未启动GPU、未刷新两节点GPU状态或strg01配额。
-   旧 GPU/quota/吞吐快照不作为新run准入，真实现场由接班者在相应操作前检查。
-
-## 接班前代码与工作树快照
-
-准备时 main 干净、与本地origin/main一致；交接文档随后在main提交并推送，最终精确提交以Git为准。
-共有主workspace、7个历史detached工作树与一个dirty native-factor-readout草稿工作树；未删除或重置它们。
-草稿分支 `codex/native-factor-readout` 基于ec02710b，相对准备前main无独有提交、落后1提交；未提交变化为
-删除coordinate.py、修改layered.py/其测试、新增native_factor.py，仍使用旧上游。其所有权与内容须保留，不能当新实现直接合并。
-
-source模型、tokenizer、manifest对应40目标/71source HDF5、LIBERO BDDL/init及仿真assets在本地存在；精确入口见README与design §9。
-这些只做存在性核对，没有复制大资产、读取held action产生梯度或做全树完整性扫描。
+- 全程goal已启用。当前完整设计为首版起点；保留证据支持的具体方法修订自主权，修改前查最近等价历史并更新合同。
+- 已消费HANDOFF；长期要求、方法、计划、证据均在正式文档，该临时入口将随本次状态更新移除。
+- 初始architecture guard基线无改动（+0/-0）；新架构将替换旧layered/coordinate行为，复用现有source、FM、LoRA及评测基础。
+- 下一项：完成阅读审计汇总，落实读取/过程图和FM+RL/物化/checkpoint整体迁移；真实机制与成本通过后冻结首段实验合同。
 
 ## 暂停前执行记录（以下“当前/下一步”只表示当时时点）
 

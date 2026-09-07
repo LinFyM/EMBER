@@ -417,29 +417,23 @@ selected checkpoint冻结后才做language/no-video、static端点、cross-suite
 shuffled/reversed只在真实frame重排后完整forward，绝不进训练、checkpoint选择或架构调整。
 方法冻结后才按32/8合同fresh重训与最终Test。所有面板报告per-task/suite、breadth、R/G/L、churn、相邻/跨视频重合。
 
-## 9. 实现迁移地图与生命周期
+## 9. 实现owner与生命周期
 
-| Owner/入口 | 已有可复用能力 | 新session需落实 |
-| --- | --- | --- |
-| `writer/native.py`, `ecp/policy_effects.py`, `ecp/observer.py` | 真实prefix/KV、probe、Meta作用域、分块observer VJP | 保存最终Z；直接捕获post-norm PreActionOut；不保留18层stack |
-| `writer/relation.py`, `writer/layered.py` | soft correspondence、rho、标准attention/FFN、集合queries | 过去单向、空匹配、H-query、两端Z、短GRU、四组单向long及三次回写 |
-| `writer/coordinate.py`, `pi05_lora.py`, `batched_lora.py` | 76张量contract及实际执行LoRA | native D取代坐标decoder，旧可执行decoder在替换验证后退出canonical树 |
-| `writer/functional.py`, `replay.py`, `training.py` | 真FM、LoRA cotangent、Writer/R-leaf/Meta重放 | action-Gaussian RL、统一版本、一次更新、reservoir、10步可微flow、trust proposal |
-| `reward/rollout.py`, `pi05_eval/` | 真实环境池、执行/重置/观测与flow-noise replay、动态队列 | 合法训练初态、独立随机流、额外动作探索与所需记录；不复用旧antithetic credit当新RL |
-| `writer/learning_data.py`, `data.py`, `task_schedule.py` | 固定train24、互斥episode、K、资产 | 从旧cycle切到每suite随机1task，64FM+4RL，记录实际曝光，GPU布局不改权重 |
-| `writer/runtime.py`, `materialization.py`, `evaluation.py` | 有界缓存、物化adapter、现有评测接入 | 新模型签名和schema；对旧18层checkpoint显式拒绝，不恢复平行fallback |
-| `ecp/checkpoint.py`, `writer/topology.py` | 完整rank状态、NUMA、deferred NCCL | 新attempt/accepted、Sigma、版本和rollout边界状态；exact-resume锁topology |
+当前源码、入口和职责地图见[README](../README.md#当前代码与运行入口)，实现验证状态见[progress](../progress.md)。
+`writer/native.py`只保留post-norm完整H读取和同forward的最终Z/KV；`writer/horizon.py`/`relation.py`/`attention.py`
+负责完整过程图与集合compiler，`writer/native_factor.py`负责76张量输出。旧18层capture、layered/coordinate图及旧FM-only入口退役。
 
-`tests/test_layered_writer.py`、`test_joint_training.py`、`test_layered_evaluation.py`、`tests/ecp/test_native_capture.py`
-含旧行为oracle；与实际改变对应地替换，不把原18层/双向断言继续套在新图。相关source改动后做比例合适的真实检查与测试，
-不因为交接文档添加无意义测试或hash sidecar。
+`writer/joint.py`组织每condition同版本的采集、FM/RL合并cotangent和一次Writer/Meta反传；`flow.py`保留完整10步可微执行，
+`rollout.py`复用canonical环境池和预处理，`rl_math.py`负责Gaussian信用、reservoir和单方向trust事务。
+`learning_data.py`持久化独立随机流；`training.py`维护attempt/accepted、接受更新warmup和完整边界checkpoint。
+这些owner复用现有FM、LoRA注入、checkpoint与评测，不保留旧antithetic信用或cycle/cosine作为新训练fallback。
 
-现有唯一训练/物化入口为 `scripts/train_layered_writer.py` / `scripts/materialize_layered_writer.py`，它们目前只服务旧图。
-实现时在现有owner内形成一套canonical运行面，入口名称是否统一更名随同源码迁移一次完成，不同时维护两条版本路径。
-**当前 `configs/pi05_layered_writer_v1.json`仍是旧192/384/672协议，不能作为新run启动配置。**新schema/配置在实现时生成并解析验证。
+唯一入口为 `scripts/train_horizon_writer.py` / `scripts/materialize_horizon_writer.py`，配置为
+`configs/pi05_horizon_writer_v1.json`。旧checkpoint明确拒绝新schema resume。图、读取、联合更新和评测的测试随实际合同替换；
+不继续保留旧18层/双向断言。新图的实现与CPU测试不替代§8规定的真实机制、成本和行为证据。
 
-未合并 `codex/native-factor-readout` 草稿只有旧上游的末端替换，不能整支直接合并为本设计；可审视已有头部实现再有选择地迁入。
-其dirty worktree与旧正式detached worktree均保留，不在本次交接准备删除、重置或覆盖。旧run不恢复。
+未合并 `codex/native-factor-readout` 草稿只有旧上游末端替换，不整支合并；其dirty worktree与旧正式detached worktree保留。
+旧实现由Git、sealed configs、formal artifacts和research_history追溯，不恢复旧run。
 
 ## 10. 资源、Git与交付
 

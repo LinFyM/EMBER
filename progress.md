@@ -13,20 +13,20 @@
 
 ## K1切换：正在落实
 
-- 旧混合K run正在从macro64续训至原定128，当前进程无中途安全保存接口；在128完整checkpoint边界切换。
+- 旧混合K run已到macro128完整保存并正常exit0，已停止；旧学习状态只作历史探索证据。
   原代码/config/frozen9ab1e710保持，原run、已完成99/95和混合K曝光证据保留。128的旧评测准备不自动执行other/train120。
 - 实际sampler已定位为硬编码choice((1,2,4))，正在修改真实抽样并验证，不能只改cardinalities。
-- Owner补充纠正覆盖前条checkpoint承接要求：本轮K1从fresh step0独立开始；旧混合K checkpoint只保留历史。
+- Owner补充纠正覆盖前条checkpoint承接要求：本轮K1从fresh step0独立开始；旧混合K checkpoint只保留历史。实际停止128，共32768queries。
   Writer全部可训练参数重新初始化、LoRA合法identity，fresh AdamW/scheduler/sampler/RNG；冻结source/架构/资产复用。
-  不继承旧训练学习状态；正在撤除尚未交付的mixed→K1迁移实现，原exact-resume topology合同仍保持。
+  不继承旧训练学习状态；未提交的mixed→K1迁移实现已撤除，原exact-resume topology合同仍保持。
 - 每步四个suite各抽一task、每条件64queries，共256；每条件梯度乘1/4后跨rank SUM，全局一次clip/step/scheduler。
-  1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。测试覆盖三卡不均匀任务数与global cursor。
+  1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。18项训练检查覆盖三卡不均匀任务数、SUM权重与global cursor；9项严格加载检查、49项评测合同检查通过。
 - 当前优先correct strict400及廉价相邻raw-row分析；早期other后移，train120按实际能力诊断需要安排。
 - K1吞吐正在实测：先复用真实64checkpoint，不更新或保存训练状态；已比较FM microbatch4/8及frame4→8、edge8→32，
   使用完整训练池中位/最长视频，无截短或flow/horizon变更。既有混合K中77个K1条件均耗16.45s（FM11.91s），只是条件成本，不能冒充K1整步。
 - 条件profile已完整结束：baseline4/4/8中位30帧17.72s、最长93帧23.85s；8/8/32分别11.43s、15.00s，
   提速1.55×/1.59×，每条件仍64queries。最长峰值35.404GiB（未含Adam），预留约2.56GiB moments后还须真实更新验证。
-  profile总232.23s，其中旧loader启动128.09s；选择microbatch8/frame8/edge32，保留既有activation checkpoint。
+  profile在模块导入后计时232.23s，其中旧loader初始化/加载128.09s；选择microbatch8/frame8/edge32，保留既有activation checkpoint。
   原件`runs/analysis/horizon_relation_writer_20260908/k1_fresh/throughput_condition_profile.json`；profile未更新或保存checkpoint。
 - 新一小时段的具体50/100倍数checkpoint将在profile结果后、任何新闭环分数前登记。旧24/64/128/192不再作为未来默认安排。
 - 双节点profile现场已检查，gpu02 p4有40314MiB余量、util2；四张旧训练卡保持，新增单卡短profile总共5卡。

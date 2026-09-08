@@ -1,4 +1,4 @@
-"""Fresh end-to-end supervised FM learning of the complete Horizon Writer and Meta."""
+"""Fresh end-to-end supervised FM learning of the complete Horizon Writer."""
 from __future__ import annotations
 
 import argparse
@@ -36,17 +36,16 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     expected_model = asdict(HorizonWriterConfig())
+    expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
+                     "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
-    actual = {**config["model"], "edge_chunk": expected_model["edge_chunk"]}
+    actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
         config.get("schema_version") != "ember_horizon_relation_writer_config_v1"
         or actual != expected_model
-        or config["optimization"].get("fresh_joint_writer_and_meta") is not True
+        or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
-        or config["data"].get("extra_meta_tasks") != []
-        or int(config["data"]["frame_stride"]) != 5
-        or config["data"].get("include_last_frame") is not True
-        or int(config["data"]["queries_per_task"]) != 64
+        or {key: config["data"].get(key) for key in expected_data} != expected_data
         or int(config["observer"]["flow_time"]) != 1
         or int(config["observer"]["meta_rank"]) != 4
         or int(config["observer"]["probe_seed"]) != 1729
@@ -64,6 +63,7 @@ def _config(path: Path) -> dict[str, Any]:
         raise ValueError("first-run gradients require all fixed train24 tasks")
     if any(int(value) <= 0 for value in config["runtime"].values()):
         raise ValueError("runtime batches and cache budget must be positive")
+    _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"])
     HorizonWriterConfig(**config["model"])
     return config
 
@@ -108,8 +108,10 @@ def _run_contract(args, context, config, runtime, state):
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one FM update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
+            "logical_batch": {"suite_count": 4, "conditions": 4, "queries_per_condition": 64,
+                              "queries_per_update": 256, "task_weight": 0.25, "gradient_reduction": "SUM"},
             "update_version": config["update_version"], "data_version": config["data"]["version"],
-            "checkpoint_updates": config["evidence"]["checkpoint_updates"],
+            "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
         "information_wall": {
             "deployment_inputs": ["exact language", "ordered RGB videos", "original frame indices"],
@@ -139,6 +141,8 @@ def _grad_norm(parameters) -> float:
 
 
 def _execute_step(engine, data, context, config, draws, step):
+    if not 1 <= context.world_size <= 4:
+        raise ValueError("four-condition task parallelism currently supports one to four useful ranks")
     tasks = tuple(int(draw["task"]) for draw in draws)
     if len(tasks) != 4 or len({data.tasks[task].suite for task in tasks}) != 4:
         raise ValueError("each supervised update must contain one task from each suite")
@@ -151,6 +155,8 @@ def _execute_step(engine, data, context, config, draws, step):
     for task in assignment[context.rank]:
         draw = by_task[task]
         tick = time.perf_counter()
+        if len(draw["video_demos"]) != 1:
+            raise ValueError("the current supervised condition must contain exactly one teaching video")
         metric = engine.backward(draw)
         if int(metric["queries"]) != int(config["data"]["queries_per_task"]):
             raise RuntimeError("supervised engine did not execute the registered FM exposure")
@@ -174,13 +180,25 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     if failures:
         raise RuntimeError(f"supervised backward failed on a rank: {failures}")
     parameters = tuple(runtime.state.parameters())
+    if context.device.type == "cuda":
+        torch.cuda.synchronize(context.device)
+    tick = time.perf_counter()
     sum_writer_gradients(parameters, world_size=context.world_size)
+    if context.device.type == "cuda":
+        torch.cuda.synchronize(context.device)
+    sync_seconds = time.perf_counter() - tick
     norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters())}
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
+    if context.device.type == "cuda":
+        torch.cuda.synchronize(context.device)
+    tick = time.perf_counter()
     optimizer.step()
     scheduler.step()
+    if context.device.type == "cuda":
+        torch.cuda.synchronize(context.device)
+        norms.update(gradient_sync_seconds=sync_seconds, optimizer_seconds=time.perf_counter() - tick)
     return rows, norms
 
 
@@ -210,7 +228,8 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
         if args.mode == "formal":
             nodes = config["evidence"]["supervised_validation"]["optimizer_updates"]
             count = sum(node <= updates for node in nodes) * len(data.tasks)
-            reconcile_metrics(args.output / "diagnostics.jsonl", updates, count, cursor_key="step", packet_label="diagnostics")
+            if count or (args.output / "diagnostics.jsonl").exists():
+                reconcile_metrics(args.output / "diagnostics.jsonl", updates, count, cursor_key="step", packet_label="diagnostics")
     return updates, metrics_rows
 
 
@@ -238,10 +257,23 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
     return metrics_rows
 
 
+def _validate_checkpoint_nodes(nodes):
+    if not nodes or list(nodes) != sorted(set(nodes)) or any(node <= 0 or node % 50 for node in nodes):
+        raise ValueError("checkpoint updates must be registered increasing multiples of 50")
+
+
+def _checkpoint_nodes(args, config):
+    supplied = getattr(args, "checkpoint_updates", None)
+    nodes = tuple(config["evidence"]["checkpoint_updates"]) if supplied is None else tuple(map(int, supplied.split(",")))
+    _validate_checkpoint_nodes(nodes)
+    return nodes
+
+
 def _segment_limit(args, config):
-    stop = max(config["evidence"]["checkpoint_updates"]) if args.stop_after_step is None else args.stop_after_step
-    if stop <= 0 or (args.mode == "formal" and stop not in config["evidence"]["checkpoint_updates"]):
-        raise ValueError("formal segment must stop at a registered optimizer-update node")
+    nodes = _checkpoint_nodes(args, config)
+    stop = nodes[-1] if args.stop_after_step is None else args.stop_after_step
+    if stop <= 0 or (args.mode == "formal" and (len(nodes) != 2 or stop != nodes[-1])):
+        raise ValueError("formal segment needs two registered checkpoint nodes and must stop at the last")
     return stop
 
 
@@ -273,7 +305,13 @@ def _validate_actions(args, engine, data, context, config, step):
 
 def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
     updates, metrics_rows = cursors
-    if args.mode == "formal" and updates == 0:
+    nodes = _checkpoint_nodes(args, config)
+    if args.mode == "formal" and any(node <= updates for node in nodes):
+        raise ValueError("segment checkpoint nodes must follow the restored update cursor")
+    if context.is_main:
+        print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
+                          "resume": str(args.resume) if getattr(args, "resume", None) else None}), flush=True)
+    if args.mode == "formal" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
         _validate_actions(args, engine, data, context, config, 0)
     while updates < stop:
         tick = time.perf_counter()
@@ -282,7 +320,7 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
         torch.cuda.synchronize(context.device)
         metrics_rows = _record_iteration(args, context, config, rows, norms, updates,
                                          metrics_rows, time.perf_counter() - tick, scheduler)
-        if updates == stop or updates in config["evidence"]["checkpoint_updates"]:
+        if updates == stop or updates in nodes:
             if args.mode == "formal" and updates in config["evidence"]["supervised_validation"]["optimizer_updates"]:
                 _validate_actions(args, engine, data, context, config, updates)
             save_ecp_checkpoint(
@@ -309,8 +347,8 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("formal supervised training requires a clean pushed detached worktree")
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if not 1 <= context.world_size <= 6:
-        raise ValueError("EMBER supervised training needs one node and at most six GPUs")
+    if not 1 <= context.world_size <= 4:
+        raise ValueError("four-condition task parallelism currently supports one node and one to four useful GPUs")
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
@@ -346,6 +384,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--stop-after-step", type=int)
+    parser.add_argument("--checkpoint-updates", help="this segment's two global update nodes, e.g. 300,400")
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

@@ -69,8 +69,8 @@ class WriterTrainingData:
         flat = [demo for pool in pools for demo in pool]
         if any(not pool for pool in pools) or len(set(flat)) != len(flat) or not set(flat) <= set(range(50)):
             raise ValueError("training video/query and diagnostic episode roles must be disjoint")
-        if tuple(config["cardinalities"]) != (1, 2, 4) or min(len(self.video_pool), len(self.held_video_pool)) < 4:
-            raise ValueError("dynamic K requires actual K1/2/4 and at least four unique videos")
+        if tuple(config["cardinalities"]) != (1,):
+            raise ValueError("the current supervised stage requires actual K=1 conditions")
         authorities = tuple(task.authority for task in self.tasks.values())
         self.videos = RawTeacherVideoStore(authorities, frame_stride=5)
         self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool, action_chunk_size=50)
@@ -78,7 +78,7 @@ class WriterTrainingData:
         self.diagnostic_queries = None
         root = random.Random(self.seed)
         self.streams = {name: random.Random(root.getrandbits(63)) for name in (
-            "task", "K", "video", "query",
+            "task", "video", "query",
         )}
         self.suites = {suite: tuple(task for task in self.tasks if self.tasks[task].suite == suite)
                        for suite in sorted({task.suite for task in self.tasks.values()})}
@@ -91,8 +91,7 @@ class WriterTrainingData:
         draws = []
         for tasks in self.suites.values():
             task = self.streams["task"].choice(tasks)
-            k = self.streams["K"].choice((1, 2, 4))
-            demos = tuple(self.streams["video"].sample(self.video_pool, k))
+            demos = tuple(self.streams["video"].sample(self.video_pool, 1))
             draws.append({
                 "task": task, "occurrence": self.counts[task], "video_demos": demos,
                 "query_seed": self.streams["query"].getrandbits(63),

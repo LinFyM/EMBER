@@ -13,7 +13,8 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract
+from ember.writer.replay import sum_writer_gradients
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,8 +28,18 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 
 
 @pytest.fixture
-def config():
-    return _config(ROOT / "configs/pi05_horizon_writer_v1.json")
+def config(tmp_path):
+    # Hold a complete K1 recipe and a short regular evidence schedule;
+    # actual segment nodes are separately registered by each launch.
+    value = json.loads((ROOT / "configs/pi05_horizon_writer_v1.json").read_text())
+    value["data"]["cardinalities"] = [1]
+    value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"
+    value["optimization"].pop("fresh_joint_writer_and_meta", None)
+    value["optimization"]["joint_train_all_writer_modules"] = True
+    value["evidence"]["checkpoint_updates"] = [50, 100]
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(value))
+    return _config(path)
 
 
 @pytest.fixture
@@ -42,17 +53,17 @@ def sampler(monkeypatch, config):
     return WriterTrainingData(ROOT, config["data"])
 
 
-def test_actual_sampler_covers_suites_dynamic_k_and_restores_all_streams(sampler):
+def test_actual_sampler_covers_suites_with_only_k1_and_restores_all_streams(sampler):
     draws = [sampler.next_iteration() for _ in range(24)]
     assert all(len({sampler.tasks[d["task"]].suite for d in iteration}) == 4 for iteration in draws)
-    assert {len(d["video_demos"]) for iteration in draws for d in iteration} == {1, 2, 4}
+    assert {len(d["video_demos"]) for iteration in draws for d in iteration} == {1}
     for iteration in draws:
         for draw in iteration:
             assert len(set(draw["video_demos"])) == len(draw["video_demos"])
             assert "episodes" not in draw
     saved = deepcopy(sampler.sampler_state())
     assert sum(saved["task_occurrences"].values()) == 24 * 4
-    assert set(saved["streams"]) == {"task", "K", "video", "query"}
+    assert set(saved["streams"]) == {"task", "video", "query"}
     future = [sampler.next_iteration() for _ in range(3)]
     sampler.restore_sampler(saved)
     assert [sampler.next_iteration() for _ in range(3)] == future
@@ -67,7 +78,8 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
     assert config["model"]["horizon"] == 50 and config["model"]["blocks"] == 4
     assert config["model"]["factor_width"] == 256 and config["data"]["queries_per_task"] == 64
     assert "total_steps" not in config["data"]
-    for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16)):
+    for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16),
+                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3)):
         changed = deepcopy(config)
         changed[section][key] = value
         path = tmp_path / "config.json"
@@ -213,3 +225,86 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     assert trainer["training_state"] == _training_state(config, stop)
     assert trainer["sampler_state"]["next_step"] == stop
     assert trainer["scheduler"]["last_epoch"] == stop
+
+
+def test_execution_chunking_is_configurable_but_formal_nodes_remain_regular(tmp_path, config):
+    changed = deepcopy(config)
+    changed["model"]["activation_checkpoint"] = False
+    changed["model"]["edge_chunk"] = 24
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(changed))
+    assert _config(path)["model"]["activation_checkpoint"] is False
+    for nodes in ([24, 64], [100, 50], [50, 50]):
+        changed["evidence"]["checkpoint_updates"] = nodes
+        path.write_text(json.dumps(changed))
+        with pytest.raises(ValueError, match="multiples of 50"):
+            _config(path)
+
+
+@pytest.mark.parametrize("world_size", [1, 2, 3, 4])
+def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch, config, world_size):
+    """Real placement and SUM helper, against an explicit logical-batch oracle."""
+    state = torch.nn.Linear(2, 1, bias=False)
+    with torch.no_grad():
+        state.weight.copy_(torch.tensor([[.2, -.3]]))
+    features = torch.tensor([[1., 0.], [0., 2.], [3., -1.], [-1., 4.]])
+    targets = torch.tensor([[1.], [-1.], [2.], [0.]])
+    loss = (state(features) - targets).square().mean()
+    loss.backward()
+    logical_gradient = state.weight.grad.clone()
+    draws = tuple({"task": task, "occurrence": 0, "video_demos": (task,), "query_seed": 17 + task,
+                   "frames": [19, 11, 7, 4][task]} for task in range(4))
+    data = SimpleNamespace(tasks={task: SimpleNamespace(suite=f"suite{task}") for task in range(4)})
+    class Engine:
+        def __init__(self, model):
+            self.model = model
+        def backward(self, draw):
+            task = draw["task"]
+            value = .25 * (self.model(features[task:task + 1]) - targets[task:task + 1]).square().sum()
+            value.backward()
+            return {"queries": 64, "flow_loss": float(value.detach())}
+    models, local_rows = [], []
+    for rank in range(world_size):
+        model = deepcopy(state)
+        model.zero_grad(set_to_none=True)
+        context = DistributedContext(rank, rank, world_size, torch.device("cpu"))
+        local_rows.append(_execute_step(Engine(model), data, context, config, draws, 1))
+        models.append(model)
+    assert sorted(row["task"] for rows in local_rows for row in rows) == [0, 1, 2, 3]
+    assert sum(row["queries"] for rows in local_rows for row in rows) == 256
+    if world_size == 3:
+        assert sorted(map(len, local_rows)) == [1, 1, 2]
+    combined = sum(model.weight.grad for model in models)
+    def reduce(gradient, op):
+        assert op == torch.distributed.ReduceOp.SUM
+        gradient.copy_(combined)
+    monkeypatch.setattr("ember.writer.replay.dist.all_reduce", reduce)
+    for model in models:
+        sum_writer_gradients(tuple(model.parameters()), world_size=world_size)
+        torch.testing.assert_close(model.weight.grad, logical_gradient, rtol=1e-5, atol=1e-6)
+
+
+def test_rank_count_cannot_expand_batch_or_create_idle_replicas(config):
+    with pytest.raises(ValueError, match="one to four"):
+        _execute_step(None, None, SimpleNamespace(world_size=5), config, (), 1)
+
+
+def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_path, config):
+    original = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
+                "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"},
+                "training": {"checkpoint_updates": [50, 100]}}
+    path = tmp_path / "run_contract.json"
+    _publish_contract(path, original, resume=False)
+    next_args = SimpleNamespace(mode="formal", stop_after_step=200, checkpoint_updates="150,200")
+    assert _segment_limit(next_args, config) == 200
+    assert _checkpoint_nodes(next_args, config) == (150, 200)
+    resumed = deepcopy(original)
+    resumed["training"]["checkpoint_updates"] = [150, 200]
+    _publish_contract(path, resumed, resume=True)
+    assert json.loads(path.read_text()) == original
+    next_args.checkpoint_updates = "150,250"
+    with pytest.raises(ValueError, match="stop at the last"):
+        _segment_limit(next_args, config)
+    resumed["topology"]["world_size"] = 3
+    with pytest.raises(ValueError, match="topology"):
+        _publish_contract(path, resumed, resume=True)

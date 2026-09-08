@@ -11,18 +11,18 @@
 - goal持续active，无总预算/尝试上限。strict correct>145/400与全部资格、最终方法冻结32/8 fresh/Test尚未完成。
 - 合同内实现、优化、正式训练、评测与依据结果继续已授权。无需重新审查全仓，也不等待逐项批准。
 
-## K1切换：正在落实
+## K1切换：已落实
 
 - 旧混合K run已到macro128完整保存并正常exit0，已停止；旧学习状态只作历史探索证据。
   原代码/config/frozen9ab1e710保持，原run、已完成99/95和混合K曝光证据保留。128的旧评测准备不自动执行other/train120。
-- 实际sampler已定位为硬编码choice((1,2,4))，正在修改真实抽样并验证，不能只改cardinalities。
+- 实际sampler已改为真实K1视频抽样，移除K随机流；已验证，不只是修改cardinalities配置。
 - Owner补充纠正覆盖前条checkpoint承接要求：本轮K1从fresh step0独立开始；旧混合K checkpoint只保留历史。实际停止128，共32768queries。
   Writer全部可训练参数重新初始化、LoRA合法identity，fresh AdamW/scheduler/sampler/RNG；冻结source/架构/资产复用。
   不继承旧训练学习状态；未提交的mixed→K1迁移实现已撤除，原exact-resume topology合同仍保持。
 - 每步四个suite各抽一task、每条件64queries，共256；每条件梯度乘1/4后跨rank SUM，全局一次clip/step/scheduler。
   1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。18项训练检查覆盖三卡不均匀任务数、SUM权重与global cursor；9项严格加载、49项评测合同及1项异构物理microbatch检查通过。
 - 当前优先correct strict400及廉价相邻raw-row分析；早期other后移，train120按实际能力诊断需要安排。
-- K1吞吐正在实测：先复用真实64checkpoint，不更新或保存训练状态；已比较FM microbatch4/8及frame4→8、edge8→32，
+- K1条件吞吐短测已完成：仅为执行测量读取历史64checkpoint，不更新或保存训练状态；已比较FM microbatch4/8及frame4→8、edge8→32，
   使用完整训练池中位/最长视频，无截短或flow/horizon变更。既有混合K中77个K1条件均耗16.45s（FM11.91s），只是条件成本，不能冒充K1整步。
 - 条件profile已完整结束：baseline4/4/8中位30帧17.72s、最长93帧23.85s；8/8/32分别11.43s、15.00s，
   提速1.55×/1.59×，每条件仍64queries。最长峰值35.404GiB（未含Adam），预留约2.56GiB moments后还须真实更新验证。
@@ -32,8 +32,7 @@
   held FM0/200，train120按能力诊断需要；其他资格后移，旧24/64/128/192不再是未来安排。
 - 双节点profile现场已检查，gpu02 p4有40314MiB余量、util2；四张旧训练卡保持，新增单卡短profile总共5卡。
   strg01 data1使用527970796KiB，soft1073741824KiB，当前旧run12GiB；临时profile只写小日志，不生成checkpoint或新cache文件。
-- 分工：独立工作树实现真实K1 sampler/逻辑更新和必要测试；另一独立树减少已证实的重复模型初始化，保留完整加载fail-closed。
-  主线程负责K1吞吐实测、配置/设计/状态、集成与正式启动。
+- 两项独立实现已集成main并推送，任务工作树已清理；主线程继续正式训练、评测与证据裁决。
 
 ## Fresh K1集成与真实更新短测（2026-09-08）
 
@@ -51,8 +50,15 @@ strg01 data1已用532410484KiB/soft1073741824，shared84TiB。GPU双节点现场
 
 正式fresh K1已启动：clean pushed b6d70d98，detached `horizon-k1-runtime`；GPU02 tmux `ember-horizon-k1-supervised`、pane1042996。
 新root=`runs/outputs/horizon_k1_supervised_v1_seed7_20260908`；run_contract确认formal、K1、world4、source trainable=0，
-启动日志确认segment_start0/resume=null。当前先计算固定held-action baseline0，随后0→200；没有继承mixed/profile checkpoint。
+启动日志确认segment_start0/resume=null。held-action baseline0已结束，实际optimizer持续推进；没有继承mixed/profile checkpoint。
 精确注册/命令/外层完整墙钟与日志在`runs/analysis/horizon_relation_writer_20260908/k1_fresh/formal_launch.json`、`formal.sh`、`formal.log`。
+
+第2–16步整步均值15.469s；microbatch4/8的FM均值11.109/9.136s（不同条件，非配对速度试验）。
+GPU02 physical2在15步中7步条件耗时最慢，超过其余三卡最慢条件的正差均值.570s；不能据此直接声称改8可提速多少。
+现场该卡总46068MiB、他人8806+148MiB，约36.2GiB可用；micro8训练allocated峰值38.147GiB尚未计CUDA额外开销，直接改8不可行。
+micro4为已验证可运行配置，micro6尚未测，不能称已找到最优值；本段结束后可按现场余量做一次限定测量。
+100/200各自correct400请求、外层完整墙钟脚本和source/SFT比较准备在`k1_fresh/step100_evaluation/`及`step200_evaluation/`；
+200额外比较100的严格配对成功集合。只准备correct，训练到200暂停后再启动；不把旧混合K节点充作fresh相邻证据。
 
 ## 历史：初始纯FM安排与原注册
 

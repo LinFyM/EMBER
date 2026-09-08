@@ -14,7 +14,11 @@
 
 active design **§8.2.6**的200→400 exact-resume已完整exit0：两新checkpoint300/400均通过public inspector，保留完整学习状态。新增201–400的800条件/51200queries与原同节点实际task/video/action query/frame/seed/权重逐条一致；累计1600条件/102400queries，各suite400。段内更新墙钟2954.17秒、均值14.771秒，完整wrapper3138.75秒；source保持冻结，未继续500/600。原件A/`segment200_400/step400/training_summary.json`与`formal.exit`。
 
-300 canonical400 bank在gpu01 p3完整exit0，400个全新条件，墙钟761.06秒；public bank inspector及与新200实际视频/state映射均通过。300 strict400已在gpu02 p2/4/6、各2persistent workers启动，tmux `ember-first-query-correct300`。400 validation400+train96独立banks在gpu01 p3物化，tmux `ember-first-query-bank400`；同3072query冻结held FM在gpu01 p1运行，tmux `ember-first-query-held400`，无梯度/optimizer/sampler推进。三个launch均来自同一次两节点实时资源快照，详细命令和状态在A/`segment200_400/step300/`与`step400/`；尚无300/400新闭环分数。
+300 canonical strict400完整exit0，**106/400**，S/O/G/L=0/64/35/7、breadth4/8；原30086，vs原R/G/L67/39/19、churn58。新200→300 R/G/L77/29/33、churn62、J=.554，breadth6→4；BBQ28→24仅保留16/新增8/丢12，cream cheese→篮31→40保留29，Long双物9→7仅保留2。新300比原高20主要来自BBQ24对1，但Spatial全零、弱任务未扩展、状态仍高churn，不能称稳定保持或整体修复。六worker均exit0，实际400行视频/state/RNG/normalization严格配对；wrapper1555.43秒。原件A/`segment200_400/step300/completed_summary.json`及全部比较。
+
+400 validation400+train96独立banks均完整exit0，共496个新条件，public inspectors和固定实际视频/state映射通过，完整墙钟1094.43秒。冻结400 held FM已完整exit0，3072实际query/frame/video/noise与新0/200及原200/400配对；新400=.105737594、原400=.106271931，11/24任务新更低，新400比新200的23/24任务下降。无梯度、无optimizer、sampler未推进，peak11.484GiB、完整635.55秒；不以此替代训练闭环。证据A/`segment200_400/held_fm_comparison.json`。
+
+400 strict400现已在gpu02 p2/4/6各2persistent workers启动，tmux `ember-first-query-correct400`；train96 bank已就绪，待资源安排。新的两节点快照及完整命令位于A/`segment200_400/step400/evaluation_launch.json`。尚无400或新400 train96闭环分数；剩余任务为完成二者并汇总本段。
 
 原300/400 correct86/87、原400 train96=59及同口径held FM=.106271931作为既定参照。两个strict400和新400 train96/held FM完成后才裁决保持/获取；明确无保持或新能力时不默认追加500/600，持续行为获取再据证据登记。首段与本段不能合并成峰值/union选点。
 

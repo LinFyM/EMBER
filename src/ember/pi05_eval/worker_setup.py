@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_processing import Pi05LiberoProcessor
+from ember.pi05_source_setup import load_pretrained_policy
 
 
 def load_policy(
@@ -18,7 +19,6 @@ def load_policy(
 ) -> tuple[Any, Pi05LiberoProcessor, Any]:
     from lerobot.configs import FeatureType, PolicyFeature
     from lerobot.configs.policies import PreTrainedConfig
-    from lerobot.policies.pi05 import PI05Policy
     from lerobot.policies.pi05.configuration_pi05 import PI05Config
     from lerobot.utils.constants import ACTION, OBS_STATE
 
@@ -36,12 +36,7 @@ def load_policy(
     config.output_features[ACTION] = PolicyFeature(
         type=FeatureType.ACTION, shape=(int(policy_contract["action_dim"]),)
     )
-    policy = PI05Policy.from_pretrained(
-        model_path,
-        config=config,
-        local_files_only=True,
-        strict=True,
-    ).to("cuda:0").eval()
+    policy = load_pretrained_policy(model_path, config, remap_native_keys=True).to("cuda:0").eval()
     if hasattr(policy.model, "gradient_checkpointing_disable"):
         policy.model.gradient_checkpointing_disable()
     processor = Pi05LiberoProcessor(

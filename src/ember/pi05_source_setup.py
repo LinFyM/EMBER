@@ -309,29 +309,44 @@ def policy_config(model_path: Path, config: dict[str, Any], device: torch.device
     return value
 
 
-def load_policy(model_path: Path, config: dict[str, Any], device: torch.device) -> Any:
-    """Strictly load PI05 without the upstream silent random-initialization fallback."""
-
+def load_pretrained_policy(
+    model_path: Path, config: Any, *, remap_native_keys: bool = False,
+) -> Any:
+    """Load every local PI05 weight without filling soon-overwritten parameters."""
     from lerobot.policies.pi05 import PI05Policy
     from safetensors.torch import load_file
+    from transformers.initialization import no_init_weights
 
-    policy = PI05Policy(policy_config(model_path, config, device))
     weights = model_path / "model.safetensors"
     if not weights.is_file():
         raise Pi05SourceTrainingError(f"missing PI05 weights: {weights}")
-    state = load_file(str(weights), device=str(device))
-    if any(not name.startswith("model.") for name in state):
+    # Use the native constructor, including deterministic buffers and its mixed
+    # dtypes. Per-episode inference uses independently seeded noise generators;
+    # discarded parameter initialization need not consume their RNG streams.
+    with no_init_weights():
+        policy = PI05Policy(config)
+    # Keep checkpoint tensors on CPU: concurrent evaluator replicas must not
+    # allocate a second full policy on each GPU while copying into native params.
+    state = load_file(str(weights), device="cpu")
+    # The established evaluator applies upstream remapping even to native
+    # keys; source training only remaps external checkpoint names. Keep this
+    # caller distinction explicit while sharing construction and strict load.
+    if remap_native_keys or any(not name.startswith("model.") for name in state):
         state = policy._fix_pytorch_state_dict_keys(state, policy.config)
         state = {
             name if name.startswith("model.") else f"model.{name}": tensor
             for name, tensor in state.items()
         }
-    missing, unexpected = policy.load_state_dict(state, strict=False)
-    del state
-    if missing or unexpected:
-        raise Pi05SourceTrainingError(
-            f"PI05 strict load failed: missing={missing[:5]}, unexpected={unexpected[:5]}"
-        )
+    try:
+        policy.load_state_dict(state, strict=True)
+    except RuntimeError as error:
+        raise Pi05SourceTrainingError(f"PI05 strict weight load failed: {error}") from error
+    return policy
+
+
+def load_policy(model_path: Path, config: dict[str, Any], device: torch.device) -> Any:
+    """Strictly load the native policy and enter source-training mode."""
+    policy = load_pretrained_policy(model_path, policy_config(model_path, config, device))
     policy.train()
     return policy
 

@@ -12,7 +12,7 @@
   目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
   后续方法冻结32/8 fresh及最终Test。
 - 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点已结束，正在物化训练与validation两组评测LoRA。完整FM/Writer/Meta机制复用已验证路径；
+- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点与train120已结束，正在执行validation correct400。完整FM/Writer/Meta机制复用已验证路径；
   native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
 - 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
@@ -56,8 +56,15 @@ summary=`supervised/step64_summary.json`；原run_contract保留初始265ef31b�
 K1、同task全部视频0–49、seed20260907、state作为ordinal。source19/47、step24与历史SFT109/107比较入口均已准备，
 旧SFT v1原件只作有明确后端/rank边界的行为参照。三bank585条件共2.805GiB，预留4GiB+评测1GiB，纳入原48GiB预算。
 64完整退出后重新live检查双节点，GPU02 p0/1/3仅210/162/162MiB、util0，已分别启动三arm物化；
-各arm独立tmux `ember-horizon-m64-<arm>`，精确命令/资源见`materialization_launch.json`，启动状态与输出日志继续核验。
+三arm已全部物化exit0，400组task/state/ordinal跨视频配对核对通过，精确命令/资源见`materialization_launch.json`。
 strg01 data1使用524900152KiB/soft1073741824KiB，shared84TiB，现有监督run约8.7GiB。未启动RL或使用Test。
+
+train120_step64 J0已完整exit0，471.70秒：34/120，S/O/G/L=12/7/12/3、breadth14/24。
+vs source19：R/G/L=13/21/6，churn27/120，J=.325；vs step24的17：R/G/L=14/20/3，churn23/120，J=.37838。
+监督继续带来训练task闭环获取，尚不能宣称held泛化。原件`step64_evaluation/train64_vs_source19.json`与`train64_vs_step24.json`。
+已再次live检查双节点，gpu02 p0/1/3/4/6仍有余量，使用五卡×2replicas启动validation correct strict400；
+tmux `ember-horizon-e64-correct`，pane241349，命令与证据`validation_correct_launch.json`，输出`evaluation/validation_correct_step64_J0/`。
+对应other400仍待correct完成后的现场资源检查。最新quota527852240KiB，run约12GiB，raw eval合计1GiB计入原48GiB预算。
 
 ## 已结束的联合profile
 

@@ -736,3 +736,8 @@ frozen9ab1e710段40updates平均32.03秒，总1532.41秒，未见相对首段的
 累计256conditions/16384queries，24tasks各6–17次曝光，K1/2/4=87/77/92；完整macro64为4.13GiB，正常exit0。
 固定held FM .131235→.123122，24/24tasks相对24改善；相对初始.151447为23/24task改善。
 这是持续监督学习证据，尚无64节点闭环分数，不判平台；原件`supervised/step64_summary.json`及run根完整记录。
+
+64节点train120 held-video J0完整exit0，471.70秒：34/120，S/O/G/L=12/7/12/3，breadth14/24。
+vs source19的R/G/L=13/21/6、churn27/120、J=.325；vs step24的17，R/G/L=14/20/3、churn23/120、J=.37838。
+相比24，Spatial/Goal成功全部保留并新增；Object丢2新增5，Long丢1新增3，仍须正视成功集合变化。
+这是训练task获取增益，不能替代validation资格。原件`supervised/step64_evaluation/train64_vs_source19.json`和`train64_vs_step24.json`。

@@ -9,7 +9,7 @@
 当前执行active design §8.2.5的单变量fresh对照：只改变首层compiler语言直接内容路径，保留其首次检索引导；原四组视频/Meta/完整horizon/native独立D与4×64 pureFM数据/优化口径保持。旧24-task未执行草稿已撤回，不混入rank共享或额外任务。
 
 1. 完成新接口、真实可达梯度、identity完整LoRA与checkpoint身份边界的定向验证，更新canonical方法文档并clean push。
-2. 从frozen运行面做有限真实完整update profile，刷新双节点GPU及记录原生NUMA/SUM归约/物理microbatch；profile权重丢弃。已有吞吐约18s/update支持先登记约一小时200更新，100/200两个节点；如实际资源令时长明显改变，只在新行为出现前登记调整。
+2. 已完成8步真实profile及双节点/独立quota检查：均值14.83s/update，32个采样条件与原基线一致。fresh正式已启动，继续100/200预登记节点；profile权重不继承。
 3. Fresh Writer/Meta/AdamW/scheduler/sampler/seed7正式启动；第一段400/800条件、25600/51200queries的100/200各做canonical strict400，与旧55/110匹配比较。200追加同口径train96对比旧52，不能用FM选点。
 4. 以绝对能力、breadth、per-task/suite和相邻R/G/L/churn/J判断下一段；持续获取则继续稳定性证据，只有内部改善不称修复。有效non-pass只否定本次接口/训练组合，不追加无依据的language/cross消融矩阵或LR/rank/seed小扫。
 5. 沿原qualification资格补other与最终视频controls；合格后方法冻结，完成规定32/8 fresh和Test。当前诊断、代码或初始两点不构成最终完成。

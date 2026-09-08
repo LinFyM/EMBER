@@ -12,9 +12,11 @@
 
 据此active design §8.2.5登记fresh首层内容对照：保留原首cross的language检索，移除其直接language残差；第二block自然沿新内容继续。全部四组视频前端/完整H/Meta/native D、rank16完整LoRA、4task×64queries、pure FM/AdamW与数据池保持。旧近等价强/弱历史边界已写入设计；它是受控假设检验，尚无新行为分数。原24-task草稿六文件已经撤回，rank共享后置，原K1不原样继续700/800。
 
-实现由现有horizon/attention承接，新增显式`compiler_language_mode=first_query_only_v1`防止同shape旧Writer被新runtime误读；旧诊断与checkpoint继续使用各自frozen worktree。新接口与完整梯度、identity、checkpoint身份、采样/恢复的96项定向覆盖已通过（首轮95通过；旧监督fixture缺缓存统计字段，补齐后该项复验通过）。尚未启动新GPU profile或正式训练；预登记首段100/200 correct400与200 held-video train96，profile只校验吞吐/峰值，不继承其学习状态。
+实现由现有horizon/attention承接，新增显式`compiler_language_mode=first_query_only_v1`防止同shape旧Writer被新runtime误读；旧诊断与checkpoint继续使用各自frozen worktree。新接口与完整梯度、identity、checkpoint身份、采样/恢复的96项定向覆盖已通过（首轮95通过；旧监督fixture缺缓存统计字段，补齐后该项复验通过）。8步真实profile已经exit0，32条件/2048queries与原基线逐条件task/video/query/seed/权重一致；均值14.83秒/update，四rank reserved峰值34.656/28.180/28.170/24.967GiB。legal identity启动后Writer/Meta梯度有限且非零。
 
-新段live data1 quota=582314184KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
+正式fresh已从clean pushed detached `fea45593`启动：gpu02 physical6/2/4/0，world4、FM microbatch6/4/4/3，原生GPU-local NUMA、NCCL_P2P_DISABLE=1。tmux `ember-horizon-first-query-formal`；新root `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909`；精确command、双节点现场证据、profile摘要与日志在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`。不继承profile学习状态，100/200 correct400与200 held-video train96按预登记继续；当前尚无新行为分数。
+
+新段live data1 quota=586750148KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

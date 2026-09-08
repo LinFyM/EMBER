@@ -8,9 +8,9 @@
 Owner2026-09-08明确要求恢复canonical每task50视频各一次。fresh K1训练200已完成、100/200 checkpoint保留，不重训或重置。
 初次100/200 banks各255条件不合规，已保留原manifest并添加sampling_issue.json；correct100启动后在rollout前SIGINT停止，exit130，无评测输出。
 旧混合K64的99/95只作重复teacher分布下的探索分数，不满足正式400合同；旧train120四条held视频重复复用（71条件/120行），相关历史结论限于该分布。
-canonical schedule、旧LoRA身份复用与启动前实际视频覆盖检查已实现，74项相关回归通过。真实旧bank被拒绝；每个checkpoint的255个已有LoRA均通过身份/生成合同核对，新400行计划每task correct/other各50条各一次、两checkpoint映射完全相同，待各补145个新LoRA后核验最终manifest。
+canonical schedule、旧LoRA身份复用与启动前实际视频覆盖检查已实现，74项相关回归通过。真实旧bank被拒绝；每个checkpoint的255个已有LoRA均通过身份/生成合同核对，两份最终sealed manifest各400个实际task-video条件/400行，每task correct/other各50条各一次且逐行不同，两checkpoint映射完全相同；各255个hardlink复用和145个新生成已实物验证。
 训练侧未来诊断改为states32–35的96行，单独建立source比较；真实核验与修复启动记录在`k1_fresh/schedule_repair/`。
-修复已由clean pushed f1330697进入detached `horizon-schedule-runtime`；GPU02 tmux `ember-k1-schedule100`/`ember-k1-schedule200`分别在p1/p3补齐145条件，旧255各自hardlink复用。当前尚待新manifest封存及最终覆盖验证，correct400未重启。
+修复已由clean pushed f1330697进入detached `horizon-schedule-runtime`；GPU02 tmux `ember-k1-schedule100`/`ember-k1-schedule200`分别在p1/p3补齐145条件，旧255各自hardlink复用。两份物化exit0，完整墙钟357.89/357.22秒；最终覆盖检查通过。已在GPU02 p0/1/2/3/4/6、每卡两worker启动correct100（tmux `ember-k1-correct100-v2`），随后correct200及相邻success-set分析；当前尚无新score。
 以下较早“正在评测/已封存”描述仅指修复前阶段，不授权继续旧schedule。
 
 ## 当前授权与阶段

@@ -769,3 +769,5 @@ churn40/400、J=.65812；总分只降4但J不达.80，Long无correct成功保留
 原success、R/G/L、churn和当时决策记录不改，但关于泛化、SFT/source比较及跨视频鲁棒性的结论仅适用于旧重复视频分布，不能作为资格证据。
 旧train24/64的17/120与34/120均为held池46–49在5个init中重复复用，共71条件/120行；这是同一旧映射下的诊断变化，不代表整轮视频覆盖。
 Fresh K1的100/200训练checkpoint保持有效；其初次物化也错误地只有255条件，已停止错误schedule评测（rollout前SIGINT、无结果），将复用合法LoRA并补齐新canonical映射。
+
+修复后f1330697复用canonical排列及+17规则；fresh100/200各255个合法旧LoRA hardlink复用、145个新编译，正常exit0、总墙钟357.89/357.22秒。最终manifest实检各400条件/400行、八task各50视频一次、两checkpoint完全相同mapping；相关74项回归通过。原件`k1_fresh/schedule_repair/final_manifest_coverage.json`。

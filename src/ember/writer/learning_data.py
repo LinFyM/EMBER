@@ -127,10 +127,11 @@ class WriterTrainingData:
 
     def _sample_actions(self, dataset, pool, task, occurrence, query_seed, count):
         rng = random.Random(query_seed)
+        episode_rows = self.query_rows[task] if dataset is self.queries else dataset.task_episode_rows[task]
         rows = []
         for _ in range(count):
             episode = rng.choice(pool)
-            rows.append(dataset[rng.choice(dataset.task_episode_rows[task][episode])])
+            rows.append(dataset[rng.choice(episode_rows[episode])])
         seed = task_logical_batch_policy_rng_seed(
             optimization_seed=self.seed, task_id=task, task_visit=occurrence,
             demo_indices=[row["demo_index"] for row in rows],

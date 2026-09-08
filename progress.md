@@ -35,8 +35,12 @@ data1 quota使用516182860KiB/soft1073741824KiB，shared84TiB；新监督至192�
 atomic临时写入、train/validation LoRA banks、raw rows/logs。当前joint末profile4.2GiB、analysis1.2MiB、scratch98MiB；其余既有用量由quota覆盖。
 新root=`runs/outputs/horizon_supervised_v1_seed7_20260908`；现场证据/精确命令登记在`runs/analysis/horizon_relation_writer_20260908/supervised/`。
 已从clean pushed `265ef31b` 的detached `.codex/worktrees/horizon-supervised-265ef31b` 正式启动；
-gpu02 tmux `ember-horizon-supervised`，torchrun3925038、四个rank3925226–3925229已现场确认存活并加载。
-精确stage/source/environment/topology由run_contract记录；当前尚未报告首个optimizer update或闭环分数。
+gpu02 tmux `ember-horizon-supervised`，torchrun3925038、四个rank3925226–3925229已完成首段并正常退出。
+24updates/96conditions/6144queries，K1/2/4=34/30/32，覆盖23/24tasks（task4尚未抽到）；平均30.40秒/update，总1027.99秒。
+独立held-action FM由.151447降至.131235（21/24task改善），不代表闭环或平台。macro24完整4.13GiB，sampler/scheduler及643个Adam状态step均24。
+summary=`supervised/step24_summary.json`。已刷新双节点/strg01，data1使用520203820KiB；step24 bank预算512MiB、评测1GiB计入48GiB总预算。
+正在gpu02p4物化train120_step24（71个不同task/video条件），随后J0动态队列评测与source19/120严格配对。
+另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
 
 ## 已结束的联合profile
 

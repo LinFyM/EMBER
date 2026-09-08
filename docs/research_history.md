@@ -720,3 +720,8 @@ Owner明确覆盖首轮FM/RL混合默认：完整架构保持，fresh纯FM端到
 平台结合实际曝光、held-action验证、训练task闭环与预登记validation相邻节点；充分监督仍弱要先定位并允许实质改进，
 不以饱和为由交给RL救场。后续独立RL从单个保留监督checkpoint初始化，新optimizer/scheduler，默认不混FM，探索/信用/约束另审。
 本次正式监督节点/判据见active design §8.2；未报告任何监督科学分数。
+
+265ef31b正式pure-FM首段24正常exit0：96conditions/6144queries，K1/2/4=34/30/32，实际23/24task有曝光，task4尚未抽到。
+平均30.40秒/update，总1027.99秒；完整macro24为4.13GiB，optimizer/scheduler/sampler均24，21/24task固定held-action FM改善，
+等权mean .151447→.131235。该节点仅早期监督获取，不能宣称平台或闭环增益；J0 train120随后执行。
+原件`runs/analysis/horizon_relation_writer_20260908/supervised/step24_summary.json`及run根目录完整metrics/exposures/diagnostics/checkpoint。

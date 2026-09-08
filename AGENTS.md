@@ -128,7 +128,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 少量显存占用或低util进程不自动排除GPU；只要峰值余量足够且不会显著干扰即可共驻，但不得kill、pause、
   reset或抢占他人任务。
 - 多卡训练固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA映射和deferred NCCL；独立evaluator不用NCCL。
-- 接受正常BF16/TF32、batch、kernel和reduction order低位差异；不为逐元素一致固定batch1、重复forward、扩dtype、
+- 接受硬件、设备分配、物理batch/microbatch、正常BF16/TF32、kernel和reduction order带来的微小数值差异。
+  不影响有效梯度、更新语义、数值稳定性和实际训练/推理行为的差异无需追查或消除，不把逐元素或逐bit一致作为验收目标。
+  仅在有证据表明差异破坏上述要求时开展针对性诊断和修复；不为低位一致固定batch1、重复forward、扩dtype、
   关闭高效kernel或逐tensor扫描。
 - 不新增SHA-256、MD5或大量防御性校验。只保留信息墙、shape、finite、OOM、asset、pairing、checkpoint和resume
   正确性所需检查。

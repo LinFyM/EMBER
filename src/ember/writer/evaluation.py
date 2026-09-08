@@ -107,7 +107,28 @@ def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
         _inspect_adapter_file(condition, manifest["writer_checkpoint"], lora)
 
 
-def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids) -> None:
+def _validate_round(selection, rows, require_formal) -> None:
+    if require_formal and selection["evaluation_role"] == "validation" and (
+            selection["init_state_ids"] != list(range(50)) or selection["video_pool"] != list(range(50))):
+        raise ValueError("formal validation requires 50 init states and all 50 teacher videos per task")
+    if selection["K"] != 1 or selection["mode"] != "per_init_ordinal":
+        return
+    for row in rows:
+        episodes = row["episodes"]
+        for field in ("teacher_demo_indices", "paired_correct_demos", "paired_other_demos"):
+            videos = [episode[field] for episode in episodes]
+            if any(len(value) != 1 for value in videos):
+                raise ValueError("K1 episode must identify exactly one actual teacher video")
+            ids = [value[0] for value in videos]
+            if len(set(ids)) != len(ids) or not set(ids) <= set(selection["video_pool"]):
+                raise ValueError("teacher videos repeat within a task/arm evaluation round")
+            if len(episodes) == len(selection["video_pool"]) and set(ids) != set(selection["video_pool"]):
+                raise ValueError("evaluation round omits an allowed teacher video")
+        if any(episode["paired_correct_demos"] == episode["paired_other_demos"] for episode in episodes):
+            raise ValueError("same-task-other must differ from correct for every init state")
+
+
+def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal) -> None:
     role = manifest["evaluation_role"]
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
@@ -122,6 +143,7 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or not source_matches(manifest["source"], source)):
         raise ValueError("horizon Writer bank scope/source/commit changed")
     validate_task_scope(rows, role, Path(manifest["asset_root"]))
+    _validate_round(selection, rows, require_formal)
     for row in rows:
         if row["episodes"] != planned_episodes(selection, row["global_task_id"]):
             raise ValueError("episode video ordinal or deterministic pairing changed")
@@ -131,17 +153,26 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
+def validate_information_wall(manifest) -> None:
+    wall = manifest["information_wall"]
+    required = {"teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
+                "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
+                "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
+                "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
+    if any(wall.get(key) != value for key, value in required.items()):
+        raise ValueError("horizon Writer information wall changed")
+
+
 def inspect_horizon_writer_bank(
     *, manifest_path: Path, source: Mapping[str, Any], task_keys: Sequence[tuple[str, int]],
     evaluation_role: str, require_formal: bool,
     task_init_state_ids: Mapping[tuple[str, int], Sequence[int]] | None = None,
 ) -> dict[str, Any]:
     """Validate condition provenance and paired row coverage before workers start."""
-    del require_formal  # This bank is always produced from a formal frozen checkpoint.
     try:
         path = manifest_path.resolve()
         manifest = read_json(path)
-        _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids)
+        _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run) or not source_matches(run["source"], source):
             raise ValueError("Writer checkpoint or method provenance changed")
@@ -151,13 +182,7 @@ def inspect_horizon_writer_bank(
         lora = load_pi05_lora_contract(lora_path)
         if lora.rank != lora.alpha or lora.rank != 16 or len(lora.targets) != 38 or lora.dropout != 0:
             raise ValueError("evaluation requires one complete 38-target rank16 LoRA")
-        wall = manifest["information_wall"]
-        required = {"teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
-                    "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-                    "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
-                    "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
-        if any(wall.get(key) != value for key, value in required.items()):
-            raise ValueError("horizon Writer information wall changed")
+        validate_information_wall(manifest)
         _inspect_conditions(manifest, path.parent, lora)
         return {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
     except (KeyError, TypeError, ValueError, OSError) as error:

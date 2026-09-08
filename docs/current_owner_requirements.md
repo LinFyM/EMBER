@@ -82,7 +82,7 @@
 - 不人为规定总工期、修正次数、版本数或总轮数。停止无信息重复，同时允许有新机制证据的合理深入。
 
 - 每段连续训练约一小时；按K1优化后的实测速率，在看到分数前登记中间和末尾两个等间隔附近的checkpoint。
-  保存点用50或100的倍数，不机械沿用24/64/128/192。当前主要跑K1 correct strict400，train120按获取/泛化诊断需要安排。
+  保存点用50或100的倍数，不机械沿用24/64/128/192。当前主要跑K1 correct strict400，train96按获取/泛化诊断需要安排（held视频46–49在states32–35各一次，另建同口径source比较）。
   早期绝对性能低且仍获取能力时延后other；接近或超过目标、有相邻稳定候选时补资格，冻结选点后再做最终controls。
 - 记录累计optimizer updates、FM queries、每task条件曝光和墙钟。历史v5.2为75600 queries、v6-fast为192000、
   SFT参照为230400，仅作曝光尺度参考；64或192步不能自动证明充分训练或平台。
@@ -132,3 +132,5 @@
   task_plan讲下一阶段，progress讲授权与现场；AGENTS只写稳定合同。
 - HANDOFF.md只是消费后删除的临时入口，不能独占长期要求、架构决定、历史结论或执行计划。跨session前正式文档必须完整，
   新session应能自主恢复理解，不要求owner再次解释整段历史。
+
+正式K1评测必须同task、同臂、同轮50个init覆盖50条teacher视频各一次；跨checkpoint和paired controls复用固定canonical state-video映射。此范围不得缩小为单次K集合内不重复。

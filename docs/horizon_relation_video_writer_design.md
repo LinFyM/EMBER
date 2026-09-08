@@ -324,11 +324,12 @@ RL阶段默认仅RL目标，不自动混回FM，不部署task-local优化。探�
 其混合K结果与原注册保持历史身份。后续K1每段连续训练约一小时，按优化后实际吞吐选择中间和末尾两个近等间隔节点，
 checkpoint使用50或100的倍数，并在看到成绩前写入配置及segment registration。每段评测后依据证据自主继续。
 首个fresh K1段登记0→200：完整逻辑更新实测约18s/step，100/200保存单checkpoint，段末依次correct400；
-独立held-action诊断在0/200，train120按分数反映的获取/泛化需要安排，早期不跑other。后续用CLI显式登记两个节点，原run合同不重写。
+独立held-action诊断在0/200，train96按分数反映的获取/泛化需要安排，早期不跑other。后续用CLI显式登记两个节点，原run合同不重写。
 
 当前以validation8 K1 correct strict paired400为主；沿用§8.3的task/state/video/policy RNG合同。
 已有correct raw rows持续计算per-task/suite、breadth、R/G/L、churn和相邻Jaccard。
-train24×states32–36 J0 paired120（K1 held teacher46–49、source19/120）按获取/泛化判断需要安排，不再每点机械执行。
+训练侧后续闭环诊断登记为train24×states32–35 J0 paired96：K1 held teacher46–49，每task四条各一次；从canonical排列中过滤合法四条，按固定state origin32分配。
+other若需要则在同一合法四条排列内偏移17 mod4，仍各一次且逐行不同。旧train120在四条视频上重复复用，保留历史；source19/120不能直接作96行基线，需同状态子集重新核对或重跑source96。
 独立held-action诊断保留train24等权、actions42–45、每task128queries、teacher46+(task mod4)、seed20260908+task，
 全程no_grad、不消耗训练sampler；节点按同段需要登记，不能代替闭环或选模型。
 绝对分数仍低且持续获取时不重复other。correct接近/超过目标并出现相邻稳定候选后，再补other资格；最终controls在选点冻结后执行。
@@ -336,15 +337,16 @@ train24×states32–36 J0 paired120（K1 held teacher46–49、source19/120）�
 记录累计optimizer updates、FM queries、每task条件曝光和墙钟，fresh K1单独统计，不将旧混合K曝光计入本轮。
 历史监督曝光参考v5.2=75600、v6-fast=192000、SFT=230400queries；优化过程与计算量不同，不承诺必达分数。
 64steps=16384queries仍早；192steps也不能自动视为充分。结合充分曝光、held FM、训练task表现和多个有信息量correct节点判断平台。
-至少三个有信息量节点中validation最佳改善≤5/400、train120改善≤3/120、held FM相对改善≤2%，且无持续breadth/suite获取，
+至少三个有信息量节点中validation最佳改善≤5/400、训练侧同口径面板改善≤2.5个百分点（新96行面板不与旧120行直接比较）、held FM相对改善≤2%，且无持续breadth/suite获取，
 只能构成平台候选，还需判断监督量；去掉原固定128update充分性暗示。有改善继续，弱平台先定位真实能力缺口，不机械交给RL。
 不追求数学完全收敛，不无限续训或无依据超参小扫。RL阶段独立登记，K1限制同样适用。
 
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，
-K1、每个ordinal内部从同task全部50条合法视频无放回取两个不同视频；跨ordinal遵循canonical teacher schedule，
-teacher seed沿用20260907以便核对既有schedule。
+K1正式每task的50个init states对应全部50条合法teacher videos各一次，每臂各自整轮无重复；validation8共400个不同task-video条件。
+复用`expert_manifold/video_schedule.py`中每task固定排列，correct用reference_demo_index(without_replacement)，other用canonical +17 mod50规则，逐行不同。
+teacher seed为20260907；同seed/task/init state跨checkpoint、worker顺序、分片与恢复保持映射一致。旧per-ordinal独立随机抽样不是canonical schedule。
 当前只实施K1。K1全部资格与因果验证通过后再登记K>1训练及测试；声称dynamic K时须真实覆盖相应cardinalities。
 
 沿用旧预登记中对Owner定性目标的操作化口径，首个新资格分数前写入新run registration：

@@ -32,7 +32,7 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
 
 def _selection(**overrides):
     values = dict(role="development_train", task_ids=(0,), cardinality=1, arm="correct",
-                  mode="per_init_ordinal", seed=7, init_state_ids=(0, 1), video_pool=tuple(range(8)))
+                  mode="per_init_ordinal", seed=7, init_state_ids=(0, 1), video_pool=tuple(range(50)))
     return selection_contract(**(values | overrides))
 
 
@@ -110,7 +110,7 @@ def _inspect(path):
 
 @pytest.mark.parametrize("k", [1, 2, 4])
 def test_paired_sampling_is_deterministic_disjoint_and_outcome_independent(k):
-    correct = _selection(cardinality=k, video_pool=tuple(range(16)))
+    correct = _selection(cardinality=k, video_pool=tuple(range(50)))
     other = correct | {"arm": "same_task_other"}
     for ordinal in (0, 1, 49):
         left, right = paired_video_sets(correct, 12, ordinal)
@@ -338,6 +338,95 @@ def test_resident_batch_rejects_output_collision_and_per_request_asset_roots(res
     assert not builds
 
 
+def test_checkpoint_change_preserves_episode_mapping(resident_materialization):
+    requests, _, _, _ = resident_materialization
+    requests[1]["arm"] = "correct"
+    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
+    left, right = (json.loads(path.read_text()) for path in paths)
+    assert left["tasks"] == right["tasks"]
+    assert left["writer_checkpoint"] != right["writer_checkpoint"]
+    assert left["conditions"][0]["writer_value"] != right["conditions"][0]["writer_value"]
+
+
+@pytest.mark.parametrize("damage", ["checkpoint", "source", "method", "video", "frames"])
+def test_condition_reuse_rejects_identity_and_generation_mismatch(bank, damage):
+    path, manifest = bank
+    run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
+    if damage == "checkpoint":
+        manifest["writer_checkpoint"]["macro"] += 1
+    elif damage == "source":
+        manifest["source"]["checkpoint"] = "/different/source"
+    elif damage == "method":
+        manifest["method"]["frame_stride"] = 10
+    elif damage == "video":
+        manifest["conditions"][0]["teacher_demo_indices"] = [49]
+    else:
+        manifest["conditions"][0]["teacher_videos"][0]["frame_indices"][0] = 1
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError):
+        materialization._reusable_conditions(path, asset_root=ROOT, run=run,
+            checkpoint=checkpoint, selection=_selection())
+
+
+def test_materialization_reuses_valid_loras_and_compiles_only_missing_video(bank, tmp_path, monkeypatch):
+    from ember.writer import learning_data, runtime
+
+    path, old = bank
+    checkpoint = Path(old["writer_checkpoint"]["path"])
+    probe = torch.randn(50, 32, generator=torch.Generator().manual_seed(1729))
+    save_file({"probe": probe}, str(checkpoint / "ecp.safetensors"))
+    state = torch.nn.Module()
+    state.register_buffer("probe", probe.clone())
+    lora = load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json")
+    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), lora=lora, source=SOURCE)
+    row = old["tasks"][0]
+    target = json.loads((ROOT / "configs/pi05_target_data_v1/manifest.json").read_text())
+    native = next(task for task in target["tasks"] if task["global_task_id"] == 0)
+    task = SimpleNamespace(suite=row["suite"], suite_task_id=row["task_id"],
+        authority=SimpleNamespace(task_id=0, language=row["language"], path=Path(row["teacher_source"]["path"])))
+    monkeypatch.setattr(materialization, "git_state", lambda _: GIT)
+    monkeypatch.setattr(runtime, "build_runtime", lambda *args: instance)
+    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *args, **kwargs: {0: task})
+    monkeypatch.setattr(materialization, "RawTeacherVideoStore", lambda *args, **kwargs: SimpleNamespace(close=lambda: None))
+    compiled = []
+
+    def compile_condition(_runtime, _store, _task, demos, output, authority):
+        compiled.append(tuple(demos))
+        key = condition_id(0, demos)
+        destination = output / f"{key}.safetensors"
+        save_file(identity_lora_state(lora), str(destination), metadata=adapter_metadata(key, authority))
+        raw = native["demonstrations"]["episode_lengths"][demos[0]]
+        indices = list(range(0, raw, 5))
+        if indices[-1] != raw - 1:
+            indices.append(raw - 1)
+        return {key_: row[key_] for key_ in ("global_task_id", "suite", "task_id", "language")} | {
+            "condition_id": key, "teacher_demo_indices": list(demos),
+            "teacher_videos": [{"demo_index": demos[0], "raw_frame_count": raw,
+                                "sampled_frame_count": len(indices), "frame_indices": indices}],
+            "adapter": file_record(destination), "writer_invocations": 1, "single_complete_rank16": True}
+
+    monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
+    # An obsolete selection declaration does not invalidate individually proved
+    # task/video LoRAs; it must never become the new episode mapping.
+    old["selection"].pop("schedule")
+    path.write_text(json.dumps(old))
+    selected = _selection(init_state_ids=(0, 1, 2))
+    output = materialization.materialize(asset_root=ROOT, checkpoint=checkpoint,
+        output=tmp_path / "repaired", selection=selected, device=torch.device("cpu"), reuse_manifest=path)
+    repaired = json.loads(output.read_text())
+    assert len(compiled) == 1
+    assert repaired["compilation"]["reused_conditions"] == 2
+    assert repaired["compilation"]["new_conditions"] == 1
+    assert repaired["tasks"][0]["episodes"] == planned_episodes(selected, 0)
+    for condition in old["conditions"]:
+        reused = output.parent / Path(condition["adapter"]["path"]).name
+        assert reused.stat().st_ino == Path(condition["adapter"]["path"]).stat().st_ino
+    verified = inspect_horizon_writer_bank(manifest_path=output, source=SOURCE,
+        task_keys=(("libero_spatial", 0),), evaluation_role="development_train", require_formal=True,
+        task_init_state_ids={("libero_spatial", 0): (0, 1, 2)})
+    assert len(verified["conditions"]) == 3
+
+
 def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, monkeypatch, capsys):
     requests = [{"checkpoint": "/checkpoint", "output": "/output", "role": "development_train", "task_ids": [0], "k": 1}]
     path = tmp_path / "requests.json"
@@ -418,25 +507,25 @@ def test_supervised_checkpoint_rejects_training_state_mismatch(bank, field, valu
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize("bank", [{"init_state_ids": tuple(range(32, 37))}], indirect=True)
+@pytest.mark.parametrize("bank", [{"init_state_ids": tuple(range(32, 36))}], indirect=True)
 def test_train_diagnostic_bank_requires_exact_evaluator_state_subset(bank):
     path, _ = bank
     arguments = dict(manifest_path=path, source=SOURCE, task_keys=(("libero_spatial", 0),),
                      evaluation_role="development_train", require_formal=True)
     adapter = inspect_horizon_writer_bank(**arguments,
-        task_init_state_ids={("libero_spatial", 0): tuple(range(32, 37))})
-    assert [row["init_state_id"] for row in adapter["tasks"][0]["episodes"]] == list(range(32, 37))
-    for states in (tuple(range(5)), tuple(range(32, 36)), tuple(range(50))):
+        task_init_state_ids={("libero_spatial", 0): tuple(range(32, 36))})
+    assert [row["init_state_id"] for row in adapter["tasks"][0]["episodes"]] == list(range(32, 36))
+    for states in (tuple(range(4)), tuple(range(32, 37)), tuple(range(50))):
         with pytest.raises(Pi05EvaluationError, match="same exact fixed init states"):
             inspect_horizon_writer_bank(**arguments, task_init_state_ids={("libero_spatial", 0): states})
 
 
 def test_explicit_train_diagnostic_request_and_count_compatibility(resident_materialization):
     requests, _, _, _ = resident_materialization
-    request = requests[0] | {"init_state_ids": list(range(32, 37)), "state_count": 5}
+    request = requests[0] | {"init_state_ids": list(range(32, 36)), "state_count": 4}
     paths = materialization.materialize_requests(asset_root=ROOT, requests=[request], device=torch.device("cpu"))
     selected = json.loads(paths[0].read_text())["selection"]
-    assert selected["init_state_ids"] == list(range(32, 37))
+    assert selected["init_state_ids"] == list(range(32, 36))
     assert materialization.request_init_state_ids(role="validation") == tuple(range(50))
     assert materialization.request_init_state_ids(role="validation", state_count=10) == tuple(range(10))
 
@@ -446,8 +535,8 @@ def test_explicit_train_diagnostic_request_and_count_compatibility(resident_mate
     {"init_state_ids": [32, 33, 34, 35, 35]}, {"init_state_ids": [36, 35, 34, 33, 32]},
 ])
 def test_explicit_train_diagnostic_request_rejects_wrong_scope(overrides):
-    values = {"role": "development_train", "init_state_ids": list(range(32, 37)), "state_count": 5}
-    with pytest.raises(ValueError, match="development_train states32..36 and count5"):
+    values = {"role": "development_train", "init_state_ids": list(range(32, 36)), "state_count": 4}
+    with pytest.raises(ValueError, match="development_train states32..35 and count4"):
         materialization.request_init_state_ids(**(values | overrides))
 
 
@@ -462,9 +551,9 @@ def test_single_cli_preserves_explicit_init_state_ids(monkeypatch):
     monkeypatch.setattr(torch, "set_num_threads", lambda _: None)
     monkeypatch.setattr("sys.argv", ["materialize_horizon_writer.py", "--checkpoint", "/checkpoint",
         "--output", "/output", "--role", "development_train", "--task-ids", "0", "--k", "1",
-        "--device", "cpu", "--state-count", "5", "--init-state-ids", "32,33,34,35,36"])
+        "--device", "cpu", "--state-count", "4", "--init-state-ids", "32,33,34,35"])
     materialization.main()
-    assert calls[0]["selection"]["init_state_ids"] == list(range(32, 37))
+    assert calls[0]["selection"]["init_state_ids"] == list(range(32, 36))
     assert calls[0]["selection"]["seed"] == 20260907
 
 
@@ -499,31 +588,33 @@ def _diagnostic_args(**overrides):
         "init_state_ids": tuple(range(32, 37)), "occupancy_capture_selection": None} | overrides))
 
 
-def test_evaluator_diagnostic_scope_state_subset_and_queue_are_exact(tmp_path):
+@pytest.mark.parametrize("count", [4, 5])
+def test_evaluator_diagnostic_scope_state_subset_and_queue_are_exact(tmp_path, count):
     from ember.pi05_eval.preparation import _select_init_states, _task_subset_tasks, shards_from_contract
     from ember.pi05_eval_contract import TargetTaskContract
 
     task = TargetTaskContract("libero_spatial", 0, "train", "task", "folder", "task.bddl", 1,
                               "states", 1, 50, 220, tuple(range(5)))
-    selected = _select_init_states(_diagnostic_args(), (task,))
-    assert selected[0].init_state_ids == tuple(range(32, 37))
+    states = tuple(range(32, 32 + count))
+    selected = _select_init_states(_diagnostic_args(state_count=count, init_state_ids=states), (task,))
+    assert selected[0].init_state_ids == states
     assert task.init_state_ids == tuple(range(5))
     shards = shards_from_contract({"tasks": [{"suite": task.suite, "task_id": 0,
         "horizon": 220, "init_state_ids": selected[0].init_state_ids}],
         "parallel": {"envs_per_replica": 8, "shard_target_cost": 4160,
                      "physical_gpu_count": 1, "replicas_per_gpu": 1}})
-    assert sorted(state for shard in shards for state in shard.init_state_ids) == list(range(32, 37))
+    assert sorted(state for shard in shards for state in shard.init_state_ids) == list(states)
     path = tmp_path / "subset.json"
     manifest = {"schema_version": "ember_pi05_task_subset_selection_v1", "role": "development_train",
-        "mode": "screen", "state_count": 5, "init_state_ids": list(range(32, 37)),
+        "mode": "screen", "state_count": count, "init_state_ids": list(states),
         "task_ordinals": [0], "global_task_ids": [0],
         "tasks": [{"global_task_id": 0, "suite": "libero_spatial", "task_id": 0}],
         "outcome_dependence": False, "validation_use": False, "test_use": False}
     path.write_text(json.dumps(manifest))
-    args = _diagnostic_args(task_subset_selection=path)
+    args = _diagnostic_args(task_subset_selection=path, state_count=count, init_state_ids=states)
     subset, record = _task_subset_tasks(args, selected, adapter_kind="static_task_lora")
-    assert subset == selected and record["init_state_ids"] == list(range(32, 37))
-    for ids in (None, list(range(5)), list(range(32, 36))):
+    assert subset == selected and record["init_state_ids"] == list(states)
+    for ids in (None, list(range(5)), list(states[:-1])):
         path.write_text(json.dumps(manifest | {"init_state_ids": ids}))
         with pytest.raises(Pi05EvaluationError, match="subset selection changed"):
             _task_subset_tasks(args, selected, adapter_kind="static_task_lora")

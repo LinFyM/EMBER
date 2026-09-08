@@ -742,14 +742,14 @@ vs source19的R/G/L=13/21/6、churn27/120、J=.325；vs step24的17，R/G/L=14/2
 相比24，Spatial/Goal成功全部保留并新增；Object丢2新增5，Long丢1新增3，仍须正视成功集合变化。
 这是训练task获取增益，不能替代validation资格。原件`supervised/step64_evaluation/train64_vs_source19.json`和`train64_vs_step24.json`。
 
-64首个validation correct strict400完整exit0（949.35秒）：99/400，S/O/G/L=9/53/35/2、breadth8/8。
+64首个validation correct 400行完整exit0（后审计为重复视频抽样，不合规）（949.35秒）：99/400，S/O/G/L=9/53/35/2、breadth8/8。
 global tasks1/3/11/13/23/26/31/32分别5/4/31/22/1/34/1/1。vs source47的R/G/L=35/64/12、churn76/400、J=.31532。
 对历史SFT109/107，R/G/L分别60/39/49与55/44/52，churn88/96；SFT400 S/O/G/L=0/69/22/18，
 因此当前Long/Object弱于SFT，Spatial/Goal较高，不能将不同成功集合压成仅差10分。旧SFT v1/后端/rank边界明确保留。
-尚未>145、Long2<10，无相邻稳定性或视频因果证据；这是早期泛化增益，不能选为qualified checkpoint。
+尚未>145、Long2<10，无相邻稳定性或视频因果证据；这是旧重复视频分布下的探索增益，不能作正式泛化或qualified checkpoint证据。
 原件`supervised/step64_evaluation/validation_correct_vs_source47.json`与`validation_correct_vs_historical_sft.json`。
 
-64 same-task-other strict400完整exit0：95/400，S/O/G/L=4/51/36/4、breadth7/8；
+64 same-task-other 400行完整exit0（后审计为重复视频抽样，不合规）：95/400，S/O/G/L=4/51/36/4、breadth7/8；
 global tasks1/3/11/13/23/26/31/32分别1/3/31/20/1/35/4/0。correct99→other95的R/G/L=77/18/22、
 churn40/400、J=.65812；总分只降4但J不达.80，Long无correct成功保留。vs source47为34/61/13、churn74。
 对SFT109/107，R/G/L分别64/31/45与58/37/49，仍保留历史后端/不同rank边界。
@@ -760,4 +760,12 @@ churn40/400、J=.65812；总分只降4但J不达.80，Long无correct成功保留
 实际env steps120809/120820，后者15worker全部权重成功、无OOM，实测最拥挤42372/46068MiB。
 不同视频arm并非纯replica因果实验，但三worker没有实际吞吐收益，后续回到两worker，不继续资源档位扫描。
 只读加载路径核查发现大Gemma/PaliGemma重复构造；GPU allocation发生在checkpoint加载前，不能当作已加载权重。
-未改第三方loader、未引入no-init；准确边界与候选限制记在`evaluation_replica_choice.json`，不影响已完成科学结果。
+未改第三方loader、未引入no-init；准确边界与候选限制记在`evaluation_replica_choice.json`，不改变原始计算记录；视频schedule的科学适用范围见下文更正。
+
+## 2026-09-08 Horizon视频schedule合同更正
+
+旧混合K64的correct99/other95保留为重复teacher抽样下的探索结果，不满足每task50视频各一次的正式合同；撤销其合规strict400身份。
+实际correct为255个task-video条件/400行、other259/400；八task每臂仅28–36条唯一视频（other29–36），存在重复。
+原success、R/G/L、churn和当时决策记录不改，但关于泛化、SFT/source比较及跨视频鲁棒性的结论仅适用于旧重复视频分布，不能作为资格证据。
+旧train24/64的17/120与34/120均为held池46–49在5个init中重复复用，共71条件/120行；这是同一旧映射下的诊断变化，不代表整轮视频覆盖。
+Fresh K1的100/200训练checkpoint保持有效；其初次物化也错误地只有255条件，已停止错误schedule评测（rollout前SIGINT、无结果），将复用合法LoRA并补齐新canonical映射。

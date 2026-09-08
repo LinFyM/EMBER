@@ -9,9 +9,11 @@
 2026-09-08最新Owner安排：**当前集中K1，Writer整体先纯FM后独立共享RL**；完整架构和信息墙保持。
 Meta归属Writer内部读取模块。真实采样与逻辑4task/256queries更新合同独立于GPU资源。
 
+当前优先修复整轮视频schedule：保留fresh K1训练与100/200 checkpoint，复用各checkpoint已合法生成的LoRA，补齐400条件后重新correct400；不重训、不重置学习状态、不改架构。
+
 ## 执行计划
 
-1. **已完成基础：** 全仓理解、历史审计、完整Horizon架构及真实完整梯度；正式纯FM fresh起点与64节点correct99/other95。
+1. **已完成基础：** 全仓理解、历史审计、完整Horizon架构及真实完整梯度；正式纯FM fresh起点；旧混合K64的99/95为重复teacher抽样的非合规探索成绩。
    旧384停止，旧联合profile只作机制证据。当前混合K段在原128完整checkpoint安全边界结束，保留完整历史。
 2. **当前落实：** sampler实际固定K1；Owner补充纠正明确fresh K1，全部Writer可训练参数与学习状态从step0重置。
    旧mixed checkpoint/result仅历史，不继承其权重、optimizer、scheduler或sampler/RNG；冻结source无需重训。
@@ -21,7 +23,7 @@ Meta归属Writer内部读取模块。真实采样与逻辑4task/256queries更新
    记录queries/s、LoRA/s、step与整段墙钟、加载/保存/评测耗时、显存峰值。有限profile后及时训练。
    用真实K1速率选择约一小时的段长，50或100倍数checkpoint，中间/末尾两个点，看到分数前登记。
 4. **correct400主线：** 每段暂停训练评测两个K1 correct400，持续raw rows相邻per-task/suite/breadth/RGL/churn/J。
-   train120及held FM按判断训练获取/泛化需要安排；仍低分且获取能力时不反复other。
+   train96及held FM按判断训练获取/泛化需要安排；仍低分且获取能力时不反复other。
    结合累计queries、每task条件曝光、多个有信息量节点判断平台，64/192步都不能自动代表充分监督。
 5. **资格与后续：** correct接近/超目标且出现相邻稳定候选时补other；冻结单checkpoint后完成视频因果controls，
    shuffled/reversed最后且不反哺设计。K1全部通过后再登记few-shot训练/测试。

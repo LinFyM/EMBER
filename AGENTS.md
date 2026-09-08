@@ -115,7 +115,11 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 
 - official preprocessing：render256/model224、双相机180度rotate、8维state（position3 + axis-angle3 + gripper qpos2）/7维action、10 flow steps、执行前5 actions后
   replan、dummy settling10、成功即终止、suite horizon 220/280/300/520。
-- zero-interaction rollout从正确task的teacher videos无放回采样，不挑最好video。
+- 正式K=1的一轮50个init states中，同task、同一评测臂必须使用全部50条合法teacher videos各一次；
+  validation8应为400个不同task-video条件。不重复按task与video共同判断，不能缩小为单次K集合内部。
+  跨checkpoint必须复用同一固定state-video映射；correct/other各自整轮无重复且逐行视频不同，controls按配对合同复用映射。
+  调度复用`src/ember/expert_manifold/video_schedule.py`，只由登记seed/task/init state决定，与GPU、worker顺序、分片及恢复无关。
+  有限池训练诊断必须登记面板与复用范围；视频不足不得宣称整轮无放回或静默重复。
 - correct/same-task-other/cross-suite-wrong/shuffled/reversed/no-video严格配对task、state、env/policy RNG和video
   ordinal；shuffle/reverse必须重排真实frames后重新完整forward。
 - evaluator采用cost-balanced dynamic queue、long-first和persistent workers，不做静态task/GPU分配或dummy占卡。

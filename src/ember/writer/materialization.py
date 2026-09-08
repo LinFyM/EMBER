@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import random
+import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -12,9 +12,13 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
+from ember.expert_manifold.video_schedule import (
+    SAME_TASK_OTHER_OFFSET, paired_condition_demo_indices, reference_demo_indices,
+)
 from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore
 
 
@@ -25,7 +29,8 @@ UPDATE_VERSION = "supervised_fm_writer_meta_v1"
 BANK_SCHEMA = "ember_horizon_writer_lora_bank_v1"
 BANK_KIND = "horizon_writer_lora_bank"
 ADAPTER_SCHEMA = "ember_horizon_writer_materialized_adapter_v1"
-TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 37))
+TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 36))
+VIDEO_SCHEDULE = "expert_manifold_canonical_permutation_v1"
 DEFAULT_SELECTION_SEED = 20260907
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -104,13 +109,24 @@ def selection_contract(
         raise ValueError("invalid explicit task/condition selection; Test and final controls are excluded")
     fixed = _fixed_video_selection(fixed_videos, mode=mode, tasks=tasks, cardinality=cardinality, pool=pool)
     if role == "validation" and mode != "per_init_ordinal":
-        raise ValueError("validation banks use per-init-state random video sets; fixed sets are train diagnostics")
+        raise ValueError("validation banks use canonical per-init video schedules; fixed sets are train diagnostics")
     if role == "validation" and states != tuple(range(len(states))):
         raise ValueError("validation init states must retain the canonical zero-based prefix")
+    if role == "validation" and sorted(pool) != list(range(50)):
+        raise ValueError("validation schedules require all 50 teacher videos")
+    origin = 32 if role == "development_train" and set(states) <= set(TRAIN_DIAGNOSTIC_INIT_STATE_IDS) else 0
+    restricted = sorted(pool) != list(range(50))
+    if mode == "per_init_ordinal" and restricted and (
+            cardinality != 1 or min(states) < origin or max(states) - origin >= len(pool)):
+        raise ValueError("finite-pool K1 diagnostics need one distinct allowed video per init state; use states32..35 for four videos")
     return {"evaluation_role": role, "task_ids": list(tasks), "K": cardinality, "arm": arm,
             "mode": mode, "seed": seed, "init_state_ids": list(states), "video_pool": sorted(pool),
             "fixed_videos": fixed, "outcome_dependence": False, "gradient_use": False,
-            "without_replacement": True, "video_ordinal_rule": "init_state_id" if mode == "per_init_ordinal" else "fixed_zero"}
+            "without_replacement": mode == "per_init_ordinal", "schedule": VIDEO_SCHEDULE,
+            "without_replacement_scope": ("per_task_per_arm_round" if cardinality == 1 else "canonical_cyclic_K_windows")
+                if mode == "per_init_ordinal" else "fixed_diagnostic_video_reuse",
+            "schedule_state_origin": origin if restricted else 0,
+            "video_ordinal_rule": "init_state_id" if mode == "per_init_ordinal" else "fixed_zero"}
 
 
 def request_init_state_ids(
@@ -125,18 +141,34 @@ def request_init_state_ids(
     states = tuple(init_state_ids)
     if (role != "development_train" or states != TRAIN_DIAGNOSTIC_INIT_STATE_IDS
             or state_count not in (None, len(states))):
-        raise ValueError("explicit Writer init states require development_train states32..36 and count5")
+        raise ValueError("explicit Writer init states require development_train states32..35 and count4")
     return states
 
 
 def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    """Same seed/ordinal yields a correct set and a disjoint alternative set."""
+    """Use the shared task permutation, independent of worker/checkpoint/cursor."""
     k = int(selection["K"])
-    rng = random.Random(int(selection["seed"]) + 1_000_003 * task + 7_919 * ordinal)
+    if not 0 <= task < 40:
+        raise ValueError("Writer video schedule requires a target40 task")
+    suite, local_task = SUITE_ORDER[task // 10], task % 10
+    seed, pool = int(selection["seed"]), selection["video_pool"]
+    if selection["mode"] == "per_init_ordinal" and pool == list(range(50)):
+        correct, other = paired_condition_demo_indices(seed, suite, local_task, ordinal,
+            "same_task_other", 50, "without_replacement", k)
+        return tuple(sorted(correct)), tuple(sorted(other))
+    order = [demo for demo in reference_demo_indices(seed, suite, local_task, 0,
+        demo_count=50, sampling_mode="without_replacement", video_count=50) if demo in pool]
     fixed = selection["fixed_videos"].get(str(task))
-    correct = tuple(sorted(fixed if fixed is not None else rng.sample(selection["video_pool"], k)))
-    remaining = [demo for demo in selection["video_pool"] if demo not in correct]
-    other = tuple(sorted(rng.sample(remaining, k))) if len(remaining) >= k else ()
+    if selection["mode"] == "fixed_per_task":
+        correct = tuple(sorted(fixed if fixed is not None else order[:k]))
+        other = tuple(sorted([demo for demo in order if demo not in correct][:k]))
+    else:
+        position = ordinal - selection["schedule_state_origin"]
+        if k != 1 or not 0 <= position < len(order):
+            raise ValueError("finite-pool diagnostic ordinal would repeat or omit a video")
+        correct = (order[position],)
+        offset = SAME_TASK_OTHER_OFFSET % len(order) or 1
+        other = (order[(position + offset) % len(order)],) if len(order) > 1 else ()
     if selection["arm"] == "same_task_other" and len(other) != k:
         raise ValueError("same-task-other requires at least K additional disjoint videos")
     return correct, other
@@ -207,11 +239,39 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
             "adapter": file_record(path), "writer_invocations": 1, "single_complete_rank16": True}
 
 
+def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
+    """Reuse individually valid adapters without accepting their old episode schedule."""
+    if path is None:
+        return {}
+    from ember.pi05_lora import load_pi05_lora_contract
+    from ember.writer.evaluation import _inspect_conditions, validate_information_wall, validate_task_scope
+
+    path = Path(path).resolve()
+    manifest = read_json(path)
+    lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
+    if (manifest.get("schema_version") != BANK_SCHEMA or manifest.get("kind") != BANK_KIND
+            or manifest.get("status") != "sealed" or manifest.get("single_complete_rank16") is not True
+            or manifest.get("writer_checkpoint") != checkpoint or manifest.get("source") != run["source"]
+            or manifest.get("method") != method_metadata(run)
+            or manifest.get("lora_contract") != file_record(lora_path)
+            or Path(manifest.get("asset_root", "")).resolve() != asset_root.resolve()
+            or manifest.get("evaluation_role") != selection["evaluation_role"]
+            or manifest.get("selection", {}).get("K") != selection["K"]
+            or manifest.get("arm") not in {"correct", "same_task_other"}
+            or not frozen_authority(manifest.get("materialization_git", {}))):
+        raise ValueError("reused LoRAs require identical checkpoint/source/preprocessing/generation contracts")
+    validate_task_scope(manifest["tasks"], manifest["evaluation_role"], asset_root)
+    validate_information_wall(manifest)
+    _inspect_conditions(manifest, path.parent, load_pi05_lora_contract(lora_path))
+    return {row["condition_id"]: row for row in manifest["conditions"]}
+
+
 def _materialize(
     *, asset_root: Path, checkpoint: Path, output: Path,
     selection: Mapping[str, Any], device: torch.device,
     runtime: Any, run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
-    repository: Mapping[str, Any],
+    repository: Mapping[str, Any], reuse_manifest: Path | None = None,
+    reusable: Mapping[str, Any] | None = None,
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
@@ -237,15 +297,24 @@ def _materialize(
     output.mkdir(parents=True, exist_ok=False)
     store = RawTeacherVideoStore(tuple(value.authority for value in tasks.values()), frame_stride=5)
     conditions = {}
+    reused = []
     try:
         for row in rows:
             task = tasks[row["global_task_id"]]
             for episode in row["episodes"]:
                 key = episode["condition_id"]
                 if key not in conditions:
-                    conditions[key] = _compile_condition(runtime, store, task, episode["teacher_demo_indices"], output, checkpoint_record)
-                    print(json.dumps({"condition": key, "compiled": len(conditions),
-                                      "frames": sum(video["sampled_frame_count"] for video in conditions[key]["teacher_videos"])}), flush=True)
+                    if key in (reusable or {}):
+                        record = reusable[key]
+                        path = output / f"{key}.safetensors"
+                        os.link(record["adapter"]["path"], path)
+                        conditions[key] = {**record, "adapter": file_record(path)}
+                        reused.append(key)
+                    else:
+                        conditions[key] = _compile_condition(runtime, store, task, episode["teacher_demo_indices"], output, checkpoint_record)
+                        print(json.dumps({"condition": key, "conditions_ready": len(conditions),
+                            "newly_compiled": len(conditions) - len(reused), "reused": len(reused),
+                            "frames": sum(video["sampled_frame_count"] for video in conditions[key]["teacher_videos"])}), flush=True)
     finally:
         store.close()
     lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
@@ -255,6 +324,9 @@ def _materialize(
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
                 "lora_contract": file_record(lora_path), "method": method_metadata(run),
                 "tasks": rows, "conditions": list(conditions.values()), "single_complete_rank16": True,
+                "compilation": {"new_conditions": len(conditions) - len(reused), "reused_conditions": len(reused),
+                    "reuse_manifest": file_record(reuse_manifest) if reuse_manifest is not None else None,
+                    "reused_condition_ids": reused},
                 "information_wall": {"deployment_inputs": ["exact language", "ordered RGB videos", "original frame indices"],
                     "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
                     "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
@@ -282,18 +354,21 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     for run, _ in inspected:
         if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
             raise ValueError("resident batch requires identical source, model, and observer contracts")
+    reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
+        run=run, checkpoint=record, selection=request["selection"])
+        for request, (run, record) in zip(requests, inspected, strict=True)]
     # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
     # prefix, generated LoRA, or checkpoint state is cached across requests.
     runtime = build_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
-    return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run,
+    return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run, reusable=reused,
                          checkpoint_record=record, repository=repository, **request)
-            for request, (run, record) in zip(requests, inspected, strict=True)]
+            for request, (run, record), reused in zip(requests, inspected, reusable, strict=True)]
 
 
 def materialize(*, asset_root: Path, checkpoint: Path, output: Path,
-                selection: Mapping[str, Any], device: torch.device) -> Path:
+                selection: Mapping[str, Any], device: torch.device, reuse_manifest: Path | None = None) -> Path:
     return _materialize_batch(asset_root=asset_root, device=device,
-        requests=[{"checkpoint": checkpoint, "output": output, "selection": selection}])[0]
+        requests=[{"checkpoint": checkpoint, "output": output, "selection": selection, "reuse_manifest": reuse_manifest}])[0]
 
 
 def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
@@ -301,7 +376,7 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
     if not isinstance(requests, (list, tuple)):
         raise ValueError("batch requests must be a JSON list")
     fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
-              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos"}
+              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest"}
     normalized = []
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
@@ -312,7 +387,8 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
                 role=request["role"], init_state_ids=request.get("init_state_ids"), state_count=request.get("state_count")),
             video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
-                           "output": Path(request["output"]).resolve(), "selection": selection})
+                           "output": Path(request["output"]).resolve(), "selection": selection,
+                           "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
     return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device)
 
 
@@ -326,6 +402,7 @@ def main() -> None:
     parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and device.")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
     parser.add_argument("--role", choices=("development_train", "validation"))
     parser.add_argument("--task-ids", type=_integers)
     parser.add_argument("--k", type=int, choices=(1, 2, 4))
@@ -333,9 +410,9 @@ def main() -> None:
     parser.add_argument("--selection-mode", choices=("fixed_per_task", "per_init_ordinal"))
     parser.add_argument("--video-pool", type=_integers)
     parser.add_argument("--fixed-videos-json", type=Path)
-    parser.add_argument("--state-count", type=int, choices=(5, 10, 50))
+    parser.add_argument("--state-count", type=int, choices=(4, 10, 50))
     parser.add_argument("--init-state-ids", type=_integers,
-                        help="Explicit train diagnostic panel: 32,33,34,35,36.")
+                        help="Explicit train diagnostic panel: 32,33,34,35 (four held videos, once each).")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--cpu-threads", type=int, default=4)
@@ -343,7 +420,7 @@ def main() -> None:
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):
         parser.error("single request requires --checkpoint, --output, --role, --task-ids and --k")
-    selection_flags = (*required, "arm", "selection_mode", "video_pool", "fixed_videos_json", "state_count", "init_state_ids", "seed")
+    selection_flags = (*required, "arm", "selection_mode", "video_pool", "fixed_videos_json", "state_count", "init_state_ids", "seed", "reuse_manifest")
     if args.requests_json is not None and any(getattr(args, key) != parser.get_default(key) for key in selection_flags):
         parser.error("--requests-json cannot be combined with single-request selection flags")
     defaults = {"arm": "correct", "selection_mode": "per_init_ordinal", "video_pool": tuple(range(50)),
@@ -369,4 +446,4 @@ def main() -> None:
         init_state_ids=request_init_state_ids(role=args.role, init_state_ids=args.init_state_ids, state_count=args.state_count),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)
     print(materialize(asset_root=args.asset_root.resolve(), checkpoint=args.checkpoint.resolve(),
-                      output=args.output, selection=selection, device=torch.device(args.device)), flush=True)
+                      output=args.output, selection=selection, device=torch.device(args.device), reuse_manifest=args.reuse_manifest), flush=True)

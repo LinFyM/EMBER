@@ -91,10 +91,11 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
         return None
     states = tuple(values)
     if (args.role != "development_train" or args.mode != "screen"
-            or states != tuple(range(32, 37)) or args.state_count != len(states)
+            or states not in (tuple(range(32, 36)), tuple(range(32, 37))) or args.state_count != len(states)
+            or (getattr(args, "exploration_sigma", False) and states != tuple(range(32, 37)))
             or getattr(args, "occupancy_capture_selection", None) is not None):
         raise Pi05EvaluationError(
-            "explicit init states require development_train screen states32..36 and state-count5"
+            "explicit init states require development_train screen states32..35/count4 or states32..36/count5"
         )
     return states
 
@@ -192,7 +193,7 @@ def _task_subset_tasks(
         return tuple(tasks), None
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or (str(args.mode), int(args.state_count)) not in {("screen", 5), ("screen", 10), ("formal", 50)}
+        or (str(args.mode), int(args.state_count)) not in {("screen", 4), ("screen", 5), ("screen", 10), ("formal", 50)}
         or args.role != "development_train"
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):

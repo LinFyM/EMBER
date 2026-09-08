@@ -3,6 +3,15 @@
 更新时间：2026-09-08 CST。最新Owner要求：当前先集中真实K=1，固定逻辑4task/256queries与GPU数解耦，
 先纯FM到有证据平台、后独立共享Writer RL；约一小时训练分段，中/末两个整齐步数correct400节点。继续当前全程goal。
 
+## 当前优先：整轮视频schedule修复
+
+Owner2026-09-08明确要求恢复canonical每task50视频各一次。fresh K1训练200已完成、100/200 checkpoint保留，不重训或重置。
+初次100/200 banks各255条件不合规，已保留原manifest并添加sampling_issue.json；correct100启动后在rollout前SIGINT停止，exit130，无评测输出。
+旧混合K64的99/95只作重复teacher分布下的探索分数，不满足正式400合同；旧train120四条held视频重复复用（71条件/120行），相关历史结论限于该分布。
+canonical schedule、旧LoRA身份复用与启动前实际视频覆盖检查已实现，74项相关回归通过。真实旧bank被拒绝；每个checkpoint的255个已有LoRA均通过身份/生成合同核对，新400行计划每task correct/other各50条各一次、两checkpoint映射完全相同，待各补145个新LoRA后核验最终manifest。
+训练侧未来诊断改为states32–35的96行，单独建立source比较；真实核验与修复启动记录在`k1_fresh/schedule_repair/`。
+以下较早“正在评测/已封存”描述仅指修复前阶段，不授权继续旧schedule。
+
 ## 当前授权与阶段
 
 - 唯一active design：[过去定向完整Horizon Writer](docs/horizon_relation_video_writer_design.md)。完整图、集合能力、信息墙和科学目标保持。
@@ -113,7 +122,7 @@ train120 held-video J0=34/120（24步17，source19），S/O/G/L=12/7/12/3、brea
 vs24 R/G/L=14/20/3，churn23/120，J=.37838；vs source为13/21/6，churn27/120，J=.325。
 Spatial task5仍0/5而source4/5；不能只报告新增而忽略遗忘。原件`step64_evaluation/train64_vs_*.json`。
 
-validation strict400 correct/other=99/95（source47，历史SFT109/107），均完整exit0。
+旧重复teacher抽样的validation探索correct/other=99/95（不合规正式400）（source47，历史SFT109/107），均完整exit0。
 correct S/O/G/L=9/53/35/2、breadth8/8；other为4/51/36/4、breadth7/8。
 global tasks1/3/11/13/23/26/31/32，correct分别5/4/31/22/1/34/1/1，other为1/3/31/20/1/35/4/0。
 correct→other R/G/L=77/18/22、churn40/400、J=.65812；总分下降4，但J未达≥.80，Long成功无保留。

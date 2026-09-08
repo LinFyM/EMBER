@@ -771,3 +771,8 @@ churn40/400、J=.65812；总分只降4但J不达.80，Long无correct成功保留
 Fresh K1的100/200训练checkpoint保持有效；其初次物化也错误地只有255条件，已停止错误schedule评测（rollout前SIGINT、无结果），将复用合法LoRA并补齐新canonical映射。
 
 修复后f1330697复用canonical排列及+17规则；fresh100/200各255个合法旧LoRA hardlink复用、145个新编译，正常exit0、总墙钟357.89/357.22秒。最终manifest实检各400条件/400行、八task各50视频一次、两checkpoint完全相同mapping；相关74项回归通过。原件`k1_fresh/schedule_repair/final_manifest_coverage.json`。
+
+## 2026-09-08 Fresh K1首个canonical correct400节点
+
+macro100（fresh K1累计25600 FM queries）correct400完整exit0：55/400，S/O/G/L=0/22/27/6、breadth6/8，global tasks1/3/11/13/23/26/31/32为0/0/21/1/2/25/4/2。相对同source47的R/G/L=25/30/22、churn52/400、J=.32468。实际rollout400行的teacher身份匹配新canonical bank，每task50条各一次；六worker全部exit0，完整墙钟1391.43秒（launcher1324.93秒）。
+未达>145、Spatial为零、Long6<10；这是单个早期监督节点，不能判断平台。旧mixed64的99/95同时具有不同训练条件和错误视频分布，不从两者分数差异归因K1或schedule。原件`k1_fresh/schedule_repair/step100/completed_summary.json`、`correct_vs_source47.json`及`evaluation/validation_correct_step100_schedule_v2_gpu3_J0/`；继续预登记200并做相邻paired分析。

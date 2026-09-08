@@ -14,7 +14,9 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 首次micro3恢复在401反向阶段因p1他人额外约3GiB占用而OOM，未执行optimizer或写曝光；所有rank退出，完整400保持。原失败日志和contract保留，不继承失败进程采样状态。
 第二次完整400恢复已真实完成401：19.327秒，256queries、累计1604条件/102656queries，rank0 allocated19.358/reserved20.662GiB；继续500/600，未改变原学习配方。
 冻结200/400 train96 CPU预验证exit0：每点96个唯一task-video，task/state/video/RNG一致；source15/96 policy/environment/RNG/normalization一致。
-两bank在gpu02p4同一resident runtime独立物化，tmux `ember-k1-train96-banks200-400`，准备与原件`k1_fresh/train96_diagnostic/`。预计新增0.923GiB；只调用f133运行面，不生成梯度。
+两bank已在gpu02p4同一resident runtime独立物化完成exit0，完整墙钟466.12秒；每个96个新条件，无跨checkpoint复用，共约0.923GiB。
+200/400完整public bank inspector均通过，实际每task四条held视频各一次、96行与预登记及彼此映射一致。原件`k1_fresh/train96_diagnostic/`；只调用f133运行面，不生成梯度，尚无train96闭环分数。
+训练已核实推进433，累计1732条件/110848queries；恢复段均值约18.3秒/update，四rank仍运行。
 当前其余卡尚不满足原evaluator准入，物化后刷新调度；诊断不阻塞续训，也不绕过准入。结果解释按design§8.2.1预登记分支，熟悉视频尚未启动。
 
 以下暂停段为历史，不覆盖本节最新恢复授权。

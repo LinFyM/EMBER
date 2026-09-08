@@ -2,16 +2,19 @@
 
 ## 当前目标与授权
 
-继续已创建的全过程goal：完整架构、正式学习、结果分析与方法迭代，直到validation8 strict paired correct>145/400、
+**Owner最新：暂停后续训练/评测，先仔细分析。** 当前授权仅覆盖已有证据、历史与代码的只读诊断及结果整理；不因原全过程goal或下面的历史计划自动恢复实验。
+400→600启动已停止且没有新update，最后完整状态400；500/600准备改为inactive。下一步先给出事实、已排除项、未验证解释和最小区分证据，与Owner讨论后再决定执行。
+
+长期全过程目标仍为：完整架构、正式学习、结果分析与方法迭代，直到validation8 strict paired correct>145/400、
 相邻与跨视频稳定、breadth/四suite/Goal/Long和最终因果要求达标，再完成冻结方法32/8 fresh与Test。
 不设token预算、总工期或总尝试次数，代码/profile/loss/单峰不是完成。
 
 2026-09-08最新Owner安排：**当前集中K1，Writer整体先纯FM后独立共享RL**；完整架构和信息墙保持。
 Meta归属Writer内部读取模块。真实采样与逻辑4task/256queries更新合同独立于GPU资源。
 
-整轮视频schedule修复已完成；fresh100/200各400条件bank实检通过，checkpoint与学习状态保留。首段两节点canonical correct400及相邻分析已完成并显示持续增长，200→400已完整恢复并正常结束；当前执行预登记300/400 correct400及相邻分析，仍按约一小时分段。
+整轮视频schedule修复已完成；fresh100/200各400条件bank实检通过，checkpoint与学习状态保留。首段两节点canonical correct400及相邻分析已完成并显示持续增长，200→400及300/400 correct400均已完整结束，400→600曾准备并启动，已按最新Owner要求停止；该接续计划现为inactive。
 
-## 执行计划
+## 长期路线（当前不执行）
 
 1. **已完成基础：** 全仓理解、历史审计、完整Horizon架构及真实完整梯度；正式纯FM fresh起点；旧混合K64的99/95为重复teacher抽样的非合规探索成绩。
    旧384停止，旧联合profile只作机制证据。当前混合K段在原128完整checkpoint安全边界结束，保留完整历史。

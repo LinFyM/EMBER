@@ -1,29 +1,36 @@
 # EMBER progress
 
-更新时间：2026-09-08 CST。最新Owner要求：当前先集中真实K=1，固定逻辑4task/256queries与GPU数解耦，
-先纯FM到有证据平台、后独立共享Writer RL；约一小时训练分段，中/末两个整齐步数correct400节点。继续当前全程goal。
+更新时间：2026-09-08 CST。最新Owner要求：暂停后续执行，仔细分析已有结果；当前不训练、不评测、不自动恢复原goal。
+长期K1/完整图/纯FM后独立RL目标保留，执行授权以以下暂停状态为准。
 
-## 当前：fresh K1 macro300=86/400，正在评测400
+## 当前：Owner暂停执行，仅分析至400的情况
 
-Owner补充：历史强性能架构也曾先升、后降、再升；继续观察400及之后节点。300单点回落不触发停止、重启或架构淘汰；held诊断仅补充学习证据。
+Owner最新明确要求“先别继续，仔细分析情况”：训练和评测全部暂停，当前只读分析已有证据与相关代码，不启动新实验或自动恢复旧goal/准备脚本。
+此前“继续观察400及之后”的授权已被本条覆盖；500/600准备仅保留，不再属于当前执行计划。
 
-首段canonical correct100/200均已完成，55→110/400；200四suite为1/61/41/7、breadth6/8。相邻R/G/L42/68/13、churn81/400、J=.34146；Long旧6个成功全部丢失、另获7个。仍在获取能力，未达到性能、breadth、Long和相邻稳定资格，不判平台。
-已登记并发起原学习状态续训200→400：原frozen b6d70d98、GPU02 physical1/2/3/6、micro8/4/8/8，300/400两节点correct400；tmux `ember-horizon-k1-segment200-400`，完整命令/预算/实时资源在`k1_fresh/segment200_400/`。不重置、不改架构/超参；other与最终controls继续后移。
+canonical correct100/200/300/400为55/110/86/87。400 S/O/G/L=0/40/42/5、breadth4/8，尚未恢复200水平，也未qualified。
+300→400 R/G/L=70/17/16、churn33/400、J=.67961；200→300为71/15/39、churn54、J=.568，退化主要集中Object global13。
+两个节点均完整400rows/六worker exit0，实际每task50视频各一次、与100/200同一固定state-video映射；完整墙钟300/400为1348.54/1351.46秒。
 
-200→400段已正常exit0，四rank均退出，完整墙钟3287.09秒（54分47.09秒），段内均值15.583秒/update，峰值38.170GiB。
-400完整checkpoint约4.13GiB，正式检查通过；累计1600个真实K1条件/102400 queries，各suite400条件，各task46–86次曝光。
-300/400完整checkpoint均保留，原Writer/Meta/optimizer/scheduler/sampler/RNG连续恢复，无重置或架构/超参变化。
+200→400训练完整exit0，墙钟3287.09秒（54分47.09秒），均值15.583秒/update，峰值38.170GiB；400完整checkpoint约4.13GiB。
+累计1600个真实K1条件/102400queries，各suite400条件，各task46–86次曝光。300/400 banks均全新400条件、正式检查通过，墙钟791.57/818.26秒。
+400固定train24 held-action独立诊断已exit0，墙钟427.57秒、峰值11.484GiB；实际video/action frames/policy RNG与0/200一致。
+FM0/200/400=.15145673/.11135264/.10627193，200→400改善4.563%，23/24task下降；task16微升.000386。尚不满足held FM平台条件，不能由闭环回落认定监督充分。
+诊断复用f133原`_validate_actions`、每task128queries、micro4，无梯度/optimizer，sampler未消费；原config和48条0/200 `diagnostics.jsonl`保持，独立原件`segment200_400/step400/held_action/`。
 
-step300 bank已400/400全新编译、exit0，完整墙钟791.57秒；正式validator及实际视频覆盖均通过：每task50视频各一次、无遗漏/重复，与200逐行映射一致。
-macro300 correct400已完整exit0：86/400，S/O/G/L=0/37/45/4、breadth5/8；实际400rows视频分配核验通过，总墙钟1348.54秒。
-200→300 R/G/L=71/15/39、churn54/400、J=.568，总分-24；主要在Object global13：旧24个成功全丢，仅新增1。
-Goal41→45、Object61→37、Long7→4、Spatial1→0；这是已有证据下的行为退化，尚无工程合同违规证据，也不能据此认定平台或架构失败。
-400 bank已全新400条件生成并exit0（墙钟818.26秒），正式validator/实际覆盖检查通过，与200/300逐行映射相同。
-400 correct400已从clean pushed f1330697在GPU02 p1/3/6×2workers接续启动（tmux `ember-k1-correct400-v2`），等待完整结果后裁决200→300→400；不重置、改超参或提前做other/最终controls。
-双节点现场已刷新，data1最近用量562166852KiB/soft1073741824KiB，当前run25GiB，仍在原20GiB新增预算内；300收尾后3张合格卡已释放并复用。
-启动及原件在`k1_fresh/segment200_400/post400_launch.json`、`step300/completed_summary.json`、`correct300_vs_correct200.json`及`decision_after300.json`。
-400固定train24 held-action诊断已在GPU02 p2单独发起（tmux `ember-k1-held400`），复用f133的`_validate_actions`原入口、原task/teacher/actions/query seed，每task128queries；micro4仅影响执行。无梯度、无optimizer，输出独立`step400/held_action/`，不修改原config、sampler或`diagnostics.jsonl`。
-下一段400→600及500/600两个canonical correct400节点已准备，当前未启动；完整恢复原400学习状态，frozen b6训练/config保持，准备原件`k1_fresh/segment400_600/preparation.json`。待400评测完成、刷新双节点和quota后接续。
+400→600刚发起后按Owner要求SIGINT停止，torchrun3190898及四rank3192409–3192412均退出。未执行401：metrics仍400行、末步400；checkpoints仅100/200/300/400，原diagnostics仍48行。
+本次外层exit1来自用户要求的SIGINT，不是训练数值失败。`segment400_600/launch_contract.json`已标记`owner_stopped_before_first_update`，prepared500/600脚本明确inactive。
+当前无本任务训练、评测或物化GPU进程。已有400及以前checkpoint/rawrows/manifest/held诊断均保留。
+最新结果与分析原件`k1_fresh/segment200_400/`；接下来核对当前任务成功集合、source增量、训练目标与闭环脱节，以及历史强路线的适用条件，结论出来后与Owner讨论。
+
+## 本次暂停分析结论
+
+400的87个成功中，两个cream cheese任务占79，加上同对象Long为84；source47也全部集中这三个task。存在Object11的真实增益（5→37），但跨对象/任务广度没有稳定扩展。
+Object13从200的24→300的1→400的3，200全部110成功到400只保留67、丢失43、另获20。33个200成功连续在300/400都未恢复。
+历史v6-fast确有106→64→111和132→117→138→143；但其每update24teacher条件×20queries，当前4条件×64queries。相近96k/102.4k queries下，历史4800条件对当前1600；旧每task50video池、当前16，实际当前400已见378/384种task-video。
+这些是优化/数据组织的重要差异，尚未被受控实验证明为本次回落原因。旧架构、LR/scheduler及backend也不同，不能从历史回升推出当前原样续训必会恢复。
+没有发现可直接解释回落的确定性执行错误；当前主要证据缺口是fresh K1训练task的真实闭环能力，不能用同task held FM替代。建议讨论冻结200/400同口径train96诊断后再决定恢复或调整，当前不执行。
+完整只读分析与精确表格：`k1_fresh/paused_review_20260908/analysis.md`、`current_evidence.json`。历史核对由read-only history_audit完成，未新增GPU实验或实现。
 
 ## 已完成：整轮视频schedule修复与首段评测
 

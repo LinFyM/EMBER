@@ -793,3 +793,14 @@ macro200（累计51200 FM queries）canonical correct110/400，S/O/G/L=1/61/41/7
 macro300 correct400=86，S/O/G/L=0/37/45/4、breadth5；global1/3/11/13/23/26/31/32为0/0/36/1/0/45/2/2。全部400rows实际视频身份验证通过，六worker exit0，完整墙钟1348.54秒（launcher1322.565）。vs source47 R/G/L=43/43/4、churn47、J=.47778。
 200→300从110降86，R/G/L=71/15/39、churn54、J=.568；S/O/G/L的R/G/L分别0/0/1、30/7/31、40/5/1、1/3/6。Object global13原24个成功全部丢失，仅新增1；Object global11净-1，Goal净+4。这是合规映射下的行为退化，未建立工程错误或监督平台，不能由单次下降推翻整个图。
 对历史SFT109/107的R/G/L为53/33/56和52/34/55，churn均89、J=.37324/.36879；历史rank128与旧backend边界保持。原件`k1_fresh/segment200_400/step300/completed_summary.json`、`correct_vs_historical_sft.json`、`correct300_vs_correct200.json`和`decision_after300.json`。继续预登记400 correct400后再裁决，不提前启动other/final controls。
+
+## 2026-09-08 Fresh K1 macro400及后续观察
+
+macro400 canonical correct87/400，S/O/G/L=0/40/42/5、breadth4；global1/3/11/13/23/26/31/32为0/0/37/3/0/42/5/0。六worker exit0，全部400rows实际视频映射验证通过，完整墙钟1351.46秒（launcher1284.764）。vs source47 R/G/L=40/47/7、churn54、J=.42553。
+300→400 R/G/L=70/17/16、churn33、J=.67961；S/O/G/L分别0/0/0、30/10/7、39/3/6、1/4/3。总分86→87但breadth5→4，尚未恢复200的110，更未通过绝对性能、Spatial、Long和相邻稳定资格。
+历史SFT109/107比较R/G/L为54/33/55和54/33/53，churn88/86、J=.38028/.38571，原rank128/旧backend边界保持。原件`segment200_400/step400/completed_summary.json`、`correct_vs_historical_sft.json`和`correct400_vs_correct300.json`。
+同checkpoint另行复用原固定train24 held-action面板，原video/action demos/action frames/policy RNG/128queries逐task一致；原run config及0/200共48条diagnostics未修改，无梯度/optimizer、sampler未消费。
+held FM0/200/400=.15145673/.11135264/.10627193，200→400改善4.563%、23/24task下降，仅task16微升.000386；完整墙钟427.57秒，峰值11.484GiB。400采用单卡micro4，0/200原world4 micro8/4/8/8；接受正常执行低位差异。诊断不选择checkpoint、不替代闭环，原件`segment200_400/step400/held_action/comparison_0_200_400.json`。
+Owner明确要求继续观察400及以后，因为历史强架构也可先升后降再升；当前held FM仍改善，未建立监督平台。完整保留原学习状态与图，预登记400→600、500/600两个correct400节点，不因300/400回落重启、换架构或小扫超参。下一段注册`k1_fresh/segment400_600/launch_contract.json`，裁决原件`segment200_400/decision_after400.json`。
+
+400→600刚启动后Owner要求暂停并仔细分析；已在首个新update前SIGINT退出，末checkpoint/metrics仍400。后续节点准备转为inactive，不构成继续执行授权。本次只读分析显示成功集中同一对象簇、训练条件曝光与历史task-complete方案明显不同，但没有单因果结论；原件`k1_fresh/paused_review_20260908/analysis.md`。

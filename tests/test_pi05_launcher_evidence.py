@@ -6,9 +6,28 @@ from types import SimpleNamespace
 
 import pytest
 
+from ember.pi05_eval.launcher import evaluator_gpus_are_eligible
 from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
 from ember.pi05_eval.recovery import worker_command_matches
 from ember.pi05_eval_queue import publish_json_exclusive
+
+
+@pytest.mark.parametrize(
+    ("memory_used_mib", "utilization_percent", "eligible"),
+    [(9551, 10, True), (13300, 0, True), (13301, 0, False), (9551, 11, False)],
+)
+def test_gpu_admission_uses_remaining_capacity_and_live_load(
+    memory_used_mib: int, utilization_percent: int, eligible: bool,
+) -> None:
+    preflight = {
+        "physical_gpu_ids": [2],
+        "gpu_telemetry": [{
+            "physical_gpu": 2, "memory_total_mib": 46068,
+            "memory_used_mib": memory_used_mib,
+            "utilization_percent": utilization_percent,
+        }],
+    }
+    assert evaluator_gpus_are_eligible(preflight) is eligible
 
 
 def _invocation_events(

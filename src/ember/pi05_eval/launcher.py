@@ -15,7 +15,6 @@ from ember.pi05_assets import Pi05EvaluationError
 
 
 MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
-MAX_COSCHEDULED_GPU_MEMORY_USED_MIB = 8 * 1024
 MIN_EVALUATOR_GPU_FREE_MEMORY_MIB = 32 * 1024
 
 
@@ -135,7 +134,6 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         "compute_applications": owned_applications,
         "gpu_admission_policy": {
             "max_utilization_percent": MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
-            "max_memory_used_mib": MAX_COSCHEDULED_GPU_MEMORY_USED_MIB,
             "min_free_memory_mib": MIN_EVALUATOR_GPU_FREE_MEMORY_MIB,
         },
         "python": sys.version,
@@ -154,13 +152,12 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
 
 
 def evaluator_gpus_are_eligible(preflight: Mapping[str, Any]) -> bool:
+    """Admit low-load devices by remaining capacity, regardless of peer allocation."""
     telemetry = preflight.get("gpu_telemetry", ())
     expected = preflight.get("physical_gpu_ids", ())
     return len(telemetry) == len(expected) and all(
         int(row["utilization_percent"])
         <= MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT
-        and int(row["memory_used_mib"])
-        <= MAX_COSCHEDULED_GPU_MEMORY_USED_MIB
         and int(row["memory_total_mib"]) - int(row["memory_used_mib"])
         >= MIN_EVALUATOR_GPU_FREE_MEMORY_MIB
         for row in telemetry

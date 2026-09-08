@@ -479,7 +479,9 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 若同task在两teacher与查询半面板中普遍具有清楚优势，降低“训练内任务功能对应普遍未形成”的优先级，后续聚焦从已获取对应到新任务的迁移；不能因此断言表示充分。若普遍缺少同task优势或出现稳定跨task替代，先定位条件表示到完整参数的任务特化不足，并结合已有行为决定是否需要语义访问或共享映射修正；矩阵本身不单独定责某个head/前端。若两teacher/半面板方向不稳，则明确证据不足，不按最优列建dictionary或扩大held搜索。结果先汇总，再登记下一项学习变量；不自动启动500/600、rank共享、前置S或额外meta训练。
 
-复用`fea45593`冻结原生运行面与canonical banks，单GPU只读执行；预计新增JSON与日志小于50MiB，无模型/cache复制。原件保留在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`。
+尤其注意policy本身仍读取正确language：同suite多个任务可能合理地共享同一个通用技能修正，因此缺少同task对角优势本身既不证明错误路由，也不要求每task拥有不同LoRA。应联合source改善、跨suite转移和已有目标获取行为解释；若这些仍无法区分，不据矩阵直接命名根因。
+
+复用`fea45593`冻结原生运行面与canonical banks，单GPU只读执行。初始全forward执行因反复计算相同冻结query前缀，在首行结果完成前终止；改为每行四个真实8-query prefix KV只读缓存，复用现有native prefix/denoise API。首行source和同task列各8query额外核对完整原生forward，数值容差为逐点loss平均绝对差≤.002且相对≤.02；actual time/noise严格配对。此执行优化不改变97列与32query定义。预计新增JSON与日志小于50MiB，无模型/cache复制。原件保留在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`。
 
 ### 8.3 资格与最终controls
 

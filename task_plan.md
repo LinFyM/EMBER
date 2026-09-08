@@ -2,17 +2,16 @@
 
 ## 当前目标与授权
 
-Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，本段执行§8.2.6；报告`docs/horizon_k1_first_query_only_20260909.md`记录已完整的首层语言内容单变量fresh对照首段。
+Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。下一项实验尚未登记，不能从历史脚本自动恢复。
 
-已完成：冻结A/A2/A3/B及完整分析；新100/200 strict400=75/110，对照原55/110；新200 train96=46，对照原52。新相邻R/G/L55/55/20、churn75、J=.4231，breadth6/8；早期增益尚未成为200总体改进，训练侧也未提高。完整训练/三banks/三评测及实际条件配对均通过，首段GPU作业已结束；原样200→400续训已完整结束，300/400两个完整checkpoint保留；300 strict400和400物化/冻结held诊断正在运行，后两节点行为尚待裁决。
+已完成：新100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；所有训练/物化/诊断/闭环完整exit0，全部配对检查通过，GPU任务均已结束。
 
-1. 登记并交付首段事实、失败边界与300/400保持检验，刷新资源与完整exact-resume launch记录。
-2. 从新200完整checkpoint原样续至400，保持Writer/Meta、optimizer/scheduler/sampler/rank RNG与world4 topology；300/400各strict400，累计1200/1600条件、76800/102400queries。对应原86/87，专门覆盖原后期回落区间；不改变主要因果变量。
-3. 新400追加固定train96及冻结24×128 held FM，与新200及原400同口径对照；无梯度/无sampler推进，不由内部指标选点。
-4. 汇总per-task/suite、breadth、retained/gained/lost、churn和相邻重合。实质保持/增长再登记资格观察；持续回落、只有旧task换手且无能力获取依据，则否定本次修复假设，不默认500/600或扫LR/rank/seed，也不立即叠新结构。
-5. 继续以完整行为和有区分力的分析推动方法，直到原>145/400、相邻/跨视频/四suite/Goal/Long与最终视频因果资格全部满足；再按规定32/8 fresh和Test。当前首段结果不是完成。
+1. 完整交付本轮事实、适用边界与“局部收益而非整体修复”的裁决；保留四checkpoint和全部原始证据。
+2. 不原样续500/600；从已经复现的训练获取与目标能力分离出发，审阅实际接口功能、竞争解释及最近等价历史。Target-Owned rank共享、旧语义路径和旧条件组织边界必须保留，不机械叠模块或重做改名方案。
+3. 选择并登记一个有信息量的受控变量：明确输入/监督/共享变化，什么证据会支持或反驳，以及与已试组合的实质区别。必要时先做最小可区分诊断，再正式修改/profile/学习；现有广泛授权继续有效。
+4. 根据真实行为推进，直到validation8 single-checkpoint correct>145/400、相邻稳定、breadth、四suite、Goal/Long、跨视频与最终因果全部满足，再完成方法冻结后的32/8 fresh与Test。当前结果不是完成，不预设总尝试次数。
 
-资源与实际launch状态以progress为准。下一段新增峰值预算16GiB，复用canonical source/dataset/tokenizer与同一新run root；旧基线及其frozen runtime仅作证据，不恢复原K1旧学习历程。
+当前canonical `first_query_only_v1`保留；没有500/600、24-task组织、额外meta、RL或新结构任务在运行。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
 
 ## 历史：只读报告交付任务（已完成）
 

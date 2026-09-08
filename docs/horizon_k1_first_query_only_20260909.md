@@ -1,80 +1,105 @@
-# 首层语言内容对照：首段真实行为证据
+# 首层语言内容对照：至400步的完整行为证据
 
-2026-09-09。注册见[active design §8.2.5](horizon_relation_video_writer_design.md#825-单变量fresh对照保留首次语言检索移除直接语言内容残差)。这是fresh学习后的对照，区别于此前A/A2/A3/B冻结诊断。
+2026-09-09。登记见[active design §8.2.5–8.2.6](horizon_relation_video_writer_design.md#825-单变量fresh对照保留首次语言检索移除直接语言内容残差)。本报告涵盖fresh100/200及原样续训300/400、两次固定train96和配对held-action诊断；此前冻结A/A2/A3/B继续由[独立报告](horizon_k1_frozen_diagnostics_20260909.md)保存。
 
-## 结论与边界
+## 结论与裁决
 
-新100/200 correct为75/110，原同节点55/110。100步有20个净成功增益，但200步总分与breadth均未提高；新训练任务held-video为46/96，低于原52/96。当前不能称整体修复，也不能把首层裸language内容路径认定为唯一泛化根因。
+**移除首层直接语言内容有局部收益，但没有修复任务迁移与保持。** 新100/200/300/400 correct为75/110/106/103，原同节点55/110/86/87。后两节点较原高20/16，但新模型自身200之后没有继续增长；BBQ能力仍从28→24→10回落，cream cheese等任务的增益抵消了部分损失。两个始终零成功的validation任务仍未获得能力。
 
-新100→200仍有35个净成功增长，四suite均有净增；但breadth一直6/8，global1、23保持0，相邻churn75/400、J=.4231，远未通过>145及稳定性资格。训练任务虽弱于原200，仍从source15/96增加到46/96，表明存在真实学习获取，尚非无能力或已充分饱和的证明。
+新400 train96为59，较新200的46增加13，与原400持平；breadth18→22，表明确有训练能力获取，不能把本轮解释为整体未学会训练任务。与此同时validation没有扩展，300→400 churn55/400、J=.5833；仍远未满足>145、breadth≥7、低churn和相邻稳定。Long也只有9/100，未满足贡献要求。
 
-这两个节点还没有覆盖原模型110→86/87的300/400回落区间。因此继续**同一改动、同一学习状态**至固定300/400，专门检验后期能力保持，而不是为了内部loss好看无界续训。后续结果可以否定本次内容移除假设；不混入rank-sharing、24-task组织、LR/rank/seed扫描或RL。
+**本轮不原样追加500/600。** 这不是声称训练已经完全饱和，或更多训练不可能改善；理由是本次预注册的后期保持检验已经重现关键任务回落与状态换手，而新增训练能力主要没有转化为目标validation获取。仅凭train/FM改善再次沿用原模型已出现的分离趋势，不足以支持下一段同配方投入。下一项干预须基于完整结果和近等价历史重新登记，不机械追加language/cross矩阵或立即叠加rank共享。
 
-## 对照与信息墙
+本轮只否定“该处内容移除足以修复当前缺口”，不否定其局部贡献、语言检索、真实视频作用或整个Horizon架构的容量。没有测same-task-other或最终video controls，也未证明动态视频必要性。
 
-唯一模型变化：第一compiler块由`F(e+l+Cross(LN(e+l),P))`改为`F(e+Cross(LN(e+l),P))`；首cross的language query保留，第二块沿实际新内容运行。所有其它视频前端、完整50H、Meta、38-target rank16独立native D、4task×64queries及pure FM保持。P4仍能包含语言引导的静态语义；本实验不证明视频动态必要性。
+## 唯一变量与实际执行
 
-整个Writer/Meta/AdamW/scheduler/sampler/RNG fresh seed7，合法LoRA identity，source可训练参数0。100/200完整checkpoint独立保留。实际前800个训练条件的task、video、action episode/frame、query/policy seed和权重与原基线逐条一致，共51200queries；每个新validation bank都是400个新LoRA条件，50个视频每task各一次。所有评测完整完成，task/state/language/env与policy-noise prefix、normalization及source合同配对通过。
+第一compiler块由`F(e+l+Cross(LN(e+l),P))`改为`F(e+Cross(LN(e+l),P))`，保留首次language query；第二块沿实际新内容运行。其它视频前端、完整50H、Action Meta、38-target rank16独立native D、4task×64queries和pure FM保持。P4仍可包含语言引导的静态语义。
 
-计算采用正常BF16/TF32和不同物理分块/worker topology；正常数值分叉保留，不重跑挑分，也不将每一条状态换手唯一归因模型改动。未做same-task-other或最终causal controls，未使用validation/test梯度。
+Writer/Meta/AdamW/scheduler/sampler/RNG从fresh seed7开始，source可训练参数0；200→400从完整学习状态原样恢复。实际前1600条件、102400queries与原模型同节点的task、video、action episode/frame、query/policy seed和权重逐条一致，各suite400条件。四个完整single checkpoints独立保留，没有LoRA或checkpoint融合。
+
+所有validation bank各400个新条件，每task50条视频各一次；train96各96个新条件。所有闭环完整退出，实际task/state/language/video ordinal、env/policy RNG与noise prefix、source和normalization配对通过。正常BF16/TF32、物理分块和worker拓扑差异保留，不重跑挑分，不把每一条状态换手唯一归因模型改动。validation/test不产生梯度。
 
 ## Validation完整结果
 
-每格分母50，本表仅列首段匹配节点。原300/400的86/87另作为下一段固定参照。
+| 节点 | 原correct /400 | 新correct /400 | 新−原 | 原breadth | 新breadth |
+|---|---:|---:|---:|---:|---:|
+| 100 | 55 | 75 | +20 | 6 | 6 |
+| 200 | 110 | 110 | 0 | 6 | 6 |
+| 300 | 86 | 106 | +20 | 5 | 4 |
+| 400 | 87 | 103 | +16 | 4 | 6 |
 
-| 任务 | 原100 | 新100 | 原200 | 新200 |
+以下每格分母50，全部为新模型。
+
+| 任务 | 100 | 200 | 300 | 400 |
 |---|---:|---:|---:|---:|
 | 1 ramekin旁黑碗→盘 | 0 | 0 | 0 | 0 |
-| 3 cookie box上黑碗→盘 | 0 | 1 | 1 | 3 |
-| 11 cream cheese→篮 | 21 | 33 | 37 | 31 |
-| 13 BBQ sauce→篮 | 1 | 3 | 24 | 28 |
-| 23 开抽屉并放碗 | 2 | 0 | 0 | 0 |
-| 26 cream cheese→碗 | 25 | 31 | 41 | 38 |
-| 31 cream cheese和butter→篮 | 4 | 3 | 4 | 9 |
-| 32 开炉并放moka pot | 2 | 4 | 3 | 1 |
-| 合计 /400 | 55 | 75 | 110 | 110 |
-| breadth /8 | 6 | 6 | 6 | 6 |
+| 3 cookie box上黑碗→盘 | 1 | 3 | 0 | 3 |
+| 11 cream cheese→篮 | 33 | 31 | 40 | 42 |
+| 13 BBQ sauce→篮 | 3 | 28 | 24 | 10 |
+| 23 开抽屉并放碗 | 0 | 0 | 0 | 0 |
+| 26 cream cheese→碗 | 31 | 38 | 35 | 39 |
+| 31 cream cheese和butter→篮 | 3 | 9 | 7 | 8 |
+| 32 开炉并放moka pot | 4 | 1 | 0 | 1 |
+| S/O/G/L | 1/36/31/7 | 3/59/38/10 | 0/64/35/7 | 3/52/39/9 |
 
-新100→200的S/O/G/L为1/36/31/7→3/59/38/10。原200为1/61/41/7；新200的Long和Spatial小幅增加被Object、Goal损失抵消。
+新300→400的BBQ减少14，cream cheese→篮增加2、Goal增加4、Long增加2、Spatial增加3，抵消11。总分仅少3不等于原能力稳定保持。BBQ200→400仅保留7/28，新增3、丢21；Long双物9→8仅保留1，新增7、丢8。Spatial任务3虽200/400均为3/50，两个成功集合没有重合；moka任务200与400的单条成功则保留。
 
-| 完整配对比较 | 保留 | 新增 | 丢失 | churn | 成功集Jaccard |
+原BBQ200/300/400为24/1/3，新为28/24/10，支持回落被部分缓解或延后；其它接口、个别轨迹和因果机制仍未单独识别。
+
+| 新模型配对区间 | 保留 | 新增 | 丢失 | churn /400 | Jaccard |
 |---|---:|---:|---:|---:|---:|
-| 原100→新100 | 44 | 31 | 11 | 42/400 | .5116 |
-| 原200→新200 | 86 | 24 | 24 | 48/400 | .6418 |
-| 新100→新200 | 55 | 55 | 20 | 75/400 | .4231 |
-| source47→新100 | 33 | 42 | 14 | 56/400 | .3708 |
-| source47→新200 | 39 | 71 | 8 | 79/400 | .3305 |
+| 100→200 | 55 | 55 | 20 | 75 | .4231 |
+| 200→300 | 77 | 29 | 33 | 62 | .5540 |
+| 300→400 | 77 | 26 | 29 | 55 | .5833 |
+| 200→400 | 70 | 33 | 40 | 73 | .4895 |
 
-前两行是跨模型比较，不把其churn误作新模型相邻资格；第三行才是本轮相邻证据。
+| 同节点原→新 | 保留 | 新增 | 丢失 | churn /400 | Jaccard |
+|---|---:|---:|---:|---:|---:|
+| 100 | 44 | 31 | 11 | 42 | .5116 |
+| 200 | 86 | 24 | 24 | 48 | .6418 |
+| 300 | 67 | 39 | 19 | 58 | .5360 |
+| 400 | 72 | 31 | 15 | 46 | .6102 |
+
+第二表是跨模型比较，不把其churn作为新模型相邻资格。相对固定source47，新300/400分别保留38/38、新增68/65、丢9/9；增益真实存在，但不能替代目标线和稳定性。
 
 ## 固定held-video训练任务诊断
 
-全train24，每task states32–35与teacher46–49各一次，4条/任务，共96。不能将不同难度的train与validation成功率直接相减命名为因果泛化损失。
+全train24，每task states32–35与teacher46–49各一次，共96条。不同难度的train与validation成功率不能直接相减命名为因果泛化损失。
 
-| Suite | 原200 | 新200 |
-|---|---:|---:|
-| Spatial | 12/24 | 11/24 |
-| Object | 15/24 | 12/24 |
-| Goal | 16/24 | 14/24 |
-| Long | 9/24 | 9/24 |
-| 合计 | 52/96 | 46/96 |
-| breadth | 20/24 | 18/24 |
+| Suite | 原200 | 新200 | 原400 | 新400 |
+|---|---:|---:|---:|---:|
+| Spatial | 12/24 | 11/24 | 17/24 | 12/24 |
+| Object | 15/24 | 12/24 | 18/24 | 21/24 |
+| Goal | 16/24 | 14/24 | 17/24 | 19/24 |
+| Long | 9/24 | 9/24 | 7/24 | 7/24 |
+| 合计 | 52/96 | 46/96 | 59/96 | 59/96 |
+| breadth /24 | 20 | 18 | 21 | 22 |
 
-原200→新200保留39、新增7、丢失13，churn20/96、J=.6610。训练侧Object减少3、Goal减少2、Spatial减少1，Long持平。相对固定source15/96，新200保留12、新增34、丢失3；该source子集来自原完整120行中的预登记32–35状态，无新source评测或结果筛选。
+新200→400保留35、新增24、丢11，churn35/96、J=.5。Object净增9、Goal净增5、Spatial净增1，Long净减2；新400仅global36、39仍零成功。原400→新400保留46、新增13、丢13，churn26、J=.6389；Spatial少5由Object多3、Goal多2抵消，Long总分不变。这是能力分布变化，不能把同分描述为逐任务等价。
 
-同一3072个held-action queries与真实teacher/query/noise配对：新200 FM .111183766，原200 .111352643，只有10/24任务新loss更低。均值接近不代表逐任务或行为等价，更不能替代上述46/96对52/96。此前A1的16query/task冻结面板口径不同，其.115832不能混用为这里的原200参照。
+对固定source15/96，新400保留12、新增47、丢3；该source子集来自原完整120行中的预登记32–35状态，无新source评测或结果筛选。新400六worker均exit0，实际96行映射与执行合同配对通过，完整墙钟465.89秒。
 
-## 执行与可复核原件
+## 同口径held-action误差
 
-科学实现与训练/物化为`fea45593`，profile仅验证运行且不继承；正式200更新墙钟2921.40秒、完整训练3290.54秒。100bank400条完整1353.86秒（包含另一节点冷加载）；200的独立400+96 banks共1004.68秒。100/200评测分别使用2/4个worker，完整wrapper墙钟保存在原件中，不将不同资源拓扑的墙钟差归因模型速度。
+每个点均为24×128=3072固定queries。实际teacher、action episode/frame和policy RNG一致；新400冻结验证无optimizer、无梯度、sampler未推进。
 
-200及train96评测使用`f478076f`：只去掉旧“已用显存≤8GiB”准入条件，保留free≥32GiB/util≤10、GPU/process记录和全部推理合同；31项launcher/queue定向检查通过，实际双worker运行仍有约13GiB余量。100评测继续其原冻结代码。此操作不改变模型、数据、LoRA或RNG。
+| 节点 | 原FM | 新FM | 新比原更低的任务数 |
+|---|---:|---:|---:|
+| 200 | .111352643 | .111183766 | 10/24 |
+| 400 | .106271931 | .105737594 | 11/24 |
+
+新0为.151466233；新400较新200有23/24任务误差下降。均值接近不能替代行为，也不证明共享能力、视频理解或闭环稳定。此前A1的16query/task面板口径不同，不混用为这里的参照。
+
+## 可复核原件与下一步边界
+
+科学实现、训练与物化使用`fea45593`；评测使用`f478076f`，后者只修正旧已用显存门槛，保留free≥32GiB/util≤10及GPU/process证据。初次100评测使用当时冻结运行面；推理/LoRA/RNG合同保持。所有formal任务从clean pushed detached运行面执行。
 
 - 原始新run：`runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`。
-- 聚合与全部比较索引：`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/first_segment_evidence.json`。
-- 同目录`step100/`、`step200/`、`train96_step200/`保留完整bank检查、launcher/return codes、实际rows比较和wall time。
-- `paired_held_fm_comparison.json`保留全24task逐任务3072query结果；`launch_contract.json`和`evaluation_admission_correction.json`保留精确执行与资源依据。
+- A：`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`；首段索引`first_segment_evidence.json`、同口径初段`paired_held_fm_comparison.json`。
+- D：A/`segment200_400/`；`round_evidence.json`索引本段训练、300/400与train96完整比较，`held_fm_comparison.json`保存逐任务动作误差。
+- D下`step300/`、`step400/`、`train96_step400/`保留完整bank检查、launch/completion、原始返回码、严格配对比较与墙钟。四checkpoint保留完整学习状态。
 
-下一段依[active design §8.2.6](horizon_relation_video_writer_design.md#826-首段后固定300400保持检验)执行，资格门槛和最终视频controls保持。
+首段200更新均值14.607秒、完整3290.54秒；恢复段200更新均值14.771秒、完整3138.75秒。300 bank完整761.06秒，400的400+96 banks完整1094.43秒；300/400 strict400 wrapper分别1555.43/1398.37秒；400 frozen held诊断635.55秒、peak11.484GiB。不同资源拓扑与冷加载使墙钟不可直接当模型速度比较。
 
-已复核原200→300/400的逐任务保持参照：BBQ sauce为24→1/3，cream cheese→篮为37→36/37、→碗为41→45/42；breadth6→5/4。原200→300保留71/新增15/丢39，→400保留67/新增20/丢43。因此后续除总分外须保留逐任务配对，区分旧能力保持、弱任务扩展与其它任务补偿；不由单个任务替代既定整体资格。原始比较在A/`segment200_400/baseline_retention_reference.json`及两份完整R/G/L JSON。
+下一步先用完整证据比较实质接口假设及其最近等价历史，再登记一个可裁决的受控变量。当前没有500/600新训练、RL、额外meta tasks、视频controls或新结构实验；这不是全过程目标完成，也不降低最终资格要求。

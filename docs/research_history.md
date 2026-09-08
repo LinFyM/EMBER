@@ -855,3 +855,13 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 新100/200为75/110，对照原55/110；breadth均6/8。新相邻R/G/L55/55/20、churn75、J=.4231；原200→新200为86/24/24，同分110。新S/O/G/L1/36/31/7→3/59/38/10，global1/23未获取。新200 train96为46、breadth18，原52、breadth20，R/G/L39/7/13。相同3072query held FM新/原.111184/.111353均值接近，不能替代行为结论。
 
 只支持早期validation增益及部分能力交换，未证明整体修复、唯一根因或资格。完整报告`docs/horizon_k1_first_query_only_20260909.md`，原件`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/first_segment_evidence.json`及新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`。保留既有近等价历史边界；后续状态只由progress/active design解释。
+
+## 2026-09-09 首层语言内容对照至400：局部保持收益，目标未扩展
+
+同一`fea45593`完整200状态exact-resume到400；实际201–400与原模型800条件/51200queries逐条匹配，累计1600条件/102400queries。300/400完整single checkpoints、各400新LoRA bank、400 train96与冻结held3072均保留并正常结束。200更新均值14.771秒，完整3138.75秒；300/400/train96 wrapper1555.43/1398.37/465.89秒。
+
+新300/400 correct106/103，S/O/G/L0/64/35/7→3/52/39/9、breadth4→6；原86/87。新200→300 R/G/L77/29/33、churn62/J=.554；300→40077/26/29、churn55/J=.5833。BBQ新28→24→10，原24→1→3，回落部分缓解但仍复现；其它任务补偿使总分只由110→106→103。两个validation task始终0，未满足目标线、breadth、Long或稳定性。
+
+400 train96=59、breadth22，对新20046为R/G/L35/24/11，对原40059为46/13/13；S/O/G/L12/21/19/7，对原17/18/17/7。训练侧获取仍在，validation未持续扩大。冻结held FM.105737594，对原.106271931，11/24任务更低；无梯度/optimizer且sampler不变。严格配对、六worker exit0和全部原件见`k1_first_query_only/segment200_400/round_evidence.json`及[完整报告](horizon_k1_first_query_only_20260909.md)。
+
+本轮保留内容移除的局部收益，未认定唯一根因或整体修复，不原样追加500/600。下一步机制分析与任何新实验由progress及后续登记解释；本历史段不恢复执行。

@@ -1,32 +1,24 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。Owner授权休息期间继续自主完成不违反科学精神的分析、修正与实验；先分析，再正式修改/训练，常规资源选择无需逐项询问。
+更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：首层语言内容对照首段完成，登记300/400保持检验
+## 当前：首层语言内容对照至400全部完成，进入下一项机制取舍
 
-完整首段报告：`docs/horizon_k1_first_query_only_20260909.md`；原始新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`；全部配对比较与执行原件在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`（下称A）。此前冻结A/A2/A3/B完整报告继续保留，其lesion/replay不混作本次fresh行为证据。
+完整报告：`docs/horizon_k1_first_query_only_20260909.md`。active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6本轮执行均已完成；下一项实验尚未登记。原件A=`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`，D=A/`segment200_400/`；D/`round_evidence.json`汇总全部本段事实。
 
-新100/200 canonical correct **75/110**，原同节点55/110。新S/O/G/L为1/36/31/7→3/59/38/10；breadth均6/8、global1/23仍0。新相邻R/G/L55/55/20，churn75/400，J=.4231；新200对原200保留86/新增24/丢24，总分和breadth不变。两个面板均400行、全部worker exit0，实际task/state/language/video/RNG与source/normalization配对通过。尚未达到>145或稳定性资格。
+新100/200/300/400 correct **75/110/106/103**，原55/110/86/87；后两点局部更好，但新200后没有继续增长。新300/400 S/O/G/L=0/64/35/7→3/52/39/9、breadth4→6；global1/23始终0。200→300 R/G/L77/29/33、churn62、J=.554；300→40077/26/29、churn55、J=.5833。BBQ28→24→10，200→400仅保留7/28；Long双物9→8仅保留1，Spatial任务3两点虽均3/50却无成功重合。仍未满足>145、breadth、Long与相邻稳定。
 
-新200 held-video train96完整 **46/96**，S/O/G/L=11/12/14/9，breadth18；原20052/96、breadth20。原→新R/G/L39/7/13、churn20、J=.6610；source15→新46为12/34/3。新/原200的同3072query held FM为.111183766/.111352643，只有10/24任务新loss更低；均值接近不代表行为等价。当前是早期validation增益与部分能力交换，不能称整体修复或唯一根因确认。
+新400固定held-video **train96=59**，S/O/G/L12/21/19/7、breadth22，仅global36/39零；新20046、breadth18，R/G/L35/24/11、churn35/J=.5。原400同分59、breadth21，原→新46/13/13；Spatial少5被Object多3、Goal多2抵消，Long同7。source15→新400为12/47/3。所有96行与旧/新200及source实际task/state/video/RNG/normalization配对通过，六worker exit0，wrapper465.89秒。
 
-首段fresh200更新已完整exit0：800条件/51200queries的实际task/video/action query/seed/权重与原基线逐条一致，完整训练3290.54秒、更新均值14.607秒，source可训练参数0。100与200的两个400 bank及200 train96 bank共896条件全新，public inspectors与整轮video/state映射通过；100/200/train96三个闭环均完整结束。首段全部作业已退出；当前新段续训状态如下。
+新400冻结held FM完整3072query=.105737594，原400=.106271931；11/24任务新更低，新400相对新200有23/24误差下降。实际teacher/action frames/noise全部配对，无梯度/optimizer且sampler未推进，完整635.55秒、peak11.484GiB。均值不能替代行为。结论是训练获取仍在、目标迁移和保持未修复；本次干预有局部贡献，不是唯一根因确认。
 
-active design **§8.2.6**的200→400 exact-resume已完整exit0：两新checkpoint300/400均通过public inspector，保留完整学习状态。新增201–400的800条件/51200queries与原同节点实际task/video/action query/frame/seed/权重逐条一致；累计1600条件/102400queries，各suite400。段内更新墙钟2954.17秒、均值14.771秒，完整wrapper3138.75秒；source保持冻结，未继续500/600。原件A/`segment200_400/step400/training_summary.json`与`formal.exit`。
+本轮**不原样追加500/600**，不因训练/FM继续改善重复目标能力不扩展的趋势；这不等于证明完全饱和。接下来先审阅实际功能、竞争解释和最近等价历史，再登记一项有信息量的干预。尤其保留findings§23：Target-Owned已尝试同target跨rank共享D，不能把当前rank共享当作全新机制机械重训；旧强配方的语义组织、Text/VL/Action Meta与输出共享并未被分别识别。未启动新结构、24-task组织、额外meta tasks、RL或视频controls。
 
-300 canonical strict400完整exit0，**106/400**，S/O/G/L=0/64/35/7、breadth4/8；原30086，vs原R/G/L67/39/19、churn58。新200→300 R/G/L77/29/33、churn62、J=.554，breadth6→4；BBQ28→24仅保留16/新增8/丢12，cream cheese→篮31→40保留29，Long双物9→7仅保留2。新300比原高20主要来自BBQ24对1，但Spatial全零、弱任务未扩展、状态仍高churn，不能称稳定保持或整体修复。六worker均exit0，实际400行视频/state/RNG/normalization严格配对；wrapper1555.43秒。原件A/`segment200_400/step300/completed_summary.json`及全部比较。
+训练与物化科学运行面仍为clean pushed detached `.codex/worktrees/horizon-first-query-runtime` 的`fea45593`；评测为`.codex/worktrees/horizon-first-query-eval-runtime` 的`f478076f`（仅修正旧资源准入，保留free≥32GiB/util≤10）。当前唯一canonical模型仍`first_query_only_v1`，四个完整checkpoint独立保留。新增201–400实际800条件/51200queries与原基线一致，累计1600/102400、各suite400；200更新均值14.771秒、完整3138.75秒。300/400/train96闭环wrapper1555.43/1398.37/465.89秒。
 
-400 validation400+train96独立banks均完整exit0，共496个新条件，public inspectors和固定实际视频/state映射通过，完整墙钟1094.43秒。冻结400 held FM已完整exit0，3072实际query/frame/video/noise与新0/200及原200/400配对；新400=.105737594、原400=.106271931，11/24任务新更低，新400比新200的23/24任务下降。无梯度、无optimizer、sampler未推进，peak11.484GiB、完整635.55秒；不以此替代训练闭环。证据A/`segment200_400/held_fm_comparison.json`。
+300 bank400条完整761.06秒；400的validation400+train96独立banks完整1094.43秒，全部496条件新生成。public checkpoint/bank inspectors及每task视频无放回、实际映射均通过。所有本任务训练、物化、冻结诊断和评测均已正常退出；没有待完成GPU任务。
 
-400 strict400现已在gpu02 p2/4/6各2persistent workers启动，tmux `ember-first-query-correct400`；train96 bank已就绪，待资源安排。新的两节点快照及完整命令位于A/`segment200_400/step400/evaluation_launch.json`。尚无400或新400 train96闭环分数；剩余任务为完成二者并汇总本段。
-
-原300/400 correct86/87、原400 train96=59及同口径held FM=.106271931作为既定参照。两个strict400和新400 train96/held FM完成后才裁决保持/获取；明确无保持或新能力时不默认追加500/600，持续行为获取再据证据登记。首段与本段不能合并成峰值/union选点。
-
-训练/物化科学运行面是clean pushed detached `.codex/worktrees/horizon-first-query-runtime` 的`fea45593`；原world4 gpu02 physical6/2/4/0、NUMA、NCCL_P2P_DISABLE=1保持。首段实际physical microbatch6/4/4/3，reserved峰值34.643/28.328/28.311/24.980GiB；续训仅在现场余量需要时调整物理分块，学习状态和逻辑batch不改。当前方法唯一active路径为`first_query_only_v1`，旧未执行24-task草稿已撤回，原K1不恢复700/800。
-
-评测运行面 `.codex/worktrees/horizon-first-query-eval-runtime` 为`f478076f`：只去掉旧已用显存≤8GiB门槛，保留free≥32GiB/util≤10及完整GPU/process证据。31项launcher/queue定向检查通过；200/train96真实4worker评测已exit0。未修改推理/model/LoRA/RNG，修正记录A/`evaluation_admission_correction.json`。此前新模型96项定向覆盖与8步真实profile已通过，不为续训重复这些检查。
-
-400后的实时data1 user quota used610740128KiB/soft1073741824KiB、hard1084227584KiB，run实际23GiB、shared可用84TiB；剩余新增峰值预计4GiB，仍在本段16GiB预算内，canonical资产复用。资源原件A/`segment200_400/post_training_resource_snapshot.json`。长期目标与最终32/8 fresh/Test流程保持，当前远未完成。
+最近data1 quota在strg01实查used610740128KiB/soft1073741824KiB、hard1084227584KiB，随后本段剩余约2.4GiB bank已完成，仍在16GiB新增预算内；原资源证据D/`post_training_resource_snapshot.json`。新launch前再刷新独立quota与双节点GPU。长期>145全部资格、方法冻结后32/8 fresh与Test流程仍未完成；本轮闭合不结束自主推进。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

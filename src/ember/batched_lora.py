@@ -96,7 +96,8 @@ class BatchedLoRAInference:
             hidden = torch.bmm(flattened, lora_a.transpose(1, 2))
             delta = torch.bmm(hidden, lora_b.transpose(1, 2))
             delta = delta.reshape(*value.shape[:-1], lora_b.shape[1])
-            return output + delta.to(output.dtype) * scale
+            # PEFT accumulates the adapter in its own dtype, then casts the sum.
+            return (output + delta * scale).to(output.dtype)
 
         return add_per_sample_delta
 

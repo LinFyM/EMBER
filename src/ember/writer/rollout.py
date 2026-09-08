@@ -16,7 +16,6 @@ from ember.pi05_eval_contract import inspect_installed_target_tasks, load_evalua
 from ember.pi05_processing import libero_policy_input
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.flow import flow_actions
-from ember.writer.native import autocast
 from ember.writer.rl_math import DecisionReservoir, exploration_covariance
 
 
@@ -140,8 +139,7 @@ class WriterRollouts:
                 for record in chunk:
                     record["flow_batch_size"] = len(chunk)
                 batch, noise = decision_batch(chunk, self.runtime.observer.device)
-                with autocast(self.runtime.observer.device):
-                    actions = flow_actions(self.runtime.policy, state, self.runtime.lora, batch, noise)
+                actions = flow_actions(self.runtime.policy, state, self.runtime.lora, batch, noise)
                 means.append(actions[:, :5, :7].flatten(1).float().cpu())
             means = torch.cat(means)
             plans = {}

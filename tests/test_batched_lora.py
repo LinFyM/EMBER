@@ -61,3 +61,27 @@ def test_per_sample_batched_lora_matches_materialized_policy() -> None:
     batched.close()
 
     torch.testing.assert_close(batched_value, sequential_value)
+
+
+def test_bfloat16_base_matches_physical_fp32_lora_at_rounding_boundary() -> None:
+    contract = _contract()
+    policy = inject_task_lora(_TinyPolicy(), contract)
+    policy.proj.base_layer.bfloat16()
+    with torch.no_grad():
+        policy.proj.base_layer.weight.zero_()
+        policy.proj.base_layer.weight[:, 0] = 1
+    identity = task_lora_state_dict(policy, clone=True)
+    state = {name: torch.zeros_like(value) for name, value in identity.items()}
+    a, b = state.values()
+    a[0, 0] = 1
+    b[:, 0] = 0.00391
+    value = torch.tensor([[[1, 0, 0, 0, 0]]], dtype=torch.bfloat16)
+    copy_task_lora_state_(policy, state, contract)
+    expected = policy(value)
+    assert bool((expected != 1).all())
+    copy_task_lora_state_(policy, identity, contract)
+    batched = BatchedLoRAInference(policy, contract)
+    with batched.activate([state]):
+        actual = policy(value)
+    batched.close()
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)

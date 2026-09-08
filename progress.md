@@ -13,7 +13,7 @@
   validation/test零梯度；shuffled/reversed仅selected冻结后的最终controls，不用于架构或checkpoint选择。
 - 当前阶段：全面阅读与审计已完成，新canonical图/联合训练/物化/评测已接通，正在真实机制与成本验证。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
   两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论已由主agent整合，独立实现已集成到main。
-  真实GPU机制已通过；尚无新架构正式checkpoint或科学分数。
+  图/梯度机制已通过；此前执行parity未覆盖真实evaluator的autocast边界，正在修复重验。尚无新架构正式checkpoint或科学分数。
 - 接管Git基线main `4f1686ab`，已fetch并确认与origin/main一致，初始干净。
   7个历史detached工作树与dirty `codex/native-factor-readout`草稿保留；草稿不整支集成。
 - 旧train24 run永久止于384，correct69→67、other72→64、熟悉/held训练视频21/18；不恢复672 schedule。
@@ -22,7 +22,22 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 当前阶段：八档回溯未解除接受停滞；定位执行数值接口
+## 当前阶段：修复训练与真实评测的执行类型边界
+
+已发现此前真实机制parity的范围不足：测试把参考policy.predict_action_chunk也包入BF16 autocast，
+而实际evaluator仅inference_mode。旧训练的action/time heads因此输出BF16，官方路径输出FP32（expert仍BF16）。
+固定非零LoRA的实测native canonical与旧训练KL=.509307；只禁用flow/prefix外层autocast后，与canonical KL=.014033。
+未经修复的实际batched路径对物理PEFT为.016349；这些差异不宜被identity smoke掩盖，也不要求逐元素一致。
+单独expert FP32/TF32虽然相邻B KL降至.000257，却对旧训练baseline KL=.921861，因此不据此扩大正式模型dtype。
+证据分别在joint_profile/native_boundary/与expert_tf32/；各探针已完成exit0并释放单卡。
+
+main正在实施v4：原生execution precision统一采集/RL VJP/trust，LoRA同值适配实际参数dtype/物化布局；
+读取/Writer/FM仍BF16，source类型不变。同时CPU复现批量LoRA提前舍入增量与PEFT不同，最小修复为相加后再cast。
+30项flow/native/joint/RL/batched检查通过；materialization/static/batched相关52项也通过（两组含重复项），CLI补上正确PYTHONPATH后单项通过。
+结构检查为REVIEW：无新模块；标记的是既有联合backward/config/rollout等长函数，本次不扩大其职责。
+尚未从v4启动profile或formal；待相关验证与提交推送后fresh完整联合profile，保留同KL约束并观察真实接受更新。
+
+## 已完成：八档回溯与数值接口诊断
 
 `ae9507b5`已通过23项针对性CPU检查、提交推送，并从clean detached `.codex/worktrees/horizon-profile-ae9507b5`启动。
 gpu02 physical0/1/3/6、world4，fresh profile目标2 accepted、最多4 attempts；保持完整图、64 FM queries/task、

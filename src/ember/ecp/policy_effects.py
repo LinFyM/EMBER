@@ -17,7 +17,9 @@ class ExecutionPolicyPrefix:
     padding: torch.Tensor
 
 
-def _autocast(device: torch.device):
+def _autocast(device: torch.device, *, native_precision: bool = False):
+    if native_precision:
+        return torch.autocast(device.type, enabled=False)
     return (
         torch.autocast("cuda", dtype=torch.bfloat16)
         if device.type == "cuda"
@@ -29,6 +31,7 @@ def _autocast(device: torch.device):
 def prepare_execution_policy_prefix(
     policy: torch.nn.Module,
     batch: Mapping[str, torch.Tensor],
+    *, native_precision: bool = False,
 ) -> ExecutionPolicyPrefix:
     """Embed the exact prefix used by ``PI05Policy.predict_action_chunk``."""
 
@@ -40,7 +43,7 @@ def prepare_execution_policy_prefix(
     tokens = batch[OBS_LANGUAGE_TOKENS]
     masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
     images, image_masks = policy._preprocess_images(batch)
-    with _autocast(tokens.device):
+    with _autocast(tokens.device, native_precision=native_precision):
         embeddings, padding, _ = policy.model.embed_prefix(
             images, image_masks, tokens, masks
         )
@@ -53,14 +56,16 @@ def prepare_execution_policy_prefix(
 def prepare_prefix_kv_cache(
     policy: torch.nn.Module,
     prefix: ExecutionPolicyPrefix,
+    *, native_precision: bool = False,
 ) -> Any:
     """Cache the frozen official image/language prefix independently of Action Meta."""
 
-    return prepare_prefix_features_and_cache(policy, prefix)[1]
+    return prepare_prefix_features_and_cache(policy, prefix, native_precision=native_precision)[1]
 
 
 def prepare_prefix_features_and_cache(
     policy: torch.nn.Module, prefix: ExecutionPolicyPrefix,
+    *, native_precision: bool = False,
 ) -> tuple[torch.Tensor, Any]:
     """Return final normalized Gemma evidence and KV from the same real forward."""
 
@@ -74,7 +79,7 @@ def prepare_prefix_features_and_cache(
     positions = torch.cumsum(prefix.padding, dim=1) - 1
     bridge = core.paligemma_with_expert
     bridge.paligemma.model.language_model.config._attn_implementation = "eager"
-    with torch.no_grad(), _autocast(prefix.embeddings.device):
+    with torch.no_grad(), _autocast(prefix.embeddings.device, native_precision=native_precision):
         outputs, cache = bridge.forward(
             attention_mask=mask,
             position_ids=positions,

@@ -378,6 +378,16 @@ K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}
 对照原B/同B重放/相邻B，报告同precision差与相对原BF16 baseline差、吞吐/显存；无训练、无dtype序列扫描。
 此对照尚未改变正式运行合同。只有结果支持才评估统一采集/VJP/trust/evaluation实现与新同口径baseline，不能混用均值或分数。
 
+2026-09-08发现并修正实际执行合同差异：正式evaluator没有外层autocast，旧训练flow却包在BF16 autocast中，
+把原生FP32 action/time heads也改成BF16输出；此前parity给参考推理也加了该context，不能证明真实评测等价。
+从update_version `same_version_fm_rl_native_execution_v4`起，采集、RL VJP和trust统一使用evaluator原生混合类型，
+执行prefix与10步flow不额外autocast；生成A/B按物理LoRA参数的dtype和连续布局作同值适配，与物化执行一致。
+Writer/Meta/FM维持BF16 autocast，source权重类型不扩大，也不改变TF32设置、Sigma、0.02或联合权重。
+批量LoRA执行须与PEFT一致：先以adapter计算类型相加，再将和转为base输出类型，不能预先舍入delta。
+v1–v3 profile不得作为v4 exact-resume；八档候选保持以单独检验执行边界修复，不声称八档本身解决了停滞。
+真实验证覆盖非零LoRA、原生physical/batched evaluator调用和完整联合更新；接受正常kernel/reduction低位差异，
+不把逐元素一致当成额外科研资格，也不把修复代码或内部parity当成学习达标。
+
 接受缩放步时提交本次moments并统一缩放实际参数步；全部拒绝则参数、moments、optimizer step和warmup计数不前进。
 **已消费的sampler/RNG和尝试迭代计数仍前进**，下一次重新采样，不能恢复同一随机流而无限重播同一拒绝批次。
 记录 attempted/accepted/rejected、alpha、各task KL及梯度/奖励统计。接受规则、clip和Adam之后不声称实际更新无偏。

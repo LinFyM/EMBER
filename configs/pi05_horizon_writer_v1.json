@@ -135,7 +135,7 @@
     "eps": 1e-08,
     "weight_decay": 0.0001,
     "grad_clip": 1.0,
-    "precision": "bfloat16 autocast with float32 trainable parameters",
+    "precision": "Writer/Meta/FM BF16 autocast; native mixed execution without outer autocast; FP32 trainable parameters",
     "loss": "fm_plus_extended_action_writer_rl_same_version",
     "normalizer": 1.0,
     "fresh_joint_writer_and_meta": true,
@@ -296,7 +296,7 @@
       "registration_status": "freeze informative strict400 nodes after real profile and before first formal learning results"
     }
   },
-  "update_version": "same_version_fm_rl_collected_batch_finite_backtracking_v3",
+  "update_version": "same_version_fm_rl_native_execution_v4",
   "rl": {
     "episodes_per_condition": 4,
     "initial_state_ids": [
@@ -351,5 +351,6 @@
       ]
     },
     "max_task_kl": 0.02
-  }
+  },
+  "execution_precision": "native_mixed_without_outer_autocast"
 }

@@ -54,7 +54,7 @@ def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
-           "source": SOURCE, "config": {"observer": {"probe_seed": 1729}}, "model_config": {"horizon": 50}}
+           "source": SOURCE, "config": {"observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
     for name in ("trainer_state.pt", "rank_00_state.pt"):
@@ -269,7 +269,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["meta.weight"].fill_(value * 10)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
-            "config": {"model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
+            "config": {"execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
             "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
@@ -354,7 +354,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
 
 
 def test_method_metadata_describes_final_native_and_visual_tokens():
-    method = method_metadata({"model_config": {}, "config": {"observer": {}}})
+    method = method_metadata({"model_config": {}, "config": {"observer": {}, "execution_precision": "native_mixed_without_outer_autocast"}})
     assert method["native_response_shape"] == [50, 1024]
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_tokens"
@@ -362,12 +362,14 @@ def test_method_metadata_describes_final_native_and_visual_tokens():
     assert method["macro_cursor"] == "attempted_complete_iterations"
 
 
-def test_old_joint_checkpoint_cannot_be_materialized_as_horizon(bank):
+@pytest.mark.parametrize("field,value", [("schema_version", "ember_layered_relation_writer_joint_run_v1"),
+                                         ("execution_precision", "outer_bf16")])
+def test_old_joint_checkpoint_cannot_be_materialized_as_horizon(bank, field, value):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
     run_path = checkpoint.parent.parent / "run_contract.json"
     run = json.loads(run_path.read_text())
-    run["schema_version"] = "ember_layered_relation_writer_joint_run_v1"
+    (run["config"] if field == "execution_precision" else run)[field] = value
     run_path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match="formal fresh-joint"):
         inspect_joint_checkpoint(checkpoint)

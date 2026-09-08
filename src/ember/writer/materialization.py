@@ -52,6 +52,7 @@ def inspect_joint_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
             or run.get("stage") != STAGE or run.get("mode") != "formal"
+            or run.get("config", {}).get("execution_precision") != "native_mixed_without_outer_autocast"
             or not frozen_authority(run.get("git", {}))
             or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
             or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA
@@ -146,6 +147,7 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
+            "execution_precision": run["config"]["execution_precision"],
             "checkpoint_state": "strict entire Writer+Meta+public probe", "frame_stride": 5,
             "include_last_frame": True, "camera": "agentview_rotated_180", "execution_rank": 16,
             "native_response_shape": [50, 1024], "generated_tensor_count": 76,

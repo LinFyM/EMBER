@@ -94,10 +94,9 @@ class JointUpdateEngine:
                 batch, noise = decision_batch(chunk, self.device)
                 credit = all_cotangents.new_zeros(len(chunk), 35)
                 credit[:len(positions)] = all_cotangents[positions]
-                with autocast(self.device):
-                    part = flow_mean_lora_gradient(
-                        runtime.policy, state, runtime.lora, batch, noise, credit,
-                    )
+                part = flow_mean_lora_gradient(
+                    runtime.policy, state, runtime.lora, batch, noise, credit,
+                )
                 for name, value in part.items():
                     rl_gradients[name].add_(value)
             del batch, noise, part, all_cotangents
@@ -142,8 +141,7 @@ class JointUpdateEngine:
         microbatch = int(self.config["runtime"]["trust_microbatch"])
         for chunk, positions in recorded_flow_batches(evidence.records, max_batch_size=microbatch):
             batch, noise = decision_batch(chunk, self.device)
-            with autocast(self.device):
-                output = flow_actions(runtime.policy, state, runtime.lora, batch, noise)
+            output = flow_actions(runtime.policy, state, runtime.lora, batch, noise)
             means[positions] = output[:len(positions), :5, :7].flatten(1).float()
         old_means = torch.stack([record["old_mean"] for record in evidence.records]).to(self.device)
         return task_trust_kl(

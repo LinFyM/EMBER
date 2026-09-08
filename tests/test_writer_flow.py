@@ -32,8 +32,8 @@ def fixture(monkeypatch):
         for value in state.values():
             value.uniform_(-0.1, 0.1)
     policy.double()
-    monkeypatch.setattr("ember.writer.flow.prepare_execution_policy_prefix", lambda *args: SimpleNamespace(padding=None))
-    monkeypatch.setattr("ember.writer.flow.prepare_prefix_kv_cache", lambda *args: None)
+    monkeypatch.setattr("ember.writer.flow.prepare_execution_policy_prefix", lambda *args, **kwargs: SimpleNamespace(padding=None))
+    monkeypatch.setattr("ember.writer.flow.prepare_prefix_kv_cache", lambda *args, **kwargs: None)
     return policy, state, contract
 
 
@@ -77,3 +77,27 @@ def test_checkpoint_replay_uses_functional_adapter_not_physical_identity(monkeyp
         results.append(torch.autograd.grad(output.square().mean(), tuple(state.values())))
     for dense, replay in zip(*results, strict=True):
         torch.testing.assert_close(dense, replay)
+
+
+def test_native_execution_and_vjp_survive_an_outer_autocast(monkeypatch):
+    torch.manual_seed(41)
+    policy, generated, contract = fixture(monkeypatch)
+    policy.float()
+    state = {name: value.detach().bfloat16().requires_grad_(True) for name, value in generated.items()}
+    noise = torch.randn(2, 50, 32)
+    score = torch.randn(2, 35)
+    a, b = state.values()
+    # Physical materialization stores these exact generated values in FP32.
+    weight = policy.model.proj.base_layer.weight + b.float() @ a.float()
+    expected = noise
+    for _ in range(10):
+        expected = expected - 0.1 * (expected @ weight.T + 0.03 * expected.mean(1, keepdim=True))
+    expected_grad = torch.autograd.grad(expected[:, :5, :7], tuple(state.values()),
+                                        grad_outputs=score.reshape(2, 5, 7))
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        actual = flow_actions(policy, state, contract, {}, noise)
+        actual_grad = flow_mean_lora_gradient(policy, state, contract, {}, noise, score)
+    torch.testing.assert_close(actual, expected, rtol=1e-5, atol=1e-6)
+    for observed, reference in zip(actual_grad.values(), expected_grad, strict=True):
+        torch.testing.assert_close(observed, reference)
+    assert all(parameter.grad is None for parameter in policy.parameters())

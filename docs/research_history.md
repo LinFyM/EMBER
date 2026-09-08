@@ -697,3 +697,10 @@ step2/3/4在1/128的最大task KL=.02300/.07222/.03424，全部16个同版本自
 相邻B固定诊断（joint_profile/adjacent_b/）完成exit0：同B重放KL0，B整体朝+infinity一个BF16相邻值
 (relative L2 .57214%, max delta9.53674e-7)时KL=.034327、max动作差=.0512085。固定A/输入/epsilon/原batch，
 Writer只生成一次；这定位到执行端足以产生变化，未证明精度缺陷。后续仅动作expert FP32/TF32因果对照另登记，尚无新formal协议或性能。
+
+限定expert FP32/TF32诊断（expert_tf32/）相邻B KL=.000257，但baseline对旧训练外层BF16 KL=.921861，
+不能视为原policy或据此直接采用。随后静态与真实native_boundary/验证发现更早的合同差异：evaluator无外层autocast，
+旧训练flow有；旧机制parity把两边都包入同一context，未覆盖实际evaluator。非零LoRA canonical-vs旧训练KL=.509307，
+禁用flow/prefix外层autocast后vs canonical=.014033，旧batched-vs physical=.016349，相邻B仍.030222。
+据此先恢复原生执行类型，不扩大模型dtype；CPU非零LoRA舍入边界另外复现batched预先cast delta与物理PEFT不同，
+v4一并按PEFT相加后cast修复。正常低位差异不作为新增逐元素一致要求；完整学习与行为仍待新合同验证。

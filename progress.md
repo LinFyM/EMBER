@@ -5,6 +5,8 @@
 
 ## 当前：fresh K1 macro300=86/400，正在评测400
 
+Owner补充：历史强性能架构也曾先升、后降、再升；继续观察400及之后节点。300单点回落不触发停止、重启或架构淘汰；held诊断仅补充学习证据。
+
 首段canonical correct100/200均已完成，55→110/400；200四suite为1/61/41/7、breadth6/8。相邻R/G/L42/68/13、churn81/400、J=.34146；Long旧6个成功全部丢失、另获7个。仍在获取能力，未达到性能、breadth、Long和相邻稳定资格，不判平台。
 已登记并发起原学习状态续训200→400：原frozen b6d70d98、GPU02 physical1/2/3/6、micro8/4/8/8，300/400两节点correct400；tmux `ember-horizon-k1-segment200-400`，完整命令/预算/实时资源在`k1_fresh/segment200_400/`。不重置、不改架构/超参；other与最终controls继续后移。
 
@@ -20,6 +22,8 @@ Goal41→45、Object61→37、Long7→4、Spatial1→0；这是已有证据下�
 400 correct400已从clean pushed f1330697在GPU02 p1/3/6×2workers接续启动（tmux `ember-k1-correct400-v2`），等待完整结果后裁决200→300→400；不重置、改超参或提前做other/最终controls。
 双节点现场已刷新，data1最近用量562166852KiB/soft1073741824KiB，当前run25GiB，仍在原20GiB新增预算内；300收尾后3张合格卡已释放并复用。
 启动及原件在`k1_fresh/segment200_400/post400_launch.json`、`step300/completed_summary.json`、`correct300_vs_correct200.json`及`decision_after300.json`。
+400固定train24 held-action诊断已在GPU02 p2单独发起（tmux `ember-k1-held400`），复用f133的`_validate_actions`原入口、原task/teacher/actions/query seed，每task128queries；micro4仅影响执行。无梯度、无optimizer，输出独立`step400/held_action/`，不修改原config、sampler或`diagnostics.jsonl`。
+下一段400→600及500/600两个canonical correct400节点已准备，当前未启动；完整恢复原400学习状态，frozen b6训练/config保持，准备原件`k1_fresh/segment400_600/preparation.json`。待400评测完成、刷新双节点和quota后接续。
 
 ## 已完成：整轮视频schedule修复与首段评测
 

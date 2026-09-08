@@ -804,3 +804,15 @@ held FM0/200/400=.15145673/.11135264/.10627193，200→400改善4.563%、23/24ta
 Owner明确要求继续观察400及以后，因为历史强架构也可先升后降再升；当前held FM仍改善，未建立监督平台。完整保留原学习状态与图，预登记400→600、500/600两个correct400节点，不因300/400回落重启、换架构或小扫超参。下一段注册`k1_fresh/segment400_600/launch_contract.json`，裁决原件`segment200_400/decision_after400.json`。
 
 400→600刚启动后Owner要求暂停并仔细分析；已在首个新update前SIGINT退出，末checkpoint/metrics仍400。后续节点准备转为inactive，不构成继续执行授权。本次只读分析显示成功集中同一对象簇、训练条件曝光与历史task-complete方案明显不同，但没有单因果结论；原件`k1_fresh/paused_review_20260908/analysis.md`。
+
+
+## 2026-09-08 恢复原样至600与冻结200/400训练任务诊断
+
+Owner解除暂停并授权持续推进，600只是一轮节点。400→600保持科学配方与学习状态完整恢复；因共驻余量将物理FM分块改为2/4/8/6，逻辑4task×64queries及权重不变。首次恢复401前反向OOM未更新，第二次从完整400成功exit0。
+200次更新完整墙钟3562.43秒、均值16.821秒/update；500/600完整checkpoint保留且通过public检查，累计2400个K1条件/153600queries、382/384种task-video。原件`k1_fresh/segment400_600/training_completion_summary.json`，500/600 closed-loop另记，不用训练完成代替性能。
+
+冻结200/400的train24×states32–35、每task held videos46–49各一次，实际teacher/state/env-policy RNG与source身份配对通过；无梯度，不选checkpoint。
+200/400为52/59成功（各96），S/O/G/L=12/15/16/9与17/18/17/7，breadth20/21；source同状态固定子集15/96、breadth7。
+200→400 R/G/L=45/14/7、churn21/96、J=.681818；vs source分别13/39/2与12/47/3、churn41/50、J=.240741/.193548。完整墙钟465.90/554.68秒，两个8worker面板全部exit0。
+训练侧总体获取与validation110→87不同向，支持优先审视跨task泛化而非全局训练失败；Long9→7仍有局部缺口。4状态/task只作定位，不直接证明根因或稳定。
+条件曝光200/400=800/1600、queries51200/102400，实际task-video341/378（总池384）。原件`k1_fresh/train96_diagnostic/{analysis.md,comparison.json,evidence_statistics.json}`，历史边界见同目录`history_boundaries.md`。

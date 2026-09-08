@@ -37,6 +37,14 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 200已在训练任务的未训练视频上形成广泛行为增益，“共享系统尚未获取训练任务能力”不足以作全局解释；这支持优先审视跨task迁移，但task难度、局部弱项和400变化仍未排除，不能写成唯一根因。
 冻结400同口径train96已在GPU02 p1/2/3/6、每卡2worker启动，tmux `ember-k1-train96-held400`；600 bank继续并行物化。熟悉视频诊断仍按两面板结果是否能区分解释而条件触发，未启动。
 
+冻结400 held-video train96已完整exit0（8worker均0），59/96，S/O/G/L=17/18/17/7、breadth21/24；200→400 R/G/L=45/14/7、churn21/96、J=.681818，完整墙钟554.68秒。
+对source15/96为R/G/L=12/47/3、churn50/96、J=.193548；两个checkpoint实际96行的teacher/state/RNG与完整completion均通过比较。
+Spatial/Object/Goal的18个训练task在400均非零；Long9→7，无新增、丢2，三个零任务全在Long。训练总体行为未见与validation110→87同向的退化，支持优先审视跨task泛化，同时保留Long局部训练能力/视频泛化缺口。
+当前不触发全量熟悉视频诊断；若下一步确实定位Long，才按预登记分支补有区分力的局部配对证据。净增7不是稳定性证明，小面板不外推task总体。
+完整诊断与历史适用边界：`train96_diagnostic/analysis.md`、`comparison.json`、`history_boundaries.md`。
+600 canonical bank完成exit0，墙钟777.10秒，400个全新条件，public formal检查及每task50视频各一次、与200/400/500实际映射一致均通过。
+500 correct strict400正在GPU02 p1/2/3/6、每卡2persistent workers执行，tmux `ember-k1-correct500-resumed`，8worker已ready并开始完成shards；600随后按现场资源启动。尚未报告500/600分数，未启动新学习配方。
+
 以下暂停段为历史，不覆盖本节最新恢复授权。
 
 ## 历史：Owner暂停执行，仅分析至400的情况

@@ -24,7 +24,7 @@ exact language + K条独立有序视频
 
 完整数学、张量、训练与迁移合同见 [正式设计](horizon_relation_video_writer_design.md)，
 原文与Owner裁决见 [讨论索引](review_materials/20260908/README.md)，实施状态见 [progress](../progress.md)。
-图已定稿，尚未实现或取得新性能证据。现有代码是待替换的旧分层实现。
+本文记录方法合同；已实现接口、实际性能与后续执行状态只由progress及对应formal evidence确认。
 
 ## 三类有序关系与因果职责
 

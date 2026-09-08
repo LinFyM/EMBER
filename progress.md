@@ -12,7 +12,7 @@
   目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
   后续方法冻结32/8 fresh及最终Test。
 - 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点与train120已结束，correct400已得99，正在执行same-task-other400。完整FM/Writer/Meta机制复用已验证路径；
+- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点全部结束，correct/other为99/95，正在从完整macro64续训至128。完整FM/Writer/Meta机制复用已验证路径；
   native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
 - 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
@@ -44,38 +44,37 @@ strict paired R/G/L=7/10/12，churn22/120，J=.24138。5卡×2persistent workers
 held FM下降没有转化为总体闭环增益；24只是早期节点，不视为平台，不转RL。按预登记继续监督64再做strict400。
 另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
 
-## 当前64节点与评测
+## 当前64节点结论与128续训
 
-同root从macro24恢复至64的监督segment正常exit0；clean pushed frozen `9ab1e710`，GPU02 physical0/1/3/6、world4。
-完整macro64为4.13GiB，inspect_writer_checkpoint通过；本段40updates共1532.41秒（含恢复/诊断/保存），训练平均32.03秒/update。
-累计256conditions/16384queries，全部24tasks各6–17次条件曝光，K1/2/4=87/77/92。
-固定held FM0/24/64=.151447/.131235/.123122；24→64全部24tasks改善，0→64为23/24改善。仍不能代替闭环或判为平台。
-summary=`supervised/step64_summary.json`；原run_contract保留初始265ef31b，续训源码/命令/live记录在`supervised/resume_to64.json`。
+监督64已完整exit0；累计256conditions/16384queries，24tasks各6–17次曝光，K1/2/4=87/77/92。
+held FM0/24/64=.151447/.131235/.123122，24→64全部24tasks改善。macro64完整4.13GiB，checkpoint检查通过。
+24→64段平均32.03秒/update、总1532.41秒；原run_contract保留初始265ef31b，续训/物化实际frozen9ab1e710另有segment记录。
+summary=`supervised/step64_summary.json`；训练仍只有pure FM，source始终冻结。
 
-64节点评测准备在`supervised/step64_evaluation/`：train120 J0 held视频46–49；validation correct/other各strict400，
-K1、同task全部视频0–49、seed20260907、state作为ordinal。source19/47、step24与历史SFT109/107比较入口均已准备，
-旧SFT v1原件只作有明确后端/rank边界的行为参照。三bank585条件共2.805GiB，预留4GiB+评测1GiB，纳入原48GiB预算。
-64完整退出后重新live检查双节点，GPU02 p0/1/3仅210/162/162MiB、util0，已分别启动三arm物化；
-三arm已全部物化exit0，400组task/state/ordinal跨视频配对核对通过，精确命令/资源见`materialization_launch.json`。
-strg01 data1使用524900152KiB/soft1073741824KiB，shared84TiB，现有监督run约8.7GiB。未启动RL或使用Test。
+train120 held-video J0=34/120（24步17，source19），S/O/G/L=12/7/12/3、breadth14/24。
+vs24 R/G/L=14/20/3，churn23/120，J=.37838；vs source为13/21/6，churn27/120，J=.325。
+Spatial task5仍0/5而source4/5；不能只报告新增而忽略遗忘。原件`step64_evaluation/train64_vs_*.json`。
 
-train120_step64 J0已完整exit0，471.70秒：34/120，S/O/G/L=12/7/12/3、breadth14/24。
-vs source19：R/G/L=13/21/6，churn27/120，J=.325；vs step24的17：R/G/L=14/20/3，churn23/120，J=.37838。
-监督继续带来训练task闭环获取，尚不能宣称held泛化。原件`step64_evaluation/train64_vs_source19.json`与`train64_vs_step24.json`。
-correct由五卡×2replicas完成，命令/现场证据`validation_correct_launch.json`，输出`evaluation/validation_correct_step64_J0/`。
-最新quota527852240KiB，run约12GiB，raw eval合计1GiB计入原48GiB预算。
+validation strict400 correct/other=99/95（source47，历史SFT109/107），均完整exit0。
+correct S/O/G/L=9/53/35/2、breadth8/8；other为4/51/36/4、breadth7/8。
+global tasks1/3/11/13/23/26/31/32，correct分别5/4/31/22/1/34/1/1，other为1/3/31/20/1/35/4/0。
+correct→other R/G/L=77/18/22、churn40/400、J=.65812；总分下降4，但J未达≥.80，Long成功无保留。
+correct vs source R/G/L=35/64/12、churn76；other vs source为34/61/13、churn74。
+SFT400 S/O/G/L=0/69/22/18，当前主要弱项是Long/Object，Spatial/Goal较高；旧SFT backend/rank边界保留。
+correct99未达严格>145目标，Long2<10，无相邻资格或视频因果证据；仍未qualified，也不是监督平台。
+完整裁决、比较和输入配对证据均在`supervised/step64_evaluation/decision_after64.json`及该目录。
 
-validation correct_step64 strict400已完整exit0，949.35秒：99/400（source47，历史SFT109/107）。
-S/O/G/L=9/53/35/2，breadth8/8；global tasks1/3/11/13/23/26/31/32分别5/4/31/22/1/34/1/1（每task50条）。
-vs source R/G/L=35/64/12，churn76/400，J=.31532；损失主要Goal26丢11，Long31丢1。
-vs SFT400 R/G/L=60/39/49、churn88/400，SFT S/O/G/L=0/69/22/18；当前主要缺口是Long/Object，不能只用总差10掩盖。
-99未达>145，Long2未达≥10；只有首个qualification节点，无相邻稳定性或已确认视频增量，不选checkpoint或转RL。
-原件`step64_evaluation/validation_correct_vs_source47.json`与`validation_correct_vs_historical_sft.json`，旧SFT后端边界保留。
+两replica correct总949.35秒（启动124.97、shard窗口820.09，120809 env steps）；三replica other总1405.26秒
+（启动548.84、shard窗口852.64，120820 env steps）。15worker均有完整权重成功日志，无OOM或队列错误；
+最拥挤卡实测42372/46068MiB。增加replica未带来实际收益，后续恢复每卡2replica，不另开扫描。
+只读源码核查发现初始化会重复构造大模型，GPU分配早于checkpoint加载；没有修改第三方loader或引入no-init路径。
 
-correct结束后刷新双节点，gpu02 p0/1/3/4/6保持低util余量；根据两replica约23–24千MiB/卡、CPU未饱和的现场证据，
-下一other使用已有3replica配置（15真实workers、env batch8），估算最拥挤卡含他人context约40.5GiB/45.0GiB，
-不改变source或已结束correct。实际是否提速及峰值余量以本次执行为准；runtime选择证据`evaluation_replica_choice.json`。
-other400已启动，tmux `ember-horizon-e64-other`，pane373405；精确命令/现场信息在`validation_other_launch.json`。
+根据held FM持续改善、train闭环17→34与首次held99/95，按已登记继续纯监督至128，不转RL、不做最终controls。
+同root、同config、同world4与GPU02 physical0/1/3/6，从macro64恢复完整Writer/Meta/Adam/scheduler/sampler/RNG；
+clean pushed frozen=`9ab1e710`，tmux `ember-horizon-supervised` pane573577，精确命令/provenance在`supervised/resume_to128.json`和`.sh`。
+新日志/退出码为`resume_to128.log`/`.exit`；目前恢复启动，首个新update65待核对，不能把旧completion64当作128完成。
+新双节点现场已刷新，所选四卡util0、低context且有余量；strg01 data1使用527869508KiB/soft1073741824KiB，
+监督run约12GiB，原48GiB注册预算尚余36GiB覆盖后续checkpoint、atomic写入、banks及评测。未使用Test。
 
 ## 已结束的联合profile
 

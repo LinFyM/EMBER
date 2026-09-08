@@ -748,3 +748,16 @@ global tasks1/3/11/13/23/26/31/32分别5/4/31/22/1/34/1/1。vs source47的R/G/L=
 因此当前Long/Object弱于SFT，Spatial/Goal较高，不能将不同成功集合压成仅差10分。旧SFT v1/后端/rank边界明确保留。
 尚未>145、Long2<10，无相邻稳定性或视频因果证据；这是早期泛化增益，不能选为qualified checkpoint。
 原件`supervised/step64_evaluation/validation_correct_vs_source47.json`与`validation_correct_vs_historical_sft.json`。
+
+64 same-task-other strict400完整exit0：95/400，S/O/G/L=4/51/36/4、breadth7/8；
+global tasks1/3/11/13/23/26/31/32分别1/3/31/20/1/35/4/0。correct99→other95的R/G/L=77/18/22、
+churn40/400、J=.65812；总分只降4但J不达.80，Long无correct成功保留。vs source47为34/61/13、churn74。
+对SFT109/107，R/G/L分别64/31/45与58/37/49，仍保留历史后端/不同rank边界。
+完整64裁决：持续监督学习与train/held获取，但未>145、Long弱、无相邻稳定且跨视频J不足，因此继续预登记128，不转RL。
+原件`supervised/step64_evaluation/decision_after64.json`及全部strict comparisons。
+
+两worker correct/三worker other分别949.35/1405.26秒；启动124.97/548.84秒，shard窗口820.09/852.64秒，
+实际env steps120809/120820，后者15worker全部权重成功、无OOM，实测最拥挤42372/46068MiB。
+不同视频arm并非纯replica因果实验，但三worker没有实际吞吐收益，后续回到两worker，不继续资源档位扫描。
+只读加载路径核查发现大Gemma/PaliGemma重复构造；GPU allocation发生在checkpoint加载前，不能当作已加载权重。
+未改第三方loader、未引入no-init；准确边界与候选限制记在`evaluation_replica_choice.json`，不影响已完成科学结果。

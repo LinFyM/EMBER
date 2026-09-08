@@ -93,6 +93,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--occupancy-capture-selection", type=Path)
     parser.add_argument("--task-subset-selection", type=Path)
     parser.add_argument("--capture-stage-predicates", action="store_true")
+    parser.add_argument("--frozen-replay-registration", type=Path,
+                        help="Registered read-only trajectory replay of a completed correct-video panel.")
 
 
 def parse_args() -> argparse.Namespace:

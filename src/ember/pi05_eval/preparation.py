@@ -30,6 +30,7 @@ from ember.pi05_eval_contract import (
     inspect_installed_target_tasks,
     inspect_source_checkpoint,
     inspect_tokenizer,
+    load_run_contract,
     load_evaluation_authorities,
 )
 from ember.pi05_eval_queue import (
@@ -84,6 +85,9 @@ def parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
 
 
 def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
+    if getattr(args, "frozen_replay_registration", None) is not None:
+        registration = _frozen_replay_registration(args)
+        return tuple(registration["init_state_ids"])
     values = getattr(args, "init_state_ids", None)
     if values is None:
         if getattr(args, "exploration_sigma", False):
@@ -98,6 +102,74 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
             "explicit init states require development_train screen states32..35/count4 or states32..36/count5"
         )
     return states
+
+
+def _frozen_replay_registration(args: Any) -> dict[str, Any]:
+    registration = read_json(args.frozen_replay_registration.resolve())
+    states = tuple(registration.get("init_state_ids", ()))
+    if (registration.get("schema_version") != "ember_pi05_frozen_replay_registration_v1"
+            or args.role not in {"development_train", "validation"}
+            or args.mode != "screen" or registration.get("role") != args.role
+            or not states or tuple(sorted(set(states))) != states
+            or any(type(state) is not int or not 0 <= state < 50 for state in states)
+            or args.state_count != len(states) or tuple(args.init_state_ids or ()) != states
+            or any(registration.get(key) is not False for key in (
+                "training_gradient_use", "checkpoint_selection_use", "test_use", "outcome_dependent_selection"))
+            or any(getattr(args, key, None) for key in (
+                "exploration_sigma", "occupancy_capture_selection", "task_subset_selection", "capture_stage_predicates"))
+            or getattr(args, "static_task_lora_manifest", None) is None):
+        raise Pi05EvaluationError("frozen replay requires a registered non-selecting correct-video panel")
+    return registration
+
+
+def _frozen_replay_capture(
+    args: Any, contract: Mapping[str, Any], output_dir: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    registration = _frozen_replay_registration(args)
+    reference_root = Path(registration["reference_output"]).resolve()
+    reference = load_run_contract(reference_root / "run_contract.json")
+    results = read_json(reference_root / "results.json")
+    completion = read_json(reference_root / "launcher_completion.json")
+    requested = {(task["suite"], int(task["task_id"]), state)
+                 for task in contract["tasks"] for state in task["init_state_ids"]}
+    prior = {(row["suite"], int(row["task_id"]), int(row["init_state_id"]))
+             for row in results["rows"]}
+    if (reference["role"] != args.role or reference["arm"] != "correct"
+            or contract["arm"] != "correct" or not requested <= prior
+            or any(tuple(task["init_state_ids"]) != tuple(registration["init_state_ids"])
+                   for task in contract["tasks"])
+            or not completion.get("return_codes") or any(completion["return_codes"].values())
+            or results["contract_reference"] != reference["contract_reference"]
+            or any(contract[key] != reference[key] for key in (
+                "model", "environment", "policy", "rng"))
+            or read_json(Path(contract["normalization"]["path"]))
+               != read_json(Path(reference["normalization"]["path"]))
+            or any(contract["tokenizer"][key] != reference["tokenizer"][key] for key in ("path", "bytes"))
+            or contract["adapter"]["manifest"] != reference["adapter"]["manifest"]
+            or {(task["suite"], int(task["task_id"])) for task in contract["tasks"]}
+               != {(task["suite"], int(task["task_id"])) for task in reference["tasks"]}):
+        raise Pi05EvaluationError("frozen replay changed the completed reference policy or paired cases")
+    scope = {
+        "registration_path": str(args.frozen_replay_registration.resolve()),
+        "reference_output": str(reference_root),
+        "reference_contract": reference["contract_reference"],
+        "training_gradient_use": False,
+        "checkpoint_selection_use": False,
+        "test_use": False,
+        "validation_use": args.role == "validation",
+        "diagnostic_subset": "registered_frozen_policy_replay",
+    }
+    return ({
+        **scope,
+        "schema_version": "ember_pi05_frozen_replay_capture_v1",
+        "trajectory_root": str(output_dir / "trajectories"),
+        "capture": "executed_policy_inputs_and_predicted_chunks_at_each_replan",
+    }, {
+        **scope,
+        "schema_version": "ember_pi05_stage_predicate_capture_v1",
+        "capture": "post_settling_then_every_executed_action_change_points",
+        "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
+    })
 
 
 def _select_init_states(args: Any, tasks: Sequence[Any]) -> tuple[Any, ...]:
@@ -127,6 +199,13 @@ def _inspect_adapter(
             require_formal=args.mode != "smoke",
         )
     if adapter_kind == "static_task_lora":
+        if getattr(args, "frozen_replay_registration", None) is not None:
+            registration = _frozen_replay_registration(args)
+            reference = load_run_contract(Path(registration["reference_output"]) / "run_contract.json")
+            prior = {(row["suite"], row["task_id"]): row for row in reference["tasks"]}
+            # Validate the entire original bank; the run still executes only registered cases.
+            tasks = tuple(replace(task, init_state_ids=tuple(prior[(task.suite, task.task_id)]["init_state_ids"]))
+                          for task in tasks)
         return inspect_static_task_lora_adapter(
             manifest_path=args.static_task_lora_manifest.resolve(),
             source=model,
@@ -402,6 +481,8 @@ def _prepared_payload(
         adapter=adapter,
         exploration_sigma=bool(getattr(args, "exploration_sigma", False)),
     )
+    if getattr(args, "frozen_replay_registration", None) is not None:
+        occupancy_capture, stage_predicates = _frozen_replay_capture(args, contract, output_dir)
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset

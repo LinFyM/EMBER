@@ -66,6 +66,17 @@ v6使用learned FactorHeads生成完整LoRA，说明显式raw X/Y bank不是产�
 有用信息，也不证明新的坐标MLP优于旧heads。原设计为 `3a6f801d:docs/action_forecast_writer_v6_design.md`，早期详细流水账为
 `ac233fa0:docs/research_history.md`旧§2及§3.1--3.9。
 
+### 输出共享与纯语言路由：近等价反例的补充索引（2026-09-09）
+
+本次对接续假设的历史核查只使用实际源码与correct资格臂，不把旧最终controls转为新架构选择信号。
+
+- **Target-Owned Factor (`34be4a0`)**：76个native tensor各一个1024→256→native head，同target跨16 rank共享，不跨target/layer/side共享。末投影20,594,688参数；50/100/150/200为99/76/86/68。历史原文曾把梯度低重合和层几何称作condition-to-policy credit的定位；这些观察不能唯一证明现代Horizon同一根因。该拓扑不能当新发现，旧前端/初始化/配方与删除DirectionStores的联动也不能被省略。完整设计、实现和结果：`3a6f801d:docs/action_forecast_writer_target_owned_factor_design.md` §1–8，正式root `runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z/`。
+- **旧v5.2/v6**：纯text queries只进入Q，内容输出是视频证据mean加attention读出；没有纯语言query残差。真实代码 `3a6f801d:src/ember/writer/temporal.py` 83–141、234–254；v5.1 proposal §6.1/13及v5.2 design §3。存在较强closed-loop，但不能单独归因于该路径限制；视频条件共同语义Value不等于裸语言Value。
+- **Dynamic-K Semantic-Address (`9e70b81`)**：semantic address只进Q，V/残差来自有向D/G，correct100→101（R/G/L84/17/16）；DirectFamilyB (`c5353f3`) 改直接B后K1/K4为102/98；后续Task-Grounded Visual-Value增加真实patch差分，四点88/86/86/96。说明这类信息通路限制不自动形成高性能；它们的动态差分only/fixed-A/rank8/旧前端不是当前Horizon。源码 `9e70b81:src/ember/writer/memory_program.py` 85–110、242–271，各完整设计在 `8553b61:docs/action_forecast_writer_*_design.md`。
+- **Common-Value Bridge与Direct Joint Native Factor Residual**：前者把冻结v6的set Value由centered Core换common Core，135→133；后者在LPCP143之上新增共享linear完整A/B residual为136。共同语义Value、直接共享head均有具体正负边界，不能拿其几何或模块名字保证后继性能。原件 `12311bd`/`0ead61e` 与 `8553b61` 对应设计。
+
+这些反例降低“单改头部共享/删语言残差即自然修复”的先验，但不否定当前图上经充分机制分析后的单变量对照。当前已授权的冻结分析实验见active design §8.2.4。
+
 ### 多视频、LPCP与参数稳定：必须看行为集合
 
 历史LPCP K4达到143/400、breadth7，但teacher schedule与另一143不同，不能伪造paired比较。若干DynamicSlotSet/SharedCore

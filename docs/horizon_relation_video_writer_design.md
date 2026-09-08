@@ -256,20 +256,17 @@ D 全零初始化、A0 用 canonical 非零 identity 模板，初始 BA=0；其�
 
 ### 7.2 数据、随机性与公平权重
 
-固定train24；当前条件组织诊断按§8.2.3每update覆盖全部24个task，各task等权1/24。原每suite均匀抽1 task、共4条件×64queries的运行作为冻结对照。
-当前每task恰好一条完整teacher video，真实sampler固定K=1，内部保序，stride5、include-last-frame；不挑video。
+固定train24；实际已执行且本轮冻结诊断沿用的学习合同为每suite均匀抽1 task、共4条件×64queries，每条件权重1/4。§8.2.3的24-task候选尚未运行，当前后置，不作为活动训练配方。
+每task条件恰好一条完整teacher video，K=1、内部保序、stride5、include-last-frame。teacher episodes0–15；FM actions episodes16–41，与teacher严格不交叠，均匀episode再均匀frame、有放回。
+训练侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test不得产生梯度。额外meta tasks为空。
+video/query使用独立持久随机流，seed7；多卡只分配完整条件，已经乘1/4的梯度跨rank SUM，不再除world size。每个条件完整64-query随机性先生成，再按实际physical microbatch切块；卡数、分工与microbatch不改变逻辑batch或权重。
 混合K历史保留；K1全部通过后再开展few-shot，集合compiler保持完整，暂不进行K2/4训练或测试。
-teacher episodes0–15；FM actions episodes16–41，独立于teacher，均匀episode再均匀frame，有放回。当前每suite总64 queries，分到六task为四份11、两份10；每三步轮换。
-train侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test同样无梯度。
-额外meta tasks仍为空，不把更多同task episodes当作更多独立映射。K固定1，video/query使用独立持久随机流，seed7；当前完整覆盖无需随机抽task。
-多卡按真实视频cost分配完整task，跨rank对已经乘1/24的梯度SUM，不再除world size；卡数不改变采样或任务权重。
-物理FM microbatch可通过`--policy-microbatches`逐rank登记，当前完整10/11-query随机性与权重不变；每个condition记录实际分块。
 
 ### 7.3 同task跨episode FM与完整端到端梯度
 
 \[
 x_s=(1-s)a+s\epsilon^{FM},\quad u_s=\epsilon^{FM}-a,\quad
-L_{FM}=\frac1{24}\sum_{i=1}^{24}\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
+L_{FM}=\frac14\sum_{i=1}^{4}\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
 \]
 
 复用冻结normalization、原生Beta flow-time分布、独立Gaussian noise及末动作补齐；不改变监督目标或padding口径。
@@ -294,7 +291,7 @@ probe、source/data版本及world topology；macro就是已完成optimizer updat
 本轮K1按Owner补充纠正明确fresh：旧混合K run在安全完整边界停止，checkpoint和结果仅作历史探索证据，
 不得成为K1初始化。Writer全部可训练参数重新初始化，LoRA采用合法identity；optimizer、scheduler、sampler/RNG全fresh，
 从step0独立正式run开始，冻结source/资产复用。原exact-resume仍要求同run/config/topology；未来换卡数须先有受控迁移实现与登记。
-每个update总query仍256；当前24条件分别10/11 queries，task梯度先乘1/24，跨rank SUM，整个逻辑batch后统一裁剪和更新一次。§8.2.3的受控分叉明确登记数据组织变更；它不是原合同的exact-resume，子run后续恢复仍严格锁自身合同。
+每个update共4条件×64queries=256；每个条件梯度先乘1/4，跨rank SUM，整个逻辑batch后统一裁剪和更新一次。§8.2.3曾提出的受控分叉仍未执行，不改变已存checkpoint的恢复语义。
 
 ### 7.5 独立RL阶段在监督平台后另登记
 
@@ -370,7 +367,7 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 ### 8.2.3 条件组织受控诊断：完整task覆盖、相同query预算与期望任务权重
 
-**状态更正（2026-09-09）：Owner已暂停此项及所有正式实验，当前仅深入分析已有证据。以下及§7中对应24-task组织为尚未执行的候选诊断，不代表根因已确认、方法已选定或继续启动授权；已产生100–600结果的实际合同仍为冻结b6d70d98的4task×64queries。**
+**状态更正（2026-09-09）：本项为未运行、当前后置的历史候选。Owner已重新授权分析实验及证据驱动推进，但没有把24-task组织认定为修复；首批诊断见§8.2.4，当前不启动本分叉。已产生100–600结果的实际合同仍为冻结b6d70d98的4task×64queries。**
 
 **依据与竞争解释。** 原样500/600 correct为70/82，600仍只覆盖4/8且78/82成功集中11/26；训练held-video200/400/600为52/59/67。没有观察到整体训练行为退化，跨task迁移为优先层级，但尚未识别根因。要区分：每步少量teacher/task条件的更新组织是否是可干预因素，还是在改变该组织后仍存在任务支持/表示/编译接口的泛化缺口。
 旧v6的条件数、任务覆盖、视频池和其它实现同时不同，不能因历史分数直接归因；旧meta73/target18还改变task权重与总queries。当前诊断不新增meta tasks，不提前使用最终视频controls。
@@ -387,6 +384,46 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 **结果分支。** 两个匹配节点出现实质绝对增益并扩展跨task/suite能力，支持条件组织是有效干预，继续按原资格判断相邻稳定；只有低churn或原少数task波动不算解决。训练侧改善而validation仍弱，说明本次组织调整未解除迁移缺口，应再定位独立task支持或具体接口；两侧都弱只否定本次已检验分配，不证明完整图无容量。不盲扫query档位、LR/rank/seed，不由负结果自动转RL或机械展开消融矩阵。
 实现由现有`learning_data.py`、`supervised.py`、`training.py`承担；原四条件运行由冻结提交和formal artifacts保留，活动树不增设第二套训练器或永久fallback。
+
+### 8.2.4 原200/600冻结诊断与后续修正排序（2026-09-09）
+
+**授权与先后。** Owner允许直接开展分析实验和内部结构拆解；先获得能区分原因的证据，再决定正式模型修改与训练。休息期间在既有科学精神、信息墙和资源范围内持续自主推进。常规换卡/调度无需再问，学习状态迁移仍按真实合同处理。
+原K1不原样续训700/800，不自动执行24-task分叉。以下诊断不更新Writer/Meta/source，不挑新的checkpoint，不提前shuffle/reverse，也不改变正式400分数。
+
+**新增历史反证改变了优先级。**
+
+- `34be4a0` Target-Owned Writer的76个native factor heads已经在同target内跨16 rank共享、跨target和A/B不共享；其末投影20,594,688参数与拟议rank-shared D完全相同，正式50/100/150/200为99/76/86/68。旧前端、1024维factor输入、W_in ownership、初始化/优化和删除DirectionStores等同时不同，不能作为当前图的单变量否证；但共享D并非未试过的新机制，当前不凭省参数就优先重训。
+- 当前checkpoint header确认独立D为329,515,008参数，占Writer368,675,520的89.38%；只共享同target内rank会变成20,594,688，整Writer59,755,200。该约束保持单套rank16 LoRA的理论可达秩，但收紧跨条件/跨rank的联合native span；不是无损压缩，也不证明过拟合。
+- 旧v5.2/v6实际让纯language只作Q检索、content来自视频语义；它与较强能力共存。另一方面Dynamic-K Semantic-Address、task-grounded D/G和DirectFamilyB有类似路由/Value限制而correct仍约100。删除裸语言残差只消除一条代码通路，不保证动态必要性、可迁移过程或高闭环。
+- 不从这些历史方案的最终shuffled/reversed结果选择当前架构。完整原件及资格臂来源由research_history索引。
+
+**A. 真实训练输入下的内部接口分析。** 固定原checkpoint200与600；24个train tasks全部覆盖，每task使用正确完整teacher46及同task diagnostic actions42–45固定16queries，复用已有诊断采样/flow RNG定义，跨checkpoint完全相同。共48个条件/768个FM queries，不消费训练sampler、不创建优化器更新。
+
+同次真实视频forward记录P4、language及compiler的实际初始query与两层cross-attention/self-attention/FFN分量。得到正常生成LoRA的训练侧FM cotangent后，只向输入P4/ell和这些中间分量求导，统计局部增益导数 `<dL/dx,x>`、敏感性及分量大小。输入、source、全部Writer和Meta数值冻结；不用zero/no-video输入，不替换checkpoint模块，也不合成shuffle/reverse。
+
+要回答的是当前参数下哪些接口对动作拟合实际有作用、200→600是否出现一致变化；梯度/范数小不等于视频被忽略，贡献项也不可相加为完整性能归因。这项诊断不单独识别R→P4的过程职责，不由FM的优劣选模型或宣称闭环修复。
+
+**B. 一次性sealed held行为轨迹诊断。** 在看到新轨迹前固定validation8全部任务、init states `[0,12,25,37]`、原200/600两点，共64 episodes；复用各自原canonical correct400中的LoRA、teacher/state映射、source/normalization、environment/policy RNG。视频不重物化，不挑成功案例。原完整400结果仍是唯一正式成绩；新小面板只用于行为解释，无训练梯度、无checkpoint选择、无Test。
+
+复用现有persistent evaluator、cost-balanced queue和真实policy输入/动作chunk捕获；仅新增显式登记的冻结reference重放入口，核对原run已完成、同policy/manifest、固定cases和read-only用途，不绕过原保护或扩展为新训练入口。记录每次replan的实际双相机/状态输入、预测action chunk，以及每个环境step的原BDDL目标谓词变化。目标谓词不是人工完整阶段标签，接触/抓取需结合真实画面与动作，不把未满足终局谓词直接命名为未抓住。
+
+首先核对新重放与历史逐行的success、steps、teacher和noise一致程度；接受正常kernel/分组低位差异，不为复刻某次成功重复挑run。有变化的案例按本次真实轨迹解释，不能冒充原历史轨迹。该固定状态小面板不能估计每task总体成功率，也不能因行为阶段相同就定责某一个Writer模块。
+
+要区分：200已有行为是否在600最初目标获取阶段消失；是否接近/抓住正确对象但放置、释放或后续子目标失败；还是在接触前就没有形成正确运动。对Spatial长期零、Object13已获取后丢失和Long组合缺口分别给出观察与不能推出的结论。若固定面板没有覆盖某种失败，不临时按新结果换状态来放大叙事。
+
+**下一步的结果分支。**
+
+| 新证据 | 后续动作 | 不能推出 |
+|---|---|---|
+| 出现可复现的采样/执行/信息接口合同违反 | 修复该明确缺陷，最小复验后重新判断原假设 | 所有低分都来自该bug |
+| 训练FM有用的接口明确、行为主要在后期子目标丢失 | 沿可观察缺口分析训练侧动作支持与过程压缩，必要时做固定train-side局部诊断 | 直接判定occupancy或某个GRU故障 |
+| 语言query残差与后端对动作拟合主导、视频P4作用弱且跨任务行为弱 | 优先准备一次只改compiler内容初始化/残差来源的fresh对照，保留视频条件共同语义Value及全部原生响应前端 | 当前已证明语言捷径或删除残差必会改善 |
+| P4实际有功能作用，但仍无稳定迁移 | 保留其作用证据，分析从条件代码到native因子的共享/任务支持；rank共享需明确相对Target-Owned的新变量 | 仅因有梯度就宣布视频理解完成 |
+| 两项诊断仍不分竞争机制 | 如实保留不可识别项，选择能区分解释的一项训练侧干预并预登记；不机械跑整个消融矩阵 | 把“未排除”改写为“已定位” |
+
+正式架构对照前补全确切公式、参数初始化、fresh学习状态、仍保持的4×64数据/优化口径和匹配节点；不得同时改language path、D sharing和task组织。每段约一小时，以真实profile决定50/100倍数的中间/末节点，日志同时报updates、conditions、queries/每task曝光和墙钟。先获得行为证据，再决定相邻继续；目标/资格仍为§8.3。
+
+本批轨迹与内部分析新增峰值预算8GiB；source、checkpoint和已有LoRA均引用canonical资产。2026-09-09 strg01实测data1 576,355,896KiB/soft1,073,741,824KiB，shared84TiB，原run38GiB；正式启动时刷新对应GPU现场。诊断原件位于 `k1_fresh/internal_diagnostic_20260909/` 与 `k1_fresh/behavior_replay_20260909/`，本节登记不是完成声明。
 
 ### 8.3 资格与最终controls
 

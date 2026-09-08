@@ -65,6 +65,22 @@ trainer/scheduler/sampler/training游标均100，643项Adam状态及四rank RNG/
 首100updates=400个真实K1条件/25600queries，四suite各100条件、24tasks均覆盖（8–25次）；整步均值16.029s，峰值38.160GiB。
 原件`k1_fresh/step100_summary.json`；correct400尚未执行，不从训练loss或checkpoint保存推断性能通过。
 
+## Fresh K1首段200完成，正在物化correct400（2026-09-08）
+
+正式0→200已正常exit0，四个训练rank均已退出；100/200两个完整checkpoint保留。200的trainer/scheduler/sampler/training游标均200、四rank RNG/topology匹配，643项Adam状态保存。
+200updates=800个真实K1条件/51200queries；平均15.848s/update，后100步15.667s，峰值38.160GiB。
+外层完整墙钟3522.76s（58分42.76秒，含导入/初始化/训练/held诊断/保存/退出），吞吐14.534query/s；更新阶段16.153query/s、0.2524训练LoRA/s。
+同一固定held-action query/video/RNG配对已核对，FM0→200=.15145673→.11135264，24/24训练task下降；不据此宣称闭环通过。
+完成与训练汇总在`k1_fresh/step200_summary.json`，原始metric/exposure/diagnostic和完整checkpoint在正式root。
+
+双节点与strg01已刷新，data1使用540974176KiB/soft1073741824KiB，shared84TiB；末checkpoint和两bank增长在原24GiB预算内。
+clean pushed detached b6d70d98不变。GPU02 physical1/3各162MiB、util0；physical2既有8974MiB、util5，余37094MiB。
+现在1号卡物化100 correct bank（tmux `ember-k1-bank100`）、3号卡物化200（`ember-k1-bank200`）；每bank255个独立条件/400配对rows。
+2号卡执行micro4/6限定短测（`ember-k1-micro6`），只读200 Writer后在临时进程做完整反向和诊断Adam，不保存或继承学习状态。
+注册与现场证据`k1_fresh/post200_launch.json`、`post200_gpu_preflight.json`；三个入口均记录外层完整墙钟与退出码。
+待物化完成后用现场合适GPU、每卡2个persistent workers分别执行100/200 strict correct400，再做相邻成功集合、source47和历史SFT比较。
+尚未启动closed-loop评测，未做other/final controls/Test，尚未qualified。下一段纯FM/RL裁决仍以真实闭环证据为准。
+
 ## 历史：初始纯FM安排与原注册
 
 以下24/64/128/192、混合K与密集other是切换前的历史执行合同，不覆盖上面的最新安排。

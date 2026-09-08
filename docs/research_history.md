@@ -865,3 +865,11 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 400 train96=59、breadth22，对新20046为R/G/L35/24/11，对原40059为46/13/13；S/O/G/L12/21/19/7，对原17/18/17/7。训练侧获取仍在，validation未持续扩大。冻结held FM.105737594，对原.106271931，11/24任务更低；无梯度/optimizer且sampler不变。严格配对、六worker exit0和全部原件见`k1_first_query_only/segment200_400/round_evidence.json`及[完整报告](horizon_k1_first_query_only_20260909.md)。
 
 本轮保留内容移除的局部收益，未认定唯一根因或整体修复，不原样追加500/600。下一步机制分析与任何新实验由progress及后续登记解释；本历史段不恢复执行。
+
+## 2026-09-09 首层内容对照后的冻结功能对应矩阵
+
+完整按§8.2.7执行新200/400×teacher46/47×train24完整adapter，应用于固定train24的32query；加source共74,496query预测。所有actual time/noise配对，无Writer forward、梯度、optimizer及新rollout；sampler不变，GPU02p2单卡449.10秒、peak11.750GiB、exit0。首个重复full-prefix实现于首行完成前终止，日志保留；冻结前缀缓存执行首行source/own核对在预登记数值容差内。
+
+自身FM200→400=.111621→.106557，source=.154875；其它23task−自身margin .009396→.015491，同suite .003599→.005578。400两teacher两半面板均优于其它23task均值为24/24，同suite为18/24，训练内任务特化继续增强。此结果支持把持续训练获取与验证退化分开，不证明充分语义理解、不用微小FM排名选择adapter、不替代视频因果或闭环。
+
+[完整报告](horizon_k1_functional_assignment_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`保存注册、两执行版本、完整24行及汇总。后续学习干预尚须另登记，本段无新结构或训练启动。

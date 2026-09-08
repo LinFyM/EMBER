@@ -4,7 +4,7 @@
 
 ## 当前：首层语言内容对照至400完成，登记冻结功能对应诊断
 
-完整报告：`docs/horizon_k1_first_query_only_20260909.md`。active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6本轮执行均已完成；下一项只读诊断已按§8.2.7登记：在train24固定动作查询上交叉应用新200/400、teacher46/47已生成的完整LoRA，检验功能任务对应；无新训练、无held梯度、不作最终视频因果解释。当前在GPU02p2冻结运行面执行，尚无完整矩阵结果。首个重复full-forward实现于首行完成前终止，现复用行内冻结query prefix，先核对原生数值；原日志保留。原件A=`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`，D=A/`segment200_400/`；D/`round_evidence.json`汇总全部本段事实。
+完整报告：`docs/horizon_k1_first_query_only_20260909.md`。active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6本轮执行均已完成；下一项只读诊断已按§8.2.7登记：在train24固定动作查询上交叉应用新200/400、teacher46/47已生成的完整LoRA，检验功能任务对应；无新训练、无held梯度、不作最终视频因果解释。该诊断已完整exit0：74,496 query预测、两teacher/两checkpoint/24task全部完成，449.10秒、peak11.750GiB。400全部24task在两teacher及两个查询半面板均优于其余23task adapter均值，跨task margin .009396→.015491；同suite margin .003599→.005578。train功能特化仍增强，不支持“训练内条件编译普遍未形成”；不能由小FM差值定责模块或替代闭环。完整报告`docs/horizon_k1_functional_assignment_20260909.md`，全部配对、无梯度与sampler不变检查通过；当前GPU任务已结束。原件A=`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`，D=A/`segment200_400/`；D/`round_evidence.json`汇总全部本段事实。
 
 新100/200/300/400 correct **75/110/106/103**，原55/110/86/87；后两点局部更好，但新200后没有继续增长。新300/400 S/O/G/L=0/64/35/7→3/52/39/9、breadth4→6；global1/23始终0。200→300 R/G/L77/29/33、churn62、J=.554；300→40077/26/29、churn55、J=.5833。BBQ28→24→10，200→400仅保留7/28；Long双物9→8仅保留1，Spatial任务3两点虽均3/50却无成功重合。仍未满足>145、breadth、Long与相邻稳定。
 

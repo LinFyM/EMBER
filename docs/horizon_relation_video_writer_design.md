@@ -483,6 +483,8 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 复用`fea45593`冻结原生运行面与canonical banks，单GPU只读执行。初始全forward执行因反复计算相同冻结query前缀，在首行结果完成前终止；改为每行四个真实8-query prefix KV只读缓存，复用现有native prefix/denoise API。首行source和同task列各8query额外核对完整原生forward，数值容差为逐点loss平均绝对差≤.002且相对≤.02；actual time/noise严格配对。此执行优化不改变97列与32query定义。预计新增JSON与日志小于50MiB，无模型/cache复制。原件保留在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`。
 
+**完成（2026-09-09）。** 全部74,496 query预测完整exit0，449.10秒、peak11.750GiB；32query与97列实际time/noise全部配对，无梯度且sampler不变。source/自身200/自身400均值=.154875/.111621/.106557；其余23task−自身margin .009396→.015491，同suite .003599→.005578。400全部24task在两teacher及两个查询半面板均优于其余23task均值，同suite相应18/24。训练内功能特化仍增长，不能用此证据继续声称训练内条件编译普遍失败；它也不证明闭环、迁移或充分语义理解。数值与小margin限制见[完整报告](horizon_k1_functional_assignment_20260909.md)。下一项学习变量须据此重新登记，未启动新训练。
+
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，

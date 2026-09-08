@@ -60,6 +60,11 @@ micro4为已验证可运行配置，micro6尚未测，不能称已找到最优�
 100/200各自correct400请求、外层完整墙钟脚本和source/SFT比较准备在`k1_fresh/step100_evaluation/`及`step200_evaluation/`；
 200额外比较100的严格配对成功集合。只准备correct，训练到200暂停后再启动；不把旧混合K节点充作fresh相邻证据。
 
+Fresh K1 macro100已完整发布，继续同段训练200；checkpoint共4434752868bytes（约4.13GiB），manifest文件大小匹配。
+trainer/scheduler/sampler/training游标均100，643项Adam状态及四rank RNG/topology已保存；仅核对序列化元数据，未重复restore或逐tensor扫描。
+首100updates=400个真实K1条件/25600queries，四suite各100条件、24tasks均覆盖（8–25次）；整步均值16.029s，峰值38.160GiB。
+原件`k1_fresh/step100_summary.json`；correct400尚未执行，不从训练loss或checkpoint保存推断性能通过。
+
 ## 历史：初始纯FM安排与原注册
 
 以下24/64/128/192、混合K与密集other是切换前的历史执行合同，不覆盖上面的最新安排。

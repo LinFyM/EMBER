@@ -49,6 +49,11 @@ profile已在8步完整保存并exit0，32条件全部K1、2048queries，正式�
 新增24GiB预算覆盖第一正式小时与临时profile checkpoint、两正式checkpoint/atomic临时写、两validation banks和日志；
 strg01 data1已用532410484KiB/soft1073741824，shared84TiB。GPU双节点现场与精确命令在`k1_fresh/`。
 
+正式fresh K1已启动：clean pushed b6d70d98，detached `horizon-k1-runtime`；GPU02 tmux `ember-horizon-k1-supervised`、pane1042996。
+新root=`runs/outputs/horizon_k1_supervised_v1_seed7_20260908`；run_contract确认formal、K1、world4、source trainable=0，
+启动日志确认segment_start0/resume=null。当前先计算固定held-action baseline0，随后0→200；没有继承mixed/profile checkpoint。
+精确注册/命令/外层完整墙钟与日志在`runs/analysis/horizon_relation_writer_20260908/k1_fresh/formal_launch.json`、`formal.sh`、`formal.log`。
+
 ## 历史：初始纯FM安排与原注册
 
 以下24/64/128/192、混合K与密集other是切换前的历史执行合同，不覆盖上面的最新安排。

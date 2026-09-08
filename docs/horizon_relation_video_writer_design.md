@@ -403,6 +403,10 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 要回答的是当前参数下哪些接口对动作拟合实际有作用、200→600是否出现一致变化；梯度/范数小不等于视频被忽略，贡献项也不可相加为完整性能归因。这项诊断不单独识别R→P4的过程职责，不由FM的优劣选模型或宣称闭环修复。
 
+**A2. 根据A结果追加单支路冻结干预。** A完成48条件/768queries：固定16-query FM .115832→.107259，20/24 tasks下降；P4 cotangent全非零，cross/self局部敏感度同数量级。梯度观察不足以判断实际支路依赖，故复用完全相同输入与200/600，比较normal、仅query_language输出置零、仅block1.cross输出置零、仅block2.cross输出置零四臂，共48×4×16=3072 FM queries。
+每臂都保留真实完整P4，至少一层cross仍读视频，P4生成时的exact language和全部原生图不变；不做两个cross同时置零、整模型language/no-video或最终视频controls。使用原functional loss的真实velocity/time/query-loss输出，统计有效50×7动作维度的配对FM及同FM时刻implied clean chunk变化；后者不是10-step动作采样或closed-loop。
+这是已训练冻结checkpoint的activation lesion，临时hook在调用后撤除，不写checkpoint、无optimizer更新或新的正式架构。大幅删除支路会产生训练分布之外的中间状态，结果只说明原参数的使用依赖，不能推断fresh删支路必然好/坏，不选择最佳gain或将这些训练侧分数当正式选点。原A数据保留，新预注册和结果单独存入同一internal diagnostic目录。
+
 **B. 一次性sealed held行为轨迹诊断。** 在看到新轨迹前固定validation8全部任务、init states `[0,12,25,37]`、原200/600两点，共64 episodes；复用各自原canonical correct400中的LoRA、teacher/state映射、source/normalization、environment/policy RNG。视频不重物化，不挑成功案例。原完整400结果仍是唯一正式成绩；新小面板只用于行为解释，无训练梯度、无checkpoint选择、无Test。
 
 复用现有persistent evaluator、cost-balanced queue和真实policy输入/动作chunk捕获；仅新增显式登记的冻结reference重放入口，核对原run已完成、同policy/manifest、固定cases和read-only用途，不绕过原保护或扩展为新训练入口。记录每次replan的实际双相机/状态输入、预测action chunk，以及每个环境step的原BDDL目标谓词变化。目标谓词不是人工完整阶段标签，接触/抓取需结合真实画面与动作，不把未满足终局谓词直接命名为未抓住。

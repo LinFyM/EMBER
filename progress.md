@@ -14,6 +14,9 @@ Owner进一步明确：该做的分析实验和内部架构拆解直接做，在
 首批新诊断已进入准备：冻结200/600训练侧内部接口敏感性（train24×teacher46×16固定actions，共48条件/768queries，无参数更新）；冻结200/600 validation8×states0/12/25/37轨迹重放（共64episode，复用原正确视频LoRA，无checkpoint选择）。后者仅补评测入口的显式登记与已有轨迹捕获，不修改模型。
 现场data1 quota=576355896KiB/1073741824KiB，原run38GiB，共享84TiB；本批派生数据峰值预算8GiB。内部诊断分配GPU02 physical2，轨迹重放拟用physical6，两者均按live余量共驻，不影响他人。精确命令与最终现场随诊断原件记录。
 冻结轨迹入口复用现有rollout capture、队列和policy forward，只增加reference/配对/用途核验；相关62项检查通过，补全原整bank复用后25项定向检查通过。实际重放尚待启动，不将入口测试记为科学结果。
+首批内部诊断已exit0：48条件/768queries全部配对，314.89秒，峰值23.411GiB，零参数更新；新16-query FM200/600=.115832/.107259，20/24任务下降。P4/cross非零且cross/self局部敏感度同量级，不支持视频分支已断开；语言query范数占比不是shortcut证明。原件`internal_diagnostic_20260909/{summary,conclusions}.json`。
+据此登记A2单支路activation lesion（normal/仅直接语言项零/仅cross1零/仅cross2零），同48条件共3072queries，真实P4和至少一层video cross始终保留；无模型更新，不是正式改模或最终controls。
+行为200重放已在GPU02 p6×2workers实际运行，原bank完整检查与4-state执行子集均保持。首次prepare后因launcher重复检查把子集当整bank而在worker前拒绝，零rollout；已修正recovery复用原整bank验证，26项定向检查通过。冻结运行面为clean pushed e1bfad44，实际输出`behavior_replay_20260909/step200_replay`，初次小失败原件`step200/`保留；600随后复用同口径单独运行。
 当前六个未提交源码/config/tests仍为未执行的24-task草稿，尚未纳入新方案、没有新模型权重或实验结果。后续实施选定修正时，先撤回本任务的失效草稿并恢复4task×64queries基线，避免同时引入两项变量。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）

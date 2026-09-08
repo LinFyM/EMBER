@@ -12,7 +12,7 @@
   目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
   后续方法冻结32/8 fresh及最终Test。
 - 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 当前正在完成纯监督入口/采样/checkpoint/物化评测接线、必要检查与正式launch。完整FM/Writer/Meta机制复用已验证路径；
+- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，首段正式进程已启动。完整FM/Writer/Meta机制复用已验证路径；
   native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
 - 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
@@ -34,7 +34,9 @@
 data1 quota使用516182860KiB/soft1073741824KiB，shared84TiB；新监督至192节点预算48GiB，计入4个完整Adam checkpoint、
 atomic临时写入、train/validation LoRA banks、raw rows/logs。当前joint末profile4.2GiB、analysis1.2MiB、scratch98MiB；其余既有用量由quota覆盖。
 新root=`runs/outputs/horizon_supervised_v1_seed7_20260908`；现场证据/精确命令登记在`runs/analysis/horizon_relation_writer_20260908/supervised/`。
-尚未宣称启动；commit/push/frozen完成后立即launch，run_contract记录最终commit/source/environment/topology。
+已从clean pushed `265ef31b` 的detached `.codex/worktrees/horizon-supervised-265ef31b` 正式启动；
+gpu02 tmux `ember-horizon-supervised`，torchrun3925038、四个rank3925226–3925229已现场确认存活并加载。
+精确stage/source/environment/topology由run_contract记录；当前尚未报告首个optimizer update或闭环分数。
 
 ## 已结束的联合profile
 

@@ -20,11 +20,11 @@
 
 首段fresh正式训练已完整exit0，200 checkpoint已发布；200更新/800条件/51200queries全部与原基线同task/video/query/seed/权重，updates墙钟2921.40秒、均值14.607秒，完整墙钟3290.54秒。held FM0→200为.151466→.111184，只作拟合证据。100bank已exit0（完整墙钟1353.86秒，含gpu01冷加载），400条件全新、实际50视频每task各一次、与原schedule一致，public formal bank inspector通过。
 
-100 strict400已在gpu02p6、2replica启动（tmux `ember-first-query-eval100`）；200独立validation400+train96 banks由同resident source在gpu02p0物化（`ember-first-query-bank200`）。运行面保持`fea45593`，详细launch/日志位于`k1_first_query_only/step100/`、`step200/`；当前无新闭环分数。下一步完成两400及train96配对证据，按active design分支裁决。
+100 strict400在gpu02p6、2replica运行（`ember-first-query-eval100`，`fea45593`）。200独立validation400+train96 banks已完整exit0，496条件全部新生成，完整墙钟1004.68秒；两bank的public inspector、实际视频/state/ordinal与原对照匹配均通过。200 strict400已从`f478076f`在gpu02p2/4、每卡2replica启动（`ember-first-query-eval200`）；train96 bank已就绪，待下一批合适资源。详细launch/日志位于`k1_first_query_only/step100/`、`step200/`、`train96_step200/`。当前无完整新闭环分数；完成两400及train96配对证据后按active design分支裁决。
 
 评测调度纠正：旧launcher来自`99c2323a`的已用显存≤8GiB条件，会额外排除现场free36–37GiB且低util设备。当前移除这一peer allocation上限，保留原free≥32GiB、util≤10与完整GPU/process证据；双worker Long运行现场合计约23.05GiB，不把单次读数宣称全局峰值。31项launcher/queue定向检查通过，包括容量边界与忙卡拒绝；不改变model/LoRA/数据/推理/配对或现行100评测运行面。后续新评测使用新的clean pushed frozen runtime；纠正记录在`k1_first_query_only/evaluation_admission_correction.json`。
 
-新段live data1 quota=597432496KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
+新段live data1 quota=599981688KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

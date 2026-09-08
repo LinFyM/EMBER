@@ -3,13 +3,19 @@
 更新时间：2026-09-08 CST。最新Owner要求：当前先集中真实K=1，固定逻辑4task/256queries与GPU数解耦，
 先纯FM到有证据平台、后独立共享Writer RL；约一小时训练分段，中/末两个整齐步数correct400节点。继续当前全程goal。
 
-## 当前：fresh K1继续200→400
+## 当前：fresh K1已完成400，评测300/400
 
 首段canonical correct100/200均已完成，55→110/400；200四suite为1/61/41/7、breadth6/8。相邻R/G/L42/68/13、churn81/400、J=.34146；Long旧6个成功全部丢失、另获7个。仍在获取能力，未达到性能、breadth、Long和相邻稳定资格，不判平台。
 已登记并发起原学习状态续训200→400：原frozen b6d70d98、GPU02 physical1/2/3/6、micro8/4/8/8，300/400两节点correct400；tmux `ember-horizon-k1-segment200-400`，完整命令/预算/实时资源在`k1_fresh/segment200_400/`。不重置、不改架构/超参；other与最终controls继续后移。
 
-step300完整checkpoint已通过正式检查，约4.13GiB；累计1200个真实K1条件、76800 queries，各task36–66次曝光。201–300更新均值15.893秒，峰值38.170GiB。checkpoint与scheduler游标为300；训练现已继续到322，未停止或重置。
-step300 bank已在GPU02 physical4额外单卡发起（tmux `ember-k1-materialize300`），只生成本checkpoint自己的400个条件；仍待封存及最终manifest覆盖核验。当前共五张实际工作的卡，闭环评测仍在400段末。记录见`k1_fresh/segment200_400/step300/`。
+200→400段已正常exit0，四rank均退出，完整墙钟3287.09秒（54分47.09秒），段内均值15.583秒/update，峰值38.170GiB。
+400完整checkpoint约4.13GiB，正式检查通过；累计1600个真实K1条件/102400 queries，各suite400条件，各task46–86次曝光。
+300/400完整checkpoint均保留，原Writer/Meta/optimizer/scheduler/sampler/RNG连续恢复，无重置或架构/超参变化。
+
+step300 bank已400/400全新编译、exit0，完整墙钟791.57秒；正式validator及实际视频覆盖均通过：每task50视频各一次、无遗漏/重复，与200逐行映射一致。
+现从clean pushed f1330697启动300 correct400（GPU02 p1/3/6、每卡2workers，tmux `ember-k1-correct300-v2`）；400 bank同时在p2生成（tmux `ember-k1-materialize400`）。
+双节点现场和strg01已刷新，data1用量555815332KiB/soft1073741824KiB，shared84TiB，checkpoint400/bank400/日志在既有20GiB段预算内。
+当前暂无300/400闭环分数，待完整400rows后比较200→300→400成功集合；other/最终controls仍后移。启动及核验原件在`k1_fresh/segment200_400/post400_launch.json`、各step子目录。
 
 ## 已完成：整轮视频schedule修复与首段评测
 

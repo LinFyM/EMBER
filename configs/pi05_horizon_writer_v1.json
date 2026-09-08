@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_horizon_relation_writer_config_v1",
-  "status": "registered_fresh_supervised_fm_then_independent_rl",
+  "status": "fresh_k1_supervised_fm_then_independent_rl",
   "design": "docs/horizon_relation_video_writer_design.md",
   "data": {
     "seed": 7,
@@ -33,9 +33,7 @@
     "tasks_per_update": 4,
     "queries_per_task": 64,
     "cardinalities": [
-      1,
-      2,
-      4
+      1
     ],
     "video_demos": [
       0,
@@ -100,7 +98,7 @@
     "frame_stride": 5,
     "include_last_frame": true,
     "extra_meta_tasks": [],
-    "version": "train24_supervised_suite_rng_cross_episode_v1"
+    "version": "train24_supervised_suite_rng_cross_episode_k1_v2"
   },
   "model": {
     "width": 256,
@@ -112,7 +110,7 @@
     "radius": 4,
     "compiler_blocks": 2,
     "factor_width": 256,
-    "edge_chunk": 8,
+    "edge_chunk": 32,
     "activation_checkpoint": true
   },
   "observer": {
@@ -120,7 +118,7 @@
     "probe_seed": 1729,
     "probe_distribution": "torch.randn CPU float32 [50,32], same public tensor for every task/frame",
     "flow_time": 1,
-    "frame_chunk": 4,
+    "frame_chunk": 8,
     "response": "post_final_norm_actual_action_out_proj_input",
     "visual_evidence": "final_effective_multimodal_prefix_Z_from_same_prefix_forward"
   },
@@ -134,20 +132,20 @@
     "eps": 1e-08,
     "weight_decay": 0.0001,
     "grad_clip": 1.0,
-    "precision": "Writer/Meta/FM BF16 autocast; native mixed execution without outer autocast; FP32 trainable parameters",
+    "precision": "Writer including its reading module and FM BF16 autocast; native mixed execution without outer autocast; FP32 trainable parameters",
     "loss": "supervised_fm",
     "normalizer": 1.0,
-    "fresh_joint_writer_and_meta": true,
-    "warmup_updates": 8
+    "warmup_updates": 8,
+    "joint_train_all_writer_modules": true
   },
   "runtime": {
-    "policy_microbatch": 4,
+    "policy_microbatch": 8,
     "prefix_cache_bytes": 2147483648
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "fresh supervised FM; first segment24; independent action validation and closed-loop plateau evidence",
-    "qualification_registration": "docs/horizon_relation_video_writer_design.md#82-首批学习与随后预登记",
+    "initial_use": "fresh K1 from step0; no mixed-K weights or learning state inherited; final segment nodes require measured throughput registration",
+    "qualification_registration": "docs/horizon_relation_video_writer_design.md#82-监督学习节点独立验证与平台期",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -200,12 +198,7 @@
       ],
       "paired": true,
       "purpose": "trained-task acquisition with held teacher videos; no RL exploration arm",
-      "optimizer_updates": [
-        24,
-        64,
-        128,
-        192
-      ]
+      "optimizer_updates": []
     },
     "qualification": {
       "tasks": [
@@ -219,8 +212,7 @@
         32
       ],
       "conditions": [
-        "correct",
-        "same_task_other"
+        "correct"
       ],
       "K": 1,
       "state_count": 50,
@@ -278,18 +270,16 @@
         48,
         49
       ],
-      "registration_status": "supervised nodes registered before first supervised learning result on 2026-09-08",
+      "registration_status": "K1 hour-segment nodes to be registered after throughput measurement before any new scores",
       "optimizer_updates": [
-        64,
-        128,
-        192
-      ]
+        100,
+        200
+      ],
+      "qualification_completion": "same_task_other deferred until correct near/over target with adjacent stable candidates; final causal controls only after selection frozen"
     },
     "checkpoint_updates": [
-      24,
-      64,
-      128,
-      192
+      100,
+      200
     ],
     "supervised_validation": {
       "task_ids": [
@@ -320,10 +310,7 @@
       ],
       "optimizer_updates": [
         0,
-        24,
-        64,
-        128,
-        192
+        200
       ],
       "action_demos": [
         42,
@@ -345,11 +332,23 @@
     },
     "plateau": {
       "minimum_informative_qualification_nodes": 3,
-      "window_updates": 128,
       "validation_best_gain_at_most": 5,
       "train120_best_gain_at_most": 3,
       "held_fm_relative_improvement_at_most": 0.02,
-      "interpretation": "all signals required over registered nodes; weak saturated capability requires diagnosis before RL; material improvement extends supervised training"
+      "interpretation": "multiple informative correct nodes, sufficient cumulative supervised exposure and training capability jointly; early64 or192 updates do not establish saturation",
+      "exposure_reference_queries": {
+        "v5_2": 75600,
+        "v6_fast": 192000,
+        "sft": 230400
+      }
+    },
+    "fresh_initialization": {
+      "writer": "all trainable modules fresh, legal LoRA identity",
+      "optimizer": "fresh",
+      "scheduler": "fresh",
+      "sampler_and_rng": "fresh",
+      "initial_step": 0,
+      "mixed_K_checkpoint": "historical exploration only; never initialization"
     }
   },
   "update_version": "supervised_fm_writer_meta_v1",

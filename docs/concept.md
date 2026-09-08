@@ -48,7 +48,7 @@ Native D按target/rank/side独立、跨任务共享，允许更直接的因子�
 
 ## 学习与裁决
 
-Writer与观察Meta fresh、端到端纯FM监督，source基础冻结；FM来自同task另一episode的actions。
+Writer（含内部读取模块Meta） fresh、端到端纯FM监督，source基础冻结；FM来自同task另一episode的actions。
 监督阶段无RL更新、探索rollout或trust回滚，真实闭环与独立验证共同判断能力和平台。
 达到有证据的平台后，才从单个保留的监督checkpoint接独立共享Writer RL，采用新optimizer/scheduler，默认不混FM。
 监督充分仍弱要先定位机制缺口，不能只宣布饱和后交给RL救场。训练期共享RL不同于部署时task-local优化。

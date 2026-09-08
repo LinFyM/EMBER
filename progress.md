@@ -1,31 +1,42 @@
 # EMBER progress
 
-更新时间：2026-09-08 CST。最新Owner要求：先纯监督FM达到有证据平台，再独立共享Writer RL；继续当前全程goal。
+更新时间：2026-09-08 CST。最新Owner要求：当前先集中真实K=1，固定逻辑4task/256queries与GPU数解耦，
+先纯FM到有证据平台、后独立共享Writer RL；约一小时训练分段，中/末两个整齐步数correct400节点。继续当前全程goal。
 
 ## 当前授权与阶段
 
-- 最新要求覆盖此前从首轮FM/RL同一步联合更新的默认。监督阶段Writer/读取Meta fresh端到端学习，source冻结；
-  不计算RL、不采集RL更新rollout、不执行trust/KL接受或整步回滚。正常J0闭环评测继续。
-- 当前唯一active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)，完整H/过去4帧/
-  双端Z/H-query/有序GRU/四组past+self与前三回写/集合compiler/native A/B保持。信息墙与科学目标不变。
-- 当前goal持续active，无token预算或总尝试上限，不能以代码、profile、loss或单次高分完成。
-  目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
-  后续方法冻结32/8 fresh及最终Test。
-- 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点全部结束，correct/other为99/95，正在从完整macro64续训至128。完整FM/Writer/Meta机制复用已验证路径；
-  native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
-- 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
+- 唯一active design：[过去定向完整Horizon Writer](docs/horizon_relation_video_writer_design.md)。完整图、集合能力、信息墙和科学目标保持。
+- Meta是Writer内部读取模块；Writer整体端到端共同更新，source冻结。监督阶段无RL更新rollout、RL loss或trust/KL回滚。
+- 当前训练/诊断/评测固定K1；K1绝对性能、相邻稳定、换视频鲁棒性和最终因果验证全部通过后再推进few-shot。
+- goal持续active，无总预算/尝试上限。strict correct>145/400与全部资格、最终方法冻结32/8 fresh/Test尚未完成。
+- 合同内实现、优化、正式训练、评测与依据结果继续已授权。无需重新审查全仓，也不等待逐项批准。
 
-## 当前监督节点与推进
+## K1切换：正在落实
 
-- config预登记checkpoint24/64/128/192，首段24；每轮四suite各1task、K1/2/4真实采样、每task64同task跨episode FM queries。
-- train24×states32–36 J0 paired120在24/64/128/192，held teacher46–49；同口径source J0=19/120。
-- 独立held-action FM在0/24/64/128/192：24task各128固定queries，actions42–45、单held video46+(task mod4)，全程no_grad。
-- validation8 strict paired400 correct/other在64/128/192；不以loss选点或无限推迟。source47与SFT109/107是正式行为参照。
-- 平台需要至少3个有信息量相邻节点与≥128 updates曝光，联合判断held FM、train闭环、validation/other和breadth；
-  操作化口径见design §8.2。持续改善则续监督，弱平台先定位并改进，不能直接交给RL救场。
-- 监督选定单checkpoint后才登记独立RL：新optimizer/scheduler，默认RL-only，按监督行为重审探索/信用/约束；
-  保留监督起点并报告收益、遗忘、稳定性。当前不启动RL。
+- 旧混合K run正在从macro64续训至原定128，当前进程无中途安全保存接口；在128完整checkpoint边界切换。
+  原代码/config/frozen9ab1e710保持，原run、已完成99/95和混合K曝光证据保留。128的旧评测准备不自动执行other/train120。
+- 实际sampler已定位为硬编码choice((1,2,4))，正在修改真实抽样并验证，不能只改cardinalities。
+- Owner补充纠正覆盖前条checkpoint承接要求：本轮K1从fresh step0独立开始；旧混合K checkpoint只保留历史。
+  Writer全部可训练参数重新初始化、LoRA合法identity，fresh AdamW/scheduler/sampler/RNG；冻结source/架构/资产复用。
+  不继承旧训练学习状态；正在撤除尚未交付的mixed→K1迁移实现，原exact-resume topology合同仍保持。
+- 每步四个suite各抽一task、每条件64queries，共256；每条件梯度乘1/4后跨rank SUM，全局一次clip/step/scheduler。
+  1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。测试覆盖三卡不均匀任务数与global cursor。
+- 当前优先correct strict400及廉价相邻raw-row分析；早期other后移，train120按实际能力诊断需要安排。
+- K1吞吐正在实测：先复用真实64checkpoint，不更新或保存训练状态；已比较FM microbatch4/8及frame4→8、edge8→32，
+  使用完整训练池中位/最长视频，无截短或flow/horizon变更。既有混合K中77个K1条件均耗16.45s（FM11.91s），只是条件成本，不能冒充K1整步。
+- 条件profile已完整结束：baseline4/4/8中位30帧17.72s、最长93帧23.85s；8/8/32分别11.43s、15.00s，
+  提速1.55×/1.59×，每条件仍64queries。最长峰值35.404GiB（未含Adam），预留约2.56GiB moments后还须真实更新验证。
+  profile总232.23s，其中旧loader启动128.09s；选择microbatch8/frame8/edge32，保留既有activation checkpoint。
+  原件`runs/analysis/horizon_relation_writer_20260908/k1_fresh/throughput_condition_profile.json`；profile未更新或保存checkpoint。
+- 新一小时段的具体50/100倍数checkpoint将在profile结果后、任何新闭环分数前登记。旧24/64/128/192不再作为未来默认安排。
+- 双节点profile现场已检查，gpu02 p4有40314MiB余量、util2；四张旧训练卡保持，新增单卡短profile总共5卡。
+  strg01 data1使用527970796KiB，soft1073741824KiB，当前旧run12GiB；临时profile只写小日志，不生成checkpoint或新cache文件。
+- 分工：独立工作树实现真实K1 sampler/逻辑更新和必要测试；另一独立树减少已证实的重复模型初始化，保留完整加载fail-closed。
+  主线程负责K1吞吐实测、配置/设计/状态、集成与正式启动。
+
+## 历史：初始纯FM安排与原注册
+
+以下24/64/128/192、混合K与密集other是切换前的历史执行合同，不覆盖上面的最新安排。
 
 纯监督相关15项FM/native/训练检查、物化49项检查通过；增加独立held动作不消耗训练sampler的测试后，训练10项通过，CLI导入通过。
 结构检查REVIEW：监督路径替换joint而非增加并行训练分支，active source净减111行（包含测试重命名）；现有复杂合同检查职责保持。
@@ -44,7 +55,7 @@ strict paired R/G/L=7/10/12，churn22/120，J=.24138。5卡×2persistent workers
 held FM下降没有转化为总体闭环增益；24只是早期节点，不视为平台，不转RL。按预登记继续监督64再做strict400。
 另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
 
-## 当前64节点结论与128续训
+## 历史64节点结论与正在收尾的128旧配置段
 
 监督64已完整exit0；累计256conditions/16384queries，24tasks各6–17次曝光，K1/2/4=87/77/92。
 held FM0/24/64=.151447/.131235/.123122，24→64全部24tasks改善。macro64完整4.13GiB，checkpoint检查通过。

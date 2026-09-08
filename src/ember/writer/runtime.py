@@ -21,7 +21,7 @@ from ember.writer.native import NativeCondition, NativeVideoObserver
 
 
 class WriterState(torch.nn.Module):
-    """Checkpoint owner for Writer, reading-only Meta, and the public probe."""
+    """Checkpoint owner for the complete Writer, its reading module and public probe."""
 
     def __init__(self, writer: torch.nn.Module, meta: MetaLoRAStack, probe_seed: int) -> None:
         super().__init__()
@@ -80,6 +80,7 @@ class FrozenVideoPrefixCache:
     def __init__(self, observer: NativeVideoObserver, data: WriterTrainingData, byte_limit: int) -> None:
         self.observer, self.data = observer, data
         self.byte_limit, self.bytes = int(byte_limit), 0
+        self.hits = self.misses = 0
         self.entries: OrderedDict[tuple[int, int], tuple[NativeCondition, int]] = OrderedDict()
 
     def condition(self, task: int, demos: Sequence[int]) -> NativeCondition:
@@ -89,9 +90,11 @@ class FrozenVideoPrefixCache:
         for demo in demos:
             key = (task, int(demo))
             if key in self.entries:
+                self.hits += 1
                 value, size = self.entries.pop(key)
                 self.entries[key] = (value, size)
             else:
+                self.misses += 1
                 frames, indices = self.data.load_videos(task, (demo,))
                 value = self.observer.prepare(frames, indices, self.data.tasks[task].authority.language)
                 size = sum(chunk.tensor_bytes for chunk in value.videos[0])

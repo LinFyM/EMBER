@@ -1,4 +1,4 @@
-"""Cross-episode FM cotangent followed by one complete Writer/Meta replay."""
+"""Cross-episode FM cotangent followed by one complete Writer replay."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ class SupervisedEngine:
         runtime, timings = self.runtime, {}
         start = time.perf_counter()
         task, demos = draw["task"], draw["video_demos"]
+        hits, misses = self.cache.hits, self.cache.misses
         condition = self.cache.condition(task, demos)
         inputs = runtime.observer.writer_arguments(condition)
         start = self._time(timings, "prefix_seconds", start)
@@ -40,6 +41,7 @@ class SupervisedEngine:
             task, draw["occurrence"], demos, query_seed=draw["query_seed"],
         )
         batch = runtime.processor.training_batch(raw_batch)
+        start = self._time(timings, "query_preparation_seconds", start)
         with autocast(self.device):
             loss, _, gradients = functional_lora_loss_gradient(
                 runtime.policy, state, runtime.lora, batch=batch,
@@ -69,6 +71,9 @@ class SupervisedEngine:
             "flow_loss": float(loss), "task_weight": 0.25, "normalizer": 1.0,
             "fm_lora_gradient_norm": fm_norm,
             "queries": len(query_trace["action_demos"]), **query_trace, **timings,
+            "prefix_cache_hits": self.cache.hits - hits,
+            "prefix_cache_misses": self.cache.misses - misses,
+            "prefix_cache_bytes": self.cache.bytes,
         }
 
     @torch.no_grad()

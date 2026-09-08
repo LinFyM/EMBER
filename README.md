@@ -31,7 +31,7 @@ main采用完整Horizon图及纯FM端到端监督；新方法仍无正式闭环�
 | 原生证据与Meta | `writer/native.py`、`ecp/policy_effects.py`、`writer/meta_lora.py` | 同forward最终Z/KV，实际action_out_proj输入完整H；仅冻结prefix可跨参数版本缓存 |
 | 完整过程图 | `writer/relation.py`、`writer/horizon.py`、`writer/attention.py` | 过去4帧、H双向query、两端Z、顺序GRU、四组past+self和前三逐H回写 |
 | 完整策略输出 | `writer/native_factor.py`、`pi05_lora.py` | 集合compiler一次生成38-target/76-tensor native A/B |
-| 监督更新 | `writer/supervised.py`、`writer/functional.py`、`writer/training.py` | 同task跨episode FM，一次完整Writer/Meta反传与直接AdamW更新，无RL/trust |
+| 监督更新 | `writer/supervised.py`、`writer/functional.py`、`writer/training.py` | 同task跨episode FM，一次完整Writer反传与直接AdamW更新，无RL/trust |
 | 采样和诊断 | `writer/learning_data.py` | 每suite随机1task、每task64FM；独立随机流，固定held动作验证无梯度 |
 | 物化与执行 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` | supervised horizon schema、J0 strict paired动态队列、单adapter |
 | checkpoint | `ecp/checkpoint.py` | 完整optimizer-update边界、sampler/RNG/阶段/版本；exact-resume锁topology |

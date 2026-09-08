@@ -40,6 +40,12 @@
 - owner只评论局部时，保留已对齐且未被否定的部分；不把局部疑问当作推翻整图的指令。先说明完整数据流水线，再讨论局部模块。
 - 数学推导从需求、少量符号和直观例子逐步展开；区分推导结论、归纳偏置、实现默认和待检验假设。结构合理不等于性能得到保证。
 
+- Meta属于Writer内部读取模块；所有应训练的内部模块共同更新，不能因称谓统一切断梯度。
+- 当前先集中K=1：训练、训练侧诊断、闭环及后续共享Writer RL均使用单视频。通过绝对性能、相邻稳定、
+  同task换视频鲁棒性和最终视频因果验证后再开展K>1；保留集合架构，暂不采样或评测K2/4。
+- 本轮K1主线明确fresh：旧混合K仅历史探索证据，不继承其权重、优化器、scheduler、sampler或RNG。
+  复用已验证架构/source/资产，Writer全部可训练参数从合法identity fresh初始化，fresh学习状态，从step0正式启动。
+
 ## 3. 证据与推进判断
 
 - 唯一正式目标是validation8 strict single-checkpoint paired correct严格 >145/400，同时满足相邻稳定、低churn、高breadth、
@@ -53,15 +59,15 @@
   保留allowlist/provenance；更多同task视频不等于更多独立meta-task映射。不得制造人工process数据或新仿真任务来绕开当前问题。
 - validation/test不得产生梯度。shuffled/reversed仅在selected checkpoint选定并冻结后测试，不进入训练、loss、Gate、checkpoint选择或架构修改。
   no-video/language、static端点、wrong-video等资格或诊断使用时须事先明确用途，不能悄悄把最终controls变成架构搜索信号。
-- 当前主线为Writer与读取侧Meta从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
+- 当前主线为Writer（含内部读取模块Meta）从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
   G1--G3的阶段冻结属于历史机制验证，不实施为当前课程，也不为旧措辞额外建立阶段初始化与随机初始化两套候选。
   LoRA采用合法identity初始化；从头初始化不要求每个张量都随机非零。短学习、扩大覆盖与闭环是实验节点，不是冻结阶段。
-- 当前训练顺序为先纯监督FM、后独立共享Writer RL。监督阶段Writer/Meta fresh端到端共同学习，source冻结；
+- 当前训练顺序为先纯监督FM、后独立共享Writer RL。监督阶段Writer fresh端到端共同学习，source冻结；
   同task跨episode动作监督，不计算RL loss、不采集用于RL更新的rollout、不做RL KL候选接受或整步回滚。
   保留已验证的执行一致性修复；旧联合profile不算正式监督结果，RL未决问题不阻塞监督启动。
 - 监督平台要结合真实曝光、训练侧独立动作验证、训练task闭环及预登记validation8相邻checkpoint，不能只看loss。
   有实质改善就继续，连续有信息量节点不改善再判断；充分监督仍弱须先定位并允许实质改进，不以饱和为由交给RL救场。
-- 独立RL从选定并保留的单个监督checkpoint初始化Writer/Meta，fresh RL optimizer/scheduler和stage记录，默认仅RL目标。
+- 独立RL从选定并保留的单个监督checkpoint初始化Writer，fresh RL optimizer/scheduler和stage记录，默认仅RL目标。
   探索、信用与更新约束根据监督后行为重新审视，不机械复用停滞设置；报告相对监督起点的收益、遗忘、breadth和稳定性。
   这是跨任务共享Writer训练，不能混同部署时task-local LoRA优化；监督checkpoint保留为可回退基线。
 - 先用有信息量的短学习与闭环证据判断投入。未证明基础行为前不默认启动约10小时长训练；接近强基线或目标后及时做strict400，
@@ -74,6 +80,12 @@
   重点防止把完整输入/非零梯度当理解，把几何/稳定参数当行为，用新视频或未见task解释训练熟悉视频也弱的结果，
   以及靠堆summary/gate/校准、扩大少数同task样本或无限续训掩盖共享能力不足。
 - 不人为规定总工期、修正次数、版本数或总轮数。停止无信息重复，同时允许有新机制证据的合理深入。
+
+- 每段连续训练约一小时；按K1优化后的实测速率，在看到分数前登记中间和末尾两个等间隔附近的checkpoint。
+  保存点用50或100的倍数，不机械沿用24/64/128/192。当前主要跑K1 correct strict400，train120按获取/泛化诊断需要安排。
+  早期绝对性能低且仍获取能力时延后other；接近或超过目标、有相邻稳定候选时补资格，冻结选点后再做最终controls。
+- 记录累计optimizer updates、FM queries、每task条件曝光和墙钟。历史v5.2为75600 queries、v6-fast为192000、
+  SFT参照为230400，仅作曝光尺度参考；64或192步不能自动证明充分训练或平台。
 
 ## 4. 授权与自主协作
 
@@ -95,7 +107,9 @@
 
 - 从算法设计阶段就考虑GPU：批量张量、高效attention、明确布局，减少逐项Python循环、CPU/GPU往返和重复大算子。
   同时审视训练、functional forward、物化与闭环评测；按真实LoRA/s、samples/s、step墙钟、SM/util与显存峰值衡量。
-- 使用1--6张当下适合的同节点GPU，保持全局task group、role权重和optimizer cadence；不固定2卡、3+3角色或6-task batch。
+- 每个optimizer update固定四suite各一个task条件、每条件64FM queries，共256queries，task权重1/4。
+  GPU1--6、分工、microbatch和累积次数只决定执行；全局batch完成后clip、optimizer.step、scheduler.step各一次。
+  使用真正提高吞吐的同节点GPU，不能扩大逻辑batch或dummy占卡。拓扑变化须有受控迁移合同，保留学习状态和逻辑cursor。
   exact-resume仍锁原world topology。两节点live检查、NUMA、deferred NCCL和NCCL_P2P_DISABLE=1按AGENTS执行。
 - 不以最低显存为目标，不人为设置35GiB等统一上限，也不以占满显存冒充效率。优先空闲设备；必要共驻须有真实吞吐收益、足够峰值余量且不干扰他人。
   节点/index不永久代表某块好坏GPU；每次按UUID/serial和现场证据判断。EMBER同时占用总量不超过6张物理卡。

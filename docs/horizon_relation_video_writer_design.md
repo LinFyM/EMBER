@@ -23,9 +23,9 @@
 | 视觉与聚合次序 | 每帧对分别读取前序/当前 Z，形成经核实消息，再按 u 从早到晚用短 GRU 聚合 |
 | 局部—长程 | 四组；每组临时 H-read 后一层 **past+self 长程 attention**；前三组逐 H 非线性回写，第四组直接进 compiler |
 | 集合与输出 | 每视频独立编码；608 个 paired target/rank queries 联合读取，native D 生成完整 A/B，rank16/alpha16 |
-| 训练 | Writer 与观察 Meta fresh、端到端纯FM监督；有证据平台后从单个监督checkpoint接独立RL |
+| 训练 | Writer（含内部读取模块Meta） fresh、端到端纯FM监督；有证据平台后从单个监督checkpoint接独立RL |
 
-没有新的性能证据。历史分层图在 192/384 的 correct=69/67、other=72/64，熟悉/held 视频 train120=21/18；
+设计初稿不构成性能证据；当前实测由progress与formal artifacts登记。历史分层图在 192/384 的 correct=69/67、other=72/64，熟悉/held 视频 train120=21/18；
 旧 run 永久止于 384。基础 SFT 109/107、早期 Writer143、GOMQ151及其非稳定边界，见
 [research_history](research_history.md)，不能合并成一个新方案的先验成功。
 
@@ -248,7 +248,7 @@ D 全零初始化、A0 用 canonical 非零 identity 模板，初始 BA=0；其�
 
 ### 7.1 Owner最新阶段安排与历史地位
 
-2026-09-08 Owner明确覆盖“从第一轮FM/RL同一步联合更新”的此前默认。完整图不变；先使Writer与读取Meta
+2026-09-08 Owner明确覆盖“从第一轮FM/RL同一步联合更新”的此前默认。完整图不变；先使Writer（含内部读取模块Meta）
 从fresh联合学习纯监督FM。source基础冻结。监督阶段不计算RL loss、不采集用于RL更新的rollout，
 不做RL trust/KL候选检查、接受筛选或整步回滚。正常闭环评测继续作为真实能力裁决。
 既有joint profiles仅为历史机制、执行与成本证据，其checkpoint不初始化正式监督训练，也不算监督学习结果。
@@ -257,10 +257,11 @@ D 全零初始化、A0 用 canonical 非零 identity 模板，初始 BA=0；其�
 ### 7.2 数据、随机性与公平权重
 
 固定train24；每次optimizer update每suite均匀抽1 task，共4个，task等权1/4。
-每task一组K1/2/4等概率抽取的互异完整teacher videos，内部保序，stride5、include-last-frame；不挑video。
+当前每task恰好一条完整teacher video，真实sampler固定K=1，内部保序，stride5、include-last-frame；不挑video。
+混合K历史保留；K1全部通过后再开展few-shot，集合compiler保持完整，暂不进行K2/4训练或测试。
 teacher episodes0–15；FM actions episodes16–41，独立于teacher，每condition64 queries，均匀episode再均匀frame，有放回。
 train侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test同样无梯度。
-首版额外meta tasks为空，不把更多同task episodes当作更多独立映射。task/K/video/query使用独立持久随机流，seed7。
+首版额外meta tasks为空，不把更多同task episodes当作更多独立映射。K固定1，task/video/query使用独立持久随机流，seed7。
 多卡按真实视频cost分配完整task，跨rank对已经乘1/4的梯度SUM，不再除world size；卡数不改变采样或任务权重。
 
 ### 7.3 同task跨episode FM与完整端到端梯度
@@ -276,7 +277,7 @@ L_{FM}=\frac14\sum_{i=1}^4\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s
 末层完整H、两端Z、全部关系/GRU/长程/前三回写/集合compiler/native A/B都保留，不能detach或缩视频。
 只有冻结prefix/Z/KV可跨更新缓存，读取R不能跨Meta更新复用。合法identity初始化首步上游零梯度由正常更新后再核实。
 
-Writer/Meta/FM保持已验证BF16 autocast，trainable参数FP32，source保持原生权重类型。
+Writer/FM保持已验证BF16 autocast，trainable参数FP32，source保持原生权重类型。
 正式执行不加外层autocast；生成A/B适配真实物理参数dtype/连续布局，批量LoRA先相加再cast。
 原生execution修复的非零LoRA物理parity已验证；允许正常kernel/reduction差异，不扩source dtype。
 
@@ -286,14 +287,18 @@ AdamW LR3e-5，betas(.9,.95)，eps1e-8，weight_decay1e-4，global norm clip1；
 ### 7.4 Checkpoint与恢复
 
 监督stage=`horizon_relation_writer_fresh_supervised`，run schema=`ember_horizon_relation_writer_supervised_run_v1`，
-update_version=`supervised_fm_writer_meta_v1`。保存Writer/Meta、optimizer、scheduler、sampler/cursor、每rank RNG、
+update_version=`supervised_fm_writer_meta_v1`。保存Writer、optimizer、scheduler、sampler/cursor、每rank RNG、
 probe、source/data版本及world topology；macro就是已完成optimizer updates。exact-resume锁原config、source和topology。
-正式监督必须fresh，与joint profiles和旧384无resume关系；只有本监督run自己的完整边界checkpoint可exact-resume。
+正式监督初始run从fresh开始，与joint profiles和旧384无resume关系；同run同合同完整边界可exact-resume。
+本轮K1按Owner补充纠正明确fresh：旧混合K run在安全完整边界停止，checkpoint和结果仅作历史探索证据，
+不得成为K1初始化。Writer全部可训练参数重新初始化，LoRA采用合法identity；optimizer、scheduler、sampler/RNG全fresh，
+从step0独立正式run开始，冻结source/资产复用。原exact-resume仍要求同run/config/topology；未来换卡数须先有受控迁移实现与登记。
+每个update固定4条件×64queries=256，task梯度先乘1/4，跨rank SUM；不再按rank数归一化，整个逻辑batch后统一裁剪和更新一次。
 
 ### 7.5 独立RL阶段在监督平台后另登记
 
 用§8.2的真实学习与行为证据判断平台；监督充分仍弱时先定位原因并允许实质改进，不能把“饱和”当作交给RL救场的理由。
-监督阶段选定并保留单个checkpoint后，从其Writer和Meta初始化共享RL训练；新建独立optimizer/scheduler与stage记录。
+监督阶段选定并保留单个checkpoint后，从其Writer初始化共享RL训练；新建独立optimizer/scheduler与stage记录。
 RL阶段默认仅RL目标，不自动混回FM，不部署task-local优化。探索、信用与更新约束依据监督后的真实行为重新审视，
 不机械恢复已造成停滞的Gaussian/trust设置。具体合同在看到监督证据后、RL启动前另登记，不现在盲选。
 报告相对固定监督起点的收益、遗忘、breadth、相邻稳定与J0正式执行；监督checkpoint保留为可回退参照。
@@ -307,38 +312,37 @@ RL阶段默认仅RL目标，不自动混回FM，不部署task-local优化。探�
    结构测试可用合成张量，不用真实shuffled/reversed视频结果选架构。
 3. 真实FM梯度到A/B、Writer、Meta；跨episode采样、全局task权重与直接optimizer更新正确。
    identity首步零上游梯度不作为失败；正常更新后核对实际通路。
-4. 最长真实K1/K4、真实FM与完整Writer/Meta replay下测LoRA/s、queries/s、每尝试更新墙钟、各卡峰值。
+4. 当前最长真实K1、真实FM与完整Writer replay下测LoRA/s、queries/s、每尝试更新墙钟、各卡峰值。
    合理复用prefix/Z和帧级投影，批量edge/H/decision，不逐token循环；只做与声明相关的检查。
 
 不把每个模块拆成冻结课程或全面消融矩阵。机制通过后以完整模型获得监督共享学习和行为证据。
 
 ### 8.2 监督学习节点、独立验证与平台期
 
-在首个正式监督结果前登记：checkpoint为updates24/64/128/192，首段先运行24；train24×states32–36 J0 paired120
-在这些节点评估，使用固定K1 held teacher pool46–49。保留官方flow noise，不加RL探索Sigma。
-同口径source J0是19/120；旧source16/120或joint JΣ22/120不能替代这个参照。
-独立动作验证在0/24/64/128/192：train24等权、actions42–45，每task128固定queries，teacher为46+(task mod4)，
-query seed20260908+task，K1；共3072 queries，完全no_grad，不消耗训练sampler，固定flow随机性以便跨checkpoint比较。
-动作验证只定位泛化/拟合，不用于正式选点或代替闭环。
+最新Owner安排覆盖旧24/64/128/192及每点correct/other密集评测。旧配置运行在可恢复完整checkpoint边界结束；
+其混合K结果与原注册保持历史身份。后续K1每段连续训练约一小时，按优化后实际吞吐选择中间和末尾两个近等间隔节点，
+checkpoint使用50或100的倍数，并在看到成绩前写入配置及segment registration。每段评测后依据证据自主继续。
 
-validation8 strict paired400 correct/other登记在64/128/192；K1与§8.3完全相同，首次资格节点不得因loss不好而无限推迟。
-每update有4条件/256 queries，因此64/128/192分别有16384/32768/49152监督queries；另报告真实per-task/K曝光。
-24节点是早期获取，不声称充分学习。64之后比较source47与SFT109/107、train J0和跨视频保持，低能力认真定位。
+当前以validation8 K1 correct strict paired400为主；沿用§8.3的task/state/video/policy RNG合同。
+已有correct raw rows持续计算per-task/suite、breadth、R/G/L、churn和相邻Jaccard。
+train24×states32–36 J0 paired120（K1 held teacher46–49、source19/120）按获取/泛化判断需要安排，不再每点机械执行。
+独立held-action诊断保留train24等权、actions42–45、每task128queries、teacher46+(task mod4)、seed20260908+task，
+全程no_grad、不消耗训练sampler；节点按同段需要登记，不能代替闭环或选模型。
+绝对分数仍低且持续获取时不重复other。correct接近/超过目标并出现相邻稳定候选后，再补other资格；最终controls在选点冻结后执行。
 
-平台需至少连续3个有信息量资格节点，覆盖至少128 optimizer updates；同时检查实际曝光、held-action FM、train120
-与validation correct/other。操作化候选平台为窗口内validation最佳改善≤5/400、train120最佳改善≤3/120、
-held FM相对改善≤2%，且无持续breadth/suite获取趋势；不能只凭任一loss或分数短暂不变宣布。
-有实质改善则继续监督，并在下一结果前登记后续相邻节点；不追求数学完全收敛，也不无限续训。
-若平台时仍明显弱于SFT或训练task获取很弱，先依据证据区分监督支持、条件表示、生成与执行，允许实质改进；
-不自动启动RL。明确工程错误或已定位严重缺口可及时处理，无须为凑平台节点浪费训练。
-达到性能线也必须由相邻单checkpoint及§8.3稳定/视频因果要求确认。RL阶段独立登记且保留监督起点。
+记录累计optimizer updates、FM queries、每task条件曝光和墙钟，fresh K1单独统计，不将旧混合K曝光计入本轮。
+历史监督曝光参考v5.2=75600、v6-fast=192000、SFT=230400queries；优化过程与计算量不同，不承诺必达分数。
+64steps=16384queries仍早；192steps也不能自动视为充分。结合充分曝光、held FM、训练task表现和多个有信息量correct节点判断平台。
+至少三个有信息量节点中validation最佳改善≤5/400、train120改善≤3/120、held FM相对改善≤2%，且无持续breadth/suite获取，
+只能构成平台候选，还需判断监督量；去掉原固定128update充分性暗示。有改善继续，弱平台先定位真实能力缺口，不机械交给RL。
+不追求数学完全收敛，不无限续训或无依据超参小扫。RL阶段独立登记，K1限制同样适用。
 
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，
 K1、每个ordinal内部从同task全部50条合法视频无放回取两个不同视频；跨ordinal遵循canonical teacher schedule，
 teacher seed沿用20260907以便核对既有schedule。
-支持dynamic K的训练覆盖1/2/4真实不同视频；其它K能力报告需明确面板，不能因K1通过就声称所有K均通过。
+当前只实施K1。K1全部资格与因果验证通过后再登记K>1训练及测试；声称dynamic K时须真实覆盖相应cardinalities。
 
 沿用旧预登记中对Owner定性目标的操作化口径，首个新资格分数前写入新run registration：
 
@@ -358,8 +362,8 @@ shuffled/reversed只在真实frame重排后完整forward，绝不进训练、che
 `writer/native.py`只保留post-norm完整H读取和同forward的最终Z/KV；`writer/horizon.py`/`relation.py`/`attention.py`
 负责完整过程图与集合compiler，`writer/native_factor.py`负责76张量输出。旧18层capture、layered/coordinate图及旧FM-only入口退役。
 
-`writer/supervised.py`组织每condition的FM A/B cotangent和一次完整Writer/Meta反传；`functional.py`复用原生FM。
-`learning_data.py`持久化task/K/video/query随机流与固定无梯度动作诊断；`training.py`维护直接AdamW更新及完整边界checkpoint。
+`writer/supervised.py`组织每condition的FM A/B cotangent和一次完整Writer反传；`functional.py`复用原生FM。
+`learning_data.py`持久化task/video/query随机流与固定无梯度动作诊断；`training.py`维护直接AdamW更新及完整边界checkpoint。
 旧joint orchestrator退役到Git及profile原件，RL数学/flow辅助代码不构成活动训练入口；独立RL阶段登记时重新审视并清理失效部分。
 
 唯一入口为 `scripts/train_horizon_writer.py` / `scripts/materialize_horizon_writer.py`，配置为

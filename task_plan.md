@@ -6,27 +6,28 @@
 相邻与跨视频稳定、breadth/四suite/Goal/Long和最终因果要求达标，再完成冻结方法32/8 fresh与Test。
 不设token预算、总工期或总尝试次数，代码/profile/loss/单峰不是完成。
 
-2026-09-08最新Owner安排覆盖从首轮FM/RL同一步更新：**先纯监督FM到有证据平台，再独立共享Writer RL**。
-完整[active design](docs/horizon_relation_video_writer_design.md)与信息墙保持；不重新审查全仓库，不继续RL profile。
+2026-09-08最新Owner安排：**当前集中K1，Writer整体先纯FM后独立共享RL**；完整架构和信息墙保持。
+Meta归属Writer内部读取模块。真实采样与逻辑4task/256queries更新合同独立于GPU资源。
 
 ## 执行计划
 
-1. **已完成：** 全面阅读、历史证据审计、完整Horizon架构及真实FM/Writer/Meta梯度验证。旧384永久停止、旧native草稿保护。
-   联合profile全部正常结束，保留代码Git与checkpoint/evidence；不作正式监督起点或科学分数。
-2. **已完成：纯监督训练接线并正式启动。** Writer/Meta fresh共同训练，source冻结；同task跨episode FM。
-   监督入口不计算RL loss、采集RL更新rollout或做trust回滚。保留原生执行精度/LoRA布局及累加修复。
-   复用完整图、批量FM与冻结prefix缓存，检查采样/完整梯度/Adam更新/checkpoint恢复和物化阶段合同，集成push。
-   正式从clean pushed detached worktree启动，现场双节点GPU/独立quota/真实用量与新增峰值按合同检查。
-3. **当前：监督学习和闭环。** 首段24updates；checkpoint24/64/128/192。每轮4conditions/256FM queries，真实K1/2/4与task曝光记录。
-   独立训练侧held-action FM在0及每checkpoint；J0 train120在每checkpoint；validation strict paired400 correct/other在64/128/192。
-   24只是早期获取，64以后必须对照source47/SFT109/107；结合per-task/suite/breadth/RGL/churn/相邻及跨视频保持。
-4. **判断平台与改进。** 至少连续3个有信息量资格节点、覆盖≥128updates，联合监督曝光、held FM、train闭环和validation。
-   有实质进步则预登记后续节点并继续；多信号不再改善才结束监督。明确弱平台先定位支持/表示/生成/执行并依据证据改进，
-   不无限续训，也不宣布饱和后交给RL救场。操作化口径见design §8.2，不事后放宽科学资格。
-5. **独立RL。** 选定并保留单个监督checkpoint初始化Writer/Meta；独立optimizer/scheduler和stage，默认仅RL目标。
-   以监督后真实行为重新设计探索/信用/约束，不机械恢复已停滞设置；报告对监督起点的收益/遗忘/breadth/稳定/J0。
-6. **选点与最终流程。** 相邻single checkpoints符合资格后冻结selected，再执行必要视频controls；shuffled/reversed最后且不反哺设计。
-   完成既定32/8 fresh和Test。保留唯一canonical实现、完整可复核证据及单个监督回退基线。
+1. **已完成基础：** 全仓理解、历史审计、完整Horizon架构及真实完整梯度；正式纯FM fresh起点与64节点correct99/other95。
+   旧384停止，旧联合profile只作机制证据。当前混合K段在原128完整checkpoint安全边界结束，保留完整历史。
+2. **当前落实：** sampler实际固定K1；Owner补充纠正明确fresh K1，全部Writer可训练参数与学习状态从step0重置。
+   旧mixed checkpoint/result仅历史，不继承其权重、optimizer、scheduler或sampler/RNG；冻结source无需重训。
+   验证全局4suite×64queries、1/4权重和SUM归约、一次clip/step/scheduler、设备无关的global cursor及曝光。
+   有效同节点1–6卡只负责执行；现有完整条件分工最多4卡真正有用，禁止空rank/dummy或扩大batch。
+3. **吞吐与第一K1段：** 实测完整视频/horizon的FM microbatch与帧/edge分块，解决已证实加载初始化开销；
+   记录queries/s、LoRA/s、step与整段墙钟、加载/保存/评测耗时、显存峰值。有限profile后及时训练。
+   用真实K1速率选择约一小时的段长，50或100倍数checkpoint，中间/末尾两个点，看到分数前登记。
+4. **correct400主线：** 每段暂停训练评测两个K1 correct400，持续raw rows相邻per-task/suite/breadth/RGL/churn/J。
+   train120及held FM按判断训练获取/泛化需要安排；仍低分且获取能力时不反复other。
+   结合累计queries、每task条件曝光、多个有信息量节点判断平台，64/192步都不能自动代表充分监督。
+5. **资格与后续：** correct接近/超目标且出现相邻稳定候选时补other；冻结单checkpoint后完成视频因果controls，
+   shuffled/reversed最后且不反哺设计。K1全部通过后再登记few-shot训练/测试。
+   充分纯FM后才考虑独立共享Writer RL，fresh RL optimizer/scheduler、默认无FM；充分监督仍弱先定位实质能力缺口。
+6. **最终目标：** 保留单checkpoint全部资格，方法冻结后按32/8 fresh和最终Test完成全流程。
+   始终一套canonical运行面，正式证据和必要checkpoint保留，按合同clean pushed detached正式launch。
 
 ## 边界与工作方式
 

@@ -22,7 +22,7 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 当前阶段：八档有限回溯完整profile运行中
+## 当前阶段：八档回溯未解除接受停滞；定位执行数值接口
 
 `ae9507b5`已通过23项针对性CPU检查、提交推送，并从clean detached `.codex/worktrees/horizon-profile-ae9507b5`启动。
 gpu02 physical0/1/3/6、world4，fresh profile目标2 accepted、最多4 attempts；保持完整图、64 FM queries/task、
@@ -31,7 +31,14 @@ gpu02 physical0/1/3/6、world4，fresh profile目标2 accepted、最多4 attempt
 `runs/analysis/horizon_relation_writer_20260908/joint_profile/finite_ae9507b5/`。本次data1 quota使用507313652KiB，
 soft1073741824KiB；新增峰值预算16GiB（完整Adam checkpoint、可能的同合同恢复及临时写入），共享剩余84TiB。
 既有v2 run8.3GiB、其余EMBER444GiB、其余个人projects27GiB（du按此前已统计路径排重）。全部大资产复用。
-尚无本轮结果；不将profile作为正式资格证据。有效更新与成本通过后，在formal结果前冻结学习及strict400节点。
+四轮迭代与完整checkpoint已完成exit0（总804.43秒），四个主训练进程已退出：1 accepted/3 rejected，1024计算FM queries中仅256进入接受更新，64 episodes。
+四轮耗时140.66/172.43/175.74/179.46秒，allocated峰值25.69GiB、reserved31.22GiB；全部同版本自比较KL0。
+新增四个更小尺度没有增加任何接受更新：step2/3/4在1/128仍maxKL=.02300/.07222/.03424，且响应不单调。
+本次有限回溯范围假设未获得支持，不继续添加尺度或同样续试，不启动formal。
+下一固定只读诊断在joint_profile/adjacent_b/：同一已接受Writer生成的A/B，固定A与全部输入，对比原B、
+完全相同B重放、每个非零B朝+infinity改一个BF16可表示单位。只定位执行端最小量化改变是否足以产生KL变化，
+不替换训练采集m_old、不训练、不放宽阈值。profile和此诊断都不是formal资格证据。
+本task已完成且clean的ba556b98/07871988 detached worktrees已移除，Git与所有run/checkpoint原件保留。
 
 ## 前一batch修复profile与exact-resume结果
 

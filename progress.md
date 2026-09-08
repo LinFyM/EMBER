@@ -20,7 +20,7 @@
   Writer全部可训练参数重新初始化、LoRA合法identity，fresh AdamW/scheduler/sampler/RNG；冻结source/架构/资产复用。
   不继承旧训练学习状态；未提交的mixed→K1迁移实现已撤除，原exact-resume topology合同仍保持。
 - 每步四个suite各抽一task、每条件64queries，共256；每条件梯度乘1/4后跨rank SUM，全局一次clip/step/scheduler。
-  1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。18项训练检查覆盖三卡不均匀任务数、SUM权重与global cursor；9项严格加载检查、49项评测合同检查通过。
+  1/2/3/4卡仅改变条件分配；不会用5/6空rank或为凑卡扩大batch。18项训练检查覆盖三卡不均匀任务数、SUM权重与global cursor；9项严格加载、49项评测合同及1项异构物理microbatch检查通过。
 - 当前优先correct strict400及廉价相邻raw-row分析；早期other后移，train120按实际能力诊断需要安排。
 - K1吞吐正在实测：先复用真实64checkpoint，不更新或保存训练状态；已比较FM microbatch4/8及frame4→8、edge8→32，
   使用完整训练池中位/最长视频，无截短或flow/horizon变更。既有混合K中77个K1条件均耗16.45s（FM11.91s），只是条件成本，不能冒充K1整步。
@@ -28,11 +28,26 @@
   提速1.55×/1.59×，每条件仍64queries。最长峰值35.404GiB（未含Adam），预留约2.56GiB moments后还须真实更新验证。
   profile在模块导入后计时232.23s，其中旧loader初始化/加载128.09s；选择microbatch8/frame8/edge32，保留既有activation checkpoint。
   原件`runs/analysis/horizon_relation_writer_20260908/k1_fresh/throughput_condition_profile.json`；profile未更新或保存checkpoint。
-- 新一小时段的具体50/100倍数checkpoint将在profile结果后、任何新闭环分数前登记。旧24/64/128/192不再作为未来默认安排。
+- 首个fresh K1段预登记0→200：短测完整逻辑更新约18s，预计约一小时，取100/200两个single checkpoints correct400。
+  held FM0/200，train120按能力诊断需要；其他资格后移，旧24/64/128/192不再是未来安排。
 - 双节点profile现场已检查，gpu02 p4有40314MiB余量、util2；四张旧训练卡保持，新增单卡短profile总共5卡。
   strg01 data1使用527970796KiB，soft1073741824KiB，当前旧run12GiB；临时profile只写小日志，不生成checkpoint或新cache文件。
 - 分工：独立工作树实现真实K1 sampler/逻辑更新和必要测试；另一独立树减少已证实的重复模型初始化，保留完整加载fail-closed。
   主线程负责K1吞吐实测、配置/设计/状态、集成与正式启动。
+
+## Fresh K1集成与真实更新短测（2026-09-08）
+
+主代码clean pushed f94c8b62；fresh profile在detached `.codex/worktrees/horizon-k1-runtime` 上实际运行。
+GPU02 physical1/2/3/6、microbatches8/4/8/8，frame8、edge32；GPU2既有低util约8.8GiB作业，采用micro4保留余量。
+前3updates为18.66/17.00/18.90s，完整256queries/update，SUM同步约.43s、Adam约.06s；含Adam峰值38.13GiB。
+profile已在8步完整保存并exit0，32条件全部K1、2048queries，正式仍重新fresh step0、不继承任何profile状态。
+完整8步均值17.345s，即14.759queries/s、0.2306训练LoRA/s；峰值38.147GiB，SUM同步.425s、Adam .0645s。
+外层完整墙钟334.27s，包含导入/初始化/加载/保存/退出；短段摊销后6.127queries/s，不能只报稳态吞吐。
+按真实update时间200步约57.82分钟，再加本段加载、held诊断与保存。
+数据准备均值2.53s/condition、冻结prefix1.37s、FM9.55s、读取前/反向.212/.474s、图前/反向.090/.526s；
+已取得实际提速，先启动正式训练，不继续扩大profile；数据准备可在真实运行中继续观察。启动/退出外层`/usr/bin/time`包含Python导入、加载、保存的完整墙钟。
+新增24GiB预算覆盖第一正式小时与临时profile checkpoint、两正式checkpoint/atomic临时写、两validation banks和日志；
+strg01 data1已用532410484KiB/soft1073741824，shared84TiB。GPU双节点现场与精确命令在`k1_fresh/`。
 
 ## 历史：初始纯FM安排与原注册
 

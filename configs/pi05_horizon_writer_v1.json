@@ -144,7 +144,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "fresh K1 from step0; no mixed-K weights or learning state inherited; final segment nodes require measured throughput registration",
+    "initial_use": "fresh K1 step0; first200 updates approximately one training hour, checkpoint100/200 correct400; no mixed-K or profiling learning state inherited",
     "qualification_registration": "docs/horizon_relation_video_writer_design.md#82-监督学习节点独立验证与平台期",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -270,7 +270,7 @@
         48,
         49
       ],
-      "registration_status": "K1 hour-segment nodes to be registered after throughput measurement before any new scores",
+      "registration_status": "first fresh K1 segment100/200 registered from full logical-update throughput before step0 and any fresh K1 score",
       "optimizer_updates": [
         100,
         200

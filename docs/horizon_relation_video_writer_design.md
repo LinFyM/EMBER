@@ -263,6 +263,7 @@ teacher episodes0–15；FM actions episodes16–41，独立于teacher，每cond
 train侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test同样无梯度。
 首版额外meta tasks为空，不把更多同task episodes当作更多独立映射。K固定1，task/video/query使用独立持久随机流，seed7。
 多卡按真实视频cost分配完整task，跨rank对已经乘1/4的梯度SUM，不再除world size；卡数不改变采样或任务权重。
+物理FM microbatch可通过`--policy-microbatches`逐rank登记，完整64-query随机性与权重不变；每个condition记录实际分块。
 
 ### 7.3 同task跨episode FM与完整端到端梯度
 
@@ -322,6 +323,8 @@ RL阶段默认仅RL目标，不自动混回FM，不部署task-local优化。探�
 最新Owner安排覆盖旧24/64/128/192及每点correct/other密集评测。旧配置运行在可恢复完整checkpoint边界结束；
 其混合K结果与原注册保持历史身份。后续K1每段连续训练约一小时，按优化后实际吞吐选择中间和末尾两个近等间隔节点，
 checkpoint使用50或100的倍数，并在看到成绩前写入配置及segment registration。每段评测后依据证据自主继续。
+首个fresh K1段登记0→200：完整逻辑更新实测约18s/step，100/200保存单checkpoint，段末依次correct400；
+独立held-action诊断在0/200，train120按分数反映的获取/泛化需要安排，早期不跑other。后续用CLI显式登记两个节点，原run合同不重写。
 
 当前以validation8 K1 correct strict paired400为主；沿用§8.3的task/state/video/policy RNG合同。
 已有correct raw rows持续计算per-task/suite、breadth、R/G/L、churn和相邻Jaccard。

@@ -1,41 +1,50 @@
 # EMBER progress
 
-更新时间：2026-09-08 CST。Owner已明确启动接管与持续科研执行，覆盖实现、真实验证、正式实验、证据驱动迭代和最终达标。
+更新时间：2026-09-08 CST。最新Owner要求：先纯监督FM达到有证据平台，再独立共享Writer RL；继续当前全程goal。
 
-## 当前授权与方法状态
+## 当前授权与阶段
 
-- 本次Owner启动指令覆盖前次交接session的只读/不启动限制。已创建全程goal，无token预算、总工期或总尝试次数；
-  实现、smoke、loss或单次峰值都不构成goal完成。合同内科学与工程工作连续自主推进。
-- 唯一active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
-  完整首版：末层post-norm PreActionOut与最终Z、过去四帧对应、完整H-query、两端核实、历史u有序GRU、
-  四组past+self长程及前三组逐H回写、集合compiler、完整native A/B。H-query沿完整H双向。
-- fresh Writer/Meta与fresh optimizer；首版FM辅助共享Writer RL、同版本采样/求梯度后一次更新，完整design §7适用。
-  validation/test零梯度；shuffled/reversed仅selected冻结后的最终controls，不用于架构或checkpoint选择。
-- 当前阶段：全面阅读与审计已完成，新canonical图/联合训练/物化/评测已接通，正在真实机制与成本验证。主agent完整读最终设计、Owner裁决、最后架构与FM/RL专家原文、Writer/Meta/训练链；
-  两个只读subagents分别覆盖历史原件及其它源码/测试/脚本/配置。审计结论已由主agent整合，独立实现已集成到main。
-  图/梯度机制已通过；此前执行parity未覆盖真实evaluator的autocast边界，正在修复重验。尚无新架构正式checkpoint或科学分数。
-- 接管Git基线main `4f1686ab`，已fetch并确认与origin/main一致，初始干净。
-  7个历史detached工作树与dirty `codex/native-factor-readout`草稿保留；草稿不整支集成。
-- 旧train24 run永久止于384，correct69→67、other72→64、熟悉/held训练视频21/18；不恢复672 schedule。
-  旧P/Q width256无闭环，不自动补评。source47与另面板48分开，SFT109/107为明确行为参照。
-- 源模型、tokenizer、data/env复用README canonical入口。单卡真实机制检查正在准备/执行；大资产复用，现场两节点与独立quota证据见下。
-- 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
-  breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
+- 最新要求覆盖此前从首轮FM/RL同一步联合更新的默认。监督阶段Writer/读取Meta fresh端到端学习，source冻结；
+  不计算RL、不采集RL更新rollout、不执行trust/KL接受或整步回滚。正常J0闭环评测继续。
+- 当前唯一active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)，完整H/过去4帧/
+  双端Z/H-query/有序GRU/四组past+self与前三回写/集合compiler/native A/B保持。信息墙与科学目标不变。
+- 当前goal持续active，无token预算或总尝试上限，不能以代码、profile、loss或单次高分完成。
+  目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
+  后续方法冻结32/8 fresh及最终Test。
+- 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
+- 当前正在完成纯监督入口/采样/checkpoint/物化评测接线、必要检查与正式launch。完整FM/Writer/Meta机制复用已验证路径；
+  native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
+- 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
-## 当前阶段：修复训练与真实评测的执行类型边界
+## 当前监督节点与推进
 
-已发现此前真实机制parity的范围不足：测试把参考policy.predict_action_chunk也包入BF16 autocast，
-而实际evaluator仅inference_mode。旧训练的action/time heads因此输出BF16，官方路径输出FP32（expert仍BF16）。
-固定非零LoRA的实测native canonical与旧训练KL=.509307；只禁用flow/prefix外层autocast后，与canonical KL=.014033。
-未经修复的实际batched路径对物理PEFT为.016349；这些差异不宜被identity smoke掩盖，也不要求逐元素一致。
-单独expert FP32/TF32虽然相邻B KL降至.000257，却对旧训练baseline KL=.921861，因此不据此扩大正式模型dtype。
-证据分别在joint_profile/native_boundary/与expert_tf32/；各探针已完成exit0并释放单卡。
+- config预登记checkpoint24/64/128/192，首段24；每轮四suite各1task、K1/2/4真实采样、每task64同task跨episode FM queries。
+- train24×states32–36 J0 paired120在24/64/128/192，held teacher46–49；同口径source J0=19/120。
+- 独立held-action FM在0/24/64/128/192：24task各128固定queries，actions42–45、单held video46+(task mod4)，全程no_grad。
+- validation8 strict paired400 correct/other在64/128/192；不以loss选点或无限推迟。source47与SFT109/107是正式行为参照。
+- 平台需要至少3个有信息量相邻节点与≥128 updates曝光，联合判断held FM、train闭环、validation/other和breadth；
+  操作化口径见design §8.2。持续改善则续监督，弱平台先定位并改进，不能直接交给RL救场。
+- 监督选定单checkpoint后才登记独立RL：新optimizer/scheduler，默认RL-only，按监督行为重审探索/信用/约束；
+  保留监督起点并报告收益、遗忘、稳定性。当前不启动RL。
 
-main正在实施v4：原生execution precision统一采集/RL VJP/trust，LoRA同值适配实际参数dtype/物化布局；
-读取/Writer/FM仍BF16，source类型不变。同时CPU复现批量LoRA提前舍入增量与PEFT不同，最小修复为相加后再cast。
-30项flow/native/joint/RL/batched检查通过；materialization/static/batched相关52项也通过（两组含重复项），CLI补上正确PYTHONPATH后单项通过。
-结构检查为REVIEW：无新模块；标记的是既有联合backward/config/rollout等长函数，本次不扩大其职责。
-尚未从v4启动profile或formal；待相关验证与提交推送后fresh完整联合profile，保留同KL约束并观察真实接受更新。
+纯监督相关15项FM/native/训练检查、物化49项检查通过；增加独立held动作不消耗训练sampler的测试后，训练10项通过，CLI导入通过。
+结构检查REVIEW：监督路径替换joint而非增加并行训练分支，active source净减111行（包含测试重命名）；现有复杂合同检查职责保持。
+正式首段计划gpu02 physical0/1/3/6，world4，每卡真实一task，FM microbatch4、observer chunk4、edge chunk8，保留完整图。
+最新双节点现场核验这些卡util0，p0/1/3仅小context、p6既有4.6GiB且有充分余量；不干扰其它进程。
+data1 quota使用516182860KiB/soft1073741824KiB，shared84TiB；新监督至192节点预算48GiB，计入4个完整Adam checkpoint、
+atomic临时写入、train/validation LoRA banks、raw rows/logs。当前joint末profile4.2GiB、analysis1.2MiB、scratch98MiB；其余既有用量由quota覆盖。
+新root=`runs/outputs/horizon_supervised_v1_seed7_20260908`；现场证据/精确命令登记在`runs/analysis/horizon_relation_writer_20260908/supervised/`。
+尚未宣称启动；commit/push/frozen完成后立即launch，run_contract记录最终commit/source/environment/topology。
+
+## 已结束的联合profile
+
+最后e1ea3596 profile已正常exit0，全部训练/验证GPU进程已退出；两次更新均接受（alpha1、1/16），共512FM queries/32episodes，
+每轮144.49/156.98秒，总446.30秒，完整macro2约4.13GiB；仅作为历史机制与成本证据保留。
+非零LoRA真实native flow对64个physical PEFT decisions输出一致；真实physical36 expert targets A/B为BF16，2 head targets为FP32。
+实际batched仍KL .016349，记录其kernel差异，不要求逐元素一致。原件joint_profile/native_fixed/与native_e1ea3596/。
+此前joint阶段的24/48/72登记草案及拒绝暂停规则被最新Owner阶段选择覆盖，未启动对应formal run。
+
+以下保留本轮早前历史执行记录；其中“下一步/正在”等时态只适用于当时，不能覆盖上述最新监督授权与计划。
 
 ## 已完成：八档回溯与数值接口诊断
 

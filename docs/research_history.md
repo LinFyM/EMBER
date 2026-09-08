@@ -704,3 +704,19 @@ Writer只生成一次；这定位到执行端足以产生变化，未证明精�
 禁用flow/prefix外层autocast后vs canonical=.014033，旧batched-vs physical=.016349，相邻B仍.030222。
 据此先恢复原生执行类型，不扩大模型dtype；CPU非零LoRA舍入边界另外复现batched预先cast delta与物理PEFT不同，
 v4一并按PEFT相加后cast修复。正常低位差异不作为新增逐元素一致要求；完整学习与行为仍待新合同验证。
+
+e1ea3596 native_fixed/非零LoRA64行真实flow对物理canonical KL/max/mean均0，13.29秒/10.70GiB；
+真实batched仍KL .016349、max .044685，12.67秒/10.72GiB。物理36 expert targets A/B为BF16，2 head targets为FP32；
+先前全state.float的诊断不代表物理参数类型。没有扩大source权重dtype或强求kernel逐元素一致。
+同commit完整fresh四卡profile正常exit0：2attempts/2accepted、alpha1及1/16，同版本8个task KL全0，
+每轮144.49/156.98秒、总446.30秒；512 FM queries全部进入接受更新、32 episodes、1 mixed RL group，第二步Meta梯度1.17e-7。
+峰值allocated25.69GiB/reserved30.37GiB，完整macro2 checkpoint4.13GiB。原件joint_profile/native_e1ea3596/；
+这是机制/成本证据，没有新架构formal score。此后Owner明确切换为先纯监督后独立RL，联合formal未启动。
+
+## 23. 2026-09-08 Owner改为监督平台后独立共享RL
+
+Owner明确覆盖首轮FM/RL混合默认：完整架构保持，fresh纯FM端到端Writer/Meta，无RL rollout/loss/trust/回滚。
+全部joint profiles及唯一checkpoints保留为历史机制/成本证据，不能初始化正式监督或冒充监督结果；执行一致性修复保留。
+平台结合实际曝光、held-action验证、训练task闭环与预登记validation相邻节点；充分监督仍弱要先定位并允许实质改进，
+不以饱和为由交给RL救场。后续独立RL从单个保留监督checkpoint初始化，新optimizer/scheduler，默认不混FM，探索/信用/约束另审。
+本次正式监督节点/判据见active design §8.2；未报告任何监督科学分数。

@@ -1,7 +1,7 @@
 # 过去定向完整 Horizon Writer：正式接续设计
 
 日期：2026-09-08。本文是当前唯一 active design，登记与实施状态见 [progress.md](../progress.md)。
-**完整首版已实现，正在真实联合profile与数值合同验证，尚未开始formal训练。**旧layered运行面已退役；当前状态以progress.md为准。
+**完整首版已实现；Owner最新要求先纯监督FM达到有证据的平台，再接独立共享Writer RL。监督正式启动状态见progress。**旧layered运行面已退役；当前状态以progress.md为准。
 
 权威顺序为 Owner 最新决定、[长期要求](current_owner_requirements.md)、[AGENTS](../AGENTS.md)、正式状态与本文。
 [专家原文及 Owner 裁决](review_materials/20260908/README.md)保存完整推导来历。
@@ -23,7 +23,7 @@
 | 视觉与聚合次序 | 每帧对分别读取前序/当前 Z，形成经核实消息，再按 u 从早到晚用短 GRU 聚合 |
 | 局部—长程 | 四组；每组临时 H-read 后一层 **past+self 长程 attention**；前三组逐 H 非线性回写，第四组直接进 compiler |
 | 集合与输出 | 每视频独立编码；608 个 paired target/rank queries 联合读取，native D 生成完整 A/B，rank16/alpha16 |
-| 训练 | Writer 与观察 Meta fresh、端到端；首版 FM 辅助真实 Writer RL，同版本采样与求梯度后一次联合更新 |
+| 训练 | Writer 与观察 Meta fresh、端到端纯FM监督；有证据平台后从单个监督checkpoint接独立RL |
 
 没有新的性能证据。历史分层图在 192/384 的 correct=69/67、other=72/64，熟悉/held 视频 train120=21/18；
 旧 run 永久止于 384。基础 SFT 109/107、早期 Writer143、GOMQ151及其非稳定边界，见
@@ -244,161 +244,59 @@ D 全零初始化、A0 用 canonical 非零 identity 模板，初始 BA=0；其�
 初始 B/D 为0可使首步部分上游梯度为0，须在正常更新后判断通路，不能把这一代数现象当成永久断梯度。
 新的架构/参数空间不兼容旧 checkpoint，禁止从旧 short4、384 或 native-head 草稿 checkpoint warm start。
 
-## 7. FM 辅助 Writer RL：完整首版更新合同
+## 7. 先纯监督，再独立共享 Writer RL
 
-### 7.1 数据、随机性与权重
+### 7.1 Owner最新阶段安排与历史地位
 
-固定 train24，global IDs 来自 `configs/libero_24_8_8_v1/protocol.json`，每 suite 六 task。
-每次尝试迭代每 suite 均匀抽1个 task，共4个；每 task 1个 condition，K 从1/2/4等概率抽取，视频无放回且互异。
+2026-09-08 Owner明确覆盖“从第一轮FM/RL同一步联合更新”的此前默认。完整图不变；先使Writer与读取Meta
+从fresh联合学习纯监督FM。source基础冻结。监督阶段不计算RL loss、不采集用于RL更新的rollout，
+不做RL trust/KL候选检查、接受筛选或整步回滚。正常闭环评测继续作为真实能力裁决。
+既有joint profiles仅为历史机制、执行与成本证据，其checkpoint不初始化正式监督训练，也不算监督学习结果。
+精度/布局/批量累加等已验证的执行一致性修复保留；RL信用、trust或探索敏感性不阻塞监督启动。
 
-| 数据/配置 | 首版 |
-| --- | --- |
-| 主 sampler/optimizer seed | 7；独立子 RNG 流和状态存入 checkpoint，不复用 episode 随机流 |
-| Teacher 视频 | episodes 0–15，完整有序，stride5，include-last-frame |
-| FM actions | episodes16–41；每 condition 64 queries，episode均匀后frame均匀，有放回；与teacher角色互斥 |
-| 冻结动作诊断 | episodes42–45；无梯度、非选点依据 |
-| 同task held视频 | episodes46–49；只作训练侧诊断，不替代validation资格 |
-| RL | 每 condition 4条相互独立完整episode；初态从该训练task的0–31均匀独立抽样 |
-| 训练侧行为诊断初态 | 32–49，与本run RL初态互斥；不是历史上从未使用过的盲集 |
-| RL反传采样 | 每episode均匀无放回 `M=min(16,Q)`个decision，使用 `Q/M`修正 |
-| 额外meta tasks | 首版为空；后续增加须精确语义/specification审计并预登记allowlist和权重 |
+### 7.2 数据、随机性与公平权重
 
-每 suite 一 task 等权，跨迭代对 train24 均匀目标无偏；不是旧cycle采样，不保证每6步恰好覆盖所有task。
-task平均、task内episode平均、episode内decision求和，不能再除Q。报告实际 task/condition/K/query/rollout曝光，
-不能以 optimizer 步数或 GPU 数代替监督量。
+固定train24；每次optimizer update每suite均匀抽1 task，共4个，task等权1/4。
+每task一组K1/2/4等概率抽取的互异完整teacher videos，内部保序，stride5、include-last-frame；不挑video。
+teacher episodes0–15；FM actions episodes16–41，独立于teacher，每condition64 queries，均匀episode再均匀frame，有放回。
+train侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test同样无梯度。
+首版额外meta tasks为空，不把更多同task episodes当作更多独立映射。task/K/video/query使用独立持久随机流，seed7。
+多卡按真实视频cost分配完整task，跨rank对已经乘1/4的梯度SUM，不再除world size；卡数不改变采样或任务权重。
 
-### 7.2 FM 是训练动作监督
+### 7.3 同task跨episode FM与完整端到端梯度
 
 \[
 x_s=(1-s)a+s\epsilon^{FM},\quad u_s=\epsilon^{FM}-a,\quad
-L_{FM}=\mathbb E\frac{\|v_{\theta_0+G_\psi(C)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
+L_{FM}=\frac14\sum_{i=1}^4\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
 \]
 
-沿用冻结 normalization、flow-time 分布与末动作补齐定义；不顺带改变 padding mask/loss 口径。
-监督来自同task另一episode的 actions；teacher部署输入仍 action-hidden。FM系数1，RL系数0.1是可试默认，
-不是两种梯度实际占比，也不是 Owner 要求永久固定损失混合。首版从第一次迭代计算两者，不采用G1–G3冻结课程。
+复用冻结normalization、原生Beta flow-time分布、独立Gaussian noise及末动作补齐；不改变监督目标或padding口径。
+按完整逻辑query批次固定随机性，microbatch只改变执行，不重复生成不同noise或改变task/query权重。
+每condition生成一次完整LoRA，在冻结policy求FM的A/B cotangent；随后完整Writer重放一次，R cotangent沿观察Meta重放。
+末层完整H、两端Z、全部关系/GRU/长程/前三回写/集合compiler/native A/B都保留，不能detach或缩视频。
+只有冻结prefix/Z/KV可跨更新缓存，读取R不能跨Meta更新复用。合法identity初始化首步上游零梯度由正常更新后再核实。
 
-### 7.3 实际探索策略与可计算密度
+Writer/Meta/FM保持已验证BF16 autocast，trainable参数FP32，source保持原生权重类型。
+正式执行不加外层autocast；生成A/B适配真实物理参数dtype/连续布局，批量LoRA先相加再cast。
+原生execution修复的非零LoRA物理parity已验证；允许正常kernel/reduction差异，不扩source dtype。
 
-固定本次参数版本 `psi_n=(Writer,Meta)`，生成 LoRA `Lambda_i=G_psi_n(C_i)`。
-每个执行decision独立采样原生 `epsilon_q ~ N(0,I[50,32])`，运行完整10步 Euler flow：
-\[
-x_0=\epsilon_q,\quad
-x_{k+1}=x_k-0.1v_{\theta_0+\Lambda_i}(o_q,\ell,x_k,1-0.1k),\quad k=0,…,9.
-\]
-\[
-m_{n,q}=\operatorname{vec}(x_{10}[0:5,0:7])\in\mathbb R^{35},\quad
-z_q\sim\mathcal N(m_{n,q},\Sigma).
-\]
+AdamW LR3e-5，betas(.9,.95)，eps1e-8，weight_decay1e-4，global norm clip1；前8个optimizer updates线性warmup后常数。
+每轮直接更新一次，无RL项和trust回滚。后续优化修改以学习证据登记，不能无限小扫LR/rank/seed来回避能力问题。
 
-完整积分50×32后再取前5×7，不能提前缩小flow内部形状。探索加在归一化动作上；执行复用canonical反归一化、
-范围与夹爪处理，不额外加sign/tanh/阈值。log probability使用裁剪前完整 z：
-\[
-\log q_\psi(z_q\mid o_q,C_i,\epsilon_q)
-=-\tfrac12(z_q-m_{\psi,q})^\top\Sigma^{-1}(z_q-m_{\psi,q})
--\tfrac12\log|\Sigma|-\tfrac{35}{2}\log(2\pi).
-\]
+### 7.4 Checkpoint与恢复
 
-这是外生 epsilon 与 z 的扩展动作策略；`p(epsilon)`不依赖psi，不求未知flow边缘密度，不把FM loss当logprob。
-不对环境反传；保存观测在重放中固定。
+监督stage=`horizon_relation_writer_fresh_supervised`，run schema=`ember_horizon_relation_writer_supervised_run_v1`，
+update_version=`supervised_fm_writer_meta_v1`。保存Writer/Meta、optimizer、scheduler、sampler/cursor、每rank RNG、
+probe、source/data版本及world topology；macro就是已完成optimizer updates。exact-resume锁原config、source和topology。
+正式监督必须fresh，与joint profiles和旧384无resume关系；只有本监督run自己的完整边界checkpoint可exact-resume。
 
-\[
-\Sigma=C_{.8}\otimes\operatorname{diag}(.05^2,.05^2,.05^2,.05^2,.05^2,.05^2,.10^2),\quad
-(C_\rho)_{ab}=\rho^{|a-b|},\ a,b=0,…,4.
-\]
+### 7.5 独立RL阶段在监督平台后另登记
 
-这是时间优先的35维flatten顺序。五步内相关，不同decision独立；首段固定Sigma，不自动退火或学习噪声。
-正式执行J0去掉额外Sigma，保留正常flow noise。训练J_Sigma增益不能替代J0。
-若五步中途成功终止，仍可使用采样的完整35维联合score；相关噪声下不能按终止结果随意删尾部密度项。
-dummy settling不计score，不改变官方成功终止和suite horizon。
-
-### 7.4 Reward、baseline与无偏decision采样
-
-仅官方成功 `Y_ie∈{0,1}`，超时失败，不bootstrap。不给视频预测、人工阶段、shaping、critic或expert纠错默认支路。
-\[
-b_{ie}=\tfrac13\sum_{e'\ne e}Y_{ie'},\quad A_{ie}=Y_{ie}-b_{ie}.
-\]
-
-4条episode在给定condition/固定策略下独立，包括初态、env、flow noise、额外噪声。baseline/advantage停止梯度。
-同组全失败或全成功时advantage均0，RL梯度确实为0；必须报告有效混合组比例，不能虚构成功信用。
-
-对Q个decision均匀无放回抽M个：
-\[
-\widehat g_{RL}=\frac1{4\cdot4}\sum_{i,e}A_{ie}\frac{Q_{ie}}{M_{ie}}
-\sum_{q\in S_{ie}}\nabla_\psi\log q_{\psi_n}(z_q\mid o_q,C_i,\epsilon_q).
-\]
-
-可用独立于reward的reservoir sampling，仅保存最多16组完整观测、epsilon、z、m_old与必要标量证据。
-不能按接触、最大分歧或成功前最后几步挑点后继续声称相同无偏估计。Q是实际产生探索动作的decision数。
-
-### 7.5 LoRA cotangent 与同版本联合更新
-
-采集、FM求梯度、RL重放期间参数全部保持psi_n。可以并行累积FM梯度，但不能提前做FM optimizer step。
-对保存的decision，固定o/epsilon/z/m_old/Y/b/A，动作均值的最小化目标cotangent为：
-\[
-g_{m_q}=-0.1\frac1{4\cdot4}\frac QM A_{ie}\Sigma^{-1}(z_q-m_{old,q}).
-\]
-
-完整10步flow反传到A/B，各步之间不能detach x_k；推理的no_grad包装不能直接充当训练路径。
-每condition先合并 `g_Lambda = (1/4) grad_Lambda L_FM,i + sum VJP_flow(g_m)`，
-再只组织一次Writer→R→Meta重放。全组、临时H-read、GRU和回写不detach；冻结source不更新但仍参与LoRA可微计算。
-所有task/episode系数只乘一次；跨卡对已全局加权梯度SUM，不再按world_size平均。
-
-默认AdamW：LR3e-5，betas(.9,.95)，eps1e-8，weight_decay1e-4；前8个**接受更新**线性warmup，之后先常数。
-合并梯度后global norm clip1，不分别把FM/RL或各task归一到同norm，不沿用旧672步cosine。
-
-### 7.6 有限候选trust检查与拒绝处理
-
-只在psi_n求一次 `grad L_FM − .1*g_RL`，形成一个AdamW候选方向d和待提交moments。
-依次检查 `alpha∈{1,1/2,1/4,1/8,1/16,1/32,1/64,1/128}` 的完整候选 `psi'=psi_n+alpha*d`：
-\[
-K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}).
-\]
-
-每episode从已均匀保存的decision中再均匀取至多4个；各candidate复用同一检查子集。按episode/task平均，
-本批task最大均值≤0.02方可接受；单位是完整35维动作块。候选用自己的Meta重新生成R和LoRA，不能复用旧R。
-只做候选前向，不在候选点对旧轨迹重复普通score梯度。这个检查不是off-policy修正，也不是成功单调保证。
-
-2026-09-08真实profile发现提前成功后的活动batch缩小会污染重放：同参数task21的KL为0.07968，超过0.02；
-始终batch4的五个task均为0。因此每decision额外记录采集flow的实际batch尺寸，RL VJP与trust按原尺寸分组重放。
-尾组用已选真实记录补齐，补齐项梯度为0且不进入KL/episode/task权重；不重算或替换采集m_old，不扣底噪，
-不扩dtype或固定batch1，Sigma与0.02阈值不变。候选仍用自己的Meta完整重读R。该修复由同参数自比较和完整联合profile验证。
-
-2026-09-08进一步profile在消除batch伪KL后仍1/8接受。极小非零执行B的动作差为0，有限B响应不单调，
-没有发现任何非零B都引入固定扰动的分支；也未区分剩余响应的模型非线性与精度效应。
-本次只检验优化假设：首版四候选可能过早截断可行步搜索，因此同一Adam方向的有限回溯扩为上述八个尺度。
-不改变LR、gradient、Sigma、原始m_old、0.02或任何科研性能线；候选不额外求梯度，也不以接受更新当作行为通过。
-修订后的fresh四轮profile仍1/4接受，新增四尺度没有贡献有效更新；step2/3/4在1/128仍maxKL=.02300/.07222/.03424。
-该范围扩展没有解除停滞，停止同样续试；正式学习尚不启动。下一步用固定A、原B/完全同B重放/相邻BF16 B的
-只读完整flow诊断，区分执行端量化响应与生成端变化；不替换训练m_old、不扩大dtype或据此放宽科学资格。
-
-相邻BF16 B诊断已实测：完全相同B重放KL0，但固定其它输入、B整体一个相邻值变化（relative L2 .57214%）
-可产生task KL .034327；执行端无需生成端变化即可出现此量级敏感性，尚不能证明精度缺陷。
-因此预登记一个数值因果对照：固定已生成A/B，只在执行动作expert采用FP32/TF32，prefix仍BF16，必要的KV/B只同值上转。
-对照原B/同B重放/相邻B，报告同precision差与相对原BF16 baseline差、吞吐/显存；无训练、无dtype序列扫描。
-此对照尚未改变正式运行合同。只有结果支持才评估统一采集/VJP/trust/evaluation实现与新同口径baseline，不能混用均值或分数。
-
-2026-09-08发现并修正实际执行合同差异：正式evaluator没有外层autocast，旧训练flow却包在BF16 autocast中，
-把原生FP32 action/time heads也改成BF16输出；此前parity给参考推理也加了该context，不能证明真实评测等价。
-从update_version `same_version_fm_rl_native_execution_v4`起，采集、RL VJP和trust统一使用evaluator原生混合类型，
-执行prefix与10步flow不额外autocast；生成A/B按物理LoRA参数的dtype和连续布局作同值适配，与物化执行一致。
-Writer/Meta/FM维持BF16 autocast，source权重类型不扩大，也不改变TF32设置、Sigma、0.02或联合权重。
-批量LoRA执行须与PEFT一致：先以adapter计算类型相加，再将和转为base输出类型，不能预先舍入delta。
-v1–v3 profile不得作为v4 exact-resume；八档候选保持以单独检验执行边界修复，不声称八档本身解决了停滞。
-真实验证覆盖非零LoRA、原生physical/batched evaluator调用和完整联合更新；接受正常kernel/reduction低位差异，
-不把逐元素一致当成额外科研资格，也不把修复代码或内部parity当成学习达标。
-
-接受缩放步时提交本次moments并统一缩放实际参数步；全部拒绝则参数、moments、optimizer step和warmup计数不前进。
-**已消费的sampler/RNG和尝试迭代计数仍前进**，下一次重新采样，不能恢复同一随机流而无限重播同一拒绝批次。
-记录 attempted/accepted/rejected、alpha、各task KL及梯度/奖励统计。接受规则、clip和Adam之后不声称实际更新无偏。
-本批轨迹不进入后续参数版本的actor训练；保留紧凑证据及必要选中观测，不默认保存每一步大图像副本。
-
-### 7.7 Checkpoint与恢复
-
-新schema必须显式区分末层R、Z、过去窗口、H-query、GRU、四组单向长程、native D及FM/RL更新协议；旧checkpoint明确拒绝resume。
-保留Writer/Meta/optimizer、LR状态、sampler/cursor、各rank RNG、probe、world topology、attempt/accepted计数、
-Sigma、更新/数据版本和schema。正式checkpoint在完整迭代边界保存；exact-resume锁world size/topology。
-在途rollout若无完整可恢复状态，不能伪称exact-resume。新run fresh，与旧384/旧draft无resume关系。
+用§8.2的真实学习与行为证据判断平台；监督充分仍弱时先定位原因并允许实质改进，不能把“饱和”当作交给RL救场的理由。
+监督阶段选定并保留单个checkpoint后，从其Writer和Meta初始化共享RL训练；新建独立optimizer/scheduler与stage记录。
+RL阶段默认仅RL目标，不自动混回FM，不部署task-local优化。探索、信用与更新约束依据监督后的真实行为重新审视，
+不机械恢复已造成停滞的Gaussian/trust设置。具体合同在看到监督证据后、RL启动前另登记，不现在盲选。
+报告相对固定监督起点的收益、遗忘、breadth、相邻稳定与J0正式执行；监督checkpoint保留为可回退参照。
 
 ## 8. 实施、行为节点与正式资格
 
@@ -407,25 +305,33 @@ Sigma、更新/数据版本和schema。正式checkpoint在完整迭代边界保�
 1. 末层读取确为action_out_proj实际输入；Z来自真实最终prefix；Meta范围与teacher信息墙正确。
 2. 过去窗口/score方向/H-query跨行依赖/GRU顺序/四组同步与单向长程；修改未来原始输入不影响先前U/E/P。
    结构测试可用合成张量，不用真实shuffled/reversed视频结果选架构。
-3. 真实FM与RL梯度到A/B、Writer、Meta；同版本、10步flow无detach、LOO与Q/M及跨卡权重正确。
+3. 真实FM梯度到A/B、Writer、Meta；跨episode采样、全局task权重与直接optimizer更新正确。
    identity首步零上游梯度不作为失败；正常更新后核对实际通路。
-4. 最长真实K1/K4、真实FM/rollout/replay下测LoRA/s、queries/s、每尝试更新墙钟、各卡峰值。
+4. 最长真实K1/K4、真实FM与完整Writer/Meta replay下测LoRA/s、queries/s、每尝试更新墙钟、各卡峰值。
    合理复用prefix/Z和帧级投影，批量edge/H/decision，不逐token循环；只做与声明相关的检查。
 
-不把每个模块拆成冻结课程或全面消融矩阵。机制通过后以完整候选获得共享学习和行为证据。
+不把每个模块拆成冻结课程或全面消融矩阵。机制通过后以完整模型获得监督共享学习和行为证据。
 
-### 8.2 首批学习与随后预登记
+### 8.2 监督学习节点、独立验证与平台期
 
-首版每24个接受联合更新做训练侧 `Sigma / 0`严格配对行为诊断，保留官方flow noise。
-可先使用train24×states32–36共120行，从held视频46–49预先固定K1条件，两个噪声arm完全配对。
-源参照必须同实际task/state/env/policy合同，旧source16/120对应states0–4不能冒充新面板基线。
-该120行细化是本次交接的执行默认，不写成Owner原话或旧专家实测。
+在首个正式监督结果前登记：checkpoint为updates24/64/128/192，首段先运行24；train24×states32–36 J0 paired120
+在这些节点评估，使用固定K1 held teacher pool46–49。保留官方flow noise，不加RL探索Sigma。
+同口径source J0是19/120；旧source16/120或joint JΣ22/120不能替代这个参照。
+独立动作验证在0/24/64/128/192：train24等权、actions42–45，每task128固定queries，teacher为46+(task mod4)，
+query seed20260908+task，K1；共3072 queries，完全no_grad，不消耗训练sampler，固定flow随机性以便跨checkpoint比较。
+动作验证只定位泛化/拟合，不用于正式选点或代替闭环。
 
-新session在真实profile后、首次正式学习结果之前登记首段命令、checkpoint/行为节点、继续/止损规则和资源预算。
-首段以24个接受更新及其训练侧诊断为起点；profile若显示明显失衡，先优化执行，不能直接默认约10小时长跑。
-不按被拒绝次数无限重复；多次拒绝或长期全失败时区分实现错误、步幅/探索支持和有效non-pass。
-具体后续strict400节点依据投入和曝光预先冻结；有信息量且出现广泛能力后及时做strict400，不靠内部loss选点。
-未预填GPU、world size、最终总步数、实际吞吐和绝对run目录，因为这些需要新session的实时证据；这是执行工作，不是额外审批。
+validation8 strict paired400 correct/other登记在64/128/192；K1与§8.3完全相同，首次资格节点不得因loss不好而无限推迟。
+每update有4条件/256 queries，因此64/128/192分别有16384/32768/49152监督queries；另报告真实per-task/K曝光。
+24节点是早期获取，不声称充分学习。64之后比较source47与SFT109/107、train J0和跨视频保持，低能力认真定位。
+
+平台需至少连续3个有信息量资格节点，覆盖至少128 optimizer updates；同时检查实际曝光、held-action FM、train120
+与validation correct/other。操作化候选平台为窗口内validation最佳改善≤5/400、train120最佳改善≤3/120、
+held FM相对改善≤2%，且无持续breadth/suite获取趋势；不能只凭任一loss或分数短暂不变宣布。
+有实质改善则继续监督，并在下一结果前登记后续相邻节点；不追求数学完全收敛，也不无限续训。
+若平台时仍明显弱于SFT或训练task获取很弱，先依据证据区分监督支持、条件表示、生成与执行，允许实质改进；
+不自动启动RL。明确工程错误或已定位严重缺口可及时处理，无须为凑平台节点浪费训练。
+达到性能线也必须由相邻单checkpoint及§8.3稳定/视频因果要求确认。RL阶段独立登记且保留监督起点。
 
 ### 8.3 资格与最终controls
 
@@ -452,10 +358,9 @@ shuffled/reversed只在真实frame重排后完整forward，绝不进训练、che
 `writer/native.py`只保留post-norm完整H读取和同forward的最终Z/KV；`writer/horizon.py`/`relation.py`/`attention.py`
 负责完整过程图与集合compiler，`writer/native_factor.py`负责76张量输出。旧18层capture、layered/coordinate图及旧FM-only入口退役。
 
-`writer/joint.py`组织每condition同版本的采集、FM/RL合并cotangent和一次Writer/Meta反传；`flow.py`保留完整10步可微执行，
-`rollout.py`复用canonical环境池和预处理，`rl_math.py`负责Gaussian信用、reservoir和单方向trust事务。
-`learning_data.py`持久化独立随机流；`training.py`维护attempt/accepted、接受更新warmup和完整边界checkpoint。
-这些owner复用现有FM、LoRA注入、checkpoint与评测，不保留旧antithetic信用或cycle/cosine作为新训练fallback。
+`writer/supervised.py`组织每condition的FM A/B cotangent和一次完整Writer/Meta反传；`functional.py`复用原生FM。
+`learning_data.py`持久化task/K/video/query随机流与固定无梯度动作诊断；`training.py`维护直接AdamW更新及完整边界checkpoint。
+旧joint orchestrator退役到Git及profile原件，RL数学/flow辅助代码不构成活动训练入口；独立RL阶段登记时重新审视并清理失效部分。
 
 唯一入口为 `scripts/train_horizon_writer.py` / `scripts/materialize_horizon_writer.py`，配置为
 `configs/pi05_horizon_writer_v1.json`。旧checkpoint明确拒绝新schema resume。图、读取、联合更新和评测的测试随实际合同替换；

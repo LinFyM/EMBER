@@ -48,9 +48,10 @@ Native D按target/rank/side独立、跨任务共享，允许更直接的因子�
 
 ## 学习与裁决
 
-Writer与观察Meta fresh、端到端学习，source基础冻结。首版采用FM辅助Writer RL：FM从同task另一episode提供动作监督，
-RL从当前生成policy的真实训练rollout提供成功信用。两者在同一参数版本求梯度后更新一次，旧轨迹不跨版本继续用于普通score梯度。
-监督目标与闭环成功不是等价目标；全失败组的RL信用可能为0，探索策略收益也不自动保留到正式执行。
+Writer与观察Meta fresh、端到端纯FM监督，source基础冻结；FM来自同task另一episode的actions。
+监督阶段无RL更新、探索rollout或trust回滚，真实闭环与独立验证共同判断能力和平台。
+达到有证据的平台后，才从单个保留的监督checkpoint接独立共享Writer RL，采用新optimizer/scheduler，默认不混FM。
+监督充分仍弱要先定位机制缺口，不能只宣布饱和后交给RL救场。训练期共享RL不同于部署时task-local优化。
 
 早期强Writer、task专家与G1/G2提供不同层次的正证据；后续shared/clone差距及384的失败说明共享行为仍未解决。
 新图没有继承它们的分数，也没有由数学依赖证明操作理解。历史与适用边界见 [research_history](research_history.md)。

@@ -292,7 +292,7 @@ def resident_materialization(tmp_path, monkeypatch):
         return {"condition_id": condition_id(0, demos), "teacher_videos": [{"sampled_frame_count": 1}],
                 "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight)}
 
-    monkeypatch.setattr(runtime, "build_runtime", build, raising=False)
+    monkeypatch.setattr(runtime, "build_runtime", build)
     monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
     return requests, runs, builds, state
 

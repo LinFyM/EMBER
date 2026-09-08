@@ -1,4 +1,4 @@
-"""Train24 sampling for fresh joint video-to-LoRA learning.
+"""Train24 sampling for supervised video-to-LoRA learning.
 
 Task and episode identities are orchestration metadata. The model receives only
 the returned RGB arrays, real frame indices and exact task language.
@@ -54,8 +54,8 @@ def load_learning_tasks(
     return output
 
 
-class JointTrainingData:
-    """Independent persisted sampling streams; rejected updates consume draws."""
+class WriterTrainingData:
+    """Independent persisted task, video and action sampling streams."""
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any]) -> None:
         self.config = dict(config)
@@ -75,14 +75,15 @@ class JointTrainingData:
         self.videos = RawTeacherVideoStore(authorities, frame_stride=5)
         self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool, action_chunk_size=50)
         self.query_rows = self.queries.task_episode_rows
+        self.diagnostic_queries = None
         root = random.Random(self.seed)
         self.streams = {name: random.Random(root.getrandbits(63)) for name in (
-            "task", "K", "video", "query", "initial_state", "environment", "flow", "exploration", "reservoir", "trust",
+            "task", "K", "video", "query",
         )}
         self.suites = {suite: tuple(task for task in self.tasks if self.tasks[task].suite == suite)
                        for suite in sorted({task.suite for task in self.tasks.values()})}
         if len(self.suites) != 4 or int(config["tasks_per_update"]) != 4:
-            raise ValueError("joint updates require one task from each of four suites")
+            raise ValueError("supervised updates require one task from each of four suites")
         self.next_step = 0
         self.counts = {task: 0 for task in self.tasks}
 
@@ -95,11 +96,6 @@ class JointTrainingData:
             draws.append({
                 "task": task, "occurrence": self.counts[task], "video_demos": demos,
                 "query_seed": self.streams["query"].getrandbits(63),
-                "episodes": tuple({
-                    "initial_state": self.streams["initial_state"].randrange(32),
-                    **{name: self.streams[name].getrandbits(31) for name in
-                       ("environment", "flow", "exploration", "reservoir", "trust")},
-                } for _ in range(4)),
                 "frames": sum(self.videos.frame_counts(task, demo)[1] for demo in demos),
             })
             self.counts[task] += 1
@@ -118,11 +114,23 @@ class JointTrainingData:
     def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int):
         if set(demos) & set(self.action_pool):
             raise ValueError("teaching video and action query episodes overlap")
+        return self._sample_actions(self.queries, self.action_pool, task, occurrence, query_seed,
+                                    int(self.config["queries_per_task"]))
+
+    def diagnostic_batch(self, task: int, *, seed: int, count: int):
+        if self.diagnostic_queries is None:
+            self.diagnostic_queries = FunctionalQueryDataset(
+                tuple(task.authority for task in self.tasks.values()),
+                demo_indices=self.diagnostic_pool, action_chunk_size=50,
+            )
+        return self._sample_actions(self.diagnostic_queries, self.diagnostic_pool, task, 0, seed, count)
+
+    def _sample_actions(self, dataset, pool, task, occurrence, query_seed, count):
         rng = random.Random(query_seed)
         rows = []
-        for _ in range(int(self.config["queries_per_task"])):
-            episode = rng.choice(self.action_pool)
-            rows.append(self.queries[rng.choice(self.query_rows[task][episode])])
+        for _ in range(count):
+            episode = rng.choice(pool)
+            rows.append(dataset[rng.choice(dataset.task_episode_rows[task][episode])])
         seed = task_logical_batch_policy_rng_seed(
             optimization_seed=self.seed, task_id=task, task_visit=occurrence,
             demo_indices=[row["demo_index"] for row in rows],
@@ -151,3 +159,5 @@ class JointTrainingData:
     def close(self) -> None:
         self.videos.close()
         self.queries.close()
+        if self.diagnostic_queries is not None:
+            self.diagnostic_queries.close()

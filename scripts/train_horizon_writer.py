@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the canonical fresh horizon Writer with same-version FM+RL."""
+"""Train the canonical fresh horizon Writer with pure supervised FM."""
 
 from ember.writer.training import main
 

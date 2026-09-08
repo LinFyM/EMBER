@@ -56,9 +56,14 @@
 - 当前主线为Writer与读取侧Meta从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
   G1--G3的阶段冻结属于历史机制验证，不实施为当前课程，也不为旧措辞额外建立阶段初始化与随机初始化两套候选。
   LoRA采用合法identity初始化；从头初始化不要求每个张量都随机非零。短学习、扩大覆盖与闭环是实验节点，不是冻结阶段。
-- Writer/Meta联合训练与FM/RL同一步联合更新是两种不同选择。当前采用可试的FM辅助Writer RL协议；
-  同版本采集与求梯度后一次更新，旧轨迹不跨更新继续用于普通score梯度。固定混合系数不是Owner的永久要求，
-  训练期共享Writer RL也不等于生成LoRA后的task-local RL。
+- 当前训练顺序为先纯监督FM、后独立共享Writer RL。监督阶段Writer/Meta fresh端到端共同学习，source冻结；
+  同task跨episode动作监督，不计算RL loss、不采集用于RL更新的rollout、不做RL KL候选接受或整步回滚。
+  保留已验证的执行一致性修复；旧联合profile不算正式监督结果，RL未决问题不阻塞监督启动。
+- 监督平台要结合真实曝光、训练侧独立动作验证、训练task闭环及预登记validation8相邻checkpoint，不能只看loss。
+  有实质改善就继续，连续有信息量节点不改善再判断；充分监督仍弱须先定位并允许实质改进，不以饱和为由交给RL救场。
+- 独立RL从选定并保留的单个监督checkpoint初始化Writer/Meta，fresh RL optimizer/scheduler和stage记录，默认仅RL目标。
+  探索、信用与更新约束根据监督后行为重新审视，不机械复用停滞设置；报告相对监督起点的收益、遗忘、breadth和稳定性。
+  这是跨任务共享Writer训练，不能混同部署时task-local LoRA优化；监督checkpoint保留为可回退基线。
 - 先用有信息量的短学习与闭环证据判断投入。未证明基础行为前不默认启动约10小时长训练；接近强基线或目标后及时做strict400，
   好趋势继续训练到足以判断相邻稳定，明确坏结果不靠无限续训或无依据的seed/LR/rank/scale/width小扫挽救。
 - 每轮记录per-task、per-suite、breadth、retained/gained/lost、churn、相邻success-set重合和实际样本曝光；训练步数本身不足以比较配方。

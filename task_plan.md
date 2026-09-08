@@ -1,57 +1,36 @@
 # EMBER task plan
 
-## 当前目标与协作安排
+## 当前目标与授权
 
-2026-09-08 Owner已发出接管启动指令：全面理解仓库，完整实现当前设计，开展正式实验，依据真实结果持续迭代直到性能和科学要求达标。
-全程goal已创建且active，无token预算、总工期或总尝试次数。前次只做交接准备的session限制已结束。
-全面阅读与证据审计已完成；当前阶段为已定位的执行autocast边界及批量LoRA舍入修复；八档回溯仍1/4接受，尚未进入formal；既定边界内无需再次请求实施、训练或方法修订批准。
+继续已创建的全过程goal：完整架构、正式学习、结果分析与方法迭代，直到validation8 strict paired correct>145/400、
+相邻与跨视频稳定、breadth/四suite/Goal/Long和最终因果要求达标，再完成冻结方法32/8 fresh与Test。
+不设token预算、总工期或总尝试次数，代码/profile/loss/单峰不是完成。
 
-唯一 active design：[过去定向完整 Horizon Writer](docs/horizon_relation_video_writer_design.md)。
-末层完整H → 过去4帧对应 → 完整H-query → 两端Z核实 → 历史u有序GRU → 四组单向长程交替/前三回写
-→ 集合compiler → 完整native A/B；fresh Writer/Meta、FM辅助真实Writer RL、同版本单次联合更新。
-**长程四组全部past+self，H-query沿H双向；专家原文中的双向长程已被Owner覆盖。**
+2026-09-08最新Owner安排覆盖从首轮FM/RL同一步更新：**先纯监督FM到有证据平台，再独立共享Writer RL**。
+完整[active design](docs/horizon_relation_video_writer_design.md)与信息墙保持；不重新审查全仓库，不继续RL profile。
 
-完整Horizon过程图、native D、物化/评测已集成；同版本FM/RL训练接口与runner已集成、真实采集及完整checkpoint已验证；首profile因数值batch自比较超阈值而0/2接受，最小修复已由真实重放验证，新方案尚无正式checkpoint或qualification行为证据。旧train24永久止于384，旧P/Q width256不补评，
-未合并native-factor-readout只作待审视草稿，不整支集成或恢复旧对照。详情见[progress](progress.md)。
+## 执行计划
 
-## 接续执行计划
+1. **已完成：** 全面阅读、历史证据审计、完整Horizon架构及真实FM/Writer/Meta梯度验证。旧384永久停止、旧native草稿保护。
+   联合profile全部正常结束，保留代码Git与checkpoint/evidence；不作正式监督起点或科学分数。
+2. **当前：纯监督训练接线并立即正式启动。** Writer/Meta fresh共同训练，source冻结；同task跨episode FM。
+   监督入口不计算RL loss、采集RL更新rollout或做trust回滚。保留原生执行精度/LoRA布局及累加修复。
+   复用完整图、批量FM与冻结prefix缓存，检查采样/完整梯度/Adam更新/checkpoint恢复和物化阶段合同，集成push。
+   正式从clean pushed detached worktree启动，现场双节点GPU/独立quota/真实用量与新增峰值按合同检查。
+3. **监督学习和闭环。** 首段24updates；checkpoint24/64/128/192。每轮4conditions/256FM queries，真实K1/2/4与task曝光记录。
+   独立训练侧held-action FM在0及每checkpoint；J0 train120在每checkpoint；validation strict paired400 correct/other在64/128/192。
+   24只是早期获取，64以后必须对照source47/SFT109/107；结合per-task/suite/breadth/RGL/churn/相邻及跨视频保持。
+4. **判断平台与改进。** 至少连续3个有信息量资格节点、覆盖≥128updates，联合监督曝光、held FM、train闭环和validation。
+   有实质进步则预登记后续节点并继续；多信号不再改善才结束监督。明确弱平台先定位支持/表示/生成/执行并依据证据改进，
+   不无限续训，也不宣布饱和后交给RL救场。操作化口径见design §8.2，不事后放宽科学资格。
+5. **独立RL。** 选定并保留单个监督checkpoint初始化Writer/Meta；独立optimizer/scheduler和stage，默认仅RL目标。
+   以监督后真实行为重新设计探索/信用/约束，不机械恢复已停滞设置；报告对监督起点的收益/遗忘/breadth/稳定/J0。
+6. **选点与最终流程。** 相邻single checkpoints符合资格后冻结selected，再执行必要视频controls；shuffled/reversed最后且不反哺设计。
+   完成既定32/8 fresh和Test。保留唯一canonical实现、完整可复核证据及单个监督回退基线。
 
-1. **准备与方法登记（前次完成）。** 对齐Owner要求、concept、完整设计、专家原文和裁决、历史索引与临时HANDOFF；
-   检查已有代码和关键资产，提交推送main。只做文档对应的验证，不执行新训练或用旧GPU快照占位。
-2. **创建goal、全面理解并实现唯一canonical路径（已完成首版）。** 按Owner要求建立覆盖正式实验、迭代和性能达标的goal，不填token预算。
-   系统阅读整个仓库的源码/测试/脚本/配置/文档及历史和原始证据，完整阅读最终架构，不能只看摘要就动手。
-   从最新main开始；按并发/结构风险需要隔离。
-   在既有owner内落实post-norm PreActionOut与最终Z、过去对应/完整H-query/GRU、四组因果long和回写、native heads，
-   同步训练/物化/配置/checkpoint schema。复用真实FM/VJP/evaluator，新增明确的Gaussian动作探索与10步可微重放。
-   首个正式实现不允许静默省略、缩水或偷换关键模块/训练合同；逐步替换旧可执行路径和对应测试，完成后及时集成push。
-   不先起平行fallback或仅合并旧native-head草稿。后续凭真实结果改进，不能用表面补丁掩盖未解决的问题。
-   若充分已有证据或实际问题要求修订，先说明理由并更新正式合同再完整实现；不为套用初稿强行运行已知错误配置。
-3. **真实机制与成本。** 按design §8.1验证必要依赖与信息墙、权重、采样版本和梯度；用最长真实K1/K4、FM与rollout/replay测吞吐和峰值。
-   功能检查与学习节点不是冻结课程。所有GPU/大输出操作前执行相应live两节点与独立quota检查，旧资源预算不继承。
-4. **结果前冻结首个run合同并开始有效学习。** 使用design §7的数据、采样、优化与RL默认；profile后确定实际batch/chunk/topology、
-   命令/output root/新schema、首段checkpoint与strict400节点、继续/止损规则。首段以24个接受更新及训练侧Sigma/0配对诊断为起点；
-   不默认长跑，不把旧672 schedule或旧48/96节点原样搬来。具体资源与成本依赖现场，接班者自主落实，不形成新的人工审批门。
-5. **共享学习、迁移与稳定性。** 分开判断训练task、同task新视频、未见task及噪声去除后的行为。
-   有信息量且出现广泛能力时及时strict400；每个关键点报告task/suite/breadth/RGL/churn/相邻及跨视频重合与真实曝光。
-   好趋势继续到足以判定相邻稳定；明确non-pass及时定位最早接口，禁止无依据rank/seed/LR/scale/dtype小扫或无限续训。
-   若有信息量学习后仍只略超source或长期在SFT附近，按design §1.1视为严重能力缺口；查历史等价尝试，允许有证据的实质机制调整，
-   不把这种落差当成只差一点小调参，不用基线rank不同或内部指标改善作为免责。
-6. **正式选择与最终交付。** 只按预登记single-checkpoint qualification与相邻稳定选点；selected冻结后做必要视频controls，
-   shuffled/reversed最后测试且不反哺设计；方法冻结后按32/8合同fresh训练与Test，交付可复核代码和formal evidence。
+## 边界与工作方式
 
-## Done when
-
-唯一正式性能线是validation8 strict paired correct>145/400，同时达到design §8.3与AGENTS的相邻稳定、低churn、
-高breadth、四suite非零、Goal/Long贡献、same-task视频鲁棒性及最终因果要求。实现完成、loss下降、训练结束或单次高分都不算完成。
-新session按Owner要求设置并持续推进goal，不自行设置token预算、总工期或总尝试数；只有真实权限/资源/信息边界才回到Owner。
-
-## 需要刷新、首版选择与自主修订
-
-- **需要现场刷新：** Git/concurrent work、两节点GPU/process、strg01各filesystem quota、真实个人用量、实际吞吐与新run预算。
-- **实施时自主确定：** cohesive源码owner、统一新schema/入口配置、profile后的执行batch、首次结果前的科学节点与续训规则。
-- **首版已定：** 末层而非18层、多K独立保序、过去4帧、完整H-query、短GRU、四组过去单向long及逐H回写、完整native输出；不以无依据疑问重开讨论。
-- **后续可自主修订：** 在总体思想和硬合同内，根据充分证据改变具体模块、监督/RL或优化机制，必要时重构，记录假设/证据/合同与验证。
-- **不能按历史自动恢复：** 384后的旧schedule、旧P/Q width256补评、旧分层native-head-only对照或专家原文双向long；不能突破teacher信息墙。
-
-正式train/eval须来自clean pushed commit的detached frozen worktree；canonical代码集成main并push。
-只保留一套当前实现，历史通过Git、sealed artifacts和research_history追溯；不覆盖dirty草稿或删除唯一资产。
+合同内实现、正式训练、评测与证据支持的实质方法修订已授权，不重新等待批准。
+GPU/存储/Git只在依赖它们时刷新；不复用旧空闲卡或quota预算。历史由Git、formal artifacts与research_history保留。
+validation/test无梯度；无teacher action/state/reward/task-ID部署输入；完整视频/horizon/梯度与单完整LoRA合同保持。
+当前状态看[progress](progress.md)，历史结论看[findings](findings.md)与[research_history](docs/research_history.md)。

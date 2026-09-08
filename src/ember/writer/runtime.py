@@ -15,12 +15,12 @@ from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenize
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_source_setup import load_policy
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.learning_data import JointTrainingData
+from ember.writer.learning_data import WriterTrainingData
 from ember.writer.meta_lora import MetaLoRAStack
 from ember.writer.native import NativeCondition, NativeVideoObserver
 
 
-class JointWriterState(torch.nn.Module):
+class WriterState(torch.nn.Module):
     """Checkpoint owner for Writer, reading-only Meta, and the public probe."""
 
     def __init__(self, writer: torch.nn.Module, meta: MetaLoRAStack, probe_seed: int) -> None:
@@ -31,16 +31,16 @@ class JointWriterState(torch.nn.Module):
 
 
 @dataclass
-class JointRuntime:
+class WriterRuntime:
     policy: torch.nn.Module
-    state: JointWriterState
+    state: WriterState
     observer: NativeVideoObserver
     processor: Pi05LiberoProcessor
     lora: Any
     source: dict[str, Any]
 
 
-def build_joint_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> JointRuntime:
+def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
     from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
@@ -55,7 +55,7 @@ def build_joint_runtime(asset_root: Path, config: Mapping[str, Any], device: tor
     # would otherwise differ during observer replay. Chunking bounds that graph.
     policy.model.gradient_checkpointing_disable()
     expert = policy.model.paligemma_with_expert.gemma_expert.model
-    state = JointWriterState(
+    state = WriterState(
         HorizonRelationWriter(lora, HorizonWriterConfig(**config["model"])),
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
@@ -67,7 +67,7 @@ def build_joint_runtime(asset_root: Path, config: Mapping[str, Any], device: tor
     )
     stats = read_json(asset_root / reuse["source_normalization"])["stats"]
     processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(device))
-    return JointRuntime(policy, state, observer, processor, lora, source)
+    return WriterRuntime(policy, state, observer, processor, lora, source)
 
 
 class FrozenVideoPrefixCache:
@@ -77,7 +77,7 @@ class FrozenVideoPrefixCache:
     prefix KV and exact-language embeddings; no R/U/E/generated LoRA is cached.
     """
 
-    def __init__(self, observer: NativeVideoObserver, data: JointTrainingData, byte_limit: int) -> None:
+    def __init__(self, observer: NativeVideoObserver, data: WriterTrainingData, byte_limit: int) -> None:
         self.observer, self.data = observer, data
         self.byte_limit, self.bytes = int(byte_limit), 0
         self.entries: OrderedDict[tuple[int, int], tuple[NativeCondition, int]] = OrderedDict()

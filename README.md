@@ -5,8 +5,8 @@ EMBER研究能否将exact task language和一条或多条action-hidden正确教�
 correct **>145/400**，并满足相邻/跨视频稳定、breadth、四suite、Goal/Long及最终视频因果要求。
 
 当前方法已完成专家讨论和Owner裁决：**末层完整H → 过去四帧对应 → 完整H-query → 两端视觉核实 → 历史u有序GRU
-→ 四组过去单向长程交替/前三组逐H回写 → 集合compiler → 完整native A/B**。首版采用FM辅助共享Writer RL。
-**方法已定，新实现尚无分数。**Owner已启动持续科研执行；全程goal已创建，全面阅读与审计已完成，当前验证新架构和联合训练，再开展正式实验和证据驱动迭代。
+→ 四组过去单向长程交替/前三组逐H回写 → 集合compiler → 完整native A/B**。当前先纯监督FM达到有证据平台，再接独立共享Writer RL。
+**方法已定，新实现尚无分数。**Owner已启动持续科研执行；全程goal已创建，全面阅读与审计已完成，当前落实纯监督正式训练与证据驱动迭代。
 
 现存正式参照为source47/400、train24 rank128 SFT相邻109/107；它们是历史结果，不是新模型重跑。
 有信息量学习后仍不及或仅略超这些参照应当认真定位实质能力缺口，不能靠小调参和内部指标解释。
@@ -22,8 +22,8 @@ Owner授权在核心思想与硬合同内依据证据修改具体方法，必要
 
 ## 当前代码与运行入口
 
-main采用完整Horizon图及同版本FM/RL；新方法仍无正式闭环分数。旧18层layered run永久止于384：correct69→67、other72→64，
-熟悉/held训练视频21/18（各120），未通过科学资格。旧图、坐标decoder、FM-only入口已由新路径替换，历史由Git与
+main采用完整Horizon图及纯FM端到端监督；新方法仍无正式闭环分数。旧18层layered run永久止于384：correct69→67、other72→64，
+熟悉/held训练视频21/18（各120），未通过科学资格。旧图、坐标decoder与旧训练入口已由新路径替换，历史由Git与
 [研究历史](docs/research_history.md)保留；旧checkpoint拒绝作为新图resume。
 
 | 责任 | 唯一owner | 合同 |
@@ -31,17 +31,17 @@ main采用完整Horizon图及同版本FM/RL；新方法仍无正式闭环分数�
 | 原生证据与Meta | `writer/native.py`、`ecp/policy_effects.py`、`writer/meta_lora.py` | 同forward最终Z/KV，实际action_out_proj输入完整H；仅冻结prefix可跨参数版本缓存 |
 | 完整过程图 | `writer/relation.py`、`writer/horizon.py`、`writer/attention.py` | 过去4帧、H双向query、两端Z、顺序GRU、四组past+self和前三逐H回写 |
 | 完整策略输出 | `writer/native_factor.py`、`pi05_lora.py` | 集合compiler一次生成38-target/76-tensor native A/B |
-| 联合更新 | `writer/joint.py`、`writer/flow.py`、`writer/rl_math.py`、`writer/training.py` | 同版本FM+真实Gaussian RL，完整十步flow VJP，一次Writer/Meta反传和有限trust候选 |
-| 采样和环境 | `writer/learning_data.py`、`writer/rollout.py`、`pi05_eval/environment_pool.py` | 每suite随机1task、64FM+4RL；独立seed流，reward无关reservoir，官方成功 |
-| 物化与执行 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` | horizon schema、strict paired动态队列、单adapter；训练侧Sigma/0显式配对 |
-| checkpoint | `ecp/checkpoint.py` | 完整迭代边界、attempt/accepted/sampler/RNG/Sigma/版本；exact-resume锁topology |
+| 监督更新 | `writer/supervised.py`、`writer/functional.py`、`writer/training.py` | 同task跨episode FM，一次完整Writer/Meta反传与直接AdamW更新，无RL/trust |
+| 采样和诊断 | `writer/learning_data.py` | 每suite随机1task、每task64FM；独立随机流，固定held动作验证无梯度 |
+| 物化与执行 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` | supervised horizon schema、J0 strict paired动态队列、单adapter |
+| checkpoint | `ecp/checkpoint.py` | 完整optimizer-update边界、sampler/RNG/阶段/版本；exact-resume锁topology |
 
-表内路径相对 `src/ember/`。新模块按过程图、可微执行、环境采集、信用/候选更新及联合版本生命周期分工，复用现有FM、
+表内路径相对 `src/ember/`。模块按过程图、监督反传、无梯度诊断及checkpoint生命周期分工，复用现有FM、
 checkpoint与evaluator；未保留旧图或第二套训练fallback。原native-factor-readout dirty草稿不属于活动实现，保留其用户工作。
 
 CLI：`scripts/train_horizon_writer.py`、`scripts/materialize_horizon_writer.py`、`scripts/evaluate_pi05.py`。
-训练配置为 `configs/pi05_horizon_writer_v1.json`；实际profile和首次正式学习结果之前登记strict400节点与资源合同。
-物化`--requests-json`复用resident source；训练侧states32–36的`--exploration-sigma`诊断必须与J0显式配对，不能进入正式val/Test。
+训练配置为 `configs/pi05_horizon_writer_v1.json`；监督checkpoint24/64/128/192，strict400在64/128/192，平台与继续规则见design §8.2。
+物化`--requests-json`复用resident source；当前监督闭环均用J0，训练侧states32–36与validation/test分开。
 
 ## Canonical资产与证据
 

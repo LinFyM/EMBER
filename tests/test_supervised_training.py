@@ -1,4 +1,4 @@
-"""Sampling, accepted updates and exact-resume boundaries without GPU assets."""
+"""Supervised sampling, shared updates and complete exact-resume boundaries."""
 from copy import deepcopy
 from pathlib import Path
 import json
@@ -12,8 +12,8 @@ from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
-from ember.writer.learning_data import JointTrainingData, load_learning_tasks
-from ember.writer.training import _attempt_update, _config, _optimization, _training_state, _trust_scores, _run_segment
+from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +39,7 @@ def sampler(monkeypatch, config):
                         SimpleNamespace(frame_counts=lambda task, demo: (20 + demo, 5 + demo // 5)))
     monkeypatch.setattr(learning_data, "FunctionalQueryDataset", lambda *a, **kw:
                         SimpleNamespace(task_episode_rows={}))
-    return JointTrainingData(ROOT, config["data"])
+    return WriterTrainingData(ROOT, config["data"])
 
 
 def test_actual_sampler_covers_suites_dynamic_k_and_restores_all_streams(sampler):
@@ -49,12 +49,10 @@ def test_actual_sampler_covers_suites_dynamic_k_and_restores_all_streams(sampler
     for iteration in draws:
         for draw in iteration:
             assert len(set(draw["video_demos"])) == len(draw["video_demos"])
-            assert len(draw["episodes"]) == 4
-            assert all(0 <= episode["initial_state"] < 32 for episode in draw["episodes"])
+            assert "episodes" not in draw
     saved = deepcopy(sampler.sampler_state())
     assert sum(saved["task_occurrences"].values()) == 24 * 4
-    assert set(saved["streams"]) == {"task", "K", "video", "query", "initial_state", "environment",
-                                      "flow", "exploration", "reservoir", "trust"}
+    assert set(saved["streams"]) == {"task", "K", "video", "query"}
     future = [sampler.next_iteration() for _ in range(3)]
     sampler.restore_sampler(saved)
     assert [sampler.next_iteration() for _ in range(3)] == future
@@ -78,10 +76,26 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
             _config(path)
 
 
-class _ToyJointEngine:
+def test_held_action_diagnostic_is_fixed_and_does_not_consume_training_sampler(monkeypatch, sampler):
+    class HeldQueries:
+        def __init__(self, authorities, demo_indices, action_chunk_size):
+            assert tuple(demo_indices) == (42, 43, 44, 45) and action_chunk_size == 50
+            self.task_episode_rows = {0: {demo: (demo * 2, demo * 2 + 1) for demo in demo_indices}}
+
+        def __getitem__(self, row):
+            return {"demo_index": row // 2, "frame_index": row % 2, "action": torch.zeros(50, 7)}
+
+    monkeypatch.setattr(learning_data, "FunctionalQueryDataset", HeldQueries)
+    before = deepcopy(sampler.sampler_state())
+    _, trace = sampler.diagnostic_batch(0, seed=20260908, count=128)
+    _, repeat = sampler.diagnostic_batch(0, seed=20260908, count=128)
+    assert trace == repeat and set(trace["action_demos"]) == {42, 43, 44, 45}
+    assert sampler.sampler_state() == before
+
+
+class _ToySupervisedEngine:
     def __init__(self, state):
         self.state = state
-        self.allow_update = False
         self.draws = []
         self.versions = []
 
@@ -92,46 +106,28 @@ class _ToyJointEngine:
         # not a proxy for the native FM/RL control objective.
         loss = .25 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
-        return {"flow_loss": float(loss.detach()), "queries": 64, "rl_episodes": 4,
-                "rl_mixed_group": False, "rl_successes": 0}, draw["task"]
+        return {"flow_loss": float(loss.detach()), "queries": 64}
 
-    def trust_score(self, evidence):
-        return .0 if self.allow_update else 1.
-
-
-def test_rejection_consumes_sampling_but_acceptance_alone_advances_optimizer_and_warmup(sampler, config):
+def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config):
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
     runtime = SimpleNamespace(state=state)
-    engine = _ToyJointEngine(state)
+    engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
-    initial = [p.detach().clone() for p in state.parameters()]
-    initial_rng = deepcopy(sampler.sampler_state())
-    rows, result, _ = _attempt_update(engine, runtime, sampler, context, config, optimizer, scheduler, 1)
-    assert len(rows) == 4 and not result.accepted and len(result.attempts) == 8
-    assert sampler.sampler_state()["next_step"] == 1
-    assert sampler.sampler_state()["streams"] != initial_rng["streams"]
-    assert not optimizer.state and scheduler.last_epoch == 0
-    for parameter, expected in zip(state.parameters(), initial, strict=True):
-        torch.testing.assert_close(parameter, expected, rtol=0, atol=0)
-    engine.allow_update = True
-    _, result, norms = _attempt_update(engine, runtime, sampler, context, config, optimizer, scheduler, 2)
-    assert result.accepted and result.alpha == 1.
-    assert sampler.sampler_state()["next_step"] == 2 and scheduler.last_epoch == 1
+    rows, norms = _update(engine, runtime, sampler, context, config, optimizer, scheduler, 1)
+    assert len(rows) == 4 and sampler.sampler_state()["next_step"] == 1
+    assert scheduler.last_epoch == 1
     assert all(int(value["step"]) == 1 for value in optimizer.state.values())
-    assert optimizer.param_groups[0]["lr"] == pytest.approx(config["optimization"]["lr"] * 2 / 8)
     assert norms["writer_grad_norm"] > 0 and norms["meta_grad_norm"] > 0
-    # Four independent task computations at each attempt all see one unchanged
-    # version; no hidden FM-only update occurs between their backwards.
-    for versions in (engine.versions[:4], engine.versions[4:]):
-        for version in versions[1:]:
-            for a, b in zip(versions[0], version, strict=True):
-                torch.testing.assert_close(a, b, rtol=0, atol=0)
-    assert engine.draws[:4] != engine.draws[4:]
+    assert optimizer.param_groups[0]["lr"] == pytest.approx(config["optimization"]["lr"] * 2 / 8)
+    # All four condition gradients see the same parameter version before Adam.
+    for version in engine.versions[1:]:
+        for a, b in zip(engine.versions[0], version, strict=True):
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
 
 
-def test_accepted_warmup_becomes_constant_instead_of_old_cosine(config):
+def test_supervised_warmup_becomes_constant_instead_of_old_cosine(config):
     state = torch.nn.Linear(1, 1)
     optimizer, scheduler = _optimization(state, config)
     rates = []
@@ -145,19 +141,7 @@ def test_accepted_warmup_becomes_constant_instead_of_old_cosine(config):
     assert rates[8:] == pytest.approx([config["optimization"]["lr"]] * 4)
 
 
-def test_distributed_trust_assembles_all_tasks_and_rejects_missing_coverage(monkeypatch):
-    context = SimpleNamespace(world_size=2, rank=0)
-    engine = SimpleNamespace(trust_score=lambda evidence: evidence)
-    def gather(out, local):
-        out[:] = [local, ({2: .005, 3: .01}, None)]
-    monkeypatch.setattr("ember.writer.training.dist.all_gather_object", gather)
-    assert _trust_scores(engine, [(0, .02), (1, .015)], context, [0, 1, 2, 3]) == {
-        0: .02, 1: .015, 2: .005, 3: .01}
-    with pytest.raises(ValueError, match="complete four-task"):
-        _trust_scores(engine, [(0, .02)], context, [0, 1, 2, 3])
-
-
-def test_checkpoint_restores_next_attempt_accepted_count_and_sampler(tmp_path, monkeypatch, config):
+def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, config):
     monkeypatch.setattr("ember.ecp.checkpoint.capture_rng", lambda _: torch.get_rng_state())
     monkeypatch.setattr("ember.ecp.checkpoint.restore_rng", lambda state, _: torch.set_rng_state(state))
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
@@ -173,21 +157,21 @@ def test_checkpoint_restores_next_attempt_accepted_count_and_sampler(tmp_path, m
         return loss.detach()
 
     update()
-    sampler = {"next_step": 2, "task_occurrences": {7: 2}}
-    training = _training_state(config, 2, 1)
+    sampler = {"next_step": 1, "task_occurrences": {7: 1}}
+    training = _training_state(config, 1)
     checkpoint = save_ecp_checkpoint(
-        output_dir=tmp_path, macro=2, stage="joint_test", context=context,
+        output_dir=tmp_path, macro=1, stage="supervised_test", context=context,
         model=model, optimizer=optimizer, scheduler=scheduler,
-        run_contract_schema="joint_test_v1", metrics_rows=8, sampler_state=sampler, training_state=training,
+        run_contract_schema="supervised_test_v1", metrics_rows=4, sampler_state=sampler, training_state=training,
     )
     expected_loss = update()
     expected_weight = model.weight.detach().clone()
-    args = dict(checkpoint=checkpoint, stage="joint_test", context=context,
-                model=model, optimizer=optimizer, scheduler=scheduler, run_contract_schema="joint_test_v1")
+    args = dict(checkpoint=checkpoint, stage="supervised_test", context=context,
+                model=model, optimizer=optimizer, scheduler=scheduler, run_contract_schema="supervised_test_v1")
     with pytest.raises(ValueError, match="cursor changed"):
         load_ecp_checkpoint(**args, expected_sampler_state={"next_step": 3})
     restored = {}
-    assert load_ecp_checkpoint(**args, restored_state=restored) == (2, 8)
+    assert load_ecp_checkpoint(**args, restored_state=restored) == (1, 4)
     assert restored == {"sampler_state": sampler, "training_state": training}
     assert scheduler.last_epoch == 1
     torch.testing.assert_close(update(), expected_loss)
@@ -205,9 +189,8 @@ def test_resume_retains_distinct_orphaned_exposure_and_step_evidence(tmp_path):
     assert all('"step": 2' in p.read_text() for p in packets)
 
 
-@pytest.mark.parametrize("attempt_cap,accepted_stop,expected_attempted,expected_accepted", [(None, 1, 2, 1), (1, 24, 1, 0)])
-def test_segment_saves_complete_rejected_or_accepted_boundary(tmp_path, monkeypatch, sampler, config,
-                                                            attempt_cap, accepted_stop, expected_attempted, expected_accepted):
+@pytest.mark.parametrize("stop", [1, 2])
+def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampler, config, stop):
     monkeypatch.setattr("ember.ecp.checkpoint.capture_rng", lambda _: torch.get_rng_state())
     monkeypatch.setattr(torch.cuda, "synchronize", lambda *_: None)
     monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda *_: 0)
@@ -215,25 +198,18 @@ def test_segment_saves_complete_rejected_or_accepted_boundary(tmp_path, monkeypa
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
     runtime = SimpleNamespace(state=state)
-    engine = _ToyJointEngine(state)
-    backward = engine.backward
-    def attempt_backward(draw):
-        engine.allow_update = sampler.next_step >= 2
-        return backward(draw)
-    engine.backward = attempt_backward
+    engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
-    args = SimpleNamespace(output=tmp_path, stop_after_step=attempt_cap, mode="profile")
+    args = SimpleNamespace(output=tmp_path, stop_after_step=stop, mode="profile")
     _run_segment(args, context, config, runtime, sampler, engine, optimizer, scheduler,
-                 (0, 0, 0), accepted_stop, time.perf_counter())
+                 (0, 0), stop, time.perf_counter())
     completion = json.loads((tmp_path / "completion.json").read_text())
-    assert completion["attempted"] == expected_attempted and completion["accepted"] == expected_accepted
-    assert not completion["scientific_qualification"]
-    assert len((tmp_path / "metrics.jsonl").read_text().splitlines()) == expected_attempted
-    assert len((tmp_path / "exposures.jsonl").read_text().splitlines()) == expected_attempted * 4
-    checkpoints = list((tmp_path / "checkpoints").glob("macro_*"))
-    assert len(checkpoints) == 1
-    trainer = torch.load(checkpoints[0] / "trainer_state.pt", weights_only=False)
-    assert trainer["training_state"] == _training_state(config, expected_attempted, expected_accepted)
-    assert trainer["sampler_state"]["next_step"] == expected_attempted
-    assert trainer["scheduler"]["last_epoch"] == expected_accepted
+    assert completion["optimizer_updates"] == stop and not completion["scientific_qualification"]
+    assert len((tmp_path / "metrics.jsonl").read_text().splitlines()) == stop
+    assert len((tmp_path / "exposures.jsonl").read_text().splitlines()) == stop * 4
+    checkpoint, = (tmp_path / "checkpoints").glob("macro_*")
+    trainer = torch.load(checkpoint / "trainer_state.pt", weights_only=False)
+    assert trainer["training_state"] == _training_state(config, stop)
+    assert trainer["sampler_state"]["next_step"] == stop
+    assert trainer["scheduler"]["last_epoch"] == stop

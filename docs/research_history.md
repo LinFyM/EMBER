@@ -785,3 +785,11 @@ macro200（累计51200 FM queries）canonical correct110/400，S/O/G/L=1/61/41/7
 100→200从55升110，R/G/L=42/68/13、churn81/400、J=.34146；S/O/G/L净增1/39/14/1。Long R/G/L=0/7/6，旧成功完全未保留；Goal为24/17/3，Object18/43/4。breadth仍6，200的global1与23为零。总分增长不能替代稳定性；仍未>145，Long7<10、相邻churn/J不合格。
 对历史SFT109/107，R/G/L为71/39/38和68/42/39，churn77/81、J=.47973/.45638；总分相近但成功集合不同，历史rank128/旧backend限制保持。原件`k1_fresh/schedule_repair/step200/completed_summary.json`、`correct_vs_historical_sft.json`、`correct200_vs_correct100.json`和`decision_after200.json`。
 因直接闭环仍显著获取且未形成平台，保持纯FM与全部学习状态，预登记200→400约一小时、300/400两个correct节点；不做架构重启或超参小扫，other与最终controls暂缓。
+
+## 2026-09-08 Fresh K1 macro300及200→400续训完成
+
+原b6d70d98学习状态续训200→400完整exit0，墙钟3287.09秒，段内均值15.583秒/update，峰值38.170GiB；累计1600个真实K1条件/102400queries，24task各46–86次曝光。300/400完整checkpoint均通过正式检查，未重置或改变训练超参。
+300/400 banks各400个新条件、分别791.57/818.26秒完整生成，正式检查及实际50视频整轮覆盖通过，与100/200同一canonical state-video映射。
+macro300 correct400=86，S/O/G/L=0/37/45/4、breadth5；global1/3/11/13/23/26/31/32为0/0/36/1/0/45/2/2。全部400rows实际视频身份验证通过，六worker exit0，完整墙钟1348.54秒（launcher1322.565）。vs source47 R/G/L=43/43/4、churn47、J=.47778。
+200→300从110降86，R/G/L=71/15/39、churn54、J=.568；S/O/G/L的R/G/L分别0/0/1、30/7/31、40/5/1、1/3/6。Object global13原24个成功全部丢失，仅新增1；Object global11净-1，Goal净+4。这是合规映射下的行为退化，未建立工程错误或监督平台，不能由单次下降推翻整个图。
+对历史SFT109/107的R/G/L为53/33/56和52/34/55，churn均89、J=.37324/.36879；历史rank128与旧backend边界保持。原件`k1_fresh/segment200_400/step300/completed_summary.json`、`correct_vs_historical_sft.json`、`correct300_vs_correct200.json`和`decision_after300.json`。继续预登记400 correct400后再裁决，不提前启动other/final controls。

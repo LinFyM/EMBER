@@ -214,3 +214,7 @@ train闭环和相邻validation判断平台，再从单个保留监督checkpoint�
 是否续训仍按held-action与闭环改善预登记，不靠凑齐SFT相同query数宣称公平或有效。数据支持、模型、rank与训练设置不同，
 这些计数只能解释曝光差异，不能单独因果归因。原始run_contract/metrics和汇总见
 `runs/analysis/horizon_relation_writer_20260908/supervised/supervision_exposure_context.json`。
+
+Fresh K1采用合规固定视频映射后的55→110→86表明，早期总分获取并非单调保持：200→300主要丢失集中在一个Object task，
+同时Goal仍有净获取。后续须结合相邻task成功集合与训练侧held诊断区分能力获取、遗忘和泛化，不能以总FM下降替代，
+也不把单次回落自动判为工程bug或整套架构失败。具体原件与适用范围见[macro300历史记录](docs/research_history.md#2026-09-08-fresh-k1-macro300及200400续训完成)。

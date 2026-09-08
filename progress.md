@@ -3,7 +3,7 @@
 更新时间：2026-09-08 CST。最新Owner要求：当前先集中真实K=1，固定逻辑4task/256queries与GPU数解耦，
 先纯FM到有证据平台、后独立共享Writer RL；约一小时训练分段，中/末两个整齐步数correct400节点。继续当前全程goal。
 
-## 当前：fresh K1已完成400，评测300/400
+## 当前：fresh K1 macro300=86/400，正在评测400
 
 首段canonical correct100/200均已完成，55→110/400；200四suite为1/61/41/7、breadth6/8。相邻R/G/L42/68/13、churn81/400、J=.34146；Long旧6个成功全部丢失、另获7个。仍在获取能力，未达到性能、breadth、Long和相邻稳定资格，不判平台。
 已登记并发起原学习状态续训200→400：原frozen b6d70d98、GPU02 physical1/2/3/6、micro8/4/8/8，300/400两节点correct400；tmux `ember-horizon-k1-segment200-400`，完整命令/预算/实时资源在`k1_fresh/segment200_400/`。不重置、不改架构/超参；other与最终controls继续后移。
@@ -13,9 +13,13 @@
 300/400完整checkpoint均保留，原Writer/Meta/optimizer/scheduler/sampler/RNG连续恢复，无重置或架构/超参变化。
 
 step300 bank已400/400全新编译、exit0，完整墙钟791.57秒；正式validator及实际视频覆盖均通过：每task50视频各一次、无遗漏/重复，与200逐行映射一致。
-现从clean pushed f1330697启动300 correct400（GPU02 p1/3/6、每卡2workers，tmux `ember-k1-correct300-v2`）；400 bank同时在p2生成（tmux `ember-k1-materialize400`）。
-双节点现场和strg01已刷新，data1用量555815332KiB/soft1073741824KiB，shared84TiB，checkpoint400/bank400/日志在既有20GiB段预算内。
-当前暂无300/400闭环分数，待完整400rows后比较200→300→400成功集合；other/最终controls仍后移。启动及核验原件在`k1_fresh/segment200_400/post400_launch.json`、各step子目录。
+macro300 correct400已完整exit0：86/400，S/O/G/L=0/37/45/4、breadth5/8；实际400rows视频分配核验通过，总墙钟1348.54秒。
+200→300 R/G/L=71/15/39、churn54/400、J=.568，总分-24；主要在Object global13：旧24个成功全丢，仅新增1。
+Goal41→45、Object61→37、Long7→4、Spatial1→0；这是已有证据下的行为退化，尚无工程合同违规证据，也不能据此认定平台或架构失败。
+400 bank已全新400条件生成并exit0（墙钟818.26秒），正式validator/实际覆盖检查通过，与200/300逐行映射相同。
+400 correct400已从clean pushed f1330697在GPU02 p1/3/6×2workers接续启动（tmux `ember-k1-correct400-v2`），等待完整结果后裁决200→300→400；不重置、改超参或提前做other/最终controls。
+双节点现场已刷新，data1最近用量562166852KiB/soft1073741824KiB，当前run25GiB，仍在原20GiB新增预算内；300收尾后3张合格卡已释放并复用。
+启动及原件在`k1_fresh/segment200_400/post400_launch.json`、`step300/completed_summary.json`、`correct300_vs_correct200.json`及`decision_after300.json`。
 
 ## 已完成：整轮视频schedule修复与首段评测
 

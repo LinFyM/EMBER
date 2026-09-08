@@ -21,7 +21,9 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 
 500完整checkpoint已发布，formal public inspector通过，run config与原b6配置一致；训练继续600，500并非段末。
 累计2000个真实K1条件/128000queries，各suite500；task曝光63–101，实际379/384种task-video已出现。401–500更新墙钟1755.58秒、均值17.556秒/update。
-500 canonical correct400 bank在gpu02p4启动，tmux `ember-k1-bank500-resumed`，原件`k1_fresh/segment400_600/step500/`；checkpoint与真实曝光见其中validation/training_summary，尚无500闭环分数。
+500 canonical correct400 bank在gpu02p4完成exit0，完整墙钟807.52秒；400条件均为新生成，public formal bank检查通过，实际每task50视频各一次、与200/400固定映射一致。
+原件`k1_fresh/segment400_600/step500/`，checkpoint/曝光/bank检查分别为`checkpoint_validation.json`、`training_summary.json`、`final_manifest_coverage.json`；尚无500闭环分数。
+训练继续555，train96两bank与500bank都已就绪。最新两节点没有独立满足原准入的评测卡；600段结束后按现场资源先补冻结200/400 train96，再完成500/600 strict400，600物化可在另一卡并行。
 最新data1 quota用563149828KiB/soft1073741824，run26GiB，原新增24GiB总预算仍足够；双节点现场已刷新。p1外部大作业结束，但仍由本段训练占用；段结束后按现场安排评测。
 
 以下暂停段为历史，不覆盖本节最新恢复授权。

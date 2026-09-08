@@ -12,7 +12,7 @@
   目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
   后续方法冻结32/8 fresh及最终Test。
 - 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，首段正式进程已启动。完整FM/Writer/Meta机制复用已验证路径；
+- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，首段24已结束，正在完整恢复续训至64。完整FM/Writer/Meta机制复用已验证路径；
   native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
 - 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
@@ -43,6 +43,15 @@ train120_step24已物化71条件（350MiB）并完成J0：17/120 vs source19/120
 strict paired R/G/L=7/10/12，churn22/120，J=.24138。5卡×2persistent workers耗489.22秒，全部完成exit0。
 held FM下降没有转化为总体闭环增益；24只是早期节点，不视为平台，不转RL。按预登记继续监督64再做strict400。
 另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
+
+## 当前续训至64
+
+已从clean pushed `9ab1e710` detached `.codex/worktrees/horizon-supervised-9ab1e710` 调度同root的macro24 exact-resume，
+目标64，GPU02仍physical0/1/3/6、world4；未改变config/采样/梯度/optimizer，仅缓存不可变query索引避免重复复制。
+原run_contract保留初始265ef31b provenance，本segment精确commit/命令/live记录在`supervised/resume_to64.json`和`.sh`，
+新日志为`resume_to64.log`，退出码为`resume_to64.exit`；不能把旧首段completion/run.exit当作本段完成。
+现场双节点已刷新，data1使用520568224KiB、run4.5GiB，仍在48GiB注册预算内。已确认torchrun4140770与四rank4140924–4140927；第25步完成，累计100conditions/6400queries，
+Writer/Meta梯度均非零，optimizer_updates继续为25。首步23.13秒，不以单步推断整体吞吐。
 
 ## 已结束的联合profile
 
@@ -453,11 +462,3 @@ launch前两节点live检查，所用三卡均无计算进程；data1 quota48937
 落实并验证已登记的末读出共享单变量改动，fresh重跑同短预算和闭环口径；原初始化对照全部完成且不再恢复。
 通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。
-
-## 当前续训至64
-
-已从clean pushed `9ab1e710` detached `.codex/worktrees/horizon-supervised-9ab1e710` 调度同root的macro24 exact-resume，
-目标64，GPU02仍physical0/1/3/6、world4；未改变config/采样/梯度/optimizer，仅缓存不可变query索引避免重复复制。
-原run_contract保留初始265ef31b provenance，本segment精确commit/命令/live记录在`supervised/resume_to64.json`和`.sh`，
-新日志为`resume_to64.log`，退出码为`resume_to64.exit`；不能把旧首段completion/run.exit当作本段完成。
-现场双节点已刷新，data1使用520568224KiB、run4.5GiB，仍在48GiB注册预算内。首个恢复后的update尚待日志核对。

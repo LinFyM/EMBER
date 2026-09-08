@@ -117,6 +117,22 @@ def _reinspect_adapter(
             )
         return inspected
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank"}:
+        capture = contract.get("diagnostic_occupancy_capture") or {}
+        if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
+            from ember.pi05_eval.preparation import _frozen_replay_capture
+            from ember.pi05_eval_contract import load_run_contract
+
+            states = tuple(contract["tasks"][0]["init_state_ids"])
+            args = argparse.Namespace(
+                frozen_replay_registration=Path(capture["registration_path"]),
+                role=contract["role"], mode=contract["mode"], state_count=len(states),
+                init_state_ids=states, static_task_lora_manifest=Path(adapter["manifest"]["path"]),
+            )
+            checked, stage = _frozen_replay_capture(args, contract, Path(contract["output_dir"]))
+            if checked != capture or stage != contract.get("diagnostic_stage_predicates"):
+                raise Pi05EvaluationError("frozen replay registration changed after prepare")
+            reference = load_run_contract(Path(capture["reference_output"]) / "run_contract.json")
+            tasks = tuple(argparse.Namespace(**row) for row in reference["tasks"])
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,

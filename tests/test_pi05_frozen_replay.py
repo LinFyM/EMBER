@@ -85,3 +85,27 @@ def test_capture_cannot_expand_into_test_training_or_checkpoint_selection(tmp_pa
         args.frozen_replay_registration.write_text(json.dumps(registration))
     with pytest.raises(Pi05EvaluationError, match='registered non-selecting'):
         _explicit_diagnostic_states(args)
+
+
+def test_launcher_reinspection_validates_original_bank_without_expanding_replay_cases(tmp_path, monkeypatch):
+    from ember.pi05_eval import recovery
+
+    args, contract, _ = _fixture(tmp_path)
+    contract['adapter']['kind'] = 'horizon_writer_lora_bank'
+    reference_path = tmp_path / 'reference/run_contract.json'
+    reference = json.loads(reference_path.read_text())
+    reference['adapter'] = contract['adapter']
+    reference['tasks'][0]['init_state_ids'] = list(range(50))
+    reference_path.write_text(json.dumps(reference))
+    contract['mode'] = 'screen'
+    contract['output_dir'] = str(tmp_path / 'replay')
+    capture, stage = _frozen_replay_capture(args, contract, tmp_path / 'replay')
+    contract['diagnostic_occupancy_capture'], contract['diagnostic_stage_predicates'] = capture, stage
+    observed = []
+    def inspect(**kwargs):
+        observed.extend(kwargs['tasks'][0].init_state_ids)
+        return contract['adapter']
+    monkeypatch.setattr(recovery, 'inspect_static_task_lora_adapter', inspect)
+    assert recovery._reinspect_adapter(contract['adapter'], contract=contract, model=contract['model']) == contract['adapter']
+    assert observed == list(range(50))
+    assert contract['tasks'][0]['init_state_ids'] == [0, 12, 25, 37]

@@ -12,7 +12,7 @@
 
 首段fresh200更新已完整exit0：800条件/51200queries的实际task/video/action query/seed/权重与原基线逐条一致，完整训练3290.54秒、更新均值14.607秒，source可训练参数0。100与200的两个400 bank及200 train96 bank共896条件全新，public inspectors与整轮video/state映射通过；100/200/train96三个闭环均完整结束。首段全部作业已退出；当前新段续训状态如下。
 
-active design **§8.2.6**已登记：同一新200完整学习状态exact-resume至400，300/400各做strict400，与旧86/87比较。该区间检验原模型回落是否被缓解；模型、4×64、数据/优化口径保持，不加rank-sharing或其它变量。400追加同口径train96及冻结24×128 held FM。首段报告与注册已由`c31d6ad4`推送；下一段已从`fea45593`原样exact-resume启动，tmux `ember-first-query-resume200-400`，完整命令/资源/记录在A/`segment200_400/launch_contract.json`与`formal.sh`/`formal.log`。原config和四rank物理UUID已匹配，当前等待恢复后的首个实际update。明确无保持/新能力时不默认追加500/600，持续行为获取才据证据再登记。
+active design **§8.2.6**已登记：同一新200完整学习状态exact-resume至400，300/400各做strict400，与旧86/87比较。该区间检验原模型回落是否被缓解；模型、4×64、数据/优化口径保持，不加rank-sharing或其它变量。400追加同口径train96及冻结24×128 held FM。首段报告与注册已由`c31d6ad4`推送；下一段已从`fea45593`原样exact-resume启动，tmux `ember-first-query-resume200-400`，完整命令/资源/记录在A/`segment200_400/launch_contract.json`与`formal.sh`/`formal.log`。原config和四rank物理UUID已匹配，已验证segment_start=200及实际201恢复：804条件/51456queries，四rank正常；训练继续，300/400和400 train96/held FM入口已准备，尚未启动。明确无保持/新能力时不默认追加500/600，持续行为获取才据证据再登记。
 
 训练/物化科学运行面是clean pushed detached `.codex/worktrees/horizon-first-query-runtime` 的`fea45593`；原world4 gpu02 physical6/2/4/0、NUMA、NCCL_P2P_DISABLE=1保持。首段实际physical microbatch6/4/4/3，reserved峰值34.643/28.328/28.311/24.980GiB；续训仅在现场余量需要时调整物理分块，学习状态和逻辑batch不改。当前方法唯一active路径为`first_query_only_v1`，旧未执行24-task草稿已撤回，原K1不恢复700/800。
 

@@ -76,3 +76,5 @@
 - `paired_held_fm_comparison.json`保留全24task逐任务3072query结果；`launch_contract.json`和`evaluation_admission_correction.json`保留精确执行与资源依据。
 
 下一段依[active design §8.2.6](horizon_relation_video_writer_design.md#826-首段后固定300400保持检验)执行，资格门槛和最终视频controls保持。
+
+已复核原200→300/400的逐任务保持参照：BBQ sauce为24→1/3，cream cheese→篮为37→36/37、→碗为41→45/42；breadth6→5/4。原200→300保留71/新增15/丢39，→400保留67/新增20/丢43。因此后续除总分外须保留逐任务配对，区分旧能力保持、弱任务扩展与其它任务补偿；不由单个任务替代既定整体资格。原始比较在A/`segment200_400/baseline_retention_reference.json`及两份完整R/G/L JSON。

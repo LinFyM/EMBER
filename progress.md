@@ -9,8 +9,13 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 每次深入诊断预登记竞争解释、历史排除边界、单个主要变量与结果分支；小面板不直接命名根因。实质回升且扩展能力则继续判断相邻稳定，连续无获取则进入有区分力的机制诊断和受控修正。
 当前纯FM/source冻结，不因监督弱转RL；不盲扫LR/rank/seed，不提前shuffled/reversed、不用held梯度。原报告的解释仍是假设。
 资源刷新：data1 quota用562179760KiB/soft1073741824KiB，run25GiB，新增峰值预算24GiB，shared84TiB。
-原gpu02 world4 UUID/topology保留；现场p1新增他人18GiB作业，p6有4.6GiB低util作业。物理FM分块改3/4/8/6以保余量，不改逻辑batch、权重或学习状态。clean pushed b6d70d98训练、f1330697物化/评测保持。
-精确恢复命令与新日志为`k1_fresh/segment400_600/resumed_formal.sh`/`resumed_formal.log`；旧主动停止证据保留。当前准备启动，成功恢复以实际runtime记录为准。
+原gpu02 world4 UUID/topology保留；现场p1新增他人18GiB作业，p6有4.6GiB低util作业。物理FM分块最终改2/4/8/6以保余量，不改逻辑batch、权重或学习状态。clean pushed b6d70d98训练、f1330697物化/评测保持。
+精确恢复命令与新日志为`k1_fresh/segment400_600/resumed2_formal.sh`/`resumed2_formal.log`；tmux `ember-horizon-k1-resumed2-400-600`，torchrun4020266。
+首次micro3恢复在401反向阶段因p1他人额外约3GiB占用而OOM，未执行optimizer或写曝光；所有rank退出，完整400保持。原失败日志和contract保留，不继承失败进程采样状态。
+第二次完整400恢复已真实完成401：19.327秒，256queries、累计1604条件/102656queries，rank0 allocated19.358/reserved20.662GiB；继续500/600，未改变原学习配方。
+冻结200/400 train96 CPU预验证exit0：每点96个唯一task-video，task/state/video/RNG一致；source15/96 policy/environment/RNG/normalization一致。
+两bank在gpu02p4同一resident runtime独立物化，tmux `ember-k1-train96-banks200-400`，准备与原件`k1_fresh/train96_diagnostic/`。预计新增0.923GiB；只调用f133运行面，不生成梯度。
+当前其余卡尚不满足原evaluator准入，物化后刷新调度；诊断不阻塞续训，也不绕过准入。结果解释按design§8.2.1预登记分支，熟悉视频尚未启动。
 
 以下暂停段为历史，不覆盖本节最新恢复授权。
 

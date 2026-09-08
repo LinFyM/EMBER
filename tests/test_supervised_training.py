@@ -308,3 +308,18 @@ def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_pat
     resumed["topology"]["world_size"] = 3
     with pytest.raises(ValueError, match="topology"):
         _publish_contract(path, resumed, resume=True)
+
+
+def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
+    from ember.writer.training import _execution_config
+    before = deepcopy(config)
+    args = SimpleNamespace(policy_microbatches="8,4,8,8")
+    for rank, expected in enumerate((8, 4, 8, 8)):
+        local, plan = _execution_config(args, config, SimpleNamespace(world_size=4, rank=rank))
+        assert local["runtime"]["policy_microbatch"] == expected
+        assert local["data"]["tasks_per_update"] * local["data"]["queries_per_task"] == 256
+        assert local["optimization"] == before["optimization"]
+        assert plan == [8, 4, 8, 8]
+    assert config == before
+    with pytest.raises(ValueError, match="per rank"):
+        _execution_config(args, config, SimpleNamespace(world_size=3, rank=0))

@@ -81,6 +81,17 @@ def _optimization(state, config):
     return optimizer, scheduler
 
 
+def _execution_config(args, config, context):
+    """Physical query chunks do not change the complete logical FM batch."""
+    supplied = getattr(args, "policy_microbatches", None)
+    batches = ([int(config["runtime"]["policy_microbatch"])] * context.world_size
+               if supplied is None else list(map(int, supplied.split(","))))
+    if len(batches) != context.world_size or any(value <= 0 for value in batches):
+        raise ValueError("physical microbatches need one positive value per rank")
+    local = {**config, "runtime": {**config["runtime"], "policy_microbatch": batches[context.rank]}}
+    return local, batches
+
+
 def _gather(value, context):
     if context.world_size == 1:
         return [value]
@@ -96,6 +107,7 @@ def _run_contract(args, context, config, runtime, state):
     return {
         "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
+        "execution": {"policy_microbatches": _execution_config(args, config, context)[1]},
         "model_config": asdict(HorizonWriterConfig(**config["model"])),
         "topology": {
             "host": socket.gethostname(), "world_size": context.world_size,
@@ -349,6 +361,9 @@ def run(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     if not 1 <= context.world_size <= 4:
         raise ValueError("four-condition task parallelism currently supports one node and one to four useful GPUs")
+    execution_config, microbatches = _execution_config(args, config, context)
+    if context.is_main:
+        print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 256}), flush=True)
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
@@ -367,7 +382,7 @@ def run(args: argparse.Namespace) -> None:
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
     cache = FrozenVideoPrefixCache(runtime.observer, data, int(config["runtime"]["prefix_cache_bytes"]))
-    engine = SupervisedEngine(runtime, data, cache, context, config)
+    engine = SupervisedEngine(runtime, data, cache, context, execution_config)
     barrier(context)
     try:
         _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start)
@@ -385,6 +400,7 @@ def main() -> None:
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-updates", help="this segment's two global update nodes, e.g. 300,400")
+    parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

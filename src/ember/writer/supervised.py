@@ -74,6 +74,7 @@ class SupervisedEngine:
             "prefix_cache_hits": self.cache.hits - hits,
             "prefix_cache_misses": self.cache.misses - misses,
             "prefix_cache_bytes": self.cache.bytes,
+            "policy_microbatch": int(self.config["runtime"]["policy_microbatch"]),
         }
 
     @torch.no_grad()

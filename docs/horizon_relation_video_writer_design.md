@@ -370,6 +370,8 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 ### 8.2.3 条件组织受控诊断：完整task覆盖、相同query预算与期望任务权重
 
+**状态更正（2026-09-09）：Owner已暂停此项及所有正式实验，当前仅深入分析已有证据。以下及§7中对应24-task组织为尚未执行的候选诊断，不代表根因已确认、方法已选定或继续启动授权；已产生100–600结果的实际合同仍为冻结b6d70d98的4task×64queries。**
+
 **依据与竞争解释。** 原样500/600 correct为70/82，600仍只覆盖4/8且78/82成功集中11/26；训练held-video200/400/600为52/59/67。没有观察到整体训练行为退化，跨task迁移为优先层级，但尚未识别根因。要区分：每步少量teacher/task条件的更新组织是否是可干预因素，还是在改变该组织后仍存在任务支持/表示/编译接口的泛化缺口。
 旧v6的条件数、任务覆盖、视频池和其它实现同时不同，不能因历史分数直接归因；旧meta73/target18还改变task权重与总queries。当前诊断不新增meta tasks，不提前使用最终视频controls。
 
@@ -377,7 +379,7 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 各task FM先在自身10/11 queries上取均值，再乘1/24，不能把256行直接混成样本等权均值。原方法每task被抽中概率1/6、条件权重1/4，期望权重也是1/24；新方法每步确定为1/24。总query预算、suite权重与期望task目标保持，改变的是这个目标的条件组织与梯度估计。
 条件数、每步task覆盖和每条件query数在固定预算下联动，不能由本实验进一步唯一命名“梯度冲突”或“视频条件数”根因；它们属于同一个预算分配干预。实际视频、query和噪声轨迹也不会逐样本匹配原随机task调度。
 
-**继承与信息墙。** 保持架构、全部episode pools、K1、source/normalization、optimizer参数顺序与状态、scheduler、precision、clip、seed和原world4拓扑。显式`controlled-fork-from`加载完整400，继承rank RNG、video/query随机流和历史task occurrences；不伪称fresh，也不称原run exact-resume。新run只写401起日志，父400/1600条件/102400queries由父记录引用，不复制或重标。
+**继承与信息墙。** 保持架构、全部episode pools、K1、source/normalization、optimizer参数顺序与状态、scheduler、precision、clip、seed和world4/global-rank顺序。原注册继承gpu02物理1/2/3/6；因1/3后来被占用，Owner在2026-09-09明确允许仅本次分叉改用0/2/4/6，保留各rank完整RNG，按新GPU重新绑定NUMA/CPU affinity，并记录父子UUID映射、重做profile；子run后续exact-resume仍锁自身完整拓扑。显式`controlled-fork-from`加载完整400，继承rank RNG、video/query随机流和历史task occurrences；不伪称fresh，也不称原run exact-resume。新run只写401起日志，父400/1600条件/102400queries由父记录引用，不复制或重标。
 新sampler保存分叉边界、父occurrence offsets及轮换相位所需状态；每task计数=父计数+(当前step−400)，总条件=1600+24×(step−400)，总queries仍=256×step。源task随机流不再参与新调度。子run exact-resume验证自己的配置、topology、完整学习状态与日志偏移。输入/输出/梯度信息墙完全保持。
 
 **节点与执行。** 用真实四卡完整逻辑update profile确认峰值和吞吐，profile状态不作为正式起点。正式仍从原400重新加载，保存完整节点后在500/600各做canonical correct strict400，与已有原样500/600同task/state/video/RNG比较；终点600补同口径held-video train96，与原600的67/96配对。

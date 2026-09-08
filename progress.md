@@ -22,7 +22,18 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 当前阶段：完整profile/恢复通过，但接受率停滞；检验有限回溯范围
+## 当前阶段：八档有限回溯完整profile运行中
+
+`ae9507b5`已通过23项针对性CPU检查、提交推送，并从clean detached `.codex/worktrees/horizon-profile-ae9507b5`启动。
+gpu02 physical0/1/3/6、world4，fresh profile目标2 accepted、最多4 attempts；保持完整图、64 FM queries/task、
+同一个Adam方向、原始采集均值与KL≤0.02，只检验回溯到1/128是否解除原四档搜索的接受停滞。
+输出`runs/outputs/horizon_joint_profile_ae9507b5_gpu02p0136_20260908`；精确命令/log与两节点现场证据在
+`runs/analysis/horizon_relation_writer_20260908/joint_profile/finite_ae9507b5/`。本次data1 quota使用507313652KiB，
+soft1073741824KiB；新增峰值预算16GiB（完整Adam checkpoint、可能的同合同恢复及临时写入），共享剩余84TiB。
+既有v2 run8.3GiB、其余EMBER444GiB、其余个人projects27GiB（du按此前已统计路径排重）。全部大资产复用。
+尚无本轮结果；不将profile作为正式资格证据。有效更新与成本通过后，在formal结果前冻结学习及strict400节点。
+
+## 前一batch修复profile与exact-resume结果
 
 clean pushed `07871988` 的batch修复profile及exact-resume已全部完成exit0：
 同gpu02 physical0/1/3/6、world4，目标2 accepted、该诊断segment最多4 attempts，必要时依据结果继续，不是全程上限。
@@ -48,7 +59,7 @@ profile每轮额外测当前参数版本的trust子集KL，定位已观察到的
 证据`joint_profile/assets_environment.log`；不能把前次仅元数据检查称为环境检查通过。
 本task创建的已退出d956956d clean worktree移除，代码由Git和failure合同保留；其它历史worktree未动。
 
-独立gpu02 physical4正进行source train24×初态32–36的J0/JΣ paired120，先J0后JΣ，
+独立gpu02 physical4已完成source train24×初态32–36的J0/JΣ paired120，先J0后JΣ，
 冻结ba556b98、2 persistent replicas；登记和命令在 `runs/analysis/horizon_relation_writer_20260908/source_train120/`。
 错误父目录的0-row失败保留，修正固定revision后重新prepare；living-room/study真实reset/step另验证通过。
 source J0/JΣ均完整完成：19/120与22/120，S/O/G/L=8/0/9/2与10/0/10/2，breadth均7/24；

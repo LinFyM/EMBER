@@ -18,7 +18,7 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metadata, condition_id,
-    file_record, frozen_authority, inspect_joint_checkpoint, method_metadata, planned_episodes,
+    file_record, frozen_authority, inspect_writer_checkpoint, method_metadata, planned_episodes,
     selection_contract, source_matches)
 
 
@@ -142,7 +142,7 @@ def inspect_horizon_writer_bank(
         path = manifest_path.resolve()
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids)
-        run, checkpoint = inspect_joint_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
+        run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run) or not source_matches(run["source"], source):
             raise ValueError("Writer checkpoint or method provenance changed")
         lora_path = Path(manifest["lora_contract"]["path"])

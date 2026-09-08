@@ -1,4 +1,4 @@
-"""Compile sealed joint Writer checkpoints into per-episode complete LoRAs."""
+"""Compile sealed supervised Writer checkpoints into per-episode complete LoRAs."""
 
 from __future__ import annotations
 
@@ -18,8 +18,10 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.data import RawTeacherVideoStore
 
 
-RUN_SCHEMA = "ember_horizon_relation_writer_joint_run_v1"
-STAGE = "horizon_relation_writer_fresh_fm_rl_joint"
+RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
+STAGE = "horizon_relation_writer_fresh_supervised"
+TRAINING_SCHEMA = "ember_horizon_supervised_training_state_v1"
+UPDATE_VERSION = "supervised_fm_writer_meta_v1"
 BANK_SCHEMA = "ember_horizon_writer_lora_bank_v1"
 BANK_KIND = "horizon_writer_lora_bank"
 ADAPTER_SCHEMA = "ember_horizon_writer_materialized_adapter_v1"
@@ -42,8 +44,8 @@ def source_matches(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
                Path(left[key]).resolve() == Path(right[key]).resolve() for key in keys)
 
 
-def inspect_joint_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Check retained checkpoint authority without loading optimizer/RNG or hashes."""
+def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Check formal supervised authority with metadata-only trainer tensor loading."""
     checkpoint = checkpoint.resolve()
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
@@ -52,16 +54,27 @@ def inspect_joint_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
             or run.get("stage") != STAGE or run.get("mode") != "formal"
+            or run.get("config", {}).get("update_version") != UPDATE_VERSION
             or run.get("config", {}).get("execution_precision") != "native_mixed_without_outer_autocast"
             or not frozen_authority(run.get("git", {}))
             or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
             or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA
             or manifest.get("next_macro") != macro or set(manifest.get("files", {})) != expected):
-        raise ValueError("materialization requires a complete formal fresh-joint Writer checkpoint")
+        raise ValueError("materialization requires a complete formal supervised Writer checkpoint")
     for name, record in manifest["files"].items():
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(record["bytes"]):
-            raise ValueError(f"joint Writer checkpoint file changed: {name}")
+            raise ValueError(f"supervised Writer checkpoint file changed: {name}")
+    # mmap and meta placement inspect scalar provenance without reading the
+    # optimizer tensor payload or allocating a second optimizer in CPU memory.
+    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
+    training = trainer.get("training_state", {})
+    data_version = run.get("config", {}).get("data", {}).get("version")
+    if (trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA or trainer.get("stage") != STAGE
+            or trainer.get("next_macro") != macro or not data_version
+            or training != {"schema_version": TRAINING_SCHEMA, "updates": macro,
+                            "update_version": UPDATE_VERSION, "data_version": data_version}):
+        raise ValueError("supervised Writer training state or optimizer-update cursor changed")
     return run, {"path": str(checkpoint), "macro": macro,
                  "weights": file_record(checkpoint / "ecp.safetensors"),
                  "manifest": file_record(checkpoint / "checkpoint_manifest.json"),
@@ -155,7 +168,8 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
             "visual_token_source": "actual_final_prefix_image_tokens",
             "visual_token_gradient": "detached_native_tokens_trainable_projection",
             "frame_attention": "four_past_plus_self_causal",
-            "macro_cursor": "attempted_complete_iterations"}
+            "training_stage": STAGE, "training_objective": "supervised_fm",
+            "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
 def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str, str]:
@@ -210,7 +224,7 @@ def _materialize(
             for task, value in tasks.items()]
     validate_task_scope(rows, selection["evaluation_role"], asset_root)
     if not source_matches(runtime.source, run["source"]):
-        raise ValueError("joint runtime uses a different frozen source checkpoint")
+        raise ValueError("Writer runtime uses a different frozen source checkpoint")
     runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
     runtime.state.requires_grad_(False).eval()
     runtime.policy.eval()
@@ -252,7 +266,7 @@ def _materialize(
 
 
 def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
-    from ember.writer.runtime import build_joint_runtime
+    from ember.writer.runtime import build_runtime
 
     repository = git_state(REPO_ROOT)
     if not frozen_authority(repository):
@@ -262,7 +276,7 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     outputs = [Path(request["output"]).resolve() for request in requests]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
-    inspected = [inspect_joint_checkpoint(Path(request["checkpoint"])) for request in requests]
+    inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
@@ -270,7 +284,7 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
             raise ValueError("resident batch requires identical source, model, and observer contracts")
     # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
     # prefix, generated LoRA, or checkpoint state is cached across requests.
-    runtime = build_joint_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
+    runtime = build_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
     return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run,
                          checkpoint_record=record, repository=repository, **request)
             for request, (run, record) in zip(requests, inspected, strict=True)]

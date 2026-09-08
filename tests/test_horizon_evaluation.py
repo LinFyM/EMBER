@@ -19,8 +19,8 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization
 from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenHorizonWriterAdapter, episode_evidence,
                                      inspect_horizon_writer_bank, validate_task_scope)
-from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, adapter_metadata,
-    condition_id, file_record, inspect_joint_checkpoint, method_metadata, paired_video_sets,
+from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, adapter_metadata,
+    condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
 
 
@@ -54,15 +54,19 @@ def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
-           "source": SOURCE, "config": {"observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
+           "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
-    for name in ("trainer_state.pt", "rank_00_state.pt"):
-        (checkpoint / name).write_bytes(b"fixture - never deserialized by materialization")
+    torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": STAGE, "next_macro": 16,
+        "optimizer": {"state": {0: {"exp_avg": torch.ones(4)}}},
+        "training_state": {"schema_version": TRAINING_SCHEMA, "updates": 16,
+            "update_version": UPDATE_VERSION, "data_version": run["config"]["data"]["version"]}},
+        checkpoint / "trainer_state.pt")
+    (checkpoint / "rank_00_state.pt").write_bytes(b"fixture - RNG is never deserialized by materialization")
     files = {path.name: {"bytes": path.stat().st_size} for path in checkpoint.iterdir()}
     (checkpoint / "checkpoint_manifest.json").write_text(json.dumps({"schema_version": "ember_ecp_checkpoint_v1",
         "stage": STAGE, "run_contract_schema": RUN_SCHEMA, "next_macro": 16, "world_size": 1, "files": files}))
-    _, authority = inspect_joint_checkpoint(checkpoint)
+    _, authority = inspect_writer_checkpoint(checkpoint)
     selection = _selection(**getattr(request, "param", {}))
     rows, target = _task_rows([0], selection)
     native = next(row for row in target["tasks"] if row["global_task_id"] == 0)
@@ -269,12 +273,12 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["meta.weight"].fill_(value * 10)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
-            "config": {"execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
+            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
             "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
     monkeypatch.setattr(materialization, "git_state", lambda _root: GIT)
-    monkeypatch.setattr(materialization, "inspect_joint_checkpoint", lambda path: (runs[path], {"path": str(path)}))
+    monkeypatch.setattr(materialization, "inspect_writer_checkpoint", lambda path: (runs[path], {"path": str(path)}))
     monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_args, **_kwargs: {0: task})
     monkeypatch.setattr(evaluation, "validate_task_scope", lambda *_args: None)
     monkeypatch.setattr(materialization, "RawTeacherVideoStore", lambda *_args, **_kwargs: SimpleNamespace(close=lambda: None))
@@ -288,7 +292,7 @@ def resident_materialization(tmp_path, monkeypatch):
         return {"condition_id": condition_id(0, demos), "teacher_videos": [{"sampled_frame_count": 1}],
                 "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight)}
 
-    monkeypatch.setattr(runtime, "build_joint_runtime", build)
+    monkeypatch.setattr(runtime, "build_runtime", build, raising=False)
     monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
     return requests, runs, builds, state
 
@@ -354,25 +358,64 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
 
 
 def test_method_metadata_describes_final_native_and_visual_tokens():
-    method = method_metadata({"model_config": {}, "config": {"observer": {}, "execution_precision": "native_mixed_without_outer_autocast"}})
+    method = method_metadata({"model_config": {}, "config": {"update_version": UPDATE_VERSION, "observer": {}, "execution_precision": "native_mixed_without_outer_autocast"}})
     assert method["native_response_shape"] == [50, 1024]
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_tokens"
     assert method["frame_attention"] == "four_past_plus_self_causal"
-    assert method["macro_cursor"] == "attempted_complete_iterations"
+    assert method["macro_cursor"] == "optimizer_updates"
+    assert method["training_stage"] == STAGE
+    assert method["training_objective"] == "supervised_fm"
+    assert method["update_version"] == UPDATE_VERSION
 
 
-@pytest.mark.parametrize("field,value", [("schema_version", "ember_layered_relation_writer_joint_run_v1"),
-                                         ("execution_precision", "outer_bf16")])
-def test_old_joint_checkpoint_cannot_be_materialized_as_horizon(bank, field, value):
+@pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
+    ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
+    ("update_version", "joint_fm_rl_same_version_v1"), ("execution_precision", "outer_bf16")])
+def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(bank, field, value):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
     run_path = checkpoint.parent.parent / "run_contract.json"
     run = json.loads(run_path.read_text())
-    (run["config"] if field == "execution_precision" else run)[field] = value
+    (run["config"] if field in {"execution_precision", "update_version"} else run)[field] = value
     run_path.write_text(json.dumps(run))
-    with pytest.raises(ValueError, match="formal fresh-joint"):
-        inspect_joint_checkpoint(checkpoint)
+    with pytest.raises(ValueError, match="formal supervised"):
+        inspect_writer_checkpoint(checkpoint)
+
+
+def test_checkpoint_inspection_keeps_optimizer_tensors_on_meta(bank, monkeypatch):
+    _, manifest = bank
+    checkpoint = Path(manifest["writer_checkpoint"]["path"])
+    load = torch.load
+    seen = []
+
+    def metadata_load(path, **kwargs):
+        assert kwargs == {"map_location": "meta", "mmap": True, "weights_only": True}
+        result = load(path, **kwargs)
+        assert result["optimizer"]["state"][0]["exp_avg"].is_meta
+        seen.append(Path(path).name)
+        return result
+
+    monkeypatch.setattr(torch, "load", metadata_load)
+    inspect_writer_checkpoint(checkpoint)
+    assert seen == ["trainer_state.pt"]
+
+
+@pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_joint_training_state_v1"),
+    ("updates", 15), ("update_version", "old_joint_version"), ("data_version", "different_data")])
+def test_supervised_checkpoint_rejects_training_state_mismatch(bank, field, value):
+    _, manifest = bank
+    checkpoint = Path(manifest["writer_checkpoint"]["path"])
+    trainer_path = checkpoint / "trainer_state.pt"
+    trainer = torch.load(trainer_path, weights_only=True)
+    trainer["training_state"][field] = value
+    torch.save(trainer, trainer_path)
+    manifest_path = checkpoint / "checkpoint_manifest.json"
+    checkpoint_manifest = json.loads(manifest_path.read_text())
+    checkpoint_manifest["files"]["trainer_state.pt"]["bytes"] = trainer_path.stat().st_size
+    manifest_path.write_text(json.dumps(checkpoint_manifest))
+    with pytest.raises(ValueError, match="training state or optimizer-update cursor"):
+        inspect_writer_checkpoint(checkpoint)
 
 
 @pytest.mark.parametrize("bank", [{"init_state_ids": tuple(range(32, 37))}], indirect=True)

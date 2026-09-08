@@ -9,7 +9,7 @@
 2026-09-08最新Owner安排：**当前集中K1，Writer整体先纯FM后独立共享RL**；完整架构和信息墙保持。
 Meta归属Writer内部读取模块。真实采样与逻辑4task/256queries更新合同独立于GPU资源。
 
-整轮视频schedule修复已完成；fresh100/200各400条件bank实检通过，checkpoint与学习状态保留。当前完成两节点canonical correct400及相邻分析，再按已有约一小时训练分段安排继续。
+整轮视频schedule修复已完成；fresh100/200各400条件bank实检通过，checkpoint与学习状态保留。首段两节点canonical correct400及相邻分析已完成并显示持续增长，当前完整恢复200→400，预登记300/400 correct400，仍按约一小时分段。
 
 ## 执行计划
 

@@ -778,3 +778,10 @@ macro100（fresh K1累计25600 FM queries）correct400完整exit0：55/400，S/O
 未达>145、Spatial为零、Long6<10；这是单个早期监督节点，不能判断平台。旧mixed64的99/95同时具有不同训练条件和错误视频分布，不从两者分数差异归因K1或schedule。原件`k1_fresh/schedule_repair/step100/completed_summary.json`、`correct_vs_source47.json`及`evaluation/validation_correct_step100_schedule_v2_gpu3_J0/`；继续预登记200并做相邻paired分析。
 
 同一macro100对历史SFT400=109与SFT425=107，R/G/L分别39/16/70和38/17/69，churn均86/400、J=.312/.30645。固定source/policy/environment/RNG及normalization的既有历史兼容性检查通过；仍保留历史rank128、旧后端且未在当前backend重跑的边界，不作为隔离架构或K因素的实验。原件`k1_fresh/schedule_repair/step100/correct_vs_historical_sft.json`。
+
+## 2026-09-08 Fresh K1 macro200及首个相邻比较
+
+macro200（累计51200 FM queries）canonical correct110/400，S/O/G/L=1/61/41/7、breadth6/8；global tasks1/3/11/13/23/26/31/32为0/1/37/24/0/41/4/3。全部400条实际视频身份匹配同一canonical schedule，六worker exit0，完整墙钟1375.21秒（launcher1300.95）。vs source47 R/G/L=41/69/6、churn75/400、J=.35345。
+100→200从55升110，R/G/L=42/68/13、churn81/400、J=.34146；S/O/G/L净增1/39/14/1。Long R/G/L=0/7/6，旧成功完全未保留；Goal为24/17/3，Object18/43/4。breadth仍6，200的global1与23为零。总分增长不能替代稳定性；仍未>145，Long7<10、相邻churn/J不合格。
+对历史SFT109/107，R/G/L为71/39/38和68/42/39，churn77/81、J=.47973/.45638；总分相近但成功集合不同，历史rank128/旧backend限制保持。原件`k1_fresh/schedule_repair/step200/completed_summary.json`、`correct_vs_historical_sft.json`、`correct200_vs_correct100.json`和`decision_after200.json`。
+因直接闭环仍显著获取且未形成平台，保持纯FM与全部学习状态，预登记200→400约一小时、300/400两个correct节点；不做架构重启或超参小扫，other与最终controls暂缓。

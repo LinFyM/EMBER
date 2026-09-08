@@ -256,20 +256,20 @@ D 全零初始化、A0 用 canonical 非零 identity 模板，初始 BA=0；其�
 
 ### 7.2 数据、随机性与公平权重
 
-固定train24；每次optimizer update每suite均匀抽1 task，共4个，task等权1/4。
+固定train24；当前条件组织诊断按§8.2.3每update覆盖全部24个task，各task等权1/24。原每suite均匀抽1 task、共4条件×64queries的运行作为冻结对照。
 当前每task恰好一条完整teacher video，真实sampler固定K=1，内部保序，stride5、include-last-frame；不挑video。
 混合K历史保留；K1全部通过后再开展few-shot，集合compiler保持完整，暂不进行K2/4训练或测试。
-teacher episodes0–15；FM actions episodes16–41，独立于teacher，每condition64 queries，均匀episode再均匀frame，有放回。
+teacher episodes0–15；FM actions episodes16–41，独立于teacher，均匀episode再均匀frame，有放回。当前每suite总64 queries，分到六task为四份11、两份10；每三步轮换。
 train侧独立动作验证episodes42–45，held teacher videos46–49，均不用于梯度；validation/test同样无梯度。
-首版额外meta tasks为空，不把更多同task episodes当作更多独立映射。K固定1，task/video/query使用独立持久随机流，seed7。
-多卡按真实视频cost分配完整task，跨rank对已经乘1/4的梯度SUM，不再除world size；卡数不改变采样或任务权重。
-物理FM microbatch可通过`--policy-microbatches`逐rank登记，完整64-query随机性与权重不变；每个condition记录实际分块。
+额外meta tasks仍为空，不把更多同task episodes当作更多独立映射。K固定1，video/query使用独立持久随机流，seed7；当前完整覆盖无需随机抽task。
+多卡按真实视频cost分配完整task，跨rank对已经乘1/24的梯度SUM，不再除world size；卡数不改变采样或任务权重。
+物理FM microbatch可通过`--policy-microbatches`逐rank登记，当前完整10/11-query随机性与权重不变；每个condition记录实际分块。
 
 ### 7.3 同task跨episode FM与完整端到端梯度
 
 \[
 x_s=(1-s)a+s\epsilon^{FM},\quad u_s=\epsilon^{FM}-a,\quad
-L_{FM}=\frac14\sum_{i=1}^4\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
+L_{FM}=\frac1{24}\sum_{i=1}^{24}\mathbb E\frac{\|v_{\theta_0+G_\psi(C_i)}(o,\ell,x_s,s)-u_s\|^2}{50\cdot7}.
 \]
 
 复用冻结normalization、原生Beta flow-time分布、独立Gaussian noise及末动作补齐；不改变监督目标或padding口径。
@@ -294,7 +294,7 @@ probe、source/data版本及world topology；macro就是已完成optimizer updat
 本轮K1按Owner补充纠正明确fresh：旧混合K run在安全完整边界停止，checkpoint和结果仅作历史探索证据，
 不得成为K1初始化。Writer全部可训练参数重新初始化，LoRA采用合法identity；optimizer、scheduler、sampler/RNG全fresh，
 从step0独立正式run开始，冻结source/资产复用。原exact-resume仍要求同run/config/topology；未来换卡数须先有受控迁移实现与登记。
-每个update固定4条件×64queries=256，task梯度先乘1/4，跨rank SUM；不再按rank数归一化，整个逻辑batch后统一裁剪和更新一次。
+每个update总query仍256；当前24条件分别10/11 queries，task梯度先乘1/24，跨rank SUM，整个逻辑batch后统一裁剪和更新一次。§8.2.3的受控分叉明确登记数据组织变更；它不是原合同的exact-resume，子run后续恢复仍严格锁自身合同。
 
 ### 7.5 独立RL阶段在监督平台后另登记
 
@@ -367,6 +367,24 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 补冻结600同一train96，与400逐行配对，source仍为固定15/96子集。唯一变量为checkpoint；task、states32–35、held videos46–49、K1、policy/env RNG及预处理不变；无梯度、不选点。
 历史已排除当前所有训练任务完全未学会，但未排除400之后整体行为退化。600训练仍广泛保持而validation继续弱，支持下一步聚焦跨task迁移；二者一起退化，优先定位后期能力保持/优化；若变化集中Long，保留局部获取与视频泛化分支。
 小面板差异不够时不强行归因；熟悉视频仅针对仍未区分的实际缺口按§8.2.1补必要证据。此项不自动启动clone/free-code、修改配方或恢复训练，600 strict400主线照常并行。
+
+### 8.2.3 条件组织受控诊断：完整task覆盖、相同query预算与期望任务权重
+
+**依据与竞争解释。** 原样500/600 correct为70/82，600仍只覆盖4/8且78/82成功集中11/26；训练held-video200/400/600为52/59/67。没有观察到整体训练行为退化，跨task迁移为优先层级，但尚未识别根因。要区分：每步少量teacher/task条件的更新组织是否是可干预因素，还是在改变该组织后仍存在任务支持/表示/编译接口的泛化缺口。
+旧v6的条件数、任务覆盖、视频池和其它实现同时不同，不能因历史分数直接归因；旧meta73/target18还改变task权重与总queries。当前诊断不新增meta tasks，不提前使用最终视频controls。
+
+**唯一主要变量。** 从原fresh K1完整macro400学习状态分叉，把每update“四suite各随机一task、每条件64queries”改为“全部24 tasks各一个K1条件、总256queries”。每suite六task共64queries：按固定task顺序，两task取10、四task取11；低query任务按分叉后步数每步轮换一对，三步各task累计32queries。
+各task FM先在自身10/11 queries上取均值，再乘1/24，不能把256行直接混成样本等权均值。原方法每task被抽中概率1/6、条件权重1/4，期望权重也是1/24；新方法每步确定为1/24。总query预算、suite权重与期望task目标保持，改变的是这个目标的条件组织与梯度估计。
+条件数、每步task覆盖和每条件query数在固定预算下联动，不能由本实验进一步唯一命名“梯度冲突”或“视频条件数”根因；它们属于同一个预算分配干预。实际视频、query和噪声轨迹也不会逐样本匹配原随机task调度。
+
+**继承与信息墙。** 保持架构、全部episode pools、K1、source/normalization、optimizer参数顺序与状态、scheduler、precision、clip、seed和原world4拓扑。显式`controlled-fork-from`加载完整400，继承rank RNG、video/query随机流和历史task occurrences；不伪称fresh，也不称原run exact-resume。新run只写401起日志，父400/1600条件/102400queries由父记录引用，不复制或重标。
+新sampler保存分叉边界、父occurrence offsets及轮换相位所需状态；每task计数=父计数+(当前step−400)，总条件=1600+24×(step−400)，总queries仍=256×step。源task随机流不再参与新调度。子run exact-resume验证自己的配置、topology、完整学习状态与日志偏移。输入/输出/梯度信息墙完全保持。
+
+**节点与执行。** 用真实四卡完整逻辑update profile确认峰值和吞吐，profile状态不作为正式起点。正式仍从原400重新加载，保存完整节点后在500/600各做canonical correct strict400，与已有原样500/600同task/state/video/RNG比较；终点600补同口径held-video train96，与原600的67/96配对。
+可按实测速率拆成450/500与550/600两段，450/550仅为恢复边界，不进入正式checkpoint选择。新增条件计算量须如实报告，不能宣称同query即同FLOPs或墙钟；不复制大资产。
+
+**结果分支。** 两个匹配节点出现实质绝对增益并扩展跨task/suite能力，支持条件组织是有效干预，继续按原资格判断相邻稳定；只有低churn或原少数task波动不算解决。训练侧改善而validation仍弱，说明本次组织调整未解除迁移缺口，应再定位独立task支持或具体接口；两侧都弱只否定本次已检验分配，不证明完整图无容量。不盲扫query档位、LR/rank/seed，不由负结果自动转RL或机械展开消融矩阵。
+实现由现有`learning_data.py`、`supervised.py`、`training.py`承担；原四条件运行由冻结提交和formal artifacts保留，活动树不增设第二套训练器或永久fallback。
 
 ### 8.3 资格与最终controls
 

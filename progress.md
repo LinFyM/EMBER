@@ -1,8 +1,18 @@
 # EMBER progress
 
-更新时间：2026-09-08 CST。最新Owner已明确解除暂停，恢复全过程自主推进；600只是一轮裁决节点。
+更新时间：2026-09-09 CST。最新Owner已明确解除暂停，恢复全过程自主推进；600只是一轮裁决节点。
 
-## 当前：恢复400→600及冻结200/400训练任务闭环诊断
+## 当前：已完成600整轮，实施条件组织受控诊断
+
+原样500/600 canonical correct70/82、breadth均4，未恢复200峰值110；600净增主要仍来自Goal26。冻结600 train96完整67/96，S/O/G/L=20/17/18/12、breadth20；400→600 R/G/L=51/16/8、churn24/96、J=.68，vs source15为13/54/2。8worker均exit0，实际96视频/state/RNG/checkpoint配对通过，完整墙钟542.38秒。
+训练200/400/600持续52/59/67，未见整体训练行为退化；600仍有global9/15/38/39零成功，Long则7→12。只支持优先聚焦迁移层，不证明唯一根因或所有训练任务已解决。本轮不自动追加全量熟悉视频或clone。
+目前本任务GPU运行均已结束，600是本轮信息节点，full goal继续active；不原样继续700/800。
+下一步已按design§8.2.3登记：从原完整400受控分叉，每步24task全覆盖，仍256queries、每task期望权重1/24，与现有原样500/600匹配比较。模型/池/优化器/source保持，只有条件组织改变；这是一项机制诊断，尚未声称它是根因或有效修复。
+完整状态接口已只读核验，可复用原loader；父topology为gpu02物理1/2/3/6、world4。新root需记录父日志偏移与sampler分叉相位，不复制或重标父历史。代码实现、必要测试、真实profile和formal launch尚待完成；当前未启动新配方。
+原件：`k1_fresh/train96_diagnostic/comparison400_600.json`、`step600_completed_summary.json`、`analysis.md`；本轮合并证据`segment400_600/round_analysis.md`与`round_evidence.json`。
+
+## 上一轮：原样400→600及冻结训练任务诊断
+
 
 Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成canonical correct strict400；架构、K1、4task×64queries、optimizer及数据合同保持。
 同时完成冻结200/400 held-video train96（train24 × states32–35，videos46–49各一次）。仅当仍不能区分训练能力与视频泛化时，追加同状态/RNG、预先固定且确已曝光的熟悉视频诊断。

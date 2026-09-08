@@ -2,7 +2,9 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：首层语言内容对照至400完成，登记冻结功能对应诊断
+## 当前：冻结功能对应分析完成，实施逐帧上下文过程条件对照
+
+下一项已按active design§8.2.8登记：只将四组过程条件从静态语言码改为当前帧同源Gemma exact task-token状态的learned read；原reader参数复用、不增加参数，完整H/四组/视觉核实/decoder/采样保持。实现已完成：新增显式exact-span mask与模型语义标记，原reader复用；源码净增35行、无新模块/参数/runner。定向检查101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖；包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。接下来真实8update profile并额外覆盖最长训练视频（task38/demo0，457原始帧、93采样帧）的完整反传；profile不继承到formal。尚未启动新GPU任务。
 
 完整报告：`docs/horizon_k1_first_query_only_20260909.md`。active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6本轮执行均已完成；下一项只读诊断已按§8.2.7登记：在train24固定动作查询上交叉应用新200/400、teacher46/47已生成的完整LoRA，检验功能任务对应；无新训练、无held梯度、不作最终视频因果解释。该诊断已完整exit0：74,496 query预测、两teacher/两checkpoint/24task全部完成，449.10秒、peak11.750GiB。400全部24task在两teacher及两个查询半面板均优于其余23task adapter均值，跨task margin .009396→.015491；同suite margin .003599→.005578。train功能特化仍增强，不支持“训练内条件编译普遍未形成”；不能由小FM差值定责模块或替代闭环。完整报告`docs/horizon_k1_functional_assignment_20260909.md`，全部配对、无梯度与sampler不变检查通过；当前GPU任务已结束。原件A=`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`，D=A/`segment200_400/`；D/`round_evidence.json`汇总全部本段事实。
 

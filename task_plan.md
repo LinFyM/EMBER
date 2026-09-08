@@ -11,7 +11,7 @@ Owner继续授权完整自主科学推进。当前active design为`docs/horizon_
 3. 选择并登记一个有信息量的受控变量：明确输入/监督/共享变化，什么证据会支持或反驳，以及与已试组合的实质区别。必要时先做最小可区分诊断，再正式修改/profile/学习；现有广泛授权继续有效。
 4. 根据真实行为推进，直到validation8 single-checkpoint correct>145/400、相邻稳定、breadth、四suite、Goal/Long、跨视频与最终因果全部满足，再完成方法冻结后的32/8 fresh与Test。当前结果不是完成，不预设总尝试次数。
 
-当前canonical `first_query_only_v1`保留；没有500/600、24-task组织、额外meta、RL或新结构任务在运行。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
+下一项§8.2.8已登记并进入实施：四组过程使用逐帧上下文task-token条件，compiler保留`first_query_only_v1`；不新增参数、不改输出或训练采样。完成定向检查/真实profile后fresh100/200及200train96。当前没有新GPU任务运行。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
 
 ## 历史：只读报告交付任务（已完成）
 

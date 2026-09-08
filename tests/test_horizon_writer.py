@@ -49,7 +49,17 @@ def _language(config):
 
 def _call(writer, inputs, language):
     responses, times, visuals, masks = map(list, zip(*inputs, strict=True))
-    return writer(responses, times, *language, visuals, masks)
+    return writer(responses, times, *language, visuals, masks, [_task_mask(mask) for mask in masks])
+
+
+def _task_mask(mask):
+    result = mask.clone()
+    result[:, 0] = False
+    return result
+
+
+def _frame_language(writer, visual, mask, language_mask):
+    return writer.contextual_language(visual, _task_mask(mask), language_mask)
 
 
 def _unlock(writer):
@@ -65,7 +75,7 @@ def test_complete_h_query_has_cross_row_relation_dependence():
     current, values = torch.randn(2, 4, 12), torch.randn(2, 3, 4, 4)
     pi = torch.randn(2, 3, 4, 5).softmax(-1)[..., :-1].detach().requires_grad_()
     query, _, _, _ = block.form_query(current, values, pi, torch.tensor([5., 8.]),
-                                      torch.randn(4, 12), torch.randn(12))
+                                      torch.randn(4, 12), torch.randn(2, 12))
     gradient = torch.autograd.grad(query[0, 0].square().sum(), pi)[0]
     assert gradient[0, :, 1:].abs().sum() > 0
     assert gradient[1].abs().sum() == 0
@@ -98,7 +108,7 @@ def test_null_mass_relative_distribution_and_true_gap_features():
         block.null[-1].bias.fill_(30)
     assert block.correspondence(current, late, early, gaps).sum(-1).max() < 1e-10
     _, matched, relative, mass = block.form_query(current, early, torch.zeros_like(pi), gaps,
-                                                  torch.randn(4, 12), torch.randn(12))
+                                                  torch.randn(4, 12), torch.randn(2, 12))
     assert matched.count_nonzero() == relative.count_nonzero() == mass.count_nonzero() == 0
 
 
@@ -106,18 +116,20 @@ def test_four_groups_three_writebacks_and_future_independence():
     config = _config()
     writer = HorizonRelationWriter(_contract(), config)
     response, times, visual, mask = _input(8, config)
-    language = writer.encode_language(*_language(config))
+    language_mask = _language(config)[1]
+    language = _frame_language(writer, visual, mask, language_mask)
     original = writer.encode_video(response, times, language, visual, mask)
     assert len(writer.process_groups) == 4
     assert sum(group.writeback is not None for group in writer.process_groups) == 3
     assert all(group.temporal.causal for group in writer.process_groups)
     response[5:] = torch.randn_like(response[5:]) * 7
     visual[5:] = torch.randn_like(visual[5:]) * 7
+    language = _frame_language(writer, visual, mask, language_mask)
     changed = writer.encode_video(response, times, language, visual, mask)
     torch.testing.assert_close(original[:5], changed[:5], rtol=0, atol=0)
     assert not torch.allclose(original[5:], changed[5:])
     # The whole four-group graph also equals a separately encoded prefix.
-    prefix = writer.encode_video(response[:5], times[:5], language, visual[:5], mask[:5])
+    prefix = writer.encode_video(response[:5], times[:5], language[:5], visual[:5], mask[:5])
     torch.testing.assert_close(original[:5], prefix, rtol=2e-5, atol=2e-6)
 
 
@@ -126,7 +138,7 @@ def test_local_edges_are_synchronous_and_visual_projections_are_reused():
     writer = HorizonRelationWriter(_contract(), config)
     block = writer.process_groups[0].local
     states, times = torch.randn(5, 4, 12), torch.arange(5).float() * 5
-    visual, mask, language = torch.randn(5, 6, 8), torch.ones(5, 6, dtype=torch.bool), torch.randn(12)
+    visual, mask, language = torch.randn(5, 6, 8), torch.ones(5, 6, dtype=torch.bool), torch.randn(5, 12)
     counts = [0, 0]
     def count(index):
         def hook(*_):
@@ -206,8 +218,8 @@ def test_variable_video_set_is_permutation_invariant(cardinality):
     response, times, visual, mask = inputs[-1]
     poisoned = visual.clone()
     poisoned[~mask] = 1000
-    clean = writer.encode_video(response, times, writer.encode_language(*language), visual, mask)
-    masked = writer.encode_video(response, times, writer.encode_language(*language), poisoned, mask)
+    clean = writer.encode_video(response, times, _frame_language(writer, visual, mask, language[1]), visual, mask)
+    masked = writer.encode_video(response, times, _frame_language(writer, poisoned, mask, language[1]), poisoned, mask)
     torch.testing.assert_close(clean, masked)
 
 
@@ -246,7 +258,7 @@ def test_compiler_language_can_route_but_cannot_supply_residual_content():
     assert all(value.abs().sum() > 0 for value in gradient)
 
 
-@pytest.mark.parametrize("mode", [None, "language_residual_v1"])
+@pytest.mark.parametrize("mode", [None, "language_residual_v1", "first_query_only_v1"])
 def test_runtime_rejects_unmarked_or_old_compiler_before_loading_assets(tmp_path, mode):
     from ember.writer.runtime import build_runtime
 
@@ -354,10 +366,10 @@ def test_invalid_inputs_are_rejected():
     response, times, visual, vmask = _input(3, writer.config)
     with pytest.raises(ValueError, match="increasing"):
         _call(writer, [(response, times.flip(0), visual, vmask)], (embeddings, mask))
-    with pytest.raises(ValueError, match="valid visual"):
+    with pytest.raises(ValueError, match="contextual task tokens"):
         _call(writer, [(response, times, visual, torch.zeros_like(vmask))], (embeddings, mask))
     with pytest.raises(ValueError, match="one or more"):
-        writer([], [], embeddings, mask, [], [])
+        writer([], [], embeddings, mask, [], [], [])
 
 
 def test_bfloat16_preserves_real_frame_gaps_before_feature_cast():
@@ -365,7 +377,7 @@ def test_bfloat16_preserves_real_frame_gaps_before_feature_cast():
     response, _, visual, mask = _input(3, writer.config)
     times = torch.tensor([510, 515, 518])
     embeddings, lmask = _language(writer.config)
-    language = writer.encode_language(embeddings.bfloat16(), lmask)
+    language = _frame_language(writer, visual.bfloat16(), mask, lmask)
     seen = []
     hook = writer.process_groups[0].register_forward_pre_hook(lambda _, args: seen.append(args[1]))
     output = writer.encode_video(response.bfloat16(), times, language, visual.bfloat16(), mask)
@@ -373,3 +385,37 @@ def test_bfloat16_preserves_real_frame_gaps_before_feature_cast():
     assert torch.isfinite(output).all()
     assert seen[0].dtype == torch.float32
     torch.testing.assert_close(seen[0], times.float(), rtol=0, atol=0)
+
+
+def test_contextual_language_reads_exact_span_per_frame_with_live_gradient():
+    writer = HorizonRelationWriter(_contract(), _config())
+    _, _, visual, mask = _input(4, writer.config)
+    language_mask = _language(writer.config)[1]
+    task_mask = _task_mask(mask)
+    visual.requires_grad_()
+    code = writer.contextual_language(visual, task_mask, language_mask)
+    assert code.shape == (4, writer.config.width)
+    changed = visual.detach().clone()
+    changed[~task_mask] = 1000
+    changed[3, task_mask[3]] *= 7
+    other = writer.contextual_language(changed, task_mask, language_mask)
+    torch.testing.assert_close(code[:3], other[:3])
+    assert not torch.allclose(code[3], other[3])
+    gradient = torch.autograd.grad(code[:2].square().sum(), visual)[0]
+    assert gradient[:2][task_mask[:2]].abs().sum() > 0
+    assert gradient[~task_mask].count_nonzero() == gradient[2:].count_nonzero() == 0
+    with pytest.raises(ValueError, match="exactly its contextual task tokens"):
+        writer.contextual_language(visual, mask, language_mask)
+
+
+def test_static_embedding_content_only_conditions_the_compiler_lookup():
+    writer = HorizonRelationWriter(_contract(), _config())
+    _unlock(writer)
+    inputs, language = [_input(4, writer.config)], _language(writer.config)
+    observed = []
+    hook = writer.process_groups[-1].register_forward_hook(lambda _, args, output: observed.append(output[1]))
+    first = _call(writer, inputs, language)
+    second = _call(writer, inputs, (language[0] * -9, language[1]))
+    hook.remove()
+    torch.testing.assert_close(observed[0], observed[1])
+    assert any(not torch.allclose(first[name], second[name]) for name in first)

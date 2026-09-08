@@ -69,5 +69,7 @@ def test_prefix_retains_final_visual_and_exact_span_from_one_forward(monkeypatch
     torch.testing.assert_close(chunk.visual_tokens, embeddings[:, [0, 1, 2, 7, 8]] + 100)
     assert chunk.padding.shape == (2, 7)
     assert chunk.visual_mask.all()
+    torch.testing.assert_close(chunk.visual_task_mask,
+                               torch.tensor([[False, False, False, True, True]]).expand(2, -1))
     assert chunk.tensor_bytes == sum(value.numel() * value.element_size() for value in
-        (chunk.padding, chunk.visual_tokens, chunk.visual_mask, chunk.layers[0][0], chunk.layers[0][1]))
+        (chunk.padding, chunk.visual_tokens, chunk.visual_mask, chunk.visual_task_mask, chunk.layers[0][0], chunk.layers[0][1]))

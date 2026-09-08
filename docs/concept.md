@@ -10,9 +10,10 @@ EMBER探索：从一条或多条action-hidden正确教学视频理解任务条�
 
 ```text
 exact language + K条独立有序视频
-  → frozen vision/Gemma真实prefix：逐帧最终Z与KV
+  → frozen vision/Gemma真实prefix：逐帧最终Z、KV与exact task-token mask
   → 单固定probe、flow_time=1、Action Expert + shared observer Meta
   → action_out_proj实际输入：最后50个post-norm hidden tokens
+  → 每帧上下文task tokens经现有reader形成该帧过程条件
   → 四组：过去4帧对应 → 沿完整H联合形成query → 两端Z视觉核实
            → 按历史u从早到晚短GRU → 完整H状态
            → 临时H-read → 单向长程时间组织
@@ -21,6 +22,8 @@ exact language + K条独立有序视频
   → native因子读出 → 唯一38-target完整rank16 A/B
   → 冻结source依据自身观测闭环执行
 ```
+
+四组使用当前帧上下文task-token条件，不跨帧池化；静态语言码仅保留在compiler首次检索query。两者共享reader参数，原生Gemma/vision仍冻结，完整时序与视觉Value通路保留。
 
 完整数学、张量、训练与迁移合同见 [正式设计](horizon_relation_video_writer_design.md)，
 原文与Owner裁决见 [讨论索引](review_materials/20260908/README.md)，实施状态见 [progress](../progress.md)。

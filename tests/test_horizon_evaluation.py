@@ -56,6 +56,7 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"]["compiler_language_mode"] = "first_query_only_v1"
+    run["model_config"]["process_language_source"] = "frame_contextual_task_tokens_v1"
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
@@ -474,13 +475,14 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
         inspect_writer_checkpoint(checkpoint)
 
 
-def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank):
+@pytest.mark.parametrize("field", ["compiler_language_mode", "process_language_source"])
+def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
     run_path = checkpoint.parent.parent / "run_contract.json"
     run = json.loads(run_path.read_text())
-    del run["model_config"]["compiler_language_mode"]
-    del run["config"]["model"]["compiler_language_mode"]
+    del run["model_config"][field]
+    del run["config"]["model"][field]
     run_path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match="architecture identity"):
         inspect_writer_checkpoint(checkpoint)
@@ -576,7 +578,7 @@ def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path
 
     lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"),
                    targets=(LoRATarget("linear", 3, 4),), rank=2, alpha=2)
-    arguments = tuple(object() for _ in range(5))
+    arguments = tuple(object() for _ in range(6))
     response = object()
     calls = []
 

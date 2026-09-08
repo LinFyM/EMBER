@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 import torch
@@ -17,6 +17,13 @@ from ember.writer.relation import LocalRelationBlock
 
 
 COMPILER_LANGUAGE_MODE = "first_query_only_v1"
+PROCESS_LANGUAGE_SOURCE = "frame_contextual_task_tokens_v1"
+
+
+def require_architecture_identity(config: Mapping[str, object]) -> None:
+    if (config.get("compiler_language_mode") != COMPILER_LANGUAGE_MODE
+            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE):
+        raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
 
 
 @dataclass(frozen=True)
@@ -33,10 +40,11 @@ class HorizonWriterConfig:
     edge_chunk: int = 8
     activation_checkpoint: bool = True
     compiler_language_mode: str = COMPILER_LANGUAGE_MODE
+    process_language_source: str = PROCESS_LANGUAGE_SOURCE
 
     def __post_init__(self) -> None:
-        if self.compiler_language_mode != COMPILER_LANGUAGE_MODE:
-            raise ValueError("this Writer requires the first-query-only compiler language contract")
+        require_architecture_identity({"compiler_language_mode": self.compiler_language_mode,
+                                       "process_language_source": self.process_language_source})
         positive = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
                     self.blocks, self.radius, self.compiler_blocks, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
@@ -72,7 +80,7 @@ class HorizonProcessGroup(nn.Module):
                 visual_mask: Tensor, horizon_embedding: Tensor) -> tuple[Tensor, Tensor]:
         states = self.local(states, times, language, visual_tokens, visual_mask, horizon_embedding)
         normalized = self.read_norm(states)
-        query = self.read_language(language)[None, None, :]
+        query = self.read_language(language)[:, None, :]
         readout = self.horizon_read(query, normalized, normalized).squeeze(-2)
         process = self.temporal(readout, times / 5)
         return (self.writeback(states, process) if self.writeback is not None else states), process
@@ -100,15 +108,28 @@ class HorizonRelationWriter(nn.Module):
         self.compiler = nn.ModuleList([CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
         self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width)
 
-    def encode_language(self, embeddings: Tensor, mask: Tensor) -> Tensor:
-        if embeddings.ndim != 2 or embeddings.shape[-1] != self.config.language_width:
-            raise ValueError("language embeddings must have shape [tokens, language_width]")
-        if mask.shape != embeddings.shape[:1] or not mask.bool().any():
+    def encode_language(self, embeddings: Tensor, mask: Tensor, *, positions: Tensor | None = None) -> Tensor:
+        if embeddings.ndim not in (2, 3) or embeddings.shape[-1] != self.config.language_width:
+            raise ValueError("language embeddings must have shape [..., tokens, language_width]")
+        if mask.shape != embeddings.shape[:-1] or not mask.bool().any(-1).all():
             raise ValueError("language mask must include at least one valid token")
         tokens = self.language_input(embeddings)
-        positions = torch.arange(len(tokens), device=tokens.device)
+        if positions is None:
+            positions = torch.arange(tokens.shape[-2], device=tokens.device)
+        if positions.shape != tokens.shape[-2:-1]:
+            raise ValueError("language positions must identify each input token")
         keys = tokens + position_encoding(positions, self.config.width, tokens.dtype)
-        return self.language_read(self.language_query, keys, tokens, mask.bool()[None, :]).squeeze(0)
+        return self.language_read(self.language_query, keys, tokens, mask.bool()[..., None, None, :]).squeeze(-2)
+
+    def contextual_language(self, visual_tokens: Tensor, task_mask: Tensor, language_mask: Tensor) -> Tensor:
+        """Read each frame's exact native task span, with the same reader and text positions."""
+        positions = language_mask.bool().nonzero().flatten()
+        if (visual_tokens.ndim != 3 or task_mask.shape != visual_tokens.shape[:2]
+                or not len(positions) or not (task_mask.bool().sum(-1) == len(positions)).all()):
+            raise ValueError("each frame must retain exactly its contextual task tokens")
+        tokens = visual_tokens[task_mask.bool()].reshape(len(visual_tokens), len(positions), -1)
+        mask = torch.ones(tokens.shape[:2], dtype=torch.bool, device=tokens.device)
+        return self.encode_language(tokens, mask, positions=positions)
 
     def encode_video(self, responses: Tensor, frame_indices: Tensor, language: Tensor,
                      visual_tokens: Tensor, visual_mask: Tensor) -> Tensor:
@@ -124,6 +145,8 @@ class HorizonRelationWriter(nn.Module):
             raise ValueError("visual evidence must have shape [T,tokens,language_width]")
         if visual_mask.shape != visual_tokens.shape[:2] or not visual_mask.bool().any(-1).all():
             raise ValueError("every frame needs at least one valid visual evidence token")
+        if language.shape != (len(responses), self.config.width):
+            raise ValueError("process language must be a separate current-frame condition")
         states = self.input_projection(responses) + self.horizon_embedding
         times = frame_indices.to(device=states.device, dtype=torch.float32)
         for group in self.process_groups:
@@ -164,10 +187,17 @@ class HorizonRelationWriter(nn.Module):
         return query.unflatten(0, (len(self.contract.targets), self.contract.rank))
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
-                language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor]) -> dict[str, Tensor]:
-        if not responses or not (len(responses) == len(frame_indices) == len(visual_tokens) == len(visual_masks)):
+                language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
+                visual_task_masks: Sequence[Tensor]) -> dict[str, Tensor]:
+        if not responses or not (len(responses) == len(frame_indices) == len(visual_tokens)
+                                 == len(visual_masks) == len(visual_task_masks)):
             raise ValueError("a condition needs one or more response videos with matching times and visual evidence")
         language = self.encode_language(language_embeddings, language_mask)
-        videos = [self.encode_video(response, indices, language, visual, mask)
-                  for response, indices, visual, mask in zip(responses, frame_indices, visual_tokens, visual_masks, strict=True)]
+        videos = []
+        for response, indices, visual, mask, task_mask in zip(
+                responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, strict=True):
+            if task_mask.shape != mask.shape or (task_mask.bool() & ~mask.bool()).any():
+                raise ValueError("contextual task tokens must be valid visual evidence")
+            contextual = self.contextual_language(visual, task_mask, language_mask)
+            videos.append(self.encode_video(response, indices, contextual, visual, mask))
         return self.decoder(self.compile(videos, frame_indices, language))

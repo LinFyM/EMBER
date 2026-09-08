@@ -84,9 +84,7 @@ GRU 的各条消息覆盖 `[u,t]` 的重叠区间，不是首尾相接的动作�
 ## 3. 冻结证据与末层响应
 
 固定 `H=50, d_R=1024, d=256, heads=8`；FFN 扩展比4，pre-norm、dropout0。
-语言条件 `ell_bar[256]`由 exact task tokens 的带位置、mask 读取形成，不再做一次 Gemma 视觉前向。
-该共享语言条件只依赖exact language，可复用当前静态token embeddings的masked learned read；不能从整段视频Z池化得到它，
-否则会经语言旁路破坏过去前缀合同。Z内图文融合后的task tokens仍按各自帧归属供视觉查询读取。
+按§8.2.8，过程条件 `ell_bar[t,256]`由当前帧真实最终Z中的exact task tokens，经带位置、mask的现有learned read形成；显式task-mask排除image/system/padding，不增加Gemma前向。每帧独立读取，不从整段视频池化，否则会破坏过去前缀合同。另保留静态token embeddings的 `ell_text[256]`，只供first-query-only compiler首次检索。两种读取复用同一language reader参数，当前原生Z读取仍保留全部有效image与task tokens。
 
 \[
 R_t=\operatorname{PreActionOut}\big(\operatorname{AE}_{\theta_0,\mu}
@@ -149,7 +147,7 @@ w^a_{tu,h}=\sum_g\Pi^a_{tu}(h,g).
 对 rho 做 learned 线性读取为 r[d]，不压成一个平均位移；直接使用含非空质量的 Pi，不除以趋零的 w。
 
 \[
-X_{tu,h}=f_{Q,b}[U_{t,h},m_{tu,h},U_{t,h}-m_{tu,h},r_{tu,h},w_{tu,h},e_h,\bar\ell,\Delta_{tu}/5].
+X_{tu,h}=f_{Q,b}[U_{t,h},m_{tu,h},U_{t,h}-m_{tu,h},r_{tu,h},w_{tu,h},e_h,\bar\ell_t,\Delta_{tu}/5].
 \]
 \[
 Y=X+\operatorname{MHSA}_{H,b}(\operatorname{LN}X;\operatorname{RoPE}(h)),\quad
@@ -202,7 +200,7 @@ WO 无 bias；L=0 时邻帧增量严格0，逐位置 FFN 仍可运行。不构�
 
 每组先临时读取：
 \[
-E^b_t=\operatorname{HRead}_b(q_b(\bar\ell),\widetilde U^b_{t,0:49})\in\mathbb R^{256}.
+E^b_t=\operatorname{HRead}_b(q_b(\bar\ell_t),\widetilde U^b_{t,0:49})\in\mathbb R^{256}.
 \]
 
 完整 U 仍保留。每组一层标准 pre-norm temporal self-attention＋FFN，时间 RoPE 使用 `tau/5`，
@@ -484,6 +482,26 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 复用`fea45593`冻结原生运行面与canonical banks，单GPU只读执行。初始全forward执行因反复计算相同冻结query前缀，在首行结果完成前终止；改为每行四个真实8-query prefix KV只读缓存，复用现有native prefix/denoise API。首行source和同task列各8query额外核对完整原生forward，数值容差为逐点loss平均绝对差≤.002且相对≤.02；actual time/noise严格配对。此执行优化不改变97列与32query定义。预计新增JSON与日志小于50MiB，无模型/cache复制。原件保留在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`。
 
 **完成（2026-09-09）。** 全部74,496 query预测完整exit0，449.10秒、peak11.750GiB；32query与97列实际time/noise全部配对，无梯度且sampler不变。source/自身200/自身400均值=.154875/.111621/.106557；其余23task−自身margin .009396→.015491，同suite .003599→.005578。400全部24task在两teacher及两个查询半面板均优于其余23task均值，同suite相应18/24。训练内功能特化仍增长，不能用此证据继续声称训练内条件编译普遍失败；它也不证明闭环、迁移或充分语义理解。数值与小margin限制见[完整报告](horizon_k1_functional_assignment_20260909.md)。下一项学习变量须据此重新登记，未启动新训练。
+
+### 8.2.8 单变量fresh：逐帧上下文task-token过程条件
+
+**为什么选这一项。** §8.2.7显示训练内功能对应在增强，而验证能力没有相应增长；不把“未学会条件编译”当作全局根因。当前四组共享的语言条件取自静态token embeddings的单query位置化attention，token进入该读出之前没有上下文交互；虽然后续图可以学习组合、Z重读已有真实上下文task tokens，但过程条件并没有直接继承冻结Gemma的上下文语义。本项检验这种访问方式是否改善新任务迁移，而非证明语义在旧图中不存在。
+
+**近等价历史与替代。** 旧Target-Owned已经跨rank共享native D，99/76/86/68不支持无新证据地把缩D当默认修复；其与当前图不同，仍非因果否定。旧Task-Grounded Visual-Value/Full-Factor分别88/86/86/96与91，使用前置task-queried patch、D/G-only Value、memory/rank8和旧mapper，不能当成本项正证据。本项不恢复前置S、不新增patch reader，保持过程关系之后的两端视觉核实。额外meta mappings或状态覆盖是可信竞争解释；已有历史并未单独排除它们，但本轮不改变数据/监督，以先检验已存在的预训练语义访问。
+
+**唯一主要变量：四组过程条件的信息来源。** 每帧同一次真实冻结prefix保留exact task-token位置mask，取其最终上下文状态 $Z_t^{\ell}[L,2048]$。复用现有`language_input/query/read`参数和读取公式，按原exact task span位置编码、mask得到 $\bar\ell_t$。局部帧对 $t\leftarrow u$ 的H-query使用当前帧 $\bar\ell_t$，每组H-read也使用同帧条件；不跨帧池化语言条件。各视频独立、只依赖当前及过去，当前帧未来动作不可见。静态embedding的 $\bar\ell_{text}$仍只用于first-query-only compiler首次检索，保留已完成修正。
+
+共享同一个learned reader是明确的受控选择：不增加参数、不另建text encoder，保持初始化张量及生成次序与first-query-only基线一致；它需从两种native输入表示学习读取，不预先保证这种共享最佳。改变的是过程条件所接收的信息与梯度路径，不把它描述为没有优化影响的纯数值替换。原生Z始终冻结，不给Gemma/vision新增梯度；已有Meta→R梯度保留。
+
+完整流程为：exact language+视频→同次prefix Z/KV及逐帧task-mask→固定probe下AE+Meta完整R→四组过去对应/H-query（当前上下文task条件）→两端真实Z核实/按u短GRU→完整H-read（同帧上下文条件）→过去长程/前三组回写→P4集合compiler（原静态language只Q）→原native D完整76张量。H=50、四组、过去4帧、单向长程、K1、rank16与所有D共享方式均不变。
+
+**实施边界。** `native.py`唯一产生与缓存真实exact-span mask，`horizon.py`唯一生成静态/逐帧条件并组织图，`relation.py`按当前帧索引条件；复用现有训练、物化与评测入口，不新增模块/runner/fallback。schema增加`process_language_source=frame_contextual_task_tokens_v1`，即使参数shape相同也拒绝把旧checkpoint按新语义恢复；旧运行面保留在其冻结提交。当前模型配置原位切换，formal必须fresh Writer/Meta/optimizer/scheduler/sampler/RNG，source/资产复用。
+
+**验证与节点。** 定向检查exact task-mask排除image/system/padding、上下文读出按帧独立且未来帧不能影响先前P、真实Z/context与R都能得到功能梯度、source冻结、完整identity76张量、分块/replay及集合置换合同。真实profile复用8update和完整最长视频，不从profile继承学习状态；新增context读取应远小于现有prefix/AE/FM成本，若出现明显开销先检查重复计算。
+
+formal seed7、4suite×64queries、episode池、AdamW/LR/warmup及source均保持first-query-only；实际曝光逐条匹配，预登记 **100/200 correct strict400**，200固定held-video train96，0/200原24×128 held FM只作训练获取诊断。对照为前轮100/200的75/110及train96=46，后续保持区间参照106/103与400train96=59；不因早期loss或单个suite好看选点。首段约一小时，资源按真实profile登记，微批/设备只改变执行。
+
+若有实质绝对能力或广度增长，继续登记相邻保持段并按§8.3资格裁决；若前两个节点整体更差且未显示可信新能力，则本访问改动不支持继续，完整分析后转向不同机制；若只恢复相近早期水平但趋势仍获取，须覆盖相邻保持才能讨论长期修复，不用200单点宣布成功。最终目标线和全部稳定/视频因果要求不变，不自动加rank/scale/LR/seed扫描、额外meta或RL。
 
 ### 8.3 资格与最终controls
 

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_horizon_relation_writer_config_v1",
-  "status": "fresh_k1_first_query_only_supervised_fm",
+  "status": "fresh_k1_frame_contextual_process_supervised_fm",
   "design": "docs/horizon_relation_video_writer_design.md",
   "data": {
     "seed": 7,
@@ -112,7 +112,8 @@
     "factor_width": 256,
     "edge_chunk": 32,
     "activation_checkpoint": true,
-    "compiler_language_mode": "first_query_only_v1"
+    "compiler_language_mode": "first_query_only_v1",
+    "process_language_source": "frame_contextual_task_tokens_v1"
   },
   "observer": {
     "meta_rank": 4,
@@ -145,8 +146,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "fresh first-query-only compiler content control;200 updates with100/200 correct400; no previous Writer or profiling learning state inherited",
-    "qualification_registration": "docs/horizon_relation_video_writer_design.md#825-单变量fresh对照保留首次语言检索移除直接语言内容残差",
+    "initial_use": "fresh per-frame contextual task-token process condition;100/200 correct400 and200 train96; same parameter initialization and training sampling, no inherited learning state",
+    "qualification_registration": "docs/horizon_relation_video_writer_design.md section8.2.8",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -272,7 +273,7 @@
         48,
         49
       ],
-      "registration_status": "registered first-query-only content control100/200 before new model behavior",
+      "registration_status": "registered frame-contextual process-condition100/200 before new behavior",
       "optimizer_updates": [
         100,
         200

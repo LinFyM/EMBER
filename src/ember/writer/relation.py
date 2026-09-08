@@ -77,7 +77,7 @@ class LocalRelationBlock(nn.Module):
         relative = self.relative_read(relative_correspondence(attention).transpose(-3, -2).flatten(-2))
         mass = attention.sum(-1).transpose(-1, -2)
         fields = (current, matched, current - matched, relative, mass,
-                  horizon_embedding.expand_as(current), language.expand_as(current),
+                  horizon_embedding.expand_as(current), language[:, None, :].expand_as(current),
                   (gap[:, None, None] / 5).expand(-1, self.horizon, 1))
         query = self.horizon_query(self.query_input(torch.cat(fields, -1)), self.h_positions)
         return query, matched, relative, mass
@@ -88,7 +88,7 @@ class LocalRelationBlock(nn.Module):
                        horizon_embedding: Tensor, language: Tensor) -> Tensor:
         attention = self.correspondence(normalized[current], content[current], content[past], gap)
         query, matched, relative, mass = self.form_query(
-            states[current], values[past], attention, gap, horizon_embedding, language)
+            states[current], values[past], attention, gap, horizon_embedding, language[current])
         z_past = self.visual_read.read_projected(query + self.visual_roles[0], visual_key[past],
                                                visual_value[past], visual_mask[past, None, None, :])
         z_now = self.visual_read.read_projected(query + self.visual_roles[1], visual_key[current],

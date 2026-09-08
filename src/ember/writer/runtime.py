@@ -41,10 +41,9 @@ class WriterRuntime:
 
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
-    from ember.writer.horizon import COMPILER_LANGUAGE_MODE, HorizonRelationWriter, HorizonWriterConfig
+    from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig, require_architecture_identity
 
-    if config["model"].get("compiler_language_mode") != COMPILER_LANGUAGE_MODE:
-        raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
+    require_architecture_identity(config["model"])
     model_config = HorizonWriterConfig(**config["model"])
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)

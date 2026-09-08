@@ -34,11 +34,12 @@ class FrozenPrefixChunk:
     layers: tuple[tuple[torch.Tensor, torch.Tensor, Any], ...]
     visual_tokens: torch.Tensor
     visual_mask: torch.Tensor
+    visual_task_mask: torch.Tensor
 
     @property
     def tensor_bytes(self) -> int:
         return sum(value.numel() * value.element_size() for value in (
-            self.padding, self.visual_tokens, self.visual_mask,
+            self.padding, self.visual_tokens, self.visual_mask, self.visual_task_mask,
         )) + sum(
             value.numel() * value.element_size()
             for keys, values, _ in self.layers for value in (keys, values)
@@ -100,6 +101,8 @@ class NativeVideoObserver:
         prefix = prepare_execution_policy_prefix(self.policy, batch)
         evidence_mask = prefix.padding.clone()
         evidence_mask[:, -tokens.shape[1]:] = task_span.expand(len(frames), -1)
+        task_mask = torch.zeros_like(prefix.padding)
+        task_mask[:, -tokens.shape[1]:] = task_span.expand(len(frames), -1)
         # Remove only columns masked for every frame. Valid-token positions and
         # native causal semantics stay unchanged, without missing-camera work
         # in the language/Action Expert attention stacks.
@@ -107,11 +110,13 @@ class NativeVideoObserver:
         prefix = ExecutionPolicyPrefix(prefix.embeddings[:, keep], prefix.padding[:, keep])
         features, cache = prepare_prefix_features_and_cache(self.policy, prefix)
         evidence_mask = evidence_mask[:, keep]
+        task_mask = task_mask[:, keep]
         evidence_keep = evidence_mask.any(dim=0)
         return FrozenPrefixChunk(
             prefix.padding.cpu(),
             tuple((keys.detach().cpu(), values.detach().cpu(), window) for keys, values, window in cache),
             features[:, evidence_keep].cpu(), evidence_mask[:, evidence_keep].cpu(),
+            task_mask[:, evidence_keep].cpu(),
         )
 
     @torch.no_grad()
@@ -161,8 +166,10 @@ class NativeVideoObserver:
                        for video in condition.videos)
         masks = tuple(torch.cat([chunk.visual_mask for chunk in video]).to(self.device)
                       for video in condition.videos)
+        task_masks = tuple(torch.cat([chunk.visual_task_mask for chunk in video]).to(self.device)
+                           for video in condition.videos)
         return (condition.frame_indices, condition.language_embeddings,
-                condition.language_mask, tokens, masks)
+                condition.language_mask, tokens, masks, task_masks)
 
     @torch.no_grad()
     def responses(self, condition: NativeCondition) -> tuple[torch.Tensor, ...]:

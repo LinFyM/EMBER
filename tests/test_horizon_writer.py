@@ -228,6 +228,33 @@ def test_memory_prior_equalizes_video_mass_and_excludes_routing_from_values():
     torch.testing.assert_close(observed[0], writer.compiler[0].memory_norm(memory))
 
 
+def test_compiler_language_can_route_but_cannot_supply_residual_content():
+    writer = HorizonRelationWriter(_contract(), _config(activation_checkpoint=False))
+    language = torch.randn(12)
+    # With a single real memory value, attention cannot select different
+    # content. A language-dependent result would reveal a residual bypass.
+    one_value, one_time = [torch.randn(1, 12)], [torch.tensor([0])]
+    first = writer.compile(one_value, one_time, language)
+    second = writer.compile(one_value, one_time, -language)
+    torch.testing.assert_close(first, second)
+
+    # Multiple distinct values make language-guided lookup meaningful, with
+    # gradients to both the existing query projection and video memory.
+    memory = torch.randn(5, 12, requires_grad=True)
+    output = writer.compile([memory], [torch.arange(5) * 5], language)
+    gradient = torch.autograd.grad(output.square().sum(), (writer.query_language.weight, memory))
+    assert all(value.abs().sum() > 0 for value in gradient)
+
+
+@pytest.mark.parametrize("mode", [None, "language_residual_v1"])
+def test_runtime_rejects_unmarked_or_old_compiler_before_loading_assets(tmp_path, mode):
+    from ember.writer.runtime import build_runtime
+
+    model = {} if mode is None else {"compiler_language_mode": mode}
+    with pytest.raises(ValueError, match="architecture identity"):
+        build_runtime(tmp_path, {"model": model}, torch.device("cpu"))
+
+
 def test_identity_output_covers_all_native_targets_and_independent_rank_decoders():
     writer = HorizonRelationWriter(_contract(True), _config())
     generated = _call(writer, [_input(1, writer.config)], _language(writer.config))

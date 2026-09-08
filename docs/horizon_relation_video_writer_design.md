@@ -232,6 +232,7 @@ GRU 某条 `[u,t]`消息可以包含当前 t 的证据；不宣称它是在 u �
 每视频独立得到 P4[k,t,256]；608个 `(target m,rank r)` queries，2层 cross-attention＋query self-attention＋FFN。
 每视频基础质量通过读取 logit 减 `log T_k`修正；内容决定实际权重。不设 video ordinal embedding，
 不跨视频建立时间边，不平均原始视频或最终 LoRA。得到 `c[38,16,256]`。
+当前按§8.2.5采用`first_query_only_v1`：首块残差内容从task-independent target/rank identities开始，language只加到首cross的检索query；任务条件内容经真实P4 Value进入。第二块按实际首块输出继续。旧裸language残差只由原冻结提交和100–600结果保存，不作为当前运行开关。
 
 \[
 a_{mr}=a^0_{mr}+D^A_{mr}\operatorname{GELU}(U_Ac_{mr}),\quad
@@ -432,6 +433,25 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 正式架构对照前补全确切公式、参数初始化、fresh学习状态、仍保持的4×64数据/优化口径和匹配节点；不得同时改language path、D sharing和task组织。每段约一小时，以真实profile决定50/100倍数的中间/末节点，日志同时报updates、conditions、queries/每task曝光和墙钟。先获得行为证据，再决定相邻继续；目标/资格仍为§8.3。
 
 本批轨迹与内部分析新增峰值预算8GiB；source、checkpoint和已有LoRA均引用canonical资产。2026-09-09 strg01实测data1 576,355,896KiB/soft1,073,741,824KiB，shared84TiB，原run38GiB；正式启动时刷新对应GPU现场。诊断原件位于 `k1_fresh/internal_diagnostic_20260909/` 与 `k1_fresh/behavior_replay_20260909/`，本节登记不是完成声明。
+
+### 8.2.5 单变量fresh对照：保留首次语言检索，移除直接语言内容残差
+
+**依据与待检验解释。** A/A2/A3共6144个固定train-side FM queries（含各臂正常基线），实际P4/cross均有作用；A3仅移除首层language残差使200/600 FM增加.026782/.028808，23/24及24/24变差，而仅移除首层language检索增加.000188/减少.000107，任务方向混合。B的预登记64条真实回放定位到错误对象/实例及组合执行混合缺口，并保留成功例和历史数值分叉。完整证据见[horizon_k1_frozen_diagnostics_20260909.md](horizon_k1_frozen_diagnostics_20260909.md)。
+这些证据支持首次compiler内容路径是一个已确认被使用、且可单独干预的接口，但没有证明它就是泛化根因。下一轮检验：直接language残差是否让共享映射过多依赖容易拟合的任务语义内容；让task-conditioned内容经现有真实视频memory进入，是否在相同学习口径下改善未见任务能力及保持。反向可能是移除有效语义prior导致能力更差，本实验允许此non-pass。
+
+**唯一主要变量与完整公式。** 记`e=e_target+e_rank`，`l=query_language(ell)`，原首cross及后续self/FFN组合为`F`。旧第一块是`F(e+l+Cross(LN(e+l),LN(P)+time,LN(P)))`，新第一块是`F(e+Cross(LN(e+l),LN(P)+time,LN(P)))`。其后的第二compiler block完全采用既有公式，输入为新第一块实际输出；不强行把后续query钳制为旧图数值。新模型中`l`只向首次cross的query加偏置，不直接进入该块残差内容。
+原有language encoder、每组内部语言引导、真实native prefix、单probe/Meta、完整50H、四组过去局部/单向长程、K1集合memory、双cross、自注意力/FFN、target/rank identities、38-target rank16 A/B、每target/rank/side独立native D、source冻结全部保留。P4仍可含视频静态语义与动态内容，此项不把删除语言残差等同于证明video dynamic必要性。共享task-independent identities/biases允许继续学习，不增加second adapter、gate、额外loss或head。
+
+**最近等价历史与新增变量。** 旧v5.2/v6已经使用语言query检索、视频Value和视频残差，但其原生读取、前端、decoder与优化配方不同；强分数是可行性边界，不能借来声称本轮已验证。旧semantic-address/Task-Grounded等弱结果也未在当前Horizon图中单独隔离这一处残差。本轮保留当前全部其它接口，首次隔离当前compiler的内容来源，不重命名复做旧整套方案。rank-sharing与24-task组织不混入。
+
+**fresh与身份。** 从合法identity step0重建整个Writer/Meta及AdamW/scheduler/sampler/RNG，seed7；不加载200/600或任何profile学习状态。参数数量、初始化分布与随机创建顺序不变，source和public probe复用原定义。新增显式model identity `compiler_language_mode=first_query_only_v1`；当前runtime/物化入口拒绝未标记或旧模式的Writer checkpoint，旧架构只由原frozen worktree/commits与artifacts解释。即使张量shape相同也不得exact-resume旧权重。
+
+**学习与评测。** 保持原四suite各随机一task、4conditions×64queries=256/update、各条件1/4（全task期望1/24）、teacher0–15/actions16–41跨episode、Meta端到端、纯FM、AdamW3e-5、warmup8与其它超参。仅物理microbatch按现场与真实profile调整，SUM归约/clip/一次optimizer step不变。以原约18s/update为依据预登记首段200更新，100/200完整checkpoint各自correct strict400；完整profile若显示无法接近一小时，只在看到新行为前调整为50/100倍数附近节点并记录原因。
+100/200累计400/800条件、25600/51200queries，与旧同节点正式55/110比较task/state/video/RNG及per-task/suite/breadth/RGL/churn/J。新200补固定held-video train96（states32–35、46–49各一次）对比原200的52/96；固定held-FM仍是训练侧定位，不用于选点。训练新run root与所有新LoRA独立，不复用旧Writer物化条件；policy、dataset、tokenizer和source checkpoint继续复用canonical资产。
+
+**裁决与后续。** 若实质扩展能力并保持相邻获取，继续原架构的新学习历程以判断稳定性；若只改善内部FM、不改善closed-loop，不称修复。两点弱但持续学习时结合训练侧与曝光继续观察，不用单点直接淘汰；经有信息量节点未形成新能力且无支持继续的证据，则本次内容移除non-pass，不通过LR/rank/seed小扫或立刻叠rank-sharing挽救。不再机械扩充冻结language/cross消融矩阵。资格、other与最终controls仍按§8.3，最终目标不降格。
+
+**工程与资源。** 由现有`horizon.py`与`attention.py`承接这处内容/检索分离，不新增平行Writer。旧未执行24-task草稿已撤回，当前baseline仍4×64。正式前完成针对新接口、language与P4有效梯度、完整identity LoRA、checkpoint身份拒绝和分块重放的检查；从clean pushed detached运行面启动。profile不成为正式权重起点；现场quota、峰值估计、双节点GPU与命令登记在本轮独立launch contract，GPU/NUMA/P2P和exact-resume约束保持。
 
 ### 8.3 资格与最终controls
 

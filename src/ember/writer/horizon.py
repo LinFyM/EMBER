@@ -16,6 +16,9 @@ from ember.writer.native_factor import NativeFactorLoRADecoder
 from ember.writer.relation import LocalRelationBlock
 
 
+COMPILER_LANGUAGE_MODE = "first_query_only_v1"
+
+
 @dataclass(frozen=True)
 class HorizonWriterConfig:
     width: int = 256
@@ -29,8 +32,11 @@ class HorizonWriterConfig:
     factor_width: int = 256
     edge_chunk: int = 8
     activation_checkpoint: bool = True
+    compiler_language_mode: str = COMPILER_LANGUAGE_MODE
 
     def __post_init__(self) -> None:
+        if self.compiler_language_mode != COMPILER_LANGUAGE_MODE:
+            raise ValueError("this Writer requires the first-query-only compiler language contract")
         positive = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
                     self.blocks, self.radius, self.compiler_blocks, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
@@ -145,12 +151,16 @@ class HorizonRelationWriter(nn.Module):
         if not videos or len(videos) != len(frame_indices):
             raise ValueError("a condition needs one or more videos with matching time arrays")
         memory, routing, prior = self._memory(videos, frame_indices)
-        query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :] + self.query_language(language)).flatten(0, 1)
-        for block in self.compiler:
+        query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
+        language_route = self.query_language(language)
+        for index, block in enumerate(self.compiler):
+            # Language guides the first lookup; task-conditioned residual
+            # content arrives through the real video values.
+            args = (query, memory, routing, prior, language_route if index == 0 else None)
             if self.config.activation_checkpoint and torch.is_grad_enabled():
-                query = checkpoint(block, query, memory, routing, prior, use_reentrant=False)
+                query = checkpoint(block, *args, use_reentrant=False)
             else:
-                query = block(query, memory, routing, prior)
+                query = block(*args)
         return query.unflatten(0, (len(self.contract.targets), self.contract.rank))
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,

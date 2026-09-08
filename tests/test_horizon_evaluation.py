@@ -55,6 +55,8 @@ def bank(tmp_path, request):
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
+    run["model_config"]["compiler_language_mode"] = "first_query_only_v1"
+    run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
     torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": STAGE, "next_macro": 16,
@@ -469,6 +471,18 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
     (run["config"] if field in {"execution_precision", "update_version"} else run)[field] = value
     run_path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match="formal supervised"):
+        inspect_writer_checkpoint(checkpoint)
+
+
+def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank):
+    _, manifest = bank
+    checkpoint = Path(manifest["writer_checkpoint"]["path"])
+    run_path = checkpoint.parent.parent / "run_contract.json"
+    run = json.loads(run_path.read_text())
+    del run["model_config"]["compiler_language_mode"]
+    del run["config"]["model"]["compiler_language_mode"]
+    run_path.write_text(json.dumps(run))
+    with pytest.raises(ValueError, match="architecture identity"):
         inspect_writer_checkpoint(checkpoint)
 
 

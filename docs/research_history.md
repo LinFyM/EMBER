@@ -96,6 +96,8 @@ GOMQ cycle2/3/4为151/135/131，相邻churn42、34。cycle2五臂151/139/131/127
 `3075b3c7:docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`（旧§3）。这不授权dtype、rank、seed扫描或旧run恢复。
 
 <a id="native-capacity"></a>
+**2026-09-09冻结诊断补充：** 原fresh K1的200/600已完成A/A2/A3共6144 train-side FM queries及预登记64条validation行为回放，全部无参数更新。首层language内容残差比仅该层language检索的移除影响大；P4/cross有实际功能，不能据此宣布动态理解、捷径根因或fresh删除有效。回放9/32→7/32，与各自历史子集7/32有成功集合分叉，原正式110/82不改；图像定位了错误目标/实例、组合子目标和具体抓取混合缺口，并保留正确双目标成功。完整报告与原件索引：[冻结诊断](horizon_k1_frozen_diagnostics_20260909.md)。后续fresh内容路径对照只以当前progress登记为准，不从此历史条目恢复执行。
+
 ## 3. 从privileged容量到G1/G2机制证据
 
 ### Privileged effects与人工process的边界（旧§4--8）

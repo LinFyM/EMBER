@@ -20,6 +20,7 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore
+from ember.writer.horizon import COMPILER_LANGUAGE_MODE
 
 
 RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
@@ -55,6 +56,9 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
+    if (run.get("model_config", {}).get("compiler_language_mode") != COMPILER_LANGUAGE_MODE
+            or run.get("config", {}).get("model", {}).get("compiler_language_mode") != COMPILER_LANGUAGE_MODE):
+        raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA

@@ -78,9 +78,11 @@ class CompilerBlock(nn.Module):
         self.cross, self.self_attention = Attention(width, heads), Attention(width, heads)
         self.ffn = feed_forward(width)
 
-    def forward(self, query: Tensor, memory: Tensor, routing: Tensor, prior: Tensor) -> Tensor:
+    def forward(self, query: Tensor, memory: Tensor, routing: Tensor, prior: Tensor,
+                query_bias: Tensor | None = None) -> Tensor:
         values = self.memory_norm(memory)
-        query = query + self.cross(self.cross_norm(query), values + routing, values, prior)
+        lookup = query if query_bias is None else query + query_bias
+        query = query + self.cross(self.cross_norm(lookup), values + routing, values, prior)
         normalized = self.self_norm(query)
         query = query + self.self_attention(normalized, normalized, normalized)
         return query + self.ffn(self.ffn_norm(query))

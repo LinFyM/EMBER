@@ -1,25 +1,20 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。Owner最新授权：继续深入分析，并据证据规划修正和实验推进；常规换卡、调度和小问题自主处理，无需再次询问。
+更新时间：2026-09-09 CST。Owner最新授权：休息期间继续自主完成不违反科学精神的分析、修正与实验；正式改模/训练前先充分分析，常规换卡与小问题无需再次询问。
 
-## 当前：恢复证据驱动推进，先完成原因区分与实验排序
+## 当前：冻结诊断完成，实施首层语言内容路径的单变量fresh对照
 
-Owner进一步明确：该做的分析实验和内部架构拆解直接做，在决定正式改模和训练前先充分分析；随后授权休息期间继续自主推进任何不违反科学精神的工作。
-本条覆盖此前“报告后只讨论、所有实验暂停”的授权状态；不自动恢复原400→600后续训练或未运行的24-task分叉。
-仍以既有科学目标、数据/信息墙、单套LoRA、K1、纯FM先行和正式评测合同为边界。先明确竞争解释、最近等价历史、干预变量及裁决分支，再实施对应修正与实验；调度变更在现场资源及恢复合同内自主解决。
+完整新证据见 `docs/horizon_k1_frozen_diagnostics_20260909.md`；原只读报告保留当时范围。A/A2/A3无参数更新，分别768/3072/2304个train-side FM queries，全部真实teacher/query/time/noise配对、exit0。A显示P4/cross实际有用；A3首层language残差移除使200/600 FM增加.026782/.028808，23/24与24/24变差，仅移除首次检索language影响很小且方向混合。结论只定位当前依赖，不证明全局语言路由无用、shortcut根因或fresh删除必然更好。
 
-本轮新增历史核查发现：旧Target-Owned Writer已经采用同target内rank共享的native末投影，正式50/100/150/200为99/76/86/68。
-它不能单独否定当前图里的rank共享对照，但降低了“减少D参数就优先重训”的依据。24-task组织、rank共享、删除语言直达残差均尚无当前图的受控行为支持，不预先称修复。
-新分析与后续顺序登记在 active design §8.2.4；已有审计报告保持其当时只读范围，不追改成新实验结果。
-首批新诊断已进入准备：冻结200/600训练侧内部接口敏感性（train24×teacher46×16固定actions，共48条件/768queries，无参数更新）；冻结200/600 validation8×states0/12/25/37轨迹重放（共64episode，复用原正确视频LoRA，无checkpoint选择）。后者仅补评测入口的显式登记与已有轨迹捕获，不修改模型。
-现场data1 quota=576355896KiB/1073741824KiB，原run38GiB，共享84TiB；本批派生数据峰值预算8GiB。内部诊断分配GPU02 physical2，轨迹重放拟用physical6，两者均按live余量共驻，不影响他人。精确命令与最终现场随诊断原件记录。
-冻结轨迹入口复用现有rollout capture、队列和policy forward，只增加reference/配对/用途核验；相关62项检查通过，补全原整bank复用后25项定向检查通过。实际重放尚待启动，不将入口测试记为科学结果。
-首批内部诊断已exit0：48条件/768queries全部配对，314.89秒，峰值23.411GiB，零参数更新；新16-query FM200/600=.115832/.107259，20/24任务下降。P4/cross非零且cross/self局部敏感度同量级，不支持视频分支已断开；语言query范数占比不是shortcut证明。原件`internal_diagnostic_20260909/{summary,conclusions}.json`。
-据此登记A2单支路activation lesion（normal/仅直接语言项零/仅cross1零/仅cross2零），同48条件共3072queries，真实P4和至少一层video cross始终保留；无模型更新，不是正式改模或最终controls。
-行为200重放已在GPU02 p6×2workers实际运行，原bank完整检查与4-state执行子集均保持。首次prepare后因launcher重复检查把子集当整bank而在worker前拒绝，零rollout；已修正recovery复用原整bank验证，26项定向检查通过。冻结运行面为clean pushed e1bfad44，实际输出`behavior_replay_20260909/step200_replay`，初次小失败原件`step200/`保留；600随后复用同口径单独运行。
-A2已完整exit0：3072queries、445.71秒、峰值10.680GiB，48 normal与A的FM一致。移除query_language使200/600 FM增加.028474/.029431，23/24与24/24任务变差；单cross增加约.0012–.0030且600影响更大。结果表明两类接口被使用，不能直接证明语言shortcut。新增A3只分离首层语言路由与残差内容，合同见design§8.2.4，尚未启动。
-行为200完整32条、2worker exit0，464.89秒；本次9/32，历史对应7/32，R/G/L=6/3/1，所有实际teacher/LoRA/state/env及policy noise前缀配对通过。变化如实保留，原formal110/400不改写。600已经在live确认后的同p6×2workers运行。固定state25全8task及Spatial1/3四state图像已检查：Spatial8/8均拿错对象/实例；Long32混合目标获取、不开炉与后续物体干扰，不将它们归为统一motor失败或特定Writer模块根因。
-当前六个未提交源码/config/tests仍为未执行的24-task草稿，尚未纳入新方案、没有新模型权重或实验结果。后续实施选定修正时，先撤回本任务的失效草稿并恢复4task×64queries基线，避免同时引入两项变量。
+预登记B回放64条已完整：200/600为9/32与7/32，S/O/G/L=0/5/4/0与0/2/4/1；相邻R/G/L=5/2/4，churn6、J=.4545。历史对应子集均7/32，回放相对历史分别6/3/1与6/1/1；teacher/LoRA/state/env/policy noise及捕获一致性通过，4个worker均exit0，完整墙钟464.89/583.61秒。保留数值分叉，不替换原正式110/82。原件 `k1_fresh/behavior_replay_20260909/`，轨迹约5.56GiB。
+
+两点42份固定图像已目视检查。Spatial存在错误物体/实例及抓取停滞；BBQ200有三条实际操作正确瓶，而600四条均先操作干扰物，三条还完成干扰物入篮。Long保留正确双目标组合，也有开炉/放置只完成其一、错误对象和慢/失败抓取；不把这些混合缺口定责单一模块。
+
+据此active design §8.2.5登记fresh首层内容对照：保留原首cross的language检索，移除其直接language残差；第二block自然沿新内容继续。全部四组视频前端/完整H/Meta/native D、rank16完整LoRA、4task×64queries、pure FM/AdamW与数据池保持。旧近等价强/弱历史边界已写入设计；它是受控假设检验，尚无新行为分数。原24-task草稿六文件已经撤回，rank共享后置，原K1不原样继续700/800。
+
+实现由现有horizon/attention承接，新增显式`compiler_language_mode=first_query_only_v1`防止同shape旧Writer被新runtime误读；旧诊断与checkpoint继续使用各自frozen worktree。新接口与完整梯度、identity、checkpoint身份、采样/恢复的96项定向覆盖已通过（首轮95通过；旧监督fixture缺缓存统计字段，补齐后该项复验通过）。尚未启动新GPU profile或正式训练；预登记首段100/200 correct400与200 held-video train96，profile只校验吞吐/峰值，不继承其学习状态。
+
+新段live data1 quota=582314184KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

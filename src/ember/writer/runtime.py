@@ -41,7 +41,11 @@ class WriterRuntime:
 
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
-    from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig
+    from ember.writer.horizon import COMPILER_LANGUAGE_MODE, HorizonRelationWriter, HorizonWriterConfig
+
+    if config["model"].get("compiler_language_mode") != COMPILER_LANGUAGE_MODE:
+        raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
+    model_config = HorizonWriterConfig(**config["model"])
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
     reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
@@ -56,7 +60,7 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     policy.model.gradient_checkpointing_disable()
     expert = policy.model.paligemma_with_expert.gemma_expert.model
     state = WriterState(
-        HorizonRelationWriter(lora, HorizonWriterConfig(**config["model"])),
+        HorizonRelationWriter(lora, model_config),
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
     ).to(device)

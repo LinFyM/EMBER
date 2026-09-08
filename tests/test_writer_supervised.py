@@ -38,7 +38,7 @@ def test_fm_weights_once_and_replays_writer_and_meta_once(monkeypatch):
     writer, observer = Writer(), Observer()
     engine = object.__new__(SupervisedEngine)
     engine.device = torch.device("cpu")
-    engine.cache = SimpleNamespace(condition=lambda *args: None)
+    engine.cache = SimpleNamespace(condition=lambda *args: None, hits=0, misses=0, bytes=0)
     engine.config = {"runtime": {"policy_microbatch": 8}}
     engine.runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), policy=None, lora=None,
                                      processor=SimpleNamespace(training_batch=lambda batch: batch))

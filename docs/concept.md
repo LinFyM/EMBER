@@ -42,6 +42,7 @@ Owner最终选择**过去局部＋过去单向长程**；每组U_t只依赖原�
 ## 共同解释与完整参数生成
 
 每条video先独立保序编码，只有集合阶段置换不变地共同读取。不混淆video内部时间和video集合次序，不平均frames、raw features或最终LoRA。
+Compiler首块以task-independent target/rank身份作为残差内容，exact language只引导首次cross检索；任务条件内容由真实P4 Value进入，第二块继续共同编译。此接口是已登记的fresh受控对照，不预先宣称视频动态必要性或更高闭环。
 Compiler的target/rank身份决定输出位置，输入不必保留18个网络层才能生成38个目标。末层未保留的信息也不能由compiler凭空恢复。
 Native D按target/rank/side独立、跨任务共享，允许更直接的因子学习通道；它仍有共享干扰和固定读出空间，不能被视为性能保证。
 参数在rollout中固定，作用于随机器人观测变化的激活，因此可以形成状态条件化行为；不能按教师视频时钟播放动作。

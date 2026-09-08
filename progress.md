@@ -18,7 +18,11 @@
 
 100完整checkpoint已发布并通过public inspector，400条件/25600queries的task/video/query/seed/权重与原基线逐条一致，四suite各100条件，24task均覆盖、259种task-video；更新墙钟1457.83秒。100 correct400 bank已在gpu01p1启动，现场free28480MiB/util6%，预计runtime峰值14GiB；训练在gpu02继续200。bank/评测准备与完整CPU排程检查记录在`k1_first_query_only/step100/`和`evaluation_schedule_prevalidation.json`，当前无新闭环分数。
 
-新段live data1 quota=591082600KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
+首段fresh正式训练已完整exit0，200 checkpoint已发布；200更新/800条件/51200queries全部与原基线同task/video/query/seed/权重，updates墙钟2921.40秒、均值14.607秒，完整墙钟3290.54秒。held FM0→200为.151466→.111184，只作拟合证据。100bank已exit0（完整墙钟1353.86秒，含gpu01冷加载），400条件全新、实际50视频每task各一次、与原schedule一致，public formal bank inspector通过。
+
+100 strict400已在gpu02p6、2replica启动（tmux `ember-first-query-eval100`）；200独立validation400+train96 banks由同resident source在gpu02p0物化（`ember-first-query-bank200`）。运行面保持`fea45593`，详细launch/日志位于`k1_first_query_only/step100/`、`step200/`；当前无新闭环分数。下一步完成两400及train96配对证据，按active design分支裁决。
+
+新段live data1 quota=597432496KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

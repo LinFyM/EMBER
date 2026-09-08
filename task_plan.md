@@ -10,7 +10,7 @@
 
 1. 完成新接口、真实可达梯度、identity完整LoRA与checkpoint身份边界的定向验证，更新canonical方法文档并clean push。
 2. 已完成8步真实profile及双节点/独立quota检查：均值14.83s/update，32个采样条件与原基线一致。fresh正式已启动，继续100/200预登记节点；profile权重不继承。
-3. Fresh Writer/Meta/AdamW/scheduler/sampler/seed7正式启动；第一段400/800条件、25600/51200queries的100/200各做canonical strict400，与旧55/110匹配比较。200追加同口径train96对比旧52，不能用FM选点。
+3. Fresh首段200更新已完整结束，800条件/51200queries与原基线实际采样一致；100bank通过完整检查，strict400运行中，200的validation400+train96独立bank物化中。继续两400与旧55/110匹配比较，200 train96对比旧52，不能用FM选点。
 4. 以绝对能力、breadth、per-task/suite和相邻R/G/L/churn/J判断下一段；持续获取则继续稳定性证据，只有内部改善不称修复。有效non-pass只否定本次接口/训练组合，不追加无依据的language/cross消融矩阵或LR/rank/seed小扫。
 5. 沿原qualification资格补other与最终视频controls；合格后方法冻结，完成规定32/8 fresh和Test。当前诊断、代码或初始两点不构成最终完成。
 

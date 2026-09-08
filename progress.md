@@ -8,6 +8,9 @@
 首段canonical correct100/200均已完成，55→110/400；200四suite为1/61/41/7、breadth6/8。相邻R/G/L42/68/13、churn81/400、J=.34146；Long旧6个成功全部丢失、另获7个。仍在获取能力，未达到性能、breadth、Long和相邻稳定资格，不判平台。
 已登记并发起原学习状态续训200→400：原frozen b6d70d98、GPU02 physical1/2/3/6、micro8/4/8/8，300/400两节点correct400；tmux `ember-horizon-k1-segment200-400`，完整命令/预算/实时资源在`k1_fresh/segment200_400/`。不重置、不改架构/超参；other与最终controls继续后移。
 
+step300完整checkpoint已通过正式检查，约4.13GiB；累计1200个真实K1条件、76800 queries，各task36–66次曝光。201–300更新均值15.893秒，峰值38.170GiB。checkpoint与scheduler游标为300；训练现已继续到322，未停止或重置。
+step300 bank已在GPU02 physical4额外单卡发起（tmux `ember-k1-materialize300`），只生成本checkpoint自己的400个条件；仍待封存及最终manifest覆盖核验。当前共五张实际工作的卡，闭环评测仍在400段末。记录见`k1_fresh/segment200_400/step300/`。
+
 ## 已完成：整轮视频schedule修复与首段评测
 
 Owner2026-09-08明确要求恢复canonical每task50视频各一次。fresh K1训练200已完成、100/200 checkpoint保留，不重训或重置。

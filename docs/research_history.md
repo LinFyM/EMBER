@@ -776,3 +776,5 @@ Fresh K1的100/200训练checkpoint保持有效；其初次物化也错误地只�
 
 macro100（fresh K1累计25600 FM queries）correct400完整exit0：55/400，S/O/G/L=0/22/27/6、breadth6/8，global tasks1/3/11/13/23/26/31/32为0/0/21/1/2/25/4/2。相对同source47的R/G/L=25/30/22、churn52/400、J=.32468。实际rollout400行的teacher身份匹配新canonical bank，每task50条各一次；六worker全部exit0，完整墙钟1391.43秒（launcher1324.93秒）。
 未达>145、Spatial为零、Long6<10；这是单个早期监督节点，不能判断平台。旧mixed64的99/95同时具有不同训练条件和错误视频分布，不从两者分数差异归因K1或schedule。原件`k1_fresh/schedule_repair/step100/completed_summary.json`、`correct_vs_source47.json`及`evaluation/validation_correct_step100_schedule_v2_gpu3_J0/`；继续预登记200并做相邻paired分析。
+
+同一macro100对历史SFT400=109与SFT425=107，R/G/L分别39/16/70和38/17/69，churn均86/400、J=.312/.30645。固定source/policy/environment/RNG及normalization的既有历史兼容性检查通过；仍保留历史rank128、旧后端且未在当前backend重跑的边界，不作为隔离架构或K因素的实验。原件`k1_fresh/schedule_repair/step100/correct_vs_historical_sft.json`。

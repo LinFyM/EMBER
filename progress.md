@@ -13,6 +13,7 @@ canonical schedule、旧LoRA身份复用与启动前实际视频覆盖检查已�
 修复已由clean pushed f1330697进入detached `horizon-schedule-runtime`；GPU02 tmux `ember-k1-schedule100`/`ember-k1-schedule200`分别在p1/p3补齐145条件，旧255各自hardlink复用。两份物化exit0，完整墙钟357.89/357.22秒；最终覆盖检查通过。correct100首次六卡请求被现有evaluator准入限制（共驻使用≤8GiB、free≥32GiB、util≤10%）在worker前拒绝，exit1、无rollout；原准备目录保留。已改GPU02 p1/3/6、每卡两worker重新发起（tmux `ember-k1-correct100-v2-gpu3`，日志`step100_gpu3/`、输出`validation_correct_step100_schedule_v2_gpu3_J0`）。该次正式结果及后续状态见下文。
 source同口径已核对：原source120完整记录固定筛出states32–35得到15/96，S/O/G/L=6/0/7/2、breadth7/24。仅为原记录的预登记状态子集，不是新run；后续train96比较仍须验证候选source/policy/environment/RNG与逐行pairing。证据`k1_fresh/schedule_repair/source96_reference.json`。
 fresh K1 macro100 canonical correct400已完整exit0：55/400，S/O/G/L=0/22/27/6、breadth6/8；按global tasks1/3/11/13/23/26/31/32为0/0/21/1/2/25/4/2。vs source47 R/G/L=25/30/22，churn52/400、J=.32468；完整墙钟1391.43秒。实际400行各task50视频各一次、逐行匹配最终manifest。尚未达到目标/Spatial覆盖/Long≥10，单节点不判断平台。macro200已在GPU02 p1/3/6、每卡2worker发起（tmux `ember-k1-correct200-v2`、日志`k1_fresh/schedule_repair/step200/`），完成后做相邻分析。
+macro100对历史SFT109/107的R/G/L分别39/16/70、38/17/69，churn均86/400、J=.312/.30645；复用已审计历史compatibility检查，保留旧后端/rank128、非当前backend重跑的边界。原件`k1_fresh/schedule_repair/step100/correct_vs_historical_sft.json`。
 以下较早“正在评测/已封存”描述仅指修复前阶段，不授权继续旧schedule。
 
 ## 当前授权与阶段

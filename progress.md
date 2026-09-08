@@ -10,6 +10,7 @@ Owner2026-09-08明确要求恢复canonical每task50视频各一次。fresh K1训
 旧混合K64的99/95只作重复teacher分布下的探索分数，不满足正式400合同；旧train120四条held视频重复复用（71条件/120行），相关历史结论限于该分布。
 canonical schedule、旧LoRA身份复用与启动前实际视频覆盖检查已实现，74项相关回归通过。真实旧bank被拒绝；每个checkpoint的255个已有LoRA均通过身份/生成合同核对，新400行计划每task correct/other各50条各一次、两checkpoint映射完全相同，待各补145个新LoRA后核验最终manifest。
 训练侧未来诊断改为states32–35的96行，单独建立source比较；真实核验与修复启动记录在`k1_fresh/schedule_repair/`。
+修复已由clean pushed f1330697进入detached `horizon-schedule-runtime`；GPU02 tmux `ember-k1-schedule100`/`ember-k1-schedule200`分别在p1/p3补齐145条件，旧255各自hardlink复用。当前尚待新manifest封存及最终覆盖验证，correct400未重启。
 以下较早“正在评测/已封存”描述仅指修复前阶段，不授权继续旧schedule。
 
 ## 当前授权与阶段

@@ -741,3 +741,10 @@ frozen9ab1e710段40updates平均32.03秒，总1532.41秒，未见相对首段的
 vs source19的R/G/L=13/21/6、churn27/120、J=.325；vs step24的17，R/G/L=14/20/3、churn23/120、J=.37838。
 相比24，Spatial/Goal成功全部保留并新增；Object丢2新增5，Long丢1新增3，仍须正视成功集合变化。
 这是训练task获取增益，不能替代validation资格。原件`supervised/step64_evaluation/train64_vs_source19.json`和`train64_vs_step24.json`。
+
+64首个validation correct strict400完整exit0（949.35秒）：99/400，S/O/G/L=9/53/35/2、breadth8/8。
+global tasks1/3/11/13/23/26/31/32分别5/4/31/22/1/34/1/1。vs source47的R/G/L=35/64/12、churn76/400、J=.31532。
+对历史SFT109/107，R/G/L分别60/39/49与55/44/52，churn88/96；SFT400 S/O/G/L=0/69/22/18，
+因此当前Long/Object弱于SFT，Spatial/Goal较高，不能将不同成功集合压成仅差10分。旧SFT v1/后端/rank边界明确保留。
+尚未>145、Long2<10，无相邻稳定性或视频因果证据；这是早期泛化增益，不能选为qualified checkpoint。
+原件`supervised/step64_evaluation/validation_correct_vs_source47.json`与`validation_correct_vs_historical_sft.json`。

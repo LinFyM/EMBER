@@ -16,7 +16,9 @@
 
 正式fresh已从clean pushed detached `fea45593`启动：gpu02 physical6/2/4/0，world4、FM microbatch6/4/4/3，原生GPU-local NUMA、NCCL_P2P_DISABLE=1。tmux `ember-horizon-first-query-formal`；新root `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909`；精确command、双节点现场证据、profile摘要与日志在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`。不继承profile学习状态，100/200 correct400与200 held-video train96按预登记继续；当前尚无新行为分数。
 
-新段live data1 quota=586750148KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
+100完整checkpoint已发布并通过public inspector，400条件/25600queries的task/video/query/seed/权重与原基线逐条一致，四suite各100条件，24task均覆盖、259种task-video；更新墙钟1457.83秒。100 correct400 bank已在gpu01p1启动，现场free28480MiB/util6%，预计runtime峰值14GiB；训练在gpu02继续200。bank/评测准备与完整CPU排程检查记录在`k1_first_query_only/step100/`和`evaluation_schedule_prevalidation.json`，当前无新闭环分数。
+
+新段live data1 quota=591082600KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

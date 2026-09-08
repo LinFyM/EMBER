@@ -2,7 +2,7 @@
 
 ## 当前目标与授权
 
-Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。下一项实验尚未登记，不能从历史脚本自动恢复。
+Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。下一项为§8.2.7冻结train24完整adapter功能对应矩阵，先执行并解释，再决定下一项学习变量；不能从历史脚本自动恢复。
 
 已完成：新100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；所有训练/物化/诊断/闭环完整exit0，全部配对检查通过，GPU任务均已结束。
 

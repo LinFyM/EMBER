@@ -469,6 +469,18 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 本轮不原样追加500/600：关键跨task回落仍被复现，目标集合未持续扩展；这不是完全饱和或任何更长训练必然无效的证明。原始状态与局部收益保留，下一项结构/训练干预须先审阅完整结果及近等价历史、登记可区分解释。当前尚未登记下一项新实验；全流程授权与最终资格保持。
 
+### 8.2.7 冻结训练任务的完整adapter功能对应矩阵
+
+首轮修正后train96由46增至59，但验证110→103且目标获取错误仍是已有行为证据中的重要缺口。接下来的未决问题是：已经生成的条件LoRA是否在训练分布内具有正确的任务功能对应，而不只是参数可区分。已有A/A2/A3只检查单条件接口依赖，BA几何只证明参数不同；它们都没有回答这个问题。本项不重复语言/cross消融，也不修改网络。
+
+在观察矩阵数值前固定：只使用新first-query-only **200、400**已完整物化的train96 banks；每个train24任务取teacher **46、47**两条，各自独立分析，不平均LoRA。矩阵行是固定train24的正确policy语言、真实观测/state和同task动作查询（episodes42–45、seed=20260908+task、每行32query）；列为其它或本task的完整已生成LoRA。每行执行全部24列×2视频×2checkpoint，加一列identity/source，共74496次query级FM预测。仅以原生FM、配对time/noise比较，保存逐query loss、实际query/condition映射与source参照。无Writer重新forward、无optimizer/梯度、无新rollout、无validation/test动作、无checkpoint选择。
+
+这是**训练任务的完整条件adapter迁移诊断**，同时改变列所代表的task language与视频，不能解释为纯视频因果效应；不替代§8.3的最终wrong-video等controls。报告每行同task列相对source、同suite其余5列、全部其余23列的差值和排序，以及两teacher的一致性与200→400变化。不同任务可共享正确动作，单个query或单个off-diagonal胜出不自动构成错误；聚合按task等权，展示两个16-query半面板的方向一致性，FM排名不等同闭环成功。
+
+若同task在两teacher与查询半面板中普遍具有清楚优势，降低“训练内任务功能对应普遍未形成”的优先级，后续聚焦从已获取对应到新任务的迁移；不能因此断言表示充分。若普遍缺少同task优势或出现稳定跨task替代，先定位条件表示到完整参数的任务特化不足，并结合已有行为决定是否需要语义访问或共享映射修正；矩阵本身不单独定责某个head/前端。若两teacher/半面板方向不稳，则明确证据不足，不按最优列建dictionary或扩大held搜索。结果先汇总，再登记下一项学习变量；不自动启动500/600、rank共享、前置S或额外meta训练。
+
+复用`fea45593`冻结原生运行面与canonical banks，单GPU只读执行；预计新增JSON与日志小于50MiB，无模型/cache复制。原件保留在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`。
+
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，

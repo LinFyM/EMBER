@@ -72,9 +72,10 @@ correct99未达严格>145目标，Long2<10，无相邻资格或视频因果证�
 根据held FM持续改善、train闭环17→34与首次held99/95，按已登记继续纯监督至128，不转RL、不做最终controls。
 同root、同config、同world4与GPU02 physical0/1/3/6，从macro64恢复完整Writer/Meta/Adam/scheduler/sampler/RNG；
 clean pushed frozen=`9ab1e710`，tmux `ember-horizon-supervised` pane573577，精确命令/provenance在`supervised/resume_to128.json`和`.sh`。
-新日志/退出码为`resume_to128.log`/`.exit`；目前恢复启动，首个新update65待核对，不能把旧completion64当作128完成。
+新日志/退出码为`resume_to128.log`/`.exit`；已完成恢复后的65–67步，Writer/Meta梯度非零，optimizer/sampler继续推进；不能把旧completion64当作128完成。
 新双节点现场已刷新，所选四卡util0、低context且有余量；strg01 data1使用527869508KiB/soft1073741824KiB，
 监督run约12GiB，原48GiB注册预算尚余36GiB覆盖后续checkpoint、atomic写入、banks及评测。未使用Test。
+128节点物化/评测及对64相邻比较已准备于`supervised/step128_evaluation/`；尚未启动，默认2replica，现场资源另核。
 
 ## 已结束的联合profile
 

@@ -32,6 +32,11 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 现场data1 quota用573830892KiB/soft1073741824，原预算内剩余物化/评测增长充足；GPU总5张有用卡，source/资产复用。命令与注册分别在`train96_diagnostic/step200_evaluation_launch.json`、`segment400_600/step600/materialization_launch.json`。
 600仅为本轮信息节点，500/600 correct400和训练任务闭环尚未完成，不构成方法通过或全过程结束。
 
+冻结200 held-video train96已完整exit0（8worker均0），52/96，S/O/G/L=12/15/16/9，breadth20/24；同状态source子集15/96，R/G/L=13/39/2、churn41/96、J=.24074。完整墙钟465.90秒。
+实际96行teacher/state/RNG/source/policy/normalization/checkpoint身份比较通过，原件`train96_diagnostic/step200_vs_source96.json`与`step200_completed_summary.json`。
+200已在训练任务的未训练视频上形成广泛行为增益，“共享系统尚未获取训练任务能力”不足以作全局解释；这支持优先审视跨task迁移，但task难度、局部弱项和400变化仍未排除，不能写成唯一根因。
+冻结400同口径train96已在GPU02 p1/2/3/6、每卡2worker启动，tmux `ember-k1-train96-held400`；600 bank继续并行物化。熟悉视频诊断仍按两面板结果是否能区分解释而条件触发，未启动。
+
 以下暂停段为历史，不覆盖本节最新恢复授权。
 
 ## 历史：Owner暂停执行，仅分析至400的情况

@@ -453,6 +453,18 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 **工程与资源。** 由现有`horizon.py`与`attention.py`承接这处内容/检索分离，不新增平行Writer。旧未执行24-task草稿已撤回，当前baseline仍4×64。正式前完成针对新接口、language与P4有效梯度、完整identity LoRA、checkpoint身份拒绝和分块重放的检查；从clean pushed detached运行面启动。profile不成为正式权重起点；现场quota、峰值估计、双节点GPU与命令登记在本轮独立launch contract，GPU/NUMA/P2P和exact-resume约束保持。
 
+### 8.2.6 首段后固定300/400保持检验
+
+**已有事实与尚未检验的区间。** 首层内容对照100/200 correct75/110，对照原55/110；new100→200 R/G/L55/55/20、churn75、J=.4231，breadth均6/8，global1、23未获取。200训练held-video46/96，低于原52/96；全3072query held FM新/原.111184/.111353接近且任务方向混合。完整分析见[首段报告](horizon_k1_first_query_only_20260909.md)。这些结果不支持“已修复”，也没有覆盖原200→300/400的110→86/87回落；新模型仍有真实75→110获取，不能仅因200同分就把它视为已饱和。
+
+**固定同一变量。** 从新完整200 checkpoint exact-resume至400，保存并分别评测300/400。模型、K1、4task×64queries、source、数据池/抽样、所有学习状态、LR/rank/seed及原world4/UUID/NUMA topology保持；物理microbatch只在现场峰值余量需要时调整并记录。两点总曝光1200/1600条件、76800/102400queries，与旧300/400的86/87按实际task/state/video/RNG匹配。当前实测14.61s/update支持新增200更新约49分钟；该段不是重新fresh或另一配方。
+
+**配套定位。** 新400追加同口径held-video train96，与新200的46及原400的59作完整配对；另在冻结400上复用既有`_validate_actions`只读24×128查询，teacher/action demos与seed完全沿原配置，与新0/200及原400的.106271931比较。后者无optimizer、无梯度、不推进训练sampler，不修改exact-resume配置，也不用于checkpoint选择。300/400每个condition仍只生成一套完整LoRA，各bank独立，新400的400+96可复用resident source但不复用条件LoRA。
+
+**结果分支。** 若后期出现实质增长、保持或新的任务能力，沿该方法继续判断相邻稳定与资格；如新300/400也重现回落、持续只在旧有task换手且训练/held诊断无支持继续的能力获取，则本次直接内容移除不构成修复，不默认追加500/600。若行为仍增长但尚未达标，以本轮真实获取和§8.2既有平台口径重新登记下一段，不能用loss下降单独续训。任何后续结构变化须先汇总该完整保持区间及训练侧证据；不机械追加language/cross矩阵或叠rank-sharing。other/最终controls仍按§8.3时机。
+
+完整学习状态继续来自`fea45593`；评测可用仅修正资源准入的`f478076f`。每次launch刷新双节点、独立data1 quota及峰值预算，沿现有launcher/检查入口执行，不新增训练或评测实现。
+
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，

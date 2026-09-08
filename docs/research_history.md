@@ -847,3 +847,11 @@ vs source47，500/600分别33/37/14与41/41/6，churn51/47、J=.392857/.465909�
 Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正式及其它新实验均未启动。只读审计核对原b6d70d98训练、f1330697评测、44个旧400行面板、专家原文与机制历史，CPU重算当前原始结果/采样/模块学习状态及已存LoRA几何，没有新增forward或rollout。
 历史四任务v5.2/v6已有132/121，全任务配方效果又方向相反；不能只凭旧v6-fast143将当前弱分优先归因4task。600的81/82成功集中source原成功对应的三个任务，而200这些任务外28成功到600只剩1；同时train held52→59→67。最受支持的是训练分布学习未稳定转化为跨task能力，具体架构/表示/共享与FM/优化作用未被单独识别。
 完整报告`docs/horizon_k1_evidence_review_20260909.md`；CPU派生统计`runs/analysis/horizon_relation_writer_20260908/k1_fresh/evidence_review_20260909/`。已写但未运行的24task源码/config/tests保留为暂停草稿，不算任何科学结果，不由本次报告恢复。
+
+## 2026-09-09 首层语言内容对照首段：早期增益未成为200整体提高
+
+`fea45593`从fresh seed7仅去掉首compiler的直接language内容残差，保持首cross语言检索及全部其它模型/4×64 pureFM口径。实际800条件/51200queries与原基线task/video/query/seed/权重一致，完整200更新与100/200 correct400、200 train96全部exit0。
+
+新100/200为75/110，对照原55/110；breadth均6/8。新相邻R/G/L55/55/20、churn75、J=.4231；原200→新200为86/24/24，同分110。新S/O/G/L1/36/31/7→3/59/38/10，global1/23未获取。新200 train96为46、breadth18，原52、breadth20，R/G/L39/7/13。相同3072query held FM新/原.111184/.111353均值接近，不能替代行为结论。
+
+只支持早期validation增益及部分能力交换，未证明整体修复、唯一根因或资格。完整报告`docs/horizon_k1_first_query_only_20260909.md`，原件`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/first_segment_evidence.json`及新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`。保留既有近等价历史边界；后续状态只由progress/active design解释。

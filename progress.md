@@ -1,30 +1,24 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。Owner最新授权：休息期间继续自主完成不违反科学精神的分析、修正与实验；正式改模/训练前先充分分析，常规换卡与小问题无需再次询问。
+更新时间：2026-09-09 CST。Owner授权休息期间继续自主完成不违反科学精神的分析、修正与实验；先分析，再正式修改/训练，常规资源选择无需逐项询问。
 
-## 当前：冻结诊断完成，实施首层语言内容路径的单变量fresh对照
+## 当前：首层语言内容对照首段完成，登记300/400保持检验
 
-完整新证据见 `docs/horizon_k1_frozen_diagnostics_20260909.md`；原只读报告保留当时范围。A/A2/A3无参数更新，分别768/3072/2304个train-side FM queries，全部真实teacher/query/time/noise配对、exit0。A显示P4/cross实际有用；A3首层language残差移除使200/600 FM增加.026782/.028808，23/24与24/24变差，仅移除首次检索language影响很小且方向混合。结论只定位当前依赖，不证明全局语言路由无用、shortcut根因或fresh删除必然更好。
+完整首段报告：`docs/horizon_k1_first_query_only_20260909.md`；原始新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`；全部配对比较与执行原件在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`（下称A）。此前冻结A/A2/A3/B完整报告继续保留，其lesion/replay不混作本次fresh行为证据。
 
-预登记B回放64条已完整：200/600为9/32与7/32，S/O/G/L=0/5/4/0与0/2/4/1；相邻R/G/L=5/2/4，churn6、J=.4545。历史对应子集均7/32，回放相对历史分别6/3/1与6/1/1；teacher/LoRA/state/env/policy noise及捕获一致性通过，4个worker均exit0，完整墙钟464.89/583.61秒。保留数值分叉，不替换原正式110/82。原件 `k1_fresh/behavior_replay_20260909/`，轨迹约5.56GiB。
+新100/200 canonical correct **75/110**，原同节点55/110。新S/O/G/L为1/36/31/7→3/59/38/10；breadth均6/8、global1/23仍0。新相邻R/G/L55/55/20，churn75/400，J=.4231；新200对原200保留86/新增24/丢24，总分和breadth不变。两个面板均400行、全部worker exit0，实际task/state/language/video/RNG与source/normalization配对通过。尚未达到>145或稳定性资格。
 
-两点42份固定图像已目视检查。Spatial存在错误物体/实例及抓取停滞；BBQ200有三条实际操作正确瓶，而600四条均先操作干扰物，三条还完成干扰物入篮。Long保留正确双目标组合，也有开炉/放置只完成其一、错误对象和慢/失败抓取；不把这些混合缺口定责单一模块。
+新200 held-video train96完整 **46/96**，S/O/G/L=11/12/14/9，breadth18；原20052/96、breadth20。原→新R/G/L39/7/13、churn20、J=.6610；source15→新46为12/34/3。新/原200的同3072query held FM为.111183766/.111352643，只有10/24任务新loss更低；均值接近不代表行为等价。当前是早期validation增益与部分能力交换，不能称整体修复或唯一根因确认。
 
-据此active design §8.2.5登记fresh首层内容对照：保留原首cross的language检索，移除其直接language残差；第二block自然沿新内容继续。全部四组视频前端/完整H/Meta/native D、rank16完整LoRA、4task×64queries、pure FM/AdamW与数据池保持。旧近等价强/弱历史边界已写入设计；它是受控假设检验，尚无新行为分数。原24-task草稿六文件已经撤回，rank共享后置，原K1不原样继续700/800。
+首段fresh200更新已完整exit0：800条件/51200queries的实际task/video/action query/seed/权重与原基线逐条一致，完整训练3290.54秒、更新均值14.607秒，source可训练参数0。100与200的两个400 bank及200 train96 bank共896条件全新，public inspectors与整轮video/state映射通过；100/200/train96三个闭环均完整结束。目前本任务GPU作业已全部退出。
 
-实现由现有horizon/attention承接，新增显式`compiler_language_mode=first_query_only_v1`防止同shape旧Writer被新runtime误读；旧诊断与checkpoint继续使用各自frozen worktree。新接口与完整梯度、identity、checkpoint身份、采样/恢复的96项定向覆盖已通过（首轮95通过；旧监督fixture缺缓存统计字段，补齐后该项复验通过）。8步真实profile已经exit0，32条件/2048queries与原基线逐条件task/video/query/seed/权重一致；均值14.83秒/update，四rank reserved峰值34.656/28.180/28.170/24.967GiB。legal identity启动后Writer/Meta梯度有限且非零。
+active design **§8.2.6**已登记：同一新200完整学习状态exact-resume至400，300/400各做strict400，与旧86/87比较。该区间检验原模型回落是否被缓解；模型、4×64、数据/优化口径保持，不加rank-sharing或其它变量。400追加同口径train96及冻结24×128 held FM。下一段尚未启动；先完成文档交付、更新资源预算和launch contract。明确无保持/新能力时不默认追加500/600，持续行为获取才据证据再登记。
 
-正式fresh已从clean pushed detached `fea45593`启动：gpu02 physical6/2/4/0，world4、FM microbatch6/4/4/3，原生GPU-local NUMA、NCCL_P2P_DISABLE=1。tmux `ember-horizon-first-query-formal`；新root `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909`；精确command、双节点现场证据、profile摘要与日志在`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/`。不继承profile学习状态，100/200 correct400与200 held-video train96按预登记继续；当前尚无新行为分数。
+训练/物化科学运行面是clean pushed detached `.codex/worktrees/horizon-first-query-runtime` 的`fea45593`；原world4 gpu02 physical6/2/4/0、NUMA、NCCL_P2P_DISABLE=1保持。首段实际physical microbatch6/4/4/3，reserved峰值34.643/28.328/28.311/24.980GiB；续训仅在现场余量需要时调整物理分块，学习状态和逻辑batch不改。当前方法唯一active路径为`first_query_only_v1`，旧未执行24-task草稿已撤回，原K1不恢复700/800。
 
-100完整checkpoint已发布并通过public inspector，400条件/25600queries的task/video/query/seed/权重与原基线逐条一致，四suite各100条件，24task均覆盖、259种task-video；更新墙钟1457.83秒。100 correct400 bank已在gpu01p1启动，现场free28480MiB/util6%，预计runtime峰值14GiB；训练在gpu02继续200。bank/评测准备与完整CPU排程检查记录在`k1_first_query_only/step100/`和`evaluation_schedule_prevalidation.json`，当前无新闭环分数。
+评测运行面 `.codex/worktrees/horizon-first-query-eval-runtime` 为`f478076f`：只去掉旧已用显存≤8GiB门槛，保留free≥32GiB/util≤10及完整GPU/process证据。31项launcher/queue定向检查通过；200/train96真实4worker评测已exit0。未修改推理/model/LoRA/RNG，修正记录A/`evaluation_admission_correction.json`。此前新模型96项定向覆盖与8步真实profile已通过，不为续训重复这些检查。
 
-首段fresh正式训练已完整exit0，200 checkpoint已发布；200更新/800条件/51200queries全部与原基线同task/video/query/seed/权重，updates墙钟2921.40秒、均值14.607秒，完整墙钟3290.54秒。held FM0→200为.151466→.111184，只作拟合证据。100bank已exit0（完整墙钟1353.86秒，含gpu01冷加载），400条件全新、实际50视频每task各一次、与原schedule一致，public formal bank inspector通过。
-
-100 strict400在gpu02p6、2replica运行（`ember-first-query-eval100`，`fea45593`）。200独立validation400+train96 banks已完整exit0，496条件全部新生成，完整墙钟1004.68秒；两bank的public inspector、实际视频/state/ordinal与原对照匹配均通过。200 strict400已从`f478076f`在gpu02p2/4、每卡2replica启动（`ember-first-query-eval200`）；train96 bank已就绪，待下一批合适资源。详细launch/日志位于`k1_first_query_only/step100/`、`step200/`、`train96_step200/`。当前无完整新闭环分数；完成两400及train96配对证据后按active design分支裁决。
-
-评测调度纠正：旧launcher来自`99c2323a`的已用显存≤8GiB条件，会额外排除现场free36–37GiB且低util设备。当前移除这一peer allocation上限，保留原free≥32GiB、util≤10与完整GPU/process证据；双worker Long运行现场合计约23.05GiB，不把单次读数宣称全局峰值。31项launcher/queue定向检查通过，包括容量边界与忙卡拒绝；不改变model/LoRA/数据/推理/配对或现行100评测运行面。后续新评测使用新的clean pushed frozen runtime；纠正记录在`k1_first_query_only/evaluation_admission_correction.json`。
-
-新段live data1 quota=599981688KiB/soft1073741824KiB、hard1084227584KiB，shared84TiB；原run38GiB，诊断root5.6GiB。首段新run、两个完整checkpoint、两次400条件物化、train96和temporary profile合计新增峰值预算24GiB，现场GPU在launch前刷新。长期资格与最终32/8 fresh/Test目标保持，当前远未完成。
+最近data1 user quota used600057220KiB/soft1073741824KiB、hard1084227584KiB；首段新增预算24GiB内完成。下一段新增峰值预计16GiB（两checkpoint、两400 bank、train96、只读held诊断与余量），launch前以strg01和实际目录用量刷新。长期目标与最终32/8 fresh/Test流程保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

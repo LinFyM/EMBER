@@ -2,19 +2,17 @@
 
 ## 当前目标与授权
 
-2026-09-09 Owner授权休息期间继续自主推进；先充分分析，再正式修改/训练，常规换卡与小问题不再逐项询问。目标仍为稳定跨任务K1初次完整LoRA与原全部科学资格，不把旧报告阶段暂停恢复为当前授权。
+Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，本段执行§8.2.6；报告`docs/horizon_k1_first_query_only_20260909.md`记录已完整的首层语言内容单变量fresh对照首段。
 
-已完成：已有证据报告、近等价历史核查、原200/600冻结接口导数/单支路/首层路由与内容分离，以及预登记64条真实行为轨迹。完整新结论见 `docs/horizon_k1_frozen_diagnostics_20260909.md`。已定位当前语言残差依赖及若干目标获取/组合执行缺口，未识别唯一泛化根因。
+已完成：冻结A/A2/A3/B及完整分析；新100/200 strict400=75/110，对照原55/110；新200 train96=46，对照原52。新相邻R/G/L55/55/20、churn75、J=.4231，breadth6/8；早期增益尚未成为200总体改进，训练侧也未提高。完整训练/三banks/三评测及实际条件配对均通过，当前GPU作业已结束。
 
-当前执行active design §8.2.5的单变量fresh对照：只改变首层compiler语言直接内容路径，保留其首次检索引导；原四组视频/Meta/完整horizon/native独立D与4×64 pureFM数据/优化口径保持。旧24-task未执行草稿已撤回，不混入rank共享或额外任务。
+1. 登记并交付首段事实、失败边界与300/400保持检验，刷新资源与完整exact-resume launch记录。
+2. 从新200完整checkpoint原样续至400，保持Writer/Meta、optimizer/scheduler/sampler/rank RNG与world4 topology；300/400各strict400，累计1200/1600条件、76800/102400queries。对应原86/87，专门覆盖原后期回落区间；不改变主要因果变量。
+3. 新400追加固定train96及冻结24×128 held FM，与新200及原400同口径对照；无梯度/无sampler推进，不由内部指标选点。
+4. 汇总per-task/suite、breadth、retained/gained/lost、churn和相邻重合。实质保持/增长再登记资格观察；持续回落、只有旧task换手且无能力获取依据，则否定本次修复假设，不默认500/600或扫LR/rank/seed，也不立即叠新结构。
+5. 继续以完整行为和有区分力的分析推动方法，直到原>145/400、相邻/跨视频/四suite/Goal/Long与最终视频因果资格全部满足；再按规定32/8 fresh和Test。当前首段结果不是完成。
 
-1. 完成新接口、真实可达梯度、identity完整LoRA与checkpoint身份边界的定向验证，更新canonical方法文档并clean push。
-2. 已完成8步真实profile及双节点/独立quota检查：均值14.83s/update，32个采样条件与原基线一致。fresh正式已启动，继续100/200预登记节点；profile权重不继承。
-3. Fresh首段200更新已完整结束，800条件/51200queries与原基线实际采样一致；100bank通过完整检查，strict400运行中，200的validation400+train96独立bank物化中。继续两400与旧55/110匹配比较，200 train96对比旧52，不能用FM选点。
-4. 以绝对能力、breadth、per-task/suite和相邻R/G/L/churn/J判断下一段；持续获取则继续稳定性证据，只有内部改善不称修复。有效non-pass只否定本次接口/训练组合，不追加无依据的language/cross消融矩阵或LR/rank/seed小扫。
-5. 沿原qualification资格补other与最终视频controls；合格后方法冻结，完成规定32/8 fresh和Test。当前诊断、代码或初始两点不构成最终完成。
-
-资源与精确当前状态见progress；首段新增峰值预算24GiB（独立data1 quota已核对），新run/checkpoint/LoRA全部独立，source/dataset/tokenizer复用canonical资产。
+资源与实际launch状态以progress为准。下一段新增峰值预算16GiB，复用canonical source/dataset/tokenizer与同一新run root；旧基线及其frozen runtime仅作证据，不恢复原K1旧学习历程。
 
 ## 历史：只读报告交付任务（已完成）
 

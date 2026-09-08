@@ -26,6 +26,12 @@ Owner授权完整400 checkpoint原样exact-resume到600，保留500/600并完成
 训练继续555，train96两bank与500bank都已就绪。最新两节点没有独立满足原准入的评测卡；600段结束后按现场资源先补冻结200/400 train96，再完成500/600 strict400，600物化可在另一卡并行。
 最新data1 quota用563149828KiB/soft1073741824，run26GiB，原新增24GiB总预算仍足够；双节点现场已刷新。p1外部大作业结束，但仍由本段训练占用；段结束后按现场安排评测。
 
+400→600 exact-resume已正常exit0，完整墙钟3562.43秒（59分22.43秒），200次更新均值16.821秒、更新墙钟3364.21秒；500/600两个完整checkpoint保留，600 public checkpoint检查通过。
+累计2400个K1条件/153600queries，各suite600，task曝光81–122，实际382/384种task-video；本段allocated/reserved峰值38.121/41.469GiB。原四rank全部退出，未自动继续700/800；下一步由本轮闭环证据裁决。
+最新GPU02 p1/2/3/6满足原评测准入（p2外部占用降至4878MiB），现用4卡×2persistent workers发起冻结200 held-video train96，tmux `ember-k1-train96-held200`；600 canonical400 bank同时在p4物化，tmux `ember-k1-bank600-resumed`。
+现场data1 quota用573830892KiB/soft1073741824，原预算内剩余物化/评测增长充足；GPU总5张有用卡，source/资产复用。命令与注册分别在`train96_diagnostic/step200_evaluation_launch.json`、`segment400_600/step600/materialization_launch.json`。
+600仅为本轮信息节点，500/600 correct400和训练任务闭环尚未完成，不构成方法通过或全过程结束。
+
 以下暂停段为历史，不覆盖本节最新恢复授权。
 
 ## 历史：Owner暂停执行，仅分析至400的情况

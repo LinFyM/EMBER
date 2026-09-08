@@ -17,6 +17,8 @@ Owner进一步明确：该做的分析实验和内部架构拆解直接做，在
 首批内部诊断已exit0：48条件/768queries全部配对，314.89秒，峰值23.411GiB，零参数更新；新16-query FM200/600=.115832/.107259，20/24任务下降。P4/cross非零且cross/self局部敏感度同量级，不支持视频分支已断开；语言query范数占比不是shortcut证明。原件`internal_diagnostic_20260909/{summary,conclusions}.json`。
 据此登记A2单支路activation lesion（normal/仅直接语言项零/仅cross1零/仅cross2零），同48条件共3072queries，真实P4和至少一层video cross始终保留；无模型更新，不是正式改模或最终controls。
 行为200重放已在GPU02 p6×2workers实际运行，原bank完整检查与4-state执行子集均保持。首次prepare后因launcher重复检查把子集当整bank而在worker前拒绝，零rollout；已修正recovery复用原整bank验证，26项定向检查通过。冻结运行面为clean pushed e1bfad44，实际输出`behavior_replay_20260909/step200_replay`，初次小失败原件`step200/`保留；600随后复用同口径单独运行。
+A2已完整exit0：3072queries、445.71秒、峰值10.680GiB，48 normal与A的FM一致。移除query_language使200/600 FM增加.028474/.029431，23/24与24/24任务变差；单cross增加约.0012–.0030且600影响更大。结果表明两类接口被使用，不能直接证明语言shortcut。新增A3只分离首层语言路由与残差内容，合同见design§8.2.4，尚未启动。
+行为200完整32条、2worker exit0，464.89秒；本次9/32，历史对应7/32，R/G/L=6/3/1，所有实际teacher/LoRA/state/env及policy noise前缀配对通过。变化如实保留，原formal110/400不改写。600已经在live确认后的同p6×2workers运行。固定state25全8task及Spatial1/3四state图像已检查：Spatial8/8均拿错对象/实例；Long32混合目标获取、不开炉与后续物体干扰，不将它们归为统一motor失败或特定Writer模块根因。
 当前六个未提交源码/config/tests仍为未执行的24-task草稿，尚未纳入新方案、没有新模型权重或实验结果。后续实施选定修正时，先撤回本任务的失效草稿并恢复4task×64queries基线，避免同时引入两项变量。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）

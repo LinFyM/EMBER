@@ -4,7 +4,7 @@
 
 Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，本段执行§8.2.6；报告`docs/horizon_k1_first_query_only_20260909.md`记录已完整的首层语言内容单变量fresh对照首段。
 
-已完成：冻结A/A2/A3/B及完整分析；新100/200 strict400=75/110，对照原55/110；新200 train96=46，对照原52。新相邻R/G/L55/55/20、churn75、J=.4231，breadth6/8；早期增益尚未成为200总体改进，训练侧也未提高。完整训练/三banks/三评测及实际条件配对均通过，首段GPU作业已结束；原样200→400续训现已启动。
+已完成：冻结A/A2/A3/B及完整分析；新100/200 strict400=75/110，对照原55/110；新200 train96=46，对照原52。新相邻R/G/L55/55/20、churn75、J=.4231，breadth6/8；早期增益尚未成为200总体改进，训练侧也未提高。完整训练/三banks/三评测及实际条件配对均通过，首段GPU作业已结束；原样200→400续训已完整结束，300/400两个完整checkpoint保留；300 strict400和400物化/冻结held诊断正在运行，后两节点行为尚待裁决。
 
 1. 登记并交付首段事实、失败边界与300/400保持检验，刷新资源与完整exact-resume launch记录。
 2. 从新200完整checkpoint原样续至400，保持Writer/Meta、optimizer/scheduler/sampler/rank RNG与world4 topology；300/400各strict400，累计1200/1600条件、76800/102400queries。对应原86/87，专门覆盖原后期回落区间；不改变主要因果变量。

@@ -12,15 +12,17 @@
 
 首段fresh200更新已完整exit0：800条件/51200queries的实际task/video/action query/seed/权重与原基线逐条一致，完整训练3290.54秒、更新均值14.607秒，source可训练参数0。100与200的两个400 bank及200 train96 bank共896条件全新，public inspectors与整轮video/state映射通过；100/200/train96三个闭环均完整结束。首段全部作业已退出；当前新段续训状态如下。
 
-active design **§8.2.6**已登记：同一新200完整学习状态exact-resume至400，300/400各做strict400，与旧86/87比较。该区间检验原模型回落是否被缓解；模型、4×64、数据/优化口径保持，不加rank-sharing或其它变量。400追加同口径train96及冻结24×128 held FM。首段报告与注册已由`c31d6ad4`推送；下一段已从`fea45593`原样exact-resume启动，tmux `ember-first-query-resume200-400`，完整命令/资源/记录在A/`segment200_400/launch_contract.json`与`formal.sh`/`formal.log`。原config和四rank物理UUID已匹配，已验证segment_start=200及实际201恢复：804条件/51456queries，四rank正常；训练继续，300/400和400 train96/held FM入口已准备，尚未启动。明确无保持/新能力时不默认追加500/600，持续行为获取才据证据再登记。
+active design **§8.2.6**的200→400 exact-resume已完整exit0：两新checkpoint300/400均通过public inspector，保留完整学习状态。新增201–400的800条件/51200queries与原同节点实际task/video/action query/frame/seed/权重逐条一致；累计1600条件/102400queries，各suite400。段内更新墙钟2954.17秒、均值14.771秒，完整wrapper3138.75秒；source保持冻结，未继续500/600。原件A/`segment200_400/step400/training_summary.json`与`formal.exit`。
 
-300完整checkpoint已发布并通过public inspector。恢复段201–300真实400条件/25600queries与原同节点逐条一致，四suite各100；更新均值14.872秒，累计1200条件/76800queries。300 canonical400 bank在gpu01 p3完整exit0，400个全新条件，墙钟761.06秒；public bank inspector及与新200实际视频/state映射均通过。当前两节点无独立满足评测free≥32GiB/util≤10的卡，strict400尚未启动；训练继续至400，之后按现场资源安排。新增原件为A/`segment200_400/step300/`。
+300 canonical400 bank在gpu01 p3完整exit0，400个全新条件，墙钟761.06秒；public bank inspector及与新200实际视频/state映射均通过。300 strict400已在gpu02 p2/4/6、各2persistent workers启动，tmux `ember-first-query-correct300`。400 validation400+train96独立banks在gpu01 p3物化，tmux `ember-first-query-bank400`；同3072query冻结held FM在gpu01 p1运行，tmux `ember-first-query-held400`，无梯度/optimizer/sampler推进。三个launch均来自同一次两节点实时资源快照，详细命令和状态在A/`segment200_400/step300/`与`step400/`；尚无300/400新闭环分数。
+
+原300/400 correct86/87、原400 train96=59及同口径held FM=.106271931作为既定参照。两个strict400和新400 train96/held FM完成后才裁决保持/获取；明确无保持或新能力时不默认追加500/600，持续行为获取再据证据登记。首段与本段不能合并成峰值/union选点。
 
 训练/物化科学运行面是clean pushed detached `.codex/worktrees/horizon-first-query-runtime` 的`fea45593`；原world4 gpu02 physical6/2/4/0、NUMA、NCCL_P2P_DISABLE=1保持。首段实际physical microbatch6/4/4/3，reserved峰值34.643/28.328/28.311/24.980GiB；续训仅在现场余量需要时调整物理分块，学习状态和逻辑batch不改。当前方法唯一active路径为`first_query_only_v1`，旧未执行24-task草稿已撤回，原K1不恢复700/800。
 
 评测运行面 `.codex/worktrees/horizon-first-query-eval-runtime` 为`f478076f`：只去掉旧已用显存≤8GiB门槛，保留free≥32GiB/util≤10及完整GPU/process证据。31项launcher/queue定向检查通过；200/train96真实4worker评测已exit0。未修改推理/model/LoRA/RNG，修正记录A/`evaluation_admission_correction.json`。此前新模型96项定向覆盖与8步真实profile已通过，不为续训重复这些检查。
 
-最近data1 user quota used600057220KiB/soft1073741824KiB、hard1084227584KiB；首段新增预算24GiB内完成。下一段新增峰值预计16GiB（两checkpoint、两400 bank、train96、只读held诊断与余量），launch前以strg01和实际目录用量刷新。长期目标与最终32/8 fresh/Test流程保持，当前远未完成。
+400后的实时data1 user quota used610740128KiB/soft1073741824KiB、hard1084227584KiB，run实际23GiB、shared可用84TiB；剩余新增峰值预计4GiB，仍在本段16GiB预算内，canonical资产复用。资源原件A/`segment200_400/post_training_resource_snapshot.json`。长期目标与最终32/8 fresh/Test流程保持，当前远未完成。
 
 ## 历史：已有证据深入审计与原因报告（已交付，当时暂停）
 

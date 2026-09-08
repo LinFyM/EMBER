@@ -725,3 +725,8 @@ Owner明确覆盖首轮FM/RL混合默认：完整架构保持，fresh纯FM端到
 平均30.40秒/update，总1027.99秒；完整macro24为4.13GiB，optimizer/scheduler/sampler均24，21/24task固定held-action FM改善，
 等权mean .151447→.131235。该节点仅早期监督获取，不能宣称平台或闭环增益；J0 train120随后执行。
 原件`runs/analysis/horizon_relation_writer_20260908/supervised/step24_summary.json`及run根目录完整metrics/exposures/diagnostics/checkpoint。
+
+同checkpoint24的held-video J0 train120全部完成：17/120，S/O/G/L=6/4/6/1、breadth8/24；source19/120为8/0/9/2、breadth7。
+strict paired retained/gained/lost=7/10/12，churn22/120，success-set J=.24138。五卡×两replicas耗489.22秒，全部exit0。
+这是监督loss下降而总体闭环未增益的早期节点，不是平台或方法成功；继续预登记64节点并首次strict400。
+原件`supervised/train120_step24/paired_source_comparison.json`及run下`evaluation/train120_step24_J0/`。

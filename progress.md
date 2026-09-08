@@ -39,7 +39,9 @@ gpu02 tmux `ember-horizon-supervised`，torchrun3925038、四个rank3925226–39
 24updates/96conditions/6144queries，K1/2/4=34/30/32，覆盖23/24tasks（task4尚未抽到）；平均30.40秒/update，总1027.99秒。
 独立held-action FM由.151447降至.131235（21/24task改善），不代表闭环或平台。macro24完整4.13GiB，sampler/scheduler及643个Adam状态step均24。
 summary=`supervised/step24_summary.json`。已刷新双节点/strg01，data1使用520203820KiB；step24 bank预算512MiB、评测1GiB计入48GiB总预算。
-正在gpu02p4物化train120_step24（71个不同task/video条件），随后J0动态队列评测与source19/120严格配对。
+train120_step24已物化71条件（350MiB）并完成J0：17/120 vs source19/120，S/O/G/L=6/4/6/1，breadth8/24（source7）。
+strict paired R/G/L=7/10/12，churn22/120，J=.24138。5卡×2persistent workers耗489.22秒，全部完成exit0。
+held FM下降没有转化为总体闭环增益；24只是早期节点，不视为平台，不转RL。按预登记继续监督64再做strict400。
 另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
 
 ## 已结束的联合profile
@@ -451,3 +453,11 @@ launch前两节点live检查，所用三卡均无计算进程；data1 quota48937
 落实并验证已登记的末读出共享单变量改动，fresh重跑同短预算和闭环口径；原初始化对照全部完成且不再恢复。
 通过基础训练行为后再登记完整train24与strict400；不能把几何或loss代替闭环。
 按task_plan持续执行，不因例行检查、阶段汇报或一次实验结束停止。
+
+## 当前续训至64
+
+已从clean pushed `9ab1e710` detached `.codex/worktrees/horizon-supervised-9ab1e710` 调度同root的macro24 exact-resume，
+目标64，GPU02仍physical0/1/3/6、world4；未改变config/采样/梯度/optimizer，仅缓存不可变query索引避免重复复制。
+原run_contract保留初始265ef31b provenance，本segment精确commit/命令/live记录在`supervised/resume_to64.json`和`.sh`，
+新日志为`resume_to64.log`，退出码为`resume_to64.exit`；不能把旧首段completion/run.exit当作本段完成。
+现场双节点已刷新，data1使用520568224KiB、run4.5GiB，仍在48GiB注册预算内。首个恢复后的update尚待日志核对。

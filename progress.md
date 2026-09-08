@@ -50,6 +50,12 @@ Spatial/Object/Goal的18个训练task在400均非零；Long9→7，无新增、�
 600 correct已在GPU02 p1/2/3/6各2worker启动，tmux `ember-k1-correct600-resumed`；不因500单点跳过已登记节点。
 在600新分数前补登记同口径冻结600 train96（design§8.2.2）：区分400后整体训练行为退化与跨task退化；复用96个state/video/RNG映射，只变checkpoint，无梯度、不选点。物化约0.46GiB，资源允许时与600 correct并行，结果决定是否聚焦迁移、保持或Long局部缺口。
 
+600 canonical correct完整82/400，S/O/G/L=1/32/46/3、breadth4；global1/3/11/13/23/26/31/32为0/1/32/0/0/46/3/0。8worker exit0，actual400视频配对通过，完整墙钟1252.58秒。
+500→600 R/G/L=56/26/14、churn40、J=.583333；净增12全部来自Goal26，Object/Spatial/Long总分不变且成功集合有变化。400→600 R/G/L=68/14/19、churn33、J=.673267；200→600保留63、新增19、丢47，仍未恢复峰值或广度。
+600对source47 R/G/L=41/41/6、churn47、J=.465909；SFT109/107分别49/33/60与51/31/56，旧rank/backend边界不变。500/600主线已完整，当前不原样继续700/800；不把600单点当架构失败，进入有区分力的机制诊断。
+冻结600 train96 bank完成并通过public完整检查，96个全新条件、同200/400实际映射，208.25秒；其闭环已在GPU02 p1/2/3/6各2worker启动，tmux `ember-k1-train96-held600`。
+本轮完整正式证据与暂定裁决：`segment400_600/round_analysis.md`、`round_evidence.json`。接下来先由600 train96确定后期是否整体行为退化，再围绕跨task、保持或Long局部缺口选择最小有信息量干预；不机械展开消融或盲扫。
+
 以下暂停段为历史，不覆盖本节最新恢复授权。
 
 ## 历史：Owner暂停执行，仅分析至400的情况

@@ -372,6 +372,12 @@ K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}
 该范围扩展没有解除停滞，停止同样续试；正式学习尚不启动。下一步用固定A、原B/完全同B重放/相邻BF16 B的
 只读完整flow诊断，区分执行端量化响应与生成端变化；不替换训练m_old、不扩大dtype或据此放宽科学资格。
 
+相邻BF16 B诊断已实测：完全相同B重放KL0，但固定其它输入、B整体一个相邻值变化（relative L2 .57214%）
+可产生task KL .034327；执行端无需生成端变化即可出现此量级敏感性，尚不能证明精度缺陷。
+因此预登记一个数值因果对照：固定已生成A/B，只在执行动作expert采用FP32/TF32，prefix仍BF16，必要的KV/B只同值上转。
+对照原B/同B重放/相邻B，报告同precision差与相对原BF16 baseline差、吞吐/显存；无训练、无dtype序列扫描。
+此对照尚未改变正式运行合同。只有结果支持才评估统一采集/VJP/trust/evaluation实现与新同口径baseline，不能混用均值或分数。
+
 接受缩放步时提交本次moments并统一缩放实际参数步；全部拒绝则参数、moments、optimizer step和warmup计数不前进。
 **已消费的sampler/RNG和尝试迭代计数仍前进**，下一次重新采样，不能恢复同一随机流而无限重播同一拒绝批次。
 记录 attempted/accepted/rejected、alpha、各task KL及梯度/奖励统计。接受规则、clip和Adam之后不声称实际更新无偏。

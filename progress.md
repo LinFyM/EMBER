@@ -38,6 +38,14 @@ soft1073741824KiB；新增峰值预算16GiB（完整Adam checkpoint、可能的�
 下一固定只读诊断在joint_profile/adjacent_b/：同一已接受Writer生成的A/B，固定A与全部输入，对比原B、
 完全相同B重放、每个非零B朝+infinity改一个BF16可表示单位。只定位执行端最小量化改变是否足以产生KL变化，
 不替换训练采集m_old、不训练、不放宽阈值。profile和此诊断都不是formal资格证据。
+相邻B诊断已完成exit0（152.35秒）：原B重复完整重放KL/动作差均0；仅移动一个BF16相邻值时，
+task KL=.0343270、max动作差=.0512085、mean abs=.000832334。680448个非零B元素各改一个相邻值，
+聚合relative L2=.57214%、max元素差9.53674e-7。执行端单独足以产生此量级变化，但这还不能证明dtype缺陷或解释全部拒绝。
+据此登记下一个限定因果对照：同一固定生成A/B及真实64 decisions，只将动作expert运算改FP32并启用TF32，
+视觉/语言prefix仍BF16，KV和B仅同值上转适配，无新权重信息；比较原B/同B重放/相邻B，并报告对BF16 baseline的动作差和成本。
+这是针对接受停滞的数值分辨率假设，不是正式协议已变更；不训练、不扫多个dtype、不更改Sigma/0.02。
+若后续采用此执行合同，必须覆盖采集、VJP、trust、物化执行和同口径baseline，不能混用旧BF16分数或旧采集均值。
+证据入口joint_profile/expert_tf32/。
 本task已完成且clean的ba556b98/07871988 detached worktrees已移除，Git与所有run/checkpoint原件保留。
 
 ## 前一batch修复profile与exact-resume结果

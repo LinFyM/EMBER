@@ -693,3 +693,7 @@ strict paired R/G/L=15/7/4、churn11/120、J=.5769。原件`runs/analysis/horizo
 step2/3/4在1/128的最大task KL=.02300/.07222/.03424，全部16个同版本自比较为0；四轮1024计算queries仅256进入接受更新。
 该证据不支持“只扩展有限搜索范围即可解除停滞”，停止同样续试。后续固定原B/相同重放/相邻BF16 B诊断定位执行端，
 不以内部数值代替闭环资格，也不根据此处训练诊断调整科学性能线。原件joint_profile/finite_ae9507b5/。
+
+相邻B固定诊断（joint_profile/adjacent_b/）完成exit0：同B重放KL0，B整体朝+infinity一个BF16相邻值
+(relative L2 .57214%, max delta9.53674e-7)时KL=.034327、max动作差=.0512085。固定A/输入/epsilon/原batch，
+Writer只生成一次；这定位到执行端足以产生变化，未证明精度缺陷。后续仅动作expert FP32/TF32因果对照另登记，尚无新formal协议或性能。

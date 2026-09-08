@@ -12,7 +12,7 @@
   目标仍是validation8 strict paired correct>145/400及相邻/跨视频稳定、breadth、四suite、Goal/Long、最终视频因果，
   后续方法冻结32/8 fresh及最终Test。
 - 全仓库阅读、历史审计和完整架构实施已完成；不因本次阶段调整重做审查。旧384永久停止，dirty native草稿保护。
-- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，首段24已结束，正在完整恢复续训至64。完整FM/Writer/Meta机制复用已验证路径；
+- 纯监督入口/采样/checkpoint/物化评测接线与必要检查已完成，监督64节点已结束，正在物化训练与validation两组评测LoRA。完整FM/Writer/Meta机制复用已验证路径；
   native execution/autocast边界、物理LoRA dtype/layout与batched累加修复保留，RL未决数值不阻塞监督训练。
 - 正式监督从fresh开始；旧联合profile不是监督结果，不能以其checkpoint初始化。监督stage/schema/update_version已独立登记。
 
@@ -44,14 +44,20 @@ strict paired R/G/L=7/10/12，churn22/120，J=.24138。5卡×2persistent workers
 held FM下降没有转化为总体闭环增益；24只是早期节点，不视为平台，不转RL。按预登记继续监督64再做strict400。
 另修复监督数据采样对同一全局episode索引的逐query重复复制，10项训练检查通过；sample/RNG/目标不变，当前frozen首段未热改。
 
-## 当前续训至64
+## 当前64节点与评测
 
-已从clean pushed `9ab1e710` detached `.codex/worktrees/horizon-supervised-9ab1e710` 调度同root的macro24 exact-resume，
-目标64，GPU02仍physical0/1/3/6、world4；未改变config/采样/梯度/optimizer，仅缓存不可变query索引避免重复复制。
-原run_contract保留初始265ef31b provenance，本segment精确commit/命令/live记录在`supervised/resume_to64.json`和`.sh`，
-新日志为`resume_to64.log`，退出码为`resume_to64.exit`；不能把旧首段completion/run.exit当作本段完成。
-现场双节点已刷新，data1使用520568224KiB、run4.5GiB，仍在48GiB注册预算内。已确认torchrun4140770与四rank4140924–4140927；第25步完成，累计100conditions/6400queries，
-Writer/Meta梯度均非零，optimizer_updates继续为25。首步23.13秒，不以单步推断整体吞吐。
+同root从macro24恢复至64的监督segment正常exit0；clean pushed frozen `9ab1e710`，GPU02 physical0/1/3/6、world4。
+完整macro64为4.13GiB，inspect_writer_checkpoint通过；本段40updates共1532.41秒（含恢复/诊断/保存），训练平均32.03秒/update。
+累计256conditions/16384queries，全部24tasks各6–17次条件曝光，K1/2/4=87/77/92。
+固定held FM0/24/64=.151447/.131235/.123122；24→64全部24tasks改善，0→64为23/24改善。仍不能代替闭环或判为平台。
+summary=`supervised/step64_summary.json`；原run_contract保留初始265ef31b，续训源码/命令/live记录在`supervised/resume_to64.json`。
+
+64节点评测准备在`supervised/step64_evaluation/`：train120 J0 held视频46–49；validation correct/other各strict400，
+K1、同task全部视频0–49、seed20260907、state作为ordinal。source19/47、step24与历史SFT109/107比较入口均已准备，
+旧SFT v1原件只作有明确后端/rank边界的行为参照。三bank585条件共2.805GiB，预留4GiB+评测1GiB，纳入原48GiB预算。
+64完整退出后重新live检查双节点，GPU02 p0/1/3仅210/162/162MiB、util0，已分别启动三arm物化；
+各arm独立tmux `ember-horizon-m64-<arm>`，精确命令/资源见`materialization_launch.json`，启动状态与输出日志继续核验。
+strg01 data1使用524900152KiB/soft1073741824KiB，shared84TiB，现有监督run约8.7GiB。未启动RL或使用Test。
 
 ## 已结束的联合profile
 

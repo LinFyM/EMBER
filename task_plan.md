@@ -13,11 +13,11 @@
 
 1. **已完成：** 全面阅读、历史证据审计、完整Horizon架构及真实FM/Writer/Meta梯度验证。旧384永久停止、旧native草稿保护。
    联合profile全部正常结束，保留代码Git与checkpoint/evidence；不作正式监督起点或科学分数。
-2. **当前：纯监督训练接线并立即正式启动。** Writer/Meta fresh共同训练，source冻结；同task跨episode FM。
+2. **已完成：纯监督训练接线并正式启动。** Writer/Meta fresh共同训练，source冻结；同task跨episode FM。
    监督入口不计算RL loss、采集RL更新rollout或做trust回滚。保留原生执行精度/LoRA布局及累加修复。
    复用完整图、批量FM与冻结prefix缓存，检查采样/完整梯度/Adam更新/checkpoint恢复和物化阶段合同，集成push。
    正式从clean pushed detached worktree启动，现场双节点GPU/独立quota/真实用量与新增峰值按合同检查。
-3. **监督学习和闭环。** 首段24updates；checkpoint24/64/128/192。每轮4conditions/256FM queries，真实K1/2/4与task曝光记录。
+3. **当前：监督学习和闭环。** 首段24updates；checkpoint24/64/128/192。每轮4conditions/256FM queries，真实K1/2/4与task曝光记录。
    独立训练侧held-action FM在0及每checkpoint；J0 train120在每checkpoint；validation strict paired400 correct/other在64/128/192。
    24只是早期获取，64以后必须对照source47/SFT109/107；结合per-task/suite/breadth/RGL/churn/相邻及跨视频保持。
 4. **判断平台与改进。** 至少连续3个有信息量资格节点、覆盖≥128updates，联合监督曝光、held FM、train闭环和validation。

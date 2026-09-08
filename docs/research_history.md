@@ -730,3 +730,9 @@ Owner明确覆盖首轮FM/RL混合默认：完整架构保持，fresh纯FM端到
 strict paired retained/gained/lost=7/10/12，churn22/120，success-set J=.24138。五卡×两replicas耗489.22秒，全部exit0。
 这是监督loss下降而总体闭环未增益的早期节点，不是平台或方法成功；继续预登记64节点并首次strict400。
 原件`supervised/train120_step24/paired_source_comparison.json`及run下`evaluation/train120_step24_J0/`。
+
+同一监督run从macro24完整恢复至64，源码仅将不可变query全局索引移出逐query循环，samples/RNG/目标保持；
+frozen9ab1e710段40updates平均32.03秒，总1532.41秒，未见相对首段的明显整体提速。
+累计256conditions/16384queries，24tasks各6–17次曝光，K1/2/4=87/77/92；完整macro64为4.13GiB，正常exit0。
+固定held FM .131235→.123122，24/24tasks相对24改善；相对初始.151447为23/24task改善。
+这是持续监督学习证据，尚无64节点闭环分数，不判平台；原件`supervised/step64_summary.json`及run根完整记录。

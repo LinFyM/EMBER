@@ -22,7 +22,15 @@
 - 最终目标为validation8 single-checkpoint strict paired correct>145/400及设计§8.3的相邻/跨视频稳定、
   breadth、四suite与Goal/Long要求，selected后视频因果controls，方法冻结后32/8 fresh及最终Test。
 
-## 当前阶段：联合profile揭示batch重放数值缺陷，修复验证中
+## 当前阶段：完整profile/恢复通过，但接受率停滞；检验有限回溯范围
+
+clean pushed `07871988` 的batch修复profile及exact-resume已全部完成exit0：
+同gpu02 physical0/1/3/6、world4，目标2 accepted、该诊断segment最多4 attempts，必要时依据结果继续，不是全程上限。
+输出 `runs/outputs/horizon_joint_profile_07871988_gpu02p0136_20260908`，launch/log在joint_profile/matched_07871988/。
+现场四卡依旧低util且有足够显存，data1 used498649088KiB；按两个完整Adam checkpoint及恢复/临时写入重算新增峰值16GiB。
+旧9c5a1c2b task-owned clean worktree移除，失败证据/唯一checkpoint和Git保留。
+
+以下是修复前已完成profile的合同与证据：
 
 从clean pushed `9c5a1c2b` 的detached `.codex/worktrees/horizon-profile-9c5a1c2b` 已完成两次尝试迭代的完整联合profile，exit0；
 gpu02 physical0/1/3/6、world4，每task一张卡，NUMA-local、deferred NCCL、NCCL_P2P_DISABLE=1。
@@ -43,6 +51,10 @@ profile每轮额外测当前参数版本的trust子集KL，定位已观察到的
 独立gpu02 physical4正进行source train24×初态32–36的J0/JΣ paired120，先J0后JΣ，
 冻结ba556b98、2 persistent replicas；登记和命令在 `runs/analysis/horizon_relation_writer_20260908/source_train120/`。
 错误父目录的0-row失败保留，修正固定revision后重新prepare；living-room/study真实reset/step另验证通过。
+source J0/JΣ均完整完成：19/120与22/120，S/O/G/L=8/0/9/2与10/0/10/2，breadth均7/24；
+strict paired R/G/L=15/7/4、churn11/120、J=.5769，summary/paired_comparison原件在source_train120/。
+两组全部worker exit0，p4释放，不再运行baseline。
+这是初态32–36的训练任务诊断参考，不能与历史validation47/400或旧初态的train16/120混用。
 
 采样节点规划（非学习结果）见`joint_profile/exposure_node_planning.json`：假设所有attempt接受，
 24次只覆盖23/24 tasks、6144 queries，48次覆盖24 tasks、12288 queries（每task4–16个conditions），
@@ -69,6 +81,25 @@ update_version改为same_version_fm_rl_collected_batch_replay_v2；不将旧prof
 原size重放KL0，改变记录排列及补齐行后仍0，统一batch4则.02439。该统计使用全部64保存decision，
 不能与原profile随机选16的.07968直接视为同一子集。接下来从推送frozen版本重跑完整联合profile，
 路径joint_profile/trust_replay.{log,json}；启动前双节点和data1 quota498549752KiB复核，预计小于0.3GiB临时观测，仍在8GiB预算内。
+
+## 2026-09-08 batch修复后的接受停滞与下一个优化假设
+
+07871988两段共8attempts、1accepted/7rejected，32conditions/2048计算FM queries，只有256 queries进入被接受更新，
+128真实episodes；所有32个current-version task KL均0，接受后Meta梯度非零。完整macro4/macro8各4.130GiB保留。
+首段741.75秒、恢复段803.27秒（均含加载/保存）。峰值allocated约25.7GiB、reserved32.1GiB；没有OOM或source梯度。
+exact-resume真实核对通过：从macro4读出的四task、video、query_seed、episodes全部随机流、occurrence/frames与step5逐项一致，
+恢复Adam643parameter states step1、scheduler1、attempt4/accepted1；拒绝不回退sampler。
+仅一次接受不能构成足够有效学习，未进入formal，不能报成新图性能失败或成功。
+
+限定数值诊断用train21固定旧A/new B×{0,1e-12,1/8,1}，完整64保存decisions及原batch，source/Writer冻结：
+0及tiny非零B（max1.709e-16）KL和动作差均0；1/8 KL.05858/maxdelta.09534，1×KL.03123/maxdelta.04779。
+没有发现任何非零B导致固定扰动的分支；剩余非单调响应尚不能区分模型非线性与精度效应。
+原件joint_profile/numerical_limit/；不与随机16decision trust值混用，不作为模型选择或完整参数候选插值。
+
+已登记下一优化假设：保持同一个Adam方向、LR/梯度/Sigma/原m_old/0.02不变，将有限回溯从四尺度扩至八尺度1…1/128，
+检验原候选范围是否过早截断可行步。update_version=v3，源码仍是一条canonical路径；不扩dtype、不改变科学性能线。
+先fresh完整profile检验实际alpha/接受率/成本，再冻结formal节点；若仍停滞，停止同样续试并重新定位。
+这是运行更新问题的有据检验，不是靠低步长掩盖已经发生的正式性能失败；新图尚无formal qualification分数。
 
 ## 2026-09-08 单卡真实机制结果与联合profile准备
 

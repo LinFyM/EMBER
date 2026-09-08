@@ -138,7 +138,17 @@
     "precision": "bfloat16 autocast with float32 trainable parameters",
     "loss": "fm_plus_extended_action_writer_rl_same_version",
     "normalizer": 1.0,
-    "fresh_joint_writer_and_meta": true
+    "fresh_joint_writer_and_meta": true,
+    "trust_scales": [
+      1.0,
+      0.5,
+      0.25,
+      0.125,
+      0.0625,
+      0.03125,
+      0.015625,
+      0.0078125
+    ]
   },
   "runtime": {
     "policy_microbatch": 4,
@@ -286,7 +296,7 @@
       "registration_status": "freeze informative strict400 nodes after real profile and before first formal learning results"
     }
   },
-  "update_version": "same_version_fm_rl_collected_batch_replay_v2",
+  "update_version": "same_version_fm_rl_collected_batch_finite_backtracking_v3",
   "rl": {
     "episodes_per_condition": 4,
     "initial_state_ids": [

@@ -23,6 +23,7 @@ from ember.pi05_source_setup import initialize_deferred_process_group, initializ
 from ember.writer.horizon import HorizonWriterConfig
 from ember.writer.learning_data import JointTrainingData
 from ember.writer.replay import sum_writer_gradients
+from ember.writer.rl_math import TRUST_SCALES
 from ember.writer.runtime import FrozenVideoPrefixCache, build_joint_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
@@ -51,6 +52,7 @@ def _config(path: Path) -> dict[str, Any]:
         or int(config["observer"]["meta_rank"]) != 4
         or int(config["observer"]["probe_seed"]) != 1729
         or config["optimization"]["loss"] != "fm_plus_extended_action_writer_rl_same_version"
+        or tuple(config["optimization"].get("trust_scales", ())) != TRUST_SCALES
     ):
         raise ValueError("horizon joint Writer scientific contract changed")
     expected_rl = {

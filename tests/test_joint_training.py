@@ -109,7 +109,7 @@ def test_rejection_consumes_sampling_but_acceptance_alone_advances_optimizer_and
     initial = [p.detach().clone() for p in state.parameters()]
     initial_rng = deepcopy(sampler.sampler_state())
     rows, result, _ = _attempt_update(engine, runtime, sampler, context, config, optimizer, scheduler, 1)
-    assert len(rows) == 4 and not result.accepted and len(result.attempts) == 4
+    assert len(rows) == 4 and not result.accepted and len(result.attempts) == 8
     assert sampler.sampler_state()["next_step"] == 1
     assert sampler.sampler_state()["streams"] != initial_rng["streams"]
     assert not optimizer.state and scheduler.last_epoch == 0

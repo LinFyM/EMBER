@@ -350,7 +350,7 @@ g_{m_q}=-0.1\frac1{4\cdot4}\frac QM A_{ie}\Sigma^{-1}(z_q-m_{old,q}).
 ### 7.6 有限候选trust检查与拒绝处理
 
 只在psi_n求一次 `grad L_FM − .1*g_RL`，形成一个AdamW候选方向d和待提交moments。
-依次检查 `alpha∈{1,1/2,1/4,1/8}` 的完整候选 `psi'=psi_n+alpha*d`：
+依次检查 `alpha∈{1,1/2,1/4,1/8,1/16,1/32,1/64,1/128}` 的完整候选 `psi'=psi_n+alpha*d`：
 \[
 K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}).
 \]
@@ -363,6 +363,12 @@ K_q(\psi')=\tfrac12(m_{\psi',q}-m_{old,q})^\top\Sigma^{-1}(m_{\psi',q}-m_{old,q}
 始终batch4的五个task均为0。因此每decision额外记录采集flow的实际batch尺寸，RL VJP与trust按原尺寸分组重放。
 尾组用已选真实记录补齐，补齐项梯度为0且不进入KL/episode/task权重；不重算或替换采集m_old，不扣底噪，
 不扩dtype或固定batch1，Sigma与0.02阈值不变。候选仍用自己的Meta完整重读R。该修复由同参数自比较和完整联合profile验证。
+
+2026-09-08进一步profile在消除batch伪KL后仍1/8接受。极小非零执行B的动作差为0，有限B响应不单调，
+没有发现任何非零B都引入固定扰动的分支；也未区分剩余响应的模型非线性与精度效应。
+本次只检验优化假设：首版四候选可能过早截断可行步搜索，因此同一Adam方向的有限回溯扩为上述八个尺度。
+不改变LR、gradient、Sigma、原始m_old、0.02或任何科研性能线；候选不额外求梯度，也不以接受更新当作行为通过。
+修订后须fresh完整profile验证接受率、实际alpha、成本和恢复，之后才冻结formal学习节点；若仍停滞，停止同样的续试并重新定位。
 
 接受缩放步时提交本次moments并统一缩放实际参数步；全部拒绝则参数、moments、optimizer step和warmup计数不前进。
 **已消费的sampler/RNG和尝试迭代计数仍前进**，下一次重新采样，不能恢复同一随机流而无限重播同一拒绝批次。

@@ -678,3 +678,13 @@ task21全成功且RL梯度0仍超0.02，因此不是信用或参数更新导致�
 64保存decision覆盖batch1/2/3/4；按原size重放及重排行顺序均KL0，强制batch4为.02439。
 原profile随机子集16与诊断全64不同，.07968/.02439不作为同口径前后值。修复只记录原batch尺寸并按其重放，
 尾组以真实记录补齐、零cotangent/零计分；保持原m_old、Sigma、threshold、候选Meta和完整图。尚无修复后正式学习结论。
+
+07871988 batch修复后两段profile共8attempts、1accepted，所有current-version task KL0，接受后Meta梯度非零；
+完整同拓扑exact-resume的下一抽样与checkpoint全部随机流吻合。计算2048 queries，仅256参与接受更新，不能等同有效学习。
+8次只有1次接受，尚无formal学习或qualification结果。固定旧A、new B有限探针的0/tiny输出与旧均值一致，
+有限B响应不单调，没有证明固定非零B分支；详见joint_profile/numerical_limit/。后续登记只扩同方向有限回溯到1/128的
+优化假设，保持Sigma/原m_old/0.02及科研性能线，先验证可行更新和成本，不以接受率代替行为。
+
+source训练任务新初态32–36的J0/JΣ120各完成，19/22，S/O/G/L=8/0/9/2和10/0/10/2、breadth7/24；
+strict paired R/G/L=15/7/4、churn11/120、J=.5769。原件`runs/analysis/horizon_relation_writer_20260908/source_train120/`。
+这是新train诊断baseline，不与旧初态train16或validation47混用。

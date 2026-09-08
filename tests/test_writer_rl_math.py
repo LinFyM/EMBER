@@ -124,9 +124,22 @@ def test_all_rejections_restore_parameters_moments_and_step(initialized):
     before = copy.deepcopy(optimizer.state_dict())
     old = parameter.detach().clone()
     result = adamw_trust_step(optimizer, lambda: {"a": 0.03, "b": 0.0})
-    assert not result.accepted and result.alpha is None and len(result.attempts) == 4
+    assert not result.accepted and result.alpha is None and len(result.attempts) == 8
     torch.testing.assert_close(parameter, old, rtol=0, atol=0)
     _assert_state_equal(optimizer.state_dict(), before)
+
+
+def test_fine_backtracking_keeps_the_original_kl_bound_and_one_adam_step():
+    parameter = torch.nn.Parameter(torch.tensor([1.], dtype=torch.float64))
+    optimizer = _optimizer(parameter)
+    parameter.grad = torch.ones_like(parameter)
+    old = parameter.detach().clone()
+    # A feasible move exists only beyond the old four-candidate truncation.
+    result = adamw_trust_step(optimizer, lambda: {"task": float((parameter - old).square().sum()) * 10000})
+    assert result.accepted and result.alpha == 0.03125
+    assert result.attempts[-1].task_kl["task"] <= 0.02
+    assert all(attempt.task_kl["task"] > 0.02 for attempt in result.attempts[:-1])
+    assert optimizer.state[parameter]["step"].item() == 1
 
 
 def test_exception_rolls_back_and_is_reraised():

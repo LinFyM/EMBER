@@ -16,6 +16,9 @@ import torch
 from torch import Tensor
 
 
+TRUST_SCALES = tuple(0.5 ** index for index in range(8))
+
+
 def exploration_covariance(*, device=None, dtype=torch.float32) -> Tensor:
     """Fixed temporal-major covariance for five normalized seven-axis actions."""
     positions = torch.arange(5, device=device)
@@ -154,7 +157,7 @@ def adamw_trust_step(
     score_candidate: Callable[[], Mapping[Hashable, float]],
     *, max_task_kl: float = 0.02,
 ) -> TrustStepResult:
-    """One AdamW direction; test alpha=1,.5,.25,.125 by fresh forward callbacks.
+    """One AdamW direction; finite halving from alpha=1 through 1/128.
 
     Caller has already SUM-reduced and globally clipped the joint gradient.
     score_candidate sees current candidate parameters and must recompute its
@@ -189,7 +192,7 @@ def adamw_trust_step(
         if not all(bool(torch.isfinite(d).all()) for d in direction):
             restore()
             return TrustStepResult(False, None, ())
-        for alpha in (1.0, 0.5, 0.25, 0.125):
+        for alpha in TRUST_SCALES:
             if alpha != 1.0:
                 for parameter, old, delta in zip(parameters, old_parameters, direction, strict=True):
                     parameter.copy_(old + alpha * delta)

@@ -45,6 +45,11 @@ Spatial/Object/Goal的18个训练task在400均非零；Long9→7，无新增、�
 600 canonical bank完成exit0，墙钟777.10秒，400个全新条件，public formal检查及每task50视频各一次、与200/400/500实际映射一致均通过。
 500 correct strict400正在GPU02 p1/2/3/6、每卡2persistent workers执行，tmux `ember-k1-correct500-resumed`，8worker已ready并开始完成shards；600随后按现场资源启动。尚未报告500/600分数，未启动新学习配方。
 
+500 canonical correct完整70/400，S/O/G/L=1/32/34/3、breadth4；400→500 R/G/L=62/8/25、churn33、J=.652632。8worker exit0，实际400行视频/RNG配对通过，完整墙钟1192.66秒。
+每task global1/3/11/13/23/26/31/32为0/1/32/0/0/34/3/0；未回升，仍主要集中11/26。vs source47 R/G/L=33/37/14，churn51、J=.392857；历史SFT109/107为43/27/66与41/29/66，保留旧backend/rank边界。
+600 correct已在GPU02 p1/2/3/6各2worker启动，tmux `ember-k1-correct600-resumed`；不因500单点跳过已登记节点。
+在600新分数前补登记同口径冻结600 train96（design§8.2.2）：区分400后整体训练行为退化与跨task退化；复用96个state/video/RNG映射，只变checkpoint，无梯度、不选点。物化约0.46GiB，资源允许时与600 correct并行，结果决定是否聚焦迁移、保持或Long局部缺口。
+
 以下暂停段为历史，不覆盖本节最新恢复授权。
 
 ## 历史：Owner暂停执行，仅分析至400的情况

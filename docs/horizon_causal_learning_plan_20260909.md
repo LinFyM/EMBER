@@ -36,6 +36,14 @@ Owner已明确：允许为探索原因修改架构、语言路径、参数共享
 
 **阶段0交付必须是精确可运行的实验合同和隔离实现方案，不能停在待研究名词。** 后续各臂在launch前补齐具体配置/命令；未指定的实现细节不是用户审批关卡。
 
+### 0.1 已落实的首轮矩阵与历史参照边界
+
+首轮语言矩阵已登记为[all/local_only/none fresh对照](horizon_causal_language_learning_20260909.md)。主agent负责该隔离实现；旧v6参照由一个独立agent在不重叠worktree接入，复用既有数据/FM/更新/官方rollout，不重写旧训练栈。
+
+真实v6模型以bad9a96为准（与4efa7371四个模型文件无diff）：前端固定H mean、Text/VL/Action三Meta、Core/Procedure及共享family heads、原probe seed23070。它们作为历史架构包的被测组成显式保留；不先换成当前fullH/仅Action Meta后仍称exact-v6。Owner最新授权允许探索性架构测试，这一历史参照只用于原因区分，不改变当前正式方法的fullH等设计要求。正式信息墙、source、split、跨episode和合法部署输入不例外。
+
+旧采样器没有跨episode排除且硬编码50池，故不恢复它。历史v6模型接当前teacher0–15/query16–41、4×64、LR3e-5/warmup8，200/400节点与当前比较；若仍保持优势，才支持架构包在同一协议下的作用，随后分离具体因素。原71.7GiB峰值不可直接照抄到A40；使用原模型no-grad生成、共同FM cotangent、完整模型重放保留三Meta梯度，真实profile裁决。三Meta每步改变prefix，禁止使用当前冻结prefix缓存。
+
 ### 1. 学习过程中检验语言/条件路径
 
 从fresh联合训练比较normal与候选路径修改，使用相同合法teacher/query序列、任务权重、累计曝光与共同参数初始化。纯文本Compiler检索、当前帧contextual条件的local/H-read入口分别明确。三处同时关闭可作为联合效应臂；若联合臂有效，必须用分离对照辨认贡献，不能仅称“语言问题已解决”。关闭后仍保留原生exact language和真实视频输入。

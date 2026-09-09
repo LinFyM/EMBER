@@ -21,6 +21,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore
 from ember.writer.horizon import require_architecture_identity
+from ember.v6_reference import contract as v6_contract
 
 
 RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
@@ -56,6 +57,9 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
+    if run.get("schema_version") == v6_contract.RUN_SCHEMA:
+        from ember.v6_reference.artifacts import inspect_checkpoint
+        return inspect_checkpoint(checkpoint, run)
     require_architecture_identity(run.get("model_config", {}))
     require_architecture_identity(run.get("config", {}).get("model", {}))
     world_size = int(manifest.get("world_size", 0))
@@ -194,6 +198,8 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 
 def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
+    if run.get("schema_version") == v6_contract.RUN_SCHEMA:
+        return v6_contract.method_metadata(run)
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "execution_precision": run["config"]["execution_precision"],
             "checkpoint_state": "strict entire Writer+Meta+public probe", "frame_stride": 5,
@@ -208,23 +214,27 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str, str]:
-    return {"schema_version": ADAPTER_SCHEMA, "condition_id": condition,
+    schema = v6_contract.ADAPTER_SCHEMA if checkpoint.get("kind") == v6_contract.BANK_KIND else ADAPTER_SCHEMA
+    return {"schema_version": schema, "condition_id": condition,
             "writer_checkpoint": str(checkpoint["path"]), "macro": str(checkpoint["macro"])}
 
 
+@torch.no_grad()
 def _compile_condition(runtime, store, task, demos, output, checkpoint):
     from ember.writer.native import autocast
 
     videos = tuple(store.load(task.authority.task_id, demo) for demo in demos)
     if any(video.raw_frame_count != task.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
         raise ValueError("actual teacher frame count differs from its data authority")
-    condition = runtime.observer.prepare(
-        tuple(torch.from_numpy(video.frames) for video in videos),
-        tuple(torch.from_numpy(video.frame_indices) for video in videos), task.authority.language,
-    )
-    with torch.no_grad(), autocast(runtime.observer.device):
-        generated = runtime.state.writer(runtime.observer.responses(condition),
-                                         *runtime.observer.writer_arguments(condition))
+    frames = tuple(torch.from_numpy(video.frames) for video in videos)
+    indices = tuple(torch.from_numpy(video.frame_indices) for video in videos)
+    if checkpoint.get("kind") == v6_contract.BANK_KIND:
+        generated = runtime.generate(frames, indices, task.authority.language)
+    else:
+        condition = runtime.observer.prepare(frames, indices, task.authority.language)
+        with autocast(runtime.observer.device):
+            generated = runtime.state.writer(runtime.observer.responses(condition),
+                                             *runtime.observer.writer_arguments(condition))
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)
@@ -242,6 +252,11 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
             "adapter": file_record(path), "writer_invocations": 1, "single_complete_rank16": True}
 
 
+def bank_identity(record):
+    return ((v6_contract.BANK_SCHEMA, v6_contract.BANK_KIND)
+            if record.get("kind") == v6_contract.BANK_KIND else (BANK_SCHEMA, BANK_KIND))
+
+
 def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
     """Reuse individually valid adapters without accepting their old episode schedule."""
     if path is None:
@@ -252,7 +267,8 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
     path = Path(path).resolve()
     manifest = read_json(path)
     lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
-    if (manifest.get("schema_version") != BANK_SCHEMA or manifest.get("kind") != BANK_KIND
+    expected_schema, expected_kind = bank_identity(checkpoint)
+    if (manifest.get("schema_version") != expected_schema or manifest.get("kind") != expected_kind
             or manifest.get("status") != "sealed" or manifest.get("single_complete_rank16") is not True
             or manifest.get("writer_checkpoint") != checkpoint or manifest.get("source") != run["source"]
             or manifest.get("method") != method_metadata(run)
@@ -279,6 +295,8 @@ def _materialize(
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
 
+    if checkpoint_record.get("kind") == v6_contract.BANK_KIND:
+        v6_contract.validate_selection(selection)
     role = "train" if selection["evaluation_role"] == "development_train" else "validation"
     tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role)
     rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
@@ -321,7 +339,8 @@ def _materialize(
     finally:
         store.close()
     lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
-    manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
+    bank_schema, bank_kind = bank_identity(checkpoint_record)
+    manifest = {"schema_version": bank_schema, "kind": bank_kind, "status": "sealed",
                 "arm": selection["arm"], "evaluation_role": selection["evaluation_role"], "selection": dict(selection),
                 "asset_root": str(asset_root.resolve()), "source": runtime.source,
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
@@ -335,6 +354,9 @@ def _materialize(
                     "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
                     "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(conditions),
                     "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}}
+    if bank_kind == v6_contract.BANK_KIND:
+        manifest["scientific_qualification"] = False
+        manifest["information_wall"]["text_vl_meta_installed"] = False
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
@@ -353,16 +375,23 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     first = inspected[0][0]
-    expected = (first["source"], first["model_config"], first["config"]["observer"])
+    expected = (first.get("schema_version"), first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
-        if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
+        if (run.get("schema_version"), run["source"], run["model_config"], run["config"]["observer"]) != expected:
             raise ValueError("resident batch requires identical source, model, and observer contracts")
+    for request, (run, _) in zip(requests, inspected, strict=True):
+        if run.get("schema_version") == v6_contract.RUN_SCHEMA:
+            v6_contract.validate_selection(request["selection"])
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]
     # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
     # prefix, generated LoRA, or checkpoint state is cached across requests.
-    runtime = build_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
+    if first.get("schema_version") == v6_contract.RUN_SCHEMA:
+        from ember.v6_reference.runtime import build_runtime as build_v6_runtime
+        runtime = build_v6_runtime(asset_root, first["config"], device)
+    else:
+        runtime = build_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
     return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run, reusable=reused,
                          checkpoint_record=record, repository=repository, **request)
             for request, (run, record), reused in zip(requests, inspected, reusable, strict=True)]

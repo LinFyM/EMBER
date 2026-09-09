@@ -12,6 +12,8 @@ STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 STATIC_TASK_LORA_KIND = "static_task_lora_bank"
 HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
+V6_REFERENCE_KIND = "exploratory_v6_lora_bank"
+COMPILED_WRITER_KINDS = {HORIZON_WRITER_KIND, V6_REFERENCE_KIND}
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -117,7 +119,7 @@ def inspect_static_task_lora_adapter(
     from ember.writer.materialization import BANK_SCHEMA
 
     manifest = read_json(manifest_path)
-    if manifest.get("kind") == HORIZON_WRITER_KIND or manifest.get("schema_version") == BANK_SCHEMA:
+    if manifest.get("kind") in COMPILED_WRITER_KINDS or manifest.get("schema_version") == BANK_SCHEMA:
         from ember.writer.evaluation import inspect_horizon_writer_bank
 
         return inspect_horizon_writer_bank(
@@ -195,7 +197,7 @@ def load_evaluation_adapter(
         from ember.static_task_lora import FrozenStaticTaskLoRAAdapter
 
         return FrozenStaticTaskLoRAAdapter(**common)
-    if adapter.get("kind") == HORIZON_WRITER_KIND:
+    if adapter.get("kind") in COMPILED_WRITER_KINDS:
         from ember.writer.evaluation import FrozenHorizonWriterAdapter
 
         return FrozenHorizonWriterAdapter(**common)
@@ -206,8 +208,10 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
-        if contract.get("adapter", {}).get("kind") == HORIZON_WRITER_KIND:
-            return {"horizon_writer_lora": dict(prepared.evidence)}
+        kind = contract.get("adapter", {}).get("kind")
+        if kind in COMPILED_WRITER_KINDS:
+            field = "v6_reference_lora" if kind == V6_REFERENCE_KIND else "horizon_writer_lora"
+            return {field: dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == STATIC_TASK_LORA_KIND:
             return {"static_task_lora": dict(prepared.evidence)}
         return {"task_expert": dict(prepared.evidence)}
@@ -225,14 +229,16 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
+    if adapter is not None and adapter.get("kind") in COMPILED_WRITER_KINDS:
         from ember.writer.evaluation import validate_horizon_writer_episode
 
+        field = "v6_reference_lora" if adapter["kind"] == V6_REFERENCE_KIND else "horizon_writer_lora"
+        other = "horizon_writer_lora" if field == "v6_reference_lora" else "v6_reference_lora"
         return (row.get("task_expert") is None and row.get("static_task_lora") is None
-                and row.get("policy_adapter_sha256") is None and validate_horizon_writer_episode(
-                    adapter, row.get("horizon_writer_lora"), suite=suite,
+                and row.get(other) is None and row.get("policy_adapter_sha256") is None and validate_horizon_writer_episode(
+                    adapter, row.get(field), suite=suite,
                     task_id=task_id, init_state_id=init_state_id))
-    if row.get("horizon_writer_lora") is not None:
+    if row.get("horizon_writer_lora") is not None or row.get("v6_reference_lora") is not None:
         return False
     if adapter is None:
         return (

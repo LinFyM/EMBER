@@ -476,7 +476,7 @@ def git_state(repo_root: Path) -> dict[str, Any]:
         capture_output=True,
     ).stdout.strip()
     commit = run("rev-parse", "HEAD")
-    authority_ref = "origin/main"
+    authority_ref = "origin/codex/v6-causal-reference"
     authority_commit = run("rev-parse", authority_ref)
     authority_contains_commit = (
         subprocess.run(
@@ -514,7 +514,7 @@ def git_state_is_clean_pushed_or_frozen_authority(
         and state.get("commit") == state.get("upstream_commit")
     )
     authority = (
-        state.get("authority_ref") == "origin/main"
+        state.get("authority_ref") in {"origin/main", "origin/codex/v6-causal-reference"}
         and state.get("authority_contains_commit") is True
     )
     detached = state.get("branch") == "" and state.get("upstream") is None

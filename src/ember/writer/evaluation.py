@@ -19,7 +19,8 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metadata, condition_id,
     file_record, frozen_authority, inspect_writer_checkpoint, method_metadata, planned_episodes,
-    selection_contract, source_matches)
+    selection_contract, source_matches, bank_identity)
+from ember.v6_reference import contract as v6_contract
 
 
 EVALUATION_SCHEMA = "ember_horizon_writer_eval_adapter_v1"
@@ -133,7 +134,8 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
     keys = [(str(row["suite"]), int(row["task_id"])) for row in rows]
-    if (manifest.get("schema_version") != BANK_SCHEMA or manifest.get("kind") != BANK_KIND
+    expected_schema, expected_kind = bank_identity(manifest)
+    if (manifest.get("schema_version") != expected_schema or manifest.get("kind") != expected_kind
             or manifest.get("status") != "sealed" or role != evaluation_role
             or manifest.get("arm") != selection["arm"] or role != selection["evaluation_role"]
             or len(task_keys) != len(set(task_keys)) or set(task_keys) != set(keys)
@@ -142,6 +144,10 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or not frozen_authority(manifest["materialization_git"])
             or not source_matches(manifest["source"], source)):
         raise ValueError("horizon Writer bank scope/source/commit changed")
+    if expected_kind == v6_contract.BANK_KIND:
+        v6_contract.validate_selection(selection)
+        if manifest.get("scientific_qualification") is not False:
+            raise ValueError("historical v6 is exploratory evidence, never formal qualification")
     validate_task_scope(rows, role, Path(manifest["asset_root"]))
     _validate_round(selection, rows, require_formal)
     for row in rows:
@@ -159,6 +165,8 @@ def validate_information_wall(manifest) -> None:
                 "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
                 "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
                 "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
+    if manifest.get("kind") == v6_contract.BANK_KIND:
+        required["text_vl_meta_installed"] = False
     if any(wall.get(key) != value for key, value in required.items()):
         raise ValueError("horizon Writer information wall changed")
 
@@ -184,7 +192,8 @@ def inspect_horizon_writer_bank(
             raise ValueError("evaluation requires one complete 38-target rank16 LoRA")
         validate_information_wall(manifest)
         _inspect_conditions(manifest, path.parent, lora)
-        return {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
+        schema = v6_contract.EVALUATION_SCHEMA if manifest["kind"] == v6_contract.BANK_KIND else EVALUATION_SCHEMA
+        return {**manifest, "schema_version": schema, "manifest": file_record(path)}
     except (KeyError, TypeError, ValueError, OSError) as error:
         raise Pi05EvaluationError(str(error)) from error
 
@@ -192,7 +201,8 @@ def inspect_horizon_writer_bank(
 def episode_evidence(adapter: Mapping[str, Any], task: Mapping[str, Any], episode: Mapping[str, Any]) -> dict[str, Any]:
     conditions = {row["condition_id"]: row for row in adapter["conditions"]}
     condition = conditions[episode["condition_id"]]
-    return {"schema_version": EPISODE_SCHEMA, **dict(condition), **dict(episode),
+    schema = v6_contract.EPISODE_SCHEMA if adapter["kind"] == v6_contract.BANK_KIND else EPISODE_SCHEMA
+    return {"schema_version": schema, **dict(condition), **dict(episode),
             "selection_seed": adapter["selection"]["seed"], "selection_mode": adapter["selection"]["mode"],
             "K": adapter["selection"]["K"], "arm": adapter["arm"],
             "writer_checkpoint": dict(adapter["writer_checkpoint"]), "method": dict(adapter["method"]),
@@ -217,13 +227,18 @@ class PreparedHorizonLoRA:
 
 
 class FrozenHorizonWriterAdapter:
-    """Execution only: no observer, video, Meta, or learned Writer is loaded."""
+    """Shared compiled-bank execution; schema identifies Horizon or exploratory v6.
+
+    No observer, video, Meta, or learned Writer is loaded in either case.
+    """
 
     def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal) -> None:
         del device, require_formal
         adapter = evaluation_adapter
         self.records = {(row["suite"], row["task_id"]): row for row in adapter["tasks"]}
-        if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
+        expected_kind = bank_identity(adapter)[1]
+        expected_schema = v6_contract.EVALUATION_SCHEMA if expected_kind == v6_contract.BANK_KIND else EVALUATION_SCHEMA
+        if (adapter.get("kind") != expected_kind or adapter.get("schema_version") != expected_schema
                 or not source_matches(adapter["source"], source) or set(self.records) != set(task_keys)
                 or adapter.get("single_complete_rank16") is not True):
             raise Pi05EvaluationError("horizon Writer runtime bank changed")

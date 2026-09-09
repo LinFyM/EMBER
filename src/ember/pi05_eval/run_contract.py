@@ -186,6 +186,12 @@ def build_run_contract(
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
+    if adapter and adapter.get("kind") == "exploratory_v6_lora_bank":
+        from ember.v6_reference.contract import execution_authority
+        if not execution_authority(git):
+            raise Pi05EvaluationError("exploratory v6 evaluation requires its clean pushed detached worktree")
+        contract["evidence_purpose"] = "exploratory_v6_matched_causal_comparison"
+        contract["scientific_qualification"] = False
     contract["diagnostic_exploration"] = build_exploration_contract(contract, enabled=exploration_sigma)
     validate_exploration_contract(contract)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"
@@ -203,6 +209,10 @@ def load_run_contract(path: Path) -> dict[str, Any]:
         or Path(str(contract.get("output_dir", ""))).resolve() != path.resolve().parent
     ):
         raise Pi05EvaluationError("PI05 evaluation run contract changed")
+    if contract.get("adapter", {}) and contract["adapter"].get("kind") == "exploratory_v6_lora_bank":
+        if (contract.get("scientific_qualification") is not False
+                or contract.get("evidence_purpose") != "exploratory_v6_matched_causal_comparison"):
+            raise Pi05EvaluationError("exploratory v6 evaluation qualification marker changed")
     validate_exploration_contract(contract)
     return contract
 

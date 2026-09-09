@@ -21,6 +21,7 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.horizon import HorizonWriterConfig
+from ember.v6_reference import contract as v6_contract
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
@@ -35,6 +36,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    if v6_contract.is_reference(config):
+        return v6_contract.validate_config(config)
     expected_model = asdict(HorizonWriterConfig())
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
@@ -66,6 +69,20 @@ def _config(path: Path) -> dict[str, Any]:
     _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"])
     HorizonWriterConfig(**config["model"])
     return config
+
+
+def _schemas(config):
+    return (v6_contract.schemas(config) if v6_contract.is_reference(config)
+            else (RUN_SCHEMA, STAGE, TRAINING_SCHEMA))
+
+
+def _meta_parameters(state):
+    return state.meta_parameters() if callable(getattr(state, "meta_parameters", None)) else state.meta.parameters()
+
+
+def _writer_parameters(state):
+    meta_ids = {id(parameter) for parameter in _meta_parameters(state)}
+    return (parameter for parameter in state.writer.parameters() if id(parameter) not in meta_ids)
 
 
 def _optimization(state, config):
@@ -101,22 +118,24 @@ def _gather(value, context):
 
 
 def _run_contract(args, context, config, runtime, state):
+    run_schema, stage, _ = _schemas(config)
     properties = torch.cuda.get_device_properties(context.local_rank)
     local = {"rank": context.rank, "local_rank": context.local_rank, "gpu_uuid": str(properties.uuid),
              "numa_node": context.numa_node, "cpu_affinity": list(context.cpu_affinity or ())}
     return {
-        "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
+        "schema_version": run_schema, "stage": stage, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
         "execution": {"policy_microbatches": _execution_config(args, config, context)[1]},
-        "model_config": asdict(HorizonWriterConfig(**config["model"])),
+        "model_config": (dict(config["model"]) if v6_contract.is_reference(config)
+                         else asdict(HorizonWriterConfig(**config["model"]))),
         "topology": {
             "host": socket.gethostname(), "world_size": context.world_size,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"), "ranks": _gather(local, context),
         },
         "training": {
-            "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
-            "meta_parameters": sum(p.numel() for p in runtime.state.meta.parameters()),
+            "writer_parameters": sum(p.numel() for p in _writer_parameters(runtime.state)),
+            "meta_parameters": sum(p.numel() for p in _meta_parameters(runtime.state)),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one FM update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
@@ -199,8 +218,8 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     if context.device.type == "cuda":
         torch.cuda.synchronize(context.device)
     sync_seconds = time.perf_counter() - tick
-    norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
-             "meta_grad_norm": _grad_norm(runtime.state.meta.parameters())}
+    norms = {"writer_grad_norm": _grad_norm(_writer_parameters(runtime.state)),
+             "meta_grad_norm": _grad_norm(_meta_parameters(runtime.state))}
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
     if context.device.type == "cuda":
@@ -215,7 +234,7 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
 
 
 def _training_state(config, updates):
-    return {"schema_version": TRAINING_SCHEMA, "updates": updates,
+    return {"schema_version": _schemas(config)[2], "updates": updates,
             "update_version": config["update_version"], "data_version": config["data"]["version"]}
 
 
@@ -224,10 +243,11 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
         return 0, 0
     if args.resume.resolve().parent.parent != args.output.resolve():
         raise ValueError("exact-resume checkpoint must belong to its original run root")
+    run_schema, stage, _ = _schemas(config)
     restored = {}
     updates, metrics_rows = load_ecp_checkpoint(
-        checkpoint=args.resume, stage=STAGE, context=context, model=runtime.state,
-        optimizer=optimizer, scheduler=scheduler, run_contract_schema=RUN_SCHEMA, restored_state=restored,
+        checkpoint=args.resume, stage=stage, context=context, model=runtime.state,
+        optimizer=optimizer, scheduler=scheduler, run_contract_schema=run_schema, restored_state=restored,
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
@@ -237,7 +257,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     if context.is_main:
         reconcile_metrics(args.output / "exposures.jsonl", updates, metrics_rows, cursor_key="step", packet_label="exposures")
         reconcile_metrics(args.output / "metrics.jsonl", updates, updates, cursor_key="step", packet_label="metrics")
-        if args.mode == "formal":
+        if args.mode in {"formal", "exploratory"}:
             nodes = config["evidence"]["supervised_validation"]["optimizer_updates"]
             count = sum(node <= updates for node in nodes) * len(data.tasks)
             if count or (args.output / "diagnostics.jsonl").exists():
@@ -278,6 +298,8 @@ def _checkpoint_nodes(args, config):
     supplied = getattr(args, "checkpoint_updates", None)
     nodes = tuple(config["evidence"]["checkpoint_updates"]) if supplied is None else tuple(map(int, supplied.split(",")))
     _validate_checkpoint_nodes(nodes)
+    if v6_contract.is_reference(config) and any(node not in config["evidence"]["checkpoint_updates"] for node in nodes):
+        raise ValueError("v6 evidence nodes must retain the registered 200/400 exposures")
     return nodes
 
 
@@ -286,6 +308,8 @@ def _segment_limit(args, config):
     stop = nodes[-1] if args.stop_after_step is None else args.stop_after_step
     if stop <= 0 or (args.mode == "formal" and (len(nodes) != 2 or stop != nodes[-1])):
         raise ValueError("formal segment needs two registered checkpoint nodes and must stop at the last")
+    if args.mode == "exploratory" and stop != nodes[-1]:
+        raise ValueError("exploratory segment must stop at its last registered checkpoint")
     return stop
 
 
@@ -316,14 +340,15 @@ def _validate_actions(args, engine, data, context, config, step):
 
 
 def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
+    run_schema, stage, _ = _schemas(config)
     updates, metrics_rows = cursors
     nodes = _checkpoint_nodes(args, config)
-    if args.mode == "formal" and any(node <= updates for node in nodes):
+    if args.mode in {"formal", "exploratory"} and any(node <= updates for node in nodes):
         raise ValueError("segment checkpoint nodes must follow the restored update cursor")
     if context.is_main:
         print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
                           "resume": str(args.resume) if getattr(args, "resume", None) else None}), flush=True)
-    if args.mode == "formal" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
+    if args.mode in {"formal", "exploratory"} and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
         _validate_actions(args, engine, data, context, config, 0)
     while updates < stop:
         tick = time.perf_counter()
@@ -333,18 +358,18 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
         metrics_rows = _record_iteration(args, context, config, rows, norms, updates,
                                          metrics_rows, time.perf_counter() - tick, scheduler)
         if updates == stop or updates in nodes:
-            if args.mode == "formal" and updates in config["evidence"]["supervised_validation"]["optimizer_updates"]:
+            if args.mode in {"formal", "exploratory"} and updates in config["evidence"]["supervised_validation"]["optimizer_updates"]:
                 _validate_actions(args, engine, data, context, config, updates)
             save_ecp_checkpoint(
-                output_dir=args.output, macro=updates, stage=STAGE, context=context,
+                output_dir=args.output, macro=updates, stage=stage, context=context,
                 model=runtime.state, optimizer=optimizer, scheduler=scheduler,
-                run_contract_schema=RUN_SCHEMA, metrics_rows=metrics_rows,
+                run_contract_schema=run_schema, metrics_rows=metrics_rows,
                 sampler_state=data.sampler_state(), training_state=_training_state(config, updates),
             )
     barrier(context)
     if context.is_main:
         write_json_atomic(args.output / "completion.json", {
-            "schema_version": RUN_SCHEMA, "status": "segment_complete", "mode": args.mode,
+            "schema_version": run_schema, "status": "segment_complete", "mode": args.mode,
             "optimizer_updates": updates, "exposures": metrics_rows, "seconds": time.perf_counter() - start,
             "scientific_qualification": False, "next": "registered held-action and paired closed-loop evidence",
         })
@@ -355,6 +380,11 @@ def run(args: argparse.Namespace) -> None:
 
     config = _config(args.config)
     state = git_state(REPO_ROOT)
+    reference = v6_contract.is_reference(config)
+    if (reference and args.mode not in {"profile", "exploratory"}) or (not reference and args.mode == "exploratory"):
+        raise ValueError("historical v6 must remain explicitly exploratory; canonical method mode is unchanged")
+    if args.mode == "exploratory" and not v6_contract.execution_authority(state):
+        raise ValueError("exploratory v6 training requires its clean pushed detached worktree")
     if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
         raise ValueError("formal supervised training requires a clean pushed detached worktree")
     stop = _segment_limit(args, config)
@@ -368,7 +398,11 @@ def run(args: argparse.Namespace) -> None:
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
     data = WriterTrainingData(args.asset_root, config["data"])
-    runtime = build_runtime(args.asset_root, config, context.device)
+    if reference:
+        from ember.v6_reference.runtime import build_runtime as build_v6_runtime
+        runtime = build_v6_runtime(args.asset_root, config, context.device)
+    else:
+        runtime = build_runtime(args.asset_root, config, context.device)
     runtime.state.train()
     optimizer, scheduler = _optimization(runtime.state, config)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -381,8 +415,12 @@ def run(args: argparse.Namespace) -> None:
     updates, _ = cursors
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
-    cache = FrozenVideoPrefixCache(runtime.observer, data, int(config["runtime"]["prefix_cache_bytes"]))
-    engine = SupervisedEngine(runtime, data, cache, context, execution_config)
+    if reference:
+        from ember.v6_reference.runtime import V6SupervisedEngine
+        engine = V6SupervisedEngine(runtime, data, context, execution_config)
+    else:
+        cache = FrozenVideoPrefixCache(runtime.observer, data, int(config["runtime"]["prefix_cache_bytes"]))
+        engine = SupervisedEngine(runtime, data, cache, context, execution_config)
     barrier(context)
     try:
         _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start)
@@ -392,12 +430,13 @@ def run(args: argparse.Namespace) -> None:
             dist.destroy_process_group()
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_horizon_writer_v1.json")
+def main(*, default_config: Path | None = None, description: str = __doc__,
+         modes: tuple[str, ...] = ("profile", "formal", "exploratory")) -> None:
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--config", type=Path, default=default_config or REPO_ROOT / "configs/pi05_horizon_writer_v1.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--mode", choices=("profile", "formal"), required=True)
+    parser.add_argument("--mode", choices=modes, required=True)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-updates", help="this segment's two global update nodes, e.g. 300,400")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")

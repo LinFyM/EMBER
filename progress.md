@@ -2,9 +2,13 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：语言两臂继续已登记学习；v6追加重训已暂停
+## 当前：语言两臂学习完成；200闭环与400生成进行中
 
-**两个语言臂均已完成200节点并继续原400预算**：完整checkpoint通过探索schema、条件配置、三rank学习状态与public inspector检查。各200次更新/800条件/51200queries与contextual基线实际采样全部配对，各suite200条件；独立24task×128query诊断也完全配对、无梯度。none/local_only held FM为.112001593/.111181941，基线.111031413，不据此判断闭环或选方法。200更新均值23.481/24.456秒，峰值allocated39.480/39.483GiB。原件`language/{arm}_step200/learning_summary.json`。
+**none/local_only的400次探索学习均完整exit0**，wrapper分别9714.56/10162.29秒；完整200/400 checkpoints独立保留、public inspector通过。各1600条件/102400queries与contextual实际曝光逐项匹配，各suite400条件。400独立3072query也完全配对、无梯度，held FM分别.105817828/.105537391，基线.105074533；只描述拟合，不作闭环裁决。更新均值23.483/24.557秒，allocated峰值39.480/39.483GiB；原件`language/{arm}_step400/learning_summary.json`。不自动追加500或新训练臂。
+
+**当前后续任务均已实际启动**：200 validation400继续在gpu02物理2/4各2worker（最新均已落盘300/400行，尚无完整分数）；none的200 train96在gpu01物理1/6各3worker，400两组bank在同节点物理5；local_only的200 train96在gpu02物理1/3各3worker，400两组bank在同节点物理6。tmux分别为`ember-causal-{arm}-train96-200`与`ember-causal-{arm}-bank400`。none训练先结束即复用其释放设备，local随后完整退出再接续；节点01/02分别三/五张有用设备，没有占位。两次launch前均重新核验两节点；none三卡free46068MiB/util0，local训练面板两卡free45906/45636、生成卡41319MiB，util均0。strg01/data1 used659939204KiB、soft1073741824、shared84TiB；余下全部输出峰值估计16GiB，仍在最初40GiB增量预算内。冻结运行面仍e60a7ca0，精确launch与资源证据在`causal_learning_20260909/language/`。
+
+**此前200节点记录**：完整checkpoint通过探索schema、条件配置、三rank学习状态与public inspector检查。各200次更新/800条件/51200queries与contextual基线实际采样全部配对，各suite200条件；独立24task×128query诊断也完全配对、无梯度。none/local_only held FM为.112001593/.111181941，基线.111031413，不据此判断闭环或选方法。200更新均值23.481/24.456秒，峰值allocated39.480/39.483GiB。原件`language/{arm}_step200/learning_summary.json`。
 
 200每臂validation400+train96的496个LoRA条件已完整生成，两个wrapper均exit0、耗时1028.61/1020.69秒。四组bank通过public inspector及基线实际task/state/video/selection配对。**两个validation400已分别在gpu02物理2/4、每卡2worker启动**，tmux `ember-causal-none-validation200` / `ember-causal-local_only-validation200`；train96输入已就绪，设备释放后接续。原三卡训练继续（最新256/253步），当前没有完整闭环分数。新launch前双节点live核验：两卡free37094/40314MiB、util1/2，同节点共五张有用设备。strg01/data1 used646263892KiB/soft1073741824、shared84TiB；本节点两臂banks约5GiB计入既有40GiB总预算。运行面仍clean pushed detached e60a7ca0；精确命令、检查与GPU/存储快照位于`causal_learning_20260909/language/`。
 

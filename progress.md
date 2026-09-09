@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：上下文条件400训练完成，300评测与400物化/诊断并行
+## 当前：上下文条件300为79/400，400验证与train96并行
 
 active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段全部结束：100/200 correct52/103（前轮75/110），200 train96为41（前轮46），尚无整体优势。完整[首段报告](docs/horizon_k1_frame_contextual_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/first_segment_evidence.json`保留事实。§8.2.9同配方300/400用于区分较慢获取与后续保持，不将早期增量或两个1/50当作正结果。
 
@@ -10,11 +10,13 @@ active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段�
 
 **200→400完整exit0**，wrapper3308.24秒、进程内3266.76秒；200次更新墙钟3166.56秒、均值15.8328秒，allocated/reserved峰值31.899/35.000GiB。300/400两个完整checkpoint均通过public inspector；201–400全部800条件/51200queries与first-query-only及原始对应节点逐条匹配、各suite200。累计1600条件/102400queries、378种task-video，per-task曝光46–86；完整100/200/300/400模型各自保留。原件`k1_frame_contextual/segment200_400/formal_summary.json`和`step400/training_summary.json`。未自动续500/600。
 
-300 bank完整exit0，805.27秒、400条件全部新生成/零复用，public inspector及实际task/state/video映射、每task50视频无放回均通过。**300 strict400正在GPU02物理1/3、每卡3个persistent worker执行**，tmux `ember-frame-contextual-correct300`。六worker全部ready，队列36动态long-first分片；装载后两卡实查仍有8812/9672MiB空闲。原件`segment200_400/step300/{bank_validation,evaluation_launch}.json`，尚无完整300分数。
+300 bank完整exit0，805.27秒、400条件全部新生成/零复用，public inspector及实际映射、每task视频无放回通过。**300 strict400完整79/400**，S/O/G/L=1/33/36/9、breadth6，global1/3/11/13/23/26/31/32=1/0/30/3/0/36/8/1。相对本轮200103为R/G/L51/28/52、churn80/J=.3893；BBQ25→3，原25个成功全部丢失。相对前轮300106为59/20/47、churn67/J=.4683；对原始86为63/16/23。六worker均exit0、全部配对通过，wrapper1981.63秒。原件`segment200_400/step300/completed_summary.json`，不由该单点提前终止已登记400面板。
 
-**400 validation400+独立held-video train96 banks正在GPU02物理0生成**，一个resident source顺序生成两套bank，tmux `ember-frame-contextual-bank400`（pane2027992）；全部496条件必须新生成，不跨checkpoint复用。**400冻结held FM已在GPU02物理2执行完成**，tmux `ember-frame-contextual-held400`（pane2028001）。它复用既有`_validate_actions`和固定24×128 queries，在完整400上无梯度/无optimizer/不推进sampler；自动训练诊断配置仍为0/200，未修改resume配置。400 held FM现已完整exit0，376.02秒、peak11.484GiB；3072条实际video/action/frame/noise与前轮/原始400及本轮200配对通过，sampler未推进。均值.105074533（前轮.105737594、原始.106271931），本轮400比200的24/24任务低、比前轮400的15/24低；不作为行为收益证据。完整原件`segment200_400/held_fm_comparison.json`，400 banks仍在生成。
+**400 validation400+独立held-video train96 banks全部完整exit0**，1202.58秒、496条件全部新生成/零复用，两个public inspector及实际视频/state映射检查通过，GPU02p0物化已结束。**400 strict400已在GPU02物理2/4、每卡2worker启动**，tmux `ember-frame-contextual-correct400`；p6出现新peer进程并持续30–40%util，采用两张合适卡，不等待或干扰其它作业。**400 train96已在300结束释放的物理1/3、每卡3worker启动**，tmux `ember-frame-contextual-train96-400`；现场两卡各45906MiB空闲/util0，沿用已实际验证的三worker配置。当前共四张有用卡，两面板均未完成；launch原件分别在`step400/evaluation_launch.json`和`train96_step400/evaluation_launch.json`。
 
-上述两项launch前重新双节点live检查；GPU02p0 free28855MiB/util1、p2 free45906/util0，分别满足既有约12GiB物化与11.484GiB冻结诊断峰值。上述launch时使用eval300两卡+bank/held两卡，共四张有用设备；held结束后当前为三张；没有占位或改变他人作业。对应launch合同为`step400/materialization_launch.json`、`held_action_launch.json`，资源为`step400/gpu_preflight_launch.json`。
+**400冻结held FM已在GPU02物理2执行完成**，tmux `ember-frame-contextual-held400`（pane2028001）。它复用既有`_validate_actions`和固定24×128 queries，在完整400上无梯度/无optimizer/不推进sampler；自动训练诊断配置仍为0/200，未修改resume配置。400 held FM现已完整exit0，376.02秒、peak11.484GiB；3072条实际video/action/frame/noise与前轮/原始400及本轮200配对通过，sampler未推进。均值.105074533（前轮.105737594、原始.106271931），本轮400比200的24/24任务低、比前轮400的15/24低；不作为行为收益证据。完整原件`segment200_400/held_fm_comparison.json`，无待完成冻结诊断。
+
+上述两项launch前重新双节点live检查；GPU02p0 free28855MiB/util1、p2 free45906/util0，分别满足既有约12GiB物化与11.484GiB冻结诊断峰值。上述launch时使用eval300两卡+bank/held两卡，共四张有用设备；此后资源已用于上文两个400面板；没有占位或改变他人作业。对应launch合同为`step400/materialization_launch.json`、`held_action_launch.json`，资源为`step400/gpu_preflight_launch.json`。
 
 最新strg01/data1 quota used641585316KiB/soft1073741824、hard1084227584；当前run23GiB、analysis1.8MiB、shared84TiB。续段新增16GiB预算中两checkpoint及300bank已完成，约余5.7GiB；400两banks预计2.4GiB、冻结诊断不足50MiB，复用全部资产。后续新launch按实际资源安排。
 

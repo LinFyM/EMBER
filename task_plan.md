@@ -5,7 +5,7 @@
 Owner继续授权完整自主科学推进。active design为`docs/horizon_relation_video_writer_design.md`，当前§8.2.8逐帧上下文过程条件fresh首段全部完成：100/200 correct52/103（前轮75/110），200 train96为41（前轮46），没有整体收益或稳定资格。[完整报告](docs/horizon_k1_frame_contextual_20260909.md)和`k1_frame_contextual/first_segment_evidence.json`保留全部配对事实。
 
 1. §8.2.9已在结果前登记：从完整200同配方exact-resume至400，保存300/400及各自correct400，400同口径train96与既有held FM。缺口由23缩至7、自身52→103，补尚未覆盖的保持区间；不将低起点增量、breadth中的单次成功或续训本身作为优势。
-2. 新launch先刷新双节点GPU、独立quota及新增峰值，保持原world4/rank物理2/6/4/0和完整学习状态；复用已验证运行面与profile，不改科学配方或重复工程检查。当前同配方200→400训练已完整exit0、两个checkpoint与实际曝光核验通过；300评测和400物化进行中，400冻结诊断已完整配对完成，实际进度见progress。
+2. 新launch先刷新双节点GPU、独立quota及新增峰值，保持原world4/rank物理2/6/4/0和完整学习状态；复用已验证运行面与profile，不改科学配方或重复工程检查。当前同配方200→400训练已完整exit0、两个checkpoint与实际曝光核验通过；300完整79/400，400banks和冻结诊断已完成，400验证与train96并行，实际进度见progress。
 3. 300/400先按自身相邻绝对能力、per-task/suite、breadth与R/G/L/churn/J判断，再对前轮106/103、train40059与原始86/87。若无实质获取/保持优势，结束该访问干预原样续训，回到有区分力的不同机制；不能靠loss或微小局部新增续500/600。
 4. 保留已有历史边界：first-query-only至400仅局部收益；冻结train24功能对应持续增强，不能称普遍未学会条件编译；Target-Owned已检验rank共享，旧四任务纯FM模型也曾更强。不能用新低分抹去这些反证或机械重做改名方案。
 5. 持续以证据推进至validation8 single-checkpoint correct>145、相邻稳定、breadth/四suite/Goal/Long、同task换视频与最终因果全部达标，再完成方法冻结后的32/8 fresh和Test。不预设总尝试次数，不因一次完整实验结束停止自主工作。

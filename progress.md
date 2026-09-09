@@ -1,8 +1,15 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
+更新时间：2026-09-09 CST。Owner最新授权深入分析与诊断实验，当前禁止正式架构/训练方式修改及正式训练启动。
 
-## 当前：上下文条件300为79/400，400验证与train96并行
+## 当前：原因诊断启动，已有400评测收尾
+
+Owner要求把语言分支与整体能力缺口共同分析，尽可能实际验证并提出方案。沿用现有canonical源码和冻结checkpoint；不因旧的全过程授权启动新正式训练或直接落实side-chat候选。main负责当前模型机制诊断，两个只读并行分析分别负责监督分布和历史能力/接口oracle。诊断协议及结果统一保留于`docs/horizon_k1_causal_diagnostics_20260909.md`，当前为证据收尾与首项冻结接口实验准备。
+
+400 train96已完整exit0：**49/96**、breadth20；相对20041为R/G/L30/19/11、churn30/J=.5；相对前轮40059为42/7/17，churn24/J=.6364。六worker均exit0，wrapper673.07秒。actual96行配对、source与normalization、退出状态全部核验通过，原件`k1_frame_contextual/segment200_400/train96_step400/completed_summary.json`。400 validation尚未完成。训练任务仍有获取，但本轮同节点低于前轮；不把held FM最低当作行为优势。
+
+## 正在收尾的登记保持段：上下文条件300为79/400
+
 
 active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段全部结束：100/200 correct52/103（前轮75/110），200 train96为41（前轮46），尚无整体优势。完整[首段报告](docs/horizon_k1_frame_contextual_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/first_segment_evidence.json`保留事实。§8.2.9同配方300/400用于区分较慢获取与后续保持，不将早期增量或两个1/50当作正结果。
 
@@ -12,7 +19,7 @@ active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段�
 
 300 bank完整exit0，805.27秒、400条件全部新生成/零复用，public inspector及实际映射、每task视频无放回通过。**300 strict400完整79/400**，S/O/G/L=1/33/36/9、breadth6，global1/3/11/13/23/26/31/32=1/0/30/3/0/36/8/1。相对本轮200103为R/G/L51/28/52、churn80/J=.3893；BBQ25→3，原25个成功全部丢失。相对前轮300106为59/20/47、churn67/J=.4683；对原始86为63/16/23。六worker均exit0、全部配对通过，wrapper1981.63秒。原件`segment200_400/step300/completed_summary.json`，不由该单点提前终止已登记400面板。
 
-**400 validation400+独立held-video train96 banks全部完整exit0**，1202.58秒、496条件全部新生成/零复用，两个public inspector及实际视频/state映射检查通过，GPU02p0物化已结束。**400 strict400已在GPU02物理2/4、每卡2worker启动**，tmux `ember-frame-contextual-correct400`；p6出现新peer进程并持续30–40%util，采用两张合适卡，不等待或干扰其它作业。**400 train96已在300结束释放的物理1/3、每卡3worker启动**，tmux `ember-frame-contextual-train96-400`；现场两卡各45906MiB空闲/util0，沿用已实际验证的三worker配置。当前共四张有用卡，两面板均未完成；launch原件分别在`step400/evaluation_launch.json`和`train96_step400/evaluation_launch.json`。
+**400 validation400+独立held-video train96 banks全部完整exit0**，1202.58秒、496条件全部新生成/零复用，两个public inspector及实际视频/state映射检查通过，GPU02p0物化已结束。**400 strict400已在GPU02物理2/4、每卡2worker启动**，tmux `ember-frame-contextual-correct400`；p6出现新peer进程并持续30–40%util，采用两张合适卡，不等待或干扰其它作业。**400 train96已在300结束释放的物理1/3、每卡3worker启动**，tmux `ember-frame-contextual-train96-400`；现场两卡各45906MiB空闲/util0，沿用已实际验证的三worker配置。该两项launch时共四张有用卡；train96现已完成，400验证仍在运行；launch原件分别在`step400/evaluation_launch.json`和`train96_step400/evaluation_launch.json`。
 
 **400冻结held FM已在GPU02物理2执行完成**，tmux `ember-frame-contextual-held400`（pane2028001）。它复用既有`_validate_actions`和固定24×128 queries，在完整400上无梯度/无optimizer/不推进sampler；自动训练诊断配置仍为0/200，未修改resume配置。400 held FM现已完整exit0，376.02秒、peak11.484GiB；3072条实际video/action/frame/noise与前轮/原始400及本轮200配对通过，sampler未推进。均值.105074533（前轮.105737594、原始.106271931），本轮400比200的24/24任务低、比前轮400的15/24低；不作为行为收益证据。完整原件`segment200_400/held_fm_comparison.json`，无待完成冻结诊断。
 
@@ -20,7 +27,7 @@ active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段�
 
 最新strg01/data1 quota used641585316KiB/soft1073741824、hard1084227584；当前run23GiB、analysis1.8MiB、shared84TiB。续段新增16GiB预算中两checkpoint及300bank已完成，约余5.7GiB；400两banks预计2.4GiB、冻结诊断不足50MiB，复用全部资产。后续新launch按实际资源安排。
 
-下一步完整300/400 correct400、400 train96和独立held FM的配对分析。先看自身200→300→400的绝对获取、per-task/suite、breadth、R/G/L/churn/J，再对前轮106/103、train40059及原始86/87；尤其区分BBQ保持、Spatial/Goal弱task和Long稳定性。没有实质获取/保持优势则结束本访问干预原样续训，转入有区分力的不同机制分析，不能因loss或单峰续500/600。未启动other/最终controls/meta/RL/Test；>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
+下一步完整300/400 correct400、400 train96和独立held FM的配对分析。先看自身200→300→400的绝对获取、per-task/suite、breadth、R/G/L/churn/J，再对前轮106/103、train40059及原始86/87；尤其区分BBQ保持、Spatial/Goal弱task和Long稳定性。没有实质获取/保持优势则结束本访问干预原样续训，转入有区分力的不同机制分析，不能因loss或单峰续500/600。未启动other/最终controls/meta/RL/Test；>145全部资格及最终32/8 fresh/Test仍未完成，当前后续授权以顶部诊断边界为准。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

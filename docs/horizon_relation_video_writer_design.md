@@ -515,6 +515,14 @@ formal seed7、4suite×64queries、episode池、AdamW/LR/warmup及source均保�
 
 不启动新meta/RL、same-task-other或最终视频controls；后者仍在相应资格及冻结边界之后。运行前按现有formal、live双节点GPU和独立quota合同记录一次续段launch，不重做未变化的工程/profile流程。
 
+### 8.2.10 Owner授权的能力缺口诊断（不启动正式训练）
+
+2026-09-09 Owner要求综合语言分支、过程表示、参数生成和监督/闭环缺口，允许充分分析及非正式验证，但明确禁止正式架构/训练方式修改与正式训练启动。保持canonical实现和现有checkpoint；§8.2.9已启动400评测完成收尾，不自动续500/600或实施side-chat的三处语言移除候选。
+
+第一项结果前登记为冻结上下文200/400、train24×teacher46/47×32独立动作queries的九臂分支诊断：normal、local language零、H-read language输入零、Compiler language输出零、三者同时零、visual-read输出零、local neighbor输出零、temporal attention输出零、前三组writeback delta零。实际原生language、真实视频顺序、完整H与信息墙保持；每臂临时hook，不修改参数。全部配对真实query/frame/time/noise，报告完整50×7、前5/后45、各动作维度和速度变化；大幅干预只能说明冻结依赖，不能推出fresh删除有效。
+
+协议、缓存数值检查、后续诊断选择及结果统一见[原因诊断报告](horizon_k1_causal_diagnostics_20260909.md)。仅train24可用于后续明示的局部oracle优化；禁止validation/test梯度和最终视频controls反哺设计。本节只登记诊断，不更改§2–7正式模型及训练合同。
+
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，

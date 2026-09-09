@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：逐帧上下文过程条件fresh formal训练中
+## 当前：上下文条件formal200完成，100闭环及200物化并行
 
 active design§8.2.8只改变四组过程条件：从静态语言码改为当前帧同源Gemma exact task-token状态的learned read。原reader复用，无新参数；compiler保留first-query-only，完整H/四组/视觉核实/decoder/采样不变。源码净增35行、无新模块/runner。定向101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖，包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。
 
@@ -10,11 +10,13 @@ active design§8.2.8只改变四组过程条件：从静态语言码改为当前
 
 fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/horizon-frame-contextual-runtime`。GPU02物理2/6/4/0、物理micro6/6/4/3，逻辑batch仍4×64；tmux `ember-frame-contextual-formal`，torchrun827717、四rank828745–828748。输出`runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909`，命令与资源为`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/launch_contract.json`。
 
-**100完整checkpoint已发布并通过public inspector**；前400条件/25600queries逐条匹配first-query-only基线，各suite100，实际259种task-video。100次更新均值15.685秒，allocated/reserved峰值31.900/34.645GiB。训练已核实107并继续到预登记200；无新闭环分数。
+**100/200完整checkpoint均已发布并通过public inspector，formal完整exit0**。200次更新累计800条件/51200queries，实际341种task-video；与first-query-only前200节点逐条配对，各suite200。均值15.566秒/update、更新总3113.22秒、完整墙钟3413.33秒；allocated/reserved峰值31.900/34.645GiB。四rank均已退出，无自动追加训练。
 
-100 canonical400 bank已在GPU01物理3启动，tmux `ember-frame-contextual-bank100`；计划从本轮100独立生成400条件。该卡启动前free29056MiB/util1%，双节点及进程现场记录在`k1_frame_contextual/step100/gpu_preflight_materialize_launch.json`，完整命令/预算为同目录`materialization_launch.json`。200 validation400+held-video train96请求也已准备；三组实际教师/状态计划与前轮完全一致，每task视频无放回。100 bank完成后按现场资源做完整strict400，不用部分结果选点。
+0/200冻结held FM各完整24task×128queries、无梯度，实际动作/video/noise与前轮配对。200均值.111031413，前轮.111183766，11/24任务更低；两者接近，不能作为行为改善证据。step0为.151469383，前轮.151466233，差值处于正常执行数值低位量级。汇总`k1_frame_contextual/formal_summary.json`。
 
-最新data1在strg01实查used617700592KiB/soft1073741824KiB、hard1084227584KiB（100 checkpoint保存前）；run现4.2GiB，shared84TiB。首段含profile/checkpoints/banks新增峰值20GiB，profile和100保存后剩余新增预算11.6GiB，当前bank约1.9GiB。后续按100/200完整correct、200train96和冻结held FM判断，>145全部资格及最终32/8 fresh/Test仍未完成。
+100 canonical400 bank完整exit0，744.99秒；400条件全部新生成，public inspector及每task50视频无放回、与前轮实际映射匹配均通过。**100 strict400已在GPU02物理2/4/6、每卡2个persistent worker启动**，tmux `ember-frame-contextual-correct100`。**200 validation400+独立held-video train96 banks已在GPU01物理3启动**，tmux `ember-frame-contextual-bank200`，一个resident source顺序生成；无新闭环分数。新launch前双节点/进程现场为`k1_frame_contextual/post_training_gpu_preflight.json`，具体命令、预算与运行日志在`step100/evaluation_launch.json`、`step200/materialization_launch.json`及同目录。
+
+最新data1在strg01实查used624050700KiB/soft1073741824KiB、hard1084227584KiB（200 checkpoint保存前）；run现约11GiB，shared84TiB。首段新增峰值20GiB预算内剩余约5.6GiB，尚待200两banks约2.4GiB。后续按100/200完整correct、200train96判断；>145全部资格及最终32/8 fresh/Test仍未完成。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

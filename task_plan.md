@@ -4,14 +4,14 @@
 
 Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。§8.2.7冻结train24完整adapter功能对应矩阵也已完成，训练内功能特化继续增强；[诊断报告](docs/horizon_k1_functional_assignment_20260909.md)约束下一项针对迁移的学习变量。不能从历史脚本自动恢复。
 
-前轮已完成：first-query-only的100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；该轮训练/物化/诊断/闭环完整exit0，全部配对检查通过，该轮GPU任务均已结束；后续上下文条件formal正在执行。
+前轮已完成：first-query-only的100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；该轮训练/物化/诊断/闭环完整exit0，全部配对检查通过，该轮GPU任务均已结束；后续上下文条件formal200已完成，闭环/物化正在执行。
 
 1. 完整交付本轮事实、适用边界与“局部收益而非整体修复”的裁决；保留四checkpoint和全部原始证据。
 2. 不原样续500/600；从已经复现的训练获取与目标能力分离出发，审阅实际接口功能、竞争解释及最近等价历史。Target-Owned rank共享、旧语义路径和旧条件组织边界必须保留，不机械叠模块或重做改名方案。
 3. 选择并登记一个有信息量的受控变量：明确输入/监督/共享变化，什么证据会支持或反驳，以及与已试组合的实质区别。必要时先做最小可区分诊断，再正式修改/profile/学习；现有广泛授权继续有效。
 4. 根据真实行为推进，直到validation8 single-checkpoint correct>145/400、相邻稳定、breadth、四suite、Goal/Long、跨视频与最终因果全部满足，再完成方法冻结后的32/8 fresh与Test。当前结果不是完成，不预设总尝试次数。
 
-下一项§8.2.8已登记并进入实施：四组过程使用逐帧上下文task-token条件，compiler保留`first_query_only_v1`；不新增参数、不改输出或训练采样。定向检查与真实profile已通过，fresh formal100/200已启动，随后完成两个strict400与200train96。当前四张GPU用于该单节点训练，具体状态见progress。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
+下一项§8.2.8已登记并进入实施：四组过程使用逐帧上下文task-token条件，compiler保留`first_query_only_v1`；不新增参数、不改输出或训练采样。定向检查与真实profile已通过，fresh formal100/200完整exit0；当前100strict400与200banks并行，随后完成200strict400和200train96。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
 
 ## 历史：只读报告交付任务（已完成）
 

@@ -22,9 +22,17 @@ Compiler关闭在H-read开/关背景的validation效应，200为+5/+16，400为+
 
 完整报告及下一复核合同：`docs/horizon_causal_language_learning_20260909.md`末两节。原件总索引：`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/{language/completed_language_matrix.json,retrieval/completed_retrieval_matrix.json}`。最后H-read400 validation/train耗时1168.67/872.58秒，全部9/3worker返回0；没有替换行、重试选成功或调整评价合同。
 
-**已登记、尚未launch的下一项：** 固定all与local_h_read候选，optimization seed11、data seed7，再fresh成对学习400，固定200/400 validation400、held-video train96及held3072；同时对冻结seed7两节点用视频schedule seed20260910做成对correct400，复用原50视频LoRA。补已选BBQ四state的候选200/400回放定位行为。独立初始化只登记这一对，不挑seed；复核不是正式checkpoint选择。官方validation只有原50个state，新的正确视频分配不能被称为全新初始化池。
+**当前复核已启动：** 固定all与local_h_read候选，optimization seed11、data seed7，再fresh成对学习400，固定200/400 validation400、held-video train96及held3072；同时对冻结seed7两节点用视频schedule seed20260910做成对correct400，复用原50视频LoRA。补已选BBQ四state的候选200/400回放定位行为。独立初始化只登记这一对，不挑seed；复核不是正式checkpoint选择。官方validation只有原50个state，新的正确视频分配不能被称为全新初始化池。
 
-最新资源记录为上轮launch时strg01/data1 used701113124KiB、soft1073741824/hard1084227584，两个retrieval run各14GiB。下一对训练/banks/回放新增峰值40GiB，launch前仍须live刷新独立quota、双节点GPU并锁定具体命令/topology。当前没有待观察的旧job。
+最新资源记录为上轮launch时strg01/data1 used701113124KiB、soft1073741824/hard1084227584，两个retrieval run各14GiB。下一对训练/banks/回放新增峰值40GiB，launch前仍须live刷新独立quota、双节点GPU并锁定具体命令/topology。当前没有待观察的旧job；复核新job见下。
+
+**init11成对学习均已fresh启动并完成最初4次更新：** all在gpu01物理1/5、world2、micro8/8，tmux `ember-compiler-confirm-all-init11`，rank PID1759875/1759876；local_h_read在gpu02物理4/6、world2、micro6/6，tmux `ember-compiler-confirm-local_h_read-init11`，rank PID2840929/2840930。输出`runs/outputs/horizon_compiler_confirmation_{all,local_h_read}_init11_data7_20260909`；actual run_contract为exploratory、init11/data7、45e16633，segment0→400/resume null。16个初始实际task/video/query/RNG事件与seed7基线逐项配对，非profile冒充学习起点。
+
+两次新world2四更新profile完整exit0、四rank梯度/source检查通过。all/LH均值29.619/31.674秒，峰值39.478/33.210GiB；93帧最长真实反向15.468/19.601秒、38.167/31.897GiB。新学习launch前双节点复查：所选gpu01两卡均46067MiB free/util0，gpu02两卡40313/41317MiB free/util2/0，仅原有低负载peer；独立quota used701123512KiB、soft1073741824，40GiB新峰值在预算内，shared84TiB。原件`causal_learning_20260909/compiler_confirmation/{profile_completed_summary,initial_sampling_pairing,train_all_launch,train_local_h_read_launch,storage_snapshot}.json`。
+
+**冻结seed7的四个换视频配对bank已CPU完整准备：** 两个schema-owning frozen runtime各自物化200/400，全部reuse400/new0、公开inspector及实际task/state/video/RNG配对通过。每面板392行更换teacher、8行碰巧保留，未调整seed；新存储约6.84MiB，原LoRA硬链接复用。`compiler_confirmation/reassignment/confirmation_preparation.json`索引四个待启动evaluate.sh；当前评测尚未launch。
+
+**候选BBQ回放已启动：** gpu01物理6、两个worker、按200后400处理原states0/12/25/37，tmux `ember-compiler-confirm-replay`。初次因遗漏原有LIBERO config链接，在环境初始化及任何queue claim/rollout之前exit1；日志保留`replay/bootstrap_attempt1`，补指向各原评测配置的symlink后刷新双节点p6free46067MiB/util0再启动。没有改source/视频/state/RNG、没有结果驱动重试。CPU对照bank准备和该回放不构成正式方法采纳。
 
 **原因分析仍未完成。** 实际学习证明后端条件的学习效应不能由冻结置零概括，也证明当前纯FM/其余架构下可以避免部分后期能力崩落；尚需复核候选是否跨初始化/视频配对成立，并保留弱Spatial/Goal/Long等未解释边界。没有将v5.2/v6历史分差全部归为同一入口，未通过该历史包替代受控证据。
 

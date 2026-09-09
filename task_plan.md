@@ -9,7 +9,7 @@
 1. 已完成：上下文400 strict400=90/train96=49，原登记完整配对、训练和held FM均已结束。
 2. 已完成：并行只读量化实际监督覆盖/尾部padding/动作事件，以及历史oracle、专家/clone、G1/G2与读出对照的可迁移边界；主agent负责当前机制实验及综合。
 3. 已完成B1：冻结上下文200/400，在train24固定teacher46/47与32条独立动作queries上，分别隔离三处语言分支、整体语言分支、视觉读取、局部消息、长程attention和回写的功能影响。原生language、真实视频顺序和完整H保留；临时hook不改变checkpoint或canonical源码。详细注册见active design §8.2.10及诊断报告。
-4. B2/C已按报告§6/7登记并启动：分horizon/动作维度与10-step行为预测差异，或冻结接口的局部可达性探索，必要时仅在train tasks做诊断闭环。任何局部优化必须显式登记独立变量、query训练/检验划分和不可部署的oracle身份；不改变共享Writer正式学习状态，不使用validation/test梯度。
+4. B2完整原生FM与10-step采样已完成，确认平均动作误差仍不能排序闭环能力；C按§7继续固定64步P4/C/A-B局部oracle及最终192行train闭环，B3按§9进行冻结分支480行配对闭环。临时变量、fit/独立query划分、固定预算与诊断身份已登记；不改变共享Writer正式学习状态，不使用validation/test梯度。
 5. 汇总证据并提出解决方案；正式改图/改训练及fresh启动留在本次授权之外。最终视频controls和Test继续封存，不借诊断提前使用。
 
 即时执行与结果见progress；当前报告为`docs/horizon_k1_causal_diagnostics_20260909.md`。先完成明确问题的诊断，再按结果决定后续，避免重复既有几何/分支分析。

@@ -1,10 +1,10 @@
 # K1能力缺口：冻结接口与监督诊断
 
-日期：2026-09-09。本报告逐步记录诊断协议、实测结果及边界。Owner允许深入分析、修正及非正式验证，明确禁止正式架构/训练方式修改和正式训练启动。已有上下文400评测收尾继续；canonical Writer、Meta、source与全部checkpoint保留。
+日期：2026-09-09。本报告逐步记录诊断协议、实测结果及边界。Owner允许深入分析、修正及非正式验证，明确禁止正式架构/训练方式修改和正式训练启动。上下文400全部正式证据已收齐；canonical Writer、Meta、source与全部checkpoint保留。
 
 ## 1. 已知问题与竞争解释
 
-- 原始K1 correct55/110/86/87，移除Compiler直接语言内容残差后75/110/106/103；本轮逐帧上下文条件52/103/79/90。前一干预有局部收益，未修复获取/保持；本轮至300无整体优势。
+- 原始K1 correct55/110/86/87，移除Compiler直接语言内容残差后75/110/106/103；本轮逐帧上下文条件52/103/79/90。前一干预有局部收益，未修复获取/保持；本轮至400无整体优势。
 - 上一轮train96由46升59，训练内adapter功能对应增强；本轮41升49，400仍低于前轮59。不支持普遍未学会条件编译，也不证明训练总体已解决。
 - 本轮400 held FM .105074533，比前轮.105737594低，但train96反而少10；平均误差不能作为闭环收益代理。
 - 既有回放包含错误对象/实例、正确子目标后未完成、抓取/时限与干扰物等多种缺口；不能统一归因motor或单个过程模块。
@@ -164,3 +164,15 @@ visual-read的平均误差变化虽小，实际动作RMS .02871并不为零，�
 B2显示动作扰动和平均MSE可以明显不同，尤其visual-read；因此直接补当前400的训练任务行为依赖，不以平均误差替代闭环。固定全部train24、正确teacher46、states32–35；normal及B2四个冻结干预（H-read language零、Compiler language零、visual-read零、三处language同时零）五臂，共480行。每task五臂从同一个真实R/Z条件完整生成各一套LoRA；无视频重排、无训练更新、无held任务或最终视频controls。
 
 每臂新跑4个state，normal也重新执行，不借正式train96中teacher46–49逐state不同的旧面板。使用与C相同的官方source/preprocessing/flow10/replan5/RNG/asset/终止条件、dynamic cost-balanced long-first queue、persistent policy/env workers，保留部分BDDL goal谓词，不录额外图像。预先保留全部五臂结果、逐task/suite/breadth及R/G/L/churn，不由行为挑分支或选checkpoint。这里检验的是冻结模型当前依赖，不能替代fresh删除后的模型比较。新增adapter/rows预计小于.6GiB，纳入原B2+C诊断总2GiB预算；C等待期间可使用已完成B2释放的两卡。
+
+
+### 9.1 B3执行记录
+
+120套完整adapter物化及480行queue准备已全部exit0，进程内87.61秒、allocated峰值10.507GiB、adapter共456005760 bytes。实际24task各五臂teacher/frame序列相同，frame stride5并按既有loader保留最后一帧，全部38target/76张量；只读取action-hidden teacher46，不构建action query数据。物化与评测source相同，normal也新生成。
+
+在双节点实查和strg01/data1 quota确认后，GPU02p1/3各两个persistent worker开始cost-balanced动态queue；连同C四卡共六张有用设备。原件`causal_diagnostics_20260909/branch_rollout/manifest.json`、`launch_contract.json`与`closedloop/contract.json`；所有最终行仍待收齐后统一解释。
+
+
+B3首次worker启动停在LIBERO初始化提示：临时prepare未链接既有asset config；当时尚无queue claim或评测行。已停止本任务四个进程，保留startup日志，链接reference contract同目录的canonical `libero_config`后重启；C prepare同步补齐该链接。首批真实rows正常落盘，配置修正不改变policy、asset内容或任务协议。
+
+两worker/GPU实际占约22–24GiB、余量21–23GiB；结合此前相同官方执行路径三worker验证，再次实查两节点后每卡增加一个persistent worker，保持相同4-env物理批次与实际RNG、同队列，合计两卡六worker。后处理同时区分初始已满足、执行中新达到及末尾又丢失的BDDL goal slots；它只是部分目标进度证据，不是完整行为分类。

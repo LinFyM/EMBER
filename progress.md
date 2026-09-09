@@ -14,9 +14,9 @@ B2已完整24tasks×12列×128queries，FM与10-step采样各36864预测、两�
 
 C正在GPU02p0/2/4/6四进程运行，tasks分别0/14、7/16、20/34、25/35。固定teacher46、128fit queries16–41与128独立queries42–45；各臂只优化临时P4/C/完整A-B，64Adam更新、固定最终点，无正式参数/optimizer/sampler更新。当前采用完整native joint FM；经一次8query实证对照（原生action输出及全部76 LoRA梯度差0），在临时梯度作用域切除对AE LoRA无贡献的冻结Pali o_proj反传，物理micro4/8/8/8。此前device placement、近似cache、micro8 OOM及无cut中途尝试分别保留日志，不混入最终曲线。原件`local_oracle/launch_contract.json`、`prefix_gradient_check.json`及各group运行记录。完成后固定八task×四state×六臂（source/normal/P4/C/A-B/expert）192行诊断闭环，不能纳入零交互分数。
 
-B3已按报告§9预登记，临时脚本独立准备中，尚未launch：当前400、全部train24、teacher46与states32–35，normal及B2四个冻结干预共480行实际闭环。每task同一真实R/Z生成完整LoRA，normal也新rollout；官方执行、cost-balanced long-first动态queue与persistent workers、部分BDDL谓词，无图像/held/训练梯度。用途是区分小平均误差与实际行为依赖，不依据结果选点或推断fresh删除收益。
+B3已按报告§9预登记，120套完整adapter物化/480行queue准备全部exit0（进程内87.61秒、peak10.507GiB、adapter共456005760 bytes），实际teacher/frame/38-target配对通过；现于GPU02p1/3各三persistent worker执行闭环，tmux `ember-causal-b3-p{1,3}_r{0,1,2}`：当前400、全部train24、teacher46与states32–35，normal及B2四个冻结干预共480行实际闭环。每task同一真实R/Z生成完整LoRA，normal也新rollout；官方执行、cost-balanced long-first动态queue与persistent workers、部分BDDL谓词，无图像/held/训练梯度。用途是区分小平均误差与实际行为依赖，不依据结果选点或推断fresh删除收益。
 
-资源：此前strg01/data1 used644196932KiB/soft1073741824、hard1084227584；当前analysis304MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B2两GPU已释放；C四卡共驻仅使用实查余量，不改变他人进程。新B3/闭环launch前刷新双节点GPU与相应存储预算。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
+资源：B3 launch时strg01/data1 used644418584KiB/soft1073741824、hard1084227584；当时analysis308MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B3 rollout launch重新实查两节点，p1/3各45906MiB free/util0，仅各148MiB轻占用；quota used644871904KiB。连同C共六张有用卡，不改变他人进程。后续新launch前刷新相关资源。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
 
 下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。
 

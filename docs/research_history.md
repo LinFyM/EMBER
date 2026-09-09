@@ -881,3 +881,11 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 100/200 correct52/103，对前轮75/110；S/O/G/L0/26/22/4→1/54/37/11、breadth6→7，200两个弱task各仅1/50。相邻R/G/L38/65/14、churn79/J=.3248；前轮200→本轮76/27/34、churn61/J=.5547，其中Long仅2/9/8。200 train96=41，对前轮46为35/6/11，S/O/G/L11/11/13/6、breadth18。配对held FM200 .111031413，对前轮 .111183766，均值接近没有变成行为收益。
 
 本首段未证明语义访问有效、稳定breadth或模块根因。相对缺口23→7、自身52→103仍获取，被登记为补300/400区分较慢获取与保持的依据，而非正结果。进一步执行状态只看progress/active design，不由本历史段恢复。完整[报告](horizon_k1_frame_contextual_20260909.md)、`k1_frame_contextual/first_segment_evidence.json`、两个`step*/completed_summary.json`及`train96_step200/`保留逐task/suite、成功集合、配对与退出证据。
+
+## 2026-09-09 上下文条件完整400：90/400，保持干预无整体收益
+
+同一9abc9b95完整200 exact-resume至400，全部学习状态/采样/topology保持，新增800条件/51200queries与前轮逐条配对。300/400 correct79/90，前轮106/103；S/O/G/L1/33/36/9→2/44/35/9，breadth均6。200→400 R/G/L56/34/47、churn81/J=.4088，BBQ25→3→1且原25成功全丢失。
+
+400 train96=49、breadth20（前轮59），对本轮20041为30/19/11；held3072 FM .105074533（前轮.105737594）。训练、checkpoint、全部896新bank条件、闭环配对与worker退出均通过；续段wrapper3308.24秒，300/400 validation1981.63/2055.91秒，train96673.07秒。本轮不追加500/600，转Owner最新授权的诊断分析，禁止正式架构/训练改动和正式launch。
+
+完整[100–400报告](horizon_k1_frame_contextual_20260909.md)，原件`k1_frame_contextual/segment200_400/round_evidence.json`；诊断另见[报告](horizon_k1_causal_diagnostics_20260909.md)，不从本历史段恢复实验。

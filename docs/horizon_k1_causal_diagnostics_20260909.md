@@ -103,3 +103,13 @@ FM使用完整native联合forward、训练BF16计算；实际动作使用官方1
 固定记录0/16/32/64的fit与独立FM，保留64步最终adapter；不用独立query或闭环选择中间最优点。预算是每臂8192重复query预测，unique fit128；一次未收敛不能证明空间不可达。必要的诊断闭环只在上述train tasks、固定states32–35，用同teacher46生成的normal与各64步oracle严格配对，并复用官方执行逻辑；独立标记action-supervised task-local oracle，不能纳入zero-interaction成绩或部署。
 
 若P4/C都能改善实际功能和行为而normal弱，提高对上游获取/共享学习的关注；若直接A/B有效而C无效，只能定位冻结读出或该局部求解；若所有接口仅fit改善而独立/闭环不改善，进一步区分样本覆盖、监督与局部求解，不据此直接改目标函数。所有结果允许混合，不预设必须支持某个方案。
+
+### 7.1 C执行修正（科学结果前）
+
+首轮临时脚本的source identity未转GPU，执行前即device mismatch，已修正；随后首task完整原生数值核对显示沿用B1的近似KV路径超出登记界限。因此C统一使用完整native联合FM forward，只复用同fit/独立面板、同microbatch的冻结image/text embedding；全部action-expert与联合transformer计算保持原生执行。旧尝试只保留失败日志，未产生可解释的oracle结果，不改变任务/数据/64步优化协议。该失败限制近似缓存的复用范围，也强化B1微小差异必须由B2完整原生复核的边界。
+
+完整native反传micro8在部分共驻设备OOM，未作科学解读。保持逻辑128/time-noise/64步，改物理micro2（GPU02p0）及micro4（p2/4/6）；每task内部三个接口及其fit/独立基准一致。四进程分别tasks0/14、7/16、20/34、25/35，同节点连同B2共六张有用卡。实际显存与吞吐由日志记录，不为低位一致扩大dtype或固定batch1。
+
+### 7.2 固定train诊断闭环
+
+八个task各states32–35、teacher46，normal/P4-final64/C-final64/AB-final64严格配对，另补同source及既有expert2000作为执行能力参照，共6×32=192行。source/专家不消费teacher；专家训练池0–49已包含本次动作池，只是privileged参照。使用现有cost-balanced动态queue、long-first、persistent policy/environment workers和完整官方rollout_shard；保留BDDL goal predicate变化作为部分进度信号，不录额外图像、不用于梯度或选点。与正式train96逐state不同teacher46–49的面板分开，重新运行normal，不能借用原96行冒充严格配对。

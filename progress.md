@@ -2,15 +2,15 @@
 
 更新时间：2026-09-09 CST。Owner最新授权深入分析与诊断实验，当前禁止正式架构/训练方式修改及正式训练启动。
 
-## 当前：原因诊断启动，已有400评测收尾
+## 当前：已有400全收齐，冻结动作与局部oracle诊断运行
 
-Owner要求把语言分支与整体能力缺口共同分析，尽可能实际验证并提出方案。沿用现有canonical源码和冻结checkpoint；不因旧的全过程授权启动新正式训练或直接落实side-chat候选。main负责当前模型机制诊断，两个只读并行分析分别负责监督分布和历史能力/接口oracle。诊断协议及结果统一保留于`docs/horizon_k1_causal_diagnostics_20260909.md`，当前为证据收尾与首项冻结接口实验准备。
+Owner要求把语言分支与整体能力缺口共同分析，尽可能实际验证并提出方案。沿用现有canonical源码和冻结checkpoint；不因旧的全过程授权启动新正式训练或直接落实side-chat候选。main负责当前模型机制诊断，两个只读并行分析分别负责监督分布和历史能力/接口oracle。诊断协议及结果统一保留于`docs/horizon_k1_causal_diagnostics_20260909.md`，当前B1与CPU/历史审计完整结束，B2和C按预登记协议运行。
 
 上下文400全部证据现已完整：validation **90/400**、S/O/G/L=2/44/35/9、breadth6；300→400 R/G/L63/27/16、churn43/J=.5943；200→40056/34/47、churn81/J=.4088。global1/3/11/13/23/26/31/32=1/1/43/1/0/35/9/0，BBQ25→3→1，保持未修复。四worker exit0、wrapper2055.91秒。train96 **49/96**、breadth20，相对20041为30/19/11、相对前轮40059为42/7/17；六worker exit0、wrapper673.07秒。全部实际配对与独立held FM通过；本段原件`k1_frame_contextual/segment200_400/round_evidence.json`。没有待完成formal GPU任务，不追加500/600。
 
 B1冻结九臂诊断已在GPU02p1/3分别完成200/400，两个完整exit0、各48条件/13824arm queries、wrapper303.87/303.71秒，peak11.779GiB，模型更新0。96条件跨checkpoint/两teacher/各arm实际action/video/time/noise及hook覆盖全部通过。normal FM .111548→.105841；400 local language零+.007630、H-read条件零+.00000282、Compiler语言零+.000576、三处同时零+.007570、visual-read零+.000367、local-neighbor零+.039144、temporal attention零+.001157、writeback零+.000849。大干预只说明冻结依赖，小差异仍需原生执行复核；不作为fresh删除性能结论。前5真实动作误差确实改善，不支持仅padding拟合的解释；夹爪切换邻域需更完整采样诊断。原件`causal_diagnostics_20260909/branches/summary.json`及逐条件npz。正式源码未改。
 
-下一项准备B2完整原生FM/真实10-step采样比较，以及C冻结P4/C/完整A-B的局部oracle；详细协议在诊断报告，当前未启动这两项。CPU监督量化原件`causal_diagnostics_20260909/supervision_distribution/`完整保存，历史oracle边界已核实。
+B2完整native FM/10-step采样已在GPU02p1/3两独立进程启动，固定train24分组、12列、128queries/task。C冻结P4/C/完整A-B局部oracle首次临时source设备放置与近似缓存核对失败后，统一改为完整native联合FM；micro8实际反传OOM后按资源改物理micro2/4，逻辑128fit/128独立queries及每臂64步不变。当前GPU02p0/2/4/6四进程各二task，连同B2共六张有用卡；正式参数全冻结，失败尝试不作科学结果。协议提交`b69e29b1`已push，分析脚本仅在`causal_diagnostics_20260909/openloop`和`local_oracle`，运行面仍9abc9b95；launch合同/日志/runtime均在各自目录。双节点现场、NUMA和data1 quota已刷新（used644196932KiB/soft1073741824），新增B2+C总预算2GiB、既有analysis92MiB/run26GiB、shared84TiB；p1/2/3各仅148MiB peer，p4约5754MiB peer/util2，四张有用卡不改变他人进程。当前只等待实际结果，不据脚本接通作科学结论。CPU监督量化原件`causal_diagnostics_20260909/supervision_distribution/`完整保存，历史oracle边界已核实。
 
 ## 历史：上下文条件保持段已全部完成，详细执行记录
 

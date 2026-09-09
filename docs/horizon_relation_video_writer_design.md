@@ -509,7 +509,7 @@ formal seed7、4suite×64queries、episode池、AdamW/LR/warmup及source均保�
 
 登记于看到300/400任何结果之前。两个早期节点和train96均低于前轮，不能用breadth7或FM近似宣布改动有效。与此同时，相对缺口由23缩到7，自身correct52→103，仍处相近早期水平且获取中的状态；按§8.2.8这一分支，补其尚未覆盖的200以后保持区间。这是有限的同配方学习检验，不是增加一个结构候选，也不把续训本身当作正证据。
 
-从本轮完整macro200 exact-resume至**400**，保存**300/400**两个完整single checkpoints；Writer/Meta/optimizer/scheduler/sampler/RNG及world4/rank顺序保持，数据、K1、4suite×64queries、LR和所有图语义不变。物理microbatch可按现场显存选已验证配置。注册两个correct strict400，400同口径held-video train96；段末使用既有24×128固定held FM只作训练获取诊断。新201–400实际曝光按step/suite与first-query-only及原始同节点核对，不能跨checkpoint复用LoRA banks。
+从本轮完整macro200 exact-resume至**400**，保存**300/400**两个完整single checkpoints；Writer/Meta/optimizer/scheduler/sampler/RNG及world4/rank顺序保持，数据、K1、4suite×64queries、LR和所有图语义不变。物理microbatch可按现场显存选已验证配置。注册两个correct strict400，400同口径held-video train96；400完整checkpoint冻结后独立调用既有24×128 held FM执行方式，只作训练获取诊断。训练配置的自动诊断节点仍为0/200，不因本项更改resume配置。新201–400实际曝光按step/suite与first-query-only及原始同节点核对，不能跨checkpoint复用LoRA banks。
 
 先看本轮200→300→400的绝对获取、per-task/suite、breadth和R/G/L/churn/J，再与前轮106/103、train40059及原始86/87比较。尤其追踪BBQ25在后续是否丢失、Spatial/Goal弱task与Long是否形成可信获取；低起点带来的净增不能替代绝对分数，两个1/50不能命名可靠广度。若有实质绝对增长及保持改善，再按§8.3登记后续资格；若没有这种证据，结束本访问干预原样续训，转入不同机制分析。不得因为loss下降、单点峰值或零星新成功自动延长500/600或扫rank/scale/LR/seed。
 

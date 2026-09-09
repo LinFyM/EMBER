@@ -8,7 +8,15 @@
 
 **目前识别到的是联合路径效应，尚未完成主要原因分析。** local_only相对all在两个验证节点+11/+20、相对none+6/+18；全部删除未解决训练改善/未见任务退步。BBQ none23→1（R/G/L0/1/23）、local34→18（12/6/22）；其余7task85→91、80→92，因此不能称所有任务同步遗忘。local400 Spatial归零、相邻大量成功得失；相对上一版first-query400只净+7且35新增/28丢失，不能宣布整体修复或正式采纳。
 
-**下一项已在结果前登记，尚未实现/profile/launch：** local固定开，新增local_h_read与local_compiler两个fresh单入口学习臂，复用已完成all/local_only补足2×2检索条件矩阵，区分各入口与交互。训练/评测合同、具体差异、历史非等价和预测见语言对照文档末节；不是继续400之后训练、重跑旧架构或开放正式方法采纳。共享候选和VL只读审计仍未选定/启动，旧v6继续暂停。
+**两个分离学习臂已fresh启动：** local固定开，新增local_h_read与local_compiler，复用已完成all/local_only补足2×2检索条件矩阵。新工作树`.codex/worktrees/horizon-causal-retrieval`从最新main建立并复用旧探索运行面，当前clean pushed detached `45e16633`；正式main行为未改。科学实现56bbb160之后只校正本分支Git authority，没有改变模型或训练计算。新增计算仅是两个已有入口的开关组合，共同参数初始化保持。架构/物化/FM三组CPU共92项通过（初次91pass，1项因新工作树未链接canonical data而失败；补只读资产symlink后定向通过），两个配置解析通过。
+
+两个真实4-update及93帧最长视频profile均完整exit0，7rank的开启/关闭检索、local reader、视觉/过程/decoder/Meta梯度及source冻结检查通过，16个实际condition与contextual前4更新配对。平均update23.421/17.237秒，allocated峰值39.478/38.134GiB，最长38.166GiB；未保存checkpoint、不用作fresh初始化。第一次学习启动因复用helper仍绑定旧探索分支，在创建run_contract和任何update之前exit1；日志保留`retrieval/bootstrap_attempt1/`。改为当前已推送分支后，实际clean/detached/ancestry通过，dirty/uncontained/unregistered仍被拒绝；无需重复计算profile。
+
+当前真正运行：local_h_read在gpu01物理1/5/6、micro8/8/8，local_compiler在gpu02物理1/2/3/6、micro8/8/8/6，固定400更新、200/400完整证据节点。tmux `ember-retrieval-local_h_read` / `ember-retrieval-local_compiler`，输出`runs/outputs/horizon_causal_{arm}_seed7_20260909`；所有3/4rank及实际run_contract、segment_start0/stop400/resume null已核实。重启前重新核验双节点，所选卡util0/free至少41319MiB；两节点各3/4张有用卡。strg01/data1 used673743772KiB、soft1073741824、shared84TiB，已有语言两run各14GiB、当前analysis582MiB；新两臂含四checkpoint/四组validation+train banks及余量预算40GiB，全部复用source/data/env。精确命令、配置、完整profile及GPU/storage证据在`causal_learning_20260909/retrieval/`。共享候选和VL只读审计仍未选定/启动，旧v6继续暂停。
+
+两臂真正探索训练前4次update已完成，16个实际condition/task/video/query/RNG字段均与contextual逐项配对，实际run_contract记录45e16633与对应backend组合。原件`retrieval/initial_sampling_pairing.json`；不是profile结果冒充学习起点，后续200/400仍核对完整曝光。
+
+Owner最新要求减少汇报频率，省略逐分片播报，集中在完整结果、结论变化、运行异常或需要决策时沟通；这不停止当前原因分析goal。
 
 ## 首轮语言对照过程记录（现已全部完成）
 

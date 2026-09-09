@@ -6,9 +6,13 @@
 
 Owner要求把语言分支与整体能力缺口共同分析，尽可能实际验证并提出方案。沿用现有canonical源码和冻结checkpoint；不因旧的全过程授权启动新正式训练或直接落实side-chat候选。main负责当前模型机制诊断，两个只读并行分析分别负责监督分布和历史能力/接口oracle。诊断协议及结果统一保留于`docs/horizon_k1_causal_diagnostics_20260909.md`，当前为证据收尾与首项冻结接口实验准备。
 
-400 train96已完整exit0：**49/96**、breadth20；相对20041为R/G/L30/19/11、churn30/J=.5；相对前轮40059为42/7/17，churn24/J=.6364。六worker均exit0，wrapper673.07秒。actual96行配对、source与normalization、退出状态全部核验通过，原件`k1_frame_contextual/segment200_400/train96_step400/completed_summary.json`。400 validation尚未完成。训练任务仍有获取，但本轮同节点低于前轮；不把held FM最低当作行为优势。
+上下文400全部证据现已完整：validation **90/400**、S/O/G/L=2/44/35/9、breadth6；300→400 R/G/L63/27/16、churn43/J=.5943；200→40056/34/47、churn81/J=.4088。global1/3/11/13/23/26/31/32=1/1/43/1/0/35/9/0，BBQ25→3→1，保持未修复。四worker exit0、wrapper2055.91秒。train96 **49/96**、breadth20，相对20041为30/19/11、相对前轮40059为42/7/17；六worker exit0、wrapper673.07秒。全部实际配对与独立held FM通过；本段原件`k1_frame_contextual/segment200_400/round_evidence.json`。没有待完成formal GPU任务，不追加500/600。
 
-## 正在收尾的登记保持段：上下文条件300为79/400
+B1冻结九臂诊断已在GPU02p1/3分别完成200/400，两个完整exit0、各48条件/13824arm queries、wrapper303.87/303.71秒，peak11.779GiB，模型更新0。96条件跨checkpoint/两teacher/各arm实际action/video/time/noise及hook覆盖全部通过。normal FM .111548→.105841；400 local language零+.007630、H-read条件零+.00000282、Compiler语言零+.000576、三处同时零+.007570、visual-read零+.000367、local-neighbor零+.039144、temporal attention零+.001157、writeback零+.000849。大干预只说明冻结依赖，小差异仍需原生执行复核；不作为fresh删除性能结论。前5真实动作误差确实改善，不支持仅padding拟合的解释；夹爪切换邻域需更完整采样诊断。原件`causal_diagnostics_20260909/branches/summary.json`及逐条件npz。正式源码未改。
+
+下一项准备B2完整原生FM/真实10-step采样比较，以及C冻结P4/C/完整A-B的局部oracle；详细协议在诊断报告，当前未启动这两项。CPU监督量化原件`causal_diagnostics_20260909/supervision_distribution/`完整保存，历史oracle边界已核实。
+
+## 历史：上下文条件保持段已全部完成，详细执行记录
 
 
 active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段全部结束：100/200 correct52/103（前轮75/110），200 train96为41（前轮46），尚无整体优势。完整[首段报告](docs/horizon_k1_frame_contextual_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/first_segment_evidence.json`保留事实。§8.2.9同配方300/400用于区分较慢获取与后续保持，不将早期增量或两个1/50当作正结果。

@@ -1,10 +1,10 @@
 # K1能力缺口：冻结接口与监督诊断
 
-日期：2026-09-09。当前是诊断协议与执行记录，尚无新机制结论。Owner允许深入分析、修正及非正式验证，明确禁止正式架构/训练方式修改和正式训练启动。已有上下文400评测收尾继续；canonical Writer、Meta、source与全部checkpoint保留。
+日期：2026-09-09。本报告逐步记录诊断协议、实测结果及边界。Owner允许深入分析、修正及非正式验证，明确禁止正式架构/训练方式修改和正式训练启动。已有上下文400评测收尾继续；canonical Writer、Meta、source与全部checkpoint保留。
 
 ## 1. 已知问题与竞争解释
 
-- 原始K1 correct55/110/86/87，移除Compiler直接语言内容残差后75/110/106/103；本轮逐帧上下文条件52/103/79，400待完整。前一干预有局部收益，未修复获取/保持；本轮至300无整体优势。
+- 原始K1 correct55/110/86/87，移除Compiler直接语言内容残差后75/110/106/103；本轮逐帧上下文条件52/103/79/90。前一干预有局部收益，未修复获取/保持；本轮至300无整体优势。
 - 上一轮train96由46升59，训练内adapter功能对应增强；本轮41升49，400仍低于前轮59。不支持普遍未学会条件编译，也不证明训练总体已解决。
 - 本轮400 held FM .105074533，比前轮.105737594低，但train96反而少10；平均误差不能作为闭环收益代理。
 - 既有回放包含错误对象/实例、正确子目标后未完成、抓取/时限与干扰物等多种缺口；不能统一归因motor或单个过程模块。
@@ -52,4 +52,54 @@ B1及上述量化结束后，按结果登记有信息量的下一项：实际10-
 
 ## 5. 执行与结果
 
-协议已登记，B1尚未启动。400 train96已完整49/96、breadth20，全部配对/六worker退出通过；原件`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/segment200_400/train96_step400/completed_summary.json`。400 validation尚待结束。
+B1已完整执行并配对核验通过。400 train96已完整49/96、breadth20，全部配对/六worker退出通过；原件`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/segment200_400/train96_step400/completed_summary.json`。400 validation完整90/400；完整本轮证据位于`k1_frame_contextual/segment200_400/round_evidence.json`。
+
+
+### 5.1 B1结果与下一步含义
+
+两个checkpoint各48条件、13824 arm query预测，模型更新0、两个wrapper exit0（303.87/303.71秒）、peak11.779GiB。逐条件真实action/video/time/noise配对及hook覆盖检查通过。原件`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/branches/summary.json`，保留每个条件的逐坐标loss、velocity、raw actions/padding与实际noise。
+
+| 干预：相对normal的FM变化 | 200 | 400 | 400两条video均变差tasks |
+|---|---:|---:|---:|
+| local language零 | +.006976 | +.007630 | 21/24 |
+| H-read language输入零 | -.000001 | +.000003 | 5/24 |
+| Compiler language零 | +.000778 | +.000576 | 15/24 |
+| 三处同时零 | +.006363 | +.007570 | 21/24 |
+| visual-read零 | +.000429 | +.000367 | 17/24 |
+| local-neighbor零 | +.035638 | +.039144 | 24/24 |
+| temporal attention零 | +.001784 | +.001157 | 19/24 |
+| writeback零 | +.002043 | +.000849 | 17/24 |
+
+normal .111548→.105841，source同面板.154875。局部消息分支有显著功能影响，但它承载当前H、语言与关系等混合信息，不能单独证明跨帧动态已经正确理解。H-read额外language的边际影响很小；visual-read、Compiler语言与其它较小差异须结合完整native执行及动作变化，不能简单称无用。400各干预速度RMS仍非零（H-read约.00396、visual-read .01363、local-neighbor .20686、temporal .04199）。
+
+### 5.2 监督分布与坐标误差
+
+CPU逐条重建102400实际queries/512万目标位置：padding16.4778%，末动作及其重复17.1496%；前5真实动作占总loss坐标9.866%。起点进度均值.5001、各十分位约均匀，展开目标最前/末10%占1.94%/26.76%。624 episodes共有1418次夹爪符号切换，全部进入过监督target，1382次进入过前5位置；正负夹爪指令48.41%/51.59%，并非事件整体缺席或静止动作主导。Long padding最低8.95%却仍弱，不能由该分布直接解释主问题。原脚本与统计在`causal_diagnostics_20260909/supervision_distribution/`。
+
+B1 normal的前5 loss .122280→.115106，前5 valid .007133的误差下降，整体改善约92%来自真实目标位置；因此不能用“只是padding被拟合得更好”解释FM/闭环不一致。夹爪切换±2位置的task等权条件均值1.17034→1.19754，前5邻域1.00746→1.03722；但这些只来自固定32query小面板，事件数、条件均值与总loss贡献口径不同，不能直接认定夹爪是唯一根因。
+
+### 5.3 历史能力对照的有效范围
+
+train24独立rank16专家为658/1200，预算32000 queries/task且动作池0–49；说明当前source/LoRA空间存在较强局部能力，不证明当前短学习易达或所有任务均强。旧whole-Writer两task clone 14/20对共享3/20说明局部可学与共享学习代价可分离，但没有定位单个模块。
+
+G1通过点114/250的launch明确`--stop-after-step 0`、optimizer_updates_before_checkpoint=0，是从已知成功参考出发的解析signed构造；旧500步优化为88/84。它不能被当作FM学会视频到参数的证据。G2用直接phase action/progress/predicate等监督，未生成LoRA闭环。旧局部primal fit/held恢复.9717/.9545，而冻结G2共享readout held约.25–.27，仅说明那套表示/reader与功能方向之间仍有缺口，不单独证明当前P4丢失信息。
+
+本轮后续必须比较当前checkpoint的相邻接口实际功能和行为，不重做一份单一Program几何probe就宣称定位。
+
+## 6. B2完整原生FM与部署采样诊断（结果前登记）
+
+固定train24，每task原episodes42–45、seed20260908+task、128queries；微批8，各列共享实际FM time/noise与另行固定的128×50×32采样noise。比较12列：source；context200/400各teacher46/47；first-query400各teacher46/47；train专家2000；context400teacher46的H-read language零、Compiler language零、visual-read零及三处language同时零。干预定义沿B1，不改架构或参数学习状态。
+
+FM使用完整native联合forward、训练BF16计算；实际动作使用官方10-step `predict_action_chunk`且无outer autocast，保留双相机、状态prompt、source normalization和动作维度。可缓存同task/microbatch/执行模式下真正native生成的冻结prefix；不跨FM/采样混用，也不把B1近似cachedFM当原生复核。首个非source列首8query做cache/uncached真实动作核对并记录误差；不扩大dtype。
+
+保存逐坐标FM、10-step动作/目标/实际noise与pad；比较前5/后45、valid/pad、xyz/rotation/gripper和事件邻域。采样误差相对单条示范仍受多解和时机差异影响，不代替闭环。专家训练读过42–45，只作为privileged能力参照，不当独立held泛化证据；本诊断不使用其validation专家。
+
+## 7. C冻结接口局部oracle（结果前登记）
+
+只用当前400，固定train tasks **0/7/14/16/20/25/34/35**（四suite各二，包含当前强弱任务及专家本身较弱的反例），正确teacher46。正常Writer生成P4、最终C和完整A/B作为共同起点。固定128个fit queries来自16–41（seed20260910+task），128个独立query来自42–45（seed20260908+task）；fit固定真实time/noise，所有接口使用同一组。无validation/test梯度。
+
+分别优化三个临时变量：P4（Compiler/decoder冻结）、C[38,16,256]（decoder全部冻结）、完整76张量A/B（source冻结）。原Writer/Meta参数一律冻结，采样器不推进，无正式optimizer/scheduler/checkpoint写入。变量写为`base + .1*rms(base)*delta`，delta从零开始，独立Adam lr=.1、无weight decay、固定64步；每tensor原始dtype在实际消费前保持。仅为统一相对局部步幅，不声称三种接口的函数空间距离相同。
+
+固定记录0/16/32/64的fit与独立FM，保留64步最终adapter；不用独立query或闭环选择中间最优点。预算是每臂8192重复query预测，unique fit128；一次未收敛不能证明空间不可达。必要的诊断闭环只在上述train tasks、固定states32–35，用同teacher46生成的normal与各64步oracle严格配对，并复用官方执行逻辑；独立标记action-supervised task-local oracle，不能纳入zero-interaction成绩或部署。
+
+若P4/C都能改善实际功能和行为而normal弱，提高对上游获取/共享学习的关注；若直接A/B有效而C无效，只能定位冻结读出或该局部求解；若所有接口仅fit改善而独立/闭环不改善，进一步区分样本覆盖、监督与局部求解，不据此直接改目标函数。所有结果允许混合，不预设必须支持某个方案。

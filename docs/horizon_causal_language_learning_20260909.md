@@ -42,7 +42,7 @@
 
 两个fresh臂已在冻结探索运行面e60a7ca0完整完成400次更新，200/400学习状态和独立动作诊断均通过检查；实际曝光与基线逐项匹配。profile、launch及资源原件在`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/`，后续动态状态见progress。
 
-## 200节点完整闭环证据（400节点尚待完成）
+## 首轮语言200节点完整闭环证据
 
 四个新增面板均完整exit0，全部worker返回0；原生strict checker确认任务、初始状态、teacher映射、执行协议及RNG配对。下表R/G/L均相对同节点contextual基线，suite顺序为Spatial/Object/Goal/Long。训练面板每suite24行，validation每suite100行。
 
@@ -116,7 +116,7 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 
 各新臂仍fresh400updates，固定200/400完整checkpoint、validation400和held-video train96、独立3072query动作诊断；同seed7、teacher0–15/query16–41、4suite×64query、LR3e-5/warmup8及正常重采样FM time/noise。实际曝光继续逐项核对，允许相同合同下正常BF16与物理微批低位差异，不按loss选点或补500。先做真实短profile验证开启/关闭入口及其余完整图梯度，再按实时设备、quota和精确输出预算登记launch；本段登记不是资源检查的替代。
 
-## 检索分离：200步train96完整结果（其余节点仍在执行）
+## 检索分离：200步完整闭环结果（400节点仍在执行）
 
 两个新增train96均完整exit0、全部worker返回0，与all和local_only实际strict配对通过。每task仍是固定4个独立state、teacher46–49；该面板描述训练任务的闭环行为，不能替代validation400或相邻保持。
 
@@ -127,6 +127,21 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 | local_compiler（关/开） | 43/96 | 10/12/14/7 | 18 | 38/5/3 | 8 / .8261 | 32/11/14 | 25 / .5614 |
 | local_only（关/关） | 46/96 | 13/14/12/7 | 18 | 32/14/9 | 23 / .5818 | — | — |
 
-在这个训练节点，关闭H-read条件在Compiler开/关的两个背景分别净增2/6；关闭Compiler条件在H-read开/关时分别净−1/+3。两处联合关闭相对all的+5，没有由任一单独关闭完整重现。Compiler单入口与all保留38个共同成功，变化较小；H-read单入口改善Spatial但在其它suite有损失。以上是单节点、单seed的实测条件效应，不能据此宣布稳定交互或将主因定责到某个入口。validation200、400及相邻结果仍按原登记完成。
+在这个训练节点，关闭H-read条件在Compiler开/关的两个背景分别净增2/6；关闭Compiler条件在H-read开/关时分别净−1/+3。两处联合关闭相对all的+5，没有由任一单独关闭完整重现。Compiler单入口与all保留38个共同成功，变化较小；H-read单入口改善Spatial但在其它suite有损失。以上是单节点、单seed的实测条件效应，不能据此宣布稳定交互或将主因定责到某个入口。这些训练任务结果须与下文validation200和待完成的400/相邻证据一起解释。
 
 全部逐task、suite、成功集合与配对原件为`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/{arm}_step200/train96_analysis/`，其中`completed_summary.json`、`vs_contextual_same_step.json`与`vs_local_only_same_step.json`保留完整依据。期间观察到共享存储RPC/文件读取等待；保留原进程后两面板正常结束、全部96行和输入配对通过，未重启、补行或调整超时来改变结果。墙钟包含该等待，不直接用来归因模型吞吐。
+
+两个新增validation400现也完整exit0、全部worker返回0，实际strict配对通过；检索分离200的四个新面板共992行已完整保留。
+
+| 臂（H-read/Compiler） | validation成功 | S/O/G/L | breadth | 相对all R/G/L | churn / J | 相对local_only R/G/L | churn / J |
+|---|---:|---|---:|---|---|---|---|
+| all（开/开） | 103/400 | 1/54/37/11 | 7 | — | — | — | — |
+| local_h_read（开/关） | 108/400 | 3/57/34/14 | 6 | 75/33/28 | 61 / .5515 | 85/23/29 | 52 / .6204 |
+| local_compiler（关/开） | 98/400 | 4/52/38/4 | 7 | 77/21/26 | 47 / .6210 | 72/26/42 | 68 / .5143 |
+| local_only（关/关） | 114/400 | 3/62/36/13 | 6 | 77/37/26 | 63 / .5500 | — | — |
+
+两个新增臂的validation global1/3/11/13/23/26/31/32分别为H-read单入口0/3/28/29/0/34/12/2、Compiler单入口1/3/31/21/0/38/2/2。它们没有恢复弱Goal任务；Spatial仍很低，breadth中的单次成功不代表能力修复。
+
+**200节点区分到的条件效应：** 关闭H-read在Compiler开/关背景下分别净−5/+6，与train96两背景都为小幅正增不同；因此不能把H-read条件笼统判为有害。关闭Compiler在H-read开/关背景下分别净+5/+16，但其train96效果为−1/+3。联合关闭在200仍最好，任一单独关闭均未同时重现联合方案的验证总分和训练任务结果。以上支持入口之间的作用依赖及训练任务/未见任务的不同响应，不证明已解释Horizon相对旧模型的主要分差。Compiler简化的验证收益是否保持，仍由预注册400及相邻成功集合裁决；不按这个200节点提前正式采纳。
+
+检索分离200总索引为`retrieval/step200_completed_matrix.json`；新增验证的完整原件在各`retrieval/{arm}_step200/validation_analysis/`。Compiler已完整训练到400，其400 validation与train96正在执行；H-read继续原训练到400，无额外训练臂或正式方法切换。

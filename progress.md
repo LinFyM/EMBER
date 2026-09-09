@@ -2,7 +2,9 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：两个语言路径探索臂已开始fresh学习，旧v6参照接入中
+## 当前：语言两臂继续已登记学习；v6追加重训已暂停
+
+Owner随后质疑为什么又启动v6训练。主agent先暂停这条自行追加的旧模型重训路线，取消后续200/400 launch，解释必要性与范围；这不是Owner要求停止全部已启动语言对照。现场核实v6 profile在第2步梯度检查自行exit1（第1步日志完成，第2步更新已执行但检查未通过），无残留进程、无resume、无完整探索训练；不修复后自动重启。旧v6现阶段只使用已有证据。隔离代码和原始日志保留，不作能力结果。
 
 **最新授权：** Owner已明确接受必要的数小时对照成本。可为探索原因修改架构、语言路径、共享方式及训练目标/方式，开展实验性训练与闭环测试；不得自行宣布修复并正式采纳候选、合入为当前正式方法、启动下一轮正式训练。旧文档中“只允许冻结诊断”的解释不再适用。原有信息墙、split、评测、GPU/存储合同继续有效。
 
@@ -18,7 +20,7 @@
 
 资源：strg01/data1 used645558440KiB，soft1073741824/hard1084227584；当前正式run26GiB、旧诊断1.2GiB，实际个人项目outputs432GiB/analysis28GiB、shared84TiB。两语言臂新增峰值40GiB含训练/物化/临时余量，全部复用source/data/env，预算在独立quota内。
 
-旧v6隔离接入已完成：`.codex/worktrees/v6-causal-reference` clean pushed detached **5be77a34**，分支`codex/v6-causal-reference`，172项CPU检查通过。历史四模型文件只改import，保留mean/三Meta/原probe，接当前合法采样/FM/更新/物化/官方评测；未合入main。完整说明位于该分支`docs/v6_causal_reference.md`。v6真实profile已在gpu02物理4/2、world2、micro8/6启动，tmux `ember-causal-v6-profile`：fresh2、93帧完整图反向、同拓扑resume到4；本次不将profile作初始化或能力证据。三Meta梯度、最长峰值与恢复仍待实测。新增v6峰值预算8GiB，加两语言臂40GiB；launch时strg01/data1 used645561828KiB、shared84TiB，现有分析460KiB/参照worktree104MiB，资源快照/命令保留`causal_learning_20260909/v6/`。下一步完成该profile后启动固定200/400探索参照；语言两臂继续已登记学习。
+旧v6隔离接入已完成：`.codex/worktrees/v6-causal-reference` clean pushed detached **5be77a34**，分支`codex/v6-causal-reference`，172项CPU检查通过。历史四模型文件只改import，保留mean/三Meta/原probe，接当前合法采样/FM/更新/物化/官方评测；未合入main。完整说明位于该分支`docs/v6_causal_reference.md`。v6真实profile已在gpu02物理4/2、world2、micro8/6启动，tmux `ember-causal-v6-profile`：fresh2、93帧完整图反向、同拓扑resume到4；本次不将profile作初始化或能力证据。三Meta梯度、最长峰值与恢复仍待实测。新增v6峰值预算8GiB，加两语言臂40GiB；launch时strg01/data1 used645561828KiB、shared84TiB，现有分析460KiB/参照worktree104MiB，资源快照/命令保留`causal_learning_20260909/v6/`。该段为暂停前的执行记录；当前禁止自动继续v6 profile/200/400，语言两臂继续已登记学习。
 
 上一批676条诊断已全部完成并保留；它们支持实际依赖与局部反证，没有完成主要原因和解决方案验证。尤其不能由冻结语言零40/96排除fresh语言简化，不能由task7 free-C有效排除架构可学习性问题，不能由局部固定噪声拟合差推断正式训练噪声bug。
 

@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：上下文条件首段52/103，登记同配方300/400保持检验
+## 当前：上下文条件首段52/103，同配方200→400已启动
 
 active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8的逐帧上下文task-token过程条件首段全部结束，完整报告[本轮首段配对结果](docs/horizon_k1_frame_contextual_20260909.md)，原件`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/first_segment_evidence.json`。
 
@@ -14,11 +14,13 @@ fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/
 
 200 held-video train96完整**41/96**，前轮46、原52；S/O/G/L11/11/13/6、breadth18。相对前轮R/G/L35/6/11、churn17/J=.673；相对source15为11/30/4。book35从3/4降0、双moka38从0增2；不能据小面板定责模块。配对held FM各24×128，无梯度，本轮200 .111031413/前轮 .111183766，仅11/24更低；均值接近不能代替闭环。
 
-100bank400和200bank400+96全部新生成、各自每task视频无放回、实际state/video/RNG/normalization及checkpoint身份检查通过。100/200/train96全部worker exit0，wrapper1440.21/1112.77/1016.96秒；两个bank wrapper744.99/932.37秒。所有本任务GPU训练、物化和评测均已正常结束，无尚未完成进程。
+100bank400和200bank400+96全部新生成、各自每task视频无放回、实际state/video/RNG/normalization及checkpoint身份检查通过。100/200/train96全部worker exit0，wrapper1440.21/1112.77/1016.96秒；两个bank wrapper744.99/932.37秒。所有首段GPU训练、物化和评测均已正常结束；下述续段是另行登记后的恢复。
 
-**下一项§8.2.9已登记，尚未启动。** 缺口由23缩到7，自身52→103仍有获取，归入§8.2.8相近早期水平分支，补同配方300/400以区分较慢获取和后续保持。它不是收益确认：两个节点/train96均更低，breadth零星新增不作正证据。exact-resume完整200，保存300/400各correct400，400补train96和既有held FM；不改架构/训练配方、不重做未变化profile。完整保持区间没有实质能力扩展/保持优势则结束本干预原样续训，不按loss追加500/600。
+**下一项§8.2.9已登记并启动恢复。** 缺口由23缩到7，自身52→103仍有获取，归入§8.2.8相近早期水平分支，补同配方300/400以区分较慢获取和后续保持。它不是收益确认：两个节点/train96均更低，breadth零星新增不作正证据。exact-resume完整200，保存300/400各correct400，400补train96和既有held FM；不改架构/训练配方、不重做未变化profile。完整保持区间没有实质能力扩展/保持优势则结束本干预原样续训，不按loss追加500/600。
 
-最近data1 quota快照624050700KiB/soft1073741824、hard1084227584KiB在200 checkpoint前；首段20GiB新增预算内全部完成，下次续段重新实查quota/相关用量/峰值与双节点GPU。训练原world4及rank物理2/6/4/0合同保持。下一步准备具体launch；没有启动other/最终controls/meta/RL/Test。>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
+续段从clean pushed frozen `9abc9b95`恢复，注册提交`eae45a9a`。tmux `ember-frame-contextual-resume200-400`，torchrun1632368、四rank1632649–1632652；原world4、物理2/6/4/0和micro6/6/4/3保持。已完成201–203实际更新，12条件/768queries与前轮及原始同节点逐条匹配；201耗时17.237秒，前三步均值16.588秒，峰值reserved34.988GiB，Writer/Meta梯度正常。具体命令、日志与launch合同位于`k1_frame_contextual/segment200_400/`。
+
+续段launch前双节点live实查，原rank UUID全部匹配，free MiB按rank45906/41319/40314/28855、util0/0/2/2，均为有用共驻设备。strg01的data1 used630901968KiB/soft1073741824、hard1084227584；当前run13GiB、analysis1.4MiB、旧profile4.2GiB已计入用量，shared84TiB。新峰值16GiB含两个完整checkpoint8.3、两个validation+train96 banks4.4、临时与余量3.3，预算充足且复用全部资产。没有启动other/最终controls/meta/RL/Test。>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

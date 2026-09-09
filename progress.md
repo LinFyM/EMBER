@@ -2,7 +2,9 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：语言两臂200完整结果已到；400闭环进行中
+## 当前：语言两臂200及400训练任务结果已到；400验证集进行中
+
+**400两个train96已完整exit0、同节点/相邻strict配对通过**：none57/96、local_only56/96，原contextual49/96，breadth均20；S/O/G/L分别14/18/17/8、15/16/18/7。相对基线none R/G/L43/14/6、churn20/J=.6825，local41/15/8、churn23/J=.6406；相对自身200分别35/22/4与36/20/10（39→57、46→56）。两条简化臂在400改善训练任务整体行为，但local相对none的200优势未保持，尚不能推出稳定路径作用或未见任务修复。完整表与原件链接已加入`docs/horizon_causal_language_learning_20260909.md`。两个400 validation仍在下列原始tmux/六worker执行，无完整分数；train96进程已正常退出，不恢复或追加训练。
 
 **200四个新增闭环面板全部exit0、实际strict配对通过**。validation400：all/none/local_only分别103/108/114，S/O/G/L分别1/54/37/11、2/58/41/7、3/62/36/13，breadth7/7/6；相对all，none R/G/L81/27/22、churn49/J=.6231，local77/37/26、churn63/J=.5500。train96为41/39/46，breadth18/16/18；none R/G/L27/12/14，local32/14/9。直接none→local validation净+6但R/G/L75/39/33、churn72；train净+7但29/17/10。local两个面板有小幅净增，尚无相邻保持证据，且未解决Spatial/Goal弱任务与得失混合；不据此宣布主要原因或正式采纳。完整表及解释见`docs/horizon_causal_language_learning_20260909.md`，原件各`language/{arm}_step200/{validation,train96}_analysis/`。
 

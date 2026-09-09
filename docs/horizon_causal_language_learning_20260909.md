@@ -65,3 +65,18 @@ validation全八task（global ID）结果：
 local_only在两个面板均有小幅净增，none没有提高训练任务整体行为；但这是第一个固定节点，尚无相邻保持证据。local_only的validation广度下降且新增37、丢失26，Spatial总分仍仅3/100、Goal task23仍为零，不能以总分+11解释成整体迁移修复。none的train Long从6到5，原6成功全部丢失、另有5新增，也表明总数接近并非保持稳定。以上结果不支持提前恢复全部正式训练、宣布后端条件为主要原因或追加小参数搜索。
 
 各臂逐task、suite、完整配对与完成记录位于`language/{arm}_step200/{validation,train96}_analysis/`；`completed_summary.json`给出汇总，`vs_contextual_same_step.json`保留成功集合和原始比较。剩余裁决仍按预注册完成400的validation400/train96及相邻对比，不按200较高单点选候选。
+
+## 400节点训练任务证据（validation尚待完成）
+
+两个train96均完整exit0、全部worker返回0；与contextual400及各自200的实际strict配对通过。none为57/96，local_only为56/96，基线为49/96；三者breadth均20。
+
+| 臂 | S/O/G/L | 相对基线R/G/L | churn / J | 相对自身200 R/G/L | churn / J |
+|---|---|---|---|---|---|
+| none | 14/18/17/8 | 43/14/6 | 20 / .6825 | 35/22/4 | 26 / .5738 |
+| local_only | 15/16/18/7 | 41/15/8 | 23 / .6406 | 36/20/10 | 30 / .5455 |
+
+因此200的局部描述不能外推为none没有学习收益：到400，它从39升至57并扩大成功任务覆盖。local_only从46升至56，但200相对none的训练任务优势没有保持。这些结果支持额外条件的影响随学习进程变化，尚不支持local条件有稳定正效应或两处检索条件就是主要原因。独立动作FM均值仍由基线略优，而400训练任务闭环由两条简化臂更好，进一步说明该动作指标不能替代行为裁决；不由此宣布FM目标失效。
+
+400直接none→local_only的train96比较为R/G/L45/11/12、churn23、J=.6618；总分接近仍伴随成功得失。原件`local_only_step400/train96_analysis/vs_none_same_step.json`保留实际配对和成功集合。
+
+完整逐task、suite、同节点及相邻成功集合见`language/{arm}_step400/train96_analysis/`。400两个validation400仍在原进程执行，未读取局部分数；未见任务迁移与反复丢失任务的解释待完整结果。

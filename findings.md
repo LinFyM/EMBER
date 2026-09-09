@@ -320,3 +320,11 @@ Long36/38固定state32回放均已转向第二对象后未完成操作；旧专�
 Owner指出并确认：冻结置零不能替代删路径后fresh学习，局部decoder可达不能证明整个架构易于学出正确表示；旧强v5.2/v6的同类FM能力要求实际解释架构/配方差距。§30及诊断报告中的语言“非统一解释”不能作为排除主要原因的结论；现有实测数值保留，尚未完成根因与修正验证。
 
 Owner允许为探索修改架构和训练方式并进行实验性训练，限制在正式采纳候选并启动下一轮正式训练之前汇报。本次重新设立独立原因分析goal，具体计划见`docs/horizon_causal_learning_plan_20260909.md`，当前状态以progress顶部为准。
+
+## 32. 验证下降集中于反复丢失BBQ，实例呈目标选择变化（2026-09-09）
+
+原始/first-query/contextual三版200→400的train96分别52→59、46→59、41→49；validation110→87、110→103、103→90。BBQ分别24→3、28→10、25→1，扣除它后其它七task总成功86→84、82→93、78→89。因此不能将总分下降概括为所有任务同步遗忘；持续弱的Spatial/Goal23/Long32获取问题与BBQ保持问题需要分别解释。全部原contract、teacher/state/RNG实际配对复算保留于`causal_learning_20260909/existing_learning_and_retention.json`。
+
+当前contextual200/400在固定states0/12/25/37的8条正常correct回放全部完成，200为3/4、400为0/4，8条均复现历史成功/失败，终态BDDL谓词一致。双相机轨迹显示200四例均操作正确BBQ（state0过晚运输而超时）；400四例均转向绿色干扰瓶，其中state25/37抓起并运到篮子区域，正确BBQ留在桌面。这些实例支持目标选择变化，反对把它们一概解释为抓取/运输能力消失；无法单独确定语言、过程表示或生成LoRA哪层导致该变化。
+
+task因重复下降事后选定、states沿用旧诊断固定集合，属于描述性实例，不能作全局率、checkpoint选择或根因识别。原件、逐例解释及限制在`causal_learning_20260909/retention_replay/completed_summary.json`，完整索引见[当前因果计划](docs/horizon_causal_learning_plan_20260909.md)。

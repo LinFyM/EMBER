@@ -144,4 +144,21 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 
 **200节点区分到的条件效应：** 关闭H-read在Compiler开/关背景下分别净−5/+6，与train96两背景都为小幅正增不同；因此不能把H-read条件笼统判为有害。关闭Compiler在H-read开/关背景下分别净+5/+16，但其train96效果为−1/+3。联合关闭在200仍最好，任一单独关闭均未同时重现联合方案的验证总分和训练任务结果。以上支持入口之间的作用依赖及训练任务/未见任务的不同响应，不证明已解释Horizon相对旧模型的主要分差。Compiler简化的验证收益是否保持，仍由预注册400及相邻成功集合裁决；不按这个200节点提前正式采纳。
 
-检索分离200总索引为`retrieval/step200_completed_matrix.json`；新增验证的完整原件在各`retrieval/{arm}_step200/validation_analysis/`。Compiler已完整训练到400，其400 validation与train96正在执行；H-read继续原训练到400，无额外训练臂或正式方法切换。
+检索分离200总索引为`retrieval/step200_completed_matrix.json`；新增验证的完整原件在各`retrieval/{arm}_step200/validation_analysis/`。Compiler两节点的完整结果见下节；H-read继续原训练到400，无额外训练臂或正式方法切换。
+
+## 检索分离：Compiler单入口400完整结果（H-read臂400待完成）
+
+local_compiler的200/400四个面板均完整exit0，全部worker返回0；400与all、local_only及自身200的actual strict配对通过。两checkpoint完整学习状态、累计1600条件/102400queries和固定held3072输入均已检查。
+
+| 面板 | 200→400 | 400 S/O/G/L | breadth200→400 | 相对all400 R/G/L | churn / J | 相对local_only400 R/G/L | 相对自身200 R/G/L |
+|---|---|---|---|---|---|---|---|
+| train96 | 43→65 | 17/18/18/12 | 18→23 | 43/22/6 | 28 / .6056 | 47/18/9 | 37/28/6 |
+| validation400 | 98→90 | 0/45/34/11 | 7→5 | 76/14/14 | 28 / .7308 | 73/17/37 | 58/32/40 |
+
+train96相对local_only的churn27/J=.6351，相对自身200为34/.5211；validation相对local_only为54/.5748，相对自身200为72/.4462。400 validation global1/3/11/13/23/26/31/32为0/0/43/2/0/34/10/1。BBQ21→2，R/G/L0/2/21，原21个成功全部丢失；其余七task合计77→88。没有新增轨迹回放，不能把此前contextual的绿色干扰瓶行为当成这一臂的已观察轨迹。
+
+相对上一版first-query-only的400，Compiler单入口train96为59→65、R/G/L51/14/8、churn22/J=.6986；validation却为103→90、76/14/27、churn41/J=.6496。故65是训练任务行为的实际改善，不能以之替代迁移改善。原件为各400分析目录的`vs_first_query_same_step.json`。
+
+这组受控学习中，关闭H-read在Compiler开启背景下使400训练任务比all多16次成功，覆盖扩到23task，但validation与all同为90且breadth更低，未修复BBQ保持。它进一步排除了“只要关闭H-read、训练任务更好就会解决未见任务退步”的具体修正假设；不排除该入口在其它背景的条件作用，也不能由训练成功证明整个表示/输出架构没有问题。相比Compiler单入口，关闭Compiler的local_only在两个validation节点分别多16/20，但400训练任务少9；这个入口的效果随任务分布和学习节点变化。
+
+完整原件位于`retrieval/local_compiler_step400/{validation,train96}_analysis/`。H-read臂400仍按原注册完成，之后统一裁决2×2及相邻保持；没有额外500续训、Test或最终视频controls。

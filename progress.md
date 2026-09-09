@@ -30,9 +30,9 @@ Compiler关闭在H-read开/关背景的validation效应，200为+5/+16，400为+
 
 两次新world2四更新profile完整exit0、四rank梯度/source检查通过。all/LH均值29.619/31.674秒，峰值39.478/33.210GiB；93帧最长真实反向15.468/19.601秒、38.167/31.897GiB。新学习launch前双节点复查：所选gpu01两卡均46067MiB free/util0，gpu02两卡40313/41317MiB free/util2/0，仅原有低负载peer；独立quota used701123512KiB、soft1073741824，40GiB新峰值在预算内，shared84TiB。原件`causal_learning_20260909/compiler_confirmation/{profile_completed_summary,initial_sampling_pairing,train_all_launch,train_local_h_read_launch,storage_snapshot}.json`。
 
-**冻结seed7的四个换视频配对bank已CPU完整准备：** 两个schema-owning frozen runtime各自物化200/400，全部reuse400/new0、公开inspector及实际task/state/video/RNG配对通过。每面板392行更换teacher、8行碰巧保留，未调整seed；新存储约6.84MiB，原LoRA硬链接复用。`compiler_confirmation/reassignment/confirmation_preparation.json`索引四个待启动evaluate.sh；当前评测尚未launch。
+**冻结seed7的四个换视频配对bank已CPU完整准备：** 两个schema-owning frozen runtime各自物化200/400，全部reuse400/new0、公开inspector及实际task/state/video/RNG配对通过。每面板392行更换teacher、8行碰巧保留，未调整seed；新存储约6.84MiB，原LoRA硬链接复用。`compiler_confirmation/reassignment/confirmation_preparation.json`索引四个evaluate.sh；all400换配对评测已在gpu01物理6×3worker启动（tmux `ember-compiler-reassign-all400`），其余三面板待执行。launch前双节点检查p6free46067MiB/util0，无peer；复用同卡已正常退出的回放进程资源。
 
-**候选BBQ回放已启动：** gpu01物理6、两个worker、按200后400处理原states0/12/25/37，tmux `ember-compiler-confirm-replay`。初次因遗漏原有LIBERO config链接，在环境初始化及任何queue claim/rollout之前exit1；日志保留`replay/bootstrap_attempt1`，补指向各原评测配置的symlink后刷新双节点p6free46067MiB/util0再启动。没有改source/视频/state/RNG、没有结果驱动重试。CPU对照bank准备和该回放不构成正式方法采纳。
+**候选BBQ回放已完整完成：** gpu01物理6、两个worker、按200后400处理原states0/12/25/37，tmux `ember-compiler-confirm-replay`。初次因遗漏原有LIBERO config链接，在环境初始化及任何queue claim/rollout之前exit1；日志保留`replay/bootstrap_attempt1`，补指向各原评测配置的symlink后刷新双节点p6free46067MiB/util0再启动。没有改source/视频/state/RNG、没有结果驱动重试。CPU对照bank准备和该回放不构成正式方法采纳。 四worker均0，200/400本次均3/4；400 state12与历史成功分叉为失败，其余7个成功标签重现，实际输入配对及终态谓词检查通过，未重跑追成功。双相机显示候选400四例都围绕正确BBQ操作，三例入篮；此前all400同四例均转向绿色干扰瓶。该实例变化不替代完整400/独立初始化复核，原件`compiler_confirmation/replay/completed_summary.json`。
 
 **原因分析仍未完成。** 实际学习证明后端条件的学习效应不能由冻结置零概括，也证明当前纯FM/其余架构下可以避免部分后期能力崩落；尚需复核候选是否跨初始化/视频配对成立，并保留弱Spatial/Goal/Long等未解释边界。没有将v5.2/v6历史分差全部归为同一入口，未通过该历史包替代受控证据。
 

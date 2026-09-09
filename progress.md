@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：上下文条件formal200完成，100闭环及200物化并行
+## 当前：上下文条件100为52/400，200闭环及train96并行
 
 active design§8.2.8只改变四组过程条件：从静态语言码改为当前帧同源Gemma exact task-token状态的learned read。原reader复用，无新参数；compiler保留first-query-only，完整H/四组/视觉核实/decoder/采样不变。源码净增35行、无新模块/runner。定向101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖，包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。
 
@@ -14,9 +14,11 @@ fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/
 
 0/200冻结held FM各完整24task×128queries、无梯度，实际动作/video/noise与前轮配对。200均值.111031413，前轮.111183766，11/24任务更低；两者接近，不能作为行为改善证据。step0为.151469383，前轮.151466233，差值处于正常执行数值低位量级。汇总`k1_frame_contextual/formal_summary.json`。
 
-100 canonical400 bank完整exit0，744.99秒；400条件全部新生成，public inspector及每task50视频无放回、与前轮实际映射匹配均通过。**100 strict400已在GPU02物理2/4/6、每卡2个persistent worker启动**，tmux `ember-frame-contextual-correct100`。**200 validation400+独立held-video train96 banks已在GPU01物理3启动**，tmux `ember-frame-contextual-bank200`，一个resident source顺序生成；无新闭环分数。新launch前双节点/进程现场为`k1_frame_contextual/post_training_gpu_preflight.json`，具体命令、预算与运行日志在`step100/evaluation_launch.json`、`step200/materialization_launch.json`及同目录。
+100 canonical400 bank完整exit0，744.99秒；400条件全部新生成，public inspector及每task50视频无放回、与前轮实际映射匹配均通过。**100 strict400完整52/400**，S/O/G/L=0/26/22/4、breadth6；global1/3/11/13/23/26/31/32=0/0/24/2/1/21/1/3。相对first-query100=75为R/G/L38/14/37、churn51/J=.427，四suite均更低；对原100=55为36/16/19，对source47为24/28/23。六worker均exit0、全部视频/state/RNG/normalization配对通过，完整1440.21秒。不支持早期收益，不由100单点提前淘汰；200与训练任务诊断仍按登记完整执行。
 
-最新data1在strg01实查used624050700KiB/soft1073741824KiB、hard1084227584KiB（200 checkpoint保存前）；run现约11GiB，shared84TiB。首段新增峰值20GiB预算内剩余约5.6GiB，尚待200两banks约2.4GiB。后续按100/200完整correct、200train96判断；>145全部资格及最终32/8 fresh/Test仍未完成。
+200 validation400+独立held-video train96 banks全部生成exit0，完整932.37秒；496条件全部新生成，两个public bank inspector及各自实际映射/视频无放回均通过。**200 strict400已在GPU02物理2/3/4/6、每卡2worker启动**，tmux `ember-frame-contextual-correct200`；**200 train96已在新空出的GPU02物理1、3worker并行执行**，tmux `ember-frame-contextual-train96-200`。train96卡启动前45906MiB空闲/util0，同模型现有worker占用11552–11876MiB，三worker实测占用量级估计35628MiB，留有余量。两项均未完成，无200闭环分数。所有launch前均双节点实查；具体资源、命令与日志为`k1_frame_contextual/step200/evaluation_launch.json`和`train96_step200/evaluation_launch.json`。
+
+最新data1在strg01实查used624050700KiB/soft1073741824KiB、hard1084227584KiB（200 checkpoint保存前）；两bank生成前run约11GiB，shared84TiB。首段新增峰值20GiB预算在两bank生成前尚余约5.6GiB，200两banks约2.4GiB现已完成，剩余约3.2GiB，余量仍充足。后续按100/200完整correct、200train96判断；>145全部资格及最终32/8 fresh/Test仍未完成。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

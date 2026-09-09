@@ -4,6 +4,10 @@
 
 ## 当前：语言两臂继续已登记学习；v6追加重训已暂停
 
+**两个语言臂均已完成200节点并继续原400预算**：完整checkpoint通过探索schema、条件配置、三rank学习状态与public inspector检查。各200次更新/800条件/51200queries与contextual基线实际采样全部配对，各suite200条件；独立24task×128query诊断也完全配对、无梯度。none/local_only held FM为.112001593/.111181941，基线.111031413，不据此判断闭环或选方法。200更新均值23.481/24.456秒，峰值allocated39.480/39.483GiB。原件`language/{arm}_step200/learning_summary.json`。
+
+200每臂validation400+train96的496个LoRA条件已分别在gpu02物理2/4启动生成，tmux `ember-causal-none-bank200` / `ember-causal-local_only-bank200`；原三卡训练继续，当前没有闭环分数。双节点live资源核验后两卡free37094/40314MiB、util5/2；已有约12GiB物化峰值满足共驻余量，同节点共五张有用设备。strg01/data1 used646263892KiB/soft1073741824、shared84TiB；本节点两臂banks预计新增约5GiB，计入既有40GiB总预算。运行面仍clean pushed detached e60a7ca0；精确命令、GPU和存储快照位于`causal_learning_20260909/language/`，完成后接预登记strict400与train96。
+
 最新完成当前contextual200/400的BBQ固定四state描述性回放（共8条）：200为3/4、400为0/4，四worker exit0，实际配对、历史结局与终态谓词均通过。200操作正确BBQ；400四例均转向绿色干扰瓶，其中两例运到篮子区域。它定位这些实例的目标选择变化，不定位致因模块或代替完整400面板。三版200→400扣除BBQ后其它七validation任务总成功分别86→84、82→93、78→89，需把反复丢失与长期未获取的弱任务分开。原件`causal_learning_20260909/retention_replay/completed_summary.json`；语言两臂仍在原训练中，未启动共享候选或恢复v6。
 
 Owner再次强调不能重复已经失败的架构。已完成近等价核对：LPCP是分层/rank证据进入Procedure query，Unified是factor每层直读真实evidence/native X/Y并曾试common-base；因此不把“加回逐层证据”或“共有base加条件修正”直接包装为创新重做。Target-Owned约束已准备的rank共享候选，CPU实现存在不构成启动理由。创新方向尚未选定，先完成机制排重；当前GPU仍只有两组语言探索训练。

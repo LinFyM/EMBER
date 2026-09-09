@@ -58,6 +58,10 @@ Owner已明确：允许为探索原因修改架构、语言路径、参数共享
 
 对共享臂明确同target跨rank和跨family的不同含义、初始化/输出尺度及参数化；参数数目或几何变化不算机制结论。若两个因素各有效或存在相反作用，再增加最小交互对照，不预先展开全组合搜索。free-C/局部A-B只定位接口，不能替代上述共享学习实验。
 
+**读取侧学习的待识别边界（只读审计，未选定/启动新臂）。** 当前`native.py`将真实Gemma prefix的Z/KV冻结并跨更新缓存，`supervised.py`只收集R cotangent交给Action Meta；none/local_only不改变该边界。旧v6的`video_program.py`则以独立Text Meta编码纯文本query、以VL Meta处理真实图文prefix、以Action Meta处理suffix；图像编码器在两者中都冻结。旧较强结果属于这个架构包，不是“只开VL Meta”的匹配因果证据，历史§2已明确不能将分差归为“只需开Meta”。
+
+若后续行为证据值得检验此因素，可区分的变量是当前图的**Gemma图文读取是否可学习**，不能同时恢复旧text-only编码、horizon mean与family heads再称单变量。原生权重shape确认18层q/k/v/o rank4将新增921600参数，但实际代价来自每更新重新计算prefix及其反向，不能用参数量推算吞吐。完整因果链要求同时收集直接Z路径与R经KV路径的梯度，再联合重放原生prefix；只给现有冻结helper安装Meta、仍缓存旧Z/KV或只反传R会漏掉目标机制。只允许冻结的pre-Gemma embeddings跨更新缓存。此为具体机制与成本边界，不是新发明、既定修复或追加launch；审计原件`causal_learning_20260909/prefix_learning_feasibility.json`，当前仍先完成已运行语言对照。
+
 ### 3. 定位剩余的训练因素，并验证解决方案
 
 先利用共同学习协议下的新旧架构结果：若差距主要随结构改变而改变，优先验证结构原因；若旧强架构在当前协议也显著变弱，追加同架构配方对照，并逐项分离条件/episode采样与optimizer聚合等因素。旧协议只移植满足当前数据墙的部分，不能用非法旧数据口径制造强参照。

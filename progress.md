@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：首轮语言学习全部完成；两臂学习全部完成，H-read臂400开始物化
+## 当前：首轮语言学习全部完成；两臂学习与物化全部完成，最后两个400面板运行
 
 **两臂200/400训练、物化及8个新闭环面板共1984行全部完整exit0**，checkpoint、实际曝光、bank和同节点/相邻strict配对通过；全部GPU评测进程已正常退出。validation all/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 none S/O/G/L2/45/37/8、local0/57/36/17，breadth均6。相对自身200，none R/G/L65/27/43、churn70/J=.4815，local70/40/44、churn84/J=.4545；相对contextual400则71/21/19、74/36/16。首轮总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`，完整解释见`docs/horizon_causal_language_learning_20260909.md`。
 
@@ -12,7 +12,9 @@
 
 **local_h_read也已完整训练400并exit0：** 1600实际condition/102400queries与contextual逐项配对，四suite各400condition，200/400完整checkpoint及held3072输入/无梯度检查通过。400held均值.104945883（基线.105074533）、11/24任务更低，仅作功能诊断；400更新均值24.369秒、后200总5229.51秒，wrapper10318.63秒，峰值39.484GiB，墙钟含本轮共享I/O等待。没有任何训练继续到500。
 
-最后一组496条件bank已在gpu02物理6启动，tmux `ember-retrieval-local_h_read-bank400`。launch前双节点检查中gpu01进程查询不完整，未选择该节点设备；gpu02p6free41319MiB/util0、peer身份明确，覆盖已验证物化峰值。最新strg01/data1 used698610248KiB、soft1073741824/hard1084227584、shared84TiB；两run实际14/11GiB，最后bank约3GiB仍在40GiB总峰值内。当前只有这一物化GPU进程；其余训练与已完成评测均正常结束。原件`retrieval/local_h_read_step400/{learning_summary,checkpoint_inspection,materialization_launch,gpu_preflight_launch}.json`。
+最后一组496条件bank已完整exit0、2172.91秒，public inspector及全部task/state/video/selection配对通过；耗时包含共享文件读取等待。**H-read400两个闭环已启动：** validation400在gpu01物理1/5/6各3worker（tmux `ember-retrieval-local_h_read-validation400`），train96在gpu02物理6×3worker（tmux `ember-retrieval-local_h_read-train96400`）；9+3个实际worker已核实。当前只有这两个待完成面板，所有梯度运行与其它评测均已正常结束。
+
+本次launch前双节点GPU/进程查询均正常：gpu01所选三卡free46067MiB/util0/无peer，gpu02p6free41317MiB/util0、仅已知低负载peer。每个evaluator独立单节点、动态队列/long-first，无占位或跨节点collective。最新strg01/data1 used701113124KiB、soft1073741824/hard1084227584；两run实际各14GiB、analysis2.4MiB，完整两臂仍在40GiB峰值预算内。原件`retrieval/local_h_read_step400/{validation_launch,train96_launch,gpu_preflight_after_bank}.json`。此前gpu01进程查询不完整的snapshot仅用于解释当时bank选择gpu02，不代表当前故障。
 
 **local_compiler两节点全部完整：** train96为43→65、400 S/O/G/L17/18/18/12、breadth18→23；validation为98→90、0/45/34/11、breadth7→5。400相对all：train R/G/L43/22/6、validation76/14/14；相对自身200分别37/28/6、58/32/40，全部worker0及actual strict配对通过。BBQ21→2、0/2/21，原21成功全部丢失；其它七validation任务77→88。相对first-query400，train59→65（51/14/8），validation103→90（76/14/27）。因此单独关闭H-read改善训练能力，但这组实验没有修复迁移退步或BBQ保持，不能当作正式修正。完整400表和边界已加入语言报告末节。
 

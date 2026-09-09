@@ -873,3 +873,11 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 自身FM200→400=.111621→.106557，source=.154875；其它23task−自身margin .009396→.015491，同suite .003599→.005578。400两teacher两半面板均优于其它23task均值为24/24，同suite为18/24，训练内任务特化继续增强。此结果支持把持续训练获取与验证退化分开，不证明充分语义理解、不用微小FM排名选择adapter、不替代视频因果或闭环。
 
 [完整报告](horizon_k1_functional_assignment_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`保存注册、两执行版本、完整24行及汇总。后续学习干预尚须另登记，本段无新结构或训练启动。
+
+## 2026-09-09 逐帧上下文过程条件首段：52/103，尚无整体收益
+
+冻结运行面`9abc9b95`只把四组静态语言条件换成同次Gemma逐帧exact task-token状态的learned read，复用原参数；compiler保持first-query-only，完整H/四组/过去依赖/视觉核实/native D与采样保持。fresh200更新800条件/51200queries与前轮实际曝光逐条匹配，完整3413.33秒；100/200完整checkpoint和896个新bank条件均通过检查。全部训练、物化和闭环exit0。
+
+100/200 correct52/103，对前轮75/110；S/O/G/L0/26/22/4→1/54/37/11、breadth6→7，200两个弱task各仅1/50。相邻R/G/L38/65/14、churn79/J=.3248；前轮200→本轮76/27/34、churn61/J=.5547，其中Long仅2/9/8。200 train96=41，对前轮46为35/6/11，S/O/G/L11/11/13/6、breadth18。配对held FM200 .111031413，对前轮 .111183766，均值接近没有变成行为收益。
+
+本首段未证明语义访问有效、稳定breadth或模块根因。相对缺口23→7、自身52→103仍获取，被登记为补300/400区分较慢获取与保持的依据，而非正结果。进一步执行状态只看progress/active design，不由本历史段恢复。完整[报告](horizon_k1_frame_contextual_20260909.md)、`k1_frame_contextual/first_segment_evidence.json`、两个`step*/completed_summary.json`及`train96_step200/`保留逐task/suite、成功集合、配对与退出证据。

@@ -284,3 +284,11 @@ Owner已授权直接做冻结分析实验与架构内部拆解，先分析后决
 同suite margin从.003599到.005578，但Object及部分Long细分差值小，400仅18/24task满足两teacher、两半面板均优于同suite均值。policy本身读正确language，合理共享通用技能无需每task独有LoRA；本矩阵既不单独定位错误路由，也不证明FM足以支持闭环。数值缓存核对约.9%–1.1%逐点loss相对差，不把细小排名当精确机制证据。
 
 当前global语言读出有位置而非无序mean，但其静态token到单query attention尚无预训练上下文task-token语义；现有Z视觉重读已经能读取这些上下文tokens，不能说语义缺失。若后继检验更直接的上下文过程条件，只能作为同源信息访问的受控变量，保留四组动作关系/视觉核实主图；不能据结构名字宣称修复。完整报告[冻结功能对应](docs/horizon_k1_functional_assignment_20260909.md)，原件`k1_first_query_only/functional_assignment/`。
+
+## 28. 上下文过程条件首段未显示整体优势，早期恢复仍需与保持分开（2026-09-09）
+
+只替换四组过程条件为同次冻结Gemma的逐帧exact task-token读取，保留reader参数、first-query-only、完整过程图/native D及全部实际采样。fresh100/200 correct52/103，前轮75/110；200 train96为41，前轮46。全部完整checkpoint、896个新bank条件、曝光和三面板配对通过，均exit0；没有发现工程失败足以解释结果。
+
+200 S/O/G/L1/54/37/11、breadth7，但Spatial1与Goal23仅各1/50；100/200的Goal23成功state不同，Long4→11也只保留1次。前轮200→本轮200总R/G/L76/27/34、Long2/9/8，不把Long总数或breadth当稳定能力。train96为35/6/11，breadth18保持，局部双moka新增2被book丢3等抵消。held3072query均值.111031/.111184接近仍不能推出行为等价。
+
+相对早期缺口23→7、自身52→103支持继续区分较慢获取与后续保持，不能说明当前改动优于前轮。是否值得投入一个固定300/400区间与是否已经有收益是不同判断；后续若无实质获取/保持优势，不按loss无限延长。负结果只约束本次表示来源及共享reader组合，不独自否定上下文语义、整个过程图或纯FM。完整报告[上下文条件首段](docs/horizon_k1_frame_contextual_20260909.md)。

@@ -2,23 +2,23 @@
 
 更新时间：2026-09-09 CST。Owner休息期间继续授权完整自主科学推进，先分析，再修正/实验；常规资源选择无需逐项询问。
 
-## 当前：上下文条件100为52/400，200闭环及train96并行
+## 当前：上下文条件首段52/103，登记同配方300/400保持检验
 
-active design§8.2.8只改变四组过程条件：从静态语言码改为当前帧同源Gemma exact task-token状态的learned read。原reader复用，无新参数；compiler保留first-query-only，完整H/四组/视觉核实/decoder/采样不变。源码净增35行、无新模块/runner。定向101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖，包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。
+active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8的逐帧上下文task-token过程条件首段全部结束，完整报告[本轮首段配对结果](docs/horizon_k1_frame_contextual_20260909.md)，原件`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/first_segment_evidence.json`。
 
-真实8update profile已完整exit0：32条件/2048queries与前轮逐条匹配，均值15.764秒/update、完整231.64秒。Writer368675520、Meta626688参数保持，各rank第2–8步context cotangent均非零，source无梯度。最长task38/demo0的93采样帧完整反传17.976秒、context梯度4.756e-5/Meta4.042e-5，sampler不变、无额外update；allocated/reserved峰值38.166/41.182GiB。profile是独立临时输出，未继承到formal。
+fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/horizon-frame-contextual-runtime`；输出`runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909`。GPU02物理2/6/4/0、world4、物理micro6/6/4/3，完整200更新800条件/51200queries，341种task-video、各suite200；100/200实际曝光与前轮逐条匹配。完整3413.33秒、更新均值15.566秒，allocated/reserved峰值31.900/34.645GiB；两个完整checkpoint通过public inspector。初段没有自动后续训练。
 
-fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/horizon-frame-contextual-runtime`。GPU02物理2/6/4/0、物理micro6/6/4/3，逻辑batch仍4×64；tmux `ember-frame-contextual-formal`，torchrun827717、四rank828745–828748。输出`runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909`，命令与资源为`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/launch_contract.json`。
+仅将四组过程条件换成同次冻结Gemma逐帧exact task-token读取，原reader参数复用；compiler仍first-query-only、完整H/四组/视觉核实/native D/采样保持。定向102项覆盖通过（101一次通过、1更新错误消息断言后单独通过），真实8update与最长93帧完整反传通过；上下文/Meta梯度和source冻结确认。profile未继承到formal，这些检查不证明行为有效。
 
-**100/200完整checkpoint均已发布并通过public inspector，formal完整exit0**。200次更新累计800条件/51200queries，实际341种task-video；与first-query-only前200节点逐条配对，各suite200。均值15.566秒/update、更新总3113.22秒、完整墙钟3413.33秒；allocated/reserved峰值31.900/34.645GiB。四rank均已退出，无自动追加训练。
+100/200 correct strict400完整**52/103**，前轮75/110；S/O/G/L=0/26/22/4→1/54/37/11，breadth6→7。200 global1/3/11/13/23/26/31/32=1/0/29/25/1/36/6/5，两个弱任务仅1/50。相邻R/G/L38/65/14、churn79/J=.3248；前轮200→本轮为76/27/34、churn61/J=.5547。仍无整体优势或稳定广度，Long11相对前轮10只保留2次。
 
-0/200冻结held FM各完整24task×128queries、无梯度，实际动作/video/noise与前轮配对。200均值.111031413，前轮.111183766，11/24任务更低；两者接近，不能作为行为改善证据。step0为.151469383，前轮.151466233，差值处于正常执行数值低位量级。汇总`k1_frame_contextual/formal_summary.json`。
+200 held-video train96完整**41/96**，前轮46、原52；S/O/G/L11/11/13/6、breadth18。相对前轮R/G/L35/6/11、churn17/J=.673；相对source15为11/30/4。book35从3/4降0、双moka38从0增2；不能据小面板定责模块。配对held FM各24×128，无梯度，本轮200 .111031413/前轮 .111183766，仅11/24更低；均值接近不能代替闭环。
 
-100 canonical400 bank完整exit0，744.99秒；400条件全部新生成，public inspector及每task50视频无放回、与前轮实际映射匹配均通过。**100 strict400完整52/400**，S/O/G/L=0/26/22/4、breadth6；global1/3/11/13/23/26/31/32=0/0/24/2/1/21/1/3。相对first-query100=75为R/G/L38/14/37、churn51/J=.427，四suite均更低；对原100=55为36/16/19，对source47为24/28/23。六worker均exit0、全部视频/state/RNG/normalization配对通过，完整1440.21秒。不支持早期收益，不由100单点提前淘汰；200与训练任务诊断仍按登记完整执行。
+100bank400和200bank400+96全部新生成、各自每task视频无放回、实际state/video/RNG/normalization及checkpoint身份检查通过。100/200/train96全部worker exit0，wrapper1440.21/1112.77/1016.96秒；两个bank wrapper744.99/932.37秒。所有本任务GPU训练、物化和评测均已正常结束，无尚未完成进程。
 
-200 validation400+独立held-video train96 banks全部生成exit0，完整932.37秒；496条件全部新生成，两个public bank inspector及各自实际映射/视频无放回均通过。**200 strict400已在GPU02物理2/3/4/6、每卡2worker启动**，tmux `ember-frame-contextual-correct200`；**200 train96已在新空出的GPU02物理1、3worker并行执行**，tmux `ember-frame-contextual-train96-200`。train96卡启动前45906MiB空闲/util0，同模型现有worker占用11552–11876MiB，三worker实测占用量级估计35628MiB，留有余量。两项均未完成，无200闭环分数。所有launch前均双节点实查；具体资源、命令与日志为`k1_frame_contextual/step200/evaluation_launch.json`和`train96_step200/evaluation_launch.json`。
+**下一项§8.2.9已登记，尚未启动。** 缺口由23缩到7，自身52→103仍有获取，归入§8.2.8相近早期水平分支，补同配方300/400以区分较慢获取和后续保持。它不是收益确认：两个节点/train96均更低，breadth零星新增不作正证据。exact-resume完整200，保存300/400各correct400，400补train96和既有held FM；不改架构/训练配方、不重做未变化profile。完整保持区间没有实质能力扩展/保持优势则结束本干预原样续训，不按loss追加500/600。
 
-最新data1在strg01实查used624050700KiB/soft1073741824KiB、hard1084227584KiB（200 checkpoint保存前）；两bank生成前run约11GiB，shared84TiB。首段新增峰值20GiB预算在两bank生成前尚余约5.6GiB，200两banks约2.4GiB现已完成，剩余约3.2GiB，余量仍充足。后续按100/200完整correct、200train96判断；>145全部资格及最终32/8 fresh/Test仍未完成。
+最近data1 quota快照624050700KiB/soft1073741824、hard1084227584KiB在200 checkpoint前；首段20GiB新增预算内全部完成，下次续段重新实查quota/相关用量/峰值与双节点GPU。训练原world4及rank物理2/6/4/0合同保持。下一步准备具体launch；没有启动other/最终controls/meta/RL/Test。>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

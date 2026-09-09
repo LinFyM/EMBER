@@ -503,6 +503,18 @@ formal seed7、4suite×64queries、episode池、AdamW/LR/warmup及source均保�
 
 若有实质绝对能力或广度增长，继续登记相邻保持段并按§8.3资格裁决；若前两个节点整体更差且未显示可信新能力，则本访问改动不支持继续，完整分析后转向不同机制；若只恢复相近早期水平但趋势仍获取，须覆盖相邻保持才能讨论长期修复，不用200单点宣布成功。最终目标线和全部稳定/视频因果要求不变，不自动加rank/scale/LR/seed扫描、额外meta或RL。
 
+**首段完成（2026-09-09）。** 本轮100/200 correct52/103，前轮75/110；200 train96为41，前轮46。全部800条件/51200queries曝光、896个新bank条件及三面板实际配对通过，全部exit0。200 S/O/G/L=1/54/37/11、breadth7，但Spatial1/Goal23各仅1/50；100→200 R/G/L38/65/14、churn79/J=.3248。无整体收益或稳定性证明；详细边界和原件见[首段报告](horizon_k1_frame_contextual_20260909.md)。
+
+### 8.2.9 同一上下文条件的300/400获取与保持检验
+
+登记于看到300/400任何结果之前。两个早期节点和train96均低于前轮，不能用breadth7或FM近似宣布改动有效。与此同时，相对缺口由23缩到7，自身correct52→103，仍处相近早期水平且获取中的状态；按§8.2.8这一分支，补其尚未覆盖的200以后保持区间。这是有限的同配方学习检验，不是增加一个结构候选，也不把续训本身当作正证据。
+
+从本轮完整macro200 exact-resume至**400**，保存**300/400**两个完整single checkpoints；Writer/Meta/optimizer/scheduler/sampler/RNG及world4/rank顺序保持，数据、K1、4suite×64queries、LR和所有图语义不变。物理microbatch可按现场显存选已验证配置。注册两个correct strict400，400同口径held-video train96；段末使用既有24×128固定held FM只作训练获取诊断。新201–400实际曝光按step/suite与first-query-only及原始同节点核对，不能跨checkpoint复用LoRA banks。
+
+先看本轮200→300→400的绝对获取、per-task/suite、breadth和R/G/L/churn/J，再与前轮106/103、train40059及原始86/87比较。尤其追踪BBQ25在后续是否丢失、Spatial/Goal弱task与Long是否形成可信获取；低起点带来的净增不能替代绝对分数，两个1/50不能命名可靠广度。若有实质绝对增长及保持改善，再按§8.3登记后续资格；若没有这种证据，结束本访问干预原样续训，转入不同机制分析。不得因为loss下降、单点峰值或零星新成功自动延长500/600或扫rank/scale/LR/seed。
+
+不启动新meta/RL、same-task-other或最终视频controls；后者仍在相应资格及冻结边界之后。运行前按现有formal、live双节点GPU和独立quota合同记录一次续段launch，不重做未变化的工程/profile流程。
+
 ### 8.3 资格与最终controls
 
 正式资格只认同一checkpoint的validation8×states0–49=400行，correct与same-task-other严格配对，

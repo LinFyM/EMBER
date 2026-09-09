@@ -2,16 +2,15 @@
 
 ## 当前目标与授权
 
-Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。§8.2.7冻结train24完整adapter功能对应矩阵也已完成，训练内功能特化继续增强；[诊断报告](docs/horizon_k1_functional_assignment_20260909.md)约束下一项针对迁移的学习变量。不能从历史脚本自动恢复。
+Owner继续授权完整自主科学推进。active design为`docs/horizon_relation_video_writer_design.md`，当前§8.2.8逐帧上下文过程条件fresh首段全部完成：100/200 correct52/103（前轮75/110），200 train96为41（前轮46），没有整体收益或稳定资格。[完整报告](docs/horizon_k1_frame_contextual_20260909.md)和`k1_frame_contextual/first_segment_evidence.json`保留全部配对事实。
 
-前轮已完成：first-query-only的100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；该轮训练/物化/诊断/闭环完整exit0，全部配对检查通过，该轮GPU任务均已结束；后续上下文条件formal200已完成，闭环/物化正在执行。
+1. §8.2.9已在结果前登记：从完整200同配方exact-resume至400，保存300/400及各自correct400，400同口径train96与既有held FM。缺口由23缩至7、自身52→103，补尚未覆盖的保持区间；不将低起点增量、breadth中的单次成功或续训本身作为优势。
+2. 新launch先刷新双节点GPU、独立quota及新增峰值，保持原world4/rank物理2/6/4/0和完整学习状态；复用已验证运行面与profile，不改科学配方或重复工程检查。当前所有首段GPU任务均已退出，续段尚未启动。
+3. 300/400先按自身相邻绝对能力、per-task/suite、breadth与R/G/L/churn/J判断，再对前轮106/103、train40059与原始86/87。若无实质获取/保持优势，结束该访问干预原样续训，回到有区分力的不同机制；不能靠loss或微小局部新增续500/600。
+4. 保留已有历史边界：first-query-only至400仅局部收益；冻结train24功能对应持续增强，不能称普遍未学会条件编译；Target-Owned已检验rank共享，旧四任务纯FM模型也曾更强。不能用新低分抹去这些反证或机械重做改名方案。
+5. 持续以证据推进至validation8 single-checkpoint correct>145、相邻稳定、breadth/四suite/Goal/Long、同task换视频与最终因果全部达标，再完成方法冻结后的32/8 fresh和Test。不预设总尝试次数，不因一次完整实验结束停止自主工作。
 
-1. 完整交付本轮事实、适用边界与“局部收益而非整体修复”的裁决；保留四checkpoint和全部原始证据。
-2. 不原样续500/600；从已经复现的训练获取与目标能力分离出发，审阅实际接口功能、竞争解释及最近等价历史。Target-Owned rank共享、旧语义路径和旧条件组织边界必须保留，不机械叠模块或重做改名方案。
-3. 选择并登记一个有信息量的受控变量：明确输入/监督/共享变化，什么证据会支持或反驳，以及与已试组合的实质区别。必要时先做最小可区分诊断，再正式修改/profile/学习；现有广泛授权继续有效。
-4. 根据真实行为推进，直到validation8 single-checkpoint correct>145/400、相邻稳定、breadth、四suite、Goal/Long、跨视频与最终因果全部满足，再完成方法冻结后的32/8 fresh与Test。当前结果不是完成，不预设总尝试次数。
-
-下一项§8.2.8已登记并进入实施：四组过程使用逐帧上下文task-token条件，compiler保留`first_query_only_v1`；不新增参数、不改输出或训练采样。定向检查与真实profile已通过，fresh formal100/200完整exit0；当前100strict400完整52（前轮75），200banks完整；200strict400与200train96并行执行，完整首段结果后裁决。资源与即时状态以progress为准；新执行先完成相应科学/资源/clean pushed frozen合同，常规步骤无需再次询问。
+即时资源、命令和进度以progress为准；当前没有启动other/最终controls/meta/RL/Test，常规合同内操作无需再次询问。
 
 ## 历史：只读报告交付任务（已完成）
 

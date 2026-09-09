@@ -22,6 +22,8 @@ Owner随后质疑为什么又启动v6训练。主agent先暂停这条自行追�
 
 旧v6隔离接入已完成：`.codex/worktrees/v6-causal-reference` clean pushed detached **5be77a34**，分支`codex/v6-causal-reference`，172项CPU检查通过。历史四模型文件只改import，保留mean/三Meta/原probe，接当前合法采样/FM/更新/物化/官方评测；未合入main。完整说明位于该分支`docs/v6_causal_reference.md`。v6真实profile已在gpu02物理4/2、world2、micro8/6启动，tmux `ember-causal-v6-profile`：fresh2、93帧完整图反向、同拓扑resume到4；本次不将profile作初始化或能力证据。三Meta梯度、最长峰值与恢复仍待实测。新增v6峰值预算8GiB，加两语言臂40GiB；launch时strg01/data1 used645561828KiB、shared84TiB，现有分析460KiB/参照worktree104MiB，资源快照/命令保留`causal_learning_20260909/v6/`。该段为暂停前的执行记录；当前禁止自动继续v6 profile/200/400，语言两臂继续已登记学习。
 
+Owner追问不能干等后，已利用两语言臂运行时间完成[当前末层rank共享候选准备](docs/horizon_causal_sharing_candidate_20260909.md)：完整核对历史Target-Owned反证，保留当前所有前端/语言/数据/FM，只绑定同target的D rank轴。隔离分支`codex/horizon-causal-sharing`，三组CPU检查86项通过、config解析与结构检查完成，main正式实现未改。它是可审查候选，不是已选修复；没有新GPU profile/训练/物化/闭环或自动launch安排。先看已运行语言对照的结果，再决定该具体接口是否值得投入学习。
+
 上一批676条诊断已全部完成并保留；它们支持实际依赖与局部反证，没有完成主要原因和解决方案验证。尤其不能由冻结语言零40/96排除fresh语言简化，不能由task7 free-C有效排除架构可学习性问题，不能由局部固定噪声拟合差推断正式训练噪声bug。
 
 ## 历史：首批冻结诊断交付快照（后续授权与结论等级已由顶部纠正）

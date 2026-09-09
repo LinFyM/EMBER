@@ -36,7 +36,7 @@ Compiler关闭在H-read开/关背景的validation效应，200为+5/+16，400为+
 
 **候选BBQ回放已完整完成：** gpu01物理6、两个worker、按200后400处理原states0/12/25/37，tmux `ember-compiler-confirm-replay`。初次因遗漏原有LIBERO config链接，在环境初始化及任何queue claim/rollout之前exit1；日志保留`replay/bootstrap_attempt1`，补指向各原评测配置的symlink后刷新双节点p6free46067MiB/util0再启动。没有改source/视频/state/RNG、没有结果驱动重试。CPU对照bank准备和该回放不构成正式方法采纳。 四worker均0，200/400本次均3/4；400 state12与历史成功分叉为失败，其余7个成功标签重现，实际输入配对及终态谓词检查通过，未重跑追成功。双相机显示候选400四例都围绕正确BBQ操作，三例入篮；此前all400同四例均转向绿色干扰瓶。该实例变化不替代完整400/独立初始化复核，原件`compiler_confirmation/replay/completed_summary.json`。
 
-**评测资源准入修正：** 新现场gpu02物理0低负载、free28842MiB，可容纳两名已实测约11622MiB的物化LoRA评测worker，但旧固定32GiB下限会拒绝。已将该现有模式改为每worker12GiB加每卡2GiB余量，两个worker要求26624MiB、三个38912MiB；负载≤10%约束保持，未取得同类峰值证据的其它评测模式保留原下限。launcher/评测runtime/queue定向47tests通过。该修改仅影响资源准入，不改变模型、视频配对、执行数值或科学选择；现有运行中的frozen进程不修改。下一面板使用新的clean pushed评测快照并在launch前再检查双节点。
+**评测资源准入修正：** 新现场gpu02物理0低负载、free28842MiB，可容纳两名已实测约11622MiB的物化LoRA评测worker，但旧固定32GiB下限会拒绝。已将该现有模式改为每worker12GiB加每卡2GiB余量，两个worker要求26624MiB、三个38912MiB；负载≤10%约束保持，未取得同类峰值证据的其它评测模式保留原下限。launcher/评测runtime/queue定向51tests通过，覆盖当前Horizon bank、普通static bank与source/其它adapter的分派。该修改仅影响资源准入，不改变模型、视频配对、执行数值或科学选择；现有运行中的frozen进程不修改。下一面板使用新的clean pushed评测快照并在launch前再检查双节点。首次LH400启动因漏识别horizon_writer_lora_bank类型，在worker创建前被拒绝；28个shard全pending、0结果行、无invocation。已修正类型分派，原准备/日志移入该面板bootstrap_attempt1，使用新提交重新准备原400条件，非结果驱动重试。
 
 **原因分析仍未完成。** 实际学习证明后端条件的学习效应不能由冻结置零概括，也证明当前纯FM/其余架构下可以避免部分后期能力崩落；尚需复核候选是否跨初始化/视频配对成立，并保留弱Spatial/Goal/Long等未解释边界。没有将v5.2/v6历史分差全部归为同一入口，未通过该历史包替代受控证据。
 

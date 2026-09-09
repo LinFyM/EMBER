@@ -39,6 +39,34 @@ def test_gpu_admission_uses_remaining_capacity_and_live_load(
     assert evaluator_gpus_are_eligible(preflight) is eligible
 
 
+@pytest.mark.parametrize("adapter,expected_replicas", [
+    ({"kind": "horizon_writer_lora_bank"}, 2),
+    ({"kind": "static_task_lora_bank"}, 2),
+    ({"kind": "task_local_expert_bank"}, None),
+    (None, None),
+])
+def test_launcher_passes_replica_budget_for_materialized_banks(
+    tmp_path: Path, monkeypatch, adapter: dict | None, expected_replicas: int | None,
+) -> None:
+    from scripts import evaluate_pi05
+
+    contract = {"adapter": adapter, "parallel": {
+        "physical_gpu_ids": [0], "replicas_per_gpu": 2,
+    }}
+    monkeypatch.setattr(evaluate_pi05, "_recover_locked_queue",
+                        lambda *args, **kwargs: (contract, False))
+    observed = {}
+
+    def preflight(gpu_ids, **kwargs):
+        observed.update(gpu_ids=gpu_ids, **kwargs)
+        raise RuntimeError("stop before GPU access")
+
+    monkeypatch.setattr(evaluate_pi05, "_gpu_preflight", preflight)
+    with pytest.raises(RuntimeError, match="stop before GPU access"):
+        evaluate_pi05._start_workers_locked(tmp_path, resume=False)
+    assert observed == {"gpu_ids": (0,), "materialized_lora_replicas": expected_replicas}
+
+
 def _invocation_events(
     *,
     contract_reference: str,

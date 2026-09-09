@@ -477,7 +477,7 @@ def git_state(repo_root: Path) -> dict[str, Any]:
     ).stdout.strip()
     commit = run("rev-parse", "HEAD")
     # This isolated exploration is pushed without adopting it on main.
-    authority_ref = "origin/codex/horizon-causal-learning"
+    authority_ref = "origin/codex/horizon-causal-retrieval"
     authority_commit = run("rev-parse", authority_ref)
     authority_contains_commit = (
         subprocess.run(
@@ -515,7 +515,8 @@ def git_state_is_clean_pushed_or_frozen_authority(
         and state.get("commit") == state.get("upstream_commit")
     )
     authority = (
-        state.get("authority_ref") in {"origin/main", "origin/codex/horizon-causal-learning"}
+        state.get("authority_ref") in {"origin/main", "origin/codex/horizon-causal-learning",
+                                       "origin/codex/horizon-causal-retrieval"}
         and state.get("authority_contains_commit") is True
     )
     detached = state.get("branch") == "" and state.get("upstream") is None

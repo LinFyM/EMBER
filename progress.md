@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner最新授权深入分析与诊断实验，当前禁止正式架构/训练方式修改及正式训练启动。
 
-## 当前：原生动作面板完整，局部接口与冻结分支闭环诊断推进
+## 当前：冻结分支行为已完整，局部接口诊断继续
 
 Owner要求综合语言分支与整体能力缺口，尽可能实际验证原因并提出方案；禁止正式架构/训练方式修改和正式训练启动。canonical源码/配置、Writer/Meta/source与所有正式checkpoint保留；当前只有临时分析脚本及冻结执行/已登记train-only局部变量。active design §8.2.10与`docs/horizon_k1_causal_diagnostics_20260909.md`统一登记协议和结果。
 
@@ -14,7 +14,7 @@ B2已完整24tasks×12列×128queries，FM与10-step采样各36864预测、两�
 
 C正在GPU02p0/2/4/6四进程运行，tasks分别0/14、7/16、20/34、25/35。固定teacher46、128fit queries16–41与128独立queries42–45；各臂只优化临时P4/C/完整A-B，64Adam更新、固定最终点，无正式参数/optimizer/sampler更新。当前采用完整native joint FM；经一次8query实证对照（原生action输出及全部76 LoRA梯度差0），在临时梯度作用域切除对AE LoRA无贡献的冻结Pali o_proj反传，物理micro4/8/8/8。此前device placement、近似cache、micro8 OOM及无cut中途尝试分别保留日志，不混入最终曲线。原件`local_oracle/launch_contract.json`、`prefix_gradient_check.json`及各group运行记录。完成后固定八task×四state×六臂（source/normal/P4/C/A-B/expert）192行诊断闭环，不能纳入零交互分数。
 
-B3已按报告§9预登记，120套完整adapter物化/480行queue准备全部exit0（进程内87.61秒、peak10.507GiB、adapter共456005760 bytes），实际teacher/frame/38-target配对通过；现于GPU02p1/3各三persistent worker执行闭环，tmux `ember-causal-b3-p{1,3}_r{0,1,2}`：当前400、全部train24、teacher46与states32–35，normal及B2四个冻结干预共480行实际闭环。每task同一真实R/Z生成完整LoRA，normal也新rollout；官方执行、cost-balanced long-first动态queue与persistent workers、部分BDDL谓词，无图像/held/训练梯度。用途是区分小平均误差与实际行为依赖，不依据结果选点或推断fresh删除收益。
+B3冻结分支闭环全部完成：480行、120queue jobs、六worker全部exit0，实际task/state/teacher/RNG配对通过。全部teacher46的normal51/96（S/O/G/L15/15/13/8，breadth20）；H-read language零54，R/G/L47/7/4；Compiler language零52，40/12/11；visual-read零54，45/9/6；三处language同时零40，33/7/18、breadth17。单支路净变化小且得失混合，全language零主要损失Spatial/Object；不能推出fresh删除收益或最终视频必要性。原件`branch_rollout/closedloop/summary.json`，完整解释与逐task表见报告§9.2。两个B3 GPU已随worker正常退出释放。
 
 资源：B3 launch时strg01/data1 used644418584KiB/soft1073741824、hard1084227584；当时analysis308MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B3 rollout launch重新实查两节点，p1/3各45906MiB free/util0，仅各148MiB轻占用；quota used644871904KiB。连同C共六张有用卡，不改变他人进程。后续新launch前刷新相关资源。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
 

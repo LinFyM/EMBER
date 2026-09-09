@@ -4,9 +4,17 @@
 
 ## 当前：逐帧上下文过程条件fresh formal训练中
 
-下一项已按active design§8.2.8登记：只将四组过程条件从静态语言码改为当前帧同源Gemma exact task-token状态的learned read；原reader参数复用、不增加参数，完整H/四组/视觉核实/decoder/采样保持。实现已完成：新增显式exact-span mask与模型语义标记，原reader复用；源码净增35行、无新模块/参数/runner。定向检查101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖；包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。接下来真实8update profile并额外覆盖最长训练视频（task38/demo0，457原始帧、93采样帧）的完整反传；profile不继承到formal。8update真实profile已完整exit0：32条件/2048queries与上一轮实际采样逐条匹配，均值15.764秒/update、完整231.64秒。Writer368675520、Meta626688参数保持；各rank第2–8步上下文cotangent均非零，source无梯度。最长task38/demo0的93帧完整反传17.976秒、context梯度4.756e-5/Meta4.042e-5，sampler不变、无额外update。profile peak allocated/reserved38.148/41.182GiB，最长allocated38.166。formal准备沿同一clean pushed detached9abc9b95与GPU02物理2/6/4/0启动，物理micro改6/6/4/3保留共驻余量：大micro未解除micro3 worker瓶颈，科学batch仍4×64。formal已在tmux `ember-frame-contextual-formal` 启动（torchrun827717，四rank828745–828748），已完成step0冻结诊断并推进正式更新；核实第18步累计72条件/4608queries，均值15.555秒/update，peak reserved34.643GiB。Writer/Meta实际梯度均非零、source trainable为0。输出`runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909`；完整命令与资源为`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/launch_contract.json`。启动前data1实查used617699468KiB/soft1073741824KiB，首段含profile/checkpoint/banks新增峰值20GiB预算内，profile后剩余新增预算15.8GiB。
+active design§8.2.8只改变四组过程条件：从静态语言码改为当前帧同源Gemma exact task-token状态的learned read。原reader复用，无新参数；compiler保留first-query-only，完整H/四组/视觉核实/decoder/采样不变。源码净增35行、无新模块/runner。定向101项通过，另1项仅错误消息断言更新后单独通过，共102项覆盖，包括未来独立、context梯度、完整identity/分块反传及旧checkpoint拒绝。
 
-100/200 validation400与200 held-video train96的物化/评测命令已准备，尚未发起；逐条教师/状态schedule沿用前轮，checkpoint到达后从当前冻结运行面独立生成。
+真实8update profile已完整exit0：32条件/2048queries与前轮逐条匹配，均值15.764秒/update、完整231.64秒。Writer368675520、Meta626688参数保持，各rank第2–8步context cotangent均非零，source无梯度。最长task38/demo0的93采样帧完整反传17.976秒、context梯度4.756e-5/Meta4.042e-5，sampler不变、无额外update；allocated/reserved峰值38.166/41.182GiB。profile是独立临时输出，未继承到formal。
+
+fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/horizon-frame-contextual-runtime`。GPU02物理2/6/4/0、物理micro6/6/4/3，逻辑batch仍4×64；tmux `ember-frame-contextual-formal`，torchrun827717、四rank828745–828748。输出`runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909`，命令与资源为`runs/analysis/horizon_relation_writer_20260908/k1_frame_contextual/launch_contract.json`。
+
+**100完整checkpoint已发布并通过public inspector**；前400条件/25600queries逐条匹配first-query-only基线，各suite100，实际259种task-video。100次更新均值15.685秒，allocated/reserved峰值31.900/34.645GiB。训练已核实107并继续到预登记200；无新闭环分数。
+
+100 canonical400 bank已在GPU01物理3启动，tmux `ember-frame-contextual-bank100`；计划从本轮100独立生成400条件。该卡启动前free29056MiB/util1%，双节点及进程现场记录在`k1_frame_contextual/step100/gpu_preflight_materialize_launch.json`，完整命令/预算为同目录`materialization_launch.json`。200 validation400+held-video train96请求也已准备；三组实际教师/状态计划与前轮完全一致，每task视频无放回。100 bank完成后按现场资源做完整strict400，不用部分结果选点。
+
+最新data1在strg01实查used617700592KiB/soft1073741824KiB、hard1084227584KiB（100 checkpoint保存前）；run现4.2GiB，shared84TiB。首段含profile/checkpoints/banks新增峰值20GiB，profile和100保存后剩余新增预算11.6GiB，当前bank约1.9GiB。后续按100/200完整correct、200train96和冻结held FM判断，>145全部资格及最终32/8 fresh/Test仍未完成。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

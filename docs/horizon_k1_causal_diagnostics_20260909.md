@@ -176,3 +176,9 @@ B2显示动作扰动和平均MSE可以明显不同，尤其visual-read；因此�
 B3首次worker启动停在LIBERO初始化提示：临时prepare未链接既有asset config；当时尚无queue claim或评测行。已停止本任务四个进程，保留startup日志，链接reference contract同目录的canonical `libero_config`后重启；C prepare同步补齐该链接。首批真实rows正常落盘，配置修正不改变policy、asset内容或任务协议。
 
 两worker/GPU实际占约22–24GiB、余量21–23GiB；结合此前相同官方执行路径三worker验证，再次实查两节点后每卡增加一个persistent worker，保持相同4-env物理批次与实际RNG、同队列，合计两卡六worker。后处理同时区分初始已满足、执行中新达到及末尾又丢失的BDDL goal slots；它只是部分目标进度证据，不是完整行为分类。
+
+## 10. C固定fit采样点的冻结重采样检查（结果前登记）
+
+C的128条fit queries在64步中使用固定time/noise；因此fit改善和独立episode表现不同，既可能来自状态/动作覆盖，也可能仅适应该批FM采样点。补一个冻结面板：全部八task、同128个fit图像/state/动作，保持episodes16–41和query选择seed；只将原`policy_rng_seed`固定加100000003，重新独立生成FM time/noise。比较normal及P4/C/AB最终64步保存的完整LoRA，共4096次query预测；不生成梯度、不更新任何局部或正式变量、不重新选择节点、不读新视频或held tasks。
+
+完整native联合FM、物理micro8、BF16及原source/normalization保持。记录真实raw actions/pad与query metadata，验证和原fit面板相同；保存新noise/time，四臂严格共享。若原fit和新噪声fit均改善，而独立episode无改善，证据更偏向状态/episode层面的泛化限制；若只在原fit采样点改善，需降低对局部oracle可达性的解释力度。一次128query重采样不构成FM总体积分上界，也不能单独推翻FM学习方法。该面板预计小于30MiB，可与最终C闭环并行，仍纳入原2GiB诊断预算。

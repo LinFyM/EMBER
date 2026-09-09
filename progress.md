@@ -18,7 +18,9 @@ B3已按报告§9预登记，120套完整adapter物化/480行queue准备全部ex
 
 资源：B3 launch时strg01/data1 used644418584KiB/soft1073741824、hard1084227584；当时analysis308MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B3 rollout launch重新实查两节点，p1/3各45906MiB free/util0，仅各148MiB轻占用；quota used644871904KiB。连同C共六张有用卡，不改变他人进程。后续新launch前刷新相关资源。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
 
-下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。
+C另按诊断报告§10登记固定fit查询的冻结重采样复核：保留同128个fit图像/state/动作，只把policy RNG seed加100000003，检查normal及三个final64 adapter，共4096query预测、无梯度；脚本已准备，待C完整后与192行闭环并行。它区分固定time/noise点的适配与跨状态/episode泛化，不新增局部优化。
+
+下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环及上述冻结复核；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。
 
 ## 历史：上下文条件保持段已全部完成，详细执行记录
 

@@ -2,9 +2,9 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：学习过程因果分析已立项，正在落实可执行对照
+## 当前：两个语言路径探索臂已开始fresh学习，旧v6参照接入中
 
-**最新授权：** 可为探索原因修改架构、语言路径、共享方式及训练目标/方式，开展实验性训练与闭环测试；不得自行宣布修复并正式采纳候选、合入为当前正式方法、启动下一轮正式训练。旧文档中“只允许冻结诊断”的解释不再适用。原有信息墙、split、评测、GPU/存储合同继续有效。
+**最新授权：** Owner已明确接受必要的数小时对照成本。可为探索原因修改架构、语言路径、共享方式及训练目标/方式，开展实验性训练与闭环测试；不得自行宣布修复并正式采纳候选、合入为当前正式方法、启动下一轮正式训练。旧文档中“只允许冻结诊断”的解释不再适用。原有信息墙、split、评测、GPU/存储合同继续有效。
 
 当前active诊断计划为`docs/horizon_causal_learning_plan_20260909.md`；正式方法design仍为`docs/horizon_relation_video_writer_design.md`，canonical实现和正式checkpoint保留。goal不要求>145或新的正式训练，完成时向Owner汇报具体因果证据和已验证候选。
 
@@ -12,11 +12,13 @@
 
 首轮语言学习矩阵已登记`docs/horizon_causal_language_learning_20260909.md`：基线all复用当前contextual200/400；none关闭三处额外后端条件；local_only保留local上下文、关闭H-read与Compiler条件。新臂各fresh400updates、固定200/400闭环，不按loss选点。隔离代码`codex/horizon-causal-learning`已推送，运行面`.codex/worktrees/horizon-causal-learning`已detached **e60a7ca0**，main正式实现未改。架构/物化/FM三组CPU检查共87项通过（首次6项为fixture数据路径/错误消息差异，修正后定向重跑通过）；配置解析与clean pushed实验ref通过。
 
-真实4-update profile已启动：none在gpu01物理1/5/6、micro8/8/8，local_only在gpu02物理1/3/6、micro8/8/6，均world3；每节点三张有用卡，不跨节点拼同一个训练。tmux `ember-causal-language-profile-none` / `ember-causal-language-profile-local_only`。每臂额外检查93帧最长训练视频，profile不保存大checkpoint、不用于fresh初始化。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/`含精确命令、snapshot、contract和日志；完成检查后进入探索学习，不能停在profile通过。
+两个真实4-update profile及93帧最长视频均已完整exit0，六rank检查通过：关闭入口没有梯度贡献，H-read共享bias/视觉/过程/decoder/Meta均在identity打开后学习，source无梯度。最大allocated39.460GiB；最长视频两臂allocated38.166GiB。profile没有保存大checkpoint、不作为fresh初始化。
+
+**两个探索训练均已fresh启动**：none在gpu01物理1/5/6、micro8/8/8；local_only在gpu02物理1/3/6、micro8/8/6；均world3、逻辑4×64不变。tmux `ember-causal-language-none` / `ember-causal-language-local_only`，输出分别`runs/outputs/horizon_causal_none_seed7_20260909` / `horizon_causal_local_only_seed7_20260909`，mode明确exploratory。固定200/400完整保存与闭环，当前未到行为节点。两臂前4update的16个实际condition/task/video/query/RNG等字段与原contextual逐条一致；后续节点继续核对新曝光。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/`包含命令、实时资源、完整合同、profile结果和初始配对证据。
 
 资源：strg01/data1 used645558440KiB，soft1073741824/hard1084227584；当前正式run26GiB、旧诊断1.2GiB，实际个人项目outputs432GiB/analysis28GiB、shared84TiB。两语言臂新增峰值40GiB含训练/物化/临时余量，全部复用source/data/env，预算在独立quota内。
 
-旧v6已核实真实模型bad9a96、旧old/TCcheckpoint完整且模型无diff；历史mean/三Meta在隔离参照中保留，合法采样/当前FM协议统一。独立agent在`.codex/worktrees/v6-causal-reference`准备可执行接入，目前无v6 GPU任务。下一步收齐语言profile、启动预注册探索训练，同时完成v6参照接入。
+旧v6隔离接入已完成：`.codex/worktrees/v6-causal-reference` clean pushed detached **5be77a34**，分支`codex/v6-causal-reference`，172项CPU检查通过。历史四模型文件只改import，保留mean/三Meta/原probe，接当前合法采样/FM/更新/物化/官方评测；未合入main。完整说明位于该分支`docs/v6_causal_reference.md`。v6真实profile已在gpu02物理4/2、world2、micro8/6启动，tmux `ember-causal-v6-profile`：fresh2、93帧完整图反向、同拓扑resume到4；本次不将profile作初始化或能力证据。三Meta梯度、最长峰值与恢复仍待实测。新增v6峰值预算8GiB，加两语言臂40GiB；launch时strg01/data1 used645561828KiB、shared84TiB，现有分析460KiB/参照worktree104MiB，资源快照/命令保留`causal_learning_20260909/v6/`。下一步完成该profile后启动固定200/400探索参照；语言两臂继续已登记学习。
 
 上一批676条诊断已全部完成并保留；它们支持实际依赖与局部反证，没有完成主要原因和解决方案验证。尤其不能由冻结语言零40/96排除fresh语言简化，不能由task7 free-C有效排除架构可学习性问题，不能由局部固定噪声拟合差推断正式训练噪声bug。
 

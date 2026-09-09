@@ -198,6 +198,8 @@ visual-read零在Object任务14由4降2，却使任务16由2升4；Long任务34/
 
 全部臂初始未满足goal slots均116。normal/H-read零/Compiler零/visual零/all-language零执行中新达到66/73/67/70/52，最终保持65/71/66/70/50；达到后末尾丢失仅1/2/1/0/2个。这些是BDDL最终目标的部分进展，不能覆盖抓取、错误对象或所有中间动作，也不能由此排除更早阶段失误。
 
+normal的45次失败中，10次达到过至少一个初始未满足的最终goal predicate，均位于Long34/36/38。global36（杯子上盘且布丁放到盘右侧）四个state均在第114–136步达到杯子目标，至520步仍从未达到布丁目标；全部五臂的四个state也都是杯子true、布丁false，全部0/4。global38的normal四次均未达到moka_pot_1上灶，另一壶在146–155步已达到过目标；三次保持、一次末尾丢失。它们确认复合目标的后续完成缺口，不单独证明没有选择后续对象，或区分选择与动作执行失败。
+
 | global task | normal | H-read零 | Compiler零 | visual零 | all-language零 |
 |---:|---:|---:|---:|---:|---:|
 | 0 | 4 | 4 | 3 | 4 | 3 |
@@ -230,3 +232,10 @@ visual-read零在Object任务14由4降2，却使任务16由2升4；Long任务34/
 C的128条fit queries在64步中使用固定time/noise；因此fit改善和独立episode表现不同，既可能来自状态/动作覆盖，也可能仅适应该批FM采样点。补一个冻结面板：全部八task、同128个fit图像/state/动作，保持episodes16–41和query选择seed；只将原`policy_rng_seed`固定加100000003，重新独立生成FM time/noise。比较normal及P4/C/AB最终64步保存的完整LoRA，共4096次query预测；不生成梯度、不更新任何局部或正式变量、不重新选择节点、不读新视频或held tasks。
 
 完整native联合FM、物理micro8、BF16及原source/normalization保持。记录真实raw actions/pad与query metadata，验证和原fit面板相同；保存新noise/time，四臂严格共享。若原fit和新噪声fit均改善，而独立episode无改善，证据更偏向状态/episode层面的泛化限制；若只在原fit采样点改善，需降低对局部oracle可达性的解释力度。一次128query重采样不构成FM总体积分上界，也不能单独推翻FM学习方法。该面板预计小于30MiB，可与最终C闭环并行，仍纳入原2GiB诊断预算。
+
+
+## 11. 两个固定失败状态的可视回放（结果前登记）
+
+为区分B3复合目标失败中“未转向后续对象”与“尝试后动作失败”，固定重放normal global36/38、各state32、teacher46。复用B3已生成的同一完整LoRA、source/资产和官方执行/RNG，只开启既有occupancy capture，每次replan保存实际处理后的双相机图像、policy state和action chunk，供描述性检查；没有优化、干预或新checkpoint选择。两条轨迹预计小于.4GiB，当前analysis841MiB，仍在原2GiB诊断预算内。
+
+每task只有一个指定state，因此物理batch1，与B3的batch4不同，接受普通BF16低位差异；先核对相同task/state/RNG与失败/目标谓词是否复现，再解释画面。不挑换状态、不把单个回放外推为全部失败原因，不将其纳入B3配对分数。若未复现，明确报告差异而非替换原始行。原件放`causal_diagnostics_20260909/targeted_replay/`；C局部求解继续，回放仅使用B3已释放的合适GPU。

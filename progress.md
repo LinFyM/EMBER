@@ -18,6 +18,8 @@ B3冻结分支闭环全部完成：480行、120queue jobs、六worker全部exit0
 
 资源：B3 launch时strg01/data1 used644418584KiB/soft1073741824、hard1084227584；当时analysis308MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B3 rollout launch重新实查两节点，p1/3各45906MiB free/util0，仅各148MiB轻占用；quota used644871904KiB。连同C共六张有用卡，不改变他人进程。后续新launch前刷新相关资源。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
 
+B3部分目标记录进一步显示global36五臂均0/4，杯子目标已达到而布丁目标从未达到；normal杯子完成于114–136步，余下约400步仍未完成另一目标。按报告§11准备normal36/38各固定state32的两次可视回放，复用已有LoRA，只启用官方occupancy capture；物理batch1与原batch4不同，先验证失败模式是否复现，不改原B3分数、不选换状态。预计新增小于.4GiB，仍在原2GiB诊断预算。
+
 C另按诊断报告§10登记固定fit查询的冻结重采样复核：保留同128个fit图像/state/动作，只把policy RNG seed加100000003，检查normal及三个final64 adapter，共4096query预测、无梯度；脚本已准备，待C完整后与192行闭环并行。它区分固定time/noise点的适配与跨状态/episode泛化，不新增局部优化。
 
 下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环及上述冻结复核；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。

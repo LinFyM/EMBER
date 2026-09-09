@@ -12,9 +12,9 @@ active design为`docs/horizon_relation_video_writer_design.md`。§8.2.8首段�
 
 300 bank完整exit0，805.27秒、400条件全部新生成/零复用，public inspector及实际task/state/video映射、每task50视频无放回均通过。**300 strict400正在GPU02物理1/3、每卡3个persistent worker执行**，tmux `ember-frame-contextual-correct300`。六worker全部ready，队列36动态long-first分片；装载后两卡实查仍有8812/9672MiB空闲。原件`segment200_400/step300/{bank_validation,evaluation_launch}.json`，尚无完整300分数。
 
-**400 validation400+独立held-video train96 banks正在GPU02物理0生成**，一个resident source顺序生成两套bank，tmux `ember-frame-contextual-bank400`（pane2027992）；全部496条件必须新生成，不跨checkpoint复用。**400冻结held FM同时在GPU02物理2执行**，tmux `ember-frame-contextual-held400`（pane2028001）。它复用既有`_validate_actions`和固定24×128 queries，在完整400上无梯度/无optimizer/不推进sampler；自动训练诊断配置仍为0/200，未修改resume配置。结果分别落在`segment200_400/step400/`的物化文件与`held_action/`，当前均未完成。
+**400 validation400+独立held-video train96 banks正在GPU02物理0生成**，一个resident source顺序生成两套bank，tmux `ember-frame-contextual-bank400`（pane2027992）；全部496条件必须新生成，不跨checkpoint复用。**400冻结held FM已在GPU02物理2执行完成**，tmux `ember-frame-contextual-held400`（pane2028001）。它复用既有`_validate_actions`和固定24×128 queries，在完整400上无梯度/无optimizer/不推进sampler；自动训练诊断配置仍为0/200，未修改resume配置。400 held FM现已完整exit0，376.02秒、peak11.484GiB；3072条实际video/action/frame/noise与前轮/原始400及本轮200配对通过，sampler未推进。均值.105074533（前轮.105737594、原始.106271931），本轮400比200的24/24任务低、比前轮400的15/24低；不作为行为收益证据。完整原件`segment200_400/held_fm_comparison.json`，400 banks仍在生成。
 
-上述两项launch前重新双节点live检查；GPU02p0 free28855MiB/util1、p2 free45906/util0，分别满足既有约12GiB物化与11.484GiB冻结诊断峰值。原四训练卡释放后当前使用eval300两卡+bank/held两卡，共四张有用设备；没有占位或改变他人作业。对应launch合同为`step400/materialization_launch.json`、`held_action_launch.json`，资源为`step400/gpu_preflight_launch.json`。
+上述两项launch前重新双节点live检查；GPU02p0 free28855MiB/util1、p2 free45906/util0，分别满足既有约12GiB物化与11.484GiB冻结诊断峰值。上述launch时使用eval300两卡+bank/held两卡，共四张有用设备；held结束后当前为三张；没有占位或改变他人作业。对应launch合同为`step400/materialization_launch.json`、`held_action_launch.json`，资源为`step400/gpu_preflight_launch.json`。
 
 最新strg01/data1 quota used641585316KiB/soft1073741824、hard1084227584；当前run23GiB、analysis1.8MiB、shared84TiB。续段新增16GiB预算中两checkpoint及300bank已完成，约余5.7GiB；400两banks预计2.4GiB、冻结诊断不足50MiB，复用全部资产。后续新launch按实际资源安排。
 

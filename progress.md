@@ -2,7 +2,7 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：首轮语言学习全部完成；Compiler分离臂全矩阵完成，H-read臂400接续
+## 当前：首轮语言学习全部完成；两臂学习全部完成，H-read臂400开始物化
 
 **两臂200/400训练、物化及8个新闭环面板共1984行全部完整exit0**，checkpoint、实际曝光、bank和同节点/相邻strict配对通过；全部GPU评测进程已正常退出。validation all/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 none S/O/G/L2/45/37/8、local0/57/36/17，breadth均6。相对自身200，none R/G/L65/27/43、churn70/J=.4815，local70/40/44、churn84/J=.4545；相对contextual400则71/21/19、74/36/16。首轮总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`，完整解释见`docs/horizon_causal_language_learning_20260909.md`。
 
@@ -10,13 +10,17 @@
 
 **两个分离学习臂已fresh启动：** local固定开，新增local_h_read与local_compiler，复用已完成all/local_only补足2×2检索条件矩阵。新工作树`.codex/worktrees/horizon-causal-retrieval`从最新main建立并复用旧探索运行面，当前clean pushed detached `45e16633`；正式main行为未改。科学实现56bbb160之后只校正本分支Git authority，没有改变模型或训练计算。新增计算仅是两个已有入口的开关组合，共同参数初始化保持。架构/物化/FM三组CPU共92项通过（初次91pass，1项因新工作树未链接canonical data而失败；补只读资产symlink后定向通过），两个配置解析通过。
 
+**local_h_read也已完整训练400并exit0：** 1600实际condition/102400queries与contextual逐项配对，四suite各400condition，200/400完整checkpoint及held3072输入/无梯度检查通过。400held均值.104945883（基线.105074533）、11/24任务更低，仅作功能诊断；400更新均值24.369秒、后200总5229.51秒，wrapper10318.63秒，峰值39.484GiB，墙钟含本轮共享I/O等待。没有任何训练继续到500。
+
+最后一组496条件bank已在gpu02物理6启动，tmux `ember-retrieval-local_h_read-bank400`。launch前双节点检查中gpu01进程查询不完整，未选择该节点设备；gpu02p6free41319MiB/util0、peer身份明确，覆盖已验证物化峰值。最新strg01/data1 used698610248KiB、soft1073741824/hard1084227584、shared84TiB；两run实际14/11GiB，最后bank约3GiB仍在40GiB总峰值内。当前只有这一物化GPU进程；其余训练与已完成评测均正常结束。原件`retrieval/local_h_read_step400/{learning_summary,checkpoint_inspection,materialization_launch,gpu_preflight_launch}.json`。
+
 **local_compiler两节点全部完整：** train96为43→65、400 S/O/G/L17/18/18/12、breadth18→23；validation为98→90、0/45/34/11、breadth7→5。400相对all：train R/G/L43/22/6、validation76/14/14；相对自身200分别37/28/6、58/32/40，全部worker0及actual strict配对通过。BBQ21→2、0/2/21，原21成功全部丢失；其它七validation任务77→88。相对first-query400，train59→65（51/14/8），validation103→90（76/14/27）。因此单独关闭H-read改善训练能力，但这组实验没有修复迁移退步或BBQ保持，不能当作正式修正。完整400表和边界已加入语言报告末节。
 
 **检索分离200四面板共992行全部完整exit0：** validation local_h_read108/400、S/O/G/L3/57/34/14、breadth6；local_compiler98/400、4/52/38/4、breadth7。相对all103，R/G/L分别75/33/28、77/21/26；相对local_only114，分别85/23/29、72/26/42，全部actual strict配对和worker0通过。200关闭H-read在Compiler开/关背景验证分别−5/+6，不能笼统判其有害；关闭Compiler则+5/+16，但尚缺相邻保持。总索引`retrieval/step200_completed_matrix.json`，完整表/逐task及解释见语言报告末节。
 
 **200两个train96已完整exit0：** local_h_read40/96、S/O/G/L14/9/12/5、breadth17；local_compiler43/96、10/12/14/7、breadth18。相对all41分别R/G/L29/11/12和38/5/3，相对local_only46分别34/6/12和32/11/14；全部worker0和actual strict配对通过。单节点中H-read关闭在两种Compiler背景净+2/+6，Compiler关闭为−1/+3；尚不能把单点条件效应当作迁移根因或稳定修复。完整表与解释已加入`docs/horizon_causal_language_learning_20260909.md`末节。
 
-Compiler400的496条件bank也已完整exit0、1368.46秒，public inspector及完整映射/selection配对通过；**400 validation在gpu02物理3/6×3worker启动**，tmux `ember-retrieval-local_compiler-validation400`，复用两个已正常结束train96的设备。launch前双节点快照p3/p6 free45905/41318MiB、util0，原有peer保持，同节点仍五张有用评测卡；Compiler400 train96也已在gpu02物理4×3worker启动（tmux `ember-retrieval-local_compiler-train96400`）；其余两个200 validation均已正常结束。该train96 launch前双节点快照p4free40313MiB/util2，复用原200验证设备。上述Compiler400两个面板现已全部正常退出；H-read原训练继续预定400。
+Compiler400的496条件bank也已完整exit0、1368.46秒，public inspector及完整映射/selection配对通过；**400 validation在gpu02物理3/6×3worker启动**，tmux `ember-retrieval-local_compiler-validation400`，复用两个已正常结束train96的设备。launch前双节点快照p3/p6 free45905/41318MiB、util0，原有peer保持，同节点仍五张有用评测卡；Compiler400 train96也已在gpu02物理4×3worker启动（tmux `ember-retrieval-local_compiler-train96400`）；其余两个200 validation均已正常结束。该train96 launch前双节点快照p4free40313MiB/util2，复用原200验证设备。上述Compiler400两个面板现已全部正常退出；H-read训练也已完成，当前物化见顶段。
 
 约13:41–13:46 UTC出现共享存储读取延迟：状态查询超时，多个评测/物化进程处于`rpc_wait_bit_killable`/`folio_wait_bit_common`；原进程保持，strg01仍可达，两train96及Compiler400bank随后完整exit0。kernel日志因权限不可读，未据此认定存储服务根因，也没有重启或改服务。观察器超时只终止观察器，未当作训练失败；后续监控捕获查询超时，并按完整tmux名字精确匹配。
 

@@ -2,11 +2,15 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：语言两臂学习完成；200闭环与400生成进行中
+## 当前：语言两臂200完整结果已到；400闭环进行中
+
+**200四个新增闭环面板全部exit0、实际strict配对通过**。validation400：all/none/local_only分别103/108/114，S/O/G/L分别1/54/37/11、2/58/41/7、3/62/36/13，breadth7/7/6；相对all，none R/G/L81/27/22、churn49/J=.6231，local77/37/26、churn63/J=.5500。train96为41/39/46，breadth18/16/18；none R/G/L27/12/14，local32/14/9。直接none→local validation净+6但R/G/L75/39/33、churn72；train净+7但29/17/10。local两个面板有小幅净增，尚无相邻保持证据，且未解决Spatial/Goal弱任务与得失混合；不据此宣布主要原因或正式采纳。完整表及解释见`docs/horizon_causal_language_learning_20260909.md`，原件各`language/{arm}_step200/{validation,train96}_analysis/`。
+
+**400的两臂validation400+train96已全部实际启动**。none在gpu01物理1/6各3worker跑validation、物理5×3worker跑train96；local_only在gpu02物理1/3各3worker跑validation、物理6×3worker跑train96。tmux分别`ember-causal-{arm}-validation400`与`ember-causal-{arm}-train96-400`。两组完整496条件bank均exit0，public inspector及基线整个task/state/video/selection映射通过。每次launch前均核验双节点；none三卡free46068MiB/util0，local三卡free45906/45636/41319、util0，仅低负载peer共驻且留有实测三worker峰值余量。两节点各三张有用设备，原200评测/400物化全部退出。资源增量仍在已核验40GiB总预算内，精确命令和live资源在`language/{arm}_step400/{validation,train96}_launch.json`；冻结运行面e60a7ca0未改。待四个完整面板及400→200成功集合比较，不追加训练臂或恢复v6。
 
 **none/local_only的400次探索学习均完整exit0**，wrapper分别9714.56/10162.29秒；完整200/400 checkpoints独立保留、public inspector通过。各1600条件/102400queries与contextual实际曝光逐项匹配，各suite400条件。400独立3072query也完全配对、无梯度，held FM分别.105817828/.105537391，基线.105074533；只描述拟合，不作闭环裁决。更新均值23.483/24.557秒，allocated峰值39.480/39.483GiB；原件`language/{arm}_step400/learning_summary.json`。不自动追加500或新训练臂。
 
-**当前后续任务均已实际启动**：200 validation400继续在gpu02物理2/4各2worker（最新均已落盘300/400行，尚无完整分数）；none的200 train96在gpu01物理1/6各3worker，400两组bank在同节点物理5；local_only的200 train96在gpu02物理1/3各3worker，400两组bank在同节点物理6。tmux分别为`ember-causal-{arm}-train96-200`与`ember-causal-{arm}-bank400`。none训练先结束即复用其释放设备，local随后完整退出再接续；节点01/02分别三/五张有用设备，没有占位。两次launch前均重新核验两节点；none三卡free46068MiB/util0，local训练面板两卡free45906/45636、生成卡41319MiB，util均0。strg01/data1 used659939204KiB、soft1073741824、shared84TiB；余下全部输出峰值估计16GiB，仍在最初40GiB增量预算内。冻结运行面仍e60a7ca0，精确launch与资源证据在`causal_learning_20260909/language/`。
+**此前后续任务启动记录（现均完整退出）**：200 validation400在gpu02物理2/4各2worker；none的200 train96在gpu01物理1/6各3worker，400两组bank在同节点物理5；local_only的200 train96在gpu02物理1/3各3worker，400两组bank在同节点物理6。tmux分别为`ember-causal-{arm}-train96-200`与`ember-causal-{arm}-bank400`。none训练先结束即复用其释放设备，local随后完整退出再接续；节点01/02分别三/五张有用设备，没有占位。两次launch前均重新核验两节点；none三卡free46068MiB/util0，local训练面板两卡free45906/45636、生成卡41319MiB，util均0。strg01/data1 used659939204KiB、soft1073741824、shared84TiB；当时余下全部输出峰值估计16GiB，仍在最初40GiB增量预算内。冻结运行面仍e60a7ca0，精确launch与资源证据在`causal_learning_20260909/language/`。
 
 **此前200节点记录**：完整checkpoint通过探索schema、条件配置、三rank学习状态与public inspector检查。各200次更新/800条件/51200queries与contextual基线实际采样全部配对，各suite200条件；独立24task×128query诊断也完全配对、无梯度。none/local_only held FM为.112001593/.111181941，基线.111031413，不据此判断闭环或选方法。200更新均值23.481/24.456秒，峰值allocated39.480/39.483GiB。原件`language/{arm}_step200/learning_summary.json`。
 

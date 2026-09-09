@@ -40,4 +40,28 @@
 
 小模型直接检查已确认：none的group输出对额外条件变化不变；local_only保留local条件作用；两个新臂Compiler对额外文本变化不变；原生response、visual和H-read共享bias仍有梯度。训练循环、数据采样与functional FM不改。当前正式源码/配置保持原状。
 
-下一步：完成真实profile、冻结并推送探索代码、登记现场资源后运行两个预注册fresh臂。profile/launch状态与精确命令在analysis原件和progress记录，未取得结果前不写改法有效。
+两个fresh臂已在冻结探索运行面e60a7ca0完整完成400次更新，200/400学习状态和独立动作诊断均通过检查；实际曝光与基线逐项匹配。profile、launch及资源原件在`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/`，后续动态状态见progress。
+
+## 200节点完整闭环证据（400节点尚待完成）
+
+四个新增面板均完整exit0，全部worker返回0；原生strict checker确认任务、初始状态、teacher映射、执行协议及RNG配对。下表R/G/L均相对同节点contextual基线，suite顺序为Spatial/Object/Goal/Long。训练面板每suite24行，validation每suite100行。
+
+| 面板/臂 | 成功 | S/O/G/L | breadth | R/G/L | churn | Jaccard |
+|---|---:|---|---:|---|---:|---:|
+| validation all | 103/400 | 1/54/37/11 | 7 | — | — | — |
+| validation none | 108/400 | 2/58/41/7 | 7 | 81/27/22 | 49 | .6231 |
+| validation local_only | 114/400 | 3/62/36/13 | 6 | 77/37/26 | 63 | .5500 |
+| train96 all | 41/96 | 11/11/13/6 | 18 | — | — | — |
+| train96 none | 39/96 | 9/12/13/5 | 16 | 27/12/14 | 26 | .5094 |
+| train96 local_only | 46/96 | 13/14/12/7 | 18 | 32/14/9 | 23 | .5818 |
+
+validation全八task（global ID）结果：
+
+| 臂 | 1 | 3 | 11 | 13 | 23 | 26 | 31 | 32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| none | 1 | 1 | 35 | 23 | 0 | 41 | 5 | 2 |
+| local_only | 0 | 3 | 28 | 34 | 0 | 36 | 12 | 1 |
+
+local_only在两个面板均有小幅净增，none没有提高训练任务整体行为；但这是第一个固定节点，尚无相邻保持证据。local_only的validation广度下降且新增37、丢失26，Spatial总分仍仅3/100、Goal task23仍为零，不能以总分+11解释成整体迁移修复。none的train Long从6到5，原6成功全部丢失、另有5新增，也表明总数接近并非保持稳定。以上结果不支持提前恢复全部正式训练、宣布后端条件为主要原因或追加小参数搜索。
+
+各臂逐task、suite、完整配对与完成记录位于`language/{arm}_step200/{validation,train96}_analysis/`；`completed_summary.json`给出汇总，`vs_contextual_same_step.json`保留成功集合和原始比较。剩余裁决仍按预注册完成400的validation400/train96及相邻对比，不按200较高单点选候选。

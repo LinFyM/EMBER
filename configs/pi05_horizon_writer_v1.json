@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_horizon_relation_writer_config_v1",
-  "status": "fresh_k1_frame_contextual_process_supervised_fm",
-  "design": "docs/horizon_relation_video_writer_design.md",
+  "status": "exploratory_candidate_prepared_not_launched",
+  "design": "docs/horizon_causal_sharing_candidate_20260909.md",
   "data": {
     "seed": 7,
     "task_ids": [
@@ -113,7 +113,8 @@
     "edge_chunk": 32,
     "activation_checkpoint": true,
     "compiler_language_mode": "first_query_only_v1",
-    "process_language_source": "frame_contextual_task_tokens_v1"
+    "process_language_source": "frame_contextual_task_tokens_v1",
+    "decoder_rank_sharing": "within_target"
   },
   "observer": {
     "meta_rank": 4,
@@ -146,9 +147,9 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "fresh per-frame contextual task-token process condition;100/200 correct400 and200 train96; same parameter initialization and training sampling, no inherited learning state",
-    "qualification_registration": "docs/horizon_relation_video_writer_design.md section8.2.8",
-    "final_checkpoint_selection": true,
+    "initial_use": "prepare a current within-target rank-sharing contrast; no launch scheduled",
+    "qualification_registration": "docs/horizon_causal_sharing_candidate_20260909.md",
+    "final_checkpoint_selection": false,
     "shuffled_reversed_use": false,
     "test_use": false,
     "training_closed_loop": {
@@ -200,7 +201,8 @@
       "paired": true,
       "purpose": "trained-task acquisition with held teacher videos; no RL exploration arm",
       "optimizer_updates": [
-        200
+        200,
+        400
       ]
     },
     "qualification": {
@@ -273,16 +275,16 @@
         48,
         49
       ],
-      "registration_status": "registered frame-contextual process-condition100/200 before new behavior",
+      "registration_status": "candidate only; fixed200/400 if subsequently selected for learning",
       "optimizer_updates": [
-        100,
-        200
+        200,
+        400
       ],
-      "qualification_completion": "same_task_other deferred until correct near/over target with adjacent stable candidates; final causal controls only after selection frozen"
+      "qualification_completion": "no formal qualification or final checkpoint selection in this causal goal"
     },
     "checkpoint_updates": [
-      100,
-      200
+      200,
+      400
     ],
     "supervised_validation": {
       "task_ids": [
@@ -312,8 +314,8 @@
         39
       ],
       "optimizer_updates": [
-        0,
-        200
+        200,
+        400
       ],
       "action_demos": [
         42,
@@ -332,18 +334,6 @@
       "seed": 20260908,
       "gradients": false,
       "checkpoint_selection": false
-    },
-    "plateau": {
-      "minimum_informative_qualification_nodes": 3,
-      "validation_best_gain_at_most": 5,
-      "held_fm_relative_improvement_at_most": 0.02,
-      "interpretation": "multiple informative correct nodes, sufficient cumulative supervised exposure and training capability jointly; early64 or192 updates do not establish saturation",
-      "exposure_reference_queries": {
-        "v5_2": 75600,
-        "v6_fast": 192000,
-        "sft": 230400
-      },
-      "train96_best_gain_at_most": 2.4
     },
     "fresh_initialization": {
       "writer": "all trainable modules fresh, legal LoRA identity",

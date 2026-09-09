@@ -22,7 +22,8 @@ PROCESS_LANGUAGE_SOURCE = "frame_contextual_task_tokens_v1"
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
     if (config.get("compiler_language_mode") != COMPILER_LANGUAGE_MODE
-            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE):
+            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE
+            or config.get("decoder_rank_sharing") not in {"independent", "within_target"}):
         raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
 
 
@@ -41,10 +42,12 @@ class HorizonWriterConfig:
     activation_checkpoint: bool = True
     compiler_language_mode: str = COMPILER_LANGUAGE_MODE
     process_language_source: str = PROCESS_LANGUAGE_SOURCE
+    decoder_rank_sharing: str = "independent"
 
     def __post_init__(self) -> None:
         require_architecture_identity({"compiler_language_mode": self.compiler_language_mode,
-                                       "process_language_source": self.process_language_source})
+                                       "process_language_source": self.process_language_source,
+                                       "decoder_rank_sharing": self.decoder_rank_sharing})
         positive = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
                     self.blocks, self.radius, self.compiler_blocks, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
@@ -106,7 +109,8 @@ class HorizonRelationWriter(nn.Module):
         self.query_language = nn.Linear(width, width)
         self.time_projection = nn.Linear(width, width, bias=False)
         self.compiler = nn.ModuleList([CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
-        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width)
+        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width,
+                                               share_ranks=config.decoder_rank_sharing == "within_target")
 
     def encode_language(self, embeddings: Tensor, mask: Tensor, *, positions: Tensor | None = None) -> Tensor:
         if embeddings.ndim not in (2, 3) or embeddings.shape[-1] != self.config.language_width:

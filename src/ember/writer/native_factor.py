@@ -1,4 +1,4 @@
-"""Complete native A/B factors with independent target/rank/side decoders."""
+"""Complete native A/B factors with an isolated within-target rank binding."""
 from __future__ import annotations
 
 import torch
@@ -11,14 +11,15 @@ from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRAContract, identity_lora
 class _NativeGroup(nn.Module):
     """Batch targets of identical native shape without sharing their D tensors."""
 
-    def __init__(self, indices: list[int], contract: LoRAContract, identity: dict, width: int) -> None:
+    def __init__(self, indices: list[int], contract: LoRAContract, identity: dict, width: int, *, share_ranks: bool) -> None:
         super().__init__()
         targets = [contract.targets[index] for index in indices]
         self.names = tuple(target.name for target in targets)
         self.register_buffer("indices", torch.tensor(indices), persistent=False)
         self.register_buffer("identity_a", torch.stack([identity[name + LORA_A_SUFFIX] for name in self.names]))
-        self.a_factors = nn.Parameter(torch.zeros(len(targets), contract.rank, targets[0].in_features, width))
-        self.b_factors = nn.Parameter(torch.zeros(len(targets), contract.rank, targets[0].out_features, width))
+        rank_owners = 1 if share_ranks else contract.rank
+        self.a_factors = nn.Parameter(torch.zeros(len(targets), rank_owners, targets[0].in_features, width))
+        self.b_factors = nn.Parameter(torch.zeros(len(targets), rank_owners, targets[0].out_features, width))
 
     def forward(self, a_code: Tensor, b_code: Tensor) -> tuple[Tensor, Tensor]:
         a = self.identity_a + torch.matmul(self.a_factors, a_code[..., None]).squeeze(-1)
@@ -29,7 +30,7 @@ class _NativeGroup(nn.Module):
 class NativeFactorLoRADecoder(nn.Module):
     """A0 + D_A GELU(U_A c), D_B GELU(U_B c); no task dictionary."""
 
-    def __init__(self, contract: LoRAContract, width: int, factor_width: int = 256) -> None:
+    def __init__(self, contract: LoRAContract, width: int, factor_width: int = 256, *, share_ranks: bool = False) -> None:
         super().__init__()
         self.contract, self.width = contract, width
         self.a_code, self.b_code = (nn.Linear(width, factor_width, bias=False) for _ in range(2))
@@ -38,7 +39,8 @@ class NativeFactorLoRADecoder(nn.Module):
             grouped.setdefault((target.in_features, target.out_features), []).append(index)
         identity = identity_lora_state(contract)
         self.groups = nn.ModuleList([
-            _NativeGroup(indices, contract, identity, factor_width) for indices in grouped.values()
+            _NativeGroup(indices, contract, identity, factor_width, share_ranks=share_ranks)
+            for indices in grouped.values()
         ])
 
     def forward(self, codes: Tensor) -> dict[str, Tensor]:

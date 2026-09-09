@@ -53,8 +53,9 @@ def _task_rows(ids, selection):
 def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
-    run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
+    run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "exploratory", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
+    run["model_config"]["decoder_rank_sharing"] = "within_target"
     run["model_config"]["compiler_language_mode"] = "first_query_only_v1"
     run["model_config"]["process_language_source"] = "frame_contextual_task_tokens_v1"
     run["config"]["model"] = dict(run["model_config"])
@@ -471,7 +472,7 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
     run = json.loads(run_path.read_text())
     (run["config"] if field in {"execution_precision", "update_version"} else run)[field] = value
     run_path.write_text(json.dumps(run))
-    with pytest.raises(ValueError, match="formal supervised"):
+    with pytest.raises(ValueError, match="exploratory Writer"):
         inspect_writer_checkpoint(checkpoint)
 
 

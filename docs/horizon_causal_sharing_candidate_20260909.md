@@ -33,3 +33,11 @@ CPU检查只证明改动真实且局限在该接口，不证明泛化收益。�
 两个固定节点均需validation400及held-video train96的逐task/suite、breadth和R/G/L/churn。train提高但validation不改善，不能称迁移修复；validation收益若伴随大规模丢失或仅单点出现，不能称保持改善。两侧均更差只否定这个具体绑定，不证明所有共享有害。稳定且有广度的收益才支持继续用独立教师/状态复核，不自动正式采纳。
 
 目前没有该候选的训练、checkpoint、闭环结果或启动安排。当前运行仍只有两组语言路径对照。
+
+## 已完成的准备与未验证范围
+
+隔离实现位于`codex/horizon-causal-sharing`，从main建立，沿用已检验的探索训练/物化身份处理，只在当前`native_factor.py`增加同target跨rank绑定；没有新增model模块、runner或架构包。探索schema与`decoder_rank_sharing`字段拒绝误读旧checkpoint，formal入口不可用。候选不合入main；最终不采用时由Git保留原件，清理此task-owned工作树，不留下canonical fallback。
+
+模型/物化/FM三组CPU检查共86项通过（首次85pass，1项测试对无梯度的None处理修正后定向pass）。共享和独立两种参数化均验证了identity后的完整图功能反向，显式验证共享梯度为rank贡献之和、跨target/side隔离、不同rank输出仍可不同。配置解析通过。精确参数计数：Writer368,675,520→59,755,200，D329,515,008→20,594,688；只报告数量，不把减少解释为疗效。
+
+结构检查无hard violation；review项来自既有大文件/长函数，实际方法改动集中于两个已有owner，Git authority仅作隔离分支替换。没有GPU profile、真实学习、闭环结果或launch脚本；86项CPU通过不能代替这些证据。

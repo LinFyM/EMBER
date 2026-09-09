@@ -298,8 +298,9 @@ def _functional_loss(generated, contract, inputs, targets):
 
 
 @pytest.mark.parametrize("checkpointed", [False, True])
-def test_identity_then_functional_update_reaches_complete_graph(checkpointed):
-    writer = HorizonRelationWriter(_contract(), _config(activation_checkpoint=checkpointed))
+@pytest.mark.parametrize("sharing", ["independent", "within_target"])
+def test_identity_then_functional_update_reaches_complete_graph(checkpointed, sharing):
+    writer = HorizonRelationWriter(_contract(), _config(activation_checkpoint=checkpointed, decoder_rank_sharing=sharing))
     response, times, visual, mask = _input(5, writer.config)
     response.requires_grad_()
     visual.requires_grad_()
@@ -419,3 +420,50 @@ def test_static_embedding_content_only_conditions_the_compiler_lookup():
     hook.remove()
     torch.testing.assert_close(observed[0], observed[1])
     assert any(not torch.allclose(first[name], second[name]) for name in first)
+
+
+def test_rank_binding_preserves_identity_complete_shape_and_common_rng():
+    torch.manual_seed(7)
+    independent = HorizonRelationWriter(_contract(True), _config())
+    original_rng = torch.get_rng_state()
+    torch.manual_seed(7)
+    shared = HorizonRelationWriter(_contract(True), _config(decoder_rank_sharing="within_target"))
+    assert torch.equal(original_rng, torch.get_rng_state())
+    generated = _call(shared, [_input(1, shared.config)], _language(shared.config))
+    validate_lora_state(generated, shared.contract)
+    assert len(generated) == 76
+    for name, value in identity_lora_state(shared.contract).items():
+        torch.testing.assert_close(generated[name], value, rtol=0, atol=0)
+    count = lambda model: sum(g.a_factors.numel() + g.b_factors.numel() for g in model.decoder.groups)
+    assert count(independent) == shared.contract.rank * count(shared)
+    assert all(g.a_factors.shape[1] == g.b_factors.shape[1] == 1 for g in shared.decoder.groups)
+
+
+def test_rank_binding_is_the_same_map_and_sums_rank_credit_without_target_leak():
+    shared = HorizonRelationWriter(_contract(), _config(decoder_rank_sharing="within_target"))
+    independent = HorizonRelationWriter(_contract(), _config())
+    _unlock(shared)
+    with torch.no_grad():
+        independent.decoder.a_code.load_state_dict(shared.decoder.a_code.state_dict())
+        independent.decoder.b_code.load_state_dict(shared.decoder.b_code.state_dict())
+        for left, right in zip(shared.decoder.groups, independent.decoder.groups):
+            right.a_factors.copy_(left.a_factors.expand_as(right.a_factors))
+            right.b_factors.copy_(left.b_factors.expand_as(right.b_factors))
+    code = torch.randn(3, 2, 12)
+    actual, expected = shared.decoder(code), independent.decoder(code)
+    vectors = {name: torch.randn_like(value) for name, value in actual.items()}
+    for name in actual:
+        torch.testing.assert_close(actual[name], expected[name])
+    for output in (actual, expected):
+        sum((output[name] * vectors[name]).sum() for name in output).backward()
+    for left, right in zip(shared.decoder.groups, independent.decoder.groups):
+        torch.testing.assert_close(left.a_factors.grad, right.a_factors.grad.sum(1, keepdim=True))
+        torch.testing.assert_close(left.b_factors.grad, right.b_factors.grad.sum(1, keepdim=True))
+    assert not torch.allclose(actual['right' + LORA_B_SUFFIX][:, 0], actual['right' + LORA_B_SUFFIX][:, 1])
+    shared.zero_grad(set_to_none=True)
+    shared.decoder(code)['right' + LORA_B_SUFFIX][:, 1].sum().backward()
+    for group in shared.decoder.groups:
+        for index, name in enumerate(group.names):
+            active = group.b_factors.grad is not None and bool(group.b_factors.grad[index].abs().sum() > 0)
+            assert active == (name == 'right')
+        assert group.a_factors.grad is None

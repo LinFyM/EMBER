@@ -20,7 +20,11 @@ fresh formal来自clean pushed detached `9abc9b95`，运行面`.codex/worktrees/
 
 续段从clean pushed frozen `9abc9b95`恢复，注册提交`eae45a9a`。tmux `ember-frame-contextual-resume200-400`，torchrun1632368、四rank1632649–1632652；原world4、物理2/6/4/0和micro6/6/4/3保持。已完成201–203实际更新，12条件/768queries与前轮及原始同节点逐条匹配；201耗时17.237秒，前三步均值16.588秒，峰值reserved34.988GiB，Writer/Meta梯度正常。具体命令、日志与launch合同位于`k1_frame_contextual/segment200_400/`。
 
-续段launch前双节点live实查，原rank UUID全部匹配，free MiB按rank45906/41319/40314/28855、util0/0/2/2，均为有用共驻设备。strg01的data1 used630901968KiB/soft1073741824、hard1084227584；当前run13GiB、analysis1.4MiB、旧profile4.2GiB已计入用量，shared84TiB。新峰值16GiB含两个完整checkpoint8.3、两个validation+train96 banks4.4、临时与余量3.3，预算充足且复用全部资产。没有启动other/最终controls/meta/RL/Test。>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
+300完整checkpoint现已保存并通过public inspector；201–300全部400条件/25600queries与前轮及原始同节点逐条匹配、各suite100，累计1200条件/76800queries、366种task-video。本100更新均值15.886秒、更新墙钟1588.61秒，allocated/reserved峰值31.899/35.000GiB。训练继续400。300 correct400独立bank已在GPU01物理3启动，tmux `ember-frame-contextual-bank300`（pane2817697），现场free29058MiB/util3；GPU02四训练rank保持。原件`segment200_400/step300/{training_summary,checkpoint_validation,materialization_launch}.json`，尚无300闭环结果。
+
+300 bank前strg01实查data1 used635234028KiB，当前run17GiB、shared84TiB；续段16GiB新增预算已包括300 checkpoint，约余11.8GiB，300 bank预计新增约2GiB。400 held FM已明确沿用前轮冻结checkpoint后的独立执行方式；自动训练诊断配置仍0/200，resume配置不改。
+
+续段launch前双节点live实查，原rank UUID全部匹配，free MiB按rank45906/41319/40314/28855、util0/0/2/2，均为有用共驻设备。strg01的data1 used630901968KiB/soft1073741824、hard1084227584；当时run13GiB、analysis1.4MiB、旧profile4.2GiB已计入用量，shared84TiB。新峰值16GiB含两个完整checkpoint8.3、两个validation+train96 banks4.4、临时与余量3.3，预算充足且复用全部资产。没有启动other/最终controls/meta/RL/Test。>145全部资格及最终32/8 fresh/Test仍未完成，Owner完整自主授权继续。
 
 ## 历史：首层语言内容对照及功能对应分析（本轮前已全部完成）
 

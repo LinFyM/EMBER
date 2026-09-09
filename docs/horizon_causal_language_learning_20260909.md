@@ -79,4 +79,6 @@ local_only在两个面板均有小幅净增，none没有提高训练任务整体
 
 400直接none→local_only的train96比较为R/G/L45/11/12、churn23、J=.6618；总分接近仍伴随成功得失。原件`local_only_step400/train96_analysis/vs_none_same_step.json`保留实际配对和成功集合。
 
+收益参照也需限定：上一版first-query-only的train96为200步46、400步59。补充实际strict比较后，400 first-query→none为R/G/L46/11/13，→local_only为44/12/15；因此57/56是相对contextual49的恢复，尚未超过上一版59，不能包装成解决了Horizon总体能力缺口。200对应比较为33/6/13和35/11/11。四个原件位于各`train96_analysis/vs_first_query_same_step.json`；这是已有行为参照，主因果对照仍以当前contextual为共同基线。
+
 完整逐task、suite、同节点及相邻成功集合见`language/{arm}_step400/train96_analysis/`。400两个validation400仍在原进程执行，未读取局部分数；未见任务迁移与反复丢失任务的解释待完整结果。

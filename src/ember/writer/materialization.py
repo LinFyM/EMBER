@@ -23,8 +23,8 @@ from ember.writer.data import RawTeacherVideoStore
 from ember.writer.horizon import require_architecture_identity
 
 
-RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
-STAGE = "horizon_relation_writer_fresh_supervised"
+RUN_SCHEMA = "ember_horizon_causal_learning_run_v1"
+STAGE = "horizon_causal_learning_exploratory"
 TRAINING_SCHEMA = "ember_horizon_supervised_training_state_v1"
 UPDATE_VERSION = "supervised_fm_writer_meta_v1"
 BANK_SCHEMA = "ember_horizon_writer_lora_bank_v1"
@@ -51,7 +51,7 @@ def source_matches(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
 
 
 def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Check formal supervised authority with metadata-only trainer tensor loading."""
+    """Check exploratory learning authority with metadata-only trainer tensor loading."""
     checkpoint = checkpoint.resolve()
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
@@ -61,14 +61,14 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
-            or run.get("stage") != STAGE or run.get("mode") != "formal"
+            or run.get("stage") != STAGE or run.get("mode") != "exploratory"
             or run.get("config", {}).get("update_version") != UPDATE_VERSION
             or run.get("config", {}).get("execution_precision") != "native_mixed_without_outer_autocast"
             or not frozen_authority(run.get("git", {}))
             or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
             or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA
             or manifest.get("next_macro") != macro or set(manifest.get("files", {})) != expected):
-        raise ValueError("materialization requires a complete formal supervised Writer checkpoint")
+        raise ValueError("materialization requires a complete exploratory Writer checkpoint")
     for name, record in manifest["files"].items():
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(record["bytes"]):

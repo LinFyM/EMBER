@@ -258,6 +258,42 @@ def test_compiler_language_can_route_but_cannot_supply_residual_content():
     assert all(value.abs().sum() > 0 for value in gradient)
 
 
+@pytest.mark.parametrize("conditioning", ["all", "local_only", "none"])
+def test_exploratory_conditions_change_only_registered_routes(conditioning):
+    writer = HorizonRelationWriter(_contract(), _config(backend_conditioning=conditioning))
+    response, times, visual, mask = _input(5, writer.config)
+    states = writer.input_projection(response) + writer.horizon_embedding
+    language = torch.randn(5, writer.config.width)
+    group = writer.process_groups[0]
+    first = group(states, times, language, visual, mask, writer.horizon_embedding)[1]
+    second = group(states, times, -language, visual, mask, writer.horizon_embedding)[1]
+    if conditioning == "none":
+        torch.testing.assert_close(first, second, rtol=0, atol=0)
+    else:
+        assert not torch.allclose(first, second)
+    query_first = writer.compile([first], [times], language[0])
+    query_second = writer.compile([first], [times], -language[0])
+    if conditioning != "all":
+        torch.testing.assert_close(query_first, query_second, rtol=0, atol=0)
+    else:
+        assert not torch.allclose(query_first, query_second)
+
+
+@pytest.mark.parametrize("conditioning", ["local_only", "none"])
+def test_exploratory_learning_keeps_native_and_visual_paths(conditioning):
+    writer = HorizonRelationWriter(_contract(), _config(backend_conditioning=conditioning))
+    _unlock(writer)
+    response, times, visual, mask = _input(5, writer.config)
+    response.requires_grad_()
+    visual.requires_grad_()
+    generated = _call(writer, [(response, times, visual, mask)], _language(writer.config))
+    sum(value.square().sum() for value in generated.values()).backward()
+    assert response.grad.abs().sum() > 0 and visual.grad.abs().sum() > 0
+    assert writer.query_language.weight.grad is None
+    assert all(group.read_language.weight.grad.abs().sum() == 0 for group in writer.process_groups)
+    assert all(group.read_language.bias.grad.abs().sum() > 0 for group in writer.process_groups)
+
+
 @pytest.mark.parametrize("mode", [None, "language_residual_v1", "first_query_only_v1"])
 def test_runtime_rejects_unmarked_or_old_compiler_before_loading_assets(tmp_path, mode):
     from ember.writer.runtime import build_runtime

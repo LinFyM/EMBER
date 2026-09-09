@@ -27,15 +27,15 @@ from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
-STAGE = "horizon_relation_writer_fresh_supervised"
+RUN_SCHEMA = "ember_horizon_causal_learning_run_v1"
+STAGE = "horizon_causal_learning_exploratory"
 TRAINING_SCHEMA = "ember_horizon_supervised_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    expected_model = asdict(HorizonWriterConfig())
+    expected_model = asdict(HorizonWriterConfig(backend_conditioning=config["model"].get("backend_conditioning", "")))
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
@@ -237,7 +237,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     if context.is_main:
         reconcile_metrics(args.output / "exposures.jsonl", updates, metrics_rows, cursor_key="step", packet_label="exposures")
         reconcile_metrics(args.output / "metrics.jsonl", updates, updates, cursor_key="step", packet_label="metrics")
-        if args.mode == "formal":
+        if args.mode == "exploratory":
             nodes = config["evidence"]["supervised_validation"]["optimizer_updates"]
             count = sum(node <= updates for node in nodes) * len(data.tasks)
             if count or (args.output / "diagnostics.jsonl").exists():
@@ -284,8 +284,8 @@ def _checkpoint_nodes(args, config):
 def _segment_limit(args, config):
     nodes = _checkpoint_nodes(args, config)
     stop = nodes[-1] if args.stop_after_step is None else args.stop_after_step
-    if stop <= 0 or (args.mode == "formal" and (len(nodes) != 2 or stop != nodes[-1])):
-        raise ValueError("formal segment needs two registered checkpoint nodes and must stop at the last")
+    if stop <= 0 or (args.mode == "exploratory" and (len(nodes) != 2 or stop != nodes[-1])):
+        raise ValueError("exploratory segment needs two registered checkpoint nodes and must stop at the last")
     return stop
 
 
@@ -318,12 +318,12 @@ def _validate_actions(args, engine, data, context, config, step):
 def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
     updates, metrics_rows = cursors
     nodes = _checkpoint_nodes(args, config)
-    if args.mode == "formal" and any(node <= updates for node in nodes):
+    if args.mode == "exploratory" and any(node <= updates for node in nodes):
         raise ValueError("segment checkpoint nodes must follow the restored update cursor")
     if context.is_main:
         print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
                           "resume": str(args.resume) if getattr(args, "resume", None) else None}), flush=True)
-    if args.mode == "formal" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
+    if args.mode == "exploratory" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
         _validate_actions(args, engine, data, context, config, 0)
     while updates < stop:
         tick = time.perf_counter()
@@ -333,7 +333,7 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
         metrics_rows = _record_iteration(args, context, config, rows, norms, updates,
                                          metrics_rows, time.perf_counter() - tick, scheduler)
         if updates == stop or updates in nodes:
-            if args.mode == "formal" and updates in config["evidence"]["supervised_validation"]["optimizer_updates"]:
+            if args.mode == "exploratory" and updates in config["evidence"]["supervised_validation"]["optimizer_updates"]:
                 _validate_actions(args, engine, data, context, config, updates)
             save_ecp_checkpoint(
                 output_dir=args.output, macro=updates, stage=STAGE, context=context,
@@ -355,8 +355,8 @@ def run(args: argparse.Namespace) -> None:
 
     config = _config(args.config)
     state = git_state(REPO_ROOT)
-    if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
-        raise ValueError("formal supervised training requires a clean pushed detached worktree")
+    if args.mode == "exploratory" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
+        raise ValueError("exploratory learning requires a clean pushed detached worktree")
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     if not 1 <= context.world_size <= 4:
@@ -397,7 +397,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_horizon_writer_v1.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--mode", choices=("profile", "formal"), required=True)
+    parser.add_argument("--mode", choices=("profile", "exploratory"), required=True)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-updates", help="this segment's two global update nodes, e.g. 300,400")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")

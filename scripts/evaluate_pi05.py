@@ -272,7 +272,14 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     if ready_to_aggregate:
         return _finalize_aggregate(output_dir)
     physical_gpu_ids = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    preflight = _gpu_preflight(physical_gpu_ids)
+    preflight = _gpu_preflight(
+        physical_gpu_ids,
+        materialized_lora_replicas=(
+            int(contract["parallel"]["replicas_per_gpu"])
+            if (contract.get("adapter") or {}).get("kind") == "static_task_lora_bank"
+            else None
+        ),
+    )
     if not _evaluator_gpus_are_eligible(preflight):
         raise Pi05EvaluationError("selected GPUs do not satisfy evaluator admission limits")
     if preflight.get("device_names") != ["NVIDIA A40"] * len(physical_gpu_ids):

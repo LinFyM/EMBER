@@ -15,7 +15,10 @@ from ember.pi05_assets import Pi05EvaluationError
 
 
 MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
-MIN_EVALUATOR_GPU_FREE_MEMORY_MIB = 32 * 1024
+# Measured materialized-LoRA workers peak below 12 GiB including CUDA context.
+EVALUATOR_WORKER_MEMORY_MIB = 12 * 1024
+EVALUATOR_GPU_HEADROOM_MIB = 2 * 1024
+OTHER_EVALUATOR_FREE_MEMORY_MIB = 32 * 1024
 
 
 def _storage_root() -> Path:
@@ -27,11 +30,21 @@ def _storage_root() -> Path:
     return Path(configured).expanduser().resolve()
 
 
-def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
+def gpu_preflight(
+    physical_gpu_ids: Sequence[int], *, materialized_lora_replicas: int | None = None,
+) -> dict[str, Any]:
     """Record storage, CUDA runtime, GPU telemetry, and co-scheduled processes."""
 
     import torch
 
+    required_memory_mib = OTHER_EVALUATOR_FREE_MEMORY_MIB
+    if materialized_lora_replicas is not None:
+        if materialized_lora_replicas < 1:
+            raise Pi05EvaluationError("evaluator replicas_per_gpu must be positive")
+        required_memory_mib = (
+            materialized_lora_replicas * EVALUATOR_WORKER_MEMORY_MIB
+            + EVALUATOR_GPU_HEADROOM_MIB
+        )
     selected_indices = tuple(int(value) for value in physical_gpu_ids)
     if (
         not selected_indices
@@ -134,7 +147,10 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         "compute_applications": owned_applications,
         "gpu_admission_policy": {
             "max_utilization_percent": MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
-            "min_free_memory_mib": MIN_EVALUATOR_GPU_FREE_MEMORY_MIB,
+            "min_free_memory_mib": required_memory_mib,
+            "materialized_lora_replicas": materialized_lora_replicas,
+            "materialized_worker_memory_mib": EVALUATOR_WORKER_MEMORY_MIB,
+            "materialized_gpu_headroom_mib": EVALUATOR_GPU_HEADROOM_MIB,
         },
         "python": sys.version,
         "torch": torch.__version__,
@@ -155,11 +171,12 @@ def evaluator_gpus_are_eligible(preflight: Mapping[str, Any]) -> bool:
     """Admit low-load devices by remaining capacity, regardless of peer allocation."""
     telemetry = preflight.get("gpu_telemetry", ())
     expected = preflight.get("physical_gpu_ids", ())
+    required_memory_mib = int(preflight["gpu_admission_policy"]["min_free_memory_mib"])
     return len(telemetry) == len(expected) and all(
         int(row["utilization_percent"])
         <= MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT
         and int(row["memory_total_mib"]) - int(row["memory_used_mib"])
-        >= MIN_EVALUATOR_GPU_FREE_MEMORY_MIB
+        >= required_memory_mib
         for row in telemetry
     )
 

@@ -13,14 +13,23 @@ from ember.pi05_eval_queue import publish_json_exclusive
 
 
 @pytest.mark.parametrize(
-    ("memory_used_mib", "utilization_percent", "eligible"),
-    [(9551, 10, True), (13300, 0, True), (13301, 0, False), (9551, 11, False)],
+    ("memory_used_mib", "utilization_percent", "required_memory_mib", "eligible"),
+    [
+        (16998, 1, 26624, True),  # Two workers fit beside an idle 17 GiB peer.
+        (16998, 1, 38912, False),  # The same GPU cannot fit three workers.
+        (9551, 10, 26624, True),
+        (9551, 11, 26624, False),
+        (19444, 0, 26624, True),
+        (19445, 0, 26624, False),
+    ],
 )
 def test_gpu_admission_uses_remaining_capacity_and_live_load(
-    memory_used_mib: int, utilization_percent: int, eligible: bool,
+    memory_used_mib: int, utilization_percent: int,
+    required_memory_mib: int, eligible: bool,
 ) -> None:
     preflight = {
         "physical_gpu_ids": [2],
+        "gpu_admission_policy": {"min_free_memory_mib": required_memory_mib},
         "gpu_telemetry": [{
             "physical_gpu": 2, "memory_total_mib": 46068,
             "memory_used_mib": memory_used_mib,

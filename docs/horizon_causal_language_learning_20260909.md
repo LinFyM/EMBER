@@ -208,3 +208,21 @@ Compiler关闭在两种H-read背景、两个验证节点均正增，是当前共
 双相机检查显示：候选400四例都围绕正确的棕色橙盖BBQ操作，states0/25/37抓取并送入篮子，state12反复尝试但未完成运输。此前同四state的all400均操作绿色干扰瓶。因此本次实例支持Compiler简化伴随目标选择保持的改善，不能把改善全部归为一般抓取/运输技巧。200的state12也未送入篮子，过程中碰倒绿色干扰瓶并移动BBQ；不把所有失败都统一成目标识别问题。
 
 这是事后选定task、沿用固定state的描述性回放，不替代完整400或新初始化/换视频复核。原件`compiler_confirmation/replay/completed_summary.json`、双相机contact与轨迹全部保留。初次缺少LIBERO配置链接的启动失败发生在任何queue claim/rollout之前，原日志另存`bootstrap_attempt1`；补原有配置symlink后的这次完成不属于结果驱动重试。
+
+### 历史分差与尚未取得的能力须分别解释
+
+为判断当前修正覆盖了哪些差距，复算三个此前已明确引用的历史节点原始400行，并与当前seed7 all/LH400分解到suite。以下是历史配方的描述性参照，未把不同训练协议、视频分配或初始化强行当成受控配对；不能用36除以历史分差，声称已经解释某个百分比。
+
+| 固定参照节点 | 总成功 | Spatial | Object | Goal | Long |
+|---|---:|---:|---:|---:|---:|
+| v5.2 old900 | 132 | 19 | 63 | 39 | 11 |
+| v6 old500 | 121 | 2 | 60 | 41 | 18 |
+| v6 task-complete400 | 143 | 3 | 83 | 36 | 21 |
+| 当前all400 | 90 | 2 | 44 | 35 | 9 |
+| 当前local_h_read400 | 126 | 1 | 70 | 36 | 19 |
+
+当前真正受控的Compiler关闭+36分解为Spatial−1、Object+26、Goal+1、Long+10；主要是Object/Long能力的获取或保持改变。它使本次候选总分高于旧v6 old参照，但不证明两个方法等价或候选已经稳定。对v6 task-complete143，候选剩余17的描述性差额主要为Object13、另有Spatial2与Long2；对v5.2 old132，候选Spatial少18、Goal少3，被Object多7与Long多8部分抵消。因此不能将历史差距笼统说成所有suite均变弱，也不能由总分接近忽略v5.2曾取得的Spatial task3能力（19/50，对当前候选1/50）。
+
+另外，Goal23和Long32的严重弱势不是当前Horizon独有：上述历史节点Goal23为1/0/0、Long32为0/0/1；三个历史配方的已保存完整曲线中，Goal23最多1/50，Long32最多5/4/4。它们仍是EMBER必须解决的科学能力缺口，但不能当作“旧强模型已解决、被当前架构全部丢掉”的事实。Spatial task1在三条旧曲线也最多3/3/2；Spatial task3则存在v5.2的实质反例，不能一并归为从未取得。
+
+原件`compiler_confirmation/historical_residual_context.json`包含当前和历史逐task/suite、原始行复算及历史曲线范围。独立初始化与换视频复核仍在运行；这些分解用于明确剩余问题，不提前采纳候选或启动未登记的新架构。

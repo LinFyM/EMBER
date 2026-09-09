@@ -2,27 +2,15 @@
 
 更新时间：2026-09-09 CST。Owner最新授权深入分析与诊断实验，当前禁止正式架构/训练方式修改及正式训练启动。
 
-## 当前：冻结分支行为已完整，局部接口诊断继续
+## 当前：原因诊断已完整结束，正式修改与训练保持未启动
 
-Owner要求综合语言分支与整体能力缺口，尽可能实际验证原因并提出方案；禁止正式架构/训练方式修改和正式训练启动。canonical源码/配置、Writer/Meta/source与所有正式checkpoint保留；当前只有临时分析脚本及冻结执行/已登记train-only局部变量。active design §8.2.10与`docs/horizon_k1_causal_diagnostics_20260909.md`统一登记协议和结果。
+Owner授权的诊断已完整交付，报告`docs/horizon_k1_causal_diagnostics_20260909.md`，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/summary.json`。B1/B2、B3、C局部求解及新噪声复核、固定接口闭环和目标回放全部完成；新诊断闭环676行，最终worker均exit0，实际配对/冻结状态/sampler边界通过。canonical源码、架构、正式训练配方及checkpoints未改；无新的正式训练、validation/test梯度、最终视频controls或Test。
 
-上下文400全部正式证据已完整：validation90/400、S/O/G/L2/44/35/9、breadth6；300→400 R/G/L63/27/16、churn43，200→40056/34/47、churn81。BBQ25→3→1且原25成功全丢失；train96=49、breadth20（本轮20041、前轮40059）；held3072 FM .105074533更低仍未对应行为优势。全部配对、checkpoint/bank检查及worker退出通过，没有待完成formal任务，不追加500/600。完整报告`docs/horizon_k1_frame_contextual_20260909.md`、原件`k1_frame_contextual/segment200_400/round_evidence.json`。
+完整native面板确认context400动作MSE更低仍比first-query400闭环弱。B3 normal51/96，H-read/Compiler/visual零54/52/54，净差小而成功得失混合；全部后端语言零40，主要损失Spatial/Object。C normal/P4/C/A-B/expert为18/17/20/15/16（各32）；task7 free-C从1/4到4/4，但C整体仍有Goal/Long损失。A/B原fit收益换time/noise后仅保留6.8%，独立episode全八task变差，不能用局部fit排容量。两条Long回放已转向正确第二对象后操作失败，既有专家同状态也失败。
 
-B1九臂/两checkpoint/两teacher/24tasks均完整，两个exit0、各13824 arm query预测、实际输入/RNG及hook覆盖通过。CPU已重建102400实际监督queries并复核历史专家/clone/G1/G2/oracle适用边界。B1说明局部消息和部分语言路径有功能影响，不能单独证明职责或fresh删除收益；近似KV路径后来未通过C某fit面板的原生核对，因此B1小差异以B2完整native复核为准。原件`causal_diagnostics_20260909/branches/`、`supervision_distribution/`。
+原因排序与方案见报告§13：优先取得可信行为/功能参照，检验有效策略修正和实际到达/恢复状态的学习，再分别检验语言简化与P4→C获取；不由分支lesion、更多参数或旧专家总分直接宣布修复。独立meta-task数量仍是候选因素而非已确认根因。
 
-B2已完整24tasks×12列×128queries，FM与10-step采样各36864预测、两个wrapper exit0（2148.45/2105.15秒），所有task采样cache最大动作差0、真实time/noise/target配对与sampler检查通过。context200→400前5 native sampled MSE .105742→.102172；比first-query400 .104265更低却train/validation闭环更弱。前5夹爪符号错误率5.927%→6.182%，但切换±2邻域FM及采样MSE均改善，B1小面板事件退化未稳健复现。H-read/Compiler/visual/all-language干预前5动作RMS约.00224/.05073/.02871/.12740，不能仅按平均FM判断分支作用。原件`openloop/summary.json`、报告§8。
-
-C正在GPU02p0/2/4/6四进程运行，tasks分别0/14、7/16、20/34、25/35。固定teacher46、128fit queries16–41与128独立queries42–45；各臂只优化临时P4/C/完整A-B，64Adam更新、固定最终点，无正式参数/optimizer/sampler更新。当前采用完整native joint FM；经一次8query实证对照（原生action输出及全部76 LoRA梯度差0），在临时梯度作用域切除对AE LoRA无贡献的冻结Pali o_proj反传，物理micro4/8/8/8。此前device placement、近似cache、micro8 OOM及无cut中途尝试分别保留日志，不混入最终曲线。原件`local_oracle/launch_contract.json`、`prefix_gradient_check.json`及各group运行记录。完成后固定八task×四state×六臂（source/normal/P4/C/A-B/expert）192行诊断闭环，不能纳入零交互分数。
-
-B3冻结分支闭环全部完成：480行、120queue jobs、六worker全部exit0，实际task/state/teacher/RNG配对通过。全部teacher46的normal51/96（S/O/G/L15/15/13/8，breadth20）；H-read language零54，R/G/L47/7/4；Compiler language零52，40/12/11；visual-read零54，45/9/6；三处language同时零40，33/7/18、breadth17。单支路净变化小且得失混合，全language零主要损失Spatial/Object；不能推出fresh删除收益或最终视频必要性。原件`branch_rollout/closedloop/summary.json`，完整解释与逐task表见报告§9.2。两个B3 GPU已随worker正常退出释放。
-
-资源：B3 launch时strg01/data1 used644418584KiB/soft1073741824、hard1084227584；当时analysis308MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B3 rollout launch重新实查两节点，p1/3各45906MiB free/util0，仅各148MiB轻占用；quota used644871904KiB。连同C共六张有用卡，不改变他人进程。后续新launch前刷新相关资源。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
-
-B3部分目标记录进一步显示global36五臂均0/4，杯子目标已达到而布丁目标从未达到；normal杯子完成于114–136步，余下约400步仍未完成另一目标。按报告§11准备normal36/38各固定state32的两次可视回放，复用已有LoRA，只启用官方occupancy capture；物理batch1与原batch4不同，先验证失败模式是否复现，不改原B3分数、不选换状态。预计新增小于.4GiB，仍在原2GiB诊断预算。
-
-C另按诊断报告§10登记固定fit查询的冻结重采样复核：保留同128个fit图像/state/动作，只把policy RNG seed加100000003，检查normal及三个final64 adapter，共4096query预测、无梯度；脚本已准备，待C完整后与192行闭环并行。它区分固定time/noise点的适配与跨状态/episode泛化，不新增局部优化。
-
-下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环及上述冻结复核；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。
+现有formal上下文400证据仍为validation90/400、train49/96，未达到科学资格，不追加500/600。当前没有待运行的诊断或正式任务；下一步是讨论本报告的方案，正式架构/训练修改与launch仍在本次授权之外。GPU诊断进程均已结束，所有有用原件保留。
 
 ## 历史：上下文条件保持段已全部完成，详细执行记录
 

@@ -889,3 +889,12 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 400 train96=49、breadth20（前轮59），对本轮20041为30/19/11；held3072 FM .105074533（前轮.105737594）。训练、checkpoint、全部896新bank条件、闭环配对与worker退出均通过；续段wrapper3308.24秒，300/400 validation1981.63/2055.91秒，train96673.07秒。本轮不追加500/600，转Owner最新授权的诊断分析，禁止正式架构/训练改动和正式launch。
 
 完整[100–400报告](horizon_k1_frame_contextual_20260909.md)，原件`k1_frame_contextual/segment200_400/round_evidence.json`；诊断另见[报告](horizon_k1_causal_diagnostics_20260909.md)，不从本历史段恢复实验。
+
+
+## 2026-09-09 完整原因诊断：676行闭环与固定接口反证
+
+在Owner禁止正式架构/训练改动和正式launch的范围内，完成监督/历史审计、B1冻结分支、B2完整native FM与10步采样、B3 480行分支闭环、八task三层final64局部求解/新time-noise复核、192行接口闭环及四条正常/专家目标回放。所有最终worker exit0、实际配对与冻结边界通过，source运行面9abc9b95不变。
+
+B3 normal/H-read零/Compiler零/visual零/all-language零为51/54/52/54/40（各96），单分支净效应小而得失混合。C source/normal/P4/C/A-B/expert为4/18/17/20/15/16（各32）；task7 free-C局部4/4对normal1/4不构成整体修复。A/B原fit改善在新噪声下仅保留6.8%，独立episode八task全部变差，局部fit不能当容量或有效学习的上界。两条Long正常回放已经选择第二对象后执行失败，旧专家同状态也未完成相同目标。
+
+[完整报告](horizon_k1_causal_diagnostics_20260909.md) §13给出原因排序与方案，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/summary.json`。未使用最终视频controls/Test或held梯度，没有正式模型/配方修改或训练启动；本历史段不恢复实验。

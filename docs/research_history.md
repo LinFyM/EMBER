@@ -898,3 +898,11 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 B3 normal/H-read零/Compiler零/visual零/all-language零为51/54/52/54/40（各96），单分支净效应小而得失混合。C source/normal/P4/C/A-B/expert为4/18/17/20/15/16（各32）；task7 free-C局部4/4对normal1/4不构成整体修复。A/B原fit改善在新噪声下仅保留6.8%，独立episode八task全部变差，局部fit不能当容量或有效学习的上界。两条Long正常回放已经选择第二对象后执行失败，旧专家同状态也未完成相同目标。
 
 [完整报告](horizon_k1_causal_diagnostics_20260909.md) §13给出原因排序与方案，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/summary.json`。未使用最终视频controls/Test或held梯度，没有正式模型/配方修改或训练启动；本历史段不恢复实验。
+
+## 2026-09-09 后端条件fresh学习：联合检索删除有收益，保持缺口仍在
+
+隔离探索运行面e60a7ca0，none关闭local/H-read/Compiler额外条件；local_only保留local、关闭两检索额外条件。两臂各fresh400、固定200/400，与contextual实际task/video/query/RNG曝光逐项匹配，source/信息墙/纯FM/完整50H保持；完整checkpoint、8个新闭环共1984行、bank与同节点/相邻strict配对均通过，所有训练和评测exit0。
+
+validation contextual/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 local S/O/G/L0/57/36/17、breadth6，对contextual R/G/L74/36/16，自身相邻70/40/44/churn84；none自身相邻65/27/43/churn70。BBQ none23→1（0/1/23）、local34→18（12/6/22）；其它7task85→91、80→92。local相对first-query-only验证200/400仅+4/+7，400训练56对59，不能将恢复contextual损失称为整体能力突破。
+
+首轮支持local保留、联合去掉两额外检索条件的总分收益；不分辨H-read与Compiler单独作用，不证明主要原因或视频动态机制已解决。none未修复训练/迁移分歧，local仍有弱任务和保持问题。未读取Test、未用held梯度、未使用最终视频controls、未正式采纳候选；后续分离学习只由progress的新登记解释。完整[报告与注册](horizon_causal_language_learning_20260909.md)，原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`及各节点比较。

@@ -66,7 +66,7 @@ local_only在两个面板均有小幅净增，none没有提高训练任务整体
 
 各臂逐task、suite、完整配对与完成记录位于`language/{arm}_step200/{validation,train96}_analysis/`；`completed_summary.json`给出汇总，`vs_contextual_same_step.json`保留成功集合和原始比较。剩余裁决仍按预注册完成400的validation400/train96及相邻对比，不按200较高单点选候选。
 
-## 400节点训练任务证据（validation尚待完成）
+## 400节点完整证据
 
 两个train96均完整exit0、全部worker返回0；与contextual400及各自200的实际strict配对通过。none为57/96，local_only为56/96，基线为49/96；三者breadth均20。
 
@@ -81,4 +81,37 @@ local_only在两个面板均有小幅净增，none没有提高训练任务整体
 
 收益参照也需限定：上一版first-query-only的train96为200步46、400步59。补充实际strict比较后，400 first-query→none为R/G/L46/11/13，→local_only为44/12/15；因此57/56是相对contextual49的恢复，尚未超过上一版59，不能包装成解决了Horizon总体能力缺口。200对应比较为33/6/13和35/11/11。四个原件位于各`train96_analysis/vs_first_query_same_step.json`；这是已有行为参照，主因果对照仍以当前contextual为共同基线。
 
-完整逐task、suite、同节点及相邻成功集合见`language/{arm}_step400/train96_analysis/`。400两个validation400仍在原进程执行，未读取局部分数；未见任务迁移与反复丢失任务的解释待完整结果。
+两个validation400也已完整exit0，全部六worker返回0，实际同节点与相邻strict配对通过：
+
+| 臂 | 成功 | S/O/G/L | breadth | 相对contextual400 R/G/L | churn / J | 相对自身200 R/G/L | churn / J |
+|---|---:|---|---:|---|---|---|---|
+| all | 90/400 | 2/44/35/9 | 6 | — | — | — | — |
+| none | 92/400 | 2/45/37/8 | 6 | 71/21/19 | 40 / .6396 | 65/27/43 | 70 / .4815 |
+| local_only | 110/400 | 0/57/36/17 | 6 | 74/36/16 | 52 / .5873 | 70/40/44 | 84 / .4545 |
+
+全八task（global1/3/11/13/23/26/31/32）：none为0/2/44/1/0/37/5/3，local_only为0/0/39/18/1/35/14/3。直接none→local_only为R/G/L68/42/24、churn66、J=.5075。相对上一版first-query-only，local_only200为+4、400为+7，400 R/G/L75/35/28、churn63/J=.5435；none400为−11、72/20/31。上述比较均保留原始成功集合，不能只报净增。
+
+BBQ是持续丢失的主要贡献项：none23→1，原23成功全部丢失，新增1；local_only34→18，保留12、新增6、丢失22。扣除BBQ，其它7task分别85→91、80→92；总分下降并非所有validation任务同步退化。这些新臂尚未补轨迹，因此不能把原contextual回放中的绿色干扰瓶选择，直接当成它们的已观察失败行为。
+
+**当前裁决：** local_only相对all在两个固定validation节点均提高（+11/+20），相对none也均提高（+6/+18）。这支持“保留local上下文、联合去掉两处额外检索条件”在本学习实现下改善总分，不能再把冻结三处零40/96用于否认学习简化的价值。none的训练任务39→57，但validation108→92、BBQ23→1，故全部删除未修复获取/迁移分歧。local_only也仍有BBQ丢失、Spatial归零和高churn，不能称整体能力保持已恢复，更不能把联合效应归给其中单一路径或当作v5.2/v6分差的主要解释。
+
+完整逐task、suite、同节点及相邻成功集合见`language/{arm}_step{200,400}/{validation,train96}_analysis/`，总索引`language/completed_language_matrix.json`。两臂各两个checkpoint、8个新闭环面板共1984行全部保留；本轮没有Test、最终视频controls或held梯度。
+
+## 下一项：分开检验两处额外检索条件（结果前登记）
+
+首轮的正效应是两个入口的联合删除。下一项补足local固定为开启时的2×2检索条件矩阵，复用已经完成的all与local_only，只新增以下两个fresh学习臂：
+
+| 臂 | local条件 | H-read条件 | Compiler首次额外条件 |
+|---|---|---|---|
+| all（已有） | 开 | 开 | 开 |
+| local_h_read（新） | 开 | 开 | 关 |
+| local_compiler（新） | 开 | 关 | 开 |
+| local_only（已有） | 开 | 关 | 关 |
+
+local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H-read的条件输入，保留其可学习bias。两臂也分别相对local_only只恢复一处入口。共同参数声明与初始化顺序、local上下文、真实原生prefix/视觉/50H、过程、decoder、Action Meta和纯FM协议均保持，不改任务或查询权重。新枚举只进入隔离探索运行面，候选行为不合入main。
+
+此处没有重做first-query-only：它曾删除Compiler后续残差中的重复语言，但保留首次query条件；本次变量是是否提供这个首次额外条件及H-read条件。也没有重做冻模lesion：两个新增臂均从相同fresh初始化真实学习。已有Target-Owned、LPCP、Unified等共享或读取架构不参与本矩阵；不因GPU释放就启动它们或恢复v6。
+
+预注册判据：若关闭H-read在Compiler开/关两种背景下均改善相邻闭环，才支持H-read条件的可重复负作用；Compiler同理。若收益只在联合删除出现，则保留交互解释，不能分别给两入口定责。若单臂只提高训练任务，或验证集只有一个节点更好、广度/保持明显变差，不将其当迁移修正。若某单臂保住Spatial且保留local_only的Object/Long收益，则是需要进一步独立teacher/state复核的具体候选；不自动正式采纳。
+
+各新臂仍fresh400updates，固定200/400完整checkpoint、validation400和held-video train96、独立3072query动作诊断；同seed7、teacher0–15/query16–41、4suite×64query、LR3e-5/warmup8及正常重采样FM time/noise。实际曝光继续逐项核对，允许相同合同下正常BF16与物理微批低位差异，不按loss选点或补500。先做真实短profile验证开启/关闭入口及其余完整图梯度，再按实时设备、quota和精确输出预算登记launch；本段登记不是资源检查的替代。

@@ -2,7 +2,15 @@
 
 更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
 
-## 当前：语言两臂200及400训练任务结果已到；400验证集进行中
+## 当前：首轮语言学习全部完成；准备两处检索条件的分离对照
+
+**两臂200/400训练、物化及8个新闭环面板共1984行全部完整exit0**，checkpoint、实际曝光、bank和同节点/相邻strict配对通过；全部GPU评测进程已正常退出。validation all/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 none S/O/G/L2/45/37/8、local0/57/36/17，breadth均6。相对自身200，none R/G/L65/27/43、churn70/J=.4815，local70/40/44、churn84/J=.4545；相对contextual400则71/21/19、74/36/16。首轮总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`，完整解释见`docs/horizon_causal_language_learning_20260909.md`。
+
+**目前识别到的是联合路径效应，尚未完成主要原因分析。** local_only相对all在两个验证节点+11/+20、相对none+6/+18；全部删除未解决训练改善/未见任务退步。BBQ none23→1（R/G/L0/1/23）、local34→18（12/6/22）；其余7task85→91、80→92，因此不能称所有任务同步遗忘。local400 Spatial归零、相邻大量成功得失；相对上一版first-query400只净+7且35新增/28丢失，不能宣布整体修复或正式采纳。
+
+**下一项已在结果前登记，尚未实现/profile/launch：** local固定开，新增local_h_read与local_compiler两个fresh单入口学习臂，复用已完成all/local_only补足2×2检索条件矩阵，区分各入口与交互。训练/评测合同、具体差异、历史非等价和预测见语言对照文档末节；不是继续400之后训练、重跑旧架构或开放正式方法采纳。共享候选和VL只读审计仍未选定/启动，旧v6继续暂停。
+
+## 首轮语言对照过程记录（现已全部完成）
 
 **400两个train96已完整exit0、同节点/相邻strict配对通过**：none57/96、local_only56/96，原contextual49/96，breadth均20；S/O/G/L分别14/18/17/8、15/16/18/7。相对基线none R/G/L43/14/6、churn20/J=.6825，local41/15/8、churn23/J=.6406；相对自身200分别35/22/4与36/20/10（39→57、46→56）。两条简化臂在400改善训练任务整体行为，但local相对none的200优势未保持，尚不能推出稳定路径作用或未见任务修复。完整表与原件链接已加入`docs/horizon_causal_language_learning_20260909.md`。两个400 validation仍在下列原始tmux/六worker执行，无完整分数；train96进程已正常退出，不恢复或追加训练。
 

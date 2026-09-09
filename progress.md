@@ -2,15 +2,23 @@
 
 更新时间：2026-09-09 CST。Owner最新授权深入分析与诊断实验，当前禁止正式架构/训练方式修改及正式训练启动。
 
-## 当前：已有400全收齐，冻结动作与局部oracle诊断运行
+## 当前：原生动作面板完整，局部接口与冻结分支闭环诊断推进
 
-Owner要求把语言分支与整体能力缺口共同分析，尽可能实际验证并提出方案。沿用现有canonical源码和冻结checkpoint；不因旧的全过程授权启动新正式训练或直接落实side-chat候选。main负责当前模型机制诊断，两个只读并行分析分别负责监督分布和历史能力/接口oracle。诊断协议及结果统一保留于`docs/horizon_k1_causal_diagnostics_20260909.md`，当前B1与CPU/历史审计完整结束，B2和C按预登记协议运行。
+Owner要求综合语言分支与整体能力缺口，尽可能实际验证原因并提出方案；禁止正式架构/训练方式修改和正式训练启动。canonical源码/配置、Writer/Meta/source与所有正式checkpoint保留；当前只有临时分析脚本及冻结执行/已登记train-only局部变量。active design §8.2.10与`docs/horizon_k1_causal_diagnostics_20260909.md`统一登记协议和结果。
 
-上下文400全部证据现已完整：validation **90/400**、S/O/G/L=2/44/35/9、breadth6；300→400 R/G/L63/27/16、churn43/J=.5943；200→40056/34/47、churn81/J=.4088。global1/3/11/13/23/26/31/32=1/1/43/1/0/35/9/0，BBQ25→3→1，保持未修复。四worker exit0、wrapper2055.91秒。train96 **49/96**、breadth20，相对20041为30/19/11、相对前轮40059为42/7/17；六worker exit0、wrapper673.07秒。全部实际配对与独立held FM通过；本段原件`k1_frame_contextual/segment200_400/round_evidence.json`。没有待完成formal GPU任务，不追加500/600。
+上下文400全部正式证据已完整：validation90/400、S/O/G/L2/44/35/9、breadth6；300→400 R/G/L63/27/16、churn43，200→40056/34/47、churn81。BBQ25→3→1且原25成功全丢失；train96=49、breadth20（本轮20041、前轮40059）；held3072 FM .105074533更低仍未对应行为优势。全部配对、checkpoint/bank检查及worker退出通过，没有待完成formal任务，不追加500/600。完整报告`docs/horizon_k1_frame_contextual_20260909.md`、原件`k1_frame_contextual/segment200_400/round_evidence.json`。
 
-B1冻结九臂诊断已在GPU02p1/3分别完成200/400，两个完整exit0、各48条件/13824arm queries、wrapper303.87/303.71秒，peak11.779GiB，模型更新0。96条件跨checkpoint/两teacher/各arm实际action/video/time/noise及hook覆盖全部通过。normal FM .111548→.105841；400 local language零+.007630、H-read条件零+.00000282、Compiler语言零+.000576、三处同时零+.007570、visual-read零+.000367、local-neighbor零+.039144、temporal attention零+.001157、writeback零+.000849。大干预只说明冻结依赖，小差异仍需原生执行复核；不作为fresh删除性能结论。前5真实动作误差确实改善，不支持仅padding拟合的解释；夹爪切换邻域需更完整采样诊断。原件`causal_diagnostics_20260909/branches/summary.json`及逐条件npz。正式源码未改。
+B1九臂/两checkpoint/两teacher/24tasks均完整，两个exit0、各13824 arm query预测、实际输入/RNG及hook覆盖通过。CPU已重建102400实际监督queries并复核历史专家/clone/G1/G2/oracle适用边界。B1说明局部消息和部分语言路径有功能影响，不能单独证明职责或fresh删除收益；近似KV路径后来未通过C某fit面板的原生核对，因此B1小差异以B2完整native复核为准。原件`causal_diagnostics_20260909/branches/`、`supervision_distribution/`。
 
-B2完整native FM/10-step采样已在GPU02p1/3两独立进程启动，固定train24分组、12列、128queries/task。C冻结P4/C/完整A-B局部oracle首次临时source设备放置与近似缓存核对失败后，统一改为完整native联合FM；micro8实际反传OOM后按资源改物理micro2/4，逻辑128fit/128独立queries及每臂64步不变。当前GPU02p0/2/4/6四进程各二task，连同B2共六张有用卡；正式参数全冻结，失败尝试不作科学结果。协议提交`b69e29b1`已push，分析脚本仅在`causal_diagnostics_20260909/openloop`和`local_oracle`，运行面仍9abc9b95；launch合同/日志/runtime均在各自目录。双节点现场、NUMA和data1 quota已刷新（used644196932KiB/soft1073741824），新增B2+C总预算2GiB、既有analysis92MiB/run26GiB、shared84TiB；p1/2/3各仅148MiB peer，p4约5754MiB peer/util2，四张有用卡不改变他人进程。当前只等待实际结果，不据脚本接通作科学结论。CPU监督量化原件`causal_diagnostics_20260909/supervision_distribution/`完整保存，历史oracle边界已核实。
+B2已完整24tasks×12列×128queries，FM与10-step采样各36864预测、两个wrapper exit0（2148.45/2105.15秒），所有task采样cache最大动作差0、真实time/noise/target配对与sampler检查通过。context200→400前5 native sampled MSE .105742→.102172；比first-query400 .104265更低却train/validation闭环更弱。前5夹爪符号错误率5.927%→6.182%，但切换±2邻域FM及采样MSE均改善，B1小面板事件退化未稳健复现。H-read/Compiler/visual/all-language干预前5动作RMS约.00224/.05073/.02871/.12740，不能仅按平均FM判断分支作用。原件`openloop/summary.json`、报告§8。
+
+C正在GPU02p0/2/4/6四进程运行，tasks分别0/14、7/16、20/34、25/35。固定teacher46、128fit queries16–41与128独立queries42–45；各臂只优化临时P4/C/完整A-B，64Adam更新、固定最终点，无正式参数/optimizer/sampler更新。当前采用完整native joint FM；经一次8query实证对照（原生action输出及全部76 LoRA梯度差0），在临时梯度作用域切除对AE LoRA无贡献的冻结Pali o_proj反传，物理micro4/8/8/8。此前device placement、近似cache、micro8 OOM及无cut中途尝试分别保留日志，不混入最终曲线。原件`local_oracle/launch_contract.json`、`prefix_gradient_check.json`及各group运行记录。完成后固定八task×四state×六臂（source/normal/P4/C/A-B/expert）192行诊断闭环，不能纳入零交互分数。
+
+B3已按报告§9预登记，临时脚本独立准备中，尚未launch：当前400、全部train24、teacher46与states32–35，normal及B2四个冻结干预共480行实际闭环。每task同一真实R/Z生成完整LoRA，normal也新rollout；官方执行、cost-balanced long-first动态queue与persistent workers、部分BDDL谓词，无图像/held/训练梯度。用途是区分小平均误差与实际行为依赖，不依据结果选点或推断fresh删除收益。
+
+资源：此前strg01/data1 used644196932KiB/soft1073741824、hard1084227584；当前analysis304MiB、formal run26GiB，新增所有诊断共2GiB预算（B3增加小于.6GiB），shared84TiB。B2两GPU已释放；C四卡共驻仅使用实查余量，不改变他人进程。新B3/闭环launch前刷新双节点GPU与相应存储预算。所有临时运行面引用clean frozen9abc9b95，正式源码未改。
+
+下一步收齐固定C节点、B3配对行为，再完成C最终192行闭环；综合已确认事实、反证、仍未识别接口与具体方案。不能以fit改善或单个分支结果结束诊断，也不能借此恢复正式新方法。
 
 ## 历史：上下文条件保持段已全部完成，详细执行记录
 

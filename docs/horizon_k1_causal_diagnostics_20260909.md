@@ -113,3 +113,54 @@ FM使用完整native联合forward、训练BF16计算；实际动作使用官方1
 ### 7.2 固定train诊断闭环
 
 八个task各states32–35、teacher46，normal/P4-final64/C-final64/AB-final64严格配对，另补同source及既有expert2000作为执行能力参照，共6×32=192行。source/专家不消费teacher；专家训练池0–49已包含本次动作池，只是privileged参照。使用现有cost-balanced动态queue、long-first、persistent policy/environment workers和完整官方rollout_shard；保留BDDL goal predicate变化作为部分进度信号，不录额外图像、不用于梯度或选点。与正式train96逐state不同teacher46–49的面板分开，重新运行normal，不能借用原96行冒充严格配对。
+
+### 7.3 原生梯度执行的实证修正
+
+进一步核对原生联合attention：有效prefix不能读取suffix，但拼接计算图仍会让冻结Pali流参与反传。只在其18个o_proj输入处临时detach，保留完整native联合前向、全部prefix K/V数值和AE反传；前提为source冻结、LoRA仅AE、loss只取suffix。
+
+固定current400 task0/teacher46的8真实queries、micro2，原路径与该切点对照：原生action head逐点差0，完整76张量LoRA梯度max abs/relative L2差均0；18hooks各执行4次。allocated峰值16.445→12.579GiB，单次计时3.232→2.035秒（同卡共驻且非隔离benchmark，仅证实本次成本降低）。原件`local_oracle/prefix_gradient_check.json`与脚本。
+
+据此统一重启同64步oracle，物理micro4/8/8/8，数据/噪声/目标/临时参数初始化和预算保持；此前中途结果不选点、不混入最终曲线。该调整仅为删除对AE LoRA无贡献的反向计算，不改正式源码、模型架构或训练方法。全局可推广性仍由冻结prefix和信息流合同约束，不用于任何带prefix可训练参数的场景。
+
+## 8. B2完整原生执行结果
+
+两组各12task全部exit0，native FM与10-step采样各36,864 query/chunk预测（12列×24task×128queries），模型更新0、sampler不推进。所有实际time/noise/target配对；每task非source首8query的cached与uncached官方采样最大动作差均0。两wrapper2148.45/2105.15秒，task峰值约15.82GiB。原件`causal_diagnostics_20260909/openloop/summary.json`及两组逐task JSON/NPZ。下表checkpoint列先分别计算teacher46/47，再平均指标；没有平均LoRA或选择视频。
+
+| 模型 | 全50×7 FM | 前5 valid FM | 原生采样前5 valid动作MSE | 前5夹爪符号错误率 |
+|---|---:|---:|---:|---:|
+| source | .151461 | .182649 | .147954 | 7.562% |
+| context200 | .111063 | .125180 | .105742 | 5.927% |
+| context400 | .105060 | .118425 | .102172 | 6.182% |
+| first-query400 | .105684 | .120072 | .104265 | 6.330% |
+| expert2000 privileged | .104119 | .117922 | .108964 | 6.216% |
+
+200→400全FM 24/24任务改善，前5 valid FM 23/24改善；真正10步采样前5 valid动作MSE 15/24改善、9/24变差，均值下降.003570。xyz/rotation分别平均下降.008147/.003272，gripper MSE增加.009269；符号错误率增加0.255个百分点。因此夹爪存在分量性退化，但并非所有动作或阶段都变差。
+
+更关键的是，**相对first-query400，本轮context400原生采样前5 valid误差在19/24任务更低、均值低.002093，train96却49对59，validation90对103。** 单纯把一阶FM替换成10步采样后的示范动作距离，仍没有解决指标与行为排序不一致。它支持进一步关注决定成败的决策/状态覆盖与可迁移功能，而不能证明某一个loss权重就是原因；离线动作还存在多解和时机差异。
+
+### 8.1 对夹爪事件小面板解释的修正
+
+完整128query面板中有22task具备前5夹爪切换±2位置。该邻域的FM gripper平均下降.058989，实际采样gripper MSE从约1.7880降至1.7200（下降.068040，12task改善/10变差）。先前B1 32query小面板中事件邻域变差的方向没有在此复现，不能把它列作已确认主因。
+
+同时，专家的前5采样MSE .108964高于context400，并且事件邻域约1.83698也更高；专家训练读过query episodes且其既有658/1200不是当前32state配对面板，所以这只是进一步提醒不能用离线示范距离排序闭环能力，不能直接声称本面板专家行为更强。后续以固定诊断闭环实际结果为准。
+
+### 8.2 额外语言与视觉分支的实际动作影响
+
+均相对context400/teacher46，保持原生语言、Z/R和真实视频顺序。RMS为同采样noise下预测动作的实际变化，和平均误差变化是不同量。
+
+| 冻结干预 | Δ全FM | Δ原生采样前5 valid MSE | 前5动作变化RMS | 前5MSE变差tasks |
+|---|---:|---:|---:|---:|
+| H-read language输入零 | -.00000048 | +.0000183 | .00224 | 10/24 |
+| Compiler language输出零 | +.000430 | +.002779 | .05073 | 15/24 |
+| visual-read输出零 | +.000153 | +.000133 | .02871 | 13/24 |
+| 三处后端language同时零 | +.008403 | +.008470 | .12740 | 20/24 |
+
+H-read额外language的当前边际作用很小，B1结论得到完整native复核。Compiler language与整体后端language影响明显，不能据“原生表示已有语言”推断当前参数自动学会不依赖这些路径；直接置零仍不是fresh删除性能的对照。
+
+visual-read的平均误差变化虽小，实际动作RMS .02871并不为零，说明可能存在方向相反的收益/损失；不能称其未被使用。正确teacher46→47的前5动作RMS在context400约.01765、first-query400约.02910；两条同task正确视频的接近输出可能是稳健性，也可能是共同静态信息主导，不能由此单独裁定动态证据必要性。最终视频因果controls继续封存。
+
+## 9. B3冻结分支的train24配对闭环（结果前登记）
+
+B2显示动作扰动和平均MSE可以明显不同，尤其visual-read；因此直接补当前400的训练任务行为依赖，不以平均误差替代闭环。固定全部train24、正确teacher46、states32–35；normal及B2四个冻结干预（H-read language零、Compiler language零、visual-read零、三处language同时零）五臂，共480行。每task五臂从同一个真实R/Z条件完整生成各一套LoRA；无视频重排、无训练更新、无held任务或最终视频controls。
+
+每臂新跑4个state，normal也重新执行，不借正式train96中teacher46–49逐state不同的旧面板。使用与C相同的官方source/preprocessing/flow10/replan5/RNG/asset/终止条件、dynamic cost-balanced long-first queue、persistent policy/env workers，保留部分BDDL goal谓词，不录额外图像。预先保留全部五臂结果、逐task/suite/breadth及R/G/L/churn，不由行为挑分支或选checkpoint。这里检验的是冻结模型当前依赖，不能替代fresh删除后的模型比较。新增adapter/rows预计小于.6GiB，纳入原B2+C诊断总2GiB预算；C等待期间可使用已完成B2释放的两卡。

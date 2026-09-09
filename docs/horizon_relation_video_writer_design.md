@@ -491,7 +491,7 @@ source参照为已完成source120中预登记states32–35的固定96行（15成
 
 **唯一主要变量：四组过程条件的信息来源。** 每帧同一次真实冻结prefix保留exact task-token位置mask，取其最终上下文状态 $Z_t^{\ell}[L,2048]$。复用现有`language_input/query/read`参数和读取公式，按原exact task span位置编码、mask得到 $\bar\ell_t$。局部帧对 $t\leftarrow u$ 的H-query使用当前帧 $\bar\ell_t$，每组H-read也使用同帧条件；不跨帧池化语言条件。各视频独立、只依赖当前及过去，当前帧未来动作不可见。静态embedding的 $\bar\ell_{text}$仍只用于first-query-only compiler首次检索，保留已完成修正。
 
-共享同一个learned reader是明确的受控选择：不增加参数、不另建text encoder，保持初始化张量及生成次序与first-query-only基线一致；它需从两种native输入表示学习读取，不预先保证这种共享最佳。改变的是过程条件所接收的信息与梯度路径，不把它描述为没有优化影响的纯数值替换。原生Z始终冻结，不给Gemma/vision新增梯度；已有Meta→R梯度保留。
+共享同一个learned reader是明确的受控选择：不增加参数、不另建text encoder，保持初始化张量及生成次序与first-query-only基线一致；它需从两种native输入表示学习读取，不预先保证这种共享最佳。改变的是过程条件所接收的信息与梯度路径，也包含两种native表示的数值分布/尺度差异；即使获益也不能单凭本轮把收益唯一归于预训练语义，不把它描述为没有优化影响的纯数值替换。原生Z始终冻结，不给Gemma/vision新增梯度；已有Meta→R梯度保留。
 
 完整流程为：exact language+视频→同次prefix Z/KV及逐帧task-mask→固定probe下AE+Meta完整R→四组过去对应/H-query（当前上下文task条件）→两端真实Z核实/按u短GRU→完整H-read（同帧上下文条件）→过去长程/前三组回写→P4集合compiler（原静态language只Q）→原native D完整76张量。H=50、四组、过去4帧、单向长程、K1、rank16与所有D共享方式均不变。
 

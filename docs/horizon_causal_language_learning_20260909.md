@@ -226,3 +226,9 @@ Compiler关闭在两种H-read背景、两个验证节点均正增，是当前共
 另外，Goal23和Long32的严重弱势不是当前Horizon独有：上述历史节点Goal23为1/0/0、Long32为0/0/1；三个历史配方的已保存完整曲线中，Goal23最多1/50，Long32最多5/4/4。它们仍是EMBER必须解决的科学能力缺口，但不能当作“旧强模型已解决、被当前架构全部丢掉”的事实。Spatial task1在三条旧曲线也最多3/3/2；Spatial task3则存在v5.2的实质反例，不能一并归为从未取得。
 
 原件`compiler_confirmation/historical_residual_context.json`包含当前和历史逐task/suite、原始行复算及历史曲线范围。独立初始化与换视频复核仍在运行；这些分解用于明确剩余问题，不提前采纳候选或启动未登记的新架构。
+
+### 换正确视频配对：all400基线完成
+
+固定schedule seed20260910的all400完整82/400，S/O/G/L2/41/35/4、breadth5，global1/3/11/13/23/26/31/32为0/2/40/1/0/35/4/0。三个worker均exit0，实际400个唯一task/state与完整contract一致，墙钟3320.17秒。旧视频分配下该checkpoint为90/400，两次BBQ都仅1/50；这里尚不比较候选净效应，也不将不同视频分配当作同视频strict配对。
+
+原件`compiler_confirmation/reassignment/all_step400/completed_summary.json`及其`evaluation/`。候选LH400继续原评测；all200已在释放的GPU上启动，两个200面板仍须完整执行。新评测资源准入修正及首次LH预worker拒绝保留在progress/原件，不改变既定科学输入或本基线运行面。

@@ -1,6 +1,8 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。当前原因分析goal继续；候选行为尚未正式采纳。
+更新时间：2026-09-10 CST。当前goal扩大为先完成原因分析、再自主方法修改/正式训练/迭代；候选行为尚未正式采纳。
+
+**最新Owner授权（覆盖旧停止边界）：** Owner睡前要求“依然是先把之前要求的各种分析都做完”，但完成后不再限制必须停在修改当前方法和正式启动下一次训练之前，允许继续推进、迭代改进。先完成当前复核与剩余必要因果区分，再依证据修订正式设计和canonical实现、启动正式训练与评测，无需再等Owner确认。科学目标、信息墙、固定split、source冻结、single LoRA、最终controls/Test时机及GPU/独立quota/Git合同保持；旧v6专项暂停不自动撤销。运行中goal工具目前仅支持读取及complete/blocked状态，不能原地改写objective；因此其旧文字中的停止限制已由本次Owner明确消息和当前task_plan覆盖，不能据旧文字停止后续授权工作。
 
 ## 当前：检索条件2×2全部完成，转入Compiler简化候选复核
 
@@ -36,7 +38,7 @@ Compiler关闭在H-read开/关背景的validation效应，200为+5/+16，400为+
 
 **原因分析仍未完成。** 实际学习证明后端条件的学习效应不能由冻结置零概括，也证明当前纯FM/其余架构下可以避免部分后期能力崩落；尚需复核候选是否跨初始化/视频配对成立，并保留弱Spatial/Goal/Long等未解释边界。没有将v5.2/v6历史分差全部归为同一入口，未通过该历史包替代受控证据。
 
-**授权与边界保持：** Owner允许必要的探索性架构/语言/共享/训练修改和数小时对照；停在正式采纳、合入候选行为到canonical及下一正式训练前。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享候选仅CPU准备，VL仅只读审计；它们存在不构成launch理由。不得枚举历史失败架构或因GPU空闲增加实验。
+**授权与边界：** Owner现已允许先完成原因分析后正式采纳/集成证据支持的修正、启动下一正式训练并持续迭代；不再保留此前的人工停止点。当前init11成对学习和四个换视频面板继续原预登记合同，新增授权不改变正在运行的实验或提前以部分结果采纳候选。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享候选仅CPU准备，VL仅只读审计；它们存在不构成launch理由。不得枚举历史失败架构或因GPU空闲增加实验。
 
 当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
 

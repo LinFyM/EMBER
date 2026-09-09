@@ -4,7 +4,7 @@
 
 Owner继续授权完整自主科学推进。当前active design为`docs/horizon_relation_video_writer_design.md`，§8.2.5–8.2.6的首层语言内容单变量fresh对照至400已全部完成；[完整报告](docs/horizon_k1_first_query_only_20260909.md)及`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/segment200_400/round_evidence.json`记录正式证据。§8.2.7冻结train24完整adapter功能对应矩阵也已完成，训练内功能特化继续增强；[诊断报告](docs/horizon_k1_functional_assignment_20260909.md)约束下一项针对迁移的学习变量。不能从历史脚本自动恢复。
 
-已完成：新100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；所有训练/物化/诊断/闭环完整exit0，全部配对检查通过，GPU任务均已结束。
+前轮已完成：first-query-only的100/200/300/400 strict400=75/110/106/103；新200/400 train96=46/59，原同节点52/59。后两validation点较原86/87有局部收益，但BBQ持续回落、成功集合高churn、目标没有扩展。400 breadth6、Long9，两个validation任务仍0；该轮训练/物化/诊断/闭环完整exit0，全部配对检查通过，该轮GPU任务均已结束；后续上下文条件formal正在执行。
 
 1. 完整交付本轮事实、适用边界与“局部收益而非整体修复”的裁决；保留四checkpoint和全部原始证据。
 2. 不原样续500/600；从已经复现的训练获取与目标能力分离出发，审阅实际接口功能、竞争解释及最近等价历史。Target-Owned rank共享、旧语义路径和旧条件组织边界必须保留，不机械叠模块或重做改名方案。

@@ -9,7 +9,7 @@
 **当前active诊断计划：** [学习过程因果分析计划](docs/horizon_causal_learning_plan_20260909.md)。正式方法仍为`docs/horizon_relation_video_writer_design.md`与现有canonical实现，当前不修改其正式科学合同。
 
 1. **首轮语言学习全部完成；v6追加重训仍暂停：** all/none/local_only的validation200→400分别103→90、108→92、114→110；train96分别41→49、39→57、46→56。联合删除两检索条件有总分收益，但未解决BBQ丢失、Spatial弱项与高churn；不据此认定主要原因已查清。Owner质疑后的v6暂停保持，不自动修复profile或启动学习。
-2. **分离对照已运行：** 固定local开启，新增local_h_read与local_compiler两个fresh单入口对照，补足已有all/local_only的2×2矩阵，区分H-read、Compiler及其交互；具体共同协议、200/400节点、历史排重与裁决在`docs/horizon_causal_language_learning_20260909.md`末节。隔离实现、真实profile及资源合同通过，当前frozen运行面45e16633；仅探索学习，不自动正式采纳。
+2. **分离对照已运行：** 固定local开启，新增local_h_read与local_compiler两个fresh单入口对照，补足已有all/local_only的2×2矩阵，区分H-read、Compiler及其交互；具体共同协议、200/400节点、历史排重与裁决在`docs/horizon_causal_language_learning_20260909.md`末节。隔离实现、真实profile及资源合同通过，当前frozen运行面45e16633；仅探索学习，不自动正式采纳。local_compiler的200完整学习与实际配对通过，496条件物化已启动；固定200/400闭环继续按原登记完成。
 3. **共享候选已准备、未启动：** 当前末层同target跨rank绑定已实现并完成86项CPU检查，历史近等价反证和具体判据已登记；是否进入学习依赖现有语言结果与剩余解释。分别检验过程获取与参数共享，按结果增加最小交互对照；不把局部free-C可达性当架构可学习性证明。
 4. **待执行：** 用同架构配方对照区分剩余训练因素；验证有证据候选的相邻保持、跨视频和未见任务闭环。
 5. **待交付：** 因果结论、具体方案与实测效果、未识别边界；在正式采纳/合入候选行为和启动正式训练之前汇报并停止。

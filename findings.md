@@ -334,3 +334,9 @@ task因重复下降事后选定、states沿用旧诊断固定集合，属于描�
 同一实际训练曝光下，保留local上下文、关闭H-read/Compiler额外条件的local_only，相对contextual在200/400 validation均提高；全部删除none未消除训练改善与验证下降。冻结后的依赖损失确实不能预言fresh删除后的学习效果。但联合删除还不能分辨两检索入口及其交互，不能把本结果统称为语言有害。
 
 两条简化臂到400的train96均超过contextual，仍未超过上一版first-query-only；local_only验证总分较好却有Spatial归零、BBQ丢失和较大相邻churn。由此分开裁决已取得的总分收益、持续弱任务的获取和原成功集合的保持，不将局部修复当作v5.2/v6总体分差的解释。首轮全部1984条新闭环及实际配对见[完整语言对照](docs/horizon_causal_language_learning_20260909.md)与其总索引；下一实验及授权只按progress，不从本结论恢复执行。
+
+## 34. 分离学习定位Compiler额外条件的贡献，H-read联合删除并非稳定最优（2026-09-09）
+
+固定local开启的2×2 fresh学习全部完成。关闭Compiler在H-read开/关背景的validation效应，200为+5/+16，400为+36/+20；关闭H-read则为−5/+6和0/−16。方向一致的验证效应来自Compiler入口，不能把两入口都笼统判为有害，也不能把200联合删除较好外推到400。训练侧效应不同，局部拟合收益不等同迁移。
+
+只关闭Compiler的local_h_read为validation108→126、train40→56，BBQ29→32（R/G/L23/9/6）；没有改FM、source、输入、共享或其它图就避免这次BBQ后期崩落。它是当前协议下具有实测收益的具体修正，尚不是全部缺口的解释：400 Spatial1/100，相邻验证仍26丢失；对all400虽净+36，也有52新增/16丢失。这里只支持该入口的学习效应，未证明唯一内部优化机制或全部v5.2/v6历史分差。完整因果表、配对原件和下一步授权见[报告](docs/horizon_causal_language_learning_20260909.md)及progress；复核结果不得从本段推定。

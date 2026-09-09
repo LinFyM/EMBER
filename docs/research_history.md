@@ -906,3 +906,11 @@ B3 normal/H-read零/Compiler零/visual零/all-language零为51/54/52/54/40（各
 validation contextual/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 local S/O/G/L0/57/36/17、breadth6，对contextual R/G/L74/36/16，自身相邻70/40/44/churn84；none自身相邻65/27/43/churn70。BBQ none23→1（0/1/23）、local34→18（12/6/22）；其它7task85→91、80→92。local相对first-query-only验证200/400仅+4/+7，400训练56对59，不能将恢复contextual损失称为整体能力突破。
 
 首轮支持local保留、联合去掉两额外检索条件的总分收益；不分辨H-read与Compiler单独作用，不证明主要原因或视频动态机制已解决。none未修复训练/迁移分歧，local仍有弱任务和保持问题。未读取Test、未用held梯度、未使用最终视频controls、未正式采纳候选；后续分离学习只由progress的新登记解释。完整[报告与注册](horizon_causal_language_learning_20260909.md)，原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`及各节点比较。
+
+## 2026-09-09 检索条件2×2：仅关闭Compiler取得126，转入固定候选复核
+
+隔离运行面45e16633完整训练local_h_read/local_compiler，各fresh400及200/400 checkpoint；保留local上下文，补足all/local_only的检索条件矩阵。两个新臂合计8个面板1984行完整exit0，全部worker0、实际训练曝光及bank/闭环strict配对通过；没有Test、held梯度或最终时序controls。
+
+local_h_read validation108→126，train40→56；400 S/O/G/L1/70/36/19、breadth7，对all90为R/G/L74/52/16，对自身200为82/44/26。BBQ29→32（23/9/6），其它7task79→94。local_compiler validation98→90、train43→65，BBQ21→2且原21成功全丢。Compiler关闭在两个H-read背景、两个验证节点均正效应；H-read关闭方向不一致，联合删除并非400最优。候选仍有Spatial和其它弱任务缺口、高churn；single seed结果不能等同可靠整体修复。
+
+完整[报告及复核登记](horizon_causal_language_learning_20260909.md)，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/completed_retrieval_matrix.json`。此批完成后优先复核固定Compiler简化候选，未正式采纳、未合入canonical科学行为；动态launch只按progress，不从本历史段恢复任何实验。

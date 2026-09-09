@@ -116,7 +116,7 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 
 各新臂仍fresh400updates，固定200/400完整checkpoint、validation400和held-video train96、独立3072query动作诊断；同seed7、teacher0–15/query16–41、4suite×64query、LR3e-5/warmup8及正常重采样FM time/noise。实际曝光继续逐项核对，允许相同合同下正常BF16与物理微批低位差异，不按loss选点或补500。先做真实短profile验证开启/关闭入口及其余完整图梯度，再按实时设备、quota和精确输出预算登记launch；本段登记不是资源检查的替代。
 
-## 检索分离：200步完整闭环结果（400节点仍在执行）
+## 检索分离：200步完整闭环结果
 
 两个新增train96均完整exit0、全部worker返回0，与all和local_only实际strict配对通过。每task仍是固定4个独立state、teacher46–49；该面板描述训练任务的闭环行为，不能替代validation400或相邻保持。
 
@@ -144,9 +144,9 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 
 **200节点区分到的条件效应：** 关闭H-read在Compiler开/关背景下分别净−5/+6，与train96两背景都为小幅正增不同；因此不能把H-read条件笼统判为有害。关闭Compiler在H-read开/关背景下分别净+5/+16，但其train96效果为−1/+3。联合关闭在200仍最好，任一单独关闭均未同时重现联合方案的验证总分和训练任务结果。以上支持入口之间的作用依赖及训练任务/未见任务的不同响应，不证明已解释Horizon相对旧模型的主要分差。Compiler简化的验证收益是否保持，仍由预注册400及相邻成功集合裁决；不按这个200节点提前正式采纳。
 
-检索分离200总索引为`retrieval/step200_completed_matrix.json`；新增验证的完整原件在各`retrieval/{arm}_step200/validation_analysis/`。Compiler两节点的完整结果见下节；H-read继续原训练到400，无额外训练臂或正式方法切换。
+检索分离200总索引为`retrieval/step200_completed_matrix.json`；新增验证的完整原件在各`retrieval/{arm}_step200/validation_analysis/`。Compiler两节点的完整结果见下节；当时H-read继续原训练到400，最终结果见末节。
 
-## 检索分离：Compiler单入口400完整结果（H-read臂400待完成）
+## 检索分离：Compiler单入口400完整结果
 
 local_compiler的200/400四个面板均完整exit0，全部worker返回0；400与all、local_only及自身200的actual strict配对通过。两checkpoint完整学习状态、累计1600条件/102400queries和固定held3072输入均已检查。
 
@@ -161,4 +161,42 @@ train96相对local_only的churn27/J=.6351，相对自身200为34/.5211；validat
 
 这组受控学习中，关闭H-read在Compiler开启背景下使400训练任务比all多16次成功，覆盖扩到23task，但validation与all同为90且breadth更低，未修复BBQ保持。它进一步排除了“只要关闭H-read、训练任务更好就会解决未见任务退步”的具体修正假设；不排除该入口在其它背景的条件作用，也不能由训练成功证明整个表示/输出架构没有问题。相比Compiler单入口，关闭Compiler的local_only在两个validation节点分别多16/20，但400训练任务少9；这个入口的效果随任务分布和学习节点变化。
 
-完整原件位于`retrieval/local_compiler_step400/{validation,train96}_analysis/`。H-read臂400仍按原注册完成，之后统一裁决2×2及相邻保持；没有额外500续训、Test或最终视频controls。
+完整原件位于`retrieval/local_compiler_step400/{validation,train96}_analysis/`。H-read臂400随后按原注册完成，统一2×2及相邻保持裁决见后文；没有额外500续训、Test或最终视频controls。
+
+## 检索分离：H-read单入口400训练任务结果
+
+local_h_read的400 train96已完整exit0、三个worker均0，同节点与自身200的actual strict配对通过。成功40→56，S/O/G/L为18/17/16/5，breadth17→20。相对all400为R/G/L39/17/10、churn27/J=.5909；相对local_only400为46/10/10、churn20/J=.6970；相对自身200为31/25/9、churn34/J=.4769。相对first-query400的59为41/15/18、churn33/J=.5541，仍未超过该旧版训练总分。
+
+因此在400训练节点，关闭H-read条件在Compiler开/关背景分别净+16/0；关闭Compiler条件在H-read开/关背景分别净+7/−9。入口作用明显依赖另一入口及学习节点，不能把简化普遍等同为更容易学习。H-read单入口Long总数5→5，但只保留1、新增4、丢失4；总数不变不等于能力保持。该训练面板先于validation400完成，不能据train96替代未见任务结果；最终验证证据见后节。
+
+原件`retrieval/local_h_read_step400/train96_analysis/`包含逐task/suite、全部比较和worker返回码。两个新臂没有继续训练或补额外节点；完整2×2的最终裁决见后节。
+
+
+## 检索分离全部完成：Compiler条件是已识别的有害因素，H-read不能一并定责
+
+最后的local_h_read validation400完整exit0、9个worker均0，actual strict配对通过。其200→400为108→126，400 S/O/G/L为1/70/36/19、breadth6→7；global1/3/11/13/23/26/31/32为0/1/38/32/1/35/18/1。相对all400为R/G/L74/52/16、churn68/J=.5211；相对local_only400为89/37/21、churn58/J=.6054；相对自身200为82/44/26、churn70/J=.5395。相对first-query400的103为80/46/23、churn69/J=.5369。
+
+BBQ从29升至32，保留23、新增9、丢失6；其余七task79→94。此处终于出现训练任务40→56、未见任务108→126同时改善，并保住多数BBQ旧成功的具体学习修正。它否定了把当前后期BBQ崩落当成纯FM或整个当前前端的必然结果；没有改FM、数据、输出共享或原生读取可学习性就能改变该结果。但它仍未获得Spatial及部分Goal/Long能力，且其它成功有更替，不能宣布整体保持问题已解决。
+
+| 关闭条件的作用 | validation200 | validation400 | train200 | train400 |
+|---|---:|---:|---:|---:|
+| 关闭Compiler，H-read开启 | +5 | +36 | −1 | +7 |
+| 关闭Compiler，H-read关闭 | +16 | +20 | +3 | −9 |
+| 关闭H-read，Compiler开启 | −5 | 0 | +2 | +16 |
+| 关闭H-read，Compiler关闭 | +6 | −16 | +6 | 0 |
+
+Compiler关闭在两种H-read背景、两个验证节点均正增，是当前共同初始化与学习协议下的方向一致证据；H-read关闭没有这种方向一致性。联合删除200较好，400却低于只删除Compiler，因此不能沿首轮结果继续断言联合删除最好。训练任务上的条件效应与验证不同，说明该入口在当前分布上可能帮助拟合而妨碍部分迁移；这是从实测差异作出的解释，尚未定位内部究竟形成何种错误编码或证明唯一优化机制。
+
+本轮两个新增学习臂、四checkpoint、八新闭环面板共1984行全部完成，完整逐task/suite、四条条件对比及相邻成功集合索引为`retrieval/completed_retrieval_matrix.json`。与首轮语言对照合计3968个新闭环行，均无Test、held梯度、最终时序controls或正式方法采纳。运行数量不构成goal完成；下一步改为复核这个实质效应，而不是立即启动已准备的共享或VL架构候选。
+
+## 候选复核：在结果前冻结下一项合同
+
+待复核候选固定为local_h_read：保留local逐帧上下文与H-read条件，只关闭Compiler首次额外文本条件。基线固定为all。两者的后续Compiler纯语言残差均已按first-query-only移除；本轮比较不把原生exact language、视觉上下文或H-read一起删除。
+
+1. **另一次初始化的成对学习。** 两臂optimization seed固定改为11，data seed仍7，teacher/query序列、FM抽样、累计曝光、源模型、数据池、4×64、LR3e-5/warmup8及所有模块保持。只做这一对独立初始化，fresh400、固定200/400 validation400与held-video train96及held3072；不试多个seed挑最好。沿用clean pushed隔离运行面45e16633，不改canonical源码。两个seed的基线必须各自配对，不把seed11候选对seed7基线冒充同初始化因果效应。
+2. **冻结seed7两节点的另一套正确视频配对。** 固定新的无放回视频schedule seed20260910，对all/local_h_read各200/400重新分配视频到官方50个初始状态，仍为correct视频、K1、相同env/policy RNG。每task已物化全部50视频，因此复用相同checkpoint的原LoRA，不重新训练、融合或挑video。这检验换教师与状态配对后的效应，不声称是新任务、新视频资产或新的初始化池；official validation只有现有50个state。该探索复核不作正式checkpoint选择，不运行wrong/shuffled/reversed/no-video或Test。
+3. **必要的行为定位。** 复用已登记的BBQ四state0/12/25/37，为候选200/400补相同correct回放，检查是否实际恢复目标对象选择，不能把原contextual绿色瓶轨迹直接套到候选。只描述这些预先选定实例；完整400负责效应裁决。若独立配对或初始化不保留收益，报告依赖条件并回到尚未区分的主要解释，不以seed7的126单点宣布修复。
+
+复核支持标准：Compiler关闭在独立初始化/视频配对中仍表现为相邻验证方向改善或避免后期崩落，且BBQ保留与Object/Long收益可复现；同时报告所有task、breadth、R/G/L/churn和弱suite。如果只在原seed/配对有效、改善来自另一组不相干成功或伴随同量丢失，则将可靠性限定到原实验，不能正式采纳。没有预设必须达到145或继续500的要求。
+
+两组学习及其200/400 banks预计新增峰值40GiB；换配对banks通过已验证的同checkpoint硬链接复用，回放/原行及余量计入该预算。真实launch仍以当时双节点GPU、quota和峰值检查为准。共享rank与可学习VL候选继续保持准备/只读审计状态，旧v6重训继续暂停。

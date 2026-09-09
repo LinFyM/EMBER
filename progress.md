@@ -1,92 +1,38 @@
 # EMBER progress
 
-更新时间：2026-09-09 CST。Owner已重新设置原因分析goal，要求先规划再行动。
+更新时间：2026-09-09 CST。当前原因分析goal继续；候选行为尚未正式采纳。
 
-## 当前：首轮语言学习全部完成；两臂学习与物化全部完成，最后两个400面板运行
+## 当前：检索条件2×2全部完成，转入Compiler简化候选复核
 
-**两臂200/400训练、物化及8个新闭环面板共1984行全部完整exit0**，checkpoint、实际曝光、bank和同节点/相邻strict配对通过；全部GPU评测进程已正常退出。validation all/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 none S/O/G/L2/45/37/8、local0/57/36/17，breadth均6。相对自身200，none R/G/L65/27/43、churn70/J=.4815，local70/40/44、churn84/J=.4545；相对contextual400则71/21/19、74/36/16。首轮总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`，完整解释见`docs/horizon_causal_language_learning_20260909.md`。
+最新完整结果改变了优先级：local_h_read（仅关闭Compiler首次额外条件）validation200→400为**108→126**，train96为**40→56**；BBQ29→32、保留23/新增9/丢失6。当前先复核这个实质效应，不启动共享rank、VL新架构或旧v6重训，也不续训到500。
 
-**目前识别到的是联合路径效应，尚未完成主要原因分析。** local_only相对all在两个验证节点+11/+20、相对none+6/+18；全部删除未解决训练改善/未见任务退步。BBQ none23→1（R/G/L0/1/23）、local34→18（12/6/22）；其余7task85→91、80→92，因此不能称所有任务同步遗忘。local400 Spatial归零、相邻大量成功得失；相对上一版first-query400只净+7且35新增/28丢失，不能宣布整体修复或正式采纳。
+两轮语言/检索探索共四个新学习臂，每臂固定200/400完整checkpoint和两类闭环，合计3968个新闭环行全部完成exit0、全部worker0；实际曝光、checkpoint、banks及同节点/相邻strict配对通过。全部原GPU训练/物化/评测进程已正常退出。唯一正式方法仍是main原科学实现，探索代码保留在clean pushed detached `45e16633`、`.codex/worktrees/horizon-causal-retrieval`。
 
-**两个分离学习臂已fresh启动：** local固定开，新增local_h_read与local_compiler，复用已完成all/local_only补足2×2检索条件矩阵。新工作树`.codex/worktrees/horizon-causal-retrieval`从最新main建立并复用旧探索运行面，当前clean pushed detached `45e16633`；正式main行为未改。科学实现56bbb160之后只校正本分支Git authority，没有改变模型或训练计算。新增计算仅是两个已有入口的开关组合，共同参数初始化保持。架构/物化/FM三组CPU共92项通过（初次91pass，1项因新工作树未链接canonical data而失败；补只读资产symlink后定向通过），两个配置解析通过。
+| 臂 | validation200→400 | train96 200→400 | BBQ200→400 |
+|---|---|---|---|
+| all基线 | 103→90 | 41→49 | 25→1 |
+| none | 108→92 | 39→57 | 23→1 |
+| local_only | 114→110 | 46→56 | 34→18 |
+| local_h_read | 108→126 | 40→56 | 29→32 |
+| local_compiler | 98→90 | 43→65 | 21→2 |
 
-**local_h_read也已完整训练400并exit0：** 1600实际condition/102400queries与contextual逐项配对，四suite各400condition，200/400完整checkpoint及held3072输入/无梯度检查通过。400held均值.104945883（基线.105074533）、11/24任务更低，仅作功能诊断；400更新均值24.369秒、后200总5229.51秒，wrapper10318.63秒，峰值39.484GiB，墙钟含本轮共享I/O等待。没有任何训练继续到500。
+H-read单入口400 S/O/G/L1/70/36/19、breadth7；相对all400 R/G/L74/52/16、churn68/J=.5211；相对自身200为82/44/26、churn70/J=.5395。相对local_only400为89/37/21，相对first-query400为80/46/23（103→126）。它已避免这次BBQ后期崩落，但Spatial仍1/100、相邻仍丢26，不代表整体修复。
 
-最后一组496条件bank已完整exit0、2172.91秒，public inspector及全部task/state/video/selection配对通过；耗时包含共享文件读取等待。**H-read400两个闭环已启动：** validation400在gpu01物理1/5/6各3worker（tmux `ember-retrieval-local_h_read-validation400`），train96在gpu02物理6×3worker（tmux `ember-retrieval-local_h_read-train96400`）；9+3个实际worker已核实。当前只有这两个待完成面板，所有梯度运行与其它评测均已正常结束。
+Compiler关闭在H-read开/关背景的validation效应，200为+5/+16，400为+36/+20；H-read关闭对应−5/+6和0/−16。因此可识别的方向一致因素是Compiler额外条件，不能把H-read也判为普遍有害，更不能把联合关闭一直当最佳。train400则为Compiler关闭+7/−9，体现训练任务和未见任务响应不同。
 
-本次launch前双节点GPU/进程查询均正常：gpu01所选三卡free46067MiB/util0/无peer，gpu02p6free41317MiB/util0、仅已知低负载peer。每个evaluator独立单节点、动态队列/long-first，无占位或跨节点collective。最新strg01/data1 used701113124KiB、soft1073741824/hard1084227584；两run实际各14GiB、analysis2.4MiB，完整两臂仍在40GiB峰值预算内。原件`retrieval/local_h_read_step400/{validation_launch,train96_launch,gpu_preflight_after_bank}.json`。此前gpu01进程查询不完整的snapshot仅用于解释当时bank选择gpu02，不代表当前故障。
+完整报告及下一复核合同：`docs/horizon_causal_language_learning_20260909.md`末两节。原件总索引：`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/{language/completed_language_matrix.json,retrieval/completed_retrieval_matrix.json}`。最后H-read400 validation/train耗时1168.67/872.58秒，全部9/3worker返回0；没有替换行、重试选成功或调整评价合同。
 
-**local_compiler两节点全部完整：** train96为43→65、400 S/O/G/L17/18/18/12、breadth18→23；validation为98→90、0/45/34/11、breadth7→5。400相对all：train R/G/L43/22/6、validation76/14/14；相对自身200分别37/28/6、58/32/40，全部worker0及actual strict配对通过。BBQ21→2、0/2/21，原21成功全部丢失；其它七validation任务77→88。相对first-query400，train59→65（51/14/8），validation103→90（76/14/27）。因此单独关闭H-read改善训练能力，但这组实验没有修复迁移退步或BBQ保持，不能当作正式修正。完整400表和边界已加入语言报告末节。
+**已登记、尚未launch的下一项：** 固定all与local_h_read候选，optimization seed11、data seed7，再fresh成对学习400，固定200/400 validation400、held-video train96及held3072；同时对冻结seed7两节点用视频schedule seed20260910做成对correct400，复用原50视频LoRA。补已选BBQ四state的候选200/400回放定位行为。独立初始化只登记这一对，不挑seed；复核不是正式checkpoint选择。官方validation只有原50个state，新的正确视频分配不能被称为全新初始化池。
 
-**检索分离200四面板共992行全部完整exit0：** validation local_h_read108/400、S/O/G/L3/57/34/14、breadth6；local_compiler98/400、4/52/38/4、breadth7。相对all103，R/G/L分别75/33/28、77/21/26；相对local_only114，分别85/23/29、72/26/42，全部actual strict配对和worker0通过。200关闭H-read在Compiler开/关背景验证分别−5/+6，不能笼统判其有害；关闭Compiler则+5/+16，但尚缺相邻保持。总索引`retrieval/step200_completed_matrix.json`，完整表/逐task及解释见语言报告末节。
+最新资源记录为上轮launch时strg01/data1 used701113124KiB、soft1073741824/hard1084227584，两个retrieval run各14GiB。下一对训练/banks/回放新增峰值40GiB，launch前仍须live刷新独立quota、双节点GPU并锁定具体命令/topology。当前没有待观察的旧job。
 
-**200两个train96已完整exit0：** local_h_read40/96、S/O/G/L14/9/12/5、breadth17；local_compiler43/96、10/12/14/7、breadth18。相对all41分别R/G/L29/11/12和38/5/3，相对local_only46分别34/6/12和32/11/14；全部worker0和actual strict配对通过。单节点中H-read关闭在两种Compiler背景净+2/+6，Compiler关闭为−1/+3；尚不能把单点条件效应当作迁移根因或稳定修复。完整表与解释已加入`docs/horizon_causal_language_learning_20260909.md`末节。
+**原因分析仍未完成。** 实际学习证明后端条件的学习效应不能由冻结置零概括，也证明当前纯FM/其余架构下可以避免部分后期能力崩落；尚需复核候选是否跨初始化/视频配对成立，并保留弱Spatial/Goal/Long等未解释边界。没有将v5.2/v6历史分差全部归为同一入口，未通过该历史包替代受控证据。
 
-Compiler400的496条件bank也已完整exit0、1368.46秒，public inspector及完整映射/selection配对通过；**400 validation在gpu02物理3/6×3worker启动**，tmux `ember-retrieval-local_compiler-validation400`，复用两个已正常结束train96的设备。launch前双节点快照p3/p6 free45905/41318MiB、util0，原有peer保持，同节点仍五张有用评测卡；Compiler400 train96也已在gpu02物理4×3worker启动（tmux `ember-retrieval-local_compiler-train96400`）；其余两个200 validation均已正常结束。该train96 launch前双节点快照p4free40313MiB/util2，复用原200验证设备。上述Compiler400两个面板现已全部正常退出；H-read训练也已完成，当前物化见顶段。
+**授权与边界保持：** Owner允许必要的探索性架构/语言/共享/训练修改和数小时对照；停在正式采纳、合入候选行为到canonical及下一正式训练前。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享候选仅CPU准备，VL仅只读审计；它们存在不构成launch理由。不得枚举历史失败架构或因GPU空闲增加实验。
 
-约13:41–13:46 UTC出现共享存储读取延迟：状态查询超时，多个评测/物化进程处于`rpc_wait_bit_killable`/`folio_wait_bit_common`；原进程保持，strg01仍可达，两train96及Compiler400bank随后完整exit0。kernel日志因权限不可读，未据此认定存储服务根因，也没有重启或改服务。观察器超时只终止观察器，未当作训练失败；后续监控捕获查询超时，并按完整tmux名字精确匹配。
+当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
 
-**local_compiler完整400学习证据：** Compiler完整1600condition/102400queries与contextual逐条配对，四suite各400condition；200/400完整checkpoint、400held3072输入配对与无梯度检查通过。400held均值.105392085（基线.105074533）、6/24任务更低，仍只作功能诊断；400更新总5959.33秒、均值14.898秒，后200更新2777.07秒，wrapper6316.71秒。训练completion明确exploratory/segment_complete，未自动续训。400物化及评测当前状态见上段。
-
-两个200节点的496条件bank均完整exit0并通过public inspector及完整task/state/video/selection配对；Compiler/H-read物化分别892.80/1002.35秒。Compiler validation400继续使用gpu02物理4×3worker；本次用Compiler训练实际释放的设备，启动H-read validation400于gpu02物理1/2×3worker、Compiler train96于物理3×3worker、H-read train96于物理6×3worker。tmux分别`ember-retrieval-local_h_read-validation200`、`ember-retrieval-local_compiler-train96200`、`ember-retrieval-local_h_read-train96200`；实际worker均已核实。本段只记录200评测启动时点；四面板现已全部完成，结果见上段。
-
-本次launch前重新检查双节点：gpu02物理1/2/3各free45906MiB，物理6free41319MiB，util均0；gpu01物理3free29058MiB/util3覆盖已验证物化峰值。各peer保持，不干预；node2共五张有用评测卡，node1含H-read原训练共四张。最新strg01/data1 used691749596KiB、soft1073741824/hard1084227584，shared84TiB；两run实际11/6.6GiB，本次400bank约3GiB仍在两臂40GiB总峰值预算内。原件`retrieval/local_compiler_step400/gpu_preflight_launch.json`及各200/400目录launch记录。
-
-**H-read200学习证据：** 完整800实际condition/51200queries及held3072输入与contextual配对，四suite各200condition、held无梯度；原训练继续到预定400。held均值.111053135（基线.111031413）、13/24任务更低，200更新均值22.590秒、峰值39.483GiB，不据此选方法。
-
-**local_compiler200学习证据：** checkpoint学习状态完整，全部800实际condition/51200queries与contextual逐条配对，四suite各200condition；固定held3072输入亦配对且无梯度。均值.111103775（基线.111031413），10/24任务更低，仅作为功能诊断；更新均值15.911秒、allocated峰值38.165GiB。原件`retrieval/local_compiler_step200/{checkpoint_inspection,learning_summary}.json`。
-
-两个真实4-update及93帧最长视频profile均完整exit0，7rank的开启/关闭检索、local reader、视觉/过程/decoder/Meta梯度及source冻结检查通过，16个实际condition与contextual前4更新配对。平均update23.421/17.237秒，allocated峰值39.478/38.134GiB，最长38.166GiB；未保存checkpoint、不用作fresh初始化。第一次学习启动因复用helper仍绑定旧探索分支，在创建run_contract和任何update之前exit1；日志保留`retrieval/bootstrap_attempt1/`。改为当前已推送分支后，实际clean/detached/ancestry通过，dirty/uncontained/unregistered仍被拒绝；无需重复计算profile。
-
-这两臂fresh启动配置与资源（历史）：local_h_read在gpu01物理1/5/6、micro8/8/8，local_compiler在gpu02物理1/2/3/6、micro8/8/8/6，固定400更新、200/400完整证据节点。tmux `ember-retrieval-local_h_read` / `ember-retrieval-local_compiler`，输出`runs/outputs/horizon_causal_{arm}_seed7_20260909`；所有3/4rank及实际run_contract、segment_start0/stop400/resume null已核实。重启前重新核验双节点，所选卡util0/free至少41319MiB；两节点各3/4张有用卡。strg01/data1 used673743772KiB、soft1073741824、shared84TiB，已有语言两run各14GiB、当前analysis582MiB；新两臂含四checkpoint/四组validation+train banks及余量预算40GiB，全部复用source/data/env。精确命令、配置、完整profile及GPU/storage证据在`causal_learning_20260909/retrieval/`。共享候选和VL只读审计仍未选定/启动，旧v6继续暂停。
-
-两臂真正探索训练前4次update已完成，16个实际condition/task/video/query/RNG字段均与contextual逐项配对，实际run_contract记录45e16633与对应backend组合。原件`retrieval/initial_sampling_pairing.json`；不是profile结果冒充学习起点，后续200/400仍核对完整曝光。
-
-Owner最新要求减少汇报频率，省略逐分片播报，集中在完整结果、结论变化、运行异常或需要决策时沟通；这不停止当前原因分析goal。
-
-## 首轮语言对照过程记录（现已全部完成）
-
-**400两个train96已完整exit0、同节点/相邻strict配对通过**：none57/96、local_only56/96，原contextual49/96，breadth均20；S/O/G/L分别14/18/17/8、15/16/18/7。相对基线none R/G/L43/14/6、churn20/J=.6825，local41/15/8、churn23/J=.6406；相对自身200分别35/22/4与36/20/10（39→57、46→56）。两条简化臂在400改善训练任务整体行为，但local相对none的200优势未保持，尚不能推出稳定路径作用或未见任务修复。完整表与原件链接已加入`docs/horizon_causal_language_learning_20260909.md`。两个400 validation仍在下列原始tmux/六worker执行，无完整分数；train96进程已正常退出，不恢复或追加训练。
-
-**200四个新增闭环面板全部exit0、实际strict配对通过**。validation400：all/none/local_only分别103/108/114，S/O/G/L分别1/54/37/11、2/58/41/7、3/62/36/13，breadth7/7/6；相对all，none R/G/L81/27/22、churn49/J=.6231，local77/37/26、churn63/J=.5500。train96为41/39/46，breadth18/16/18；none R/G/L27/12/14，local32/14/9。直接none→local validation净+6但R/G/L75/39/33、churn72；train净+7但29/17/10。local两个面板有小幅净增，尚无相邻保持证据，且未解决Spatial/Goal弱任务与得失混合；不据此宣布主要原因或正式采纳。完整表及解释见`docs/horizon_causal_language_learning_20260909.md`，原件各`language/{arm}_step200/{validation,train96}_analysis/`。
-
-**400的两臂validation400+train96已全部实际启动**。none在gpu01物理1/6各3worker跑validation、物理5×3worker跑train96；local_only在gpu02物理1/3各3worker跑validation、物理6×3worker跑train96。tmux分别`ember-causal-{arm}-validation400`与`ember-causal-{arm}-train96-400`。两组完整496条件bank均exit0，public inspector及基线整个task/state/video/selection映射通过。每次launch前均核验双节点；none三卡free46068MiB/util0，local三卡free45906/45636/41319、util0，仅低负载peer共驻且留有实测三worker峰值余量。两节点各三张有用设备，原200评测/400物化全部退出。资源增量仍在已核验40GiB总预算内，精确命令和live资源在`language/{arm}_step400/{validation,train96}_launch.json`；冻结运行面e60a7ca0未改。待四个完整面板及400→200成功集合比较，不追加训练臂或恢复v6。
-
-**none/local_only的400次探索学习均完整exit0**，wrapper分别9714.56/10162.29秒；完整200/400 checkpoints独立保留、public inspector通过。各1600条件/102400queries与contextual实际曝光逐项匹配，各suite400条件。400独立3072query也完全配对、无梯度，held FM分别.105817828/.105537391，基线.105074533；只描述拟合，不作闭环裁决。更新均值23.483/24.557秒，allocated峰值39.480/39.483GiB；原件`language/{arm}_step400/learning_summary.json`。不自动追加500或新训练臂。
-
-**此前后续任务启动记录（现均完整退出）**：200 validation400在gpu02物理2/4各2worker；none的200 train96在gpu01物理1/6各3worker，400两组bank在同节点物理5；local_only的200 train96在gpu02物理1/3各3worker，400两组bank在同节点物理6。tmux分别为`ember-causal-{arm}-train96-200`与`ember-causal-{arm}-bank400`。none训练先结束即复用其释放设备，local随后完整退出再接续；节点01/02分别三/五张有用设备，没有占位。两次launch前均重新核验两节点；none三卡free46068MiB/util0，local训练面板两卡free45906/45636、生成卡41319MiB，util均0。strg01/data1 used659939204KiB、soft1073741824、shared84TiB；当时余下全部输出峰值估计16GiB，仍在最初40GiB增量预算内。冻结运行面仍e60a7ca0，精确launch与资源证据在`causal_learning_20260909/language/`。
-
-**此前200节点记录**：完整checkpoint通过探索schema、条件配置、三rank学习状态与public inspector检查。各200次更新/800条件/51200queries与contextual基线实际采样全部配对，各suite200条件；独立24task×128query诊断也完全配对、无梯度。none/local_only held FM为.112001593/.111181941，基线.111031413，不据此判断闭环或选方法。200更新均值23.481/24.456秒，峰值allocated39.480/39.483GiB。原件`language/{arm}_step200/learning_summary.json`。
-
-200每臂validation400+train96的496个LoRA条件已完整生成，两个wrapper均exit0、耗时1028.61/1020.69秒。四组bank通过public inspector及基线实际task/state/video/selection配对。**两个validation400已分别在gpu02物理2/4、每卡2worker启动**，tmux `ember-causal-none-validation200` / `ember-causal-local_only-validation200`；train96输入已就绪，设备释放后接续。原三卡训练继续（最新256/253步），当前没有完整闭环分数。新launch前双节点live核验：两卡free37094/40314MiB、util1/2，同节点共五张有用设备。strg01/data1 used646263892KiB/soft1073741824、shared84TiB；本节点两臂banks约5GiB计入既有40GiB总预算。运行面仍clean pushed detached e60a7ca0；精确命令、检查与GPU/存储快照位于`causal_learning_20260909/language/`。
-
-最新完成当前contextual200/400的BBQ固定四state描述性回放（共8条）：200为3/4、400为0/4，四worker exit0，实际配对、历史结局与终态谓词均通过。200操作正确BBQ；400四例均转向绿色干扰瓶，其中两例运到篮子区域。它定位这些实例的目标选择变化，不定位致因模块或代替完整400面板。三版200→400扣除BBQ后其它七validation任务总成功分别86→84、82→93、78→89，需把反复丢失与长期未获取的弱任务分开。原件`causal_learning_20260909/retention_replay/completed_summary.json`；语言两臂仍在原训练中，未启动共享候选或恢复v6。
-
-Owner再次强调不能重复已经失败的架构。已完成近等价核对：LPCP是分层/rank证据进入Procedure query，Unified是factor每层直读真实evidence/native X/Y并曾试common-base；因此不把“加回逐层证据”或“共有base加条件修正”直接包装为创新重做。Target-Owned约束已准备的rank共享候选，CPU实现存在不构成启动理由。创新方向尚未选定，先完成机制排重；当前GPU仍只有两组语言探索训练。
-
-Owner最新补充：允许针对当前问题提出创新性架构并探索验证，不把本goal限定为现有模块小改。保持当前v6重训暂停和正式采纳前汇报边界；新候选先核对机制与历史实质差异。共有能力加条件修正已有Unified/common-base等近似负历史，不能直接改名重做；当前尚未确定或启动新的创新架构。
-
-Owner随后质疑为什么又启动v6训练。主agent先暂停这条自行追加的旧模型重训路线，取消后续200/400 launch，解释必要性与范围；这不是Owner要求停止全部已启动语言对照。现场核实v6 profile在第2步梯度检查自行exit1（第1步日志完成，第2步更新已执行但检查未通过），无残留进程、无resume、无完整探索训练；不修复后自动重启。旧v6现阶段只使用已有证据。隔离代码和原始日志保留，不作能力结果。
-
-**最新授权：** Owner已明确接受必要的数小时对照成本。可为探索原因修改架构、语言路径、共享方式及训练目标/方式，开展实验性训练与闭环测试；不得自行宣布修复并正式采纳候选、合入为当前正式方法、启动下一轮正式训练。旧文档中“只允许冻结诊断”的解释不再适用。原有信息墙、split、评测、GPU/存储合同继续有效。
-
-当前active诊断计划为`docs/horizon_causal_learning_plan_20260909.md`；正式方法design仍为`docs/horizon_relation_video_writer_design.md`，canonical实现和正式checkpoint保留。goal不要求>145或新的正式训练，完成时向Owner汇报具体因果证据和已验证候选。
-
-计划先完成旧新公平协议及精确干预矩阵，再做fresh语言/条件、过程/共享、必要训练因素的单变量与最小交互对照。新旧配方差异不能成为不比较的理由；旧rank共享失败和原生语言/上下文区别必须进入干预解释。探索实现使用独立worktree，文档/证据可入main，候选行为不自动正式集成。
-
-首轮语言学习矩阵已登记`docs/horizon_causal_language_learning_20260909.md`：基线all复用当前contextual200/400；none关闭三处额外后端条件；local_only保留local上下文、关闭H-read与Compiler条件。新臂各fresh400updates、固定200/400闭环，不按loss选点。隔离代码`codex/horizon-causal-learning`已推送，运行面`.codex/worktrees/horizon-causal-learning`已detached **e60a7ca0**，main正式实现未改。架构/物化/FM三组CPU检查共87项通过（首次6项为fixture数据路径/错误消息差异，修正后定向重跑通过）；配置解析与clean pushed实验ref通过。
-
-两个真实4-update profile及93帧最长视频均已完整exit0，六rank检查通过：关闭入口没有梯度贡献，H-read共享bias/视觉/过程/decoder/Meta均在identity打开后学习，source无梯度。最大allocated39.460GiB；最长视频两臂allocated38.166GiB。profile没有保存大checkpoint、不作为fresh初始化。
-
-**两个探索训练均已fresh启动**：none在gpu01物理1/5/6、micro8/8/8；local_only在gpu02物理1/3/6、micro8/8/6；均world3、逻辑4×64不变。tmux `ember-causal-language-none` / `ember-causal-language-local_only`，输出分别`runs/outputs/horizon_causal_none_seed7_20260909` / `horizon_causal_local_only_seed7_20260909`，mode明确exploratory。固定200/400完整保存与闭环，当前未到行为节点。两臂前4update的16个实际condition/task/video/query/RNG等字段与原contextual逐条一致；后续节点继续核对新曝光。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/`包含命令、实时资源、完整合同、profile结果和初始配对证据。
-
-资源：strg01/data1 used645558440KiB，soft1073741824/hard1084227584；当前正式run26GiB、旧诊断1.2GiB，实际个人项目outputs432GiB/analysis28GiB、shared84TiB。两语言臂新增峰值40GiB含训练/物化/临时余量，全部复用source/data/env，预算在独立quota内。
-
-旧v6隔离接入已完成：`.codex/worktrees/v6-causal-reference` clean pushed detached **5be77a34**，分支`codex/v6-causal-reference`，172项CPU检查通过。历史四模型文件只改import，保留mean/三Meta/原probe，接当前合法采样/FM/更新/物化/官方评测；未合入main。完整说明位于该分支`docs/v6_causal_reference.md`。v6真实profile已在gpu02物理4/2、world2、micro8/6启动，tmux `ember-causal-v6-profile`：fresh2、93帧完整图反向、同拓扑resume到4；本次不将profile作初始化或能力证据。三Meta梯度、最长峰值与恢复仍待实测。新增v6峰值预算8GiB，加两语言臂40GiB；launch时strg01/data1 used645561828KiB、shared84TiB，现有分析460KiB/参照worktree104MiB，资源快照/命令保留`causal_learning_20260909/v6/`。该段为暂停前的执行记录；当前禁止自动继续v6 profile/200/400，语言两臂继续已登记学习。
-
-Owner追问不能干等后，已利用两语言臂运行时间完成[当前末层rank共享候选准备](docs/horizon_causal_sharing_candidate_20260909.md)：完整核对历史Target-Owned反证，保留当前所有前端/语言/数据/FM，只绑定同target的D rank轴。隔离分支`codex/horizon-causal-sharing`，三组CPU检查86项通过、config解析与结构检查完成，main正式实现未改。它是可审查候选，不是已选修复；没有新GPU profile/训练/物化/闭环或自动launch安排。先看已运行语言对照的结果，再决定该具体接口是否值得投入学习。
-
-上一批676条诊断已全部完成并保留；它们支持实际依赖与局部反证，没有完成主要原因和解决方案验证。尤其不能由冻结语言零40/96排除fresh语言简化，不能由task7 free-C有效排除架构可学习性问题，不能由局部固定噪声拟合差推断正式训练噪声bug。
+Owner要求减少汇报频率：集中报告完整结果、结论变化和实际问题，省略逐分片播报。此前共享存储读取等待及启动authority修正均已保留原件和Git历史，所有受影响阶段最终完整exit0；不把观察超时当作GPU/训练故障。
 
 ## 历史：首批冻结诊断交付快照（后续授权与结论等级已由顶部纠正）
 

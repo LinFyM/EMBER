@@ -115,3 +115,18 @@ local_h_read相对all只关闭Compiler入口；local_compiler相对all只关闭H
 预注册判据：若关闭H-read在Compiler开/关两种背景下均改善相邻闭环，才支持H-read条件的可重复负作用；Compiler同理。若收益只在联合删除出现，则保留交互解释，不能分别给两入口定责。若单臂只提高训练任务，或验证集只有一个节点更好、广度/保持明显变差，不将其当迁移修正。若某单臂保住Spatial且保留local_only的Object/Long收益，则是需要进一步独立teacher/state复核的具体候选；不自动正式采纳。
 
 各新臂仍fresh400updates，固定200/400完整checkpoint、validation400和held-video train96、独立3072query动作诊断；同seed7、teacher0–15/query16–41、4suite×64query、LR3e-5/warmup8及正常重采样FM time/noise。实际曝光继续逐项核对，允许相同合同下正常BF16与物理微批低位差异，不按loss选点或补500。先做真实短profile验证开启/关闭入口及其余完整图梯度，再按实时设备、quota和精确输出预算登记launch；本段登记不是资源检查的替代。
+
+## 检索分离：200步train96完整结果（其余节点仍在执行）
+
+两个新增train96均完整exit0、全部worker返回0，与all和local_only实际strict配对通过。每task仍是固定4个独立state、teacher46–49；该面板描述训练任务的闭环行为，不能替代validation400或相邻保持。
+
+| 臂（H-read/Compiler） | 成功 | S/O/G/L | breadth | 相对all R/G/L | churn / J | 相对local_only R/G/L | churn / J |
+|---|---:|---|---:|---|---|---|---|
+| all（开/开） | 41/96 | 11/11/13/6 | 18 | — | — | — | — |
+| local_h_read（开/关） | 40/96 | 14/9/12/5 | 17 | 29/11/12 | 23 / .5577 | 34/6/12 | 18 / .6538 |
+| local_compiler（关/开） | 43/96 | 10/12/14/7 | 18 | 38/5/3 | 8 / .8261 | 32/11/14 | 25 / .5614 |
+| local_only（关/关） | 46/96 | 13/14/12/7 | 18 | 32/14/9 | 23 / .5818 | — | — |
+
+在这个训练节点，关闭H-read条件在Compiler开/关的两个背景分别净增2/6；关闭Compiler条件在H-read开/关时分别净−1/+3。两处联合关闭相对all的+5，没有由任一单独关闭完整重现。Compiler单入口与all保留38个共同成功，变化较小；H-read单入口改善Spatial但在其它suite有损失。以上是单节点、单seed的实测条件效应，不能据此宣布稳定交互或将主因定责到某个入口。validation200、400及相邻结果仍按原登记完成。
+
+全部逐task、suite、成功集合与配对原件为`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/{arm}_step200/train96_analysis/`，其中`completed_summary.json`、`vs_contextual_same_step.json`与`vs_local_only_same_step.json`保留完整依据。期间观察到共享存储RPC/文件读取等待；保留原进程后两面板正常结束、全部96行和输入配对通过，未重启、补行或调整超时来改变结果。墙钟包含该等待，不直接用来归因模型吞吐。

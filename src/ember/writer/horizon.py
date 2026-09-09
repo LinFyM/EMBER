@@ -18,11 +18,13 @@ from ember.writer.relation import LocalRelationBlock
 
 COMPILER_LANGUAGE_MODE = "first_query_only_v1"
 PROCESS_LANGUAGE_SOURCE = "frame_contextual_task_tokens_v1"
+BACKEND_CONDITIONING = ("all", "local_only", "none")
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
     if (config.get("compiler_language_mode") != COMPILER_LANGUAGE_MODE
-            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE):
+            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE
+            or config.get("backend_conditioning") not in BACKEND_CONDITIONING):
         raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
 
 
@@ -41,10 +43,12 @@ class HorizonWriterConfig:
     activation_checkpoint: bool = True
     compiler_language_mode: str = COMPILER_LANGUAGE_MODE
     process_language_source: str = PROCESS_LANGUAGE_SOURCE
+    backend_conditioning: str = "all"
 
     def __post_init__(self) -> None:
         require_architecture_identity({"compiler_language_mode": self.compiler_language_mode,
-                                       "process_language_source": self.process_language_source})
+                                       "process_language_source": self.process_language_source,
+                                       "backend_conditioning": self.backend_conditioning})
         positive = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
                     self.blocks, self.radius, self.compiler_blocks, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
@@ -75,12 +79,15 @@ class HorizonProcessGroup(nn.Module):
         self.horizon_read = Attention(width, config.heads)
         self.temporal = RotaryBlock(width, config.heads, causal=True)
         self.writeback = HorizonWriteback(width) if writeback else None
+        self.backend_conditioning = config.backend_conditioning
 
     def forward(self, states: Tensor, times: Tensor, language: Tensor, visual_tokens: Tensor,
                 visual_mask: Tensor, horizon_embedding: Tensor) -> tuple[Tensor, Tensor]:
-        states = self.local(states, times, language, visual_tokens, visual_mask, horizon_embedding)
+        local_condition = language if self.backend_conditioning != "none" else torch.zeros_like(language)
+        states = self.local(states, times, local_condition, visual_tokens, visual_mask, horizon_embedding)
         normalized = self.read_norm(states)
-        query = self.read_language(language)[:, None, :]
+        read_condition = language if self.backend_conditioning == "all" else torch.zeros_like(language)
+        query = self.read_language(read_condition)[:, None, :]
         readout = self.horizon_read(query, normalized, normalized).squeeze(-2)
         process = self.temporal(readout, times / 5)
         return (self.writeback(states, process) if self.writeback is not None else states), process
@@ -176,6 +183,8 @@ class HorizonRelationWriter(nn.Module):
         memory, routing, prior = self._memory(videos, frame_indices)
         query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
         language_route = self.query_language(language)
+        if self.config.backend_conditioning != "all":
+            language_route = torch.zeros_like(language_route)
         for index, block in enumerate(self.compiler):
             # Language guides the first lookup; task-conditioned residual
             # content arrives through the real video values.

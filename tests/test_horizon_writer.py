@@ -258,7 +258,7 @@ def test_compiler_language_can_route_but_cannot_supply_residual_content():
     assert all(value.abs().sum() > 0 for value in gradient)
 
 
-@pytest.mark.parametrize("conditioning", ["all", "local_only", "none"])
+@pytest.mark.parametrize("conditioning", ["all", "local_only", "none", "local_h_read", "local_compiler"])
 def test_exploratory_conditions_change_only_registered_routes(conditioning):
     writer = HorizonRelationWriter(_contract(), _config(backend_conditioning=conditioning))
     response, times, visual, mask = _input(5, writer.config)
@@ -273,13 +273,13 @@ def test_exploratory_conditions_change_only_registered_routes(conditioning):
         assert not torch.allclose(first, second)
     query_first = writer.compile([first], [times], language[0])
     query_second = writer.compile([first], [times], -language[0])
-    if conditioning != "all":
+    if conditioning not in ("all", "local_compiler"):
         torch.testing.assert_close(query_first, query_second, rtol=0, atol=0)
     else:
         assert not torch.allclose(query_first, query_second)
 
 
-@pytest.mark.parametrize("conditioning", ["local_only", "none"])
+@pytest.mark.parametrize("conditioning", ["all", "local_only", "none", "local_h_read", "local_compiler"])
 def test_exploratory_learning_keeps_native_and_visual_paths(conditioning):
     writer = HorizonRelationWriter(_contract(), _config(backend_conditioning=conditioning))
     _unlock(writer)
@@ -289,8 +289,13 @@ def test_exploratory_learning_keeps_native_and_visual_paths(conditioning):
     generated = _call(writer, [(response, times, visual, mask)], _language(writer.config))
     sum(value.square().sum() for value in generated.values()).backward()
     assert response.grad.abs().sum() > 0 and visual.grad.abs().sum() > 0
-    assert writer.query_language.weight.grad is None
-    assert all(group.read_language.weight.grad.abs().sum() == 0 for group in writer.process_groups)
+    if conditioning in ("all", "local_compiler"):
+        assert writer.query_language.weight.grad.abs().sum() > 0
+    else:
+        assert writer.query_language.weight.grad is None
+    hread_enabled = conditioning in ("all", "local_h_read")
+    assert all((group.read_language.weight.grad.abs().sum() > 0) == hread_enabled
+               for group in writer.process_groups)
     assert all(group.read_language.bias.grad.abs().sum() > 0 for group in writer.process_groups)
 
 

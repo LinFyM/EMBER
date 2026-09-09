@@ -18,7 +18,7 @@ from ember.writer.relation import LocalRelationBlock
 
 COMPILER_LANGUAGE_MODE = "first_query_only_v1"
 PROCESS_LANGUAGE_SOURCE = "frame_contextual_task_tokens_v1"
-BACKEND_CONDITIONING = ("all", "local_only", "none")
+BACKEND_CONDITIONING = ("all", "local_only", "none", "local_h_read", "local_compiler")
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -86,7 +86,8 @@ class HorizonProcessGroup(nn.Module):
         local_condition = language if self.backend_conditioning != "none" else torch.zeros_like(language)
         states = self.local(states, times, local_condition, visual_tokens, visual_mask, horizon_embedding)
         normalized = self.read_norm(states)
-        read_condition = language if self.backend_conditioning == "all" else torch.zeros_like(language)
+        read_condition = (language if self.backend_conditioning in ("all", "local_h_read")
+                          else torch.zeros_like(language))
         query = self.read_language(read_condition)[:, None, :]
         readout = self.horizon_read(query, normalized, normalized).squeeze(-2)
         process = self.temporal(readout, times / 5)
@@ -183,7 +184,7 @@ class HorizonRelationWriter(nn.Module):
         memory, routing, prior = self._memory(videos, frame_indices)
         query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
         language_route = self.query_language(language)
-        if self.config.backend_conditioning != "all":
+        if self.config.backend_conditioning not in ("all", "local_compiler"):
             language_route = torch.zeros_like(language_route)
         for index, block in enumerate(self.compiler):
             # Language guides the first lookup; task-conditioned residual

@@ -18,11 +18,16 @@ from ember.writer.relation import LocalRelationBlock
 
 COMPILER_LANGUAGE_MODE = "first_query_only_v1"
 PROCESS_LANGUAGE_SOURCE = "frame_contextual_task_tokens_v1"
+CONSUMERS = {"unified": COMPILER_LANGUAGE_MODE, "semantic_process": "semantic_then_process_v1"}
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
-    if (config.get("compiler_language_mode") != COMPILER_LANGUAGE_MODE
-            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE):
+    consumer, process = config.get("consumer_mode"), config.get("process_mode")
+    if (consumer not in CONSUMERS or config.get("compiler_language_mode") != CONSUMERS.get(consumer)
+            or config.get("process_language_source") != PROCESS_LANGUAGE_SOURCE
+            or config.get("backend_conditioning") != "local_h_read"
+            or process not in ("past_relation", "frame_set")
+            or (consumer == "unified" and process != "past_relation")):
         raise ValueError("Writer architecture identity is missing or incompatible; use its frozen runtime")
 
 
@@ -41,10 +46,15 @@ class HorizonWriterConfig:
     activation_checkpoint: bool = True
     compiler_language_mode: str = COMPILER_LANGUAGE_MODE
     process_language_source: str = PROCESS_LANGUAGE_SOURCE
+    backend_conditioning: str = "local_h_read"
+    consumer_mode: str = "unified"
+    process_mode: str = "past_relation"
 
     def __post_init__(self) -> None:
         require_architecture_identity({"compiler_language_mode": self.compiler_language_mode,
-                                       "process_language_source": self.process_language_source})
+                                       "process_language_source": self.process_language_source,
+                                       "backend_conditioning": self.backend_conditioning,
+                                       "consumer_mode": self.consumer_mode, "process_mode": self.process_mode})
         positive = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
                     self.blocks, self.radius, self.compiler_blocks, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
@@ -107,6 +117,22 @@ class HorizonRelationWriter(nn.Module):
         self.time_projection = nn.Linear(width, width, bias=False)
         self.compiler = nn.ModuleList([CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
         self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width)
+        if config.consumer_mode == "semantic_process":
+            from ember.writer.frame_evidence import FrameEvidenceEncoder
+            from ember.writer.semantic import SemanticProcessCompiler, VisualSemanticEncoder
+
+            # Added modules must not perturb the retained R-path initialization
+            # or the reading Meta constructed by the runtime after this Writer.
+            with torch.random.fork_rng(devices=[]):
+                self.semantic = VisualSemanticEncoder(width, config.heads, config.language_width)
+                self.semantic_compiler = SemanticProcessCompiler(width, config.heads)
+                if config.process_mode == "frame_set":
+                    self.frame_encoder = FrameEvidenceEncoder(width, config.heads, config.horizon,
+                                                              config.language_width, config.blocks,
+                                                              config.activation_checkpoint)
+            del self.compiler, self.query_language, self.time_projection
+            if config.process_mode == "frame_set":
+                del self.process_groups
 
     def encode_language(self, embeddings: Tensor, mask: Tensor, *, positions: Tensor | None = None) -> Tensor:
         if embeddings.ndim not in (2, 3) or embeddings.shape[-1] != self.config.language_width:
@@ -148,6 +174,8 @@ class HorizonRelationWriter(nn.Module):
         if language.shape != (len(responses), self.config.width):
             raise ValueError("process language must be a separate current-frame condition")
         states = self.input_projection(responses) + self.horizon_embedding
+        if self.config.process_mode == "frame_set":
+            return self.frame_encoder(states, language, visual_tokens, visual_mask.bool())
         times = frame_indices.to(device=states.device, dtype=torch.float32)
         for group in self.process_groups:
             args = (states, times, language, visual_tokens, visual_mask.bool(), self.horizon_embedding)
@@ -175,11 +203,10 @@ class HorizonRelationWriter(nn.Module):
             raise ValueError("a condition needs one or more videos with matching time arrays")
         memory, routing, prior = self._memory(videos, frame_indices)
         query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
-        language_route = self.query_language(language)
         for index, block in enumerate(self.compiler):
-            # Language guides the first lookup; task-conditioned residual
-            # content arrives through the real video values.
-            args = (query, memory, routing, prior, language_route if index == 0 else None)
+            # R is the measured local_h_read variant. Exact language is already
+            # present in the per-frame local and H-read conditions.
+            args = (query, memory, routing, prior, None)
             if self.config.activation_checkpoint and torch.is_grad_enabled():
                 query = checkpoint(block, *args, use_reentrant=False)
             else:
@@ -200,4 +227,11 @@ class HorizonRelationWriter(nn.Module):
                 raise ValueError("contextual task tokens must be valid visual evidence")
             contextual = self.contextual_language(visual, task_mask, language_mask)
             videos.append(self.encode_video(response, indices, contextual, visual, mask))
+        if self.config.consumer_mode == "semantic_process":
+            semantic = self.semantic(visual_tokens, visual_masks, visual_task_masks,
+                                     language_embeddings, language_mask)
+            identities = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
+            code = self.semantic_compiler(identities, semantic, videos, frame_indices,
+                                          ordered=self.config.process_mode == "past_relation")
+            return self.decoder(code.unflatten(0, (len(self.contract.targets), self.contract.rank)))
         return self.decoder(self.compile(videos, frame_indices, language))

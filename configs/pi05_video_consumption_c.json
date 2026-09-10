@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_horizon_relation_writer_config_v1",
-  "status": "unified_off_single_condition_reference",
+  "status": "fresh_video_consumption_c_registered_100_200",
   "design": "docs/video_consumption_writer_design.md",
   "data": {
     "seed": 7,
@@ -93,13 +93,13 @@
       48,
       49
     ],
-    "task_weight": "one uniformly sampled task per suite per attempt; equal global task weight 1/4",
+    "task_weight": "four suite tasks, two independent K1 conditions per task; weight1/8 per32queries, taskweight1/4",
     "query_sampling": "uniform action episode, then uniform frame, independently sampled with replacement",
     "frame_stride": 5,
     "include_last_frame": true,
     "extra_meta_tasks": [],
-    "version": "train24_supervised_suite_rng_cross_episode_k1_v2",
-    "conditions_per_task": 1
+    "version": "train24_supervised_two_k1_conditions_v1",
+    "conditions_per_task": 2
   },
   "model": {
     "width": 256,
@@ -113,10 +113,10 @@
     "factor_width": 256,
     "edge_chunk": 32,
     "activation_checkpoint": true,
-    "compiler_language_mode": "first_query_only_v1",
+    "compiler_language_mode": "semantic_then_process_v1",
     "process_language_source": "frame_contextual_task_tokens_v1",
     "backend_conditioning": "local_h_read",
-    "consumer_mode": "unified",
+    "consumer_mode": "semantic_process",
     "process_mode": "past_relation"
   },
   "observer": {
@@ -150,8 +150,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "fresh per-frame contextual task-token process condition;100/200 correct400 and200 train96; same parameter initialization and training sampling, no inherited learning state",
-    "qualification_registration": "docs/horizon_relation_video_writer_design.md section8.2.8",
+    "initial_use": "fresh controlled R/C/S comparison; pure FM, matched task/action/noise, separate K1 LoRAs",
+    "qualification_registration": "docs/video_consumption_writer_design.md section4",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -277,7 +277,7 @@
         48,
         49
       ],
-      "registration_status": "registered frame-contextual process-condition100/200 before new behavior",
+      "registration_status": "registered R/C/S100/200 before new behavior",
       "optimizer_updates": [
         100,
         200

@@ -57,6 +57,7 @@ def bank(tmp_path, request):
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"]["compiler_language_mode"] = "first_query_only_v1"
     run["model_config"]["process_language_source"] = "frame_contextual_task_tokens_v1"
+    run["model_config"].update(consumer_mode="unified", process_mode="past_relation", backend_conditioning="local_h_read")
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))

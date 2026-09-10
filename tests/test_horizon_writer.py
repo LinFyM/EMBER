@@ -240,7 +240,7 @@ def test_memory_prior_equalizes_video_mass_and_excludes_routing_from_values():
     torch.testing.assert_close(observed[0], writer.compiler[0].memory_norm(memory))
 
 
-def test_compiler_language_can_route_but_cannot_supply_residual_content():
+def test_compiler_off_reads_video_without_an_extra_language_query():
     writer = HorizonRelationWriter(_contract(), _config(activation_checkpoint=False))
     language = torch.randn(12)
     # With a single real memory value, attention cannot select different
@@ -250,12 +250,13 @@ def test_compiler_language_can_route_but_cannot_supply_residual_content():
     second = writer.compile(one_value, one_time, -language)
     torch.testing.assert_close(first, second)
 
-    # Multiple distinct values make language-guided lookup meaningful, with
-    # gradients to both the existing query projection and video memory.
+    # Exact language remains in the encoder, while this extra route is off.
     memory = torch.randn(5, 12, requires_grad=True)
     output = writer.compile([memory], [torch.arange(5) * 5], language)
-    gradient = torch.autograd.grad(output.square().sum(), (writer.query_language.weight, memory))
-    assert all(value.abs().sum() > 0 for value in gradient)
+    changed = writer.compile([memory], [torch.arange(5) * 5], -language)
+    torch.testing.assert_close(output, changed)
+    gradient = torch.autograd.grad(output.square().sum(), (writer.query_language.weight, memory), allow_unused=True)
+    assert gradient[0] is None and gradient[1].abs().sum() > 0
 
 
 @pytest.mark.parametrize("mode", [None, "language_residual_v1", "first_query_only_v1"])
@@ -408,7 +409,7 @@ def test_contextual_language_reads_exact_span_per_frame_with_live_gradient():
         writer.contextual_language(visual, mask, language_mask)
 
 
-def test_static_embedding_content_only_conditions_the_compiler_lookup():
+def test_static_embedding_does_not_reintroduce_disabled_compiler_route():
     writer = HorizonRelationWriter(_contract(), _config())
     _unlock(writer)
     inputs, language = [_input(4, writer.config)], _language(writer.config)
@@ -418,4 +419,5 @@ def test_static_embedding_content_only_conditions_the_compiler_lookup():
     second = _call(writer, inputs, (language[0] * -9, language[1]))
     hook.remove()
     torch.testing.assert_close(observed[0], observed[1])
-    assert any(not torch.allclose(first[name], second[name]) for name in first)
+    for name in first:
+        torch.testing.assert_close(first[name], second[name])

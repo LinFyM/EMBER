@@ -1,18 +1,18 @@
 # EMBER task plan
 
-## 当前补做：最强候选的冻结视频检查（2026-09-10）
+## 最强候选冻结视频检查已完成（2026-09-11）
 
-Owner最新要求先完成最强模型检查。固定`horizon_causal_local_h_read_seed7_20260909` macro400（已有validation126/400），完整复用上一轮九臂、train24、states32–35、teacher46/other47、单视角RGB变换与执行RNG，共216套LoRA/864条配对闭环；结果与all400逐臂、逐task/suite及R/G/L比较。此前动态增量结论只适用于all，不能外推候选。
+Owner最新要求的126/400候选补测已完整完成：固定`horizon_causal_local_h_read_seed7_20260909` macro400，216套LoRA、九臂×train24×四初态共864条配对闭环；18个worker全部complete/exit0，无失败重试或遗留任务。正确/另一正确/同suite错误/跨suite错误/乱序/倒序/首帧/中帧/末帧分别53/60/59/59/55/52/58/53/53（各96），完整视频的稳定动态增量仍未建立；结论限此候选与固定面板，不能称完全不看视频或纯task记忆。与all400逐条件及执行RNG配对核验通过，详细per-task/suite、breadth、R/G/L和边界见findings§49。
 
-本次仅冻结诊断，含已明确授权的wrong/shuffle/reverse/static；不训练、不修改方法、不读Test、不作正式checkpoint选择。生成使用该候选原clean pushed detached45e16633运行面，执行复用9abc9b95；原始变换和evaluator直接调用既有脚本。新增峰值预算3GiB，strg01/data1已查used742426964KiB/soft1073741824KiB，共享84TiB；生成上限1200秒、worker5400秒，动态queue与persistent workers。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/registration.json`。完成后直接交付结果，正式训练前复核边界保留。
+本次只做已授权冻结诊断；无新训练、held梯度、Test、正式checkpoint选择或方法采纳。生成复用候选原45e16633运行面，执行复用9abc9b95；原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/`，实际791MiB低于登记3GiB预算。原all分析的动态结论范围已明确修正。当前没有待运行队列，结果直接在对话交付，正式修改/训练继续停在Owner复核前。
 
-## 当前任务：本轮原因深化已完成；正式修改/训练前等待复核（2026-09-10）
+## 历史：上一轮原因深化已完成；正式修改/训练前等待复核（2026-09-10）
 
 Owner明确要求重新集中当前能力、迁移与保持问题的原因，范围包括视频输入因果对照、Compiler查询中介、读取/过程编码与decoder的函数变化分解，以及小预算真实更新的跨任务功能影响；不能只做Owner点名的视频实验。允许有明确问题和预登记预算的GPU诊断及必要的临时极少量更新；禁止新增400步完整训练、同等规模重训练或拆短段绕过上限。最终方案/正式训练仍由Owner复核后推进。
 
 本次Owner明确允许shuffled/reversed/其它任务视频用于原因诊断，覆盖此前仅最终选点后使用的限制，限于本轮登记的诊断用途；不以这些对照选择正式checkpoint，不进入训练loss，Test仍封存。所有现有checkpoint是单视角，诊断保持agentview；双视角能力接通不等于训练过双视角。结果直接在对话中解释，证据写入既有findings/progress/research_history，不新建独立原因报告。
 
-本轮执行已完成：视频控制、两层Q中介、P/C/D端点全交互、四次真实更新及Adam对照，另补固定BBQ和橙汁实际行为，共2701条配对闭环。动态过程未形成稳定整体增量；其它task真实梯度可使橙汁转选BBQ；既有BBQ的P/D变化与交互直接改变目标选择；强制双层查询分工未带来一致即时修复。证据及边界见findings§44–48。没有待运行队列，不由本轮结果自动采纳新架构或追加训练。
+本轮执行已完成：视频控制、两层Q中介、P/C/D端点全交互、四次真实更新及Adam对照，另补固定BBQ和橙汁实际行为，共2701条配对闭环。原all模型的动态过程未形成稳定整体增量；其它task真实梯度可使橙汁转选BBQ；既有BBQ的P/D变化与交互直接改变目标选择；强制双层查询分工未带来一致即时修复。证据及边界见findings§44–48。没有待运行队列，不由本轮结果自动采纳新架构或追加训练。
 
 **已登记的正式推进待办（当前不执行）：**
 

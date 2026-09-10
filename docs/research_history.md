@@ -960,3 +960,9 @@ train8的全200/40016→18/32仍R/G/L10/8/6，旧P/C+新D可达22却也丢5。�
 查询中介真实改变Q及Value槽间差异，但normal/LL/HL/LH/HH成功数（各32）为all20016/16/18/15/16、all40018/14/18/14/17、off20016/15/17/14/15、off40020/18/18/19/18。首层作用依赖背景，双层HH四面板均未超过normal；降低强制槽分工作为即时修复的优先级，仍保留Compiler删除的fresh学习净收益及完整学习中介未识别的边界。详见findings§48及`query_mediator/behavior_mediation_summary.json`。
 
 全部新增证据5.6GiB，在strg01核定的总32GiB新增峰值预算内；独立worker复用释放设备、最多六张实际工作GPU，最终双节点无本任务句柄。Q首次子集队列准备的断言错误修正后完成，失败记录保留；无held梯度/Test/正式checkpoint选择或正式方案采纳。双视角学习、Compiler关闭候选的后续增长与保持、每100步strict400及合法language/static prior对照等仅记录为后续正式验证事项。本历史段不恢复执行。
+
+## 2026-09-11 最强Compiler-off macro400冻结视频检查补全
+
+此前九臂只测all，不能概括当前最强候选。Owner要求后，固定validation126/400的`horizon_causal_local_h_read_seed7_20260909` macro400补完整216 LoRA/864配对rows；agentview、train24、states32–35、teacher46/other47与all400完全同口径。正确/另一正确/同suite错误/跨suite错误/乱序/倒序/首帧/中帧/末帧=53/60/59/59/55/52/58/53/53（各96），对应all51/53/48/46/47/50/52/51/48。完整all→off保留43/新增10/丢8，改善不限于正确过程；当前最强候选在该面板亦未形成稳定动态优势。输入仍导致具体成功得失，不能外推完全忽略视频或纯task记忆。
+
+18个worker complete/exit0、216 jobs完整，实际视频输入及env/policy RNG配对通过；无更新、Test、正式选点或方法采纳。生成用原45e16633，执行用9abc9b95；数据量791MiB，未超过登记3GiB。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/{registration.json,step400/closedloop/summary.json,comparison_with_all400.json}`；解释与边界见findings§49，当前授权只看progress。

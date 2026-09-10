@@ -441,7 +441,7 @@ state25呈明确模块交互：P、C或D单独换400都仍选正确BBQ；D400与
 
 这比“policy Q路径传递动作差异”进一步定位了生成函数：D是跨任务共享的代码到38-target LoRA映射，旧P/C保持也不保证该映射更新后仍生成选择正确对象的策略。§45中D400改善train8若干任务、此处却损害held BBQ，与§44中真实其它任务梯度损害橙汁一起，支持共享条件映射的获取与保持发生有害耦合。它不等于全部参数共享有害，不证明单独冻结D就是修复，也不从两个端点追责某次历史更新；当前Compiler额外入口的fresh删除收益仍成立，但“查询压缩独自解释BBQ后期转向”的强解释不成立。完整逐例目标判断与初始函数证据见`{visual_review,initial_function_comparison,replay_verification,factorial_analysis}.json`，公开结论不把视觉回放当内部错误patch测量。
 
-## 47. 正确动态教学尚未形成稳定整体增益，视频作用局部且伴随成功集合置换（2026-09-10）
+## 47. 原all7模型的正确动态教学尚未形成稳定整体增益，视频作用局部且伴随成功集合置换（2026-09-10）
 
 Owner本轮明确授权的单视角真实RGB视频对照已全部完成：all7固定200/400 × train24 × 9条件 × states32–35，共1728配对rollouts。正确demo46、另一正确demo47；同suite和跨suite错误视频按固定循环映射、保留目标exact language；真实frames乱序/倒序后重新完整native prefix+Meta+Writer；首/中/末帧分别重复到原长度，保留呈现时间位置，三种静态都报告。全部生成/worker exit0、跨臂与跨checkpoint实际teacher/task/state/env/policy RNG配对通过，无训练、held梯度或Test，不能充当正式qualification/checkpoint选择。
 
@@ -461,7 +461,7 @@ Owner本轮明确授权的单视角真实RGB视频对照已全部完成：all7�
 
 Suite层面也有反向效果：400 Long完整/倒序/首帧=8/8/11（各24），Goal完整13而倒序/中帧/末帧均18；Object完整15比这些控制的11–12高。两条正确视频均成功的47个state中，只有1个在三种静态下都失败；该state（Spatial task4/state33）在全部七个错误/破坏条件均失败，说明存在局部视频证据增量，不能全盘否定。上述联合条件只是描述性逐state对照，不是部署union、新资格线或普遍时序理解证明。
 
-架构与目标解释应据此收窄：当前R/P4虽沿真实视频链生成，却已经包含exact language的原生图文条件，图上“必须经过video Value”不保证有效LoRA必须依赖视觉动态。跨episode FM约束正确动作拟合，固定task的语言/静态场景也可提供可拟合线索。结果支持当前学习没有把动态教学变成足够稳定的必要增量；仍不能唯一断言纯task记忆、完全语言独立解或冻结prefix无能力，也不能由此宣称必须换RL。未来真实学习比较需区分language/static prior与视频条件增量，而不是只让P4更复杂或attention差异更大。原件`deep_causal_20260910/video_controls/{dependence_summary.json,step200/closedloop/summary.json,step400/closedloop/summary.json}`保存全部逐task/suite、状态得失与阶段谓词。
+架构与目标解释应据此收窄：当前R/P4虽沿真实视频链生成，却已经包含exact language的原生图文条件，图上“必须经过video Value”不保证有效LoRA必须依赖视觉动态。跨episode FM约束正确动作拟合，固定task的语言/静态场景也可提供可拟合线索。结果支持被测all7模型没有把动态教学变成足够稳定的必要增量，该面板未覆盖Compiler-off候选，补测见§49；仍不能唯一断言纯task记忆、完全语言独立解或冻结prefix无能力，也不能由此宣称必须换RL。未来真实学习比较需区分language/static prior与视频条件增量，而不是只让P4更复杂或attention差异更大。原件`deep_causal_20260910/video_controls/{dependence_summary.json,step200/closedloop/summary.json,step400/closedloop/summary.json}`保存全部逐task/suite、状态得失与阶段谓词。
 
 ## 48. 双层查询差异干预有局部功能作用，强制分工未成为即时修复（2026-09-10）
 
@@ -477,3 +477,29 @@ all7/off7 × 200/400、八train任务及原视频、states32–35的双层Q中�
 每格32个配对episodes，第一字母为第一层，第二字母为第二层。不能把native normal等同LL或HL：固定第二层为L/H时，第一层L→H在all200增加2/1、all400增加4/3、off200增加2/1，而off400为0/−1。故首层分工有局部即时功能贡献，但不是跨模型/节点统一增益。双层同时H在四面板均未超过native normal；off400即使压低第一层仍保留多数成功，查询差异的几何幅度不能当作能力刻度。
 
 本结果降低“通过幅度恢复两层rank/target检索分工即可直接修复”的优先级，不能据此默认采用rank正交loss、更大Q尺度或持久地址流。持久地址/内容分离仍是未经学习验证的不同候选，并非被本冻结缩放完整否定；已有Compiler额外仿射入口删除的fresh验证净收益亦保留，但“共用位移压缩→该学习收益/BBQ保持改善”的唯一中介链没有成立。§44–47的真实更新、P/D端点和视频控制给出更直接的功能保持及动态增量问题。原件`query_mediator/{manipulation_summary,behavior_mediation_summary}.json`及四面板`closedloop/summary.json`；无新模型更新、held梯度或checkpoint选择。
+
+## 49. 最强Compiler-off候选补测：正确视频的动态增量仍未建立（2026-09-11）
+
+Owner指出此前all九臂没有覆盖当前最强模型后，明确要求先补完最强候选检查。本次固定`horizon_causal_local_h_read_seed7_20260909` macro400，即已有validation126/400的候选；不是all，也没有改为其它seed或选择新的checkpoint。完整复用§47的24训练tasks、states32–35、teacher46/other47、九种实际RGB输入变换与执行条件，共216套完整LoRA、864条closed-loop rows。此处每臂96是训练任务冻结诊断，不能与validation126/400或原先每state使用不同teacher的train96直接比较。
+
+| 视频条件 | all400 /96 | 最强候选off400 /96 | 候选相对自身完整视频 保留/新增/丢失 |
+| --- | ---: | ---: | --- |
+| 正确完整视频 | 51 | 53 | 53/0/0 |
+| 同task另一正确视频 | 53 | 60 | 47/13/6 |
+| 同suite错误task视频 | 48 | 59 | 48/11/5 |
+| 跨suite错误task视频 | 46 | 59 | 49/10/4 |
+| 真实帧乱序 | 47 | 55 | 45/10/8 |
+| 真实帧倒序 | 50 | 52 | 44/8/9 |
+| 重复首帧 | 52 | 58 | 47/11/6 |
+| 重复中帧 | 51 | 53 | 45/8/8 |
+| 重复末帧 | 48 | 53 | 45/8/8 |
+
+在本固定面板上，完整53、另一正确60，没有相对错误视频59/59、首帧58及其它静态53/53形成稳定的正确动态证据优势。删除Compiler额外支路的既有validation收益保留，但不能把收益解释成已建立必要视频动态。all→off的完整正确仅51→53（保留43、新增10、丢失8、churn18）；其它正确+7、错误同suite+11/跨suite+13、乱序+8、倒序+2、三静态+6/+2/+5，说明改善并不专属于正确过程，不能从该面板定责全部收益来源。
+
+候选自身四suite按Spatial/Object/Goal/Long依次：完整16/17/14/6，另一正确16/20/17/7，首帧15/19/15/9，中帧15/17/14/7，末帧13/19/13/8；完整breadth20/24，另一正确22/24。Spatial完整比三个静态高1/1/3，但没有跨suite稳定优势。输入仍有实际作用：首帧条件丢失完整视频的6个成功、另增11；跨suite错误丢4增10；倒序丢9增8。不能据总数相近说逐state等效、完全不看视频、纯语言解或纯task记忆已被证明。
+
+两条正确视频均成功的47个state中，没有一个同时在三种静态条件全部失败，也没有一个在两种错误视频下均失败；有5个在乱序和倒序下均失败。它们只是固定逐state描述，不能在部署中挑静态条件组成union，也不构成新资格门槛或普遍时序理解证明。单视角、每task两条正确视频及四个初态、冻结替换的分布变化和未训练language/static baseline均限制结论范围；init11及其它checkpoint未在本次补测。
+
+生成使用候选原clean pushed detached45e16633、原生`backend_conditioning=local_h_read`，无事后hook替代；完整216条件332.95秒，peak10.508GiB。执行沿用§47的9abc9b95运行面；18个动态queue/persistent workers全部complete/exit0，最长1041.89秒。实际核对两模型216条件的language、donor/demo、帧数量、呈现及来源索引、像素置换、相机，以及864 rows的task/state/env/policy-noise配对，全部通过；216 jobs全部complete，无失败重试。只读模型，无梯度、Test、正式选点或方法修改；最终双节点无本任务tmux。
+
+原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/`保留结果前registration、GPU/launch记录、候选checkpoint引用、生成manifest、全部raw rows和`step400/closedloop/summary.json`；`comparison_with_all400.json`保存输入与执行配对、逐臂/逐suite模型差异和描述性逐state集合。新增实际791MiB，低于登记3GiB峰值预算。此前§47只解释all的边界已修正；本节才是对当前最强候选的视频检查结论。

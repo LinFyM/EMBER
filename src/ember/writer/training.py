@@ -48,6 +48,8 @@ def _config(path: Path) -> dict[str, Any]:
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
         or {key: config["data"].get(key) for key in expected_data} != expected_data
+        or type(config["data"].get("conditions_per_task")) is not int
+        or config["data"].get("conditions_per_task") not in (1, 2)
         or int(config["observer"]["flow_time"]) != 1
         or int(config["observer"]["meta_rank"]) != 4
         or int(config["observer"]["probe_seed"]) != 1729
@@ -122,8 +124,7 @@ def _run_contract(args, context, config, runtime, state):
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one FM update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
-            "logical_batch": {"suite_count": 4, "conditions": 4, "queries_per_condition": 64,
-                              "queries_per_update": 256, "task_weight": 0.25, "gradient_reduction": "SUM"},
+            "logical_batch": _logical_batch(config),
             "update_version": config["update_version"], "data_version": config["data"]["version"],
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
@@ -154,31 +155,62 @@ def _grad_norm(parameters) -> float:
     return float(torch.stack(norms).norm()) if norms else 0.0
 
 
+def _logical_batch(config):
+    conditions = config["data"]["conditions_per_task"]
+    return {"suite_count": 4, "tasks": 4, "conditions_per_task": conditions,
+            "conditions": 4 * conditions, "K": 1, "queries_per_task": 64,
+            "queries_per_condition": 64 // conditions, "queries_per_update": 256,
+            "task_weight": 0.25, "condition_weight": 1.0 / (4 * conditions),
+            "gradient_reduction": "SUM"}
+
+
+def _condition_jobs(data, config, draws):
+    logical = _logical_batch(config)
+    by_job = {draw["job_id"]: draw for draw in draws}
+    tasks = {draw["task"] for draw in draws}
+    if (len(draws) != logical["conditions"] or len(by_job) != len(draws)
+            or len(tasks) != 4 or len({data.tasks[task].suite for task in tasks}) != 4):
+        raise ValueError("each supervised update requires distinct condition jobs from four suite tasks")
+    for task in tasks:
+        group = [draw for draw in draws if draw["task"] == task]
+        indices = {draw["condition_index"] for draw in group}
+        if (indices != set(range(logical["conditions_per_task"]))
+                or len({(draw["occurrence"], draw["query_seed"]) for draw in group}) != 1
+                or any(len(draw["video_demos"]) != 1 for draw in group)
+                or len({draw["video_demos"][0] for draw in group}) != len(group)):
+            raise ValueError("task conditions require distinct K1 videos and one shared occurrence/query seed")
+        for draw in group:
+            if (draw["query_count"] != logical["queries_per_condition"]
+                    or draw["query_offset"] != draw["condition_index"] * draw["query_count"]):
+                raise ValueError("condition query slices must partition the full task batch")
+    return by_job
+
+
 def _execute_step(engine, data, context, config, draws, step):
-    if not 1 <= context.world_size <= 4:
-        raise ValueError("four-condition task parallelism currently supports one to four useful ranks")
-    tasks = tuple(int(draw["task"]) for draw in draws)
-    if len(tasks) != 4 or len({data.tasks[task].suite for task in tasks}) != 4:
-        raise ValueError("each supervised update must contain one task from each suite")
-    by_task = {int(draw["task"]): draw for draw in draws}
-    costs = {task: int(draw["frames"]) for task, draw in by_task.items()}
+    logical = _logical_batch(config)
+    if not 1 <= context.world_size <= min(6, logical["conditions"]):
+        raise ValueError("condition parallelism requires 1 to min(6, condition count) useful ranks")
+    by_job = _condition_jobs(data, config, draws)
+    jobs = tuple(by_job)
+    costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
     assignment = cost_balanced_task_assignment(
-        tasks, costs, {task: tuple(range(context.world_size)) for task in tasks}, world_size=context.world_size,
+        jobs, costs, {job: tuple(range(context.world_size)) for job in jobs}, world_size=context.world_size,
     )
     rows = []
-    for task in assignment[context.rank]:
-        draw = by_task[task]
+    for job in assignment[context.rank]:
+        draw = by_job[job]
+        task = draw["task"]
         tick = time.perf_counter()
-        if len(draw["video_demos"]) != 1:
-            raise ValueError("the current supervised condition must contain exactly one teaching video")
         metric = engine.backward(draw)
-        if int(metric["queries"]) != int(config["data"]["queries_per_task"]):
+        if int(metric["queries"]) != draw["query_count"]:
             raise RuntimeError("supervised engine did not execute the registered FM exposure")
-        rows.append({**metric, "step": step, "task": task, "suite": data.tasks[task].suite,
-                     "occurrence": draw["occurrence"], "K": len(draw["video_demos"]),
-                     "video_demos": list(draw["video_demos"]), "frames": costs[task],
-                     "query_seed": draw["query_seed"],
-                     "queries": int(config["data"]["queries_per_task"]), "seconds": time.perf_counter() - tick})
+        rows.append({**metric, "step": step, "job_id": job, "task": task,
+                     "suite": data.tasks[task].suite, "condition_index": draw["condition_index"],
+                     "occurrence": draw["occurrence"], "K": 1,
+                     "condition_weight": logical["condition_weight"], "task_weight": logical["task_weight"],
+                     "video_demos": list(draw["video_demos"]), "frames": costs[job],
+                     "query_seed": draw["query_seed"], "query_offset": draw["query_offset"],
+                     "queries": draw["query_count"], "seconds": time.perf_counter() - tick})
     return rows
 
 
@@ -259,9 +291,11 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             append_jsonl(args.output / "exposures.jsonl", row)
         metric = {
             "step": updates, "optimizer_updates": updates,
-            "seconds": seconds, "mean_flow_loss": sum(r["flow_loss"] for r in gathered) / 4,
+            "seconds": seconds,
+            "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
-            "supervised_queries": metrics_rows * int(config["data"]["queries_per_task"]),
+            "condition_exposures": metrics_rows, "task_exposures": updates * 4,
+            "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
             "rank_memory": [{key: value for key, value in packet.items() if key != "rows"} for packet in packets],
             "peak_allocated_gib": max(packet["peak_allocated_gib"] for packet in packets),
             "peak_reserved_gib": max(packet["peak_reserved_gib"] for packet in packets),
@@ -347,7 +381,10 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
     if context.is_main:
         write_json_atomic(args.output / "completion.json", {
             "schema_version": RUN_SCHEMA, "status": "segment_complete", "mode": args.mode,
-            "optimizer_updates": updates, "exposures": metrics_rows, "seconds": time.perf_counter() - start,
+            "optimizer_updates": updates, "exposures": metrics_rows,
+            "condition_exposures": metrics_rows, "task_exposures": updates * 4,
+            "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
+            "seconds": time.perf_counter() - start,
             "scientific_qualification": False, "next": "registered held-action and paired closed-loop evidence",
         })
 
@@ -361,8 +398,8 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("formal supervised training requires a clean pushed detached worktree")
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if not 1 <= context.world_size <= 4:
-        raise ValueError("four-condition task parallelism currently supports one node and one to four useful GPUs")
+    if not 1 <= context.world_size <= min(6, _logical_batch(config)["conditions"]):
+        raise ValueError("condition parallelism requires one node and 1 to min(6, condition count) useful GPUs")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
         print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 256}), flush=True)

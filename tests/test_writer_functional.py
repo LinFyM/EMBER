@@ -616,3 +616,51 @@ def test_functional_gradient_rejects_zero_microbatch() -> None:
             flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
             policy_microbatch_size=0,
         )
+
+
+@pytest.mark.parametrize("microbatch", [8, 32])
+def test_two_k1_conditions_replay_original_full64_flow_draws_and_gradient(microbatch):
+    from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
+
+    policy = _TinyPi05Policy()
+    contract = _tiny_pi05_contract()
+    state = prepare_frozen_writer_policy(policy, contract)
+    state = {name: value.detach().clone() for name, value in state.items()}
+    state[next(name for name in state if ".lora_B." in name)].fill_(0.02)
+    batch = {"image": torch.randn(64, 3, 4, 4), ACTION: torch.randn(64, 2, 3),
+             OBS_LANGUAGE_TOKENS: torch.ones(64, 4, dtype=torch.long),
+             OBS_LANGUAGE_ATTENTION_MASK: torch.ones(64, 4, dtype=torch.bool)}
+    common = dict(policy_rng_seed=303, policy_rng_device=torch.device("cpu"),
+                  flow_time_sampling_scheme=INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+                  flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+                  collect_policy_details=False)
+    full_loss, _, full_gradient = functional_lora_loss_gradient(policy, state, contract, batch=batch, **common)
+    full_noise, full_time = policy.model.flow_draws.pop()
+    ambient_rng = torch.get_rng_state().clone()
+    results = []
+    for offset in (0, 32):
+        results.append(functional_lora_loss_gradient(
+            policy, state, contract, batch={key: value[offset:offset + 32] for key, value in batch.items()},
+            policy_microbatch_size=microbatch, policy_random_batch_size=64, policy_batch_offset=offset, **common,
+        ))
+    assert torch.equal(torch.get_rng_state(), ambient_rng)
+    noise, times = zip(*policy.model.flow_draws, strict=True)
+    torch.testing.assert_close(torch.cat(noise), full_noise)
+    torch.testing.assert_close(torch.cat(times), full_time)
+    torch.testing.assert_close(sum(result[0] for result in results) / 2, full_loss)
+    # Same-adapter oracle isolates slice/weight correctness; deployment still
+    # generates separate adapters for each different teaching condition.
+    for name in full_gradient:
+        torch.testing.assert_close(sum(result[2][name] for result in results) / 2, full_gradient[name])
+
+
+@pytest.mark.parametrize("offset,random_size,seed", [(40, 64, 303), (-1, 64, 303), (0, 16, 303), (0, 64, None)])
+def test_condition_flow_slice_rejects_out_of_range_or_unkeyed_draws(offset, random_size, seed):
+    from ember.writer.functional import functional_microbatch_contract
+    with pytest.raises(WriterModelError, match="condition exceeds|keyed sliceable"):
+        functional_microbatch_contract(
+            {"value": torch.zeros(32, 3)}, 32, policy_rng_seed=seed,
+            flow_time_sampling_scheme=INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+            flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+            policy_random_batch_size=random_size, policy_batch_offset=offset,
+        )

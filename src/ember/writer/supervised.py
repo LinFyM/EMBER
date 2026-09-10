@@ -39,6 +39,7 @@ class SupervisedEngine:
         start = self._time(timings, "writer_forward_seconds", start)
         raw_batch, query_trace = self.data.action_batch(
             task, draw["occurrence"], demos, query_seed=draw["query_seed"],
+            query_offset=draw["query_offset"], query_count=draw["query_count"],
         )
         batch = runtime.processor.training_batch(raw_batch)
         start = self._time(timings, "query_preparation_seconds", start)
@@ -50,8 +51,11 @@ class SupervisedEngine:
                 flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
                 policy_microbatch_size=int(self.config["runtime"]["policy_microbatch"]),
                 collect_policy_details=False,
+                policy_random_batch_size=query_trace["policy_random_batch_size"],
+                policy_batch_offset=draw["query_offset"],
             )
-        gradients = {name: value.float().mul_(0.25) for name, value in gradients.items()}
+        condition_weight = 1.0 / (4 * self.config["data"]["conditions_per_task"])
+        gradients = {name: value.float().mul_(condition_weight) for name, value in gradients.items()}
         fm_norm = float(torch.stack([value.norm() for value in gradients.values()]).norm())
         del batch, raw_batch, state
         start = self._time(timings, "fm_vjp_seconds", start)
@@ -68,7 +72,8 @@ class SupervisedEngine:
         runtime.observer.backward(condition, cotangents)
         self._time(timings, "observer_vjp_seconds", start)
         return {
-            "flow_loss": float(loss), "task_weight": 0.25, "normalizer": 1.0,
+            "flow_loss": float(loss), "task_weight": 0.25,
+            "condition_weight": condition_weight, "normalizer": 1.0,
             "fm_lora_gradient_norm": fm_norm,
             "queries": len(query_trace["action_demos"]), **query_trace, **timings,
             "prefix_cache_hits": self.cache.hits - hits,

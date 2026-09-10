@@ -2,6 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import json
+import random
 import time
 from types import SimpleNamespace
 
@@ -33,6 +34,7 @@ def config(tmp_path):
     # actual segment nodes are separately registered by each launch.
     value = json.loads((ROOT / "configs/pi05_horizon_writer_v1.json").read_text())
     value["data"]["cardinalities"] = [1]
+    value["data"]["conditions_per_task"] = 1
     value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
     value["optimization"]["joint_train_all_writer_modules"] = True
@@ -79,7 +81,9 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
     assert config["model"]["factor_width"] == 256 and config["data"]["queries_per_task"] == 64
     assert "total_steps" not in config["data"]
     for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16),
-                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3)):
+                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
+                                ("data", "conditions_per_task", None), ("data", "conditions_per_task", True),
+                                ("data", "conditions_per_task", 3)):
         changed = deepcopy(config)
         changed[section][key] = value
         path = tmp_path / "config.json"
@@ -116,11 +120,13 @@ class _ToySupervisedEngine:
         self.versions.append(tuple(p.detach().clone() for p in self.state.parameters()))
         # One globally weighted condition. This is an update-cadence oracle,
         # not a proxy for the native FM/RL control objective.
-        loss = .25 * sum(p.square().sum() for p in self.state.parameters())
+        loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
-        return {"flow_loss": float(loss.detach()), "queries": 64}
+        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"]}
 
-def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config):
+@pytest.mark.parametrize("conditions", [1, 2])
+def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):
+    config["data"]["conditions_per_task"] = sampler.conditions_per_task = conditions
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
     runtime = SimpleNamespace(state=state)
@@ -128,7 +134,7 @@ def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler,
     optimizer, scheduler = _optimization(state, config)
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     rows, norms = _update(engine, runtime, sampler, context, config, optimizer, scheduler, 1)
-    assert len(rows) == 4 and sampler.sampler_state()["next_step"] == 1
+    assert len(rows) == 4 * conditions and sampler.sampler_state()["next_step"] == 1
     assert scheduler.last_epoch == 1
     assert all(int(value["step"]) == 1 for value in optimizer.state.values())
     assert norms["writer_grad_norm"] > 0 and norms["meta_grad_norm"] > 0
@@ -202,7 +208,9 @@ def test_resume_retains_distinct_orphaned_exposure_and_step_evidence(tmp_path):
 
 
 @pytest.mark.parametrize("stop", [1, 2])
-def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampler, config, stop):
+@pytest.mark.parametrize("conditions", [1, 2])
+def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampler, config, stop, conditions):
+    config["data"]["conditions_per_task"] = sampler.conditions_per_task = conditions
     monkeypatch.setattr("ember.ecp.checkpoint.capture_rng", lambda _: torch.get_rng_state())
     monkeypatch.setattr(torch.cuda, "synchronize", lambda *_: None)
     monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda *_: 0)
@@ -219,7 +227,14 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     completion = json.loads((tmp_path / "completion.json").read_text())
     assert completion["optimizer_updates"] == stop and not completion["scientific_qualification"]
     assert len((tmp_path / "metrics.jsonl").read_text().splitlines()) == stop
-    assert len((tmp_path / "exposures.jsonl").read_text().splitlines()) == stop * 4
+    exposures = [json.loads(line) for line in (tmp_path / "exposures.jsonl").read_text().splitlines()]
+    assert len(exposures) == stop * 4 * conditions
+    metrics = json.loads((tmp_path / "metrics.jsonl").read_text().splitlines()[-1])
+    assert metrics["supervised_queries"] == sum(row["queries"] for row in exposures) == stop * 256
+    assert metrics["condition_exposures"] == metrics["exposures"] == stop * 4 * conditions
+    assert metrics["task_exposures"] == stop * 4
+    latest = [row for row in exposures if row["step"] == stop]
+    assert metrics["mean_flow_loss"] == pytest.approx(sum(row["flow_loss"] for row in latest) / len(latest))
     checkpoint, = (tmp_path / "checkpoints").glob("macro_*")
     trainer = torch.load(checkpoint / "trainer_state.pt", weights_only=False)
     assert trainer["training_state"] == _training_state(config, stop)
@@ -253,7 +268,8 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
     loss.backward()
     logical_gradient = state.weight.grad.clone()
     draws = tuple({"task": task, "occurrence": 0, "video_demos": (task,), "query_seed": 17 + task,
-                   "frames": [19, 11, 7, 4][task]} for task in range(4))
+                   "frames": [19, 11, 7, 4][task], "job_id": task, "condition_index": 0,
+                   "query_offset": 0, "query_count": 64} for task in range(4))
     data = SimpleNamespace(tasks={task: SimpleNamespace(suite=f"suite{task}") for task in range(4)})
     class Engine:
         def __init__(self, model):
@@ -285,7 +301,7 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
 
 
 def test_rank_count_cannot_expand_batch_or_create_idle_replicas(config):
-    with pytest.raises(ValueError, match="one to four"):
+    with pytest.raises(ValueError, match="useful ranks"):
         _execute_step(None, None, SimpleNamespace(world_size=5), config, (), 1)
 
 
@@ -341,3 +357,133 @@ def test_dual_view_is_an_explicit_config_change_not_an_exact_resume(tmp_path, co
     cfg_path.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match="camera_view"):
         _config(cfg_path)
+
+
+def test_two_conditions_preserve_task_query_streams_and_resume(sampler, config):
+    original = deepcopy(sampler.sampler_state())
+    one = [sampler.next_iteration() for _ in range(24)]
+    one_state = deepcopy(sampler.sampler_state())
+    sampler.restore_sampler(original)
+    sampler.conditions_per_task = 2
+    two = [sampler.next_iteration() for _ in range(24)]
+    two_state = deepcopy(sampler.sampler_state())
+    for singles, pairs in zip(one, two, strict=True):
+        assert [draw["job_id"] for draw in pairs] == list(range(8))
+        for single, first, second in zip(singles, pairs[::2], pairs[1::2], strict=True):
+            for key in ("task", "occurrence", "query_seed"):
+                assert single[key] == first[key] == second[key]
+            assert first["video_demos"] != second["video_demos"]
+            assert len(first["video_demos"]) == len(second["video_demos"]) == 1
+            assert (first["query_offset"], second["query_offset"]) == (0, 32)
+            assert first["query_count"] == second["query_count"] == 32
+    for name in ("task", "query"):
+        assert one_state["streams"][name] == two_state["streams"][name]
+    assert one_state["task_occurrences"] == two_state["task_occurrences"]
+    expected = [sampler.next_iteration() for _ in range(3)]
+    sampler.restore_sampler(two_state)
+    assert [sampler.next_iteration() for _ in range(3)] == expected
+
+
+def test_action_conditions_partition_original_full_selection_and_seed(sampler):
+    from ember.writer.functional import task_logical_batch_policy_rng_seed
+
+    class Queries:
+        task_episode_rows = {0: {demo: tuple(demo * 100 + frame for frame in range(demo))
+                                for demo in range(16, 42)}}
+        loaded = []
+        def __getitem__(self, index):
+            self.loaded.append(index)
+            return {"demo_index": index // 100, "frame_index": index % 100,
+                    "action": torch.tensor([index], dtype=torch.float32)}
+    sampler.queries = Queries()
+    sampler.query_rows = sampler.queries.task_episode_rows
+    rng = random.Random(123)
+    indices = [rng.choice(sampler.query_rows[0][rng.choice(sampler.action_pool)]) for _ in range(64)]
+    expected_seed = task_logical_batch_policy_rng_seed(
+        optimization_seed=sampler.seed, task_id=0, task_visit=9,
+        demo_indices=[index // 100 for index in indices], frame_indices=[index % 100 for index in indices],
+    )
+    before = deepcopy(sampler.sampler_state())
+    outputs = [sampler.action_batch(0, 9, (demo,), query_seed=123, query_offset=offset, query_count=32)
+               for demo, offset in ((3, 0), (4, 32))]
+    assert sampler.queries.loaded == indices  # Select full64 twice, read only each condition's actual32.
+    assert torch.cat([batch["action"] for batch, _ in outputs]).flatten().tolist() == indices
+    assert all(trace["policy_rng_seed"] == expected_seed for _, trace in outputs)
+    assert all(trace["policy_random_batch_size"] == 64 for _, trace in outputs)
+    assert sampler.sampler_state() == before
+    with pytest.raises(ValueError, match="overlap"):
+        sampler.action_batch(0, 0, (16,), query_seed=123)
+    with pytest.raises(ValueError, match="exceeds"):
+        sampler.action_batch(0, 0, (0,), query_seed=123, query_offset=40, query_count=32)
+
+
+@pytest.mark.parametrize("world_size", range(1, 7))
+def test_eight_condition_jobs_preserve_global_gradient_and_use_all_ranks(monkeypatch, sampler, config, world_size):
+    config["data"]["conditions_per_task"] = sampler.conditions_per_task = 2
+    draws = sampler.next_iteration()
+    state = torch.nn.Linear(2, 1, bias=False)
+    features = torch.arange(16, dtype=torch.float32).reshape(8, 2) / 8
+    targets = torch.linspace(-1, 1, 8).reshape(8, 1)
+    (state(features) - targets).square().mean().backward()
+    expected = state.weight.grad.clone()
+    class Engine:
+        def __init__(self, model):
+            self.model = model
+        def backward(self, draw):
+            job = draw["job_id"]
+            loss = (self.model(features[job:job + 1]) - targets[job:job + 1]).square().mean()
+            (loss / 8).backward()
+            return {"queries": 32, "flow_loss": float(loss.detach())}
+    models, rows = [], []
+    for rank in range(world_size):
+        model = deepcopy(state)
+        model.zero_grad(set_to_none=True)
+        context = DistributedContext(rank, rank, world_size, torch.device("cpu"))
+        local = _execute_step(Engine(model), sampler, context, config, draws, 1)
+        assert local  # No idle replica; repeated task IDs cannot overwrite jobs.
+        rows.extend(local)
+        models.append(model)
+    assert sorted(row["job_id"] for row in rows) == list(range(8))
+    assert sum(row["queries"] for row in rows) == 256
+    assert sum(row["condition_weight"] for row in rows) == 1
+    combined = sum(model.weight.grad for model in models)
+    def reduce(gradient, op):
+        assert op == torch.distributed.ReduceOp.SUM
+        gradient.copy_(combined)
+    monkeypatch.setattr("ember.writer.replay.dist.all_reduce", reduce)
+    for model in models:
+        sum_writer_gradients(tuple(model.parameters()), world_size=world_size)
+        torch.testing.assert_close(model.weight.grad, expected)
+    from ember.writer.training import _logical_batch
+    contract = _logical_batch(config)
+    assert contract["conditions"] == 8 and contract["queries_per_condition"] == 32
+    assert contract["queries_per_update"] == 256 and contract["K"] == 1
+
+
+def test_two_conditions_are_explicit_and_cannot_resume_one_condition(tmp_path, config):
+    changed = deepcopy(config)
+    changed["data"]["conditions_per_task"] = 2
+    cfg_path = tmp_path / "two.json"
+    cfg_path.write_text(json.dumps(changed))
+    assert _config(cfg_path)["data"]["conditions_per_task"] == 2
+    contract = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
+                "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"}}
+    path = tmp_path / "run_contract.json"
+    _publish_contract(path, contract, resume=False)
+    with pytest.raises(ValueError, match="exact-resume contract differs: config"):
+        _publish_contract(path, {**contract, "config": changed}, resume=True)
+
+
+@pytest.mark.parametrize("key,value", [("job_id", 0), ("condition_index", 0),
+                                      ("query_offset", 0), ("query_seed", -1),
+                                      ("video_demos", (99, 100))])
+def test_duplicate_or_misaligned_conditions_fail_before_backward(sampler, config, key, value):
+    config["data"]["conditions_per_task"] = sampler.conditions_per_task = 2
+    draws = list(sampler.next_iteration())
+    draws[1] = {**draws[1], key: value}
+    with pytest.raises(ValueError):
+        _execute_step(None, sampler, SimpleNamespace(world_size=6, rank=0), config, draws, 1)
+    draws = list(sampler.next_iteration())
+    draws[1] = {**draws[1], "video_demos": draws[0]["video_demos"]}
+    with pytest.raises(ValueError, match="distinct K1 videos"):
+        _execute_step(None, sampler, SimpleNamespace(world_size=6, rank=0), config, draws, 1)

@@ -60,6 +60,9 @@ class WriterTrainingData:
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "agentview") -> None:
         self.config = dict(config)
         self.seed = int(config["seed"])
+        self.conditions_per_task = config.get("conditions_per_task")
+        if type(self.conditions_per_task) is not int or self.conditions_per_task not in (1, 2):
+            raise ValueError("conditions_per_task must explicitly be 1 or 2")
         self.tasks = load_learning_tasks(asset_root, config["task_ids"])
         self.video_pool = tuple(map(int, config["video_demos"]))
         self.action_pool = tuple(map(int, config["action_demos"]))
@@ -91,12 +94,16 @@ class WriterTrainingData:
         draws = []
         for tasks in self.suites.values():
             task = self.streams["task"].choice(tasks)
-            demos = tuple(self.streams["video"].sample(self.video_pool, 1))
-            draws.append({
-                "task": task, "occurrence": self.counts[task], "video_demos": demos,
-                "query_seed": self.streams["query"].getrandbits(63),
-                "frames": sum(self.videos.frame_counts(task, demo)[1] for demo in demos),
-            })
+            demos = self.streams["video"].sample(self.video_pool, self.conditions_per_task)
+            query_seed = self.streams["query"].getrandbits(63)
+            query_count = int(self.config["queries_per_task"]) // self.conditions_per_task
+            for condition_index, demo in enumerate(demos):
+                draws.append({
+                    "job_id": len(draws), "condition_index": condition_index,
+                    "task": task, "occurrence": self.counts[task], "video_demos": (demo,),
+                    "query_seed": query_seed, "query_offset": condition_index * query_count,
+                    "query_count": query_count, "frames": self.videos.frame_counts(task, demo)[1],
+                })
             self.counts[task] += 1
         self.next_step += 1
         return tuple(draws)
@@ -110,11 +117,13 @@ class WriterTrainingData:
             tuple(torch.from_numpy(video.frame_indices) for video in videos),
         )
 
-    def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int):
+    def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int,
+                     query_offset: int = 0, query_count: int | None = None):
         if set(demos) & set(self.action_pool):
             raise ValueError("teaching video and action query episodes overlap")
         return self._sample_actions(self.queries, self.action_pool, task, occurrence, query_seed,
-                                    int(self.config["queries_per_task"]))
+                                    int(self.config["queries_per_task"]),
+                                    query_offset=query_offset, query_count=query_count)
 
     def diagnostic_batch(self, task: int, *, seed: int, count: int):
         if self.diagnostic_queries is None:
@@ -124,22 +133,32 @@ class WriterTrainingData:
             )
         return self._sample_actions(self.diagnostic_queries, self.diagnostic_pool, task, 0, seed, count)
 
-    def _sample_actions(self, dataset, pool, task, occurrence, query_seed, count):
+    def _sample_actions(self, dataset, pool, task, occurrence, query_seed, count, *,
+                        query_offset=0, query_count=None):
+        query_count = count if query_count is None else query_count
+        if not 0 <= query_offset < count or not 0 < query_count <= count - query_offset:
+            raise ValueError("action query slice exceeds full task batch")
         rng = random.Random(query_seed)
         episode_rows = self.query_rows[task] if dataset is self.queries else dataset.task_episode_rows[task]
-        rows = []
+        selected = []
         for _ in range(count):
             episode = rng.choice(pool)
-            rows.append(dataset[rng.choice(episode_rows[episode])])
+            # Dataset episode rows are ordered by frame. randrange uses the same
+            # draw as choice(rows), preserving the original full task selection.
+            frame = rng.randrange(len(episode_rows[episode]))
+            selected.append((episode, frame, episode_rows[episode][frame]))
         seed = task_logical_batch_policy_rng_seed(
             optimization_seed=self.seed, task_id=task, task_visit=occurrence,
-            demo_indices=[row["demo_index"] for row in rows],
-            frame_indices=[row["frame_index"] for row in rows],
+            demo_indices=[episode for episode, _, _ in selected],
+            frame_indices=[frame for _, frame, _ in selected],
         )
+        selected = selected[query_offset:query_offset + query_count]
+        rows = [dataset[row] for _, _, row in selected]
         return default_collate(rows), {
-            "action_demos": [row["demo_index"] for row in rows],
-            "action_frames": [row["frame_index"] for row in rows],
-            "policy_rng_seed": seed,
+            "action_demos": [episode for episode, _, _ in selected],
+            "action_frames": [frame for _, frame, _ in selected],
+            "policy_rng_seed": seed, "policy_random_batch_size": count,
+            "query_offset": query_offset,
         }
 
     def sampler_state(self) -> dict[str, Any]:

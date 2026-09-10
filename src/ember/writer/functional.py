@@ -426,6 +426,8 @@ def functional_microbatch_contract(
     policy_rng_seed: int | None,
     flow_time_sampling_scheme: str | None,
     flow_noise_sampling_scheme: str | None,
+    policy_random_batch_size: int | None = None,
+    policy_batch_offset: int = 0,
 ) -> tuple[int, int]:
     batch_sizes = {
         int(value.shape[0])
@@ -450,7 +452,10 @@ def functional_microbatch_contract(
             INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
         ),
     }
-    if microbatch_size < logical_batch_size and (
+    random_size = logical_batch_size if policy_random_batch_size is None else policy_random_batch_size
+    if not 0 <= policy_batch_offset or policy_batch_offset + logical_batch_size > random_size:
+        raise WriterModelError("functional condition exceeds full policy random batch")
+    if (microbatch_size < random_size or policy_batch_offset) and (
         (flow_time_sampling_scheme, flow_noise_sampling_scheme)
         not in keyed_sliceable_pairs
         or policy_rng_seed is None
@@ -470,7 +475,8 @@ def _functional_microbatch_gradient(
     start: int,
     stop: int,
     logical_batch_size: int,
-    physical_microbatching: bool,
+    policy_random_batch_size: int,
+    policy_batch_offset: int,
     policy_rng_seed: int | None,
     policy_rng_device: torch.device | str | None,
     flow_time_sampling_scheme: str | None,
@@ -490,19 +496,18 @@ def _functional_microbatch_gradient(
         )
         for name, value in batch.items()
     }
-    random_batch_size = logical_batch_size if physical_microbatching else None
     with scoped_policy_randomness(policy_rng_seed, policy_rng_device):
         with scoped_policy_flow_noise_sampling(
             policy,
             flow_noise_sampling_scheme,
-            logical_batch_size=random_batch_size,
-            batch_offset=start,
+            logical_batch_size=policy_random_batch_size,
+            batch_offset=policy_batch_offset + start,
         ):
             with scoped_policy_flow_time_sampling(
                 policy,
                 flow_time_sampling_scheme,
-                logical_batch_size=random_batch_size,
-                batch_offset=start,
+                logical_batch_size=policy_random_batch_size,
+                batch_offset=policy_batch_offset + start,
             ):
                 with _scoped_policy_detail_collection(
                     policy,
@@ -546,12 +551,15 @@ def functional_lora_loss_gradient(
     flow_noise_sampling_scheme: str | None = None,
     policy_microbatch_size: int | None = None,
     collect_policy_details: bool = True,
+    policy_random_batch_size: int | None = None,
+    policy_batch_offset: int = 0,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
     Backpropagating the returned leaf gradients through the one-video Writer is
     the exact first derivative by the chain rule; no policy parameter is
-    trainable or accumulated.
+    trainable or accumulated. A condition can select its contiguous rows from
+    a larger keyed policy random batch before physical microbatching.
     """
 
     if any(parameter.requires_grad for parameter in policy.parameters()):
@@ -562,8 +570,11 @@ def functional_lora_loss_gradient(
         policy_rng_seed=policy_rng_seed,
         flow_time_sampling_scheme=flow_time_sampling_scheme,
         flow_noise_sampling_scheme=flow_noise_sampling_scheme,
+        policy_random_batch_size=policy_random_batch_size,
+        policy_batch_offset=policy_batch_offset,
     )
 
+    random_batch_size = logical_batch_size if policy_random_batch_size is None else policy_random_batch_size
     if microbatch_size == logical_batch_size:
         return _functional_microbatch_gradient(
             policy,
@@ -573,7 +584,8 @@ def functional_lora_loss_gradient(
             start=0,
             stop=logical_batch_size,
             logical_batch_size=logical_batch_size,
-            physical_microbatching=False,
+            policy_random_batch_size=random_batch_size,
+            policy_batch_offset=policy_batch_offset,
             policy_rng_seed=policy_rng_seed,
             policy_rng_device=policy_rng_device,
             flow_time_sampling_scheme=flow_time_sampling_scheme,
@@ -607,7 +619,8 @@ def functional_lora_loss_gradient(
             start=start,
             stop=stop,
             logical_batch_size=logical_batch_size,
-            physical_microbatching=microbatch_size < logical_batch_size,
+            policy_random_batch_size=random_batch_size,
+            policy_batch_offset=policy_batch_offset,
             policy_rng_seed=policy_rng_seed,
             policy_rng_device=policy_rng_device,
             flow_time_sampling_scheme=flow_time_sampling_scheme,

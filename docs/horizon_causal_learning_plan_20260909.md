@@ -8,6 +8,14 @@
 
 **当前执行节点（完整结果后更新）：** 语言/检索2×2与Compiler固定确认全部完成。关闭Compiler的验证净增方向跨init7/init11保留，但init11候选BBQ35→19、丢20，整体丢37、breadth7→6，稳定保持修复未复现。下一项选为当前同target跨rank输出D绑定，以原all seed7作为共同基线，只改变末层参数共享；近等价历史反证、学习协议与预注册节点见语言报告末节及隔离候选文档。此项四更新/最长视频完整反向profile已通过，fresh400隔离学习已启动，前4更新实际采样与all基线配对；VL未选定、原v6重训继续暂停。以下历史阶段描述不表示全部仍待执行。
 
+## 本轮机制深化与轻量诊断（2026-09-10，结果前登记）
+
+Owner要求继续深入结构与学习机制，结合实际实现、数学关系、训练记录和已有checkpoint，区分结构事实、诊断支持与未验证假设。Compiler候选init7与init11的200→400均上升：分别评估学习进展、能力保持与是否平台，不能以保持失败推出已平台或再训无效；本轮完整训练上限不变。输出共享结论严格限定当前同target跨rank的D参数绑定，不外推所有共享形式。
+
+在已有训练/评测等待期间，登记一次CPU只读查询几何诊断：使用all/local_h_read × init7/init11 × 200/400的八个已有checkpoint，只读language reader、target/rank queries及第一Compiler Q投影/LayerNorm等少量张量。复用原生tokenizer、固定source embedding表的所需token行和已有train24/validation8 bank中的exact language，不读取Test、action、状态或优化器；不加载完整policy/Writer，不运行视频或policy forward，无梯度、无优化器、无新rollout。预算单CPU进程、至多4线程/10分钟、输出小于10MiB，达到预算即停止并报告。
+
+计算全仿射语言位移、纯bias和零位移的实际第一层Q几何，量化同task内608个target/rank query的分散程度、跨task位移和200→400漂移。区分“近乎常量bias”与“task-dependent共用位移压缩query差异”解释；这是固定张量的代数诊断，不能由query范数或相似度宣称视频attention饱和、错误帧选择或行为原因唯一定位。真实P4/K/V与闭环反事实不在此诊断中。使用FP32作可解释计算，非BF16逐元素复刻。原件放已有原因分析root的mechanism目录，解释并入现有完整报告。
+
 ## 授权与阶段顺序
 
 Owner已明确：允许为探索原因修改架构、语言路径、参数共享、训练目标和训练方式，并进行必要的实验性训练、恢复与闭环测试。此前把授权限制成冻结诊断，是错误解释。实验性训练不能仅因保存checkpoint或使用完整模型被误称为禁止的正式训练；反之，也不能把实际正式接续换个“探索”名字绕过边界。

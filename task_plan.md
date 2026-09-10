@@ -10,9 +10,9 @@ Owner明确要求休息期间由Codex自行整理专家意见与独立判断、�
 
 唯一active design为[语义条件化过程消费](docs/video_consumption_writer_design.md)。前代[Horizon设计](docs/horizon_relation_video_writer_design.md)提供保留的完整H/过去关系细节与历史合同，不恢复其中旧待办。
 
-1. **进行中：** 归档第二轮专家原文与独立判断，落实R/C/S对照、数据/随机性/评测和资源合同。
-2. 实现一个canonical runtime下的条件分配与消费接口；共享C/S语义读取、融合和D，明确无序帧集合参照的能力与边界。
-3. CPU信息墙/shape/真实梯度语义检查，双节点GPU与独立quota预检，最长真实视频吞吐及恢复smoke；验证后合入并推送main，formal从冻结detached提交启动。
+1. **完成：** 归档第二轮专家原文与独立判断，落实R/C/S对照、数据/随机性/评测和资源合同。
+2. **完成：** 实现一个canonical runtime下的条件分配与消费接口；共享C/S语义读取、融合和D，明确无序帧集合参照的能力与边界。
+3. **进行中：** CPU合同与整合检查通过，已合入main；进行最长真实视频吞吐及恢复smoke，formal从clean pushed冻结detached提交启动。
 4. R/C/S分别fresh普通FM，初轮100/200节点strict correct400，200训练闭环96与独立动作验证；固定task/state/video/RNG口径，报告全部曝光和逐task/suite得失。
 5. 依据真实能力和竞争解释选择继续、修正或终止候选。有实质获取则登记后续相邻节点；明确负结果不无限续训、不小扫、不同时叠加多个未经支持的改动。
 6. 候选稳定后补换正确视频与公平参照，冻结选择后做独立最终因果裁决；全过程维护可审查记录、checkpoint、原始结果和Git。目标完成前持续自主推进。

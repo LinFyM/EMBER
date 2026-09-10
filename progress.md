@@ -8,7 +8,11 @@ Owner最新明确授权Codex在其休息期间持续自主推进方法修正、�
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
-当前执行：主agent负责架构、配置、整合与科研裁决；条件调度/梯度权重可在独立worktree完成。初轮资源预计峰值96GiB，strg01/data1最新used743343260KiB/soft1073741824KiB；大资产全部复用，GPU分配在launch前按两节点实时状态决定。代码、profile与formal身份分开。
+当前执行：R/C/S架构与双K1条件训练已合入main（513d1ec4），共享functional完整64随机批后切32的语义检查通过。整合回归377通过，唯一失败为测试fixture未解析worktree数据symlink；修正fixture后相关49项通过，全部378项已覆盖通过。三份正式配置通过合同解析。当前进行真实视频吞吐及恢复profile，尚无新formal结果。
+
+本轮只增加semantic与frame_evidence两个凝聚模块，复用现有训练/物化/eval入口。架构检查无hard violation；既有长函数和测试文件的局部增长已审查，未复制runner。实验模式由同一入口显式限制，候选选择后退役非选中模式。
+
+初轮资源预计峰值96GiB，strg01/data1最新used743721572KiB/soft1073741824KiB；当前tmp13GiB、worktrees1.6GiB。大资产全部复用。GPU两节点已检查，profile拟用gpu01空闲1/4，正式分配在launch前刷新。代码、profile与formal身份分开。
 
 ## 方法身份与学习结果
 

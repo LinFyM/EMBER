@@ -245,4 +245,4 @@ all的新关联200也已完整99/400，S/O/G/L2/51/33/13、breadth6。其200→4
 
 all/local_h_read两臂已各完成fresh400且exit0，200/400完整checkpoint通过公开检查，各自累计1600条件/102400queries、各suite400，实际teacher/query/frame/FM RNG与data7参照一致；无Test或held梯度。all/LH的held3072均值200为.112488689/.112699040，400为.105458612/.106606225；这些值不负责判断候选行为。完整更新用时11608.09/15573.63秒，不能把共享GPU上的墙钟差直接归为架构吞吐。原件为`compiler_confirmation/{arm}_init11_step{200,400}/learning_summary.json`与checkpoint inspection。
 
-已启动all200、LH200、all400三组496条件物化，随后完成第四组及八个预登记闭环面板。评测仍按各自init11成对比较，不能把seed11候选对seed7基线冒充同初始化干预。
+all200与LH200各496条件物化已完整exit0、公开inspector与实际task/state/video映射检查通过，两组validation400已启动；all400物化继续，随后完成第四组及其余预登记闭环面板。评测仍按各自init11成对比较，不能把seed11候选对seed7基线冒充同初始化干预。动作拟合的同init11成对汇总另存`compiler_confirmation/init11_paired_learning_summary.json`，200/400候选分别5/14个task误差更低、总均值均稍高；该诊断不代替闭环。

@@ -9,7 +9,7 @@
 **当前active诊断计划：** [学习过程因果分析计划](docs/horizon_causal_learning_plan_20260909.md)。正式方法目前仍为`docs/horizon_relation_video_writer_design.md`与现有canonical实现；完成分析并由证据支持修正后，同步正式合同和实现，不另等Owner醒来批准。
 
 1. **语言与检索条件学习全部完成：** 四新臂、3968新闭环行完整且actual配对。all/none/local_only/local_h_read/local_compiler的validation200→400为103→90、108→92、114→110、108→126、98→90。只关闭Compiler的local_h_read保留BBQ多数旧成功（29→32、R/G/L23/9/6）；方向一致因素是Compiler额外条件，不能把H-read联合定责。完整2×2、train96、逐task/suite及成功得失见报告。
-2. **当前：复核有实测收益的固定候选。** 结果前合同已写入`docs/horizon_causal_language_learning_20260909.md`末节：all/local_h_read成对optimization seed11、data seed7、fresh400及固定200/400完整行为；冻结seed7两节点另用schedule seed20260910配对正确视频，复用原LoRA；补原四state的BBQ候选回放。先验证收益/保持的可复现边界，不挑seed或单峰，不以126宣布整体修复或正式采纳。init11两臂已完整fresh400，四个checkpoint、累计实际曝光及held3072通过检查；独立初始化闭环待完成，三组496条件物化已启动。换视频400为all82/LH126（R/G/L70/56/12），all200为99，最后LH200正在评测；候选回放已完成。资源和实际进程见progress。
+2. **当前：复核有实测收益的固定候选。** 结果前合同已写入`docs/horizon_causal_language_learning_20260909.md`末节：all/local_h_read成对optimization seed11、data seed7、fresh400及固定200/400完整行为；冻结seed7两节点另用schedule seed20260910配对正确视频，复用原LoRA；补原四state的BBQ候选回放。先验证收益/保持的可复现边界，不挑seed或单峰，不以126宣布整体修复或正式采纳。init11两臂已完整fresh400，四个checkpoint、累计实际曝光及held3072通过检查；独立初始化闭环待完成；200两臂各496条件bank完成且actual配对通过，两组validation400已启动。all400物化继续，LH400待卡。换视频400为all82/LH126（R/G/L70/56/12），all200为99，最后LH200正在评测；候选回放已完成。资源和实际进程见progress。
 3. **候选与未识别因素保留：** rank共享仅CPU准备，VL仅只读可行性审计；当前不启动。若复核无法支持当前具体修正，再依剩余分歧选择有区分力的过程/共享或训练对照。局部free-C有效不证明整个架构可学习；纯FM没改而BBQ保持改善，也不等于所有训练因素已排除。旧v6追加重训继续暂停。
 4. **先完成分析交付：** 主要因果贡献、经过复核的具体方案与实测效果、历史反证和未识别边界；剩余主要解释若仍有明确可行的区分实验，应先完成，不用单个正结果代替此前要求的分析。
 5. **随后自主方法迭代：** 依据分析证据选择修改，更新正式设计/合同，完成隔离实现与适当验证后集成main并推送；从clean pushed detached运行面启动预登记正式学习与闭环评测，继续按实际获取、迁移、保持和全部科学资格迭代。正式采纳和下一次正式训练已获授权，不再设置阶段性人工批准停止点；旧v6等已暂停方案不因此机械重启。

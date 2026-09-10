@@ -10,7 +10,11 @@
 
 冻结seed7换视频400的实际strict配对已完成：all82、LH126，R/G/L70/56/12、churn68/J=.5072；LH S/O/G/L0/71/37/18、breadth4，BBQ31。候选Object/Long优势换视频关联仍存在，但Spatial归零，不能称广泛修复。all换视频200为99，200→400保留53/新增29/丢失46、churn75/J=.4141；BBQ23→1。最后LH200换视频已在gpu01p5×3worker启动（tmux `ember-compiler-reassign-lh200`，worker2523932/2523933/2523934）。
 
-三组init11物化同时启动：all200在gpu01p6（PID2440804），LH200在gpu02p4（PID1416440），all400在gpu02p5（PID1417442），每组validation400+train96共496条件；LH400物化待下一张合适卡。当前四张有用GPU，全部原训练及前述已完成评测进程已退出。物化用原clean pushed45e16633，换视频评测用资源修正后的0e2a3a44；没有改动科学行为或预注册面板。最新strg01/data1 used719737772KiB、soft1073741824/hard1084227584，两新run各8.3GiB、analysis499MiB，四banks及余量新增峰值12GiB在原40GiB预算内；shared84TiB。资源原件`compiler_confirmation/{gpu_preflight_completed_training,storage_completed_training}.json`。
+init11的all200/LH200各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组validation400已同时启动：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。all400物化仍在gpu02p5；LH400待该卡释放。LH seed7换视频200继续gpu01p5×3worker；当前共四张有用GPU。
+
+物化使用clean pushed45e16633；八个尚未启动的init11评测脚本已在launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。两次validation launch前分别双节点live检查，gpu01p6free46067MiB/util0，gpu02p4free40314MiB/util2，满足三个worker38912MiB准入且不打断peer。精确命令、资源与实际进程保存在各面板`validation_launch.json`。
+
+同init11的实际学习配对另存`compiler_confirmation/init11_paired_learning_summary.json`，两个节点held输入经共同参照配对；候选200/400分别5/14个task的动作误差更低，但总均值都稍高，不能据此选择行为方案。最新strg01/data1 used719737772KiB、soft1073741824/hard1084227584，两新run各8.3GiB、analysis499MiB，四banks及余量新增峰值12GiB在原40GiB预算内；shared84TiB。资源原件`compiler_confirmation/{gpu_preflight_completed_training,storage_completed_training}.json`。
 
 最新完整结果改变了优先级：local_h_read（仅关闭Compiler首次额外条件）validation200→400为**108→126**，train96为**40→56**；BBQ29→32、保留23/新增9/丢失6。当前先复核这个实质效应，不启动共享rank、VL新架构或旧v6重训，也不续训到500。
 

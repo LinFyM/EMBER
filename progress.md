@@ -10,7 +10,7 @@
 
 冻结seed7换视频400的实际strict配对已完成：all82、LH126，R/G/L70/56/12、churn68/J=.5072；LH S/O/G/L0/71/37/18、breadth4，BBQ31。候选Object/Long优势换视频关联仍存在，但Spatial归零，不能称广泛修复。all换视频200为99，200→400保留53/新增29/丢失46、churn75/J=.4141；BBQ23→1。最后LH200换视频已在gpu01p5×3worker启动（tmux `ember-compiler-reassign-lh200`，worker2523932/2523933/2523934）。
 
-init11的all200/LH200各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组validation400已同时启动：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。all400物化仍在gpu02p5；LH400待该卡释放。LH seed7换视频200继续gpu01p5×3worker；当前共四张有用GPU。
+init11的all200/LH200各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组validation400已同时启动：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。all400各496条件物化现也完整exit0、public inspector和actual配对通过。LH400物化尚未启动：gpu02p5释放后出现新peer（ycliu PID369035），两次双节点检查为98/99%负载，第二次free17638MiB；不在忙卡强行共驻，等待下一张合适卡。LH seed7换视频200继续gpu01p5×3worker；当前三组评测使用三张有用GPU。
 
 物化使用clean pushed45e16633；八个尚未启动的init11评测脚本已在launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。两次validation launch前分别双节点live检查，gpu01p6free46067MiB/util0，gpu02p4free40314MiB/util2，满足三个worker38912MiB准入且不打断peer。精确命令、资源与实际进程保存在各面板`validation_launch.json`。
 

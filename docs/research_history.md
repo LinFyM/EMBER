@@ -923,3 +923,15 @@ local_h_read validation108→126，train40→56；400 S/O/G/L1/70/36/19、breadt
 init7原关联all103→90、候选108→126；新关联99→82与101→126；init11为100→108与104→119。init11训练任务all41→56、候选44→61。删除Compiler额外仿射query支路的验证增益方向保留，但400净效应从init7+36变为init11+11。init11候选BBQ35→19、保留15/丢20，整体相邻67保留/52新增/37丢失、breadth7→6、Spatial1/100，稳定保持修复没有复现。
 
 该结果识别局部支路贡献，不解释全部获取/保持缺口或旧v5.2/v6配方分差。完整结论与所有原件在[学习报告](horizon_causal_language_learning_20260909.md)末节及`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`；后续实验与授权仅看progress，不从此历史条目恢复。
+
+## 2026-09-10 当前D绑定与机制深化：训练获取改善，迁移保持未修复
+
+当前前端、全语言路径、rank16、source、合法teacher/query池、纯FM与实际采样协议保持，只将同target跨rank的A/B两侧D绑定；fresh seed7固定400。科学运行面c63f55dc，400及后段评测e7447291仅修正按worker显存准入；探索科学实现未合入canonical方法。训练完整exit0、两个checkpoint及1600条件/102400queries实际配对通过，held3072无梯度、mean .114600358→.107955018。四个200/400行为面板992行完整，全部worker/父进程exit0和实际strict配对通过。
+
+共享validation115→82，对all103→90，400同节点R/G/L63/19/27、breadth6→5；共享自身59/23/56、churn79/J=.4275、breadth7→5，S/O/G/L3/61/38/13→1/42/35/4。BBQ26→3丢23，Long早期13个成功全丢。训练侧却32→60，对all41→49，400同节点41/19/8；自身29/31/3、保留90.6%、breadth16→20。该具体绑定的早期验证优势未保持，后期训练获取与未见任务保持继续分离，不作为本轮修复采纳。
+
+结果前登记的CPU只读机制分析进一步定位：八个Compiler checkpoint的额外共用语言位移在LayerNorm前强烈压缩第一层608个query的差异（相对同权重置零反事实只剩3.5%–4.6%），但没有实际K/V attention或独立中介行为证据，不能称注意力饱和或唯一根因。共享两节点的生成B/BA近单方向，D_B字典自身有多方向且后期更分散；形式rank16未被强制降为1。该几何与训练闭环60并存，不能代替性能或被直接命名为缺陷。绑定的梯度聚合/AdamW共同改变，五个相关400日志均未实际触发clip1。
+
+Compiler候选init7/init11的验证108→126、104→119与训练40→56、44→61都仍有净学习，保持未修复不等于平台或再训无效。本轮停止来自Owner明确完整训练上限与复核边界，不是参数/性能穷尽证明。未识别的查询中介、读取侧可学习性、任务覆盖和旧新训练配方仍保留；不以本负结果否定全部共享、FM或未来组合。
+
+最终[原因与学习机制报告](horizon_causal_language_learning_20260909.md)包含完整逐task/suite、R/G/L/churn/J、历史反证和建议；共享总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json`，机制原件同root的`mechanism/`。全部本任务GPU与观察进程已结束；未正式修改/采纳方法、未续401或新增完整训练、未用Test/held梯度/最终视频controls。本历史段不恢复执行，后续须Owner复核后重新授权。

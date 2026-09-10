@@ -1,58 +1,38 @@
 # EMBER progress
 
-更新时间：2026-09-10 CST。当前goal恢复为完整原因分析，完成后停在正式修改/采纳当前方法及下一次正式训练之前，等待Owner复核。
+更新时间：2026-09-10 CST。**当前原因分析已交付，停在正式方法修改/采纳和下一轮训练之前，等待Owner复核。** 本轮最后授权的共享run完整止于400，既定200/400全部面板已完成；没有待运行实验或本任务GPU/观察进程。不得从下文历史计划、旧设计或空闲GPU恢复执行。
 
-**最新Owner授权（覆盖此前更宽的探索学习授权）：** 2026-09-10 CST Owner最新限制：当前已启动的 `horizon_causal_within_target_rank_shared_seed7_20260910` 是本次分析最后获准的完整训练，仅完成既定400步及200/400评测。此后分析排查不得再启动完整训练或同等规模的重训练，也不得通过改称探索、拆分短段、追加seed/候选或延长当前run绕过限制。后续使用已有checkpoint、历史证据、冻结评测及有明确问题和小预算的轻量诊断；证据不足时明确报告未识别项，不以必须查清为由追加重训练。正式方法修改/采纳及未来正式训练仍须等待Owner复核后另行明确授权。
+**授权边界：** Owner限定当前共享run为本次分析最后一轮完整训练。它已完整结束；此后不得以探索、拆段、追加seed/候选或延长为名再训练。正式方法修改/采纳、合入探索科学实现及下一轮训练均须Owner复核后另行明确授权。旧v6专项继续暂停，VL未选定，Test与最终视频controls保持封存。
 
-**最新机制分析要求：** 结合实际代码、数学与checkpoint定位具体学习接口和竞争解释；Compiler两个初始化均200→400上升，须分开判断净学习、成功保持和平台证据。保持未修复不等于停止学习或已到平台。仅做已登记的小预算CPU几何诊断及既有证据分析，共享结论仅适用于实际D绑定干预，完整训练上限不变。
+## 本轮完整结果与原因结论
 
-## 当前：Compiler固定确认完成，转入输出共享的单接口原因分析
+报告：[当前Horizon能力缺口：原因分析与学习机制](docs/horizon_causal_language_learning_20260909.md)。顶部是最终结论和证据等级，中段保存所有注册/阶段结果，后段给出数学关系、checkpoint诊断、竞争解释及未验证方案。没有以几何、loss、清单耗尽或单个正结果宣布唯一根因。
 
-**已完成并裁决（2026-09-10 CST）：** 语言与检索2×2的四个fresh新臂及Compiler固定确认均已完整。确认12面板3584行、全部worker0、实际同节点/相邻strict配对通过；另有固定BBQ八次回放，数值分叉与限制保留。init11两臂训练均止于400，四checkpoint、完整学习状态、实际1600条件/102400queries和held3072信息墙检查通过。全部确认训练/物化/评测进程已退出，无待执行面板和本地观察进程。
+| 实际臂 | validation200→400 | train96 200→400 | validation自身 保留/新增/丢失 |
+|---|---|---|---|
+| all init7 | 103→90 | 41→49 | 56/34/47 |
+| 仅去Compiler额外query init7 | 108→126 | 40→56 | 82/44/26 |
+| all init11 | 100→108 | 41→56 | 62/46/38 |
+| 仅去Compiler额外query init11 | 104→119 | 44→61 | 67/52/37 |
+| 仅绑定同target跨rank D init7 | 115→82 | 32→60 | 59/23/56 |
 
-| 条件 | all validation200→400 | local_h_read validation200→400 | all train96 | local_h_read train96 |
-|---|---|---|---|---|
-| init7原关联 | 103→90 | 108→126 | 41→49 | 40→56 |
-| init7新正确视频关联 | 99→82 | 101→126 | 不重复 | 不重复 |
-| init11原关联 | 100→108 | 104→119 | 41→56 | 44→61 |
+**Compiler：** 删除额外仿射query支路的验证净收益方向经两个初始化和另一正确视频关联复核（新关联all99→82、候选101→126）；不是删除exact language、local/H-read或视频Value。两候选200→400仍净学习，不能宣布平台、已穷尽或再训无效；init11候选仍丢37个验证成功、BBQ35→19只保留15，稳定保持未修复。最有实测支持的是这项局部修正候选，尚无完整科学资格或正式采纳。
 
-**结论边界：** 仅关闭Compiler额外仿射query支路的验证净增方向复现；原生exact language、local上下文与H-read均保留，不能统称语言有害。init11候选400相对all108→119为R/G/L86/33/22、churn55/J=.6099；自身104→119却67保留/52新增/37丢失、churn89/J=.4295、breadth7→6，BBQ35→19只保留15/丢20。Spatial1/100、Goal23仍0。相比init7候选BBQ29→32保留23/29，稳定保持修复没有通过独立初始化复核，不能正式采纳或宣布全部原因已查清。
+**输出D绑定：** 最后400 validation82对all90，R/G/L63/19/27、churn46/J=.5780、breadth6→5；自身115→82为59/23/56、churn79/J=.4275、breadth7→5，S/O/G/L1/42/35/4，global1/3/11/13/23/26/31/32为0/1/39/3/0/35/4/0。BBQ26→3丢23，两条Long早期13个成功全丢。训练侧却32→60、保留29/新增31/丢3，breadth16→20；400对all49净+11、R/G/L41/19/8，S/O/G/L18/19/14/9。因此早期验证优势未保持，后期训练获取不能替代未见任务保持；不采纳这个具体绑定作为修复，结论不外推全部共享。
 
-init11末期train候选61对all56为R/G/L48/13/8，breadth22对20；自身44→61为36/25/8、churn33/J=.5217，S/O/G/L19/18/15/9。训练任务改善不能替代未见任务保持。最后候选train96使用gpu01p5/6×3worker正常完成458.72秒，准确launch/resource/outer completion原件均保留。
+**实际机制定位：** 八个已有checkpoint的CPU选参分析发现，all的共用语言位移经LayerNorm将第一层608个Q的差异幅度压到同权重置零反事实的3.5%–4.6%；其Q/静态语言读出漂移也更大。未读取真实P4/K/V attention，不能宣布饱和或选错帧。共享200/400的实际B/BA近单方向，而D_B自身有多方向；定位到代码经U_B/GELU与字典的实际使用，不是形式rank16被硬降。该几何与train60并存，不能直接称为有害缺陷或据此加rank损失。五条完整400日志均未触发clip1；共享真正改变的是函数空间、rank梯度聚合与AdamW状态。prefix可学习性、meta-task数量、闭环状态覆盖、旧新配方及上述中间机制各自贡献仍未独立识别，报告明确保留边界。
 
-完整报告`docs/horizon_causal_language_learning_20260909.md`末节；总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`，各paired JSON含全部task/suite/成功集合。训练/物化来自clean pushed45e16633，评测来自clean pushed0e2a3a44（仅资源准入修正，模型及科学合同不变）；没有合入探索科学实现。
+## 完成与验证证据
 
-**输出共享探索训练已完整止于400，既定400评测尚待完成：** 只将当前同target跨rank的D绑定，以原all seed7为共同基线；全体语言入口、前端/过程、rank16、teacher/query与纯FM均保持，不叠加Compiler删除。运行面 `.codex/worktrees/horizon-causal-sharing` 为clean pushed detached c63f55dc，探索科学实现尚未合入main。历史Target-Owned负结果及本次当前前端/合法协议的单接口差异见报告和隔离候选文档。
+- 语言/检索四个新学习臂共3968条新闭环完整；Compiler固定确认12面板3584行完整，另有固定BBQ回放及其数值分叉记录。索引`causal_learning_20260909/{language/completed_language_matrix,retrieval/completed_retrieval_matrix,compiler_confirmation/completed_confirmation_matrix}.json`。
+- 最后共享run `runs/outputs/horizon_causal_within_target_rank_shared_seed7_20260910` 完整400，wrapper exit0/12104.41秒；两个完整checkpoint、1600条件/102400queries、每suite400条件和实际teacher/query/frame/RNG配对通过。held3072无梯度均值.114600358→.107955018，24/24训练task改善；all400为.105074533。训练/物化科学运行面clean pushed detached c63f55dc，评测后段e7447291仅含资源准入修正。
+- 共享200/400四个行为面板992行均完整，worker和wrapper全exit0，实际同节点/自身相邻strict配对通过；最终validation与train96墙钟1724.22/955.20秒。各节点完整逐task/suite、breadth、R/G/L/churn/J、raw rows及学习原件均保留于`causal_learning_20260909/sharing/`，总索引`sharing/completed_matrix.json`。
+- 机制诊断全部为结果前登记的小预算CPU只读：八个checkpoint选参查询几何、128套既有LoRA的因子/乘积几何、共享两节点D_B谱与既有日志。没有完整policy/视频forward、动作输入、优化器或梯度；原件`causal_learning_20260909/mechanism/`。
+- 最终双节点实际tmux检查无本任务句柄；最后所有worker和父进程均正常退出，本地观察进程也结束。原运行合同、live GPU/独立quota、精确launch、资源准入失败与实际成功启动原件保留；没有reset、占位或干扰peer。
 
-四更新与93帧最长视频完整反向profile已exit0、两rank检查通过：共享D20594688参数、全部有效读取/过程/decoder/Meta梯度存在、source trainable0；平均30.0015秒/update、峰值34.8792GiB，最长15.1864秒/34.7127GiB。profile不作为初始化。fresh0→400曾运行于gpu01p5/6（现已exit0）、world2/micro8,8，tmux `ember-horizon-rank-sharing-seed7`、torchrun3520650、rank3533719/3533720；固定200/400 checkpoint，run `runs/outputs/horizon_causal_within_target_rank_shared_seed7_20260910`。实际前4次更新16条件/1024queries与原all的task/video/action-query/frame/RNG及权重逐项配对通过，init/data均7；不是profile续训。按profile约3.3小时更新，闭环另计，不构成能力预期。
+原因计划`docs/horizon_causal_learning_plan_20260909.md`本轮已完成；正式方法记录仍为`docs/horizon_relation_video_writer_design.md`，canonical科学源码未替换。候选只存在于保留的隔离分支/冻结运行面，未合入main作为正式方法。当前下一步仅是Owner复核本报告与建议；不存在自动后续训练、设计采纳或新的诊断队列。
 
-launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABLE1、GPU-local NUMA/deferred NCCL已由actual contract确认。strg01/data1 used729795400KiB、soft1073741824/hard1084227584，相关已有run14GiB/analysis1.1GiB，新峰值20GiB在独立配额内、shared84TiB，资产复用。原件`causal_learning_20260909/sharing/{registered_contract,profile_completed_summary,train_launch,storage_train_launch,gpu_preflight_train_launch,initial_sampling_pairing}.json`。首次profile仅因本地缺失既有远端authority ref在model/data/update前退出；fetch精确ref并公开git_state检查通过后原配置复测成功，失败原件`sharing/bootstrap_attempt1`保留。200/400的496条件物化请求及schema-owning评测脚本已CPU准备，须checkpoint完成/公开检查及launch前实时资源后执行；没有提前产生评测结果。
-
-**共享200节点已保存并核验：** 完整checkpoint公开检查通过；累计200更新、800条件/51200queries，各suite200条件，实际teacher/query/frame/RNG与原all基线逐项配对。held3072输入配对、无梯度，均值.114600358对基线.111031413，仅作为拟合诊断。训练随后按原合同完整止于400。200的validation400+train96共496条件已物化完成，exit0/815.58秒、全部新生成；两bank公开检查和实际task/state/video映射与基线一致。原件 `sharing/step200/{checkpoint_inspection,learning_summary,bank_inspection}.json`。
-
-**200两个行为面板均已完整：** train96为32/96，对all41为R/G/L24/8/17、churn25/J=.4898、breadth18→16，S/O/G/L7/10/11/4；validation115/400对all103为77/38/26、churn64/J=.5461、breadth均7，S/O/G/L3/61/38/13，global1/3/11/13/23/26/31/32为2/1/35/26/0/38/10/3。实际strict配对均通过，train两worker/validation三worker和各自wrapper全exit0，墙钟1201.75/3585.10秒；两个eval tmux均退出。完整原件`sharing/step200/{train96,validation}_analysis/`。绑定的早期train获取下降、validation净增并存，近单方向输出不能直接判为有害缺陷；400与自身相邻待完成。训练随后按原合同完整止于400，见下。
-
-物化及已完成validation来自c63f55dc；已完成train96及后续400评测使用clean pushed detached e7447291，仅复用按worker显存预算准入修正，模型/行为协议不变、共享schema保留。24项launcher定向检查通过。首次train96准入未过发生在任何rollout前，刷新双节点后原队列start成功；原件`sharing/step200/{validation_launch,train96_admission_failure,train96_start1_launch,gpu_preflight_train96_start1}.json`与`sharing/evaluation_runtime_adjustment.json`。
-
-**机制深化已取得新定位：** 八个已有Compiler checkpoint的CPU选参诊断显示，all额外语言位移将第一层608个Q的差异幅度压到同权重置零反事实的3.5%–4.6%；实际Q/静态语言读出漂移也明显高于删除支路候选。不能据此宣布attention饱和、选错帧或最终代码坍缩。共享200固定32条件×38target的B/BA近单方向，B第一奇异能量全部>99.9979%，但D_B自身第一方向仅38.54%–74.46%，定位到代码经过字典的实际使用，而非字典被结构强制rank1。全部为小预算CPU只读，未做模型forward/优化；原件`causal_learning_20260909/mechanism/`，完整数学、竞争解释及三轴学习判断已并入原报告。400输出几何仅待原定bank完成后读取，不增加训练。
-
-最近strg01/data1 used730508012KiB，原20GiB增长预算内；物化前run696MiB、analysis516KiB、shared84TiB，资产复用。运行中的训练源码及checkpoint合同未改，没有新增训练。
-
-**共享400训练节点已完整：** wrapper exit0/12104.41秒，完整checkpoint公开检查通过，累计400更新、1600条件/102400queries，各suite400条件、实际teacher/query/frame/RNG与all逐项配对。更新总11760.21秒、平均29.4005秒、200→400段5861.40秒，峰值34.8969GiB；原训练tmux和ranks均退出。held3072实际输入配对、无梯度，均值.107955018（自身200 .114600358，24/24任务改善；all400 .105074533，仅1/24优于all）。完整400日志没有触发clip1，最大.941387，故不能把实际绑定效应归于全局裁剪。原件`sharing/step400/{checkpoint_inspection,learning_summary,gradient_log_summary}.json`。没有401或新增训练。
-
-**400 bank与轻量几何完整，两个行为面板已启动：** 496条件物化exit0/774.79秒，两个公开bank检查及实际task/state/video映射通过，物化tmux已退出。400固定32条件×38target的生成B/BA仍近单方向（B全部第一方向能量>99.9924%、BA>99.9759%），但D_B自身第一方向均值降至57.86%、范围39.67%–71.88%，字典更分散；不能以几何代替闭环。原件`sharing/step400/bank_inspection.json`与`mechanism/{output_geometry,dictionary_geometry}_step400.json`。
-
-**400 train96已完整60/96：** 对all49为R/G/L41/19/8、churn27/J=.6029、breadth均20，S/O/G/L18/19/14/9。自身32→60为29/31/3、churn34/J=.4603、breadth16→20，保留90.6%早期成功，Spatial/Long旧成功全保留；不能把以新增为主的churn读成遗忘。三worker及wrapper exit0、actual配对通过、墙钟955.20秒，gpu02该eval tmux/pane322364已退出。原件`sharing/step400/train96_analysis/`。200训练劣势已反转，近单方向输出不构成持续获取障碍的证明。
-
-最后400 validation仍在gpu01物理5/6各3worker运行，tmux `ember-sharing-seed7-val400`、pane3678407；尚无完整验证结果。两项均来自clean pushed detached e7447291、模型与官方配对协议不变。launch前双节点live检查：gpu01p5/p6各free45490MiB/util0/无peer；gpu02p6 free40742MiB/util0、既有4584+148MiB低负载peer保留，满足3worker+2GiB余量。原件`sharing/step400/{validation_launch,train96_launch,gpu_preflight_evaluation}.json`。
-
-最近strg01/data1 used733839756KiB、soft1073741824/hard1084227584，物化前run3.8GiB/analysis892KiB/机制2MiB、余3GiB预算在原20GiB内、shared84TiB；banks已按预算完成，评测只增小量raw rows/queue/logs。原件`sharing/step400/{materialization_launch,gpu_preflight_materialization,storage_materialization_launch}.json`。没有新增训练。
-
-**授权与边界：** 当前共享run是最后一轮完整训练，400后不延长、不新增其它重训练。完成既定评测和预算内轻量分析后交付具体结论及未识别项，等待Owner复核。Compiler确认已完整结束，不由局部净增正式采纳候选；旧v6重训保持暂停，VL未选定，不因GPU空闲增加实验。
-
-当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
-
-Owner再次明确要求：正常训练、轮询与等待保持静默，不再每隔几分钟播报步数/句柄存活或重复“继续等待”，包括自动继续任务的结束语。只在完整结果、实质结论变化、需要Owner处理的问题或主动询问时汇报；后台工作照常继续。此前共享存储读取等待及启动authority修正均已保留原件和Git历史，所有受影响阶段最终完整exit0；不把观察超时当作GPU/训练故障。
+Owner要求正常训练/轮询静默，完整结果、实质结论变化或需Owner处理的问题才汇报；该协作要求继续保留。
 
 ## 历史：首批冻结诊断交付快照（后续授权与结论等级已由顶部纠正）
 

@@ -2,17 +2,21 @@
 
 ## 当前快照（2026-09-11，自主执行已恢复）
 
-Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现已整合，正在真实GPU profile，尚未启动新formal训练。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C正式fresh训练已启动，S接续待资源。
 
 唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。尚无新正式闭环分数。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
-当前执行：R/C/S架构与双K1条件训练已合入main（513d1ec4），共享functional完整64随机批后切32的语义检查通过。整合回归377通过，唯一失败为测试fixture未解析worktree数据symlink；修正fixture后相关49项通过，全部378项已覆盖通过。三份正式配置通过合同解析。当前进行真实视频吞吐及恢复profile，尚无新formal结果。
+当前执行：R/C/S架构与双K1条件训练已合入main（513d1ec4），共享functional完整64随机批后切32的语义检查通过。整合回归377通过，唯一失败为测试fixture未解析worktree数据symlink；修正fixture后相关49项通过，全部378项已覆盖通过。三份正式配置通过合同解析。物化metadata已准确区分S的无序帧集合（7fedbe85），相关60项通过；尚无新formal结果。
 
 本轮只增加semantic与frame_evidence两个凝聚模块，复用现有训练/物化/eval入口。架构检查无hard violation；既有长函数和测试文件的局部增长已审查，未复制runner。实验模式由同一入口显式限制，候选选择后退役非选中模式。
 
-初轮资源预计峰值96GiB，strg01/data1最新used743721572KiB/soft1073741824KiB；当前tmp13GiB、worktrees1.6GiB。大资产全部复用。GPU两节点已检查，profile拟用gpu01空闲1/4，正式分配在launch前刷新。代码、profile与formal身份分开。
+R/C/S真实GPU完整梯度与最长457帧/93输入帧检查通过；C完整checkpoint2→4 exact resume通过，source无trainable或gradient。双卡每更新R约29–34秒、C34–39秒、S27–31秒；最长C约14秒。R的共驻micro6约36–47秒，reserved峰值34.7GiB；空闲卡micro8全段最高41.8GiB。仅说明工程可运行，不是科研达标。
+
+正式runtime为clean pushed detached `7fedbe85`（`.codex/worktrees/video-consumption`）。C：gpu01 1/4、micro8/8；R：gpu02 4/6、micro6/6，已检查其他进程低util和余量，无抢占。两组各fresh200/51,200queries/1,600K1 conditions，100/200 strict400；S同合同待资源。预计每组约两小时，按已登记100节点取得中途闭环，不缩水科学样本。完整命令、GPU UUID、profile、storage与后续结果在`runs/analysis/video_consumption_20260911/`，输出为`runs/outputs/video_consumption_{r,c,s}_seed7_20260911/`。
+
+初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
 ## 方法身份与学习结果
 

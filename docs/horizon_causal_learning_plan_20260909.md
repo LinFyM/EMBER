@@ -1,5 +1,11 @@
 # 当前能力缺口：学习过程因果分析计划
 
+## 当前补做：最强候选的冻结视频检查（2026-09-10）
+
+Owner最新要求先完成最强模型检查。固定`horizon_causal_local_h_read_seed7_20260909` macro400（已有validation126/400），完整复用上一轮九臂、train24、states32–35、teacher46/other47、单视角RGB变换与执行RNG，共216套LoRA/864条配对闭环；结果与all400逐臂、逐task/suite及R/G/L比较。此前动态增量结论只适用于all，不能外推候选。
+
+本次仅冻结诊断，含已明确授权的wrong/shuffle/reverse/static；不训练、不修改方法、不读Test、不作正式checkpoint选择。生成使用该候选原clean pushed detached45e16633运行面，执行复用9abc9b95；原始变换和evaluator直接调用既有脚本。新增峰值预算3GiB，strg01/data1已查used742426964KiB/soft1073741824KiB，共享84TiB；生成上限1200秒、worker5400秒，动态queue与persistent workers。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/registration.json`。完成后直接交付结果，正式训练前复核边界保留。
+
 ## 当前轮次已完成：单视角原因深化；停在正式修改/训练前（2026-09-10）
 
 本轮新增诊断已完整完成：1728视频控制、640查询中介、256训练任务端点替换、36有限更新行为、32 sealed BBQ端点与9橙汁描述回放，共2701条新闭环。只执行4次真实gradient macro，另4次零当前梯度Adam对照；未新增完整训练、held梯度、Test或正式方法采纳。结论见findings§44–48；原件统一在`mechanism/deep_causal_20260910/`，正式推进待办保留在task_plan。

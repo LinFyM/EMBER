@@ -1,5 +1,11 @@
 # EMBER task plan
 
+## 当前补做：最强候选的冻结视频检查（2026-09-10）
+
+Owner最新要求先完成最强模型检查。固定`horizon_causal_local_h_read_seed7_20260909` macro400（已有validation126/400），完整复用上一轮九臂、train24、states32–35、teacher46/other47、单视角RGB变换与执行RNG，共216套LoRA/864条配对闭环；结果与all400逐臂、逐task/suite及R/G/L比较。此前动态增量结论只适用于all，不能外推候选。
+
+本次仅冻结诊断，含已明确授权的wrong/shuffle/reverse/static；不训练、不修改方法、不读Test、不作正式checkpoint选择。生成使用该候选原clean pushed detached45e16633运行面，执行复用9abc9b95；原始变换和evaluator直接调用既有脚本。新增峰值预算3GiB，strg01/data1已查used742426964KiB/soft1073741824KiB，共享84TiB；生成上限1200秒、worker5400秒，动态queue与persistent workers。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/registration.json`。完成后直接交付结果，正式训练前复核边界保留。
+
 ## 当前任务：本轮原因深化已完成；正式修改/训练前等待复核（2026-09-10）
 
 Owner明确要求重新集中当前能力、迁移与保持问题的原因，范围包括视频输入因果对照、Compiler查询中介、读取/过程编码与decoder的函数变化分解，以及小预算真实更新的跨任务功能影响；不能只做Owner点名的视频实验。允许有明确问题和预登记预算的GPU诊断及必要的临时极少量更新；禁止新增400步完整训练、同等规模重训练或拆短段绕过上限。最终方案/正式训练仍由Owner复核后推进。

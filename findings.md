@@ -333,20 +333,20 @@ task因重复下降事后选定、states沿用旧诊断固定集合，属于描�
 
 同一实际训练曝光下，保留local上下文、关闭H-read/Compiler额外条件的local_only，相对contextual在200/400 validation均提高；全部删除none未消除训练改善与验证下降。冻结后的依赖损失确实不能预言fresh删除后的学习效果。但联合删除还不能分辨两检索入口及其交互，不能把本结果统称为语言有害。
 
-两条简化臂到400的train96均超过contextual，仍未超过上一版first-query-only；local_only验证总分较好却有Spatial归零、BBQ丢失和较大相邻churn。由此分开裁决已取得的总分收益、持续弱任务的获取和原成功集合的保持，不将局部修复当作v5.2/v6总体分差的解释。首轮全部1984条新闭环及实际配对见[完整语言对照](docs/horizon_causal_language_learning_20260909.md)与其总索引；下一实验及授权只按progress，不从本结论恢复执行。
+两条简化臂到400的train96均超过contextual，仍未超过上一版first-query-only；local_only验证总分较好却有Spatial归零、BBQ丢失和较大相邻churn。由此分开裁决已取得的总分收益、持续弱任务的获取和原成功集合的保持，不将局部修复当作v5.2/v6总体分差的解释。首轮全部1984条新闭环及实际配对见既有实验记录（docs/research_history.md及原始分析产物）与其总索引；下一实验及授权只按progress，不从本结论恢复执行。
 
 ## 34. 分离学习定位Compiler额外条件的贡献，H-read联合删除并非稳定最优（2026-09-09）
 
 固定local开启的2×2 fresh学习全部完成。关闭Compiler在H-read开/关背景的validation效应，200为+5/+16，400为+36/+20；关闭H-read则为−5/+6和0/−16。方向一致的验证效应来自Compiler入口，不能把两入口都笼统判为有害，也不能把200联合删除较好外推到400。训练侧效应不同，局部拟合收益不等同迁移。
 
-只关闭Compiler的local_h_read为validation108→126、train40→56，BBQ29→32（R/G/L23/9/6）；没有改FM、source、输入、共享或其它图就避免这次BBQ后期崩落。它是当前协议下具有实测收益的具体修正，尚不是全部缺口的解释：400 Spatial1/100，相邻验证仍26丢失；对all400虽净+36，也有52新增/16丢失。这里只支持该入口的学习效应，未证明唯一内部优化机制或全部v5.2/v6历史分差。完整因果表、配对原件和下一步授权见[报告](docs/horizon_causal_language_learning_20260909.md)及progress；复核结果不得从本段推定。
+只关闭Compiler的local_h_read为validation108→126、train40→56，BBQ29→32（R/G/L23/9/6）；没有改FM、source、输入、共享或其它图就避免这次BBQ后期崩落。它是当前协议下具有实测收益的具体修正，尚不是全部缺口的解释：400 Spatial1/100，相邻验证仍26丢失；对all400虽净+36，也有52新增/16丢失。这里只支持该入口的学习效应，未证明唯一内部优化机制或全部v5.2/v6历史分差。完整因果表、配对原件和下一步授权见既有实验记录（docs/research_history.md及原始分析产物）及progress；复核结果不得从本段推定。
 
 
 ## 35. Compiler候选换视频复核保留部分保持收益，整体稳定性仍不足（2026-09-10）
 
 固定seed7两臂两节点的另一套无放回正确视频关联已完整1600行。all200→400为99→82，local_h_read为101→126；候选相对基线200仅+2、400+44，方向同原关联，但不能把早期和末期效果混为一谈。候选BBQ26→31保留17/新增14/丢9，对照23→1仅保留1；说明避免这项后期崩落的效应不限于原teacher/state关联。
 
-候选相邻总计71保留/55新增/30丢失，churn85/J=.4551，breadth6→4；Spatial task3的5个成功和moka任务的4个成功全部丢失。因此126及部分BBQ保持不是整体稳定或广度修复，独立初始化效应仍须其自身完整闭环确认。新关联复用原50个官方state及原视频资产，不是独立state池。全部strict配对、逐task/suite和worker证据见[完整报告](docs/horizon_causal_language_learning_20260909.md)末节与`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`。
+候选相邻总计71保留/55新增/30丢失，churn85/J=.4551，breadth6→4；Spatial task3的5个成功和moka任务的4个成功全部丢失。因此126及部分BBQ保持不是整体稳定或广度修复，独立初始化效应仍须其自身完整闭环确认。新关联复用原50个官方state及原视频资产，不是独立state池。全部strict配对、逐task/suite和worker证据见既有实验记录（docs/research_history.md及原始分析产物）与`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`。
 
 
 ## 36. Compiler删除的验证净增跨初始化保留，但稳定保持修复未获支持（2026-09-10）
@@ -355,7 +355,7 @@ init11两臂固定200/400全部validation400完成：all100→108，local_h_read
 
 保持结论必须收窄：init11基线BBQ27→5保留4/丢23，候选35→19保留15/丢20；候选自身总计67保留/52新增/37丢失、churn89/J=.4295、breadth7→6。基线大量BBQ丢失复现，候选在seed7的多数旧成功保持未复现；候选400相对基线多14个BBQ成功，不等于自身没有遗忘。候选Spatial仍1/100、Goal23为零，不能将这项局部因果贡献当成完整稳定方案或全部旧新能力差距的根因。
 
-init11基线总分上升而BBQ崩落，其余七task73→103，再次要求区分任务获取与局部保持，不能用总分或训练FM定义统一退化。完整原始配对与两臂相邻证据见`compiler_confirmation/init11_validation_step400_analysis/`和[学习报告](docs/horizon_causal_language_learning_20260909.md)；后续原因工作与正式采纳授权仍以progress为准。
+init11基线总分上升而BBQ崩落，其余七task73→103，再次要求区分任务获取与局部保持，不能用总分或训练FM定义统一退化。完整原始配对与两臂相邻证据见`compiler_confirmation/init11_validation_step400_analysis/`和既有实验记录（docs/research_history.md及原始分析产物）；后续原因工作与正式采纳授权仍以progress为准。
 
 
 Compiler固定确认全部完成后，init11候选train96为44→61、相邻R/G/L36/25/8、breadth17→22；400相对all56为48/13/8。训练任务与验证总分都有改善，但未见任务保持不足的判断不变。完整12面板3584行与固定回放索引`compiler_confirmation/completed_confirmation_matrix.json`。输出rank独立性、读取侧可学习性和旧新配方不是由本次支路删除直接识别的因素；不能把本次正效应扩展为其它结构或训练因素已排除。
@@ -374,4 +374,4 @@ Compiler两个候选200→400均有真实净学习：init7验证108→126、trai
 
 实际参数绑定同时改变方向字典、同target/side跨rank梯度求和与AdamW状态；不是纯减参或纯正则化实验。共享完整400日志同样未触发clip1，因此实际裁剪不是该效应的原因。当前结果不支持把这项绑定采纳为迁移/保持修复；否决仅适用于已测绑定、all背景、seed7和预算，不外推全部共享或未测Compiler×共享组合。历史Target-Owned负例保留，亦不能由本轮重解释全部旧新架构分差。
 
-完整推导、逐task/suite、成功集合、竞争解释与未验证建议见[最终原因报告](docs/horizon_causal_language_learning_20260909.md)。原件总索引`causal_learning_20260909/sharing/completed_matrix.json`，机制原件`causal_learning_20260909/mechanism/`。本轮分析交付后已停在正式修改/采纳及下一轮训练前；未识别的读取侧可学习性、meta-task数量、闭环状态覆盖和旧新协议效应不自动触发新实验。
+Owner要求直接在对话中说明原因、机制与建议，独立报告已删除；本文件保留跨轮结论。原件总索引`causal_learning_20260909/sharing/completed_matrix.json`，机制原件`causal_learning_20260909/mechanism/`。本轮分析交付后已停在正式修改/采纳及下一轮训练前；未识别的读取侧可学习性、meta-task数量、闭环状态覆盖和旧新协议效应不自动触发新实验。

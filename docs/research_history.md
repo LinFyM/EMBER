@@ -905,7 +905,7 @@ B3 normal/H-read零/Compiler零/visual零/all-language零为51/54/52/54/40（各
 
 validation contextual/none/local_only为103→90、108→92、114→110；train96为41→49、39→57、46→56。400 local S/O/G/L0/57/36/17、breadth6，对contextual R/G/L74/36/16，自身相邻70/40/44/churn84；none自身相邻65/27/43/churn70。BBQ none23→1（0/1/23）、local34→18（12/6/22）；其它7task85→91、80→92。local相对first-query-only验证200/400仅+4/+7，400训练56对59，不能将恢复contextual损失称为整体能力突破。
 
-首轮支持local保留、联合去掉两额外检索条件的总分收益；不分辨H-read与Compiler单独作用，不证明主要原因或视频动态机制已解决。none未修复训练/迁移分歧，local仍有弱任务和保持问题。未读取Test、未用held梯度、未使用最终视频controls、未正式采纳候选；后续分离学习只由progress的新登记解释。完整[报告与注册](horizon_causal_language_learning_20260909.md)，原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`及各节点比较。
+首轮支持local保留、联合去掉两额外检索条件的总分收益；不分辨H-read与Compiler单独作用，不证明主要原因或视频动态机制已解决。none未修复训练/迁移分歧，local仍有弱任务和保持问题。未读取Test、未用held梯度、未使用最终视频controls、未正式采纳候选；后续分离学习只由progress的新登记解释。完整原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/language/completed_language_matrix.json`及各节点比较。
 
 ## 2026-09-09 检索条件2×2：仅关闭Compiler取得126，转入固定候选复核
 
@@ -913,7 +913,7 @@ validation contextual/none/local_only为103→90、108→92、114→110；train9
 
 local_h_read validation108→126，train40→56；400 S/O/G/L1/70/36/19、breadth7，对all90为R/G/L74/52/16，对自身200为82/44/26。BBQ29→32（23/9/6），其它7task79→94。local_compiler validation98→90、train43→65，BBQ21→2且原21成功全丢。Compiler关闭在两个H-read背景、两个验证节点均正效应；H-read关闭方向不一致，联合删除并非400最优。候选仍有Spatial和其它弱任务缺口、高churn；single seed结果不能等同可靠整体修复。
 
-完整[报告及复核登记](horizon_causal_language_learning_20260909.md)，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/completed_retrieval_matrix.json`。此批完成后优先复核固定Compiler简化候选，未正式采纳、未合入canonical科学行为；动态launch只按progress，不从本历史段恢复任何实验。
+完整原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/completed_retrieval_matrix.json`。此批完成后优先复核固定Compiler简化候选，未正式采纳、未合入canonical科学行为；动态launch只按progress，不从本历史段恢复任何实验。
 
 
 ## 2026-09-10 Compiler固定确认：净增方向保留，稳定保持未复现
@@ -922,7 +922,7 @@ local_h_read validation108→126，train40→56；400 S/O/G/L1/70/36/19、breadt
 
 init7原关联all103→90、候选108→126；新关联99→82与101→126；init11为100→108与104→119。init11训练任务all41→56、候选44→61。删除Compiler额外仿射query支路的验证增益方向保留，但400净效应从init7+36变为init11+11。init11候选BBQ35→19、保留15/丢20，整体相邻67保留/52新增/37丢失、breadth7→6、Spatial1/100，稳定保持修复没有复现。
 
-该结果识别局部支路贡献，不解释全部获取/保持缺口或旧v5.2/v6配方分差。完整结论与所有原件在[学习报告](horizon_causal_language_learning_20260909.md)末节及`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`；后续实验与授权仅看progress，不从此历史条目恢复。
+该结果识别局部支路贡献，不解释全部获取/保持缺口或旧v5.2/v6配方分差。本节保留结论，完整原件见`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`；后续实验与授权仅看progress，不从此历史条目恢复。
 
 ## 2026-09-10 当前D绑定与机制深化：训练获取改善，迁移保持未修复
 
@@ -934,4 +934,4 @@ init7原关联all103→90、候选108→126；新关联99→82与101→126；ini
 
 Compiler候选init7/init11的验证108→126、104→119与训练40→56、44→61都仍有净学习，保持未修复不等于平台或再训无效。本轮停止来自Owner明确完整训练上限与复核边界，不是参数/性能穷尽证明。未识别的查询中介、读取侧可学习性、任务覆盖和旧新训练配方仍保留；不以本负结果否定全部共享、FM或未来组合。
 
-最终[原因与学习机制报告](horizon_causal_language_learning_20260909.md)包含完整逐task/suite、R/G/L/churn/J、历史反证和建议；共享总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json`，机制原件同root的`mechanism/`。全部本任务GPU与观察进程已结束；未正式修改/采纳方法、未续401或新增完整训练、未用Test/held梯度/最终视频controls。本历史段不恢复执行，后续须Owner复核后重新授权。
+独立原因报告已按Owner要求删除，结论直接在对话中解释；逐task/suite与成功集合原始证据保留，共享总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json`，机制原件同root的`mechanism/`。全部本任务GPU与观察进程已结束；未正式修改/采纳方法、未续401或新增完整训练、未用Test/held梯度/最终视频controls。本历史段不恢复执行，后续须Owner复核后重新授权。

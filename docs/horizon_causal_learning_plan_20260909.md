@@ -6,7 +6,7 @@
 
 **历史执行修正：** Owner质疑为何追加v6重训后，主agent已暂停旧v6路线并取消其200/400 launch。下文0.1的v6接入是暂停前计划/实现，不构成自动继续授权。当时改为使用旧v6已有证据并保留已启动Horizon语言学习；未恢复旧模型训练。现时完成状态见下。
 
-**当前状态：本轮分析交付完成，等待Owner复核。** 语言/检索学习、Compiler固定确认与最后D绑定400及全部200/400面板均完整结束，所有worker/父进程和本地观察已退出。Compiler候选两个初始化持续净学习但保持不足；D绑定train32→60、val115→82，没有修复未见任务保持。八checkpoint查询几何、两节点输出/字典谱和日志的轻量诊断已完整，报告区分实际LN/Q压缩、共享输出使用集中与未识别的中介机制。最终报告为`horizon_causal_language_learning_20260909.md`，共享总索引`causal_learning_20260909/sharing/completed_matrix.json`。
+**当前状态：本轮分析交付完成，等待Owner复核。** 语言/检索学习、Compiler固定确认与最后D绑定400及全部200/400面板均完整结束，所有worker/父进程和本地观察已退出。Compiler候选两个初始化持续净学习但保持不足；D绑定train32→60、val115→82，没有修复未见任务保持。八checkpoint查询几何、两节点输出/字典谱和日志的轻量诊断已完整，结论区分实际LN/Q压缩、共享输出使用集中与未识别的中介机制。Owner要求直接在对话中说明结论，独立报告已删除；共享总索引`causal_learning_20260909/sharing/completed_matrix.json`。
 
 本计划的本轮执行已关闭；以下保留结果前注册、历史授权与实验合同，不构成待执行队列。正式方法修改/采纳、合入及下一轮训练继续停在Owner复核之前；旧v6暂停、VL未选定、Test及最终controls封存。未解释完整历史分差之处明确交付为未识别，不追加重训练。
 
@@ -58,7 +58,7 @@ Owner已明确：允许为探索原因修改架构、语言路径、参数共享
 
 ### 0.1 已落实的首轮矩阵与历史参照边界
 
-首轮语言矩阵已登记为[all/local_only/none fresh对照](horizon_causal_language_learning_20260909.md)。主agent负责该隔离实现；旧v6参照由一个独立agent在不重叠worktree接入，复用既有数据/FM/更新/官方rollout，不重写旧训练栈。
+首轮all/local_only/none fresh矩阵已完成，结果与原件索引见research_history.md。主agent负责该隔离实现；旧v6参照由一个独立agent在不重叠worktree接入，复用既有数据/FM/更新/官方rollout，不重写旧训练栈。
 
 真实v6模型以bad9a96为准（与4efa7371四个模型文件无diff）：前端固定H mean、Text/VL/Action三Meta、Core/Procedure及共享family heads、原probe seed23070。它们作为历史架构包的被测组成显式保留；不先换成当前fullH/仅Action Meta后仍称exact-v6。Owner最新授权允许探索性架构测试，这一历史参照只用于原因区分，不改变当前正式方法的fullH等设计要求。正式信息墙、source、split、跨episode和合法部署输入不例外。
 

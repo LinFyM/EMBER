@@ -10,10 +10,10 @@
 
 **本轮已完成的诊断计划：** [学习过程因果分析计划](docs/horizon_causal_learning_plan_20260909.md)。正式方法仍为`docs/horizon_relation_video_writer_design.md`与现有canonical实现；隔离探索不构成正式方法采纳。
 
-1. **语言与检索条件学习全部完成：** 四新臂、3968新闭环行完整且actual配对。all/none/local_only/local_h_read/local_compiler的validation200→400为103→90、108→92、114→110、108→126、98→90。只关闭Compiler的local_h_read保留BBQ多数旧成功（29→32、R/G/L23/9/6）；方向一致因素是Compiler额外条件，不能把H-read联合定责。完整2×2、train96、逐task/suite及成功得失见报告。
-2. **Compiler固定确认全部完成。** init11两臂固定200/400八面板及init7换视频四面板共3584行完整、全部worker0、actual配对；另有固定八次BBQ描述回放。init11 all验证100→108、候选104→119，train41→56与44→61；净增方向保留，候选BBQ35→19只保留15/丢20、全验证丢37、breadth7→6。稳定保持修复未复现，不能由seed7的126或跨初始化净增宣布全部原因已解释。完整矩阵和边界见报告末节及progress。
+1. **语言与检索条件学习全部完成：** 四新臂、3968新闭环行完整且actual配对。all/none/local_only/local_h_read/local_compiler的validation200→400为103→90、108→92、114→110、108→126、98→90。只关闭Compiler的local_h_read保留BBQ多数旧成功（29→32、R/G/L23/9/6）；方向一致因素是Compiler额外条件，不能把H-read联合定责。完整2×2、train96、逐task/suite及成功得失保留在原始分析产物。
+2. **Compiler固定确认全部完成。** init11两臂固定200/400八面板及init7换视频四面板共3584行完整、全部worker0、actual配对；另有固定八次BBQ描述回放。init11 all验证100→108、候选104→119，train41→56与44→61；净增方向保留，候选BBQ35→19只保留15/丢20、全验证丢37、breadth7→6。稳定保持修复未复现，不能由seed7的126或跨初始化净增宣布全部原因已解释。完整矩阵保留在原始分析产物，当前边界见progress。
 3. **输出共享单接口分析全部完成。** 同target跨rank A/B两侧D绑定严格止于400，200/400四面板992行完整。validation115→82、train32→60；400对all为82对90与60对49。训练自身保留29/32旧成功，validation仅59/115、BBQ26→3且Long13个旧成功全丢。该绑定不构成迁移/保持修复，不能外推所有共享。
-4. **结构与学习机制报告已完成。** checkpoint诊断定位Compiler共用位移→LayerNorm→Q差异压缩，以及共享字典实际使用近单方向；区分结构事实、行为干预支持、优化推导与未验证假设。Compiler两候选200→400净增，保持未修复不等于平台；几何也不能替代闭环。完整数学、逐task/suite、成功得失、历史反证与未识别边界见报告。
+4. **结构与学习机制分析已完成，直接在对话中解释。** checkpoint诊断定位Compiler共用位移→LayerNorm→Q差异压缩，以及共享字典实际使用近单方向；区分结构事实、行为干预支持、优化推导与未验证假设。Compiler两候选200→400净增，保持未修复不等于平台；几何也不能替代闭环。独立报告按Owner最新要求删除；既有findings、research_history和实验原件保留。
 5. **已交付并等待Owner复核。** 本轮所有训练/物化/评测/观察进程均退出，没有待运行面板。正式科学方法未采纳/合入，下一次正式训练未启动；以后推进须Owner复核后重新授权。本分析完成不意味着>145及完整科学资格达成，也不意味着全部历史分差已唯一归因。
 
 

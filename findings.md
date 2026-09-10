@@ -512,10 +512,12 @@ Owner在讨论[专家首轮回复](docs/review_materials/20260911/expert_review_
 
 这支持普通监督能够学出正确视频依赖；它不证明旧模型已满足全部科学资格，不将历史400与当前train24诊断96混作配对差值，也不唯一归因到某个架构模块。旧v5.2 task-complete的120/109/107/111/124仍约束架构与recipe交互解释。“同task独立采样允许不依赖V的最优解”是监督识别边界，不能单独解释为何不同参数化/优化学到不同依赖，也不能据此判定纯FM做不到。后续讨论应说明真实视频过程如何被参数生成和执行消费；功能保持、任务共现或P4动作读出改善各自指标均不自动证明动态增量。未采纳新方案，科学执行继续暂停。
 
-## 51. 新消费接口C早期闭环弱，等待匹配对照定位（2026-09-11）
+## 51. 双视频条件与新消费接口增加训练任务获取，未见迁移收益（2026-09-11）
 
 按active design普通FM、双独立K1条件、完整H与独立D fresh训练，C100/200 strict correct各400条完整通过。结果43→50，Spatial/Object/Goal/Long=0/37/6/0→3/29/16/2，breadth4→6；相邻R/G/L=27/23/16、churn39/400、J=.40909。相对冻结source47，100/200分别R/G/L=9/34/38与18/32/29。早期Object获取与source Goal损失同时发生，200部分恢复Goal但Object下降，不能把总分接近source解释为完全没学习。
 
-该消费组合在51,200queries、1,600独立K1条件后仍明显弱，按设计不追加C训练、不做seed/LR/rank小扫。它只检验当前语义读取、中心化过程Value和融合的组合；尚不能分离语义/过程贡献，不能裁为普通FM、所有有序过程或视频条件不可行。R/S相同查询预算、相邻节点与三组train96尚未完成，获取/迁移定位和后续主要修正留待这些证据。
+该消费组合在51,200queries、1,600独立K1条件后仍明显弱，按设计不追加C训练、不做seed/LR/rank小扫。它只检验当前语义读取、中心化过程Value和融合的组合；尚不能分离语义/过程贡献，不能裁为普通FM、所有有序过程或视频条件不可行。S完整相邻节点与train96尚未完成，后续主要修正仍待这些证据。
 
 两组各6worker全部exit0、400rows完整，canonical comparer通过source/normalizer/environment/policy/RNG与实际教学视频配对。原件runs/analysis/video_consumption_20260911/c/step{100,200}/{completed_summary.json,vs_source47.json}和step200/adjacent100_200.json；全部raw rows、sealed banks、formal checkpoints保留。未使用Test、wrong/shuffle/reverse或held梯度。当前执行状态只看progress。
+
+R100/200 strict400=37→83，四suite1/26/10/0→0/41/37/5、breadth5；相邻R/G/L23/60/14、churn74、J=.23711。R200比C200多33，但比同查询预算旧off200108少25（R/G/L63/20/45）。train96则旧off200/R/C为40/46/49，R/C都breadth18，旧→R的R/G/L33/13/7、旧→C34/15/6。训练任务使用独立teacher46–49和固定新初态；有实际能力获取，低validation不能概括为整图不工作。更多条件在当前节点增加训练任务得分却没有迁移净收益，新语义消费组合进一步拉开训练/validation表现；这仍是组合证据，R/C初始化和接口差异、短学习时标等边界保留。R增长46但整体低于旧参照，不由此宣布平台，也不自动追加更弱候选；先完成S。原件各arm/step200/{train96_summary.json,old_off200_vs_*200_train96.json}以及R/step200的adjacent100_200、c200_vs_r200、old_off200_vs_r200，均通过canonical实际输入与执行配对。

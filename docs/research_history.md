@@ -974,3 +974,5 @@ train8的全200/40016→18/32仍R/G/L10/8/6，旧P/C+新D可达22却也丢5。�
 Owner授权恢复自主科研后，登记video_consumption_writer_design并实现R/C/S与双K1条件分配，formal运行面clean pushed detached7fedbe85。C fresh100/200分别25,600/51,200queries和800/1,600条件，strict400=43→50，四suite0/37/6/0→3/29/16/2；相邻R/G/L27/23/16、churn39、J=.40909，breadth4→6。两组各6worker完整exit0、实际teacher及执行配对通过，约29.5/29.6分钟。相对source47分别R/G/L9/34/38、18/32/29。当前组合弱且改善有限，不追加C训练；不从该负结果推翻整个过程函数类。R/S与train96尚待完成。
 
 原件runs/outputs/video_consumption_c_seed7_20260911/{checkpoints,materialized,evaluation}，分析runs/analysis/video_consumption_20260911/c/step{100,200}/，设计/实现验证和资源记录在同一analysis根；跨轮解释见findings§51，当前状态看progress。
+
+同轮R的strict400两点为37→83，四suite1/26/10/0→0/41/37/5，R/G/L23/60/14、churn74、J=.23711。R200比同51200queries旧off200108少25，保留63/新增20/丢45；比C20050多33。训练任务诊断旧off/R/C=40/46/49（各96），R/C均breadth18；旧→R的R/G/L33/13/7，旧→C34/15/6。R仍获取但双视频条件未在当前节点带来迁移净收益；C也有训练任务能力，不能把低validation等同于完全学不动。所有R/C面板完整exit0，实际配对通过；S仍在执行，本段不代替最终三臂裁决。

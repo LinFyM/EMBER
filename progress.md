@@ -30,9 +30,9 @@ launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABL
 
 **共享200节点已保存并核验：** 完整checkpoint公开检查通过；累计200更新、800条件/51200queries，各suite200条件，实际teacher/query/frame/RNG与原all基线逐项配对。held3072输入配对、无梯度，均值.114600358对基线.111031413，仅作为拟合诊断。训练按原合同继续至400。200的validation400+train96共496条件已物化完成，exit0/815.58秒、全部新生成；两bank公开检查和实际task/state/video映射与基线一致。原件 `sharing/step200/{checkpoint_inspection,learning_summary,bank_inspection}.json`。
 
-**200 train96完整，validation仍运行：** train96为32/96，对all41为R/G/L24/8/17、churn25/J=.4898、breadth18→16，S/O/G/L7/10/11/4；两worker及实际start1 wrapper均exit0，actual配对通过、墙钟1201.75秒。`sharing/step200/train96_analysis/`保留全部task/suite和原行。原train96 tmux/pane已退出。validation继续在gpu02物理6×3worker，tmux `ember-sharing-seed7-val200`、pane3727963、driver3728002；尚无完整验证结果。
+**200两个行为面板均已完整：** train96为32/96，对all41为R/G/L24/8/17、churn25/J=.4898、breadth18→16，S/O/G/L7/10/11/4；validation115/400对all103为77/38/26、churn64/J=.5461、breadth均7，S/O/G/L3/61/38/13，global1/3/11/13/23/26/31/32为2/1/35/26/0/38/10/3。实际strict配对均通过，train两worker/validation三worker和各自wrapper全exit0，墙钟1201.75/3585.10秒；两个eval tmux均退出。完整原件`sharing/step200/{train96,validation}_analysis/`。绑定的早期train获取下降、validation净增并存，近单方向输出不能直接判为有害缺陷；400与自身相邻待完成。训练仍按原合同继续到400。
 
-物化及在运行validation来自c63f55dc；已完成train96及后续400评测使用clean pushed detached e7447291，仅复用按worker显存预算准入修正，模型/行为协议不变、共享schema保留。24项launcher定向检查通过。首次train96准入未过发生在任何rollout前，刷新双节点后原队列start成功；原件`sharing/step200/{validation_launch,train96_admission_failure,train96_start1_launch,gpu_preflight_train96_start1}.json`与`sharing/evaluation_runtime_adjustment.json`。
+物化及已完成validation来自c63f55dc；已完成train96及后续400评测使用clean pushed detached e7447291，仅复用按worker显存预算准入修正，模型/行为协议不变、共享schema保留。24项launcher定向检查通过。首次train96准入未过发生在任何rollout前，刷新双节点后原队列start成功；原件`sharing/step200/{validation_launch,train96_admission_failure,train96_start1_launch,gpu_preflight_train96_start1}.json`与`sharing/evaluation_runtime_adjustment.json`。
 
 **机制深化已取得新定位：** 八个已有Compiler checkpoint的CPU选参诊断显示，all额外语言位移将第一层608个Q的差异幅度压到同权重置零反事实的3.5%–4.6%；实际Q/静态语言读出漂移也明显高于删除支路候选。不能据此宣布attention饱和、选错帧或最终代码坍缩。共享200固定32条件×38target的B/BA近单方向，B第一奇异能量全部>99.9979%，但D_B自身第一方向仅38.54%–74.46%，定位到代码经过字典的实际使用，而非字典被结构强制rank1。全部为小预算CPU只读，未做模型forward/优化；原件`causal_learning_20260909/mechanism/`，完整数学、竞争解释及三轴学习判断已并入原报告。400输出几何仅待原定bank完成后读取，不增加训练。
 

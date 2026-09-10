@@ -111,7 +111,8 @@
 
 - 从算法设计阶段就考虑GPU：批量张量、高效attention、明确布局，减少逐项Python循环、CPU/GPU往返和重复大算子。
   同时审视训练、functional forward、物化与闭环评测；按真实LoRA/s、samples/s、step墙钟、SM/util与显存峰值衡量。
-- 每个optimizer update固定四suite各一个task条件、每条件64FM queries，共256queries，task权重1/4。
+- 每个optimizer update固定四suite各一个task、每task64FM queries，共256queries，task权重1/4。
+  教学条件分配由active design显式登记；允许每task两个独立K1条件各32queries、每条件权重1/8，不混同K2或LoRA平均。
   GPU1--6、分工、microbatch和累积次数只决定执行；全局batch完成后clip、optimizer.step、scheduler.step各一次。
   使用真正提高吞吐的同节点GPU，不能扩大逻辑batch或dummy占卡。拓扑变化须有受控迁移合同，保留学习状态和逻辑cursor。
   exact-resume仍锁原world topology。两节点live检查、NUMA、deferred NCCL和NCCL_P2P_DISABLE=1按AGENTS执行。

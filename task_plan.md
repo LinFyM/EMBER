@@ -1,44 +1,29 @@
 # EMBER task plan
 
-## 已完成：专家反馈的合并追问（2026-09-11）
+## 当前目标与授权（2026-09-11）
 
-Owner要求合并视频问题及其它质疑，并特别强调v5.2普通监督已产生正确视频依赖，不加辅助loss也能做到；架构及其学习路径应成为专家必须解释的因素。已归档专家原文并准备[第二轮追问](docs/review_materials/20260911/FOLLOWUP_PROMPT.md)，核对历史配置、训练入口和五臂汇总，随文提供远程证据入口。
+Owner明确要求休息期间由Codex自行整理专家意见与独立判断、规划、设置goal并连续完成方法修正、实验验证、问题分析及再次修正，醒来后审查。已建立active goal。此前仅咨询、暂停科研和禁止再次完整训练的阶段限制已被本次授权覆盖；不再逐项请求批准。信息墙、固定split、source冻结、资源/Git及最终资格保持，Test封存。
 
-当前仅转交咨询和讨论；没有采纳功能保持、8-task共现、动作过程辅助头或新架构，没有恢复训练/评测。下一步等待Owner转交后的专家回复。
+目标为validation8 strict paired single-checkpoint correct>145/400，并满足相邻稳定、低churn、高breadth、四suite/Goal/Long、换正确视频和最终独立视频因果资格。不能以一次高分、机制接通或实验结束标记goal完成。
 
-## 已完成：仓库整理与远程专家咨询材料（2026-09-11）
+## 当前计划
 
-Owner要求整理仓库、推送远程，并准备说明现状、分析与看法的prompt，咨询专家如何改进现有方法和继续推进。专家只能看到远程仓库。本次不启动训练/评测、不正式采纳新架构、不向专家或其它人代发消息。
+唯一active design为[语义条件化过程消费](docs/video_consumption_writer_design.md)。前代[Horizon设计](docs/horizon_relation_video_writer_design.md)提供保留的完整H/过去关系细节与历史合同，不恢复其中旧待办。
 
-交付内容已完成，远程版本以本文件所属提交为准：
+1. **进行中：** 归档第二轮专家原文与独立判断，落实R/C/S对照、数据/随机性/评测和资源合同。
+2. 实现一个canonical runtime下的条件分配与消费接口；共享C/S语义读取、融合和D，明确无序帧集合参照的能力与边界。
+3. CPU信息墙/shape/真实梯度语义检查，双节点GPU与独立quota预检，最长真实视频吞吐及恢复smoke；验证后合入并推送main，formal从冻结detached提交启动。
+4. R/C/S分别fresh普通FM，初轮100/200节点strict correct400，200训练闭环96与独立动作验证；固定task/state/video/RNG口径，报告全部曝光和逐task/suite得失。
+5. 依据真实能力和竞争解释选择继续、修正或终止候选。有实质获取则登记后续相邻节点；明确负结果不无限续训、不小扫、不同时叠加多个未经支持的改动。
+6. 候选稳定后补换正确视频与公平参照，冻结选择后做独立最终因果裁决；全过程维护可审查记录、checkpoint、原始结果和Git。目标完成前持续自主推进。
 
-- 更新README，明确main、126候选及历史D绑定实验的区别。
-- 将本文件与progress收敛为当前状态；逐次执行历史由research_history、findings、原件和已推送Git保存。
-- 在`docs/review_materials/20260911/`提供最新学习与机制证据、可复算逐条结果、原配置/commit、行为图、证据等级和专家咨询prompt；保留旧9月7/8日材料各自的历史用途。
-- 清理明确可再生缓存和已确认重复临时文件。保留唯一checkpoint、formal evidence、数据、smoke/profile证据及所有权不清的工作。
-- 核验导出保真、汇总、引用及任务范围diff，提交并推送main。
+## 当前已知事实与候选边界
 
-下一步由Owner转交咨询prompt并讨论专家反馈，不自动恢复科研执行。
+- 既有最强Horizon off7 macro400为126/400，off11为119，尚未达标；最强训练任务九臂也没有稳定动态增量。
+- v5.2普通正样本监督已有正确视频依赖；监督允许捷径不足以解释新旧差异。专家已撤回先保持再视频的顺序，见[第二轮原文](docs/review_materials/20260911/expert_review_round2.md)。
+- 主假设是最后消费接口难以利用过程；竞争解释是每update教学条件分配。新增语义路径独立解释收益、P4过程不足与无序多帧仍能含过程信息，是本轮裁决必须保留的限制。
+- 初轮不加辅助loss/保持约束，不换D/rank，不扩Meta/数据、不切dual。后续只有证据改变判断时才选择一个主要修正。
 
-## 科学状态与执行边界
+## 审查入口
 
-现有canonical设计仍为`docs/horizon_relation_video_writer_design.md`，没有采纳新的active design。当前最强Horizon候选为Compiler额外语言query关闭、独立D、单视角的init7 macro400，validation126/400；另一初始化119/400。既有训练与冻结诊断已结束。最新九臂补测的完整/另一正确/同suite错/跨suite错/乱序/倒序/首/中/末静态为53/60/59/59/55/52/58/53/53（各96），见findings§49。
-
-当前持续停在正式方法修改/采纳和下一轮训练前，等待Owner复核。GPU诊断授权仅覆盖已登记且已完成的实验，不从过去的自主执行文字恢复任务；禁止再用完整400步重训或拆段绕过此前分析预算。专家建议属于待讨论意见，不是执行授权。Test保持封存。
-
-## 已登记但未执行的后续事项
-
-- Compiler额外query关闭、保留独立D候选的后续学习与保持；两个初始化200→400仍增长，尚无平台证据。
-- 真正训练同步双视角，再与单视角同口径比较；输入smoke不算双视角效果。
-- 若正式续训，每100步保存完整checkpoint并做strict paired400；具体区间须在获准推进后登记。
-- Compiler关闭×D绑定的交互仍未识别，不将all背景绑定负结果外推全部组合。
-- learned language-only/static prior参照及完整视频的真实条件增量需要正式设计；冻结替换不能冒充学习后的baseline。
-- 功能保持约束、prior加视频残差等仅为未验证设想，须由专家独立审视证据和历史近等价失败，尚无采纳决定。
-
-上述事项不是本轮咨询问题的全部答案；需要专家具体说明哪些修正有证据支持、针对哪个最早失效接口、为何区别于历史失败、怎样用最少有信息量的实验裁决。
-
-## 历史入口
-
-- 持久结论与原件索引：`findings.md`、`docs/research_history.md`。
-- 本轮既有诊断注册：`docs/horizon_causal_learning_plan_20260909.md`，文内旧授权/待办只代表当时。
-- 整理前完整计划：[043b58ca的task_plan](https://github.com/LinFyM/EMBER/blob/043b58ca3f1f3e7ed699b876f4964be96654c7e5/task_plan.md)。保留历史，不在当前文件继续堆叠失效执行段落。
+即时进度：[progress](progress.md)；跨轮结论：[findings](findings.md)；历史：[research_history](docs/research_history.md)。专家原文、第一轮追问与最新证据保留在[9月11日材料](docs/review_materials/20260911/README.md)。旧整理及咨询工作已完成，其历史在ae606387及前序Git中保留。

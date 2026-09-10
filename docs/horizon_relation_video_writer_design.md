@@ -1,6 +1,6 @@
 # 过去定向完整 Horizon Writer：正式接续设计
 
-日期：2026-09-08。本文是当前唯一 active design，登记与实施状态见 [progress.md](../progress.md)。
+日期：2026-09-08。本文为前代设计与历史执行记录；2026-09-11接续的唯一active design见[语义条件化过程消费](video_consumption_writer_design.md)，当前授权与实施状态见[progress](../progress.md)。文中旧active/待办按当时时点解释。
 **完整首版已实现；Owner最新要求先纯监督FM达到有证据的平台，再接独立共享Writer RL。监督正式启动状态见progress。**旧layered运行面已退役；当前状态以progress.md为准。
 
 权威顺序为 Owner 最新决定、[长期要求](current_owner_requirements.md)、[AGENTS](../AGENTS.md)、正式状态与本文。

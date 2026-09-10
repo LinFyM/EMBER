@@ -1,16 +1,18 @@
 # EMBER progress
 
-## 当前快照（2026-09-11）
+## 当前快照（2026-09-11，自主执行已恢复）
 
-**科学执行暂停，现有训练、机制诊断和最强候选视频检查均已完成；没有运行队列。** 仓库整理、首轮专家材料及收到反馈后的合并追问已完成。正式方法修改/采纳及后续训练继续停在Owner复核前。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。当前正在落实设计与实现，尚未启动新formal训练。
 
-[最新专家材料](docs/review_materials/20260911/README.md)包含现状、方法/commit区别、可复算数据与分析边界；[咨询prompt](docs/review_materials/20260911/EXPERT_PROMPT.md)供Owner转交。当前目标仍为strict paired validation400严格>145，加相邻稳定、低churn、breadth、四suite/Goal/Long、换视频和最终因果资格；尚未达标。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H、过去定向和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；具体随机性、曝光、节点和裁决见设计。源码尚未实现部分不冒充已运行模型。
 
-当前转发入口为[第二轮追问](docs/review_materials/20260911/FOLLOWUP_PROMPT.md)，[首轮专家回复](docs/review_materials/20260911/expert_review_round1.md)已原样归档。Owner强调v5.2在普通正样本动作监督下已有明显正确视频依赖，要求专家正面解释架构/训练交互，不将“监督允许捷径”直接等同于需要辅助loss。专家提出的保持、任务共现和过程辅助监督均为待讨论候选；本次无新实验。
+[专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
+
+当前执行：主agent负责架构、配置、整合与科研裁决；条件调度/梯度权重可在独立worktree完成。初轮资源预计峰值96GiB，strg01/data1最新used743343260KiB/soft1073741824KiB；大资产全部复用，GPU分配在launch前按两节点实时状态决定。代码、profile与formal身份分开。
 
 ## 方法身份与学习结果
 
-main canonical启用Compiler额外语言query；126候选使用独立冻结commit45e16633的`backend_conditioning=local_h_read`关闭该route，保留local/H-read/exact language与独立D。两者不能混同。main已实现同步双视角输入，实际有分数的checkpoint全部为agentview单视角；双视角只做过输入/梯度smoke。
+下表为本轮新实验前的历史参照：main canonical曾启用Compiler额外语言query；126候选使用独立冻结commit45e16633的`backend_conditioning=local_h_read`关闭该route，保留local/H-read/exact language与独立D。两者不能混同。main已实现同步双视角输入，实际有分数的checkpoint全部为agentview单视角；双视角只做过输入/梯度smoke。
 
 | 固定实验 | validation200→400 /400 | train200→400 /96 | validation自身保留/新增/丢失 |
 | --- | --- | --- | --- |

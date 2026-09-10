@@ -2,13 +2,13 @@
 
 EMBER研究从exact task language和action-hidden正确教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从未见初始化闭环执行。目标是validation8 single-checkpoint strict paired correct **>145/400**，并同时满足相邻稳定、低churn、任务广度、四suite/Goal/Long、换视频鲁棒性和最终视频因果要求。
 
-**当前处于专家复核阶段，没有运行中的训练或评测。** Horizon这轮最好的验证候选为126/400，另一个初始化119/400；均未达到科学目标。126候选的最新视频对照也未建立正确动态教学的稳定整体优势。当前工作是审视证据并咨询如何改进现有方法，不能从历史计划自行恢复训练。
+**Owner已授权休息期间由Codex持续自主修正、实验与分析，active goal已建立。** 当前正在实施[语义条件化过程消费设计](docs/video_consumption_writer_design.md)，新formal进度见progress。既有Horizon最好候选为126/400、另一初始化119/400；均未达到科学目标，视频动态增量也未建立。
 
 ## 先读哪里
 
 1. **[最新专家材料与证据索引](docs/review_materials/20260911/README.md)**，以及[可直接使用的咨询prompt](docs/review_materials/20260911/EXPERT_PROMPT.md)。最新学习对照、视频控制、有限更新、机制数据与行为图片均有远程可读副本；不要求专家访问本地runs。
-2. [当前状态](progress.md)、[当前计划与暂停边界](task_plan.md)、[长期要求](docs/current_owner_requirements.md)、[项目合同](AGENTS.md)。
-3. [科学动机与数据流](docs/concept.md)、[当前canonical设计](docs/horizon_relation_video_writer_design.md)。
+2. [当前状态](progress.md)、[当前计划与授权](task_plan.md)、[长期要求](docs/current_owner_requirements.md)、[项目合同](AGENTS.md)。
+3. [科学动机与数据流](docs/concept.md)、[当前active设计](docs/video_consumption_writer_design.md)、[保留的前代完整H关系图细节](docs/horizon_relation_video_writer_design.md)。
 4. [持久发现](findings.md)、[分层研究历史](docs/research_history.md)，再按需读取[9月7日历史证据包](docs/review_materials/20260907/README.md)和[9月8日专家讨论及Owner裁决](docs/review_materials/20260908/README.md)。
 
 旧实验中的“当前”“下一步”只描述当时状态。此前专家建议的双向长程，已被Owner选定的过去单向长程覆盖。

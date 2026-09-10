@@ -6,6 +6,8 @@
 
 已收到[第一轮专家回复原文](expert_review_round1.md)。最新转发入口为[第二轮追问](FOLLOWUP_PROMPT.md)：重点要求解释v5.2普通监督已有的视频依赖、当前架构与学习路径的差异，以及保持/过程辅助监督的优先依据。原证据包与实验结果未改变。
 
+后续已收到[第二轮专家修订原文](expert_review_round2.md)。Owner随后明确授权自主科研执行；采纳范围、独立判断和实验合同见[接续设计](../../video_consumption_writer_design.md)，现场见[progress](../../../progress.md)。本包上述暂停文字只描述初次咨询时点，证据仍按其原始身份解释。
+
 ## 1. 远程可用的证据与模型身份
 
 - [index.json](index.json)：8个学习run的精确commit/原配置、每份本地原件对应的已提交文件、导出范围。

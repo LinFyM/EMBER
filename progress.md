@@ -16,6 +16,8 @@ R/C/S真实GPU完整梯度与最长457帧/93输入帧检查通过；C完整check
 
 正式runtime为clean pushed detached `7fedbe85`（`.codex/worktrees/video-consumption`）。C：gpu01 1/4、micro8/8；R：gpu02 4/6、micro6/6，已检查其他进程低util和余量，无抢占。两组各fresh200/51,200queries/1,600K1 conditions，100/200 strict400；S同合同待资源。预计每组约两小时，按已登记100节点取得中途闭环，不缩水科学样本。完整命令、GPU UUID、profile、storage与后续结果在`runs/analysis/video_consumption_20260911/`，输出为`runs/outputs/video_consumption_{r,c,s}_seed7_20260911/`。
 
+R/C第100次正式checkpoint均已保存并通过现有formal inspector：各25,600queries、800独立K1条件，完整Writer/Meta、optimizer/scheduler、sampler/RNG与7fedbe85身份一致；记录见`checkpoint100_inspection.json`。两组继续到200。第100次GPU快照未出现可并发评测的空闲或低负载且余量足够设备，strict400请求保留排队；不把未执行的闭环写成已有分数，不缩成80条screen。六组物化、validation400与三组train96启动命令均已准备，恢复可用资源后尽快执行。
+
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
 ## 方法身份与学习结果

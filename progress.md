@@ -12,6 +12,8 @@
 
 **第二项冻结诊断：共享reader的真实FM信用分解。** 仅all init7/init11的200/400，在每suite按global ID前两个train task（共8task）、teacher demo0、action16–41的两组独立32query上，保持相同前向及LoRA cotangent，分别计算静态与contextual reader梯度；核对二者之和与总梯度、跨query重复性及方向导数。无optimizer/参数更新，不读取held动作或Test，无训练。独立单GPU预算30分钟、输出10MiB；只对既有权重求导，不推进sampler。该诊断区分前向查询作用之外是否存在稳定支路信用冲突，不把负cosine直接等同历史遗忘。原件`causal_learning_20260909/mechanism/reader_credit/`。
 
+**reader信用初段已完整：** 32条件/64组train-only梯度完成，无更新。全reader欧氏梯度两支近正交，但独立查询组的总梯度方向常不一致；不能据此排除分模块或Adam预条件后的局部冲突。原30分钟预算内，补看每suite第一个登记task（4task）、两初始化400节点、同两组query的逐参数及已有Adam二阶矩固定度量，最多10分钟/10MiB；不是训练、实际Adam更新或新的架构候选。所有held仍无梯度。
+
 ## 本轮完整结果与原因结论
 
 Owner最新要求删除独立原因报告，直接在对话中解释问题、架构机制和改进意见；已删除报告并清理引用。实验原始证据与现有findings/research_history保留，不新建替代报告。当前解释已定位局部支路及查询几何，尚未唯一解释全部历史分差。

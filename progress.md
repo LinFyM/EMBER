@@ -2,7 +2,7 @@
 
 ## 当前快照（2026-09-11，自主执行已恢复）
 
-Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C正式fresh训练已启动，S接续待资源。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；S正式fresh训练与R/C物化正在并行，尚无新closed-loop分数。
 
 唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。尚无新正式闭环分数。
 
@@ -14,11 +14,15 @@ Owner最新明确授权Codex在其休息期间持续自主推进方法修正、�
 
 R/C/S真实GPU完整梯度与最长457帧/93输入帧检查通过；C完整checkpoint2→4 exact resume通过，source无trainable或gradient。双卡每更新R约29–34秒、C34–39秒、S27–31秒；最长C约14秒。R的共驻micro6约36–47秒，reserved峰值34.7GiB；空闲卡micro8全段最高41.8GiB。仅说明工程可运行，不是科研达标。
 
-正式runtime为clean pushed detached `7fedbe85`（`.codex/worktrees/video-consumption`）。C：gpu01 1/4、micro8/8；R：gpu02 4/6、micro6/6，已检查其他进程低util和余量，无抢占。两组各fresh200/51,200queries/1,600K1 conditions，100/200 strict400；S同合同待资源。预计每组约两小时，按已登记100节点取得中途闭环，不缩水科学样本。完整命令、GPU UUID、profile、storage与后续结果在`runs/analysis/video_consumption_20260911/`，输出为`runs/outputs/video_consumption_{r,c,s}_seed7_20260911/`。
+正式runtime为clean pushed detached `7fedbe85`（`.codex/worktrees/video-consumption`）。C训练使用gpu01 1/4、micro8/8；R使用gpu02 4/6、micro6/6，均已exit0。两组各fresh200/51,200queries/1,600K1 conditions，训练加独立动作验证约115分钟。完整命令、GPU UUID、profile、storage与后续结果在`runs/analysis/video_consumption_20260911/`，输出为`runs/outputs/video_consumption_{r,c,s}_seed7_20260911/`。
 
-R/C第100次正式checkpoint均已保存并通过现有formal inspector：各25,600queries、800独立K1条件，完整Writer/Meta、optimizer/scheduler、sampler/RNG与7fedbe85身份一致；记录见`checkpoint100_inspection.json`。两组继续到200。第100次GPU快照未出现可并发评测的空闲或低负载且余量足够设备，strict400请求保留排队；不把未执行的闭环写成已有分数，不缩成80条screen。六组物化、validation400与三组train96启动命令均已准备，恢复可用资源后尽快执行。
+R/C第100、200次正式checkpoint均已保存并通过现有formal inspector；记录见`checkpoint100_inspection.json`与`rc200_learning_summary.json`。两组200均覆盖378/384个训练task/video组合；相同25,600queries时新方案覆盖330个，旧单条件259个，具体见曝光summary。独立动作FM：R0.151459→0.110515，C0.151461→0.109569；两者接近，不据此选模型或宣称闭环进步。
+
+第100次节点没有适合并发评测的设备，原strict400保留排队，未缩成80条screen。训练完成后已刷新两节点：S在释放的gpu01 1/4、micro8/8上按同合同fresh训练；R/C各由gpu02 6/4单卡批量物化checkpoint100 validation400、checkpoint200 validation400及train96（每模型896个独立完整LoRA）。没有混合checkpoint或平均LoRA。当前物化已产生真实输出，正式闭环将接续执行；六组validation400和三组train96命令均已准备。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
+
+后续launch存储复核used752234200KiB/soft1073741824KiB，另计尚在保存的两份200 checkpoint约8.4GiB、R/C物化约8.8GiB及S约13GiB，仍低于原总峰值预算和独立quota。共享文件系统另有84TiB；额度证据见`storage_after_rc200.txt`。
 
 ## 方法身份与学习结果
 

@@ -283,3 +283,12 @@ all按global1/3/11/13/23/26/31/32为0/1/30/27/0/31/10/1，候选为0/2/28/35/1/3
 同一init11的200 train96为all41、local_h_read44，六worker均exit0、actual strict配对通过；S/O/G/L为13/8/14/6与14/12/13/5，breadth均17。候选保留37/新增7/丢失4，churn11、J=.770833；Object保留全部8个基线成功并新增4个，Spatial净+1，Goal/Long各−1。两个面板完整耗时932.49/928.98秒。
 
 这个节点的训练任务净+3与validation净+4都较小，任务覆盖未增加，不能由此宣布稳定泛化或保持修复。两臂400及各自200→400仍待完整比较。原件`compiler_confirmation/init11_train96_step200_analysis/completed_summary.json`与paired JSON；all400 train96已接续，最后LH400 train96仍按预登记待执行。
+
+
+### 独立初始化基线400与相邻证据完成
+
+init11 all400 validation108/400、train56/96均完整，六worker及outer exit均0；两面板分别3297.31/870.09秒。实际200→400 strict配对通过。validation S/O/G/L从1/57/31/11到3/46/40/19、breadth均6，相邻保留62/新增46/丢38、churn84/J=.424658；train从41到56、breadth17→20、相邻30/26/11、churn37/J=.447761，400 S/O/G/L16/18/13/9。
+
+基线BBQ27→5，只保留4、新增1、丢23；其它七task73→103。因而另一初始化重现了BBQ大量丢失，却没有重现验证总分下降：其它task的获取抵消了该退步。必须把局部保持与整体总分分开，不能将seed7的总分走势外推给所有初始化。此时local_h_read400两个面板仍在运行，不能提前宣布候选独立初始化有效。
+
+完整原件`compiler_confirmation/all_init11_step400/{validation,train96}_200_to_400.json`及各面板完成汇总；两臂全完后仍按原合同出完整同节点及相邻矩阵。最后候选train96已接续刚释放的gpu01p5/6，每卡三worker，复用原动态队列和96条件；无需改变科学合同。

@@ -12,7 +12,9 @@
 
 **init11 validation200两臂完成：** all100/400、LH104/400，S/O/G/L为1/57/31/11与2/63/32/7，breadth6/7；actual strict R/G/L76/28/24、churn52/J=.59375，六worker均0。BBQ27→35保留25/新增10/丢2，但双物体Long10→5保留2/新增3/丢8。早期净+4不能替代后期保持；完整`compiler_confirmation/init11_validation_step200_analysis/`。
 
-四组200/400、validation400+train96各496条件banks均已完整exit0并通过public inspector与实际映射检查。两组400验证现已接续：all400在gpu01p5×3worker，tmux `ember-compiler-init11-all400-validation`、worker1812548/1812549/1812550；LH400在gpu02p4×3worker，tmux `ember-compiler-init11-lh400-validation`、worker803914/803916/803918。200 train96两臂现已全部完成：all41、LH44，S/O/G/L13/8/14/6与14/12/13/5，breadth均17；actual strict R/G/L37/7/4、churn11/J=.7708，六worker均0，LH928.98秒。all400 train96接续gpu01p6×3worker，tmux `ember-compiler-init11-all400-train96`；仅LH400 train96尚待启动。launch前双节点live检查p5/p6free46064MiB/util0，p4free40313MiB/util2，三个worker38912MiB准入通过；当前共三张有用GPU。精确命令与实际进程见各面板`validation_launch.json`/`train96_launch.json`。
+四组200/400、validation400+train96各496条件banks均已完整exit0并通过public inspector与实际映射检查。init11 all400的validation与train96现已全部完成、六worker及outer exit均0：validation100→108，400 S/O/G/L3/46/40/19、breadth6，相邻R/G/L62/46/38、churn84/J=.4247；BBQ27→5、保留4/新增1/丢23，其余七task73→103。train96为41→56，400 S/O/G/L16/18/13/9、breadth17→20，相邻30/26/11、churn37/J=.4478。这说明该初始化基线总分增长与BBQ大量丢失并存；候选400尚未完成，暂不作同初始化干预裁决。
+
+200 train96两臂已完整all41/LH44，S/O/G/L13/8/14/6与14/12/13/5、breadth均17；actual strict R/G/L37/7/4、churn11/J=.7708。当前仅余两面板且均已启动：LH400验证继续gpu02p4×3worker（803914/803916/803918，tmux `ember-compiler-init11-lh400-validation`）；最后LH400 train96使用刚释放的gpu01p5/6、每卡三worker共六个，tmux `ember-compiler-init11-lh400-train96`、launcher1746700、workers1796688/1796689/1796793/1796803/1796839/1796889。该launch前双节点live检查p5/p6各free46067MiB/util0/无peer，每卡38912MiB准入通过；复用原动态队列与预登记96条件。精确命令、资源和实际进程见各面板`validation_launch.json`/`train96_launch.json`；不再有未启动面板。
 
 物化使用clean pushed45e16633；八个init11评测脚本均在各自首次launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。各次launch的双节点资源及实际进程原件由上文面板记录保存。
 

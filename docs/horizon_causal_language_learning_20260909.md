@@ -276,3 +276,10 @@ init11的all与local_h_read两个200面板各完整400行，六worker均exit0，
 all按global1/3/11/13/23/26/31/32为0/1/30/27/0/31/10/1，候选为0/2/28/35/1/31/5/2。BBQ27→35、保留25/新增10/丢2；双物体Long10→5则仅保留2/新增3/丢8。此处候选早期总分净+4、Object+6，但Long−4；breadth多出的Goal task23只出现一次成功，不能称广泛获取。它与seed7早期小幅净差方向相同，却不证明独立初始化下已避免后期BBQ崩落或保留Long收益。
 
 完整原件`compiler_confirmation/init11_validation_step200_analysis/completed_summary.json`及`candidate_vs_all.json`。两组400验证和预登记train96继续；400将分别与各自init11的200比较保持，不与seed7基线混作同初始化干预。当前仅报告这个已完成节点，不正式采纳方法。
+
+
+### 独立初始化200训练任务配对完成
+
+同一init11的200 train96为all41、local_h_read44，六worker均exit0、actual strict配对通过；S/O/G/L为13/8/14/6与14/12/13/5，breadth均17。候选保留37/新增7/丢失4，churn11、J=.770833；Object保留全部8个基线成功并新增4个，Spatial净+1，Goal/Long各−1。两个面板完整耗时932.49/928.98秒。
+
+这个节点的训练任务净+3与validation净+4都较小，任务覆盖未增加，不能由此宣布稳定泛化或保持修复。两臂400及各自200→400仍待完整比较。原件`compiler_confirmation/init11_train96_step200_analysis/completed_summary.json`与paired JSON；all400 train96已接续，最后LH400 train96仍按预登记待执行。

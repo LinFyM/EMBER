@@ -1,10 +1,19 @@
 # EMBER progress
 
-更新时间：2026-09-10 CST。**Owner最新重新授权深入原因分析，包含未完成的全部关键机制分析；不启动400步完整训练。** 当前准备单视角视频对照、查询差异中介、模块变化分解和小预算更新机制诊断。主agent负责实验与综合；只读agent补精确Compiler中介公式，不运行GPU或修改文件。
+更新时间：2026-09-10 CST。**本轮原因深化诊断全部完成；当前没有运行队列，停在正式方法修改/训练前。** Owner重新授权的视频控制、查询中介、模块变化归因和有限真实更新均已执行，结果直接在对话中解释，未新建独立原因报告。
 
-Owner明确允许乱序、倒序、其它任务视频作为本轮原因分析，覆盖此前最终controls专用限制；本次用途是诊断，不作正式checkpoint选择或最终资格。Test/held梯度继续禁止。所有现有权重按单视角训练，当前诊断保持agentview，双视角训练留待正式推进。完整训练硬上限仍有效；必要临时更新必须单独预登记小预算，不借分析名义重训。
+**完整证据：** 1728视频控制、640两层Q中介、256训练任务P/C/D端点、36有限更新行为、32 sealed BBQ端点、9橙汁描述回放，共2701条配对closed-loop rows；51个worker全部complete/exit0。只做4次真实gradient macro（16条件/1024跨episode queries），另4次零当前梯度Adam对照。原formal状态只读，未新增完整训练、held梯度、Test、checkpoint选择或正式方法采纳。
 
-正式推进待办已写入task_plan：双视角学习效果、Compiler额外仿射语言查询删除候选的后续增长/保持、每100步完整checkpoint与strict400，以及未识别的Compiler关闭×D共享交互。当前不恢复任何旧训练run。
+**主要实证结论（findings§44–48）：**
+
+- 教学视频动态没有形成稳定整体优势：400完整/首帧/中帧/倒序=51/52/51/50（各96），错配和乱序有局部损失但也有新增成功；保留局部视频增量与同task另一视频对照，不能称完全忽略视频或已证明纯task记忆。
+- 四次其它task真实更新使原成功橙汁任务转选BBQ瓶；零当前梯度Adam对照仍成功。P变化可单独复现目标转移，C+D另有操作失效；九臂回放及首步实际相同native输入已核对。
+- 原BBQ四例全200/400的3/4、0/4及正确对象→绿色瓶转移均复现。只换D400使3/4实例转移，只换P400为2/4，只换C400为0/4；还有P/C/D交互。train8上的有用decoder调整与held目标选择损失并存，不能将保持问题只归Compiler。
+- 查询干预确实改变两层真实读取差异，但HH在四面板均未超过native normal；首层局部作用依赖背景。已有Compiler入口删除的fresh收益保留，强制分工不是经验证的即时修复，唯一学习中介仍未识别。
+
+全部新诊断保持训练过的agentview单视角。Owner本轮明确允许shuffle/reverse/wrong-video作为原因诊断，覆盖旧最终controls专用限制；这些已看过结果不冒充未触碰的最终资格。正式推进待办见task_plan：双视角真实学习、仅去Compiler额外仿射query并保留独立D的后续增长/保持、每100步完整checkpoint与strict400、未识别的Compiler×D绑定交互，以及合法language/static prior学习参照与视频增量。
+
+原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/summary.json`；全部结果、raw rows、动作/轨迹、注册和launch保留，实际5.6GiB，低于已核定总32GiB新增峰值预算。科学运行面为clean pushed detached9abc9b95，canonical科研源码未改。独立worker使用至多六张有用GPU并复用先完成面板释放的设备；最终双节点无本任务tmux或进程。Q首面板准备的train8/24筛选断言修正后，全部面板已完成，失败记录保留，没有重复训练或未完成结果。
 
 ## 历史快照：双视角输入交付时
 

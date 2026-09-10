@@ -946,3 +946,17 @@ Owner要求把原因分析继续做深，在已完成的最后共享训练之后
 四项GPU诊断均complete/exit0，进程内1564.96/414.79/111.00/90.47秒；原预算内完成，所有句柄退出。首个actual-video辅助SVD的BF16错误修正为FP32代数后重启，失败证据保留，不改变原生attention。训练/视频运行面c63f55dc、执行重放e7447291保持clean pushed冻结版本，canonical科研方法未改。
 
 跨轮解释与候选等级见findings§39–43；原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/{actual_video,reader_credit,execution_projection}/`各summary及注册。当前最有学习证据的候选仍仅去Compiler额外仿射query；地址/内容分离是进一步机制候选，尚未验证完整可学习性或闭环。旧强FM与共享负例继续约束解释，不能宣布唯一根因、完整修复、平台或必须RL。Owner要求直接在对话中交付，不新建报告；正式修改/采纳和未来训练仍停在复核前。
+
+## 2026-09-10 视频控制、查询中介及真实更新深化：动态增量与条件映射保持
+
+Owner重新要求深入原因，明确允许本轮shuffle/reverse/wrong-video诊断及小预算真实更新，禁止再次400步完整训练。全部沿用已训练agentview单视角，clean pushed detached9abc9b95；canonical科研源码与正式方法未改。新视频控制1728行、双层Q中介640行、train8 P/C/D端点256行、有限更新36行、sealed BBQ端点32行、橙汁描述回放9行，共2701条实际配对闭环，51个worker全部exit0。原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/summary.json`。
+
+视频对照200/400正确为41/51（各96），同task另一视频43/53，同suite错误43/48、跨suite错误46/46、乱序42/47、倒序42/50、重复首/中/末45/52、43/51、43/48。400有局部正确视频增量，却没有正确动态过程的稳定整体优势；静态首帧对完整为R/G/L39/13/12，不能由52≈51推逐例等价。原生R/P4已包含exact language条件，经过video Value并不能保证动态图像是必要信息；纯task记忆或完全忽略视频仍不是唯一解释。完整per-task/suite、得失和局部反例见findings§47及`video_controls/dependence_summary.json`。
+
+四个预注册真实macro从all7完整400临时恢复，在单GPU串行保持四task各0.25权重、64跨episode queries；16条件1024queries，四个预选观察任务均未参与这些更新。另从同初态执行四次零当前梯度AdamW，保留m/v、decay与scheduler。生成274.20秒、峰值26.97GiB、exit0。原400/M均4/4，FULL404为3/4，橙汁task19转向BBQ瓶；P-only复制该目标转移，C+D联合则产生另一种操作失败。九臂冻结轨迹重放逐臂复现，初始实际native输入相同；这是新梯度造成跨任务功能损害的实例，不能全归历史动量，也不当全局遗忘率。无额外训练复跑或完整更新模型保存，原正式checkpoint/optimizer/sampler只读；详见findings§44。
+
+train8的全200/40016→18/32仍R/G/L10/8/6，旧P/C+新D可达22却也丢5。直接沿用BBQ四实例、原teacher的sealed P/C/D八组合全部完成，两个正常端点重现3/4、0/4及正确BBQ→绿色瓶。旧P/C只换新D即使3/4实例转向绿色瓶，只换P为2/4，只换Compiler为0/4；state25则需D与P或C联合变化才转移。新decoder在部分训练任务有用、在held条件有害，与实际跨task更新共同定位共享条件映射的获取/保持耦合，不唯一归Compiler，也不证明冻结某块就是修复。32条完整轨迹和首步相同输入证据保存；详见findings§45–46。
+
+查询中介真实改变Q及Value槽间差异，但normal/LL/HL/LH/HH成功数（各32）为all20016/16/18/15/16、all40018/14/18/14/17、off20016/15/17/14/15、off40020/18/18/19/18。首层作用依赖背景，双层HH四面板均未超过normal；降低强制槽分工作为即时修复的优先级，仍保留Compiler删除的fresh学习净收益及完整学习中介未识别的边界。详见findings§48及`query_mediator/behavior_mediation_summary.json`。
+
+全部新增证据5.6GiB，在strg01核定的总32GiB新增峰值预算内；独立worker复用释放设备、最多六张实际工作GPU，最终双节点无本任务句柄。Q首次子集队列准备的断言错误修正后完成，失败记录保留；无held梯度/Test/正式checkpoint选择或正式方案采纳。双视角学习、Compiler关闭候选的后续增长与保持、每100步strict400及合法language/static prior对照等仅记录为后续正式验证事项。本历史段不恢复执行。

@@ -1,6 +1,8 @@
 # 当前能力缺口：学习过程因果分析计划
 
-## 当前重新启动：Owner最新授权与完整分析范围（2026-09-10）
+## 当前轮次已完成：单视角原因深化；停在正式修改/训练前（2026-09-10）
+
+本轮新增诊断已完整完成：1728视频控制、640查询中介、256训练任务端点替换、36有限更新行为、32 sealed BBQ端点与9橙汁描述回放，共2701条新闭环。只执行4次真实gradient macro，另4次零当前梯度Adam对照；未新增完整训练、held梯度、Test或正式方法采纳。结论见findings§44–48；原件统一在`mechanism/deep_causal_20260910/`，正式推进待办保留在task_plan。
 
 Owner要求继续深入原因，明确可以使用GPU做有针对性的诊断，禁止再做400步完整训练或同等规模重训。范围不止视频乱序/倒序/错配：还必须完成查询差异的功能中介、读取/过程编码与decoder的变化归因，以及必要的小预算真实更新为何损害其它条件下正确功能。先登记每项竞争解释、干预、功能/行为结果与上限，完整学习及正式采纳仍停在Owner复核前。
 
@@ -16,7 +18,21 @@ Owner要求继续深入原因，明确可以使用GPU做有针对性的诊断，
 
 真实stride5 RGB frames在native prefix前变换，乱序/倒序保持同一图片集合及单调呈现时间网格，原始来源索引单独保存；不重排hidden替代完整forward。静态臂重复真实初/中/末采样画面，三者全部报告；当前observer保持训练时agentview单视角。错配条件保留各自完整视频长度，承认长度/内容联合变化，时序特异性主要由同帧集合的乱序/倒序识别；冻结输入干预的分布外限制明确保留。
 
-原件在既有mechanism/deep_causal_20260910/video_controls，独立registration.json保存预测、任务、映射、边界和预算。runtime复用clean pushed detached9abc9b95，每节点物化进程上限2400秒（wrapper2700），闭环worker上限5400秒，同节点动态queue/长任务优先/persistent worker，合计不超过六张有用GPU。新增此项预计不超过8GiB，本轮全部新诊断峰值32GiB；strg01/data1已查used736612296KiB/soft1073741824，共享84TiB，复用所有大资产。无optimizer或新训练。
+原件在既有mechanism/deep_causal_20260910/video_controls，独立registration.json保存预测、任务、映射、边界和预算。runtime复用clean pushed detached9abc9b95，每节点物化进程上限2400秒（wrapper2700），闭环worker上限5400秒，动态queue/长任务优先/persistent worker，合计不超过六张有用GPU。执行中复用先完成面板释放的设备，独立evaluator在两个节点分发，每个worker的模型和环境始终节点本地，没有跨节点分布式模型或训练。新增此项预计不超过8GiB，本轮全部新诊断峰值32GiB；strg01/data1已查used736612296KiB/soft1073741824，共享84TiB，复用所有大资产。无optimizer或新训练。
+
+### 当前第二项结果前登记：保留公共Q的双层差异中介
+
+沿用此前八train任务0/7/14/16/20/25/34/35及states32–35，在all7/off7×200/400共四固定checkpoint上，用各自已有actual_video ordinal0真实P4、language route和完整视频时间，不移植其它checkpoint的视频表示。保留normal，另做两层L/H的2×2（LL/HL/LH/HH），160套完整LoRA、640条配对诊断闭环。L/H由已有train24×两视频的第一层projected-Q槽差异RMS中位数定义：200为.0218333/.5687001，400为.0201242/.5700444；第二层用同一对预定尺度，禁止看分数调参。
+
+hook仅在每层cross.query Linear输出，Q*=mean_slot(Q)+(Q-mean_slot(Q))*tau/RMS(Q-mean_slot(Q))。保留当次公共query分量与差异方向，不改K/V/语言支路/残差；第一层干预后的下游公共分量允许自然变化。FP32局部代数后恢复原dtype，允许正常BF16舍入；normal首先重建已有C（相对RMS<=.02），不把缓存源或精度错配当机制结果。旧shift置零/identity配平未覆盖这项双向、双层中介。
+
+观察真实Q→attention/Value→C→实际配对行为。all扩展获益且off压缩受损支持功能中介；只有几何变化不算修复；双向都受损保留冻结接口共同适应解释，不否定训练时修正。原件query_mediator/registration.json；仅加载Writer与既有P4，GPU物化上限900秒、新增2GiB，无原生policy/optimizer或新学习，闭环沿用视频面板同一执行owner。
+
+### 当前第三项结果前登记：200/400函数变化的三组全交互
+
+同一all7两个端点，沿用八train任务及各自actual_video ordinal0视频、states32–35。P为Meta+共享language reader+input/horizon+四组process；C为target/rank身份、query_language、time routing与Compiler；D为完整native decoder。完整2×2×2共64套LoRA/256条配对闭环，保留两个原始端点和所有混合组合，不只挑三个单模块。
+
+每个P版本从同一真实单视角前缀重新运行Meta及过程编码；固定source的Z/KV可复用，不能跨P复用R。静态language编码属于P，它的Compiler投影属于C，明确共享reader的混合职责。用真实行为及组合交互区分表示、编译、输出映射的函数变化；混合状态同时变差只支持共同适应边界，不把单次不兼容移植当模块定罪。原件endpoint_swaps/registration.json；无更新、GPU生成上限1200秒、预计新增1GiB。
 
 **最新授权上限（覆盖下文此前探索授权与条件追加计划）：** 2026-09-10 CST Owner最新限制：当前已启动的 `horizon_causal_within_target_rank_shared_seed7_20260910` 是本次分析最后获准的完整训练，仅完成既定400步及200/400评测。此后分析排查不得再启动完整训练或同等规模的重训练，也不得通过改称探索、拆分短段、追加seed/候选或延长当前run绕过限制。后续使用已有checkpoint、历史证据、冻结评测及有明确问题和小预算的轻量诊断；证据不足时明确报告未识别项，不以必须查清为由追加重训练。正式方法修改/采纳及未来正式训练仍须等待Owner复核后另行明确授权。
 
@@ -140,3 +156,13 @@ Owner已明确：允许为探索原因修改架构、语言路径、参数共享
 在授权范围内仍有明确能区分主要解释的实验时，继续执行，不把预列步骤跑完或报告写完当作完成。若遇到真实资源/信息/授权边界，说明尚未回答什么和必须增加什么证据；不能靠把原因列为“疑点”宣布彻底分析完，也不能伪造唯一根因。
 
 分析完成后交付可审阅报告和下一步方案，并停在正式修改/采纳、合入和下一次正式训练之前，等待Owner复核。原因分析完成须由主要问题的实际区分证据支持，不能因预列步骤或报告文字完成就宣布完成；尚未识别的边界须明确保留。正式阶段是否推进由Owner复核后重新授权，不由本goal自动启动。
+
+### 有界真实更新机制补充注册（结果前，2026-09-10）
+
+从all7完整400临时恢复模型、AdamW、scheduler和sampler，仅执行固定接续401–404四macro（原4任务等权×64 queries）；单GPU串行只是诊断拓扑，不冒称world4 exact-resume。与同初态下四次零当前梯度Adam更新M比较，并用M+(FULL−M)的P/C/D全八组合定位当前梯度效应。四个预选成功train条件task0/19/22/34均不出现在这16次训练条件中，严格配对36行；先核正常400能重现成功。P包含Meta及语言/视频共享reader，C为Compiler，D为decoder。保留历史动量、二阶矩、decay与scheduler，不能把零梯度误设None；不追加步数/搜索受害者来制造损失。预算30分钟生成、4个真实macro、36rollouts、额外1GiB，已含总32GiB增长估计；Test/held梯度禁止，原formal目录只读。原件deep_causal_20260910/bounded_updates/registration.json。
+
+### BBQ已知失效实例的冻结端点补充（结果前，2026-09-10）
+
+训练任务P/C/D分解不能代替BBQ失效解释，因此沿用既有validation task13四个state0/12/25/37与原teacher42/21/5/43，增加相同200/400 P/C/D八组合，共32个单环境rollouts。原件`deep_causal_20260910/bbq_endpoint/registration.json`。这是一次预注册sealed frozen held诊断：不产生梯度、不选checkpoint、不追加条件，不将单任务回放当全局率；先核全200/全400复现原3/4与0/4及正确对象/干扰瓶行为，再逐组合定位。完整轨迹只作终端机制解释，不进入Writer或学习。GPU生成上限15分钟、存储2GiB仍在原总32GiB内；等待已有面板释放一张卡，保持最多六张实际工作GPU。
+
+四次预注册真实macro已完成，原400与零当前梯度M均4/4，FULL404为3/4，唯一丢失的预选task19橙汁没有参加这16训练条件。冻结P/C/D组合显示P-only及C+D均可使该例失败。为描述是对象选择还是操作失败，登记复用全部九套已冻结adapter、同state32/demo48做9条带完整轨迹回放，不生成新LoRA或新增梯度；这是事后描述性定位，不作新成功率估计，重放不符先报告，不搜索条件。原件`deep_causal_20260910/orange_replay/registration.json`。

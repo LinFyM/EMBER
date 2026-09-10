@@ -2,7 +2,7 @@
 
 ## 当前快照（2026-09-11，自主执行已恢复）
 
-Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S100评测与S后半段训练仍在进行。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S100=59/400，S训练和全部物化已完成，S200 validation400与train96正在并行。
 
 唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C两点不支持追加训练；R仍增长但低于旧同预算off200，先完成S及其train96再决定后续。
 
@@ -24,7 +24,9 @@ C100/C200两组strict400均完整exit0，每组6个persistent worker、约29.5/2
 
 R100/R200 strict400均完整exit0，37→83，四suite1/26/10/0→0/41/37/5、breadth5→5；相邻保留23/新增60/丢失14、churn74、J=.23711。global tasks1/3/11/13/23/26/31/32从0/1/24/2/1/9/0/0到0/0/24/17/1/36/0/5。R200相对C200多33次成功；相对同51,200queries旧off200108却少25，R/G/L63/20/45。R train96=46，四suite12/11/15/8、breadth18；旧off20040→R46保留33/新增13/丢失7。当前证据显示两项改动均提高训练任务分数，却未带来未见任务净收益；不能单独归因为没有学习或全部有序过程失效。
 
-当前S100 checkpoint及400条件bank已完整验证封存，strict400在gpu02 0/1每卡3worker运行；S双卡训练继续向200，之后物化validation400+train96并完成闭环。运行均为clean pushed detached7fedbe85。R暂不追加，等待S完整结果；后续只按有辨别力的假设选择投入，不为占用空闲GPU提前扩大训练。全部同口径比较见runs/analysis/video_consumption_20260911/{r,c}/step{100,200}/。
+S100 strict400=59，四suite2/37/16/4、breadth7；global tasks1/3/11/13/23/26/31/32为0/2/34/3/1/15/2/2。相对匹配C10043保留36/新增23/丢失7，churn30、J=.54545。无序多帧参照早期更强，但不唯一归因时序。S200训练完整exit0，200checkpoint经formal inspector通过、source trainable=0；总6048秒、平均更新28秒，独立动作FM0.151461→0.109258。三臂各51200queries/1600conditions/800taskoccurrences/378unique task-video一致，见rcs_training_summary.json。
+
+S全部896条件bank已sealed，100物化567秒、200含train96物化696秒，均exit0。当前S200 strict400在gpu02 0/1/3/4/6每卡3worker（共15）运行，train96在gpu01 1/4每卡3worker（共6）并行；两节点live检查通过，单节点最多6个实际工作GPU，运行均为clean pushed detached7fedbe85。当前只剩这两个已登记面板。C不追加，R待S完整结果；全部原件和同口径比较见runs/analysis/video_consumption_20260911/。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 

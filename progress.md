@@ -26,6 +26,8 @@ init11末期train候选61对all56为R/G/L48/13/8，breadth22对20；自身44→6
 
 launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABLE1、GPU-local NUMA/deferred NCCL已由actual contract确认。strg01/data1 used729795400KiB、soft1073741824/hard1084227584，相关已有run14GiB/analysis1.1GiB，新峰值20GiB在独立配额内、shared84TiB，资产复用。原件`causal_learning_20260909/sharing/{registered_contract,profile_completed_summary,train_launch,storage_train_launch,gpu_preflight_train_launch,initial_sampling_pairing}.json`。首次profile仅因本地缺失既有远端authority ref在model/data/update前退出；fetch精确ref并公开git_state检查通过后原配置复测成功，失败原件`sharing/bootstrap_attempt1`保留。200/400的496条件物化请求及schema-owning评测脚本已CPU准备，须checkpoint完成/公开检查及launch前实时资源后执行；没有提前产生评测结果。
 
+**共享200节点已保存并核验：** 完整checkpoint公开检查通过；累计200更新、800条件/51200queries，各suite200条件，实际teacher/query/frame/RNG与原all基线逐项配对。held3072输入配对、无梯度，均值.114600358对基线.111031413，仅作为拟合诊断。训练按原合同继续至400；200的validation400+train96共496条件已在gpu02物理4物化，tmux `ember-sharing-seed7-step200-bank`、pane3248576，运行面仍为clean pushed c63f55dc。launch现场该卡free39027MiB/util2，已有低负载peer保留；strg01/data1 used730508012KiB，当前run696MiB、analysis516KiB，后续物化仍在原20GiB峰值预算内。原件 `sharing/step200/{checkpoint_inspection,learning_summary,materialization_launch,gpu_preflight_materialization,storage_materialization_launch}.json`；尚无这轮闭环结果。
+
 **授权与边界：** 当前共享run是最后一轮完整训练，400后不延长、不新增其它重训练。完成既定评测和预算内轻量分析后交付具体结论及未识别项，等待Owner复核。Compiler确认已完整结束，不由局部净增正式采纳候选；旧v6重训保持暂停，VL未选定，不因GPU空闲增加实验。
 
 当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。

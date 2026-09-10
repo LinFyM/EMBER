@@ -2,7 +2,7 @@
 
 更新时间：2026-09-10 CST。当前goal恢复为完整原因分析，完成后停在正式修改/采纳当前方法及下一次正式训练之前，等待Owner复核。
 
-**最新Owner授权（覆盖睡前扩大授权）：** Owner明确要求“切换一下goal，还是回到原来的goal，就是停在正式训练前，等待我复核”。原因分析、必要隔离探索与已登记的Compiler候选复核继续；分析交付后停止，不正式采纳/合入方法修改，不启动下一轮正式训练或继续正式方法迭代，须等Owner复核后重新明确授权。本次live查询goal为null，随后已实际创建上述分析goal并再次get_goal确认active；不只是修改文档。科学目标、信息墙、固定split、source冻结、single LoRA、最终controls/Test及GPU/独立quota/Git合同保持，旧v6专项暂停不自动撤销。
+**最新Owner授权（覆盖此前更宽的探索学习授权）：** 2026-09-10 CST Owner最新限制：当前已启动的 `horizon_causal_within_target_rank_shared_seed7_20260910` 是本次分析最后获准的完整训练，仅完成既定400步及200/400评测。此后分析排查不得再启动完整训练或同等规模的重训练，也不得通过改称探索、拆分短段、追加seed/候选或延长当前run绕过限制。后续使用已有checkpoint、历史证据、冻结评测及有明确问题和小预算的轻量诊断；证据不足时明确报告未识别项，不以必须查清为由追加重训练。正式方法修改/采纳及未来正式训练仍须等待Owner复核后另行明确授权。
 
 ## 当前：Compiler固定确认完成，转入输出共享的单接口原因分析
 
@@ -26,7 +26,7 @@ init11末期train候选61对all56为R/G/L48/13/8，breadth22对20；自身44→6
 
 launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABLE1、GPU-local NUMA/deferred NCCL已由actual contract确认。strg01/data1 used729795400KiB、soft1073741824/hard1084227584，相关已有run14GiB/analysis1.1GiB，新峰值20GiB在独立配额内、shared84TiB，资产复用。原件`causal_learning_20260909/sharing/{registered_contract,profile_completed_summary,train_launch,storage_train_launch,gpu_preflight_train_launch,initial_sampling_pairing}.json`。首次profile仅因本地缺失既有远端authority ref在model/data/update前退出；fetch精确ref并公开git_state检查通过后原配置复测成功，失败原件`sharing/bootstrap_attempt1`保留。200/400的496条件物化请求及schema-owning评测脚本已CPU准备，须checkpoint完成/公开检查及launch前实时资源后执行；没有提前产生评测结果。
 
-**授权与边界：** 最新Owner要求恢复分析后的复核停止点。Compiler确认已完整结束，不由局部净增正式采纳候选；必要且有区分力的隔离探索仍属原因分析范围。分析完成后，正式方法修改/采纳、合入及下一次正式训练均等待Owner复核后授权。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享是已登记单接口原因探索，现已fresh学习；VL只读审计仍未选定。不得枚举历史失败架构或因GPU空闲增加实验。
+**授权与边界：** 当前共享run是最后一轮完整训练，400后不延长、不新增其它重训练。完成既定评测和预算内轻量分析后交付具体结论及未识别项，等待Owner复核。Compiler确认已完整结束，不由局部净增正式采纳候选；旧v6重训保持暂停，VL未选定，不因GPU空闲增加实验。
 
 当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
 

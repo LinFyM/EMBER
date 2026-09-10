@@ -387,7 +387,7 @@ v_i=W_V\operatorname{LN}(P_i)+b_V,
 \alpha_{tr,i}=\operatorname{softmax}_i(q_{tr}^{\top}k_i/\sqrt{32}+\pi_i).
 \]
 
-这里8head、每head32维；`p_i`由真实frame index/5编码，K1下`π_i=-log(T)`对所有帧相同，不能改变该视频内部的softmax分配。语言支路只加在第一block的lookup；该block的残差起点仍为`q_id`，后续还有cross输出、自注意力、FFN和第二Compiler block。P4始终提供真实视频Value，exact language也仍进入原生图文prefix及逐帧local/H-read。删除该支路不等于删除语言、视频Value或target/rank身份。
+这里8head、每head32维；`p_i`由真实frame index/5编码，K1下`π_i=-log(T)`对所有帧相同，不能改变该视频内部的softmax分配。语言支路只加在第一block的lookup；该block的残差起点仍为`q_id`，后续还有cross输出、自注意力、FFN和第二Compiler block。P4始终提供真实视频Value，exact language也仍进入原生图文prefix及逐帧local/H-read。删除该支路不等于删除语言、视频Value或target/rank身份。 H-read对照的实现则是先将`read_condition`置零、再经过`read_language`，所以它仍保留自己的bias；两处开关不是完全相同的bias干预，不能把其效应差直接解释成两种纯语言内容的优劣。
 
 **新诊断支持：额外共用位移确实强烈压缩第一层检索query之间的差异。** 预登记CPU分析只读八个已有checkpoint各933,888参数、冻结source的77个token行，以及固定train24/validation8 exact language。复用实际language reader与原生task span、位置和embedding缩放，FP32计算；没有完整policy/视频forward、动作、优化器、梯度或Test。原件`causal_learning_20260909/mechanism/query_geometry.json`保留每task数值、所读checkpoint及实现，计算主体1.71秒。
 
@@ -431,7 +431,7 @@ A=A_0+H_AD_A^\top,\qquad B=D_BH_B^\top,
 
 独立版各自更新`D_r`。跨任务共享原本已经存在，新增的是同target/side的rank贡献进入同一参数和AdamW状态。总梯度平方`(Σ_rG_r)²`含跨rank交叉项，因此“分别AdamW后平均”不等于绑定更新，也不能解释成学习率自动乘16。当前每task的FM LoRA梯度仍乘.25，四task归约后一次clip/step/scheduler，任务权重未改。
 
-以固定代码的局部SGD近似帮助理解：`δf_s=-ηΣ_r g_r(h_rᵀh_s)`。相似代码的槽互相影响更强；兼容需求可共享统计信号，冲突需求也可能抵消或相互干扰。AdamW会再按坐标改变更新。源码中的全局clip还可能因绑定改变系数；这只是结构可能性，是否发生必须由本run完整梯度日志判断，不能把它预设为观察到的原因。
+以固定代码的局部SGD近似帮助理解：`δf_s=-ηΣ_r g_r(h_rᵀh_s)`。相似代码的槽互相影响更强；兼容需求可共享统计信号，冲突需求也可能抵消或相互干扰。AdamW会再按坐标改变更新。源码中的全局clip还可能因绑定改变系数；这只是结构可能性；本run完整400日志后来确认最大全局范数.941387、clip阈值1、触发次数0，基线亦0，因此实际裁剪不是本次绑定效应的原因。AdamW聚合及共享函数空间仍实际改变。
 
 identity初始化的FM梯度也有明确顺序。`∇_A L=sBᵀG`、`∇_B L=sGAᵀ`；fresh时D_A=D_B=0、A=A0、B=0，所以第一反向只有D_B可以打开。D_B有效更新后，D_A、U_B、C与共同上游才可能获得梯度；D_A再更新后U_A才打开，通常对应第1/2/3次反向。不能把AdamW对非零参数的weight decay当FM梯度，也不能把四步profile写成所有模块从第一步就在学习。两种D参数化都有这个顺序，绑定改变的是首次有效B更新的聚合以及随后返回上游的梯度。
 
@@ -460,6 +460,8 @@ identity初始化的FM梯度也有明确顺序。`∇_A L=sBᵀG`、`∇_B L=sGA
 为区分字典本身与实际使用，进一步只读共享200的38个D_B（约40MiB）。D_B第一奇异方向能量均值65.02%，逐target38.54%–74.46%，stable rank均值1.5723；前4方向89.50%。1.53秒完成，原件`mechanism/dictionary_geometry_step200.json`。D_B自身并没有达到生成B的近乎单方向集中，**因此仅说“共享字典只能表达rank1”不符合实际参数**。更窄的定位是：代码经过U_B/GELU与D_B映射后，对字典的实际使用高度集中。尚不能由此分开C本身差异小、U_B/GELU压缩差异与代码选择D_B主方向的共同适应；也没有直接证明仅恢复B多方向就会修复闭环。
 
 这组结果使“相似检索在独立D下能被不同映射补偿，而绑定后代码分工不足”的解释更有针对性，但没有跨Compiler删除×绑定的实际学习对照，因此仍是受诊断支持的竞争解释。也不能排除近rank1是当前学习阶段的现象；必须保留既定400的对应行为和几何。低有效秩本身不是优化目标，不据此添加rank/正交损失、改scale或追加训练。
+
+共享训练随后按原合同完整止于400，wrapper exit0/12104.41秒；400 checkpoint及1600条件/102400queries实际采样配对通过，held3072无梯度输入配对。自身held均值`.114600358→.107955018`，24/24训练task改善；仍比all400 `.105074533`高，仅1/24优于all。平均更新29.4005秒、峰值34.8969GiB，没有401或额外候选训练。400的validation400/train96尚待原定完整物化与评测，不能用这些训练/拟合数字先行裁决。
 
 ### 监督与前端：已经知道的链条，以及尚不能定责的接口
 

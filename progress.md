@@ -20,9 +20,9 @@ init11末期train候选61对all56为R/G/L48/13/8，breadth22对20；自身44→6
 
 完整报告`docs/horizon_causal_language_learning_20260909.md`末节；总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`，各paired JSON含全部task/suite/成功集合。训练/物化来自clean pushed45e16633，评测来自clean pushed0e2a3a44（仅资源准入修正，模型及科学合同不变）；没有合入探索科学实现。
 
-**下一项已选定、尚未launch：** 当前同target跨rank输出D绑定，独立worktree `.codex/worktrees/horizon-causal-sharing`、准备提交c63f55dc，复用原all seed7作为共同基线。只改末层参数共享，保留全体语言入口、前端/过程、rank16、teacher/query、FM和固定200/400节点。它区分此前没有实际学习检验的输出独立性因素；不同时叠加Compiler删除，也不恢复旧v6或启动VL新臂。近等价Target-Owned负结果和当前单接口差异见报告及隔离候选文档。CPU86项检查属于已完成准备，尚须真实profile、当前独立quota/GPU/峰值和精确launch合同；不把准备当作学习结果。
+**下一项已选定、profile已启动：** 当前同target跨rank输出D绑定，独立worktree `.codex/worktrees/horizon-causal-sharing`、准备提交c63f55dc，复用原all seed7作为共同基线。只改末层参数共享，保留全体语言入口、前端/过程、rank16、teacher/query、FM和固定200/400节点。它区分此前没有实际学习检验的输出独立性因素；不同时叠加Compiler删除，也不恢复旧v6或启动VL新臂。近等价Target-Owned负结果和当前单接口差异见报告及隔离候选文档。CPU86项检查属于此前准备；实际数据/optimizer/observer/runtime与基线配置一致，只新增rank绑定字段。当前四更新及93帧最长视频完整反向profile运行在gpu01p5/6、world2/micro8,8，tmux `ember-horizon-rank-sharing-profile`、rank1733484/1733535；尚未开始fresh400证据学习。live strg01/data1 used729795068KiB、soft1073741824/hard1084227584，相关已有run14GiB/analysis1.1GiB，新峰值20GiB在独立配额内，shared84TiB；双节点所选p5/p6各free46067MiB/util0/无peer。原件`causal_learning_20260909/sharing/{registered_contract,storage_snapshot,profile_launch,gpu_preflight_profile_launch}.json`，运行面clean pushed detached c63f55dc。
 
-**授权与边界：** 最新Owner要求恢复分析后的复核停止点。Compiler确认已完整结束，不由局部净增正式采纳候选；必要且有区分力的隔离探索仍属原因分析范围。分析完成后，正式方法修改/采纳、合入及下一次正式训练均等待Owner复核后授权。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享已因剩余输出独立性问题选为下一项单接口探索，尚未launch；VL只读审计仍未选定。不得枚举历史失败架构或因GPU空闲增加实验。
+**授权与边界：** 最新Owner要求恢复分析后的复核停止点。Compiler确认已完整结束，不由局部净增正式采纳候选；必要且有区分力的隔离探索仍属原因分析范围。分析完成后，正式方法修改/采纳、合入及下一次正式训练均等待Owner复核后授权。旧v6追加重训保持暂停（profile第2步梯度检查退出，无正式学习），不得自动修复重启。rank共享已因剩余输出独立性问题选为下一项单接口探索，当前仅profile；VL只读审计仍未选定。不得枚举历史失败架构或因GPU空闲增加实验。
 
 当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
 

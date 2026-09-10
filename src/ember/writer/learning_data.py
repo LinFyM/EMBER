@@ -57,7 +57,7 @@ def load_learning_tasks(
 class WriterTrainingData:
     """Independent persisted task, video and action sampling streams."""
 
-    def __init__(self, asset_root: Path, config: Mapping[str, Any]) -> None:
+    def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "agentview") -> None:
         self.config = dict(config)
         self.seed = int(config["seed"])
         self.tasks = load_learning_tasks(asset_root, config["task_ids"])
@@ -72,7 +72,7 @@ class WriterTrainingData:
         if tuple(config["cardinalities"]) != (1,):
             raise ValueError("the current supervised stage requires actual K=1 conditions")
         authorities = tuple(task.authority for task in self.tasks.values())
-        self.videos = RawTeacherVideoStore(authorities, frame_stride=5)
+        self.videos = RawTeacherVideoStore(authorities, frame_stride=5, camera_view=camera_view)
         self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool, action_chunk_size=50)
         self.query_rows = self.queries.task_episode_rows
         self.diagnostic_queries = None

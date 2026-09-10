@@ -100,6 +100,16 @@ U^0_{t,h}=W_RR_{t,h}+e_h.
 - 新接口应 hook **action_out_proj 的实际输入**。旧 `ActionLayerStateCapture` 最后项是 final norm 的输入，不能直接取其末项替代。
 - Z 应来自同一次真实 prefix 的最终图文输出；现有 helper 只保留 KV，需扩展其返回合同，不能拿静态词 embedding 冒充 Z。
 
+### 3.1 同episode同步双视角输入（2026-09-10，读取能力扩展）
+
+Owner请求加入双视角。现有原生输入链支持在配置`observer.camera_view`指定`dual`：同一episode、相同stride5和include-last-frame索引下，读取`agentview_rgb`与`eye_in_hand_rgb`，两者分别180度旋转后进入π0.5的`base_0_rgb`与`left_wrist_0_rgb`槽位。相机缺失、帧数或图像shape不一致时明确拒绝，不复制一幅图补齐。
+
+两相机在每个时间点共同形成一次真实图文prefix；冻结Z/KV包含两路有效图像tokens和同一exact task span，Meta从该前缀读取一份完整`R[t,50,1024]`。四组过程图和Compiler仍接收原有接口，最后只生成一套完整LoRA。相机轴是同一演示内部的同步观察，不是额外teacher episode，K1仍为K1；不单独生成视角LoRA后平均。
+
+训练数据、observer、prefix cache、物化与bank的method metadata共同遵守该配置。缺省值解释为历史`agentview`，以便保持现有单视角合同；切换至`dual`会改变run配置，禁止冒充原单视角exact-resume，也不能跨视角复用物化bank或resident observer。调用示例：在原配置`observer`内加入`"camera_view": "dual"`，其它字段保持。
+
+本次交付是输入能力实现与接口验证，不采纳新的性能结论，不同时改变Compiler支路或D共享。现有单视角结果仍按原合同解释；双视角正式学习/吞吐和闭环收益需独立登记，未获本次请求自动启动。后续若获准续训，Owner要求每100步保存完整checkpoint并做strict400评测。
+
 ## 4. 一组局部核实
 
 第 b 组读 `U^(b−1)`；所有帧对读同一旧状态，不按视频遍历顺序原地更新。

@@ -319,11 +319,13 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
     assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
 
 
-@pytest.mark.parametrize("field", ["source", "model_config", "observer"])
+@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view"])
 def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_materialization, field):
     requests, runs, builds, _ = resident_materialization
     changed = runs[Path(requests[1]["checkpoint"])]
-    if field == "observer":
+    if field == "camera_view":
+        changed["config"]["observer"]["camera_view"] = "dual"
+    elif field == "observer":
         changed["config"][field]["probe_seed"] += 1
     else:
         changed[field]["different_contract"] = True

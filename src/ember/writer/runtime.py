@@ -67,6 +67,7 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     observer = NativeVideoObserver(
         policy, state.meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,
         frame_chunk=int(config["observer"]["frame_chunk"]),
+        camera_view=config["observer"].get("camera_view", "agentview"),
     )
     stats = read_json(asset_root / reuse["source_normalization"])["stats"]
     processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(device))
@@ -81,6 +82,8 @@ class FrozenVideoPrefixCache:
     """
 
     def __init__(self, observer: NativeVideoObserver, data: WriterTrainingData, byte_limit: int) -> None:
+        if observer.camera_view != data.videos.camera_view:
+            raise ValueError("prefix cache teacher camera views differ from the observer contract")
         self.observer, self.data = observer, data
         self.byte_limit, self.bytes = int(byte_limit), 0
         self.hits = self.misses = 0

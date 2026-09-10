@@ -323,3 +323,21 @@ def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
     assert config == before
     with pytest.raises(ValueError, match="per rank"):
         _execution_config(args, config, SimpleNamespace(world_size=3, rank=0))
+
+
+def test_dual_view_is_an_explicit_config_change_not_an_exact_resume(tmp_path, config):
+    changed = deepcopy(config)
+    changed["observer"]["camera_view"] = "dual"
+    cfg_path = tmp_path / "dual.json"
+    cfg_path.write_text(json.dumps(changed))
+    assert _config(cfg_path)["observer"]["camera_view"] == "dual"
+    original = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
+                "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"}}
+    path = tmp_path / "run_contract.json"
+    _publish_contract(path, original, resume=False)
+    with pytest.raises(ValueError, match="exact-resume contract differs: config"):
+        _publish_contract(path, {**original, "config": changed}, resume=True)
+    changed["observer"]["camera_view"] = "unknown"
+    cfg_path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="camera_view"):
+        _config(cfg_path)

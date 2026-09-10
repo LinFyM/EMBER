@@ -27,11 +27,20 @@ class WriterTaskAuthority:
 
 @dataclass(frozen=True)
 class RawTeacherVideo:
-    """One sampled third-person teaching video and its original frame indices."""
+    """One episode: [T,C,H,W] or synchronized [T,view,C,H,W] RGB and times."""
 
     frames: Any
     frame_indices: Any
     raw_frame_count: int
+
+
+def teacher_camera_names(camera_view: str) -> tuple[str, ...]:
+    """Camera order within one episode, independent of its K-video cardinality."""
+    if camera_view == "dual":
+        return ("agentview", "eye_in_hand")
+    if camera_view in {"agentview", "eye_in_hand"}:
+        return (camera_view,)
+    raise ValueError("teacher camera_view must be agentview, eye_in_hand, or dual")
 
 
 def verify_authority(authority: WriterTaskAuthority) -> None:
@@ -110,14 +119,13 @@ class RawTeacherVideoStore:
             or frame_stride <= 0
             or max_open_files <= 0
             or len({item.task_id for item in authorities}) != len(authorities)
-            or camera_view not in {"agentview", "eye_in_hand"}
         ):
             raise WriterModelError("invalid action-hidden video store")
         self.authorities = {item.task_id: item for item in authorities}
         self.frame_stride = int(frame_stride)
         self.max_open_files = int(max_open_files)
         self.camera_view = str(camera_view)
-        self.camera_key = f"{self.camera_view}_rgb"
+        self.camera_names = teacher_camera_names(camera_view)
         self._handles: OrderedDict[int, h5py.File] = OrderedDict()
         for authority in authorities:
             verify_authority(authority)
@@ -134,27 +142,30 @@ class RawTeacherVideoStore:
                 stale.close()
         return self._handles[task_id]
 
-    def load(self, task_id: int, demo_index: int) -> RawTeacherVideo:
+    def _pixels(self, task_id: int, demo_index: int) -> tuple[h5py.Dataset, ...]:
         if demo_index < 0:
             raise WriterModelError("teaching video demo index must be non-negative")
         demo = self._handle(task_id).get(f"data/demo_{demo_index}")
         if not isinstance(demo, h5py.Group):
             raise WriterModelError("teaching video episode is missing")
-        pixels = demo.get(f"obs/{self.camera_key}")
-        if (
-            not isinstance(pixels, h5py.Dataset)
-            or pixels.ndim != 4
-            or pixels.shape[0] <= 0
-            or pixels.shape[-1] != 3
-            or pixels.dtype != np.uint8
-        ):
-            raise WriterModelError("invalid action-hidden teaching video")
-        raw_count = int(pixels.shape[0])
+        pixels = tuple(demo.get(f"obs/{camera}_rgb") for camera in self.camera_names)
+        if any(not isinstance(value, h5py.Dataset) or value.ndim != 4
+               or value.shape[0] <= 0 or value.shape[-1] != 3 or value.dtype != np.uint8
+               for value in pixels):
+            raise WriterModelError("missing or invalid declared teacher RGB view")
+        if any(value.shape != pixels[0].shape for value in pixels[1:]):
+            raise WriterModelError("teacher camera views must have synchronized frame counts and shapes")
+        return pixels
+
+    def load(self, task_id: int, demo_index: int) -> RawTeacherVideo:
+        pixels = self._pixels(task_id, demo_index)
+        raw_count = int(pixels[0].shape[0])
         indices = list(range(0, raw_count, self.frame_stride))
         if indices[-1] != raw_count - 1:
             indices.append(raw_count - 1)
         # Camera convention is identical to the execution policy: rotate 180°.
-        frames = _camera_batch(np.asarray(pixels[indices]))
+        views = tuple(_camera_batch(np.asarray(value[indices])) for value in pixels)
+        frames = views[0] if len(views) == 1 else np.stack(views, axis=1)
         return RawTeacherVideo(
             frames=frames,
             frame_indices=np.asarray(indices, dtype=np.int64),
@@ -164,20 +175,7 @@ class RawTeacherVideoStore:
     def frame_counts(self, task_id: int, demo_index: int) -> tuple[int, int]:
         """Read only allowed video length metadata for throughput scheduling."""
 
-        if demo_index < 0:
-            raise WriterModelError("teaching video demo index must be non-negative")
-        pixels = self._handle(task_id).get(
-            f"data/demo_{demo_index}/obs/{self.camera_key}"
-        )
-        if (
-            not isinstance(pixels, h5py.Dataset)
-            or pixels.ndim != 4
-            or pixels.shape[0] <= 0
-            or pixels.shape[-1] != 3
-            or pixels.dtype != np.uint8
-        ):
-            raise WriterModelError("invalid action-hidden teaching video")
-        raw_count = int(pixels.shape[0])
+        raw_count = int(self._pixels(task_id, demo_index)[0].shape[0])
         sampled_count = (raw_count - 1) // self.frame_stride + 1
         if (raw_count - 1) % self.frame_stride:
             sampled_count += 1

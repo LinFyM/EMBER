@@ -60,3 +60,6 @@ Writer（含内部读取模块Meta） fresh、端到端纯FM监督，source基�
 早期强Writer、task专家与G1/G2提供不同层次的正证据；后续shared/clone差距及384的失败说明共享行为仍未解决。
 新图没有继承它们的分数，也没有由数学依赖证明操作理解。历史与适用边界见 [research_history](research_history.md)。
 唯一正式性能线是validation8 single-checkpoint strict paired correct>145/400，并满足相邻、跨视频、breadth、四suite、Goal/Long及最终视频因果要求。
+
+
+同步双视角是同一教学演示的两路RGB观察。`observer.camera_view=dual`将第三人称与腕部画面在同一时间点送入原生双相机prefix，形成共同Z/KV和一份完整horizon响应；不把相机数当作K、不平均视角LoRA。该读取能力不预先证明双视角的闭环收益。

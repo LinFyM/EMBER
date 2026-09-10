@@ -20,6 +20,7 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
+from ember.writer.data import teacher_camera_names
 from ember.writer.horizon import HorizonWriterConfig
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
@@ -35,6 +36,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    teacher_camera_names(config["observer"].get("camera_view", "agentview"))
     expected_model = asdict(HorizonWriterConfig())
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
@@ -367,7 +369,8 @@ def run(args: argparse.Namespace) -> None:
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
-    data = WriterTrainingData(args.asset_root, config["data"])
+    data = WriterTrainingData(args.asset_root, config["data"],
+                              camera_view=config["observer"].get("camera_view", "agentview"))
     runtime = build_runtime(args.asset_root, config, context.device)
     runtime.state.train()
     optimizer, scheduler = _optimization(runtime.state, config)

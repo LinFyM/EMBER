@@ -19,7 +19,7 @@ from ember.lora import validate_lora_state
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
-from ember.writer.data import RawTeacherVideoStore
+from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.horizon import require_architecture_identity
 
 
@@ -56,6 +56,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
+    teacher_camera_names(run.get("config", {}).get("observer", {}).get("camera_view", "agentview"))
     require_architecture_identity(run.get("model_config", {}))
     require_architecture_identity(run.get("config", {}).get("model", {}))
     world_size = int(manifest.get("world_size", 0))
@@ -194,10 +195,11 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 
 def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
+    cameras = teacher_camera_names(run["config"]["observer"].get("camera_view", "agentview"))
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "execution_precision": run["config"]["execution_precision"],
             "checkpoint_state": "strict entire Writer+Meta+public probe", "frame_stride": 5,
-            "include_last_frame": True, "camera": "agentview_rotated_180", "execution_rank": 16,
+            "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180", "execution_rank": 16,
             "native_response_shape": [50, 1024], "generated_tensor_count": 76,
             "native_response_source": "action_out_proj_input_after_final_normalization",
             "visual_token_source": "actual_final_prefix_image_tokens",
@@ -298,7 +300,8 @@ def _materialize(
         raise ValueError("materialization must produce one complete 38-target rank16 LoRA")
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    store = RawTeacherVideoStore(tuple(value.authority for value in tasks.values()), frame_stride=5)
+    store = RawTeacherVideoStore(tuple(value.authority for value in tasks.values()), frame_stride=5,
+                                camera_view=run["config"]["observer"].get("camera_view", "agentview"))
     conditions = {}
     reused = []
     try:

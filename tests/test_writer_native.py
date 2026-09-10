@@ -52,6 +52,7 @@ def test_native_response_is_actual_action_projection_input_and_meta_vjp():
 def test_prefix_retains_final_visual_and_exact_span_from_one_forward(monkeypatch):
     observer = object.__new__(NativeVideoObserver)
     observer.policy, observer.device = object(), torch.device("cpu")
+    observer.camera_names = ("agentview",)
     padding = torch.tensor([[True] * 3 + [False] * 3 + [True] * 4]).expand(2, -1)
     embeddings = torch.arange(20).reshape(2, 10, 1).float()
     monkeypatch.setattr("ember.writer.native.prepare_execution_policy_prefix",
@@ -73,3 +74,65 @@ def test_prefix_retains_final_visual_and_exact_span_from_one_forward(monkeypatch
                                torch.tensor([[False, False, False, True, True]]).expand(2, -1))
     assert chunk.tensor_bytes == sum(value.numel() * value.element_size() for value in
         (chunk.padding, chunk.visual_tokens, chunk.visual_mask, chunk.visual_task_mask, chunk.layers[0][0], chunk.layers[0][1]))
+
+
+def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
+    from ember.writer.runtime import FrozenVideoPrefixCache
+
+    observer = object.__new__(NativeVideoObserver)
+    observer.device, observer.frame_chunk = torch.device("cpu"), 2
+    observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
+    observer.policy = SimpleNamespace(model=SimpleNamespace(paligemma_with_expert=SimpleNamespace(
+        embed_language_tokens=lambda tokens: torch.zeros(1, 4, 8))))
+    tokens, mask = torch.ones(1, 4, dtype=torch.long), torch.ones(1, 4, dtype=torch.bool)
+    span = torch.tensor([[False, True, True, False]])
+    observer.tokenizer = lambda languages: (tokens, mask, span)
+    calls = []
+
+    def embed(policy, batch):
+        front = batch["observation.images.base_0_rgb"]
+        wrist = batch["observation.images.left_wrist_0_rgb"]
+        calls.append((front, wrist))
+        assert front.shape == wrist.shape
+        assert torch.all(front == 0) and torch.all(wrist == 1)
+        # Two valid tokens per camera, two masked spare-camera tokens, four text tokens.
+        padding = torch.tensor([[True] * 4 + [False] * 2 + [True] * 4]).expand(len(front), -1)
+        embeddings = torch.arange(10).float().reshape(1, 10, 1).expand(len(front), -1, -1)
+        return ExecutionPolicyPrefix(embeddings, padding)
+
+    def forward(policy, prefix):
+        batch, length = prefix.padding.shape
+        return prefix.embeddings + 100, ((torch.zeros(batch, 1, length, 1), torch.ones(batch, 1, length, 1), None),)
+
+    monkeypatch.setattr("ember.writer.native.prepare_execution_policy_prefix", embed)
+    monkeypatch.setattr("ember.writer.native.prepare_prefix_features_and_cache", forward)
+    frames = torch.zeros(3, 2, 3, 8, 8, dtype=torch.uint8)
+    frames[:, 1] = 255
+    indices = torch.tensor([0, 5, 7])
+    data = SimpleNamespace(videos=SimpleNamespace(camera_view="dual"),
+        tasks={0: SimpleNamespace(authority=SimpleNamespace(language="task"))},
+        load_videos=lambda task, demos: ((frames,), (indices,)))
+    cache = FrozenVideoPrefixCache(observer, data, byte_limit=10**6)
+    condition = cache.condition(0, (0,))
+    repeated = cache.condition(0, (0,))
+    assert len(calls) == 2 and cache.hits == 1 and cache.misses == 1
+    assert len(condition.videos) == 1 and len(condition.videos[0]) == 2
+    torch.testing.assert_close(condition.frame_indices[0], indices)
+    assert repeated.videos[0] is condition.videos[0]
+    chunk = condition.videos[0][0]
+    torch.testing.assert_close(chunk.visual_tokens[0, :, 0], torch.tensor([100., 101., 102., 103., 107., 108.]))
+    torch.testing.assert_close(chunk.visual_task_mask[0], torch.tensor([False] * 4 + [True] * 2))
+    assert chunk.padding.shape == (2, 8)
+    assert not chunk.visual_tokens.requires_grad
+
+
+def test_camera_contract_rejects_single_rgb_in_dual_observer_and_cache_mismatch():
+    import pytest
+    from ember.writer.runtime import FrozenVideoPrefixCache
+
+    observer = object.__new__(NativeVideoObserver)
+    observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
+    with pytest.raises(ValueError, match="declared teacher camera views"):
+        observer.prefix(torch.zeros(1, 3, 8, 8), None, None, None)
+    with pytest.raises(ValueError, match="camera views differ"):
+        FrozenVideoPrefixCache(observer, SimpleNamespace(videos=SimpleNamespace(camera_view="agentview")), 100)

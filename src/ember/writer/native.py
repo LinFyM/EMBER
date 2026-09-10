@@ -19,6 +19,7 @@ from ember.ecp.policy_effects import (
     prepare_prefix_features_and_cache,
 )
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
+from ember.writer.data import teacher_camera_names
 from ember.writer.meta_lora import MetaLoRAStack
 
 
@@ -71,7 +72,7 @@ class NativeVideoObserver:
     def __init__(
         self, policy: torch.nn.Module, meta: MetaLoRAStack,
         tokenizer: Pi05TeacherPrefixTokenizer, probe: torch.Tensor,
-        *, frame_chunk: int = 4,
+        *, frame_chunk: int = 4, camera_view: str = "agentview",
     ) -> None:
         if probe.shape != (50, 32) or frame_chunk <= 0:
             raise ValueError("native observer requires one public 50x32 probe")
@@ -80,6 +81,8 @@ class NativeVideoObserver:
         self.policy, self.meta, self.tokenizer = policy, meta, tokenizer
         self.probe, self.frame_chunk = probe, int(frame_chunk)
         self.device = probe.device
+        self.camera_view = camera_view
+        self.camera_names = teacher_camera_names(camera_view)
         self.expert = policy.model.paligemma_with_expert.gemma_expert.model
         if len(self.expert.layers) != 18:
             raise ValueError("native observer requires all 18 Action Expert layers")
@@ -89,15 +92,19 @@ class NativeVideoObserver:
                task_span: torch.Tensor) -> FrozenPrefixChunk:
         from lerobot.utils.constants import OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
 
-        if frames.ndim != 4 or frames.shape[1] != 3 or frames.shape[0] <= 0:
-            raise ValueError("native observer requires real RGB frame batches")
+        dual = len(self.camera_names) == 2
+        expected_axes = (2, 3) if dual else (3,)
+        if frames.ndim != (5 if dual else 4) or tuple(frames.shape[1:-2]) != expected_axes or frames.shape[0] <= 0:
+            raise ValueError("native observer RGB shape must match its declared teacher camera views")
         images = frames.to(self.device, non_blocking=True)
         images = images.float().div(255) if images.dtype == torch.uint8 else images.float()
         batch = {
-            "observation.images.base_0_rgb": images,
             OBS_LANGUAGE_TOKENS: tokens.expand(len(frames), -1),
             OBS_LANGUAGE_ATTENTION_MASK: mask.expand(len(frames), -1),
         }
+        native_keys = {"agentview": "base_0_rgb", "eye_in_hand": "left_wrist_0_rgb"}
+        for camera, pixels in zip(self.camera_names, images.unbind(1) if dual else (images,), strict=True):
+            batch[f"observation.images.{native_keys[camera]}"] = pixels
         prefix = prepare_execution_policy_prefix(self.policy, batch)
         evidence_mask = prefix.padding.clone()
         evidence_mask[:, -tokens.shape[1]:] = task_span.expand(len(frames), -1)

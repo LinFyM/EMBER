@@ -968,3 +968,9 @@ train8的全200/40016→18/32仍R/G/L10/8/6，旧P/C+新D可达22却也丢5。�
 此前九臂只测all，不能概括当前最强候选。Owner要求后，固定validation126/400的`horizon_causal_local_h_read_seed7_20260909` macro400补完整216 LoRA/864配对rows；agentview、train24、states32–35、teacher46/other47与all400完全同口径。正确/另一正确/同suite错误/跨suite错误/乱序/倒序/首帧/中帧/末帧=53/60/59/59/55/52/58/53/53（各96），对应all51/53/48/46/47/50/52/51/48。完整all→off保留43/新增10/丢8，改善不限于正确过程；当前最强候选在该面板亦未形成稳定动态优势。输入仍导致具体成功得失，不能外推完全忽略视频或纯task记忆。
 
 18个worker complete/exit0、216 jobs完整，实际视频输入及env/policy RNG配对通过；无更新、Test、正式选点或方法采纳。生成用原45e16633，执行用9abc9b95；数据量791MiB，未超过登记3GiB。原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/{registration.json,step400/closedloop/summary.json,comparison_with_all400.json}`；解释与边界见findings§49，当前授权只看progress。
+
+## 2026-09-11 普通FM语义条件化消费C首轮负结果
+
+Owner授权恢复自主科研后，登记video_consumption_writer_design并实现R/C/S与双K1条件分配，formal运行面clean pushed detached7fedbe85。C fresh100/200分别25,600/51,200queries和800/1,600条件，strict400=43→50，四suite0/37/6/0→3/29/16/2；相邻R/G/L27/23/16、churn39、J=.40909，breadth4→6。两组各6worker完整exit0、实际teacher及执行配对通过，约29.5/29.6分钟。相对source47分别R/G/L9/34/38、18/32/29。当前组合弱且改善有限，不追加C训练；不从该负结果推翻整个过程函数类。R/S与train96尚待完成。
+
+原件runs/outputs/video_consumption_c_seed7_20260911/{checkpoints,materialized,evaluation}，分析runs/analysis/video_consumption_20260911/c/step{100,200}/，设计/实现验证和资源记录在同一analysis根；跨轮解释见findings§51，当前状态看progress。

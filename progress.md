@@ -2,13 +2,13 @@
 
 ## 当前快照（2026-09-11，自主执行已恢复）
 
-Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C物化已完成，C100/C200 strict400与S正式fresh训练正在并行，尚无完整新closed-loop分数。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；C100/C200 strict400已完成，结果43→50/400偏弱；R100/R200 strict400、S100物化与S后半段训练正在并行。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。尚无新正式闭环分数。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C两点不支持追加训练，先完成匹配R/S及train96定位范围。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
-当前执行：R/C/S架构与双K1条件训练已合入main（513d1ec4），共享functional完整64随机批后切32的语义检查通过。整合回归377通过，唯一失败为测试fixture未解析worktree数据symlink；修正fixture后相关49项通过，全部378项已覆盖通过。三份正式配置通过合同解析。物化metadata已准确区分S的无序帧集合（7fedbe85），相关60项通过；尚无新formal结果。
+当前执行：R/C/S架构与双K1条件训练已合入main（513d1ec4），共享functional完整64随机批后切32的语义检查通过。整合回归377通过，唯一失败为测试fixture未解析worktree数据symlink；修正fixture后相关49项通过，全部378项已覆盖通过。三份正式配置通过合同解析。物化metadata已准确区分S的无序帧集合（7fedbe85），相关60项通过；本轮首个正式闭环结果见下文。
 
 本轮只增加semantic与frame_evidence两个凝聚模块，复用现有训练/物化/eval入口。架构检查无hard violation；既有长函数和测试文件的局部增长已审查，未复制runner。实验模式由同一入口显式限制，候选选择后退役非选中模式。
 
@@ -20,11 +20,15 @@ R/C第100、200次正式checkpoint均已保存并通过现有formal inspector；
 
 第100次节点没有适合并发评测的设备，原strict400保留排队，未缩成80条screen。训练完成后已刷新两节点：S在释放的gpu01 1/4、micro8/8上按同合同fresh训练；R/C各由gpu02 6/4单卡批量物化checkpoint100 validation400、checkpoint200 validation400及train96（每模型896个独立完整LoRA）。没有混合checkpoint或平均LoRA。全部六个bank已sealed，物化均exit0，R/C各耗时约22/23分钟，见rc_materialization_summary.json。六组validation400和三组train96命令均已准备。
 
-设备随后释放，重新检查两节点后，C100 strict400在gpu02 0/1、每卡3个persistent worker上运行；物化结束后C200 strict400接入gpu02 4/6、每卡3worker。运行来自clean pushed detached 7fedbe85，均按相同8 tasks/400 states及固定RNG配对，使用long-first动态队列。C100已有分片完成，尚无完整aggregate；R100/R200及train96接续排队。GPU、精确命令和launch状态见c/step{100,200}/validation_launch.json，S训练保持原合同继续。
+C100/C200两组strict400均完整exit0，每组6个persistent worker、约29.5/29.6分钟，source/config/RNG和实际teacher配对由canonical comparer通过。结果43→50/400，Spatial/Object/Goal/Long从0/37/6/0到3/29/16/2，breadth4→6；相邻保留27/新增23/丢失16、churn39/400、Jaccard0.4091。global tasks1/3/11/13/23/26/31/32从0/0/34/3/2/4/0/0到0/3/29/0/1/15/1/1。相对source47，100/200分别R/G/L=9/34/38和18/32/29。C100主要获得Object并丢失source Goal，200只部分恢复；两点尚远低于目标，依登记规则不追加C训练，不归因整类有序过程失败。train96及R/S仍需完成。
+
+当前R100/R200已接入释放的gpu02 0/1和4/6，各每卡3worker；S100 checkpoint经formal inspector通过，确认frame_set/semantic_process，在新释放的gpu02 2生成correct400 LoRA，S双卡训练继续向200。所有运行来自clean pushed detached7fedbe85，未改训练合同。后续接续S节点及三组train96；结果原件与逐task/suite配对见runs/analysis/video_consumption_20260911/c/step{100,200}/。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
 后续launch存储复核used752234200KiB/soft1073741824KiB，另计尚在保存的两份200 checkpoint约8.4GiB、R/C物化约8.8GiB及S约13GiB，仍低于原总峰值预算和独立quota。共享文件系统另有84TiB；额度证据见`storage_after_rc200.txt`。
+
+S100后存储复核：strg01/data1 used773630184KiB/soft1073741824KiB，余下S200 checkpoint、S物化及小型评测预计新增不超过16GiB，仍在原96GiB峰值与独立quota内；见storage_s100.txt。
 
 ## 方法身份与学习结果
 

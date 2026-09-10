@@ -30,7 +30,7 @@ S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/�
 
 全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。
 
-首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。当前正在准备迁移和原生合同检查；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
+首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。已在gpu02 0/1/2、micro8/8/8启动；原生合同及完整400恢复通过，实际401的四task、occurrence、video、query seed、frames逐项匹配恢复sampler的预期，每task64queries/权重1/4。401约27秒、峰值reserved41.7GiB。完整迁移/launch证据在video_consumption_20260911/continuation；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 

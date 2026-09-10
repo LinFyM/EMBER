@@ -204,7 +204,8 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
             "native_response_source": "action_out_proj_input_after_final_normalization",
             "visual_token_source": "actual_final_prefix_image_tokens",
             "visual_token_gradient": "detached_native_tokens_trainable_projection",
-            "frame_attention": "four_past_plus_self_causal",
+            "frame_attention": ("independent_full_h_frame_set" if run["model_config"].get("process_mode") == "frame_set"
+                                else "four_past_plus_self_causal"),
             "training_stage": STAGE, "training_objective": "supervised_fm",
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 

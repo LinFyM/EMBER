@@ -40,7 +40,11 @@ launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABL
 
 **共享400训练节点已完整：** wrapper exit0/12104.41秒，完整checkpoint公开检查通过，累计400更新、1600条件/102400queries，各suite400条件、实际teacher/query/frame/RNG与all逐项配对。更新总11760.21秒、平均29.4005秒、200→400段5861.40秒，峰值34.8969GiB；原训练tmux和ranks均退出。held3072实际输入配对、无梯度，均值.107955018（自身200 .114600358，24/24任务改善；all400 .105074533，仅1/24优于all）。完整400日志没有触发clip1，最大.941387，故不能把实际绑定效应归于全局裁剪。原件`sharing/step400/{checkpoint_inspection,learning_summary,gradient_log_summary}.json`。没有401或新增训练。
 
-400的496条件物化已按原合同在gpu01物理5启动，tmux `ember-sharing-seed7-step400-bank`、pane3631194，runtime仍clean pushed detached c63f55dc。launch前双节点live检查p5 free45490MiB/util0/无compute process；strg01/data1 used733839756KiB、soft1073741824/hard1084227584，run3.8GiB/analysis892KiB/机制2MiB，余3GiB预算在原20GiB内、shared84TiB。原件`sharing/step400/{materialization_launch,gpu_preflight_materialization,storage_materialization_launch}.json`；400行为与输出几何等待原定bank完成。已登记只读D_B400谱已计算：第一方向均值57.86%、范围39.67%–71.88%，比200更分散，不能替代实际输出或行为。
+**400 bank与轻量几何完整，两个行为面板已启动：** 496条件物化exit0/774.79秒，两个公开bank检查及实际task/state/video映射通过，物化tmux已退出。400固定32条件×38target的生成B/BA仍近单方向（B全部第一方向能量>99.9924%、BA>99.9759%），但D_B自身第一方向均值降至57.86%、范围39.67%–71.88%，字典更分散；不能以几何代替闭环。原件`sharing/step400/bank_inspection.json`与`mechanism/{output_geometry,dictionary_geometry}_step400.json`。
+
+400 validation在gpu01物理5/6各3worker运行，tmux `ember-sharing-seed7-val400`、pane3678407；train96在gpu02物理6×3worker，tmux `ember-sharing-seed7-train96-400`、pane322364。两项均来自clean pushed detached e7447291、模型与官方配对协议不变。launch前双节点live检查：gpu01p5/p6各free45490MiB/util0/无peer；gpu02p6 free40742MiB/util0、既有4584+148MiB低负载peer保留，满足3worker+2GiB余量。原件`sharing/step400/{validation_launch,train96_launch,gpu_preflight_evaluation}.json`。
+
+最近strg01/data1 used733839756KiB、soft1073741824/hard1084227584，物化前run3.8GiB/analysis892KiB/机制2MiB、余3GiB预算在原20GiB内、shared84TiB；banks已按预算完成，评测只增小量raw rows/queue/logs。原件`sharing/step400/{materialization_launch,gpu_preflight_materialization,storage_materialization_launch}.json`。没有新增训练。
 
 **授权与边界：** 当前共享run是最后一轮完整训练，400后不延长、不新增其它重训练。完成既定评测和预算内轻量分析后交付具体结论及未识别项，等待Owner复核。Compiler确认已完整结束，不由局部净增正式采纳候选；旧v6重训保持暂停，VL未选定，不因GPU空闲增加实验。
 

@@ -914,3 +914,12 @@ validation contextual/none/local_only为103→90、108→92、114→110；train9
 local_h_read validation108→126，train40→56；400 S/O/G/L1/70/36/19、breadth7，对all90为R/G/L74/52/16，对自身200为82/44/26。BBQ29→32（23/9/6），其它7task79→94。local_compiler validation98→90、train43→65，BBQ21→2且原21成功全丢。Compiler关闭在两个H-read背景、两个验证节点均正效应；H-read关闭方向不一致，联合删除并非400最优。候选仍有Spatial和其它弱任务缺口、高churn；single seed结果不能等同可靠整体修复。
 
 完整[报告及复核登记](horizon_causal_language_learning_20260909.md)，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/retrieval/completed_retrieval_matrix.json`。此批完成后优先复核固定Compiler简化候选，未正式采纳、未合入canonical科学行为；动态launch只按progress，不从本历史段恢复任何实验。
+
+
+## 2026-09-10 Compiler固定确认：净增方向保留，稳定保持未复现
+
+固定init11 all/local_h_read fresh400及200/400 validation400/train96共1984行完整；冻结init7两臂两节点换正确视频关联共1600行完整，另有预选BBQ八次描述回放。全部实际同节点/相邻strict配对通过、worker均0，训练/物化/评测进程全部正常结束。探索科学实现来自45e16633，评测0e2a3a44仅修正资源准入；不构成正式方法采纳。
+
+init7原关联all103→90、候选108→126；新关联99→82与101→126；init11为100→108与104→119。init11训练任务all41→56、候选44→61。删除Compiler额外仿射query支路的验证增益方向保留，但400净效应从init7+36变为init11+11。init11候选BBQ35→19、保留15/丢20，整体相邻67保留/52新增/37丢失、breadth7→6、Spatial1/100，稳定保持修复没有复现。
+
+该结果识别局部支路贡献，不解释全部获取/保持缺口或旧v5.2/v6配方分差。完整结论与所有原件在[学习报告](horizon_causal_language_learning_20260909.md)末节及`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/compiler_confirmation/completed_confirmation_matrix.json`；后续实验与授权仅看progress，不从此历史条目恢复。

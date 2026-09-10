@@ -356,3 +356,6 @@ init11两臂固定200/400全部validation400完成：all100→108，local_h_read
 保持结论必须收窄：init11基线BBQ27→5保留4/丢23，候选35→19保留15/丢20；候选自身总计67保留/52新增/37丢失、churn89/J=.4295、breadth7→6。基线大量BBQ丢失复现，候选在seed7的多数旧成功保持未复现；候选400相对基线多14个BBQ成功，不等于自身没有遗忘。候选Spatial仍1/100、Goal23为零，不能将这项局部因果贡献当成完整稳定方案或全部旧新能力差距的根因。
 
 init11基线总分上升而BBQ崩落，其余七task73→103，再次要求区分任务获取与局部保持，不能用总分或训练FM定义统一退化。完整原始配对与两臂相邻证据见`compiler_confirmation/init11_validation_step400_analysis/`和[学习报告](docs/horizon_causal_language_learning_20260909.md)；后续原因工作与正式采纳授权仍以progress为准。
+
+
+Compiler固定确认全部完成后，init11候选train96为44→61、相邻R/G/L36/25/8、breadth17→22；400相对all56为48/13/8。训练任务与验证总分都有改善，但未见任务保持不足的判断不变。完整12面板3584行与固定回放索引`compiler_confirmation/completed_confirmation_matrix.json`。输出rank独立性、读取侧可学习性和旧新配方不是由本次支路删除直接识别的因素；不能把本次正效应扩展为其它结构或训练因素已排除。

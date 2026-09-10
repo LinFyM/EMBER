@@ -308,3 +308,22 @@ init11 local_h_read400为119/400，S/O/G/L1/54/44/20、breadth6；三worker和ou
 候选自身BBQ35→19丢20，双物体Long5→18仅保留1、另新增17/丢4；总分上升伴随大量成功更替。与seed7候选BBQ29→32、原成功保留23/29不同，init11只保留15/35。因此“关闭Compiler必能避免后期BBQ崩落/建立稳定保持”没有通过独立初始化复核；“该额外支路的删除能改善这两次初始化、两节点的验证总分”获得方向支持，400效应由seed7的+36缩至init11的+11，不能把初次幅度当固定疗效。这里没有多seed挑选或将总分净增替代原保持判据。
 
 完整原件`compiler_confirmation/init11_validation_step400_analysis/{completed_summary,candidate_vs_all,all_200_to_400,local_h_read_200_to_400}.json`。最后候选400 train96仍待完成；全体确认结果之后再裁决下一项有区分力的原因实验，当前不正式采纳。
+
+
+## 固定确认全部完成与最终裁决
+
+最后init11候选400 train96为61/96、S/O/G/L19/18/15/9、breadth22，六worker和outer exit均0、458.72秒；与all56为R/G/L48/13/8、churn21/J=.695652。候选自身44→61、breadth17→22，保留36/新增25/丢8、churn33/J=.521739；Long原5个成功均保留并新增4，但训练任务的保持不能外推为validation的保持。
+
+| 确认条件 | all validation200→400 | 候选validation200→400 | all train96 | 候选train96 |
+|---|---|---|---|---|
+| init7、原视频关联 | 103→90 | 108→126 | 41→49 | 40→56 |
+| init7、新视频关联 | 99→82 | 101→126 | 不重复 | 不重复 |
+| init11、原视频关联 | 100→108 | 104→119 | 41→56 | 44→61 |
+
+预登记确认共12个完整行为面板3584行（init11八面板1984行、冻结init7换视频四面板1600行），全部worker0，实际同节点与各自相邻strict配对通过。另有预登记BBQ八次描述性回放，标签分叉及限制保留。总索引`compiler_confirmation/completed_confirmation_matrix.json`，最后train配对在`init11_train96_step400_analysis/`。全部确认进程已正常退出，没有待运行确认面板、额外500步、Test或最终controls。
+
+本轮识别到Compiler额外仿射查询支路在当前协议下的局部负贡献：关闭后两次初始化、两个节点以及换视频关联的验证总分方向改善，未改FM或输出共享即可改变部分退步。但独立初始化只保留15/35个早期BBQ成功，整体仍丢37、Spatial1/100、Goal23为零，**稳定保持修复未通过复核**。该结果不支持正式采纳为完整方案，也没有解释当前参数生成可学习性与旧新训练配方的全部差距。
+
+下一项固定为已有隔离候选的同target跨rank输出映射绑定，比较当前all基线：只将D[target,rank,side,native,256]绑定为D[target,1,side,native,256]，语言/local/H-read/Compiler、完整视频与native50H、全部前端、rank16、FM及实际学习曝光均不改。选择原all基线而非新造结合臂，是为了直接区分原架构的输出独立性因素；不把Compiler删除与共享同时作为一个变化。历史Target-Owned的99/76/86/68是必须保留的反证，本次价值仅在当前前端和合法固定协议下的单接口识别，不将共享宣称为新发明或预定疗效。
+
+共同seed7、teacher0–15/query16–41、4×64、LR3e-5/warmup8、fresh400及固定200/400 validation400/train96/held3072沿用已准备候选合同。共享D天然改变rank梯度聚合及AdamW状态，结果只归于这个参数绑定整体，不拆称纯参数量或纯正则化因果。不得从独立D checkpoint转换启动，不额外挑seed/学习率或续500；先真实profile并依据当时双节点GPU、独立quota、峰值和精确命令启动，CPU准备不代替这些检查。具体接口、初始化与历史边界见隔离候选`docs/horizon_causal_sharing_candidate_20260909.md`。这是下一项原因实验，正式修改/采纳和正式训练仍等Owner复核。

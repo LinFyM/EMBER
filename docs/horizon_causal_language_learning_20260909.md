@@ -262,3 +262,17 @@ all200与LH200各496条件物化已完整exit0、公开inspector与实际task/st
 候选自身相邻保留71、新增55、丢失30，churn85反而高于基线75，说明更高总分仍包含明显行为更替。BBQ保留17/26，弱于原关联的23/29，但远多于同关联基线的1/23；这支持部分保持改善，不是零遗忘。Spatial task3的5个成功全部丢失，Long moka任务4→0、四个旧成功全失，最终breadth由6降至4。双物体Long8→18仅保留4、新增14、丢4；Goal36→37也有30/7/6的更替。不能用总分增长或两个400都为126掩盖这些缺口。
 
 完整原件为`compiler_confirmation/reassignment_validation_step{200,400}_analysis/completed_summary.json`及各自paired比较JSON。独立初始化行为仍由当前两臂自身的完整200/400面板裁决，未通过新视频配对替代它。最新Owner已恢复分析后的复核停止点：本结果不触发正式方法采纳或下一次正式训练。
+
+
+### 独立初始化200完成：早期小幅净增，不能外推后期保持
+
+init11的all与local_h_read两个200面板各完整400行，六worker均exit0，实际输入/状态/视频及env-policy RNG严格配对通过；all3500.67秒、候选3627.25秒。四组200/400、validation400+train96 LoRA banks此时均已完整生成并通过公开inspector与实际映射检查。
+
+| init11，step200 | correct | S/O/G/L | breadth | 相对all R/G/L | churn / J |
+|---|---:|---|---:|---|---|
+| all | 100/400 | 1/57/31/11 | 6 | — | — |
+| local_h_read | 104/400 | 2/63/32/7 | 7 | 76/28/24 | 52 / .59375 |
+
+all按global1/3/11/13/23/26/31/32为0/1/30/27/0/31/10/1，候选为0/2/28/35/1/31/5/2。BBQ27→35、保留25/新增10/丢2；双物体Long10→5则仅保留2/新增3/丢8。此处候选早期总分净+4、Object+6，但Long−4；breadth多出的Goal task23只出现一次成功，不能称广泛获取。它与seed7早期小幅净差方向相同，却不证明独立初始化下已避免后期BBQ崩落或保留Long收益。
+
+完整原件`compiler_confirmation/init11_validation_step200_analysis/completed_summary.json`及`candidate_vs_all.json`。两组400验证和预登记train96继续；400将分别与各自init11的200比较保持，不与seed7基线混作同初始化干预。当前仅报告这个已完成节点，不正式采纳方法。

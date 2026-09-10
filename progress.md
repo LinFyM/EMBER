@@ -10,9 +10,11 @@
 
 **冻结seed7换视频四面板全部完成：** all200→400为99→82，LH为101→126，共1600行、11worker均0，全部同节点/相邻actual strict配对通过。LH200 S/O/G/L5/48/36/12、breadth6，400为0/71/37/18、breadth4。候选对基线200仅+2（R/G/L64/37/35），400+44（70/56/12）；自身相邻71/55/30、churn85/J=.4551，BBQ26→31、保留17/新增14/丢9；基线BBQ23→1仅保留1。收益在新关联保留，但候选Spatial5→0、moka4→0，仍有明显丢失与广度收缩。完整原件`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`，不能由此替代独立初始化复核。
 
-init11的all200/LH200/all400各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组200 validation400继续：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。最后LH400的496条件物化已在换视频评测释放的gpu01p5启动，tmux `ember-compiler-bank-local_h_read-400`、PID2923816。launch前双节点检查该卡free46064MiB/util0、无peer；gpu02p5虽短时util0，但此前持续高负载，采用真正空闲卡。当前共三张有用GPU。精确命令与实际进程见该面板`materialization_launch.json`。
+**init11 validation200两臂完成：** all100/400、LH104/400，S/O/G/L为1/57/31/11与2/63/32/7，breadth6/7；actual strict R/G/L76/28/24、churn52/J=.59375，六worker均0。BBQ27→35保留25/新增10/丢2，但双物体Long10→5保留2/新增3/丢8。早期净+4不能替代后期保持；完整`compiler_confirmation/init11_validation_step200_analysis/`。
 
-物化使用clean pushed45e16633；八个尚未启动的init11评测脚本已在launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。两次validation launch前分别双节点live检查，gpu01p6free46067MiB/util0，gpu02p4free40314MiB/util2，满足三个worker38912MiB准入且不打断peer。精确命令、资源与实际进程保存在各面板`validation_launch.json`。
+四组200/400、validation400+train96各496条件banks均已完整exit0并通过public inspector与实际映射检查。两组400验证现已接续：all400在gpu01p5×3worker，tmux `ember-compiler-init11-all400-validation`、worker1812548/1812549/1812550；LH400在gpu02p4×3worker，tmux `ember-compiler-init11-lh400-validation`、worker803914/803916/803918。all200 train96在gpu01p6×3worker，tmux `ember-compiler-init11-all200-train96`；其余三个train96按预登记继续待执行。launch前双节点live检查p5/p6free46064MiB/util0，p4free40313MiB/util2，三个worker38912MiB准入通过；当前共三张有用GPU。精确命令与实际进程见各面板`validation_launch.json`/`train96_launch.json`。
+
+物化使用clean pushed45e16633；八个init11评测脚本均在各自首次launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。各次launch的双节点资源及实际进程原件由上文面板记录保存。
 
 同init11的实际学习配对另存`compiler_confirmation/init11_paired_learning_summary.json`，两个节点held输入经共同参照配对；候选200/400分别5/14个task的动作误差更低，但总均值都稍高，不能据此选择行为方案。最新strg01/data1 used719737772KiB、soft1073741824/hard1084227584，两新run各8.3GiB、analysis499MiB，四banks及余量新增峰值12GiB在原40GiB预算内；shared84TiB。资源原件`compiler_confirmation/{gpu_preflight_completed_training,storage_completed_training}.json`。
 

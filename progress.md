@@ -30,7 +30,7 @@ launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABL
 
 当前active原因计划为`docs/horizon_causal_learning_plan_20260909.md`；正式design仍为`docs/horizon_relation_video_writer_design.md`。原信息墙、split、teacher/query跨episode、source冻结、single LoRA、GPU/独立quota与clean pushed frozen运行面合同保持。无Test、held梯度或最终视频controls。
 
-Owner要求减少汇报频率：集中报告完整结果、结论变化和实际问题，省略逐分片播报。此前共享存储读取等待及启动authority修正均已保留原件和Git历史，所有受影响阶段最终完整exit0；不把观察超时当作GPU/训练故障。
+Owner再次明确要求：正常训练、轮询与等待保持静默，不再每隔几分钟播报步数/句柄存活或重复“继续等待”，包括自动继续任务的结束语。只在完整结果、实质结论变化、需要Owner处理的问题或主动询问时汇报；后台工作照常继续。此前共享存储读取等待及启动authority修正均已保留原件和Git历史，所有受影响阶段最终完整exit0；不把观察超时当作GPU/训练故障。
 
 ## 历史：首批冻结诊断交付快照（后续授权与结论等级已由顶部纠正）
 

@@ -976,3 +976,5 @@ Owner授权恢复自主科研后，登记video_consumption_writer_design并实�
 原件runs/outputs/video_consumption_c_seed7_20260911/{checkpoints,materialized,evaluation}，分析runs/analysis/video_consumption_20260911/c/step{100,200}/，设计/实现验证和资源记录在同一analysis根；跨轮解释见findings§51，当前状态看progress。
 
 同轮R的strict400两点为37→83，四suite1/26/10/0→0/41/37/5，R/G/L23/60/14、churn74、J=.23711。R200比同51200queries旧off200108少25，保留63/新增20/丢45；比C20050多33。训练任务诊断旧off/R/C=40/46/49（各96），R/C均breadth18；旧→R的R/G/L33/13/7，旧→C34/15/6。R仍获取但双视频条件未在当前节点带来迁移净收益；C也有训练任务能力，不能把低validation等同于完全学不动。所有R/C面板完整exit0，实际配对通过；S仍在执行，本段不代替最终三臂裁决。
+
+首轮最终S=59→45/400，四suite2/37/16/4→0/21/24/0、breadth7→3，相邻R/G/L32/13/27、J=.44444；train96=52，四suite22/10/14/6。S100优势没有保持，C/S均不追加。R/C/S最终83/50/45低于同查询预算旧off108，训练任务46/49/52却高于旧40；新增条件分配及语义消费未改善未见任务迁移。六组strict400及三组train96共2688rows全部exit0，训练合计153600queries，原件总入口runs/analysis/video_consumption_20260911/first_round_summary.json。该负结果不证明监督平台、全部有序视频不可行或强旧候选已穷尽。

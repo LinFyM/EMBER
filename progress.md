@@ -2,9 +2,9 @@
 
 ## 当前快照（2026-09-11，自主执行已恢复）
 
-Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S100=59/400，S训练和全部物化已完成，S200 validation400与train96正在并行。
+Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S59→45（各400），train96=52；首轮三臂所有训练与九个闭环面板均完整结束。目标未达标。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C两点不支持追加训练；R仍增长但低于旧同预算off200，先完成S及其train96再决定后续。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。接下来核查保留最强off126的未完成监督学习及其继续执行合同，不依据S100短暂优势扩展新架构。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
@@ -26,7 +26,9 @@ R100/R200 strict400均完整exit0，37→83，四suite1/26/10/0→0/41/37/5、br
 
 S100 strict400=59，四suite2/37/16/4、breadth7；global tasks1/3/11/13/23/26/31/32为0/2/34/3/1/15/2/2。相对匹配C10043保留36/新增23/丢失7，churn30、J=.54545。无序多帧参照早期更强，但不唯一归因时序。S200训练完整exit0，200checkpoint经formal inspector通过、source trainable=0；总6048秒、平均更新28秒，独立动作FM0.151461→0.109258。三臂各51200queries/1600conditions/800taskoccurrences/378unique task-video一致，见rcs_training_summary.json。
 
-S全部896条件bank已sealed，100物化567秒、200含train96物化696秒，均exit0。当前S200 strict400在gpu02 0/1/3/4/6每卡3worker（共15）运行，train96在gpu01 1/4每卡3worker（共6）并行；两节点live检查通过，单节点最多6个实际工作GPU，运行均为clean pushed detached7fedbe85。当前只剩这两个已登记面板。C不追加，R待S完整结果；全部原件和同口径比较见runs/analysis/video_consumption_20260911/。
+S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/丢失27、churn40、J=.44444，早期优势未保持。S200 train96=52，四suite22/10/14/6、breadth18；比C49多3但validation低5，比R46多6但validation低38。三臂最终validation/train96为R83/46、C50/49、S45/52，同预算旧off200108/40。它们均有训练任务获取，但新条件分配和消费接口没有得到迁移净收益；不能按S100单点宣称无序模型解决问题或再加时间模块即可修复。
+
+全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。首轮已结束，下一步只从新证据、历史强候选未穷尽的学习和当前授权出发；未登记新的架构或训练launch。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 

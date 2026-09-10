@@ -1,0 +1,103 @@
+"""Frozen 200/400 P-C-D factorial: functions, not an alternative trained model."""
+import argparse,importlib.util,json,os,time
+from pathlib import Path
+import numpy as np
+import torch
+from safetensors.torch import load_file,save_file
+
+ROOT=Path('<REPO_ROOT>');HERE=Path(__file__).resolve().parent
+RUN=ROOT/'runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909'
+ACTUAL=HERE.parent.parent/'actual_video'
+TASKS=(0,7,14,16,20,25,34,35)
+COMBINATIONS={('normal' if p==c==d==400 else f'P{p}_C{c}_D{d}'):(str(p),str(c),str(d)) for p in (200,400) for c in (200,400) for d in (200,400)}
+
+def read(p):return json.loads(Path(p).read_text())
+def write(p,v):
+    q=p.with_suffix('.tmp');q.write_text(json.dumps(v,indent=2,allow_nan=False)+'\n');q.replace(p)
+def group(name):
+    if name.startswith('writer.decoder.'):return 'D'
+    if name.startswith(('writer.target_queries','writer.rank_queries','writer.query_language.','writer.time_projection.','writer.compiler.')):return 'C'
+    return 'P'
+def apply_group(runtime,state,which):
+    current=runtime.state.state_dict()
+    with torch.no_grad():
+        for name,value in state.items():
+            if group(name)==which:current[name].copy_(value)
+def panel_module():
+    spec=importlib.util.spec_from_file_location('existing_video_panel',HERE.parent/'video_controls/panel.py')
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+    m.TASKS=TASKS;m.ARMS=tuple(COMBINATIONS);m.KIND='frozen_endpoint_function_factorial';return m
+
+def materialize(args):
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.writer.runtime import build_runtime
+    from ember.writer.native import autocast
+    from ember.writer.learning_data import load_learning_tasks
+    from ember.writer.data import RawTeacherVideoStore
+    from ember.writer.materialization import source_matches
+    from ember.lora import identity_lora_state,copy_task_lora_state_,validate_lora_state
+    assert read(HERE/'registration.json')['status']=='registered_before_results'
+    if (HERE/'manifest.json').exists():raise FileExistsError(HERE/'manifest.json')
+    (HERE/'adapters').mkdir()
+    torch.set_num_threads(4);torch.set_grad_enabled(False);torch.manual_seed(7);torch.backends.cuda.matmul.allow_tf32=True
+    ctx=initialize_distributed(require_numa=True);device=ctx.device
+    uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+    assert ctx.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+    run=read(RUN/'run_contract.json');assert run['config']['observer'].get('camera_view','agentview')=='agentview'
+    runtime=build_runtime(ROOT,run['config'],device);assert source_matches(runtime.source,run['source'])
+    runtime.state.requires_grad_(False).eval();runtime.policy.requires_grad_(False).eval()
+    copy_task_lora_state_(runtime.policy,identity_lora_state(runtime.lora),runtime.lora)
+    states={str(s):load_file(str(RUN/f'checkpoints/macro_{s:08d}/ecp.safetensors'),device='cpu') for s in (200,400)}
+    assert set(states['200'])==set(states['400'])==set(runtime.state.state_dict())
+    tasks=load_learning_tasks(ROOT,TASKS);store=RawTeacherVideoStore(tuple(t.authority for t in tasks.values()),frame_stride=5)
+    tick=time.monotonic();torch.cuda.reset_peak_memory_stats(device)
+    manifest={'status':'running','kind':'frozen_endpoint_function_factorial','camera_view':'agentview','source':runtime.source,
+        'writer_checkpoint':{'source_endpoints':[str(RUN/f'checkpoints/macro_{s:08d}') for s in (200,400)],'hybrid_not_a_trained_checkpoint':True},
+        'model_updates':0,'arms':list(COMBINATIONS),'combinations':COMBINATIONS,'task_ids':list(TASKS),'conditions':[],
+        'gpu_uuid':uuid,'groups':{'P':'Meta + shared language reader + input/horizon + process groups; includes fixed probe',
+        'C':'target/rank queries + query-language projection + time projection + Compiler blocks','D':'all native-factor decoder parameters and identity buffers'}}
+    write(HERE/'manifest.json',manifest)
+    try:
+        for task in TASKS:
+            if time.monotonic()-tick>args.max_seconds:raise TimeoutError('endpoint budget')
+            meta=read(ACTUAL/f'all7_400_task{task:02d}_video0.json');assert meta['role']=='train'
+            video=store.load(task,meta['demo'])
+            condition=runtime.observer.prepare((torch.from_numpy(video.frames),),(torch.from_numpy(video.frame_indices),),tasks[task].authority.language)
+            inputs=runtime.observer.writer_arguments(condition);indices,embeddings,language_mask,visuals,masks,task_masks=inputs
+            for p in ('200','400'):
+                runtime.state.load_state_dict(states[p],strict=True)
+                responses=runtime.observer.responses(condition)
+                with autocast(device):
+                    language=runtime.state.writer.encode_language(embeddings,language_mask)
+                    process=[]
+                    for response,index,visual,mask,task_mask in zip(responses,indices,visuals,masks,task_masks,strict=True):
+                        context=runtime.state.writer.contextual_language(visual,task_mask,language_mask)
+                        process.append(runtime.state.writer.encode_video(response,index,context,visual,mask))
+                del responses
+                for c in ('200','400'):
+                    apply_group(runtime,states[c],'C')
+                    with autocast(device):codes=runtime.state.writer.compile(process,indices,language)
+                    for d in ('200','400'):
+                        apply_group(runtime,states[d],'D')
+                        with autocast(device):generated=runtime.state.writer.decoder(codes)
+                        validate_lora_state(generated,runtime.lora);assert all(torch.isfinite(v).all() for v in generated.values())
+                        arm=next(k for k,v in COMBINATIONS.items() if v==(p,c,d));name=f'task{task:02d}_{arm}';path=HERE/'adapters'/f'{name}.safetensors'
+                        save_file({k:v.detach().cpu().contiguous() for k,v in generated.items()},str(path))
+                        manifest['conditions'].append({'condition_id':name,'global_task_id':task,'source_task':task,'arm':arm,
+                            'language':meta['language'],'teacher_demo':meta['demo'],'camera_view':'agentview','P':p,'C':c,'D':d,
+                            'adapter_path':str(path),'complete_target_count':38,'tensor_count':76})
+                        write(HERE/'manifest.json',manifest);del generated
+                del process,language
+            del condition,inputs,visuals,masks,task_masks,video
+            print(json.dumps({'task':task,'complete':len(manifest['conditions']),'seconds':time.monotonic()-tick}),flush=True)
+        assert len(manifest['conditions'])==64
+        manifest.update(status='complete',seconds=time.monotonic()-tick,peak_gib=torch.cuda.max_memory_allocated(device)/2**30)
+        write(HERE/'manifest.json',manifest);panel_module().prepare(HERE)
+    except Exception as error:
+        manifest.update(status='failed',error=repr(error));write(HERE/'manifest.json',manifest);raise
+    finally:store.close()
+
+if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('mode',choices=('materialize','worker'));ap.add_argument('--worker');ap.add_argument('--gpu',type=int);ap.add_argument('--max-seconds',type=int,default=1200);args=ap.parse_args()
+    if args.mode=='materialize':materialize(args)
+    else:panel_module().worker(HERE,args)

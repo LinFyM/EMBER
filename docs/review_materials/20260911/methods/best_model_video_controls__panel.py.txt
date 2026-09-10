@@ -1,0 +1,22 @@
+"""Strongest current candidate; reuse original transforms and evaluator unchanged."""
+import argparse, importlib.util, json
+from pathlib import Path
+HERE=Path(__file__).resolve().parent
+spec=importlib.util.spec_from_file_location('registered_video_panel',HERE.parent/'video_controls/panel.py')
+p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
+p.HERE=HERE
+p.RUN=p.ROOT/'runs/outputs/horizon_causal_local_h_read_seed7_20260909'
+p.KIND='frozen_strongest_candidate_single_view_video_control'
+if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('mode',choices=('materialize_prepare','worker'))
+    ap.add_argument('--worker');ap.add_argument('--gpu',type=int);args=ap.parse_args()
+    output=HERE/'step400'
+    if args.mode=='materialize_prepare':
+        p.FROZEN=p.ROOT/'.codex/worktrees/horizon-causal-retrieval'
+        p.COMMIT='45e16633394e1baa9af8cefba698661b41aab539'
+        run=p.read(p.RUN/'run_contract.json')
+        assert run['model_config']['backend_conditioning']=='local_h_read'
+        assert run['git']['commit']==p.COMMIT
+        assert run['config']['data']['cardinalities']==[1]
+        p.materialize(output,400,1200);p.prepare(output)
+    else:p.worker(output,args)

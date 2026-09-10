@@ -1,0 +1,112 @@
+"""Sealed frozen P/C/D decomposition of four already documented BBQ cases."""
+import argparse,importlib.util,json,os,time
+from pathlib import Path
+import torch
+from safetensors.torch import load_file,save_file
+ROOT=Path('<REPO_ROOT>');HERE=Path(__file__).resolve().parent
+RUN=ROOT/'runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909'
+OLD=HERE.parent.parent.parent/'retention_replay'
+KIND='sealed_bbq_endpoint_function_factorial'
+CASES={0:42,12:21,25:5,37:43}
+def read(p):return json.loads(Path(p).read_text())
+def write(p,v):
+    q=p.with_suffix('.tmp');q.write_text(json.dumps(v,indent=2,allow_nan=False)+'\n');q.replace(p)
+def module(name,path):
+    spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+E=module('existing_endpoints',HERE.parent/'endpoint_swaps/diagnose.py')
+def panel_module():
+    m=module('existing_video_panel',HERE.parent/'video_controls/panel.py');m.KIND=KIND;m.SOURCE=OLD/'step400/contract.json';return m
+
+def prepare():
+    from ember.pi05_eval_queue import EvaluationShard,initialize_queue
+    m=read(HERE/'manifest.json');original=read(OLD/'step400/contract.json')
+    assert m['status']=='complete' and m['model_updates']==0
+    out=HERE/'closedloop';out.mkdir();(out/'shards').mkdir();(out/'workers').mkdir()
+    (out/'libero_config').symlink_to(OLD/'step400/libero_config',target_is_directory=True)
+    contract={k:original[k] for k in ('model','normalization','tokenizer','libero_paths','policy','environment','rng','tasks')}
+    contract.update(schema_version='ember_sealed_bbq_endpoint_v1',role='development_validation',mode='diagnostic',kind=KIND,
+        parallel={'envs_per_replica':1},adapter=None,diagnostic_exploration=None,
+        diagnostic_occupancy_capture={'schema_version':'ember_pi05_occupancy_capture_v1','trajectory_root':str(out/'trajectories'),
+        'training_gradient_use':False,'checkpoint_selection_use':False},
+        diagnostic_stage_predicates={'schema_version':'ember_pi05_stage_predicate_capture_v1',
+        'capture':'post_settling_then_every_executed_action_change_points','predicate_source':'installed_LIBERO_BDDL_goal_conjunction',
+        'training_gradient_use':False,'checkpoint_selection_use':False},reference_contract=str(OLD/'step400/contract.json'),
+        diagnostic_manifest=str(HERE/'manifest.json'),writer_checkpoint=m['writer_checkpoint'],arms=list(E.COMBINATIONS),
+        camera_view='agentview',status='prepared',expected_rows=32,jobs={})
+    shards=[];task=contract['tasks'][0];assert task['split_role']=='validation' and task['task_id']==3
+    for c in m['conditions']:
+        name=c['condition_id'];assert c['language']==task['language']
+        contract['jobs'][name]={k:c[k] for k in ('global_task_id','arm','adapter_path','source_task','teacher_demo','camera_view','condition_id')}
+        shards.append(EvaluationShard(name,len(shards),task['suite'],task['task_id'],task['horizon'],(c['init_state_id'],),task['horizon']))
+    write(out/'contract.json',contract);initialize_queue(out/'queue.sqlite3',shards,contract_reference='ember_sealed_bbq_endpoints_20260910')
+
+def materialize(args):
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.writer.runtime import build_runtime
+    from ember.writer.native import autocast
+    from ember.writer.learning_data import load_learning_tasks
+    from ember.writer.data import RawTeacherVideoStore
+    from ember.writer.materialization import source_matches
+    from ember.lora import identity_lora_state,copy_task_lora_state_,validate_lora_state
+    assert read(HERE/'registration.json')['status']=='registered_before_results'
+    assert not (HERE/'manifest.json').exists();(HERE/'adapters').mkdir()
+    for step in (200,400):
+        old=read(OLD/f'step{step}/contract.json')
+        assert {j['reference_row']['init_state_id']:j['reference_row']['horizon_writer_lora']['teacher_demo_indices'][0] for j in old['jobs'].values()}==CASES
+    torch.set_num_threads(4);torch.set_grad_enabled(False);torch.manual_seed(7);torch.backends.cuda.matmul.allow_tf32=True
+    ctx=initialize_distributed(require_numa=True);device=ctx.device
+    uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+    assert ctx.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+    run=read(RUN/'run_contract.json');runtime=build_runtime(ROOT,run['config'],device);assert source_matches(runtime.source,run['source'])
+    assert run['config']['observer'].get('camera_view','agentview')=='agentview'
+    runtime.state.requires_grad_(False).eval();runtime.policy.requires_grad_(False).eval()
+    copy_task_lora_state_(runtime.policy,identity_lora_state(runtime.lora),runtime.lora)
+    states={str(s):load_file(str(RUN/f'checkpoints/macro_{s:08d}/ecp.safetensors'),device='cpu') for s in (200,400)}
+    task=load_learning_tasks(ROOT,(13,),role='validation')[13]
+    store=RawTeacherVideoStore((task.authority,),frame_stride=5)
+    tick=time.monotonic();torch.cuda.reset_peak_memory_stats(device)
+    manifest={'status':'running','kind':KIND,'camera_view':'agentview','source':runtime.source,
+        'writer_checkpoint':{'source_endpoints':[str(RUN/f'checkpoints/macro_{s:08d}') for s in (200,400)],'hybrid_not_trained':True},
+        'model_updates':0,'gradients':False,'teacher_action_state_reward_reads':0,'checkpoint_selection':False,
+        'task_ids':[13],'cases':CASES,'arms':list(E.COMBINATIONS),'combinations':E.COMBINATIONS,'conditions':[],'gpu_uuid':uuid}
+    write(HERE/'manifest.json',manifest)
+    try:
+        for state_id,demo in CASES.items():
+            if time.monotonic()-tick>args.max_seconds:raise TimeoutError('BBQ frozen budget')
+            video=store.load(13,demo);condition=runtime.observer.prepare((torch.from_numpy(video.frames),),
+                (torch.from_numpy(video.frame_indices),),task.authority.language)
+            inputs=runtime.observer.writer_arguments(condition);indices,embeddings,language_mask,visuals,masks,task_masks=inputs
+            for p in ('200','400'):
+                runtime.state.load_state_dict(states[p],strict=True);responses=runtime.observer.responses(condition)
+                with autocast(device):
+                    language=runtime.state.writer.encode_language(embeddings,language_mask);process=[]
+                    for response,index,visual,mask,task_mask in zip(responses,indices,visuals,masks,task_masks,strict=True):
+                        context=runtime.state.writer.contextual_language(visual,task_mask,language_mask)
+                        process.append(runtime.state.writer.encode_video(response,index,context,visual,mask))
+                del responses
+                for c in ('200','400'):
+                    E.apply_group(runtime,states[c],'C')
+                    with autocast(device):codes=runtime.state.writer.compile(process,indices,language)
+                    for d in ('200','400'):
+                        E.apply_group(runtime,states[d],'D')
+                        with autocast(device):generated=runtime.state.writer.decoder(codes)
+                        validate_lora_state(generated,runtime.lora);assert all(torch.isfinite(v).all() for v in generated.values())
+                        arm=next(k for k,v in E.COMBINATIONS.items() if v==(p,c,d));name=f'task13_state{state_id:02d}_{arm}'
+                        path=HERE/'adapters'/f'{name}.safetensors';save_file({k:v.detach().cpu().contiguous() for k,v in generated.items()},str(path))
+                        manifest['conditions'].append({'condition_id':name,'global_task_id':13,'source_task':13,'arm':arm,
+                            'language':task.authority.language,'init_state_id':state_id,'teacher_demo':demo,'camera_view':'agentview',
+                            'P':p,'C':c,'D':d,'adapter_path':str(path),'complete_target_count':38,'tensor_count':76})
+                        write(HERE/'manifest.json',manifest);del generated
+                del process,language
+            del condition,inputs,video,visuals,masks,task_masks
+        assert len(manifest['conditions'])==32
+        manifest.update(status='complete',seconds=time.monotonic()-tick,peak_gib=torch.cuda.max_memory_allocated(device)/2**30)
+        write(HERE/'manifest.json',manifest);prepare()
+    except Exception as error:
+        manifest.update(status='failed',error=repr(error));write(HERE/'manifest.json',manifest);raise
+    finally:store.close()
+
+if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('mode',choices=('materialize','worker'));ap.add_argument('--worker');ap.add_argument('--gpu',type=int);ap.add_argument('--max-seconds',type=int,default=900);args=ap.parse_args()
+    if args.mode=='materialize':materialize(args)
+    else:panel_module().worker(HERE,args)

@@ -1,0 +1,200 @@
+"""Owner-authorized frozen single-view video controls; no model updates."""
+import argparse, importlib.util, json, os, subprocess, sys, time
+from pathlib import Path
+import numpy as np
+
+ROOT=Path('<REPO_ROOT>')
+HERE=Path(__file__).resolve().parent
+FROZEN=ROOT/'.codex/worktrees/horizon-frame-contextual-runtime'
+COMMIT='9abc9b956d76b6a9918bcd9836eee25806a9448b'
+RUN=ROOT/'runs/outputs/horizon_k1_frame_contextual_v1_seed7_20260909'
+SOURCE=RUN/'evaluation/train_correct_step400_held46_49_train96_J0/run_contract.json'
+TASKS=(0,2,4,5,7,9,12,14,15,16,18,19,20,21,22,25,28,29,34,35,36,37,38,39)
+STATES=(32,33,34,35)
+ARMS=('correct','same_task_other','wrong_same_suite','wrong_cross_suite','shuffled','reversed','static_first','static_middle','static_last')
+KIND='frozen_single_view_video_control'
+
+def read(path):return json.loads(Path(path).read_text())
+def write(path,value):
+    temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,indent=2,allow_nan=False)+'\n');temp.replace(path)
+def gid(task):return {'libero_spatial':0,'libero_object':10,'libero_goal':20,'libero_10':30}[task['suite']]+int(task['task_id'])
+def donor(task,arm):
+    group=[t for t in TASKS if t//10==task//10];position=group.index(task)
+    if arm=='wrong_same_suite':return group[(position+1)%len(group)]
+    if arm=='wrong_cross_suite':return [t for t in TASKS if t//10==(task//10+1)%4][position]
+    return task
+
+def frames_for(store,task,arm):
+    source_task=donor(task,arm);demo=47 if arm=='same_task_other' else 46
+    raw=store.load(source_task,demo);n=len(raw.frames);order=np.arange(n)
+    seed=20260910+task*104729
+    if arm=='shuffled':
+        order=np.random.default_rng(seed).permutation(n)
+        if n>1 and np.array_equal(order,np.arange(n)):order=np.roll(order,1)
+    elif arm=='reversed':order=order[::-1]
+    elif arm.startswith('static_'):
+        pos={'static_first':0,'static_middle':n//2,'static_last':n-1}[arm]
+        order=np.full(n,pos,dtype=np.int64)
+    assert raw.frames.ndim==4 and raw.frames.shape[1]==3
+    # The presented timeline is monotonic; source timestamps travel separately
+    # as provenance and cannot undo the experimental pixel reordering.
+    metadata={'source_task':source_task,'teacher_demo':demo,'frame_count':n,
+        'presentation_frame_indices':raw.frame_indices.tolist(),
+        'source_frame_indices':raw.frame_indices[order].tolist(),
+        'pixel_permutation':order.tolist(),'permutation_seed':seed if arm=='shuffled' else None,
+        'camera_view':'agentview','target_language_retained':True}
+    return np.ascontiguousarray(raw.frames[order]),raw.frame_indices.copy(),metadata
+
+def materialize(output,step,max_seconds):
+    import torch
+    from safetensors.torch import load_file,save_file
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.writer.runtime import build_runtime
+    from ember.writer.native import autocast
+    from ember.writer.materialization import inspect_writer_checkpoint,source_matches
+    from ember.writer.learning_data import load_learning_tasks
+    from ember.writer.data import RawTeacherVideoStore
+    from ember.lora import identity_lora_state,copy_task_lora_state_,validate_lora_state
+    if (output/'manifest.json').exists():raise FileExistsError(output)
+    output.mkdir(parents=True);(output/'adapters').mkdir()
+    assert read(HERE/'registration.json')['status']=='registered_before_results'
+    assert subprocess.check_output(['git','-C',str(FROZEN),'rev-parse','HEAD'],text=True).strip()==COMMIT
+    assert Path(sys.modules['ember.writer.runtime'].__file__).resolve()==FROZEN/'src/ember/writer/runtime.py'
+    torch.set_num_threads(4);torch.set_grad_enabled(False);torch.manual_seed(7)
+    torch.backends.cuda.matmul.allow_tf32=True
+    context=initialize_distributed(require_numa=True);device=context.device
+    uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+    assert context.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+    run,record=inspect_writer_checkpoint(RUN/f'checkpoints/macro_{step:08d}')
+    assert run['config']['observer'].get('camera_view','agentview')=='agentview'
+    assert tuple(sorted(run['config']['data']['task_ids']))==TASKS
+    runtime=build_runtime(ROOT,run['config'],device)
+    assert source_matches(runtime.source,run['source'])
+    weights=load_file(record['weights']['path'],device='cpu');runtime.state.load_state_dict(weights,strict=True);del weights
+    runtime.state.requires_grad_(False).eval();runtime.policy.requires_grad_(False).eval()
+    copy_task_lora_state_(runtime.policy,identity_lora_state(runtime.lora),runtime.lora)
+    tasks=load_learning_tasks(ROOT,TASKS)
+    store=RawTeacherVideoStore(tuple(t.authority for t in tasks.values()),frame_stride=5)
+    tick=time.monotonic();torch.cuda.reset_peak_memory_stats(device)
+    manifest={'status':'running','kind':KIND,'step':step,'source':runtime.source,'writer_checkpoint':record,
+        'runtime_commit':COMMIT,'camera_view':'agentview','model_updates':0,'action_queries_read':0,
+        'held_tasks_read':False,'formal_selection':False,'gpu_uuid':uuid,'cpu_affinity':list(context.cpu_affinity),
+        'arms':list(ARMS),'task_ids':list(TASKS),'conditions':[],'expected_conditions':len(TASKS)*len(ARMS)}
+    write(output/'manifest.json',manifest)
+    try:
+        for task in TASKS:
+            for arm in ARMS:
+                if time.monotonic()-tick>max_seconds:raise TimeoutError('registered materialization budget reached')
+                frames,indices,meta=frames_for(store,task,arm)
+                condition=runtime.observer.prepare((torch.from_numpy(frames),),(torch.from_numpy(indices),),tasks[task].authority.language)
+                # All arms, including shuffle/reverse, rerun the real native
+                # prefix, Meta responses and entire Writer from actual pixels.
+                with autocast(device):
+                    responses=runtime.observer.responses(condition)
+                    generated=runtime.state.writer(responses,*runtime.observer.writer_arguments(condition))
+                validate_lora_state(generated,runtime.lora)
+                assert len(generated)==76 and all(torch.isfinite(v).all() for v in generated.values())
+                name=f'task{task:02d}_{arm}';path=output/'adapters'/f'{name}.safetensors'
+                save_file({k:v.detach().cpu().contiguous() for k,v in generated.items()},str(path))
+                manifest['conditions'].append({'condition_id':name,'global_task_id':task,'arm':arm,
+                    'suite':tasks[task].suite,'task_id':tasks[task].suite_task_id,'language':tasks[task].authority.language,
+                    'adapter_path':str(path),'adapter_bytes':path.stat().st_size,'complete_target_count':38,
+                    'tensor_count':76,'writer_invocations':1,**meta})
+                manifest['seconds']=time.monotonic()-tick;write(output/'manifest.json',manifest)
+                print(json.dumps({'step':step,'task':task,'arm':arm,'complete':len(manifest['conditions']),'seconds':manifest['seconds']}),flush=True)
+                del condition,responses,generated,frames
+        assert len(manifest['conditions'])==manifest['expected_conditions']
+        manifest.update(status='complete',seconds=time.monotonic()-tick,peak_gib=torch.cuda.max_memory_allocated(device)/2**30)
+        write(output/'manifest.json',manifest)
+    except Exception as error:
+        manifest.update(status='failed',error=repr(error),seconds=time.monotonic()-tick);write(output/'manifest.json',manifest);raise
+    finally:store.close()
+
+def prepare(output):
+    from ember.pi05_eval_queue import EvaluationShard,initialize_queue
+    from ember.writer.materialization import source_matches
+    manifest=read(output/'manifest.json');original=read(SOURCE)
+    assert manifest['status']=='complete' and manifest['model_updates']==0 and manifest['camera_view']=='agentview'
+    assert source_matches(manifest['source'],original['adapter']['source'])
+    conditions={(c['global_task_id'],c['arm']):c for c in manifest['conditions']}
+    assert set(conditions)=={(t,a) for t in TASKS for a in ARMS}
+    tasks=sorted((t for t in original['tasks'] if gid(t) in TASKS),key=gid);assert tuple(gid(t) for t in tasks)==TASKS
+    for task in tasks:assert task['split_role']=='train';task['init_state_ids']=list(STATES)
+    out=output/'closedloop';out.mkdir();(out/'shards').mkdir();(out/'workers').mkdir()
+    (out/'libero_config').symlink_to(SOURCE.parent/'libero_config',target_is_directory=True)
+    contract={k:original[k] for k in ('model','normalization','tokenizer','libero_paths','policy','environment','rng')}
+    contract.update(schema_version='ember_frozen_video_control_diagnostic_v1',role='development_train',mode='diagnostic',
+        kind=KIND,tasks=tasks,parallel={'envs_per_replica':4},adapter=None,diagnostic_exploration=None,
+        diagnostic_occupancy_capture=None,diagnostic_stage_predicates={'schema_version':'ember_pi05_stage_predicate_capture_v1',
+        'capture':'post_settling_then_every_executed_action_change_points','predicate_source':'installed_LIBERO_BDDL_goal_conjunction',
+        'training_gradient_use':False,'checkpoint_selection_use':False},reference_contract=str(SOURCE),
+        diagnostic_manifest=str(output/'manifest.json'),writer_checkpoint=manifest['writer_checkpoint'],
+        arms=list(ARMS),camera_view='agentview',status='prepared',expected_rows=len(conditions)*4,jobs={})
+    shards=[]
+    for task in tasks:
+        for arm in ARMS:
+            c=conditions[gid(task),arm];name=c['condition_id'];assert c['language']==task['language']
+            assert Path(c['adapter_path']).is_file()
+            contract['jobs'][name]={k:c[k] for k in ('global_task_id','arm','adapter_path','source_task','teacher_demo','camera_view','condition_id')}
+            shards.append(EvaluationShard(name,len(shards),task['suite'],task['task_id'],task['horizon'],STATES,4*task['horizon']))
+    write(out/'contract.json',contract)
+    initialize_queue(out/'queue.sqlite3',shards,contract_reference='ember_frozen_video_controls_20260910')
+
+def worker(output,args):
+    out=output/'closedloop'
+    os.environ.update(MUJOCO_GL='egl',PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.gpu),LIBERO_CONFIG_PATH=str(out/'libero_config'))
+    import torch
+    from safetensors.torch import load_file
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.pi05_eval.worker_setup import load_policy,validate_worker_assets
+    from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
+    from ember.pi05_eval_queue import claim_next,publish_json_exclusive,complete_job,fail_job
+    from ember.pi05_evaluation import rollout_shard
+    from ember.pi05_lora import derive_pi05_lora_rank,load_pi05_lora_contract
+    from ember.writer.functional import prepare_frozen_writer_policy
+    from ember.lora import copy_task_lora_state_
+    torch.set_num_threads(2);context=initialize_distributed(require_numa=True)
+    uuid='GPU-'+str(torch.cuda.get_device_properties(0).uuid).removeprefix('GPU-')
+    assert uuid==os.environ['EXPECTED_GPU_UUID'] and torch.cuda.device_count()==1
+    contract=read(out/'contract.json');assert contract['kind']==KIND and contract['camera_view']=='agentview'
+    torch.manual_seed(contract['rng']['inference_seed']);torch.cuda.manual_seed(contract['rng']['inference_seed'])
+    torch.backends.cuda.matmul.allow_tf32=True;torch.set_grad_enabled(False)
+    model,normalization,tokenizer=validate_worker_assets(contract)
+    policy,processor,postprocess=load_policy(model,normalization['stats'],tokenizer,contract['policy'])
+    reuse=read(ROOT/'configs/pi05_writer_data_v1.json')['authorities']
+    lora=derive_pi05_lora_rank(load_pi05_lora_contract(ROOT/reuse['lora_contract']),rank=16)
+    prepare_frozen_writer_policy(policy,lora);policy.requires_grad_(False).eval();policy.model.gradient_checkpointing_disable()
+    pool=PersistentTaskEnvironmentPool(contract,physical_gpu_id=args.gpu)
+    tick=time.monotonic();status={'status':'running','worker':args.worker,'gpu_uuid':uuid,'affinity':list(context.cpu_affinity),'completed':[]}
+    write(out/'workers'/f'{args.worker}.json',status);tasks={(t['suite'],t['task_id']):t for t in contract['tasks']}
+    preferred=None
+    try:
+        while (claim:=claim_next(out/'queue.sqlite3',worker_id=args.worker,preferred_task=preferred)) is not None:
+            job=contract['jobs'][claim.shard.job_id];task=tasks[claim.task_key]
+            try:
+                copy_task_lora_state_(policy,load_file(job['adapter_path']),lora)
+                envs,initial=pool.switch(task)
+                rollout_contract=contract
+                if contract.get('diagnostic_occupancy_capture') is not None:
+                    capture=contract['diagnostic_occupancy_capture']
+                    rollout_contract={**contract,'diagnostic_occupancy_capture':{**capture,'trajectory_root':str(Path(capture['trajectory_root'])/claim.shard.job_id)}}
+                rows=rollout_shard(envs=envs,init_states=initial,task=task,state_ids=claim.shard.init_state_ids,
+                    contract=rollout_contract,policy=policy,preprocess=processor,postprocess=postprocess,task_adapter=None)
+                for row in rows:row.update(diagnostic_control=job,teacher_demo=job['teacher_demo'],zero_interaction_qualification=False)
+                path=out/'shards'/f'{claim.shard.job_id}.json'
+                size=publish_json_exclusive(path,{'job':job,'rows':rows,'source_execution_reference':str(SOURCE)})
+                complete_job(out/'queue.sqlite3',job_id=claim.shard.job_id,worker_id=args.worker,claim_token=claim.claim_token,
+                    rows_path=str(path.relative_to(out)),rows_bytes=size,row_count=len(rows),successes=sum(r['success'] for r in rows))
+                status['completed'].append(claim.shard.job_id);status['seconds']=time.monotonic()-tick;write(out/'workers'/f'{args.worker}.json',status)
+                print(json.dumps({'job':claim.shard.job_id,'successes':sum(r['success'] for r in rows)}),flush=True);preferred=claim.task_key
+            except Exception as error:
+                fail_job(out/'queue.sqlite3',job_id=claim.shard.job_id,worker_id=args.worker,claim_token=claim.claim_token,error=repr(error));raise
+        status.update(status='complete',seconds=time.monotonic()-tick);write(out/'workers'/f'{args.worker}.json',status)
+    finally:pool.close()
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('mode',choices=('materialize_prepare','worker'))
+    parser.add_argument('--step',type=int,choices=(200,400),required=True);parser.add_argument('--worker');parser.add_argument('--gpu',type=int)
+    parser.add_argument('--max-seconds',type=int,default=2400);args=parser.parse_args();output=HERE/f'step{args.step}'
+    if args.mode=='materialize_prepare':materialize(output,args.step,args.max_seconds);prepare(output)
+    else:worker(output,args)

@@ -1,0 +1,126 @@
+"""Frozen train-only FM credit decomposition, no optimizer or model updates."""
+import argparse,gc,json,os,socket,subprocess,time
+from pathlib import Path
+import numpy as np
+import torch
+from safetensors.torch import load_file
+from ember.pi05_source_setup import initialize_distributed
+from ember.writer.runtime import build_runtime,FrozenVideoPrefixCache
+from ember.writer.learning_data import WriterTrainingData
+from ember.writer.native import autocast
+from ember.writer.functional import functional_lora_loss_gradient,writer_chain_rule_surrogate,INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME
+from ember.writer.materialization import source_matches
+
+R=Path('<REPO_ROOT>');O=Path(__file__).resolve().parent
+RUNS={'all7':'horizon_k1_frame_contextual_v1_seed7_20260909','all11':'horizon_compiler_confirmation_all_init11_data7_20260909'}
+def write(p,x):
+ t=p.with_suffix('.tmp');t.write_text(json.dumps(x,indent=2,allow_nan=False)+'\n');t.replace(p)
+def cosine(a,b):return float(torch.dot(a,b)/(a.norm()*b.norm()).clamp_min(1e-30))
+def flat(values,params):return torch.cat([(torch.zeros_like(p) if v is None else v).detach().float().flatten().cpu() for v,p in zip(values,params)])
+
+def main():
+ global O
+ ap=argparse.ArgumentParser();ap.add_argument('--max-seconds',type=int,default=1800);ap.add_argument('--steps',type=int,nargs='+',default=[200,400]);ap.add_argument('--output-dir',type=Path);ap.add_argument('--optimizer-metric',action='store_true');args=ap.parse_args()
+ if args.output_dir is not None:O=args.output_dir.resolve()
+ start=time.monotonic();torch.set_num_threads(4);torch.manual_seed(7);torch.backends.cuda.matmul.allow_tf32=True
+ context=initialize_distributed(require_numa=True);device=context.device
+ uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+ assert context.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+ reg=json.loads((O/'registration.json').read_text());base=json.loads((R/'runs/outputs'/RUNS['all7']/'run_contract.json').read_text())
+ config=dict(base['config']);config['model']={**config['model'],'decoder_rank_sharing':'independent'}
+ runtime=build_runtime(R,config,device);runtime.state.requires_grad_(False).eval();runtime.policy.eval()
+ data=WriterTrainingData(R,base['config']['data']);sampler=data.sampler_state();cache=FrozenVideoPrefixCache(runtime.observer,data,2*2**30)
+ assert set(reg['tasks'])<=set(data.tasks) and set(data.action_pool)==set(range(16,42)) and set(data.video_pool)==set(range(16))
+ status={'state':'running','completed':0,'expected':len(reg['tasks'])*len(RUNS)*len(args.steps),'model_updates':0,'host':socket.gethostname(),'gpu_uuid':uuid,'runtime_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'cpu_affinity':list(context.cpu_affinity),'numa_node':context.numa_node,'held_gradients':False}
+ write(O/'runtime.json',status)
+ for arm,run_name in RUNS.items():
+  root=R/'runs/outputs'/run_name;run=json.loads((root/'run_contract.json').read_text());assert source_matches(runtime.source,run['source'])
+  for step in args.steps:
+   ckpt=root/f'checkpoints/macro_{step:08d}';manifest=json.loads((ckpt/'checkpoint_manifest.json').read_text());assert manifest['next_macro']==step
+   weights=load_file(str(ckpt/'ecp.safetensors'),device='cpu');runtime.state.load_state_dict(weights,strict=True);del weights;gc.collect()
+   runtime.state.requires_grad_(False).eval();writer=runtime.state.writer
+   named=[(n,p) for n,p in writer.named_parameters() if n.startswith('language_')]
+   params=[p for n,p in named]
+   for p in params:p.requires_grad_(True)
+   precondition=None;momentum=None;slices={};offset=0
+   for name,param in named:
+    slices[name]=slice(offset,offset+param.numel());offset+=param.numel()
+   if args.optimizer_metric:
+    saved=torch.load(ckpt/'trainer_state.pt',map_location='cpu',mmap=True,weights_only=True)['optimizer']
+    assert len(saved['param_groups'])==1
+    group=saved['param_groups'][0];ids=group['params'];allnames=list(runtime.state.named_parameters());assert len(ids)==len(allnames)
+    mapids={n:i for (n,p),i in zip(allnames,ids)};pp=[];mm=[]
+    for name,param in named:
+     v=saved['state'][mapids['writer.'+name]];assert v['exp_avg_sq'].shape==param.shape
+     age=float(v['step']);beta1,beta2=group['betas'];den=(v['exp_avg_sq'].float()/(1-beta2**age)).sqrt()+group['eps']
+     pp.append(den.reciprocal().flatten());mm.append((v['exp_avg'].float()/(1-beta1**age)).flatten())
+    precondition=torch.cat(pp);momentum=torch.cat(mm);del saved,pp,mm
+
+   for task in reg['tasks']:
+    if time.monotonic()-start>args.max_seconds:
+     status.update(state='budget_stop',seconds=time.monotonic()-start);write(O/'runtime.json',status);return
+    key=f'{arm}_{step}_task{task:02d}';tick=time.monotonic()
+    condition=cache.condition(task,(0,));inputs=runtime.observer.writer_arguments(condition);responses=runtime.observer.responses(condition)
+    with torch.no_grad(),autocast(device):state=writer(responses,*inputs)
+    vectors=[];samples=[]
+    for rep in [0,1]:
+     seed=2026091000+task*2+rep
+     raw,trace=data._sample_actions(data.queries,data.action_pool,task,0,seed,32)
+     assert set(trace['action_demos'])<=set(range(16,42))
+     batch=runtime.processor.training_batch(raw)
+     with autocast(device):
+      loss,_,cot=functional_lora_loss_gradient(runtime.policy,state,runtime.lora,batch=batch,policy_rng_seed=trace['policy_rng_seed'],policy_rng_device=device,flow_time_sampling_scheme=INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,policy_microbatch_size=8,collect_policy_details=False)
+     del batch,raw
+     nodes=[]
+     def hook(m,a,out):nodes.append(out)
+     handle=writer.language_read.register_forward_hook(hook)
+     with autocast(device):
+      generated=writer(responses,*inputs);surrogate=writer_chain_rule_surrogate(generated,cot)
+     handle.remove();assert len(nodes)==2 and nodes[0].ndim==2 and nodes[1].ndim==3
+     gs_out,gc_out=torch.autograd.grad(surrogate,tuple(nodes),retain_graph=True)
+     gs=flat(torch.autograd.grad(nodes[0],params,grad_outputs=gs_out,retain_graph=True,allow_unused=True),params)
+     gc_=flat(torch.autograd.grad(nodes[1],params,grad_outputs=gc_out,retain_graph=True,allow_unused=True),params)
+     # Actual total gradient from the unchanged forward; no clipping/Adam or update.
+     gt=flat(torch.autograd.grad(surrogate,params,allow_unused=True),params)
+     err=float((gt-gs-gc_).norm()/gt.norm().clamp_min(1e-30))
+     if err>.04:raise ValueError(f'credit decomposition exceeds BF16 accumulation tolerance: {err}')
+     total=gs+gc_;ngs=float(gs.norm());ngc=float(gc_.norm())
+     samples.append({'rep':rep,'query_seed':seed,**trace,'flow_loss':float(loss),'static_norm':ngs,'context_norm':ngc,'total_norm':float(gt.norm()),'static_context_cosine':cosine(gs,gc_),
+       'cancellation_ratio':float(total.norm()/(gs.norm()+gc_.norm()).clamp_min(1e-30)),
+       'static_share_norm':ngs/max(ngs+ngc,1e-30),'gradient_sum_relative_error':err,
+       'total_dot_static':float(torch.dot(gt,gs)),'total_dot_context':float(torch.dot(gt,gc_))})
+     if args.optimizer_metric:
+      per={}
+      for name,sl in slices.items():
+       sv=gs[sl];cv=gc_[sl];pv=precondition[sl];mv=momentum[sl]
+       denom=(torch.dot(sv,pv*sv)*torch.dot(cv,pv*cv)).clamp_min(1e-30).sqrt()
+       per[name]={'static_norm':float(sv.norm()),'context_norm':float(cv.norm()),'cosine':cosine(sv,cv),
+        'preconditioned_credit_cosine':float(torch.dot(sv,pv*cv)/denom),
+        'static_directional_derivative_historical_momentum':-float(torch.dot(sv,pv*mv)),
+        'context_directional_derivative_historical_momentum':-float(torch.dot(cv,pv*mv))}
+      samples[-1]['per_parameter']=per
+      denom=(torch.dot(gs,precondition*gs)*torch.dot(gc_,precondition*gc_)).clamp_min(1e-30).sqrt()
+      samples[-1]['optimizer_metric']={'credit_cosine':float(torch.dot(gs,precondition*gc_)/denom),
+        'update_vector_cosine':cosine(precondition*gs,precondition*gc_),
+        'static_directional_derivative_historical_momentum':-float(torch.dot(gs,precondition*momentum)),
+        'context_directional_derivative_historical_momentum':-float(torch.dot(gc_,precondition*momentum))}
+     vectors.append((gs,gc_,gt));del generated,cot,surrogate,nodes,gs_out,gc_out
+    a,b=vectors
+    cross={'static_replicate_cosine':cosine(a[0],b[0]),'context_replicate_cosine':cosine(a[1],b[1]),'total_replicate_cosine':cosine(a[2],b[2]),
+      'staticA_contextB_cosine':cosine(a[0],b[1]),'contextA_staticB_cosine':cosine(a[1],b[0]),
+      'queryB_derivative_along_negative_staticA':-float(torch.dot(b[2],a[0])),
+      'queryB_derivative_along_negative_contextA':-float(torch.dot(b[2],a[1])),
+      'queryA_derivative_along_negative_staticB':-float(torch.dot(a[2],b[0])),
+      'queryA_derivative_along_negative_contextB':-float(torch.dot(a[2],b[1]))}
+    if args.optimizer_metric:
+     cross.update(staticA_contextB_metric_dot=float(torch.dot(a[0],precondition*b[1])),contextA_staticB_metric_dot=float(torch.dot(a[1],precondition*b[0])),queryB_derivative_negative_preconditioned_staticA=-float(torch.dot(b[2],precondition*a[0])),queryB_derivative_negative_preconditioned_contextA=-float(torch.dot(b[2],precondition*a[1])))
+    result={'arm':arm,'step':step,'task':task,'teacher_demo':0,'checkpoint':str(ckpt),'samples':samples,'cross_query':cross,'seconds':time.monotonic()-tick,'reader_parameters':[{'name':n,'shape':list(p.shape)} for n,p in named]}
+    write(O/(key+'.json'),result)
+    # Retain compact projected evidence; large gradients are not retained.
+    del vectors,state,responses,inputs,condition
+    assert data.sampler_state()==sampler and not any(p.requires_grad for p in runtime.policy.parameters())
+    status.update(completed=status['completed']+1,last=key,seconds=time.monotonic()-start,peak_gib=torch.cuda.max_memory_allocated()/2**30);write(O/'runtime.json',status)
+    print(json.dumps({k:status[k] for k in ['completed','last','seconds','peak_gib']}),flush=True)
+ data.close();status.update(state='complete',seconds=time.monotonic()-start);write(O/'runtime.json',status)
+
+if __name__=='__main__':main()

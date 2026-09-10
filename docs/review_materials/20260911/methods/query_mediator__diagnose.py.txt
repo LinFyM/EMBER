@@ -1,0 +1,120 @@
+"""Frozen two-layer Q dispersion intervention on previously recorded real P4."""
+import argparse,importlib.util,json,math,os,sys,time
+from pathlib import Path
+import numpy as np
+import torch
+from safetensors import safe_open
+from safetensors.torch import save_file
+
+ROOT=Path('<REPO_ROOT>');HERE=Path(__file__).resolve().parent
+ACTUAL=HERE.parent.parent/'actual_video'
+TASKS=(0,7,14,16,20,25,34,35)
+ARMS=('normal','LL','HL','LH','HH')
+RUNS={'all7':'horizon_k1_frame_contextual_v1_seed7_20260909','off7':'horizon_causal_local_h_read_seed7_20260909'}
+def read(p):return json.loads(Path(p).read_text())
+def write(p,v):
+    q=p.with_suffix('.tmp');q.write_text(json.dumps(v,indent=2,allow_nan=False)+'\n');q.replace(p)
+def rms(x):return x.float().square().mean().sqrt()
+def panel_module():
+    spec=importlib.util.spec_from_file_location('existing_video_panel',HERE.parent/'video_controls/panel.py')
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+    m.TASKS=TASKS;m.ARMS=ARMS;m.KIND='frozen_query_dispersion_mediator';return m
+
+class Dispersion:
+    def __init__(self,writer,arm,scales):self.writer=writer;self.arm=arm;self.scales=scales;self.handles=[];self.stats={};self.last={}
+    def __enter__(self):
+        for i,block in enumerate(self.writer.compiler):
+            def query(module,args,out,i=i):
+                original=out.float();mean=original.mean(-2,keepdim=True);delta=original-mean;s=rms(delta)
+                value=out
+                if self.arm!='normal':
+                    if not torch.isfinite(s) or s<1e-8:raise ValueError('query dispersion is zero/nonfinite; no unregistered scale fallback')
+                    value=(mean+delta*(self.scales[self.arm[i]]/s)).to(out.dtype)
+                self.last[i]=value.detach()
+                self.stats[f'layer{i}']={'before_scatter_rms':float(s),'after_scatter_rms':float(rms(value.float()-value.float().mean(-2,keepdim=True))),
+                    'mean_rounding_rms':float(rms(value.float().mean(-2)-mean.squeeze(-2))),
+                    'scale':float(self.scales[self.arm[i]]/s) if self.arm!='normal' else 1.}
+                return value
+            self.handles.append(block.cross.query.register_forward_hook(query))
+            def cross(module,args,out,i=i):
+                q=module.split_heads(self.last[i]);k,v=module.project_memory(args[1],args[2])
+                with torch.autocast('cuda',enabled=False):
+                    logits=q.float()@k.float().transpose(-2,-1)/math.sqrt(module.head_width)
+                    if len(args)>3 and args[3] is not None:logits=logits+args[3].float()
+                    p=logits.softmax(-1);readout=<EMAIL>();d=readout-readout.mean(-2,keepdim=True)
+                    self.stats[f'layer{i}'].update(read_slot_relative_rms=float(rms(d)/rms(readout).clamp_min(1e-12)),
+                        entropy_normalized=float(-(p*p.clamp_min(1e-30).log()).sum(-1).mean()/math.log(p.shape[-1])))
+            self.handles.append(block.cross.register_forward_hook(cross))
+        return self
+    def __exit__(self,*args):
+        for h in self.handles:h.remove()
+
+def materialize(args):
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.pi05_lora import derive_pi05_lora_rank,load_pi05_lora_contract
+    from ember.writer.horizon import HorizonRelationWriter,HorizonWriterConfig
+    from ember.writer.native import autocast
+    from ember.lora import validate_lora_state
+    reg=read(HERE/'registration.json');assert reg['status']=='registered_before_results'
+    torch.set_num_threads(4);torch.set_grad_enabled(False);torch.manual_seed(7);torch.backends.cuda.matmul.allow_tf32=True
+    ctx=initialize_distributed(require_numa=True);device=ctx.device
+    uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+    assert ctx.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+    reuse=read(ROOT/'configs/pi05_writer_data_v1.json')['authorities']
+    lora=derive_pi05_lora_rank(load_pi05_lora_contract(ROOT/reuse['lora_contract']),rank=16)
+    tick=time.monotonic();writer=None
+    for model in ('all7','off7'):
+        run=read(ROOT/'runs/outputs'/RUNS[model]/'run_contract.json');cfg=dict(run['model_config'])
+        cfg.pop('backend_conditioning',None);cfg.pop('decoder_rank_sharing',None)
+        assert run['config']['observer'].get('camera_view','agentview')=='agentview'
+        if writer is None:writer=HorizonRelationWriter(lora,HorizonWriterConfig(**cfg)).to(device).eval().requires_grad_(False)
+        for step in (200,400):
+            output=HERE/f'{model}_{step}'
+            if output.exists():
+                finished=read(output/'manifest.json')
+                if finished['status']!='complete' or len(finished['conditions'])!=len(TASKS)*len(ARMS):raise FileExistsError(output)
+                if not (output/'closedloop').exists():panel_module().prepare(output)
+                continue
+            output.mkdir();(output/'adapters').mkdir()
+            ckpt=ROOT/'runs/outputs'/RUNS[model]/f'checkpoints/macro_{step:08d}/ecp.safetensors'
+            with safe_open(ckpt,framework='pt',device='cpu') as f:
+                state={k.removeprefix('writer.'):f.get_tensor(k) for k in f.keys() if k.startswith('writer.')}
+            writer.load_state_dict(state,strict=True);del state
+            scales=reg['scales'][str(step)]
+            manifest={'status':'running','kind':'frozen_query_dispersion_mediator','model':model,'step':step,'camera_view':'agentview',
+                'source':run['source'],'writer_checkpoint':{'path':str(ckpt.parent),'macro':step},'model_updates':0,
+                'source_policy_loaded':False,'inputs':'existing same-checkpoint real P4 and language route, all sampled video frames retained',
+                'arms':list(ARMS),'task_ids':list(TASKS),'conditions':[],'gpu_uuid':uuid,'scales':scales}
+            write(output/'manifest.json',manifest)
+            for task in TASKS:
+                if time.monotonic()-tick>args.max_seconds:raise TimeoutError('query mediator budget')
+                key=f'{model}_{step}_task{task:02d}_video0';meta=read(ACTUAL/f'{key}.json');z=np.load(ACTUAL/f'{key}.npz')
+                assert meta['role']=='train' and meta['task']==task
+                p4=torch.from_numpy(z['P4']).to(device=device,dtype=torch.bfloat16);indices=torch.from_numpy(z['frame_indices']).to(device)
+                route=torch.from_numpy(z['language_route']).to(device=device,dtype=torch.bfloat16)
+                if model=='off7':route=torch.zeros_like(route)
+                for arm in ARMS:
+                    with autocast(device),Dispersion(writer,arm,scales) as hook:
+                        memory,routing,prior=writer._memory((p4,),(indices,))
+                        query=(writer.target_queries[:,None,:]+writer.rank_queries[None,:,:]).flatten(0,1)
+                        for i,block in enumerate(writer.compiler):query=block(query,memory,routing,prior,route if i==0 else None)
+                        codes=query.reshape(38,16,256);generated=writer.decoder(codes)
+                    validate_lora_state(generated,lora);assert all(torch.isfinite(v).all() for v in generated.values())
+                    reference=torch.from_numpy(z['C']).to(device).float()
+                    relative=float(rms(codes-reference)/rms(reference).clamp_min(1e-12))
+                    if arm=='normal' and relative>.02:raise ValueError(f'cached native baseline not reconstructed: {relative}')
+                    name=f'task{task:02d}_{arm}';path=output/'adapters'/f'{name}.safetensors'
+                    save_file({k:v.detach().cpu().contiguous() for k,v in generated.items()},str(path))
+                    manifest['conditions'].append({'condition_id':name,'global_task_id':task,'source_task':task,
+                        'arm':arm,'language':meta['language'],'teacher_demo':meta['demo'],'camera_view':'agentview',
+                        'adapter_path':str(path),'complete_target_count':38,'tensor_count':76,'trace':hook.stats,
+                        'C_relative_delta':relative,'source_artifact':str(ACTUAL/f'{key}.npz')})
+                    write(output/'manifest.json',manifest);del generated,codes
+            manifest.update(status='complete',seconds=time.monotonic()-tick,peak_gib=torch.cuda.max_memory_allocated(device)/2**30)
+            write(output/'manifest.json',manifest);panel_module().prepare(output)
+            print(json.dumps({'panel':output.name,'status':'complete','conditions':len(manifest['conditions'])}),flush=True)
+
+if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('mode',choices=('materialize','worker'));ap.add_argument('--panel');ap.add_argument('--worker');ap.add_argument('--gpu',type=int);ap.add_argument('--max-seconds',type=int,default=900);args=ap.parse_args()
+    if args.mode=='materialize':materialize(args)
+    else:panel_module().worker(HERE/args.panel,args)

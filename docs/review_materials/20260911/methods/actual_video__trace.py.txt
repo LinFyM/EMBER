@@ -1,0 +1,194 @@
+"""Bounded frozen actual-video interface diagnosis; never trains or selects models."""
+import argparse, gc, json, math, os, socket, subprocess, time
+from pathlib import Path
+import numpy as np
+import torch
+from torch.nn import functional as F
+from safetensors.torch import load_file
+from ember.pi05_source_setup import initialize_distributed
+from ember.writer.runtime import build_runtime
+from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig
+from ember.writer.native import autocast
+from ember.writer.data import RawTeacherVideoStore
+from ember.writer.learning_data import load_learning_tasks
+from ember.writer.materialization import source_matches
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
+
+R=Path('<REPO_ROOT>'); O=Path(__file__).resolve().parent
+RUNS={
+ 'all7':'horizon_k1_frame_contextual_v1_seed7_20260909',
+ 'off7':'horizon_causal_local_h_read_seed7_20260909',
+ 'all11':'horizon_compiler_confirmation_all_init11_data7_20260909',
+ 'off11':'horizon_compiler_confirmation_local_h_read_init11_data7_20260909',
+ 'shared7':'horizon_causal_within_target_rank_shared_seed7_20260910'}
+
+def write(path, value):
+ temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,allow_nan=False,indent=2)+'\n');temp.replace(path)
+
+def number(t):return float(t)
+def rms(x):return x.float().square().mean().sqrt()
+def scatter(x):
+ x=x.float();return rms(x-x.mean(-2,keepdim=True))
+def paircos(x):
+ x=F.normalize(x.float(),dim=-1);n=x.shape[-2]
+ return ((x.sum(-2).square().sum(-1)-n)/(n*(n-1))).mean() if n>1 else x.new_tensor(1.)
+def geometry(x):
+ x=x.detach().float();s=scatter(x);n=rms(x)
+ return {'rms':number(n),'slot_scatter_rms':number(s),'scatter_to_rms':number(s/n.clamp_min(1e-12)), 'paircos':number(paircos(x))}
+def codes_geometry(x):
+ x=x.reshape(38,16,256).float();g=geometry(x)
+ sv=torch.linalg.svdvals(x)
+ g['rank_top1_energy']=number((sv[:,0].square()/sv.square().sum(-1).clamp_min(1e-20)).mean())
+ g['all_slot_paircos']=number(paircos(x.flatten(0,1)))
+ g['target_mean_scatter']=number(scatter(x.mean(1)))
+ return g
+
+class Capture:
+ def __init__(self,writer):self.writer=writer;self.handles=[];self.summary={};self.arrays={};self.compiler_inputs=None
+ def simple(self,name,output):
+  self.summary[name]=codes_geometry(output) if output.numel()==38*16*256 else geometry(output)
+ def __enter__(self):
+  def queryhook(m,args,out):self.arrays['language_route']=out.detach().float().cpu().numpy()
+  self.handles.append(self.writer.query_language.register_forward_hook(queryhook))
+  def inputs(m,args):
+   self.compiler_inputs=tuple(x.detach() if torch.is_tensor(x) else x for x in args)
+   self.arrays['P4']=args[1].detach().half().cpu().numpy()
+   self.summary['P4']=geometry(args[1])
+  self.handles.append(self.writer.compiler[0].register_forward_pre_hook(inputs))
+  for i,block in enumerate(self.writer.compiler):
+   def crosshook(m,args,out,i=i):
+    # Same inputs/projections as real SDPA; FP32 softmax describes its logits,
+    # while the actual retained output remains the untouched native SDPA result.
+    q=m.split_heads(m.query(args[0]));k,v=m.project_memory(args[1],args[2])
+    with torch.autocast("cuda",enabled=False):
+     logits=q.float()@k.float().transpose(-2,-1)/math.sqrt(m.head_width)
+     if len(args)>3 and args[3] is not None:logits=logits+args[3].float()
+     p=logits.softmax(-1);n=p.shape[-1];avg=p.mean(-2,keepdim=True)
+     h=-(p*p.clamp_min(1e-30).log()).sum(-1)
+     delta=p-avg
+     # This decomposes slot-varying attention from the shared read on actual V.
+     read=<EMAIL>();shared=<EMAIL>()
+     self.summary[f'cross{i}']={
+       'q':geometry(q),'k':geometry(k),'v':geometry(v),'actual_output':codes_geometry(out),
+       'entropy_normalized':number(h.mean()/math.log(n)) if n>1 else 0.,
+       'max_attention_mean':number(p.max(-1).values.mean()),
+       'attention_slot_rms':number(rms(delta)),
+       'attention_slot_l1':number(delta.abs().sum(-1).mean()),
+       'attention_slot_relative_rms':number(rms(delta)/rms(p).clamp_min(1e-12)),
+       'pre_output_read':geometry(read),
+       'read_slot_relative_rms':number(rms(read-shared)/rms(read).clamp_min(1e-12)),
+       'logit_time_std':number(logits.std(-1).mean()),
+       'first_quarter_mass':number(p[...,:max(1,n//4)].sum(-1).mean()),
+       'last_quarter_mass':number(p[...,-max(1,n//4):].sum(-1).mean())}
+     self.arrays[f'cross{i}_attention_mean']=p.mean(-2).cpu().numpy()
+     self.arrays[f'cross{i}_entropy']=h.cpu().numpy()
+   self.handles.append(block.cross.register_forward_hook(crosshook))
+   def blockhook(m,args,out,i=i):self.simple(f'block{i}_output',out)
+   self.handles.append(block.register_forward_hook(blockhook))
+   for key,mod in [('self',block.self_attention),('ffn',block.ffn)]:
+    def part(m,args,out,name=f'block{i}_{key}'):self.simple(name,out)
+    self.handles.append(mod.register_forward_hook(part))
+  for i,group in enumerate(self.writer.process_groups):
+   def grouphook(m,args,out,i=i):
+    states,process=out
+    self.summary[f'group{i}']={'horizon':geometry(states),'process':geometry(process),'horizon_frame_mean':geometry(states.mean(1))}
+   self.handles.append(group.register_forward_hook(grouphook))
+  def decoderhook(m,args,out):
+   c=args[0];a=F.gelu(m.a_code(c));b=F.gelu(m.b_code(c))
+   self.summary['C']=codes_geometry(c);self.summary['H_A']=codes_geometry(a);self.summary['H_B']=codes_geometry(b)
+   self.arrays['C']=c.detach().half().cpu().numpy()
+   self.arrays['H_A_task_mean']=a.mean(1).float().cpu().numpy()
+   self.arrays['H_B_task_mean']=b.mean(1).float().cpu().numpy()
+   # Small Gram matrices supply gauge-independent BA energy and rank separation.
+   with torch.autocast("cuda",enabled=False):
+    vals=[]
+    for target in m.contract.targets:
+     aa=out[target.name+LORA_A_SUFFIX].float();bb=out[target.name+LORA_B_SUFFIX].float()
+     ra=torch.linalg.qr(aa.T,mode='r').R;rb=torch.linalg.qr(bb,mode='r').R
+     ss=torch.linalg.svdvals(rb@ra.T)
+     vals.append({'B_rank_paircos':number(paircos(bb.T)), 'BA_norm':number(ss.norm()),
+                  'BA_top1_energy':number(ss[0].square()/ss.square().sum().clamp_min(1e-20))})
+   self.summary['outputs_by_target']=vals
+  self.handles.append(self.writer.decoder.register_forward_hook(decoderhook))
+  return self
+ def __exit__(self,*_):
+  for h in self.handles:h.remove()
+
+
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--max-seconds',type=int,default=2700);ap.add_argument('--arms',nargs='+',default=list(RUNS));ap.add_argument('--limit',type=int,default=64);args=ap.parse_args()
+ start=time.monotonic();torch.set_num_threads(4);torch.set_grad_enabled(False);torch.manual_seed(7)
+ torch.backends.cuda.matmul.allow_tf32=True
+ context=initialize_distributed(require_numa=True);device=context.device
+ uuid='GPU-'+str(torch.cuda.get_device_properties(device).uuid).removeprefix('GPU-')
+ assert context.world_size==1 and torch.cuda.device_count()==1 and uuid==os.environ['EXPECTED_GPU_UUID']
+ reg=json.loads((O/'registration.json').read_text());conditions=reg['conditions'][:args.limit]
+ tasks={}
+ for role in ['train','validation']:
+  ids=sorted({c['task'] for c in conditions if c['role']==role})
+  if ids:tasks.update(load_learning_tasks(R,ids,role=role))
+ store=RawTeacherVideoStore(tuple(t.authority for t in tasks.values()),frame_stride=5)
+ first=json.loads((R/'runs/outputs'/RUNS[args.arms[0]]/'run_contract.json').read_text())
+ config=dict(first['config']);model=dict(first['model_config']);model.pop('backend_conditioning',None);model['decoder_rank_sharing']='independent';config['model']=model
+ runtime=build_runtime(R,config,device);runtime.policy.eval()
+ assert source_matches(runtime.source,first['source']) and not any(p.requires_grad for p in runtime.policy.parameters())
+ status={'state':'running','host':socket.gethostname(),'gpu_uuid':uuid,'cpu_affinity':list(context.cpu_affinity),'numa_node':context.numa_node,'completed':0,'runtime_source':str(Path(__import__('ember.writer.runtime',fromlist=['x']).__file__).resolve()),'runtime_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'model_updates':0,'conditions_expected':len(conditions)*len(args.arms)*2}
+ write(O/'runtime.json',status)
+ for arm in args.arms:
+  run=R/'runs/outputs'/RUNS[arm];record=json.loads((run/'run_contract.json').read_text())
+  assert source_matches(runtime.source,record['source'])
+  mc=dict(record['model_config']);mode=mc.pop('backend_conditioning','all');mc['decoder_rank_sharing']='within_target' if arm=='shared7' else 'independent'
+  assert mode==('local_h_read' if arm.startswith('off') else 'all')
+  if runtime.state.writer.config.decoder_rank_sharing!=mc['decoder_rank_sharing']:
+   runtime.state.writer=HorizonRelationWriter(runtime.lora,HorizonWriterConfig(**mc)).to(device)
+  for step in [200,400]:
+   ckpt=run/f'checkpoints/macro_{step:08d}';manifest=json.loads((ckpt/'checkpoint_manifest.json').read_text());assert manifest['next_macro']==step
+   weights=load_file(str(ckpt/'ecp.safetensors'),device='cpu');runtime.state.load_state_dict(weights,strict=True);del weights;gc.collect()
+   runtime.state.requires_grad_(False).eval();writer=runtime.state.writer
+   handle=writer.query_language.register_forward_hook(lambda m,a,o:torch.zeros_like(o)) if arm.startswith('off') else None
+   for c in conditions:
+    if time.monotonic()-start>args.max_seconds or sum(p.stat().st_size for p in O.iterdir() if p.is_file())>2**30:
+     status.update(state='budget_stop',seconds=time.monotonic()-start);write(O/'runtime.json',status);return
+    key=f'{arm}_{step}_task{c["task"]:02d}_video{c["ordinal"]}';tick=time.monotonic()
+    raw=store.load(c['task'],c['demo']);t=tasks[c['task']]
+    assert t.authority.language==c['language']
+    condition=runtime.observer.prepare((torch.from_numpy(raw.frames),),(torch.from_numpy(raw.frame_indices),),t.authority.language)
+    with autocast(device), Capture(writer) as trace:
+     responses=runtime.observer.responses(condition)
+     generated=writer(responses,*runtime.observer.writer_arguments(condition))
+    assert len(generated)==76 and all(torch.isfinite(x).all() for x in generated.values())
+    result={'arm':arm,'step':step,**c,'frames':len(raw.frame_indices),'checkpoint':str(ckpt),'normal':trace.summary}
+    trace.arrays['frame_indices']=raw.frame_indices
+    if not arm.startswith('off'):
+     qid,mem,routing,prior,shift=trace.compiler_inputs
+     centered=lambda x:x-x.mean(-1,keepdim=True)
+     scale=centered(qid).norm(dim=-1).mean()/centered(shift).norm().clamp_min(1e-12)
+     result['counterfactuals']={}
+     for name,newshift in [('zero',torch.zeros_like(shift)),('bias_only',writer.query_language.bias),('identity_matched_shift',shift*scale)]:
+      with autocast(device), Capture(writer) as cf:
+       query=qid
+       for i,block in enumerate(writer.compiler):
+        query=block(query,mem,routing,prior,newshift if i==0 else None)
+       out=writer.decoder(query.reshape(38,16,256))
+      deltas=[]
+      with torch.autocast('cuda',enabled=False):
+       for target in runtime.lora.targets:
+        a0=generated[target.name+LORA_A_SUFFIX].float();b0=generated[target.name+LORA_B_SUFFIX].float()
+        a1=out[target.name+LORA_A_SUFFIX].float();b1=out[target.name+LORA_B_SUFFIX].float()
+        n0=((b0.T@b0)*(a0@a0.T)).sum();n1=((b1.T@b1)*(a1@a1.T)).sum()
+        dot=((b1.T@b0)*(a1@a0.T)).sum()
+        deltas.append(float(((n0+n1-2*dot).clamp_min(0)/n0.clamp_min(1e-20)).sqrt()))
+      result['counterfactuals'][name]={'trace':cf.summary,'BA_relative_delta_mean':float(np.mean(deltas)),
+        'C_relative_delta':float(np.linalg.norm(cf.arrays['C'].astype('float32')-trace.arrays['C'].astype('float32'))/max(np.linalg.norm(trace.arrays['C'].astype('float32')),1e-12)),
+        'shift_scale':float(scale) if name=='identity_matched_shift' else None}
+      del out,cf
+    np.savez_compressed(O/(key+'.npz'),**trace.arrays)
+    result['seconds']=time.monotonic()-tick
+    write(O/(key+'.json'),result)
+    del generated,responses,condition,trace,raw
+    status['completed']+=1;status.update(last=key,seconds=time.monotonic()-start,peak_gib=torch.cuda.max_memory_allocated()/2**30)
+    write(O/'runtime.json',status);print(json.dumps({k:status[k] for k in ['completed','last','seconds','peak_gib']}),flush=True)
+   if handle is not None:handle.remove()
+ store.close();status.update(state='complete',seconds=time.monotonic()-start);write(O/'runtime.json',status)
+
+if __name__=='__main__':main()

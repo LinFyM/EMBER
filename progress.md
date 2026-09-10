@@ -4,7 +4,7 @@
 
 Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S59→45（各400），train96=52；首轮三臂所有训练与九个闭环面板均完整结束。目标未达标。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。接下来核查保留最强off126的未完成监督学习及其继续执行合同，不依据S100短暂优势扩展新架构。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。受控迁移后的off7探索性续训正在gpu02 0/1/2运行，500 checkpoint已保存并通过原生检查；500 correct400的LoRA正在gpu01 1物化，后续600节点保持登记合同，不依据S100短暂优势扩展新架构。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
@@ -30,7 +30,7 @@ S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/�
 
 全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。
 
-首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。已在gpu02 0/1/2、micro8/8/8启动；原生合同及完整400恢复通过，实际401的四task、occurrence、video、query seed、frames逐项匹配恢复sampler的预期，每task64queries/权重1/4。401约27秒、峰值reserved41.7GiB。完整迁移/launch证据在video_consumption_20260911/continuation；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
+首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。已在gpu02 0/1/2、micro8/8/8启动；原生合同及完整400恢复通过，实际401的四task、occurrence、video、query seed、frames逐项匹配恢复sampler的预期，每task64queries/权重1/4。401约27秒、峰值reserved41.7GiB。401–500平均25.34秒，500独立动作FM0.104097（400为0.104946），仅小幅下降；500完整checkpoint已通过原生inspector，source trainable=0。完整迁移/launch证据在video_consumption_20260911/continuation；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 

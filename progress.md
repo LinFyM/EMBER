@@ -6,15 +6,17 @@
 
 ## 当前：检索条件2×2全部完成，转入Compiler简化候选复核
 
-**最新完成与当前执行（2026-09-10 CST）：** init11两臂fresh400全部exit0，200/400完整checkpoint及学习状态通过public inspector；各自1600条件/102400queries与原data7实际采样配对、各suite400，四组held3072实际输入和无梯度检查通过。all held200→400为.112489→.105459，LH为.112699→.106606；这些仅为动作拟合诊断，独立初始化的闭环结果仍待执行。
+**最新完成与当前执行（2026-09-10 CST）：** init11两臂fresh400全部exit0，200/400完整checkpoint及学习状态通过public inspector；各自1600条件/102400queries与原data7实际采样配对、各suite400，四组held3072实际输入和无梯度检查通过。all held200→400为.112489→.105459，LH为.112699→.106606；这些仅为动作拟合诊断；独立初始化验证结果现已完整，见下文。
 
 **冻结seed7换视频四面板全部完成：** all200→400为99→82，LH为101→126，共1600行、11worker均0，全部同节点/相邻actual strict配对通过。LH200 S/O/G/L5/48/36/12、breadth6，400为0/71/37/18、breadth4。候选对基线200仅+2（R/G/L64/37/35），400+44（70/56/12）；自身相邻71/55/30、churn85/J=.4551，BBQ26→31、保留17/新增14/丢9；基线BBQ23→1仅保留1。收益在新关联保留，但候选Spatial5→0、moka4→0，仍有明显丢失与广度收缩。完整原件`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`，不能由此替代独立初始化复核。
 
 **init11 validation200两臂完成：** all100/400、LH104/400，S/O/G/L为1/57/31/11与2/63/32/7，breadth6/7；actual strict R/G/L76/28/24、churn52/J=.59375，六worker均0。BBQ27→35保留25/新增10/丢2，但双物体Long10→5保留2/新增3/丢8。早期净+4不能替代后期保持；完整`compiler_confirmation/init11_validation_step200_analysis/`。
 
-四组200/400、validation400+train96各496条件banks均已完整exit0并通过public inspector与实际映射检查。init11 all400的validation与train96现已全部完成、六worker及outer exit均0：validation100→108，400 S/O/G/L3/46/40/19、breadth6，相邻R/G/L62/46/38、churn84/J=.4247；BBQ27→5、保留4/新增1/丢23，其余七task73→103。train96为41→56，400 S/O/G/L16/18/13/9、breadth17→20，相邻30/26/11、churn37/J=.4478。这说明该初始化基线总分增长与BBQ大量丢失并存；候选400尚未完成，暂不作同初始化干预裁决。
+四组200/400、validation400+train96各496条件banks均已完整exit0并通过public inspector与实际映射检查。init11 all400的validation与train96现已全部完成、六worker及outer exit均0：validation100→108，400 S/O/G/L3/46/40/19、breadth6，相邻R/G/L62/46/38、churn84/J=.4247；BBQ27→5、保留4/新增1/丢23，其余七task73→103。train96为41→56，400 S/O/G/L16/18/13/9、breadth17→20，相邻30/26/11、churn37/J=.4478。这说明该初始化基线总分增长与BBQ大量丢失并存；同初始化候选比较见下段。
 
-200 train96两臂已完整all41/LH44，S/O/G/L13/8/14/6与14/12/13/5、breadth均17；actual strict R/G/L37/7/4、churn11/J=.7708。当前仅余两面板且均已启动：LH400验证继续gpu02p4×3worker（803914/803916/803918，tmux `ember-compiler-init11-lh400-validation`）；最后LH400 train96使用刚释放的gpu01p5/6、每卡三worker共六个，tmux `ember-compiler-init11-lh400-train96`、launcher1746700、workers1796688/1796689/1796793/1796803/1796839/1796889。该launch前双节点live检查p5/p6各free46067MiB/util0/无peer，每卡38912MiB准入通过；复用原动态队列与预登记96条件。精确命令、资源和实际进程见各面板`validation_launch.json`/`train96_launch.json`；不再有未启动面板。
+**init11验证四面板全部完成：** local_h_read400为119/400、S/O/G/L1/54/44/20、breadth6，三worker/outer均0；same-init all108→LH119为R/G/L86/33/22、churn55/J=.6099，400净+11。候选自身104→119、R/G/L67/52/37、churn89/J=.4295、breadth7→6；BBQ35→19只保留15/新增4/丢20。总分净增方向复现，seed7的多数BBQ成功保持没有复现，不能宣布稳定修复；完整`compiler_confirmation/init11_validation_step400_analysis/`。
+
+200 train96两臂已完整all41/LH44，S/O/G/L13/8/14/6与14/12/13/5、breadth均17；actual strict R/G/L37/7/4、churn11/J=.7708。当前仅余最后LH400 train96运行：gpu01p5/6、每卡三worker共六个，tmux `ember-compiler-init11-lh400-train96`、launcher1746700、workers1796688/1796689/1796793/1796803/1796839/1796889。该launch前双节点live检查p5/p6各free46067MiB/util0/无peer，每卡38912MiB准入通过；复用原动态队列与预登记96条件。精确命令、资源和实际进程见`local_h_read_init11_step400/train96_launch.json`；没有其它在跑/待启动的确认面板。
 
 物化使用clean pushed45e16633；八个init11评测脚本均在各自首次launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。各次launch的双节点资源及实际进程原件由上文面板记录保存。
 

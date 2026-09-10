@@ -347,3 +347,12 @@ task因重复下降事后选定、states沿用旧诊断固定集合，属于描�
 固定seed7两臂两节点的另一套无放回正确视频关联已完整1600行。all200→400为99→82，local_h_read为101→126；候选相对基线200仅+2、400+44，方向同原关联，但不能把早期和末期效果混为一谈。候选BBQ26→31保留17/新增14/丢9，对照23→1仅保留1；说明避免这项后期崩落的效应不限于原teacher/state关联。
 
 候选相邻总计71保留/55新增/30丢失，churn85/J=.4551，breadth6→4；Spatial task3的5个成功和moka任务的4个成功全部丢失。因此126及部分BBQ保持不是整体稳定或广度修复，独立初始化效应仍须其自身完整闭环确认。新关联复用原50个官方state及原视频资产，不是独立state池。全部strict配对、逐task/suite和worker证据见[完整报告](docs/horizon_causal_language_learning_20260909.md)末节与`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`。
+
+
+## 36. Compiler删除的验证净增跨初始化保留，但稳定保持修复未获支持（2026-09-10）
+
+init11两臂固定200/400全部validation400完成：all100→108，local_h_read104→119；候选净增从早期+4到末期+11，400同初始化R/G/L86/33/22。结合seed7原关联+5/+36与新关联+2/+44，删除该额外Compiler仿射查询支路的验证收益方向得到复核；其幅度依赖初始化，不能把+36当固定效应。干预包含query_language的bias，仍不能将净效应单独归给文本内容。
+
+保持结论必须收窄：init11基线BBQ27→5保留4/丢23，候选35→19保留15/丢20；候选自身总计67保留/52新增/37丢失、churn89/J=.4295、breadth7→6。基线大量BBQ丢失复现，候选在seed7的多数旧成功保持未复现；候选400相对基线多14个BBQ成功，不等于自身没有遗忘。候选Spatial仍1/100、Goal23为零，不能将这项局部因果贡献当成完整稳定方案或全部旧新能力差距的根因。
+
+init11基线总分上升而BBQ崩落，其余七task73→103，再次要求区分任务获取与局部保持，不能用总分或训练FM定义统一退化。完整原始配对与两臂相邻证据见`compiler_confirmation/init11_validation_step400_analysis/`和[学习报告](docs/horizon_causal_language_learning_20260909.md)；后续原因工作与正式采纳授权仍以progress为准。

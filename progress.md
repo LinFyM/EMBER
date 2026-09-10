@@ -1,20 +1,19 @@
 # EMBER progress
 
-更新时间：2026-09-10 CST。**Owner要求继续完成所有有区分力的原因分析与可行改进判断，当前分析重新开放。** 既定完整训练均已结束；本阶段使用已有checkpoint与小预算冻结诊断，正式方法修改/采纳和下一轮训练仍停在Owner复核前。
+更新时间：2026-09-10 CST。**新增原因分析已完成并直接在对话中交付，停在Owner复核前。** 既定完整训练与本次冻结诊断均已结束；未正式修改/采纳候选或启动下一轮训练。完整科学目标及未识别的原因边界不因此视为达成。
 
 **授权边界：** Owner限定当前共享run为本次分析最后一轮完整训练。它已完整结束；此后不得以探索、拆段、追加seed/候选或延长为名再训练。正式方法修改/采纳、合入探索科学实现及下一轮训练均须Owner复核后另行明确授权。旧v6专项继续暂停，VL未选定，Test与最终视频controls保持封存。
 
-## 当前冻结机制诊断（结果前登记）
+## 最新冻结机制诊断已完成（2026-09-10）
 
-目标是补齐实际视频P4→两层Compiler检索→C→A/B的证据，区分查询差异压缩是否持续为真实attention/Value/最终代码的分工不足，以及共享字典的实际使用。读取all/Compiler-off两个初始化和D绑定init7的200/400共10个已有checkpoint；固定train24及validation8，各取既有canonical bank前两条teacher条件，不按成功筛选，共640次真实视频forward。保留每视频完整stride5顺序，不读teacher action/state/reward，不读Test；无梯度、无优化器、无训练或环境交互。正常完整Writer执行采集实际两层Q/K/V、attention摘要、group输出及C/因子代码；仅对同一P4做Compiler语言位移置零、仅bias与按身份中心化范数配平的冻结代数反事实，解释即时接口作用，不冒充fresh学习或闭环改善。
+- **真实视频640/640：** 10个既有checkpoint × train24/validation8 × 固定两teacher，完整stride5视频；两层实际Q/K/V/attention、P4/C与解码几何均已保存。exit0、1564.96秒、峰值10.495GiB，无更新。初次辅助SVD在autocast下失败后改为FP32诊断代数，失败日志保留；重启仍在原45分钟预算内，正常native forward未改。
+- **reader信用：** 32条件/64组train-only FM分解完整，414.79秒、exit0；原30分钟预算内另补8条件/16组逐参数与冻结Adam度量，111.00秒、exit0。两支近正交，未支持强稳定抵消，无optimizer或参数更新。
+- **执行投影：** 已有BBQ四state真实轨迹共768个固定观测/原噪声10-flow预测完整，90.47秒、exit0。Q路径主要传递两节点的平移变化，但400直接删Q让动作更远离200参考；无新rollout或训练。
+- **共享D局部学习核：** 既有640组C加小投影权重CPU复算完整，量化绑定将rank差异学习与共同更新耦合。共享H_B在rank差异子空间的平均响应仅为共同方向约3.2e-5；这是冻结代码、D-only局部SGD贡献，不是整个Adam轨迹或验证失败的唯一原因。
 
-单GPU总预算45分钟、输出上限1GiB；复用已有runtime/source/数据/环境，仅保存必要小中间量与汇总，不复制模型、视频或完整LoRA bank。先完成脚本与现场资源检查再启动，原件放既有`causal_learning_20260909/mechanism/actual_video/`。时间/存储达到上限即停并说明覆盖，不拆段绕过完整训练上限。另有独立只读监督/梯度链源码审计，不启动第二组模型计算。后续有区分力的分析由实际证据决定，不预设必须跑完某套架构清单。不再新建原因报告，结论直接在对话中解释。
+新证据纠正与可行方案见findings§39–43。真实attention为宽分布而非饱和；第一层Compiler-off恢复槽间读取差异，但第二层仍接近广播，任务间C差异仍明显。不能把静态Q漂移当整个C稳定、把相似代码当所有task同一LoRA、或把D绑定近单方向直接当坏性能原因。
 
-**第二项冻结诊断：共享reader的真实FM信用分解。** 仅all init7/init11的200/400，在每suite按global ID前两个train task（共8task）、teacher demo0、action16–41的两组独立32query上，保持相同前向及LoRA cotangent，分别计算静态与contextual reader梯度；核对二者之和与总梯度、跨query重复性及方向导数。无optimizer/参数更新，不读取held动作或Test，无训练。独立单GPU预算30分钟、输出10MiB；只对既有权重求导，不推进sampler。该诊断区分前向查询作用之外是否存在稳定支路信用冲突，不把负cosine直接等同历史遗忘。原件`causal_learning_20260909/mechanism/reader_credit/`。
-
-**reader信用初段已完整：** 32条件/64组train-only梯度完成，无更新。全reader欧氏梯度两支近正交，但独立查询组的总梯度方向常不一致；不能据此排除分模块或Adam预条件后的局部冲突。原30分钟预算内，补看每suite第一个登记task（4task）、两初始化400节点、同两组query的逐参数及已有Adam二阶矩固定度量，最多10分钟/10MiB；不是训练、实际Adam更新或新的架构候选。所有held仍无梯度。
-
-**执行侧冻结定位（已登记，结果未知）：** 利用原有BBQ states0/12/25/37的all200/400真实轨迹，在replan0/1/2/4/8/16相同processed双相机观测、state-token及原噪声上，重放all/off init7两节点，并分别置零生成LoRA的18个Q、18个V或动作in/out的B。共768个10-flow预测，正常分支与存档动作验证；无新环境交互、梯度、训练或checkpoint融合，不作资格选点。单GPU最多15分钟/10MiB，先区分执行输出变化经过哪个参数族；参考动作不作为专家真值，不把离线接近参考等同闭环修复。原件`causal_learning_20260909/mechanism/execution_projection/`。
+所有原件在`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/`下`actual_video/`、`reader_credit/`与`execution_projection/`，各自保留结果前注册、runtime/exit与summary。双节点最终tmux检查均无会话，所有本任务诊断已退出；没有新增训练、held梯度、Test或最终时序controls。正式科学运行面保持原状，不新建原因报告。
 
 ## 本轮完整结果与原因结论
 
@@ -32,17 +31,17 @@ Owner最新要求删除独立原因报告，直接在对话中解释问题、架
 
 **输出D绑定：** 最后400 validation82对all90，R/G/L63/19/27、churn46/J=.5780、breadth6→5；自身115→82为59/23/56、churn79/J=.4275、breadth7→5，S/O/G/L1/42/35/4，global1/3/11/13/23/26/31/32为0/1/39/3/0/35/4/0。BBQ26→3丢23，两条Long早期13个成功全丢。训练侧却32→60、保留29/新增31/丢3，breadth16→20；400对all49净+11、R/G/L41/19/8，S/O/G/L18/19/14/9。因此早期验证优势未保持，后期训练获取不能替代未见任务保持；不采纳这个具体绑定作为修复，结论不外推全部共享。
 
-**实际机制定位：** 八个已有checkpoint的CPU选参分析发现，all的共用语言位移经LayerNorm将第一层608个Q的差异幅度压到同权重置零反事实的3.5%–4.6%；其Q/静态语言读出漂移也更大。未读取真实P4/K/V attention，不能宣布饱和或选错帧。共享200/400的实际B/BA近单方向，而D_B自身有多方向；定位到代码经U_B/GELU与字典的实际使用，不是形式rank16被硬降。该几何与train60并存，不能直接称为有害缺陷或据此加rank损失。五条完整400日志均未触发clip1；共享真正改变的是函数空间、rank梯度聚合与AdamW状态。prefix可学习性、meta-task数量、闭环状态覆盖、旧新配方及上述中间机制各自贡献仍未独立识别，结论保留上述未识别边界。
+**实际机制定位：** 共用语言位移经LayerNorm压缩首层查询差异，已由真实视频attention/Value和fresh行为补证；off第一层400读取差异提高约20–27倍，但第二层仍接近广播。不同task代码仍有明显差异。共享D将近似rank代码转成高度耦合的输出学习，解释了其实际近单方向使用；它与训练60/96并存，不能直接作为有害秩结论。真实reader分支信用及Adam固定度量未支持强抵消，实际clip也未触发。BBQ相同初始观测上的动作差异主要经Q投影功能路径传递，Q删除不是修复。完整原因等级、反证与方案见findings§39–43；prefix读取可学习性、meta-task数量、闭环状态覆盖和旧新配方贡献仍未被独立识别。
 
 ## 完成与验证证据
 
 - 语言/检索四个新学习臂共3968条新闭环完整；Compiler固定确认12面板3584行完整，另有固定BBQ回放及其数值分叉记录。索引`causal_learning_20260909/{language/completed_language_matrix,retrieval/completed_retrieval_matrix,compiler_confirmation/completed_confirmation_matrix}.json`。
 - 最后共享run `runs/outputs/horizon_causal_within_target_rank_shared_seed7_20260910` 完整400，wrapper exit0/12104.41秒；两个完整checkpoint、1600条件/102400queries、每suite400条件和实际teacher/query/frame/RNG配对通过。held3072无梯度均值.114600358→.107955018，24/24训练task改善；all400为.105074533。训练/物化科学运行面clean pushed detached c63f55dc，评测后段e7447291仅含资源准入修正。
 - 共享200/400四个行为面板992行均完整，worker和wrapper全exit0，实际同节点/自身相邻strict配对通过；最终validation与train96墙钟1724.22/955.20秒。各节点完整逐task/suite、breadth、R/G/L/churn/J、raw rows及学习原件均保留于`causal_learning_20260909/sharing/`，总索引`sharing/completed_matrix.json`。
-- 机制诊断全部为结果前登记的小预算CPU只读：八个checkpoint选参查询几何、128套既有LoRA的因子/乘积几何、共享两节点D_B谱与既有日志。没有完整policy/视频forward、动作输入、优化器或梯度；原件`causal_learning_20260909/mechanism/`。
+- 初段CPU选参查询/输出/字典诊断全部完成；随后按顶部注册补完真实视频、train-only信用、冻结Adam度量和执行重放。所有新增计算无参数更新，不能把早期“未做视频forward”的范围外推到本次补充。
 - 最终双节点实际tmux检查无本任务句柄；最后所有worker和父进程均正常退出，本地观察进程也结束。原运行合同、live GPU/独立quota、精确launch、资源准入失败与实际成功启动原件保留；没有reset、占位或干扰peer。
 
-原因计划`docs/horizon_causal_learning_plan_20260909.md`本轮已完成；正式方法记录仍为`docs/horizon_relation_video_writer_design.md`，canonical科学源码未替换。候选只存在于保留的隔离分支/冻结运行面，未合入main作为正式方法。此前交付停止点被Owner最新继续分析要求覆盖；当前推进下述冻结机制诊断，不正式采纳候选、不新增完整训练。
+原因计划`docs/horizon_causal_learning_plan_20260909.md`本轮已完成；正式方法记录仍为`docs/horizon_relation_video_writer_design.md`，canonical科学源码未替换。候选只存在于保留的隔离分支/冻结运行面，未合入main作为正式方法。新增冻结机制诊断亦已完整交付；当前没有待执行队列，正式采纳/合入候选及下一轮训练仍须Owner复核后另行授权。
 
 Owner要求正常训练/轮询静默，完整结果、实质结论变化或需Owner处理的问题才汇报；该协作要求继续保留。
 

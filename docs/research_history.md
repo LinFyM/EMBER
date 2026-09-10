@@ -935,3 +935,14 @@ init7原关联all103→90、候选108→126；新关联99→82与101→126；ini
 Compiler候选init7/init11的验证108→126、104→119与训练40→56、44→61都仍有净学习，保持未修复不等于平台或再训无效。本轮停止来自Owner明确完整训练上限与复核边界，不是参数/性能穷尽证明。未识别的查询中介、读取侧可学习性、任务覆盖和旧新训练配方仍保留；不以本负结果否定全部共享、FM或未来组合。
 
 独立原因报告已按Owner要求删除，结论直接在对话中解释；逐task/suite与成功集合原始证据保留，共享总索引`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json`，机制原件同root的`mechanism/`。全部本任务GPU与观察进程已结束；未正式修改/采纳方法、未续401或新增完整训练、未用Test/held梯度/最终视频controls。本历史段不恢复执行，后续须Owner复核后重新授权。
+
+
+## 2026-09-10 真实读取、信用及执行机制补充分析
+
+Owner要求把原因分析继续做深，在已完成的最后共享训练之后，仅新增有明确问题的小预算冻结诊断。全部10checkpoint×32task×2teacher=640真实视频forward完成，all/off第一层真实读取分工差异得到确认；第二层仍广播，C在task间仍有明显变化。attention宽分布，不能称饱和。共享D的局部SGD核H H^T在rank差异子空间/共同方向的平均响应约3.2e-5，解释代码相似与输出绑定的学习耦合，不能独自证明近单方向造成泛化失败。
+
+32条件/64组train-only reader FM信用分解，加400两初始化8条件/16组固定Adam度量，均未支持强稳定支路冲突。已有BBQ四state、两轨迹节点上的768次固定观测/原噪声10-flow动作预测定位Q相关功能路径；all初始平移漂移在两节点均删Q后剩.200倍，但直接400删Q距200参考反而1.96倍，未形成修复。正常动作重建通过预登记容差，全部无参数更新、无新rollout，无held梯度/Test/最终controls。
+
+四项GPU诊断均complete/exit0，进程内1564.96/414.79/111.00/90.47秒；原预算内完成，所有句柄退出。首个actual-video辅助SVD的BF16错误修正为FP32代数后重启，失败证据保留，不改变原生attention。训练/视频运行面c63f55dc、执行重放e7447291保持clean pushed冻结版本，canonical科研方法未改。
+
+跨轮解释与候选等级见findings§39–43；原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/{actual_video,reader_credit,execution_projection}/`各summary及注册。当前最有学习证据的候选仍仅去Compiler额外仿射query；地址/内容分离是进一步机制候选，尚未验证完整可学习性或闭环。旧强FM与共享负例继续约束解释，不能宣布唯一根因、完整修复、平台或必须RL。Owner要求直接在对话中交付，不新建报告；正式修改/采纳和未来训练仍停在复核前。

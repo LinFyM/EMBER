@@ -1,8 +1,14 @@
 # EMBER progress
 
-更新时间：2026-09-10 CST。**当前原因分析已交付，停在正式方法修改/采纳和下一轮训练之前，等待Owner复核。** 本轮最后授权的共享run完整止于400，既定200/400全部面板已完成；没有待运行实验或本任务GPU/观察进程。不得从下文历史计划、旧设计或空闲GPU恢复执行。
+更新时间：2026-09-10 CST。**Owner要求继续完成所有有区分力的原因分析与可行改进判断，当前分析重新开放。** 既定完整训练均已结束；本阶段使用已有checkpoint与小预算冻结诊断，正式方法修改/采纳和下一轮训练仍停在Owner复核前。
 
 **授权边界：** Owner限定当前共享run为本次分析最后一轮完整训练。它已完整结束；此后不得以探索、拆段、追加seed/候选或延长为名再训练。正式方法修改/采纳、合入探索科学实现及下一轮训练均须Owner复核后另行明确授权。旧v6专项继续暂停，VL未选定，Test与最终视频controls保持封存。
+
+## 当前冻结机制诊断（结果前登记）
+
+目标是补齐实际视频P4→两层Compiler检索→C→A/B的证据，区分查询差异压缩是否持续为真实attention/Value/最终代码的分工不足，以及共享字典的实际使用。读取all/Compiler-off两个初始化和D绑定init7的200/400共10个已有checkpoint；固定train24及validation8，各取既有canonical bank前两条teacher条件，不按成功筛选，共640次真实视频forward。保留每视频完整stride5顺序，不读teacher action/state/reward，不读Test；无梯度、无优化器、无训练或环境交互。正常完整Writer执行采集实际两层Q/K/V、attention摘要、group输出及C/因子代码；仅对同一P4做Compiler语言位移置零、仅bias与按身份中心化范数配平的冻结代数反事实，解释即时接口作用，不冒充fresh学习或闭环改善。
+
+单GPU总预算45分钟、输出上限1GiB；复用已有runtime/source/数据/环境，仅保存必要小中间量与汇总，不复制模型、视频或完整LoRA bank。先完成脚本与现场资源检查再启动，原件放既有`causal_learning_20260909/mechanism/actual_video/`。时间/存储达到上限即停并说明覆盖，不拆段绕过完整训练上限。另有独立只读监督/梯度链源码审计，不启动第二组模型计算。后续有区分力的分析由实际证据决定，不预设必须跑完某套架构清单。不再新建原因报告，结论直接在对话中解释。
 
 ## 本轮完整结果与原因结论
 
@@ -30,7 +36,7 @@ Owner最新要求删除独立原因报告，直接在对话中解释问题、架
 - 机制诊断全部为结果前登记的小预算CPU只读：八个checkpoint选参查询几何、128套既有LoRA的因子/乘积几何、共享两节点D_B谱与既有日志。没有完整policy/视频forward、动作输入、优化器或梯度；原件`causal_learning_20260909/mechanism/`。
 - 最终双节点实际tmux检查无本任务句柄；最后所有worker和父进程均正常退出，本地观察进程也结束。原运行合同、live GPU/独立quota、精确launch、资源准入失败与实际成功启动原件保留；没有reset、占位或干扰peer。
 
-原因计划`docs/horizon_causal_learning_plan_20260909.md`本轮已完成；正式方法记录仍为`docs/horizon_relation_video_writer_design.md`，canonical科学源码未替换。候选只存在于保留的隔离分支/冻结运行面，未合入main作为正式方法。当前下一步仅是Owner复核对话中的结论与建议；不存在自动后续训练、设计采纳或新的诊断队列。
+原因计划`docs/horizon_causal_learning_plan_20260909.md`本轮已完成；正式方法记录仍为`docs/horizon_relation_video_writer_design.md`，canonical科学源码未替换。候选只存在于保留的隔离分支/冻结运行面，未合入main作为正式方法。此前交付停止点被Owner最新继续分析要求覆盖；当前推进下述冻结机制诊断，不正式采纳候选、不新增完整训练。
 
 Owner要求正常训练/轮询静默，完整结果、实质结论变化或需Owner处理的问题才汇报；该协作要求继续保留。
 

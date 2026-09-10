@@ -28,7 +28,9 @@ S100 strict400=59，四suite2/37/16/4、breadth7；global tasks1/3/11/13/23/26/3
 
 S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/丢失27、churn40、J=.44444，早期优势未保持。S200 train96=52，四suite22/10/14/6、breadth18；比C49多3但validation低5，比R46多6但validation低38。三臂最终validation/train96为R83/46、C50/49、S45/52，同预算旧off200108/40。它们均有训练任务获取，但新条件分配和消费接口没有得到迁移净收益；不能按S100单点宣称无序模型解决问题或再加时间模块即可修复。
 
-全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。首轮已结束，下一步只从新证据、历史强候选未穷尽的学习和当前授权出发；未登记新的架构或训练launch。
+全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。
+
+首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。当前正在准备迁移和原生合同检查；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 

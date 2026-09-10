@@ -96,3 +96,15 @@ C/S共享读取与融合，把差异集中在过去关系图相对于独立逐�
 2026-09-11新工作前strg01/data1 quota used743,343,260KiB、soft1,073,741,824、hard1,084,227,584；共享84TiB。当前源树（排除runs/data/models/env/git但含旧tmp/worktrees）15GiB。新实现worktrees预计<1GiB；三臂checkpoint、临时profile、物化bank和闭环证据初轮峰值预留96GiB，低于独立quota余量。大模型/数据/env复用；每次正式launch前更新所需资源证据，GPU同时检查gpu01/gpu02，总量≤6物理卡，不占空卡、不干扰他人。
 
 本文件是首个完整执行合同；后续实质修订记录理由和实际变化，不把专家方案当不可修改硬约束。目标是否完成由全部科学资格判断；Owner休息期间继续推进，正常轮询静默，完整结果与实质决策才进入进度。
+
+## 7. 首轮后续：保留强候选的监督续训（2026-09-11）
+
+R/C/S首轮全部结束：validation100→200分别37→83、43→50、59→45，train96分别46/49/52；同51,200queries旧off200为108/40。两项改动未带来未见任务净收益，C/S不追加，不从S100峰值推导第四种架构。旧off init7从200的108/40提升到400的126/56，停止来自当时阶段预算，尚未证明监督平台。当前选择检查该强候选的剩余学习，主要变量只有继续监督曝光。
+
+预登记全局500、600两个checkpoint：各correct strict400，600补同口径train96，500/600做既有train24独立动作验证。新增200updates=51,200queries/800独立K1条件，累计600=153,600queries。原train24、每task一个K1条件/64queries、agentview、source、完整H/P4/local_h_read/D、Meta、AdamW与恒定LR均不变。不得添加保持loss、RL、换视角、seed或LR搜索。若两个节点无实质改善则不继续惯性延长；如有接近目标的广泛改善，再登记相邻节点和必要资格，当前不预许无限续训。
+
+原checkpoint位于horizon_causal_local_h_read_seed7_20260909/macro400，runtime为clean pushed detached45e16633，mode/stage为exploratory/horizon_causal_learning_exploratory。原gpu01 1/5/6中5/6当前被他人满负载使用，不能exact-resume原拓扑。按owner允许的受控拓扑迁移，在新run root保留原三rank及其完整Writer/Meta/probe、optimizer/scheduler、sampler/400cursor和各rank Python/NumPy/Torch CPU/CUDA RNG，映射到同节点三张适用A40，micro8/8/8、NUMA与deferred NCCL保持。物理host/UUID/affinity变更明确记录；不声称逐bit等价或原拓扑exact-resume。
+
+采用原冻结runtime的原生恢复入口，不改训练代码或建立第二套trainer。迁移仅新建有lineage的run contract、更新预登记evidence节点、复用不可变checkpoint文件并复制小型历史日志；模型/optimizer/RNG文件不重写，原run和历史标记不改。新run的native contract校验仍逐项核对config/source/model/topology，恢复仍核对stage、world、400cursor与完整学习状态。迁移报告保存父run/commit、字段变化、逻辑rank映射和下一批采样检查；失败则停止新run，原checkpoint可直接回退。新run继续标记探索性续训，不把旧探索性checkpoint转换为formal fresh或直接用于最终资格选择；如能力得到支持，正式资格须另行明确fresh复现及独立controls。
+
+新run及材料位于runs/outputs/horizon_off7_continuation_20260911与runs/analysis/video_consumption_20260911/continuation。新增两份checkpoint约8.3GiB、validation/train96 LoRA约4.4GiB、日志及物化临时文件峰值预算16GiB；父checkpoint以同filesystem hardlink复用。launch前strg01/data1 used782,678,700KiB/soft1,073,741,824KiB，共享83TiB，预算有余量。实际卡和完整命令由launch记录固定，两节点现场复核后执行。

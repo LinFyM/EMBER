@@ -1,5 +1,23 @@
 # 当前能力缺口：学习过程因果分析计划
 
+## 当前重新启动：Owner最新授权与完整分析范围（2026-09-10）
+
+Owner要求继续深入原因，明确可以使用GPU做有针对性的诊断，禁止再做400步完整训练或同等规模重训。范围不止视频乱序/倒序/错配：还必须完成查询差异的功能中介、读取/过程编码与decoder的变化归因，以及必要的小预算真实更新为何损害其它条件下正确功能。先登记每项竞争解释、干预、功能/行为结果与上限，完整学习及正式采纳仍停在Owner复核前。
+
+本次明确允许shuffled/reversed/wrong-video用于当前机制诊断，覆盖旧最终controls专用规则，限本次诊断；不作正式checkpoint选择或训练信号，不将已看过的诊断伪称未触碰的最终因果确认。全部现有checkpoint的teacher为agentview单视角，必须沿用该合同；双视角真实学习、Compiler删除候选的后续增长/保持和每100步strict400已记入task_plan的正式推进待办。
+
+当前四项：①单视角完整/另一正确video/同suite和跨suite错配/真实frames乱序与倒序/固定初中末静态条件，实际重新完整forward；②保留公共Q、只改变槽间偏差的两层中介，区别于旧首层shift置零/配平；③配对checkpoint的读取/过程/Compiler/decoder变化与交互；④临时副本极少量真实更新的功能变化，用真实行为核实梯度/动作代理。已完成等价证据直接复用，新增结果决定后续具体诊断，不演变为枚举新架构训练。
+
+以下“交付完成/已关闭”和旧授权段为历史，不覆盖本段。
+
+### 当前首项结果前登记：单视角视频证据对照
+
+固定现有contextual init7的200/400，不选择节点；train24全部任务、沿用states32–35，每condition一条teacher46，same-task-other用47。同suite错配取六train任务的下一task，跨suite错配取下一suite同序号train任务，保留目标exact language，均无held输入/梯度。九臂为correct、same-task-other、same-suite-wrong、cross-suite-wrong、shuffled、reversed、static-first/middle/last；432次完整生成、1728条配对诊断闭环，不当strict validation成绩。
+
+真实stride5 RGB frames在native prefix前变换，乱序/倒序保持同一图片集合及单调呈现时间网格，原始来源索引单独保存；不重排hidden替代完整forward。静态臂重复真实初/中/末采样画面，三者全部报告；当前observer保持训练时agentview单视角。错配条件保留各自完整视频长度，承认长度/内容联合变化，时序特异性主要由同帧集合的乱序/倒序识别；冻结输入干预的分布外限制明确保留。
+
+原件在既有mechanism/deep_causal_20260910/video_controls，独立registration.json保存预测、任务、映射、边界和预算。runtime复用clean pushed detached9abc9b95，每节点物化进程上限2400秒（wrapper2700），闭环worker上限5400秒，同节点动态queue/长任务优先/persistent worker，合计不超过六张有用GPU。新增此项预计不超过8GiB，本轮全部新诊断峰值32GiB；strg01/data1已查used736612296KiB/soft1073741824，共享84TiB，复用所有大资产。无optimizer或新训练。
+
 **最新授权上限（覆盖下文此前探索授权与条件追加计划）：** 2026-09-10 CST Owner最新限制：当前已启动的 `horizon_causal_within_target_rank_shared_seed7_20260910` 是本次分析最后获准的完整训练，仅完成既定400步及200/400评测。此后分析排查不得再启动完整训练或同等规模的重训练，也不得通过改称探索、拆分短段、追加seed/候选或延长当前run绕过限制。后续使用已有checkpoint、历史证据、冻结评测及有明确问题和小预算的轻量诊断；证据不足时明确报告未识别项，不以必须查清为由追加重训练。正式方法修改/采纳及未来正式训练仍须等待Owner复核后另行明确授权。
 
 2026-09-09建立，2026-09-10 CST按Owner最新要求恢复原分析goal。先完成此前全部必要的原因分析：查清当前方法较旧v5.2/v6弱、训练改善与未见任务闭环不一致及能力丢失的主要原因，验证具体解决办法并保留报告。分析交付后停在正式修改/采纳当前方法及下一次正式训练之前，等待Owner复核；此条覆盖此前睡前的扩大授权。本文拥有分析阶段，不自动进入正式方法迭代。

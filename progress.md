@@ -10,6 +10,8 @@
 
 单GPU总预算45分钟、输出上限1GiB；复用已有runtime/source/数据/环境，仅保存必要小中间量与汇总，不复制模型、视频或完整LoRA bank。先完成脚本与现场资源检查再启动，原件放既有`causal_learning_20260909/mechanism/actual_video/`。时间/存储达到上限即停并说明覆盖，不拆段绕过完整训练上限。另有独立只读监督/梯度链源码审计，不启动第二组模型计算。后续有区分力的分析由实际证据决定，不预设必须跑完某套架构清单。不再新建原因报告，结论直接在对话中解释。
 
+**第二项冻结诊断：共享reader的真实FM信用分解。** 仅all init7/init11的200/400，在每suite按global ID前两个train task（共8task）、teacher demo0、action16–41的两组独立32query上，保持相同前向及LoRA cotangent，分别计算静态与contextual reader梯度；核对二者之和与总梯度、跨query重复性及方向导数。无optimizer/参数更新，不读取held动作或Test，无训练。独立单GPU预算30分钟、输出10MiB；只对既有权重求导，不推进sampler。该诊断区分前向查询作用之外是否存在稳定支路信用冲突，不把负cosine直接等同历史遗忘。原件`causal_learning_20260909/mechanism/reader_credit/`。
+
 ## 本轮完整结果与原因结论
 
 Owner最新要求删除独立原因报告，直接在对话中解释问题、架构机制和改进意见；已删除报告并清理引用。实验原始证据与现有findings/research_history保留，不新建替代报告。当前解释已定位局部支路及查询几何，尚未唯一解释全部历史分差。

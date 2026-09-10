@@ -245,4 +245,20 @@ all的新关联200也已完整99/400，S/O/G/L2/51/33/13、breadth6。其200→4
 
 all/local_h_read两臂已各完成fresh400且exit0，200/400完整checkpoint通过公开检查，各自累计1600条件/102400queries、各suite400，实际teacher/query/frame/FM RNG与data7参照一致；无Test或held梯度。all/LH的held3072均值200为.112488689/.112699040，400为.105458612/.106606225；这些值不负责判断候选行为。完整更新用时11608.09/15573.63秒，不能把共享GPU上的墙钟差直接归为架构吞吐。原件为`compiler_confirmation/{arm}_init11_step{200,400}/learning_summary.json`与checkpoint inspection。
 
-all200与LH200各496条件物化已完整exit0、公开inspector与实际task/state/video映射检查通过，两组validation400已启动；all400的496条件物化也已完整exit0并通过检查；LH400因现场新peer繁忙等待合适卡，随后完成第四组及其余预登记闭环面板。评测仍按各自init11成对比较，不能把seed11候选对seed7基线冒充同初始化干预。动作拟合的同init11成对汇总另存`compiler_confirmation/init11_paired_learning_summary.json`，200/400候选分别5/14个task误差更低、总均值均稍高；该诊断不代替闭环。
+all200与LH200各496条件物化已完整exit0、公开inspector与实际task/state/video映射检查通过，两组validation400已启动；all400的496条件物化也已完整exit0并通过检查；LH400随后已在换视频评测释放的gpu01p5启动物化，继续完成第四组及其余预登记闭环面板。评测仍按各自init11成对比较，不能把seed11候选对seed7基线冒充同初始化干预。动作拟合的同init11成对汇总另存`compiler_confirmation/init11_paired_learning_summary.json`，200/400候选分别5/14个task误差更低、总均值均稍高；该诊断不代替闭环。
+
+
+### 换正确视频复核全部完成：保持收益与剩余丢失同时存在
+
+最后的LH200完整101/400、三worker均exit0，S/O/G/L5/48/36/12、breadth6，global1/3/11/13/23/26/31/32为0/5/22/26/0/36/8/4，墙钟3467.19秒。四个换视频面板共1600行已完整结束，11个worker均0；200同节点、400同节点及两臂各自相邻的actual strict配对全部通过。仍是同一官方50个state池与相同视频资产的另一种无放回关联，没有新增独立初始化池。
+
+| 新视频关联 | 200→400 | 自身相邻R/G/L | churn / J | breadth200→400 | BBQ200→400及R/G/L |
+|---|---|---|---|---|---|
+| all | 99→82 | 53/29/46 | 75 / .4141 | 6→5 | 23→1，1/0/22 |
+| local_h_read | 101→126 | 71/55/30 | 85 / .4551 | 6→4 | 26→31，17/14/9 |
+
+候选对基线200为99→101、R/G/L64/37/35、churn72/J=.4706，早期净差仅+2；400为82→126、70/56/12、churn68/J=.5072。它在这一视频关联下仍避免BBQ后期近乎全失，并继续取得Object/双物体Long能力；不能把两节点统称为同幅度稳定优势。
+
+候选自身相邻保留71、新增55、丢失30，churn85反而高于基线75，说明更高总分仍包含明显行为更替。BBQ保留17/26，弱于原关联的23/29，但远多于同关联基线的1/23；这支持部分保持改善，不是零遗忘。Spatial task3的5个成功全部丢失，Long moka任务4→0、四个旧成功全失，最终breadth由6降至4。双物体Long8→18仅保留4、新增14、丢4；Goal36→37也有30/7/6的更替。不能用总分增长或两个400都为126掩盖这些缺口。
+
+完整原件为`compiler_confirmation/reassignment_validation_step{200,400}_analysis/completed_summary.json`及各自paired比较JSON。独立初始化行为仍由当前两臂自身的完整200/400面板裁决，未通过新视频配对替代它。最新Owner已恢复分析后的复核停止点：本结果不触发正式方法采纳或下一次正式训练。

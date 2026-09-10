@@ -340,3 +340,10 @@ task因重复下降事后选定、states沿用旧诊断固定集合，属于描�
 固定local开启的2×2 fresh学习全部完成。关闭Compiler在H-read开/关背景的validation效应，200为+5/+16，400为+36/+20；关闭H-read则为−5/+6和0/−16。方向一致的验证效应来自Compiler入口，不能把两入口都笼统判为有害，也不能把200联合删除较好外推到400。训练侧效应不同，局部拟合收益不等同迁移。
 
 只关闭Compiler的local_h_read为validation108→126、train40→56，BBQ29→32（R/G/L23/9/6）；没有改FM、source、输入、共享或其它图就避免这次BBQ后期崩落。它是当前协议下具有实测收益的具体修正，尚不是全部缺口的解释：400 Spatial1/100，相邻验证仍26丢失；对all400虽净+36，也有52新增/16丢失。这里只支持该入口的学习效应，未证明唯一内部优化机制或全部v5.2/v6历史分差。完整因果表、配对原件和下一步授权见[报告](docs/horizon_causal_language_learning_20260909.md)及progress；复核结果不得从本段推定。
+
+
+## 35. Compiler候选换视频复核保留部分保持收益，整体稳定性仍不足（2026-09-10）
+
+固定seed7两臂两节点的另一套无放回正确视频关联已完整1600行。all200→400为99→82，local_h_read为101→126；候选相对基线200仅+2、400+44，方向同原关联，但不能把早期和末期效果混为一谈。候选BBQ26→31保留17/新增14/丢9，对照23→1仅保留1；说明避免这项后期崩落的效应不限于原teacher/state关联。
+
+候选相邻总计71保留/55新增/30丢失，churn85/J=.4551，breadth6→4；Spatial task3的5个成功和moka任务的4个成功全部丢失。因此126及部分BBQ保持不是整体稳定或广度修复，独立初始化效应仍须其自身完整闭环确认。新关联复用原50个官方state及原视频资产，不是独立state池。全部strict配对、逐task/suite和worker证据见[完整报告](docs/horizon_causal_language_learning_20260909.md)末节与`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`。

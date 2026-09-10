@@ -8,9 +8,9 @@
 
 **最新完成与当前执行（2026-09-10 CST）：** init11两臂fresh400全部exit0，200/400完整checkpoint及学习状态通过public inspector；各自1600条件/102400queries与原data7实际采样配对、各suite400，四组held3072实际输入和无梯度检查通过。all held200→400为.112489→.105459，LH为.112699→.106606；这些仅为动作拟合诊断，独立初始化的闭环结果仍待执行。
 
-冻结seed7换视频400的实际strict配对已完成：all82、LH126，R/G/L70/56/12、churn68/J=.5072；LH S/O/G/L0/71/37/18、breadth4，BBQ31。候选Object/Long优势换视频关联仍存在，但Spatial归零，不能称广泛修复。all换视频200为99，200→400保留53/新增29/丢失46、churn75/J=.4141；BBQ23→1。最后LH200换视频已在gpu01p5×3worker启动（tmux `ember-compiler-reassign-lh200`，worker2523932/2523933/2523934）。
+**冻结seed7换视频四面板全部完成：** all200→400为99→82，LH为101→126，共1600行、11worker均0，全部同节点/相邻actual strict配对通过。LH200 S/O/G/L5/48/36/12、breadth6，400为0/71/37/18、breadth4。候选对基线200仅+2（R/G/L64/37/35），400+44（70/56/12）；自身相邻71/55/30、churn85/J=.4551，BBQ26→31、保留17/新增14/丢9；基线BBQ23→1仅保留1。收益在新关联保留，但候选Spatial5→0、moka4→0，仍有明显丢失与广度收缩。完整原件`compiler_confirmation/reassignment_validation_step{200,400}_analysis/`，不能由此替代独立初始化复核。
 
-init11的all200/LH200各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组validation400已同时启动：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。all400各496条件物化现也完整exit0、public inspector和actual配对通过。LH400物化尚未启动：gpu02p5释放后出现新peer（ycliu PID369035），两次双节点检查为98/99%负载，第二次free17638MiB；不在忙卡强行共驻，等待下一张合适卡。LH seed7换视频200继续gpu01p5×3worker；当前三组评测使用三张有用GPU。
+init11的all200/LH200/all400各496条件物化已完整exit0、public bank inspector与实际视频/state映射检查通过。两组200 validation400继续：all200在gpu01p6×3worker，tmux `ember-compiler-init11-all200-validation`；LH200在gpu02p4×3worker，tmux `ember-compiler-init11-lh200-validation`、worker3536455/3536498/3536528。最后LH400的496条件物化已在换视频评测释放的gpu01p5启动，tmux `ember-compiler-bank-local_h_read-400`、PID2923816。launch前双节点检查该卡free46064MiB/util0、无peer；gpu02p5虽短时util0，但此前持续高负载，采用真正空闲卡。当前共三张有用GPU。精确命令与实际进程见该面板`materialization_launch.json`。
 
 物化使用clean pushed45e16633；八个尚未启动的init11评测脚本已在launch前统一指向clean pushed0e2a3a44，仅采用已验证资源准入修正，原模型、checkpoint、bank和rollout合同不变，脚本语法检查通过。两次validation launch前分别双节点live检查，gpu01p6free46067MiB/util0，gpu02p4free40314MiB/util2，满足三个worker38912MiB准入且不打断peer。精确命令、资源与实际进程保存在各面板`validation_launch.json`。
 

@@ -75,7 +75,7 @@ def manifest():
         if task["global_task_id"] in TASKS:
             source = ROOT / "data/datasets" / authority["dataset"]["revision"] / task["hdf5"]["relative_path"]
             rows.append({key: task[key] for key in ("global_task_id", "suite", "task_id", "language", "split_role")} |
-                {"teacher_source": {"path": str(source), "bytes": task["hdf5"]["bytes"]},
+                {"teacher_source": {"path": str(source.resolve()), "bytes": task["hdf5"]["bytes"]},
                  "episodes": planned_episodes(selected, task["global_task_id"])})
     return {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
             "evaluation_role": "validation", "arm": "correct", "selection": selected,

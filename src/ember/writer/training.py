@@ -38,6 +38,9 @@ def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
     expected_model = asdict(HorizonWriterConfig())
+    selected_model = HorizonWriterConfig(**config["model"])
+    for key in ("consumer_mode", "process_mode", "compiler_language_mode"):
+        expected_model[key] = getattr(selected_model, key)
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.

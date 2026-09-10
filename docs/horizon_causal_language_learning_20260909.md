@@ -327,3 +327,10 @@ init11 local_h_read400为119/400，S/O/G/L1/54/44/20、breadth6；三worker和ou
 下一项固定为已有隔离候选的同target跨rank输出映射绑定，比较当前all基线：只将D[target,rank,side,native,256]绑定为D[target,1,side,native,256]，语言/local/H-read/Compiler、完整视频与native50H、全部前端、rank16、FM及实际学习曝光均不改。选择原all基线而非新造结合臂，是为了直接区分原架构的输出独立性因素；不把Compiler删除与共享同时作为一个变化。历史Target-Owned的99/76/86/68是必须保留的反证，本次价值仅在当前前端和合法固定协议下的单接口识别，不将共享宣称为新发明或预定疗效。
 
 共同seed7、teacher0–15/query16–41、4×64、LR3e-5/warmup8、fresh400及固定200/400 validation400/train96/held3072沿用已准备候选合同。共享D天然改变rank梯度聚合及AdamW状态，结果只归于这个参数绑定整体，不拆称纯参数量或纯正则化因果。不得从独立D checkpoint转换启动，不额外挑seed/学习率或续500；先真实profile并依据当时双节点GPU、独立quota、峰值和精确命令启动，CPU准备不代替这些检查。具体接口、初始化与历史边界见隔离候选`docs/horizon_causal_sharing_candidate_20260909.md`。这是下一项原因实验，正式修改/采纳和正式训练仍等Owner复核。
+
+
+### 输出共享原因实验的实际启动
+
+共享候选四更新真实profile与93帧最长视频完整反向均通过，全部有效路径含Compiler语言与H-read仍有梯度、source参数冻结；平均30.0015秒/update、峰值34.8792GiB、最长15.1864秒/34.7127GiB。已有CPU绑定/梯度检查与实际配置比较只证明干预按合同发生，不证明能力改善。首次profile在model/data/update之前因缺失本地远端authority ref退出，fetch精确既有ref后原配置通过，日志保留`sharing/bootstrap_attempt1`。
+
+随后按新的双节点GPU/独立quota记录，从clean pushed detached c63f55dc使用gpu01p5/6、world2/micro8,8 fresh0→400，固定200/400，init/data均7，输出`horizon_causal_within_target_rank_shared_seed7_20260910`。actual前4更新16条件1024queries与原all的task、teacher、action query/frame、RNG、task权重逐项配对；主方法未改，无held梯度、最终controls或Test。约3.3小时更新仅为profile估计，不能替代后续行为结果。所有精确合同/资源/实际进程和配对原件在`causal_learning_20260909/sharing/`；两个checkpoint的物化与闭环脚本已按自身schema准备，尚无模型能力结果。

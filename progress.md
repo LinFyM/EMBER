@@ -42,7 +42,9 @@ launch前双节点live检查p5/p6各free46067MiB/util0/无peer，NCCL_P2P_DISABL
 
 **400 bank与轻量几何完整，两个行为面板已启动：** 496条件物化exit0/774.79秒，两个公开bank检查及实际task/state/video映射通过，物化tmux已退出。400固定32条件×38target的生成B/BA仍近单方向（B全部第一方向能量>99.9924%、BA>99.9759%），但D_B自身第一方向均值降至57.86%、范围39.67%–71.88%，字典更分散；不能以几何代替闭环。原件`sharing/step400/bank_inspection.json`与`mechanism/{output_geometry,dictionary_geometry}_step400.json`。
 
-400 validation在gpu01物理5/6各3worker运行，tmux `ember-sharing-seed7-val400`、pane3678407；train96在gpu02物理6×3worker，tmux `ember-sharing-seed7-train96-400`、pane322364。两项均来自clean pushed detached e7447291、模型与官方配对协议不变。launch前双节点live检查：gpu01p5/p6各free45490MiB/util0/无peer；gpu02p6 free40742MiB/util0、既有4584+148MiB低负载peer保留，满足3worker+2GiB余量。原件`sharing/step400/{validation_launch,train96_launch,gpu_preflight_evaluation}.json`。
+**400 train96已完整60/96：** 对all49为R/G/L41/19/8、churn27/J=.6029、breadth均20，S/O/G/L18/19/14/9。自身32→60为29/31/3、churn34/J=.4603、breadth16→20，保留90.6%早期成功，Spatial/Long旧成功全保留；不能把以新增为主的churn读成遗忘。三worker及wrapper exit0、actual配对通过、墙钟955.20秒，gpu02该eval tmux/pane322364已退出。原件`sharing/step400/train96_analysis/`。200训练劣势已反转，近单方向输出不构成持续获取障碍的证明。
+
+最后400 validation仍在gpu01物理5/6各3worker运行，tmux `ember-sharing-seed7-val400`、pane3678407；尚无完整验证结果。两项均来自clean pushed detached e7447291、模型与官方配对协议不变。launch前双节点live检查：gpu01p5/p6各free45490MiB/util0/无peer；gpu02p6 free40742MiB/util0、既有4584+148MiB低负载peer保留，满足3worker+2GiB余量。原件`sharing/step400/{validation_launch,train96_launch,gpu_preflight_evaluation}.json`。
 
 最近strg01/data1 used733839756KiB、soft1073741824/hard1084227584，物化前run3.8GiB/analysis892KiB/机制2MiB、余3GiB预算在原20GiB内、shared84TiB；banks已按预算完成，评测只增小量raw rows/queue/logs。原件`sharing/step400/{materialization_launch,gpu_preflight_materialization,storage_materialization_launch}.json`。没有新增训练。
 

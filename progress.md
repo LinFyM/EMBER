@@ -6,6 +6,12 @@
 
 ## 当前：检索条件2×2全部完成，转入Compiler简化候选复核
 
+**最新完成与当前执行（2026-09-10 CST）：** init11两臂fresh400全部exit0，200/400完整checkpoint及学习状态通过public inspector；各自1600条件/102400queries与原data7实际采样配对、各suite400，四组held3072实际输入和无梯度检查通过。all held200→400为.112489→.105459，LH为.112699→.106606；这些仅为动作拟合诊断，独立初始化的闭环结果仍待执行。
+
+冻结seed7换视频400的实际strict配对已完成：all82、LH126，R/G/L70/56/12、churn68/J=.5072；LH S/O/G/L0/71/37/18、breadth4，BBQ31。候选Object/Long优势换视频关联仍存在，但Spatial归零，不能称广泛修复。all换视频200为99，200→400保留53/新增29/丢失46、churn75/J=.4141；BBQ23→1。最后LH200换视频已在gpu01p5×3worker启动（tmux `ember-compiler-reassign-lh200`，worker2523932/2523933/2523934）。
+
+三组init11物化同时启动：all200在gpu01p6（PID2440804），LH200在gpu02p4（PID1416440），all400在gpu02p5（PID1417442），每组validation400+train96共496条件；LH400物化待下一张合适卡。当前四张有用GPU，全部原训练及前述已完成评测进程已退出。物化用原clean pushed45e16633，换视频评测用资源修正后的0e2a3a44；没有改动科学行为或预注册面板。最新strg01/data1 used719737772KiB、soft1073741824/hard1084227584，两新run各8.3GiB、analysis499MiB，四banks及余量新增峰值12GiB在原40GiB预算内；shared84TiB。资源原件`compiler_confirmation/{gpu_preflight_completed_training,storage_completed_training}.json`。
+
 最新完整结果改变了优先级：local_h_read（仅关闭Compiler首次额外条件）validation200→400为**108→126**，train96为**40→56**；BBQ29→32、保留23/新增9/丢失6。当前先复核这个实质效应，不启动共享rank、VL新架构或旧v6重训，也不续训到500。
 
 两轮语言/检索探索共四个新学习臂，每臂固定200/400完整checkpoint和两类闭环，合计3968个新闭环行全部完成exit0、全部worker0；实际曝光、checkpoint、banks及同节点/相邻strict配对通过。全部原GPU训练/物化/评测进程已正常退出。唯一正式方法仍是main原科学实现，探索代码保留在clean pushed detached `45e16633`、`.codex/worktrees/horizon-causal-retrieval`。

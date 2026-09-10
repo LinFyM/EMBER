@@ -232,3 +232,17 @@ Compiler关闭在两种H-read背景、两个验证节点均正增，是当前共
 固定schedule seed20260910的all400完整82/400，S/O/G/L2/41/35/4、breadth5，global1/3/11/13/23/26/31/32为0/2/40/1/0/35/4/0。三个worker均exit0，实际400个唯一task/state与完整contract一致，墙钟3320.17秒。旧视频分配下该checkpoint为90/400，两次BBQ都仅1/50；这里尚不比较候选净效应，也不将不同视频分配当作同视频strict配对。
 
 原件`compiler_confirmation/reassignment/all_step400/completed_summary.json`及其`evaluation/`。候选LH400继续原评测；all200已在释放的GPU上启动，两个200面板仍须完整执行。新评测资源准入修正及首次LH预worker拒绝保留在progress/原件，不改变既定科学输入或本基线运行面。
+
+### 换视频400配对完成：收益保留，但弱任务仍未修复
+
+同一新的正确视频关联下，all82/400、local_h_read126/400，实际strict配对通过，五个worker均exit0。候选相对基线R/G/L为70/56/12、churn68、J=.507246；S/O/G/L为0/71/37/18、breadth4，对基线2/41/35/4、breadth5。逐global1/3/11/13/23/26/31/32为0/0/40/31/0/37/18/0。BBQ为1→31、保留1/新增30/丢失0；双物体Long为4→18、3/15/1。候选4197.07秒完整结束。
+
+原视频关联的受控净增+36、这次+44，说明seed7的Compiler关闭收益并非只存在于原teacher/state关联；BBQ和双物体Long的末节点能力也在新关联下保留。但候选Spatial、弱Goal与另一Long仍零，原breadth7中的稀疏成功没有在新关联重现，不能以总数仍126代替广度或稳定性。独立初始化尚须由其自身all/LH闭环比较裁决。
+
+all的新关联200也已完整99/400，S/O/G/L2/51/33/13、breadth6。其200→400为R/G/L53/29/46、churn75/J=.414063；BBQ23→1，仅保留1、无新增、丢22；Long13→4则原13全丢、另增4。LH200按原登记继续执行，尚不能计算候选在新关联下的相邻保持。原件`compiler_confirmation/reassignment_validation_step400_analysis/`含逐task/suite和全部strict比较。
+
+### init11实际学习完成，闭环验证继续
+
+all/local_h_read两臂已各完成fresh400且exit0，200/400完整checkpoint通过公开检查，各自累计1600条件/102400queries、各suite400，实际teacher/query/frame/FM RNG与data7参照一致；无Test或held梯度。all/LH的held3072均值200为.112488689/.112699040，400为.105458612/.106606225；这些值不负责判断候选行为。完整更新用时11608.09/15573.63秒，不能把共享GPU上的墙钟差直接归为架构吞吐。原件为`compiler_confirmation/{arm}_init11_step{200,400}/learning_summary.json`与checkpoint inspection。
+
+已启动all200、LH200、all400三组496条件物化，随后完成第四组及八个预登记闭环面板。评测仍按各自init11成对比较，不能把seed11候选对seed7基线冒充同初始化干预。

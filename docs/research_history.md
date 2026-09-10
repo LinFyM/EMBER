@@ -44,6 +44,8 @@ SFT与当前冻结source的normalization一致，400组task/state/language/env s
 <a id="early-writers"></a>
 ## 2. 早期端到端Writer与多视频稳定化
 
+2026-09-11讨论补充：[专家回复原文](review_materials/20260911/expert_review_round1.md)与[Owner要求的合并追问](review_materials/20260911/FOLLOWUP_PROMPT.md)重新核对v5.2普通监督的视频依赖正证据，要求解释旧架构/recipe与当前方法的差异。它们是咨询记录，没有新实验或架构采纳；跨轮解释边界见findings§50。
+
 ### v5.2 / v6：有能力，尚未稳定
 
 五臂顺序为correct / same-task-other / wrong / shuffled / reversed：

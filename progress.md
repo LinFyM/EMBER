@@ -2,9 +2,11 @@
 
 ## 当前快照（2026-09-11）
 
-**科学执行暂停，现有训练、机制诊断和最强候选视频检查均已完成；没有运行队列。** Owner要求的仓库整理与远程专家咨询材料已完成。正式方法修改/采纳及后续训练继续停在Owner复核前。
+**科学执行暂停，现有训练、机制诊断和最强候选视频检查均已完成；没有运行队列。** 仓库整理、首轮专家材料及收到反馈后的合并追问已完成。正式方法修改/采纳及后续训练继续停在Owner复核前。
 
 [最新专家材料](docs/review_materials/20260911/README.md)包含现状、方法/commit区别、可复算数据与分析边界；[咨询prompt](docs/review_materials/20260911/EXPERT_PROMPT.md)供Owner转交。当前目标仍为strict paired validation400严格>145，加相邻稳定、低churn、breadth、四suite/Goal/Long、换视频和最终因果资格；尚未达标。
+
+当前转发入口为[第二轮追问](docs/review_materials/20260911/FOLLOWUP_PROMPT.md)，[首轮专家回复](docs/review_materials/20260911/expert_review_round1.md)已原样归档。Owner强调v5.2在普通正样本动作监督下已有明显正确视频依赖，要求专家正面解释架构/训练交互，不将“监督允许捷径”直接等同于需要辅助loss。专家提出的保持、任务共现和过程辅助监督均为待讨论候选；本次无新实验。
 
 ## 方法身份与学习结果
 

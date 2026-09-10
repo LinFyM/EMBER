@@ -2,6 +2,7 @@
 
 当前方法见[正式设计](docs/horizon_relation_video_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
 最新学习与原因分析集中在§39–49；[2026-09-11专家材料](docs/review_materials/20260911/README.md)提供远程可读原配置、逐条结果、机制记录及当前看法。文内本地runs路径通过该材料的index映射到已提交副本。
+§50记录Owner对首轮专家意见的修正重点与历史正证据，不代表新实验或正式方法采纳。
 以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15–16记录方法收口与接续裁决要求，§17记录实际新图的数值重放发现。
 
 这里只保留会改变下一轮决策的结论与开放问题，不再复制逐轮实验年表。证据、数值和旧原文入口集中在
@@ -504,3 +505,9 @@ Owner指出此前all九臂没有覆盖当前最强模型后，明确要求先补
 生成使用候选原clean pushed detached45e16633、原生`backend_conditioning=local_h_read`，无事后hook替代；完整216条件332.95秒，peak10.508GiB。执行沿用§47的9abc9b95运行面；18个动态queue/persistent workers全部complete/exit0，最长1041.89秒。实际核对两模型216条件的language、donor/demo、帧数量、呈现及来源索引、像素置换、相机，以及864 rows的task/state/env/policy-noise配对，全部通过；216 jobs全部complete，无失败重试。只读模型，无梯度、Test、正式选点或方法修改；最终双节点无本任务tmux。
 
 原件`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/best_model_video_controls/`保留结果前registration、GPU/launch记录、候选checkpoint引用、生成manifest、全部raw rows和`step400/closedloop/summary.json`；`comparison_with_all400.json`保存输入与执行配对、逐臂/逐suite模型差异和描述性逐state集合。新增实际791MiB，低于登记3GiB峰值预算。此前§47只解释all的边界已修正；本节才是对当前最强候选的视频检查结论。
+
+## 50. 普通监督已有视频依赖正证据，捷径存在不足以解释当前失败（2026-09-11）
+
+Owner在讨论[专家首轮回复](docs/review_materials/20260911/expert_review_round1.md)后强调：v5.2纯正常训练已产生明显正确视频依赖，不能把当前问题直接推成需要辅助loss；架构及学习路径必须进入核心解释。核对原commit `529da6bbe290f7393422937aa7cc278cee732107`的v5.2设计、配置、as_step与functional入口，训练为normal-order positive-only动作监督，无contrast/order辅助目标。step900五臂汇总为132/138/74/82/83（各400），原配置登记75,600动作queries、3,600单视频条件曝光。具体远程引用见[合并追问](docs/review_materials/20260911/FOLLOWUP_PROMPT.md)。
+
+这支持普通监督能够学出正确视频依赖；它不证明旧模型已满足全部科学资格，不将历史400与当前train24诊断96混作配对差值，也不唯一归因到某个架构模块。旧v5.2 task-complete的120/109/107/111/124仍约束架构与recipe交互解释。“同task独立采样允许不依赖V的最优解”是监督识别边界，不能单独解释为何不同参数化/优化学到不同依赖，也不能据此判定纯FM做不到。后续讨论应说明真实视频过程如何被参数生成和执行消费；功能保持、任务共现或P4动作读出改善各自指标均不自动证明动态增量。未采纳新方案，科学执行继续暂停。

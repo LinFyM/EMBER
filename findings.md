@@ -658,3 +658,20 @@ Spatial/Long增加，但Goal较main少15/12，source原41成功的Goal task6只�
 本项8面板1,984rows，完整study48面板11,904rows；原件`runs/analysis/video_functional_20260911/paired_summary.json`，
 限定裁决`auxiliary_fm/bounded_200_decision.json`，留出动作轨迹`auxiliary_fm/held_action_trajectory.json`。
 没有selected checkpoint、Test或最终sealed controls；当前goal未完成。
+
+
+## 60. 原生中层读取可学习，但未形成更强功能教师（2026-09-12）
+
+固定main200表示与source，fresh同类hidden-residual reader在第10层输入归一化后读E，经后续冻结Action Expert
+输出动作；32epochs/192updates，原1536支持queries复用、768留出无梯度。实际48条件及采样与旧动作头诊断匹配。
+新头held .154897→.139792，source同缓存路径 .154875；平均改善.015083、task-cluster95%CI[.010621,.020128]，
+22/24任务。16→32仍改善.004677、CI[.002959,.006544]，说明存在继续学习，不构成收敛证明。
+
+但旧64epochs动作头同缓存重算 .140281，新头仅改善.000488、CI[-.003509,.003975]，15/24更好；原LoRA学生
+.110005仍24/24更好，新头超额.029787、CI[.021072,.039954]。因此该具体中层消费函数没有形成更强教师证据，
+不据此接蒸馏、追加训练或扫描层位。它不否定全部原生条件策略，也不能独立区分表示与函数类容量/优化。
+
+最终held原E相对跨suite E优势.001718、CI[.001015,.002516]，19/24任务；该表示含语言/静态因素，不能推出
+正确视频时序收益。两类辅助函数均有有限获取且明显弱于完整LoRA学生，继续把整体问题只归为弱教师或编译容量均缺乏依据。
+原件`runs/analysis/video_functional_20260911/native_reader_diagnostic/`，配对统计`native_reader_analysis.json`；
+只使用train24，没有deployment checkpoint、Test或最终sealed controls。临时入口由Git b1d3fa25保留后退役。

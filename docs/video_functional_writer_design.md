@@ -267,3 +267,11 @@ P1 `c9e8198:bank_conditioning/primal_capacity.py`及PNBTT `e65c6388:joint_progra
 可用RAM、两节点GPU与/data1 quota；Owner全局用卡上限保持。精确命令、峰值与实现commit另存launch记录。
 临时`ember.writer.native_reader_diagnostic`仅拥有本次诊断，复用source/cache/data/旧reader参数化；没有新Writer
 运行面。问题关闭后删除此入口，或在有证据的正式职责替换中提取必要实现并退役旧头；历史由Git与probe artifacts保存。
+
+
+### 第9节完成裁决（2026-09-12）
+
+32epochs完整完成；held新头 .139792、旧头 .140281、原学生 .110005。对旧头改善的95%CI跨0，所有24task
+仍落后原学生。原生中层函数可学习且末段仍在获取，但该预算未形成更强教师证据；不追加拟合、层位扫描或
+自动接新Writer训练。限定结论与采样匹配见`native_reader_analysis.json`，临时入口退役，代码由b1d3fa25保留。
+当前goal未完成；新干预需由后续机制复核登记，不能从本节或历史阶段恢复执行。

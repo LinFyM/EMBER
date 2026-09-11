@@ -1152,3 +1152,28 @@ CI[-.0025,.03]。source47→correct72只保留9、other67只保留8；两臂Goal
 新增8面板/1,984rows全部完成，study累计48面板/11,904rows。最终两组strict400各42jobs完整结束，
 耗时1202.78/1204.78秒；2026-09-12复核两节点无本轮进程或tmux。没有300续训、rho0 frame_set、Test或sealed最终controls。
 本项停止追加：训练正收益尚未迁移，局部Spatial/Long改变不足以确认保持修复。继续机制复核，但本记录不登记新GPU实验。
+
+
+## 2026-09-12：固定表示的原生中层读出诊断结束
+
+代码b1d3fa25，source及main200 Writer完全冻结，仅新hidden residual reader学习。固定第10层input_layernorm
+输出后读取同一E，保留原AdaRMS gate及后续动作网络。原1536支持/768留出queries、48条件实际采样全部匹配；
+fresh32epochs/192updates/49,152次支持query复用，学习325.06秒。gpu01:4的tmux/进程已退出。
+真实profile选择micro32，约143queries/s；全部profile最高17.95GiB。缓存prefix仅主机内存，无持久大资产。
+
+| epoch | support FM | held FM |
+|---|---:|---:|
+| 0 | .156007 | .154897 |
+| 4 | .155703 | .154597 |
+| 16 | .146148 | .144469 |
+| 32 | .138662 | .139792 |
+
+同缓存参照source held=.154875、旧拟合64epoch动作头=.140281、main200 LoRA学生=.110005。
+最终新头对source改善.015083、95%task-clusterCI[.010621,.020128]；对旧头改善.000488、CI[-.003509,.003975]；
+相对学生更差.029787、CI[.021072,.039954]，所有24task仍落后学生。16→32学习改善仍在，但固定预算不延长。
+最终held原E相对cross-task E差额.001718、CI[.001015,.002516]，19/24task；不视为视频时序因果资格。
+缓存与完整source FM最大差.000389属于接受的正常数值路径差异，全部科学参照在同一缓存路径重新计算。
+
+原件`runs/analysis/video_functional_20260911/native_reader_diagnostic/`包括run/cache provenance/profile/results及
+不可部署probe状态；`native_reader_launch.{json,sh}`记录精确资源与命令，`native_reader_analysis.json`保留逐节点配对统计。
+本项未建立更强教师，停止拟合与层位扫描，不自动启动新Writer或蒸馏。临时入口退役，复现代码由Git b1d3fa25保存。

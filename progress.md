@@ -4,7 +4,7 @@
 
 Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S59→45（各400），train96=52；首轮三臂所有训练与九个闭环面板均完整结束。目标未达标。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。受控迁移后的off7探索性续训正在gpu02 0/1/2运行，500 checkpoint已保存并通过原生检查；500 correct400的LoRA正在gpu01 1物化，后续600节点保持登记合同，不依据S100短暂优势扩展新架构。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。off7探索性续训600已完整结束：500 correct73/400，600 checkpoint通过原生检查，600 correct400/train96正在物化。R已从原200完整恢复，按§8继续300/400有限获取节点；不依据S100短暂优势扩展新架构。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
@@ -74,4 +74,4 @@ Compiler删除的验证净收益经两个初始化与init7另一正确视频关�
 
 整理前完整进度：[043b58ca的progress](https://github.com/LinFyM/EMBER/blob/043b58ca3f1f3e7ed699b876f4964be96654c7e5/progress.md)。后续待办与权限只看当前task_plan，不恢复历史命令。
 
-R追加获取节点已登记于active design§8：仅R从原200完整exact-resume至400，300/400 correct400，400 train96及独立动作验证；总动作曝光达到旧off400相同102400queries。依据是R37→83仍有获取，C/S分别43→50、59→45不追加。当前准备原gpu02 4/6、micro6/6的原生恢复；off600物化/闭环继续独立完成，总用卡≤6。没有新增架构、保持loss、VL Meta或D变体。
+R追加获取节点已登记于active design§8：仅R从原200完整exact-resume至400，300/400 correct400，400 train96及独立动作验证；总动作曝光达到旧off400相同102400queries。依据是R37→83仍有获取，C/S分别43→50、59→45不追加。已在原gpu02 4/6、micro6/6通过原生合同及完整200恢复；201实际8条件/4task/256queries、每条件1/8，后续约32秒/update、reserved35GiB。off600物化/闭环继续独立完成，总用卡≤6。新增R峰值16GiB与off600余量3GiB已计入strg01 used794434480KiB/soft1073741824KiB；共享83TiB。没有新增架构、保持loss、VL Meta或D变体。

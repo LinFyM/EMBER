@@ -65,9 +65,9 @@ def prepare_prefix_kv_cache(
 
 def prepare_prefix_features_and_cache(
     policy: torch.nn.Module, prefix: ExecutionPolicyPrefix,
-    *, native_precision: bool = False,
+    *, native_precision: bool = False, track_grad: bool = False,
 ) -> tuple[torch.Tensor, Any]:
-    """Return final normalized Gemma evidence and KV from the same real forward."""
+    """Return same-forward Z/KV; teacher Meta replay may request their full graph."""
 
     from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
@@ -79,7 +79,7 @@ def prepare_prefix_features_and_cache(
     positions = torch.cumsum(prefix.padding, dim=1) - 1
     bridge = core.paligemma_with_expert
     bridge.paligemma.model.language_model.config._attn_implementation = "eager"
-    with torch.no_grad(), _autocast(prefix.embeddings.device, native_precision=native_precision):
+    with torch.set_grad_enabled(track_grad), _autocast(prefix.embeddings.device, native_precision=native_precision):
         outputs, cache = bridge.forward(
             attention_mask=mask,
             position_ids=positions,
@@ -90,4 +90,4 @@ def prepare_prefix_features_and_cache(
     features = outputs[0]
     if features.shape[:2] != prefix.padding.shape:
         raise ValueError("native prefix evidence and KV positions differ")
-    return features.detach(), cache
+    return features if track_grad else features.detach(), cache

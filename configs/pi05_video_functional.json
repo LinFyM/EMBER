@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_video_functional_writer_config_v1",
-  "status": "registered_fresh_auxiliary_FM_without_distillation",
+  "status": "registered_teacher_VL_Meta_comparison",
   "design": "docs/video_functional_writer_design.md",
   "data": {
     "seed": 7,
@@ -113,7 +113,7 @@
     "edge_chunk": 32,
     "activation_checkpoint": true,
     "process_mode": "ordered",
-    "schema": "video_conditioned_writer_v1",
+    "schema": "video_conditioned_writer_v2",
     "architecture": "task_token_adjacent_full_h_v1"
   },
   "observer": {
@@ -123,7 +123,8 @@
     "flow_time": 1,
     "frame_chunk": 8,
     "response": "post_final_norm_actual_action_out_proj_input",
-    "visual_evidence": "final_effective_multimodal_prefix_Z_from_same_prefix_forward"
+    "visual_evidence": "same_version_teacher_VL_Meta_Z_and_KV; frozen_pre_Gemma_embeddings_only",
+    "vl_meta_rank": 4
   },
   "optimization": {
     "seed": 7,
@@ -147,7 +148,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Design section8: same shared auxiliary FM, no teacher target for Compiler; fresh bounded200",
+    "initial_use": "Design section10: teacher VL Meta; same encoder/decoder and mu1 rho0; fresh bounded200; controls require registration",
     "qualification_registration": "docs/video_functional_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -433,7 +434,7 @@
       ]
     }
   },
-  "update_version": "video_functional_credit_v1",
+  "update_version": "video_functional_vl_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",
   "auxiliary": {
     "enabled": true,

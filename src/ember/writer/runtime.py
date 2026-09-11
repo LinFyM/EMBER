@@ -1,4 +1,4 @@
-"""Canonical model and bounded frozen-prefix lifetime for the Video Functional Writer."""
+"""Canonical Writer with two teacher Meta stacks and frozen input-embedding cache."""
 
 from __future__ import annotations
 
@@ -66,10 +66,14 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     )
     if config["auxiliary"]["enabled"]:
         state.reader = ExecutionVideoReader(model_config.width, model_config.heads)
+    # Append VL only after all common modules: their fresh initialization stays
+    # matched to the frozen-prefix reference without a new RNG convention.
+    gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
+    state.vl_meta = MetaLoRAStack(gemma.layers, rank=int(config["observer"]["vl_meta_rank"]))
     state.to(device)
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(
-        policy, state.meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,
+        policy, state.meta, state.vl_meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,
         frame_chunk=int(config["observer"]["frame_chunk"]),
         camera_view=config["observer"].get("camera_view", "agentview"),
     )
@@ -82,7 +86,7 @@ class FrozenVideoPrefixCache:
     """Loader cache scoped to one frozen policy/preprocessing runtime.
 
     Identity keys never enter a learned module. Each entry holds only frozen
-    prefix KV and exact-language embeddings; no R/U/E/generated LoRA is cached.
+    pre-Gemma vision/token embeddings and masks; no learned Z/KV/R/E is cached.
     """
 
     def __init__(self, observer: NativeVideoObserver, data: WriterTrainingData, byte_limit: int) -> None:

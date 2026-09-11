@@ -619,7 +619,7 @@ def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path
         return identity_lora_state(lora)
 
     observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: "condition",
-        responses=lambda condition: response, writer_arguments=lambda condition: arguments)
+        read=lambda condition: (response, arguments))
     runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora)
     task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),
         episode_lengths=(6,), suite="libero_spatial", suite_task_id=0)

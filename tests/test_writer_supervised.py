@@ -18,7 +18,8 @@ def test_replay_matches_direct_grouped_objective(rho, activation_checkpoint):
     reference = copy.deepcopy(model)
     args = inputs((3, 4))
     direct_responses = tuple(value.detach().requires_grad_() for value in args[0])
-    videos = reference.encode(direct_responses, *args[1:])
+    direct_visuals = tuple(value.detach().requires_grad_() for value in args[4])
+    videos = reference.encode(direct_responses, *args[1:4], direct_visuals, *args[5:])
     state = reference.decode(videos, args[1])
     targets = {name: torch.randn_like(value) for name, value in state.items()}
     teacher_targets = {name: torch.randn_like(value) for name, value in state.items()}
@@ -30,13 +31,13 @@ def test_replay_matches_direct_grouped_objective(rho, activation_checkpoint):
     auxiliary = weight * memory.sin().square().mean()
     encoder_params = tuple(reference.encoder_parameters())
     compiler_params = tuple(reference.compiler_parameters())
-    expected_encoder = torch.autograd.grad(correct + auxiliary, encoder_params + direct_responses, retain_graph=True)
+    expected_encoder = torch.autograd.grad(correct + auxiliary, encoder_params + direct_responses + direct_visuals, retain_graph=True)
     expected_compiler = torch.autograd.grad((1-rho)*correct + rho*distill, compiler_params, retain_graph=True)
     compiled = dict(zip(state, torch.autograd.grad(correct, tuple(state.values()), retain_graph=True)))
     distilled = dict(zip(state, torch.autograd.grad(distill, tuple(state.values()), retain_graph=True)))
     memory_gradient = torch.autograd.grad(auxiliary, memory)[0]
-    response_grads = replay_functional_credit(model, args[0], args[1:], compiled, distilled, memory_gradient, rho)
-    actual = [p.grad for p in model.encoder_parameters()] + list(response_grads)
+    response_grads, visual_grads = replay_functional_credit(model, args[0], args[1:], compiled, distilled, memory_gradient, rho)
+    actual = [p.grad for p in model.encoder_parameters()] + list(response_grads) + list(visual_grads)
     for result, expected in zip(actual, expected_encoder, strict=True):
         torch.testing.assert_close(result, expected, rtol=3e-4, atol=2e-6)
     for parameter, expected in zip(model.compiler_parameters(), expected_compiler, strict=True):

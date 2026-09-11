@@ -26,7 +26,7 @@ from ember.writer.video import VideoWriterConfig, require_architecture_identity
 RUN_SCHEMA = "ember_video_functional_writer_run_v1"
 STAGE = "video_functional_writer_fresh"
 TRAINING_SCHEMA = "ember_video_functional_training_state_v1"
-UPDATE_VERSION = "video_functional_credit_v1"
+UPDATE_VERSION = "video_functional_vl_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -233,8 +233,8 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
         tuple(torch.from_numpy(video.frame_indices) for video in videos), task.authority.language,
     )
     with torch.no_grad(), autocast(runtime.observer.device):
-        generated = runtime.state.writer(runtime.observer.responses(condition),
-                                         *runtime.observer.writer_arguments(condition))
+        responses, inputs = runtime.observer.read(condition)
+        generated = runtime.state.writer(responses, *inputs)
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)

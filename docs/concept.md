@@ -4,7 +4,9 @@
 不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
 Owner已授权实施，唯一active design为[Video Functional Writer](video_functional_writer_design.md)。
 新方法保留时间×任务token表示，以执行条件化辅助真实FM提供直接功能信用，完整LoRA真实FM持续约束可编译性；
-首版蒸馏只更新Compiler/native D；当前设计第8节保留两条真实FM、关闭蒸馏，单独检验这条教师目标的作用。
+首版蒸馏只更新Compiler/native D；第8节保留两条真实FM、关闭蒸馏的比较已结束。
+当前第10节单独加入teacher侧Gemma VL Meta，联合接收直接Z及R经KV的梯度，检验图文融合的可学习性；
+其余表示、输出和mu1/rho0配方保持，source基础权重及执行prefix仍冻结。新适配是否改善过程收益由闭环裁决。
 下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略

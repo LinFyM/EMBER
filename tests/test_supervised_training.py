@@ -81,6 +81,7 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
     assert config["model"]["factor_width"] == 256 and config["data"]["queries_per_task"] == 64
     assert "total_steps" not in config["data"]
     for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16),
+                                ("observer", "vl_meta_rank", 0),
                                 ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
                                 ("data", "conditions_per_task", None), ("data", "conditions_per_task", True),
                                 ("data", "conditions_per_task", 3)):
@@ -130,6 +131,7 @@ def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler,
     config["data"]["conditions_per_task"] = sampler.conditions_per_task = conditions
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
+    state.vl_meta = torch.nn.Linear(1, 1)
     state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)
@@ -219,6 +221,7 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     monkeypatch.setattr(torch.cuda, "max_memory_reserved", lambda *_: 0)
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
+    state.vl_meta = torch.nn.Linear(1, 1)
     state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)

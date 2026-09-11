@@ -18,7 +18,9 @@ def replay_functional_credit(writer, responses, inputs, compiled, distilled, aux
     cotangent of flatten(E), independent of the Compiler's time-routing weights.
     """
     leaves = tuple(value.detach().requires_grad_(True) for value in responses)
-    videos = writer.encode(leaves, *inputs)
+    visual_leaves = tuple(value.detach().requires_grad_(True) for value in inputs[3])
+    learned_inputs = (*inputs[:3], visual_leaves, *inputs[4:])
+    videos = writer.encode(leaves, *learned_inputs)
     memory_leaves = tuple(video.detach().requires_grad_(True) for video in videos)
     state = writer.decode(memory_leaves, inputs[0])
     correct = writer_chain_rule_surrogate(state, compiled)
@@ -37,10 +39,10 @@ def replay_functional_credit(writer, responses, inputs, compiled, distilled, aux
     if auxiliary is not None and cursor != len(auxiliary):
         raise ValueError("auxiliary memory cotangent lost video/token alignment")
     torch.autograd.backward(videos, memory_gradients)
-    cotangents = tuple(value.grad for value in leaves)
+    cotangents = tuple(value.grad for value in (*leaves, *visual_leaves))
     if any(value is None for value in cotangents):
-        raise RuntimeError("functional Writer detached a native response leaf")
-    return cotangents
+        raise RuntimeError("functional Writer detached a native R/Z leaf")
+    return cotangents[:len(leaves)], cotangents[len(leaves):]
 
 
 class SupervisedEngine:
@@ -77,9 +79,8 @@ class SupervisedEngine:
         task, demos = draw["task"], draw["video_demos"]
         hits, misses = self.cache.hits, self.cache.misses
         condition = self.cache.condition(task, demos)
-        inputs = runtime.observer.writer_arguments(condition)
         start = self._time(timings, "prefix_seconds", start)
-        responses = runtime.observer.responses(condition)
+        responses, inputs = runtime.observer.read(condition)
         start = self._time(timings, "observer_forward_seconds", start)
         with torch.no_grad(), autocast(self.device):
             videos = runtime.state.writer.encode(responses, *inputs)
@@ -102,7 +103,7 @@ class SupervisedEngine:
                                                  compiled, distilled, auxiliary, credit["rho"])
         del compiled, distilled, auxiliary, responses, inputs
         start = self._time(timings, "writer_vjp_seconds", start)
-        runtime.observer.backward(condition, cotangents)
+        runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)
         return {**credit, "task_weight": .25, "condition_weight": 1. / (4 * self.config["data"]["conditions_per_task"]),
                 "normalizer": 1., "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
@@ -113,8 +114,7 @@ class SupervisedEngine:
     @torch.no_grad()
     def validate(self, task: int, demo: int, *, seed: int, queries: int) -> dict:
         condition = self.cache.condition(task, (demo,))
-        responses = self.runtime.observer.responses(condition)
-        inputs = self.runtime.observer.writer_arguments(condition)
+        responses, inputs = self.runtime.observer.read(condition)
         raw, trace = self.data.diagnostic_batch(task, seed=seed, count=queries)
         batch = self.runtime.processor.training_batch(raw)
         with autocast(self.device):

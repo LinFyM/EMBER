@@ -43,6 +43,7 @@ def _config(path: Path) -> dict[str, Any]:
         expected_model[key] = getattr(selected_model, key)
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
+    expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
@@ -53,11 +54,9 @@ def _config(path: Path) -> dict[str, Any]:
         or {key: config["data"].get(key) for key in expected_data} != expected_data
         or type(config["data"].get("conditions_per_task")) is not int
         or config["data"].get("conditions_per_task") not in (1, 2)
-        or int(config["observer"]["flow_time"]) != 1
-        or int(config["observer"]["meta_rank"]) != 4
-        or int(config["observer"]["probe_seed"]) != 1729
+        or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
         or config["optimization"]["loss"] != "grouped_functional_credit"
-        or config.get("update_version") != "video_functional_credit_v1"
+        or config.get("update_version") != "video_functional_vl_credit_v1"
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
@@ -129,6 +128,7 @@ def _run_contract(args, context, config, runtime, state):
         "training": {
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
             "meta_parameters": sum(p.numel() for p in runtime.state.meta.parameters()),
+            "vl_meta_parameters": sum(p.numel() for p in runtime.state.vl_meta.parameters()),
             "reader_parameters": sum(p.numel() for p in runtime.state.reader.parameters()) if runtime.state.reader else 0,
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
@@ -244,7 +244,8 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
         torch.cuda.synchronize(context.device)
     sync_seconds = time.perf_counter() - tick
     norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
-             "meta_grad_norm": _grad_norm(runtime.state.meta.parameters())}
+             "meta_grad_norm": _grad_norm(runtime.state.meta.parameters()),
+             "vl_meta_grad_norm": _grad_norm(runtime.state.vl_meta.parameters())}
     norms["reader_grad_norm"] = _grad_norm(runtime.state.reader.parameters()) if runtime.state.reader else 0.0
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))

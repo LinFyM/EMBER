@@ -1,15 +1,15 @@
-"""State-free native video reading with trainable Action Meta and frozen KV.
+"""State-free teacher reading with trainable VL/Action Meta and joint Z/R VJP.
 
-Only frozen prefix tensors may outlive an optimizer step. Responses belong to
-one condition at the current parameter version; their cotangents are replayed
-through independently chunked native forwards before the optimizer advances.
+Only pre-Gemma embeddings may outlive an optimizer step. Z/KV/R belong to one
+condition at the current parameter version and are replayed together before
+the optimizer advances. Teacher adapters never enter execution forwards.
 """
 
 from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Sequence
 
 import torch
 
@@ -28,39 +28,30 @@ def autocast(device: torch.device):
 
 
 @dataclass(frozen=True)
-class FrozenPrefixChunk:
-    """CPU-resident native prefix KV, independent of all learned Writer state."""
+class FrozenInputChunk:
+    """CPU-resident vision/token embeddings, preceding every learned Meta."""
 
+    embeddings: torch.Tensor
     padding: torch.Tensor
-    layers: tuple[tuple[torch.Tensor, torch.Tensor, Any], ...]
-    visual_tokens: torch.Tensor
-    visual_mask: torch.Tensor
-    visual_task_mask: torch.Tensor
+    evidence_mask: torch.Tensor
+    task_mask: torch.Tensor
 
     @property
     def tensor_bytes(self) -> int:
         return sum(value.numel() * value.element_size() for value in (
-            self.padding, self.visual_tokens, self.visual_mask, self.visual_task_mask,
-        )) + sum(
-            value.numel() * value.element_size()
-            for keys, values, _ in self.layers for value in (keys, values)
-        )
-
-    def on_device(self, device: torch.device):
-        from transformers.cache_utils import DynamicCache
-
-        cache = DynamicCache(tuple(
-            (keys.to(device, non_blocking=True), values.to(device, non_blocking=True), window)
-            for keys, values, window in self.layers
+            self.embeddings, self.padding, self.evidence_mask, self.task_mask,
         ))
-        return self.padding.to(device, non_blocking=True), cache
+
+    def on_device(self, device: torch.device) -> ExecutionPolicyPrefix:
+        return ExecutionPolicyPrefix(self.embeddings.to(device, non_blocking=True),
+                                     self.padding.to(device, non_blocking=True))
 
 
 @dataclass(frozen=True)
 class NativeCondition:
     """One ephemeral condition; no task identity or privileged teacher fields."""
 
-    videos: tuple[tuple[FrozenPrefixChunk, ...], ...]
+    videos: tuple[tuple[FrozenInputChunk, ...], ...]
     frame_indices: tuple[torch.Tensor, ...]
     language_embeddings: torch.Tensor
     language_mask: torch.Tensor
@@ -70,7 +61,7 @@ class NativeVideoObserver:
     """Own execution scope, not the frozen policy's parameter registration."""
 
     def __init__(
-        self, policy: torch.nn.Module, meta: MetaLoRAStack,
+        self, policy: torch.nn.Module, meta: MetaLoRAStack, vl_meta: MetaLoRAStack,
         tokenizer: Pi05TeacherPrefixTokenizer, probe: torch.Tensor,
         *, frame_chunk: int = 4, camera_view: str = "agentview",
     ) -> None:
@@ -78,18 +69,19 @@ class NativeVideoObserver:
             raise ValueError("native observer requires one public 50x32 probe")
         if any(parameter.requires_grad for parameter in policy.parameters()):
             raise ValueError("native observer base policy must be frozen")
-        self.policy, self.meta, self.tokenizer = policy, meta, tokenizer
+        self.policy, self.meta, self.vl_meta, self.tokenizer = policy, meta, vl_meta, tokenizer
         self.probe, self.frame_chunk = probe, int(frame_chunk)
         self.device = probe.device
         self.camera_view = camera_view
         self.camera_names = teacher_camera_names(camera_view)
         self.expert = policy.model.paligemma_with_expert.gemma_expert.model
-        if len(self.expert.layers) != 18:
-            raise ValueError("native observer requires all 18 Action Expert layers")
+        self.gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
+        if len(self.expert.layers) != 18 or len(self.gemma.layers) != 18:
+            raise ValueError("native observer requires all 18 VL and Action Expert layers")
 
     @torch.no_grad()
     def prefix(self, frames: torch.Tensor, tokens: torch.Tensor, mask: torch.Tensor,
-               task_span: torch.Tensor) -> FrozenPrefixChunk:
+               task_span: torch.Tensor) -> FrozenInputChunk:
         from lerobot.utils.constants import OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
 
         dual = len(self.camera_names) == 2
@@ -115,16 +107,10 @@ class NativeVideoObserver:
         # in the language/Action Expert attention stacks.
         keep = prefix.padding.any(dim=0)
         prefix = ExecutionPolicyPrefix(prefix.embeddings[:, keep], prefix.padding[:, keep])
-        features, cache = prepare_prefix_features_and_cache(self.policy, prefix)
         evidence_mask = evidence_mask[:, keep]
         task_mask = task_mask[:, keep]
-        evidence_keep = evidence_mask.any(dim=0)
-        return FrozenPrefixChunk(
-            prefix.padding.cpu(),
-            tuple((keys.detach().cpu(), values.detach().cpu(), window) for keys, values, window in cache),
-            features[:, evidence_keep].cpu(), evidence_mask[:, evidence_keep].cpu(),
-            task_mask[:, evidence_keep].cpu(),
-        )
+        return FrozenInputChunk(prefix.embeddings.cpu(), prefix.padding.cpu(),
+                                evidence_mask.cpu(), task_mask.cpu())
 
     @torch.no_grad()
     def prepare(
@@ -147,17 +133,21 @@ class NativeVideoObserver:
             positions.append(indices.to(self.device))
         return NativeCondition(tuple(videos), tuple(positions), embeddings, task_span[0])
 
-    def capture(self, chunk: FrozenPrefixChunk) -> torch.Tensor:
-        padding, cache = chunk.on_device(self.device)
-        noise = self.probe.expand(len(padding), -1, -1)
-        time = torch.ones(len(padding), device=self.device)
+    def capture(self, chunk: FrozenInputChunk) -> tuple[torch.Tensor, torch.Tensor]:
+        """One shared prefix graph supplies both direct Z and R-through-KV paths."""
+        prefix = chunk.on_device(self.device)
+        with self.vl_meta.installed(self.gemma):
+            features, cache = prepare_prefix_features_and_cache(
+                self.policy, prefix, track_grad=torch.is_grad_enabled())
+        noise = self.probe.expand(len(prefix.padding), -1, -1)
+        time = torch.ones(len(prefix.padding), device=self.device)
         captured = []
         def capture_input(module, args):
             captured.append(args[0])
         handle = self.policy.model.action_out_proj.register_forward_pre_hook(capture_input)
         try:
             with self.meta.installed(self.expert), autocast(self.device):
-                self.policy.model.denoise_step(padding, cache, noise, time)
+                self.policy.model.denoise_step(prefix.padding, cache, noise, time)
         finally:
             handle.remove()
         if len(captured) != 1:
@@ -165,34 +155,37 @@ class NativeVideoObserver:
         responses = captured[0]
         if responses.shape[1:] != (50, 1024) or responses.dtype != torch.float32:
             raise ValueError("native observer lost final normalized FP32 complete horizon states")
-        return responses
-
-    def writer_arguments(self, condition: NativeCondition) -> tuple:
-        """Transfer immutable per-frame evidence once for all same-condition replays."""
-        tokens = tuple(torch.cat([chunk.visual_tokens for chunk in video]).to(self.device)
-                       for video in condition.videos)
-        masks = tuple(torch.cat([chunk.visual_mask for chunk in video]).to(self.device)
-                      for video in condition.videos)
-        task_masks = tuple(torch.cat([chunk.visual_task_mask for chunk in video]).to(self.device)
-                           for video in condition.videos)
-        return (condition.frame_indices, condition.language_embeddings,
-                condition.language_mask, tokens, masks, task_masks)
+        return responses, features[:, chunk.evidence_mask.any(dim=0).to(self.device)]
 
     @torch.no_grad()
-    def responses(self, condition: NativeCondition) -> tuple[torch.Tensor, ...]:
-        return tuple(torch.cat([self.capture(chunk) for chunk in video]) for video in condition.videos)
+    def read(self, condition: NativeCondition) -> tuple[tuple[torch.Tensor, ...], tuple]:
+        """Materialize same-version R/Z once; no learned values enter the cache."""
+        responses, visuals, masks, task_masks = [], [], [], []
+        for video in condition.videos:
+            captured = [self.capture(chunk) for chunk in video]
+            responses.append(torch.cat([pair[0] for pair in captured]))
+            visuals.append(torch.cat([pair[1] for pair in captured]))
+            masks.append(torch.cat([chunk.evidence_mask[:, chunk.evidence_mask.any(0)] for chunk in video]).to(self.device))
+            task_masks.append(torch.cat([chunk.task_mask[:, chunk.evidence_mask.any(0)] for chunk in video]).to(self.device))
+        inputs = (condition.frame_indices, condition.language_embeddings, condition.language_mask,
+                  tuple(visuals), tuple(masks), tuple(task_masks))
+        return tuple(responses), inputs
 
-    def backward(self, condition: NativeCondition, cotangents: Sequence[torch.Tensor]) -> None:
-        if len(condition.videos) != len(cotangents):
+    def backward(self, condition: NativeCondition, response_cotangents: Sequence[torch.Tensor],
+                 visual_cotangents: Sequence[torch.Tensor]) -> None:
+        if not len(condition.videos) == len(response_cotangents) == len(visual_cotangents):
             raise ValueError("observer VJP lost a video")
-        for video, gradient in zip(condition.videos, cotangents, strict=True):
+        for video, response_gradient, visual_gradient in zip(
+                condition.videos, response_cotangents, visual_cotangents, strict=True):
             cursor = 0
             for chunk in video:
-                response = self.capture(chunk)
+                response, visual = self.capture(chunk)
                 stop = cursor + len(response)
-                if gradient[cursor:stop].shape != response.shape:
+                gradients = (response_gradient[cursor:stop], visual_gradient[cursor:stop])
+                if gradients[0].shape != response.shape or gradients[1].shape != visual.shape:
                     raise ValueError("observer VJP frame chunk changed")
-                torch.autograd.backward(response, gradient[cursor:stop].to(response.dtype))
+                torch.autograd.backward((response, visual),
+                                        (gradients[0].to(response.dtype), gradients[1].to(visual.dtype)))
                 cursor = stop
-            if cursor != len(gradient):
+            if cursor != len(response_gradient) or cursor != len(visual_gradient):
                 raise ValueError("observer VJP omitted frames")

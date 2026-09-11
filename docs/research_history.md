@@ -6,7 +6,7 @@
 
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
 immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
-[progress.md](../progress.md)，当前方法见 [设计记录](horizon_relation_video_writer_design.md)。
+[progress.md](../progress.md)，当前方法见 [设计记录](video_functional_writer_design.md)。
 
 本次整理前的完整账本是 `fcdb6e43706c5fcedf10eaa5d2d459602b263016:docs/research_history.md`，含旧§1--181（有两个旧§126）；
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
@@ -1019,3 +1019,12 @@ Owner要求先还原科学动机、数学与专家形成链，再定位并持续
 Owner接受视频特异性优先的新候选；完整合同见`docs/video_functional_writer_design.md`及本日专家原文包。
 新video.py替代horizon/relation/semantic/frame_evidence；旧图专属测试随之退役，原生H、语言span、时序因果、完整LoRA、集合聚合与梯度合同由新行为测试覆盖。
 旧C/无变化参照实现保留于Git d1b62535及原formal冻结worktrees/configs/artifacts；其负结果不等于淘汰完整H或视频信息。新实现尚无科学结果。
+
+
+## 2026-09-11：视频功能信用首段完成与首个validation面板
+
+冻结a81a38ed，两配方fresh100更新，各400条件/25,600queries，逐条曝光匹配；主方案耗时4123.94s、pureFM3185.59s，50/100完整checkpoint保留。主方案/纯FM留出动作FM为.116660/.114877，主方案辅助reader.153163、source.154849。
+
+主方案50 validation correct69/400（source47），S/O/G/L=4/48/16/1、breadth7，保留20/新增49/丢失27、churn76、J=.20833。task1/3/11/13/23/26/31/32分别2/2/42/6/1/15/1/0；source对应0/0/5/0/0/41/1/0。主方案100 train35/96，S/O/G/L=7/8/15/5、breadth13，source15→35保留11/新增24/丢4；pureFM50 train30/96，9/2/12/7、breadth12，保留11/新增19/丢4。source配对实际通过；其它同曝光/相邻/换视频结果仍待完整收齐，非视频资格或checkpoint选择。
+
+原件`runs/outputs/video_functional_20260911/`；读出`runs/analysis/video_functional_20260911/paired_summary.json`及`first100_exposure_alignment.json`。一次gpu02:0启动与其它作业撞时导致加载OOM、0rows，失败记录保留于analysis的`failed_attempts/main100_validation_correct_gpu02p0`；不计入科学得分。

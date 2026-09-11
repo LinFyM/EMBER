@@ -26,12 +26,15 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 ### 首段实时证据
 
 - pureFM已完成fresh100/25,600queries，用时3185.59s；50/100完整checkpoint通过身份检查。固定train24留出动作FM从.154865降至.114877（32queries/task、相同视频/query面板）。主方案也已完成100更新/25,600queries，用时4123.94s，留出动作FM从.154849降至.116660；辅助读出仅降至.153163，尚不能称为合格功能教师。
-- 两配方前50更新的200条件/12,800queries实际曝光逐条匹配：任务、视频、动作query、RNG种子及权重一致；记录`runs/analysis/video_functional_20260911/first50_exposure_alignment.json`。
+- 两配方完整100更新的400条件/25,600queries实际曝光逐条匹配：任务、视频、动作query、RNG种子及权重一致；记录`runs/analysis/video_functional_20260911/first100_exposure_alignment.json`。
 - pureFM50固定训练面板correct30/96，严格配对source15/96；Spatial/Object/Goal/Long为9/2/12/7，对source净增3/2/5/5，breadth12/24。保留11、增19、失4，churn23，Jaccard.3235；task-cluster bootstrap净成功率增益95%CI[.0521,.2708]。
 - 以上是训练任务行为获取，尚无视频特异性或validation迁移结论；不是checkpoint选择。完整统计见`runs/analysis/video_functional_20260911/paired_summary.json`。
 - pureFM50/100、主方案50的训练96+validation400 LoRA均已物化；每个checkpoint的other共496条件全部hardlink复用，无重复编译。主方案100也已完成全部物化。
 - 四轮validation strict400并行：pureFM50 correct在gpu02:4，pureFM100 correct在gpu02:6，主方案50 other在gpu02:3，以上各3workers；主方案50 correct在gpu01:5,6共6workers。采用long-first动态队列与持久worker。
-- 随后gpu02:0释放，live检查只有低显存空闲context；主方案100 validation correct在该卡启动3workers，训练correct在物化释放的gpu01:4启动3workers。
+- 主方案100训练correct已在物化释放的gpu01:4启动3workers。gpu02:0曾通过空闲检查，但另一作业在启动窗口进入；主方案100 validation correct加载OOM、0rows，失败原件保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。未干预他人作业。
+- 主方案50 validation correct完整69/400，source47；S/O/G/L=4/48/16/1，breadth7/8。保留20/新增49/丢失27，churn76/J=.2083；task-cluster95%净增益CI[-.1700,.2975]。主要task11为5→42、task26为41→15，未形成可信广泛迁移结论。
+- 主方案100 train correct完整35/96，source15；S/O/G/L=7/8/15/5，breadth13/24，保留11/新增24/丢失4，churn28/J=.2821，task-cluster95%CI[.0729,.3333]。
+- 上述两面板完成后，live gpu01:4/5/6均空闲；100 validation correct已重调度到5,6共6workers，50 train correct在4上3workers。原gpu02三轮验证继续运行。
 - 后续补齐50/100两配方的correct/other及训练面板，再决定辅助信用是否保留，并采用对应配方的匹配无序视觉参照。4states训练诊断使用screen，validation400使用formal；不以部分队列结果选点。
 
 ## 暂停时点的已完成实验与未完成范围

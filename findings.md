@@ -2,15 +2,15 @@
 
 Owner已授权Video Functional Writer设计、实现和实验。专家最终方案的机制理由是直接执行query功能信用；
 这不是首次联合训练，也没有数学上排除共同动作捷径。J2真实联合训练已核验，辅助头失败不证明无信息，
-辅助头强/LoRA弱不证明rank容量不足。具体设计见docs/video_functional_writer_design.md；当前尚无新实测结果。
+辅助头强/LoRA弱不证明rank容量不足。具体设计见docs/video_functional_writer_design.md；首段实测见§56，尚无视频特异性资格。
 
 # EMBER findings
 
-Owner最新阶段为综合全部历史推导有益视频特异性，暂不强制绝对性能；当前科研执行继续暂停。
-最新已完成证据见§51–55，远程副本与跨历史阅读入口见[全新专家材料](docs/review_materials/video_specificity_20260911/README.md)。
+Owner最新阶段为有益视频特异性优先，已授权新候选自主实施；旧路线保持暂停。
+最新已完成证据见§51–56，远程副本与跨历史阅读入口见[全新专家材料](docs/review_materials/video_specificity_20260911/README.md)。
 以下各节保留当时结论与边界，其旧“当前/下一步/目标”不覆盖最新Owner要求；本次不预设恢复v5.2或保留Horizon全图。
 
-当前方法见[正式设计](docs/horizon_relation_video_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
+当前方法见[正式设计](docs/video_functional_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
 最新学习与原因分析集中在§39–49；[2026-09-11专家材料](docs/review_materials/20260911/README.md)提供远程可读原配置、逐条结果、机制记录及当前看法。文内本地runs路径通过该材料的index映射到已提交副本。
 §50记录Owner对首轮专家意见的修正重点与历史正证据，不代表新实验或正式方法采纳。
 以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15–16记录方法收口与接续裁决要求，§17记录实际新图的数值重放发现。
@@ -577,3 +577,10 @@ R400已完整结束，将§53更新为有限续训终点结论：correct85/400�
 200 validation strict400=34，source47、旧C20050；S/O/G/L=4/24/5/1，breadth5。相对source保留6/新增28/丢失41，churn69/J=.08；相对旧C保留18/新增16/丢失32，churn48/J=.27273。global task26 source41→2、task11 source5→24，再次存在任务间得失抵消。该节点没有source以上的未见任务能力；已登记300/400尚未完成，不能从首段宣称收敛或否定整个候选。
 
 原件`runs/analysis/video_change_reference_20260911/step200/paired_summary.json`、`train_mechanism/step100`与`step200`、`first_segment_action_diagnostic.json`及对应formal输出。当前机制goal是可信稳定的correct优于错误视频且高于source；项目最终>145/400资格另行保留，不加为本次goal完成门槛。
+
+
+## 56. 视频功能信用首段：辅助教师尚弱，训练获取不等于迁移（2026-09-11）
+
+新表示的主方案与纯FM都完成fresh100/25,600queries，实际任务、video、query及RNG曝光匹配。主方案留出动作FM从.154849降至.116660，辅助reader仅降至.153163；纯FM学生从.154865降至.114877。当前辅助头未成为强功能教师，不能凭存在直接信用就断言表示已经学到有益过程，也不能把学生表现不理想归到编译容量。
+
+首个主方案50 validation为69/400，配对source47；Object5→48同时Goal41→16，task-cluster增益95%CI[-.1700,.2975]，尚非可信广泛迁移。主方案100 train35/96高于source15，证明当前训练任务行为获取；两个配方的同曝光闭环、相邻及换视频尚未收齐，暂不决定辅助信用去留。无序视觉参照和最终sealed controls尚未执行，当前goal未完成。完整指标及success-set见`runs/analysis/video_functional_20260911/paired_summary.json`；动态后续仅看progress。

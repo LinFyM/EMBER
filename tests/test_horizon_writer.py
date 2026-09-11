@@ -167,28 +167,56 @@ def test_gru_uses_ordered_real_messages_and_correct_spacing():
     states, times = torch.randn(6, 4, 12), torch.tensor([0., 5., 10., 15., 20., 23.])
     current, past, slots = past_edges(6, 4, states.device)
     assert past[current == 5].tolist() == [1, 2, 3, 4]
-    messages = torch.randn(len(current), 4, 12)
+    messages = torch.randn(2, len(current), 4, 12)
     actual = block.aggregate(states, times, messages, current, past, slots)
     initial = block.initial(block.initial_norm(states)).tanh()
     final = []
-    for t in range(len(states)):
-        hidden = initial[t]
-        edge_ids = (current == t).nonzero().flatten().tolist()
-        for ordinal, edge in enumerate(edge_ids):
-            u = past[edge]
-            delta = (times[u] - times[past[edge_ids[ordinal - 1]]]) / 5 if ordinal else 0
-            gamma = torch.tensor([(times[t] - times[u]) / 5, delta, float(ordinal > 0)])
-            inputs = block.message_norm(messages[edge]) + block.time_input(gamma)
-            hidden = block.gru(inputs, hidden)
-        final.append(hidden)
-    expected = states + block.neighbor_output(torch.stack(final) - initial)
+    for branch in range(2):
+        sequence = []
+        for t in range(len(states)):
+            hidden = initial[t]
+            edge_ids = (current == t).nonzero().flatten().tolist()
+            for ordinal, edge in enumerate(edge_ids):
+                u = past[edge]
+                delta = (times[u] - times[past[edge_ids[ordinal - 1]]]) / 5 if ordinal else 0
+                gamma = torch.tensor([(times[t] - times[u]) / 5, delta, float(ordinal > 0)])
+                inputs = block.message_norm(messages[branch, edge]) + block.time_input(gamma)
+                hidden = block.gru(inputs, hidden)
+            sequence.append(hidden)
+        final.append(torch.stack(sequence))
+    expected = states + block.neighbor_output(final[0] - final[1])
     expected = expected + block.ffn(block.ffn_norm(expected))
     torch.testing.assert_close(actual, expected)
     torch.testing.assert_close(actual[0], states[0] + block.ffn(block.ffn_norm(states[0])))
     swapped = messages.clone()
     indices = (current == 5).nonzero().flatten()
-    swapped[indices] = swapped[indices.flip(0)]
+    swapped[0, indices] = swapped[0, indices.flip(0)]
     assert not torch.allclose(actual[5], block.aggregate(states, times, swapped, current, past, slots)[5])
+
+
+@pytest.mark.parametrize("length", [1, 3, 8])
+def test_repeated_real_frame_has_no_centered_process_value(length):
+    writer = HorizonRelationWriter(_contract(), _config())
+    response, times, visual, mask = _input(length, writer.config)
+    response = response[:1].expand_as(response).clone()
+    visual = visual[:1].expand_as(visual).clone()
+    language = _frame_language(writer, visual, mask, _language(writer.config)[1])
+    process = writer.encode_video(response, times, language, visual, mask)
+    centered = process - process.mean(0, keepdim=True)
+    torch.testing.assert_close(centered, torch.zeros_like(centered), rtol=0, atol=2e-6)
+
+
+def test_real_change_retains_process_signal_and_native_input_gradients():
+    writer = HorizonRelationWriter(_contract(), _config(activation_checkpoint=True))
+    response, times, visual, mask = _input(8, writer.config)
+    response.requires_grad_()
+    visual.requires_grad_()
+    language = _frame_language(writer, visual, mask, _language(writer.config)[1])
+    process = writer.encode_video(response, times, language, visual, mask)
+    variation = (process - process.mean(0, keepdim=True)).square().mean()
+    assert variation > 1e-4
+    gradients = torch.autograd.grad(variation, (response, visual))
+    assert all(torch.isfinite(g).all() and g.abs().sum() > 0 for g in gradients)
 
 
 def test_writeback_depends_on_each_h_and_language_positions_and_masks():

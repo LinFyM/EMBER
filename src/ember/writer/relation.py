@@ -100,19 +100,19 @@ class LocalRelationBlock(nn.Module):
 
     def aggregate(self, states: Tensor, times: Tensor, messages: Tensor,
                   current: Tensor, past: Tensor, slots: Tensor) -> Tensor:
-        """Only the <=4 neighbor slots recur; all real (t,h) cells are batched."""
+        """Subtract a matched no-change recurrence, retaining real message order."""
         initial = self.initial(self.initial_norm(states)).tanh()
-        hidden = initial
+        hidden = initial.unsqueeze(0).expand(2, -1, -1, -1)
         for slot in range(min(self.radius, len(states) - 1)):
             selected = slots == slot
             targets, sources = current[selected], past[selected]
             gap = (times[targets] - times[sources]) / 5
             previous_gap = (times[sources] - times[sources - 1]) / 5 if slot else torch.zeros_like(gap)
             gamma = torch.stack((gap, previous_gap, torch.full_like(gap, float(slot > 0))), -1)
-            inputs = self.message_norm(messages[selected]) + self.time_input(gamma.to(states.dtype))[:, None, :]
-            updated = self.gru(inputs.flatten(0, 1), hidden[targets].flatten(0, 1)).reshape(-1, self.horizon, self.width)
-            hidden = hidden.index_copy(0, targets, updated)
-        updated = states + self.neighbor_output(hidden - initial)
+            inputs = self.message_norm(messages[:, selected]) + self.time_input(gamma.to(states.dtype))[None, :, None, :]
+            updated = self.gru(inputs.flatten(0, 2), hidden[:, targets].flatten(0, 2)).reshape(2, -1, self.horizon, self.width)
+            hidden = hidden.index_copy(1, targets, updated)
+        updated = states + self.neighbor_output(hidden[0] - hidden[1])
         return updated + self.ffn(self.ffn_norm(updated))
 
     def forward(self, states: Tensor, times: Tensor, language: Tensor,
@@ -124,13 +124,18 @@ class LocalRelationBlock(nn.Module):
             return states + self.ffn(self.ffn_norm(states))
         # These projections occur once per frame/group, outside the edge loop.
         key, value = self.visual_read.project_memory(visual_tokens, visual_tokens)
-        chunks = []
+        chunks, references = [], []
         for start in range(0, len(current), self.edge_chunk):
             late, early = current[start:start + self.edge_chunk], past[start:start + self.edge_chunk]
-            args = (states, normalized, content, values, key, value, visual_mask, late, early,
-                    times[late] - times[early], horizon_embedding, language)
-            if self.activation_checkpoint and torch.is_grad_enabled():
-                chunks.append(checkpoint(self._pair_messages, *args, use_reentrant=False))
-            else:
-                chunks.append(self._pair_messages(*args))
-        return self.aggregate(states, times, torch.cat(chunks), current, past, slots)
+            # Both paths use the real gap, roles, window and shared parameters.
+            # The reference reads the current frame's native activations at
+            # both endpoints; it never calls the backbone on fabricated input.
+            for sources, destination in ((early, chunks), (late, references)):
+                args = (states, normalized, content, values, key, value, visual_mask, late, sources,
+                        times[late] - times[early], horizon_embedding, language)
+                if self.activation_checkpoint and torch.is_grad_enabled():
+                    destination.append(checkpoint(self._pair_messages, *args, use_reentrant=False))
+                else:
+                    destination.append(self._pair_messages(*args))
+        messages = torch.stack((torch.cat(chunks), torch.cat(references)))
+        return self.aggregate(states, times, messages, current, past, slots)

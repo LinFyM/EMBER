@@ -10,6 +10,12 @@ Goal已建立。Owner随后补充correct必须至少高于冻结source；该条�
 
 上述goal进展：第1步形成过程审查完成，完整结论见[机制复核](docs/video_mechanism_reassessment.md)。已完整读当前形成链的七篇专家原文，核对Owner覆盖和实际代码；独立只读核查旧v5.2/v6推导及三组15臂6000条rows。没有发现可直接解释全部视频失效的永久断梯度/排序还原错误，尚未确定唯一原因。下一项准备是已有C100/C200的冻结训练任务视频检查与匹配S/source比较，复用off400九臂；诊断合同已在结果前登记于`runs/analysis/video_mechanism_20260911/registration.json`。C100/C200各六臂、S100/S200各correct，train24×states32–35，共1344新rows；冻结source既有同口径96rows复用（15/96），逐row配对待结果核对。使用clean pushed冻结7fedbe85，两路物化已在gpu01 p4和gpu02 p6启动；gpu02 p6仅原4.64GiB、util0可共驻。无新训练或held读取。/data1 quota used809460352KiB/soft1073741824KiB，共享83TiB；C/S checkpoints实测16.08GiB，新面板峰值≤3GiB。
 
+### 当前冻结诊断执行
+
+`runs/analysis/video_mechanism_20260911/`：C100/C200六臂及S100/S200 correct共336条件已全部物化（C各220秒、S各35秒，约10.5GiB峰值），1344闭环rows正在执行；source同口径96rows复用。主面板之外，在结果前另登记C200同批64queries/task的六臂、S/source功能对照，以及沿用历史固定八task的S/P4路径替换（128新rows与配对动作诊断）。路径替换仅定位现有checkpoint，不是部署或训练中惩罚错误视频；zero分支损害本身不证明动态语义。
+
+初次闭环launch时，gpu02 p0–3的其它任务在live检查后重新占用，7个loader OOM。已只撤下这些卡上的5个本任务存活worker，将5个尚无raw rows的claimed jobs定向归还队列，失败/中断原件留在`closedloop/attempts/withdrawn_gpu02_p0_p3/`，详见`contention_recovery.json`。gpu01 p4及gpu02 p6共6worker持续执行，gpu02 p4运行无梯度动作诊断与短路径物化；没有修改其它用户进程。不存在新训练、95-task恢复或最终资格结论。
+
 ## 历史Owner暂停（已由上述定向授权覆盖）
 
 Owner明确要求“停一下”，指出核心仍是正确视频的使用：off/普通FM与扩大task数量没有回答当前结构为何需要正确视频。立即暂停95-task实现、profile及训练；此前4480条闭环已完成，没有任何95-task GPU任务。子agent已停止，两个隔离worktree的未提交改动原样保留，不集成或继续。

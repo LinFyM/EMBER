@@ -138,3 +138,32 @@ supervised.py编排同condition重放，runtime.py统一构建，training.py统�
 旧科学模型只由原detached commit运行。没有平行fallback；pureFM和frame_set是同一模型合同的必要对照配置。
 新代码与测试在独立codex工作树完成，合main并push；formal使用clean pushed detached冻结工作树。
 精确GPU、quota、命令与峰值在launch记录中，不把动态资源状态放AGENTS。
+
+## 7. 有界冻结表示读出拟合诊断（2026-09-12，额外拟合前登记）
+
+主方案200→300两组validation视频均74→32，50/100/200匹配frame_set未获得可信有序增益。
+已有训练同批与train24留出动作诊断均显示辅助读出只小幅改善source，且明显落后LoRA学生。
+因此当前不成立“好教师已经学会、只有LoRA编译失败”的前提。先用一个低成本干预检验现有读出是否还能学习，
+不追加canonical Writer更新，不用该诊断选择部署checkpoint或宣称视频因果资格。
+
+- 诊断锚点固定为main200（退化前节点，非qualified/selected checkpoint）。冻结source、Meta、视频encoder、
+  Compiler、完整LoRA decoder；缓存原生source执行query、source速度、FM target及视频E，只让现有ExecutionVideoReader学习。
+  这不是Writer分阶段训练课程；输出仅为不可部署的独立读出probe，不回写原checkpoint。
+- 仅train24。每task固定一条训练池video（global task modulo 16）、64条动作queries（episodes16–41，query seed=20260912+task）；
+  同task跨episode、stride5、exact language和source-only normalization不变。固定缓存共1,536条独立query条件，后续轮次是复用，不能称新增数据。
+- 留出沿用原train24动作诊断：episodes42–45、每task32queries、seed20260908+task，teacher46–49按task modulo4。
+  这些768条queries从不产生梯度。validation8/Test均不访问；这不是held benchmark动作学习。
+- 从main200读出权重出发，fresh AdamW与原LR3e-5/betas/wd/clip、8updates warmup。每epoch每task恰好一次，
+  各suite内按seed20260912+epoch打乱，四suite各一task组成一次等权更新；固定64epochs=384updates，无LR/seed/架构扫描。
+  这是一项“额外读出拟合”干预，包含fresh optimizer与固定缓存复用，不声称隔离了某一个优化器超参数。
+- 只报告epoch0/4/16/64的support/held逐task FM、冻结source/原LoRA学生FM与最终probe状态。所有报告节点保留，不按结果延长或选点。
+  同时作无梯度的cross-task E替换（固定选不同suite的donor）：这是表示接口依赖诊断，不是raw-video wrong/shuffle控制，
+  不替代视频内容或顺序因果证据。正确条件改善才有意义，donor退化本身不是目标。
+- 判读：若固定表示下读出能改善留出动作，说明该接口存在可学习修正，值得进一步查原共同训练中的获取和传递；
+  仅support改善说明固定样本拟合不足以泛化；两者都弱仍不能区分函数类与优化，也不能断言视频无信息。
+  无论结果如何，FM不能完成当前closed-loop goal，probe不会直接进入部署。
+- 先做4个训练tasks、各8条support/held queries、1epoch的smoke，只验真实native/cache/梯度机制。
+  正式诊断1GPU，CPU缓存不落盘，预计持久增量小于1GiB（含约217MiB隔离checkout），运行占卡计入Owner全局上限。
+
+`ember.writer.reader_diagnostic`只拥有此诊断编排，复用现有runtime、数据、视频与FM函数；不增加第二Writer或评测器。
+它是有明确问题的临时研究入口，由当前任务维护，诊断结论被后续方法吸收或该问题关闭后退役，证据由Git及probe artifacts保留。

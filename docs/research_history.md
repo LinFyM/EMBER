@@ -1000,3 +1000,12 @@ R400终点与train96随后完整结束：correct85，四suite1/45/32/7、breadth
 Owner要求先还原科学动机、数学与专家形成链，再定位并持续修正正确视频失效，补充correct必须高于source。形成链及旧6000条rows复核记录见[机制复核](video_mechanism_reassessment.md)。随后C100/200六臂、匹配S及固定八task路径替换1472新闭环和14336配对动作预测完成，无训练或held梯度。C200 correct42/96、两错46/46、乱序45、静态49、S51、source15；固定正确S时correct/静态过程同为15/32。C在训练任务上获得source增量，却未使正确过程产生净收益；两个节点不证明收敛。
 
 具体表示缺陷为重复画面仍产生较强中心化P4。依据该性质与功能/闭环干预，准备局部真实历史GRU减同gap/窗口静态参照GRU，只改过程更新、保留正样本FM，尚无新学习结果。详细边界、原件和相邻集合见findings§54；候选设计与后续授权只能从当时progress确认。本历史段不恢复运行。
+
+
+## 56. 2026-09-11：无变化参照200步首段与冻结行为
+
+冻结64eba75b的局部无变化参照候选完成fresh200更新/51200queries（3327.11秒）；100、200完整checkpoint与六卡恢复状态保留。唯一主要改动是C局部过程更新的同内容参照，未新增wrong训练、辅助loss、RL或task覆盖。24项固定留出动作FM均改善，平均.151451→.109323。
+
+固定train100/200正确视频36/45，各96；200正确/换视频/同suite错/跨suite错/乱序/静态45/42/41/37/41/40。所有视频差额的逐task bootstrap95%区间含0。200 validation34/400低于配对source47及旧C20050；四suite4/24/5/1，breadth5。证据支持学习与初步训练条件分化，未证明可信视频因果优势或source以上迁移能力；首段观察不能作为收敛结论。详见findings§55。
+
+证据根`runs/analysis/video_change_reference_20260911/`中的`launch_contract.json`、`first_segment_action_diagnostic.json`、`step200/paired_summary.json`与`train_mechanism/step100`、`step200`；formal输出`runs/outputs/video_change_reference_seed7_20260911/`。本条只记已完成首段事实，不把开发视频面板当最终资格。

@@ -556,3 +556,14 @@ R400已完整结束，将§53更新为有限续训终点结论：correct85/400�
 固定八task的语义S，correct/错误过程/静态过程/zero过程/错误语义为15/18/15/14/21，各32；正确动态未产生稳定净收益。配对动作14336次预测中，C correct.112128、S.111931、source.152494；换static过程仅+.000044。静态首帧仍产生正常视频0.692–0.935倍中心化P4，证明过程Value包含时间/窗口响应，不能自动解读为视觉动态。此表示性质是具体修正对象，尚非全部失败的唯一原因。
 
 采用局部无变化参照作为下一受控候选，保留C其余结构和普通FM；须经真实profile和fresh后续节点才能判断。完整论证、有限面板和路径替换边界见[机制复核§9–10](docs/video_mechanism_reassessment.md)。1472条新闭环及逐行配对、逐task/suite、success-set和task bootstrap在runs/analysis/video_mechanism_20260911/{behavior_summary,functional_comparison}.json及paths/behavior_summary.json。现有validation C43/50对source47未建立可信稳定source收益，EMBER目标与本次goal均未达成。
+
+
+## 55. 无变化参照首段出现小幅训练视频分化，尚无迁移收益（2026-09-11）
+
+只替换C局部关系更新的无变化参照，保持普通正样本FM、train24、2K1条件/task与32queries/条件，fresh训练200更新。固定train-only留出动作128queries/task配对通过，24/24任务FM下降，平均.151451→.109323；该动作证据不能证明有益视频因果依赖。
+
+同一固定teacher46、states32–35的train100/200 correct=36/45（source15、旧C100/200=32/42）。100→200保留22/新增23/丢失14，churn37/J=.37288，不能把+9总分视为成功集合稳定。200六臂正确/换同task视频/同suite错/跨suite错/乱序/静态为45/42/41/37/41/40，各96；correct对两错/乱序/静态的task-bootstrap95%差额区间全部含0。由原C200的42/46/46/45/49转为小幅正差额是初步方向信号，正确自身仅+3，不能声称机制已修复。
+
+200 validation strict400=34，source47、旧C20050；S/O/G/L=4/24/5/1，breadth5。相对source保留6/新增28/丢失41，churn69/J=.08；相对旧C保留18/新增16/丢失32，churn48/J=.27273。global task26 source41→2、task11 source5→24，再次存在任务间得失抵消。该节点没有source以上的未见任务能力；已登记300/400尚未完成，不能从首段宣称收敛或否定整个候选。
+
+原件`runs/analysis/video_change_reference_20260911/step200/paired_summary.json`、`train_mechanism/step100`与`step200`、`first_segment_action_diagnostic.json`及对应formal输出。当前机制goal是可信稳定的correct优于错误视频且高于source；项目最终>145/400资格另行保留，不加为本次goal完成门槛。

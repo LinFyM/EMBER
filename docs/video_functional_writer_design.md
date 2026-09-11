@@ -275,3 +275,45 @@ P1 `c9e8198:bank_conditioning/primal_capacity.py`及PNBTT `e65c6388:joint_progra
 仍落后原学生。原生中层函数可学习且末段仍在获取，但该预算未形成更强教师证据；不追加拟合、层位扫描或
 自动接新Writer训练。限定结论与采样匹配见`native_reader_analysis.json`，临时入口退役，代码由b1d3fa25保留。
 当前goal未完成；新干预需由后续机制复核登记，不能从本节或历史阶段恢复执行。
+
+## 10. 单独检验teacher侧图文融合的可学习性（2026-09-12，实施前登记）
+
+第7–9节区分了辅助读出获取、蒸馏和读出函数类：两类头都未建立强教师，去蒸馏的训练收益未形成可信迁移。
+这些结果不证明输入信息不足，也不支持继续把读出拟合当作主修复。当前最早尚未检验的学习边界在Gemma prefix：
+直接用于语义grounding的Z与供Action Expert读取的KV均冻结，只有其后的投影、过程模块及Action Meta可学习。
+它们可能已足以补偿，也可能更容易在固定语义上学习训练task修正，未学出可迁移的图文关系整合；现有证据尚未分开。
+
+这不是新提出的因素。近等价审计`980072f3:docs/horizon_causal_learning_plan_20260909.md`§2及
+`docs/review_materials/20260911/expert_review_round2.md`§三.3已保留此假设，未有匹配学习实验。
+旧v5.2/v6使用Text/VL/Action三Meta；其更强correct成绩属于整套架构/配方，不能归因到只开VL。
+两者视觉编码器均冻结。此处不恢复旧text-only分支、H均值、Core/Procedure或family heads。
+
+**唯一主要变量：teacher侧PaliGemma 18层q/k/v/o新增共享rank4 VL Meta（921,600参数）。**
+source所有基础权重与执行侧prefix保持冻结；该Meta只在视频读取时安装，读完移除，不进入执行policy。
+视频encoder、完整H、Action Meta、Compiler/native D、K1/stride5、数据池/采样、mu1/rho0及optimizer均沿第8节。
+VL Meta在原Writer/Action Meta/reader构造后初始化，避免新增模块改变共同参数的初始化随机流；所有模块fresh共同学习。
+
+```text
+teacher RGB + exact language
+ → frozen vision/token embeddings（唯一可跨update缓存的内容）
+ → Gemma + teacher VL Meta → 同次Z/KV
+ → Z直接grounding；KV经Action Meta产生完整H
+ → 原时间×语义encoder → 原Compiler/native D → 唯一完整LoRA
+```
+
+梯度必须同时包含直接Z路径与R经KV路径，按同一参数版本联合重放prefix和Action Expert；只反传R或缓存旧Z/KV
+均不满足本干预。仍用分块VJP控制显存，不把训练图缓存到下一update。冻结的图像embedding可驻CPU，Z/KV/R为当次临时值。
+`native.py`拥有新的单一读取/重放边界，`supervised.py`回收R与Z cotangents，runtime/checkpoint保存两组读取Meta；
+materialization复用同一读取。旧冻结KV运行面由Git保留，不留第二trainer或隐式兼容旧checkpoint的fallback。
+
+先用真实native smoke检验identity、两条VL梯度、Action梯度、source无梯度、同条件重放及生成出口；用最长合法视频
+profile选择frame/policy microbatch，按真实吞吐登记单段命令，若成本明显失衡先修正布局。额外参数很少不代表计算便宜。
+正式fresh上限200updates=800条件/51,200queries，保存100/200完整checkpoints，按吞吐拆分约1h段。
+两个节点均做原train96与validation strict400的correct/other及原留出动作诊断；固定映射、task权重和bootstrap不变。
+直接比较第8节同曝光结果，报告全部task/suite、source、breadth、R/G/L/churn/J及相邻/换视频保持。
+
+若改善只在训练任务、validation两节点两臂均无正向总分变化且保持亦无改善，则不延长或扫描Meta rank/层位/LR。
+若出现值得验证的跨task收益与保持，再登记相同VL适配、相同曝光的fresh frame_set，沿第5节原资格门槛检验过程增量；
+冻结prefix旧frame_set不能替代该匹配参照。只开放VL本身不能完成goal，FM改善也不能作为视频资格。
+继续保持Test封存，不使用shuffled/reversed修正设计，无RL或新增meta tasks。资源与正式精确命令另记launch contract；
+当前本节授权实现与profile，正式训练需先完成上述实测及clean pushed detached运行准备，无额外人工审批步骤。

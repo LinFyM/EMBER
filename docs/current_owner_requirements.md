@@ -51,7 +51,8 @@ Owner随后明确授权“开始推进”，给予足够自由度并要求高效
 - 每条视频独立保序编码；只在集合阶段置换不变地合并证据。不得平均frames、raw features或最终LoRAs，不挑最好video。
   声称dynamic K就必须真实训练对应cardinalities，不能重复同一条视频凑K。one-shot/few-shot设定由真实能力决定，不故意削弱强方案。
 - 观察侧Meta-LoRA应有明确输入域与学习职责，必须保留其真实梯度以及cache有效性。已对齐设计采用Action Expert共享Meta适配，
-  vision/Gemma保持冻结；其具体rank、投影集合、probe和readout以登记设计为准，不把历史默认当作永久规定。
+  vision/Gemma保持冻结；当前active design第10节单独检验teacher侧Gemma VL Meta，基础权重及执行prefix仍冻结。
+  具体rank、投影集合、probe和readout以登记设计为准，不把历史默认当作永久规定。
 - 显式读X/Y与把因子限制在X/Y的span是两个独立选择。G1证明过局部native-factor容量，不强迫后继复刻signed pooling；
   原生状态或压缩的过程表示也不自动等同于原始算子X/Y。观察侧与执行侧激活坐标必须区分。
 - 保持少数职责清楚、可重复扩展的标准attention/MLP及短序列递推模块；有序GRU不是跨rollout记忆。

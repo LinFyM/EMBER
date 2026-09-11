@@ -35,12 +35,15 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 ### 正在运行与下一步
 
 - 首段16个面板共3968条闭环全部完成，所有source及模型间配对通过。validation other主方案50/100=71/71、pureFM64/60；主方案100 correct/other=72/71，J=.76543。主方案other相邻总分不变，仍有24新增/24丢失，J=.49474；不将总分保持等同于低churn。
-- 主方案已从完整100恢复到200/300段：原gpu01:4,5,6/world3/micro8×3及NUMA/UUID/config合同通过，实际完成103步，rho=.25、峰值39.01GiB。tmux `ember-video-functional-main-300`；精确脚本与合同在analysis的`main/resume_200_300.sh`、`main/continuation_launch_contract.json`，日志在output的`main/train_200_300.log`。原首段completion已保留。
+- 主方案已从完整100恢复到200/300段：原gpu01:4,5,6/world3/micro8×3及NUMA/UUID/config合同通过，200完整checkpoint及四套correct/other LoRA manifest已保存，训练继续至225步，rho=.25、峰值39.03GiB。tmux `ember-video-functional-main-300`；精确脚本与合同在analysis的`main/resume_200_300.sh`、`main/continuation_launch_contract.json`，日志在output的`main/train_200_300.log`。原首段completion已保留。
 - 一次gpu02:0在空闲检查后遭遇其它作业进入，主方案100 validation加载OOM、0rows；完整失败证据保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。已换gpu01:5,6完成正式400；未干预其它作业。
 - 按原设计准备与主方案匹配的frame_set参照；目前主方案correct相邻轨迹较好，因此先以其配方检验有序处理的增量，不等于辅助优势已确立。配置唯一变化为`model.process_mode: ordered→frame_set`，保留完整帧、同参数、同FM/辅助/蒸馏和曝光。50/100/200/300请求及理由见`runs/analysis/video_functional_20260911/frame_set/registration.json`；fresh首段已启动。
 - 已在新学习前登记下一有界窗口：主方案完整100按原拓扑exact-resume到200/300，frame_set fresh检查50/100/200/300，最终匹配76,800queries。原config/optimizer/sampler与科学边界不变；不追加pureFM或300以后的更新。精确理由与48GiB增量预算见`runs/analysis/video_functional_20260911/bounded_300_registration.json`；主方案续训与frame_set fresh首段均已启动。
-- frame_set真实93帧profile通过：rho=.25时micro4/8为3.06/3.17queries/s、峰值25.32/37.85GiB。scratch未保存权重；正式fresh已在gpu02:1,3/world2/micro8,8启动，和gpu01原拓扑续训并行。实际合同frame_set、reader864000参数、source trainable0通过，初始固定留出FM .154849。tmux `ember-video-frame-set`，output的`frame_set/launch.sh`及`launch_contract.json`保存精确命令；未来resume锁此拓扑。最新strg01 /data1仍811.6GiB/1TiB、当前run25GiB、共享83TiB；完整下一窗口48GiB增量预算，预计峰值859.6GiB。
+- frame_set真实93帧profile通过：rho=.25时micro4/8为3.06/3.17queries/s、峰值25.32/37.85GiB。scratch未保存权重；正式fresh已在gpu02:1,3/world2/micro8,8启动，和gpu01原拓扑续训并行。实际合同frame_set、reader864000参数、source trainable0通过，初始固定留出FM .154849。tmux `ember-video-frame-set`，output的`frame_set/launch.sh`及`launch_contract.json`保存精确命令；未来resume锁此拓扑。启动前strg01 /data1为811.6GiB/1TiB、当时run25GiB、共享83TiB；完整下一窗口48GiB增量预算，预计峰值859.6GiB。
 - frame_set首次四节点单段命令在更新前被现有入口拒绝，0updates、无checkpoint；已按每段恰好两个节点拆为fresh50/100与原拓扑resume200/300，不修改训练状态或科学节点。原失败命令/日志在analysis的`frame_set/failed_four_nodes`，实际fresh已通过初始诊断。
+- frame_set已完整保存50 checkpoint，四套train96/validation400 correct/other LoRA manifest均已生成；前50步实际task/video/action/query-seed/weight曝光与主方案匹配，通过记录见analysis的`frame_set/step50/exposure_alignment.json`。fresh首段继续至77步，峰值39.04GiB；100完成后按已登记的原拓扑恢复到200/300。
+- 新一轮正在执行frame_set50 validation correct400（gpu02:4，3workers）与main200 validation correct400（gpu02:6，3workers），live双节点检查及启动admission均通过。frame_set50 train correct首次在gpu02:2启动时被admission发现其它活跃任务而拒绝，0rows/0workers；准备态与日志保留于analysis的`frame_set/step50/failed_gpu02p2_admission`，等待可用设备重新调度。未干预其它作业。main200及frame_set50的train与validation other尚未完成，不能报告新节点性能。
+- 本轮materialization前strg01核验/data1用量819.6GiB/1TiB，仍在已登记859.6GiB预计峰值内；other arm复用对应correct条件的LoRA文件硬链接。
 - 按有界窗口及必要无序参照裁决。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
 - 当前goal未完成，未选定checkpoint；无序参照尚无完成结果，最终sealed视频controls未执行，Test继续封存。
 

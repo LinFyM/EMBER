@@ -16,6 +16,8 @@ Goal已建立。Owner随后补充correct必须至少高于冻结source；该条�
 
 初次闭环launch时，gpu02 p0–3的其它任务在live检查后重新占用，7个loader OOM。已只撤下这些卡上的5个本任务存活worker，将5个尚无raw rows的claimed jobs定向归还队列，失败/中断原件留在`closedloop/attempts/withdrawn_gpu02_p0_p3/`，详见`contention_recovery.json`。gpu01 p4及gpu02 p6共6worker持续执行，gpu02 p4运行无梯度动作诊断与短路径物化；没有修改其它用户进程。不存在新训练、95-task恢复或最终资格结论。
 
+已完成配对动作诊断14336个query预测：C200 correct .112128、无序S .111931、static .112543、source .152494；固定正确语义后换static过程仅+0.000044。已有validation原件复算C20050对source47为18保留/32新增/29丢失，尚无可信稳定source增量。完整表与区间见[机制复核§9](docs/video_mechanism_reassessment.md)。独立候选`codex/video-change-reference`019fba33已推送，26项CPU检查通过，仅准备局部无变化参照更新；未集成main或启动新训练。两项动作诊断已退出，释放的容量交给两个主面板helper；当前8个主面板worker和1个路径worker继续推进。
+
 ## 历史Owner暂停（已由上述定向授权覆盖）
 
 Owner明确要求“停一下”，指出核心仍是正确视频的使用：off/普通FM与扩大task数量没有回答当前结构为何需要正确视频。立即暂停95-task实现、profile及训练；此前4480条闭环已完成，没有任何95-task GPU任务。子agent已停止，两个隔离worktree的未提交改动原样保留，不集成或继续。

@@ -160,3 +160,32 @@ S参照保留全部真实帧，独立逐帧完整H/Z处理，再无时钟集合�
 C200在沿用的八任务面板（0、7、14、16、20、25、34、35）上，重复真实首帧并保留原时间轴后，中心化P4的RMS仍为正常视频的0.692–0.935倍，中位数0.817。实际像素没有运动，编码器的时间、边界和历史状态仍能产生相当幅度的时变输出。因此C的中心化Value不能自动解释为真实视觉变化；它没有保留旧Procedure的静态零响应性质。
 
 来源：`runs/analysis/video_mechanism_20260911/paths/step200/manifest.json`的`representation_trace`。这是表示性质，不是“81.7%的执行来自假动态”的归因，也没有单独证明失败根因。冻结S/P4替换和匹配动作/闭环正在检验这些表示是否被消费及其实际贡献；在结果完整前不据此启动新架构训练。
+
+### 配对动作函数的完整结果
+
+固定train24、每task64个独立action queries（42–45）和相同FM time/noise，无梯度：
+
+| 条件 | mean FM |
+| --- | ---: |
+| C200 correct | 0.112128 |
+| same-task other | 0.112159 |
+| same-suite wrong | 0.112430 |
+| cross-suite wrong | 0.113185 |
+| shuffled | 0.112538 |
+| static first | 0.112543 |
+| S200 correct | 0.111931 |
+| frozen source | 0.152494 |
+
+correct相对source在24/24 task降低误差。wrong/shuffled/static相对correct的差额远小于这项共同收益；正确顺序相对乱序仍有微小差额（mean0.000410，paired-task bootstrap 95%区间0.000016–0.000818）。因此不应宣称“完全没有任何顺序信息”，也不应把主监督收益说成已学会正确过程。
+
+沿用八task、同query/noise且固定正确语义S，过程换成错误/静态/zero时FM分别比正常高0.000330/0.000044/0.000867，三项task bootstrap区间均跨零；只替换错误语义为+0.000777，区间0.000069–0.001516。固定S后，已有正确过程相对静态过程几乎没有平均动作收益。有限样本与分布外路径替换的边界仍适用，闭环尚待完成。
+
+完整原件为`runs/analysis/video_mechanism_20260911/{functional_summary,functional_comparison}.json`及`paths/functional_summary.json`；主面板12288 query预测、路径2048，共14336，实际抽样与噪声逐项配对通过，无模型更新。
+
+### source要求的现有validation检查
+
+对已有C100/C200与同一source47/400的原始400行重新配对，没有新rollout。模型、执行配置、source normalization原件、task/state/language/env与policy-noise前缀一致。C100为43（保留9/新增34/丢失38），C200为50（18/32/29，churn61）；200主要Object任务+24与Goal任务−26抵消。这个微小总量差额不能证明稳定source增量，更没有满足EMBER绝对目标。原件`existing_validation_source_comparison.json`。
+
+### 在等待闭环时准备的受控候选
+
+独立`codex/video-change-reference`的019fba33实现了“同一时间合同下，真实历史响应减当前画面保持不变时的响应”。只修改局部消息/GRU更新参照，保留C其余模型、语义分支、参数数量和普通FM；不把wrong标签、惩罚或标量开关加入模型。26项CPU检查已验证静态中心化Value消失且真实输入变化仍有信号和梯度。此时尚未集成canonical main、进行GPU实测或启动训练；完整设计在该候选commit的`docs/video_change_reference_design.md`。是否进入学习由完整行为证据及后续实际验证决定。

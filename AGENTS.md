@@ -128,7 +128,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 ## 9. GPU, throughput and numerical policy
 
 - 每次launch前同时live检查gpu01与gpu02，按节点、GPU index、显存、utilization和process判断空闲、可共驻、忙或故障。
-- 单节点至多使用6张真正提高吞吐的A40；有几张合适就用几张，不等待凑6、不跨节点拼碎片、不dummy占卡。
+- 两节点合计同时最多使用8张物理GPU；两节点空闲卡总数不超过10张时，合计上限降为6张。训练、物化、
+  评测与共驻占用统一计数，每次launch或resume前核验当前总量及启动后总量。单节点仍至多6张；
+  只使用真正提高吞吐的A40，不等待凑卡、不跨节点拼训练碎片、不dummy占卡。
 - 少量显存占用或低util进程不自动排除GPU；只要峰值余量足够且不会显著干扰即可共驻，但不得kill、pause、
   reset或抢占他人任务。
 - 多卡训练固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA映射和deferred NCCL；独立evaluator不用NCCL。

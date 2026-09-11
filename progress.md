@@ -36,8 +36,9 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 
 - gpu01:4/5/6各3workers分别运行pureFM50/main50/main100的train other；gpu02:1运行pureFM100 train other。gpu02:4/3/6分别运行pureFM50/main100/pureFM100 validation other，各3workers。均为long-first动态队列和持久workers；每次launch live检查两节点。
 - 一次gpu02:0在空闲检查后遭遇其它作业进入，主方案100 validation加载OOM、0rows；完整失败证据保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。已换gpu01:5,6完成正式400；未干预其它作业。
-- 按原设计准备与主方案匹配的frame_set参照；目前主方案correct相邻轨迹较好，因此先以其配方检验有序处理的增量，不等于辅助优势已确立。配置唯一变化为`model.process_mode: ordered→frame_set`，保留完整帧、同参数、同FM/辅助/蒸馏和曝光。50/100请求及理由见`runs/analysis/video_functional_20260911/frame_set/registration.json`；尚未启动训练。
-- 收齐换视频结果后结合必要无序参照决定接续。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
+- 按原设计准备与主方案匹配的frame_set参照；目前主方案correct相邻轨迹较好，因此先以其配方检验有序处理的增量，不等于辅助优势已确立。配置唯一变化为`model.process_mode: ordered→frame_set`，保留完整帧、同参数、同FM/辅助/蒸馏和曝光。50/100/200/300请求及理由见`runs/analysis/video_functional_20260911/frame_set/registration.json`；尚未启动训练。
+- 已在新学习前登记下一有界窗口：主方案完整100按原拓扑exact-resume到200/300，frame_set fresh检查50/100/200/300，最终匹配76,800queries。原config/optimizer/sampler与科学边界不变；不追加pureFM或300以后的更新。精确理由与48GiB增量预算见`runs/analysis/video_functional_20260911/bounded_300_registration.json`；目前仅准备，均未启动。
+- 收齐换视频结果并结合必要无序参照裁决。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
 - 当前goal未完成，未选定checkpoint；无序参照与最终sealed视频controls尚未执行，Test继续封存。
 
 ## 暂停时点的已完成实验与未完成范围

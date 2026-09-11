@@ -99,6 +99,17 @@ Compiler时间路由也关闭，严格帧置换不变；不把冻结重复首帧
 validation沿用官方strict400全50 teacher无放回与state-video映射，开发seed20260911。correct/other在有信息量节点评测，不等145门槛。
 辅助读出仅作为单独标记的诊断控制器，其闭环绝不计入EMBER部署分数。
 
+### 首段后的有界曝光登记（2026-09-11，续训前）
+
+首段主方案/纯FM训练correct26→35与30→41，仍在获取；validation主方案69→72、纯FM69→56。
+以主方案为匹配无序参照的对象，不宣称辅助优势已被证明。主方案从完整100 checkpoint按原config、原world3及
+GPU/NUMA拓扑exact-resume到200/300；frame_set从fresh检查50/100/200/300，两者最终均76,800queries。
+只改变有序/无序表示，保持主方案辅助与蒸馏、采样、LR和所有信息墙；不追加pureFM续训，不登记300以后的更新。
+200/300沿用同train96、validation strict400 correct/other及固定映射；CLI checkpoint节点与
+`runs/analysis/video_functional_20260911/bounded_300_registration.json`记录本段覆盖原首段节点列表。
+原固定留出动作诊断仅0/100；不据后续训练FM宣称留出动作平台，后续以真实训练/validation闭环和相邻证据裁决。
+本窗口确保不把弱训无序参照或两个早期节点直接当资格/平台；下述完成口径不变。
+
 ### 阶段goal完成口径（登记后不按新分数移动）
 
 1. 选定单checkpoint的correct与same-task-other，均在validation400相对匹配训练无序视觉参照有正收益；

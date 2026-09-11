@@ -10,32 +10,35 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 选择时间×任务token有序表示＋执行query条件化辅助真实FM；完整LoRA从第一步真实FM，
 仅Compiler/native D接受归一化蒸馏，encoder的真实LoRA FM系数固定1。部署仍只有唯一完整38-target A/B。
 
-### 当前工作
+### 实现、训练与证据
 
-- 新模型、分组信用、runtime/config/schema及评测适配已合并并推送main a81a38ed；完整CPU测试378 passed。
-- 旧图运行路径已退役，原结果/冻结worktrees保留；本次实现工作树已进入集成后清理。
-- 最长合法训练视频93frames真实profile通过：原生/捕获FM均.106989；rho=.25时batch4/8为3.10/3.20queries/s、峰值25.32/37.84GiB；batch16 OOM。未保存profile权重。
-- 首段在看到正式学习结果前登记50/100更新；两配方均已完成100更新，首批闭环评测进行中。
-- 训练来自clean pushed detached `.codex/worktrees/video-functional-frozen`，commit `a81a38edd055034a4a080215bdc4362310500678`。
-- 主方案：gpu01:4,5,6，microbatch8×3，tmux `ember-video-functional-main`；pureFM：gpu02:3,6，microbatch8,4，tmux `ember-video-functional-fm`。后者与低负荷服务共驻，留出显存；不干预其它进程。
-- 运行根 `runs/outputs/video_functional_20260911/{main,pure_fm}`，精确命令/设备/数据/预算见父目录 `launch_contract.json` 及各run contract。
-- 实际run contract已核对：同冻结commit、完整schema，source trainable=0；主方案reader864000参数，pureFM无reader参数。
-- /data1独立quota使用787.1GiB/1TiB，runs实测636GiB；两配方首段checkpoint及全配对物化预算40GiB，预计峰值827GiB，共享空闲83TiB；不复制基础资产。
-- 下一步核查首批真实更新，再对50/100单checkpoint做训练获取与validation correct/other strict400；不能用学习loss宣称视频资格。
+- 科研源码已合并并推送main a81a38ed；CPU测试378 passed，真实native梯度及最长93frames profile通过。正式执行来自clean pushed detached `.codex/worktrees/video-functional-frozen`、commit `a81a38edd055034a4a080215bdc4362310500678`；原生source trainable=0。
+- 主方案与pureFM均完成fresh100更新，各400条件/25,600queries；50/100完整checkpoint保留。用时4123.94/3185.59秒。全部任务、视频、动作query、RNG及权重实际匹配，见`runs/analysis/video_functional_20260911/first100_exposure_alignment.json`。
+- 固定train24留出动作诊断32queries/task：主方案FM .154849→.116660，辅助reader仅至.153163；pureFM .154865→.114877。辅助教师尚弱；该动作证据不证明视频资格。
+- 四个checkpoint的全部训练96/validation400 correct及other LoRA已物化；每个other面板完整hardlink复用，无重复编译。精确输入、运行命令及设备保留在`runs/outputs/video_functional_20260911/`各run/evaluation contract。
+- 首段独立/data1预算787→预计827GiB/1TiB，之后物化前live quota为809.1GiB，共享空闲83TiB；新增训练前重新检查。基础模型、数据及normalization均复用canonical资产。
 
-### 首段实时证据
+### 已完成闭环
 
-- pureFM已完成fresh100/25,600queries，用时3185.59s；50/100完整checkpoint通过身份检查。固定train24留出动作FM从.154865降至.114877（32queries/task、相同视频/query面板）。主方案也已完成100更新/25,600queries，用时4123.94s，留出动作FM从.154849降至.116660；辅助读出仅降至.153163，尚不能称为合格功能教师。
-- 两配方完整100更新的400条件/25,600queries实际曝光逐条匹配：任务、视频、动作query、RNG种子及权重一致；记录`runs/analysis/video_functional_20260911/first100_exposure_alignment.json`。
-- pureFM50固定训练面板correct30/96，严格配对source15/96；Spatial/Object/Goal/Long为9/2/12/7，对source净增3/2/5/5，breadth12/24。保留11、增19、失4，churn23，Jaccard.3235；task-cluster bootstrap净成功率增益95%CI[.0521,.2708]。
-- 以上是训练任务行为获取，尚无视频特异性或validation迁移结论；不是checkpoint选择。完整统计见`runs/analysis/video_functional_20260911/paired_summary.json`。
-- pureFM50/100、主方案50的训练96+validation400 LoRA均已物化；每个checkpoint的other共496条件全部hardlink复用，无重复编译。主方案100也已完成全部物化。
-- 四轮validation strict400并行：pureFM50 correct在gpu02:4，pureFM100 correct在gpu02:6，主方案50 other在gpu02:3，以上各3workers；主方案50 correct在gpu01:5,6共6workers。采用long-first动态队列与持久worker。
-- 主方案100训练correct已在物化释放的gpu01:4启动3workers。gpu02:0曾通过空闲检查，但另一作业在启动窗口进入；主方案100 validation correct加载OOM、0rows，失败原件保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。未干预他人作业。
-- 主方案50 validation correct完整69/400，source47；S/O/G/L=4/48/16/1，breadth7/8。保留20/新增49/丢失27，churn76/J=.2083；task-cluster95%净增益CI[-.1700,.2975]。主要task11为5→42、task26为41→15，未形成可信广泛迁移结论。
-- 主方案100 train correct完整35/96，source15；S/O/G/L=7/8/15/5，breadth13/24，保留11/新增24/丢失4，churn28/J=.2821，task-cluster95%CI[.0729,.3333]。
-- 上述两面板完成后，live gpu01:4/5/6均空闲；100 validation correct已重调度到5,6共6workers，50 train correct在4上3workers。原gpu02三轮验证继续运行。
-- 后续补齐50/100两配方的correct/other及训练面板，再决定辅助信用是否保留，并采用对应配方的匹配无序视觉参照。4states训练诊断使用screen，validation400使用formal；不以部分队列结果选点。
+| 配方/更新 | train correct /96 | train other /96 | validation correct /400 | validation other /400 |
+|---|---:|---:|---:|---:|
+| main/50 | 26 | 运行中 | 69 | 71 |
+| main/100 | 35 | 运行中 | 72 | 运行中 |
+| pure_fm/50 | 30 | 运行中 | 69 | 运行中 |
+| pure_fm/100 | 41 | 运行中 | 56 | 运行中 |
+
+- 配对source为train15/96、validation47/400；实际task/state/env/policy RNG检查通过。所有逐task/suite、breadth、R/G/L、churn、Jaccard和task-cluster bootstrap95%CI见`runs/analysis/video_functional_20260911/paired_summary.json`。
+- 主方案validation50→100为69→72，S/O/G/L=4/48/16/1→0/55/11/6，breadth7→6；相邻保留50/新增22/丢19、churn41、J=.54945。pureFM69→56，3/53/11/2→0/43/3/10、breadth7→5；相邻34/22/35、churn57、J=.37363。主方案100比pureFM多16，但task-cluster95%差额CI[-.0075,.0925]仍含0，不能宣称辅助信用有效。
+- 主方案50 correct/other=69/71，重合58、互换24、J=.70732；净差95%CI[-.03,.0125]。仅支持该节点同task换视频较稳健，不能替代内容/顺序必要性。
+- train correct主方案26→35、pureFM30→41；pureFM训练获取更强而validation下降，不能按训练FM或训练成功数选择迁移方案。
+
+### 正在运行与下一步
+
+- gpu01:4/5/6各3workers分别运行pureFM50/main50/main100的train other；gpu02:1运行pureFM100 train other。gpu02:4/3/6分别运行pureFM50/main100/pureFM100 validation other，各3workers。均为long-first动态队列和持久workers；每次launch live检查两节点。
+- 一次gpu02:0在空闲检查后遭遇其它作业进入，主方案100 validation加载OOM、0rows；完整失败证据保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。已换gpu01:5,6完成正式400；未干预其它作业。
+- 按原设计准备与主方案匹配的frame_set参照；目前主方案correct相邻轨迹较好，因此先以其配方检验有序处理的增量，不等于辅助优势已确立。配置唯一变化为`model.process_mode: ordered→frame_set`，保留完整帧、同参数、同FM/辅助/蒸馏和曝光。50/100请求及理由见`runs/analysis/video_functional_20260911/frame_set/registration.json`；尚未启动训练。
+- 收齐换视频结果后结合必要无序参照决定接续。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
+- 当前goal未完成，未选定checkpoint；无序参照与最终sealed视频controls尚未执行，Test继续封存。
 
 ## 暂停时点的已完成实验与未完成范围
 

@@ -584,3 +584,5 @@ R400已完整结束，将§53更新为有限续训终点结论：correct85/400�
 新表示的主方案与纯FM都完成fresh100/25,600queries，实际任务、video、query及RNG曝光匹配。主方案留出动作FM从.154849降至.116660，辅助reader仅降至.153163；纯FM学生从.154865降至.114877。当前辅助头未成为强功能教师，不能凭存在直接信用就断言表示已经学到有益过程，也不能把学生表现不理想归到编译容量。
 
 首个主方案50 validation为69/400，配对source47；Object5→48同时Goal41→16，task-cluster增益95%CI[-.1700,.2975]，尚非可信广泛迁移。主方案100 train35/96高于source15，证明当前训练任务行为获取；两个配方的同曝光闭环、相邻及换视频尚未收齐，暂不决定辅助信用去留。无序视觉参照和最终sealed controls尚未执行，当前goal未完成。完整指标及success-set见`runs/analysis/video_functional_20260911/paired_summary.json`；动态后续仅看progress。
+
+主方案correct validation50→100为69→72，纯FM为69→56；100主方案比纯FM多16，但task-cluster95%CI[-.0075,.0925]含0。训练correct则主方案26→35、纯FM30→41。主方案50换视频71与correct69相近；当前支持保留主方案作匹配frame_set比较对象，尚不支持辅助有效、视频必要性或稳定迁移资格。纯FM训练获取更强却未保持validation，再次要求将获取与迁移分开解释。

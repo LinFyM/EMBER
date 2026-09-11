@@ -4,7 +4,7 @@
 
 Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S59→45（各400），train96=52；首轮三臂所有训练与九个闭环面板均完整结束。目标未达标。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。off7探索性续训及评测全部结束：400/500/600 correct126/73/54，train400→600为56→64/96，停止该未改配方的续训。R原200完整恢复后的300 strict400已完成：83→63，保留43/新增20/丢失40，四suite0/24/34/5、breadth4；400训练继续，按§8完成有限获取节点及train96/独立动作验证，不自动追加后续训练。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。off7探索性续训及评测全部结束：400/500/600 correct126/73/54，train400→600为56→64/96，停止该未改配方的续训。R原200完整恢复后的300 strict400已完成：83→63，保留43/新增20/丢失40，四suite0/24/34/5、breadth4；400训练完整exit0、checkpoint通过检查，累计102400queries/3200条件；独立动作FM=.105399，400 strict400已启动、train96即将衔接，不追加500训练。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
@@ -79,3 +79,5 @@ Compiler删除的验证净收益经两个初始化与init7另一正确视频关�
 R追加获取节点已登记于active design§8：仅R从原200完整exact-resume至400，300/400 correct400，400 train96及独立动作验证；总动作曝光达到旧off400相同102400queries。依据是R37→83仍有获取，C/S分别43→50、59→45不追加。已在原gpu02 4/6、micro6/6通过原生合同及完整200恢复；201实际8条件/4task/256queries、每条件1/8，后续约32秒/update、reserved35GiB。off600物化/闭环继续独立完成，总用卡≤6。新增R峰值16GiB与off600余量3GiB已计入strg01 used794434480KiB/soft1073741824KiB；共享83TiB。没有新增架构、保持loss、VL Meta或D变体。
 
 R300全部400rows/42shards/9worker exit0，耗时1206.51秒；300物化400条件615.33秒，source trainable=0、formal inspector通过。200→300 churn60/J=.41748，Long总数5→5但原5全丢并新增5；Object41→24、Goal37→34、Spatial仍0。相对旧off400126为保留51/新增12/丢失75、churn87/J=.36957；比较均通过canonical实际teacher、source/normalizer及执行RNG检查。新增100更新平均32.28秒；R300累计76800queries/2400条件。原件r/step300/completed_summary.json、r200_vs_300.json、old400_vs_r300.json。
+
+R的200→400段完整6422.31秒，200新增更新平均31.75秒、reserved峰值35.002GiB；累计覆盖383/384个task/video组合。400独立动作验证24×128=3072queries全程无梯度、289.10秒，相对200的.110515下降至.105399。400验证bank先sealed后用gpu02五卡×3worker开始闭环；train96物化在gpu01:3收尾后衔接同卡评测，总用卡≤6。strg01复核used802241268KiB/soft1073741824KiB，余量与共享83TiB足够，剩余峰值≤7GiB且仍在原16GiB追加预算内。记录r/continuation/continuation_summary.json与r/step400/。

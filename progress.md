@@ -4,7 +4,7 @@
 
 Owner最新明确授权Codex在其休息期间持续自主推进方法修正、实验验证、分析和再次修正，并要求创建goal；active goal已建立。此前咨询暂停与完整训练限制已被覆盖，后续不重复请求逐项批准。实现与profile通过，R/C首轮正式训练完成；R/C首轮validation与train96均完整完成：R37→83、C43→50（各400），train96分别46/49；S59→45（各400），train96=52；首轮三臂所有训练与九个闭环面板均完整结束。目标未达标。
 
-唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。off7探索性续训600已完整结束：500 correct73/400，600 checkpoint通过原生检查，600 correct400/train96正在物化。R已从原200完整恢复，按§8继续300/400有限获取节点；不依据S100短暂优势扩展新架构。
+唯一active design：[普通FM下语义条件化过程消费](docs/video_consumption_writer_design.md)。首轮R/C/S比较保留普通FM、完整H和独立D，分别检验条件分配、消费接口及主动训练无序帧集合参照；R/C保留过去定向，S逐帧独立。具体随机性、曝光、节点和裁决见设计。C/S不追加，R虽增长但低于旧同预算off200；本轮两项改动均未带来未见任务净收益。off7探索性续训及评测全部结束：400/500/600 correct126/73/54，train400→600为56→64/96，停止该未改配方的续训。R已从原200完整恢复，按§8继续300/400有限获取节点；不依据S100短暂优势扩展新架构。
 
 [专家第二轮原文](docs/review_materials/20260911/expert_review_round2.md)已归档。独立判断：末端改动依赖P4已有可用信息；新增语义S可能独立贡献；无序多帧仍有状态变化信息。C/S必须共享语义、融合和D，不能把不同模型分数差唯一归因于时序。目标仍未达标；Test封存。
 
@@ -34,7 +34,9 @@ S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/�
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
-off7续训500 correct400已完整exit0，9worker/3GPU耗时1218.65秒，42shards/400rows。结果73/400，S/O/G/L=1/51/12/9，breadth6；global1/3/11/13/23/26/31/32=0/1/31/20/0/12/6/3。与父400的126实际输入/执行配对通过：保留60/新增13/丢失66，churn79/400、J=.43165；Goal36→12、Long19→9。独立动作FM只微降，但未见任务行为明显下降，不支持把继续监督曝光视为已获得进步。600已接近完成，按登记补齐相邻correct400、train96和独立动作验证后裁决，未登记600之后续训。原件continuation/step500/completed_summary.json、old400_vs_500.json。
+off7续训500 correct400已完整exit0，9worker/3GPU耗时1218.65秒，42shards/400rows。结果73/400，S/O/G/L=1/51/12/9，breadth6；global1/3/11/13/23/26/31/32=0/1/31/20/0/12/6/3。与父400的126实际输入/执行配对通过：保留60/新增13/丢失66，churn79/400、J=.43165；Goal36→12、Long19→9。独立动作FM只微降，但未见任务行为明显下降，不支持把继续监督曝光视为已获得进步。600已完成，完整后续裁决见下段，未登记600之后续训。原件continuation/step500/completed_summary.json、old400_vs_500.json。
+
+off600完整correct400=54，四suite1/24/22/7、breadth6；global1/3/11/13/23/26/31/32=0/1/22/2/0/22/6/1。500→600保留31/新增23/丢失42，churn65/J=.32292；400→600为43/11/83，churn94/J=.31387。train96=64，四suite20/16/16/12、breadth22，相对400的56为46/18/10；独立动作FM600=.104786。两组400与一组96全部exit0、实际配对通过，600 val1205.90秒/train822.95秒；训练200新增更新5216.95秒。继续监督获得训练任务能力，却丢失未见任务能力，停止这条off7未改配方续训，保留126 checkpoint。统一原件continuation/continuation_summary.json。当前仅R的300/400登记段在运行。
 
 后续launch存储复核used752234200KiB/soft1073741824KiB，另计尚在保存的两份200 checkpoint约8.4GiB、R/C物化约8.8GiB及S约13GiB，仍低于原总峰值预算和独立quota。共享文件系统另有84TiB；额度证据见`storage_after_rc200.txt`。
 

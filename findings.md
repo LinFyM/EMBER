@@ -514,12 +514,26 @@ Owner在讨论[专家首轮回复](docs/review_materials/20260911/expert_review_
 
 ## 51. 双视频条件与新消费接口增加训练任务获取，未见迁移收益（2026-09-11）
 
-按active design普通FM、双独立K1条件、完整H与独立D fresh训练，C100/200 strict correct各400条完整通过。结果43→50，Spatial/Object/Goal/Long=0/37/6/0→3/29/16/2，breadth4→6；相邻R/G/L=27/23/16、churn39/400、J=.40909。相对冻结source47，100/200分别R/G/L=9/34/38与18/32/29。早期Object获取与source Goal损失同时发生，200部分恢复Goal但Object下降，不能把总分接近source解释为完全没学习。
+R/C/S按同一普通FM、双独立K1条件、完整H与独立D，各fresh200更新/51,200queries/1,600条件。共有D初始化与读取Meta随机流一致，新增模块没有改变共有D的种子；函数类及新增模块的学习影响仍不能单独分离。
 
-该消费组合在51,200queries、1,600独立K1条件后仍明显弱，按设计不追加C训练、不做seed/LR/rank小扫。它只检验当前语义读取、中心化过程Value和融合的组合；尚不能分离语义/过程贡献，不能裁为普通FM、所有有序过程或视频条件不可行。S完整相邻节点与train96尚未完成，后续主要修正仍待这些证据。
+| 候选 | validation100→200 /400 | 200 Spatial/Object/Goal/Long | breadth100→200 | train96 |
+| --- | --- | --- | --- | --- |
+| R，原off消费+双K1条件 | 37→83 | 0/41/37/5 | 5→5 | 46 |
+| C，语义后过程消费 | 43→50 | 3/29/16/2 | 4→6 | 49 |
+| S，匹配无序帧集合 | 59→45 | 0/21/24/0 | 7→3 | 52 |
 
-两组各6worker全部exit0、400rows完整，canonical comparer通过source/normalizer/environment/policy/RNG与实际教学视频配对。原件runs/analysis/video_consumption_20260911/c/step{100,200}/{completed_summary.json,vs_source47.json}和step200/adjacent100_200.json；全部raw rows、sealed banks、formal checkpoints保留。未使用Test、wrong/shuffle/reverse或held梯度。当前执行状态只看progress。
+同51,200queries旧off200为108/400、40/96。R200比旧off少25，R/G/L63/20/45；train96旧→R为33/13/7、旧→C34/15/6、旧→S33/19/7。三臂增加训练任务分数，却没有得到未见任务净收益；不能把低validation概括为整图不工作。训练任务诊断采用独立teacher46–49及states32–35，无held梯度。
 
-R100/200 strict400=37→83，四suite1/26/10/0→0/41/37/5、breadth5；相邻R/G/L23/60/14、churn74、J=.23711。R200比C200多33，但比同查询预算旧off200108少25（R/G/L63/20/45）。train96则旧off200/R/C为40/46/49，R/C都breadth18，旧→R的R/G/L33/13/7、旧→C34/15/6。训练任务使用独立teacher46–49和固定新初态；有实际能力获取，低validation不能概括为整图不工作。更多条件在当前节点增加训练任务得分却没有迁移净收益，新语义消费组合进一步拉开训练/validation表现；这仍是组合证据，新增模块的初始化和函数类差异、短学习时标等边界保留；R/C/S沿用同一共有D初始化及读取Meta随机流，不把共享D种子漂移当作解释。R增长46但整体低于旧参照，不由此宣布平台，也不自动追加更弱候选；先完成S。原件各arm/step200/{train96_summary.json,old_off200_vs_*200_train96.json}以及R/step200的adjacent100_200、c200_vs_r200、old_off200_vs_r200，均通过canonical实际输入与执行配对。
+相邻100→200的R/G/L分别为R23/60/14（churn74、J=.23711）、C27/23/16（39、.40909）、S32/13/27（40、.44444）。C相对source47的100/200分别R/G/L9/34/38与18/32/29；早期Object获取伴随Goal丢失，200部分恢复Goal但Object下降。S100强于C/R的优势没有保持，不能据单点选择无序模型或再加时间模块就认为能够修复。
 
-S的strict400为59→45，四suite2/37/16/4→0/21/24/0、breadth7→3；相邻R/G/L32/13/27、churn40、J=.44444。最终train96=52（22/10/14/6，breadth18），C→S训练R/G/L40/12/9，但validation50→45为26/19/24。S100高于C/R的早期优势没有保持，不能据该单点选择无序模型、归因全部时序计算有害或启动新的时间模块。R/C/S200最终83/50/45，均低于相同51200queries旧off200108，而train46/49/52均高于旧40；当前组合加剧了训练/未见任务表现的差异，不是整图完全无法学出控制。初轮六组400及三组96全部完成、输入与执行配对通过，统一证据first_round_summary.json。C/S不追加；更强旧off400126尚未因充分学习而被排除，后续需核实其历史run与当前执行合同再登记，不能从旧日志自行恢复。
+C/S不追加；负结果只淘汰实际消费/条件组合在该预算下的收益，不否定普通FM、全部有序过程或视频条件。R增长46但低于旧参照，尚不能判平台；后续有限R300/400节点按active design§8另行登记。全部六组400和三组96共2688rows完整exit0、canonical实际输入与执行配对通过。统一原件runs/analysis/video_consumption_20260911/first_round_summary.json，各arm/step*/的completed_summary、相邻/旧off比较和train96_summary保留细节；checkpoint、sealed banks、raw rows完整保留。没有Test、wrong/shuffle/reverse或held梯度。
+
+## 52. 强旧候选继续监督仍增加训练能力，却失去未见任务能力（2026-09-11）
+
+off7在原macro400=126/400、train56/96仍增长时曾因阶段预算停止，不能据此宣布平台。本轮按登记合同完整保留学习状态，物理三rank受控迁移后以原冻结45e16633继续200更新/51,200queries；保留探索性标记和lineage，不把它改称formal fresh。
+
+400/500/600 correct为126/73/54。500/600四suite分别1/51/12/9与1/24/22/7，breadth均6；400→500保留60/新增13/丢失66，500→600为31/23/42，400→600为43/11/83（churn94、J=.31387）。未见任务能力继续下降，相邻稳定性未建立。
+
+与此同时，train96从56提高到64（四suite20/16/16/12、breadth22），保留46/新增18/丢失10；独立动作FM400/500/600为0.104946/0.104097/0.104786。该实际配方仍学会训练任务，但训练侧拟合和获取没有转成稳定的未见task能力。它不证明全部监督已到平台、唯一根因是D/读取Meta，或加入保持约束/RL必然有效。
+
+因此停止这条未改配方的off7续训，不登记700/800；原126和所有学习状态保留。两个400及一个96共896闭环rows完整exit0、source/normalizer/实际teacher与执行配对通过。原件runs/analysis/video_consumption_20260911/continuation/continuation_summary.json、step500/old400_vs_500.json、step600/{old400_vs_600,adjacent500_600,old400_vs_600_train96}.json。R的后续获取是另一个已登记对照，不由旧off的下降预先裁决。

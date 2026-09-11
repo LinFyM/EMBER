@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：读出诊断完成；辅助FM保留、去蒸馏比较运行中（2026-09-12）
+## 当前状态：读出诊断完成；辅助FM有界训练完成、闭环比较进行中（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7节登记已完成诊断，第8节登记下一项单变量比较。
@@ -11,13 +11,16 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 主方案、pureFM及匹配frame_set的本轮训练和全部40个闭环面板均已结束。没有Writer续训、RL或待恢复的旧评测。
 - 冻结读出诊断已完成64epochs/384updates，支持/留出缓存48条件，峰值11.25GiB；gpu02的tmux与诊断进程已退出。该诊断占卡已释放。
 - 诊断代码为clean pushed detached `19896b4aed6a47f9bf201a32c0640ef1d3925f90`；输出与命令在`runs/analysis/video_functional_20260911/reader_fit_diagnostic/`及同根`reader_fit_launch.sh`。固定表示probe没有回写Writer、访问validation/Test或输出可部署checkpoint。
-- 当前gpu01:0,4,5,6运行去蒸馏比较（world4、每卡micro8），tmux `ember-auxiliary-fm`；原生runtime已确认fresh0→200、辅助FM启用/rho0、source trainable=0。单变量之外结构、数据与优化配方保持，固定100/200节点，不继承probe状态。
+- 去蒸馏比较已完成fresh200更新、800条件、51,200queries，world4/micro8用时3967.10秒，峰值37.82GiB；100/200完整checkpoint保留。原训练已退出，不追加更新。全部800条件实际曝光与main200匹配，source trainable=0。
 - 运行代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；配置解析及相关49项测试通过。旧reader诊断worktree已复用并改名，未复制大资产。
 - 精确launch/preflight见`runs/analysis/video_functional_20260911/auxiliary_fm/`，正式输出在同study输出根的`auxiliary_fm/`。两节点检查启动前本人GPU作业0，启动后4≤6；/data1 quota849.0GiB/1TiB，追加峰值预算20GiB、投影869GiB，共享83TiB，现有study62GiB。
 - 100 checkpoint及4套LoRA banks已完成：correct新编译train96+validation400，other全量复用同checkpoint条件。实际400次K1条件与main100的task/video/action/query/RNG/weight匹配，原留出动作面板亦匹配。
 - 100训练correct闭环已完成42/96（S/O/G/L=12/9/15/6，breadth19）。相对main35为R/G/L27/15/8、churn23/J=.54、差额CI[0,.15625]；相对pureFM41为34/8/7、churn15/J=.69388、CI[-.072917,.083333]，未获额外辅助收益资格。逐task与配对原件见`paired_summary.json`。
 - 100留出动作student FM=.114956（main .116660、pureFM .114877），reader=.153161。相对main的FM降幅.001704、CI[-.000833,.004305]，相对pureFM −.0000789、CI[-.000186,.0000294]，均不据此宣称可信收益或选点。见`auxiliary_fm/step100/held_action_comparison.json`。
-- 当前100换视频train96在gpu02:3（3replicas）运行，correct评测已结束，100 LoRA生成也已退出；training仍占gpu01四卡，现共5张。为缩短整轮时间，200训练释放卡后用多卡运行已准备的100 validation400两臂，并衔接200物化/评测；不为单卡长面板修改正在运行的evaluator合同。
+- 100换视频train96也已完成38/96（S/O/G/L=9/9/15/5，breadth16），对main38为R/G/L30/8/8、CI[-.09375,.083333]，对pureFM40为32/6/8、CI[-.104167,.052083]。同checkpoint other→correct为34/8/4、churn12/J=.73913，差额CI[-.020833,.104167]。
+- 200留出动作FM=.107338，相对100降幅.007618、CI[.004680,.010944]，22/24改善；reader仍为.149237。固定面板及全部节点见`auxiliary_fm/held_action_trajectory.json`。FM的继续获取不等于未见task迁移或视频收益。
+- 当前100 validation correct在gpu02:0,3，other在gpu01:0,4（均3replicas/GPU）；200 LoRA生成在gpu01:5，最近启动后合计5张。100两组完整训练诊断均已退出。调度已将短面板与训练重叠，并在训练结束后转入多卡strict400；不修改运行中的evaluator合同。
+- 最近strg01 quota859.0GiB/1TiB，新配方已用10GiB，仍在原峰值869GiB预算内。200物化及100 validation other共享一次启动分配记录：`auxiliary_fm/step200/materialization_and_val100_launch.json`；100 correct单独记录在step100。
 - Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
 
 ### 已完成学习与验证

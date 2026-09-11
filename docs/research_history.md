@@ -1034,3 +1034,14 @@ Owner接受视频特异性优先的新候选；完整合同见`docs/video_functi
 训练other随后完整收齐：主方案50/100=29/38，pureFM22/40，各96。主方案100 correct35/other38配对保留33/增2/失5，J=.825；50为22/4/7，J=.66667。pureFM100 correct41/other40，训练侧获取与跨视频表现仍不能代替validation顺序收益。上述全train面板没有梯度。
 
 首段全部16面板3968rows最终完整：pureFM50 other64（S/O/G/L=0/50/11/3），main100 other71（0/52/9/10），pureFM100 other60（4/44/5/7）。main100 other→correct为62/10/9、churn19/J=.76543；pureFM100为45/11/15、churn26/J=.63380。main other50→100总分71不变但47/24/24、churn48/J=.49474。100 main对pureFM other净增11、95%CI[-.0225,.0775]，没有辅助优势资格。所有完整结果保留于同一paired_summary。
+
+
+## 2026-09-12：功能信用匹配frame_set首个验证节点
+
+同主方案配置仅改process_mode=frame_set，fresh100/25,600queries完成；前100步400个task–video条件及action/query/RNG/weight实际匹配（按step/task/video条件对齐），用时4953.25秒。留出动作FM .154849→.116912，24/24任务改善，与main100 .116660接近。
+
+frame_set50 train correct29/96，S/O/G/L=10/4/11/4、breadth14；同曝光main26/96相对它保留23/新增3/丢6，J=.71875，task-cluster95%差额CI[-.07292,.01042]。validation correct66/400（1/49/14/2、breadth5），main69相对它保留58/新增11/丢8、churn19/J=.75325，CI[-.015,.0275]。早期有序增量未确立，不代表充分曝光后全部候选无效。
+
+main200 train correct45/96（15/14/10/6、breadth17），100→200保留27/新增18/丢8、churn26/J=.50943，CI[-.03125,.25]；训练获取继续但Goal15→10。主方案已按原拓扑完成300/76,800queries，续训段8657.20秒，完整200/300保存；这里不把尚未完成的评测算作能力证据。
+
+原件沿用`runs/analysis/video_functional_20260911/paired_summary.json`与formal output根；匹配记录`frame_set/step100/exposure_alignment.json`，留出诊断汇总`frame_set/step100/held_action_diagnostic_summary.json`。同task换视频、相邻充分曝光和最终sealed controls仍需后续证据；授权只看progress。

@@ -12,15 +12,16 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 
 ### 当前工作
 
-- 历史证据包已在main d1b62535交付；专家已确认实际读取，最终三轮原文保存在该包并由active design索引。
-- 主实现工作树codex/video-functional；独立视频编码及评测适配子任务已完成，两个提交已集成至主实现树。
-- 主任务负责原生FM执行读出、辅助头、分组VJP、runtime/config/schema和集成；旧未提交95-task工作树不动。
-- 已核对/data1独立quota（786.6GiB/1TiB）及共享空间，代码工作树新增不到1GiB；训练前另核定输出峰值。
-- 新模型、分组信用、runtime/config/schema及评测适配已实现；旧图运行路径退役。完整CPU测试378 passed。
+- 新模型、分组信用、runtime/config/schema及评测适配已合并并推送main a81a38ed；完整CPU测试378 passed。
+- 旧图运行路径已退役，原结果/冻结worktrees保留；本次实现工作树已进入集成后清理。
 - 最长合法训练视频93frames真实profile通过：原生/捕获FM均.106989；rho=.25时batch4/8为3.10/3.20queries/s、峰值25.32/37.84GiB；batch16 OOM。未保存profile权重。
-- 首段在看到正式学习结果前登记50/100更新；主方案拟用gpu01:4,5,6，microbatch8；pureFM拟用gpu02:3,6，microbatch8,4，后者给低负荷服务留显存。正式训练尚未启动。
-- /data1实时独立quota使用787.0GiB/1TiB，runs实测636GiB；两配方首段checkpoint及全配对物化预算40GiB，预计峰值827GiB，不复制基础资产。
-- 训练与评测均从clean pushed detached commit；不把profile权重作为formal起点。
+- 首段在看到正式学习结果前登记50/100更新；两配方已启动，尚无闭环结论。
+- 训练来自clean pushed detached `.codex/worktrees/video-functional-frozen`，commit `a81a38edd055034a4a080215bdc4362310500678`。
+- 主方案：gpu01:4,5,6，microbatch8×3，tmux `ember-video-functional-main`；pureFM：gpu02:3,6，microbatch8,4，tmux `ember-video-functional-fm`。后者与低负荷服务共驻，留出显存；不干预其它进程。
+- 运行根 `runs/outputs/video_functional_20260911/{main,pure_fm}`，精确命令/设备/数据/预算见父目录 `launch_contract.json` 及各run contract。
+- 实际run contract已核对：同冻结commit、完整schema，source trainable=0；主方案reader864000参数，pureFM无reader参数。
+- /data1独立quota使用787.1GiB/1TiB，runs实测636GiB；两配方首段checkpoint及全配对物化预算40GiB，预计峰值827GiB，共享空闲83TiB；不复制基础资产。
+- 下一步核查首批真实更新，再对50/100单checkpoint做训练获取与validation correct/other strict400；不能用学习loss宣称视频资格。
 
 ## 暂停时点的已完成实验与未完成范围
 

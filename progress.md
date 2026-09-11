@@ -16,7 +16,7 @@ Goal已建立。Owner随后补充correct必须至少高于冻结source；该条�
 
 局部无变化参照已集成main。真实六卡第二步14.21秒，比四卡25.02秒快；采用gpu02 0/1/2/3/4/6、micro8/8/8/8/6/6，原件`runs/analysis/video_change_reference_20260911/profile_summary.json`。最长93帧通过，静态中心化过程为真实视频约0.9%，上游有梯度且source无梯度。128项相关CPU合同通过；一次性profile checkpoint已删除。
 
-正式配置`configs/pi05_video_change_reference.json`，fresh100/200后exact-resume300/400，每节点correct strict400及固定train96，200/400加开发视频对照。保留C的2K1条件/task、32queries/条件、普通FM和全部其它结构，只改局部更新参照。正式fresh100/200已从clean pushed detached64eba75b启动，gpu02六卡与NUMA/原任务权重核对通过；实际source、数据、observer、optimizer与C原合同相同，唯一model字段新增局部参照身份。命令与输入/资源合同在`runs/analysis/video_change_reference_20260911/launch_contract.json`，日志同目录`train100_200.log`。尚无新闭环结果，目标未达成。
+正式配置`configs/pi05_video_change_reference.json`，fresh100/200后exact-resume300/400，每节点correct strict400及固定train96，200/400加开发视频对照。保留C的2K1条件/task、32queries/条件、普通FM和全部其它结构，只改局部更新参照。正式fresh100/200已从clean pushed detached64eba75b启动，gpu02六卡与NUMA/原任务权重核对通过；实际source、数据、observer、optimizer与C原合同相同，唯一model字段新增局部参照身份。命令与输入/资源合同在`runs/analysis/video_change_reference_20260911/launch_contract.json`，日志同目录`train100_200.log`。100步checkpoint已完整保存，模型身份、world6和checkpoint manifest检查通过；训练继续至200。第100步待物化/strict400，现场gpu01所有卡已有其它高负载任务，gpu02六张由本训练实际使用、其余卡同样忙，没有合适评测设备；释放容量后立即执行已登记评测。尚无新闭环结果，目标未达成。
 
 /data1最新quota used811028252KiB、soft1073741824KiB，共享83TiB；新profile两次峰值≤12GiB，现有诊断1.4GiB、候选worktree184MiB，复用大资产。旧面板争用失败和撤回记录保留，最终完整且所有本任务GPU worker已退出。实际profile命令与设备登记在`.codex/tmp/video-change-reference-profile/`。
 

@@ -34,6 +34,8 @@ S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/�
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
+off7续训500 correct400已完整exit0，9worker/3GPU耗时1218.65秒，42shards/400rows。结果73/400，S/O/G/L=1/51/12/9，breadth6；global1/3/11/13/23/26/31/32=0/1/31/20/0/12/6/3。与父400的126实际输入/执行配对通过：保留60/新增13/丢失66，churn79/400、J=.43165；Goal36→12、Long19→9。独立动作FM只微降，但未见任务行为明显下降，不支持把继续监督曝光视为已获得进步。600已接近完成，按登记补齐相邻correct400、train96和独立动作验证后裁决，未登记600之后续训。原件continuation/step500/completed_summary.json、old400_vs_500.json。
+
 后续launch存储复核used752234200KiB/soft1073741824KiB，另计尚在保存的两份200 checkpoint约8.4GiB、R/C物化约8.8GiB及S约13GiB，仍低于原总峰值预算和独立quota。共享文件系统另有84TiB；额度证据见`storage_after_rc200.txt`。
 
 S100后存储复核：strg01/data1 used773630184KiB/soft1073741824KiB，余下S200 checkpoint、S物化及小型评测预计新增不超过16GiB，仍在原96GiB峰值与独立quota内；见storage_s100.txt。

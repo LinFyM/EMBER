@@ -1057,3 +1057,5 @@ frame_set100 train other38/96，与main100 other同分，配对36/2/2、J=.90、
 2026-09-12后续完整节点：main300 train correct43/96，S/O/G/L=13/14/12/4、breadth18；200→30045→43，R/G/L31/12/14、churn26/J=.54386、task-cluster95%CI[-.125,.08333]。frame_set200完整checkpoint保存，前800条件/51,200queries与主方案逐条件实际曝光匹配；本段训练诊断没有继续提高，不代替完整validation及同曝光无序参照裁决。原件沿用paired_summary，曝光证据在`frame_set/step200/exposure_alignment.json`。
 
 frame_set50 validation other67/400（S/O/G/L=3/48/16/0、breadth5）；other→correct67→66为57/9/10、churn19/J=.75、95%CI[-.0175,.015]。main50other71对frame_set67为58/13/9、churn22/J=.725、95%CI[-.015,.0325]。50步正确与换视频两臂均未证明有序增益；完整逐task/suite与配对原件见同一paired_summary。
+
+main300 strict validation correct32/400，S/O/G/L=1/18/8/5、breadth6；200→30074→32，R/G/L21/11/53、churn64/J=.24706，task-cluster95%CI[-.18,-.0325]。source47→32为7/25/40、J=.09722、CI[-.24,.085]。Object42→18、Goal20→8、Long12→5，Spatial0→1；这是相邻迁移退化，训练45→43不能替代保持。不从它直接判定无序增量或根因，需对应参照与换视频面板；主方案按登记已停300。

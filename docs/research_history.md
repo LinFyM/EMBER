@@ -1013,3 +1013,9 @@ Owner要求先还原科学动机、数学与专家形成链，再定位并持续
 固定train100/200正确视频36/45，各96；200正确/换视频/同suite错/跨suite错/乱序/静态45/42/41/37/41/40。所有视频差额的逐task bootstrap95%区间含0。200 validation34/400低于配对source47及旧C20050；四suite4/24/5/1，breadth5。证据支持学习与初步训练条件分化，未证明可信视频因果优势或source以上迁移能力；首段观察不能作为收敛结论。详见findings§55。
 
 证据根`runs/analysis/video_change_reference_20260911/`中的`launch_contract.json`、`first_segment_action_diagnostic.json`、`step200/paired_summary.json`与`train_mechanism/step100`、`step200`；formal输出`runs/outputs/video_change_reference_seed7_20260911/`。本条只记已完成首段事实，不把开发视频面板当最终资格。
+
+## 2026-09-11：视频功能信用候选与旧运行路径退役
+
+Owner接受视频特异性优先的新候选；完整合同见`docs/video_functional_writer_design.md`及本日专家原文包。
+新video.py替代horizon/relation/semantic/frame_evidence；旧图专属测试随之退役，原生H、语言span、时序因果、完整LoRA、集合聚合与梯度合同由新行为测试覆盖。
+旧C/无变化参照实现保留于Git d1b62535及原formal冻结worktrees/configs/artifacts；其负结果不等于淘汰完整H或视频信息。新实现尚无科学结果。

@@ -2,7 +2,9 @@
 
 当前阶段按Owner最新要求，先恢复有益的视频特异性、暂不强制绝对性能，并综合全部历史证据推导新的完整架构与训练。
 不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
-科学执行继续暂停，咨询入口见[新专家材料](review_materials/video_specificity_20260911/README.md)。
+Owner已授权实施，唯一active design为[Video Functional Writer](video_functional_writer_design.md)。
+新方法保留时间×任务token表示，以执行条件化辅助真实FM提供直接功能信用，完整LoRA真实FM持续约束可编译性；
+蒸馏只更新Compiler/native D。下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略
 

@@ -1,26 +1,26 @@
 # EMBER progress
 
-## 当前状态：全新专家咨询材料已就绪；科研执行继续暂停（2026-09-11）
+## 当前状态：Video Functional Writer设计与实现（2026-09-11）
 
-Owner最新要求整理相关材料与远程仓库，提供一段可复制prompt，由Owner发给没有历史对话上下文的全新外部专家。
-当前阶段先专注恢复有益的视频特异性，暂不强制绝对性能；不是直接回到v5.2，也不预设在v5.2上改进。
-应结合全部历史证据提炼理论，从原始输入一直推导到LoRA参数作用与训练，重新设计完整方法。
+Owner最新明确“开始推进”，给予足够自由度并要求高效率。已创建活动goal：先实现有益视频特异性及validation迁移，
+暂不要求145/400；达到后再保持视频收益提升性能。此前暂停只继续适用于旧C/无变化参照、95-task等历史路线，
+不阻止本次新设计的实现、profile、正式学习、匹配对照和证据驱动修正。
 
-v5.2普通监督的视频依赖正例是绕不开的重点，其绝对性能、稳定性不达标；后继尚无同时满足能力、稳定与特异性的整体胜出，
-但v6/GOMQ等更高单项结果及各阶段局部正证据必须保留。不得把不同配方的优点拼成一个模型。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)。**
+选择时间×任务token有序表示＋执行query条件化辅助真实FM；完整LoRA从第一步真实FM，
+仅Compiler/native D接受归一化蒸馏，encoder的真实LoRA FM系数固定1。部署仍只有唯一完整38-target A/B。
 
-本次只开展文档、已有科学记录的导出/复算、Git整理和咨询准备。没有新训练、GPU评测、资源轮询、外部消息或goal创建。
-此前“你先停一下吧”对科研执行继续有效；没有获准执行的active design，不恢复300/400、95-task或旧待办。
+### 当前工作
 
-## 本次材料工作
-
-- 新入口：[视频特异性与综合理论重构](docs/review_materials/video_specificity_20260911/README.md)。
-- 复用9月7日、9月11日历史包，补充其后R/C/S、off/R续训、完整C机制诊断及无变化参照首段证据。
-- 更新长期要求与当前计划；原专家回复保留为历史观点，新专家先读事实与正负证据。
-- 新包覆盖45个面板、7216条rows，其中192条为明确复用参照；原始科学导出约32.75 MiB。
-- 标准库验证已复算全部新面板逐task/suite、breadth、validation视频覆盖及43项关键配对成功集合；bootstrap区间保留原分析。
-- 已检查206个文档链接及对应历史Git对象，新增发布文件未发现机器私有路径、GPU UUID或凭据模式。
-- 材料与入口随本次提交交付main，精确提交由Git记录；Owner转发prompt，尚未收到这位新专家的回复。
+- 历史证据包已在main d1b62535交付；专家已确认实际读取，最终三轮原文保存在该包并由active design索引。
+- 主实现工作树codex/video-functional；独立视频编码及评测适配子任务已完成，两个提交已集成至主实现树。
+- 主任务负责原生FM执行读出、辅助头、分组VJP、runtime/config/schema和集成；旧未提交95-task工作树不动。
+- 已核对/data1独立quota（786.6GiB/1TiB）及共享空间，代码工作树新增不到1GiB；训练前另核定输出峰值。
+- 新模型、分组信用、runtime/config/schema及评测适配已实现；旧图运行路径退役。完整CPU测试378 passed。
+- 最长合法训练视频93frames真实profile通过：原生/捕获FM均.106989；rho=.25时batch4/8为3.10/3.20queries/s、峰值25.32/37.84GiB；batch16 OOM。未保存profile权重。
+- 首段在看到正式学习结果前登记50/100更新；主方案拟用gpu01:4,5,6，microbatch8；pureFM拟用gpu02:3,6，microbatch8,4，后者给低负荷服务留显存。正式训练尚未启动。
+- /data1实时独立quota使用787.0GiB/1TiB，runs实测636GiB；两配方首段checkpoint及全配对物化预算40GiB，预计峰值827GiB，不复制基础资产。
+- 训练与评测均从clean pushed detached commit；不把profile权重作为formal起点。
 
 ## 暂停时点的已完成实验与未完成范围
 

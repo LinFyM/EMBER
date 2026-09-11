@@ -1,4 +1,4 @@
-"""Fresh end-to-end supervised FM learning of the complete Horizon Writer."""
+"""Fresh video-conditioned functional learning with explicit gradient ownership."""
 from __future__ import annotations
 
 import argparse
@@ -21,32 +21,32 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.data import teacher_camera_names
-from ember.writer.horizon import HorizonWriterConfig
+from ember.writer.video import VideoWriterConfig
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
-STAGE = "horizon_relation_writer_fresh_supervised"
-TRAINING_SCHEMA = "ember_horizon_supervised_training_state_v1"
+RUN_SCHEMA = "ember_video_functional_writer_run_v1"
+STAGE = "video_functional_writer_fresh"
+TRAINING_SCHEMA = "ember_video_functional_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
-    expected_model = asdict(HorizonWriterConfig())
-    selected_model = HorizonWriterConfig(**config["model"])
-    for key in ("consumer_mode", "process_mode", "compiler_language_mode"):
+    expected_model = asdict(VideoWriterConfig())
+    selected_model = VideoWriterConfig(**config["model"])
+    for key in ("process_mode",):
         expected_model[key] = getattr(selected_model, key)
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_horizon_relation_writer_config_v1"
+        config.get("schema_version") != "ember_video_functional_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -56,12 +56,12 @@ def _config(path: Path) -> dict[str, Any]:
         or int(config["observer"]["flow_time"]) != 1
         or int(config["observer"]["meta_rank"]) != 4
         or int(config["observer"]["probe_seed"]) != 1729
-        or config["optimization"]["loss"] != "supervised_fm"
-        or config.get("update_version") != "supervised_fm_writer_meta_v1"
+        or config["optimization"]["loss"] != "grouped_functional_credit"
+        or config.get("update_version") != "video_functional_credit_v1"
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
-        raise ValueError("horizon supervised Writer scientific contract changed")
+        raise ValueError("video functional Writer scientific contract changed")
     for key, expected in (("video_demos", range(16)), ("action_demos", range(16, 42)),
                           ("diagnostic_action_demos", range(42, 46)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
@@ -70,8 +70,13 @@ def _config(path: Path) -> dict[str, Any]:
         raise ValueError("first-run gradients require all fixed train24 tasks")
     if any(int(value) <= 0 for value in config["runtime"].values()):
         raise ValueError("runtime batches and cache budget must be positive")
+    auxiliary = config["auxiliary"]
+    if (type(auxiliary.get("enabled")) is not bool or
+            {key: value for key, value in auxiliary.items() if key != "enabled"} !=
+            {"weight": 1.0, "distill_start": 32, "distill_end": 100, "distill_max": 0.25}):
+        raise ValueError("registered auxiliary objective or schedule changed")
     _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"])
-    HorizonWriterConfig(**config["model"])
+    VideoWriterConfig(**config["model"])
     return config
 
 
@@ -115,7 +120,7 @@ def _run_contract(args, context, config, runtime, state):
         "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
         "execution": {"policy_microbatches": _execution_config(args, config, context)[1]},
-        "model_config": asdict(HorizonWriterConfig(**config["model"])),
+        "model_config": asdict(VideoWriterConfig(**config["model"])),
         "topology": {
             "host": socket.gethostname(), "world_size": context.world_size,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
@@ -124,8 +129,9 @@ def _run_contract(args, context, config, runtime, state):
         "training": {
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
             "meta_parameters": sum(p.numel() for p in runtime.state.meta.parameters()),
+            "reader_parameters": sum(p.numel() for p in runtime.state.reader.parameters()) if runtime.state.reader else 0,
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
-            "optimizer": "fresh AdamW; one FM update per four equally weighted tasks", "scaler": None,
+            "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
             "logical_batch": _logical_batch(config),
             "update_version": config["update_version"], "data_version": config["data"]["version"],
@@ -136,7 +142,7 @@ def _run_contract(args, context, config, runtime, state):
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": "disjoint fixed roles", "gradient_normalizer": 1.0,
-            "objective": "supervised_fm", "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
+            "objective": "grouped_functional_credit", "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
 
@@ -194,6 +200,7 @@ def _execute_step(engine, data, context, config, draws, step):
     if not 1 <= context.world_size <= min(6, logical["conditions"]):
         raise ValueError("condition parallelism requires 1 to min(6, condition count) useful ranks")
     by_job = _condition_jobs(data, config, draws)
+    engine.step = step
     jobs = tuple(by_job)
     costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
     assignment = cost_balanced_task_assignment(
@@ -238,6 +245,7 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     sync_seconds = time.perf_counter() - tick
     norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters())}
+    norms["reader_grad_norm"] = _grad_norm(runtime.state.reader.parameters()) if runtime.state.reader else 0.0
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
     if context.device.type == "cuda":
@@ -296,6 +304,9 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "step": updates, "optimizer_updates": updates,
             "seconds": seconds,
             "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
+            **{f"mean_{key}": sum(r[key] * r["condition_weight"] for r in gathered)
+               for key in ("reader_loss", "distill_loss", "source_loss")},
+            "rho": gathered[0]["rho"],
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
             "condition_exposures": metrics_rows, "task_exposures": updates * 4,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
@@ -437,7 +448,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_video_change_reference.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_video_functional.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

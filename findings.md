@@ -1,3 +1,9 @@
+# 当前实施边界（2026-09-11）
+
+Owner已授权Video Functional Writer设计、实现和实验。专家最终方案的机制理由是直接执行query功能信用；
+这不是首次联合训练，也没有数学上排除共同动作捷径。J2真实联合训练已核验，辅助头失败不证明无信息，
+辅助头强/LoRA弱不证明rank容量不足。具体设计见docs/video_functional_writer_design.md；当前尚无新实测结果。
+
 # EMBER findings
 
 Owner最新阶段为综合全部历史推导有益视频特异性，暂不强制绝对性能；当前科研执行继续暂停。

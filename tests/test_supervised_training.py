@@ -32,7 +32,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_video_change_reference.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_video_functional.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"
@@ -77,7 +77,7 @@ def test_actual_sampler_covers_suites_with_only_k1_and_restores_all_streams(samp
 
 def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tmp_path, config):
     import json
-    assert config["model"]["horizon"] == 50 and config["model"]["blocks"] == 4
+    assert config["model"]["horizon"] == 50 and config["model"]["blocks"] == 2
     assert config["model"]["factor_width"] == 256 and config["data"]["queries_per_task"] == 64
     assert "total_steps" not in config["data"]
     for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16),
@@ -122,13 +122,15 @@ class _ToySupervisedEngine:
         # not a proxy for the native FM/RL control objective.
         loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
-        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"]}
+        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"],
+                "reader_loss": 0., "distill_loss": 0., "source_loss": 0., "rho": 0.}
 
 @pytest.mark.parametrize("conditions", [1, 2])
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):
     config["data"]["conditions_per_task"] = sampler.conditions_per_task = conditions
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
+    state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)
@@ -217,6 +219,7 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     monkeypatch.setattr(torch.cuda, "max_memory_reserved", lambda *_: 0)
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
+    state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)

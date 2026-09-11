@@ -1,4 +1,4 @@
-"""Canonical model and bounded frozen-prefix lifetime for the Horizon Writer."""
+"""Canonical model and bounded frozen-prefix lifetime for the Video Functional Writer."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ from ember.writer.native import NativeCondition, NativeVideoObserver
 class WriterState(torch.nn.Module):
     """Checkpoint owner for the complete Writer, its reading module and public probe."""
 
-    def __init__(self, writer: torch.nn.Module, meta: MetaLoRAStack, probe_seed: int) -> None:
+    def __init__(self, writer: torch.nn.Module, meta: MetaLoRAStack, probe_seed: int, reader: torch.nn.Module | None = None) -> None:
         super().__init__()
-        self.writer, self.meta = writer, meta
+        self.writer, self.meta, self.reader = writer, meta, reader
         generator = torch.Generator(device="cpu").manual_seed(probe_seed)
         self.register_buffer("probe", torch.randn(50, 32, generator=generator))
 
@@ -41,10 +41,11 @@ class WriterRuntime:
 
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
-    from ember.writer.horizon import HorizonRelationWriter, HorizonWriterConfig, require_architecture_identity
+    from ember.writer.video import VideoConditionedWriter, VideoWriterConfig, require_architecture_identity
+    from ember.writer.function_reader import ExecutionVideoReader
 
     require_architecture_identity(config["model"])
-    model_config = HorizonWriterConfig(**config["model"])
+    model_config = VideoWriterConfig(**config["model"])
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
     reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
@@ -59,10 +60,13 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     policy.model.gradient_checkpointing_disable()
     expert = policy.model.paligemma_with_expert.gemma_expert.model
     state = WriterState(
-        HorizonRelationWriter(lora, model_config),
+        VideoConditionedWriter(lora, model_config),
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
-    ).to(device)
+    )
+    if config["auxiliary"]["enabled"]:
+        state.reader = ExecutionVideoReader(model_config.width, model_config.heads)
+    state.to(device)
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(
         policy, state.meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,

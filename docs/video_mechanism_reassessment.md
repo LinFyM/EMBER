@@ -189,3 +189,27 @@ correct相对source在24/24 task降低误差。wrong/shuffled/static相对correc
 ### 在等待闭环时准备的受控候选
 
 独立`codex/video-change-reference`的019fba33实现了“同一时间合同下，真实历史响应减当前画面保持不变时的响应”。只修改局部消息/GRU更新参照，保留C其余模型、语义分支、参数数量和普通FM；不把wrong标签、惩罚或标量开关加入模型。26项CPU检查已验证静态中心化Value消失且真实输入变化仍有信号和梯度。此时尚未集成canonical main、进行GPU实测或启动训练；完整设计在该候选commit的`docs/video_change_reference_design.md`。是否进入学习由完整行为证据及后续实际验证决定。
+
+
+## 10. 冻结闭环完成与下一项可证伪修正
+
+全部1344主面板及128路径替换新rows完成，复用source96和off400九臂并逐row核对task/state、目标language、env/policy根与共同执行噪声前缀。所有对照均为冻结train24开发诊断，无held梯度或checkpoint选择。
+
+| 条件（每臂96） | C100 | C200 |
+| --- | ---: | ---: |
+| correct | 32 | 42 |
+| same-task other | 31 | 48 |
+| same-suite wrong | 27 | 46 |
+| cross-suite wrong | 33 | 46 |
+| shuffled | 29 | 45 |
+| static first | 29 | 49 |
+| 匹配无序S | 30 | 51 |
+| source | 15 | 15 |
+
+C200 correct比source多27（保留12/新增30/丢失3），paired-task bootstrap成功率差95%区间[.156,.417]。但比static少7，区间[-.125,-.031]；相对wrong/shuffled没有正净收益。C100→200 correct增加10，保留20/新增22/丢失12、churn34/J=.370；相同期间static增加20、S增加21。C100/200的Spatial/Object/Goal/Long为8/8/11/5和14/11/12/5，breadth15→17；完整逐task和所有对照的集合/区间见`behavior_summary.json`。这不是C已收敛的证明，但获取增长并未使正确过程优势出现。
+
+固定八task的正确语义S后，完整correct15/32，换wrong过程18、static过程15、zero过程14；换错误语义而保留正确过程为21。static替换丢3增3；zero丢3增2；wrong过程丢1增4；错误语义丢1增7。路径干预的分布变化、八task和四state仍限制外推；它们不能把S或D识别成唯一根因。结合§9实际重复画面的高中心化P4，最早明确可修正的表示缺陷是：现有局部更新把静态内容在时间/窗口下的响应也送入过程Value，而这些过程值尚未产生正确过程净收益。
+
+下一项采用已准备的无变化参照局部更新，先在真实native/BF16、最长93个stride5输入帧及完整FM梯度上profile，再fresh学习。它只扣除相同gap/角色/窗口下画面保持不变的响应，不编码wrong标签，不增加错误视频惩罚，也不移除语义S。若静态不变性成立而学习仍无correct优势，则该缺陷不足以解释失败，返回表征内容与消费信用定位。不能把数学修正先验写成成功。C未改配方的更晚学习仍未观测；本次选择因果修正而非宣称其收敛。
+
+所有原件在`runs/analysis/video_mechanism_20260911/`，主行为`behavior_summary.json`、路径`paths/behavior_summary.json`，共1472条新闭环与14336次配对动作预测。初次共享GPU争用的loader失败与定向撤回记录保留；最终面板完整、所有本任务worker退出。

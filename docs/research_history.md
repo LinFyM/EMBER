@@ -993,3 +993,10 @@ Owner授权恢复自主科研后，登记video_consumption_writer_design并实�
 冻结7fedbe85、原gpu02 4/6/world2/micro6/6，从formal macro200原生完整exact-resume。R300经formal inspector通过，累计76800queries/2400条件，新增100updates均32.28秒；物化400条件sealed/exit0、615.33秒。correct strict400=63（四suite0/24/34/5、breadth4），9worker/42shards全部exit0、1206.51秒。200的83→300的63保留43/新增20/丢失40、churn60/J=.41748；Long5→5却全部更替。相对旧off400126为51/12/75、churn87/J=.36957，只作不同曝光的能力参照。实际teacher、source/normalizer、执行RNG的canonical配对通过；未触碰Test或新增因果controls。该节点未保持双K1条件的早期增长，后续按已登记400收尾。原件runs/analysis/video_consumption_20260911/r/step300/{completed_summary.json,r200_vs_300.json,old400_vs_r300.json}，解释见findings§53，动态授权只看当前plan/progress。
 
 R400终点与train96随后完整结束：correct85，四suite1/45/32/7、breadth6；R300→400 R/G/L50/35/13、churn48/J=.51020；R200→400为53/32/30、churn62/J=.46087；同102400queries旧off400126→R85为69/16/57、churn73/J=.48592。train96=56（17/17/14/8、breadth20），R20046→56为36/20/10，旧off40056→R56为43/13/13。独立动作FM=.105399/3072queries/无梯度/289.10秒。200新增更新6422.31秒，400验证15worker/60shards798.74秒、train3worker/36shards888.14秒，496条件物化747.14秒；新增896闭环rows和全部配对通过。结束该双K1条件配方，未增加500节点；原件r/continuation/continuation_summary.json及r/step400/（均位于runs/analysis/video_consumption_20260911）。更多教学条件未提高终点训练能力或迁移，不将这个负结果外推为所有独立meta-task扩展无效。
+
+
+## 55. 2026-09-11：完整形成链复核后，C冻结机制面板完成
+
+Owner要求先还原科学动机、数学与专家形成链，再定位并持续修正正确视频失效，补充correct必须高于source。形成链及旧6000条rows复核记录见[机制复核](video_mechanism_reassessment.md)。随后C100/200六臂、匹配S及固定八task路径替换1472新闭环和14336配对动作预测完成，无训练或held梯度。C200 correct42/96、两错46/46、乱序45、静态49、S51、source15；固定正确S时correct/静态过程同为15/32。C在训练任务上获得source增量，却未使正确过程产生净收益；两个节点不证明收敛。
+
+具体表示缺陷为重复画面仍产生较强中心化P4。依据该性质与功能/闭环干预，准备局部真实历史GRU减同gap/窗口静态参照GRU，只改过程更新、保留正样本FM，尚无新学习结果。详细边界、原件和相邻集合见findings§54；候选设计与后续授权只能从当时progress确认。本历史段不恢复运行。

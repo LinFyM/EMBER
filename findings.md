@@ -547,3 +547,12 @@ off7在原macro400=126/400、train56/96仍增长时曾因阶段预算停止，�
 R400已完整结束，将§53更新为有限续训终点结论：correct85/400、四suite1/45/32/7、breadth6；300→400保留50/新增35/丢失13（churn48/J=.51020），200→400为53/32/30（62/.46087）。旧off400在相同102400 target queries下为126；旧→R85保留69/新增16/丢失57（73/.48592）。train96=56，四suite17/17/14/8、breadth20；R20046→56为36/20/10，而旧off40056→R56为43/13/13。故更频繁条件曝光没有提高终点训练能力，也没有改善未见任务迁移；停止R，不因300→400局部回升再延长。
 
 独立动作FM400=.105399，24×128queries无梯度、289.10秒；新增训练200updates/51200queries完整6422.31秒，累计3200条件/383种task-video仍只有24个独立任务映射。400 val15worker/60shards798.74秒、train3worker/36shards888.14秒，496条件物化747.14秒；新增896闭环rows全部exit0，实际配对通过。完整原件runs/analysis/video_consumption_20260911/r/continuation/continuation_summary.json及step400/；该结论不证明全部普通FM或所有更大meta-task集合无效。
+
+
+## 54. C学习到source以上训练能力，但正确过程无净收益（2026-09-11）
+
+冻结C100/200六臂train24×states32–35、teacher46/other47全部配对：correct32→42、other31→48、同suite错27→46、跨suite错33→46、乱序29→45、首帧29→49；S30→51，source15。C200对source多27且task bootstrap区间为正，但correct对首帧少7，区间[-.125,-.031]；C100→200正确增加10、static增加20。correct四suite8/8/11/5→14/11/12/5、breadth15→17，相邻R/G/L20/22/12、churn34/J=.370。它仍在获取能力，两个早期节点不构成收敛证据。
+
+固定八task的语义S，correct/错误过程/静态过程/zero过程/错误语义为15/18/15/14/21，各32；正确动态未产生稳定净收益。配对动作14336次预测中，C correct.112128、S.111931、source.152494；换static过程仅+.000044。静态首帧仍产生正常视频0.692–0.935倍中心化P4，证明过程Value包含时间/窗口响应，不能自动解读为视觉动态。此表示性质是具体修正对象，尚非全部失败的唯一原因。
+
+采用局部无变化参照作为下一受控候选，保留C其余结构和普通FM；须经真实profile和fresh后续节点才能判断。完整论证、有限面板和路径替换边界见[机制复核§9–10](docs/video_mechanism_reassessment.md)。1472条新闭环及逐行配对、逐task/suite、success-set和task bootstrap在runs/analysis/video_mechanism_20260911/{behavior_summary,functional_comparison}.json及paths/behavior_summary.json。现有validation C43/50对source47未建立可信稳定source收益，EMBER目标与本次goal均未达成。

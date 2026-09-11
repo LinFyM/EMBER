@@ -1030,3 +1030,5 @@ Owner接受视频特异性优先的新候选；完整合同见`docs/video_functi
 原件`runs/outputs/video_functional_20260911/`；读出`runs/analysis/video_functional_20260911/paired_summary.json`及`first100_exposure_alignment.json`。一次gpu02:0启动与其它作业撞时导致加载OOM、0rows，失败记录保留于analysis的`failed_attempts/main100_validation_correct_gpu02p0`；不计入科学得分。
 
 首段correct随后收齐：主方案50/100 validation69/72，pureFM69/56；对应训练correct26/35、30/41。主方案100 S/O/G/L=0/55/11/6、breadth6，相邻R/G/L50/22/19、churn41/J=.54945；pureFM100为0/43/3/10、breadth5，相邻34/22/35、churn57/J=.37363。主方案50 other71（4/47/20/0、breadth6），other→correct为58/11/13、churn24/J=.70732。主方案100对pureFM100净增16、95%task-clusterCI[-.0075,.0925]，尚非辅助优势资格；后续frame_set保持主方案同配方，仅去除顺序处理，未启动事实以progress为准。
+
+训练other随后完整收齐：主方案50/100=29/38，pureFM22/40，各96。主方案100 correct35/other38配对保留33/增2/失5，J=.825；50为22/4/7，J=.66667。pureFM100 correct41/other40，训练侧获取与跨视频表现仍不能代替validation顺序收益。上述全train面板没有梯度。

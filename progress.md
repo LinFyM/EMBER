@@ -22,10 +22,10 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 
 | 配方/更新 | train correct /96 | train other /96 | validation correct /400 | validation other /400 |
 |---|---:|---:|---:|---:|
-| main/50 | 26 | 运行中 | 69 | 71 |
-| main/100 | 35 | 运行中 | 72 | 运行中 |
-| pure_fm/50 | 30 | 运行中 | 69 | 运行中 |
-| pure_fm/100 | 41 | 运行中 | 56 | 运行中 |
+| main/50 | 26 | 29 | 69 | 71 |
+| main/100 | 35 | 38 | 72 | 运行中 |
+| pure_fm/50 | 30 | 22 | 69 | 运行中 |
+| pure_fm/100 | 41 | 40 | 56 | 运行中 |
 
 - 配对source为train15/96、validation47/400；实际task/state/env/policy RNG检查通过。所有逐task/suite、breadth、R/G/L、churn、Jaccard和task-cluster bootstrap95%CI见`runs/analysis/video_functional_20260911/paired_summary.json`。
 - 主方案validation50→100为69→72，S/O/G/L=4/48/16/1→0/55/11/6，breadth7→6；相邻保留50/新增22/丢19、churn41、J=.54945。pureFM69→56，3/53/11/2→0/43/3/10、breadth7→5；相邻34/22/35、churn57、J=.37363。主方案100比pureFM多16，但task-cluster95%差额CI[-.0075,.0925]仍含0，不能宣称辅助信用有效。
@@ -34,10 +34,12 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 
 ### 正在运行与下一步
 
-- gpu01:4/5/6各3workers分别运行pureFM50/main50/main100的train other；gpu02:1运行pureFM100 train other。gpu02:4/3/6分别运行pureFM50/main100/pureFM100 validation other，各3workers。均为long-first动态队列和持久workers；每次launch live检查两节点。
+- 全部train correct/other已完成；gpu02:4/3/6继续运行pureFM50/main100/pureFM100 validation other，各3workers。采用long-first动态队列和持久workers；每次launch live检查两节点。
+- 主方案已从完整100恢复到200/300段：原gpu01:4,5,6/world3/micro8×3及NUMA/UUID/config合同通过，实际完成103步，rho=.25、峰值39.01GiB。tmux `ember-video-functional-main-300`；精确脚本与合同在analysis的`main/resume_200_300.sh`、`main/continuation_launch_contract.json`，日志在output的`main/train_200_300.log`。原首段completion已保留。
 - 一次gpu02:0在空闲检查后遭遇其它作业进入，主方案100 validation加载OOM、0rows；完整失败证据保留于`runs/analysis/video_functional_20260911/failed_attempts/main100_validation_correct_gpu02p0`。已换gpu01:5,6完成正式400；未干预其它作业。
 - 按原设计准备与主方案匹配的frame_set参照；目前主方案correct相邻轨迹较好，因此先以其配方检验有序处理的增量，不等于辅助优势已确立。配置唯一变化为`model.process_mode: ordered→frame_set`，保留完整帧、同参数、同FM/辅助/蒸馏和曝光。50/100/200/300请求及理由见`runs/analysis/video_functional_20260911/frame_set/registration.json`；尚未启动训练。
-- 已在新学习前登记下一有界窗口：主方案完整100按原拓扑exact-resume到200/300，frame_set fresh检查50/100/200/300，最终匹配76,800queries。原config/optimizer/sampler与科学边界不变；不追加pureFM或300以后的更新。精确理由与48GiB增量预算见`runs/analysis/video_functional_20260911/bounded_300_registration.json`；目前仅准备，均未启动。
+- 已在新学习前登记下一有界窗口：主方案完整100按原拓扑exact-resume到200/300，frame_set fresh检查50/100/200/300，最终匹配76,800queries。原config/optimizer/sampler与科学边界不变；不追加pureFM或300以后的更新。精确理由与48GiB增量预算见`runs/analysis/video_functional_20260911/bounded_300_registration.json`；主方案续训已启动，frame_set尚未启动。
+- frame_set真实93帧profile通过：rho=.25时micro4/8为3.06/3.17queries/s、峰值25.32/37.85GiB。scratch未保存权重；正式fresh训练在gpu02的合适设备释放后启动，和gpu01原拓扑续训并行。最新strg01 /data1仍811.6GiB/1TiB、当前run25GiB、共享83TiB；完整下一窗口48GiB增量预算，预计峰值859.6GiB。
 - 收齐换视频结果并结合必要无序参照裁决。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
 - 当前goal未完成，未选定checkpoint；无序参照与最终sealed视频controls尚未执行，Test继续封存。
 

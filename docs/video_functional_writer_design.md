@@ -209,3 +209,61 @@ Spatial/Long局部收益与Goal丢失并存，保留局部正证据，不将本�
 本项不延长训练或自动追加rho0 frame_set；没有匹配rho0无序结果，不能对其过程增量作正负定论。
 所有原件与有限裁决见`runs/analysis/video_functional_20260911/auxiliary_fm/bounded_200_decision.json`。
 下一项先综合既有机制证据；在新的可区分假设与干预登记前，尚未登记新GPU实验命令，也不恢复历史候选。
+
+
+## 9. 固定表示、原生中层功能读取诊断（2026-09-12，额外拟合前登记）
+
+### 证据、假设与近等价边界
+
+第8节没有修复迁移，因此不能把预测空间负内积当作蒸馏根因。第7节现有辅助头在固定main200表示下
+额外拟合64epochs后held FM .140251，仍24/24落后LoRA学生.110025。现有头在冻结source完成全部动作
+计算后才查询E，并用新训练的小型头将读取内容直接变成7维动作残差。它有状态依赖，但读取到的视频
+内容不再进入冻结Action Expert的后续动作计算。这是尚可区分的函数类问题，**不是已确认根因**。
+
+限定历史核对：G2 `c1493a1:natural_program.py` 的TemporalProgramDecoder只读Program与query_times；
+G3 `5140362:shared_compiler_train_step.py`、native teacher `2a7f760`来自固定expert/effect/factor bank；
+P1 `c9e8198:bank_conditioning/primal_capacity.py`及PNBTT `e65c6388:joint_program_primal/pnbtt_tasklocal.py`
+先产生固定LoRA。J2 `5fd80b6:joint_program_primal/train_step.py`确实联合更新视频Program/Compiler，
+但执行batch只进入已生成LoRA后的functional loss。它们没有训练执行query内部读取E的原生动态控制教师。
+这些代码均位于当时`src/ember/ecp/`；实际结果边界见research_history的对应索引，不能仅因名字不同忽略历史non-pass。
+
+外部[Vid2Robot §II-C](https://arxiv.org/html/2403.12943v1#S2.SS3)先用当前状态查询视频，再解码动作；
+它训练的是完整视频条件策略，使用大量数据及辅助对齐目标，并不证明EMBER的一次LoRA编译可行。
+本诊断只借鉴消费次序，不引入其数据、损失或部署设定。
+
+### 唯一干预与固定输入
+
+冻结main200的source、观察Meta、E编码器、Compiler和LoRA学生。以全新、identity初始化的同类读取头
+替换诊断控制函数：在18层Action Expert的第10层（zero-based 9）input_layernorm输出后读取视频，
+保持原AdaRMS gate和所有原生QKV、attention、MLP及后续层不变。
+
+令h为该层真实执行观测、noisy action与flow time下的归一化动作token：
+`r=Attention(P LN(h), E, E)`，`h'=h+W_o[GELU(U_q LN(h)) ⊙ U_r r]`。
+新W_o输出1024维hidden residual且零初始化；width256/heads8及其余参数化复用现有ExecutionVideoReader。
+后续原生动作计算才产生T。改动同时改变读取位置、残差输出域及下游冻结函数，不能称只改一个层号或等参数容量对照。
+固定第10层，不扫描层位/width/LR/seed，不训练source权重，不让执行query成为Writer部署输入。
+
+- 原固定1536 support queries（24tasks×64）、768 held queries（24×32）、teacher选择、action/query/noise/time
+  与第7节完全同口径；所有输入均来自train24，held不产生梯度。E与执行prefix KV可在CPU内存缓存，source冻结保证有效。
+- 新读取头fresh初始化与fresh AdamW，原LR3e-5/betas/wd/clip、8updates warmup，seed20260912；
+  四suite各一task等权更新、每epoch各task一次。固定32epochs=192updates=49,152次support query使用，
+  只有1536个不同支持queries，不能称新增曝光数据；报告0/4/16/32，禁止依据中间值追加轮次。
+- 对照为冻结source、原main200 LoRA学生，以及第7节拟合64epochs后的原动作读出头；在同一缓存输入上
+  重算其固定FM参照。新读取头与旧头的初始化/拟合预算不同，只检验这个具体函数类与可用原生先验是否更易获得
+  有效功能，不进行纯参数量归因。
+- 最后对held执行一次固定跨suite E替换，沿用第7节donor规则。它只测表示接口依赖，E含语言/静态内容；
+  不作为raw-video或时序因果证据，不开展shuffled/reversed。
+- 先4个train tasks、各8条support/held queries、1epoch smoke，核对真实source identity、缓存/完整native FM一致、
+  新头梯度及hook清理；用实际suffix throughput确定物理microbatch，保持逻辑权重和查询不变。
+
+### 判读、范围与生命周期
+
+报告每task与paired task-cluster95%CI（沿第5节相同bootstrap口径），同时比较原动作头、原LoRA学生。
+若新函数仍不能形成更好的留出控制拟合，不把失败归成只缺更多头训练或自动接Writer新训练。
+若改善原头但仍落后学生，只记录有限函数类收益；它仍不具备更强蒸馏教师的证据。若两者均被改善，才有
+依据进一步登记共同学习与实际闭环传递实验；该probe本身永远不获得部署或视频资格，也不回写Writer。
+
+本项仅1GPU，固定缓存约数十GiB主机RAM且不落盘，持久增量预计<1GiB（含隔离checkout）。启动前核实主机
+可用RAM、两节点GPU与/data1 quota；Owner全局用卡上限保持。精确命令、峰值与实现commit另存launch记录。
+临时`ember.writer.native_reader_diagnostic`仅拥有本次诊断，复用source/cache/data/旧reader参数化；没有新Writer
+运行面。问题关闭后删除此入口，或在有证据的正式职责替换中提取必要实现并退役旧头；历史由Git与probe artifacts保存。

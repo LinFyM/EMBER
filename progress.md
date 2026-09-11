@@ -3,7 +3,7 @@
 ## 当前状态：辅助FM有界比较全部完成；视频目标未达，进入机制复核（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7/8节的诊断及单变量比较均已完成；尚无新的GPU实验登记。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7/8节已完成；第9节登记固定表示下原生中层功能读取诊断，尚未启动。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### 当前执行与完整结果
@@ -27,7 +27,7 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 100对pureFM的validation只+1/+1，CI跨0；留出动作0/100/200 student FM=.154849/.114956/.107338，reader=.154849/.153161/.149237。动作拟合继续改善，不能替代闭环迁移或过程资格。
 - 最后两项200 strict400分别耗时1202.78/1204.78秒，各42个queue jobs完整400rows。原新增存储预算20GiB，最近quota861.4GiB/1TiB、投影869GiB；未新增数据或模型副本。
 - **本项裁决：**不延长去蒸馏训练，不自动启动同rho0 frame_set。两个节点、两臂validation都低于main，局部Spatial/Long正证据尚不足以证明保持改善；训练收益不能成为追加资格训练的唯一理由。
-- **下一步：**结合本轮与既有正负证据复核最早失效接口，形成可区分竞争解释的新机制判断后再登记具体干预。当前没有新训练命令、selected checkpoint或最终sealed controls；Test继续封存，goal保持未完成。
+- **下一步：**第9节诊断仅改变固定表示后的功能读出：在Action Expert中层读取E，由后续冻结原生层转成动作；原Writer完全冻结，32epochs有界。先实现与smoke，核实资源再启动。没有新的Writer训练、selected checkpoint或最终sealed controls；Test继续封存，goal保持未完成。
 - Owner双节点GPU总上限持续有效：最多8张，空闲总数不超过10张时最多6张；全部训练、物化与评测共享。
 
 ### 已完成学习与验证

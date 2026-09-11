@@ -108,3 +108,15 @@ R/C/S首轮全部结束：validation100→200分别37→83、43→50、59→45�
 采用原冻结runtime的原生恢复入口，不改训练代码或建立第二套trainer。迁移仅新建有lineage的run contract、更新预登记evidence节点、复用不可变checkpoint文件并复制小型历史日志；模型/optimizer/RNG文件不重写，原run和历史标记不改。新run的native contract校验仍逐项核对config/source/model/topology，恢复仍核对stage、world、400cursor与完整学习状态。迁移报告保存父run/commit、字段变化、逻辑rank映射和下一批采样检查；失败则停止新run，原checkpoint可直接回退。新run继续标记探索性续训，不把旧探索性checkpoint转换为formal fresh或直接用于最终资格选择；如能力得到支持，正式资格须另行明确fresh复现及独立controls。
 
 新run及材料位于runs/outputs/horizon_off7_continuation_20260911与runs/analysis/video_consumption_20260911/continuation。新增两份checkpoint约8.3GiB、validation/train96 LoRA约4.4GiB、日志及物化临时文件峰值预算16GiB；父checkpoint以同filesystem hardlink复用。launch前strg01/data1 used782,678,700KiB/soft1,073,741,824KiB，共享83TiB，预算有余量。实际卡和完整命令由launch记录固定，两节点现场复核后执行。
+
+## 8. R的有限后续获取节点（2026-09-11）
+
+off7追加500为73/400，低于父400的126；600训练已结束，独立动作FM400/500/600为0.104946/0.104097/0.104786，闭环与train96待完成。此前停止强旧候选确实不能证明平台，但继续曝光也未在首个追加节点保住已有能力。暂不根据这一点增加保持loss、VL Meta或另一种decoder。
+
+R的100→200是37→83，新增60/丢失14，Goal10→37、Long0→5，仍有获取趋势；这与C43→50及S59→45不同。R虽在51,200queries时低于旧off200108，却尚未完成旧off400的102,400queries，首轮结论只否定该预算下的净迁移收益。为区分慢获取与较差的最终迁移，**只追加R的200→400段**，预登记300/400两个correct strict400、400同口径train96及冻结后的train24独立动作验证。新增51,200queries/1,600K1条件；R累计400为102,400queries/3,200条件，与旧off400动作曝光相同。C/S不追加，不恢复未采纳架构，不更改教学池或动作监督。
+
+从R原macro200在原run root、冻结7fedbe85、原gpu02 4/6、world2、micro6/6完整exact-resume；原config/source/采样/模型/optimizer/scheduler/RNG与topology不变。仅通过原生checkpoint CLI登记本段300/400。原config自动动作诊断仍为0/200，400诊断另用同一原生validate方法只读执行，原seed20260908、每task128queries、teacher46+task%4/actions42–45，无梯度或checkpoint选择。不存在初始化迁移或新runner。若原拓扑不合适，等待此合同以外的执行选择，不擅改为另一初始化。
+
+本段是R唯一登记的追加，不自动许可400之后继续。300/400须同时报告对200及旧off400的逐task/suite、breadth与R/G/L/churn；只有实质的广泛行为改善才讨论进一步节点，否则该条件分配路线结束，回到已有证据支持的机制判断。不能以C/S早期失败否定全部消费结构，也不把R的更多条件调用本身当成视频必要性。
+
+材料位于runs/analysis/video_consumption_20260911/r/continuation；复用原R output root。新增两checkpoint、896个LoRA及诊断小文件峰值预留16GiB，独立quota与两节点在launch前复核。与off600评测合计始终不超过六张实际工作GPU；off600完整结果继续独立完成。

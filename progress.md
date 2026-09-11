@@ -30,7 +30,7 @@ S200 strict400=45，四suite0/21/24/0、breadth3；100→200保留32/新增13/�
 
 全部六组validation400和三组train96共2688条闭环完整exit0；S200 validation用15worker/5GPU耗时859秒，train96用6worker/2GPU耗时508秒。三臂共153600监督queries，checkpoint、896×3唯一完整LoRA及配对原件保留。统一结果入口runs/analysis/video_consumption_20260911/first_round_summary.json。
 
-首轮后的唯一新学习已登记于active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。已在gpu02 0/1/2、micro8/8/8启动；原生合同及完整400恢复通过，实际401的四task、occurrence、video、query seed、frames逐项匹配恢复sampler的预期，每task64queries/权重1/4。401约27秒、峰值reserved41.7GiB。401–500平均25.34秒，500独立动作FM0.104097（400为0.104946），仅小幅下降；500完整checkpoint已通过原生inspector，source trainable=0。完整迁移/launch证据在video_consumption_20260911/continuation；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
+首轮后首先登记的学习见active design§7：对保留最强off126追加500/600监督节点，每点correct400，600 train96，两个独立动作验证。旧400仍增长、未证明平台；C/S不追加。原gpu01 5/6他人满负载，采用有lineage的三rank物理迁移，完整权重/optimizer/scheduler/sampler/rank RNG保留，原冻结45e16633代码不改，继续探索性mode/stage。新root horizon_off7_continuation_20260911，不改原run、不冒充formal fresh或原拓扑exact-resume。已在gpu02 0/1/2、micro8/8/8启动；原生合同及完整400恢复通过，实际401的四task、occurrence、video、query seed、frames逐项匹配恢复sampler的预期，每task64queries/权重1/4。401约27秒、峰值reserved41.7GiB。401–500平均25.34秒，500独立动作FM0.104097（400为0.104946），仅小幅下降；500完整checkpoint已通过原生inspector，source trainable=0。完整迁移/launch证据在video_consumption_20260911/continuation；新增峰值16GiB、strg01 used782678700KiB/soft1073741824KiB。
 
 初轮总峰值预算96GiB；formal launch前strg01/data1 used764989296KiB/soft1073741824KiB（含约21GiB可删除profile checkpoint）。profile检查点完成消费后删除，仅保留合同、metrics、梯度/最长视频/恢复报告；正式checkpoint与数据不删除。大资产全部复用，source不复制。条件训练独立worktree已完成集成并移除。
 
@@ -73,3 +73,5 @@ Compiler删除的验证净收益经两个初始化与init7另一正确视频关�
 - 导出保真、119面板/13,901条统计、13组关键配对、全部新材料引用与隐私字段检查通过。没有新增训练/评测或无关测试；main交付以本文件所属提交为准。
 
 整理前完整进度：[043b58ca的progress](https://github.com/LinFyM/EMBER/blob/043b58ca3f1f3e7ed699b876f4964be96654c7e5/progress.md)。后续待办与权限只看当前task_plan，不恢复历史命令。
+
+R追加获取节点已登记于active design§8：仅R从原200完整exact-resume至400，300/400 correct400，400 train96及独立动作验证；总动作曝光达到旧off400相同102400queries。依据是R37→83仍有获取，C/S分别43→50、59→45不追加。当前准备原gpu02 4/6、micro6/6的原生恢复；off600物化/闭环继续独立完成，总用卡≤6。没有新增架构、保持loss、VL Meta或D变体。

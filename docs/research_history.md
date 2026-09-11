@@ -1059,3 +1059,5 @@ frame_set100 train other38/96，与main100 other同分，配对36/2/2、J=.90、
 frame_set50 validation other67/400（S/O/G/L=3/48/16/0、breadth5）；other→correct67→66为57/9/10、churn19/J=.75、95%CI[-.0175,.015]。main50other71对frame_set67为58/13/9、churn22/J=.725、95%CI[-.015,.0325]。50步正确与换视频两臂均未证明有序增益；完整逐task/suite与配对原件见同一paired_summary。
 
 main300 strict validation correct32/400，S/O/G/L=1/18/8/5、breadth6；200→30074→32，R/G/L21/11/53、churn64/J=.24706，task-cluster95%CI[-.18,-.0325]。source47→32为7/25/40、J=.09722、CI[-.24,.085]。Object42→18、Goal20→8、Long12→5，Spatial0→1；这是相邻迁移退化，训练45→43不能替代保持。不从它直接判定无序增量或根因，需对应参照与换视频面板；主方案按登记已停300。
+
+frame_set100 validation other74/400（S/O/G/L=0/57/8/9、breadth5）；相邻67→74为46/28/21、churn49/J=.48421、95%CI[-.055,.085]；other→correct74→73为63/10/11、churn21/J=.75、CI[-.01,.005]。main100other71相对frame_set74为62/9/12、churn21/J=.74699、CI[-.0275,.01]。因此50/100两臂完整匹配的主方案有序差额分别correct+3/-1、other+4/-3，未形成相邻同方向的可信增量，早期节点未获资格。

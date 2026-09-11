@@ -22,13 +22,13 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metada
     selection_contract, source_matches)
 
 
-EVALUATION_SCHEMA = "ember_horizon_writer_eval_adapter_v1"
-EPISODE_SCHEMA = "ember_horizon_writer_episode_v1"
+EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
+EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path) -> None:
     if role not in {"development_train", "validation"}:
-        raise ValueError("horizon Writer evaluation excludes Test and non-target tasks")
+        raise ValueError("video Writer evaluation excludes Test and non-target tasks")
     protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
     manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
     canonical = {int(row["global_task_id"]): row for row in manifest["tasks"]}
@@ -141,7 +141,7 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or manifest.get("single_complete_rank16") is not True
             or not frozen_authority(manifest["materialization_git"])
             or not source_matches(manifest["source"], source)):
-        raise ValueError("horizon Writer bank scope/source/commit changed")
+        raise ValueError("video Writer bank scope/source/commit changed")
     validate_task_scope(rows, role, Path(manifest["asset_root"]))
     _validate_round(selection, rows, require_formal)
     for row in rows:
@@ -160,7 +160,7 @@ def validate_information_wall(manifest) -> None:
                 "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
                 "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
     if any(wall.get(key) != value for key, value in required.items()):
-        raise ValueError("horizon Writer information wall changed")
+        raise ValueError("video Writer information wall changed")
 
 
 def inspect_horizon_writer_bank(
@@ -226,7 +226,7 @@ class FrozenHorizonWriterAdapter:
         if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
                 or not source_matches(adapter["source"], source) or set(self.records) != set(task_keys)
                 or adapter.get("single_complete_rank16") is not True):
-            raise Pi05EvaluationError("horizon Writer runtime bank changed")
+            raise Pi05EvaluationError("video Writer runtime bank changed")
         self.adapter, self.policy = adapter, policy
         self.conditions = {row["condition_id"]: row for row in adapter["conditions"]}
         self.lora = load_pi05_lora_contract(Path(adapter["lora_contract"]["path"]))

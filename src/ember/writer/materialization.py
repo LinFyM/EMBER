@@ -20,16 +20,17 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
-from ember.writer.horizon import require_architecture_identity
+from ember.writer.video import VideoWriterConfig, require_architecture_identity
 
 
-RUN_SCHEMA = "ember_horizon_relation_writer_supervised_run_v1"
-STAGE = "horizon_relation_writer_fresh_supervised"
-TRAINING_SCHEMA = "ember_horizon_supervised_training_state_v1"
-UPDATE_VERSION = "supervised_fm_writer_meta_v1"
-BANK_SCHEMA = "ember_horizon_writer_lora_bank_v1"
+RUN_SCHEMA = "ember_video_functional_writer_run_v1"
+STAGE = "video_functional_writer_fresh"
+TRAINING_SCHEMA = "ember_video_functional_training_state_v1"
+UPDATE_VERSION = "video_functional_credit_v1"
+BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
+# This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
-ADAPTER_SCHEMA = "ember_horizon_writer_materialized_adapter_v1"
+ADAPTER_SCHEMA = "ember_video_writer_materialized_adapter_v1"
 TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 36))
 VIDEO_SCHEDULE = "expert_manifold_canonical_permutation_v1"
 DEFAULT_SELECTION_SEED = 20260907
@@ -59,6 +60,8 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     teacher_camera_names(run.get("config", {}).get("observer", {}).get("camera_view", "agentview"))
     require_architecture_identity(run.get("model_config", {}))
     require_architecture_identity(run.get("config", {}).get("model", {}))
+    if VideoWriterConfig(**run["model_config"]) != VideoWriterConfig(**run["config"]["model"]):
+        raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
@@ -196,17 +199,21 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
     cameras = teacher_camera_names(run["config"]["observer"].get("camera_view", "agentview"))
+    auxiliary = run["config"].get("auxiliary", {})
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "execution_precision": run["config"]["execution_precision"],
-            "checkpoint_state": "strict entire Writer+Meta+public probe", "frame_stride": 5,
+            "checkpoint_state": "strict entire Writer+Meta+public probe+optional training-only reader", "frame_stride": 5,
             "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180", "execution_rank": 16,
             "native_response_shape": [50, 1024], "generated_tensor_count": 76,
             "native_response_source": "action_out_proj_input_after_final_normalization",
-            "visual_token_source": "actual_final_prefix_image_tokens",
+            "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
             "visual_token_gradient": "detached_native_tokens_trainable_projection",
             "frame_attention": ("independent_full_h_frame_set" if run["model_config"].get("process_mode") == "frame_set"
-                                else "four_past_plus_self_causal"),
-            "training_stage": STAGE, "training_objective": "supervised_fm",
+                                else "adjacent_full_h_past_self_temporal"),
+            "video_representation": "per_frame_exact_task_tokens_T_L_d",
+            "training_stage": STAGE, "training_objective": ("supervised_fm_with_functional_reader"
+                if auxiliary.get("enabled", False) else "supervised_fm"),
+            "auxiliary": auxiliary, "functional_reader_in_execution": False,
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
@@ -357,10 +364,10 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     first = inspected[0][0]
-    expected = (first["source"], first["model_config"], first["config"]["observer"])
+    expected = (first["source"], first["model_config"], first["config"]["observer"], first["config"].get("auxiliary", {}))
     for run, _ in inspected:
-        if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
-            raise ValueError("resident batch requires identical source, model, and observer contracts")
+        if (run["source"], run["model_config"], run["config"]["observer"], run["config"].get("auxiliary", {})) != expected:
+            raise ValueError("resident batch requires identical source, model, and observer contracts plus auxiliary reader configuration")
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]

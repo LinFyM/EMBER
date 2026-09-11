@@ -73,7 +73,7 @@ def _config(path: Path) -> dict[str, Any]:
     auxiliary = config["auxiliary"]
     if (type(auxiliary.get("enabled")) is not bool or
             {key: value for key, value in auxiliary.items() if key != "enabled"} !=
-            {"weight": 1.0, "distill_start": 32, "distill_end": 100, "distill_max": 0.25}):
+            {"weight": 1.0, "distill_start": 32, "distill_end": 100, "distill_max": 0.0}):
         raise ValueError("registered auxiliary objective or schedule changed")
     _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"])
     VideoWriterConfig(**config["model"])

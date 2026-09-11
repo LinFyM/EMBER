@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_video_functional_writer_config_v1",
-  "status": "registered_fresh_video_functional_learning",
+  "status": "registered_fresh_auxiliary_FM_without_distillation",
   "design": "docs/video_functional_writer_design.md",
   "data": {
     "seed": 7,
@@ -147,7 +147,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Fresh task-token/full-H video representation with direct auxiliary functional credit",
+    "initial_use": "Design section8: same shared auxiliary FM, no teacher target for Compiler; fresh bounded200",
     "qualification_registration": "docs/video_functional_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -202,8 +202,8 @@
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
       "optimizer_updates": [
-        50,
-        100
+        100,
+        200
       ]
     },
     "qualification": {
@@ -279,14 +279,14 @@
       ],
       "registration_status": "registered before functional learning",
       "optimizer_updates": [
-        50,
-        100
+        100,
+        200
       ],
       "qualification_completion": "paired400 correct/other at informative nodes; video specificity against matched trained frame_set; no145 gate"
     },
     "checkpoint_updates": [
-      50,
-      100
+      100,
+      200
     ],
     "supervised_validation": {
       "task_ids": [
@@ -317,7 +317,8 @@
       ],
       "optimizer_updates": [
         0,
-        100
+        100,
+        200
       ],
       "action_demos": [
         42,
@@ -439,6 +440,6 @@
     "weight": 1.0,
     "distill_start": 32,
     "distill_end": 100,
-    "distill_max": 0.25
+    "distill_max": 0.0
   }
 }

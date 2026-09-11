@@ -167,3 +167,33 @@ supervised.py编排同condition重放，runtime.py统一构建，training.py统�
 
 `ember.writer.reader_diagnostic`只拥有此诊断编排，复用现有runtime、数据、视频与FM函数；不增加第二Writer或评测器。
 它是有明确问题的临时研究入口，由当前任务维护，诊断结论被后续方法吸收或该问题关闭后退役，证据由Git及probe artifacts保留。
+
+## 8. 保留辅助真实FM、关闭蒸馏的有界比较（2026-09-12，学习前登记）
+
+第7节诊断结束：读出held FM .149662→.140251，23/24task改善，但24/24仍落后原学生（均值.110025）。
+已有同批三项MSE表明main/frame_set后段蒸馏与真实FM在**预测空间**的梯度cos≈−.15；不据此推断参数/Adam
+冲突或断言蒸馏损害迁移。弱教师也可能产生正则化收益，且旧pureFM100验证56低于main72；旧两臂同时改变了
+辅助表示监督与蒸馏，无法区分两者。此处只检验一个明确因素，保留已经对齐的表示与完整LoRA架构。
+
+**单一变化：rho恒为0；mu仍为1。** phi接受完整L_C+L_R，eta接受L_R，psi仅接受L_C。
+辅助头职责收窄为视频表示的直接真实动作信用，不向Compiler/nativeD提供教师目标。数学上L_D在rho0时
+只可作为诊断值，不产生蒸馏cotangent。复用现有支持rho0的canonical trainer，无新参数、模块或并行fallback。
+
+- 从step0 fresh Writer/Meta/reader及合法identity LoRA开始，fresh optimizer/scheduler/sampler/RNG。
+  不继承main200或额外拟合reader；原训练seed7、LR、任务/视频/query采样、source、rank16、宽度、K1与全部信息墙不变。
+- 固定训练上限200updates=800 K1条件=51,200queries，保留100/200完整checkpoints，不追加300。
+  两节点均做原train96与validation strict400的correct/other，原seed/state-video映射、配对推理及bootstrap不变。
+  留出动作诊断0/100/200，均无梯度；它只能定位，不能选择checkpoint。
+- 当前canonical配置`configs/pi05_video_functional.json`登记本配方；旧rho.25配置由原run_contract及冻结commit保存。
+  现有frame_set配置同步同配方供未来匹配资格参照，但**本段不自动启动第二条训练**。
+- 先与同曝光main100/200比较以辨别去蒸馏的实际收益/代价，pureFM100作辅助表示信用的有限匹配参照。
+  必须报告全部task/suite、source、breadth、R/G/L/churn/Jaccard与相邻证据；不因teacher FM或输出方向选模型。
+- 本段不能独立声称过程资格：若correct与other在两个节点均相对原main没有正向总分变化，且main中已有的
+  局部收益/保持亦未改善，则不为本配方追加匹配frame_set或延长训练；记录所检验因素的负结果。
+  若出现值得验证的保持/迁移改善，再登记同rho0、匹配曝光的fresh frame_set资格参照，沿第5节原有
+  correct-primary CI与相邻/同视频要求裁决；原rho.25无序分数不能冒充这一匹配参照。
+- 不开展reader额外更新、LR/seed/容量扫描、RL、95-task或sealed最终controls；Test继续封存。
+  资源与正式命令另写launch contract，仍要求clean pushed detached代码与Owner全局用卡上限。
+
+此比较可能只改善共享动作修正，也可能失去原蒸馏的正则化收益；只有之后的匹配行为证据才能判断有益过程是否形成。
+第7节临时诊断入口随问题关闭退役，原状态与证据留在Git和artifacts，不成为新的课程或部署路径。

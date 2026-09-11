@@ -1,18 +1,17 @@
 # EMBER progress
 
-## 当前状态：有界比较未获资格；冻结读出诊断进行中（2026-09-12）
+## 当前状态：读出诊断完成；辅助FM保留、去蒸馏比较准备中（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7节登记当前诊断。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7节登记已完成诊断，第8节登记下一项单变量比较。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### 当前执行
 
 - 主方案、pureFM及匹配frame_set的本轮训练和全部40个闭环面板均已结束。没有Writer续训、RL或待恢复的旧评测。
-- 当前仅gpu02:3运行冻结读出拟合诊断，tmux `ember-reader-fit-diagnostic`。固定main200表示和source，仅现有辅助头接受train24支持集FM；64epochs/384updates，留出动作无梯度，不访问validation/Test。
-- 诊断入口已合main并推送，运行代码为clean pushed detached `19896b4aed6a47f9bf201a32c0640ef1d3925f90`，工作树`.codex/worktrees/reader-fit-diagnostic`。真实4-task/1epoch smoke通过，读出梯度有限非零，峰值11.25GiB；这里只证明缓存与更新机制。
-- 精确命令、GPU、quota见`runs/analysis/video_functional_20260911/reader_fit_launch.sh`及`reader_fit_launch_contract.json`；数据/优化合同及输出在同根`reader_fit_diagnostic/`，日志`reader_fit.log`。
-- 启动前两节点live检查没有其它ymdai GPU作业，加入诊断后共1张；/data1个人848.8GiB/1TiB，包含217MiB checkout及小型probe的额外持久预算1GiB，预计峰值849.8GiB。CPU query/memory缓存不落盘。
+- 冻结读出诊断已完成64epochs/384updates，支持/留出缓存48条件，峰值11.25GiB；gpu02的tmux与诊断进程已退出。没有正在运行的EMBER GPU作业。
+- 诊断代码为clean pushed detached `19896b4aed6a47f9bf201a32c0640ef1d3925f90`；输出与命令在`runs/analysis/video_functional_20260911/reader_fit_diagnostic/`及同根`reader_fit_launch.sh`。固定表示probe没有回写Writer、访问validation/Test或输出可部署checkpoint。
+- 下一项只关闭蒸馏，保留辅助真实FM、新表示、完整LoRA、数据、优化器与fresh共同训练。按active design第8节固定100/200节点，尚未启动；不把本次reader状态迁入新Writer。
 - Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
 
 ### 已完成学习与验证
@@ -40,7 +39,9 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 本轮未获得视频资格。50/100/200/300的main相对frame_set correct差额+3/-1/+5/+5，other差额+4/-3/+13/+1；primary正确视频95%CI均跨0。预注册必要门槛核对见`bounded_300_decision.json`，不以差额方向或单点峰值代替可信收益。
 - main200→300 validation两臂均74→32，correct/other差额95%CI分别[-.18,-.0325]/[-.1925,-.0225]。frame_set相邻correct69→27、other61→31，CI[-.195,-.025]/[-.1425,-.015]。两方案后段均迁移退化，训练任务获取近似保持不能代替迁移保持。
 - 已有train24留出动作100步main source/reader/student FM=.154849/.153163/.116660；251–300同批为.157011/.148191/.102797。辅助读出明显落后学生，尚无“好教师已学会、仅编译失败”的证据；这是诊断线索，不是退化的单一根因。
-- 当前固定表示probe只回答额外读出拟合能否改善support及原留出动作，并附无梯度cross-task E替换诊断。它不改变原Writer，不把缓存复用称新增数据，不按结果延长，不输出可部署checkpoint。结果决定下一项具体假设，FM本身不能完成goal。
+- 固定表示probe的support reader FM .150983→.136589（24/24改善），held .149662→.140251（23/24改善，平均降幅.009411、task-cluster95%CI[.006285,.012963]）；原学生held .110025，24/24任务仍优于reader。当前接口能学习可迁移到同训练task留出动作的修正，但尚无更好功能教师。
+- held换入跨task E后FM .148876，相对原条件高.008625、CI[.005880,.011906]；E含语言与静态内容，此接口依赖不等于视频动态因果资格。逐task/节点见`reader_fit_analysis.json`及probe原始results。
+- 同批损失可直接恢复输出误差内积：`<S-y,S-T>=(L_C+L_D-L_R)/2`。main/frame_set 151–200、251–300各50/50更新为负，汇总cos≈−.15。它限定在预测空间，不能推出参数梯度或Adam更新相反，更不能把迁移退化单因归给蒸馏。现有pureFM同时移除了两种辅助作用，故下一步单独检验去蒸馏；不增加reader优化轮数或新架构。
 - 当前goal仍未完成；无selected checkpoint，最终sealed视频controls未执行，Test继续封存。完整阶段结论与历史细节已转入`docs/research_history.md`和`findings.md`。
 
 ## 暂停时点的已完成实验与未完成范围

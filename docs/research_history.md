@@ -1096,3 +1096,27 @@ main300other32对frame31为20/12/11、churn23/J=.46512、CI[-.0325,.035]。两�
 
 所有原训练/评测均按登记结束，最终sealed controls与Test未使用；本轮负结果不等于整个有益视频目标被否定。
 下一项仅登记main200固定表示的读出拟合诊断，范围、不可部署属性和停止点见active design第7节；原始实验不继续训练。
+
+## 2026-09-12：冻结读出64epochs诊断完成与下一单变量比较
+
+诊断冻结main200，train24固定1536支持queries、768原留出queries；只更新reader，64epochs/384updates，
+source/Meta/encoder/Compiler/nativeD全部冻结，无validation/Test读取、无可部署checkpoint。代码commit
+`19896b4aed6a47f9bf201a32c0640ef1d3925f90`，gpu02:3，峰值11.248GiB，按登记自动退出。
+
+| epoch | support reader | held reader | held cross-task E |
+|---|---:|---:|---:|
+| 0 | .150983 | .149662 | .151491 |
+| 4 | .149965 | .148927 | .151246 |
+| 16 | .146609 | .146396 | .150786 |
+| 64 | .136589 | .140251 | .148876 |
+
+source support/held=.155994/.154849；原LoRA学生=.107394/.110025，整个诊断保持不变。
+held reader降幅.009411、95%task-clusterCI[.006285,.012963]，23/24task改善；最终24/24仍落后学生。
+跨task E替换差额.008625、CI[.005880,.011906]，含语言/静态因素，不是raw-video控制或时序资格。
+证据根`runs/analysis/video_functional_20260911/reader_fit_diagnostic/`，外层`reader_fit_analysis.json`汇总逐task与CI。
+诊断入口问题已关闭，从活动源码退役，复现由上述Git及完整run/cache provenance/results/辅助训练状态保留。
+
+无新增GPU计算地由同批MSE恢复预测空间方向：main/frame_set151–200、251–300均50/50更新的
+`<S-y,S-T>`为负，汇总cos≈−.15；不外推到参数更新或闭环因果。见`distillation_output_geometry.json`。
+据此按active design§8登记只移除蒸馏的fresh100/200比较，保持辅助FM；它测试两个辅助作用的拆分，
+不认定根因已找到、不恢复旧路线，学习前登记而非按新分数改门槛。具体是否运行和资源只看progress/run contract。

@@ -1050,3 +1050,6 @@ main200 train correct45/96（15/14/10/6、breadth17），100→200保留27/新�
 main200 validation correct最终74/400，S/O/G/L=0/42/20/12、breadth6；10072→20074 R/G/L36/38/36、churn74/J=.32727，task-cluster95%差额CI[-.105,.085]。对source47为20/54/27、churn81/J=.19802，CI[-.1225,.2275]。总体保持伴随显著成功集合更替，不能宣称稳定。main200 train other47/96（14/16/11/6、breadth18），correct45对other47为43/2/4、churn6/J=.87755；other相邻38→47为28/19/10、churn29/J=.49123。
 
 frame_set50 train other24/96（9/2/10/3、breadth13）；main50other29对它22/7/2、churn9/J=.70968、95%CI[0,.10417]。frame_set100 train correct35/96（8/9/14/4、breadth13），相邻29→35为18/17/11、churn28/J=.39130；main100同为35，对它31/4/4、churn8/J=.79487、CI[-.05208,.05208]。动作拟合及100步训练行为继续接近；尚无充分曝光的验证有序收益证据。原始面板与完整逐task/suite/配对字段均进入同一paired_summary。
+
+
+frame_set100 train other38/96，与main100 other同分，配对36/2/2、J=.90、task-cluster95%CI[-.04167,.04167]；frame_set100 correct/other为35/38，33/2/5、J=.825。其完整validation correct73/400（S/O/G/L=0/56/9/8、breadth5）；main10072对它61/11/12、churn23/J=.72619、CI[-.0225,.015]。frame_set验证50→100为66→73，45/28/21、churn49/J=.47872、CI[-.0325,.0625]。50/100有序差额+3/-1没有可信同方向保持，仍按既定充分曝光窗口裁决，未选点或执行最终controls。

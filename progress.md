@@ -1,16 +1,16 @@
 # EMBER progress
 
-## 当前状态：辅助FM有界比较全部完成；视频目标未达，进入机制复核（2026-09-12）
+## 当前状态：辅助FM比较结束；固定表示原生中层读出诊断运行中（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7/8节已完成；第9节登记固定表示下原生中层功能读取诊断，尚未启动。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7/8节已完成；第9节的固定表示原生中层功能读取诊断已启动。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### 当前执行与完整结果
 
-- 所有Writer学习、读出诊断、LoRA生成和闭环评测均已完成。两节点已确认没有本轮训练/物化/评测进程或auxiliary tmux；无待恢复任务。
+- 原Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。当前只有第9节新中层读出诊断：gpu01:4、tmux `ember-native-reader-diagnostic`，仅1GPU。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
-- formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；原main/frame_set代码仍为`a81a38edd055034a4a080215bdc4362310500678`。配置解析及相关49测试通过，未改变原科学实现。
+- formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。
 - 新配方8面板/1,984闭环rows全部完成；连同原40面板，study共48面板/11,904rows。精确命令、preflight、raw rows、aggregate和completion保留；统一逐task/suite及配对统计见`runs/analysis/video_functional_20260911/paired_summary.json`，裁决见`auxiliary_fm/bounded_200_decision.json`。
 
 | 配方/更新 | train correct /96 | train other /96 | validation correct /400 | validation other /400 |
@@ -27,12 +27,16 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 100对pureFM的validation只+1/+1，CI跨0；留出动作0/100/200 student FM=.154849/.114956/.107338，reader=.154849/.153161/.149237。动作拟合继续改善，不能替代闭环迁移或过程资格。
 - 最后两项200 strict400分别耗时1202.78/1204.78秒，各42个queue jobs完整400rows。原新增存储预算20GiB，最近quota861.4GiB/1TiB、投影869GiB；未新增数据或模型副本。
 - **本项裁决：**不延长去蒸馏训练，不自动启动同rho0 frame_set。两个节点、两臂validation都低于main，局部Spatial/Long正证据尚不足以证明保持改善；训练收益不能成为追加资格训练的唯一理由。
-- **下一步：**第9节诊断仅改变固定表示后的功能读出：在Action Expert中层读取E，由后续冻结原生层转成动作；原Writer完全冻结，32epochs有界。先实现与smoke，核实资源再启动。没有新的Writer训练、selected checkpoint或最终sealed controls；Test继续封存，goal保持未完成。
+- **下一步：**第9节诊断仅改变固定表示后的功能读出：在Action Expert中层读取E，由后续冻结原生层转成动作；原Writer完全冻结，32epochs有界。已完成实现及真实smoke，现在按登记拟合。没有新的Writer训练、selected checkpoint或最终sealed controls；Test继续封存，goal保持未完成。
+- 新诊断实现为clean pushed detached `b1d3fa25`，`.codex/worktrees/native-reader-diagnostic`；临时单模块335行，复用既有reader与原生cache。语法/CLI和真实smoke通过，source identity保持、输出/query/Value梯度存在、source无梯度；缓存/完整forward的最大FM差.000381，峰值9.93GiB。
+- 新launch与完整资源记录在`runs/analysis/video_functional_20260911/native_reader_launch.{json,sh}`，运行日志`native_reader.log`、输出`native_reader_diagnostic/`。32epochs/192updates固定，1536支持queries复用、768留出queries无梯度；没有新的Writer训练或部署checkpoint。
+- 启动前两节点本人作业0，启动后1≤6。/data1 quota861.6GiB/1TiB，新增预算<1GiB、投影862.6GiB，共享83TiB；gpu01可用RAM444GiB，缓存预计数十GiB且不落盘。两个旧任务运行树清理已核对clean与main ancestry，全部正式资产保留。
+- 结构复核保留一个有明确退出条件的诊断入口；cache helper的循环/字段拼装复杂度17及writer目录27个文件作为有限例外记录，问题关闭即退役入口，不创建第二Writer运行面。
 - Owner双节点GPU总上限持续有效：最多8张，空闲总数不超过10张时最多6张；全部训练、物化与评测共享。
 
 ### 已完成学习与验证
 
-- 原Writer实现及正式实验代码冻结在`a81a38edd055034a4a080215bdc4362310500678`、`.codex/worktrees/video-functional-frozen`；原CPU套件378 passed，真实native梯度和最长93frames profile通过，source trainable=0。新诊断入口另以语法、结构检查及真实smoke验证，未改原Writer训练路径。
+- 原Writer正式实验代码保存在Git `a81a38edd055034a4a080215bdc4362310500678`，已结束执行checkout已清理；原CPU套件378 passed，真实native梯度和最长93frames profile通过，source trainable=0。新诊断入口另以语法、结构检查及真实smoke验证，未改原Writer训练路径。
 - main与frame_set均按登记完成300更新、1,200条件、76,800queries，checkpoint50/100/200/300完整保存；全部task/video/action/query/RNG/weight实际匹配。证据`frame_set/step300/exposure_alignment.json`。pureFM仅完成原登记100更新，无追加续训。
 - main200/300续训段8657.20秒，frame_set对应段10470.90秒；frame_set峰值39.05GiB。所有LoRA banks及正式rows、aggregate、completion与恢复证据保留在`runs/outputs/video_functional_20260911/`。
 - 40个完整面板共9,920条保留闭环rows，source参考train15/96、validation47/400；task/state/env/policy RNG配对通过。逐task/suite、breadth、R/G/L、churn、Jaccard和task-cluster bootstrap95%CI均见`paired_summary.json`。

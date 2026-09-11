@@ -6,15 +6,13 @@ EMBER探索：从一条或多条action-hidden正确教学视频理解任务条�
 在rollout前一次性编译成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从自己的新初始化闭环执行。
 语言确定目标与关注对象，视频动态必须贡献必要信息；执行行为由机器人当前观测触发。跨具身是科学动机，LIBERO结果不自动证明跨具身泛化。
 
-## 当前讨论：正确视频是否被有效使用
+## 正确教学增量与方法证据
 
-Owner已要求暂停95-task实现与实验，先回答现有结构为何需要正确视频。以下扩展方案仅为暂停前提案，尚无实验，不能当作已解决该问题或继续执行的授权。
+正确教学视频必须同时满足同任务和内部顺序正确。研究要求正常训练自然形成correct相对错任务、乱序视频的有益闭环增量，且correct高于冻结source；不能靠人为压低错误条件制造差额。
 
-v5.2普通正样本动作监督已有正确视频依赖；纯监督允许捷径不足以解释不同模型的行为。语义消费C/S及双K1条件R的完整有限实验没有得到迁移净收益，较强off配方继续曝光也出现训练任务提升、未见任务下降。
+v5.2普通正样本动作监督已有正确视频与顺序依赖正证据；纯监督允许捷径不足以解释不同模型的行为。完整H、前缀依赖、attention和真实梯度只证明计算可用，不能证明操作证据已被有益消费。
 
-当前保留完整H、过去定向关系图、local_h_read Compiler与独立D，以普通跨episode FM学习；新增经既有完整任务审计排除target40重合项的71个source meta tasks。target24与meta71显式各半加权，每个task一条K1视频/64queries，检验更多独立task映射能否改善共享video→LoRA函数的迁移。增加task覆盖只是待检验假设，不保证视频动态增量。
-
-唯一active合同见[非held meta-task扩展设计](nonheld_meta_writer_design.md)，实现/学习状态见progress。target validation/test保持固定和无梯度；source、图结构、Meta范围、视角和普通FM不变。前轮[消费接口设计](video_consumption_writer_design.md)保留为历史，不恢复其待办。
+Horizon与语义条件化消费C的形成过程、数学性质及未经证实的推论见[机制复核](video_mechanism_reassessment.md)。C/S只观察100/200两个节点，其后续学习潜力未被充分检验。95-task提案不构成解决视频消费问题的证据；当前授权与阶段只看[progress](../progress.md)和[task_plan](../task_plan.md)。
 
 ## 保留的完整H过去定向数据流
 
@@ -55,7 +53,7 @@ Owner最终选择**过去局部＋过去单向长程**；每组U_t只依赖原�
 ## 共同解释与完整参数生成
 
 每条video先独立保序编码，只有集合阶段置换不变地共同读取。不混淆video内部时间和video集合次序，不平均frames、raw features或最终LoRA。
-Compiler首块以task-independent target/rank身份作为残差内容，exact language只引导首次cross检索；任务条件内容由真实P4 Value进入，第二块继续共同编译。此接口是已登记的fresh受控对照，不预先宣称视频动态必要性或更高闭环。
+Compiler首块以task-independent target/rank身份作为残差内容，较强off候选关闭了额外language query；exact language仍通过逐帧Z/R和过程条件进入P4，第二块继续共同编译。真实P4 Value不保证视觉动态必要性。C则另用逐token视觉语义先确定过程读取条件，再融合语义与变化生成LoRA；两者的实现与证据须分开解释。
 Compiler的target/rank身份决定输出位置，输入不必保留18个网络层才能生成38个目标。末层未保留的信息也不能由compiler凭空恢复。
 Native D按target/rank/side独立、跨任务共享，允许更直接的因子学习通道；它仍有共享干扰和固定读出空间，不能被视为性能保证。
 参数在rollout中固定，作用于随机器人观测变化的激活，因此可以形成状态条件化行为；不能按教师视频时钟播放动作。

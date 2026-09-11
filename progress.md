@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：读出诊断完成；辅助FM保留、去蒸馏比较准备中（2026-09-12）
+## 当前状态：读出诊断完成；辅助FM保留、去蒸馏比较运行中（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7节登记已完成诊断，第8节登记下一项单变量比较。
@@ -9,9 +9,11 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 ### 当前执行
 
 - 主方案、pureFM及匹配frame_set的本轮训练和全部40个闭环面板均已结束。没有Writer续训、RL或待恢复的旧评测。
-- 冻结读出诊断已完成64epochs/384updates，支持/留出缓存48条件，峰值11.25GiB；gpu02的tmux与诊断进程已退出。没有正在运行的EMBER GPU作业。
+- 冻结读出诊断已完成64epochs/384updates，支持/留出缓存48条件，峰值11.25GiB；gpu02的tmux与诊断进程已退出。该诊断占卡已释放。
 - 诊断代码为clean pushed detached `19896b4aed6a47f9bf201a32c0640ef1d3925f90`；输出与命令在`runs/analysis/video_functional_20260911/reader_fit_diagnostic/`及同根`reader_fit_launch.sh`。固定表示probe没有回写Writer、访问validation/Test或输出可部署checkpoint。
-- 下一项只关闭蒸馏，保留辅助真实FM、新表示、完整LoRA、数据、优化器与fresh共同训练。按active design第8节固定100/200节点，尚未启动；不把本次reader状态迁入新Writer。
+- 当前gpu01:0,4,5,6运行去蒸馏比较（world4、每卡micro8），tmux `ember-auxiliary-fm`；原生runtime已确认fresh0→200、辅助FM启用/rho0、source trainable=0。单变量之外结构、数据与优化配方保持，固定100/200节点，不继承probe状态。
+- 运行代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；配置解析及相关49项测试通过。旧reader诊断worktree已复用并改名，未复制大资产。
+- 精确launch/preflight见`runs/analysis/video_functional_20260911/auxiliary_fm/`，正式输出在同study输出根的`auxiliary_fm/`。两节点检查启动前本人GPU作业0，启动后4≤6；/data1 quota849.0GiB/1TiB，追加峰值预算20GiB、投影869GiB，共享83TiB，现有study62GiB。
 - Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
 
 ### 已完成学习与验证

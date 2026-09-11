@@ -1,5 +1,11 @@
 # EMBER progress
 
+## Owner最新指令：暂停（2026-09-11）
+
+Owner明确要求“停一下”，指出核心仍是正确视频的使用：off/普通FM与扩大task数量没有回答当前结构为何需要正确视频。立即暂停95-task实现、profile及训练；此前4480条闭环已完成，没有任何95-task GPU任务。子agent已停止，两个隔离worktree的未提交改动原样保留，不集成或继续。
+
+当前回到机制讨论，没有获准继续执行的新科学设计。[95-task设计](docs/nonheld_meta_writer_design.md)为暂停的未验证提案，不能因旧登记恢复执行；既有训练/评测也不自动恢复。active goal尚未达成，用户暂停优先于此前自主推进授权。主工作区后文是暂停前快照。
+
 ## 当前快照（2026-09-11，95-task有限对照已登记）
 
 Owner休息期间自主修正、验证与再次修正的授权及active goal继续。唯一active design为[非held meta-task扩展](docs/nonheld_meta_writer_design.md)；当前准备实现与验证，尚未启动新训练。目标未达到，Test封存。

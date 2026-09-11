@@ -2,7 +2,7 @@
 
 EMBER研究从exact task language和action-hidden正确教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从未见初始化闭环执行。目标是validation8 single-checkpoint strict paired correct **>145/400**，并同时满足相邻稳定、低churn、任务广度、四suite/Goal/Long、换视频鲁棒性和最终视频因果要求。
 
-**Owner已授权休息期间由Codex持续自主修正、实验与分析，active goal已建立。** 当前登记[扩大非held独立meta-task映射](docs/nonheld_meta_writer_design.md)，在较强off结构上进行95-task有限对照；实现与formal进度见progress。既有Horizon最好候选为126/400、另一初始化119/400；均未达到科学目标，视频动态增量也未建立。
+**Owner已授权休息期间由Codex持续自主修正、实验与分析，active goal已建立。** Owner随后要求暂停，先讨论当前结构对正确视频的使用；[95-task提案](docs/nonheld_meta_writer_design.md)的实现与实验均已停止，最新授权见progress。既有Horizon最好候选为126/400、另一初始化119/400；均未达到科学目标，视频动态增量也未建立。
 
 ## 先读哪里
 

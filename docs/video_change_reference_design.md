@@ -39,7 +39,7 @@ M^0_{tu}=f(U_t,U_t,Z_t,Z_t,\Delta_{tu},H,L_t).
 
 已通过26项现有/相关CPU检查，包括完整H依赖、两端视觉、过去单向、集合顺序、梯度重放，以及1/3/8帧的恒定输入无中心化过程Value和真实变化的native-input梯度。尚未检验实际BF16/native视频数值、最长视频显存、吞吐或新学习。
 
-若进入学习，保持C原来的2条件/task、每条件32queries、每更新4task及固定采样池、初始化seed和optimizer；不得同时改覆盖、学习率、D或增加辅助目标。完整观察范围与相邻闭环节点须在launch前登记，不能只看100/200两个早期节点就宣布收敛。最终仍要求correct高于source及错误视频，并满足EMBER的绝对能力与稳定性要求。
+若进入学习，保持C原来的2条件/task、每条件32queries、每更新4task及固定采样池、初始化seed和optimizer；不得同时改覆盖、学习率、D或增加辅助目标。完整观察范围与相邻闭环节点须在launch前登记，不能只看100/200两个早期节点就宣布收敛。本次机制goal要求correct可信稳定地高于source及错误视频；项目最终绝对性能资格与当前goal分开。
 
 
 ## 冻结行为依据与有限学习合同
@@ -54,7 +54,7 @@ M^0_{tu}=f(U_t,U_t,Z_t,Z_t,\Delta_{tu},H,L_t).
 
 主要判据为新candidate相邻节点的correct绝对成功率、相对source/两错/乱序的配对差额、same-task鲁棒性、逐task/suite与breadth、R/G/L/churn/J及paired task-bootstrap不确定性；和旧C的100/200比较只在相同节点与配对输入下进行。correct须实质提高，错误条件下降本身不能满足goal。若到400仍无净收益，则返回原因分析；不自动续到无限步、不扫seed/LR/rank。若存在可信获取或已出现自然优势但相邻不足，依据完整证据另登记延伸验证，不把本预算结束写成收敛。
 
-最终方法仍以>145/400、相邻稳定、四suite与Goal/Long贡献及same-task-other qualification裁决；之后冻结选择，再用未用于开发的独立输入执行最终视频controls。Test封存，本次训练任务诊断不能替代最终资格。
+项目后续最终方法仍以>145/400、相邻稳定、四suite与Goal/Long贡献及same-task-other qualification裁决，>145不作为本次机制goal完成门槛；之后冻结选择，再用未用于开发的独立输入执行最终视频controls。Test封存，本次训练任务诊断不能替代最终资格。
 
 部署保持一套完整38-target LoRA与一次Writer调用。现有unified/frame-set模块暂只保留为本次机制对照的测试/初始化结构，旧R/C/S配置没有新架构身份，须使用冻结7fedbe85；不把它们登记成新训练候选。主agent负责在此局部修正裁决后清理不再需要的对照路径，当前不同时改变D随机初始化流或已暂停95-task worktree。
 

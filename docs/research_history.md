@@ -1077,3 +1077,22 @@ frame_set正式训练已按登记结束于300更新/76,800queries；200/300续�
 frame_set200 validation other61/400（S/O/G/L=1/33/13/14、breadth7），100→20074→61为31/30/43、churn73/J=.29808、95%CI[-.1675,.0525]；other→correct61→69为48/21/13、churn34/J=.58537、CI[-.015,.06]。main200other74相对它为51/23/10、churn33/J=.60714、CI[-.01,.0775]。200步有序correct/other增量+5/+13仍均无可信正下界，尚未获资格。
 
 frame_set300 train correct48/96（16/15/13/4、breadth19），200→30046→48为36/12/10、churn22/J=.62069、95%CI[-.09375,.13542]；main30043相对它为38/5/10、churn15/J=.71698、CI[-.13542,.03125]。300步训练正确视频仍没有主方案优势。
+
+
+## 2026-09-12：功能信用300步有界比较闭环完成，未获视频资格
+
+主方案/匹配frame_set各4节点，加pureFM两节点，共40个train96/validation400 correct/other面板、9,920条完整rows。
+main validation correct/other轨迹为69/71、72/71、74/74、32/32；frame_set为66/67、73/74、69/61、27/31。
+四节点有序correct差额+3/-1/+5/+5、other+4/-3/+13/+1，所有差额task-cluster95%CI均跨0；没有qualified checkpoint。
+`bounded_300_decision.json`记录预注册必要门槛，`paired_summary.json`保留所有逐task/suite和配对集合。
+
+frame_set300 train other44/96，S/O/G/L=12/15/13/4、breadth17；200→30047→44为R/G/L37/7/10、churn17/J=.68519、CI[-.125,.0625]。
+other→correct44→48为41/7/3、churn10/J=.80392、CI[-.02083,.11458]；main300other46对它为38/8/6、churn14/J=.73077、CI[-.0625,.10417]。
+
+frame_set300 validation correct27/400（S/O/G/L=2/12/11/2、breadth7），other31/400（1/12/11/7、breadth6）。
+correct200→30069→27为16/11/53、churn64/J=.20、CI[-.195,-.025]；other61→31为18/13/43、churn56/J=.24324、CI[-.1425,-.015]。
+other→correct31→27为23/4/8、churn12/J=.65714、CI[-.0375,.01]。main300correct32对frame27为21/11/6、churn17/J=.55263、CI[-.0175,.05]；
+main300other32对frame31为20/12/11、churn23/J=.46512、CI[-.0325,.035]。两种视频表示均出现后段迁移退化，不能单因归为有序模块或某组teacher配对。
+
+所有原训练/评测均按登记结束，最终sealed controls与Test未使用；本轮负结果不等于整个有益视频目标被否定。
+下一项仅登记main200固定表示的读出拟合诊断，范围、不可部署属性和停止点见active design第7节；原始实验不继续训练。

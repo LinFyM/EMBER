@@ -23,6 +23,15 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 - /data1独立quota使用787.1GiB/1TiB，runs实测636GiB；两配方首段checkpoint及全配对物化预算40GiB，预计峰值827GiB，共享空闲83TiB；不复制基础资产。
 - 下一步核查首批真实更新，再对50/100单checkpoint做训练获取与validation correct/other strict400；不能用学习loss宣称视频资格。
 
+### 首段实时证据
+
+- pureFM已完成fresh100/25,600queries，用时3185.59s；50/100完整checkpoint通过身份检查。固定train24留出动作FM从.154865降至.114877（32queries/task、相同视频/query面板）。主方案仍在首段学习。
+- 两配方前50更新的200条件/12,800queries实际曝光逐条匹配：任务、视频、动作query、RNG种子及权重一致；记录`runs/analysis/video_functional_20260911/first50_exposure_alignment.json`。
+- pureFM50固定训练面板correct30/96，严格配对source15/96；Spatial/Object/Goal/Long为9/2/12/7，对source净增3/2/5/5，breadth12/24。保留11、增19、失4，churn23，Jaccard.3235；task-cluster bootstrap净成功率增益95%CI[.0521,.2708]。
+- 以上是训练任务行为获取，尚无视频特异性或validation迁移结论；不是checkpoint选择。完整统计见`runs/analysis/video_functional_20260911/paired_summary.json`。
+- pureFM50所有训练96+validation400 LoRA已物化；other两臂共496个条件全部hardlink复用，无重复编译。validation correct400已在gpu02:4/3workers启动。
+- 主方案50、pureFM100物化分别在gpu02:3、6进行。后续评测按live设备余量调度；4states训练诊断使用screen，validation400使用formal。
+
 ## 暂停时点的已完成实验与未完成范围
 
 无变化参照候选从冻结`64eba75bcf316a1f6792ab8ddf5eb1aaefded378`完成fresh200更新/51200queries，

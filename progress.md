@@ -28,7 +28,7 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 | pure_fm/100 | 41 | 40 | 56 | 60 |
 | main/200 | 45 | 47 | 74 | 待完成 |
 | frame_set/50 | 29 | 24 | 66 | 待完成 |
-| frame_set/100 | 35 | 待完成 | 待完成 | 待完成 |
+| frame_set/100 | 35 | 38 | 待完成 | 待完成 |
 
 - 配对source为train15/96、validation47/400；实际task/state/env/policy RNG检查通过。所有逐task/suite、breadth、R/G/L、churn、Jaccard和task-cluster bootstrap95%CI见`runs/analysis/video_functional_20260911/paired_summary.json`。
 - 主方案validation50→100为69→72，S/O/G/L=4/48/16/1→0/55/11/6，breadth7→6；相邻保留50/新增22/丢19、churn41、J=.54945。pureFM69→56，3/53/11/2→0/43/3/10、breadth7→5；相邻34/22/35、churn57、J=.37363。主方案100比pureFM多16，但task-cluster95%差额CI[-.0075,.0925]仍含0，不能宣称辅助信用有效。
@@ -37,7 +37,7 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 
 ### 正在运行与下一步
 
-- Owner新增用卡约束：两节点合计最多8张，空闲卡总数不超过10张时最多6张。已将9张降到6张，live验证gpu01:4,5和gpu02:1,2,3,4；main200/300及frame_set100的validation other已暂停，保留已完成分片，额度内才用canonical resume续跑。精确记录与恢复命令见`runs/analysis/video_functional_20260911/owner_gpu_cap_adjustment.json`。本段规则优先于以下历史launch位置记录。
+- Owner新增用卡约束：两节点合计最多8张，空闲卡总数不超过10张时最多6张。已将9张降到6张，live验证gpu01:4,5和gpu02:1,2,3,4；main200/300及frame_set100的validation other曾暂停并保留已完成分片；frame_set100 train other完成后，总占用先降至5，再于gpu02:0恢复其validation other（保留51rows），计划总量6。main200/300 validation other继续排队。精确记录与恢复命令见`runs/analysis/video_functional_20260911/owner_gpu_cap_adjustment.json`。本段规则优先于以下历史launch位置记录。
 
 - 首段16个面板共3968条闭环全部完成，所有source及模型间配对通过。validation other主方案50/100=71/71、pureFM64/60；主方案100 correct/other=72/71，J=.76543。主方案other相邻总分不变，仍有24新增/24丢失，J=.49474；不将总分保持等同于低churn。
 - 主方案已从完整100恢复到200/300段：原gpu01:4,5,6/world3/micro8×3及NUMA/UUID/config合同通过，200/300完整checkpoint已保存，原段续训完成300步/76,800queries（本段8657.20秒），rho=.25、峰值39.03GiB；训练按登记停于300。200/300全部LoRA banks已保存，300正确验证在gpu01:4运行；换视频验证因Owner总量上限暂停，等待额度内恢复。tmux `ember-video-functional-main-300`；精确脚本与合同在analysis的`main/resume_200_300.sh`、`main/continuation_launch_contract.json`，日志在output的`main/train_200_300.log`。原首段completion已保留。
@@ -47,7 +47,7 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 - frame_set真实93帧profile通过：rho=.25时micro4/8为3.06/3.17queries/s、峰值25.32/37.85GiB。scratch未保存权重；正式fresh已在gpu02:1,3/world2/micro8,8启动，和gpu01原拓扑续训并行。实际合同frame_set、reader864000参数、source trainable0通过，初始固定留出FM .154849。tmux `ember-video-frame-set`，output的`frame_set/launch.sh`及`launch_contract.json`保存精确命令；未来resume锁此拓扑。启动前strg01 /data1为811.6GiB/1TiB、当时run25GiB、共享83TiB；完整下一窗口48GiB增量预算，预计峰值859.6GiB。
 - frame_set首次四节点单段命令在更新前被现有入口拒绝，0updates、无checkpoint；已按每段恰好两个节点拆为fresh50/100与原拓扑resume200/300，不修改训练状态或科学节点。原失败命令/日志在analysis的`frame_set/failed_four_nodes`，实际fresh已通过初始诊断。
 - frame_set已完整保存50 checkpoint，四套train96/validation400 correct/other LoRA manifest均已生成；前50步实际task/video/action/query-seed/weight曝光与主方案匹配，通过记录见analysis的`frame_set/step50/exposure_alignment.json`。fresh首段100已完整结束（4953.25秒、25,600queries），峰值39.04GiB；前100步400条件/25,600queries与主方案实际曝光匹配。首段completion已保留，并从原gpu02:1,3/world2/micro8,8恢复至200/300段，已完成159步；脚本/合同见analysis的`frame_set/resume_200_300.sh`及`continuation_launch_contract.json`。
-- frame_set50 validation correct400已完成（66/400）；目前gpu02:4执行其validation other、gpu02:2执行frame_set100 validation correct、main200及frame_set100 validation other按Owner总量上限暂停；活跃验证均3workers。gpu01:5执行frame_set100 train other，3workers；上述launch均通过双节点live检查与admission。frame_set100四套LoRA banks已全部生成。
+- frame_set50 validation correct400已完成（66/400）；目前gpu02:4执行其validation other、gpu02:2执行frame_set100 validation correct、gpu02:0在6卡总额内恢复frame_set100 validation other；main200 validation other继续暂停。frame_set100 train other已完成38/96，活跃验证均3workers；上述launch均通过双节点live检查与admission。frame_set100四套LoRA banks已全部生成。
 - frame_set50 train correct首次在gpu02:2被admission发现其它活跃任务而拒绝，0rows/0workers；证据保留于analysis的`frame_set/step50/failed_gpu02p2_admission`。同卡后续两次空闲检查通过后成功完成96条；未干预其它作业。
 - main300 materialization前strg01核验/data1用量830.1GiB/1TiB、当前run44GiB、共享83TiB，仍在已登记859.6GiB预计峰值内；other arm复用对应correct条件的LoRA文件硬链接。
 - 首个匹配frame_set50 train correct=29/96，S/O/G/L=10/4/11/4，breadth14；对source15保留10/新增19/丢5、churn24、J=.29412，task-bootstrap差额95%CI[.04167,.25]。同节点main26对frame_set29为保留23/新增3/丢6、churn9、J=.71875，差额95%CI[-.07292,.01042]；尚无训练面板有序增量，不能外推验证或充分曝光后的结论。
@@ -55,6 +55,7 @@ Owner最新明确“开始推进”，给予足够自由度并要求高效率。
 - main train correct100→200为35→45，breadth13→17，保留27/新增18/丢8、churn26、J=.50943，差额95%CI[-.03125,.25]；S/O/G/L=15/14/10/6，Goal由15降10。frame_set100固定留出动作FM .116912、main .116660，均从.154849下降、24/24任务改善；这些只能说明学习获取。
 - main200完整validation correct=74/400，S/O/G/L=0/42/20/12、breadth6；10072→20074保留36/新增38/丢36、churn74/J=.32727，task-cluster差额95%CI[-.105,.085]。Goal/Long改善同时Object下降，Spatial仍0；总分接近不等于相邻稳定。
 - main200 train correct/other=45/47，R/G/L43/2/4、churn6/J=.87755；other100→200为38→47，28/19/10、churn29/J=.49123。frame_set50 train other24；frame_set100 train correct35（8/9/14/4、breadth13），main100同为35，配对31/4/4、churn8/J=.79487，95%差额CI[-.05208,.05208]。到100步仍未见训练有序增量。
+- frame_set100 train correct/other=35/38，与main100两臂同分；main100 other对frame_set100 other保留36/新增2/丢2、J=.90，task-cluster95%差额CI[-.04167,.04167]。frame_set correct/other为33/2/5、J=.825；早期训练行为仍高度接近。
 - 按有界窗口及必要无序参照裁决。任何明显仍在获取的参照都需匹配充分曝光，不能靠弱训参照制造视频资格；不从两个早期节点宣称平台或整套失败。
 - 当前goal未完成，未选定checkpoint；首个完整匹配validation尚无可信有序增量，最终sealed视频controls未执行，Test继续封存。
 

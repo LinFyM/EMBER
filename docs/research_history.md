@@ -1073,3 +1073,7 @@ main300 train other46/96（S/O/G/L=13/15/14/4、breadth20）；200→30047→46�
 frame_set200 validation correct69/400（2/41/15/11、breadth7），100→20073→69为37/32/36、churn68/J=.35238、95%CI[-.15,.0825]；main20074对它为52/22/17、churn39/J=.57143、CI[-.025,.05]。200步正确视频的+5差额仍未形成可信有序收益；配对other及300节点的结论等待相应完整面板。
 
 frame_set正式训练已按登记结束于300更新/76,800queries；200/300续训段10470.90秒，峰值39.05GiB，完整300 checkpoint与每rank状态保存。全部1,200个条件的task、video、action query、RNG及权重与main匹配；证据在`frame_set/step300/exposure_alignment.json`。251–300同批source/reader/student FM=.157011/.148135/.102810，仍与main接近；这些只作拟合诊断，300闭环资格待完整面板。
+
+frame_set200 validation other61/400（S/O/G/L=1/33/13/14、breadth7），100→20074→61为31/30/43、churn73/J=.29808、95%CI[-.1675,.0525]；other→correct61→69为48/21/13、churn34/J=.58537、CI[-.015,.06]。main200other74相对它为51/23/10、churn33/J=.60714、CI[-.01,.0775]。200步有序correct/other增量+5/+13仍均无可信正下界，尚未获资格。
+
+frame_set300 train correct48/96（16/15/13/4、breadth19），200→30046→48为36/12/10、churn22/J=.62069、95%CI[-.09375,.13542]；main30043相对它为38/5/10、churn15/J=.71698、CI[-.13542,.03125]。300步训练正确视频仍没有主方案优势。

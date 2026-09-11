@@ -14,6 +14,10 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 当前gpu01:0,4,5,6运行去蒸馏比较（world4、每卡micro8），tmux `ember-auxiliary-fm`；原生runtime已确认fresh0→200、辅助FM启用/rho0、source trainable=0。单变量之外结构、数据与优化配方保持，固定100/200节点，不继承probe状态。
 - 运行代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；配置解析及相关49项测试通过。旧reader诊断worktree已复用并改名，未复制大资产。
 - 精确launch/preflight见`runs/analysis/video_functional_20260911/auxiliary_fm/`，正式输出在同study输出根的`auxiliary_fm/`。两节点检查启动前本人GPU作业0，启动后4≤6；/data1 quota849.0GiB/1TiB，追加峰值预算20GiB、投影869GiB，共享83TiB，现有study62GiB。
+- 100 checkpoint及4套LoRA banks已完成：correct新编译train96+validation400，other全量复用同checkpoint条件。实际400次K1条件与main100的task/video/action/query/RNG/weight匹配，原留出动作面板亦匹配。
+- 100训练correct闭环已完成42/96（S/O/G/L=12/9/15/6，breadth19）。相对main35为R/G/L27/15/8、churn23/J=.54、差额CI[0,.15625]；相对pureFM41为34/8/7、churn15/J=.69388、CI[-.072917,.083333]，未获额外辅助收益资格。逐task与配对原件见`paired_summary.json`。
+- 100留出动作student FM=.114956（main .116660、pureFM .114877），reader=.153161。相对main的FM降幅.001704、CI[-.000833,.004305]，相对pureFM −.0000789、CI[-.000186,.0000294]，均不据此宣称可信收益或选点。见`auxiliary_fm/step100/held_action_comparison.json`。
+- 当前100换视频train96在gpu02:3（3replicas）运行，correct评测已结束，100 LoRA生成也已退出；training仍占gpu01四卡，现共5张。为缩短整轮时间，200训练释放卡后用多卡运行已准备的100 validation400两臂，并衔接200物化/评测；不为单卡长面板修改正在运行的evaluator合同。
 - Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
 
 ### 已完成学习与验证

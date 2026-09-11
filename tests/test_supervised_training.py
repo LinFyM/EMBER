@@ -32,7 +32,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_horizon_writer_v1.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_video_change_reference.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"

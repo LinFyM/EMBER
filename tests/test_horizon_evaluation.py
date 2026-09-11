@@ -57,7 +57,8 @@ def bank(tmp_path, request):
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"]["compiler_language_mode"] = "first_query_only_v1"
     run["model_config"]["process_language_source"] = "frame_contextual_task_tokens_v1"
-    run["model_config"].update(consumer_mode="unified", process_mode="past_relation", backend_conditioning="local_h_read")
+    run["model_config"].update(consumer_mode="unified", process_mode="past_relation", backend_conditioning="local_h_read",
+                                local_relation_update="paired_nochange_reference_v1")
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
@@ -478,7 +479,7 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize("field", ["compiler_language_mode", "process_language_source"])
+@pytest.mark.parametrize("field", ["compiler_language_mode", "process_language_source", "local_relation_update"])
 def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])

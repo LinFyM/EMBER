@@ -19,8 +19,11 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 100留出动作student FM=.114956（main .116660、pureFM .114877），reader=.153161。相对main的FM降幅.001704、CI[-.000833,.004305]，相对pureFM −.0000789、CI[-.000186,.0000294]，均不据此宣称可信收益或选点。见`auxiliary_fm/step100/held_action_comparison.json`。
 - 100换视频train96也已完成38/96（S/O/G/L=9/9/15/5，breadth16），对main38为R/G/L30/8/8、CI[-.09375,.083333]，对pureFM40为32/6/8、CI[-.104167,.052083]。同checkpoint other→correct为34/8/4、churn12/J=.73913，差额CI[-.020833,.104167]。
 - 200留出动作FM=.107338，相对100降幅.007618、CI[.004680,.010944]，22/24改善；reader仍为.149237。固定面板及全部节点见`auxiliary_fm/held_action_trajectory.json`。FM的继续获取不等于未见task迁移或视频收益。
-- 当前100 validation correct在gpu02:0,3，other在gpu01:0,4（均3replicas/GPU）；200 LoRA生成在gpu01:5，最近启动后合计5张。100两组完整训练诊断均已退出。调度已将短面板与训练重叠，并在训练结束后转入多卡strict400；不修改运行中的evaluator合同。
-- 最近strg01 quota859.0GiB/1TiB，新配方已用10GiB，仍在原峰值869GiB预算内。200物化及100 validation other共享一次启动分配记录：`auxiliary_fm/step200/materialization_and_val100_launch.json`；100 correct单独记录在step100。
+- 100 validation correct/other已完成57/61，各400；S/O/G/L分别1/46/2/8、1/43/4/13，breadth6/7。相对main72/71差额CI[-.0875,.0075]/[-.07,.0175]；相对pureFM56/60均只+1，CI[-.02,.02]/[-.02,.035]，未见可信额外辅助迁移收益。other→correct R/G/L47/10/14、churn24/J=.66197、CI[-.04,.0125]。
+- 200训练correct/other均55/96，S/O/G/L=17/16/13/9、17/17/13/8，breadth21/20。对main45/47为R/G/L38/17/7、37/18/10，差额CI[.020833,.1875]/[-.020833,.197917]。四suite均净增加，但尚无验证迁移结论。
+- 自身100→200 correct为42→55、R/G/L29/26/13、churn39/J=.42647、CI[0,.28125]；other为38→55、28/27/10、churn37/J=.43077、CI[.041667,.322917]。同200两视频R/G/L50/5/5、churn10/J=.83333。继续获取与相邻丢失并存。
+- 全部学习、LoRA生成和训练诊断均已结束。当前只运行200 validation：correct在gpu02:0,1,3，other在gpu01:0,4,5，均3replicas/GPU，合计6张。100完整两臂已退出；只剩这两项预注册闭环，不追加学习或开展sealed controls。
+- 最近strg01 quota861.4GiB/1TiB，原峰值预算869GiB保持；后续只产生小型rows/logs。200两臂的live检查与精确命令分别见`auxiliary_fm/step200/{validation_correct_launch,validation_other_launch}.json`；分配同时计入已派发但尚未出现在nvidia进程表中的作业。
 - Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
 
 ### 已完成学习与验证

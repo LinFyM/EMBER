@@ -8,13 +8,15 @@ Goal已建立。Owner随后补充correct必须至少高于冻结source；该条�
 
 最新授权允许错任务/乱序开发诊断用于原因分析与架构修正，区别于最终独立冻结验证；旧禁止开发反馈的条款不覆盖本次授权。当前启动的仅为下述冻结诊断。C/S仅有100/200两个节点，其失败结论限于该观察范围；特别是C43→50不能视为已证实收敛或整个消费机制被否定。
 
-上述goal进展：第1步形成过程审查完成，完整结论见[机制复核](docs/video_mechanism_reassessment.md)。已完整读当前形成链的七篇专家原文，核对Owner覆盖和实际代码；独立只读核查旧v5.2/v6推导及三组15臂6000条rows。没有发现可直接解释全部视频失效的永久断梯度/排序还原错误，尚未确定唯一原因。下一项准备是已有C100/C200的冻结训练任务视频检查与匹配S/source比较，复用off400九臂；诊断合同已在结果前登记于`runs/analysis/video_mechanism_20260911/registration.json`。C100/C200各六臂、S100/S200各correct，train24×states32–35，共1344新rows；冻结source既有同口径96rows复用（15/96），逐row配对待结果核对。使用clean pushed冻结7fedbe85，两路物化已在gpu01 p4和gpu02 p6启动；gpu02 p6仅原4.64GiB、util0可共驻。无新训练或held读取。/data1 quota used809460352KiB/soft1073741824KiB，共享83TiB；C/S checkpoints实测16.08GiB，新面板峰值≤3GiB。
+当前唯一active design为[无变化参照局部过程更新](docs/video_change_reference_design.md)。形成链与冻结机制诊断已完成；新候选数学、128项相关CPU检查及真实四/六卡两步profile通过，进入fresh正式学习准备。原C/S仅观察100/200，未宣称收敛；95-task不恢复。
 
 ### 当前机制结果与候选实测
 
 完整1472条新闭环及14336配对动作预测已完成，原件`runs/analysis/video_mechanism_20260911/`。C200正确/两错/乱序/静态/S/source为42/46/46/45/49/51/15，各96；固定S后的正确与静态过程同为15/32。source训练增量存在，正确动态净收益未建立。C100→200仍有获取，未宣称收敛。完整逐task/suite、配对、相邻与区间见[机制复核§10](docs/video_mechanism_reassessment.md)及findings§54。
 
-下一项局部无变化参照候选独立分支019fba33已完成26项CPU检查；进入真实native/BF16、最长93帧、完整梯度及吞吐profile，checkpoint为一次性检查产物，不用于正式初始化。只改变局部更新参照，C其它结构和普通FM保留。当前尚无新正式学习结果；95-task暂停继续。
+局部无变化参照已集成main。真实六卡第二步14.21秒，比四卡25.02秒快；采用gpu02 0/1/2/3/4/6、micro8/8/8/8/6/6，原件`runs/analysis/video_change_reference_20260911/profile_summary.json`。最长93帧通过，静态中心化过程为真实视频约0.9%，上游有梯度且source无梯度。128项相关CPU合同通过；一次性profile checkpoint已删除。
+
+正式配置`configs/pi05_video_change_reference.json`，fresh100/200后exact-resume300/400，每节点correct strict400及固定train96，200/400加开发视频对照。保留C的2K1条件/task、32queries/条件、普通FM和全部其它结构，只改局部更新参照。尚无正式学习结果；当前准备clean pushed detached运行面与launch record。
 
 /data1最新quota used811028252KiB、soft1073741824KiB，共享83TiB；新profile两次峰值≤12GiB，现有诊断1.4GiB、候选worktree184MiB，复用大资产。旧面板争用失败和撤回记录保留，最终完整且所有本任务GPU worker已退出。实际profile命令与设备登记在`.codex/tmp/video-change-reference-profile/`。
 

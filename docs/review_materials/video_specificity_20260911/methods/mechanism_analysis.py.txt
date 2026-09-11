@@ -1,0 +1,81 @@
+"""Verify paired execution and compare every preregistered arm."""
+import importlib.util
+import json
+from pathlib import Path
+import numpy as np
+
+R = Path('<REPO_ROOT>')
+O = Path(__file__).resolve().parent
+BASE = R / 'runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910'
+spec = importlib.util.spec_from_file_location('existing_summary', BASE / 'summarize_panel.py')
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+read = lambda p: json.loads(p.read_text())
+panels = {}
+for v in ('c', 's'):
+    for step in (100, 200):
+        p = O / v / f'step{step}'
+        status = m.summarize(p)
+        print(v, step, status, flush=True)
+        if status['status'] != 'complete':
+            raise SystemExit('registered panels still pending')
+        panels[f'{v}{step}'] = read(p / 'closedloop/summary.json')
+
+def keyed(rows):
+    out = {(r['suite'], r['task_id'], r['init_state_id']): r for r in rows}
+    assert len(out) == len(rows) == 96
+    return out
+
+sets = {'source': keyed([r for r in read(R / 'runs/outputs/source_horizon_train120_J0_ba556b98_gpu02p4_20260908/results.json')['rows'] if r['init_state_id'] in (32,33,34,35)])}
+for name, p in panels.items():
+    for arm, rows in p['rows'].items():
+        sets[f'{name}_{arm}'] = keyed(rows)
+off = read(BASE / 'best_model_video_controls/step400/closedloop/summary.json')
+for arm, rows in off['rows'].items():
+    sets[f'off400_{arm}'] = keyed(rows)
+reference = sets['source']
+for name, rows in sets.items():
+    assert rows.keys() == reference.keys(), name
+    for k, r in rows.items():
+        b = reference[k]
+        for field in ('suite','task_id','init_state_id','language','env_seed','policy_seed_root'):
+            assert r[field] == b[field], (name, k, field)
+        n = min(len(r['policy_noise_seeds']), len(b['policy_noise_seeds']))
+        assert r['policy_noise_seeds'][:n] == b['policy_noise_seeds'][:n], (name,k,'noise')
+
+tasks = sorted({k[:2] for k in reference})
+rng = np.random.default_rng(20260911)
+boot = rng.integers(len(tasks), size=(20000,len(tasks)))
+
+def compare(left, right):
+    a, b = sets[left], sets[right]
+    x = {k for k,r in a.items() if r['success']}
+    y = {k for k,r in b.items() if r['success']}
+    d = np.array([sum(int(b[k]['success'])-int(a[k]['success']) for k in a if k[:2] == t) / 4 for t in tasks])
+    ci = np.quantile(d[boot].mean(1), [.025,.975]).tolist()
+    return {'reference': left, 'candidate': right, 'counts': [len(x),len(y)], 'difference': len(y)-len(x),
+            'retained': len(x&y), 'gained': len(y-x), 'lost': len(x-y), 'churn': len(x^y),
+            'jaccard': len(x&y)/len(x|y) if x|y else None, 'task_cluster_bootstrap_rate_difference_95ci': ci,
+            'per_task_rate_difference': {f'{s}/{t}':float(v) for (s,t),v in zip(tasks,d)},
+            'gained_keys': sorted(y-x), 'lost_keys': sorted(x-y)}
+
+contrasts = []
+for step in (100,200):
+    correct = f'c{step}_correct'
+    for arm in ('same_task_other','wrong_same_suite','wrong_cross_suite','shuffled','static_first'):
+        contrasts.append(compare(f'c{step}_{arm}', correct))
+    for baseline in ('source',f's{step}_correct','off400_correct'):
+        contrasts.append(compare(baseline,correct))
+for arm in panels['c100']['rows']:
+    contrasts.append(compare(f'c100_{arm}',f'c200_{arm}'))
+summary = {'status': 'complete', 'pairing_verified': True, 'formal_qualification': False,
+           'scope': 'train24 fixed independent states32-35, videos46/47, existing frozen checkpoints; no selection',
+           'counts': {n:sum(r['success'] for r in x.values()) for n,x in sets.items()},
+           'per_arm': {n:{'breadth':sum(any(r['success'] for k,r in x.items() if k[:2]==t) for t in tasks),
+                         'per_task':{f'{s}/{t}':sum(r['success'] for k,r in x.items() if k[:2]==(s,t)) for s,t in tasks},
+                         'per_suite':{s:sum(r['success'] for k,r in x.items() if k[0]==s) for s in sorted({t[0] for t in tasks})}}
+                       for n,x in sets.items()},
+           'contrasts': contrasts,
+           'uncertainty': '20000 paired task-cluster bootstrap replicates, fixed 24 train tasks and four states each; descriptive development uncertainty, not held-task qualification'}
+(O/'behavior_summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps({'counts':summary['counts'],'pairing_verified':True}),flush=True)

@@ -1,0 +1,70 @@
+"""Paired single-checkpoint behavior against source, old C and registered video arms."""
+import argparse
+import importlib.util
+import json
+from pathlib import Path
+import numpy as np
+from ember.pi05_eval_results import paired_success_comparison
+
+R = Path('<REPO_ROOT>')
+A = Path(__file__).resolve().parent
+RUN = R/'runs/outputs/video_change_reference_seed7_20260911'
+OLD = R/'runs/analysis/video_mechanism_20260911'
+read = lambda p: json.loads(p.read_text())
+base = R/'runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/summarize_panel.py'
+spec = importlib.util.spec_from_file_location('existing_panel_summary',base)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+def compare(before, after):
+    report = paired_success_comparison(before, after)
+    tasks = report['per_task']
+    changes = np.array([(t['candidate_successes']-t['reference_successes'])/t['rows'] for t in tasks])
+    bootstrap = np.random.default_rng(20260911).integers(len(tasks),size=(20000,len(tasks)))
+    report['paired_task_bootstrap_rate_difference_95ci'] = np.quantile(changes[bootstrap].mean(1),[.025,.975]).tolist()
+    return report
+
+
+def main(step):
+    result = {'step':step,'status':'pending','selected_checkpoint':False,'test_read':False}
+    current = RUN/f'evaluation/validation_correct_step{step}_J0/results.json'
+    if current.exists():
+        panel=read(current)
+        assert len(panel['rows'])==400
+        source=read(R/'runs/analysis/pi05_ecp_prw_meta73_equal_exposure_20260906/source_strict400/results.json')
+        comparisons={'source':compare(source,panel)}
+        if step in (100,200):
+            old=read(R/f'runs/outputs/video_consumption_c_seed7_20260911/evaluation/validation_correct_step{step}_J0/results.json')
+            comparisons['old_C_same_step']=compare(old,panel)
+        if step>100:
+            previous=RUN/f'evaluation/validation_correct_step{step-100}_J0/results.json'
+            if previous.exists(): comparisons['previous_node']=compare(read(previous),panel)
+        result['validation']=comparisons
+    train=A/'train_mechanism'/f'step{step}'
+    if (train/'closedloop/contract.json').exists():
+        state=module.summarize(train)
+        result['train_status']=state['status']
+        if state['status']=='complete':
+            p=read(train/'closedloop/summary.json')
+            correct={'rows':p['rows']['correct']}
+            source={'rows':[r for r in read(R/'runs/outputs/source_horizon_train120_J0_ba556b98_gpu02p4_20260908/results.json')['rows'] if r['init_state_id'] in (32,33,34,35)]}
+            assert len(correct['rows'])==len(source['rows'])==96
+            comparisons={'source':compare(source,correct)}
+            comparisons.update({name:compare({'rows':rows},correct) for name,rows in p['rows'].items() if name!='correct'})
+            if step in (100,200):
+                old=read(OLD/'c'/f'step{step}'/'closedloop/summary.json')
+                comparisons['old_C_same_step']=compare({'rows':old['rows']['correct']},correct)
+            prior=A/'train_mechanism'/f'step{step-100}'/'closedloop/summary.json'
+            if prior.exists(): comparisons['previous_node']=compare({'rows':read(prior)['rows']['correct']},correct)
+            result['train']=comparisons
+            result['train_counts']=state['counts']
+    if 'validation' in result and 'train' in result: result['status']='complete'
+    output=A/f'step{step}'/'paired_summary.json'
+    output.write_text(json.dumps(result,indent=2)+'\n')
+    print(json.dumps({'step':step,'status':result['status'],'validation':result.get('validation',{}).get('source',{}).get('candidate_successes'),'train_counts':result.get('train_counts')}))
+
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--step',type=int,choices=(100,200,300,400),required=True)
+    main(parser.parse_args().step)

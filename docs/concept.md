@@ -1,5 +1,9 @@
 # EMBER concept
 
+当前阶段按Owner最新要求，先恢复有益的视频特异性、暂不强制绝对性能，并综合全部历史证据推导新的完整架构与训练。
+不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
+科学执行继续暂停，咨询入口见[新专家材料](review_materials/video_specificity_20260911/README.md)。
+
 ## 从教学过程到自己的策略
 
 EMBER探索：从一条或多条action-hidden正确教学视频理解任务条件和操作变化，结合exact language，

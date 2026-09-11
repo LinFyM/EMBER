@@ -1,5 +1,9 @@
 # EMBER findings
 
+Owner最新阶段为综合全部历史推导有益视频特异性，暂不强制绝对性能；当前科研执行继续暂停。
+最新已完成证据见§51–55，远程副本与跨历史阅读入口见[全新专家材料](docs/review_materials/video_specificity_20260911/README.md)。
+以下各节保留当时结论与边界，其旧“当前/下一步/目标”不覆盖最新Owner要求；本次不预设恢复v5.2或保留Horizon全图。
+
 当前方法见[正式设计](docs/horizon_relation_video_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
 最新学习与原因分析集中在§39–49；[2026-09-11专家材料](docs/review_materials/20260911/README.md)提供远程可读原配置、逐条结果、机制记录及当前看法。文内本地runs路径通过该材料的index映射到已提交副本。
 §50记录Owner对首轮专家意见的修正重点与历史正证据，不代表新实验或正式方法采纳。

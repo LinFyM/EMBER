@@ -1,0 +1,126 @@
+"""Frozen path substitutions, keeping the learned compiler and decoder intact."""
+import argparse
+import importlib.util
+import json
+import os
+import subprocess
+from pathlib import Path
+
+R = Path('<REPO_ROOT>')
+O = Path(__file__).resolve().parent
+F = R / '.codex/worktrees/video-consumption'
+BASE = R / 'runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/video_controls/panel.py'
+spec = importlib.util.spec_from_file_location('path_existing_panel', BASE)
+p = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(p)
+p.HERE = O
+p.RUN = R / 'runs/outputs/video_consumption_c_seed7_20260911'
+p.SOURCE = p.RUN / 'evaluation/train_correct_step200_held46_49_train96_J0/run_contract.json'
+p.KIND = 'frozen_c200_semantic_process_substitution'
+reg = p.read(O / 'registration.json')
+TASKS = tuple(reg['tasks'])
+ARMS = tuple(reg['arms'])
+
+def materialize():
+    import torch
+    from safetensors.torch import load_file, save_file
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.writer.runtime import build_runtime
+    from ember.writer.native import autocast
+    from ember.writer.materialization import inspect_writer_checkpoint, source_matches
+    from ember.writer.learning_data import load_learning_tasks
+    from ember.writer.data import RawTeacherVideoStore
+    from ember.lora import identity_lora_state, copy_task_lora_state_, validate_lora_state
+    import time
+
+    assert reg['status'] == 'registered_before_results'
+    assert subprocess.check_output(['git','-C',str(F),'rev-parse','HEAD'],text=True).strip() == reg['runtime_commit']
+    torch.set_num_threads(4)
+    torch.set_grad_enabled(False)
+    torch.manual_seed(7)
+    torch.backends.cuda.matmul.allow_tf32 = True
+    ctx = initialize_distributed(require_numa=True)
+    uuid = 'GPU-' + str(torch.cuda.get_device_properties(0).uuid).removeprefix('GPU-')
+    assert ctx.world_size == 1 and torch.cuda.device_count() == 1 and uuid == os.environ['EXPECTED_GPU_UUID']
+    run, record = inspect_writer_checkpoint(p.RUN / 'checkpoints/macro_00000200')
+    runtime = build_runtime(R, run['config'], ctx.device)
+    assert source_matches(runtime.source, run['source'])
+    runtime.state.load_state_dict(load_file(record['weights']['path'],device='cpu'),strict=True)
+    runtime.state.requires_grad_(False).eval()
+    runtime.policy.requires_grad_(False).eval()
+    copy_task_lora_state_(runtime.policy,identity_lora_state(runtime.lora),runtime.lora)
+    writer = runtime.state.writer
+    tasks = load_learning_tasks(R, p.TASKS)
+    store = RawTeacherVideoStore(tuple(t.authority for t in tasks.values()),frame_stride=5)
+    out = O / 'step200'
+    out.mkdir()
+    (out / 'adapters').mkdir()
+    report = {'status':'running','kind':p.KIND,'source':runtime.source,'writer_checkpoint':record,
+              'runtime_commit':reg['runtime_commit'],'camera_view':'agentview','model_updates':0,
+              'held_tasks_read':False,'formal_selection':False,'conditions':[],'arms':list(ARMS),
+              'task_ids':list(TASKS),'gpu_uuid':uuid,'representation_trace':{}}
+    captured = {}
+    def capture(module,args):
+        captured.update(identities=args[0].detach(),semantic=args[1].detach(),
+                        videos=tuple(x.detach() for x in args[2]),indices=tuple(x.detach() for x in args[3]))
+    handle = writer.semantic_compiler.register_forward_pre_hook(capture)
+    tick = time.monotonic()
+    try:
+        for task in TASKS:
+            variants = {}
+            metadata = {}
+            for arm in ('correct','wrong_cross_suite','static_first'):
+                assert time.monotonic()-tick < reg['max_materialization_seconds']
+                frames, indices, meta = p.frames_for(store,task,arm)
+                condition = runtime.observer.prepare((torch.from_numpy(frames),),(torch.from_numpy(indices),),tasks[task].authority.language)
+                with autocast(ctx.device):
+                    responses = runtime.observer.responses(condition)
+                    generated = writer(responses,*runtime.observer.writer_arguments(condition))
+                variants[arm] = dict(captured)
+                metadata[arm] = meta
+                del condition,responses,generated,frames
+            good, wrong, static = (variants[a] for a in ('correct','wrong_cross_suite','static_first'))
+            report['representation_trace'][str(task)] = {
+                a: {'p4_rms':float(v['videos'][0].float().square().mean().sqrt()),
+                    'p4_centered_rms':float((v['videos'][0].float()-v['videos'][0].float().mean(0,keepdim=True)).square().mean().sqrt())}
+                for a,v in variants.items()}
+            conditions = {
+                'process_wrong':(good['semantic'],wrong['videos'],wrong['indices']),
+                'process_static':(good['semantic'],static['videos'],static['indices']),
+                'process_zero':(good['semantic'],tuple(torch.zeros_like(x) for x in good['videos']),good['indices']),
+                'semantic_wrong':(wrong['semantic'],good['videos'],good['indices']),
+            }
+            for arm,(semantic,videos,indices) in conditions.items():
+                with autocast(ctx.device):
+                    code = writer.semantic_compiler(good['identities'],semantic,videos,indices,ordered=True)
+                    generated = writer.decoder(code.unflatten(0,(38,16)))
+                validate_lora_state(generated,runtime.lora)
+                assert len(generated)==76 and all(torch.isfinite(v).all() for v in generated.values())
+                name=f'task{task:02d}_{arm}'
+                path=out/'adapters'/f'{name}.safetensors'
+                save_file({k:v.detach().cpu().contiguous() for k,v in generated.items()},str(path))
+                report['conditions'].append({'condition_id':name,'global_task_id':task,'arm':arm,
+                    'language':tasks[task].authority.language,'source_task':metadata['wrong_cross_suite']['source_task'] if 'wrong' in arm else task,
+                    'teacher_demo':46,'camera_view':'agentview','adapter_path':str(path),
+                    'complete_target_count':38,'tensor_count':76,'intervention':reg['arms'][arm]})
+                p.write(out/'manifest.json',report)
+            print(json.dumps({'task':task,'conditions':len(report['conditions']),'seconds':time.monotonic()-tick}),flush=True)
+        report.update(status='complete',seconds=time.monotonic()-tick,peak_gib=torch.cuda.max_memory_allocated()/2**30)
+        p.write(out/'manifest.json',report)
+    finally:
+        handle.remove()
+        store.close()
+    p.TASKS,p.ARMS=TASKS,ARMS
+    p.prepare(out)
+
+if __name__=='__main__':
+    ap=argparse.ArgumentParser()
+    ap.add_argument('mode',choices=('materialize_prepare','worker'))
+    ap.add_argument('--gpu',type=int)
+    ap.add_argument('--worker')
+    args=ap.parse_args()
+    if args.mode=='materialize_prepare':
+        materialize()
+    else:
+        p.TASKS,p.ARMS=TASKS,ARMS
+        p.worker(O/'step200',args)

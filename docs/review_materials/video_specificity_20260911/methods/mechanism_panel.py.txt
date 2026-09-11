@@ -1,0 +1,33 @@
+"""Frozen C/S diagnosis; reuse registered real-pixel transforms and queue."""
+import argparse
+import importlib.util
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = Path('<REPO_ROOT>')
+BASE = ROOT / 'runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/video_controls/panel.py'
+spec = importlib.util.spec_from_file_location('existing_video_panel', BASE)
+p = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(p)
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('mode', choices=('materialize_prepare', 'worker'))
+    ap.add_argument('--variant', choices=('c', 's'), required=True)
+    ap.add_argument('--step', type=int, choices=(100, 200), required=True)
+    ap.add_argument('--worker')
+    ap.add_argument('--gpu', type=int)
+    args = ap.parse_args()
+    p.HERE = HERE
+    p.FROZEN = ROOT / '.codex/worktrees/video-consumption'
+    p.COMMIT = '7fedbe85b5eb6835e9fa50c313068a276a3fb63b'
+    p.RUN = ROOT / f'runs/outputs/video_consumption_{args.variant}_seed7_20260911'
+    p.SOURCE = p.RUN / 'evaluation/train_correct_step200_held46_49_train96_J0/run_contract.json'
+    p.KIND = f'frozen_video_mechanism_{args.variant}_20260911'
+    p.ARMS = tuple(p.read(HERE / 'registration.json')[f'{args.variant}_arms'])
+    output = HERE / args.variant / f'step{args.step}'
+    if args.mode == 'materialize_prepare':
+        p.materialize(output, args.step, 2400)
+        p.prepare(output)
+    else:
+        p.worker(output, args)

@@ -1,0 +1,79 @@
+"""Frozen paired action-function comparison, reusing the native FM evaluator."""
+import argparse
+import json
+import os
+import time
+from pathlib import Path
+import torch
+from safetensors.torch import load_file
+from ember.pi05_source_setup import initialize_distributed
+from ember.pi05_eval.worker_setup import load_policy, validate_worker_assets
+from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+from ember.writer.learning_data import WriterTrainingData
+from ember.writer.native import autocast
+from ember.writer.functional import (
+    prepare_frozen_writer_policy, functional_lora_loss_value,
+    INDEPENDENT_BETA_TIME_SAMPLING_SCHEME, INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+)
+
+R = Path('<REPO_ROOT>')
+O = Path(__file__).resolve().parent
+read = lambda p: json.loads(p.read_text())
+ap = argparse.ArgumentParser()
+ap.add_argument('--registration', type=Path, default=O / 'functional_registration.json')
+ap.add_argument('--output', type=Path, default=O / 'functional_summary.json')
+args = ap.parse_args()
+reg = read(args.registration)
+assert reg['status'] == 'registered_before_results'
+ctx = initialize_distributed(require_numa=True)
+uuid = 'GPU-' + str(torch.cuda.get_device_properties(0).uuid).removeprefix('GPU-')
+assert ctx.world_size == 1 and torch.cuda.device_count() == 1 and uuid == os.environ['EXPECTED_GPU_UUID']
+torch.set_num_threads(4)
+torch.set_grad_enabled(False)
+torch.backends.cuda.matmul.allow_tf32 = True
+contract = read(O / 'c/step200/closedloop/contract.json')
+model, normalization, tokenizer = validate_worker_assets(contract)
+policy, processor, _ = load_policy(model, normalization['stats'], tokenizer, contract['policy'])
+reuse = read(R / 'configs/pi05_writer_data_v1.json')['authorities']
+lora = derive_pi05_lora_rank(load_pi05_lora_contract(R / reuse['lora_contract']), rank=16)
+identity = prepare_frozen_writer_policy(policy, lora)
+cfg = read(R / 'runs/outputs/video_consumption_c_seed7_20260911/run_contract.json')['config']
+data = WriterTrainingData(R, cfg['data'], camera_view='agentview')
+tick = time.monotonic()
+rows = []
+try:
+    for task in reg['tasks']:
+        raw, trace = data.diagnostic_batch(task, seed=reg['query_seed_base'] + task, count=reg['queries_per_task'])
+        assert set(trace['action_demos']) <= set(reg['action_demos'])
+        batch = processor.training_batch(raw)
+        for condition in reg['conditions']:
+            if time.monotonic() - tick > reg['max_seconds']:
+                raise TimeoutError('registered action diagnostic budget')
+            if condition == 'source':
+                state = identity
+            else:
+                if 'adapter_paths' in reg:
+                    path = Path(reg['adapter_paths'][condition].format(task=task))
+                else:
+                    variant, arm = condition.split('_', 1)
+                    path = O / variant / 'step200/adapters' / f'task{task:02d}_{arm}.safetensors'
+                state = load_file(str(path), device=str(ctx.device))
+            with autocast(ctx.device):
+                loss, _ = functional_lora_loss_value(
+                    policy, state, lora, batch=batch,
+                    policy_rng_seed=trace['policy_rng_seed'], policy_rng_device=ctx.device,
+                    flow_time_sampling_scheme=INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+                    flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+                    policy_microbatch_size=reg['policy_microbatch'], collect_policy_details=False,
+                )
+            rows.append({'task': task, 'condition': condition, 'flow_loss': float(loss), 'queries': reg['queries_per_task'], **trace})
+            print(json.dumps({'task': task, 'condition': condition, 'flow_loss': float(loss)}), flush=True)
+        del raw, batch, state
+finally:
+    data.close()
+assert len(rows) == len(reg['tasks']) * len(reg['conditions'])
+report = {'status': 'complete', 'registration': reg, 'gradients': False, 'seconds': time.monotonic() - tick,
+          'means': {c: sum(x['flow_loss'] for x in rows if x['condition'] == c) / len(reg['tasks']) for c in reg['conditions']},
+          'peak_gib': torch.cuda.max_memory_allocated() / 2**30, 'rows': rows}
+args.output.write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'means': report['means'], 'seconds': report['seconds']}), flush=True)

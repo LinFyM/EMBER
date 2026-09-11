@@ -1,0 +1,32 @@
+"""Frozen local-reference mechanism panel; reuse paired real-pixel transforms and queue."""
+import argparse
+import importlib.util
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = Path('<REPO_ROOT>')
+BASE = ROOT / 'runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/video_controls/panel.py'
+spec = importlib.util.spec_from_file_location('existing_video_panel', BASE)
+p = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(p)
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('mode', choices=('materialize_prepare', 'worker'))
+    ap.add_argument('--step', type=int, choices=(100, 200, 300, 400), required=True)
+    ap.add_argument('--worker')
+    ap.add_argument('--gpu', type=int)
+    args = ap.parse_args()
+    p.HERE = HERE
+    p.FROZEN = ROOT / '.codex/worktrees/video-change-reference-frozen'
+    p.COMMIT = '64eba75bcf316a1f6792ab8ddf5eb1aaefded378'
+    p.RUN = ROOT / 'runs/outputs/video_change_reference_seed7_20260911'
+    p.SOURCE = ROOT / 'runs/outputs/video_consumption_c_seed7_20260911/evaluation/train_correct_step200_held46_49_train96_J0/run_contract.json'
+    p.KIND = 'frozen_video_change_reference_mechanism_20260911'
+    p.ARMS = tuple(p.read(HERE / 'registration.json')['node_arms'][str(args.step)])
+    output = HERE / 'train_mechanism' / f'step{args.step}'
+    if args.mode == 'materialize_prepare':
+        p.materialize(output, args.step, 2400)
+        p.prepare(output)
+    else:
+        p.worker(output, args)

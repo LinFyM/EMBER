@@ -1,0 +1,63 @@
+"""Compare frozen path substitutions against matching full C200 rows."""
+import json
+from pathlib import Path
+import numpy as np
+
+O = Path(__file__).resolve().parent
+read = lambda p: json.loads(p.read_text())
+reg = read(O/'registration.json')
+full = O.parent/'c/step200/closedloop'
+out = O/'step200/closedloop'
+contract = read(out/'contract.json')
+groups = {}
+for arm in reg['arms']:
+    groups[arm] = []
+    for task in reg['tasks']:
+        path = out/'shards'/f'task{task:02d}_{arm}.json'
+        if not path.exists():
+            raise SystemExit(f'path rows pending: {path.name}')
+        data = read(path)
+        assert data['job'] == contract['jobs'][f'task{task:02d}_{arm}']
+        assert all(r['diagnostic_control']==data['job'] for r in data['rows'])
+        groups[arm].extend(data['rows'])
+for arm in ('correct','wrong_cross_suite','static_first'):
+    groups['full_'+arm] = []
+    for task in reg['tasks']:
+        path = full/'shards'/f'task{task:02d}_{arm}.json'
+        if not path.exists():
+            raise SystemExit(f'full reference rows pending: {path.name}')
+        groups['full_'+arm].extend(read(path)['rows'])
+key = lambda r:(r['suite'],r['task_id'],r['init_state_id'])
+groups = {a:{key(r):r for r in rows} for a,rows in groups.items()}
+base = groups['full_correct']
+assert len(base) == 32
+for arm, rows in groups.items():
+    assert rows.keys() == base.keys()
+    for k,r in rows.items():
+        b = base[k]
+        for field in ('suite','task_id','init_state_id','language','env_seed','policy_seed_root','teacher_demo'):
+            assert r[field] == b[field], (arm,k,field)
+        n = min(len(r['policy_noise_seeds']),len(b['policy_noise_seeds']))
+        assert r['policy_noise_seeds'][:n] == b['policy_noise_seeds'][:n]
+        assert r['stage_predicates']['predicates'] == b['stage_predicates']['predicates']
+tasks = sorted({k[:2] for k in base})
+boot = np.random.default_rng(20260911).integers(len(tasks),size=(20000,len(tasks)))
+results = {}
+for arm,rows in groups.items():
+    x={k for k,r in base.items() if r['success']}
+    y={k for k,r in rows.items() if r['success']}
+    diffs=np.array([sum(int(base[k]['success'])-int(rows[k]['success']) for k in base if k[:2]==t)/4 for t in tasks])
+    results[arm]={'successes':len(y),'correct_minus_arm':len(x)-len(y),'retained':len(x&y),
+                  'gained_by_substitution':len(y-x),'lost_by_substitution':len(x-y),'churn':len(x^y),
+                  'jaccard':len(x&y)/len(x|y) if x|y else None,
+                  'correct_minus_arm_task_cluster_bootstrap_rate_95ci':np.quantile(diffs[boot].mean(1),[.025,.975]).tolist(),
+                  'per_task':{f'{s}/{t}':sum(r['success'] for k,r in rows.items() if k[:2]==(s,t)) for s,t in tasks},
+                  'per_suite':{s:sum(r['success'] for k,r in rows.items() if k[0]==s) for s in sorted({t[0] for t in tasks})},
+                  'breadth':sum(any(r['success'] for k,r in rows.items() if k[:2]==t) for t in tasks)}
+workers=[read(p) for p in (out/'workers').glob('*.json')]
+assert workers and all(w['status']=='complete' for w in workers)
+assert all((out/'workers'/f"{w['worker']}.exit").read_text().strip()=='0' for w in workers)
+summary={'status':'complete','pairing_verified':True,'formal_qualification':False,'registration':reg,
+         'results':results,'rows':{a:list(rows.values()) for a,rows in groups.items()}}
+(O/'behavior_summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps({a:d['successes'] for a,d in results.items()}))

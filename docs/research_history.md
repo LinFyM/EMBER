@@ -1,5 +1,9 @@
 # EMBER research history
 
+当前咨询重点为结合全部历史证据重新推导有益视频特异性，暂不强制绝对性能，也不直接回到v5.2。
+新专家先读[机制证据地图](review_materials/video_specificity_20260911/EVIDENCE_MAP.md)及[最新证据](review_materials/video_specificity_20260911/LATEST_EVIDENCE.md)，
+再沿本页进入各阶段完整论证；旧“根因”措辞仍须接受证据审查，不能直接作为已证实结论。
+
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
 immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
 [progress.md](../progress.md)，当前方法见 [设计记录](horizon_relation_video_writer_design.md)。

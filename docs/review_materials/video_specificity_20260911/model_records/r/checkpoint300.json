@@ -1,0 +1,1 @@
+{"files":{"ecp.safetensors":{"bytes":1479715624},"rank_00_state.pt":{"bytes":14869},"rank_01_state.pt":{"bytes":14869},"trainer_state.pt":{"bytes":2954977768}},"next_macro":300,"run_contract_schema":"ember_horizon_relation_writer_supervised_run_v1","schema_version":"ember_ecp_checkpoint_v1","stage":"horizon_relation_writer_fresh_supervised","world_size":2}

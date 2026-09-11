@@ -1,0 +1,1 @@
+{"source":"runs/outputs/horizon_causal_local_h_read_seed7_20260909/exposures.jsonl","nodes":{"100":{"queries":25600,"K1_conditions":400,"unique_task_video_conditions":259},"200":{"queries":51200,"K1_conditions":800,"unique_task_video_conditions":341}}}

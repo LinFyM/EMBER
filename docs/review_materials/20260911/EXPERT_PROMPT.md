@@ -1,5 +1,7 @@
 # 请审查EMBER现有方法，并建议下一阶段的实质改进
 
+**历史prompt，保留咨询过程。当前咨询请使用[新prompt](../video_specificity_20260911/EXPERT_PROMPT.md)，以下main与目标描述只适用于原咨询时点。**
+
 你是一位熟悉机器人模仿学习、视觉语言动作模型、视频到策略迁移、超网络和多任务优化的独立研究专家。请基于远程仓库的实际代码、历史和已提交实验记录，审视EMBER目前的失败，提出改进现有方法和继续推进的建议。请独立判断，允许推翻我们的解释；不要只复述指标或给泛泛的调参清单。
 
 仓库：https://github.com/LinFyM/EMBER 。请以本prompt所属提交为审阅快照。先读同目录`README.md`、`index.json`和`panel_summary.json`，再读仓库根目录`progress.md`、`task_plan.md`、`findings.md`相关§39–49、`docs/current_owner_requirements.md`、`docs/concept.md`和当前设计。历史路线按`docs/research_history.md`索引追查；9月7日证据包和9月8日专家原文保留了重要反证和Owner裁决。不要一次把所有JSON塞进上下文。

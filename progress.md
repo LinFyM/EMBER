@@ -4,11 +4,11 @@
 
 Owner明确要求建立goal：完整理解从科学精神、数学推导、专家讨论到当前架构的形成过程；随后定位为何同任务正确顺序视频没有带来必要执行收益；依据原因改架构或训练、验证，失败返回原因分析，持续到正常训练自然产生正确视频优于错任务/乱序视频的可信行为分化。不得人为压低错误视频性能制造差额，绝对能力目标仍保留。
 
-Goal已建立。Owner随后补充correct必须至少高于冻结source；该条件已与correct高于错任务、乱序共同写入goal验收标准，不能只靠错误条件变差达成。第1步原始材料与代码审查已完成，第2步完整冻结诊断已完成，进入第3步局部表示修正与真实profile；不启动盲目覆盖实验。95-task计划不恢复，两个未提交worktree继续原样保留。后续授权含必要实验与实现，无需逐项再次批准，但每次实验须按最新task_plan登记用途、信息墙、配对与资源合同。
+Goal已建立。Owner随后补充correct必须至少高于冻结source；该条件已与correct高于错任务、乱序共同写入goal验收标准，不能只靠错误条件变差达成。第1步原始材料与代码审查已完成，第2步完整冻结诊断已完成，进入第3步局部表示修正与正式学习验证；不启动盲目覆盖实验。95-task计划不恢复，两个未提交worktree继续原样保留。后续授权含必要实验与实现，无需逐项再次批准，但每次实验须按最新task_plan登记用途、信息墙、配对与资源合同。
 
-最新授权允许错任务/乱序开发诊断用于原因分析与架构修正，区别于最终独立冻结验证；旧禁止开发反馈的条款不覆盖本次授权。当前启动的仅为下述冻结诊断。C/S仅有100/200两个节点，其失败结论限于该观察范围；特别是C43→50不能视为已证实收敛或整个消费机制被否定。
+最新授权允许错任务/乱序开发诊断用于原因分析与架构修正，区别于最终独立冻结验证；旧禁止开发反馈的条款不覆盖本次授权。当前执行以下已登记的局部参照候选，诊断与训练授权以本节为准。C/S仅有100/200两个节点，其失败结论限于该观察范围；特别是C43→50不能视为已证实收敛或整个消费机制被否定。
 
-当前唯一active design为[无变化参照局部过程更新](docs/video_change_reference_design.md)。形成链与冻结机制诊断已完成；新候选数学、128项相关CPU检查及真实四/六卡两步profile通过，进入fresh正式学习准备。原C/S仅观察100/200，未宣称收敛；95-task不恢复。
+当前唯一active design为[无变化参照局部过程更新](docs/video_change_reference_design.md)。形成链与冻结机制诊断已完成；新候选数学、128项相关CPU检查及真实四/六卡两步profile通过，已完成fresh正式学习首段100/200，当前执行配对闭环评测。原C/S仅观察100/200，未宣称收敛；95-task不恢复。
 
 ### 当前机制结果与候选实测
 
@@ -16,9 +16,9 @@ Goal已建立。Owner随后补充correct必须至少高于冻结source；该条�
 
 局部无变化参照已集成main。真实六卡第二步14.21秒，比四卡25.02秒快；采用gpu02 0/1/2/3/4/6、micro8/8/8/8/6/6，原件`runs/analysis/video_change_reference_20260911/profile_summary.json`。最长93帧通过，静态中心化过程为真实视频约0.9%，上游有梯度且source无梯度。128项相关CPU合同通过；一次性profile checkpoint已删除。
 
-正式配置`configs/pi05_video_change_reference.json`，fresh100/200后exact-resume300/400，每节点correct strict400及固定train96，200/400加开发视频对照。保留C的2K1条件/task、32queries/条件、普通FM和全部其它结构，只改局部更新参照。正式fresh100/200已从clean pushed detached64eba75b启动，gpu02六卡与NUMA/原任务权重核对通过；实际source、数据、observer、optimizer与C原合同相同，唯一model字段新增局部参照身份。命令与输入/资源合同在`runs/analysis/video_change_reference_20260911/launch_contract.json`，日志同目录`train100_200.log`。100步checkpoint已完整保存，模型身份、world6和checkpoint manifest检查通过；训练继续至200。第100步待物化/strict400，现场gpu01所有卡已有其它高负载任务，gpu02六张由本训练实际使用、其余卡同样忙，没有合适评测设备；释放容量后立即执行已登记评测。尚无新闭环结果，目标未达成。
+正式配置`configs/pi05_video_change_reference.json`，fresh100/200后exact-resume300/400，每节点correct strict400及固定train96，200/400加开发视频对照。保留C的2K1条件/task、32queries/条件、普通FM和全部其它结构，只改局部更新参照。正式fresh100/200已从clean pushed detached64eba75b启动，gpu02六卡与NUMA/原任务权重核对通过；实际source、数据、observer、optimizer与C原合同相同，唯一model字段新增局部参照身份。命令与输入/资源合同在`runs/analysis/video_change_reference_20260911/launch_contract.json`，日志同目录`train100_200.log`。首段200更新/51200queries用时3327.11秒并正常退出；100/200两个完整checkpoint均通过模型身份、world6和manifest检查。固定train-only留出动作FM由初始.151451降至200的.109323。gpu02训练设备释放后，已并行物化100/200的validation400及固定train机制面板；资源与具体命令在`launch_eval100_200.json`。首段闭环完成后按原world6继续300/400，尚无新闭环成绩，目标未达成。
 
-/data1最新quota used811028252KiB、soft1073741824KiB，共享83TiB；新profile两次峰值≤12GiB，现有诊断1.4GiB、候选worktree184MiB，复用大资产。旧面板争用失败和撤回记录保留，最终完整且所有本任务GPU worker已退出。实际profile命令与设备登记在`.codex/tmp/video-change-reference-profile/`。
+/data1最新quota used815393884KiB、soft1073741824KiB，共享83TiB；新profile两次峰值≤12GiB，现有诊断1.4GiB、候选worktree184MiB，复用大资产。旧面板争用失败和撤回记录保留，旧诊断最终完整且其GPU worker均已退出。实际profile命令与设备登记在`.codex/tmp/video-change-reference-profile/`。
 
 ## 历史Owner暂停（已由上述定向授权覆盖）
 

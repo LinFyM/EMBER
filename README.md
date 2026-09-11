@@ -20,8 +20,8 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 
 ## 当前保留实现与实验状态
 
-当前数据流：真实图文prefix → Action Expert与观察Meta完整50-H响应 → 任务token视觉grounding、相邻完整H读取与语言/时间轴交互 → Compiler → native D → 唯一38-target/76-tensor A/B。
-训练期辅助读取器以冻结source真实FM query查询共享视频表示；分组信用不让蒸馏梯度流入视频encoder。部署不保留辅助控制器。
+当前数据流：冻结图像/词嵌入 → teacher侧Gemma VL Meta形成同次Z/KV → Action Expert与观察Meta完整50-H响应 → 任务token视觉grounding、相邻完整H读取与语言/时间轴交互 → Compiler → native D → 唯一38-target/76-tensor A/B。
+训练期辅助读取器以冻结source真实FM query查询共享视频表示；当前mu1/rho0，联合反传直接Z及R经KV两条路径。source基础权重与执行prefix始终冻结，部署不保留读取Meta或辅助控制器。
 
 | 代码职责 | src/ember下的owner |
 | --- | --- |

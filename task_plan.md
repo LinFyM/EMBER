@@ -2,29 +2,27 @@
 
 ## 当前目标与授权（2026-09-11）
 
-Owner明确要求休息期间由Codex自行整理专家意见与独立判断、规划、设置goal并连续完成方法修正、实验验证、问题分析及再次修正，醒来后审查。已建立active goal。此前仅咨询、暂停科研和禁止再次完整训练的阶段限制已被本次授权覆盖；不再逐项请求批准。信息墙、固定split、source冻结、资源/Git及最终资格保持，Test封存。
+Owner要求休息期间由Codex自主规划、修正方法、实验验证、分析和再次修正，醒来后审查；active goal继续。此前暂停与禁止再次完整训练的阶段限制已被覆盖，不重复请求逐项批准。固定split、信息墙、source冻结、资源/Git与最终资格保持；Test封存。
 
-目标为validation8 strict paired single-checkpoint correct>145/400，并满足相邻稳定、低churn、高breadth、四suite/Goal/Long、换正确视频和最终独立视频因果资格。不能以一次高分、机制接通或实验结束标记goal完成。
+目标为validation8 strict paired single-checkpoint correct>145/400，并满足相邻稳定、低churn、高breadth、四suite/Goal/Long、换正确视频及最终独立视频因果资格。不能以机制接通、一次高分或实验结束标记goal完成。
 
 ## 当前计划
 
-唯一active design为[语义条件化过程消费](docs/video_consumption_writer_design.md)。前代[Horizon设计](docs/horizon_relation_video_writer_design.md)提供保留的完整H/过去关系细节与历史合同，不恢复其中旧待办。
+唯一active design为[非held meta-task扩展](docs/nonheld_meta_writer_design.md)。前轮R/C/S与off、R有限续训全部完成，旧合同只作历史。
 
-1. **完成：** 归档第二轮专家原文与独立判断，落实R/C/S对照、数据/随机性/评测和资源合同。
-2. **完成：** 实现一个canonical runtime下的条件分配与消费接口；共享C/S语义读取、融合和D，明确无序帧集合参照的能力与边界。
-3. **完成：** CPU合同与整合、真实最长视频及恢复检查通过；formal使用clean pushed detached 7fedbe85。
-4. **完成：** R/C/S首轮训练、物化、六组validation400与三组train96全部完成，共153600监督queries、2688闭环rows。R37→83/train46，C43→50/train49，S59→45/train52；同预算旧off200108/train40。两项改动均未见迁移净收益，C/S不追加，不依据S100短暂优势新增架构。
-5. **完成：** off7受控续训及评测为400/500/600 correct126/73/54、train56→64/96；训练获取未转为未见任务能力，停止该未改配方续训，保留126及探索性lineage。
-6. **完成：** R原200完整恢复至400，验证200/300/400=83/63/85，train46→56/96，独立动作FM=.105399；同102400 target queries的旧off400=126/56。更多教学条件未改善最终训练能力或迁移，停止R，保留完整896条新增配对证据。
-7. 候选稳定后补换正确视频与公平参照，冻结选择后做独立最终因果裁决；全过程维护可审查记录、checkpoint、原始结果和Git。目标完成前持续自主推进。
+1. **完成：** 根据R400=85/400、train56/96和同target预算旧off126/56，结束条件分配路线；登记保留off图、普通FM、target24+已审计meta71各半的95-task有限对照。只改变独立任务覆盖，target恢复原一条K1/64queries。
+2. **进行中：** 在隔离worktree实现审计meta loader、独立采样流、8-task逻辑batch/权重/曝光及完整恢复；并行退役C/S专属路径。主agent整合，保持off计算与初始化语义。
+3. 验证固定target/held边界、71项allowlist、跨episode、target采样流不受meta消耗、8×64queries/权重1/8、完整恢复；真实混合GPU更新及最长视频，source始终无梯度。
+4. 从clean pushed detached commit fresh seed7执行200/400有限节点：各correct strict400，400 train96，0/200/400独立动作验证。分别累计target51200/102400和同等meta queries，显式报告新增计算及独立task覆盖，不冒充同总预算。
+5. 依per-task/suite、breadth、相邻及同target预算旧off的R/G/L/churn裁决；无广泛改善则结束该扩展，不扫比例/seed/LR或原样续训。实质改善后才登记相邻稳定与独立视频资格。目标未完成前持续推进。
 
-## 当前已知事实与候选边界
+## 已完成的本轮证据
 
-- 既有最强Horizon off7 macro400为126/400，off11为119，尚未达标；最强训练任务九臂也没有稳定动态增量。
-- v5.2普通正样本监督已有正确视频依赖；监督允许捷径不足以解释新旧差异。专家已撤回先保持再视频的顺序，见[第二轮原文](docs/review_materials/20260911/expert_review_round2.md)。
-- 主假设是最后消费接口难以利用过程；竞争解释是每update教学条件分配。新增语义路径独立解释收益、P4过程不足与无序多帧仍能含过程信息，是本轮裁决必须保留的限制。
-- 初轮不加辅助loss/保持约束，不换D/rank，不扩Meta/数据、不切dual。后续只有证据改变判断时才选择一个主要修正。
+- R/C/S各fresh200：validation100→200为37→83、43→50、59→45；train96=46/49/52。C/S不追加。
+- off7从400受控续训至600：correct126→73→54，train56→64/96，停止未改配方；保留探索性lineage。
+- R原200 exact-resume至400：correct83→63→85，train46→56/96；旧off400同102400queries为126/56。全部新增896rows及实际配对完整，停止R。
+- 首轮2688rows + off续训896 + R续训896 = 4480条闭环；原始结果、checkpoint和合同保留。未新增Test、held梯度或视频因果controls。
 
 ## 审查入口
 
-即时进度：[progress](progress.md)；跨轮结论：[findings](findings.md)；历史：[research_history](docs/research_history.md)。专家原文、第一轮追问与最新证据保留在[9月11日材料](docs/review_materials/20260911/README.md)。旧整理及咨询工作已完成，其历史在ae606387及前序Git中保留。
+[progress](progress.md)记录实现/运行状态；[findings](findings.md)§51–53保存跨轮结果；[research_history](docs/research_history.md)保留完整历史及近等价边界。专家原文见[9月11日材料](docs/review_materials/20260911/README.md)。

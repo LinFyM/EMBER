@@ -6,13 +6,13 @@ EMBER探索：从一条或多条action-hidden正确教学视频理解任务条�
 在rollout前一次性编译成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从自己的新初始化闭环执行。
 语言确定目标与关注对象，视频动态必须贡献必要信息；执行行为由机器人当前观测触发。跨具身是科学动机，LIBERO结果不自动证明跨具身泛化。
 
-## 当前接续：让普通监督利用视频过程
+## 当前接续：扩大独立训练任务映射
 
-v5.2普通正样本动作监督已经学出明显正确视频依赖，因此“目标允许不看视频”只是背景风险，不能单独解释当前失败。接续方法让task-token视觉语义先确定参数槽关注的对象与关系，再用语义条件化读取过程变化，共同生成完整LoRA；它不通过辅助loss或强制动态gate人为制造必要性。
+v5.2普通正样本动作监督已有正确视频依赖；纯监督允许捷径不足以解释不同模型的行为。语义消费C/S及双K1条件R的完整有限实验没有得到迁移净收益，较强off配方继续曝光也出现训练任务提升、未见任务下降。
 
-完整H和过去定向关系图保留。新方法与主动训练的无序帧集合参照共享语义读取、融合和解码，用真实行为判断显式过程处理的增量；无序多帧仍可能含有变化信息，不能冒充单帧static。新增语义路径也可能独立解释分数提高，架构职责不等于机制已兑现。
+当前保留完整H、过去定向关系图、local_h_read Compiler与独立D，以普通跨episode FM学习；新增经既有完整任务审计排除target40重合项的71个source meta tasks。target24与meta71显式各半加权，每个task一条K1视频/64queries，检验更多独立task映射能否改善共享video→LoRA函数的迁移。增加task覆盖只是待检验假设，不保证视频动态增量。
 
-当前唯一active合同见[语义条件化过程消费设计](video_consumption_writer_design.md)，实现/学习状态见progress。下文保留的图和数学职责是该设计复用的前代过程encoder；旧Compiler接口已进入受控替换比较，不把历史状态当当前默认。
+唯一active合同见[非held meta-task扩展设计](nonheld_meta_writer_design.md)，实现/学习状态见progress。target validation/test保持固定和无梯度；source、图结构、Meta范围、视角和普通FM不变。前轮[消费接口设计](video_consumption_writer_design.md)保留为历史，不恢复其待办。
 
 ## 保留的完整H过去定向数据流
 
@@ -31,7 +31,7 @@ exact language + K条独立有序视频
   → 冻结source依据自身观测闭环执行
 ```
 
-四组使用当前帧上下文task-token条件，不跨帧池化；静态语言码仅保留在compiler首次检索query。两者共享reader参数，原生Gemma/vision仍冻结，完整时序与视觉Value通路保留。
+四组使用当前帧上下文task-token条件，不跨帧池化；Compiler额外静态语言query保持关闭；精确language仍通过逐帧原生task-token条件进入过程读取。语言读取共享reader参数，原生Gemma/vision仍冻结，完整时序与视觉Value通路保留。
 
 完整数学、张量、训练与迁移合同见 [正式设计](horizon_relation_video_writer_design.md)，
 原文与Owner裁决见 [讨论索引](review_materials/20260908/README.md)，实施状态见 [progress](../progress.md)。

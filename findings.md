@@ -537,3 +537,9 @@ off7在原macro400=126/400、train56/96仍增长时曾因阶段预算停止，�
 与此同时，train96从56提高到64（四suite20/16/16/12、breadth22），保留46/新增18/丢失10；独立动作FM400/500/600为0.104946/0.104097/0.104786。该实际配方仍学会训练任务，但训练侧拟合和获取没有转成稳定的未见task能力。它不证明全部监督已到平台、唯一根因是D/读取Meta，或加入保持约束/RL必然有效。
 
 因此停止这条未改配方的off7续训，不登记700/800；原126和所有学习状态保留。两个400及一个96共896闭环rows完整exit0、source/normalizer/实际teacher与执行配对通过。原件runs/analysis/video_consumption_20260911/continuation/continuation_summary.json、step500/old400_vs_500.json、step600/{old400_vs_600,adjacent500_600,old400_vs_600_train96}.json。R的后续获取是另一个已登记对照，不由旧off的下降预先裁决。
+
+## 53. R增加教学条件的后续获取未在300持续（2026-09-11）
+
+按预登记§8从原200完整exact-resume，R300累计76,800queries/2,400条件，correct strict400=63，四suite0/24/34/5、breadth4。R100/200/300为37/83/63；200→300保留43/新增20/丢失40，churn60/J=.41748。Object41→24、Goal37→34、Spatial仍0；Long5→5但没有任何原成功保留，5个新增抵消5个丢失，总数相同不代表行为稳定。
+
+相对旧off400126，R300保留51/新增12/丢失75、churn87/J=.36957；后者动作曝光不同，只作能力参照。该节点不支持更多教学条件持续改善迁移；最终等102400queries及train96比较须等登记的400结果，不提前宣称终点或因一次下降追加新loss/架构。400rows/42shards与9worker全部exit0，1206.51秒；原件runs/analysis/video_consumption_20260911/r/step300/completed_summary.json及两份canonical配对比较。

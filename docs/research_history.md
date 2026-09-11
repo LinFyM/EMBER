@@ -987,3 +987,7 @@ Owner授权恢复自主科研后，登记video_consumption_writer_design并实�
 预登记correct500/600各400条完整为73/54，四suite1/51/12/9→1/24/22/7，breadth均6。父400为126；400→500 R/G/L60/13/66，500→600为31/23/42，400→600为43/11/83、churn94/J=.31387。两个面板分别1218.65/1205.90秒、9worker/3GPU，均42shards/400rows/所有worker exit0。600 train96=64（20/16/16/12、breadth22），父40056→64保留46/新增18/丢失10，3worker/1GPU822.95秒。独立动作FM400/500/600为.104946/.104097/.104786。
 
 全部896闭环rows及输入/执行配对通过。该轨迹增加训练task获取却明显降低未见任务能力，不支持进一步原样续训，原126及完整证据保留；不是全部FM平台或某个模块唯一根因的证明。没有新wrong/shuffle/reverse、Test或held梯度。原件runs/analysis/video_consumption_20260911/continuation/continuation_summary.json及step500/step600内逐task/suite、相邻、parent400和train96比较。另因R37→83仍获取而登记的R300/400只看当前plan/design，不由本历史段恢复其它任务。
+
+## 2026-09-11 R追加300节点：早期增长未保持
+
+冻结7fedbe85、原gpu02 4/6/world2/micro6/6，从formal macro200原生完整exact-resume。R300经formal inspector通过，累计76800queries/2400条件，新增100updates均32.28秒；物化400条件sealed/exit0、615.33秒。correct strict400=63（四suite0/24/34/5、breadth4），9worker/42shards全部exit0、1206.51秒。200的83→300的63保留43/新增20/丢失40、churn60/J=.41748；Long5→5却全部更替。相对旧off400126为51/12/75、churn87/J=.36957，只作不同曝光的能力参照。实际teacher、source/normalizer、执行RNG的canonical配对通过；未触碰Test或新增因果controls。该节点未保持双K1条件的早期增长，后续按已登记400收尾。原件runs/analysis/video_consumption_20260911/r/step300/{completed_summary.json,r200_vs_300.json,old400_vs_r300.json}，解释见findings§53，动态授权只看当前plan/progress。

@@ -543,3 +543,7 @@ off7在原macro400=126/400、train56/96仍增长时曾因阶段预算停止，�
 按预登记§8从原200完整exact-resume，R300累计76,800queries/2,400条件，correct strict400=63，四suite0/24/34/5、breadth4。R100/200/300为37/83/63；200→300保留43/新增20/丢失40，churn60/J=.41748。Object41→24、Goal37→34、Spatial仍0；Long5→5但没有任何原成功保留，5个新增抵消5个丢失，总数相同不代表行为稳定。
 
 相对旧off400126，R300保留51/新增12/丢失75、churn87/J=.36957；后者动作曝光不同，只作能力参照。该节点不支持更多教学条件持续改善迁移；最终等102400queries及train96比较须等登记的400结果，不提前宣称终点或因一次下降追加新loss/架构。400rows/42shards与9worker全部exit0，1206.51秒；原件runs/analysis/video_consumption_20260911/r/step300/completed_summary.json及两份canonical配对比较。
+
+R400已完整结束，将§53更新为有限续训终点结论：correct85/400、四suite1/45/32/7、breadth6；300→400保留50/新增35/丢失13（churn48/J=.51020），200→400为53/32/30（62/.46087）。旧off400在相同102400 target queries下为126；旧→R85保留69/新增16/丢失57（73/.48592）。train96=56，四suite17/17/14/8、breadth20；R20046→56为36/20/10，而旧off40056→R56为43/13/13。故更频繁条件曝光没有提高终点训练能力，也没有改善未见任务迁移；停止R，不因300→400局部回升再延长。
+
+独立动作FM400=.105399，24×128queries无梯度、289.10秒；新增训练200updates/51200queries完整6422.31秒，累计3200条件/383种task-video仍只有24个独立任务映射。400 val15worker/60shards798.74秒、train3worker/36shards888.14秒，496条件物化747.14秒；新增896闭环rows全部exit0，实际配对通过。完整原件runs/analysis/video_consumption_20260911/r/continuation/continuation_summary.json及step400/；该结论不证明全部普通FM或所有更大meta-task集合无效。

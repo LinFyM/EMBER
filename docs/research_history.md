@@ -1071,3 +1071,5 @@ frame_set200 train other47/96（S/O/G/L=14/17/11/5、breadth17），100→20038�
 main300 train other46/96（S/O/G/L=13/15/14/4、breadth20）；200→30047→46为32/14/15、churn29/J=.52459、95%CI[-.10417,.08333]，other→correct46→43为38/5/8、churn13/J=.74510、CI[-.11458,.05208]。validation other32/400（0/17/11/4、breadth6），200→30074→32为22/10/52、churn62/J=.26190、CI[-.1925,-.0225]；other→correct32→32为23/9/9、churn18/J=.56098、CI[-.0225,.025]。两组视频均出现后段迁移退化，训练任务获取大体保持，不能归为单组教学视频配对偶然。
 
 frame_set200 validation correct69/400（2/41/15/11、breadth7），100→20073→69为37/32/36、churn68/J=.35238、95%CI[-.15,.0825]；main20074对它为52/22/17、churn39/J=.57143、CI[-.025,.05]。200步正确视频的+5差额仍未形成可信有序收益；配对other及300节点的结论等待相应完整面板。
+
+frame_set正式训练已按登记结束于300更新/76,800queries；200/300续训段10470.90秒，峰值39.05GiB，完整300 checkpoint与每rank状态保存。全部1,200个条件的task、video、action query、RNG及权重与main匹配；证据在`frame_set/step300/exposure_alignment.json`。251–300同批source/reader/student FM=.157011/.148135/.102810，仍与main接近；这些只作拟合诊断，300闭环资格待完整面板。

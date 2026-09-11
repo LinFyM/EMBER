@@ -1,30 +1,34 @@
 # EMBER progress
 
-## 当前状态：读出诊断完成；辅助FM有界训练完成、闭环比较进行中（2026-09-12）
+## 当前状态：辅助FM有界比较全部完成；视频目标未达，进入机制复核（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7节登记已完成诊断，第8节登记下一项单变量比较。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7/8节的诊断及单变量比较均已完成；尚无新的GPU实验登记。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
-### 当前执行
+### 当前执行与完整结果
 
-- 主方案、pureFM及匹配frame_set的本轮训练和全部40个闭环面板均已结束。没有Writer续训、RL或待恢复的旧评测。
-- 冻结读出诊断已完成64epochs/384updates，支持/留出缓存48条件，峰值11.25GiB；gpu02的tmux与诊断进程已退出。该诊断占卡已释放。
-- 诊断代码为clean pushed detached `19896b4aed6a47f9bf201a32c0640ef1d3925f90`；输出与命令在`runs/analysis/video_functional_20260911/reader_fit_diagnostic/`及同根`reader_fit_launch.sh`。固定表示probe没有回写Writer、访问validation/Test或输出可部署checkpoint。
-- 去蒸馏比较已完成fresh200更新、800条件、51,200queries，world4/micro8用时3967.10秒，峰值37.82GiB；100/200完整checkpoint保留。原训练已退出，不追加更新。全部800条件实际曝光与main200匹配，source trainable=0。
-- 运行代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；配置解析及相关49项测试通过。旧reader诊断worktree已复用并改名，未复制大资产。
-- 精确launch/preflight见`runs/analysis/video_functional_20260911/auxiliary_fm/`，正式输出在同study输出根的`auxiliary_fm/`。两节点检查启动前本人GPU作业0，启动后4≤6；/data1 quota849.0GiB/1TiB，追加峰值预算20GiB、投影869GiB，共享83TiB，现有study62GiB。
-- 100 checkpoint及4套LoRA banks已完成：correct新编译train96+validation400，other全量复用同checkpoint条件。实际400次K1条件与main100的task/video/action/query/RNG/weight匹配，原留出动作面板亦匹配。
-- 100训练correct闭环已完成42/96（S/O/G/L=12/9/15/6，breadth19）。相对main35为R/G/L27/15/8、churn23/J=.54、差额CI[0,.15625]；相对pureFM41为34/8/7、churn15/J=.69388、CI[-.072917,.083333]，未获额外辅助收益资格。逐task与配对原件见`paired_summary.json`。
-- 100留出动作student FM=.114956（main .116660、pureFM .114877），reader=.153161。相对main的FM降幅.001704、CI[-.000833,.004305]，相对pureFM −.0000789、CI[-.000186,.0000294]，均不据此宣称可信收益或选点。见`auxiliary_fm/step100/held_action_comparison.json`。
-- 100换视频train96也已完成38/96（S/O/G/L=9/9/15/5，breadth16），对main38为R/G/L30/8/8、CI[-.09375,.083333]，对pureFM40为32/6/8、CI[-.104167,.052083]。同checkpoint other→correct为34/8/4、churn12/J=.73913，差额CI[-.020833,.104167]。
-- 200留出动作FM=.107338，相对100降幅.007618、CI[.004680,.010944]，22/24改善；reader仍为.149237。固定面板及全部节点见`auxiliary_fm/held_action_trajectory.json`。FM的继续获取不等于未见task迁移或视频收益。
-- 100 validation correct/other已完成57/61，各400；S/O/G/L分别1/46/2/8、1/43/4/13，breadth6/7。相对main72/71差额CI[-.0875,.0075]/[-.07,.0175]；相对pureFM56/60均只+1，CI[-.02,.02]/[-.02,.035]，未见可信额外辅助迁移收益。other→correct R/G/L47/10/14、churn24/J=.66197、CI[-.04,.0125]。
-- 200训练correct/other均55/96，S/O/G/L=17/16/13/9、17/17/13/8，breadth21/20。对main45/47为R/G/L38/17/7、37/18/10，差额CI[.020833,.1875]/[-.020833,.197917]。四suite均净增加，但尚无验证迁移结论。
-- 自身100→200 correct为42→55、R/G/L29/26/13、churn39/J=.42647、CI[0,.28125]；other为38→55、28/27/10、churn37/J=.43077、CI[.041667,.322917]。同200两视频R/G/L50/5/5、churn10/J=.83333。继续获取与相邻丢失并存。
-- 全部学习、LoRA生成和训练诊断均已结束。当前只运行200 validation：correct在gpu02:0,1,3，other在gpu01:0,4,5，均3replicas/GPU，合计6张。100完整两臂已退出；只剩这两项预注册闭环，不追加学习或开展sealed controls。
-- 最近strg01 quota861.4GiB/1TiB，原峰值预算869GiB保持；后续只产生小型rows/logs。200两臂的live检查与精确命令分别见`auxiliary_fm/step200/{validation_correct_launch,validation_other_launch}.json`；分配同时计入已派发但尚未出现在nvidia进程表中的作业。
-- Owner用卡上限持续有效：双节点最多8张，空闲卡不超过10张时最多6张，训练和评测共享。此前暂停/恢复及每次分配见`owner_gpu_cap_adjustment.json`和`owner_gpu_cap_transitions.jsonl`；全部原评测现已完成并释放。
+- 所有Writer学习、读出诊断、LoRA生成和闭环评测均已完成。两节点已确认没有本轮训练/物化/评测进程或auxiliary tmux；无待恢复任务。
+- 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
+- formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，`.codex/worktrees/auxiliary-fm-frozen`；原main/frame_set代码仍为`a81a38edd055034a4a080215bdc4362310500678`。配置解析及相关49测试通过，未改变原科学实现。
+- 新配方8面板/1,984闭环rows全部完成；连同原40面板，study共48面板/11,904rows。精确命令、preflight、raw rows、aggregate和completion保留；统一逐task/suite及配对统计见`runs/analysis/video_functional_20260911/paired_summary.json`，裁决见`auxiliary_fm/bounded_200_decision.json`。
+
+| 配方/更新 | train correct /96 | train other /96 | validation correct /400 | validation other /400 |
+|---|---:|---:|---:|---:|
+| 原main/100 | 35 | 38 | 72 | 71 |
+| 去蒸馏/100 | 42 | 38 | 57 | 61 |
+| 原main/200 | 45 | 47 | 74 | 74 |
+| 去蒸馏/200 | 55 | 55 | 72 | 67 |
+
+- 去蒸馏200训练两臂S/O/G/L=17/16/13/9、17/17/13/8，breadth21/20；对main的correct净增10，task-cluster95%CI[.020833,.1875]，other净增8、CI[-.020833,.197917]。同checkpoint两视频重合50，J=.83333。训练获取改善保留为正证据。
+- 200 validation correct/other S/O/G/L=3/47/5/17、2/47/6/12，breadth7/6。对main净差−2/−7、CI[-.0875,.06]/[-.0925,.0425]；R/G/L37/35/37、34/33/40。Spatial/Long有局部收益，但Goal较main少15/12，不能以总获取替代迁移保持。
+- 自身100→200 validation correct57→72：R/G/L32/40/25、churn65/J=.32990、CI[-.0675,.14]；other61→67：33/34/28、churn62/J=.34737、CI[-.075,.1125]。原main相邻J=.32727/.39423；没有可信保持改善。
+- 200同task换视频other→correct67→72：R/G/L48/24/19、churn43/J=.52747、差额CI[-.0025,.03]；原main200两视频J=.66292。source47→新72/67只保留9/8，Goal task6原41→5/5，广泛保留未形成。
+- 100对pureFM的validation只+1/+1，CI跨0；留出动作0/100/200 student FM=.154849/.114956/.107338，reader=.154849/.153161/.149237。动作拟合继续改善，不能替代闭环迁移或过程资格。
+- 最后两项200 strict400分别耗时1202.78/1204.78秒，各42个queue jobs完整400rows。原新增存储预算20GiB，最近quota861.4GiB/1TiB、投影869GiB；未新增数据或模型副本。
+- **本项裁决：**不延长去蒸馏训练，不自动启动同rho0 frame_set。两个节点、两臂validation都低于main，局部Spatial/Long正证据尚不足以证明保持改善；训练收益不能成为追加资格训练的唯一理由。
+- **下一步：**结合本轮与既有正负证据复核最早失效接口，形成可区分竞争解释的新机制判断后再登记具体干预。当前没有新训练命令、selected checkpoint或最终sealed controls；Test继续封存，goal保持未完成。
+- Owner双节点GPU总上限持续有效：最多8张，空闲总数不超过10张时最多6张；全部训练、物化与评测共享。
 
 ### 已完成学习与验证
 
@@ -53,7 +57,7 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 已有train24留出动作100步main source/reader/student FM=.154849/.153163/.116660；251–300同批为.157011/.148191/.102797。辅助读出明显落后学生，尚无“好教师已学会、仅编译失败”的证据；这是诊断线索，不是退化的单一根因。
 - 固定表示probe的support reader FM .150983→.136589（24/24改善），held .149662→.140251（23/24改善，平均降幅.009411、task-cluster95%CI[.006285,.012963]）；原学生held .110025，24/24任务仍优于reader。当前接口能学习可迁移到同训练task留出动作的修正，但尚无更好功能教师。
 - held换入跨task E后FM .148876，相对原条件高.008625、CI[.005880,.011906]；E含语言与静态内容，此接口依赖不等于视频动态因果资格。逐task/节点见`reader_fit_analysis.json`及probe原始results。
-- 同批损失可直接恢复输出误差内积：`<S-y,S-T>=(L_C+L_D-L_R)/2`。main/frame_set 151–200、251–300各50/50更新为负，汇总cos≈−.15。它限定在预测空间，不能推出参数梯度或Adam更新相反，更不能把迁移退化单因归给蒸馏。现有pureFM同时移除了两种辅助作用，故下一步单独检验去蒸馏；不增加reader优化轮数或新架构。
+- 同批损失可直接恢复输出误差内积：`<S-y,S-T>=(L_C+L_D-L_R)/2`。main/frame_set 151–200、251–300各50/50更新为负，汇总cos≈−.15。它限定在预测空间，不能推出参数梯度或Adam更新相反，更不能把迁移退化单因归给蒸馏。现有pureFM同时移除了两种辅助作用，故已单独完成去蒸馏比较；其训练收益未转为可信validation收益，不增加reader优化轮数或无依据延长。
 - 当前goal仍未完成；无selected checkpoint，最终sealed视频controls未执行，Test继续封存。完整阶段结论与历史细节已转入`docs/research_history.md`和`findings.md`。
 
 ## 暂停时点的已完成实验与未完成范围

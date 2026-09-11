@@ -634,3 +634,27 @@ support .150983→.136589（24/24任务改善），同train24留出768queries .1
 这里只是预测空间的同权配对，不证明经native Jacobian及Adam后仍反向，不证明蒸馏无正则化收益，也不单因解释
 validation退化。已有pureFM同时删除辅助表示信用和蒸馏，不能分开两种作用。下一项受控假设仅移除蒸馏，
 保留辅助真实FM；不按此负内积推定改后一定更好。原件`distillation_output_geometry.json`，无新增GPU计算。
+
+
+## 59. 去蒸馏改善训练获取，未解决迁移与保持（2026-09-12）
+
+保持辅助真实FM、只令rho=0的fresh200比较全部完成。与原main在task/video/query/RNG/权重上逐条件匹配：
+100训练correct/other42/38对35/38，200为55/55对45/47；200 correct配对净增10的task-cluster95%CI
+[.020833,.1875]。这项训练收益不能被validation non-pass抹去，也不能据此归因于有益动态。
+
+100 validation57/61对原72/71，200为72/67对原74/74。两个节点、两臂均没有正总分收益；200差额CI
+[-.0875,.06]/[-.0925,.0425]。200 Spatial/Object/Goal/Long为3/47/5/17、2/47/6/12，存在局部
+Spatial/Long增加，但Goal较main少15/12，source原41成功的Goal task6只剩5/5。去蒸馏尚未修复迁移。
+
+自身validation100→200 correct的R/G/L32/40/25、J=.32990，other33/34/28、J=.34737；原main
+对应J=.32727/.39423。200同task两组视频J从原main .66292变为.52747（48共同成功、24新增/19丢失）。
+现有证据没有可信相邻或换视频保持改善，不以较低起点后的净增长制造修复结论。
+
+本项不追加300或自动补rho0 frame_set。尚未做该配方的匹配无序对照，故不能断言它没有任何过程收益；
+更不能从弱教师FM或预测空间负内积推出蒸馏是原失败的唯一原因。保留辅助FM的100结果又仅比pureFM多1/1
+个validation成功，尚无额外辅助迁移信用的行为证据。后续机制判断必须同时解释训练获取、未见task损失、
+历史普通FM视频依赖正例；不把该non-pass当工程bug或继续增加辅助头训练的理由。
+
+本项8面板1,984rows，完整study48面板11,904rows；原件`runs/analysis/video_functional_20260911/paired_summary.json`，
+限定裁决`auxiliary_fm/bounded_200_decision.json`，留出动作轨迹`auxiliary_fm/held_action_trajectory.json`。
+没有selected checkpoint、Test或最终sealed controls；当前goal未完成。

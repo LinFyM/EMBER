@@ -1120,3 +1120,35 @@ held reader降幅.009411、95%task-clusterCI[.006285,.012963]，23/24task改善�
 `<S-y,S-T>`为负，汇总cos≈−.15；不外推到参数更新或闭环因果。见`distillation_output_geometry.json`。
 据此按active design§8登记只移除蒸馏的fresh100/200比较，保持辅助FM；它测试两个辅助作用的拆分，
 不认定根因已找到、不恢复旧路线，学习前登记而非按新分数改门槛。具体是否运行和资源只看progress/run contract。
+
+
+## 2026-09-12：去蒸馏fresh200及全部闭环完成
+
+唯一变化rho恒0、辅助FM mu1；保留原表示、完整38-target rank16、source冻结、seed7/LR与任务权重。
+代码`ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，fresh200更新/800条件/51,200queries，3967.10秒，
+峰值37.82GiB。800个实际task/video/query/RNG/weight曝光与原main200匹配，100/200完整状态保留。
+输出`runs/outputs/video_functional_20260911/auxiliary_fm/`，launch、分析与限定裁决在同study analysis根的
+`auxiliary_fm/`；原source/数据资产复用。
+
+| 更新 | train correct/other /96 | validation correct/other /400 | validation S/O/G/L correct；other |
+|---|---|---|---|
+| 100 | 42/38 | 57/61 | 1/46/2/8；1/43/4/13 |
+| 200 | 55/55 | 72/67 | 3/47/5/17；2/47/6/12 |
+
+原main100/200训练35/38、45/47，validation72/71、74/74。200训练correct相对main R/G/L38/17/7，
+churn24/J=.61290、95%task-clusterCI[.020833,.1875]；other37/18/10、churn28/J=.56923、CI[-.020833,.197917]。
+新配方自身训练100→200分别29/26/13、28/27/10；同200两视频50/5/5、J=.83333。训练获取改善成立于该实际面板。
+
+200 validation对main correct R/G/L37/35/37、churn72/J=.33945、差额CI[-.0875,.06]；other34/33/40、
+churn73/J=.31776、CI[-.0925,.0425]。自身100→200 correct32/40/25、churn65/J=.32990、CI[-.0675,.14]；
+other33/34/28、churn62/J=.34737、CI[-.075,.1125]。200 other→correct48/24/19、churn43/J=.52747、
+CI[-.0025,.03]。source47→correct72只保留9、other67只保留8；两臂Goal task6 source41→5。
+全部per-task/suite、breadth与集合保留在统一`paired_summary.json`。
+
+固定train24留出动作student0/100/200=.154849362/.114956222/.107338454；reader=.154849362/.153160642/.149236511。
+100→200学生22/24task改善，平均降幅.007617768、CI[.004679839,.010944057]。100对pureFM的validation
+只是+1/+1，CI跨0；不将FM获取视为额外辅助收益或过程资格。
+
+新增8面板/1,984rows全部完成，study累计48面板/11,904rows。最终两组strict400各42jobs完整结束，
+耗时1202.78/1204.78秒；2026-09-12复核两节点无本轮进程或tmux。没有300续训、rho0 frame_set、Test或sealed最终controls。
+本项停止追加：训练正收益尚未迁移，局部Spatial/Long改变不足以确认保持修复。继续机制复核，但本记录不登记新GPU实验。

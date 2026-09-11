@@ -197,3 +197,15 @@ supervised.py编排同condition重放，runtime.py统一构建，training.py统�
 
 此比较可能只改善共享动作修正，也可能失去原蒸馏的正则化收益；只有之后的匹配行为证据才能判断有益过程是否形成。
 第7节临时诊断入口随问题关闭退役，原状态与证据留在Git和artifacts，不成为新的课程或部署路径。
+
+
+### 第8节完成裁决（2026-09-12）
+
+按登记完整执行fresh200及100/200各四个闭环面板。去蒸馏训练correct/other42/38→55/55，
+validation57/61→72/67；原main对应35/38→45/47、72/71→74/74。训练获取有改善，四项validation
+均没有超过main；相邻correct/other J=.32990/.34737，同200两视频J=.52747，未获可信保持改善。
+Spatial/Long局部收益与Goal丢失并存，保留局部正证据，不将本项解释成整体表示被否定。
+
+本项不延长训练或自动追加rho0 frame_set；没有匹配rho0无序结果，不能对其过程增量作正负定论。
+所有原件与有限裁决见`runs/analysis/video_functional_20260911/auxiliary_fm/bounded_200_decision.json`。
+下一项先综合既有机制证据；在新的可区分假设与干预登记前，尚未登记新GPU实验命令，也不恢复历史候选。

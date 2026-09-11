@@ -607,3 +607,5 @@ main200 validation74与100的72近似，却只保留36条成功、新增38/丢36
 ### 2026-09-12：辅助读出尚未形成更好的同批FM教师
 
 已有日志的固定50-update窗口中，主方案151–200步source/reader/student FM为.153444/.149475/.106168，251–300为.157011/.148191/.102797；reader相对同批source有改善，但明显落后LoRA学生。frame_set151–200为.153444/.149457/.106165，与有序方案接近。因此当前没有同批动作拟合证据支持辅助读出已经是更好的蒸馏教师；这不是held动作或闭环指标，不能据此选点、证明无视频信息，或单因归因迁移退化。完整数值在`runs/analysis/video_functional_20260911/training_functional_fit_windows.json`，后续定位应保持辅助获取、编译传递与保持问题的区分。
+
+现有首段预注册训练任务留出动作诊断（train24、每task32queries、无梯度）亦显示：100步main source/reader/student=.154849/.153163/.116660，frame_set=.154849/.153170/.116912；pureFM学生=.114877，其辅助关闭，日志中的reader/source零占位不代表实际误差。该已有证据支持辅助动作修正获取很弱，尚不足以将失败描述为“好教师已学会、只有LoRA编译失败”。汇总见`runs/analysis/video_functional_20260911/held_functional_fit_summary.json`。

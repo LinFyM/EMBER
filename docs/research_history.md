@@ -1053,3 +1053,5 @@ frame_set50 train other24/96（9/2/10/3、breadth13）；main50other29对它22/7
 
 
 frame_set100 train other38/96，与main100 other同分，配对36/2/2、J=.90、task-cluster95%CI[-.04167,.04167]；frame_set100 correct/other为35/38，33/2/5、J=.825。其完整validation correct73/400（S/O/G/L=0/56/9/8、breadth5）；main10072对它61/11/12、churn23/J=.72619、CI[-.0225,.015]。frame_set验证50→100为66→73，45/28/21、churn49/J=.47872、CI[-.0325,.0625]。50/100有序差额+3/-1没有可信同方向保持，仍按既定充分曝光窗口裁决，未选点或执行最终controls。
+
+2026-09-12后续完整节点：main300 train correct43/96，S/O/G/L=13/14/12/4、breadth18；200→30045→43，R/G/L31/12/14、churn26/J=.54386、task-cluster95%CI[-.125,.08333]。frame_set200完整checkpoint保存，前800条件/51,200queries与主方案逐条件实际曝光匹配；本段训练诊断没有继续提高，不代替完整validation及同曝光无序参照裁决。原件沿用paired_summary，曝光证据在`frame_set/step200/exposure_alignment.json`。

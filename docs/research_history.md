@@ -1063,3 +1063,5 @@ main300 strict validation correct32/400，S/O/G/L=1/18/8/5、breadth6；200→30
 frame_set100 validation other74/400（S/O/G/L=0/57/8/9、breadth5）；相邻67→74为46/28/21、churn49/J=.48421、95%CI[-.055,.085]；other→correct74→73为63/10/11、churn21/J=.75、CI[-.01,.005]。main100other71相对frame_set74为62/9/12、churn21/J=.74699、CI[-.0275,.01]。因此50/100两臂完整匹配的主方案有序差额分别correct+3/-1、other+4/-3，未形成相邻同方向的可信增量，早期节点未获资格。
 
 frame_set200 train correct46/96（S/O/G/L=15/14/11/6、breadth17），100→20035→46为27/19/8、churn27/J=.50、95%CI[-.03125,.26042]；main20045对frame_set46为41/4/5、churn9/J=.82、CI[-.07292,.04193]。主方案和无序参照到200步的训练行为仍接近，不能把功能信用产生的训练获取直接归因于有序过程。
+
+main200 validation other74/400（S/O/G/L=1/44/18/11、breadth7），100→20071→74为41/33/30、churn63/J=.39423、95%CI[-.0925,.09]；other→correct74→74为59/15/15、churn30/J=.66292、CI[-.0125,.015]。同task换视频总分保持，仍须报告逐行成功集合变化；不能据同分认定相邻稳定或有序必要性。

@@ -1032,3 +1032,5 @@ Owner接受视频特异性优先的新候选；完整合同见`docs/video_functi
 首段correct随后收齐：主方案50/100 validation69/72，pureFM69/56；对应训练correct26/35、30/41。主方案100 S/O/G/L=0/55/11/6、breadth6，相邻R/G/L50/22/19、churn41/J=.54945；pureFM100为0/43/3/10、breadth5，相邻34/22/35、churn57/J=.37363。主方案50 other71（4/47/20/0、breadth6），other→correct为58/11/13、churn24/J=.70732。主方案100对pureFM100净增16、95%task-clusterCI[-.0075,.0925]，尚非辅助优势资格；后续frame_set保持主方案同配方，仅去除顺序处理，未启动事实以progress为准。
 
 训练other随后完整收齐：主方案50/100=29/38，pureFM22/40，各96。主方案100 correct35/other38配对保留33/增2/失5，J=.825；50为22/4/7，J=.66667。pureFM100 correct41/other40，训练侧获取与跨视频表现仍不能代替validation顺序收益。上述全train面板没有梯度。
+
+首段全部16面板3968rows最终完整：pureFM50 other64（S/O/G/L=0/50/11/3），main100 other71（0/52/9/10），pureFM100 other60（4/44/5/7）。main100 other→correct为62/10/9、churn19/J=.76543；pureFM100为45/11/15、churn26/J=.63380。main other50→100总分71不变但47/24/24、churn48/J=.49474。100 main对pureFM other净增11、95%CI[-.0225,.0775]，没有辅助优势资格。所有完整结果保留于同一paired_summary。

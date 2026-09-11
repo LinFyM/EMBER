@@ -103,7 +103,7 @@ validation沿用官方strict400全50 teacher无放回与state-video映射，开�
 
 首段主方案/纯FM训练correct26→35与30→41，仍在获取；validation主方案69→72、纯FM69→56。
 以主方案为匹配无序参照的对象，不宣称辅助优势已被证明。主方案从完整100 checkpoint按原config、原world3及
-GPU/NUMA拓扑exact-resume到200/300；frame_set从fresh检查50/100/200/300，两者最终均76,800queries。
+GPU/NUMA拓扑exact-resume到200/300；frame_set分两段，fresh检查50/100，再原拓扑exact-resume检查200/300，两者最终均76,800queries。
 只改变有序/无序表示，保持主方案辅助与蒸馏、采样、LR和所有信息墙；不追加pureFM续训，不登记300以后的更新。
 200/300沿用同train96、validation strict400 correct/other及固定映射；CLI checkpoint节点与
 `runs/analysis/video_functional_20260911/bounded_300_registration.json`记录本段覆盖原首段节点列表。

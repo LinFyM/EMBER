@@ -25,12 +25,13 @@ Writer、两组Meta和prior投影获得梯度，source／prior始终无梯度。
 
 ordered已在gpu01的0/1/3/4四卡fresh启动，tmux `ember-prior-ordered`；实查torchrun及四rank存活，
 正式run contract确认clean pushed commit；现已完成100更新、0/100各24-task留出诊断及完整100 checkpoint，继续向200学习。
-100 checkpoint通过现有正式身份／完整性入口检查，gpu01第5卡的`ember-prior-mat100`已启动correct的train96／validation400物化；
-train96的correct库已sealed（96个条件），validation400仍在同进程继续物化。
+100 checkpoint通过现有正式身份／完整性入口检查；correct的train96／validation400物化全部完成、两个库sealed，
+`ember-prior-mat100`以exit0退出，验证了validation每task的50视频无放回及固定state映射。
 `ember-prior-train100`已在gpu01第6卡启动train96动态队列评测，正式合同确认24tasks／96states，worker已ready；
-训练、物化和评测合计6卡，尚无完整闭环面板结果。
+`ember-prior-val100`已在释放的第5卡启动validation strict400，两个worker均ready，正式合同为8tasks／400states／28动态分片。
+单worker实测约10.8GiB显存，据此采用双worker并记录吞吐；训练与两类评测合计6卡，尚无完整闭环面板结果。
 frame_set启动脚本已准备但尚未运行；前臂结束后须按live资源重新选择并记录，不能把历史空闲卡当成预留。
-训练与全部评测共同遵循当前6卡额度；validation库完整封存且评测GPU额度可用后，启动固定400条配对rollout。
+训练与全部评测共同遵循当前6卡额度；待200节点与训练96面板完成后，按live资源安排200物化及匹配frame_set学习。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

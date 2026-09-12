@@ -2,8 +2,11 @@
 
 ## 当前goal：有益视频特异性先行，再提升绝对性能
 
-Owner授权自主高效推进新视频表示与执行状态条件化功能监督，取得正确视频在唯一完整LoRA中的可重复闭环增量，
+Owner授权依据综合正负证据自主高效推进理论、设计与实验，取得正确视频在唯一完整LoRA中的可重复闭环增量，
 并验证跨同task视频、初始化、相邻checkpoint和固定validation迁移。暂不要求145/400；当前goal未完成。
+
+Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
+先完成当前队列，负结果后优先审计冻结正例复核的判别力与合同，再决定执行。整体目标未达时不标记完成。
 
 **当前active design：**[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。
 前轮8面板已关闭，训练200局部有序正例与validation反转完整保留。综合审计见findings§71。
@@ -13,10 +16,14 @@ Owner授权自主高效推进新视频表示与执行状态条件化功能监督
 1. **已完成机制选择：**排除重命名的endpoint／专家蒸馏；依据post-action生产时序校正主执行监督。
 2. **实现与验证已完成：**唯一Writer强制obs[i]对应actions[i+1:]；训练／动作留出共用，末query排除，无teacher截断。
    验证真实下一状态转移、padding、显式旧消费者口径及新训练／物化身份；历史checkpoint只用原冻结runtime。
-3. **正式学习已启动：**修复后的2ecf1770 clean pushed冻结树，两臂各world3、总计6卡，fresh100/200，各800条件／51,200queries；两臂100步完整检查点与400条件配对已验证，100动作留出差额CI跨零；继续固定200终点。
-4. 两节点先train96与validation400 correct，按新标签合同匹配ordered／frame_set；有相邻正向候选才补other与强静态参照。
+3. **正式学习已完成：**2ecf1770 clean pushed冻结树，两臂各world3完成fresh200，各800条件／51,200queries；100/200完整checkpoint与全800条件配对已验证，两节点动作留出有序差额CI均跨零，不能替代闭环。
+4. **睡前自主执行已启动：**后台先完成100/200两节点train96与validation400 correct共8面板／1,984rows，并自动汇总。按新标签合同匹配ordered／frame_set；有相邻正向候选才评估后续other与强静态参照资格。
 5. 保持全部task/suite、breadth、R/G/L、churn及相邻/换视频资格；选点冻结后的sealed内容／顺序controls通过才能完成goal。
    时间对应的正确性不是有益过程的性能证据；无资格则关闭有界学习，不扫描offset或局部参数。
+
+本轮未通过则关闭，不追加完整Writer训练或参数扫描。下一项优先准备旧52/96对40/96冻结正例复核：
+先确定跨视频／初始化面板、统计辨别力、四臂合同及停止分支；尚不自动启动新rollout或改变最终controls用途。
+夜间后台队列范围止于本轮完整correct证据与初步裁决，异常保留日志，整体目标不因队列完成而完成。
 
 用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
 formal来自clean pushed frozen commit，后续新增长重新检查独立quota与两节点实时资源。

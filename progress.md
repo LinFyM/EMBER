@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：两臂100步检查点与首段配对核验完成，继续至200步（2026-09-12）
+## 当前状态：两臂200步学习完成，后台接续8个correct闭环面板（2026-09-12）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -9,6 +9,15 @@ Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保
 Owner新增要求整理最后一次专家意见后的情况与咨询prompt，由Owner自行转发。
 已形成[整体复审prompt](docs/review_materials/20260912_followup/EXPERT_PROMPT.md)：包含已完成的正负证据、
 在途结果边界及假设裁决／视频知识可识别性／下一项判别实验的问题。当前运行仍按下述既定合同执行。
+
+Owner随后提供专家整体复审，并在睡前要求自主有效推进，随后明确要求重新设置goal。
+新goal已激活：在证据支持下自主完成分析、理论修正、设计、实现与验证；目标仍是可重复视频收益及保持／迁移，
+不以评测收尾或局部涨分完成目标。失败后先综合判断；优先审计并登记冻结正例复核，只有实质机制证据支持时才开启方法修正。
+当前夜间队列为已登记的100/200、ordered/frame_set、train96/validation400共8个correct面板与配对汇总；
+在形成新的实质机制证据前暂停完整Writer训练。
+专家建议先收尾本轮，若未获资格，优先复核旧冻结模型52/96对40/96的跨视频／初始化证据。
+该复核尚未启动；先核对顺序controls用途、完成具体预登记与成本判断，后续执行依据最新Owner授权和登记设计。
+后台队列只执行当前8面板，按首阶段判据输出初步候选／关闭建议；候选不等于选点或goal完成。
 
 唯一Writer已改为post-action obs[i]→actions[i+1:]，排除无未来动作标签的最后query；source与normalization冻结。
 624条train动作episode的CPU审计、四suite真实dataset首／尾8例、378项全套测试通过。
@@ -23,7 +32,7 @@ Owner新增要求整理最后一次专家意见后的情况与咨询prompt，由
 - frame_set：gpu02 `[0,1,2]`，tmux `ember-aligned-static`，controller3163713、rank3164131/34/36。
 - 两臂world3，共6张真实工作卡；每更新仍四suite等权4tasks、256queries，microbatch8、fresh纯主FM至100/200。
   gpu02既有低利用率148–186MiB进程已核实所有权，启动余量覆盖约42GiB实测reserved峰值；未修改其他用户进程。
-- 两臂100步检查点均已完成formal inspector检查：模型／trainer／三rank状态完整，新身份与offset1一致；进程继续至200。
+- 两臂100/200检查点均已完成formal inspector检查：模型／trainer／三rank状态完整，新身份与offset1一致；训练已退出。
   首段各400条件／25,600queries，18项任务／video／动作起点／noise等字段配对一致，各suite100条件，全部训练指标finite。
   初始24task诊断FM均.1532853388；100步有序.1146888600／静态.1146933126，静态减有序+.0000044525，
   paired-task bootstrap95%CI[−.0001895658,+.0002019832]跨零，9/24task为正；没有可信的诊断有序优势。
@@ -35,8 +44,20 @@ Owner新增要求整理最后一次专家意见后的情况与咨询prompt，由
 输出：`runs/outputs/execution_aligned_video_20260912/`；分析／exact launch／设备UUID／startup验证：
 `runs/analysis/execution_aligned_video_20260912/`。formal run_contract记录source和prior trainable均0及新offset1。
 首段证据为analysis下`training_step100_pairing.json`、`diagnostic_step100_comparison.json`及各step100/checkpoint_inspection.json。
-100/200的train96＋validation400 correct共8面板请求与运行脚本已准备；100步checkpoint完整，尚无新闭环分数。
-六张卡仍全部进行固定world3训练，待训练完成释放设备后接续物化／评测。
+两臂200步均segment_complete且exit0，各800条件／51,200queries；全部18项配对字段、offset1和finite检查通过。
+200动作留出有序.1068289227／静态.1068355200，静态减有序+.0000065973，
+task-bootstrap95%CI[−.0002747199,+.0002935941]跨零；10/24task正向。此项仍不是闭环资格。
+学习总墙钟有序5465.92秒／静态5708.51秒；完整证据见training_step200_pairing.json与diagnostic_step200_comparison.json。
+
+夜间后台tmux `ember-aligned-overnight`已启动，controller PID3744657；
+队列复用原materialize.sh/evaluate.sh，从原2ecf1770 frozen运行面生成4组、合计8个LoRA库，
+然后顺序完成8个correct面板，动态队列／persistent workers／long-first保持，每卡2个评测worker。
+每次launch现场检查两节点，选同节点至多6张有效设备；计入其它ymdai GPU后仍不超过保守总上限6。
+物化前quota实测956.4/1024GiB，当前study16GiB，初始8面板剩余峰值12GiB，预计968.4GiB；
+队列各阶段再次检查quota和共享容量，不启动任何条件性额外增长。
+状态为analysis/overnight_status.json，确切命令与现场准入证据为overnight_*日志／admission文件。
+完成后自动生成paired_summary.json、bounded_200_initial_decision.json与OVERNIGHT_READOUT.md；
+失败或资源不合格时停止后续启动并保留日志，不自行重训、参数扫描或扩大实验。当前尚无新闭环分数。
 接下来按实际checkpoint完成物化与strict配对，并报告全task/suite、breadth、R/G/L、churn与相邻稳定性。
 other／原生image参照只在资格触发后补；没有selected checkpoint，不运行sealed controls、Test或RL。
 

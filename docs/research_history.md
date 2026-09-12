@@ -1319,3 +1319,22 @@ validation100有序53／静态48，差额CI[0,.025]未达严格下界；200为33
 夹爪切换率=.0141226233；没有forward、梯度、新rollout或held动作访问。
 结合已核实post-action生产时序，登记[Execution-Aligned设计](execution_aligned_writer_design.md)，
 修正主FM与留出动作的未来标签对应，实际实施和新训练状态只看progress，不由登记推断已有性能结果。
+
+
+## 2026-09-13：执行时间对齐有界比较关闭，激活冻结正例交叉复核
+
+[Execution-Aligned设计](execution_aligned_writer_design.md)保留正确post-action未来标签对应，
+两臂fresh200及8个correct面板／1,984rows全部完成，冻结运行面2ecf1770，所有worker exit0。
+train100/200有序44/51、静态36/53；早期净增8未保持。validation有序61/72、静态65/81，
+两节点差额CI[−.0325,.01]/[−.0425,0]；有序200的S/O/G/L=0/62/8/2、breadth4，未获资格。
+相邻有序J=.60241、静态J=.60440；绝对总分提高不等于有益视频增量，完整解释见[findings§72](../findings.md)。
+关闭有界候选，不续训、扫描或进入条件性other／image；无selected checkpoint、最终controls、Test或RL。
+
+原件：`runs/analysis/execution_aligned_video_20260912/paired_summary.json`、`bounded_200_decision.json`，
+全部checkpoint、bank、学习诊断、raw rows及completion保留。夜间controller正常结束；早期共享文件可见性
+时差及有界恢复记录亦保留，无重复评测。新旧query支持不同，不把历史差异单因归给offset。
+
+新outcome前由3c2534db登记的[冻结正例复核§6](frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)
+由完整non-pass触发：旧611770d1固定200双模型，24task×4video×8state加独立source192，共1,728rollout上限，
+零新训练／编译。它用于检验能力差额的跨条件支持，不能据此选checkpoint或宣称顺序因果与迁移。
+具体启动及结果仍以progress和新formal artifacts为准；本条登记不预写尚未发生的结果。

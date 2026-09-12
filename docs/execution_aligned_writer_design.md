@@ -1,6 +1,7 @@
 # Execution-Aligned Video Writer
 
-2026-09-12登记。当前阶段先修正并验证执行监督的时间对应，再完成有界有序／无序比较。
+2026-09-12登记，2026-09-13完成并关闭。8面板未获资格，不追加训练；结果见findings§72及progress。
+以下保留原登记的时间对应修正与有界比较合同。
 Owner授权内推进；整体目标仍是正确action-hidden内容和顺序在唯一完整LoRA中的可重复闭环收益，
 跨同task视频、初始化、相邻checkpoint及固定validation迁移。暂不要求145/400。
 

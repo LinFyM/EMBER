@@ -1,91 +1,53 @@
 # EMBER progress
 
-## 当前状态：训练侧有序优势未相邻保持，最后两项validation评测中（2026-09-13）
+## 当前状态：时间对齐候选关闭，激活冻结正例正确收益复核（2026-09-13）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
-**当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
-综合机制判断及旧endpoint／expert近邻核对见findings§71；前轮冻结视频先验比较保持关闭。
+**当前active design：[冻结正例正确收益复核](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)§6。**
+Execution-Aligned已按完整证据关闭，当前不再开展完整Writer训练。新复核仍使用原611770d1冻结运行面，
+不恢复旧模型的训练或把旧实现并回canonical源码。最新专家建议、竞争解释与停止分支见该审计§1–6及findings§70–72。
 
-Owner新增要求整理最后一次专家意见后的情况与咨询prompt，由Owner自行转发。
-已形成[整体复审prompt](docs/review_materials/20260912_followup/EXPERT_PROMPT.md)：包含已完成的正负证据、
-在途结果边界及假设裁决／视频知识可识别性／下一项判别实验的问题。当前运行仍按下述既定合同执行。
+### 时间对齐实验：完整结果与裁决
 
-Owner随后提供专家整体复审，并在睡前要求自主有效推进，随后明确要求重新设置goal。
-新goal已激活：在证据支持下自主完成分析、理论修正、设计、实现与验证；目标仍是可重复视频收益及保持／迁移，
-不以评测收尾或局部涨分完成目标。失败后先综合判断；优先审计并登记冻结正例复核，只有实质机制证据支持时才开启方法修正。
-当前夜间队列为已登记的100/200、ordered/frame_set、train96/validation400共8个correct面板与配对汇总；
-在形成新的实质机制证据前暂停完整Writer训练。
-专家建议先收尾本轮，若未获资格，优先复核旧冻结模型52/96对40/96的跨视频／初始化证据。
-该复核尚未启动；先核对顺序controls用途、完成具体预登记与成本判断，后续执行依据最新Owner授权和登记设计。
-后台队列只执行当前8面板，按首阶段判据输出初步候选／关闭建议；候选不等于选点或goal完成。
-等待期完成[冻结正例复核审计](docs/frozen_positive_replication_audit.md)：旧96配对核验为新增15／丢失3；
-原面板混淆video与state，768交叉面板的判别力依变异结构而异。正确臂可复用已有192个LoRA，
-两模型加source共1,728次新rollout；8个fixed-video×states0–7映射已通过原运行面CPU合同核验，
-无需改模型或冻结源码。顺序干预用途／合同尚待登记，未启动新复核。
+| 节点 | train96 ordered / frame_set | validation400 ordered / frame_set |
+| --- | --- | --- |
+| 100 | 44 / 36 | 61 / 65 |
+| 200 | 51 / 53 | 72 / 81 |
 
-唯一Writer已改为post-action obs[i]→actions[i+1:]，排除无未来动作标签的最后query；source与normalization冻结。
-624条train动作episode的CPU审计、四suite真实dataset首／尾8例、378项全套测试通过。
-首次两臂在GPU／output初始化前exit1，原因是入口仍要求上一候选登记名称；已修正并通过43项相关测试。
-外层shell曾在preflight拒绝后继续调用launch，重试已分离资格检查与启动调用。失败日志和原命令保留在analysis/failed_attempts，
-首次无训练更新或checkpoint。新formal来自clean pushed detached `2ecf17704c68644b948ad6655b2d73d468cf6200`，
-冻结树`.codex/worktrees/execution-aligned-frozen`；旧checkpoint没有用于初始化。
+- train100有序净增8，task-cluster95%CI[.03125,.13542]；200净额−2，CI[−.08333,.04167]，早期优势未相邻保持。
+- validation100净额−4，CI[−.0325,.01]；200净额−9，CI[−.0425,0]，两节点均未达到正向资格。
+  200有序相对静态保留62／新增10／丢失19，churn29、J=.68132；S/O/G/L为0/62/8/2对1/67/12/1，
+  breadth4对6，仅Long净增1。区间端点0不写成严格负区间，也不是证实零效应。
+- 有序validation61→72：保留50／新增22／丢失11，churn33、J=.60241，breadth5→4，Goal13→8。
+  静态65→81：保留55／新增26／丢失10，churn36、J=.60440，breadth5→6。
+  正确条件绝对能力改善未兑现有序增量；source47的任务异质性很大，不能仅凭总数超source完成目标。
+- 2ecf1770 clean pushed冻结树，两臂world3各fresh200、800条件／51,200queries；100/200完整checkpoint、
+  配对采样、offset1与finite验证通过。两节点动作留出FM有序差额均跨零；全部8个bank／1,984rows及worker exit0已核验。
+  唯一Writer保留obs[i]→actions[i+1:]正确时序；该修正不被负结果撤销，也不能将历史差异单因归给offset。
+- 不续训、不扫描参数，未触发other／原生image资格；没有selected checkpoint，不运行最终controls、Test或RL。
+  这是有效科学non-pass，关闭的是此有界配方，不证明视频到LoRA或普通FM普遍不可能。
 
-### 本轮实际执行
+原件：`runs/outputs/execution_aligned_video_20260912/`；
+`runs/analysis/execution_aligned_video_20260912/paired_summary.json`、`bounded_200_decision.json`、
+`training_step200_pairing.json`、`materialization_mapping_audit.json`及各completion保留全部task/suite/source与相邻成功集合。
+后台tmux ember-aligned-overnight已complete，controller3865623已退出。首面板结束后的共享文件可见性时差恢复记录及
+attempt1日志保留；其余交接均通过，没有重复训练、物化或rollout。
 
-- ordered：gpu01 `[0,5,6]`，tmux `ember-aligned-ordered`，controller3864138、rank3864157/58/59。
-- frame_set：gpu02 `[0,1,2]`，tmux `ember-aligned-static`，controller3163713、rank3164131/34/36。
-- 两臂world3，共6张真实工作卡；每更新仍四suite等权4tasks、256queries，microbatch8、fresh纯主FM至100/200。
-  gpu02既有低利用率148–186MiB进程已核实所有权，启动余量覆盖约42GiB实测reserved峰值；未修改其他用户进程。
-- 两臂100/200检查点均已完成formal inspector检查：模型／trainer／三rank状态完整，新身份与offset1一致；训练已退出。
-  首段各400条件／25,600queries，18项任务／video／动作起点／noise等字段配对一致，各suite100条件，全部训练指标finite。
-  初始24task诊断FM均.1532853388；100步有序.1146888600／静态.1146933126，静态减有序+.0000044525，
-  paired-task bootstrap95%CI[−.0001895658,+.0002019832]跨零，9/24task为正；没有可信的诊断有序优势。
-  这是训练侧动作留出结果，不是视频闭环收益或checkpoint选择依据，不触发配方调整或提前结束。
-  两臂训练更新分别累计2568.99／2667.07秒（不含加载／诊断／保存），reserved峰值42.0645／42.0625GiB。
-- 启动前strg01独立data1用量941.2/1024GiB，已含冻结树；初始阶段增长预算28GiB，整个study含条件后续70GiB，
-  预计峰值1011.2GiB，共享余量83TiB。后续物化/新增长前刷新剩余quota与GPU。
+### 当前复核：固定模型、交叉条件、一次预算
 
-输出：`runs/outputs/execution_aligned_video_20260912/`；分析／exact launch／设备UUID／startup验证：
-`runs/analysis/execution_aligned_video_20260912/`。formal run_contract记录source和prior trainable均0及新offset1。
-首段证据为analysis下`training_step100_pairing.json`、`diagnostic_step100_comparison.json`及各step100/checkpoint_inspection.json。
-两臂200步均segment_complete且exit0，各800条件／51,200queries；全部18项配对字段、offset1和finite检查通过。
-200动作留出有序.1068289227／静态.1068355200，静态减有序+.0000065973，
-task-bootstrap95%CI[−.0002747199,+.0002935941]跨零；10/24task正向。此项仍不是闭环资格。
-学习总墙钟有序5465.92秒／静态5708.51秒；完整证据见training_step200_pairing.json与diagnostic_step200_comparison.json。
+条件性合同在新outcome前已由3c2534db登记，本轮完整non-pass使其现在生效。
+固定旧611770d1的ordered200／frame_set200（原52/96对40/96），全部train24、teacher46–49、states0–7全交叉。
+两模型各768rows，source单独192rows，共1,728次实际rollout；复用192个原LoRA，零新Writer调用、零新训练。
+新映射保留原编译身份，另存于原bank旁，不覆盖原manifest；原运行树保持clean pushed detached。
 
-夜间后台tmux `ember-aligned-overnight`继续运行，当前controller PID3865623（attempt2）；
-队列复用原materialize.sh/evaluate.sh，已从原2ecf1770 frozen运行面完成4组、合计8个sealed LoRA库，
-全部物化exit0；1,984个条件的跨arm／checkpoint映射一致，validation每task全部50视频各一次，
-证据为analysis/materialization_mapping_audit.json。已进入顺序8面板评测，dynamic queue／persistent workers／long-first保持。
-首个ordered100 train96在gpu01[0,1,3,4,5,6]、每卡2worker完成：44/96，全部12个worker exit0，
-墙钟250.98秒。匹配frame_set100已完成36/96，墙钟255.45秒、所有worker exit0。
-完整配对有序新增10／丢失2、保留34，churn12、J=.73913；task-cluster95%差额CI[.03125,.1354167]为正。
-Spatial/Object/Goal/Long有序9/13/15/7，静态7/12/12/5，四suite净收益均为正，有序breadth18。
-证据为analysis/step100_train_comparison.json（含全部task/suite/source比较）；只支持该训练任务面板的局部增量，
-还不能证明视频顺序因果性或相邻保持。100步validation已完整为有序61/400、静态65/400：
-有序新增8／丢失12、保留53，churn20、J=.72603，task-cluster95%差额CI[−.0325,.01]跨零。
-Spatial/Object/Goal/Long有序0/47/13/1，静态0/52/12/1，有序breadth5；source47仅作同口径基线。
-训练侧局部正增量未在100步validation兑现，不能把CI跨零称为证实零效应。
-完整4面板、全部task/suite/source配对与墙钟见analysis/step100_complete_comparison.json。
-100步两项validation的全部worker均exit0。200步train也已完整：有序51/96、静态53/96，
-有序相对静态新增5／丢失7、保留46，CI[−.0833333,.0416667]跨零；Spatial/Object/Goal/Long为14/17/14/6对16/18/13/6。
-相邻有序44→51，保留36／新增15／丢失8，churn23、J=.61017，breadth18→17；
-静态36→53，保留28／新增25／丢失8，churn33、J=.45902，breadth16→17。
-因此训练总体能力仍获取，但100步有序优势未保持；不能以总分上升代替过程增量。
-完整训练相邻证据为analysis/train_adjacent_comparison.json。队列正在最后两项200步validation，仍完成原登记8面板。
-首个面板结束后，远端已写completion约1秒，controller首次读取却报FileNotFound，随后该文件可读且完整。
-按共享文件可见性时差在ops脚本加入最长60秒的有界读取等待，具体NFS缓存层未独立定位；不改变评测实现。
-旧controller已退出，attempt1日志保留；恢复前核验已完成96rows及checkpoint身份并跳过全部8库／首面板，
-只接续剩余7面板，无重训、重复物化或重复rollout。frame_set100完成后已自动进入validation，实际交接通过。
-每次launch现场检查两节点，选同节点至多6张有效设备；计入其它ymdai GPU后仍不超过保守总上限6。
-物化前quota实测956.4/1024GiB，当前study16GiB，初始8面板剩余峰值12GiB，预计968.4GiB；
-首个评测准入时data1实测966.0GiB，评测剩余预算2GiB，预计968.0GiB；
-队列各阶段再次检查quota和共享容量，不启动任何条件性额外增长。
-状态为analysis/overnight_status.json，确切命令与现场准入证据为overnight_*日志／admission文件。
-完成后自动生成paired_summary.json、bounded_200_initial_decision.json与OVERNIGHT_READOUT.md；
-失败或资源不合格时停止后续启动并保留日志，不自行重训、参数扫描或扩大实验。100步训练侧局部正例不构成方法资格，原注册分支与条件性冻结复核触发条件保持。
-接下来按实际checkpoint完成物化与strict配对，并报告全task/suite、breadth、R/G/L、churn与相邻稳定性。
-other／原生image参照只在资格触发后补；没有selected checkpoint，不运行sealed controls、Test或RL。
+脚本已准备，原运行面的8个映射CPU合同已验证，三种交叉bootstrap的数学常量校验通过。
+下一步刷新两节点GPU、data1独立quota与输出峰值预算后启动。运行／确切命令／完整配对统计保存到
+`runs/analysis/frozen_positive_replication_20260913/`，输出到同名outputs根；此刻尚无该复核新结果。
+
+复核要求总体ordered−static与ordered−source在三种登记95%区间下界均>0，至少两个suite净增、四条teacher方向均正。
+它只确认固定两模型的跨条件能力差额；通过也不证明输入顺序因果性、相邻保持或未见task迁移。
+负向、不确定或跨视频异质性均按原1,728rows上限停止，不自动追加训练或面板。最终顺序controls边界保持，
+任何后续实质机制修改仍须新增证据、近邻历史区别及可失败预测。
 
 ### 上一候选：冻结视频先验比较已关闭
 

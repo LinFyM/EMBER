@@ -8,24 +8,20 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 先完成当前队列，负结果后优先审计冻结正例复核的判别力与合同，再决定执行。整体目标未达时不标记完成。
 
-**当前active design：**[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。
-前轮8面板已关闭，训练200局部有序正例与validation反转完整保留。综合审计见findings§71。
+**当前active design：**[冻结正例正确收益复核](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)§6。
 
 ### 当前执行计划
 
-1. **已完成机制选择：**排除重命名的endpoint／专家蒸馏；依据post-action生产时序校正主执行监督。
-2. **实现与验证已完成：**唯一Writer强制obs[i]对应actions[i+1:]；训练／动作留出共用，末query排除，无teacher截断。
-   验证真实下一状态转移、padding、显式旧消费者口径及新训练／物化身份；历史checkpoint只用原冻结runtime。
-3. **正式学习已完成：**2ecf1770 clean pushed冻结树，两臂各world3完成fresh200，各800条件／51,200queries；100/200完整checkpoint与全800条件配对已验证，两节点动作留出有序差额CI均跨零，不能替代闭环。
-4. **睡前自主执行已启动：**后台先完成100/200两节点train96与validation400 correct共8面板／1,984rows，并自动汇总。按新标签合同匹配ordered／frame_set；有相邻正向候选才评估后续other与强静态参照资格。
-5. 保持全部task/suite、breadth、R/G/L、churn及相邻/换视频资格；选点冻结后的sealed内容／顺序controls通过才能完成goal。
-   时间对应的正确性不是有益过程的性能证据；无资格则关闭有界学习，不扫描offset或局部参数。
-
-本轮未通过则关闭，不追加完整Writer训练或参数扫描。下一项优先准备旧52/96对40/96冻结正例复核：
-已在[冻结正例审计§6](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)登记条件性的正确收益复核：
-24task×4video×8state，两模型加source共1,728rows；不新增训练，复用旧LoRA，预定配对交叉统计与停止分支。
-当前尚未触发或启动；顺序干预与最终controls用途另行核对，不能静默用于模型选择或架构修正。
-夜间后台队列范围止于本轮完整correct证据与初步裁决，异常保留日志，整体目标不因队列完成而完成。
+1. **时间对齐实验已完整关闭：**两臂fresh200及8面板／1,984rows全部完成。train100/200为44/51对36/53；
+   validation为61/72对65/81。训练侧早期优势未保持，validation两节点有序差额均负，无资格候选；不续训或扫描。
+2. **已激活预注册冻结复核：**固定旧611770d1 ordered200与frame_set200，24task×4video×8state，
+   两模型各768加source192，共1,728rows。仅复用原LoRA／运行面，新映射不覆盖原件；先完成live资源准入再启动。
+3. 完整报告task/suite、四video、source、R/G/L、churn、换视频成功集合；source只计192个实际outcome，
+   使用预定的固定task交叉、多层交叉、task均值三种20,000次配对bootstrap，不使用IID行重采样。
+4. 按预定下界、suite及四video方向条件判定跨条件支持；不确定／负向／异质结果均遵守一次预算，不自动扩大面板。
+   阳性也不等于顺序因果、相邻保持或validation迁移；后续修正须先提出实质机制证据、历史差异与可失败预测。
+5. 整体goal保持：可重复有益视频增量、跨视频／初始化／相邻及固定validation迁移，并在合法冻结后确认最终controls。
+   当前未选checkpoint，不启动顺序干预、Test或RL；不会把本次固定模型诊断当作正式方法选择。
 
 用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
 formal来自clean pushed frozen commit，后续新增长重新检查独立quota与两节点实时资源。

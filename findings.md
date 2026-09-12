@@ -990,3 +990,44 @@ SEOD129→135→143→136、GOMQ151→135→131均未稳定。旧expert在离线
 改为obs[i]/actions[i+1:]，最后无未来标签的观测不参与query采样。完整teacher末帧仍保留；source及normalization冻结。
 这首先是监督时间一致性修正，是否使已有训练有序收益迁移仍待两臂fresh100/200有界比较。
 新旧合法query支持不同，旧分数不冒充匹配训练反事实；不由旧强模型的存在否定正确时间对应，也不由修正正确性宣称目标完成。
+
+
+## 72. 正确时间对应仍未获得相邻有序增量，转入固定正例复核（2026-09-13）
+
+Execution-Aligned在冻结2ecf1770运行面完成两臂fresh200、全部8个correct面板／1,984rows；
+每臂800条件／51,200主FM queries，配对采样、offset1、finite、完整checkpoint与全部worker exit0均通过。
+
+| 节点 | train96 ordered / frame_set | validation400 ordered / frame_set |
+| --- | --- | --- |
+| 100 | 44 / 36 | 61 / 65 |
+| 200 | 51 / 53 | 72 / 81 |
+
+train100差额+8、task-cluster95%CI[.03125,.13542]；200差额−2、CI[−.08333,.04167]。
+有序相邻R/G/L=36/15/8、J=.61017，静态28/25/8、J=.45902。两者训练能力提高，早期有序优势未保持。
+validation100差额−4、CI[−.0325,.01]；200差额−9、CI[−.0425,0]。
+200有序相对静态R/G/L=62/10/19、churn29、J=.68132，breadth4对6；S/O/G/L为0/62/8/2对1/67/12/1。
+CI上界等于0不是严格负区间，也不能解释为已证明零效应；未获正向资格是明确的决策事实。
+
+有序validation61→72：R/G/L=50/22/11、churn33、J=.60241，breadth5→4、Goal13→8；
+静态65→81：55/26/10、churn36、J=.60440，breadth5→6。总分提高与视频增量及覆盖保持再次分离。
+两臂200均超过source47，但有序对sourceR/G/L=13/59/34，task-cluster差额CI[−.1975,.3275]；
+静态15/66/32、CI[−.1675,.36]。任务间效果高度异质，总体提高不能替代有益过程和稳定迁移。
+主FM留出100/200的静态减有序差额仅.0000044525/.0000065973，task区间均跨零，不提供独立的有序读出优势。
+
+正确obs[i]→actions[i+1:]监督合同保留。与旧611770d1相比的绝对分数改善只作历史描述：
+合法query支持和训练执行不同，不是逐query匹配的offset反事实，不能单因宣称时间错位解释了旧失败。
+本轮否定的是“该修正与现有配方在登记200步窗口足以建立可重复有序增量”的预测，不是所有FM或视频编译。
+已有局部正例仍限制普遍否定，但当前证据也不足以认定表示已充分、只剩Compiler。
+因此停止连续完整Writer训练和局部参数／模块补丁；不因总分上涨追加300或恢复旧课程。
+
+条件性[冻结正例审计§6](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)
+在本轮新outcome前登记，现由完整non-pass触发。固定旧200有序52/96对静态40/96，
+用train24×teacher46–49×states0–7的交叉面板检验该能力差额是否依赖原先四个对角video/state格点。
+该实验不新增训练或编译，用1,728实际rollout区分稳定较大优势、跨视频异质性和未能复现／不确定性；
+不直接定位表示／编译根因，不证明输入顺序因果或未见任务迁移，阳性不自动授权加模块，阴性不扩大为普遍不可能。
+原始收益、所有分组与三种预定交叉统计完整保留；未通过不自动扩大预算。
+
+本轮原件：`runs/analysis/execution_aligned_video_20260912/paired_summary.json`、`bounded_200_decision.json`、
+`training_step200_pairing.json`、`diagnostic_step200_comparison.json`及8项completion。
+全部checkpoint／LoRA／raw rows保留。没有selected checkpoint，未触发other／强image参照、最终controls、Test或RL。
+整体goal未完成；后续活跃状态以progress为准。

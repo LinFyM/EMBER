@@ -36,6 +36,10 @@ ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒�
 单worker实测约10.8GiB显存，据此采用双worker；实际双worker合计约23.6GiB，吞吐以完整面板报告。
 `ember-prior-frame-set`已在释放的0/1/3/4四卡从同一冻结commit fresh启动；正式run contract及四rank存活已核验。
 其配置仅`model.process_mode`和`video_prior.mode`不同，逻辑曝光／优化／数据／共同初始化合同均相同，checkpoint固定100/200。
+静态臂100 checkpoint已保存并通过正式身份检查，继续学习至200；100的物化脚本已准备，等待现场GPU额度。
+`step100/learning_comparison.json`核验两臂实际400条件／25,600queries、18个采样字段、world4拓扑与信息墙一致。
+train24留出主FM为有序.113733／静态.113939；有序改善.0002066，task-cluster95%CI[−.0000675,.0005043]跨零，
+17/24任务方向为正。初始诊断一致；该损失定位不用于checkpoint选择或替代闭环资格。
 有序200的correct train96／validation400库已全部sealed，`ember-prior-mat200`以exit0退出；
 与100的全部496条state–video映射逐行一致，LoRA由200独立生成。
 `ember-prior-train200`已在释放的第6卡启动双worker训练96闭环，24tasks／96states／30动态分片，两个worker均ready。

@@ -57,8 +57,9 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   相对source task-cluster95%差额区间[.166667,.354167]。这是训练任务适配收益，尚无匹配frame_set有序增量结论。
 - train96 other完整35/96、breadth17，source R/G/L=11/24/4。correct/other四suite S/O/G/L分别9/9/15/7、9/8/12/6；
   换视频成功集合重合33、churn9、J=.78571，correct−other差额95%CI[-.010417,.114583]。两臂进程均已退出。
-- gpu02:2继续validation400 correct（tmux `ember-local-action-ordered-val-c100`，3个persistent workers）；
-  gpu02:0接续ordered 200节点LoRA物化（tmux `ember-local-action-ordered-mat200`），validation100 other尚待空闲设备。
+- ordered 200节点四个LoRA库均已封存，物化进程退出；100/200所有train96/validation400 correct/other条件库齐备。
+- gpu02:2与gpu02:0分别运行validation100 correct/other（tmux `ember-local-action-ordered-val-c100`／`ember-local-action-ordered-val-o100`），
+  各3个persistent workers。correct已完成100/400条，other正式400队列已准备；尚无完整validation分数。
   frame_set与评测共享物理GPU总数6，未超过Owner额度。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
@@ -70,8 +71,10 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - ordered退出后，frame_set已从同一clean pushed detached 5f4f440c在gpu01:0/4/5/6、world4 fresh启动，
   tmux `ember-local-action-frame-set`，精确命令及新preflight在`runs/analysis/local_action_grounded_20260912/frame_set/`。
   启动前四卡均无进程、0MiB，节点可用RAM460GiB；quota896.1GiB、study10.028GiB，40GiB预算剩余29.972GiB，投影926.072GiB。
-  actual run contract确认fresh/world4/source trainable=0；0步24主诊断及384局部诊断完整，已执行至少5次正式更新。
-- 下一步完成ordered 100节点其余面板与200节点物化/评测，同时跟进frame_set登记的100/200节点。
+  actual run contract确认fresh/world4/source trainable=0；0步24主诊断及384局部诊断完整，已执行至少60次正式更新。
+- validation100 other接续前，两节点preflight确认gpu02:0仅223MiB低利用率context；quota898.4GiB、study12.418GiB，
+  原40GiB预算剩余27.582GiB，投影925.982GiB。精确命令与资源记录在`ordered/step100/eval_validation_other_launch.json`。
+- 下一步完成ordered 100节点其余面板与200节点闭环评测，同时跟进frame_set登记的100/200节点。
   当前没有selected checkpoint、sealed controls或Test使用，goal未完成。
 
 ### Owner最新纠正与执行调整

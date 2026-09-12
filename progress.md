@@ -64,6 +64,10 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - validation100 other完整48/400，S/O/G/L=0/39/1/8、breadth5，source R/G/L=4/44/43、churn87、J=.04396。
   correct/other成功重合36、churn21、J=.63158，差额task-cluster95%CI[−.025,.005]。两组正确视频总体均接近source，
   但成功任务组成大幅改变；仍未显示总体迁移改善。两项400评测及进程均已完成。
+- ordered200 validation correct完整30/400，S/O/G/L=1/29/0/0、breadth3；source R/G/L=2/28/45、churn73、J=.02667。
+  相较100步45/400，R/G/L=21/9/24、churn33、J=.38889，差额task-cluster95%CI[−.1075,.02]；
+  Object37→29、Long8→0、Spatial0→1，Goal仍0。总体迁移继续偏弱；匹配frame_set及200换视频结果待齐。
+  400rows/36jobs完整、评测1769.79秒，进程退出。
 - correct评测进程已退出，frame_set100/200物化随后均完成；当前资源接续见下节。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
@@ -102,13 +106,24 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   ordered200 train correct完整46/96，S/O/G/L=15/12/12/7、breadth17，source R/G/L=13/33/2、churn35、J=.27083。
   相较自身100步40/96，R/G/L=31/15/9、churn24、J=.56364，差额task-cluster95%CI[−.052083,.1875]；
   总分增加但breadth19→17，尚无可信相邻改善，完整匹配frame_set结果待齐。96rows/36jobs全部完成，进程退出。
+- ordered200 train other完整49/96，S/O/G/L=16/12/14/7、breadth18；source R/G/L=14/35/1、churn36、J=.28。
+  自身100→200为35→49，R/G/L=28/21/7、churn28、J=.5，task-cluster95%CI[.052083,.25]，显示这一训练面板的相邻适配改善。
+  200 correct/other重合43、churn9、J=.82692、差额95%CI[−.083333,.020833]；不能替代匹配有序增量及validation迁移。
+  96rows/36jobs完成、进程退出。
 - 首个匹配训练结果：frame_set100 correct完整39/96，S/O/G/L=8/9/15/7、breadth19，source R/G/L=11/28/4。
   ordered100 correct为40/96；相对frame_set R/G/L=35/5/4、churn9、J=.79545，task-cluster95%差额CI[−.03125,.052083]。
   两臂仅Spatial净差1，其余suite总数相同，尚无可信有序结构增益。原件及逐task数据在`paired_summary.json`；96rows/36jobs完成、进程退出。
-- 当前已完成6/16完整闭环面板。gpu01:4/5以6 workers评测ordered200 validation correct，gpu01:6以3 workers评测ordered200 train other；
-  gpu01:0评测frame_set100 train other，gpu02:0/2各以3 workers评测frame_set200 train correct/other。
-  五项评测均已核对活进程及实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
-  最新接续时quota910.9GiB、study24.840GiB，原40GiB预算剩余15.160GiB，投影926.060GiB；大型checkpoint/bank写出已完成。
+- frame_set100 other完整38/96，S/O/G/L=7/9/15/7、breadth19；ordered100 other35/96，相对它R/G/L=30/5/8、
+  churn13、J=.69767，差额task-cluster95%CI[−.09375,.03125]。有序组两套视频对照差额+1/−3均未形成可信增益。
+  frame_set自身correct/other重合33、churn11、J=.75；36jobs/96rows完成、进程退出。
+- frame_set200 correct完整42/96，S/O/G/L=14/12/12/4、breadth17；source R/G/L=13/29/2、churn31、J=.29545。
+  ordered200 correct46/96，相对frame_set R/G/L=39/7/3、churn10、J=.79592，差额task-cluster95%CI[−.020833,.114583]。
+  净收益Long+3、Spatial+1，另两suite相同；当前仍无可信有序结构增量。frame_set自身100→200 R/G/L=29/13/10、churn23、J=.55769。
+  36jobs/96rows完成、进程退出；还需200换视频及validation的匹配结果。
+- 当前已完成10/16完整闭环面板。gpu01:0/4/5以9 workers评测frame_set100 validation correct，
+  gpu01:6以3 workers评测frame_set100 validation other；gpu02:0接续ordered200 validation other，gpu02:2继续frame_set200 train other。
+  四项评测均已核对活进程与实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
+  最新接续时quota910.9GiB、study24.861GiB，原40GiB预算剩余15.139GiB，投影926.039GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
   原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。
 

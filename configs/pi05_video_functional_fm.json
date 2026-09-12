@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_video_functional_writer_config_v1",
-  "status": "available_matched_control_not_launched",
-  "design": "docs/video_functional_writer_design.md",
+  "schema_version": "ember_local_action_writer_config_v1",
+  "status": "registered_local_action_grounding_comparison",
+  "design": "docs/local_action_grounded_writer_design.md",
   "data": {
     "seed": 7,
     "task_ids": [
@@ -98,7 +98,7 @@
     "frame_stride": 5,
     "include_last_frame": true,
     "extra_meta_tasks": [],
-    "version": "train24_supervised_suite_rng_cross_episode_k1_v2",
+    "version": "train24_cross_episode_k1_local_action_v1",
     "conditions_per_task": 1
   },
   "model": {
@@ -113,7 +113,7 @@
     "edge_chunk": 32,
     "activation_checkpoint": true,
     "process_mode": "ordered",
-    "schema": "video_conditioned_writer_v2",
+    "schema": "video_conditioned_writer_v3",
     "architecture": "task_token_adjacent_full_h_v1"
   },
   "observer": {
@@ -137,7 +137,7 @@
     "weight_decay": 0.0001,
     "grad_clip": 1.0,
     "precision": "Writer including its reading module and FM BF16 autocast; native mixed execution without outer autocast; FP32 trainable parameters",
-    "loss": "grouped_functional_credit",
+    "loss": "main_fm_plus_local_action_fm",
     "normalizer": 1.0,
     "warmup_updates": 8,
     "joint_train_all_writer_modules": true
@@ -148,8 +148,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Design section10: teacher VL Meta; same encoder/decoder and mu1 rho0; fresh bounded200; controls require registration",
-    "qualification_registration": "docs/video_functional_writer_design.md",
+    "initial_use": "True local post-action RGB transition grounding; fresh matched ordered/frame_set, updates100/200",
+    "qualification_registration": "docs/local_action_grounded_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -333,22 +333,10 @@
         49
       ],
       "K": 1,
-      "queries_per_task": 32,
+      "queries_per_task": 128,
       "seed": 20260908,
       "gradients": false,
       "checkpoint_selection": false
-    },
-    "plateau": {
-      "minimum_informative_qualification_nodes": 3,
-      "validation_best_gain_at_most": 5,
-      "held_fm_relative_improvement_at_most": 0.02,
-      "interpretation": "multiple informative correct nodes, sufficient cumulative supervised exposure and training capability jointly; early64 or192 updates do not establish saturation",
-      "exposure_reference_queries": {
-        "v5_2": 75600,
-        "v6_fast": 192000,
-        "sft": 230400
-      },
-      "train96_best_gain_at_most": 2.4
     },
     "fresh_initialization": {
       "writer": "all trainable modules fresh, legal LoRA identity",
@@ -431,15 +419,37 @@
         "correct_minus_wrong_cross_suite",
         "correct_minus_shuffled"
       ]
-    }
+    },
+    "local_action_validation": {
+      "optimizer_updates": [
+        0,
+        100,
+        200
+      ],
+      "action_demos": [
+        42,
+        43,
+        44,
+        45
+      ],
+      "clips_per_task": 16,
+      "noise_draws": 8,
+      "seed": 20260913,
+      "gradients": false,
+      "checkpoint_selection": false
+    },
+    "pure_fm_followup": "Only after primary paired behavioral qualification; fresh common initialization and matched exposure"
   },
-  "update_version": "video_functional_vl_credit_v1",
+  "update_version": "local_action_grounded_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",
-  "auxiliary": {
+  "local_action": {
     "enabled": false,
     "weight": 1.0,
-    "distill_start": 32,
-    "distill_end": 100,
-    "distill_max": 0.0
+    "frames": 4,
+    "frame_stride": 5,
+    "action_steps": 15,
+    "noise_draws": 8,
+    "diagnostic_clips_per_task": 16,
+    "diagnostic_seed": 20260913
   }
 }

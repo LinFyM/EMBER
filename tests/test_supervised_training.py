@@ -124,7 +124,7 @@ class _ToySupervisedEngine:
         loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
         return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"],
-                "reader_loss": 0., "distill_loss": 0., "source_loss": 0., "rho": 0.}
+                "local_flow_loss": 0., "local_weight": 0.}
 
 @pytest.mark.parametrize("conditions", [1, 2])
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):

@@ -14,13 +14,13 @@ Owner 2026-09-12要求改变连续负结果后的推进方式：停止自动串�
 外部视频预训练仅为待分析的知识来源，不自动采纳。这不是等待额外人工审批，也不改变既有评测门槛。
 
 已完成[过程获取的监督关系复核](docs/video_process_acquisition_analysis.md)：推荐具体审视action训练池的
-同episode局部观察—动作配对，区别于已执行的跨episode功能／phase监督。该新支路需要明确现有跨episode
-合同的适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，进入实现，尚未开始新学习。
+同episode局部观察—动作配对，区别于已执行的跨episode功能／phase监督。该新支路的跨episode
+合同适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，实现与真实profile已通过，尚未开始新正式学习。
 
 ### 当前执行计划
 
-1. 在隔离工作树实现局部post-action转移数据、训练专用动作FM头及共享encoder/native重放；退役旧执行读出与蒸馏。
-2. 验证信息墙、局部标签索引、无序参照、梯度归属、采样恢复和完整checkpoint；真实最长视频profile确定物理执行。
+1. 已完成隔离实现局部post-action数据、动作FM头及共享encoder/native重放；旧执行读出与蒸馏已退役。
+2. 已通过信息墙、索引、无序参照、梯度、采样恢复及checkpoint定向检查；93帧真实profile选frame8/policy8。
 3. 从clean pushed frozen commit开展ordered/frame_set匹配学习，预登记100/200、局部与主动作留出及train96/validation400两臂。
 4. 按新设计分开裁决局部获取、LoRA收益与迁移；只有可信正结果才进入无辅助归因参照与最终冻结后的sealed controls。
 

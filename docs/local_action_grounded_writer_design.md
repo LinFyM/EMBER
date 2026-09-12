@@ -111,3 +111,10 @@ Test继续封存。独立RL、K>1与长期145/400阶段均不混入当前结果�
 启动前两节点GPU、总额度、NUMA/NCCL和strg01独立quota按现有合同实查，记录增长预算与精确命令。
 不复制source/data/models，不保留整action池新cache。四帧局部prefix只作当次工作量，必要缓存仅冻结输入embedding。
 峰值与吞吐按实际profile裁决，不用11.27%的输入帧数比例代替运行时间证据。
+
+### 首次执行参数（学习分数产生前登记）
+
+真实93帧profile两次完整更新通过，第二次17.558秒，allocated37.837GiB、reserved40.936GiB。
+局部4帧支路约0.5秒，frame chunk8 / policy microbatch8保持；不继承profile权重。
+按当前总额度，ordered与frame_set各使用同一四卡拓扑顺序fresh学习，同时在其它合法设备处理节点评测，
+每臂200updates约一小时，两个节点与曝光不变。精确GPU/commit/命令与动态资源只记launch contract/progress。

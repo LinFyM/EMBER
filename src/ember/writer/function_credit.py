@@ -1,8 +1,4 @@
-"""Native paired FM predictions and distinct compiled/teacher cotangents.
-
-Every source and compiled prediction uses the official PI05 model.forward and
-the same action/noise/time sample. No query feature enters video compilation.
-"""
+"""Official full-horizon main FM credit and separately keyed local FM samples."""
 from __future__ import annotations
 
 from contextlib import ExitStack
@@ -56,17 +52,17 @@ def mean_velocity_loss(prediction: Tensor, target: Tensor, width: int) -> Tensor
 
 
 class NativeFlowPrediction(nn.Module):
-    """Expose velocity and its actual normalized input from one native forward."""
+    """Expose velocity from one official native forward."""
 
     def __init__(self, policy: nn.Module) -> None:
         super().__init__()
         self.policy = policy
 
-    def forward(self, sample: FlowSample) -> tuple[Tensor, Tensor]:
+    def forward(self, sample: FlowSample) -> Tensor:
         captured = []
 
         def capture(module, args, output):
-            captured.append((output, args[0]))
+            captured.append(output)
 
         handle = self.policy.model.action_out_proj.register_forward_hook(capture)
         try:
@@ -75,10 +71,10 @@ class NativeFlowPrediction(nn.Module):
             handle.remove()
         if len(captured) != 1:
             raise RuntimeError("paired flow requires one actual action_out_proj forward")
-        velocity, query = captured[0]
-        if velocity.shape != sample.target.shape or query.shape[:2] != velocity.shape[:2]:
+        velocity = captured[0]
+        if velocity.shape != sample.target.shape:
             raise RuntimeError("native flow capture changed its actual action horizon")
-        return velocity, query
+        return velocity
 
 
 def _add(destination: dict[str, Tensor], values: Mapping[str, Tensor], weight: float) -> None:
@@ -89,17 +85,10 @@ def _add(destination: dict[str, Tensor], values: Mapping[str, Tensor], weight: f
             destination[name].add_(value.detach().float(), alpha=weight)
 
 
-def paired_functional_credit(policy, state, contract, batch, *, reader, memory, prior,
+def paired_functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
-                             condition_weight: float, auxiliary_weight: float, rho: float,
-                             backward: bool = True) -> dict[str, Any]:
-    """Return L_C/L_D LoRA cotangents and L_R memory cotangent separately.
-
-    Auxiliary parameter gradients accumulate here. Video memory is an ephemeral
-    leaf; its L_R cotangent is returned for the one shared encoder replay.
-    Source features and teacher targets have no policy/teacher gradient route
-    through distillation. Pure-FM uses no reader and performs no source forward.
-    """
+                             condition_weight: float, backward: bool = True) -> dict[str, Any]:
+    """Return the complete LoRA cotangent of cross-episode main FM only."""
     validate_lora_state(state, contract)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ValueError("functional credit requires a frozen physical policy")
@@ -109,49 +98,33 @@ def paired_functional_credit(policy, state, contract, batch, *, reader, memory, 
         flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
         policy_random_batch_size=random_batch, policy_batch_offset=offset,
     )
-    owner, losses = NativeFlowPrediction(policy), {"flow_loss": 0., "reader_loss": 0., "distill_loss": 0., "source_loss": 0.}
-    gradient_c, gradient_d = {}, {}
-    memory_leaf = None if reader is None else memory.detach().requires_grad_(backward)
-    calls = 0
+    owner, loss, gradient, calls = NativeFlowPrediction(policy), 0., {}, 0
     for start in range(0, total, chunk):
         stop = min(total, start + chunk)
         sliced = {name: value[start:stop] if isinstance(value, Tensor) and value.ndim and len(value) == total else value
                   for name, value in batch.items()}
         sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch, offset=offset + start)
         weight = (stop - start) / total
-        teacher = None
-        if reader is not None:
-            with torch.no_grad():
-                base, query = owner(sample)
-            calls += 1
-            with torch.set_grad_enabled(backward):
-                teacher = reader(query.detach(), base.detach(), memory_leaf, prior.detach())
-                loss_r = mean_velocity_loss(teacher, sample.target, sample.action_width)
-            if backward:
-                (loss_r * (weight * condition_weight * auxiliary_weight)).backward()
-            teacher = teacher.detach()
-            losses["reader_loss"] += float(loss_r.detach()) * weight
-            losses["source_loss"] += float(mean_velocity_loss(base, sample.target, sample.action_width)) * weight
-            del loss_r, base, query
         leaves = {name: value.detach().requires_grad_(backward) for name, value in state.items()}
         with torch.set_grad_enabled(backward):
-            prediction, _ = torch.func.functional_call(
+            prediction = torch.func.functional_call(
                 owner, {"policy." + name: value for name, value in leaves.items()}, (sample,), strict=False)
             calls += 1
-            loss_c = mean_velocity_loss(prediction, sample.target, sample.action_width)
-            loss_d = None if teacher is None else mean_velocity_loss(prediction, teacher, sample.action_width)
+            value = mean_velocity_loss(prediction, sample.target, sample.action_width)
             if backward:
-                grad_c = torch.autograd.grad(loss_c, tuple(leaves.values()), retain_graph=rho > 0)
-                _add(gradient_c, dict(zip(leaves, grad_c, strict=True)), weight * condition_weight)
-                if rho > 0:
-                    grad_d = torch.autograd.grad(loss_d, tuple(leaves.values()))
-                    _add(gradient_d, dict(zip(leaves, grad_d, strict=True)), weight * condition_weight)
-        losses["flow_loss"] += float(loss_c.detach()) * weight
-        if loss_d is not None:
-            losses["distill_loss"] += float(loss_d.detach()) * weight
-        del prediction, leaves, sample, teacher, loss_c, loss_d
-    return {**losses, "lora_cotangent": gradient_c, "distill_cotangent": gradient_d,
-            "memory_cotangent": None if memory_leaf is None else memory_leaf.grad,
-            "source_forward_calls": 0 if reader is None else calls // 2,
-            "compiled_forward_calls": calls if reader is None else calls // 2,
-            "rho": rho}
+                gradients = torch.autograd.grad(value, tuple(leaves.values()))
+                _add(gradient, dict(zip(leaves, gradients, strict=True)), weight * condition_weight)
+        loss += float(value.detach()) * weight
+    return {"flow_loss": loss, "lora_cotangent": gradient,
+            "source_forward_calls": 0, "compiled_forward_calls": calls}
+
+
+def local_flow_sample(actions: Tensor, *, seed: int, draws: int = 8) -> tuple[Tensor, Tensor, Tensor]:
+    """Independent Gaussian/Beta(1.5,1) samples, leaving all main RNG streams alone."""
+    if actions.shape != (15, 7) or draws <= 0 or not torch.isfinite(actions).all():
+        raise ValueError("local FM requires a finite normalized 15x7 action interval")
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+    noise = torch.randn(draws, 15, 7, generator=generator).to(actions)
+    time = (torch.rand(draws, generator=generator).pow(2. / 3.) * .999 + .001).to(actions)
+    noisy = time[:, None, None] * noise + (1 - time[:, None, None]) * actions[None]
+    return noisy, time, noise - actions[None]

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：局部动作转移监督已获授权，进入实现（2026-09-12）
+## 当前状态：局部动作监督实现与真实profile通过，准备匹配学习（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，当前尚未启动新学习。**
@@ -8,6 +8,25 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 主LoRA跨episode、teacher动作隐藏、完整H、source冻结和部署零交互保持。旧[Video Functional Writer](docs/video_functional_writer_design.md)
 及第7–11节比较全部结束，旧执行辅助头／蒸馏路线关闭；新假设是实际观察转移的局部动作标签能改善过程获取。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
+
+### 当前实现与执行证据
+
+- 唯一训练入口已接通主跨episode LoRA FM与局部动作FM；原执行辅助头、函数蒸馏与rho调度退役。
+  局部四帧读取由action数据owner负责，严格post-action偏移；RawTeacherVideoStore仍无动作读取能力。
+  局部noise/time使用独立key，主sampler/查询/RNG流保持；局部梯度仅到共享encoder、两组Meta及局部头。
+- 新runtime/run/training schema拒绝旧checkpoint混入；完整optimizer/scheduler/sampler/rank RNG/topology继续保存。
+  142项定向测试通过；随后processor/native/main FM与配置恢复相关64项通过（部分覆盖与前组重叠）。
+- 最长task38/demo0的93帧真实teacher完成两次完整主＋局部更新；第二次17.558秒、3.645queries/s，
+  peak allocated37.837GiB、reserved40.936GiB。局部分支约0.5秒；第二次Writer、Action Meta、VL Meta、局部头梯度均非零，
+  source trainable及梯度为0，局部无梯度诊断路径通过。原件`runs/analysis/local_action_grounded_20260912/profile/`。
+  profile仅证明真实机制与容量，不作为正式初始化或性能证据；进程已退出。
+- 保持frame chunk8、policy microbatch8，正式两臂各fresh200、checkpoint100/200；单臂四卡约一小时。
+  计划按同一四卡拓扑顺序训练ordered与frame_set，同时用剩余额度处理已到节点的物化/评测。
+  每臂51,200主queries、800局部片段/6,400noise draws；两个动作留出诊断及16个闭环面板按active design执行。
+- 结构检查标记现有配置/评测协议条件复杂度、文件规模及测试增长，已按数据、头、重放、生命周期owner复核；
+  生产源码净增约76行，没有新增生产模块或第二trainer，不因旧协议复杂度扩展无关重构。
+- 本次/data1 quota886.5GiB/1TiB、现有旧study100GiB、共享83TiB；两臂checkpoint、banks、临时写出与执行树合计新增峰值预算40GiB，
+  投影926.5GiB。不复制source/data/env；启动前再核对所用GPU及剩余预算。尚未产生新正式学习分数。
 
 ### Owner最新纠正与执行调整
 

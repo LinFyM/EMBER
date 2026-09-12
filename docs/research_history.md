@@ -6,7 +6,7 @@
 
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
 immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
-[progress.md](../progress.md)，当前方法见 [设计记录](video_functional_writer_design.md)。
+[progress.md](../progress.md)，当前方法见 [设计记录](local_action_grounded_writer_design.md)。
 
 本次整理前的完整账本是 `fcdb6e43706c5fcedf10eaa5d2d459602b263016:docs/research_history.md`，含旧§1--181（有两个旧§126）；
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。

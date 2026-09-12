@@ -3,8 +3,8 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**当前阶段先解决有益的视频特异性，暂不强制绝对性能。** Owner已接受综合历史与专家修正后的候选，授权实现与实验。
-唯一active design是[Video Functional Writer](docs/video_functional_writer_design.md)：任务token视频表示、训练期执行query辅助功能信用、一次编译完整LoRA。
+**当前阶段先解决有益的视频特异性，暂不强制绝对性能。** Owner已授权依据综合证据修正理论、实现与实验。
+唯一active design是[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)：用真实局部RGB转移与动作标签训练共享视频表示，主LoRA仍按跨episode功能目标学习。
 实际实现、资源与实验进度见[progress](progress.md)，当前计划见[task_plan](task_plan.md)。旧C/无变化参照和95-task不恢复。
 
 ## 全新专家先读
@@ -21,7 +21,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 ## 当前保留实现与实验状态
 
 当前数据流：冻结图像/词嵌入 → teacher侧Gemma VL Meta形成同次Z/KV → Action Expert与观察Meta完整50-H响应 → 任务token视觉grounding、相邻完整H读取与语言/时间轴交互 → Compiler → native D → 唯一38-target/76-tensor A/B。
-训练期辅助读取器以冻结source真实FM query查询共享视频表示；当前mu1/rho0，联合反传直接Z及R经KV两条路径。source基础权重与执行prefix始终冻结，部署不保留读取Meta或辅助控制器。
+训练期局部头读取action池同episode的四帧共享表示，预测其间真实15步动作的FM速度；post-action图像对应actions[p+1:p+16]。完整teacher仍隐藏动作，主LoRA查询与teacher跨episode。局部梯度到达encoder及两组Meta，主FM更新完整生成链；source基础权重始终冻结，部署只使用一套生成LoRA。
 
 | 代码职责 | src/ember下的owner |
 | --- | --- |
@@ -32,7 +32,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | 物化、闭环与恢复 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/`、`ecp/checkpoint.py` |
 
 入口为`scripts/train_horizon_writer.py`、`scripts/materialize_horizon_writer.py`、`scripts/evaluate_pi05.py`。
-训练默认配置`configs/pi05_video_functional.json`；同表示纯FM与训练无序参照采用同一实现的显式配置。旧checkpoint须使用原冻结runtime。
+训练默认配置`configs/pi05_video_functional.json`与`_frame_set.json`是匹配的ordered/frame_set局部监督比较；`_fm.json`仅在行为资格通过后用于无辅助归因。三者使用同一实现。旧执行辅助头与蒸馏已退役，旧checkpoint须使用原冻结runtime。
 
 ## 科学与资产入口
 

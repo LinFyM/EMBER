@@ -14,7 +14,7 @@ from ember.writer.attention import Attention, CompilerBlock, RotaryBlock, feed_f
 from ember.writer.native_factor import NativeFactorLoRADecoder
 
 
-SCHEMA = "video_conditioned_writer_v2"
+SCHEMA = "video_conditioned_writer_v3"
 ARCHITECTURE = "task_token_adjacent_full_h_v1"
 
 

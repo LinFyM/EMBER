@@ -168,12 +168,7 @@ class Pi05LiberoProcessor:
 
         base = image("observation.images.camera1")
         wrist = image("observation.images.camera2")
-        actions = value[ACTION].to(
-            self._device, dtype=torch.float32, non_blocking=True
-        )
-        actions = self._quantile_transform(
-            actions, self._action_q01, self._action_q99, inverse=False
-        )
+        actions = self.normalize_action(value[ACTION])
         # OpenPI pads LIBERO's missing right wrist with image_mask=False. Omitting
         # the key is the pinned LeRobot PI05 preprocessor's exact equivalent.
         return {
@@ -183,6 +178,13 @@ class Pi05LiberoProcessor:
             OBS_LANGUAGE_ATTENTION_MASK: masks,
             ACTION: actions,
         }
+
+    def normalize_action(self, action: Any) -> Any:
+        """Use only the frozen source quantiles, for main and local action targets."""
+        import torch
+
+        action = action.to(self._device, dtype=torch.float32, non_blocking=True)
+        return self._quantile_transform(action, self._action_q01, self._action_q99, inverse=False)
 
     def unnormalize_action(self, action: Any) -> Any:
         return self._quantile_transform(

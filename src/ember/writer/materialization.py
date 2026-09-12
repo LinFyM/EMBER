@@ -23,10 +23,10 @@ from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.video import VideoWriterConfig, require_architecture_identity
 
 
-RUN_SCHEMA = "ember_video_functional_writer_run_v1"
-STAGE = "video_functional_writer_fresh"
-TRAINING_SCHEMA = "ember_video_functional_training_state_v1"
-UPDATE_VERSION = "video_functional_vl_credit_v1"
+RUN_SCHEMA = "ember_local_action_writer_run_v1"
+STAGE = "local_action_grounded_writer_fresh"
+TRAINING_SCHEMA = "ember_local_action_training_state_v1"
+UPDATE_VERSION = "local_action_grounded_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -199,7 +199,7 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
     cameras = teacher_camera_names(run["config"]["observer"].get("camera_view", "agentview"))
-    auxiliary = run["config"].get("auxiliary", {})
+    local_action = run["config"].get("local_action", {})
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "execution_precision": run["config"]["execution_precision"],
             "checkpoint_state": "strict entire Writer+Meta+public probe+optional training-only reader", "frame_stride": 5,
@@ -207,13 +207,13 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
             "native_response_shape": [50, 1024], "generated_tensor_count": 76,
             "native_response_source": "action_out_proj_input_after_final_normalization",
             "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
-            "visual_token_gradient": "detached_native_tokens_trainable_projection",
+            "visual_token_gradient": "joint_native_Z_and_R_replay_to_VL_and_Action_Meta",
             "frame_attention": ("independent_full_h_frame_set" if run["model_config"].get("process_mode") == "frame_set"
                                 else "adjacent_full_h_past_self_temporal"),
             "video_representation": "per_frame_exact_task_tokens_T_L_d",
-            "training_stage": STAGE, "training_objective": ("supervised_fm_with_functional_reader"
-                if auxiliary.get("enabled", False) else "supervised_fm"),
-            "auxiliary": auxiliary, "functional_reader_in_execution": False,
+            "training_stage": STAGE, "training_objective": ("supervised_fm_with_local_action_grounding"
+                if local_action.get("enabled", False) else "supervised_fm"),
+            "local_action": local_action, "local_action_reader_in_execution": False,
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
@@ -364,10 +364,10 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     first = inspected[0][0]
-    expected = (first["source"], first["model_config"], first["config"]["observer"], first["config"].get("auxiliary", {}))
+    expected = (first["source"], first["model_config"], first["config"]["observer"], first["config"].get("local_action", {}))
     for run, _ in inspected:
-        if (run["source"], run["model_config"], run["config"]["observer"], run["config"].get("auxiliary", {})) != expected:
-            raise ValueError("resident batch requires identical source, model, and observer contracts plus auxiliary reader configuration")
+        if (run["source"], run["model_config"], run["config"]["observer"], run["config"].get("local_action", {})) != expected:
+            raise ValueError("resident batch requires identical source, model, and observer contracts plus local_action reader configuration")
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]

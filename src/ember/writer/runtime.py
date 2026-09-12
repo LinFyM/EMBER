@@ -42,7 +42,7 @@ class WriterRuntime:
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
     from ember.writer.video import VideoConditionedWriter, VideoWriterConfig, require_architecture_identity
-    from ember.writer.function_reader import ExecutionVideoReader
+    from ember.writer.function_reader import LocalActionReader
 
     require_architecture_identity(config["model"])
     model_config = VideoWriterConfig(**config["model"])
@@ -64,13 +64,11 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
     )
-    # Consume the same initialization stream in both objective arms. The unused
-    # reader is discarded on CPU before state.to() or optimizer construction.
-    reader = ExecutionVideoReader(model_config.width, model_config.heads)
+    # Finish every common module before optional local-head initialization.
     gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
     state.vl_meta = MetaLoRAStack(gemma.layers, rank=int(config["observer"]["vl_meta_rank"]))
-    state.reader = reader if config["auxiliary"]["enabled"] else None
-    del reader
+    if config["local_action"]["enabled"]:
+        state.reader = LocalActionReader(model_config.width, model_config.heads)
     state.to(device)
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(

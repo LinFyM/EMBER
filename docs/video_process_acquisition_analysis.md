@@ -52,13 +52,14 @@ action pool 16–41：同一动作episode的真实stride5 RGB片段
   → 监督该片段内已经执行的动作；这些标签不进入表示／Compiler
 ```
 
-部署只执行上行；不读取teacher动作、state、reward或terminal，不将反演头部署为另一policy，
+部署只执行上行至LoRA生成的部分，再由冻结policy闭环；不读取teacher动作、state、reward或terminal，不将反演头部署为另一policy，
 不对教学视频生成的伪动作做task-local BC。共享参数从fresh开始与Compiler联合学习，不先冻结一个新教师再训练第二阶段。
 这里借用的是观察到的转移与动作关联这一思路；经典[BCO](https://arxiv.org/abs/1805.01954)
 另有探索与任务模仿训练合同，不能直接作为EMBER一次编译成功的外部证据。
 
 若采样帧是t−5与t，目标应对应其间已执行动作，不能继续按另一episode的归一化进度配标签，
-也不能把source从t预测的未来动作当作已经发生的真实动作。具体数据集中obs/action先后索引须在实现前核对。
+也不能把source从t预测的未来动作当作已经发生的真实动作。§9已核实当前数据的post-action时序：
+该区间取`actions[t−4:t+1]`，不取通常pre-action约定下的`actions[t−5:t]`。
 stride5看不见间隔内全部运动，两端RGB也可能对应多种动作序列；因此不能承诺精确确定性反演。
 候选采用局部动作分布的FM监督而非强迫唯一动作重建，动作仅在训练读出中加噪，不能流入共享视觉表示。
 不把这段局部动作沿教师时间轴直接用于机器人执行；独立主FM仍承担跨初始化的策略编译。
@@ -113,3 +114,59 @@ stride5看不见间隔内全部运动，两端RGB也可能对应多种动作序�
 teacher0–15及held46–49仍action-hidden，diagnostic42–45无梯度，validation/test无动作训练，
 主LoRA功能查询继续跨episode。允许该范围后再登记active design、确定最小配对节点和profile；
 不用本分析文件恢复已关闭的候选，也不以本提案声称goal已有根本性能进展。
+
+## 8. 待确认期间的只读可行性核对
+
+### 局部输入与参照不能泄漏先后
+
+现有`src/ember/writer/video.py`提供同一个`encode()`入口，返回每视频`E[T,L,256]`；
+`memory()`在ordered模式提供时间路由，在frame_set模式置零时间路由并将全部帧展平。
+因此局部训练读出可以复用现有表示边界，不必增加第二套视频编码器或把执行query送回Compiler。
+
+一个具体的最小候选是每个task额外取action池中的四个连续stride5采样帧，对应三个已发生的5步间隔；
+读出预测共15×7维的局部动作分布。动作token的序列位置与flow time属于训练读出，
+真实动作／加噪动作不能成为`encode()`输入。标签起止按§9的生产时序确定，不能根据数组同长度猜测对齐。
+
+有序与无序两臂均让局部读出查询全部四帧的表示，拥有相同的15个动作输出位置。
+**无序臂不得选取`E[-1]`、按目标间隔切出有身份的两端、传入原帧号或单独标记终点图像**；
+否则即使上游attention取消RoPE，下游仍知道哪帧先后，不能作为无序资格参照。
+无序臂的frame tokens允许保留单帧内容与空间位置，通过集合读取输出动作序列；
+有序臂使用原有时间路由。输出动作位置本身不是帧的时间标签，不能通过实现细节将两者绑定。
+这项约束针对参照有效性，不预先保证有序臂会更好。
+
+### 有界工作量与尚未验证的范围
+
+只读取现有manifest的train24长度元数据：teacher0–15共384条件，stride5帧数均值35.484375，
+最短17、最长93；action16–41中没有不足16个原始采样点的episode。
+每task增加四个真实观察帧，相当于当前平均teacher观察帧数的11.27%；
+这只是native观察计算的输入量比例，**不是训练墙钟、GPU利用率或新增总成本的实测值**。
+局部读出、反传、数据读取及额外共享表示计算仍需实际profile；这里没有据此指定GPU或启动段长。
+
+只取完整局部间隔即可避免末端重复action填充，不需要修改主FM既有horizon/padding合同。
+完整teacher视频仍逐stride5读到末帧；局部监督的四帧预算不能偷换为部署teacher截断。
+本节未修改数据、sampler、源代码或训练配置，尚未进行局部模型拟合。
+
+## 9. 当前数据的实际时间对应：post-action RGB
+
+生产证据来自[LIBERO固定版本的create_dataset.py](https://github.com/Lifelong-Robot-Learning/LIBERO/blob/6a71fae1724c1b84b62cfb4eeb96398c60fdc095/scripts/create_dataset.py)：
+循环先执行`env.step(action)`，再保存返回的RGB、关节与末端观察；末尾对原states/actions使用相同valid_index。
+它只略过开头五步，不按action值删除中间步，不创建next_obs。
+因此保留行的关系是`states[i]=s_i, actions[i]=a_i, obs[i]=o_(i+1)`。
+
+本地artifact由目标manifest固定为`yifengzhu-hf/LIBERO-datasets@f13aa24a3da8c43c7225569f28c562979fa0e35a`。
+只读四suite的train tasks 0/12/20/34各demo0：前11行`obs/joint_states[i]`均与`states[i+1,1:8]`完全对应；
+与同一行states的最大差分别为.03444218/.00660394/.03280896/.00503797。
+四个demo均无next_obs，完整state时间轴每步约.05秒、未见内部缺口。
+这项检查未读action数值或held数据，未重放模拟器，也不是全数据逐帧像素验证。
+当前数值证据与生产代码一致，支持用于本提案的时间对应。
+
+一般区间`obs[p] → obs[q]`应取`actions[p+1:q+1]`，共q−p步。
+四帧`p,p+5,p+10,p+15`对应15个动作`actions[p+1:p+16]`。
+obs[0]已经是actions[0]之后的图像，当前RGB序列不提供该首动作的pre-action端点。
+Writer会追加真实末帧；例如N=98的95→97只有两步，不能视作五个动作或用padding伪造转移。
+局部候选只选完整15步区间，完整teacher视频的末帧保留规则不变。
+
+既有`src/ember/writer/data.py:317`采用obs[i]与actions[i:]同索引；这是当前主FM实际合同。
+本核对未测一位时间差的闭环影响，不能把它认定为历史视频收益缺失的根因，也没有据此改主FM或source。
+局部反演必须遵循已发生转移的真实标签关系；改变既有主FM监督是另一项科学变量，不能同时静默引入。
+若以后改用会删除已执行控制步的数据，须保留原控制索引；retained行号相邻不再自动等于原时间相邻。

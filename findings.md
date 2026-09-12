@@ -854,3 +854,13 @@ video/action demos交集，Stage0与G2各自sampler也明确分开。这些并�
 需要Owner明确现有跨episode合同的例外范围。没有静默改sampler、训练目标或部署输入；当前无active design。
 额外冻结视频模型也并非即插即用：普通整视频双向编码后的下游causal mask无法恢复前缀因果性，
 编码后的无序token集合仍可能包含上游顺序；参照必须从实际输入与编码路径定义。来源与细节见提案§6。
+
+## 67. 当前LIBERO观察为post-action，局部监督须按实际时间对齐（2026-09-12）
+
+固定官方生产代码先env.step再保存RGB／proprio，而states与actions仍使用相同原索引。
+本地train0/12/20/34各demo0的前11行obs关节均与下一行states相符，四个完整时间轴连续约20Hz且无next_obs；
+检查未读取action数值、held数据或运行环境。具体生产来源、数据revision及数值见[提案§9](docs/video_process_acquisition_analysis.md)。
+
+因此obs[p]→obs[q]的真实区间动作应为actions[p+1:q+1]。stride5末尾追加帧可能不足五步，不能用padding补成真实转移。
+该结论直接约束拟议局部反演标签；现有主FM实际采用obs[i]/actions[i:]同索引，尚未量化其时间差的行为影响，
+不能将它定为此前科学失败的唯一原因，也没有在这次只读核对中变更原训练合同。

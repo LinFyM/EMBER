@@ -105,3 +105,18 @@ development seed20260911、env/policy seed7、20,000次task-cluster paired boots
 profile若OOM只调整物理batch／chunk并如实保留失败，不改变科学模型；profile初始化不用作训练。
 formal前刷新两节点GPU、strg01独立quota、相关用量与全轮峰值预算，从clean pushed detached commit冻结运行。
 最多单节点6卡，训练与全部评测共享Owner两节点8卡／空闲总数≤10时6卡的额度。实际分配依live可用性。
+
+## 6. 实施与正式入口登记
+
+126项针对性检查通过；额外错误prior view拒绝回归通过。初次测试因未设置PYTHONPATH而未收集，
+补上仓库既有src路径后通过，未为环境问题修改科研实现。唯一trainer默认配置已随重命名更新。
+
+profile源代码4591cc09，task38/demo0的全部93帧，两次完整条件更新exit0；热条件26.4771秒，
+allocated峰值39.1695GiB、reserved42.1699GiB。第二次Writer／Action Meta／VL Meta及prior读取投影均有有效梯度，
+source／V-JEPA参数无梯度，profile不保存正式checkpoint。采用frame_chunk4、policy_microbatch8、prior_window_batch4。
+该事实只证明计算可运行，不证明有益过程或闭环资格。
+
+初始两臂100/200加8面板参考已有同规模输出约26GiB，额外峰值登记32GiB；
+data1现场966.9/1024GiB、预计998.9GiB，含checkpoint、临时写入、LoRA banks、代码树、日志与余量。
+正式启动仍刷新live quota／GPU。条件性other／image参照／最终controls触发后另核增长与独立quota，不预先启动。
+精确formal command、节点设备、环境、来源commit及资源写入`runs/analysis/native_dual_video_20260913/launch_contract.json`。

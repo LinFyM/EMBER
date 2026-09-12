@@ -152,7 +152,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Fresh bounded100/200 native dual-camera main FM comparison; physical profile required before formal launch",
+    "initial_use": "Fresh bounded100/200 native dual-camera main FM comparison; frame_chunk4/policy_microbatch8/prior_batch4 profiled",
     "qualification_registration": "docs/native_dual_video_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -282,7 +282,7 @@
         48,
         49
       ],
-      "registration_status": "100/200 and51200 main queries registered before learning; new dual-camera profile required",
+      "registration_status": "100/200 and51200 main queries registered before learning; longest93-frame dual-native profile complete",
       "optimizer_updates": [
         100,
         200
@@ -427,7 +427,7 @@
     },
     "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
     "profile_registration": {
-      "status": "pending",
+      "status": "complete",
       "condition": "longest train24 teacher task38 demo0,93frames",
       "frame_chunk": 4,
       "policy_microbatch": 8,
@@ -435,7 +435,13 @@
       "updates": 200,
       "condition_exposures": 800,
       "main_fm_queries": 51200,
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "warm_condition_seconds": 26.477069047046825,
+      "peak_allocated_gib": 39.16946840286255,
+      "peak_reserved_gib": 42.169921875,
+      "source_profile": "runs/analysis/native_dual_video_20260913/profile/results.json",
+      "source_commit": "4591cc09",
+      "reuse_scope": "same dual-native graph, fixed agentview prior, complete longest93-frame condition; no reused initialization"
     }
   },
   "update_version": "pretrained_video_main_fm_credit_v1",

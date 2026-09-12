@@ -13,7 +13,7 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 不能检验跨初态的LoRA行为传递。保留目标物体运动作为候选，但尚无能区分获取与编译不足的具体判别合同；
 运动对应审查本身没有新权重下载、模型forward或实验启动。完整依据见findings§76。
 
-### Native双相机修正：已登记，实施／profile阶段
+### Native双相机修正：实现与profile完成，待正式启动
 
 新证据是相同输入位置下native双相机动作读出稳定改善；本项只将腕部加入native前缀，
 V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fresh共享学习及唯一38-target LoRA保持。
@@ -21,8 +21,9 @@ V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fr
 复用旧agentview两臂的同节点原件作输入范围参照。相邻有序资格未通过即关闭，不追加局部参数扫描。
 
 已实现显式native／prior相机绑定及新运行身份，旧单相机配置与checkpoint只在冻结历史树中复现；
-相机路由／cache／配置／物化／完整模型126项检查通过。下一步测最长93帧真实双相机完整更新，
-profile只确定物理batch与峰值，不改变100/200学习预算，也不提供正式初始化。
+相机路由／cache／配置／物化／完整模型126项检查通过。最长93帧双相机两次完整更新已exit0，
+热条件26.48秒，allocated39.17GiB／reserved42.17GiB；采用frame_chunk4／microbatch8／prior batch4。
+profile无正式checkpoint，不改变100/200学习预算或提供初始化；下一步从clean pushed frozen commit启动两臂。
 正式两臂及初始8面板估计约26GiB，登记32GiB阶段峰值预算；data1现场用量966.9/1024GiB，
 预计峰值998.9GiB。条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。
 

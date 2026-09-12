@@ -8,6 +8,10 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 
 ### 当前执行与完整结果
 
+- 第11节无辅助路径相关83测试通过，配置与8个评测请求的科学字段匹配。初始化按共同CPU构造顺序保持VL随机流；reader在进入GPU/state optimizer前丢弃，无新的执行模块或第二trainer。
+- 真实最长task38/demo0 93frames：micro16 OOM已结束；micro8两次更新通过，第二次16.86秒/64queries（3.795queries/s）、峰值37.81GiB。Writer/Action/VL均有实际梯度，source冻结、source辅助forward=0。固定frame8/policy8；profile无checkpoint，原件`runs/analysis/video_functional_20260911/direct_fm_vl_profile/`。
+- 第11节100/200全部评测请求已准备，训练前需刷新两节点GPU和/data1独立quota。原quota873.4GiB/1TiB，新增formal峰值预算20GiB、投影893.4GiB（含checkpoints/banks/临时与执行checkout），共享83TiB。仅formal launch后才更新本段为实际运行。
+
 - 第10节完整Z/R双路VJP已接入唯一observer；跨update只缓存pre-Gemma embeddings，新VL Meta在共同模块后初始化，新增921,600参数。旧KV缓存入口退役，model schema v2拒绝旧checkpoint；无第二trainer或执行adapter。
 - CPU相关168项通过，配置小改后3项复核通过。真实native identity Z差0，两条VL梯度均非零，联合重放与直接梯度一致，source trainable=0；真实学习第2次后Writer/Action/VL/reader均有梯度。
 - 最长合法视频task38/demo0，93frames/64queries：frame_chunk4/8分别24.97/21.55秒，后者2.970queries/s、峰值37.84GiB。选择frame8、policy micro8；profile只运行gpu01:4且已退出，无保留训练checkpoint。原件`runs/analysis/video_functional_20260911/teacher_vl_profile/`。

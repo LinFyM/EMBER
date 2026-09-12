@@ -437,7 +437,7 @@
   "update_version": "video_functional_vl_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",
   "auxiliary": {
-    "enabled": true,
+    "enabled": false,
     "weight": 1.0,
     "distill_start": 32,
     "distill_end": 100,

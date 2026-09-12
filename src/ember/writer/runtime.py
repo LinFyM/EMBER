@@ -64,12 +64,13 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
     )
-    if config["auxiliary"]["enabled"]:
-        state.reader = ExecutionVideoReader(model_config.width, model_config.heads)
-    # Append VL only after all common modules: their fresh initialization stays
-    # matched to the frozen-prefix reference without a new RNG convention.
+    # Consume the same initialization stream in both objective arms. The unused
+    # reader is discarded on CPU before state.to() or optimizer construction.
+    reader = ExecutionVideoReader(model_config.width, model_config.heads)
     gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
     state.vl_meta = MetaLoRAStack(gemma.layers, rank=int(config["observer"]["vl_meta_rank"]))
+    state.reader = reader if config["auxiliary"]["enabled"] else None
+    del reader
     state.to(device)
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(

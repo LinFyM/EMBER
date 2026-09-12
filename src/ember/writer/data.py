@@ -63,6 +63,17 @@ def _camera_batch(value: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(value[:, ::-1, ::-1].transpose(0, 3, 1, 2))
 
 
+def _camera_datasets(demo: h5py.Group, names: Sequence[str]) -> tuple[h5py.Dataset, ...]:
+    pixels = tuple(demo.get(f"obs/{camera}_rgb") for camera in names)
+    if any(not isinstance(value, h5py.Dataset) or value.ndim != 4
+           or value.shape[0] <= 0 or value.shape[-1] != 3 or value.dtype != np.uint8
+           for value in pixels):
+        raise WriterModelError("missing or invalid declared teacher RGB view")
+    if any(value.shape != pixels[0].shape for value in pixels[1:]):
+        raise WriterModelError("teacher camera views must have synchronized frame counts and shapes")
+    return pixels
+
+
 def iter_action_hidden_video_chunks(
     authority: WriterTaskAuthority,
     demo_indices: Sequence[int],
@@ -148,14 +159,7 @@ class RawTeacherVideoStore:
         demo = self._handle(task_id).get(f"data/demo_{demo_index}")
         if not isinstance(demo, h5py.Group):
             raise WriterModelError("teaching video episode is missing")
-        pixels = tuple(demo.get(f"obs/{camera}_rgb") for camera in self.camera_names)
-        if any(not isinstance(value, h5py.Dataset) or value.ndim != 4
-               or value.shape[0] <= 0 or value.shape[-1] != 3 or value.dtype != np.uint8
-               for value in pixels):
-            raise WriterModelError("missing or invalid declared teacher RGB view")
-        if any(value.shape != pixels[0].shape for value in pixels[1:]):
-            raise WriterModelError("teacher camera views must have synchronized frame counts and shapes")
-        return pixels
+        return _camera_datasets(demo, self.camera_names)
 
     def load(self, task_id: int, demo_index: int) -> RawTeacherVideo:
         pixels = self._pixels(task_id, demo_index)
@@ -347,6 +351,29 @@ class FunctionalQueryDataset:
             "demo_index": demo_index,
             "frame_index": frame_index,
         }
+
+    def local_action_clip(
+        self, task_id: int, demo_index: int, start_frame: int, *, camera_view: str = "agentview",
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Read four post-action RGB frames and their fifteen intervening actions."""
+        episodes = self._task_episode_rows.get(task_id, {})
+        if demo_index not in episodes:
+            raise WriterModelError("local action episode is outside the query dataset authority")
+        length = len(episodes[demo_index])
+        if type(start_frame) is not int or not 0 <= start_frame < length - 15:
+            raise WriterModelError("local action clip requires fifteen complete steps without padding")
+        demo = self._handle(task_id)[f"data/demo_{demo_index}"]
+        pixels = _camera_datasets(demo, teacher_camera_names(camera_view))
+        if pixels[0].shape[0] != length:
+            raise WriterModelError("local action RGB and action counts differ")
+        indices = np.arange(start_frame, start_frame + 16, 5, dtype=np.int64)
+        views = tuple(_camera_batch(np.asarray(value[indices])) for value in pixels)
+        frames = views[0] if len(views) == 1 else np.stack(views, axis=1)
+        # obs[p] already follows actions[p]; the first intervening action is p+1.
+        actions = np.asarray(demo["actions"][start_frame + 1:start_frame + 16], dtype=np.float32)
+        if not np.isfinite(actions).all():
+            raise WriterModelError("local action clip contains nonfinite actions")
+        return frames, indices, actions
 
     def close(self) -> None:
         for handle in self._handles.values():

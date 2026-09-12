@@ -1,10 +1,10 @@
 # EMBER progress
 
-## 当前状态：冻结视频先验正式有序臂学习中（2026-09-12）
+## 当前状态：冻结视频先验静态臂学习与配对评测中（2026-09-12）
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：fresh正式学习与配对评测准备。**
-Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选尚无正式闭环成绩。
+Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有首个train96面板，尚无完整validation或匹配静态结论。
 原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
 
 ### 当前决定与工作
@@ -23,19 +23,26 @@ Writer、两组Meta和prior投影获得梯度，source／prior始终无梯度。
 保留frame chunk8、policy microbatch8、prior window batch4。profile速度仅是约65分钟纯更新成本参考，
 不含启动、诊断、checkpoint和数据读取成本；实际段长以formal日志为准。
 
-ordered已在gpu01的0/1/3/4四卡fresh启动，tmux `ember-prior-ordered`；实查torchrun及四rank存活，
-正式run contract确认clean pushed commit；现已完成100更新、0/100各24-task留出诊断及完整100 checkpoint，继续向200学习。
-100 checkpoint通过现有正式身份／完整性入口检查；correct的train96／validation400物化全部完成、两个库sealed，
-`ember-prior-mat100`以exit0退出，验证了validation每task的50视频无放回及固定state映射。
-`ember-prior-train100`已在gpu01第6卡启动train96动态队列评测，正式合同确认24tasks／96states，worker已ready；
-`ember-prior-val100`已在释放的第5卡启动validation strict400，两个worker均ready，正式合同为8tasks／400states／28动态分片。
-单worker实测约10.8GiB显存，据此采用双worker并记录吞吐；训练与两类评测合计6卡，尚无完整闭环面板结果。
-frame_set启动脚本已准备但尚未运行；前臂结束后须按live资源重新选择并记录，不能把历史空闲卡当成预留。
-训练与全部评测共同遵循当前6卡额度；待200节点与训练96面板完成后，按live资源安排200物化及匹配frame_set学习。
+ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒；0/100/200各24-task留出诊断完整，
+100/200 checkpoint均通过现有正式身份与完整性入口检查，训练以exit0结束且原四rank已退出。
+
+100 correct的train96／validation400 LoRA库全部sealed，物化以exit0结束；validation每task50条视频无放回、跨节点固定state映射。
+首个train96面板完整为**41/96**，source为15/96；Spatial/Object/Goal/Long为9/8/16/8，breadth18（source7）。
+相对source保留11／新增30／丢失4，churn34，J=.24444；task-cluster95%成功率增量区间[.13542,.38542]。
+其24个任务分片、96rows及worker exit0已核验；该相对source结果不证明视频内容／有序过程收益或validation迁移。
+`paired_summary.json`保留逐任务、suite及成功集合；其它参照、节点和视频尚未形成完整比较。
+
+`ember-prior-val100`仍在gpu01第5卡运行有序100的validation strict400，两个worker、8tasks／400states／28动态分片。
+单worker实测约10.8GiB显存，据此采用双worker；实际双worker合计约23.6GiB，吞吐以完整面板报告。
+`ember-prior-frame-set`已在释放的0/1/3/4四卡从同一冻结commit fresh启动；正式run contract及四rank存活已核验。
+其配置仅`model.process_mode`和`video_prior.mode`不同，逻辑曝光／优化／数据／共同初始化合同均相同，checkpoint固定100/200。
+`ember-prior-mat200`已在释放的第6卡物化有序200的correct train96／validation400；已有首个条件生成，未继承100 LoRA。
+当前四卡学习、两类评测／物化合计6张物理卡；待200库封存后按现场额度安排闭环，不能追加超额设备。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。
-正式启动前strg01/data1用量916.2GiB／1024GiB、共享83TiB可用；剩余研究峰值50GiB及冻结worktree0.3GiB，预计966.5GiB。
+最初正式启动前strg01/data1为916.2GiB／1024GiB；静态臂与200物化启动前已刷新为927.7GiB、当前study约12GiB，
+剩余峰值按40GiB估计，预计967.7GiB，低于1024GiB额度；共享83TiB可用。预算为整项研究的剩余增长，不对每个job重复增加。
 单份官方权重4.8GiB已落canonical模型根，临时下载文件已消失；不建立dense磁盘缓存。
 
 两个主臂100/200的train96与validation400 correct物化请求已准备，沿用固定seed20260911、held46–49／states32–35

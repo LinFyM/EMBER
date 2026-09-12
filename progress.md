@@ -77,6 +77,18 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - 下一步完成ordered 100节点其余面板与200节点闭环评测，同时跟进frame_set登记的100/200节点。
   当前没有selected checkpoint、sealed controls或Test使用，goal未完成。
 
+### 100步匹配学习对比
+
+- frame_set第100步完整checkpoint及两类留出诊断已保存，formal checkpoint检查通过；训练继续向200推进。
+  两臂前100步实际400条件、25,600主queries、400局部片段、3,200局部noise draws逐字段匹配，
+  包括task、teacher/action episode、frame、局部起点、noise/query seed及权重。
+- 主动作留出ordered/frame_set为0.114319/0.114132；以frame_set−ordered定义改善，差额−0.000186888，
+  task-cluster95%CI[−0.000422633,0.000041479]，6/24任务正向。当前没有可信主动作拟合改善。
+- 局部留出为1.164801/1.164866，ordered改善0.000065278，95%CI[0.000005210,0.000128710]，16/24任务正向。
+  差异很小，不能单凭此宣称有益过程已获得。两臂0步诊断一致；均只读train24留出动作，不读取validation/test动作。
+- 原件`runs/analysis/local_action_grounded_20260912/step100/learning_comparison.json`包含逐task/suite与匹配曝光。
+  完成登记的200步及全部闭环面板后再裁决，不据此扩大局部头、追加消融或选checkpoint。
+
 ### Owner最新纠正与执行调整
 
 Owner指出近几小时没有根本进展，要求调整负结果后的分析与修正方式。此前去蒸馏、额外读出与VL适配虽各有

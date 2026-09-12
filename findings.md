@@ -1116,3 +1116,32 @@ S/O/G/L有序114/84/104/57、静态118/87/102/54，净额−4/−3/+2/+3；sourc
 不因本节分析而自动启动完整Writer、追加probe或新controls；整体goal保持未完成。
 
 原件：`runs/analysis/frozen_positive_replication_20260913/conditional_information_audit.py`及同名JSON。
+
+## 75. 局部有序优势延续到生成误差，但现成动作估计仍不如任务均值（2026-09-13）
+
+按新增outcome前登记的[冻结生成诊断](docs/frozen_local_action_decode_audit.md)，固定原local两臂step200，
+复用train24×16个diagnostic42–45片段，从纯Gaussian噪声经10步Euler生成15×7动作，每片段8次。
+真实动作不进入生成过程，只在输出后评分；全部768片段完整、两臂exit0，无梯度／新LoRA／rollout／validation或test动作。
+
+| 8次生成均值的动作MSE | ordered | frame_set | task mean |
+| --- | ---: | ---: | ---: |
+| train24等权 | .31625053 | .31676502 | .25059744 |
+
+task mean−ordered差额−.06565309、task-cluster95%CI[−.08381484,−.05098097]，24/24task均不如均值。
+frame_set−ordered差额+.00051449、CI[+.00032845,+.00070563]，21task正／3负、四suite净额均正。
+所以小幅有序优势不只出现在带噪标签的FM中，亦出现在固定生成协议的误差上；但未满足两个参照同时通过的前提。
+独立训练两臂仍不能唯一识别固定模型的顺序因果作用，不能仅因相对无序为正而称已有强动作教师。
+
+另以训练action16–41的98,465个合法15步窗口计算episode等权Gaussian矩，解析预测带噪动作FM；
+24task留出平均.26389586，而旧两臂.81011446/.81128639，24/24task均落后这一无视频去噪参照。
+解析参照使用训练task身份与noisy actions，是离线诊断，不是合法部署字典、语言模型或无视频闭环policy。
+384个step0零输出loss重建核对通过；不把这类MSE或内部loss替代最终行为。
+
+停止把本现成局部读出直接接入参数生成的提案依据，不增加noise／Euler步数／训练／头容量。
+8样本均值误差仍含采样误差，不能外推所有逆动力学失败或表示毫无知识；也没有唯一归责E或Compiler。
+解析参照使用全部授权训练池，曝光不与原800个局部片段匹配，不作为同预算算法比较或唯一根因证据。
+下一机制仍需解释如何获得并利用可迁移的操作知识，不能从“可解码”直接跳到“只差编译”。整体goal未完成。
+
+代码冻结017430b3，模型原5f4f440c；每臂诊断循环约98.3秒、allocated峰值10.155GiB，
+有限入口已从active scripts退役。完整原件：`runs/analysis/local_action_grounded_20260912/inverse_action_READOUT.md`、
+`inverse_action_summary.json`、`inverse_action_marginal.json`、逐臂raw/samples及`inverse_action_launch_contract.json`。

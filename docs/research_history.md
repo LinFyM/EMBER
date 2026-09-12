@@ -16,6 +16,12 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 独立训练臂比较不等于固定模型的顺序干预；跨episode FM允许视频无关解不等于视频无法帮助有限模型迁移。
 详见findings§74及既有冻结复核analysis中的`conditional_information_audit.py/json`。没有新训练、rollout或最终controls。
 
+2026-09-13随后完成[冻结局部动作生成诊断](frozen_local_action_decode_audit.md)：固定旧local两臂step200，
+train24各384片段纯噪声生成，MSE有序.31625053／无序.31676502，均不如task mean .25059744。
+小幅有序差额保留，但24/24task的有序估计均落后均值；停止把现成动作读出直接接入参数生成的提案依据，
+无新训练或rollout。CPU Gaussian边缘去噪FM=.26389586，亦优于旧两臂.81011446/.81128639；
+该task身份参照只作离线诊断，不用于部署。完整原件与解释边界见findings§75及`inverse_action_*`证据。
+
 ## 研究主线速览
 
 | 时段 / 路线 | 真正获得的证据 | 未解决或失效的范围 | 对接续工作的约束 |

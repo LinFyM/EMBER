@@ -1,6 +1,6 @@
 # 冻结局部动作读出的生成能力诊断
 
-2026-09-13，新增outcome前登记。当前active仅为本只读诊断，旧局部训练不恢复。
+2026-09-13，新增outcome前登记；本只读诊断已完整结束并关闭，结果见末节，旧局部训练不恢复。
 依据[视频信息复核](video_information_identifiability.md)，本项检验一个具体提案的前提：能否把旧局部读出已经学到的
 动作知识直接作为参数生成的中间量。没有提出或启动这种新Writer；先判断其现成知识是否足够支持继续推导。
 
@@ -62,3 +62,35 @@ CPU脚本及GPU两臂共用一个有限诊断入口`diagnose_local_action_reader
 GPU启动前实时查两节点；最多两张真正执行任务的A40，每臂一张、无NCCL，CPU与GPU选择不改变task权重。
 模型载入与4帧native读取预计每臂数分钟；出现非finite、输入合同或运行失败先定位具体工程问题，不扩展科学面板。
 数值精度沿用正常BF16/FP32，不要求逐bit复现。首轮已有零输出loss对照足以检查评分口径，不新增防御性hash或全树扫描。
+
+## 完整结果与裁决
+
+入口冻结提交`017430b3`，历史模型运行面仍为`5f4f440c`；两臂各384片段完成、exit0，
+每臂诊断循环约98.3秒，峰值allocated10.155GiB。CPU矩估计使用98,465个合法训练窗口、624个episode，
+按原定义episode等权；384个step0零输出loss重建通过，固定片段、标签和噪声映射核对通过。
+
+| 指标 | ordered | frame_set | task mean |
+| --- | ---: | ---: | ---: |
+| 8次生成均值的动作MSE | .31625053 | .31676502 | .25059744 |
+| 单次生成动作MSE（8次平均） | .65159739 | .65250543 | — |
+
+task mean−ordered为−.06565309，task-cluster95%CI[−.08381484,−.05098097]，24/24任务均不如task mean；
+frame_set−ordered为+.00051449，95%CI[+.00032845,+.00070563]，21task正／3负，四suite总体同向。
+原有序小幅优势延续到实际生成误差，但未达到两个登记参照同时通过的前提，**本诊断non-pass**。
+不以这个相对正差额重开旧方法，也不追加noise数／积分步数／训练来改变裁决。
+
+CPU的无视频task Gaussian FM=.26389586，两臂原FM=.81011446/.81128639；24/24任务解析参照均更低。
+该参照使用noisy action与训练task身份，不能作为部署字典，也不是video-free闭环策略；
+其作用是说明绝对局部FM仍明显落后一个简单动作边缘去噪器，不能仅凭有序差额把局部读出称为充分功能教师。
+
+停止的是“把此现成局部动作估计直接作为参数生成中间量”的前提。固定8样本均值的MSE包含采样误差，
+这项失败不证明所有逆动力学不可能、不排除表示含有部分有用知识，也不能把失败唯一归到E或Compiler。
+两个解析参照使用全部授权action训练池，标签曝光不与仅800个局部训练片段匹配；因此它们检验现成输出的可用前提，
+不构成同训练预算的算法比较，也不能唯一归因于模型结构或视频信息不足。
+不创建新的完整Writer、selected checkpoint或最终controls；整体goal未完成。
+
+原始预测和标签、逐task/suite、两项配对区间、完整原始行与日志保留在既有analysis根的
+`inverse_action_READOUT.md`、`inverse_action_summary.json`、`inverse_action_marginal.json`、
+`inverse_action_{ordered,frame_set}.json`、对应samples.npz及`inverse_action_launch_contract.json`。
+有限入口从active scripts退役，源码保留于`017430b3:scripts/diagnose_local_action_reader.py`及其冻结运行面，
+不恢复局部头的canonical训练实现。

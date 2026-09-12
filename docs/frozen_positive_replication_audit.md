@@ -97,3 +97,49 @@ materializer CLI显式state入口只接受32–35。
 - 只有充分证据使一个实质机制修改优于竞争解释时，才写出新预测、近等价历史差异和失败后的停止分支，再实施。
 
 本页的准备不改变整体goal：最终仍需有益视频增量、跨视频／初始化／相邻保持和固定validation迁移。
+
+## 6. 条件性正确收益复核合同（新outcome产生前登记）
+
+本节只在当前Execution-Aligned两个节点的完整资格裁决不通过、且该候选明确关闭后激活。
+不根据旧模型的新分数换checkpoint；固定旧611770d1 ordered200与匹配frame_set200。
+本节确认的是两种已训练的信息组织方式的能力差额，不把它单独命名为输入顺序的因果效应。
+本节不启动顺序、错视频或最终sealed controls；第4节的用途歧义保持显式，不能通过改干预名称绕过。
+
+### 固定面板与执行
+
+- 全部train24，教师46/47/48/49，初始化0–7；每条教师与每个初始化交叉。
+- 对每个模型、每个教师ordinal建立一个192行fixed_per_task面板，共8个面板；source单独192行。
+  总计1,728次新rollout，上限不因CI宽而追加。所有task、video、state都在新outcome前固定。
+- 复用两个原始train200 bank中的192个唯一adapter，新的映射JSON不得覆盖原manifest。
+  每个映射引用24个原adapter并明确记录零新Writer调用；一次生成的LoRA跨初始化复用。
+- 保持原source、normalization、official preprocessing/horizon/flow steps、env/policy seed7及原冻结runtime。
+  evaluator使用development_train、screen、state-count8的默认0–7，固定video映射seed20260911。
+  screen只标识训练任务诊断，不用于正式checkpoint选择；不据它宣布方法或goal完成。
+- 两节点live资源、独立quota、同节点真实吞吐选卡及动态persistent队列保持；不改frozen源码。
+  条件触发后才创建新run root、保存确切命令、映射provenance与最新资源预算。
+
+### 分析单位与预定判据
+
+主数据为两臂逐行匹配的D[task,video,state]，shape24×4×8；按task等权、task内video/state等权。
+source仅192个真实outcome。它在代数上可广播到视频轴以构造差额，但不能由此增加样本数或自由度。
+
+同时报告全部task/suite和四个教师ordinal的成功率、source差额、两模型差额、retained/gained/lost、churn、
+同state换视频成功集合与对原96面板的分布描述。新旧state不重合，不把跨面板成功集合做假配对。
+
+不把768行IID重采样。预先固定seed20260912、20,000次配对重采样，给出：
+1. 保留固定24task、在每个task内分别重采样4个video与8个state并取笛卡尔积的条件敏感性区间；
+2. 再按task重采样、内部仍保留上述交叉结构的多层敏感性区间；
+3. 只重采样task均值的原口径参照区间。
+
+所有臂在每次重采样共用索引；source只随task/state索引变化。上述区间依赖交换性假设，
+不证明未见task／新训练seed泛化，也不把已开发的4条video当独立新视频样本。
+固定面板的经验差额是直接事实；小样本多层重采样区间仅用于保守决策和敏感性检查，不承诺精确覆盖率。
+
+“固定模型能力优势得到跨条件支持”要求：总体ordered−frame_set以及ordered−source均为正，
+并在上述三种95%区间中的下界均>0；至少两个suite有净收益，四个教师ordinal的总体ordered−frame_set均>0。
+若只有总体通过而部分教师方向不同，报告异质性／部分复现，不称跨视频保持。
+所有总体／分组结果完整保留，不选择video、task或另一checkpoint重新计算一个通过结果。
+
+未通过时区分可信负差额、正点估计但区间不确定、跨video异质性；均不自动追加Writer训练或扩大复核面板。
+通过也仅提高固定模型能力差额的可信度：是否有益使用顺序、为何不能稳定迁移仍未解决。
+任何后续修改须先给出新增机制证据、相对近等价历史的实质区别和可失败预测，不能由“复核阳性”直接触发加模块。

@@ -46,7 +46,10 @@ attempt1日志保留；其余交接均通过，没有重复训练、物化或rol
 启动后8个新映射全部通过完整原运行面inspect，source prepare因8-state screen入口限制退出，零GPU模型／rollout。
 已在唯一registered-subset入口增补screen8并扩展source／adapter与信息墙回归，116项相关测试通过；
 source将用新clean pushed冻结运行面和完整train24显式清单，两个Writer臂保留原611770d1。
-准备从同一1,728rows合同恢复；首次命令和失败原件保留，不改变面板或预算。
+已从同一1,728rows合同恢复，tmux ember-frozen-positive、controller56404正在source192；
+实际prepare核验24tasks与全部states0–7，12worker动态领取任务。source冻结commit c5a28747，
+其评测路径相对611770d1只改变一行registered screen8准入；首次命令和失败原件保留于failed_attempts/attempt1，
+不改变面板或预算。每一面板启动前重新检查两节点GPU与独立quota；后续8个固定video Writer面板顺序自动接续。
 运行／确切命令／完整统计保存到`runs/analysis/frozen_positive_replication_20260913/`，输出到同名outputs根。
 
 复核要求总体ordered−static与ordered−source在三种登记95%区间下界均>0，至少两个suite净增、四条teacher方向均正。

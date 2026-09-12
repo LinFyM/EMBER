@@ -1,7 +1,8 @@
 # Video Functional Writer：任务语义轴与执行条件化功能信用
 
 第10节已完成：在第8节mu1/rho0配方上单独开放teacher VL Meta，phi包含视频encoder与Action/VL两组读取Meta。
-该有界比较未获得可信迁移收益，不追加训练或自动补frame_set；当前无新GPU实验登记，结果见progress/findings§61。
+该有界比较未获得可信迁移收益，不追加训练或自动补frame_set；结果见progress/findings§61。
+当前第11节单独移除辅助表示FM监督，保留第10节其余完整图，先验证再启动fresh匹配比较。
 第1–6节保留首版合同，第7–9节保留已完成干预；当前prefix缓存及完整Z/R梯度边界以第10节为准。
 
 ## 1. 当前授权、目标与理论边界
@@ -321,3 +322,35 @@ profile选择frame/policy microbatch，按真实吞吐登记单段命令，若�
 冻结prefix旧frame_set不能替代该匹配参照。只开放VL本身不能完成goal，FM改善也不能作为视频资格。
 继续保持Test封存，不使用shuffled/reversed修正设计，无RL或新增meta tasks。资源与正式精确命令另记launch contract；
 当前本节授权实现与profile，正式训练需先完成上述实测及clean pushed detached运行准备，无额外人工审批步骤。
+
+
+## 11. 单独移除辅助表示监督的fresh比较（2026-09-12，实施前登记）
+
+第8节关闭蒸馏后仍保留L_R对视频表示的监督。第7/9节两种额外拟合的reader都明显弱于完整LoRA学生；
+第10节增加teacher VL可学习性后，留出动作变化仍极小，validation100=61/61、200=62/64，没有可信收益与保持。
+这些结果既不证明L_R梯度有害，也没有证明它给予了有用的额外教学信用。剩下可直接分开的因素是：
+**同一视频表示同时优化辅助函数和真实LoRA，是否比仅优化真实LoRA更有利？**
+
+原pureFM首段仅到100、没有VL Meta，不能回答当前完整图在100/200匹配节点上的该问题；不恢复旧run或继承旧权重。
+这里补齐一个明确的目标函数对照，不把它命名为新表示，也不再增加reader容量、拟合轮数或其它辅助loss。
+历史多视频审计只支持可能过滤演示扰动，尚不支持过程迁移；当前K1边界继续有效，不启动K2/4。
+
+唯一主要变量：`auxiliary.enabled=false`，有效mu=0、rho仍0。所有Writer、Action/VL Meta与Compiler只接真实LoRA FM，
+source仍冻结；同一T×L、完整H、prefix双路重放、native D、rank16/38-target、K1/stride5及数据/优化器均沿第10节。
+不构造执行辅助forward、memory cotangent或蒸馏；部署仍只生成一套完整LoRA。
+为保持VL初始化随机流，runtime仍按原顺序在CPU构造一次reader并在VL初始化后丢弃；它不进入state/optimizer、GPU、
+checkpoint或训练forward。Writer/Action/VL的fresh初始化与第10节匹配，不通过加载任何旧参数实现匹配。
+
+沿同一task/video/action/query/RNG与权重，fresh200=800条件/51,200queries，保存100/200完整checkpoints。
+先验证现有无辅助cotangent路径与真实最长视频更新、source冻结、共同初始化顺序、无reader/source辅助forward；
+复用已验证frame8，profile policy micro8/16的实际吞吐与峰值后固定启动配置，不扩大dtype或追逐逐bit一致。
+formal必须clean pushed detached，精确命令与live GPU/quota另记launch contract。所有模块共同端到端学习，无额外课程或RL。
+
+100/200均用原train96和validation strict400 correct/other、同映射、同teacher pools，以及原train24留出动作诊断。
+primary单变量参照为第10节teacher_vl；同时列第8节auxiliary_fm及原main，避免仅借较弱参照制造恢复结论。
+报告逐task/suite、breadth、source、R/G/L/churn/J与既定task-cluster20000次CI，明确各参照实际改变的因素。
+关闭辅助时日志reader/source的零占位不代表真实误差；只报告实际得到的学生FM与闭环。
+
+本窗口止于200，不按中途结果扫mu/rho、LR、rank或seed。若无可信跨视频、跨task收益与保持，不延长该配方或自动补frame_set；
+若有值得验证的恢复，才登记同纯FM/VL配置的fresh匹配frame_set，再沿第5节固定资格标准判断视频过程增量。
+单纯删去辅助头、训练loss降低、超过较弱VL参照或条件差异扩大均不能完成goal。Test及最终sealed controls继续封存。

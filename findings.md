@@ -735,3 +735,23 @@ Owner指出连续数小时没有根本进展。问题不只是分数没涨：此
 第11节当前100检查点已生成，200及原配对证据仍在途；其结果尚未裁决，不用本节预先判失败。
 完成这组已登记比较后，先进行上述综合裁决，不自动启动新配方或frame_set。即使本项涨分，也须说明改变了
 哪条机制判断，不能仅借较弱参照宣布恢复。目标、信息墙、K1、sealed controls及既定资格门槛保持。
+
+本次按该方式复核历史后，进一步排除三种看似尚未尝试的默认修复：
+
+- **同预算增加K1条件已试过。** R在同4tasks/256queries/400updates、原图/LR/任务流下，把每task
+  1×64改为2个无放回K1×32；条件1600→3200，unique task-video378→383，训练56→56/96，
+  validation126→85/400。原件`runs/analysis/video_consumption_20260911/r/continuation/continuation_summary.json`，
+  `7fedbe85:docs/video_consumption_writer_design.md`§3及`src/ember/writer/learning_data.py`。
+  因此不能再把条件调用次数与独立任务映射混同，或仅因当前表示不同就重做条件数小扫。
+- **早期recipe的正负交互不是单纯更多视频。** 按每task150次visit比较，v5.2 old900/TC150均3600条件，
+  queries75600/72000、correct132/51；v6均3600条件/72000queries，correct95/111。旧v6按(task,visit)
+  的3600条teacher已有实际一致审计；变化在4→24任务聚合、900→150更新、LR和flow RNG时间线。
+  原件`runs/outputs/pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json`及
+  `docs/horizon_k1_evidence_review_20260909.md`§4.1。支持架构与学习组织交互，不支持任一未识别配方因素自动成为修复。
+- **输出更独立、更视频敏感也有负例。** `34be4a0`的Target-Owned Factor实际解除跨层硬共享，
+  50/100/150/200仅99/76/86/68；扩大参数条件差异没有兑现行为能力。完整设计及裁决在
+  `3a6f801d:docs/action_forecast_writer_target_owned_factor_design.md`§8。不再用参数几何改善替代实际执行价值。
+
+早期50-episode视频与动作sampler没有显式同episode排除，旧日志也缺逐action-demo trace；因此旧正结果继续保留，
+但不能把其训练合同说成与当前16/26分池逐条匹配，也不猜测碰撞率以解释成绩。未识别变量应标为未识别，
+不能顺势变成下一轮默认实验。以上复核仅用已有源码、合同和分析，不新增GPU干预或使用旧sealed controls选架构。

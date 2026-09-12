@@ -42,7 +42,7 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   当前两臂的曝光、诊断、optimizer和初始化配置已逐字段核对，只有process_mode不同。
   条件触发的pureFM配置也已同步至100/200及相同曝光，目前不启动。
 - ordered/frame_set两节点共16个train96/validation400 correct/other面板已准备，materialize/evaluate脚本及请求语义核对通过；
-  主/局部学习对比脚本准备完毕，paired成功集合已汇总两个完整训练面板；未选checkpoint，Test及sealed controls未用。
+  主/局部学习对比已完成，paired成功集合持续汇总完整面板；未选checkpoint，Test及sealed controls未用。
 - 最新启动前/data1 quota886.7GiB/1TiB，两臂新增峰值预算40GiB；3个已集成临时实现工作树清理完毕，
   source/data/env与正式冻结运行面保留。接续训练和各新GPU评测启动前按实际变化检查额度。
 
@@ -61,9 +61,8 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - validation100 correct完整45/400，source47/400；S/O/G/L=0/37/0/8、breadth4，source R/G/L=4/41/43，
   churn84、J=.04545，差额task-cluster95%CI[−.2825,.22]。source的41个Goal成功全部丢失；本节点未显示总体迁移改善。
   原件及逐task/suite记录在统一`paired_summary.json`。单臂不能判断有序结构增量，匹配frame_set及相邻200仍待完成。
-- correct评测进程已退出，gpu02:2接续frame_set100 LoRA物化（tmux `ember-local-action-frame-set-mat100`）；
+- correct评测进程已退出，frame_set100/200物化随后均完成；当前资源接续见下节。
   gpu02:0继续validation100 other（tmux `ember-local-action-ordered-val-o100`，3个persistent workers）。
-  两节点物化与评测共享物理GPU总数6，未超过Owner额度。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
   gpu02可用RAM321GiB。两个共驻设备原仅有约0.2GiB低利用率context，未改动其它用户作业。
@@ -97,9 +96,11 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   12/24任务正向。两节点主动作拟合均未形成可靠有序增量。
 - 200局部留出为0.810114/0.811286，ordered改善0.001171932，95%CI[0.000908669,0.001444574]，24/24任务正向。
   局部优势一致但幅度仍小；只有配对闭环才能判定是否成为有益过程。原件`step200/learning_comparison.json`与100节点同根。
-- 当前已完成3/16完整闭环面板。gpu01:0生成frame_set200 LoRA，gpu01:4/5以6 workers评测ordered200 validation correct，
-  gpu01:6以3 workers评测ordered200 train correct；gpu02:2继续frame_set100物化、gpu02:0继续ordered100 validation other。
-  新作业已实际生成LoRA或领取rollout任务；精确命令及共享两节点preflight记录在对应`step200` launch records。
+- 两臂100/200共16个LoRA库全部封存，train/validation每库各96/400条件；所有物化进程已退出。
+  当前已完成3/16完整闭环面板。gpu01:4/5以6 workers评测ordered200 validation correct，gpu01:6以3 workers评测ordered200 train correct；
+  gpu01:0与gpu02:2各以3 workers评测frame_set100 train other/correct，gpu02:0继续ordered100 validation other。
+  五项评测均已核对活进程及实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
+  最新接续时quota910.9GiB、study24.840GiB，原40GiB预算剩余15.160GiB，投影926.060GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
   原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。
 

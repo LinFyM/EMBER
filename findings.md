@@ -864,3 +864,37 @@ video/action demos交集，Stage0与G2各自sampler也明确分开。这些并�
 因此obs[p]→obs[q]的真实区间动作应为actions[p+1:q+1]。stride5末尾追加帧可能不足五步，不能用padding补成真实转移。
 该结论直接约束拟议局部反演标签；现有主FM实际采用obs[i]/actions[i:]同索引，尚未量化其时间差的行为影响，
 不能将它定为此前科学失败的唯一原因，也没有在这次只读核对中变更原训练合同。
+
+## 68. 扩展任务映射已有直接历史，不能作为负结果后的默认修复（2026-09-12）
+
+局部动作窗口收尾期间，重新核对“只有24个任务，所以未获得可迁移过程”这一竞争解释。95是曾登记的
+71个审计LIBERO-90任务加train24总池，不等于每条历史路线实际对95个任务产生梯度；以下数字为不同task
+spec的数量，也不等于已经证明相互独立、能区分操作顺序的教学映射。
+
+- 冻结G2行为读出`5781694`实际训练56 meta＋19 target共75任务，另20任务零梯度；四类reader各1000步。
+  held full/language recovery约.2695/.2687，behavior-span oracle约.7160。G2-B `5cbe76e`随后在相同75任务上
+  共同训练表征，60macros/420更新/2280条件，held recovery最高约.294、终点.283，未获行为充分性。
+  前者是冻结读出，后者保留跨episode动作/进度监督；都没有分别训练的ordered/frame_set Writer。
+- 自然组合Writer `5534cb14`实际55 meta＋18 target共73任务，400步/4800条件/76,800 functional rows，
+  每task65–67次；扩大了不同任务映射，不能说只增加同task视频。held5为30→32/250，rank-balance后继为45→35，
+  carrier43。该图有G2组件初始化、冻结observer和rank12 carrier＋生成rank4，不能作当前fresh完整输出的单变量参照。
+- 更接近当前输出合同的`041aff55`已经生成全部38-target rank16 A/B。其73-task组与`351feb48`仅18-target组
+  都训练128更新、每target1024 action queries；后者的实际configuration audit确认只移除55个meta目标，
+  保持target身份、采样、noise、权重及optimizer。四点validation screen80为15/19/19/19对17/17/20/16；
+  终点18训练task诊断为42/180对55/180、breadth9对13。这支持特定共享训练组合的能力取舍，
+  不支持更多任务自然改善迁移，也不能把screen80外推为strict400；两组均未训练匹配无序参照。
+
+以上共同排除“扩展任务尚未试过”及“历史扩展只是更多同task样本”。它们未排除当前图的覆盖效应，
+但也没有把覆盖不足识别为唯一或首要根因。旧覆盖审计确有同语言跨场景及gradient-to-held bridge，
+仍存在具体过程缺口；统计task总数或重新训练小reader不能回答扩大覆盖是否增加有益的有序闭环差额。
+仅凭本轮负结果、当前图不同或任务数较少，不恢复95-task，不把新的匹配训练作为开始理论判断的前置。
+
+原件与完整适用范围：
+
+- `runs/analysis/pi05_ecp_g2_behavior_sufficiency_probe75_20_5781694_gpu01p6_20260829/report.json`；
+  `runs/outputs/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/run_contract.json`。
+- `runs/outputs/pi05_ecp_policy_response_writer_factorial_73task_k1_component_s400_5534cb14_gpu01p0156_cache8g_20260903/run_contract.json`；
+  `runs/analysis/pi05_ecp_policy_response_writer_factorial_coverage_v1_20260903/report.json`。
+- `runs/analysis/pi05_ecp_prw_complete_meta73_20260906/decision.json`；
+  `runs/analysis/pi05_ecp_prw_complete_target18_20260906/decision.json`与`launch/configuration_audit.json`；
+  更广行为诊断见[research_history§6](docs/research_history.md#recent-learning)。

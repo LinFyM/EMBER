@@ -1,11 +1,54 @@
 # EMBER progress
 
-## 当前状态：时间对齐候选关闭，激活冻结正例正确收益复核（2026-09-13）
+## 当前状态：冻结正例复核未通过，回到机制理论裁决（2026-09-13）
 
-Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
-**当前active design：[冻结正例正确收益复核](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)§6。**
-Execution-Aligned已按完整证据关闭，当前不再开展完整Writer训练。新复核仍使用原611770d1冻结运行面，
-不恢复旧模型的训练或把旧实现并回canonical源码。最新专家建议、竞争解释与停止分支见该审计§1–6及findings§70–72。
+Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
+**整体goal未完成。当前无active实验design；时间对齐与冻结正例复核均已按完整证据关闭。**
+当前工作转为综合机制与可识别性判断，不恢复历史训练、不自动扩大冻结复核或运行最终controls。
+下一项实验须先有相对已失败近邻的实质机制区别、可区分竞争解释的预测和停止条件。
+
+### 冻结正例复核：完整1,728次rollout
+
+固定旧611770d1 ordered200与frame_set200；train24×teacher46–49×states0–7全交叉，
+每模型768rows，source独立192rows。复用原192个LoRA，零新训练／Writer调用，不覆盖原manifest。
+
+| 教师video | ordered /192 | frame_set /192 | 净增 |
+| --- | --- | --- | --- |
+| 46 | 90 | 90 | 0 |
+| 47 | 93 | 89 | +4 |
+| 48 | 89 | 87 | +2 |
+| 49 | 87 | 95 | −8 |
+| 总计 | 359/768 | 361/768 | −2 |
+
+有序−静态为−0.26个百分点；固定task交叉、多层交叉、task均值三种20,000次配对bootstrap95%CI分别
+[−4.04,+3.52]、[−4.69,+4.30]、[−2.73,+2.21]个百分点，均跨零。8task净正、6个零、10个净负；
+S/O/G/L有序114/84/104/57，静态118/87/102/54。相对静态保留316／新增43／丢失45，churn88、J=.78218。
+四条video并非均正，预注册的固定模型跨条件优势要求未通过；不扩大面板或追加训练。
+
+source32/192（16.67%），有序359/768（46.74%）；有序−source+30.08pp，三种CI下界均>0，
+最宽多层交叉区间[+18.88,+41.67]pp。说明训练任务的适应能力仍在，未兑现额外有序收益。
+source广播只用于等权差额计算，实际样本始终192。两模型breadth22/24、21/24；192个task/state中
+四条视频均成功74、69，不用这一单项保持指标替代总体／逐video的增量判据。
+
+原52/96对40/96仍是原条件的有效历史事实；在本次登记假设下，新面板不支持其12.5pp量级的平均优势，
+仍未排除小幅正负效果。新旧初始化不重合，旧96不是交叉面板且阳性受开发选择影响；
+不能唯一归因到video、state、训练随机性或某个模块，也不证明视频／普通FM普遍不可能。
+
+全部1,728行、model/video/task/state/env-policy RNG及共有noise序列已核验；9面板全部worker exit0，
+累计评测墙钟4089.74秒，controller56404已退出。source入口首次prepare在GPU模型／rollout前退出，
+原件保留于failed_attempts/attempt1；一行registered-subset screen8支持经116项测试后推送，
+source用clean pushed c5a28747冻结运行面，两Writer保留原611770d1，source评测路径只有该准入行差异。
+每项现场准入记录保留；data1最后阶段约966.2/1024GiB，2GiB新增峰值预算覆盖输出与218MiB source冻结树。
+没有新模型／数据大副本或删除formal证据。当前没有selected checkpoint，未用最终controls、Test或RL。
+
+原件：`runs/analysis/frozen_positive_replication_20260913/REPLICATION_READOUT.md`、
+`paired_replication_summary.json`、`replication_decision.json`、`study_contract.json`、`mapping_provenance.json`，
+以及同名outputs根的9项raw rows／completion。全部task/suite、逐video、source与换视频成功集合均保留。
+完整判断见findings§73；原预注册合同为docs/frozen_positive_replication_audit.md§6，现已关闭。
+
+下一步先把视频所需信息、初始化变化和共享参数竞争与已保存的证据对齐，提出能够产生不同观察的机制预测。
+现有结果不支持“只差Compiler”、默认增加任务／模块或把有意的state-free教师输入当作新bug。
+在预测与合法判别路径明确前不再投入完整Writer训练；整体goal继续，不以评测完成或局部指标完成目标。
 
 ### 时间对齐实验：完整结果与裁决
 
@@ -32,34 +75,6 @@ Execution-Aligned已按完整证据关闭，当前不再开展完整Writer训练
 `training_step200_pairing.json`、`materialization_mapping_audit.json`及各completion保留全部task/suite/source与相邻成功集合。
 后台tmux ember-aligned-overnight已complete，controller3865623已退出。首面板结束后的共享文件可见性时差恢复记录及
 attempt1日志保留；其余交接均通过，没有重复训练、物化或rollout。
-
-### 当前复核：固定模型、交叉条件、一次预算
-
-条件性合同在新outcome前已由3c2534db登记，本轮完整non-pass使其现在生效。
-固定旧611770d1的ordered200／frame_set200（原52/96对40/96），全部train24、teacher46–49、states0–7全交叉。
-两模型各768rows，source单独192rows，共1,728次实际rollout；复用192个原LoRA，零新Writer调用、零新训练。
-新映射保留原编译身份，另存于原bank旁，不覆盖原manifest；原运行树保持clean pushed detached。
-
-脚本已准备，原运行面的8个映射CPU合同已验证，三种交叉bootstrap的数学常量校验通过。
-首次现场准入为data1 966.0/1024GiB，2GiB新增峰值预算、预计968.0GiB，共享约82.7TiB；
-该预算也覆盖小于0.3GiB的评测冻结树。gpu01[0,1,3,4,5,6]合适，两节点进程身份已核对。
-启动后8个新映射全部通过完整原运行面inspect，source prepare因8-state screen入口限制退出，零GPU模型／rollout。
-已在唯一registered-subset入口增补screen8并扩展source／adapter与信息墙回归，116项相关测试通过；
-source将用新clean pushed冻结运行面和完整train24显式清单，两个Writer臂保留原611770d1。
-已从同一1,728rows合同恢复，tmux ember-frozen-positive、controller56404持续执行固定队列；
-实际prepare核验24tasks与全部states0–7，12worker动态领取任务。source冻结commit c5a28747，
-其评测路径相对611770d1只改变一行registered screen8准入；首次命令和失败原件保留于failed_attempts/attempt1，
-不改变面板或预算。每一面板启动前重新检查两节点GPU与独立quota；后续8个固定video Writer面板顺序自动接续。
-已完成source32/192（480.88秒）及video46两臂：有序90/192、静态90/192（453.96／448.13秒），
-三项全部worker exit0。第一组两臂与source的192个task/state、env/policy seed及共有noise序列已核验；
-两模型R/G/L=80/10/10、churn20、J=.8，breadth20／19；S/O/G/L为28/21/28/13对31/21/25/13。
-该视频未在新初始化上复现总分优势；尚未完成其余三视频，不提前代替整体有界裁决。当前正执行video47 ordered。
-运行／确切命令／完整统计保存到`runs/analysis/frozen_positive_replication_20260913/`，输出到同名outputs根。
-
-复核要求总体ordered−static与ordered−source在三种登记95%区间下界均>0，至少两个suite净增、四条teacher方向均正。
-它只确认固定两模型的跨条件能力差额；通过也不证明输入顺序因果性、相邻保持或未见task迁移。
-负向、不确定或跨视频异质性均按原1,728rows上限停止，不自动追加训练或面板。最终顺序controls边界保持，
-任何后续实质机制修改仍须新增证据、近邻历史区别及可失败预测。
 
 ### 上一候选：冻结视频先验比较已关闭
 

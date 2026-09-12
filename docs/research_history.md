@@ -1338,3 +1338,24 @@ train100/200有序44/51、静态36/53；早期净增8未保持。validation有�
 由完整non-pass触发：旧611770d1固定200双模型，24task×4video×8state加独立source192，共1,728rollout上限，
 零新训练／编译。它用于检验能力差额的跨条件支持，不能据此选checkpoint或宣称顺序因果与迁移。
 具体启动及结果仍以progress和新formal artifacts为准；本条登记不预写尚未发生的结果。
+
+
+## 2026-09-13：旧冻结正例的1,728次交叉复核关闭
+
+[预注册复核§6](frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)已完整执行：
+旧611770d1双模型固定200，train24×teacher46–49×states0–7交叉，两模型各768加source192，
+零新训练／Writer调用，原192个LoRA复用，所有1,728行与配对身份／RNG检查通过、9面板全部worker exit0。
+有序359/768、静态361/768（−.26042pp），四video有序净额0/+4/+2/−8；source32/192。
+三种预注册有序−静态95%CI[−4.04,+3.52]/[−4.69,+4.30]/[−2.73,+2.21]pp均跨零；
+有序−source+30.08pp且三种下界均正，任务适应能力仍在，旧12.5pp量级有序优势未在新条件复现。
+旧96面板事实保留，不能由本次区间跨零推出零效应或唯一根因。完整suite／task／换视频保持与解释见[findings§73](../findings.md)。
+
+按1,728上限关闭，不扩面板、不续训或扫参数；无selected checkpoint、最终controls、Test或RL，整体goal未完成。
+下一阶段回到综合机制与可识别性判断；历史state-free教师prefix不是新bug，也不自动支持增加模块。
+source首次prepare因screen8入口限制在模型／rollout前退出；唯一registered-subset入口增补经116测试并以c5a28747冻结执行，
+source评测路径仅改变该准入行。两个Writer臂仍为611770d1，原失败日志保留，没有重复rollout。
+累计评测墙钟4089.74秒，controller正常结束；原资源准入与独立quota预算记录完整保留。
+
+原件：`runs/analysis/frozen_positive_replication_20260913/REPLICATION_READOUT.md`、`paired_replication_summary.json`、
+`replication_decision.json`、`study_contract.json`、`mapping_provenance.json`与同名outputs根9项raw rows／completion。
+原checkpoint、LoRA、两冻结runtime和所有原始证据保留；当前是否有新active design只看progress。

@@ -1031,3 +1031,65 @@ CI上界等于0不是严格负区间，也不能解释为已证明零效应；�
 `training_step200_pairing.json`、`diagnostic_step200_comparison.json`及8项completion。
 全部checkpoint／LoRA／raw rows保留。没有selected checkpoint，未触发other／强image参照、最终controls、Test或RL。
 整体goal未完成；后续活跃状态以progress为准。
+
+
+## 73. 冻结200正例的跨条件复核未通过；任务适应能力与有序增量须分开（2026-09-13）
+
+按新outcome前登记的[复核合同§6](docs/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)，
+固定旧611770d1 ordered200与frame_set200，对train24×teacher46–49×states0–7完整交叉评测；
+两模型各768，source单独192，共1,728次实际rollout。零新训练／Writer调用，复用192个原LoRA，
+source广播只用于构造等权差额，未增加样本数。初始化对固定模型是新的，教师已开发，不是新task或新训练seed。
+
+| video | ordered /192 | frame_set /192 | 有序净增 |
+| --- | --- | --- | --- |
+| 46 | 90 | 90 | 0 |
+| 47 | 93 | 89 | +4 |
+| 48 | 89 | 87 | +2 |
+| 49 | 87 | 95 | −8 |
+| 合计 | 359/768 | 361/768 | −2 |
+
+整体有序−静态为−.26042pp。预注册seed20260912、20,000次配对bootstrap的区间为：
+
+| 口径 | 有序−静态95%CI（pp） | 有序−source95%CI（pp） |
+| --- | --- | --- |
+| 固定24task，task内video/state分别抽样后交叉 | [−4.03646,+3.51563] | [+23.82813,+36.32813] |
+| 再按task重采样，内部仍为交叉结构 | [−4.68750,+4.29688] | [+18.88021,+41.66667] |
+| 只重采样task均值 | [−2.73438,+2.21354] | [+20.96354,+39.71354] |
+
+三种有序−静态区间均跨零；总体点估计非正、四video并非均正，预注册的跨条件优势判据未通过。
+在登记的交换性与重采样假设下，新面板不支持旧12.5pp量级的平均增益，仍未排除小幅正负效果。
+旧52/96对40/96仍是其原四个video/state配对格点的有效事实；新旧state不同，旧面板不交叉且阳性受多轮开发后关注影响，
+不能唯一归因初始化、video或训练随机性，也不能把CI跨零写成零效应或普遍不可能性证明。
+
+source32/192=16.67%；有序46.74%、静态47.01%。有序−source+30.07813pp，三种CI下界均严格正，
+说明已训练的条件化系统能在新初始化上产生有用LoRA；没有证明这种能力必须使用视频动态，也不证明Compiler已充分。
+这是正证据与负证据的分界：整体任务适应能力保留，而额外有序收益未在新的条件面板建立。
+
+有序相对静态R/G/L=316/43/45，churn88、J=.78218；24task净额8正／6零／10负。
+S/O/G/L有序114/84/104/57、静态118/87/102/54，净额−4/−3/+2/+3；source各suite实际14/0/16/2，共32/192。
+两模型breadth为22/24、21/24。192个task/state中，四条video均成功74/69，至少一条成功107/109；
+正确video两两成功集合J分别.782–.853、.750–.822。完整分布保留，不能以单项all-video成功数提升替代增量判据。
+
+### 对下一步机制判断的约束
+
+- 现有证据支持“学到了可跨初始化使用的任务适应能力，但有序组织没有可信附加收益”这一现象描述。
+  它未隔离语言与静态视觉贡献，不能直接定性为某一种输入捷径。
+- 时间对齐两节点的有序优势不保持与本次固定正例不复现，共同降低继续同族完整Writer训练的投入价值。
+  不默认通过增加任务、rank、训练步数、读出头或共享／独立D再试一轮；也不能由此否定早期v5.2/GOMQ在其条件下的正事实。
+- 表示是否充分、Compiler怎样消费与跨task更新竞争仍未唯一定位。原生H、辅助可解码性或有用LoRA的存在，
+  都不等于特定接口已经解决；下一项需要可使竞争解释产生不同观察的预测。
+- 等待期只读核对了教师prefix：当前native.py使用真实RGB与`Task: ...; Action:`，不含teacher proprio/state；
+  execution processor则使用真实机器人state。这是信息墙下已规定的输入差异，历史3a6f801d的feature_cache／live_adapter／v6 runtime
+  采用同一Pi05TeacherPrefixTokenizer；不是本轮新出现的工程缺陷，也不足以自动启动state估计模块或宣称唯一根因。
+
+按原预算关闭本复核，不追加面板、完整Writer训练或参数扫描，不运行最终controls、Test或RL；无selected checkpoint。
+当前回到综合理论与可识别性判断，先给出新增机制证据、近邻历史区别与可失败预测，才登记下一项合法最小实验。
+整体goal未完成，实验完成本身不能完成目标。
+
+全部1,728行及固定model/video/task/state/env-policy seed与共有noise序列核验通过，9面板全部worker exit0，
+累计评测墙钟4089.738秒，controller已退出。source首个prepare在GPU模型／rollout前退出，
+既有registered-subset入口增补screen8后116项相关测试通过；source用clean pushed c5a28747冻结运行面，
+其评测路径与611770d1仅差该准入行，两个Writer臂仍用原611770d1。原失败与正常完整证据均保留，无重复rollout。
+
+原件：`runs/analysis/frozen_positive_replication_20260913/REPLICATION_READOUT.md`、`paired_replication_summary.json`、
+`replication_decision.json`、`study_contract.json`、`mapping_provenance.json`及同名outputs根的9项raw rows／completion。

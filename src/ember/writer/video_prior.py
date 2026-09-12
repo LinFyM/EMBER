@@ -22,13 +22,13 @@ def validate_prior_config(config: dict) -> None:
     prior = config["video_prior"]
     mode = prior.get("mode")
     expected_process = "ordered" if mode == "ordered" else "frame_set"
-    fixed = {"schema": "frozen_vjepa21_prefix4_v1", "code_commit": PRIOR_COMMIT,
+    fixed = {"schema": "frozen_vjepa21_agentview_prefix4_v2", "camera_view": "agentview", "code_commit": PRIOR_COMMIT,
              "checkpoint_key": "ema_encoder", "input_size": 384, "prefix_frames": 4,
              "preprocessing": "official_single_view_resize438_center384_imagenet",
              "code_root": ".codex/vendor/vjepa2",
              "checkpoint": "models/vjepa2_1/vjepa2_1_vitl_dist_vitG_384.pt"}
     if (mode not in PRIOR_MODES or config["model"]["process_mode"] != expected_process
-            or config["observer"].get("camera_view", "agentview") != "agentview"
+            or config["observer"].get("camera_view") != "dual"
             or {key: prior.get(key) for key in fixed} != fixed
             or type(prior.get("window_batch")) is not int or prior["window_batch"] <= 0
             or set(prior) != {*fixed, "mode", "window_batch"}):

@@ -101,6 +101,7 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     observer = object.__new__(NativeVideoObserver)
     observer.device, observer.frame_chunk = torch.device("cpu"), 2
     observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
+    observer.prior_camera_view = "agentview"
     observer.policy = SimpleNamespace(model=SimpleNamespace(paligemma_with_expert=SimpleNamespace(
         embed_language_tokens=lambda tokens: torch.zeros(1, 4, 8))))
     tokens, mask = torch.ones(1, 4, dtype=torch.long), torch.ones(1, 4, dtype=torch.bool)
@@ -108,6 +109,8 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     observer.tokenizer = lambda languages: (tokens, mask, span)
     prior_calls = []
     def prior(video):
+        assert video.shape == (3, 3, 8, 8) and video.dtype == torch.uint8
+        assert torch.all(video == 0)  # The distinct wrist pixels cannot enter the prior.
         prior_calls.append(len(video))
         return torch.zeros(len(video), 5, 7, dtype=torch.bfloat16)
     observer.prior = prior
@@ -154,6 +157,7 @@ def test_camera_contract_rejects_single_rgb_in_dual_observer_and_cache_mismatch(
 
     observer = object.__new__(NativeVideoObserver)
     observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
+    observer.prior_camera_view = "agentview"
     with pytest.raises(ValueError, match="declared teacher camera views"):
         observer.prefix(torch.zeros(1, 3, 8, 8), None, None, None)
     with pytest.raises(ValueError, match="camera views differ"):

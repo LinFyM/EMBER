@@ -77,7 +77,8 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(
         policy, state.meta, state.vl_meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,
-        prior=prior, frame_chunk=int(config["observer"]["frame_chunk"]),
+        prior=prior, prior_camera_view=prior_config["camera_view"],
+        frame_chunk=int(config["observer"]["frame_chunk"]),
         camera_view=config["observer"].get("camera_view", "agentview"),
     )
     stats = read_json(asset_root / reuse["source_normalization"])["stats"]

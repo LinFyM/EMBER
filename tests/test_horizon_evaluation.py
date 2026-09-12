@@ -32,7 +32,7 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
 
 
 def _prior(mode="ordered"):
-    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())["video_prior"]
+    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())["video_prior"]
     value["mode"] = mode
     return value
 
@@ -61,7 +61,7 @@ def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
-           "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
+           "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_cross_episode_k1_execution_aligned_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}

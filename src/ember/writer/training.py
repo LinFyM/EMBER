@@ -29,9 +29,9 @@ from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_execution_aligned_video_writer_run_v1"
-STAGE = "execution_aligned_video_writer_fresh"
-TRAINING_SCHEMA = "ember_execution_aligned_video_training_state_v1"
+RUN_SCHEMA = "ember_native_dual_video_writer_run_v1"
+STAGE = "native_dual_video_writer_fresh"
+TRAINING_SCHEMA = "ember_native_dual_video_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -51,7 +51,7 @@ def _config(path: Path) -> dict[str, Any]:
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_execution_aligned_video_writer_config_v1"
+        config.get("schema_version") != "ember_native_dual_video_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -405,7 +405,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and config["status"] != "registered_execution_aligned_comparison":
+    if args.mode == "formal" and config["status"] != "registered_native_dual_comparison":
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
     if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):

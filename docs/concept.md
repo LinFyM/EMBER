@@ -12,6 +12,8 @@ Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已
 该结果不否定所有视频预训练或普通FM，也不证明共享表示已充分。
 [执行对齐设计](execution_aligned_writer_design.md)规定执行query使用真实post-action观测之后的未来动作标签；
 时间对应正确性不等于有益过程证据，当前授权与状态只看progress和task_plan。
+[Native双相机修正](native_dual_video_writer_design.md)基于原生读出的相机范围证据，只向native prefix加入同步腕部RGB，
+冻结视频先验保持agentview；实际学习与闭环资格仍待独立验证。
 下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略

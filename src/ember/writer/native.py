@@ -64,7 +64,7 @@ class NativeVideoObserver:
     def __init__(
         self, policy: torch.nn.Module, meta: MetaLoRAStack, vl_meta: MetaLoRAStack,
         tokenizer: Pi05TeacherPrefixTokenizer, probe: torch.Tensor,
-        *, prior, frame_chunk: int = 4, camera_view: str = "agentview",
+        *, prior, prior_camera_view: str, frame_chunk: int = 4, camera_view: str = "agentview",
     ) -> None:
         if probe.shape != (50, 32) or frame_chunk <= 0:
             raise ValueError("native observer requires one public 50x32 probe")
@@ -76,6 +76,9 @@ class NativeVideoObserver:
         self.prior = prior
         self.camera_view = camera_view
         self.camera_names = teacher_camera_names(camera_view)
+        if prior_camera_view not in self.camera_names:
+            raise ValueError("prior camera must be present in the declared teacher views")
+        self.prior_camera_view = prior_camera_view
         self.expert = policy.model.paligemma_with_expert.gemma_expert.model
         self.gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
         if len(self.expert.layers) != 18 or len(self.gemma.layers) != 18:
@@ -128,7 +131,9 @@ class NativeVideoObserver:
         for video, indices in zip(frames, frame_indices, strict=True):
             if indices.shape != (len(video),) or len(video) == 0 or not bool((indices[1:] > indices[:-1]).all()):
                 raise ValueError("native video positions must preserve real frame order")
-            prior_tokens.append(self.prior(video))
+            prior_index = self.camera_names.index(self.prior_camera_view)
+            prior_frames = video[:, prior_index] if len(self.camera_names) == 2 else video
+            prior_tokens.append(self.prior(prior_frames))
             videos.append(tuple(
                 self.prefix(video[start:start + self.frame_chunk], tokens, mask, task_span)
                 for start in range(0, len(video), self.frame_chunk)

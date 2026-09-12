@@ -26,7 +26,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_execution_aligned_video{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_native_dual_video{suffix}.json")
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
         training.run(args)
 
@@ -34,7 +34,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -53,7 +53,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
@@ -377,9 +377,9 @@ def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
         _execution_config(args, config, SimpleNamespace(world_size=3, rank=0))
 
 
-def test_unregistered_dual_view_is_rejected_and_cannot_exact_resume(tmp_path, config):
+def test_unregistered_camera_binding_is_rejected_and_cannot_exact_resume(tmp_path, config):
     changed = deepcopy(config)
-    changed["observer"]["camera_view"] = "dual"
+    changed["observer"]["camera_view"] = "agentview"
     cfg_path = tmp_path / "dual.json"
     cfg_path.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match="video prior"):
@@ -390,6 +390,11 @@ def test_unregistered_dual_view_is_rejected_and_cannot_exact_resume(tmp_path, co
     _publish_contract(path, original, resume=False)
     with pytest.raises(ValueError, match="exact-resume contract differs: config"):
         _publish_contract(path, {**original, "config": changed}, resume=True)
+    wrong_prior = deepcopy(config)
+    wrong_prior["video_prior"]["camera_view"] = "eye_in_hand"
+    cfg_path.write_text(json.dumps(wrong_prior))
+    with pytest.raises(ValueError, match="video prior"):
+        _config(cfg_path)
     changed["observer"]["camera_view"] = "unknown"
     cfg_path.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match="video prior"):

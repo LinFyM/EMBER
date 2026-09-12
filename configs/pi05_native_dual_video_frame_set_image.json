@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_execution_aligned_video_writer_config_v1",
-  "status": "registered_execution_aligned_comparison",
-  "design": "docs/execution_aligned_writer_design.md",
+  "schema_version": "ember_native_dual_video_writer_config_v1",
+  "status": "registered_native_dual_comparison",
+  "design": "docs/native_dual_video_writer_design.md",
   "data": {
     "seed": 7,
     "task_ids": [
@@ -124,11 +124,11 @@
     "probe_seed": 1729,
     "probe_distribution": "torch.randn CPU float32 [50,32], same public tensor for every task/frame",
     "flow_time": 1,
-    "frame_chunk": 8,
+    "frame_chunk": 4,
     "response": "post_final_norm_actual_action_out_proj_input",
     "visual_evidence": "same_version_teacher_VL_Meta_Z_and_KV; frozen_pre_Gemma_embeddings_only",
     "vl_meta_rank": 4,
-    "camera_view": "agentview"
+    "camera_view": "dual"
   },
   "optimization": {
     "seed": 7,
@@ -152,8 +152,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Fresh bounded100/200 future-control main FM comparison; unchanged longest93-frame graph/profile",
-    "qualification_registration": "docs/execution_aligned_writer_design.md",
+    "initial_use": "Fresh bounded100/200 native dual-camera main FM comparison; physical profile required before formal launch",
+    "qualification_registration": "docs/native_dual_video_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -282,7 +282,7 @@
         48,
         49
       ],
-      "registration_status": "100/200 and51200 main queries registered before learning, reusing unchanged-graph profile",
+      "registration_status": "100/200 and51200 main queries registered before learning; new dual-camera profile required",
       "optimizer_updates": [
         100,
         200
@@ -427,26 +427,21 @@
     },
     "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
     "profile_registration": {
+      "status": "pending",
       "condition": "longest train24 teacher task38 demo0,93frames",
-      "warm_condition_seconds": 19.5573024940677,
-      "peak_allocated_gib": 39.07941246032715,
-      "peak_reserved_gib": 42.083984375,
-      "frame_chunk": 8,
+      "frame_chunk": 4,
       "policy_microbatch": 8,
       "prior_window_batch": 4,
       "updates": 200,
       "condition_exposures": 800,
       "main_fm_queries": 51200,
-      "profile_initialization_reused": false,
-      "source_profile": "runs/analysis/pretrained_video_grounded_20260912/profile/results.json",
-      "source_commit": "611770d13ab71bcee8284539914372935d07387e",
-      "reuse_scope": "unchanged model graph, shapes and per-condition queries; action labels shifted, no reused initialization"
+      "profile_initialization_reused": false
     }
   },
   "update_version": "pretrained_video_main_fm_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",
   "video_prior": {
-    "schema": "frozen_vjepa21_prefix4_v1",
+    "schema": "frozen_vjepa21_agentview_prefix4_v2",
     "code_commit": "204698b45b3712590f06245fbfba32d3be539812",
     "checkpoint_key": "ema_encoder",
     "input_size": 384,
@@ -455,6 +450,7 @@
     "code_root": ".codex/vendor/vjepa2",
     "checkpoint": "models/vjepa2_1/vjepa2_1_vitl_dist_vitG_384.pt",
     "mode": "frame_set_image",
-    "window_batch": 4
+    "window_batch": 4,
+    "camera_view": "agentview"
   }
 }

@@ -8,8 +8,21 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
 
-**当前无active实验design。** 时间对齐、冻结正例复核及
+**当前active design为[Native Dual-View Writer](docs/native_dual_video_writer_design.md)。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，无新Writer训练。
+
+### Native双相机修正：已登记，实施／profile阶段
+
+新证据是相同输入位置下native双相机动作读出稳定改善；本项只将腕部加入native前缀，
+V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fresh共享学习及唯一38-target LoRA保持。
+新dual ordered／frame_set各fresh200，固定100/200及8个train96／validation400 correct面板；
+复用旧agentview两臂的同节点原件作输入范围参照。相邻有序资格未通过即关闭，不追加局部参数扫描。
+
+已实现显式native／prior相机绑定及新运行身份，旧单相机配置与checkpoint只在冻结历史树中复现；
+相机路由／cache／配置／物化／完整模型126项检查通过。下一步测最长93帧真实双相机完整更新，
+profile只确定物理batch与峰值，不改变100/200学习预算，也不提供正式初始化。
+正式两臂及初始8面板估计约26GiB，登记32GiB阶段峰值预算；data1现场用量966.9/1024GiB，
+预计峰值998.9GiB。条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。
 
 ### 原生端点读出：已完成，保留视觉范围限制
 
@@ -21,14 +34,14 @@ dual对应.13673/.13217/.13177，均胜过task mean。三个同读出相机差�
 双相机的单步H有原生可读动作价值，不能转写成当前agentview或学习后Meta／E已充分；
 也未区分腕部信息与source输入分布匹配，不能由动作预测直接声称视频过程／LoRA收益。
 已核对双视角实现与V-JEPA单视角合同；1,669份范围内库存中38份可判定observer均为agentview。
-当前下一步推导native双相机与现有单视角视频先验的最小输入修正及可失败预测；
-不将双视频K结果混为双相机实验，不自动重启已关闭训练。原始endpoint_*证据完整保留；代码e1a06b46。
+上述证据已用于登记native双相机与原单视角视频先验的最小输入修正及可失败预测；
+不将双视频K结果混为双相机实验，不恢复已关闭checkpoint训练。原始endpoint_*证据完整保留；代码e1a06b46。
 
 ### 当前执行计划
 
 新增[冻结source状态输入诊断](docs/source_state_input_audit.md)已完整完成：MSE free/mean/true=.13673/.14173/.12469，
 任务动作均值.25060。free−true区间跨零，状态补全前提未通过；free本身相对动作均值的正事实保留。
-后续端点×视角诊断也已关闭：差异主要随相机范围改变；当前核对双视角历史与合法输入修正，不扫描flow阶段。
+后续端点×视角诊断也已关闭；新native双相机修正已登记，上节为当前实施计划，不扫描flow阶段。
 
 后续方法选择尚需明确：独立训练的全帧frame_set优势检验是否属于持续硬门槛，还是本轮特定研究问题；
 冻结模型的内容／顺序因果要求、跨视频／初始化／相邻稳定及固定validation迁移均保持。当前不据结果自行改变口径，

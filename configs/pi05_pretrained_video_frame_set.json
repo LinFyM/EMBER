@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_local_action_writer_config_v1",
-  "status": "registered_local_action_grounding_comparison",
-  "design": "docs/local_action_grounded_writer_design.md",
+  "schema_version": "ember_pretrained_video_writer_config_v1",
+  "status": "implementation_profile_pending",
+  "design": "docs/pretrained_video_grounded_writer_design.md",
   "data": {
     "seed": 7,
     "task_ids": [
@@ -93,12 +93,12 @@
       48,
       49
     ],
-    "task_weight": "four suite tasks, one K1 condition and64queries each; task/condition weight1/4",
+    "task_weight": "four suite tasks, one K1 condition and 64 queries each; weight 1/4",
     "query_sampling": "uniform action episode, then uniform frame, independently sampled with replacement",
     "frame_stride": 5,
     "include_last_frame": true,
     "extra_meta_tasks": [],
-    "version": "train24_cross_episode_k1_local_action_v1",
+    "version": "train24_cross_episode_k1_pretrained_video_v1",
     "conditions_per_task": 1
   },
   "model": {
@@ -112,9 +112,10 @@
     "factor_width": 256,
     "edge_chunk": 32,
     "activation_checkpoint": true,
-    "process_mode": "ordered",
-    "schema": "video_conditioned_writer_v3",
-    "architecture": "task_token_adjacent_full_h_v1"
+    "process_mode": "frame_set",
+    "schema": "video_conditioned_writer_v4",
+    "architecture": "pretrained_video_task_full_h_v1",
+    "prior_width": 1024
   },
   "observer": {
     "meta_rank": 4,
@@ -124,7 +125,8 @@
     "frame_chunk": 8,
     "response": "post_final_norm_actual_action_out_proj_input",
     "visual_evidence": "same_version_teacher_VL_Meta_Z_and_KV; frozen_pre_Gemma_embeddings_only",
-    "vl_meta_rank": 4
+    "vl_meta_rank": 4,
+    "camera_view": "agentview"
   },
   "optimization": {
     "seed": 7,
@@ -137,7 +139,7 @@
     "weight_decay": 0.0001,
     "grad_clip": 1.0,
     "precision": "Writer including its reading module and FM BF16 autocast; native mixed execution without outer autocast; FP32 trainable parameters",
-    "loss": "main_fm_plus_local_action_fm",
+    "loss": "main_fm",
     "normalizer": 1.0,
     "warmup_updates": 8,
     "joint_train_all_writer_modules": true
@@ -148,8 +150,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "True local post-action RGB transition grounding; fresh matched ordered/frame_set, updates100/200",
-    "qualification_registration": "docs/local_action_grounded_writer_design.md",
+    "initial_use": "Frozen video prior comparison; numerical checkpoint defaults require pre-learning profile registration",
+    "qualification_registration": "docs/pretrained_video_grounded_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -278,7 +280,7 @@
         48,
         49
       ],
-      "registration_status": "registered before functional learning",
+      "registration_status": "behavioral criteria registered; numerical checkpoint nodes pending real profile",
       "optimizer_updates": [
         100,
         200
@@ -421,36 +423,20 @@
         "correct_minus_shuffled"
       ]
     },
-    "local_action_validation": {
-      "optimizer_updates": [
-        0,
-        100,
-        200
-      ],
-      "action_demos": [
-        42,
-        43,
-        44,
-        45
-      ],
-      "clips_per_task": 16,
-      "noise_draws": 8,
-      "seed": 20260913,
-      "gradients": false,
-      "checkpoint_selection": false
-    },
-    "pure_fm_followup": "Only after primary paired behavioral qualification; fresh common initialization and matched exposure"
+    "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification"
   },
-  "update_version": "local_action_grounded_credit_v1",
+  "update_version": "pretrained_video_main_fm_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",
-  "local_action": {
-    "enabled": true,
-    "weight": 1.0,
-    "frames": 4,
-    "frame_stride": 5,
-    "action_steps": 15,
-    "noise_draws": 8,
-    "diagnostic_clips_per_task": 16,
-    "diagnostic_seed": 20260913
+  "video_prior": {
+    "schema": "frozen_vjepa21_prefix4_v1",
+    "code_commit": "204698b45b3712590f06245fbfba32d3be539812",
+    "checkpoint_key": "ema_encoder",
+    "input_size": 384,
+    "prefix_frames": 4,
+    "preprocessing": "official_single_view_resize438_center384_imagenet",
+    "code_root": ".codex/vendor/vjepa2",
+    "checkpoint": "models/vjepa2_1/vjepa2_1_vitl_dist_vitG_384.pt",
+    "mode": "frame_set",
+    "window_batch": 4
   }
 }

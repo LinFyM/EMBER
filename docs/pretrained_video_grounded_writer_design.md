@@ -143,3 +143,17 @@ launch前两节点GPU和合计额度、NUMA／NCCL依现有合同核查，具体
 支持dense视频表示及image/video模态实现的选择；其机器人规划结果使用另外的action-conditioned模型和online方法，
 并不证明教学视频一次编译LoRA。[JEPA-VLA](https://arxiv.org/html/2602.11832v1)也不证明本部署合同。
 本方案的四帧前缀使用和任务条件化native消费是待验证设计，预训练任务成绩不代替EMBER行为证据。
+
+## 8. 实施检查记录
+
+2026-09-12：唯一运行面已接入冻结prior准备、统一容量缓存、learned Value读取和主FM／native重放，
+training及materialization使用新schema，局部动作头／loss／片段读取／专属诊断与两份专属测试已退役。
+三份配置明确ordered、重复帧静态和条件触发的image静态；正式启动仍等待profile后的节点／曝光登记。
+370项共享源码测试通过；其中直接autograd检查覆盖主LoRA及两组Meta信用，Value干预覆盖全部76输出tensor，
+前缀、静态置换、缓存容量、严格checkpoint与配对调度合同保留。官方代码导入和384预处理检查通过。
+这些检查尚不包含下载完成后的真实encoder加载、GPU峰值／吞吐或闭环行为；不能据此宣称目标已达。
+
+结构检查为review：active source/test合计+271/−621，净减350行，仅新增一个冻结先验owner，未复制trainer或evaluator。
+保留的复杂度提示来自既有采样／selection／checkpoint合同函数，相关分支未扩展；
+materialization长函数仅更新身份与元数据，695行评测测试仅调整同一checkpoint所有权fixture。
+Writer目录26个直接源码文件的既有规模未增长，不为这些提示拆散凝聚的合同或进行无关重构。

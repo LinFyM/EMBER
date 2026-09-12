@@ -31,6 +31,12 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
        "authority_ref": "origin/main", "authority_contains_commit": True}
 
 
+def _prior(mode="ordered"):
+    value = json.loads((ROOT / "configs/pi05_pretrained_video.json").read_text())["video_prior"]
+    value["mode"] = mode
+    return value
+
+
 def _selection(**overrides):
     values = dict(role="development_train", task_ids=(0,), cardinality=1, arm="correct",
                   mode="per_init_ordinal", seed=7, init_state_ids=(0, 1), video_pool=tuple(range(50)))
@@ -57,7 +63,7 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"] = vars(VideoWriterConfig())
-    run["config"]["local_action"] = {"enabled": False}
+    run["config"]["video_prior"] = _prior()
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
@@ -253,7 +259,7 @@ def resident_materialization(tmp_path, monkeypatch):
             super().__init__()
             self.writer = torch.nn.Linear(1, 1, bias=False)
             self.meta = torch.nn.Linear(1, 1, bias=False)
-            self.reader = torch.nn.Linear(1, 1, bias=False)
+            self.vl_meta = torch.nn.Linear(1, 1, bias=False)
             self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator().manual_seed(1729)))
             self.loads = 0
 
@@ -276,11 +282,11 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors = {name: tensor.detach().clone() for name, tensor in state.state_dict().items()}
         tensors["writer.weight"].fill_(value)
         tensors["meta.weight"].fill_(value * 10)
-        tensors["reader.weight"].fill_(value * 100)
+        tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
             "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4},
-                       "local_action": {"enabled": True, "weight": 1., "frames": 4, "action_steps": 15, "noise_draws": 8}}}
+                       "video_prior": _prior()}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
             "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
@@ -298,7 +304,7 @@ def resident_materialization(tmp_path, monkeypatch):
         assert current is instance and current.observer.probe is current.state.probe
         return {"condition_id": condition_id(0, demos), "teacher_videos": [{"sampled_frame_count": 1}],
                 "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight),
-                "reader_value": float(state.reader.weight)}
+                "vl_meta_value": float(state.vl_meta.weight)}
 
     monkeypatch.setattr(runtime, "build_runtime", build)
     monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
@@ -317,8 +323,8 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["arm"] == requests[index]["arm"]
         assert manifest["conditions"][0]["writer_value"] == index + 1
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
-        assert manifest["conditions"][0]["reader_value"] == (index + 1) * 100
-        assert manifest["method"]["local_action_reader_in_execution"] is False
+        assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
+        assert manifest["method"]["video_prior_in_execution"] is False
         assert manifest["information_wall"]["total_writer_invocations"] == 1
         assert len(manifest["tasks"][0]["episodes"]) == 10
     materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
@@ -326,7 +332,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
     assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
 
 
-@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view", "local_action"])
+@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view", "video_prior"])
 def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_materialization, field):
     requests, runs, builds, _ = resident_materialization
     changed = runs[Path(requests[1]["checkpoint"])]
@@ -334,8 +340,8 @@ def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_mat
         changed["config"]["observer"]["camera_view"] = "dual"
     elif field == "observer":
         changed["config"][field]["probe_seed"] += 1
-    elif field == "local_action":
-        changed["config"][field]["enabled"] = False
+    elif field == "video_prior":
+        changed["config"][field]["mode"] = "frame_set"
     else:
         changed[field]["different_contract"] = True
     with pytest.raises(ValueError, match="identical source, model, and observer"):
@@ -464,21 +470,20 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
 
 
 @pytest.mark.parametrize("process_mode", ["ordered", "frame_set"])
-@pytest.mark.parametrize("local_action", [False, True])
-def test_method_metadata_describes_final_native_and_visual_tokens(process_mode, local_action):
+def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     method = method_metadata({"model_config": vars(VideoWriterConfig(process_mode=process_mode)),
-        "config": {"update_version": UPDATE_VERSION, "observer": {}, "local_action": {"enabled": local_action},
+        "config": {"update_version": UPDATE_VERSION, "observer": {}, "video_prior": _prior(process_mode),
                    "execution_precision": "native_mixed_without_outer_autocast"}})
     assert method["native_response_shape"] == [50, 1024]
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_and_contextual_task_tokens"
     assert method["frame_attention"] == ("adjacent_full_h_past_self_temporal" if process_mode == "ordered"
                                          else "independent_full_h_frame_set")
-    assert method["video_representation"] == "per_frame_exact_task_tokens_T_L_d"
+    assert method["video_representation"] == "pretrained_dense_visual_and_native_task_tokens_T_L_d"
     assert method["macro_cursor"] == "optimizer_updates"
     assert method["training_stage"] == STAGE
-    assert method["training_objective"] == ("supervised_fm_with_local_action_grounding" if local_action else "supervised_fm")
-    assert method["local_action_reader_in_execution"] is False
+    assert method["training_objective"] == "supervised_fm"
+    assert method["video_prior_in_execution"] is False
     assert method["update_version"] == UPDATE_VERSION
 
 

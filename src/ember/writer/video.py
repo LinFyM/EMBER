@@ -14,8 +14,8 @@ from ember.writer.attention import Attention, CompilerBlock, RotaryBlock, feed_f
 from ember.writer.native_factor import NativeFactorLoRADecoder
 
 
-SCHEMA = "video_conditioned_writer_v3"
-ARCHITECTURE = "task_token_adjacent_full_h_v1"
+SCHEMA = "video_conditioned_writer_v4"
+ARCHITECTURE = "pretrained_video_task_full_h_v1"
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -31,6 +31,7 @@ class VideoWriterConfig:
     horizon: int = 50
     native_width: int = 1024
     language_width: int = 2048
+    prior_width: int = 1024
     blocks: int = 2
     compiler_blocks: int = 2
     factor_width: int = 256
@@ -43,7 +44,7 @@ class VideoWriterConfig:
     def __post_init__(self) -> None:
         require_architecture_identity(vars(self))
         dimensions = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
-                      self.blocks, self.compiler_blocks, self.factor_width, self.edge_chunk)
+                      self.blocks, self.compiler_blocks, self.factor_width, self.edge_chunk, self.prior_width)
         if min(dimensions) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
             raise ValueError("positive dimensions and even RoPE width per head are required")
 
@@ -58,6 +59,9 @@ class _VideoEncoder(nn.Module):
         self.visual_projection = nn.Linear(config.language_width, width, bias=False)
         self.task_norm, self.patch_norm = nn.LayerNorm(width), nn.LayerNorm(width)
         self.patch_read = Attention(width, config.heads)
+        self.prior_projection = nn.Linear(config.prior_width, width, bias=False)
+        self.prior_query_norm, self.prior_patch_norm = nn.LayerNorm(width), nn.LayerNorm(width)
+        self.prior_read = Attention(width, config.heads)
         self.native_projection = nn.Linear(config.native_width, width)
         self.horizon_norm, self.pair_norm = nn.LayerNorm(width), nn.LayerNorm(2 * width)
         self.pair_query = nn.Linear(2 * width, width)
@@ -106,9 +110,12 @@ class _VideoEncoder(nn.Module):
         return torch.cat(contents)
 
     def forward(self, response: Tensor, indices: Tensor, visual: Tensor, valid: Tensor,
-                task_mask: Tensor, positions: Tensor) -> Tensor:
+                task_mask: Tensor, positions: Tensor, prior: Tensor) -> Tensor:
         times = indices.to(device=response.device, dtype=torch.float32)
         grounded = self._ground(visual, valid, task_mask, len(positions))
+        patches = self.prior_projection(prior)
+        grounded = grounded + self.prior_read(
+            self.prior_query_norm(grounded), self.prior_patch_norm(patches), patches)
         content = self._pair_read(grounded, response, times)
         temporal_positions = times / 5 if self.config.process_mode == "ordered" else torch.zeros_like(times)
         for language, temporal in zip(self.language_blocks, self.temporal_blocks, strict=True):
@@ -156,9 +163,9 @@ class VideoConditionedWriter(nn.Module):
 
     def encode(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-               visual_task_masks: Sequence[Tensor]) -> tuple[Tensor, ...]:
+               visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor]) -> tuple[Tensor, ...]:
         if not responses or not (len(responses) == len(frame_indices) == len(visual_tokens)
-                                 == len(visual_masks) == len(visual_task_masks)):
+                                 == len(visual_masks) == len(visual_task_masks) == len(prior_tokens)):
             raise ValueError("one or more videos need matching native responses, times and visual evidence")
         if (language_embeddings.ndim != 2 or language_embeddings.shape[-1] != self.config.language_width
                 or language_mask.shape != language_embeddings.shape[:1] or not language_mask.bool().any()):
@@ -166,11 +173,14 @@ class VideoConditionedWriter(nn.Module):
         # Content comes from the contextual native task spans, not a second language-only path.
         positions = language_mask.bool().nonzero().flatten()
         videos = []
-        for response, indices, visual, valid, task_mask in zip(
-                responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, strict=True):
+        for response, indices, visual, valid, task_mask, prior in zip(
+                responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, prior_tokens, strict=True):
             valid, task_mask = valid.bool(), task_mask.bool()
             self._validate_video(response, indices, visual, valid, task_mask, len(positions))
-            args = (response, indices, visual, valid, task_mask, positions.to(response.device))
+            if (prior.ndim != 3 or prior.shape[0] != len(response) or prior.shape[1] <= 0
+                    or prior.shape[2] != self.config.prior_width or prior.requires_grad):
+                raise ValueError("one frozen dense prior [T,P,prior_width] is required per real video")
+            args = (response, indices, visual, valid, task_mask, positions.to(response.device), prior)
             if self.config.activation_checkpoint and torch.is_grad_enabled():
                 videos.append(checkpoint(self.encoder, *args, use_reentrant=False))
             else:
@@ -208,7 +218,7 @@ class VideoConditionedWriter(nn.Module):
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                 language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-                visual_task_masks: Sequence[Tensor]) -> dict[str, Tensor]:
+                visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor]) -> dict[str, Tensor]:
         videos = self.encode(responses, frame_indices, language_embeddings, language_mask,
-                             visual_tokens, visual_masks, visual_task_masks)
+                             visual_tokens, visual_masks, visual_task_masks, prior_tokens)
         return self.decode(videos, frame_indices)

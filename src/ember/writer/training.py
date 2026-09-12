@@ -22,20 +22,22 @@ from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.data import teacher_camera_names
 from ember.writer.video import VideoWriterConfig
+from ember.writer.video_prior import validate_prior_config
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_local_action_writer_run_v1"
-STAGE = "local_action_grounded_writer_fresh"
-TRAINING_SCHEMA = "ember_local_action_training_state_v1"
+RUN_SCHEMA = "ember_pretrained_video_writer_run_v1"
+STAGE = "pretrained_video_grounded_writer_fresh"
+TRAINING_SCHEMA = "ember_pretrained_video_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    validate_prior_config(config)
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
     expected_model = asdict(VideoWriterConfig())
     selected_model = VideoWriterConfig(**config["model"])
@@ -47,16 +49,16 @@ def _config(path: Path) -> dict[str, Any]:
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_local_action_writer_config_v1"
+        config.get("schema_version") != "ember_pretrained_video_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
         or {key: config["data"].get(key) for key in expected_data} != expected_data
         or type(config["data"].get("conditions_per_task")) is not int
-        or config["data"].get("conditions_per_task") not in (1, 2)
+        or config["data"].get("conditions_per_task") != 1
         or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
-        or config["optimization"]["loss"] != "main_fm_plus_local_action_fm"
-        or config.get("update_version") != "local_action_grounded_credit_v1"
+        or config["optimization"]["loss"] != "main_fm"
+        or config.get("update_version") != "pretrained_video_main_fm_credit_v1"
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
@@ -69,17 +71,6 @@ def _config(path: Path) -> dict[str, Any]:
         raise ValueError("first-run gradients require all fixed train24 tasks")
     if any(int(value) <= 0 for value in config["runtime"].values()):
         raise ValueError("runtime batches and cache budget must be positive")
-    local = config["local_action"]
-    if (type(local.get("enabled")) is not bool or
-            {key: value for key, value in local.items() if key != "enabled"} !=
-            {"weight": 1.0, "frames": 4, "frame_stride": 5, "action_steps": 15, "noise_draws": 8,
-             "diagnostic_clips_per_task": 16, "diagnostic_seed": 20260913}):
-        raise ValueError("registered local action objective changed")
-    if config["evidence"]["local_action_validation"] != {
-            "optimizer_updates": config["evidence"]["supervised_validation"]["optimizer_updates"],
-            "action_demos": list(range(42, 46)), "clips_per_task": 16, "noise_draws": 8,
-            "seed": 20260913, "gradients": False, "checkpoint_selection": False}:
-        raise ValueError("local action diagnostic registration changed")
     _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"])
     VideoWriterConfig(**config["model"])
     return config
@@ -135,7 +126,8 @@ def _run_contract(args, context, config, runtime, state):
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
             "meta_parameters": sum(p.numel() for p in runtime.state.meta.parameters()),
             "vl_meta_parameters": sum(p.numel() for p in runtime.state.vl_meta.parameters()),
-            "reader_parameters": sum(p.numel() for p in runtime.state.reader.parameters()) if runtime.state.reader else 0,
+            "frozen_prior_parameters": sum(p.numel() for p in runtime.observer.prior.encoder.parameters()),
+            "prior_trainable_parameters": sum(p.numel() for p in runtime.observer.prior.encoder.parameters() if p.requires_grad),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
@@ -147,8 +139,8 @@ def _run_contract(args, context, config, runtime, state):
             "deployment_inputs": ["exact language", "ordered RGB videos", "original frame indices"],
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
-            "video_action_episodes": "main LoRA cross-episode; local RGB/action pairing only within action pool", "gradient_normalizer": 1.0,
-            "objective": "main_fm_plus_local_action_fm", "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
+            "video_action_episodes": "main LoRA cross-episode; prior RGB-only", "gradient_normalizer": 1.0,
+            "objective": "main_fm", "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
 
@@ -176,8 +168,6 @@ def _logical_batch(config):
             "conditions": 4 * conditions, "K": 1, "queries_per_task": 64,
             "queries_per_condition": 64 // conditions, "queries_per_update": 256,
             "task_weight": 0.25, "condition_weight": 1.0 / (4 * conditions),
-            "local_clips_per_update": 4 if config["local_action"]["enabled"] else 0,
-            "local_noise_draws_per_update": 32 if config["local_action"]["enabled"] else 0,
             "gradient_reduction": "SUM"}
 
 
@@ -210,8 +200,7 @@ def _execute_step(engine, data, context, config, draws, step):
     by_job = _condition_jobs(data, config, draws)
     engine.step = step
     jobs = tuple(by_job)
-    costs = {job: int(draw["frames"]) + (4 if config["local_action"]["enabled"] and draw["condition_index"] == 0 else 0)
-             for job, draw in by_job.items()}
+    costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
     assignment = cost_balanced_task_assignment(
         jobs, costs, {job: tuple(range(context.world_size)) for job in jobs}, world_size=context.world_size,
     )
@@ -255,7 +244,6 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters()),
              "vl_meta_grad_norm": _grad_norm(runtime.state.vl_meta.parameters())}
-    norms["reader_grad_norm"] = _grad_norm(runtime.state.reader.parameters()) if runtime.state.reader else 0.0
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
     if context.device.type == "cuda":
@@ -297,10 +285,6 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
             count = sum(node <= updates for node in nodes) * len(data.tasks)
             if count or (args.output / "diagnostics.jsonl").exists():
                 reconcile_metrics(args.output / "diagnostics.jsonl", updates, count, cursor_key="step", packet_label="diagnostics")
-            if config["local_action"]["enabled"]:
-                local_count = count * config["local_action"]["diagnostic_clips_per_task"]
-                reconcile_metrics(args.output / "local_diagnostics.jsonl", updates, local_count,
-                                  cursor_key="step", packet_label="local_diagnostics")
     return updates, metrics_rows
 
 
@@ -318,9 +302,6 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "step": updates, "optimizer_updates": updates,
             "seconds": seconds,
             "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
-            "mean_local_flow_loss": sum(r["local_flow_loss"] * r["local_weight"] for r in gathered),
-            "local_clips": updates * _logical_batch(config)["local_clips_per_update"],
-            "local_noise_draws": updates * _logical_batch(config)["local_noise_draws_per_update"],
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
             "condition_exposures": metrics_rows, "task_exposures": updates * 4,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
@@ -361,31 +342,22 @@ def _validate_actions(args, engine, data, context, config, step):
     assignment = cost_balanced_task_assignment(
         tasks, costs, {task: tuple(range(context.world_size)) for task in tasks}, world_size=context.world_size,
     )
-    rows, local_rows, error = [], [], None
+    rows, error = [], None
     try:
         for task in assignment[context.rank]:
             rows.append({"step": step, **engine.validate(task, demos[task], seed=spec["seed"] + task,
                                                        queries=spec["queries_per_task"])})
-            if config["local_action"]["enabled"]:
-                for clip in range(config["local_action"]["diagnostic_clips_per_task"]):
-                    local_rows.append({"step": step, "task": task, "suite": data.tasks[task].suite,
-                        "clip": clip, "gradients": False, **engine.local_action(task, clip, diagnostic=True)})
     except Exception:
         error = traceback.format_exc()
-    packets = _gather((rows, local_rows, error), context)
-    if any(failure for _, _, failure in packets):
-        raise RuntimeError(f"held-action validation failed: {[e for _, _, e in packets if e]}")
+    packets = _gather((rows, error), context)
+    if any(failure for _, failure in packets):
+        raise RuntimeError(f"held-action validation failed: {[e for _, e in packets if e]}")
     if context.is_main:
-        gathered = [row for rows, _, _ in packets for row in rows]
-        local_gathered = [row for _, rows, _ in packets for row in rows]
-        for row in local_gathered:
-            append_jsonl(args.output / "local_diagnostics.jsonl", row)
+        gathered = [row for rows, _ in packets for row in rows]
         for row in gathered:
             append_jsonl(args.output / "diagnostics.jsonl", row)
         print(json.dumps({"diagnostic_step": step, "tasks": len(gathered),
-                          "held_action_fm": sum(row["flow_loss"] for row in gathered) / len(gathered),
-                          "held_local_action_fm": (sum(row["local_flow_loss"] for row in local_gathered) / len(local_gathered)
-                                                   if local_gathered else None)}), flush=True)
+                          "held_action_fm": sum(row["flow_loss"] for row in gathered) / len(gathered)}), flush=True)
 
 
 def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
@@ -430,6 +402,8 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
+    if args.mode == "formal" and config["status"] != "registered_pretrained_video_comparison":
+        raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
     if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
         raise ValueError("formal supervised training requires a clean pushed detached worktree")
@@ -471,7 +445,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_video_functional.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_pretrained_video.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

@@ -1,13 +1,11 @@
-"""Main complete-LoRA FM replay plus true local-action credit to the shared encoder."""
+"""Complete-LoRA main FM with joint learned native and video-prior consumption."""
 from __future__ import annotations
 
-import math
 import time
 
 import torch
 
-from ember.writer.attention import position_encoding
-from ember.writer.function_credit import local_flow_sample, mean_velocity_loss, paired_functional_credit
+from ember.writer.function_credit import paired_functional_credit
 from ember.writer.functional import writer_chain_rule_surrogate
 from ember.writer.native import autocast
 
@@ -33,26 +31,6 @@ def replay_functional_credit(writer, responses, inputs, compiled):
     return _native_cotangents(leaves, visuals)
 
 
-def local_action_credit(writer, reader, responses, inputs, sample, *, weight, backward):
-    """All four frames supply local Values; no Compiler parameter enters this graph."""
-    videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=backward)
-    if len(videos) != 1 or videos[0].shape[0] != 4:
-        raise ValueError("local supervision requires one four-frame clip")
-    video = videos[0]
-    memory = video.flatten(0, 1)
-    routing = torch.zeros_like(memory)
-    if writer.config.process_mode == "ordered":
-        relative = torch.arange(4, device=video.device)
-        routing = position_encoding(relative, video.shape[-1], video.dtype)
-        routing = routing[:, None].expand_as(video).flatten(0, 1)
-    prior = memory.new_full((1, len(memory)), -math.log(len(memory)))
-    noisy, flow_time, target = sample
-    prediction = reader(noisy, flow_time, memory, routing, prior)
-    loss = mean_velocity_loss(prediction, target, 7)
-    if backward:
-        (loss * weight).backward()
-    return float(loss.detach()), _native_cotangents(leaves, visuals) if backward else None
-
 
 class SupervisedEngine:
     def __init__(self, runtime, data, cache, context, config) -> None:
@@ -74,28 +52,6 @@ class SupervisedEngine:
                 microbatch=min(int(self.config["runtime"]["policy_microbatch"]), len(trace["action_demos"])),
                 condition_weight=1.0 / (4 * self.config["data"]["conditions_per_task"]), backward=backward,
             )
-
-    def local_action(self, task, occurrence, *, diagnostic=False):
-        runtime, timings = self.runtime, {}
-        start = time.perf_counter()
-        frames, indices, raw, trace = self.data.local_action_clip(task, occurrence, diagnostic=diagnostic)
-        actions = runtime.processor.normalize_action(raw)
-        sample = local_flow_sample(actions, seed=trace["local_flow_seed"], draws=self.config["local_action"]["noise_draws"])
-        condition = runtime.observer.prepare(frames, indices, self.data.tasks[task].authority.language)
-        start = self._time(timings, "local_prefix_seconds", start)
-        responses, inputs = runtime.observer.read(condition)
-        start = self._time(timings, "local_observer_forward_seconds", start)
-        with torch.set_grad_enabled(not diagnostic), autocast(self.device):
-            loss, cotangents = local_action_credit(
-                runtime.state.writer, runtime.state.reader, responses, inputs, sample,
-                weight=.25 * self.config["local_action"]["weight"], backward=not diagnostic,
-            )
-        start = self._time(timings, "local_writer_seconds", start)
-        if not diagnostic:
-            runtime.observer.backward(condition, *cotangents)
-        self._time(timings, "local_observer_vjp_seconds", start)
-        return {"local_flow_loss": loss, "local_noise_draws": self.config["local_action"]["noise_draws"],
-                **trace, **timings}
 
     def backward(self, draw) -> dict:
         runtime, timings = self.runtime, {}
@@ -128,10 +84,7 @@ class SupervisedEngine:
         runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)
         del condition, cotangents
-        local = {"local_flow_loss": 0., "local_noise_draws": 0, "local_weight": 0.}
-        if runtime.state.reader is not None and draw["condition_index"] == 0:
-            local = {**self.local_action(task, draw["occurrence"]), "local_weight": .25}
-        return {**credit, **local, "task_weight": .25,
+        return {**credit, "task_weight": .25,
                 "condition_weight": 1. / (4 * self.config["data"]["conditions_per_task"]),
                 "normalizer": 1., "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
                 **trace, **timings, "prefix_cache_hits": self.cache.hits - hits,

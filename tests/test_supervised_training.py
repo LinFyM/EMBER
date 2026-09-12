@@ -32,7 +32,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_video_functional.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_pretrained_video.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"
@@ -123,8 +123,7 @@ class _ToySupervisedEngine:
         # not a proxy for the native FM/RL control objective.
         loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
-        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"],
-                "local_flow_loss": 0., "local_weight": 0.}
+        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"]}
 
 @pytest.mark.parametrize("conditions", [1, 2])
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):
@@ -132,7 +131,6 @@ def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler,
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
     state.vl_meta = torch.nn.Linear(1, 1)
-    state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)
@@ -222,7 +220,6 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     state = torch.nn.Module()
     state.writer, state.meta = torch.nn.Linear(1, 1), torch.nn.Linear(1, 1)
     state.vl_meta = torch.nn.Linear(1, 1)
-    state.reader = None
     runtime = SimpleNamespace(state=state)
     engine = _ToySupervisedEngine(state)
     optimizer, scheduler = _optimization(state, config)
@@ -347,12 +344,13 @@ def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
         _execution_config(args, config, SimpleNamespace(world_size=3, rank=0))
 
 
-def test_dual_view_is_an_explicit_config_change_not_an_exact_resume(tmp_path, config):
+def test_unregistered_dual_view_is_rejected_and_cannot_exact_resume(tmp_path, config):
     changed = deepcopy(config)
     changed["observer"]["camera_view"] = "dual"
     cfg_path = tmp_path / "dual.json"
     cfg_path.write_text(json.dumps(changed))
-    assert _config(cfg_path)["observer"]["camera_view"] == "dual"
+    with pytest.raises(ValueError, match="video prior"):
+        _config(cfg_path)
     original = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
                 "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"}}
     path = tmp_path / "run_contract.json"
@@ -361,7 +359,7 @@ def test_dual_view_is_an_explicit_config_change_not_an_exact_resume(tmp_path, co
         _publish_contract(path, {**original, "config": changed}, resume=True)
     changed["observer"]["camera_view"] = "unknown"
     cfg_path.write_text(json.dumps(changed))
-    with pytest.raises(ValueError, match="camera_view"):
+    with pytest.raises(ValueError, match="video prior"):
         _config(cfg_path)
 
 
@@ -466,12 +464,13 @@ def test_eight_condition_jobs_preserve_global_gradient_and_use_all_ranks(monkeyp
     assert contract["queries_per_update"] == 256 and contract["K"] == 1
 
 
-def test_two_conditions_are_explicit_and_cannot_resume_one_condition(tmp_path, config):
+def test_unregistered_two_conditions_are_rejected_and_cannot_resume_one_condition(tmp_path, config):
     changed = deepcopy(config)
     changed["data"]["conditions_per_task"] = 2
     cfg_path = tmp_path / "two.json"
     cfg_path.write_text(json.dumps(changed))
-    assert _config(cfg_path)["data"]["conditions_per_task"] == 2
+    with pytest.raises(ValueError, match="scientific contract"):
+        _config(cfg_path)
     contract = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
                 "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"}}
     path = tmp_path / "run_contract.json"

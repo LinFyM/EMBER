@@ -1,23 +1,36 @@
 # EMBER progress
 
-## 当前状态：正式启动登记检查已修复，重新准备学习（2026-09-12）
+## 当前状态：执行时间对应修正的两臂正式学习已启动（2026-09-12）
 
-Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400。
+Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
-综合机制判断及旧endpoint／expert近邻核对见findings§71；不是恢复已关闭的冻结视频先验训练。
+综合机制判断及旧endpoint／expert近邻核对见findings§71；前轮冻结视频先验比较保持关闭。
 
-已有生产证据证明RGB/state为post-action，原主FM标签却从同索引已执行动作开始。
-624条训练动作episode的CPU审计已完成；唯一Writer已改为obs[i]→actions[i+1:]，排除无未来标签的最后query。
-Source及normalization冻结，完整teacher与模型图保持；训练与留出共享正确时间对应。
-已登记fresh100/200两臂、有界8个correct面板及原资格口径，尚未启动新训练／GPU作业。
-378项测试全部通过；四suite train0/12/20/34的demo16首／尾共8个真实query通过，动作起点、8维state和尾端padding正确。
-原件为前轮analysis根下posthoc_execution_alignment_audit.json及posthoc_execution_alignment_dataset_check.json；
-均为关闭后的训练侧只读核对，不改变前轮qualification。实现5e772d65已push并冻结。
-首次两臂启动均在GPU／output初始化前exit1：入口仍要求上一候选的旧登记名称。
-已修正该唯一名称，43项训练相关测试通过，新增覆盖三个正式配置通过登记及未登记配置拒绝。
-首次尝试没有训练更新、checkpoint或GPU工作；日志和精确命令保留在本轮analysis的failed_attempts。
-此前GPU刷新后的拒绝未阻止外层shell后续启动，也是启动调度错误；重试将先检查结果，再独立执行launch。
-原候选设备已被其他用户使用；下一步从修复后的clean pushed commit冻结，按两节点实时状态重新分配并启动。
+唯一Writer已改为post-action obs[i]→actions[i+1:]，排除无未来动作标签的最后query；source与normalization冻结。
+624条train动作episode的CPU审计、四suite真实dataset首／尾8例、378项全套测试通过。
+首次两臂在GPU／output初始化前exit1，原因是入口仍要求上一候选登记名称；已修正并通过43项相关测试。
+外层shell曾在preflight拒绝后继续调用launch，重试已分离资格检查与启动调用。失败日志和原命令保留在analysis/failed_attempts，
+首次无训练更新或checkpoint。新formal来自clean pushed detached `2ecf17704c68644b948ad6655b2d73d468cf6200`，
+冻结树`.codex/worktrees/execution-aligned-frozen`；旧checkpoint没有用于初始化。
+
+### 本轮实际执行
+
+- ordered：gpu01 `[0,5,6]`，tmux `ember-aligned-ordered`，controller3864138、rank3864157/58/59。
+- frame_set：gpu02 `[0,1,2]`，tmux `ember-aligned-static`，controller3163713、rank3164131/34/36。
+- 两臂world3，共6张真实工作卡；每更新仍四suite等权4tasks、256queries，microbatch8、fresh纯主FM至100/200。
+  gpu02既有低利用率148–186MiB进程已核实所有权，启动余量覆盖约42GiB实测reserved峰值；未修改其他用户进程。
+- 最新验证快照：ordered 9步、frame_set 4步，已产生有限loss与梯度更新。
+  初始24task动作诊断各完整，FM均.1532853388；无梯度、future offset1、任务／视频／query／noise字段匹配。
+  两臂共同前4步/16条件的18项曝光字段一致；这是启动检查，不代替完成后的整轮核验。
+  有序第二步起Action/VL Meta梯度非零；initial identity的第一步Meta零符合既有设计。
+- 启动前strg01独立data1用量941.2/1024GiB，已含冻结树；初始阶段增长预算28GiB，整个study含条件后续70GiB，
+  预计峰值1011.2GiB，共享余量83TiB。后续物化/新增长前刷新剩余quota与GPU。
+
+输出：`runs/outputs/execution_aligned_video_20260912/`；分析／exact launch／设备UUID／startup验证：
+`runs/analysis/execution_aligned_video_20260912/`。formal run_contract记录source和prior trainable均0及新offset1。
+100/200的train96＋validation400 correct共8面板请求与运行脚本已准备，尚无新checkpoint或闭环分数。
+接下来按实际checkpoint完成物化与strict配对，并报告全task/suite、breadth、R/G/L、churn与相邻稳定性。
+other／原生image参照只在资格触发后补；没有selected checkpoint，不运行sealed controls、Test或RL。
 
 ### 上一候选：冻结视频先验比较已关闭
 

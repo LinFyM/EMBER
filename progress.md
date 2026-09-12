@@ -4,7 +4,7 @@
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：两臂fresh正式学习完成，配对评测中。**
-Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有两个有序train96及一个validation400面板，训练100匹配静态结果无可信有序优势，其余静态与相邻validation结论尚待完成。
+Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有两个有序train96及一个validation400面板，训练100匹配静态无可信有序优势，200有序52对静态40获得训练面板正差额；相邻validation及跨视频结论尚待完成。
 原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
 
 ### 当前决定与工作
@@ -43,10 +43,15 @@ Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移
 静态100 train96完整结束，为**41/96**，Spatial/Object/Goal/Long10/10/16/5，breadth19；
 相对source保留11／新增30／丢失4，churn34，J=.24444，task-cluster95%增量区间[.13542,.38542]。
 有序／静态100总分同为41；以静态为参照，有序保留35／新增6／丢失6，churn12，J=.74468，
-配对增量95%CI[−.0625,.0625]跨零。Long+3、Spatial−1、Object−2、Goal0，尚无训练端可信有序优势。
+配对增量95%CI[−.0625,.0625]跨零。Long+3、Spatial−1、Object−2、Goal0，该100节点尚无可信有序优势。
 30分片／96rows、双worker exit0及退出已核验，用时969.27秒；全部per-task和成功集合在`paired_summary.json`。
-`ember-prior-static-train200`已接用释放的第5卡，以双worker运行静态200训练96面板；
-200训练LoRA库已sealed，与有序200的96条state–video映射逐行一致。
+静态200 train96也已完整结束，为**40/96**，Spatial/Object/Goal/Long13/8/13/6，breadth18；
+相对source保留12／新增28／丢失3，churn31，J=.27907，95%增量区间[.15625,.375]。
+200有序52对静态40，保留37／新增15／丢失3，churn18，J=.67273；配对增量95%CI[.05208,.20833]为正，
+Spatial+4、Object+5、Goal0、Long+3。该正差额仅支持本节点train96，100为0差额，尚不证明跨节点或validation有益过程资格。
+静态100→200保留25／新增15／丢失16，churn31，J=.44643，成功率增量CI[−.125,.10417]跨零，Goal16→13。
+200的30分片／96rows、双worker exit0和退出已核验，用时977.87秒；两臂训练面板与全部成功集合均已汇总。
+
 静态臂也已完成fresh200／800条件／51,200主FM queries，用时3510.27秒；0/100/200各24-task留出诊断齐全，
 200 checkpoint通过正式身份入口检查，训练exit0且原四rank已退出。两臂配置仅`model.process_mode`和`video_prior.mode`不同。
 `step200/learning_comparison.json`核验全部800条件／51,200queries、18个采样字段、world4拓扑与信息墙一致。
@@ -65,7 +70,7 @@ Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移
 - `ember-prior-static-val200`接用释放的第0卡、双worker，启动最后一个validation strict400 correct面板。
 
 两个validation各四worker均已ready并完成首批分片；正式合同各32个动态分片，采用long-first／persistent queue。
-连同第5卡静态200训练评测，当前共6张物理卡；初始8个correct面板已有4个完成、其余4个正在评测。各exact command、进程及GPU身份记录在对应step launch artifacts。
+静态200训练评测已释放第5卡；当前三项validation共使用5张物理卡，初始8个correct面板已有5个完成、3个正在评测。各exact command、进程及GPU身份记录在对应step launch artifacts。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

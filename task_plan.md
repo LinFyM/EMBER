@@ -8,8 +8,16 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
 
-**当前无active实验design。** 时间对齐、冻结正例复核及
+**当前active design为[原生端点读出诊断](docs/source_endpoint_readout_audit.md)。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，无新Writer训练。
+
+### 原生端点读出诊断：已登记，待执行
+
+核对现行Writer为agentview，上一source诊断为dual，不能把对角差额归因采样深度。
+固定camera×t1/full10四单元，复用dual/full10，仅新增三单元；同384个train位置、原八噪声，
+端点另完整报告原observer seed1729单probe。无新参数、梯度、LoRA或rollout。
+先验证合法原生输出头能否读出当前t1 H中的动作价值，再决定竞争解释；按登记分支一次关闭，
+不扫描seed／flow time／步数，不由局部动作MSE直接启动Writer。
 
 ### 当前执行计划
 

@@ -3,7 +3,7 @@
 ## 当前状态：冻结正例复核未通过，回到机制理论裁决（2026-09-13）
 
 Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
-**整体goal未完成。当前无active实验design。** 时间对齐、冻结正例复核及
+**整体goal未完成。当前active design为[原生端点读出诊断](docs/source_endpoint_readout_audit.md)。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已按完整证据关闭。
 新增[冻结source状态输入诊断](docs/source_state_input_audit.md)也已完成关闭；不恢复历史训练、不扩大旧闭环复核或运行最终controls。
 下一项实验须先有相对已失败近邻的实质机制区别、可区分竞争解释的预测和停止条件。
@@ -12,6 +12,14 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 不采用直接追加／替换dense-flow编码器的提案：文献的物体运动收益依赖物体绑定与执行状态对应，单独跟踪质量
 不能检验跨初态的LoRA行为传递。保留目标物体运动作为候选，但尚无能区分获取与编译不足的具体判别合同；
 运动对应审查本身没有新权重下载、模型forward或实验启动。完整依据见findings§76。
+
+### 原生端点读出诊断：已登记，待执行
+
+核对现行Writer为agentview，上一source诊断为dual，不能把对角差额归因采样深度。
+固定camera×t1/full10四单元，复用dual/full10，仅新增三单元；同384个train位置、原八噪声，
+端点另完整报告原observer seed1729单probe。无新参数、梯度、LoRA或rollout。
+先验证合法原生输出头能否读出当前t1 H中的动作价值，再决定竞争解释；按登记分支一次关闭，
+不扫描seed／flow time／步数，不由局部动作MSE直接启动Writer。
 
 ### 待Owner明确的后续方法选择口径
 

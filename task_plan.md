@@ -8,7 +8,7 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
 
 **当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
 冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
-当前处于实现前登记，无新学习或闭环结果。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
+当前处于隔离实现与资产准备，无新学习或闭环结果。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
 
 ### 当前执行计划
 

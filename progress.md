@@ -1,10 +1,10 @@
 # EMBER progress
 
-## 当前状态：冻结视频先验候选已登记，准备实现（2026-09-12）
+## 当前状态：冻结视频先验候选实现中（2026-09-12）
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：实现前登记。**
-尚未下载先验权重或启动新GPU作业；Local Action Grounded全部16面板已完成关闭，整体goal未达。
+**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：隔离实现与资产准备。**
+官方先验权重正在下载，尚未启动新GPU作业；Local Action Grounded全部16面板已完成关闭，整体goal未达。
 原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
 
 ### 当前决定与工作
@@ -16,6 +16,16 @@ Owner授权自主高效推进有益视频特异性及validation迁移，暂不�
 
 接下来按隔离实现、信息路径／梯度验证、quota／资产与最长视频profile、clean pushed frozen学习推进。
 约一小时窗口的实际checkpoint节点须在profile后、学习分数前登记；目前没有新formal命令或性能证据。
+
+实施分支`codex/pretrained-video`位于`.codex/worktrees/pretrained-video`，基于已push设计登记`3c1d8155`。
+已新增冻结先验owner模块，完成窗口索引与官方导入／确定性384预处理检查；尚未接入主图或验证真实权重forward。
+官方代码已固定到登记commit；资产会话`ember-vjepa-assets`下载单份5,151,198,524-byte权重，
+脚本、日志与状态位于`runs/analysis/pretrained_video_grounded_20260912/`；无GPU占用。
+`asset_storage_budget.json`记录strg01当前/data1用量910.9GiB／1TiB、个人目录du911G、共享83TiB可用，
+新增峰值预算61GiB，预计971.9GiB。formal前须刷新预算；不建立dense磁盘缓存。
+官方代码所需`timm==1.0.29`已仅添加该包到现有环境，未改变其依赖；固定配置／lock正在隔离分支更新。
+rollback命令与临时uv工具位置记录在同一资产预算文件。下一步完成唯一主图／重放接线、局部路径退役及针对性验证。
+
 
 ### 上一候选：Local Action Grounded已关闭
 

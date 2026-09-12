@@ -1,5 +1,10 @@
 # EMBER research history
 
+2026-09-13完成[原生端点×视角诊断](source_endpoint_readout_audit.md)：三个新增单元各384位置全部exit0，复用dual/full10。
+agentview full10/t1均值/t1公共probe MSE=.36548/.34789/.34732，dual=.13673/.13217/.13177，任务均值.25060。
+同读出下dual相对agentview全部24/24task改善、区间严格正；增加flow深度未补偿单视角限制，触发预登记视觉范围分支。
+该source动作预测证据不证明视频过程或LoRA闭环收益；下一步核对双视角历史与当前先验输入合同。详见findings§78与原件endpoint_*。
+
 2026-09-13新增[冻结source状态输入诊断](source_state_input_audit.md)：三臂各384位置完整完成，MSE free/mean/true
 为.13673/.14173/.12469，动作均值.25060。free−true区间跨零，状态补全前提未通过；state-free完整采样优于
 动作均值的正事实保留，但不证明单步H／过程表示充分或视频因果收益。原件与完整边界见findings§77及诊断第5节。

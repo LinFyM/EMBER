@@ -1179,3 +1179,33 @@ mean-state−true差额+.01704142、CI[+.00965492,+.02384471]，21正／3负；a
 下一项先检查原生完整采样与单步响应的具体关系及旧forecast失败假设；不因本正数自动扫描flow阶段、层位或重训Writer。
 每臂约311.18秒、allocated峰值9.88GiB。code6fa6177f、原始rows/samples、summary、READOUT和launch contract
 在`runs/analysis/source_state_input_20260913/`完整保存，临时入口退役。整体goal仍未完成。
+
+## 78. 原生动作读出的主要差异随相机范围改变，增加flow深度没有补偿（2026-09-13）
+
+[预登记端点×视角诊断](docs/source_endpoint_readout_audit.md)先确认当前execution-aligned observer为agentview，
+而§77 source输入实验为dual；两者不能作单一采样阶段比较。固定同384个train24位置、exact language、
+state-free输入、原八噪声与15×7标签，新增agentview/full10、agentview/t1、dual/t1，完整复用dual/full10。
+两个t1均另报告原observer seed1729唯一公共probe。全部新增1,152位置exit0，无Writer、Meta、LoRA、梯度或rollout。
+
+MSE：agentview full10/mean8/public=.36548145/.34788516/.34731886；
+dual full10/mean8/public=.13672735/.13217241/.13176813；task mean=.25059744。
+agentview三项相对任务均值改善的95%CI均严格负、四suite均负；dual三项均严格正、四suite均正、22/24task为正。
+在相同读出下，dual相对agentview的改善分别+.22875410/+.21571275/+.21555073，
+全部24/24task为正，95%CI分别[+.20100961,+.25719621]、[+.18717154,+.24534044]、[+.18742479,+.24470501]。
+
+agentview从t1增加到full10没有改善，反而MSE增加约.01760/.01816、区间均正；dual的full10也未优于端点，
+mean8差额区间跨零而public差额略正，二者全部保留，不选择新的probe或一步rollout采样器。
+按合同触发视觉范围分支，停止把增加denoise深度作为当前首要修复投入依据。
+
+在双相机条件下，t1完整H经现有原生头已有动作预测价值；不能把这一正数外推到当前单相机或适配后的Meta／E。
+结果尚未分开腕部内容、source训练分布匹配及其交互，也没有测视频动态、跨初态参数编译或闭环因果收益。
+这是具体输入效应，不是现有所有下游失败的唯一根因。下一机制仍须证明这项知识能进入唯一LoRA并带来保持及迁移。
+
+原生双视角支持见99ee2d03与Horizon设计§3.1，不能把接口实现当作已完成性能实验；旧双视频K比较不是双相机比较。
+当前V-JEPA合同限制agentview，新增输入须明示与该先验的关系，不静默更改已有run配置或冒充exact-resume。
+范围内1,669份run contracts中38份具有内嵌observer，均显式／缺省agentview；其余合同不能据此判定，
+不把该有限库存审计当作全部历史未做双相机实验的证明。逐份路径和状态保存在endpoint_camera_contract_audit.json。
+
+代码e1a06b46，loader6fa6177f；三臂约302.89/248.95/249.84秒，峰值9.88/10.04/10.04GiB。
+raw/samples、完整逐task／suite、所有配对差额、summary代码、READOUT与launch均在
+`runs/analysis/source_state_input_20260913/endpoint_*`。临时active入口退役，原始冻结代码保留；整体goal未完成。

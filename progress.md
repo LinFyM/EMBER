@@ -3,7 +3,7 @@
 ## 当前状态：冻结正例复核未通过，回到机制理论裁决（2026-09-13）
 
 Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
-**整体goal未完成。当前active design为[原生端点读出诊断](docs/source_endpoint_readout_audit.md)。** 时间对齐、冻结正例复核及
+**整体goal未完成。当前无active实验design。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已按完整证据关闭。
 新增[冻结source状态输入诊断](docs/source_state_input_audit.md)也已完成关闭；不恢复历史训练、不扩大旧闭环复核或运行最终controls。
 下一项实验须先有相对已失败近邻的实质机制区别、可区分竞争解释的预测和停止条件。
@@ -13,13 +13,18 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 不能检验跨初态的LoRA行为传递。保留目标物体运动作为候选，但尚无能区分获取与编译不足的具体判别合同；
 运动对应审查本身没有新权重下载、模型forward或实验启动。完整依据见findings§76。
 
-### 原生端点读出诊断：已登记，待执行
+### 原生端点读出：已完成，保留视觉范围限制
 
-核对现行Writer为agentview，上一source诊断为dual，不能把对角差额归因采样深度。
-固定camera×t1/full10四单元，复用dual/full10，仅新增三单元；同384个train位置、原八噪声，
-端点另完整报告原observer seed1729单probe。无新参数、梯度、LoRA或rollout。
-先验证合法原生输出头能否读出当前t1 H中的动作价值，再决定竞争解释；按登记分支一次关闭，
-不扫描seed／flow time／步数，不由局部动作MSE直接启动Writer。
+[端点诊断](docs/source_endpoint_readout_audit.md)新增三单元各384位置完整exit0，复用既有dual/full10。
+agentview full10/t1均值/t1固定probe为.36548/.34789/.34732，均差于task mean .25060；
+dual对应.13673/.13217/.13177，均胜过task mean。三个同读出相机差额均24/24task为正、区间严格为正。
+触发视觉范围分支；同视角增加flow步数没有改善，停止以denoise深度为当前首要修复依据。
+
+双相机的单步H有原生可读动作价值，不能转写成当前agentview或学习后Meta／E已充分；
+也未区分腕部信息与source输入分布匹配，不能由动作预测直接声称视频过程／LoRA收益。
+已核对双视角实现与V-JEPA单视角合同；1,669份范围内库存中38份可判定observer均为agentview。
+当前下一步推导native双相机与现有单视角视频先验的最小输入修正及可失败预测；
+不将双视频K结果混为双相机实验，不自动重启已关闭训练。原始endpoint_*证据完整保留；代码e1a06b46。
 
 ### 待Owner明确的后续方法选择口径
 
@@ -39,7 +44,7 @@ action-mean−true亦为正。三项要求未同时通过，停止直接新增�
 
 描述性追踪中action-mean−state-free为+.11387009、区间[+.08481614,+.13969462]，22/24task为正。
 保留这一原生动作生成正证据，但它不证明单步H／Meta／E已充分，也不证明视频动态的因果收益或新初始化闭环。
-下一理论重点是完整原生采样与当前单步响应消费之间的实际区别，并对照旧forecast失败边界，不默认扫描flow阶段。
+后续端点×视角比较已区分这个混杂，完整结果见上节；不默认扫描flow阶段或恢复旧forecast。
 代码冻结6fa6177f，每臂约311.18秒、9.88GiB峰值，全部原件位于`runs/analysis/source_state_input_20260913/`。
 
 ### 冻结局部动作生成：完整768片段，未通过

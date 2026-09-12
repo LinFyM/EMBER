@@ -24,9 +24,11 @@ Writer、两组Meta和prior投影获得梯度，source／prior始终无梯度。
 不含启动、诊断、checkpoint和数据读取成本；实际段长以formal日志为准。
 
 ordered已在gpu01的0/1/3/4四卡fresh启动，tmux `ember-prior-ordered`；实查torchrun及四rank存活，
-正式run contract确认clean pushed commit，step0的24-task留出诊断完成，并已产生exposures／metrics。
+正式run contract确认clean pushed commit；现已完成100更新、0/100各24-task留出诊断及完整100 checkpoint，继续向200学习。
+100 checkpoint通过现有正式身份／完整性入口检查，gpu01第5卡的`ember-prior-mat100`已启动correct的train96／validation400物化；
+启动后已实查worker存活，当前包括训练共使用5卡，尚无闭环结果。先验初始化可能需数分钟，不能因日志暂静默重启。
 frame_set启动脚本已准备但尚未运行；前臂结束后须按live资源重新选择并记录，不能把历史空闲卡当成预留。
-训练与全部评测共同遵循当前6卡额度；100checkpoint产生后可在符合live资源的余量卡上进行物化与闭环。
+训练与全部评测共同遵循当前6卡额度；train物化manifest完成后，按live状态使用余量卡进行persistent动态队列rollout。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

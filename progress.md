@@ -1,9 +1,9 @@
 # EMBER progress
 
-## 当前状态：ordered完成200步，fresh frame_set已接续（2026-09-12）
+## 当前状态：两臂200步已完成，继续配对闭环评测（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，ordered完成200步，frame_set已按同拓扑fresh接续。**
+**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，ordered/frame_set均完成fresh200步，当前补齐配对闭环证据。**
 Owner已在具体提案后明确给予核心科学精神内的理论／架构修正自由度，覆盖动作训练池内的局部RGB—动作配对监督。
 主LoRA跨episode、teacher动作隐藏、完整H、source冻结和部署零交互保持。旧[Video Functional Writer](docs/video_functional_writer_design.md)
 及第7–11节比较全部结束，旧执行辅助头／蒸馏路线关闭；新假设是实际观察转移的局部动作标签能改善过程获取。
@@ -58,9 +58,12 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - train96 other完整35/96、breadth17，source R/G/L=11/24/4。correct/other四suite S/O/G/L分别9/9/15/7、9/8/12/6；
   换视频成功集合重合33、churn9、J=.78571，correct−other差额95%CI[-.010417,.114583]。两臂进程均已退出。
 - ordered 200节点四个LoRA库均已封存，物化进程退出；100/200所有train96/validation400 correct/other条件库齐备。
-- gpu02:2与gpu02:0分别运行validation100 correct/other（tmux `ember-local-action-ordered-val-c100`／`ember-local-action-ordered-val-o100`），
-  各3个persistent workers。correct已完成100/400条，other正式400队列已准备；尚无完整validation分数。
-  frame_set与评测共享物理GPU总数6，未超过Owner额度。
+- validation100 correct完整45/400，source47/400；S/O/G/L=0/37/0/8、breadth4，source R/G/L=4/41/43，
+  churn84、J=.04545，差额task-cluster95%CI[−.2825,.22]。source的41个Goal成功全部丢失；本节点未显示总体迁移改善。
+  原件及逐task/suite记录在统一`paired_summary.json`。单臂不能判断有序结构增量，匹配frame_set及相邻200仍待完成。
+- correct评测进程已退出，gpu02:2接续frame_set100 LoRA物化（tmux `ember-local-action-frame-set-mat100`）；
+  gpu02:0继续validation100 other（tmux `ember-local-action-ordered-val-o100`，3个persistent workers）。
+  两节点物化与评测共享物理GPU总数6，未超过Owner额度。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
   gpu02可用RAM321GiB。两个共驻设备原仅有约0.2GiB低利用率context，未改动其它用户作业。
@@ -71,23 +74,34 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - ordered退出后，frame_set已从同一clean pushed detached 5f4f440c在gpu01:0/4/5/6、world4 fresh启动，
   tmux `ember-local-action-frame-set`，精确命令及新preflight在`runs/analysis/local_action_grounded_20260912/frame_set/`。
   启动前四卡均无进程、0MiB，节点可用RAM460GiB；quota896.1GiB、study10.028GiB，40GiB预算剩余29.972GiB，投影926.072GiB。
-  actual run contract确认fresh/world4/source trainable=0；0步24主诊断及384局部诊断完整，已执行至少60次正式更新。
+  actual run contract确认fresh/world4/source trainable=0；0步24主诊断及384局部诊断完整，现已完成200步，匹配分析见下。
 - validation100 other接续前，两节点preflight确认gpu02:0仅223MiB低利用率context；quota898.4GiB、study12.418GiB，
   原40GiB预算剩余27.582GiB，投影925.982GiB。精确命令与资源记录在`ordered/step100/eval_validation_other_launch.json`。
-- 下一步完成ordered 100节点其余面板与200节点闭环评测，同时跟进frame_set登记的100/200节点。
+- 下一步补齐两臂100/200节点的剩余闭环面板。
   当前没有selected checkpoint、sealed controls或Test使用，goal未完成。
 
-### 100步匹配学习对比
+### 100/200步匹配学习对比与评测接续
 
-- frame_set第100步完整checkpoint及两类留出诊断已保存，formal checkpoint检查通过；训练继续向200推进。
-  两臂前100步实际400条件、25,600主queries、400局部片段、3,200局部noise draws逐字段匹配，
+- frame_set第100步完整checkpoint及两类留出诊断已保存，formal checkpoint检查通过。
+  两臂前100步实际400次条件曝光、25,600主queries、400局部片段、3,200局部noise draws逐字段匹配，
   包括task、teacher/action episode、frame、局部起点、noise/query seed及权重。
 - 主动作留出ordered/frame_set为0.114319/0.114132；以frame_set−ordered定义改善，差额−0.000186888，
   task-cluster95%CI[−0.000422633,0.000041479]，6/24任务正向。当前没有可信主动作拟合改善。
 - 局部留出为1.164801/1.164866，ordered改善0.000065278，95%CI[0.000005210,0.000128710]，16/24任务正向。
   差异很小，不能单凭此宣称有益过程已获得。两臂0步诊断一致；均只读train24留出动作，不读取validation/test动作。
 - 原件`runs/analysis/local_action_grounded_20260912/step100/learning_comparison.json`包含逐task/suite与匹配曝光。
-  完成登记的200步及全部闭环面板后再裁决，不据此扩大局部头、追加消融或选checkpoint。
+  当前不据此扩大局部头、追加消融或选checkpoint。
+- frame_set完整200更新已结束，用时3307.92秒；100/200 checkpoint、0/100/200两类诊断齐备，formal检查通过，进程退出。
+  两臂各800次条件曝光、51,200主queries、800局部片段、6,400noise draws及实际采样字段全部匹配。
+- 200主动作留出ordered/frame_set为0.108236/0.108274；ordered改善0.000037421，95%CI[−0.000154784,0.000225352]，
+  12/24任务正向。两节点主动作拟合均未形成可靠有序增量。
+- 200局部留出为0.810114/0.811286，ordered改善0.001171932，95%CI[0.000908669,0.001444574]，24/24任务正向。
+  局部优势一致但幅度仍小；只有配对闭环才能判定是否成为有益过程。原件`step200/learning_comparison.json`与100节点同根。
+- 当前已完成3/16完整闭环面板。gpu01:0生成frame_set200 LoRA，gpu01:4/5以6 workers评测ordered200 validation correct，
+  gpu01:6以3 workers评测ordered200 train correct；gpu02:2继续frame_set100物化、gpu02:0继续ordered100 validation other。
+  新作业已实际生成LoRA或领取rollout任务；精确命令及共享两节点preflight记录在对应`step200` launch records。
+- 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
+  原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。
 
 ### Owner最新纠正与执行调整
 

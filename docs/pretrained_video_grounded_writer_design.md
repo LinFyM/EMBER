@@ -1,6 +1,6 @@
 # Pretrained Video Grounded Writer
 
-2026-09-12登记，当前阶段为实现与真实profile，尚无学习或闭环结果。
+2026-09-12登记；实现与真实profile已完成，正式节点见§8。动态运行进度以progress.md为准。
 Owner授权内的新候选；目标仍是正确action-hidden内容和顺序在唯一完整LoRA中的可重复执行收益，
 跨同task视频、初始化、相邻checkpoint保持并迁移到固定validation8。暂不要求145/400。
 
@@ -92,7 +92,7 @@ frame_set对每个真实I_t输入`[I_t,I_t,I_t,I_t]`，同样取最后时间patc
 ## 5. 学习窗口与裁决
 
 最长完整teacher真实profile后，在学习分数产生前登记约一小时的总updates和两个等间隔附近节点，采用50或100的倍数。
-100/200仅为既有速度参照，尚未指定本次正式步数；profile不能作为fresh学习或性能结果。
+profile后的正式100/200节点与曝光已按本条登记于§8；profile不能作为fresh学习或性能结果。
 每节点train96与validation400先完成correct；主比较无正向资格则不为挽救方法扩大对照。
 主比较出现两节点正向候选时补两臂相同节点other，用于完整资格；这些条件在看到分数前固定。
 主动作留出在0及两个节点执行，train24每task128queries、seed20260908、原held视频池；只作定位，无checkpoint选择。
@@ -132,7 +132,7 @@ shuffle/reverse先改真实帧再完整重跑V-JEPA窗口、native和Writer，�
 共享不变量测试继续保留，覆盖prefix依赖、静态置换、全H、唯一LoRA、冻结模型／Meta梯度和严格checkpoint身份。
 
 主写在隔离`codex/`工作树，验证后合main并push，formal从clean pushed detached commit执行。
-代码依赖和权重只存一处canonical资产根，权重HTTP长度已知为5,151,198,524 bytes；尚未下载。
+代码依赖和权重只存一处canonical资产根，权重HTTP长度为5,151,198,524 bytes；已下载至canonical资产根并通过真实strict加载。
 下载／新run前刷新strg01独立quota及相关目录用量，预算包括下载临时文件、模型、checkpoint、LoRA库和评测输出。
 先验原始checkpoint含非encoder对象的可能空间须计入，未检查内容前不删原件或承诺精简大小。
 launch前两节点GPU和合计额度、NUMA／NCCL依现有合同核查，具体路径／命令／增长预算写launch contract。
@@ -148,10 +148,10 @@ launch前两节点GPU和合计额度、NUMA／NCCL依现有合同核查，具体
 
 2026-09-12：唯一运行面已接入冻结prior准备、统一容量缓存、learned Value读取和主FM／native重放，
 training及materialization使用新schema，局部动作头／loss／片段读取／专属诊断与两份专属测试已退役。
-三份配置明确ordered、重复帧静态和条件触发的image静态；正式启动仍等待profile后的节点／曝光登记。
+三份配置明确ordered、重复帧静态和条件触发的image静态；profile后的节点／曝光登记见下文。
 370项共享源码测试通过；其中直接autograd检查覆盖主LoRA及两组Meta信用，Value干预覆盖全部76输出tensor，
 前缀、静态置换、缓存容量、严格checkpoint与配对调度合同保留。官方代码导入和384预处理检查通过。
-这些检查尚不包含下载完成后的真实encoder加载、GPU峰值／吞吐或闭环行为；不能据此宣称目标已达。
+当时的实现测试不包含真实encoder加载与GPU行为；后续真实profile见下文，闭环目标仍待正式证据。
 
 结构检查为review：active source/test合计+271/−621，净减350行，仅新增一个冻结先验owner，未复制trainer或evaluator。
 保留的复杂度提示来自既有采样／selection／checkpoint合同函数，相关分支未扩展；

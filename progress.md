@@ -1,38 +1,41 @@
 # EMBER progress
 
-## 当前状态：冻结视频先验候选实现中（2026-09-12）
+## 当前状态：冻结视频先验正式有序臂学习中（2026-09-12）
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：隔离实现与资产准备。**
-官方先验权重正在下载，尚未启动新GPU作业；Local Action Grounded全部16面板已完成关闭，整体goal未达。
+**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：fresh正式学习与配对评测准备。**
+Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选尚无正式闭环成绩。
 原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
 
 ### 当前决定与工作
 
-新增冻结V-JEPA2.1过去四帧视觉特征，task-conditioned dense Value读取进入现有完整native H及LoRA主FM。
-沿用teacher单agentview，避免同时改变视角；仅主FM，退役已关闭的局部动作辅助支路。
-匹配frame_set在同video encoder上逐帧输入四张相同真实图，不携带历史；只有两节点资格成立后才追加
-原生image全帧静态参照，防止静态分支过弱。完整理论、可辨别预测、停止条件及最终controls均在active design。
+冻结V-JEPA2.1过去四帧dense特征，经task-conditioned Value读取进入现有完整native H及LoRA主FM。
+沿用teacher单agentview，只有主FM；旧局部动作辅助支路已退役。主比较为同encoder的ordered／逐帧四张重复图frame_set；
+只有两节点资格成立后才追加原生image全帧静态参照。完整预测、停止条件和最终controls见active design。
 
-接下来按隔离实现、信息路径／梯度验证、quota／资产与最长视频profile、clean pushed frozen学习推进。
-约一小时窗口的实际checkpoint节点须在profile后、学习分数前登记；目前没有新formal命令或性能证据。
+实现与节点配置已集成并push，正式训练从clean detached `611770d13ab71bcee8284539914372935d07387e`
+（`.codex/worktrees/pretrained-video-frozen`）运行；370项共享源码测试通过。真实官方EMA权重strict加载通过，
+最长93帧teacher的两次完整单条件反向已完成；第二次19.5573秒、allocated39.0794GiB／reserved42.0840GiB，
+Writer、两组Meta和prior投影获得梯度，source／prior始终无梯度。profile没有保存或复用正式初始化。
+集成完成且profile进程退出后，已移除干净的task-owned实现worktree／分支；正式冻结运行树保留。
 
-实现已由`345bc330`合入并push主线`2e6d8b3b`。冻结先验、统一容量缓存、task-conditioned Value读取及主FM/native重放已接通；
-旧局部头／loss／action片段读取／专属诊断和两份测试退役。三个新配置为`pi05_pretrained_video*.json`，旧checkpoint仅用原冻结runtime。
-370项共享源码测试通过，覆盖完整76-tensor LoRA、先验Value通路、完整H、前缀／静态置换、R/Z与两组Meta信用及严格checkpoint／评测配对。
-结构检查保留既有合同函数的review提示，活动源码与测试净减350行、Writer文件数未增长；理由见active design§8。
-尚未验证真实先验权重加载、GPU峰值／吞吐或闭环结果；formal启动会拒绝仍标记profile_pending的配置。
+在学习前固定100/200节点，每臂200updates、800个K1条件及51,200主FM queries；四suite每update各一task、64queries／task。
+保留frame chunk8、policy microbatch8、prior window batch4。profile速度仅是约65分钟纯更新成本参考，
+不含启动、诊断、checkpoint和数据读取成本；实际段长以formal日志为准。
 
-官方代码已固定到登记commit；资产会话`ember-vjepa-assets`正在下载单份5,151,198,524-byte权重，
-脚本、日志与状态位于`runs/analysis/pretrained_video_grounded_20260912/`，目前没有GPU作业。
-`asset_storage_budget.json`记录strg01/data1用量910.9GiB／1TiB、个人目录du911G、共享83TiB可用，
-新增峰值预算61GiB，预计971.9GiB。formal前须刷新预算；不建立dense磁盘缓存。
-`timm==1.0.29`及对应uv.lock已提交，仅新增该包、未升级其它依赖；环境rollback保存在同一资产记录。
+ordered已在gpu01的0/1/3/4四卡fresh启动，tmux `ember-prior-ordered`；实查torchrun及四rank存活，
+正式run contract确认clean pushed commit，step0的24-task留出诊断完成，并已产生exposures／metrics。
+frame_set启动脚本已准备但尚未运行；前臂结束后须按live资源重新选择并记录，不能把历史空闲卡当成预留。
+训练与全部评测共同遵循当前6卡额度；100checkpoint产生后可在符合live资源的余量卡上进行物化与闭环。
 
-下一步在权重下载完成后按gpu-preflight现场选择一张卡，运行已准备的最长完整teacher两次单条件反向profile，
-检查真实加载、两组Meta与prior投影信用及冻结参数无梯度；根据实测选择物理batch和约一小时的正式节点。
-隔离工作树`.codex/worktrees/pretrained-video`暂保留供这一profile及必要范围内修复，主代理所有；
-profile通过并完成最终配置集成后移除，不作为第二条运行路径或历史fallback。
+本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
+exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。
+正式启动前strg01/data1用量916.2GiB／1024GiB、共享83TiB可用；剩余研究峰值50GiB及冻结worktree0.3GiB，预计966.5GiB。
+单份官方权重4.8GiB已落canonical模型根，临时下载文件已消失；不建立dense磁盘缓存。
+
+两个主臂100/200的train96与validation400 correct物化请求已准备，沿用固定seed20260911、held46–49／states32–35
+及validation各50视频映射。先完成这8个面板；有正向候选才补other和条件性的image静态检查。
+统计报告包括source、task/suite、breadth、R/G/L、churn、相邻及换视频成功集合；最终内容／顺序controls仍待方法选定后。
 
 ### 上一候选：Local Action Grounded已关闭
 

@@ -95,7 +95,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 
 - target development gradients只来自24 train tasks；active design可登记额外、经审计的non-held LIBERO-90 meta-task
   gradients。所有授权meta tasks按预注册口径等权或显式分层，validation/test不得产生梯度。
-- video与action query同task但跨episode采样，阻断逐帧轨迹复制。
+- 主video-conditioned LoRA的功能监督使用同task但跨episode的video/action query，阻断逐帧轨迹复制。
+  经active design登记，训练期共享读取器可用授权action训练episode自身的RGB转移与动作作辅助监督；
+  这些标签不得进入视频表示／Compiler的条件输入，teacher视频仍action-hidden，部署不得做逐轨迹适配。
 - 多卡可按K、帧数和历史cost平衡负载，但不得改变task权重。
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
 - incompatible架构必须fresh；exact-resume锁原world size/topology。

@@ -1,9 +1,12 @@
 # EMBER progress
 
-## 当前状态：有界比较全部结束，关闭当前候选并重审学习机制（2026-09-12）
+## 当前状态：局部动作转移监督已获授权，进入实现（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**当前没有active design或运行中的实验。** [Video Functional Writer](docs/video_functional_writer_design.md)及第7–11节有界比较全部结束；本候选未获过程与迁移资格，停止继续叠加局部修正。持续科研授权与原goal保留，下一项设计须先完成综合机制判断并明确登记。
+**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，当前尚未启动新学习。**
+Owner已在具体提案后明确给予核心科学精神内的理论／架构修正自由度，覆盖动作训练池内的局部RGB—动作配对监督。
+主LoRA跨episode、teacher动作隐藏、完整H、source冻结和部署零交互保持。旧[Video Functional Writer](docs/video_functional_writer_design.md)
+及第7–11节比较全部结束，旧执行辅助头／蒸馏路线关闭；新假设是实际观察转移的局部动作标签能改善过程获取。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### Owner最新纠正与执行调整
@@ -22,14 +25,14 @@ v5/v6使用固定probe，Stage0/G2虽有真实动作标签，却明确来自另�
 推荐继续推导action训练池内的局部动作反演，共享表示最终仍由跨episode完整LoRA FM学习；
 局部预测强弱、LoRA收益和跨task迁移分别裁决，不能以反演头成绩完成goal。
 
-该提案尚未登记active design，也未改代码、下载模型或启动学习。新增辅助支路会使用同一action episode的RGB与动作标签，
-触及AGENTS现有跨episode监督合同；已写清仅action池16–41的拟议例外及所有保留边界，待Owner明确此范围后再实施。
-这是一项具体监督关系的确认，不是要求重新批准所有已授权研究。其它旧候选保持关闭。
+此前待确认的范围现已由Owner最新授权覆盖：辅助分支只使用action池16–41自身RGB及动作训练共享读取器，
+标签不进入encoder／Compiler，主LoRA查询继续跨episode。已登记完整新设计，不再等待同一事项批准。
+实现复用唯一运行面并退役旧辅助执行／蒸馏支路；其它旧候选保持关闭。
 
 等待范围确认期间已完成只读准备：提案§8规定全帧无序参照不得通过末帧选取或端点标记泄漏先后；
 §9依据固定官方生产代码及四suite训练样本确认post-action RGB，区间obs[p]→obs[q]应配actions[p+1:q+1]。
 当前主FM仍使用原同索引合同，时间差的行为影响未测，不作为历史低分根因。仅长度元数据表明四帧局部候选
-新增观察量约为平均teacher帧数的11.27%，不是墙钟实测；无代码／数据修改或新学习，Owner确认仍待回复。
+新增观察量约为平均teacher帧数的11.27%，不是墙钟实测。上述只读准备已完成，新实现与profile据最新授权推进。
 
 ### 当前执行与完整结果
 

@@ -2,7 +2,8 @@
 
 ## 当前goal：有益视频特异性先行，再提升绝对性能
 
-Owner 2026-09-11已授权自主高效实施。[本轮设计](docs/video_functional_writer_design.md)已完成有界学习及修正并关闭，当前无active design；
+Owner 2026-09-11已授权自主高效实施，2026-09-12再次明确核心科学精神内的理论／架构修正自由度。
+旧[Video Functional设计](docs/video_functional_writer_design.md)已关闭；唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)。
 结合全部历史重新设计，不恢复v5.2底座；暂不要求145/400，但闭环真实收益、跨视频/初态/相邻保持及validation迁移不可替代。
 
 用卡遵循Owner最新上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
@@ -14,7 +15,14 @@ Owner 2026-09-12要求改变连续负结果后的推进方式：停止自动串�
 
 已完成[过程获取的监督关系复核](docs/video_process_acquisition_analysis.md)：推荐具体审视action训练池的
 同episode局部观察—动作配对，区别于已执行的跨episode功能／phase监督。该新支路需要明确现有跨episode
-合同的适用范围；拟议数据流、停止条件与信息墙已写成可审阅提案，尚无active design或新实验。
+合同的适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，进入实现，尚未开始新学习。
+
+### 当前执行计划
+
+1. 在隔离工作树实现局部post-action转移数据、训练专用动作FM头及共享encoder/native重放；退役旧执行读出与蒸馏。
+2. 验证信息墙、局部标签索引、无序参照、梯度归属、采样恢复和完整checkpoint；真实最长视频profile确定物理执行。
+3. 从clean pushed frozen commit开展ordered/frame_set匹配学习，预登记100/200、局部与主动作留出及train96/validation400两臂。
+4. 按新设计分开裁决局部获取、LoRA收益与迁移；只有可信正结果才进入无辅助归因参照与最终冻结后的sealed controls。
 
 ## 计划与完成口径
 

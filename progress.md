@@ -68,6 +68,14 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   相较100步45/400，R/G/L=21/9/24、churn33、J=.38889，差额task-cluster95%CI[−.1075,.02]；
   Object37→29、Long8→0、Spatial0→1，Goal仍0。总体迁移继续偏弱；匹配frame_set及200换视频结果待齐。
   400rows/36jobs完整、评测1769.79秒，进程退出。
+- frame_set100 validation correct完整58/400，S/O/G/L=0/43/1/14、breadth5，source R/G/L=5/53/42、churn95、J=.05。
+  ordered100为45/400，相对frame_set R/G/L=39/6/19、churn25、J=.609375，task-cluster95%差额CI[−.06,−.01]。
+  Object−6、Long−6、Goal−1、Spatial0，没有suite净收益；这一节点的有序结构迁移劣于充分匹配的无序参照。
+  本节点不满足预登记迁移资格；继续补齐其余节点与换视频证据，不据此启动pureFM第三臂或最终controls。
+  42jobs/400rows完整、评测1180.75秒，全部进程退出。
+- 当前归因边界：局部FM优势属于共享读取器与专用局部头的整体；局部头拥有自己的时间Key投影，不更新Compiler的时间投影。
+  因此它尚未单独证明共享E已获得可迁移的完整任务过程，不能把Compiler指定为唯一失败点。
+  新局部RGB—动作真实配对区别于旧跨episode辅助FM；其增量贡献尚无同图纯FM消融，不能用跨配方历史分数代替。
 - correct评测进程已退出，frame_set100/200物化随后均完成；当前资源接续见下节。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
@@ -125,10 +133,10 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   净收益Spatial+3、Object+1，另两suite相同；frame_set自身换视频重合39、churn9、J=.8125，other相邻重合30、churn23、J=.56604。
   两臂8个训练面板全部完成；100两视频差额+1/−3、200两视频差额+4/+4，四项区间均跨零，尚无可信有序结构增量。
   原件与所有task/suite、相邻及换视频统计均在`paired_summary.json`；最后36jobs/96rows完整、进程退出。
-- 当前已完成11/16完整闭环面板。gpu01:0/4/5以9 workers评测frame_set100 validation correct，
+- 当前已完成12/16完整闭环面板。gpu01:0/4/5以9 workers接续frame_set200 validation other，
   gpu01:6以3 workers评测frame_set100 validation other；gpu02:0评测ordered200 validation other，gpu02:2接续frame_set200 validation correct。
   四项评测均已核对活进程与实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
-  最新接续时quota910.9GiB、study24.863GiB，原40GiB预算剩余15.137GiB，投影926.037GiB；大型checkpoint/bank写出已完成。
+  最新接续时quota910.9GiB、study24.871GiB，原40GiB预算剩余15.129GiB，投影926.029GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
   原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。
 

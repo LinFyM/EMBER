@@ -18,6 +18,9 @@ Owner随后提供专家整体复审，并在睡前要求自主有效推进，随
 专家建议先收尾本轮，若未获资格，优先复核旧冻结模型52/96对40/96的跨视频／初始化证据。
 该复核尚未启动；先核对顺序controls用途、完成具体预登记与成本判断，后续执行依据最新Owner授权和登记设计。
 后台队列只执行当前8面板，按首阶段判据输出初步候选／关闭建议；候选不等于选点或goal完成。
+等待期完成[冻结正例复核审计](docs/frozen_positive_replication_audit.md)：旧96配对核验为新增15／丢失3；
+原面板混淆video与state，768交叉面板的判别力依变异结构而异。正确臂可复用已有192个LoRA，
+两模型加source共1,728次新rollout；顺序干预用途／合同尚待登记，未启动新复核。
 
 唯一Writer已改为post-action obs[i]→actions[i+1:]，排除无未来动作标签的最后query；source与normalization冻结。
 624条train动作episode的CPU审计、四suite真实dataset首／尾8例、378项全套测试通过。

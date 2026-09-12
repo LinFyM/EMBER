@@ -45,6 +45,21 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - 最新启动前/data1 quota886.7GiB/1TiB，两臂新增峰值预算40GiB；3个已集成临时实现工作树清理完毕，
   source/data/env与正式冻结运行面保留。接续训练和各新GPU评测启动前按实际变化检查额度。
 
+### 首个100节点与评测接续
+
+- ordered第100步完整checkpoint已保存，并由formal materialization检查器验证；0/100主动作留出各24task×128queries，
+  局部留出各24task×16clips×8noise均完整无梯度。主FM均值0.151461→0.114319，局部1.308081→1.164801；
+  这是拟合进展，尚不能推断有序视频增益，匹配frame_set及闭环结果仍待完成。
+- 100节点train correct的96套LoRA已封存，validation correct的400套正在生成；same-task-other随后按固定映射复用同条件LoRA，
+  不平均生成权重。物化使用gpu02:0，tmux `ember-local-action-ordered-mat100`。
+- 首个train96 correct rollout已在gpu02:2用3个persistent workers启动，队列已实际产生完成rows；
+  tmux `ember-local-action-ordered-train-c100`。训练继续向200推进，当前占用物理GPU总数6，未超过Owner额度。
+- 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
+  此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
+  gpu02可用RAM321GiB。两个共驻设备原仅有约0.2GiB低利用率context，未改动其它用户作业。
+- 下一步完成100节点四面板并跟进200checkpoint；ordered退出后用同一四卡拓扑fresh启动已登记frame_set。
+  当前没有selected checkpoint、sealed controls或Test使用，goal未完成。
+
 ### Owner最新纠正与执行调整
 
 Owner指出近几小时没有根本进展，要求调整负结果后的分析与修正方式。此前去蒸馏、额外读出与VL适配虽各有

@@ -203,8 +203,8 @@
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
       "optimizer_updates": [
-        50,
-        100
+        100,
+        200
       ]
     },
     "qualification": {
@@ -280,14 +280,14 @@
       ],
       "registration_status": "registered before functional learning",
       "optimizer_updates": [
-        50,
-        100
+        100,
+        200
       ],
       "qualification_completion": "paired400 correct/other at informative nodes; video specificity against matched trained frame_set; no145 gate"
     },
     "checkpoint_updates": [
-      50,
-      100
+      100,
+      200
     ],
     "supervised_validation": {
       "task_ids": [
@@ -318,7 +318,8 @@
       ],
       "optimizer_updates": [
         0,
-        100
+        100,
+        200
       ],
       "action_demos": [
         42,

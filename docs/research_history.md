@@ -1296,3 +1296,17 @@ ordered200 correct与frame_set成功重合25、gained/lost5/5；other重合23、
 `step100/learning_comparison.json`、`step200/learning_comparison.json`。逐task/suite、breadth、source、
 R/G/L、churn、相邻与换视频成功集合完整保留于paired_summary；精确命令及每项completion由同根launch records索引。
 设计及其停止条款为[Local Action Grounded Writer](local_action_grounded_writer_design.md)§7，本条目不恢复该run。
+
+
+## 2026-09-12：冻结视频先验有界比较关闭
+
+[Pretrained Video Grounded设计](pretrained_video_grounded_writer_design.md)以冻结V-JEPA2.1过去四帧dense特征，
+经任务条件化Value读取进入完整native H和唯一LoRA，只有主FM；匹配参照为同encoder逐帧重复图与无序Writer。
+两臂fresh200各800条件／51,200queries，实际采样匹配，冻结实现`611770d1`；8个correct面板／1,984rows全部完成。
+train100/200有序41/52、静态41/40；200差额CI[.05208,.20833]为正，应保留为单节点训练行为正例。
+validation100有序53／静态48，差额CI[0,.025]未达严格下界；200为33／48，CI[−.0825,−.005]为负。
+有序相邻Long5→0、J=.24638；静态总分48→48但J=.29730，未建立有益过程的稳定迁移。
+本组合关闭，不续训或扫描局部参数，不触发other／原生image／最终controls；无selected checkpoint，整体goal未达。
+完整解释和边界见[findings§70](../findings.md)，正式裁决、逐task/suite和成功集合原件为
+`runs/analysis/pretrained_video_grounded_20260912/bounded_200_decision.json`及`paired_summary.json`。
+全部formal raw rows、checkpoint、manifest、学习诊断和completion保留；所有该轮进程已退出。

@@ -2,25 +2,24 @@
 
 ## 当前goal：有益视频特异性先行，再提升绝对性能
 
-Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精神内的理论／架构修正自由度。
-结合全部历史重新设计，不恢复v5.2底座；暂不要求145/400，但正确视频闭环收益、跨视频/初态/相邻保持及validation迁移不可替代。
-用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
+Owner授权自主高效推进新视频表示与执行状态条件化功能监督，取得正确视频在唯一完整LoRA中的可重复闭环增量，
+并验证跨同task视频、初始化、相邻checkpoint和固定validation迁移。暂不要求145/400；当前goal未完成。
 
-**当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
-冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
-两臂fresh200与全部LoRA物化完成，7/8个correct面板完整。train100有序／静态41/41，200为52/40且差额CI为正；validation100为53/48但差额CI[0,.025]未达严格下界，ordered200为33/400、Long归零。静态200 validation继续运行，尚无稳定迁移或跨视频资格。Local Action Grounded已关闭，历史证据保留。
+**当前无active design。** Pretrained Video Grounded的fresh200与8面板／1,984rows全部完成并关闭。
+train100有序／静态41/41，200为52/40且配对CI为正；validation100为53/48但下界0，200为33/48且CI为负。
+有序Long5→0，静态48→48却有52次成功状态变动；没有稳定迁移或跨视频资格。完整证据见progress及findings§70。
 
 ### 当前执行计划
 
-1. **已完成设计登记：**综合功能信用、局部监督、覆盖扩展负证据与v5.2正例，检验预训练视频知识来源。
-   主比较为同一视频编码器的ordered／逐帧重复静态；仅出现完整正向资格时，追加原生image全帧静态参照确认强度。
-2. **实现已集成：**唯一入口接入冻结先验与learned task grounding，保留完整H、source冻结、teacher信息墙和跨episode主FM。
-   退役局部动作头／loss／数据支路／专属诊断，复用现有trainer、重放、checkpoint与动态evaluator。
-3. **正式学习已完成：**实现／单份资产／最长teacher profile完成；学习前固定100/200与每臂51,200主FM queries。
-   ordered与frame_set在clean pushed frozen `611770d1`上各完成world4 fresh200；实际800条件／51,200queries及18个采样字段匹配。
-4. **行为裁决：**先两节点train96和validation400 correct；有正向候选再补other与已登记强静态检查。
-   报告绝对能力、source、task/suite、breadth、成功集合及相邻／换视频保持；明确坏结果不扫参数或追加局部补救。
-5. 全部资格成立后冻结方法与single checkpoint，完成sealed内容／顺序controls；当前goal仍未完成。
+1. **已完成：**完整有界学习、实际曝光核验、两节点train96／validation400及成功集合裁决。
+2. **已关闭：**不续训、不扫局部参数、不触发other／image／最终controls；保留formal evidence，全部进程已退出。
+3. **下一步机制判断：**同时解释train200局部正例、validation反转、相邻漂移和历史强正例；核对最近等价历史，
+   在信息路径、参数作用或学习关系上提出实质可辨别的新机制，避免重命名已有共享prior、辅助loss或任务扩展。
+4. 登记有明确竞争预测、停止条件和行为证据的新active design后，自主完成实现及验证；不默认启动另一轮同图小改。
+5. 只有正确视频收益、跨视频／初态／相邻保持与迁移均成立，且selected后的因果controls通过，才完成当前goal。
+
+用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
+formal来自clean pushed frozen commit，后续新增长重新检查独立quota与两节点实时资源。
 
 ## 已完成历史与最终口径
 

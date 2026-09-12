@@ -930,3 +930,39 @@ CI[.00090867,.00144457]且24/24任务正向。主FM相应差额−.00018689/+.00
 原件：`runs/analysis/local_action_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
 `step100/learning_comparison.json`、`step200/learning_comparison.json`；完整任务/suite及source成功集合均保留。
 这是有效科学non-pass；当前goal未完成，未使用Test、held梯度或最终sealed视频controls。
+
+
+## 70. 冻结视频先验得到单节点训练收益，未形成稳定迁移（2026-09-12）
+
+Pretrained Video Grounded两臂fresh200及全部8个correct面板完成，共1,984闭环rows。
+每臂800条件／51,200主FM queries，18个采样字段及world4曝光实际匹配；0/100/200各24-task留出诊断完整。
+使用同一冻结V-JEPA2.1与当前完整native H／LoRA编译路径，主比较为过去四帧与逐帧四张重复图静态参照。
+
+| 节点 | train96 ordered / frame_set | validation400 ordered / frame_set |
+| --- | --- | --- |
+| 100 | 41 / 41 | 53 / 48 |
+| 200 | 52 / 40 | 33 / 48 |
+
+训练200差额+12，task-cluster95%CI[.05208,.20833]，Spatial/Object/Goal/Long净额+4/+5/0/+3；
+100差额0、CI[−.0625,.0625]。该单节点行为正证据不同于§65/69的辅助可解码性，不能用“从未学到任何有益过程”概括本轮。
+它仍不证明共享E已经充分、只剩Compiler失败，也没有证明跨视频和相邻稳定的过程获取。
+
+validation100差额+5、CI[0,.025]，下界未严格大于零；200差额−15、CI[−.0825,−.005]。
+200有序相对静态保留24／新增9／丢失24，churn33，J=.42105，suite净额+1/−4/−11/−1。
+有序100→200保留17／新增16／丢失36，churn52，J=.24638；Object33→17、Long5→0、breadth7→5。
+静态100→200虽总分同为48，却只保留22／新增26／丢失26，churn52，J=.29730；Object32→21、Goal12→26、Long4→1。
+静态200相对source47仅+1，CI[−.1175,.0925]；有序200比source少14，CI[−.1925,.0675]。
+这些宽区间不证明唯一总体原因，但实际正确条件退化及资格失败已足以停止本候选追加投入。
+
+主FM留出100有序改善.0002066、CI跨零；200差额约−.000000342、CI亦跨零。
+主FM几乎无差额与train200行为正差额并存，再次限制用平均离线损失代替闭环的解释。
+本轮停止的是冻结四帧先验与当前消费／编译／fresh200配方的组合，不是所有视频预训练或普通FM。
+未做匹配无先验臂，不能把与历史局部辅助配方的差异单因归给encoder；原生image强静态参照与other未触发，
+没有selected checkpoint或最终内容／顺序controls，不能补写未发生的因果确认。
+
+关闭本候选，不续训、不扫层位／窗口／rank／LR／seed或辅助loss，不启动条件性other／image。
+下一理论须同时解释本轮单节点训练正例、相邻与迁移负例，以及旧v5.2等正证据；不恢复已经否决的局部补丁链。
+现有target/rank查询残差与共享D已有表示跨条件公共LoRA的容量；这不证明学出了好基底，也不自动给显式prior＋residual提供修复依据。
+原件：`runs/analysis/pretrained_video_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
+`step100/learning_comparison.json`与`step200/learning_comparison.json`。冻结实现`611770d1`，八面板全部完整、worker exit0。
+目标仍未完成；未使用Test、held梯度或最终sealed controls。

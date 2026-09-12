@@ -1,6 +1,7 @@
 # Pretrained Video Grounded Writer
 
-2026-09-12登记；实现与真实profile已完成，正式节点见§8。动态运行进度以progress.md为准。
+2026-09-12登记并完成有界比较，现已关闭；train200局部正差额未形成稳定validation收益，见findings§70。
+下文保留原预登记方法与裁决合同，不能从历史节点恢复执行；当前授权以progress.md为准。
 Owner授权内的新候选；目标仍是正确action-hidden内容和顺序在唯一完整LoRA中的可重复执行收益，
 跨同task视频、初始化、相邻checkpoint保持并迁移到固定validation8。暂不要求145/400。
 

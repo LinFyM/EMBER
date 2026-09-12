@@ -1,90 +1,50 @@
 # EMBER progress
 
-## 当前状态：冻结视频先验两臂学习完成，配对评测中（2026-09-12）
+## 当前状态：冻结视频先验比较关闭，目标未达（2026-09-12）
 
-Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：两臂fresh正式学习完成，配对评测中。**
-Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有7/8个correct面板：训练200有序正差额，validation100差额下界为0、有序200后段退化；尚未获迁移与稳定资格，静态200 validation仍在运行。
-原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
+Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400。
+**当前无active design。** Pretrained Video Grounded的正式学习与8个correct面板全部完成，停止本候选追加投入。
+不从旧design、旧未完成清单或历史分数自动恢复实验；整体goal继续，下一项须由综合机制判断重新登记。
 
-### 当前决定与工作
+### 本轮完整结果与决定
 
-冻结V-JEPA2.1过去四帧dense特征，经task-conditioned Value读取进入现有完整native H及LoRA主FM。
-沿用teacher单agentview，只有主FM；旧局部动作辅助支路已退役。主比较为同encoder的ordered／逐帧四张重复图frame_set；
-只有两节点资格成立后才追加原生image全帧静态参照。完整预测、停止条件和最终controls见active design。
+| 节点 | train96 ordered / frame_set | validation400 ordered / frame_set |
+| --- | --- | --- |
+| 100 | 41 / 41 | 53 / 48 |
+| 200 | 52 / 40 | 33 / 48 |
 
-实现与节点配置已集成并push，正式训练从clean detached `611770d13ab71bcee8284539914372935d07387e`
-（`.codex/worktrees/pretrained-video-frozen`）运行；370项共享源码测试通过。真实官方EMA权重strict加载通过，
-最长93帧teacher的两次完整单条件反向已完成；第二次19.5573秒、allocated39.0794GiB／reserved42.0840GiB，
-Writer、两组Meta和prior投影获得梯度，source／prior始终无梯度。profile没有保存或复用正式初始化。
-集成完成且profile进程退出后，已移除干净的task-owned实现worktree／分支；正式冻结运行树保留。
+- train200差额+12，task-cluster95%CI[.05208,.20833]为正，suite净额S+4/O+5/G0/L+3；100差额0、CI跨零。
+  保留这一单节点闭环正证据，不能笼统宣布毫无过程获取，也不能据此认定共享表示已充分或只差Compiler。
+- validation100差额+5、CI[0,.025]未满足严格正下界；200差额−15、CI[−.0825,−.005]为负。
+  200有序相对静态保留24／新增9／丢失24，churn33，J=.42105；suite净额+1/−4/−11/−1。
+- ordered100→200从53降至33，保留17／新增16／丢失36，churn52，J=.24638，Long5→0、breadth7→5。
+  frame_set48→48却保留22／新增26／丢失26，churn52，J=.29730；总分持平不等于行为稳定。
+- source validation47；两节点有序53/33、静态48/48。尚无可信稳定迁移与跨视频资格；未触发other和原生image参照，
+  没有selected checkpoint，不做最终视频controls、Test、RL或训练续跑／参数扫描。
 
-在学习前固定100/200节点，每臂200updates、800个K1条件及51,200主FM queries；四suite每update各一task、64queries／task。
-保留frame chunk8、policy microbatch8、prior window batch4。profile速度仅是约65分钟纯更新成本参考，
-不含启动、诊断、checkpoint和数据读取成本；实际段长以formal日志为准。
+完整逐任务／suite、source对照、breadth、R/G/L、churn与相邻成功集合见
+`runs/analysis/pretrained_video_grounded_20260912/paired_summary.json`；裁决为同根`bounded_200_decision.json`。
+综合边界见[findings§70](findings.md)和[历史记录](docs/research_history.md)。
 
-ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒；0/100/200各24-task留出诊断完整，
-100/200 checkpoint均通过现有正式身份与完整性入口检查，训练以exit0结束且原四rank已退出。
+### 已完成执行及证据
 
-100 correct的train96／validation400 LoRA库全部sealed，物化以exit0结束；validation每task50条视频无放回、跨节点固定state映射。
-首个train96面板完整为**41/96**，source为15/96；Spatial/Object/Goal/Long为9/8/16/8，breadth18（source7）。
-相对source保留11／新增30／丢失4，churn34，J=.24444；task-cluster95%成功率增量区间[.13542,.38542]。
-其24个任务分片、96rows及worker exit0已核验；该相对source结果不证明视频内容／有序过程收益或validation迁移。
-200 correct train96也已完整结束，为**52/96**，Spatial/Object/Goal/Long17/13/13/9，breadth18。
-相对source保留14／新增38／丢失1；100→200保留26／新增26／丢失15，churn41，J=.38806，
-相邻成功率增量95%CI[−.04167,.28125]跨零；Goal16→13，整体增长不代表低churn或已获得稳定视频过程增益。
-200的30个分片／96rows、双worker exit0及进程退出已核验，用时939.64秒；与100的耗时差同时受checkpoint行为与并发数影响，
-不单因归给双worker。`paired_summary.json`保留逐任务、suite、相邻及source成功集合；其它参照和视频尚未形成完整比较。
+两臂各fresh200／800条件／51,200主FM queries，实际18个采样字段及world4曝光匹配；0/100/200留出诊断完整。
+100主FM有序小幅改善但CI跨零，200差额近零；平均损失不替代行为裁决。
+全部8面板／1,984rows完整，所有worker return0；最后静态200 validation48/400、28分片，用时3636.50秒。
+两臂100/200全部LoRA库sealed，跨臂／节点state–video映射一致，validation每task50条视频各一次；生成与学习均exit0。
+全部本轮训练、生成、评测进程已退出，无GPU占用维持任务。所有checkpoint、raw rows、aggregate、completion与launch合同保留。
 
-有序100 validation strict400已完整结束，为**53/400**（source47）；Spatial/Object/Goal/Long1/33/14/5，breadth7。
-相对source保留17／新增36／丢失30，churn66，J=.20482，task-cluster95%增量区间[−.1925,.2075]跨零；
-Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移增量。28分片／400rows、双worker exit0及退出均已核验，
-用时3793.60秒。
-有序200 validation完整为**33/400**，Spatial/Object/Goal/Long1/17/15/0，breadth5；
-相对source保留15／新增18／丢失32，churn50，J=.23077，增量95%CI[−.1925,.0675]。
-100→200保留17／新增16／丢失36，churn52，J=.24638，增量CI[−.1525,.0175]；Object33→17、Long5→0，
-训练200的有序正差额没有兑现该节点的source相对迁移收益或相邻保持。32分片／400rows、四worker exit0及退出已核验，2065.68秒。
-静态100 validation完整为**48/400**，Spatial/Object/Goal/Long0/32/12/4，breadth5；
-source相对保留16／新增32／丢失31，churn63，J=.20253，增量CI[−.2075,.195]。
-有序100对静态100为53对48，保留41／新增12／丢失7，churn19，J=.68333，配对增量CI[0,.025]，
-下界不严格大于0，未满足登记资格；suite有序净额S+1/O+1/G+2/L+1。静态32分片／400rows、四worker exit0及退出已核验，2129.39秒。
-静态100 train96完整结束，为**41/96**，Spatial/Object/Goal/Long10/10/16/5，breadth19；
-相对source保留11／新增30／丢失4，churn34，J=.24444，task-cluster95%增量区间[.13542,.38542]。
-有序／静态100总分同为41；以静态为参照，有序保留35／新增6／丢失6，churn12，J=.74468，
-配对增量95%CI[−.0625,.0625]跨零。Long+3、Spatial−1、Object−2、Goal0，该100节点尚无可信有序优势。
-30分片／96rows、双worker exit0及退出已核验，用时969.27秒；全部per-task和成功集合在`paired_summary.json`。
-静态200 train96也已完整结束，为**40/96**，Spatial/Object/Goal/Long13/8/13/6，breadth18；
-相对source保留12／新增28／丢失3，churn31，J=.27907，95%增量区间[.15625,.375]。
-200有序52对静态40，保留37／新增15／丢失3，churn18，J=.67273；配对增量95%CI[.05208,.20833]为正，
-Spatial+4、Object+5、Goal0、Long+3。该正差额仅支持本节点train96，100为0差额，尚不证明跨节点或validation有益过程资格。
-静态100→200保留25／新增15／丢失16，churn31，J=.44643，成功率增量CI[−.125,.10417]跨零，Goal16→13。
-200的30分片／96rows、双worker exit0和退出已核验，用时977.87秒；两臂训练面板与全部成功集合均已汇总。
+正式运行来自clean pushed detached `611770d13ab71bcee8284539914372935d07387e`，冻结运行树
+`.codex/worktrees/pretrained-video-frozen`保留；本轮没有held梯度、Test或训练后task-local交互。
+最后一次新评测启动前data1用量941.0GiB／1024GiB，study约25GiB，整项剩余峰值27GiB，预计968.0GiB；
+这是当时launch预算而非实时quota，后续大增长前重新检查。source、资产和单份视频权重保持canonical，无dense磁盘缓存。
 
-静态臂也已完成fresh200／800条件／51,200主FM queries，用时3510.27秒；0/100/200各24-task留出诊断齐全，
-200 checkpoint通过正式身份入口检查，训练exit0且原四rank已退出。两臂配置仅`model.process_mode`和`video_prior.mode`不同。
-`step200/learning_comparison.json`核验全部800条件／51,200queries、18个采样字段、world4拓扑与信息墙一致。
-100留出主FM有序改善.0002066，95%CI[−.0000675,.0005043]；200改善−.000000342，
-95%CI[−.0004171,.0004319]，10/24任务方向为正。初始诊断一致；尚无可信主FM有序优势，损失不替代闭环裁决。
+### 下一步
 
-静态100 correct的train96／validation400 LoRA库全部sealed、物化exit0且worker退出；
-全部496条state–video映射与有序100一致，validation每task50条视频各一次。
-有序200的两库此前已sealed，与100全部496条映射一致；train200已结束，结果见上。
-全部两臂／两节点train96和validation400 LoRA库已sealed；每轮496条state–video映射跨臂、跨节点完全一致，
-validation每task50条视频各一次。物化全部exit0，原生成进程已退出。
-当前仅`ember-prior-static-val200`在第0卡以双worker继续最后一个validation strict400 correct面板，28个动态分片。
-其它训练与评测已正常退出并释放设备；初始8个correct面板已有7个完成、1个运行。各exact command、进程及GPU身份记录在step launch artifacts。
-完成该面板后作整体裁决；不因train200正差额启动条件性的other／image，不延长有序训练追峰值。
-
-本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
-exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。
-静态200 validation启动前已再次同时检查gpu01／gpu02，第0卡已释放、无进程；其它用户任务保持原状。
-strg01/data1用量941.0GiB／1024GiB，当前study约25GiB，整项研究剩余峰值按27GiB估计，
-预计968.0GiB，低于额度；共享83TiB可用。预算为整项研究的剩余增长，不对每个job重复增加。
-单份官方权重4.8GiB已落canonical模型根，临时下载文件已消失；不建立dense磁盘缓存。
-
-两个主臂100/200的train96与validation400 correct物化请求已准备，沿用固定seed20260911、held46–49／states32–35
-及validation各50视频映射。先完成这8个面板；有正向候选才补other和条件性的image静态检查。
-统计报告包括source、task/suite、breadth、R/G/L、churn、相邻及换视频成功集合；最终内容／顺序controls仍待方法选定后。
+利用本轮train200正例与validation反转，重新判断过程知识、共享参数作用及监督泛化之间的竞争解释；
+结合旧v5.2正例和既有功能信用、局部动作、覆盖扩展、共享prior负例，提出具有实质差异且可证伪的新机制。
+不预设保留当前全图，不把已有共享LoRA容量或平均FM差额当作根因定位，也不从“尚未普遍否证”推出继续局部扫描。
+完成机制选择与明确预测后再登记active design并实施；无需重复请求既有范围内的授权。
 
 ### 上一候选：Local Action Grounded已关闭
 

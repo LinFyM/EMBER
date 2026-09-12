@@ -4,7 +4,7 @@
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：两臂fresh正式学习完成，配对评测中。**
-Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有两个有序train96及一个validation400面板，训练100匹配静态无可信有序优势，200有序52对静态40获得训练面板正差额；相邻validation及跨视频结论尚待完成。
+Local Action Grounded全部16面板已完成关闭，整体goal未达。新候选已有7/8个correct面板：训练200有序正差额，validation100差额下界为0、有序200后段退化；尚未获迁移与稳定资格，静态200 validation仍在运行。
 原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
 
 ### 当前决定与工作
@@ -39,7 +39,15 @@ ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒�
 有序100 validation strict400已完整结束，为**53/400**（source47）；Spatial/Object/Goal/Long1/33/14/5，breadth7。
 相对source保留17／新增36／丢失30，churn66，J=.20482，task-cluster95%增量区间[−.1925,.2075]跨零；
 Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移增量。28分片／400rows、双worker exit0及退出均已核验，
-用时3793.60秒；静态与200 validation比较尚待完成。
+用时3793.60秒。
+有序200 validation完整为**33/400**，Spatial/Object/Goal/Long1/17/15/0，breadth5；
+相对source保留15／新增18／丢失32，churn50，J=.23077，增量95%CI[−.1925,.0675]。
+100→200保留17／新增16／丢失36，churn52，J=.24638，增量CI[−.1525,.0175]；Object33→17、Long5→0，
+训练200的有序正差额没有兑现该节点的source相对迁移收益或相邻保持。32分片／400rows、四worker exit0及退出已核验，2065.68秒。
+静态100 validation完整为**48/400**，Spatial/Object/Goal/Long0/32/12/4，breadth5；
+source相对保留16／新增32／丢失31，churn63，J=.20253，增量CI[−.2075,.195]。
+有序100对静态100为53对48，保留41／新增12／丢失7，churn19，J=.68333，配对增量CI[0,.025]，
+下界不严格大于0，未满足登记资格；suite有序净额S+1/O+1/G+2/L+1。静态32分片／400rows、四worker exit0及退出已核验，2129.39秒。
 静态100 train96完整结束，为**41/96**，Spatial/Object/Goal/Long10/10/16/5，breadth19；
 相对source保留11／新增30／丢失4，churn34，J=.24444，task-cluster95%增量区间[.13542,.38542]。
 有序／静态100总分同为41；以静态为参照，有序保留35／新增6／丢失6，churn12，J=.74468，
@@ -61,16 +69,11 @@ Spatial+4、Object+5、Goal0、Long+3。该正差额仅支持本节点train96，
 静态100 correct的train96／validation400 LoRA库全部sealed、物化exit0且worker退出；
 全部496条state–video映射与有序100一致，validation每task50条视频各一次。
 有序200的两库此前已sealed，与100全部496条映射一致；train200已结束，结果见上。
-训练和静态100物化释放显卡后，在同一clean pushed frozen `611770d1`运行面启动：
-
-- `ember-prior-val200`：第1/3卡、各双worker，有序200 validation strict400；
-- `ember-prior-static-val100`：第4/6卡、各双worker，静态100 validation strict400；
-- `ember-prior-static-mat200`已完成静态200 correct train96／validation400物化，以exit0退出；
-  两库全部sealed，496条映射与有序200及静态100逐行一致，validation每task50视频各一次。
-- `ember-prior-static-val200`接用释放的第0卡、双worker，启动最后一个validation strict400 correct面板。
-
-两个validation各四worker均已ready并完成首批分片；正式合同各32个动态分片，采用long-first／persistent queue。
-静态200训练评测已释放第5卡；当前三项validation共使用5张物理卡，初始8个correct面板已有5个完成、3个正在评测。各exact command、进程及GPU身份记录在对应step launch artifacts。
+全部两臂／两节点train96和validation400 LoRA库已sealed；每轮496条state–video映射跨臂、跨节点完全一致，
+validation每task50条视频各一次。物化全部exit0，原生成进程已退出。
+当前仅`ember-prior-static-val200`在第0卡以双worker继续最后一个validation strict400 correct面板，28个动态分片。
+其它训练与评测已正常退出并释放设备；初始8个correct面板已有7个完成、1个运行。各exact command、进程及GPU身份记录在step launch artifacts。
+完成该面板后作整体裁决；不因train200正差额启动条件性的other／image，不延长有序训练追峰值。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

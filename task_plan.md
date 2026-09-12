@@ -8,7 +8,7 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
 
 **当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
 冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
-实现与真实profile已通过，两臂fresh200均完整结束且实际曝光匹配；有序train100/200为41/52（各96），有序validation100为53/400。静态训练100/200为41/40，100有序差额CI跨零、200差额CI[.05208,.20833]为正；全部LoRA库已sealed，三项validation评测继续进行，尚无跨节点、跨视频或迁移资格。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
+两臂fresh200与全部LoRA物化完成，7/8个correct面板完整。train100有序／静态41/41，200为52/40且差额CI为正；validation100为53/48但差额CI[0,.025]未达严格下界，ordered200为33/400、Long归零。静态200 validation继续运行，尚无稳定迁移或跨视频资格。Local Action Grounded已关闭，历史证据保留。
 
 ### 当前执行计划
 

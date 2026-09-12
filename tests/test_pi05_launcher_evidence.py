@@ -182,7 +182,8 @@ def test_worker_detection_uses_exact_argv_tokens(tmp_path: Path) -> None:
     assert not worker_command_matches(worker, tmp_path / "another")
 
 
-@pytest.mark.parametrize("state_count", [5, 10])
+@pytest.mark.parametrize("state_count", [5, 8, 10])
+@pytest.mark.parametrize("adapter_kind", [None, "static_task_lora"])
 @pytest.mark.parametrize("informed,scope,selection,role,accepted", [
     (False, None, False, "development_train", True),
     (True, "training_task_fitting_diagnostic", False, "development_train", True),
@@ -193,7 +194,7 @@ def test_worker_detection_uses_exact_argv_tokens(tmp_path: Path) -> None:
 ])
 def test_outcome_informed_subset_is_explicit_training_diagnostic(
     tmp_path: Path, informed: bool, scope: str | None,
-    selection: bool, role: str, accepted: bool, state_count: int,
+    selection: bool, role: str, accepted: bool, state_count: int, adapter_kind: str | None,
 ) -> None:
     from ember.pi05_assets import Pi05EvaluationError
     from ember.pi05_eval.preparation import _task_subset_tasks
@@ -213,9 +214,9 @@ def test_outcome_informed_subset_is_explicit_training_diagnostic(
     tasks = (SimpleNamespace(suite="libero_spatial", task_id=7),)
     if not accepted:
         with pytest.raises(Pi05EvaluationError):
-            _task_subset_tasks(args, tasks, adapter_kind="static_task_lora")
+            _task_subset_tasks(args, tasks, adapter_kind=adapter_kind)
         return
-    selected, recorded = _task_subset_tasks(args, tasks, adapter_kind="static_task_lora")
+    selected, recorded = _task_subset_tasks(args, tasks, adapter_kind=adapter_kind)
     assert selected == tasks
     assert recorded["outcome_dependence"] is informed
     if informed:

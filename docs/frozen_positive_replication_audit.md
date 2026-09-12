@@ -116,6 +116,10 @@ materializer CLI显式state入口只接受32–35。
 - 保持原source、normalization、official preprocessing/horizon/flow steps、env/policy seed7及原冻结runtime。
   evaluator使用development_train、screen、state-count8的默认0–7，固定video映射seed20260911。
   screen只标识训练任务诊断，不用于正式checkpoint选择；不据它宣布方法或goal完成。
+- 2026-09-13启动前补记：原source-base入口拒绝8-state screen，首次prepare即退出，零新rollout。
+  source通过显式、无outcome依赖的完整train24选择清单执行；仅为既有registered-subset入口增加screen8资格，
+  从修复后的clean pushed冻结运行面执行source。两个Writer臂仍使用原611770d1运行面；
+  source权重、状态面板、预处理、RNG和192条预算不变，不以smoke标签绕过检查。
 - 两节点live资源、独立quota、同节点真实吞吐选卡及动态persistent队列保持；不改frozen源码。
   条件触发后才创建新run root、保存确切命令、映射provenance与最新资源预算。
 

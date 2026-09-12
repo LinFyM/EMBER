@@ -41,8 +41,13 @@ attempt1日志保留；其余交接均通过，没有重复训练、物化或rol
 新映射保留原编译身份，另存于原bank旁，不覆盖原manifest；原运行树保持clean pushed detached。
 
 脚本已准备，原运行面的8个映射CPU合同已验证，三种交叉bootstrap的数学常量校验通过。
-下一步刷新两节点GPU、data1独立quota与输出峰值预算后启动。运行／确切命令／完整配对统计保存到
-`runs/analysis/frozen_positive_replication_20260913/`，输出到同名outputs根；此刻尚无该复核新结果。
+首次现场准入为data1 966.0/1024GiB，2GiB新增峰值预算、预计968.0GiB，共享约82.7TiB；
+该预算也覆盖小于0.3GiB的评测冻结树。gpu01[0,1,3,4,5,6]合适，两节点进程身份已核对。
+启动后8个新映射全部通过完整原运行面inspect，source prepare因8-state screen入口限制退出，零GPU模型／rollout。
+已在唯一registered-subset入口增补screen8并扩展source／adapter与信息墙回归，116项相关测试通过；
+source将用新clean pushed冻结运行面和完整train24显式清单，两个Writer臂保留原611770d1。
+准备从同一1,728rows合同恢复；首次命令和失败原件保留，不改变面板或预算。
+运行／确切命令／完整统计保存到`runs/analysis/frozen_positive_replication_20260913/`，输出到同名outputs根。
 
 复核要求总体ordered−static与ordered−source在三种登记95%区间下界均>0，至少两个suite净增、四条teacher方向均正。
 它只确认固定两模型的跨条件能力差额；通过也不证明输入顺序因果性、相邻保持或未见task迁移。

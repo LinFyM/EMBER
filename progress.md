@@ -3,7 +3,7 @@
 ## 当前状态：完成在途比较，停止自动串联局部修正（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200及全部8个闭环面板；本项不追加。第11节已单独移除辅助表示FM，从fresh正式学习中。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200及全部8个闭环面板；本项不追加。第11节单独移除辅助表示FM已完成fresh200，100/200既定闭环证据进行中。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### Owner最新纠正与执行调整
@@ -15,12 +15,11 @@ Owner指出近几小时没有根本进展，要求调整负结果后的分析与
 
 ### 当前执行与完整结果
 
-- 第11节100完整checkpoint已保存；实际400条件/25,600queries与teacher_vl参照逐字段匹配。held student FM=.114742605，
-  相对参照改善.000179162、task-cluster95%CI[.000050021,.000325814]，18/24任务改善；变化很小，不能替代闭环或机制进展。
-  前50更新平均16.46秒，参照20.35秒，更新时间约省19%；100/200闭环尚待完成，训练继续至原200上限。
-- 100 LoRA物化已在gpu02:3启动，tmux `ember-df100-materialize`；训练4卡加物化1卡，合计5≤6。
-  两节点现场检查及/data1用量877.4GiB、剩余预算16.2GiB/投影893.6GiB已核对；命令与资源记录
-  `runs/analysis/video_functional_20260911/direct_fm_vl/step100/materialization_launch.json`。这是完成在途比较，未新增候选。
+- 第11节fresh200训练完成，正式用时3339.18秒；800条件/51,200queries与teacher_vl参照逐字段匹配，100/200完整checkpoints齐备，训练进程退出。source保持冻结，峰值37.83GiB。
+- held student FM100/200=.114742605/.107176777；相对参照改善.000179162/.000175662，task-cluster95%CI分别[.000050021,.000325814]/[-.000226025,.000602552]，18/24和13/24任务改善。差额很小，200区间跨零，不能替代行为证据。原件`direct_fm_vl/step{100,200}/learning_comparison.json`。
+- 100训练correct完整37/96，teacher_vl参照34/96；R/G/L28/9/6、breadth19，差额CI[-.052083,.114583]，不足以认定改善；other仍在gpu02:3的3个persistent workers评测。
+- 100四个LoRA banks已sealed；100 validation correct在gpu01:0/4、other在gpu02:0/1，各2GPU×3 workers正式运行。200物化在gpu01:5运行；连同train other合计6≤6。训练四卡已经释放，无占位作业。
+- 新launch前两节点live检查通过，/data1 quota883.6GiB/1TiB、当前run10GiB、剩余预算10GiB/投影893.6GiB，共享83TiB；精确命令与资源原件`direct_fm_vl/step100/{validation_correct,validation_same_task_other}_launch.json`、`step200/materialization_launch.json`。本轮未新增候选或额外面板。
 - 第11节无辅助路径相关83测试通过，配置与8个评测请求的科学字段匹配。初始化按共同CPU构造顺序保持VL随机流；reader在进入GPU/state optimizer前丢弃，无新的执行模块或第二trainer。
 - 真实最长task38/demo0 93frames：micro16 OOM已结束；micro8两次更新通过，第二次16.86秒/64queries（3.795queries/s）、峰值37.81GiB。Writer/Action/VL均有实际梯度，source冻结、source辅助forward=0。固定frame8/policy8；profile无checkpoint，原件`runs/analysis/video_functional_20260911/direct_fm_vl_profile/`。
 - 第11节已从clean pushed detached `9b21b0ed34d5501f931b8c44f8922c2e6d254849`启动，执行checkout `.codex/worktrees/direct-fm-vl`；gpu01:0/4/5/6，world4，tmux `ember-direct-fm-vl`，fresh200/800条件/51,200queries，保存100/200。实际run contract确认reader0/source0、Writer337,568,000/Action626,688/VL921,600、NCCL/NUMA及物理8；初始held FM=.154849362与参照一致，已进入有效更新。
@@ -43,7 +42,7 @@ Owner指出近几小时没有根本进展，要求调整负结果后的分析与
 - validation200两臂62/64，参照72/67；差额−10/−3，CI[-.0575,.0025]/[-.0375,.03]。S/O/G/L=2/42/6/12、2/45/4/13，breadth5/6；source47仅保留8/6，新增54/58、丢失39/41。
 - 自身100→200 validation correct R/G/L32/30/29、churn59/J=.35165；other35/29/26、churn55/J=.38889。参照J=.32990/.34737，但correct保留仍32、获取更少，breadth8→5；不能把小幅J增加当作保持改善。200换视频重合44、churn38/J=.53659，差额CI跨0。
 - **第10节裁决：**未形成值得追加的跨task收益与保持，不延长或扫描VL Meta rank/层位/LR，不自动补匹配frame_set。该因素并非input信息或全部VL学习的否证。原件`teacher_vl/bounded_200_decision.json`，全部逐task/suite、source及相邻配对在统一`paired_summary.json`。
-- 当前goal未完成，无selected checkpoint、Test或最终sealed controls。第11节只移除L_R、保留当前完整图，以fresh100/200检验辅助表示监督的实际作用；无辅助路径和真实profile已通过，已按上方合同launch。
+- 当前goal未完成，无selected checkpoint、Test或最终sealed controls。第11节只移除L_R、保留当前完整图，fresh200已完成，配对闭环进行中。
 - 此前Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。第9节中层读出诊断也已完成并退出；它们不是当前训练的初始化或恢复来源。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
 - formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。

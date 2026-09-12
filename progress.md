@@ -40,9 +40,13 @@ ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒�
 相对source保留17／新增36／丢失30，churn66，J=.20482，task-cluster95%增量区间[−.1925,.2075]跨零；
 Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移增量。28分片／400rows、双worker exit0及退出均已核验，
 用时3793.60秒；静态与200 validation比较尚待完成。
-`ember-prior-static-train100`在第5卡运行静态100训练96评测，两个worker已ready并推进动态队列；
-静态／有序100的96条state–video映射一致，保持相同env/policy RNG。
-
+静态100 train96完整结束，为**41/96**，Spatial/Object/Goal/Long10/10/16/5，breadth19；
+相对source保留11／新增30／丢失4，churn34，J=.24444，task-cluster95%增量区间[.13542,.38542]。
+有序／静态100总分同为41；以静态为参照，有序保留35／新增6／丢失6，churn12，J=.74468，
+配对增量95%CI[−.0625,.0625]跨零。Long+3、Spatial−1、Object−2、Goal0，尚无训练端可信有序优势。
+30分片／96rows、双worker exit0及退出已核验，用时969.27秒；全部per-task和成功集合在`paired_summary.json`。
+`ember-prior-static-train200`已接用释放的第5卡，以双worker运行静态200训练96面板；
+200训练LoRA库已sealed，与有序200的96条state–video映射逐行一致。
 静态臂也已完成fresh200／800条件／51,200主FM queries，用时3510.27秒；0/100/200各24-task留出诊断齐全，
 200 checkpoint通过正式身份入口检查，训练exit0且原四rank已退出。两臂配置仅`model.process_mode`和`video_prior.mode`不同。
 `step200/learning_comparison.json`核验全部800条件／51,200queries、18个采样字段、world4拓扑与信息墙一致。
@@ -58,14 +62,14 @@ Goal41→14、Object5→33的变化相互抵消，尚无可信source相对迁移
 - `ember-prior-static-val100`：第4/6卡、各双worker，静态100 validation strict400；
 - `ember-prior-static-mat200`：第0卡，静态200 correct train96／validation400物化。
 
-两个新validation正式合同、各32个动态分片及四worker进程已核验；采用long-first／persistent queue。
-连同第5卡静态100训练评测，当前共6张物理卡；各exact command、进程及GPU身份记录在对应step launch artifacts。
+两个validation各四worker均已ready并完成首批分片；正式合同各32个动态分片，采用long-first／persistent queue。
+连同第5卡静态200训练评测，当前共6张物理卡；各exact command、进程及GPU身份记录在对应step launch artifacts。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。
-本次三项新作业启动前已同时检查gpu01／gpu02，第0/1/3/4/6卡已释放、无进程；其它用户任务保持原状。
-strg01/data1用量938.6GiB／1024GiB，当前study约23GiB，整项研究剩余峰值按29GiB估计，
-预计967.6GiB，低于额度；共享83TiB可用。预算为整项研究的剩余增长，不对每个job重复增加。
+静态200训练评测启动前已再次同时检查gpu01／gpu02，第5卡已释放、无进程；其它用户任务保持原状。
+strg01/data1用量940.2GiB／1024GiB，当前study约24GiB，整项研究剩余峰值按28GiB估计，
+预计968.2GiB，低于额度；共享83TiB可用。预算为整项研究的剩余增长，不对每个job重复增加。
 单份官方权重4.8GiB已落canonical模型根，临时下载文件已消失；不建立dense磁盘缓存。
 
 两个主臂100/200的train96与validation400 correct物化请求已准备，沿用固定seed20260911、held46–49／states32–35

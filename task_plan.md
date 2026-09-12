@@ -6,20 +6,21 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
 结合全部历史重新设计，不恢复v5.2底座；暂不要求145/400，但正确视频闭环收益、跨视频/初态/相邻保持及validation迁移不可替代。
 用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
 
-**当前无active design。** [Local Action Grounded](docs/local_action_grounded_writer_design.md)的fresh两臂200步、
-两类学习诊断与16闭环面板全部完成，共3,968rows。validation100有序两视频均劣于匹配frame_set，200差额0/+1且区间跨零；
-两臂后段均退化，局部动作FM优势未成为有益任务过程。当前配方关闭，整体goal未完成；详见findings§69及progress。
+**当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
+冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
+当前处于实现前登记，无新学习或闭环结果。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
 
 ### 当前执行计划
 
-1. **已完成并封存：**局部post-action配对、共享encoder/native信用重放、信息墙和真实profile；两臂各51,200主queries，
-   完整checkpoint、两类动作留出、全部16登记面板及逐task/suite、相邻/换视频配对统计保留。所有进程已退出。
-2. **停止当前配方投入：**不续训、扩大局部头或扫描loss/LR/rank/seed；未获资格，不启动pureFM第三臂或最终controls。
-   不将局部头优势当作共享E充分、Compiler唯一失效或goal完成的证据。
-3. **下一工作：**在综合正负证据上推导实质不同的过程表示与学习机制，明确完整输入到唯一LoRA的因果路径、
-   相对近等价历史新增什么，以及不同结果如何改变后续投入；再登记唯一active design并按既有授权实现、profile和有界验证。
-   任务覆盖和外部预训练先验已有边界核查，不能仅凭本轮负结果自动启动；不恢复95-task、旧候选或改低行为门槛。
-4. 达到登记的正确视频收益、换视频/相邻保持及迁移后，冻结方法与single checkpoint，完成最终视频内容/顺序因果确认，才完成当前goal。
+1. **已完成设计登记：**综合功能信用、局部监督、覆盖扩展负证据与v5.2正例，检验预训练视频知识来源。
+   主比较为同一视频编码器的ordered／逐帧重复静态；仅出现完整正向资格时，追加原生image全帧静态参照确认强度。
+2. **实施：**唯一入口接入冻结先验与learned task grounding，保留完整H、source冻结、teacher信息墙和跨episode主FM。
+   退役局部动作头／loss／数据支路／专属诊断，复用现有trainer、重放、checkpoint与动态evaluator。
+3. **验证与启动：**隔离实现合main并push；quota允许后下载单份固定资产，最长视频profile确认batch／吞吐／峰值。
+   在学习分数产生前登记约一小时的两个正式节点和曝光，从clean pushed frozen commit fresh比较。
+4. **行为裁决：**先两节点train96和validation400 correct；有正向候选再补other与已登记强静态检查。
+   报告绝对能力、source、task/suite、breadth、成功集合及相邻／换视频保持；明确坏结果不扫参数或追加局部补救。
+5. 全部资格成立后冻结方法与single checkpoint，完成sealed内容／顺序controls；当前goal仍未完成。
 
 ## 已完成历史与最终口径
 

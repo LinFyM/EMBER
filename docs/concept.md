@@ -6,9 +6,10 @@ Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已
 该候选检验了时间×任务token表示、执行条件化功能信用、蒸馏、teacher VL适配及纯FM比较。
 计算与学习事实成立，但未形成可重复的有益有序增量；下一步不能默认只差保持或编译，也不靠继续叠加局部补救维护原假设。
 目标与信息墙保持，当前机制判断及下一设计状态只看[progress](../progress.md)与[task plan](../task_plan.md)。
-Owner再次授权核心科学精神内的实质修正后，当前登记[Local Action Grounded Writer](local_action_grounded_writer_design.md)：
-用action训练池自身的局部RGB转移及动作监督共享视频读取器，完整LoRA主FM仍跨episode，部署teacher动作保持隐藏。
-该训练关系针对过程获取，不预先证明局部动作可解码即可编译成有益策略。
+[Local Action Grounded Writer](local_action_grounded_writer_design.md)也已完成关闭：局部动作FM小幅有序优势未成为主LoRA收益。
+当前登记[Pretrained Video Grounded Writer](pretrained_video_grounded_writer_design.md)，将冻结通用视频先验的过去四帧dense特征，
+经任务条件化Value读取接入完整native H及唯一LoRA，训练只用跨episode主FM；完整设计、强静态参照与行为裁决见该文。
+这一知识来源是待验证假设，不能从既有负结果推得必要性或成功保证。当前处于实施阶段，尚无新模型结果。
 下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略

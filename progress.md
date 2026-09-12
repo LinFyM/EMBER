@@ -1,11 +1,23 @@
 # EMBER progress
 
-## 当前状态：局部动作监督有界比较完成，候选关闭（2026-09-12）
+## 当前状态：冻结视频先验候选已登记，准备实现（2026-09-12）
 
 Owner授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**当前没有active design或运行中的训练/评测；Local Action Grounded的两臂200步与全部16面板已完成，目标未达。**
-Owner此前给予的核心科学精神内理论／架构修正自由度保持，包括已登记的action训练池局部RGB—动作配对范围；
-主LoRA跨episode、teacher部署动作隐藏、完整H、source冻结与部署零交互不变。候选关闭不等于撤销总体推进授权。
+**当前active design为[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)，阶段：实现前登记。**
+尚未下载先验权重或启动新GPU作业；Local Action Grounded全部16面板已完成关闭，整体goal未达。
+原始信息墙、完整H、source冻结、主LoRA跨episode及零交互部署不变；K1/train24，未恢复95-task、RL或Test。
+
+### 当前决定与工作
+
+新增冻结V-JEPA2.1过去四帧视觉特征，task-conditioned dense Value读取进入现有完整native H及LoRA主FM。
+沿用teacher单agentview，避免同时改变视角；仅主FM，退役已关闭的局部动作辅助支路。
+匹配frame_set在同video encoder上逐帧输入四张相同真实图，不携带历史；只有两节点资格成立后才追加
+原生image全帧静态参照，防止静态分支过弱。完整理论、可辨别预测、停止条件及最终controls均在active design。
+
+接下来按隔离实现、信息路径／梯度验证、quota／资产与最长视频profile、clean pushed frozen学习推进。
+约一小时窗口的实际checkpoint节点须在profile后、学习分数前登记；目前没有新formal命令或性能证据。
+
+### 上一候选：Local Action Grounded已关闭
 
 ### 完整结果与当前判断
 
@@ -45,10 +57,9 @@ Owner此前给予的核心科学精神内理论／架构修正自由度保持，
 辅助系数、LR/rank/seed，不启动条件触发的pureFM第三臂或最终视频controls。旧Video Functional、C/无变化参照、
 95-task及其它历史候选仍不因旧文件的“下一步”而恢复。
 
-下一步先完成实质不同候选的推导：联合旧功能信用/读出、真实局部配对、完整输出及v5.2等正例，说明新方法增加什么
-可用于任务执行的过程知识、如何经完整H进入唯一LoRA，以及匹配参照如何区分有益内容/顺序与弱参照退化。
-已复核任务覆盖旧实验（findings§68）和外部视频先验的适用边界（§64）；二者均未被当前负结果自动选为下一方案。
-不再以“局部结果不能普遍否定整体”串联同类修补，不以辅助头成绩完成goal。具备明确可执行设计后，在既有授权内继续实现和验证。
+下一候选已在上方登记；旧实验停止范围不因新候选激活而解除。
+已核查任务覆盖旧实验（findings§68）和外部视频先验边界（§64），新设计是可检验的知识来源假设，
+不是把本次负结果当成预训练缺失的唯一根因。具体工作与授权只看本文当前段和active design。
 
 以下为旧暂停时点的历史记录，不能覆盖上面的当前状态、目标或授权。
 

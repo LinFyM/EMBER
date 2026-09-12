@@ -1093,3 +1093,26 @@ S/O/G/L有序114/84/104/57、静态118/87/102/54，净额−4/−3/+2/+3；sourc
 
 原件：`runs/analysis/frozen_positive_replication_20260913/REPLICATION_READOUT.md`、`paired_replication_summary.json`、
 `replication_decision.json`、`study_contract.json`、`mapping_provenance.json`及同名outputs根的9项raw rows／completion。
+
+## 74. 多状态视频、显式顺序与共享学习的可识别性边界（2026-09-13）
+
+完整推导、竞争预测及停止分支见[视频信息与可识别性](docs/video_information_identifiability.md)。
+本次只读源码、train24 specification和既有outcomes，未调用新模型或使用最终controls。
+
+- `frame_set`逐个读取整条视频的全部采样画面，取消局部跨帧证据与显式时间路由，保留全部T×L内容。
+  它不是单张静态图，也不等于语言参照；有序／frame_set比较是两种独立学习系统的总效果，不能直接等同固定模型的顺序干预。
+- 审计24个训练task：19个单原子、5个多原子合取，On17/In10/Open1/Turnon1/Close1。实际成功检查以当前
+  接触、位置、区域与关节条件为依据，不记录目标完成的历史顺序。物理可行性、遮挡和前置条件仍可让过程知识有用；
+  不从终态目标推出视频时序无用，也不修改benchmark制造顺序奖励。
+- 原9个净正task贡献全部+12/96，同task在新交叉面板合计−1/288，4正／1零／4负；其余15task净额−1/480。
+  这是事后描述，反对“原受益群保持、仅被别的task抵消”的事实描述，不能唯一归因训练seed或选择噪声。
+- 当前独立video/query采样下，给定已知任务T，期望FM为E_V[R_T(W(L_T,V))]≥inf_w R_T(w)。
+  若函数类可实现逐task最优LoRA，同task恒定输出允许达到下界；采样本身不强制个体视频差异。
+  实际函数类、优化与未见task知识均不由此解决，不能把任务ID可由语言识别误写成视频不可能帮助学习或迁移。
+
+本次明确比较语义与学习压力，未唯一定位剩余瓶颈。历史v5.2固定模型的视频依赖与本轮独立训练臂打平
+是不同测量，可以同时成立；不抹去前者，也不恢复旧架构。现有读出与跨条件复核不足以支持“已有强过程知识、
+只差Compiler／保持”的单因解释。下一机制须说明它增加了何种影响闭环的知识及怎样被合法证伪，
+不因本节分析而自动启动完整Writer、追加probe或新controls；整体goal保持未完成。
+
+原件：`runs/analysis/frozen_positive_replication_20260913/conditional_information_audit.py`及同名JSON。

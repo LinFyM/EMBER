@@ -11,6 +11,11 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
 [查看完整旧账本](https://github.com/LinFyM/EMBER/blob/fcdb6e43706c5fcedf10eaa5d2d459602b263016/docs/research_history.md)。
 
+2026-09-13只读补充：[视频信息与可识别性复核](video_information_identifiability.md)澄清全帧frame_set与显式顺序的
+不同信息内容，审计train24当前状态目标，并追踪原9个受益task在新交叉条件上的合计净额−1/288。
+独立训练臂比较不等于固定模型的顺序干预；跨episode FM允许视频无关解不等于视频无法帮助有限模型迁移。
+详见findings§74及既有冻结复核analysis中的`conditional_information_audit.py/json`。没有新训练、rollout或最终controls。
+
 ## 研究主线速览
 
 | 时段 / 路线 | 真正获得的证据 | 未解决或失效的范围 | 对接续工作的约束 |

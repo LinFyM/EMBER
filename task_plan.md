@@ -8,13 +8,13 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
 
 **当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
 冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
-当前处于隔离实现与资产准备，无新学习或闭环结果。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
+实现已集成并通过370项测试，当前等待资产完成后的真实profile；无新学习或闭环结果。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
 
 ### 当前执行计划
 
 1. **已完成设计登记：**综合功能信用、局部监督、覆盖扩展负证据与v5.2正例，检验预训练视频知识来源。
    主比较为同一视频编码器的ordered／逐帧重复静态；仅出现完整正向资格时，追加原生image全帧静态参照确认强度。
-2. **实施：**唯一入口接入冻结先验与learned task grounding，保留完整H、source冻结、teacher信息墙和跨episode主FM。
+2. **实现已集成：**唯一入口接入冻结先验与learned task grounding，保留完整H、source冻结、teacher信息墙和跨episode主FM。
    退役局部动作头／loss／数据支路／专属诊断，复用现有trainer、重放、checkpoint与动态evaluator。
 3. **验证与启动：**隔离实现合main并push；quota允许后下载单份固定资产，最长视频profile确认batch／吞吐／峰值。
    在学习分数产生前登记约一小时的两个正式节点和曝光，从clean pushed frozen commit fresh比较。

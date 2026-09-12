@@ -17,15 +17,22 @@ Owner授权自主高效推进有益视频特异性及validation迁移，暂不�
 接下来按隔离实现、信息路径／梯度验证、quota／资产与最长视频profile、clean pushed frozen学习推进。
 约一小时窗口的实际checkpoint节点须在profile后、学习分数前登记；目前没有新formal命令或性能证据。
 
-实施分支`codex/pretrained-video`位于`.codex/worktrees/pretrained-video`，基于已push设计登记`3c1d8155`。
-已新增冻结先验owner模块，完成窗口索引与官方导入／确定性384预处理检查；尚未接入主图或验证真实权重forward。
-官方代码已固定到登记commit；资产会话`ember-vjepa-assets`下载单份5,151,198,524-byte权重，
-脚本、日志与状态位于`runs/analysis/pretrained_video_grounded_20260912/`；无GPU占用。
-`asset_storage_budget.json`记录strg01当前/data1用量910.9GiB／1TiB、个人目录du911G、共享83TiB可用，
-新增峰值预算61GiB，预计971.9GiB。formal前须刷新预算；不建立dense磁盘缓存。
-官方代码所需`timm==1.0.29`已仅添加该包到现有环境，未改变其依赖；固定配置／lock正在隔离分支更新。
-rollback命令与临时uv工具位置记录在同一资产预算文件。下一步完成唯一主图／重放接线、局部路径退役及针对性验证。
+实现已由`345bc330`合入并push主线`2e6d8b3b`。冻结先验、统一容量缓存、task-conditioned Value读取及主FM/native重放已接通；
+旧局部头／loss／action片段读取／专属诊断和两份测试退役。三个新配置为`pi05_pretrained_video*.json`，旧checkpoint仅用原冻结runtime。
+370项共享源码测试通过，覆盖完整76-tensor LoRA、先验Value通路、完整H、前缀／静态置换、R/Z与两组Meta信用及严格checkpoint／评测配对。
+结构检查保留既有合同函数的review提示，活动源码与测试净减350行、Writer文件数未增长；理由见active design§8。
+尚未验证真实先验权重加载、GPU峰值／吞吐或闭环结果；formal启动会拒绝仍标记profile_pending的配置。
 
+官方代码已固定到登记commit；资产会话`ember-vjepa-assets`正在下载单份5,151,198,524-byte权重，
+脚本、日志与状态位于`runs/analysis/pretrained_video_grounded_20260912/`，目前没有GPU作业。
+`asset_storage_budget.json`记录strg01/data1用量910.9GiB／1TiB、个人目录du911G、共享83TiB可用，
+新增峰值预算61GiB，预计971.9GiB。formal前须刷新预算；不建立dense磁盘缓存。
+`timm==1.0.29`及对应uv.lock已提交，仅新增该包、未升级其它依赖；环境rollback保存在同一资产记录。
+
+下一步在权重下载完成后按gpu-preflight现场选择一张卡，运行已准备的最长完整teacher两次单条件反向profile，
+检查真实加载、两组Meta与prior投影信用及冻结参数无梯度；根据实测选择物理batch和约一小时的正式节点。
+隔离工作树`.codex/worktrees/pretrained-video`暂保留供这一profile及必要范围内修复，主代理所有；
+profile通过并完成最终配置集成后移除，不作为第二条运行路径或历史fallback。
 
 ### 上一候选：Local Action Grounded已关闭
 

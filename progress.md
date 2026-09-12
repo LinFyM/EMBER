@@ -119,11 +119,16 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - frame_set200 correct完整42/96，S/O/G/L=14/12/12/4、breadth17；source R/G/L=13/29/2、churn31、J=.29545。
   ordered200 correct46/96，相对frame_set R/G/L=39/7/3、churn10、J=.79592，差额task-cluster95%CI[−.020833,.114583]。
   净收益Long+3、Spatial+1，另两suite相同；当前仍无可信有序结构增量。frame_set自身100→200 R/G/L=29/13/10、churn23、J=.55769。
-  36jobs/96rows完成、进程退出；还需200换视频及validation的匹配结果。
-- 当前已完成10/16完整闭环面板。gpu01:0/4/5以9 workers评测frame_set100 validation correct，
-  gpu01:6以3 workers评测frame_set100 validation other；gpu02:0接续ordered200 validation other，gpu02:2继续frame_set200 train other。
+  该correct面板36jobs/96rows完成、进程退出；200换视频匹配见下，validation继续评测。
+- frame_set200 other完整45/96，S/O/G/L=13/11/14/7、breadth17；source R/G/L=15/30/0、churn30、J=.33333。
+  ordered200 other49/96，相对frame_set R/G/L=41/8/4、churn12、J=.77358，差额task-cluster95%CI[−.03125,.114583]。
+  净收益Spatial+3、Object+1，另两suite相同；frame_set自身换视频重合39、churn9、J=.8125，other相邻重合30、churn23、J=.56604。
+  两臂8个训练面板全部完成；100两视频差额+1/−3、200两视频差额+4/+4，四项区间均跨零，尚无可信有序结构增量。
+  原件与所有task/suite、相邻及换视频统计均在`paired_summary.json`；最后36jobs/96rows完整、进程退出。
+- 当前已完成11/16完整闭环面板。gpu01:0/4/5以9 workers评测frame_set100 validation correct，
+  gpu01:6以3 workers评测frame_set100 validation other；gpu02:0评测ordered200 validation other，gpu02:2接续frame_set200 validation correct。
   四项评测均已核对活进程与实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
-  最新接续时quota910.9GiB、study24.861GiB，原40GiB预算剩余15.139GiB，投影926.039GiB；大型checkpoint/bank写出已完成。
+  最新接续时quota910.9GiB、study24.863GiB，原40GiB预算剩余15.137GiB，投影926.037GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
   原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。
 

@@ -8,13 +8,14 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
 
-**当前active诊断design为[冻结source状态输入诊断](docs/source_state_input_audit.md)。** 时间对齐、冻结正例复核及
+**当前无active实验design。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，无新Writer训练。
 
 ### 当前执行计划
 
-当前执行固定train24×16位置的source state-free／均值state／真实state三臂动作生成诊断，定位原生动作知识
-对当前状态内容的依赖。只读冻结source，没有Writer训练、LoRA或环境rollout；预算及停止分支以新诊断合同为准。
+新增[冻结source状态输入诊断](docs/source_state_input_audit.md)已完整完成：MSE free/mean/true=.13673/.14173/.12469，
+任务动作均值.25060。free−true区间跨零，状态补全前提未通过；free本身相对动作均值的正事实保留。
+接下来核对完整原生采样与单步H消费的知识区别及旧forecast失败条件，不自动重训或扫描flow阶段。
 
 后续方法选择尚需明确：独立训练的全帧frame_set优势检验是否属于持续硬门槛，还是本轮特定研究问题；
 冻结模型的内容／顺序因果要求、跨视频／初始化／相邻稳定及固定validation迁移均保持。当前不据结果自行改变口径，

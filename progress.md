@@ -3,9 +3,9 @@
 ## 当前状态：冻结正例复核未通过，回到机制理论裁决（2026-09-13）
 
 Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
-**整体goal未完成。当前active诊断design为[冻结source状态输入诊断](docs/source_state_input_audit.md)。** 时间对齐、冻结正例复核及
+**整体goal未完成。当前无active实验design。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已按完整证据关闭。
-当前登记train24固定384位置的三臂source输入诊断，尚未产生新结果；不恢复历史训练、不扩大旧闭环复核或运行最终controls。
+新增[冻结source状态输入诊断](docs/source_state_input_audit.md)也已完成关闭；不恢复历史训练、不扩大旧闭环复核或运行最终controls。
 下一项实验须先有相对已失败近邻的实质机制区别、可区分竞争解释的预测和停止条件。
 
 最新[运动对应机制审查](docs/video_information_identifiability.md#7-显式运动对应能补什么以及为什么尚不足以启动新writer)
@@ -20,7 +20,19 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 全帧无序方法”设为持续硬门槛，需要Owner明确；这会改变候选与比较设计，不据已有分数自行放宽或加码。
 在澄清前不重判任何已关闭实验，不选checkpoint或提前运行最终controls。目标及其它科学合同保持。
 本次同时核对findings§68的73/75任务原件索引与现有sampler；没有新增支持恢复95-task的证据，不重复该审计。
-该疑问不阻塞与它独立的机制诊断；新的source输入诊断沿用全部现行科学边界，不据未回答的问题放宽方法资格。
+该疑问不阻塞与它独立的机制诊断；已完成的source输入诊断沿用全部现行科学边界，不据未回答的问题放宽方法资格。
+
+### 冻结source输入诊断：原生state-free采样有能力，状态补全前提未通过
+
+固定train24×16位置，三臂各384位置、8个配对噪声、10步完整采样，均exit0；没有Writer／Meta／LoRA／梯度或rollout。
+生成均值MSE：state-free .13672735、mean-state .14173378、true-state .12469236、action-mean .25059744。
+free−true的task-cluster95%CI[−.00247592,+.02751481]跨零；mean-state−true区间[+.00965492,+.02384471]为正，
+action-mean−true亦为正。三项要求未同时通过，停止直接新增状态补全模块的依据，不追加采样／拟合。
+
+描述性追踪中action-mean−state-free为+.11387009、区间[+.08481614,+.13969462]，22/24task为正。
+保留这一原生动作生成正证据，但它不证明单步H／Meta／E已充分，也不证明视频动态的因果收益或新初始化闭环。
+下一理论重点是完整原生采样与当前单步响应消费之间的实际区别，并对照旧forecast失败边界，不默认扫描flow阶段。
+代码冻结6fa6177f，每臂约311.18秒、9.88GiB峰值，全部原件位于`runs/analysis/source_state_input_20260913/`。
 
 ### 冻结局部动作生成：完整768片段，未通过
 

@@ -1159,3 +1159,23 @@ Im2Flow2Act等正证据同时依赖目标物体绑定、执行状态对应或动
 当前不采用直接换成／追加dense-flow编码器、其余跨episode FM与Compiler不变的提案；不启动只验证跟踪后
 必然进入Writer训练的probe链。目标物体运动仍保留为候选，重提时须给出可改变决策的跨初态功能判别，
 并区分感知失败、任务相关性不足与编译传递失败。尚无新实验design、权重下载、forward或闭环结果；goal未完成。
+
+## 77. 冻结source在state-free输入下已有动作生成能力，补state的预登记前提未通过（2026-09-13）
+
+[预注册输入诊断](docs/source_state_input_audit.md)固定train24×16位置，逐臂8个配对噪声、10步原生采样；
+三臂共1,152位置完整exit0，无Writer、Meta、LoRA、梯度或环境。仅以obs[p]预测actions[p+1:p+16]，
+相机、标签和noise保持；均值state来自train16–41、真实state只是train-side执行查询的离线oracle，不是部署输入。
+
+生成均值MSE为free .13672735、mean-state .14173378、true-state .12469236，任务动作均值 .25059744。
+free−true差额+.01203498、task-cluster95%CI[−.00247592,+.02751481]，16task正／8负；
+mean-state−true差额+.01704142、CI[+.00965492,+.02384471]，21正／3负；action-mean−true的CI也严格为正。
+第一项未通过，按原合同停止状态补全提案依据。不能把状态相对均值确有作用抹去，也不能把缺state称为已定位主因。
+
+描述性追加计算保留另一项正证据：action-mean−free为+.11387009、区间[+.08481614,+.13969462]，22正／2负。
+合法state-free RGB＋语言输入足以让冻结source完整采样优于该任务均值；这个新事实不依赖训练新读出头。
+但它没有分离语言／视觉贡献，没有验证顺序必要性，也不能推出time1单步H、经过学习的Meta/E或Compiler已保留这些知识。
+此前局部逆动作头看四帧、本项source看首帧并预测未来，不能把两个MSE差额直接当作同输入模块替换效果。
+
+下一项先检查原生完整采样与单步响应的具体关系及旧forecast失败假设；不因本正数自动扫描flow阶段、层位或重训Writer。
+每臂约311.18秒、allocated峰值9.88GiB。code6fa6177f、原始rows/samples、summary、READOUT和launch contract
+在`runs/analysis/source_state_input_20260913/`完整保存，临时入口退役。整体goal仍未完成。

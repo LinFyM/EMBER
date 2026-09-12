@@ -1,5 +1,9 @@
 # EMBER research history
 
+2026-09-13新增[冻结source状态输入诊断](source_state_input_audit.md)：三臂各384位置完整完成，MSE free/mean/true
+为.13673/.14173/.12469，动作均值.25060。free−true区间跨零，状态补全前提未通过；state-free完整采样优于
+动作均值的正事实保留，但不证明单步H／过程表示充分或视频因果收益。原件与完整边界见findings§77及诊断第5节。
+
 当前咨询重点为结合全部历史证据重新推导有益视频特异性，暂不强制绝对性能，也不直接回到v5.2。
 新专家先读[机制证据地图](review_materials/video_specificity_20260911/EVIDENCE_MAP.md)及[最新证据](review_materials/video_specificity_20260911/LATEST_EVIDENCE.md)，
 再沿本页进入各阶段完整论证；旧“根因”措辞仍须接受证据审查，不能直接作为已证实结论。

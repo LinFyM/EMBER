@@ -1,10 +1,23 @@
 # EMBER progress
 
-## 当前状态：冻结视频先验比较关闭，目标未达（2026-09-12）
+## 当前状态：执行监督时间对应修正已验证，准备正式学习（2026-09-12）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400。
-**当前无active design。** Pretrained Video Grounded的正式学习与8个correct面板全部完成，停止本候选追加投入。
-不从旧design、旧未完成清单或历史分数自动恢复实验；整体goal继续，下一项须由综合机制判断重新登记。
+**当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
+综合机制判断及旧endpoint／expert近邻核对见findings§71；不是恢复已关闭的冻结视频先验训练。
+
+已有生产证据证明RGB/state为post-action，原主FM标签却从同索引已执行动作开始。
+624条训练动作episode的CPU审计已完成；唯一Writer已改为obs[i]→actions[i+1:]，排除无未来标签的最后query。
+Source及normalization冻结，完整teacher与模型图保持；训练与留出共享正确时间对应。
+已登记fresh100/200两臂、有界8个correct面板及原资格口径，尚未启动新训练／GPU作业。
+378项测试全部通过；四suite train0/12/20/34的demo16首／尾共8个真实query通过，动作起点、8维state和尾端padding正确。
+原件为前轮analysis根下posthoc_execution_alignment_audit.json及posthoc_execution_alignment_dataset_check.json；
+均为关闭后的训练侧只读核对，不改变前轮qualification。下一步集成push，刷新quota／两节点GPU并冻结formal运行树。
+
+### 上一候选：冻结视频先验比较已关闭
+
+Pretrained Video Grounded的正式学习与8个correct面板全部完成，停止其原合同追加投入。
+整体goal未完成；旧checkpoint和sealed原件保留。
 
 ### 本轮完整结果与决定
 
@@ -38,13 +51,6 @@ Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保
 `.codex/worktrees/pretrained-video-frozen`保留；本轮没有held梯度、Test或训练后task-local交互。
 最后一次新评测启动前data1用量941.0GiB／1024GiB，study约25GiB，整项剩余峰值27GiB，预计968.0GiB；
 这是当时launch预算而非实时quota，后续大增长前重新检查。source、资产和单份视频权重保持canonical，无dense磁盘缓存。
-
-### 下一步
-
-利用本轮train200正例与validation反转，重新判断过程知识、共享参数作用及监督泛化之间的竞争解释；
-结合旧v5.2正例和既有功能信用、局部动作、覆盖扩展、共享prior负例，提出具有实质差异且可证伪的新机制。
-不预设保留当前全图，不把已有共享LoRA容量或平均FM差额当作根因定位，也不从“尚未普遍否证”推出继续局部扫描。
-完成机制选择与明确预测后再登记active design并实施；无需重复请求既有范围内的授权。
 
 ### 上一候选：Local Action Grounded已关闭
 

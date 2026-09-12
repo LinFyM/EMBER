@@ -138,6 +138,7 @@ def prepare_online_source_sft_validation(
         tasks,
         demo_indices=range(50),
         action_chunk_size=int(panel["sampling"]["action_chunk_size"]),
+        action_start_offset=0,
     )
     manifest = build_validation_loss_manifest(dataset, panel)
     grouped = {

@@ -32,10 +32,9 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_pretrained_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
-    value["data"]["version"] = "train24_supervised_suite_rng_cross_episode_k1_v2"
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
     value["optimization"]["joint_train_all_writer_modules"] = True
     value["evidence"]["checkpoint_updates"] = [50, 100]
@@ -93,10 +92,23 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
             _config(path)
 
 
+@pytest.mark.parametrize("offset", [0, True, None])
+def test_writer_rejects_previous_or_implicit_action_alignment(tmp_path, config, offset):
+    changed = deepcopy(config)
+    changed["data"]["action_start_offset"] = offset
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="scientific contract"):
+        _config(path)
+    with pytest.raises(ValueError, match="future-control labels"):
+        WriterTrainingData(ROOT, changed["data"])
+
+
 def test_held_action_diagnostic_is_fixed_and_does_not_consume_training_sampler(monkeypatch, sampler):
     class HeldQueries:
-        def __init__(self, authorities, demo_indices, action_chunk_size):
+        def __init__(self, authorities, demo_indices, action_chunk_size, action_start_offset):
             assert tuple(demo_indices) == (42, 43, 44, 45) and action_chunk_size == 50
+            assert action_start_offset == 1
             self.task_episode_rows = {0: {demo: (demo * 2, demo * 2 + 1) for demo in demo_indices}}
 
         def __getitem__(self, row):

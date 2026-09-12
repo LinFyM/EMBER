@@ -5,18 +5,18 @@
 Owner授权自主高效推进新视频表示与执行状态条件化功能监督，取得正确视频在唯一完整LoRA中的可重复闭环增量，
 并验证跨同task视频、初始化、相邻checkpoint和固定validation迁移。暂不要求145/400；当前goal未完成。
 
-**当前无active design。** Pretrained Video Grounded的fresh200与8面板／1,984rows全部完成并关闭。
-train100有序／静态41/41，200为52/40且配对CI为正；validation100为53/48但下界0，200为33/48且CI为负。
-有序Long5→0，静态48→48却有52次成功状态变动；没有稳定迁移或跨视频资格。完整证据见progress及findings§70。
+**当前active design：**[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。
+前轮8面板已关闭，训练200局部有序正例与validation反转完整保留。综合审计见findings§71。
 
 ### 当前执行计划
 
-1. **已完成：**完整有界学习、实际曝光核验、两节点train96／validation400及成功集合裁决。
-2. **已关闭：**不续训、不扫局部参数、不触发other／image／最终controls；保留formal evidence，全部进程已退出。
-3. **下一步机制判断：**同时解释train200局部正例、validation反转、相邻漂移和历史强正例；核对最近等价历史，
-   在信息路径、参数作用或学习关系上提出实质可辨别的新机制，避免重命名已有共享prior、辅助loss或任务扩展。
-4. 登记有明确竞争预测、停止条件和行为证据的新active design后，自主完成实现及验证；不默认启动另一轮同图小改。
-5. 只有正确视频收益、跨视频／初态／相邻保持与迁移均成立，且selected后的因果controls通过，才完成当前goal。
+1. **已完成机制选择：**排除重命名的endpoint／专家蒸馏；依据post-action生产时序校正主执行监督。
+2. **实现与验证已完成：**唯一Writer强制obs[i]对应actions[i+1:]；训练／动作留出共用，末query排除，无teacher截断。
+   验证真实下一状态转移、padding、显式旧消费者口径及新训练／物化身份；历史checkpoint只用原冻结runtime。
+3. 集成并push后，刷新独立quota／两节点GPU，使用clean detached正式树fresh两臂100/200，各800条件／51,200queries。
+4. 两节点先train96与validation400 correct，按新标签合同匹配ordered／frame_set；有相邻正向候选才补other与强静态参照。
+5. 保持全部task/suite、breadth、R/G/L、churn及相邻/换视频资格；选点冻结后的sealed内容／顺序controls通过才能完成goal。
+   时间对应的正确性不是有益过程的性能证据；无资格则关闭有界学习，不扫描offset或局部参数。
 
 用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
 formal来自clean pushed frozen commit，后续新增长重新检查独立quota与两节点实时资源。

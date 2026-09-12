@@ -32,7 +32,7 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
 
 
 def _prior(mode="ordered"):
-    value = json.loads((ROOT / "configs/pi05_pretrained_video.json").read_text())["video_prior"]
+    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())["video_prior"]
     value["mode"] = mode
     return value
 
@@ -63,6 +63,8 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"] = vars(VideoWriterConfig())
+    run["config"]["data"] = {"version": "train24_cross_episode_k1_execution_aligned_v1",
+                            "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
     run["config"]["video_prior"] = _prior()
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
@@ -541,6 +543,19 @@ def test_checkpoint_inspection_keeps_optimizer_tensors_on_meta(bank, monkeypatch
     monkeypatch.setattr(torch, "load", metadata_load)
     inspect_writer_checkpoint(checkpoint)
     assert seen == ["trainer_state.pt"]
+
+
+@pytest.mark.parametrize("field,value", [("action_start_offset", 0), ("action_start_offset", True),
+    ("query_alignment", "same_index"), ("version", "train24_cross_episode_k1_pretrained_video_v1")])
+def test_checkpoint_refuses_old_execution_label_contract(bank, field, value):
+    _, manifest = bank
+    checkpoint = Path(manifest["writer_checkpoint"]["path"])
+    run_path = checkpoint.parent.parent / "run_contract.json"
+    run = json.loads(run_path.read_text())
+    run["config"]["data"][field] = value
+    run_path.write_text(json.dumps(run))
+    with pytest.raises(ValueError):
+        inspect_writer_checkpoint(checkpoint)
 
 
 @pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_joint_training_state_v1"),

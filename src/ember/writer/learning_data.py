@@ -59,6 +59,9 @@ class WriterTrainingData:
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "agentview") -> None:
         self.config = dict(config)
+        if (type(config.get("action_start_offset")) is not int or config["action_start_offset"] != 1
+                or config.get("query_alignment") != "post_action_observation_future_control_v1"):
+            raise ValueError("Writer requires post-action observations with future-control labels")
         self.seed = int(config["seed"])
         self.camera_view = str(camera_view)
         self.conditions_per_task = config.get("conditions_per_task")
@@ -77,7 +80,8 @@ class WriterTrainingData:
             raise ValueError("the current supervised stage requires actual K=1 conditions")
         authorities = tuple(task.authority for task in self.tasks.values())
         self.videos = RawTeacherVideoStore(authorities, frame_stride=5, camera_view=camera_view)
-        self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool, action_chunk_size=50)
+        self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool,
+                                              action_chunk_size=50, action_start_offset=1)
         self.query_rows = self.queries.task_episode_rows
         self.diagnostic_queries = None
         root = random.Random(self.seed)
@@ -130,7 +134,7 @@ class WriterTrainingData:
         if self.diagnostic_queries is None:
             self.diagnostic_queries = FunctionalQueryDataset(
                 tuple(task.authority for task in self.tasks.values()),
-                demo_indices=self.diagnostic_pool, action_chunk_size=50,
+                demo_indices=self.diagnostic_pool, action_chunk_size=50, action_start_offset=1,
             )
         return self.diagnostic_queries
 
@@ -161,6 +165,7 @@ class WriterTrainingData:
         return default_collate(rows), {
             "action_demos": [episode for episode, _, _ in selected],
             "action_frames": [frame for _, frame, _ in selected],
+            "action_start_indices": [frame + 1 for _, frame, _ in selected],
             "policy_rng_seed": seed, "policy_random_batch_size": count,
             "query_offset": query_offset,
         }

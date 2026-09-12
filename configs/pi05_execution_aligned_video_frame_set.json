@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_pretrained_video_writer_config_v1",
-  "status": "registered_pretrained_video_comparison",
-  "design": "docs/pretrained_video_grounded_writer_design.md",
+  "schema_version": "ember_execution_aligned_video_writer_config_v1",
+  "status": "registered_execution_aligned_comparison",
+  "design": "docs/execution_aligned_writer_design.md",
   "data": {
     "seed": 7,
     "task_ids": [
@@ -94,12 +94,14 @@
       49
     ],
     "task_weight": "four suite tasks, one K1 condition and 64 queries each; weight 1/4",
-    "query_sampling": "uniform action episode, then uniform frame, independently sampled with replacement",
+    "query_sampling": "uniform action episode, then uniform post-action observation with a recorded future control; independently with replacement",
     "frame_stride": 5,
     "include_last_frame": true,
     "extra_meta_tasks": [],
-    "version": "train24_cross_episode_k1_pretrained_video_v1",
-    "conditions_per_task": 1
+    "version": "train24_cross_episode_k1_execution_aligned_v1",
+    "conditions_per_task": 1,
+    "action_start_offset": 1,
+    "query_alignment": "post_action_observation_future_control_v1"
   },
   "model": {
     "width": 256,
@@ -150,8 +152,8 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Longest93-frame true profile passed; fresh bounded100/200 main FM comparison",
-    "qualification_registration": "docs/pretrained_video_grounded_writer_design.md",
+    "initial_use": "Fresh bounded100/200 future-control main FM comparison; unchanged longest93-frame graph/profile",
+    "qualification_registration": "docs/execution_aligned_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -280,7 +282,7 @@
         48,
         49
       ],
-      "registration_status": "100/200 nodes and51200 main queries registered after real profile, before learning",
+      "registration_status": "100/200 and51200 main queries registered before learning, reusing unchanged-graph profile",
       "optimizer_updates": [
         100,
         200
@@ -435,7 +437,10 @@
       "updates": 200,
       "condition_exposures": 800,
       "main_fm_queries": 51200,
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "source_profile": "runs/analysis/pretrained_video_grounded_20260912/profile/results.json",
+      "source_commit": "611770d13ab71bcee8284539914372935d07387e",
+      "reuse_scope": "unchanged model graph, shapes and per-condition queries; action labels shifted, no reused initialization"
     }
   },
   "update_version": "pretrained_video_main_fm_credit_v1",
@@ -449,7 +454,7 @@
     "preprocessing": "official_single_view_resize438_center384_imagenet",
     "code_root": ".codex/vendor/vjepa2",
     "checkpoint": "models/vjepa2_1/vjepa2_1_vitl_dist_vitG_384.pt",
-    "mode": "frame_set_image",
+    "mode": "frame_set",
     "window_batch": 4
   }
 }

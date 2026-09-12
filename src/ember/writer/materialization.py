@@ -24,9 +24,9 @@ from ember.writer.video import VideoWriterConfig, require_architecture_identity
 from ember.writer.video_prior import validate_prior_config
 
 
-RUN_SCHEMA = "ember_pretrained_video_writer_run_v1"
-STAGE = "pretrained_video_grounded_writer_fresh"
-TRAINING_SCHEMA = "ember_pretrained_video_training_state_v1"
+RUN_SCHEMA = "ember_execution_aligned_video_writer_run_v1"
+STAGE = "execution_aligned_video_writer_fresh"
+TRAINING_SCHEMA = "ember_execution_aligned_video_training_state_v1"
 UPDATE_VERSION = "pretrained_video_main_fm_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
@@ -68,6 +68,10 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
             or run.get("stage") != STAGE or run.get("mode") != "formal"
+            or run.get("config", {}).get("data", {}).get("version") != "train24_cross_episode_k1_execution_aligned_v1"
+            or run.get("config", {}).get("data", {}).get("query_alignment") != "post_action_observation_future_control_v1"
+            or type(run.get("config", {}).get("data", {}).get("action_start_offset")) is not int
+            or run["config"]["data"]["action_start_offset"] != 1
             or run.get("config", {}).get("update_version") != UPDATE_VERSION
             or run.get("config", {}).get("execution_precision") != "native_mixed_without_outer_autocast"
             or not frozen_authority(run.get("git", {}))

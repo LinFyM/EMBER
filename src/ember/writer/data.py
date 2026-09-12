@@ -241,6 +241,7 @@ class FunctionalQueryDataset:
         *,
         demo_indices: Sequence[int],
         action_chunk_size: int,
+        action_start_offset: int,
         max_open_files_per_worker: int = 8,
     ) -> None:
         if (
@@ -248,6 +249,8 @@ class FunctionalQueryDataset:
             or not demo_indices
             or len(set(demo_indices)) != len(demo_indices)
             or action_chunk_size <= 0
+            or type(action_start_offset) is not int
+            or action_start_offset not in (0, 1)
             or max_open_files_per_worker <= 0
         ):
             raise WriterModelError("invalid functional-query data request")
@@ -255,6 +258,9 @@ class FunctionalQueryDataset:
         if len(self.authorities) != len(authorities):
             raise WriterModelError("duplicate task authority")
         self.action_chunk_size = action_chunk_size
+        # Writer uses post-action observations and predicts the next control.
+        # Source-SFT/expert consumers declare their existing same-index recipe.
+        self.action_start_offset = action_start_offset
         self.max_open_files_per_worker = max_open_files_per_worker
         self._index: list[tuple[int, int, int]] = []
         self._task_rows: dict[int, list[int]] = {}
@@ -278,7 +284,9 @@ class FunctionalQueryDataset:
                     episode_rows = self._task_episode_rows.setdefault(
                         authority.task_id, {}
                     ).setdefault(int(demo_index), [])
-                    for frame_index in range(actions.shape[0]):
+                    if actions.shape[0] <= self.action_start_offset:
+                        raise WriterModelError("functional-query episode has no future action")
+                    for frame_index in range(actions.shape[0] - self.action_start_offset):
                         flat = len(self._index)
                         self._index.append(
                             (authority.task_id, int(demo_index), frame_index)
@@ -322,9 +330,10 @@ class FunctionalQueryDataset:
         task_id, demo_index, frame_index = self._index[item]
         demo = self._handle(task_id)[f"data/demo_{demo_index}"]
         actions_ds = demo["actions"]
-        stop = min(frame_index + self.action_chunk_size, actions_ds.shape[0])
-        valid = stop - frame_index
-        valid_actions = np.asarray(actions_ds[frame_index:stop], dtype=np.float32)
+        action_start = frame_index + self.action_start_offset
+        stop = min(action_start + self.action_chunk_size, actions_ds.shape[0])
+        valid = stop - action_start
+        valid_actions = np.asarray(actions_ds[action_start:stop], dtype=np.float32)
         actions = np.repeat(valid_actions[-1:], self.action_chunk_size, axis=0)
         actions[:valid] = valid_actions
         action_is_pad = np.ones(self.action_chunk_size, dtype=np.bool_)
@@ -350,6 +359,7 @@ class FunctionalQueryDataset:
             "task_id": task_id,
             "demo_index": demo_index,
             "frame_index": frame_index,
+            "action_start_index": action_start,
         }
 
     def close(self) -> None:

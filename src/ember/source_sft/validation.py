@@ -442,6 +442,7 @@ def evaluate(args: argparse.Namespace) -> None:
             tasks,
             demo_indices=range(50),
             action_chunk_size=int(panel["sampling"]["action_chunk_size"]),
+            action_start_offset=0,
         )
         manifest = build_validation_loss_manifest(dataset, panel)
         policy, lora, processor = _build_policy(

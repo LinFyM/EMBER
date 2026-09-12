@@ -9,7 +9,9 @@ Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已
 [Local Action Grounded Writer](local_action_grounded_writer_design.md)也已完成关闭：局部动作FM小幅有序优势未成为主LoRA收益。
 [Pretrained Video Grounded Writer](pretrained_video_grounded_writer_design.md)已完成关闭：冻结四帧视频先验经任务条件化Value
 读取进入完整native H与唯一LoRA，纯主FM在单节点训练面板获得有序收益，但未形成相邻稳定的validation收益。
-该结果不否定所有视频预训练或普通FM，也不证明共享表示已充分；下一机制和授权状态见progress及findings§70。
+该结果不否定所有视频预训练或普通FM，也不证明共享表示已充分。
+当前[执行对齐设计](execution_aligned_writer_design.md)先按真实post-action生产时序修正执行query的未来动作标签；
+是否获得稳定有益过程仍由行为裁决，状态与综合依据见progress及findings§71。
 下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略

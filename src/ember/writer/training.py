@@ -29,9 +29,9 @@ from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_pretrained_video_writer_run_v1"
-STAGE = "pretrained_video_grounded_writer_fresh"
-TRAINING_SCHEMA = "ember_pretrained_video_training_state_v1"
+RUN_SCHEMA = "ember_execution_aligned_video_writer_run_v1"
+STAGE = "execution_aligned_video_writer_fresh"
+TRAINING_SCHEMA = "ember_execution_aligned_video_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -44,16 +44,19 @@ def _config(path: Path) -> dict[str, Any]:
     for key in ("process_mode",):
         expected_model[key] = getattr(selected_model, key)
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
-                     "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1]}
+                     "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1],
+                     "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
+                     "version": "train24_cross_episode_k1_execution_aligned_v1"}
     expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_pretrained_video_writer_config_v1"
+        config.get("schema_version") != "ember_execution_aligned_video_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
         or {key: config["data"].get(key) for key in expected_data} != expected_data
+        or type(config["data"].get("action_start_offset")) is not int
         or type(config["data"].get("conditions_per_task")) is not int
         or config["data"].get("conditions_per_task") != 1
         or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
@@ -445,7 +448,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_pretrained_video.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_execution_aligned_video.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

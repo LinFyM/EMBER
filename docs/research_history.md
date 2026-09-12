@@ -5,8 +5,7 @@
 再沿本页进入各阶段完整论证；旧“根因”措辞仍须接受证据审查，不能直接作为已证实结论。
 
 本文把可复核的2026年7月至9月研究整理为三层：先读本页的阶段结论；遇到具体接口问题再读对应细节；只有摘要无法裁决时才进入
-immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态见
-[progress.md](../progress.md)，当前方法见 [设计记录](local_action_grounded_writer_design.md)。
+immutable Git原件和formal artifacts。历史中的资格、假设和“下一步”都属于当时时点，不恢复执行。当前状态与active design登记见[progress.md](../progress.md)。
 
 本次整理前的完整账本是 `fcdb6e43706c5fcedf10eaa5d2d459602b263016:docs/research_history.md`，含旧§1--181（有两个旧§126）；
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
@@ -1310,3 +1309,13 @@ validation100有序53／静态48，差额CI[0,.025]未达严格下界；200为33
 完整解释和边界见[findings§70](../findings.md)，正式裁决、逐task/suite和成功集合原件为
 `runs/analysis/pretrained_video_grounded_20260912/bounded_200_decision.json`及`paired_summary.json`。
 全部formal raw rows、checkpoint、manifest、学习诊断和completion保留；所有该轮进程已退出。
+
+
+## 2026-09-12：执行监督时间对应核对与新设计登记
+
+在冻结视频先验关闭后，完整核对旧v5.2/v6共享／Value／Meta与SEOD/GOMQ执行动作蒸馏原件，见findings§71。
+未将旧endpoint、expert、D共享或同task视频扩展重新当作未试机制。
+对train24 action16–41共624episode／107,825行只读量化相邻控制差异，原始7维MSE=.0094648085，
+夹爪切换率=.0141226233；没有forward、梯度、新rollout或held动作访问。
+结合已核实post-action生产时序，登记[Execution-Aligned设计](execution_aligned_writer_design.md)，
+修正主FM与留出动作的未来标签对应，实际实施和新训练状态只看progress，不由登记推断已有性能结果。

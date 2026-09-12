@@ -407,6 +407,7 @@ def build_dataset(
         [task.authority for task in tasks],
         demo_indices=range(first, last + 1),
         action_chunk_size=int(config["task_experts"]["action_chunk_size"]),
+        action_start_offset=0,
         max_open_files_per_worker=max(2, len(tasks)),
     )
 

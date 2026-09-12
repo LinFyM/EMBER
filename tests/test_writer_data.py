@@ -5,7 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
+from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 
 
 def test_teacher_video_store_selects_the_declared_rgb_view(tmp_path: Path) -> None:
@@ -72,3 +72,41 @@ def test_dual_teacher_refuses_missing_or_unsynchronized_wrist(tmp_path: Path) ->
             with pytest.raises(WriterModelError, match="RGB view|synchronized"):
                 read(0, 0)
         store.close()
+
+
+def test_future_control_matches_next_observed_transition_and_has_no_terminal_query(tmp_path: Path) -> None:
+    # A deterministic toy controller records observations AFTER applying a_i,
+    # as LIBERO create_dataset does. The next displacement is the label oracle.
+    path = tmp_path / "post_action.hdf5"
+    actions = np.zeros((4, 7), dtype=np.float32)
+    actions[:, 0] = [0.1, 0.2, 0.3, 0.4]
+    actions[:, 6] = [-1, -1, 1, 1]
+    ee = np.zeros((4, 6), dtype=np.float32)
+    ee[:, 0] = np.cumsum(actions[:, 0])
+    with h5py.File(path, "w") as handle:
+        demo = handle.create_group("data/demo_16")
+        demo.create_dataset("actions", data=actions)
+        obs = demo.create_group("obs")
+        obs.create_dataset("ee_states", data=ee)
+        obs.create_dataset("gripper_states", data=np.zeros((4, 2), dtype=np.float32))
+        for camera in ("agentview_rgb", "eye_in_hand_rgb"):
+            obs.create_dataset(camera, data=np.zeros((4, 2, 2, 3), dtype=np.uint8))
+    authority = WriterTaskAuthority(0, "task", path, path.stat().st_size)
+    future = FunctionalQueryDataset([authority], demo_indices=[16], action_chunk_size=50, action_start_offset=1)
+    try:
+        assert future.frame_index == ((0, 16, 0), (0, 16, 1), (0, 16, 2))
+        row = future[1]
+        np.testing.assert_allclose(row["observation.state"][:3] + row["action"][0, :3], ee[2, :3])
+        assert row["action"][0, 6] == 1  # next transition closes the gripper
+        assert row["frame_index"] == 1 and row["action_start_index"] == 2
+        terminal = future[2]
+        assert terminal["action_is_pad"].tolist() == [False] + [True] * 49
+        np.testing.assert_array_equal(terminal["action"], np.repeat(actions[-1:], 50, axis=0))
+    finally:
+        future.close()
+    historical = FunctionalQueryDataset([authority], demo_indices=[16], action_chunk_size=50, action_start_offset=0)
+    try:
+        assert len(historical) == 4
+        np.testing.assert_array_equal(historical[1]["action"][0], actions[1])
+    finally:
+        historical.close()

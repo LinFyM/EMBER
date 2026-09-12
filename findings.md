@@ -966,3 +966,27 @@ validation100差额+5、CI[0,.025]，下界未严格大于零；200差额−15�
 原件：`runs/analysis/pretrained_video_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
 `step100/learning_comparison.json`与`step200/learning_comparison.json`。冻结实现`611770d1`，八面板全部完整、worker exit0。
 目标仍未完成；未使用Test、held梯度或最终sealed controls。
+
+
+## 71. 先校正执行监督的时间对应，不能把旧蒸馏重新命名为新机制（2026-09-12）
+
+本轮回到旧v5.2/v6源码与近邻干预：当前已有VL＋Action Meta，旧shared family heads与新独立D均有能力和迁移边界；
+旧配方的架构×更新组织反向效果不支持默认恢复全任务batch、改D共享或增加同task视频。
+`3a6f801d`的model/temporal/video_program及Target-Owned完整设计，与§62/70的实际闭环事实共同约束该判断。
+
+“把监督移到真正的10步执行动作”也不是尚未试过的原则。`8553b613`的SEOD设计§4–6明确使用成功expert occupancy、
+相同观测／noise的expert与student实际执行动作、unit-residual目标；GOMQ只打开memory-query梯度。
+SEOD129→135→143→136、GOMQ151→135→131均未稳定。旧expert在离线B20上的flow audit仅2/24任务优于baseline，
+因此不能把任何expert的任意离线预测直接当更可信标签。强carrier、K4、fixed-A/B residual及成功状态选择限制外推，
+但足以取消“改成endpoint／专家目标就新增了科学信息”的默认理由；本次未启动新的专家或endpoint蒸馏。
+
+一个更具体的监督语义问题已在§67确认：obs[i]是执行actions[i]后的观测，主FM却从actions[i]开始。
+本轮修改前源码仍如此。此次只读train24的action16–41共624episode／107,825行，按task／episode等权，
+相邻原始7维控制MSE=.0094648085，前6维=.0016271944，夹爪切换率=.0141226233。
+差异主要集中在夹爪切换；这些原始控制量不能与归一化FM直接比较，也不证明它解释了全部旧失败。
+原件`runs/analysis/pretrained_video_grounded_20260912/posthoc_execution_alignment_audit.json`，没有新forward或闭环。
+
+[Execution-Aligned设计](docs/execution_aligned_writer_design.md)据实际post-action时序，将唯一Writer的主FM与动作留出
+改为obs[i]/actions[i+1:]，最后无未来标签的观测不参与query采样。完整teacher末帧仍保留；source及normalization冻结。
+这首先是监督时间一致性修正，是否使已有训练有序收益迁移仍待两臂fresh100/200有界比较。
+新旧合法query支持不同，旧分数不冒充匹配训练反事实；不由旧强模型的存在否定正确时间对应，也不由修正正确性宣称目标完成。

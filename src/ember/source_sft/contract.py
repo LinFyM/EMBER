@@ -305,6 +305,7 @@ def load_training_data(
         [task.authority for task in tasks],
         demo_indices=range(first_demo, last_demo + 1),
         action_chunk_size=int(config["data"]["action_chunk_size"]),
+        action_start_offset=0,
         max_open_files_per_worker=int(config["data"]["max_open_files_per_worker"]),
     )
     return dataset, tasks, validation

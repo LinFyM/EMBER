@@ -4,7 +4,8 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
 **当前阶段先解决有益的视频特异性，暂不强制绝对性能。** Owner已授权依据综合证据修正理论、实现与实验。
-唯一active design是[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)：冻结视频先验通过任务条件化读取进入完整H及唯一LoRA，采用跨episode主FM。
+唯一active design是[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)：保留冻结视频先验与完整H的唯一LoRA生成，
+按post-action观测对应的下一动作序列进行跨episode主FM。
 实际实现、资源与实验进度见[progress](progress.md)，当前计划见[task_plan](task_plan.md)。旧C/无变化参照和95-task不恢复。
 
 ## 全新专家先读
@@ -22,7 +23,8 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 
 当前数据流：真实teacher RGB分别形成原生contextual Z／完整50-H响应与冻结V-JEPA2.1过去四帧dense特征；
 任务token读取视觉先验Value，条件化相邻完整H读取和过去时间交互，再经Compiler／native D生成唯一38-target/76-tensor A/B。
-仅跨episode主FM联合更新Writer及两组teacher Meta；source和外部视频encoder冻结。局部动作辅助路径已经退役。
+仅跨episode主FM联合更新Writer及两组teacher Meta；query obs[i]的动作标签从i+1开始，最后无未来标签的观测不参与监督。
+source和外部视频encoder冻结。局部动作辅助路径已经退役。
 
 | 代码职责 | src/ember下的owner |
 | --- | --- |
@@ -34,7 +36,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | 物化、闭环与恢复 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/`、`ecp/checkpoint.py` |
 
 入口为`scripts/train_horizon_writer.py`、`scripts/materialize_horizon_writer.py`、`scripts/evaluate_pi05.py`。
-训练默认配置`configs/pi05_pretrained_video.json`与`_frame_set.json`是匹配的有序／静态视频编码器比较；
+训练默认配置`configs/pi05_execution_aligned_video.json`与`_frame_set.json`是匹配的有序／静态视频编码器比较；
 `_frame_set_image.json`只在主比较资格通过后用于原生图像分支的强静态检查。三者使用同一实现，旧checkpoint须使用原冻结runtime。
 外部encoder代码与权重只在canonical资产根各保存一份；路径、固定commit、预处理及模式进入run contract。
 

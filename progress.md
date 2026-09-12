@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：两臂200步学习完成，后台接续8个correct闭环面板（2026-09-12）
+## 当前状态：100步train96为有序44／静态36，validation与200节点待裁决（2026-09-13）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -53,15 +53,27 @@ Owner随后提供专家整体复审，并在睡前要求自主有效推进，随
 task-bootstrap95%CI[−.0002747199,+.0002935941]跨零；10/24task正向。此项仍不是闭环资格。
 学习总墙钟有序5465.92秒／静态5708.51秒；完整证据见training_step200_pairing.json与diagnostic_step200_comparison.json。
 
-夜间后台tmux `ember-aligned-overnight`已启动，controller PID3744657；
-队列复用原materialize.sh/evaluate.sh，从原2ecf1770 frozen运行面生成4组、合计8个LoRA库，
-然后顺序完成8个correct面板，动态队列／persistent workers／long-first保持，每卡2个评测worker。
+夜间后台tmux `ember-aligned-overnight`继续运行，当前controller PID3865623（attempt2）；
+队列复用原materialize.sh/evaluate.sh，已从原2ecf1770 frozen运行面完成4组、合计8个sealed LoRA库，
+全部物化exit0；1,984个条件的跨arm／checkpoint映射一致，validation每task全部50视频各一次，
+证据为analysis/materialization_mapping_audit.json。已进入顺序8面板评测，dynamic queue／persistent workers／long-first保持。
+首个ordered100 train96在gpu01[0,1,3,4,5,6]、每卡2worker完成：44/96，全部12个worker exit0，
+墙钟250.98秒。匹配frame_set100已完成36/96，墙钟255.45秒、所有worker exit0。
+完整配对有序新增10／丢失2、保留34，churn12、J=.73913；task-cluster95%差额CI[.03125,.1354167]为正。
+Spatial/Object/Goal/Long有序9/13/15/7，静态7/12/12/5，四suite净收益均为正，有序breadth18。
+证据为analysis/step100_train_comparison.json（含全部task/suite/source比较）；只支持该训练任务面板的局部增量，
+还不能证明视频顺序因果性、相邻保持或validation迁移。队列正在ordered100 validation400。
+首个面板结束后，远端已写completion约1秒，controller首次读取却报FileNotFound，随后该文件可读且完整。
+按共享文件可见性时差在ops脚本加入最长60秒的有界读取等待，具体NFS缓存层未独立定位；不改变评测实现。
+旧controller已退出，attempt1日志保留；恢复前核验已完成96rows及checkpoint身份并跳过全部8库／首面板，
+只接续剩余7面板，无重训、重复物化或重复rollout。frame_set100完成后已自动进入validation，实际交接通过。
 每次launch现场检查两节点，选同节点至多6张有效设备；计入其它ymdai GPU后仍不超过保守总上限6。
 物化前quota实测956.4/1024GiB，当前study16GiB，初始8面板剩余峰值12GiB，预计968.4GiB；
+首个评测准入时data1实测966.0GiB，评测剩余预算2GiB，预计968.0GiB；
 队列各阶段再次检查quota和共享容量，不启动任何条件性额外增长。
 状态为analysis/overnight_status.json，确切命令与现场准入证据为overnight_*日志／admission文件。
 完成后自动生成paired_summary.json、bounded_200_initial_decision.json与OVERNIGHT_READOUT.md；
-失败或资源不合格时停止后续启动并保留日志，不自行重训、参数扫描或扩大实验。当前尚无新闭环分数。
+失败或资源不合格时停止后续启动并保留日志，不自行重训、参数扫描或扩大实验。100步训练侧局部正例不构成方法资格，原注册分支与条件性冻结复核触发条件保持。
 接下来按实际checkpoint完成物化与strict配对，并报告全task/suite、breadth、R/G/L、churn与相邻稳定性。
 other／原生image参照只在资格触发后补；没有selected checkpoint，不运行sealed controls、Test或RL。
 

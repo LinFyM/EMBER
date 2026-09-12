@@ -836,3 +836,21 @@ validation亦未获得可靠有序增量。因此当前主候选连训练侧可�
 本项8面板/1,984rows，study累计64面板/15,872rows；全部banks/checkpoints/raw rows/aggregate/completion保留。
 原件`runs/analysis/video_functional_20260911/direct_fm_vl/bounded_200_decision.json`及统一`paired_summary.json`。
 全部进程已退出，无selected checkpoint、Test、held梯度或最终sealed controls；目标未完成，当前无active design。
+
+## 66. 局部变化的动作标签与跨episode功能标签是不同监督（2026-09-12）
+
+下一项机制分析见[过程获取提案](docs/video_process_acquisition_analysis.md)。源码复核纠正一种容易混同的历史：
+Action-Forecast v4预测未来动作；v5/v6使用固定probe响应；Stage0/G2的真实动作grounding仍来自另一episode，
+按归一化进度取未来动作并组成phase标签。`c1493a1:src/ember/privileged_actions.py:61–110`直接拒绝
+video/action demos交集，Stage0与G2各自sampler也明确分开。这些并不是对观察到的局部变化作实际动作反演。
+所查历史范围内没有找到后者的完整执行链，不能扩大为全历史从未尝试。
+
+由此推荐优先推导局部观察—动作配对对共享视频表示的学习作用，暂不同时引入额外视频骨干。
+新增信息是标签与实际观察转移的对应关系；原辅助FM只是改变跨episode任务监督的读取路径。
+该区别不证明反演一定可学、局部动作一定足以表示目标过程，或编译后一定迁移；v5.2普通FM正例仍反对
+把局部反演称作视频依赖的必要条件。提案分别规定局部获取不成立、可解码但LoRA无收益、有稳定闭环收益时的不同决策。
+
+提案保持teacher视频动作隐藏与主LoRA跨episode，但辅助分支拟对action池中的同episode RGB/动作学习，
+需要Owner明确现有跨episode合同的例外范围。没有静默改sampler、训练目标或部署输入；当前无active design。
+额外冻结视频模型也并非即插即用：普通整视频双向编码后的下游causal mask无法恢复前缀因果性，
+编码后的无序token集合仍可能包含上游顺序；参照必须从实际输入与编码路径定义。来源与细节见提案§6。

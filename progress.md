@@ -74,8 +74,14 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   本节点不满足预登记迁移资格；继续补齐其余节点与换视频证据，不据此启动pureFM第三臂或最终controls。
   42jobs/400rows完整、评测1180.75秒，全部进程退出。
 - frame_set200 validation other完整26/400，S/O/G/L=1/22/3/0、breadth4；source R/G/L=5/21/42、churn63、J=.07353。
-  对应ordered200 other、frame_set200 correct及frame_set100 other仍在评测，当前不能据此计算完整匹配或相邻差额。
+  对应ordered200 other及frame_set200 correct仍在评测；与frame_set100 other的相邻比较见下。
   42jobs/400rows完整、评测1213.09秒，全部进程退出，所用3张GPU已释放。
+- frame_set100 validation other完整53/400，S/O/G/L=0/43/1/9、breadth5，source R/G/L=5/48/42、churn90、J=.05263。
+  ordered100 other48对53，R/G/L=40/8/13、churn21、J=.65574，task-cluster95%差额CI[−.025,−.0025]；
+  Object−4、Long−1，其余suite相同。100节点两组正确视频的有序差额−13/−5，区间均严格为负，未兑现跨视频有益过程预测。
+  frame_set100自身correct/other重合45、churn21、J=.68182；other100→200为53→26，R/G/L=21/5/32、churn37、
+  J=.36207、95%CI[−.17,.005]，Long9→0、Object43→22。各项原件与逐task/suite统计在统一paired_summary。
+  本次30jobs/400rows完整、评测3344.79秒，三worker exit0、全部进程退出；仍不启动pureFM第三臂或最终controls。
 - 当前归因边界：局部FM优势属于共享读取器与专用局部头的整体；局部头拥有自己的时间Key投影，不更新Compiler的时间投影。
   因此它尚未单独证明共享E已获得可迁移的完整任务过程，不能把Compiler指定为唯一失败点。
   新局部RGB—动作真实配对区别于旧跨episode辅助FM；其增量贡献尚无同图纯FM消融，不能用跨配方历史分数代替。
@@ -138,9 +144,9 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   净收益Spatial+3、Object+1，另两suite相同；frame_set自身换视频重合39、churn9、J=.8125，other相邻重合30、churn23、J=.56604。
   两臂8个训练面板全部完成；100两视频差额+1/−3、200两视频差额+4/+4，四项区间均跨零，尚无可信有序结构增量。
   原件与所有task/suite、相邻及换视频统计均在`paired_summary.json`；最后36jobs/96rows完整、进程退出。
-- 当前已完成13/16完整闭环面板，16项均已启动。gpu01:6以3 workers评测frame_set100 validation other；
-  gpu02:0评测ordered200 validation other，gpu02:2评测frame_set200 validation correct，两项各3 workers。
-  剩余三项评测各使用一张GPU；精确命令与各次两节点preflight在对应step launch records，不追加实验占用已释放设备。
+- 当前已完成14/16完整闭环面板，16项均已启动。gpu02:0评测ordered200 validation other，
+  gpu02:2评测frame_set200 validation correct，两项各3 workers；gpu01本轮全部评测进程已退出。
+  剩余两项评测各使用一张GPU；精确命令与各次两节点preflight在对应step launch records，不追加实验占用已释放设备。
   最新接续时quota910.9GiB、study24.871GiB，原40GiB预算剩余15.129GiB，投影926.029GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，
   原40GiB预算剩余19.197GiB，投影925.997GiB。不存在额外训练或新配方，待全部登记闭环结果后裁决。

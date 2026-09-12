@@ -28,10 +28,12 @@ profile无正式checkpoint，不改变100/200学习预算或提供初始化。
 两臂均已正常exit0，完成200步／800条件／51,200个动作查询；100与200四份完整检查点已保存并通过物化前检查。
 0／100／200各24-task的登记动作诊断完整保留，不用于替代闭环裁决。四模型800条件的18个登记字段完全配对。
 四个编译作业均exit0，8个bank均sealed：各checkpoint的train96／validation400完整，共1,984个task-video条件。
-controller964812已进入8个correct面板；首个ordered100 train96于23:11UTC启动，GPU01=0/1/3/4/5/6、每卡2 workers。
-已核实launcher1951823及12个workers实际存活，启动记录为24task／96states；尚无完整面板分数。
+step100 train96两臂已完整exit0：ordered36／frame_set32；S/O/G/L为9/11/12/4对5/11/13/3，breadth15/14。
+96行task/state、视频与环境／policy RNG配对通过；有序保留29／新增7／丢失3，churn10，J=.74359。
+当前+4仅为train单节点结果，不证明validation迁移或相邻保持。controller964812已启动ordered100 validation400，
+GPU01=0/1/3/4/5、每卡2 workers；已核实launcher2012389及10个workers实际存活，启动记录为8task／400states。
 每面板独立保留资源准入、run contract、raw rows与completion；原始训练配对为同analysis根的`training_pairing.json`。
-句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前尚无新闭环分数。
+句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前尚无完整validation结果。
 正式两臂及初始8面板估计约26GiB，32GiB阶段峰值预算保持。
 条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。
 

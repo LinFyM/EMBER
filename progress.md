@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：Native双相机Writer正式运行已启动（2026-09-13）
+## 当前状态：Native双相机Writer训练完成，评测队列接续（2026-09-13）
 
 Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
 **整体goal未完成。当前active design为[Native Dual-View Writer](docs/native_dual_video_writer_design.md)。** 时间对齐、冻结正例复核及
@@ -13,7 +13,7 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 不能检验跨初态的LoRA行为传递。保留目标物体运动作为候选，但尚无能区分获取与编译不足的具体判别合同；
 运动对应审查本身没有新权重下载、模型forward或实验启动。完整依据见findings§76。
 
-### Native双相机修正：正式运行已启动
+### Native双相机修正：训练完成，评测队列接续
 
 新证据是相同输入位置下native双相机动作读出稳定改善；本项只将腕部加入native前缀，
 V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fresh共享学习及唯一38-target LoRA保持。
@@ -27,7 +27,9 @@ profile无正式checkpoint，不改变100/200学习预算或提供初始化。
 两臂已从defcf734 clean pushed detached树启动，world3各自fresh0→200；GPU01 ordered=0/5/6、frame_set=1/3/4。
 现场966.9GiB快照后，正式launch复核data1为967.1/1024GiB，保守预计999.1GiB；两节点共使用6卡。
 两份runtime contract均确认native dual／prior agentview、source与prior trainable参数为0。
-评测controller964812已存活，等待训练完成后核验800条件跨四模型逻辑配对，再物化／执行8个correct面板。
+两臂均已正常exit0，完成200步／800条件／51,200个动作查询；100与200四份完整检查点已保存并通过物化前检查。
+0／100／200各24-task的登记动作诊断完整保留，不用于替代闭环裁决。四模型800条件的18个登记字段完全配对。
+controller964812已接续检查点后的队列，将物化并执行8个correct面板；原始配对记录为同analysis根的`training_pairing.json`。
 句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前尚无新闭环分数。
 正式两臂及初始8面板估计约26GiB，32GiB阶段峰值预算保持。
 条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。

@@ -11,7 +11,7 @@ Owner已明确要求重新设置自主推进goal并已激活。依证据自主�
 **当前active design为[Native Dual-View Writer](docs/native_dual_video_writer_design.md)。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，当前只执行新登记native双相机候选。
 
-### Native双相机修正：正式运行已启动
+### Native双相机修正：训练完成，评测队列接续
 
 新证据是相同输入位置下native双相机动作读出稳定改善；本项只将腕部加入native前缀，
 V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fresh共享学习及唯一38-target LoRA保持。
@@ -25,7 +25,9 @@ profile无正式checkpoint，不改变100/200学习预算或提供初始化。
 两臂已从defcf734 clean pushed detached树启动，world3各自fresh0→200；GPU01 ordered=0/5/6、frame_set=1/3/4。
 现场966.9GiB快照后，正式launch复核data1为967.1/1024GiB，保守预计999.1GiB；两节点共使用6卡。
 两份runtime contract均确认native dual／prior agentview、source与prior trainable参数为0。
-评测controller964812已存活，等待训练完成后核验800条件跨四模型逻辑配对，再物化／执行8个correct面板。
+两臂均已正常exit0，完成200步／800条件／51,200个动作查询；100与200四份完整检查点已保存并通过物化前检查。
+0／100／200各24-task的登记动作诊断完整保留，不用于替代闭环裁决。四模型800条件的18个登记字段完全配对。
+controller964812已接续检查点后的队列，将物化并执行8个correct面板；原始配对记录为同analysis根的`training_pairing.json`。
 句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前尚无新闭环分数。
 正式两臂及初始8面板估计约26GiB，32GiB阶段峰值预算保持。
 条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。

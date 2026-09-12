@@ -1,13 +1,26 @@
 # EMBER progress
 
-## 当前状态：无辅助FM单变量比较正式学习中（2026-09-12）
+## 当前状态：完成在途比较，停止自动串联局部修正（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
 **唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200及全部8个闭环面板；本项不追加。第11节已单独移除辅助表示FM，从fresh正式学习中。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
+### Owner最新纠正与执行调整
+
+Owner指出近几小时没有根本进展，要求调整负结果后的分析与修正方式。此前去蒸馏、额外读出与VL适配虽各有
+限定结论，但没有充分收窄原主假设；“尚不能否定整体”不能继续充当追加投入的依据。综合初判见findings§62。
+正在运行的第11节保持200步上限，完成原登记100/200配对证据。其后先综合裁决主假设与竞争解释、明确停止投入
+的路径，再决定有辨别力的修正；新候选和自动frame_set暂不启动。无需另设人工审批，不恢复旧任务或改变资格标准。
+
 ### 当前执行与完整结果
 
+- 第11节100完整checkpoint已保存；实际400条件/25,600queries与teacher_vl参照逐字段匹配。held student FM=.114742605，
+  相对参照改善.000179162、task-cluster95%CI[.000050021,.000325814]，18/24任务改善；变化很小，不能替代闭环或机制进展。
+  前50更新平均16.46秒，参照20.35秒，更新时间约省19%；100/200闭环尚待完成，训练继续至原200上限。
+- 100 LoRA物化已在gpu02:3启动，tmux `ember-df100-materialize`；训练4卡加物化1卡，合计5≤6。
+  两节点现场检查及/data1用量877.4GiB、剩余预算16.2GiB/投影893.6GiB已核对；命令与资源记录
+  `runs/analysis/video_functional_20260911/direct_fm_vl/step100/materialization_launch.json`。这是完成在途比较，未新增候选。
 - 第11节无辅助路径相关83测试通过，配置与8个评测请求的科学字段匹配。初始化按共同CPU构造顺序保持VL随机流；reader在进入GPU/state optimizer前丢弃，无新的执行模块或第二trainer。
 - 真实最长task38/demo0 93frames：micro16 OOM已结束；micro8两次更新通过，第二次16.86秒/64queries（3.795queries/s）、峰值37.81GiB。Writer/Action/VL均有实际梯度，source冻结、source辅助forward=0。固定frame8/policy8；profile无checkpoint，原件`runs/analysis/video_functional_20260911/direct_fm_vl_profile/`。
 - 第11节已从clean pushed detached `9b21b0ed34d5501f931b8c44f8922c2e6d254849`启动，执行checkout `.codex/worktrees/direct-fm-vl`；gpu01:0/4/5/6，world4，tmux `ember-direct-fm-vl`，fresh200/800条件/51,200queries，保存100/200。实际run contract确认reader0/source0、Writer337,568,000/Action626,688/VL921,600、NCCL/NUMA及物理8；初始held FM=.154849362与参照一致，已进入有效更新。

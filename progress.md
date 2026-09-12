@@ -36,8 +36,10 @@ ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒�
 单worker实测约10.8GiB显存，据此采用双worker；实际双worker合计约23.6GiB，吞吐以完整面板报告。
 `ember-prior-frame-set`已在释放的0/1/3/4四卡从同一冻结commit fresh启动；正式run contract及四rank存活已核验。
 其配置仅`model.process_mode`和`video_prior.mode`不同，逻辑曝光／优化／数据／共同初始化合同均相同，checkpoint固定100/200。
-`ember-prior-mat200`已在释放的第6卡物化有序200的correct train96／validation400；已有首个条件生成，未继承100 LoRA。
-当前四卡学习、两类评测／物化合计6张物理卡；待200库封存后按现场额度安排闭环，不能追加超额设备。
+有序200的correct train96／validation400库已全部sealed，`ember-prior-mat200`以exit0退出；
+与100的全部496条state–video映射逐行一致，LoRA由200独立生成。
+`ember-prior-train200`已在释放的第6卡启动双worker训练96闭环，24tasks／96states／30动态分片，两个worker均ready。
+当前四卡静态臂学习、有序100的validation和有序200的train评测合计6张物理卡；有序200的validation尚未启动。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

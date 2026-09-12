@@ -1,9 +1,9 @@
 # EMBER progress
 
-## 当前状态：局部动作监督ordered正式学习已启动（2026-09-12）
+## 当前状态：ordered完成200步，fresh frame_set已接续（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，ordered正式学习已启动，frame_set待同拓扑接续。**
+**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，ordered完成200步，frame_set已按同拓扑fresh接续。**
 Owner已在具体提案后明确给予核心科学精神内的理论／架构修正自由度，覆盖动作训练池内的局部RGB—动作配对监督。
 主LoRA跨episode、teacher动作隐藏、完整H、source冻结和部署零交互保持。旧[Video Functional Writer](docs/video_functional_writer_design.md)
 及第7–11节比较全部结束，旧执行辅助头／蒸馏路线关闭；新假设是实际观察转移的局部动作标签能改善过程获取。
@@ -21,27 +21,28 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   source trainable及梯度为0，局部无梯度诊断路径通过。原件`runs/analysis/local_action_grounded_20260912/profile/`。
   profile仅证明真实机制与容量，不作为正式初始化或性能证据；进程已退出。
 - 保持frame chunk8、policy microbatch8，正式两臂各fresh200、checkpoint100/200；单臂四卡约一小时。
-  计划按同一四卡拓扑顺序训练ordered与frame_set，同时用剩余额度处理已到节点的物化/评测。
+  按同一四卡拓扑顺序训练ordered与frame_set，同时用剩余额度处理已到节点的物化/评测。
   每臂51,200主queries、800局部片段/6,400noise draws；两个动作留出诊断及16个闭环面板按active design执行。
 - 结构检查标记现有配置/评测协议条件复杂度、文件规模及测试增长，已按数据、头、重放、生命周期owner复核；
   生产源码净增约76行，没有新增生产模块或第二trainer，不因旧协议复杂度扩展无关重构。
 - 本次/data1 quota886.5GiB/1TiB、现有旧study100GiB、共享83TiB；两臂checkpoint、banks、临时写出与执行树合计新增峰值预算40GiB，
-  投影926.5GiB。不复制source/data/env；启动前再核对所用GPU及剩余预算。尚无新正式闭环分数。
+  投影926.5GiB。不复制source/data/env；启动前再核对所用GPU及剩余预算。首个完整train96分数见下。
 
 ### 当前formal launch
 
 - ordered已从clean pushed detached `5f4f440c992e470aaffcc873c847373ce6df43e5`启动；
   冻结运行面`.codex/worktrees/local-action-frozen`，gpu01物理0/4/5/6、world4、GPU-local NUMA及NCCL_P2P_DISABLE=1已由actual run contract确认。
-  两节点本人仅该4张训练卡，总额度保持≤6；其它可用卡留给到点物化/评测，不dummy占用。
+  启动时使用该4张训练卡；到点评测与训练共享两节点总额度≤6，不dummy占用。
 - 输出`runs/outputs/local_action_grounded_20260912/ordered/`；命令、launch contract、两节点preflight与日志在
   `runs/analysis/local_action_grounded_20260912/ordered/`，tmux `ember-local-action-ordered`。
-  已写完0步主诊断24task×128queries及局部诊断24task×16clips×8noise，均无梯度；随后已执行至少3次正式更新，
-  单步约15–17秒、peak allocated37.81GiB，所有Writer/Meta/局部头已有非零梯度，source trainable=0。
+  已完成200次更新、800条件、51,200主queries及800局部片段/6,400noise draws，用时3337.34秒；
+  100/200完整checkpoint与0/100/200两类无梯度诊断齐备，保存合同检查通过，训练进程退出。
+  peak allocated37.852GiB，所有Writer/Meta/局部头有非零梯度，source trainable=0。
 - 本轮主留出明确采用128queries/task；旧study部分实际配置为32queries，旧FM均值不能当作完全匹配的跨轮对照。
   当前两臂的曝光、诊断、optimizer和初始化配置已逐字段核对，只有process_mode不同。
   条件触发的pureFM配置也已同步至100/200及相同曝光，目前不启动。
 - ordered/frame_set两节点共16个train96/validation400 correct/other面板已准备，materialize/evaluate脚本及请求语义核对通过；
-  主/局部学习对比与paired成功集合分析脚本准备完毕，尚无闭环结果，未选checkpoint，Test及sealed controls未用。
+  主/局部学习对比脚本准备完毕，paired成功集合已汇总两个完整训练面板；未选checkpoint，Test及sealed controls未用。
 - 最新启动前/data1 quota886.7GiB/1TiB，两臂新增峰值预算40GiB；3个已集成临时实现工作树清理完毕，
   source/data/env与正式冻结运行面保留。接续训练和各新GPU评测启动前按实际变化检查额度。
 
@@ -50,14 +51,27 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - ordered第100步完整checkpoint已保存，并由formal materialization检查器验证；0/100主动作留出各24task×128queries，
   局部留出各24task×16clips×8noise均完整无梯度。主FM均值0.151461→0.114319，局部1.308081→1.164801；
   这是拟合进展，尚不能推断有序视频增益，匹配frame_set及闭环结果仍待完成。
-- 100节点train correct的96套LoRA已封存，validation correct的400套正在生成；same-task-other随后按固定映射复用同条件LoRA，
-  不平均生成权重。物化使用gpu02:0，tmux `ember-local-action-ordered-mat100`。
-- 首个train96 correct rollout已在gpu02:2用3个persistent workers启动，队列已实际产生完成rows；
-  tmux `ember-local-action-ordered-train-c100`。训练继续向200推进，当前占用物理GPU总数6，未超过Owner额度。
+- 100节点train/validation correct及same-task-other四个LoRA库均已封存，各96/400条件；
+  other按固定映射复用同条件LoRA，不平均生成权重。物化进程已退出。
+- train96 correct完整40/96、breadth19；配对source15/96，R/G/L=12/28/3，churn31、J=.27907，
+  相对source task-cluster95%差额区间[.166667,.354167]。这是训练任务适配收益，尚无匹配frame_set有序增量结论。
+- train96 other完整35/96、breadth17，source R/G/L=11/24/4。correct/other四suite S/O/G/L分别9/9/15/7、9/8/12/6；
+  换视频成功集合重合33、churn9、J=.78571，correct−other差额95%CI[-.010417,.114583]。两臂进程均已退出。
+- gpu02:2继续validation400 correct（tmux `ember-local-action-ordered-val-c100`，3个persistent workers）；
+  gpu02:0接续ordered 200节点LoRA物化（tmux `ember-local-action-ordered-mat200`），validation100 other尚待空闲设备。
+  frame_set与评测共享物理GPU总数6，未超过Owner额度。
 - 精确命令、两节点preflight与预算记录在`runs/analysis/local_action_grounded_20260912/ordered/step100/`。
   此次quota890.4GiB/1TiB，study已用4.4GiB，原40GiB新增峰值预算剩余35.6GiB，投影926.0GiB；
   gpu02可用RAM321GiB。两个共驻设备原仅有约0.2GiB低利用率context，未改动其它用户作业。
-- 下一步完成100节点四面板并跟进200checkpoint；ordered退出后用同一四卡拓扑fresh启动已登记frame_set。
+- 两个完整训练面板及全部配对统计在`runs/analysis/local_action_grounded_20260912/paired_summary.json`；
+  首个correct面板完成时quota892.3GiB、study6.3GiB、原40GiB预算剩余33.7GiB，投影926.0GiB。
+- ordered 200主留出FM为0.108236、局部0.810114；0/100/200各有完整24task主诊断及384局部片段，均无梯度。
+  它们是学习证据，不能替代匹配frame_set及完整闭环比较。
+- ordered退出后，frame_set已从同一clean pushed detached 5f4f440c在gpu01:0/4/5/6、world4 fresh启动，
+  tmux `ember-local-action-frame-set`，精确命令及新preflight在`runs/analysis/local_action_grounded_20260912/frame_set/`。
+  启动前四卡均无进程、0MiB，节点可用RAM460GiB；quota896.1GiB、study10.028GiB，40GiB预算剩余29.972GiB，投影926.072GiB。
+  actual run contract确认fresh/world4/source trainable=0；0步24主诊断及384局部诊断完整，已执行至少5次正式更新。
+- 下一步完成ordered 100节点其余面板与200节点物化/评测，同时跟进frame_set登记的100/200节点。
   当前没有selected checkpoint、sealed controls或Test使用，goal未完成。
 
 ### Owner最新纠正与执行调整

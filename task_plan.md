@@ -15,7 +15,7 @@ Owner 2026-09-12要求改变连续负结果后的推进方式：停止自动串�
 
 已完成[过程获取的监督关系复核](docs/video_process_acquisition_analysis.md)：推荐具体审视action训练池的
 同episode局部观察—动作配对，区别于已执行的跨episode功能／phase监督。该新支路的跨episode
-合同适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，实现与真实profile已通过，ordered正式学习已启动，frame_set按同拓扑随后接续。
+合同适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，实现与真实profile已通过，ordered完成200步，frame_set已按同拓扑fresh接续。
 
 ### 当前执行计划
 

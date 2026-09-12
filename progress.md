@@ -102,8 +102,11 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
   ordered200 train correct完整46/96，S/O/G/L=15/12/12/7、breadth17，source R/G/L=13/33/2、churn35、J=.27083。
   相较自身100步40/96，R/G/L=31/15/9、churn24、J=.56364，差额task-cluster95%CI[−.052083,.1875]；
   总分增加但breadth19→17，尚无可信相邻改善，完整匹配frame_set结果待齐。96rows/36jobs全部完成，进程退出。
-- 当前已完成5/16完整闭环面板。gpu01:4/5以6 workers评测ordered200 validation correct，gpu01:6以3 workers评测ordered200 train other；
-  gpu01:0与gpu02:2各以3 workers评测frame_set100 train other/correct，gpu02:0接续frame_set200 train correct。
+- 首个匹配训练结果：frame_set100 correct完整39/96，S/O/G/L=8/9/15/7、breadth19，source R/G/L=11/28/4。
+  ordered100 correct为40/96；相对frame_set R/G/L=35/5/4、churn9、J=.79545，task-cluster95%差额CI[−.03125,.052083]。
+  两臂仅Spatial净差1，其余suite总数相同，尚无可信有序结构增益。原件及逐task数据在`paired_summary.json`；96rows/36jobs完成、进程退出。
+- 当前已完成6/16完整闭环面板。gpu01:4/5以6 workers评测ordered200 validation correct，gpu01:6以3 workers评测ordered200 train other；
+  gpu01:0评测frame_set100 train other，gpu02:0/2各以3 workers评测frame_set200 train correct/other。
   五项评测均已核对活进程及实际rollout领取，共用6张GPU；精确命令与各次两节点preflight在对应step launch records。
   最新接续时quota910.9GiB、study24.840GiB，原40GiB预算剩余15.160GiB，投影926.060GiB；大型checkpoint/bank写出已完成。
 - 新接续前gpu01四卡均0MiB、无进程，节点可用RAM460GiB；quota906.8GiB、study20.803GiB，

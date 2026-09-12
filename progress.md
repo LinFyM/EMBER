@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：执行时间对应修正的两臂正式学习已启动（2026-09-12）
+## 当前状态：两臂100步检查点与首段配对核验完成，继续至200步（2026-09-12）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -19,16 +19,20 @@ Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保
 - frame_set：gpu02 `[0,1,2]`，tmux `ember-aligned-static`，controller3163713、rank3164131/34/36。
 - 两臂world3，共6张真实工作卡；每更新仍四suite等权4tasks、256queries，microbatch8、fresh纯主FM至100/200。
   gpu02既有低利用率148–186MiB进程已核实所有权，启动余量覆盖约42GiB实测reserved峰值；未修改其他用户进程。
-- 最新验证快照：ordered 9步、frame_set 4步，已产生有限loss与梯度更新。
-  初始24task动作诊断各完整，FM均.1532853388；无梯度、future offset1、任务／视频／query／noise字段匹配。
-  两臂共同前4步/16条件的18项曝光字段一致；这是启动检查，不代替完成后的整轮核验。
-  有序第二步起Action/VL Meta梯度非零；initial identity的第一步Meta零符合既有设计。
+- 两臂100步检查点均已完成formal inspector检查：模型／trainer／三rank状态完整，新身份与offset1一致；进程继续至200。
+  首段各400条件／25,600queries，18项任务／video／动作起点／noise等字段配对一致，各suite100条件，全部训练指标finite。
+  初始24task诊断FM均.1532853388；100步有序.1146888600／静态.1146933126，静态减有序+.0000044525，
+  paired-task bootstrap95%CI[−.0001895658,+.0002019832]跨零，9/24task为正；没有可信的诊断有序优势。
+  这是训练侧动作留出结果，不是视频闭环收益或checkpoint选择依据，不触发配方调整或提前结束。
+  两臂训练更新分别累计2568.99／2667.07秒（不含加载／诊断／保存），reserved峰值42.0645／42.0625GiB。
 - 启动前strg01独立data1用量941.2/1024GiB，已含冻结树；初始阶段增长预算28GiB，整个study含条件后续70GiB，
   预计峰值1011.2GiB，共享余量83TiB。后续物化/新增长前刷新剩余quota与GPU。
 
 输出：`runs/outputs/execution_aligned_video_20260912/`；分析／exact launch／设备UUID／startup验证：
 `runs/analysis/execution_aligned_video_20260912/`。formal run_contract记录source和prior trainable均0及新offset1。
-100/200的train96＋validation400 correct共8面板请求与运行脚本已准备，尚无新checkpoint或闭环分数。
+首段证据为analysis下`training_step100_pairing.json`、`diagnostic_step100_comparison.json`及各step100/checkpoint_inspection.json。
+100/200的train96＋validation400 correct共8面板请求与运行脚本已准备；100步checkpoint完整，尚无新闭环分数。
+六张卡仍全部进行固定world3训练，待训练完成释放设备后接续物化／评测。
 接下来按实际checkpoint完成物化与strict配对，并报告全task/suite、breadth、R/G/L、churn与相邻稳定性。
 other／原生image参照只在资格触发后补；没有selected checkpoint，不运行sealed controls、Test或RL。
 

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pretrained_video_writer_config_v1",
-  "status": "implementation_profile_pending",
+  "status": "registered_pretrained_video_comparison",
   "design": "docs/pretrained_video_grounded_writer_design.md",
   "data": {
     "seed": 7,
@@ -150,7 +150,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Frozen video prior comparison; numerical checkpoint defaults require pre-learning profile registration",
+    "initial_use": "Longest93-frame true profile passed; fresh bounded100/200 main FM comparison",
     "qualification_registration": "docs/pretrained_video_grounded_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -280,7 +280,7 @@
         48,
         49
       ],
-      "registration_status": "behavioral criteria registered; numerical checkpoint nodes pending real profile",
+      "registration_status": "100/200 nodes and51200 main queries registered after real profile, before learning",
       "optimizer_updates": [
         100,
         200
@@ -423,7 +423,20 @@
         "correct_minus_shuffled"
       ]
     },
-    "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification"
+    "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
+    "profile_registration": {
+      "condition": "longest train24 teacher task38 demo0,93frames",
+      "warm_condition_seconds": 19.5573024940677,
+      "peak_allocated_gib": 39.07941246032715,
+      "peak_reserved_gib": 42.083984375,
+      "frame_chunk": 8,
+      "policy_microbatch": 8,
+      "prior_window_batch": 4,
+      "updates": 200,
+      "condition_exposures": 800,
+      "main_fm_queries": 51200,
+      "profile_initialization_reused": false
+    }
   },
   "update_version": "pretrained_video_main_fm_credit_v1",
   "execution_precision": "native_mixed_without_outer_autocast",

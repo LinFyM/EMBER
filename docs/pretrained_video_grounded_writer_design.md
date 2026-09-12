@@ -157,3 +157,13 @@ training及materialization使用新schema，局部动作头／loss／片段读�
 保留的复杂度提示来自既有采样／selection／checkpoint合同函数，相关分支未扩展；
 materialization长函数仅更新身份与元数据，695行评测测试仅调整同一checkpoint所有权fixture。
 Writer目录26个直接源码文件的既有规模未增长，不为这些提示拆散凝聚的合同或进行无关重构。
+
+### 真实profile后的正式节点登记
+
+实际93帧teacher、完整H／76-tensor LoRA、64queries的两次单条件反向均完成，profile不保存正式checkpoint或初始化。
+第二次19.5573秒，allocated39.0794GiB、reserved42.0840GiB；第二次Writer及两组Meta／prior投影梯度均非零，
+source与外部encoder无梯度，实际官方EMA权重strict加载成功。保留frame chunk8、policy microbatch8、prior window batch4。
+据此在学习前固定100/200两节点：每臂200updates、800个K1条件曝光、51,200主FM queries；四suite每update各一task、
+每task64queries，权重1/4。profile单条件耗时给出约65分钟量级的纯更新成本参考，不含初始化、诊断、checkpoint及不同数据读取成本；实际多卡段长另据日志报告。
+两臂采用相同逻辑曝光与fresh共有初始化；每个arm的source／prior保持冻结，不继承profile参数或optimizer。
+主比较先按§5执行correct，达到预登记候选才补other及条件性的image静态参照。具体GPU、环境、frozen commit与命令写launch record。

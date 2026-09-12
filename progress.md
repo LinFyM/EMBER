@@ -17,9 +17,9 @@ Owner指出近几小时没有根本进展，要求调整负结果后的分析与
 
 - 第11节fresh200训练完成，正式用时3339.18秒；800条件/51,200queries与teacher_vl参照逐字段匹配，100/200完整checkpoints齐备，训练进程退出。source保持冻结，峰值37.83GiB。
 - held student FM100/200=.114742605/.107176777；相对参照改善.000179162/.000175662，task-cluster95%CI分别[.000050021,.000325814]/[-.000226025,.000602552]，18/24和13/24任务改善。差额很小，200区间跨零，不能替代行为证据。原件`direct_fm_vl/step{100,200}/learning_comparison.json`。
-- 100训练correct完整37/96，teacher_vl参照34/96；R/G/L28/9/6、breadth19，差额CI[-.052083,.114583]，不足以认定改善；other仍在gpu02:3的3个persistent workers评测。
-- 100四个LoRA banks已sealed；100 validation correct在gpu01:0/4、other在gpu02:0/1，各2GPU×3 workers正式运行。200物化在gpu01:5运行；连同train other合计6≤6。训练四卡已经释放，无占位作业。
-- 新launch前两节点live检查通过，/data1 quota883.6GiB/1TiB、当前run10GiB、剩余预算10GiB/投影893.6GiB，共享83TiB；精确命令与资源原件`direct_fm_vl/step100/{validation_correct,validation_same_task_other}_launch.json`、`step200/materialization_launch.json`。本轮未新增候选或额外面板。
+- 100训练两臂完整37/40（各96），teacher_vl参照34/37；correct R/G/L28/9/6、breadth19，other33/7/4、breadth18；差额CI[-.052083,.114583]/[-.052083,.125]均跨零。自身换视频重合33、churn11、J=.75；两臂进程均退出。原件`direct_fm_vl/step100/train_paired.json`。
+- 100/200全部8个LoRA banks已sealed，物化进程退出；100 validation correct在gpu01:0/4、other在gpu02:0/1，各2GPU×3 workers运行。200 train correct/other在gpu01:6/5，各1GPU×3 workers，合计6≤6；200 validation待额度释放。
+- 最新launch前两节点live检查通过，/data1 quota886.0GiB/1TiB、当前run13GiB，全部banks落盘后剩余为小型rows/logs，仍低于原893.6GiB投影峰值，共享83TiB；精确命令与资源原件`direct_fm_vl/step100/{validation_correct,validation_same_task_other}_launch.json`及`step200/{materialization,train_correct,train_same_task_other}_launch.json`。本轮未新增候选或额外面板。
 - 第11节无辅助路径相关83测试通过，配置与8个评测请求的科学字段匹配。初始化按共同CPU构造顺序保持VL随机流；reader在进入GPU/state optimizer前丢弃，无新的执行模块或第二trainer。
 - 真实最长task38/demo0 93frames：micro16 OOM已结束；micro8两次更新通过，第二次16.86秒/64queries（3.795queries/s）、峰值37.81GiB。Writer/Action/VL均有实际梯度，source冻结、source辅助forward=0。固定frame8/policy8；profile无checkpoint，原件`runs/analysis/video_functional_20260911/direct_fm_vl_profile/`。
 - 第11节已从clean pushed detached `9b21b0ed34d5501f931b8c44f8922c2e6d254849`启动，执行checkout `.codex/worktrees/direct-fm-vl`；gpu01:0/4/5/6，world4，tmux `ember-direct-fm-vl`，fresh200/800条件/51,200queries，保存100/200。实际run contract确认reader0/source0、Writer337,568,000/Action626,688/VL921,600、NCCL/NUMA及物理8；初始held FM=.154849362与参照一致，已进入有效更新。

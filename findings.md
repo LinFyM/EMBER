@@ -768,3 +768,21 @@ Owner指出连续数小时没有根本进展。问题不只是分数没涨：此
 有益过程、完整唯一adapter及迁移保持，不能只以接口形式作为贡献。它也提示功能学习与权重监督须按真实合同比较，
 不是发现一篇正结果就改loss。当前[公开仓库](https://github.com/Fascetta/WIZARD)列出网页与README，
 尚未据公开训练实现复核其完整运行细节；这里保留论文级证据，不宣称已经复现，不启动新训练。
+
+对外部正例补做最邻近历史核对后，**专家原始因子MSE＋方向／尺度监督并不是EMBER尚未执行的变量**：
+`925e7b1:src/ember/expert_manifold/model.py`的真实目标为masked raw-factor MSE加cosine和log-scale项，
+train24同初始化step2000 experts提供38-target完整rank16目标。原图macro50为48/400，topology address绑定后
+fresh macro50为75/400（matched gained31/lost4、breadth4/8）；修复有真实收益，后者仍向跨task公共方向收缩。
+完整执行与裁决在`3a6f801:docs/action_forecast_writer_video_expert_manifold_design.md`§24–29；两次只完成
+预注册50节点，不能扩大为所有专家权重监督已被否定，也不能说这类loss完全没试过。
+
+GOMQ则是成功专家occupancy上的函数蒸馏，具有强carrier、K4、fixed-A/B-only残差等不同合同，不能归为直接
+专家权重回归的正例。其151→135→131及既有视频依赖证据均保留，不能只挑151或只写失败。另一路固定functional
+code decoder后训练视频Writer，macro10的correct131/150与language-only130/150近似；后继仅decoder的实验
+没有继续训练视频Writer，不能将它们重复计为端到端失败。对应证据索引见research_history§2，以及
+`ac233fa0:docs/evidence/functional_adaptation_20260819/writer_macro10_inference_gate_20260820.json`。
+
+旧直接重建用冻结16-phase视频特征、仅Action Expert38-target生成；WIZARD所述全视觉/语言/动作生成及suite
+留出合同有实质区别，但这些区别没有配对隔离，不能据此认定补全模块或照搬loss会修复当前问题。
+这一审计取消的是“尚未试过权重监督，所以默认改loss”的理由，不启动新路线。专家target有效、decoder可实现、
+video能推断有益更新、该更新闭环有效且稳定，是需要分别有证据的接口，不能由前两项替后两项背书。

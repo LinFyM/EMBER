@@ -1,9 +1,9 @@
 # EMBER progress
 
-## 当前状态：teacher侧VL Meta学习完成，配对闭环评测中（2026-09-12）
+## 当前状态：teacher侧VL Meta有界比较完成，继续机制判断（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200有界学习，正在收齐100/200配对闭环。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200及全部8个闭环面板；本项不追加，当前无运行中的GPU实验。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### 当前执行与完整结果
@@ -11,14 +11,20 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 第10节完整Z/R双路VJP已接入唯一observer；跨update只缓存pre-Gemma embeddings，新VL Meta在共同模块后初始化，新增921,600参数。旧KV缓存入口退役，model schema v2拒绝旧checkpoint；无第二trainer或执行adapter。
 - CPU相关168项通过，配置小改后3项复核通过。真实native identity Z差0，两条VL梯度均非零，联合重放与直接梯度一致，source trainable=0；真实学习第2次后Writer/Action/VL/reader均有梯度。
 - 最长合法视频task38/demo0，93frames/64queries：frame_chunk4/8分别24.97/21.55秒，后者2.970queries/s、峰值37.84GiB。选择frame8、policy micro8；profile只运行gpu01:4且已退出，无保留训练checkpoint。原件`runs/analysis/video_functional_20260911/teacher_vl_profile/`。
-- 结构变更净增15行active source/test、无新文件；配置检查复杂度从28降为27，其余guard提示为既存大文件/函数与目录规模，未增长相关复杂职责。实现已集成并推送；formal冻结`a89648740c28d1a2f4aff07b6e42bc7b35e44223`，clean pushed detached `.codex/worktrees/teacher-vl-meta`。
+- 结构变更净增15行active source/test、无新文件；配置检查复杂度从28降为27，其余guard提示为既存大文件/函数与目录规模，未增长相关复杂职责。实现已集成并推送；formal冻结`a89648740c28d1a2f4aff07b6e42bc7b35e44223`；已结束的clean detached执行checkout在核对main ancestry后清理，全部formal资产保留。
 - 第10节fresh训练已完成，原gpu01:0/4/5/6 world4进程全部退出；200updates/800条件/51,200queries与参照曝光匹配，训练4010.96秒，100/200完整checkpoints已保存。两组读取Meta共同学习、source trainable=0，NCCL/NUMA与逻辑batch已由实际run contract确认。
 - 启动前两节点本人占用0，启动后4≤6；/data1独立quota861.2GiB/1TiB，新增峰值预算20GiB、投影881.2GiB，共享83TiB。精确命令与资源记录`runs/analysis/video_functional_20260911/teacher_vl/launch_contract.json`，日志`train.log`；输出`runs/outputs/video_functional_20260911/teacher_vl/`。100/200全部物化与评测请求已准备，训练及评测共享Owner全局额度。
 - 100节点实际400条件/25,600queries与第8节逐字段匹配；held student=.114921766，参照.114956222，改善仅.000034455（task-clusterCI[.000004203,.000064595]）；reader=.153159816、差额CI跨0。差额很小，不能据此推定闭环收益；原件`teacher_vl/step100/learning_comparison.json`。
 - 100四个banks已完整物化：train96与validation400各正确/同task另一视频，other复用相同条件LoRA而保留不同state-video映射。训练两臂已在gpu02:0/3各3 persistent workers完成并退出；原件`teacher_vl/step100/{materialization_launch,train_correct_launch,train_same_task_other_launch}.json`及对应preflight/logs。
-- 100训练两臂完整34/37（各96），参照42/38；correct保留31/新增3/丢失11、差额CI[-.166667,0]，other33/4/5、CI[-.083333,.0625]。自身换视频重合30、J=.73171；未见训练收益，尚待validation与相邻节点。原件`teacher_vl/step100/train_paired.json`。
+- 100训练两臂完整34/37（各96），参照42/38；correct保留31/新增3/丢失11、差额CI[-.166667,0]，other33/4/5、CI[-.083333,.0625]。自身换视频重合30、J=.73171；100节点未见训练收益。原件`teacher_vl/step100/train_paired.json`。
 - 200留出student=.107352440、相对参照改善−.000013986（CI[-.000078555,.000057563]）；reader=.149220013、微小改善.000016497，不能作为目标证据。全部800条件/51,200queries匹配，原件`teacher_vl/step200/learning_comparison.json`。
-- 200四banks物化已启动gpu01:0，100 validation correct使用gpu02:0，other使用gpu01:4/5/6，各卡3 persistent workers；总用卡5≤6。train200 bank就绪后利用剩余额度评测。最近quota871.2GiB/1TiB、run10GiB，预计峰值881.2GiB；全部启动与资源记录在相应`teacher_vl/step100`及`step200`。
+- 100/200全部8个banks、8面板/1,984rows完成；study累计56面板/13,888rows。两节点本轮进程已退出，峰值合计6张卡。最后200 validation两臂各2GPU×3 workers，均36jobs完整400rows；完整命令、资源与结果保留在`teacher_vl/step100`及`step200`。最近quota873.6GiB/1TiB、run13GiB，低于原881.2GiB投影峰值。
+- 200训练两臂56/56（各96），参照55/55；净差均+1、CI均跨0，breadth21/20。100→200训练获取提高，但同节点换视频重合46、J=.69697，参照50、J=.83333。
+- validation100两臂61/61，参照57/61；差额CI[-.02,.0425]/[-.0325,.025]。S/O/G/L=2/42/2/15、3/45/3/10，breadth8/7；correct的Long+7未在other复现（−3）。
+- validation200两臂62/64，参照72/67；差额−10/−3，CI[-.0575,.0025]/[-.0375,.03]。S/O/G/L=2/42/6/12、2/45/4/13，breadth5/6；source47仅保留8/6，新增54/58、丢失39/41。
+- 自身100→200 validation correct R/G/L32/30/29、churn59/J=.35165；other35/29/26、churn55/J=.38889。参照J=.32990/.34737，但correct保留仍32、获取更少，breadth8→5；不能把小幅J增加当作保持改善。200换视频重合44、churn38/J=.53659，差额CI跨0。
+- **第10节裁决：**未形成值得追加的跨task收益与保持，不延长或扫描VL Meta rank/层位/LR，不自动补匹配frame_set。该因素并非input信息或全部VL学习的否证。原件`teacher_vl/bounded_200_decision.json`，全部逐task/suite、source及相邻配对在统一`paired_summary.json`。
+- 当前goal未完成，无selected checkpoint、Test或最终sealed controls。后续按历史证据审查具体新假设；尚未登记新的GPU实验。
 - 此前Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。第9节中层读出诊断也已完成并退出；它们不是当前训练的初始化或恢复来源。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
 - formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。
@@ -47,7 +53,7 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - 新中层读出held0/4/16/32=.154897/.154597/.144469/.139792；旧拟合头=.140281，原LoRA学生=.110005。最终对旧头平均改善.000488、95%CI[-.003509,.003975]，15/24更好；对学生劣化.029787、CI[.021072,.039954]，24/24仍更差。
 - 相对source改善.015083、CI[.010621,.020128]，22/24更好；16→32仍改善.004677、CI[.002959,.006544]。这些学习事实保留，但固定预算下没有更强教师证据，不能据末段获取无限追加。
 - held原E相对跨task E优势.001718、CI[.001015,.002516]，19/24；E含语言/静态，仍非视频过程资格。完整原件`native_reader_diagnostic/results.json`，配对汇总`native_reader_analysis.json`。临时诊断入口随问题关闭退役，原代码由b1d3fa25及artifacts保留。
-- 综合复核后，第10节只开放teacher侧PaliGemma VL Meta，保留第8节其余图和学习配方。历史审计曾提出但未匹配检验该因素；现已按上方合同启动。两类弱头不证明输入无信息或唯一编译失败，goal保持未完成。
+- 综合复核后，第10节只开放teacher侧PaliGemma VL Meta，保留第8节其余图和学习配方。历史审计曾提出该因素；现已按上方合同完成匹配检验，未获可信收益。两类弱头不证明输入无信息或唯一编译失败，goal保持未完成。
 - Owner双节点GPU总上限持续有效：最多8张，空闲总数不超过10张时最多6张；全部训练、物化与评测共享。
 
 ### 已完成学习与验证

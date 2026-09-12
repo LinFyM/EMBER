@@ -1,6 +1,7 @@
 # Video Functional Writer：任务语义轴与执行条件化功能信用
 
-当前执行第10节：在第8节mu1/rho0配方上单独开放teacher VL Meta，phi包含视频encoder与Action/VL两组读取Meta。
+第10节已完成：在第8节mu1/rho0配方上单独开放teacher VL Meta，phi包含视频encoder与Action/VL两组读取Meta。
+该有界比较未获得可信迁移收益，不追加训练或自动补frame_set；当前无新GPU实验登记，结果见progress/findings§61。
 第1–6节保留首版合同，第7–9节保留已完成干预；当前prefix缓存及完整Z/R梯度边界以第10节为准。
 
 ## 1. 当前授权、目标与理论边界

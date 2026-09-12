@@ -1177,3 +1177,33 @@ fresh32epochs/192updates/49,152次支持query复用，学习325.06秒。gpu01:4�
 原件`runs/analysis/video_functional_20260911/native_reader_diagnostic/`包括run/cache provenance/profile/results及
 不可部署probe状态；`native_reader_launch.{json,sh}`记录精确资源与命令，`native_reader_analysis.json`保留逐节点配对统计。
 本项未建立更强教师，停止拟合与层位扫描，不自动启动新Writer或蒸馏。临时入口退役，复现代码由Git b1d3fa25保存。
+
+
+## 2026-09-12：teacher侧VL Meta单变量fresh200比较完成
+
+正式代码`a89648740c28d1a2f4aff07b6e42bc7b35e44223`，新增921,600个teacher VL参数，共同模块后初始化。
+保留第8节mu1/rho0和完整视频/H/Compiler，source基础与执行prefix冻结；Z/R经KV双路VJP实测通过，
+最长93帧profile选frame8/policy8，峰值37.84GiB。fresh200/800条件/51,200queries实际曝光匹配，训练4010.96秒。
+完整100/200 checkpoints、8个sealed banks及8面板/1,984rows保留；累计study56面板/13,888rows。
+
+| 节点 | train correct/other /96 | validation correct/other /400 | validation S/O/G/L |
+|---|---:|---:|---|
+| 100 | 34/37 | 61/61 | 2/42/2/15；3/45/3/10 |
+| 200 | 56/56 | 62/64 | 2/42/6/12；2/45/4/13 |
+
+匹配去蒸馏参照训练10042/38、20055/55，validation10057/61、20072/67。
+VL100 validation差额+4/0，task-cluster95%CI[-.02,.0425]/[-.0325,.025]；200差额−10/−3，
+CI[-.0575,.0025]/[-.0375,.03]。200对参照correct R/G/L48/14/24、J=.55814；other43/21/24、J=.48864。
+
+自身100→200 validation correct61→62，R/G/L32/30/29、churn59/J=.35165；other61→64，35/29/26、
+churn55/J=.38889。breadth8→5、7→6；200换视频重合44、新增18/丢失20、churn38/J=.53659。
+source47到200只保留8/6，新增54/58、丢失39/41。相邻J的小幅增加没有形成可信保持与迁移改善。
+
+留出student0/100/200=.154849362/.114921766/.107352440，reader=.154849362/.153159816/.149220013。
+学生200相对参照改善−.000013986、CI[-.000078555,.000057563]；reader改善.000016497、
+CI[.000008302,.000025545]。这些微小动作拟合变化不提供过程资格，不触发数值精度/参数扫描。
+
+2026-09-12完成时两节点本轮进程均退出，峰值全局6GPU；最近/data1独立quota873.6GiB/1TiB，run13GiB，
+低于原881.2GiB峰值预算。精确命令/preflight/学习及配对结果在`runs/analysis/video_functional_20260911/teacher_vl/`，
+完整统计在上级`paired_summary.json`。本项不追加学习或自动补frame_set；无selected checkpoint、Test或sealed最终controls。
+当前继续机制判断，但本记录不授权恢复历史任务或新增GPU实验。

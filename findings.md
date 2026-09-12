@@ -675,3 +675,31 @@ Spatial/Long增加，但Goal较main少15/12，source原41成功的Goal task6只�
 正确视频时序收益。两类辅助函数均有有限获取且明显弱于完整LoRA学生，继续把整体问题只归为弱教师或编译容量均缺乏依据。
 原件`runs/analysis/video_functional_20260911/native_reader_diagnostic/`，配对统计`native_reader_analysis.json`；
 只使用train24，没有deployment checkpoint、Test或最终sealed controls。临时入口由Git b1d3fa25保留后退役。
+
+
+## 61. 单独开放teacher图文融合未改善有益迁移（2026-09-12）
+
+在第59节mu1/rho0配方上，仅新增teacher PaliGemma 18层q/k/v/o rank4 VL Meta；共同模块初始化、
+800条件/51,200queries与task/video/action/query/RNG/权重匹配，fresh200。Z直接路径和R经KV路径均真实反传，
+完整重放与直接梯度一致，source trainable=0；本项没有观测到应按工程故障解释的合同违例。
+
+训练100 correct/other34/37对参照42/38，200为56/56对55/55；200差额均+1且task-cluster95%CI跨0。
+同checkpoint换视频200重合46、J=.69697，参照50、J=.83333。留出student FM200=.107352440，参照.107338454，
+差额很小且CI跨0；reader=.149220013的微小改善不能代替行为增益。
+
+validation100=61/61对57/61，差额CI[-.02,.0425]/[-.0325,.025]；200=62/64对72/67，
+差额CI[-.0575,.0025]/[-.0375,.03]。100 correct Long+7未在other复现（−3）；200 S/O/G/L为
+2/42/6/12、2/45/4/13，breadth5/6，source47只保留8/6。正确视频的局部收益不具跨视频、相邻一致性。
+
+100→200 validation correct R/G/L32/30/29、churn59/J=.35165，other35/29/26、churn55/J=.38889；
+相对参照J=.32990/.34737仅有小幅数值增加，correct保留数同为32、获取减少且breadth8→5，
+不足以认定保持改善。200两视频重合44、J=.53659，差额CI跨0。
+
+本项不延长或扫描VL rank/层位/LR，也不据100单臂+4自动补无序训练。只限定本干预、图和曝光，
+不证明视频无信息、所有VL学习无用或优化已收敛；未训练匹配VL frame_set，不能宣称时间增量已被排除。
+此结果与两个弱读出诊断共同说明：增加一条上游可学习路径并未兑现更强可迁移教学；继续只沿弱教师/单个冻结边界
+解释整体失败缺少支持。下一个变化须有独立机制理由，不以参数微小差别或负结果本身触发数值调查。
+
+新增8面板/1,984rows，study共56面板/13,888rows；原件`runs/analysis/video_functional_20260911/teacher_vl/`，
+限定裁决`bounded_200_decision.json`及统一`paired_summary.json`保留逐task/suite、source、相邻、换视频与CI。
+没有selected checkpoint、Test或最终sealed controls，当前goal未完成。

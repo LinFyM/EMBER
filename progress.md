@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：执行监督时间对应修正已验证，准备正式学习（2026-09-12）
+## 当前状态：正式启动登记检查已修复，重新准备学习（2026-09-12）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -12,7 +12,12 @@ Source及normalization冻结，完整teacher与模型图保持；训练与留出
 已登记fresh100/200两臂、有界8个correct面板及原资格口径，尚未启动新训练／GPU作业。
 378项测试全部通过；四suite train0/12/20/34的demo16首／尾共8个真实query通过，动作起点、8维state和尾端padding正确。
 原件为前轮analysis根下posthoc_execution_alignment_audit.json及posthoc_execution_alignment_dataset_check.json；
-均为关闭后的训练侧只读核对，不改变前轮qualification。下一步集成push，刷新quota／两节点GPU并冻结formal运行树。
+均为关闭后的训练侧只读核对，不改变前轮qualification。实现5e772d65已push并冻结。
+首次两臂启动均在GPU／output初始化前exit1：入口仍要求上一候选的旧登记名称。
+已修正该唯一名称，43项训练相关测试通过，新增覆盖三个正式配置通过登记及未登记配置拒绝。
+首次尝试没有训练更新、checkpoint或GPU工作；日志和精确命令保留在本轮analysis的failed_attempts。
+此前GPU刷新后的拒绝未阻止外层shell后续启动，也是启动调度错误；重试将先检查结果，再独立执行launch。
+原候选设备已被其他用户使用；下一步从修复后的clean pushed commit冻结，按两节点实时状态重新分配并启动。
 
 ### 上一候选：冻结视频先验比较已关闭
 

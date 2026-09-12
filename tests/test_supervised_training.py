@@ -21,6 +21,27 @@ from ember.writer.replay import sum_writer_gradients
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.parametrize("suffix", ["", "_frame_set", "_frame_set_image"])
+def test_registered_formal_recipes_reach_git_guard_before_device_initialization(monkeypatch, suffix):
+    from ember.writer import training
+
+    monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_execution_aligned_video{suffix}.json")
+    with pytest.raises(ValueError, match="clean pushed detached worktree"):
+        training.run(args)
+
+
+def test_formal_launch_rejects_unregistered_recipe(tmp_path):
+    from ember.writer import training
+
+    value = json.loads((ROOT / "configs/pi05_execution_aligned_video.json").read_text())
+    value["status"] = "unregistered"
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="post-profile checkpoint and exposure registration"):
+        training.run(SimpleNamespace(mode="formal", config=path))
+
+
 def test_fixed_validation_cannot_enter_gradient_loader():
     with pytest.raises(ValueError, match="fixed development split"):
         load_learning_tasks(ROOT, [1])

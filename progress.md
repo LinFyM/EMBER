@@ -6,6 +6,10 @@ Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
 综合机制判断及旧endpoint／expert近邻核对见findings§71；前轮冻结视频先验比较保持关闭。
 
+Owner新增要求整理最后一次专家意见后的情况与咨询prompt，由Owner自行转发。
+已形成[整体复审prompt](docs/review_materials/20260912_followup/EXPERT_PROMPT.md)：包含已完成的正负证据、
+在途结果边界及假设裁决／视频知识可识别性／下一项判别实验的问题。当前运行仍按下述既定合同执行。
+
 唯一Writer已改为post-action obs[i]→actions[i+1:]，排除无未来动作标签的最后query；source与normalization冻结。
 624条train动作episode的CPU审计、四suite真实dataset首／尾8例、378项全套测试通过。
 首次两臂在GPU／output初始化前exit1，原因是入口仍要求上一候选登记名称；已修正并通过43项相关测试。

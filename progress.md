@@ -30,20 +30,25 @@ ordered已完成200updates／800条件／51,200主FM queries，用时3884.59秒�
 首个train96面板完整为**41/96**，source为15/96；Spatial/Object/Goal/Long为9/8/16/8，breadth18（source7）。
 相对source保留11／新增30／丢失4，churn34，J=.24444；task-cluster95%成功率增量区间[.13542,.38542]。
 其24个任务分片、96rows及worker exit0已核验；该相对source结果不证明视频内容／有序过程收益或validation迁移。
-`paired_summary.json`保留逐任务、suite及成功集合；其它参照、节点和视频尚未形成完整比较。
+200 correct train96也已完整结束，为**52/96**，Spatial/Object/Goal/Long17/13/13/9，breadth18。
+相对source保留14／新增38／丢失1；100→200保留26／新增26／丢失15，churn41，J=.38806，
+相邻成功率增量95%CI[−.04167,.28125]跨零；Goal16→13，整体增长不代表低churn或已获得稳定视频过程增益。
+200的30个分片／96rows、双worker exit0及进程退出已核验，用时939.64秒；与100的耗时差同时受checkpoint行为与并发数影响，
+不单因归给双worker。`paired_summary.json`保留逐任务、suite、相邻及source成功集合；其它参照和视频尚未形成完整比较。
 
 `ember-prior-val100`仍在gpu01第5卡运行有序100的validation strict400，两个worker、8tasks／400states／28动态分片。
 单worker实测约10.8GiB显存，据此采用双worker；实际双worker合计约23.6GiB，吞吐以完整面板报告。
 `ember-prior-frame-set`已在释放的0/1/3/4四卡从同一冻结commit fresh启动；正式run contract及四rank存活已核验。
 其配置仅`model.process_mode`和`video_prior.mode`不同，逻辑曝光／优化／数据／共同初始化合同均相同，checkpoint固定100/200。
-静态臂100 checkpoint已保存并通过正式身份检查，继续学习至200；100的物化脚本已准备，等待现场GPU额度。
+静态臂100 checkpoint已保存并通过正式身份检查，继续学习至200；`ember-prior-static-mat100`已在释放的第6卡
+启动correct train96／validation400物化，worker存活且开始生成条件。
 `step100/learning_comparison.json`核验两臂实际400条件／25,600queries、18个采样字段、world4拓扑与信息墙一致。
 train24留出主FM为有序.113733／静态.113939；有序改善.0002066，task-cluster95%CI[−.0000675,.0005043]跨零，
 17/24任务方向为正。初始诊断一致；该损失定位不用于checkpoint选择或替代闭环资格。
 有序200的correct train96／validation400库已全部sealed，`ember-prior-mat200`以exit0退出；
 与100的全部496条state–video映射逐行一致，LoRA由200独立生成。
-`ember-prior-train200`已在释放的第6卡启动双worker训练96闭环，24tasks／96states／30动态分片，两个worker均ready。
-当前四卡静态臂学习、有序100的validation和有序200的train评测合计6张物理卡；有序200的validation尚未启动。
+`ember-prior-train200`已正常结束并释放第6卡，结果见上；有序200的validation库已就绪但评测尚未启动。
+当前四卡静态臂学习、有序100的validation和静态100物化合计6张物理卡。
 
 本轮证据根为`runs/analysis/pretrained_video_grounded_20260912/`，输出为`runs/outputs/pretrained_video_grounded_20260912/`。
 exact command、GPU UUID、quota和fresh合同在`ordered/launch_contract.json`；profile证据在`profile/results.json`。

@@ -12,8 +12,10 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - CPU相关168项通过，配置小改后3项复核通过。真实native identity Z差0，两条VL梯度均非零，联合重放与直接梯度一致，source trainable=0；真实学习第2次后Writer/Action/VL/reader均有梯度。
 - 最长合法视频task38/demo0，93frames/64queries：frame_chunk4/8分别24.97/21.55秒，后者2.970queries/s、峰值37.84GiB。选择frame8、policy micro8；profile只运行gpu01:4且已退出，无保留训练checkpoint。原件`runs/analysis/video_functional_20260911/teacher_vl_profile/`。
 - 结构变更净增15行active source/test、无新文件；配置检查复杂度从28降为27，其余guard提示为既存大文件/函数与目录规模，未增长相关复杂职责。实现已集成并推送；formal冻结`a89648740c28d1a2f4aff07b6e42bc7b35e44223`，clean pushed detached `.codex/worktrees/teacher-vl-meta`。
-- 当前唯一GPU作业为第10节fresh训练：gpu01:0/4/5/6，world4，tmux `ember-teacher-vl`，200updates/800条件/51,200queries，保存100/200。两组读取Meta共同学习、source trainable=0，NCCL/NUMA与逻辑batch已由实际run contract确认。
-- 启动前两节点本人占用0，启动后4≤6；/data1独立quota861.2GiB/1TiB，新增峰值预算20GiB、投影881.2GiB，共享83TiB。精确命令与资源记录`runs/analysis/video_functional_20260911/teacher_vl/launch_contract.json`，日志`train.log`；输出`runs/outputs/video_functional_20260911/teacher_vl/`。100/200全部物化与评测请求已准备，尚未启动评测，训练及评测共享Owner全局额度。
+- 第10节fresh训练运行于gpu01:0/4/5/6，world4，tmux `ember-teacher-vl`，200updates/800条件/51,200queries；100完整checkpoint已保存，继续到200。两组读取Meta共同学习、source trainable=0，NCCL/NUMA与逻辑batch已由实际run contract确认。
+- 启动前两节点本人占用0，启动后4≤6；/data1独立quota861.2GiB/1TiB，新增峰值预算20GiB、投影881.2GiB，共享83TiB。精确命令与资源记录`runs/analysis/video_functional_20260911/teacher_vl/launch_contract.json`，日志`train.log`；输出`runs/outputs/video_functional_20260911/teacher_vl/`。100/200全部物化与评测请求已准备，训练及评测共享Owner全局额度。
+- 100节点实际400条件/25,600queries与第8节逐字段匹配；held student=.114921766，参照.114956222，改善仅.000034455（task-clusterCI[.000004203,.000064595]）；reader=.153159816、差额CI跨0。差额很小，不能据此推定闭环收益；原件`teacher_vl/step100/learning_comparison.json`。
+- 100物化已启动gpu02:3、tmux `ember-vl100-materialize`，与4卡训练合计5≤6。该卡仅既有148MiB/0util上下文，余量45GiB；quota865.0GiB，剩余原预算16.2GiB。物化前checkpoint authority检查通过，资源/精确命令见`teacher_vl/step100/materialization_launch.json`；闭环尚待banks完成。
 - 此前Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。第9节中层读出诊断也已完成并退出；它们不是当前训练的初始化或恢复来源。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
 - formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。

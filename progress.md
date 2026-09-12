@@ -1,9 +1,9 @@
 # EMBER progress
 
-## 当前状态：局部动作监督实现与真实profile通过，准备匹配学习（2026-09-12）
+## 当前状态：局部动作监督ordered正式学习已启动（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，当前尚未启动新学习。**
+**唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)，ordered正式学习已启动，frame_set待同拓扑接续。**
 Owner已在具体提案后明确给予核心科学精神内的理论／架构修正自由度，覆盖动作训练池内的局部RGB—动作配对监督。
 主LoRA跨episode、teacher动作隐藏、完整H、source冻结和部署零交互保持。旧[Video Functional Writer](docs/video_functional_writer_design.md)
 及第7–11节比较全部结束，旧执行辅助头／蒸馏路线关闭；新假设是实际观察转移的局部动作标签能改善过程获取。
@@ -26,7 +26,24 @@ Owner已在具体提案后明确给予核心科学精神内的理论／架构修
 - 结构检查标记现有配置/评测协议条件复杂度、文件规模及测试增长，已按数据、头、重放、生命周期owner复核；
   生产源码净增约76行，没有新增生产模块或第二trainer，不因旧协议复杂度扩展无关重构。
 - 本次/data1 quota886.5GiB/1TiB、现有旧study100GiB、共享83TiB；两臂checkpoint、banks、临时写出与执行树合计新增峰值预算40GiB，
-  投影926.5GiB。不复制source/data/env；启动前再核对所用GPU及剩余预算。尚未产生新正式学习分数。
+  投影926.5GiB。不复制source/data/env；启动前再核对所用GPU及剩余预算。尚无新正式闭环分数。
+
+### 当前formal launch
+
+- ordered已从clean pushed detached `5f4f440c992e470aaffcc873c847373ce6df43e5`启动；
+  冻结运行面`.codex/worktrees/local-action-frozen`，gpu01物理0/4/5/6、world4、GPU-local NUMA及NCCL_P2P_DISABLE=1已由actual run contract确认。
+  两节点本人仅该4张训练卡，总额度保持≤6；其它可用卡留给到点物化/评测，不dummy占用。
+- 输出`runs/outputs/local_action_grounded_20260912/ordered/`；命令、launch contract、两节点preflight与日志在
+  `runs/analysis/local_action_grounded_20260912/ordered/`，tmux `ember-local-action-ordered`。
+  已写完0步主诊断24task×128queries及局部诊断24task×16clips×8noise，均无梯度；随后已执行至少3次正式更新，
+  单步约15–17秒、peak allocated37.81GiB，所有Writer/Meta/局部头已有非零梯度，source trainable=0。
+- 本轮主留出明确采用128queries/task；旧study部分实际配置为32queries，旧FM均值不能当作完全匹配的跨轮对照。
+  当前两臂的曝光、诊断、optimizer和初始化配置已逐字段核对，只有process_mode不同。
+  条件触发的pureFM配置也已同步至100/200及相同曝光，目前不启动。
+- ordered/frame_set两节点共16个train96/validation400 correct/other面板已准备，materialize/evaluate脚本及请求语义核对通过；
+  主/局部学习对比与paired成功集合分析脚本准备完毕，尚无闭环结果，未选checkpoint，Test及sealed controls未用。
+- 最新启动前/data1 quota886.7GiB/1TiB，两臂新增峰值预算40GiB；3个已集成临时实现工作树清理完毕，
+  source/data/env与正式冻结运行面保留。接续训练和各新GPU评测启动前按实际变化检查额度。
 
 ### Owner最新纠正与执行调整
 

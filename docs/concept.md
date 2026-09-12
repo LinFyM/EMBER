@@ -9,7 +9,7 @@ Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已
 [Local Action Grounded Writer](local_action_grounded_writer_design.md)也已完成关闭：局部动作FM小幅有序优势未成为主LoRA收益。
 当前登记[Pretrained Video Grounded Writer](pretrained_video_grounded_writer_design.md)，将冻结通用视频先验的过去四帧dense特征，
 经任务条件化Value读取接入完整native H及唯一LoRA，训练只用跨episode主FM；完整设计、强静态参照与行为裁决见该文。
-这一知识来源是待验证假设，不能从既有负结果推得必要性或成功保证。当前处于实施阶段，尚无新模型结果。
+这一知识来源是待验证假设，不能从既有负结果推得必要性或成功保证；学习与闭环证据的当前状态见progress。
 下文Horizon流水线保留为历史方法说明，不是当前运行面。
 
 ## 从教学过程到自己的策略

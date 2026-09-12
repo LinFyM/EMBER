@@ -18,7 +18,7 @@ Owner 2026-09-11已授权自主高效实施。以[active design](docs/video_func
    **已全部完成：**active design第8节去蒸馏fresh200比较；100训练42/38、validation57/61；200训练55/55、validation72/67。
    训练获取提高，四项validation均低于原main，相邻及换视频保持未获可信改善；不延长或自动补rho0无序训练。
    **已完成：**第9节原生中层读出32epochs；held .13979对旧头 .14028，差额CI跨0，仍24/24落后LoRA学生 .11000。
-   **当前：**第10节teacher侧图文VL Meta的完整Z及R经KV双路VJP和真实profile已通过，fresh学习进行中；100/200按原映射配对闭环。
+   **当前：**第10节teacher侧图文VL Meta的完整Z及R经KV双路VJP和真实profile已通过，fresh200学习完成，100/200按原映射配对闭环进行中。
    不延长读出probe或扫描层位；所有旧Writer/probe冻结，新干预从fresh开始且不继承probe。
 5. 达到设计登记的正确视频收益、换视频/相邻保持及迁移后，冻结方法和选点，完成视频内容/顺序因果确认，才完成当前goal。
 6. 下一阶段另以保持视频收益并提升绝对性能为goal，恢复长期145/400及完整稳定/breadth资格。

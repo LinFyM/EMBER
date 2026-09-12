@@ -1,9 +1,9 @@
 # EMBER progress
 
-## 当前状态：teacher侧VL Meta单变量比较正式学习中（2026-09-12）
+## 当前状态：teacher侧VL Meta学习完成，配对闭环评测中（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已从fresh启动100/200有界学习。
+**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200有界学习，正在收齐100/200配对闭环。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### 当前执行与完整结果
@@ -12,10 +12,13 @@ Owner已授权自主高效推进有益视频特异性及validation迁移，暂�
 - CPU相关168项通过，配置小改后3项复核通过。真实native identity Z差0，两条VL梯度均非零，联合重放与直接梯度一致，source trainable=0；真实学习第2次后Writer/Action/VL/reader均有梯度。
 - 最长合法视频task38/demo0，93frames/64queries：frame_chunk4/8分别24.97/21.55秒，后者2.970queries/s、峰值37.84GiB。选择frame8、policy micro8；profile只运行gpu01:4且已退出，无保留训练checkpoint。原件`runs/analysis/video_functional_20260911/teacher_vl_profile/`。
 - 结构变更净增15行active source/test、无新文件；配置检查复杂度从28降为27，其余guard提示为既存大文件/函数与目录规模，未增长相关复杂职责。实现已集成并推送；formal冻结`a89648740c28d1a2f4aff07b6e42bc7b35e44223`，clean pushed detached `.codex/worktrees/teacher-vl-meta`。
-- 第10节fresh训练运行于gpu01:0/4/5/6，world4，tmux `ember-teacher-vl`，200updates/800条件/51,200queries；100完整checkpoint已保存，继续到200。两组读取Meta共同学习、source trainable=0，NCCL/NUMA与逻辑batch已由实际run contract确认。
+- 第10节fresh训练已完成，原gpu01:0/4/5/6 world4进程全部退出；200updates/800条件/51,200queries与参照曝光匹配，训练4010.96秒，100/200完整checkpoints已保存。两组读取Meta共同学习、source trainable=0，NCCL/NUMA与逻辑batch已由实际run contract确认。
 - 启动前两节点本人占用0，启动后4≤6；/data1独立quota861.2GiB/1TiB，新增峰值预算20GiB、投影881.2GiB，共享83TiB。精确命令与资源记录`runs/analysis/video_functional_20260911/teacher_vl/launch_contract.json`，日志`train.log`；输出`runs/outputs/video_functional_20260911/teacher_vl/`。100/200全部物化与评测请求已准备，训练及评测共享Owner全局额度。
 - 100节点实际400条件/25,600queries与第8节逐字段匹配；held student=.114921766，参照.114956222，改善仅.000034455（task-clusterCI[.000004203,.000064595]）；reader=.153159816、差额CI跨0。差额很小，不能据此推定闭环收益；原件`teacher_vl/step100/learning_comparison.json`。
-- 100四个banks已完整物化：train96与validation400各正确/同task另一视频，other复用相同条件LoRA而保留不同state-video映射。物化进程已退出。训练两臂评测分别运行于gpu02:0/3，各3 persistent workers，与4卡训练合计6≤6；validation两臂banks就绪待资源。启动检查通过，原件`teacher_vl/step100/{materialization_launch,train_correct_launch,train_same_task_other_launch}.json`及对应preflight/logs。最近/data1 quota867.4GiB/1TiB，run6.2GiB，原投影峰值881.2GiB；未复制模型或数据。
+- 100四个banks已完整物化：train96与validation400各正确/同task另一视频，other复用相同条件LoRA而保留不同state-video映射。训练两臂已在gpu02:0/3各3 persistent workers完成并退出；原件`teacher_vl/step100/{materialization_launch,train_correct_launch,train_same_task_other_launch}.json`及对应preflight/logs。
+- 100训练两臂完整34/37（各96），参照42/38；correct保留31/新增3/丢失11、差额CI[-.166667,0]，other33/4/5、CI[-.083333,.0625]。自身换视频重合30、J=.73171；未见训练收益，尚待validation与相邻节点。原件`teacher_vl/step100/train_paired.json`。
+- 200留出student=.107352440、相对参照改善−.000013986（CI[-.000078555,.000057563]）；reader=.149220013、微小改善.000016497，不能作为目标证据。全部800条件/51,200queries匹配，原件`teacher_vl/step200/learning_comparison.json`。
+- 200四banks物化已启动gpu01:0，100 validation correct使用gpu02:0，other使用gpu01:4/5/6，各卡3 persistent workers；总用卡5≤6。train200 bank就绪后利用剩余额度评测。最近quota871.2GiB/1TiB、run10GiB，预计峰值881.2GiB；全部启动与资源记录在相应`teacher_vl/step100`及`step200`。
 - 此前Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。第9节中层读出诊断也已完成并退出；它们不是当前训练的初始化或恢复来源。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
 - formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。

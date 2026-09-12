@@ -2,29 +2,27 @@
 
 ## 当前goal：有益视频特异性先行，再提升绝对性能
 
-Owner 2026-09-11已授权自主高效实施，2026-09-12再次明确核心科学精神内的理论／架构修正自由度。
-旧[Video Functional设计](docs/video_functional_writer_design.md)已关闭；唯一active design为[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)。
-结合全部历史重新设计，不恢复v5.2底座；暂不要求145/400，但闭环真实收益、跨视频/初态/相邻保持及validation迁移不可替代。
+Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精神内的理论／架构修正自由度。
+结合全部历史重新设计，不恢复v5.2底座；暂不要求145/400，但正确视频闭环收益、跨视频/初态/相邻保持及validation迁移不可替代。
+用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
 
-用卡遵循Owner最新上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
-
-Owner 2026-09-12要求改变连续负结果后的推进方式：停止自动串联局部消融。第11节200步及100/200全部面板已完成。
-按findings§62/65，当前主候选在训练侧亦未形成可重复有序增量；不再默认先修保持、扩大辅助读出或改loss。
-下一设计应正面解释并检验过程获取，说明近等价历史、竞争预测及各结果的停止/保留决策；未经此分析不启动新候选。
-外部视频预训练仅为待分析的知识来源，不自动采纳。这不是等待额外人工审批，也不改变既有评测门槛。
-
-已完成[过程获取的监督关系复核](docs/video_process_acquisition_analysis.md)：推荐具体审视action训练池的
-同episode局部观察—动作配对，区别于已执行的跨episode功能／phase监督。该新支路的跨episode
-合同适用范围现由Owner最新授权覆盖；数据流、停止条件及信息墙已登记为active design，实现与真实profile已通过，ordered/frame_set均完成fresh200步，当前补齐配对闭环证据。
+**当前无active design。** [Local Action Grounded](docs/local_action_grounded_writer_design.md)的fresh两臂200步、
+两类学习诊断与16闭环面板全部完成，共3,968rows。validation100有序两视频均劣于匹配frame_set，200差额0/+1且区间跨零；
+两臂后段均退化，局部动作FM优势未成为有益任务过程。当前配方关闭，整体goal未完成；详见findings§69及progress。
 
 ### 当前执行计划
 
-1. 已完成隔离实现局部post-action数据、动作FM头及共享encoder/native重放；旧执行读出与蒸馏已退役。
-2. 已通过信息墙、索引、无序参照、梯度、采样恢复及checkpoint定向检查；93帧真实profile选frame8/policy8。
-3. 已完成：从clean pushed frozen 5f4f440c开展ordered/frame_set匹配200步学习与两类动作留出；进行中：补齐100/200的16个train96/validation400 correct/other面板。
-4. 按新设计分开裁决局部获取、LoRA收益与迁移；只有可信正结果才进入无辅助归因参照与最终冻结后的sealed controls。
+1. **已完成并封存：**局部post-action配对、共享encoder/native信用重放、信息墙和真实profile；两臂各51,200主queries，
+   完整checkpoint、两类动作留出、全部16登记面板及逐task/suite、相邻/换视频配对统计保留。所有进程已退出。
+2. **停止当前配方投入：**不续训、扩大局部头或扫描loss/LR/rank/seed；未获资格，不启动pureFM第三臂或最终controls。
+   不将局部头优势当作共享E充分、Compiler唯一失效或goal完成的证据。
+3. **下一工作：**在综合正负证据上推导实质不同的过程表示与学习机制，明确完整输入到唯一LoRA的因果路径、
+   相对近等价历史新增什么，以及不同结果如何改变后续投入；再登记唯一active design并按既有授权实现、profile和有界验证。
+   任务覆盖和外部预训练先验已有边界核查，不能仅凭本轮负结果自动启动；不恢复95-task、旧候选或改低行为门槛。
+4. 达到登记的正确视频收益、换视频/相邻保持及迁移后，冻结方法与single checkpoint，完成最终视频内容/顺序因果确认，才完成当前goal。
 
-## 计划与完成口径
+## 已完成历史与最终口径
+
 
 1. **已完成：具体设计与实现。** 保留T×L到长程过程表示，明确完整H首次读取；实现辅助真实FM和分组cotangent。
    复用官方source/data/完整LoRA出口/evaluator，退役旧活动Writer路径；旧结果留在Git与formal artifacts。

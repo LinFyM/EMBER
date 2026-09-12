@@ -1234,3 +1234,65 @@ other35/19/20、J=.47297；局部相邻重合提高，但跨视频迁移收益�
 按Owner的负结果分析纠正，当前Video Functional设计关闭，不追加局部辅助/层位/配方扫描或自动frame_set。
 主方案训练侧也未显示可重复有序增量，下一理论不能先假定有益过程已学会、只剩保持；综合判断见findings§65。
 没有selected checkpoint、Test或最终sealed controls，goal仍未完成；本历史条目不授权恢复任何run。
+
+<a id="local-action-grounded"></a>
+## 2026-09-12：真实局部动作配对有界比较完成，未形成有益过程
+
+Owner在具体提案后授权核心科学精神内的修正，允许action训练池自身RGB—动作配对作为共享读取器训练关系。
+主LoRA仍使用action-hidden teacher0–15和另一episode的action16–41；局部四帧p/p+5/p+10/p+15的目标为
+实际post-action对齐的actions[p+1:p+16]。held动作只用于既定train24无梯度诊断，validation/test动作不读取。
+新局部头替换旧执行辅助/蒸馏出口，source基础权重冻结，Writer/两组Meta/Compiler/D/局部头fresh联合学习。
+
+冻结实现为clean pushed detached `5f4f440c992e470aaffcc873c847373ce6df43e5`；最长93帧真实主＋局部profile通过，
+第二次17.558秒、allocated37.837GiB/reserved40.936GiB，frame chunk8/policy micro8；profile不成为正式初始化。
+两臂顺序使用同一world4拓扑fresh200，正式学习分别3337.34/3307.92秒。每臂800条件曝光、51,200主FM queries、
+800局部片段/6,400独立noise-time draws；主任务、teacher、action/query、局部片段、noise及权重逐字段匹配。
+100/200完整checkpoint和0/100/200两类无梯度诊断均保留；source trainable=0。
+
+| 节点 | train96 ordered correct/other | train96 frame_set | validation400 ordered | validation400 frame_set |
+| --- | --- | --- | --- | --- |
+| 100 | 40/35 | 39/38 | 45/48 | 58/53 |
+| 200 | 46/49 | 42/45 | 30/27 | 30/26 |
+
+训练匹配有序差额100为+1/−3、200为+4/+4，四个task-cluster95%区间均跨零。
+validation100差额−13/−5、CI[−.06,−.01]/[−.025,−.0025]，所有suite无净收益；
+200差额0/+1、CI[−.015,.0125]/[−.005,.01]，没有可信有序增量。
+两臂均以同seed20260911的固定state-video schedule评测，K1每task50合法teacher各一次；
+train96为登记的四视频有限池面板。没有通过80-row screen、checkpoint union或融合选点。
+
+| validation面板 | S/O/G/L | breadth | 相对source47 R/G/L | churn |
+| --- | --- | --- | --- | --- |
+| ordered100 correct | 0/37/0/8 | 4 | 4/41/43 | 84 |
+| ordered100 other | 0/39/1/8 | 5 | 4/44/43 | 87 |
+| frame_set100 correct | 0/43/1/14 | 5 | 5/53/42 | 95 |
+| frame_set100 other | 0/43/1/9 | 5 | 5/48/42 | 90 |
+| ordered200 correct | 1/29/0/0 | 3 | 2/28/45 | 73 |
+| ordered200 other | 2/22/3/0 | 4 | 5/22/42 | 64 |
+| frame_set200 correct | 0/27/3/0 | 4 | 4/26/43 | 69 |
+| frame_set200 other | 1/22/3/0 | 4 | 5/21/42 | 63 |
+
+ordered100→200 correct/other R/G/L=21/9/24、18/9/30，churn33/39，J=.38889/.31579；
+frame_set为22/8/36、21/5/32，churn44/37，J=.33333/.36207。两臂均后段退化，200全部视频面板Long为0。
+自身correct/other的J：ordered100/200=.63158/.67647；frame_set=.68182/.64706。
+ordered200 correct与frame_set成功重合25、gained/lost5/5；other重合23、4/3。零星条件变化不构成广泛保持。
+
+主FM0均为.151461，100 ordered/frame_set=.114319/.114132，200=.108236/.108274；
+以frame_set−ordered为改善，两节点差额−.00018689/+.00003742，区间均跨零。
+局部0均为1.308081，100=1.164801/1.164866，200=.810114/.811286；改善.00006528/.00117193，
+95%CI[.00000521,.00012871]/[.00090867,.00144457]，正向任务16/24、24/24。
+局部有序优势属于共享读取器与有独立时间Key投影的局部头整体，不能证明共享E已具备充分任务过程或Compiler唯一失效。
+
+全部16banks及16闭环面板共3,968rows完成；每项队列完整，所有worker return0，训练/物化/评测进程均退出。
+最后两项单卡三worker评测分别3467.44秒（ordered200 other）和3432.27秒（frame_set200 correct）。
+两节点全程按额度接续，峰值同时6GPU；每次启动的live preflight、独立quota及40GiB新增峰值预算保留于launch records。
+没有新增数据或模型大副本，没有删除formal checkpoints、banks或原始rows。
+
+按预登记资格关闭当前局部监督配方：不延长、不扫头/辅助权重/LR/rank/seed，未触发pureFM归因第三臂，不进入sealed controls。
+这是有效科学non-pass；原预测未兑现，但不证明所有逆动力学或普通FM视频方法不可能，也不单因解释与不同历史配方的差异。
+没有qualified/selected checkpoint、Test或held梯度，整体goal未完成。更完整的综合判断与后续投入边界见findings§68–69。
+
+原件：`runs/outputs/local_action_grounded_20260912/`；
+`runs/analysis/local_action_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
+`step100/learning_comparison.json`、`step200/learning_comparison.json`。逐task/suite、breadth、source、
+R/G/L、churn、相邻与换视频成功集合完整保留于paired_summary；精确命令及每项completion由同根launch records索引。
+设计及其停止条款为[Local Action Grounded Writer](local_action_grounded_writer_design.md)§7，本条目不恢复该run。

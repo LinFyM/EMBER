@@ -1,7 +1,8 @@
 # 过程获取：监督关系与下一项干预边界
 
 2026-09-12。本文保存候选关闭后的机制判断与提案形成过程；Owner随后明确授权核心科学精神内的修正。
-已登记的唯一执行合同为[Local Action Grounded Writer](local_action_grounded_writer_design.md)，下文待确认措辞保留其形成时点。
+本提案随后实现为[Local Action Grounded Writer](local_action_grounded_writer_design.md)，其200步有界比较已完成并关闭；
+下文待确认与推荐措辞保留提案形成时点，不能恢复执行。
 目标仍是正确教学过程在唯一完整LoRA中的可重复闭环增量；当前状态见[progress](../progress.md)。
 
 ## 1. 改变哪项判断

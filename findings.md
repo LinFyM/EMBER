@@ -898,3 +898,35 @@ spec的数量，也不等于已经证明相互独立、能区分操作顺序的�
 - `runs/analysis/pi05_ecp_prw_complete_meta73_20260906/decision.json`；
   `runs/analysis/pi05_ecp_prw_complete_target18_20260906/decision.json`与`launch/configuration_audit.json`；
   更广行为诊断见[research_history§6](docs/research_history.md#recent-learning)。
+
+## 69. 真实局部动作配对出现小幅预测优势，仍未形成有益任务过程（2026-09-12）
+
+Local Action Grounded的ordered/frame_set两臂fresh200有界比较及全部16面板完成，登记闭环3,968rows。
+每臂800条件、51,200主FM queries、800局部片段/6,400noise draws，实际task/teacher/query/局部片段流匹配；
+这里800是条件曝光次数，不是800个独立任务映射。
+
+| 节点 | train96 ordered correct/other | train96 frame_set | validation400 ordered | validation400 frame_set |
+| --- | --- | --- | --- | --- |
+| 100 | 40/35 | 39/38 | 45/48 | 58/53 |
+| 200 | 46/49 | 42/45 | 30/27 | 30/26 |
+
+validation100两视频有序差额−13/−5，task-cluster95%CI[−.06,−.01]/[−.025,−.0025]，没有suite净收益。
+200差额0/+1，CI[−.015,.0125]/[−.005,.01]；四项train匹配差额区间也均跨零。
+ordered validation100→200 correct R/G/L=21/9/24、J=.38889，other18/9/30、J=.31579；Long两视频均8→0。
+frame_set相邻correct R/G/L=22/8/36、J=.33333，other21/5/32、J=.36207，Long14/9→0/0。
+两臂共同退化，不能用更弱参照或某个suite的零星净增制造有益过程结论。
+
+局部动作留出确有有序优势：100改善.00006528、CI[.00000521,.00012871]；200改善.00117193、
+CI[.00090867,.00144457]且24/24任务正向。主FM相应差额−.00018689/+.00003742，区间均跨零。
+因此本轮确实学到小幅局部有序预测优势，但未兑现“由此获得足够的任务过程并编译为有益LoRA”的预测。
+局部FM优势属于共享读取器与专用局部头整体；后者拥有独立时间Key投影，不更新Compiler的时间投影。
+不能据此认定共享E已经充分、Compiler是唯一失败点；局部机械运动、目标物/接触语义、长程组合及编译消费仍未分开。
+
+与§62/65的旧功能读出、去蒸馏、VL适配证据合并后，应停止依靠更短信用路径或局部可解码性背书有益过程的投入。
+当前局部监督配方关闭，不延长、不扫头容量/系数/LR/rank/seed；没有qualified checkpoint，不启动pureFM第三臂或最终controls。
+该归因臂未运行，所以不能单因断言局部监督导致与旧配方的差异；v5.2等普通FM正例仍反对“FM或视频编译普遍不可能”。
+本轮也不自动恢复95-task（§68）或采纳外部视频骨干（§64）：下一候选须提供实质新增的过程知识或学习机制及可辨别预测。
+
+原件：`runs/analysis/local_action_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
+`step100/learning_comparison.json`、`step200/learning_comparison.json`；完整任务/suite及source成功集合均保留。
+这是有效科学non-pass；当前goal未完成，未使用Test、held梯度或最终sealed视频controls。

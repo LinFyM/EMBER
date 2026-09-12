@@ -1,7 +1,8 @@
 # Local Action Grounded Writer：真实局部转移监督
 
 2026-09-12，Owner再次明确给予核心科学精神内的理论／架构修正自由度后登记。
-本文件为唯一active design；前置推导与历史核查见[过程获取分析](video_process_acquisition_analysis.md)。
+本设计的200步有界比较已完成并关闭，不再是active design；结果与停止范围见§7。
+前置推导与历史核查见[过程获取分析](video_process_acquisition_analysis.md)。
 当前目标及最终资格不缩减：正确action-hidden教学内容与顺序须通过一次生成的完整LoRA产生可重复闭环收益，
 跨同task视频、初态、相邻checkpoint保持并迁移到validation8。暂不要求145/400。
 
@@ -118,3 +119,19 @@ Test继续封存。独立RL、K>1与长期145/400阶段均不混入当前结果�
 局部4帧支路约0.5秒，frame chunk8 / policy microbatch8保持；不继承profile权重。
 按当前总额度，ordered与frame_set各使用同一四卡拓扑顺序fresh学习，同时在其它合法设备处理节点评测，
 每臂200updates约一小时，两个节点与曝光不变。精确GPU/commit/命令与动态资源只记launch contract/progress。
+
+## 7. 有界比较结论：关闭当前局部监督配方
+
+两臂各完成200更新、51,200主queries及800局部片段；16个登记面板共3,968闭环rows全部完成，所有进程退出。
+validation100 correct/other为ordered45/48、frame_set58/53；有序差额95%CI分别[−.06,−.01]、[−.025,−.0025]。
+validation200为ordered30/27、frame_set30/26；差额CI分别[−.015,.0125]、[−.005,.01]，均无可信正增量。
+四个训练侧匹配差额区间也均跨零。两臂validation后段退化，未满足相邻、跨视频有益过程资格。
+
+局部FM两节点存在小幅有序优势，但主FM无可靠优势；局部头拥有独立时间Key路由，不能据此断言共享E已学会完整任务过程，
+也不能将Compiler指定为唯一失败点。按§4停止当前配方，不延长训练、不扫局部头／权重／LR／rank／seed，
+不启动条件触发的pureFM第三臂或sealed controls。未选checkpoint，Test未用，整体研究goal仍未完成。
+没有同图无局部目标的归因结果，不能把与旧配方的分数差异单因归于局部监督；负结果不外推为所有逆动力学方法无效。
+
+完整逐task/suite、source、R/G/L、churn、相邻与换视频统计在
+`runs/analysis/local_action_grounded_20260912/paired_summary.json`，两类学习证据在`step100/learning_comparison.json`及`step200/learning_comparison.json`，
+统一裁决为`bounded_200_decision.json`；历史摘要见[research_history](research_history.md#local-action-grounded)。

@@ -1207,3 +1207,30 @@ CI[.000008302,.000025545]。这些微小动作拟合变化不提供过程资格�
 低于原881.2GiB峰值预算。精确命令/preflight/学习及配对结果在`runs/analysis/video_functional_20260911/teacher_vl/`，
 完整统计在上级`paired_summary.json`。本项不追加学习或自动补frame_set；无selected checkpoint、Test或sealed最终controls。
 当前继续机制判断，但本记录不授权恢复历史任务或新增GPU实验。
+
+## 2026-09-12：纯FM/VL有界比较完成，Video Functional候选关闭
+
+正式clean pushed代码`9b21b0ed34d5501f931b8c44f8922c2e6d254849`；仅令辅助表示FM关闭、rho仍0，
+Writer/Action/VL共同fresh学习，source冻结。200updates/800条件/51,200queries与teacher_vl匹配；
+正式用时3339.18秒、峰值37.83GiB，100/200完整checkpoint及8个banks、8面板/1,984rows保留。
+
+| 节点 | train correct/other /96 | validation correct/other /400 | validation S/O/G/L |
+|---|---:|---:|---|
+| 100 | 37/40 | 60/55 | 1/49/3/7；0/47/3/5 |
+| 200 | 55/59 | 64/54 | 2/46/6/10；1/41/6/6 |
+
+200对teacher_vl的validation差额+2/−10，task-cluster95%CI[-.04,.0425]/[-.0575,.005]；
+对auxiliary_fm为−8/−13，对原main为−10/−20。自身100→200 correct R/G/L38/26/22、J=.44186，
+other35/19/20、J=.47297；局部相邻重合提高，但跨视频迁移收益未成立。200两视频重合45、churn28、J=.61644，
+两个合法视频映射之间的+10差额CI[.0025,.05]不能作为内容或顺序因果证据。source47仅保留7/8。
+
+200训练对原main45/47的+10/+12及同task换视频J=.83871保留为局部正证据；最后去辅助对主要参照56/56的
+−1/+3区间仍跨零。留出FM200=.107176777、对主要参照改善.000175662的CI[-.000226025,.000602552]，不替代闭环。
+
+最后200两臂各42jobs/400rows、0 job errors，耗时1202.94/1213.93秒；两节点进程退出，峰值总6GPU。
+/data1最近quota886.0GiB/1TiB、run13GiB，低于原893.6GiB峰值预算。study共64面板/15,872rows。
+精确命令、资源、学习和配对原件在`runs/analysis/video_functional_20260911/direct_fm_vl/`，完整统计为上级`paired_summary.json`。
+
+按Owner的负结果分析纠正，当前Video Functional设计关闭，不追加局部辅助/层位/配方扫描或自动frame_set。
+主方案训练侧也未显示可重复有序增量，下一理论不能先假定有益过程已学会、只剩保持；综合判断见findings§65。
+没有selected checkpoint、Test或最终sealed controls，goal仍未完成；本历史条目不授权恢复任何run。

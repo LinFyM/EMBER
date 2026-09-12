@@ -1,17 +1,18 @@
 # EMBER progress
 
-## 当前状态：完成在途比较，停止自动串联局部修正（2026-09-12）
+## 当前状态：有界比较全部结束，关闭当前候选并重审学习机制（2026-09-12）
 
 Owner已授权自主高效推进有益视频特异性及validation迁移，暂不要求145/400。
-**唯一active design：[Video Functional Writer](docs/video_functional_writer_design.md)**，第7–9节已完成；第10节teacher侧VL Meta已完成fresh200及全部8个闭环面板；本项不追加。第11节单独移除辅助表示FM已完成fresh200，100/200既定闭环证据进行中。
+**当前没有active design或运行中的实验。** [Video Functional Writer](docs/video_functional_writer_design.md)及第7–11节有界比较全部结束；本候选未获过程与迁移资格，停止继续叠加局部修正。持续科研授权与原goal保留，下一项设计须先完成综合机制判断并明确登记。
 旧C/无变化参照、95-task等历史路线继续停用；以下旧暂停记录不是当前执行授权。
 
 ### Owner最新纠正与执行调整
 
 Owner指出近几小时没有根本进展，要求调整负结果后的分析与修正方式。此前去蒸馏、额外读出与VL适配虽各有
 限定结论，但没有充分收窄原主假设；“尚不能否定整体”不能继续充当追加投入的依据。综合初判见findings§62。
-正在运行的第11节保持200步上限，完成原登记100/200配对证据。其后先综合裁决主假设与竞争解释、明确停止投入
-的路径，再决定有辨别力的修正；新候选和自动frame_set暂不启动。无需另设人工审批，不恢复旧任务或改变资格标准。
+第11节已完成原登记200步及100/200配对证据。综合裁决见findings§65：主方案在训练侧也未显示可重复的有序增量，
+不能再默认“有益过程已经学会、只需保持或编译”。停止读出容量、辅助loss、VL层位及一般保持小修的自动串联；
+下一步应正面解释过程获取的缺口。文献中的额外视频先验仅为待分析候选，不自动启动；无需另设人工审批，不恢复旧任务或改变资格标准。
 
 ### 当前执行与完整结果
 
@@ -20,7 +21,11 @@ Owner指出近几小时没有根本进展，要求调整负结果后的分析与
 - 100训练两臂完整37/40（各96），teacher_vl参照34/37；correct R/G/L28/9/6、breadth19，other33/7/4、breadth18；差额CI[-.052083,.114583]/[-.052083,.125]均跨零。自身换视频重合33、churn11、J=.75；两臂进程均退出。原件`direct_fm_vl/step100/train_paired.json`。
 - 200训练两臂55/59（各96），主要参照56/56，差额CI[-.072917,.052083]/[-.03125,.09375]均跨零；S/O/G/L=17/15/14/9、17/18/14/10，breadth均20。自身100→200为37→55、40→59，R/G/L28/27/9、32/27/8；200换视频重合52、churn10、J=.83871。原件`direct_fm_vl/step200/train_paired.json`。
 - 100 validation两臂60/55，主要参照61/61；差额CI[-.04,.035]/[-.0475,.02]，S/O/G/L=1/49/3/7、0/47/3/5，breadth7/6。Object+7/+2伴随Long−8/−5，未形成可信迁移收益；source47仅保留8/5。换视频重合47、churn21、J=.69118。原件`direct_fm_vl/step100/validation_paired.json`。
-- 100/200全部8个LoRA banks与4个训练面板已完成，100 validation两臂完整400rows并退出。最后200 validation correct在gpu01:0/4/5，other在gpu02:0/1/2，各3GPU×3 persistent workers，合计6≤6；没有额外候选。
+- 200 validation两臂64/54，主要参照62/64，差额CI[-.04,.0425]/[-.0575,.005]；S/O/G/L=2/46/6/10、1/41/6/6，breadth均7。相对auxiliary_fm为−8/−13，相对原main为−10/−20；没有可靠的跨视频迁移改善。
+- 自身100→200 correct R/G/L38/26/22、churn48/J=.44186；other35/19/20、churn39/J=.47297。相较teacher_vl相邻J=.35165/.38889有局部提高，但总分与换视频收益不成立。200两视频重合45、churn28/J=.61644；correct−other的+10区间[.0025,.05]比较的是两组合法正确视频，不能称为内容/顺序收益。
+- 100/200全部8个banks、8面板/1,984rows完成，study累计64面板/15,872rows；最后200两臂各42jobs/400rows、0 job errors，耗时1202.94/1213.93秒。两节点进程均退出，峰值6GPU；无selected checkpoint、Test或最终sealed controls。
+- 原clean detached执行checkout已在全部worker退出、Git clean与main ancestry核对后清理；正式代码由`9b21b0ed`、全部checkpoint和结果保留，无运行树待恢复。
+- **第11节及当前候选关闭：**不延长、扫描或自动补frame_set。完整逐task/suite、source、相邻、换视频统计保留于统一`paired_summary.json`，限定裁决`direct_fm_vl/bounded_200_decision.json`。局部训练获取与重合提高保留，但目标未完成；未训练本配方的匹配无序参照，不能扩大为所有纯FM/VL的时序否证。
 - 最新launch前两节点live检查通过，/data1 quota886.0GiB/1TiB、当前run13GiB，全部banks落盘后剩余为小型rows/logs，仍低于原893.6GiB投影峰值，共享83TiB；精确命令与资源原件`direct_fm_vl/step100/{validation_correct,validation_same_task_other}_launch.json`及`step200/{materialization,train_correct,train_same_task_other,validation_correct,validation_same_task_other}_launch.json`。本轮未新增候选或额外面板。
 - 第11节无辅助路径相关83测试通过，配置与8个评测请求的科学字段匹配。初始化按共同CPU构造顺序保持VL随机流；reader在进入GPU/state optimizer前丢弃，无新的执行模块或第二trainer。
 - 真实最长task38/demo0 93frames：micro16 OOM已结束；micro8两次更新通过，第二次16.86秒/64queries（3.795queries/s）、峰值37.81GiB。Writer/Action/VL均有实际梯度，source冻结、source辅助forward=0。固定frame8/policy8；profile无checkpoint，原件`runs/analysis/video_functional_20260911/direct_fm_vl_profile/`。
@@ -44,7 +49,7 @@ Owner指出近几小时没有根本进展，要求调整负结果后的分析与
 - validation200两臂62/64，参照72/67；差额−10/−3，CI[-.0575,.0025]/[-.0375,.03]。S/O/G/L=2/42/6/12、2/45/4/13，breadth5/6；source47仅保留8/6，新增54/58、丢失39/41。
 - 自身100→200 validation correct R/G/L32/30/29、churn59/J=.35165；other35/29/26、churn55/J=.38889。参照J=.32990/.34737，但correct保留仍32、获取更少，breadth8→5；不能把小幅J增加当作保持改善。200换视频重合44、churn38/J=.53659，差额CI跨0。
 - **第10节裁决：**未形成值得追加的跨task收益与保持，不延长或扫描VL Meta rank/层位/LR，不自动补匹配frame_set。该因素并非input信息或全部VL学习的否证。原件`teacher_vl/bounded_200_decision.json`，全部逐task/suite、source及相邻配对在统一`paired_summary.json`。
-- 当前goal未完成，无selected checkpoint、Test或最终sealed controls。第11节只移除L_R、保留当前完整图，fresh200已完成，配对闭环进行中。
+- 当前goal未完成。第11节只移除L_R的fresh200及配对闭环全部结束；不从本段历史启动下一轮训练。
 - 此前Writer学习、动作头诊断、LoRA生成和闭环评测均已完成，无待恢复任务。第9节中层读出诊断也已完成并退出；它们不是当前训练的初始化或恢复来源。
 - 去蒸馏配方固定rho=0、mu=1，fresh200更新/800条件/51,200queries，训练3967.10秒，峰值37.82GiB。完整100/200 checkpoints及全部800条件曝光匹配证据保留；source trainable=0。
 - formal代码为clean pushed detached `ba4d1f4da16759a5ea1c5d7dec0dce1b0bd1b5e4`，原执行checkout已清理；原main/frame_set代码为`a81a38edd055034a4a080215bdc4362310500678`，其已结束checkout亦清理。配置解析及相关49测试通过，未改变原科学实现。

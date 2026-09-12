@@ -1,4 +1,4 @@
-"""Official full-horizon main FM credit and separately keyed local FM samples."""
+"""Official full-horizon main FM credit through the complete generated LoRA."""
 from __future__ import annotations
 
 from contextlib import ExitStack
@@ -117,14 +117,3 @@ def paired_functional_credit(policy, state, contract, batch, *,
         loss += float(value.detach()) * weight
     return {"flow_loss": loss, "lora_cotangent": gradient,
             "source_forward_calls": 0, "compiled_forward_calls": calls}
-
-
-def local_flow_sample(actions: Tensor, *, seed: int, draws: int = 8) -> tuple[Tensor, Tensor, Tensor]:
-    """Independent Gaussian/Beta(1.5,1) samples, leaving all main RNG streams alone."""
-    if actions.shape != (15, 7) or draws <= 0 or not torch.isfinite(actions).all():
-        raise ValueError("local FM requires a finite normalized 15x7 action interval")
-    generator = torch.Generator(device="cpu").manual_seed(seed)
-    noise = torch.randn(draws, 15, 7, generator=generator).to(actions)
-    time = (torch.rand(draws, generator=generator).pow(2. / 3.) * .999 + .001).to(actions)
-    noisy = time[:, None, None] * noise + (1 - time[:, None, None]) * actions[None]
-    return noisy, time, noise - actions[None]

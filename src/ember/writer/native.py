@@ -1,7 +1,7 @@
 """State-free teacher reading with trainable VL/Action Meta and joint Z/R VJP.
 
-Only pre-Gemma embeddings may outlive an optimizer step. Z/KV/R belong to one
-condition at the current parameter version and are replayed together before
+Frozen pre-Gemma embeddings and video-prior tokens may outlive an optimizer
+step. Z/KV/R belong to one parameter version and are replayed together before
 the optimizer advances. Teacher adapters never enter execution forwards.
 """
 
@@ -55,6 +55,7 @@ class NativeCondition:
     frame_indices: tuple[torch.Tensor, ...]
     language_embeddings: torch.Tensor
     language_mask: torch.Tensor
+    prior_tokens: tuple[torch.Tensor, ...]
 
 
 class NativeVideoObserver:
@@ -63,7 +64,7 @@ class NativeVideoObserver:
     def __init__(
         self, policy: torch.nn.Module, meta: MetaLoRAStack, vl_meta: MetaLoRAStack,
         tokenizer: Pi05TeacherPrefixTokenizer, probe: torch.Tensor,
-        *, frame_chunk: int = 4, camera_view: str = "agentview",
+        *, prior, frame_chunk: int = 4, camera_view: str = "agentview",
     ) -> None:
         if probe.shape != (50, 32) or frame_chunk <= 0:
             raise ValueError("native observer requires one public 50x32 probe")
@@ -72,6 +73,7 @@ class NativeVideoObserver:
         self.policy, self.meta, self.vl_meta, self.tokenizer = policy, meta, vl_meta, tokenizer
         self.probe, self.frame_chunk = probe, int(frame_chunk)
         self.device = probe.device
+        self.prior = prior
         self.camera_view = camera_view
         self.camera_names = teacher_camera_names(camera_view)
         self.expert = policy.model.paligemma_with_expert.gemma_expert.model
@@ -121,17 +123,18 @@ class NativeVideoObserver:
         tokens, mask, task_span = self.tokenizer([language])
         bridge = self.policy.model.paligemma_with_expert
         embeddings = bridge.embed_language_tokens(tokens).detach()[0]
-        videos = []
+        videos, prior_tokens = [], []
         positions = []
         for video, indices in zip(frames, frame_indices, strict=True):
             if indices.shape != (len(video),) or len(video) == 0 or not bool((indices[1:] > indices[:-1]).all()):
                 raise ValueError("native video positions must preserve real frame order")
+            prior_tokens.append(self.prior(video))
             videos.append(tuple(
                 self.prefix(video[start:start + self.frame_chunk], tokens, mask, task_span)
                 for start in range(0, len(video), self.frame_chunk)
             ))
             positions.append(indices.to(self.device))
-        return NativeCondition(tuple(videos), tuple(positions), embeddings, task_span[0])
+        return NativeCondition(tuple(videos), tuple(positions), embeddings, task_span[0], tuple(prior_tokens))
 
     def capture(self, chunk: FrozenInputChunk) -> tuple[torch.Tensor, torch.Tensor]:
         """One shared prefix graph supplies both direct Z and R-through-KV paths."""
@@ -168,7 +171,8 @@ class NativeVideoObserver:
             masks.append(torch.cat([chunk.evidence_mask[:, chunk.evidence_mask.any(0)] for chunk in video]).to(self.device))
             task_masks.append(torch.cat([chunk.task_mask[:, chunk.evidence_mask.any(0)] for chunk in video]).to(self.device))
         inputs = (condition.frame_indices, condition.language_embeddings, condition.language_mask,
-                  tuple(visuals), tuple(masks), tuple(task_masks))
+                  tuple(visuals), tuple(masks), tuple(task_masks),
+                  tuple(value.to(self.device, non_blocking=True) for value in condition.prior_tokens))
         return tuple(responses), inputs
 
     def backward(self, condition: NativeCondition, response_cotangents: Sequence[torch.Tensor],

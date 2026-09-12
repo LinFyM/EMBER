@@ -56,7 +56,8 @@ def test_native_response_and_direct_visual_share_complete_prefix_vjp(monkeypatch
     z_only = torch.autograd.grad(visual, vl_meta.scale, visual_grad, retain_graph=True)[0]
     assert r_only.abs() > 0 and z_only.abs() > 0
     expected = torch.autograd.grad((response, visual), (meta.scale, vl_meta.scale), (response_grad, visual_grad))
-    condition = NativeCondition(((chunk,),), (torch.tensor([0, 5]),), torch.zeros(4, 2048), torch.ones(4, dtype=torch.bool))
+    condition = NativeCondition(((chunk,),), (torch.tensor([0, 5]),), torch.zeros(4, 2048), torch.ones(4, dtype=torch.bool),
+                                (torch.zeros(2, 5, 7),))
     observer.backward(condition, (response_grad,), (visual_grad,))
     torch.testing.assert_close(meta.scale.grad, expected[0])
     torch.testing.assert_close(vl_meta.scale.grad, expected[1])
@@ -105,6 +106,11 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     tokens, mask = torch.ones(1, 4, dtype=torch.long), torch.ones(1, 4, dtype=torch.bool)
     span = torch.tensor([[False, True, True, False]])
     observer.tokenizer = lambda languages: (tokens, mask, span)
+    prior_calls = []
+    def prior(video):
+        prior_calls.append(len(video))
+        return torch.zeros(len(video), 5, 7, dtype=torch.bfloat16)
+    observer.prior = prior
     calls = []
 
     def embed(policy, batch):
@@ -132,6 +138,9 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     assert len(condition.videos) == 1 and len(condition.videos[0]) == 2
     torch.testing.assert_close(condition.frame_indices[0], indices)
     assert repeated.videos[0] is condition.videos[0]
+    assert repeated.prior_tokens[0] is condition.prior_tokens[0] and prior_calls == [3]
+    assert cache.bytes == (sum(chunk.tensor_bytes for chunk in condition.videos[0])
+                           + condition.prior_tokens[0].numel() * 2)
     chunk = condition.videos[0][0]
     torch.testing.assert_close(chunk.embeddings[0, :, 0], torch.tensor([0., 1., 2., 3., 6., 7., 8., 9.]))
     torch.testing.assert_close(chunk.task_mask[0], torch.tensor([False] * 5 + [True] * 2 + [False]))

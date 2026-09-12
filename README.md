@@ -4,7 +4,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
 **当前阶段先解决有益的视频特异性，暂不强制绝对性能。** Owner已授权依据综合证据修正理论、实现与实验。
-唯一active design是[Local Action Grounded Writer](docs/local_action_grounded_writer_design.md)：用真实局部RGB转移与动作标签训练共享视频表示，主LoRA仍按跨episode功能目标学习。
+唯一active design是[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)：冻结视频先验通过任务条件化读取进入完整H及唯一LoRA，采用跨episode主FM。
 实际实现、资源与实验进度见[progress](progress.md)，当前计划见[task_plan](task_plan.md)。旧C/无变化参照和95-task不恢复。
 
 ## 全新专家先读
@@ -20,19 +20,24 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 
 ## 当前保留实现与实验状态
 
-当前数据流：冻结图像/词嵌入 → teacher侧Gemma VL Meta形成同次Z/KV → Action Expert与观察Meta完整50-H响应 → 任务token视觉grounding、相邻完整H读取与语言/时间轴交互 → Compiler → native D → 唯一38-target/76-tensor A/B。
-训练期局部头读取action池同episode的四帧共享表示，预测其间真实15步动作的FM速度；post-action图像对应actions[p+1:p+16]。完整teacher仍隐藏动作，主LoRA查询与teacher跨episode。局部梯度到达encoder及两组Meta，主FM更新完整生成链；source基础权重始终冻结，部署只使用一套生成LoRA。
+当前数据流：真实teacher RGB分别形成原生contextual Z／完整50-H响应与冻结V-JEPA2.1过去四帧dense特征；
+任务token读取视觉先验Value，条件化相邻完整H读取和过去时间交互，再经Compiler／native D生成唯一38-target/76-tensor A/B。
+仅跨episode主FM联合更新Writer及两组teacher Meta；source和外部视频encoder冻结。局部动作辅助路径已经退役。
 
 | 代码职责 | src/ember下的owner |
 | --- | --- |
 | 原生图文证据与观察Meta | `writer/native.py`、`writer/meta_lora.py`、`ecp/policy_effects.py` |
+| 冻结视频先验 | `writer/video_prior.py` |
 | 完整H过程与编译 | `writer/video.py`、`writer/attention.py` |
 | 完整LoRA输出 | `writer/native_factor.py`、`pi05_lora.py` |
-| 监督学习与采样 | `writer/supervised.py`、`writer/function_credit.py`、`writer/function_reader.py`、`writer/training.py`、`writer/learning_data.py` |
+| 监督学习与采样 | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py` |
 | 物化、闭环与恢复 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/`、`ecp/checkpoint.py` |
 
 入口为`scripts/train_horizon_writer.py`、`scripts/materialize_horizon_writer.py`、`scripts/evaluate_pi05.py`。
-训练默认配置`configs/pi05_video_functional.json`与`_frame_set.json`是匹配的ordered/frame_set局部监督比较；`_fm.json`仅在行为资格通过后用于无辅助归因。三者使用同一实现。旧执行辅助头与蒸馏已退役，旧checkpoint须使用原冻结runtime。
+训练默认配置`configs/pi05_pretrained_video.json`与`_frame_set.json`是匹配的有序／静态视频编码器比较；
+`_frame_set_image.json`只在主比较资格通过后用于原生图像分支的强静态检查。三者使用同一实现，旧checkpoint须使用原冻结runtime。
+外部encoder代码与权重只在canonical资产根各保存一份；路径、固定commit、预处理及模式进入run contract。
+
 
 ## 科学与资产入口
 

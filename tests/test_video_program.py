@@ -25,7 +25,7 @@ def writer(**kwargs):
     contract = replace(contract, targets=tuple(LoRATarget(target.name, 3, 4) for target in contract.targets),
                        rank=2, alpha=2)
     config = replace(VideoWriterConfig(width=12, heads=3, horizon=4, native_width=6, language_width=8,
-                                       factor_width=5, edge_chunk=2), **kwargs)
+                                       prior_width=7, factor_width=5, edge_chunk=2), **kwargs)
     return VideoConditionedWriter(contract, config)
 
 
@@ -39,7 +39,8 @@ def inputs(lengths=(5,)):
                   for length in lengths)
     task = tuple(torch.tensor([False, False, False, True, True, True, False, False]).expand(length, -1)
                  for length in lengths)
-    return response, indices, language, language_mask, visual, valid, task
+    prior = tuple(torch.randn(length, 5, 7) for length in lengths)
+    return response, indices, language, language_mask, visual, valid, task, prior
 
 
 def unlock(model):
@@ -50,7 +51,7 @@ def unlock(model):
 
 
 def permute(args, order):
-    return tuple((value[0][order],) if index in (0, 1, 4, 5, 6) else value
+    return tuple((value[0][order],) if index in (0, 1, 4, 5, 6, 7) else value
                  for index, value in enumerate(args))
 
 
@@ -66,6 +67,20 @@ def test_complete_identity_then_video_conditioned_factors():
     changed[0] = (args[0][0] + torch.randn_like(args[0][0]) * 3,)
     original, perturbed = model(*args), model(*changed)
     assert all(not torch.allclose(original[name], perturbed[name]) for name in original)
+
+
+def test_frozen_prior_values_affect_complete_lora_and_trainable_grounding():
+    model, args = writer(), inputs((4,))
+    unlock(model)
+    original = model(*args)
+    changed = list(args)
+    changed[7] = (args[7][0] + torch.randn_like(args[7][0]) * 3,)
+    perturbed = model(*changed)
+    assert all(not torch.allclose(original[name], perturbed[name]) for name in original)
+    sum(value.square().mean() for value in original.values()).backward()
+    assert model.encoder.prior_projection.weight.grad.norm() > 0
+    assert all(value.grad is None and not value.requires_grad for value in args[7])
+    assert len(original) == 76
 
 
 @pytest.mark.parametrize("activation_checkpoint", [False, True])
@@ -90,13 +105,13 @@ def test_exact_contextual_task_span_and_padding_wall():
     args[4][0][:, 3] += torch.randn_like(args[4][0][:, 3]) * 2
     assert not torch.allclose(model.encode(*args)[0], original)
     invalid = list(args)
-    invalid[-1] = (args[-1][0].clone(),)
-    invalid[-1][0][:, 4] = False
+    invalid[6] = (args[6][0].clone(),)
+    invalid[6][0][:, 4] = False
     with pytest.raises(ValueError, match="task-token span"):
         model.encode(*invalid)
-    invalid[-1] = (args[-1][0].clone(),)
-    invalid[-1][0][:, 5] = False
-    invalid[-1][0][:, 7] = True
+    invalid[6] = (args[6][0].clone(),)
+    invalid[6][0][:, 5] = False
+    invalid[6][0][:, 7] = True
     with pytest.raises(ValueError, match="task-token span"):
         model.encode(*invalid)
 
@@ -104,11 +119,12 @@ def test_exact_contextual_task_span_and_padding_wall():
 def test_ordered_prefix_causality_and_past_dependence():
     model, args = writer(), inputs((6,))
     original = model.encode(*args)[0]
-    prefix = tuple((value[0][:3],) if index in (0, 1, 4, 5, 6) else value
+    prefix = tuple((value[0][:3],) if index in (0, 1, 4, 5, 6, 7) else value
                    for index, value in enumerate(args))
     torch.testing.assert_close(model.encode(*prefix)[0], original[:3], rtol=2e-5, atol=2e-6)
     args[0][0][3:] += torch.randn_like(args[0][0][3:]) * 3
     args[4][0][3:] += torch.randn_like(args[4][0][3:]) * 3
+    args[7][0][3:] += torch.randn_like(args[7][0][3:]) * 3
     changed = model.encode(*args)[0]
     torch.testing.assert_close(changed[:3], original[:3], rtol=0, atol=0)
     assert not torch.allclose(changed[3:], original[3:])

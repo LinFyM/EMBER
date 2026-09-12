@@ -137,35 +137,6 @@ class WriterTrainingData:
     def diagnostic_batch(self, task: int, *, seed: int, count: int):
         return self._sample_actions(self._diagnostic_dataset(), self.diagnostic_pool, task, 0, seed, count)
 
-    def local_action_clip(
-        self, task: int, occurrence: int, *, diagnostic: bool = False,
-    ) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor], torch.Tensor, dict[str, Any]]:
-        """Sample a training-only RGB/action pair without consuming persisted streams."""
-        if task not in self.tasks or type(occurrence) is not int or occurrence < 0:
-            raise ValueError("local action task or occurrence is outside training authority")
-        pool = self.diagnostic_pool if diagnostic else self.action_pool
-        expected_pool = tuple(range(42, 46)) if diagnostic else tuple(range(16, 42))
-        if pool != expected_pool or (diagnostic and occurrence >= 16):
-            raise ValueError("local action episode roles or diagnostic occurrence changed")
-        seed = 20260913 if diagnostic else self.seed
-        rng = random.Random(f"local-action:{seed}:{task}:{occurrence}:{int(diagnostic)}")
-        demo = pool[occurrence // 4] if diagnostic else rng.choice(pool)
-        length = self.tasks[task].episode_lengths[demo]
-        if length <= 15:
-            raise ValueError("local action episode has no complete fifteen-step clip")
-        start = rng.randrange(length - 15)
-        dataset = self._diagnostic_dataset() if diagnostic else self.queries
-        frames, indices, actions = dataset.local_action_clip(
-            task, demo, start, camera_view=self.camera_view,
-        )
-        trace = {
-            "local_action_demo": demo, "local_start_frame": start,
-            "local_frame_indices": indices.tolist(),
-            "local_action_start": start + 1, "local_action_stop": start + 16,
-            "local_flow_seed": rng.getrandbits(63), "local_diagnostic": diagnostic,
-        }
-        return (torch.from_numpy(frames),), (torch.from_numpy(indices),), torch.from_numpy(actions), trace
-
     def _sample_actions(self, dataset, pool, task, occurrence, query_seed, count, *,
                         query_offset=0, query_count=None):
         query_count = count if query_count is None else query_count

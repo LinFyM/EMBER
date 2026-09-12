@@ -1,12 +1,11 @@
-"""Direct-autograd oracles for main LoRA replay and isolated local action credit."""
+"""Direct-autograd oracles for complete main LoRA and native replay credit."""
 import copy
 
 import pytest
 import torch
 
-from ember.writer.function_credit import local_flow_sample, mean_velocity_loss
-from ember.writer.function_reader import LocalActionReader
-from ember.writer.supervised import local_action_credit, replay_functional_credit
+from ember.writer.function_credit import mean_velocity_loss
+from ember.writer.supervised import replay_functional_credit
 from test_video_program import inputs, small_cpu_work, unlock, writer
 
 
@@ -64,46 +63,3 @@ def test_native_main_credit_matches_direct_autograd_and_query_slicing(microbatch
         torch.testing.assert_close(actual, target, rtol=2e-4, atol=2e-6)
     assert credit['source_forward_calls'] == 0
     assert all(p.grad is None and not p.requires_grad for p in policy.parameters())
-
-
-def test_local_flow_sample_preserves_global_rng_and_exact_flow_relationship():
-    actions = torch.randn(15, 7)
-    before = torch.get_rng_state().clone()
-    noisy, time, target = local_flow_sample(actions, seed=37)
-    assert torch.equal(torch.get_rng_state(), before)
-    assert noisy.shape == target.shape == (8, 15, 7) and time.shape == (8,)
-    torch.testing.assert_close(noisy, actions[None] + time[:, None, None] * target)
-    assert ((time > .001) & (time < 1)).all() and time.unique().numel() == 8
-    for actual, repeated in zip((noisy, time, target), local_flow_sample(actions, seed=37), strict=True):
-        torch.testing.assert_close(actual, repeated)
-    assert not torch.equal(noisy, local_flow_sample(actions, seed=38)[0])
-
-
-@pytest.mark.parametrize('process_mode', ['ordered', 'frame_set'])
-def test_local_credit_preserves_compiler_gradients_and_carries_native_cotangents(process_mode):
-    model = writer(process_mode=process_mode)
-    head = LocalActionReader(width=model.config.width, heads=model.config.heads)
-    with torch.no_grad():
-        head.output.weight.normal_(std=.1)
-    args = inputs((4,))
-    sample = local_flow_sample(torch.randn(15, 7), seed=37)
-    # Existing main gradients cannot be erased or supplemented by the local path.
-    compiler_before = []
-    for parameter in model.compiler_parameters():
-        parameter.grad = torch.randn_like(parameter)
-        compiler_before.append(parameter.grad.clone())
-    loss, cotangents = local_action_credit(model, head, args[0], args[1:], sample, weight=.25, backward=True)
-    assert loss > 0 and all(torch.isfinite(value).all() for group in cotangents for value in group)
-    assert all(value.norm() > 0 for group in cotangents for value in group)
-    assert any(p.grad is not None and p.grad.norm() > 0 for p in model.encoder_parameters())
-    for parameter, expected in zip(model.compiler_parameters(), compiler_before, strict=True):
-        torch.testing.assert_close(parameter.grad, expected)
-    before = [p.grad.clone() if p.grad is not None else None for p in model.parameters()]
-    with torch.no_grad():
-        repeated, gradients = local_action_credit(model, head, args[0], args[1:], sample, weight=.25, backward=False)
-    assert repeated == pytest.approx(loss) and gradients is None
-    for p, previous in zip(model.parameters(), before, strict=True):
-        if previous is None:
-            assert p.grad is None
-        else:
-            torch.testing.assert_close(p.grad, previous)

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：100步train96为有序44／静态36，validation与200节点待裁决（2026-09-13）
+## 当前状态：100步train44／36、validation61／65；200步闭环进行中（2026-09-13）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -62,7 +62,12 @@ task-bootstrap95%CI[−.0002747199,+.0002935941]跨零；10/24task正向。此�
 完整配对有序新增10／丢失2、保留34，churn12、J=.73913；task-cluster95%差额CI[.03125,.1354167]为正。
 Spatial/Object/Goal/Long有序9/13/15/7，静态7/12/12/5，四suite净收益均为正，有序breadth18。
 证据为analysis/step100_train_comparison.json（含全部task/suite/source比较）；只支持该训练任务面板的局部增量，
-还不能证明视频顺序因果性、相邻保持或validation迁移。队列正在ordered100 validation400。
+还不能证明视频顺序因果性或相邻保持。100步validation已完整为有序61/400、静态65/400：
+有序新增8／丢失12、保留53，churn20、J=.72603，task-cluster95%差额CI[−.0325,.01]跨零。
+Spatial/Object/Goal/Long有序0/47/13/1，静态0/52/12/1，有序breadth5；source47仅作同口径基线。
+训练侧局部正增量未在100步validation兑现，不能把CI跨零称为证实零效应。
+完整4面板、全部task/suite/source配对与墙钟见analysis/step100_complete_comparison.json。
+100步两项validation的全部worker均exit0，队列已进入200步train与validation，仍按原合同完成8面板。
 首个面板结束后，远端已写completion约1秒，controller首次读取却报FileNotFound，随后该文件可读且完整。
 按共享文件可见性时差在ops脚本加入最长60秒的有界读取等待，具体NFS缓存层未独立定位；不改变评测实现。
 旧controller已退出，attempt1日志保留；恢复前核验已完成96rows及checkpoint身份并跳过全部8库／首面板，

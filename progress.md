@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：100步train44／36、validation61／65；200步闭环进行中（2026-09-13）
+## 当前状态：训练侧有序优势未相邻保持，最后两项validation评测中（2026-09-13）
 
 Owner授权自主推进有益视频特异性、跨视频／初始化／相邻保持及validation迁移，暂不要求145/400；整体goal未完成。
 **当前active design：[Execution-Aligned Video Writer](docs/execution_aligned_writer_design.md)。**
@@ -67,7 +67,12 @@ Spatial/Object/Goal/Long有序9/13/15/7，静态7/12/12/5，四suite净收益均
 Spatial/Object/Goal/Long有序0/47/13/1，静态0/52/12/1，有序breadth5；source47仅作同口径基线。
 训练侧局部正增量未在100步validation兑现，不能把CI跨零称为证实零效应。
 完整4面板、全部task/suite/source配对与墙钟见analysis/step100_complete_comparison.json。
-100步两项validation的全部worker均exit0，队列已进入200步train与validation，仍按原合同完成8面板。
+100步两项validation的全部worker均exit0。200步train也已完整：有序51/96、静态53/96，
+有序相对静态新增5／丢失7、保留46，CI[−.0833333,.0416667]跨零；Spatial/Object/Goal/Long为14/17/14/6对16/18/13/6。
+相邻有序44→51，保留36／新增15／丢失8，churn23、J=.61017，breadth18→17；
+静态36→53，保留28／新增25／丢失8，churn33、J=.45902，breadth16→17。
+因此训练总体能力仍获取，但100步有序优势未保持；不能以总分上升代替过程增量。
+完整训练相邻证据为analysis/train_adjacent_comparison.json。队列正在最后两项200步validation，仍完成原登记8面板。
 首个面板结束后，远端已写completion约1秒，controller首次读取却报FileNotFound，随后该文件可读且完整。
 按共享文件可见性时差在ops脚本加入最长60秒的有界读取等待，具体NFS缓存层未独立定位；不改变评测实现。
 旧controller已退出，attempt1日志保留；恢复前核验已完成96rows及checkpoint身份并跳过全部8库／首面板，

@@ -1145,3 +1145,17 @@ frame_set−ordered差额+.00051449、CI[+.00032845,+.00070563]，21task正／3�
 代码冻结017430b3，模型原5f4f440c；每臂诊断循环约98.3秒、allocated峰值10.155GiB，
 有限入口已从active scripts退役。完整原件：`runs/analysis/local_action_grounded_20260912/inverse_action_READOUT.md`、
 `inverse_action_summary.json`、`inverse_action_marginal.json`、逐臂raw/samples及`inverse_action_launch_contract.json`。
+
+## 76. 点对应提供运动归纳偏置，尚未补上跨初态到参数行为的联系（2026-09-13）
+
+源码与原始文献审查见[可识别性分析§7](docs/video_information_identifiability.md#7-显式运动对应能补什么以及为什么尚不足以启动新writer)。
+当前任务token视觉读取／native H端点读取没有显式同物理点约束；不因此否认其隐式运动知识。
+跟踪可见表面与生成具体7维机器人动作是不同问题，旧局部动作头失败不直接否决前者。
+
+Im2Flow2Act等正证据同时依赖目标物体绑定、执行状态对应或动作重定向，不能只抽取“flow有效”来支持新Writer。
+固定运动先验仍是RGB的函数；点对应能改善可用表示，不自动解决跨演示初态的操作关系及唯一LoRA的行为传递。
+仅评估光度warp或展示轨迹图无法区分获取不足与编译不足，也可能只反映背景／机器人／相机运动。
+
+当前不采用直接换成／追加dense-flow编码器、其余跨episode FM与Compiler不变的提案；不启动只验证跟踪后
+必然进入Writer训练的probe链。目标物体运动仍保留为候选，重提时须给出可改变决策的跨初态功能判别，
+并区分感知失败、任务相关性不足与编译传递失败。尚无新实验design、权重下载、forward或闭环结果；goal未完成。

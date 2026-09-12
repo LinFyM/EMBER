@@ -76,7 +76,10 @@ states0–7不与原32–35重合；新的是这些固定模型的配对条件�
 evaluator的默认state-count合同可用count8选择0–7；其显式init-state-ids另有限制，不能随意传新列表。
 materializer CLI显式state入口只接受32–35。
 因此不能直接把新8-state请求塞入旧materializer，也不应为这个CLI限制再训练／复制模型。
-后续应先验证由既有adapter构成的明确fixed-video评测映射，并保持checkpoint／完整LoRA／原始帧等检查。
+已在原611770d1运行面完成8个fixed-video映射的CPU内存核验：每个24task×8states，
+原scope、information wall、完整LoRA与真实帧检查均通过；没有修改原文件、写出新manifest或启动rollout。
+证据为当前analysis根下`frozen_positive_mapping_audit.json`。后续正式登记后仍须记录映射生成／复用provenance，
+保留原生成身份并使用默认state-count8，而非绕过CLI的显式state限制。
 旧冻结运行树保持不变；如需源码调整，应按项目Git与隔离合同处理，不暗改frozen authority。
 
 顺序干预另有科学限制：原设计规定shuffle/reverse在正式选点冻结后使用，并禁止进入架构修正。

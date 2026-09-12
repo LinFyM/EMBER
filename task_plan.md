@@ -8,7 +8,7 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
 
 **当前active design：**[Pretrained Video Grounded Writer](docs/pretrained_video_grounded_writer_design.md)。
 冻结V-JEPA2.1过去四帧dense表示，经task-conditioned Value读取进入完整native H及唯一LoRA；仅跨episode主FM。
-实现与真实profile已通过，100/200节点已登记；ordered200学习已完整结束，100/200训练面板41/52，各96；frame_set fresh学习、有序100的validation评测及静态100物化正在并行。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
+实现与真实profile已通过，两臂fresh200均完整结束且实际曝光匹配；有序train100/200为41/52（各96），有序validation100为53/400。静态100训练、有序200与静态100 validation评测，以及静态200物化并行进行；尚无有益过程或迁移结论。Local Action Grounded已关闭，其完整证据保留于findings§69与progress。
 
 ### 当前执行计划
 
@@ -16,8 +16,8 @@ Owner 2026-09-11授权自主高效实施，2026-09-12再次明确核心科学精
    主比较为同一视频编码器的ordered／逐帧重复静态；仅出现完整正向资格时，追加原生image全帧静态参照确认强度。
 2. **实现已集成：**唯一入口接入冻结先验与learned task grounding，保留完整H、source冻结、teacher信息墙和跨episode主FM。
    退役局部动作头／loss／数据支路／专属诊断，复用现有trainer、重放、checkpoint与动态evaluator。
-3. **正式学习已启动：**实现／单份资产／最长teacher profile完成；学习前固定100/200与每臂51,200主FM queries。
-   ordered在clean pushed frozen `611770d1`上完成world4 fresh200；匹配frame_set已按live资源在同四卡fresh启动。
+3. **正式学习已完成：**实现／单份资产／最长teacher profile完成；学习前固定100/200与每臂51,200主FM queries。
+   ordered与frame_set在clean pushed frozen `611770d1`上各完成world4 fresh200；实际800条件／51,200queries及18个采样字段匹配。
 4. **行为裁决：**先两节点train96和validation400 correct；有正向候选再补other与已登记强静态检查。
    报告绝对能力、source、task/suite、breadth、成功集合及相邻／换视频保持；明确坏结果不扫参数或追加局部补救。
 5. 全部资格成立后冻结方法与single checkpoint，完成sealed内容／顺序controls；当前goal仍未完成。

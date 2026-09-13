@@ -1426,3 +1426,18 @@ state-free full10 S/O/G/L改善.00332542/.00471454/.02799325/.00069453，83/96�
 按正分支关闭诊断、退役一次性入口；下一项可继续推导共享前向生成的获取与传递合同。
 不能用运行时loss/VJP/任务更新规避信息墙，也不能仅给普通自由B head改名、拼接历史正数就假定Writer已获支持。
 完整有益视频特异性goal仍未完成，没有恢复旧Writer、扩展扫描、Test或最终controls。
+
+## 89. 从oracle到合法前向生成的具体区别与存在性边界（2026-09-13）
+
+[Native Correction Writer](docs/native_correction_writer_design.md)用`ΔW=B(RX)`保留同位置输入与预测纠正的乘积，
+避免把部署梯度更新包装为Writer，也避免先独立pool两侧后引入跨位置项。B自由而A由实际裸source X构成，
+旧nativeD的自由B及EBSRI/PNBTT的训练VJP本身都不是这项新意；两者的负例和能力限制继续保留。
+
+oracle更新右空间属于其输入X的行空间，完整视频X包含oracle四采样位置，因此任意R的rank16构造有表示该更新的空间。
+这个存在性不证明有限attention网络能预测R，也不证明RGB足够；监督只约束预测纠正对X的参数作用，
+不声称逐位置cotangent可唯一恢复。目标直接使用已具实际跨episode功能证据的source更新，按完整ΔW误差训练，
+避免SVD因子符号／旋转和native Y span的限制；部署生成不用SVD。
+
+保留原有读取及实际空间信用；使用授权action池16–41自己的RGB/纠正label，主FM必须逐条件排除其教学episode。
+这是新episode合同，不伪装成与旧0–15教学逐行匹配；目标标签不进入部署。拟合、identity与参数空间都不等于行为，
+最终仍由两个节点的完整配对闭环、跨视频／初始化保持与冻结后的controls裁决。当前仅完成推导登记，尚无新模型结果。

@@ -1,0 +1,177 @@
+# Native Correction Writer
+
+2026-09-13登记。Owner授权继续推导、实施与依结果调整；完整有益视频特异性goal未完成。
+本项依据已通过的[原生纠正传递](native_corrective_transfer_audit.md)开发合法前向生成器，
+不把训练侧oracle的分数当作Writer结果。当前实现、资源和运行状态只看progress。
+
+## 1. 新证据改变了什么
+
+裸source在state-free教学观测上，由四个真实动作纠正构造的一次38-target rank16 LoRA，
+在另一批episode的t1/full10均改善实际动作输出，两个区间严格正、四suite净正。
+这支持继续检验这个条件与纠正联合出口的摊销获取。它没有证明视频读取已充分、LoRA具有闭环收益，
+或改善必然来自特定视频而非共享偏置；完整负条件仍在findings§88。
+
+历史近邻限定了新增机制：
+
+- Target-Owned及nativeD早已有自由B、纯前向与完整A/B；它们的99/76/86/68等结果不能被抹去。
+  新方法的区别不能仅是另一个自由B head。精确参照为`3a6f801d:docs/action_forecast_writer_target_owned_factor_design.md`
+  §3/5/8和`7a71ca14:src/ember/writer/native_factor.py`。
+- EBSRI/PNBTT的真实FM LoRA叶VJP只给共享生成器训练信用，forward的B仍在native Y signed span内；
+  没有把预测纠正量与同位置X的乘积定义为前向出口。原始代码为`25477c9`的
+  `bank_set_shared_training.py`与`e65c6388`的`pnbtt_training.py`；相关负结果继续约束本项。
+- 旧behavior authority的几何恢复不是当前完整source参数更新后的行为验证；当前新oracle补的是实际函数联系，
+  不能替它补出不存在的RGB共享学习证据。
+
+本项把主要改变收敛到**原生输入与预测纠正共同生成参数，并以实际source纠正更新提供训练目标**。
+保留当前有实测后段绝对收益的视觉／运动落点监督和读取前端，不再重做一个不进入LoRA的动作头。
+新监督与出口联合改变，不能在结果后声称唯一分离了两者的各自贡献。
+
+## 2. 完整合法信息路径
+
+```text
+exact language + 单条完整双相机RGB，stride5及真实末帧
+  ├─ 原vision/Gemma + VL Meta → Z / task spans / KV
+  │  原Action Expert + Action Meta，public noise1729、t=1 → 完整H[T,50,1024]
+  │  原冻结agentview V-JEPA过去四帧 + task条件视觉读取
+  │  原两端完整H读取 + 过去单向T×L组织 → E
+  │  原两块集合Compiler、38×16个target/rank queries → Q
+  └─ 同组真实RGB、同language、同public noise与t=1
+     裸冻结source，不安装任一Meta → 全38目标的实际输入X[T,50,d_in]
+
+Q与每个位置的X → signed系数R；Q → 自由输出因子B
+  A = R X / N，ΔW = B A
+  → 唯一38-target rank16完整LoRA → source依据自己的观测／state闭环
+
+仅训练：同教学episode的四个真动作片段 → 固定source纠正oracle标签ΔW*
+        → 实际参数更新误差；另一episode动作 → 原主FM
+        OOI／存储state → 原实际注意力空间loss
+```
+
+两次原生读取都在同一次Writer调用内部，针对同一组授权RGB，只读、固定计算。
+原生X分支没有teacher action/state、loss、VJP、optimizer、参数更新、额外预训练模型或运行时迭代。
+Meta仍是共同训练的读取模块，其参数不进入执行；参数地址X固定在裸source坐标，不被Meta更新移动。
+全部真实frames和50个H均参与读取；不选择几个帧代替完整部署输入。
+
+X对每帧独立读取，完整捕获全部38个真实线性层输入。不能将观察Meta的X、native Y或最后一层hidden冒充这些输入。
+它们可以随冻结pre-Gemma输入一起作有预算的CPU缓存；Z/KV/H/E仍按现有同版本重放合同处理。
+缓存身份只属于调度，不能进入Writer。数据、source权重与已有V-JEPA均复用。
+
+## 3. 不在部署求梯度的低秩构造
+
+对目标l，把该视频的每个真实frame与完整horizon位置记为i，N=T×50。
+现有Compiler给出q_lr；新增目标专属输入投影P_l和输出投影O_l：
+
+```text
+k_li = LN(P_l x_li)
+r_lri = tanh(LN(q_lr)ᵀ k_li / sqrt(d))
+a_lrᵀ = (1/N) Σ_i r_lri x_liᵀ
+b_lr = O_l GELU(q_lr)
+ΔW_l = B_l A_l
+      = (1/N) Σ_i [B_l r_li] x_liᵀ.
+```
+
+模型预测的输出纠正向量可写作c_hat_li=B_l r_li/N。它与同一位置的x_li配对后形成实际参数，
+不是先各自平均纠正和X再外积；后一写法会引入未获oracle支持的跨位置项。
+B不受native Y span限制；A保留实际source输入的坐标。固定tanh和1/N只是有界系数及视频长度归一，
+不是推导出的最优实现，不扫描温度、归一方式、rank或额外gate。
+
+该分解一次输出rank16，不在部署运行SVD或任何梯度更新。O_l为零初始化，故B=0而A可非零，
+输出为合法identity；第一步B可从实际FM与更新目标得到梯度，随后其它模块共同学习。
+不对零矩阵的SVD求导，不增加任务内优化或第二个adapter来处理初始化。
+
+一个有限容量事实：oracle的G_l=C_l X_l，故其右奇异向量属于X_l的行空间。
+包含四个oracle采样位置的完整X，也包含rank16投影ΔW*_l的行空间；若允许任意R，则存在
+R=A* X†使B* R X=B* A*。这是因子空间的存在性，**不证明上述有限神经网络能学出该R，也不证明RGB足够**。
+本监督只约束预测纠正与X形成的参数作用，不声称恢复了每个位置唯一的真实cotangent；X的零空间中仍有不可识别分量。
+
+学习误差信号有[synthetic gradients的原始研究先例](https://proceedings.mlr.press/v70/jaderberg17a.html)。
+这里仅借鉴“纠正信号可成为共享预测对象”的概念；该文的模块更新机制及DAML的部署梯度更新都不是本部署合同，
+也不为本方法的效果背书。
+
+多video只在集合Compiler后合并各自的条件×纠正贡献，使用各video的1/N与集合等权；不平均原始frames或最终LoRA。
+本轮只训练与声称K=1，保留集合置换不变接口，不开展K2/4。
+
+## 4. 训练数据与真实纠正目标
+
+固定train24、所有meta-task梯度仍来自这24task，不添加95-task、validation/test动作、RL或新仿真任务。
+Owner已允许action训练池自身RGB—动作监督；据此本次教学RGB从既有action池demo16–41取样。
+同一池产生主FM query，但**每个condition必须排除其教学episode**；不能在全局池重合时丢掉逐条件跨episode检查。
+教学episode与允许的query episode均按登记口径均匀，task仍四suite各一个、每task64query与权重1/4。
+0–15不产生新增动作标签。42–45继续只作无梯度诊断，46–49继续是train96的未用教学池。
+这是显式的新episode合同；不声称与旧0–15教学实验的逐行训练曝光相同。
+
+每个train24/demo16–41生成一个训练目标，共624套。复用原诊断中16–19的96套state-free原件，
+仅为20–41新增528套，不复制已存在因子。目标严格复用f39d594f的算子：
+
+- 由所有有效stride5起点序列的1/5、2/5、3/5、4/5附近确定四个p；真标签为actions[p+1:p+16]。
+- 裸source state-free双相机prefix，public probe1729、t=1，真实15×7 MSE对全部38个weight求导。
+- 固定q24/niter2/seed20260923的rank16投影，teacher JVP给出半步线性幅度；不看query定幅，不线搜索。
+- 完整ΔW*的76个因子及构造记录只作训练label；teacher loss与幅度仅核对构造，不能据它选视频或过滤差条件。
+
+构建不执行query FM或闭环，不训练Writer，不读取42–45动作。source物理参数无梯度登记／写入。
+原96套曾经同时另做query评分；本项只引用其已固定state-free参数，旧query结果不参与标签权重或筛选。
+部署load/forward没有这个label参数、文件路径或loss对象；模型只收到RGB派生的合法输入。
+
+空间监督扩展到同一train24/demo16–41，复用已验证的OOI/rigid-body/双相机及prior坐标规则；
+624条标签只进原两处实际注意力loss。无需重新下载数据，也不改变mask定义来追分。
+
+## 5. 共同学习目标与曝光
+
+保留同一组Meta、encoder与Compiler参数共同fresh训练；只替换native因子出口。
+每个condition同时获得原跨episode主FM、原空间loss及真实更新目标：
+
+```text
+L_update = Σ_l ||B_l A_l − B*_l A*_l||_F² / Σ_l ||B*_l A*_l||_F²
+L = L_FM + .1 L_spatial + .1 L_update.
+```
+
+L_spatial沿旧合同为object/motion两KL的平均。更新loss使用所有目标的共同原生参数尺度，
+不是逐因子cosine、任意SVD符号／rank排列的回归或逐层人为重加权。分子可通过rank16 Gram矩阵精确计算，
+不物化每个dense ΔW；浮点近零截断只处理平方范数舍入。若完整目标恰为identity，分母取1并保留该条件。
+identity输出的非零目标L_update=1，固定系数.1让初始项与既有source FM约.1处于同一数量级；
+它是预先指定的尺度默认，不是最优性结论，不做λ扫描。
+
+source动作归一、full50主FM、noise/t、256queries/update、AdamW lr3e-5/betas(.9,.95)、8步warmup与clip1保持。
+新采样流及排除当前teacher后的query/RNG口径共同登记；ordered/frame_set须逐行匹配全部采样与动作随机数。
+监督期没有RL、rollout学习、trust回滚、分段冻结或旧checkpoint继承。
+
+先完成最长新教学池视频的真实profile，确认一次完整条件前向、主FM、更新／空间信用与Meta重放；
+同时核对identity后第二步的共同梯度、source冻结、38-target shapes及推理无autograd/loss依赖。
+profile不选科学参数、不继承权重。当前预期沿用100/200两个节点与每臂800条件／51,200主query；
+实际节点须在正式学习前依据profile固定，不能看到分数后延长或缩短。
+
+## 6. 有界行为比较与停止
+
+ordered与frame_set均使用相同新出口、纠正标签、空间信用及fresh曝光。frame_set仍看全部真实frames、
+独立重复四帧的视频prior、无teacher顺序；X分支也只按帧独立读取并作集合聚合，不给它额外的时间配对或顺序标签输入。
+只有有序臂的原encoder/Compiler时序部分不同；完整X的共同置换不会改变frame_set输出。
+
+两个已固定节点各做train96与validation400 correct，共8个面板／1,984rows。
+固定source、state-video schedule、预处理和single-checkpoint规则完全沿现行合同；validation每task50teacher整轮各一次，
+train96明确复用46–49/states32–35有限池。部署官方10 flow steps，不能用t1替代闭环。
+当前先保留既有资格：validation有序−frame_set的task-cluster95%下界严格正、至少两个suite净正、
+相邻节点增量同向、正确条件相对source有收益且后段不明显退化；完整报告per-task/suite、breadth、R/G/L、churn与相邻集合。
+frame_set资格的Owner问题尚未改变合同，本项不利用新身份放宽它。
+
+资格通过后补same-task-other、原强静态参照及跨初始化保持，再选定并冻结single checkpoint。
+最后才运行sealed内容／shuffled/reversed controls；Test、held梯度、RL及checkpoint融合保持关闭。
+若更新目标拟合改善而闭环／有序资格不通过，停止这个具体共享获取与原生因子组合；不把LoRA重建当成功，
+不以rank/λ/seed/LR/层位扫描、冻结Meta或新增动作头继续维护它。
+若主FM下降但更新目标未获获取，完整有界结果也不自动触发更大读取器；先综合两个损失与真实行为的竞争解释。
+
+## 7. 工程、存储与生命周期
+
+保留video encoder/Compiler、原生Meta重放、采样持久状态、checkpoint、cost-balanced调度与evaluator的既有owner。
+`native_factor.py`由输入配对的因子构造替换，旧自由A/B出口退役；不保留另一默认或fallback。
+原生X读取与更新label/loss分别由小的明确模块拥有。两个一次性数据入口在数据完成核验后退役，Git保留实现。
+新schema/architecture/config/run身份拒绝旧checkpoint；fresh optimizer、sampler及完整rank RNG/topology照常保存。
+
+2026-09-13 strg01现场data0为52.2/1024GiB、data1为1017.6/1024GiB。
+大新输出放data0的独立canonical run根，经当前workspace的ignored runs入口引用；data1只新增源码worktree，峰值预算768MiB。
+完整新增峰值先按18GiB预留，覆盖528套新纠正labels、624空间labels、两臂四完整checkpoint、8个LoRA bank、原始rows与临时输出；
+实际checkpoint大小和profile峰值在正式launch前刷新。已有source、prior、数据及96个oracle标签不复制。
+不因data1接近额度删除formal evidence；每个filesystem独立准入，launch仍须live复核资源。
+
+数据构建、正式train/eval使用clean pushed detached frozen树。GPU launch前同时查两节点，
+按Owner总量／节点限制选择实际提高吞吐的卡；DDP保留NUMA、NCCL_P2P_DISABLE=1及deferred NCCL。
+主写在隔离codex分支完成后验证、及时集成并推送main；本轮frozen/工作树在消费完且证据保留后移除。

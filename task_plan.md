@@ -1,11 +1,11 @@
 # EMBER task plan
 
-## 当前目标与计划：原生纠正传递前提通过，推导合法视频获取与参数生成（2026-09-13）
+## 当前目标与计划：实现Native Correction Writer并验证有益视频增量（2026-09-13）
 
 完整目标仍为正确教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、初始化、相邻checkpoint
-及固定validation迁移；暂不强制145/400。**整体goal未完成，没有active Writer或selected checkpoint。**
+及固定validation迁移；暂不强制145/400。**整体goal未完成，没有在途运行或selected checkpoint。**
 [原生纠正传递](docs/native_corrective_transfer_audit.md)的192套／3,072组合已完成、两oracle按原条件通过并关闭；
-当前没有active design或在途运行，下一项不默认完整Writer训练。
+当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，先实施数据与前向参数生成合同。
 
 1. 已完成[可见物体与运动监督](docs/visible_object_grounded_writer_design.md)两臂fresh200及8面板／1,984rows，原始审计通过。
    validation有序／无序100=20/24、200=71/70，两节点净率CI均跨零、未相邻同向，按原资格关闭且不追加训练。
@@ -17,9 +17,12 @@
 4. 已用训练侧oracle检验实际weight导数的联合关系：state-free t1/full10的source−oracle改善为.00626285/.00918194，
    区间均严格正、四suite均正；full10 21/24tasks及83/96条件改善。true-state参照亦通过，全部原始数组与动作标签核验通过。
    这限定为跨episode功能前提，不能拼成合法RGB Writer或闭环正结论。
-5. 现在推导有序RGB如何提供足够好的纠正信号，并由一次纯前向构造保留它与同帧原生X的关系；
-   与旧自由FactorHeads、native Y span及运行时VJP逐项区别后再登记可失败实施。当前不放宽frame_set资格，
-   不用最终controls改架构，不追加旧实验、Test或RL。
+5. 已推导`ΔW=B(RX)`的同位置纠正联系与identity学习路径，新增真实source参数更新标签；
+   源坐标X与可训练Meta读取分开，部署没有梯度／任务更新。实施新decoder、只读X、训练loss与逐condition跨episode采样，
+   核验后替换旧出口；624标签中复用96套已有因子，完整新空间标签仍只来自train24。
+6. 真实最长条件profile通过后，在正式学习前固定两个节点、独立quota与GPU拓扑；按新设计完整执行两臂的8个配对面板。
+   此项检验共享合法获取与实际闭环，不把oracle或参数拟合当通过。当前不放宽frame_set资格，不用最终controls改架构，
+   不追加旧实验、Test或RL。
 
 以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。
 

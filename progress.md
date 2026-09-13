@@ -1,5 +1,25 @@
 # EMBER progress
 
+## 当前：实施原生输入配对的纠正Writer（2026-09-13）
+
+Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
+依据下方已通过的具体oracle传递前提实施合法前向生成；没有在途GPU运行、正式学习或selected checkpoint。
+所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
+
+新出口为`ΔW=B(RX)`：从同组完整RGB以裸source读真实38-target输入X，视频网络输出自由B和逐位置R。
+纠正与X在同一位置配对，不部署loss、autograd、SVD或task-local更新；B零初始化给出identity。
+它只保证低秩构造及参数作用关系，有限网络获取与闭环收益尚未验证，不将普通FactorHead改名当新证据。
+原Meta、完整H、视频prior、encoder/Compiler和有后段绝对正证据的空间信用保留，旧自由A/B出口将被替换并退役。
+
+新教学池取授权action池16–41；主FM逐condition排除同一教学episode，仍四suite各一task、64query/task。
+624个source纠正目标复用旧16–19的96套state-free因子，仅新增20–41的528套；完整624条空间标签沿原定义构建。
+真实标签只进loss，42–45无梯度诊断、46–49未用教学视频与validation/Test墙保持；不声称新旧教学池逐行相同。
+按`.1`更新误差与既有主FM／空间目标共同fresh学习，未注册λ/rank/seed扫描；正式节点在真实profile后、学习前固定。
+两节点的8个train96/validation400配对面板及当前frame_set资格保持，最终controls仍在选定冻结以后。
+
+strg01现场data0为52.2/1024GiB，data1为1017.6/1024GiB。新大输出计划在data0独立根，新增峰值预算18GiB；
+data1只新增隔离源码树，峰值预算768MiB。当前先实现／核验数据与前向合同，完整运行前刷新实际profile、checkpoint体积及两节点资源。
+
 ## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 
 Owner授权继续仔细推导、实施并按结果调整，整体有益视频特异性goal保持active且未完成。

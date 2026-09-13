@@ -3,10 +3,12 @@
 当前阶段按Owner最新要求，先恢复有益的视频特异性、暂不强制绝对性能，并综合全部历史证据推导新的完整架构与训练。
 [Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)的两臂fresh200及8个闭环面板已完成并关闭。
 实际视觉attention的物体／运动监督在200节点改善了两种模式相对旧纯FM的绝对性能，但有序相对无序仅71/400对70/400，
-未形成登记的相邻有益有序增量；一般学习收益与视频必要性仍须区分。当前无active Writer。
+未形成登记的相邻有益有序增量；一般学习收益与视频必要性仍须区分。
 [原生纠正传递](native_corrective_transfer_audit.md)训练侧oracle已完成：state-free条件的一次38-target rank16构造
 在独立episode的t1/full10均降低真实动作误差，按登记支持具体传递前提。它仍用真实动作、没有闭环或合法RGB获取结论；
-下一步推导无task-local优化的前向摊销生成，运行与资格状态只看progress。
+据此登记[Native Correction Writer](native_correction_writer_design.md)：由完整视频生成B和逐位置R，
+与裸source实际输入X组成唯一`ΔW=B(RX)`，真实纠正标签仅训练使用，部署无loss/VJP/任务更新。
+当前处于实施阶段，合法RGB获取及闭环尚未验证；运行与资格状态只看progress。
 不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
 Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已完成有界学习与修正，未获资格并关闭。
 该候选检验了时间×任务token表示、执行条件化功能信用、蒸馏、teacher VL适配及纯FM比较。

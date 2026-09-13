@@ -62,9 +62,10 @@ Owner随后明确授权“开始推进”，给予足够自由度并要求高效
   捕获full horizon、存在梯度、attention或模块名称，都不能单独证明这一科学机制已经兑现。
 - teacher-video time、relative action horizon、flow time、layer depth分别处理；horizon不是事件标签，计算深度不是任务阶段。
   frame stride固定5，完整50-horizon在有实际任务条件与跨帧消费的learned read之前保留，不能恢复coarse或horizon mean。
-- 教学视频在rollout前完整可用，必须保留视频内部顺序和时间方向；具体可见范围由Owner选择和登记设计定义。
-  当前选定方法使用过去四帧局部读取及过去单向长程，所有组和回写遵守视频前缀依赖；完整H内部仍可双向交互。
-  不因完整视频可用或专家原文推荐而恢复双向长程。计算上的前缀因果性与视频对行为的必要性不同，后者由冻结后的controls裁决。
+- Owner 2026-09-14明确：教学视频在rollout前完整可用，视频理解不强制只看过去，允许利用完整视频双向解释证据。
+  必须保留真实顺序和时间方向，理解靠近／抓取／移动等操作前置关系，以及任务描述中“先A后B”的要求；
+  双向读取不等于无序聚合。过去四帧／单向长程属于历史候选的具体合同，不再是后继设计的硬约束。
+  可见顺序提供可用信息，但不保证模型已学会有益消费；时序理解必须落实为执行优势，不能由mask或位置编码单独证明。
 - 每条视频独立保序编码；只在集合阶段置换不变地合并证据。不得平均frames、raw features或最终LoRAs，不挑最好video。
   声称dynamic K就必须真实训练对应cardinalities，不能重复同一条视频凑K。one-shot/few-shot设定由真实能力决定，不故意削弱强方案。
 - 观察侧Meta-LoRA应有明确输入域与学习职责，必须保留其真实梯度以及cache有效性。已对齐设计采用Action Expert共享Meta适配，
@@ -93,6 +94,10 @@ Owner随后明确授权“开始推进”，给予足够自由度并要求高效
 - 唯一正式目标是validation8 strict single-checkpoint paired correct严格 >145/400，同时满足相邻稳定、低churn、高breadth、
   四suite非零、Goal/Long贡献、same-task不同视频鲁棒性及最终视频因果controls。正式选择不使用80-row screen、checkpoint union或融合。
 - 闭环绝对性能优先。functional loss、reconstruction、norm/rank/cosine、内部margin和surrogate仅用于定位；不能用漂亮数值接受明显更差行为。
+- Owner 2026-09-14明确：有序模型强于匹配的、独立训练的全帧无序模型是后继方法必须取得的过程理解证据，
+  不能因无序模型也能使用多状态画面而取消这一要求。两者使用相同视频画面、语言和可比训练条件，不人为削弱frame_set。
+  具体比较与重复性口径须在新设计中预登记；不能靠错误条件退化、单个偶然峰值或内部surrogate代替有益闭环增量。
+  该比较与选定冻结模型后的内容／顺序因果controls各自保留，不能相互替代；本次澄清不重判既有关闭实验。
 - 有信息量且口径可比的正式学习后，若仍不能超过source或仅略超source、长期低于或仅略超SFT，应视为严重能力缺口，
   不能以“较source有提升”“loss在降”把它降格成小调参问题。source现存参照47/400（另一历史面板48/400），
   train24 rank128 SFT相邻109/107；来源与比较边界见research_history。低分不是某个唯一根因的证明，也不能因初始identity/smoke低分直接推翻全图。

@@ -366,6 +366,32 @@ def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_pat
         _publish_contract(path, resumed, resume=True)
 
 
+def test_mid_segment_resume_finishes_original_registered_boundary(tmp_path, monkeypatch, config):
+    from ember.writer import training
+
+    attempted, saved, diagnosed = [], [], []
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda *_: None)
+
+    def update(*args):
+        attempted.append(args[-1])
+        return [], {}
+
+    monkeypatch.setattr(training, "_update", update)
+    monkeypatch.setattr(training, "_record_iteration", lambda *args: args[6] + 4)
+    monkeypatch.setattr(training, "_validate_actions", lambda *args: diagnosed.append(args[-1]))
+    monkeypatch.setattr(training, "save_ecp_checkpoint", lambda **kwargs: saved.append(kwargs["macro"]))
+    args = SimpleNamespace(output=tmp_path, mode="formal", checkpoint_updates="50,100",
+                           resume=tmp_path / "checkpoints" / "macro_00000050")
+    context = DistributedContext(0, 0, 1, torch.device("cpu"))
+    sampler = SimpleNamespace(sampler_state=lambda: {"next_step": 100})
+    _run_segment(args, context, config, SimpleNamespace(state=None), sampler, None, None, None,
+                 (50, 200), 100, time.perf_counter())
+    assert attempted == list(range(51, 101))
+    assert saved == diagnosed == [100]
+    completion = json.loads((tmp_path / "completion.json").read_text())
+    assert completion["optimizer_updates"] == 100 and completion["condition_exposures"] == 400
+
+
 def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
     from ember.writer.training import _execution_config
     before = deepcopy(config)

@@ -34,6 +34,9 @@ source固定供全部节点复用；新旧source的模型、环境、policy／RN
 source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从同一5116deb0 frozen独立fresh正式启动；
 实际两run配置除process_mode外相同，source、Git、学习／信息墙、三rank及物理batch8均匹配，整体6张有效训练卡。
 四checkpoint／八bank请求、canonical无放回视频映射及完整1984rows的预注册配对readout已备妥；尚无新候选闭环结果。
+有序step50完整checkpoint已产生。另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
+原登记50／100中的50被误当作非法节点；现在由恢复cursor跳过已完成节点，并保留100的原终点。
+监督训练共47项检查通过，包含针对性恢复回归。两组在途学习继续使用原冻结版本；没有中断、重启或改变科学合同。
 训练前strg01现场data0／data1为67.62／1017.85GiB，无序启动前再查data0为67.62GiB；
 新研究峰值24／.5GiB预算满足独立额度，大资产均复用。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。

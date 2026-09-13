@@ -366,8 +366,8 @@ def _validate_actions(args, engine, data, context, config, step):
 def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
     updates, metrics_rows = cursors
     nodes = _checkpoint_nodes(args, config)
-    if args.mode == "formal" and any(node <= updates for node in nodes):
-        raise ValueError("segment checkpoint nodes must follow the restored update cursor")
+    # A resumed segment keeps its original registered nodes. The restored
+    # cursor skips completed nodes while the loop retains the registered stop.
     if context.is_main:
         print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
                           "resume": str(args.resume) if getattr(args, "resume", None) else None}), flush=True)

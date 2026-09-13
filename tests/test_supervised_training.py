@@ -26,9 +26,9 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_semantic_path_writer{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_local_correction_field_writer{suffix}.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_semantic_path_comparison"
+    configured["status"] = "registered_local_field_comparison"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -38,7 +38,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_semantic_path_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_local_correction_field_writer.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -57,7 +57,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_semantic_path_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_local_correction_field_writer.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
@@ -158,9 +158,12 @@ class _ToySupervisedEngine:
         self.versions.append(tuple(p.detach().clone() for p in self.state.parameters()))
         # One globally weighted condition. This is an update-cadence oracle,
         # not a proxy for the native main FM control objective.
-        loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
+        main = sum(p.square().sum() for p in self.state.parameters())
+        field = sum((p - .5).square().sum() for p in self.state.parameters())
+        loss = draw["query_count"] / 256 * (main + .1 * field)
         loss.backward()
-        return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"]}
+        return {"flow_loss": float(main.detach()), "local_field_loss": float(field.detach()),
+                "queries": draw["query_count"]}
 
 @pytest.mark.parametrize("conditions", [1, 2])
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):
@@ -275,6 +278,8 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     assert metrics["task_exposures"] == stop * 4
     latest = [row for row in exposures if row["step"] == stop]
     assert metrics["mean_flow_loss"] == pytest.approx(sum(row["flow_loss"] for row in latest) / len(latest))
+    assert metrics["mean_local_field_loss"] == pytest.approx(sum(row["local_field_loss"] for row in latest) / len(latest))
+    assert metrics["mean_joint_loss"] == pytest.approx(metrics["mean_flow_loss"] + .1 * metrics["mean_local_field_loss"])
     checkpoint, = (tmp_path / "checkpoints").glob("macro_*")
     trainer = torch.load(checkpoint / "trainer_state.pt", weights_only=False)
     assert trainer["training_state"] == _training_state(config, stop)

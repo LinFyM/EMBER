@@ -1,5 +1,13 @@
 # EMBER progress
 
+## 当前实施：局部物理效果的因果可用性（2026-09-13）
+
+当前active诊断为[操作语义§6](docs/operation_semantics_feasibility.md#6-从语义读出转向实际物理后果当前有界诊断)：
+固定train24×demo16–19×三个时间位置，288条件，各17种预登记动作干预；CPU、无渲染／模型／梯度。
+检验局部连续动作Jacobian对未拟合组合扰动的物理变化预测，不以语义辅助头、reward或success评分。
+新增512MiB空间上限；不通过则停止该局部效果度量，不扫扰动或默认训世界模型；通过也需另登记有界Writer比较。
+下文已关闭状态属于先前标签诊断／Writer；当前没有新Writer训练、selected checkpoint或最终controls。整体goal未完成。
+
 ## 当前补充实施已完成：操作语义标签与设计修正（2026-09-13）
 
 Owner最新要求继续仔细推导、实施并按结果调整。[操作语义可行性](docs/operation_semantics_feasibility.md)已完成关闭：

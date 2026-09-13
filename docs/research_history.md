@@ -1412,3 +1412,13 @@ controller正常exit0；无selected checkpoint、最终controls、Test或RL。�
 原件：`runs/analysis/cross_init_relation_retrieval_20260913/`的launch／初始失败，及`completed/`下
 registration、raw_rows、geometry_schema、episode_scores、summary、evidence_audit、run.log与completion。
 一次性入口退役、源码由Git9f90a14d保留；无新模型、GPU、rollout、Test或最终controls，整体goal未完成。
+
+
+## 2026-09-13：操作语义标签实现及语义rank反例
+
+Owner要求继续推导、实施并按结果调整后，完成[操作语义可行性](operation_semantics_feasibility.md)的有界CPU实现：
+train24×8episode、6,668状态，7bd8a6f5冻结84.34秒exit0。186/192episode有双指接触转换，但抽屉6/8条在采样位置
+没有双指同时接触，区域owning body也不构成区域谓词。停止将二者直接当通用操作阶段，不调整阈值／挑task。
+同时给出直接A监督的零B和共享A反例，防止把语义loss准确当作视频有益传递。
+原件`runs/analysis/operation_semantics_20260913/`保留192份npz、schema、summary、completion与raw重算audit；
+源CLI由Git7bd8a6f5保留后退役。没有新Writer训练、模型forward或闭环结论，整体goal未达。跨轮结论见findings§82。

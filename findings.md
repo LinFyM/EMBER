@@ -1294,3 +1294,17 @@ train96为登记有限池；全部worker exit0，冻结代码defcf734，累计�
 动作offset1与生产Writer不变。修正前的失败、登记、脚本Git及全部原始证据保留，非一次科学non-pass重试。
 原件位于`runs/analysis/cross_init_relation_retrieval_20260913/completed/`，完整索引见诊断§7；约1.3MiB。
 一次性入口退役，无active design、selected checkpoint或新训练；整体goal未完成。
+
+
+## 82. 物理标签有动态覆盖，不足以定义通用语义rank（2026-09-13）
+
+[操作语义可行性](docs/operation_semantics_feasibility.md)完成train24固定192episode、6,668状态位置的CPU恢复，
+源7bd8a6f5、84.34秒exit0。两指同对象接触共2,878对象帧、493次转换，186/192episode存在转换。
+这证明所选物理事实不是task常数；不证明RGB可读、动作适用性、稳定抓持或视频必要性。
+抽屉task20有6/8episode在stride5采样位置没有双指同时接触；region所属body还可能覆盖整柜、整桌或整架。
+因此不把双指proxy及region-body接触直接升格为通用阶段／支撑／前置条件，也不扫阈值或挑task修补。
+
+直接监督生成A的实际响应虽然区别于无关辅助头，仍有明确反例：B=0或rank更新抵消时语义可准确而行为无贡献；
+source h已有language时共享A也可能不需要视频。标签覆盖不能解除这两项传递与特异性问题。
+撤去“通用接触阶段→语义rank”的直接实施依据；保留分部件变化与左右指物理事实，完整Writer尚无合格启动合同。
+新原件约1.36MiB、raw重算及时间对应通过，CLI已退役；本项零梯度、零GPU、零环境步，无held/Test或动作数值读取。

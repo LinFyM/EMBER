@@ -4,7 +4,7 @@
 
 完整目标仍为正确action-hidden教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、
 初始化、相邻checkpoint和固定validation迁移；暂不强制145/400。**整体goal未完成；
-[固定A误差分解诊断](docs/native_correction_acquisition_audit.md)已完成关闭，当前无active design、在途运行或selected checkpoint。**
+[固定A误差分解诊断](docs/native_correction_acquisition_audit.md)已完成关闭；当前仅登记其§7只读幅度／方向与系数代价分析，尚未执行，无在途运行或selected checkpoint。**
 
 [Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)的两臂fresh200、四checkpoint、
 8个bank与8个配对面板／1,984rows已完整结束，原始证据审计及全部worker退出通过。

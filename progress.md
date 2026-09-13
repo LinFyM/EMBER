@@ -1,10 +1,17 @@
 # EMBER progress
 
-## 当前：固定A误差分解完成，转入共享纠正获取分析（2026-09-13）
+## 当前：登记幅度／方向与系数代价的只读分析（2026-09-13）
+
+完整goal保持active且未完成。当前唯一active design为[获取诊断§7](docs/native_correction_acquisition_audit.md#7-后续登记幅度与方向以及弱方向的系数代价)：
+只读现有四模型384条件，分解空间内误差中仅整体幅度可消除与仍需改变方向的部分，并描述弱A方向所需B范数。
+尚未执行；无新模型生成、训练、梯度、动作query、环境步、held读取或selected checkpoint。
+原固定A分析及全部Writer训练继续保持关闭；该新分析不安装解析倍率、不扫描scale或奇异阈值，按四模型一致分支裁决后关闭。
+
+## 最近：固定A误差分解完成并关闭（2026-09-13）
 
 Owner完整有益视频特异性goal保持active且未完成，暂不强制145/400。
 **[原生纠正获取诊断](docs/native_correction_acquisition_audit.md#6-完整结果与关闭裁决)已完整完成并关闭；
-当前无active design、在途GPU／CPU运行或selected checkpoint。** Native Correction Writer及全部旧组合保持关闭。
+该轮结束时无active design、在途GPU／CPU运行或selected checkpoint。** Native Correction Writer及全部旧组合保持关闭。
 
 8c714e91 clean pushed detached固定ordered/frame_set的100/200四checkpoint与train24/demo16–19，
 完成384套合法单视频LoRA，四worker均exit0、501–505秒。CPU分解26.286秒exit0，全部同视频label、

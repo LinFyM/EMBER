@@ -5,7 +5,9 @@
 整体goal保持active且未完成。当前唯一active design为[固定纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
 固定既有state-free的train24/demo16–19共96套LoRA，每套在init32–35四个初态执行，另新算source96，共480个episodes。
 这是privileged训练侧目标诊断，不能计入合法action-hidden Writer成绩；无新label、训练、梯度、held读取、scale／rank扫描或checkpoint选择。
-尚未启动。先完成现有static evaluator的来源检查、冻结与资源准入，再按全部四teacher／四init及task-cluster资格一次裁决。
+尚未启动。现有static evaluator增加59行临时来源检查，9项既有回归、96套真实标签与7项无效身份拒绝均通过。
+创建根前strg01的data0／data1为67.6／1017.6GiB，各自新增1／.5GiB预算可容纳；待clean pushed frozen与live GPU准入。
+随后按全部四teacher／四init及task-cluster资格一次裁决。
 已有oracle正证据止于独立动作预测；本项优先确认目标G自身的闭环价值，避免从参数拟合缺口默认另一个Writer。
 此前全部Writer、固定A与ray分析保持关闭；当前是否执行只看本节与新设计。
 

@@ -42,6 +42,7 @@ COMPLETE_POLICY_RESPONSE_WRITER_ADAPTER_SCHEMA = (
 )
 POLICY_RESPONSE_WRITER_ARM_PREFIX = "ecp_policy_response_writer_"
 FIXED_CARRIER_ARM = "frozen_stable_carrier"
+NATIVE_CORRECTION_ORACLE_ARM = "native_source_correction_state_free_oracle"
 
 
 def validation_task_keys() -> tuple[tuple[str, int], ...]:
@@ -206,6 +207,8 @@ def _language_provenance(manifest: Mapping[str, Any]) -> bool:
 
 
 def _manifest_provenance_valid(manifest: Mapping[str, Any], arm: str) -> bool:
+    if arm == NATIVE_CORRECTION_ORACLE_ARM:
+        return _native_correction_provenance(manifest)
     if arm == FIXED_CARRIER_ARM:
         return _fixed_carrier_provenance(manifest)
     if arm == "ecp_native_factor_g1_free_code":
@@ -289,6 +292,8 @@ def _complete_writer_bank(manifest: Mapping[str, Any]) -> bool:
 
 
 def _rank_partition_valid(manifest: Mapping[str, Any]) -> bool:
+    if manifest.get("arm") == NATIVE_CORRECTION_ORACLE_ARM:
+        return manifest.get("rank_partition") == {"task": [0, 16]}
     if _complete_writer_bank(manifest):
         contract = manifest["shared_run_contract"]
         return (
@@ -376,6 +381,58 @@ def _checkpoint_authority_matches(
     )
 
 
+def _native_correction_provenance(manifest: Mapping[str, Any]) -> bool:
+    """Temporary train24 oracle identity; retired after the registered panel."""
+    path = Path(str(manifest.get("oracle_authority", {}).get("label_registration", "")))
+    if not path.is_file():
+        return False
+    authority = read_json(path)
+    condition = manifest.get("condition", {})
+    wall = manifest.get("information_wall", {})
+    return all((
+        authority.get("schema") == "native_source_correction_labels_v1",
+        authority.get("source_operator_commit") == "f39d594f",
+        authority.get("state_contract") == "state_free",
+        authority.get("privileged_training_labels_only") is True,
+        manifest.get("evaluation_role") == "development_train",
+        condition.get("teacher_demo") in (16, 17, 18, 19),
+        condition.get("K") == 1,
+        condition.get("outcome_dependent_selection") is False,
+        len(manifest.get("tasks", ())) == len(authority.get("tasks", ())) == 24,
+        {row.get("global_task_id") for row in manifest.get("tasks", ())} == set(authority.get("tasks", ())),
+        wall.get("privileged_oracle_diagnostic") is True,
+        wall.get("teacher_actions_used_for_construction") is True,
+        wall.get("action_hidden_deployment_claim") is False,
+        wall.get("new_teacher_action_reads") == 0,
+        wall.get("optimizer_steps") == 0,
+        wall.get("checkpoint_selection") is False,
+    ))
+
+
+def _inspect_native_correction_row(row, key, manifest, lora):
+    authority = read_json(Path(manifest["oracle_authority"]["label_registration"]))
+    demo, task = manifest["condition"]["teacher_demo"], row["global_task_id"]
+    entries = [entry for entry in authority["entries"] if (entry["task"], entry["demo"]) == (task, demo)]
+    path = Path(str(row.get("adapter_path", ""))).resolve()
+    metadata_path = Path(str(row.get("construction_metadata", ""))).resolve()
+    if (len(entries) != 1 or path != Path(entries[0]["adapter"]).resolve()
+            or not path.is_file() or path.stat().st_size != row.get("adapter_bytes")
+            or metadata_path != path.with_suffix(".json") or not metadata_path.is_file()
+            or row.get("teacher_demo") != demo or row.get("single_complete_rank16") is not True):
+        raise Pi05EvaluationError("native correction oracle source identity changed")
+    metadata = read_json(metadata_path)
+    offset = {"libero_spatial": 0, "libero_object": 10, "libero_goal": 20, "libero_10": 30}.get(key[0], -100)
+    if (metadata.get("task") != task or task != offset + key[1]
+            or metadata.get("teacher_demo") != demo or metadata.get("suite") != key[0]
+            or metadata.get("arm") != "state_free"):
+        raise Pi05EvaluationError("native correction oracle task or teacher changed")
+    state = load_file(str(path), device="cpu")
+    validate_lora_state(state, lora)
+    if any(value.dtype != torch.float32 or not torch.isfinite(value).all() for value in state.values()):
+        raise Pi05EvaluationError("native correction oracle requires complete finite FP32 factors")
+    return dict(row)
+
+
 def _inspect_static_task_row(
     *,
     row: Mapping[str, Any],
@@ -384,6 +441,8 @@ def _inspect_static_task_row(
     manifest: Mapping[str, Any],
     lora: Any,
 ) -> dict[str, Any]:
+    if arm == NATIVE_CORRECTION_ORACLE_ARM:
+        return _inspect_native_correction_row(row, key, manifest, lora)
     checkpoint = Path(str(row.get("checkpoint", ""))).resolve()
     adapter_path = Path(str(row.get("adapter_path", ""))).resolve()
     checkpoint_manifest = checkpoint / "manifest.json"

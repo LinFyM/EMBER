@@ -78,3 +78,15 @@ launch前同时live检查gpu01／gpu02，单节点至多使用6张有实际吞�
 
 保留registration、launch、四份oracle引用manifest、原始480rows、各面板完整退出／aggregate、配对与统计原件。
 公式、源配置／RNG配对、task/video/init全覆盖、单完整adapter与worker退出核验后关闭；不新增hash、全树扫描或部署旁路。
+
+## 6. 实施与输入准入
+
+现有`static_task_lora.py`增加59行来源分支，保持唯一`FrozenStaticTaskLoRAAdapter`与评测器执行逻辑。
+原9个static adapter测试通过；实际96套标签的原注册路径、task/demo、state-free metadata、完整76个finite FP32因子通过。
+另有7个无效descriptor（越界teacher、held角色／task、虚假action-hidden声明、错teacher／adapter／true-state metadata）均被拒绝，
+CPU输入核验1.201秒，无tensor复制或模型forward。原件为`oracle_rollout/input_qa.json`及四份引用manifest。
+
+结构检查提示文件671行、新来源谓词复杂度19、既有总检查函数75行／复杂度23；这些是有限身份字段核验，
+本次不拆分或复制执行器，按§5在诊断关闭后移除59行临时支持。没有新增活动模块、入口或学习机制。
+创建根前strg01的data0为67.6/1024GiB、data1为1017.6/1024GiB；各自预算1/.5GiB后为68.6/1018.1GiB。
+data0个人目录68GiB、既有data1工作临时树13GiB，共享容量足够；正式launch仍需当时GPU准入及clean pushed frozen代码。

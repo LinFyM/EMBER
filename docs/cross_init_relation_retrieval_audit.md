@@ -20,7 +20,8 @@
 
 - 使用固定train24全部任务；teacher参照来自action训练池的demo16–19，query来自原动作诊断池demo42–45。
   每条query episode分别与四条teacher配对，共24×4×4个episode对。每个condition始终仅有一条teacher。
-- 每条episode只取`i=0,5,10,...`且`i+5<N`的位置。`obs[i]`与`states[i+1]`同为post-action时刻；
+- 每条episode只取`i=0,5,10,...`且`i+5<N`的位置。`obs[i]`对应`states[i+1]`的控制周期，
+  几何恢复另按§6对齐末端传感器的子步缓存；
   Value与评分目标均为`actions[i+1:i+6]`的完整5×7控制chunk，不做末端padding或动作平均后复制。
 - 从封存目标manifest确认train身份，使用现有HDF5、source normalization、官方BDDL及本地assets；
   不读取validation/test动作，不改24/8/8身份，不读teacher0–15或held teacher46–49的privileged字段。
@@ -75,3 +76,16 @@ D_relative = D_common + meanₒₖ(||(pₒₖ−e)−(pₒₖ′−e′)||²) / 
 strg01现场data1 quota为991.9GiB/1TiB，共享空间83TiB；现有`.codex/tmp`为13GiB。
 新增冻结源码与全部输出按512MiB峰值预算，预估峰值992.4GiB，复用所有大资产、不下载或复制模型。
 这是只读数据分析，GPU不参与；不启动GPU预检或任何历史运行。
+
+## 6. 评分前的子步时刻修正
+
+首次冻结54be9ca3运行在task0/demo16的坐标检查退出，尚未计算任何动作检索MSE。
+`states[i+1]`直接forward与存储末端最大差.00061199859m，而旧同下标state最大差.01516064470m。
+已安装robosuite的step在每个子步`sim.forward → sim.step → update_observables`，EEF传感器读取site_xpos缓存。
+task0/demo16的17个登记位置中，从下一存储qpos按同一qvel回退一个模型子步再forward，最大位置差约1.09e−15m；
+此模型子步.002s，外层控制周期.05s。这支持末次积分前运动学缓存的时刻对应，不是把未来动作标签改回同下标。
+
+修正后的诊断从`states[i+1]`通过`mj_integratePos(..., -model.opt.timestep)`恢复缓存几何时刻再forward，
+继续保留原obs末端／夹爪读数和`actions[i+1:i+6]`。每个episode仍核对恢复末端与存储末端在.0001m内，
+记录实际子步与最大误差，不扫描阈值。此次修正不涉及RGB、source模型或生产Writer代码。
+原失败registration／failure与日志保留；修正的完整输出放同一analysis根的`completed/`，不覆盖首轮原件。

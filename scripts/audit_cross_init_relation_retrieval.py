@@ -80,6 +80,10 @@ def geometry_episode(demo, objects, asset_root: Path, robosuite_root: Path):
         data.time = state[0]
         data.qpos[:] = state[1:1 + model.nq]
         data.qvel[:] = state[1 + model.nq:]
+        # Stored EEF sensors use mj_step's last pre-integration kinematics.
+        # Reconstruct that substep, rather than changing the high-level action offset.
+        mujoco.mj_integratePos(model, data.qpos, data.qvel, -model.opt.timestep)
+        data.time -= model.opt.timestep
         mujoco.mj_forward(model, data)
         coordinate_errors.append(float(np.linalg.norm(data.site_xpos[grip_sites[0]] - own[:3])))
         positions.append([getattr(data, "xpos" if kind == "body" else "site_xpos")[i].copy()
@@ -108,7 +112,8 @@ def geometry_episode(demo, objects, asset_root: Path, robosuite_root: Path):
     if chunks.shape != (len(frames), 5, 7) or not np.isfinite(chunks).all():
         raise ValueError("Invalid future action chunks")
     return {"frames": frames, "absolute": absolute, "relative": relative, "actions": chunks,
-            "signature": signature, "max_coordinate_error_m": max(coordinate_errors)}
+            "signature": signature, "max_coordinate_error_m": max(coordinate_errors),
+            "kinematic_backstep_seconds": float(model.opt.timestep)}
 
 
 def nearest(query, teacher):
@@ -142,6 +147,7 @@ def run(args):
         "teacher_demos": TEACHERS, "query_demos": QUERIES, "stride": 5, "action_start_offset": 1,
         "chunk_size": 5, "bootstrap_seed": 20260916, "bootstrap_replicates": 20000,
         "position_scale_m": 0.10, "gripper_scale_m": 0.04,
+        "geometry_timing": "next_stored_qpos_back_one_mujoco_substep_to_cached_eef_sensor",
         "learned_parameters": 0, "uses_privileged_teacher_actions_and_geometry": True,
     })
     all_ids, all_distances, raw = [], [], {name: [] for name in ("target", *ARMS)}
@@ -166,6 +172,7 @@ def run(args):
             raise ValueError("Body/site correspondence differs across episodes")
         schemas.append({"task_id": tid, "suite": suite, "objects": objects, "points": reference,
                         "frames_by_demo": {str(i): ep["frames"].tolist() for i, ep in episodes.items()},
+                        "kinematic_backstep_seconds_by_demo": {str(i): ep["kinematic_backstep_seconds"] for i, ep in episodes.items()},
                         "max_coordinate_error_m": max(ep["max_coordinate_error_m"] for ep in episodes.values())})
         cell_scores = []
         for teacher_id in TEACHERS:

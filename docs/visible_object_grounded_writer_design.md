@@ -122,7 +122,7 @@ validation correct−匹配frame_set的task-cluster95%下界>0、至少两个sui
 旧配置为明确关闭的历史参照，不作为当前默认训练。模型计算图/初始化不变，实验身份由新config与run contract标识。
 
 构建前strg01报告/data1为991.9GiB/1TiB、共享83TiB空闲，相关历史标签2.7MiB、workspace tmp13GiB。
-标签构建预算512MiB（含短期217MiB frozen worktree）；未来训练/四checkpoint/LoRA banks另预留不超过12GiB，
+标签构建预算512MiB（含短期217MiB frozen worktree）；最初训练/四checkpoint/LoRA banks估计12GiB；启动审计已用同构实测纠正为29GiB，
 正式启动前再测独立quota、相关目录并确认总峰值。复用source、V-JEPA和数据，不复制大模型。
 所有正式数据构建和train/eval来自clean pushed detached frozen commit。训练前用实际最长视频完成一次信用/峰值profile，
 检查标签只进loss、两辅助项到Q/K的梯度、主FM/Meta共同更新、identity、finite与原采样合同。
@@ -145,3 +145,16 @@ GPU启动前同时live检查两节点，遵守Owner总量与每节点限制、NU
 这是标签数据合同通过，未训练物体定位器、未证明有益参数生成。标签生成入口完成后退役，源保留05fe7ebe。
 原件为`runs/analysis/visible_object_grounding_20260913/labels`，邻接保留launch、log、QA源码、audit和label_alignment.png。
 初次启动先于frozen worktree复制结束，在Python入口前失败且没有处理数据；错误原件保留，随后同命令完整执行。
+
+## 8. 原生profile与正式资源审计
+
+05fe7ebe冻结代码在gpu01/0完成最长task38/demo0、93帧的两次64query联合反向并exit0。
+warm26.38秒，峰值allocated39.17／reserved42.17GiB；microbatch8、native frame chunk4、prior window batch4。
+两处实际Q/K均收到finite非零梯度，第二次Writer／Action Meta／VL Meta均非零，source与V-JEPA保持冻结。
+第一步Action Meta为零符合完整生成LoRA合法identity的主FM路径；第二步不再为零。没有保存或继承profile参数。
+这只证明信用与资源可运行，不证明已学会空间绑定或有益视频特异性。
+
+正式输出同构参考实测：每臂两checkpoint约7.60GiB、四bank约4.77GiB，两个臂合计约24.77GiB。
+加临时写入、日志、冻结源和余量后本阶段预算29GiB，替代遗漏完整checkpoint与banks的初始12GiB估计。
+strg01启动准备期/data1为992.1GiB/1024GiB，预计峰值1021.1GiB；共享83TiB空闲。
+正式学习、物化、评测各阶段继续检查剩余峰值，不依共享空闲推断个人配额；条件性后续另行预算。

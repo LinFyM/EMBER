@@ -6,8 +6,8 @@
 当前active design见[物体与运动落点监督](docs/visible_object_grounded_writer_design.md)，整体goal未完成。
 
 1. 已登记：将训练侧可见对象／部件位置直接监督实际视觉cross-attention；保留原输入、完整H、全部共同学习模块及LoRA出口。
-2. 实施训练池384条视频的CPU空间标签，核对图像坐标、关节body及全部采样索引；标签只在loss中使用。
-3. 验证真实主FM与空间梯度共同通过、最长视频资源与信息墙，完成clean pushed frozen profile后fresh启动两臂。
+2. 已完成：384条CPU空间标签及全部数组／坐标QA；标签只在loss中使用，一次性构建入口已退役。
+3. 原生最长视频profile已通过：两次64query完整反向，warm26.38秒、峰值allocated39.17／reserved42.17GiB；当前准备fresh两臂的冻结启动。
 4. 各200updates／51,200queries，完整100/200的8面板；严格按设计资格和停止分支裁决，不根据局部loss扫权重或增加节点。
 5. 通过才补换视频、强静态和跨初始化，合法冻结后最终controls；未通过关闭当前组合。Test／RL／held梯度不使用。
 

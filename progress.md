@@ -13,12 +13,18 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 目前尚无新训练或selected checkpoint。标签构建、真实图信用/资源profile通过后才从clean pushed frozen版本学习。
 旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
 实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
-两处真实Q/K均非零。该检查只证明图接通，原生最长视频profile仍待完成。
+两处真实Q/K均非零。该检查只证明图接通；原生最长视频profile已随后完成，结果见下。
 
 384条训练视频标签已完成：05fe7ebe clean pushed frozen，257.81秒exit0；13,626采样帧中13,242可恢复，
 所有可恢复帧有可见OOI，10,819帧有可见运动质量。全部原始数组／映射重算和四suite双相机／prior裁剪叠图通过。
 初次启动因frozen工作树尚未复制完成而在程序入口前exit2，错误已保留；随后同命令完整完成，无标签处理重叠。
 原件见runs/analysis/visible_object_grounding_20260913；一次性构建入口退役，后续只由训练loss加载这些标签。
+
+原生profile已正常exit0：05fe7ebe冻结、gpu01/0，task38/demo0的93帧，两次64query联合反向。
+第二次26.38秒、峰值allocated39.17／reserved42.17GiB，实际patch/prior Q/K梯度非零；
+Writer／Action Meta／VL Meta第二次均有finite梯度，source与V-JEPA无梯度。profile不保存或复用模型。
+正式配置已登记完成；尚无正式学习。按旧同构输出实测修正本阶段完整存储预算为29GiB，
+原12GiB估计遗漏完整checkpoint与全部banks，不能继续沿用；strg01当前992.1GiB，预计峰值1021.1<1024GiB。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

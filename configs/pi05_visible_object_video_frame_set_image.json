@@ -152,7 +152,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Fresh bounded100/200 actual attention supervision; profile pending; historical initialization is not reused",
+    "initial_use": "Fresh bounded100/200 actual attention supervision; native longest-condition profile complete; no profile initialization reuse",
     "qualification_registration": "docs/visible_object_grounded_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -427,9 +427,21 @@
     },
     "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
     "profile_registration": {
-      "status": "pending",
+      "status": "complete",
       "condition": "longest train24 teacher task38 demo0,93frames",
-      "initialization_reused": false
+      "source_commit": "05fe7ebe",
+      "evidence": "runs/analysis/visible_object_grounding_20260913/profile/results.json",
+      "policy_microbatch": 8,
+      "frame_chunk": 4,
+      "prior_window_batch": 4,
+      "warm_condition_seconds": 26.382145659066737,
+      "peak_allocated_gib": 39.16984558105469,
+      "peak_reserved_gib": 42.169921875,
+      "source_and_prior_frozen": true,
+      "finite_joint_backward": true,
+      "actual_patch_and_prior_qk_gradients_nonzero": true,
+      "initialization_reused": false,
+      "graph_scope": "two complete ordered condition backward/update passes; frame_set uses the same supervision and smaller temporal graph"
     }
   },
   "update_version": "visible_object_main_fm_spatial_credit_v1",

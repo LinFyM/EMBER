@@ -1,88 +1,48 @@
 # EMBER progress
 
-## 当前：实施原生输入配对的纠正Writer（2026-09-13）
+## 当前：原生纠正Writer有界闭环完成，转入获取缺口分析（2026-09-13）
 
-Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
-依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
-09c1a0d6 clean pushed detached的两臂fresh200已全部完成exit0；四份checkpoint及采样配对通过。
-8个LoRA bank、1,984套完整LoRA已全部封存，四个生成worker均exit0；
-6个配对闭环面板、1,184rows已完成；目前GPU01的0–5六卡正在执行ordered/200/validation400，随后为frame_set/200/validation400。
-当前无selected checkpoint，整体goal未完成。
-所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
+Owner的完整有益视频特异性goal保持active且未完成，当前暂不强制145/400。
+**[Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)已按原资格完成关闭；
+当前无active design、selected checkpoint或在途训练／评测。** 旧Writer、冻结正例复核及原生纠正oracle诊断继续保持关闭。
 
-新出口为`ΔW=B(RX)`：从同组完整RGB以裸source读真实38-target输入X，视频网络输出自由B和逐位置R。
-纠正与X在同一位置配对，不部署loss、autograd、SVD或task-local更新；B零初始化给出identity。
-它只保证低秩构造及参数作用关系，有限网络获取与闭环收益尚待完整配对裁决，不将普通FactorHead改名当新证据。
-原Meta、完整H、视频prior、encoder/Compiler和有后段绝对正证据的空间信用保留，旧自由A/B出口已替换并退役。
+09c1a0d6 clean pushed frozen完成两臂各fresh200、800教学条件与51,200主query；四完整checkpoint、
+8个sealed bank和1,984条配对闭环记录完整。训练18个曝光字段及0/100/200独立诊断配对通过，teacher逐条件排除于主query。
+全部阶段与96个评测worker均exit0，真实stride5帧／末帧、50视频无放回、RNG、单次Writer与76因子／checkpoint身份、
+raw和aggregate审计通过；累计评测launcher墙钟4,051.92秒，controller已正常退出，无本研究在途Python进程。
 
-新教学池取授权action池16–41；主FM逐condition排除同一教学episode，仍四suite各一task、64query/task。
-624个source纠正目标复用旧16–19的96套state-free因子，仅新增20–41的528套；完整624条空间标签沿原定义构建。
-真实标签只进loss，42–45无梯度诊断、46–49未用教学视频与validation/Test墙保持；不声称新旧教学池逐行相同。
-按`.1`更新误差与既有主FM／空间目标共同fresh学习，未注册λ/rank/seed扫描；正式100/200节点已在真实profile后、学习前固定。
-两节点的8个train96/validation400配对面板及当前frame_set资格保持，最终controls仍在选定冻结以后。
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation O−F 95%CI |
+| --- | --- | --- | --- |
+| 100 | 15/96 / 15/96 | 50/400 / 51/400 | [−.75,0]pp |
+| 200 | 19/96 / 20/96 | 50/400 / 49/400 | [−.75,+1.5]pp |
 
-新数据已完成并封存：ca87f05c clean pushed frozen构建528套新纠正标签，6 worker全部exit0，
-墙钟95.29–99.55秒、峰值10.225GiB；加已有96套原件引用组成完整624套，teacher原始数组／幅度／完整因子审核通过。
-CPU空间构建438.79秒exit0，624条／22,319真实frames完整；原始stride5及末帧、512/576布局、有效性与aggregate复核通过。
-原件在`runs/analysis/native_correction_writer_20260913/`，物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913`，
-构建阶段标签约2.6GiB。两个构建入口已完成其生命周期，退出活动树，精确源码保留在ca87f05c。
+有序净增−1→+1，两个区间下界均未严格正，净正suite数0/1，未满足相邻同向和至少两个suite净正。
+按原设计§6关闭本共享获取／原生因子组合，不追加训练或rank／λ／seed／LR／scale扫描，不补未获资格的
+other／强静态／跨初始化或最终内容／shuffled/reversed controls、Test、RL；整体goal不因此完成。
 
-前向、训练label边界、逐condition跨episode采样及新checkpoint身份已实现；旧自由A/B出口与三份旧配置已替换。
-相关接口／梯度检查通过。9c14f476最长105帧的两次反传43.12／32.84秒、峰值35.77GiB，纯推理正常exit0；
-但首次Adam把L_update从1推至2910.36。固定Q/A的纠正梯度解析读出2906.34，单独单位行A仍162.19。
-据此在正式学习前登记[设计§9](docs/native_correction_writer_design.md#9-正式学习前的因子单位修正)：
-A固定单位行，B用全部624标签计算的38个共享参数单位，不改变原loss度量／权重或Adam设置。
-范围3.91385e-8–.00305696，只有train24共享统计，部署不读label；architecture改为v2并fresh重做最长profile。
-f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.770GiB、reserved37.182GiB；
-主FM .11770744→.11770465，L_update 1→.99981159，第二步Q/K、native key与Action/VL Meta共同梯度有效。
-裸source与prior冻结，纯前向一次产出38目标／76因子，没有loss／autograd。所有profile权重丢弃，不作正式初始化。
-据此正式学习前固定两臂各100/200、800条件、51,200主query及8个配对面板，保留原有资格与停止条件。
-两臂各完成200updates、800教学条件、51,200主query，墙钟7022.86／7025.27秒，训练均正常exit0。
-18个曝光字段全程一致，逐condition主query排除teacher；0/100/200诊断的10个task／视频／动作／RNG字段匹配，无诊断梯度。
-100节点checkpoint各368,432,539bytes，200节点各368,432,731bytes；四份完整状态包括Writer、Adam、scheduler、
-sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。训练读出不能代替完整闭环裁决。
+validation有序两个节点S/O/G/L均为0/6/41/3，frame_set为0/6/41/4及0/6/42/1，breadth均3/8。
+source47/400为0/5/41/1；有序两个节点相对source均R/G/L=45/5/2、churn7、J=.86538，净率区间[0,+1.75]pp。
+保留名义+3及Goal总数保持，不能据此宣称统计明确的source收益或有益视频特异性。
+有序对frame_set的100／200分别R/G/L=45/5/6与46/4/3、churn11/7、J=.80357/.86792。
+相邻有序50→50为46/4/4、churn8、J=.85185；frame_set51→49为45/4/6、churn10、J=.81818。
+较低churn成立，成功集合仍有变化，Spatial仍零成功，共五个validation task零成功。
 
-固定独立动作诊断初始均为.15328534，100步有序／无序为.15307564／.15304530，仅小幅变化；
-分别12/24、15/24task下降，Spatial与Long均值略升，Object／Goal略降。23个共同出现task的训练窗口中，
-首25→末25条件的L_update为.98578→.96394／.98569→.96108；有序object／motion KL为2.087→1.189／3.339→.830，
-无序为2.085→1.155／3.450→1.600。两个窗口使用不同teacher draws，以上只描述训练区拟合，不能当作配对改善或闭环收益。
-200步独立动作诊断有序／无序为.15281900／.15280163，仍仅小幅变化；17/24、16/24task下降，Spatial均值略升，
-其余三suite略降。末25条件窗口的L_update为.90642／.90657，object KL .69610／.69681，motion KL .40473／.88908。
-相同读取目标的拟合已发生，参数拟合与独立动作变化仍有限；完整逐task、checkpoint、窗口及曝光证据在`training_readout.json`。
-原定8个配对闭环面板继续，不能用这些量作资格裁决。
+训练侧frame_set15→20保留15、新增5、丢失0，净率区间[+1.042,+9.375]pp；相对source15亦有正区间。
+有序15→19的相邻区间跨零。两臂train breadth均7/24，不能把本轮写成完全没有学习。
+固定独立动作FM初始.15328534，100有序／无序.15307564/.15304530，200为.15281900/.15280163；
+末25条件L_update约.90642/.90657，空间信用亦有拟合。它们不能代替真实行为或唯一定位失败接口。
+完整624标签的共同成分与样本内常量参照继续作为限定统计，见findings§90；真实纠正oracle的功能前提保留，见§88。
 
-补充只读标签统计：完整624套训练目标的同task共同成分比例平均.468739，按原相对Frobenius度量、
-无秩约束的task常量样本内最小误差平均.516543；S/O/G/L分别.55077/.55788/.27449/.68304，
-总更新能量87.415%位于action_out_proj。CPU 6.73秒、零模型forward／梯度，因子Gram对dense更新内积的单项计算复核通过。
-它只是有task标签的样本内参照，不是部署baseline、RGB可获取证明、不可约误差或匹配训练曝光；不改变本轮训练／选择。
-原件为`label_structure_registration.json`、`label_structure.py/json/log`，完整公式、26×26 Gram和逐task／demo／layer结果保留。
+本轮有序200的Goal41优于上一空间监督组合的9，Object6则低于59、总数50低于71；
+教学池16–41与旧0–15不同，出口和纠正监督共同改变，不宣称匹配曝光的单变量消融。
+下一步先区分有限R/A空间、B的纠正预测／学习信用、读取与视频信息限制，形成有停止条件的最小冻结诊断；
+不由本轮non-pass自动启动另一完整Writer，也不从参数存在性或共同标签统计推断RGB获取已解决。
 
-正式启动已刷新两节点及strg01：data0为54.7/1024GiB，data1为1017.9/1024GiB；data0个人目录du53GiB。
-大新输出总峰值18GiB，扣除现有标签后尚余15.4GiB，预计data0峰值70.1GiB；source／prior／数据及旧96套标签复用。
-训练物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913/training`，workspace outputs同名入口为symlink。
-已结束的训练tmux为`ember-native-correction-ordered`、`ember-native-correction-frame_set`；GPU01两组world3的CPU分别NUMA0/1，
-source/prior trainable均0，NCCL_P2P_DISABLE=1及deferred NCCL生效。完整合同在analysis的`launch_contract.json`。
-
-`ember-native-correction-queue`已核对全程800条件及四checkpoint，并以GPU01的0–3四卡完成8个bank；
-四个worker各负责一个single checkpoint的train96／validation400，均exit0，所有1,984条件均为本次新生成。
-8个manifest已封存，单checkpoint路径及09c1a0d6 clean pushed frozen身份相符。
-物化前12:32UTC两节点检查及data0额度56.1/1024GiB、剩余预算12GiB的记录保留。
-13:14UTC评测前重新检查两节点及strg01：data0用量65.7/1024GiB、剩余预算2GiB、预计67.7GiB；
-GPU01的1–6六卡启动前均空闲，自有GPU占用为0。首个ordered/100/train96已实际启动12个persistent worker，
-按原队列依次完成8个面板／1,984配对rows；目前尚待完整闭环裁决。每次GPU阶段重查两节点与data0额度，
-累计所有自有GPU不超过6，不运行未获资格的other／静态／最终controls。`overnight_status.json`、`queue.log`与`queue.exit`
-保留控制状态；后续raw审计与逐task/suite、source／frame_set及相邻配对读出已接入。新旧教学曝光不同，不宣称其匹配消融。
-
-截至14:00UTC，6个面板／1,184rows已封存，各面板原始行数与12个worker的正常退出均已核对：
-
-| 节点 | train ordered / frame_set | validation ordered / frame_set |
-| --- | --- | --- |
-| 100 | 15/96 / 15/96 | 50/400 / 51/400 |
-| 200 | 19/96 / 20/96 | 运行中 / 待运行 |
-
-ordered/200/validation400的launcher及12个worker已确认存活；剩余两个面板沿既定队列执行。
-以上是已封存面板的绝对计数，尚未完成本轮逐task／suite、source、相邻success-set及区间的综合裁决；
-不能由部分计数选择checkpoint或恢复关闭的实验。整体goal未完成。
+原件在`runs/analysis/native_correction_writer_20260913/`（物理根`/data0/user/ymdai/ember_runs/native_correction_writer_20260913`）：
+完整`OVERNIGHT_READOUT.md`、`paired_summary.json`、`bounded_200_decision.json`、自动初步decision、
+`evidence_audit.json`、`training_pairing.json`、`training_readout.json`与`launch_contract.json`均保留。
+训练、四checkpoint、8个bank与8个原始评测目录在同物理根`training/`；相关标签、profile及只读统计原件保留。
+跨轮结论见findings§91，实施与数值准入历史见设计§1–9。以下历史段落不恢复执行。
 
 ## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 

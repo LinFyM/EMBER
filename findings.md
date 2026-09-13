@@ -1440,7 +1440,7 @@ oracle更新右空间属于其输入X的行空间，完整视频X包含oracle四
 
 保留原有读取及实际空间信用；使用授权action池16–41自己的RGB/纠正label，主FM必须逐条件排除其教学episode。
 这是新episode合同，不伪装成与旧0–15教学逐行匹配；目标标签不进入部署。拟合、identity与参数空间都不等于行为，
-最终仍由两个节点的完整配对闭环、跨视频／初始化保持与冻结后的controls裁决。两臂fresh200已完成，闭环结果尚待。
+最终仍由两个节点的完整配对闭环、跨视频／初始化保持与冻结后的controls裁决。两臂fresh200和8个闭环面板已完成，按原资格关闭，见§91。
 
 初始最长profile的图与梯度成立，但第一步参数误差1→2910.36。固定Q/A的解析首步2906.34表明输出坐标尺度足以解释主要放大，
 单独单位A仍162.19。按[设计§9](docs/native_correction_writer_design.md#9-正式学习前的因子单位修正)在正式学习前修正：
@@ -1461,3 +1461,38 @@ oracle更新右空间属于其输入X的行空间，完整视频X包含oracle四
 原件在runs/analysis/native_correction_writer_20260913的label_structure_registration、label_structure.py/json/log；
 CPU 6.73秒完成，保留全部Gram、逐demo能量／误差和逐layer统计，因子Gram与实际dense更新内积的单项复核通过。
 该只读分析不产生初始化、adapter、梯度或checkpoint选择，不改变当前active design与停止条件。
+
+## 91. 原生纠正Writer保留source能力，但未获得有益有序增量（2026-09-13）
+
+[Native Correction Writer§10](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)完成两臂各fresh200、
+四完整checkpoint及8个面板／1,984条配对记录。100/200的train有序／无序为15/15、19/20；
+validation为50/51、50/49。有序−frame_set的task-cluster95%净率区间分别[−.75,0]pp、[−.75,+1.5]pp，
+净正suite数0/1、增量−1→+1；没有通过严格正下界、至少两个suite净正与相邻同向的原资格。
+
+有序两个validation节点S/O/G/L均为0/6/41/3，frame_set为0/6/41/4及0/6/42/1，breadth均3/8。
+source47为0/5/41/1；有序各相对source保留45／新增5／丢失2、churn7、J=.86538，净率区间[0,+1.75]pp。
+名义+3、Goal总数保持与低churn是有限正事实，不证明统计明确的source收益；Spatial仍零成功，共五个validation task零成功。
+有序对frame_set两节点的R/G/L为45/5/6、46/4/3，churn11/7、J=.80357/.86792；
+有序相邻50→50为46/4/4、churn8、J=.85185，无序51→49为45/4/6、churn10、J=.81818。
+成功总数相同不等于相邻成功集合相同，较低churn也不等于视频必要性。
+
+训练侧frame_set15→20保留15／新增5／丢失0、净率区间[+1.042,+9.375]pp，相对source15也有正区间；
+有序15→19的相邻区间跨零，四模型breadth均7/24。保留该有限训练收益，不能写成完全没有学习。
+固定独立动作FM初始.15328534，100有序／无序.15307564/.15304530，200为.15281900/.15280163；
+末25条件L_update约.90642/.90657，空间信用有拟合。窗口teacher draws不同，不将其与§90的样本内常量参照
+冒充匹配曝光比较，也不以参数误差代替闭环裁决。
+
+本轮有序200的Goal41优于上一空间监督组合9，Object6低于59、总数50低于71。
+教学池16–41与旧0–15不同，出口及纠正监督共同改变，不能将差额唯一归责原生因子出口。
+§88的真实纠正oracle跨episode功能正事实仍成立；任意R的空间存在性、共同标签结构与本有限共享模型获取是不同问题。
+本轮失败不唯一识别Meta、Compiler、有限R/A空间、B纠正预测／学习信用或RGB信息限制。
+
+09c1a0d6 clean pushed frozen运行，训练18个曝光字段、0/100/200独立诊断10个字段配对通过；
+全部真实帧／末帧、state-video无放回与有限池、环境／policy RNG、76因子和single-checkpoint身份、raw及aggregate通过。
+全部阶段和96个评测worker均exit0，评测launcher累计4,051.92秒，controller正常退出、无在途本研究Python进程。
+原件在runs/analysis/native_correction_writer_20260913的完整readout、paired_summary、最终decision、audit及training原始目录。
+
+按预登记停止该共享获取／原生因子组合，不追加训练或rank／λ／seed／LR／scale扫描，不补未获资格的
+other／强静态／跨初始化、最终controls、Test或RL；没有selected checkpoint，完整goal未完成。
+下一项先区分有限原生输入空间与纠正获取的竞争解释，核对近等价历史并登记有停止条件的最小冻结诊断；
+本结果不自动授权恢复本组合或连续新增完整Writer。

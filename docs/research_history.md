@@ -1,5 +1,12 @@
 # EMBER research history
 
+2026-09-13完成[Native Correction Writer](native_correction_writer_design.md#10-完整有界结果与关闭裁决)：
+两臂各fresh200、8个配对面板／1,984rows完整且审计通过；validation有序／无序100为50/51、200为50/49。
+有序净增区间均未严格正，增量−1→+1、净正suite0/1，按原资格关闭，无selected checkpoint或最终controls。
+保留相对source47的名义+3、Goal41保持、较低churn及frame_set训练15→20的有限正收益；breadth未扩展。
+原生真纠正oracle的跨episode功能前提仍成立；合法共享获取缺口尚不能唯一归到R/A、B、读取或RGB信息。
+完整事实、比较限制与原件见findings§91及下方同日历史条目；完整goal未完成，不恢复该组合训练。
+
 2026-09-13完成[可见物体与运动落点监督](visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)：
 两臂各fresh200、100/200的8个闭环面板／1,984rows全部完成并审计通过。validation有序／无序为20/24、71/70，
 净率95%CI均跨零、有序净差未相邻同向，按登记关闭；无selected checkpoint或最终controls。
@@ -1468,3 +1475,31 @@ state-free full10 83/96条件改善，task2/34/37平均非正全部保留。按�
 `TRANSFER_READOUT.md`、`paired_summary.json`、`bounded_decision.json`及两个audit。一次性源码由f39d594f保留后退役。
 具体出口的功能正证据不证明RGB获取、视频特定收益、闭环或validation迁移；下一步只据正分支推导合法前向摊销生成。
 没有selected checkpoint、旧Writer恢复、Test、RL或最终controls，整体goal未达；跨轮结论见findings§88。
+
+## 2026-09-13：原生纠正Writer完整闭环未获有益有序资格
+
+[Native Correction Writer](native_correction_writer_design.md)以固定裸source输入构成A、自由B表达纠正，
+由真实oracle完整ΔW提供共享训练目标，保留原空间信用与跨episode主FM。教学池登记为16–41，
+主query逐条件排除teacher；该条件不同于上一空间监督的0–15，不声称曝光匹配的单变量消融。
+
+09c1a0d6 clean pushed frozen完成两臂各fresh200、800教学条件／51,200主query，四100/200完整checkpoint、
+8个sealed bank和1,984条闭环记录。训练及诊断配对、真实帧／末帧、state-video／RNG配对、
+76因子／单checkpoint身份和raw／aggregate均通过；所有阶段及96个评测worker均exit0。
+累计评测launcher墙钟4,051.92秒，controller正常退出，全部本研究Python/GPU任务结束。
+
+100/200 train有序／无序15/15、19/20，validation50/51、50/49。
+有序净率区间[−.75,0]pp、[−.75,+1.5]pp，净正suite0/1，不满足§6的严格正下界及相邻同向资格。
+有序S/O/G/L两节点均0/6/41/3、breadth3，source47为0/5/41/1；有序各相对sourceR/G/L=45/5/2，
+churn7、J=.86538、净率区间[0,+1.75]pp。相邻有序50→50保留46／新增4／丢失4、churn8、J=.85185；
+无序51→49为45/4/6、churn10、J=.81818。保留source名义+3与Goal保持，Spatial仍零成功，共五个validation task零成功。
+
+训练frame_set15→20无旧成功丢失，净率区间[+1.042,+9.375]pp，相对source15也为正区间；
+有序15→19区间跨零、所有模型train breadth7。固定独立FM初始.15328534，200有序／无序.15281900/.15280163；
+末25条件完整更新误差约.90642/.90657。训练拟合与闭环均有有限变化，不能把non-pass写成完全无学习。
+本轮有序200的Goal41对上一空间监督9，Object6对59、总数50对71；教学池／出口／监督共同变化，不能唯一归因。
+
+按登记关闭本组合，不追加训练或参数扫描，不触发未获资格的other／静态／跨初始化、最终controls、Test、RL。
+无selected checkpoint，完整goal未完成；§88真实纠正功能前提和§90标签共同结构的限定正事实保留。
+下一项先区分有限R/A空间与纠正预测／学习信用／读取的信息缺口，不以本次失败默认新增完整Writer。
+原件保留于`runs/analysis/native_correction_writer_20260913/`：完整readout、paired_summary、最终和初步decision、
+evidence_audit、training_pairing/readout、launch contract及training下的全部checkpoint／bank／raw／completion。

@@ -4,6 +4,8 @@
 本项依据已通过的[原生纠正传递](native_corrective_transfer_audit.md)开发合法前向生成器，
 不把训练侧oracle的分数当作Writer结果。当前实现、资源和运行状态只看progress。
 
+**本有界候选已完成关闭，完整裁决见§10；没有selected checkpoint。以下§1–9保留登记与实施历史，不恢复执行。**
+
 ## 1. 新证据改变了什么
 
 裸source在state-free教学观测上，由四个真实动作纠正构造的一次38-target rank16 LoRA，
@@ -241,3 +243,42 @@ prior_window_batch4不变。两臂均fresh seed7，全部profile状态丢弃，�
 实际trainable参数30,659,328，四份完整参数／Adam状态约1.4GiB；1,984套完整LoRA bank按既有同shape文件约9.55GiB，
 加现存2.6GiB标签、单份checkpoint临时写入和日志／rows，18GiB总新增峰值仍覆盖。data0为唯一物理输出根，
 data1只保留源码及轻量入口；正式launch与后续物化／评测各按实时独立quota和GPU证据准入。
+
+## 10. 完整有界结果与关闭裁决
+
+09c1a0d6 clean pushed frozen完成ordered/frame_set各fresh200、每臂800教学条件／51,200主FM query，
+四完整checkpoint、8个sealed bank和8个闭环面板／1,984条记录全部保留。两臂18个曝光字段、
+0/100/200独立诊断10个配对字段相同，主query逐条件排除teacher episode；所有阶段及96个评测worker均exit0。
+
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation O−F 95%CI | 净正suite |
+| --- | --- | --- | --- | --- |
+| 100 | 15/96 / 15/96 | 50/400 / 51/400 | [−.75,0]pp | 0 |
+| 200 | 19/96 / 20/96 | 50/400 / 49/400 | [−.75,+1.5]pp | 1 |
+
+两个task-cluster区间下界均未严格正，有序增量−1→+1不满足相邻同向、净正suite数不足2。
+依据§6关闭本共享获取／原生因子组合：不追加训练、节点或rank／λ／seed／LR／scale扫描；
+不触发未获资格的same-task-other、强静态／跨初始化或最终内容／shuffled/reversed controls、Test、RL。
+没有selected checkpoint，完整有益视频特异性goal未完成。
+
+有序validation两节点S/O/G/L均0/6/41/3，frame_set为0/6/41/4、0/6/42/1，breadth均3/8。
+source47/400为0/5/41/1，有序各相对source保留45、新增5、丢失2、churn7、J=.86538，净率区间[0,+1.75]pp。
+有序相邻50→50保留46、新增4、丢失4、churn8、J=.85185；无序51→49为45/4/6、churn10、J=.81818。
+有序对无序两节点R/G/L为45/5/6与46/4/3，churn11/7、J=.80357/.86792。
+保留source名义+3、Goal总数保持和低churn；没有新增成功task或有益有序增量，不能以稳定低分代替资格。
+
+训练侧无序15→20保留全部15次成功并新增5次，净率区间[+1.042,+9.375]pp，相对source15亦有正区间；
+有序15→19的相邻区间跨零，四模型train breadth均7/24。固定独立FM初始.15328534，
+100有序／无序.15307564/.15304530，200为.15281900/.15280163；末25条件L_update约.90642/.90657。
+这些事实保留有限学习，不证明合法RGB已获取oracle，也不能唯一识别读取、有限R/A空间、B预测／学习信用的限制。
+相比上一空间监督有序200，本轮Goal41对9、Object6对59、总数50对71；teacher池和监督／出口共同改变，不能作单变量归因。
+
+完整逐task／suite、source与相邻成功集合及全部区间见同物理run根的`OVERNIGHT_READOUT.md`、
+`paired_summary.json`；原始raw、completion、四checkpoint及8个bank在`training/`。
+`evidence_audit.json`核对真实stride5／末帧、validation50视频无放回、train96的46–49/states32–35有限池、
+task/state与RNG配对、一次Writer调用、76因子和checkpoint身份、raw／aggregate与worker退出；全项通过。
+累计评测launcher墙钟4,051.92秒，controller exit0且已确认无本研究在途Python进程。
+`bounded_200_decision.json`保存最终关闭裁决，自动初步decision单独保留；launch contract登记完成证据。
+
+§88 oracle功能前提与§90标签共同结构仍作为限定证据保留（见findings对应章节）。
+下一步须先用已有证据形成可失败的竞争解释，优先区分有限原生输入空间与纠正获取，登记最小冻结诊断后再执行；
+不从本次non-pass自动启动新Writer，不用参数空间存在性证明有限RGB获取。

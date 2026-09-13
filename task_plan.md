@@ -7,7 +7,10 @@
 [固定A与幅度／方向诊断](docs/native_correction_acquisition_audit.md)均已完成关闭；当前唯一active design为
 [既有真实纠正的闭环前提](docs/native_corrective_closed_loop_audit.md)，已按Owner 2026-09-14最新要求暂停。
 source启动尝试在准备阶段被评测范围合同拒绝，零episode；无在途运行或selected checkpoint。**
-当前只说明情况，不继续修复、重试或执行下列计划，等待Owner恢复推进。
+当前仅进行方法讨论与要求整理，不继续修复、重试或执行下列计划，等待Owner恢复推进。
+下一方法的优先设计任务是形成架构与训练的整体工作原理：解释输入理解、可执行的高层操作知识、
+唯一LoRA生成、未见任务迁移及能力保持，并明确历史依据、待检验假设和可失败预测。
+局部动作／纠正监督尚非已选方案；既有oracle只能检验纠正目标的闭环价值，不能替当前架构的可学习性与迁移背书。
 
 [Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)的两臂fresh200、四checkpoint、
 8个bank与8个配对面板／1,984rows已完整结束，原始证据审计及全部worker退出通过。
@@ -27,7 +30,7 @@ source启动尝试在准备阶段被评测范围合同拒绝，零episode；无�
    不从这些参数定位直接启动新Writer、续训、辅助动作头或参数扫描；先形成可失败且会改变投入判断的最小机制合同。
 5. 整体goal继续；已完成的Execution-Aligned、旧冻结52/96正例复核及其它关闭诊断不从旧计划措辞恢复。
 
-当前实施项：现有state-free的96套真实纠正标签各运行四个init，共384oracle rows；新source96只运行一次、按task/init配对复用。
+暂停中的既有实施项：现有state-free的96套真实纠正标签各运行四个init，共384oracle rows；新source96只运行一次、按task/init配对复用。
 全部五面板480episodes固定，检验目标G本身的闭环作用是否跨teacher／init保持；先补既有动作预测正证据到闭环的缺口。
 实现只补现有static adapter的真实来源检查，结束后退役；不伪造Writer／G1身份、不复制执行器或LoRA，不以此结果当合法视频生成成绩。
 

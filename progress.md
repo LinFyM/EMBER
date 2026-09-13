@@ -12,6 +12,11 @@ Owner最新要求“你先停一下，我想听你介绍下目前的情况”。
 原始launch、controller状态／退出和source错误日志保存在
 `runs/analysis/native_correction_writer_20260913/oracle_rollout/`，既有模型与全部研究证据保留。
 
+Owner随后进一步强调：下一方案须由自己的整体理论或明确理由统一架构与训练，解释从语言／视频理解、
+高层操作知识、能力获取到参数作用、未见任务迁移与训练保持的完整链路；依据历史正负证据修正主假设，避免连续补丁。
+完整要求已写入[current_owner_requirements§2](docs/current_owner_requirements.md#2-架构与推导原则)。
+当前联合方案尚未定稿，局部动作／纠正只是候选；本次要求整理不恢复oracle、旧Writer或新增训练。
+
 ## 最近登记：真实纠正标签的跨视频／初始化闭环前提（2026-09-13）
 
 登记时整体goal为active且未完成，当时唯一active design为[固定纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：

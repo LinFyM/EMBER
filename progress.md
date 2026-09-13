@@ -5,7 +5,8 @@
 Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
 依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
 09c1a0d6 clean pushed detached的两臂fresh200已全部完成exit0；四份checkpoint及采样配对通过。
-当前GPU01的0–3四卡并行生成8个LoRA bank，随后完成8个配对闭环面板。
+8个LoRA bank、1,984套完整LoRA已全部封存，四个生成worker均exit0；
+队列已开始8个配对闭环面板，首个为ordered/100/train96，GPU01的1–6六卡、每卡两个persistent worker。
 当前无selected checkpoint，整体goal未完成。
 所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
 
@@ -62,9 +63,13 @@ sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。没有�
 已结束的训练tmux为`ember-native-correction-ordered`、`ember-native-correction-frame_set`；GPU01两组world3的CPU分别NUMA0/1，
 source/prior trainable均0，NCCL_P2P_DISABLE=1及deferred NCCL生效。完整合同在analysis的`launch_contract.json`。
 
-`ember-native-correction-queue`已核对全程800条件及四checkpoint，现用GPU01的0–3四卡并行物化8个bank；
-四个worker各负责一个single checkpoint的train96／validation400。12:32UTC重新检查两节点，data0额度56.1/1024GiB，
-剩余阶段预算12GiB、预计68.1GiB；四卡启动前均空闲。随后以动态persistent evaluator完成1,984配对rows。每次GPU阶段重查两节点与data0额度，
+`ember-native-correction-queue`已核对全程800条件及四checkpoint，并以GPU01的0–3四卡完成8个bank；
+四个worker各负责一个single checkpoint的train96／validation400，均exit0，所有1,984条件均为本次新生成。
+8个manifest已封存，单checkpoint路径及09c1a0d6 clean pushed frozen身份相符。
+物化前12:32UTC两节点检查及data0额度56.1/1024GiB、剩余预算12GiB的记录保留。
+13:14UTC评测前重新检查两节点及strg01：data0用量65.7/1024GiB、剩余预算2GiB、预计67.7GiB；
+GPU01的1–6六卡启动前均空闲，自有GPU占用为0。首个ordered/100/train96已实际启动12个persistent worker，
+按原队列依次完成8个面板／1,984配对rows；目前尚待完整闭环裁决。每次GPU阶段重查两节点与data0额度，
 累计所有自有GPU不超过6，不运行未获资格的other／静态／最终controls。`overnight_status.json`、`queue.log`与`queue.exit`
 保留控制状态；后续raw审计与逐task/suite、source／frame_set及相邻配对读出已接入。新旧教学曝光不同，不宣称其匹配消融。
 

@@ -3,7 +3,7 @@
 ## 当前目标与计划：实现Native Correction Writer并验证有益视频增量（2026-09-13）
 
 完整目标仍为正确教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、初始化、相邻checkpoint
-及固定validation迁移；暂不强制145/400。**整体goal未完成；两臂fresh200已完成，正在生成LoRA并接续8个闭环面板，没有selected checkpoint。**
+及固定validation迁移；暂不强制145/400。**整体goal未完成；两臂fresh200及8个LoRA bank均已完成，8个闭环面板正在执行，没有selected checkpoint。**
 [原生纠正传递](docs/native_corrective_transfer_audit.md)的192套／3,072组合已完成、两oracle按原条件通过并关闭；
 当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，数据与实现已完成，修正后的最长profile已通过。
 
@@ -21,8 +21,8 @@
    源坐标X与可训练Meta读取分开，部署没有梯度／任务更新。实施新decoder、只读X、训练loss与逐condition跨episode采样，
    已替换旧出口并通过相关测试；624纠正标签中复用96套已有因子、528新建，624条新空间标签已全部完成封存与原始核验。
 6. f962feb6真实最长条件profile已通过；正式学习前已固定100/200及两臂各800条件／51,200主query，
-   09c1a0d6 clean pushed frozen两臂均完成exit0、四完整checkpoint与全程配对通过；队列已刷新资源并开始物化8个bank，
-   随后按新设计完整执行8个配对闭环面板。
+   09c1a0d6 clean pushed frozen两臂均完成exit0、四完整checkpoint与全程配对通过；8个bank／1,984套完整LoRA已全部封存，
+   四个生成worker均exit0。队列已刷新资源并启动ordered/100/train96，按新设计完整执行8个配对闭环面板。
    此项检验共享合法获取与实际闭环，不把oracle或参数拟合当通过。当前不放宽frame_set资格，不用最终controls改架构，
    不追加旧实验、Test或RL。
 

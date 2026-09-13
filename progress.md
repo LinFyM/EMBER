@@ -62,7 +62,8 @@ frame_set [.05190,.42785]→[.90533,2.26667]；这支持标注区域读取拟合
 100步train96两面板已完整结束：ordered32/96、frame_set33/96，breadth13/17；
 S/O/G/L为4/13/12/3对10/9/10/4。两组原始96rows与全部worker exit0核对通过，墙钟286.53/328.36秒。
 该训练任务节点没有有序净优势；完整8面板尚未齐备，不由这一局部结果关闭候选或改变资格。
-ordered100/validation400已实际启动（launcher3593499、8workers）；继续两个节点的全部validation与200步train面板。
+ordered100/validation400已完成20/400，S/O/G/L为0/16/3/1、breadth5；完整400个task/state记录及8个worker exit0核对通过，墙钟1051.90秒。
+该节点表现弱，完整比较与相邻资格仍待其它面板；当前3/8面板完成，frame_set100/validation已实际启动（launcher3688409、8workers），随后继续200步全部面板。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

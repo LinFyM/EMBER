@@ -31,7 +31,10 @@ gpu01 ordered=0,1,2／frame_set=3,4,5，每臂world3，microbatch8、GPU-local N
 启动时两节点process已核对，总占用0→6；launcher PIDs2752946／2753301，各3个worker实际存活。
 精确命令、设备UUID、source/数据、29GiB预算及恢复合同见`runs/analysis/visible_object_grounding_20260913/launch_contract.json`。
 `ember-visible-object-queue`在gpu02以CPU进程跟踪这两个实际训练句柄，随后完成8个登记面板及旧pure-FM同模式参照；
-不自动追加资格／最终controls。当前仅确认进程启动，模型加载／初始留出评估／optimizer更新继续按真实日志核对。
+不自动追加资格／最终controls。两臂原生运行合同、初始化留出评估和前2次正式optimizer更新已完成核对：
+各512queries，第二步31.60／31.56秒，峰值allocated40.21GiB；主FM／空间loss有限，Writer及两组Meta梯度非零。
+新旧四模型前2步／8条件的18个登记采样字段相同；只属于startup证据，完整800条件配对仍由队列核对。
+原始核验见`startup_evidence.json`，当前尚未到闭环节点，整体goal未完成。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

@@ -1,4 +1,4 @@
-"""Exact task-token video evidence compiled once into one complete task LoRA."""
+"""Task-grounded semantic paths compiled once into complete conditional LoRAs."""
 from __future__ import annotations
 
 import math
@@ -10,12 +10,12 @@ from torch import Tensor, nn
 from torch.utils.checkpoint import checkpoint
 
 from ember.lora import LoRAContract
-from ember.writer.attention import Attention, CompilerBlock, RotaryBlock, feed_forward, position_encoding
-from ember.writer.native_factor import NativeFactorLoRADecoder
+from ember.writer.attention import Attention, RotaryBlock, feed_forward
+from ember.writer.factor import FactorLoRADecoder
 
 
-SCHEMA = "video_conditioned_writer_v5"
-ARCHITECTURE = "native_input_corrective_factors_v2"
+SCHEMA = "video_conditioned_writer_v6"
+ARCHITECTURE = "semantic_state_path_lora_v1"
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -31,35 +31,49 @@ class VideoWriterConfig:
     horizon: int = 50
     native_width: int = 1024
     language_width: int = 2048
-    prior_width: int = 1024
     blocks: int = 2
-    compiler_blocks: int = 2
     factor_width: int = 256
-    edge_chunk: int = 32
+    state_width: int = 32
+    query_chunk: int = 32
     activation_checkpoint: bool = True
     process_mode: str = "ordered"
     schema: str = SCHEMA
     architecture: str = ARCHITECTURE
-    native_output_units: tuple[float, ...] = (1.,) * 38
 
     def __post_init__(self) -> None:
         require_architecture_identity(vars(self))
         dimensions = (self.width, self.heads, self.horizon, self.native_width, self.language_width,
-                      self.blocks, self.compiler_blocks, self.factor_width, self.edge_chunk, self.prior_width)
+                      self.blocks, self.factor_width, self.state_width, self.query_chunk)
         if min(dimensions) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
             raise ValueError("positive dimensions and even RoPE width per head are required")
-        units = tuple(map(float, self.native_output_units))
-        if len(units) != 38 or any(not math.isfinite(value) or value <= 0 for value in units):
-            raise ValueError("native output units require 38 positive frozen shared scalars")
-        object.__setattr__(self, "native_output_units", units)
 
     def to_dict(self) -> dict:
-        """Use the same JSON-native representation before and after exact resume."""
-        return {**asdict(self), "native_output_units": list(self.native_output_units)}
+        return asdict(self)
+
+
+def path_statistics(states: Tensor, process_mode: str) -> Tensor:
+    """Second-order log-signature or matched full-set second moments, [L,d(d+1)/2]."""
+    if states.ndim != 3 or min(states.shape) <= 0:
+        raise ValueError("semantic states require nonempty [T,L,d]")
+    with torch.autocast(states.device.type, enabled=False):
+        values = states.float()
+        dimension = values.shape[-1]
+        if process_mode == "ordered":
+            differences = values[1:] - values[:-1]
+            preceding = differences.cumsum(0) - differences
+            integral = torch.einsum("tli,tlj->lij", preceding, differences)
+            area = .5 * (integral - integral.transpose(-1, -2))
+            rows, columns = torch.triu_indices(dimension, dimension, 1, device=states.device)
+            return torch.cat((values[-1] - values[0], area[:, rows, columns]), -1)
+        if process_mode == "frame_set":
+            moments = torch.einsum("tli,tlj->lij", values, values) / len(values)
+            rows, columns = torch.triu_indices(dimension, dimension, device=states.device)
+            return moments[:, rows, columns]
+    raise ValueError("unknown semantic path aggregation")
 
 
 class _VideoEncoder(nn.Module):
-    """Own every parameter used to produce E[T,L,d], independently per video."""
+    """Read complete native evidence, then form one semantic path per language role."""
 
     def __init__(self, config: VideoWriterConfig) -> None:
         super().__init__()
@@ -68,94 +82,85 @@ class _VideoEncoder(nn.Module):
         self.visual_projection = nn.Linear(config.language_width, width, bias=False)
         self.task_norm, self.patch_norm = nn.LayerNorm(width), nn.LayerNorm(width)
         self.patch_read = Attention(width, config.heads)
-        self.prior_projection = nn.Linear(config.prior_width, width, bias=False)
-        self.prior_query_norm, self.prior_patch_norm = nn.LayerNorm(width), nn.LayerNorm(width)
-        self.prior_read = Attention(width, config.heads)
-        self.native_projection = nn.Linear(config.native_width, width)
-        self.horizon_norm, self.pair_norm = nn.LayerNorm(width), nn.LayerNorm(2 * width)
-        self.pair_query = nn.Linear(2 * width, width)
-        self.horizon_embedding = nn.Parameter(torch.randn(config.horizon, width) * 0.02)
-        self.endpoint_embedding = nn.Parameter(torch.randn(2, width) * 0.02)
-        self.endpoint_time = nn.Linear(width, width, bias=False)
+        self.context_norm, self.context_query_norm = nn.LayerNorm(width), nn.LayerNorm(width)
+        self.context_read = Attention(width, config.heads)
+        self.native_projection = nn.Linear(config.native_width, width, bias=False)
+        self.horizon_norm, self.horizon_query_norm = nn.LayerNorm(width), nn.LayerNorm(2 * width)
+        self.horizon_query = nn.Linear(2 * width, width)
+        self.horizon_embedding = nn.Parameter(torch.randn(config.horizon, width) * .02)
         self.horizon_read = Attention(width, config.heads)
         self.fusion = feed_forward(width, 3 * width)
         self.language_blocks = nn.ModuleList([
             RotaryBlock(width, config.heads, causal=False) for _ in range(config.blocks)
         ])
         self.temporal_blocks = nn.ModuleList([
-            RotaryBlock(width, config.heads, causal=config.process_mode == "ordered")
-            for _ in range(config.blocks)
+            RotaryBlock(width, config.heads, causal=False) for _ in range(config.blocks)
         ])
+        self.state_norm, self.summary_norm = nn.LayerNorm(width), nn.LayerNorm(width)
+        self.state_projection = nn.Linear(width, config.state_width)
+        self.summary_read = Attention(width, config.heads)
 
-    def _ground(self, visual: Tensor, valid: Tensor, task_mask: Tensor, token_count: int,
-                return_grounding: bool):
+    def _ground(self, visual: Tensor, valid: Tensor, task_mask: Tensor, count: int) -> Tensor:
         image_mask = valid & ~task_mask
         if not image_mask.any(-1).all():
             raise ValueError("every frame requires real valid image patches")
         projected = self.visual_projection(visual)
-        tasks = projected[task_mask].reshape(len(visual), token_count, self.config.width)
-        read = self.patch_read(self.task_norm(tasks), self.patch_norm(projected), projected,
-                               image_mask[:, None, None, :], return_log_distribution=return_grounding)
-        if return_grounding:
-            grounded, distribution = read
-            if not (image_mask.sum(-1) == image_mask.sum(-1)[0]).all():
-                raise ValueError("spatial supervision requires a fixed camera patch layout")
-            return tasks + grounded, distribution[image_mask].reshape(len(visual), -1)
-        return tasks + read, None
+        tasks = projected[task_mask].reshape(len(visual), count, self.config.width)
+        return tasks + self.patch_read(self.task_norm(tasks), self.patch_norm(projected), projected,
+                                       image_mask[:, None, None, :])
 
-    def _pair_read(self, grounded: Tensor, native: Tensor, times: Tensor) -> Tensor:
-        count, width = len(grounded), self.config.width
-        current = torch.arange(count, device=grounded.device)
-        previous = (current - 1).clamp_min(0) if self.config.process_mode == "ordered" else current
-        values = self.horizon_norm(self.native_projection(native))
-        contents = []
-        for start in range(0, count, self.config.edge_chunk):
-            now, before = current[start:start + self.config.edge_chunk], previous[start:start + self.config.edge_chunk]
-            z_before, z_now = grounded[before], grounded[now]
-            query = self.pair_query(self.pair_norm(torch.cat((z_before, z_now), -1)))
-            # Both COMPLETE H endpoints remain available until this task-conditioned read.
-            pair_values = torch.stack((values[before], values[now]), 1)
-            keys = pair_values + self.horizon_embedding[None, None, :, :]
-            if self.config.process_mode == "ordered":
-                offsets = torch.stack((times[before] - times[now], torch.zeros_like(times[now])), 1) / 5
-                route = self.endpoint_time(position_encoding(offsets, width, values.dtype))
-                keys = keys + (self.endpoint_embedding[None, :, :] + route)[:, :, None, :]
-            read = self.horizon_read(query, keys.flatten(1, 2), pair_values.flatten(1, 2))
-            contents.append(z_now + self.fusion(torch.cat((z_before, z_now, read), -1)))
-        return torch.cat(contents)
+    def _native_read(self, grounded: Tensor, context: Tensor, response: Tensor) -> Tensor:
+        values = self.horizon_norm(self.native_projection(response))
+        keys = (values + self.horizon_embedding[None]).flatten(0, 1)[None]
+        # Every frame and all H positions survive until the actual full-video read.
+        key, value = self.horizon_read.project_memory(keys, values.flatten(0, 1)[None])
+        outputs = []
+        for start in range(0, len(grounded), self.config.query_chunk):
+            current = grounded[start:start + self.config.query_chunk]
+            whole = context[None].expand_as(current)
+            query = self.horizon_query(self.horizon_query_norm(torch.cat((current, whole), -1)))
+            read = self.horizon_read.read_projected(query.flatten(0, 1)[None], key, value)[0]
+            read = read.reshape_as(current)
+            outputs.append(current + self.fusion(torch.cat((current, whole, read), -1)))
+        return torch.cat(outputs)
 
-    def forward(self, response: Tensor, indices: Tensor, visual: Tensor, valid: Tensor,
-                task_mask: Tensor, positions: Tensor, prior: Tensor, return_grounding: bool = False):
-        times = indices.to(device=response.device, dtype=torch.float32)
-        grounded, native_distribution = self._ground(visual, valid, task_mask, len(positions), return_grounding)
-        patches = self.prior_projection(prior)
-        read = self.prior_read(self.prior_query_norm(grounded), self.prior_patch_norm(patches), patches,
-                               return_log_distribution=return_grounding)
-        if return_grounding:
-            read, prior_distribution = read
-        grounded = grounded + read
-        content = self._pair_read(grounded, response, times)
-        temporal_positions = times / 5 if self.config.process_mode == "ordered" else torch.zeros_like(times)
-        for language, temporal in zip(self.language_blocks, self.temporal_blocks, strict=True):
-            content = language(content, positions)
-            content = temporal(content.transpose(0, 1), temporal_positions).transpose(0, 1)
-        return (content, native_distribution, prior_distribution) if return_grounding else content
+    def forward(self, response: Tensor, visual: Tensor, valid: Tensor, task_mask: Tensor,
+                language: Tensor, positions: Tensor) -> tuple[Tensor, Tensor]:
+        grounded = self._ground(visual, valid, task_mask, len(language))
+        query = self.context_query_norm(self.visual_projection(language))[None]
+        memory = self.context_norm(grounded.flatten(0, 1))[None]
+        context = self.context_read(query, memory, memory)[0]
+        content = self._native_read(grounded, context, response)
+        # Both models use the same full, bidirectional, permutation-equivariant
+        # state interpretation. Only the final path/set statistic uses order.
+        no_time = content.new_zeros(len(content))
+        for language_block, temporal in zip(self.language_blocks, self.temporal_blocks, strict=True):
+            content = language_block(content, positions)
+            content = temporal(content.transpose(0, 1), no_time).transpose(0, 1)
+        states = self.state_projection(self.state_norm(content)).tanh()
+        memory = self.summary_norm(content.flatten(0, 1))[None]
+        summary = self.summary_read(query, memory, memory)[0]
+        return summary, path_statistics(states, self.config.process_mode)
 
 
 class VideoConditionedWriter(nn.Module):
-    """Deployment inputs are native video evidence and exact language, with no source-policy owner."""
+    """No source-policy owner, privileged teacher fields, or execution-time state."""
 
     def __init__(self, contract: LoRAContract, config: VideoWriterConfig = VideoWriterConfig()) -> None:
         super().__init__()
         self.contract, self.config = contract, config
-        width = config.width
+        width, state_width = config.width, config.state_width
         self.encoder = _VideoEncoder(config)
-        self.target_queries = nn.Parameter(torch.randn(len(contract.targets), width) * 0.02)
-        self.rank_queries = nn.Parameter(torch.randn(contract.rank, width) * 0.02)
-        self.time_projection = nn.Linear(width, width, bias=False)
-        self.compiler = nn.ModuleList([CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
-        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width,
-                                              output_units=config.native_output_units)
+        statistics = state_width * (state_width + 1) // 2
+        self.process_norm = nn.LayerNorm(statistics)
+        self.process_projection = nn.Linear(statistics, width)
+        self.process_gain, self.process_value = nn.Linear(width, width), nn.Linear(width, width)
+        self.target_queries = nn.Parameter(torch.randn(len(contract.targets), width) * .02)
+        self.rank_queries = nn.Parameter(torch.randn(contract.rank, width) * .02)
+        self.semantic_norm, self.query_norm = nn.LayerNorm(width), nn.LayerNorm(width)
+        self.parameter_read = Attention(width, config.heads)
+        self.code_norm, self.code_ffn = nn.LayerNorm(width), feed_forward(width)
+        self.decoder = FactorLoRADecoder(contract, width, config.factor_width)
 
     def encoder_parameters(self) -> Iterator[nn.Parameter]:
         return self.encoder.parameters()
@@ -163,91 +168,68 @@ class VideoConditionedWriter(nn.Module):
     def compiler_parameters(self) -> Iterator[nn.Parameter]:
         return (parameter for name, parameter in self.named_parameters() if not name.startswith("encoder."))
 
-    def _validate_video(self, response: Tensor, indices: Tensor, visual: Tensor, valid: Tensor,
-                        task_mask: Tensor, token_count: int) -> None:
-        expected = (self.config.horizon, self.config.native_width)
-        if response.ndim != 3 or not len(response) or response.shape[1:] != expected:
-            raise ValueError(f"native response must have shape [T,{expected}], T > 0")
+    def _validate_video(self, response, indices, visual, valid, task_mask, count) -> None:
+        if response.ndim != 3 or not len(response) or response.shape[1:] != (self.config.horizon, self.config.native_width):
+            raise ValueError("native response must retain every frame and complete horizon")
         if indices.shape != response.shape[:1] or not torch.isfinite(indices).all():
-            raise ValueError("one finite real frame index is required per frame")
+            raise ValueError("one finite original frame index is required per frame")
         if (self.config.process_mode == "ordered" and len(indices) > 1
                 and not (indices[1:] > indices[:-1]).all()):
             raise ValueError("ordered video frame indices must be strictly increasing")
-        if (visual.ndim != 3 or visual.shape[0] != len(response)
-                or visual.shape[-1] != self.config.language_width):
-            raise ValueError("visual evidence must have shape [T,P,language_width]")
-        if (valid.shape != visual.shape[:2] or task_mask.shape != valid.shape
-                or (task_mask & ~valid).any() or not (task_mask.sum(-1) == token_count).all()):
+        if visual.ndim != 3 or visual.shape[0] != len(response) or visual.shape[-1] != self.config.language_width:
+            raise ValueError("visual evidence must be [T,P,language_width]")
+        if (valid.shape != visual.shape[:2] or task_mask.shape != valid.shape or (task_mask & ~valid).any()
+                or not (task_mask.sum(-1) == count).all()):
             raise ValueError("every frame must retain exactly its valid contextual task-token span")
 
     def encode(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-               visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor], *, return_grounding: bool = False):
+               visual_task_masks: Sequence[Tensor]) -> tuple[tuple[Tensor, Tensor], ...]:
         if not responses or not (len(responses) == len(frame_indices) == len(visual_tokens)
-                                 == len(visual_masks) == len(visual_task_masks) == len(prior_tokens)):
-            raise ValueError("one or more videos need matching native responses, times and visual evidence")
+                                 == len(visual_masks) == len(visual_task_masks)):
+            raise ValueError("every video requires matching native, visual, and frame evidence")
         if (language_embeddings.ndim != 2 or language_embeddings.shape[-1] != self.config.language_width
                 or language_mask.shape != language_embeddings.shape[:1] or not language_mask.bool().any()):
-            raise ValueError("exact language needs embeddings [L,language_width] and a nonempty valid mask")
-        # Content comes from the contextual native task spans, not a second language-only path.
+            raise ValueError("exact language requires nonempty valid native embeddings")
         positions = language_mask.bool().nonzero().flatten()
-        videos, distributions = [], []
-        for response, indices, visual, valid, task_mask, prior in zip(
-                responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, prior_tokens, strict=True):
+        language = language_embeddings[language_mask.bool()]
+        videos = []
+        for response, indices, visual, valid, task_mask in zip(
+                responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, strict=True):
             valid, task_mask = valid.bool(), task_mask.bool()
             self._validate_video(response, indices, visual, valid, task_mask, len(positions))
-            if (prior.ndim != 3 or prior.shape[0] != len(response) or prior.shape[1] <= 0
-                    or prior.shape[2] != self.config.prior_width or prior.requires_grad):
-                raise ValueError("one frozen dense prior [T,P,prior_width] is required per real video")
-            args = (response, indices, visual, valid, task_mask, positions.to(response.device), prior, return_grounding)
+            args = (response, visual, valid, task_mask, language, positions.to(response.device))
             if self.config.activation_checkpoint and torch.is_grad_enabled():
-                encoded = checkpoint(self.encoder, *args, use_reentrant=False)
+                videos.append(checkpoint(self.encoder, *args, use_reentrant=False))
             else:
-                encoded = self.encoder(*args)
-            if return_grounding:
-                encoded, native_distribution, prior_distribution = encoded
-                distributions.append((native_distribution, prior_distribution))
-            videos.append(encoded)
-        return (tuple(videos), tuple(distributions)) if return_grounding else tuple(videos)
+                videos.append(self.encoder(*args))
+        return tuple(videos)
 
-    def memory(self, videos: Sequence[Tensor], frame_indices: Sequence[Tensor]) -> tuple[Tensor, Tensor, Tensor]:
-        if not videos or len(videos) != len(frame_indices):
-            raise ValueError("a condition needs one or more encoded videos and matching frame indices")
-        memories, routes, priors = [], [], []
-        for video, indices in zip(videos, frame_indices, strict=True):
-            if (video.ndim != 3 or min(video.shape[:2]) <= 0 or video.shape[-1] != self.config.width
-                    or indices.shape != video.shape[:1]):
-                raise ValueError("video evidence must have shape [T,L,d] with matching frame indices")
-            memory = video.flatten(0, 1)
-            if self.config.process_mode == "ordered":
-                time = position_encoding(indices.to(video.device) / 5, self.config.width, video.dtype)
-                routing = self.time_projection(time)[:, None, :].expand_as(video).flatten(0, 1)
-            else:
-                routing = torch.zeros_like(memory)
-            memories.append(memory)
-            routes.append(routing)
-            priors.append(video.new_full((len(memory),), -math.log(len(memory))))
-        return torch.cat(memories), torch.cat(routes), torch.cat(priors)[None, :]
-
-    def decode(self, videos: Sequence[Tensor], frame_indices: Sequence[Tensor],
-               native_inputs: Sequence[Sequence[Tensor]]) -> dict[str, Tensor]:
-        if (len(native_inputs) != len(videos) or any(
-                any(value.shape[:2] != (len(indices), self.config.horizon) for value in inputs)
-                for inputs, indices in zip(native_inputs, frame_indices, strict=True))):
-            raise ValueError("native inputs must match every real video frame and complete horizon")
-        memory, routing, prior = self.memory(videos, frame_indices)
-        query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
-        for block in self.compiler:
-            if self.config.activation_checkpoint and torch.is_grad_enabled():
-                query = checkpoint(block, query, memory, routing, prior, use_reentrant=False)
-            else:
-                query = block(query, memory, routing, prior)
-        return self.decoder(query.unflatten(0, (len(self.contract.targets), self.contract.rank)), native_inputs)
+    def decode(self, videos: Sequence[tuple[Tensor, Tensor]]) -> dict[str, Tensor]:
+        if not videos:
+            raise ValueError("parameter compilation requires actual video knowledge")
+        semantics, contents, priors = [], [], []
+        statistics = self.config.state_width * (self.config.state_width + 1) // 2
+        for semantic, path in videos:
+            if (semantic.ndim != 2 or semantic.shape[0] <= 0 or semantic.shape[1] != self.config.width
+                    or path.shape != (len(semantic), statistics)):
+                raise ValueError("each video needs matched semantic roles and path statistics")
+            semantic = self.semantic_norm(semantic)
+            process = self.process_projection(self.process_norm(path))
+            content = semantic * (1 + self.process_gain(process).tanh()) + self.process_value(process)
+            semantics.append(semantic)
+            contents.append(content)
+            priors.append(semantic.new_full((len(semantic),), -math.log(len(semantic))))
+        query = (self.target_queries[:, None] + self.rank_queries[None]).flatten(0, 1)
+        # Learned addresses only enter Q; the actual parameter Value comes from
+        # paired semantic conditions and their observed path.
+        code = self.parameter_read(self.query_norm(query)[None], torch.cat(semantics)[None],
+                                   torch.cat(contents)[None], torch.cat(priors)[None])[0]
+        code = code + self.code_ffn(self.code_norm(code))
+        return self.decoder(code.unflatten(0, (len(self.contract.targets), self.contract.rank)))
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                 language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-                visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor], *,
-                native_inputs: Sequence[Sequence[Tensor]]) -> dict[str, Tensor]:
-        videos = self.encode(responses, frame_indices, language_embeddings, language_mask,
-                             visual_tokens, visual_masks, visual_task_masks, prior_tokens)
-        return self.decode(videos, frame_indices, native_inputs)
+                visual_task_masks: Sequence[Tensor]) -> dict[str, Tensor]:
+        return self.decode(self.encode(responses, frame_indices, language_embeddings, language_mask,
+                                       visual_tokens, visual_masks, visual_task_masks))

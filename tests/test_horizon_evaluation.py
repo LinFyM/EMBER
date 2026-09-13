@@ -31,12 +31,6 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
        "authority_ref": "origin/main", "authority_contains_commit": True}
 
 
-def _prior(mode="ordered"):
-    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())["video_prior"]
-    value["mode"] = mode
-    return value
-
-
 def _selection(**overrides):
     values = dict(role="development_train", task_ids=(0,), cardinality=1, arm="correct",
                   mode="per_init_ordinal", seed=7, init_state_ids=(0, 1), video_pool=tuple(range(50)))
@@ -65,7 +59,8 @@ def bank(tmp_path, request):
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
-    run["config"]["video_prior"] = _prior()
+    run["config"]["schema_version"] = "ember_semantic_path_writer_config_v1"
+    run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
@@ -287,8 +282,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
-            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4},
-                       "video_prior": _prior()}}
+            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
             "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
@@ -326,7 +320,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["conditions"][0]["writer_value"] == index + 1
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
         assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
-        assert manifest["method"]["video_prior_in_execution"] is False
+        assert manifest["method"]["training_objective"] == "main_fm"
         assert manifest["information_wall"]["total_writer_invocations"] == 1
         assert len(manifest["tasks"][0]["episodes"]) == 10
     materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
@@ -334,7 +328,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
     assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
 
 
-@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view", "video_prior"])
+@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view"])
 def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_materialization, field):
     requests, runs, builds, _ = resident_materialization
     changed = runs[Path(requests[1]["checkpoint"])]
@@ -342,8 +336,6 @@ def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_mat
         changed["config"]["observer"]["camera_view"] = "dual"
     elif field == "observer":
         changed["config"][field]["probe_seed"] += 1
-    elif field == "video_prior":
-        changed["config"][field]["mode"] = "frame_set"
     else:
         changed[field]["different_contract"] = True
     with pytest.raises(ValueError, match="identical source, model, and observer"):
@@ -474,23 +466,28 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
 @pytest.mark.parametrize("process_mode", ["ordered", "frame_set"])
 def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     method = method_metadata({"model_config": vars(VideoWriterConfig(process_mode=process_mode)),
-        "config": {"update_version": UPDATE_VERSION, "observer": {}, "video_prior": _prior(process_mode),
+        "config": {"update_version": UPDATE_VERSION, "observer": {"camera_view": "dual"},
                    "execution_precision": "native_mixed_without_outer_autocast"}})
     assert method["native_response_shape"] == [50, 1024]
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_and_contextual_task_tokens"
-    assert method["frame_attention"] == ("adjacent_full_h_past_self_temporal" if process_mode == "ordered"
-                                         else "independent_full_h_frame_set")
-    assert method["video_representation"] == "pretrained_dense_visual_and_native_task_tokens_T_L_d"
+    assert method["native_read"] == "full_T_x_50_crossframe_action_response_attention"
+    assert method["frame_attention"] == "bidirectional_order_equivariant_full_video"
+    assert method["video_representation"] == "language_conditioned_semantic_states_T_L_d"
+    assert method["process_aggregation"] == ("second_order_log_signature" if process_mode == "ordered"
+                                             else "unordered_second_moments")
+    assert method["native_parameter_generation"] == "free_full_A_B_shape_family_heads_after_semantic_path_modulation"
     assert method["macro_cursor"] == "optimizer_updates"
     assert method["training_stage"] == STAGE
-    assert method["training_objective"] == "main_fm_plus_spatial_kl_and_native_update"
-    assert method["video_prior_in_execution"] is False
+    assert method["training_objective"] == "main_fm"
     assert method["update_version"] == UPDATE_VERSION
 
 
 @pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
+    ("schema_version", "ember_native_correction_writer_run_v1"),
     ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
+    ("stage", "native_correction_writer_fresh"),
+    ("update_version", "native_correction_main_fm_joint_credit_v1"),
     ("update_version", "joint_fm_rl_same_version_v1"), ("execution_precision", "outer_bf16")])
 def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(bank, field, value):
     _, manifest = bank
@@ -634,13 +631,11 @@ def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path
     response = object()
     calls = []
 
-    captured_native = object()
-    def writer(*values, native_inputs):
-        assert native_inputs is captured_native
+    def writer(*values):
         calls.append(values)
         return identity_lora_state(lora)
 
-    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: SimpleNamespace(native_inputs=captured_native),
+    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: object(),
         read=lambda condition: (response, arguments))
     runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora)
     task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),

@@ -8,7 +8,7 @@
 1. 已登记：将训练侧可见对象／部件位置直接监督实际视觉cross-attention；保留原输入、完整H、全部共同学习模块及LoRA出口。
 2. 已完成：384条CPU空间标签及全部数组／坐标QA；标签只在loss中使用，一次性构建入口已退役。
 3. 原生最长视频profile已通过：两次64query完整反向，warm26.38秒、峰值allocated39.17／reserved42.17GiB；b304cde6冻结两臂正式进程已启动，运行合同及8面板队列见progress。
-4. 两臂200updates／51,200queries及四checkpoint、全部曝光配对已完成；当前物化后执行完整100/200的8面板，严格按设计资格和停止分支裁决。
+4. 两臂200updates／51,200queries、四checkpoint、全部曝光配对及8个LoRA库已完成；当前执行完整100/200的8个闭环面板，严格按设计资格和停止分支裁决。
 5. 通过才补换视频、强静态和跨初始化，合法冻结后最终controls；未通过关闭当前组合。Test／RL／held梯度不使用。
 
 运行和精确资源登记见progress及formal artifacts；先前无active design的段落均为已关闭阶段的记录。

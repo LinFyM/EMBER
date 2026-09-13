@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：物体与运动落点监督两臂200完成，物化／闭环队列执行中（2026-09-13）
+## 当前：物体与运动落点监督八库封存，配对闭环执行中（2026-09-13）
 
 Owner要求继续仔细推导、实施并按结果调整。当前active design为
 [Visible-Object Grounded Writer](docs/visible_object_grounded_writer_design.md)：保持完整生成链，
@@ -10,7 +10,7 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 
 登记fresh ordered/frame_set各200、100/200节点、8个train96/validation400面板，旧dual同模式作为固定参照。
 资格继承原合同，未放宽frame_set要求；定位改善不代替跨视频／初始化／相邻与validation闭环收益。
-标签与原生profile已通过；两臂200步完整结束，四个100/200 checkpoint已核验；尚无新闭环结果。
+标签与原生profile已通过；两臂200步完整结束，四个100/200 checkpoint及八个LoRA库已封存；闭环评测执行中。
 旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
 实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
 两处真实Q/K均非零。该检查只证明图接通；原生最长视频profile已随后完成，结果见下。
@@ -51,8 +51,13 @@ frame_set [.05190,.42785]→[.90533,2.26667]；这支持标注区域读取拟合
 旧纯FM对应.107371／.107225；仍是train24留出episode定位指标，不构成闭环资格。
 最后25步共同23task物体／运动log-density为ordered [1.34737,3.47312]，frame_set [1.35711,2.97551]；
 沿用上述描述性口径，只说明空间读取拟合，不能证明有益LoRA或视频因果性。
-四个物化任务在gpu01/0–3实际运行，原始日志已出现逐条件LoRA输出；物化后执行8个correct面板，共1984rows，再按登记资格裁决。
+四个物化任务在gpu01/0–3完成并exit0，八个bank全部sealed，每个checkpoint含96+400条件，共1984条编译记录；随后执行8个correct面板，再按登记资格裁决。
 训练已停止于200，无selected checkpoint；整体goal未完成。原件为training_readout、training_pairing、completion及overnight状态。
+
+评测启动前两节点GPU/process及strg01配额重新核对：个人/data1为1016.9/1024GiB，剩余预算2GiB，预计1018.9GiB。
+物化进程全部退出后实际占用0→6；gpu01/0–5每卡2个persistent worker，按cost-balanced dynamic queue执行。
+首个ordered100/train96 launcher3529687与12个worker已实际运行；其余面板由同一队列接续，尚无完整新闭环成绩。
+精确启动合同、设备UUID和资源快照为`overnight_ordered_100_train_admission.json`及各panel的run_contract。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

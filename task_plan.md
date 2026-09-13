@@ -3,8 +3,8 @@
 ## 当前目标：定位合法视频获取到有效参数作用的缺口（2026-09-13）
 
 完整目标仍为正确action-hidden教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、
-初始化、相邻checkpoint和固定validation迁移；暂不强制145/400。**整体goal未完成，当前无active design、
-在途训练／评测或selected checkpoint。**
+初始化、相邻checkpoint和固定validation迁移；暂不强制145/400。**整体goal未完成；当前唯一active design为
+[固定A误差分解诊断](docs/native_correction_acquisition_audit.md)，尚未启动，无新训练或selected checkpoint。**
 
 [Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)的两臂fresh200、四checkpoint、
 8个bank与8个配对面板／1,984rows已完整结束，原始证据审计及全部worker退出通过。
@@ -15,8 +15,9 @@
    同时保留validation breadth3、Spatial零、有益有序资格缺失和独立动作／参数拟合有限的事实。完整结论见findings§91。
 2. 不把共同标签统计／参数空间存在性当成有限RGB获取证明，也不把弱闭环唯一归到Meta、Compiler、R/A或B。
    新旧教学池及训练目标不同，不以本轮50与旧空间监督71的差额冒充单变量归因。
-3. 下一步先针对有限原生输入空间与纠正预测获取的竞争解释建立可失败的冻结诊断，核对历史近邻、明确实际比较对象和停止条件后登记执行。
-   保持真实同位置条件与纠正联系、训练侧信息墙和无部署梯度；不默认新增完整Writer训练、辅助动作头或参数扫描。
+3. 已核对旧fixed-A／G1／G3 fit-span近邻并登记最小冻结诊断：四checkpoint×train24×demo16–19共384次合法生成，
+   与同视频既有label分解实际误差、当前A下界和空间内差额；共同参数度量、四模型一致分支与混合即停均已固定。
+   完成live资源准入和clean pushed冻结后执行；保持训练侧信息墙及无部署梯度，不新增完整Writer训练、辅助动作头或参数扫描。
 4. 整体goal继续；已完成的Execution-Aligned、旧冻结52/96正例复核及其它关闭诊断不从旧计划措辞恢复。
 
 以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。

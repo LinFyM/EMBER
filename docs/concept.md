@@ -11,7 +11,7 @@
 该Writer的两臂fresh200及8个配对面板已完成并按原资格关闭：有序validation两节点均50/400，
 对frame_set的净增−1/+1未形成相邻有益有序增量。保留source能力不等于获取视频特定纠正；
 真实纠正的功能前提与合法共享预测的缺口须继续区分，不能由参数空间存在性直接推导RGB学习成功。
-当前无active design，精确运行与资格状态只看progress。
+该候选无selected checkpoint；后续冻结获取诊断与精确运行状态只看progress。
 不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
 Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已完成有界学习与修正，未获资格并关闭。
 该候选检验了时间×任务token表示、执行条件化功能信用、蒸馏、teacher VL适配及纯FM比较。

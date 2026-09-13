@@ -1,10 +1,23 @@
 # EMBER progress
 
-## 当前：原生纠正Writer有界闭环完成，转入获取缺口分析（2026-09-13）
+## 当前：登记原生纠正获取的固定A误差分解（2026-09-13）
+
+Owner完整有益视频特异性goal保持active且未完成，暂不强制145/400。
+当前唯一active design为[原生纠正获取诊断](docs/native_correction_acquisition_audit.md)：
+固定既有ordered/frame_set的100/200四checkpoint与train24/demo16–19，生成384套合法单视频LoRA，
+对同视频既有真纠正label分解“当前A行空间无法表达的误差”和“空间内未拟合的误差”。
+无新Writer训练、参数更新、动作query、环境步、validation/Test读取或checkpoint选择；当前尚未启动物化。
+
+已核对旧fixed-A、G1与G3 fit-span／dual近邻；该诊断不重复完整native bank存在性，也不把投影能量当行为。
+固定共同参数度量及四模型一致方向分支，混合结果即关闭，不追加阈值、视频或模型扫描。
+启动前完成live额度和GPU准入、冻结clean pushed代码；详细公式、条件、停止与3GiB data0预算见登记文档。
+已关闭的Native Correction Writer及所有更早训练继续保持关闭；无selected checkpoint。
+
+## 最近：原生纠正Writer有界闭环完成并关闭（2026-09-13）
 
 Owner的完整有益视频特异性goal保持active且未完成，当前暂不强制145/400。
 **[Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)已按原资格完成关闭；
-当前无active design、selected checkpoint或在途训练／评测。** 旧Writer、冻结正例复核及原生纠正oracle诊断继续保持关闭。
+该轮结束时无active design、selected checkpoint或在途训练／评测。** 旧Writer、冻结正例复核及原生纠正oracle诊断继续保持关闭。
 
 09c1a0d6 clean pushed frozen完成两臂各fresh200、800教学条件与51,200主query；四完整checkpoint、
 8个sealed bank和1,984条配对闭环记录完整。训练18个曝光字段及0/100/200独立诊断配对通过，teacher逐条件排除于主query。

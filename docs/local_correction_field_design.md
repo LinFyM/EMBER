@@ -202,3 +202,35 @@ profile仅验证最长完整视频的两次真实共同更新及一次完整推�
 据实际吞吐在学习前固定约一小时曝光的两个等间距节点，随后完全沿§6资格及后续分支。
 现有video／factor拥有唯一Encoder和场收缩；裸读取／训练cotangent由一个小模块拥有，
 supervised、sampler、runtime及materialization复用现有owner；不保留旧Semantic Path可执行分支。
+
+## 9. 最长profile通过及固定50／100正式比较
+
+c4c07bbb clean pushed detached在gpu01物理4完成task38/demo36的全部517原始帧／105个stride5采样帧，
+两次真实共同更新及一次完整部署推理均exit0。Writer10,255,712参数，加两组Meta共11,804,000可训练参数；
+source参数无requires_grad或残留梯度。主模型11项机制检查与相关运行／数据／评测／训练142项检查通过，
+624个既有eta的task／episode与sealed身份均符合合同。
+
+第二次最长更新31.346秒，显存allocated／reserved峰值34.285／35.459GiB；完整无标签推理8.299秒，
+全部38个裸输入、76个finite factors、完整50-horizon及所有105帧保留。
+局部系数、U、裸输入投影、图像读取、时间读取和两组Meta第二步均有有限梯度；
+Action／VL Meta范数约4.71e-11／3.30e-9，信用较小，不能把图接通写成已获得有效知识。
+profile不复用权重、不据两步loss修改字段单位、初始化、lambda、rank、LR、seed或架构。
+
+依当前seed7真实sampler及原cost-balanced调度，三GPU的100次更新估计2,998.53秒，
+另含初始化、三次固定train24无梯度动作诊断及checkpoint开销，按约一小时冻结**50／100**两节点。
+两臂分别fresh100，各400条teacher conditions、25,600条主FM queries及每condition四个局部位置；
+相同数据、field seed／ordinals／真实剩余动作／eta、主query及policy RNG逐行配对，只有有序时间RoPE不同。
+诊断只在0／50／100，继续固定teacher46–49、actions42–45、每task128 queries；不用于选择模型。
+
+每节点都完成train24×四init32–35的96行，以及validation8×50的400行correct面板，共八面板1,984行。
+train每task只用46–49四个教学视频各一次，validation每task全部0–49各一次；跨checkpoint／两臂固定映射。
+§6的有益有序、相对source、至少两正suite及相邻保持资格不变，完整面板后才裁决。
+既有配对source train17/96及validation47/400仅在执行合同、normalizer、assets和逐episode RNG一致时引用，
+不使用旧Writer成绩替代新参照。未获资格则关闭本组合，不续训／小扫或补未触发的other／最终controls。
+
+当前代码结构净增长约406行，唯一新增197行correction owner负责裸读取及训练标签；
+其余复用既有生命周期。shape／信息墙／完整目标验证中的分支保留在各自owner，未新增架构上限违规；
+原路径统计与自由A/B出口及其专属测试已退役，历史代码和证据仍由Git与原运行根保留。
+正式学习须从包含此profile／节点登记的clean pushed detached commit开始，并在launch记录实际两节点GPU与独立quota。
+原profile、完整timings／gradient norms、退出和调度估计在
+[profile](../runs/analysis/local_correction_field_writer_20260914/profile/results.json)。

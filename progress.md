@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：局部条件纠正场算子通过，转入合法共同学习实现（2026-09-14）
+## 当前：局部纠正场实现与最长profile通过，登记50／100正式比较（2026-09-14）
 
 Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
 自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
@@ -8,6 +8,11 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展且明�
 当前推进§2–3已选机制的合法共同学习实现；§8已在profile／学习前冻结模型、字段采样、单位及共同loss，
 尚无active Writer训练或selected checkpoint。主模型同字段收缩／全帧梯度／无序置换等11项检查已通过，
 正在接入裸source读取、训练专用在线cotangent与正式materialization合同。
+c4c07bbb已集成、推送、detached冻结，真实最长task38/demo36的105帧两次更新及完整推理已exit0。
+第二次更新31.346秒、显存峰值34.285GiB，完整推理8.299秒；source全冻结，局部场与两组Meta均有有限但较小梯度。
+相关模型／运行检查共153项通过，全部624个eta记录符合训练身份。依真实sampler估计100更新约2,998.53秒，
+§9已在学习前冻结两臂fresh50／100、各400条件／25,600 queries及八个完整配对面板；尚未实际启动正式训练。
+profile原件在`runs/analysis/local_correction_field_writer_20260914/profile/`，不据profile loss改变科学参数。
 新候选让逐位置的同一纠正场接受真实局部监督并直接合成LoRA，区别于独立辅助动作头与旧总参数回归。
 先检验在局部场上限制rank16是否保留实际跨episode作用；现有G的rank16是在总参数矩阵上施加，两者不能当成等价。
 登记96条件、1,536独立query组合、t1及full10，原source／query／eta全部固定复用；不新增闭环、held、训练或最终controls。

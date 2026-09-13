@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_local_field_writer_config_v1",
-  "status": "registered_local_field_joint_profile",
+  "status": "registered_local_field_comparison",
   "design": "docs/local_correction_field_design.md",
   "data": {
     "seed": 7,
@@ -438,12 +438,29 @@
       ]
     },
     "profile_registration": {
-      "status": "registered_before_profile",
+      "status": "complete",
       "scope": "actual longest full video: two complete mainFM+local-field updates and same-version observer replay; one deployment inference; all38 targets/full50/allframes/source-frozen and second-update joint finite gradients",
       "checkpoint_policy": "before training or closed-loop scores, choose two equally spaced multiples of50 or100 for about one hour of continuous learning, identical for both arms",
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "evidence": "runs/analysis/local_correction_field_writer_20260914/profile/results.json",
+      "throughput_budget": "runs/analysis/local_correction_field_writer_20260914/profile/throughput_budget.json",
+      "physical_policy_microbatch": 8,
+      "planned_training_world_size": 3,
+      "longest_frames": 105,
+      "peak_allocated_gib": 34.284810066223145,
+      "peak_reserved_gib": 35.458984375,
+      "second_update_seconds": 31.346028323983774,
+      "second_update_joint_gradients": true,
+      "source_trainable_parameters": 0,
+      "pure_forward_seconds": 8.298522752011195,
+      "selected_checkpoint_updates": [
+        50,
+        100
+      ],
+      "modeled_training_seconds": 2998.532270688364,
+      "gradient_magnitude_note": "joint native credit finite but small; mechanism verification alone does not prove useful learning"
     },
-    "checkpoint_registration": "provisional_50_100_to_freeze_from_actual_profile_before_any_training",
+    "checkpoint_registration": "registered_50_100_from_actual_profile_before_training_or_closed_loop_scores",
     "content_reference_followup": "only after initial two-node qualification; register the stronger content reference before use"
   },
   "update_version": "local_field_main_fm_joint_credit_v1",

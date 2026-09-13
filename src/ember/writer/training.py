@@ -8,7 +8,6 @@ import socket
 import sys
 import time
 import traceback
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -42,11 +41,18 @@ def _config(path: Path) -> dict[str, Any]:
     validate_prior_config(config)
     validate_spatial_config(config.get("spatial_supervision"))
     validate_correction_config(config.get("correction_supervision"))
+    calibration = {"schema": "native_correction_output_units_v1",
+                   "source": "runs/analysis/native_correction_writer_20260913/native_output_units.json",
+                   "formula": "sqrt(mean_target_update_energy/(rank*out_features))", "conditions": 624,
+                   "task_conditioned": False, "held_data_used": False, "fixed_before_formal": True}
+    if config.get("native_output_calibration") != calibration:
+        raise ValueError("native correction output units need the registered training-only calibration")
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
-    expected_model = asdict(VideoWriterConfig())
+    expected_model = VideoWriterConfig().to_dict()
     selected_model = VideoWriterConfig(**config["model"])
     for key in ("process_mode",):
         expected_model[key] = getattr(selected_model, key)
+    expected_model["native_output_units"] = list(selected_model.native_output_units)
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1],
                      "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
@@ -124,7 +130,7 @@ def _run_contract(args, context, config, runtime, state):
         "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
         "execution": {"policy_microbatches": _execution_config(args, config, context)[1]},
-        "model_config": asdict(VideoWriterConfig(**config["model"])),
+        "model_config": VideoWriterConfig(**config["model"]).to_dict(),
         "topology": {
             "host": socket.gethostname(), "world_size": context.world_size,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),

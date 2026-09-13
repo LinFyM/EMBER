@@ -484,7 +484,7 @@ def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     assert method["video_representation"] == "pretrained_dense_visual_and_native_task_tokens_T_L_d"
     assert method["macro_cursor"] == "optimizer_updates"
     assert method["training_stage"] == STAGE
-    assert method["training_objective"] == "supervised_fm"
+    assert method["training_objective"] == "main_fm_plus_spatial_kl_and_native_update"
     assert method["video_prior_in_execution"] is False
     assert method["update_version"] == UPDATE_VERSION
 

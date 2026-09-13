@@ -39,7 +39,7 @@ exact language + 单条完整双相机RGB，stride5及真实末帧
      裸冻结source，不安装任一Meta → 全38目标的实际输入X[T,50,d_in]
 
 Q与每个位置的X → signed系数R；Q → 自由输出因子B
-  A = R X / N，ΔW = B A
+  A_raw = R X / N；A逐行单位范数，B以共享训练目标单位表达；ΔW = B A
   → 唯一38-target rank16完整LoRA → source依据自己的观测／state闭环
 
 仅训练：同教学episode的四个真动作片段 → 固定source纠正oracle标签ΔW*
@@ -59,21 +59,28 @@ X对每帧独立读取，完整捕获全部38个真实线性层输入。不能�
 ## 3. 不在部署求梯度的低秩构造
 
 对目标l，把该视频的每个真实frame与完整horizon位置记为i，N=T×50。
-现有Compiler给出q_lr；新增目标专属输入投影P_l和输出投影O_l：
+现有Compiler给出q_lr；共享路由投影U、目标专属输入投影P_l和输出投影O_l定义：
 
 ```text
 k_li = LN(P_l x_li)
-r_lri = tanh(LN(q_lr)ᵀ k_li / sqrt(d))
-a_lrᵀ = (1/N) Σ_i r_lri x_liᵀ
-b_lr = O_l GELU(q_lr)
+u_lr = LN(U q_lr)
+r_lri = tanh(u_lrᵀ k_li / sqrt(d))
+a_raw_lrᵀ = (1/N) Σ_i r_lri x_liᵀ
+a_lr = a_raw_lr / ||a_raw_lr||_2
+s_l = sqrt(E_train ||ΔW*_l||_F² / (rank × d_out_l))
+b_lr = s_l O_l GELU(q_lr)
 ΔW_l = B_l A_l
-      = (1/N) Σ_i [B_l r_li] x_liᵀ.
+      = (1/N) Σ_i [B_l diag(1/||a_raw_lr||) r_li] x_liᵀ.
 ```
 
-模型预测的输出纠正向量可写作c_hat_li=B_l r_li/N。它与同一位置的x_li配对后形成实际参数，
+A的精确零行保持零，数值实现使用标准L2 normalize的零范数保护。s_l来自全部train24×26条的624个固定label，
+逐task／episode等权，只有38个全局共享常数；写入config与checkpoint buffer，部署不打开label文件，不进行task条件归一。
+这是B的物理参数单位，原主FM、空间及全层原生ΔW误差的权重和度量保持原定义。
+
+模型预测的输出纠正向量可写作c_hat_li=B_l diag(1/||a_raw_lr||) r_li/N。它与同一位置的x_li配对后形成实际参数，
 不是先各自平均纠正和X再外积；后一写法会引入未获oracle支持的跨位置项。
-B不受native Y span限制；A保留实际source输入的坐标。固定tanh和1/N只是有界系数及视频长度归一，
-不是推导出的最优实现，不扫描温度、归一方式、rank或额外gate。
+B不受native Y span限制；A保留实际source输入的坐标。固定tanh和1/N分别定义有界系数与集合贡献。A单位行固定因子幅度规范，B共享单位依据初始profile的实际放大与
+解析复核修正（§9）；它们不证明最优。理想任意因子的表示空间保留，有限共享网络的参数化／优化轨迹改变，必须fresh验证。
 
 该分解一次输出rank16，不在部署运行SVD或任何梯度更新。O_l为零初始化，故B=0而A可非零，
 输出为合法identity；第一步B可从实际FM与更新目标得到梯度，随后其它模块共同学习。
@@ -81,7 +88,8 @@ B不受native Y span限制；A保留实际source输入的坐标。固定tanh和1
 
 一个有限容量事实：oracle的G_l=C_l X_l，故其右奇异向量属于X_l的行空间。
 包含四个oracle采样位置的完整X，也包含rank16投影ΔW*_l的行空间；若允许任意R，则存在
-R=A* X†使B* R X=B* A*。这是因子空间的存在性，**不证明上述有限神经网络能学出该R，也不证明RGB足够**。
+R=A* X†使B* R X=B* A*。对非零行把A*归一、把其范数及正s_l的逆吸收进B*即可保留该空间。
+这是因子空间的存在性，**不证明上述有限神经网络能学出该R，也不证明RGB足够**。
 本监督只约束预测纠正与X形成的参数作用，不声称恢复了每个位置唯一的真实cotangent；X的零空间中仍有不可识别分量。
 
 学习误差信号有[synthetic gradients的原始研究先例](https://proceedings.mlr.press/v70/jaderberg17a.html)。
@@ -199,3 +207,27 @@ registration/completion和`label_data_audit.json`。旧96套没有复制，也�
 覆盖完整identity、第二步共享梯度、dense ΔW误差／梯度与因子gauge不变、实际source输入、cache预算、
 frame_set联合置换、主FM teacher排除、采样恢复及checkpoint拒绝旧身份。
 这些不构成机制或性能正结论。最长新教学条件已定为task38/demo36、105frames；下一步真实profile后再固定formal准入。
+
+
+## 9. 正式学习前的因子单位修正
+
+9c14f476的最长105帧profile已完成，两次完整反传43.12／32.84秒、峰值35.77GiB，纯推理亦正常exit0。
+identity的B首先获得梯度，第二步Action/VL Meta与所有读取图均收到有限信用；但L_update从1升为2910.36，
+主FM为.117707→.120403，不能把图接通直接当作数值准入。
+
+一次不执行optimizer的固定初始化读取核对发现：原始A行范数为.412–10.408，目标完整ΔW能量为.00386317。
+只用纠正loss、固定Q/A并代入原第一步Adam闭式式，得到更新能量11.24792、相对误差2906.34，复现实际放大；
+它支持参数输出坐标尺度这一解释，没有把有限loss上升宣称为软件bug。单独单位化A的解析误差仍162.19，故不采用这一不充分修正。
+原件在analysis/profile的`scale_registration.json`、`scale_audit.py/json`；该诊断无模型学习、held读取或rollout。
+
+在看到修正后的学习表现之前，登记并采用§3的单位行A＋共享s_l输出单位；公式由
+`profile/output_units_registration.json`固定，没有扫描倍率、LR、lambda或rank。
+全部624训练label得到38个s_l，范围3.91385e-8–.00305696，平均总ΔW能量.00547348；
+统计文件`native_output_units.json`保留完整目标顺序、来源与原始能量统计。没有按条件筛选或按task/held重标定。
+这些常数是共享模型的一部分，不是部署输入、task字典或损失逐层重加权；B仍可通过学习产生超过参照单位的幅度。
+
+architecture更新为`native_input_corrective_factors_v2`，旧profile不成为初始化。保持同组视频、主query采样、优化器和科学目标，
+从fresh identity重做两次最长条件联合反传与纯推理。两次均需finite、source/prior冻结、第二步完整共同梯度成立；
+首步后L_update不得再次放大到identity的10倍以上，作为本次已识别尺度问题的运行准入，不作为科学资格或调参分数。
+正式100/200节点仍须在这次真实profile之后、正式学习之前冻结；
+该修正是被实际尺度证据支持的参数化变更，不是视频有益性或闭环结果。

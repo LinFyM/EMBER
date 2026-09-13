@@ -68,6 +68,7 @@ def test_complete_identity_then_video_conditioned_factors():
     for target in model.contract.targets:
         a, b = (initial[target.name + suffix] for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX))
         assert a.count_nonzero() > 0
+        torch.testing.assert_close(a.norm(dim=-1), torch.ones(model.contract.rank))
         assert (b @ a).count_nonzero() == 0
     unlock(model)
     changed = list(args)

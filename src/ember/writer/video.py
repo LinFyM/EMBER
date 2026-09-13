@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 import torch
 from torch import Tensor, nn
@@ -15,7 +15,7 @@ from ember.writer.native_factor import NativeFactorLoRADecoder
 
 
 SCHEMA = "video_conditioned_writer_v5"
-ARCHITECTURE = "native_input_corrective_factors_v1"
+ARCHITECTURE = "native_input_corrective_factors_v2"
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -40,6 +40,7 @@ class VideoWriterConfig:
     process_mode: str = "ordered"
     schema: str = SCHEMA
     architecture: str = ARCHITECTURE
+    native_output_units: tuple[float, ...] = (1.,) * 38
 
     def __post_init__(self) -> None:
         require_architecture_identity(vars(self))
@@ -47,6 +48,14 @@ class VideoWriterConfig:
                       self.blocks, self.compiler_blocks, self.factor_width, self.edge_chunk, self.prior_width)
         if min(dimensions) <= 0 or self.width % self.heads or (self.width // self.heads) % 2:
             raise ValueError("positive dimensions and even RoPE width per head are required")
+        units = tuple(map(float, self.native_output_units))
+        if len(units) != 38 or any(not math.isfinite(value) or value <= 0 for value in units):
+            raise ValueError("native output units require 38 positive frozen shared scalars")
+        object.__setattr__(self, "native_output_units", units)
+
+    def to_dict(self) -> dict:
+        """Use the same JSON-native representation before and after exact resume."""
+        return {**asdict(self), "native_output_units": list(self.native_output_units)}
 
 
 class _VideoEncoder(nn.Module):
@@ -145,7 +154,8 @@ class VideoConditionedWriter(nn.Module):
         self.rank_queries = nn.Parameter(torch.randn(contract.rank, width) * 0.02)
         self.time_projection = nn.Linear(width, width, bias=False)
         self.compiler = nn.ModuleList([CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
-        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width)
+        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width,
+                                              output_units=config.native_output_units)
 
     def encoder_parameters(self) -> Iterator[nn.Parameter]:
         return self.encoder.parameters()

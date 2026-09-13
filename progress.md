@@ -24,9 +24,12 @@ CPU空间构建438.79秒exit0，624条／22,319真实frames完整；原始stride
 目前约2.6GiB。两个构建入口已完成其生命周期，退出活动树，精确源码保留在ca87f05c。
 
 前向、训练label边界、逐condition跨episode采样及新checkpoint身份已实现；旧自由A/B出口与三份旧配置已替换。
-135项相关检查通过，新增联合FM＋更新目标的直接autograd对照亦通过；这些只验证工程合同。
-已确定新教学池最长条件task38/demo36、105frames，接着从fresh identity完成两次真实联合反传与纯推理profile。
-当前没有正式学习、GPU运行或selected checkpoint；profile权重不得继承。
+相关接口／梯度检查通过。9c14f476最长105帧的两次反传43.12／32.84秒、峰值35.77GiB，纯推理正常exit0；
+但首次Adam把L_update从1推至2910.36。固定Q/A的纠正梯度解析读出2906.34，单独单位行A仍162.19。
+据此在正式学习前登记[设计§9](docs/native_correction_writer_design.md#9-正式学习前的因子单位修正)：
+A固定单位行，B用全部624标签计算的38个共享参数单位，不改变原loss度量／权重或Adam设置。
+范围3.91385e-8–.00305696，只有train24共享统计，部署不读label；architecture改为v2并fresh重做最长profile。
+当前没有正式学习或selected checkpoint；所有profile权重不继承，整体goal未完成。
 
 数据构建准入strg01/data0为52.2/1024GiB、data1为1018.1/1024GiB；大新输出总峰值18GiB，data1源码预算768MiB。
 已复用source／prior／数据及旧96套标签。正式学习前依据实际profile固定节点、checkpoint体积并刷新独立quota与两节点资源。

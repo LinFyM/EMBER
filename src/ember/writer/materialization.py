@@ -217,7 +217,8 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
                                 else "adjacent_full_h_past_self_temporal"),
             "video_representation": "pretrained_dense_visual_and_native_task_tokens_T_L_d",
             "video_prior": run["config"]["video_prior"],
-            "training_stage": STAGE, "training_objective": "supervised_fm",
+            "training_stage": STAGE, "training_objective": "main_fm_plus_spatial_kl_and_native_update",
+            "native_parameter_generation": "unit_rows(RX/N); B in frozen shared training-target units",
             "video_prior_in_execution": False,
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 

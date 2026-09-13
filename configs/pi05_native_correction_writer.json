@@ -126,8 +126,48 @@
     "activation_checkpoint": true,
     "process_mode": "ordered",
     "schema": "video_conditioned_writer_v5",
-    "architecture": "native_input_corrective_factors_v1",
-    "prior_width": 1024
+    "architecture": "native_input_corrective_factors_v2",
+    "prior_width": 1024,
+    "native_output_units": [
+      5.307342967268577e-06,
+      1.174839442590179e-06,
+      2.76870259905809e-06,
+      4.807659165270107e-06,
+      2.5219325935562727e-06,
+      1.335351596833492e-05,
+      1.3646941491432248e-05,
+      3.092628822935794e-05,
+      3.9542782935232964e-06,
+      3.157482632351663e-06,
+      2.094523210474253e-06,
+      3.913846966013956e-08,
+      5.063780470211836e-06,
+      1.3800504665714839e-05,
+      8.911177885549733e-06,
+      2.54999176944258e-05,
+      1.0477961101617111e-05,
+      7.6838960841398e-06,
+      1.5529779243896328e-05,
+      2.5546437386131398e-05,
+      1.794052005855701e-05,
+      1.1162226012695185e-05,
+      1.0033650480413393e-05,
+      2.668696489297266e-06,
+      3.069131551604935e-05,
+      4.844912632175436e-05,
+      1.9786262971459292e-05,
+      4.2257024235733306e-05,
+      8.774398095475764e-05,
+      5.073225938452145e-05,
+      6.522020677268086e-05,
+      5.342621943456187e-05,
+      2.3976463223042225e-05,
+      6.194592286961965e-05,
+      3.875693620938351e-05,
+      0.00012271988463180084,
+      3.514572544427035e-05,
+      0.00305695972193415
+    ]
   },
   "observer": {
     "meta_rank": 4,
@@ -439,7 +479,7 @@
     "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
     "profile_registration": {
       "status": "pending",
-      "scope": "longest train24 demo16-41; complete forward and twice joint backward from identity; no initialization reuse"
+      "scope": "fresh unit-row A and shared target-unit B; longest105frames twice joint backward after initial scale audit"
     }
   },
   "update_version": "native_correction_main_fm_joint_credit_v1",
@@ -470,5 +510,14 @@
     "label_root": "runs/analysis/native_correction_writer_20260913/correction_labels",
     "weight": 0.1,
     "objective": "complete_source_update_relative_frobenius"
+  },
+  "native_output_calibration": {
+    "schema": "native_correction_output_units_v1",
+    "source": "runs/analysis/native_correction_writer_20260913/native_output_units.json",
+    "formula": "sqrt(mean_target_update_energy/(rank*out_features))",
+    "conditions": 624,
+    "task_conditioned": false,
+    "held_data_used": false,
+    "fixed_before_formal": true
   }
 }

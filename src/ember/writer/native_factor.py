@@ -14,11 +14,13 @@ from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRAContract
 class _NativeGroup(nn.Module):
     """Batch equal-shaped targets while retaining their own native-coordinate maps."""
 
-    def __init__(self, indices: list[int], contract: LoRAContract, width: int, key_width: int) -> None:
+    def __init__(self, indices: list[int], contract: LoRAContract, width: int, key_width: int,
+                 output_units: Sequence[float]) -> None:
         super().__init__()
         targets = [contract.targets[index] for index in indices]
         self.names, self.positions = tuple(target.name for target in targets), tuple(indices)
         self.register_buffer("indices", torch.tensor(indices), persistent=False)
+        self.register_buffer("output_units", torch.tensor([output_units[index] for index in indices])[:, None, None])
         self.key_factors = nn.Parameter(torch.empty(len(targets), key_width, targets[0].in_features))
         for weight in self.key_factors:
             nn.init.kaiming_uniform_(weight, a=math.sqrt(5))
@@ -38,23 +40,29 @@ class _NativeGroup(nn.Module):
             with torch.autocast(route.device.type, enabled=False):
                 part = torch.matmul(coefficients.float(), native) / (native.shape[1] * len(videos))
             a = part if a is None else a + part
-        b = torch.matmul(self.b_factors, F.gelu(content).transpose(-1, -2)).float()
+        # Fix the arbitrary A/B row gauge. Zero rows stay zero; physical X is
+        # unchanged and still paired with its own correction coefficient.
+        a = F.normalize(a, dim=-1)
+        b = torch.matmul(self.b_factors, F.gelu(content).transpose(-1, -2)).float() * self.output_units
         return a, b
 
 
 class NativeFactorLoRADecoder(nn.Module):
-    """A=R(X,Q)X/N, B=O(Q); B RX is the same-position correction/input sum."""
+    """Unit-row A from RX/N and B in frozen shared training-target units."""
 
-    def __init__(self, contract: LoRAContract, width: int, factor_width: int = 256) -> None:
+    def __init__(self, contract: LoRAContract, width: int, factor_width: int = 256, *,
+                 output_units: Sequence[float]) -> None:
         super().__init__()
         self.contract, self.width = contract, width
+        if len(output_units) != len(contract.targets) or any(not math.isfinite(value) or value <= 0 for value in output_units):
+            raise ValueError("every native target requires a positive shared output unit")
         self.route_projection = nn.Linear(width, factor_width, bias=False)
         self.route_norm = nn.LayerNorm(factor_width)
         grouped: dict[tuple[int, int], list[int]] = {}
         for index, target in enumerate(contract.targets):
             grouped.setdefault((target.in_features, target.out_features), []).append(index)
         self.groups = nn.ModuleList([
-            _NativeGroup(indices, contract, width, factor_width) for indices in grouped.values()
+            _NativeGroup(indices, contract, width, factor_width, output_units) for indices in grouped.values()
         ])
 
     def _validate(self, codes: Tensor, videos: Sequence[Sequence[Tensor]]) -> None:

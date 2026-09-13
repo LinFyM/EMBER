@@ -47,6 +47,10 @@ source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从�
 增量主要来自Object；Long计数2→1，不能由总分增长宣称保持或时序优势。训练侧面板不作正式checkpoint选择。
 有序50 validation400已在gpu02三卡／九常驻worker运行，有序100在gpu01卡5／6／六worker运行；
 编译释放的gpu01卡4已接无序50 train96／三worker，当前六张GPU均为闭环。无序两轮validation及100 train仍待调度。
+有序50 validation在252行完成后，切换Spatial task3时出现MuJoCo／EGL离屏缓冲区创建错误；
+原launcher exit1并结束其余所管worker，31个完成分片／252原始行及完整失败日志保留。根因尚未确认，未改科学合同或模型。
+现场确认旧worker已退出并再次核验两节点后，使用原5116deb0 canonical resume重建九个worker，重试剩余148行；
+原state／video／RNG映射及checkpoint保持，恢复日志与退出单独记录。若再次失败，先调整资源／恢复方案，不无界重复同样尝试。
 canonical无放回视频映射及完整1,984rows的预注册配对readout保持；完整面板收齐后按原资格裁决，尚无selected checkpoint。
 另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
 原登记50／100中的50被误当作非法节点；现在由恢复cursor跳过已完成节点，并保留100的原终点。

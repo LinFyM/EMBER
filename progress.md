@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：物体与运动落点监督100节点完成，继续200（2026-09-13）
+## 当前：物体与运动落点监督两臂200完成，物化／闭环队列执行中（2026-09-13）
 
 Owner要求继续仔细推导、实施并按结果调整。当前active design为
 [Visible-Object Grounded Writer](docs/visible_object_grounded_writer_design.md)：保持完整生成链，
@@ -10,7 +10,7 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 
 登记fresh ordered/frame_set各200、100/200节点、8个train96/validation400面板，旧dual同模式作为固定参照。
 资格继承原合同，未放宽frame_set要求；定位改善不代替跨视频／初始化／相邻与validation闭环收益。
-标签与原生profile已通过；两臂已保存并核验100步完整checkpoint，继续登记的200步；尚无新闭环结果。
+标签与原生profile已通过；两臂200步完整结束，四个100/200 checkpoint已核验；尚无新闭环结果。
 旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
 实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
 两处真实Q/K均非零。该检查只证明图接通；原生最长视频profile已随后完成，结果见下。
@@ -33,8 +33,8 @@ gpu01 ordered=0,1,2／frame_set=3,4,5，每臂world3，microbatch8、GPU-local N
 `ember-visible-object-queue`在gpu02以CPU进程跟踪这两个实际训练句柄，随后完成8个登记面板及旧pure-FM同模式参照；
 不自动追加资格／最终controls。两臂原生运行合同、初始化留出评估和前2次正式optimizer更新已完成核对：
 各512queries，第二步31.60／31.56秒，峰值allocated40.21GiB；主FM／空间loss有限，Writer及两组Meta梯度非零。
-新旧四模型前2步／8条件的18个登记采样字段相同；只属于startup证据，完整800条件配对仍由队列核对。
-原始核验见`startup_evidence.json`，当前尚未到闭环节点，整体goal未完成。
+新旧四模型前2步／8条件的18个登记采样字段相同；这是startup证据，完整800条件核验结果见下。
+原始启动核验见`startup_evidence.json`，整体goal未完成。
 
 100节点：两臂各400条件／25,600queries，完整checkpoint、run／training state及文件记录检查通过。
 新旧四模型截至100的全部18个曝光字段、0/100独立动作评估的10个配对字段一致。
@@ -43,8 +43,16 @@ gpu01 ordered=0,1,2／frame_set=3,4,5，每臂world3，microbatch8、GPU-local N
 训练侧前／后25步共同23task的物体／运动相对均匀读取log-density：ordered [.04994,.54115]→[.87463,3.05159]，
 frame_set [.05190,.42785]→[.90533,2.26667]；这支持标注区域读取拟合发生，不能证明OOI语义角色／held泛化或有益LoRA。
 两个窗按共同task等权、教学draw不同，loss来自更新前forward；不把描述性曲线当作同输入干预或选点统计。
-原件为`training_readout.py/json`，完整800条件配对和8个闭环面板仍待完成。
+原件为`training_readout.py/json`；100节点记录之后的完整配对结果见下。
 100 checkpoint写入后strg01/data1为999.7/1024GiB，本轮输出7.6GiB；按登记剩余21.4GiB预计1021.1GiB。
+
+200节点：两臂各800条件／51,200queries完成、exit0，墙钟6514.54／6515.52秒；四完整checkpoint均通过检查。
+新旧四模型全部800条件的18字段及0/100/200独立评估配对一致。200独立动作FM ordered .107831／frame_set .107719，
+旧纯FM对应.107371／.107225；仍是train24留出episode定位指标，不构成闭环资格。
+最后25步共同23task物体／运动log-density为ordered [1.34737,3.47312]，frame_set [1.35711,2.97551]；
+沿用上述描述性口径，只说明空间读取拟合，不能证明有益LoRA或视频因果性。
+四个物化任务在gpu01/0–3实际运行，原始日志已出现逐条件LoRA输出；物化后执行8个correct面板，共1984rows，再按登记资格裁决。
+训练已停止于200，无selected checkpoint；整体goal未完成。原件为training_readout、training_pairing、completion及overnight状态。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

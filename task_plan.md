@@ -17,13 +17,14 @@ Owner明确要求“制定一个goal开始推进”，恢复自主研究。新go
 3. **进行中：50／100两等间隔节点已按实际吞吐在看分数前登记。** 有序／无序分别在gpu02／gpu01各三卡，
    从同一5116deb0 frozen独立fresh正式启动，实际run合同确认除process_mode外配置相同；
    两臂各100updates／400教学条件／25,600主query均已完整结束，四checkpoint核验及全部学习／诊断字段配对通过。
-   四节点LoRA编译已启动，有序50／100的train96已开始闭环；两个节点均做完整train96／validation400。
+   四节点共1,984套LoRA已全部封存；有序train96为16→29（source17），相邻仍有3个丢失、Long2→1。
+   两个有序validation400及无序50 train96正在评测；两个节点均完成train96／validation400后再裁决。
    报告能力、ordered−frame_set、breadth、churn和相邻保持；资格后补换视频，再冻结并做最终controls。
    负结果先更新主假设和投入判断，停止近等价重复；有益候选继续验证跨视频与冻结后的因果controls。
 4. 仅在完整目标证据成立时完成goal；局部正例、surrogate、单个峰值、代码或理论文档完成均不算科学目标达成。
 
-当前唯一active design为语义状态路径Writer。真实纠正诊断已关闭，不扩大面板或扫描；两臂训练已结束，编译与配对闭环正在运行，
-新source400已47/400完整结束，全部worker正常退出。还没有候选闭环分数或selected checkpoint。
+当前唯一active design为语义状态路径Writer。真实纠正诊断已关闭，不扩大面板或扫描；两臂训练和全部编译已结束，配对闭环正在运行。
+新source400已47/400完整结束，全部worker正常退出。新候选目前只有两个有序train96完整结果，尚无完整资格或selected checkpoint。
 下方暂停记录与旧“下一步”为历史，不覆盖本次恢复授权。
 
 ## 暂停时点：讨论架构与训练的整体原理（2026-09-14）

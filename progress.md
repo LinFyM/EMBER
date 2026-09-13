@@ -40,16 +40,22 @@ source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从�
 有序训练释放设备后再次核验两节点，gpu02卡4／5低负载且余量足够，两个节点各496条件的LoRA编译已并行启动；
 随后以live准入的gpu02卡6编译已保存的无序50步checkpoint，与其后半段训练并行。
 无序训练释放后再查两节点，gpu01卡4／5／6为空；卡4编译无序100，卡5／6各以三个常驻worker启动有序50／100的train96闭环。
-首两个闭环面板均已通过prepared合同，覆盖24tasks／96states／36shards，当前合计六张有效GPU。
-有序50／100及无序50的train96 bank均封存，validation400编译继续；完整train96／validation400结果收齐后按原资格裁决。
-四checkpoint／八bank请求、canonical无放回视频映射及完整1984rows的预注册配对readout已备妥；尚无新候选闭环结果。
+全部四checkpoint／八bank共1,984套唯一完整LoRA已封存，四个编译进程均exit0。
+有序train96的50／100节点已完整完成，分别16／29（固定source17），两面板全部六worker及launcher均exit0；
+状态／视频、真实帧、RNG和checkpoint身份审计通过。S/O/G/L为7/2/5/2→10/9/9/1，breadth8→12；
+相邻R/G/L为13/16/3、churn19、J=.40625，净率CI[+5.21,+21.88]pp。100相对source净+12、CI[+2.08,+22.92]pp，
+增量主要来自Object；Long计数2→1，不能由总分增长宣称保持或时序优势。训练侧面板不作正式checkpoint选择。
+有序50 validation400已在gpu02三卡／九常驻worker运行，有序100在gpu01卡5／6／六worker运行；
+编译释放的gpu01卡4已接无序50 train96／三worker，当前六张GPU均为闭环。无序两轮validation及100 train仍待调度。
+canonical无放回视频映射及完整1,984rows的预注册配对readout保持；完整面板收齐后按原资格裁决，尚无selected checkpoint。
 另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
 原登记50／100中的50被误当作非法节点；现在由恢复cursor跳过已完成节点，并保留100的原终点。
 监督训练共47项检查通过，包含针对性恢复回归。修复时两组在途学习继续使用原冻结版本；没有中断、重启或改变科学合同。
 训练前strg01现场data0／data1为67.62／1017.85GiB，无序启动前再查data0为67.62GiB；
 新研究峰值24／.5GiB预算满足独立额度，大资产均复用。编译准入前data0为67.88GiB、研究目录261.65MiB，
 共享可用1.6TiB；本批约4.757GiB LoRA及剩余24GiB总预算可容纳。首批闭环准入前data0为72.18GiB，
-研究目录4.56GiB，剩余20GiB保守预算可容纳。
+研究目录4.56GiB，剩余20GiB保守预算可容纳。无序train96准入前data0为77.68GiB、研究目录10.06GiB，
+剩余14GiB保守预算仍可容纳。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：原生纠正传递诊断已登记，尚在实施（2026-09-13）
+## 当前：原生纠正传递实现与smoke通过，准备完整有界诊断（2026-09-13）
 
 Owner授权继续仔细推导、实施并按结果调整，整体有益视频特异性goal保持active且未完成。
 **当前active诊断：[原生条件与真实纠正的跨episode传递](docs/native_corrective_transfer_audit.md)。**
@@ -14,7 +14,10 @@ Owner授权继续仔细推导、实施并按结果调整，整体有益视频特
 历史近邻复核发现旧95-task authority的.716/.801、.2695是梯度因子cosine，而非安装更新后的FM；
 J2真实FM正控、EBSRI及PNBTT则是不同的优化／共享生成合同，不能拼成当前固定算子的行为验证。
 本项明确是训练侧oracle，真实动作与一次任务更新不能包装为action-hidden部署，也不恢复task-local优化。
-实现／smoke／准入完成后从clean pushed frozen树执行，当前未启动正式诊断；新增峰值预算2GiB，data1现场1016.7/1024GiB。
+实现f39d594f已clean pushed frozen。CPU面板检查通过；task0/demo16两个oracle的真实smoke与raw方向幅度重算通过，
+source始终冻结、query无梯度，worker exit0，含首次source读取185.76秒、显存峰值11.01GiB。
+smoke不作科学选点；按原合同继续192套／3,072组合的完整诊断，不改幅度、rank或读出。
+新增峰值总预算仍为2GiB，正式准入data1现场1016.9/1024GiB；原件位于runs/analysis/native_corrective_transfer_20260913。
 
 ## 最近完整闭环：物体与运动落点监督关闭（2026-09-13）
 

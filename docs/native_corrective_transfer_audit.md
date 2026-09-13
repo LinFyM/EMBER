@@ -112,3 +112,11 @@ launch前按gpu-preflight同时核对两节点，选一个节点至多6张实际
 绕开当前禁止task-local优化的边界。DAML的原论文Algorithm2也明确在meta-test使用梯度更新；它是相关机制，
 并非当前部署合同的例外（[Yu等，RSS 2018](https://arxiv.org/html/1802.01557)）。
 若后续考虑这种部署更新，必须先处理Owner科学边界；合法前向摊销生成则仍需证明自身获取与传递，不能借用oracle分数。
+
+## 6. 实现验证
+
+f39d594f的CPU面板检查确认24tasks、每臂96构造条件／384位置与384独立query，episode池和时间对应通过。
+同源detached clean pushed树在task0/demo16完成两oracle真实smoke：完整76个A/B张量、参数导数、方向导数、
+实际LoRA替换及两读出均可运行；从原始residual／direction重算η通过。source trainable=0、query无梯度、worker exit0。
+含首次9.35GB canonical source读取共185.76秒，显存峰值11.01GiB。没有因smoke分数更改科学参数或提前裁决方法。
+完整证据保存于当前analysis的smoke目录、smoke_verification.json、launch contract／log／exit；下一步仍按原有界面板执行。

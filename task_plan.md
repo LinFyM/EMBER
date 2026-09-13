@@ -16,12 +16,13 @@ Owner明确要求“制定一个goal开始推进”，恢复自主研究。新go
    新图仅用跨episode主FM；完整R/Z理解与二阶路径共同生成自由完整A/B，无旧辅助标签或裸X约束。
 3. **进行中：50／100两等间隔节点已按实际吞吐在看分数前登记。** 有序／无序分别在gpu02／gpu01各三卡，
    从同一5116deb0 frozen独立fresh正式启动，实际run合同确认除process_mode外配置相同；
-   每臂100updates／400教学条件／25,600主query；两个节点均做完整train96／validation400。
+   每臂100updates／400教学条件／25,600主query；有序已完整结束并启动50／100两个节点的LoRA编译，无序仍在训练。
+   两个节点均做完整train96／validation400。
    报告能力、ordered−frame_set、breadth、churn和相邻保持；资格后补换视频，再冻结并做最终controls。
    负结果先更新主假设和投入判断，停止近等价重复；有益候选继续验证跨视频与冻结后的因果controls。
 4. 仅在完整目标证据成立时完成goal；局部正例、surrogate、单个峰值、代码或理论文档完成均不算科学目标达成。
 
-当前唯一active design为语义状态路径Writer。真实纠正诊断已关闭，不扩大面板或扫描；两臂正式训练正在运行，
+当前唯一active design为语义状态路径Writer。真实纠正诊断已关闭，不扩大面板或扫描；有序编译与无序正式训练正在运行，
 新source400已47/400完整结束，全部worker正常退出。还没有候选闭环分数或selected checkpoint。
 下方暂停记录与旧“下一步”为历史，不覆盖本次恢复授权。
 

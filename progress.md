@@ -26,19 +26,25 @@ fresh8／8两次26.452／26.539秒、峰值allocated34.274GiB，第二次关键�
 一次无梯度编译4.322秒产出完整38-target／76-factor LoRA；整个profile学习状态废弃，不用于正式初始化。
 在新分数前登记50／100两个节点，每臂fresh400教学条件／25,600主queries、三rank／物理batch8，
 按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。
-5116deb0 clean pushed detached已在gpu02卡4/5/6启动有序组fresh正式训练，NUMA／deferred NCCL及source冻结合同通过，
-step0的24task独立动作诊断和首个256-query更新已完成；首步33.74秒、峰值allocated34.10GiB。
+5116deb0 clean pushed detached的有序组已在gpu02卡4/5/6完成fresh正式100步，NUMA／deferred NCCL及source冻结合同通过，
+累计400教学条件／25,600主query，完整50／100 checkpoint和0／50／100动作诊断均落盘，exit0、3416.41秒。
+固定独立动作FM为.153285→.130330→.121139，四suite均下降；这些是学习诊断，不能代替闭环能力或时序优势。
 三卡现场为0–2%util、已有占用约5.62／.16／4.64GiB，按实测峰值可共驻，未操作他人进程。
 新source400已完整结束：47/400，S/O/G/L为0/5/41/1、breadth3，36shard／6worker和launcher全部exit0，1657.05秒。
 source固定供全部节点复用；新旧source的模型、环境、policy／RNG、tokenizer和归一化合同匹配，训练侧source17/96可复用。
 source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从同一5116deb0 frozen独立fresh正式启动；
-实际两run配置除process_mode外相同，source、Git、学习／信息墙、三rank及物理batch8均匹配，整体6张有效训练卡。
+实际两run配置除process_mode外相同，source、Git、学习／信息墙、三rank及物理batch8均匹配。
+无序组仍在原100步段内训练，其50步诊断.130311与有序.130330接近；没有因此改动训练或资格合同。
+有序训练释放设备后再次核验两节点，gpu02卡4／5低负载且余量足够，两个节点各496条件的LoRA编译已并行启动；
+随后以live准入的gpu02卡6编译已保存的无序50步checkpoint，与其后半段训练并行，当前合计六张有效GPU。
+各train96 bank先封存；训练完成或编译结束释放设备后接动态队列闭环。
 四checkpoint／八bank请求、canonical无放回视频映射及完整1984rows的预注册配对readout已备妥；尚无新候选闭环结果。
-有序step50完整checkpoint已产生。另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
+另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
 原登记50／100中的50被误当作非法节点；现在由恢复cursor跳过已完成节点，并保留100的原终点。
-监督训练共47项检查通过，包含针对性恢复回归。两组在途学习继续使用原冻结版本；没有中断、重启或改变科学合同。
+监督训练共47项检查通过，包含针对性恢复回归。修复时两组在途学习继续使用原冻结版本；没有中断、重启或改变科学合同。
 训练前strg01现场data0／data1为67.62／1017.85GiB，无序启动前再查data0为67.62GiB；
-新研究峰值24／.5GiB预算满足独立额度，大资产均复用。
+新研究峰值24／.5GiB预算满足独立额度，大资产均复用。编译准入前data0为67.88GiB、研究目录261.65MiB，
+共享可用1.6TiB；本批约4.757GiB LoRA及剩余24GiB总预算可容纳。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 

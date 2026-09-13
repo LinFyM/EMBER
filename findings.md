@@ -1322,3 +1322,20 @@ Object比例.01887、Spatial.23625、Goal.41550、Long.51493，不能只引用70
 open/close真实效果不同，但其扰动幅度和连续ε不同，不能据效果量大小宣布夹爪主导失败或直接增权。
 原始数组重算通过；基准对旧存储终态position RMS平均.345mm/P95=1.935mm，不能称原采集轨迹精确复现。
 原件约.79MiB保留于runs/analysis/operation_semantics_20260913/effect_replay；CLI退役，无新Writer资格。
+
+## 84. 实际视觉注意力的物体／运动监督有区别且数据合同通过，学习收益尚未检验（2026-09-13）
+
+v4错误目标绑定回放、Horizon错误对象／实例及共享更新改变目标选择，支持检验绑定信用不足；不能据此解释全部失败。
+限定近邻审计未找到v4/v5/Horizon用真实可见mask或部件运动直接监督视觉cross-attention Q/K；旧task/causal/padding mask、
+H×H对应和冻结回放均不属于该监督。新[设计](docs/visible_object_grounded_writer_design.md)保持完整生成链，
+标签只训练实际native/prior空间读取分布，主FM仍跨episode；没有新可训练模块或部署标签输入。
+
+train24 teacher0–15的384条CPU构建完成，05fe7ebe冻结257.81秒exit0；13,626帧中13,242可恢复且可见OOI，
+10,819帧有可见运动质量。末帧没有对应存储state时仅跳过监督，原始末帧仍入模型；关节body独立保留。
+静态target对可见OOI等权，motion按真实body表面位移上界及其可见mask构成；region owner只表示相关实体表面。
+原始数组、时间与两种patch布局重算通过，固定四suite双相机／prior crop叠图通过。原件在
+runs/analysis/visible_object_grounding_20260913，构建入口退役，源保留Git。
+
+128项原有合同检查及真实标签＋合成小特征的联合梯度smoke通过，只证明工程图成立。
+定位准确仍可能被Value／下游忽略；原生模型学习、配对闭环和跨task迁移尚未产生，不能把数据通过当作机制通过。
+当前登记两臂各fresh200与100/200的8面板，沿原严格资格／停止分支。已关闭的J、语义rank等候选不由本数据恢复。

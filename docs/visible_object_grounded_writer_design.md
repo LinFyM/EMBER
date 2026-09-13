@@ -136,3 +136,12 @@ GPU启动前同时live检查两节点，遵守Owner总量与每节点限制、NU
 它只验证训练图，尚不是原生模型profile或定位学习证据。活动源约新增400行，两个新源文件分别拥有标签构建与训练loss；
 标签构建的单episode函数保持一处模型／renderer生命周期，76行/复杂度22，构建完成即退役，避免拆出永久工具层。
 既有materialization复杂函数只更新运行身份，未扩展其行为；新训练身份拒绝旧checkpoint混入。
+
+## 7. 数据构建结果
+
+05fe7ebe clean pushed frozen构建完整384条，257.81秒exit0；13,626帧中13,242可恢复且均有可见OOI，
+10,819帧有可见运动质量。384个无法恢复的末帧只无监督，不改变教学RGB采样。原始arrays的shape、finite、
+归一化、frame indices及汇总重算通过；固定四suite demo0中点的两相机与prior crop叠图已检查，空间对应成立。
+这是标签数据合同通过，未训练物体定位器、未证明有益参数生成。标签生成入口完成后退役，源保留05fe7ebe。
+原件为`runs/analysis/visible_object_grounding_20260913/labels`，邻接保留launch、log、QA源码、audit和label_alignment.png。
+初次启动先于frozen worktree复制结束，在Python入口前失败且没有处理数据；错误原件保留，随后同命令完整执行。

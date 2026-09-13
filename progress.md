@@ -15,6 +15,11 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
 两处真实Q/K均非零。该检查只证明图接通，原生最长视频profile仍待完成。
 
+384条训练视频标签已完成：05fe7ebe clean pushed frozen，257.81秒exit0；13,626采样帧中13,242可恢复，
+所有可恢复帧有可见OOI，10,819帧有可见运动质量。全部原始数组／映射重算和四suite双相机／prior裁剪叠图通过。
+初次启动因frozen工作树尚未复制完成而在程序入口前exit2，错误已保留；随后同命令完整完成，无标签处理重叠。
+原件见runs/analysis/visible_object_grounding_20260913；一次性构建入口退役，后续只由训练loss加载这些标签。
+
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 
 [操作语义§6–7](docs/operation_semantics_feasibility.md)完成固定train24×demo16–19×3位置的288条件，

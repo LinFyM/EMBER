@@ -1432,3 +1432,14 @@ fcd9a613冻结434.79秒exit0，CPU无模型／LoRA／梯度。局部J预测未�
 Object较准、Goal／Long残余较大，正负边界共同保留；夹爪离散干预不能与不同幅度的连续扰动直接比大小归因。
 原件runs/analysis/operation_semantics_20260913/effect_replay保存96份npz、schema、scores、audit与completion，
 一次性源码由fcd9a613保留后退役。没有新增完整闭环episode或Writer结论，整体goal未达；见findings§83。
+
+## 物体与运动落点监督的数据实施（2026-09-13）
+
+Owner要求继续仔细推导、实施并按结果调整。v4/v5/Horizon近邻审计区分实际物体mask监督、task/padding mask和冻结回放，
+据错误对象绑定证据登记[Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)。新增信用落到实际
+native/prior视觉cross-attention Q/K；标签仅训练侧，部署接口、全部共同学习模块与完整LoRA出口保持。
+
+05fe7ebe冻结完成train24×teacher0–15共384条CPU标签，257.81秒、13,626采样帧／13,242支持帧／10,819运动帧，
+exit0。原始数组／索引核验和固定四suite双视角／prior空间叠图通过，入口随后退役；原件位于
+runs/analysis/visible_object_grounding_20260913。初次命令早于worktree复制结束，在程序入口前失败并保留记录，
+没有重复处理或改动已生成标签。本记录不代表模型训练或闭环收益；当前执行状态仅由progress解释。

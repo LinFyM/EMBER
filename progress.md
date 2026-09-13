@@ -35,8 +35,8 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展且明�
 source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp，四teacher／四init均净正，注册前提全部通过。
 它使用privileged真实纠正，不能计入合法视频Writer或整体goal完成；Object仍零，task35贡献11/22净增。
 
-下一步先具体区分当前失败行为，再决定是否修改学习机制。原始任务语言显示本轮显著收益与回退涉及同一cream-cheese物体，
-但目标分别为basket与bowl；现有仅success／steps的rows不能判断是否选错目的地、抓取失败或运输／放置失效。
+原始分数曾显示收益与回退涉及同一cream-cheese物体、不同basket／bowl目标；仅success／steps不能定位失效。
+据此先按固定原模型和病例完成了以下实际行为检查，再判断后继学习机制。
 后续[冻结行为回放](docs/semantic_path_behavior_replay.md#5-完整结果与关闭)也已完整关闭：原四checkpoint、全部8个validation tasks，
 各固定init0／12／25／37，共128次，复用原视频／LoRA／RNG映射。保存正常执行图像／动作与目标谓词，
 区分对象／目的地选择和抓取／运输／放置失效；不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。

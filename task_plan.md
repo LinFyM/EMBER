@@ -12,7 +12,7 @@
    train96有序／无序16/22→29/26，validation77/75→48/44；三个资格均失败。完整1,984rows审计通过，39个最终worker exit0。
    保留训练获取和Object增量，停止原组合续训／扫描；不选50峰值，不触发未获资格的other或最终controls。
 3. **已完成：冻结实际行为定位。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
-   降低“重排表示并给普通FM即可得到过程”的支持程度。当前same-object／different-destination现象尚无真实轨迹解释；
+   降低“重排表示并给普通FM即可得到过程”的支持程度；此前same-object／different-destination现象只来自分数，
    已登记[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全8tasks、init0／12／25／37，
    共128次已完成，复用原LoRA、视频与RNG配对通过，24个worker exit0；32组固定图像齐全。
    全部32组人工观察已完成，失败同时涉及错物／实例、具体获取／运输和组合目标保持；8/128次回放结果变化完整保留。

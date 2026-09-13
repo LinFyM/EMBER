@@ -1,11 +1,23 @@
 # EMBER progress
 
-## 当前：登记真实纠正标签的跨视频／初始化闭环前提（2026-09-13）
+## 当前：Owner要求暂停，转为情况说明（2026-09-14）
 
-整体goal保持active且未完成。当前唯一active design为[固定纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
+Owner最新要求“你先停一下，我想听你介绍下目前的情况”。整体goal未完成并已暂停；
+固定真实纠正闭环诊断保留登记但暂停执行，下方历史授权或“下一步”均不恢复推进。
+最新运行代码2c0a8dde的五面板队列曾尝试启动source参照，在准备阶段因
+`source-base screen must cover its complete role`退出；controller与source launcher均exit1，
+尚未创建评测目录或执行episode，四个oracle面板未启动。这是评测范围合同拒绝，没有新科学结果。
+已现场确认controller PID 1105922与gpu01 launcher PID 1695766均不存在，相关运行进程为空；
+不修复、重试、启动下一面板或新增训练，先向Owner说明完整正负证据及未决问题。
+原始launch、controller状态／退出和source错误日志保存在
+`runs/analysis/native_correction_writer_20260913/oracle_rollout/`，既有模型与全部研究证据保留。
+
+## 最近登记：真实纠正标签的跨视频／初始化闭环前提（2026-09-13）
+
+登记时整体goal为active且未完成，当时唯一active design为[固定纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
 固定既有state-free的train24/demo16–19共96套LoRA，每套在init32–35四个初态执行，另新算source96，共480个episodes。
 这是privileged训练侧目标诊断，不能计入合法action-hidden Writer成绩；无新label、训练、梯度、held读取、scale／rank扫描或checkpoint选择。
-尚未启动。现有static evaluator增加59行临时来源检查，9项既有回归、96套真实标签与7项无效身份拒绝均通过。
+登记时尚未启动；最新启动尝试和暂停状态见顶部。现有static evaluator增加59行临时来源检查，9项既有回归、96套真实标签与7项无效身份拒绝均通过。
 创建根前strg01的data0／data1为67.6／1017.6GiB，各自新增1／.5GiB预算可容纳；待clean pushed frozen与live GPU准入。
 随后按全部四teacher／四init及task-cluster资格一次裁决。
 已有oracle正证据止于独立动作预测；本项优先确认目标G自身的闭环价值，避免从参数拟合缺口默认另一个Writer。

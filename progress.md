@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：物体与运动落点监督已登记，实施／验证中（2026-09-13）
+## 当前：物体与运动落点监督两臂正式训练已启动（2026-09-13）
 
 Owner要求继续仔细推导、实施并按结果调整。当前active design为
 [Visible-Object Grounded Writer](docs/visible_object_grounded_writer_design.md)：保持完整生成链，
@@ -10,7 +10,7 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 
 登记fresh ordered/frame_set各200、100/200节点、8个train96/validation400面板，旧dual同模式作为固定参照。
 资格继承原合同，未放宽frame_set要求；定位改善不代替跨视频／初始化／相邻与validation闭环收益。
-目前尚无新训练或selected checkpoint。标签构建、真实图信用/资源profile通过后才从clean pushed frozen版本学习。
+标签与原生profile已通过；两臂正式训练进程已从clean pushed frozen启动，尚无新checkpoint或闭环结果。
 旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
 实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
 两处真实Q/K均非零。该检查只证明图接通；原生最长视频profile已随后完成，结果见下。
@@ -23,8 +23,15 @@ Owner要求继续仔细推导、实施并按结果调整。当前active design�
 原生profile已正常exit0：05fe7ebe冻结、gpu01/0，task38/demo0的93帧，两次64query联合反向。
 第二次26.38秒、峰值allocated39.17／reserved42.17GiB，实际patch/prior Q/K梯度非零；
 Writer／Action Meta／VL Meta第二次均有finite梯度，source与V-JEPA无梯度。profile不保存或复用模型。
-正式配置已登记完成；尚无正式学习。按旧同构输出实测修正本阶段完整存储预算为29GiB，
+正式配置已登记完成。按旧同构输出实测修正本阶段完整存储预算为29GiB，
 原12GiB估计遗漏完整checkpoint与全部banks，不能继续沿用；strg01当前992.1GiB，预计峰值1021.1<1024GiB。
+
+两臂正式进程已启动：b304cde6 clean pushed detached `.codex/tmp/visible-object-frozen`，
+gpu01 ordered=0,1,2／frame_set=3,4,5，每臂world3，microbatch8、GPU-local NUMA与deferred NCCL。
+启动时两节点process已核对，总占用0→6；launcher PIDs2752946／2753301，各3个worker实际存活。
+精确命令、设备UUID、source/数据、29GiB预算及恢复合同见`runs/analysis/visible_object_grounding_20260913/launch_contract.json`。
+`ember-visible-object-queue`在gpu02以CPU进程跟踪这两个实际训练句柄，随后完成8个登记面板及旧pure-FM同模式参照；
+不自动追加资格／最终controls。当前仅确认进程启动，模型加载／初始留出评估／optimizer更新继续按真实日志核对。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

@@ -90,3 +90,37 @@ CPU输入核验1.201秒，无tensor复制或模型forward。原件为`oracle_rol
 本次不拆分或复制执行器，按§5在诊断关闭后移除59行临时支持。没有新增活动模块、入口或学习机制。
 创建根前strg01的data0为67.6/1024GiB、data1为1017.6/1024GiB；各自预算1/.5GiB后为68.6/1018.1GiB。
 data0个人目录68GiB、既有data1工作临时树13GiB，共享容量足够；正式launch仍需当时GPU准入及clean pushed frozen代码。
+
+## 7. 完整结果与关闭裁决（2026-09-14）
+
+Owner恢复自主推进后，5f1c25e8记录恢复状态，复用clean pushed 2c0a8dde frozen执行。
+source原准备错误由现有task-subset接口声明原24task／init32–35修正，评测代码与注册样本未改；
+首次零episode失败记录保留为attempt1。gpu01的4/5/6三卡、每卡三个persistent workers完成全部五面板。
+45个worker及controller均exit0，累计launcher墙钟1943.48秒；controller和运行进程已退出。
+真实480rows、完整task/init覆盖、source／normalization／tokenizer／policy／environment／RNG与噪声公共前缀配对均通过。
+
+| 面板 | 成功/96 | S/O/G/L | breadth | 保留/新增/丢失 | 净增 | churn / J |
+|---|---|---|---|---|---|---|
+| source | 17 | 7/0/9/1 | 7 | — | — | — |
+| demo16 | 21 | 7/0/11/3 | 7 | 14/7/3 | +4 | 10 / .58333 |
+| demo17 | 25 | 11/0/10/4 | 9 | 16/9/1 | +8 | 10 / .61538 |
+| demo18 | 20 | 5/0/10/5 | 8 | 15/5/2 | +3 | 7 / .68182 |
+| demo19 | 24 | 10/0/10/4 | 8 | 15/9/2 | +7 | 11 / .57692 |
+
+四teacher合计90/384，source96按注册配对复用为68/384，**没有384个独立source episodes**。
+task等权净率+5.72917pp，24task-cluster bootstrap95%CI为[+1.04167,+12.5]pp。
+聚合R/G/L=60/30/8、churn38、J=.612245；跨四teacher的task breadth并集为10，对source为7。
+S/O/G/L净增分别+5/0/+5/+12，init32/33/34/35净增+1/+5/+8/+8；全部四teacher和四init组净正。
+因此预登记四项条件全部满足，**本有限训练面板的闭环前提通过，本诊断完成关闭**。
+
+正结果保留范围：实际纠正LoRA对独立初始化有可重复的净作用，不能再把该G的价值只限于动作MSE。
+同时，7task净正、1task净负、16task净零；task35贡献11/22净增，Object仍零。
+单teacher或单init的区间不都严格正，注册条件只要求它们净增同向；不把主区间外推成每个子组都显著。
+这仍是使用真实动作构造的privileged oracle，不证明RGB共享获取、ordered优势、held迁移或完整goal；
+也不与旧Writer的不同teacher面板作单变量比较。
+
+下一项优先检验合法条件控制获取。候选[语义状态路径Writer](semantic_path_writer_design.md)用原生R/Z理解状态、
+显式路径交互连接语义与自由完整A/B，并由真实跨episode FM直接学习；本正结果不要求继续拟合旧G的特定参数坐标。
+不继续oracle、扩大面板、挑teacher、改幅度或续训旧Writer。按§5移除59行临时static来源支持，冻结代码和全部原始证据保留。
+原件为`runs/analysis/native_correction_writer_20260913/oracle_rollout/`的五个evaluation、registration／launch、
+controller、`paired_rows.json`、`decision.json`及`analyze.py`／analysis.log；六组teacher success-set重合和全部逐task统计均保留。

@@ -1,20 +1,27 @@
 # EMBER progress
 
-## 当前：Owner恢复自主推进，新goal已激活（2026-09-14）
+## 当前：固定G闭环前提通过，实施语义状态路径Writer（2026-09-14）
 
 Owner要求自主推进、制定goal并开始，期待真实正向进展，明确不要求制造正结果。新goal已建立且未完成，
 授权覆盖合同内的理论推导、方法选择、实现、验证与证据驱动修正；无需逐项等待Owner醒来批准。
 已形成[条件控制算子工作理论](docs/temporal_control_compilation_theory.md)：完整LoRA须共同表达适用条件与操作作用，
 普通FM通过另一episode的状态学习此函数；现有数学分解、语义轴或局部辅助信用均不能替代有益过程获取的证据。
-独立历史核对排除了仅改共享head或加prior残差的默认修复。新Writer尚未选定。
+独立历史核对排除了仅改共享head或加prior残差的默认修复。
 完整视频双向理解已允许，ordered强于匹配的独立全帧frame_set仍是必要方法证据，所有信息墙与资源合同保持。
-当前唯一active design为[固定真实纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
-按原五面板480episodes恢复，以决定真纠正G是否值得作为主要闭环修复目标；不沿用旧失败Writer。
-既有零episode准备失败已用现有task-subset接口声明原24task／4init解决，source与static两种原准入均通过，评测代码未改。
-c8181ac8恢复登记，复用clean pushed 2c0a8dde frozen运行面；gpu01的4/5/6三卡、每卡三worker，17:36UTC启动固定五面板。
-strg01现场data0／data1为67.61／1017.85GiB，新增峰值1／.05GiB均在各自额度内；无大资产复制。
-source96已完整结束，17次成功、388.67秒；四个oracle面板继续按注册执行，不能据单个面板提前裁决。
-原始首次失败以attempt1保留，恢复launch／task panel／controller／配对分析位于原oracle_rollout根；整体方法收益尚未证明。
+
+[固定真实纠正闭环§7](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)全部480episodes完成并关闭：
+source17/96，四teacher为21/25/20/24；按task等权配对净+5.73pp，95%CI[+1.04,+12.5]pp。
+四teacher、四init均净正，S/G/L三suite净正，注册四项均通过。Object仍零，task35贡献11/22净增；
+这是privileged训练侧控制作用证据，不能计入合法视频Writer或goal完成。45个worker和controller全部exit0，1943.48秒。
+2c0a8dde frozen、原始五面板、配对／统计及attempt1失败均保留；临时59行static来源分支按合同退役。
+
+当前唯一active design为[语义状态路径Writer](docs/semantic_path_writer_design.md)：
+native双视角R/Z全视频理解→可学习状态的二阶有向路径→条件调制→自由完整A/B，唯一真实跨episode主FM。
+与独立fresh全帧frame_set共享全部学习模块和曝光，只替换无参数的路径／集合统计；不再拟合旧G标签。
+5f1c25e8先保存完整联合设计；隔离实现bc7ec5ab的核心图12项CPU公式／输入／梯度检查通过，尚非学习或行为证据。
+一个独立接线子任务修改现有runtime／trainer／物化并退役旧辅助路径；主agent负责图、集成、诊断收尾和实际profile。
+新Writer共9.465M参数，两组Meta另计；正式节点须在最长真实条件profile后、看到分数前登记，尚未开始新训练。
+strg01现场data0／data1为67.61／1017.85GiB，两个新隔离树合计预算.75GiB满足data1额度；大资产均复用。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 
 ## 暂停时点：Owner转为方法讨论（2026-09-14）

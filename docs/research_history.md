@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-14完成[固定真实纠正的闭环前提](native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)：
+原480episodes全部结束，source17/96、demo16–19为21/25/20/24；配对净+5.73pp，24task-cluster95%CI[+1.04,+12.5]pp。
+四teacher／四init均净正，S/G/L三suite正，按原四项资格通过后关闭。Object仍零，task35贡献11/22净增。
+这是privileged训练侧实际控制作用证据，不能计入合法视频Writer、held或有益顺序成绩；45worker和controller全部exit0。
+完整raw、配对、六组teacher重合、逐task统计和失败attempt1原件均保留，临时59行static准入退役；跨轮边界见findings§94。
+
 2026-09-13完成[现存更新的幅度／方向分析](native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)：
 3c3c4897登记后CPU只读384条件，14.183秒exit0。最优privileged整体倍率仅消除3.87%–6.32%的当前参数误差；
 四个H−J区间均严格负、每模型24/24task方向缺口更大，按登记关闭整体gain修复的主要依据。

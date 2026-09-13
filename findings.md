@@ -1548,3 +1548,26 @@ CPU只读既有四模型384条件完成全局ray分解。每个条件对完整38
 本项关闭，无新模型forward、动作读取、梯度、query、环境步、held读取或checkpoint选择；整体goal未完成。
 后续须把方向获取与坐标代价分别解释，保留原生oracle功能、标签共同结构及旧校准／rank均衡的局部正负边界；
 不能由这两个定位数值直接恢复dual、白化、calibration或另一个完整Writer。
+
+## 94. 固定真实纠正在独立初始化上取得有限但可重复的闭环净收益（2026-09-14）
+
+原注册train24×demo16–19×init32–35共384oracle episodes及一次source96全部结束。
+source17/96，四teacher分别21/25/20/24；按四teacher复用source参照为68/384，对oracle90/384。
+24task等权净率+5.72917pp，20,000次task-cluster bootstrap、seed20260926，95%CI[+1.04167,+12.5]pp。
+四teacher净增+4/+8/+3/+7，四init净增+1/+5/+8/+8，S/O/G/L净增+5/0/+5/+12；原四项前提全部通过。
+聚合R/G/L=60/30/8、churn38、J=.612245；source breadth7，oracle跨teacher并集breadth10。
+
+本结果将§88–93中“G只被验证具有独立动作预测价值”的边界推进到该有限面板的实际闭环作用。
+它仍不证明合法RGB共享获取、时序必要性或held泛化，不与不同teacher池的旧Writer直接作因果比较。
+只有7task净正、1task净负，task35贡献11/22净增，Object完全未获取；不能写成广泛任务能力已解决。
+子teacher／init区间不都严格正，注册要求的是主区间严格正和所有子组净额同向；不升级其统计结论。
+
+据此优先研究合法条件控制作用的获取，同时不将旧G特定参数坐标当唯一中间目标。
+语义状态路径候选以完整native R/Z、显式有向状态交互及自由完整A/B承担这条共同FM学习链；
+它须重新证明获取、ordered−frame_set和相邻／跨视频／held保持，不能继承oracle的分数或资格。
+不继续旧oracle、扩面板、调整幅度或续训已关闭Writer。
+
+运行代码clean pushed 2c0a8dde、恢复登记c8181ac8／5f1c25e8，45worker和controller全部exit0，
+累计launcher1943.48秒；真实480rows、执行合同和policy RNG公共前缀配对重算通过，运行进程已退出。
+原件在`runs/analysis/native_correction_writer_20260913/oracle_rollout/`；完整结果见
+[闭环诊断§7](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)，临时来源准入按关闭合同退役。

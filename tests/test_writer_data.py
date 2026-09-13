@@ -8,6 +8,44 @@ import numpy as np
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 
 
+def test_local_field_sampling_preserves_main_rng_and_only_true_future_actions():
+    import random
+    from types import SimpleNamespace
+    import torch
+    from ember.writer.learning_data import WriterTrainingData
+
+    actions = np.arange(12 * 7, dtype=np.float32).reshape(12, 7)
+    data = object.__new__(WriterTrainingData)
+    data.tasks = {0: SimpleNamespace(episode_lengths=(12,) * 17)}
+    data.video_pool = (16,)
+    data.queries = SimpleNamespace(_handle=lambda task: {'data/demo_16/actions': actions})
+    random.seed(81)
+    python_rng, torch_rng = random.getstate(), torch.random.get_rng_state()
+    arguments = dict(query_seed=913, positions_per_condition=4, future_horizon=15, seed=20260914)
+    indices, labels, counts, trace = data.local_field_batch(0, 16, torch.tensor([0, 5, 10, 11]), **arguments)
+    assert random.getstate() == python_rng
+    assert torch.equal(torch.random.get_rng_state(), torch_rng)
+    assert indices.tolist() == [0, 1, 2, 3] and counts.tolist() == [11, 6, 1, 0]
+    assert trace['field_seed'] == 913 ^ 20260914
+    assert trace['field_frame_positions'] == [0, 5, 10, 11]
+    for row, position in enumerate(trace['field_frame_positions']):
+        count = int(counts[row])
+        np.testing.assert_array_equal(labels[row, :count], actions[position + 1:position + 1 + count])
+        assert labels[row, count:].count_nonzero() == 0
+    repeated = data.local_field_batch(0, 16, torch.tensor([0, 5, 10, 11]), **arguments)
+    assert repeated[-1] == trace
+
+    # A short video samples every available position, while a longer one draws
+    # a subset from the entire real video, including the end region.
+    data.tasks[0].episode_lengths = (12,) * 17
+    seen = set()
+    for seed in range(40):
+        selected, _, _, row = data.local_field_batch(0, 16, torch.arange(12), **{**arguments, 'query_seed': seed})
+        assert len(selected) == len(selected.unique()) == 4
+        seen.update(row['field_frame_ordinals'])
+    assert seen == set(range(12))
+
+
 def test_teacher_video_store_selects_the_declared_rgb_view(tmp_path: Path) -> None:
     path = tmp_path / "video.hdf5"
     with h5py.File(path, "w") as handle:

@@ -20,13 +20,14 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
+from ember.writer.correction import validate_field_config
 from ember.writer.video import VideoWriterConfig, require_architecture_identity
 
 
-RUN_SCHEMA = "ember_semantic_path_writer_run_v1"
-STAGE = "semantic_path_writer_fresh"
-TRAINING_SCHEMA = "ember_semantic_path_training_state_v1"
-UPDATE_VERSION = "semantic_path_main_fm_joint_credit_v1"
+RUN_SCHEMA = "ember_local_field_writer_run_v1"
+STAGE = "local_field_writer_fresh"
+TRAINING_SCHEMA = "ember_local_field_training_state_v1"
+UPDATE_VERSION = "local_field_main_fm_joint_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -65,12 +66,13 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     config = run["config"]
+    validate_field_config(config.get("local_field_supervision"), model_unit=run["model_config"]["field_unit"])
     data = config.get("data", {})
     identities = (
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": "ember_semantic_path_writer_config_v1", "update_version": UPDATE_VERSION,
+        (config, {"schema_version": "ember_local_field_writer_config_v1", "update_version": UPDATE_VERSION,
                   "execution_precision": "native_mixed_without_outer_autocast"}),
-        (config.get("optimization", {}), {"loss": "main_fm"}),
+        (config.get("optimization", {}), {"loss": "main_fm_plus_local_field"}),
         (config.get("observer", {}), {"camera_view": "dual"}),
         (data, {"version": "train24_teacher_action_pool_cross_episode_k1_v1", "action_start_offset": 1,
                 "query_alignment": "post_action_observation_future_control_v1"}),
@@ -217,12 +219,15 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
             "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
             "visual_token_gradient": "joint_native_Z_and_R_replay_to_VL_and_Action_Meta",
             "native_read": "full_T_x_50_crossframe_action_response_attention",
-            "frame_attention": "bidirectional_order_equivariant_full_video",
-            "video_representation": "language_conditioned_semantic_states_T_L_d",
-            "process_aggregation": ("unordered_second_moments" if run["model_config"].get("process_mode") == "frame_set"
-                                    else "second_order_log_signature"),
-            "training_stage": STAGE, "training_objective": "main_fm",
-            "native_parameter_generation": "free_full_A_B_shape_family_heads_after_semantic_path_modulation",
+            "frame_attention": "bidirectional_real_time_or_zero_time_full_video",
+            "video_representation": "contextual_language_roles_T_L_d_and_local_native_states_T_50_d",
+            "process_aggregation": ("full_frame_set_zero_time_rope" if run["model_config"].get("process_mode") == "frame_set"
+                                    else "bidirectional_real_frame_time_rope"),
+            "training_stage": STAGE, "training_objective": "main_fm_plus_local_field",
+            "native_parameter_generation": "B_sigma_U_A_sum_r_bare_X_div_T_same_local_field",
+            "native_input_source": "bare_frozen_source_without_VL_or_Action_Meta",
+            "field_unit": run["model_config"]["field_unit"],
+            "deployment_field_labels_or_cotangents": False,
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
@@ -243,7 +248,8 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
     )
     with torch.no_grad(), autocast(runtime.observer.device):
         responses, inputs = runtime.observer.read(condition)
-        generated = runtime.state.writer(responses, *inputs)
+        native_inputs = runtime.correction.read(condition)
+        generated = runtime.state.writer(responses, *inputs, native_inputs=native_inputs)
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)

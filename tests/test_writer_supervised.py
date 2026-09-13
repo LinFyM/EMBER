@@ -6,27 +6,41 @@ import torch
 
 from ember.writer.function_credit import mean_velocity_loss
 from ember.writer.supervised import replay_functional_credit
-from test_video_program import inputs, small_cpu_work, unlock, writer
+from test_video_program import inputs, native_inputs, small_cpu_work, unlock, writer
 
 
 @pytest.mark.parametrize('activation_checkpoint', [False, True])
 @pytest.mark.parametrize('process_mode', ['ordered', 'frame_set'])
-def test_main_replay_matches_direct_autograd(activation_checkpoint, process_mode):
+@pytest.mark.parametrize('with_field', [False, True])
+def test_joint_replay_matches_direct_autograd(activation_checkpoint, process_mode, with_field):
     model = writer(activation_checkpoint=activation_checkpoint, process_mode=process_mode)
     unlock(model)
     reference = copy.deepcopy(model)
-    args = inputs((3, 4))
+    args = inputs((3,))
+    native = native_inputs(model, args)
+    indices = torch.tensor([0, 2])
     direct_responses = tuple(value.detach().requires_grad_() for value in args[0])
     direct_visuals = tuple(value.detach().requires_grad_() for value in args[4])
-    state = reference(direct_responses, *args[1:4], direct_visuals, *args[5:])
+    video = reference.encode(direct_responses, *args[1:4], direct_visuals, *args[5:])
+    state, fields = reference.decode_with_fields(video, native, indices)
     targets = {name: torch.randn_like(value) for name, value in state.items()}
     main = .125 * sum((value - targets[name]).square().mean() for name, value in state.items())
     compiled = dict(zip(state, torch.autograd.grad(main, tuple(state.values()), retain_graph=True)))
-    expected = torch.autograd.grad(main, (*reference.parameters(), *direct_responses, *direct_visuals), retain_graph=True)
-    response_grads, visual_grads = replay_functional_credit(model, args[0], args[1:], compiled)
+    field_targets = {name: torch.randn_like(value) * model.config.field_unit for name, value in fields.items()}
+    field_loss = sum((value - field_targets[name]).square().sum() for name, value in fields.items())
+    field_loss = field_loss / (sum(value.numel() for value in fields.values()) * model.config.field_unit ** 2)
+    objective = main + .125 * .1 * field_loss if with_field else main
+    expected = torch.autograd.grad(objective, (*reference.parameters(), *direct_responses, *direct_visuals))
+    metrics = {}
+    response_grads, visual_grads = replay_functional_credit(
+        model, args[0], args[1:], compiled, native,
+        field_indices=indices if with_field else None, field_targets=field_targets if with_field else None,
+        field_unit=model.config.field_unit, condition_weight=.125, metrics=metrics)
     actual = [p.grad for p in model.parameters()] + list(response_grads) + list(visual_grads)
     for result, target in zip(actual, expected, strict=True):
         torch.testing.assert_close(result, target, rtol=3e-4, atol=2e-6)
+    if with_field:
+        assert metrics['local_field_loss'] == pytest.approx(float(field_loss.detach()))
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():

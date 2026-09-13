@@ -20,6 +20,7 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.data import teacher_camera_names
+from ember.writer.correction import validate_field_config
 from ember.writer.video import VideoWriterConfig
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
@@ -27,10 +28,10 @@ from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_semantic_path_writer_run_v1"
-STAGE = "semantic_path_writer_fresh"
-TRAINING_SCHEMA = "ember_semantic_path_training_state_v1"
-UPDATE_VERSION = "semantic_path_main_fm_joint_credit_v1"
+RUN_SCHEMA = "ember_local_field_writer_run_v1"
+STAGE = "local_field_writer_fresh"
+TRAINING_SCHEMA = "ember_local_field_training_state_v1"
+UPDATE_VERSION = "local_field_main_fm_joint_credit_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -44,11 +45,12 @@ def _config(path: Path) -> dict[str, Any]:
                      "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
                      "version": "train24_teacher_action_pool_cross_episode_k1_v1"}
     expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729,
-                         "camera_view": "dual"}
+                         "camera_view": "dual",
+                         "native_inputs": "bare_source_same_position_all38_full50_public_probe_t1"}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("query_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_semantic_path_writer_config_v1"
+        config.get("schema_version") != "ember_local_field_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -57,14 +59,14 @@ def _config(path: Path) -> dict[str, Any]:
         or type(config["data"].get("conditions_per_task")) is not int
         or config["data"].get("conditions_per_task") != 1
         or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
-        or config["optimization"]["loss"] != "main_fm"
+        or config["optimization"]["loss"] != "main_fm_plus_local_field"
         or config.get("update_version") != UPDATE_VERSION
         or {"video_prior", "spatial_supervision", "correction_supervision", "native_output_calibration"} & config.keys()
-        or "native_inputs" in config["observer"]
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
-        raise ValueError("semantic path Writer scientific contract changed")
+        raise ValueError("local correction field Writer scientific contract changed")
+    validate_field_config(config.get("local_field_supervision"), model_unit=config["model"]["field_unit"])
     for key, expected in (("video_demos", range(16, 42)), ("action_demos", range(16, 42)),
                           ("diagnostic_action_demos", range(42, 46)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
@@ -141,8 +143,12 @@ def _run_contract(args, context, config, runtime, state):
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
-            "training_only_actions": "same-task query episodes excluding the teacher; complete LoRA main FM only",
-            "native_read": "same-version Z and full T x 50 R; joint replay to VL and Action Meta",
+            "training_only_actions": "cross-episode main FM; real teacher futures only for sampled local field targets",
+            "native_read": "same-version Z/R joint Meta replay; bare source X and training-only noise VJP outside Meta",
+            "local_field": {**config["local_field_supervision"],
+                            "seed_derivation": "persisted_query_seed_xor_20260914",
+                            "eta": "sealed teacher-side values only; no query scores or re-estimation",
+                            "deployment_cotangents": False},
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
@@ -305,6 +311,9 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "step": updates, "optimizer_updates": updates,
             "seconds": seconds,
             "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
+            "mean_local_field_loss": sum(r["local_field_loss"] * r["condition_weight"] for r in gathered),
+            "mean_joint_loss": sum((r["flow_loss"] + config["local_field_supervision"]["coefficient"] *
+                                    r["local_field_loss"]) * r["condition_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
             "condition_exposures": metrics_rows, "task_exposures": updates * 4,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
@@ -405,7 +414,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_semantic_path_comparison"
+    if args.mode == "formal" and (config["status"] != "registered_local_field_comparison"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
@@ -449,7 +458,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_semantic_path_writer.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_local_correction_field_writer.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

@@ -14,6 +14,7 @@ from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_source_setup import load_policy
+from ember.writer.correction import NativeCorrectionReader
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.meta_lora import MetaLoRAStack
@@ -35,6 +36,7 @@ class WriterRuntime:
     policy: torch.nn.Module
     state: WriterState
     observer: NativeVideoObserver
+    correction: NativeCorrectionReader
     processor: Pi05LiberoProcessor
     lora: Any
     source: dict[str, Any]
@@ -74,7 +76,8 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     )
     stats = read_json(asset_root / reuse["source_normalization"])["stats"]
     processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(device))
-    return WriterRuntime(policy, state, observer, processor, lora, source)
+    correction = NativeCorrectionReader(policy, lora, state.probe)
+    return WriterRuntime(policy, state, observer, correction, processor, lora, source)
 
 
 class FrozenVideoPrefixCache:

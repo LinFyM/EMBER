@@ -153,3 +153,68 @@ def test_camera_contract_rejects_single_rgb_in_dual_observer_and_cache_mismatch(
         observer.prefix(torch.zeros(1, 3, 8, 8), None, None, None)
     with pytest.raises(ValueError, match="camera views differ"):
         FrozenVideoPrefixCache(observer, SimpleNamespace(videos=SimpleNamespace(camera_view="agentview")), 100)
+
+
+def test_bare_source_noise_leaf_cotangents_match_direct_control_oracle(monkeypatch):
+    from ember.lora import LoRATarget
+    from ember.writer.correction import NativeCorrectionReader
+
+    class Wrapped(nn.Module):
+        def __init__(self, inputs, outputs):
+            super().__init__()
+            self.base_layer = nn.Linear(inputs, outputs, bias=False)
+
+        def forward(self, value):
+            return self.base_layer(value)
+
+    class Core(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.action_in_proj, self.action_out_proj = Wrapped(32, 8), Wrapped(8, 32)
+
+        def denoise_step(self, padding, cache, noise, clock):
+            return self.action_out_proj(torch.tanh(self.action_in_proj(noise) + cache))
+
+    policy = nn.Module()
+    policy.model = Core()
+    policy.requires_grad_(False)
+    contract = SimpleNamespace(targets=(LoRATarget('model.action_in_proj', 32, 8),
+                                        LoRATarget('model.action_out_proj', 8, 32)))
+    probe = torch.randn(50, 32)
+    reader = NativeCorrectionReader(policy, contract, probe)
+    embeddings = torch.randn(4, 3, 8)
+    mask = torch.ones(4, 3, dtype=torch.bool)
+    chunks = tuple(FrozenInputChunk(embeddings[i:i + 2], mask[i:i + 2], mask[i:i + 2], mask[i:i + 2])
+                   for i in (0, 2))
+    condition = NativeCondition((chunks,), (torch.tensor([0, 5, 10, 11]),), torch.zeros(3, 8), mask[0])
+
+    def bare_prefix(owner, prefix, *, native_precision):
+        assert native_precision is True and not torch.is_autocast_enabled('cpu')
+        return prefix.embeddings, prefix.embeddings.mean(1, keepdim=True)
+
+    monkeypatch.setattr('ember.writer.correction.prepare_prefix_features_and_cache', bare_prefix)
+    noise = probe.expand(4, -1, -1).detach().requires_grad_()
+    pre = nn.functional.linear(noise, policy.model.action_in_proj.base_layer.weight)
+    hidden = torch.tanh(pre + embeddings.mean(1, keepdim=True))
+    prediction = nn.functional.linear(hidden, policy.model.action_out_proj.base_layer.weight)
+    actions, counts, eta = torch.randn(4, 15, 7), torch.tensor([15, 6, 1, 0]), .4
+    oracle = sum((prediction[row, :count, :7] - noise[row, :count, :7] + actions[row, :count]).square().mean()
+                 for row, count in enumerate(counts.tolist()) if count)
+    expected = torch.autograd.grad(oracle, (pre, prediction))
+    with torch.no_grad(), torch.autocast('cpu', dtype=torch.bfloat16):
+        native = reader.read(condition)[0]
+        fields = reader.fields(condition, torch.arange(4), actions, counts, eta=eta)
+    torch.testing.assert_close(native['model.action_in_proj'], noise.detach())
+    torch.testing.assert_close(native['model.action_out_proj'], hidden.detach())
+    for target, gradient in zip(contract.targets, expected, strict=True):
+        torch.testing.assert_close(fields[target.name], -eta * gradient)
+        assert fields[target.name][-1].count_nonzero() == 0
+        assert fields[target.name].shape == (4, 50, target.out_features)
+        assert not policy.get_submodule(target.name).base_layer._forward_hooks
+    assert all(not value.requires_grad and value.grad is None for value in policy.parameters())
+
+    # Tail placeholders do not create artificial future controls.
+    for row, count in enumerate(counts.tolist()):
+        actions[row, count:] = 1e6
+    padded = reader.fields(condition, torch.arange(4), actions, counts, eta=eta)
+    torch.testing.assert_close(padded, fields)

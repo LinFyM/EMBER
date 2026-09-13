@@ -4,7 +4,8 @@
 
 Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
 依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
-09c1a0d6 clean pushed detached已启动两臂fresh200，GPU01分别0–2／3–5、world3；后续8面板队列已运行等待。
+09c1a0d6 clean pushed detached的两臂fresh200已全部完成exit0；四份checkpoint及采样配对通过。
+当前GPU01的0–3四卡并行生成8个LoRA bank，随后完成8个配对闭环面板。
 当前无selected checkpoint，整体goal未完成。
 所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
 
@@ -23,7 +24,7 @@ Owner自主目标保持active且未完成。当前active design为[Native Correc
 墙钟95.29–99.55秒、峰值10.225GiB；加已有96套原件引用组成完整624套，teacher原始数组／幅度／完整因子审核通过。
 CPU空间构建438.79秒exit0，624条／22,319真实frames完整；原始stride5及末帧、512/576布局、有效性与aggregate复核通过。
 原件在`runs/analysis/native_correction_writer_20260913/`，物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913`，
-目前约2.6GiB。两个构建入口已完成其生命周期，退出活动树，精确源码保留在ca87f05c。
+构建阶段标签约2.6GiB。两个构建入口已完成其生命周期，退出活动树，精确源码保留在ca87f05c。
 
 前向、训练label边界、逐condition跨episode采样及新checkpoint身份已实现；旧自由A/B出口与三份旧配置已替换。
 相关接口／梯度检查通过。9c14f476最长105帧的两次反传43.12／32.84秒、峰值35.77GiB，纯推理正常exit0；
@@ -35,25 +36,35 @@ f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.
 主FM .11770744→.11770465，L_update 1→.99981159，第二步Q/K、native key与Action/VL Meta共同梯度有效。
 裸source与prior冻结，纯前向一次产出38目标／76因子，没有loss／autograd。所有profile权重丢弃，不作正式初始化。
 据此正式学习前固定两臂各100/200、800条件、51,200主query及8个配对面板，保留原有资格与停止条件。
-两臂100步checkpoint及对应动作诊断已完整，正按登记继续200步；没有闭环分数或selected checkpoint。
-每臂400教学条件／25,600主query的18个曝光字段全部一致，逐condition主query排除teacher；
-0/100诊断的10个task／视频／动作／RNG字段匹配，无诊断梯度。两份完整checkpoint各368,432,539bytes，
-包括Writer、Adam、scheduler、sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。
+两臂各完成200updates、800教学条件、51,200主query，墙钟7022.86／7025.27秒，训练均正常exit0。
+18个曝光字段全程一致，逐condition主query排除teacher；0/100/200诊断的10个task／视频／动作／RNG字段匹配，无诊断梯度。
+100节点checkpoint各368,432,539bytes，200节点各368,432,731bytes；四份完整状态包括Writer、Adam、scheduler、
+sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。没有闭环分数或selected checkpoint。
 
 固定独立动作诊断初始均为.15328534，100步有序／无序为.15307564／.15304530，仅小幅变化；
 分别12/24、15/24task下降，Spatial与Long均值略升，Object／Goal略降。23个共同出现task的训练窗口中，
 首25→末25条件的L_update为.98578→.96394／.98569→.96108；有序object／motion KL为2.087→1.189／3.339→.830，
 无序为2.085→1.155／3.450→1.600。两个窗口使用不同teacher draws，以上只描述训练区拟合，不能当作配对改善或闭环收益。
-完整逐task、checkpoint与曝光证据见analysis的`training_readout.json`；保留原定200节点和8个配对闭环面板。
+200步独立动作诊断有序／无序为.15281900／.15280163，仍仅小幅变化；17/24、16/24task下降，Spatial均值略升，
+其余三suite略降。末25条件窗口的L_update为.90642／.90657，object KL .69610／.69681，motion KL .40473／.88908。
+相同读取目标的拟合已发生，参数拟合与独立动作变化仍有限；完整逐task、checkpoint、窗口及曝光证据在`training_readout.json`。
+原定8个配对闭环面板继续，不能用这些量作资格裁决。
+
+补充只读标签统计：完整624套训练目标的同task共同成分比例平均.468739，按原相对Frobenius度量、
+无秩约束的task常量样本内最小误差平均.516543；S/O/G/L分别.55077/.55788/.27449/.68304，
+总更新能量87.415%位于action_out_proj。CPU 6.73秒、零模型forward／梯度，因子Gram对dense更新内积的单项计算复核通过。
+它只是有task标签的样本内参照，不是部署baseline、RGB可获取证明、不可约误差或匹配训练曝光；不改变本轮训练／选择。
+原件为`label_structure_registration.json`、`label_structure.py/json/log`，完整公式、26×26 Gram和逐task／demo／layer结果保留。
 
 正式启动已刷新两节点及strg01：data0为54.7/1024GiB，data1为1017.9/1024GiB；data0个人目录du53GiB。
 大新输出总峰值18GiB，扣除现有标签后尚余15.4GiB，预计data0峰值70.1GiB；source／prior／数据及旧96套标签复用。
 训练物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913/training`，workspace outputs同名入口为symlink。
-GPU01两个独立tmux为`ember-native-correction-ordered`、`ember-native-correction-frame_set`；CPU分别NUMA0/1，
+已结束的训练tmux为`ember-native-correction-ordered`、`ember-native-correction-frame_set`；GPU01两组world3的CPU分别NUMA0/1，
 source/prior trainable均0，NCCL_P2P_DISABLE=1及deferred NCCL生效。完整合同在analysis的`launch_contract.json`。
 
-`ember-native-correction-queue`等待两臂200完成，先核对各800条件的18个配对字段及主query排除teacher，
-再核验四完整checkpoint、物化8个bank并以动态persistent evaluator完成1,984配对rows。每次GPU阶段重新检查两节点与data0额度，
+`ember-native-correction-queue`已核对全程800条件及四checkpoint，现用GPU01的0–3四卡并行物化8个bank；
+四个worker各负责一个single checkpoint的train96／validation400。12:32UTC重新检查两节点，data0额度56.1/1024GiB，
+剩余阶段预算12GiB、预计68.1GiB；四卡启动前均空闲。随后以动态persistent evaluator完成1,984配对rows。每次GPU阶段重查两节点与data0额度，
 累计所有自有GPU不超过6，不运行未获资格的other／静态／最终controls。`overnight_status.json`、`queue.log`与`queue.exit`
 保留控制状态；后续raw审计与逐task/suite、source／frame_set及相邻配对读出已接入。新旧教学曝光不同，不宣称其匹配消融。
 

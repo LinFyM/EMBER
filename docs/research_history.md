@@ -1422,3 +1422,13 @@ train24×8episode、6,668状态，7bd8a6f5冻结84.34秒exit0。186/192episode�
 同时给出直接A监督的零B和共享A反例，防止把语义loss准确当作视频有益传递。
 原件`runs/analysis/operation_semantics_20260913/`保留192份npz、schema、summary、completion与raw重算audit；
 源CLI由Git7bd8a6f5保留后退役。没有新Writer训练、模型forward或闭环结论，整体goal未达。跨轮结论见findings§82。
+
+
+## 2026-09-13：局部物理效果的真实动作干预
+
+[操作语义§6–7](operation_semantics_feasibility.md)完成288条件×17分支、24,480高层动作步；
+fcd9a613冻结434.79秒exit0，CPU无模型／LoRA／梯度。局部J预测未拟合组合方向的MSE相对零变化降低70.26%，
+差额CI严格为正、23/24task及四suite正，但误差比例.29736未达登记<.25，关闭其加权FM提案，不扫扰动／task／时长。
+Object较准、Goal／Long残余较大，正负边界共同保留；夹爪离散干预不能与不同幅度的连续扰动直接比大小归因。
+原件runs/analysis/operation_semantics_20260913/effect_replay保存96份npz、schema、scores、audit与completion，
+一次性源码由fcd9a613保留后退役。没有新增完整闭环episode或Writer结论，整体goal未达；见findings§83。

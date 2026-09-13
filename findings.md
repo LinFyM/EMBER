@@ -1308,3 +1308,17 @@ train96为登记有限池；全部worker exit0，冻结代码defcf734，累计�
 source h已有language时共享A也可能不需要视频。标签覆盖不能解除这两项传递与特异性问题。
 撤去“通用接触阶段→语义rank”的直接实施依据；保留分部件变化与左右指物理事实，完整Writer尚无合格启动合同。
 新原件约1.36MiB、raw重算及时间对应通过，CLI已退役；本项零梯度、零GPU、零环境步，无held/Test或动作数值读取。
+
+
+## 83. 真实短段动作效果部分可预测，局部J替代未达登记精度（2026-09-13）
+
+[操作语义§6–7](docs/operation_semantics_feasibility.md)将旧activation/action effect与真实对象／部件变化分开：
+旧OCPB/MDCO已有success/progress的物理outcome信用，本项新增的是固定状态下明确动作干预造成的dense位姿变化。
+fcd9a613冻结完成288条件×17分支、24,480高层动作步，434.79秒exit0，无模型、LoRA或梯度。
+12个轴向干预的中心差分预测两个未拟合组合干预；零变化／局部MSE=.00089956/.00026749，
+差额CI[.00048754,.00076067]、23/24task和四suite正。但误差比例.29736未达<.25，按登记停止J加权FM提案。
+Object比例.01887、Spatial.23625、Goal.41550、Long.51493，不能只引用70.26%总体降低称为通用效果教师或挑suite挽救。
+该J只覆盖5动作共同运动偏移，不覆盖时变30维误差与离散夹爪。普通sign梯度几乎处处为零；
+open/close真实效果不同，但其扰动幅度和连续ε不同，不能据效果量大小宣布夹爪主导失败或直接增权。
+原始数组重算通过；基准对旧存储终态position RMS平均.345mm/P95=1.935mm，不能称原采集轨迹精确复现。
+原件约.79MiB保留于runs/analysis/operation_semantics_20260913/effect_replay；CLI退役，无新Writer资格。

@@ -1,12 +1,14 @@
 # EMBER task plan
 
-## 当前实施：局部物理效果的因果可用性（2026-09-13）
+## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 
-当前active诊断为[操作语义§6](docs/operation_semantics_feasibility.md#6-从语义读出转向实际物理后果当前有界诊断)：
-固定train24×demo16–19×三个时间位置，288条件，各17种预登记动作干预；CPU、无渲染／模型／梯度。
-检验局部连续动作Jacobian对未拟合组合扰动的物理变化预测，不以语义辅助头、reward或success评分。
-新增512MiB空间上限；不通过则停止该局部效果度量，不扫扰动或默认训世界模型；通过也需另登记有界Writer比较。
-下文已关闭状态属于先前标签诊断／Writer；当前没有新Writer训练、selected checkpoint或最终controls。整体goal未完成。
+[操作语义§6–7](docs/operation_semantics_feasibility.md)完成固定train24×demo16–19×3位置的288条件，
+4,896条短段动作干预／24,480高层步，CPU、无模型／LoRA／梯度。fcd9a613冻结434.79秒exit0、raw重算通过。
+零变化／局部预测MSE=.00089956/.00026749，差额CI[.00048754,.00076067]、23/24task及四suite正；
+但预测误差比例.29736不满足预登记<.25（RMS=.54531），因此关闭该J加权FM提案，不实施条件性§6.5。
+Object比例.01887，Goal／Long为.41550/.51493；保留部分物理可预测性的正事实，不挑suite或扫描扰动挽救。
+夹爪离散分支存在真实效果差，但幅度与连续扰动不同，不能推断夹爪是主因或默认重加权。
+原件留在runs/analysis/operation_semantics_20260913/effect_replay，CLI退役。无active design／运行／selected checkpoint，整体goal未完成。
 
 ## 当前补充实施已完成：操作语义标签与设计修正（2026-09-13）
 

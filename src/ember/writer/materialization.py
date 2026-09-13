@@ -24,10 +24,10 @@ from ember.writer.video import VideoWriterConfig, require_architecture_identity
 from ember.writer.video_prior import validate_prior_config
 
 
-RUN_SCHEMA = "ember_native_dual_video_writer_run_v1"
-STAGE = "native_dual_video_writer_fresh"
-TRAINING_SCHEMA = "ember_native_dual_video_training_state_v1"
-UPDATE_VERSION = "pretrained_video_main_fm_credit_v1"
+RUN_SCHEMA = "ember_visible_object_writer_run_v1"
+STAGE = "visible_object_writer_fresh"
+TRAINING_SCHEMA = "ember_visible_object_training_state_v1"
+UPDATE_VERSION = "visible_object_main_fm_spatial_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"

@@ -8,12 +8,13 @@ import torch
 from ember.writer.function_credit import paired_functional_credit
 from ember.writer.functional import writer_chain_rule_surrogate
 from ember.writer.native import autocast
+from ember.writer.spatial_supervision import SpatialLabelStore, spatial_objective
 
 
-def _encode_leaves(writer, responses, inputs, *, backward):
+def _encode_leaves(writer, responses, inputs, *, backward, return_grounding=False):
     leaves = tuple(value.detach().requires_grad_(backward) for value in responses)
     visuals = tuple(value.detach().requires_grad_(backward) for value in inputs[3])
-    videos = writer.encode(leaves, *inputs[:3], visuals, *inputs[4:])
+    videos = writer.encode(leaves, *inputs[:3], visuals, *inputs[4:], return_grounding=return_grounding)
     return videos, leaves, visuals
 
 
@@ -23,12 +24,17 @@ def _native_cotangents(leaves, visuals):
     return tuple(value.grad for value in leaves), tuple(value.grad for value in visuals)
 
 
-def replay_functional_credit(writer, responses, inputs, compiled):
-    """Replay the main FM cotangent through the single complete generation graph."""
-    videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True)
+def replay_functional_credit(writer, responses, inputs, compiled, *, spatial_labels=None, spatial_weight=0.):
+    """Replay FM and the registered spatial credit through one generation graph."""
+    videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True,
+                                           return_grounding=spatial_labels is not None)
+    metrics, auxiliary = {}, 0.
+    if spatial_labels is not None:
+        videos, distributions = videos
+        auxiliary, metrics = spatial_objective(distributions, spatial_labels)
     state = writer.decode(videos, inputs[0])
-    writer_chain_rule_surrogate(state, compiled).backward()
-    return _native_cotangents(leaves, visuals)
+    (writer_chain_rule_surrogate(state, compiled) + spatial_weight * auxiliary).backward()
+    return _native_cotangents(leaves, visuals), metrics
 
 
 
@@ -36,6 +42,8 @@ class SupervisedEngine:
     def __init__(self, runtime, data, cache, context, config) -> None:
         self.runtime, self.data, self.cache, self.config = runtime, data, cache, config
         self.device, self.step = context.device, 0
+        self.spatial = SpatialLabelStore(data.asset_root, config["spatial_supervision"],
+                                        data.tasks, data.video_pool)
 
     def _time(self, timings, name, start):
         if self.device.type == "cuda":
@@ -61,6 +69,7 @@ class SupervisedEngine:
         condition = self.cache.condition(task, demos)
         start = self._time(timings, "prefix_seconds", start)
         responses, inputs = runtime.observer.read(condition)
+        labels = self.spatial.load(task, demos, inputs[0])
         start = self._time(timings, "observer_forward_seconds", start)
         with torch.no_grad(), autocast(self.device):
             videos = runtime.state.writer.encode(responses, *inputs)
@@ -78,13 +87,15 @@ class SupervisedEngine:
         compiled = credit.pop("lora_cotangent")
         fm_norm = float(torch.stack([value.norm() for value in compiled.values()]).norm())
         with autocast(self.device):
-            cotangents = replay_functional_credit(runtime.state.writer, responses, inputs, compiled)
+            cotangents, spatial_metrics = replay_functional_credit(
+                runtime.state.writer, responses, inputs, compiled, spatial_labels=labels,
+                spatial_weight=self.config["spatial_supervision"]["weight"] / (4 * self.config["data"]["conditions_per_task"]))
         del compiled, responses, inputs
         start = self._time(timings, "writer_vjp_seconds", start)
         runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)
         del condition, cotangents
-        return {**credit, "task_weight": .25,
+        return {**credit, **spatial_metrics, "task_weight": .25,
                 "condition_weight": 1. / (4 * self.config["data"]["conditions_per_task"]),
                 "normalizer": 1., "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
                 **trace, **timings, "prefix_cache_hits": self.cache.hits - hits,

@@ -32,7 +32,7 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
 
 
 def _prior(mode="ordered"):
-    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())["video_prior"]
+    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())["video_prior"]
     value["mode"] = mode
     return value
 

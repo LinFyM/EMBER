@@ -23,21 +23,23 @@ from ember.pi05_source_setup import initialize_deferred_process_group, initializ
 from ember.writer.data import teacher_camera_names
 from ember.writer.video import VideoWriterConfig
 from ember.writer.video_prior import validate_prior_config
+from ember.writer.spatial_supervision import validate_spatial_config
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_native_dual_video_writer_run_v1"
-STAGE = "native_dual_video_writer_fresh"
-TRAINING_SCHEMA = "ember_native_dual_video_training_state_v1"
+RUN_SCHEMA = "ember_visible_object_writer_run_v1"
+STAGE = "visible_object_writer_fresh"
+TRAINING_SCHEMA = "ember_visible_object_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     validate_prior_config(config)
+    validate_spatial_config(config.get("spatial_supervision"))
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
     expected_model = asdict(VideoWriterConfig())
     selected_model = VideoWriterConfig(**config["model"])
@@ -51,7 +53,7 @@ def _config(path: Path) -> dict[str, Any]:
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_native_dual_video_writer_config_v1"
+        config.get("schema_version") != "ember_visible_object_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -60,8 +62,8 @@ def _config(path: Path) -> dict[str, Any]:
         or type(config["data"].get("conditions_per_task")) is not int
         or config["data"].get("conditions_per_task") != 1
         or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
-        or config["optimization"]["loss"] != "main_fm"
-        or config.get("update_version") != "pretrained_video_main_fm_credit_v1"
+        or config["optimization"]["loss"] != "main_fm_plus_actual_spatial_kl"
+        or config.get("update_version") != "visible_object_main_fm_spatial_credit_v1"
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
@@ -143,7 +145,8 @@ def _run_contract(args, context, config, runtime, state):
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": "main LoRA cross-episode; prior RGB-only", "gradient_normalizer": 1.0,
-            "objective": "main_fm", "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
+            "objective": config["optimization"]["loss"], "training_only_geometry": "labels in spatial loss only",
+            "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
 
@@ -405,7 +408,8 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and config["status"] != "registered_native_dual_comparison":
+    if args.mode == "formal" and (config["status"] != "registered_visible_object_grounding_comparison"
+                                  or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
     if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
@@ -448,7 +452,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_native_dual_video.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_visible_object_video.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

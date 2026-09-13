@@ -78,15 +78,21 @@ class _VideoEncoder(nn.Module):
             for _ in range(config.blocks)
         ])
 
-    def _ground(self, visual: Tensor, valid: Tensor, task_mask: Tensor, token_count: int) -> Tensor:
+    def _ground(self, visual: Tensor, valid: Tensor, task_mask: Tensor, token_count: int,
+                return_grounding: bool):
         image_mask = valid & ~task_mask
         if not image_mask.any(-1).all():
             raise ValueError("every frame requires real valid image patches")
         projected = self.visual_projection(visual)
         tasks = projected[task_mask].reshape(len(visual), token_count, self.config.width)
-        grounded = self.patch_read(self.task_norm(tasks), self.patch_norm(projected), projected,
-                                   image_mask[:, None, None, :])
-        return tasks + grounded
+        read = self.patch_read(self.task_norm(tasks), self.patch_norm(projected), projected,
+                               image_mask[:, None, None, :], return_log_distribution=return_grounding)
+        if return_grounding:
+            grounded, distribution = read
+            if not (image_mask.sum(-1) == image_mask.sum(-1)[0]).all():
+                raise ValueError("spatial supervision requires a fixed camera patch layout")
+            return tasks + grounded, distribution[image_mask].reshape(len(visual), -1)
+        return tasks + read, None
 
     def _pair_read(self, grounded: Tensor, native: Tensor, times: Tensor) -> Tensor:
         count, width = len(grounded), self.config.width
@@ -110,18 +116,21 @@ class _VideoEncoder(nn.Module):
         return torch.cat(contents)
 
     def forward(self, response: Tensor, indices: Tensor, visual: Tensor, valid: Tensor,
-                task_mask: Tensor, positions: Tensor, prior: Tensor) -> Tensor:
+                task_mask: Tensor, positions: Tensor, prior: Tensor, return_grounding: bool = False):
         times = indices.to(device=response.device, dtype=torch.float32)
-        grounded = self._ground(visual, valid, task_mask, len(positions))
+        grounded, native_distribution = self._ground(visual, valid, task_mask, len(positions), return_grounding)
         patches = self.prior_projection(prior)
-        grounded = grounded + self.prior_read(
-            self.prior_query_norm(grounded), self.prior_patch_norm(patches), patches)
+        read = self.prior_read(self.prior_query_norm(grounded), self.prior_patch_norm(patches), patches,
+                               return_log_distribution=return_grounding)
+        if return_grounding:
+            read, prior_distribution = read
+        grounded = grounded + read
         content = self._pair_read(grounded, response, times)
         temporal_positions = times / 5 if self.config.process_mode == "ordered" else torch.zeros_like(times)
         for language, temporal in zip(self.language_blocks, self.temporal_blocks, strict=True):
             content = language(content, positions)
             content = temporal(content.transpose(0, 1), temporal_positions).transpose(0, 1)
-        return content
+        return (content, native_distribution, prior_distribution) if return_grounding else content
 
 
 class VideoConditionedWriter(nn.Module):
@@ -163,7 +172,7 @@ class VideoConditionedWriter(nn.Module):
 
     def encode(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-               visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor]) -> tuple[Tensor, ...]:
+               visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor], *, return_grounding: bool = False):
         if not responses or not (len(responses) == len(frame_indices) == len(visual_tokens)
                                  == len(visual_masks) == len(visual_task_masks) == len(prior_tokens)):
             raise ValueError("one or more videos need matching native responses, times and visual evidence")
@@ -172,7 +181,7 @@ class VideoConditionedWriter(nn.Module):
             raise ValueError("exact language needs embeddings [L,language_width] and a nonempty valid mask")
         # Content comes from the contextual native task spans, not a second language-only path.
         positions = language_mask.bool().nonzero().flatten()
-        videos = []
+        videos, distributions = [], []
         for response, indices, visual, valid, task_mask, prior in zip(
                 responses, frame_indices, visual_tokens, visual_masks, visual_task_masks, prior_tokens, strict=True):
             valid, task_mask = valid.bool(), task_mask.bool()
@@ -180,12 +189,16 @@ class VideoConditionedWriter(nn.Module):
             if (prior.ndim != 3 or prior.shape[0] != len(response) or prior.shape[1] <= 0
                     or prior.shape[2] != self.config.prior_width or prior.requires_grad):
                 raise ValueError("one frozen dense prior [T,P,prior_width] is required per real video")
-            args = (response, indices, visual, valid, task_mask, positions.to(response.device), prior)
+            args = (response, indices, visual, valid, task_mask, positions.to(response.device), prior, return_grounding)
             if self.config.activation_checkpoint and torch.is_grad_enabled():
-                videos.append(checkpoint(self.encoder, *args, use_reentrant=False))
+                encoded = checkpoint(self.encoder, *args, use_reentrant=False)
             else:
-                videos.append(self.encoder(*args))
-        return tuple(videos)
+                encoded = self.encoder(*args)
+            if return_grounding:
+                encoded, native_distribution, prior_distribution = encoded
+                distributions.append((native_distribution, prior_distribution))
+            videos.append(encoded)
+        return (tuple(videos), tuple(distributions)) if return_grounding else tuple(videos)
 
     def memory(self, videos: Sequence[Tensor], frame_indices: Sequence[Tensor]) -> tuple[Tensor, Tensor, Tensor]:
         if not videos or len(videos) != len(frame_indices):

@@ -1,5 +1,20 @@
 # EMBER progress
 
+## 当前：物体与运动落点监督已登记，实施／验证中（2026-09-13）
+
+Owner要求继续仔细推导、实施并按结果调整。当前active design为
+[Visible-Object Grounded Writer](docs/visible_object_grounded_writer_design.md)：保持完整生成链，
+在训练侧用真实可见OOI和实际body运动，监督两处真正消费视频的视觉cross-attention Q/K；标签不进部署输入。
+旧v4/v5/Horizon近邻审计未找到这一直接空间监督关系；错误对象／实例回放支持检验绑定不足，但不证明唯一根因。
+四suite静态叠图及task0/demo0整条CPU构建smoke完成：21帧中20可恢复、15有可见运动，2.94秒；无action读取／环境step。
+
+登记fresh ordered/frame_set各200、100/200节点、8个train96/validation400面板，旧dual同模式作为固定参照。
+资格继承原合同，未放宽frame_set要求；定位改善不代替跨视频／初始化／相邻与validation闭环收益。
+目前尚无新训练或selected checkpoint。标签构建、真实图信用/资源profile通过后才从clean pushed frozen版本学习。
+旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
+实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
+两处真实Q/K均非零。该检查只证明图接通，原生最长视频profile仍待完成。
+
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 
 [操作语义§6–7](docs/operation_semantics_feasibility.md)完成固定train24×demo16–19×3位置的288条件，

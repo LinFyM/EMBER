@@ -58,6 +58,7 @@ class WriterTrainingData:
     """Independent persisted task, video and action sampling streams."""
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "agentview") -> None:
+        self.asset_root = asset_root
         self.config = dict(config)
         if (type(config.get("action_start_offset")) is not int or config["action_start_offset"] != 1
                 or config.get("query_alignment") != "post_action_observation_future_control_v1"):

@@ -26,7 +26,10 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_native_dual_video{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_visible_object_video{suffix}.json")
+    configured = training._config(args.config)
+    configured["evidence"]["profile_registration"]["status"] = "complete"
+    monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
         training.run(args)
 
@@ -34,7 +37,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -53,7 +56,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_native_dual_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)

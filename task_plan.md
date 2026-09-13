@@ -1,5 +1,18 @@
 # EMBER task plan
 
+## 当前实施：Visible-Object Grounded Writer（2026-09-13）
+
+完整目标仍为正确教学视频经唯一LoRA产生可重复有益闭环增量及跨视频／初始化／相邻、固定validation迁移。
+当前active design见[物体与运动落点监督](docs/visible_object_grounded_writer_design.md)，整体goal未完成。
+
+1. 已登记：将训练侧可见对象／部件位置直接监督实际视觉cross-attention；保留原输入、完整H、全部共同学习模块及LoRA出口。
+2. 实施训练池384条视频的CPU空间标签，核对图像坐标、关节body及全部采样索引；标签只在loss中使用。
+3. 验证真实主FM与空间梯度共同通过、最长视频资源与信息墙，完成clean pushed frozen profile后fresh启动两臂。
+4. 各200updates／51,200queries，完整100/200的8面板；严格按设计资格和停止分支裁决，不根据局部loss扫权重或增加节点。
+5. 通过才补换视频、强静态和跨初始化，合法冻结后最终controls；未通过关闭当前组合。Test／RL／held梯度不使用。
+
+运行和精确资源登记见progress及formal artifacts；先前无active design的段落均为已关闭阶段的记录。
+
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 
 [操作语义§6–7](docs/operation_semantics_feasibility.md)完成固定train24×demo16–19×3位置的288条件，

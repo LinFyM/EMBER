@@ -22,7 +22,7 @@ def test_main_replay_matches_direct_autograd(activation_checkpoint):
     correct = .125 * sum((value - targets[name]).square().mean() for name, value in state.items())
     expected = torch.autograd.grad(correct, (*reference.parameters(), *direct_responses, *direct_visuals), retain_graph=True)
     compiled = dict(zip(state, torch.autograd.grad(correct, tuple(state.values()))))
-    response_grads, visual_grads = replay_functional_credit(model, args[0], args[1:], compiled)
+    (response_grads, visual_grads), _ = replay_functional_credit(model, args[0], args[1:], compiled)
     actual = [p.grad for p in model.parameters()] + list(response_grads) + list(visual_grads)
     for result, target in zip(actual, expected, strict=True):
         torch.testing.assert_close(result, target, rtol=3e-4, atol=2e-6)

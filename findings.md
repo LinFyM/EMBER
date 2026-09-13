@@ -1255,3 +1255,19 @@ train96为登记有限池；全部worker exit0，冻结代码defcf734，累计�
 完整原件在`runs/analysis/native_dual_video_20260913/`的`paired_summary.json`、`camera_comparison.json`、
 `bounded_200_initial_decision.json`、`bounded_200_decision.json`、`evidence_audit.json`、`training_pairing.json`及
 `OVERNIGHT_READOUT.md`；四完整checkpoint、8个bank、raw rows与全部completion保留。整体goal未完成。
+
+## 80. 跨初态关系监督有数据来源，但同task关系到LoRA仍可退化为任务记忆（2026-09-13）
+
+[可识别性分析§9](docs/video_information_identifiability.md#9-跨初态操作关系新增监督必须区别于旧状态条件化与任务记忆)
+完整记录近邻历史、数据检查与判别限制。现有LoRA的`B(Ah)`已随执行状态变化；旧native-factor已用X/Y生成因子，
+旧Local Action Grounded已反演真实帧之间的动作。仅改称状态地址或回顾反演没有新增机制。
+
+只读检查train任务0/12/20/34的demo16，每个episode首／中／末三个存储状态用既有MuJoCo在CPU恢复，
+共12个forward完成、状态宽度与nq/nv匹配、位置有限。物体位姿可从现存states/XML/assets恢复，但没有现成关系标签。
+目标实例、其它移动物体与抽屉子部件需要区别；柜体根位置不变不代表抽屉操作不存在。没有推进仿真、模型forward或梯度。
+这是标签来源的可行性，不是动作、接触、视频获取或闭环能力证据；没有生成标签库。
+
+若每task对应固定关系r(t)，同task跨episode／初始化验证不能排除关系到LoRA的任务索引记忆。
+因此oracle关系图训练内成功不能独自定位视频读取失败；纯终态标签也不能证明动态视频增量。
+下一候选须同时说明合法RGB获取何种方向性实例／部件关系，以及怎样验证其经唯一LoRA跨初态和任务传递。
+不能由位姿可恢复默认训练完整Writer，也不把这些限制扩大为否定所有关系监督。当前无新active design。

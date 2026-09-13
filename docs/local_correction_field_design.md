@@ -164,3 +164,41 @@ formal从clean pushed detached commit运行，launch前同时检查两GPU节点�
 [READOUT](../runs/analysis/local_correction_field_20260914/READOUT.md)及同根`paired_readout.json`／`decision.json`。
 整体goal未完成。下一阶段直接完成§2–3已选联合机制的合法前向、训练标签采样与同一场的学习接线，
 冻结完整profile／学习合同后再启动；不重新把其它候选或独立动作头加入当前主线。
+
+## 8. 合法共同学习实现合同（profile与学习前冻结）
+
+本节将§2–3细化为唯一实现，不新增并行候选。保留原width256、8 heads、两组语言／时间blocks和两组rank4 Meta，
+native50及全部38个rank16目标。原二阶路径统计与自由A/B出口退役。逐帧任务tokens先读真实图像，再以任务条件
+读取完整T×50原生响应；两组语言RoPE／双向时间RoPE形成T×L上下文。语言位置保留原token位置；
+有序时间位置为真实frame index／5，无序时间位置全零。每个当前frame/horizon的原生状态再读取该帧已经包含
+全视频前后信息的语言角色，形成e[T,50,256]。不把同一全局摘要广播后冒充全部局部状态。
+
+target／rank queries从完整角色上下文读取共同输出方向U；按原生输入／输出shape共享小MLP，输出非零初始化。
+各目标的局部系数r读取同位置e、投影裸X及该目标的共同上下文，经共享MLP和零初始化rank出口产生。
+裸X保持原尺度参与§2收缩，A不再行归一，也没有独立自由A。采用固定物理单位
+`sigma=5.823084826577233e-6`，为§7全部96条件、38目标原始C逐坐标的全局RMS；
+内部U为无量纲，实际`B=sigma U`、`c_hat=sigma U r`。该单一常数进入模型配置和checkpoint，
+不读取task条件统计，不再根据学习或闭环分数校准。零r／非零U给出合法identity；第二步检查整条共同梯度。
+
+teacher/action池及主FM沿用16–41，逐condition排除其teacher episode；每更新四suite各一task、各64个完整50-horizon
+真实7维动作query、权重1/4。每个condition由独立局部RNG在其全部T个采样frames中均匀无放回抽`m=min(4,T)`位置，
+seed由该condition已持久化query seed与固定20260914派生，不消耗主动作RNG，不依赖设备或worker次序。
+字段监督位置只用于训练loss索引，不成为Writer特征。各位置p的真实标签为已有的`actions[p+1:p+16]`，
+末段按真实剩余动作数计均方误差，无未来动作为零目标；不复制或生成虚构后续动作，不把mask或terminal送入Writer。
+
+局部标签在线由同一裸source／双RGB／public probe1729／t1计算。令L_p为该位置已有未来动作的7维均方误差，
+`C_lp=-eta_video dL_p/dy_lp`。eta只引用既有624条训练纠正构造的已冻结teacher侧记录，
+不读取其query分数、不重新定幅，不构建新的全池原始C cache。源权重物理requires_grad始终False；
+训练侧仅令公共noise成为求导起点，捕获原生线性输出cotangent，不部署VJP或优化。
+
+`L_field = sum_l ||C_hat_l-C_l||_F^2 / (m*50*sum_l d_out_l*sigma^2)`；
+共同目标固定`L=L_FM+.1 L_field`，为全部坐标统一的软约束，不逐video或逐层重加权。
+字段loss直接读取构成同一A/B的U/r，且与主LoRA cotangent在同一参数版本重放，然后共同传回Action／VL Meta。
+AdamW lr3e-5、betas(.9,.95)、eps1e-8、weight_decay1e-4、clip1、8步warmup保持，所有学习模块／优化器均fresh。
+有序与无序使用同一字段标签及所有采样字段，独立fresh训练；不混RL、旧checkpoint、独立动作头或总参数回归。
+
+profile仅验证最长完整视频的两次真实共同更新及一次完整推理：source冻结、完整帧／H／38目标、同一字段收缩、
+第二次joint finite梯度、峰值与吞吐；profile权重丢弃，不由其loss选择上述科学参数。
+据实际吞吐在学习前固定约一小时曝光的两个等间距节点，随后完全沿§6资格及后续分支。
+现有video／factor拥有唯一Encoder和场收缩；裸读取／训练cotangent由一个小模块拥有，
+supervised、sampler、runtime及materialization复用现有owner；不保留旧Semantic Path可执行分支。

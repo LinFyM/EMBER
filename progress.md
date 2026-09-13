@@ -35,7 +35,16 @@ f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.
 主FM .11770744→.11770465，L_update 1→.99981159，第二步Q/K、native key与Action/VL Meta共同梯度有效。
 裸source与prior冻结，纯前向一次产出38目标／76因子，没有loss／autograd。所有profile权重丢弃，不作正式初始化。
 据此正式学习前固定两臂各100/200、800条件、51,200主query及8个配对面板，保留原有资格与停止条件。
-正式两臂已进入学习，启动后的前两步有限，L_update仍约1；这只是运行状态，不能据此推断拟合或闭环收益。
+两臂100步checkpoint及对应动作诊断已完整，正按登记继续200步；没有闭环分数或selected checkpoint。
+每臂400教学条件／25,600主query的18个曝光字段全部一致，逐condition主query排除teacher；
+0/100诊断的10个task／视频／动作／RNG字段匹配，无诊断梯度。两份完整checkpoint各368,432,539bytes，
+包括Writer、Adam、scheduler、sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。
+
+固定独立动作诊断初始均为.15328534，100步有序／无序为.15307564／.15304530，仅小幅变化；
+分别12/24、15/24task下降，Spatial与Long均值略升，Object／Goal略降。23个共同出现task的训练窗口中，
+首25→末25条件的L_update为.98578→.96394／.98569→.96108；有序object／motion KL为2.087→1.189／3.339→.830，
+无序为2.085→1.155／3.450→1.600。两个窗口使用不同teacher draws，以上只描述训练区拟合，不能当作配对改善或闭环收益。
+完整逐task、checkpoint与曝光证据见analysis的`training_readout.json`；保留原定200节点和8个配对闭环面板。
 
 正式启动已刷新两节点及strg01：data0为54.7/1024GiB，data1为1017.9/1024GiB；data0个人目录du53GiB。
 大新输出总峰值18GiB，扣除现有标签后尚余15.4GiB，预计data0峰值70.1GiB；source／prior／数据及旧96套标签复用。

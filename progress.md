@@ -25,9 +25,13 @@ f46e3303 clean pushed detached的最长105帧profile已完整通过，exit0：�
 fresh8／8两次26.452／26.539秒、峰值allocated34.274GiB，第二次关键路径及两组Meta均有梯度，source冻结。
 一次无梯度编译4.322秒产出完整38-target／76-factor LoRA；整个profile学习状态废弃，不用于正式初始化。
 在新分数前登记50／100两个节点，每臂fresh400教学条件／25,600主queries、三rank／物理batch8，
-按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。尚未启动正式训练，正在完成冻结与现场准入。
+按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。
+5116deb0 clean pushed detached已在gpu02卡4/5/6启动有序组fresh正式训练，NUMA／deferred NCCL及source冻结合同通过，
+step0的24task独立动作诊断和首个256-query更新已完成；首步33.74秒、峰值allocated34.10GiB。
+三卡现场为0–2%util、已有占用约5.62／.16／4.64GiB，按实测峰值可共驻，未操作他人进程；连同source总占卡5。
+无序组等待同节点三张可用卡，以相同曝光独立fresh启动；四checkpoint／八bank请求及canonical无放回视频映射已备妥。
 新source400仍在gpu01卡5/6各三worker运行，完整8task／50init已通过准备准入，固定后供全部节点复用。
-strg01现场data0／data1为67.62／1018.28GiB，新研究峰值24／.5GiB预算满足独立额度；大资产均复用。
+训练前strg01现场data0／data1为67.62／1017.85GiB，新研究峰值24／.5GiB预算满足独立额度；大资产均复用。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 

@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-13完成[原生纠正获取分解](native_correction_acquisition_audit.md#6-完整结果与关闭裁决)：
+四冻结checkpoint×train24/demo16–19共384次合法生成，原始配对及正交误差分解通过。
+66.9%–70.6%的参数误差位于当前A空间内，四个task-cluster F−D区间均严格负，按登记第二分支关闭。
+停止把扩A空间当必要首项修正；任意B的乐观下界不证明有限共享B、RGB充分性或闭环修复。
+完整矩阵、实际曝光与数值范围见findings§92及下方历史条目；没有新训练、held读取或selected checkpoint，goal未完成。
+
 2026-09-13完成[Native Correction Writer](native_correction_writer_design.md#10-完整有界结果与关闭裁决)：
 两臂各fresh200、8个配对面板／1,984rows完整且审计通过；validation有序／无序100为50/51、200为50/49。
 有序净增区间均未严格正，增量−1→+1、净正suite0/1，按原资格关闭，无selected checkpoint或最终controls。
@@ -1503,3 +1509,21 @@ churn7、J=.86538、净率区间[0,+1.75]pp。相邻有序50→50保留46／新�
 下一项先区分有限R/A空间与纠正预测／学习信用／读取的信息缺口，不以本次失败默认新增完整Writer。
 原件保留于`runs/analysis/native_correction_writer_20260913/`：完整readout、paired_summary、最终和初步decision、
 evidence_audit、training_pairing/readout、launch contract及training下的全部checkpoint／bank／raw／completion。
+
+## 2026-09-13：固定当前A的参数误差分解指向空间内获取缺口
+
+8c714e91 clean pushed detached在原ordered/frame_set100/200四checkpoint上读取train24/demo16–19，
+384次合法Writer调用、四worker均exit0、501–505秒；CPU26.286秒完成原同视频label误差分解，无模型更新或环境步。
+所有真实帧、76因子／single checkpoint／单次Writer、same-video配对、四bank与正交恒等式核验通过。
+
+100有序／无序E/F/D为.951379/.313762/.637617、.950511/.314918/.635593；
+200为.900546/.270922/.629623、.900279/.265043/.635235。
+四个F−D区间均严格负，各模型24/24task均值及各suite／teacher汇总D>F；实际误差的66.9%–70.6%在当前A空间内。
+100/200的已见条件49/67条，200已见D仍.628765/.636050；不能仅归未见教学video。
+本96标签action-out能量87.6726%，弱奇异方向仍保留；乐观下界不证明有限共享B可达、RGB充分或参数误差等同闭环价值。
+
+按[诊断§4](native_correction_acquisition_audit.md#4-预登记读出与停止条件)第二分支关闭，停止把扩A空间当必要首项修正。
+旧fixed-A投影丢失行为、G1容量及G3共享获取负例继续约束解释；不唯一定位B／读取端，不追加模型、阈值、训练或controls。
+原件`runs/analysis/native_correction_writer_20260913/acquisition_audit/`保留384套生成结果、四完整decomposition、
+summary／decision／readout、registration／launch及全部log／exit。原checkpoint和label仅引用、未复制或修改。
+完整goal未完成，无selected checkpoint；下一项先推导有限共享纠正获取的竞争解释。

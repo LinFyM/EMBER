@@ -1,21 +1,36 @@
 # EMBER progress
 
-## 当前：登记原生纠正获取的固定A误差分解（2026-09-13）
+## 当前：固定A误差分解完成，转入共享纠正获取分析（2026-09-13）
 
 Owner完整有益视频特异性goal保持active且未完成，暂不强制145/400。
-当前唯一active design为[原生纠正获取诊断](docs/native_correction_acquisition_audit.md)：
-固定既有ordered/frame_set的100/200四checkpoint与train24/demo16–19，生成384套合法单视频LoRA，
-对同视频既有真纠正label分解“当前A行空间无法表达的误差”和“空间内未拟合的误差”。
-无新Writer训练、参数更新、动作query、环境步、validation/Test读取或checkpoint选择。
-8c714e91 clean pushed detached已在GPU01的0–3四卡分别启动四checkpoint物化，四个Python进程已现场确认存活。
+**[原生纠正获取诊断](docs/native_correction_acquisition_audit.md#6-完整结果与关闭裁决)已完整完成并关闭；
+当前无active design、在途GPU／CPU运行或selected checkpoint。** Native Correction Writer及全部旧组合保持关闭。
 
-已核对旧fixed-A、G1与G3 fit-span／dual近邻；该诊断不重复完整native bank存在性，也不把投影能量当行为。
-固定共同参数度量及四模型一致方向分支，混合结果即关闭，不追加阈值、视频或模型扫描。
-启动前已完成两节点及strg01准入：data0为65.7/1024GiB、新增峰值3GiB；data1为1017.8/1024GiB，
-217MiB frozen已计入当前用量，保守额外预算.5GiB。原资产复用、所有自有GPU合计4张；详细合同见登记文档。
-原件在`runs/analysis/native_correction_writer_20260913/acquisition_audit/`，含registration、launch、四requests及日志／PID／exit。
-代数检查覆盖满秩、零A与rank1；384个合法前向完成后执行同视频原始误差分解，当前没有诊断结论。
-已关闭的Native Correction Writer及所有更早训练继续保持关闭；无selected checkpoint。
+8c714e91 clean pushed detached固定ordered/frame_set的100/200四checkpoint与train24/demo16–19，
+完成384套合法单视频LoRA，四worker均exit0、501–505秒。CPU分解26.286秒exit0，全部同视频label、
+真实帧／末帧、76因子、单次Writer／checkpoint身份、四sealed bank及误差正交分解通过。
+无新动作读取、参数更新、query、环境步、validation/Test或checkpoint选择。
+
+| 模型 | 实际相对误差E | 固定A下界F | 空间内差额D | F−D 95%CI |
+| --- | --- | --- | --- | --- |
+| ordered100 | .951379 | .313762 | .637617 | [−.371229,−.277388] |
+| frame_set100 | .950511 | .314918 | .635593 | [−.366038,−.275823] |
+| ordered200 | .900546 | .270922 | .629623 | [−.404789,−.314671] |
+| frame_set200 | .900279 | .265043 | .635235 | [−.411855,−.330517] |
+
+四个task-cluster区间均严格负，各模型24/24task均值D>F；各suite与四个teacher序号汇总亦如此。
+66.9%–70.6%的实际参数误差在当前A空间内，按登记第二分支停止把扩A空间当必要的首项修正。
+固定A下界仍约.27–.31，且允许任意条件专属B及任意幅度；不能据其认定A充分、有限B易学、RGB充分或B是唯一根因。
+
+100/200实际已见教学条件为49/67条；200已见条件的空间内差额仍为有序.628765、无序.636050。
+不是仅未见视频的问题；该分组不是随机因果比较。相邻有序总误差下降.05083中F下降.04284，D仅下降.00799；
+无序对应.05023/.04987/.00036。保留A覆盖变化与空间内获取有限的事实，不把它变成续训、尺度或rank扫描的依据。
+本96标签87.6726%能量在action-out，真实A有弱奇异方向；这是原参数度量的定位，不替代视频必要性或闭环价值。
+
+下一步先综合当前可表达方向、有限共享纠正预测、原生坐标可用性和学习信用的竞争解释，
+只有可失败论证和有信息量的最小干预成立后再登记；不从“B侧差额大”直接启动另一个Writer或辅助动作头。
+原件在`runs/analysis/native_correction_writer_20260913/acquisition_audit/`：完整readout、summary／decision、
+四decomposition与bank、registration／launch／requests／logs／exit全部保留。跨轮结论见findings§92；旧闭环裁决如下。
 
 ## 最近：原生纠正Writer有界闭环完成并关闭（2026-09-13）
 

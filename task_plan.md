@@ -18,7 +18,7 @@
    不由低FM、参数几何或一篇论文直接登记新训练。新证据须能区分对象／目的地选择与实际操作失败，并改变后续投入。
 4. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前无active训练design、selected checkpoint或在途正式train/eval；唯一active诊断为上述已登记只读回放，尚未启动。
+当前无active训练design或selected checkpoint；唯一active诊断为上述只读回放，两个50节点正在运行，100节点待首批释放。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 

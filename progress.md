@@ -40,7 +40,8 @@ source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp�
 唯一active诊断为[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全部8个validation tasks，
 各固定init0／12／25／37，共128次，复用原视频／LoRA／RNG映射。保存正常执行图像／动作与目标谓词，
 区分对象／目的地选择和抓取／运输／放置失效；不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。
-现有入口和完整bank复用合同已核对；登记完成，待clean pushed登记与live GPU后启动，不恢复任何训练。
+登记3bd9db19已推送；原5116deb0冻结代码已通过两臂原面板合同准备，首批50节点分别在gpu01／gpu02各三卡、每卡两worker运行。
+两节点live准入与data0的16GiB新增预算已登记；100节点待首批释放后执行，不恢复任何训练。
 当前理论降级及历史边界见[工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
 
 下方暂停与旧执行段落均为历史，不覆盖本次持续自主授权。

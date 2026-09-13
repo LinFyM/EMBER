@@ -22,7 +22,7 @@
   原400次是性能证据，回放分数不替代它，也不用于模型选择或再次训练。
 - 复用clean pushed frozen代码`5116deb0efb3c2d77dbb6228772e859176496fdc`及原source、
   normalization、tokenizer、官方环境与执行参数。没有新Writer调用、LoRA合并、部署优化或教学视频controls。
-- 不读Test，不产生held梯度。只保存冻结policy正常执行时已有的图像／state输入、动作chunk及BDDL目标谓词变化。
+- 不读Test，不产生held梯度。只保存冻结policy正常执行时已有的图像、含量化state的tokenized prompt、动作chunk及BDDL目标谓词变化。
   这些是执行侧诊断信息，不成为Writer部署输入或训练数据。
 
 研究根为`runs/analysis/semantic_path_writer_20260914/behavior_replay/`。
@@ -55,7 +55,7 @@ adapter仍指向原`training/<arm>/materialized/validation_correct_step<step>/ma
 ## 4. 执行与资源
 
 复用现有冻结checkout、环境及所有大资产，只新增正常replan轨迹与小型图像索引。
-四模型×四init×全部suite horizon上界为8,448个replans；双224×224 RGB FP32约9.47GiB，
+四模型×四init×全部suite horizon上界为8,448个replans；保存的是resize前双256×256 RGB FP32，约12.375GiB，
 含动作／state／token、索引和必要片段，新增峰值预算16GiB，全部置于data0。
 登记前strg01 data0个人使用81,496,036KiB，独立soft quota为1,073,741,824KiB；
 研究根10,582,248KiB，共享可用约1.6TiB，预算充足。data1不新增大输出。
@@ -64,3 +64,6 @@ adapter仍指向原`training/<arm>/materialized/validation_correct_step<step>/ma
 总占卡遵守现行六卡边界；dynamic queue、long-first、persistent workers保持。
 代码commit、登记commit、实际命令／设备、quota与completion记录于研究根launch contract。
 本项复用已验证evaluator，不新增实现或测试框架。
+
+首批ordered50／frame_set50已通过原面板合同准备，分别在gpu01／gpu02的4、5、6运行，每卡两个persistent workers。
+轨迹图像分辨率经processor实现核对为256，16GiB总新增预算不变；模型内部仍采用官方224预处理。

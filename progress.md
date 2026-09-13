@@ -6,11 +6,15 @@ Owner完整有益视频特异性goal保持active且未完成，暂不强制145/4
 当前唯一active design为[原生纠正获取诊断](docs/native_correction_acquisition_audit.md)：
 固定既有ordered/frame_set的100/200四checkpoint与train24/demo16–19，生成384套合法单视频LoRA，
 对同视频既有真纠正label分解“当前A行空间无法表达的误差”和“空间内未拟合的误差”。
-无新Writer训练、参数更新、动作query、环境步、validation/Test读取或checkpoint选择；当前尚未启动物化。
+无新Writer训练、参数更新、动作query、环境步、validation/Test读取或checkpoint选择。
+8c714e91 clean pushed detached已在GPU01的0–3四卡分别启动四checkpoint物化，四个Python进程已现场确认存活。
 
 已核对旧fixed-A、G1与G3 fit-span／dual近邻；该诊断不重复完整native bank存在性，也不把投影能量当行为。
 固定共同参数度量及四模型一致方向分支，混合结果即关闭，不追加阈值、视频或模型扫描。
-启动前完成live额度和GPU准入、冻结clean pushed代码；详细公式、条件、停止与3GiB data0预算见登记文档。
+启动前已完成两节点及strg01准入：data0为65.7/1024GiB、新增峰值3GiB；data1为1017.8/1024GiB，
+217MiB frozen已计入当前用量，保守额外预算.5GiB。原资产复用、所有自有GPU合计4张；详细合同见登记文档。
+原件在`runs/analysis/native_correction_writer_20260913/acquisition_audit/`，含registration、launch、四requests及日志／PID／exit。
+代数检查覆盖满秩、零A与rank1；384个合法前向完成后执行同视频原始误差分解，当前没有诊断结论。
 已关闭的Native Correction Writer及所有更早训练继续保持关闭；无selected checkpoint。
 
 ## 最近：原生纠正Writer有界闭环完成并关闭（2026-09-13）

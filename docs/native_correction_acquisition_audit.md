@@ -75,7 +75,7 @@ P为A行空间的正交投影。任意B的最优乘积为GP，因此：
 物化沿既有GPU-local NUMA、正常BF16/TF32及resident runtime；四个独立worker各负责一份checkpoint，无NCCL。
 按两节点live可用设备决定是否并行，用于加速真实生成而非占卡；累计所有自有GPU遵守Owner总量规则。
 384套同shape完整因子约1.85GiB，连同manifest、原始分解及临时输出，data0新增峰值预算3GiB；
-data1仅新增轻量文档与frozen worktree，预算128MiB。启动前查strg01两额度、相关个人目录和共享容量。
+data1新增文档与frozen worktree，按实际tracked文档体积修正预算为512MiB。启动前查strg01两额度、相关个人目录和共享容量。
 
 核验同task／video／checkpoint、完整76因子、有限值、单次合法Writer调用、真实帧与匹配标签、
 四份sealed manifest／worker退出和误差恒等式；不做额外hash或全树完整性扫描。

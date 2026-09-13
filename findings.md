@@ -1632,3 +1632,19 @@ Long2/state12/F50开炉70步成立、120步失去。它们不能写成从未完�
 原件`runs/analysis/semantic_path_writer_20260914/behavior_replay/`保留READOUT、replay_readout、decision、
 两份覆盖全部32组的人工观察、固定图像／元数据、128条逐replan轨迹及完整launch／completion。
 整体goal未完成，自主授权持续，无active design或在途运行；不从历史关闭段恢复训练。
+
+## 97. 在局部纠正场上限制rank16保留了实际跨episode作用（2026-09-14）
+
+[局部纠正场§5–7](docs/local_correction_field_design.md#7-固定算子完整结果与下一阶段)固定原train24/demo16–19、
+四位置、source、eta及query42–45，先对真实输出cotangent场C作rank16，再与同位置X收缩。
+4f55968d完成96条件／1,536 query组合与两读出，三个worker均exit0，原身份／truth／noise配对及finite通过。
+
+t1 source .11977705→.11351439，净改善CI[.00253443,.01103297]，17/24task正；
+full10 .16493043→.15574597，CI[.00326525,.01693516]，21/24task正；两读出均四suite净正，原共同资格通过。
+与旧G均差约−1.84e−7／+2.52e−6、区间均跨零，不能声称等价、严格非劣或更优。
+逐条件局部C能量保留率范围.998731–.999738，总参数相对原G的Frobenius差范围.007706–.027575；
+这类几何只作描述，不替代上述实际函数结果。三worker68.620／70.805／69.517秒，峰值11.014GiB。
+
+原始场、完整LoRA、预测、逐task／suite／teacher及裁决在runs/analysis/local_correction_field_20260914。
+按正分支关闭诊断、退役入口；只支持该局部场收缩的privileged函数前提，未检验合法获取、全视频各位置、闭环或held。
+下一阶段完成已选同位置过程→纠正場→唯一LoRA的共同学习机制，不重开独立动作头或由这个正数宣称goal完成。

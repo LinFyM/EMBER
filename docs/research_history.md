@@ -1604,3 +1604,12 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 按异质失败分支关闭，未唯一定位模块，也没有新方法取得过程资格；不扩回放或自动追加局部修补。
 代码clean pushed frozen5116deb0、登记3bd9db19，11.74GiB轨迹及READOUT、逐组图像／人工观察、decision和全部退出证据保留于
 `runs/analysis/semantic_path_writer_20260914/behavior_replay/`。跨轮结论见findings§96；整体goal继续。
+
+## 2026-09-14：局部纠正场rank16的固定函数前提通过
+
+[设计与完整裁决](local_correction_field_design.md#7-固定算子完整结果与下一阶段)使用原G的96个train条件、原source／eta／query映射，
+从真实cotangent C先作rank16，再与同帧X收缩为完整LoRA。4f55968d clean pushed detached的三个worker全部exit0。
+两读出source MSE .11977705/.16493043降至.11351439/.15574597，两个task-cluster改善区间严格正，均四suite净正。
+与原G实测误差接近、配对区间跨零；局部场几何与真实输出分开记录，未声称等价、无损或闭环成功。
+按登记关闭一次性诊断、退役入口；原始C、96套LoRA、1,536查询组合、两个读出与完整统计在
+`runs/analysis/local_correction_field_20260914/`。后续合法共享获取仍待实现与闭环证明，整体goal未完成。

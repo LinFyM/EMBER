@@ -17,15 +17,16 @@
    共128次已完成，复用原LoRA、视频与RNG配对通过，24个worker exit0；32组固定图像齐全。
    全部32组人工观察已完成，失败同时涉及错物／实例、具体获取／运输和组合目标保持；8/128次回放结果变化完整保留。
    按异质失败分支关闭，不从中选择唯一失败模块，不扩回放／controls或自动加目的地解析、局部动作头或保持损失。
-4. **进行中：局部条件纠正场的有界算子核验。** [新联合机制](docs/local_correction_field_design.md)已选定：
+4. **算子核验已通过，进行合法共同学习实现。** [新联合机制](docs/local_correction_field_design.md)已选定：
    同位置过程解释得到的纠正场，既接受真实纠正监督，又直接与裸source状态配对形成LoRA；不保留独立辅助动作出口。
    先按§5固定96条件／1,536 query组合及原source／eta／RNG，检验局部rank16场收缩的t1与full10实际作用。
-   当前只有该privileged训练侧诊断active，尚在实现、未启动GPU；两读出资格不过就停止这个具体组合，
-   通过才继续完成合法Writer实现／profile／学习登记，不把原G分数或新局部误差当目标完成。
+   4f55968d完成96条件与两读出，三个worker exit0；t1／full10相对source改善区间均严格正、四suite均正。
+   按正分支关闭诊断并退役入口；现在完成§2–3合法Writer及同一纠正场的学习接线、profile和完整学习登记。
+   不扩大oracle或重选其它机制，不把原G分数或新局部误差当目标完成。
 5. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前唯一active design为[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)，
-无selected checkpoint或在途GPU运行；上述回放及行为解释全部关闭，整体goal和自主授权继续。
+当前[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整关闭，§2–3机制进入实现细化；
+无selected checkpoint、Writer训练或在途GPU运行；回放及行为解释全部关闭，整体goal和自主授权继续。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 

@@ -8,7 +8,8 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
 
-**当前无active design；[Native Dual-View Writer](docs/native_dual_video_writer_design.md)已关闭。** 时间对齐、冻结正例复核及
+**当前active诊断为[跨初态相对几何检索](docs/cross_init_relation_retrieval_audit.md)，无active Writer学习；
+[Native Dual-View Writer](docs/native_dual_video_writer_design.md)已关闭。** 时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，当前进行综合机制分析。
 
 ### Native双相机修正：8面板完成，按预登记资格关闭
@@ -70,7 +71,11 @@ dual对应.13673/.13217/.13177，均胜过task mean。三个同读出相机差�
 [跨初态关系复核§9](docs/video_information_identifiability.md#9-跨初态操作关系新增监督必须区别于旧状态条件化与任务记忆)
 已完成近等价历史检查和四train任务12个存储状态的CPU恢复：状态地址与回顾动作反演已属旧机制；
 物体／部件监督有数据来源，但同task的oracle关系图拟合仍可能只是任务索引。下一判别必须排除这一混淆，
-不能把可恢复位姿当作视频理解或LoRA传递正证据。无新标签库、模型学习或active design。
+不能把可恢复位姿当作视频理解或LoRA传递正证据。无新标签库或模型学习。
+
+据此登记一个无学习映射的直接参照：全部train24的action16–19演示与诊断42–45交叉，固定相对／绝对几何1-NN，
+检验跨初态的5步真实动作传递。共384个episode对，单次CPU分析；差额、均值参照及停止条件在active诊断中固定。
+本项排除的是新增task→参数拟合混淆，不声称排除privileged task配对，也不由MSE通过直接启动完整Writer。
 
 后续方法选择尚需明确：独立训练的全帧frame_set优势检验是否属于持续硬门槛，还是本轮特定研究问题；
 冻结模型的内容／顺序因果要求、跨视频／初始化／相邻稳定及固定validation迁移均保持。当前不据结果自行改变口径，

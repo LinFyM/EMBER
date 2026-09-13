@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_semantic_path_writer_config_v1",
-  "status": "implementation_profile_pending",
+  "status": "registered_semantic_path_comparison",
   "design": "docs/semantic_path_writer_design.md",
   "data": {
     "seed": 7,
@@ -215,8 +215,8 @@
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
       "optimizer_updates": [
-        100,
-        200
+        50,
+        100
       ]
     },
     "qualification": {
@@ -289,17 +289,17 @@
         48,
         49
       ],
-      "registration_status": "provisional_pending_actual_longest_profile",
+      "registration_status": "registered_before_new_closed_loop_scores",
       "optimizer_updates": [
-        100,
-        200
+        50,
+        100
       ],
       "qualification_completion": "two complete paired400 correct nodes; ordered minus matched fresh frame_set and ordered minus paired_source task-cluster95%CI lower bounds strictly positive at both nodes; at least two positive suites at each node; adjacent ordered success count, breadth and nonzero suites do not decrease",
       "same_task_other": "complete matched400 only after initial two-node qualification; before single-checkpoint freeze"
     },
     "checkpoint_updates": [
-      100,
-      200
+      50,
+      100
     ],
     "supervised_validation": {
       "task_ids": [
@@ -330,8 +330,8 @@
       ],
       "optimizer_updates": [
         0,
-        100,
-        200
+        50,
+        100
       ],
       "action_demos": [
         42,
@@ -437,12 +437,30 @@
       ]
     },
     "profile_registration": {
-      "status": "pending",
+      "status": "complete",
       "scope": "actual longest full video: forward, main FM backward plus same-version observer replay twice and one complete LoRA inference; inspect second-update joint gradients, frozen source, all frames/full50, 76 finite factors, peak memory and throughput",
       "checkpoint_policy": "before closed-loop scores, replace provisional nodes with two equally spaced multiples of 50 or 100 for about one hour of continuous learning; match both arms exactly",
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "evidence": "runs/analysis/semantic_path_writer_20260914/profile/results.json",
+      "throughput_budget": "runs/analysis/semantic_path_writer_20260914/profile/throughput_budget.json",
+      "physical_policy_microbatch": 8,
+      "planned_training_world_size": 3,
+      "longest_frames": 105,
+      "peak_allocated_gib": 34.27430534362793,
+      "peak_reserved_gib": 35.455078125,
+      "second_update_seconds": 26.53867132891901,
+      "pure_forward_seconds": 4.322199499933049,
+      "second_update_joint_gradients": true,
+      "source_trainable_parameters": 0,
+      "selected_checkpoint_updates": [
+        50,
+        100
+      ],
+      "modeled_training_seconds": 2687.106194317649,
+      "segment_estimate": "about45 minutes for100updates plus initialization and three fixed train24 action diagnostics; about one hour total",
+      "rejected_physical_batch": "16 OOM in policy FM; fresh8/8 complete, original attempt retained; no scientific graph change"
     },
-    "checkpoint_registration": "provisional_pending_actual_longest_profile",
+    "checkpoint_registration": "registered_from_longest_profile_before_training_and_scores",
     "content_reference_followup": "only after initial two-node qualification; register the stronger content reference before use"
   },
   "update_version": "semantic_path_main_fm_joint_credit_v1",

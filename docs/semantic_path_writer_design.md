@@ -1,7 +1,7 @@
 # 语义状态路径到条件控制参数
 
-2026-09-14。候选联合设计；正式激活只看progress。既有固定G诊断正在按原480episodes完成，
-本文件不提前裁决其结果，也不恢复任何关闭的Writer。
+2026-09-14。当前联合设计；正式执行状态只看progress。固定G诊断已按原480episodes完成并关闭，
+四项前提通过，但不证明本合法Writer可学；本文件不恢复任何关闭的Writer。
 
 ## 1. 主假设与历史取舍
 
@@ -158,8 +158,19 @@ native/runtime/supervised/training/materialization只更新必要接口与新sch
 checkpoint字段核验改为同一函数内的声明表后，70项相关物化回归再通过。
 本次活动源码与测试合计净减558行，新增唯一59行factor owner、删除五个旧模块，没有新trainer或fallback。
 结构检查无新增／增长的hard问题；原selection／物化编排保持同一职责，输入验证是短shape／mask合同，未为计数拆成零碎模块。
-这些仅证明实现合同；[100,200]只是尚未获得formal准入的配置占位节点。
-f46e3303 clean pushed detached启动最长条件两次完整主FM／observer重放，物理microbatch分别8／16；
-这是吞吐／显存执行选择，逻辑64queries不变，整个profile初始化不供正式学习复用。
-同一冻结代码的新source400在另外两张卡运行，完整launch、双节点现场与存储预算保存于
-`runs/analysis/semantic_path_writer_20260914/initial_launch_contract.json`及其引用原件；当前科学结果只看progress。
+这些仅证明实现合同。f46e3303 clean pushed detached完成最长task38/demo36的105帧完整主FM／observer重放：
+首尝试microbatch8通过、16在policy FM显存不足；保留原件后fresh以8／8重做，两次分别26.452／26.539秒，
+峰值allocated34.274GiB、reserved35.455GiB。第二次A/B、路径、native投影及两组Meta均有非零梯度，source始终冻结。
+无梯度一次Writer推理4.322秒返回38个target／76个finite因子，全部真实帧与full50保留，exit0。
+profile初始化、optimizer与任何权重均不供正式训练复用；不因16的执行OOM改变科学图或数值配方。
+
+看新闭环分数前，正式登记**50／100 updates**。三张A40、物理batch8、四suite各一K1条件和64 queries，
+逻辑256 queries/update不变；每臂末尾累计400教学条件、25,600主queries，两臂独立fresh且曝光完全匹配。
+用上述实测固定query代价与帧代价、既有同seed同采样合同的帧数及canonical三rank调度估算，100步约2687秒；
+加初始化与0／50／100三次固定train24独立动作诊断，约一小时。该估计未使用旧闭环分数或结果选择节点。
+50／100每个节点均按§5完成train96和validation400；资格、相邻保持与后续controls边界不变。
+仅100步不能称充分训练或平台；后续投入按预登记的学习／行为证据分支裁决，不从loss或配置占位数字恢复200。
+
+完整profile、吞吐估计及首尝试原件保存在`runs/analysis/semantic_path_writer_20260914/profile/`。
+同一冻结代码的新source400在另外两张卡运行，初始launch、双节点现场与存储预算见同研究根；
+训练须用包含本登记的clean pushed detached commit，并在启动前更新实际设备与独立quota。

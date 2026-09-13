@@ -11,10 +11,11 @@ Owner明确要求“制定一个goal开始推进”，恢复自主研究。新go
    联合解释输入内容、操作关系、执行知识、参数生成和获取／保持。固定G原480episodes全部完成，
    source17/96、四teacher21/25/20/24，净+5.73pp CI[+1.04,+12.5]pp，四项注册前提均通过后关闭。
    这将合法条件控制获取提为下一重点，不默认特定G参数拟合就是唯一的学习途径。
-2. **进行中：实施[语义状态路径Writer](docs/semantic_path_writer_design.md)。** 联合设计与旧C／Video Functional／native纠正的
-   实质差别已登记，核心图和12项CPU检查完成；现有运行接线、退役、集成及最长真实profile继续。
+2. **完成实现和profile：[语义状态路径Writer](docs/semantic_path_writer_design.md)。** 联合设计与旧C／Video Functional／native纠正的
+   实质差别已登记，核心图12项检查、运行接线与回归、退役及集成完成；最长105帧fresh8／8真实profile通过。
    新图仅用跨episode主FM；完整R/Z理解与二阶路径共同生成自由完整A/B，无旧辅助标签或裸X约束。
-3. 按实际吞吐在看分数前登记两个等间隔学习节点，启动两臂同曝光fresh训练及完整train96／validation400。
+3. **进行中：50／100两等间隔节点已按实际吞吐在看分数前登记。** 完成现场准入后启动两臂同曝光fresh训练，
+   每臂100updates／400教学条件／25,600主query；两个节点均做完整train96／validation400。
    报告能力、ordered−frame_set、breadth、churn和相邻保持；资格后补换视频，再冻结并做最终controls。
    负结果先更新主假设和投入判断，停止近等价重复；有益候选继续验证跨视频与冻结后的因果controls。
 4. 仅在完整目标证据成立时完成goal；局部正例、surrogate、单个峰值、代码或理论文档完成均不算科学目标达成。

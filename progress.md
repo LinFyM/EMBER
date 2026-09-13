@@ -21,9 +21,12 @@ native双视角R/Z全视频理解→可学习状态的二阶有向路径→条�
 5f1c25e8先保存完整联合设计；核心图12项CPU检查、接线128项回归通过，字段核验重构后70项物化回归再通过。
 f46e3303已集成推送，活动源码与测试净减558行、五旧模块和十一旧配置退出活动树；两隔离树及已关闭oracle树已核验清理。
 新Writer共9.465M参数，两组Meta另计；这些仍只是实现证据。
-当前f46e3303 clean pushed detached的最长真实条件profile（microbatch8／16）与新source400已启动：
-gpu01卡4用于profile、5/6各三worker用于source；两节点现场核验三卡均空闲，整体占卡3。
-正式节点须在profile后、看到分数前登记，尚未开始新训练。source400完整8task／50init已通过准备准入，固定后供全部节点复用。
+f46e3303 clean pushed detached的最长105帧profile已完整通过，exit0：首尝试8通过、16执行OOM后保留原件，
+fresh8／8两次26.452／26.539秒、峰值allocated34.274GiB，第二次关键路径及两组Meta均有梯度，source冻结。
+一次无梯度编译4.322秒产出完整38-target／76-factor LoRA；整个profile学习状态废弃，不用于正式初始化。
+在新分数前登记50／100两个节点，每臂fresh400教学条件／25,600主queries、三rank／物理batch8，
+按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。尚未启动正式训练，正在完成冻结与现场准入。
+新source400仍在gpu01卡5/6各三worker运行，完整8task／50init已通过准备准入，固定后供全部节点复用。
 strg01现场data0／data1为67.62／1018.28GiB，新研究峰值24／.5GiB预算满足独立额度；大资产均复用。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。

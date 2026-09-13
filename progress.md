@@ -38,10 +38,14 @@ step100 validation400亦完整exit0：ordered64／frame_set56；S/O/G/L为1/52/8
 step200 train96两臂已完整exit0：ordered54／frame_set50；S/O/G/L为15/19/13/7对15/16/14/5，breadth18/17。
 有序保留46／新增8／丢失4，churn12，J=.79310；差额CI[−2.08,+10.42]pp跨零。两臂较step100均净增18。
 ordered相邻保留33／新增21／丢失3，frame_set为27／23／5；训练增长本身不证明有序视频特异性。
-controller964812已进入最后两个validation400面板，ordered200先行；launcher2224889实际存活并准备评测，
-GPU01=0/1/3/4/5、计划每卡2 workers；完整validation相邻裁决仍待结果。
+step200 ordered validation400已完整exit0：53/400，S/O/G/L为0/52/0/1，breadth3；
+全局task 1/3/11/13/23/26/31/32成功数为0/0/39/13/0/0/1/0。400个task/state和video条件唯一，
+各task的50条teacher各用一次，全部来自同一step200检查点。相邻64→53，保留41／新增12／丢失23，
+churn35，J=.53947；差额CI[−7,+.5]pp。Spatial／Goal归零，尚不支持稳定保持，不能由train增长选模型。
+controller964812已启动最后一个frame_set200 validation400面板；launcher2302338与10个worker实际存活，
+GPU01=0/1/3/4/5、每卡2 workers；完整有序差额及两臂相邻裁决仍待该面板。
 每面板独立保留资源准入、run contract、raw rows与completion；原始训练配对为同analysis根的`training_pairing.json`。
-句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前已完成6/8面板，整体goal未完成。
+句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前已完成7/8面板，整体goal未完成。
 正式两臂及初始8面板估计约26GiB，32GiB阶段峰值预算保持。
 条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。
 

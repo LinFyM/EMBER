@@ -1606,3 +1606,29 @@ bounded100_decision、各training／materialized／evaluation及launch/profile/r
 按注册关闭本主假设组合，不续训或扫路径阶数／宽度、head、rank、LR、seed、scale、辅助loss。
 没有selected checkpoint、other、最终内容／时序controls、Test、held梯度或RL。整体goal未完成，自主授权持续。
 下一解释须同时保留§94的privileged控制正事实、这里的一般训练获取与稳定／过程负证据，不默认另一个完整Writer或保持补丁。
+
+
+## 96. 固定四模型回放显示条件绑定与操作／组合保持的异质缺口（2026-09-14）
+
+语义路径原四模型、全validation8、各init0/12/25/37，共128次正常correct回放及32组双相机人工观察完整。
+原400子集→回放成功O50 7→5、F50 5→9、O100 3→5、F100 1→1；120/128结果相同。
+模型、完整LoRA、teacher/task/state与环境／policy RNG公共前缀配对通过；8条结果变化原样保留，原400与Writer关闭裁决不改。
+24个worker exit0，累计launcher812.30秒，轨迹11.74GiB，双节点无本研究在途进程。
+
+奶油奶酪Goal6的100节点六条失败中，目标仍留桌面而手已转向碗附近；50的另一失败已把目标运到碗上方，
+但目标谓词始终未成立。Object1有目标附近反复获取、运输迟滞，也保留有序100比50更快成功的初态反例。
+这组没有清楚的错误目的地证据，却不能外推为语义绑定已正确：Spatial可见错实例碗，Object3可见错瓶，
+Goal3停留抽屉开合，Long存在错包装盒／平底锅及组合目标未保持。不能统一归因抓取或occupancy。
+
+完整谓词还修正了稀疏图像可能形成的过度解释：Long1/state0/F50的cream cheese223步入篮、361步失去；
+Long2/state12/F50开炉70步成立、120步失去。它们不能写成从未完成对应子目标。
+稀疏图像、遮挡与最后replan并不唯一说明接触、释放或落点；某些相近棕色瓶身份明确保留不确定性。
+
+按登记的异质失败分支关闭，不扩病例、模型、checkpoint或controls，也不由该回放自动启动解析、局部动作头、
+保持蒸馏或状态扩池。下一方法仍须联合解释实体／条件绑定、具体控制和训练保持；没有唯一失效模块或新的正向方法被证明。
+旧teacher-state接续、expert occupancy蒸馏和相邻更新干预已显示相关混合缺口，本轮新增的是这些四个模型的实际行为。
+
+合同见[冻结行为回放§5](docs/semantic_path_behavior_replay.md#5-完整结果与关闭)，代码5116deb0、登记3bd9db19。
+原件`runs/analysis/semantic_path_writer_20260914/behavior_replay/`保留READOUT、replay_readout、decision、
+两份覆盖全部32组的人工观察、固定图像／元数据、128条逐replan轨迹及完整launch／completion。
+整体goal未完成，自主授权持续，无active design或在途运行；不从历史关闭段恢复训练。

@@ -37,11 +37,17 @@ source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp�
 
 下一步先具体区分当前失败行为，再决定是否修改学习机制。原始任务语言显示本轮显著收益与回退涉及同一cream-cheese物体，
 但目标分别为basket与bowl；现有仅success／steps的rows不能判断是否选错目的地、抓取失败或运输／放置失效。
-唯一active诊断为[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全部8个validation tasks，
+后续[冻结行为回放](docs/semantic_path_behavior_replay.md#5-完整结果与关闭)也已完整关闭：原四checkpoint、全部8个validation tasks，
 各固定init0／12／25／37，共128次，复用原视频／LoRA／RNG映射。保存正常执行图像／动作与目标谓词，
 区分对象／目的地选择和抓取／运输／放置失效；不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。
-登记3bd9db19已推送；原5116deb0冻结代码已通过两臂原面板合同准备，首批50节点分别在gpu01／gpu02各三卡、每卡两worker运行。
-两节点live准入与data0的16GiB新增预算已登记；100节点待首批释放后执行，不恢复任何训练。
+登记3bd9db19、运行5116deb0的四面板128次回放已全部完成，24个worker exit0，两节点已无本研究在途进程。
+O50／F50／O100／F100的原→重放成功为7→5／5→9／3→5／1→1；128条中8条结果变化。
+模型、LoRA、视频和RNG配对通过，差异完整保留且不替换原400成绩。累计launcher812.30秒，轨迹约11.74GiB，在16GiB预算内。
+32组固定双相机图像已全部人工检查：奶油奶酪有获取／运输衔接失败，其他任务同时有错实例／错物、
+抽屉子阶段停滞及组合目标失去；未唯一识别模块或单一操作阶段。短暂目标变化由完整谓词补充，原件和边界见
+[回放完整读出](runs/analysis/semantic_path_writer_20260914/behavior_replay/READOUT.md)及findings§96。
+当前无active设计、selected checkpoint或在途运行，不扩回放或由其中一种失败自动启动局部修补。
+整体goal与自主授权持续；下一项选择须同时解释条件绑定、实际控制和组合保持，并与近等价旧机制比较后决定投入。
 当前理论降级及历史边界见[工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
 
 下方暂停与旧执行段落均为历史，不覆盖本次持续自主授权。

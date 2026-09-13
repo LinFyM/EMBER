@@ -11,14 +11,18 @@
 2. **已完成关闭：语义状态路径Writer。** 全图实现、最长105帧profile、两臂fresh100、四checkpoint和八配对面板完成。
    train96有序／无序16/22→29/26，validation77/75→48/44；三个资格均失败。完整1,984rows审计通过，39个最终worker exit0。
    保留训练获取和Object增量，停止原组合续训／扫描；不选50峰值，不触发未获资格的other或最终controls。
-3. **进行中：更新整体解释并定位实际行为。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
+3. **已完成：冻结实际行为定位。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
    降低“重排表示并给普通FM即可得到过程”的支持程度。当前same-object／different-destination现象尚无真实轨迹解释；
    已登记[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全8tasks、init0／12／25／37，
-   共128次，复用原LoRA、视频与RNG，不按结果筛例。下一步运行现有只读入口，逐组报告可观察的最早分歧。
-   不由低FM、参数几何或一篇论文直接登记新训练。新证据须能区分对象／目的地选择与实际操作失败，并改变后续投入。
-4. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
+   共128次已完成，复用原LoRA、视频与RNG配对通过，24个worker exit0；32组固定图像齐全。
+   全部32组人工观察已完成，失败同时涉及错物／实例、具体获取／运输和组合目标保持；8/128次回放结果变化完整保留。
+   按异质失败分支关闭，不从中选择唯一失败模块，不扩回放／controls或自动加目的地解析、局部动作头或保持损失。
+4. **进行中：据混合行为与完整历史选择联合机制。** 当前无新方法登记；需说明如何同时获得条件绑定和可执行作用，
+   学习信用为何能够迁移和保持，以及相对旧获取／蒸馏／几何／共享方案的实质区别，再决定下一笔实现与验证投入。
+   不由低FM、参数几何或一篇论文直接登记新训练。
+5. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前无active训练design或selected checkpoint；唯一active诊断为上述只读回放，两个50节点正在运行，100节点待首批释放。
+当前无active design、selected checkpoint或在途运行；上述回放及行为解释全部关闭，整体goal和自主授权继续。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 

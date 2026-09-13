@@ -5,7 +5,9 @@
 Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
 自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
 暂不额外强制145/400。[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整通过并关闭；
-当前推进§2–3已选机制的合法共同学习实现与合同细化，尚无active Writer训练或selected checkpoint。
+当前推进§2–3已选机制的合法共同学习实现；§8已在profile／学习前冻结模型、字段采样、单位及共同loss，
+尚无active Writer训练或selected checkpoint。主模型同字段收缩／全帧梯度／无序置换等11项检查已通过，
+正在接入裸source读取、训练专用在线cotangent与正式materialization合同。
 新候选让逐位置的同一纠正场接受真实局部监督并直接合成LoRA，区别于独立辅助动作头与旧总参数回归。
 先检验在局部场上限制rank16是否保留实际跨episode作用；现有G的rank16是在总参数矩阵上施加，两者不能当成等价。
 登记96条件、1,536独立query组合、t1及full10，原source／query／eta全部固定复用；不新增闭环、held、训练或最终controls。

@@ -59,9 +59,11 @@ def bank(tmp_path, request):
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
-    run["config"]["schema_version"] = "ember_semantic_path_writer_config_v1"
-    run["config"]["optimization"] = {"loss": "main_fm"}
+    run["config"]["schema_version"] = "ember_local_field_writer_config_v1"
+    run["config"]["optimization"] = {"loss": "main_fm_plus_local_field"}
     run["config"]["model"] = dict(run["model_config"])
+    run["config"]["local_field_supervision"] = json.loads(
+        (ROOT / "configs/pi05_local_correction_field_writer.json").read_text())["local_field_supervision"]
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
     torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": STAGE, "next_macro": 16,
@@ -281,7 +283,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["meta.weight"].fill_(value * 10)
         tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
-        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
+        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12, "field_unit": VideoWriterConfig().field_unit},
             "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
@@ -310,7 +312,7 @@ def resident_materialization(tmp_path, monkeypatch):
 def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(resident_materialization, tmp_path):
     requests, _, builds, state = resident_materialization
     paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
-    assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12}
+    assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12, "field_unit": VideoWriterConfig().field_unit}
     assert state.loads == 2
     for index, path in enumerate(paths):
         manifest = json.loads(path.read_text())
@@ -320,7 +322,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["conditions"][0]["writer_value"] == index + 1
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
         assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
-        assert manifest["method"]["training_objective"] == "main_fm"
+        assert manifest["method"]["training_objective"] == "main_fm_plus_local_field"
         assert manifest["information_wall"]["total_writer_invocations"] == 1
         assert len(manifest["tasks"][0]["episodes"]) == 10
     materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
@@ -472,14 +474,14 @@ def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_and_contextual_task_tokens"
     assert method["native_read"] == "full_T_x_50_crossframe_action_response_attention"
-    assert method["frame_attention"] == "bidirectional_order_equivariant_full_video"
-    assert method["video_representation"] == "language_conditioned_semantic_states_T_L_d"
-    assert method["process_aggregation"] == ("second_order_log_signature" if process_mode == "ordered"
-                                             else "unordered_second_moments")
-    assert method["native_parameter_generation"] == "free_full_A_B_shape_family_heads_after_semantic_path_modulation"
+    assert method["frame_attention"] == "bidirectional_real_time_or_zero_time_full_video"
+    assert method["video_representation"] == "contextual_language_roles_T_L_d_and_local_native_states_T_50_d"
+    assert method["process_aggregation"] == ("bidirectional_real_frame_time_rope" if process_mode == "ordered"
+                                             else "full_frame_set_zero_time_rope")
+    assert method["native_parameter_generation"] == "B_sigma_U_A_sum_r_bare_X_div_T_same_local_field"
     assert method["macro_cursor"] == "optimizer_updates"
     assert method["training_stage"] == STAGE
-    assert method["training_objective"] == "main_fm"
+    assert method["training_objective"] == "main_fm_plus_local_field"
     assert method["update_version"] == UPDATE_VERSION
 
 
@@ -487,6 +489,9 @@ def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     ("schema_version", "ember_native_correction_writer_run_v1"),
     ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
     ("stage", "native_correction_writer_fresh"),
+    ("schema_version", "ember_semantic_path_writer_run_v1"),
+    ("stage", "semantic_path_writer_fresh"),
+    ("update_version", "semantic_path_main_fm_joint_credit_v1"),
     ("update_version", "native_correction_main_fm_joint_credit_v1"),
     ("update_version", "joint_fm_rl_same_version_v1"), ("execution_precision", "outer_bf16")])
 def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(bank, field, value):
@@ -631,20 +636,23 @@ def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path
     response = object()
     calls = []
 
-    def writer(*values):
-        calls.append(values)
+    native = ({"linear": torch.zeros(2, 50, 3)},)
+
+    def writer(*values, native_inputs):
+        calls.append((values, native_inputs))
         return identity_lora_state(lora)
 
     observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: object(),
         read=lambda condition: (response, arguments))
-    runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora)
+    runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora,
+                              correction=SimpleNamespace(read=lambda condition: native))
     task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),
         episode_lengths=(6,), suite="libero_spatial", suite_task_id=0)
     video = SimpleNamespace(frames=np.zeros((2, 3, 4, 4), dtype=np.uint8),
         frame_indices=np.array([0, 5]), raw_frame_count=6)
     record = materialization._compile_condition(runtime, SimpleNamespace(load=lambda *args: video),
         task, (0,), tmp_path, {"path": "/checkpoint", "macro": 16})
-    assert calls == [(response, *arguments)]
+    assert calls == [((response, *arguments), native)]
     assert record["writer_invocations"] == 1
 
 

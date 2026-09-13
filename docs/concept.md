@@ -1,9 +1,9 @@
 # EMBER concept
 
 当前阶段按Owner最新要求，先恢复有益的视频特异性、暂不强制绝对性能，并综合全部历史证据推导新的完整架构与训练。
-当前登记的[Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)保持完整生成链，
-新增训练侧物体位置／部件运动到实际视觉attention的监督；它检验空间绑定信用，部署仍只有RGB和language，
-尚未证明有益视频增量。当前运行与资格状态只看progress。
+[Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)的两臂fresh200及8个闭环面板已完成并关闭。
+实际视觉attention的物体／运动监督在200节点改善了两种模式相对旧纯FM的绝对性能，但有序相对无序仅71/400对70/400，
+未形成登记的相邻有益有序增量；一般学习收益与视频必要性仍须区分。当前无active design，运行与资格状态只看progress。
 不直接回到v5.2或预设在其上改进；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
 Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已完成有界学习与修正，未获资格并关闭。
 该候选检验了时间×任务token表示、执行条件化功能信用、蒸馏、teacher VL适配及纯FM比较。

@@ -1,5 +1,12 @@
 # EMBER research history
 
+2026-09-13完成[可见物体与运动落点监督](visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)：
+两臂各fresh200、100/200的8个闭环面板／1,984rows全部完成并审计通过。validation有序／无序为20/24、71/70，
+净率95%CI均跨零、有序净差未相邻同向，按登记关闭；无selected checkpoint或最终controls。
+空间监督在200节点相对旧纯FM使两臂53→71、39→70且区间为正；不能把non-pass写成无学习收益。
+有序相邻保留19/20次旧成功，低J主要来自新增；相对source则Goal41→9、Object5→59，能力保持边界不同。
+完整资格、正负事实与原件索引见findings§85及设计§9；整体goal未完成，不恢复旧运行。
+
 2026-09-13完成[原生端点×视角诊断](source_endpoint_readout_audit.md)：三个新增单元各384位置全部exit0，复用dual/full10。
 agentview full10/t1均值/t1公共probe MSE=.36548/.34789/.34732，dual=.13673/.13217/.13177，任务均值.25060。
 同读出下dual相对agentview全部24/24task改善、区间严格正；增加flow深度未补偿单视角限制，触发预登记视觉范围分支。

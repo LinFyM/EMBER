@@ -1,17 +1,20 @@
 # EMBER task plan
 
-## 当前实施：Visible-Object Grounded Writer（2026-09-13）
+## 当前目标与计划：本轮闭环关闭，先完成综合机制裁决（2026-09-13）
 
-完整目标仍为正确教学视频经唯一LoRA产生可重复有益闭环增量及跨视频／初始化／相邻、固定validation迁移。
-当前active design见[物体与运动落点监督](docs/visible_object_grounded_writer_design.md)，整体goal未完成。
+完整目标仍为正确教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、初始化、相邻checkpoint
+及固定validation迁移；暂不强制145/400。**整体goal未完成，当前无active design、运行或selected checkpoint。**
 
-1. 已登记：将训练侧可见对象／部件位置直接监督实际视觉cross-attention；保留原输入、完整H、全部共同学习模块及LoRA出口。
-2. 已完成：384条CPU空间标签及全部数组／坐标QA；标签只在loss中使用，一次性构建入口已退役。
-3. 原生最长视频profile已通过：两次64query完整反向，warm26.38秒、峰值allocated39.17／reserved42.17GiB；b304cde6冻结两臂正式进程已启动，运行合同及8面板队列见progress。
-4. 两臂200updates／51,200queries、四checkpoint、全部曝光配对及8个LoRA库已完成；当前执行完整100/200的8个闭环面板，严格按设计资格和停止分支裁决。
-5. 通过才补换视频、强静态和跨初始化，合法冻结后最终controls；未通过关闭当前组合。Test／RL／held梯度不使用。
+1. 已完成[可见物体与运动监督](docs/visible_object_grounded_writer_design.md)两臂fresh200及8面板／1,984rows，原始审计通过。
+   validation有序／无序100=20/24、200=71/70，两节点净率CI均跨零、未相邻同向，按原资格关闭且不追加训练。
+2. 保留200节点同模式相对旧纯FM的53→71、39→70及两个正区间，同时保留source Goal41→9、有序收益缺失的限制；
+   不能用“无效果”概括本轮，也不能把普通绝对涨分当作有益视频机制通过。完整裁决与证据见progress和findings§85。
+3. 先综合既有v5.2视频正例、共享映射／局部动作负例、native双相机可读性、空间监督后段收益及当前训练—迁移分离。
+   区分竞争解释并明确各自的可失败预测；不默认继续当前Compiler、不机械换另一个辅助头，也不重开旧冻结正例复核。
+4. 下一项实施须有相对近等价历史的实质新增机制和能改变决策的最低成本判别证据；成立后才登记新active design。
+   当前不放宽既定frame_set资格，不使用最终顺序controls指导架构，不追加Test／RL／held梯度。
 
-运行和精确资源登记见progress及formal artifacts；先前无active design的段落均为已关闭阶段的记录。
+以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

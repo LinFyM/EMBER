@@ -3,6 +3,9 @@
 2026-09-13登记。Owner要求继续推导、实施并依结果调整；本项检验新的训练信用关系，
 不恢复已关闭的双相机纯FM实验，也不改变整体视频特异性目标或现行资格口径。
 
+2026-09-13全部两臂fresh200与8面板已完成，按原§5资格关闭；无selected checkpoint、无在途运行。
+§1–8保留登记与实施时点的合同，最终裁决见§9。整体goal未完成，不由旧启动措辞恢复运行。
+
 ## 1. 依据、竞争解释与历史边界
 
 旧v4冻结回放出现具体错误绑定：Object3的31条shuffled-only成功中，23条correct运行接近／抓起绿色干扰瓶。
@@ -158,3 +161,37 @@ warm26.38秒，峰值allocated39.17／reserved42.17GiB；microbatch8、native fr
 加临时写入、日志、冻结源和余量后本阶段预算29GiB，替代遗漏完整checkpoint与banks的初始12GiB估计。
 strg01启动准备期/data1为992.1GiB/1024GiB，预计峰值1021.1GiB；共享83TiB空闲。
 正式学习、物化、评测各阶段继续检查剩余峰值，不依共享空闲推断个人配额；条件性后续另行预算。
+
+## 9. 完整有界结果与关闭裁决
+
+b304cde6 clean pushed frozen完成两臂各200updates、800条件、51,200queries，墙钟6514.54／6515.52秒。
+四完整checkpoint、八sealed bank、1,984条raw rows及全部worker/阶段exit0；评测累计4775.89秒。
+新旧四模型全部800条件的18个曝光字段和0/100/200无梯度诊断字段匹配；raw、aggregate、teacher真实帧、
+RNG、checkpoint身份、完整38-target及single invocation审计通过。validation每task50teacher整轮各一次；
+train96复用46–49/states32–35有限池。正式证据均保留，无Test／held梯度／RL。
+
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation净率95%CI |
+| --- | --- | --- | --- |
+| 100 | 32/96 / 33/96 | 20/400 / 24/400 | [−3,+1]pp |
+| 200 | 50/96 / 50/96 | 71/400 / 70/400 | [−2,+2.25]pp |
+
+validation100 S/O/G/L为0/16/3/1对1/19/4/0，breadth5/4；200为0/59/9/3对0/61/7/2，breadth6/5。
+相对frame_set，ordered100 R/G/L=12/8/12、churn20、J=.375；200为62/9/8、churn17、J=.78481。
+相邻ordered20→71为19/52/1、churn53、J=.26389，保留95%早期成功，属于新增主导而非后段明显退化。
+frame_set24→70为18/52/6、churn58、J=.23684。正确条件后段改善这一正事实保留；两个节点CI下界不严格为正、
+有序净差−4→+1未相邻同向，100仅一个suite净正，因此原基础资格不通过，不选择checkpoint。
+
+预登记同模式空间监督参照：validation100 pure FM→grounded为ordered64→20、frame_set56→24；
+200为53→71、39→70，后两者task-cluster95%CI为[+1.5,+8.5]pp、[+1,+16.75]pp。
+200空间监督有两种模式的绝对收益，不能称为无学习或无行为效果；监督×顺序交互为−3.25pp、CI[−11,+2]pp，
+未支持有序结构更好消费新增信用。frame_set拥有全部真实frames，不是单图；独立训练差额不是固定模型顺序干预。
+定位拟合、一般正则收益和有益视频Value目前未被因果分开，不能将该non-pass唯一归责Meta或Compiler。
+
+source47/400的S/O/G/L=0/5/41/1，ordered200为0/59/9/3；source→ordered R/G/L=12/59/35、churn94、J=.11321。
+Goal41→9保留7、新增2、丢失34；更高总数主要伴随Object新能力，不能称为广泛保留source。
+source净率task区间[−20.25,+31.75]pp属于解释限制，不是补加资格门槛。
+
+按原停止分支关闭当前λ=.1组合，不追加训练／节点／seed／LR／rank／层位／标签定义，不触发other、
+frame_set_image、额外初始化资格或最终内容／shuffled/reversed controls。整体目标未完成；先综合正负证据再决定新机制。
+完整per-task/suite、source、R/G/L/churn/J与训练对照见`runs/analysis/visible_object_grounding_20260913/OVERNIGHT_READOUT.md`，
+最终裁决为`bounded_200_decision.json`，原始依据为paired_summary、supervision_comparison、evidence_audit和training_pairing。

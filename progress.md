@@ -1,73 +1,52 @@
 # EMBER progress
 
-## 当前：物体与运动落点监督八库封存，配对闭环执行中（2026-09-13）
+## 当前：物体与运动落点监督完整关闭，转入综合机制分析（2026-09-13）
 
-Owner要求继续仔细推导、实施并按结果调整。当前active design为
-[Visible-Object Grounded Writer](docs/visible_object_grounded_writer_design.md)：保持完整生成链，
-在训练侧用真实可见OOI和实际body运动，监督两处真正消费视频的视觉cross-attention Q/K；标签不进部署输入。
-旧v4/v5/Horizon近邻审计未找到这一直接空间监督关系；错误对象／实例回放支持检验绑定不足，但不证明唯一根因。
-四suite静态叠图及task0/demo0整条CPU构建smoke完成：21帧中20可恢复、15有可见运动，2.94秒；无action读取／环境step。
+Owner授权继续仔细推导、实施并按结果调整，完整有益视频特异性goal仍未完成。
+**当前无active design、无在途训练／物化／评测、无selected checkpoint。** 下方各历史阶段的“当前／下一步”
+均不恢复执行；最新裁决为本节。[Visible-Object设计§9](docs/visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)
+与findings§85保存完整正负事实，旧时间对齐、冻结正例复核、局部动作、native双相机及其它已关闭诊断不重开。
 
-登记fresh ordered/frame_set各200、100/200节点、8个train96/validation400面板，旧dual同模式作为固定参照。
-资格继承原合同，未放宽frame_set要求；定位改善不代替跨视频／初始化／相邻与validation闭环收益。
-标签与原生profile已通过；两臂200步完整结束，四个100/200 checkpoint及八个LoRA库已封存；闭环评测执行中。
-旧接触语义rank、物理J、相对几何、原生双相机纯FM等提案继续关闭，不恢复其旧运行。
-实现已通过128项现有检查、语法与diff检查；真实标签＋小尺寸合成特征的checkpointed联合信用smoke中梯度finite，
-两处真实Q/K均非零。该检查只证明图接通；原生最长视频profile已随后完成，结果见下。
+b304cde6 clean pushed frozen完成ordered/frame_set各fresh200、800条件、51,200主FM queries，
+两臂墙钟6514.54／6515.52秒，四完整100/200 checkpoint和八sealed LoRA bank保留。
+8个correct面板、1,984条raw rows及对应编译记录全审计通过，全部worker／阶段exit0，队列exit0；
+累计评测墙钟4775.89秒。训练、物化和评测均已按有界登记完成，未追加节点、训练或controls。
 
-384条训练视频标签已完成：05fe7ebe clean pushed frozen，257.81秒exit0；13,626采样帧中13,242可恢复，
-所有可恢复帧有可见OOI，10,819帧有可见运动质量。全部原始数组／映射重算和四suite双相机／prior裁剪叠图通过。
-初次启动因frozen工作树尚未复制完成而在程序入口前exit2，错误已保留；随后同命令完整完成，无标签处理重叠。
-原件见runs/analysis/visible_object_grounding_20260913；一次性构建入口退役，后续只由训练loss加载这些标签。
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation净率95%CI |
+| --- | --- | --- | --- |
+| 100 | 32/96 / 33/96 | 20/400 / 24/400 | [−3,+1]pp |
+| 200 | 50/96 / 50/96 | 71/400 / 70/400 | [−2,+2.25]pp |
 
-原生profile已正常exit0：05fe7ebe冻结、gpu01/0，task38/demo0的93帧，两次64query联合反向。
-第二次26.38秒、峰值allocated39.17／reserved42.17GiB，实际patch/prior Q/K梯度非零；
-Writer／Action Meta／VL Meta第二次均有finite梯度，source与V-JEPA无梯度。profile不保存或复用模型。
-正式配置已登记完成。按旧同构输出实测修正本阶段完整存储预算为29GiB，
-原12GiB估计遗漏完整checkpoint与全部banks，不能继续沿用；strg01当前992.1GiB，预计峰值1021.1<1024GiB。
+validation100 S/O/G/L为0/16/3/1对1/19/4/0，breadth5/4；200为0/59/9/3对0/61/7/2，breadth6/5。
+有序对无序R/G/L在100为12/8/12、churn20、J=.375，200为62/9/8、churn17、J=.78481。
+相邻有序20→71保留19／新增52／丢失1，churn53、J=.26389；无序24→70为18/52/6、churn58、J=.23684。
+相邻有序95%旧成功保持，低J主要来自新增；不能把它写成后段明显退化。但两节点CI下界不严格>0、
+有序净差−4→+1未相邻同向，100也未达至少两个suite净正；按登记基础资格关闭，未放宽frame_set口径。
 
-两臂正式进程已启动：b304cde6 clean pushed detached `.codex/tmp/visible-object-frozen`，
-gpu01 ordered=0,1,2／frame_set=3,4,5，每臂world3，microbatch8、GPU-local NUMA与deferred NCCL。
-启动时两节点process已核对，总占用0→6；launcher PIDs2752946／2753301，各3个worker实际存活。
-精确命令、设备UUID、source/数据、29GiB预算及恢复合同见`runs/analysis/visible_object_grounding_20260913/launch_contract.json`。
-`ember-visible-object-queue`在gpu02以CPU进程跟踪这两个实际训练句柄，随后完成8个登记面板及旧pure-FM同模式参照；
-不自动追加资格／最终controls。两臂原生运行合同、初始化留出评估和前2次正式optimizer更新已完成核对：
-各512queries，第二步31.60／31.56秒，峰值allocated40.21GiB；主FM／空间loss有限，Writer及两组Meta梯度非零。
-新旧四模型前2步／8条件的18个登记采样字段相同；这是startup证据，完整800条件核验结果见下。
-原始启动核验见`startup_evidence.json`，整体goal未完成。
+**保留新增正证据：**200节点旧同模式纯FM→空间监督为有序53→71、无序39→70，
+CI分别[+1.5,+8.5]pp、[+1,+16.75]pp；100节点则64→20、56→24。空间信用有后段绝对收益，不能概括为无效。
+监督×顺序交互200为−3.25pp、CI[−11,+2]pp，未支持有序结构更好消费该信用；一般正则／共享学习与视频必要性未分开。
+frame_set拥有全部真实frames，独立训练差额不是固定模型的顺序干预，也不是单图对照。
 
-100节点：两臂各400条件／25,600queries，完整checkpoint、run／training state及文件记录检查通过。
-新旧四模型截至100的全部18个曝光字段、0/100独立动作评估的10个配对字段一致。
-独立动作FM由共同.153285降至ordered .117252／frame_set .117195；旧纯FM对应.115768／.115886。
-这些是train24留出episode的无梯度定位指标，数值接近，不能代替validation闭环收益。
-训练侧前／后25步共同23task的物体／运动相对均匀读取log-density：ordered [.04994,.54115]→[.87463,3.05159]，
-frame_set [.05190,.42785]→[.90533,2.26667]；这支持标注区域读取拟合发生，不能证明OOI语义角色／held泛化或有益LoRA。
-两个窗按共同task等权、教学draw不同，loss来自更新前forward；不把描述性曲线当作同输入干预或选点统计。
-原件为`training_readout.py/json`；100节点记录之后的完整配对结果见下。
-100 checkpoint写入后strg01/data1为999.7/1024GiB，本轮输出7.6GiB；按登记剩余21.4GiB预计1021.1GiB。
+source47/400的S/O/G/L为0/5/41/1；有序200为0/59/9/3，source→有序R/G/L=12/59/35、churn94、J=.11321。
+Goal41→9丢失34次旧成功，Object5→59保留5并新增54。更高总数不等于广泛保持source；
+source净率区间[−20.25,+31.75]pp属于解释限制，不是补加资格门槛。当前仍不能唯一定位Meta、Compiler或视频Value根因。
 
-200节点：两臂各800条件／51,200queries完成、exit0，墙钟6514.54／6515.52秒；四完整checkpoint均通过检查。
-新旧四模型全部800条件的18字段及0/100/200独立评估配对一致。200独立动作FM ordered .107831／frame_set .107719，
-旧纯FM对应.107371／.107225；仍是train24留出episode定位指标，不构成闭环资格。
-最后25步共同23task物体／运动log-density为ordered [1.34737,3.47312]，frame_set [1.35711,2.97551]；
-沿用上述描述性口径，只说明空间读取拟合，不能证明有益LoRA或视频因果性。
-四个物化任务在gpu01/0–3完成并exit0，八个bank全部sealed，每个checkpoint含96+400条件，共1984条编译记录；随后执行8个correct面板，再按登记资格裁决。
-训练已停止于200，无selected checkpoint；整体goal未完成。原件为training_readout、training_pairing、completion及overnight状态。
+证据边界：新旧四模型全部800条件的18个曝光字段、0/100/200留出动作诊断字段匹配；raw/aggregate、
+真实teacher stride5帧和末帧、环境／policy RNG、checkpoint/commit、38-target rank16 A/B及single invocation核验通过。
+validation同task50teacher整轮各一次，train96只复用46–49/states32–35有限池。主FM200=.107831/.107719，
+实际Q/K空间读取拟合成立，但都只是定位证据。384条CPU标签、128项原有检查与最长视频profile在设计§7–8及原件留存。
 
-评测启动前两节点GPU/process及strg01配额重新核对：个人/data1为1016.9/1024GiB，剩余预算2GiB，预计1018.9GiB。
-物化进程全部退出后实际占用0→6；gpu01/0–5每卡2个persistent worker，按cost-balanced dynamic queue执行。
-首个ordered100/train96以12个worker完成；随后按实时空闲资源使用gpu01/0–3、每卡2worker，不改变逻辑评测面板。
-精确启动合同、设备UUID和资源快照为`overnight_ordered_100_train_admission.json`及各panel的run_contract。
+正式原件：`runs/analysis/visible_object_grounding_20260913/`中的`bounded_200_decision.json`、`OVERNIGHT_READOUT.md`、
+`paired_summary.json`、`supervision_comparison.json`、`evidence_audit.py/json`、`training_readout.py/json`、
+`training_pairing.json`、launch/run/completion与queue状态；checkpoint和bank保留在对应runs/outputs根。
+最后评测准入strg01/data1为1016.9/1024GiB、剩余预算2GiB，完整阶段29GiB预算已登记；后续若有新增长须重新准入。
 
-100步train96两面板已完整结束：ordered32/96、frame_set33/96，breadth13/17；
-S/O/G/L为4/13/12/3对10/9/10/4。两组原始96rows与全部worker exit0核对通过，墙钟286.53/328.36秒。
-该训练任务节点没有有序净优势；完整8面板尚未齐备，不由这一局部结果关闭候选或改变资格。
-ordered100/validation400已完成20/400，S/O/G/L为0/16/3/1、breadth5；完整400个task/state记录及8个worker exit0核对通过，墙钟1051.90秒。
-frame_set100/validation400也已完成24/400，S/O/G/L为1/19/4/0、breadth4；完整400个task/state记录及8个worker exit0核对通过，墙钟1060.51秒。
-100步有序净差train−1、validation−4，未达到该节点的有序增益要求；继续按登记完成200步，量化后段效果与相邻保持。
-200步train96两组均完成50/96，breadth17/18；S/O/G/L为16/15/13/6对13/17/14/6。
-两组完整96rows及各10个worker exit0核对通过，墙钟277.64/280.49秒；相较100步训练任务总分上升，但无有序总分优势。
-当前6/8面板完成；ordered200/validation400已实际启动（launcher3833144、12workers），实时空闲资源为gpu01/0–3,5,6，仍按统一额度执行。
+按停止分支不追加本组合训练／节点／seed／LR／λ／rank／层位／标签定义，不触发other、frame_set_image、
+额外初始化资格或最终内容／shuffled/reversed controls；没有Test、held梯度、RL或模型融合。
+**下一步先用全部相关证据完成理论判断：**区分跨episode任务级学习、可迁移视频操作知识获取和参数传递，
+保留v5.2等历史正例及最近同模式监督正数，明确哪一预测未兑现、应停止哪些投入，以及何种最低成本证据能改变决策。
+在可区分且区别于旧失败方案的新机制合同成立前，不启动下一套Writer；整体goal保持active。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

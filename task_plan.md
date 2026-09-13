@@ -8,40 +8,40 @@ Owner授权依据综合正负证据自主高效推进理论、设计与实验，
 Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
 当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
 
-**当前active design为[Native Dual-View Writer](docs/native_dual_video_writer_design.md)。** 时间对齐、冻结正例复核及
-[冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，当前只执行新登记native双相机候选。
+**当前无active design；[Native Dual-View Writer](docs/native_dual_video_writer_design.md)已关闭。** 时间对齐、冻结正例复核及
+[冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，当前进行综合机制分析。
 
-### Native双相机修正：编译完成，配对闭环已启动
+### Native双相机修正：8面板完成，按预登记资格关闭
 
-新证据是相同输入位置下native双相机动作读出稳定改善；本项只将腕部加入native前缀，
-V-JEPA继续读取同一agentview四帧窗口。信息墙、完整H、主FM、fresh共享学习及唯一38-target LoRA保持。
-新dual ordered／frame_set各fresh200，固定100/200及8个train96／validation400 correct面板；
-复用旧agentview两臂的同节点原件作输入范围参照。相邻有序资格未通过即关闭，不追加局部参数扫描。
+两臂各fresh200，100/200四checkpoint、8个sealed bank及1,984条闭环记录完整；运行代码defcf734。
+新旧四模型800条件的18个采样字段匹配，8面板及相机参照的task/state/language、teacher真实帧索引、
+环境／policy RNG配对核验通过。validation各task50条teacher整轮各一次；train96为46–49/states32–35有限池。
+全部worker正常退出，累计评测墙钟4417.77秒，controller正常exit0，无在途训练／评测。
 
-已实现显式native／prior相机绑定及新运行身份，旧单相机配置与checkpoint只在冻结历史树中复现；
-相机路由／cache／配置／物化／完整模型126项检查通过。最长93帧双相机两次完整更新已exit0，
-热条件26.48秒，allocated39.17GiB／reserved42.17GiB；采用frame_chunk4／microbatch8／prior batch4。
-profile无正式checkpoint，不改变100/200学习预算或提供初始化。
-两臂已从defcf734 clean pushed detached树启动，world3各自fresh0→200；GPU01 ordered=0/5/6、frame_set=1/3/4。
-现场966.9GiB快照后，正式launch复核data1为967.1/1024GiB，保守预计999.1GiB；两节点共使用6卡。
-两份runtime contract均确认native dual／prior agentview、source与prior trainable参数为0。
-两臂均已正常exit0，完成200步／800条件／51,200个动作查询；100与200四份完整检查点已保存并通过物化前检查。
-0／100／200各24-task的登记动作诊断完整保留，不用于替代闭环裁决。四模型800条件的18个登记字段完全配对。
-四个编译作业均exit0，8个bank均sealed：各checkpoint的train96／validation400完整，共1,984个task-video条件。
-step100 train96两臂已完整exit0：ordered36／frame_set32；S/O/G/L为9/11/12/4对5/11/13/3，breadth15/14。
-96行task/state、视频与环境／policy RNG配对通过；有序保留29／新增7／丢失3，churn10，J=.74359。
-step100 validation400亦完整exit0：ordered64／frame_set56；S/O/G/L为1/52/8/3对0/48/6/2，breadth6/4。
-有序保留51／新增13／丢失5，churn18，J=.73913；净增2pp的task-cluster95%CI为[0,+4.5]pp，
-下界未严格大于零，尚未满足登记单节点资格；不由局部正差额选checkpoint或运行controls。
-step200 train96两臂已完整exit0：ordered54／frame_set50；S/O/G/L为15/19/13/7对15/16/14/5，breadth18/17。
-有序保留46／新增8／丢失4，churn12，J=.79310；差额CI[−2.08,+10.42]pp跨零。两臂较step100均净增18。
-ordered相邻保留33／新增21／丢失3，frame_set为27／23／5；训练增长本身不证明有序视频特异性。
-controller964812已进入最后两个validation400面板，ordered200先行；launcher2224889实际存活并准备评测，
-GPU01=0/1/3/4/5、计划每卡2 workers；完整validation相邻裁决仍待结果。
-每面板独立保留资源准入、run contract、raw rows与completion；原始训练配对为同analysis根的`training_pairing.json`。
-句柄、精确命令与资源在`runs/analysis/native_dual_video_20260913/launch_contract.json`；当前已完成6/8面板，整体goal未完成。
-正式两臂及初始8面板估计约26GiB，32GiB阶段峰值预算保持。
-条件性other／强静态／最终controls在触发后另核quota与增长，未预先启动。
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation差额95%CI |
+| --- | --- | --- | --- |
+| 100 | 36/96 / 32/96 | 64/400 / 56/400 | [0,+4.5]pp |
+| 200 | 54/96 / 50/96 | 53/400 / 39/400 | [−.5,+9.25]pp |
+
+100节点S/O/G/L为1/52/8/3对0/48/6/2、breadth6/4；200为0/52/0/1对1/37/0/1、breadth3/4。
+200仅Object净正，有序53次成功中52次来自Object；相邻Spatial／Goal归零。
+有序相对无序100保留51／新增13／丢失5、churn18、J=.73913；200为35／18／4、churn22、J=.61404。
+相邻有序64→53，保留41／新增12／丢失23、churn35、J=.53947；无序56→39为32／7／24、churn31、J=.50794。
+两个节点的有序净额均正，但CI下界均未严格>0，200也未达至少两个suite净正；不满足登记资格和稳定保持。
+
+预登记相机参照中，ordered validation单→双为61→64、72→53；frame_set为65→56、81→39。
+200同模式差额CI分别[−9.5,−.75]pp、[−20.25,−2]pp；相机×顺序交互虽为正，伴随明显绝对性能损失。
+不能把相对无序少退化当作足够的方法收益。冻结source仍为47/400；有序总数高于source但配对task区间跨零。
+
+**当前无active design，无selected checkpoint。** 关闭本有界组合，不追加训练、节点、seed、LR、rank、flow或Meta冻结扫描；
+不触发same-task-other／强静态／最终controls、Test或RL。原生双相机动作读出的正证据仍成立，
+它未转化为本共享Meta／表示／Compiler的稳定闭环收益，不能唯一归责某个接口或否定全部视频方法。
+下一步先综合局部功能诊断、既有共享／蒸馏负结果及当前训练—迁移分离，明确能区分获取与传递不足的预测；
+在实质机制与合法判别证据成立前不启动新Writer。完整边界见findings§79。
+
+原件：`runs/analysis/native_dual_video_20260913/`的`paired_summary.json`、`camera_comparison.json`、
+`bounded_200_decision.json`、`evidence_audit.json`、`training_pairing.json`和`OVERNIGHT_READOUT.md`。
+全部训练／物化／评测contract、四完整checkpoint、8个bank、raw rows和completion保留；整体goal未完成。
 
 ### 原生端点读出：已完成，保留视觉范围限制
 
@@ -60,7 +60,7 @@ dual对应.13673/.13217/.13177，均胜过task mean。三个同读出相机差�
 
 新增[冻结source状态输入诊断](docs/source_state_input_audit.md)已完整完成：MSE free/mean/true=.13673/.14173/.12469，
 任务动作均值.25060。free−true区间跨零，状态补全前提未通过；free本身相对动作均值的正事实保留。
-后续端点×视角诊断也已关闭；新native双相机修正已登记，上节为当前实施计划，不扫描flow阶段。
+后续端点×视角诊断与native双相机修正均已关闭；上节为完整裁决，不扫描flow阶段或恢复该候选。
 
 后续方法选择尚需明确：独立训练的全帧frame_set优势检验是否属于持续硬门槛，还是本轮特定研究问题；
 冻结模型的内容／顺序因果要求、跨视频／初始化／相邻稳定及固定validation迁移均保持。当前不据结果自行改变口径，

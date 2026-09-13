@@ -1379,3 +1379,21 @@ source评测路径仅改变该准入行。两个Writer臂仍为611770d1，原失
 原件：`runs/analysis/frozen_positive_replication_20260913/REPLICATION_READOUT.md`、`paired_replication_summary.json`、
 `replication_decision.json`、`study_contract.json`、`mapping_provenance.json`与同名outputs根9项raw rows／completion。
 原checkpoint、LoRA、两冻结runtime和所有原始证据保留；当前是否有新active design只看progress。
+
+## 2026-09-13：Native双相机有界Writer比较关闭
+
+原生端点×视角诊断支持新增native腕部输入，V-JEPA仍为agentview，完整设计与运行代码defcf734冻结。
+两臂fresh200、四checkpoint、8个bank、1,984个闭环rows全部完成，所有worker正常退出；
+800个训练条件的18字段及全量闭环task/state/video-frame/RNG配对通过，累计评测墙钟4417.77秒。
+train100/200有序36/54、静态32/50；validation有序64/53、静态56/39，
+有序差额CI[0,+4.5]/[−.5,+9.25]pp，两节点均未达到严格正下界；200仅Object净正。
+有序相邻breadth6→3、Spatial／Goal归零，J=.53947；按登记关闭，不追加训练或进入条件性资格。
+
+相机×顺序交互+3/+5.75pp且区间均正，但200同模式单→双有序72→53、静态81→39，
+不能据较小相对退化选择明显更差的闭环方法。冻结source双相机局部动作读出正事实仍保留，
+尚未在该共享Writer链兑现稳定迁移。完整逐task／suite、source、churn、相邻及解释见[findings§79](../findings.md)。
+
+原件：`runs/analysis/native_dual_video_20260913/OVERNIGHT_READOUT.md`、`paired_summary.json`、
+`camera_comparison.json`、`bounded_200_initial_decision.json`、`bounded_200_decision.json`、`evidence_audit.json`、
+`training_pairing.json`及同名outputs根全部checkpoint／banks／raw rows／completion。
+controller正常exit0；无selected checkpoint、最终controls、Test或RL。候选关闭不等于整体goal完成。

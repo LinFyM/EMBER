@@ -120,3 +120,12 @@ source／V-JEPA参数无梯度，profile不保存正式checkpoint。采用frame_
 data1现场966.9/1024GiB、预计998.9GiB，含checkpoint、临时写入、LoRA banks、代码树、日志与余量。
 正式启动仍刷新live quota／GPU。条件性other／image参照／最终controls触发后另核增长与独立quota，不预先启动。
 精确formal command、节点设备、环境、来源commit及资源写入`runs/analysis/native_dual_video_20260913/launch_contract.json`。
+
+## 7. 有界实验裁决（2026-09-13）
+
+两个checkpoint、8个correct面板／1,984rows全部完成，worker均exit0；本候选按§4资格关闭。
+validation100 ordered64／frame_set56，差额95%CI[0,+4.5]pp；200为53／39、CI[−.5,+9.25]pp，
+两节点下界均未严格>0，200仅Object净正且ordered的Spatial／Goal归零。未触发other／image或最终controls。
+相机×顺序交互的正事实与同模式200绝对退化同时保留，详见findings§79与
+`runs/analysis/native_dual_video_20260913/bounded_200_decision.json`、`camera_comparison.json`。
+不追加训练／扫描，不选checkpoint；整体goal仍未完成，当前执行状态以progress为准。

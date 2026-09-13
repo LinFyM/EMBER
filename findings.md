@@ -1209,3 +1209,49 @@ mean8差额区间跨零而public差额略正，二者全部保留，不选择新
 代码e1a06b46，loader6fa6177f；三臂约302.89/248.95/249.84秒，峰值9.88/10.04/10.04GiB。
 raw/samples、完整逐task／suite、所有配对差额、summary代码、READOUT与launch均在
 `runs/analysis/source_state_input_20260913/endpoint_*`。临时active入口退役，原始冻结代码保留；整体goal未完成。
+
+## 79. 原生双相机读出改善未转成当前Writer的稳定迁移（2026-09-13）
+
+[Native双相机设计](docs/native_dual_video_writer_design.md)的两臂fresh200及8面板全部完成，1,984行，
+source／V-JEPA冻结，唯一变化是native增加同步wrist，prior仍agentview。四模型800条件的18个采样字段匹配；
+全量task/state/language、环境与policy RNG、真实teacher帧索引及跨相机映射核对通过。validation各task50视频无放回，
+train96为登记有限池；全部worker exit0，冻结代码defcf734，累计评测墙钟4417.77秒。
+
+| 节点 | train ordered / frame_set | validation ordered / frame_set | validation有序差额95%CI |
+| --- | --- | --- | --- |
+| 100 | 36/96 / 32/96 | 64/400 / 56/400 | [0,+4.5]pp |
+| 200 | 54/96 / 50/96 | 53/400 / 39/400 | [−.5,+9.25]pp |
+
+两节点有序点差额+8/+14全部保留，不将区间未通过误写为有序无效。100有四suite净正；
+200 S/O/G/L有序0/52/0/1、静态1/37/0/1，仅Object净正。breadth100为6/4，200为3/4。
+100有序相对静态保留51／新增13／丢失5、churn18、J=.73913；200为35／18／4、churn22、J=.61404。
+两节点CI下界均未严格>0，200也未达至少两个suite净正。按预登记关闭，无条件性other／image资格或模型选择。
+
+有序相邻64→53，保留41／新增12／丢失23、churn35、J=.53947、差额CI[−7,+.5]pp；
+静态56→39为32／7／24、churn31、J=.50794、CI[−9.75,0]pp。train两臂却都净增18。
+这支持本组合存在训练任务适应与held迁移分离；仅凭两节点不能证明唯一的过拟合或优化机制，不能默认早停解决。
+相对source47/400，有序100/200总数+17/+6，但task-cluster区间分别[−20.5,+27.75]/[−27.5,+26.75]pp；
+200仅保留source的5次成功、新增48、丢失42，churn90，不是原能力普遍保持的证据。
+
+预登记同模式相机比较：ordered validation单→双为61→64、72→53；frame_set为65→56、81→39。
+100差额CI分别[−2.25,+3.5]pp、[−4.5,−.25]pp；200为[−9.5,−.75]pp、[−20.25,−2]pp。
+相机×顺序交互为+3/+5.75pp，CI[+.75,+6]/[+.25,+13]pp均正，是必须保留的正事实；
+200同时表现为两臂绝对能力下降且静态损失更大，不能由正交互推出更好的有序policy或成功转移局部动作知识。
+这是固定seed训练系统比较，非固定checkpoint输入干预，也未证明跨训练seed稳定。
+
+综合§72–78后的解释边界与下一判别条件：
+
+- 冻结source的双相机端点读出确有局部动作价值；“补足native视野即可由现有共享链兑现稳定收益”的本次预测未通过。
+  这淘汰当前组合的充分性，不推翻局部读出事实，也不能改写为腕部视频普遍有害。
+- 共享Meta可能改变原生可读知识，表示读取也可能丢失或未利用它；当前闭环结果不能分开二者。
+  下一项获取／保留诊断必须在同一合法train位置、相同原生读出合同下产生可比较功能证据，不能仅看hidden距离或FM。
+- 即使某接口保持可读信息，也不保证跨episode、跨初态的参数行为传递。旧局部动作教师、功能共享／蒸馏及forecast
+  的失败约束继续有效；不能从这次负结果跳到“只差Compiler”或再接一次已失败的功能中间量。
+  传递假设必须提供能改变决策的跨初态功能预测，并明确上游失败时停止，不把probe通过自动转成新Writer训练。
+- 相邻train增长而validation下降也兼容任务共性、样本曝光与条件映射问题；固定24-task两节点尚不能唯一归因。
+  已审计的跨episode FM允许视频无关解，但不是视频学习不可能定理；不以更多同task视频、seed或超参扫描代替机制证据。
+
+本候选关闭，不追加checkpoint、相机融合、Meta冻结、flow、rank、LR或训练seed；不运行最终controls、Test或RL。
+完整原件在`runs/analysis/native_dual_video_20260913/`的`paired_summary.json`、`camera_comparison.json`、
+`bounded_200_initial_decision.json`、`bounded_200_decision.json`、`evidence_audit.json`、`training_pairing.json`及
+`OVERNIGHT_READOUT.md`；四完整checkpoint、8个bank、raw rows与全部completion保留。整体goal未完成。

@@ -1368,3 +1368,24 @@ task-cluster净率区间[−20.25,+31.75]pp。Goal41→9仅保留7、新增2、�
 最终内容／shuffled/reversed controls、Test或RL；无selected checkpoint，整体goal未完成。
 后续必须同时解释局部原生动作可读、同模式后段监督收益、跨任务行为偏移与稳定有序收益缺失；
 停止把“再给一个辅助信用”默认当成完整机制修复，也不能从本次non-pass推成所有空间监督或视频方法无效。
+
+## 86. 空间边际、动作纠正与可迁移策略作用的三个未等价接口（2026-09-13）
+
+[可识别性分析§10–12](docs/video_information_identifiability.md#10-空间边际监督学到了什么尚不能据它推断什么)
+结合§85完整结果核对了实际loss：KL监督head/query平均后的patch概率，任意置换query的物体分配不改变该loss。
+两query分别读A/B或B/A都可对(.5,.5)目标取得KL=0，实际Value却分别为(+.8,−.8)与(−.8,+.8)。
+此CPU代数反例保存在当前analysis的attention_objective_identifiability.json；不是真实模型坍缩测量。
+运动质量也是无符号位移上界；它不直接标注方向，但不能据此声称整条标签或模型在倒序下不变。
+因此边际定位拟合不足以证明对象角色／操作获取已解决，不能用它把余下失败唯一归到Compiler。
+
+另一个直接反例：若仅蒸馏source在完全相同输入／state／noise合同下的自预测，identity LoRA已使函数MSE为0。
+教师状态支持本身没有给该目标添加正确偏离source的方向；跨输入域或真实转移纠正是不同目标，需要明确登记。
+
+近邻源码审计确认，v4原生forecast及latest−earlier预测差实际进入LoRA，但原生prior受Meta影响且无真实转移纠正监督；
+Local Action Grounded已有回顾实际动作标签，却是独立fresh FM头，其输出不进入Compiler。
+两者与“固定原生prior＋真实转移纠正＋纠正直接作Value”不同；此限定新意不能被扩大为全历史从未尝试或有效性证明。
+
+动作残差本身也不是完整迁移规则：source可在教学轨迹上预测正确而在新初始化失败，故δa=0不能自动解释为视频无用；
+非零教师动作残差同样不能直接照搬到新的机器人状态。先明确状态／部件条件与效果的联合关系怎样约束执行策略，
+再判断合法RGB可否获取它；当前不训练新的残差动作头、不恢复裸forecast编译、不构建新cache。
+本项是理论与历史机制裁决，无新模型／环境／最终controls，整体goal未完成。

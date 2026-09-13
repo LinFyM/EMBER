@@ -44,9 +44,13 @@ validation同task50teacher整轮各一次，train96只复用46–49/states32–3
 
 按停止分支不追加本组合训练／节点／seed／LR／λ／rank／层位／标签定义，不触发other、frame_set_image、
 额外初始化资格或最终内容／shuffled/reversed controls；没有Test、held梯度、RL或模型融合。
-**下一步先用全部相关证据完成理论判断：**区分跨episode任务级学习、可迁移视频操作知识获取和参数传递，
-保留v5.2等历史正例及最近同模式监督正数，明确哪一预测未兑现、应停止哪些投入，以及何种最低成本证据能改变决策。
-在可区分且区别于旧失败方案的新机制合同成立前，不启动下一套Writer；整体goal保持active。
+**综合理论判断已补充：**[可识别性§10–12](docs/video_information_identifiability.md)与findings§86明确，
+当前空间loss对query角色分配的置换不敏感；边际拟合不能证明操作关系充分。裸source自蒸馏又有identity零损失解，
+单纯复制其预测没有新增纠正信息。v4的预测差Value与Local的独立反演头已按实际源码分开，不能换名称重做。
+固定source prior＋真实转移纠正在这些近邻中有区别，但还缺另一初态下的策略作用合同；δa=0也不等于视频没有价值。
+因此不先训练新动作头、不新建cache。下一步先推导状态／部件条件与效果的联合关系怎样进入实际策略函数，
+审查task索引、native span及旧辅助头反例；满足可失败、能改变决策的条件后才登记新实验。整体goal保持active。
+本轮task-owned frozen worktree及重复profile／queue脚本已退役，精确源在Git及formal artifacts保留；见closure_lifecycle.json。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

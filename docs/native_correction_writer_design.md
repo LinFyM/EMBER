@@ -145,8 +145,8 @@ source动作归一、full50主FM、noise/t、256queries/update、AdamW lr3e-5/be
 
 先完成最长新教学池视频的真实profile，确认一次完整条件前向、主FM、更新／空间信用与Meta重放；
 同时核对identity后第二步的共同梯度、source冻结、38-target shapes及推理无autograd/loss依赖。
-profile不选科学参数、不继承权重。当前预期沿用100/200两个节点与每臂800条件／51,200主query；
-实际节点须在正式学习前依据profile固定，不能看到分数后延长或缩短。
+profile不选科学参数、不继承权重。f962feb6的真实最长profile已通过，正式学习前固定100/200两个节点与每臂800条件／51,200主query；
+不能看到分数后延长或缩短。
 
 ## 6. 有界行为比较与停止
 
@@ -231,3 +231,13 @@ architecture更新为`native_input_corrective_factors_v2`，旧profile不成为�
 首步后L_update不得再次放大到identity的10倍以上，作为本次已识别尺度问题的运行准入，不作为科学资格或调参分数。
 正式100/200节点仍须在这次真实profile之后、正式学习之前冻结；
 该修正是被实际尺度证据支持的参数化变更，不是视频有益性或闭环结果。
+
+修正后的f962feb6 profile完成exit0：两次完整条件33.264／33.090秒，峰值allocated35.770GiB／reserved37.182GiB；
+主FM .11770744→.11770465、L_update 1→.99981159。第二步实际Q/K、native路由／key和Action/VL Meta均有有限梯度，
+source/prior保持冻结。纯前向一次生成全38目标／76因子，未调用loss或autograd。它只通过数值与运行准入。
+据此在正式学习前固定100/200、每臂800条件／51,200主query及§6的8个配对面板；microbatch8、frame_chunk4、
+prior_window_batch4不变。两臂均fresh seed7，全部profile状态丢弃，不继承学习或优化器。
+
+实际trainable参数30,659,328，四份完整参数／Adam状态约1.4GiB；1,984套完整LoRA bank按既有同shape文件约9.55GiB，
+加现存2.6GiB标签、单份checkpoint临时写入和日志／rows，18GiB总新增峰值仍覆盖。data0为唯一物理输出根，
+data1只保留源码及轻量入口；正式launch与后续物化／评测各按实时独立quota和GPU证据准入。

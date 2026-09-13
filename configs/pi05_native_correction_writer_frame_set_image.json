@@ -203,7 +203,7 @@
   },
   "evidence": {
     "checkpoint_boundary": "complete attempted iteration only",
-    "initial_use": "Native input/correction pairing; complete profile required before fresh bounded learning",
+    "initial_use": "Native input/correction pairing; fresh bounded100/200 learning after complete unit-corrected profile",
     "qualification_registration": "docs/native_correction_writer_design.md",
     "final_checkpoint_selection": true,
     "shuffled_reversed_use": false,
@@ -333,7 +333,7 @@
         48,
         49
       ],
-      "registration_status": "two nodes provisional 100/200; finalize before formal learning from longest-condition profile",
+      "registration_status": "fixed before formal learning after f962feb6 complete longest-condition joint profile",
       "optimizer_updates": [
         100,
         200
@@ -478,8 +478,38 @@
     },
     "strong_static_followup": "frame_set_image fresh matched exposure only after primary two-node ordered versus frame_set qualification",
     "profile_registration": {
-      "status": "pending",
-      "scope": "fresh unit-row A and shared target-unit B; longest105frames twice joint backward after initial scale audit"
+      "status": "complete",
+      "source_commit": "f962feb6",
+      "results": "runs/analysis/native_correction_writer_20260913/profile_units/results.json",
+      "scope": "fresh unit-row A and shared target-unit B; longest105frames twice joint backward and complete inference",
+      "condition": {
+        "task": 38,
+        "demo": 36,
+        "frames": 105
+      },
+      "seconds": [
+        33.26399632100947,
+        33.09047197387554
+      ],
+      "peak_allocated_gib": 35.7697057723999,
+      "peak_reserved_gib": 37.181640625,
+      "trainable_parameters": 30659328,
+      "native_update_relative_error": [
+        1.0,
+        0.999811589717865
+      ],
+      "source_prior_frozen": true,
+      "second_step_joint_gradients": true,
+      "deployment_targets": 38,
+      "deployment_factors": 76,
+      "deployment_autograd": false,
+      "profile_initialization_reused": false,
+      "fixed_optimizer_updates": [
+        100,
+        200
+      ],
+      "conditions_per_arm": 800,
+      "main_queries_per_arm": 51200
     }
   },
   "update_version": "native_correction_main_fm_joint_credit_v1",

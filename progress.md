@@ -3,18 +3,19 @@
 ## 当前：实施原生输入配对的纠正Writer（2026-09-13）
 
 Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
-依据下方已通过的具体oracle传递前提实施合法前向生成；没有在途GPU运行、正式学习或selected checkpoint。
+依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
+正在准备两臂fresh学习与8个配对闭环面板；尚无在途GPU运行或selected checkpoint。
 所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
 
 新出口为`ΔW=B(RX)`：从同组完整RGB以裸source读真实38-target输入X，视频网络输出自由B和逐位置R。
 纠正与X在同一位置配对，不部署loss、autograd、SVD或task-local更新；B零初始化给出identity。
 它只保证低秩构造及参数作用关系，有限网络获取与闭环收益尚未验证，不将普通FactorHead改名当新证据。
-原Meta、完整H、视频prior、encoder/Compiler和有后段绝对正证据的空间信用保留，旧自由A/B出口将被替换并退役。
+原Meta、完整H、视频prior、encoder/Compiler和有后段绝对正证据的空间信用保留，旧自由A/B出口已替换并退役。
 
 新教学池取授权action池16–41；主FM逐condition排除同一教学episode，仍四suite各一task、64query/task。
 624个source纠正目标复用旧16–19的96套state-free因子，仅新增20–41的528套；完整624条空间标签沿原定义构建。
 真实标签只进loss，42–45无梯度诊断、46–49未用教学视频与validation/Test墙保持；不声称新旧教学池逐行相同。
-按`.1`更新误差与既有主FM／空间目标共同fresh学习，未注册λ/rank/seed扫描；正式节点在真实profile后、学习前固定。
+按`.1`更新误差与既有主FM／空间目标共同fresh学习，未注册λ/rank/seed扫描；正式100/200节点已在真实profile后、学习前固定。
 两节点的8个train96/validation400配对面板及当前frame_set资格保持，最终controls仍在选定冻结以后。
 
 新数据已完成并封存：ca87f05c clean pushed frozen构建528套新纠正标签，6 worker全部exit0，
@@ -29,7 +30,11 @@ CPU空间构建438.79秒exit0，624条／22,319真实frames完整；原始stride
 据此在正式学习前登记[设计§9](docs/native_correction_writer_design.md#9-正式学习前的因子单位修正)：
 A固定单位行，B用全部624标签计算的38个共享参数单位，不改变原loss度量／权重或Adam设置。
 范围3.91385e-8–.00305696，只有train24共享统计，部署不读label；architecture改为v2并fresh重做最长profile。
-当前没有正式学习或selected checkpoint；所有profile权重不继承，整体goal未完成。
+f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.770GiB、reserved37.182GiB；
+主FM .11770744→.11770465，L_update 1→.99981159，第二步Q/K、native key与Action/VL Meta共同梯度有效。
+裸source与prior冻结，纯前向一次产出38目标／76因子，没有loss／autograd。所有profile权重丢弃，不作正式初始化。
+据此正式学习前固定两臂各100/200、800条件、51,200主query及8个配对面板，保留原有资格与停止条件。
+当前没有正式学习或selected checkpoint，整体goal未完成。
 
 数据构建准入strg01/data0为52.2/1024GiB、data1为1018.1/1024GiB；大新输出总峰值18GiB，data1源码预算768MiB。
 已复用source／prior／数据及旧96套标签。正式学习前依据实际profile固定节点、checkpoint体积并刷新独立quota与两节点资源。

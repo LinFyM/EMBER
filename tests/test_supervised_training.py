@@ -21,13 +21,14 @@ from ember.writer.replay import sum_writer_gradients
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("suffix", ["", "_frame_set", "_frame_set_image"])
+@pytest.mark.parametrize("suffix", ["", "_frame_set"])
 def test_registered_formal_recipes_reach_git_guard_before_device_initialization(monkeypatch, suffix):
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_native_correction_writer{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_semantic_path_writer{suffix}.json")
     configured = training._config(args.config)
+    configured["status"] = "registered_semantic_path_comparison"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -37,7 +38,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_semantic_path_writer.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -56,7 +57,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_semantic_path_writer.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
@@ -156,7 +157,7 @@ class _ToySupervisedEngine:
         self.draws.append(draw)
         self.versions.append(tuple(p.detach().clone() for p in self.state.parameters()))
         # One globally weighted condition. This is an update-cadence oracle,
-        # not a proxy for the native FM/RL control objective.
+        # not a proxy for the native main FM control objective.
         loss = draw["query_count"] / 256 * sum(p.square().sum() for p in self.state.parameters())
         loss.backward()
         return {"flow_loss": float(loss.detach()) * 256 / draw["query_count"], "queries": draw["query_count"]}
@@ -284,7 +285,7 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
 def test_execution_chunking_is_configurable_but_formal_nodes_remain_regular(tmp_path, config):
     changed = deepcopy(config)
     changed["model"]["activation_checkpoint"] = False
-    changed["model"]["edge_chunk"] = 24
+    changed["model"]["query_chunk"] = 24
     path = tmp_path / "config.json"
     path.write_text(json.dumps(changed))
     assert _config(path)["model"]["activation_checkpoint"] is False
@@ -385,7 +386,7 @@ def test_unregistered_camera_binding_is_rejected_and_cannot_exact_resume(tmp_pat
     changed["observer"]["camera_view"] = "agentview"
     cfg_path = tmp_path / "dual.json"
     cfg_path.write_text(json.dumps(changed))
-    with pytest.raises(ValueError, match="video prior"):
+    with pytest.raises(ValueError, match="scientific contract"):
         _config(cfg_path)
     original = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
                 "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"}}
@@ -393,15 +394,20 @@ def test_unregistered_camera_binding_is_rejected_and_cannot_exact_resume(tmp_pat
     _publish_contract(path, original, resume=False)
     with pytest.raises(ValueError, match="exact-resume contract differs: config"):
         _publish_contract(path, {**original, "config": changed}, resume=True)
-    wrong_prior = deepcopy(config)
-    wrong_prior["video_prior"]["camera_view"] = "eye_in_hand"
-    cfg_path.write_text(json.dumps(wrong_prior))
-    with pytest.raises(ValueError, match="video prior"):
-        _config(cfg_path)
     changed["observer"]["camera_view"] = "unknown"
     cfg_path.write_text(json.dumps(changed))
-    with pytest.raises(ValueError, match="video prior"):
+    with pytest.raises(ValueError, match="teacher camera_view"):
         _config(cfg_path)
+
+
+@pytest.mark.parametrize("field", ["video_prior", "spatial_supervision", "correction_supervision", "native_output_calibration"])
+def test_retired_supervision_and_prior_configs_are_rejected(tmp_path, config, field):
+    changed = deepcopy(config)
+    changed[field] = {}
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="scientific contract"):
+        _config(path)
 
 
 def test_two_conditions_preserve_task_query_streams_and_resume(sampler, config):

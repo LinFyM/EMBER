@@ -56,8 +56,7 @@ def test_native_response_and_direct_visual_share_complete_prefix_vjp(monkeypatch
     z_only = torch.autograd.grad(visual, vl_meta.scale, visual_grad, retain_graph=True)[0]
     assert r_only.abs() > 0 and z_only.abs() > 0
     expected = torch.autograd.grad((response, visual), (meta.scale, vl_meta.scale), (response_grad, visual_grad))
-    condition = NativeCondition(((chunk,),), (torch.tensor([0, 5]),), torch.zeros(4, 2048), torch.ones(4, dtype=torch.bool),
-                                (torch.zeros(2, 5, 7),), ())
+    condition = NativeCondition(((chunk,),), (torch.tensor([0, 5]),), torch.zeros(4, 2048), torch.ones(4, dtype=torch.bool))
     observer.backward(condition, (response_grad,), (visual_grad,))
     torch.testing.assert_close(meta.scale.grad, expected[0])
     torch.testing.assert_close(vl_meta.scale.grad, expected[1])
@@ -66,6 +65,7 @@ def test_native_response_and_direct_visual_share_complete_prefix_vjp(monkeypatch
     with torch.no_grad():
         vl_meta.scale.add_(.1)
     _, read_inputs = observer.read(condition)
+    assert len(read_inputs) == 6
     assert not torch.allclose(read_inputs[3][0], old_visual)
     assert calls == [True, True, False]
     assert not chunk.embeddings.requires_grad and all(p.grad is None for p in core.parameters())
@@ -101,20 +101,11 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     observer = object.__new__(NativeVideoObserver)
     observer.device, observer.frame_chunk = torch.device("cpu"), 2
     observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
-    observer.prior_camera_view = "agentview"
-    observer.input_reader = SimpleNamespace(read_video=lambda chunks: (torch.zeros(sum(len(chunk.padding) for chunk in chunks), 50, 32),))
     observer.policy = SimpleNamespace(model=SimpleNamespace(paligemma_with_expert=SimpleNamespace(
         embed_language_tokens=lambda tokens: torch.zeros(1, 4, 8))))
     tokens, mask = torch.ones(1, 4, dtype=torch.long), torch.ones(1, 4, dtype=torch.bool)
     span = torch.tensor([[False, True, True, False]])
     observer.tokenizer = lambda languages: (tokens, mask, span)
-    prior_calls = []
-    def prior(video):
-        assert video.shape == (3, 3, 8, 8) and video.dtype == torch.uint8
-        assert torch.all(video == 0)  # The distinct wrist pixels cannot enter the prior.
-        prior_calls.append(len(video))
-        return torch.zeros(len(video), 5, 7, dtype=torch.bfloat16)
-    observer.prior = prior
     calls = []
 
     def embed(policy, batch, *, native_precision):
@@ -143,9 +134,8 @@ def test_dual_prefix_fuses_cameras_once_and_keeps_one_episode(monkeypatch):
     assert len(condition.videos) == 1 and len(condition.videos[0]) == 2
     torch.testing.assert_close(condition.frame_indices[0], indices)
     assert repeated.videos[0] is condition.videos[0]
-    assert repeated.prior_tokens[0] is condition.prior_tokens[0] and prior_calls == [3]
-    assert cache.bytes == (sum(chunk.tensor_bytes for chunk in condition.videos[0])
-                           + condition.prior_tokens[0].numel() * 2 + condition.native_inputs[0][0].numel() * 4)
+    assert set(vars(condition)) == {"videos", "frame_indices", "language_embeddings", "language_mask"}
+    assert cache.bytes == sum(chunk.tensor_bytes for chunk in condition.videos[0])
     chunk = condition.videos[0][0]
     torch.testing.assert_close(chunk.embeddings[0, :, 0], torch.tensor([0., 1., 2., 3., 6., 7., 8., 9.]))
     torch.testing.assert_close(chunk.task_mask[0], torch.tensor([False] * 5 + [True] * 2 + [False]))
@@ -159,45 +149,7 @@ def test_camera_contract_rejects_single_rgb_in_dual_observer_and_cache_mismatch(
 
     observer = object.__new__(NativeVideoObserver)
     observer.camera_view, observer.camera_names = "dual", ("agentview", "eye_in_hand")
-    observer.prior_camera_view = "agentview"
-    observer.input_reader = SimpleNamespace(read_video=lambda chunks: (torch.zeros(sum(len(chunk.padding) for chunk in chunks), 50, 32),))
     with pytest.raises(ValueError, match="declared teacher camera views"):
         observer.prefix(torch.zeros(1, 3, 8, 8), None, None, None)
     with pytest.raises(ValueError, match="camera views differ"):
         FrozenVideoPrefixCache(observer, SimpleNamespace(videos=SimpleNamespace(camera_view="agentview")), 100)
-
-
-def test_bare_source_read_captures_actual_layer_inputs_without_grad_or_hooks(monkeypatch):
-    from ember.writer.native_inputs import NativeInputReader, native_input_bytes
-    from ember.lora import LoRATarget
-
-    class Core(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.first = nn.ModuleDict({"base_layer": nn.Linear(32, 6)})
-            self.last = nn.ModuleDict({"base_layer": nn.Linear(6, 32)})
-            self.calls = 0
-
-        def denoise_step(self, padding, cache, noise, clock):
-            assert not torch.is_grad_enabled()
-            self.calls += 1
-            hidden = self.first.base_layer(noise + cache)
-            return self.last.base_layer(hidden)
-
-    policy = nn.Module()
-    policy.model = Core()
-    policy.requires_grad_(False)
-    probe = torch.randn(50, 32)
-    contract = SimpleNamespace(targets=(LoRATarget("model.first", 32, 6), LoRATarget("model.last", 6, 32)))
-    monkeypatch.setattr("ember.writer.native_inputs.prepare_prefix_kv_cache", lambda *args, **kw: .2)
-    chunk = FrozenInputChunk(torch.zeros(2, 4, 8), torch.ones(2, 4, dtype=torch.bool),
-                             torch.ones(2, 4, dtype=torch.bool), torch.ones(2, 4, dtype=torch.bool))
-    native = NativeInputReader(policy, contract, probe).read_video((chunk,))
-    expected_input = probe.expand(2, -1, -1) + .2
-    torch.testing.assert_close(native[0], expected_input)
-    torch.testing.assert_close(native[1], nn.functional.linear(expected_input,
-        policy.model.first.base_layer.weight, policy.model.first.base_layer.bias))
-    assert policy.model.calls == 1 and all(not value.requires_grad for value in native)
-    assert not any(parameter.grad is not None for parameter in policy.parameters())
-    assert not policy.model.first.base_layer._forward_pre_hooks and not policy.model.last.base_layer._forward_pre_hooks
-    assert native_input_bytes((native, native)) == sum(value.numel() * 4 for value in native)

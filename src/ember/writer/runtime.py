@@ -18,7 +18,6 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.meta_lora import MetaLoRAStack
 from ember.writer.native import NativeCondition, NativeVideoObserver
-from ember.writer.native_inputs import NativeInputReader, native_input_bytes
 
 
 class WriterState(torch.nn.Module):
@@ -43,10 +42,8 @@ class WriterRuntime:
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:
     from ember.writer.video import VideoConditionedWriter, VideoWriterConfig, require_architecture_identity
-    from ember.writer.video_prior import FrozenVideoPrior, validate_prior_config
 
     require_architecture_identity(config["model"])
-    validate_prior_config(config)
     model_config = VideoWriterConfig(**config["model"])
 
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
@@ -66,22 +63,14 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
         MetaLoRAStack(expert.layers, rank=int(config["observer"]["meta_rank"])),
         int(config["observer"]["probe_seed"]),
     )
-    # All trainable modules precede frozen prior loading; their initialization is shared.
     gemma = policy.model.paligemma_with_expert.paligemma.model.language_model
     state.vl_meta = MetaLoRAStack(gemma.layers, rank=int(config["observer"]["vl_meta_rank"]))
     state.to(device)
-    prior_config = config["video_prior"]
-    prior = FrozenVideoPrior(
-        asset_root / prior_config["code_root"], asset_root / prior_config["checkpoint"], device,
-        mode=prior_config["mode"], window_batch=int(prior_config["window_batch"]),
-    )
     tokenizer = asset_root / reuse["tokenizer"]
     observer = NativeVideoObserver(
         policy, state.meta, state.vl_meta, Pi05TeacherPrefixTokenizer(tokenizer, 200, str(device)), state.probe,
-        prior=prior, input_reader=NativeInputReader(policy, lora, state.probe),
-        prior_camera_view=prior_config["camera_view"],
         frame_chunk=int(config["observer"]["frame_chunk"]),
-        camera_view=config["observer"].get("camera_view", "agentview"),
+        camera_view=config["observer"]["camera_view"],
     )
     stats = read_json(asset_root / reuse["source_normalization"])["stats"]
     processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(device))
@@ -92,9 +81,8 @@ class FrozenVideoPrefixCache:
     """Loader cache scoped to one frozen policy/preprocessing runtime.
 
     Identity keys never enter a learned module. Each entry holds frozen
-    pre-Gemma embeddings/masks, dense prior tokens and bare-source native X,
-    all under one byte cap;
-    no learned Z/KV/R/E is cached.
+    pre-Gemma embeddings/masks under one byte cap; no learned Z/KV/R or
+    semantic state is cached.
     """
 
     def __init__(self, observer: NativeVideoObserver, data: WriterTrainingData, byte_limit: int) -> None:
@@ -119,9 +107,7 @@ class FrozenVideoPrefixCache:
                 self.misses += 1
                 frames, indices = self.data.load_videos(task, (demo,))
                 value = self.observer.prepare(frames, indices, self.data.tasks[task].authority.language)
-                size = (sum(chunk.tensor_bytes for chunk in value.videos[0])
-                        + value.prior_tokens[0].numel() * value.prior_tokens[0].element_size()
-                        + native_input_bytes(value.native_inputs))
+                size = sum(chunk.tensor_bytes for chunk in value.videos[0])
                 if size <= self.byte_limit:
                     while self.entries and self.bytes + size > self.byte_limit:
                         _, (_, evicted) = self.entries.popitem(last=False)
@@ -132,6 +118,4 @@ class FrozenVideoPrefixCache:
         return NativeCondition(
             tuple(value.videos[0] for value in values), tuple(value.frame_indices[0] for value in values),
             values[0].language_embeddings, values[0].language_mask,
-            tuple(value.prior_tokens[0] for value in values),
-            tuple(value.native_inputs[0] for value in values),
         )

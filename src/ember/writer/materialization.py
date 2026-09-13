@@ -21,13 +21,12 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.video import VideoWriterConfig, require_architecture_identity
-from ember.writer.video_prior import validate_prior_config
 
 
-RUN_SCHEMA = "ember_native_correction_writer_run_v1"
-STAGE = "native_correction_writer_fresh"
-TRAINING_SCHEMA = "ember_native_correction_training_state_v1"
-UPDATE_VERSION = "native_correction_main_fm_joint_credit_v1"
+RUN_SCHEMA = "ember_semantic_path_writer_run_v1"
+STAGE = "semantic_path_writer_fresh"
+TRAINING_SCHEMA = "ember_semantic_path_training_state_v1"
+UPDATE_VERSION = "semantic_path_main_fm_joint_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -63,11 +62,13 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     require_architecture_identity(run.get("config", {}).get("model", {}))
     if VideoWriterConfig(**run["model_config"]) != VideoWriterConfig(**run["config"]["model"]):
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
-    validate_prior_config(run["config"])
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
             or run.get("stage") != STAGE or run.get("mode") != "formal"
+            or run.get("config", {}).get("schema_version") != "ember_semantic_path_writer_config_v1"
+            or run.get("config", {}).get("optimization", {}).get("loss") != "main_fm"
+            or run.get("config", {}).get("observer", {}).get("camera_view") != "dual"
             or run.get("config", {}).get("data", {}).get("version") != "train24_teacher_action_pool_cross_episode_k1_v1"
             or run.get("config", {}).get("data", {}).get("query_alignment") != "post_action_observation_future_control_v1"
             or type(run.get("config", {}).get("data", {}).get("action_start_offset")) is not int
@@ -207,19 +208,19 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
     cameras = teacher_camera_names(run["config"]["observer"].get("camera_view", "agentview"))
     return {"model_config": run["model_config"], "observer": run["config"]["observer"],
             "execution_precision": run["config"]["execution_precision"],
-            "checkpoint_state": "strict entire Writer+two Meta stacks+public probe; frozen prior asset external", "frame_stride": 5,
+            "checkpoint_state": "strict entire Writer+two Meta stacks+public probe", "frame_stride": 5,
             "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180", "execution_rank": 16,
             "native_response_shape": [50, 1024], "generated_tensor_count": 76,
             "native_response_source": "action_out_proj_input_after_final_normalization",
             "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
             "visual_token_gradient": "joint_native_Z_and_R_replay_to_VL_and_Action_Meta",
-            "frame_attention": ("independent_full_h_frame_set" if run["model_config"].get("process_mode") == "frame_set"
-                                else "adjacent_full_h_past_self_temporal"),
-            "video_representation": "pretrained_dense_visual_and_native_task_tokens_T_L_d",
-            "video_prior": run["config"]["video_prior"],
-            "training_stage": STAGE, "training_objective": "main_fm_plus_spatial_kl_and_native_update",
-            "native_parameter_generation": "unit_rows(RX/N); B in frozen shared training-target units",
-            "video_prior_in_execution": False,
+            "native_read": "full_T_x_50_crossframe_action_response_attention",
+            "frame_attention": "bidirectional_order_equivariant_full_video",
+            "video_representation": "language_conditioned_semantic_states_T_L_d",
+            "process_aggregation": ("unordered_second_moments" if run["model_config"].get("process_mode") == "frame_set"
+                                    else "second_order_log_signature"),
+            "training_stage": STAGE, "training_objective": "main_fm",
+            "native_parameter_generation": "free_full_A_B_shape_family_heads_after_semantic_path_modulation",
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
@@ -240,7 +241,7 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
     )
     with torch.no_grad(), autocast(runtime.observer.device):
         responses, inputs = runtime.observer.read(condition)
-        generated = runtime.state.writer(responses, *inputs, native_inputs=condition.native_inputs)
+        generated = runtime.state.writer(responses, *inputs)
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)
@@ -370,10 +371,10 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     first = inspected[0][0]
-    expected = (first["source"], first["model_config"], first["config"]["observer"], first["config"]["video_prior"])
+    expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
-        if (run["source"], run["model_config"], run["config"]["observer"], run["config"]["video_prior"]) != expected:
-            raise ValueError("resident batch requires identical source, model, and observer contracts plus frozen video prior configuration")
+        if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
+            raise ValueError("resident batch requires identical source, model, and observer contracts")
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]

@@ -1,10 +1,11 @@
 # EMBER task plan
 
-## 当前目标与计划：闭环组合关闭，检验原生纠正的跨episode传递（2026-09-13）
+## 当前目标与计划：原生纠正传递前提通过，推导合法视频获取与参数生成（2026-09-13）
 
 完整目标仍为正确教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、初始化、相邻checkpoint
 及固定validation迁移；暂不强制145/400。**整体goal未完成，没有active Writer或selected checkpoint。**
-当前登记的有界诊断为[原生纠正传递](docs/native_corrective_transfer_audit.md)，尚在实施，未启动正式计算。
+[原生纠正传递](docs/native_corrective_transfer_audit.md)的192套／3,072组合已完成、两oracle按原条件通过并关闭；
+当前没有active design或在途运行，下一项不默认完整Writer训练。
 
 1. 已完成[可见物体与运动监督](docs/visible_object_grounded_writer_design.md)两臂fresh200及8面板／1,984rows，原始审计通过。
    validation有序／无序100=20/24、200=71/70，两节点净率CI均跨零、未相邻同向，按原资格关闭且不追加训练。
@@ -13,9 +14,12 @@
 3. 已完成[可识别性§10–12](docs/video_information_identifiability.md)的实际loss、代数反例与v4／Local近邻审计：
    空间边际不是对象角色，裸source自蒸馏没有纠正方向，教师动作残差也不等于新初始化下的参数修正。
    不默认继续当前Compiler，不先训练新动作头或新建cache，不重开旧冻结正例复核。
-4. 已将原生条件与真实动作纠正写成实际weight导数的联合关系，先用训练侧oracle检验固定算子能否跨episode改变原生输出；
-   这不是另训动作头、task code或旧Y-span Compiler。state-free与true-state oracle分开，同真实query与noise评分t1/full10。
-   完成一次构造的有界诊断；不通过就停止该具体出口，不默认新Writer。当前不放宽frame_set资格，不用最终controls改架构或追加Test／RL。
+4. 已用训练侧oracle检验实际weight导数的联合关系：state-free t1/full10的source−oracle改善为.00626285/.00918194，
+   区间均严格正、四suite均正；full10 21/24tasks及83/96条件改善。true-state参照亦通过，全部原始数组与动作标签核验通过。
+   这限定为跨episode功能前提，不能拼成合法RGB Writer或闭环正结论。
+5. 现在推导有序RGB如何提供足够好的纠正信号，并由一次纯前向构造保留它与同帧原生X的关系；
+   与旧自由FactorHeads、native Y span及运行时VJP逐项区别后再登记可失败实施。当前不放宽frame_set资格，
+   不用最终controls改架构，不追加旧实验、Test或RL。
 
 以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。
 

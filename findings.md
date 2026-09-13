@@ -1403,5 +1403,26 @@ Local Action Grounded已有回顾实际动作标签，却是独立fresh FM头，
 P1的mapping容量、J2实际100步FM正控，以及EBSRI/PNBTT的生成器VJP是不同实验；它们的正负边界分别保留。
 
 因此没有把梯度一词当作新意，也没有由几何正数假定当前传递通过。新有界诊断将给定真实动作、固定一次38目标rank16构造，
-在独立query中同时检验t1与full10真实输出；不先训练RGB残差头。该项是privileged训练侧oracle，尚未产生结果，
+在独立query中同时检验t1与full10真实输出；不先训练RGB残差头。该项是privileged训练侧oracle，登记时尚未产生结果，
 不能包装成action-hidden部署或放开禁止task-local优化的边界。完整采样、配对、停止与资源合同在上述登记文档。
+
+## 88. 同帧条件与真纠正的一次原生参数构造具有跨episode功能前提（2026-09-13）
+
+[原生纠正传递§7](docs/native_corrective_transfer_audit.md#7-完整结果与关闭裁决)完成f39d594f冻结的192套完整rank16 LoRA、
+3,072个condition-query组合。固定train24/demo16–19构造，42–45的384个真实query仅预测后评分；source始终冻结，
+无optimizer、query梯度或环境步。三个worker均exit0、墙钟110.63／113.15／113.28秒、峰值11.014GiB。
+
+state-free t1 MSE .11977705→.11351420，改善.00626285、95%CI[.00251749,.01101049]、17/24tasks正；
+full10 .16493043→.15574849，改善.00918194、CI[.00322478,.01688248]、21/24tasks正。
+true-state t1/full10为.11022396/.15252233，改善CI[.00485088,.01539874]/[.00534316,.02148158]，21/22tasks正。
+四单元均四suite净正、四teacher序号汇总正，两oracle均按原共同资格通过；不是在t1/full10间选优。
+state-free full10 S/O/G/L改善.00332542/.00471454/.02799325/.00069453，83/96条件正；task2/34/37非正，保留负条件。
+
+完整raw MSE、方向幅度、配对与76张量shape通过；原HDF的768个teacher／384个query动作标签、冻结quantile及采样位置补核通过。
+原件位于runs/analysis/native_corrective_transfer_20260913，TRANSFER_READOUT.md包含全task／suite／teacher与证据限制。
+当前具体结论是：给定真实纠正，state-free的原生条件×cotangent联系可在所测分布改变另一episode的原生输出。
+这比因子cosine或局部辅助头更直接，但仍是privileged oracle；没有证明合法视频获取、共同偏置之外的视频作用、闭环或held迁移。
+
+按正分支关闭诊断、退役一次性入口；下一项可继续推导共享前向生成的获取与传递合同。
+不能用运行时loss/VJP/任务更新规避信息墙，也不能仅给普通自由B head改名、拼接历史正数就假定Writer已获支持。
+完整有益视频特异性goal仍未完成，没有恢复旧Writer、扩展扫描、Test或最终controls。

@@ -1,23 +1,35 @@
 # EMBER progress
 
-## 当前：原生纠正传递实现与smoke通过，准备完整有界诊断（2026-09-13）
+## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 
 Owner授权继续仔细推导、实施并按结果调整，整体有益视频特异性goal保持active且未完成。
-**当前active诊断：[原生条件与真实纠正的跨episode传递](docs/native_corrective_transfer_audit.md)。**
-没有active Writer训练、在途GPU运行或selected checkpoint；Visible-Object及更早组合全部保持关闭。
+**[原生条件与真实纠正的跨episode传递](docs/native_corrective_transfer_audit.md)已完成关闭，两个oracle均通过其登记前提。**
+没有active design、Writer训练、在途GPU运行或selected checkpoint；Visible-Object及更早组合全部保持关闭。
 
-新合同固定裸source和一次rank16参数构造：从train24/demo16–19真实动作误差取得38目标weight导数，
-给定正确纠正信号后，先检验state-free条件的参数作用能否传到另一episode；true-state只作privileged参照。
-复用42–45的384个独立query，每臂96套LoRA、1,536个组合，配对评分t1与full10真实输出，无query梯度或环境步。
-只有两读出都满足登记的正区间／suite前提，才支持继续推导合法RGB获取；非通过不追加尺度、rank、seed或训练。
+f39d594f clean pushed frozen完成train24/demo16–19、192套完整38-target rank16 LoRA，
+在42–45的384个独立query上构成3,072个配对组合，无query梯度或环境步；三个worker与formal均exit0。
+worker墙钟110.63／113.15／113.28秒、峰值11.014GiB。真实动作只用于训练侧oracle构造与独立预测后评分。
+
+| Teacher合同 | 读出 | source→oracle MSE | 改善95%CI | 正向task |
+| --- | --- | --- | --- | --- |
+| state-free | t1 | .11977705→.11351420 | [.00251749,.01101049] | 17/24 |
+| state-free | full10 | .16493043→.15574849 | [.00322478,.01688248] | 21/24 |
+| true-state oracle | t1 | .11977705→.11022396 | [.00485088,.01539874] | 21/24 |
+| true-state oracle | full10 | .16493043→.15252233 | [.00534316,.02148158] | 22/24 |
+
+两个oracle的两读出均四suite净正，四个teacher序号汇总均正；state-free full10为83/96个task-video条件改善，
+task2/34/37汇总非正，不筛除。该正事实支持固定原生条件与真纠正的一次参数作用具有跨episode功能前提；
+尚不证明有序RGB获取、共同偏置之外的视频必要性、闭环或validation迁移，也不恢复task-local优化。
 
 历史近邻复核发现旧95-task authority的.716/.801、.2695是梯度因子cosine，而非安装更新后的FM；
 J2真实FM正控、EBSRI及PNBTT则是不同的优化／共享生成合同，不能拼成当前固定算子的行为验证。
-本项明确是训练侧oracle，真实动作与一次任务更新不能包装为action-hidden部署，也不恢复task-local优化。
-实现f39d594f已clean pushed frozen。CPU面板检查通过；task0/demo16两个oracle的真实smoke与raw方向幅度重算通过，
-source始终冻结、query无梯度，worker exit0，含首次source读取185.76秒、显存峰值11.01GiB。
-smoke不作科学选点；按原合同继续192套／3,072组合的完整诊断，不改幅度、rank或读出。
-新增峰值总预算仍为2GiB，正式准入data1现场1016.9/1024GiB；原件位于runs/analysis/native_corrective_transfer_20260913。
+原始MSE、teacher幅度／线性读出、配对与76张量shape审计通过；从原HDF补核768个teacher标签位置、
+384个query标签、冻结quantile及构造位置均通过。完整逐task／suite、四teacher及负条件保存在
+`runs/analysis/native_corrective_transfer_20260913/TRANSFER_READOUT.md`、`paired_summary.json`、
+`bounded_decision.json`、两个audit与formal原件。正式准入data1为1016.9/1024GiB、新增总预算2GiB。
+
+按正分支继续推导合法RGB纠正获取与纯前向参数生成；须保留同帧条件和纠正的联合关系，不能把普通自由B head改名
+当作新机制，也不能用推理时loss/VJP/参数更新绕过部署边界。本次只关闭有界诊断；整体有益视频特异性goal未完成。
 
 ## 最近完整闭环：物体与运动落点监督关闭（2026-09-13）
 

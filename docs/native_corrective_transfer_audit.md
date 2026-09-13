@@ -119,4 +119,34 @@ f39d594f的CPU面板检查确认24tasks、每臂96构造条件／384位置与384
 同源detached clean pushed树在task0/demo16完成两oracle真实smoke：完整76个A/B张量、参数导数、方向导数、
 实际LoRA替换及两读出均可运行；从原始residual／direction重算η通过。source trainable=0、query无梯度、worker exit0。
 含首次9.35GB canonical source读取共185.76秒，显存峰值11.01GiB。没有因smoke分数更改科学参数或提前裁决方法。
-完整证据保存于当前analysis的smoke目录、smoke_verification.json、launch contract／log／exit；下一步仍按原有界面板执行。
+完整证据保存于当前analysis的smoke目录、smoke_verification.json、launch contract／log／exit；随后按原有界面板执行，结果如下。
+
+## 7. 完整结果与关闭裁决
+
+f39d594f clean pushed detached完成全部24tasks、每臂96套LoRA与1,536组合，总计192套／3,072组合。
+GPU01三个独立worker墙钟110.63／113.15／113.28秒，峰值11.014GiB；worker和formal均exit0。
+physical source trainable=0、optimizer updates=0、query gradients=false、环境步数0。
+
+| Teacher合同 | 读出 | source MSE | oracle MSE | source−oracle改善95%CI | 正向task |
+| --- | --- | --- | --- | --- | --- |
+| state-free | t1 | .11977705 | .11351420 | [.00251749,.01101049] | 17/24 |
+| state-free | full10 | .16493043 | .15574849 | [.00322478,.01688248] | 21/24 |
+| true-state oracle | t1 | .11977705 | .11022396 | [.00485088,.01539874] | 21/24 |
+| true-state oracle | full10 | .16493043 | .15252233 | [.00534316,.02148158] | 22/24 |
+
+四个单元各四suite净正、四个teacher序号汇总均正，两个oracle均满足原登记的共同资格。
+state-free full10的S/O/G/L改善分别.00332542/.00471454/.02799325/.00069453；
+83/96个task-video条件改善，task2/34/37平均非正，完整保留。true-state full10为84/96条件改善。
+teacher构造位置的真实t1 MSE free为.11376726→.08101415，true为.10755532→.07645810，均96/96改善；
+这些拟合数字是定位证据，不替代独立query读出。
+
+原始预测重算MSE、teacher的η／线性预测、query元数据配对和全部38-target A/B shape通过；
+另从原HDF核对768个两臂teacher标签位置与384个query标签、冻结quantile和五等分附近的四个构造位置，全部通过。
+原件位于`runs/analysis/native_corrective_transfer_20260913/`：`TRANSFER_READOUT.md`保存完整per-task／suite与teacher结果，
+`paired_summary.json`、`bounded_decision.json`、`evidence_audit.json`、`action_label_audit.json`及全部预测、因子、构造记录、launch/log/exit保留。
+
+**按预登记state-free正分支关闭这项诊断，允许继续推导合法RGB纠正获取与前向摊销生成；没有active Writer或selected checkpoint。**
+结果缩小了竞争解释：在所测离线分布，teacher state缺失不阻止给定真实纠正后的这个具体参数出口改善另一episode。
+它没有证明共享RGB网络能预测相应纠正量、改善来自视频特定操作而非共同偏置、离线改善可迁移闭环或固定validation。
+不得据此恢复已关闭Writer、扩展构造尺度／rank扫描或采用部署时任务更新；整体goal未完成。
+一次性运行入口与本轮frozen tree完成后退役，源码由f39d594f保留，formal原件及完整LoRA不删除。

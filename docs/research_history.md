@@ -1450,3 +1450,21 @@ native/prior视觉cross-attention Q/K；标签仅训练侧，部署接口、全�
 exit0。原始数组／索引核验和固定四suite双视角／prior空间叠图通过，入口随后退役；原件位于
 runs/analysis/visible_object_grounding_20260913。初次命令早于worktree复制结束，在程序入口前失败并保留记录，
 没有重复处理或改动已生成标签。本记录不代表模型训练或闭环收益；当前执行状态仅由progress解释。
+
+## 2026-09-13：真纠正到原生参数的跨episode功能前提通过
+
+[原生纠正传递诊断](native_corrective_transfer_audit.md)从train24/demo16–19真实动作误差构造裸source的
+38-target weight方向，一次rank16投影与teacher定幅；不是action-hidden部署或新Writer。
+f39d594f clean pushed detached完成两oracle共192套／3,072组合，独立42–45 query无梯度、无环境步。
+三个worker与formal均exit0，墙钟110.63／113.15／113.28秒，显存峰值11.014GiB。
+
+state-free t1/full10 MSE由source .11977705/.16493043降到.11351420/.15574849，
+改善95%CI[.00251749,.01101049]/[.00322478,.01688248]，17/21个task为正；
+true-state为.11022396/.15252233、区间亦严格正。四单元各四suite净正、四teacher序号汇总正；
+state-free full10 83/96条件改善，task2/34/37平均非正全部保留。按登记支持state-free传递前提并关闭诊断。
+
+原始MSE、teacher幅度／线性预测、元数据配对与76张量shape核验通过；原HDF动作、冻结quantile和采样位置补核通过。
+原件`runs/analysis/native_corrective_transfer_20260913/`保存全部LoRA、预测、构造记录、launch/log/exit、
+`TRANSFER_READOUT.md`、`paired_summary.json`、`bounded_decision.json`及两个audit。一次性源码由f39d594f保留后退役。
+具体出口的功能正证据不证明RGB获取、视频特定收益、闭环或validation迁移；下一步只据正分支推导合法前向摊销生成。
+没有selected checkpoint、旧Writer恢复、Test、RL或最终controls，整体goal未达；跨轮结论见findings§88。

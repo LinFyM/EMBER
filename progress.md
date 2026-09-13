@@ -10,8 +10,11 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展，明�
 完整视频双向理解已允许，ordered强于匹配的独立全帧frame_set仍是必要方法证据，所有信息墙与资源合同保持。
 当前唯一active design为[固定真实纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
 按原五面板480episodes恢复，以决定真纠正G是否值得作为主要闭环修复目标；不沿用旧失败Writer。
-既有准备失败仍为零episode；已定位为source缺少显式训练任务面板声明，计划使用现有task-subset接口声明原24task／4init。
-资源准入、启动与结果尚未完成，不把工作理论或恢复登记当作科学收益。
+既有零episode准备失败已用现有task-subset接口声明原24task／4init解决，source与static两种原准入均通过，评测代码未改。
+c8181ac8恢复登记，复用clean pushed 2c0a8dde frozen运行面；gpu01的4/5/6三卡、每卡三worker，17:36UTC启动固定五面板。
+strg01现场data0／data1为67.61／1017.85GiB，新增峰值1／.05GiB均在各自额度内；无大资产复制。
+source96已完整结束，17次成功、388.67秒；四个oracle面板继续按注册执行，不能据单个面板提前裁决。
+原始首次失败以attempt1保留，恢复launch／task panel／controller／配对分析位于原oracle_rollout根；整体方法收益尚未证明。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 
 ## 暂停时点：Owner转为方法讨论（2026-09-14）

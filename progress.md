@@ -28,10 +28,14 @@ fresh8／8两次26.452／26.539秒、峰值allocated34.274GiB，第二次关键�
 按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。
 5116deb0 clean pushed detached已在gpu02卡4/5/6启动有序组fresh正式训练，NUMA／deferred NCCL及source冻结合同通过，
 step0的24task独立动作诊断和首个256-query更新已完成；首步33.74秒、峰值allocated34.10GiB。
-三卡现场为0–2%util、已有占用约5.62／.16／4.64GiB，按实测峰值可共驻，未操作他人进程；连同source总占卡5。
-无序组等待同节点三张可用卡，以相同曝光独立fresh启动；四checkpoint／八bank请求及canonical无放回视频映射已备妥。
-新source400仍在gpu01卡5/6各三worker运行，完整8task／50init已通过准备准入，固定后供全部节点复用。
-训练前strg01现场data0／data1为67.62／1017.85GiB，新研究峰值24／.5GiB预算满足独立额度；大资产均复用。
+三卡现场为0–2%util、已有占用约5.62／.16／4.64GiB，按实测峰值可共驻，未操作他人进程。
+新source400已完整结束：47/400，S/O/G/L为0/5/41/1、breadth3，36shard／6worker和launcher全部exit0，1657.05秒。
+source固定供全部节点复用；新旧source的模型、环境、policy／RNG、tokenizer和归一化合同匹配，训练侧source17/96可复用。
+source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从同一5116deb0 frozen独立fresh正式启动；
+实际两run配置除process_mode外相同，source、Git、学习／信息墙、三rank及物理batch8均匹配，整体6张有效训练卡。
+四checkpoint／八bank请求、canonical无放回视频映射及完整1984rows的预注册配对readout已备妥；尚无新候选闭环结果。
+训练前strg01现场data0／data1为67.62／1017.85GiB，无序启动前再查data0为67.62GiB；
+新研究峰值24／.5GiB预算满足独立额度，大资产均复用。
 原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
 计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
 

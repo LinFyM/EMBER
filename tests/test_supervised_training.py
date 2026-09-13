@@ -26,7 +26,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_visible_object_video{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_native_correction_writer{suffix}.json")
     configured = training._config(args.config)
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
@@ -37,7 +37,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -56,7 +56,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short regular evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
@@ -429,37 +429,34 @@ def test_two_conditions_preserve_task_query_streams_and_resume(sampler, config):
     assert [sampler.next_iteration() for _ in range(3)] == expected
 
 
-def test_action_conditions_partition_original_full_selection_and_seed(sampler):
+def test_action_conditions_exclude_their_teacher_and_keep_logical_seed(sampler):
     from ember.writer.functional import task_logical_batch_policy_rng_seed
 
     class Queries:
         task_episode_rows = {0: {demo: tuple(demo * 100 + frame for frame in range(demo))
                                 for demo in range(16, 42)}}
-        loaded = []
         def __getitem__(self, index):
-            self.loaded.append(index)
             return {"demo_index": index // 100, "frame_index": index % 100,
                     "action": torch.tensor([index], dtype=torch.float32)}
     sampler.queries = Queries()
     sampler.query_rows = sampler.queries.task_episode_rows
-    rng = random.Random(123)
-    indices = [rng.choice(sampler.query_rows[0][rng.choice(sampler.action_pool)]) for _ in range(64)]
-    expected_seed = task_logical_batch_policy_rng_seed(
-        optimization_seed=sampler.seed, task_id=0, task_visit=9,
-        demo_indices=[index // 100 for index in indices], frame_indices=[index % 100 for index in indices],
-    )
     before = deepcopy(sampler.sampler_state())
-    outputs = [sampler.action_batch(0, 9, (demo,), query_seed=123, query_offset=offset, query_count=32)
-               for demo, offset in ((3, 0), (4, 32))]
-    assert sampler.queries.loaded == indices  # Select full64 twice, read only each condition's actual32.
-    assert torch.cat([batch["action"] for batch, _ in outputs]).flatten().tolist() == indices
-    assert all(trace["policy_rng_seed"] == expected_seed for _, trace in outputs)
-    assert all(trace["policy_random_batch_size"] == 64 for _, trace in outputs)
+    for teacher, offset in ((16, 0), (17, 32)):
+        pool = [demo for demo in sampler.action_pool if demo != teacher]
+        rng = random.Random(123)
+        full = [rng.choice(sampler.query_rows[0][rng.choice(pool)]) for _ in range(64)]
+        expected_seed = task_logical_batch_policy_rng_seed(
+            optimization_seed=sampler.seed, task_id=0, task_visit=9,
+            demo_indices=[index // 100 for index in full], frame_indices=[index % 100 for index in full])
+        batch, trace = sampler.action_batch(0, 9, (teacher,), query_seed=123, query_offset=offset, query_count=32)
+        assert batch["action"].flatten().tolist() == full[offset:offset + 32]
+        assert teacher not in trace["action_demos"] and len(trace["action_demos"]) == 32
+        assert trace["policy_rng_seed"] == expected_seed and trace["policy_random_batch_size"] == 64
     assert sampler.sampler_state() == before
-    with pytest.raises(ValueError, match="overlap"):
-        sampler.action_batch(0, 0, (16,), query_seed=123)
+    with pytest.raises(ValueError, match="registered training pool"):
+        sampler.action_batch(0, 0, (0,), query_seed=123)
     with pytest.raises(ValueError, match="exceeds"):
-        sampler.action_batch(0, 0, (0,), query_seed=123, query_offset=40, query_count=32)
+        sampler.action_batch(0, 0, (16,), query_seed=123, query_offset=40, query_count=32)
 
 
 @pytest.mark.parametrize("world_size", range(1, 7))

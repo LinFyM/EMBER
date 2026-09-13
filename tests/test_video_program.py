@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from ember.lora import LoRATarget, identity_lora_state, validate_lora_state
+from ember.lora import LoRATarget, LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.video import VideoConditionedWriter, VideoWriterConfig
 
@@ -43,10 +43,15 @@ def inputs(lengths=(5,)):
     return response, indices, language, language_mask, visual, valid, task, prior
 
 
+def native_inputs(args):
+    generator = torch.Generator().manual_seed(1975)
+    return tuple(tuple(torch.randn(len(value), value.shape[1], 3, generator=generator)
+                       for _ in range(38)) for value in args[0])
+
+
 def unlock(model):
     with torch.no_grad():
         for group in model.decoder.groups:
-            group.a_factors.normal_(std=0.03)
             group.b_factors.normal_(std=0.03)
 
 
@@ -57,25 +62,27 @@ def permute(args, order):
 
 def test_complete_identity_then_video_conditioned_factors():
     model, args = writer(), inputs()
-    initial = model(*args)
+    initial = model(*args, native_inputs=native_inputs(args))
     validate_lora_state(initial, model.contract)
     assert len(initial) == 76
-    for name, value in identity_lora_state(model.contract).items():
-        torch.testing.assert_close(initial[name], value)
+    for target in model.contract.targets:
+        a, b = (initial[target.name + suffix] for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX))
+        assert a.count_nonzero() > 0
+        assert (b @ a).count_nonzero() == 0
     unlock(model)
     changed = list(args)
     changed[0] = (args[0][0] + torch.randn_like(args[0][0]) * 3,)
-    original, perturbed = model(*args), model(*changed)
+    original, perturbed = model(*args, native_inputs=native_inputs(args)), model(*changed, native_inputs=native_inputs(args))
     assert all(not torch.allclose(original[name], perturbed[name]) for name in original)
 
 
 def test_frozen_prior_values_affect_complete_lora_and_trainable_grounding():
     model, args = writer(), inputs((4,))
     unlock(model)
-    original = model(*args)
+    original = model(*args, native_inputs=native_inputs(args))
     changed = list(args)
     changed[7] = (args[7][0] + torch.randn_like(args[7][0]) * 3,)
-    perturbed = model(*changed)
+    perturbed = model(*changed, native_inputs=native_inputs(args))
     assert all(not torch.allclose(original[name], perturbed[name]) for name in original)
     sum(value.square().mean() for value in original.values()).backward()
     assert model.encoder.prior_projection.weight.grad.norm() > 0
@@ -144,7 +151,7 @@ def test_frame_set_is_permutation_equivariant_and_time_blind():
     changed_times = list(args)
     changed_times[1] = (args[1][0] * 100 + 70,)
     torch.testing.assert_close(model.encode(*changed_times)[0], original)
-    original_lora, shuffled_lora = model(*args), model(*shuffled)
+    original_lora, shuffled_lora = model(*args, native_inputs=native_inputs(args)), model(*shuffled, native_inputs=(tuple(value[order] for value in native_inputs(args)[0]),))
     for name, value in original_lora.items():
         torch.testing.assert_close(shuffled_lora[name], value, rtol=2e-5, atol=2e-6)
 
@@ -166,7 +173,7 @@ def test_video_set_order_invariance_and_equal_video_prior(mode):
     assert memory.shape == routing.shape == (24, 12)
     torch.testing.assert_close(prior.exp()[0, :9].sum(), torch.tensor(1.))
     torch.testing.assert_close(prior.exp()[0, 9:].sum(), torch.tensor(1.))
-    original, reversed_set = model.decode(videos, args[1]), model.decode(videos[::-1], args[1][::-1])
+    original, reversed_set = model.decode(videos, args[1], native_inputs(args)), model.decode(videos[::-1], args[1][::-1], native_inputs(args)[::-1])
     for name in original:
         torch.testing.assert_close(reversed_set[name], original[name], rtol=2e-5, atol=2e-6)
 

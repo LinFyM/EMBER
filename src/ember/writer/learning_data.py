@@ -73,10 +73,9 @@ class WriterTrainingData:
         self.action_pool = tuple(map(int, config["action_demos"]))
         self.diagnostic_pool = tuple(map(int, config["diagnostic_action_demos"]))
         self.held_video_pool = tuple(map(int, config["held_video_demos"]))
-        pools = (self.video_pool, self.action_pool, self.diagnostic_pool, self.held_video_pool)
-        flat = [demo for pool in pools for demo in pool]
-        if any(not pool for pool in pools) or len(set(flat)) != len(flat) or not set(flat) <= set(range(50)):
-            raise ValueError("training video/query and diagnostic episode roles must be disjoint")
+        if (self.video_pool != tuple(range(16, 42)) or self.action_pool != self.video_pool
+                or self.diagnostic_pool != tuple(range(42, 46)) or self.held_video_pool != tuple(range(46, 50))):
+            raise ValueError("native correction requires the registered training and held episode pools")
         if tuple(config["cardinalities"]) != (1,):
             raise ValueError("the current supervised stage requires actual K=1 conditions")
         authorities = tuple(task.authority for task in self.tasks.values())
@@ -125,9 +124,10 @@ class WriterTrainingData:
 
     def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int,
                      query_offset: int = 0, query_count: int | None = None):
-        if set(demos) & set(self.action_pool):
-            raise ValueError("teaching video and action query episodes overlap")
-        return self._sample_actions(self.queries, self.action_pool, task, occurrence, query_seed,
+        if not demos or len(set(demos)) != len(demos) or not set(demos) <= set(self.video_pool):
+            raise ValueError("teaching video must belong to the registered training pool")
+        query_pool = tuple(demo for demo in self.action_pool if demo not in demos)
+        return self._sample_actions(self.queries, query_pool, task, occurrence, query_seed,
                                     int(self.config["queries_per_task"]),
                                     query_offset=query_offset, query_count=query_count)
 

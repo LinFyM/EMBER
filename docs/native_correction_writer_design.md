@@ -175,3 +175,27 @@ frame_set资格的Owner问题尚未改变合同，本项不利用新身份放宽
 数据构建、正式train/eval使用clean pushed detached frozen树。GPU launch前同时查两节点，
 按Owner总量／节点限制选择实际提高吞吐的卡；DDP保留NUMA、NCCL_P2P_DISABLE=1及deferred NCCL。
 主写在隔离codex分支完成后验证、及时集成并推送main；本轮frozen/工作树在消费完且证据保留后移除。
+
+
+## 8. 数据完成与实施核验
+
+ca87f05c clean pushed detached构建新528套完整纠正标签，旧96套只引用原始路径；合计624套已seal。
+六GPU worker全部exit0，墙钟95.29–99.55秒、峰值10.225GiB；smoke的task0/demo20为10.06秒含加载，
+teacher MSE .11535222→.08484499，只作算子运行检查。原始teacher速度／真实动作／JVP幅度与MSE、76个因子核验通过。
+CPU空间标签624条、22,319frames，438.79秒exit0；21,695支持frames、17,552有motion mass，
+独立重算真实位置／末帧／512与576布局／非支持位置清零及aggregate通过。没有query读取、环境步或Writer学习。
+
+当前物理原件根`/data0/user/ymdai/ember_runs/native_correction_writer_20260913`，由workspace的同名analysis根引用，
+约2.6GiB；两个一次性builder退役，源码在ca87f05c中保留。原件含build/launch合同、worker metadata、
+registration/completion和`label_data_audit.json`。旧96套没有复制，也不把旧query评分引入新label权重。
+
+实现复用原生读取／Meta replay、监督引擎、采样和checkpoint owner。`native_inputs.py`只负责裸source真实输入读取，
+`correction_supervision.py`只拥有训练label加载及实际权重更新loss；`native_factor.py`替换旧自由A出口，
+无第二decoder。新增两模块分别71/77行，避免把部署只读运算与privileged训练目标放入同一接口。
+结构检查计入tests为+417/−112净305行、两个新source文件，无新增hard violation；既有materialization合同／调度复杂度
+只做身份与参数接线的窄改，不借本轮拆分。两个helper虽使writer目录peer数增加，职责和部署边界清晰，保留此有界分工。
+
+135项现有／新增相关检查通过，补充联合FM与更新loss的回放—直接autograd对照也通过；
+覆盖完整identity、第二步共享梯度、dense ΔW误差／梯度与因子gauge不变、实际source输入、cache预算、
+frame_set联合置换、主FM teacher排除、采样恢复及checkpoint拒绝旧身份。
+这些不构成机制或性能正结论。最长新教学条件已定为task38/demo36、105frames；下一步真实profile后再固定formal准入。

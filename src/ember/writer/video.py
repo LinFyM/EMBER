@@ -14,8 +14,8 @@ from ember.writer.attention import Attention, CompilerBlock, RotaryBlock, feed_f
 from ember.writer.native_factor import NativeFactorLoRADecoder
 
 
-SCHEMA = "video_conditioned_writer_v4"
-ARCHITECTURE = "pretrained_video_task_full_h_v1"
+SCHEMA = "video_conditioned_writer_v5"
+ARCHITECTURE = "native_input_corrective_factors_v1"
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -219,7 +219,12 @@ class VideoConditionedWriter(nn.Module):
             priors.append(video.new_full((len(memory),), -math.log(len(memory))))
         return torch.cat(memories), torch.cat(routes), torch.cat(priors)[None, :]
 
-    def decode(self, videos: Sequence[Tensor], frame_indices: Sequence[Tensor]) -> dict[str, Tensor]:
+    def decode(self, videos: Sequence[Tensor], frame_indices: Sequence[Tensor],
+               native_inputs: Sequence[Sequence[Tensor]]) -> dict[str, Tensor]:
+        if (len(native_inputs) != len(videos) or any(
+                any(value.shape[:2] != (len(indices), self.config.horizon) for value in inputs)
+                for inputs, indices in zip(native_inputs, frame_indices, strict=True))):
+            raise ValueError("native inputs must match every real video frame and complete horizon")
         memory, routing, prior = self.memory(videos, frame_indices)
         query = (self.target_queries[:, None, :] + self.rank_queries[None, :, :]).flatten(0, 1)
         for block in self.compiler:
@@ -227,11 +232,12 @@ class VideoConditionedWriter(nn.Module):
                 query = checkpoint(block, query, memory, routing, prior, use_reentrant=False)
             else:
                 query = block(query, memory, routing, prior)
-        return self.decoder(query.unflatten(0, (len(self.contract.targets), self.contract.rank)))
+        return self.decoder(query.unflatten(0, (len(self.contract.targets), self.contract.rank)), native_inputs)
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                 language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],
-                visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor]) -> dict[str, Tensor]:
+                visual_task_masks: Sequence[Tensor], prior_tokens: Sequence[Tensor], *,
+                native_inputs: Sequence[Sequence[Tensor]]) -> dict[str, Tensor]:
         videos = self.encode(responses, frame_indices, language_embeddings, language_mask,
                              visual_tokens, visual_masks, visual_task_masks, prior_tokens)
-        return self.decode(videos, frame_indices)
+        return self.decode(videos, frame_indices, native_inputs)

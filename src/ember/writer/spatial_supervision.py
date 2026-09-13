@@ -12,7 +12,7 @@ SCHEMA = "visible_object_attention_labels_v1"
 
 
 def validate_spatial_config(config):
-    expected = {"schema": SCHEMA, "label_root": "runs/analysis/visible_object_grounding_20260913/labels",
+    expected = {"schema": SCHEMA, "label_root": "runs/analysis/native_correction_writer_20260913/spatial_labels",
                 "weight": .1, "native_patches": 512, "prior_patches": 576,
                 "objective": "mean_head_query_actual_attention_object_and_motion_kl"}
     if config != expected:

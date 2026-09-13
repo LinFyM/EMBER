@@ -9,6 +9,7 @@ from ember.writer.function_credit import paired_functional_credit
 from ember.writer.functional import writer_chain_rule_surrogate
 from ember.writer.native import autocast
 from ember.writer.spatial_supervision import SpatialLabelStore, spatial_objective
+from ember.writer.correction_supervision import CorrectionLabelStore, native_update_objective
 
 
 def _encode_leaves(writer, responses, inputs, *, backward, return_grounding=False):
@@ -24,16 +25,22 @@ def _native_cotangents(leaves, visuals):
     return tuple(value.grad for value in leaves), tuple(value.grad for value in visuals)
 
 
-def replay_functional_credit(writer, responses, inputs, compiled, *, spatial_labels=None, spatial_weight=0.):
-    """Replay FM and the registered spatial credit through one generation graph."""
+def replay_functional_credit(writer, responses, inputs, native_inputs, compiled, *,
+                             spatial_labels=None, spatial_weight=0., correction_target=None, correction_weight=0.):
+    """Replay all registered training credits through the same complete generator."""
     videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True,
                                            return_grounding=spatial_labels is not None)
     metrics, auxiliary = {}, 0.
     if spatial_labels is not None:
         videos, distributions = videos
         auxiliary, metrics = spatial_objective(distributions, spatial_labels)
-    state = writer.decode(videos, inputs[0])
-    (writer_chain_rule_surrogate(state, compiled) + spatial_weight * auxiliary).backward()
+    state = writer.decode(videos, inputs[0], native_inputs)
+    objective = writer_chain_rule_surrogate(state, compiled) + spatial_weight * auxiliary
+    if correction_target is not None:
+        correction, correction_metrics = native_update_objective(state, correction_target, writer.contract)
+        objective = objective + correction_weight * correction
+        metrics.update(correction_metrics)
+    objective.backward()
     return _native_cotangents(leaves, visuals), metrics
 
 
@@ -44,6 +51,8 @@ class SupervisedEngine:
         self.device, self.step = context.device, 0
         self.spatial = SpatialLabelStore(data.asset_root, config["spatial_supervision"],
                                         data.tasks, data.video_pool)
+        self.correction = CorrectionLabelStore(data.asset_root, config["correction_supervision"],
+                                               data.tasks, data.video_pool, runtime.lora)
 
     def _time(self, timings, name, start):
         if self.device.type == "cuda":
@@ -70,10 +79,11 @@ class SupervisedEngine:
         start = self._time(timings, "prefix_seconds", start)
         responses, inputs = runtime.observer.read(condition)
         labels = self.spatial.load(task, demos, inputs[0])
+        target = self.correction.load(task, demos, self.device)
         start = self._time(timings, "observer_forward_seconds", start)
         with torch.no_grad(), autocast(self.device):
             videos = runtime.state.writer.encode(responses, *inputs)
-            state = runtime.state.writer.decode(videos, inputs[0])
+            state = runtime.state.writer.decode(videos, inputs[0], condition.native_inputs)
         start = self._time(timings, "writer_forward_seconds", start)
         raw, trace = self.data.action_batch(
             task, draw["occurrence"], demos, query_seed=draw["query_seed"],
@@ -87,15 +97,18 @@ class SupervisedEngine:
         compiled = credit.pop("lora_cotangent")
         fm_norm = float(torch.stack([value.norm() for value in compiled.values()]).norm())
         with autocast(self.device):
-            cotangents, spatial_metrics = replay_functional_credit(
-                runtime.state.writer, responses, inputs, compiled, spatial_labels=labels,
-                spatial_weight=self.config["spatial_supervision"]["weight"] / (4 * self.config["data"]["conditions_per_task"]))
+            condition_weight = 1. / (4 * self.config["data"]["conditions_per_task"])
+            cotangents, auxiliary_metrics = replay_functional_credit(
+                runtime.state.writer, responses, inputs, condition.native_inputs, compiled, spatial_labels=labels,
+                spatial_weight=self.config["spatial_supervision"]["weight"] * condition_weight,
+                correction_target=target,
+                correction_weight=self.config["correction_supervision"]["weight"] * condition_weight)
         del compiled, responses, inputs
         start = self._time(timings, "writer_vjp_seconds", start)
         runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)
         del condition, cotangents
-        return {**credit, **spatial_metrics, "task_weight": .25,
+        return {**credit, **auxiliary_metrics, "task_weight": .25,
                 "condition_weight": 1. / (4 * self.config["data"]["conditions_per_task"]),
                 "normalizer": 1., "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
                 **trace, **timings, "prefix_cache_hits": self.cache.hits - hits,
@@ -110,7 +123,7 @@ class SupervisedEngine:
         batch = self.runtime.processor.training_batch(raw)
         with autocast(self.device):
             videos = self.runtime.state.writer.encode(responses, *inputs)
-            state = self.runtime.state.writer.decode(videos, inputs[0])
+            state = self.runtime.state.writer.decode(videos, inputs[0], condition.native_inputs)
             credit = self._credit(state, batch, trace, 0, backward=False)
         credit.pop("lora_cotangent")
         return {"task": task, "suite": self.data.tasks[task].suite, "video_demos": [demo],

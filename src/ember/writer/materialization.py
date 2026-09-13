@@ -24,10 +24,10 @@ from ember.writer.video import VideoWriterConfig, require_architecture_identity
 from ember.writer.video_prior import validate_prior_config
 
 
-RUN_SCHEMA = "ember_visible_object_writer_run_v1"
-STAGE = "visible_object_writer_fresh"
-TRAINING_SCHEMA = "ember_visible_object_training_state_v1"
-UPDATE_VERSION = "visible_object_main_fm_spatial_credit_v1"
+RUN_SCHEMA = "ember_native_correction_writer_run_v1"
+STAGE = "native_correction_writer_fresh"
+TRAINING_SCHEMA = "ember_native_correction_training_state_v1"
+UPDATE_VERSION = "native_correction_main_fm_joint_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -68,7 +68,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
             or run.get("stage") != STAGE or run.get("mode") != "formal"
-            or run.get("config", {}).get("data", {}).get("version") != "train24_cross_episode_k1_execution_aligned_v1"
+            or run.get("config", {}).get("data", {}).get("version") != "train24_teacher_action_pool_cross_episode_k1_v1"
             or run.get("config", {}).get("data", {}).get("query_alignment") != "post_action_observation_future_control_v1"
             or type(run.get("config", {}).get("data", {}).get("action_start_offset")) is not int
             or run["config"]["data"]["action_start_offset"] != 1
@@ -239,7 +239,7 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint):
     )
     with torch.no_grad(), autocast(runtime.observer.device):
         responses, inputs = runtime.observer.read(condition)
-        generated = runtime.state.writer(responses, *inputs)
+        generated = runtime.state.writer(responses, *inputs, native_inputs=condition.native_inputs)
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, runtime.lora)

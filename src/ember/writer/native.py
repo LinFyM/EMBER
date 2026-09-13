@@ -56,6 +56,7 @@ class NativeCondition:
     language_embeddings: torch.Tensor
     language_mask: torch.Tensor
     prior_tokens: tuple[torch.Tensor, ...]
+    native_inputs: tuple[tuple[torch.Tensor, ...], ...]
 
 
 class NativeVideoObserver:
@@ -64,7 +65,7 @@ class NativeVideoObserver:
     def __init__(
         self, policy: torch.nn.Module, meta: MetaLoRAStack, vl_meta: MetaLoRAStack,
         tokenizer: Pi05TeacherPrefixTokenizer, probe: torch.Tensor,
-        *, prior, prior_camera_view: str, frame_chunk: int = 4, camera_view: str = "agentview",
+        *, prior, input_reader, prior_camera_view: str, frame_chunk: int = 4, camera_view: str = "agentview",
     ) -> None:
         if probe.shape != (50, 32) or frame_chunk <= 0:
             raise ValueError("native observer requires one public 50x32 probe")
@@ -74,6 +75,7 @@ class NativeVideoObserver:
         self.probe, self.frame_chunk = probe, int(frame_chunk)
         self.device = probe.device
         self.prior = prior
+        self.input_reader = input_reader
         self.camera_view = camera_view
         self.camera_names = teacher_camera_names(camera_view)
         if prior_camera_view not in self.camera_names:
@@ -102,7 +104,7 @@ class NativeVideoObserver:
         native_keys = {"agentview": "base_0_rgb", "eye_in_hand": "left_wrist_0_rgb"}
         for camera, pixels in zip(self.camera_names, images.unbind(1) if dual else (images,), strict=True):
             batch[f"observation.images.{native_keys[camera]}"] = pixels
-        prefix = prepare_execution_policy_prefix(self.policy, batch)
+        prefix = prepare_execution_policy_prefix(self.policy, batch, native_precision=True)
         evidence_mask = prefix.padding.clone()
         evidence_mask[:, -tokens.shape[1]:] = task_span.expand(len(frames), -1)
         task_mask = torch.zeros_like(prefix.padding)
@@ -126,7 +128,7 @@ class NativeVideoObserver:
         tokens, mask, task_span = self.tokenizer([language])
         bridge = self.policy.model.paligemma_with_expert
         embeddings = bridge.embed_language_tokens(tokens).detach()[0]
-        videos, prior_tokens = [], []
+        videos, prior_tokens, native_inputs = [], [], []
         positions = []
         for video, indices in zip(frames, frame_indices, strict=True):
             if indices.shape != (len(video),) or len(video) == 0 or not bool((indices[1:] > indices[:-1]).all()):
@@ -138,8 +140,10 @@ class NativeVideoObserver:
                 self.prefix(video[start:start + self.frame_chunk], tokens, mask, task_span)
                 for start in range(0, len(video), self.frame_chunk)
             ))
+            native_inputs.append(self.input_reader.read_video(videos[-1]))
             positions.append(indices.to(self.device))
-        return NativeCondition(tuple(videos), tuple(positions), embeddings, task_span[0], tuple(prior_tokens))
+        return NativeCondition(tuple(videos), tuple(positions), embeddings, task_span[0],
+                               tuple(prior_tokens), tuple(native_inputs))
 
     def capture(self, chunk: FrozenInputChunk) -> tuple[torch.Tensor, torch.Tensor]:
         """One shared prefix graph supplies both direct Z and R-through-KV paths."""

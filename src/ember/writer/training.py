@@ -24,15 +24,16 @@ from ember.writer.data import teacher_camera_names
 from ember.writer.video import VideoWriterConfig
 from ember.writer.video_prior import validate_prior_config
 from ember.writer.spatial_supervision import validate_spatial_config
+from ember.writer.correction_supervision import validate_correction_config
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_visible_object_writer_run_v1"
-STAGE = "visible_object_writer_fresh"
-TRAINING_SCHEMA = "ember_visible_object_training_state_v1"
+RUN_SCHEMA = "ember_native_correction_writer_run_v1"
+STAGE = "native_correction_writer_fresh"
+TRAINING_SCHEMA = "ember_native_correction_training_state_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -40,6 +41,7 @@ def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     validate_prior_config(config)
     validate_spatial_config(config.get("spatial_supervision"))
+    validate_correction_config(config.get("correction_supervision"))
     teacher_camera_names(config["observer"].get("camera_view", "agentview"))
     expected_model = asdict(VideoWriterConfig())
     selected_model = VideoWriterConfig(**config["model"])
@@ -48,12 +50,13 @@ def _config(path: Path) -> dict[str, Any]:
     expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
                      "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1],
                      "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
-                     "version": "train24_cross_episode_k1_execution_aligned_v1"}
-    expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729}
+                     "version": "train24_teacher_action_pool_cross_episode_k1_v1"}
+    expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729,
+                         "native_inputs": "bare_frozen_source_all38_actual_linear_inputs_same_public_probe_without_Meta"}
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("edge_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_visible_object_writer_config_v1"
+        config.get("schema_version") != "ember_native_correction_writer_config_v1"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -62,13 +65,13 @@ def _config(path: Path) -> dict[str, Any]:
         or type(config["data"].get("conditions_per_task")) is not int
         or config["data"].get("conditions_per_task") != 1
         or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
-        or config["optimization"]["loss"] != "main_fm_plus_actual_spatial_kl"
-        or config.get("update_version") != "visible_object_main_fm_spatial_credit_v1"
+        or config["optimization"]["loss"] != "main_fm_plus_spatial_kl_and_native_update"
+        or config.get("update_version") != "native_correction_main_fm_joint_credit_v1"
         or "rl" in config or "trust_scales" in config["optimization"]
         or config.get("execution_precision") != "native_mixed_without_outer_autocast"
     ):
         raise ValueError("video functional Writer scientific contract changed")
-    for key, expected in (("video_demos", range(16)), ("action_demos", range(16, 42)),
+    for key, expected in (("video_demos", range(16, 42)), ("action_demos", range(16, 42)),
                           ("diagnostic_action_demos", range(42, 46)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
             raise ValueError(f"registered episode roles changed: {key}")
@@ -146,6 +149,8 @@ def _run_contract(args, context, config, runtime, state):
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": "main LoRA cross-episode; prior RGB-only", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"], "training_only_geometry": "labels in spatial loss only",
+            "training_only_actions": "same-video source correction labels in update loss only; main FM cross-episode",
+            "native_inputs": "all38 bare frozen source linear inputs; fixed no_grad forward within one Writer call",
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
@@ -408,7 +413,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_visible_object_grounding_comparison"
+    if args.mode == "formal" and (config["status"] != "registered_native_correction_comparison"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
@@ -452,7 +457,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_visible_object_video.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_native_correction_writer.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

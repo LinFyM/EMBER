@@ -17,8 +17,19 @@ Owner自主目标保持active且未完成。当前active design为[Native Correc
 按`.1`更新误差与既有主FM／空间目标共同fresh学习，未注册λ/rank/seed扫描；正式节点在真实profile后、学习前固定。
 两节点的8个train96/validation400配对面板及当前frame_set资格保持，最终controls仍在选定冻结以后。
 
-strg01现场data0为52.2/1024GiB，data1为1017.6/1024GiB。新大输出计划在data0独立根，新增峰值预算18GiB；
-data1只新增隔离源码树，峰值预算768MiB。当前先实现／核验数据与前向合同，完整运行前刷新实际profile、checkpoint体积及两节点资源。
+新数据已完成并封存：ca87f05c clean pushed frozen构建528套新纠正标签，6 worker全部exit0，
+墙钟95.29–99.55秒、峰值10.225GiB；加已有96套原件引用组成完整624套，teacher原始数组／幅度／完整因子审核通过。
+CPU空间构建438.79秒exit0，624条／22,319真实frames完整；原始stride5及末帧、512/576布局、有效性与aggregate复核通过。
+原件在`runs/analysis/native_correction_writer_20260913/`，物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913`，
+目前约2.6GiB。两个构建入口已完成其生命周期，退出活动树，精确源码保留在ca87f05c。
+
+前向、训练label边界、逐condition跨episode采样及新checkpoint身份已实现；旧自由A/B出口与三份旧配置已替换。
+135项相关检查通过，新增联合FM＋更新目标的直接autograd对照亦通过；这些只验证工程合同。
+已确定新教学池最长条件task38/demo36、105frames，接着从fresh identity完成两次真实联合反传与纯推理profile。
+当前没有正式学习、GPU运行或selected checkpoint；profile权重不得继承。
+
+数据构建准入strg01/data0为52.2/1024GiB、data1为1018.1/1024GiB；大新输出总峰值18GiB，data1源码预算768MiB。
+已复用source／prior／数据及旧96套标签。正式学习前依据实际profile固定节点、checkpoint体积并刷新独立quota与两节点资源。
 
 ## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 

@@ -32,7 +32,7 @@ GIT = {"branch": "", "commit": "a" * 40, "upstream": None, "dirty_paths": [],
 
 
 def _prior(mode="ordered"):
-    value = json.loads((ROOT / "configs/pi05_visible_object_video.json").read_text())["video_prior"]
+    value = json.loads((ROOT / "configs/pi05_native_correction_writer.json").read_text())["video_prior"]
     value["mode"] = mode
     return value
 
@@ -63,7 +63,7 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"] = vars(VideoWriterConfig())
-    run["config"]["data"] = {"version": "train24_cross_episode_k1_execution_aligned_v1",
+    run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
     run["config"]["video_prior"] = _prior()
     run["config"]["model"] = dict(run["model_config"])
@@ -634,11 +634,13 @@ def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path
     response = object()
     calls = []
 
-    def writer(*values):
+    captured_native = object()
+    def writer(*values, native_inputs):
+        assert native_inputs is captured_native
         calls.append(values)
         return identity_lora_state(lora)
 
-    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: "condition",
+    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: SimpleNamespace(native_inputs=captured_native),
         read=lambda condition: (response, arguments))
     runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora)
     task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),

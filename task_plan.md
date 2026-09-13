@@ -13,11 +13,12 @@
    保留训练获取和Object增量，停止原组合续训／扫描；不选50峰值，不触发未获资格的other或最终controls。
 3. **进行中：更新整体解释并定位实际行为。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
    降低“重排表示并给普通FM即可得到过程”的支持程度。当前same-object／different-destination现象尚无真实轨迹解释；
-   先核对已有回放合同和历史，必要时登记原四checkpoint、全8tasks、等距init的冻结只读回放，不按结果筛例。
+   已登记[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全8tasks、init0／12／25／37，
+   共128次，复用原LoRA、视频与RNG，不按结果筛例。下一步运行现有只读入口，逐组报告可观察的最早分歧。
    不由低FM、参数几何或一篇论文直接登记新训练。新证据须能区分对象／目的地选择与实际操作失败，并改变后续投入。
 4. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前无active训练design、selected checkpoint或在途正式train/eval；只读回放尚未登记／启动。
+当前无active训练design、selected checkpoint或在途正式train/eval；唯一active诊断为上述已登记只读回放，尚未启动。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 

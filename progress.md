@@ -37,8 +37,10 @@ source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp�
 
 下一步先具体区分当前失败行为，再决定是否修改学习机制。原始任务语言显示本轮显著收益与回退涉及同一cream-cheese物体，
 但目标分别为basket与bowl；现有仅success／steps的rows不能判断是否选错目的地、抓取失败或运输／放置失效。
-正在核对现有只读轨迹回放入口及最近历史；若登记回放，应固定全部原checkpoint、等距init与原视频映射，
-不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。尚未启动该回放或新训练。
+唯一active诊断为[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全部8个validation tasks，
+各固定init0／12／25／37，共128次，复用原视频／LoRA／RNG映射。保存正常执行图像／动作与目标谓词，
+区分对象／目的地选择和抓取／运输／放置失效；不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。
+现有入口和完整bank复用合同已核对；登记完成，待clean pushed登记与live GPU后启动，不恢复任何训练。
 当前理论降级及历史边界见[工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
 
 下方暂停与旧执行段落均为历史，不覆盖本次持续自主授权。

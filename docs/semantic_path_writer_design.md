@@ -123,9 +123,12 @@ source冻结、所有帧/fullH、76因子finite、实际峰值和吞吐。CPU运
 训练动作诊断仅定位，不选点；正式候选只由两轮完整paired400与相邻结果选择。
 
 初段资格要求：两个相邻节点的validation ordered−frame_set task-cluster95%CI下界均严格>0，
-每节点至少两个suite有序净正；有序每节点相对固定source47的净增CI下界也严格>0；
+每节点至少两个suite有序净正；有序每节点相对固定配对source参照的净增CI下界也严格>0；
 相邻有序成功数不下降、breadth不下降且非零suite不减少，不能以更差无序臂的退化冒充成功。
-CI使用固定seed20260914、20,000次按8task配对bootstrap。报告全部task／suite、breadth、R/G/L、churn及Jaccard。
+CI使用固定seed20260914、20,000次按8task配对bootstrap。正式学习前新算一次validation source400，
+固定8task×50init与新候选相同的执行／RNG合同，供两臂与所有节点复用；旧source47只作历史参照。
+train source96复用刚完成且合同匹配的oracle诊断source17/96，若执行合同有实质差异则先解决配对。
+报告全部task／suite、breadth、R/G/L、churn及Jaccard。
 该初段资格不要求145，但也不等同完整goal完成。
 
 达到初段资格后，补同task-other的完整matched400及内容更强的参照所需验证，再冻结single checkpoint；
@@ -146,3 +149,12 @@ native/runtime/supervised/training/materialization只更新必要接口与新sch
 主写在独立`codex/semantic-path-writer`工作树，验证后集成main并推送；正式训练／物化使用clean pushed detached frozen树。
 新大输出放data0，先按strg01的两个独立quota登记峰值，复用canonical模型／数据／环境。
 每次GPU launch检查两个节点与EMBER总占卡边界；按实际可用设备和峰值选择，不等待凑卡或占位。
+
+## 7. 实施核验与profile准入
+
+核心Writer为9,464,704参数，其中encoder6,204,960、完整因子head2,187,584，两组Meta另计。
+12项路径公式／帧集合／完整H及梯度检查、128项接线／重放／checkpoint／采样／物化回归通过；
+checkpoint字段核验改为同一函数内的声明表后，70项相关物化回归再通过。
+本次活动源码与测试合计净减558行，新增唯一59行factor owner、删除五个旧模块，没有新trainer或fallback。
+结构检查无新增／增长的hard问题；原selection／物化编排保持同一职责，输入验证是短shape／mask合同，未为计数拆成零碎模块。
+这些仅证明实现合同，真实梯度、显存和吞吐由下一项profile检验；[100,200]只是尚未获得formal准入的配置占位节点。

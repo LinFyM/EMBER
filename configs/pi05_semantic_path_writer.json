@@ -294,7 +294,7 @@
         100,
         200
       ],
-      "qualification_completion": "two complete paired400 correct nodes; ordered minus matched fresh frame_set and ordered minus source47 task-cluster95%CI lower bounds strictly positive at both nodes; at least two positive suites at each node; adjacent ordered success count, breadth and nonzero suites do not decrease",
+      "qualification_completion": "two complete paired400 correct nodes; ordered minus matched fresh frame_set and ordered minus paired_source task-cluster95%CI lower bounds strictly positive at both nodes; at least two positive suites at each node; adjacent ordered success count, breadth and nonzero suites do not decrease",
       "same_task_other": "complete matched400 only after initial two-node qualification; before single-checkpoint freeze"
     },
     "checkpoint_updates": [
@@ -429,7 +429,7 @@
       "confidence": 0.95,
       "primary": [
         "ordered_correct_minus_trained_frame_set",
-        "ordered_correct_minus_fixed_source47"
+        "ordered_correct_minus_fixed_paired_source"
       ],
       "final_primary": [
         "correct_minus_wrong_cross_suite",

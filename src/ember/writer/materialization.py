@@ -64,21 +64,23 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
-    if (macro <= 0 or not 1 <= world_size <= 6 or run.get("schema_version") != RUN_SCHEMA
-            or run.get("stage") != STAGE or run.get("mode") != "formal"
-            or run.get("config", {}).get("schema_version") != "ember_semantic_path_writer_config_v1"
-            or run.get("config", {}).get("optimization", {}).get("loss") != "main_fm"
-            or run.get("config", {}).get("observer", {}).get("camera_view") != "dual"
-            or run.get("config", {}).get("data", {}).get("version") != "train24_teacher_action_pool_cross_episode_k1_v1"
-            or run.get("config", {}).get("data", {}).get("query_alignment") != "post_action_observation_future_control_v1"
-            or type(run.get("config", {}).get("data", {}).get("action_start_offset")) is not int
-            or run["config"]["data"]["action_start_offset"] != 1
-            or run.get("config", {}).get("update_version") != UPDATE_VERSION
-            or run.get("config", {}).get("execution_precision") != "native_mixed_without_outer_autocast"
-            or not frozen_authority(run.get("git", {}))
-            or manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-            or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA
-            or manifest.get("next_macro") != macro or set(manifest.get("files", {})) != expected):
+    config = run["config"]
+    data = config.get("data", {})
+    identities = (
+        (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
+        (config, {"schema_version": "ember_semantic_path_writer_config_v1", "update_version": UPDATE_VERSION,
+                  "execution_precision": "native_mixed_without_outer_autocast"}),
+        (config.get("optimization", {}), {"loss": "main_fm"}),
+        (config.get("observer", {}), {"camera_view": "dual"}),
+        (data, {"version": "train24_teacher_action_pool_cross_episode_k1_v1", "action_start_offset": 1,
+                "query_alignment": "post_action_observation_future_control_v1"}),
+        (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
+                    "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
+    )
+    if (macro <= 0 or not 1 <= world_size <= 6
+            or any(value.get(key) != wanted for value, fields in identities for key, wanted in fields.items())
+            or type(data.get("action_start_offset")) is not int
+            or not frozen_authority(run.get("git", {})) or set(manifest.get("files", {})) != expected):
         raise ValueError("materialization requires a complete formal supervised Writer checkpoint")
     for name, record in manifest["files"].items():
         path = checkpoint / name

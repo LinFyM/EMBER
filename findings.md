@@ -1271,3 +1271,26 @@ train96为登记有限池；全部worker exit0，冻结代码defcf734，累计�
 因此oracle关系图训练内成功不能独自定位视频读取失败；纯终态标签也不能证明动态视频增量。
 下一候选须同时说明合法RGB获取何种方向性实例／部件关系，以及怎样验证其经唯一LoRA跨初态和任务传递。
 不能由位姿可恢复默认训练完整Writer，也不把这些限制扩大为否定所有关系监督。当前无新active design。
+
+## 81. Privileged状态匹配能传递部分动作价值，相对几何替换未获支持（2026-09-13）
+
+[登记诊断](docs/cross_init_relation_retrieval_audit.md)已完成：train24、action16–19单演示与诊断42–45交叉，
+固定stride5、post-action后的完整5×7动作，384个episode对、13,064位置；无训练、source模型或LoRA。
+对象集合来自官方obj_of_interest，含body与site；两种检索只改变平移坐标，动作Value及其它距离项相同。
+没有可训练task→参数映射，但privileged对象对应与真实teacher actions仍不构成合法deployment输入。
+
+绝对／相对／video_mean归一化MSE=.12443553/.12634790/.25459689；
+绝对−相对差额−.00191237，task-cluster95%CI[−.00421347,+.00027549]，仅8/24task为正、四suite点差额均负。
+均值−相对+.12824898，CI[+.11063319,+.14508720]、24/24task为正；绝对亦在24/24task胜过均值。
+登记两项条件未同时满足，关闭相对中心化的本具体替换依据，不追加坐标、尺度、特征或邻居数扫描。
+
+四个teacher中，相对只有demo19略优于绝对；两种检索相对均值的收益在四teacher均保持。
+总体收益来自平移与夹爪：绝对／相对／均值的旋转分项为.09144200/.09160858/.08597376，匹配未优于均值。
+因此保留部分状态条件化动作传递能力，不能将它称为完整动作教师或由此替换原Writer。
+此检验没有给出“只差世界坐标对齐”的证据，也没有评测RGB关系获取、顺序因果或参数编译；旧功能教师负结果仍有效。
+
+执行冻结9f90a14d、99.37秒、exit0；192条episode的6,513个几何状态与全部raw rows重算通过。
+初次54be9ca3在评分前发现2ms末次积分缓存差；按已安装step/sensor语义回退一个子步恢复几何后吻合，
+动作offset1与生产Writer不变。修正前的失败、登记、脚本Git及全部原始证据保留，非一次科学non-pass重试。
+原件位于`runs/analysis/cross_init_relation_retrieval_20260913/completed/`，完整索引见诊断§7；约1.3MiB。
+一次性入口退役，无active design、selected checkpoint或新训练；整体goal未完成。

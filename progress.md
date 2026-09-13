@@ -3,7 +3,7 @@
 ## 当前状态：Native双相机有界实验关闭，回到机制分析（2026-09-13）
 
 Owner授权的自主goal保持：取得有益视频增量、跨视频／初始化／相邻保持及固定validation迁移，暂不要求145/400。
-**整体goal未完成，当前active诊断为[跨初态相对几何检索](docs/cross_init_relation_retrieval_audit.md)，无active Writer学习。**
+**整体goal未完成，当前无active design。[跨初态相对几何检索](docs/cross_init_relation_retrieval_audit.md)已完成关闭。**
 [Native Dual-View Writer](docs/native_dual_video_writer_design.md)已关闭。时间对齐、冻结正例复核及
 [冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已按完整证据关闭。
 新增[冻结source状态输入诊断](docs/source_state_input_audit.md)也已完成关闭；不恢复历史训练、不扩大旧闭环复核或运行最终controls。
@@ -21,14 +21,17 @@ Owner授权的自主goal保持：取得有益视频增量、跨视频／初始�
 同task oracle关系图可退化为任务索引，不能据其拟合决定换RGB读取器；后续判别须处理任务层面泛化。
 已向Owner提出独立frame_set是否为持续硬门槛的明确选择，尚未据此变更资格。整体goal未完成。
 
-### 当前有界诊断：跨初态相对几何检索
+### 跨初态相对几何检索：13,064位置完整，替换前提未通过
 
 先不训练关系到参数映射：固定train24、teacher参照action16–19、query动作诊断42–45，比较同一条演示的
 绝对几何／相对几何1-NN及不检索的video动作均值。每条query保持stride5，预测真实后续5×7动作chunk；
-全部384个episode对一次完成。对象／部件固定来自官方obj_of_interest，含body与region site，未按动作选物体。
-两项MSE配对区间下界均为正且至少两个suite共同改善，才支持本具体几何传递前提；否则关闭且不扫描。
+全部384个episode对、13,064位置完整。对象／部件固定来自官方obj_of_interest，含body与region site，未按动作选物体。
+绝对／相对／均值MSE=.12443553/.12634790/.25459689；绝对−相对CI[−.00421347,+.00027549]跨零，
+四suite均无相对改善，按登记关闭。两种匹配均在24/24task胜过均值，但旋转分项未优于均值，不是完整教师的证明。
 这是privileged CPU数据参照，不是部署Writer、闭环或最终controls，也不恢复95-task或任一旧训练。
-源代码与诊断合同冻结后执行，原始动作／预测／索引及所有task/suite结果保留；完整合同见上方active诊断链接。
+9f90a14d冻结执行exit0、99.37秒，6,513个几何状态恢复及raw rows加权重算通过；原始动作／预测／索引及全部结果保留。
+评分前发现并修正2ms运动学缓存对应，原失败证据保留，生产Writer与高层动作offset未改变。一次性入口退役。
+停止直接以相对中心化替换作为修复依据，不扫描检索变体或默认追加完整Writer；完整边界见findings§81。
 
 最新[运动对应机制审查](docs/video_information_identifiability.md#7-显式运动对应能补什么以及为什么尚不足以启动新writer)
 不采用直接追加／替换dense-flow编码器的提案：文献的物体运动收益依赖物体绑定与执行状态对应，单独跟踪质量

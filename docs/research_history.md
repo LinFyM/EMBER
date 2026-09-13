@@ -1397,3 +1397,18 @@ train100/200有序36/54、静态32/50；validation有序64/53、静态56/39，
 `camera_comparison.json`、`bounded_200_initial_decision.json`、`bounded_200_decision.json`、`evidence_audit.json`、
 `training_pairing.json`及同名outputs根全部checkpoint／banks／raw rows／completion。
 controller正常exit0；无selected checkpoint、最终controls、Test或RL。候选关闭不等于整体goal完成。
+
+## 2026-09-13：跨初态相对几何检索前提关闭
+
+[预登记诊断](cross_init_relation_retrieval_audit.md)比较同一条演示的privileged绝对／相对几何1-NN动作Value，
+不用可训练task→参数映射。固定train24、action16–19与诊断42–45、stride5及后续5×7动作，
+384个episode对、13,064位置完整；9f90a14d冻结执行99.37秒、exit0，6,513个存储几何状态恢复。
+绝对／相对／video_mean MSE=.12443553/.12634790/.25459689，绝对−相对CI[−.00421347,+.00027549]跨零，
+四suite无相对改善。按登记关闭，不扫检索变体；两检索均在24/24task胜过均值，但旋转分项并未胜过均值。
+保留privileged状态匹配的部分动作价值，不证明合法RGB、时序或唯一LoRA收益，完整解释见findings§81。
+
+初次54be9ca3在动作评分前因末端坐标差退出；源码和17位置恢复指出2ms末次积分前运动学缓存。
+诊断几何按该子步恢复后所有episode对齐，生产Writer与高层动作offset未变，原失败证据保留。
+原件：`runs/analysis/cross_init_relation_retrieval_20260913/`的launch／初始失败，及`completed/`下
+registration、raw_rows、geometry_schema、episode_scores、summary、evidence_audit、run.log与completion。
+一次性入口退役、源码由Git9f90a14d保留；无新模型、GPU、rollout、Test或最终controls，整体goal未完成。

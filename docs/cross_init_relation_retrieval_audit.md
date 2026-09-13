@@ -1,6 +1,7 @@
 # 跨初态相对几何检索诊断（2026-09-13）
 
-登记后只运行一次；当前状态由progress记录。本项是训练侧privileged数据诊断，不是action-hidden Writer或方法资格。
+**已完成并关闭：相对几何替换前提未通过。** 原合同及评分前修正保留；本项是训练侧privileged数据诊断，
+不是action-hidden Writer或方法资格。不追加检索变体或据本结果重开Writer。
 
 ## 1. 判别问题与近邻区别
 
@@ -68,13 +69,13 @@ D_relative = D_common + meanₒₖ(||(pₒₖ−e)−(pₒₖ′−e′)||²) / 
 
 ## 5. 运行与保留
 
-只在CPU恢复存储状态，不推进仿真或渲染。一次性入口`scripts/audit_cross_init_relation_retrieval.py`在完成后退役，
-由Git和冻结源码保留；来自clean pushed detached树，复用canonical环境与资产。
+只在CPU恢复存储状态，不推进仿真或渲染。一次性入口`scripts/audit_cross_init_relation_retrieval.py`完成后退役，
+由Git冻结9f90a14d保留；执行来自clean pushed detached树，复用canonical环境与资产。
 输出`runs/analysis/cross_init_relation_retrieval_20260913/`保留登记、精确命令、逐行真实／预测动作、索引、
 全部task/suite/video指标、配对区间、完成与失败状态。没有新训练基础设施。
 
-strg01现场data1 quota为991.9GiB/1TiB，共享空间83TiB；现有`.codex/tmp`为13GiB。
-新增冻结源码与全部输出按512MiB峰值预算，预估峰值992.4GiB，复用所有大资产、不下载或复制模型。
+已在存储authority核对data1独立user quota、相关目录用量和共享容量，现场数值保存在本地launch原件。
+新增冻结源码与全部输出按512MiB峰值预算，验证在quota内；复用所有大资产、不下载或复制模型。
 这是只读数据分析，GPU不参与；不启动GPU预检或任何历史运行。
 
 ## 6. 评分前的子步时刻修正
@@ -89,3 +90,39 @@ task0/demo16的17个登记位置中，从下一存储qpos按同一qvel回退一�
 继续保留原obs末端／夹爪读数和`actions[i+1:i+6]`。每个episode仍核对恢复末端与存储末端在.0001m内，
 记录实际子步与最大误差，不扫描阈值。此次修正不涉及RGB、source模型或生产Writer代码。
 原失败registration／failure与日志保留；修正的完整输出放同一analysis根的`completed/`，不覆盖首轮原件。
+
+## 7. 完整结果与裁决
+
+9f90a14d冻结执行正常exit0，99.37秒；24task、192条episode的6,513个几何状态全部恢复，384个episode对、
+13,064个唯一task/teacher/query/frame位置完整。所有episode的模型子步均为.002s，坐标对应检查通过；
+全部真实／预测动作有限，按episode对、task等权从raw rows重新计算的MSE与summary一致。
+
+| 动作MSE | 绝对几何 | 相对几何 | 单视频动作均值 |
+| --- | ---: | ---: | ---: |
+| 全24task | .12443553 | .12634790 | .25459689 |
+| Spatial | .14956629 | .15157419 | .28452838 |
+| Object | .10331134 | .10773631 | .25113665 |
+| Goal | .13092024 | .13098083 | .24804866 |
+| Long | .11394427 | .11510028 | .23467385 |
+
+绝对−相对为−.00191237，task-cluster95%CI[−.00421347,+.00027549]跨零，仅8/24task为正；
+四suite点差额均负，共同满足两参照改善的suite数为0。均值−相对为+.12824898，CI[+.11063319,+.14508720]，
+24/24task为正；绝对几何也在24/24task优于均值。**两项要求未同时满足，按登记关闭本相对几何替换前提。**
+没有证据宣称相对坐标普遍无效，也不能把其相对均值的优势写成相对绝对几何的优势。
+
+按teacher16/17/18/19分别对query episode与task等权，相对−绝对MSE为+.00111197/+.00685869/+.00019884/−.00052002；
+没有选择其中较好的teacher。两种状态匹配相对均值的收益在四条teacher上均保留。
+预登记分项中，绝对／相对／均值的平移MSE为.08314998/.08391011/.21231973，
+旋转为.09144200/.09160858/.08597376，夹爪为.34727279/.35787925/.88729774。
+总体收益来自平移及夹爪，旋转并未胜过均值；这限制把参照称为完整动作教师，不能用总体MSE掩盖该分项。
+分项不改变主裁决，不据它另扫旋转坐标或特征子集。
+
+本结果支持“给定privileged任务对应、几何及真实单演示动作时，状态匹配能传递部分局部动作价值”；
+它不支持“世界坐标混淆是当前Writer的主要缺口”，也未检验合法RGB获取、视频顺序或固定LoRA编译。
+与旧source端点／局部头的输入和评分位置、horizon不同，不以近似MSE作跨实验排行。
+后续不追加坐标／邻居／尺度变体，不默认将该oracle接为新Writer教师；新机制仍须说明缺失信息及行为传递的判别。
+
+原件位于`runs/analysis/cross_init_relation_retrieval_20260913/`：顶层保留初始失败与launch，
+`completed/`保存`registration.json`、`raw_rows.npz`、`geometry_schema.json`、`episode_scores.json`、
+`summary.json`、`evidence_audit.json`、`run.log`和`completion.json`；总计约1.3MiB。没有新checkpoint或LoRA，
+没有GPU、训练、环境rollout、Test或最终controls。一次性入口退役，整体goal未完成。

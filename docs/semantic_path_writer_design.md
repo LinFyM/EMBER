@@ -125,8 +125,9 @@ source冻结、所有帧/fullH、76因子finite、实际峰值和吞吐。CPU运
 初段资格要求：两个相邻节点的validation ordered−frame_set task-cluster95%CI下界均严格>0，
 每节点至少两个suite有序净正；有序每节点相对固定配对source参照的净增CI下界也严格>0；
 相邻有序成功数不下降、breadth不下降且非零suite不减少，不能以更差无序臂的退化冒充成功。
-CI使用固定seed20260914、20,000次按8task配对bootstrap。正式学习前新算一次validation source400，
+CI使用固定seed20260914、20,000次按8task配对bootstrap。预先登记并启动一次validation source400，
 固定8task×50init与新候选相同的执行／RNG合同，供两臂与所有节点复用；旧source47只作历史参照。
+参照须在资格裁决前完整完成，其独立计算可与已登记的学习并行，不因尚未收齐source rows阻塞无依赖的训练。
 train source96复用刚完成且合同匹配的oracle诊断source17/96，若执行合同有实质差异则先解决配对。
 报告全部task／suite、breadth、R/G/L、churn及Jaccard。
 该初段资格不要求145，但也不等同完整goal完成。
@@ -157,4 +158,8 @@ native/runtime/supervised/training/materialization只更新必要接口与新sch
 checkpoint字段核验改为同一函数内的声明表后，70项相关物化回归再通过。
 本次活动源码与测试合计净减558行，新增唯一59行factor owner、删除五个旧模块，没有新trainer或fallback。
 结构检查无新增／增长的hard问题；原selection／物化编排保持同一职责，输入验证是短shape／mask合同，未为计数拆成零碎模块。
-这些仅证明实现合同，真实梯度、显存和吞吐由下一项profile检验；[100,200]只是尚未获得formal准入的配置占位节点。
+这些仅证明实现合同；[100,200]只是尚未获得formal准入的配置占位节点。
+f46e3303 clean pushed detached启动最长条件两次完整主FM／observer重放，物理microbatch分别8／16；
+这是吞吐／显存执行选择，逻辑64queries不变，整个profile初始化不供正式学习复用。
+同一冻结代码的新source400在另外两张卡运行，完整launch、双节点现场与存储预算保存于
+`runs/analysis/semantic_path_writer_20260914/initial_launch_contract.json`及其引用原件；当前科学结果只看progress。

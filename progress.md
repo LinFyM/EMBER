@@ -4,7 +4,8 @@
 
 Owner自主目标保持active且未完成。当前active design为[Native Correction Writer](docs/native_correction_writer_design.md)，
 依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
-正在准备两臂fresh学习与8个配对闭环面板；尚无在途GPU运行或selected checkpoint。
+09c1a0d6 clean pushed detached已启动两臂fresh200，GPU01分别0–2／3–5、world3；后续8面板队列已运行等待。
+当前无selected checkpoint，整体goal未完成。
 所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
 
 新出口为`ΔW=B(RX)`：从同组完整RGB以裸source读真实38-target输入X，视频网络输出自由B和逐位置R。
@@ -34,10 +35,18 @@ f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.
 主FM .11770744→.11770465，L_update 1→.99981159，第二步Q/K、native key与Action/VL Meta共同梯度有效。
 裸source与prior冻结，纯前向一次产出38目标／76因子，没有loss／autograd。所有profile权重丢弃，不作正式初始化。
 据此正式学习前固定两臂各100/200、800条件、51,200主query及8个配对面板，保留原有资格与停止条件。
-当前没有正式学习或selected checkpoint，整体goal未完成。
+正式两臂已进入学习，启动后的前两步有限，L_update仍约1；这只是运行状态，不能据此推断拟合或闭环收益。
 
-数据构建准入strg01/data0为52.2/1024GiB、data1为1018.1/1024GiB；大新输出总峰值18GiB，data1源码预算768MiB。
-已复用source／prior／数据及旧96套标签。正式学习前依据实际profile固定节点、checkpoint体积并刷新独立quota与两节点资源。
+正式启动已刷新两节点及strg01：data0为54.7/1024GiB，data1为1017.9/1024GiB；data0个人目录du53GiB。
+大新输出总峰值18GiB，扣除现有标签后尚余15.4GiB，预计data0峰值70.1GiB；source／prior／数据及旧96套标签复用。
+训练物理根为`/data0/user/ymdai/ember_runs/native_correction_writer_20260913/training`，workspace outputs同名入口为symlink。
+GPU01两个独立tmux为`ember-native-correction-ordered`、`ember-native-correction-frame_set`；CPU分别NUMA0/1，
+source/prior trainable均0，NCCL_P2P_DISABLE=1及deferred NCCL生效。完整合同在analysis的`launch_contract.json`。
+
+`ember-native-correction-queue`等待两臂200完成，先核对各800条件的18个配对字段及主query排除teacher，
+再核验四完整checkpoint、物化8个bank并以动态persistent evaluator完成1,984配对rows。每次GPU阶段重新检查两节点与data0额度，
+累计所有自有GPU不超过6，不运行未获资格的other／静态／最终controls。`overnight_status.json`、`queue.log`与`queue.exit`
+保留控制状态；后续raw审计与逐task/suite、source／frame_set及相邻配对读出已接入。新旧教学曝光不同，不宣称其匹配消融。
 
 ## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 

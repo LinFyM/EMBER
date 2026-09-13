@@ -872,7 +872,7 @@ video/action demos交集，Stage0与G2各自sampler也明确分开。这些并�
 spec的数量，也不等于已经证明相互独立、能区分操作顺序的教学映射。
 
 - 冻结G2行为读出`5781694`实际训练56 meta＋19 target共75任务，另20任务零梯度；四类reader各1000步。
-  held full/language recovery约.2695/.2687，behavior-span oracle约.7160。G2-B `5cbe76e`随后在相同75任务上
+  held full/language梯度因子几何恢复约.2695/.2687，behavior-span oracle约.7160（`factor_cosine`，不是安装LoRA后的FM收益；见§87）。G2-B `5cbe76e`随后在相同75任务上
   共同训练表征，60macros/420更新/2280条件，held recovery最高约.294、终点.283，未获行为充分性。
   前者是冻结读出，后者保留跨episode动作/进度监督；都没有分别训练的ordered/frame_set Writer。
 - 自然组合Writer `5534cb14`实际55 meta＋18 target共73任务，400步/4800条件/76,800 functional rows，
@@ -1389,3 +1389,19 @@ Local Action Grounded已有回顾实际动作标签，却是独立fresh FM头，
 非零教师动作残差同样不能直接照搬到新的机器人状态。先明确状态／部件条件与效果的联合关系怎样约束执行策略，
 再判断合法RGB可否获取它；当前不训练新的残差动作头、不恢复裸forecast编译、不构建新cache。
 本项是理论与历史机制裁决，无新模型／环境／最终controls，整体goal未完成。
+
+## 87. 真实动作纠正到原生参数作用：梯度几何、训练信用与前向构造须分开（2026-09-13）
+
+[原生纠正传递诊断](docs/native_corrective_transfer_audit.md)把条件与纠正的联合关系落实到
+`g_l=Σ c_li x_liᵀ`：c是同次forward的输出cotangent，x是该层真实输入；它区别于native Y或forecast差。
+其跨episode作用仍需实际测量，教师位置下降不保证另一初态下降，state-free与true-state的Jacobian也不自动匹配。
+
+近邻审计修正一个证据口径：旧95-task behavior authority的.716/.801与.2695来自
+`fcdb6e43:src/ember/ecp/behavior/gate.py::_exact_rows`的`factor_cosine`，不是实际跨episodeFM／闭环。
+`5cbe76e0:scripts/seal_ecp_g2_behavior_codes.py`只加载外部rank4因子，`source_policy_loaded:false`；
+本次限定检索未找到原始生成器，不能推断它们的source/carrier运行点、state、noise或flow time。
+P1的mapping容量、J2实际100步FM正控，以及EBSRI/PNBTT的生成器VJP是不同实验；它们的正负边界分别保留。
+
+因此没有把梯度一词当作新意，也没有由几何正数假定当前传递通过。新有界诊断将给定真实动作、固定一次38目标rank16构造，
+在独立query中同时检验t1与full10真实输出；不先训练RGB残差头。该项是privileged训练侧oracle，尚未产生结果，
+不能包装成action-hidden部署或放开禁止task-local优化的边界。完整采样、配对、停止与资源合同在上述登记文档。

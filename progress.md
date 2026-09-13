@@ -1,10 +1,26 @@
 # EMBER progress
 
-## 当前：物体与运动落点监督完整关闭，转入综合机制分析（2026-09-13）
+## 当前：原生纠正传递诊断已登记，尚在实施（2026-09-13）
+
+Owner授权继续仔细推导、实施并按结果调整，整体有益视频特异性goal保持active且未完成。
+**当前active诊断：[原生条件与真实纠正的跨episode传递](docs/native_corrective_transfer_audit.md)。**
+没有active Writer训练、在途GPU运行或selected checkpoint；Visible-Object及更早组合全部保持关闭。
+
+新合同固定裸source和一次rank16参数构造：从train24/demo16–19真实动作误差取得38目标weight导数，
+给定正确纠正信号后，先检验state-free条件的参数作用能否传到另一episode；true-state只作privileged参照。
+复用42–45的384个独立query，每臂96套LoRA、1,536个组合，配对评分t1与full10真实输出，无query梯度或环境步。
+只有两读出都满足登记的正区间／suite前提，才支持继续推导合法RGB获取；非通过不追加尺度、rank、seed或训练。
+
+历史近邻复核发现旧95-task authority的.716/.801、.2695是梯度因子cosine，而非安装更新后的FM；
+J2真实FM正控、EBSRI及PNBTT则是不同的优化／共享生成合同，不能拼成当前固定算子的行为验证。
+本项明确是训练侧oracle，真实动作与一次任务更新不能包装为action-hidden部署，也不恢复task-local优化。
+实现／smoke／准入完成后从clean pushed frozen树执行，当前未启动正式诊断；新增峰值预算2GiB，data1现场1016.7/1024GiB。
+
+## 最近完整闭环：物体与运动落点监督关闭（2026-09-13）
 
 Owner授权继续仔细推导、实施并按结果调整，完整有益视频特异性goal仍未完成。
-**当前无active design、无在途训练／物化／评测、无selected checkpoint。** 下方各历史阶段的“当前／下一步”
-均不恢复执行；最新裁决为本节。[Visible-Object设计§9](docs/visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)
+本组合无active design、无在途训练／物化／评测、无selected checkpoint。下方各历史阶段的“当前／下一步”
+均不恢复执行；最新执行状态为顶部。[Visible-Object设计§9](docs/visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)
 与findings§85保存完整正负事实，旧时间对齐、冻结正例复核、局部动作、native双相机及其它已关闭诊断不重开。
 
 b304cde6 clean pushed frozen完成ordered/frame_set各fresh200、800条件、51,200主FM queries，

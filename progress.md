@@ -1,10 +1,19 @@
 # EMBER progress
 
+## 当前：登记真实纠正标签的跨视频／初始化闭环前提（2026-09-13）
+
+整体goal保持active且未完成。当前唯一active design为[固定纠正闭环诊断](docs/native_corrective_closed_loop_audit.md)：
+固定既有state-free的train24/demo16–19共96套LoRA，每套在init32–35四个初态执行，另新算source96，共480个episodes。
+这是privileged训练侧目标诊断，不能计入合法action-hidden Writer成绩；无新label、训练、梯度、held读取、scale／rank扫描或checkpoint选择。
+尚未启动。先完成现有static evaluator的来源检查、冻结与资源准入，再按全部四teacher／四init及task-cluster资格一次裁决。
+已有oracle正证据止于独立动作预测；本项优先确认目标G自身的闭环价值，避免从参数拟合缺口默认另一个Writer。
+此前全部Writer、固定A与ray分析保持关闭；当前是否执行只看本节与新设计。
+
 ## 当前：幅度／方向与系数代价分析完成关闭（2026-09-13）
 
 完整有益视频特异性goal保持active且未完成，暂不强制145/400。
 **[获取诊断§7–8](docs/native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)已按登记关闭；
-当前无active design、在途GPU／CPU运行或selected checkpoint。** 全部Writer训练及旧诊断继续保持关闭。
+该轮结束时无active design、在途GPU／CPU运行或selected checkpoint。** 全部Writer训练及旧诊断继续保持关闭。
 
 3c3c4897登记后，CPU只读四模型384条件，14.183秒exit0；六组固定小矩阵、投影公式、完整三项恒等式与task等权汇总通过。
 没有新模型forward、训练、梯度、动作读取／query、环境步或held读取，也没有构造／安装倍率adapter或真实B_min。

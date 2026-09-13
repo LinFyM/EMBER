@@ -56,8 +56,13 @@ frame_set [.05190,.42785]→[.90533,2.26667]；这支持标注区域读取拟合
 
 评测启动前两节点GPU/process及strg01配额重新核对：个人/data1为1016.9/1024GiB，剩余预算2GiB，预计1018.9GiB。
 物化进程全部退出后实际占用0→6；gpu01/0–5每卡2个persistent worker，按cost-balanced dynamic queue执行。
-首个ordered100/train96 launcher3529687与12个worker已实际运行；其余面板由同一队列接续，尚无完整新闭环成绩。
+首个ordered100/train96以12个worker完成；随后按实时空闲资源使用gpu01/0–3、每卡2worker，不改变逻辑评测面板。
 精确启动合同、设备UUID和资源快照为`overnight_ordered_100_train_admission.json`及各panel的run_contract。
+
+100步train96两面板已完整结束：ordered32/96、frame_set33/96，breadth13/17；
+S/O/G/L为4/13/12/3对10/9/10/4。两组原始96rows与全部worker exit0核对通过，墙钟286.53/328.36秒。
+该训练任务节点没有有序净优势；完整8面板尚未齐备，不由这一局部结果关闭候选或改变资格。
+ordered100/validation400已实际启动（launcher3593499、8workers）；继续两个节点的全部validation与200步train面板。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

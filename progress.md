@@ -1,10 +1,15 @@
 # EMBER progress
 
-## 当前：语义状态路径完整比较已关闭，继续定位条件行为的获取与保持（2026-09-14）
+## 当前：局部条件纠正场已选定，先核验其rank16合成作用（2026-09-14）
 
 Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
 自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
-暂不额外强制145/400。当前没有active训练design或selected checkpoint，不从下方历史状态恢复旧实验。
+暂不额外强制145/400。当前唯一active design为[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)，
+只执行固定train24／四teacher的privileged函数核验；没有active Writer训练或selected checkpoint。
+新候选让逐位置的同一纠正场接受真实局部监督并直接合成LoRA，区别于独立辅助动作头与旧总参数回归。
+先检验在局部场上限制rank16是否保留实际跨episode作用；现有G的rank16是在总参数矩阵上施加，两者不能当成等价。
+登记96条件、1,536独立query组合、t1及full10，原source／query／eta全部固定复用；不新增闭环、held、训练或最终controls。
+当前为实现与CPU核验，尚未启动GPU。本文后面的关闭与旧执行段落不恢复旧实验。
 
 [语义状态路径Writer§8](docs/semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)两臂fresh100及八面板全部完成：
 
@@ -46,9 +51,9 @@ O50／F50／O100／F100的原→重放成功为7→5／5→9／3→5／1→1；1
 32组固定双相机图像已全部人工检查：奶油奶酪有获取／运输衔接失败，其他任务同时有错实例／错物、
 抽屉子阶段停滞及组合目标失去；未唯一识别模块或单一操作阶段。短暂目标变化由完整谓词补充，原件和边界见
 [回放完整读出](runs/analysis/semantic_path_writer_20260914/behavior_replay/READOUT.md)及findings§96。
-当前无active设计、selected checkpoint或在途运行，不扩回放或由其中一种失败自动启动局部修补。
-整体goal与自主授权持续；下一项选择须同时解释条件绑定、实际控制和组合保持，并与近等价旧机制比较后决定投入。
-当前理论降级及历史边界见[工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
+回放关闭时无active设计、selected checkpoint或在途运行；不扩回放或由其中一种失败自动启动局部修补。
+整体goal与自主授权持续；当前已按顶部登记新的局部纠正场假设及其有限核验，尚无新性能结果。
+理论降级及新联合消费关系见[工作理论§8–10](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
 
 下方暂停与旧执行段落均为历史，不覆盖本次持续自主授权。
 

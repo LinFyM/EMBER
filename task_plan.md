@@ -17,12 +17,15 @@
    共128次已完成，复用原LoRA、视频与RNG配对通过，24个worker exit0；32组固定图像齐全。
    全部32组人工观察已完成，失败同时涉及错物／实例、具体获取／运输和组合目标保持；8/128次回放结果变化完整保留。
    按异质失败分支关闭，不从中选择唯一失败模块，不扩回放／controls或自动加目的地解析、局部动作头或保持损失。
-4. **进行中：据混合行为与完整历史选择联合机制。** 当前无新方法登记；需说明如何同时获得条件绑定和可执行作用，
-   学习信用为何能够迁移和保持，以及相对旧获取／蒸馏／几何／共享方案的实质区别，再决定下一笔实现与验证投入。
-   不由低FM、参数几何或一篇论文直接登记新训练。
+4. **进行中：局部条件纠正场的有界算子核验。** [新联合机制](docs/local_correction_field_design.md)已选定：
+   同位置过程解释得到的纠正场，既接受真实纠正监督，又直接与裸source状态配对形成LoRA；不保留独立辅助动作出口。
+   先按§5固定96条件／1,536 query组合及原source／eta／RNG，检验局部rank16场收缩的t1与full10实际作用。
+   当前只有该privileged训练侧诊断active，尚在实现、未启动GPU；两读出资格不过就停止这个具体组合，
+   通过才继续完成合法Writer实现／profile／学习登记，不把原G分数或新局部误差当目标完成。
 5. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前无active design、selected checkpoint或在途运行；上述回放及行为解释全部关闭，整体goal和自主授权继续。
+当前唯一active design为[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)，
+无selected checkpoint或在途GPU运行；上述回放及行为解释全部关闭，整体goal和自主授权继续。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 

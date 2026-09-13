@@ -1,33 +1,25 @@
 # EMBER task plan
 
-## 当前目标：恢复自主推进有益时序视频编译（2026-09-14）
+## 当前目标：自主推进可重复的有益时序视频编译（2026-09-14）
 
-Owner明确要求“制定一个goal开始推进”，恢复自主研究。新goal已激活且未完成：用历史正负证据建立连贯的
-架构与训练机制，并通过实现和验证取得正确action-hidden视频经唯一完整LoRA产生的可重复有益闭环增量。
-允许完整视频双向理解；有序模型必须强于匹配且独立训练的全帧无序模型，保留跨同task视频、初始化、相邻checkpoint、
-固定validation迁移及冻结后的内容／时序因果证据。暂不额外强制145/400，既有信息墙、K1、数据、GPU、存储与Git合同保持。
+整体goal保持active且未完成，Owner自主授权持续。目标是正确action-hidden视频经一次生成的唯一完整LoRA获得
+可重复闭环增量；有序强于独立fresh全帧frame_set，并跨视频、初始化、相邻checkpoint及固定validation保持。
+允许完整视频双向理解，暂不额外强制145/400；信息墙、K1、数据／资源／Git合同保持。
 
-1. **完成：工作理论、近等价核对与完整G诊断。** [条件控制算子理论](docs/temporal_control_compilation_theory.md)
-   联合解释输入内容、操作关系、执行知识、参数生成和获取／保持。固定G原480episodes全部完成，
-   source17/96、四teacher21/25/20/24，净+5.73pp CI[+1.04,+12.5]pp，四项注册前提均通过后关闭。
-   这将合法条件控制获取提为下一重点，不默认特定G参数拟合就是唯一的学习途径。
-2. **完成实现和profile：[语义状态路径Writer](docs/semantic_path_writer_design.md)。** 联合设计与旧C／Video Functional／native纠正的
-   实质差别已登记，核心图12项检查、运行接线与回归、退役及集成完成；最长105帧fresh8／8真实profile通过。
-   新图仅用跨episode主FM；完整R/Z理解与二阶路径共同生成自由完整A/B，无旧辅助标签或裸X约束。
-3. **进行中：50／100两等间隔节点已按实际吞吐在看分数前登记。** 有序／无序分别在gpu02／gpu01各三卡，
-   从同一5116deb0 frozen独立fresh正式启动，实际run合同确认除process_mode外配置相同；
-   两臂各100updates／400教学条件／25,600主query均已完整结束，四checkpoint核验及全部学习／诊断字段配对通过。
-   四节点共1,984套LoRA已全部封存；有序train96为16→29（source17），相邻仍有3个丢失、Long2→1。
-   有序validation为77→48（source47），Goal36→14、相邻丢失47个成功，source增益与保持的初步条件未通过。
-   无序50 train96为22；全部八面板已启动、五个完成，剩余无序两个validation及100 train正在收齐。
-   报告能力、ordered−frame_set、breadth、churn和相邻保持；资格后补换视频，再冻结并做最终controls。
-   负结果先更新主假设和投入判断，停止近等价重复；有益候选继续验证跨视频与冻结后的因果controls。
-4. 仅在完整目标证据成立时完成goal；局部正例、surrogate、单个峰值、代码或理论文档完成均不算科学目标达成。
+1. **已完成：完整G诊断。** 480episodes按注册关闭，source17/96，四teacher21/25/20/24；
+   净+5.73pp、CI[+1.04,+12.5]pp。只支持privileged纠正的有限跨视频／初态控制作用。
+2. **已完成关闭：语义状态路径Writer。** 全图实现、最长105帧profile、两臂fresh100、四checkpoint和八配对面板完成。
+   train96有序／无序16/22→29/26，validation77/75→48/44；三个资格均失败。完整1,984rows审计通过，39个最终worker exit0。
+   保留训练获取和Object增量，停止原组合续训／扫描；不选50峰值，不触发未获资格的other或最终controls。
+3. **进行中：更新整体解释并定位实际行为。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
+   降低“重排表示并给普通FM即可得到过程”的支持程度。当前same-object／different-destination现象尚无真实轨迹解释；
+   先核对已有回放合同和历史，必要时登记原四checkpoint、全8tasks、等距init的冻结只读回放，不按结果筛例。
+   不由低FM、参数几何或一篇论文直接登记新训练。新证据须能区分对象／目的地选择与实际操作失败，并改变后续投入。
+4. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前唯一active design为语义状态路径Writer。真实纠正诊断已关闭，不扩大面板或扫描；两臂训练和全部编译已结束，配对闭环正在运行。
-新source400已47/400完整结束；有序50 validation的一次EGL失败已按原合同恢复完整400，首次错误与全部原件保留。
-尚无完整资格或selected checkpoint；等无序对比齐全后完成本段解释与裁决，不以训练loss下降替代未见任务保持。
-下方暂停记录与旧“下一步”为历史，不覆盖本次恢复授权。
+当前无active训练design、selected checkpoint或在途正式train/eval；只读回放尚未登记／启动。
+原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
+下方暂停和未完成旧清单均是历史，不恢复执行。
 
 ## 暂停时点：讨论架构与训练的整体原理（2026-09-14）
 

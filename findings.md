@@ -1571,3 +1571,38 @@ source17/96，四teacher分别21/25/20/24；按四teacher复用source参照为68
 累计launcher1943.48秒；真实480rows、执行合同和policy RNG公共前缀配对重算通过，运行进程已退出。
 原件在`runs/analysis/native_correction_writer_20260913/oracle_rollout/`；完整结果见
 [闭环诊断§7](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)，临时来源准入按关闭合同退役。
+
+
+## 95. 显式二阶状态路径有训练获取，未获得重复过程增量或未见任务保持（2026-09-14）
+
+Semantic Path两臂fresh100、四checkpoint和全部八面板完成，共1,984闭环rows；每臂400条件／25,600queries，
+曝光18字段、独立诊断12字段匹配。完整R/Z、双向理解、自由完整A/B与唯一跨episodeFM的组合由独立fresh全帧集合直接比较。
+
+| 节点 | train96有序／无序 | validation400有序／无序 |
+| --- | --- | --- |
+| 50 | 16 / 22 | 77 / 75 |
+| 100 | 29 / 26 | 48 / 44 |
+
+新source400为47，训练source17/96。validation有序−无序95%区间[−1.25,+2.50]／[−1.75,+5.00]pp，
+净正suite2／1；有序−source区间[−2.25,+23.50]／[−19.25,+17.25]pp。原两个节点及相邻资格全部失败。
+有序S/O/G/L为0/38/36/3→1/32/14/1，无序0/35/38/2→1/34/7/2；breadth分别5→6、3→6。
+有序相邻R/G/L30/18/47、churn65、J=.31579，无序23/21/52、churn73、J=.23958。
+两个模型都获得部分Object而失去Goal；不能用无序退化或早期77的单峰宣布时序恢复。
+
+有序train16→29、breadth8→12，100相对source净+12、CI[+2.08,+22.92]pp；相邻净率CI[+5.21,+21.88]pp。
+但有序−无序−6／+3，CI[−11.46,−1.04]／[−6.25,+13.54]pp；没有可重复训练有序优势。
+两组固定动作FM为.153285→.130330→.121139及.153285→.130311→.121899，50→100各24/24task改善。
+这反对“没有任何学习”的说法，也明确拟合／部分训练获取没有形成held保持；不把100称为充分训练或平台。
+
+原始语言显示，held的cream cheese→basket从source5改善到有序35／27、无序35／28；
+cream cheese→bowl则从source41变为有序36／13、无序38／6。只有任务条件与成功计数，尚无目的地混淆或操作阶段根因证明。
+未来若核对这些行为，须固定全任务／checkpoint／等距init及原state-video映射，不按结果挑实例，也不能先改模型再补故事。
+
+原四checkpoint、八bank、真实帧／末帧、38-target／76-factor、单次Writer、source与RNG配对均通过。
+39个最终worker exit0，八面板有效累计10,202.87秒；有序50的一次EGL初始失败按原contract恢复完整400，原件保留、根因未定。
+运行代码5116deb0 clean pushed frozen。原件位于`runs/analysis/semantic_path_writer_20260914/`的READOUT、paired_readout、
+bounded100_decision、各training／materialized／evaluation及launch/profile/recovery。
+
+按注册关闭本主假设组合，不续训或扫路径阶数／宽度、head、rank、LR、seed、scale、辅助loss。
+没有selected checkpoint、other、最终内容／时序controls、Test、held梯度或RL。整体goal未完成，自主授权持续。
+下一解释须同时保留§94的privileged控制正事实、这里的一般训练获取与稳定／过程负证据，不默认另一个完整Writer或保持补丁。

@@ -1557,3 +1557,35 @@ summary／decision／readout、registration／launch及全部log／exit。原che
 summary、task等权曝光分组、decision、readout、分析／报告源码及start/end/log/exit。
 没有新模型forward、标签、动作query、梯度、环境步、held数据或checkpoint选择，没有生成真实B_min或倍率adapter。
 分析已关闭，无在途运行；整体有益视频特异性goal未完成，不默认新Writer、续训或参数扫描。
+
+
+## 2026-09-14：固定真实纠正完成跨初始化闭环前提
+
+[固定G闭环§7](native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)的原480episodes完整结束。
+source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp；四teacher、四init均净正，
+S/G/L三suite净正，四项预注册前提全部通过。Object仍零，task35贡献11/22净增，不能称广泛任务能力。
+这把§88的独立动作正证据推进到具体privileged更新的有限闭环作用；仍不是合法RGB生成、时序必要性或held迁移证据。
+45worker和controller均exit0，累计1943.48秒。2c0a8dde运行与原首次准备失败保留于
+`runs/analysis/native_correction_writer_20260913/oracle_rollout/`；59行临时来源分支随后退役。跨轮结论见findings§94。
+
+## 2026-09-14：语义状态路径的完整有序／无序比较未获资格
+
+[完整联合设计与裁决](semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)在5116deb0 clean pushed frozen
+完成两臂fresh100；每臂400条件／25,600主FM queries，四checkpoint、八bank和1,984闭环rows全部完整。
+原生R/Z双向状态理解、二阶有向路径、条件调制及自由完整A/B只以跨episode主FM共同学习；
+独立fresh全帧frame_set保留相同学习模块、输入、优化与实际曝光，只替换无参数路径／集合统计。
+
+50/100的train96有序／无序为16/22、29/26；validation400为77/75、48/44，固定source17/96和新47/400。
+validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节点及相邻资格均失败；无selected checkpoint。
+有序相邻R/G/L30/18/47、churn65、J=.31579；无序23/21/52、churn73、J=.23958。
+两组均保留部分Object增长而Goal明显回退；训练有序16→29及100相对source的正区间不能证明过程或held保持。
+50→100两组24/24task固定动作FM改善，也不抵消实际闭环负证据。
+
+全部实际曝光／诊断字段、source执行、RNG／无放回state-video、真实帧及完整38-target因子身份通过。
+39个最终评测worker全部exit0，累计有效10,202.87秒；有序50初次EGL错误在保留252行后按原contract恢复余下148行，
+失败记录保留且根因未定。没有时序／内容最终controls、Test、held梯度、RL或checkpoint融合。
+原件`runs/analysis/semantic_path_writer_20260914/`保存完整READOUT、paired_readout、bounded100_decision、
+所有checkpoints／banks／raw rows／aggregate／completion及launch/profile/recovery。跨轮结论见findings§95。
+
+按原合同关闭二阶语义路径与本联合FM译码组合，不续训或追加路径／head／rank／LR／seed／scale／loss扫描。
+整体goal未完成，自主授权持续；后继先具体核对条件行为的失败阶段，不能把另一种表示或训练术语直接当修复。

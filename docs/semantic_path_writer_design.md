@@ -1,7 +1,7 @@
 # 语义状态路径到条件控制参数
 
-2026-09-14。当前联合设计；正式执行状态只看progress。固定G诊断已按原480episodes完成并关闭，
-四项前提通过，但不证明本合法Writer可学；本文件不恢复任何关闭的Writer。
+2026-09-14。两臂fresh100与全部八面板已完成，按原资格关闭，完整裁决见§8。
+§1–7保留原登记与实施合同；当前执行状态只看progress，本文件不恢复已关闭Writer。
 
 ## 1. 主假设与历史取舍
 
@@ -174,3 +174,41 @@ profile初始化、optimizer与任何权重均不供正式训练复用；不因1
 完整profile、吞吐估计及首尝试原件保存在`runs/analysis/semantic_path_writer_20260914/profile/`。
 同一冻结代码的新source400在另外两张卡运行，初始launch、双节点现场与存储预算见同研究根；
 训练须用包含本登记的clean pushed detached commit，并在启动前更新实际设备与独立quota。
+
+## 8. 完整50／100结果与关闭裁决（2026-09-14）
+
+两臂各fresh100／400教学条件／25,600主FM queries完成，所有曝光及诊断字段实际配对。四checkpoint、
+八sealed bank和1,984闭环rows完整，source／环境／state-video／RNG、实际stride5帧及完整38-target身份核验通过。
+运行代码5116deb0 clean pushed frozen；39个最终worker全部exit0，累计有效评测10,202.87秒。
+
+| 节点 | train96 ordered / frame_set | validation400 ordered / frame_set |
+| --- | --- | --- |
+| 50 | 16 / 22 | 77 / 75 |
+| 100 | 29 / 26 | 48 / 44 |
+
+新source400=47，train配对source96=17。有序−frame_set的validation净率95%区间为[−1.25,+2.50]pp、
+[−1.75,+5.00]pp，净正suite数2／1；有序−source区间[−2.25,+23.50]pp、[−19.25,+17.25]pp。
+两个节点资格及相邻保持资格全部失败，没有selected checkpoint。
+
+有序50／100的S/O/G/L为0/38/36/3→1/32/14/1，breadth5→6；无序0/35/38/2→1/34/7/2，breadth3→6。
+有序对无序的R/G/L为64/13/11→27/21/17，churn24→38，J=.72727→.41538。
+有序相邻R/G/L=30/18/47、churn65、J=.31579；无序23/21/52、churn73、J=.23958。
+Object仍有相对source增量，Goal回退显著；100的有序优势只有Goal净+7，其余suite为0/−2/−1，不构成广泛过程收益。
+
+训练有序16→29相邻净率CI[+5.21,+21.88]pp、breadth8→12；100相对source净+12，CI[+2.08,+22.92]pp。
+但同节点有序−无序−6／+3，区间[−11.46,−1.04]／[−6.25,+13.54]pp，没有相邻训练过程优势。
+固定动作FM有序.153285→.130330→.121139、无序.153285→.130311→.121899；50→100两组全部24task均改善。
+这些是实在的获取诊断，不能抵消held行为回退或证明过程表示已充分；100也不被称为充分训练／平台。
+
+有序50 validation的首次renderer在252行后报告EGL离屏framebuffer错误；原始失败、日志及已完成行保留，
+原contract的canonical resume重建worker并完成其余148行。400行配对通过，累计1307.46秒包含两次有效运行；
+最后九worker exit0，根因未定。该恢复没有改模型、frame／state／RNG映射或择优使用重复行。
+
+**按§5关闭“二阶语义路径＋此联合FM译码”的主假设组合。** 不续训150/200，不扫路径阶数／宽度、heads、
+rank、LR、seed、scale或辅助loss；没有资格，不补other、最终wrong／no-video／shuffle／reverse、Test或RL。
+保留有限训练获取和Object作用，但不把更弱无序终点或50步峰值当成成功。负证据限制实际检验组合，
+不否定所有过程表示、普通FM或一次LoRA编译；它同样不能作为继续保留本主假设投入的理由。
+
+全量task／suite、source／相邻配对、学习及审计见
+[READOUT](../runs/analysis/semantic_path_writer_20260914/READOUT.md)、同根`paired_readout.json`与`bounded100_decision.json`。
+整体goal未完成；后继先更新机制判断并区分当前实际失败，不自动登记另一完整Writer。

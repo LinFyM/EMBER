@@ -1,72 +1,47 @@
 # EMBER progress
 
-## 当前：固定G闭环前提通过，实施语义状态路径Writer（2026-09-14）
+## 当前：语义状态路径完整比较已关闭，继续定位条件行为的获取与保持（2026-09-14）
 
-Owner要求自主推进、制定goal并开始，期待真实正向进展，明确不要求制造正结果。新goal已建立且未完成，
-授权覆盖合同内的理论推导、方法选择、实现、验证与证据驱动修正；无需逐项等待Owner醒来批准。
-已形成[条件控制算子工作理论](docs/temporal_control_compilation_theory.md)：完整LoRA须共同表达适用条件与操作作用，
-普通FM通过另一episode的状态学习此函数；现有数学分解、语义轴或局部辅助信用均不能替代有益过程获取的证据。
-独立历史核对排除了仅改共享head或加prior残差的默认修复。
-完整视频双向理解已允许，ordered强于匹配的独立全帧frame_set仍是必要方法证据，所有信息墙与资源合同保持。
+Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
+自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
+暂不额外强制145/400。当前没有active训练design或selected checkpoint，不从下方历史状态恢复旧实验。
 
-[固定真实纠正闭环§7](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)全部480episodes完成并关闭：
-source17/96，四teacher为21/25/20/24；按task等权配对净+5.73pp，95%CI[+1.04,+12.5]pp。
-四teacher、四init均净正，S/G/L三suite净正，注册四项均通过。Object仍零，task35贡献11/22净增；
-这是privileged训练侧控制作用证据，不能计入合法视频Writer或goal完成。45个worker和controller全部exit0，1943.48秒。
-2c0a8dde frozen、原始五面板、配对／统计及attempt1失败均保留；临时59行static来源分支按合同退役。
+[语义状态路径Writer§8](docs/semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)两臂fresh100及八面板全部完成：
 
-当前唯一active design为[语义状态路径Writer](docs/semantic_path_writer_design.md)：
-native双视角R/Z全视频理解→可学习状态的二阶有向路径→条件调制→自由完整A/B，唯一真实跨episode主FM。
-与独立fresh全帧frame_set共享全部学习模块和曝光，只替换无参数的路径／集合统计；不再拟合旧G标签。
-5f1c25e8先保存完整联合设计；核心图12项CPU检查、接线128项回归通过，字段核验重构后70项物化回归再通过。
-f46e3303已集成推送，活动源码与测试净减558行、五旧模块和十一旧配置退出活动树；两隔离树及已关闭oracle树已核验清理。
-新Writer共9.465M参数，两组Meta另计；这些仍只是实现证据。
-f46e3303 clean pushed detached的最长105帧profile已完整通过，exit0：首尝试8通过、16执行OOM后保留原件，
-fresh8／8两次26.452／26.539秒、峰值allocated34.274GiB，第二次关键路径及两组Meta均有梯度，source冻结。
-一次无梯度编译4.322秒产出完整38-target／76-factor LoRA；整个profile学习状态废弃，不用于正式初始化。
-在新分数前登记50／100两个节点，每臂fresh400教学条件／25,600主queries、三rank／物理batch8，
-按实际帧成本估计学习44.8分钟，加三次独立动作诊断和初始化约一小时。
-5116deb0 clean pushed detached的有序组已在gpu02卡4/5/6完成fresh正式100步，NUMA／deferred NCCL及source冻结合同通过，
-累计400教学条件／25,600主query，完整50／100 checkpoint和0／50／100动作诊断均落盘，exit0、3416.41秒。
-固定独立动作FM为.153285→.130330→.121139，四suite均下降；这些是学习诊断，不能代替闭环能力或时序优势。
-三卡现场为0–2%util、已有占用约5.62／.16／4.64GiB，按实测峰值可共驻，未操作他人进程。
-新source400已完整结束：47/400，S/O/G/L为0/5/41/1、breadth3，36shard／6worker和launcher全部exit0，1657.05秒。
-source固定供全部节点复用；新旧source的模型、环境、policy／RNG、tokenizer和归一化合同匹配，训练侧source17/96可复用。
-source释放后再次核验两节点，gpu01卡4/5/6为零占用，无序组从同一5116deb0 frozen独立fresh正式启动；
-实际两run配置除process_mode外相同，source、Git、学习／信息墙、三rank及物理batch8均匹配。
-无序组也已完整结束100步，exit0、3270.97秒；固定动作FM为.153285→.130311→.121899。
-两组各400条教学曝光的18个字段、72条固定诊断的12个字段全部配对通过，四个完整formal checkpoint已核验。
-这保证比较使用相同学习条件，尚不证明有序机制已获得闭环优势。
-有序训练释放设备后再次核验两节点，gpu02卡4／5低负载且余量足够，两个节点各496条件的LoRA编译已并行启动；
-随后以live准入的gpu02卡6编译已保存的无序50步checkpoint，与其后半段训练并行。
-无序训练释放后再查两节点，gpu01卡4／5／6为空；卡4编译无序100，卡5／6各以三个常驻worker启动有序50／100的train96闭环。
-全部四checkpoint／八bank共1,984套唯一完整LoRA已封存，四个编译进程均exit0。
-有序train96的50／100节点已完整完成，分别16／29（固定source17），两面板全部六worker及launcher均exit0；
-状态／视频、真实帧、RNG和checkpoint身份审计通过。S/O/G/L为7/2/5/2→10/9/9/1，breadth8→12；
-相邻R/G/L为13/16/3、churn19、J=.40625，净率CI[+5.21,+21.88]pp。100相对source净+12、CI[+2.08,+22.92]pp，
-增量主要来自Object；Long计数2→1，不能由总分增长宣称保持或时序优势。训练侧面板不作正式checkpoint选择。
-有序validation50／100均已完整结束，为77／48（固定source47），S/O/G/L为0/38/36/3→1/32/14/1，breadth5→6。
-相邻R/G/L为30/18/47、churn65、J=.31579；Goal36→14是主要回退。两个节点相对source的task-cluster95%CI
-分别[−2.25,+23.5]pp和[−19.25,+17.25]pp，均未通过严格正下界；相邻成功数也未保持，当前无合格候选。
-无序50 train96已22/96完整结束，S/O/G/L7/4/8/3、breadth12；同节点有序−无序净−6，CI[−11.46,−1.04]pp。
-八个预登记面板均已启动，五个完成；无序50 validation在gpu02三卡每卡两个worker、100 validation在gpu01卡5／6每卡三个worker，
-无序100 train96在gpu01卡4三个worker运行。GPU02降低新面板并发以增加渲染余量，task／video／RNG合同保持，当前合计六张有效卡。
-有序50 validation在252行完成后，切换Spatial task3时出现MuJoCo／EGL离屏缓冲区创建错误；
-原launcher exit1并结束其余所管worker，31个完成分片／252原始行及完整失败日志保留。根因尚未确认，未改科学合同或模型。
-现场确认旧worker已退出并再次核验两节点后，原5116deb0 canonical resume重建九个worker，完成剩余148行，exit0且九worker均0。
-原state／video／RNG映射及checkpoint保持，400行身份与配对审计通过，未重复完成行或改选checkpoint；首次错误原件保留。
-该面板总有效运行1307.46秒，最后恢复362.08秒；readout使用canonical累计时间并显式列出失败记录，根因仍未定。
-canonical无放回视频映射及完整1,984rows的预注册配对readout保持；完整面板收齐后按原资格裁决，尚无selected checkpoint。
-另在CPU复现并修复恢复入口的边界错误：从已保存的中间节点50恢复时，
-原登记50／100中的50被误当作非法节点；现在由恢复cursor跳过已完成节点，并保留100的原终点。
-监督训练共47项检查通过，包含针对性恢复回归。修复时两组在途学习继续使用原冻结版本；没有中断、重启或改变科学合同。
-训练前strg01现场data0／data1为67.62／1017.85GiB，无序启动前再查data0为67.62GiB；
-新研究峰值24／.5GiB预算满足独立额度，大资产均复用。编译准入前data0为67.88GiB、研究目录261.65MiB，
-共享可用1.6TiB；本批约4.757GiB LoRA及剩余24GiB总预算可容纳。首批闭环准入前data0为72.18GiB，
-研究目录4.56GiB，剩余20GiB保守预算可容纳。无序train96准入前data0为77.68GiB、研究目录10.06GiB，
-剩余14GiB保守预算仍可容纳。
-原件在`runs/analysis/semantic_path_writer_20260914/`，包含初始launch、GPU／存储证据、profile及source日志。
-计划见[task_plan](task_plan.md)顶部；下方暂停与旧执行段落均为历史状态。
+| 节点 | train96有序／无序 | validation400有序／无序 |
+| --- | --- | --- |
+| 50 | 16 / 22 | 77 / 75 |
+| 100 | 29 / 26 | 48 / 44 |
+
+固定source为train17/96、新算validation47/400。validation有序−无序95%区间为[−1.25,+2.50]／[−1.75,+5.00]pp，
+两个节点均未获得可信过程增量；100仅一个suite净正。两有序节点相对source的区间也均跨零，三个注册资格全部失败。
+有序相邻R/G/L=30/18/47、churn65、J=.31579；无序23/21/52、churn73、J=.23958。
+两组Goal分别36→14、38→7，Object分别38→32、35→34；训练动作FM两组仍在全部24task改善。
+保留有序train16→29、100相对source净+12且CI[+2.08,+22.92]pp的有限正证据，但不能当成视频过程或held保持。
+
+两臂各400教学条件／25,600主queries，400条曝光18字段与72条诊断12字段全部匹配；四完整checkpoint、
+八bank／1,984套唯一完整LoRA及1,984闭环rows已封存，实际帧、source／state-video／RNG及38-target／76-factor身份审计通过。
+39个最终评测worker全部exit0，八面板累计有效评测10,202.87秒。有序50 validation最初的一次MuJoCo/EGL离屏缓冲错误
+按原5116deb0 canonical resume恢复；首次失败与252已完成行保留，总400行核验通过，根因仍未确定。
+原件与完整逐task／suite、配对／相邻／学习报告在
+[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)，
+机器裁决为同根`paired_readout.json`／`bounded100_decision.json`，实际运行代码clean pushed frozen5116deb0。
+
+按预登记关闭“二阶语义路径＋此联合FM译码”的组合，不续至150/200，不扫描路径阶数／宽度、heads、rank、LR、seed、scale或辅助loss。
+没有触发other、最终wrong／no-video／shuffle／reverse、Test或RL；不融合或挑选50步峰值。
+所有正式训练和评测launcher均已退出；本轮两个冻结checkout暂留，供原始证据读取与有依据的只读诊断复用。
+
+前置[固定G闭环§7](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)仍是限定的正事实：
+source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp，四teacher／四init均净正，注册前提全部通过。
+它使用privileged真实纠正，不能计入合法视频Writer或整体goal完成；Object仍零，task35贡献11/22净增。
+
+下一步先具体区分当前失败行为，再决定是否修改学习机制。原始任务语言显示本轮显著收益与回退涉及同一cream-cheese物体，
+但目标分别为basket与bowl；现有仅success／steps的rows不能判断是否选错目的地、抓取失败或运输／放置失效。
+正在核对现有只读轨迹回放入口及最近历史；若登记回放，应固定全部原checkpoint、等距init与原视频映射，
+不得按成功／失败挑例，不新增held梯度、模型选择或时序controls。尚未启动该回放或新训练。
+当前理论降级及历史边界见[工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)。
+
+下方暂停与旧执行段落均为历史，不覆盖本次持续自主授权。
 
 ## 暂停时点：Owner转为方法讨论（2026-09-14）
 

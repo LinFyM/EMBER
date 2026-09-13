@@ -6,13 +6,13 @@ Owner自主目标保持active且未完成。当前active design为[Native Correc
 依据下方已通过的具体oracle传递前提实施合法前向生成；修正后的profile已通过，100/200节点已在正式学习前冻结。
 09c1a0d6 clean pushed detached的两臂fresh200已全部完成exit0；四份checkpoint及采样配对通过。
 8个LoRA bank、1,984套完整LoRA已全部封存，四个生成worker均exit0；
-队列已开始8个配对闭环面板，首个为ordered/100/train96，GPU01的1–6六卡、每卡两个persistent worker。
+6个配对闭环面板、1,184rows已完成；目前GPU01的0–5六卡正在执行ordered/200/validation400，随后为frame_set/200/validation400。
 当前无selected checkpoint，整体goal未完成。
 所有旧Writer和原生纠正oracle诊断仍关闭，不从其旧启动措辞恢复执行。
 
 新出口为`ΔW=B(RX)`：从同组完整RGB以裸source读真实38-target输入X，视频网络输出自由B和逐位置R。
 纠正与X在同一位置配对，不部署loss、autograd、SVD或task-local更新；B零初始化给出identity。
-它只保证低秩构造及参数作用关系，有限网络获取与闭环收益尚未验证，不将普通FactorHead改名当新证据。
+它只保证低秩构造及参数作用关系，有限网络获取与闭环收益尚待完整配对裁决，不将普通FactorHead改名当新证据。
 原Meta、完整H、视频prior、encoder/Compiler和有后段绝对正证据的空间信用保留，旧自由A/B出口已替换并退役。
 
 新教学池取授权action池16–41；主FM逐condition排除同一教学episode，仍四suite各一task、64query/task。
@@ -40,7 +40,7 @@ f962feb6修正profile完成exit0：两次33.264／33.090秒，峰值allocated35.
 两臂各完成200updates、800教学条件、51,200主query，墙钟7022.86／7025.27秒，训练均正常exit0。
 18个曝光字段全程一致，逐condition主query排除teacher；0/100/200诊断的10个task／视频／动作／RNG字段匹配，无诊断梯度。
 100节点checkpoint各368,432,539bytes，200节点各368,432,731bytes；四份完整状态包括Writer、Adam、scheduler、
-sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。没有闭环分数或selected checkpoint。
+sampler/cursor和3rank RNG，inspect通过，实际体积符合预算。训练读出不能代替完整闭环裁决。
 
 固定独立动作诊断初始均为.15328534，100步有序／无序为.15307564／.15304530，仅小幅变化；
 分别12/24、15/24task下降，Spatial与Long均值略升，Object／Goal略降。23个共同出现task的训练窗口中，
@@ -72,6 +72,17 @@ GPU01的1–6六卡启动前均空闲，自有GPU占用为0。首个ordered/100/
 按原队列依次完成8个面板／1,984配对rows；目前尚待完整闭环裁决。每次GPU阶段重查两节点与data0额度，
 累计所有自有GPU不超过6，不运行未获资格的other／静态／最终controls。`overnight_status.json`、`queue.log`与`queue.exit`
 保留控制状态；后续raw审计与逐task/suite、source／frame_set及相邻配对读出已接入。新旧教学曝光不同，不宣称其匹配消融。
+
+截至14:00UTC，6个面板／1,184rows已封存，各面板原始行数与12个worker的正常退出均已核对：
+
+| 节点 | train ordered / frame_set | validation ordered / frame_set |
+| --- | --- | --- |
+| 100 | 15/96 / 15/96 | 50/400 / 51/400 |
+| 200 | 19/96 / 20/96 | 运行中 / 待运行 |
+
+ordered/200/validation400的launcher及12个worker已确认存活；剩余两个面板沿既定队列执行。
+以上是已封存面板的绝对计数，尚未完成本轮逐task／suite、source、相邻success-set及区间的综合裁决；
+不能由部分计数选择checkpoint或恢复关闭的实验。整体goal未完成。
 
 ## 当前：原生纠正跨episode传递前提通过，转入合法生成推导（2026-09-13）
 

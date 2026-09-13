@@ -4,7 +4,7 @@
 
 完整目标仍为正确action-hidden教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、
 初始化、相邻checkpoint和固定validation迁移；暂不强制145/400。**整体goal未完成；
-[固定A误差分解诊断](docs/native_correction_acquisition_audit.md)已完成关闭；当前仅登记其§7只读幅度／方向与系数代价分析，尚未执行，无在途运行或selected checkpoint。**
+[固定A与幅度／方向诊断](docs/native_correction_acquisition_audit.md)均已完成关闭；当前无active design、在途运行或selected checkpoint。**
 
 [Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)的两臂fresh200、四checkpoint、
 8个bank与8个配对面板／1,984rows已完整结束，原始证据审计及全部worker退出通过。
@@ -18,8 +18,10 @@
 3. 已核对旧fixed-A／G1／G3 fit-span近邻，8c714e91完成四checkpoint×train24×demo16–19共384次合法生成与原分解。
    实际E约.90–.95、固定A下界F约.27–.31、空间内D约.63–.64，四个F−D区间均严格负；按第二分支关闭。
    66.9%–70.6%误差在现有A空间内，停止以扩展A空间作为必要首项修正；不能由乐观下界宣称有限B或RGB充分。见findings§92。
-4. 下一步先针对有限共享纠正、可用坐标、表示／信息和学习信用推导可区分解释；已见条件仍有大差额，不能只归新视频。
-   不从参数定位直接启动新Writer、续训、辅助动作头或参数扫描；先形成可失败且会改变投入判断的最小证据合同。
+4. §7只读384条件进一步完成：最优privileged整体倍率只消除实际误差3.87%–6.32%，四个H−J区间均严格负；
+   每模型24/24task均值方向缺口更大，按登记关闭。当前A的最小B系数代价较大，限定乐观下界，但不是容量或根因证明。见findings§93。
+   下一步先区分可用方向、有限共享纠正、表示／信息与学习信用；已见条件仍有大差额，不能只归新视频。
+   不从这些参数定位直接启动新Writer、续训、辅助动作头或参数扫描；先形成可失败且会改变投入判断的最小机制合同。
 5. 整体goal继续；已完成的Execution-Aligned、旧冻结52/96正例复核及其它关闭诊断不从旧计划措辞恢复。
 
 以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。

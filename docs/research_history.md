@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-13完成[现存更新的幅度／方向分析](native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)：
+3c3c4897登记后CPU只读384条件，14.183秒exit0。最优privileged整体倍率仅消除3.87%–6.32%的当前参数误差；
+四个H−J区间均严格负、每模型24/24task方向缺口更大，按登记关闭整体gain修复的主要依据。
+当前单位行A的最小B范数比中位数约256–387，限定了低投影下界的可用性解释，但不是有限模型容量或唯一根因证明。
+全量分组／系数代价／验证与边界见findings§93及下方历史条目；没有新模型forward、梯度、query或环境步，goal未完成。
+
 2026-09-13完成[原生纠正获取分解](native_correction_acquisition_audit.md#6-完整结果与关闭裁决)：
 四冻结checkpoint×train24/demo16–19共384次合法生成，原始配对及正交误差分解通过。
 66.9%–70.6%的参数误差位于当前A空间内，四个task-cluster F−D区间均严格负，按登记第二分支关闭。
@@ -1527,3 +1533,21 @@ evidence_audit、training_pairing/readout、launch contract及training下的全�
 原件`runs/analysis/native_correction_writer_20260913/acquisition_audit/`保留384套生成结果、四完整decomposition、
 summary／decision／readout、registration／launch及全部log／exit。原checkpoint和label仅引用、未复制或修改。
 完整goal未完成，无selected checkpoint；下一项先推导有限共享纠正获取的竞争解释。
+
+## 2026-09-13：全局幅度无法解释主要纠正误差，弱坐标代价明确
+
+[获取诊断§7–8](native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)以3c3c4897预登记，
+只读前项四模型384套因子与同视频label，CPU14.183秒exit0。六组小矩阵、真实投影重算、三项恒等式与等权汇总通过。
+100有序／无序的方向J与幅度H为.599946/.037671、.598835/.036758；200为.582501/.047122、.578330/.056906。
+四个task-cluster H−J区间均严格负、每模型24/24task均值J>H，整体倍率只消除实际误差3.87%–6.32%，按登记关闭。
+保持原参数度量与single38-target幅度，不把层间相对幅度或参数误差同闭环收益混为一谈。
+
+当前单位行A坐标的最小B范数比中位数100为259.23／255.96、200为370.56／386.61；
+96条件能量汇总294.19／293.43、895.20／723.05。它说明最乐观固定A下界的系数代价较大，
+但具有坐标依赖，不能证明有限共享模型硬上限、数值故障或白化修复有效。200已见组方向缺口仍约.585，不只属于未见video。
+下一项先区分方向获取、可用坐标、信息与学习信用；原生oracle功能、标签共同结构与旧校准／rank均衡边界继续保留。
+
+原件位于`runs/analysis/native_correction_writer_20260913/acquisition_audit/ray_*`：登记、四完整条件统计、
+summary、task等权曝光分组、decision、readout、分析／报告源码及start/end/log/exit。
+没有新模型forward、标签、动作query、梯度、环境步、held数据或checkpoint选择，没有生成真实B_min或倍率adapter。
+分析已关闭，无在途运行；整体有益视频特异性goal未完成，不默认新Writer、续训或参数扫描。

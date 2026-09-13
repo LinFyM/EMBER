@@ -65,7 +65,9 @@ S/O/G/L为4/13/12/3对10/9/10/4。两组原始96rows与全部worker exit0核对�
 ordered100/validation400已完成20/400，S/O/G/L为0/16/3/1、breadth5；完整400个task/state记录及8个worker exit0核对通过，墙钟1051.90秒。
 frame_set100/validation400也已完成24/400，S/O/G/L为1/19/4/0、breadth4；完整400个task/state记录及8个worker exit0核对通过，墙钟1060.51秒。
 100步有序净差train−1、validation−4，未达到该节点的有序增益要求；继续按登记完成200步，量化后段效果与相邻保持。
-当前4/8面板完成；ordered200/train96已实际启动（launcher3774009、10workers），实时空闲资源为gpu01/0–3,6，仍按统一额度执行。
+200步train96两组均完成50/96，breadth17/18；S/O/G/L为16/15/13/6对13/17/14/6。
+两组完整96rows及各10个worker exit0核对通过，墙钟277.64/280.49秒；相较100步训练任务总分上升，但无有序总分优势。
+当前6/8面板完成；ordered200/validation400已实际启动（launcher3833144、12workers），实时空闲资源为gpu01/0–3,5,6，仍按统一额度执行。
 
 ## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
 

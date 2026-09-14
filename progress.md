@@ -4,10 +4,10 @@
 
 Goal active，按Owner五个问题讨论确定的[Process Pullback Writer](docs/process_pullback_writer_design.md)持续推进。
 Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回到v5.2完全由owner决定，agent不自行切换。
-Owner追加的磁盘、退役源码／入口及文档正文清理已完成，当前准备真实profile和新低秩出口功能核验。
+Owner追加的磁盘、退役源码／入口及文档正文清理已完成；最长视频真实机制基线通过，当前完成等价效率优化及新低秩出口功能核验。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
-本方案尚未完成GPU profile或G P投影出口的真实功能前提，未启动正式新训练或评测，没有selected checkpoint或新方法闭环结果。
+本方案已完成GPU机制／成本基线，优化后profile及G P投影出口功能前提尚待结果；未启动正式新训练或评测，没有selected checkpoint或新方法闭环结果。
 CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未取消能力、相邻保持、换视频及最终视频controls的要求。
 
 ## 已实现与验证
@@ -23,9 +23,16 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
   五份当前文档经`3abbdb7b`从1,250行减至295行；main已集成。170项相关检查、训练入口help及diff检查通过。
 - `strg01`清理后data1用量846,270,296KiB，soft quota 1,073,741,824KiB，余量约217GiB。
   删除范围和重建依据见[清理记录](runs/analysis/workspace_cleanup_20260914.json)；新输出留在data1，按各阶段峰值另登记。
-- 新配置为`configs/pi05_process_pullback_writer.json`，当前学习节点未登记，profile状态pending；smoke需显式停止点，formal需完整登记。
+- 最长task38/demo36共517原帧／105个stride5帧，真实全38-target／50×7编译与两次pure-FM更新通过；
+  B8基线46.61／46.86秒、峰值34.18／34.23GiB。第二次Writer／Action Meta／VL Meta及各过程模块均有finite非零梯度，
+  source无可训练参数或累积梯度。部署一次编译13.68秒，无loss／optimizer；基线初始化不复用，未保存正式checkpoint。
+  B16旧full-prefix FM因显存不足退出，记录保留。结果在`runs/analysis/process_pullback_writer_20260914/profile/batch8/results.json`。
+- 等价优化复用裸source的CPU前缀KV、直接以固定编译器伴随重放q信用，并让main FM使用官方prefix-KV／suffix路径；
+  CPU全38-target投影、q伴随及联合梯度对照通过，优化后的真实GPU成本与FM对照待测。
+- 新配置为`configs/pi05_process_pullback_writer.json`；96条件低秩出口功能前提已在分数前登记，当前学习节点仍未登记。
+  smoke需显式停止点，formal需完整窗口登记。
 - 训练池为train24的demo16–41，共624个K1条件；采样帧数min16、median31、p90为57、max105。
-  该统计用于选择最长视频profile，不是已经完成的GPU成本测量。独立动作42–45／teacher46–49及train states32–35保持既有合同。
+  最长视频已用于上述真实profile；独立动作42–45／teacher46–49及train states32–35保持既有合同。
 
 尚未登记的窗口、profile值和功能结果不由历史实验填补；当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
 

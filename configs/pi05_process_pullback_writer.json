@@ -427,10 +427,25 @@
       ]
     },
     "profile_registration": {
-      "status": "pending",
+      "status": "baseline_complete_optimized_profile_pending",
       "scope": "actual longest full dual-camera video; two complete pure-main-FM updates and same-version observer replay; one deployment compilation using frozen source VJP; all38 targets/full50/allframes/source-frozen and second-update joint finite gradients",
       "checkpoint_policy": "register an informative learning window and intermediate/final closed-loop nodes from actual throughput and exposure before formal scores; no inherited fixed update cutoff",
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "baseline": "runs/analysis/process_pullback_writer_20260914/profile/batch8/results.json",
+      "baseline_update_seconds": [
+        46.60680085606873,
+        46.86090177716687
+      ],
+      "baseline_peak_gib": [
+        34.177847385406494,
+        34.227537631988525
+      ],
+      "baseline_deployment_seconds": 13.677644737064838,
+      "longest_task": 38,
+      "longest_demo": 36,
+      "raw_frames": 517,
+      "sampled_frames": 105,
+      "second_update_joint_gradients": true
     },
     "checkpoint_registration": "pending actual source-pullback functional evidence and longest-video profile",
     "source_pullback_functional_check": {

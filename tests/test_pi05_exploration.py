@@ -13,7 +13,7 @@ import torch
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.exploration import (
     DIAGNOSTIC_STATES, add_exploration_noise, build_exploration_contract,
-    episode_exploration_fields, exploration_metadata, exploration_noise_seed,
+    episode_exploration_fields, exploration_covariance, exploration_metadata, exploration_noise_seed,
     validate_exploration_comparison, validate_exploration_contract,
 )
 from ember.pi05_eval.preparation import _explicit_diagnostic_states
@@ -21,7 +21,6 @@ from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, load_run_contract, pol
 from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import AGGREGATE_SCHEMA, paired_success_comparison
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, _plan_action_chunks, rollout_shard, validate_shard_result
-from ember.writer.rl_math import exploration_covariance
 from scripts.compare_pi05_results import compare
 
 

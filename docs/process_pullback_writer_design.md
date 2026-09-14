@@ -102,7 +102,8 @@ shuffle/reverse重排真实双路frames后重新完整读取和编译；这些�
 复用writer/runtime、native observer、data、supervised、training、materialization和唯一strict evaluator。
 video.py拥有任务条件化过程与q预测；correction.py/factor.py拥有固定source坐标、投影及线性编译／伴随。
 替换退役的LocalFieldLoRADecoder与LocalFieldSupervisor，不保留新旧两个active Writer或辅助field分支。
-旧代码与schema由Git、frozen worktrees、sealed configs和formal artifacts保存；旧checkpoint不由新runtime加载。
+旧代码与schema由Git、sealed configs和formal artifacts保存；结束运行的clean worktree可删除并按原commit重建。
+旧checkpoint不由新runtime加载。唯一入口为scripts/train_writer.py与scripts/materialize_writer.py。
 隔离并发实现使用codex worktree，集成main并push；正式train/eval来自clean pushed detached frozen commit。
 每次GPU launch前同时检查两节点；新大run root前按strg01独立quota及实际占用估计峰值，不复制source／数据／模型。
 完整训练checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology及schema。

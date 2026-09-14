@@ -469,7 +469,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
     calls = []
     monkeypatch.setattr(materialization, "materialize_requests", lambda **kwargs: calls.append(kwargs) or [Path("/output/manifest.json")])
     monkeypatch.setattr(torch, "set_num_threads", lambda _threads: None)
-    argv = ["materialize_horizon_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT),
+    argv = ["materialize_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT),
             "--device", "cpu", "--native-frame-chunk", "16"]
     monkeypatch.setattr("sys.argv", argv)
     materialization.main()
@@ -642,7 +642,7 @@ def test_single_cli_preserves_explicit_init_state_ids(monkeypatch):
     calls = []
     monkeypatch.setattr(materialization, "materialize", lambda **kwargs: calls.append(kwargs) or Path("/manifest.json"))
     monkeypatch.setattr(torch, "set_num_threads", lambda _: None)
-    monkeypatch.setattr("sys.argv", ["materialize_horizon_writer.py", "--checkpoint", "/checkpoint",
+    monkeypatch.setattr("sys.argv", ["materialize_writer.py", "--checkpoint", "/checkpoint",
         "--output", "/output", "--role", "development_train", "--task-ids", "0", "--k", "1",
         "--device", "cpu", "--state-count", "4", "--init-state-ids", "32,33,34,35"])
     materialization.main()

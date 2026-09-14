@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the canonical fresh Visible-Object Grounded Writer."""
+"""Train the canonical fresh video-conditioned Writer."""
 
 from ember.writer.training import main
 

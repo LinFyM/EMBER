@@ -17,30 +17,23 @@
 
 ## 2. 原生信息要有实际消费者
 
-当时分层图保留完整50-horizon、各层状态、native prefix和有效梯度；这些工程条件不自动构成视频过程理解，也不证明后继必须保留层轴。
-早期把原生响应压缩后做泛化时序attention，或晚期让参数queries读取全部证据，都不足以证明动作序列先验已被有效利用。
-新候选在H压缩前进行同层、双向局部帧对的跨horizon处理，并区分T/H/J；其效果仍需检验。
-
-9月7日推导明确：对齐后内容差为零，不代表过程未推进；对应位置本身也可提供证据。相对位移分布rho只是A行的索引重排，
-同一关系MLP应在逐帧聚合前消费内容与对应模式。固定probe造成的共同结构或漂亮斜带，都不足以证明物理动作对应。
-这是一项建模依据；首轮短学习16步的训练侧闭环尚未见广泛改善，不能将其当作方法通过。离线双向读取不违反rollout前一次编译；有限上下文与视频因果必要性分别验证。
-
-G2证明有序response包含功能动态；固定DP/event schema不是后继必须保留的形式。
+完整50-horizon、层轴、native prefix及有效梯度不自动构成过程理解。H必须在有意义的读取前保持完整，
+但“使用了原生信息”不能代替动作先验被实际消费的证据，也不要求永久保留某个层轴、DP/event或关系模块。
+对齐后内容差为零不等于过程未推进；对应位置也可能含信息。固定probe形成的共同结构或斜带不能证明物理动作对应。
+离线双向读取符合rollout前一次编译，有限上下文的效果与视频因果必要性仍须分别验证。
 [原生容量与动态](docs/research_history.md#native-capacity)。
 
 ## 3. X/Y、输出span与真实功能是三个层次
 
 G1证明某些native X/Y signed pooling具有局部容量，也通过投影干预证明过窄Y span会丢失Goal/Long必要方向。
 显式读取X/Y与强制因子在其span中，是两项独立选择。真实policy反传的gxᵀ本身提供原生参数坐标，Y=WX+b不等于应该施加的修正。
-压缩E不是X/Y无损副本，观察Meta侧激活也不是执行场景激活。首版不加完整X/Y bank，保留对功能缺口有针对性的后续审视。
+压缩E不是X/Y无损副本，观察Meta侧激活也不是执行场景激活。
 
 普通family head的固定末投影确实限制生成方向，但早期FactorHeads也有强行为；不能把这个几何事实直接称作新近低分根因。
 坐标条件MLP是明确的候选解除方式，没有通用性能保证。
 
-新图首轮std0.02 native坐标初始化下，16/48步训练侧闭环仅4/6与6/5（各40，source4），未形成广泛能力。
-96步两个训练任务的三个代表target中B近乎native-channel常量，但真实policy梯度绝大部分不在该方向；
-code RMS约1.1、坐标0.02。这支持检查坐标初始化的学习条件，不证明共同学习缺口已被唯一归因。
-当前仅以标准正态native坐标、其它科学变量不变的fresh短对照检验；几何改善不能替代行为。
+旧native坐标初始化及读出常量方向的诊断，只支持相应学习条件检查，未唯一定位共享学习缺口。
+具体对照与数值见[学习历史](docs/research_history.md#recent-learning)；几何改善不能替代行为。
 
 ## 4. 参数稳定性不能代替成功集合稳定性
 
@@ -58,14 +51,12 @@ K是一次condition真正使用的视频数；视频池大小是跨训练可见�
 必须独立保序编码、集合共同读取、真实训练cardinality、无放回不同视频，并保持task权重。
 正式K1的无重复还要求同task同臂跨50个init各用50条视频一次；不能以单次K集合不重复替代整轮覆盖。旧Horizon64的99/95不满足该合同，只作历史探索。
 
-## 6. 最新共同学习缺口是事实，唯一根因仍未知
+## 6. 共同学习获取与未见任务迁移须分别建立
 
-完整输出四任务短学习主要改善Goal，但Spatial有损失；这是移除carrier/解除span/完整rank/head变化的耦合收益，不能拆成单因果解释。
-同预算target18相对mixed meta73恢复部分目标行为；两种初始化仍未建立广泛稳定能力。同两弱训练任务，clone14/20，对shared3或4/20，
-而shared历程没有先达到强能力再遗忘。这使“只有未见task迁移困难”不足以解释现象。
-
+旧完整输出、target18／meta73和clone／shared对照说明，部分组合连训练任务的能力获取也不足，
+不能把全部负结果归为未见task迁移或先学会再遗忘。包含多个变化的收益不拆成单因果解释。
 容量、条件表示、优化和任务支持仍是竞争解释；gradient cosine或更低loss不能单独裁决。
-[近期学习对照](docs/research_history.md#recent-learning)。width256仅确认训练结束，无新闭环分数，不为其补写好坏结论。
+[学习对照及适用范围](docs/research_history.md#recent-learning)。未测闭环的候选不补写好坏结论。
 
 ## 7. 短面板必须有代表性，局部监督不等价闭环
 
@@ -89,9 +80,8 @@ PNBTT停在free-query E1，真实Program E2未运行，不能借此否定G2。
 共享mmap改善负载，重复物化复用resident policy减少加载；端到端收益应与单算子收益分开报告。
 [准确吞吐范围](docs/research_history.md#throughput)。
 
-新Meta-on图不能复用跨step frozen R cache。可保留的是冻结prefix、同step临时R、policy VJP、Writer replay与observer chunk replay的
-链式法则。清理后已有query-microbatch VJP和通用replay基础；新图R-leaf与Meta重放已真实验证，最长K4已profile；跨condition batch尚未实现。
-只按实际最长K1/K4和真实queries测成本，不宣称设计图已经具有历史倍数加速。
+Meta更新后不得复用旧版本激活；冻结prefix、同step临时激活、policy VJP及分块重放可按真实依赖复用。
+成本由当前模型、合法cardinality、最长真实视频和实际queries测量，不能继承旧设计的加速倍数或profile结论。
 
 ## 10. 旧分层图形成时需要回答的科学问题（历史）
 

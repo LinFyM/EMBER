@@ -68,10 +68,20 @@ def exploration_noise_seed(metadata, *, suite: str, task_id: int, state_id: int,
     return policy_noise_seed(int(metadata["seed_root"]), suite, task_id, state_id, replan)
 
 
+def exploration_covariance(*, device=None, dtype=None):
+    """Fixed temporal-major covariance for five normalized seven-axis actions."""
+    import torch
+
+    dtype = torch.float32 if dtype is None else dtype
+    positions = torch.arange(5, device=device)
+    temporal = 0.8 ** (positions[:, None] - positions[None, :]).abs().to(dtype)
+    variances = torch.tensor([0.05 ** 2] * 6 + [0.10 ** 2], device=device, dtype=dtype)
+    return torch.kron(temporal, torch.diag(variances))
+
+
 @lru_cache(maxsize=1)
 def _cpu_cholesky():
     import torch
-    from ember.writer.rl_math import exploration_covariance
 
     return torch.linalg.cholesky(exploration_covariance(device="cpu", dtype=torch.float32))
 

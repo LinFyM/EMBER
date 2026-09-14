@@ -59,11 +59,10 @@ def bank(tmp_path, request):
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
-    run["config"]["schema_version"] = "ember_local_field_writer_config_v1"
-    run["config"]["optimization"] = {"loss": "main_fm_plus_local_field"}
+    run["config"]["schema_version"] = "ember_process_pullback_writer_config_v1"
+    run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
-    run["config"]["local_field_supervision"] = json.loads(
-        (ROOT / "configs/pi05_local_correction_field_writer.json").read_text())["local_field_supervision"]
+    run["config"]["observer"]["native_inputs"] = "bare_source_output_pullback_pca16_full50"
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
     torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": STAGE, "next_macro": 16,
@@ -283,7 +282,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["meta.weight"].fill_(value * 10)
         tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
-        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12, "field_unit": VideoWriterConfig().field_unit},
+        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
             "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
@@ -316,7 +315,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
     requests, _, builds, state = resident_materialization
     paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"),
                                                  native_frame_chunk=native_frame_chunk)
-    assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12, "field_unit": VideoWriterConfig().field_unit}
+    assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12}
     assert state.loads == 2
     for index, path in enumerate(paths):
         manifest = json.loads(path.read_text())
@@ -326,7 +325,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["conditions"][0]["writer_value"] == index + 1
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
         assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
-        assert manifest["method"]["training_objective"] == "main_fm_plus_local_field"
+        assert manifest["method"]["training_objective"] == "main_fm"
         assert manifest["materialization_execution"]["native_frame_chunk"] == (native_frame_chunk or 4)
         assert manifest["method"]["observer"]["frame_chunk"] == 4
         assert manifest["information_wall"]["total_writer_invocations"] == 1
@@ -334,6 +333,16 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
     materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
         output=tmp_path / "single", selection=_selection(mode="fixed_per_task"), device=torch.device("cpu"))
     assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
+
+
+@pytest.mark.parametrize("cardinality", [2, 4])
+def test_pullback_materialization_rejects_untrained_cardinality_before_runtime_build(resident_materialization,
+                                                                                  cardinality):
+    requests, _, builds, _ = resident_materialization
+    requests[0]["k"] = cardinality
+    with pytest.raises(ValueError, match="trained K=1"):
+        materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
+    assert not builds
 
 
 @pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view"])
@@ -474,23 +483,25 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         assert error.value.code == 2 and len(calls) == 1
 
 
-@pytest.mark.parametrize("process_mode", ["ordered", "frame_set"])
-def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
-    method = method_metadata({"model_config": vars(VideoWriterConfig(process_mode=process_mode)),
+def test_method_metadata_describes_native_read_and_frozen_source_derivative_compilation():
+    method = method_metadata({"model_config": vars(VideoWriterConfig()),
         "config": {"update_version": UPDATE_VERSION, "observer": {"camera_view": "dual"},
                    "execution_precision": "native_mixed_without_outer_autocast"}})
     assert method["native_response_shape"] == [50, 1024]
     assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
     assert method["visual_token_source"] == "actual_final_prefix_image_and_contextual_task_tokens"
-    assert method["native_read"] == "full_T_x_50_crossframe_action_response_attention"
-    assert method["frame_attention"] == "bidirectional_real_time_or_zero_time_full_video"
-    assert method["video_representation"] == "contextual_language_roles_T_L_d_and_local_native_states_T_50_d"
-    assert method["process_aggregation"] == ("bidirectional_real_frame_time_rope" if process_mode == "ordered"
-                                             else "full_frame_set_zero_time_rope")
-    assert method["native_parameter_generation"] == "B_sigma_U_A_sum_r_bare_X_div_T_same_local_field"
+    assert method["native_read"] == "all_50_action_horizon_positions_retained_until_learned_read"
+    assert method["video_representation"] == "language_role_semantic_states_and_change_driven_process_values"
+    assert method["process_aggregation"] == "forward_change_recurrence_with_backward_context"
+    assert method["native_parameter_generation"] == "G_mean_J_W_F0_T_q_then_DeltaW_G_P_PCA16"
+    assert method["action_code_shape"] == ["T", 50, 7]
+    assert method["deployment_frozen_source_vjp"] is True
+    assert method["deployment_grad_context"] == "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported"
+    assert method["source_parameter_training"] is False
+    assert method["deployment_teacher_labels_loss_optimizer"] is False
     assert method["macro_cursor"] == "optimizer_updates"
     assert method["training_stage"] == STAGE
-    assert method["training_objective"] == "main_fm_plus_local_field"
+    assert method["training_objective"] == "main_fm"
     assert method["update_version"] == UPDATE_VERSION
 
 
@@ -499,7 +510,10 @@ def test_method_metadata_describes_final_native_and_visual_tokens(process_mode):
     ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
     ("stage", "native_correction_writer_fresh"),
     ("schema_version", "ember_semantic_path_writer_run_v1"),
+    ("schema_version", "ember_local_field_writer_run_v1"),
     ("stage", "semantic_path_writer_fresh"),
+    ("stage", "local_field_writer_fresh"),
+    ("update_version", "local_field_main_fm_joint_credit_v1"),
     ("update_version", "semantic_path_main_fm_joint_credit_v1"),
     ("update_version", "native_correction_main_fm_joint_credit_v1"),
     ("update_version", "joint_fm_rl_same_version_v1"), ("execution_precision", "outer_bf16")])
@@ -532,7 +546,7 @@ def test_checkpoint_rejects_shape_compatible_run_model_disagreement(bank):
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
     run_path = checkpoint.parent.parent / "run_contract.json"
     run = json.loads(run_path.read_text())
-    run["config"]["model"]["process_mode"] = "frame_set"
+    run["config"]["model"]["memory_timescale"] *= 2
     run_path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match="disagree"):
         inspect_writer_checkpoint(checkpoint)

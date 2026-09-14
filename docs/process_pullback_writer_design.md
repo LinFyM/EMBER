@@ -178,3 +178,40 @@ train96用teacher46–49，不能单凭它区分训练池拟合与同task换视�
 按本轮窗口结束原样续训及小扫，保留实现和证据。q辅助尚未实施；后续实质修订或回到v5.2由owner依据结果决定。
 完整逐task／suite、配对集合、成本及有限原因分析见本轮`READOUT.md`、`paired_readout.json`与`bounded900_decision.json`；
 原件根为`runs/analysis/process_pullback_writer_20260914/`。训练／物化／闭环墙钟分别4.565／.462／1.091小时，前期profile另计。
+
+## 10. 原因诊断授权与预登记（2026-09-14）
+
+Owner在看过三个问题的原因分析及拟议方案后明确要求按方案充分诊断。仅授权下述诊断／冻结评测，
+不启动新一轮正式Writer训练，不做q辅助、RL、Test或方法切换；结果在对话中说明，不新增用户报告。
+原§9的科学non-pass保留；下述注册在任何新增outcome前完成，原件集中于本研究根的`causal_diagnostics/`。
+
+### 10.1 视频特异性与跨视频保持
+
+- 冻结窗口末尾900，不按300／600／900分数选点；沿用seed20260911及全部validation8×50的state/video/RNG配对。
+- correct复用原完整400。same-task-other复用兼容完整LoRA，改变逐state视频映射；每task整轮各50视频且逐行不同。
+- cross-suite-wrong使用共享video_schedule的同split循环donor映射，保留目标exact language；shuffled／reversed
+  重排同步双路真实frames后完整重做observer与裸source编译。绝不打乱latent或LoRA冒充真实输入干预。
+- no-video定义为零视频作用的identity/source参照，不做fake zero-image forward；检查实际零LoRA与官方执行合同后复用paired source。
+- 每臂报告完整paired差额、per-task／suite及不确定性。这些controls只用于描述冻结模型，不能选择或调整下一方法。
+- 另对300／600／900做train24×states32–35，teacher16–19按原seed的有限池ordinal规则各用一次；
+  与既有teacher46–49的相同初态面板比较。新旧池不是新task，不把两者成功率差直接称唯一因果泛化损失。
+- 行为回放固定全部validation8×init0／12／25／37×三个checkpoint，共96条；复用原bank与RNG，保存逐replan输入／动作和谓词。
+  不按成败挑病例，报告对原结果的复现情况；对象选择、抓取／运输、放置及组合任务进展只作有范围的行为定位。
+
+### 10.2 固定出口与共享获取的有界可达性参照
+
+- 全train24，每task固定完整teacher16一条，共24条件。以900的同一套q及完整A/B为起点；原Writer、两组Meta及source全部冻结。
+- `writer900`保持原输出；`free_q`只优化每视频的完整T×50×7变量，经过原冻结source/PCA16编译；
+  `free_lora`只优化同起点的完整76个A/B factors。两个诊断参照均为唯一38-target rank16，绝不部署为Writer或后继初始化。
+- 支持集固定64个同task跨episode动作query，来自demo17–41并明确排除teacher16；使用两套独立官方FM time/noise，
+  共128个固定预测条件，保存实际位置、time/noise和seed。独立动作42–45、独立噪声不参与优化、停止或选择。
+- 两臂采用同一原生LBFGS，max_iter32、soft max_eval48、history_size10、strong_wolfe；记录真实closure次数、
+  原生退出信息和有限值。线搜索可以超过soft max_eval，不自造中途硬截断；不根据held表现改步数、LR或选中间点。
+- 先单独做首个train task的2步机制／成本smoke，结果不合并正式诊断。工程错误可修复，科学预算变更须在完整outcome前解释。
+- 报告起点／末尾支持及独立动作功能。三个最终参照统一在train24×states32–35上评测，每task复用teacher16，
+  明示有限视频池；状态从不参与拟合，source17/96只在执行合同及逐行配对相同时复用。
+- 直接拟合只是受给定优化预算限制的可达性参照：free_q成功不能证明共享RGB可学；失败不能证明数学容量上界；
+  free_lora与free_q的差同时受参数化及优化影响。只按已实际区分的接口提出修正，不由此恢复旧solver或追加扫描。
+
+每次GPU启动按现有两节点、单节点有效卡数、NUMA、quota和clean pushed frozen commit合同登记。
+本次训练侧拟合不更新正式模型；视频控制、seen-video和行为回放均无梯度。正式源码变更独立集成，原训练运行树保持冻结。

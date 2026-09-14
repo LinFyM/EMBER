@@ -58,6 +58,8 @@
   属于严重能力缺口；小幅涨分或loss下降不能将其降格成调参问题，也不能由此唯一归因某个模块。
 - 能力与相邻资格成立后补same-task-other，选定并冻结单checkpoint，再做wrong／no-video／shuffled／reversed最终controls。
   controls不进入训练、checkpoint选择或架构修正；旧实验按原注册标准保留，不因新要求重判。
+- Owner单独授权的原因诊断可固定已结束窗口的末尾checkpoint，独立完成上述视频对照，无须先获方法性能资格。
+  这不是合格checkpoint选择；保持冻结、不选优，不反哺下一方法训练或架构设计，诊断与原资格裁决分别解释。
 - 正式评测使用single-checkpoint完整400配对行，不用80-row screen、checkpoint union或融合选模型。
   K1每task、每臂、每轮50个init对应全部50条合法teacher videos各一次，跨checkpoint和controls复用固定canonical映射。
 - 主FM来自同task跨episode执行queries。固定validation/test不产生梯度；扩展non-held meta tasks须先审计held及重复specification排除，

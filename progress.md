@@ -2,9 +2,10 @@
 
 ## 当前状态（2026-09-14）
 
-本轮[Process Pullback Writer](docs/process_pullback_writer_design.md)纯FM研究已完成，完整报告与有限原因分析已落盘。
-Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回到v5.2完全由owner决定，agent不自行切换。
-Owner追加的清理、真实机制、效率优化、低秩出口功能核验及预登记fresh学习窗口均已完成。
+Owner最新批准按已经提出的方案充分分析原因；当前执行[设计§10](docs/process_pullback_writer_design.md#10-原因诊断授权与预登记2026-09-14)。
+范围为固定模型的视频对照、见过／未见教学视频和相邻行为回放，以及train-only有界q／完整LoRA可达性诊断。
+不启动下一轮正式Writer训练，不做q辅助、RL或Test，不自动切换方法；结果直接在对话中说明，不新增用户报告。
+原纯FM900研究、清理、效率优化和学习窗口均已完成；原结果及资格裁决保留，不用本次诊断改写。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
 900更新及300／600／900的六个完整面板、1,488条闭环rows全部结束。
@@ -65,7 +66,8 @@ train两次为17/5/7、21/5/1，churn12／6，Jaccard .5862／.7778。不能把�
 本轮已结束，无在途训练／评测，不原样追加900之后的训练或小扫。
 same-task-other及wrong／no-video／shuffled／reversed未运行；没有q辅助、RL、Test、checkpoint融合或自动回退v5.2。
 当前实现、完整checkpoint与正式证据保留；两棵冻结运行树供本轮复核及后续比较使用。
-Owner此前决定先完成纯FM再决定q辅助；当前没有新对照的执行决定，后续范围由owner结合完整报告确定。
+上述未运行状态是原900窗口结束时的事实。本次新授权补视频诊断，不要求该模型先取得性能资格。
+固定900只由预登记窗口末尾决定，不在300／600／900中选优；视频controls不用于下一方法训练、选点或架构反馈。
 
 ## 近期关键出处
 

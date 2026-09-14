@@ -30,8 +30,9 @@ class LearningTask:
 def load_learning_tasks(
     asset_root: Path, task_ids: Sequence[int], *, role: str = "train",
 ) -> dict[int, LearningTask]:
-    if role not in {"train", "validation"}:
-        raise ValueError("current development loader excludes Test")
+    """Load task metadata only; training callers retain the fixed train default."""
+    if role not in {"train", "validation", "test"}:
+        raise ValueError("task metadata requires a registered target split")
     manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
     protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
     selected = tuple(map(int, task_ids))
@@ -44,7 +45,7 @@ def load_learning_tasks(
         row = rows[task_id]
         suite, local = row["suite"], int(row["task_id"])
         if row["split_role"] != role or local not in protocol["split"]["suites"][suite][role]:
-            raise ValueError("selected task crosses the fixed development split")
+            raise ValueError("selected task crosses the fixed target split")
         authority = WriterTaskAuthority(
             task_id, str(row["language"]), data_root / row["hdf5"]["relative_path"], int(row["hdf5"]["bytes"]),
         )

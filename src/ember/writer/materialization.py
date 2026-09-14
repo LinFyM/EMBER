@@ -123,12 +123,12 @@ def selection_contract(
     fixed_videos: Mapping[str, Sequence[int]] | None = None,
 ) -> dict[str, Any]:
     tasks, states, pool = tuple(task_ids), tuple(init_state_ids), tuple(video_pool)
-    if (role not in {"development_train", "validation"} or cardinality not in (1, 2, 4)
+    if (role not in {"development_train", "validation", "test"} or cardinality not in (1, 2, 4)
             or arm not in {"correct", "same_task_other", *CONTROL_ARMS} or mode not in {"fixed_per_task", "per_init_ordinal"}
             or not tasks or len(set(tasks)) != len(tasks) or seed < 0
             or not states or tuple(sorted(set(states))) != states or not set(states) <= set(range(50))
             or len(set(pool)) != len(pool) or not set(pool) <= set(range(50)) or len(pool) < cardinality):
-        raise ValueError("invalid explicit task/condition selection; Test is excluded")
+        raise ValueError("invalid explicit task/condition selection")
     fixed = _fixed_video_selection(fixed_videos, mode=mode, tasks=tasks, cardinality=cardinality, pool=pool)
     if role == "validation" and mode != "per_init_ordinal":
         raise ValueError("validation banks use canonical per-init video schedules; fixed sets are train diagnostics")
@@ -157,6 +157,11 @@ def request_init_state_ids(
     *, role: str, init_state_ids: Sequence[int] | None = None, state_count: int | None = None,
 ) -> tuple[int, ...]:
     """Resolve the existing count API or the registered train diagnostic panel."""
+    if role == "test":
+        states = tuple(range(50))
+        if state_count not in (None, 50) or (init_state_ids is not None and tuple(init_state_ids) != states):
+            raise ValueError("sealed Test requires exactly initial states0..49")
+        return states
     if init_state_ids is None:
         count = 50 if state_count is None else state_count
         if count not in (10, 50):
@@ -396,7 +401,7 @@ def _materialize(
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
 
-    role = "train" if selection["evaluation_role"] == "development_train" else "validation"
+    role = "train" if selection["evaluation_role"] == "development_train" else selection["evaluation_role"]
     tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role)
     rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
              "language": value.authority.language, "split_role": role,
@@ -543,8 +548,8 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
-    parser.add_argument("--diagnostic-contract-json", type=Path, help="Explicit frozen terminal900 control declaration.")
-    parser.add_argument("--role", choices=("development_train", "validation"))
+    parser.add_argument("--diagnostic-contract-json", type=Path, help="Explicit frozen terminal900 video-control or Test400 declaration.")
+    parser.add_argument("--role", choices=("development_train", "validation", "test"))
     parser.add_argument("--task-ids", type=_integers)
     parser.add_argument("--k", type=int, choices=(1,))
     parser.add_argument("--arm", choices=("correct", "same_task_other", *CONTROL_ARMS))

@@ -11,18 +11,21 @@ import pytest
 import torch
 from safetensors.torch import load_file, save_file
 
+from ember.eval_adapters import inspect_static_task_lora_adapter
 from ember.lora import LoRATarget, expected_lora_state_shapes
+from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization, materialization_workers, runtime
 from ember.writer.learning_data import load_learning_tasks
 from ember.writer.materialization import condition_id, file_record, planned_episodes, selection_contract
 from ember.writer.video import VideoWriterConfig
-from ember.writer.video_controls import (CONTROL_ARMS, DIAGNOSTIC_DECLARATION, control_provenance,
-                                         controlled_frames, inspect_diagnostic_contract, video_task_id)
+from ember.writer.video_controls import (CONTROL_ARMS, DIAGNOSTIC_DECLARATION, METHOD_FREEZE_DECLARATION,
+    SEALED_TEST_DECLARATION, control_provenance, controlled_frames, inspect_diagnostic_contract, video_task_id)
 from test_horizon_evaluation import GIT, ROOT, SOURCE
 
 
 VALIDATION = (1, 3, 11, 13, 23, 26, 31, 32)
+TEST = (6, 8, 10, 17, 24, 27, 30, 33)
 
 
 def selection(arm, **changes):
@@ -250,3 +253,186 @@ def test_no_video_materializes_without_runtime_or_pixels_and_executes_source_ide
     save_file(state, condition["adapter"]["path"], metadata=materialization.adapter_metadata(condition["condition_id"], checkpoint))
     with pytest.raises(ValueError, match="zero-delta identity"):
         evaluation._inspect_adapter_file(condition, checkpoint, execution.lora)
+
+
+@pytest.fixture
+def frozen_test_assets(frozen_control_assets, tmp_path):
+    root, run, checkpoint, _, _, lora = frozen_control_assets
+    target_path = root / "configs/pi05_target_data_v1/manifest.json"
+    target = json.loads(target_path.read_text())
+    for row in target["tasks"]:
+        if row["global_task_id"] in TEST:
+            path = root / "data/datasets" / target["dataset"]["revision"] / row["hdf5"]["relative_path"]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"synthetic fixture; no real Test episode is opened")
+            row["hdf5"]["bytes"] = path.stat().st_size
+    target_path.write_text(json.dumps(target))
+    freeze = tmp_path / "method_freeze.json"
+    freeze.write_text(json.dumps(METHOD_FREEZE_DECLARATION | {
+        "writer_checkpoint": checkpoint, "method": materialization.method_metadata(run)}))
+    declaration = SEALED_TEST_DECLARATION | {"method_freeze": str(freeze)}
+    return root, run, checkpoint, declaration, lora
+
+
+@pytest.mark.parametrize("damage", ["missing", "missing_freeze", "missing_file", "macro", "checkpoint", "method",
+    "further_training", "further_architecture_changes", "test_gradient_use", "checkpoint_selection", "feedback"])
+def test_test_requires_the_exact_frozen_method_and_terminal_checkpoint(frozen_test_assets, damage):
+    root, run, checkpoint, declaration, _ = frozen_test_assets
+    selected = selection("correct", role="test", task_ids=TEST)
+    freeze_path = Path(declaration["method_freeze"])
+    freeze = json.loads(freeze_path.read_text())
+    if damage == "missing":
+        declaration = None
+    elif damage == "missing_freeze":
+        declaration.pop("method_freeze")
+    elif damage == "missing_file":
+        declaration["method_freeze"] = str(freeze_path.with_name("absent.json"))
+    elif damage == "macro":
+        checkpoint = checkpoint | {"macro": 600}
+    elif damage == "checkpoint":
+        freeze["writer_checkpoint"]["path"] += "_different"
+    elif damage == "method":
+        freeze["method"]["frame_stride"] = 10
+    elif damage == "feedback":
+        declaration["training_feedback"] = True
+    else:
+        freeze[damage] = True
+    freeze_path.write_text(json.dumps(freeze))
+    with pytest.raises((ValueError, OSError)):
+        inspect_diagnostic_contract(declaration, selection=selected, checkpoint=checkpoint, run=run, asset_root=root)
+
+
+@pytest.mark.parametrize("changes", [dict(cardinality=2), dict(init_state_ids=tuple(range(49))),
+    dict(video_pool=tuple(range(49))), dict(mode="fixed_per_task"),
+    *(dict(arm=arm) for arm in ("same_task_other", *CONTROL_ARMS))])
+def test_test_cannot_select_partial_rounds_few_shot_or_other_arms(changes):
+    values = dict(role="test", task_ids=TEST, cardinality=1, arm="correct", mode="per_init_ordinal",
+                  seed=7, init_state_ids=tuple(range(50)), video_pool=tuple(range(50)))
+    with pytest.raises(ValueError):
+        selection_contract(**(values | changes))
+
+
+@pytest.fixture
+def test_cpu_compiler(frozen_test_assets, monkeypatch):
+    root, _, _, _, lora = frozen_test_assets
+    tasks = load_learning_tasks(root, TEST, role="test")
+    reads, stages = [], []
+
+    def load(task, demo):
+        assert task in TEST and 0 <= demo < 50
+        reads.append((task, demo))
+        raw = tasks[task].episode_lengths[demo]
+        indices = list(range(0, raw, 5))
+        if indices[-1] != raw - 1:
+            indices.append(raw - 1)
+        return SimpleNamespace(raw_frame_count=raw, frame_indices=np.array(indices),
+            frames=np.ones((len(indices), 2, 3, 2, 2), dtype=np.float32))
+
+    def prepare(frames, indices, language):
+        assert len(frames) == len(indices) == 1
+        assert frames[0].shape[1:] == (2, 3, 2, 2)
+        assert language in {task.authority.language for task in tasks.values()}
+        stages.append("prepare_RGB_indices_language")
+        return frames, indices, language
+
+    def read(condition):
+        assert not torch.is_grad_enabled() and len(condition) == 3
+        stages.append("observer")
+        return torch.ones(1), ()
+
+    def source_read(condition):
+        assert not torch.is_grad_enabled() and len(condition) == 3
+        stages.append("bare_source")
+        return "synthetic native coordinates"
+
+    def write(response, *, native_inputs):
+        assert not torch.is_grad_enabled() and response == 1 and native_inputs == "synthetic native coordinates"
+        stages.append("writer")
+        return {key: torch.full(shape, .01) for key, shape in expected_lora_state_shapes(lora).items()}
+
+    current = SimpleNamespace(lora=lora, state=SimpleNamespace(writer=write),
+        observer=SimpleNamespace(device=torch.device("cpu"), prepare=prepare, read=read),
+        correction=SimpleNamespace(read=source_read))
+
+    class CPUWorkers:
+        def __init__(self, *, config, devices, **_kwargs):
+            self.config, self.devices = config, devices
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def compile(self, request, jobs):
+            _, _, record, selected_tasks, output = request
+            worker = object.__new__(materialization_workers.ResidentCompiler)
+            worker.runtime, worker.store, worker.tasks = current, SimpleNamespace(load=load), selected_tasks
+            worker.output, worker.record = output, record
+            for job in jobs:
+                yield job, worker.compile(job)
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("CPU contract check attempted to load a real model or teacher episode")
+
+    monkeypatch.setattr(materialization, "MaterializationWorkers", CPUWorkers)
+    monkeypatch.setattr(materialization, "RawTeacherVideoStore", forbidden)
+    monkeypatch.setattr(runtime, "build_runtime", forbidden)
+    return reads, stages
+
+
+@pytest.mark.parametrize("ids", [TEST[:-1], VALIDATION, (0, *TEST[1:])])
+def test_test_task_subsets_and_wrong_splits_fail_before_video_reads(frozen_test_assets, test_cpu_compiler, tmp_path, ids):
+    root, _, checkpoint, declaration, _ = frozen_test_assets
+    with pytest.raises(ValueError, match="fixed .*split|test8"):
+        materialization.materialize_requests(asset_root=root, device=torch.device("cpu"), requests=[{
+            "checkpoint": checkpoint["path"], "output": str(tmp_path / "rejected"), "role": "test",
+            "task_ids": ids, "k": 1, "diagnostic_contract": declaration}])
+    assert test_cpu_compiler == ([], [])
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_complete_frozen_test400_uses_the_canonical_compiler_and_official_adapter(frozen_test_assets,
+    test_cpu_compiler, tmp_path):
+    root, _, checkpoint, declaration, _ = frozen_test_assets
+    with pytest.raises(ValueError, match="fixed target split"):
+        load_learning_tasks(root, TEST)
+    path, = materialization.materialize_requests(asset_root=root, device=torch.device("cpu"), requests=[{
+        "checkpoint": checkpoint["path"], "output": str(tmp_path / "test400"), "role": "test",
+        "task_ids": TEST, "k": 1, "arm": "correct", "state_count": 50, "init_state_ids": list(range(50)), "seed": 7,
+        "diagnostic_contract": declaration}])
+    manifest = json.loads(path.read_text())
+    requests = [SimpleNamespace(suite=row["suite"], task_id=row["task_id"], init_state_ids=tuple(range(50)))
+                for row in manifest["tasks"]]
+    adapter = inspect_static_task_lora_adapter(manifest_path=path, source=SOURCE, tasks=requests,
+        evaluation_role="test", require_formal=True)
+    assert len(adapter["tasks"]) == 8 and len(adapter["conditions"]) == 400
+    assert all(row["split_role"] == "test" and len(row["episodes"]) == 50 for row in adapter["tasks"])
+    assert set(test_cpu_compiler[0]) == {(task, demo) for task in TEST for demo in range(50)}
+    assert len(test_cpu_compiler[0]) == 400
+    assert test_cpu_compiler[1] == ["prepare_RGB_indices_language", "observer", "bare_source", "writer"] * 400
+    assert adapter["information_wall"]["total_writer_invocations"] == 400
+    assert adapter["information_wall"]["materialization_rgb_video_reads"] == 400
+    assert adapter["diagnostic_contract"] == SEALED_TEST_DECLARATION | {
+        "method_freeze": file_record(Path(declaration["method_freeze"]))}
+    first = adapter["tasks"][0]
+    evidence = evaluation.episode_evidence(adapter, first, first["episodes"][0])
+    assert evidence["diagnostic_contract"] == adapter["diagnostic_contract"]
+    assert len(load_file(adapter["conditions"][0]["adapter"]["path"])) == 76
+    keys = [(row.suite, row.task_id) for row in requests]
+    with pytest.raises(Pi05EvaluationError, match="fixed init states"):
+        evaluation.inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=keys,
+            evaluation_role="test", require_formal=False,
+            task_init_state_ids={key: tuple(range(49)) for key in keys})
+    for field in ("validation_test_gradients", "deployment_loss_or_optimizer"):
+        damaged = copy.deepcopy(manifest)
+        damaged["information_wall"][field] = True
+        with pytest.raises(ValueError, match="information wall"):
+            evaluation.validate_information_wall(damaged)
+    freeze_path = Path(declaration["method_freeze"])
+    freeze = json.loads(freeze_path.read_text())
+    freeze["further_training"] = True
+    freeze_path.write_text(json.dumps(freeze))
+    with pytest.raises(Pi05EvaluationError, match="freeze"):
+        evaluation.inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=keys,
+            evaluation_role="test", require_formal=True)

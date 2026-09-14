@@ -29,16 +29,16 @@ EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path) -> None:
-    if role not in {"development_train", "validation"}:
-        raise ValueError("video Writer evaluation excludes Test and non-target tasks")
+    if role not in {"development_train", "validation", "test"}:
+        raise ValueError("video Writer evaluation requires a registered target split")
     protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
     manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
     canonical = {int(row["global_task_id"]): row for row in manifest["tasks"]}
-    split = "train" if role == "development_train" else "validation"
+    split = "train" if role == "development_train" else role
     expected = {(suite, task) for suite, roles in protocol["split"]["suites"].items() for task in roles[split]}
     keys = [(str(row["suite"]), int(row["task_id"])) for row in rows]
-    if not keys or len(set(keys)) != len(keys) or not set(keys) <= expected or (split == "validation" and set(keys) != expected):
-        raise ValueError("task bank crosses the fixed split or omits validation8 tasks")
+    if not keys or len(set(keys)) != len(keys) or not set(keys) <= expected or (split != "train" and set(keys) != expected):
+        raise ValueError("task bank crosses the fixed split or omits validation8/test8 tasks")
     for row in rows:
         actual = canonical.get(int(row["global_task_id"]))
         if actual is None or any(row.get(key) != actual[key] for key in ("suite", "task_id", "language", "split_role")):
@@ -182,7 +182,7 @@ def validate_information_wall(manifest) -> None:
                 "total_writer_invocations": 0 if no_video else len(manifest["conditions"]),
                 "outcome_dependent_video_selection": False,
                 "shuffled_reversed_wrong_no_video": manifest["arm"] in CONTROL_ARMS}
-    if manifest["arm"] in CONTROL_ARMS:
+    if manifest["arm"] in CONTROL_ARMS or manifest.get("evaluation_role") == "test":
         required.update(materialization_rgb_video_reads=0 if no_video else len(manifest["conditions"]),
                         deployment_frozen_source_vjp=not no_video, deployment_loss_or_optimizer=False)
     if no_video:

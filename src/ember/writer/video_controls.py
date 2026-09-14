@@ -1,4 +1,4 @@
-"""Frozen post-hoc video controls, with explicit donor and real-frame provenance."""
+"""Frozen video controls and final Test admission with explicit provenance."""
 
 from __future__ import annotations
 
@@ -20,9 +20,30 @@ DIAGNOSTIC_DECLARATION = {
     "checkpoint_selection": False,
     "training_feedback": False,
 }
+SEALED_TEST_DECLARATION = {
+    "schema_version": "ember_process_pullback_sealed_test_v1",
+    "purpose": "frozen_method_test",
+    "checkpoint_macro": 900,
+    "checkpoint_selection": False,
+    "training_feedback": False,
+}
+METHOD_FREEZE_DECLARATION = {
+    "schema_version": "ember_process_pullback_method_freeze_v1",
+    "terminal_macro": 900,
+    "further_training": False,
+    "further_architecture_changes": False,
+    "test_gradient_use": False,
+    "checkpoint_selection": False,
+}
 
 
 def require_control_selection(selection):
+    if selection["evaluation_role"] == "test" and (
+            selection["arm"] != "correct" or selection["K"] != 1
+            or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
+            or selection["init_state_ids"] != list(range(50))
+            or selection["video_pool"] != list(range(50))):
+        raise ValueError("sealed Test requires fixed test8, K1 correct and all 50 canonical state/video ordinals")
     if selection["arm"] in CONTROL_ARMS and (
             selection["evaluation_role"] != "validation" or selection["K"] != 1
             or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
@@ -74,6 +95,8 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
     from ember.writer.materialization import file_record, method_metadata
     from ember.writer.evaluation import _inspect_scope
 
+    if selection["evaluation_role"] == "test":
+        return _inspect_sealed_test(value, selection=selection, checkpoint=checkpoint, run=run)
     if selection["arm"] not in CONTROL_ARMS:
         if value is not None:
             raise ValueError("a frozen diagnostic declaration belongs only to video controls")
@@ -101,3 +124,24 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
     if len(correct["conditions"]) != 400 or {row["condition_id"] for row in correct["conditions"]} != references:
         raise ValueError("diagnostic reference must retain the complete 400-condition correct bank")
     return {**DIAGNOSTIC_DECLARATION, "paired_correct_manifest": record}
+
+
+def _inspect_sealed_test(value, *, selection, checkpoint, run):
+    """Require the explicit end of training/design before the sole correct Test400."""
+    from ember.writer.materialization import file_record, method_metadata
+
+    require_control_selection(selection)
+    if (not isinstance(value, dict)
+            or set(value) != {*SEALED_TEST_DECLARATION, "method_freeze"}
+            or any(value.get(key) != expected for key, expected in SEALED_TEST_DECLARATION.items())
+            or checkpoint.get("macro") != 900):
+        raise ValueError("Test requires the explicit frozen terminal900 Test400 declaration")
+    reference = value["method_freeze"]
+    path = Path(reference["path"] if isinstance(reference, dict) else reference).resolve()
+    record = file_record(path)
+    if isinstance(reference, dict) and reference != record:
+        raise ValueError("method freeze changed after Test registration")
+    expected = {**METHOD_FREEZE_DECLARATION, "writer_checkpoint": checkpoint, "method": method_metadata(run)}
+    if read_json(path) != expected:
+        raise ValueError("Test method freeze must end training/design and bind the identical terminal900 checkpoint and method")
+    return {**SEALED_TEST_DECLARATION, "method_freeze": record}

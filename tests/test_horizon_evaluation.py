@@ -141,7 +141,7 @@ def test_fixed_sets_share_one_condition_and_full_k_pool_can_support_correct_only
 def test_fixed_split_and_validation8_scope_are_enforced():
     train, _ = _task_rows([0], _selection())
     validate_task_scope(train, "development_train", ROOT)
-    with pytest.raises(ValueError, match="excludes Test"):
+    with pytest.raises(ValueError, match="fixed split"):
         validate_task_scope(train, "test", ROOT)
     ids = [1, 3, 11, 13, 23, 26, 31, 32]
     rows, _ = _task_rows(ids, _selection(role="validation", task_ids=ids))

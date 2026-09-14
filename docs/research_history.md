@@ -1638,3 +1638,19 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 八面板累计评测17,987.69秒。原件在`runs/analysis/local_correction_field_writer_20260914/`，
 保留READOUT、paired_readout、bounded100_decision、全部checkpoint／bank／raw rows及训练／物化／评测合同与completion。
 整体goal未完成；理论中对应的获取预测按[工作理论§11](temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)降级。
+
+## 2026-09-14：按Owner要求清理磁盘及活动仓库内容
+
+清理前完整源码和文档由Git `f9f142e5`保存；`aeb78f94`退役10个无调用方的旧RL／采样／panel模块、4份已关闭Writer配置及4个专属测试。
+评测仍使用的探索协方差回归`pi05_eval/exploration.py`，唯一Writer入口改为`train_writer.py`与`materialize_writer.py`。
+`3abbdb7b`将五份当前文档从1,250行收拢至295行，删除并列旧状态及被覆盖要求；历史论证、专家原件和关闭裁决继续保留于既有索引。
+170项相关检查、训练入口help及diff检查通过，没有因清理重跑科学实验。
+
+实际删除228,148,912,128字节占块（212.48GiB）：已完成临时profile的15个载荷30.29GiB，32棵clean已集成无在途进程的worktree 4.17GiB，
+以及32个已关闭实验根中188个bank的物化LoRA缓存178.02GiB。后者49,038条路径／37,008个inode的全部硬链接均在删除范围内。
+这些bank保留manifest、checkpoint身份和视频／状态／frame映射；完整Writer/source checkpoint、生成commit和源数据继续保留，可用原commit重新物化。
+缓存载荷不再现场保留，原始评测rows／aggregate／contract／completion及分析不变；临时profile保留历史记录但不再可resume。
+三棵含未提交工作、六棵含main未集成提交的旧树保留。只删除已核清集合，未扩展到其它bank、checkpoint、数据、环境或项目。
+
+逐根范围与删除字节见[清理记录](../runs/analysis/workspace_cleanup_20260914.json)。清理后的strg01 data1用量846,270,296KiB、
+soft quota 1,073,741,824KiB，余量约217GiB；共享文件系统空间与个人quota分别核验。后续新方法继续使用data1，不以更换磁盘代替清理。

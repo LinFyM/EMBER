@@ -33,6 +33,9 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
   全部finite，两个worker exit0。原件在本轮`functional/summary.json`，不计作合法Writer或闭环结果。
 - `configs/pi05_process_pullback_writer.json`已登记fresh900、3,600条件／230,400queries；300／600／900做correct400及train96，
   100倍数保存。四卡训练预计4–5小时、诊断和评测另计；初段12GiB、含条件触发controls的预计峰值24GiB。
+- 评测物化已支持同节点常驻GPU worker按完整条件动态分工，保持同一编译计算和单一完整manifest；
+  78项bank合同与5项实际spawn并发／失败检查通过，真实四卡物化将在首个checkpoint完成后执行。
+  三个节点的400＋96请求、固定state/video映射、source来源与完整配对readout已准备；候选实际配对检查待闭环完成。
 - 训练池为train24的demo16–41，共624个K1条件；采样帧数min16、median31、p90为57、max105。
   最长视频已用于上述真实profile；独立动作42–45／teacher46–49及train states32–35保持既有合同。
 
@@ -41,6 +44,8 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
 初始24task动作诊断完成，FM .153279524；前三个实际更新19.75／22.26／19.94秒，第二次起两组Meta均有有效梯度。
 NCCL同步约.016秒，峰值37.54GiB，source可训练参数0。首段结束后及时完成correct400／train96，再exact-resume同一run至600／900。
 当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
+Owner最新确定先保持当前四卡、完成纯FM闭环结果后再决定是否做q辅助对照；暂不开展六卡训练拆分或新增q损失。
+等待期间只完成必要准备，其余等待进程结束事件，不反复读取或播报训练进度。
 
 ## 近期关键出处
 

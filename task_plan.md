@@ -29,7 +29,8 @@
 5. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
 当前[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整关闭，§8–9的合法共同学习完成；
-两臂100及全部固定诊断／checkpoint已完成，按登记先核验推理批量，再完成50／100整轮闭环。无selected checkpoint；
+两臂100及全部固定诊断／checkpoint已完成，推理批量核验通过并选择16；46aaf22d已并行生成四checkpoint的八个bank，
+接续完成50／100整轮闭环。无selected checkpoint；
 回放及行为解释全部关闭，整体goal和自主授权继续。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。

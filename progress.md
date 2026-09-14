@@ -12,8 +12,10 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展且明�
 **50dafb05 clean pushed detached已完成两臂独立fresh100：两节点各world3、policy microbatch8、GPU-local NUMA、deferred NCCL，
 launcher均exit0，训练墙钟分别3,647.61／3,655.72秒。四个正式checkpoint完整，400条曝光的25字段和72条诊断的12字段全部配对通过。**
 固定动作FM均值0／50／100：有序.153285339／.153149835／.152403202，无序.153285339／.153149911／.152400151。
-改善约0.58%，两臂仍接近；不据此认定过程理解或闭环收益。现场训练设备已释放，进入§9固定完整推理物理batch核验，
-随后物化四checkpoint及八个完整闭环面板；无selected checkpoint或新闭环成绩。
+改善约0.58%，两臂仍接近；不据此认定过程理解或闭环收益。§9固定完整推理批量4／8／16／32均exit0、输出完整且finite；
+105帧实测13.647／12.170／11.511／11.536秒，按最快且占用较小选择16，allocated／reserved峰值10.296／11.135GiB。
+46aaf22d clean pushed detached已在两节点各物理4／5并行物化四checkpoint的八个bank，共1,984套唯一完整LoRA；
+按完整train96 bank就绪情况用其它适合设备接续闭环，validation400仍整轮完成后比较。无selected checkpoint或新闭环成绩。
 双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在
 `runs/analysis/local_correction_field_writer_20260914/training_launch_contract.json`。
 profile及字段梯度原件同根`profile/`，未据两步loss改变科学参数。后续按固定节点完成整轮面板再裁决。

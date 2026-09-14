@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import torch
-from safetensors.torch import load_file, save_file
+from safetensors.torch import save_file
 
 from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
 from ember.expert_manifold.video_schedule import (
@@ -20,6 +20,7 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
+from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
 from ember.writer.video import VideoWriterConfig, require_architecture_identity
 
 
@@ -299,8 +300,8 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
 
 def _materialize(
     *, asset_root: Path, checkpoint: Path, output: Path,
-    selection: Mapping[str, Any], device: torch.device,
-    runtime: Any, run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
+    selection: Mapping[str, Any], workers: MaterializationWorkers,
+    run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
     repository: Mapping[str, Any], reuse_manifest: Path | None = None,
     reusable: Mapping[str, Any] | None = None,
 ) -> Path:
@@ -314,49 +315,45 @@ def _materialize(
              "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
             for task, value in tasks.items()]
     validate_task_scope(rows, selection["evaluation_role"], asset_root)
-    if not source_matches(runtime.source, run["source"]):
-        raise ValueError("Writer runtime uses a different frozen source checkpoint")
-    runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
-    runtime.state.requires_grad_(False).eval()
-    runtime.policy.eval()
-    expected_probe = torch.randn(50, 32, generator=torch.Generator().manual_seed(int(run["config"]["observer"]["probe_seed"])))
-    if not torch.equal(runtime.state.probe.cpu(), expected_probe):
-        raise ValueError("checkpoint public probe differs from its declared seed")
-    if runtime.lora.rank != 16 or len(runtime.lora.targets) != 38:
-        raise ValueError("materialization must produce one complete 38-target rank16 LoRA")
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    store = RawTeacherVideoStore(tuple(value.authority for value in tasks.values()), frame_stride=5,
-                                camera_view=run["config"]["observer"].get("camera_view", "agentview"))
+    planned = {episode["condition_id"]: {"condition_id": episode["condition_id"],
+               "task": row["global_task_id"], "demos": episode["teacher_demo_indices"]}
+               for row in rows for episode in row["episodes"]}
     conditions = {}
     reused = []
-    try:
-        for row in rows:
-            task = tasks[row["global_task_id"]]
-            for episode in row["episodes"]:
-                key = episode["condition_id"]
-                if key not in conditions:
-                    if key in (reusable or {}):
-                        record = reusable[key]
-                        path = output / f"{key}.safetensors"
-                        os.link(record["adapter"]["path"], path)
-                        conditions[key] = {**record, "adapter": file_record(path)}
-                        reused.append(key)
-                    else:
-                        conditions[key] = _compile_condition(runtime, store, task, episode["teacher_demo_indices"], output, checkpoint_record)
-                        print(json.dumps({"condition": key, "conditions_ready": len(conditions),
-                            "newly_compiled": len(conditions) - len(reused), "reused": len(reused),
-                            "frames": sum(video["sampled_frame_count"] for video in conditions[key]["teacher_videos"])}), flush=True)
-    finally:
-        store.close()
+    for key in (key for key in planned if key in (reusable or {})):
+        record = reusable[key]
+        path = output / f"{key}.safetensors"
+        os.link(record["adapter"]["path"], path)
+        conditions[key] = {**record, "adapter": file_record(path)}
+        reused.append(key)
+    jobs = sorted((job for key, job in planned.items() if key not in conditions),
+                  key=lambda job: -sum(tasks[job["task"]].episode_lengths[demo] for demo in job["demos"]))
+    request = (checkpoint, run, checkpoint_record, tasks, output)
+    for job, record in workers.compile(request, jobs):
+        key = job["condition_id"]
+        path = output / f"{key}.safetensors"
+        if (key not in planned or key in conditions or record.get("condition_id") != key
+                or record.get("global_task_id") != job["task"] or record.get("teacher_demo_indices") != job["demos"]
+                or record.get("adapter") != file_record(path)):
+            raise ValueError("materialization worker returned a duplicate, mismatched, or missing condition file")
+        conditions[key] = record
+        print(json.dumps({"condition": key, "conditions_ready": len(conditions),
+            "newly_compiled": len(conditions) - len(reused), "reused": len(reused),
+            "frames": sum(video["sampled_frame_count"] for video in record["teacher_videos"])}), flush=True)
+    if set(conditions) != set(planned):
+        raise ValueError("materialization cannot seal an incomplete condition bank")
     lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
     manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
                 "arm": selection["arm"], "evaluation_role": selection["evaluation_role"], "selection": dict(selection),
-                "asset_root": str(asset_root.resolve()), "source": runtime.source,
+                "asset_root": str(asset_root.resolve()), "source": run["source"],
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
                 "lora_contract": file_record(lora_path), "method": method_metadata(run),
-                "materialization_execution": {"native_frame_chunk": runtime.observer.frame_chunk},
-                "tasks": rows, "conditions": list(conditions.values()), "single_complete_rank16": True,
+                "materialization_execution": {"native_frame_chunk": workers.config["observer"]["frame_chunk"],
+                    "devices": list(map(str, workers.devices)), "workers": len(workers.devices),
+                    "dispatch": "longest_video_first_dynamic_conditions"},
+                "tasks": rows, "conditions": [conditions[key] for key in planned], "single_complete_rank16": True,
                 "compilation": {"new_conditions": len(conditions) - len(reused), "reused_conditions": len(reused),
                     "reuse_manifest": file_record(reuse_manifest) if reuse_manifest is not None else None,
                     "reused_condition_ids": reused},
@@ -371,10 +368,12 @@ def _materialize(
     return path
 
 
-def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device,
+def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
+                       devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
                        native_frame_chunk: int | None = None) -> list[Path]:
-    from ember.writer.runtime import build_runtime
-
+    selected_devices = execution_devices(device, devices)
+    if type(cpu_threads) is not int or cpu_threads <= 0:
+        raise ValueError("materialization CPU threads must be positive")
     repository = git_state(REPO_ROOT)
     if not frozen_authority(repository):
         raise ValueError("materialization requires a clean pushed detached checkout")
@@ -396,29 +395,32 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]
-    # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
-    # prefix, generated LoRA, or checkpoint state is cached across requests.
+    # One asset root fixes LoRA/tokenizer/normalization authorities. Workers may
+    # reuse weights for the same checkpoint, never adapted Z/KV/H or generated LoRAs.
     runtime_config = {**first["config"], "model": first["model_config"],
                       "observer": dict(first["config"]["observer"])}
     if native_frame_chunk is not None:
         runtime_config["observer"]["frame_chunk"] = native_frame_chunk
-    runtime = build_runtime(asset_root, runtime_config, device)
-    return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run, reusable=reused,
+    with MaterializationWorkers(asset_root=asset_root, config=runtime_config, devices=selected_devices,
+                                cpu_threads=cpu_threads) as workers:
+        return [_materialize(asset_root=asset_root, workers=workers, run=run, reusable=reused,
                          checkpoint_record=record, repository=repository, **request)
             for request, (run, record), reused in zip(requests, inspected, reusable, strict=True)]
 
 
 def materialize(*, asset_root: Path, checkpoint: Path, output: Path,
-                selection: Mapping[str, Any], device: torch.device, reuse_manifest: Path | None = None,
+                selection: Mapping[str, Any], device: torch.device | None = None, reuse_manifest: Path | None = None,
+                devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
                 native_frame_chunk: int | None = None) -> Path:
-    return _materialize_batch(asset_root=asset_root, device=device,
+    return _materialize_batch(asset_root=asset_root, device=device, devices=devices, cpu_threads=cpu_threads,
         native_frame_chunk=native_frame_chunk,
         requests=[{"checkpoint": checkpoint, "output": output, "selection": selection, "reuse_manifest": reuse_manifest}])[0]
 
 
-def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device,
+def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
+                         devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
                          native_frame_chunk: int | None = None) -> list[Path]:
-    """Compile a JSON request list with one resident, compatible runtime."""
+    """Compile complete JSON-request banks with one compatible runtime per GPU."""
     if not isinstance(requests, (list, tuple)):
         raise ValueError("batch requests must be a JSON list")
     fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
@@ -436,6 +438,7 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
                            "output": Path(request["output"]).resolve(), "selection": selection,
                            "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
     return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device,
+                              devices=devices, cpu_threads=cpu_threads,
                               native_frame_chunk=native_frame_chunk)
 
 
@@ -446,7 +449,7 @@ def _integers(value: str) -> tuple[int, ...]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
-    parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and device.")
+    parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and devices.")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
@@ -461,7 +464,9 @@ def main() -> None:
     parser.add_argument("--init-state-ids", type=_integers,
                         help="Explicit train diagnostic panel: 32,33,34,35 (four held videos, once each).")
     parser.add_argument("--seed", type=int)
-    parser.add_argument("--device", default="cuda:0")
+    placement = parser.add_mutually_exclusive_group()
+    placement.add_argument("--device", default="cuda:0")
+    placement.add_argument("--devices", help="Distinct same-node visible devices, e.g. cuda:0,cuda:1,cuda:2,cuda:3.")
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--native-frame-chunk", type=int,
                         help="Physical frame batch for both native reads; preserves every video frame.")
@@ -477,16 +482,10 @@ def main() -> None:
     for key, value in defaults.items():
         if getattr(args, key) is None:
             setattr(args, key, value)
-    torch.set_num_threads(args.cpu_threads)
-    if torch.device(args.device).type == "cuda":
-        from ember.writer.topology import bind_current_process_to_cuda_numa
-
-        torch.cuda.set_device(torch.device(args.device))
-        if not bind_current_process_to_cuda_numa(torch.cuda.current_device()):
-            raise ValueError("materialization requires GPU-local NUMA placement")
-        torch.backends.cuda.matmul.allow_tf32 = True
+    placement = {"devices": tuple(torch.device(value) for value in args.devices.split(","))} if args.devices else {
+        "device": torch.device(args.device)}
     if args.requests_json is not None:
-        for path in materialize_requests(asset_root=args.asset_root.resolve(), device=torch.device(args.device),
+        for path in materialize_requests(asset_root=args.asset_root.resolve(), **placement, cpu_threads=args.cpu_threads,
                                          native_frame_chunk=args.native_frame_chunk,
                                          requests=json.loads(args.requests_json.read_text())):
             print(path, flush=True)
@@ -496,5 +495,5 @@ def main() -> None:
         init_state_ids=request_init_state_ids(role=args.role, init_state_ids=args.init_state_ids, state_count=args.state_count),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)
     print(materialize(asset_root=args.asset_root.resolve(), checkpoint=args.checkpoint.resolve(),
-                      output=args.output, selection=selection, device=torch.device(args.device),
+                      output=args.output, selection=selection, **placement, cpu_threads=args.cpu_threads,
                       reuse_manifest=args.reuse_manifest, native_frame_chunk=args.native_frame_chunk), flush=True)

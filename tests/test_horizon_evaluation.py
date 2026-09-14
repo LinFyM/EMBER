@@ -63,6 +63,7 @@ def bank(tmp_path, request):
     run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
     run["config"]["observer"]["native_inputs"] = "bare_source_output_pullback_pca16_full50"
+    run["config"]["observer"]["frame_chunk"] = 4
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
     torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": STAGE, "next_macro": 16,
@@ -272,7 +273,8 @@ def resident_materialization(tmp_path, monkeypatch):
     source = tmp_path / "teacher.hdf5"
     source.write_bytes(b"CPU orchestration fixture")
     task = SimpleNamespace(suite="libero_spatial", suite_task_id=0,
-                           authority=SimpleNamespace(path=source, language="exact task language"))
+                           authority=SimpleNamespace(task_id=0, path=source, language="exact task language"),
+                           episode_lengths=(100,) * 50)
     runs, requests, builds = {}, [], []
     for step, value, arm in ((16, 1., "correct"), (48, 2., "same_task_other")):
         checkpoint = tmp_path / f"run/checkpoints/macro_{step:08d}"
@@ -300,7 +302,10 @@ def resident_materialization(tmp_path, monkeypatch):
 
     def compile_condition(current, _store, _task, demos, _output, _checkpoint):
         assert current is instance and current.observer.probe is current.state.probe
-        return {"condition_id": condition_id(0, demos), "teacher_videos": [{"sampled_frame_count": 1}],
+        path = _output / f"{condition_id(0, demos)}.safetensors"
+        save_file({"value": state.writer.weight.detach()}, str(path))
+        return {"condition_id": condition_id(0, demos), "global_task_id": 0, "teacher_demo_indices": list(demos),
+                "adapter": file_record(path), "teacher_videos": [{"sampled_frame_count": 1}],
                 "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight),
                 "vl_meta_value": float(state.vl_meta.weight)}
 
@@ -415,7 +420,8 @@ def test_materialization_reuses_valid_loras_and_compiles_only_missing_video(bank
     target = json.loads((ROOT / "configs/pi05_target_data_v1/manifest.json").read_text())
     native = next(task for task in target["tasks"] if task["global_task_id"] == 0)
     task = SimpleNamespace(suite=row["suite"], suite_task_id=row["task_id"],
-        authority=SimpleNamespace(task_id=0, language=row["language"], path=Path(row["teacher_source"]["path"])))
+        authority=SimpleNamespace(task_id=0, language=row["language"], path=Path(row["teacher_source"]["path"])),
+        episode_lengths=tuple(native["demonstrations"]["episode_lengths"]))
     # This orchestration test uses the sealed fixture provenance, without needing the real dataset.
     monkeypatch.setattr(materialization, "file_record", lambda path: dict(row["teacher_source"])
         if Path(path) == task.authority.path else file_record(path))
@@ -474,7 +480,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
     monkeypatch.setattr("sys.argv", argv)
     materialization.main()
     assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu"),
-                      "native_frame_chunk": 16}]
+                      "native_frame_chunk": 16, "cpu_threads": 4}]
     assert "/output/manifest.json" in capsys.readouterr().out
     for option in (("--arm", "same_task_other"), ("--seed", "7")):
         monkeypatch.setattr("sys.argv", [*argv, *option])

@@ -603,7 +603,25 @@
       "exposure_estimate": "runs/analysis/process_pullback_writer_20260914/learning_exposure_estimate.json",
       "initial_panel_rows": 1488,
       "initial_output_estimate_gib": 12,
-      "conditional_full_study_peak_estimate_gib": 24
+      "conditional_full_study_peak_estimate_gib": 24,
+      "execution_segments": [
+        [
+          100,
+          200,
+          300
+        ],
+        [
+          400,
+          500,
+          600
+        ],
+        [
+          700,
+          800,
+          900
+        ]
+      ],
+      "segment_policy": "same fresh run and exact optimizer/sampler/RNG/topology resume; finish each registered correct panel promptly before the next segment"
     }
   },
   "update_version": "source_pullback_pure_main_fm_joint_credit_v1",

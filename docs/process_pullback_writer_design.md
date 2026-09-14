@@ -130,6 +130,9 @@ full10 .16493043→.15792518，改善CI [.00191831,.01375751]，分别4／3个�
 validation400和train96，同时在0／300／600／900做既定独立动作诊断。300达到约76,800 queries，接近v5.2
 历史query曝光；900达到其条件曝光并超过v6历史query数量。这给予更有信息量的学习机会，不保证新方法已充分学习。
 
+执行按300／600／900三个段边界衔接，及时完成对应闭环再exact-resume同一run；不重新初始化、改数据或改变梯度权重。
+每段继续原Writer／optimizer／scheduler／sampler／rank RNG与同一world size／topology，只改变已预登记的段停止点。
+
 三个节点共1,488条闭环rows，跨checkpoint固定state/video/RNG映射。既有source train17/96与validation47/400只在
 当前执行合同和逐episode pairing一致时复用原rows，来源登记到本轮运行记录；不以旧Writer结果代替source。
 source的两个参照为`native_correction_writer_20260913/oracle_rollout/evaluation/source`与

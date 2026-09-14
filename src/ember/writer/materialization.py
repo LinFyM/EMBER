@@ -27,10 +27,10 @@ from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, contr
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
 
-RUN_SCHEMA = "ember_process_pullback_writer_run_v1"
+RUN_SCHEMA = "ember_process_pullback_writer_run_v2"
 STAGE = "process_pullback_writer_fresh"
-TRAINING_SCHEMA = "ember_process_pullback_training_state_v1"
-UPDATE_VERSION = "source_pullback_pure_main_fm_joint_credit_v1"
+TRAINING_SCHEMA = "ember_process_pullback_training_state_v2"
+UPDATE_VERSION = "source_pullback_learned_outlet_pure_main_fm_joint_credit_v2"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -72,7 +72,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     data = config.get("data", {})
     identities = (
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": "ember_process_pullback_writer_config_v1", "update_version": UPDATE_VERSION,
+        (config, {"schema_version": "ember_process_pullback_writer_config_v2", "update_version": UPDATE_VERSION,
                   "execution_precision": "native_mixed_without_outer_autocast"}),
         (config.get("optimization", {}), {"loss": "main_fm"}),
         (config.get("observer", {}), {"camera_view": "dual",
@@ -237,10 +237,11 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
             "process_aggregation": "forward_change_recurrence_with_backward_context",
             "static_content_role": "queries_and_gates_only; zero_change_gives_zero_action_code",
             "training_stage": STAGE, "training_objective": "main_fm",
-            "native_parameter_generation": "G_mean_J_W_F0_T_q_then_DeltaW_G_P_PCA16",
+            "native_parameter_generation": "G_mean_J_W_F0_T_q_then_DeltaW_L_G_P_R",
+            "shared_native_transforms": "identity_initialized_rank16_left_and_right; task_shared; multiplicative_only",
             "native_input_source": "bare_frozen_source_without_VL_or_Action_Meta",
             "action_code_shape": ["T", 50, 7], "native_output_padding_cotangents": "zero_dimensions_7_to_31",
-            "input_projection": "top16_right_singular_vectors_all_real_frame_horizon_bare_X",
+            "input_projection": "bare_A0_top16_right_singular_vectors_all_real_frame_horizon_X; emitted_A=A0_R",
             "deployment_frozen_source_vjp": True, "source_parameter_training": False,
             "deployment_grad_context": "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported",
             "deployment_teacher_labels_loss_optimizer": False,

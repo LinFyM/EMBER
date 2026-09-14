@@ -16,7 +16,8 @@ exact language + 一条同步agentview／eye_in_hand教学视频（K=1）
   → language引导语义角色对齐，形成逐帧语义状态e_t
   → 真实相邻变化d_t，正向变化递推与反向上下文形成过程Value
   → 过程Value产生每帧、每horizon的7维动作作用码q_t
-  → 同视频裸冻结source的输出导数 + 全视频原生X的PCA rank16投影
+  → 同视频裸冻结source的输出导数 + 全视频原生X的PCA rank16，形成A0/B0
+  → 共享identity起步的左右原生坐标变换L/R
   → 唯一38-target完整A/B LoRA
   → source按自身当前观测闭环执行，LoRA在rollout期间固定
 ```
@@ -40,39 +41,45 @@ exact language + 一条同步agentview／eye_in_hand教学视频（K=1）
 作用码q保留每个真实视频状态的全部50个horizon位置，使用7维实际动作输出坐标；原生32维输出的其余位置补零。
 它是作用于裸source输出的余切，不是teacher action标签或一条待播放的轨迹。网络仅从过程Value产生q。
 
-令F0为同一合法双路RGB／language条件下裸source的原生flow输出。对每个LoRA目标层，固定编译关系为：
+令F0为同一合法双路RGB／language条件下裸source的原生flow输出。对每个LoRA目标层：
 
 ```text
 G_l = (1/T) sum_t J_(W_l) F0(V_t)^T q_t
-A_l = 全视频裸source X_l的top16右奇异向量（正交行）
-B_l = G_l A_l^T
-DeltaW_l = B_l A_l = G_l P_l，P_l = A_l^T A_l
+A0_l = 全视频裸source X_l的top16右奇异向量（正交行）
+B0_l = G_l A0_l^T
+L_l = I + U_L,l V_L,l，R_l = I + U_R,l V_R,l
+B_l = L_l B0_l，A_l = A0_l R_l
+DeltaW_l = L_l G_l P_l R_l，P_l = A0_l^T A0_l
 ```
 
-这把学习网络的输出约束在有实际动作含义的坐标中，再由冻结source导数确定参数作用；共享网络不再同时学习任意的高维参数译码。
+q先在原生动作余切坐标中形成作用，再由冻结source导数生成初始参数方向。共享L/R用跨episode执行FM学习调整这些方向，
+其每侧变换秩与LoRA同为16，初始严格identity，无独立language或task输入，也不加第二套参数更新。q=0始终给出零LoRA。
 裸source坐标在两组Meta作用域之外计算。所有真实frame／horizon参与投影，完整A/B组成唯一执行LoRA，无第二adapter或task-local候选。
 编译在一次Writer调用内部允许固定、只读、多阶段重放，明确使用冻结模型导数；部署没有teacher标签、loss或optimizer。
 
-这一映射只描述F0处的局部关系，有限LoRA的实际行为仍由完整非线性policy决定。PCA保留输入能量，未保证保留有用功能方向，
-因此完整学习前须对本次G P出口完成有界的训练侧功能核验；旧G或旧局部场的正例不能代替这项前提。
+F0导数只描述局部关系，最终出口经共享变换后也不再等于纯G P；有限LoRA的实际行为由完整非线性policy决定。
+本次固定出口与自由A/B的闭环对照支持优先修正出口整体约束，但尚未单独定位PCA或证明共享L/R足够。
+PCA基内符号／旋转在最终BA中相消；低维共享变换保持这个性质，不以任意基编号作为任务标识。
 
 ## 共同学习、迁移与保持
 
-Writer、Action Meta与VL Meta从合法identity开始fresh共同学习，q末端投影初始为零。唯一loss是同task跨episode的真实主执行FM：
+Writer（含L/R）、Action Meta与VL Meta从合法identity开始fresh共同学习，q末端投影初始为零。唯一loss是同task跨episode的真实主执行FM：
 教学视频给出任务条件，动作queries来自同task其它episode，避免逐帧复制该教师轨迹。Teacher video本身不需要动作标注或专门q监督。
 
-真实FM先产生完整LoRA余切，再经固定q到LoRA映射的精确伴随回到过程网络及两组Meta；各部分在同一参数版本完成信用后统一更新。
+真实FM先产生完整LoRA余切，通过同版本L/R小图得到共享出口参数梯度及B0信用，再经固定q到B0的精确伴随回到过程网络及两组Meta；
+各部分在同一参数版本完成信用后统一更新，并保留同次裸因子以避免重复编译。
 基础source始终冻结，已适配Z/KV/H不跨更新缓存。本轮不采用分段冻结课程、辅助q标签、RL或部署优化。
 
-共享语义与动作坐标、跨episode监督和固定编译关系，是本方法尝试获得跨视频／初始化／任务复用的理由。
-固定参数映射可能减少共享译码漂移，但读取器仍可能遗忘、走捷径或不泛化；普通FM与结构性质都不能保证能力获取或保持。
+共享语义与动作坐标、跨episode监督和原生导数约束，是本方法尝试获得跨视频／初始化／任务复用的理由。
+本次放开共享L/R可能改善有效方向，也可能新增跨任务漂移；读取器仍可能遗忘、走捷径或不泛化，必须由相邻闭环检验。
 参数在rollout期间固定却作用于随自身观测变化的激活，因此可以形成状态条件化行为，无需按教师视频时钟播放动作。
 
 ## 怎样判断方法是否成立
 
 当前优先检验正确视频的实际闭环能力、有益的视频特异性及相邻保持，>145/400仍为长期目标和参照，本阶段不强制。
 正式判断使用single-checkpoint strict paired400，结合task／suite、breadth、retained/gained/lost、churn及相邻success-set重合。
-能力与相邻资格成立后补same-task-other，冻结选定单checkpoint，再测试wrong／no-video／shuffled／reversed；不另训frame_set作为硬要求。
+本轮预先固定终点900，在方法冻结后补same-task-other、wrong／no-video／shuffled／reversed及登记的Test；
+固定终点评估与能力／相邻资格分开，不能把未合格的终点称为合格选点。不另训frame_set作为硬要求。
 最终controls不参与训练、选点或架构修正，错误条件退化不能替代正确条件获益。
 
 若有信息量学习后仍缺少正向信号，须降低对实际检验组合的支持并作有限原因分析，不以loss下降无限续训。

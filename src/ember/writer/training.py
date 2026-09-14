@@ -27,10 +27,10 @@ from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_process_pullback_writer_run_v1"
+RUN_SCHEMA = "ember_process_pullback_writer_run_v2"
 STAGE = "process_pullback_writer_fresh"
-TRAINING_SCHEMA = "ember_process_pullback_training_state_v1"
-UPDATE_VERSION = "source_pullback_pure_main_fm_joint_credit_v1"
+TRAINING_SCHEMA = "ember_process_pullback_training_state_v2"
+UPDATE_VERSION = "source_pullback_learned_outlet_pure_main_fm_joint_credit_v2"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -48,7 +48,7 @@ def _config(path: Path) -> dict[str, Any]:
     # Chunk sizes are execution choices; the complete scientific graph is fixed.
     actual = {**config["model"], **{key: expected_model[key] for key in ("query_chunk", "activation_checkpoint")}}
     if (
-        config.get("schema_version") != "ember_process_pullback_writer_config_v1"
+        config.get("schema_version") != "ember_process_pullback_writer_config_v2"
         or actual != expected_model
         or config["optimization"].get("joint_train_all_writer_modules") is not True
         or float(config["optimization"]["normalizer"]) != 1.0
@@ -145,9 +145,10 @@ def _run_contract(args, context, config, runtime, state):
             "native_read": "same-version Z/H joint Meta replay; fixed bare source output VJP outside both Meta stacks",
             "source_pullback": {"action_code_width": 7, "horizon": 50,
                                 "projection": "full-video bare native X right-PCA rank16",
-                                "parameter_effect": "G P; G = mean_frame J_W F0^T q; B = G A^T",
+                                "parameter_effect": "L G P R; G = mean_frame J_W F0^T q; bare B0 = G A0^T",
+                                "shared_outlet": "L=I+U_L V_L; R=I+U_R V_R; rank16 per side; identity initialized; no additive LoRA",
                                 "deployment_frozen_source_vjp": True,
-                                "training_adjoint": "exact fixed q-to-LoRA adjoint with chunked source replay",
+                                "training_adjoint": "same-version shared outlet VJP, then exact fixed q adjoint and joint native replay",
                                 "teacher_labels": False, "deployment_loss_or_optimizer": False},
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },

@@ -17,6 +17,10 @@
 Owner于2026-09-15明确要求：完成本次原因诊断后，由agent自主决定当前方法修改，直接实施、验证、正式训练和测试，
 无需owner再次审查讨论。固定Test仍只在方法冻结后使用，不反馈设计或checkpoint选择；本次固定900视频controls继续保持封闭解释边界。
 
+当前修订依据train-only完整q／A/B对照，增加共享identity起步的乘法L/R出口，其余过程读取与纯FM保持。
+本轮按[active design](process_pullback_writer_design.md)预登记fresh900及固定终点的完整冻结读出；
+终点评估与方法能力资格分别裁决，不把未合格模型称为selected合格checkpoint。旧900 controls不作为修订依据。
+
 ## 1. 科学精神与目标
 
 人可以从他人或不同身体的教学视频理解目标、条件与操作过程，再迁移到自己的身体及场景。EMBER探索将这种能力落实为

@@ -1697,3 +1697,29 @@ Validation相邻R/G/L56/16/8、52/12/20，churn24／32、Jaccard .7000／.6190�
 不能单凭它区分训练池拟合与同task换视频／初始化泛化，900也不证明普遍收敛或不可学习性。
 按本轮窗口停止原样续训和小扫，保留方法与完整证据；后续q辅助或其它实质修订、是否回到v5.2由owner决定。
 完整原件在`runs/analysis/process_pullback_writer_20260914/`的READOUT、paired_readout、bounded900_decision及全部checkpoint／rows／合同。
+
+## 101. 有界闭环对照定位固定出口缺口，方向特异性仍未成立（2026-09-15）
+
+按原设计诊断注册固定v1终点900，完整train24同teacher16、共同A/B起点、相同支持动作和LBFGS预算，
+source与Writer冻结，仅分别优化完整q或rank16 A/B。独立states32–35的source／原输出／free_q／free_AB为
+17／20／18／46（均/96）；free_AB breadth19，S/O/G/L11/17/13/5，相对原输出R/G/L16/30/4，
+相对free_q12/34/6、差额task-bootstrap95%CI[+13.54,+44.79]pp。三臂全部24任务有效，无选中间点或held梯度。
+
+独立动作full10 MSE原输出／free_q／free_AB为.171922／.150169／.140512，实际前5步为
+.144629／.129600／.118305。free_q功能误差改善未增加闭环，完整A/B则有跨suite实际能力；
+因此固定编译出口的参数化／优化约束值得优先修正。相同优化器预算不等于相同优化难度，结果不证明数学容量上界、
+PCA单一根因、可泛化共享L/R足够或合法RGB获取已解决。诊断拟合只作定位，永不作为后继初始化。
+
+训练池teacher16–19的300/600/900为18/20/22，对独立teacher46–49的24/22/26，没有一致训练池优势。
+换视频过拟合不能单独解释整体缺口。32组三节点共96条correct回放均已实际查看，95/96复现原成败；
+唯一差异为Long task2/state0/600原成功、本次失败，不改原400。已确认错对象／实例、获取、放置及组合只做一项等
+不同失败阶段，不能统一写成后半段遗忘，也不能由稀疏画面指认具体模型模块。模糊瓶标签保留不确定。
+
+固定900的correct／other／wrong／shuffled／reversed／no-video为64／65／48／35／67／47（均/400）。
+相对correct的other／wrong／shuffled／reversed差额CI分别[-1.75,+2.50]／[-9.50,-.25]／[-18.50,+1.75]／[-1,+2.50]pp。
+内容匹配有支持，correct未优于倒序，乱序差额也有跨task不确定性；不能宣称有益时间方向或完整视频必要性已建立。
+这组controls只描述旧模型，未用于后继出口选择。它不改写原窗口的未获资格结论。
+
+所有数据原件在`runs/analysis/process_pullback_writer_20260914/causal_diagnostics/`：diagnostic_metrics、
+reachability_functional_metrics、replay_pairing_metrics、各任务拟合、raw rows／completion、注册和来源。
+临时拟合及static bank准入由已推送`adc31a15`与冻结运行树保存，完成使命后从canonical main退役。

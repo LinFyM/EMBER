@@ -2,54 +2,31 @@
 
 ## 当前goal与边界
 
-Owner最新要求完成原因诊断后，自主决定当前方法的必要修改，直接实施、验证、正式训练和完整配对评测，无需再次审查讨论。
-已设置持续goal，完成范围包括诊断、方法修订、实现与Git集成、正式训练评测及对话内结果分析。
-先完成[设计§10](docs/process_pullback_writer_design.md#10-原因诊断授权与预登记2026-09-14)的有界诊断，区分固定编译出口的有限可达性、
-合法视频共享获取、换视频泛化与相邻保持，再据训练侧证据修订设计。固定Test只在方法冻结后使用，不反馈设计或选点；不开展RL、不自动回退v5.2。
-当前授权与实际完成状态见[progress](progress.md)，稳定要求见[owner requirements](docs/current_owner_requirements.md)。
+完成原因诊断后，自主决定当前方法修订、实施、验证、正式训练和完整配对评测，再在对话中交付实际结果与原因分析。
+Owner无需再次审查，持续goal仍active。当前唯一设计为[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)。
+方法只改变原生LoRA出口：共享identity起步的L/R乘法变换，其余过程读取、7维q、rank16、数据和纯FM保持。
+旧冻结900的视频controls不反馈新方法；不做q辅助、RL、自动回退v5.2或超参扫描。
+固定Test仅在本轮方法及terminal900冻结后用于登记的source/correct读出，无梯度、不选点、不反哺设计。
 
-已完成900窗口及当前诊断固定双路K1、冻结source、完整50-horizon、7维q、固定source导数／PCA rank16唯一38-target LoRA及纯跨episode FM。
-后续改变须有明确证据与修订合同；训练仍采用fresh联合纯FM，沿用信息墙和固定split。暂不强制>145/400，不要求另训frame_set；
-能力、相邻保持、换视频与最终controls仍须有真实证据。
+## 已完成
 
-## 已完成的纯FM窗口
+1. 固定出口fresh900窗口、六个正式面板及完整曝光／相邻保持分析结束。
+2. 旧900全部视频对照、三节点训练池视频、96条行为回放、全train24 q／完整A/B有界功能及闭环对照结束。
+3. 原出口／free_q／free_AB的20／18／46支持优先修正固定出口整体约束；不单独给PCA定责，也不把特权拟合当RGB能力。
+4. 相关历史与原始合同已核对；现有负例边界保留。已明确新修正的因果作用、局限、fresh曝光和冻结读出合同。
 
-1. **实际清理已完成。** 已删除退役源码／配置、过时正文、可重建物化缓存、临时profile载荷及32棵完成集成的工作树。
-   数据集、源模型、完整正式checkpoint和评测原件保留，实际释放212.48GiB；范围与余量见progress。
-   新输出留在`/data1`，按每阶段实时独立user quota和峰值预算执行，后续及时清理完成使命的临时产物。
-2. **真实机制与成本核验已完成。** 最长视频完整编译、q伴随、identity、第二次联合梯度及真实main FM对照通过；
-   96条件G P功能前提通过。优化后每最长条件约24秒，frame_chunk16／FM16，峰值37.01GiB；oracle不计作合法Writer能力。
-3. **预登记学习窗口已完成。** Fresh900更新、3,600条件／230,400queries，实际覆盖623/624个task/video条件；九份完整checkpoint保留。
-   四卡训练墙钟4.565小时，三次物化.462小时、六个闭环面板1.091小时。登记与实际证据见设计§8–9及本轮READOUT。
-4. **全部配对面板已完成。** 300／600／900的train为24／22／26（source17/96），validation为64／72／64（source47/400）。
-   六面板1,488rows、source合同、RNG及state/video配对通过；逐task／suite、breadth、R/G/L、churn与相邻重合已完整报告。
-   有局部可学性，但能力扩展与未见task保持仍不足；按有效科学non-pass及未识别范围报告，不解释为已证实工程故障。
-5. **资格及未执行范围已裁决。** 未获能力／相邻前置资格，无selected checkpoint；same-task-other及wrong／no-video／shuffled／reversed未运行。
-   这不证明视频或顺序无效。没有RL、Test或q辅助，不从未做的controls反推根因，也不把最大72当合格选点。
+## 当前执行
 
-## 当前诊断执行
+1. 集成共享出口与同版本精确信用，更新配置／metadata；补冻结后Test准入，退役已完成使命的诊断专属路径。
+2. 完成有意义的直接autograd及bank合同检查，集成main并push；真实最长双路视频两次完整联合更新与一次部署profile。
+3. 按实时两节点GPU与独立data1 quota，从clean pushed detached运行树启动fresh900；完整保存每100 checkpoint。
+4. 在300／600／900分别完成strict paired validation400、train96及固定独立动作诊断，按原topology exact-resume。
+5. 冻结预先固定的terminal900和本轮方法，完成same-task-other、wrong/no-video及最后shuffled/reversed的paired400，
+   再完成固定test8 source400／correct400。终点读出不冒充性能合格选点，controls和Test均不反馈本轮设计。
+6. 汇总per-task／suite、breadth、R/G/L、churn、相邻重合、曝光、成本、配对不确定性和未解决范围，直接在对话中报告。
 
-1. 固定终点900，补same-task-other、cross-suite-wrong、shuffled、reversed及identity/source参照；严格paired400，不选择checkpoint。
-2. 300／600／900复用相同train24初态32–35，补训练池teacher16–19，与既有teacher46–49面板分开获取、视频泛化与保持。
-3. 固定全validation8、初态0／12／25／37，回放三个完整模型，记录实际行为及谓词；描述实例不改写原400分数。
-4. 全train24、固定teacher16，从900生成结果共同起步，仅对q或完整rank16 A/B做有界直接拟合；source与Writer冻结。
-   优化只看跨episode支持动作，独立动作42–45及闭环初态不参与优化或选点；最终三个参照统一闭环比较。
-5. 按各比较的实际识别范围综合原因，不把有限拟合失败当容量上界，也不把局部成功当共享学习已经解决。
+## 完成判断
 
-视频controls只描述冻结900，不反馈下一方法设计；训练侧机制诊断承担原因定位。所需代码保持单一评测路径。
-
-## 诊断后的自主推进
-
-1. 综合功能拟合、实际闭环、见过／未见视频和相邻行为证据，限定已识别原因与未识别范围，选择有区分力的一项主要方法修正。
-2. 先登记完整数据流水线、模块因果作用、相对历史的新内容、训练窗口及裁决，再实现并完成适当验证、集成和推送。
-3. 按实时GPU与独立quota合同，从干净已推送的冻结运行树启动fresh正式训练；在预登记节点完成strict paired400及train诊断。
-4. 检验相邻保持、same-task换视频和选定冻结模型的最终controls；方法冻结后才使用固定Test，保留其封闭性。
-5. 直接在对话中交付实际结果、原因判断与剩余限制；不以等待owner审查结束本goal，也不以孤立峰值宣称成功。
-
-## 成功与结束判断
-
-科学成功需要正确视频的真实闭环价值、跨task／suite获取、相邻保持、same-task换视频鲁棒性及冻结模型后的因果证据共同支持。
-代码、非零梯度、loss、局部privileged正例或孤立分数峰值均不替代这些证据。
-
-本goal的完成指授权研究工作与完整汇报完成，不要求制造正结果。合理窗口后持续缺少正向信号时，完成有限原因分析并明确报告，
-不自动回退或无限追加训练。历史结果、旧计划和暂停快照由[研究历史](docs/research_history.md)、封存原件与Git保留，不在本计划续写。
+本goal要求授权工作完整结束，不要求制造正结果。科学成功仍要真实能力、跨task迁移、保持、换视频及必要视频增量共同支持。
+有界特权正例、代码、非零梯度、loss或孤立分数峰值都不是成功。合理窗口后仍弱则报告具体修正未通过，不无限续训／扫参。
+实际状态和资源记录见[progress](progress.md)，正式命令与来源只保存在当前研究launch contract，历史见[research_history](docs/research_history.md)。

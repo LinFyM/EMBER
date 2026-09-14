@@ -1685,7 +1685,7 @@ source−G P task-cluster95%CI为[.00142637,.00853139]／[.00191831,.01375751]�
 
 ## 2026-09-14：Process Pullback纯FM完整窗口结束，局部获取未形成广泛保持
 
-按[预登记设计§8–9](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)完成900更新，
+按冻结设计`9b44fe7f:docs/process_pullback_writer_design.md`§8–9完成900更新，
 3,600条件／230,400queries覆盖623/624个不同task/video条件；九份完整checkpoint保留，独立meta tasks为24。
 训练d6defa69、物化／评测f5d9db78均来自clean pushed frozen trees；六面板／1,488rows完整，最终72个评测worker exit0。
 source执行合同、normalization、采样曝光、真实帧、完整LoRA及固定state/video/RNG配对通过，没有失败重试。
@@ -1703,3 +1703,27 @@ identity首步后899次Writer及两Meta梯度记录均finite非零、source冻�
 原件根`runs/analysis/process_pullback_writer_20260914/`保留READOUT、paired_readout、bounded900_decision、训练审计、
 完整checkpoint／manifest／raw rows／aggregate／completion和各阶段launch contract；逐task、suite、成功集合与有限原因分析均可复核。
 训练／物化／闭环墙钟4.565／.462／1.091小时，阶段合计6.118小时，不包括前期机制profile、功能前提和阶段间分析。
+
+## 2026-09-15：Process Pullback原因诊断完成，固定出口与完整LoRA有真实能力差距
+
+原诊断合同在`473cec18`先于新增outcome登记，实现`adc31a15`，冻结树`.codex/tmp/pullback-causal-runtime`。
+Owner随后于本地9月15日授权诊断后自主修改、实施及正式训练测试；没有用后来的授权改写原诊断预算。
+新完成2,272条闭环：四个validation视频臂1,600、训练池视频288、三节点回放96、三臂可达性288；
+correct/source的既有rows明确复用。24任务两臂拟合全部正常返回，source／Writer冻结、独立动作及初态无梯度，未选择中间点。
+
+teacher16共同起点的原输出／free_q／free_AB为20／18／46（source17，均/96），free_AB breadth19、四suite非零；
+对free_q差额CI[+13.54,+44.79]pp。独立full10 MSE .171922／.150169／.140512，功能改善与闭环分开解释。
+训练池teacher16–19在300/600/900为18/20/22，独立teacher46–49为24/22/26，不支持只归因视频过拟合。
+回放95/96重现原成败，唯一差异Long2/state0/600原成功、本次失败；不同失败阶段已逐组核对，原400分数不改。
+
+固定900 correct／other／wrong／shuffled／reversed／no-video为64／65／48／35／67／47。
+wrong差额task区间严格负；shuffled差额区间仍跨零，reversed未低于correct，方向特异性未成立。
+这些controls不参与下一方法设计／训练／选点。具体R/G/L、task／suite、bootstrap与解释见findings§101和原始JSON。
+
+Same-task-other的官方12 workers均exit0且400 rows完整；外层shell因运行中脚本被改写而收尾127，随后错误命令覆盖console log。
+事故已定位为shell恢复字节偏移变化，原run_summary／launcher_completion／raw rows不受影响，不重跑挑结果；
+`other_launcher_incident.json`保留因果证据。其余launcher均正常结束，后续不再修改在途脚本。
+
+原件根为`runs/analysis/process_pullback_writer_20260914/causal_diagnostics/`，保留registration、完整拟合及noise、
+functional／paired metrics、全部rows／aggregate／completion、96轨迹及执行记录。回放contact sheets仅作临时视觉辅助。
+诊断源码及专属static准入在完成使命后从main退役，可从`adc31a15`恢复；没有删除正式证据或唯一checkpoint。

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：局部纠正场两臂fresh100已启动，50／100配对比较（2026-09-14）
+## 当前：局部纠正场两臂fresh100完成，进入50／100配对闭环（2026-09-14）
 
 Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
 自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
@@ -9,10 +9,11 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展且明�
 第二次更新31.346秒、显存峰值34.285GiB，完整推理8.299秒；source全冻结，局部场与两组Meta均有有限但较小梯度。
 153项相关检查通过，624个eta记录符合训练身份。§9依真实sampler估计100更新约2,998.53秒，
 在学习前固定两臂50／100、各400条件／25,600 queries及八个完整配对面板。
-**50dafb05 clean pushed detached已启动两臂独立fresh100：gpu01物理4/5/6为ordered，gpu02物理4/5/6为frame_set；
-均world3、policy microbatch8、GPU-local NUMA、deferred NCCL。两个正式run contract已生成并通过代码／拓扑身份。**
-两臂均已完成初始无梯度train24动作诊断并到达第50次更新，随后按原合同完成中间诊断、保存checkpoint并继续至100；
-无selected checkpoint或新闭环成绩。现场其它设备仍在满载或显存不足，物化和评测在本轮训练释放设备后接续。
+**50dafb05 clean pushed detached已完成两臂独立fresh100：两节点各world3、policy microbatch8、GPU-local NUMA、deferred NCCL，
+launcher均exit0，训练墙钟分别3,647.61／3,655.72秒。四个正式checkpoint完整，400条曝光的25字段和72条诊断的12字段全部配对通过。**
+固定动作FM均值0／50／100：有序.153285339／.153149835／.152403202，无序.153285339／.153149911／.152400151。
+改善约0.58%，两臂仍接近；不据此认定过程理解或闭环收益。现场训练设备已释放，进入§9固定完整推理物理batch核验，
+随后物化四checkpoint及八个完整闭环面板；无selected checkpoint或新闭环成绩。
 双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在
 `runs/analysis/local_correction_field_writer_20260914/training_launch_contract.json`。
 profile及字段梯度原件同根`profile/`，未据两步loss改变科学参数。后续按固定节点完成整轮面板再裁决。

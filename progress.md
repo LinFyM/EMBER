@@ -19,7 +19,10 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
   单次部署编译完整38-target耗时7.850s、无loss/optimizer；profile初始化已丢弃。原件在新研究`profile/actual/`。
 - Fresh900预登记3,600条件／230,400queries，300/600/900各validation400和train96。
   终点900预先固定，方法冻结后完整video controls及source/correct Test400；资格与终点描述分别裁决。
-- 正在从clean pushed detached运行树启动首个300节点；随后固定topology exact-resume至600/900。
+- 正式训练已从clean pushed detached `85ecfd18` 在gpu01:0–3启动，首两次全局更新18.850／21.974s；
+  第二步Writer及两Meta均有有效信用，reserved峰值38.355GiB。首个300节点运行中，随后同topology exact-resume至600/900。
+- 首次启动在配置状态标签检查处退出，未创建训练runtime或更新参数；登记字段修正后重新启动。
+  原失败日志与commit保留于新研究`failed_attempts/initial_registration/`，不混入正式曝光。
 
 新研究根`runs/analysis/process_pullback_learned_outlet_20260915/`，额外峰值预算32GiB。
 启动前strg01 data1用量872,777,216KiB、soft1,073,741,824KiB，独立余量约191.65GiB；

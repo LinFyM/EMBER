@@ -206,6 +206,9 @@ def _language_provenance(manifest: Mapping[str, Any]) -> bool:
 
 
 def _manifest_provenance_valid(manifest: Mapping[str, Any], arm: str) -> bool:
+    if arm.startswith("process_pullback_reachability_"):
+        from ember.writer.reachability_bank import bank_provenance_valid
+        return bank_provenance_valid(manifest)
     if arm == FIXED_CARRIER_ARM:
         return _fixed_carrier_provenance(manifest)
     if arm == "ecp_native_factor_g1_free_code":
@@ -289,6 +292,8 @@ def _complete_writer_bank(manifest: Mapping[str, Any]) -> bool:
 
 
 def _rank_partition_valid(manifest: Mapping[str, Any]) -> bool:
+    if str(manifest.get("arm", "")).startswith("process_pullback_reachability_"):
+        return manifest.get("rank_partition") == {"task": [0, 16]}
     if _complete_writer_bank(manifest):
         contract = manifest["shared_run_contract"]
         return (
@@ -358,6 +363,9 @@ def _checkpoint_authority_matches(
     key: tuple[str, int],
     manifest: Mapping[str, Any],
 ) -> bool:
+    if arm.startswith("process_pullback_reachability_"):
+        from ember.writer.reachability_bank import checkpoint_matches
+        return checkpoint_matches(arm, checkpoint, row, key, manifest)
     if arm == FIXED_CARRIER_ARM:
         return (
             checkpoint.get("schema_version") == "ember_frozen_stable_carrier_adapter_v1"
@@ -550,6 +558,8 @@ class FrozenStaticTaskLoRAAdapter:
         row = self.records.get(key)
         if row is None:
             raise Pi05EvaluationError("rollout task is outside static task-LoRA bank")
+        if "allowed_init_state_ids" in row and init_state_id not in row["allowed_init_state_ids"]:
+            raise Pi05EvaluationError("rollout state is outside the registered static-LoRA diagnostic")
         return PreparedStaticTaskLoRA(
             key=key,
             evidence={

@@ -1,204 +1,103 @@
 # EMBER owner requirements
 
-本文保存owner的长期目标、研究原则与协作要求。科学、数据、评测、资源和Git的具体合同以 [AGENTS.md](../AGENTS.md) 为准；
-当前授权只看 [progress.md](../progress.md)，执行计划只看 [task_plan.md](../task_plan.md)。已经结束的讨论与旧实验不构成重新启动授权。
+本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
+当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
-## 当前阶段的优先级：完整新方案的最后一轮推进（Owner 2026-09-14）
+## 当前阶段的优先级：Process Pullback Writer（Owner 2026-09-14）
 
-Owner在五个问题讨论后明确恢复推进：按已确定的完整方案实施、训练和有依据迭代，最后汇报完整结果。
-“最后一轮”不限制为只训练一次；若合理学习后持续缺少正向信号，应降低对实际检验组合的支持并明确报告，
-不能靠无信息修补无限延长。是否停止坚持或回到v5.2完全由owner决定，agent不得自行切换路线。
-同步双路教学RGB作为默认；当前采用纯跨episode FM，不要求教学video自身的动作标注或专门q监督。
-允许选定冻结模型上的correct相对wrong／shuffled／reversed证据，不再强制另训独立frame_set模型。
-当前具体方案为[Process Pullback Writer](process_pullback_writer_design.md)，执行和学习窗口只看progress与该设计。
-以下2026-09-11／12的路线描述保留为优先级形成过程，不覆盖本次最新裁决。
+五个问题讨论后确定推进[Process Pullback Writer](process_pullback_writer_design.md)。按完整方案实施、训练并作有依据的迭代，
+最后汇报完整结果；“最后一轮”不限制为只训练一次。若合理学习后持续缺少正向信号，应降低对实际检验组合的支持并明确报告，
+停止无信息重复；是否结束坚持或回到v5.2完全由owner决定，agent不得自行切换路线。
 
-Owner最新选择先专注恢复有益的视频特异性：正确教学视频中的任务内容与内部顺序应使生成的LoRA具有真实执行价值，
-错任务或破坏顺序的输入不应得到同样的教学收益。暂不强制绝对性能；下文>145/400、SFT与source能力要求保留为项目长期目标
-或参照，不作为本次理论咨询的额外完成门槛。仍需区分正确条件获得收益与仅让错误条件退化；具体机制验收口径尚待推导、登记。
-
-下一步先深入挖掘全部既有架构、训练和干预证据，提出同时解释正例与负例的机制理论，再从原始输入、表示、LoRA参数作用一路
-推导到训练与验证。不能把更多实验当作开始理论工作的前置，也不能先试出结果再补无法被否定的解释。
-
-本轮先集中已确定的新方案，回到v5.2由owner决定。v5.2的绝对性能与稳定性不达标，但其普通监督下的视频依赖正例是必须解释
-的重要证据；后继尚无同时覆盖能力、稳定性与视频特异性的整体胜出方案。v6/GOMQ等更高单项成绩和其它局部正证据同样保留，
-不把“未整体超越”写成“所有后继每项指标都更差”。应结合全部历史重新设计，也不预设保留当前Horizon的全部组件。
-
-Owner随后明确授权“开始推进”，给予足够自由度并要求高效率。2026-09-11曾选定
-[Video Functional Writer](video_functional_writer_design.md)：时间×任务token有序表示＋执行query条件化功能读出，
-真实LoRA FM与辅助真实FM共同训练视频表示，只有Compiler/native D接受归一化蒸馏。
-该候选的有界比较已结束，当前是否存在active design只看progress，不由本段恢复历史训练。
-下文纯FM课程与Horizon具体结构属于此前选定方法；输入信息墙、完整H、冻结source、
-唯一完整LoRA与部署零交互等科学边界保持。允许实现、profile、formal学习、必要对照及有依据的修正，
-不自动恢复95-task或此前未完成实验。
-
-2026-09-12在具体局部动作反演提案后，Owner再次明确给予足够自由度，只要不违反核心科学精神，
-可根据现有证据修正理论及架构并尽可能达成目标。据此允许登记action训练池自身RGB—动作配对作为
-共享读取器的辅助学习关系；主教学视频到LoRA的功能监督继续跨episode，teacher部署输入与held信息墙不变。
-这项明确授权覆盖此前待确认的限定范围，不再为同一事项重复请求批准；当前具体方法仍只看progress的active design。
+本阶段优先检验正确视频的实际执行价值、视频特异性与能力保持，暂不强制长期的>145/400性能线。
+默认输入为一条演示的同步双路RGB（K=1）；采用纯跨episode FM，不要求教学video的动作标注或专门q监督，本轮不开展RL或Test。
+允许完整视频双向理解，须保留真实顺序和操作前置关系。接受选定冻结模型上的correct相对wrong／shuffled／reversed证据，
+不再强制另训独立frame_set模型；正确条件能力、相邻保持与same-task换视频鲁棒性仍须检验，不能靠错误条件退化制造收益。
 
 ## 1. 科学精神与目标
 
-人可以从他人或不同身体的教学视频中理解目标、条件和操作过程，再迁移到自己的身体及当前场景。EMBER探索把这种能力落实为
-视频到策略参数的编译：从generic `lerobot/pi05_base`建立的冻结source policy出发，输入exact task language和一条或多条
-同task、action-hidden、内部有序的正确视频，一次生成完整task-conditioned LoRA，随后从未见初始化闭环完成任务。
-跨具身视频是科学动机；目前LIBERO实验本身不证明已经获得跨人类、机器人身体或视角的泛化。
+人可以从他人或不同身体的教学视频理解目标、条件与操作过程，再迁移到自己的身体及场景。EMBER探索将这种能力落实为
+视频到策略参数的编译：从generic `lerobot/pi05_base`建立的冻结source出发，输入exact language与action-hidden正确教学视频，
+一次生成完整task-conditioned LoRA，从未见初始化闭环完成任务。跨具身是科学动机；LIBERO结果本身不证明跨身体泛化。
 
-- Writer初次生成的LoRA应立即有效；rollout期间不重复看teacher video，不做task-local优化、环境试错或第二阶段适配。
-- 语言说明目标和关注对象；正确视频的动态过程必须带来相对language/static prior的必要条件增量。
-- 输出是一套覆盖Action Expert全部38个目标的完整LoRA，联合生成A/B，无独立carrier、任务字典或第二套执行adapter。
-  rank16是已对齐候选的首选容量，不把rank、memory tokens、FactorHeads或某种decoder当成研究目标。
-- 部署输入不得包含teacher actions、state/proprio、reward、terminal、task ID、filename、pose、hidden normalization或policy outcome。
-  执行policy读取自己的当前观测和state；不能把执行输入与teacher-video信息墙混淆。
-- 一次Writer调用内部允许固定、只读、多阶段读取与重放同一组授权视频或native activations；这不是task-local训练。
-- 冻结source无可训练参数；共享observer适配只改变读取侧。若将共享prior用于执行，必须与条件残差合并为唯一完整LoRA，计入总rank预算。
+- Writer初次生成的LoRA应立即有效；rollout期间不重复观看teacher video，不做task-local优化、环境试错或第二阶段适配。
+- 语言说明目标与关注对象；视频动态必须提供相对language/static prior的必要条件增量。
+- 输出是一套覆盖Action Expert全部38个目标的完整LoRA；无task-ID字典、独立carrier或第二套执行adapter。
+  rank、memory tokens、FactorHeads及具体decoder均为方法选择，不是研究目标。
+- teacher部署输入不得含action、state/proprio、reward、terminal、task ID、filename、pose、hidden normalization或policy outcome。
+  执行policy可以读取自身当前观测和state；两者的信息边界不同。
+- 一次Writer调用内部可对授权视频或native activations作固定、只读、多阶段读取与重放，包括本设计的冻结source导数计算。
+  共享读取侧适配属于Writer；source基础权重始终冻结，部署不存在loss或optimizer。
 
 ## 2. 架构与推导原则
 
-- Owner 2026-09-14重申：架构与训练方法必须作为一个整体设计，由研究者给出自己的连贯理论或明确理由，
-  解释任务描述与视频的处理、内容理解、高层认知、任务过程与能力的获取、唯一LoRA参数生成、未见任务迁移及训练中的能力保持。
-  高层认知须说明保留了什么可用于执行的知识、下游怎样消费，不能由模块名称、张量形状或存在梯度代替。
-- 整体解释同时覆盖正向计算和学习机制：每个关键接口为何需要、传递什么、哪些监督和参数共享使其可学、
-  所学知识为何可能跨视频／初始化／任务复用，以及共享更新如何兼顾能力获取与保持。区分结构保证、候选机制与实验证据；
-  允许待检验假设，不要求先有完整数学证明，也不把每个接口都变成独立训练阶段或额外诊断流程。
-- 从完整历史正负证据提炼上述解释，再据它设计和修正方法。v5.2普通FM的视频依赖及架构与配方的交互必须被解释；
-  不能从“监督允许视频无关解”直接推出必须增加复杂辅助目标。局部动作／纠正监督须与表示和参数消费联合论证，
-  不默认现有架构已能理解片段、实现有效更新并迁移，也不因本要求机械恢复旧架构。
-- 负结果后先指出整体解释中的哪项预测未兑现、哪些假设应保留／降级／放弃，再决定局部修复或实质重构。
-  每次方法修正须仍能纳入同一套可检验的工作原理；不默认保留整图后不断叠加模块／loss，也不因局部失败推翻无关的已确认结论。
-- Action Expert的原生动作生成知识应参与视频理解。逐帧Gemma图文语义、Action Expert响应、跨帧过程理解和参数生成各自承担明确职责。
-  捕获full horizon、存在梯度、attention或模块名称，都不能单独证明这一科学机制已经兑现。
-- teacher-video time、relative action horizon、flow time、layer depth分别处理；horizon不是事件标签，计算深度不是任务阶段。
-  frame stride固定5，完整50-horizon在有实际任务条件与跨帧消费的learned read之前保留，不能恢复coarse或horizon mean。
-- Owner 2026-09-14明确：教学视频在rollout前完整可用，视频理解不强制只看过去，允许利用完整视频双向解释证据。
-  必须保留真实顺序和时间方向，理解靠近／抓取／移动等操作前置关系，以及任务描述中“先A后B”的要求；
-  双向读取不等于无序聚合。过去四帧／单向长程属于历史候选的具体合同，不再是后继设计的硬约束。
-  可见顺序提供可用信息，但不保证模型已学会有益消费；时序理解必须落实为执行优势，不能由mask或位置编码单独证明。
-- 每条视频独立保序编码；只在集合阶段置换不变地合并证据。不得平均frames、raw features或最终LoRAs，不挑最好video。
-  声称dynamic K就必须真实训练对应cardinalities，不能重复同一条视频凑K。one-shot/few-shot设定由真实能力决定，不故意削弱强方案。
-- 观察侧Meta-LoRA应有明确输入域与学习职责，必须保留其真实梯度以及cache有效性。已对齐设计采用Action Expert共享Meta适配，
-  vision/Gemma保持冻结；当前active design第10节单独检验teacher侧Gemma VL Meta，基础权重及执行prefix仍冻结。
-  具体rank、投影集合、probe和readout以登记设计为准，不把历史默认当作永久规定。
-- 显式读X/Y与把因子限制在X/Y的span是两个独立选择。G1证明过局部native-factor容量，不强迫后继复刻signed pooling；
-  原生状态或压缩的过程表示也不自动等同于原始算子X/Y。观察侧与执行侧激活坐标必须区分。
-- 保持少数职责清楚、可重复扩展的标准attention/MLP及短序列递推模块；有序GRU不是跨rollout记忆。
-  不把保留18层响应当作必要原则，当前选定接口直接读取最终动作投影前的完整H。不要沿用无用途的双probe、重复读取或旁路，也不要连续叠加summary、
-  covariance、whitening、transport、anchor、gate或校准链。保留与删除都需要说明当前用途和行为代价。
-- 为解决实际能力与学习缺口，允许提出并在隔离探索中验证实质性的创新架构；不将分析限定为现有模块的小修或消融。
-  创新候选须说明针对的机制、相对历史尝试的实质差异和可辨别的行为预测；历史优势不自动构成逐一重训的理由。
-  新候选先按核心假设、信息路径、参数生成和学习机制核对近等价历史；不得重做已失败方案。若没有新证据或实质机制差异
-  能改变原失败判断，不因改名、重新组合或代码已准备而启动；历史否决仍只覆盖实际检验的条件，不扩大为否定全部相关方法。
-- owner只评论局部时，保留已对齐且未被否定的部分；不把局部疑问当作推翻整图的指令。先说明完整数据流水线，再讨论局部模块。
-- 数学推导从需求、少量符号和直观例子逐步展开；区分推导结论、归纳偏置、实现默认和待检验假设。结构合理不等于性能得到保证。
-
-- Meta属于Writer内部读取模块；所有应训练的内部模块共同更新，不能因称谓统一切断梯度。
-- 当前先集中K=1：训练、训练侧诊断、闭环及后续共享Writer RL均使用单视频。通过绝对性能、相邻稳定、
-  同task换视频鲁棒性和最终视频因果验证后再开展K>1；保留集合架构，暂不采样或评测K2/4。
-- 本轮K1主线明确fresh：旧混合K仅历史探索证据，不继承其权重、优化器、scheduler、sampler或RNG。
-  复用已验证架构/source/资产，Writer全部可训练参数从合法identity fresh初始化，fresh学习状态，从step0正式启动。
+- 架构与训练须由一套连贯、可检验的工作原理解释：从语言与视频理解、操作知识和能力获取，到唯一LoRA生成、未见任务迁移及训练保持。
+  说明每个接口传递什么、下游怎样消费、什么监督和参数共享使其可能学成；模块名称、张量形状、attention或非零梯度不代替解释。
+- 先综合完整的相关历史正负证据，再设计或修改方法。v5.2普通FM的视频依赖正例与后继局部正证据都须解释，
+  不把不同模型的优点拼成一个不存在的强结果，也不由“监督允许捷径”直接推出必须增加辅助loss。
+- 负结果后明确哪些预测未兑现、哪些假设应保留／降级／放弃，以及哪些投入应停止。新修正须说明相对近等价历史增加了什么，
+  不同结果将怎样改变下一步；不因改名、模块重组或代码已准备就重做已失败的组合，也不以局部失败否定无关结论。
+- Action Expert的原生动作知识须对视频理解有明确作用。图文语义、动作响应、过程理解和参数生成各有职责；
+  观察侧与裸source执行侧的激活坐标必须区分，显式读取X/Y不等于把输出限制在其span。
+- teacher-video time、relative action horizon、flow time和layer depth分别处理。stride固定5并保留真实末帧；
+  完整50-horizon保留到实际learned read，不能用coarse或horizon mean冒充完整读取。
+- 视频在rollout前完整可用，允许双向前后文；须理解真实时间方向、操作前置关系及语言中的“先A后B”。
+  旧过去窗口或单向递推不构成永久约束；位置编码、mask和可见顺序本身不证明有益时序理解。
+- 如扩展K，每条视频先独立保序编码，只在集合阶段置换不变地聚合；不平均frames、raw features或最终LoRA，不挑video。
+  声称支持的cardinality必须实际训练，不重复视频凑K；one-shot/few-shot选择服从真实能力。本轮保持K=1。
+- Writer内部所有应训练模块，包括Action Meta与VL Meta，都要共同获得真实信用；不能因模块命名切断梯度。
+  仅冻结输入可跨参数版本缓存，已适配的Z/KV/H不能跨更新复用；具体probe、容量和投影由active design登记。
+- 保持模块职责清楚。允许有证据的实质重构，不局限于小补丁；也不无依据叠加summary、gate、校准或重复读取。
+  Owner只评论局部时保留其它已对齐部分，先说明完整流水线，再讨论局部选择。区分结构保证、归纳偏置和待检验假设。
 
 ## 3. 证据与推进判断
 
-- 唯一正式目标是validation8 strict single-checkpoint paired correct严格 >145/400，同时满足相邻稳定、低churn、高breadth、
-  四suite非零、Goal/Long贡献、same-task不同视频鲁棒性及最终视频因果controls。正式选择不使用80-row screen、checkpoint union或融合。
-- 闭环绝对性能优先。functional loss、reconstruction、norm/rank/cosine、内部margin和surrogate仅用于定位；不能用漂亮数值接受明显更差行为。
-- Owner 2026-09-14在最终讨论中调整方法证据：接受训练完成后在选定冻结模型上，correct明显优于wrong／shuffled／reversed，
-  不再要求另训独立全帧无序模型。正确视频仍须具有实际闭环价值，保留相邻稳定与same-task不同视频鲁棒性；
-  不能靠错误条件退化、孤立峰值或内部surrogate代替有益增量。最终controls不参与训练、选点或架构修改，旧实验不重判。
-- 有信息量且口径可比的正式学习后，若仍不能超过source或仅略超source、长期低于或仅略超SFT，应视为严重能力缺口，
-  不能以“较source有提升”“loss在降”把它降格成小调参问题。source现存参照47/400（另一历史面板48/400），
-  train24 rank128 SFT相邻109/107；来源与比较边界见research_history。低分不是某个唯一根因的证明，也不能因初始identity/smoke低分直接推翻全图。
-- 历史v5.2/v6的强闭环能力、G1容量、G2动态、后续局部正结果及失败边界都要保留。不同checkpoint/配方的优点不能拼成一个不存在的强结果。
-- 使用正确视频与同task不同episode的action queries训练。额外non-held meta tasks须审计固定validation/test及重复specification排除，
-  保留allowlist/provenance；更多同task视频不等于更多独立meta-task映射。不得制造人工process数据或新仿真任务来绕开当前问题。
-- validation/test不得产生梯度。shuffled/reversed仅在selected checkpoint选定并冻结后测试，不进入训练、loss、Gate、checkpoint选择或架构修改。
-  no-video/language、static端点、wrong-video等资格或诊断使用时须事先明确用途，不能悄悄把最终controls变成架构搜索信号。
-- 当前主线为Writer（含内部读取模块Meta）从头初始化，以fresh optimizer/scheduler直接端到端联合训练；source基础权重始终冻结。
-  G1--G3的阶段冻结属于历史机制验证，不实施为当前课程，也不为旧措辞额外建立阶段初始化与随机初始化两套候选。
-  LoRA采用合法identity初始化；从头初始化不要求每个张量都随机非零。短学习、扩大覆盖与闭环是实验节点，不是冻结阶段。
-- 当前训练顺序为先纯监督FM、后独立共享Writer RL。监督阶段Writer fresh端到端共同学习，source冻结；
-  同task跨episode动作监督，不计算RL loss、不采集用于RL更新的rollout、不做RL KL候选接受或整步回滚。
-  保留已验证的执行一致性修复；旧联合profile不算正式监督结果，RL未决问题不阻塞监督启动。
-- 监督平台要结合真实曝光、训练侧独立动作验证、训练task闭环及预登记validation8相邻checkpoint，不能只看loss。
-  有实质改善就继续，连续有信息量节点不改善再判断；充分监督仍弱须先定位并允许实质改进，不以饱和为由交给RL救场。
-- 独立RL从选定并保留的单个监督checkpoint初始化Writer，fresh RL optimizer/scheduler和stage记录，默认仅RL目标。
-  探索、信用与更新约束根据监督后行为重新审视，不机械复用停滞设置；报告相对监督起点的收益、遗忘、breadth和稳定性。
-  这是跨任务共享Writer训练，不能混同部署时task-local LoRA优化；监督checkpoint保留为可回退基线。
-- 先用有信息量的短学习与闭环证据判断投入。未证明基础行为前不默认启动约10小时长训练；接近强基线或目标后及时做strict400，
-  好趋势继续训练到足以判断相邻稳定，明确坏结果不靠无限续训或无依据的seed/LR/rank/scale/width小扫挽救。
-- 每轮记录per-task、per-suite、breadth、retained/gained/lost、churn、相邻success-set重合和实际样本曝光；训练步数本身不足以比较配方。
-- 负结果只淘汰真正测试的组合。先区分工程合同错误、有效科学non-pass与证据不足；不要把可疑现象或一次梯度cosine称作根因。
-- 诊断应能区分竞争解释并定位最早失效接口。先查历史同类尝试、原始评审及后续修正，再做最小有信息量的干预；
-  明确输入变化、旧证据排除什么、新证据如何改变判断。新证据支持模块职责替换时可以实质重构，避免围绕同一接口原地打补丁。
-- 反复出现的架构/性能问题必须先查最近等价旧尝试及其结果，明确本次新增的机制、信息或监督；不换名字重做已失败的同一组合。
-  重点防止把完整输入/非零梯度当理解，把几何/稳定参数当行为，用新视频或未见task解释训练熟悉视频也弱的结果，
-  以及靠堆summary/gate/校准、扩大少数同task样本或无限续训掩盖共享能力不足。
-- 不人为规定总工期、修正次数、版本数或总轮数。停止无信息重复，同时允许有新机制证据的合理深入。
-
-- Owner 2026-09-12指出连续数小时没有根本进展，要求调整负结果后的分析与修正方式。不能继续以
-  “局部结果不能否定整体”为理由，串联局部消融并默认保留原主假设。每次负结果后先综合全部相关正负证据，
-  明确原预测是否兑现、哪些解释失去支持，以及哪些具体研究投入应停止；未被普遍证伪不等于值得继续投入。
-- 下一项修正须针对当前最有根据的竞争解释，说明相对近等价历史新增什么、不同结果分别如何改变后续决策，
-  并选择成本最低且能区分这些解释的证据。若正负结果都只会导向“再调另一个模块”，该实验尚不值得启动。
-  不把单个配方涨分当机制进展，也不因局部失败立即推翻所有已确认边界；必要时重新审视主假设及模块职责。
-  先用已有证据完成这项分析，不把更多实验作为开始综合判断的前置。
-
-- 每段连续训练约一小时；按K1优化后的实测速率，在看到分数前登记中间和末尾两个等间隔附近的checkpoint。
-  保存点用50或100的倍数，不机械沿用24/64/128/192。当前主要跑K1 correct strict400，train96按获取/泛化诊断需要安排（held视频46–49在states32–35各一次，另建同口径source比较）。
-  早期绝对性能低且仍获取能力时延后other；接近或超过目标、有相邻稳定候选时补资格，冻结选点后再做最终controls。
-- 记录累计optimizer updates、FM queries、每task条件曝光和墙钟。历史v5.2为75600 queries、v6-fast为192000、
-  SFT参照为230400，仅作曝光尺度参考；64或192步不能自动证明充分训练或平台。
+- 长期正式性能目标为validation8 strict single-checkpoint paired correct严格>145/400，并有相邻稳定、低churn、高breadth、
+  四suite非零、Goal/Long贡献、same-task换视频及最终视频因果证据。本阶段按顶部优先级判断，不额外强制这条分数线。
+- 闭环实际能力先于loss、reconstruction、norm/rank/cosine、内部margin及surrogate。充分且可比的学习后仍弱于source／SFT参照，
+  属于严重能力缺口；小幅涨分或loss下降不能将其降格成调参问题，也不能由此唯一归因某个模块。
+- 能力与相邻资格成立后补same-task-other，选定并冻结单checkpoint，再做wrong／no-video／shuffled／reversed最终controls。
+  controls不进入训练、checkpoint选择或架构修正；旧实验按原注册标准保留，不因新要求重判。
+- 正式评测使用single-checkpoint完整400配对行，不用80-row screen、checkpoint union或融合选模型。
+  K1每task、每臂、每轮50个init对应全部50条合法teacher videos各一次，跨checkpoint和controls复用固定canonical映射。
+- 主FM来自同task跨episode执行queries。固定validation/test不产生梯度；扩展non-held meta tasks须先审计held及重复specification排除，
+  登记allowlist/provenance。更多同task episodes不等于更多独立meta-task映射，不制造人工process或新仿真任务绕开问题。
+- 本轮Writer和两组Meta采用fresh联合监督，optimizer、scheduler、sampler和RNG均fresh；合法identity不要求每个张量随机非零。
+  历史G1–G3冻结阶段不实施为当前课程；监督学习不混RL、trust回滚或部署适配。未来共享RL须另作独立阶段，不能替弱监督结果救场。
+- 学习窗口由真实最长视频profile、累计条件／queries和历史曝光尺度决定，在看到正式分数前登记中间与末尾节点。
+  保存点使用50或100的倍数，但不机械继承旧50/100停止点、固定一小时或任意短步数作为充分学习证明。
+- 有实质获取和保持证据可继续；连续有信息量节点不改善时先综合判断，不靠无限续训或无依据的seed/LR/rank/scale/width小扫延长。
+  不人为规定总轮数；Owner明确的预算与次数上限必须遵守，不能以“探索”名义绕过。
+- 每轮报告per-task、per-suite、breadth、retained/gained/lost、churn、相邻success-set重合、真实曝光与墙钟。
+  区分可复现工程错误、有效科学non-pass和证据不足；诊断应能区分竞争解释，不能把可疑现象或单个局部指标直接命名为根因。
 
 ## 4. 授权与自主协作
 
-- 以owner最新授权为准，跨session先理解当前状态并读取progress中的持续授权。已有明确科研执行授权时，理解与进度说明后
-  立即推进，不重复请求实施计划批准。只有owner明确暂停或撤回时才停止相应工作；旧交接限制不覆盖新授权。
-- 获准接管后，在既有目标、信息墙与资源合同内，实验设计、实现、分析、相关修复、吞吐优化和证据支持的模块重构由接管者连续完成，
-  无需逐项询问。不因一个侧面问题、单点好坏或常规技术检查停止已授权流程。
-- Owner给予新session充分的证据驱动自主权：核心思想保持冻结动作知识参与有序视频理解、以真实视觉核实过程、一次编译完整策略参数并由闭环裁决；
-  具体读取、关系/时序模块、回写、读出、监督/RL与优化实现可以据充分证据修改或重构，不限于小补丁。
-  当前设计是须完整理解和实施的首版起点，不是永久不可修订的图；充分已有证据或实际问题证明需要修订时，先明确理由并同步正式合同再完整实现，
-  不强行跑已知错误的配置。禁止静默缩水或只因实现方便偏离设计；合同内改动无需再次批准，科学目标/信息墙等真实边界保持。
-- 改变科学目标或信息墙、引入未授权数据/资源、无法裁决且显著改变投入方向的路线歧义、删除所有权不明或唯一资产时，
-  带具体事实和推荐选择回到owner。不得创造额外审批流程。
-- 不把再次完整专家审查作为每轮开工前置。已有明确可检验设计时先获得具体实现与证据；需要专家时给有针对性的问题和新事实。
-  未经owner当次明确授权，不向外部专家发送消息，只提供可复制prompt。
-- 只有owner明确要求时创建或设置goal，不因任务复杂或跨session自行启用goal机制。
+- 在owner授权、目标、信息墙与资源合同内连续完成设计、实现、分析、相关修复和有依据的重构，无需逐项询问。
+  侧面问题或常规技术检查不停止已授权流程；Owner明确暂停或撤回时停止相应工作，旧授权不能覆盖新暂停。
+- Active design是须完整理解和落实的起点；有充分证据需要修订时先说明理由并同步合同，不强行执行已知错误配置，
+  不静默缩水或仅为实现方便偏离科学方法。是否回到v5.2由owner决定。
+- 改变科学目标／信息墙、引入未授权数据或资源、重大且无法裁决的路线歧义、删除唯一或所有权不明资产时，带具体事实交owner判断；
+  不创造额外审批流程，不把完整专家审查变成每轮开工前置。
+- 未经owner明确授权不向外部专家或他人发送消息；需要时提供可复制prompt。只有owner明确要求时创建或设置goal。
 
 ## 5. GPU效率、工程与资产生命周期
 
-- 从算法设计阶段就考虑GPU：批量张量、高效attention、明确布局，减少逐项Python循环、CPU/GPU往返和重复大算子。
-  同时审视训练、functional forward、物化与闭环评测；按真实LoRA/s、samples/s、step墙钟、SM/util与显存峰值衡量。
-- 每个optimizer update固定四suite各一个task、每task64FM queries，共256queries，task权重1/4。
-  教学条件分配由active design显式登记；允许每task两个独立K1条件各32queries、每条件权重1/8，不混同K2或LoRA平均。
-  GPU1--6、分工、microbatch和累积次数只决定执行；全局batch完成后clip、optimizer.step、scheduler.step各一次。
-  使用真正提高吞吐的同节点GPU，不能扩大逻辑batch或dummy占卡。拓扑变化须有受控迁移合同，保留学习状态和逻辑cursor。
-  exact-resume仍锁原world topology。两节点live检查、NUMA、deferred NCCL和NCCL_P2P_DISABLE=1按AGENTS执行。
-- 不以最低显存为目标，不人为设置35GiB等统一上限，也不以占满显存冒充效率。优先空闲设备；必要共驻须有真实吞吐收益、足够峰值余量且不干扰他人。
-  节点/index不永久代表某块好坏GPU；每次按UUID/serial和现场证据判断。EMBER两节点合计同时最多8张物理卡；两节点空闲卡总数不超过10张时，合计最多6张。
-  训练、物化、评测和共驻统一计入，不能分别按节点或作业计算额度；每次启动/恢复先检查当前与启动后的总占用。
-- 真实长视频profile外推完整训练与评测成本；少量更新因重复大算子消耗几十分钟或数小时的明显失衡应先修正。
-  自设吞吐阈值不合适时可以修订，不可让它取代科学判断或靠堆卡掩盖算法问题。
-- 保持完整视频/horizon、信息墙、梯度语义、任务权重、checkpoint与resume；接受正常BF16/TF32和高效kernel的低位差异。
-  不新增防御性hash sidecars、逐tensor一致性扫描或无意义测试。只做与实际声明相称的验证。
-- canonical资产复用，不复制数据、模型、环境与大缓存。大增长前检查strg01上的独立user quota，不能只看共享df空间。
-- 退役代码、脚本、配置和设计通过Git与有索引的正式证据保留，退出活动树。可重建临时缓存、重复物化结果在验证生命周期后删除；
-  唯一checkpoint、原始数据、正式raw rows/metrics/manifest及所有权不清内容保留。
-- main是集成目标；完成验证后及时集成、推送并清理已合并task worktrees。新架构只有一套canonical实现，不保留平行fallback。
-- 有效实验已经可运行时，非必要重构、文档或清理不阻塞科学节点；独立工作利用等待期完成。收到新实验结果及时回到科学推进。
+- 从算法设计时考虑训练、物化和闭环总成本，以真实LoRA/s、samples/s、墙钟、利用率与峰值显存衡量；不以最低显存、占满显存或堆卡代替效率。
+  真实长视频的明显计算失衡应先修正，吞吐阈值不能取代科学判断。
+- 物理batch、chunk和设备分工不改变完整输入、任务权重、全局更新、checkpoint或exact-resume语义；接受正常BF16/TF32与高效kernel低位差异。
+  GPU并发上限、两节点live检查、NUMA/NCCL、quota、formal frozen commit和Git集成按[AGENTS](../AGENTS.md)执行，不在本文复制运行规则。
+- 复用canonical数据、source、环境与资产。清理须覆盖仓库文件及其过时正文，不仅更换输出位置或建立in-tree archive。
+  退役内容由Git、已有历史索引和formal证据保存；明确temporary／duplicate内容才删除，保留数据集、源模型、唯一checkpoint与正式原件。
+- 活动树只有一个canonical实现，无平行fallback。验证按实际声明取最小有效范围；不增加防御性hash、逐tensor扫描或无意义测试。
+  普通非必要整理不拖延科学节点；owner明确要求清理时完成实际清理和相关引用更新。
 
 ## 6. 沟通和交接
 
-- 正常训练、轮询与等待保持静默，不每隔几分钟播报步数、句柄存活或“继续等待”，也不在自动继续任务时反复发送同类结束语。仅在完整结果、实质结论变化、需要Owner处理的问题，或Owner主动询问时汇报；后台观察继续，不把静默误解成停止工作。
-
-- 分析排查须遵守Owner明确的计算预算与训练次数上限；完整训练、重训练不能仅以“探索”名义绕过。达到上限后使用现有证据和轻量诊断，保留未识别边界；当前具体上限见progress与task_plan。
-
-- 默认实用中文，先直接回答具体问题，再给证据和边界。owner主要语音输入，应主动修正明显同音词、断句和术语识别错误。
-- 已对齐的部署adapter/信息墙边界不在每次解释中反复强调；涉及变更、违规或用户疑问时再明确说明。
-- 讨论像共同推导：不把回答写成教科书岔路，不反复使用“不是……而是……”式对立话术，不把未接受的建议说成owner要求。
-- 持久文档职责固定：concept讲科学精神，设计文档讲推导与方法，findings讲跨轮结论，research_history讲分层历史与证据，
-  task_plan讲下一阶段，progress讲授权与现场；AGENTS只写稳定合同。
-- HANDOFF.md只是消费后删除的临时入口，不能独占长期要求、架构决定、历史结论或执行计划。跨session前正式文档必须完整，
-  新session应能自主恢复理解，不要求owner再次解释整段历史。
-
-正式K1评测必须同task、同臂、同轮50个init覆盖50条teacher视频各一次；跨checkpoint和paired controls复用固定canonical state-video映射。此范围不得缩小为单次K集合内不重复。
+- 默认实用中文，先回答问题，再给关键证据和边界。Owner主要语音输入，主动修正明显同音词、术语与断句错误。
+  讨论采用共同推导的方式，不把未接受建议写成owner要求，也不反复展开已对齐的adapter／信息墙边界。
+- 正常训练和后台轮询不反复播报步数、句柄存活或“继续等待”；在完整结果、实质变化、需要owner处理或被询问时汇报。
+  静默不表示停止工作，后台观察仍按授权继续。
+- 文档单一职责：concept解释科学动机，active design规定方法，findings保存跨轮结论，research_history索引历史证据，
+  task_plan保存当前计划，progress保存授权与实际状态，AGENTS保存稳定合同。旧快照不追加到当前状态文件。
+- 临时handoff只在真实交接时使用，消费后删除；不能独占稳定要求或证据。跨session先读最新状态，按需追溯历史，不要求owner重讲全过程。

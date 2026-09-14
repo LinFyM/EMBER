@@ -3,50 +3,40 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**当前阶段先解决有益的视频特异性，暂不强制绝对性能。** Owner已授权依据综合证据修正理论、实现与实验。
-当前canonical实现为[语义状态路径Writer](docs/semantic_path_writer_design.md)：完整原生图文／Action响应解释视频状态，
-状态路径提供有向变化关系，经条件调制生成自由完整A/B，由跨episode主FM联合学习。
-当前授权、唯一active design及实际资源／实验状态只看[progress](progress.md)，计划见[task_plan](task_plan.md)；旧设计不自行恢复。
+当前方法为[Process Pullback Writer](docs/process_pullback_writer_design.md)：同步双路RGB形成语义状态与变化驱动的过程表示，
+共享网络输出动作作用码，经裸冻结source的固定导数和PCA rank16投影编译为唯一38-target LoRA。
+Writer及读取侧两组Meta以纯跨episode FM从头共同学习。当前优先检验能力、视频特异性与保持，暂不强制长期性能线。
 
-## 历史专家评审索引
+## 阅读入口
 
-1. **[9月11日咨询入口](docs/review_materials/video_specificity_20260911/README.md)**：当时的目标、阅读路线、证据范围及模型身份。
-2. [综合历史机制地图](docs/review_materials/video_specificity_20260911/EVIDENCE_MAP.md)：正负证据、混杂、反例和原件路径；不是预定根因。
-3. [可复制咨询prompt](docs/review_materials/video_specificity_20260911/EXPERT_PROMPT.md)。
-4. [当前状态](progress.md)、[计划](task_plan.md)、[长期要求](docs/current_owner_requirements.md)、[科学合同](AGENTS.md)。
-
-新包补齐R/C/S、off/R续训、C冻结诊断与无变化参照首段。早期强模型、GOMQ/PQ等原件复用
-[9月7日包](docs/review_materials/20260907/README.md)，Horizon all/off及真实更新诊断复用
-[9月11日旧包](docs/review_materials/20260911/README.md)。历史专家意见按需追溯，不能代替原始事实或最新Owner要求。
-
-## 当前保留实现与实验状态
-
-当前数据流：双相机teacher RGB与exact language形成同版本原生contextual Z／完整50-H响应；
-任务语义查询完整T×50动作响应，双向解释每帧状态。共享语义坐标的二阶有向路径与语义内容一起生成唯一38-target/76-tensor A/B。
-独立训练的frame_set参照保留全部画面与相同学习模块，只把路径变换替换为匹配维度的全帧语义二阶矩。
-仅跨episode主FM联合更新Writer及两组teacher Meta；query obs[i]的动作标签从i+1开始，最后无未来标签的观测不参与监督。
-source执行权重冻结；额外视频encoder、裸X输入bank、空间／纠正参数辅助路径已退出活动实现。
-
-| 代码职责 | src/ember下的owner |
+| 文档 | 职责 |
 | --- | --- |
-| 原生图文证据与观察Meta | `writer/native.py`、`writer/meta_lora.py`、`ecp/policy_effects.py` |
-| 完整H读取、语义状态路径与编译 | `writer/video.py`、`writer/attention.py` |
-| 完整LoRA输出 | `writer/factor.py`、`pi05_lora.py` |
-| 监督学习与采样 | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py` |
-| 物化、闭环与恢复 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/`、`ecp/checkpoint.py` |
+| [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
+| [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
+| [Active design](docs/process_pullback_writer_design.md) | 本方法的接口、训练和证据合同 |
+| [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
+| [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
+| [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
 
-入口为`scripts/train_horizon_writer.py`、`scripts/materialize_horizon_writer.py`、`scripts/evaluate_pi05.py`。
-训练默认配置`configs/pi05_semantic_path_writer.json`与`_frame_set.json`是匹配的有序／全帧集合比较，使用同一实现。
-节点与formal准入在最长真实profile后登记；旧checkpoint须使用原冻结runtime，不能装入新架构。
-旧配置与实现通过Git、正式run contract和research_history保留，原始模型／数据／label／checkpoint不随活动代码退役删除。
+旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
 
+## 当前代码与运行入口
 
-## 科学与资产入口
+| 代码职责 | `src/ember/`下的owner |
+| --- | --- |
+| 原生图文／完整H读取与观察Meta | `writer/native.py`、`writer/meta_lora.py`、`ecp/policy_effects.py` |
+| 语义状态、过程读取与动作作用码 | `writer/video.py`、`writer/attention.py` |
+| 固定source导数、PCA投影与完整LoRA编译 | `writer/correction.py`、`writer/factor.py`、`pi05_lora.py` |
+| 纯FM学习、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
+| 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
-[concept](docs/concept.md)解释科学动机；[局部参照设计](docs/video_change_reference_design.md)与
-[完整Horizon设计](docs/horizon_relation_video_writer_design.md)保存历史方法；[findings](findings.md)保存跨轮结论，
-[research_history](docs/research_history.md)索引全部分层历史、冻结设计和专家修订。历史“当前/下一步”均按当时时点解释。
+Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
+训练配置为`configs/pi05_process_pullback_writer.json`。正式学习窗口在真实profile和新出口功能前提之后登记；
+旧checkpoint使用其原冻结runtime，不装入新架构。是否已有运行或结果只看progress。
 
-`data/`、`models/`、`runs/`、`.venv/`为ignored本地资产；远程专家只使用已提交副本与其索引，不假定能访问本地路径。
+## 数据与资产
+
 固定split在`configs/libero_24_8_8_v1/`，source71审计在`configs/pi05_source_corpus_v1/`。
-共享源码测试入口为`PYTHONPATH=src .venv/bin/python -m pytest -q`。
+`data/`、`models/`、`runs/`、`.venv/`为ignored本地资产；复用canonical根，不复制大资产。
+源码退役不删除数据集、源模型、唯一checkpoint或formal证据；远程读取者不应假定能访问这些本地资产。
+验证应按实际改动选择已有检查，具体运行及通过范围记录在progress。

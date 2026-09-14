@@ -296,6 +296,7 @@ def resident_materialization(tmp_path, monkeypatch):
 
     def build(asset_root, config, device):
         builds.append((asset_root, config, device))
+        instance.observer.frame_chunk = config["observer"]["frame_chunk"]
         return instance
 
     def compile_condition(current, _store, _task, demos, _output, _checkpoint):
@@ -309,9 +310,12 @@ def resident_materialization(tmp_path, monkeypatch):
     return requests, runs, builds, state
 
 
-def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(resident_materialization, tmp_path):
+@pytest.mark.parametrize("native_frame_chunk", [None, 16])
+def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(resident_materialization, tmp_path,
+                                                                           native_frame_chunk):
     requests, _, builds, state = resident_materialization
-    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
+    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"),
+                                                 native_frame_chunk=native_frame_chunk)
     assert len(builds) == 1 and builds[0][1]["model"] == {"width": 12, "field_unit": VideoWriterConfig().field_unit}
     assert state.loads == 2
     for index, path in enumerate(paths):
@@ -323,6 +327,8 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
         assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
         assert manifest["method"]["training_objective"] == "main_fm_plus_local_field"
+        assert manifest["materialization_execution"]["native_frame_chunk"] == (native_frame_chunk or 4)
+        assert manifest["method"]["observer"]["frame_chunk"] == 4
         assert manifest["information_wall"]["total_writer_invocations"] == 1
         assert len(manifest["tasks"][0]["episodes"]) == 10
     materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
@@ -394,7 +400,8 @@ def test_materialization_reuses_valid_loras_and_compiles_only_missing_video(bank
     state = torch.nn.Module()
     state.register_buffer("probe", probe.clone())
     lora = load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json")
-    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), lora=lora, source=SOURCE)
+    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), lora=lora, source=SOURCE,
+                               observer=SimpleNamespace(frame_chunk=4))
     row = old["tasks"][0]
     target = json.loads((ROOT / "configs/pi05_target_data_v1/manifest.json").read_text())
     native = next(task for task in target["tasks"] if task["global_task_id"] == 0)
@@ -453,10 +460,12 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
     calls = []
     monkeypatch.setattr(materialization, "materialize_requests", lambda **kwargs: calls.append(kwargs) or [Path("/output/manifest.json")])
     monkeypatch.setattr(torch, "set_num_threads", lambda _threads: None)
-    argv = ["materialize_horizon_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT), "--device", "cpu"]
+    argv = ["materialize_horizon_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT),
+            "--device", "cpu", "--native-frame-chunk", "16"]
     monkeypatch.setattr("sys.argv", argv)
     materialization.main()
-    assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu")}]
+    assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu"),
+                      "native_frame_chunk": 16}]
     assert "/output/manifest.json" in capsys.readouterr().out
     for option in (("--arm", "same_task_other"), ("--seed", "7")):
         monkeypatch.setattr("sys.argv", [*argv, *option])

@@ -352,6 +352,7 @@ def _materialize(
                 "asset_root": str(asset_root.resolve()), "source": runtime.source,
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
                 "lora_contract": file_record(lora_path), "method": method_metadata(run),
+                "materialization_execution": {"native_frame_chunk": runtime.observer.frame_chunk},
                 "tasks": rows, "conditions": list(conditions.values()), "single_complete_rank16": True,
                 "compilation": {"new_conditions": len(conditions) - len(reused), "reused_conditions": len(reused),
                     "reuse_manifest": file_record(reuse_manifest) if reuse_manifest is not None else None,
@@ -366,7 +367,8 @@ def _materialize(
     return path
 
 
-def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
+def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device,
+                       native_frame_chunk: int | None = None) -> list[Path]:
     from ember.writer.runtime import build_runtime
 
     repository = git_state(REPO_ROOT)
@@ -374,6 +376,8 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization requires a clean pushed detached checkout")
     if not requests:
         raise ValueError("materialization batch must contain at least one request")
+    if native_frame_chunk is not None and (type(native_frame_chunk) is not int or native_frame_chunk <= 0):
+        raise ValueError("native frame chunk must be a positive physical batch size")
     outputs = [Path(request["output"]).resolve() for request in requests]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
@@ -388,19 +392,26 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         for request, (run, record) in zip(requests, inspected, strict=True)]
     # One asset root fixes the LoRA/tokenizer/normalization authorities. No R,
     # prefix, generated LoRA, or checkpoint state is cached across requests.
-    runtime = build_runtime(asset_root, {**first["config"], "model": first["model_config"]}, device)
+    runtime_config = {**first["config"], "model": first["model_config"],
+                      "observer": dict(first["config"]["observer"])}
+    if native_frame_chunk is not None:
+        runtime_config["observer"]["frame_chunk"] = native_frame_chunk
+    runtime = build_runtime(asset_root, runtime_config, device)
     return [_materialize(asset_root=asset_root, device=device, runtime=runtime, run=run, reusable=reused,
                          checkpoint_record=record, repository=repository, **request)
             for request, (run, record), reused in zip(requests, inspected, reusable, strict=True)]
 
 
 def materialize(*, asset_root: Path, checkpoint: Path, output: Path,
-                selection: Mapping[str, Any], device: torch.device, reuse_manifest: Path | None = None) -> Path:
+                selection: Mapping[str, Any], device: torch.device, reuse_manifest: Path | None = None,
+                native_frame_chunk: int | None = None) -> Path:
     return _materialize_batch(asset_root=asset_root, device=device,
+        native_frame_chunk=native_frame_chunk,
         requests=[{"checkpoint": checkpoint, "output": output, "selection": selection, "reuse_manifest": reuse_manifest}])[0]
 
 
-def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device) -> list[Path]:
+def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device,
+                         native_frame_chunk: int | None = None) -> list[Path]:
     """Compile a JSON request list with one resident, compatible runtime."""
     if not isinstance(requests, (list, tuple)):
         raise ValueError("batch requests must be a JSON list")
@@ -418,7 +429,8 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection,
                            "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
-    return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device)
+    return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device,
+                              native_frame_chunk=native_frame_chunk)
 
 
 def _integers(value: str) -> tuple[int, ...]:
@@ -445,6 +457,8 @@ def main() -> None:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--cpu-threads", type=int, default=4)
+    parser.add_argument("--native-frame-chunk", type=int,
+                        help="Physical frame batch for both native reads; preserves every video frame.")
     args = parser.parse_args()
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):
@@ -467,6 +481,7 @@ def main() -> None:
         torch.backends.cuda.matmul.allow_tf32 = True
     if args.requests_json is not None:
         for path in materialize_requests(asset_root=args.asset_root.resolve(), device=torch.device(args.device),
+                                         native_frame_chunk=args.native_frame_chunk,
                                          requests=json.loads(args.requests_json.read_text())):
             print(path, flush=True)
         return
@@ -475,4 +490,5 @@ def main() -> None:
         init_state_ids=request_init_state_ids(role=args.role, init_state_ids=args.init_state_ids, state_count=args.state_count),
         video_pool=args.video_pool, fixed_videos=read_json(args.fixed_videos_json) if args.fixed_videos_json else None)
     print(materialize(asset_root=args.asset_root.resolve(), checkpoint=args.checkpoint.resolve(),
-                      output=args.output, selection=selection, device=torch.device(args.device), reuse_manifest=args.reuse_manifest), flush=True)
+                      output=args.output, selection=selection, device=torch.device(args.device),
+                      reuse_manifest=args.reuse_manifest, native_frame_chunk=args.native_frame_chunk), flush=True)

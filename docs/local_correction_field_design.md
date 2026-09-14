@@ -234,3 +234,8 @@ train每task只用46–49四个教学视频各一次，validation每task全部0�
 正式学习须从包含此profile／节点登记的clean pushed detached commit开始，并在launch记录实际两节点GPU与独立quota。
 原profile、完整timings／gradient norms、退出和调度估计在
 [profile](../runs/analysis/local_correction_field_writer_20260914/profile/results.json)。
+
+完整视频生成的原生读取耗时占比较高；在正式训练结束后，以固定ordered100、task38/demo36做一次纯推理物理batch核验。
+只比较完整视频frame_chunk=4／8／16／32的LoRA/s、峰值与finite／完整性，不读取动作、reward或环境，不比较行为分数，
+也不要求逐元素一致。按最快且能放入当前设备的批量物化；OOM仅排除该物理batch，保留该次原始记录。
+该批量通过既有materialization入口显式传入、保存到`materialization_execution`；Writer参数／训练合同和全部帧保持原定义。

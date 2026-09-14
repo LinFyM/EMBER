@@ -1,5 +1,15 @@
 # EMBER progress
 
+## 当前：Owner恢复推进，Process Pullback Writer实施中（2026-09-14）
+
+五个问题讨论已结束，Owner明确要求设置goal并推进最后一轮方法研究，可多次训练和有依据迭代。
+随后纠正：回到v5.2由owner决定，agent只专注新方案。goal已按纠正重新建立；回退准备任务已停止。
+唯一active design为[Process Pullback Writer](docs/process_pullback_writer_design.md)，当前实施与必要验证阶段，尚未启动新训练／评测。
+同步双路K1、变化驱动过程Value、q作用码、裸source固定导数、PCA rank16唯一完整LoRA及纯跨episode FM已登记。
+不再强制另训frame_set；正确视频能力、相邻保持、same-task换视频及选定冻结模型后的最终controls仍须完整检验。
+源码起点main ec08b9f2，启动时clean且与origin/main一致；既有数据/source/checkpoint与关闭实验原件保留。
+接下来替换canonical Writer、验证实际source编译与学习信用，按真实profile登记学习窗口；未形成科学结果，不宣称goal达成。
+
 ## 当前：按Owner要求暂停推进（2026-09-14）
 
 Owner最新要求“你稍微停一下吧”。已暂停研究推进，整体goal未完成；无active design、selected checkpoint或在途研究进程。

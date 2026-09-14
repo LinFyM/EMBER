@@ -1,5 +1,21 @@
 # EMBER task plan
 
+## 当前：最终讨论后恢复新方案推进（2026-09-14）
+
+Owner要求设置goal并按五个问题讨论确定的方案推进，允许多次有依据的训练与修复；agent只专注新方案。
+若合理学习后持续缺少正向信号，完整报告证据和判断；是否结束坚持或回到v5.2由owner决定，agent不自行切换。
+唯一active design为[Process Pullback Writer](docs/process_pullback_writer_design.md)。旧暂停及后续历史清单不覆盖当前授权。
+
+1. **进行中：登记完整合同并替换canonical Writer。** 双路K1、变化驱动过程内容、输出作用码、固定裸source导数与PCA rank16出口；
+   fresh联合纯跨episode FM。复用native/data/train/evaluator，退役旧local-field学习与自由译码分支。
+2. **待实施：必要接口与最长视频profile。** 检验真实源模型的38-target投影／线性编译／伴随、信息墙、identity及第二步联合梯度；
+   一次有界训练侧功能核验检验新的低秩出口，不能以旧G结果替代。
+3. **待登记：有信息量的学习窗口与闭环节点。** 按真实吞吐、更新、条件与queries确定初始窗口，之后依据正确视频获取、泛化和保持决定迭代。
+   不机械沿用旧50/100硬截断，不以loss下降单独延长投入，不重训frame_set作为本轮硬要求。
+4. **待执行：fresh正式学习和strict paired400。** 所有正式train/eval来自clean pushed frozen commit，持续报告task/suite、breadth、R/G/L与churn。
+5. **待资格：same-task-other及单checkpoint冻结，再执行最终视频controls。** wrong/shuffled/reversed不反哺选点或设计，Test与RL保持关闭。
+6. **最终交付：** 完整学习／闭环／保持／视频因果证据、实际结论及未证实范围；本goal完成指授权研究工作和汇报完成，不要求制造正结果。
+
 ## 当前：按Owner要求暂停（2026-09-14）
 
 Owner最新要求“你稍微停一下吧”。研究推进已暂停，无active design或在途研究进程；整体goal未完成。

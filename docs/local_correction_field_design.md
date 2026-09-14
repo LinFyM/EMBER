@@ -1,7 +1,7 @@
 # 局部条件纠正场：联合机制与有界算子核验
 
 2026-09-14。整体goal及Owner自主授权持续；语义路径Writer与冻结回放均已关闭。
-本文选择一个新的联合研究假设。**§5的训练侧算子核验已完整通过并关闭，结果见§7；合法共同学习合同见§8–9。**
+本文记录已经按§10关闭的联合研究假设。**§5的训练侧算子核验通过；§8–9的合法共同学习及八面板已完整完成，未获有益有序资格。**
 当前状态由progress登记，历史正数和本文后续分支均不自行恢复运行。
 
 ## 1. 改变的是学习对象及其实际消费关系
@@ -239,3 +239,37 @@ train每task只用46–49四个教学视频各一次，validation每task全部0�
 只比较完整视频frame_chunk=4／8／16／32的LoRA/s、峰值与finite／完整性，不读取动作、reward或环境，不比较行为分数，
 也不要求逐元素一致。按最快且能放入当前设备的批量物化；OOM仅排除该物理batch，保留该次原始记录。
 该批量通过既有materialization入口显式传入、保存到`materialization_execution`；Writer参数／训练合同和全部帧保持原定义。
+
+## 10. 完整50／100结果与关闭裁决（2026-09-14）
+
+50dafb05 clean pushed detached完成两臂独立fresh100，每臂400教学条件／25,600主queries。
+四checkpoint完整；46aaf22d在完整物理batch核验后采用native frame chunk16，完成八bank与八闭环面板，共1,984条件／rows。
+全部25曝光字段、12诊断字段及实际source、视频／初态／RNG、stride5末帧和38-target／76-factor身份审计通过。
+24个最终评测worker及全部launcher均exit0，无失败重试；八面板累计评测墙钟17,987.69秒。
+
+| 节点 | train96有序／无序 | validation400有序／无序 | validation有序−无序95%CI |
+| --- | --- | --- | --- |
+| 50 | 18 / 16 | 48 / 47 | [0,+.75]pp |
+| 100 | 17 / 17 | 47 / 50 | [−1.75,0]pp |
+
+同合同source为train17/96、validation47/400。两个有序相对source的CI为[0,+.75]／[−.75,+.75]pp。
+有序相对无序净正suite分别1／0，且相邻48→47；§6三个资格均失败。
+四组validation的breadth均3、Spatial均零；S/O/G/L依次为O50 0/5/42/1、F50 0/4/42/1、
+O100 0/5/40/2、F100 0/7/40/3。训练breadth均7，没有形成新的广泛任务能力。
+有序相邻保留41、新增6、丢失7，churn13、J=.75926；无序41/9/6、churn15、J=.73214。
+
+固定动作FM0／50／100有序.153285339／.153149835／.152403202，无序.153285339／.153149911／.152400151。
+末节点约0.58%改善，有序23/24、无序24/24task方向改善；这点有限学习没有变成有益条件控制。
+当前最早明确失败的预测是合法共享获取，而非已经获得强能力后仅在held上遗忘。
+§7的privileged函数前提继续成立，但它没有使当前RGB预测器、局部参数化与共同loss在登记预算内学出可用的纠正。
+
+按§6／9关闭当前联合组合，不续至150/200或扫描rank、scale、seed、LR、loss来挽救本轮。
+不把低churn、接近source的成绩或算子前提当成功，也不宣称已证明RGB信息缺失、某一个模块失效或普遍不可学习。
+没有selected checkpoint，未启动same-task-other、强内容资格、最终wrong／no-video／shuffle／reverse、Test或RL。
+原始记录不替换、不融合；全部冻结checkpoint和证据保留，整体goal仍未完成。
+
+完整逐task／suite、相邻集合、来源和执行记录见
+[READOUT](../runs/analysis/local_correction_field_writer_20260914/READOUT.md)，
+机器事实与裁决为同根`paired_readout.json`／`bounded100_decision.json`。
+后继投入先遵循[工作理论§11](temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)，
+本关闭记录不自行激活任何下一实验。

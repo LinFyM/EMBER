@@ -1,43 +1,42 @@
 # EMBER progress
 
-## 当前：局部纠正场两臂fresh100完成，进入50／100配对闭环（2026-09-14）
+## 当前：局部纠正场完整比较关闭，复核整体学习机制（2026-09-14）
 
 Owner要求自主推进、制定goal并开始，期待真实正向进展且明确不要求制造正结果。整体goal保持active、未完成，
-自主研究授权持续；有序必须强于独立fresh全帧frame_set，保留跨视频／初始化／相邻／validation与最终因果要求，
-暂不额外强制145/400。[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整通过并关闭；
-§2–3的合法共同学习实现及§8采样／单位／loss已冻结，c4c07bbb的最长105帧两次共同更新与完整推理exit0。
-第二次更新31.346秒、显存峰值34.285GiB，完整推理8.299秒；source全冻结，局部场与两组Meta均有有限但较小梯度。
-153项相关检查通过，624个eta记录符合训练身份。§9依真实sampler估计100更新约2,998.53秒，
-在学习前固定两臂50／100、各400条件／25,600 queries及八个完整配对面板。
-**50dafb05 clean pushed detached已完成两臂独立fresh100：两节点各world3、policy microbatch8、GPU-local NUMA、deferred NCCL，
-launcher均exit0，训练墙钟分别3,647.61／3,655.72秒。四个正式checkpoint完整，400条曝光的25字段和72条诊断的12字段全部配对通过。**
-固定动作FM均值0／50／100：有序.153285339／.153149835／.152403202，无序.153285339／.153149911／.152400151。
-改善约0.58%，两臂仍接近；不据此认定过程理解或闭环收益。§9固定完整推理批量4／8／16／32均exit0、输出完整且finite；
-105帧实测13.647／12.170／11.511／11.536秒，按最快且占用较小选择16，allocated／reserved峰值10.296／11.135GiB。
-46aaf22d clean pushed detached已完成四checkpoint的八个sealed bank，共1,984套唯一完整LoRA，四个物化launcher均exit0；
-§9固定的四个validation400面板已在两节点各物理4／5启动，每卡三个常驻worker。
-四组train96已全部完成384行，十二个worker均exit0且没有失败重试；四组validation继续运行，目前研究使用四张物理卡。
-train50有序／无序墙钟1,028.98／1,016.43秒，train100为1,034.21／1,031.05秒。
-训练面板实际帧／末帧、视频整轮映射、checkpoint／38-target身份与完整计数已通过`training_panel_audit.json`；
-八个实际评测run contract的source模型、环境、RNG、assets及policy执行字段均与配对source参照一致。
-无selected checkpoint，八面板裁决尚未完成。
-完整八面板前不作方法裁决。实际评测命令、设备、PID及完成状态见同根`evaluation_launch_contract.json`；
-八bank的封存和四生成进程退出见`materialization_launch_contract.json`。
-双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在
-`runs/analysis/local_correction_field_writer_20260914/training_launch_contract.json`。
-profile及字段梯度原件同根`profile/`，未据两步loss改变科学参数。后续按固定节点完成整轮面板再裁决。
-新候选让逐位置的同一纠正场接受真实局部监督并直接合成LoRA，区别于独立辅助动作头与旧总参数回归。
-先检验在局部场上限制rank16是否保留实际跨episode作用；现有G的rank16是在总参数矩阵上施加，两者不能当成等价。
-登记96条件、1,536独立query组合、t1及full10，原source／query／eta全部固定复用；不新增闭环、held、训练或最终controls。
-实现4f55968d已clean pushed并在detached树冻结。CPU全24task路径／身份与收缩机制核验通过；
-真实task0/demo16 smoke为12.286秒、峰值11.008GiB，38-target完整、source冻结、两读出finite且exit0。
-场收缩与原weight gradient的相对差异.0006498，保留正常数值差异；没有据smoke动作分数选参。
-完整96条件／1,536 query组合及两读出已完成，三worker与launcher均exit0、全部预测finite。
-t1 source .11977705→.11351439，改善95%CI[.00253443,.01103297]；full10 .16493043→.15574597，
-CI[.00326525,.01693516]；两读出均四suite净正，正task分别17／21。与原G均差很小、区间包含零，
-保留其实际作用接近的事实；这仍是privileged前提，不能计为合法视频Writer或完整goal成功。
-双节点现场、独立quota、原件、完整逐task／suite／teacher与裁决在
-`runs/analysis/local_correction_field_20260914/`；一次性入口退役，不扩oracle、query或扫描。本文旧执行段落不恢复旧实验。
+自主研究授权持续；有序必须强于独立fresh全帧frame_set，并保留跨视频／初始化／相邻／validation及最终因果要求，
+暂不额外强制145/400。**本轮[局部纠正场§10](docs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)
+已按预登记关闭；无active design、selected checkpoint或在途研究进程。两节点现场进程检查为空。**
+
+| 节点 | train96有序／无序 | validation400有序／无序 |
+| --- | --- | --- |
+| 50 | 18 / 16 | 48 / 47 |
+| 100 | 17 / 17 | 47 / 50 |
+
+配对source为train17/96、validation47/400。有序−无序validation的95%CI为[0,+.75]／[−1.75,0]pp，
+两个节点都不满足严格正下界，净正suite分别1／0；有序相对source的CI为[0,+.75]／[−.75,+.75]pp。
+有序48→47，相邻R/G/L=41/6/7、churn13、J=.75926，三个预登记资格全部失败。
+四个validation面板breadth均3、Spatial均零；train均breadth7。低churn伴随接近source的低分，不能计为已获取能力的保持。
+
+两臂独立fresh100，各400教学条件／25,600主queries；四完整checkpoint、八sealed bank和1,984闭环rows全部封存。
+25个曝光字段、12个诊断字段及source／视频／初态／RNG、真实stride5末帧、38-target／76-factor身份审计通过。
+24个评测worker及全部launcher均exit0，没有失败重试；八面板累计评测墙钟17,987.69秒。
+训练代码clean pushed detached50dafb05，推理／评测代码46aaf22d；完整profile、物理batch16、quota、命令及完成记录均保留。
+固定动作FM0／50／100有序.153285339／.153149835／.152403202，无序.153285339／.153149911／.152400151；
+末节点改善约0.58%，有序23/24、无序24/24task方向改善，但没有转为可信的有益条件控制。
+
+完整逐task／suite、配对与相邻统计见
+[runs/analysis/local_correction_field_writer_20260914/READOUT.md](runs/analysis/local_correction_field_writer_20260914/READOUT.md)，
+机器原件为同根`paired_readout.json`／`bounded100_decision.json`，执行状态为`evaluation_launch_contract.json`。
+停止这套“同位置局部纠正监督＋原生X收缩＋当前共同学习”的后续训练及小扫；未触发other、最终controls、Test或RL。
+本轮冻结checkout暂留，保留可复核原件；不由代码、有限动作改善或privileged正例宣称goal完成。
+
+保留[固定真实G的跨视频／初态闭环正事实](docs/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)，
+以及[局部rank16场的函数前提](docs/local_correction_field_design.md#7-固定算子完整结果与下一阶段)；两者都不证明合法RGB获取。
+当前最早明确的缺口仍是合法共享能力获取，没有唯一定位某个模块、RGB信息不足、rank上限或数值故障。
+下一步先把本结果与普通FM正例和已检验共享学习机制合并审视，形成有区分力的整体学习理由后再决定投入；
+当前没有登记后继模型或新实验。理论修正见[工作理论§11](docs/temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)。
+
+以下是已关闭的前置证据，不恢复旧训练或诊断。
 
 [语义状态路径Writer§8](docs/semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)两臂fresh100及八面板全部完成：
 

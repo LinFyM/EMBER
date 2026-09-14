@@ -194,3 +194,55 @@ S/G/L三个suite净正、Object仍零。它证实本有限面板上的实际控�
 新局部场t1/full10均保留相对source的可信改善，四suite均正，与原G实测均差很小且区间跨零。
 因此下一阶段投入同一局部场的合法RGB获取与真实FM共同学习；不再扩这个oracle或把秩／整体gain作为首项修复。
 这仅消除具体收缩出口的一项功能疑问，没有证明字段可学、全视频覆盖、视频顺序优势或训练保持。
+
+## 11. 局部纠正场比较后的学习假设修正（2026-09-14）
+
+[完整有界比较](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)没有兑现§10的获取预测：
+同位置预测场被直接监督并实际组成LoRA，但train96有序18→17、无序16→17，source17；
+validation有序48→47、无序47→50，source47，三个预登记资格均失败。
+这次主要问题先发生在合法共享能力获取；不能继续默认已有强任务能力，只缺顺序辨别、held迁移或保持项。
+
+因此降低的支持范围是：裸source提供可用地址、真cotangent存在及局部损失直接消费，足以让当前共享RGB生成器
+在跨episode FM下获取可迁移的条件作用。原Native Correction在总参数层面获取有限，本轮在收缩前局部监督也没有解决。
+两者都可以代数地输出有益的privileged纠正，却没有给出相称的合法共享行为。
+不能据“当前预测仍可改进”无止境地保留这条具体学习对象及消费方式，再换一个头、字段归一或优化系数。
+
+保留的事实同样明确：真G有有限跨视频／初态闭环价值，局部rank16场保留已测函数价值；
+source在合法state-free双相机下已有动作知识，早期普通FM视频Writer也取得过明显source以上闭环能力。
+这些正例支持继续研究合法视频编译，却没有证明当前观察表示能预测同一cotangent、当前坐标容易学习，
+或任意共享条件更新会迁移。0.58%的固定动作误差下降及少量行为变化是真实学习，尚不足以建立该主张。
+
+当前仍未分开的解释包括：可用于本目标的RGB／原生表示、学习对象及输出坐标与视觉条件之间的匹配、
+以及跨条件共享学习时的实际能力获取。仅在参数空间证明存在、看到梯度或增加数据字段，都不能单独区分它们。
+这不是数值故障或普遍收敛结论；本轮局部参数化与监督共同改变，也不能由旧Semantic Path分数进行单变量归因。
+
+下一项先合并普通FM的合法能力正例与G3／primal／EBSRI／PNBTT等已检验学习机制的原始适用条件，
+明确哪些正例实际使用自然RGB Program、哪些使用free code／task token或privileged效果，哪些只证明局部求解。
+后继设计必须解释合法条件知识如何被实际获取及消费，给出与最近失败不同且会改变投入判断的可失败预测；
+本节尚未选择新架构、辅助目标、优化链或新实验。关闭组合及完整原件见findings§98。
+
+## 12. 共享原生编译学习的历史证据口径（2026-09-14）
+
+本次只读恢复了三条最接近的原始学习路径。下表的recovery是离线功能或参数方向恢复率，不能当闭环成功率；
+旧wrong配对属于其当时资格，不使用最终shuffle／reverse作后继设计信号。
+
+| 路线 | 实际可用的正证据 | 自然条件／共享学习的边界 |
+| --- | --- | --- |
+| G3／primal→current-bank dual | P1的free primal在fit／held方向恢复.972／.955；J2 task-local正控10/10task的held功能显著优于carrier | J2真实policy VJP共同学习的train／held-video仅.171／.165；R5固定task token正控.940／.963，接回自然Program的R6降至.165／.143。不能从局部可解推到RGB共享获取 |
+| EBSRI whole-bank interaction | S1真实B0 summary的task-local correct和wrong同时通过 | S0–S2实际条件源为固定orthogonal task token→冻结R5 scorer，尚非自然RGB Program；direct-functional S2恢复correct时wrong同样高，polish未跨task通过。自然Program S3没有取得启动资格 |
+| PNBTT key/value transport | 最终free-query E1通过wrong及margin条件，保留部分可学选择性 | correct／held仍失败，完整E1未通过；实际只训free queries及共享keys，Natural Program E2未启动。不能把它当作自然Program获取已被检验或已被否定 |
+
+G3/J2的实现及原件入口为`c9e8198:src/ember/ecp/bank_conditioning/primal_capacity.py`、
+`5fd80b6:src/ember/ecp/joint_program_primal/train_step.py`，以及
+[J2 task-local原报告](../runs/outputs/pi05_ecp_j2_functional_positive_control_10task_c4704cb_gpu01p012345_20260829/aggregate.json)。
+EBSRI真实VJP和训练变量见`25477c9:src/ember/ecp/joint_program_primal/bank_set_shared_training.py`及
+[direct S2原结果](../runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_gate_25477c9_eval3e15632_gpu01p013456_w6_20260901/aggregate.json)。
+PNBTT实际为Cholesky query whitening、真实native value transport，源码
+`e65c6388:src/ember/ecp/bank_conditioning/key_value_replay.py`，
+[最终qualification](../runs/outputs/pi05_ecp_pnbtt_e1_gate_aligned_necessity_s110_e65c6388_gpu01p12_20260902/evaluations/qualification.json)。
+完整旧账本`fcdb6e43:docs/research_history.md`的§21–24、46–61、81–89、97–103保留各版条件与停止点。
+
+这些事实限制“可微求解＋真实functional信用”“压低wrong”“真实bank唯一Value”等充分性解释，
+没有否定所有共享学习，也不代表部署中已经学出了合法RGB optimizer。旧普通FM的source以上闭环能力仍是另一类正事实；
+它的架构、初始化、样本曝光与读取方式共同变化，不能据此恢复旧coarse接口或断言某个单一模块是答案。
+接续要解释合法输入到实际作用的获取差异，不能只再证明free variables或privileged目标存在。

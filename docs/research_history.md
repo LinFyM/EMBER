@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-14完成[局部纠正场Writer的完整比较](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)：
+两臂fresh100、四checkpoint与八面板／1,984rows完整，24个worker均exit0且配对审计通过。
+train96有序／无序18/16→17/17，validation48/47→47/50，source17/96与47/400；三个预登记资格均失败。
+合法获取仍弱，接近source的低churn不能当新能力保持；按登记关闭当前局部监督／参数消费联合组合。
+privileged G及局部场函数正例的原边界保留，完整事实见findings§98与下方同日条目；整体goal未完成。
+
 2026-09-14完成[固定真实纠正的闭环前提](native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)：
 原480episodes全部结束，source17/96、demo16–19为21/25/20/24；配对净+5.73pp，24task-cluster95%CI[+1.04,+12.5]pp。
 四teacher／四init均净正，S/G/L三suite正，按原四项资格通过后关闭。Object仍零，task35贡献11/22净增。
@@ -1613,3 +1619,22 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 与原G实测误差接近、配对区间跨零；局部场几何与真实输出分开记录，未声称等价、无损或闭环成功。
 按登记关闭一次性诊断、退役入口；原始C、96套LoRA、1,536查询组合、两个读出与完整统计在
 `runs/analysis/local_correction_field_20260914/`。后续合法共享获取仍待实现与闭环证明，整体goal未完成。
+
+## 2026-09-14：合法局部纠正场的完整共享学习比较关闭
+
+[设计§8–10](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)从同位置过程和裸source X预测局部场，
+预测场本身接受真实cotangent监督并形成唯一完整LoRA；不是旧独立辅助动作出口，也没有部署VJP或真实动作输入。
+50dafb05两臂独立fresh100、各400条件／25,600queries，46aaf22d完成四checkpoint的八bank和八闭环面板。
+完整曝光、source／视频／初态／RNG、真实stride5末帧与38-target身份通过；1,984rows、24个worker全exit0，无失败重试。
+
+50／100的train96有序／无序为18/16、17/17；validation400为48/47、47/50，参照source为17/96与47/400。
+有序−无序validation95%CI为[0,+.75]／[−1.75,0]pp，有序−source为[0,+.75]／[−.75,+.75]pp。
+净正suite1／0，相邻有序48→47，三个资格失败。validation四组breadth3、Spatial零；train各breadth7。
+有序相邻R/G/L41/6/7、churn13、J=.75926；无序41/9/6、churn15、J=.73214。
+固定动作FM末节点两臂均只改善约0.58%，分别23/24与24/24task方向改善，尚无有益合法共享获取。
+
+按登记关闭这套局部场监督／参数化／共同学习组合，不续训、不扫参、不选择checkpoint或补未获资格的controls。
+原有privileged G与局部场函数前提仍是限定正事实，不能合并为已实现的合法Writer。没有Test、RL或checkpoint融合。
+八面板累计评测17,987.69秒。原件在`runs/analysis/local_correction_field_writer_20260914/`，
+保留READOUT、paired_readout、bounded100_decision、全部checkpoint／bank／raw rows及训练／物化／评测合同与completion。
+整体goal未完成；理论中对应的获取预测按[工作理论§11](temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)降级。

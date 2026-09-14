@@ -6,33 +6,23 @@
 可重复闭环增量；有序强于独立fresh全帧frame_set，并跨视频、初始化、相邻checkpoint及固定validation保持。
 允许完整视频双向理解，暂不额外强制145/400；信息墙、K1、数据／资源／Git合同保持。
 
-1. **已完成：完整G诊断。** 480episodes按注册关闭，source17/96，四teacher21/25/20/24；
-   净+5.73pp、CI[+1.04,+12.5]pp。只支持privileged纠正的有限跨视频／初态控制作用。
-2. **已完成关闭：语义状态路径Writer。** 全图实现、最长105帧profile、两臂fresh100、四checkpoint和八配对面板完成。
-   train96有序／无序16/22→29/26，validation77/75→48/44；三个资格均失败。完整1,984rows审计通过，39个最终worker exit0。
-   保留训练获取和Object增量，停止原组合续训／扫描；不选50峰值，不触发未获资格的other或最终controls。
-3. **已完成：冻结实际行为定位。** [工作理论§8](docs/temporal_control_compilation_theory.md#8-语义路径比较后的理论修正2026-09-14)
-   降低“重排表示并给普通FM即可得到过程”的支持程度；此前same-object／different-destination现象只来自分数，
-   已登记[冻结行为回放](docs/semantic_path_behavior_replay.md)：原四checkpoint、全8tasks、init0／12／25／37，
-   共128次已完成，复用原LoRA、视频与RNG配对通过，24个worker exit0；32组固定图像齐全。
-   全部32组人工观察已完成，失败同时涉及错物／实例、具体获取／运输和组合目标保持；8/128次回放结果变化完整保留。
-   按异质失败分支关闭，不从中选择唯一失败模块，不扩回放／controls或自动加目的地解析、局部动作头或保持损失。
-4. **两臂正式共同学习已完成，进入固定闭环比较。** [新联合机制](docs/local_correction_field_design.md)已选定：
-   同位置过程解释得到的纠正场，既接受真实纠正监督，又直接与裸source状态配对形成LoRA；不保留独立辅助动作出口。
-   先按§5固定96条件／1,536 query组合及原source／eta／RNG，检验局部rank16场收缩的t1与full10实际作用。
-   4f55968d完成96条件与两读出，三个worker exit0；t1／full10相对source改善区间均严格正、四suite均正。
-   按正分支关闭诊断并退役入口；§8已冻结合法Writer及同一纠正场的采样、单位与共同loss；主模型11项机制检查通过，
-   在线标签与运行集成已完成，c4c07bbb最长105帧两次共同更新与完整推理exit0；
-   全153项检查通过。§9已按实测固定50／100；50dafb05两臂独立fresh100均exit0，各400条件／25,600 queries，
-   四完整checkpoint、全部曝光25字段及诊断12字段配对通过。固定动作误差改善约0.58%，尚无有益有序或闭环证据，继续完成八面板。
-   不扩大oracle或重选其它机制，不把原G分数或新局部误差当目标完成。
-5. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
+1. **固定G诊断完成关闭。** source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp。
+   只支持privileged纠正的有限跨视频／初态实际控制作用。
+2. **语义路径Writer及冻结回放完成关闭。** 两臂fresh100与八面板未获相邻有益有序资格；固定128次回放和全部32组图像
+   显示对象／实例绑定、获取运输及组合保持的异质缺口，没有唯一识别一个失败模块。
+3. **局部rank16场的固定函数前提完成通过。** 原96条件、1,536 query组合的t1／full10改善区间均严格正；
+   保留与原G实际作用接近的限定事实，不将privileged输出计入合法Writer能力。
+4. **局部纠正场共同学习完整比较完成关闭。** 两臂fresh100、四checkpoint、八bank和1,984rows全部完成；
+   train96有序／无序18/16→17/17，validation48/47→47/50。三个预登记资格均失败，24个worker均exit0且全部身份审计通过。
+   固定动作FM约0.58%的改善未带来有益共享获取；停止当前组合续训／扫参，不补未触发的other、最终controls、Test或RL。
+5. **当前进行整体学习机制复核。** 合并本次合法获取失败、普通FM历史正例及已试过的共享functional／update机制，
+   明确哪些学习解释失去支持、哪些证据仍保留、哪项新证据能区分竞争解释。尚无active design、后继模型或新运行。
+   不把新增局部标签、不同收缩代数、非零梯度或又一个模块作为重新训练的充分理由。
+6. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
 
-当前[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整关闭，§8–9的合法共同学习完成；
-两臂100及全部固定诊断／checkpoint已完成，推理批量核验通过并选择16；46aaf22d已完成四checkpoint的八个sealed bank／1,984套LoRA。
-50／100的四组train96均完整exit0，384行身份审计通过；四组validation400继续并行运行，随后完成八面板裁决。无selected checkpoint；
-回放及行为解释全部关闭，整体goal和自主授权继续。
-原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
+完整读出见[runs/analysis/local_correction_field_writer_20260914/READOUT.md](runs/analysis/local_correction_field_writer_20260914/READOUT.md)，
+关闭合同见[设计§10](docs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)，理论修正见
+[工作理论§11](docs/temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)。
 下方暂停和未完成旧清单均是历史，不恢复执行。
 
 ## 暂停时点：讨论架构与训练的整体原理（2026-09-14）

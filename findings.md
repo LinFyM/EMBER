@@ -1,23 +1,11 @@
-# 当前实施边界（2026-09-11）
-
-Owner已授权Video Functional Writer设计、实现和实验。专家最终方案的机制理由是直接执行query功能信用；
-这不是首次联合训练，也没有数学上排除共同动作捷径。J2真实联合训练已核验，辅助头失败不证明无信息，
-辅助头强/LoRA弱不证明rank容量不足。具体设计见docs/video_functional_writer_design.md；首段实测见§56，尚无视频特异性资格。
-
 # EMBER findings
 
-Owner最新阶段为有益视频特异性优先，已授权新候选自主实施；旧路线保持暂停。
-最新已完成证据见§51–56，远程副本与跨历史阅读入口见[全新专家材料](docs/review_materials/video_specificity_20260911/README.md)。
-以下各节保留当时结论与边界，其旧“当前/下一步/目标”不覆盖最新Owner要求；本次不预设恢复v5.2或保留Horizon全图。
+本文件保留跨轮结论及其适用边界；历史段落的“当前／下一步／active”只表示当时时点。
+当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
+完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。
 
-当前方法见[正式设计](docs/video_functional_writer_design.md)，当前执行计划与授权见[progress](progress.md)。
-最新学习与原因分析集中在§39–49；[2026-09-11专家材料](docs/review_materials/20260911/README.md)提供远程可读原配置、逐条结果、机制记录及当前看法。文内本地runs路径通过该材料的index映射到已提交副本。
-§50记录Owner对首轮专家意见的修正重点与历史正证据，不代表新实验或正式方法采纳。
-以下§1–14记录此前各轮的持久发现，其中“新图/当前/下一轮”按当时路线解释，不恢复旧18层图或旧run；§15–16记录方法收口与接续裁决要求，§17记录实际新图的数值重放发现。
-
-这里只保留会改变下一轮决策的结论与开放问题，不再复制逐轮实验年表。证据、数值和旧原文入口集中在
-[research_history.md](docs/research_history.md)；已对齐候选的完整推导在
-[horizon_relation_video_writer_design.md](docs/horizon_relation_video_writer_design.md)。当前授权和现场只看 [progress.md](progress.md)。
+§94–98分别记录固定纠正闭环、语义路径比较、冻结行为回放、局部场rank前提及合法局部场Writer的完整结果。
+这些结果不能混成一套已经取得有益视频特异性的模型；旧普通FM及其它合法视频Writer的能力正例也继续保留。
 
 ## 1. 先分清三个问题
 
@@ -1648,3 +1636,36 @@ full10 .16493043→.15574597，CI[.00326525,.01693516]，21/24task正；两读�
 原始场、完整LoRA、预测、逐task／suite／teacher及裁决在runs/analysis/local_correction_field_20260914。
 按正分支关闭诊断、退役入口；只支持该局部场收缩的privileged函数前提，未检验合法获取、全视频各位置、闭环或held。
 下一阶段完成已选同位置过程→纠正場→唯一LoRA的共同学习机制，不重开独立动作头或由这个正数宣称goal完成。
+
+## 98. 同位置纠正监督及直接参数消费仍未形成有益共享获取（2026-09-14）
+
+[局部纠正场§8–10](docs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)让同一预测场接受
+真实局部cotangent监督，并与同位置裸X直接收缩为完整LoRA。两臂独立fresh100、各400条件／25,600queries，
+四checkpoint及全部八面板／1,984rows完成；源模型、实际视频／初态／RNG、完整目标及采样曝光审计通过。
+24个最终worker和所有launcher均exit0，无失败重试。这是有效科学non-pass，未发现运行合同错误。
+
+| 节点 | train96有序／无序 | validation400有序／无序 | validation有序−无序95%CI |
+| --- | --- | --- | --- |
+| 50 | 18 / 16 | 48 / 47 | [0,+.75]pp |
+| 100 | 17 / 17 | 47 / 50 | [−1.75,0]pp |
+
+source为train17/96、validation47/400。两有序相对source的CI为[0,+.75]／[−.75,+.75]pp，
+有序−无序净正suite1／0；50／100两个节点资格及相邻保持资格均失败，没有选择任何checkpoint。
+四组validation的S/O/G/L分别为0/5/42/1、0/4/42/1、0/5/40/2、0/7/40/3（O50/F50/O100/F100）；
+breadth均3、Spatial均零，train breadth均7，与source仍在相同的有限任务上成功。
+有序相邻R/G/L=41/6/7、churn13、J=.75926；无序41/9/6、churn15、J=.73214。
+这些较小churn主要围绕弱source附近的行为，不能转译为新能力获取后的保持改善。
+
+固定训练侧动作FM有序0／50／100为.153285339／.153149835／.152403202，无序为
+.153285339／.153149911／.152400151；末节点约0.58%改善，有序23/24、无序24/24task方向改善。
+保留这些有限学习事实，但训练闭环仍无可信source以上增量，不能把主要缺口仅归于未见任务、换视频或晚期遗忘。
+100updates是预登记有界投入，并非普遍收敛或信息不可能性证明；微小梯度、非零参数及闭环相近也不能唯一认定优化或数值根因。
+
+本轮降级“把局部监督接到实际参数出口就足以建立共享可迁移纠正知识”的具体联合解释。
+它没有否定§94／97的privileged功能前提，也没有否定所有视频信息、固定LoRA控制或早期普通FM的合法能力。
+本次同时改变局部预测、输出参数化与辅助监督，不能用它和Semantic Path旧分数的差额冒充单变量因果效应。
+
+按登记关闭当前组合，停止续训及rank／scale／seed／LR／字段loss等小扫；不扩oracle或补未获资格的controls。
+完整原件在`runs/analysis/local_correction_field_writer_20260914/`：READOUT、paired_readout、bounded100_decision、
+全部训练／物化／评测合同、checkpoint、bank、raw rows及completion。训练代码50dafb05，推理／评测46aaf22d。
+整体goal未完成；接续先综合已有学习正负证据，不从这个non-pass自动启动新的局部头、监督或优化链。

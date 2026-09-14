@@ -10,20 +10,23 @@ Owner允许多次有依据的训练、工程修复与方法迭代；不以只训
 本轮固定双路K1、冻结source、完整50-horizon、7维q、固定source导数／PCA rank16唯一38-target LoRA及fresh联合纯跨episode FM。
 不使用q辅助标签、额外meta tasks、RL或Test。暂不强制>145/400，不要求另训frame_set；能力、相邻保持、换视频与最终controls仍须有真实证据。
 
-## 当前阶段与必要下一步
+## 本轮执行与交付
 
 1. **实际清理已完成。** 已删除退役源码／配置、过时正文、可重建物化缓存、临时profile载荷及32棵完成集成的工作树。
    数据集、源模型、完整正式checkpoint和评测原件保留，实际释放212.48GiB；范围与余量见progress。
    新输出留在`/data1`，按每阶段实时独立user quota和峰值预算执行，后续及时清理完成使命的临时产物。
 2. **真实机制与成本核验已完成。** 最长视频完整编译、q伴随、identity、第二次联合梯度及真实main FM对照通过；
    96条件G P功能前提通过。优化后每最长条件约24秒，frame_chunk16／FM16，峰值37.01GiB；oracle不计作合法Writer能力。
-3. **学习窗口已登记。** Fresh900更新、3,600教学条件／230,400queries，100倍数保存；300／600／900做完整correct400及train96。
-   预计四卡训练约4–5小时，诊断和评测另计。曝光规模和判断理由见active design§8，不能以loss代替闭环或无信息续训。
-4. **执行fresh学习与配对闭环。** Formal train/eval来自clean pushed detached frozen commit；按预登记节点完成correct strict400，
-   必要时用固定train96及独立动作面板区分获取与迁移，报告task／suite、breadth、R/G/L、churn、相邻重合与真实曝光。
-   有能力获取和保持证据再继续；负结果先修正实际受损假设，区分工程错误、科学non-pass与证据不足。
-5. **完成资格与最终视频证据。** 能力和相邻资格成立后补same-task-other，选定冻结单checkpoint，再执行完整配对wrong／no-video／shuffled／reversed。
-   最终controls不反哺训练、选点或架构；未获前置资格则明确报告未执行范围，不制造selected checkpoint。
+3. **预登记学习窗口已完成。** Fresh900更新、3,600条件／230,400queries，实际覆盖623/624个task/video条件；九份完整checkpoint保留。
+   四卡训练墙钟4.565小时，三次物化.462小时、六个闭环面板1.091小时。登记与实际证据见设计§8–9及本轮READOUT。
+4. **全部配对面板已完成。** 300／600／900的train为24／22／26（source17/96），validation为64／72／64（source47/400）。
+   六面板1,488rows、source合同、RNG及state/video配对通过；逐task／suite、breadth、R/G/L、churn与相邻重合已完整报告。
+   有局部可学性，但能力扩展与未见task保持仍不足；按有效科学non-pass及未识别范围报告，不解释为已证实工程故障。
+5. **资格及未执行范围已裁决。** 未获能力／相邻前置资格，无selected checkpoint；same-task-other及wrong／no-video／shuffled／reversed未运行。
+   这不证明视频或顺序无效。没有RL、Test或q辅助，不从未做的controls反推根因，也不把最大72当合格选点。
+
+当前没有在途运行或900之后的续训；完整实现与正式证据保留。
+Owner已明确先看纯FM再决定q辅助，当前没有新增对照的执行决定。是否继续实质修订或回到v5.2由owner决定。
 
 ## 成功与结束判断
 

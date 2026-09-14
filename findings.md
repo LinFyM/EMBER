@@ -4,7 +4,7 @@
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。
 
-§94–99记录固定纠正闭环、语义路径比较、冻结行为回放、局部场及G P rank前提与合法局部场Writer的完整结果。
+§94–100记录固定纠正闭环、语义路径比较、冻结行为回放、局部场、G P rank前提及Process Pullback纯FM窗口的完整结果。
 这些结果不能混成一套已经取得有益视频特异性的模型；旧普通FM及其它合法视频Writer的能力正例也继续保留。
 
 ## 1. 先分清三个问题
@@ -1672,3 +1672,28 @@ full10 .16493043→.15792518，CI [.00191831,.01375751]，20/24task与三suite�
 
 该前提只支持继续检验此固定出口的合法学习，不证明无动作视频能预测有效q、不证明闭环或held转移，也不抵销§98的获取缺口。
 原件、逐task／suite和task-cluster bootstrap在`runs/analysis/process_pullback_writer_20260914/functional/summary.json`。
+
+## 100. 固定参数编译后的纯FM有局部获取，但未建立广泛迁移保持（2026-09-14）
+
+Process Pullback Writer按登记完成fresh900更新、3,600条件／230,400跨episode queries，实际覆盖623/624个教学条件，
+独立meta tasks仍为24。同步双路视频、过程Value、7维q、裸source固定导数及全视频PCA16出口共同接受唯一主FM；
+本轮没有q辅助、frame_set训练臂、RL、Test或部署优化。训练代码d6defa69，物化／评测f5d9db78，六面板／1,488rows完整有效。
+
+300／600／900的train96为24／22／26，source17；validation400为64／72／64，source47。
+900的train source差额CI[+2.08,+17.71]pp、breadth9/24，固定独立动作FM19/24task改善且均值下降约3.08%。
+这些是真实局部可学性；不能因最终未获资格改写成完全没有获取，也不能把更多同task条件说成更多独立任务。
+
+Validation相邻R/G/L56/16/8、52/12/20，churn24／32、Jaccard .7000／.6190；train相邻则17/5/7、21/5/1。
+训练任务后段保持改善没有同步转化为未见task保持。Validation Object task1为5→26→29→18，Long为1→2→3→0；
+900新增Spatial task1与Goal task3各2/50，三个节点均未形成四suite同时非零能力。900 source差额CI[0,+10.75]pp。
+固定q到LoRA关系因此没有充分保证这套共享读取／学习组合的广泛能力保持；本轮不把>145作为额外硬门槛。
+
+未获能力／相邻前置资格，没有selected checkpoint、same-task-other或最终wrong／no-video／shuffled／reversed。
+正确条件涨分与零变化结构均不能证明视频必要性或顺序特异性。§99的privileged功能前提继续保留，不能替代本次合法闭环。
+本轮同时改变过程读取、参数出口并扩大了学习窗口，不能把相对旧局部场或语义路径的分差归因单一模块或取消辅助监督。
+
+实际首步后的899次Writer／Action Meta／VL Meta梯度记录均finite非零、source冻结，未见所检查运行合同错误。
+这不识别唯一优化根因；q、投影、读取器、任务支持及学习条件仍是竞争解释。train96用未参与梯度的teacher46–49，
+不能单凭它区分训练池拟合与同task换视频／初始化泛化，900也不证明普遍收敛或不可学习性。
+按本轮窗口停止原样续训和小扫，保留方法与完整证据；后续q辅助或其它实质修订、是否回到v5.2由owner决定。
+完整原件在`runs/analysis/process_pullback_writer_20260914/`的READOUT、paired_readout、bounded900_decision及全部checkpoint／rows／合同。

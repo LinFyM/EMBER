@@ -1,5 +1,10 @@
 # EMBER research history
 
+2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
+3,600条件／230,400queries、六面板／1,488rows完整；train24／22／26（source17/96），validation64／72／64（source47/400）。
+保留局部获取，未见task保持与广度未建立；未获前置资格，无selected checkpoint、same-task-other或最终视频controls。
+本轮结束原样续训，不自动回到v5.2；完整证据及有限原因分析见findings§100与本轮`READOUT.md`、`bounded900_decision.json`。
+
 2026-09-14完成[Process Pullback Writer的G P出口功能前提](process_pullback_writer_design.md#8-first-learning-window-registration2026-09-14正式训练闭环前)：
 de7237a8、96条件／1,536 query、两worker exit0；t1／full10 source改善CI下界.001426／.001918，4／3个suite净正。
 PCA16保留原G平均改善72.56%／76.29%，有明确功能损失；仅通过本出口privileged前提，未产生合法Writer闭环成绩。
@@ -1677,3 +1682,24 @@ t1 source .11977705、G .11351420、G P .11523266；full10 .16493043／.15574849
 source−G P task-cluster95%CI为[.00142637,.00853139]／[.00191831,.01375751]，4／3个正suite，全finite，原前提通过。
 原G−G P区间均负，约保留72.56%／76.29%的改善；不将此局部privileged正例算作共享Writer或闭环证据。
 原件在`runs/analysis/process_pullback_writer_20260914/functional/`，只保留预测、映射及合同，不另存可重建LoRA／完整G。
+
+## 2026-09-14：Process Pullback纯FM完整窗口结束，局部获取未形成广泛保持
+
+按[预登记设计§8–9](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)完成900更新，
+3,600条件／230,400queries覆盖623/624个不同task/video条件；九份完整checkpoint保留，独立meta tasks为24。
+训练d6defa69、物化／评测f5d9db78均来自clean pushed frozen trees；六面板／1,488rows完整，最终72个评测worker exit0。
+source执行合同、normalization、采样曝光、真实帧、完整LoRA及固定state/video/RNG配对通过，没有失败重试。
+
+300／600／900的train96为24／22／26，validation400为64／72／64，source17/96及47/400。
+Validation S/O/G/L为0/26/36/2、0/29/40/3、2/18/44/0，breadth3／4／4；相邻R/G/L56/16/8、52/12/20，
+churn24／32、Jaccard .7000／.6190。Object task1在900从29回落18，Long的3次成功归零，稀疏新task成功没有构成广泛保持。
+Train900相对source净增9、差额CI[+2.08,+17.71]pp，相邻21/5/1；其恢复不等同于held保持。Validation900 source CI[0,+10.75]pp。
+
+固定独立动作FM为.153279524→.149746817→.150356967→.148562361；19/24task末节点改善，均值改善约3.08%。
+identity首步后899次Writer及两Meta梯度记录均finite非零、source冻结。局部可学性保留，不能由这些数值证明过程理解或唯一归因。
+本轮未获能力／相邻前置资格，没有selected checkpoint、same-task-other或wrong／no-video／shuffled／reversed；未测条件仍属未知。
+没有q辅助、RL或Test；原样追加训练和小扫结束，是否实质修订或回到v5.2交owner决定，不自动恢复旧路线。
+
+原件根`runs/analysis/process_pullback_writer_20260914/`保留READOUT、paired_readout、bounded900_decision、训练审计、
+完整checkpoint／manifest／raw rows／aggregate／completion和各阶段launch contract；逐task、suite、成功集合与有限原因分析均可复核。
+训练／物化／闭环墙钟4.565／.462／1.091小时，阶段合计6.118小时，不包括前期机制profile、功能前提和阶段间分析。

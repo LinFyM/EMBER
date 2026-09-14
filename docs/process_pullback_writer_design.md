@@ -4,7 +4,7 @@
 
 Owner在2026-09-14完成五个问题的讨论后明确恢复推进并要求设置goal；随后纠正：是否回到v5.2由owner决定，
 agent只专注本方案的实施、训练、有依据的迭代与结果汇报。允许多次训练与工程修复；持续缺少正向信号时须降低
-对实际检验组合的支持并明确报告，不自动回退、不无限追加无信息修补。本文件为唯一active design，状态见progress。
+对实际检验组合的支持并明确报告，不自动回退、不无限追加无信息修补。Active design登记与执行状态以progress为准。
 
 完整假设：exact language引导同步双路教学视频的状态／过程读取；变化驱动的共享网络输出动作空间作用码；
 裸冻结source的固定导数把作用码编译为唯一完整LoRA；纯跨episode执行FM可以共同学得可迁移且保持的视频依赖能力。
@@ -152,3 +152,29 @@ profile仅为一次条件更新，正式logical update仍须汇总四task。真�
 按实测估计更新本体3.86–4.19小时，正式准备按约4–5小时及额外诊断／评测时间执行，并以实际墙钟更新估计。
 九份完整checkpoint加首轮1,488个物化LoRA约8GiB，初段预留12GiB；连同有资格才触发的controls，整轮预计峰值24GiB。
 这在清理后约217GiB独立data1配额余量内；正式launch仍登记当时实际quota、两节点GPU与单节点拓扑。
+
+## 9. 900更新窗口完整结果与裁决（2026-09-14）
+
+预登记900更新、3,600条件／230,400queries完整结束，实际覆盖623/624个task/video条件；独立task仍为24。
+训练来自d6defa69，物化／评测来自f5d9db78的clean pushed frozen trees。九份checkpoint、六面板／1,488rows保留，
+训练和全部最终worker exit0；source、完整38-target、曝光、固定视频／初态／RNG和normalization配对审计通过。
+
+| 更新 | Train /96 | Validation /400 | Validation S/O/G/L | Validation breadth /8 |
+| ---: | ---: | ---: | --- | ---: |
+| 300 | 24 | 64 | 0/26/36/2 | 3 |
+| 600 | 22 | 72 | 0/29/40/3 | 4 |
+| 900 | 26 | 64 | 2/18/44/0 | 4 |
+
+Source为17/96和47/400。900的train净增9、task-bootstrap CI[+2.08,+17.71]pp，保留真实局部学习。
+Validation相邻R/G/L为56/16/8、52/12/20，Jaccard .7000／.6190；Object task1为5→26→29→18，Long最终归零。
+900的validation相对source区间为[0,+10.75]pp，三个节点未形成广泛且保持的suite能力；本阶段不以>145/400作为额外硬门槛。
+
+本轮未获能力／相邻前置资格，不选择checkpoint，不开展same-task-other及wrong／no-video／shuffled／reversed。
+这些未运行的条件仍是未识别范围，不能报告成视频无效、顺序已验证或因果controls失败。
+固定动作诊断19/24task改善、均值下降约3.08%；Writer和两组Meta在首步后899次梯度记录均finite非零，source冻结。
+梯度与loss不弥补闭环缺口。当前联合组合的稳定广泛迁移解释被降级，但q、投影、读取器、任务支持及优化尚不能单独定责。
+train96用teacher46–49，不能单凭它区分训练池拟合与同task换视频／初始化泛化；900更新不是普遍收敛或不可能性证明。
+
+按本轮窗口结束原样续训及小扫，保留实现和证据。q辅助尚未实施；后续实质修订或回到v5.2由owner依据结果决定。
+完整逐task／suite、配对集合、成本及有限原因分析见本轮`READOUT.md`、`paired_readout.json`与`bounded900_decision.json`；
+原件根为`runs/analysis/process_pullback_writer_20260914/`。训练／物化／闭环墙钟分别4.565／.462／1.091小时，前期profile另计。

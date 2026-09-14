@@ -2,13 +2,14 @@
 
 ## 当前状态（2026-09-14）
 
-Goal active，按Owner五个问题讨论确定的[Process Pullback Writer](docs/process_pullback_writer_design.md)持续推进。
+本轮[Process Pullback Writer](docs/process_pullback_writer_design.md)纯FM研究已完成，完整报告与有限原因分析已落盘。
 Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回到v5.2完全由owner决定，agent不自行切换。
-Owner追加的磁盘、退役源码／入口及文档正文清理已完成；真实机制、效率优化与新低秩出口功能核验通过，当前执行已登记窗口的正式fresh学习。
+Owner追加的清理、真实机制、效率优化、低秩出口功能核验及预登记fresh学习窗口均已完成。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
-本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，300／600的400＋96闭环节点完成，当前exact-resume至900；尚无selected checkpoint。
-CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未取消能力、相邻保持、换视频及最终视频controls的要求。
+900更新及300／600／900的六个完整面板、1,488条闭环rows全部结束。
+结论为有局部能力获取，尚未形成广泛、稳定的未见task迁移；未获前置资格，没有selected checkpoint或最终视频controls。
+本轮按已放宽绝对分数后的能力／保持要求裁决；视频必要性及顺序特异性仍未知，不用CPU机制或结构性质替代。
 
 ## 已实现与验证
 
@@ -39,30 +40,32 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
 - 训练池为train24的demo16–41，共624个K1条件；采样帧数min16、median31、p90为57、max105。
   最长视频已用于上述真实profile；独立动作42–45／teacher46–49及train states32–35保持既有合同。
 
-当前训练来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
+本轮训练来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
 启动与分段记录为本轮`training_launch_contract.json`，输出`training/`。
-前两段正常退出，累计600更新、2,400条件／153,600queries，训练墙钟合计11,118秒；
-24task独立动作诊断FM为0／300／600的.153279524／.149746817／.150356967。
+三段正常退出，累计900更新、3,600条件／230,400queries，实际覆盖623/624个task/video条件；独立meta tasks仍为24。
+训练墙钟合计16,433秒；独立动作诊断FM为0／300／600／900的.153279524／.149746817／.150356967／.148562361。
 source可训练参数0，完整checkpoint和曝光检查通过；动作loss只是诊断，闭环证据如下。
 物化／评测冻结树`.codex/tmp/process-pullback-evaluation`来自已推送`f5d9db78`，使用四卡按条件动态编译；训练树保持原样。
-600的496条件物化正常完成，569秒、约.871 LoRA/s；300／600四个闭环面板均12 workers exit0，完整配对检查通过。
+三次各496条件物化正常完成，合计1,663秒；六个闭环面板均12 workers exit0、合计3,928秒，完整配对检查通过。
 
 | 节点 | Train /96 | Train breadth /24 | Validation /400 | Validation breadth /8 |
 | --- | ---: | ---: | ---: | ---: |
 | Source | 17 | 7 | 47 | 3 |
 | 300 | 24 | 8 | 64 | 3 |
 | 600 | 22 | 8 | 72 | 4 |
+| 900 | 26 | 9 | 64 | 4 |
 
-600相对source：train R/G/L12/10/5、差额task-bootstrap CI[-3.12,+14.58]pp；validation R/G/L41/31/6、CI[-0.25,+18.50]pp。
-Validation S/O/G/L为0/29/40/3，净增益仍主要来自Object task1的5→29，新增Long task2仅1/50。
-300→600的validation保留／新增／丢失56/16/8，churn24/400、Jaccard .7000；
-train为17/5/7，churn12/96、Jaccard .5862，Long从3降至0。有局部held获取与相邻保持，但广泛迁移和train保持仍有限。
+900相对source：train R/G/L14/12/3、差额task-bootstrap CI[+2.08,+17.71]pp；validation R/G/L39/25/8、CI[0,+10.75]pp。
+Validation S/O/G/L从0/26/36/2→0/29/40/3→2/18/44/0，Object局部增益回落，Long归零；三个节点没有同时覆盖四suite。
+Validation两次相邻R/G/L56/16/8、52/12/20，churn24／32，Jaccard .7000／.6190；
+train两次为17/5/7、21/5/1，churn12／6，Jaccard .5862／.7778。不能把训练任务恢复等同于未见task保持。
+固定动作诊断19/24task改善、均值约3.08%；identity首步后Writer及两组Meta的899次记录梯度均finite非零，source冻结。
+这些保留局部可学性，不能唯一定位q、PCA、读取器、source或优化根因，也不能证明普遍收敛。
 完整逐task、suite和配对证据见本轮[READOUT](runs/analysis/process_pullback_writer_20260914/READOUT.md)及`paired_readout.json`。
-当前以原四卡、同一配置与完整训练状态exact-resume至原登记900终点，tmux `ember_process_pullback_train900_20260914`；
-随后完成900的400＋96面板，综合三个节点判断，不据当前局部增益扩展窗口或打开最终controls。
-当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
-Owner最新确定先保持当前四卡、完成纯FM闭环结果后再决定是否做q辅助对照；暂不开展六卡训练拆分或新增q损失。
-等待期间只完成必要准备，其余等待进程结束事件，不反复读取或播报训练进度。
+本轮已结束，无在途训练／评测，不原样追加900之后的训练或小扫。
+same-task-other及wrong／no-video／shuffled／reversed未运行；没有q辅助、RL、Test、checkpoint融合或自动回退v5.2。
+当前实现、完整checkpoint与正式证据保留；两棵冻结运行树供本轮复核及后续比较使用。
+Owner此前决定先完成纯FM再决定q辅助；当前没有新对照的执行决定，后续范围由owner结合完整报告确定。
 
 ## 近期关键出处
 

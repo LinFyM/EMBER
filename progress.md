@@ -21,14 +21,17 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
   终点900预先固定，方法冻结后完整video controls及source/correct Test400；资格与终点描述分别裁决。
 - 正式训练已从clean pushed detached `85ecfd18` 在gpu01:0–3启动，首两次全局更新18.850／21.974s；
   第二步Writer及两Meta均有有效信用。首个300节点已正常结束，墙钟5,611.741s，完整保存100／200／300。
-  实际allocated峰值37.615GiB、reserved43.740GiB；正在物化该节点validation400／train96，再做完整闭环。
-  独立训练动作FM从.153279524变为.148711546，尚不能据此判断闭环能力；随后同topology exact-resume至600/900。
+  实际allocated峰值37.615GiB、reserved43.740GiB。该节点validation400／train96及完整配对核验均已结束。
+  Train为21/96、breadth9/24、相对source R/G/L=14/7/3；validation为50/400、breadth4/8、R/G/L=31/19/16，
+  S/O/G/L=0/16/32/2。Validation净增的task-cluster95%区间[-7,+8.5]pp，当前未证明共享出口改善泛化。
+  独立训练动作FM从.153279524变为.148711546；不把loss或本次局部结果当作能力通过。
+  两套评测均正常结束，496套条件、原始rows及所有workers完成证据保留；已从300按同一四rank topology exact-resume至600。
 - 首次启动在配置状态标签检查处退出，未创建训练runtime或更新参数；登记字段修正后重新启动。
   原失败日志与commit保留于新研究`failed_attempts/initial_registration/`，不混入正式曝光。
 
 新研究根`runs/analysis/process_pullback_learned_outlet_20260915/`，额外峰值预算32GiB。
-启动前strg01 data1用量872,777,216KiB、soft1,073,741,824KiB，独立余量约191.65GiB；
-新研究当前49,036bytes，共享data1约83TiB可用。全部source／数据／环境复用，不复制大资产。
+续训600前strg01 data1用量875,171,524KiB、soft1,073,741,824KiB；新研究2,905,221,523bytes，
+额外32GiB峰值仍在独立quota内，共享data1约83TiB可用。全部source／数据／环境复用，不复制大资产。
 实际拓扑、命令与完成状态以新研究launch contract为准。
 
 ## 已关闭的固定出口900窗口

@@ -30,7 +30,7 @@
 
 当前[局部纠正场§5](docs/local_correction_field_design.md#5-当前激活的固定算子核验)已完整关闭，§8–9的合法共同学习完成；
 两臂100及全部固定诊断／checkpoint已完成，推理批量核验通过并选择16；46aaf22d已完成四checkpoint的八个sealed bank／1,984套LoRA。
-50的两组train96均完整exit0；100的两组train96及四组validation400已并行启动，继续完成八面板裁决。无selected checkpoint；
+50／100的四组train96均完整exit0，384行身份审计通过；四组validation400继续并行运行，随后完成八面板裁决。无selected checkpoint；
 回放及行为解释全部关闭，整体goal和自主授权继续。
 原件及全量表在[runs/analysis/semantic_path_writer_20260914/READOUT.md](runs/analysis/semantic_path_writer_20260914/READOUT.md)。
 下方暂停和未完成旧清单均是历史，不恢复执行。

@@ -16,10 +16,11 @@ launcher均exit0，训练墙钟分别3,647.61／3,655.72秒。四个正式checkp
 105帧实测13.647／12.170／11.511／11.536秒，按最快且占用较小选择16，allocated／reserved峰值10.296／11.135GiB。
 46aaf22d clean pushed detached已完成四checkpoint的八个sealed bank，共1,984套唯一完整LoRA，四个物化launcher均exit0；
 §9固定的四个validation400面板已在两节点各物理4／5启动，每卡三个常驻worker。
-train100仍在两节点物理6并行评测，研究合计使用六张物理卡。无selected checkpoint，八面板裁决尚未完成。
-四个train96 bank均已完整sealed且实际读取批量为16；有序／无序50的train96均完成96行、六个worker均exit0，
-墙钟分别1,028.98／1,016.43秒。双节点现场确认后，100的train96已在各物理6接续启动，仍各三个常驻worker。
-50节点两个实际评测run contract的source模型、环境、RNG、assets及policy执行字段已与配对source参照一致；
+四组train96已全部完成384行，十二个worker均exit0且没有失败重试；四组validation继续运行，目前研究使用四张物理卡。
+train50有序／无序墙钟1,028.98／1,016.43秒，train100为1,034.21／1,031.05秒。
+训练面板实际帧／末帧、视频整轮映射、checkpoint／38-target身份与完整计数已通过`training_panel_audit.json`；
+八个实际评测run contract的source模型、环境、RNG、assets及policy执行字段均与配对source参照一致。
+无selected checkpoint，八面板裁决尚未完成。
 完整八面板前不作方法裁决。实际评测命令、设备、PID及完成状态见同根`evaluation_launch_contract.json`；
 八bank的封存和四生成进程退出见`materialization_launch_contract.json`。
 双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在

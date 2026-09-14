@@ -21,14 +21,13 @@ from ember.writer.replay import sum_writer_gradients
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("suffix", ["", "_frame_set"])
-def test_registered_formal_recipes_reach_git_guard_before_device_initialization(monkeypatch, suffix):
+def test_registered_formal_recipe_reaches_git_guard_before_device_initialization(monkeypatch):
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / f"configs/pi05_local_correction_field_writer{suffix}.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_process_pullback_writer.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_local_field_comparison"
+    configured["status"] = "registered_process_pullback_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -38,7 +37,7 @@ def test_registered_formal_recipes_reach_git_guard_before_device_initialization(
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_local_correction_field_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_process_pullback_writer.json").read_text())
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -55,14 +54,15 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 
 @pytest.fixture
 def config(tmp_path):
-    # Hold a complete K1 recipe and a short regular evidence schedule;
+    # Hold a complete K1 recipe and a short test-only evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_local_correction_field_writer.json").read_text())
+    value = json.loads((ROOT / "configs/pi05_process_pullback_writer.json").read_text())
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
     value["optimization"]["joint_train_all_writer_modules"] = True
     value["evidence"]["checkpoint_updates"] = [50, 100]
+    value["evidence"]["supervised_validation"]["optimizer_updates"] = [0, 50, 100]
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
     return _config(path)
@@ -102,9 +102,10 @@ def test_actual_sampler_covers_suites_with_only_k1_and_restores_all_streams(samp
 def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tmp_path, config):
     import json
     assert config["model"]["horizon"] == 50 and config["model"]["blocks"] == 2
-    assert config["model"]["factor_width"] == 256 and config["data"]["queries_per_task"] == 64
+    assert config["model"]["action_width"] == 7 and config["data"]["queries_per_task"] == 64
     assert "total_steps" not in config["data"]
-    for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25), ("data", "queries_per_task", 16),
+    for section, key, value in (("model", "blocks", 3), ("model", "horizon", 25),
+                                ("model", "process_mode", "frame_set"), ("data", "queries_per_task", 16),
                                 ("observer", "vl_meta_rank", 0),
                                 ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
                                 ("data", "conditions_per_task", None), ("data", "conditions_per_task", True),
@@ -159,11 +160,9 @@ class _ToySupervisedEngine:
         # One globally weighted condition. This is an update-cadence oracle,
         # not a proxy for the native main FM control objective.
         main = sum(p.square().sum() for p in self.state.parameters())
-        field = sum((p - .5).square().sum() for p in self.state.parameters())
-        loss = draw["query_count"] / 256 * (main + .1 * field)
+        loss = draw["query_count"] / 256 * main
         loss.backward()
-        return {"flow_loss": float(main.detach()), "local_field_loss": float(field.detach()),
-                "queries": draw["query_count"]}
+        return {"flow_loss": float(main.detach()), "queries": draw["query_count"]}
 
 @pytest.mark.parametrize("conditions", [1, 2])
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config, conditions):
@@ -278,8 +277,7 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     assert metrics["task_exposures"] == stop * 4
     latest = [row for row in exposures if row["step"] == stop]
     assert metrics["mean_flow_loss"] == pytest.approx(sum(row["flow_loss"] for row in latest) / len(latest))
-    assert metrics["mean_local_field_loss"] == pytest.approx(sum(row["local_field_loss"] for row in latest) / len(latest))
-    assert metrics["mean_joint_loss"] == pytest.approx(metrics["mean_flow_loss"] + .1 * metrics["mean_local_field_loss"])
+    assert "mean_local_field_loss" not in metrics and "mean_joint_loss" not in metrics
     checkpoint, = (tmp_path / "checkpoints").glob("macro_*")
     trainer = torch.load(checkpoint / "trainer_state.pt", weights_only=False)
     assert trainer["training_state"] == _training_state(config, stop)
@@ -287,18 +285,34 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     assert trainer["scheduler"]["last_epoch"] == stop
 
 
-def test_execution_chunking_is_configurable_but_formal_nodes_remain_regular(tmp_path, config):
+def test_execution_chunking_and_profile_selected_checkpoint_nodes_are_configurable(tmp_path, config):
     changed = deepcopy(config)
     changed["model"]["activation_checkpoint"] = False
     changed["model"]["query_chunk"] = 24
     path = tmp_path / "config.json"
     path.write_text(json.dumps(changed))
     assert _config(path)["model"]["activation_checkpoint"] is False
-    for nodes in ([24, 64], [100, 50], [50, 50]):
+    changed["evidence"]["checkpoint_updates"] = [24, 64, 137]
+    path.write_text(json.dumps(changed))
+    assert _config(path)["evidence"]["checkpoint_updates"] == [24, 64, 137]
+    for nodes in ([0, 50], [100, 50], [50, 50], [True, 50], [24.5, 64]):
         changed["evidence"]["checkpoint_updates"] = nodes
         path.write_text(json.dumps(changed))
-        with pytest.raises(ValueError, match="multiples of 50"):
+        with pytest.raises(ValueError, match="increasing positive integers"):
             _config(path)
+
+
+def test_smoke_requires_explicit_stop_before_profile_node_registration():
+    config = _config(ROOT / "configs/pi05_process_pullback_writer.json")
+    config["evidence"]["checkpoint_updates"] = []
+    args = SimpleNamespace(mode="smoke", stop_after_step=2, checkpoint_updates=None)
+    assert _checkpoint_nodes(args, config) == () and _segment_limit(args, config) == 2
+    args.stop_after_step = None
+    with pytest.raises(ValueError, match="explicit positive --stop-after-step"):
+        _segment_limit(args, config)
+    args.mode = "formal"
+    with pytest.raises(ValueError, match="registered increasing positive integers"):
+        _checkpoint_nodes(args, config)
 
 
 @pytest.mark.parametrize("world_size", [1, 2, 3, 4])
@@ -431,7 +445,8 @@ def test_unregistered_camera_binding_is_rejected_and_cannot_exact_resume(tmp_pat
         _config(cfg_path)
 
 
-@pytest.mark.parametrize("field", ["video_prior", "spatial_supervision", "correction_supervision", "native_output_calibration"])
+@pytest.mark.parametrize("field", ["video_prior", "spatial_supervision", "correction_supervision",
+                                  "native_output_calibration", "local_field_supervision"])
 def test_retired_supervision_and_prior_configs_are_rejected(tmp_path, config, field):
     changed = deepcopy(config)
     changed[field] = {}

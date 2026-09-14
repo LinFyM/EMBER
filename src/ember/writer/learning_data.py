@@ -75,7 +75,7 @@ class WriterTrainingData:
         self.held_video_pool = tuple(map(int, config["held_video_demos"]))
         if (self.video_pool != tuple(range(16, 42)) or self.action_pool != self.video_pool
                 or self.diagnostic_pool != tuple(range(42, 46)) or self.held_video_pool != tuple(range(46, 50))):
-            raise ValueError("native correction requires the registered training and held episode pools")
+            raise ValueError("Process Pullback Writer requires the registered training and held episode pools")
         if tuple(config["cardinalities"]) != (1,):
             raise ValueError("the current supervised stage requires actual K=1 conditions")
         authorities = tuple(task.authority for task in self.tasks.values())
@@ -130,33 +130,6 @@ class WriterTrainingData:
         return self._sample_actions(self.queries, query_pool, task, occurrence, query_seed,
                                     int(self.config["queries_per_task"]),
                                     query_offset=query_offset, query_count=query_count)
-
-    def local_field_batch(self, task, demo, frame_indices, *, query_seed,
-                          positions_per_condition, future_horizon, seed):
-        """Training-only real teacher futures; its local RNG never advances main sampling."""
-        if (task not in self.tasks or demo not in self.video_pool or frame_indices.ndim != 1
-                or len(frame_indices) == 0 or positions_per_condition <= 0 or future_horizon <= 0):
-            raise ValueError("local correction positions require a registered train teacher video")
-        positions = frame_indices.detach().cpu().long()
-        actions = self.queries._handle(task)[f"data/demo_{demo}/actions"]
-        if (actions.shape != (self.tasks[task].episode_lengths[demo], 7)
-                or int(positions[0]) != 0 or int(positions[-1]) != len(actions) - 1
-                or not bool((positions[1:] > positions[:-1]).all())):
-            raise ValueError("local correction labels must retain the full real video including its final frame")
-        field_seed = int(query_seed) ^ int(seed)
-        selected = sorted(random.Random(field_seed).sample(range(len(positions)), min(positions_per_condition, len(positions))))
-        ordinals = torch.tensor(selected, dtype=torch.long)
-        selected_positions = positions[ordinals].tolist()
-        raw = torch.zeros(len(selected), future_horizon, 7, dtype=torch.float32)
-        counts = torch.tensor([min(future_horizon, len(actions) - p - 1) for p in selected_positions])
-        for row, (position, count) in enumerate(zip(selected_positions, counts.tolist(), strict=True)):
-            if count:
-                raw[row, :count] = torch.as_tensor(actions[position + 1:position + 1 + count])
-        return ordinals, raw, counts, {
-            "field_seed": field_seed, "field_frame_ordinals": selected,
-            "field_frame_positions": selected_positions, "field_real_future_counts": counts.tolist(),
-            "field_action_start_indices": [position + 1 for position in selected_positions],
-        }
 
     def _diagnostic_dataset(self) -> FunctionalQueryDataset:
         if self.diagnostic_queries is None:

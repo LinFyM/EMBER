@@ -10,37 +10,29 @@ from test_video_program import inputs, native_inputs, small_cpu_work, unlock, wr
 
 
 @pytest.mark.parametrize('activation_checkpoint', [False, True])
-@pytest.mark.parametrize('process_mode', ['ordered', 'frame_set'])
-@pytest.mark.parametrize('with_field', [False, True])
-def test_joint_replay_matches_direct_autograd(activation_checkpoint, process_mode, with_field):
-    model = writer(activation_checkpoint=activation_checkpoint, process_mode=process_mode)
+def test_joint_replay_matches_direct_autograd(activation_checkpoint):
+    model = writer(activation_checkpoint=activation_checkpoint)
     unlock(model)
     reference = copy.deepcopy(model)
     args = inputs((3,))
     native = native_inputs(model, args)
-    indices = torch.tensor([0, 2])
     direct_responses = tuple(value.detach().requires_grad_() for value in args[0])
     direct_visuals = tuple(value.detach().requires_grad_() for value in args[4])
     video = reference.encode(direct_responses, *args[1:4], direct_visuals, *args[5:])
-    state, fields = reference.decode_with_fields(video, native, indices)
+    state = reference.decode(video, native)
     targets = {name: torch.randn_like(value) for name, value in state.items()}
     main = .125 * sum((value - targets[name]).square().mean() for name, value in state.items())
-    compiled = dict(zip(state, torch.autograd.grad(main, tuple(state.values()), retain_graph=True)))
-    field_targets = {name: torch.randn_like(value) * model.config.field_unit for name, value in fields.items()}
-    field_loss = sum((value - field_targets[name]).square().sum() for name, value in fields.items())
-    field_loss = field_loss / (sum(value.numel() for value in fields.values()) * model.config.field_unit ** 2)
-    objective = main + .125 * .1 * field_loss if with_field else main
-    expected = torch.autograd.grad(objective, (*reference.parameters(), *direct_responses, *direct_visuals))
-    metrics = {}
+    # The FM policy differentiates all complete LoRA leaves, including fixed A.
+    # Replay must use only their actual dependence on q and native observations.
+    lora_leaves = {name: value.detach().requires_grad_() for name, value in state.items()}
+    leaf_loss = .125 * sum((value - targets[name]).square().mean() for name, value in lora_leaves.items())
+    compiled = dict(zip(state, torch.autograd.grad(leaf_loss, tuple(lora_leaves.values()))))
+    expected = torch.autograd.grad(main, (*reference.parameters(), *direct_responses, *direct_visuals))
     response_grads, visual_grads = replay_functional_credit(
-        model, args[0], args[1:], compiled, native,
-        field_indices=indices if with_field else None, field_targets=field_targets if with_field else None,
-        field_unit=model.config.field_unit, condition_weight=.125, metrics=metrics)
+        model, args[0], args[1:], compiled, native)
     actual = [p.grad for p in model.parameters()] + list(response_grads) + list(visual_grads)
     for result, target in zip(actual, expected, strict=True):
         torch.testing.assert_close(result, target, rtol=3e-4, atol=2e-6)
-    if with_field:
-        assert metrics['local_field_loss'] == pytest.approx(float(field_loss.detach()))
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():

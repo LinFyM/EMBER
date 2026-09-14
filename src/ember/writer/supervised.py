@@ -1,4 +1,4 @@
-"""Complete-LoRA main FM and same-field local supervision with joint native credit."""
+"""Pure complete-LoRA main FM with fixed source pullback and joint native credit."""
 from __future__ import annotations
 
 import time
@@ -7,7 +7,6 @@ import torch
 
 from ember.writer.function_credit import paired_functional_credit
 from ember.writer.functional import writer_chain_rule_surrogate
-from ember.writer.correction import FIELD_UNIT, LocalFieldSupervisor, local_field_loss
 from ember.writer.native import autocast
 
 
@@ -24,23 +23,11 @@ def _native_cotangents(leaves, visuals):
     return tuple(value.grad for value in leaves), tuple(value.grad for value in visuals)
 
 
-def replay_functional_credit(writer, responses, inputs, compiled, native_inputs, *,
-                             field_indices=None, field_targets=None, field_coefficient=.1,
-                             field_unit=FIELD_UNIT, condition_weight=1., metrics=None):
-    """Replay complete main cotangents and the same U/r field at one parameter version."""
+def replay_functional_credit(writer, responses, inputs, compiled, native_inputs):
+    """Replay complete main cotangents through the same fixed source coordinates."""
     videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True)
-    if (field_indices is None) != (field_targets is None):
-        raise ValueError("local field replay requires both positions and targets")
-    if field_targets is None:
-        state = writer.decode(videos, native_inputs)
-        objective = writer_chain_rule_surrogate(state, compiled)
-    else:
-        state, fields = writer.decode_with_fields(videos, native_inputs, field_indices)
-        field = local_field_loss(fields, field_targets, unit=field_unit)
-        objective = writer_chain_rule_surrogate(state, compiled) + field * field_coefficient * condition_weight
-        if metrics is not None:
-            metrics["local_field_loss"] = float(field.detach())
-    objective.backward()
+    state = writer.decode(videos, native_inputs)
+    writer_chain_rule_surrogate(state, compiled).backward()
     return _native_cotangents(leaves, visuals)
 
 
@@ -48,7 +35,6 @@ class SupervisedEngine:
     def __init__(self, runtime, data, cache, context, config) -> None:
         self.runtime, self.data, self.cache, self.config = runtime, data, cache, config
         self.device, self.step = context.device, 0
-        self.field_supervisor = None
 
     def _time(self, timings, name, start):
         if self.device.type == "cuda":
@@ -92,20 +78,10 @@ class SupervisedEngine:
         start = self._time(timings, "fm_vjp_seconds", start)
         compiled = credit.pop("lora_cotangent")
         fm_norm = float(torch.stack([value.norm() for value in compiled.values()]).norm())
-        if self.field_supervisor is None:
-            self.field_supervisor = LocalFieldSupervisor(
-                runtime.correction, self.data, runtime.processor, self.config["local_field_supervision"])
-        field_indices, field_targets, field_trace = self.field_supervisor.targets(
-            condition, task, demos[0], query_seed=draw["query_seed"])
-        start = self._time(timings, "field_target_seconds", start)
-        field_config = self.config["local_field_supervision"]
         with autocast(self.device):
             cotangents = replay_functional_credit(
-                runtime.state.writer, responses, inputs, compiled, native_inputs,
-                field_indices=field_indices, field_targets=field_targets,
-                field_coefficient=field_config["coefficient"], field_unit=field_config["unit"],
-                condition_weight=1. / (4 * self.config["data"]["conditions_per_task"]), metrics=credit)
-        del compiled, responses, inputs, native_inputs, field_targets
+                runtime.state.writer, responses, inputs, compiled, native_inputs)
+        del compiled, responses, inputs, native_inputs
         start = self._time(timings, "writer_vjp_seconds", start)
         runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)
@@ -113,7 +89,7 @@ class SupervisedEngine:
         return {**credit, "task_weight": .25,
                 "condition_weight": 1. / (4 * self.config["data"]["conditions_per_task"]),
                 "normalizer": 1., "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
-                **trace, **field_trace, **timings, "prefix_cache_hits": self.cache.hits - hits,
+                **trace, **timings, "prefix_cache_hits": self.cache.hits - hits,
                 "prefix_cache_misses": self.cache.misses - misses, "prefix_cache_bytes": self.cache.bytes,
                 "policy_microbatch": int(self.config["runtime"]["policy_microbatch"])}
 

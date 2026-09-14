@@ -20,14 +20,13 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
-from ember.writer.correction import validate_field_config
 from ember.writer.video import VideoWriterConfig, require_architecture_identity
 
 
-RUN_SCHEMA = "ember_local_field_writer_run_v1"
-STAGE = "local_field_writer_fresh"
-TRAINING_SCHEMA = "ember_local_field_training_state_v1"
-UPDATE_VERSION = "local_field_main_fm_joint_credit_v1"
+RUN_SCHEMA = "ember_process_pullback_writer_run_v1"
+STAGE = "process_pullback_writer_fresh"
+TRAINING_SCHEMA = "ember_process_pullback_training_state_v1"
+UPDATE_VERSION = "source_pullback_pure_main_fm_joint_credit_v1"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -66,14 +65,14 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     config = run["config"]
-    validate_field_config(config.get("local_field_supervision"), model_unit=run["model_config"]["field_unit"])
     data = config.get("data", {})
     identities = (
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": "ember_local_field_writer_config_v1", "update_version": UPDATE_VERSION,
+        (config, {"schema_version": "ember_process_pullback_writer_config_v1", "update_version": UPDATE_VERSION,
                   "execution_precision": "native_mixed_without_outer_autocast"}),
-        (config.get("optimization", {}), {"loss": "main_fm_plus_local_field"}),
-        (config.get("observer", {}), {"camera_view": "dual"}),
+        (config.get("optimization", {}), {"loss": "main_fm"}),
+        (config.get("observer", {}), {"camera_view": "dual",
+                                      "native_inputs": "bare_source_output_pullback_pca16_full50"}),
         (data, {"version": "train24_teacher_action_pool_cross_episode_k1_v1", "action_start_offset": 1,
                 "query_alignment": "post_action_observation_future_control_v1"}),
         (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
@@ -81,6 +80,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     )
     if (macro <= 0 or not 1 <= world_size <= 6
             or any(value.get(key) != wanted for value, fields in identities for key, wanted in fields.items())
+            or {"local_field_supervision", "correction_supervision", "spatial_supervision"} & config.keys()
             or type(data.get("action_start_offset")) is not int
             or not frozen_authority(run.get("git", {})) or set(manifest.get("files", {})) != expected):
         raise ValueError("materialization requires a complete formal supervised Writer checkpoint")
@@ -218,16 +218,19 @@ def method_metadata(run: Mapping[str, Any]) -> dict[str, Any]:
             "native_response_source": "action_out_proj_input_after_final_normalization",
             "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
             "visual_token_gradient": "joint_native_Z_and_R_replay_to_VL_and_Action_Meta",
-            "native_read": "full_T_x_50_crossframe_action_response_attention",
-            "frame_attention": "bidirectional_real_time_or_zero_time_full_video",
-            "video_representation": "contextual_language_roles_T_L_d_and_local_native_states_T_50_d",
-            "process_aggregation": ("full_frame_set_zero_time_rope" if run["model_config"].get("process_mode") == "frame_set"
-                                    else "bidirectional_real_frame_time_rope"),
-            "training_stage": STAGE, "training_objective": "main_fm_plus_local_field",
-            "native_parameter_generation": "B_sigma_U_A_sum_r_bare_X_div_T_same_local_field",
+            "native_read": "all_50_action_horizon_positions_retained_until_learned_read",
+            "video_representation": "language_role_semantic_states_and_change_driven_process_values",
+            "process_aggregation": "forward_change_recurrence_with_backward_context",
+            "static_content_role": "queries_and_gates_only; zero_change_gives_zero_action_code",
+            "training_stage": STAGE, "training_objective": "main_fm",
+            "native_parameter_generation": "G_mean_J_W_F0_T_q_then_DeltaW_G_P_PCA16",
             "native_input_source": "bare_frozen_source_without_VL_or_Action_Meta",
-            "field_unit": run["model_config"]["field_unit"],
-            "deployment_field_labels_or_cotangents": False,
+            "action_code_shape": ["T", 50, 7], "native_output_padding_cotangents": "zero_dimensions_7_to_31",
+            "input_projection": "top16_right_singular_vectors_all_real_frame_horizon_bare_X",
+            "deployment_frozen_source_vjp": True, "source_parameter_training": False,
+            "deployment_grad_context": "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported",
+            "deployment_teacher_labels_loss_optimizer": False,
+            "writer_execution": "one_pre_rollout_call_with_fixed_read_only_source_replays",
             "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
 
 
@@ -360,6 +363,7 @@ def _materialize(
                 "information_wall": {"deployment_inputs": ["exact language", "ordered RGB videos", "original frame indices"],
                     "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
                     "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
+                    "deployment_frozen_source_vjp": True, "deployment_loss_or_optimizer": False,
                     "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(conditions),
                     "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}}
     path = output / "manifest.json"
@@ -376,6 +380,8 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization requires a clean pushed detached checkout")
     if not requests:
         raise ValueError("materialization batch must contain at least one request")
+    if any(request["selection"]["K"] != 1 for request in requests):
+        raise ValueError("Process Pullback Writer materialization requires the trained K=1 condition")
     if native_frame_chunk is not None and (type(native_frame_chunk) is not int or native_frame_chunk <= 0):
         raise ValueError("native frame chunk must be a positive physical batch size")
     outputs = [Path(request["output"]).resolve() for request in requests]
@@ -446,7 +452,7 @@ def main() -> None:
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
     parser.add_argument("--role", choices=("development_train", "validation"))
     parser.add_argument("--task-ids", type=_integers)
-    parser.add_argument("--k", type=int, choices=(1, 2, 4))
+    parser.add_argument("--k", type=int, choices=(1,))
     parser.add_argument("--arm", choices=("correct", "same_task_other"))
     parser.add_argument("--selection-mode", choices=("fixed_per_task", "per_init_ordinal"))
     parser.add_argument("--video-pool", type=_integers)

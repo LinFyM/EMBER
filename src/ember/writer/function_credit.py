@@ -8,6 +8,7 @@ from typing import Any, Mapping
 import torch
 from torch import Tensor, nn
 
+from ember.ecp.policy_effects import ExecutionPolicyPrefix, prepare_prefix_kv_cache
 from ember.lora import validate_lora_state
 from ember.writer.functional import (
     INDEPENDENT_BETA_TIME_SAMPLING_SCHEME, INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
@@ -52,28 +53,29 @@ def mean_velocity_loss(prediction: Tensor, target: Tensor, width: int) -> Tensor
 
 
 class NativeFlowPrediction(nn.Module):
-    """Expose velocity from one official native forward."""
+    """Official FM velocity with frozen prefix KV and a differentiable action suffix."""
 
     def __init__(self, policy: nn.Module) -> None:
         super().__init__()
         self.policy = policy
 
     def forward(self, sample: FlowSample) -> Tensor:
-        captured = []
-
-        def capture(module, args, output):
-            captured.append(output)
-
-        handle = self.policy.model.action_out_proj.register_forward_hook(capture)
-        try:
-            self.policy.model(*sample.arguments)
-        finally:
-            handle.remove()
-        if len(captured) != 1:
-            raise RuntimeError("paired flow requires one actual action_out_proj forward")
-        velocity = captured[0]
+        images, masks, tokens, token_masks, actions, noise, time = sample.arguments
+        core = self.policy.model
+        # Official prefix queries cannot attend to action tokens. All execution
+        # LoRAs belong to the suffix, so this KV has no LoRA gradient to retain.
+        with torch.no_grad():
+            embeddings, padding, _ = core.embed_prefix(images, masks, tokens, token_masks)
+            prefix = ExecutionPolicyPrefix(embeddings, padding)
+            cache = prepare_prefix_kv_cache(
+                self.policy, prefix,
+                native_precision=not torch.is_autocast_enabled(embeddings.device.type),
+            )
+        time_expanded = time[:, None, None]
+        noisy_actions = time_expanded * noise + (1 - time_expanded) * actions
+        velocity = core.denoise_step(padding, cache, noisy_actions, time)
         if velocity.shape != sample.target.shape:
-            raise RuntimeError("native flow capture changed its actual action horizon")
+            raise RuntimeError("native flow suffix changed its actual action horizon")
         return velocity
 
 

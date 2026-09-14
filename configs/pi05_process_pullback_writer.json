@@ -436,7 +436,7 @@
     "paired_inference": {
       "unit": "task_cluster",
       "bootstrap_replicates": 20000,
-      "bootstrap_seed": 20260914,
+      "bootstrap_seed": 20260915,
       "confidence": 0.95,
       "primary": [
         "correct_minus_fixed_paired_source"
@@ -448,12 +448,27 @@
       ]
     },
     "profile_registration": {
-      "status": "pending_real_longest_video_check",
+      "status": "passed_real_longest_two_updates_and_deployment",
       "scope": "same actual longest full dual-camera video; two complete joint pure-FM updates; identity, complete LoRA, shared-outlet and native replay credit; one deployment compilation",
       "profile_initialization_reused": false,
       "frame_chunk": 16,
       "policy_microbatch": 16,
-      "reference_v1": "runs/analysis/process_pullback_writer_20260914/profile/chunk16/results.json"
+      "reference_v1": "runs/analysis/process_pullback_writer_20260914/profile/chunk16/results.json",
+      "frozen_commit": "6dffa85c0ef6632ee6a02507a3445a5cda5ab2be",
+      "results": "runs/analysis/process_pullback_learned_outlet_20260915/profile/actual/results.json",
+      "longest_task": 38,
+      "longest_demo": 36,
+      "sampled_frames": 105,
+      "full_horizon": 50,
+      "update_seconds": [
+        29.86556832306087,
+        24.282978028059006
+      ],
+      "peak_allocated_gib": 37.0489182472229,
+      "peak_reserved_gib": 37.76953125,
+      "deployment_seconds": 7.850230242824182,
+      "all_shared_module_groups_receive_credit": true,
+      "source_trainable_parameters": 0
     },
     "checkpoint_registration": "fresh900, complete checkpoints every100; correct validation400 and train96 at300/600/900; terminal900 fixed for sealed final controls/Test before any scores",
     "learning_window": {
@@ -508,7 +523,7 @@
       "rationale": "matches completed v1 full900 window so the major changed variable is the learned multiplicative outlet, not training exposure; actual longest-video profile verifies cost and mechanism before formal launch",
       "first_window_extension": "only actual closed-loop acquisition/retention supports a preregistered extension; loss alone or privileged outlet success does not",
       "scientific_method_change": "requires an explicit evidence-backed new hypothesis and updated design, never a silent resume or parameter sweep",
-      "wall_time_estimate": "approximately4-5h for four-GPU updates before diagnostics and paired evaluations; refresh from actual revised-outlet profile",
+      "wall_time_estimate": "approximately4-5h for four-GPU full900 before independent-action and closed-loop evaluations; actual longest condition update24.283s, deployment7.850s, allocated37.049GiB, reserved37.770GiB",
       "exposure_estimate": "runs/analysis/process_pullback_writer_20260914/learning_exposure_estimate.json",
       "initial_panel_rows": 1488,
       "initial_output_estimate_gib": 12,

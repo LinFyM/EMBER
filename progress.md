@@ -8,19 +8,23 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
 旧900视频controls只描述旧模型，不反馈新设计。固定Test只在本轮方法冻结后使用，无梯度／选点／设计反馈。
 结果直接在对话交付，不新增用户报告，不开展RL、不自动回退v5.2。
 
-## 正在完成的修改
+## 新窗口实施与启动
 
-- 模型及精确信用已在隔离分支实现：`9b131ea0`，30项针对性CPU检查通过，尚待主树集成和完整验证。
-  新接口保留同次裸A0/B0，先反传共享出口再用原q伴随与R/Z重放，不重做第二次source编译。
-- 主树同步v9/v2配置、训练／物化metadata及本设计；诊断专用拟合入口和static准入已退役，历史冻结树仍保留。
-- 正在补最终冻结后的Test correct400准入；只有固定test8、50初态／视频及匹配method freeze record才能执行。
-- 新窗口预登记fresh900、3,600条件／230,400queries，300/600/900各validation400和train96。
-  终点900预先固定，方法冻结后完成video controls与source/correct Test400；终点读出与能力资格分别裁决。
-- 尚未启动新正式训练；先完成集成、最长真实视频两次联合更新与部署profile，再按实时GPU／quota合同启动。
+- 共享出口与精确信用已集成：模型`e1ca29b9`、v2 bank fixture`6dffa85c`、冻结Test准入`6e3f9953`。
+  同次裸A0/B0先反传共享出口，再用原q伴随及R/Z重放，不重做第二次source编译。
+- 核心直接autograd等30项检查通过；主树旧fixture已同步，相关bank/controls/workers102项通过。
+  Test分支125项检查通过，集成后相关bank和controls的121项检查通过。
+- 真实最长task38/demo36、105帧、完整50-horizon两次联合更新正常结束；第二步24.283s，
+  allocated峰值37.049GiB、reserved37.770GiB；Writer／两Meta／共享出口均获得有效finite信用，source无可训练参数。
+  单次部署编译完整38-target耗时7.850s、无loss/optimizer；profile初始化已丢弃。原件在新研究`profile/actual/`。
+- Fresh900预登记3,600条件／230,400queries，300/600/900各validation400和train96。
+  终点900预先固定，方法冻结后完整video controls及source/correct Test400；资格与终点描述分别裁决。
+- 正在从clean pushed detached运行树启动首个300节点；随后固定topology exact-resume至600/900。
 
 新研究根`runs/analysis/process_pullback_learned_outlet_20260915/`，额外峰值预算32GiB。
-本次strg01 data1 quota用量872,330,316KiB、soft1,073,741,824KiB，独立余量约192.08GiB；
-旧研究实际26,145,380,221bytes，共享data1约83TiB可用。新研究复用全部source／数据／环境，不复制大资产。
+启动前strg01 data1用量872,777,216KiB、soft1,073,741,824KiB，独立余量约191.65GiB；
+新研究当前49,036bytes，共享data1约83TiB可用。全部source／数据／环境复用，不复制大资产。
+实际拓扑、命令与完成状态以新研究launch contract为准。
 
 ## 已关闭的固定出口900窗口
 

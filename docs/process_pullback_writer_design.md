@@ -104,6 +104,8 @@ video.py拥有过程与q，factor.py拥有冻结编译、精确q伴随包装和�
 随后对真实最长task38/demo36（105个stride5帧）做两次完整联合更新和一次部署编译，检查source冻结、第二步各模块组的finite
 有效信用、完整38-target／50-horizon／全视频及实际吞吐和峰值。Profile初始化不复用。
 沿用frame_chunk16、FM microbatch16；只有实际资源或数值合同失败才作必要工程调整，不把低位差异当故障。
+实际profile已通过：两步29.866／24.283s，allocated峰值37.049GiB、reserved37.770GiB，部署7.850s。
+各共享模块组均获得有效finite信用，source无可训练参数；原件见新研究`profile/actual/results.json`，初始化不复用。
 
 新研究根为`runs/analysis/process_pullback_learned_outlet_20260915/`，峰值额外预算32GiB，复用全部source、数据和环境。
 每次launch同时live检查gpu01/gpu02，单节点最多6张实际提高吞吐的卡；DDP固定P2P禁用、NUMA绑定和deferred NCCL。

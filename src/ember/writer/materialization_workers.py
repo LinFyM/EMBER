@@ -79,8 +79,10 @@ class ResidentCompiler:
     def compile(self, job):
         from ember.writer.materialization import _compile_condition
 
+        control = job.get("control")
+        extras = {"control": control, "video_task": self.tasks[control["video_global_task_id"]]} if control else {}
         return _compile_condition(self.runtime, self.store, self.tasks[job["task"]], job["demos"],
-                                  self.output, self.record)
+                                  self.output, self.record, **extras)
 
     def close(self):
         if self.store is not None:

@@ -55,7 +55,7 @@ def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
-           "source": SOURCE, "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
+           "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
@@ -100,7 +100,7 @@ def bank(tmp_path, request):
                 "raw_frame_count": raw, "sampled_frame_count": len(indices), "frame_indices": indices}],
             "adapter": file_record(path), "writer_invocations": 1, "single_complete_rank16": True}
     manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed", "evaluation_role": "development_train",
-        "arm": "correct", "selection": selection, "source": SOURCE, "asset_root": str(ROOT), "writer_checkpoint": authority,
+        "arm": "correct", "selection": selection, "source": copy.deepcopy(SOURCE), "asset_root": str(ROOT), "writer_checkpoint": authority,
         "materialization_git": GIT, "lora_contract": file_record(lora_path), "method": method_metadata(run),
         "tasks": rows, "conditions": list(conditions.values()), "single_complete_rank16": True,
         "information_wall": {"teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,

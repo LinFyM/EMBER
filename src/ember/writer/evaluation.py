@@ -20,6 +20,8 @@ from ember.pi05_source_checkpoint import read_json
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metadata, condition_id,
     file_record, frozen_authority, inspect_writer_checkpoint, method_metadata, planned_episodes,
     selection_contract, source_matches)
+from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
+                                         inspect_diagnostic_contract)
 
 
 EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
@@ -67,9 +69,11 @@ def _inspect_adapter_file(condition: Mapping[str, Any], checkpoint: Mapping[str,
             value = handle.get_slice(name)
             if tuple(value.get_shape()) != shape or value.get_dtype() != "F32":
                 raise ValueError("materialized adapter must retain complete FP32 native shapes")
+            if condition.get("video_control", {}).get("identity_zero_delta") and torch.count_nonzero(handle.get_tensor(name)):
+                raise ValueError("no-video adapter must be the actual complete zero-delta identity")
 
 
-def _validate_video_frames(videos, demos, lengths) -> None:
+def _validate_video_frames(videos, demos, lengths, control=None) -> None:
     if [video["demo_index"] for video in videos] != demos:
         raise ValueError("actual teacher videos differ from the selected K-set")
     for video in videos:
@@ -81,6 +85,10 @@ def _validate_video_frames(videos, demos, lengths) -> None:
             indices.append(raw - 1)
         if video["frame_indices"] != indices or video["sampled_frame_count"] != len(indices):
             raise ValueError("teacher stride5/full-frame provenance changed")
+        if control is not None:
+            _, _, expected = controlled_frames(indices, control=control, demo=video["demo_index"])
+            if any(video.get(key) != value for key, value in expected.items()):
+                raise ValueError("real source frames, displayed order or complete-forward control provenance changed")
 
 
 def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
@@ -93,14 +101,22 @@ def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
         raise ValueError("condition bank contains duplicates, missing rows, or unused adapters")
     for key, condition in conditions.items():
         task = tasks.get(condition["global_task_id"])
+        if task is None:
+            raise ValueError("materialized condition task is outside its registered bank")
         demos = condition["teacher_demo_indices"]
-        if (task is None or any(condition[field] != task[field] for field in ("suite", "task_id", "language"))
-                or key != condition_id(task["global_task_id"], demos)
-                or len(demos) != manifest["selection"]["K"] or demos != sorted(set(demos))
-                or condition.get("writer_invocations") != 1 or condition.get("single_complete_rank16") is not True
+        arm = manifest["arm"]
+        control = control_provenance(manifest["selection"], condition["global_task_id"], tasks) if arm in CONTROL_ARMS else None
+        no_video = arm == "no_video"
+        donor = control["video_global_task_id"] if control else condition["global_task_id"]
+        identity = {field: task[field] for field in ("suite", "task_id", "language")}
+        identity.update(condition_id=condition_id(task["global_task_id"], demos, arm=arm, video_task=donor),
+                        teacher_demo_indices=sorted(set(demos)), video_control=control,
+                        writer_invocations=0 if no_video else 1, single_complete_rank16=True)
+        if (any(condition.get(field) != value for field, value in identity.items())
+                or len(demos) != (0 if no_video else manifest["selection"]["K"])
                 or Path(condition["adapter"]["path"]).resolve() != root / f"{key}.safetensors"):
             raise ValueError("materialized condition task/video/adapter provenance changed")
-        _validate_video_frames(condition["teacher_videos"], demos, lengths[task["global_task_id"]])
+        _validate_video_frames(condition["teacher_videos"], demos, lengths[donor] if donor is not None else (), control)
         for episode in task["episodes"]:
             if episode["condition_id"] == key and episode["teacher_demo_indices"] != demos:
                 raise ValueError("episode mapping changed its actual teacher K-set")
@@ -115,7 +131,11 @@ def _validate_round(selection, rows, require_formal) -> None:
         return
     for row in rows:
         episodes = row["episodes"]
-        for field in ("teacher_demo_indices", "paired_correct_demos", "paired_other_demos"):
+        fields = ("paired_correct_demos", "paired_other_demos") if selection["arm"] == "no_video" else (
+            "teacher_demo_indices", "paired_correct_demos", "paired_other_demos")
+        if selection["arm"] == "no_video" and any(episode["teacher_demo_indices"] for episode in episodes):
+            raise ValueError("no-video episodes retain paired ordinals but cannot claim actual teacher reads")
+        for field in fields:
             videos = [episode[field] for episode in episodes]
             if any(len(value) != 1 for value in videos):
                 raise ValueError("K1 episode must identify exactly one actual teacher video")
@@ -155,10 +175,18 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
 
 def validate_information_wall(manifest) -> None:
     wall = manifest["information_wall"]
+    no_video = manifest["arm"] == "no_video"
     required = {"teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
                 "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-                "writer_invocations_per_unique_condition": 1, "total_writer_invocations": len(manifest["conditions"]),
-                "outcome_dependent_video_selection": False, "shuffled_reversed_wrong_no_video": False}
+                "writer_invocations_per_unique_condition": 0 if no_video else 1,
+                "total_writer_invocations": 0 if no_video else len(manifest["conditions"]),
+                "outcome_dependent_video_selection": False,
+                "shuffled_reversed_wrong_no_video": manifest["arm"] in CONTROL_ARMS}
+    if manifest["arm"] in CONTROL_ARMS:
+        required.update(materialization_rgb_video_reads=0 if no_video else len(manifest["conditions"]),
+                        deployment_frozen_source_vjp=not no_video, deployment_loss_or_optimizer=False)
+    if no_video:
+        required["deployment_inputs"] = []
     if any(wall.get(key) != value for key, value in required.items()):
         raise ValueError("video Writer information wall changed")
 
@@ -174,8 +202,12 @@ def inspect_horizon_writer_bank(
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
-        if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run) or not source_matches(run["source"], source):
+        if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
             raise ValueError("Writer checkpoint or method provenance changed")
+        diagnostic = inspect_diagnostic_contract(manifest.get("diagnostic_contract"), selection=manifest["selection"],
+                                                checkpoint=checkpoint, run=run, asset_root=Path(manifest["asset_root"]))
+        if manifest.get("diagnostic_contract") != diagnostic:
+            raise ValueError("frozen diagnostic contract changed")
         lora_path = Path(manifest["lora_contract"]["path"])
         if manifest["lora_contract"] != file_record(lora_path):
             raise ValueError("LoRA topology authority changed")
@@ -192,11 +224,14 @@ def inspect_horizon_writer_bank(
 def episode_evidence(adapter: Mapping[str, Any], task: Mapping[str, Any], episode: Mapping[str, Any]) -> dict[str, Any]:
     conditions = {row["condition_id"]: row for row in adapter["conditions"]}
     condition = conditions[episode["condition_id"]]
-    return {"schema_version": EPISODE_SCHEMA, **dict(condition), **dict(episode),
+    evidence = {"schema_version": EPISODE_SCHEMA, **dict(condition), **dict(episode),
             "selection_seed": adapter["selection"]["seed"], "selection_mode": adapter["selection"]["mode"],
             "K": adapter["selection"]["K"], "arm": adapter["arm"],
             "writer_checkpoint": dict(adapter["writer_checkpoint"]), "method": dict(adapter["method"]),
             "source_checkpoint": adapter["source"]["checkpoint"], "global_task_id": task["global_task_id"]}
+    if "diagnostic_contract" in adapter:
+        evidence["diagnostic_contract"] = dict(adapter["diagnostic_contract"])
+    return evidence
 
 
 def validate_horizon_writer_episode(adapter, evidence, *, suite: str, task_id: int, init_state_id: int) -> bool:

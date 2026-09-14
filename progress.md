@@ -1,12 +1,27 @@
 # EMBER progress
 
-## 当前状态（2026-09-14）
+## 当前状态（2026-09-15）
 
 Owner最新批准按已经提出的方案充分分析原因；当前执行[设计§10](docs/process_pullback_writer_design.md#10-原因诊断授权与预登记2026-09-14)。
 范围为固定模型的视频对照、见过／未见教学视频和相邻行为回放，以及train-only有界q／完整LoRA可达性诊断。
 不启动下一轮正式Writer训练，不做q辅助、RL或Test，不自动切换方法；结果直接在对话中说明，不新增用户报告。
 原纯FM900研究、清理、效率优化和学习窗口均已完成；原结果及资格裁决保留，不用本次诊断改写。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
+
+原因诊断原件位于`runs/analysis/process_pullback_writer_20260914/causal_diagnostics/`：
+
+- 诊断实现已集成并推送`adc31a15`，113项相关检查通过；新冻结运行树为`.codex/tmp/pullback-causal-runtime`。
+  两棵开发工作树已验证集成并清理，原训练和原评测运行树保留。
+- 固定900的same-task-other完整400为65，correct为64；R/G/L50/15/14，churn29，Jaccard .6329，
+  换视频差额task-bootstrap CI[-1.75,+2.50]pp。12 workers全部exit0；外层脚本因运行中被改写而收尾exit127，
+  console日志被尾部错误命令覆盖，但原400 rows、aggregate、completion完整。事故与不重跑依据已记录。
+- no-video真实零LoRA与400位置映射已检查；零视频／Writer／VJP读取，复用同执行与逐行RNG合同的source47/400，新增rollout0。
+- 训练池teacher16–19的300／600／900共288条件，以及wrong／shuffled／reversed共1,200条件全部物化完成；
+  后者均真实双路RGB变换后完整重编译、零复用。对应闭环及固定96条行为回放仍待执行。
+- train-only可达性smoke完成：首task两步，两臂均正常返回，source／Writer冻结，独立动作无梯度，
+  用时189秒、峰值13.14GiB；只证明机制与成本。完整24task拟合已按原预算分配至gpu01四卡，未更新正式Writer。
+- 本阶段strg01 data1 quota用量862,359,456KiB、soft quota1,073,741,824KiB；本研究实际约15.13GiB，
+  后续额外峰值预算18GiB仍在独立quota内。拟合产物只作本次诊断，不作为后继初始化。
 
 900更新及300／600／900的六个完整面板、1,488条闭环rows全部结束。
 结论为有局部能力获取，尚未形成广泛、稳定的未见task迁移；未获前置资格，没有selected checkpoint或最终视频controls。

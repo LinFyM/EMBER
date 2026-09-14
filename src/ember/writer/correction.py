@@ -1,71 +1,45 @@
-"""Bare frozen source coordinates and training-only local correction cotangents.
+"""Legal bare source coordinates, projected pullback and chunked exact q credit.
 
-The deployment reader has only legal pre-Gemma inputs and the public probe.
-The supervisor separately owns privileged action labels and sealed teacher eta.
+There are no teacher action labels, eta records or learned decoder parameters.
+The source is read outside both observer Meta and execution-adapter scopes.
 """
 from __future__ import annotations
 
-import math
 from contextlib import ExitStack
-from pathlib import Path
+from dataclasses import dataclass
 
 import torch
+import torch.nn.functional as F
 
 from ember.ecp.policy_effects import prepare_prefix_features_and_cache
-from ember.pi05_source_checkpoint import read_json
-from ember.writer.native import FrozenInputChunk
+from ember.writer.factor import compile_source_lora, native_input_basis
+from ember.writer.native import NativeCondition
 
 
-FIELD_UNIT = 5.823084826577233e-6
-FIELD_ETA_MANIFEST = "runs/analysis/native_correction_writer_20260913/correction_labels/registration.json"
+@dataclass(frozen=True)
+class SourceCoordinates:
+    """Frozen CPU predictions/bases and the original legal condition; not a Module."""
 
+    reader: NativeCorrectionReader
+    condition: NativeCondition
+    predictions: torch.Tensor
+    bases: dict[str, torch.Tensor]
 
-def validate_field_config(config, *, model_unit):
-    expected = {"positions_per_condition": 4, "future_horizon": 15, "seed": 20260914,
-                "coefficient": .1, "unit": FIELD_UNIT, "eta_manifest": FIELD_ETA_MANIFEST}
-    if config != expected or model_unit != FIELD_UNIT:
-        raise ValueError("registered local correction field supervision changed")
-
-
-def future_velocity_losses(prediction, noise, actions, counts):
-    """Each frame averages only its available future control steps and seven axes."""
-    if (actions.ndim != 3 or actions.shape[-1] != 7 or counts.shape != actions.shape[:1]
-            or prediction.shape != noise.shape or prediction.shape[0] != len(actions)
-            or prediction.shape[1] < actions.shape[1] or prediction.shape[-1] < 7
-            or bool((counts < 0).any()) or bool((counts > actions.shape[1]).any())):
-        raise ValueError("local future-action target shape or valid-step count changed")
-    horizon = actions.shape[1]
-    valid = torch.arange(horizon, device=prediction.device)[None] < counts[:, None]
-    error = prediction[:, :horizon, :7].float() - (noise[:, :horizon, :7] - actions)
-    return (error.square() * valid[..., None]).sum((1, 2)) / (counts.clamp_min(1) * 7)
-
-
-def local_field_loss(prediction, target, *, unit):
-    """One physical-coordinate mean across all frames, horizons and 38 outputs."""
-    if not prediction or set(prediction) != set(target) or not math.isfinite(unit) or unit <= 0:
-        raise ValueError("local field loss needs matching complete physical fields and a fixed unit")
-    numerator, coordinates = 0., 0
-    leading = next(iter(prediction.values())).shape[:2]
-    for name, value in prediction.items():
-        truth = target[name]
-        if value.ndim != 3 or value.shape[:2] != leading or value.shape != truth.shape:
-            raise ValueError("local field lost a sampled position, horizon or native output coordinate")
-        numerator = numerator + (value.float() - truth.to(value.device, dtype=torch.float32)).square().sum()
-        coordinates += value.numel()
-    if coordinates == 0:
-        raise ValueError("local field needs at least one real position")
-    return numerator / (coordinates * unit ** 2)
+    def compile(self, q: torch.Tensor) -> dict[str, torch.Tensor]:
+        return compile_source_lora(self, q)
 
 
 class NativeCorrectionReader:
-    """One bare state-free source owner, outside both teacher Meta scopes."""
+    """Read each source graph in its native precision, with only public noise a leaf."""
 
     def __init__(self, policy, contract, probe):
         self.policy, self.contract, self.probe = policy, contract, probe
         self.modules = tuple(getattr(policy.get_submodule(target.name), "base_layer",
                                      policy.get_submodule(target.name)) for target in contract.targets)
-        if any(parameter.requires_grad for parameter in policy.parameters()) or probe.shape != (50, 32):
-            raise ValueError("native correction requires a frozen source and its complete public probe")
+        if (any(parameter.requires_grad for parameter in policy.parameters()) or probe.shape != (50, 32)
+                or contract.alpha != contract.rank or not contract.targets
+                or not 0 < contract.rank <= min(target.in_features for target in contract.targets)):
+            raise ValueError("source pullback requires a frozen policy, public 50x32 probe and alpha=rank")
 
     def _forward(self, chunk, *, with_grad):
         device = self.probe.device
@@ -78,7 +52,7 @@ class NativeCorrectionReader:
                     raise RuntimeError("native target ran more than once in one bare source read")
                 if (arguments[0].shape != (len(prefix.padding), 50, target.in_features)
                         or output.shape != (len(prefix.padding), 50, target.out_features)):
-                    raise ValueError("native source lost a frame, horizon or actual linear coordinate")
+                    raise ValueError("source pullback lost a frame, horizon or actual linear coordinate")
                 captured[target.name] = (arguments[0], output)
             return receive
 
@@ -86,112 +60,104 @@ class NativeCorrectionReader:
             _, cache = prepare_prefix_features_and_cache(self.policy, prefix, native_precision=True)
             for target, module in zip(self.contract.targets, self.modules, strict=True):
                 stack.callback(module.register_forward_hook(hook(target)).remove)
-            # Public noise alone connects every Action Expert output to autograd;
-            # source weights never become leaves or receive parameter gradients.
             noise = self.probe.expand(len(prefix.padding), -1, -1).detach().requires_grad_(with_grad)
             clock = torch.ones(len(prefix.padding), device=device)
             velocity = self.policy.model.denoise_step(prefix.padding, cache, noise, clock)
-        if len(captured) != len(self.modules) or not torch.isfinite(velocity).all():
+        if (len(captured) != len(self.modules) or velocity.shape != noise.shape
+                or not torch.isfinite(velocity).all()):
             raise RuntimeError("bare source read is incomplete or nonfinite")
-        return velocity, noise, captured
+        return velocity, captured
 
     @torch.no_grad()
-    def read(self, condition):
-        if len(condition.videos) != 1:
-            raise ValueError("local correction compilation currently requires one complete video")
-        chunks = []
+    def read(self, condition: NativeCondition) -> SourceCoordinates:
+        if len(condition.videos) != 1 or not condition.videos[0]:
+            raise ValueError("source pullback currently requires one complete real video")
+        owners, grams, predictions = {}, {}, []
         for chunk in condition.videos[0]:
-            _, _, captured = self._forward(chunk, with_grad=False)
-            copies, values = {}, {}
-            for name, (value, _) in captured.items():
-                # Shared q/v inputs retain one CPU FP32 copy.
-                if id(value) not in copies:
-                    copies[id(value)] = value.detach().float().cpu()
-                values[name] = copies[id(value)]
-            chunks.append(values)
-        if not chunks:
-            raise ValueError("bare source input read needs actual video frames")
-        joined, shared = {}, {}
-        for target in self.contract.targets:
-            identity = tuple(id(chunk[target.name]) for chunk in chunks)
-            if identity not in shared:
-                shared[identity] = torch.cat([chunk[target.name] for chunk in chunks])
-            joined[target.name] = shared[identity]
-        if any(value.shape[0] != len(condition.frame_indices[0]) for value in joined.values()):
-            raise ValueError("bare native inputs omitted a teacher frame")
-        return (joined,)
+            velocity, captured = self._forward(chunk, with_grad=False)
+            predictions.append((self.probe[None, :, :7] - velocity[:, :, :7]).float().cpu())
+            if not owners:
+                shared = {}
+                for target in self.contract.targets:
+                    identity = id(captured[target.name][0])
+                    owners[target.name] = shared.setdefault(identity, target.name)
+            for target, owner in owners.items():
+                if captured[target][0] is not captured[owner][0]:
+                    raise ValueError("shared native input identity changed between frame chunks")
+                if owner != target:
+                    continue
+                value = captured[target][0].detach().float().flatten(0, 1)
+                with torch.autocast(value.device.type, enabled=False):
+                    if owner not in grams:
+                        grams[owner] = value.T @ value
+                    else:
+                        grams[owner].addmm_(value.T, value)
+        predictions = torch.cat(predictions)
+        if len(predictions) != len(condition.frame_indices[0]):
+            raise ValueError("bare source coordinates omitted a real video frame")
+        basis = {owner: native_input_basis(gram, self.contract.rank) for owner, gram in grams.items()}
+        return SourceCoordinates(self, condition, predictions, {name: basis[owner] for name, owner in owners.items()})
 
-    def fields(self, condition, ordinals, actions, counts, *, eta):
-        """Training-only output cotangents; labels never become condition inputs."""
-        if (len(condition.videos) != 1 or ordinals.ndim != 1 or len(ordinals) != len(actions)
-                or not len(ordinals) or not bool((ordinals[1:] > ordinals[:-1]).all())
-                or int(ordinals[0]) < 0 or int(ordinals[-1]) >= len(condition.frame_indices[0])
-                or not math.isfinite(eta) or eta < 0):
-            raise ValueError("local field labels need unique sorted real positions and sealed nonnegative eta")
-        collected, cursor = {target.name: [] for target in self.contract.targets}, 0
-        for chunk in condition.videos[0]:
+    @torch.no_grad()
+    def pullback(self, coordinates, q):
+        """B_l = sum_(frame,horizon) cotangent(y_l)^T (X_l A_l^T) / T."""
+        device, total = self.probe.device, len(coordinates.predictions)
+        values = [torch.zeros(target.out_features, self.contract.rank, device=device)
+                  for target in self.contract.targets]
+        cursor = 0
+        for chunk in coordinates.condition.videos[0]:
             stop = cursor + len(chunk.padding)
-            selected = torch.nonzero((ordinals >= cursor) & (ordinals < stop), as_tuple=False).flatten()
-            if len(selected):
-                local = (ordinals[selected] - cursor).cpu()
-                part = FrozenInputChunk(*(value[local] for value in (
-                    chunk.embeddings, chunk.padding, chunk.evidence_mask, chunk.task_mask)))
-                with torch.enable_grad(), torch.autocast(self.probe.device.type, enabled=False):
-                    velocity, noise, captured = self._forward(part, with_grad=True)
-                    loss = future_velocity_losses(velocity, noise, actions[selected], counts[selected]).sum()
-                    outputs = tuple(captured[target.name][1] for target in self.contract.targets)
-                    gradients = torch.autograd.grad(loss, outputs)
-                for target, gradient in zip(self.contract.targets, gradients, strict=True):
-                    value = gradient.detach().float().mul(-eta)
-                    if not torch.isfinite(value).all():
-                        raise RuntimeError("bare source produced a nonfinite local correction target")
-                    collected[target.name].append(value.cpu())
+            with torch.enable_grad(), torch.autocast(device.type, enabled=False):
+                velocity, captured = self._forward(chunk, with_grad=True)
+                outputs = tuple(captured[target.name][1] for target in self.contract.targets)
+                cotangent = F.pad(q[cursor:stop].detach().to(device, dtype=torch.float32), (0, 25))
+                gradients = torch.autograd.grad(velocity, outputs, grad_outputs=cotangent)
+            for target, gradient, value in zip(self.contract.targets, gradients, values, strict=True):
+                with torch.autocast(device.type, enabled=False):
+                    x = captured[target.name][0].detach().float().flatten(0, 1)
+                    address = x @ coordinates.bases[target.name].to(device).T
+                    value.addmm_(gradient.float().flatten(0, 1).T, address)
             cursor = stop
-        fields = {name: torch.cat(values) for name, values in collected.items()}
-        if any(len(value) != len(ordinals) for value in fields.values()):
-            raise ValueError("local correction target omitted a sampled frame")
-        return fields
+            del velocity, captured, outputs, gradients
+        for value in values:
+            value.div_(total)
+            if not torch.isfinite(value).all():
+                raise RuntimeError("fixed source pullback produced nonfinite factors")
+        return tuple(values)
 
+    @torch.no_grad()
+    def adjoint(self, coordinates, gradients):
+        """Exact transpose of pullback, using native eager attention's supported AD.
 
-class LocalFieldSupervisor:
-    """Training-only authority for sealed eta and online future-action cotangents."""
-
-    def __init__(self, reader, data, processor, config):
-        self.reader, self.data, self.processor, self.config = reader, data, processor, config
-        path = data.asset_root / config["eta_manifest"]
-        registration, seal = read_json(path), read_json(path.parent / "completion.json")
-        expected = {"schema": "native_source_correction_labels_v1", "rank": 16, "target_count": 38,
-                    "state_contract": "state_free", "probe_seed": 1729, "flow_time": 1.,
-                    "source_frame_stride": 5, "source_operator_commit": "f39d594f",
-                    "privileged_training_labels_only": True}
-        pairs = {(task, demo) for task in data.tasks for demo in data.video_pool}
-        if (any(registration.get(key) != value for key, value in expected.items())
-                or set(registration["tasks"]) != set(data.tasks)
-                or tuple(registration["demos"]) != data.video_pool
-                or seal.get("status") != "complete" or seal.get("episodes") != len(pairs)
-                or len(registration["entries"]) != len(pairs)):
-            raise ValueError("local field eta requires the complete sealed train24 teacher pool")
-        self.etas = {}
-        for entry in registration["entries"]:
-            task, demo = int(entry["task"]), int(entry["demo"])
-            metadata = Path(entry["adapter"]).with_suffix(".json")
-            record = read_json(metadata)
-            eta = float(record["fit"]["eta"])
-            if ((task, demo) not in pairs or (task, demo) in self.etas
-                    or record.get("task") != task or record.get("teacher_demo") != demo
-                    or record.get("suite") != data.tasks[task].suite or record.get("arm") != "state_free"
-                    or not math.isfinite(eta) or eta < 0):
-                raise ValueError("sealed teacher eta identity or finite-value contract changed")
-            # The historical query scores and adapter factors have no consumer.
-            self.etas[task, demo] = (eta, str(metadata))
-
-    def targets(self, condition, task, demo, *, query_seed):
-        ordinals, raw, counts, trace = self.data.local_field_batch(
-            task, demo, condition.frame_indices[0], query_seed=query_seed,
-            positions_per_condition=self.config["positions_per_condition"],
-            future_horizon=self.config["future_horizon"], seed=self.config["seed"],
-        )
-        eta, metadata = self.etas[task, demo]
-        actions = self.processor.normalize_action(raw)
-        fields = self.reader.fields(condition, ordinals, actions, counts.to(actions.device), eta=eta)
-        return ordinals, fields, {**trace, "field_eta": eta, "field_eta_source": metadata}
+        Differentiate J_y F^T u with respect to dummy u. X A^T and incoming
+        factor cotangents are fixed directions; no source-weight derivative
+        or finite-difference approximation is constructed.
+        """
+        device, total = self.probe.device, len(coordinates.predictions)
+        incoming = tuple(None if value is None else value.detach().to(device, dtype=torch.float32)
+                         for value in gradients)
+        result = []
+        for chunk in coordinates.condition.videos[0]:
+            with torch.enable_grad(), torch.autocast(device.type, enabled=False):
+                velocity, captured = self._forward(chunk, with_grad=True)
+                outputs = tuple(captured[target.name][1] for target in self.contract.targets)
+                dummy = torch.zeros_like(velocity[:, :, :7], requires_grad=True)
+                cotangents = torch.autograd.grad(velocity, outputs, F.pad(dummy, (0, 25)), create_graph=True)
+                directions = []
+                with torch.no_grad():
+                    for target, output, gradient in zip(self.contract.targets, outputs, incoming, strict=True):
+                        if gradient is None:
+                            direction = torch.zeros_like(output)
+                        else:
+                            x = captured[target.name][0].detach().float()
+                            address = x @ coordinates.bases[target.name].to(device).T
+                            direction = ((address @ gradient.T) / total).to(output.dtype)
+                        directions.append(direction)
+                gradient, = torch.autograd.grad(cotangents, dummy, grad_outputs=directions)
+            if not torch.isfinite(gradient).all():
+                raise RuntimeError("fixed source pullback produced nonfinite q credit")
+            result.append(gradient.detach())
+            # The first VJP retained its source graph to form the adjoint.
+            # Release every graph reference before the next real frame chunk.
+            del velocity, captured, outputs, output, dummy, cotangents, directions
+        return torch.cat(result)

@@ -4,7 +4,7 @@
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。
 
-§94–98分别记录固定纠正闭环、语义路径比较、冻结行为回放、局部场rank前提及合法局部场Writer的完整结果。
+§94–99记录固定纠正闭环、语义路径比较、冻结行为回放、局部场及G P rank前提与合法局部场Writer的完整结果。
 这些结果不能混成一套已经取得有益视频特异性的模型；旧普通FM及其它合法视频Writer的能力正例也继续保留。
 
 ## 1. 先分清三个问题
@@ -1659,3 +1659,16 @@ breadth均3、Spatial均零，train breadth均7，与source仍在相同的有限
 完整原件在`runs/analysis/local_correction_field_writer_20260914/`：READOUT、paired_readout、bounded100_decision、
 全部训练／物化／评测合同、checkpoint、bank、raw rows及completion。训练代码50dafb05，推理／评测46aaf22d。
 整体goal未完成；接续先综合已有学习正负证据，不从这个non-pass自动启动新的局部头、监督或优化链。
+
+## 99. 全视频native X的PCA16出口保留部分真实作用，但不是共享获取证据（2026-09-14）
+
+Process Pullback Writer在正式学习前，按已登记96条件复用原teacher16–19、四支持的真实纠正q／eta及query42–45。
+本次唯一主要变量是完整stride5视频的native X所确定的PCA16投影G P；q用T/4还原原四支持平均，余下50×7位置为零。
+de7237a8完成两个worker全部exit0、1,536条件query及t1／full10两读出；query用自身执行state，全部finite。
+
+t1 source .11977705→G P .11523266，改善95%CI [.00142637,.00853139]，16/24task与四suite净正；
+full10 .16493043→.15792518，CI [.00191831,.01375751]，20/24task与三suite净正。原注册功能前提通过。
+相对原G平均改善保留72.56%／76.29%，原G−G P的MSE差CI均严格负，投影有实际功能损失，不能宣称无损或非劣。
+
+该前提只支持继续检验此固定出口的合法学习，不证明无动作视频能预测有效q、不证明闭环或held转移，也不抵销§98的获取缺口。
+原件、逐task／suite和task-cluster bootstrap在`runs/analysis/process_pullback_writer_20260914/functional/summary.json`。

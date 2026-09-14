@@ -117,3 +117,35 @@ video.py拥有任务条件化过程与q预测；correction.py/factor.py拥有固
 隔离并发实现使用codex worktree，集成main并push；正式train/eval来自clean pushed detached frozen commit。
 每次GPU launch前同时检查两节点；新大run root前按strg01独立quota及实际占用估计峰值，不复制source／数据／模型。
 完整训练checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology及schema。
+
+## 8. First learning window registration（2026-09-14，正式训练／闭环前）
+
+96条件的G P功能前提通过：t1的source MSE .11977705→.11523266，改善CI [.00142637,.00853139]；
+full10 .16493043→.15792518，改善CI [.00191831,.01375751]，分别4／3个正suite且全部finite。
+相对原完整G平均保留72.56%／76.29%的改善，故投影有实际损失，不能宣称等效保留全部纠正。
+原件与逐task／suite在`runs/analysis/process_pullback_writer_20260914/functional/summary.json`。
+
+初始窗口固定fresh **900个logical updates**，每更新四task、四K1条件、256个跨episodequeries，
+合计**3,600教学条件／230,400 queries**。100的倍数保存完整checkpoint；**300／600／900**各做完整correct
+validation400和train96，同时在0／300／600／900做既定独立动作诊断。300达到约76,800 queries，接近v5.2
+历史query曝光；900达到其条件曝光并超过v6历史query数量。这给予更有信息量的学习机会，不保证新方法已充分学习。
+
+三个节点共1,488条闭环rows，跨checkpoint固定state/video/RNG映射。既有source train17/96与validation47/400只在
+当前执行合同和逐episode pairing一致时复用原rows，来源登记到本轮运行记录；不以旧Writer结果代替source。
+source的两个参照为`native_correction_writer_20260913/oracle_rollout/evaluation/source`与
+`semantic_path_writer_20260914/source400`。
+
+继续与裁决服从§6：看实际获取、跨task／suite分布及相邻保持，报告source差额CI、breadth、R/G/L、churn和重合；
+真实窗口后持续接近source或退化则降低本组合的支持，完成有限原因分析，不自动追加到1200／1500或小扫。
+有明确获取且仍在保持／改善时可登记有依据的后续窗口；loss或本节privileged正例不构成延长理由。
+same-task-other和最终controls仍须先满足前置资格并冻结单checkpoint；本节不提前打开sealed controls。
+
+最长task38/demo36（105个真实采样帧）的两次联合更新与部署编译均通过。缓存裸source前缀、直接q伴随及官方FM
+prefix-KV路径后，frame_chunk4／8／16第二次更新分别31.95／26.72／23.99秒；原full-prefix基线46.86秒。
+选用**frame_chunk16、FM microbatch16**，峰值37.01GiB、部署7.78秒；FM batch32相对16的收益不足1%，保持16。
+全部模块第二次获得finite信用，source冻结；真实nonidentity全38 FM对照梯度cosine .999899、norm比1.00363、loss差0.155%。
+原严格数值probe的阈值失败保留；带指标对照和安装版运算核对未显示语义变化，不据此关闭BF16或追求逐tensor一致。
+profile仅为一次条件更新，正式logical update仍须汇总四task。真实900更新采样共129,188帧，四卡最长rank平均58.53帧；
+按实测估计更新本体3.86–4.19小时，正式准备按约4–5小时及额外诊断／评测时间执行，并以实际墙钟更新估计。
+九份完整checkpoint加首轮1,488个物化LoRA约8GiB，初段预留12GiB；连同有资格才触发的controls，整轮预计峰值24GiB。
+这在清理后约217GiB独立data1配额余量内；正式launch仍登记当时实际quota、两节点GPU与单节点拓扑。

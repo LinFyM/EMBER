@@ -1,5 +1,10 @@
 # EMBER research history
 
+2026-09-14完成[Process Pullback Writer的G P出口功能前提](process_pullback_writer_design.md#8-first-learning-window-registration2026-09-14正式训练闭环前)：
+de7237a8、96条件／1,536 query、两worker exit0；t1／full10 source改善CI下界.001426／.001918，4／3个suite净正。
+PCA16保留原G平均改善72.56%／76.29%，有明确功能损失；仅通过本出口privileged前提，未产生合法Writer闭环成绩。
+原件见`runs/analysis/process_pullback_writer_20260914/functional/summary.json`与findings§99。
+
 2026-09-14完成[局部纠正场Writer的完整比较](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)：
 两臂fresh100、四checkpoint与八面板／1,984rows完整，24个worker均exit0且配对审计通过。
 train96有序／无序18/16→17/17，validation48/47→47/50，source17/96与47/400；三个预登记资格均失败。
@@ -1654,3 +1659,21 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 
 逐根范围与删除字节见[清理记录](../runs/analysis/workspace_cleanup_20260914.json)。清理后的strg01 data1用量846,270,296KiB、
 soft quota 1,073,741,824KiB，余量约217GiB；共享文件系统空间与个人quota分别核验。后续新方法继续使用data1，不以更换磁盘代替清理。
+
+## 2026-09-14：新Process Pullback Writer的机制、效率及出口前提
+
+f9f142e5起实现完整过程→7维q→裸source固定导数→全视频PCA16唯一LoRA；de7237a8集成冻结prefix KV复用、
+直接q伴随信用与官方FM prefix-KV／suffix路径。175项相关CPU检查通过，实际105帧最长视频两次联合更新、
+identity、全38-target／50×7、source冻结与部署编译通过；profile均为一次条件，初始化不复用，没有正式checkpoint。
+
+原full-prefix B8第二次46.86秒、34.23GiB、部署13.68秒；新frame_chunk4／8／16分别31.95／26.72／23.99秒，
+最终选frame16／FM16，峰值37.01GiB、部署7.78秒。FM batch32收益不足1%，未继续扩大。
+原B16 OOM和一次未打印指标的严格FM probe阈值失败保留；带指标真实nonidentity对照通过，loss差0.155%、
+全38目标梯度cosine .999899、norm比1.00363。安装版两路径的mask、RoPE及head坐标对应，未发现数学语义变化；
+没有为低位一致关闭BF16或保留旧full-prefix生产路径。全部原始profile在本轮`profile/`。
+
+同commit完成预登记train24×teacher16–19的96条件G P前提，均复用原eta／source／G参照及动作42–45的固定query。
+t1 source .11977705、G .11351420、G P .11523266；full10 .16493043／.15574849／.15792518。
+source−G P task-cluster95%CI为[.00142637,.00853139]／[.00191831,.01375751]，4／3个正suite，全finite，原前提通过。
+原G−G P区间均负，约保留72.56%／76.29%的改善；不将此局部privileged正例算作共享Writer或闭环证据。
+原件在`runs/analysis/process_pullback_writer_20260914/functional/`，只保留预测、映射及合同，不另存可重建LoRA／完整G。

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_process_pullback_writer_config_v1",
-  "status": "awaiting_profile_registration",
+  "status": "registered_process_pullback_learning",
   "design": "docs/process_pullback_writer_design.md",
   "data": {
     "seed": 7,
@@ -133,7 +133,7 @@
     "probe_seed": 1729,
     "probe_distribution": "torch.randn CPU float32 [50,32], same public tensor for every task/frame",
     "flow_time": 1,
-    "frame_chunk": 4,
+    "frame_chunk": 16,
     "response": "post_final_norm_actual_action_out_proj_input",
     "visual_evidence": "same_version_teacher_VL_Meta_Z_and_KV; frozen_pre_Gemma_embeddings_only",
     "vl_meta_rank": 4,
@@ -157,7 +157,7 @@
     "joint_train_all_writer_modules": true
   },
   "runtime": {
-    "policy_microbatch": 8,
+    "policy_microbatch": 16,
     "prefix_cache_bytes": 2147483648
   },
   "evidence": {
@@ -215,7 +215,11 @@
       ],
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
-      "optimizer_updates": []
+      "optimizer_updates": [
+        300,
+        600,
+        900
+      ]
     },
     "qualification": {
       "tasks": [
@@ -287,12 +291,26 @@
         48,
         49
       ],
-      "registration_status": "awaiting_profile_based_learning_window_before_closed_loop_scores",
-      "optimizer_updates": [],
+      "registration_status": "registered_before_formal_writer_training_and_scores",
+      "optimizer_updates": [
+        300,
+        600,
+        900
+      ],
       "qualification_completion": "single-checkpoint paired400 correct acquisition relative to paired source across tasks and suites; adjacent success-set retention and breadth; report task/suite, retained/gained/lost, churn and overlap",
       "same_task_other": "complete matched400 after ability and adjacent qualification, before single-checkpoint freeze"
     },
-    "checkpoint_updates": [],
+    "checkpoint_updates": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
     "supervised_validation": {
       "task_ids": [
         0,
@@ -321,7 +339,10 @@
         39
       ],
       "optimizer_updates": [
-        0
+        0,
+        300,
+        600,
+        900
       ],
       "action_demos": [
         42,
@@ -427,7 +448,7 @@
       ]
     },
     "profile_registration": {
-      "status": "baseline_complete_optimized_profile_pending",
+      "status": "complete",
       "scope": "actual longest full dual-camera video; two complete pure-main-FM updates and same-version observer replay; one deployment compilation using frozen source VJP; all38 targets/full50/allframes/source-frozen and second-update joint finite gradients",
       "checkpoint_policy": "register an informative learning window and intermediate/final closed-loop nodes from actual throughput and exposure before formal scores; no inherited fixed update cutoff",
       "profile_initialization_reused": false,
@@ -445,11 +466,26 @@
       "longest_demo": 36,
       "raw_frames": 517,
       "sampled_frames": 105,
-      "second_update_joint_gradients": true
+      "second_update_joint_gradients": true,
+      "selected_profile": "runs/analysis/process_pullback_writer_20260914/profile/chunk16/results.json",
+      "selected_frame_chunk": 16,
+      "selected_policy_microbatch": 16,
+      "update_seconds": [
+        24.24967348598875,
+        23.988156743114814
+      ],
+      "peak_allocated_gib": [
+        36.942275524139404,
+        37.010557651519775
+      ],
+      "deployment_seconds": 7.775227129925042,
+      "real_fm_equivalence": "runs/analysis/process_pullback_writer_20260914/profile/chunk8/results.json: official_full_forward_fm_equivalence",
+      "precision_policy": "accept normal BF16/kernel/reduction differences; actual full38 loss and gradient direction validated; no per-tensor or bit equality requirement",
+      "real_fm_equivalence_passed": true
     },
-    "checkpoint_registration": "pending actual source-pullback functional evidence and longest-video profile",
+    "checkpoint_registration": "900 fresh joint updates; correct strict400 and train96 at300/600/900; save100 multiples; registered before formal Writer learning and scores",
     "source_pullback_functional_check": {
-      "status": "registered_before_execution",
+      "status": "complete_pass",
       "scope": "one bounded training-side check of fixed true q through this G P PCA16 outlet on independent episode queries",
       "use": "precondition for full learning only; privileged correction is not a legal video Writer result",
       "reference_root": "runs/analysis/native_corrective_transfer_20260913/formal",
@@ -507,7 +543,67 @@
       "confidence": 0.95,
       "pass_criterion": "both source-minus-pullback task-cluster CI lower bounds >0; each readout at least two positive suites; all predictions finite",
       "save_lora": false,
-      "projected_output_bytes": 134217728
+      "projected_output_bytes": 134217728,
+      "summary": "runs/analysis/process_pullback_writer_20260914/functional/summary.json",
+      "all_finite": true
+    },
+    "learning_window": {
+      "optimizer_updates": 900,
+      "conditions_per_update": 4,
+      "queries_per_update": 256,
+      "teacher_conditions": 3600,
+      "supervised_queries": 230400,
+      "formal_correct_nodes": [
+        300,
+        600,
+        900
+      ],
+      "checkpoint_updates": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900
+      ],
+      "node_exposures": [
+        {
+          "step": 300,
+          "conditions": 1200,
+          "queries": 76800
+        },
+        {
+          "step": 600,
+          "conditions": 2400,
+          "queries": 153600
+        },
+        {
+          "step": 900,
+          "conditions": 3600,
+          "queries": 230400
+        }
+      ],
+      "historical_scale_context": {
+        "v5_2": {
+          "conditions": 3600,
+          "queries": 75600
+        },
+        "v6": {
+          "conditions": 9600,
+          "queries": 192000
+        }
+      },
+      "rationale": "first300 reaches historical v5.2 query scale;900 reaches v5.2 condition scale and exceeds v6 query count; these are exposure context, not sufficiency proofs",
+      "first_window_extension": "only actual closed-loop acquisition/retention supports a preregistered extension; loss alone or privileged outlet success does not",
+      "scientific_method_change": "requires an explicit evidence-backed new hypothesis and updated design, never a silent resume or parameter sweep",
+      "wall_time_estimate": "approximately4-5h for four-GPU updates including overhead; six-hour all-longest upper estimate before communication, diagnostics and evaluation",
+      "exposure_estimate": "runs/analysis/process_pullback_writer_20260914/learning_exposure_estimate.json",
+      "initial_panel_rows": 1488,
+      "initial_output_estimate_gib": 12,
+      "conditional_full_study_peak_estimate_gib": 24
     }
   },
   "update_version": "source_pullback_pure_main_fm_joint_credit_v1",

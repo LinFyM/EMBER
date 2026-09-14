@@ -7,7 +7,7 @@ Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回
 Owner追加的磁盘、退役源码／入口及文档正文清理已完成；真实机制、效率优化与新低秩出口功能核验通过，当前执行已登记窗口的正式fresh学习。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
-本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，首个300更新的400＋96闭环节点完成，当前exact-resume至600；尚无selected checkpoint。
+本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，300／600的400＋96闭环节点完成，当前exact-resume至900；尚无selected checkpoint。
 CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未取消能力、相邻保持、换视频及最终视频controls的要求。
 
 ## 已实现与验证
@@ -41,15 +41,25 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
 
 当前训练来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
 启动与分段记录为本轮`training_launch_contract.json`，输出`training/`。
-首段300更新正常退出，1,200条件／76,800queries，墙钟5,704秒；24task独立动作诊断FM .153279524→.149746817。
+前两段正常退出，累计600更新、2,400条件／153,600queries，训练墙钟合计11,118秒；
+24task独立动作诊断FM为0／300／600的.153279524／.149746817／.150356967。
 source可训练参数0，完整checkpoint和曝光检查通过；动作loss只是诊断，闭环证据如下。
 物化／评测冻结树`.codex/tmp/process-pullback-evaluation`来自已推送`f5d9db78`，使用四卡按条件动态编译；训练树保持原样。
-300闭环train **24/96**（source17，R/G/L15/9/2，差额task-bootstrap CI[+2.08,+13.54]pp）；validation **64/400**
-（source47，R/G/L38/26/9，CI[-3.25,+16.00]pp）。Validation S/O/G/L为0/26/36/2，breadth仍3/8；
-主要增益为Object task1的5→26，尚未形成广泛迁移或相邻保持证据。两个面板均12 workers exit0。
+600的496条件物化正常完成，569秒、约.871 LoRA/s；300／600四个闭环面板均12 workers exit0，完整配对检查通过。
+
+| 节点 | Train /96 | Train breadth /24 | Validation /400 | Validation breadth /8 |
+| --- | ---: | ---: | ---: | ---: |
+| Source | 17 | 7 | 47 | 3 |
+| 300 | 24 | 8 | 64 | 3 |
+| 600 | 22 | 8 | 72 | 4 |
+
+600相对source：train R/G/L12/10/5、差额task-bootstrap CI[-3.12,+14.58]pp；validation R/G/L41/31/6、CI[-0.25,+18.50]pp。
+Validation S/O/G/L为0/29/40/3，净增益仍主要来自Object task1的5→29，新增Long task2仅1/50。
+300→600的validation保留／新增／丢失56/16/8，churn24/400、Jaccard .7000；
+train为17/5/7，churn12/96、Jaccard .5862，Long从3降至0。有局部held获取与相邻保持，但广泛迁移和train保持仍有限。
 完整逐task、suite和配对证据见本轮[READOUT](runs/analysis/process_pullback_writer_20260914/READOUT.md)及`paired_readout.json`。
-当前以原四卡、同一配置与完整训练状态exact-resume至600，tmux `ember_process_pullback_train600_20260914`；
-实际运行边界300→600已核对，随后按登记窗口判断获取与保持。
+当前以原四卡、同一配置与完整训练状态exact-resume至原登记900终点，tmux `ember_process_pullback_train900_20260914`；
+随后完成900的400＋96面板，综合三个节点判断，不据当前局部增益扩展窗口或打开最终controls。
 当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
 Owner最新确定先保持当前四卡、完成纯FM闭环结果后再决定是否做q辅助对照；暂不开展六卡训练拆分或新增q损失。
 等待期间只完成必要准备，其余等待进程结束事件，不反复读取或播报训练进度。

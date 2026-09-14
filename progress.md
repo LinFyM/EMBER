@@ -8,7 +8,7 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
 旧900视频controls只描述旧模型，不反馈新设计。固定Test只在本轮方法冻结后使用，无梯度／选点／设计反馈。
 结果直接在对话交付，不新增用户报告，不开展RL、不自动回退v5.2。
 
-## 新窗口实施与启动
+## 新窗口执行
 
 - 共享出口与精确信用已集成：模型`e1ca29b9`、v2 bank fixture`6dffa85c`、冻结Test准入`6e3f9953`。
   同次裸A0/B0先反传共享出口，再用原q伴随及R/Z重放，不重做第二次source编译。
@@ -20,7 +20,9 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
 - Fresh900预登记3,600条件／230,400queries，300/600/900各validation400和train96。
   终点900预先固定，方法冻结后完整video controls及source/correct Test400；资格与终点描述分别裁决。
 - 正式训练已从clean pushed detached `85ecfd18` 在gpu01:0–3启动，首两次全局更新18.850／21.974s；
-  第二步Writer及两Meta均有有效信用，reserved峰值38.355GiB。首个300节点运行中，随后同topology exact-resume至600/900。
+  第二步Writer及两Meta均有有效信用。首个300节点已正常结束，墙钟5,611.741s，完整保存100／200／300。
+  实际allocated峰值37.615GiB、reserved43.740GiB；正在物化该节点validation400／train96，再做完整闭环。
+  独立训练动作FM从.153279524变为.148711546，尚不能据此判断闭环能力；随后同topology exact-resume至600/900。
 - 首次启动在配置状态标签检查处退出，未创建训练runtime或更新参数；登记字段修正后重新启动。
   原失败日志与commit保留于新研究`failed_attempts/initial_registration/`，不混入正式曝光。
 

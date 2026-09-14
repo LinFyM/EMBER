@@ -19,7 +19,7 @@ Owner无需再次审查，持续goal仍active。当前唯一设计为[Process Pu
 
 1. 共享出口、精确信用、v2 metadata及冻结后Test准入已集成main并push，诊断专属路径已退役。
 2. 直接autograd、bank及Test准入检查与真实最长视频两次联合更新／部署profile均通过，隔离实现工作树已清理。
-3. Fresh900已从clean pushed detached `85ecfd18` 在gpu01:0–3启动；首个300节点运行中，完整保存每100 checkpoint。
+3. Fresh900已从clean pushed detached `85ecfd18` 在gpu01:0–3启动；首个300节点已完成并保存100／200／300，正在完成该节点的两套闭环面板。
 4. 在300／600／900分别完成strict paired validation400、train96及固定独立动作诊断，按原topology exact-resume。
 5. 冻结预先固定的terminal900和本轮方法，完成same-task-other、wrong/no-video及最后shuffled/reversed的paired400，
    再完成固定test8 source400／correct400。终点读出不冒充性能合格选点，controls和Test均不反馈本轮设计。

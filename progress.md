@@ -16,6 +16,8 @@ launcher均exit0，训练墙钟分别3,647.61／3,655.72秒。四个正式checkp
 105帧实测13.647／12.170／11.511／11.536秒，按最快且占用较小选择16，allocated／reserved峰值10.296／11.135GiB。
 46aaf22d clean pushed detached已在两节点各物理4／5并行物化四checkpoint的八个bank，共1,984套唯一完整LoRA；
 按完整train96 bank就绪情况用其它适合设备接续闭环，validation400仍整轮完成后比较。无selected checkpoint或新闭环成绩。
+四个train96 bank均已完整sealed且实际读取批量为16；有序／无序50的train96已分别在两节点物理6启动，各三个常驻worker。
+两个实际评测run contract的source模型、环境、RNG、assets及policy执行字段已与配对source参照一致；validation bank继续并行生成。
 双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在
 `runs/analysis/local_correction_field_writer_20260914/training_launch_contract.json`。
 profile及字段梯度原件同根`profile/`，未据两步loss改变科学参数。后续按固定节点完成整轮面板再裁决。

@@ -434,9 +434,65 @@
     },
     "checkpoint_registration": "pending actual source-pullback functional evidence and longest-video profile",
     "source_pullback_functional_check": {
-      "status": "pending",
+      "status": "registered_before_execution",
       "scope": "one bounded training-side check of fixed true q through this G P PCA16 outlet on independent episode queries",
-      "use": "precondition for full learning only; privileged correction is not a legal video Writer result"
+      "use": "precondition for full learning only; privileged correction is not a legal video Writer result",
+      "reference_root": "runs/analysis/native_corrective_transfer_20260913/formal",
+      "output_root": "runs/analysis/process_pullback_writer_20260914/functional",
+      "tasks": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "teacher_demos": [
+        16,
+        17,
+        18,
+        19
+      ],
+      "query_demos": [
+        42,
+        43,
+        44,
+        45
+      ],
+      "conditions": 96,
+      "queries_per_condition": 16,
+      "readouts": [
+        "own_execution_state_t1_endpoint",
+        "own_execution_state_full10"
+      ],
+      "q": "original residual and eta; four supports x first15 x 7; -2eta*residual/(15*7)*T/4; zero elsewhere",
+      "reference_predictions_recomputed": false,
+      "eta_refitted": false,
+      "aggregation": "mean teachers and queries within task, then equal task weight",
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260914,
+      "confidence": 0.95,
+      "pass_criterion": "both source-minus-pullback task-cluster CI lower bounds >0; each readout at least two positive suites; all predictions finite",
+      "save_lora": false,
+      "projected_output_bytes": 134217728
     }
   },
   "update_version": "source_pullback_pure_main_fm_joint_credit_v1",

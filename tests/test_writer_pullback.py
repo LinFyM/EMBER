@@ -45,12 +45,15 @@ class _NativeCore(nn.Module):
         self.action_in_proj, self.action_out_proj = _Projection(), _Projection()
         self.layers = nn.ModuleList([_NativeAttention() for _ in range(18)])
         self.calls = 0
+        self.prefix_calls = 0
 
     def forward(self, padding, cache, noise, clock):
         self.calls += 1
         assert not torch.is_autocast_enabled('cpu')
         assert bool((clock == 1).all()) and bool(padding.all())
         value = self.action_in_proj(noise)
+        if not isinstance(cache, torch.Tensor):
+            cache = cache[0][0]
         for layer in self.layers:
             value = layer(value, cache)
         return self.action_out_proj(F.layer_norm(value, (32,)))
@@ -78,7 +81,8 @@ def source(monkeypatch):
 
     def prepare(owner, prefix, *, native_precision):
         assert native_precision and not torch.is_autocast_enabled('cpu')
-        return prefix.embeddings, prefix.embeddings
+        owner.model.prefix_calls += 1
+        return prefix.embeddings, ((prefix.embeddings, prefix.embeddings, None),)
 
     monkeypatch.setattr('ember.writer.correction.prepare_prefix_features_and_cache', prepare)
     yield reader, embeddings, mask
@@ -148,6 +152,7 @@ def test_complete_projection_and_q_adjoint_match_dense_native_autograd(source, c
     torch.testing.assert_close(actual, expected, rtol=4e-4, atol=4e-6)
     torch.testing.assert_close(compiled_loss.detach(), (q.detach() * actual).sum(), rtol=4e-4, atol=5e-6)
     assert actual.norm() > 0 and bool(actual.abs().sum((0, 2)).gt(0).all())
+    assert reader.policy.model.prefix_calls == len(condition.videos[0])
 
 
 def test_no_grad_materialization_identity_and_last_frame_credit(source):

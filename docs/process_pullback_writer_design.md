@@ -66,6 +66,16 @@ PCA投影保留输入能量，未保证保留功能方向。旧fixed-A反例仍�
 同一批固定真实纠正q经本次G P出口，是否在独立episode保留可用作用；使用已有授权训练数据／已有面板与最小必要计算，
 登记具体条件及判断后执行。不能拿旧G闭环或旧局部rank16场的结果替本出口背书，也不把核验扩为新的oracle课程。
 
+本次固定使用`native_corrective_transfer_20260913/formal`的train24 × teacher16–19，共96条件；每条件使用原固定
+动作42–45的16个跨episode queries及原noise。保留原四个teacher支持位置、前15×7动作、source velocity和eta，
+以`q=-2*eta*residual/(15*7)*T/4`嵌入完整T×50×7，其余位置为零；T/4抵消新编译器1/T与原四支持平均的差异。
+唯一主要变量为完整视频native X决定的PCA16投影出口；不重新拟合eta，不重跑或选择source／原G参照。
+两个读出为t1 endpoint和full10，均使用query自身执行state。每task先等权聚合4teacher与16queries，再对24task等权；
+20,000次task-cluster配对bootstrap，seed20260914。只有两个读出的source−G P改善95%CI下界均严格>0、
+各至少两个suite净正且全部预测finite才通过。报告原G差额和各task／suite，不以本privileged结果选择Writer或宣称能力。
+入口为`scripts/check_process_pullback_function.py`，输出`runs/analysis/process_pullback_writer_20260914/functional`；
+默认只保留小型预测／元数据，预算128MiB，不保存可重建LoRA或完整G。判断已在本次GPU读出前登记。
+
 ## 5. Acquisition and retention through ordinary FM
 
 唯一训练loss为同task跨episode主执行FM，无q标签辅助项、局部场监督、重建、蒸馏、顺序loss、负视频或RL。

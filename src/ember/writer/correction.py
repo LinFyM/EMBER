@@ -12,8 +12,12 @@ import torch
 import torch.nn.functional as F
 
 from ember.ecp.policy_effects import prepare_prefix_features_and_cache
+from ember.lora import LORA_B_SUFFIX
 from ember.writer.factor import compile_source_lora, native_input_basis
 from ember.writer.native import NativeCondition
+
+
+PrefixCache = tuple[tuple[torch.Tensor, torch.Tensor, int | None], ...]
 
 
 @dataclass(frozen=True)
@@ -24,9 +28,15 @@ class SourceCoordinates:
     condition: NativeCondition
     predictions: torch.Tensor
     bases: dict[str, torch.Tensor]
+    prefix_caches: tuple[PrefixCache, ...]
 
     def compile(self, q: torch.Tensor) -> dict[str, torch.Tensor]:
         return compile_source_lora(self, q)
+
+    def adjoint(self, gradients: dict[str, torch.Tensor]) -> torch.Tensor:
+        # A is a fixed bare-source coordinate, so only B contributes to q.
+        return self.reader.adjoint(self, tuple(gradients.get(target.name + LORA_B_SUFFIX)
+                                               for target in self.reader.contract.targets))
 
 
 class NativeCorrectionReader:
@@ -41,28 +51,29 @@ class NativeCorrectionReader:
                 or not 0 < contract.rank <= min(target.in_features for target in contract.targets)):
             raise ValueError("source pullback requires a frozen policy, public 50x32 probe and alpha=rank")
 
-    def _forward(self, chunk, *, with_grad):
+    def _forward(self, chunk, cache, *, with_grad):
         device = self.probe.device
-        prefix = chunk.on_device(device)
+        padding = chunk.padding.to(device, non_blocking=True)
         captured = {}
 
         def hook(target):
             def receive(module, arguments, output):
                 if target.name in captured:
                     raise RuntimeError("native target ran more than once in one bare source read")
-                if (arguments[0].shape != (len(prefix.padding), 50, target.in_features)
-                        or output.shape != (len(prefix.padding), 50, target.out_features)):
+                if (arguments[0].shape != (len(padding), 50, target.in_features)
+                        or output.shape != (len(padding), 50, target.out_features)):
                     raise ValueError("source pullback lost a frame, horizon or actual linear coordinate")
                 captured[target.name] = (arguments[0], output)
             return receive
 
         with torch.set_grad_enabled(with_grad), torch.autocast(device.type, enabled=False), ExitStack() as stack:
-            _, cache = prepare_prefix_features_and_cache(self.policy, prefix, native_precision=True)
+            cache = tuple((keys.to(device, non_blocking=True), values.to(device, non_blocking=True), window)
+                          for keys, values, window in cache)
             for target, module in zip(self.contract.targets, self.modules, strict=True):
                 stack.callback(module.register_forward_hook(hook(target)).remove)
-            noise = self.probe.expand(len(prefix.padding), -1, -1).detach().requires_grad_(with_grad)
-            clock = torch.ones(len(prefix.padding), device=device)
-            velocity = self.policy.model.denoise_step(prefix.padding, cache, noise, clock)
+            noise = self.probe.expand(len(padding), -1, -1).detach().requires_grad_(with_grad)
+            clock = torch.ones(len(padding), device=device)
+            velocity = self.policy.model.denoise_step(padding, cache, noise, clock)
         if (len(captured) != len(self.modules) or velocity.shape != noise.shape
                 or not torch.isfinite(velocity).all()):
             raise RuntimeError("bare source read is incomplete or nonfinite")
@@ -72,9 +83,16 @@ class NativeCorrectionReader:
     def read(self, condition: NativeCondition) -> SourceCoordinates:
         if len(condition.videos) != 1 or not condition.videos[0]:
             raise ValueError("source pullback currently requires one complete real video")
-        owners, grams, predictions = {}, {}, []
+        owners, grams, predictions, caches = {}, {}, [], []
         for chunk in condition.videos[0]:
-            velocity, captured = self._forward(chunk, with_grad=False)
+            with torch.autocast(self.probe.device.type, enabled=False):
+                _, cache = prepare_prefix_features_and_cache(
+                    self.policy, chunk.on_device(self.probe.device), native_precision=True)
+            velocity, captured = self._forward(chunk, cache, with_grad=False)
+            # Only the bare frozen source prefix is reusable. Observer Meta
+            # Z/KV/H belong to their current update and never enter this cache.
+            caches.append(tuple((keys.detach().cpu(), values.detach().cpu(), window)
+                                for keys, values, window in cache))
             predictions.append((self.probe[None, :, :7] - velocity[:, :, :7]).float().cpu())
             if not owners:
                 shared = {}
@@ -96,7 +114,8 @@ class NativeCorrectionReader:
         if len(predictions) != len(condition.frame_indices[0]):
             raise ValueError("bare source coordinates omitted a real video frame")
         basis = {owner: native_input_basis(gram, self.contract.rank) for owner, gram in grams.items()}
-        return SourceCoordinates(self, condition, predictions, {name: basis[owner] for name, owner in owners.items()})
+        return SourceCoordinates(self, condition, predictions,
+                                 {name: basis[owner] for name, owner in owners.items()}, tuple(caches))
 
     @torch.no_grad()
     def pullback(self, coordinates, q):
@@ -105,10 +124,10 @@ class NativeCorrectionReader:
         values = [torch.zeros(target.out_features, self.contract.rank, device=device)
                   for target in self.contract.targets]
         cursor = 0
-        for chunk in coordinates.condition.videos[0]:
+        for chunk, cache in zip(coordinates.condition.videos[0], coordinates.prefix_caches, strict=True):
             stop = cursor + len(chunk.padding)
             with torch.enable_grad(), torch.autocast(device.type, enabled=False):
-                velocity, captured = self._forward(chunk, with_grad=True)
+                velocity, captured = self._forward(chunk, cache, with_grad=True)
                 outputs = tuple(captured[target.name][1] for target in self.contract.targets)
                 cotangent = F.pad(q[cursor:stop].detach().to(device, dtype=torch.float32), (0, 25))
                 gradients = torch.autograd.grad(velocity, outputs, grad_outputs=cotangent)
@@ -137,9 +156,9 @@ class NativeCorrectionReader:
         incoming = tuple(None if value is None else value.detach().to(device, dtype=torch.float32)
                          for value in gradients)
         result = []
-        for chunk in coordinates.condition.videos[0]:
+        for chunk, cache in zip(coordinates.condition.videos[0], coordinates.prefix_caches, strict=True):
             with torch.enable_grad(), torch.autocast(device.type, enabled=False):
-                velocity, captured = self._forward(chunk, with_grad=True)
+                velocity, captured = self._forward(chunk, cache, with_grad=True)
                 outputs = tuple(captured[target.name][1] for target in self.contract.targets)
                 dummy = torch.zeros_like(velocity[:, :, :7], requires_grad=True)
                 cotangents = torch.autograd.grad(velocity, outputs, F.pad(dummy, (0, 25)), create_graph=True)

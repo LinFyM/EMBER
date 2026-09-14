@@ -6,7 +6,6 @@ import time
 import torch
 
 from ember.writer.function_credit import paired_functional_credit
-from ember.writer.functional import writer_chain_rule_surrogate
 from ember.writer.native import autocast
 
 
@@ -24,10 +23,13 @@ def _native_cotangents(leaves, visuals):
 
 
 def replay_functional_credit(writer, responses, inputs, compiled, native_inputs):
-    """Replay complete main cotangents through the same fixed source coordinates."""
+    """Transpose the fixed compiler once, then replay its exact q credit."""
+    # q -> B is linear and A is fixed. Compute the transpose before retaining
+    # the learned Writer graph; no second forward compilation is necessary.
+    q_credit = native_inputs.adjoint(compiled)
     videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True)
-    state = writer.decode(videos, native_inputs)
-    writer_chain_rule_surrogate(state, compiled).backward()
+    q = writer.action_cotangents(videos, native_inputs.predictions)
+    (q * q_credit.detach().to(q)).sum().backward()
     return _native_cotangents(leaves, visuals)
 
 

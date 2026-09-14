@@ -60,6 +60,10 @@ class _FixedCoordinates:
                 self.maps[target.name].to(q) @ q.flatten()).reshape(target.out_features, self.contract.rank)
         return state
 
+    def adjoint(self, gradients):
+        return sum(self.maps[target.name].T @ gradients[target.name + LORA_B_SUFFIX].detach().flatten()
+                   for target in self.contract.targets).reshape_as(self.predictions)
+
 
 def native_inputs(model, args):
     return _FixedCoordinates(model, args)

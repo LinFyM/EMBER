@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_process_pullback_writer_config_v2",
-  "status": "registered_learned_outlet_fresh_learning",
+  "status": "registered_process_pullback_learning",
   "design": "docs/process_pullback_writer_design.md",
   "data": {
     "seed": 7,
@@ -448,7 +448,7 @@
       ]
     },
     "profile_registration": {
-      "status": "passed_real_longest_two_updates_and_deployment",
+      "status": "complete",
       "scope": "same actual longest full dual-camera video; two complete joint pure-FM updates; identity, complete LoRA, shared-outlet and native replay credit; one deployment compilation",
       "profile_initialization_reused": false,
       "frame_chunk": 16,

@@ -7,7 +7,7 @@ Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回
 Owner追加的磁盘、退役源码／入口及文档正文清理已完成；真实机制、效率优化与新低秩出口功能核验通过，当前执行已登记窗口的正式fresh学习。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
-本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，并已启动四卡formal首段0→300；尚无selected checkpoint或新方法闭环结果。
+本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，四卡首段0→300已完成，正在物化首个400＋96闭环节点；尚无selected checkpoint或新方法闭环结果。
 CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未取消能力、相邻保持、换视频及最终视频controls的要求。
 
 ## 已实现与验证
@@ -39,10 +39,12 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
 - 训练池为train24的demo16–41，共624个K1条件；采样帧数min16、median31、p90为57、max105。
   最长视频已用于上述真实profile；独立动作42–45／teacher46–49及train states32–35保持既有合同。
 
-当前formal来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
+当前训练来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
 启动记录为本轮`training_launch_contract.json`，输出`training/`，tmux `ember_process_pullback_train_20260914`。
-初始24task动作诊断完成，FM .153279524；前三个实际更新19.75／22.26／19.94秒，第二次起两组Meta均有有效梯度。
-NCCL同步约.016秒，峰值37.54GiB，source可训练参数0。首段结束后及时完成correct400／train96，再exact-resume同一run至600／900。
+首段300更新正常退出，1,200条件／76,800queries，墙钟5,704秒；24task独立动作诊断FM .153279524→.149746817。
+source可训练参数0，完整checkpoint和曝光检查通过；动作loss只是诊断，实际能力待本节点correct400／train96。
+物化／评测冻结树`.codex/tmp/process-pullback-evaluation`来自已推送`f5d9db78`，使用四卡按条件动态编译；训练树保持原样。
+首个节点完成后按预登记合同exact-resume同一run至600／900。
 当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
 Owner最新确定先保持当前四卡、完成纯FM闭环结果后再决定是否做q辅助对照；暂不开展六卡训练拆分或新增q损失。
 等待期间只完成必要准备，其余等待进程结束事件，不反复读取或播报训练进度。

@@ -25,12 +25,19 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
   Train为21/96、breadth9/24、相对source R/G/L=14/7/3；validation为50/400、breadth4/8、R/G/L=31/19/16，
   S/O/G/L=0/16/32/2。Validation净增的task-cluster95%区间[-7,+8.5]pp，当前未证明共享出口改善泛化。
   独立训练动作FM从.153279524变为.148711546；不把loss或本次局部结果当作能力通过。
-  两套评测均正常结束，496套条件、原始rows及所有workers完成证据保留；已从300按同一四rank topology exact-resume至600。
+  两套评测均正常结束，496套条件、原始rows及所有workers完成证据保留。
+- 600段训练正常结束，累计2,400条件／153,600queries，段墙钟5,123.126s；400／500／600完整checkpoint保留。
+  新生成496套条件后，validation400与train96及全部18 workers均正常结束，完整配对核验通过。
+  Train20/96、breadth8/24、source R/G/L=13/7/4；validation75/400、breadth3/8、source R/G/L=37/38/10，
+  S/O/G/L=0/38/34/3。75次成功只来自Object1、Goal6及Long2；相对source净增区间[-4.5,+25.25]pp，仍未建立广泛迁移。
+  Validation300→600 R/G/L=39/36/11、churn47、Jaccard .4535；train相邻13/7/8、churn15、Jaccard .4643。
+  独立动作FM为.144942572；599次identity后更新的Writer／两Meta信用均finite非零。实际闭环能力与覆盖仍优先于loss。
+  已从600按原四rank topology、优化器／scheduler／sampler／rank RNG exact-resume启动900段，不按中间分数选峰值。
 - 首次启动在配置状态标签检查处退出，未创建训练runtime或更新参数；登记字段修正后重新启动。
   原失败日志与commit保留于新研究`failed_attempts/initial_registration/`，不混入正式曝光。
 
 新研究根`runs/analysis/process_pullback_learned_outlet_20260915/`，额外峰值预算32GiB。
-续训600前strg01 data1用量875,171,524KiB、soft1,073,741,824KiB；新研究2,905,221,523bytes，
+续训900前strg01 data1用量878,010,872KiB、soft1,073,741,824KiB；新研究5,810,292,265bytes，
 额外32GiB峰值仍在独立quota内，共享data1约83TiB可用。全部source／数据／环境复用，不复制大资产。
 实际拓扑、命令与完成状态以新研究launch contract为准。
 

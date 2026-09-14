@@ -11,7 +11,8 @@ Owner要求自主推进、制定goal并开始，期待真实正向进展且明�
 在学习前固定两臂50／100、各400条件／25,600 queries及八个完整配对面板。
 **50dafb05 clean pushed detached已启动两臂独立fresh100：gpu01物理4/5/6为ordered，gpu02物理4/5/6为frame_set；
 均world3、policy microbatch8、GPU-local NUMA、deferred NCCL。两个正式run contract已生成并通过代码／拓扑身份。**
-正在完成初始无梯度train24动作诊断后连续训练；无selected checkpoint或新闭环成绩。
+两臂均已完成初始无梯度train24动作诊断并到达第50次更新，随后按原合同完成中间诊断、保存checkpoint并继续至100；
+无selected checkpoint或新闭环成绩。现场其它设备仍在满载或显存不足，物化和评测在本轮训练释放设备后接续。
 双节点空闲／共驻证据、strg01独立quota、完整命令、PID／日志与20GiB data0预算均在
 `runs/analysis/local_correction_field_writer_20260914/training_launch_contract.json`。
 profile及字段梯度原件同根`profile/`，未据两步loss改变科学参数。后续按固定节点完成整轮面板再裁决。

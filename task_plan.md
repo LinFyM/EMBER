@@ -1,233 +1,34 @@
 # EMBER task plan
 
-## 当前：最终讨论后恢复新方案推进（2026-09-14）
+## 当前goal与边界
 
-Owner要求设置goal并按五个问题讨论确定的方案推进，允许多次有依据的训练与修复；agent只专注新方案。
-若合理学习后持续缺少正向信号，完整报告证据和判断；是否结束坚持或回到v5.2由owner决定，agent不自行切换。
-唯一active design为[Process Pullback Writer](docs/process_pullback_writer_design.md)。旧暂停及后续历史清单不覆盖当前授权。
+按Owner五个问题讨论确定的[Process Pullback Writer](docs/process_pullback_writer_design.md)推进完整研究：
+以正确action-hidden视频一次编译的LoRA获得可迁移的执行能力，检验视频特异性与训练保持，并完整汇报证据和未识别范围。
+Owner允许多次有依据的训练、工程修复与方法迭代；不以只训练一次为限，也不允许无信息重复。是否停止坚持或回到v5.2由owner决定。
+当前授权与实际完成状态见[progress](progress.md)，稳定要求见[owner requirements](docs/current_owner_requirements.md)。
 
-1. **进行中：登记完整合同并替换canonical Writer。** 双路K1、变化驱动过程内容、输出作用码、固定裸source导数与PCA rank16出口；
-   fresh联合纯跨episode FM。复用native/data/train/evaluator，退役旧local-field学习与自由译码分支。
-2. **待实施：必要接口与最长视频profile。** 检验真实源模型的38-target投影／线性编译／伴随、信息墙、identity及第二步联合梯度；
-   一次有界训练侧功能核验检验新的低秩出口，不能以旧G结果替代。
-3. **待登记：有信息量的学习窗口与闭环节点。** 按真实吞吐、更新、条件与queries确定初始窗口，之后依据正确视频获取、泛化和保持决定迭代。
-   不机械沿用旧50/100硬截断，不以loss下降单独延长投入，不重训frame_set作为本轮硬要求。
-4. **待执行：fresh正式学习和strict paired400。** 所有正式train/eval来自clean pushed frozen commit，持续报告task/suite、breadth、R/G/L与churn。
-5. **待资格：same-task-other及单checkpoint冻结，再执行最终视频controls。** wrong/shuffled/reversed不反哺选点或设计，Test与RL保持关闭。
-6. **最终交付：** 完整学习／闭环／保持／视频因果证据、实际结论及未证实范围；本goal完成指授权研究工作和汇报完成，不要求制造正结果。
+本轮固定双路K1、冻结source、完整50-horizon、7维q、固定source导数／PCA rank16唯一38-target LoRA及fresh联合纯跨episode FM。
+不使用q辅助标签、额外meta tasks、RL或Test。暂不强制>145/400，不要求另训frame_set；能力、相邻保持、换视频与最终controls仍须有真实证据。
 
-## 当前：按Owner要求暂停（2026-09-14）
+## 当前阶段与必要下一步
 
-Owner最新要求“你稍微停一下吧”。研究推进已暂停，无active design或在途研究进程；整体goal未完成。
-本轮仅完成局部纠正场关闭后的只读学习机制复核，后继想法没有登记或实施；下列既有计划不恢复执行，等待Owner明确恢复。
+1. **完成Owner要求的实际清理。** Canonical新实现已集成；现先审计占用，删除明确退役的源码／入口及文档过时内容，更新相关引用。
+   保留数据集、源模型、唯一checkpoint和formal原件；不以新建archive或更换输出位置代替清理。
+   新输出根依据清理后`/data1`的实时独立user quota确定，不把转移到`/data0`当作清理。
+2. **完成真实机制与成本核验。** 在现有CPU合同检查基础上，验证真实source编译、q伴随、identity及第二次更新的联合梯度，
+   测最长真实视频的吞吐／显存，并完成一次有界训练侧G P低秩出口功能前提。局部oracle只裁决本出口，不计作合法Writer能力。
+3. **登记有信息量学习窗口。** 依据真实profile、累计教学条件／queries与历史曝光尺度，在正式分数前确定更新总量、中间／末尾节点、
+   保存点和预计墙钟。保存点沿用50或100倍数，不机械继承旧50/100停止点，不以短步数或loss变化宣称充分学习。
+4. **执行fresh学习与配对闭环。** Formal train/eval来自clean pushed detached frozen commit；按预登记节点完成correct strict400，
+   必要时用固定train96及独立动作面板区分获取与迁移，报告task／suite、breadth、R/G/L、churn、相邻重合与真实曝光。
+   有能力获取和保持证据再继续；负结果先修正实际受损假设，区分工程错误、科学non-pass与证据不足。
+5. **完成资格与最终视频证据。** 能力和相邻资格成立后补same-task-other，选定冻结单checkpoint，再执行完整配对wrong／no-video／shuffled／reversed。
+   最终controls不反哺训练、选点或架构；未获前置资格则明确报告未执行范围，不制造selected checkpoint。
 
-原目标是正确action-hidden视频经一次生成的唯一完整LoRA获得
-可重复闭环增量；有序强于独立fresh全帧frame_set，并跨视频、初始化、相邻checkpoint及固定validation保持。
-允许完整视频双向理解，暂不额外强制145/400；信息墙、K1、数据／资源／Git合同保持。
+## 成功与结束判断
 
-1. **固定G诊断完成关闭。** source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp。
-   只支持privileged纠正的有限跨视频／初态实际控制作用。
-2. **语义路径Writer及冻结回放完成关闭。** 两臂fresh100与八面板未获相邻有益有序资格；固定128次回放和全部32组图像
-   显示对象／实例绑定、获取运输及组合保持的异质缺口，没有唯一识别一个失败模块。
-3. **局部rank16场的固定函数前提完成通过。** 原96条件、1,536 query组合的t1／full10改善区间均严格正；
-   保留与原G实际作用接近的限定事实，不将privileged输出计入合法Writer能力。
-4. **局部纠正场共同学习完整比较完成关闭。** 两臂fresh100、四checkpoint、八bank和1,984rows全部完成；
-   train96有序／无序18/16→17/17，validation48/47→47/50。三个预登记资格均失败，24个worker均exit0且全部身份审计通过。
-   固定动作FM约0.58%的改善未带来有益共享获取；停止当前组合续训／扫参，不补未触发的other、最终controls、Test或RL。
-5. **当前进行整体学习机制复核。** 合并本次合法获取失败、普通FM历史正例及已试过的共享functional／update机制，
-   明确哪些学习解释失去支持、哪些证据仍保留、哪项新证据能区分竞争解释。尚无active design、后继模型或新运行。
-   不把新增局部标签、不同收缩代数、非零梯度或又一个模块作为重新训练的充分理由。
-6. 仅在完整目标证据成立时完成goal。局部正例、surrogate、单峰、代码或理论文档完成均不算科学目标达成。
+科学成功需要正确视频的真实闭环价值、跨task／suite获取、相邻保持、same-task换视频鲁棒性及冻结模型后的因果证据共同支持。
+代码、非零梯度、loss、局部privileged正例或孤立分数峰值均不替代这些证据。
 
-完整读出见[runs/analysis/local_correction_field_writer_20260914/READOUT.md](runs/analysis/local_correction_field_writer_20260914/READOUT.md)，
-关闭合同见[设计§10](docs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)，理论修正见
-[工作理论§11](docs/temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)。
-下方暂停和未完成旧清单均是历史，不恢复执行。
-
-## 暂停时点：讨论架构与训练的整体原理（2026-09-14）
-
-完整目标仍为正确action-hidden教学视频经唯一完整LoRA产生可重复有益闭环增量，并保持跨同task视频、
-初始化、相邻checkpoint和固定validation迁移；暂不强制145/400。**整体goal未完成；
-[固定A与幅度／方向诊断](docs/native_correction_acquisition_audit.md)均已完成关闭；当前唯一active design为
-[既有真实纠正的闭环前提](docs/native_corrective_closed_loop_audit.md)，已按Owner 2026-09-14最新要求暂停。
-source启动尝试在准备阶段被评测范围合同拒绝，零episode；无在途运行或selected checkpoint。**
-当前仅进行方法讨论与要求整理，不继续修复、重试或执行下列计划，等待Owner恢复推进。
-下一方法的优先设计任务是形成架构与训练的整体工作原理：解释输入理解、可执行的高层操作知识、
-唯一LoRA生成、未见任务迁移及能力保持，并明确历史依据、待检验假设和可失败预测。
-局部动作／纠正监督尚非已选方案；既有oracle只能检验纠正目标的闭环价值，不能替当前架构的可学习性与迁移背书。
-Owner已澄清后继设计边界：允许完整视频双向理解，不再强制过去依赖；保留真实顺序与方向，
-有序模型强于匹配的独立全帧无序模型仍是必要方法证据。新设计须解释并预登记如何检验这一优势，
-不得据此放宽信息墙、削弱无序参照或重判旧实验；本次讨论不恢复执行。
-
-[Native Correction Writer](docs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)的两臂fresh200、四checkpoint、
-8个bank与8个配对面板／1,984rows已完整结束，原始证据审计及全部worker退出通过。
-100/200的train有序／无序为15/15、19/20；validation为50/51、50/49。两有序增量区间均未严格正，
-增量未相邻同向，按原资格关闭该组合，不续训或扫参，也不补未获资格的controls、Test或RL。
-
-1. 保留真实纠正oracle的跨episode功能正事实，以及本轮有限训练收益、source名义+3、Goal保持与较低churn；
-   同时保留validation breadth3、Spatial零、有益有序资格缺失和独立动作／参数拟合有限的事实。完整结论见findings§91。
-2. 不把共同标签统计／参数空间存在性当成有限RGB获取证明，也不把弱闭环唯一归到Meta、Compiler、R/A或B。
-   新旧教学池及训练目标不同，不以本轮50与旧空间监督71的差额冒充单变量归因。
-3. 已核对旧fixed-A／G1／G3 fit-span近邻，8c714e91完成四checkpoint×train24×demo16–19共384次合法生成与原分解。
-   实际E约.90–.95、固定A下界F约.27–.31、空间内D约.63–.64，四个F−D区间均严格负；按第二分支关闭。
-   66.9%–70.6%误差在现有A空间内，停止以扩展A空间作为必要首项修正；不能由乐观下界宣称有限B或RGB充分。见findings§92。
-4. §7只读384条件进一步完成：最优privileged整体倍率只消除实际误差3.87%–6.32%，四个H−J区间均严格负；
-   每模型24/24task均值方向缺口更大，按登记关闭。当前A的最小B系数代价较大，限定乐观下界，但不是容量或根因证明。见findings§93。
-   下一步先区分可用方向、有限共享纠正、表示／信息与学习信用；已见条件仍有大差额，不能只归新视频。
-   不从这些参数定位直接启动新Writer、续训、辅助动作头或参数扫描；先形成可失败且会改变投入判断的最小机制合同。
-5. 整体goal继续；已完成的Execution-Aligned、旧冻结52/96正例复核及其它关闭诊断不从旧计划措辞恢复。
-
-暂停中的既有实施项：现有state-free的96套真实纠正标签各运行四个init，共384oracle rows；新source96只运行一次、按task/init配对复用。
-全部五面板480episodes固定，检验目标G本身的闭环作用是否跨teacher／init保持；先补既有动作预测正证据到闭环的缺口。
-实现只补现有static adapter的真实来源检查，结束后退役；不伪造Writer／G1身份、不复制执行器或LoRA，不以此结果当合法视频生成成绩。
-
-以下为已关闭阶段的计划与结果记录，不由其“当前／下一步”措辞恢复执行。精确运行与授权只看progress顶部。
-
-## 当前物理效果诊断已关闭：部分可预测性成立，替代度量未获资格（2026-09-13）
-
-[操作语义§6–7](docs/operation_semantics_feasibility.md)完成固定train24×demo16–19×3位置的288条件，
-4,896条短段动作干预／24,480高层步，CPU、无模型／LoRA／梯度。fcd9a613冻结434.79秒exit0、raw重算通过。
-零变化／局部预测MSE=.00089956/.00026749，差额CI[.00048754,.00076067]、23/24task及四suite正；
-但预测误差比例.29736不满足预登记<.25（RMS=.54531），因此关闭该J加权FM提案，不实施条件性§6.5。
-Object比例.01887，Goal／Long为.41550/.51493；保留部分物理可预测性的正事实，不挑suite或扫描扰动挽救。
-夹爪离散分支存在真实效果差，但幅度与连续扰动不同，不能推断夹爪是主因或默认重加权。
-原件留在runs/analysis/operation_semantics_20260913/effect_replay，CLI退役。无active design／运行／selected checkpoint，整体goal未完成。
-
-## 当前补充实施已完成：操作语义标签与设计修正（2026-09-13）
-
-Owner最新要求继续仔细推导、实施并按结果调整。[操作语义可行性](docs/operation_semantics_feasibility.md)已完成关闭：
-train24×8episode、6,668个CPU状态位置，零梯度／GPU／环境步；源7bd8a6f5、84.34秒exit0，原始数组重算通过。
-保留对象／部件及左右指接触，186/192episode有双指接触转换；抽屉8条中6条在采样位置无双指同时接触，
-region所属body也不等于区域谓词。因此撤去“通用接触阶段→语义rank”的直接依据，不以数据覆盖默认启动Writer。
-新增实际A监督的零B与共享A反例：准确接触响应仍可没有行为／视频贡献，须先明确可执行效果传递，不能重做无关辅助头。
-一次性入口已退役，约1.36MiB原件留在runs/analysis/operation_semantics_20260913；无active design、无在途运行。
-整体goal未完成；下一项需收敛真实RGB操作证据与唯一LoRA实际效果之间的可失败合同，保持旧失败边界及现行资格。
-
-## 当前goal：有益视频特异性先行，再提升绝对性能
-
-Owner授权依据综合正负证据自主高效推进理论、设计与实验，取得正确视频在唯一完整LoRA中的可重复闭环增量，
-并验证跨同task视频、初始化、相邻checkpoint和固定validation迁移。暂不要求145/400；当前goal未完成。
-
-Owner已明确要求重新设置自主推进goal并已激活。依证据自主承担理论分析、方法修正与验证；
-当前时间对齐队列与冻结正例复核已完整结束，转入基于全部证据的机制判断。整体目标未达时不标记完成。
-
-**当前无active design；[跨初态相对几何检索](docs/cross_init_relation_retrieval_audit.md)已完成关闭，
-[Native Dual-View Writer](docs/native_dual_video_writer_design.md)已关闭。** 时间对齐、冻结正例复核及
-[冻结局部动作生成诊断](docs/frozen_local_action_decode_audit.md)均已关闭；整体goal保持，当前进行综合机制分析。
-
-### Native双相机修正：8面板完成，按预登记资格关闭
-
-两臂各fresh200，100/200四checkpoint、8个sealed bank及1,984条闭环记录完整；运行代码defcf734。
-新旧四模型800条件的18个采样字段匹配，8面板及相机参照的task/state/language、teacher真实帧索引、
-环境／policy RNG配对核验通过。validation各task50条teacher整轮各一次；train96为46–49/states32–35有限池。
-全部worker正常退出，累计评测墙钟4417.77秒，controller正常exit0，无在途训练／评测。
-
-| 节点 | train ordered / frame_set | validation ordered / frame_set | validation差额95%CI |
-| --- | --- | --- | --- |
-| 100 | 36/96 / 32/96 | 64/400 / 56/400 | [0,+4.5]pp |
-| 200 | 54/96 / 50/96 | 53/400 / 39/400 | [−.5,+9.25]pp |
-
-100节点S/O/G/L为1/52/8/3对0/48/6/2、breadth6/4；200为0/52/0/1对1/37/0/1、breadth3/4。
-200仅Object净正，有序53次成功中52次来自Object；相邻Spatial／Goal归零。
-有序相对无序100保留51／新增13／丢失5、churn18、J=.73913；200为35／18／4、churn22、J=.61404。
-相邻有序64→53，保留41／新增12／丢失23、churn35、J=.53947；无序56→39为32／7／24、churn31、J=.50794。
-两个节点的有序净额均正，但CI下界均未严格>0，200也未达至少两个suite净正；不满足登记资格和稳定保持。
-
-预登记相机参照中，ordered validation单→双为61→64、72→53；frame_set为65→56、81→39。
-200同模式差额CI分别[−9.5,−.75]pp、[−20.25,−2]pp；相机×顺序交互虽为正，伴随明显绝对性能损失。
-不能把相对无序少退化当作足够的方法收益。冻结source仍为47/400；有序总数高于source但配对task区间跨零。
-
-**当前无active design，无selected checkpoint。** 关闭本有界组合，不追加训练、节点、seed、LR、rank、flow或Meta冻结扫描；
-不触发same-task-other／强静态／最终controls、Test或RL。原生双相机动作读出的正证据仍成立，
-它未转化为本共享Meta／表示／Compiler的稳定闭环收益，不能唯一归责某个接口或否定全部视频方法。
-下一步先综合局部功能诊断、既有共享／蒸馏负结果及当前训练—迁移分离，明确能区分获取与传递不足的预测；
-在实质机制与合法判别证据成立前不启动新Writer。完整边界见findings§79。
-
-原件：`runs/analysis/native_dual_video_20260913/`的`paired_summary.json`、`camera_comparison.json`、
-`bounded_200_decision.json`、`evidence_audit.json`、`training_pairing.json`和`OVERNIGHT_READOUT.md`。
-全部训练／物化／评测contract、四完整checkpoint、8个bank、raw rows和completion保留；整体goal未完成。
-
-### 原生端点读出：已完成，保留视觉范围限制
-
-[端点诊断](docs/source_endpoint_readout_audit.md)新增三单元各384位置完整exit0，复用既有dual/full10。
-agentview full10/t1均值/t1固定probe为.36548/.34789/.34732，均差于task mean .25060；
-dual对应.13673/.13217/.13177，均胜过task mean。三个同读出相机差额均24/24task为正、区间严格为正。
-触发视觉范围分支；同视角增加flow步数没有改善，停止以denoise深度为当前首要修复依据。
-
-双相机的单步H有原生可读动作价值，不能转写成当前agentview或学习后Meta／E已充分；
-也未区分腕部信息与source输入分布匹配，不能由动作预测直接声称视频过程／LoRA收益。
-已核对双视角实现与V-JEPA单视角合同；1,669份范围内库存中38份可判定observer均为agentview。
-上述证据已用于登记native双相机与原单视角视频先验的最小输入修正及可失败预测；
-不将双视频K结果混为双相机实验，不恢复已关闭checkpoint训练。原始endpoint_*证据完整保留；代码e1a06b46。
-
-### 当前执行计划
-
-新增[冻结source状态输入诊断](docs/source_state_input_audit.md)已完整完成：MSE free/mean/true=.13673/.14173/.12469，
-任务动作均值.25060。free−true区间跨零，状态补全前提未通过；free本身相对动作均值的正事实保留。
-后续端点×视角诊断与native双相机修正均已关闭；上节为完整裁决，不扫描flow阶段或恢复该候选。
-
-[Meta校准提案复核](docs/video_information_identifiability.md#8-为什么当前不单独追加meta动作校准诊断)已否决
-仅由原生动作头MSE决定冻结／替换Meta的下一诊断：它不能区分所需竞争解释，旧校准／读出正数也未修复闭环。
-下一步先定义跨初态操作关系和可失败的行为预测，并与旧功能教师、native-span的输入／监督／传递合同逐项区别。
-若仍只是局部读出更准、原共享参数映射不变且没有可区分预测，不启动新Writer。
-
-[跨初态关系复核§9](docs/video_information_identifiability.md#9-跨初态操作关系新增监督必须区别于旧状态条件化与任务记忆)
-已完成近等价历史检查和四train任务12个存储状态的CPU恢复：状态地址与回顾动作反演已属旧机制；
-物体／部件监督有数据来源，但同task的oracle关系图拟合仍可能只是任务索引。下一判别必须排除这一混淆，
-不能把可恢复位姿当作视频理解或LoRA传递正证据。无新标签库或模型学习。
-
-据此完成一个无学习映射的直接参照：全部train24的action16–19演示与诊断42–45交叉，固定相对／绝对几何1-NN，
-384个episode对、13,064位置完整。绝对／相对／均值MSE=.12443553/.12634790/.25459689，
-绝对−相对CI[−.00421347,+.00027549]跨零，四suite均无相对改善；按登记关闭，不扫检索变体。
-两种状态匹配都有相对均值的部分动作价值，仍依赖privileged几何／动作；不得直接称为合法过程教师或启动完整Writer。
-此结果停止把坐标中心化视为当前主要修复的依据；后续机制须区分真实动作Value、对象／部件获取与参数传递，
-不能由此回到已失败的可训练局部头或task图拟合。完整原件及分项限制见findings§81。
-
-当时提出的后续方法选择疑问已由Owner 2026-09-14澄清：有序强于匹配且独立训练的全帧frame_set是持续要求。
-冻结模型的内容／顺序因果要求、跨视频／初始化／相邻稳定及固定validation迁移均保持；
-不重判或重开已关闭实验。比较对象的区别仍见[可识别性分析§2](docs/video_information_identifiability.md#2-三种不同的比较对象)。
-
-1. **时间对齐已完成：**fresh200两臂及8面板／1,984rows。train100/200为44/51对36/53，
-   validation为61/72对65/81；早期有序优势未保持，validation无资格，不续训或扫描。
-2. **冻结正例复核已完成：**固定旧200双模型，24task×4video×8state加source，共1,728rows；
-   有序359/768、静态361/768、source32/192。三种有序−静态95%CI均跨零，四video净额0/+4/+2/−8。
-   新条件下有序对source能力仍在，原大幅有序优势未复现；按预注册上限关闭，不增加训练或面板。
-3. **理论边界复核已形成：**[视频信息与可识别性](docs/video_information_identifiability.md)核对了全帧frame_set、
-   train24当前状态目标和原受益9task的新条件净额−1/288；区分独立训练臂比较与固定模型因果干预。
-   跨episode FM允许同task视频无关最优解，但不证明有限共享模型不可能从视频学习迁移知识。
-   **新增诊断已完成：**原train24留出片段的固定10步/8noise生成MSE为.31625/.31677，均差于task mean .25060；
-   有序小幅优势保留，但现成动作中间量前提未通过，关闭且不追加noise／步数／训练。
-   **当前理论任务：**明确现有系统缺少何种可迁移操作知识及其合法学习路径；不能把局部FM差额、
-   表示可解码或任务内拟合视为已经建立可用于参数编译的过程教师。
-   [运动对应审查](docs/video_information_identifiability.md#7-显式运动对应能补什么以及为什么尚不足以启动新writer)
-   未形成直接替换／追加dense-flow编码器的充分投入依据。下一重点是目标物体变化如何转为跨初态操作关系，
-   以及能分开获取与参数传递不足的合法证据；不以warp质量通过默认启动新Writer。
-4. 只有新增机制证据与相对近邻历史的实质区别成立，才登记下一项最小、合法判别实验的预算与停止分支；
-   不因CI跨零、局部正数、总分高于source或代码准备好而自动启动完整Writer、参数扫描或最终controls。
-5. 整体目标仍是可重复有益视频增量及跨视频／初始化／相邻和固定validation迁移，在合法冻结后确认最终controls。
-   当前未选checkpoint，不使用Test、held梯度或RL；局部诊断不构成方法选择或goal完成。
-
-用卡遵循Owner上限：两节点合计最多8张，空闲卡总数不超过10张时最多6张；训练与全部评测共享额度。
-formal来自clean pushed frozen commit，后续新增长重新检查独立quota与两节点实时资源。
-
-## 已完成历史与最终口径
-
-
-1. **已完成：具体设计与实现。** 保留T×L到长程过程表示，明确完整H首次读取；实现辅助真实FM和分组cotangent。
-   复用官方source/data/完整LoRA出口/evaluator，退役旧活动Writer路径；旧结果留在Git与formal artifacts。
-2. **已完成：**验证梯度分配、identity启动、teacher墙、query/noise配对和checkpoint身份；真实长视频profile决定物理batch与段长。
-3. **已完成：**主方案、纯FM首段与匹配frame_set共40面板、9,920闭环rows；所有节点尚未获得可信有序增益。
-4. **已完成有界200/300窗口；目标未达。** main与frame_set均76,800queries，后段两者均validation退化，原训练已结束。
-   **已完成：**固定表示读出64epochs诊断；留出FM改善但所有train24任务仍落后原LoRA学生，不形成部署资格。
-   **已全部完成：**active design第8节去蒸馏fresh200比较；100训练42/38、validation57/61；200训练55/55、validation72/67。
-   训练获取提高，四项validation均低于原main，相邻及换视频保持未获可信改善；不延长或自动补rho0无序训练。
-   **已完成：**第9节原生中层读出32epochs；held .13979对旧头 .14028，差额CI跨0，仍24/24落后LoRA学生 .11000。
-   **已完成：**第10节teacher侧VL Meta fresh200及8面板；validation100=61/61、200=62/64，未形成可信增益与保持，不延长或自动补frame_set。
-   **已完成：**第11节单独移除辅助表示FM；fresh200、800条件/51,200queries及8面板匹配。validation100=60/55、200=64/54，未形成可信迁移收益。
-   当前候选关闭，转入过程获取的综合机制判断；不由本项单个涨跌自动触发下一轮模块修改。
-   不延长读出probe或扫描层位；所有旧Writer/probe冻结，新干预从fresh开始且不继承probe。
-5. 达到设计登记的正确视频收益、换视频/相邻保持及迁移后，冻结方法和选点，完成视频内容/顺序因果确认，才完成当前goal。
-6. 下一阶段另以保持视频收益并提升绝对性能为goal，恢复长期145/400及完整稳定/breadth资格。
-
-每轮只根据真正检验的因素修正；不以辅助loss、wrong退化或单点峰值完成goal。不启动95-task、不恢复旧候选；
-新实验live资源与精确命令写run contract，阶段状态写progress，跨轮结论写findings，历史结果写research_history。
+本goal的完成指授权研究工作与完整汇报完成，不要求制造正结果。合理窗口后持续缺少正向信号时，完成有限原因分析并明确报告，
+不自动回退或无限追加训练。历史结果、旧计划和暂停快照由[研究历史](docs/research_history.md)、封存原件与Git保留，不在本计划续写。

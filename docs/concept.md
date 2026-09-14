@@ -1,113 +1,80 @@
 # EMBER concept
 
-当前阶段按Owner2026-09-14最终讨论，推进[Process Pullback Writer](process_pullback_writer_design.md)：
-同步双路视频的变化驱动过程读取→动作作用码→裸冻结source导数与rank16投影→唯一完整LoRA，fresh共同学习仅用跨episode FM。
-优先恢复有益的视频特异性、获取和保持，暂不强制绝对性能；具体状态与窗口只看progress及active design。
-若持续缺少正向信号须据实报告，是否回到v5.2由owner决定。下列候选描述均为历史，不能恢复旧运行。
-[Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)的两臂fresh200及8个闭环面板已完成并关闭。
-实际视觉attention的物体／运动监督在200节点改善了两种模式相对旧纯FM的绝对性能，但有序相对无序仅71/400对70/400，
-未形成登记的相邻有益有序增量；一般学习收益与视频必要性仍须区分。
-[原生纠正传递](native_corrective_transfer_audit.md)训练侧oracle已完成：state-free条件的一次38-target rank16构造
-在独立episode的t1/full10均降低真实动作误差，按登记支持具体传递前提。它仍用真实动作、没有闭环或合法RGB获取结论；
-据此登记[Native Correction Writer](native_correction_writer_design.md)：由完整视频生成B和逐位置R，
-与裸source实际输入X组成唯一`ΔW=B(RX)`，真实纠正标签仅训练使用，部署无loss/VJP/任务更新。
-该Writer的两臂fresh200及8个配对面板已完成并按原资格关闭：有序validation两节点均50/400，
-对frame_set的净增−1/+1未形成相邻有益有序增量。保留source能力不等于获取视频特定纠正；
-真实纠正的功能前提与合法共享预测的缺口须继续区分，不能由参数空间存在性直接推导RGB学习成功。
-该候选无selected checkpoint；后续冻结获取诊断与精确运行状态只看progress。
-本轮集中已确定的新方案，回到v5.2由owner决定；下文Horizon与无变化参照是已实现方法及待解释证据，不构成本次新方案。
-Owner授权下的[Video Functional Writer](video_functional_writer_design.md)已完成有界学习与修正，未获资格并关闭。
-该候选检验了时间×任务token表示、执行条件化功能信用、蒸馏、teacher VL适配及纯FM比较。
-计算与学习事实成立，但未形成可重复的有益有序增量；下一步不能默认只差保持或编译，也不靠继续叠加局部补救维护原假设。
-目标与信息墙保持，当前机制判断及下一设计状态只看[progress](../progress.md)与[task plan](../task_plan.md)。
-[Local Action Grounded Writer](local_action_grounded_writer_design.md)也已完成关闭：局部动作FM小幅有序优势未成为主LoRA收益。
-[Pretrained Video Grounded Writer](pretrained_video_grounded_writer_design.md)已完成关闭：冻结四帧视频先验经任务条件化Value
-读取进入完整native H与唯一LoRA，纯主FM在单节点训练面板获得有序收益，但未形成相邻稳定的validation收益。
-该结果不否定所有视频预训练或普通FM，也不证明共享表示已充分。
-[执行对齐设计](execution_aligned_writer_design.md)规定执行query使用真实post-action观测之后的未来动作标签；
-时间对应正确性不等于有益过程证据，当前授权与状态只看progress和task_plan。
-[Native双相机修正](native_dual_video_writer_design.md)基于原生读出的相机范围证据，只向native prefix加入同步腕部RGB，
-冻结视频先验保持agentview；两臂fresh200及8个闭环面板已完成，未满足登记资格并关闭。
-原生局部动作读出改善与最终共享Writer迁移不足同时成立，不能由前者默认继续投入相同编译链。
-下文Horizon流水线保留为历史方法说明，不是当前运行面。
+EMBER研究能否把exact task language与action-hidden正确教学视频，在rollout前一次编译为冻结π0.5 source的一套完整task-conditioned LoRA，
+使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作变化应提供必要条件信息；执行由机器人自己的观测触发。
+人从他人教学迁移到自己身体的能力是科学动机，LIBERO实验本身不证明跨身体泛化。
 
-## 从教学过程到自己的策略
+当前方法为[Process Pullback Writer](process_pullback_writer_design.md)。本文解释其完整工作原理与边界；
+接口、训练和证据节点由该设计规定，实际状态只看[progress](../progress.md)，计划见[task_plan](../task_plan.md)。
 
-EMBER探索：从一条或多条action-hidden正确教学视频理解任务条件和操作变化，结合exact language，
-在rollout前一次性编译成冻结π0.5 source的一套完整task-conditioned LoRA，使机器人从自己的新初始化闭环执行。
-语言确定目标与关注对象，视频动态必须贡献必要信息；执行行为由机器人当前观测触发。跨具身是科学动机，LIBERO结果不自动证明跨具身泛化。
-
-## 正确教学增量与方法证据
-
-正确教学视频必须同时满足同任务和内部顺序正确。研究要求正常训练自然形成correct相对错任务、乱序视频的有益闭环增量，且correct高于冻结source；不能靠人为压低错误条件制造差额。
-
-Owner 2026-09-14明确：视频理解允许读取完整视频、双向利用前后文，但须保留真实顺序与时间方向，
-将操作的前置关系及语言中的“先A后B”转为可执行知识。Owner在最终讨论中接受选定冻结模型上的correct相对
-wrong／shuffled／reversed的有益闭环证据，不再强制另训独立全帧无序模型；仍保留能力、相邻稳定和换视频鲁棒性。
-拥有顺序信息或采用双向读取本身不保证学成；架构与训练须共同解释如何把它转为可重复的有益闭环增量。
-下文过去定向流水线是历史实现，不再限制后继设计只能看视频前缀；当前执行与授权以progress为准。
-
-v5.2普通正样本动作监督已有正确视频与顺序依赖正证据；纯监督允许捷径不足以解释不同模型的行为。完整H、前缀依赖、attention和真实梯度只证明计算可用，不能证明操作证据已被有益消费。
-
-Horizon与语义条件化消费C的形成过程、数学性质及未经证实的推论见[机制复核](video_mechanism_reassessment.md)。C/S只观察100/200两个节点，其后续学习潜力未被充分检验。95-task提案不构成解决视频消费问题的证据；当前授权与阶段只看[progress](../progress.md)和[task_plan](../task_plan.md)。
-
-历史局部参照修正的数学合同见[无变化参照设计](video_change_reference_design.md)：真实历史与当前画面保持不变的读取使用同一gap/角色/窗口与参数，GRU差额进入过程图。它保持过去依赖并排除静态时间响应，但不保证过程被有益消费；当时保留语义分支、原生D与普通FM。
-
-## 历史方法：完整H过去定向数据流
+## 从原始视频到一次性策略参数
 
 ```text
-exact language + K条独立有序视频
-  → frozen vision/Gemma真实prefix：逐帧最终Z、KV与exact task-token mask
-  → 单固定probe、flow_time=1、Action Expert + shared observer Meta
-  → action_out_proj实际输入：最后50个post-norm hidden tokens
-  → 每帧上下文task tokens经现有reader形成该帧过程条件
-  → 四组：过去4帧对应 → 沿完整H联合形成query → 两端Z视觉核实
-           → 按历史u从早到晚短GRU → 完整H状态
-           → 临时H-read → 单向长程时间组织
-           → 前三组逐H条件化回写；第四组直接送出
-  → 多视频集合compiler，608个paired target/rank queries
-  → native因子读出 → 唯一38-target完整rank16 A/B
-  → 冻结source依据自身观测闭环执行
+exact language + 一条同步agentview／eye_in_hand教学视频（K=1）
+  → 真实双相机prefix，stride5完整视频及真实末帧
+  → 冻结vision／Gemma基础 + 共享读取Meta：逐帧图文Z与完整50-horizon动作响应H
+  → language引导语义角色对齐，形成逐帧语义状态e_t
+  → 真实相邻变化d_t，正向变化递推与反向上下文形成过程Value
+  → 过程Value产生每帧、每horizon的7维动作作用码q_t
+  → 同视频裸冻结source的输出导数 + 全视频原生X的PCA rank16投影
+  → 唯一38-target完整A/B LoRA
+  → source按自身当前观测闭环执行，LoRA在rollout期间固定
 ```
 
-四组使用当前帧上下文task-token条件，不跨帧池化；Compiler额外静态语言query保持关闭；精确language仍通过逐帧原生task-token条件进入过程读取。语言读取共享reader参数，原生Gemma/vision仍冻结，完整时序与视觉Value通路保留。
+同一演示的两路相机共同形成原生prefix，不能把双视角当成K=2。Teacher的动作、state、reward、terminal或任务身份不进入Writer。
+原生动作horizon表示模型动作计算的相对位置；它与teacher-video time、flow time和网络层深分别处理，不能互相替代。
 
-完整数学、张量、训练与迁移合同见 [正式设计](horizon_relation_video_writer_design.md)，
-原文与Owner裁决见 [讨论索引](review_materials/20260908/README.md)，实施状态见 [progress](../progress.md)。
-本文记录方法合同；已实现接口、实际性能与后续执行状态只由progress及对应formal evidence确认。
+## 语义、动作知识与过程各自的作用
 
-## 三类有序关系与因果职责
+图文语义负责解释画面中的对象、关系和任务关注点。Action Expert的完整50-horizon响应提供原生动作知识，
+帮助共享网络在不同画面中形成具有一致角色对应的语义状态。读取侧Action Meta和VL Meta属于Writer，基础权重始终冻结。
+完整H保留到实际learned read；它不是已经恢复的教师未来动作，也不能由hidden差异直接宣称理解了过程。
 
-1. **Horizon h：动作计算的相对位置。** 末层50个hidden仍不是已经采样完成的正确未来轨迹。
-   软对应首先提出跨起点的候选关系；新形成的匹配内容、位移分布和不匹配模式再沿完整H联合处理，产生50个视觉query。
-   H-query的作用是让一处视觉查询能参考其它位置的新对应模式；不把匹配斜带或hidden差直接解释成真实过程/速度。
-2. **邻帧 u：以当前t为共同终点的历史证据。** 每条 `[u,t]` 关系先读取过去与当前的原生Z核实，再按u从早到晚进入短GRU。
-   区间有重叠，递推解释证据之间的支持、冗余或修正；它不是动作积分，也不自动消除重复计数。
-3. **视频 t：完整任务过程。** 每组临时H-read形成时间tokens，长程层只读当前及过去；前三组通过当前h状态条件化回写，
-   让更长的过去上下文帮助下一轮局部对应和原始视觉读取。完整U始终保留到需要的最后读取，不用复制压缩token恢复H。
+相邻语义变化作为过程内容进入递推，静态语义和裸source动作估计只条件化查询与门。
+前后文可以共同解释操作，但正向与反向保留不同的前态／后态角色，以表达抓取前需接近、运输前需抓住等前置关系，
+以及语言中“先A后B”的要求。架构对重复相同合法画面施加零变化、零过程作用码的性质；这只排除该静态输入的非零输出，
+不证明真实视频的顺序已被有益消费。
 
-该历史方法当时选择**过去局部＋过去单向长程**；每组U_t只依赖原视频前缀。H-query允许同一帧完整H双向交互，不能混用两种mask。
-专家原文曾建议双向长程，当时没有采用；Owner 2026-09-14已允许后继设计利用完整视频双向理解。
-旧实现与实验合同保持原样，计算前缀性质不能证明视频对最终行为有必要作用。
+## 用冻结source把动作作用转为参数作用
 
-## 共同解释与完整参数生成
+作用码q保留每个真实视频状态的全部50个horizon位置，使用7维实际动作输出坐标；原生32维输出的其余位置补零。
+它是作用于裸source输出的余切，不是teacher action标签或一条待播放的轨迹。网络仅从过程Value产生q。
 
-每条video先独立保序编码，只有集合阶段置换不变地共同读取。不混淆video内部时间和video集合次序，不平均frames、raw features或最终LoRA。
-Compiler首块以task-independent target/rank身份作为残差内容，较强off候选关闭了额外language query；exact language仍通过逐帧Z/R和过程条件进入P4，第二块继续共同编译。真实P4 Value不保证视觉动态必要性。C则另用逐token视觉语义先确定过程读取条件，再融合语义与变化生成LoRA；两者的实现与证据须分开解释。
-Compiler的target/rank身份决定输出位置，输入不必保留18个网络层才能生成38个目标。末层未保留的信息也不能由compiler凭空恢复。
-Native D按target/rank/side独立、跨任务共享，允许更直接的因子学习通道；它仍有共享干扰和固定读出空间，不能被视为性能保证。
-参数在rollout中固定，作用于随机器人观测变化的激活，因此可以形成状态条件化行为；不能按教师视频时钟播放动作。
+令F0为同一合法双路RGB／language条件下裸source的原生flow输出。对每个LoRA目标层，固定编译关系为：
 
-## 学习与裁决
+```text
+G_l = (1/T) sum_t J_(W_l) F0(V_t)^T q_t
+A_l = 全视频裸source X_l的top16右奇异向量（正交行）
+B_l = G_l A_l^T
+DeltaW_l = B_l A_l = G_l P_l，P_l = A_l^T A_l
+```
 
-Writer（含内部读取模块Meta） fresh、端到端纯FM监督，source基础冻结；FM来自同task另一episode的actions。
-监督阶段无RL更新、探索rollout或trust回滚，真实闭环与独立验证共同判断能力和平台。
-达到有证据的平台后，才从单个保留的监督checkpoint接独立共享Writer RL，采用新optimizer/scheduler，默认不混FM。
-监督充分仍弱要先定位机制缺口，不能只宣布饱和后交给RL救场。训练期共享RL不同于部署时task-local优化。
+这把学习网络的输出约束在有实际动作含义的坐标中，再由冻结source导数确定参数作用；共享网络不再同时学习任意的高维参数译码。
+裸source坐标在两组Meta作用域之外计算。所有真实frame／horizon参与投影，完整A/B组成唯一执行LoRA，无第二adapter或task-local候选。
+编译在一次Writer调用内部允许固定、只读、多阶段重放，明确使用冻结模型导数；部署没有teacher标签、loss或optimizer。
 
-早期强Writer、task专家与G1/G2提供不同层次的正证据；后续shared/clone差距及384的失败说明共享行为仍未解决。
-新图没有继承它们的分数，也没有由数学依赖证明操作理解。历史与适用边界见 [research_history](research_history.md)。
-唯一正式性能线是validation8 single-checkpoint strict paired correct>145/400，并满足相邻、跨视频、breadth、四suite、Goal/Long及最终视频因果要求。
+这一映射只描述F0处的局部关系，有限LoRA的实际行为仍由完整非线性policy决定。PCA保留输入能量，未保证保留有用功能方向，
+因此完整学习前须对本次G P出口完成有界的训练侧功能核验；旧G或旧局部场的正例不能代替这项前提。
 
+## 共同学习、迁移与保持
 
-同步双视角是同一教学演示的两路RGB观察。`observer.camera_view=dual`将第三人称与腕部画面在同一时间点送入原生双相机prefix，形成共同Z/KV和一份完整horizon响应；不把相机数当作K、不平均视角LoRA。该读取能力不预先证明双视角的闭环收益。
+Writer、Action Meta与VL Meta从合法identity开始fresh共同学习，q末端投影初始为零。唯一loss是同task跨episode的真实主执行FM：
+教学视频给出任务条件，动作queries来自同task其它episode，避免逐帧复制该教师轨迹。Teacher video本身不需要动作标注或专门q监督。
+
+真实FM先产生完整LoRA余切，再经固定q到LoRA映射的精确伴随回到过程网络及两组Meta；各部分在同一参数版本完成信用后统一更新。
+基础source始终冻结，已适配Z/KV/H不跨更新缓存。本轮不采用分段冻结课程、辅助q标签、RL或部署优化。
+
+共享语义与动作坐标、跨episode监督和固定编译关系，是本方法尝试获得跨视频／初始化／任务复用的理由。
+固定参数映射可能减少共享译码漂移，但读取器仍可能遗忘、走捷径或不泛化；普通FM与结构性质都不能保证能力获取或保持。
+参数在rollout期间固定却作用于随自身观测变化的激活，因此可以形成状态条件化行为，无需按教师视频时钟播放动作。
+
+## 怎样判断方法是否成立
+
+当前优先检验正确视频的实际闭环能力、有益的视频特异性及相邻保持，>145/400仍为长期目标和参照，本阶段不强制。
+正式判断使用single-checkpoint strict paired400，结合task／suite、breadth、retained/gained/lost、churn及相邻success-set重合。
+能力与相邻资格成立后补same-task-other，冻结选定单checkpoint，再测试wrong／no-video／shuffled／reversed；不另训frame_set作为硬要求。
+最终controls不参与训练、选点或架构修正，错误条件退化不能替代正确条件获益。
+
+若有信息量学习后仍缺少正向信号，须降低对实际检验组合的支持并作有限原因分析，不以loss下降无限续训。
+是否结束坚持或回到v5.2由owner决定。完整相关正负证据、旧方法及专家论证统一从[研究历史](research_history.md)追溯，
+跨轮判断见[findings](../findings.md)；新图不继承历史模型的分数或资格。

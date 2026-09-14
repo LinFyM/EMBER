@@ -17,10 +17,11 @@ from torch.utils.checkpoint import checkpoint
 
 from ember.lora import LoRAContract
 from ember.writer.attention import Attention, RotaryBlock, feed_forward
+from ember.writer.factor import SharedSourceOutlet
 
 
-SCHEMA = "video_conditioned_writer_v8"
-ARCHITECTURE = "source_pullback_process_lora_v1"
+SCHEMA = "video_conditioned_writer_v9"
+ARCHITECTURE = "source_pullback_process_lora_v2"
 
 
 def require_architecture_identity(config: Mapping[str, object]) -> None:
@@ -138,7 +139,7 @@ class _VideoEncoder(nn.Module):
 
 
 class VideoConditionedWriter(nn.Module):
-    """Predict real action cotangents; no learned high-dimensional decoder."""
+    """Predict action cotangents and share a two-sided native LoRA outlet."""
 
     def __init__(self, contract: LoRAContract, config: VideoWriterConfig = VideoWriterConfig()) -> None:
         super().__init__()
@@ -155,12 +156,13 @@ class VideoConditionedWriter(nn.Module):
                                          nn.Linear(4 * width, width, bias=False))
         self.q_head = nn.Linear(width, config.action_width, bias=False)
         nn.init.zeros_(self.q_head.weight)
+        self.outlet = SharedSourceOutlet(contract)
 
     def encoder_parameters(self) -> Iterator[nn.Parameter]:
         return self.encoder.parameters()
 
     def compiler_parameters(self) -> Iterator[nn.Parameter]:
-        # Historical metric partition: the learned part now ends at q.
+        # The compiler partition includes q reading and the shared outlet.
         return (parameter for name, parameter in self.named_parameters() if not name.startswith("encoder."))
 
     def _validate_video(self, response, indices, visual, valid, task_mask, count) -> None:
@@ -218,8 +220,12 @@ class VideoConditionedWriter(nn.Module):
             outputs.append(self.q_head(content).float())
         return torch.cat(outputs)
 
-    def decode(self, videos, native_inputs) -> dict[str, Tensor]:
+    def raw_factors(self, videos, native_inputs) -> dict[str, Tensor]:
+        """Compile once; training retains this small A0/B0 for outlet replay."""
         return native_inputs.compile(self.action_cotangents(videos, native_inputs.predictions))
+
+    def decode(self, videos, native_inputs) -> dict[str, Tensor]:
+        return self.outlet(self.raw_factors(videos, native_inputs))
 
     def forward(self, responses: Sequence[Tensor], frame_indices: Sequence[Tensor], language_embeddings: Tensor,
                 language_mask: Tensor, visual_tokens: Sequence[Tensor], visual_masks: Sequence[Tensor],

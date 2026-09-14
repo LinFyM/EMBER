@@ -1,10 +1,42 @@
-"""Fixed full-video PCA projection and the source pullback's exact q adjoint."""
+"""Fixed source pullback and shared two-sided native coordinate transforms."""
 from __future__ import annotations
 
 import torch
 from torch.autograd.function import once_differentiable
 
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
+
+
+class SharedSourceOutlet(torch.nn.Module):
+    """Task-independent L B0 A0 R, with rank-sized residual transforms.
+
+    The transforms act in native input/output coordinates, so a rotation of
+    the internal PCA rank basis cancels between B0 and A0. No dense identity
+    or task-conditioned parameter path is constructed.
+    """
+
+    def __init__(self, contract):
+        super().__init__()
+        self.contract = contract
+        self.left_u, self.left_v = torch.nn.ParameterList(), torch.nn.ParameterList()
+        self.right_u, self.right_v = torch.nn.ParameterList(), torch.nn.ParameterList()
+        for target in contract.targets:
+            for width, up, down in ((target.out_features, self.left_u, self.left_v),
+                                    (target.in_features, self.right_u, self.right_v)):
+                up.append(torch.nn.Parameter(torch.zeros(width, contract.rank)))
+                down.append(torch.nn.Parameter(torch.randn(contract.rank, width) * width ** -.5))
+
+    def forward(self, bare_state):
+        state = {}
+        for target, left_u, left_v, right_u, right_v in zip(
+                self.contract.targets, self.left_u, self.left_v, self.right_u, self.right_v, strict=True):
+            a, b = bare_state[target.name + LORA_A_SUFFIX], bare_state[target.name + LORA_B_SUFFIX]
+            # Factors and shared transforms retain FP32 under the Writer's
+            # outer autocast. Native source and actual main FM are unchanged.
+            with torch.autocast(a.device.type, enabled=False):
+                state[target.name + LORA_A_SUFFIX] = a + (a @ right_u) @ right_v
+                state[target.name + LORA_B_SUFFIX] = b + left_u @ (left_v @ b)
+        return state
 
 
 @torch.no_grad()

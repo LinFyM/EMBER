@@ -1,4 +1,4 @@
-"""Behavioral contracts for a change-driven video reader and a fixed compiler."""
+"""Behavioral contracts for process-only q and a shared native-coordinate outlet."""
 from dataclasses import replace
 from pathlib import Path
 
@@ -46,6 +46,7 @@ class _FixedCoordinates:
 
     def __init__(self, model, args):
         self.contract = model.contract
+        self.compile_calls = 0
         self.predictions = torch.randn(*args[0][0].shape[:2], model.config.action_width)
         self.bases, self.maps = {}, {}
         for target in model.contract.targets:
@@ -53,6 +54,7 @@ class _FixedCoordinates:
             self.maps[target.name] = torch.randn(target.out_features * model.contract.rank, self.predictions.numel()) * .1
 
     def compile(self, q):
+        self.compile_calls += 1
         state = {}
         for target in self.contract.targets:
             state[target.name + LORA_A_SUFFIX] = self.bases[target.name].to(q)
@@ -105,6 +107,9 @@ def test_complete_identity_and_the_first_real_update_opens_upstream_credit():
 def test_constant_video_cannot_generate_process_content_after_learning(activation_checkpoint):
     model, args = writer(activation_checkpoint=activation_checkpoint), list(inputs((11,)))
     unlock(model)
+    with torch.no_grad():
+        for parameter in model.outlet.parameters():
+            parameter.normal_(std=.2)
     args[0] = (args[0][0][:1].expand_as(args[0][0]).clone(),)
     args[4] = (args[4][0][:1].expand_as(args[4][0]).clone(),)
     native = native_inputs(model, args)
@@ -114,6 +119,10 @@ def test_constant_video_cannot_generate_process_content_after_learning(activatio
     torch.testing.assert_close(videos[0][0], torch.zeros_like(videos[0][0]), rtol=0, atol=1e-6)
     q = model.action_cotangents(videos, native.predictions)
     torch.testing.assert_close(q, torch.zeros_like(q), rtol=0, atol=1e-6)
+    state = model.decode(videos, native)
+    for target in model.contract.targets:
+        update = state[target.name + LORA_B_SUFFIX] @ state[target.name + LORA_A_SUFFIX]
+        torch.testing.assert_close(update, torch.zeros_like(update), rtol=0, atol=1e-6)
     shifted = list(args)
     shifted[1] = (args[1][0] * 19 + 731,)
     torch.testing.assert_close(model(*shifted, native_inputs=native), model(*args, native_inputs=native))
@@ -195,9 +204,15 @@ def test_k1_and_frozen_source_prediction_information_wall():
         writer(process_mode="frame_set")
 
 
-def test_parameter_partition_covers_exactly_encoder_and_q_reader():
+def test_parameter_partition_covers_exactly_encoder_q_reader_and_outlet():
     model = writer()
     encoder, compiler = map(lambda it: {id(value) for value in it},
                             (model.encoder_parameters(), model.compiler_parameters()))
     assert encoder and compiler and not encoder & compiler
     assert encoder | compiler == {id(value) for value in model.parameters()}
+    assert {id(value) for value in model.outlet.parameters()} <= compiler
+
+
+def test_old_architecture_requires_its_frozen_runtime():
+    with pytest.raises(ValueError, match="identity"):
+        writer(schema="video_conditioned_writer_v8", architecture="source_pullback_process_lora_v1")

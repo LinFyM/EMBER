@@ -5,6 +5,7 @@ import time
 
 import torch
 
+from ember.lora import LORA_B_SUFFIX
 from ember.writer.function_credit import paired_functional_credit
 from ember.writer.native import autocast
 
@@ -22,11 +23,18 @@ def _native_cotangents(leaves, visuals):
     return tuple(value.grad for value in leaves), tuple(value.grad for value in visuals)
 
 
-def replay_functional_credit(writer, responses, inputs, compiled, native_inputs):
-    """Transpose the fixed compiler once, then replay its exact q credit."""
-    # q -> B is linear and A is fixed. Compute the transpose before retaining
-    # the learned Writer graph; no second forward compilation is necessary.
-    q_credit = native_inputs.adjoint(compiled)
+def replay_functional_credit(writer, responses, inputs, compiled, native_inputs, bare_state):
+    """Replay outlet parameter/B0 credit, then the fixed compiler and q reader."""
+    bare_leaves = {name: value.detach().requires_grad_(name.endswith(LORA_B_SUFFIX))
+                   for name, value in bare_state.items()}
+    state = writer.outlet(bare_leaves)
+    torch.autograd.backward(tuple(state.values()),
+                            tuple(compiled[name].detach().to(value) for name, value in state.items()))
+    raw_credit = {name: value.grad for name, value in bare_leaves.items() if name.endswith(LORA_B_SUFFIX)}
+    # Only B0 depends on q. A0 is frozen, but its final A cotangent already
+    # trained R above. No expensive source compilation is repeated here.
+    q_credit = native_inputs.adjoint(raw_credit)
+    del state, bare_leaves, raw_credit
     videos, leaves, visuals = _encode_leaves(writer, responses, inputs, backward=True)
     q = writer.action_cotangents(videos, native_inputs.predictions)
     (q * q_credit.detach().to(q)).sum().backward()
@@ -67,7 +75,8 @@ class SupervisedEngine:
         start = self._time(timings, "bare_source_seconds", start)
         with torch.no_grad(), autocast(self.device):
             videos = runtime.state.writer.encode(responses, *inputs)
-            state = runtime.state.writer.decode(videos, native_inputs)
+            bare_state = runtime.state.writer.raw_factors(videos, native_inputs)
+            state = runtime.state.writer.outlet(bare_state)
         start = self._time(timings, "writer_forward_seconds", start)
         raw, trace = self.data.action_batch(
             task, draw["occurrence"], demos, query_seed=draw["query_seed"],
@@ -82,8 +91,8 @@ class SupervisedEngine:
         fm_norm = float(torch.stack([value.norm() for value in compiled.values()]).norm())
         with autocast(self.device):
             cotangents = replay_functional_credit(
-                runtime.state.writer, responses, inputs, compiled, native_inputs)
-        del compiled, responses, inputs, native_inputs
+                runtime.state.writer, responses, inputs, compiled, native_inputs, bare_state)
+        del compiled, responses, inputs, native_inputs, bare_state
         start = self._time(timings, "writer_vjp_seconds", start)
         runtime.observer.backward(condition, *cotangents)
         self._time(timings, "observer_vjp_seconds", start)

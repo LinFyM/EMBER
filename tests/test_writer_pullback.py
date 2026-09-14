@@ -9,7 +9,7 @@ from transformers.models.gemma.modeling_gemma import eager_attention_forward
 
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRATarget
 from ember.writer.correction import NativeCorrectionReader, SourceCoordinates
-from ember.writer.factor import native_input_basis
+from ember.writer.factor import SharedSourceOutlet, native_input_basis
 from ember.writer.native import FrozenInputChunk, NativeCondition
 
 
@@ -182,3 +182,37 @@ def test_native_gram_basis_is_the_uncentered_full_input_top_rank_projection():
     _, _, right = torch.linalg.svd(x, full_matrices=False)
     expected = right[:16]
     torch.testing.assert_close(basis.T @ basis, expected.T @ expected, rtol=3e-4, atol=5e-6)
+
+
+def test_shared_outlet_identity_zero_rank_and_basis_rotation(source):
+    reader, _, _ = source
+    outlet = SharedSourceOutlet(reader.contract)
+    raw = {}
+    for target in reader.contract.targets:
+        raw[target.name + LORA_A_SUFFIX] = torch.linalg.qr(torch.randn(32, 16)).Q.T
+        raw[target.name + LORA_B_SUFFIX] = torch.randn(32, 16)
+    with torch.autocast('cpu', dtype=torch.bfloat16):
+        identity = outlet(raw)
+    assert len(identity) == 76
+    for name, value in identity.items():
+        assert value.dtype == torch.float32
+        torch.testing.assert_close(value, raw[name], rtol=0, atol=0)
+    with torch.no_grad():
+        for parameter in outlet.parameters():
+            parameter.normal_(std=.1)
+    rotated, zero = {}, {}
+    for target in reader.contract.targets:
+        a_key, b_key = target.name + LORA_A_SUFFIX, target.name + LORA_B_SUFFIX
+        rotation = torch.linalg.qr(torch.randn(16, 16)).Q
+        rotation[:, ::2] *= -1  # Include arbitrary sign choices as well as rotations.
+        rotated[a_key], rotated[b_key] = rotation @ raw[a_key], raw[b_key] @ rotation.T
+        zero[a_key], zero[b_key] = raw[a_key], torch.zeros_like(raw[b_key])
+    transformed, changed_basis, zero_output = outlet(raw), outlet(rotated), outlet(zero)
+    for target in reader.contract.targets:
+        a_key, b_key = target.name + LORA_A_SUFFIX, target.name + LORA_B_SUFFIX
+        a, b = transformed[a_key], transformed[b_key]
+        assert a.shape == (16, 32) and b.shape == (32, 16)
+        assert torch.linalg.matrix_rank(b @ a) <= 16
+        torch.testing.assert_close(b @ a, changed_basis[b_key] @ changed_basis[a_key], rtol=3e-4, atol=4e-6)
+        assert zero_output[b_key].count_nonzero() == 0
+        assert (zero_output[b_key] @ zero_output[a_key]).count_nonzero() == 0

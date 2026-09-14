@@ -59,7 +59,7 @@ def bank(tmp_path, request):
     run["model_config"] = vars(VideoWriterConfig())
     run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
-    run["config"]["schema_version"] = "ember_process_pullback_writer_config_v1"
+    run["config"]["schema_version"] = "ember_process_pullback_writer_config_v2"
     run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
     run["config"]["observer"]["native_inputs"] = "bare_source_output_pullback_pca16_full50"
@@ -499,7 +499,7 @@ def test_method_metadata_describes_native_read_and_frozen_source_derivative_comp
     assert method["native_read"] == "all_50_action_horizon_positions_retained_until_learned_read"
     assert method["video_representation"] == "language_role_semantic_states_and_change_driven_process_values"
     assert method["process_aggregation"] == "forward_change_recurrence_with_backward_context"
-    assert method["native_parameter_generation"] == "G_mean_J_W_F0_T_q_then_DeltaW_G_P_PCA16"
+    assert method["native_parameter_generation"] == "G_mean_J_W_F0_T_q_then_DeltaW_L_G_P_R"
     assert method["action_code_shape"] == ["T", 50, 7]
     assert method["deployment_frozen_source_vjp"] is True
     assert method["deployment_grad_context"] == "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported"
@@ -512,6 +512,7 @@ def test_method_metadata_describes_native_read_and_frozen_source_derivative_comp
 
 
 @pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
+    ("schema_version", "ember_process_pullback_writer_run_v1"),
     ("schema_version", "ember_native_correction_writer_run_v1"),
     ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
     ("stage", "native_correction_writer_fresh"),

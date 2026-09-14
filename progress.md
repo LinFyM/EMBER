@@ -7,7 +7,7 @@ Owner允许多次有依据的训练、修复和迭代；是否停止坚持或回
 Owner追加的磁盘、退役源码／入口及文档正文清理已完成；真实机制、效率优化与新低秩出口功能核验通过，当前执行已登记窗口的正式fresh学习。
 计划见[task_plan](task_plan.md)，稳定目标与最新优先级见[owner requirements](docs/current_owner_requirements.md)。
 
-本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，四卡首段0→300已完成，正在物化首个400＋96闭环节点；尚无selected checkpoint或新方法闭环结果。
+本方案已完成GPU机制／成本核验及G P投影出口功能前提；900更新窗口已在正式分数前登记，首个300更新的400＋96闭环节点完成，当前exact-resume至600；尚无selected checkpoint。
 CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未取消能力、相邻保持、换视频及最终视频controls的要求。
 
 ## 已实现与验证
@@ -34,17 +34,22 @@ CPU机制检查不能代替上述结果；长期>145/400本阶段不强制，未
 - `configs/pi05_process_pullback_writer.json`已登记fresh900、3,600条件／230,400queries；300／600／900做correct400及train96，
   100倍数保存。四卡训练预计4–5小时、诊断和评测另计；初段12GiB、含条件触发controls的预计峰值24GiB。
 - 评测物化已支持同节点常驻GPU worker按完整条件动态分工，保持同一编译计算和单一完整manifest；
-  78项bank合同与5项实际spawn并发／失败检查通过，真实四卡物化将在首个checkpoint完成后执行。
-  三个节点的400＋96请求、固定state/video映射、source来源与完整配对readout已准备；候选实际配对检查待闭环完成。
+  78项bank合同与5项实际spawn并发／失败检查通过；首个496条件真实四卡物化完成，576秒、约.861 LoRA/s。
+  三个节点固定state/video映射；300的所有候选执行合同、normalization、逐行RNG和视频无重复检查通过。
 - 训练池为train24的demo16–41，共624个K1条件；采样帧数min16、median31、p90为57、max105。
   最长视频已用于上述真实profile；独立动作42–45／teacher46–49及train states32–35保持既有合同。
 
 当前训练来自clean pushed detached `d6defa69`，冻结运行树`.codex/tmp/process-pullback-runtime`，gpu01:0,1,2,3四rank。
-启动记录为本轮`training_launch_contract.json`，输出`training/`，tmux `ember_process_pullback_train_20260914`。
+启动与分段记录为本轮`training_launch_contract.json`，输出`training/`。
 首段300更新正常退出，1,200条件／76,800queries，墙钟5,704秒；24task独立动作诊断FM .153279524→.149746817。
-source可训练参数0，完整checkpoint和曝光检查通过；动作loss只是诊断，实际能力待本节点correct400／train96。
+source可训练参数0，完整checkpoint和曝光检查通过；动作loss只是诊断，闭环证据如下。
 物化／评测冻结树`.codex/tmp/process-pullback-evaluation`来自已推送`f5d9db78`，使用四卡按条件动态编译；训练树保持原样。
-首个节点完成后按预登记合同exact-resume同一run至600／900。
+300闭环train **24/96**（source17，R/G/L15/9/2，差额task-bootstrap CI[+2.08,+13.54]pp）；validation **64/400**
+（source47，R/G/L38/26/9，CI[-3.25,+16.00]pp）。Validation S/O/G/L为0/26/36/2，breadth仍3/8；
+主要增益为Object task1的5→26，尚未形成广泛迁移或相邻保持证据。两个面板均12 workers exit0。
+完整逐task、suite和配对证据见本轮[READOUT](runs/analysis/process_pullback_writer_20260914/READOUT.md)及`paired_readout.json`。
+当前以原四卡、同一配置与完整训练状态exact-resume至600，tmux `ember_process_pullback_train600_20260914`；
+实际运行边界300→600已核对，随后按登记窗口判断获取与保持。
 当前无额外数据、RL或Test授权，后续顺序只在task_plan维护。
 Owner最新确定先保持当前四卡、完成纯FM闭环结果后再决定是否做q辅助对照；暂不开展六卡训练拆分或新增q损失。
 等待期间只完成必要准备，其余等待进程结束事件，不反复读取或播报训练进度。

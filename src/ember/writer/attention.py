@@ -21,13 +21,15 @@ def feed_forward(width: int, input_width: int | None = None) -> nn.Sequential:
 class Attention(nn.Module):
     """K/V may be projected once and reused by several edge batches."""
 
-    def __init__(self, width: int, heads: int, memory_width: int | None = None) -> None:
+    def __init__(self, width: int, heads: int, memory_width: int | None = None,
+                 *, zero_value: bool = False) -> None:
         super().__init__()
         self.heads, self.head_width = heads, width // heads
         self.query = nn.Linear(width, width)
         self.key = nn.Linear(memory_width or width, width)
-        self.value = nn.Linear(memory_width or width, width)
-        self.output = nn.Linear(width, width)
+        # Q/K may use static conditions while zero process Values stay zero.
+        self.value = nn.Linear(memory_width or width, width, bias=not zero_value)
+        self.output = nn.Linear(width, width, bias=not zero_value)
 
     def split_heads(self, value: Tensor) -> Tensor:
         return value.unflatten(-1, (self.heads, self.head_width)).transpose(-3, -2)

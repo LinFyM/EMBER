@@ -1723,3 +1723,63 @@ PCA单一根因、可泛化共享L/R足够或合法RGB获取已解决。诊断�
 所有数据原件在`runs/analysis/process_pullback_writer_20260914/causal_diagnostics/`：diagnostic_metrics、
 reachability_functional_metrics、replay_pairing_metrics、各任务拟合、raw rows／completion、注册和来源。
 临时拟合及static bank准入由已推送`adc31a15`与冻结运行树保存，完成使命后从canonical main退役。
+
+## 102. 共享L/R出口扩大了局部验证收益，尚未建立广泛能力（2026-09-15）
+
+依§101的train-only有界q／完整A/B差距，唯一主要修订是在原G P两侧加入共享、identity起步的乘法变换L/R。
+保留双路RGB过程读取、完整50-horizon、7维q、冻结裸source导数、38-target唯一LoRA及同task跨episode纯FM。
+两Meta与Writer fresh共同训练，未复用特权拟合初始化、未引入q辅助或RL；旧900视频controls未参与修订。
+实现`e1ca29b9`、正式训练和全部新评测来自clean pushed detached `85ecfd18`。
+
+Fresh900实际完成3,600条件／230,400queries、623/624合法teacher条件、九份完整checkpoint。
+三段训练合计15,663.382秒，最大reserved43.809GiB；899次identity后更新的Writer及两Meta信用均finite非零，source冻结。
+独立训练动作FM从.153279524降至.140811848，22/24task改善、均差task-bootstrap95%CI[.007163,.019066]。
+训练闭环没有对应的普遍提升；loss下降和有效信用不能代替能力证据。
+
+| 节点 | Train /96 | Train breadth /24 | Validation /400 | Validation breadth /8 | Validation S/O/G/L |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Source | 17 | 7 | 47 | 3 | 0/5/41/1 |
+| 300 | 21 | 9 | 50 | 4 | 0/16/32/2 |
+| 600 | 20 | 8 | 75 | 3 | 0/38/34/3 |
+| 900 | 18 | 11 | 79 | 3 | 0/40/39/0 |
+
+Validation300→600与600→900的R/G/L为39/36/11、63/16/12，churn47／28、Jaccard .4535／.6923。
+Train相邻为13/7/8、12/6/8，churn15／14、Jaccard .4643／.4615。
+900对source的validation R/G/L37/42/10、CI[-2.5,+26.25]pp；train9/9/8、CI[-7.29,+9.38]pp。
+900的77/79次成功集中于奶油奶酪入篮40及入碗37，余下2次为Goal3；Spatial与Long均零。
+这说明局部验证收益在后两节点有所保持，但广泛获取、组合能力和迁移保持仍未成立。
+
+固定旧900→新900的validation为64→79、R/G/L48/31/16、CI[-4,+16]pp；train26→18、13/5/13、CI[-19.79,+2.08]pp。
+验证净增15来自Object1 +22、Goal6 −5和Spatial1 −2；保留实际局部改进，不能描述为全面修复或完全无效。
+有限预算完整A/B拟合的正例只证明一处出口参数化／优化约束，不能推出共享L/R足够，或把剩余缺口唯一归于读取器、PCA或优化器。
+900窗口也不是所有训练条件下的不可学习性证明。
+
+能力non-pass和terminal900在所有新controls／Test之前登记并冻结，没有选择合格checkpoint。
+最终correct／other／wrong／shuffled／reversed为79／81／53／70／78（均/400），四个新增面板的48个workers全exit0。
+相对correct的四个差额CI为[-1.75,+2.75]／[-22,+2.75]／[-9.5,+2.25]／[-2.25,+1.5]pp，均包含零。
+Other R/G/L67/14/12、churn26、Jaccard .7204；Wrong42/11/37、churn48；Shuffled57/13/22、churn35；Reversed67/11/12、churn23。
+Correct相对wrong的局部优势主要来自Object1的40对11；倒序整体78接近correct79，有益时间方向未成立。
+Same-task换视频的整体分数接近，不等于所有初态或未成功任务均鲁棒；这些controls仅作冻结后的描述，不反馈方法。
+No-video生成8套完整零LoRA条件、覆盖400配对初态；最终身份与执行合同核验通过，复用source47，不冒充新增400条rollouts。
+
+固定Test只在方法冻结及视频controls全部完成后准入，source86／correct49（均/400），breadth5→6，
+S/O/G/L从19/0/45/22变为5/6/27/11。R/G/L34/15/52、churn67、Jaccard .3366；
+差额−9.25pp，task-bootstrap95%CI[-20.25,+.75]pp。区间包含零，但该固定面板不能作为泛化改善证据。
+
+| Test task（每task50条） | Source | 900 | Retained / Gained / Lost |
+| --- | ---: | ---: | --- |
+| Spatial6 | 2 | 0 | 0/0/2 |
+| Spatial8 | 17 | 5 | 3/2/14 |
+| Object0 | 0 | 6 | 0/6/0 |
+| Object7 | 0 | 0 | 0/0/0 |
+| Goal4 | 45 | 26 | 25/1/20 |
+| Goal7 | 0 | 1 | 0/1/0 |
+| Long0 | 4 | 2 | 1/1/3 |
+| Long3 | 18 | 9 | 5/4/13 |
+
+Object0和Goal7的新增能力保留为局部正例；其它三个suite的已有能力损失更大，不能由breadth增加宣称能力保持改善。
+Test不反哺方法、训练或选点，不改变此前冻结的能力non-pass。新方法12个面板共3,888条rows、126个workers均正常结束，
+各面板墙钟累计10,522.596秒（含跨节点并行）。完整配对、freeze、400-row视频臂全50视频无放回、checkpoint／method及no-video审计通过。
+关闭本次修订窗口，不追加训练、小扫或新的设计；该non-pass只限制本轮检验的共享出口／过程读取／纯FM组合。
+原件根`runs/analysis/process_pullback_learned_outlet_20260915/`保留paired_readout、paired_endpoint_revision_comparison、
+final_paired_readout、bounded900_decision、method_freeze、全部checkpoint／bank／raw rows／completion及训练、物化和最终读出launch contracts。

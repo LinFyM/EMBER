@@ -1,32 +1,28 @@
 # EMBER task plan
 
-## 当前goal与边界
+## 本轮完成范围
 
-完成原因诊断后，自主决定当前方法修订、实施、验证、正式训练和完整配对评测，再在对话中交付实际结果与原因分析。
-Owner无需再次审查，持续goal仍active。当前唯一设计为[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)。
-方法只改变原生LoRA出口：共享identity起步的L/R乘法变换，其余过程读取、7维q、rank16、数据和纯FM保持。
-旧冻结900的视频controls不反馈新方法；不做q辅助、RL、自动回退v5.2或超参扫描。
-固定Test仅在本轮方法及terminal900冻结后用于登记的source/correct读出，无梯度、不选点、不反哺设计。
+Owner授权的原因诊断、自主决定修订、实施验证、正式训练、冻结测试和对话内结果分析均已完成。
+本轮[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)已冻结并关闭执行窗口；
+当前没有active design或待执行实验。工作完成不代表方法获得科学资格：没有selected合格checkpoint。
 
 ## 已完成
 
-1. 固定出口fresh900窗口、六个正式面板及完整曝光／相邻保持分析结束。
-2. 旧900全部视频对照、三节点训练池视频、96条行为回放、全train24 q／完整A/B有界功能及闭环对照结束。
-3. 原出口／free_q／free_AB的20／18／46支持优先修正固定出口整体约束；不单独给PCA定责，也不把特权拟合当RGB能力。
-4. 相关历史与原始合同已核对；现有负例边界保留。已明确新修正的因果作用、局限、fresh曝光和冻结读出合同。
+1. 固定出口fresh900、全部节点面板、训练池视频、96条行为回放及全train24 q／完整A/B有界对照。
+2. 原输出／free_q／free_AB的20／18／46支持优先修正出口参数化／优化约束；没有将PCA单独定责，也未把特权拟合作为初始化。
+3. 实施共享identity乘法L/R出口，保留原过程读取、7维q、rank16、完整50-horizon与纯FM；完成相关检查、真实profile、main集成和推送。
+4. Clean pushed detached 85ecfd18完成fresh900、3,600条件／230,400queries和六套节点面板：train21／20／18（/96），validation50／75／79（/400）。
+5. 在新controls／Test之前登记能力non-pass并冻结方法和固定terminal900；全部视频对照79／81／53／70／78／47完成。
+6. 全部视频controls结束后完成固定Test source86／correct49（/400），逐task／suite、breadth、R/G/L、churn、不确定性及配对审计齐全。
+7. 新方法共3,888条正式rollouts、126个workers均正常结束；完整证据与限定结论进入项目状态、findings和research_history，结果直接在对话交付。
 
-## 当前执行
+## 关闭结论与边界
 
-1. 共享出口、精确信用、v2 metadata及冻结后Test准入已集成main并push，诊断专属路径已退役。
-2. 直接autograd、bank及Test准入检查与真实最长视频两次联合更新／部署profile均通过，隔离实现工作树已清理。
-3. Fresh900来自clean pushed detached `85ecfd18`、gpu01:0–3；300／600／900及六套闭环面板已完成，train21／20／18（/96）、validation50／75／79（/400）。
-4. 全部曝光与配对审计通过；900只覆盖3/8 validation tasks、2/4 suites，train接近source。局部验证收益有所保持，广泛能力资格未通过，已在新controls／Test之前登记此判断。
-5. 已冻结预先固定的terminal900和本轮方法；完成same-task-other、wrong/no-video及最后shuffled/reversed的paired400，
-   再完成固定test8 source400／correct400。终点读出不冒充性能合格选点，controls和Test均不反馈本轮设计。
-6. 汇总per-task／suite、breadth、R/G/L、churn、相邻重合、曝光、成本、配对不确定性和未解决范围，直接在对话中报告。
+共享出口取得局部validation增益，但训练闭环接近source，validation成功仍集中于两项奶油奶酪任务，Spatial／Long均零。
+正确方向没有明确优势；Test出现局部新成功，但已有能力损失更多，86→49、R/G/L34/15/52，差额95%CI[-20.25,+.75]pp。
+这些证据不支持广泛获取、迁移和保持已获解决；保留正负事实，不将有界窗口等同普遍不可学习性证明。
 
-## 完成判断
-
-本goal要求授权工作完整结束，不要求制造正结果。科学成功仍要真实能力、跨task迁移、保持、换视频及必要视频增量共同支持。
-有界特权正例、代码、非零梯度、loss或孤立分数峰值都不是成功。合理窗口后仍弱则报告具体修正未通过，不无限续训／扫参。
-实际状态和资源记录见[progress](progress.md)，正式命令与来源只保存在当前研究launch contract，历史见[research_history](docs/research_history.md)。
+旧controls、所有新controls和Test均未反哺本轮架构／训练／选点；没有q辅助、RL、checkpoint融合、超参扫描或自动回退v5.2。
+不从已关闭设计、日志或历史未完成项恢复运行。没有登记新的方法或训练计划。
+实际状态见[progress](progress.md)，跨轮结论见[findings§102](findings.md#102-共享lr出口扩大了局部验证收益尚未建立广泛能力2026-09-15)，
+原始命令、完成状态与审计以新研究final_launch_contract、paired_readout及final_paired_readout为准。

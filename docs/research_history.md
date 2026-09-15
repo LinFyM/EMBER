@@ -1727,3 +1727,38 @@ Same-task-other的官方12 workers均exit0且400 rows完整；外层shell因运�
 原件根为`runs/analysis/process_pullback_writer_20260914/causal_diagnostics/`，保留registration、完整拟合及noise、
 functional／paired metrics、全部rows／aggregate／completion、96轨迹及执行记录。回放contact sheets仅作临时视觉辅助。
 诊断源码及专属static准入在完成使命后从main退役，可从`adc31a15`恢复；没有删除正式证据或唯一checkpoint。
+
+## 2026-09-15：共享可学习出口完成fresh900及冻结视频读出
+
+依train-only原输出／free_q／free_AB的20／18／46闭环差距，在原G P左右加入共享identity乘法L/R，
+保留原视频过程、完整50-horizon、7维q和纯跨episode FM；诊断拟合不作为初始化，旧900 controls不反馈设计。
+实现`e1ca29b9`，v2 bank合同`6dffa85c`，冻结后Test准入`6e3f9953`；正式新训练、物化及评测统一来自
+clean pushed detached `85ecfd18`，冻结树`.codex/tmp/pullback-outlet-runtime`。
+直接autograd及真实最长105帧视频的两次联合更新／部署profile通过，Writer、Action Meta、VL Meta及L/R共同获信用，source冻结。
+无需第二次裸source编译；实测第二次更新24.283秒、部署7.850秒，profile初始化未进入正式训练。
+
+Fresh900为3,600条件／230,400queries，实际623/624合法教学条件；九份完整checkpoint及六面板1,488rows全部完成。
+300／600／900的train96为21／20／18，validation400为50／75／79，source分别17及47。
+Validation breadth4／3／3、S/O/G/L为0/16/32/2、0/38/34/3、0/40/39/0；900的77/79次成功来自两项奶油奶酪搬运。
+相邻validation R/G/L39/36/11、63/16/12，churn47／28、Jaccard .4535／.6923；train为13/7/8、12/6/8。
+900对source的validation／train差额CI为[-2.5,+26.25]／[-7.29,+9.38]pp，广泛获取与迁移保持未成立。
+旧900→新900 validation64→79、train26→18，两差额CI均跨零；保留Object1 +22的局部改进及其它任务损失。
+
+三段训练墙钟合计15,663.382秒，最大reserved43.809GiB；独立训练动作FM .153279524→.140811848、22/24task改善。
+首步identity后的899次Writer和两Meta信用均finite非零；正式视频／state／normalization／RNG配对与曝光审计通过。
+首个注册状态标签错误在创建runtime前退出，修正后从fresh启动；原失败日志单独保留，不混入正式更新。
+
+能力non-pass、固定terminal900和禁止进一步训练／架构变化在新controls／Test之前登记于bounded900_decision和method_freeze。
+新correct／other／wrong／shuffled／reversed为79／81／53／70／78（均/400），四个新增面板1,600rows与48个workers全exit0。
+Other／wrong／shuffled／reversed相对correct的task-bootstrap95%CI分别[-1.75,+2.75]／[-22,+2.75]／[-9.5,+2.25]／[-2.25,+1.5]pp。
+Object1的correct40／wrong11提供局部内容匹配信号，整体倒序78接近correct79，不能宣称有益时间方向成立。
+No-video的8套完整零LoRA身份和400初态执行合同核验通过，复用source47，未额外制造一轮source。
+
+全部视频controls完成后才准入固定Test source400／correct400，实际86→49、breadth5→6，
+S/O/G/L从19/0/45/22变为5/6/27/11；R/G/L34/15/52、churn67、Jaccard .3366，差额95%CI[-20.25,+.75]pp。
+Object0新增6、Goal7新增1，但其它三个suite能力损失更多；结果不反哺设计、训练或checkpoint选择。
+全部12个新面板共3,888条rows、126个workers及最终launcher均正常结束；各面板累计墙钟10,522.596秒，包含跨节点并行。
+最终400-row视频臂全50视频、task／state／env／policy RNG、source／normalization、checkpoint／method／freeze及no-video身份审计通过。
+本次修订窗口完整关闭，未获得科学资格，没有selected checkpoint或后继训练；不以局部增益、loss或Test覆盖增加改写能力缺口。
+原件根`runs/analysis/process_pullback_learned_outlet_20260915/`保留完整checkpoint、bank、raw rows、completion、
+paired_readout、paired_endpoint_revision_comparison、final_paired_readout、bounded900_decision、method_freeze及各阶段launch contract。限定结论见findings§102。

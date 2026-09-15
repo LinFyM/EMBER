@@ -11,8 +11,9 @@ Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)。Process P
    全12 workers exit0；旧NUMA汇总判断经实际拓扑修正，原400行成功汇总。未重跑、不选点、不新增controls／Test。
 2. **进行中：现行合同fresh基线。** 保留v5.2视频Core、Procedure与完整A/B能力路径，明确迁移双相机、完整50-horizon learned read、
    严格跨episode；B300为validation97/400、train35/96，继续600／900／1200节点与相邻保持评测。
-3. **已准入、准备启动：一个任务共现对照。** B300已建立可辨认train获取，仅改变同一train24事件的四task共现，保持曝光、query数、更新和学习率一致。
+3. **进行中：一个任务共现对照。** B300已建立可辨认train获取，仅改变同一train24事件的四task共现，保持曝光、query数、更新和学习率一致。
    C与继续中的B在各自单节点并行；两臂各自仍在当前完整节点面板完成后才续下一段。
+   当前B使用gpu01四卡，C使用gpu02两卡，满足合计6卡资源上限；各自resume锁定原拓扑。
    没有获取／保持共同改善则停止该假设，不作小扫。
 4. 能力和相邻稳定成立后，验证same-task换视频，再冻结单checkpoint并做最终视频因果controls；Test仅在登记冻结后开放。
 

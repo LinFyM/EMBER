@@ -31,8 +31,11 @@ Validation逐task（global1/3/11/13/23/26/31/32）为0/1/39/13/0/37/4/3；train�
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
 其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
 C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同。
-B300的train获取满足C前提。B继续原节点；同一模型的C准备在gpu02三卡独立启动以缩短墙钟，保持各自节点证据与原有界预算。
-当前主树配置为C的explicit grouping，B继续使用7f9f11a3冻结配置；C尚在启动前登记，不能写成已有分数。
+B300的train获取满足C前提。B从300精确续训到600，gpu01四卡、launcher PID1377696。
+同一模型的C已从clean pushed detached `56bf1cc0`在gpu02物理0/1两卡fresh启动300，launcher PID2091686。
+当前空闲资源对应两节点合计6卡上限，故C从原准备三卡改为两卡；每更新仍为4task等权SUM，C后续resume锁定两rank拓扑。
+B/C各自保持完整节点证据与原有界预算；C命令、quota/GPU和实际运行记录见cooccurrence/training_launch_contract.json。
+当前主树配置为C的explicit grouping，B继续使用7f9f11a3冻结配置；C尚无闭环分数。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。

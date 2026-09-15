@@ -4,7 +4,10 @@
 
 Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
 当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
-原C保持关闭；A40实际多卡更新及完整恢复核验已完成，正在封存并启动新source formal1000。
+原C保持关闭；新source formal1000已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3启动。
+四rank首步及后续实际更新正常；最近核验到step9／1000、2304 queries，loss／gradient均finite，约8.2 query/s。
+Launcher PID2965377；source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`，
+命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。尚无新source闭环或新A/B性能结果。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；准备microbatch／累积及rank0 CPU EMA，均须实际更新验证。
@@ -31,8 +34,8 @@ policy／EMA／optimizer／scheduler、四rank RNG与sampler cursor齐全，glob
 每250步保存完整恢复点并保留最新一份，固定raw1000。记录见`runs/analysis/source_alignment_20260915/source_launch_contract.json`。
 A配置`configs/pi05_writer_aligned_A.json`已单独登记；与B仅模型读取模式及相应说明不同，数据／optimizer／runtime／source相同。
 失败记录保留在`.codex/tmp/source-alignment-profile/generic_full3_ddp4`，不作为训练或闭环证据。
-main起点b56f0a9c clean/pushed；首次架构检查无新增违规。已同时探测gpu01/gpu02，launch前重新核对。
-首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB，共享83TiB可用；最近用量908286360KiB。
+main起点b56f0a9c；实现、配置和检查已集成推送，开发worktree已清理，source冻结运行树保留供exact-resume。
+首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB；formal前used922315952KiB、soft余量144.41GiB，共享83TiB可用。
 S+A+B追加峰值预算调整为112GiB，包含补回generic约13.5GiB；formal前再次实测quota及恢复点峰值。
 旧source、A/B/C全部checkpoint与formal evidence保留；未完成的新训练／评测和后续不预写结果。
 

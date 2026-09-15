@@ -12,7 +12,7 @@ Owner于2026-09-15要求设置goal自主推进：同规格重训正确时间对�
    保持1000更新／global256／全参数训练及原optimizer。适配A40显存，不冻结参数或缩短曝光。
    A单视角／mean和B双视角／learned已整合；真实四卡global256及完整checkpoint恢复通过。
 2. **进行中：source训练与官方读出。** 已据profile锁定四rank、micro8／accum8及滚动完整checkpoint；
-   正在封存命令／quota并从clean pushed detached树启动fresh1000；
+   已从clean pushed detached `b8ea00e9`正式启动fresh1000，实际更新正常；
    固定raw step1000做validation400＋train96，不按结果选source或扩步。
 3. **待启动：新source上的A，再B。** 共享正确数据／初始化／事件／LR及评测映射，分别fresh1200；
    300／600／900／1200完整correct400＋train96，分开报告获取、保持及相对各自source的收益。

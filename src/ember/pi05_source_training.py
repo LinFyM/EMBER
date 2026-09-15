@@ -357,7 +357,11 @@ def _optimizer_step(
     applied_lr = float(runtime.optimizer.param_groups[0]["lr"])
     runtime.optimizer.step()
     runtime.scheduler.step()
-    runtime.optimizer.zero_grad(set_to_none=True)
+    # Keep DDP bucket views across accumulated updates. Dropping those views
+    # makes no_sync backwards allocate a second full set of policy gradients.
+    runtime.optimizer.zero_grad(
+        set_to_none=not isinstance(runtime.wrapped, DistributedDataParallel)
+    )
     if runtime.ema_policy is not None:
         update_ema(
             runtime.ema_policy,

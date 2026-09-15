@@ -4,7 +4,7 @@
 
 Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
 当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
-原C保持关闭；新source formal尚未启动，当前阶段为A40实际profile及原revision generic权重补齐。
+原C保持关闭；新source formal尚未启动，当前阶段为A40实际多卡更新及完整恢复核验。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；准备microbatch／累积及rank0 CPU EMA，均须实际更新验证。
@@ -14,11 +14,15 @@ config、训练、checkpoint检查和物化均识别camera／H-read。显式新s
 source入口恢复，接offset1、rank0 CPU EMA、逐张量AdamW、DDP gradient bucket view及deferred NCCL。
 原逻辑8×32采样已与历史实现比较1000步／256000个queries，完全一致；物理打包与resume合同检查通过。
 整合后的249项相关CPU检查通过（70.26秒），另保留agent的181项独立检查；尚未以这些检查代替GPU更新。
-generic固定7de663972b7817d2c4cf2d84c821153dfea772e9下载中；旧source同尺寸容量smoke准备完成，正式fresh参数不复用它。
+generic固定7de663972b7817d2c4cf2d84c821153dfea772e9已补齐；旧source容量smoke仅定资源，正式fresh参数不复用它。
 旧source容量smoke在gpu01物理0完成：micro2三步正常、reserved33.64GiB；micro8／累积4三步正常，
 后两步各32queries平均16.732秒、约1.913 query/s，reserved37.94GiB。两次均全参数可训练、rank0 CPU EMA、无checkpoint保留。
 已补不整除world的query等权分配，三卡可按86／85／85维持global256；相关source／sampler／eval的37项检查通过。
 source恢复合同补GPU UUID；实际多卡、generic初始化与完整checkpoint resume仍待核验。
+Owner提醒gpu01有低占用卡后，复核并采用物理0–3；其中1–3随后全部空闲，不等待固定数量或排除可共驻卡。
+四卡generic／global256首步完成，loss .302815、梯度finite、7.675 query/s；第二步CUDA OOM，未进入正式训练。
+当前定位DDP bucket views在zero_grad置None后被丢弃、no_sync累积额外分配梯度；保留views清零后重跑同一真实窗口。
+失败记录保留在`.codex/tmp/source-alignment-profile/generic_full3_ddp4`，不作为训练或闭环证据。
 main起点b56f0a9c clean/pushed；首次架构检查无新增违规。已同时探测gpu01/gpu02，launch前重新核对。
 首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB，共享83TiB可用；最近用量908286360KiB。
 S+A+B追加峰值预算调整为112GiB，包含补回generic约13.5GiB；formal前再次实测quota及恢复点峰值。

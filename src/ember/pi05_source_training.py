@@ -333,7 +333,13 @@ def _optimizer_step(
     step_started = time.monotonic()
     for accumulation_index in range(runtime.accumulation):
         batch = runtime.processor.training_batch(next(runtime.iterator))
-        synchronize = accumulation_index == runtime.accumulation - 1
+        # A newly constructed reducer (including resume) has no gradient views
+        # yet. Bind them using the first real microbatch before no_sync starts.
+        synchronize = accumulation_index == runtime.accumulation - 1 or (
+            isinstance(runtime.wrapped, DistributedDataParallel)
+            and optimizer_step == runtime.resume_optimizer_step
+            and accumulation_index == 0
+        )
         sync_context = (
             contextlib.nullcontext()
             if synchronize or not isinstance(runtime.wrapped, DistributedDataParallel)

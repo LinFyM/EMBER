@@ -21,7 +21,10 @@ generic固定7de663972b7817d2c4cf2d84c821153dfea772e9已补齐；旧source容量
 source恢复合同补GPU UUID；实际多卡、generic初始化与完整checkpoint resume仍待核验。
 Owner提醒gpu01有低占用卡后，复核并采用物理0–3；其中1–3随后全部空闲，不等待固定数量或排除可共驻卡。
 四卡generic／global256首步完成，loss .302815、梯度finite、7.675 query/s；第二步CUDA OOM，未进入正式训练。
-当前定位DDP bucket views在zero_grad置None后被丢弃、no_sync累积额外分配梯度；保留views清零后重跑同一真实窗口。
+保留DDP bucket views原位清零后，同一四卡／micro8／accum8真实三步完成，exit0；后两步平均30.701秒、
+8.339 query/s、reserved37.940GiB。完整恢复需在首个真实microbatch建立views，再按原全局权重累积。
+按实测纯更新约8.53小时／1000步，另计初始化与写盘；11项source CPU检查通过，完整checkpoint恢复仍待实测。
+A配置`configs/pi05_writer_aligned_A.json`已单独登记；与B仅模型读取模式及相应说明不同，数据／optimizer／runtime／source相同。
 失败记录保留在`.codex/tmp/source-alignment-profile/generic_full3_ddp4`，不作为训练或闭环证据。
 main起点b56f0a9c clean/pushed；首次架构检查无新增违规。已同时探测gpu01/gpu02，launch前重新核对。
 首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB，共享83TiB可用；最近用量908286360KiB。

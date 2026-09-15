@@ -43,6 +43,8 @@ Test保持关闭，部署信息墙、train24／validation8／test8和source71审
 每个mean loss乘`local_query_count * world_size / 256`后由DDP平均，保持每个query严格等权。
 每个rank的每次microbatch均为真实非空query；world、GPU UUID及完整物理batch计划进入resume合同。
 原生未参与action loss的language-output heads继续按原图处理；累积DDP使用unused-parameter发现，不人为增加额外forward／loss。
+DDP保留已建立的gradient bucket views并原位清零；fresh／resume的首个真实microbatch先同步以建立views，
+其余累积仅在末microbatch同步。首项已平均的梯度再次取平均不改global256权重，不增加训练样本或optimizer更新。
 
 恢复一个source训练入口及cohesive训练owner，复用现存setup／contract／checkpoint／dataset，不复制source-SFT或Writer orchestrator。
 新config单独登记，原sealed config及source保留。数据／模型复用固定revision、manifest、file sizes与provenance，

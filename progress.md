@@ -4,7 +4,7 @@
 
 Owner在完整分析后要求“你计划下接下来怎么做，然后就启动吧”。
 Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为固定旧step900复核、现行合同fresh基线、有条件的单变量任务共现对照。
-阶段A、B已全部完成，C已完成300闭环和600训练，正在补齐600闭环；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
+阶段A、B已全部完成，C已完成300／600闭环并精确续训900；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
 原529da6b与兼容operator 1ce99a0c均已封存为clean pushed detached树。原checkpoint／训练合同、执行配置、RNG和400条件映射检查通过。
 最长8个验证视频（63–69帧）两次真实生成通过，第二次16.458秒、0.486 LoRA/s，reserved峰值12,834,570,240bytes。
 固定step900 correct400为125/400，原132；S/O/G/L15/58/41/11、breadth6，R/G/L111/14/21、churn35、Jaccard .7603。
@@ -56,7 +56,7 @@ B的四组validation400／train96固定请求全部完成，各段均在上一�
 C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同。
 B300的train获取满足C前提。B所有训练、物化和闭环已结束，gpu01原四卡已明确释放给C的后续独立评测调度。
 同一模型的C从clean pushed detached `56bf1cc0`在gpu02物理0/1完成fresh300及精确续训600；各task累计100条件，全部598次identity后四组梯度有效。
-C600训练段7087.029秒、exit0，累计训练14529.289秒；现仍在原两卡物化496条件，launcher PID3393745。
+C600训练段7087.029秒、exit0，累计训练14529.289秒；完整600 checkpoint和两面板完成后，现已在原两卡精确续训900，launcher PID3548657。
 当前空闲资源对应两节点合计6卡上限，故C从原准备三卡改为两卡；每更新仍为4task等权SUM，C后续resume锁定两rank拓扑。
 复查发现此前B300两面板并行评测合计用了7卡，漏计了已有的跨节点6卡上限；该调度偏差保留在evaluation_launch_contract中，
 并行阶段按B最多4卡＋C最多2卡核验，原完整配对结果不重跑。B结束后，C独立物化／评测可按fresh快照增加有效单节点卡数；训练resume仍锁原world2。
@@ -69,7 +69,17 @@ Train28/96、breadth14，S/O/G/L7/7/10/4；source配对10/18/7、churn25，差�
 C300验证逐task为1/3/34/21/0/32/0/0；全部train逐task与原始配对见cooccurrence/paired_readout.json。
 B300→C300的validation R/G/L69/22/28、churn50、Jaccard .5798，差额95%CI[-7,+4.75]pp；
 train为19/9/16、churn25、Jaccard .4318，差额95%CI[-19.7917,+5.2083]pp。当前没有共现分组带来改善的证据，继续预注册相邻节点检验保持。
-实际前300更新的1200个条件事件和全局LR时间轴逐项一致；跨臂完整证据为grouping_comparison.json，不使用checkpoint union选模型。
+C600 validation65/400、breadth5，S/O/G/L1/42/21/1；source配对R/G/L25/40/22、churn62，差额95%CI[-11.75,+21.5]pp。
+Train43/96、breadth19，S/O/G/L12/14/10/7；source配对13/30/4、churn34，差额95%CI[+15.625,+39.5833]pp。
+300→600的validation R/G/L48/17/43、churn60、Jaccard .4444，差额95%CI[-12.75,-1.25]pp；
+train为20/23/8、churn31、Jaccard .3922，差额95%CI[+4.1667,+28.125]pp。C仍有训练任务获取，但早期验证收益保持变差。
+C600验证逐task为0/1/30/12/0/21/1/0；全部train逐task及配对原件在cooccurrence/paired_readout.json。
+496条件sealed后，两面板使用已释放的gpu01四卡，24 workers全exit0；墙钟972.617／304.098秒，完整source／normalization／LoRA与配对审计通过。
+B600→C600的validation105→65，R/G/L51/14/54、churn68、Jaccard .4286，差额95%CI[-18.5,-2.75]pp；
+train49→43，32/11/17、churn28、Jaccard .5333，差额95%CI[-17.7083,+5.2083]pp。
+两臂各自300相对source新增的58个验证成功，到600时B保留42、C保留28；新增train成功则分别保留15/21与12/18。
+这些有限面板未支持共现分组改善获取与保持；保留其相对source的训练获取，不由此唯一归因梯度冲突。
+实际前600更新的2400个条件事件／50400 queries和全局LR时间轴逐项一致；跨臂完整证据为grouping_comparison.json，不使用checkpoint union选模型。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 A仅使用fixed step900 correct400；B已完成预注册四节点correct400及train96，C继续同一有界窗口，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。

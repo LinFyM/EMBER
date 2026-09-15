@@ -3,23 +3,19 @@
 本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
 当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
-## 当前阶段的优先级：Process Pullback Writer（Owner 2026-09-14）
+## 当前阶段的优先级：回到v5.2（Owner 2026-09-15）
 
-五个问题讨论后确定推进[Process Pullback Writer](process_pullback_writer_design.md)。按完整方案实施、训练并作有依据的迭代，
-最后汇报完整结果；“最后一轮”不限制为只训练一次。若合理学习后持续缺少正向信号，应降低对实际检验组合的支持并明确报告，
-停止无信息重复；是否结束坚持或回到v5.2完全由owner决定，agent不得自行切换路线。
+Process Pullback完整窗口已结束。Owner要求结合后续全部实验分析v5.2，并授权“计划下接下来怎么做，然后就启动吧”。
+按[v5.2恢复与保持对照](v52_return_plan.md)先固定旧step900复核，再建立现行合同基线，随后有条件执行单一任务共现对照。
+不把每次结构增加称为改进；完整A/B与真实视频内容Core的既有能力须保留为参照，获取不足和已获能力丢失分别判断。
 
-本阶段优先检验正确视频的实际执行价值、视频特异性与能力保持，暂不强制长期的>145/400性能线。
-默认输入为一条演示的同步双路RGB（K=1）；采用纯跨episode FM，不要求教学video的动作标注或专门q监督，不开展RL。
-允许完整视频双向理解，须保留真实顺序和操作前置关系。接受选定冻结模型上的correct相对wrong／shuffled／reversed证据，
-不再强制另训独立frame_set模型；正确条件能力、相邻保持与same-task换视频鲁棒性仍须检验，不能靠错误条件退化制造收益。
+新方法默认一条同步双路RGB演示（K=1）、完整50-horizon到实际learned read、纯同task跨episode FM；
+不要求teacher动作标注或专门q监督，不开展RL。旧单视角／horizon mean只用于明确登记的固定历史模型复核，不能冒充现行基线。
+允许完整视频双向理解，须保留真实顺序和操作前置关系；不强制另训frame_set模型，不能靠错误条件退化制造收益。
+旧窗口的最终controls和Test只解释各自冻结方法，不反哺新设计、训练或checkpoint选择。
 
-Owner于2026-09-15明确要求：完成本次原因诊断后，由agent自主决定当前方法修改，直接实施、验证、正式训练和测试，
-无需owner再次审查讨论。固定Test仍只在方法冻结后使用，不反馈设计或checkpoint选择；本次固定900视频controls继续保持封闭解释边界。
-
-当前修订依据train-only完整q／A/B对照，增加共享identity起步的乘法L/R出口，其余过程读取与纯FM保持。
-本轮按[active design](process_pullback_writer_design.md)预登记fresh900及固定终点的完整冻结读出；
-终点评估与方法能力资格分别裁决，不把未合格模型称为selected合格checkpoint。旧900 controls不作为修订依据。
+Owner已授权agent在上述计划和稳定科学／资源合同内完成实现、验证和启动，无需逐项再审。
+后续实验顺序、精确预算与停止条件归active design及状态文件；不得把未封存的候选接口当作已启动训练。
 
 ## 1. 科学精神与目标
 
@@ -33,7 +29,7 @@ Owner于2026-09-15明确要求：完成本次原因诊断后，由agent自主决
   rank、memory tokens、FactorHeads及具体decoder均为方法选择，不是研究目标。
 - teacher部署输入不得含action、state/proprio、reward、terminal、task ID、filename、pose、hidden normalization或policy outcome。
   执行policy可以读取自身当前观测和state；两者的信息边界不同。
-- 一次Writer调用内部可对授权视频或native activations作固定、只读、多阶段读取与重放，包括本设计的冻结source导数计算。
+- 一次Writer调用内部可对授权视频或native activations作固定、只读、多阶段读取与重放，包括方法明确登记的冻结source导数计算。
   共享读取侧适配属于Writer；source基础权重始终冻结，部署不存在loss或optimizer。
 
 ## 2. 架构与推导原则
@@ -60,7 +56,7 @@ Owner于2026-09-15明确要求：完成本次原因诊断后，由agent自主决
 ## 3. 证据与推进判断
 
 - 长期正式性能目标为validation8 strict single-checkpoint paired correct严格>145/400，并有相邻稳定、低churn、高breadth、
-  四suite非零、Goal/Long贡献、same-task换视频及最终视频因果证据。本阶段按顶部优先级判断，不额外强制这条分数线。
+  四suite非零、Goal/Long贡献、same-task换视频及最终视频因果证据。历史恢复及局部学习与正式资格分开记录。
 - 闭环实际能力先于loss、reconstruction、norm/rank/cosine、内部margin及surrogate。充分且可比的学习后仍弱于source／SFT参照，
   属于严重能力缺口；小幅涨分或loss下降不能将其降格成调参问题，也不能由此唯一归因某个模块。
 - 能力与相邻资格成立后补same-task-other，选定并冻结单checkpoint，再做wrong／no-video／shuffled／reversed最终controls。

@@ -1,28 +1,25 @@
 # EMBER task plan
 
-## 本轮完成范围
+## 当前目标
 
-Owner授权的原因诊断、自主决定修订、实施验证、正式训练、冻结测试和对话内结果分析均已完成。
-本轮[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)已冻结并关闭执行窗口；
-当前没有active design或待执行实验。工作完成不代表方法获得科学资格：没有selected合格checkpoint。
+Owner于2026-09-15在v5.2完整历史分析后授权“计划下接下来怎么做，然后就启动吧”。
+Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)。Process Pullback已完成并关闭，原证据保留。
 
-## 已完成
+## 执行顺序
 
-1. 固定出口fresh900、全部节点面板、训练池视频、96条行为回放及全train24 q／完整A/B有界对照。
-2. 原输出／free_q／free_AB的20／18／46支持优先修正出口参数化／优化约束；没有将PCA单独定责，也未把特权拟合作为初始化。
-3. 实施共享identity乘法L/R出口，保留原过程读取、7维q、rank16、完整50-horizon与纯FM；完成相关检查、真实profile、main集成和推送。
-4. Clean pushed detached 85ecfd18完成fresh900、3,600条件／230,400queries和六套节点面板：train21／20／18（/96），validation50／75／79（/400）。
-5. 在新controls／Test之前登记能力non-pass并冻结方法和固定terminal900；全部视频对照79／81／53／70／78／47完成。
-6. 全部视频controls结束后完成固定Test source86／correct49（/400），逐task／suite、breadth、R/G/L、churn、不确定性及配对审计齐全。
-7. 新方法共3,888条正式rollouts、126个workers均正常结束；完整证据与限定结论进入项目状态、findings和research_history，结果直接在对话交付。
+1. **进行中：固定旧step900复核。** 恢复原代码／checkpoint，用原state–video映射完成validation correct400，
+   比较旧132的逐task、suite、breadth与成功集合。只迁移资产路径／运行环境；不续训、不选点、不新增controls／Test。
+2. **随后：现行合同fresh基线。** 保留v5.2视频Core、Procedure与完整A/B能力路径，明确迁移双相机、完整50-horizon learned read、
+   严格跨episode；先封存接口／采样／优化与真实profile，再按300／600／900／1200节点执行。
+3. **有条件：一个任务共现对照。** 基线具备可辨认获取后，仅改变同一train24事件的四task共现，保持曝光、query数、更新和学习率一致。
+   没有获取／保持共同改善则停止该假设，不作小扫。
+4. 能力和相邻稳定成立后，再冻结单checkpoint、验证same-task换视频及最终视频因果controls；Test仅在登记冻结后开放。
 
-## 关闭结论与边界
+## 预算与停止条件
 
-共享出口取得局部validation增益，但训练闭环接近source，validation成功仍集中于两项奶油奶酪任务，Spatial／Long均零。
-正确方向没有明确优势；Test出现局部新成功，但已有能力损失更多，86→49、R/G/L34/15/52，差额95%CI[-20.25,+.75]pp。
-这些证据不支持广泛获取、迁移和保持已获解决；保留正负事实，不将有界窗口等同普遍不可学习性证明。
+A追加峰值4GiB，模型和数据不复制；单节点至多6张live合适A40，先测真实长视频，再定生成并发。
+B／C每臂预设最多1,200更新、4,800视频条件、100,800 action queries；精确接口和资源预算在训练前封存。
+A分叉先核对合同，不重跑挑132；B没有获取则不盲做C；C没有联合改善则结束该候选。
+不改科学目标、信息墙或长期资格线，不引入RL、辅助loss、第二adapter、held梯度或未授权meta tasks。
 
-旧controls、所有新controls和Test均未反哺本轮架构／训练／选点；没有q辅助、RL、checkpoint融合、超参扫描或自动回退v5.2。
-不从已关闭设计、日志或历史未完成项恢复运行。没有登记新的方法或训练计划。
-实际状态见[progress](progress.md)，跨轮结论见[findings§102](findings.md#102-共享lr出口扩大了局部验证收益尚未建立广泛能力2026-09-15)，
-原始命令、完成状态与审计以新研究final_launch_contract、paired_readout及final_paired_readout为准。
+当前实际状态与命令见[progress](progress.md)，完整边界与阶段准入见[active design](docs/v52_return_plan.md)。

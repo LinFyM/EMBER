@@ -4,8 +4,13 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作变化应提供必要条件信息；执行由机器人自己的观测触发。
 人从他人教学迁移到自己身体的能力是科学动机，LIBERO实验本身不证明跨身体泛化。
 
-当前方法为[Process Pullback Writer](process_pullback_writer_design.md)。本文解释其完整工作原理与边界；
-接口、训练和证据节点由该设计规定，实际状态只看[progress](../progress.md)，计划见[task_plan](../task_plan.md)。
+当前阶段按[v5.2恢复与保持对照](v52_return_plan.md)先恢复固定历史参考，再建立现行合同的fresh基线。
+目标是保住真实视频内容进入Core、动作响应支持Procedure、二者共同生成完整A/B的能力路径，并分开检验获取与保持。
+旧checkpoint的单视角／horizon mean只用于历史复核；新方法保持双相机、完整50-horizon到learned read及严格跨episode。
+新接口尚待在active design封存，不能声称新架构继承旧132分。实际状态见[progress](../progress.md)，计划见[task_plan](../task_plan.md)。
+
+以下为已关闭Process Pullback的机制说明，仅保留科学解释；它不授权运行，也不是当前默认方法。
+其完整设计与结果见[历史设计](process_pullback_writer_design.md)和[研究历史](research_history.md)。
 
 ## 从原始视频到一次性策略参数
 

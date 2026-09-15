@@ -1,12 +1,18 @@
 # EMBER progress
 
-## 当前状态（2026-09-15）
+## 当前状态（2026-09-15，Owner授权回到v5.2）
 
-Owner授权的原因诊断、自主方法修订、实现验证、正式训练和完整冻结读出均已完成。
-本轮方法为[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)，已冻结并关闭执行窗口；
-当前没有active design、在途训练或待执行评测。能力资格未通过，没有selected合格checkpoint。
-方法及预先固定terminal900在所有新controls／Test之前冻结；结果不反哺本轮方法、梯度或选点。
-结果直接在对话交付，不新增用户报告。本轮没有q辅助、RL或回退v5.2，也没有登记后继实验。
+Owner在完整分析后要求“你计划下接下来怎么做，然后就启动吧”。
+Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为固定旧step900复核、现行合同fresh基线、有条件的单变量任务共现对照。
+目前执行A：原529da6b已建立只读detached运行树，checkpoint和原correct400面板存在；正在准备目录／资源／LIBERO兼容入口。
+尚未启动GPU。B／C需先封存精确接口／事件表及profile，不从计划文字自动提交未完成的训练。
+历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
+本轮只开放fixed step900 correct400，未开放新controls或Test。结果在对话中交付，不新建用户报告。
+
+Process Pullback的原有原因诊断、实现、fresh900和全部冻结读出已经完成并关闭，未通过能力资格，没有selected合格checkpoint。
+其完整结果见下方已关闭记录、findings§102及research_history；旧controls／Test不反哺当前计划。
+
+## 已关闭窗口：Process Pullback共享出口
 
 ## 本轮修改与正式训练
 

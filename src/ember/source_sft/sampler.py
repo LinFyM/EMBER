@@ -14,6 +14,70 @@ from ember.writer.data import FunctionalQueryDataset
 from ember.writer.errors import WriterModelError
 
 
+class SourceBaseBatchSampler(Sampler[list[int]]):
+    """Pack the original source's 32-query task slots onto physical ranks.
+
+    The global query stream is independent of microbatch and world size.
+    With global256, each update therefore retains the original eight task
+    slots, fixed episode permutations and deterministic frame choices.
+    """
+
+    def __init__(self, dataset: FunctionalQueryDataset, *, task_ids: Sequence[int],
+                 per_rank_batch_size: int, logical_task_batch_size: int,
+                 start_step: int, stop_step: int, rank: int, world_size: int, seed: int) -> None:
+        tasks = tuple(sorted(task_ids))
+        if (not tasks or len(set(tasks)) != len(tasks) or not 0 <= start_step <= stop_step
+                or not 0 <= rank < world_size or min(per_rank_batch_size, logical_task_batch_size) <= 0
+                or seed < 0 or set(tasks) - set(dataset.task_episode_rows)):
+            raise WriterModelError("invalid source-base query stream")
+        episodes = {task: dataset.task_episode_rows[task] for task in tasks}
+        counts = {len(value) for value in episodes.values()}
+        if len(counts) != 1 or not all(rows for value in episodes.values() for rows in value.values()):
+            raise WriterModelError("source-base tasks require equal nonempty episode pools")
+        self.task_ids, self.episode_rows = tasks, episodes
+        self.episodes_per_task = counts.pop()
+        if self.episodes_per_task <= 0:
+            raise WriterModelError("source-base episode pool is empty")
+        self.seed, self.rank, self.world_size = seed, rank, world_size
+        self.per_rank_batch_size, self.logical_task_batch_size = per_rank_batch_size, logical_task_batch_size
+        self.start_step, self.stop_step = start_step, stop_step
+        self.episode_orders = {
+            task: tuple(int(value) for value in np.random.default_rng(
+                np.random.SeedSequence([seed, task, 0xE91])).permutation(tuple(sorted(episodes[task]))))
+            for task in tasks
+        }
+
+    def __len__(self) -> int:
+        return self.stop_step - self.start_step
+
+    @lru_cache(maxsize=256)
+    def _task_order(self, visit: int) -> tuple[int, ...]:
+        return tuple(int(value) for value in np.random.default_rng(
+            np.random.SeedSequence([self.seed, visit])).permutation(self.task_ids))
+
+    def _row(self, position: int) -> int:
+        task_slot, batch_offset = divmod(position, self.logical_task_batch_size)
+        task_visit, task_offset = divmod(task_slot, len(self.task_ids))
+        task = self._task_order(task_visit)[task_offset]
+        episode_cycle, episode_offset = divmod(
+            task_visit * self.logical_task_batch_size + batch_offset, self.episodes_per_task)
+        demo = self.episode_orders[task][episode_offset]
+        rows = self.episode_rows[task][demo]
+        offset = int(np.random.default_rng(np.random.SeedSequence(
+            [self.seed, task, demo, episode_cycle, 0xF4A])).integers(len(rows)))
+        return rows[offset]
+
+    def batch_for_step(self, step: int) -> list[int]:
+        if not self.start_step <= step < self.stop_step:
+            raise WriterModelError("source-base micro step is outside the sampler interval")
+        start = (step * self.world_size + self.rank) * self.per_rank_batch_size
+        return [self._row(start + offset) for offset in range(self.per_rank_batch_size)]
+
+    def __iter__(self) -> Iterator[list[int]]:
+        for step in range(self.start_step, self.stop_step):
+            yield self.batch_for_step(step)
+
+
 class CyclicSubsetMixedBatchSampler(Sampler[list[int]]):
     """Yield mixed-rank, partial-task updates in complete task cycles.
 

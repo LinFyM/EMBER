@@ -1,5 +1,8 @@
 # v5.2恢复与保持对照（2026-09-15）
 
+本窗口已关闭：A／B完成，C在600完整节点后由owner停止。Owner随后授权source重训goal，
+active design已切换为[source时间对齐与v5.2复核](source_alignment_v52_plan.md)；以下只保存原计划与实际证据。
+
 ## 授权与问题
 
 Owner在完整历史分析后要求“你计划下接下来怎么做，然后就启动吧”。本计划据此启动，实际状态由

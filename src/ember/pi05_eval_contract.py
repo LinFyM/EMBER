@@ -556,6 +556,9 @@ def _validate_source_checkpoint_provenance(
         "trainer_micro_step": trainer.get("micro_step"),
         "ema_enabled": True,
     }
+    if "action_start_offset" in source_config["data"]:
+        observed["data"] = run_contract.get("data")
+        expected["data"] = source_config["data"]
     if observed != expected:
         raise Pi05EvaluationError("source checkpoint provenance contract changed")
 
@@ -651,6 +654,8 @@ def _validate_final_source_policy(
         "ema_enabled": True,
         "task_limit": None,
     }
+    if "runtime" in source_config:
+        expected_runtime["execution"] = source_config["runtime"]
     observed_runtime = {key: runtime.get(key) for key in expected_runtime}
     source_corpus = run_contract.get("asset_validation", {}).get("source_corpus", {})
     expected_corpus = {

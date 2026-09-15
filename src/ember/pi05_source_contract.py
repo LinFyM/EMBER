@@ -107,6 +107,7 @@ def build_contract(
         "models": config["models"],
         "asset_validation": asset_validation,
         "features": config["features"],
+        "data": config["data"],
         "optimization": config["optimization"],
         "runtime": {
             "world_size": context.world_size,
@@ -122,7 +123,8 @@ def build_contract(
             "num_workers_per_rank": args.num_workers,
             "ema_enabled": ema_enabled,
             "task_limit": args.task_limit,
-            "data_sha256_verified": not args.skip_data_sha,
+            "data_sha256_verified": asset_validation["source_corpus"]["full_sha256_verified"],
+            "execution": config.get("runtime", {}),
             "rank_topology": rank_topology,
         },
         "task_ids": list(task_ids),
@@ -171,8 +173,11 @@ def validate_formal(
     for key, observed in expected.items():
         if formal.get(key) != observed:
             failures.append(f"formal {key} differs from sealed config")
-    if args.task_limit is not None or args.skip_data_sha:
-        failures.append("formal launch must use all tasks and verify every HDF5 hash")
+    verification = config.get("runtime", {}).get("asset_verification", "full_hash")
+    if args.task_limit is not None or (args.skip_data_sha and verification == "full_hash"):
+        failures.append("formal launch must use all tasks and its registered asset verification")
+    if verification not in {"full_hash", "sealed_manifest_and_file_sizes"}:
+        failures.append("unknown asset verification contract")
     if args.stop_after_optimizer_step is not None:
         failures.append("formal launch cannot stop before its sealed horizon")
     if context.world_size * micro_batch_size * gradient_accumulation != 256:

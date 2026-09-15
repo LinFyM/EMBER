@@ -1,0 +1,214 @@
+{
+  "schema_version": "ember_pi05_source_base_v1",
+  "authorities": {
+    "overlap_audit": {
+      "path": "configs/pi05_source_corpus_v1/overlap_audit.json",
+      "sha256": "fe7311272fc7b854a84f799692f96fbb069e74a88ba5008757fa5ec7fb7cc003"
+    },
+    "source_manifest": {
+      "path": "configs/pi05_source_corpus_v1/source_manifest.json",
+      "sha256": "75453a2028733973ae257ab76351cd129456dbae3225e732b4bed5cc96d32e54"
+    },
+    "normalization": {
+      "path": "configs/pi05_source_corpus_v1/source_normalization.json",
+      "sha256": "e259ee6e77a5793820235983917b17cfc0f8d3e6de94774a1f3173accc73f7c4"
+    },
+    "recipe": {
+      "path": "configs/pi05_source_corpus_v1/pi05_recipe_research.json",
+      "sha256": "feadfff2df9111d08148c942dafbeb9db248f40904142ec5c4a2bae6d823f692"
+    },
+    "model_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_model_manifest.json",
+      "sha256": "a8261cc72ae7557fb0919f55e57c39c2a484ac69dcf3db9172e487466857bc7b"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "models": {
+    "foundation": {
+      "repo_id": "lerobot/pi05_base",
+      "revision": "7de663972b7817d2c4cf2d84c821153dfea772e9",
+      "weights_bytes": 14467165872,
+      "weights_sha256": "0eb11ca9587678c1d2ef8cf32807c29f8ce53a2bfdfc1aa4a4c96f16fca59b0f",
+      "config_sha256": "367869712a2847c27e95c431ecb03f17bec4eee01a63995e2fb2d91940752b53"
+    },
+    "tokenizer": {
+      "source": "gs://big_vision/paligemma_tokenizer.model",
+      "openpi_revision": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+      "bytes": 4264023,
+      "sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6"
+    },
+    "forbidden": [
+      "pi05_libero"
+    ]
+  },
+  "features": {
+    "state_dim": 8,
+    "action_dim": 7,
+    "chunk_size": 50,
+    "n_action_steps": 10,
+    "training_image_shape": [
+      3,
+      128,
+      128
+    ],
+    "model_image_shape": [
+      3,
+      224,
+      224
+    ],
+    "tokenizer_max_length": 200,
+    "camera_rotation_degrees": 180,
+    "right_wrist_padding": "zero_image_with_false_mask_via_missing_feature_key",
+    "quantile_normalization": "(x-q01)/(q99-q01+1e-6)*2-1"
+  },
+  "data": {
+    "active_task_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      23,
+      24,
+      26,
+      28,
+      29,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      45,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "sampler_seed": 20260721,
+    "max_open_files_per_worker": 8,
+    "sampling": "Original source logical stream: eight task slots of 32 queries per global256 update; task and episode cycles unchanged by physical packing",
+    "action_start_offset": 1,
+    "query_alignment": "post_action_observation_future_control_v1",
+    "logical_task_batch_size": 32
+  },
+  "optimization": {
+    "method": "full_action_sft",
+    "precision": "bfloat16",
+    "gradient_checkpointing": true,
+    "compile": false,
+    "seed": 7,
+    "global_batch_size": 256,
+    "optimizer_steps": 1000,
+    "optimizer": {
+      "name": "AdamW",
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "gradient_clip_norm": 1.0
+    },
+    "schedule": {
+      "kind": "linear_warmup_then_constant",
+      "warmup_steps": 333,
+      "peak_lr": 5e-05
+    },
+    "ema_decay": 0.999
+  },
+  "profile_defaults": {
+    "optimizer_steps": 3,
+    "micro_batch_size_per_rank": 2,
+    "gradient_accumulation_steps": 1,
+    "checkpoint_interval": 0,
+    "ema_enabled": true
+  },
+  "formal_run": {
+    "locked": false,
+    "lock_reason": "Same-spec future-action source; physical A40 topology awaits measured full-parameter profile. Raw step1000 is fixed before any validation.",
+    "world_size": 4,
+    "optimizer_steps": 1000,
+    "micro_batch_size_per_rank": 4,
+    "gradient_accumulation_steps": 16,
+    "checkpoint_interval": 250,
+    "ema_enabled": true
+  },
+  "profile_evidence": {},
+  "checkpointing": {
+    "keep_latest": 1,
+    "atomic_publish": true,
+    "retained_state": "policy, optional EMA policy, optimizer, scheduler, per-rank RNG, sampler cursor, metrics cursor, contract and hashes"
+  },
+  "logging": {
+    "interval_steps": 10,
+    "raw_metrics": "one JSONL row per optimizer step"
+  },
+  "design": "docs/source_alignment_v52_plan.md",
+  "reference_run": "runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722",
+  "runtime": {
+    "ema_device": "cpu",
+    "optimizer_foreach": false,
+    "gradient_as_bucket_view": true,
+    "static_graph": false,
+    "asset_verification": "sealed_manifest_and_file_sizes"
+  }
+}

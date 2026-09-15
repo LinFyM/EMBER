@@ -102,12 +102,12 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     require_architecture_identity(config["model"])
     if config["observer"]["camera_view"] != config["model"]["camera_view"]:
         raise ValueError("observer camera mode differs from the Writer architecture")
-    authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
+    source_config = config["source"]
+    authorities = load_evaluation_authorities(asset_root / source_config["evaluation_config"], asset_root)
     reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
-    checkpoint = asset_root / reuse["source_checkpoint"]
+    checkpoint = asset_root / source_config["checkpoint"]
     source = inspect_source_checkpoint(authorities, checkpoint.parent.parent, checkpoint, evaluation_mode="formal")
-    source_config = read_json(asset_root / reuse["source_base_config"])
-    policy = load_policy(Path(source["model_path"]), source_config, device)
+    policy = load_policy(Path(source["model_path"]), authorities.source_base_config, device)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(asset_root / reuse["lora_contract"]), rank=16)
     template = prepare_frozen_writer_policy(policy, lora)
     # Each encoder checkpoint reinstalls the correct Meta hooks during replay.

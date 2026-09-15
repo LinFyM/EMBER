@@ -171,7 +171,7 @@ def validate_runtime_assets(
             ):
                 raise Pi05SourceTrainingError("OpenPI tokenizer identity changed")
             observed_weight_hash = (
-                sha256_file(weights) if verify_weight_hash else "not_rehashed_in_smoke"
+                sha256_file(weights) if verify_weight_hash else "reused_sealed_identity_without_rehash"
             )
             if verify_weight_hash and observed_weight_hash != model["weights_sha256"]:
                 raise Pi05SourceTrainingError("foundation weight hash changed")
@@ -392,8 +392,14 @@ def update_ema(ema_policy: torch.nn.Module, policy: torch.nn.Module, decay: floa
     parameters = tuple(policy.parameters())
     if len(ema_parameters) != len(parameters):
         raise Pi05SourceTrainingError("EMA and train policy topologies differ")
-    torch._foreach_mul_(ema_parameters, decay)
-    torch._foreach_add_(ema_parameters, parameters, alpha=1.0 - decay)
+    if all(ema.device == parameter.device for ema, parameter in zip(ema_parameters, parameters, strict=True)):
+        torch._foreach_mul_(ema_parameters, decay)
+        torch._foreach_add_(ema_parameters, parameters, alpha=1.0 - decay)
+    else:
+        # EMA never participates in gradients. Transfer one parameter at a time
+        # so full-parameter A40 training does not retain a second CUDA policy.
+        for ema, parameter in zip(ema_parameters, parameters, strict=True):
+            ema.mul_(decay).add_(parameter.detach().to(ema.device), alpha=1.0 - decay)
     for ema_buffer, buffer in zip(ema_policy.buffers(), policy.buffers(), strict=True):
         ema_buffer.copy_(buffer)
 

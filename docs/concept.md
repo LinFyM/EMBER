@@ -4,8 +4,9 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
-当前方法和执行边界见[v5.2恢复与保持对照](v52_return_plan.md)，状态见[progress](../progress.md)。
-以下解释现行fresh基线；旧单相机／horizon mean checkpoint只作为固定历史参照，不把旧分数赋给迁移后的新模型。
+当前方法和执行边界见[Source时间对齐与v5.2复核](source_alignment_v52_plan.md)，状态见[progress](../progress.md)。
+先以原科学规格重训正确未来动作标签的source，再fresh比较A结构与B。以下流水线解释B；A保留同一Core／Procedure／完整A/B，
+以单agentview和完整50-H固定mean作已登记的结构参照。两者均使用正确offset1及匹配训练合同，不继承旧checkpoint分数。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 
 ## 从视频到一次性策略参数

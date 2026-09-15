@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -218,3 +220,62 @@ def test_checkpoint_manifest_detects_file_changes(tmp_path: Path) -> None:
         assert "hashes changed" in str(error)
     else:
         raise AssertionError("checkpoint mutation was not detected")
+
+
+def test_accumulated_source_updates_match_full_batch_and_preserve_ema(monkeypatch) -> None:
+    from ember.pi05_source_training import _optimizer_step
+
+    class Policy(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = torch.nn.Linear(2, 1, bias=False)
+
+        def forward(self, batch):
+            return (self.linear(batch["x"]) - batch["y"]).square().mean(), {}
+
+    torch.manual_seed(7)
+    policy = Policy()
+    reference, ema = copy.deepcopy(policy), copy.deepcopy(policy)
+    expected_ema = ema.linear.weight.detach().clone()
+    optimizer = torch.optim.SGD(policy.parameters(), lr=.2)
+    reference_optimizer = torch.optim.SGD(reference.parameters(), lr=.2)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.)
+    x, y = torch.randn(6, 2), torch.randn(6, 1)
+    runtime = SimpleNamespace(
+        policy=policy, wrapped=policy, ema_policy=ema, optimizer=optimizer, scheduler=scheduler,
+        context=SimpleNamespace(world_size=1, device=torch.device("cpu")), micro_batch=2, accumulation=3,
+        processor=SimpleNamespace(training_batch=lambda batch: batch),
+        config={"optimization": {"optimizer": {"gradient_clip_norm": 1.}, "ema_decay": .9}},
+    )
+    for name in ("max_memory_allocated", "max_memory_reserved"):
+        monkeypatch.setattr(torch.cuda, name, lambda _: 0)
+    for step in range(2):
+        runtime.iterator = iter({"x": x[i:i+2], "y": y[i:i+2]} for i in range(0, 6, 2))
+        row = _optimizer_step(runtime, step, time.monotonic())
+        reference_optimizer.zero_grad()
+        reference({"x": x, "y": y})[0].backward()
+        torch.nn.utils.clip_grad_norm_(reference.parameters(), 1.)
+        reference_optimizer.step()
+        expected_ema.mul_(.9).add_(reference.linear.weight.detach(), alpha=.1)
+        torch.testing.assert_close(policy.linear.weight, reference.linear.weight)
+        torch.testing.assert_close(ema.linear.weight, expected_ema)
+        assert row["global_examples"] == (step + 1) * 6
+        assert row["micro_step"] == (step + 1) * 3
+
+
+def test_aligned_source_provenance_rejects_old_action_alignment() -> None:
+    from ember.pi05_eval_contract import Pi05EvaluationError, _validate_source_checkpoint_provenance
+
+    config = load_config(ROOT / "configs/pi05_source_aligned.json")
+    authorities = SimpleNamespace(source_base_config=config)
+    run = {"schema_version": "ember_pi05_source_launch_v1", "models": config["models"],
+           "features": config["features"], "optimization": config["optimization"],
+           "task_ids": config["data"]["active_task_ids"], "data": config["data"]}
+    trainer = {"schema_version": "ember_pi05_source_trainer_state_v1", "optimizer_step": 1000,
+               "micro_step": 16000, "ema_enabled": True}
+    manifest = {"schema_version": "ember_pi05_source_checkpoint_v1", "optimizer_step": 1000,
+                "micro_step": 16000}
+    _validate_source_checkpoint_provenance(authorities, run, manifest, trainer)
+    for data in (None, {**config["data"], "action_start_offset": 0}):
+        with pytest.raises(Pi05EvaluationError, match="provenance"):
+            _validate_source_checkpoint_provenance(authorities, {**run, "data": data}, manifest, trainer)

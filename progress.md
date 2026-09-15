@@ -1,6 +1,26 @@
 # EMBER progress
 
-## 当前状态（2026-09-15，Owner要求停止C）
+## 当前状态（2026-09-15，source时间对齐goal）
+
+Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
+当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
+原C保持关闭；新source formal尚未启动，当前阶段为A40实际profile及原revision generic权重补齐。
+已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
+后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
+原8×A100峰值约71GB不能直接搬到A40；准备microbatch／累积及rank0 CPU EMA，均须实际更新验证。
+主agent拥有source与整合；独立codex/v52-aligned-model实现A单视角／mean和B双视角／learned，保留共有初始化流。
+2026-09-16：模型与模式plumbing已整合为aa1a7b65／02160554；B恢复baseline分组，A／B共享同一实现，
+config、训练、checkpoint检查和物化均识别camera／H-read。显式新source引用与eval authority已接入。
+source入口恢复，接offset1、rank0 CPU EMA、逐张量AdamW、DDP gradient bucket view及deferred NCCL。
+原逻辑8×32采样已与历史实现比较1000步／256000个queries，完全一致；物理打包与resume合同检查通过。
+整合后的249项相关CPU检查通过（70.26秒），另保留agent的181项独立检查；尚未以这些检查代替GPU更新。
+generic固定7de663972b7817d2c4cf2d84c821153dfea772e9下载中；旧source同尺寸容量smoke准备完成，正式fresh参数不复用它。
+main起点b56f0a9c clean/pushed；首次架构检查无新增违规。已同时探测gpu01/gpu02，launch前重新核对。
+首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB，共享83TiB可用；最近用量908286360KiB。
+S+A+B追加峰值预算调整为112GiB，包含补回generic约13.5GiB；formal前再次实测quota及恢复点峰值。
+旧source、A/B/C全部checkpoint与formal evidence保留；未完成的新训练／评测和后续不预写结果。
+
+## 已关闭窗口：v5.2旧source恢复与任务共现（2026-09-15）
 
 Owner最新明确要求“别继续C了，你停一下”。C已停止，后续训练、物化和评测不再启动。
 本轮按[v5.2恢复与保持对照](docs/v52_return_plan.md)完成了阶段A、B，以及C的300／600完整闭环；C剩余计划现处于停止状态，不自动恢复。

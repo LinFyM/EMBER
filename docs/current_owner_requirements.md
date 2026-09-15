@@ -3,14 +3,20 @@
 本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
 当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
-## 当前阶段的优先级：回到v5.2（Owner 2026-09-15）
+## 当前阶段的优先级：修正source，再复核v5.2（Owner 2026-09-15）
 
-Process Pullback完整窗口已结束。Owner要求结合后续全部实验分析v5.2，并授权“计划下接下来怎么做，然后就启动吧”。
-按[v5.2恢复与保持对照](v52_return_plan.md)先固定旧step900复核，再建立现行合同基线，随后有条件执行单一任务共现对照。
-不把每次结构增加称为改进；完整A/B与真实视频内容Core的既有能力须保留为参照，获取不足和已获能力丢失分别判断。
+Owner已要求创建goal自主推进[source时间对齐与v5.2复核](source_alignment_v52_plan.md)：
+先以原科学规格fresh重训正确未来动作标签的source，再在新source上fresh复现A结构和训练B；
+依据裸source及A/B整条链的影响，决定有限复查历史架构，或继续解决v5.2性能、稳定性及视频特异性。
+本轮明确允许单agentview／完整H固定mean作为A结构参照；A/B共享正确offset1、严格跨episode及其它训练合同。
+此前C已停止，不恢复其剩余训练。具体节点、资源、后续分流及冻结视频读出按新active design与progress。
+以下保留已对齐的v5.2模型原则；旧执行顺序由新goal替代。
+
+Process Pullback及上一轮[v5.2恢复与保持对照](v52_return_plan.md)保留为历史参照，旧C剩余清单不能恢复执行。
+不把每次结构增加称为改进；完整A/B与真实视频内容Core的既有能力须保留，获取不足和已获能力丢失分别判断。
 
 新方法默认一条同步双路RGB演示（K=1）、完整50-horizon到实际learned read、纯同task跨episode FM；
-不要求teacher动作标注或专门q监督，不开展RL。旧单视角／horizon mean只用于明确登记的固定历史模型复核，不能冒充现行基线。
+不要求teacher动作标注或专门q监督，不开展RL。单视角／horizon mean可用于已登记的A结构参照，不把旧分数直接赋给fresh新模型。
 允许完整视频双向理解，须保留真实顺序和操作前置关系；不强制另训frame_set模型，不能靠错误条件退化制造收益。
 旧窗口的最终controls和Test只解释各自冻结方法，不反哺新设计、训练或checkpoint选择。
 

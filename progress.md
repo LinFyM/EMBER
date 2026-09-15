@@ -4,8 +4,12 @@
 
 Owner在完整分析后要求“你计划下接下来怎么做，然后就启动吧”。
 Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为固定旧step900复核、现行合同fresh基线、有条件的单变量任务共现对照。
-目前执行A：原529da6b已建立只读detached运行树，checkpoint和原correct400面板存在；正在准备目录／资源／LIBERO兼容入口。
-尚未启动GPU。B／C需先封存精确接口／事件表及profile，不从计划文字自动提交未完成的训练。
+目前执行A：原529da6b与兼容operator 1ce99a0c均已封存为clean pushed detached树。原checkpoint／训练合同、执行配置、RNG和400条件映射检查通过。
+最长8个验证视频（63–69帧）两次真实生成通过，第二次16.458秒、0.486 LoRA/s，reserved峰值12,834,570,240bytes。
+固定step900 correct400已在gpu01:0–3启动，每卡1个generator／3个persistent rollout workers，原队列long-first与动态分配保持。
+启动PID838752；原件与命令见runs/analysis/v52_return_20260915/{launch_contract.json,evaluate.sh}，结果尚待完成。
+启动前strg01 data1约848.06GiB／soft1024GiB，本阶段追加预算4GiB，全部大资产复用。
+B／C需先封存精确接口／事件表及profile，不从计划文字自动提交未完成的训练。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 本轮只开放fixed step900 correct400，未开放新controls或Test。结果在对话中交付，不新建用户报告。
 

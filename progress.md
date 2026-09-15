@@ -17,9 +17,13 @@ B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写�
 192项相关CPU检查通过，覆盖模型／Meta重放、官方FM、更新／resume、bank／pairing、workers与信息墙。
 真实source最长105帧双相机视频的chunk4／8各三次完整条件更新均通过；第三次Writer及三Meta信用非零，source冻结。
 选chunk8／policy microbatch8：后两次平均25.381秒／条件，reserved峰值29.004GiB，快于chunk4的27.939秒。
-该profile只检验信用、吞吐与显存，不保留其初始化；B正式运行将从fresh开始，仍没有B训练或闭环分数。
+该profile只检验信用、吞吐与显存，不保留其初始化；不构成B的闭环能力证据。
 完整metadata计划4800事件／100800queries、每task200次，同episode和held46–49训练暴露均0。
-B的profile登记已完成；正式节点脚本与全部四组固定validation400／train96请求已准备，资源刷新后提交fresh300。
+B的fresh300已从clean pushed detached `7f9f11a3`启动，gpu01物理0/1/2/3，四rank按实际PCI/NUMA绑定并SUM。
+入口已登记step0→300及100/200/300完整保存点；先完成独立动作step0诊断，再进行更新。仍无B闭环分数。
+命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
+启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
+其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。

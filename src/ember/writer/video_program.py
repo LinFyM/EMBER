@@ -1,4 +1,4 @@
-"""Language-aligned dual-camera evidence and learned Action-Expert horizon read."""
+"""Language-aligned camera evidence and full Action-Expert horizon read."""
 
 from __future__ import annotations
 
@@ -12,6 +12,9 @@ from ember.writer.meta_lora import MetaLoRAStack
 from ember.writer.temporal import RMSNorm
 
 
+VIDEO_READ_MODES = (("agentview", "fixed_mean"), ("dual", "learned"))
+
+
 class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
 
@@ -19,12 +22,11 @@ class VideoProgramError(RuntimeError):
 class TaskQueriedPatchGrounding(torch.nn.Module):
     """Read per-frame image-position content with text-only task queries."""
 
-    NATIVE_IMAGE_TOKENS = 512
-
-    def __init__(self, *, width: int, heads: int) -> None:
+    def __init__(self, *, width: int, heads: int, image_tokens: int = 512) -> None:
         super().__init__()
-        if min(width, heads) <= 0 or width % heads:
+        if min(width, heads) <= 0 or width % heads or image_tokens not in (256, 512):
             raise VideoProgramError("invalid task-queried patch grounding")
+        self.image_tokens = image_tokens
         self.heads = int(heads)
         self.head_width = width // heads
         self.query_norm = RMSNorm(width)
@@ -45,7 +47,7 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
             or task_queries.shape[0] != patch_content.shape[0]
             or task_queries.shape[-1] != patch_content.shape[-1]
             or task_queries.shape[-1] != self.heads * self.head_width
-            or patch_content.shape[1] != self.NATIVE_IMAGE_TOKENS
+            or patch_content.shape[1] != self.image_tokens
             or valid_task_tokens.shape != task_queries.shape[:2]
             or valid_task_tokens.dtype != torch.bool
             or not bool(valid_task_tokens.any(dim=1).all())
@@ -86,14 +88,23 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
 
 
 class LearnedHorizonRead(torch.nn.Module):
-    """Read raw horizon Values with non-affine RMS content and position logits."""
+    """Read all raw horizon Values; fixed_mean freezes the zero query and bias."""
 
-    def __init__(self, *, width: int, horizon: int) -> None:
+    def __init__(self, *, width: int, horizon: int, mode: str = "learned") -> None:
         super().__init__()
-        if min(width, horizon) <= 0:
+        if min(width, horizon) <= 0 or mode not in ("fixed_mean", "learned"):
             raise VideoProgramError("invalid learned horizon read dimensions")
-        self.query = torch.nn.Parameter(torch.zeros(width))
-        self.bias = torch.nn.Parameter(torch.zeros(horizon))
+        self.mode = mode
+        self.query = torch.nn.Parameter(torch.zeros(width), requires_grad=mode == "learned")
+        self.bias = torch.nn.Parameter(torch.zeros(horizon), requires_grad=mode == "learned")
+
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+        if self.mode == "fixed_mean" and any(
+            bool(state_dict[prefix + name].count_nonzero())
+            for name in ("query", "bias") if prefix + name in state_dict
+        ):
+            raise VideoProgramError("fixed-mean horizon checkpoint requires zero query and bias")
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     def forward(self, hidden: torch.Tensor) -> torch.Tensor:
         if hidden.ndim != 3 or hidden.shape[1:] != (self.bias.numel(), self.query.numel()):
@@ -108,9 +119,7 @@ class LearnedHorizonRead(torch.nn.Module):
 class Pi05LanguageAxialEncoder(torch.nn.Module):
     """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
-    CAMERA_COUNT = 2
     PATCHES_PER_CAMERA = 256
-    NATIVE_IMAGE_TOKENS = CAMERA_COUNT * PATCHES_PER_CAMERA
 
     def __init__(
         self,
@@ -129,6 +138,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         padded_action_dim: int,
         initialization_seed: int,
         activation_checkpointing: bool,
+        camera_view: str = "dual",
+        horizon_read: str = "learned",
     ) -> None:
         super().__init__()
         dimensions = (
@@ -147,6 +158,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             any(value <= 0 for value in dimensions)
             or action_horizon != 50
             or padded_action_dim != 32
+            or (camera_view, horizon_read) not in VIDEO_READ_MODES
         ):
             raise VideoProgramError("invalid PI05 language-axial dimensions")
         self.image_width = int(image_width)
@@ -156,6 +168,9 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         self.action_horizon = int(action_horizon)
         self.padded_action_dim = int(padded_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
+        self.camera_view = camera_view
+        self.camera_count = 2 if camera_view == "dual" else 1
+        self.image_tokens = self.camera_count * self.PATCHES_PER_CAMERA
         self.language_projection = torch.nn.Linear(
             image_width,
             program_width,
@@ -166,10 +181,11 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             program_width,
             bias=False,
         )
-        self.horizon_read = LearnedHorizonRead(width=expert_width, horizon=action_horizon)
+        self.horizon_read = LearnedHorizonRead(width=expert_width, horizon=action_horizon, mode=horizon_read)
         self.patch_grounding = TaskQueriedPatchGrounding(
             width=program_width,
             heads=patch_grounding_heads,
+            image_tokens=self.image_tokens,
         )
         self.text_meta_lora = MetaLoRAStack(
             paligemma_model.layers,
@@ -197,18 +213,21 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             persistent=True,
         )
 
-    @staticmethod
-    def _prepare_images(frames: torch.Tensor) -> torch.Tensor:
+    def _valid_frame_layout(self, frames: torch.Tensor) -> bool:
+        channels = (2, 3) if self.camera_count == 2 else (3,)
+        return frames.ndim == len(channels) + 3 and frames.shape[1:1 + len(channels)] == channels
+
+    def _prepare_images(self, frames: torch.Tensor) -> torch.Tensor:
         from lerobot.policies.pi05.modeling_pi05 import resize_with_pad_torch
 
         if (
-            frames.ndim != 5
+            not self._valid_frame_layout(frames)
             or frames.shape[0] <= 0
-            or frames.shape[1:3] != (2, 3)
             or frames.dtype != torch.uint8
         ):
             raise VideoProgramError("teacher frames changed shape or dtype")
-        value = frames.flatten(0, 1).to(torch.float32).div_(255.0).permute(0, 2, 3, 1)
+        pixels = frames.flatten(0, 1) if self.camera_count == 2 else frames
+        value = pixels.to(torch.float32).div_(255.0).permute(0, 2, 3, 1)
         value = resize_with_pad_torch(value, 224, 224)
         return (value * 2.0 - 1.0).permute(0, 3, 1, 2)
 
@@ -314,16 +333,16 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             text_tokens = bridge.embed_language_tokens(language_tokens)
         if (
             image_tokens.shape != (
-                frames.shape[0] * self.CAMERA_COUNT,
+                frames.shape[0] * self.camera_count,
                 self.PATCHES_PER_CAMERA,
                 self.image_width,
             )
             or text_tokens.shape[:2] != language_tokens.shape
         ):
             raise VideoProgramError("PI05 prefix embedding layout changed")
-        # Preserve synchronized camera order: agentview patches, then wrist patches.
+        # Agentview is real in both modes; dual appends synchronized wrist patches.
         image_tokens = image_tokens.reshape(
-            frames.shape[0], self.NATIVE_IMAGE_TOKENS, self.image_width
+            frames.shape[0], self.image_tokens, self.image_width
         )
         prefix = torch.cat((image_tokens, text_tokens), dim=1)
         prefix_padding = torch.cat(
@@ -382,7 +401,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         ):
             raise VideoProgramError("PI05 semantic hidden layout changed")
 
-        language_hidden = prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :]
+        language_hidden = prefix_hidden[:, self.image_tokens :]
         packed_language = self._pack_hidden(
             language_hidden,
             task_span_mask,
@@ -390,7 +409,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         multimodal_evidence = self.language_projection(packed_language)
         patch_content = self.language_projection(
-            prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
+            prefix_hidden[:, : self.image_tokens]
         )
         patch_evidence = self.patch_grounding(
             text_queries,
@@ -412,8 +431,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
     ) -> tuple[torch.nn.Module, torch.Tensor, torch.Tensor]:
         conditions = language_tokens.shape[0]
         if (
-            frames.ndim != 5
-            or frames.shape[1:3] != (2, 3)
+            not self._valid_frame_layout(frames)
             or frames.shape[0] <= 0
             or frame_condition_ids.ndim != 1
             or frame_condition_ids.shape[0] != frames.shape[0]

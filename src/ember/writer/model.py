@@ -38,6 +38,8 @@ LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS = frozenset(
         "factor_hidden_width",
         "initialization_seed",
         "activation_checkpointing",
+        "camera_view",
+        "horizon_read",
     }
 )
 
@@ -176,6 +178,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         factor_hidden_width: int,
         initialization_seed: int,
         activation_checkpointing: bool,
+        camera_view: str = "dual",
+        horizon_read: str = "learned",
     ) -> None:
         super().__init__()
         if (
@@ -204,6 +208,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("invalid Language-Axial Writer topology")
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
+        self.camera_view = camera_view
         self.semantic_encoder = Pi05LanguageAxialEncoder(
             paligemma_model=paligemma_model,
             expert_model=expert_model,
@@ -219,6 +224,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             padded_action_dim=padded_action_dim,
             initialization_seed=initialization_seed,
             activation_checkpointing=activation_checkpointing,
+            camera_view=camera_view,
+            horizon_read=horizon_read,
         )
         self.semantic_core = LanguageSemanticCore(
             width=program_width,
@@ -379,9 +386,10 @@ class CompleteLoRAWriter(torch.nn.Module):
     ]:
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
+        channels = (2, 3) if self.camera_view == "dual" else (3,)
         if (
-            frames.ndim != 5
-            or frames.shape[1:3] != (2, 3)
+            frames.ndim != len(channels) + 3
+            or frames.shape[1:1 + len(channels)] != channels
             or frame_indices.ndim != 1
             or frame_indices.shape[0] != frames.shape[0]
             or frame_indices.dtype != torch.long

@@ -139,7 +139,7 @@ def training_data_factory(tmp_path, monkeypatch):
                                    f"suite{task // 6}", task % 6, lengths) for task in task_ids}
     monkeypatch.setattr("ember.writer.learning_data.load_learning_tasks", metadata)
     opened = []
-    def create(**changes):
+    def create(*, camera_view="dual", **changes):
         config = {"seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
                   "maximum_updates": 12, "grouping": "baseline", "event_schema_version": EVENT_SCHEMA,
                   "task_ids": list(range(24)), "tasks_per_update": 4, "conditions_per_task": 1,
@@ -147,12 +147,35 @@ def training_data_factory(tmp_path, monkeypatch):
                   "action_demos": list(range(46)), "diagnostic_action_demos": list(range(46, 50)),
                   "held_video_demos": list(range(46, 50)), "action_start_offset": 1,
                   "query_alignment": "post_action_observation_future_control_v1", **changes}
-        data = WriterTrainingData(tmp_path, config)
+        data = WriterTrainingData(tmp_path, config, camera_view=camera_view)
         opened.append(data)
         return data
     yield create
     for data in opened:
         data.close()
+
+
+def test_registered_camera_modes_share_events_and_read_only_declared_rgb(training_data_factory, monkeypatch):
+    single = training_data_factory(camera_view="agentview")
+    dual = training_data_factory()
+    assert single.event_plan() == dual.event_plan()
+    assert single.next_iteration() == dual.next_iteration()
+    reads = []
+    original = h5py.Dataset.__getitem__
+    def rgb_only(dataset, key):
+        assert dataset.name.endswith(("/agentview_rgb", "/eye_in_hand_rgb"))
+        reads.append(dataset.name.rsplit("/", 1)[-1])
+        return original(dataset, key)
+    monkeypatch.setattr(h5py.Dataset, "__getitem__", rgb_only)
+    frames_a, indices_a = single.load_videos(0, [0])
+    assert reads == ["agentview_rgb"]
+    frames_b, indices_b = dual.load_videos(0, [0])
+    assert reads == ["agentview_rgb", "agentview_rgb", "eye_in_hand_rgb"]
+    np.testing.assert_array_equal(frames_a[0], frames_b[0][:, 0])
+    np.testing.assert_array_equal(indices_a[0], indices_b[0])
+    assert frames_a[0].ndim == 4 and frames_b[0].ndim == 5
+    with pytest.raises(ValueError, match="registered agentview or dual"):
+        training_data_factory(camera_view="eye_in_hand")
 
 
 def test_full_training_plan_has_balanced_rounds_and_cross_episode_events(training_data_factory):

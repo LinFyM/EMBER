@@ -15,6 +15,7 @@ from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenize
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_source_setup import load_policy
 from ember.writer.functional import prepare_frozen_writer_policy
+from ember.writer.video_program import VIDEO_READ_MODES
 
 
 MODEL_SCHEMA = "ember_language_axial_writer_v1"
@@ -28,13 +29,15 @@ MODEL_DEFAULTS = {
     "semantic_core_heads": 8, "semantic_core_blocks": 2, "frame_attention_initial_lambda": .05,
     "procedure_heads": 8, "procedure_blocks": 2, "fusion_heads": 8,
     "factor_hidden_width": 216, "initialization_seed": 7, "activation_checkpointing": True,
+    "camera_view": "dual", "horizon_read": "learned",
 }
 
 
 def require_architecture_identity(model: Mapping[str, Any]) -> None:
-    physical = {"max_frames_per_encoder_call", "activation_checkpointing"}
+    variable = {"max_frames_per_encoder_call", "activation_checkpointing", "camera_view", "horizon_read"}
     if (set(model) != set(MODEL_DEFAULTS)
-            or any(model[key] != value for key, value in MODEL_DEFAULTS.items() if key not in physical)
+            or any(model[key] != value for key, value in MODEL_DEFAULTS.items() if key not in variable)
+            or (model["camera_view"], model["horizon_read"]) not in VIDEO_READ_MODES
             or type(model["max_frames_per_encoder_call"]) is not int
             or model["max_frames_per_encoder_call"] <= 0
             or type(model["activation_checkpointing"]) is not bool):
@@ -81,7 +84,7 @@ class WriterRuntime:
 
     def prepare(self, frames: Sequence[torch.Tensor], indices: Sequence[torch.Tensor], language: str) -> tuple:
         if len(frames) != 1 or len(indices) != 1 or len(frames[0]) != len(indices[0]):
-            raise ValueError("the canonical Writer requires one complete dual-camera video")
+            raise ValueError("the canonical Writer requires one complete video in its declared camera mode")
         tokens, mask, span = self.tokenizer([language])
         pixels = frames[0].to(self.device, non_blocking=True)
         positions = indices[0].to(self.device, non_blocking=True)
@@ -97,8 +100,8 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
     from ember.writer.model import CompleteLoRAWriter, LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS, build_lora_tensor_specs
 
     require_architecture_identity(config["model"])
-    if config["observer"]["camera_view"] != "dual":
-        raise ValueError("canonical Writer requires synchronized dual-camera teaching")
+    if config["observer"]["camera_view"] != config["model"]["camera_view"]:
+        raise ValueError("observer camera mode differs from the Writer architecture")
     authorities = load_evaluation_authorities(asset_root / "configs/pi05_target_evaluation_v1.json", asset_root)
     reuse = read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]
     checkpoint = asset_root / reuse["source_checkpoint"]
@@ -129,8 +132,8 @@ class VideoConditionCache:
     """Bounded CPU cache of raw RGB and frame positions; no adapted activations."""
 
     def __init__(self, runtime: WriterRuntime, data, byte_limit: int) -> None:
-        if data.videos.camera_view != "dual" or byte_limit <= 0:
-            raise ValueError("raw input cache requires dual views and a positive byte cap")
+        if data.videos.camera_view != runtime.state.writer.camera_view or byte_limit <= 0:
+            raise ValueError("raw input cache requires the Writer camera mode and a positive byte cap")
         self.runtime, self.data, self.byte_limit = runtime, data, int(byte_limit)
         self.bytes = self.hits = self.misses = 0
         self.entries = OrderedDict()

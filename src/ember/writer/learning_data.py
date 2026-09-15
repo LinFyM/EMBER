@@ -80,8 +80,8 @@ class WriterTrainingData:
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "dual") -> None:
         self.asset_root, self.config = asset_root, deepcopy(dict(config))
         self._validate_config()
-        if camera_view != "dual":
-            raise ValueError("v5.2 fresh training requires synchronized dual-camera video")
+        if camera_view not in ("agentview", "dual"):
+            raise ValueError("v5.2 training requires the registered agentview or dual camera mode")
         self.seed = config["seed"]
         self.sampler_seed = config["sampler_seed"]
         self.teacher_video_seed = config["teacher_video_seed"]

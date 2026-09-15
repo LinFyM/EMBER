@@ -1,4 +1,4 @@
-"""Dual-camera native reads, Meta replay, and complete Core/Procedure LoRA output."""
+"""Registered camera/horizon reads, Meta replay, and complete LoRA output."""
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,6 +12,7 @@ from ember.lora import identity_lora_state, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.meta_lora import MetaLoRAStack
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.runtime import MODEL_DEFAULTS, VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.video_program import LearnedHorizonRead, Pi05LanguageAxialEncoder, VideoProgramError
 
 
@@ -72,7 +73,7 @@ class _TinyBridge(nn.Module):
                            bool(language.layers[0].self_attn.q_proj._forward_hooks),
                            bool(expert.layers[0].self_attn.q_proj._forward_hooks)))
         if suffix is not None:
-            self.image_prefixes.append(prefix[:, :512].detach().clone())
+            self.image_prefixes.append(prefix.detach().clone())
             assert kwargs['position_ids'].shape[1] == prefix.shape[1] + 50
         prefix = language(prefix)
         if suffix is not None:
@@ -96,7 +97,7 @@ class _TinyCore(nn.Module):
         return value[:, None]
 
 
-def _encoder(checkpoint=False):
+def _encoder(checkpoint=False, *, camera_view="dual", horizon_read="learned"):
     policy = nn.Module()
     policy.model = _TinyCore()
     policy.requires_grad_(False)
@@ -109,34 +110,45 @@ def _encoder(checkpoint=False):
         patch_grounding_heads=2, max_frames_per_encoder_call=2,
         action_horizon=50, padded_action_dim=32, initialization_seed=7,
         activation_checkpointing=checkpoint,
+        camera_view=camera_view, horizon_read=horizon_read,
     )
     frames = torch.empty(3, 2, 3, 8, 8, dtype=torch.uint8)
     for index in range(3):
         frames[index, 0] = 20 + index * 35
         frames[index, 1] = 240 - index * 20
+    if camera_view == "agentview":
+        frames = frames[:, 0]
     tokens = torch.tensor([[1, 3, 5, 7, 0], [1, 4, 6, 8, 9]])
     spans = torch.tensor([[False, True, True, False, False], [False, True, True, True, False]])
     args = (frames, torch.tensor([0, 0, 1]), tokens, tokens.ne(0), spans)
     return policy, encoder, args
 
 
-def test_complete_horizon_read_starts_as_mean_and_learns_content_and_relative_position():
-    read = LearnedHorizonRead(width=1024, horizon=50)
+@pytest.mark.parametrize('mode', ['fixed_mean', 'learned'])
+def test_complete_horizon_read_starts_as_mean_and_preserves_its_registered_learning_mode(mode):
+    read = LearnedHorizonRead(width=1024, horizon=50, mode=mode)
     hidden = torch.randn(2, 50, 1024, requires_grad=True)
     pooled = read(hidden)
     torch.testing.assert_close(pooled, hidden.mean(1))
     pooled.square().sum().backward()
     assert hidden.grad.abs().sum(-1).gt(0).all()
-    assert read.query.grad.norm() > 0 and read.bias.grad.abs().gt(0).all()
-    with torch.no_grad():
-        read.bias[-1] = 30
-    torch.testing.assert_close(read(hidden), hidden[:, -1])
+    if mode == 'learned':
+        assert read.query.grad.norm() > 0 and read.bias.grad.abs().gt(0).all()
+        with torch.no_grad():
+            read.bias[-1] = 30
+        torch.testing.assert_close(read(hidden), hidden[:, -1])
+    else:
+        assert all(not value.requires_grad and value.grad is None for value in read.parameters())
+        torch.optim.AdamW(read.parameters(), lr=.1, weight_decay=.1).step()
+        assert all(value.count_nonzero() == 0 for value in read.parameters())
+        torch.testing.assert_close(read(hidden), hidden.mean(1))
     with pytest.raises(VideoProgramError, match='complete native horizon'):
         read(hidden[:, :49])
 
 
-def test_both_synchronized_cameras_supply_512_real_patch_values_to_core():
-    policy, encoder, args = _encoder()
+@pytest.mark.parametrize('camera_view,horizon_read,patches', [('agentview', 'fixed_mean', 256), ('dual', 'learned', 512)])
+def test_declared_cameras_supply_only_their_real_patch_values_to_core(camera_view, horizon_read, patches):
+    policy, encoder, args = _encoder(camera_view=camera_view, horizon_read=horizon_read)
     patch_inputs = []
     horizon_inputs = []
     encoder.patch_grounding.register_forward_pre_hook(lambda module, values: patch_inputs.append(values[1]))
@@ -144,26 +156,33 @@ def test_both_synchronized_cameras_supply_512_real_patch_values_to_core():
     text, evidence, interactions, valid = encoder(policy, *args)
     assert text.shape == (2, 3, 8) and evidence.shape == (3, 3, 8)
     assert interactions.shape == (3, 8) and valid.tolist() == [[True, True, False], [True] * 3]
-    assert [value.shape[1] for value in patch_inputs] == [512, 512]
+    assert [value.shape[1] for value in patch_inputs] == [patches, patches]
     assert all(value.shape[1:] == (50, 8) for value in horizon_inputs)
     bridge = policy.model.paligemma_with_expert
-    expected = bridge.embed_image(encoder._prepare_images(args[0][:2])).reshape(2, 512, 8)
-    torch.testing.assert_close(bridge.image_prefixes[0], expected)
-    assert not torch.allclose(expected[:, :256], expected[:, 256:])
-    for camera in (0, 1):
+    expected = bridge.embed_image(encoder._prepare_images(args[0][:2])).reshape(2, patches, 8)
+    assert bridge.image_prefixes[0].shape[1] == patches + args[2].shape[1]
+    torch.testing.assert_close(bridge.image_prefixes[0][:, :patches], expected)
+    if camera_view == 'dual':
+        assert not torch.allclose(expected[:, :256], expected[:, 256:])
+    for camera in range(encoder.camera_count):
         changed = args[0].clone()
-        changed[:, camera] = 255 - changed[:, camera]
+        if camera_view == 'dual':
+            changed[:, camera] = 255 - changed[:, camera]
+        else:
+            changed = 255 - changed
         observed = encoder(policy, changed, *args[1:])
         assert not torch.allclose(observed[1], evidence)
     assert not ({id(value) for value in encoder.parameters()} & {id(value) for value in policy.parameters()})
     assert all(not value.requires_grad for value in policy.parameters())
+    wrong_frames = args[0][:, 0] if camera_view == 'dual' else args[0][:, None].expand(-1, 2, -1, -1, -1)
     with pytest.raises(VideoProgramError, match='invalid frame-language'):
-        encoder(policy, args[0][:, 0], *args[1:])
+        encoder(policy, wrong_frames, *args[1:])
 
 
 @pytest.mark.parametrize('checkpoint', [False, True])
-def test_frame_replay_keeps_all_three_meta_stacks_and_horizon_read_in_gradient_path(checkpoint):
-    policy, encoder, args = _encoder(checkpoint)
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
+def test_frame_replay_keeps_all_three_meta_stacks_in_gradient_path(checkpoint, camera_view, horizon_read):
+    policy, encoder, args = _encoder(checkpoint, camera_view=camera_view, horizon_read=horizon_read)
     stacks = (encoder.text_meta_lora, encoder.vl_meta_lora, encoder.action_meta_lora)
     assert all(isinstance(stack, MetaLoRAStack) for stack in stacks)
     assert all(adapter.b.count_nonzero() == 0 for stack in stacks for adapter in stack.adapters.values())
@@ -175,8 +194,11 @@ def test_frame_replay_keeps_all_three_meta_stacks_and_horizon_read_in_gradient_p
     sum(value.square().mean() for value in output[:3]).backward()
     for stack in stacks:
         assert all(value.grad is not None and value.grad.norm() > 0 for value in stack.parameters())
-    assert encoder.horizon_read.query.grad.norm() > 0
-    assert encoder.horizon_read.bias.grad.norm() > 0
+    if horizon_read == 'learned':
+        assert encoder.horizon_read.query.grad.norm() > 0
+        assert encoder.horizon_read.bias.grad.norm() > 0
+    else:
+        assert encoder.horizon_read.query.grad is None and encoder.horizon_read.bias.grad is None
     assert encoder.language_projection.weight.grad.norm() > 0
     assert encoder.interaction_projection.weight.grad.norm() > 0
     bridge = policy.model.paligemma_with_expert
@@ -185,6 +207,57 @@ def test_frame_replay_keeps_all_three_meta_stacks_and_horizon_read_in_gradient_p
                for is_video, text_hooks, expert_hooks in bridge.calls)
     assert all(not module._forward_hooks for module in bridge.modules())
     assert all(value.grad is None for value in policy.parameters())
+
+
+def test_camera_modes_share_fresh_parameters_and_consume_the_same_rng_stream():
+    # Start after unrelated upstream construction, as runtime does after its LoRA template.
+    torch.rand(19)
+    initial_rng = torch.get_rng_state()
+    policy_a, encoder_a, _ = _encoder(camera_view='agentview', horizon_read='fixed_mean')
+    after_a = torch.get_rng_state()
+    torch.set_rng_state(initial_rng)
+    policy_b, encoder_b, _ = _encoder()
+    assert torch.equal(torch.get_rng_state(), after_a)
+    torch.testing.assert_close(policy_a.state_dict(), policy_b.state_dict(), rtol=0, atol=0)
+    torch.testing.assert_close(encoder_a.state_dict(), encoder_b.state_dict(), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize('camera_view,horizon_read', [('dual', 'fixed_mean'), ('agentview', 'learned'),
+                                                     ('eye_in_hand', 'fixed_mean'), ('dual', 'truncated')])
+def test_unregistered_camera_read_pairs_are_rejected(camera_view, horizon_read):
+    model = MODEL_DEFAULTS | {'camera_view': camera_view, 'horizon_read': horizon_read}
+    with pytest.raises(ValueError, match='architecture'):
+        require_architecture_identity(model)
+    with pytest.raises(VideoProgramError, match='dimensions'):
+        _encoder(camera_view=camera_view, horizon_read=horizon_read)
+
+
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
+def test_config_identity_and_input_cache_reject_camera_mismatch_before_asset_reads(camera_view, horizon_read):
+    model = MODEL_DEFAULTS | {'camera_view': camera_view, 'horizon_read': horizon_read}
+    require_architecture_identity(model)
+    other = 'dual' if camera_view == 'agentview' else 'agentview'
+    with pytest.raises(ValueError, match='observer camera mode'):
+        build_runtime(Path('/unused'), {'model': model, 'observer': {'camera_view': other}}, torch.device('cpu'))
+    runtime = SimpleNamespace(state=SimpleNamespace(writer=SimpleNamespace(camera_view=camera_view)))
+    data = SimpleNamespace(videos=SimpleNamespace(camera_view=camera_view))
+    VideoConditionCache(runtime, data, 1024)
+    data.videos.camera_view = other
+    with pytest.raises(ValueError, match='Writer camera mode'):
+        VideoConditionCache(runtime, data, 1024)
+    del model['horizon_read']
+    with pytest.raises(ValueError, match='architecture'):
+        require_architecture_identity(model)
+
+
+def test_fixed_mean_checkpoint_refuses_learned_nonuniform_weights():
+    fixed = LearnedHorizonRead(width=8, horizon=50, mode='fixed_mean')
+    fixed.load_state_dict(fixed.state_dict(), strict=True)
+    for name in ('query', 'bias'):
+        state = {key: value.clone() for key, value in fixed.state_dict().items()}
+        state[name][-1] = .1
+        with pytest.raises(VideoProgramError, match='fixed-mean horizon checkpoint'):
+            fixed.load_state_dict(state, strict=True)
 
 
 def test_checkpoint_and_physical_chunk_preserve_the_same_condition_read():
@@ -218,13 +291,14 @@ class _SemanticInput(nn.Module):
         valid = torch.arange(int(counts.max()))[None] < counts[:, None]
         channels = torch.linspace(.2, 1, 256)
         text = tokens[:, 1:valid.shape[1] + 1, None].float() * channels
-        content = frames.float().mean((1, 2, 3, 4)) / 255
+        content = frames.float().flatten(1).mean(1) / 255
         evidence = content[:, None, None] * channels + text[ids]
         interactions = content[:, None] * channels.flip(0)
         return text, evidence, interactions, valid
 
 
-def test_complete_ab_identity_full_decoder_credit_and_raw_frame_rope_positions():
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
+def test_complete_ab_identity_full_decoder_credit_and_raw_frame_rope_positions(camera_view, horizon_read):
     contract = load_pi05_lora_contract(Path(__file__).resolve().parents[1] / 'configs/pi05_lora_v1.json')
     template = identity_lora_state(contract)
     pali = _metadata_backbone(dict(q_proj=(2048, 2048), k_proj=(2048, 256),
@@ -239,6 +313,7 @@ def test_complete_ab_identity_full_decoder_credit_and_raw_frame_rope_positions()
         semantic_core_heads=8, semantic_core_blocks=2, frame_attention_initial_lambda=.05,
         procedure_heads=8, procedure_blocks=2, fusion_heads=8, factor_hidden_width=216,
         initialization_seed=7, activation_checkpointing=True,
+        camera_view=camera_view, horizon_read=horizon_read,
     )
     expected_probe = torch.randn(50, 32, generator=torch.Generator().manual_seed(7 + 0x5A17))
     torch.testing.assert_close(model.semantic_encoder.fixed_suffix_noise, expected_probe)
@@ -249,6 +324,8 @@ def test_complete_ab_identity_full_decoder_credit_and_raw_frame_rope_positions()
     assert all(head.network[-1].weight.count_nonzero() == 0 for head in model.factor_heads.values())
     model.semantic_encoder = _SemanticInput()
     frames = torch.randint(0, 256, (5, 2, 3, 4, 4), dtype=torch.uint8)
+    if camera_view == 'agentview':
+        frames = frames[:, 0]
     indices = torch.tensor([0, 5, 0, 5, 9])
     tokens = torch.tensor([[1, 3, 5, 0], [1, 4, 6, 8]])
     spans = torch.tensor([[False, True, True, False], [False, True, True, True]])

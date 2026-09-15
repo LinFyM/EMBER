@@ -19,8 +19,10 @@ B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写�
 选chunk8／policy microbatch8：后两次平均25.381秒／条件，reserved峰值29.004GiB，快于chunk4的27.939秒。
 该profile只检验信用、吞吐与显存，不保留其初始化；不构成B的闭环能力证据。
 完整metadata计划4800事件／100800queries、每task200次，同episode和held46–49训练暴露均0。
-B的fresh300已从clean pushed detached `7f9f11a3`启动，gpu01物理0/1/2/3，四rank按实际PCI/NUMA绑定并SUM。
-入口已登记step0→300及100/200/300完整保存点；先完成独立动作step0诊断，再进行更新。仍无B闭环分数。
+B的fresh300已从clean pushed detached `7f9f11a3`正常完成，gpu01物理0/1/2/3，四rank按实际PCI/NUMA绑定并SUM。
+用时4789.652秒，1200条件／25200 queries，每task50次；第三步后298次更新的Writer与三Meta梯度均finite非零。
+100/200/300完整checkpoint及0/300独立动作诊断已保存，最高reserved29.441GiB；仍无B闭环分数。
+496套LoRA已生成并通过canonical checkpoint／bank检查，validation400在gpu01四卡、train96在gpu02三卡独立评测。
 命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
 其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。

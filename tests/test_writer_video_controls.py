@@ -18,7 +18,7 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization, materialization_workers, runtime
 from ember.writer.learning_data import load_learning_tasks
 from ember.writer.materialization import condition_id, file_record, planned_episodes, selection_contract
-from ember.writer.video import VideoWriterConfig
+from ember.writer.runtime import MODEL_DEFAULTS
 from ember.writer.video_controls import (CONTROL_ARMS, DIAGNOSTIC_DECLARATION, METHOD_FREEZE_DECLARATION,
     SEALED_TEST_DECLARATION, control_provenance, controlled_frames, inspect_diagnostic_contract, video_task_id)
 from test_horizon_evaluation import GIT, ROOT, SOURCE
@@ -88,27 +88,13 @@ def test_real_dual_camera_pixels_are_reordered_before_both_complete_reads(tmp_pa
         prepared.append((pixels, displayed, language))
         return prepared[-1]
 
-    def read(value):
-        assert value is prepared[-1]
-        reads.append(("observer", value[2]))
-        return torch.tensor(1.), ()
-
-    def source_read(value):
-        assert value is prepared[-1]
-        reads.append(("bare_source", value[2]))
-        return "native source coordinates"
-
     lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"),
                    targets=(LoRATarget("linear", 3, 3),))
-
-    def write(response, *, native_inputs):
-        assert response == 1 and native_inputs == "native source coordinates"
-        reads.append(("writer",))
+    def compile(value):
+        assert value is prepared[-1] and not torch.is_grad_enabled()
+        reads.append(("writer", value[2]))
         return {key: torch.zeros(shape) for key, shape in expected_lora_state_shapes(lora).items()}
-
-    current = SimpleNamespace(lora=lora, state=SimpleNamespace(writer=write),
-        observer=SimpleNamespace(device=torch.device("cpu"), prepare=prepare, read=read),
-        correction=SimpleNamespace(read=source_read))
+    current = SimpleNamespace(lora=lora, prepare=prepare, compile=compile)
     # Exercise the actual resident-worker donor handoff and canonical compiler.
     worker = object.__new__(materialization_workers.ResidentCompiler)
     worker.runtime, worker.store, worker.tasks = current, SimpleNamespace(load=load), tasks | {donor.authority.task_id: donor}
@@ -118,7 +104,7 @@ def test_real_dual_camera_pixels_are_reordered_before_both_complete_reads(tmp_pa
     assert torch.equal(prepared[0][0][0], torch.from_numpy(frames)[content])
     assert torch.equal(prepared[0][1][0], displayed)
     assert prepared[0][2] == tasks[1].authority.language
-    assert [value[0] for value in reads] == ["RGB", "observer", "bare_source", "writer"]
+    assert [value[0] for value in reads] == ["RGB", "writer"]
     assert record["video_control"] == control
     assert all(record["teacher_videos"][0][key] == value for key, value in evidence.items())
     evaluation._validate_video_frames(record["teacher_videos"], [demo], donor.episode_lengths, control)
@@ -155,9 +141,9 @@ def frozen_control_assets(tmp_path, monkeypatch):
     monkeypatch.setattr("ember.pi05_lora.load_pi05_lora_contract", lambda _path: lora)
     monkeypatch.setattr(evaluation, "load_pi05_lora_contract", lambda _path: lora)
     checkpoint = {"path": str(tmp_path / "macro_00000900"), "macro": 900}
-    run = {"source": SOURCE, "model_config": vars(VideoWriterConfig()), "config": {
+    run = {"source": SOURCE, "model_config": dict(MODEL_DEFAULTS), "config": {
         "observer": {"camera_view": "dual", "frame_chunk": 4}, "update_version": materialization.UPDATE_VERSION,
-        "execution_precision": "native_mixed_without_outer_autocast"}}
+        "execution_precision": "native_bf16_writer_fm_fp32_lora"}}
     monkeypatch.setattr(materialization, "git_state", lambda _root: GIT)
     monkeypatch.setattr(materialization, "inspect_writer_checkpoint", lambda _path: (run, checkpoint))
     monkeypatch.setattr(evaluation, "inspect_writer_checkpoint", lambda _path: (run, checkpoint))
@@ -175,12 +161,12 @@ def frozen_control_assets(tmp_path, monkeypatch):
             for row in rows for episode in row["episodes"]]}
     anchor = tmp_path / "correct400.json"
     anchor.write_text(json.dumps(correct))
-    declaration = DIAGNOSTIC_DECLARATION | {"paired_correct_manifest": str(anchor)}
+    declaration = DIAGNOSTIC_DECLARATION | {"checkpoint_macro": 900, "paired_correct_manifest": str(anchor)}
     return root, run, checkpoint, declaration, rows, lora
 
 
 @pytest.mark.parametrize("damage", ["missing", "step", "feedback", "seed", "anchor_checkpoint", "partial_anchor"])
-def test_controls_require_explicit_terminal900_authority_and_the_same_correct400_map(frozen_control_assets, damage):
+def test_controls_require_explicit_selected_checkpoint_authority_and_the_same_correct400_map(frozen_control_assets, damage):
     root, run, checkpoint, declaration, _, _ = frozen_control_assets
     selected = selection("shuffled")
     if damage == "missing":
@@ -268,9 +254,9 @@ def frozen_test_assets(frozen_control_assets, tmp_path):
             row["hdf5"]["bytes"] = path.stat().st_size
     target_path.write_text(json.dumps(target))
     freeze = tmp_path / "method_freeze.json"
-    freeze.write_text(json.dumps(METHOD_FREEZE_DECLARATION | {
+    freeze.write_text(json.dumps(METHOD_FREEZE_DECLARATION | {"terminal_macro": 900,
         "writer_checkpoint": checkpoint, "method": materialization.method_metadata(run)}))
-    declaration = SEALED_TEST_DECLARATION | {"method_freeze": str(freeze)}
+    declaration = SEALED_TEST_DECLARATION | {"checkpoint_macro": 900, "method_freeze": str(freeze)}
     return root, run, checkpoint, declaration, lora
 
 
@@ -335,24 +321,11 @@ def test_cpu_compiler(frozen_test_assets, monkeypatch):
         stages.append("prepare_RGB_indices_language")
         return frames, indices, language
 
-    def read(condition):
+    def compile(condition):
         assert not torch.is_grad_enabled() and len(condition) == 3
-        stages.append("observer")
-        return torch.ones(1), ()
-
-    def source_read(condition):
-        assert not torch.is_grad_enabled() and len(condition) == 3
-        stages.append("bare_source")
-        return "synthetic native coordinates"
-
-    def write(response, *, native_inputs):
-        assert not torch.is_grad_enabled() and response == 1 and native_inputs == "synthetic native coordinates"
         stages.append("writer")
         return {key: torch.full(shape, .01) for key, shape in expected_lora_state_shapes(lora).items()}
-
-    current = SimpleNamespace(lora=lora, state=SimpleNamespace(writer=write),
-        observer=SimpleNamespace(device=torch.device("cpu"), prepare=prepare, read=read),
-        correction=SimpleNamespace(read=source_read))
+    current = SimpleNamespace(lora=lora, prepare=prepare, compile=compile)
 
     class CPUWorkers:
         def __init__(self, *, config, devices, **_kwargs):
@@ -410,10 +383,10 @@ def test_complete_frozen_test400_uses_the_canonical_compiler_and_official_adapte
     assert all(row["split_role"] == "test" and len(row["episodes"]) == 50 for row in adapter["tasks"])
     assert set(test_cpu_compiler[0]) == {(task, demo) for task in TEST for demo in range(50)}
     assert len(test_cpu_compiler[0]) == 400
-    assert test_cpu_compiler[1] == ["prepare_RGB_indices_language", "observer", "bare_source", "writer"] * 400
+    assert test_cpu_compiler[1] == ["prepare_RGB_indices_language", "writer"] * 400
     assert adapter["information_wall"]["total_writer_invocations"] == 400
     assert adapter["information_wall"]["materialization_rgb_video_reads"] == 400
-    assert adapter["diagnostic_contract"] == SEALED_TEST_DECLARATION | {
+    assert adapter["diagnostic_contract"] == SEALED_TEST_DECLARATION | {"checkpoint_macro": 900,
         "method_freeze": file_record(Path(declaration["method_freeze"]))}
     first = adapter["tasks"][0]
     evidence = evaluation.episode_evidence(adapter, first, first["episodes"][0])

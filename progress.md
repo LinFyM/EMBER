@@ -12,7 +12,10 @@ Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为
 旧汇总器将GPU3误认NUMA0导致外层exit1；实际PCI/NUMA/affinity核验后只修正此判断，原400行汇总成功，未重跑模型或闭环。
 原件与修正脚本见runs/analysis/v52_return_20260915/{launch_contract.json,reference_readout.json,aggregate_reference.py}。
 启动前strg01 data1约848.06GiB／soft1024GiB，本阶段追加预算4GiB，全部大资产复用。
-B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写入active design，正在替换canonical实现与确定性事件表。
+B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写入active design，模型和事件采样已集成。
+模型移植90c58154，确定性事件20330e64；主入口沿用train_writer/materialize_writer，旧Pullback专属路径与临时A入口已退役。
+187项相关CPU检查通过，覆盖模型／Meta重放、官方FM、更新／resume、bank／pairing与信息墙；尚无B的真实GPU profile或训练分数。
+完整metadata计划4800事件／100800queries、每task200次，同episode和held46–49训练暴露均0。
 B／C仍需完成真实profile与资源检查后才提交formal训练，不把接口登记写成已训练。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 本轮只开放fixed step900 correct400，未开放新controls或Test。结果在对话中交付，不新建用户报告。

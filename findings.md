@@ -1783,3 +1783,19 @@ Test不反哺方法、训练或选点，不改变此前冻结的能力non-pass�
 关闭本次修订窗口，不追加训练、小扫或新的设计；该non-pass只限制本轮检验的共享出口／过程读取／纯FM组合。
 原件根`runs/analysis/process_pullback_learned_outlet_20260915/`保留paired_readout、paired_endpoint_revision_comparison、
 final_paired_readout、bounded900_decision、method_freeze、全部checkpoint／bank／raw rows／completion及训练、物化和最终读出launch contracts。
+
+## 103. 固定v5.2历史参考保留了能力量级，现行基线迁移须独立计量（2026-09-15）
+
+原529da6b的step900在当前A40环境、原400个state–video与RNG映射下为125/400，历史132/400；
+S/O/G/L从19/63/39/11变为15/58/41/11，breadth均6。逐行R/G/L111/14/21、churn35、Jaccard .7603；
+任务配对差额95%CI[-4.25,+.75]pp。完整原件见runs/analysis/v52_return_20260915/reference_readout.json。
+复核没有参数更新、换点、controls或Test；结果保留旧能力参照，但不是>145的正式资格，也不唯一分开硬件与闭环敏感性。
+
+外层exit1来自旧汇总器把GPU3硬编码NUMA0；实际该卡在NUMA1，12个workers均exit0且400行完整。
+基于PCI/NUMA/affinity原件仅修正汇总判断后完成汇总，原exit1与修正脚本保留，未重跑挑结果。
+
+新fresh基线保留Core/Procedure/完整A/B和三组Meta，仅模型接口迁移双相机与完整50-horizon learned read；
+另外明确登记offset0→1、严格跨episode及46/4训练／独立视频分池，不能把新旧差值单归某个模型模块。
+旧v5.2实际RoPE读取raw frame indices，历史文字的sampled ordinal并未被执行；当前保留真实旧图。
+当前依赖scheduler会把decay自动缩到run budget，入口明确保留原100 warmup／12000 decay时钟。
+这些是新基线的可复核实施边界，不是能力改进结论；任务共现仍待在同事件／同更新对照中检验。

@@ -184,7 +184,7 @@ def validate_information_wall(manifest) -> None:
                 "shuffled_reversed_wrong_no_video": manifest["arm"] in CONTROL_ARMS}
     if manifest["arm"] in CONTROL_ARMS or manifest.get("evaluation_role") == "test":
         required.update(materialization_rgb_video_reads=0 if no_video else len(manifest["conditions"]),
-                        deployment_frozen_source_vjp=not no_video, deployment_loss_or_optimizer=False)
+                        deployment_frozen_source_vjp=False, deployment_loss_or_optimizer=False)
     if no_video:
         required["deployment_inputs"] = []
     if any(wall.get(key) != value for key, value in required.items()):

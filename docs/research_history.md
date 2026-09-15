@@ -1762,3 +1762,16 @@ Object0新增6、Goal7新增1，但其它三个suite能力损失更多；结果�
 本次修订窗口完整关闭，未获得科学资格，没有selected checkpoint或后继训练；不以局部增益、loss或Test覆盖增加改写能力缺口。
 原件根`runs/analysis/process_pullback_learned_outlet_20260915/`保留完整checkpoint、bank、raw rows、completion、
 paired_readout、paired_endpoint_revision_comparison、final_paired_readout、bounded900_decision、method_freeze及各阶段launch contract。限定结论见findings§102。
+
+## 2026-09-15：v5.2固定step900历史复核完成
+
+Owner要求详细分析后授权计划并启动，随后明确不能停在“已启动”。原模型529da6b与兼容operator1ce99a0c分别冻结；
+原single-camera／horizon mean图与checkpoint不改，canonical source和资产仅做路径桥接。
+GPU01四张A40、每卡一个生成器与三个persistent rollout workers，固定原400无放回state–video映射及RNG。
+400套LoRA和400条闭环均完成，12个workers全部exit0，整体1142.301秒。当前125/400，对旧132的
+R/G/L111/14/21、churn35、Jaccard .7603，breadth均6，S/O/G/L15/58/41/11；差额任务CI[-4.25,+.75]pp。
+
+旧NUMA汇总假设导致外层exit1；实测GPU3位于NUMA1，基于PCI与worker affinity证据完成CPU汇总修正，
+未更改旧rows或重跑。原件根runs/analysis/v52_return_20260915包含launch_contract、aggregate_reference、
+aggregation_topology、reference_correct400和reference_readout；原evaluate.exit=1保持。
+临时replay入口使命结束后退役，原operator／模型冻结树与Git继续保存。现行fresh基线另行登记，见active design；本条不赋予新模型旧分数。

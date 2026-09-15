@@ -1,60 +1,9 @@
 """Direct-autograd oracles for complete main LoRA and native replay credit."""
-import copy
 
 import pytest
 import torch
 
-from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
 from ember.writer.function_credit import mean_velocity_loss
-from ember.writer.supervised import replay_functional_credit
-from test_video_program import inputs, native_inputs, small_cpu_work, unlock, writer
-
-
-@pytest.mark.parametrize('activation_checkpoint', [False, True])
-@pytest.mark.parametrize('nonidentity', [False, True])
-def test_joint_replay_matches_direct_autograd(activation_checkpoint, nonidentity):
-    model = writer(activation_checkpoint=activation_checkpoint)
-    unlock(model)
-    if nonidentity:
-        with torch.no_grad():
-            for parameter in model.outlet.parameters():
-                parameter.normal_(std=.2)
-    reference = copy.deepcopy(model)
-    args = inputs((3,))
-    native = native_inputs(model, args)
-    direct_responses = tuple(value.detach().requires_grad_() for value in args[0])
-    direct_visuals = tuple(value.detach().requires_grad_() for value in args[4])
-    video = reference.encode(direct_responses, *args[1:4], direct_visuals, *args[5:])
-    bare = reference.raw_factors(video, native)
-    state = {}
-    # Independent dense L/R oracle, only at the small test widths. Production
-    # uses low-rank contractions and never forms either identity matrix.
-    for index, target in enumerate(reference.contract.targets):
-        outlet = reference.outlet
-        left = torch.eye(target.out_features) + outlet.left_u[index] @ outlet.left_v[index]
-        right = torch.eye(target.in_features) + outlet.right_u[index] @ outlet.right_v[index]
-        state[target.name + LORA_A_SUFFIX] = bare[target.name + LORA_A_SUFFIX] @ right
-        state[target.name + LORA_B_SUFFIX] = left @ bare[target.name + LORA_B_SUFFIX]
-    targets = {name: torch.randn_like(value) for name, value in state.items()}
-    main = .125 * sum((value - targets[name]).square().mean() for name, value in state.items())
-    # FM differentiates both final factors. A's cotangent trains the right
-    # transform, while B's cotangent trains L and flows through source to q.
-    lora_leaves = {name: value.detach().requires_grad_() for name, value in state.items()}
-    leaf_loss = .125 * sum((value - targets[name]).square().mean() for name, value in lora_leaves.items())
-    compiled = dict(zip(state, torch.autograd.grad(leaf_loss, tuple(lora_leaves.values()))))
-    expected = torch.autograd.grad(main, (*reference.parameters(), *direct_responses, *direct_visuals))
-    with torch.no_grad():
-        bare_state = model.raw_factors(model.encode(*args), native)
-    compile_calls = native.compile_calls
-    response_grads, visual_grads = replay_functional_credit(
-        model, args[0], args[1:], compiled, native, bare_state)
-    assert native.compile_calls == compile_calls
-    actual = [p.grad for p in model.parameters()] + list(response_grads) + list(visual_grads)
-    for result, target in zip(actual, expected, strict=True):
-        torch.testing.assert_close(result, target, rtol=3e-4, atol=2e-6)
-    if nonidentity:
-        assert all(parameter.grad.norm() > 0 for parameter in model.outlet.parameters())
-        assert all(value.norm() > 0 for value in (*response_grads, *visual_grads))
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():

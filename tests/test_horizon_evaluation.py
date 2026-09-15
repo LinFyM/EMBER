@@ -22,7 +22,7 @@ from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenHorizonWriterAdapt
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, adapter_metadata,
     condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
-from ember.writer.video import VideoWriterConfig
+from ember.writer.runtime import MODEL_DEFAULTS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,14 +55,14 @@ def bank(tmp_path, request):
     checkpoint = tmp_path / "run/checkpoints/macro_00000016"
     checkpoint.mkdir(parents=True)
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
-           "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_mixed_without_outer_autocast"}, "model_config": {"horizon": 50}}
-    run["model_config"] = vars(VideoWriterConfig())
-    run["config"]["data"] = {"version": "train24_teacher_action_pool_cross_episode_k1_v1",
+           "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_bf16_writer_fm_fp32_lora"}, "model_config": {"horizon": 50}}
+    run["model_config"] = dict(MODEL_DEFAULTS)
+    run["config"]["data"] = {"version": "v52_full_video_cross_episode_events_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
-    run["config"]["schema_version"] = "ember_process_pullback_writer_config_v2"
+    run["config"]["schema_version"] = "ember_language_axial_writer_config_v1"
     run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
-    run["config"]["observer"]["native_inputs"] = "bare_source_output_pullback_pca16_full50"
+    run["config"]["observer"]["native_inputs"] = "full512_patch_content_and_full50_learned_horizon_read"
     run["config"]["observer"]["frame_chunk"] = 4
     (checkpoint.parent.parent / "run_contract.json").write_text(json.dumps(run))
     save_file({"probe": torch.zeros(50, 32)}, str(checkpoint / "ecp.safetensors"))
@@ -285,7 +285,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": {"width": 12},
-            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_mixed_without_outer_autocast", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
+            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_bf16_writer_fm_fp32_lora", "model": {"width": 999}, "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
             "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
             "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
@@ -489,26 +489,16 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         assert error.value.code == 2 and len(calls) == 1
 
 
-def test_method_metadata_describes_native_read_and_frozen_source_derivative_compilation():
-    method = method_metadata({"model_config": vars(VideoWriterConfig()),
+def test_method_metadata_binds_complete_video_reads_and_single_full_lora():
+    method = method_metadata({"model_config": dict(MODEL_DEFAULTS),
         "config": {"update_version": UPDATE_VERSION, "observer": {"camera_view": "dual"},
-                   "execution_precision": "native_mixed_without_outer_autocast"}})
+                   "execution_precision": "native_bf16_writer_fm_fp32_lora"}})
     assert method["native_response_shape"] == [50, 1024]
-    assert method["native_response_source"] == "action_out_proj_input_after_final_normalization"
-    assert method["visual_token_source"] == "actual_final_prefix_image_and_contextual_task_tokens"
-    assert method["native_read"] == "all_50_action_horizon_positions_retained_until_learned_read"
-    assert method["video_representation"] == "language_role_semantic_states_and_change_driven_process_values"
-    assert method["process_aggregation"] == "forward_change_recurrence_with_backward_context"
-    assert method["native_parameter_generation"] == "G_mean_J_W_F0_T_q_then_DeltaW_L_G_P_R"
-    assert method["action_code_shape"] == ["T", 50, 7]
-    assert method["deployment_frozen_source_vjp"] is True
-    assert method["deployment_grad_context"] == "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported"
+    assert method["generated_tensor_count"] == 76 and method["execution_rank"] == 16
+    assert method["deployment_frozen_source_vjp"] is False
     assert method["source_parameter_training"] is False
     assert method["deployment_teacher_labels_loss_optimizer"] is False
-    assert method["macro_cursor"] == "optimizer_updates"
-    assert method["training_stage"] == STAGE
-    assert method["training_objective"] == "main_fm"
-    assert method["update_version"] == UPDATE_VERSION
+    assert method["training_objective"] == "main_fm" and method["update_version"] == UPDATE_VERSION
 
 
 @pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
@@ -535,7 +525,7 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize("field", ["schema", "architecture", "process_mode"])
+@pytest.mark.parametrize("field", ["schema", "architecture", "action_horizon"])
 def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
@@ -544,7 +534,7 @@ def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     del run["model_config"][field]
     del run["config"]["model"][field]
     run_path.write_text(json.dumps(run))
-    with pytest.raises(ValueError, match="identity"):
+    with pytest.raises(ValueError, match="architecture"):
         inspect_writer_checkpoint(checkpoint)
 
 
@@ -553,7 +543,7 @@ def test_checkpoint_rejects_shape_compatible_run_model_disagreement(bank):
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
     run_path = checkpoint.parent.parent / "run_contract.json"
     run = json.loads(run_path.read_text())
-    run["config"]["model"]["memory_timescale"] *= 2
+    run["config"]["model"]["max_frames_per_encoder_call"] *= 2
     run_path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match="disagree"):
         inspect_writer_checkpoint(checkpoint)
@@ -657,33 +647,28 @@ def test_single_cli_preserves_explicit_init_state_ids(monkeypatch):
     assert calls[0]["selection"]["seed"] == 20260907
 
 
-def test_compile_uses_observer_arguments_including_actual_visual_tokens(tmp_path, monkeypatch):
+def test_compile_uses_complete_dual_video_and_exact_language_once(tmp_path, monkeypatch):
     import numpy as np
-
     lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"),
                    targets=(LoRATarget("linear", 3, 4),), rank=2, alpha=2)
-    arguments = tuple(object() for _ in range(6))
-    response = object()
     calls = []
-
-    native = ({"linear": torch.zeros(2, 50, 3)},)
-
-    def writer(*values, native_inputs):
-        calls.append((values, native_inputs))
+    def prepare(frames, indices, language):
+        assert frames[0].shape == (2, 2, 3, 4, 4)
+        assert indices[0].tolist() == [0, 5] and language == "exact task"
+        calls.append("prepare")
+        return object()
+    def compile(condition):
+        assert not torch.is_grad_enabled()
+        calls.append("complete_writer")
         return identity_lora_state(lora)
-
-    observer = SimpleNamespace(device=torch.device("cpu"), prepare=lambda *args: object(),
-        read=lambda condition: (response, arguments))
-    runtime = SimpleNamespace(observer=observer, state=SimpleNamespace(writer=writer), lora=lora,
-                              correction=SimpleNamespace(read=lambda condition: native))
+    runtime = SimpleNamespace(prepare=prepare, compile=compile, lora=lora)
     task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),
         episode_lengths=(6,), suite="libero_spatial", suite_task_id=0)
-    video = SimpleNamespace(frames=np.zeros((2, 3, 4, 4), dtype=np.uint8),
+    video = SimpleNamespace(frames=np.zeros((2, 2, 3, 4, 4), dtype=np.uint8),
         frame_indices=np.array([0, 5]), raw_frame_count=6)
     record = materialization._compile_condition(runtime, SimpleNamespace(load=lambda *args: video),
         task, (0,), tmp_path, {"path": "/checkpoint", "macro": 16})
-    assert calls == [((response, *arguments), native)]
-    assert record["writer_invocations"] == 1
+    assert calls == ["prepare", "complete_writer"] and record["writer_invocations"] == 1
 
 
 def _diagnostic_args(**overrides):

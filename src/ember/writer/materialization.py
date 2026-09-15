@@ -22,15 +22,12 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.video import VideoWriterConfig, require_architecture_identity
+from ember.writer.runtime import require_architecture_identity
+from ember.writer.training import RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
 
-RUN_SCHEMA = "ember_process_pullback_writer_run_v2"
-STAGE = "process_pullback_writer_fresh"
-TRAINING_SCHEMA = "ember_process_pullback_training_state_v2"
-UPDATE_VERSION = "source_pullback_learned_outlet_pure_main_fm_joint_credit_v2"
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
 # This existing execution-protocol kind is also consumed by generic pi05 evaluators.
 BANK_KIND = "horizon_writer_lora_bank"
@@ -64,7 +61,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     teacher_camera_names(run.get("config", {}).get("observer", {}).get("camera_view", "agentview"))
     require_architecture_identity(run.get("model_config", {}))
     require_architecture_identity(run.get("config", {}).get("model", {}))
-    if VideoWriterConfig(**run["model_config"]) != VideoWriterConfig(**run["config"]["model"]):
+    if run["model_config"] != run["config"]["model"]:
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
@@ -72,12 +69,12 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     data = config.get("data", {})
     identities = (
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": "ember_process_pullback_writer_config_v2", "update_version": UPDATE_VERSION,
-                  "execution_precision": "native_mixed_without_outer_autocast"}),
+        (config, {"schema_version": "ember_language_axial_writer_config_v1", "update_version": UPDATE_VERSION,
+                  "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
         (config.get("optimization", {}), {"loss": "main_fm"}),
         (config.get("observer", {}), {"camera_view": "dual",
-                                      "native_inputs": "bare_source_output_pullback_pca16_full50"}),
-        (data, {"version": "train24_teacher_action_pool_cross_episode_k1_v1", "action_start_offset": 1,
+                                      "native_inputs": "full512_patch_content_and_full50_learned_horizon_read"}),
+        (data, {"version": "v52_full_video_cross_episode_events_v1", "action_start_offset": 1,
                 "query_alignment": "post_action_observation_future_control_v1"}),
         (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
                     "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
@@ -228,38 +225,32 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
-    cameras = teacher_camera_names(run["config"]["observer"].get("camera_view", "agentview"))
-    metadata = {"model_config": run["model_config"], "observer": run["config"]["observer"],
-            "execution_precision": run["config"]["execution_precision"],
-            "checkpoint_state": "strict entire Writer+two Meta stacks+public probe", "frame_stride": 5,
-            "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180", "execution_rank": 16,
-            "native_response_shape": [50, 1024], "generated_tensor_count": 76,
-            "native_response_source": "action_out_proj_input_after_final_normalization",
-            "visual_token_source": "actual_final_prefix_image_and_contextual_task_tokens",
-            "visual_token_gradient": "joint_native_Z_and_R_replay_to_VL_and_Action_Meta",
-            "native_read": "all_50_action_horizon_positions_retained_until_learned_read",
-            "video_representation": "language_role_semantic_states_and_change_driven_process_values",
-            "process_aggregation": "forward_change_recurrence_with_backward_context",
-            "static_content_role": "queries_and_gates_only; zero_change_gives_zero_action_code",
-            "training_stage": STAGE, "training_objective": "main_fm",
-            "native_parameter_generation": "G_mean_J_W_F0_T_q_then_DeltaW_L_G_P_R",
-            "shared_native_transforms": "identity_initialized_rank16_left_and_right; task_shared; multiplicative_only",
-            "native_input_source": "bare_frozen_source_without_VL_or_Action_Meta",
-            "action_code_shape": ["T", 50, 7], "native_output_padding_cotangents": "zero_dimensions_7_to_31",
-            "input_projection": "bare_A0_top16_right_singular_vectors_all_real_frame_horizon_X; emitted_A=A0_R",
-            "deployment_frozen_source_vjp": True, "source_parameter_training": False,
-            "deployment_grad_context": "outer_no_grad_with_internal_enable_grad; inference_mode_not_supported",
-            "deployment_teacher_labels_loss_optimizer": False,
-            "writer_execution": "one_pre_rollout_call_with_fixed_read_only_source_replays",
-            "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates"}
+    metadata = {
+        "model_config": run["model_config"], "observer": run["config"]["observer"],
+        "execution_precision": run["config"]["execution_precision"],
+        "checkpoint_state": "strict entire Writer including Text/VL/Action Meta and public probe",
+        "frame_stride": 5, "include_last_frame": True, "camera": "agentview_and_eye_in_hand_rotated_180",
+        "execution_rank": 16, "generated_tensor_count": 76, "native_response_shape": [50, 1024],
+        "native_response_source": "final_normalized_action_suffix_hidden",
+        "visual_token_source": "actual_final_512_image_patches_and_exact_task_span_tokens",
+        "visual_token_gradient": "joint_Text_VL_Action_Meta_complete_Writer_replay",
+        "native_read": "all_50_horizon_positions_to_learned_content_position_read_uniform_init",
+        "video_representation": "language_queried_video_content_Core_and_causal_Procedure",
+        "process_aggregation": "two_causal_blocks_raw_frame_position_RoPE_and_centered_slot_read",
+        "native_parameter_generation": "complete_A_B_from_eight_shared_family_heads",
+        "training_stage": STAGE, "training_objective": "main_fm",
+        "deployment_frozen_source_vjp": False, "source_parameter_training": False,
+        "deployment_grad_context": "no_grad_complete_Writer_forward",
+        "deployment_teacher_labels_loss_optimizer": False, "writer_execution": "one_pre_rollout_call",
+        "update_version": run["config"]["update_version"], "macro_cursor": "optimizer_updates",
+    }
     if arm in CONTROL_ARMS:
         metadata["diagnostic_control"] = arm
         metadata["control_transform"] = "identity_zero_delta_without_RGB_reads" if arm == "no_video" else (
-            "real_dual_camera_RGB_before_complete_observer_and_bare_source_forward")
+            "real_dual_camera_RGB_before_complete_Writer_forward")
     if arm == "no_video":
-        metadata.update(writer_execution="bypassed_no_video_identity", deployment_frozen_source_vjp=False,
+        metadata.update(writer_execution="bypassed_no_video_identity",
                         native_parameter_generation="complete_zero_A_and_B_identity",
-                        native_input_source=None, action_code_shape=None, input_projection=None,
                         deployment_grad_context="no_autograd_or_model_forward")
     return metadata
 
@@ -270,8 +261,6 @@ def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str,
 
 
 def _compile_condition(runtime, store, task, demos, output, checkpoint, *, control=None, video_task=None):
-    from ember.writer.native import autocast
-
     donor = video_task if video_task is not None else task
     if control is not None and (donor.authority.task_id != control["video_global_task_id"]
                                 or task.authority.task_id != control["language_global_task_id"]):
@@ -291,13 +280,9 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint, *, contr
         frames.append(frame)
         indices.append(index)
         records.append(record)
-    condition = runtime.observer.prepare(
-        tuple(frames), tuple(indices), task.authority.language,
-    )
-    with torch.no_grad(), autocast(runtime.observer.device):
-        responses, inputs = runtime.observer.read(condition)
-        native_inputs = runtime.correction.read(condition)
-        generated = runtime.state.writer(responses, *inputs, native_inputs=native_inputs)
+    condition = runtime.prepare(tuple(frames), tuple(indices), task.authority.language)
+    with torch.no_grad():
+        generated = runtime.compile(condition)
     return _save_condition(generated, runtime.lora, task, demos, records, output, checkpoint, control=control)
 
 
@@ -438,7 +423,7 @@ def _materialize(
                 "information_wall": {"deployment_inputs": [] if no_video else ["exact language", "RGB videos", "displayed frame indices"],
                     "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
                     "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-                    "deployment_frozen_source_vjp": not no_video, "deployment_loss_or_optimizer": False,
+                    "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
                     "writer_invocations_per_unique_condition": 0 if no_video else 1,
                     "total_writer_invocations": 0 if no_video else len(conditions),
                     "outcome_dependent_video_selection": False,
@@ -465,7 +450,7 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if not requests:
         raise ValueError("materialization batch must contain at least one request")
     if any(request["selection"]["K"] != 1 for request in requests):
-        raise ValueError("Process Pullback Writer materialization requires the trained K=1 condition")
+        raise ValueError("canonical Core/Procedure Writer materialization requires the trained K=1 condition")
     if native_frame_chunk is not None and (type(native_frame_chunk) is not int or native_frame_chunk <= 0):
         raise ValueError("native frame chunk must be a positive physical batch size")
     outputs = [Path(request["output"]).resolve() for request in requests]
@@ -548,7 +533,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
-    parser.add_argument("--diagnostic-contract-json", type=Path, help="Explicit frozen terminal900 video-control or Test400 declaration.")
+    parser.add_argument("--diagnostic-contract-json", type=Path, help="Explicit frozen selected-checkpoint video-control or Test400 declaration.")
     parser.add_argument("--role", choices=("development_train", "validation", "test"))
     parser.add_argument("--task-ids", type=_integers)
     parser.add_argument("--k", type=int, choices=(1,))
@@ -565,7 +550,7 @@ def main() -> None:
     placement.add_argument("--devices", help="Distinct same-node visible devices, e.g. cuda:0,cuda:1,cuda:2,cuda:3.")
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--native-frame-chunk", type=int,
-                        help="Physical frame batch for both native reads; preserves every video frame.")
+                        help="Physical native frame batch; preserves every video frame and both cameras.")
     args = parser.parse_args()
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):

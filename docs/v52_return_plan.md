@@ -30,9 +30,9 @@ Owner在完整历史分析后要求“你计划下接下来怎么做，然后就
   每次GPU launch按双节点live快照选单节点至多6张合适A40，动态long-first队列与persistent workers。
 
 运行职责：历史529da6b detached树拥有原模型、generation／LoRA cache、视频调度、官方rollout与统计。
-当前`replay_v52_checkpoint.py`只桥接三项明确旧路径比较、现行GPU／quota准入、canonical LIBERO assets和现有strict权重加载。
+当时的`replay_v52_checkpoint.py`只桥接三项明确旧路径比较、现行GPU／quota准入、canonical LIBERO assets和现有strict权重加载。
 原run/checkpoint不重写；source内容、Writer schema与全部76个A/B校验不放宽。旧源文件也不改写，operator对精确函数位点作显式替换，
-每个worker经同一入口重装；原算法commit和operator commit同时封存。该临时入口由主agent负责，A完成后从活动树退役，
+每个worker经同一入口重装；原算法commit和operator commit同时封存。该临时入口由主agent负责，A完成后已从活动树退役，
 其冻结运行树与Git保留复核原件；不复制第二套科学实现，也不恢复旧训练launcher。
 
 实际复核为125/400（原132），breadth均6，S/O/G/L为15/58/41/11；相对原件R/G/L为111/14/21，
@@ -63,7 +63,7 @@ churn35、Jaccard .7603，任务配对差额95%CI为[-4.25,+.75]pp。12个worker
    共享q[1024]及相对horizon bias b[50]从零开始；初始化为原mean函数，更新后权重可读取所有50个内容及其位置。
    H在这次实际learned read之前不平均／截断；没有新增attention block、动作标签或原生span输出约束。
 3. Raw双路RGB、原frame indices、exact token/span是模型接口；frame stride5及真实末帧保持。
-   新模型只声称K1；video time采用原v5.2的sampled-frame ordinal RoPE，horizon bias只描述动作相对位置。
+   新模型只声称K1；video time采用原v5.2实际执行的原frame indices RoPE（0,5,…及真实末帧），horizon bias只描述动作相对位置。
    训练采用同版本完整LoRA叶节点FM余切→Writer重放，frame chunk内checkpoint重算同时安装三组对应Meta，
    保持全部原生信用。不会跨更新缓存适配Z/KV/H；物理chunk只限峰值内存。
 4. Train24每6次更新完整访问全部24task各一次，每更新4个不同task各一条K1／21个queries，等权1/4。

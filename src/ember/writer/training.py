@@ -19,75 +19,76 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
-from ember.writer.data import teacher_camera_names
-from ember.writer.video import VideoWriterConfig
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
-from ember.writer.runtime import FrozenVideoPrefixCache, build_runtime
+from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_process_pullback_writer_run_v2"
-STAGE = "process_pullback_writer_fresh"
-TRAINING_SCHEMA = "ember_process_pullback_training_state_v2"
-UPDATE_VERSION = "source_pullback_learned_outlet_pure_main_fm_joint_credit_v2"
+RUN_SCHEMA = "ember_language_axial_writer_run_v1"
+STAGE = "language_axial_writer_fresh"
+TRAINING_SCHEMA = "ember_language_axial_training_state_v1"
+UPDATE_VERSION = "full_ab_pure_fm_joint_text_vl_action_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    teacher_camera_names(config["observer"]["camera_view"])
-    expected_model = VideoWriterConfig().to_dict()
-    expected_data = {"extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
-                     "queries_per_task": 64, "tasks_per_update": 4, "cardinalities": [1],
-                     "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
-                     "version": "train24_teacher_action_pool_cross_episode_k1_v1"}
-    expected_observer = {"flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "probe_seed": 1729,
-                         "camera_view": "dual",
-                         "native_inputs": "bare_source_output_pullback_pca16_full50"}
-    # Chunk sizes are execution choices; the complete scientific graph is fixed.
-    actual = {**config["model"], **{key: expected_model[key] for key in ("query_chunk", "activation_checkpoint")}}
-    if (
-        config.get("schema_version") != "ember_process_pullback_writer_config_v2"
-        or actual != expected_model
-        or config["optimization"].get("joint_train_all_writer_modules") is not True
-        or float(config["optimization"]["normalizer"]) != 1.0
-        or {key: config["data"].get(key) for key in expected_data} != expected_data
-        or type(config["data"].get("action_start_offset")) is not int
-        or type(config["data"].get("conditions_per_task")) is not int
-        or config["data"].get("conditions_per_task") != 1
-        or {key: config["observer"].get(key) for key in expected_observer} != expected_observer
-        or config["optimization"]["loss"] != "main_fm"
-        or config.get("update_version") != UPDATE_VERSION
-        or {"video_prior", "spatial_supervision", "correction_supervision", "native_output_calibration",
-            "local_field_supervision"} & config.keys()
-        or "rl" in config or "trust_scales" in config["optimization"]
-        or config.get("execution_precision") != "native_mixed_without_outer_autocast"
-    ):
-        raise ValueError("Process Pullback Writer scientific contract changed")
-    for key, expected in (("video_demos", range(16, 42)), ("action_demos", range(16, 42)),
-                          ("diagnostic_action_demos", range(42, 46)), ("held_video_demos", range(46, 50))):
+    require_architecture_identity(config["model"])
+    expected_data = {
+        "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
+        "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],
+        "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
+        "version": "v52_full_video_cross_episode_events_v1",
+        "event_schema_version": "v52_full_video_cross_episode_events_v1",
+        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1200,
+    }
+    expected_observer = {
+        "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
+        "probe_seed": 7 + 0x5A17, "camera_view": "dual",
+        "native_inputs": "full512_patch_content_and_full50_learned_horizon_read",
+    }
+    if (config.get("schema_version") != "ember_language_axial_writer_config_v1"
+            or config["optimization"].get("joint_train_all_writer_modules") is not True
+            or float(config["optimization"]["normalizer"]) != 1.0
+            or config["optimization"]["loss"] != "main_fm"
+            or any(config["data"].get(key) != value for key, value in expected_data.items())
+            or type(config["data"].get("action_start_offset")) is not int
+            or any(config["observer"].get(key) != value for key, value in expected_observer.items())
+            or config.get("update_version") != UPDATE_VERSION
+            or {"rl", "video_prior", "spatial_supervision", "correction_supervision",
+                "native_output_calibration", "local_field_supervision"} & config.keys()
+            or "trust_scales" in config["optimization"]
+            or config.get("execution_precision") != "native_bf16_writer_fm_fp32_lora"):
+        raise ValueError("canonical Core/Procedure Writer scientific contract changed")
+    for key, expected in (("video_demos", range(46)), ("action_demos", range(46)),
+                          ("diagnostic_action_demos", range(46, 50)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
             raise ValueError(f"registered episode roles changed: {key}")
     if len(config["data"]["task_ids"]) != 24:
-        raise ValueError("first-run gradients require all fixed train24 tasks")
-    if any(int(value) <= 0 for value in config["runtime"].values()):
-        raise ValueError("runtime batches and cache budget must be positive")
+        raise ValueError("development gradients require all fixed train24 tasks")
+    if any(type(value) is not int or value <= 0 for value in config["runtime"].values()):
+        raise ValueError("runtime batches and cache budget must be positive integers")
+    if type(config["observer"]["frame_chunk"]) is not int or config["observer"]["frame_chunk"] <= 0:
+        raise ValueError("native frame chunk must be a positive integer")
     _validate_checkpoint_nodes(config["evidence"]["checkpoint_updates"], allow_empty=True)
-    VideoWriterConfig(**config["model"])
     return config
 
 
 def _optimization(state, config):
+    from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
+
     opt = config["optimization"]
     optimizer = torch.optim.AdamW(
         state.parameters(), lr=float(opt["lr"]), betas=tuple(opt["betas"]),
         eps=float(opt["eps"]), weight_decay=float(opt["weight_decay"]),
     )
-    warmup = int(opt["warmup_updates"])
-    if warmup < 1:
-        raise ValueError("supervised-update warmup must be positive")
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda updates: min(1., (updates + 1) / warmup))
+    scheduler = CosineDecayWithWarmupSchedulerConfig(
+        num_warmup_steps=int(opt["warmup_updates"]), num_decay_steps=int(opt["decay_updates"]),
+        peak_lr=float(opt["lr"]), decay_lr=float(opt["decay_lr"]),
+    # This bounded run covers only the beginning of the original 12k clock.
+    # The upstream builder otherwise rescales warmup/decay to the 1200 budget.
+    ).build(optimizer, int(opt["decay_updates"]))
     return optimizer, scheduler
 
 
@@ -118,7 +119,7 @@ def _run_contract(args, context, config, runtime, state):
         "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
         "execution": {"policy_microbatches": _execution_config(args, config, context)[1]},
-        "model_config": VideoWriterConfig(**config["model"]).to_dict(),
+        "model_config": dict(config["model"]),
         "topology": {
             "host": socket.gethostname(), "world_size": context.world_size,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
@@ -128,10 +129,12 @@ def _run_contract(args, context, config, runtime, state):
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
             "meta_parameters": sum(p.numel() for p in runtime.state.meta.parameters()),
             "vl_meta_parameters": sum(p.numel() for p in runtime.state.vl_meta.parameters()),
+            "text_meta_parameters": sum(p.numel() for p in runtime.state.text_meta.parameters()),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
             "logical_batch": _logical_batch(config),
+            "event_plan": str((args.output / "training_events.json").resolve()),
             "update_version": config["update_version"], "data_version": config["data"]["version"],
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
@@ -142,14 +145,9 @@ def _run_contract(args, context, config, runtime, state):
             "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
             "training_only_actions": "same-task cross-episode main FM execution queries only",
-            "native_read": "same-version Z/H joint Meta replay; fixed bare source output VJP outside both Meta stacks",
-            "source_pullback": {"action_code_width": 7, "horizon": 50,
-                                "projection": "full-video bare native X right-PCA rank16",
-                                "parameter_effect": "L G P R; G = mean_frame J_W F0^T q; bare B0 = G A0^T",
-                                "shared_outlet": "L=I+U_L V_L; R=I+U_R V_R; rank16 per side; identity initialized; no additive LoRA",
-                                "deployment_frozen_source_vjp": True,
-                                "training_adjoint": "same-version shared outlet VJP, then exact fixed q adjoint and joint native replay",
-                                "teacher_labels": False, "deployment_loss_or_optimizer": False},
+            "native_read": "same-version final dual-camera Z and full50 H; joint three-Meta checkpoint replay",
+            "complete_lora": "shared eight-family full A/B heads from video Core and Procedure modulation",
+            "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
     }
@@ -173,33 +171,18 @@ def _grad_norm(parameters) -> float:
 
 
 def _logical_batch(config):
-    conditions = config["data"]["conditions_per_task"]
-    return {"suite_count": 4, "tasks": 4, "conditions_per_task": conditions,
-            "conditions": 4 * conditions, "K": 1, "queries_per_task": 64,
-            "queries_per_condition": 64 // conditions, "queries_per_update": 256,
-            "task_weight": 0.25, "condition_weight": 1.0 / (4 * conditions),
-            "gradient_reduction": "SUM"}
+    return {"tasks": 4, "conditions_per_task": 1, "conditions": 4, "K": 1,
+            "queries_per_task": 21, "queries_per_condition": 21, "queries_per_update": 84,
+            "task_weight": .25, "condition_weight": .25, "gradient_reduction": "SUM"}
 
 
 def _condition_jobs(data, config, draws):
-    logical = _logical_batch(config)
     by_job = {draw["job_id"]: draw for draw in draws}
     tasks = {draw["task"] for draw in draws}
-    if (len(draws) != logical["conditions"] or len(by_job) != len(draws)
-            or len(tasks) != 4 or len({data.tasks[task].suite for task in tasks}) != 4):
-        raise ValueError("each supervised update requires distinct condition jobs from four suite tasks")
-    for task in tasks:
-        group = [draw for draw in draws if draw["task"] == task]
-        indices = {draw["condition_index"] for draw in group}
-        if (indices != set(range(logical["conditions_per_task"]))
-                or len({(draw["occurrence"], draw["query_seed"]) for draw in group}) != 1
-                or any(len(draw["video_demos"]) != 1 for draw in group)
-                or len({draw["video_demos"][0] for draw in group}) != len(group)):
-            raise ValueError("task conditions require distinct K1 videos and one shared occurrence/query seed")
-        for draw in group:
-            if (draw["query_count"] != logical["queries_per_condition"]
-                    or draw["query_offset"] != draw["condition_index"] * draw["query_count"]):
-                raise ValueError("condition query slices must partition the full task batch")
+    if (len(draws) != 4 or len(by_job) != 4 or len(tasks) != 4 or not tasks <= set(data.tasks)
+            or any(draw["condition_index"] != 0 or len(draw["video_demos"]) != 1
+                   or draw["query_count"] != 21 or draw["query_offset"] != 0 for draw in draws)):
+        raise ValueError("each update requires four distinct equal-weight K1 task events and 21 queries each")
     return by_job
 
 
@@ -253,7 +236,8 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     sync_seconds = time.perf_counter() - tick
     norms = {"writer_grad_norm": _grad_norm(runtime.state.writer.parameters()),
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters()),
-             "vl_meta_grad_norm": _grad_norm(runtime.state.vl_meta.parameters())}
+             "vl_meta_grad_norm": _grad_norm(runtime.state.vl_meta.parameters()),
+             "text_meta_grad_norm": _grad_norm(runtime.state.text_meta.parameters())}
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
     if context.device.type == "cuda":
@@ -416,7 +400,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_process_pullback_learning"
+    if args.mode == "formal" and (config["status"] != "registered_v52_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
@@ -428,12 +412,23 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("condition parallelism requires one node and 1 to min(6, condition count) useful GPUs")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
-        print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 256}), flush=True)
+        print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 84}), flush=True)
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
     data = WriterTrainingData(args.asset_root, config["data"],
                               camera_view=config["observer"]["camera_view"])
+    if context.is_main:
+        args.output.mkdir(parents=True, exist_ok=True)
+        events = data.event_plan()
+        event_path = args.output / "training_events.json"
+        if args.resume:
+            if read_json(event_path) != events:
+                raise ValueError("exact-resume training events or grouping changed")
+        elif event_path.exists():
+            raise ValueError("fresh training refuses an existing event plan")
+        else:
+            write_json_atomic(event_path, events)
     runtime = build_runtime(args.asset_root, config, context.device)
     runtime.state.train()
     optimizer, scheduler = _optimization(runtime.state, config)
@@ -447,7 +442,7 @@ def run(args: argparse.Namespace) -> None:
     updates, _ = cursors
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
-    cache = FrozenVideoPrefixCache(runtime.observer, data, int(config["runtime"]["prefix_cache_bytes"]))
+    cache = VideoConditionCache(runtime, data, int(config["runtime"]["raw_video_cache_bytes"]))
     engine = SupervisedEngine(runtime, data, cache, context, execution_config)
     barrier(context)
     try:
@@ -460,7 +455,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_process_pullback_writer.json")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_writer.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "profile", "formal"), required=True)

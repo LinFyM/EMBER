@@ -14,22 +14,19 @@ from ember.video_conditions import frame_control
 
 CONTROL_ARMS = ("cross_suite_wrong", "shuffled", "reversed", "no_video")
 DIAGNOSTIC_DECLARATION = {
-    "schema_version": "ember_process_pullback_terminal900_controls_v1",
+    "schema_version": "ember_selected_writer_controls_v1",
     "purpose": "sealed_posthoc_video_causality",
-    "checkpoint_macro": 900,
     "checkpoint_selection": False,
     "training_feedback": False,
 }
 SEALED_TEST_DECLARATION = {
-    "schema_version": "ember_process_pullback_sealed_test_v1",
+    "schema_version": "ember_selected_writer_test_v1",
     "purpose": "frozen_method_test",
-    "checkpoint_macro": 900,
     "checkpoint_selection": False,
     "training_feedback": False,
 }
 METHOD_FREEZE_DECLARATION = {
-    "schema_version": "ember_process_pullback_method_freeze_v1",
-    "terminal_macro": 900,
+    "schema_version": "ember_selected_writer_method_freeze_v1",
     "further_training": False,
     "further_architecture_changes": False,
     "test_gradient_use": False,
@@ -49,7 +46,7 @@ def require_control_selection(selection):
             or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
             or selection["init_state_ids"] != list(range(50))
             or selection["video_pool"] != list(range(50))):
-        raise ValueError("terminal900 controls require validation8, K1 and all 50 canonical state/video ordinals")
+        raise ValueError("selected-checkpoint controls require validation8, K1 and all 50 canonical state/video ordinals")
 
 
 def video_task_id(selection, task):
@@ -86,12 +83,12 @@ def controlled_frames(indices, *, control, demo):
     evidence = {"frame_order_seed": seed, "frame_permutation": order.content.tolist(),
                 "source_frame_indices": indices[order.content].tolist(),
                 "frame_indices": indices[order.positions].tolist(),
-                "transform_stage": "both_real_camera_RGB_before_complete_observer_and_bare_source_forward"}
+                "transform_stage": "both_real_camera_RGB_before_complete_Writer_forward"}
     return order.content, indices[order.positions], evidence
 
 
 def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root):
-    """Bind controls to one frozen terminal checkpoint and its actual correct map."""
+    """Bind controls to one frozen selected checkpoint and its actual correct map."""
     from ember.writer.materialization import file_record, method_metadata
     from ember.writer.evaluation import _inspect_scope
 
@@ -103,10 +100,11 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
         return None
     require_control_selection(selection)
     if (not isinstance(value, dict)
-            or set(value) != {*DIAGNOSTIC_DECLARATION, "paired_correct_manifest"}
+            or set(value) != {*DIAGNOSTIC_DECLARATION, "checkpoint_macro", "paired_correct_manifest"}
             or any(value.get(key) != expected for key, expected in DIAGNOSTIC_DECLARATION.items())
-            or checkpoint.get("macro") != 900):
-        raise ValueError("video controls require the explicit frozen terminal900 diagnostic declaration")
+            or type(value.get("checkpoint_macro")) is not int
+            or value["checkpoint_macro"] <= 0 or checkpoint.get("macro") != value["checkpoint_macro"]):
+        raise ValueError("video controls require the explicit frozen selected-checkpoint diagnostic declaration")
     reference = value["paired_correct_manifest"]
     path = Path(reference["path"] if isinstance(reference, dict) else reference).resolve()
     record = file_record(path)
@@ -117,13 +115,13 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
             or correct.get("selection") != dict(selection, arm="correct")
             or correct.get("method") != method_metadata(run)
             or Path(correct["asset_root"]).resolve() != asset_root.resolve()):
-        raise ValueError("diagnostic controls must retain the frozen terminal900 correct400 checkpoint and map")
+        raise ValueError("diagnostic controls must retain the frozen selected-checkpoint correct400 checkpoint and map")
     keys = [(row["suite"], row["task_id"]) for row in correct["tasks"]]
     _inspect_scope(correct, run["source"], keys, "validation", None, True)
     references = {episode["condition_id"] for row in correct["tasks"] for episode in row["episodes"]}
     if len(correct["conditions"]) != 400 or {row["condition_id"] for row in correct["conditions"]} != references:
         raise ValueError("diagnostic reference must retain the complete 400-condition correct bank")
-    return {**DIAGNOSTIC_DECLARATION, "paired_correct_manifest": record}
+    return {**DIAGNOSTIC_DECLARATION, "checkpoint_macro": value["checkpoint_macro"], "paired_correct_manifest": record}
 
 
 def _inspect_sealed_test(value, *, selection, checkpoint, run):
@@ -132,16 +130,18 @@ def _inspect_sealed_test(value, *, selection, checkpoint, run):
 
     require_control_selection(selection)
     if (not isinstance(value, dict)
-            or set(value) != {*SEALED_TEST_DECLARATION, "method_freeze"}
+            or set(value) != {*SEALED_TEST_DECLARATION, "checkpoint_macro", "method_freeze"}
             or any(value.get(key) != expected for key, expected in SEALED_TEST_DECLARATION.items())
-            or checkpoint.get("macro") != 900):
-        raise ValueError("Test requires the explicit frozen terminal900 Test400 declaration")
+            or type(value.get("checkpoint_macro")) is not int
+            or value["checkpoint_macro"] <= 0 or checkpoint.get("macro") != value["checkpoint_macro"]):
+        raise ValueError("Test requires the explicit frozen selected-checkpoint Test400 declaration")
     reference = value["method_freeze"]
     path = Path(reference["path"] if isinstance(reference, dict) else reference).resolve()
     record = file_record(path)
     if isinstance(reference, dict) and reference != record:
         raise ValueError("method freeze changed after Test registration")
-    expected = {**METHOD_FREEZE_DECLARATION, "writer_checkpoint": checkpoint, "method": method_metadata(run)}
+    expected = {**METHOD_FREEZE_DECLARATION, "terminal_macro": checkpoint["macro"],
+                "writer_checkpoint": checkpoint, "method": method_metadata(run)}
     if read_json(path) != expected:
-        raise ValueError("Test method freeze must end training/design and bind the identical terminal900 checkpoint and method")
-    return {**SEALED_TEST_DECLARATION, "method_freeze": record}
+        raise ValueError("Test method freeze must end training/design and bind the identical selected-checkpoint checkpoint and method")
+    return {**SEALED_TEST_DECLARATION, "checkpoint_macro": value["checkpoint_macro"], "method_freeze": record}

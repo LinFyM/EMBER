@@ -4,7 +4,7 @@
 
 Owner在完整分析后要求“你计划下接下来怎么做，然后就启动吧”。
 Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为固定旧step900复核、现行合同fresh基线、有条件的单变量任务共现对照。
-阶段A已完成，B已完成300/600/900闭环并续训最后的1200节点，C已完成300闭环并续训600；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
+阶段A、B已全部完成，C已完成300闭环和600训练，正在补齐600闭环；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
 原529da6b与兼容operator 1ce99a0c均已封存为clean pushed detached树。原checkpoint／训练合同、执行配置、RNG和400条件映射检查通过。
 最长8个验证视频（63–69帧）两次真实生成通过，第二次16.458秒、0.486 LoRA/s，reserved峰值12,834,570,240bytes。
 固定step900 correct400为125/400，原132；S/O/G/L15/58/41/11、breadth6，R/G/L111/14/21、churn35、Jaccard .7603。
@@ -41,17 +41,27 @@ Train50/96、breadth19，S/O/G/L17/15/10/8；source配对13/37/4、churn41，差
 600→900的validation R/G/L55/22/50、churn72、Jaccard .4331，差额95%CI[-19.5,+3]pp；
 train为34/16/15、churn31、Jaccard .5231，差额95%CI[-12.5,+14.5833]pp。训练诊断总分近似保持也伴随能力交换，验证收益明显回落。
 900验证逐task为0/2/39/6/0/17/9/4；完整train逐task及配对在baseline/paired_readout.json，独立动作FM .105490。
+B1200终点为validation85/400、breadth5，S/O/G/L0/43/37/5；source配对R/G/L37/48/10、churn58，差额95%CI[-2,+28.25]pp。
+Train56/96、breadth21，S/O/G/L15/20/13/8；source配对14/42/3、churn45，差额95%CI[+26.0417,+55.2083]pp。
+900→1200的validation R/G/L56/29/21、churn50、Jaccard .5283，差额95%CI[-5.5,+13.25]pp；
+train为38/18/12、churn30、Jaccard .5588，差额95%CI[-5.2083,+17.7083]pp。训练获取与breadth扩大，验证交换、迁移不足仍在。
+1200验证逐task为0/0/41/2/1/36/5/0；全部train逐task及原始配对见baseline/paired_readout.json。
+B四节点八面板共1,984条完整rows、93 workers全exit0；终点两个面板墙钟986.012／293.699秒，完整信息墙与配对审计通过。
+训练累计1,200更新、4,800条件／100,800 queries、每task200条件，覆盖全部1,104个合法teacher条件各4–5次。
+12份完整checkpoint、1,198次identity后四组有效梯度保留；最后训练段4531.588秒，累计18216.923秒，峰值reserved35.490GiB。
+独立动作FM终点.102588、24/24task相对fresh下降；闭环最高105和终点Spatial0均不满足正式资格，不开放controls／Test。
 命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
-全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段，剩余1200的学习预算不变。
+B的四组validation400／train96固定请求全部完成，各段均在上一节点面板完成后才继续；1,200更新预算未扩大。
 C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同。
-B300的train获取满足C前提。B从完整900 checkpoint精确续训1200，gpu01原四卡与world4不变，launcher PID1996342。
-同一模型的C从clean pushed detached `56bf1cc0`在gpu02物理0/1两卡完成fresh300，并从完整checkpoint精确续训600，launcher PID2914268。
+B300的train获取满足C前提。B所有训练、物化和闭环已结束，gpu01原四卡已明确释放给C的后续独立评测调度。
+同一模型的C从clean pushed detached `56bf1cc0`在gpu02物理0/1完成fresh300及精确续训600；各task累计100条件，全部598次identity后四组梯度有效。
+C600训练段7087.029秒、exit0，累计训练14529.289秒；现仍在原两卡物化496条件，launcher PID3393745。
 当前空闲资源对应两节点合计6卡上限，故C从原准备三卡改为两卡；每更新仍为4task等权SUM，C后续resume锁定两rank拓扑。
 复查发现此前B300两面板并行评测合计用了7卡，漏计了已有的跨节点6卡上限；该调度偏差保留在evaluation_launch_contract中，
-后续训练、物化和评测统一按B最多4卡＋C最多2卡核验，原完整配对结果不重跑。
+并行阶段按B最多4卡＋C最多2卡核验，原完整配对结果不重跑。B结束后，C独立物化／评测可按fresh快照增加有效单节点卡数；训练resume仍锁原world2。
 B/C各自保持完整节点证据与原有界预算；C命令、quota/GPU和实际运行记录见cooccurrence/training_launch_contract.json。
-当前主树配置为C的explicit grouping，B继续使用7f9f11a3冻结配置。
+当前主树配置为C的explicit grouping，B完整证据来自7f9f11a3冻结配置。
 C300训练7442.261秒，1200条件／25200 queries、每task50次，峰值reserved30.650GiB；全部298次identity后梯度组有效。
 C300 validation91/400、breadth5，S/O/G/L4/55/32/0；source配对R/G/L33/58/14、churn72，差额95%CI[-3.75,+28.5]pp。
 Train28/96、breadth14，S/O/G/L7/7/10/4；source配对10/18/7、churn25，差额95%CI[+2.0833,+21.875]pp。
@@ -61,7 +71,7 @@ B300→C300的validation R/G/L69/22/28、churn50、Jaccard .5798，差额95%CI[-
 train为19/9/16、churn25、Jaccard .4318，差额95%CI[-19.7917,+5.2083]pp。当前没有共现分组带来改善的证据，继续预注册相邻节点检验保持。
 实际前300更新的1200个条件事件和全局LR时间轴逐项一致；跨臂完整证据为grouping_comparison.json，不使用checkpoint union选模型。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
-A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
+A仅使用fixed step900 correct400；B已完成预注册四节点correct400及train96，C继续同一有界窗口，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。
 
 Process Pullback的原有原因诊断、实现、fresh900和全部冻结读出已经完成并关闭，未通过能力资格，没有selected合格checkpoint。

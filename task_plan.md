@@ -7,9 +7,9 @@ Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)。Process P
 
 ## 执行顺序
 
-1. **进行中：固定旧step900复核。** 恢复原代码／checkpoint，用原state–video映射完成validation correct400，
-   比较旧132的逐task、suite、breadth与成功集合。只迁移资产路径／运行环境；不续训、不选点、不新增controls／Test。
-2. **随后：现行合同fresh基线。** 保留v5.2视频Core、Procedure与完整A/B能力路径，明确迁移双相机、完整50-horizon learned read、
+1. **已完成：固定旧step900复核。** 原state–video映射correct125/400，原132；breadth均6，R/G/L111/14/21、churn35。
+   全12 workers exit0；旧NUMA汇总判断经实际拓扑修正，原400行成功汇总。未重跑、不选点、不新增controls／Test。
+2. **进行中：现行合同fresh基线。** 保留v5.2视频Core、Procedure与完整A/B能力路径，明确迁移双相机、完整50-horizon learned read、
    严格跨episode；先封存接口／采样／优化与真实profile，再按300／600／900／1200节点执行。
 3. **有条件：一个任务共现对照。** 基线具备可辨认获取后，仅改变同一train24事件的四task共现，保持曝光、query数、更新和学习率一致。
    没有获取／保持共同改善则停止该假设，不作小扫。

@@ -24,6 +24,7 @@ B的fresh300已从clean pushed detached `7f9f11a3`启动，gpu01物理0/1/2/3，
 命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
 其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
+C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同，尚未启动C。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。

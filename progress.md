@@ -1,16 +1,19 @@
 # EMBER progress
 
-## 当前状态（2026-09-15，source时间对齐goal）
+## 当前状态（2026-09-16，source时间对齐goal）
 
 Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
 当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
 原C保持关闭；新source formal1000已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3启动。
-四rank首步及后续实际更新正常；最近核验到step9／1000、2304 queries，loss／gradient均finite，约8.2 query/s。
+四rank实际更新正常；第250步完整恢复点已写出，累计64000 queries；最近核验到step253／1000、64768 queries。
+前253步的计数连续、global256／micro8×accum8一致，loss／gradient均finite；保存前稳定约8.2 query/s。
+第250步raw policy／EMA／optimizer／scheduler及四rank RNG齐全，scheduler、rank与采样游标均对应step250／micro2000；
+完整点31.513GiB，写盘后已继续更新。strg01最新data1 used955360492KiB，soft余量112.90GiB，后续滚动保存预算充足。
 Launcher PID2965377；source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`，
 命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。尚无新source闭环或新A/B性能结果。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
-原8×A100峰值约71GB不能直接搬到A40；准备microbatch／累积及rank0 CPU EMA，均须实际更新验证。
+原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。
 主agent拥有source与整合；独立codex/v52-aligned-model实现A单视角／mean和B双视角／learned，保留共有初始化流。
 2026-09-16：模型与模式plumbing已整合为aa1a7b65／02160554；B恢复baseline分组，A／B共享同一实现，
 config、训练、checkpoint检查和物化均识别camera／H-read。显式新source引用与eval authority已接入。

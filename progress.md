@@ -4,7 +4,7 @@
 
 Owner在完整分析后要求“你计划下接下来怎么做，然后就启动吧”。
 Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为固定旧step900复核、现行合同fresh基线、有条件的单变量任务共现对照。
-阶段A已完成，继续推进B的实现、profile与正式节点训练；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
+阶段A已完成，B已完成300/600闭环并续训900，C任务共现对照运行中；owner再次指出不能在“启动后”停止，本计划按授权连续执行。
 原529da6b与兼容operator 1ce99a0c均已封存为clean pushed detached树。原checkpoint／训练合同、执行配置、RNG和400条件映射检查通过。
 最长8个验证视频（63–69帧）两次真实生成通过，第二次16.458秒、0.486 LoRA/s，reserved峰值12,834,570,240bytes。
 固定step900 correct400为125/400，原132；S/O/G/L15/58/41/11、breadth6，R/G/L111/14/21、churn35、Jaccard .7603。
@@ -26,12 +26,19 @@ B300 validation97/400，source47；breadth6/8，S/O/G/L1/52/37/7，R/G/L39/58/8�
 Train35/96，source17；breadth16/24，S/O/G/L8/14/10/3，R/G/L14/21/3、churn24、Jaccard .3684。
 两面板全部496行完成，21 workers exit0；task-bootstrap差额95%CI为validation[0,+30.25]pp、train[+7.2917,+31.25]pp。
 Validation逐task（global1/3/11/13/23/26/31/32）为0/1/39/13/0/37/4/3；train逐task及全部配对原件见baseline/paired_readout.json。
-独立动作FM .150990→.114290，24/24task下降；能力解释使用上述闭环。当前没有相邻稳定或>145资格。
+独立动作FM .150990→.114290，24/24task下降；能力解释使用上述闭环。
+B600为validation105/400、breadth6，S/O/G/L0/59/39/7；source配对R/G/L39/66/8、churn74，差额95%CI[+.25,+33]pp。
+Train49/96、breadth19，S/O/G/L11/15/15/8；source配对13/36/4、churn40，差额95%CI[+18.75,+48.9583]pp。
+300→600的validation R/G/L76/29/21、churn50、Jaccard .6032，差额95%CI[-.25,+5.25]pp；
+train为27/22/8、churn30、Jaccard .4737，差额95%CI[+4.1667,+26.0417]pp。训练任务获取继续扩大，验证迁移增量尚不稳健。
+600累计2400条件／50400 queries、每task100次，六份完整checkpoint；598次identity后更新的Writer与三Meta信用均finite非零。
+本段4505.649秒，累积最高reserved35.490GiB；新节点24 workers全部exit0，496条配对审计通过，独立动作FM .106714。
+600验证逐task为0/0/40/19/1/38/3/4；完整train逐task及原始配对见baseline/paired_readout.json。当前没有>145或相邻稳定资格。
 命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
-其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
+后续900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
 C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同。
-B300的train获取满足C前提。B从300精确续训到600，gpu01四卡、launcher PID1377696。
+B300的train获取满足C前提。B已完成600两面板，从该完整checkpoint精确续训900，gpu01四卡、launcher PID1670474。
 同一模型的C已从clean pushed detached `56bf1cc0`在gpu02物理0/1两卡fresh启动300，launcher PID2091686。
 当前空闲资源对应两节点合计6卡上限，故C从原准备三卡改为两卡；每更新仍为4task等权SUM，C后续resume锁定两rank拓扑。
 复查发现此前B300两面板并行评测合计用了7卡，漏计了已有的跨节点6卡上限；该调度偏差保留在evaluation_launch_contract中，

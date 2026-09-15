@@ -5,11 +5,11 @@
 Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
 当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
 原C保持关闭；新source formal1000已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3启动。
-四rank实际更新正常；第500步完整恢复点已写出，累计128000 queries；最近核验到step502／1000、128512 queries。
-前502步的计数连续、global256／micro8×accum8一致，loss／gradient均finite；当前稳定约9.1 query/s。
-第500步raw policy／EMA／optimizer／scheduler及四rank RNG齐全，scheduler、rank与采样游标均对应step500／micro4000，LR为5e-5。
-完整点31.513GiB，写盘后已继续更新；第250步恢复点已在新点发布后按keep_latest=1退休，保留retention记录。
-strg01最新data1 used955360628KiB，soft余量112.90GiB，后续滚动保存预算充足。
+四rank实际更新正常；第750步完整恢复点已写出，累计192000 queries；最近核验到step752／1000、192512 queries。
+前752步的计数连续、global256／micro8×accum8一致，loss／gradient均finite；当前稳定约9.1 query/s。
+第750步raw policy／EMA／optimizer／scheduler及四rank RNG齐全，scheduler、rank与采样游标均对应step750／micro6000，LR为5e-5。
+完整点31.513GiB，写盘后已继续更新；第250／500步恢复点均在下一完整点发布后按keep_latest=1退休，保留retention记录。
+strg01最新data1 used955360760KiB，soft余量112.90GiB，后续滚动保存预算充足。
 Launcher PID2965377；source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`，
 命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。尚无新source闭环或新A/B性能结果。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；

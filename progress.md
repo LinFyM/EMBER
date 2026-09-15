@@ -21,12 +21,18 @@ B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写�
 完整metadata计划4800事件／100800queries、每task200次，同episode和held46–49训练暴露均0。
 B的fresh300已从clean pushed detached `7f9f11a3`正常完成，gpu01物理0/1/2/3，四rank按实际PCI/NUMA绑定并SUM。
 用时4789.652秒，1200条件／25200 queries，每task50次；第三步后298次更新的Writer与三Meta梯度均finite非零。
-100/200/300完整checkpoint及0/300独立动作诊断已保存，最高reserved29.441GiB；仍无B闭环分数。
-496套LoRA已生成并通过canonical checkpoint／bank检查，validation400在gpu01四卡、train96在gpu02三卡独立评测。
+100/200/300完整checkpoint及0/300独立动作诊断已保存，最高reserved29.441GiB。
+B300 validation97/400，source47；breadth6/8，S/O/G/L1/52/37/7，R/G/L39/58/8、churn66、Jaccard .3714。
+Train35/96，source17；breadth16/24，S/O/G/L8/14/10/3，R/G/L14/21/3、churn24、Jaccard .3684。
+两面板全部496行完成，21 workers exit0；task-bootstrap差额95%CI为validation[0,+30.25]pp、train[+7.2917,+31.25]pp。
+Validation逐task（global1/3/11/13/23/26/31/32）为0/1/39/13/0/37/4/3；train逐task及全部配对原件见baseline/paired_readout.json。
+独立动作FM .150990→.114290，24/24task下降；能力解释使用上述闭环。当前没有相邻稳定或>145资格。
 命令及PID、quota/GPU快照在`runs/analysis/v52_return_20260915/baseline/training_launch_contract.json`。
 启动时data1用量890,964,648KiB，soft1,073,741,824KiB，B/C追加峰值预算32GiB；源模型及数据均复用。
 其余600/900/1200分段和全部四组validation400／train96固定请求已准备，上一节点面板完成后才继续下一段。
-C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同，尚未启动C。
+C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际重建验证4800事件／100800 queries与B逐项相同。
+B300的train获取满足C前提。B继续原节点；同一模型的C准备在gpu02三卡独立启动以缩短墙钟，保持各自节点证据与原有界预算。
+当前主树配置为C的explicit grouping，B继续使用7f9f11a3冻结配置；C尚在启动前登记，不能写成已有分数。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
 A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
 结果在对话中交付，不新建用户报告。

@@ -34,6 +34,8 @@ C唯一六组候选已在B闭环分数前仅依据train24规范登记；实际�
 B300的train获取满足C前提。B从300精确续训到600，gpu01四卡、launcher PID1377696。
 同一模型的C已从clean pushed detached `56bf1cc0`在gpu02物理0/1两卡fresh启动300，launcher PID2091686。
 当前空闲资源对应两节点合计6卡上限，故C从原准备三卡改为两卡；每更新仍为4task等权SUM，C后续resume锁定两rank拓扑。
+复查发现此前B300两面板并行评测合计用了7卡，漏计了已有的跨节点6卡上限；该调度偏差保留在evaluation_launch_contract中，
+后续训练、物化和评测统一按B最多4卡＋C最多2卡核验，原完整配对结果不重跑。
 B/C各自保持完整节点证据与原有界预算；C命令、quota/GPU和实际运行记录见cooccurrence/training_launch_contract.json。
 当前主树配置为C的explicit grouping，B继续使用7f9f11a3冻结配置；C尚无闭环分数。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。

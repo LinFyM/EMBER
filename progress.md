@@ -15,6 +15,10 @@ source入口恢复，接offset1、rank0 CPU EMA、逐张量AdamW、DDP gradient 
 原逻辑8×32采样已与历史实现比较1000步／256000个queries，完全一致；物理打包与resume合同检查通过。
 整合后的249项相关CPU检查通过（70.26秒），另保留agent的181项独立检查；尚未以这些检查代替GPU更新。
 generic固定7de663972b7817d2c4cf2d84c821153dfea772e9下载中；旧source同尺寸容量smoke准备完成，正式fresh参数不复用它。
+旧source容量smoke在gpu01物理0完成：micro2三步正常、reserved33.64GiB；micro8／累积4三步正常，
+后两步各32queries平均16.732秒、约1.913 query/s，reserved37.94GiB。两次均全参数可训练、rank0 CPU EMA、无checkpoint保留。
+已补不整除world的query等权分配，三卡可按86／85／85维持global256；相关source／sampler／eval的37项检查通过。
+source恢复合同补GPU UUID；实际多卡、generic初始化与完整checkpoint resume仍待核验。
 main起点b56f0a9c clean/pushed；首次架构检查无新增违规。已同时探测gpu01/gpu02，launch前重新核对。
 首次strg01 data1 used908275108KiB／soft1073741824KiB，项目834GiB，共享83TiB可用；最近用量908286360KiB。
 S+A+B追加峰值预算调整为112GiB，包含补回generic约13.5GiB；formal前再次实测quota及恢复点峰值。

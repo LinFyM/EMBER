@@ -222,7 +222,8 @@ def test_checkpoint_manifest_detects_file_changes(tmp_path: Path) -> None:
         raise AssertionError("checkpoint mutation was not detected")
 
 
-def test_accumulated_source_updates_match_full_batch_and_preserve_ema(monkeypatch) -> None:
+@pytest.mark.parametrize("batch_sizes", [(2, 2, 2), (4, 2)])
+def test_accumulated_source_updates_match_full_batch_and_preserve_ema(monkeypatch, batch_sizes) -> None:
     from ember.pi05_source_training import _optimizer_step
 
     class Policy(torch.nn.Module):
@@ -231,7 +232,7 @@ def test_accumulated_source_updates_match_full_batch_and_preserve_ema(monkeypatc
             self.linear = torch.nn.Linear(2, 1, bias=False)
 
         def forward(self, batch):
-            return (self.linear(batch["x"]) - batch["y"]).square().mean(), {}
+            return (self.linear(batch["x"]) - batch["action"]).square().mean(), {}
 
     torch.manual_seed(7)
     policy = Policy()
@@ -243,24 +244,26 @@ def test_accumulated_source_updates_match_full_batch_and_preserve_ema(monkeypatc
     x, y = torch.randn(6, 2), torch.randn(6, 1)
     runtime = SimpleNamespace(
         policy=policy, wrapped=policy, ema_policy=ema, optimizer=optimizer, scheduler=scheduler,
-        context=SimpleNamespace(world_size=1, device=torch.device("cpu")), micro_batch=2, accumulation=3,
+        context=SimpleNamespace(world_size=1, device=torch.device("cpu")),
+        micro_batch=max(batch_sizes), accumulation=len(batch_sizes), global_batch=6,
         processor=SimpleNamespace(training_batch=lambda batch: batch),
         config={"optimization": {"optimizer": {"gradient_clip_norm": 1.}, "ema_decay": .9}},
     )
     for name in ("max_memory_allocated", "max_memory_reserved"):
         monkeypatch.setattr(torch.cuda, name, lambda _: 0)
     for step in range(2):
-        runtime.iterator = iter({"x": x[i:i+2], "y": y[i:i+2]} for i in range(0, 6, 2))
+        runtime.iterator = iter({"x": inputs, "action": targets}
+                                for inputs, targets in zip(x.split(batch_sizes), y.split(batch_sizes), strict=True))
         row = _optimizer_step(runtime, step, time.monotonic())
         reference_optimizer.zero_grad()
-        reference({"x": x, "y": y})[0].backward()
+        reference({"x": x, "action": y})[0].backward()
         torch.nn.utils.clip_grad_norm_(reference.parameters(), 1.)
         reference_optimizer.step()
         expected_ema.mul_(.9).add_(reference.linear.weight.detach(), alpha=.1)
         torch.testing.assert_close(policy.linear.weight, reference.linear.weight)
         torch.testing.assert_close(ema.linear.weight, expected_ema)
         assert row["global_examples"] == (step + 1) * 6
-        assert row["micro_step"] == (step + 1) * 3
+        assert row["micro_step"] == (step + 1) * len(batch_sizes)
 
 
 def test_aligned_source_provenance_rejects_old_action_alignment() -> None:

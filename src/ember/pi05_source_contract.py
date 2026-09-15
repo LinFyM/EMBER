@@ -23,9 +23,16 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
     verify_checkpoint,
 )
+from ember.source_sft.sampler import source_batch_sizes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def effective_global_batch(args, config, context, micro_batch, accumulation) -> int:
+    if args.mode == "formal":
+        return int(config["optimization"]["global_batch_size"])
+    return int(getattr(args, "global_batch_size", None) or context.world_size * micro_batch * accumulation)
 
 
 def append_jsonl(path: Path, value: dict[str, Any]) -> None:
@@ -90,6 +97,7 @@ def build_contract(
         "cuda_device": str(context.device),
         "numa_node": context.numa_node,
         "cpu_affinity": list(context.cpu_affinity or ()),
+        "gpu_uuid": str(torch.cuda.get_device_properties(context.local_rank).uuid),
     }
     rank_topology: list[Any] = [None] * context.world_size
     if context.world_size > 1:
@@ -114,9 +122,11 @@ def build_contract(
             "one_policy_cuda_process_per_rank": True,
             "micro_batch_size_per_rank": micro_batch_size,
             "gradient_accumulation_steps": gradient_accumulation,
-            "effective_global_batch_size": context.world_size
-            * micro_batch_size
-            * gradient_accumulation,
+            "effective_global_batch_size": effective_global_batch(args, config, context, micro_batch_size, gradient_accumulation),
+            "rank_microbatches": source_batch_sizes(
+                effective_global_batch(args, config, context, micro_batch_size, gradient_accumulation),
+                context.world_size, micro_batch_size, gradient_accumulation),
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "optimizer_steps": optimizer_steps,
             "micro_steps": optimizer_steps * gradient_accumulation,
             "checkpoint_interval": checkpoint_interval,
@@ -180,7 +190,8 @@ def validate_formal(
         failures.append("unknown asset verification contract")
     if args.stop_after_optimizer_step is not None:
         failures.append("formal launch cannot stop before its sealed horizon")
-    if context.world_size * micro_batch_size * gradient_accumulation != 256:
+    if (int(config["optimization"]["global_batch_size"]) != 256
+            or getattr(args, "global_batch_size", None) not in (None, 256)):
         failures.append("formal effective global batch must equal the official 256")
     if failures:
         raise Pi05SourceTrainingError("; ".join(failures))
@@ -207,6 +218,8 @@ def resolve_runtime(
         ema_enabled = False
     if min(optimizer_steps, micro_batch, accumulation) <= 0 or checkpoint_interval < 0:
         raise Pi05SourceTrainingError("invalid optimizer, batch, accumulation, or checkpoint request")
+    source_batch_sizes(effective_global_batch(args, config, context, micro_batch, accumulation),
+                       context.world_size, micro_batch, accumulation)
     validate_formal(
         args,
         config,

@@ -21,6 +21,7 @@ from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_contract import (
     append_jsonl,
     build_contract,
+    effective_global_batch,
     load_resume,
     reconcile_metrics,
     resolve_runtime,
@@ -78,6 +79,7 @@ class TrainingRuntime:
     optimizer_steps: int
     micro_batch: int
     accumulation: int
+    global_batch: int
     checkpoint_interval: int
     resume_optimizer_step: int
     metrics_path: Path
@@ -205,6 +207,8 @@ def _build_loader(
         world_size=runtime.context.world_size,
         seed=int(runtime.config["data"]["sampler_seed"]),
         logical_task_batch_size=int(runtime.config["data"]["logical_task_batch_size"]),
+        global_batch_size=runtime.global_batch,
+        gradient_accumulation_steps=runtime.accumulation,
     )
     loader = DataLoader(
         runtime.dataset,
@@ -275,7 +279,7 @@ def _prepare_training(args: argparse.Namespace, context: DistributedContext) -> 
             device_ids=[context.local_rank],
             output_device=context.local_rank,
             broadcast_buffers=False,
-            find_unused_parameters=False,
+            find_unused_parameters=config["runtime"]["find_unused_parameters"],
             static_graph=config["runtime"]["static_graph"],
             gradient_as_bucket_view=config["runtime"]["gradient_as_bucket_view"],
         )
@@ -312,6 +316,7 @@ def _prepare_training(args: argparse.Namespace, context: DistributedContext) -> 
         optimizer_steps=optimizer_steps,
         micro_batch=micro_batch,
         accumulation=accumulation,
+        global_batch=effective_global_batch(args, config, context, micro_batch, accumulation),
         checkpoint_interval=checkpoint_interval,
         resume_optimizer_step=resume_step,
         metrics_path=args.output_dir / "metrics.jsonl",
@@ -340,8 +345,9 @@ def _optimizer_step(
                 raise Pi05SourceTrainingError(
                     f"non-finite loss at optimizer step {optimizer_step}"
                 )
-            raw_loss_sum += float(loss.detach())
-            (loss / runtime.accumulation).backward()
+            weight = len(batch["action"]) * runtime.context.world_size / runtime.global_batch
+            raw_loss_sum += float(loss.detach()) * weight
+            (loss * weight).backward()
     optimizer_config = runtime.config["optimization"]["optimizer"]
     grad_norm = torch.nn.utils.clip_grad_norm_(
         runtime.policy.parameters(), float(optimizer_config["gradient_clip_norm"])
@@ -360,11 +366,11 @@ def _optimizer_step(
         )
     completed = optimizer_step + 1
     seconds = reduce_max(time.monotonic() - step_started, runtime.context)
-    examples = runtime.context.world_size * runtime.micro_batch * runtime.accumulation
+    examples = runtime.global_batch
     return {
         "optimizer_step": completed,
         "micro_step": completed * runtime.accumulation,
-        "mean_loss": reduce_mean(raw_loss_sum / runtime.accumulation, runtime.context),
+        "mean_loss": reduce_mean(raw_loss_sum, runtime.context),
         "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
@@ -471,6 +477,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--optimizer-steps", type=int)
     parser.add_argument("--micro-batch-size", type=int)
     parser.add_argument("--gradient-accumulation", type=int)
+    parser.add_argument("--global-batch-size", type=int, help="Smoke logical batch; formal remains fixed at 256.")
     parser.add_argument("--checkpoint-interval", type=int)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--ema", choices=("config", "on", "off"), default="config")

@@ -36,9 +36,13 @@ Test保持关闭，部署信息墙、train24／validation8／test8和source71审
 原8×A100、物理batch32、约71GB峰值属于历史执行条件。当前以live A40资源和等效microbatch／梯度累积保持global256。
 允许rank0 CPU保存不参与梯度的EMA，以及减少optimizer临时张量／共享DDP gradient bucket；这些须由真实更新profile验证。
 不冻结参数、不压缩曝光、不降低训练dtype。旧120分钟属于旧机器窗口；本轮严格1000更新，墙钟由profile另行登记。
-采样保留原8个logical task slots／每槽32queries，再按连续global query stream打包到物理rank／microbatch。
+采样保留原8个logical task slots／每槽32queries，再按logical global query stream打包到物理rank／microbatch。
 不能因累积次数增加而改成更多task、每task更少queries。原任务／episode／frame调度与历史实现已用71tasks、
 1000 logical updates共256000 queries核对一致；offset1使可执行frame支持变化，仍不声称与旧标签逐query等同。
+允许256不能整除world时按query数分配（如三rank为86／85／85），末microbatch取实际剩余queries，
+每个mean loss乘`local_query_count * world_size / 256`后由DDP平均，保持每个query严格等权。
+每个rank的每次microbatch均为真实非空query；world、GPU UUID及完整物理batch计划进入resume合同。
+原生未参与action loss的language-output heads继续按原图处理；累积DDP使用unused-parameter发现，不人为增加额外forward／loss。
 
 恢复一个source训练入口及cohesive训练owner，复用现存setup／contract／checkpoint／dataset，不复制source-SFT或Writer orchestrator。
 新config单独登记，原sealed config及source保留。数据／模型复用固定revision、manifest、file sizes与provenance，

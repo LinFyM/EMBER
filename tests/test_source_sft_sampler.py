@@ -145,7 +145,8 @@ def test_production_topology_preserves_full24_sample_clock() -> None:
     )
 
 
-@pytest.mark.parametrize("world,micro,accumulation", [(4, 4, 16), (4, 8, 8), (2, 8, 16)])
+@pytest.mark.parametrize("world,micro,accumulation", [(4, 4, 16), (4, 8, 8), (2, 8, 16),
+    (3, 8, 11), (3, 16, 6), (4, 12, 6), (5, 8, 7), (6, 8, 6)])
 def test_source_base_keeps_original_global256_task_episode_stream(world, micro, accumulation):
     dataset = _subset_dataset()
 
@@ -153,6 +154,7 @@ def test_source_base_keeps_original_global256_task_episode_stream(world, micro, 
         samplers = [SourceBaseBatchSampler(
             dataset, task_ids=tuple(dataset.task_episode_rows), per_rank_batch_size=batch,
             logical_task_batch_size=32, start_step=start * accumulation, stop_step=stop * accumulation,
+            global_batch_size=256, gradient_accumulation_steps=accumulation,
             rank=rank, world_size=ranks, seed=20260721) for rank in range(ranks)]
         return [[row for step in range(update * accumulation, (update + 1) * accumulation)
                  for sampler in samplers for row in sampler.batch_for_step(step)]
@@ -160,7 +162,7 @@ def test_source_base_keeps_original_global256_task_episode_stream(world, micro, 
 
     original = batches(8, 32, 1)
     physical = batches(world, micro, accumulation)
-    assert physical == original
+    assert [sorted(rows) for rows in physical] == [sorted(rows) for rows in original]
     assert batches(world, micro, accumulation, stop=2) + batches(world, micro, accumulation, start=2) == physical
     for update in physical:
         tasks = [dataset.frame_index[row][0] for row in update]

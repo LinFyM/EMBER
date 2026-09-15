@@ -14,6 +14,19 @@ from ember.writer.data import FunctionalQueryDataset
 from ember.writer.errors import WriterModelError
 
 
+def source_batch_sizes(global_batch: int, world_size: int, micro_batch: int,
+                       accumulation: int) -> tuple[tuple[int, ...], ...]:
+    """Partition one logical update, keeping every rank active for DDP."""
+    if min(global_batch, world_size, micro_batch, accumulation) <= 0:
+        raise WriterModelError("source batch dimensions must be positive")
+    counts = [global_batch // world_size + (rank < global_batch % world_size)
+              for rank in range(world_size)]
+    if any(not micro_batch * (accumulation - 1) < count <= micro_batch * accumulation for count in counts):
+        raise WriterModelError("source microbatches must cover the global batch with a nonempty final batch on every rank")
+    return tuple(tuple(min(micro_batch, count - index * micro_batch) for index in range(accumulation))
+                 for count in counts)
+
+
 class SourceBaseBatchSampler(Sampler[list[int]]):
     """Pack the original source's 32-query task slots onto physical ranks.
 
@@ -24,6 +37,7 @@ class SourceBaseBatchSampler(Sampler[list[int]]):
 
     def __init__(self, dataset: FunctionalQueryDataset, *, task_ids: Sequence[int],
                  per_rank_batch_size: int, logical_task_batch_size: int,
+                 global_batch_size: int, gradient_accumulation_steps: int,
                  start_step: int, stop_step: int, rank: int, world_size: int, seed: int) -> None:
         tasks = tuple(sorted(task_ids))
         if (not tasks or len(set(tasks)) != len(tasks) or not 0 <= start_step <= stop_step
@@ -40,6 +54,10 @@ class SourceBaseBatchSampler(Sampler[list[int]]):
             raise WriterModelError("source-base episode pool is empty")
         self.seed, self.rank, self.world_size = seed, rank, world_size
         self.per_rank_batch_size, self.logical_task_batch_size = per_rank_batch_size, logical_task_batch_size
+        plan = source_batch_sizes(global_batch_size, world_size, per_rank_batch_size, gradient_accumulation_steps)
+        self.global_batch_size, self.accumulation = global_batch_size, gradient_accumulation_steps
+        self.batch_sizes = plan[rank]
+        self.rank_offset = sum(sum(sizes) for sizes in plan[:rank])
         self.start_step, self.stop_step = start_step, stop_step
         self.episode_orders = {
             task: tuple(int(value) for value in np.random.default_rng(
@@ -70,8 +88,9 @@ class SourceBaseBatchSampler(Sampler[list[int]]):
     def batch_for_step(self, step: int) -> list[int]:
         if not self.start_step <= step < self.stop_step:
             raise WriterModelError("source-base micro step is outside the sampler interval")
-        start = (step * self.world_size + self.rank) * self.per_rank_batch_size
-        return [self._row(start + offset) for offset in range(self.per_rank_batch_size)]
+        update, micro = divmod(step, self.accumulation)
+        start = update * self.global_batch_size + self.rank_offset + sum(self.batch_sizes[:micro])
+        return [self._row(start + offset) for offset in range(self.batch_sizes[micro])]
 
     def __iter__(self) -> Iterator[list[int]]:
         for step in range(self.start_step, self.stop_step):

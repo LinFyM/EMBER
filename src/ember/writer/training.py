@@ -32,9 +32,19 @@ UPDATE_VERSION = "full_ab_pure_fm_joint_text_vl_action_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
+def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
+    """Bind declared RGB and full-horizon reads to the registered model pair."""
+    require_architecture_identity(model)
+    camera, read = model["camera_view"], model["horizon_read"]
+    patches = 512 if camera == "dual" else 256
+    return {"camera_view": camera,
+            "native_inputs": f"full{patches}_patch_content_and_full50_{read}_horizon_read",
+            "horizon_read": "softmax_shared_query_nonaffine_rms_H_plus_relative_bias_then_raw_H_values_uniform_init"
+                if read == "learned" else "uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values"}
+
+
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    require_architecture_identity(config["model"])
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
         "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],
@@ -45,8 +55,7 @@ def _config(path: Path) -> dict[str, Any]:
     }
     expected_observer = {
         "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
-        "probe_seed": 7 + 0x5A17, "camera_view": "dual",
-        "native_inputs": "full512_patch_content_and_full50_learned_horizon_read",
+        "probe_seed": 7 + 0x5A17, **observer_mode_contract(config["model"]),
     }
     if (config.get("schema_version") != "ember_language_axial_writer_config_v1"
             or config["optimization"].get("joint_train_all_writer_modules") is not True
@@ -145,7 +154,8 @@ def _run_contract(args, context, config, runtime, state):
             "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
             "training_only_actions": "same-task cross-episode main FM execution queries only",
-            "native_read": "same-version final dual-camera Z and full50 H; joint three-Meta checkpoint replay",
+            "native_read": f"same-version final {config['model']['camera_view']} Z and full50 H to "
+                           f"{config['model']['horizon_read']}; joint three-Meta checkpoint replay",
             "complete_lora": "shared eight-family full A/B heads from video Core and Procedure modulation",
             "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
@@ -400,7 +410,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_v52_learning"
+    if args.mode == "formal" and (config["status"] != "registered_source_aligned_v52_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)

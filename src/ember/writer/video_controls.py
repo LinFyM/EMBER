@@ -75,7 +75,7 @@ def control_provenance(selection, task, rows):
 
 
 def controlled_frames(indices, *, control, demo):
-    """The same content permutation acts on both real camera streams."""
+    """One content permutation acts on every declared real camera stream."""
     seed = frame_order_seed(control["selection_seed"], SUITE_ORDER[control["language_global_task_id"] // 10],
                             control["language_global_task_id"] % 10, demo)
     order = frame_control(len(indices), condition=control["arm"], order_seed=seed)
@@ -83,7 +83,7 @@ def controlled_frames(indices, *, control, demo):
     evidence = {"frame_order_seed": seed, "frame_permutation": order.content.tolist(),
                 "source_frame_indices": indices[order.content].tolist(),
                 "frame_indices": indices[order.positions].tolist(),
-                "transform_stage": "both_real_camera_RGB_before_complete_Writer_forward"}
+                "transform_stage": "declared_real_camera_RGB_before_complete_Writer_forward"}
     return order.content, indices[order.positions], evidence
 
 

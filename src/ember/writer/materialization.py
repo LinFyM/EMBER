@@ -22,8 +22,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.runtime import require_architecture_identity
-from ember.writer.training import RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION
+from ember.writer.training import RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, observer_mode_contract
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -58,10 +57,8 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
-    teacher_camera_names(run.get("config", {}).get("observer", {}).get("camera_view", "agentview"))
-    require_architecture_identity(run.get("model_config", {}))
-    require_architecture_identity(run.get("config", {}).get("model", {}))
-    if run["model_config"] != run["config"]["model"]:
+    observer = observer_mode_contract(run.get("model_config", {}))
+    if run["model_config"] != run.get("config", {}).get("model"):
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
     world_size = int(manifest.get("world_size", 0))
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
@@ -72,8 +69,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
         (config, {"schema_version": "ember_language_axial_writer_config_v1", "update_version": UPDATE_VERSION,
                   "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
         (config.get("optimization", {}), {"loss": "main_fm"}),
-        (config.get("observer", {}), {"camera_view": "dual",
-                                      "native_inputs": "full512_patch_content_and_full50_learned_horizon_read"}),
+        (config.get("observer", {}), observer),
         (data, {"version": "v52_full_video_cross_episode_events_v1", "action_start_offset": 1,
                 "query_alignment": "post_action_observation_future_control_v1"}),
         (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
@@ -225,16 +221,22 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
+    observer = observer_mode_contract(run["model_config"])
+    cameras = teacher_camera_names(observer["camera_view"])
+    patches = len(cameras) * 256
     metadata = {
         "model_config": run["model_config"], "observer": run["config"]["observer"],
         "execution_precision": run["config"]["execution_precision"],
         "checkpoint_state": "strict entire Writer including Text/VL/Action Meta and public probe",
-        "frame_stride": 5, "include_last_frame": True, "camera": "agentview_and_eye_in_hand_rotated_180",
+        "frame_stride": 5, "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180",
+        "native_image_tokens": patches,
         "execution_rank": 16, "generated_tensor_count": 76, "native_response_shape": [50, 1024],
         "native_response_source": "final_normalized_action_suffix_hidden",
-        "visual_token_source": "actual_final_512_image_patches_and_exact_task_span_tokens",
+        "visual_token_source": f"actual_final_{patches}_image_patches_and_exact_task_span_tokens",
         "visual_token_gradient": "joint_Text_VL_Action_Meta_complete_Writer_replay",
-        "native_read": "all_50_horizon_positions_to_learned_content_position_read_uniform_init",
+        "native_read": ("all_50_horizon_positions_to_learned_content_position_read_uniform_init"
+                        if run["model_config"]["horizon_read"] == "learned" else
+                        "all_50_horizon_positions_to_fixed_mean_zero_query_and_bias"),
         "video_representation": "language_queried_video_content_Core_and_causal_Procedure",
         "process_aggregation": "two_causal_blocks_raw_frame_position_RoPE_and_centered_slot_read",
         "native_parameter_generation": "complete_A_B_from_eight_shared_family_heads",
@@ -247,7 +249,7 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
     if arm in CONTROL_ARMS:
         metadata["diagnostic_control"] = arm
         metadata["control_transform"] = "identity_zero_delta_without_RGB_reads" if arm == "no_video" else (
-            "real_dual_camera_RGB_before_complete_Writer_forward")
+            f"real_{observer['camera_view']}_camera_RGB_before_complete_Writer_forward")
     if arm == "no_video":
         metadata.update(writer_execution="bypassed_no_video_identity",
                         native_parameter_generation="complete_zero_A_and_B_identity",
@@ -550,7 +552,7 @@ def main() -> None:
     placement.add_argument("--devices", help="Distinct same-node visible devices, e.g. cuda:0,cuda:1,cuda:2,cuda:3.")
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--native-frame-chunk", type=int,
-                        help="Physical native frame batch; preserves every video frame and both cameras.")
+                        help="Physical native frame batch; preserves every frame and the declared cameras.")
     args = parser.parse_args()
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):

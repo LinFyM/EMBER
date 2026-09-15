@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract
 from ember.writer.replay import sum_writer_gradients
 
 
@@ -27,7 +27,7 @@ def test_registered_formal_recipe_reaches_git_guard_before_device_initialization
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
     args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_writer.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_v52_learning"
+    configured["status"] = "registered_source_aligned_v52_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -94,6 +94,60 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
         path.write_text(json.dumps(changed))
         with pytest.raises(ValueError, match="contract|architecture"):
             _config(path)
+
+
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
+def test_registered_modes_keep_baseline_events_training_and_execution_pairing(tmp_path, config, camera_view, horizon_read):
+    changed = deepcopy(config)
+    changed['model'].update(camera_view=camera_view, horizon_read=horizon_read)
+    changed['observer'].update(observer_mode_contract(changed['model']))
+    path = tmp_path / 'mode.json'
+    path.write_text(json.dumps(changed))
+    configured = _config(path)
+    assert configured['data'] == config['data'] and configured['optimization'] == config['optimization']
+    assert configured['data']['grouping'] == 'baseline' and 'event_groups' not in configured['data']
+    assert configured['evidence']['qualification'] == config['evidence']['qualification']
+    assert configured['design'] == 'docs/source_alignment_v52_plan.md'
+    assert configured['source'] == {
+        'evaluation_config': 'configs/pi05_source_aligned_evaluation.json',
+        'checkpoint': 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000'}
+
+
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
+def test_run_contract_records_the_actual_camera_and_full_horizon_read(config, monkeypatch, tmp_path, camera_view, horizon_read):
+    config['model'].update(camera_view=camera_view, horizon_read=horizon_read)
+    config['observer'].update(observer_mode_contract(config['model']))
+    monkeypatch.setattr(torch.cuda, 'get_device_properties', lambda _: SimpleNamespace(uuid='cpu-fixture'))
+    modules = {name: torch.nn.Linear(1, 1) for name in ('writer', 'meta', 'vl_meta', 'text_meta')}
+    runtime = SimpleNamespace(state=SimpleNamespace(**modules), policy=torch.nn.Linear(1, 1).requires_grad_(False), source={})
+    context = SimpleNamespace(rank=0, local_rank=0, world_size=1, numa_node=None, cpu_affinity=None)
+    run = _run_contract(SimpleNamespace(output=tmp_path, mode='formal'), context, config, runtime, {})
+    assert run['information_wall']['native_read'] == (
+        f'same-version final {camera_view} Z and full50 H to {horizon_read}; joint three-Meta checkpoint replay')
+    assert run['model_config']['camera_view'] == camera_view and run['model_config']['horizon_read'] == horizon_read
+
+
+@pytest.mark.parametrize('field', ['camera_view', 'native_inputs', 'horizon_read'])
+def test_observer_mode_mismatch_is_rejected(tmp_path, config, field):
+    single = config['model'] | {'camera_view': 'agentview', 'horizon_read': 'fixed_mean'}
+    config['observer'][field] = observer_mode_contract(single)[field]
+    path = tmp_path / 'mismatched.json'
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match='scientific contract'):
+        _config(path)
+
+
+def test_registered_a_and_b_cannot_exact_resume_each_other(tmp_path, config):
+    original = {'schema_version': 'run', 'stage': 'supervised', 'mode': 'formal', 'config': config,
+                'model_config': config['model'], 'topology': {'world_size': 4}, 'source': config['source']}
+    path = tmp_path / 'run_contract.json'
+    _publish_contract(path, original, resume=False)
+    changed = deepcopy(original)
+    changed['config']['model'].update(camera_view='agentview', horizon_read='fixed_mean')
+    changed['config']['observer'].update(observer_mode_contract(changed['config']['model']))
+    changed['model_config'] = dict(changed['config']['model'])
+    with pytest.raises(ValueError, match='exact-resume contract differs: config'):
+        _publish_contract(path, changed, resume=True)
 
 
 @pytest.mark.parametrize("offset", [0, True, None])

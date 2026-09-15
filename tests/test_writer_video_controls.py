@@ -66,7 +66,8 @@ def test_partial_or_train_control_rounds_are_rejected(changes):
 
 
 @pytest.mark.parametrize("arm", CONTROL_ARMS[:-1])
-def test_real_dual_camera_pixels_are_reordered_before_both_complete_reads(tmp_path, arm):
+@pytest.mark.parametrize('camera_view', ['agentview', 'dual'])
+def test_real_declared_camera_pixels_are_reordered_before_complete_reads(tmp_path, arm, camera_view):
     selected = selection(arm)
     tasks = load_learning_tasks(ROOT, VALIDATION, role="validation")
     rows = {task: {"suite": value.suite, "task_id": value.suite_task_id, "split_role": "validation",
@@ -77,6 +78,8 @@ def test_real_dual_camera_pixels_are_reordered_before_both_complete_reads(tmp_pa
     donor = replace(donor, episode_lengths=(17,) * 50)
     indices = np.array([0, 5, 10, 15, 16])
     frames = np.arange(5 * 2 * 3 * 2 * 2).reshape(5, 2, 3, 2, 2).astype(np.float32)
+    if camera_view == 'agentview':
+        frames = frames[:, 0]
     reads, prepared = [], []
 
     def load(task, index):
@@ -101,6 +104,7 @@ def test_real_dual_camera_pixels_are_reordered_before_both_complete_reads(tmp_pa
     worker.output, worker.record = tmp_path, {"path": "/frozen/900", "macro": 900}
     record = worker.compile({"task": 1, "demos": [demo], "control": control})
     content, displayed, evidence = controlled_frames(indices, control=control, demo=demo)
+    assert evidence['transform_stage'] == 'declared_real_camera_RGB_before_complete_Writer_forward'
     assert torch.equal(prepared[0][0][0], torch.from_numpy(frames)[content])
     assert torch.equal(prepared[0][1][0], displayed)
     assert prepared[0][2] == tasks[1].authority.language

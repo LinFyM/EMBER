@@ -67,7 +67,7 @@ Owner已授权agent在上述计划和稳定科学／资源合同内完成实现�
   K1每task、每臂、每轮50个init对应全部50条合法teacher videos各一次，跨checkpoint和controls复用固定canonical映射。
 - 主FM来自同task跨episode执行queries。固定validation/test不产生梯度；扩展non-held meta tasks须先审计held及重复specification排除，
   登记allowlist/provenance。更多同task episodes不等于更多独立meta-task映射，不制造人工process或新仿真任务绕开问题。
-- 本轮Writer和两组Meta采用fresh联合监督，optimizer、scheduler、sampler和RNG均fresh；合法identity不要求每个张量随机非零。
+- 本轮Writer和Text/VL/Action三组Meta采用fresh联合监督，optimizer、scheduler、sampler和RNG均fresh；合法identity不要求每个张量随机非零。
   历史G1–G3冻结阶段不实施为当前课程；监督学习不混RL、trust回滚或部署适配。未来共享RL须另作独立阶段，不能替弱监督结果救场。
 - 学习窗口由真实最长视频profile、累计条件／queries和历史曝光尺度决定，在看到正式分数前登记中间与末尾节点。
   保存点使用50或100的倍数，但不机械继承旧50/100停止点、固定一小时或任意短步数作为充分学习证明。

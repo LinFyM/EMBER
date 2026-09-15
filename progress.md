@@ -14,11 +14,15 @@ Active design为[v5.2恢复与保持对照](docs/v52_return_plan.md)，顺序为
 启动前strg01 data1约848.06GiB／soft1024GiB，本阶段追加预算4GiB，全部大资产复用。
 B精确learned H-read／双视角／offset1／46+4分池／旧LR时间轴已写入active design，模型和事件采样已集成。
 模型移植90c58154，确定性事件20330e64；主入口沿用train_writer/materialize_writer，旧Pullback专属路径与临时A入口已退役。
-187项相关CPU检查通过，覆盖模型／Meta重放、官方FM、更新／resume、bank／pairing与信息墙；尚无B的真实GPU profile或训练分数。
+192项相关CPU检查通过，覆盖模型／Meta重放、官方FM、更新／resume、bank／pairing、workers与信息墙。
+真实source最长105帧双相机视频的chunk4／8各三次完整条件更新均通过；第三次Writer及三Meta信用非零，source冻结。
+选chunk8／policy microbatch8：后两次平均25.381秒／条件，reserved峰值29.004GiB，快于chunk4的27.939秒。
+该profile只检验信用、吞吐与显存，不保留其初始化；B正式运行将从fresh开始，仍没有B训练或闭环分数。
 完整metadata计划4800事件／100800queries、每task200次，同episode和held46–49训练暴露均0。
-B／C仍需完成真实profile与资源检查后才提交formal训练，不把接口登记写成已训练。
+B的profile登记已完成；正式节点脚本与全部四组固定validation400／train96请求已准备，资源刷新后提交fresh300。
 历史复核保留单agentview和horizon mean；新方法仍须双相机、完整50-horizon learned read和严格跨episode。
-本轮只开放fixed step900 correct400，未开放新controls或Test。结果在对话中交付，不新建用户报告。
+A仅使用fixed step900 correct400；B开放预注册四节点correct400及train96，未开放最终视频controls或Test。
+结果在对话中交付，不新建用户报告。
 
 Process Pullback的原有原因诊断、实现、fresh900和全部冻结读出已经完成并关闭，未通过能力资格，没有selected合格checkpoint。
 其完整结果见下方已关闭记录、findings§102及research_history；旧controls／Test不反哺当前计划。

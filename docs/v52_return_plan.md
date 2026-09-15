@@ -40,7 +40,7 @@ churn35、Jaccard .7603，任务配对差额95%CI为[-4.25,+.75]pp。12个worker
 原汇总器沿用旧GPU index→NUMA假设，外层收尾exit1；依据实际PCI拓扑修正这一处汇总判断后，原400行成功汇总，
 未重跑模型或闭环。原exit1、全部worker exit0及修正脚本分别保留。证据根为`runs/analysis/v52_return_20260915/`。
 
-## B：现行合同下的fresh基线——A后推进
+## B：现行合同下的fresh基线——已完成实现与profile
 
 保留v5.2的主要能力路径：exact language查询真实视频内容Core，Procedure提供变化条件，Core内容进入Value，
 完整A/B由共享family heads生成，两类内容在同一Writer内结合。继续纯同task跨episode FM，source始终冻结。
@@ -97,6 +97,13 @@ Process Pullback专属video/correction/factor/native路径和专属测试、配�
 train面板的4条video／task复用范围须登记，不称其为50视频无放回正式验证。
 上述初始化、LR/scheduler、teacher/query分池及实际任务事件表在首个训练更新前封存，保持两臂一致。
 如实际profile表明此尺度不合理，先用测量依据更新预算，不从验证分数反推学习预算。
+
+实际最长train视频为task38/demo36、105帧。clean pushed `4e26d224`代码上，chunk4与8各完成三次
+完整单条件联合FM更新（每次21 queries、权重1/4）；第三次Writer、Text/VL/Action Meta信用全部非零，source冻结，
+完整76张量LoRA finite。chunk8后两次平均25.381秒，reserved峰值29.004GiB，chunk4为27.939秒／19.275GiB。
+采用frame chunk8、policy microbatch8；四task正式更新在单节点四张合适GPU上分别计算条件后SUM，
+不复用profile参数。profile原件见`runs/analysis/v52_return_20260915/baseline_profile/chunk{4,8}/results.json`。
+仍保留上述1200更新、四个闭环节点和全部曝光预算；profile不构成能力或正式完整四task更新证据。
 
 ## C：只改变任务共现的一个有界对照
 

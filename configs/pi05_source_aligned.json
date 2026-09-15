@@ -183,16 +183,38 @@
     "ema_enabled": true
   },
   "formal_run": {
-    "locked": false,
-    "lock_reason": "Same-spec future-action source; physical A40 topology awaits measured full-parameter profile. Raw step1000 is fixed before any validation.",
+    "locked": true,
+    "lock_reason": "Generic initialization, four-rank global256 updates and complete checkpoint/EMA/optimizer/RNG resume passed; raw1000 preselected.",
     "world_size": 4,
     "optimizer_steps": 1000,
-    "micro_batch_size_per_rank": 4,
-    "gradient_accumulation_steps": 16,
+    "micro_batch_size_per_rank": 8,
+    "gradient_accumulation_steps": 8,
     "checkpoint_interval": 250,
     "ema_enabled": true
   },
-  "profile_evidence": {},
+  "profile_evidence": {
+    "path": "runs/analysis/source_alignment_20260915/profiles/profile_summary.json",
+    "world_size": 4,
+    "global_batch": 256,
+    "micro_batch": 8,
+    "accumulation": 8,
+    "steady_step_seconds": 30.700864771846682,
+    "resume_peak_reserved_gib": 39.169921875,
+    "checkpoint_gib": 31.51348557509482,
+    "profile_initialization_reused": false,
+    "continuous_window": {
+      "runtime_commit": "35fde51acec1377044de88616666d02c4c382838",
+      "fresh_updates": 3
+    },
+    "resume_window": {
+      "runtime_commit": "c8855862d27be667cdcd12fd85c85bf92b6475c3",
+      "fresh_updates": 1,
+      "resumed_updates": [
+        2,
+        3
+      ]
+    }
+  },
   "checkpointing": {
     "keep_latest": 1,
     "atomic_publish": true,

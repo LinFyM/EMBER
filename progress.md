@@ -6,7 +6,8 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
 原因诊断已全部完成。当前唯一active design为[Process Pullback共享可学习出口](docs/process_pullback_writer_design.md)。
 依据训练侧q／完整A/B的真实闭环差距，给原G P增加共享identity起步的L/R乘法变换；视频过程、7维q、纯FM和数据保持。
 旧900视频controls只描述旧模型，不反馈新设计。固定Test只在本轮方法冻结后使用，无梯度／选点／设计反馈。
-结果直接在对话交付，不新增用户报告，不开展RL、不自动回退v5.2。
+结果直接在对话交付，不新增用户报告，不开展RL、不自动回退v5.2。新方法fresh900及六套节点面板均已完成，
+方法与预先固定的terminal900已冻结；能力资格未通过，正在执行最终视频对照，随后完成Test读出。
 
 ## 新窗口执行
 
@@ -32,12 +33,20 @@ Owner已要求原因诊断结束后自主决定方法修改、实施、正式训
   S/O/G/L=0/38/34/3。75次成功只来自Object1、Goal6及Long2；相对source净增区间[-4.5,+25.25]pp，仍未建立广泛迁移。
   Validation300→600 R/G/L=39/36/11、churn47、Jaccard .4535；train相邻13/7/8、churn15、Jaccard .4643。
   独立动作FM为.144942572；599次identity后更新的Writer／两Meta信用均finite非零。实际闭环能力与覆盖仍优先于loss。
-  已从600按原四rank topology、优化器／scheduler／sampler／rank RNG exact-resume启动900段，不按中间分数选峰值。
+  随后按原四rank topology、优化器／scheduler／sampler／rank RNG exact-resume完成900段，不按中间分数选峰值。
+- 900段正常结束，累计3,600条件／230,400queries，段墙钟4,928.515s，三段训练合计15,663.382s；九份完整checkpoint保留。
+  900节点400／96及全部18 workers正常结束，六面板共1,488条新rollouts的配对、信息墙及曝光审计通过。
+  Train18/96、breadth11/24、source R/G/L=9/9/8；validation79/400、breadth3/8、source R/G/L=37/42/10，
+  S/O/G/L=0/40/39/0。77/79次成功仍集中于两项奶油奶酪搬运，另2次为Goal3；Spatial和Long均为零。
+  Validation600→900 R/G/L=63/16/12、churn28、Jaccard .6923，局部收益有所保持；source净增区间[-2.5,+26.25]pp。
+  Train相邻12/6/8、churn14、Jaccard .4615，完整窗口未建立可靠的广泛能力积累。独立动作FM为.140811848；
+  623/624合法teacher条件实际曝光，899次identity后更新的Writer／两Meta信用均finite非零。
+  已在新视频controls／Test之前登记能力non-pass并冻结方法，继续既定终点读出，不再训练或更改架构。
 - 首次启动在配置状态标签检查处退出，未创建训练runtime或更新参数；登记字段修正后重新启动。
   原失败日志与commit保留于新研究`failed_attempts/initial_registration/`，不混入正式曝光。
 
 新研究根`runs/analysis/process_pullback_learned_outlet_20260915/`，额外峰值预算32GiB。
-续训900前strg01 data1用量878,010,872KiB、soft1,073,741,824KiB；新研究5,810,292,265bytes，
+最终对照前strg01 data1用量880,850,276KiB、soft1,073,741,824KiB；新研究8,715,386,250bytes，
 额外32GiB峰值仍在独立quota内，共享data1约83TiB可用。全部source／数据／环境复用，不复制大资产。
 实际拓扑、命令与完成状态以新研究launch contract为准。
 

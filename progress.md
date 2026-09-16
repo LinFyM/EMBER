@@ -2,6 +2,12 @@
 
 ## 当前状态（2026-09-16，source时间对齐goal）
 
+Owner最新单独授权“先把新的A900测试一下视频特异性，然后告诉我结果”。本次仅固定已完成的A900，
+复用correct400，补same-task-other、cross-suite-wrong、no-video、shuffled、reversed各400严格配对行。
+后两臂最后评测，真实RGB重排后完整生成；no-video为零LoRA／裸source干预，不是language-only Writer。
+这是未获性能资格checkpoint的封闭原因诊断，不选点、不训练、不反哺架构；A1200、新B和SFT评测／续训仍暂停。
+执行与原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`；结果尚未产生。
+
 Owner于2026-09-16最新要求A900完整验证结果出来后立即暂停讨论；Goal已由owner暂停，不启动A1200或新B。
 Owner明确保留在运行的SFT后台训练，到400步自动停止；不启动其评测或425／450续训。旧基线／必要B计划保留待讨论，不自动恢复。
 最新暂停边界优先于旧goal和下方执行年表。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。

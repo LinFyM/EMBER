@@ -16,6 +16,14 @@ Owner评估了“同规格重训source→复现v5.2 A→测试B→按source影�
 不启动A1200或新B；SFT按owner单独回复继续现有后台训练，到400步自动停止，不启动其后续评测或425／450续训。
 Goal已由owner暂停。下文1200及SFT450均保留为原登记预算，不构成此暂停之后的自动执行授权。
 
+随后owner单独授权新的A900视频特异性诊断：固定`macro_00000900`及已有correct140/400，不重新选点。
+补same-task-other、cross-suite-wrong、no-video、shuffled、reversed各400；后两臂最后评测，真实RGB重排后
+完整生成LoRA，exact target language不变。所有臂复用seed20260911的50初态／视频ordinal及env／policy RNG；
+same-task-other逐行换视频且整轮无重复，wrong使用预定跨suite donor，no-video按现有零LoRA合同评测裸source。
+全部训练／架构／checkpoint选择反馈关闭，Test封闭。A900仍未通过>145或稳定资格，此处仅是owner授权的
+冻结模型原因诊断；完成逐task／suite、breadth、R/G/L、churn及任务bootstrap读出后报告并暂停。
+原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`，执行仍用冻结`575c189a`。
+
 先消除已确认的观测—动作标签错位，再判断source与Writer各自的能力限制。长期资格仍为validation8
 single-checkpoint strict correct严格>145/400、相邻稳定、低churn、四suite贡献、same-task换视频鲁棒性及冻结后的因果controls。
 Test保持关闭，部署信息墙、train24／validation8／test8和source71审计排除均不改变。

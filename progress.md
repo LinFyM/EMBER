@@ -14,14 +14,24 @@ Owner最新要求“你设置个合适的goal推进这件事吧”；source重�
 固定raw1000正式source检查通过，11个manifest文件和大小匹配，完整点31.513GiB；原生加载及三次更新验证后750已退休，250／500／750均保留retention记录。
 后续source入口显式使用一小时NCCL collective timeout以容纳大型保存；11项相关CPU检查通过，原训练冻结树不改动。
 strg01最新data1 used955362116KiB，soft余量112.90GiB，仅保留完整1000；Writer剩余预算充足。
-官方source validation400已在gpu01物理0–3启动（12 workers，launcher246274），train96在gpu02物理0运行（3 workers，launcher2626731）。
+官方source validation400／train96全部完成，15个workers均exit0；墙钟1017.512／925.201秒，两组严格配对检查通过。
+Validation旧47→新50/400，breadth3→3，S/O/G/L为0/1/42/7；R/G/L36/14/11、churn25、Jaccard .5902，task-bootstrap差值95%CI[-2.75,+4.75]pp。
+Train旧17→新13/96，breadth7→8，S/O/G/L为2/1/6/4；R/G/L8/5/9、churn14、Jaccard .3636，差值95%CI[-13.5417,+5.2083]pp。
+新validation逐task（global1/3/11/13/23/26/31/32）为0/0/1/0/0/42/7/0；train逐task按固定24task顺序为1/1/0/0/0/0/0/0/0/0/0/1/0/3/0/0/3/0/2/1/0/0/1/0。
+裸source尚无稳健净改善；Long局部获取与其它suite损失均保留，不能由裸policy接近判断其对Writer整条链影响小。
 Train首个launcher在准备阶段因漏传显式train24诊断面板被拒，未产生rollouts；补传旧source同一注册面板后准备通过，原exit1和日志保留。
+Validation Python evaluator及400行聚合成功；外层Bash因其运行时launcher文本被上述修补改变，完成后报EOF／exit2。原exit2保留，不重跑完整rollouts；后续运行期间不改共用launcher。
 A／B均在正确source上通过最长105帧视频三次完整联合更新及部署，两个profile均exit0；第三步Writer和Text／VL／Action三Meta信用finite非零，source冻结。
 采用共同frame chunk8／policy microbatch8；后两次A平均17.673秒、B25.414秒，reserved峰值21.148／29.004GiB，部署3.905／6.052秒。
 两配置已登记实测profile；均丢弃profile参数，正式A／B继续使用相同fresh初始化流与已注册1200更新窗口。
 两节点snapshot确认gpu02物理0／1现有进程仅186／148MiB且0%利用率，按共驻合同使用；本批合计6张有效GPU。
 Source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`；命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。
-当前source闭环仍在运行，尚无完整新source分数或新A/B性能结果。
+两组source原件及逐task／suite配对在study的`source/{validation,train}`及对应`*_comparison.json`。
+Fresh A300已从clean pushed detached `575c189a`在gpu01物理0–3启动，launcher355735、torchrun355737、ranks355760–355763；
+run_contract与完整4800事件计划已写出；已核验12更新、48条件／1008queries，step3起四组梯度均finite非零，source冻结。
+共同global84、baseline分组和frame chunk8／microbatch8保持；参数、optimizer、scheduler和采样／RNG均fresh。
+启动前data1 used955586976KiB，soft余量112.68GiB，A/B剩余追加预算22GiB；独立冻结树为`.codex/tmp/source-aligned-writer-runtime`。
+本段停在300并先完成correct400＋train96，再按相同拓扑继续600／900／1200；尚无新A/B性能结果。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。

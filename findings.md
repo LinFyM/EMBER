@@ -1799,3 +1799,31 @@ S/O/G/L从19/63/39/11变为15/58/41/11，breadth均6。逐行R/G/L111/14/21、ch
 旧v5.2实际RoPE读取raw frame indices，历史文字的sampled ordinal并未被执行；当前保留真实旧图。
 当前依赖scheduler会把decay自动缩到run budget，入口明确保留原100 warmup／12000 decay时钟。
 这些是新基线的可复核实施边界，不是能力改进结论；任务共现仍待在同事件／同更新对照中检验。
+
+## 104. 正确时间对齐的裸source未证实稳健净改善，Writer效应须另行计量（2026-09-16）
+
+从同revision generic π0.5，以审计后71tasks、全参数、1000更新／global256及原optimizer、LR、normalization重训，
+监督从`obs[i]→actions[i]`改为真实未来的`actions[i+1:i+51]`，固定raw1000而不选EMA或中间点。
+实际256000queries，全部1000行计数及loss／gradient／LR正常；四A40 micro8／accum8维持原logical8tasks×32采样。
+完整模型／optimizer状态已落盘后的最终保存超时仅影响发布；恢复原调度和元数据未改写参数、EMA或rank RNG。
+恢复事实和原始失败记录均保留，不把launcher exit1写成正常训练退出。
+
+| 面板 | 旧source | 对齐source | Breadth旧→新 | 新S/O/G/L | Retained/Gained/Lost | Churn | Jaccard | task-bootstrap差值95%CI |
+| --- | ---: | ---: | --- | --- | --- | ---: | ---: | --- |
+| Validation | 47/400 | 50/400 | 3→3 | 0/1/42/7 | 36/14/11 | 25 | .5902 | [-2.75,+4.75]pp |
+| Train | 17/96 | 13/96 | 7→8 | 2/1/6/4 | 8/5/9 | 14 | .3636 | [-13.5417,+5.2083]pp |
+
+Validation按global1/3/11/13/23/26/31/32逐task为0/0/1/0/0/42/7/0，仍主要依赖Goal6。
+Long由1→7，Object由5→1，Goal41→42，Spatial仍0；train的Long1→4、Object0→1，同时Spatial7→2、Goal9→6。
+这些是固定面板上的局部获取与损失，不能抹掉其一，也不能把两个跨零区间当作等效证明。
+
+两组496条闭环、15个workers正常完成，task/state/env/policy RNG及normalization配对检查通过；
+bootstrap按task聚类、20000次、seed20260915。Validation外层Bash因运行中修改launcher末尾文本而exit2，
+实际Python聚合、12个workers与400条原件全部成功；保留异常说明，没有重跑或筛选结果。
+训练96首次准备缺少显式面板而被拒，补用旧source的完整train24固定32–35面板后正常完成，不更改任务或初态。
+
+此时只能说裸policy尚无稳健整体收益。Source同时供执行与教学视频的原生观察计算，不能据此认定Writer侧影响有限，
+也不能认定时间错位解释了全部历史负结果。新source上的fresh A/B及旧B同节点比较仍是独立、已登记的必要证据；
+不据本结果扩source训练、挑checkpoint、恢复旧C或重启其它历史架构。
+原件见`runs/analysis/source_alignment_20260915/source/{validation,train}`与两份`*_comparison.json`；
+原训练／恢复及评测记录分别在`source_launch_contract.json`、`source_checkpoint_recovery.json`和`source_evaluation_launch_contract.json`。

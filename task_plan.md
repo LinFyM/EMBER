@@ -11,11 +11,12 @@ Owner于2026-09-15要求设置goal自主推进：同规格重训正确时间对�
 1. **已完成：实现与profile。** 恢复唯一source训练入口，复用现有setup／checkpoint／dataset；修正offset1，
    保持1000更新／global256／全参数训练及原optimizer。适配A40显存，不冻结参数或缩短曝光。
    A单视角／mean和B双视角／learned已整合；真实四卡global256及完整checkpoint恢复通过。
-2. **进行中：source训练与官方读出。** 已据profile锁定四rank、micro8／accum8及滚动完整checkpoint；
+2. **已完成：source训练与官方读出。** 已据profile锁定四rank、micro8／accum8及滚动完整checkpoint；
    clean pushed detached `b8ea00e9`的fresh1000更新已完成；最终保存超时后依据完整落盘状态恢复发布元数据，保留原失败记录。
-   固定raw step1000的validation400＋train96已启动，不按结果选source或扩步。
-3. **待启动：新source上的A，再B。** 共享正确数据／初始化／事件／LR及评测映射，分别fresh1200；
+   固定raw step1000为validation50/400、train13/96，旧source47／17；两组配对区间跨零，不按结果选source或扩步。
+3. **进行中：新source上的A，再B。** 共享正确数据／初始化／事件／LR及评测映射，分别fresh1200；
    A／B的新source最长视频profile已通过并封存；300／600／900／1200完整correct400＋train96，分开报告获取、保持及相对各自source的收益。
+   A的fresh300已从`575c189a`启动；尚未进入B正式训练，不由裸source结果提前裁决下游效应。
 4. **结果驱动后续。** 有重复实质改善可有限复查有局部正证据的source敏感旧架构；影响有限或A/B差异主导，
    则聚焦v5.2，必要时补2×2另两角。区间宽时保留不确定，不机械二分。
 5. **冻结视频证据与交付。** 按预登记规则确认换视频鲁棒性及最终controls，Test关闭；未具资格的固定终点

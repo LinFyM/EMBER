@@ -1,5 +1,14 @@
 # EMBER research history
 
+2026-09-16完成[source时间对齐计划](source_alignment_v52_plan.md)中的同科学规格fresh source及固定raw1000读出：
+71tasks、全参数、1000更新／256000queries、原optimizer／normalization；`b8ea00e9`的所有更新均finite。
+最终保存因共享存储I/O触发NCCL 600秒等待超时；raw／EMA／optimizer／四rank RNG已完整落盘，
+只从750点按原调度重建scheduler并恢复发布元数据，未重做模型更新或改写已保存训练状态，原exit1和恢复记录保留。
+Validation旧47→新50/400、breadth3→3、S/O/G/L0/1/42/7；R/G/L36/14/11、CI[-2.75,+4.75]pp。
+Train旧17→新13/96、breadth7→8、S/O/G/L2/1/6/4；R/G/L8/5/9、CI[-13.5417,+5.2083]pp。
+496条闭环完整、15个workers均exit0、配对审计通过。裸source未证实稳健净改善，不能据此代替新source上的A/B下游复核。
+完整边界见findings§104，原件为`runs/analysis/source_alignment_20260915/source/`及source checkpoint恢复、评测launch contracts。
+
 2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
 3,600条件／230,400queries、六面板／1,488rows完整；train24／22／26（source17/96），validation64／72／64（source47/400）。
 保留局部获取，未见task保持与广度未建立；未获前置资格，无selected checkpoint、same-task-other或最终视频controls。

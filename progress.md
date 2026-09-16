@@ -5,7 +5,12 @@
 Owner于2026-09-16收敛本轮为先建立正确对齐的source、共享SFT和v5.2 A；三者若与旧版本变化有限，允许跳过新B。
 必要时完成已登记B后，分析B相对A的差距并停下来讨论；不自动重启历史失败方法、补2×2、controls或Test。
 Goal保持active，最新范围优先于旧goal的广泛后续措辞。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
-共享SFT按历史实际rank128／global576／450步登记修正；旧入口offset0与过时recipe已确认，隔离代码适配进行中，尚未启动新SFT。
+共享SFT的offset1／历史rank128／global576／450步入口已整合推送至`c421933a`，独立开发树已退休，正式训练尚未启动。
+51项CPU检查通过（122.83秒），含真实三rank不等分片累积与随机checkpoint恢复；450步／259200条历史逻辑采样及900个实际LR值复核一致。
+保留新的单一训练路径，移除在线held-action监控接线；旧诊断入口也拒绝此配置读取validation actions。
+SFT的两卡micro64／累积5真实三步及step1→3完整恢复均exit0，梯度finite非零、source冻结；LoRA原生dtype与旧SFT一致。
+后两步平均74.596秒、reserved峰值32.934GiB，450步纯训练估计9.324小时；formal配置已据此封存，正式启动不复用profile参数。
+SFT使用独立冻结运行树；旧Writer冻结树保持`575c189a`，两路径的源模型引用均为新raw1000。
 Owner询问实现是否仍有未发现错误；定向复查训练—部署索引、读取模式、LoRA注入与缩放、梯度权重和完整恢复合同，未发现新合同违例。
 冻结Writer运行树的22项原生FM直接梯度、future-control、Meta重放、批量LoRA与模式／恢复相关检查新近全部通过（21.87秒）。
 证据在study的`implementation_review.json`及CPU日志；此结论不证明绝对无错，SFT独立入口仍待修正后的真实更新与恢复验证。
@@ -45,8 +50,16 @@ Validation首次完成准备后被实时GPU准入拒绝，未启动workers或产
 两面板完成后，A600已从300点在原四rank／GPU UUID拓扑精确续训并正常exit0；本段3392.728秒，累计2400条件／50400queries。
 400／500／600完整checkpoint检查通过；step3起598次更新四组梯度全部finite非零，source冻结，reserved峰值22.854GiB。
 独立train held动作诊断FM为.105642；此loss不代替闭环。累计训练6815.231秒，证据在`A/training_audit_600.json`。
-600点496条件物化已在gpu01物理0–3启动，launcher847996；独立冻结树仍为`.codex/tmp/source-aligned-writer-runtime`的`575c189a`。
-启动前data1 used959072544KiB，A实测3263852KiB，A/B剩余追加预算22GiB；仍须完成correct400＋train96后再续训900。
+600点496条件已全部物化并sealed，correct400＋train96完整完成，18个workers及两个launcher均exit0；配对与信息墙审计通过。
+Validation88/400、breadth6，S/O/G/L13/35/36/4；source配对R/G/L32/56/18、churn74、Jaccard .3019，差额95%CI[-2.75,+23.75]pp。
+Train47/96、breadth17，S/O/G/L11/19/13/4；source配对R/G/L12/35/1、churn36、Jaccard .25，差额95%CI[+21.875,+50]pp。
+300→600 validation为R/G/L57/31/42、churn73、Jaccard .4385，差额95%CI[-13,+5.75]pp；train为29/18/7、churn25、Jaccard .5370。
+验证逐task为0/13/26/9/1/35/4/0；train为3/3/1/1/3/0/4/4/1/3/4/3/2/4/3/0/4/0/2/2/0/0/0/0，顺序同上。
+训练获取继续扩大，验证净下降11且Long20→4，仍有明显能力交换；没有>145或相邻保持资格，不由此改变既定窗口。
+两个面板墙钟1120.709／667.014秒，完整证据已进入`A/paired_readout.json`；Writer冻结树仍为`575c189a`。
+A900已从600在相同gpu01四rank／GPU UUID精确续训，launcher962964；live quota used961648756KiB，剩余Writer22GiB及SFT3GiB预算充足。
+SFT两卡micro64／累积5的真实首步完成exit0：global576、loss .149509、梯度 .017673、76.263秒，reserved32.934GiB。
+完整step1保存后已在相同gpu02物理1／3精确恢复至profile step3并正常完成，launcher3771217；完整恢复点、CPU与profile证据保留。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。

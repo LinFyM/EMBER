@@ -13,7 +13,12 @@ Train旧17→新13/96、breadth7→8、S/O/G/L2/1/6/4；R/G/L8/5/9、CI[-13.5417
 breadth5／18、S/O/G/L为10/38/31/20与11/11/10/4；相对新source的R/G/L为30/69/20与9/27/4，churn89／31。
 任务配对净差95%CI[-3,+31.25]／[+12.5,+35.4167]pp；获取保留，但尚无>145或相邻保持资格，不提前归因source效应。
 496条完整、18个最终workers均exit0；validation准备后的GPU准入拒绝及同队列重启原件保留。详见findings§105与
-`runs/analysis/source_alignment_20260915/A/paired_readout.json`，后续节点和新B尚未作为完成事实登记。
+`runs/analysis/source_alignment_20260915/A/paired_readout.json`。
+
+同日A600完整correct400／train96为88／47，breadth6／17，S/O/G/L为13/35/36/4与11/19/13/4。
+相对source R/G/L为32/56/18与12/35/1；300→600为57/31/42与29/18/7，验证churn73、Long20→4。
+训练获取扩大，验证继续交换；未获>145或相邻保持资格。两面板496条、18个workers及launchers均exit0，配对审计通过。
+累计600更新／50400queries，完整训练与恢复证据保留；解释边界见findings§106。新B尚未启动，是否补跑服从新的基线比较范围。
 
 2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
 3,600条件／230,400queries、六面板／1,488rows完整；train24／22／26（source17/96），validation64／72／64（source47/400）。

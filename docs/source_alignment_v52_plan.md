@@ -100,6 +100,12 @@ baseline task permutation分组，不用C分组。共同事件、flow噪声、ta
 先恢复科学合同、验证实际更新及恢复，再封存配置与formal launch contract。SFT的rank和动作曝光多于Writer，
 它是普通共享监督的能力参照，不宣称同参数量或同query预算公平比较。
 
+实测执行登记：两张A40、physical micro64，每rank按64/64/64/64/32累积五次，global576；
+三次真实更新及step1→3完整恢复通过，原生混合BF16/F32 LoRA dtype与历史rank128一致。
+后两步平均74.596秒、reserved峰值32.934GiB，450次纯更新估计9.324小时，另计加载、保存与三轮闭环。
+正式仍从fresh identity开始；profile参数不复用，配置封存后从独立clean pushed detached运行树启动。
+小型CPU／profile与完整恢复证据保存在`runs/analysis/source_alignment_20260915/SFT/`。
+
 ## 裁决与后续
 
 裸source与Writer分别报告absolute、相对各自source的增量、per-task／suite、breadth、R/G/L、churn、相邻overlap及

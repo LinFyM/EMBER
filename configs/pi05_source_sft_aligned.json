@@ -112,11 +112,11 @@
       "available_action_episodes": 1200,
       "selection_data": "full validation400 rollouts only; validation/test action values are never read",
       "formal_run": {
-        "status": "profile_pending",
-        "expected_world_size": null,
+        "status": "sealed",
+        "expected_world_size": 2,
         "total_steps": 450,
-        "per_rank_batch_size": null,
-        "gradient_accumulation_steps": null,
+        "per_rank_batch_size": 64,
+        "gradient_accumulation_steps": 5,
         "checkpoint_steps": [
           100,
           200,
@@ -135,7 +135,8 @@
           425,
           450
         ],
-        "selection_rule": "Fixed 450-update historical-exposure baseline on the aligned frozen source. Read complete paired validation400 at 400/425/450; no automatic extension or held-action monitor."
+        "selection_rule": "Fixed 450-update historical-exposure baseline on the aligned frozen source. Read complete paired validation400 at 400/425/450; no automatic extension or held-action monitor.",
+        "profile_evidence": "runs/analysis/source_alignment_20260915/SFT/profile_results.json"
       }
     },
     "final": {
